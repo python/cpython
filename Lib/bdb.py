@@ -16,7 +16,6 @@ class Bdb: # Basic Debugger
 	
 	def __init__(self):
 		self.breaks = {}
-		self.cbreaks = {}
 	
 	def reset(self):
 		import linecache
@@ -84,7 +83,7 @@ class Bdb: # Basic Debugger
 				return 1
 			frame = frame.f_back
 		return 0
-	
+
 	def break_here(self, frame):
 		filename=frame.f_code.co_filename
 		if not self.breaks.has_key(filename):
@@ -92,11 +91,15 @@ class Bdb: # Basic Debugger
 		lineno=frame.f_lineno
 		if not lineno in self.breaks[filename]:
 			return 0
-		if self.cbreaks.has_key((filename, lineno)):
-			cond=self.cbreaks[filename, lineno]
-			return eval(cond, frame.f_globals,
-				    frame.f_locals)
-		return 1
+		# flag says ok to delete temp. bp
+		(bp, flag) = effective(filename, lineno, frame)
+		if bp:
+			self.currentbp = bp.number
+			if (flag and bp.temporary):
+				self.do_delete(str(bp.number))
+			return 1
+		else:
+			return 0
 	
 	def break_anywhere(self, frame):
 		return self.breaks.has_key(frame.f_code.co_filename)
@@ -182,9 +185,11 @@ class Bdb: # Basic Debugger
 	# Derived classes and clients can call the following methods
 	# to manipulate breakpoints.  These methods return an
 	# error message is something went wrong, None if all is well.
-	# Call self.get_*break*() to see the breakpoints.
+	# Set_break prints out the breakpoint line and file:lineno.
+	# Call self.get_*break*() to see the breakpoints or better
+	# for bp in Breakpoint.bpbynumber: if bp: bp.bpprint().
 	
-	def set_break(self, filename, lineno, cond=None):
+	def set_break(self, filename, lineno, temporary=0, cond = None):
 		import linecache # Import as late as possible
 		line = linecache.getline(filename, lineno)
 		if not line:
@@ -192,34 +197,49 @@ class Bdb: # Basic Debugger
 		if not self.breaks.has_key(filename):
 			self.breaks[filename] = []
 		list = self.breaks[filename]
-		if lineno in list:
-			return 'There is already a breakpoint there!'
-		list.append(lineno)
-		if cond is not None: self.cbreaks[filename, lineno]=cond
-	
-	def clear_break(self, filename, lineno):
+		if not lineno in list:
+			list.append(lineno)
+		bp = Breakpoint(filename, lineno, temporary, cond)
+		print 'Breakpoint %d, at %s:%d.' %(bp.number, filename, lineno)
+
+	def clear_break(self, arg):
+		try:
+			number = int(arg)
+			bp = Breakpoint.bpbynumber[int(arg)]
+		except:
+			return 'Invalid argument'
+		if not bp:
+			return 'Breakpoint already deleted'
+		filename = bp.file
+		lineno = bp.line
 		if not self.breaks.has_key(filename):
 			return 'There are no breakpoints in that file!'
 		if lineno not in self.breaks[filename]:
 			return 'There is no breakpoint there!'
-		self.breaks[filename].remove(lineno)
+		# If there's only one bp in the list for that file,line
+		# pair, then remove the breaks entry
+		if len(Breakpoint.bplist[filename, lineno]) == 1:
+			self.breaks[filename].remove(lineno)
 		if not self.breaks[filename]:
 			del self.breaks[filename]
-		try: del self.cbreaks[filename, lineno]
-		except: pass
+		bp.deleteMe()
 	
 	def clear_all_file_breaks(self, filename):
 		if not self.breaks.has_key(filename):
 			return 'There are no breakpoints in that file!'
+		for line in self.breaks[filename]:
+			blist = Breakpoint.bplist[filename, line]
+			for bp in blist:
+				bp.deleteMe()
 		del self.breaks[filename]
-		for f,l in self.cbreaks.keys():
-		    if f==filename: del self.cbreaks[f,l]
 	
 	def clear_all_breaks(self):
 		if not self.breaks:
 			return 'There are no breakpoints!'
+		for bp in Breakpoint.bpbynumber:
+			if bp:
+				bp.deleteMe()
 		self.breaks = {}
-		self.cbreaks = {}
 	
 	def get_break(self, filename, lineno):
 		return self.breaks.has_key(filename) and \
@@ -261,9 +281,9 @@ class Bdb: # Basic Debugger
 		filename = frame.f_code.co_filename
 		s = filename + '(' + `lineno` + ')'
 		if frame.f_code.co_name:
-		    s = s + frame.f_code.co_name
+			s = s + frame.f_code.co_name
 		else:
-		    s = s + "<lambda>"
+			s = s + "<lambda>"
 		if frame.f_locals.has_key('__args__'):
 			args = frame.f_locals['__args__']
 		else:
@@ -344,6 +364,135 @@ class Bdb: # Basic Debugger
 
 def set_trace():
 	Bdb().set_trace()
+
+
+class Breakpoint:
+
+	"""Breakpoint class
+
+	Implements temporary breakpoints, ignore counts, disabling and
+	(re)-enabling, and conditionals.
+
+	Breakpoints are indexed by number through bpbynumber and by
+	the file,line tuple using bplist.  The former points to a
+	single instance of class Breakpoint.  The latter points to a
+	list of such instances since there may be more than one
+	breakpoint per line.
+
+	"""
+
+
+	next = 1		# Next bp to be assigned
+	bplist = {}		# indexed by (file, lineno) tuple
+	bpbynumber = [None]	# Each entry is None or an instance of Bpt
+				# index 0 is unused, except for marking an
+				# effective break .... see effective()
+
+	def __init__(self, file, line, temporary=0, cond = None):
+		self.file = file
+		self.line = line
+		self.temporary = temporary
+		self.cond = cond
+		self.enabled = 1
+		self.ignore = 0
+		self.hits = 0
+		self.number = Breakpoint.next
+		Breakpoint.next = Breakpoint.next + 1
+		# Build the two lists
+		self.bpbynumber.append(self)
+		if self.bplist.has_key((file, line)):
+			self.bplist[file, line].append(self)
+		else:
+			self.bplist[file, line] = [self]
+
+		
+	def deleteMe(self):
+		index = (self.file, self.line)
+		self.bpbynumber[self.number] = None   # No longer in list
+		self.bplist[index].remove(self)
+		if not self.bplist[index]:
+			# No more bp for this f:l combo
+			del self.bplist[index]
+
+	def enable(self):
+		self.enabled = 1
+
+	def disable(self):
+		self.enabled = 0
+
+	def bpprint(self):
+		if self.temporary:
+		   disp = 'del  '
+		else:
+		   disp = 'keep '
+		if self.enabled:
+		   disp = disp + 'yes'
+		else:
+		   disp = disp + 'no '
+		print '%-4dbreakpoint	 %s at %s:%d' % (self.number, disp,
+							 self.file, self.line)
+		if self.cond:
+			print '\tstop only if %s' % (self.cond,)
+		if self.ignore:
+			print '\tignore next %d hits' % (self.ignore)
+		if (self.hits):
+			if (self.hits > 1): ss = 's'
+			else: ss = ''
+			print ('\tbreakpoint already hit %d time%s' %
+			       (self.hits, ss))
+
+# -----------end of Breakpoint class----------
+
+# Determines if there is an effective (active) breakpoint at this
+# line of code.  Returns breakpoint number or 0 if none
+def effective(file, line, frame):
+	"""Determine which breakpoint for this file:line is to be acted upon.
+
+	Called only if we know there is a bpt at this
+	location.  Returns breakpoint that was triggered and a flag
+	that indicates if it is ok to delete a temporary bp.
+
+	"""
+	possibles = Breakpoint.bplist[file,line]
+	for i in range(0, len(possibles)):
+		b = possibles[i]
+		if b.enabled == 0:
+			continue
+		# Count every hit when bp is enabled
+		b.hits = b.hits + 1
+		if not b.cond:
+			# If unconditional, and ignoring,
+			# go on to next, else break
+			if b.ignore > 0:
+				b.ignore = b.ignore -1
+				continue
+			else:
+				# breakpoint and marker that's ok
+				# to delete if temporary
+				return (b,1)
+		else:
+			# Conditional bp.
+			# Ignore count applies only to those bpt hits where the
+			# condition evaluates to true.
+			try:
+				val = eval(b.cond, frame.f_globals,
+					   frame.f_locals) 
+				if val:
+					if b.ignore > 0:
+						b.ignore = b.ignore -1
+						# continue
+					else:
+						return (b,1)
+				# else:
+				#	continue
+			except:
+				# if eval fails, most conservative
+				# thing is to stop on breakpoint
+				# regardless of ignore count. 
+				# Don't delete temporary,
+				# as another hint to user.
+				return (b,0)
+	return (None, None)
 
 # -------------------- testing --------------------
 
