@@ -50,7 +50,7 @@ attributes, the key being the \var{name} and the value being the
 Lower case and double quotes and backslashes in the \var{value} have
 been interpreted.  For instance, for the tag
 \code{<A HREF="http://www.cwi.nl/">}, this method would be called as
-\code{handle_starttag('A', self.start_A, {'HREF': 'http://www.cwi.nl/'})}.
+\code{handle_starttag('A', self.start_A, \{'HREF': 'http://www.cwi.nl/'\})}.
 The base implementation simply calls \code{method} with \code{attributes}
 as the only argument.
 \end{funcdesc}
