@@ -1466,7 +1466,7 @@ PyCurses_KeyName(self,arg)
      PyObject * self;
      PyObject * arg;
 {
-  char *knp;
+  const char *knp;
   int ch;
   if (!PyArg_Parse(arg,"i",&ch))
     return NULL;
