@@ -92,15 +92,6 @@ an instance of \class{UserString} (or a subclass) or an arbitrary sequence
 which can be converted into a string.
 \end{classdesc}
 
-In addition to supporting the methods and operations of string  or
-Unicode objects (see section \ref{typesseq}), \class{UserString} instances
-provide the following attribute:
-
-\begin{memberdesc}{data}
-A real Python string or Unicode object used to store the content of the
-\class{UserString} class.
-\end{memberdesc}
-
 \begin{classdesc}{MutableString}{\optional{sequence}}
 This class is derived from the \class{UserString} above and redefines
 strings to be \emph{mutable}.  Mutable strings can't be used as
@@ -111,3 +102,12 @@ example for inheritance and necessity to remove (override) the
 mutable object as dictionary key, which would be otherwise very
 error prone and hard to track down.
 \end{classdesc}
+
+In addition to supporting the methods and operations of string  or
+Unicode objects (see section \ref{typesseq}), \class{UserString} instances
+provide the following attribute:
+
+\begin{memberdesc}{data}
+A real Python string or Unicode object used to store the content of the
+\class{UserString} class.
+\end{memberdesc}
