@@ -12,6 +12,7 @@
 """
 
 import macfs
+import EasyDialogs
 import os
 import sys
 import re
@@ -53,7 +54,7 @@ def walk(top):
 			remove(top)
 		
 
-fss, ok = macfs.GetDirectory("Please locate the Python home directory")
-if ok:
-	walk(fss.as_pathname())
+pathname = EasyDialogs.AskFolder(message="Please locate the Python home directory")
+if pathname:
+	walk(pathname)
 	sys.exit(1)  # so we see the results

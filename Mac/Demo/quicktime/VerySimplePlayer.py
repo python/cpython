@@ -11,7 +11,8 @@ from Carbon import Evt
 from Carbon import Events
 from Carbon import Win
 from Carbon import Windows
-import macfs
+from Carbon import File
+import EasyDialogs
 import sys
 
 # XXXX maxbounds = (40, 40, 1000, 1000)
@@ -23,8 +24,8 @@ def main():
 	Qt.EnterMovies()
 	
 	# Get the movie file
-	fss, ok = macfs.StandardGetFile(QuickTime.MovieFileType)
-	if not ok:
+	fss = EasyDialogs.AskFileForOpen(wanted=File.FSSpec) # Was: QuickTime.MovieFileType
+	if not fss:
 		sys.exit(0)
 		
 	# Open the window

@@ -13,8 +13,8 @@ import waste
 import WASTEconst
 from Carbon import Scrap
 import os
+import EasyDialogs
 import macfs
-import MACFS
 import string
 import htmllib
 
@@ -243,7 +243,7 @@ class WasteWindow(ScrolledWindow):
 		try:
 			rf = Res.FSpOpenResFile(self.path, 3)
 		except Res.Error:
-			Res.FSpCreateResFile(self.path, '????', 'TEXT', MACFS.smAllScripts)
+			Res.FSpCreateResFile(self.path, '????', 'TEXT', macfs.smAllScripts)
 			rf = Res.FSpOpenResFile(self.path, 3)
 		styles = Res.Resource('')
 		soup = Res.Resource('')
@@ -256,9 +256,9 @@ class WasteWindow(ScrolledWindow):
 		self.ted.WEResetModCount()
 		
 	def menu_save_as(self):
-		fss, ok = macfs.StandardPutFile('Save as:')
-		if not ok: return
-		self.path = fss.as_pathname()
+		path = EasyDialogs.AskFileForSave(message='Save as:')
+		if not path: return
+		self.path = path
 		self.name = os.path.split(self.path)[-1]
 		self.wid.SetWTitle(self.name)
 		self.menu_save()
@@ -661,10 +661,9 @@ class Wed(Application):
 
 	def _open(self, askfile):
 		if askfile:
-			fss, ok = macfs.StandardGetFile('TEXT')
-			if not ok:
+			path = EasyDialogs.AskFileForOpen(typeList=('TEXT',))
+			if not path:
 				return
-			path = fss.as_pathname()
 			name = os.path.split(path)[-1]
 			try:
 				fp = open(path, 'rb') # NOTE binary, we need cr as end-of-line
@@ -683,10 +682,9 @@ class Wed(Application):
 
 	def insertfile(self, *args):
 		if self.active:
-			fss, ok = macfs.StandardGetFile('TEXT')
-			if not ok:
+			path = EasyDialogs.AskFileForOpen(typeList=('TEXT',))
+			if not path:
 				return
-			path = fss.as_pathname()
 			try:
 				fp = open(path, 'rb') # NOTE binary, we need cr as end-of-line
 			except IOError, arg:
@@ -698,10 +696,9 @@ class Wed(Application):
 
 	def inserthtml(self, *args):
 		if self.active:
-			fss, ok = macfs.StandardGetFile('TEXT')
-			if not ok:
+			path = EasyDialogs.AskFileForOpen(typeList=('TEXT',))
+			if not path:
 				return
-			path = fss.as_pathname()
 			try:
 				fp = open(path, 'r')
 			except IOError, arg:

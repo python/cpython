@@ -4,6 +4,7 @@ the filename and a bit of context.
 
 By Just, with a little glue by Jack"""
 
+import EasyDialogs
 import macfs
 import re
 import os
@@ -43,9 +44,9 @@ def walk(top, recurse=1):
 				pos = j
 
 def main():
-	fss, ok = macfs.GetDirectory()
-	if ok:
-		walk(fss.as_pathname())
+	pathname = EasyDialogs.AskFolder()
+	if pathname:
+		walk(pathname)
 		
 if __name__ == '__main__':
 	main()

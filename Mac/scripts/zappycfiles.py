@@ -2,6 +2,7 @@
 """Recursively zap all .pyc and .pyo files"""
 import os
 import sys
+import EasyDialogs
 
 # set doit true to actually delete files
 # set doit false to just print what would be deleted
@@ -11,10 +12,9 @@ def main():
 	if not sys.argv[1:]:
 		if os.name == 'mac':
 			import macfs
-			fss, ok = macfs.GetDirectory('Directory to zap pyc files in')
-			if not ok:
+			dir = EasyDialogs.AskFolder(message='Directory to zap pyc files in')
+			if not dir:
 				sys.exit(0)
-			dir = fss.as_pathname()
 			zappyc(dir)
 		else:
 			print 'Usage: zappyc dir ...'

@@ -205,10 +205,10 @@ def findpythoncore():
 		raise "Unknown MacOS.runtimemodel", MacOS.runtimemodel
 	corepath = os.path.join(extpath, corename)
 	if not os.path.exists(corepath):
-		fss, ok = macfs.PromptGetFile("Please locate PythonCore:", "shlb")
-		if not ok:
+		corepath = EasyDialogs.AskFileForOpen(message="Please locate PythonCore:", 
+			typeList=("shlb",))
+		if not corepath:
 			raise KeyboardInterrupt, "cancelled"
-		corepath = fss.as_pathname()
 	return resolvealiasfile(corepath)
 
 def resolvealiasfile(path):

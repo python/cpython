@@ -9,6 +9,7 @@
 #
 import os
 import macfs
+import EasyDialogs
 import sys
 import macostools
 
@@ -45,10 +46,10 @@ def walktree(name, change):
 			walktree(os.path.join(name, f), change)
 			
 def run(change):
-	fss, ok = macfs.GetDirectory('Folder to search:')
-	if not ok:
+	pathname = EasyDialogs.AskFolder(message='Folder to search:')
+	if not pathname:
 		sys.exit(0)
-	walktree(fss.as_pathname(), change)
+	walktree(pathname, change)
 	
 if __name__ == '__main__':
 	run(1)
