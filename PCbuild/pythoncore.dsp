@@ -1737,6 +1737,21 @@ SOURCE=..\Objects\unicodeobject.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\Objects\weakrefobject.c
+
+!IF  "$(CFG)" == "pythoncore - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "pythoncore - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Debug"
+
+!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\Modules\xreadlinesmodule.c
 
 !IF  "$(CFG)" == "pythoncore - Win32 Release"
