@@ -237,8 +237,9 @@ class TextWrapper:
         converted to space.
         """
         text = self._munge_whitespace(text)
-        if len(text) <= self.width:
-            return [text]
+        indent = self.initial_indent
+        if len(text) + len(indent) <= self.width:
+            return [indent + text]
         chunks = self._split(text)
         if self.fix_sentence_endings:
             self._fix_sentence_endings(chunks)
