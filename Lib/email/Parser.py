@@ -14,9 +14,16 @@ from email import Message
 EMPTYSTRING = ''
 NL = '\n'
 
+try:
+    True, False
+except NameError:
+    True = 1
+    False = 0
+
+
 
 class Parser:
-    def __init__(self, _class=Message.Message, strict=0):
+    def __init__(self, _class=Message.Message, strict=False):
         """Parser of RFC 2822 and MIME email messages.
 
         Creates an in-memory object tree representing the email message, which
@@ -41,14 +48,14 @@ class Parser:
         self._class = _class
         self._strict = strict
 
-    def parse(self, fp, headersonly=0):
+    def parse(self, fp, headersonly=False):
         root = self._class()
         self._parseheaders(root, fp)
         if not headersonly:
             self._parsebody(root, fp)
         return root
 
-    def parsestr(self, text, headersonly=0):
+    def parsestr(self, text, headersonly=False):
         return self.parse(StringIO(text), headersonly=headersonly)
 
     def _parseheaders(self, container, fp):
@@ -57,7 +64,7 @@ class Parser:
         lastheader = ''
         lastvalue = []
         lineno = 0
-        while 1:
+        while True:
             # Don't strip the line before we test for the end condition,
             # because whitespace-only header lines are RFC compliant
             # continuation lines.
@@ -216,7 +223,7 @@ class Parser:
             # by a blank line.  We'll represent each header block as a
             # separate Message object
             blocks = []
-            while 1:
+            while True:
                 blockmsg = self._class()
                 self._parseheaders(blockmsg, fp)
                 if not len(blockmsg):
