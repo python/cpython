@@ -401,13 +401,18 @@ cPickle_ErrFormat(PyObject *ErrType, char *stringformat, char *format, ...)
   return NULL;
 }
 
-static int 
+static int
 write_file(Picklerobject *self, char *s, int  n) {
+    size_t nbyteswritten;
+
     if (s == NULL) {
         return 0;
     }
 
-    if (fwrite(s, sizeof(char), n, self->fp) != (size_t)n) {
+    Py_BEGIN_ALLOW_THREADS
+    nbyteswritten = fwrite(s, sizeof(char), n, self->fp);
+    Py_END_ALLOW_THREADS
+    if (nbyteswritten != (size_t)n) {
         PyErr_SetFromErrno(PyExc_IOError);
         return -1;
     }
@@ -472,21 +477,22 @@ write_other(Picklerobject *self, char *s, int  n) {
         if (junk) Py_DECREF(junk);
         else return -1;
       }
-    else 
+    else
       PDATA_PUSH(self->file, py_str, -1);
-    
-    self->buf_size = 0; 
+
+    self->buf_size = 0;
     return n;
 }
 
 
-static int 
+static int
 read_file(Unpicklerobject *self, char **s, int  n) {
+    size_t nbytesread;
 
     if (self->buf_size == 0) {
         int size;
 
-        size = ((n < 32) ? 32 : n); 
+        size = ((n < 32) ? 32 : n);
         UNLESS (self->buf = (char *)malloc(size * sizeof(char))) {
             PyErr_NoMemory();
             return -1;
@@ -499,11 +505,14 @@ read_file(Unpicklerobject *self, char **s, int  n) {
             PyErr_NoMemory();
             return -1;
         }
- 
+
         self->buf_size = n;
     }
-            
-    if (fread(self->buf, sizeof(char), n, self->fp) != (size_t)n) {
+
+    Py_BEGIN_ALLOW_THREADS
+    nbytesread = fread(self->buf, sizeof(char), n, self->fp);
+    Py_END_ALLOW_THREADS
+    if (nbytesread != (size_t)n) {
         if (feof(self->fp)) {
             PyErr_SetNone(PyExc_EOFError);
             return -1;

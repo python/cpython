@@ -83,6 +83,8 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 - #128053 - posixmodule.c - #ifdef for including "tmpfile" in the 
             posix_methods[] array was wrong -- should be HAVE_TMPFILE
 
+- #233200 - cPickle did not use Py_BEGIN_ALLOW_THREADS.
+
 What's New in Python 2.0?
 =========================
 
