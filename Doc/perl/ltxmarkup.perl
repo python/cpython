@@ -45,7 +45,7 @@ sub do_env_macrodesc{
     my $params = ltx_process_params(ltx_next_argument());
     return "\n<dl class=macrodesc>"
          . "\n<dt><b><tt class=macro>&#92;$macro</tt></b>"
-         . "\n                       $params"
+         . "\n    $params"
 	 . "\n<dd>"
 	 . $_
 	 . "</dl>";
@@ -56,8 +56,8 @@ sub do_env_envdesc{
     my $env = ltx_next_argument();
     my $params = ltx_process_params(ltx_next_argument());
     return "\n<dl class=envdesc>"
-         . "\n<dt><b><tt class=environment>&#92;$env</tt></b>"
-         . "\n                             $params"
+         . "\n<dt><tt>&#92;begin{<b class=environment>$env</b>}</tt>"
+         . "\n    $params"
 	 . "\n<dd>"
 	 . $_
 	 . "</dl>";
