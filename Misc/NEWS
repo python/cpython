@@ -316,6 +316,9 @@ Extension modules
   available in source code, but not built automatically anymore, and
   is now named bsddb185.
 
+- unicodedata was updated to Unicode 3.2. In now also supports names
+  for Hangul syllables.
+
 - resource.getrlimit() now returns longs instead of ints.
 
 - readline now dynamically adjusts its input/output stream if
