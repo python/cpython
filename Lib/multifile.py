@@ -76,8 +76,11 @@ class MultiFile:
         line = self.readahead
         if line:
             self.readahead = self._readline()
-            if not self.readahead and line[-1:] == "\n":
-                line = line[:-1]
+            if not self.readahead:
+                if line[-2:] == "\r\n":
+                    line = line[:-2]
+                elif line[-1:] == "\n":
+                    line = line[:-1]
         return line
 
     def _readline(self):
