@@ -331,11 +331,11 @@ static PyMethodDef thread_methods[] = {
 	{"allocate_lock",	(PyCFunction)thread_PyThread_allocate_lock, 
 	 METH_NOARGS, allocate_doc},
 	{"allocate",		(PyCFunction)thread_PyThread_allocate_lock, 
-	 METH_OLDARGS, allocate_doc},
+	 METH_NOARGS, allocate_doc},
 	{"exit_thread",		(PyCFunction)thread_PyThread_exit_thread, 
 	 METH_NOARGS, exit_doc},
 	{"exit",		(PyCFunction)thread_PyThread_exit_thread, 
-	 METH_OLDARGS, exit_doc},
+	 METH_NOARGS, exit_doc},
 	{"get_ident",		(PyCFunction)thread_get_ident, 
 	 METH_NOARGS, get_ident_doc},
 #ifndef NO_EXIT_PROG
