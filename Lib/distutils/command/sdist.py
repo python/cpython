@@ -30,9 +30,9 @@ class sdist (Command):
         ('use-defaults', None,
          "include the default file set in the manifest "
          "[default; disable with --no-defaults]"),
-        ('manifest-only', None,
+        ('manifest-only', 'o',
          "just regenerate the manifest and then stop"),
-        ('force-manifest', None,
+        ('force-manifest', 'f',
          "forcibly regenerate the manifest and carry on as usual"),
         ('formats=', None,
          "formats for source distribution (tar, ztar, gztar, bztar, or zip)"),
