@@ -152,6 +152,8 @@ def makedirs(name, mode=0777):
         head, tail = path.split(head)
     if head and tail and not path.exists(head):
         makedirs(head, mode)
+        if tail == curdir:           # xxx/newdir/. exists if xxx/newdir exists
+            return
     mkdir(name, mode)
 
 def removedirs(name):
