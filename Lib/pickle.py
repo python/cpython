@@ -38,8 +38,9 @@ compatible_formats = ["1.0", "1.1", "1.2"] # Old format versions we can read
 mdumps = marshal.dumps
 mloads = marshal.loads
 
-PicklingError = "pickle.PicklingError"
-UnpicklingError = "pickle.UnpicklingError"
+class PickleError(Exception): pass
+class PicklingError(PickleError): pass
+class UnpicklingError(PickleError): pass
 
 try:
     from org.python.core import PyStringMap
