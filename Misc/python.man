@@ -164,7 +164,7 @@ per source line);
 .B all
 to print a warning each time it occurs (this may generate many
 messages if a warning is triggered repeatedly for the same source
-line, e.g. inside a loop);
+line, such as inside a loop);
 .B module
 to print each warning only only the first time it occurs in each
 module;
@@ -316,6 +316,11 @@ You can also change the prompts
 and
 .I sys.ps2
 in this file.
+.IP PYTHONY2K
+Set this to a non-empty string to cause the \fItime\fP module to
+require dates specified as strings to include 4-digit years, otherwise
+2-digit years are converted based on rules described in the \fItime\fP
+module documnetation.
 .IP PYTHONDEBUG
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-d\fP option.
@@ -337,19 +342,19 @@ E-mail: guido@python.org
 .PP
 And a cast of thousands.
 .SH INTERNET RESOURCES
-Main website: http://www.python.org
+Main website:  http://www.python.org/
 .br
-Community website: http://starship.python.net
+Documentation:  http://www.python.org/doc/
 .br
-Developer resources:
+Community website:  http://starship.python.net/
 .br
-  http://sourceforge.net/project/?group_id=5470
+Developer resources:  http://sourceforge.net/project/python/
 .br
-FTP: ftp://ftp.python.org/pub/python
+FTP:  ftp://ftp.python.org/pub/python/
 .br
-Module repository: http://www.vex.net/parnassus/
+Module repository:  http://www.vex.net/parnassus/
 .br
-Newsgroups: comp.lang.python, comp.lang.python.announce
+Newsgroups:  comp.lang.python, comp.lang.python.announce
 .SH LICENSING
 Python is distributed under an Open Source license.  See the file
 "LICENSE" in the Python source distribution for information on terms &
