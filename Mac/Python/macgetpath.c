@@ -296,7 +296,7 @@ PyMac_GetPythonDir()
  		/* If all fails, we return the current directory */
    		printf("Python home dir exists but I cannot find the pathname!!\n");
 		name[0] = 0;
-		(void)getwd(name);
+		(void)getcwd(name, sizeof(name));
 	}
 	diditbefore = 1;
 	return name;
