@@ -6,6 +6,7 @@
 #define TARGET_API_MAC_CARBON 1
 #define TARGET_API_MAC_CARBON_NOTYET 1 /* Things we should do eventually, but not now */
 #define WITHOUT_FRAMEWORKS /* Use old-style Universal Header includes, not Carbon/Carbon.h */
+#define USE_TOOLBOX_OBJECT_GLUE	/* Use glue routines for accessing PyArg_Parse/Py_BuildValue helpers */
 
 /* #define USE_GUSI1		/* Stdio implemented with GUSI */
 #define USE_GUSI2		/* Stdio implemented with GUSI */
