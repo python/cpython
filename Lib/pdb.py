@@ -10,6 +10,7 @@ import linecache
 import cmd
 import bdb
 import repr
+import os
 
 
 # Interaction prompt line will separate file and call info from code
@@ -25,6 +26,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		bdb.Bdb.__init__(self)
 		cmd.Cmd.__init__(self)
 		self.prompt = '(Pdb) '
+		# Try to load readline if it exists
+		try:
+			import readline
+		except ImportError:
+			pass
 	
 	def reset(self):
 		bdb.Bdb.reset(self)
@@ -75,7 +81,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		if line[:1] == '!': line = line[1:]
 		locals = self.curframe.f_locals
 		globals = self.curframe.f_globals
-		globals['__privileged__'] = 1
 		try:
 			code = compile(line + '\n', '<stdin>', 'single')
 			exec code in globals, locals
@@ -93,38 +98,66 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 	do_h = cmd.Cmd.do_help
 
 	def do_break(self, arg):
+		# break [ ([filename:]lineno | function) [, "condition"] ]
 		if not arg:
 			print self.get_all_breaks() # XXX
 			return
-		# Try line number as argument
-		try:
-			arg = eval(arg, self.curframe.f_globals,
-				   self.curframe.f_locals)
-		except:
-			print '*** Could not eval argument:', arg
-			return
-
-		# Check for condition
-		try: arg, cond = arg
-		except: arg, cond = arg, None
-
-		try:	
-			lineno = int(arg)
-			filename = self.curframe.f_code.co_filename
-		except:
-			# Try function name as the argument
+		# parse arguments; comma has lowest precendence
+		# and cannot occur in filename
+		filename = None
+		lineno = None
+		cond = None
+		comma = string.find(arg, ',')
+		if comma > 0:
+			# parse stuff after comma: "condition"
+			cond = string.lstrip(arg[comma+1:])
+			arg = string.rstrip(arg[:comma])
 			try:
-				func = arg
-				if hasattr(func, 'im_func'):
-					func = func.im_func
-				code = func.func_code
+				cond = eval(
+					cond,
+					self.curframe.f_globals,
+					self.curframe.f_locals)
 			except:
-				print '*** The specified object',
-				print 'is not a function', arg
+				print '*** Could not eval condition:', cond
 				return
-			lineno = code.co_firstlineno
-			filename = code.co_filename
-
+		# parse stuff before comma: [filename:]lineno | function
+		colon = string.rfind(arg, ':')
+		if colon >= 0:
+			filename = string.rstrip(arg[:colon])
+			filename = self.lookupmodule(filename)
+			arg = string.lstrip(arg[colon+1:])
+			try:
+				lineno = int(arg)
+			except ValueError, msg:
+				print '*** Bad lineno:', arg
+				return
+		else:
+			# no colon; can be lineno or function
+			try:
+				lineno = int(arg)
+			except ValueError:
+				try:
+					func = eval(arg,
+						    self.curframe.f_globals,
+						    self.curframe.f_locals)
+				except:
+					print '*** Could not eval argument:',
+					print arg
+					return
+				try:
+					if hasattr(func, 'im_func'):
+						func = func.im_func
+					code = func.func_code
+				except:
+					print '*** The specified object',
+					print 'is not a function', arg
+					return
+				lineno = code.co_firstlineno
+				if not filename:
+					filename = code.co_filename
+		# supply default filename if necessary
+		if not filename:
+			filename = self.curframe.f_code.co_filename
 		# now set the break point
 		err = self.set_break(filename, lineno, cond)
 		if err: print '***', err
@@ -141,12 +174,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			if reply in ('y', 'yes'):
 				self.clear_all_breaks()
 			return
+		filename = None
+		colon = string.rfind(arg, ':')
+		if colon >= 0:
+			filename = string.rstrip(arg[:colon])
+			filename = self.lookupmodule(filename)
+			arg = string.lstrip(arg[colon+1:])
 		try:
-			lineno = int(eval(arg))
+			lineno = int(arg)
 		except:
-			print '*** Error in argument:', `arg`
+			print '*** Bad lineno:', `arg`
 			return
-		filename = self.curframe.f_code.co_filename
+		if not filename:
+			filename = self.curframe.f_code.co_filename
 		err = self.clear_break(filename, lineno)
 		if err: print '***', err
 	do_cl = do_clear # 'c' is already an abbreviation for 'continue'
@@ -222,7 +262,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 	do_rv = do_retval
 	
 	def do_p(self, arg):
-		self.curframe.f_globals['__privileged__'] = 1
 		try:
 			value = eval(arg, self.curframe.f_globals, \
 					self.curframe.f_locals)
@@ -373,13 +412,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		self.help_b()
 
 	def help_b(self):
-		print """b(reak) [lineno | function] [, "condition"]
+		print """b(reak) ([file:]lineno | function) [, "condition"]
 	With a line number argument, set a break there in the current
 	file.  With a function name, set a break at the entry of that
 	function.  Without argument, list all breaks.  If a second
 	argument is present, it is a string specifying an expression
 	which must evaluate to true before the breakpoint is honored.
-	"""
+
+	The line number may be prefixed with a filename and a colon,
+	to specify a breakpoint in another file (probably one that
+	hasn't been loaded yet).  The file is searched on sys.path."""
 
 	def help_clear(self):
 		self.help_cl()
@@ -387,7 +429,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 	def help_cl(self):
 		print """cl(ear) [lineno]
 	With a line number argument, clear that break in the current file.
-	Without argument, clear all breaks (but first ask confirmation)."""
+	Without argument, clear all breaks (but first ask confirmation).
+
+	The line number may be prefixed with a filename and a colon,
+	to specify a breakpoint in another file (probably one that
+	hasn't been loaded yet).  The file is searched on sys.path."""
 
 	def help_step(self):
 		self.help_s()
@@ -466,6 +512,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 	def help_pdb(self):
 		help()
 
+	# Helper function for break/clear parsing -- may be overridden
+
+	def lookupmodule(self, filename):
+		if filename == mainmodule:
+			return mainpyfile
+		for dirname in sys.path:
+			fullname = os.path.join(dirname, filename)
+			if os.path.exists(fullname):
+				return fullname
+		print 'Warning:', `filename`, 'not found from sys.path'
+		return filename
+
+
 # Simplified interface
 
 def run(statement, globals=None, locals=None):
@@ -493,7 +552,6 @@ def post_mortem(t):
 	p.interaction(t.tb_frame, t)
 
 def pm():
-	import sys
 	post_mortem(sys.last_traceback)
 
 
@@ -506,7 +564,6 @@ def test():
 
 # print help
 def help():
-	import os
 	for dirname in sys.path:
 		fullname = os.path.join(dirname, 'pdb.doc')
 		if os.path.exists(fullname):
@@ -517,16 +574,21 @@ def help():
 		print 'Sorry, can\'t find the help file "pdb.doc"',
 		print 'along the Python search path'
 
+mainmodule = ''
+mainpyfile = ''
+
 # When invoked as main program, invoke the debugger on a script
 if __name__=='__main__':
-	import sys
-	import os
+	global mainmodule, mainpyfile
 	if not sys.argv[1:]:
 		print "usage: pdb.py scriptfile [arg] ..."
 		sys.exit(2)
 
-	filename = sys.argv[1]	# Get script filename
-
+	mainpyfile = filename = sys.argv[1]	# Get script filename
+	if not os.path.exists(filename):
+		print 'Error:', `filename`, 'does not exist'
+		sys.exit(1)
+	mainmodule = os.path.basename(filename)
 	del sys.argv[0]		# Hide "pdb.py" from argument list
 
 	# Insert script directory in front of module search path
