@@ -12,6 +12,9 @@ What's New in Python 2.4 beta 1?
 Core and builtins
 -----------------
 
+- Added a command line option, -m module, which searches sys.path for the
+  module and then runs it.  (Contributed by Nick Coghlan.)
+
 - The bytecode optimizer now folds tuples of constants into a single
   constant.
 
@@ -29,7 +32,9 @@ Extension modules
 
 - ``collections.deque`` objects didn't play quite right with garbage
   collection, which could lead to a segfault in a release build, or
-  an assert failure in a debug build.
+  an assert failure in a debug build.  Also, added overflow checks,
+  better detection of mutation during iteration, and shielded deque
+  comparisons from unusual subclass overrides of the __iter__() method.
 
 Library
 -------

@@ -205,6 +205,11 @@ executes the statement(s) in \var{command}, analogous to the shell's
 or other characters that are special to the shell, it is best to quote 
 \var{command} in its entirety with double quotes.
 
+Some Python modules are also useful as scripts.  These can be invoked using
+\samp{\program{python} \programopt{-m} \var{module} [arg] ...}, which
+executes the source file for \var{module} as if you had spelled out its
+full name on the command line.
+
 Note that there is a difference between \samp{python file} and
 \samp{python <file}.  In the latter case, input requests from the
 program, such as calls to \function{input()} and \function{raw_input()}, are
@@ -229,9 +234,11 @@ one; when no script and no arguments are given, \code{sys.argv[0]} is
 an empty string.  When the script name is given as \code{'-'} (meaning 
 standard input), \code{sys.argv[0]} is set to \code{'-'}.  When
 \programopt{-c} \var{command} is used, \code{sys.argv[0]} is set to
-\code{'-c'}.  Options found after \programopt{-c} \var{command} are
-not consumed by the Python interpreter's option processing but left in
-\code{sys.argv} for the command to handle.
+\code{'-c'}.  When \programopt{-m} \var{module} is used, \code{sys.argv[0]} 
+is set to the full name of the located module.  Options found after 
+\programopt{-c} \var{command} or \programopt{-m} \var{module} are not consumed 
+by the Python interpreter's option processing but left in \code{sys.argv} for 
+the command or module to handle.
 
 \subsection{Interactive Mode \label{interactive}}
 
