@@ -366,12 +366,11 @@ class Pickler:
 
     def save_string(self, object):
         if self.bin:
-            l = len(object)
-            s = mdumps(l)[1:]
-            if l < 256:
-                self.write(SHORT_BINSTRING + s[0] + object)
+            n = len(object)
+            if n < 256:
+                self.write(SHORT_BINSTRING + chr(n) + object)
             else:
-                self.write(BINSTRING + s + object)
+                self.write(BINSTRING + mdumps(n)[1:] + object)
         else:
             self.write(STRING + `object` + '\n')
         self.memoize(object)
@@ -380,8 +379,8 @@ class Pickler:
     def save_unicode(self, object):
         if self.bin:
             encoding = object.encode('utf-8')
-            l = len(encoding)
-            s = mdumps(l)[1:]
+            n = len(encoding)
+            s = mdumps(n)[1:]
             self.write(BINUNICODE + s + encoding)
         else:
             object = object.replace("\\", "\\u005c")
@@ -716,7 +715,7 @@ class Unpickler:
     dispatch[BININT] = load_binint
 
     def load_binint1(self):
-        self.append(mloads('i' + self.read(1) + '\000\000\000'))
+        self.append(ord(self.read(1)))
     dispatch[BININT1] = load_binint1
 
     def load_binint2(self):
@@ -800,7 +799,7 @@ class Unpickler:
     dispatch[BINUNICODE] = load_binunicode
 
     def load_short_binstring(self):
-        len = mloads('i' + self.read(1) + '\000\000\000')
+        len = ord(self.read(1))
         self.append(self.read(len))
     dispatch[SHORT_BINSTRING] = load_short_binstring
 
@@ -950,7 +949,7 @@ class Unpickler:
     dispatch[GET] = load_get
 
     def load_binget(self):
-        i = mloads('i' + self.read(1) + '\000\000\000')
+        i = ord(self.read(1))
         self.append(self.memo[`i`])
     dispatch[BINGET] = load_binget
 
@@ -964,7 +963,7 @@ class Unpickler:
     dispatch[PUT] = load_put
 
     def load_binput(self):
-        i = mloads('i' + self.read(1) + '\000\000\000')
+        i = ord(self.read(1))
         self.memo[`i`] = self.stack[-1]
     dispatch[BINPUT] = load_binput
 
