@@ -35,6 +35,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Include nearly all Python header files */
 
+#include "patchlevel.h"
 #include "config.h"
 
 /* config.h may or may not define DL_IMPORT */
