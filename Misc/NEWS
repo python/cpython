@@ -1,3 +1,21 @@
+====================================
+==> Release 1.0.3 (14 July 1994) <==
+====================================
+
+This release consists entirely of bug fixes to the C sources; see the
+head of ../ChangeLog for a complete list.  Most important bugs fixed:
+
+- Sometimes the format operator (string%expr) would drop the last
+character of the format string
+
+- Tokenizer looped when last line did not end in \n
+
+- Bug when triple-quoted string ended in quote plus newline
+
+- Typo in socketmodule (listen) (== instead of =)
+
+- typing vars() at the >>> prompt would cause recursive output
+
 ==================================
 ==> Release 1.0.2 (4 May 1994) <==
 ==================================
