@@ -90,17 +90,20 @@ object *
 newlongobject(ival)
 	long ival;
 {
-	/* Assume a C long fits in at most 3 'digits' */
-	/* XXX On 64 bit machines this isn't true!!! */
-	longobject *v = alloclongobject(3);
+	/* Assume a C long fits in at most 5 'digits' */
+	/* Works on both 32- and 64-bit machines */
+	longobject *v = alloclongobject(5);
 	if (v != NULL) {
+		unsigned long t = ival;
+		int i;
 		if (ival < 0) {
-			ival = -ival;
+			t = -ival;
 			v->ob_size = -(v->ob_size);
+  		}
+		for (i = 0; i < 5; i++) {
+			v->ob_digit[i] = t & MASK; 
+			t >>= SHIFT;
 		}
-		v->ob_digit[0] = ival & MASK;
-		v->ob_digit[1] = (ival >> SHIFT) & MASK;
-		v->ob_digit[2] = ((unsigned long)ival >> (2*SHIFT)) & MASK;
 		v = long_normalize(v);
 	}
 	return (object *)v;
@@ -384,7 +387,7 @@ long_escan(str, pend, base)
 	int sign = 1;
 	longobject *z;
 	
-	if (base != 0 && base < 2 || base > 36) {
+	if ((base != 0 && base < 2) || base > 36) {
 		err_setstr(ValueError, "invalid base for long literal");
 		return NULL;
 	}
@@ -453,8 +456,8 @@ long_divrem(a, b, pdiv, prem)
 		return -1;
 	}
 	if (size_a < size_b ||
-			size_a == size_b &&
-			a->ob_digit[size_a-1] < b->ob_digit[size_b-1]) {
+	    (size_a == size_b &&
+	     a->ob_digit[size_a-1] < b->ob_digit[size_b-1])) {
 		/* |a| < |b|. */
 		*pdiv = alloclongobject(0);
 		INCREF(a);
@@ -889,8 +892,8 @@ l_divmod(v, w, pdiv, pmod)
 	
 	if (long_divrem(v, w, &div, &mod) < 0)
 		return -1;
-	if (mod->ob_size < 0 && w->ob_size > 0 ||
-				mod->ob_size > 0 && w->ob_size < 0) {
+	if ((mod->ob_size < 0 && w->ob_size > 0) ||
+	    (mod->ob_size > 0 && w->ob_size < 0)) {
 		longobject *temp;
 		longobject *one;
 		temp = (longobject *) long_add(mod, w);
