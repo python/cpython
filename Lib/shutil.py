@@ -52,8 +52,8 @@ def copytree(src, dst):
 	dot_dotdot = '.', '..'
 	for name in names:
 		if name not in dot_dotdot:
-			srcname = path.cat(src, name)
-			dstname = path.cat(dst, name)
+			srcname = path.join(src, name)
+			dstname = path.join(dst, name)
 			#print 'Copying', srcname, 'to', dstname
 			try:
 				#if path.islink(srcname):

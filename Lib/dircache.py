@@ -32,5 +32,5 @@ opendir = listdir # XXX backward compatibility
 
 def annotate(head, list): # Add '/' suffixes to directories
 	for i in range(len(list)):
-		if path.isdir(path.cat(head, list[i])):
+		if path.isdir(path.join(head, list[i])):
 			list[i] = list[i] + '/'

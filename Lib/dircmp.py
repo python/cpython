@@ -53,8 +53,8 @@ class dircmp():
 		dd.common_funny = []
 		#
 		for x in dd.common:
-			a_path = path.cat(dd.a, x)
-			b_path = path.cat(dd.b, x)
+			a_path = path.join(dd.a, x)
+			b_path = path.join(dd.b, x)
 			#
 			ok = 1
 			try:
@@ -92,8 +92,8 @@ class dircmp():
 		# The hide and ignore properties are inherited from the parent
 		dd.subdirs = {}
 		for x in dd.common_dirs:
-			a_x = path.cat(dd.a, x)
-			b_x = path.cat(dd.b, x)
+			a_x = path.join(dd.a, x)
+			b_x = path.join(dd.b, x)
 			dd.subdirs[x] = newdd = dircmp().new(a_x, b_x)
 			newdd.hide = dd.hide
 			newdd.ignore = dd.ignore
@@ -151,7 +151,7 @@ class dircmp():
 def cmpfiles(a, b, common):
 	res = ([], [], [])
 	for x in common:
-		res[cmp(path.cat(a, x), path.cat(b, x))].append(x)
+		res[cmp(path.join(a, x), path.join(b, x))].append(x)
 	return res
 
 

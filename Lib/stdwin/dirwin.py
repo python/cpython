@@ -11,7 +11,7 @@ import dircache
 def action(w, string, i, detail):
 	(h, v), clicks, button, mask = detail
 	if clicks = 2:
-		name = path.cat(w.name, string)
+		name = path.join(w.name, string)
 		try:
 			w2 = anywin.open(name)
 			w2.parent = w
@@ -19,7 +19,7 @@ def action(w, string, i, detail):
 			stdwin.message('Can\'t open ' + name + ': ' + why[1])
 
 def open(name):
-	name = path.cat(name, '')
+	name = path.join(name, '')
 	list = dircache.opendir(name)[:]
 	list.sort()
 	dircache.annotate(name, list)
