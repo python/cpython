@@ -1,52 +1,67 @@
-# module getopt -- Standard command line processing.
+"""Module getopt -- Parser for command line options.
 
-# Function getopt.getopt() has a different interface but provides the
-# similar functionality to the Unix getopt() function, with the
-# addition of long-option support.  (Long option support added by Lars
-# Wirzenius <liw@iki.fi>.)
+This module helps scripts to parse the command line arguments in
+sys.argv.  It supports the same conventions as the Unix getopt()
+function (including the special meanings of arguments of the form `-'
+and `--').  Long options similar to those supported by GNU software
+may be used as well via an optional third argument.  This module
+provides a single function and an exception:
 
-# It has two required arguments: the first should be argv[1:] (it
-# doesn't want the script name), the second the string of option
-# letters as passed to Unix getopt() (i.e., a string of allowable
-# option letters, with options requiring an argument followed by a
-# colon).
+getopt() -- Parse command line options
+error    -- Exception (string) raised when bad options are found
+"""
 
-# The optional third argument, if present, getopt.getopt works similar
-# to the GNU getopt_long function (but optional arguments are not
-# supported).  The third argument should be a list of strings that
-# name the long options.  If the name ends '=', the argument requires
-# an argument.
-
-# It raises the exception getopt.error with a string argument if it
-# detects an error.
-
-# It returns two values:
-# (1)   a list of pairs (option, option_argument) giving the options in
-#       the order in which they were specified.  (I'd use a dictionary
-#       but applications may depend on option order or multiple
-#       occurrences.)  Boolean options have '' as option_argument.
-# (2)   the list of remaining arguments (may be empty).
+# Long option support added by Lars Wirzenius <liw@iki.fi>.
 
 import string
 
 error = 'getopt.error'
 
 def getopt(args, shortopts, longopts = []):
-    list = []
-    longopts = longopts[:]
+    """getopt(args, options[, long_options]) -> opts, args
+
+    Parses command line options and parameter list.  args is the
+    argument list to be parsed, without the leading reference to the
+    running program.  Typically, this means "sys.argv[1:]".  shortopts
+    is the string of option letters that the script wants to
+    recognize, with options that require an argument followed by a
+    colon (i.e., the same format that Unix getopt() uses).  If
+    specified, longopts is a list of strings with the names of the
+    long options which should be supported.  The leading '--'
+    characters should not be included in the option name.  Options
+    which require an argument should be followed by an equal sign
+    ('=').
+
+    The return value consists of two elements: the first is a list of
+    (option, value) pairs; the second is the list of program arguments
+    left after the option list was stripped (this is a trailing slice
+    of the first argument).  Each option-and-value pair returned has
+    the option as its first element, prefixed with a hyphen (e.g.,
+    '-x'), and the option argument as its second element, or an empty
+    string if the option has no argument.  The options occur in the
+    list in the same order in which they were found, thus allowing
+    multiple occurrences.  Long and short options may be mixed.
+
+    """
+
+    opts = []
+    if type(longopts) == type(""):
+        longopts = [longopts]
+    else:
+        longopts = list(longopts)
     longopts.sort()
     while args and args[0][:1] == '-' and args[0] != '-':
         if args[0] == '--':
             args = args[1:]
             break
         if args[0][:2] == '--':
-            list, args = do_longs(list, args[0][2:], longopts, args[1:])
+            opts, args = do_longs(opts, args[0][2:], longopts, args[1:])
         else:
-            list, args = do_shorts(list, args[0][1:], shortopts, args[1:])
+            opts, args = do_shorts(opts, args[0][1:], shortopts, args[1:])
 
-    return list, args
+    return opts, args
 
-def do_longs(list, opt, longopts, args):
+def do_longs(opts, opt, longopts, args):
     try:
         i = string.index(opt, '=')
         opt, optarg = opt[:i], opt[i+1:]
@@ -61,8 +76,8 @@ def do_longs(list, opt, longopts, args):
             optarg, args = args[0], args[1:]
     elif optarg:
         raise error, 'option --%s must not have an argument' % opt
-    list.append(('--' + opt, optarg or ''))
-    return list, args
+    opts.append(('--' + opt, optarg or ''))
+    return opts, args
 
 # Return:
 #   has_arg?
@@ -81,7 +96,7 @@ def long_has_args(opt, longopts):
         return 0, longopts[i]
     raise error, 'option --' + opt + ' not recognized'
 
-def do_shorts(list, optstring, shortopts, args):
+def do_shorts(opts, optstring, shortopts, args):
     while optstring != '':
         opt, optstring = optstring[0], optstring[1:]
         if short_has_arg(opt, shortopts):
@@ -92,8 +107,8 @@ def do_shorts(list, optstring, shortopts, args):
             optarg, optstring = optstring, ''
         else:
             optarg = ''
-        list.append(('-' + opt, optarg))
-    return list, args
+        opts.append(('-' + opt, optarg))
+    return opts, args
 
 def short_has_arg(opt, shortopts):
     for i in range(len(shortopts)):
