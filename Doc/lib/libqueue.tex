@@ -1,88 +1,70 @@
 \section{Standard Module \sectcode{Queue}}
 \stmodindex{Queue}
-
 \label{module-Queue}
 
-% ==== 2. ====
-% Give a short overview of what the module does.
-% If it is platform specific, mention this.
-% Mention other important restrictions or general operating principles.
-% For example:
 
-The \code{Queue} module implements a multi-producer, multi-consumer
+The \module{Queue} module implements a multi-producer, multi-consumer
 FIFO queue.  It is especially useful in threads programming when
 information must be exchanged safely between multiple threads.  The
-\code{Queue} class in this module implements all the required locking
+\class{Queue} class in this module implements all the required locking
 semantics.  It depends on the availability of thread support in
 Python.
 
-The \code{Queue} module defines the following exception:
+The \module{Queue} module defines the following class and exception:
 
-\setindexsubitem{(in module Queue)}
 
-\begin{excdesc}{Empty}
-Exception raised when non-blocking get (e.g. \code{get_nowait()}) is
-called on a Queue object which is empty, or for which the emptyiness
-cannot be determined (i.e. because the appropriate locks cannot be
-acquired).
-\end{excdesc}
-
-\subsection{Queue Objects}
-
-Class \code{Queue} implements queue objects and has the methods
-described below.  This class can be derived from in order to implement
-other queue organizations (e.g. stack) but the inheritable interface
-is not described here.  See the source code for details.  The public
-interface methods are:
-
-\setindexsubitem{(__init__ method)}
-
-\begin{funcdesc}{__init__}{maxsize}
+\begin{classdesc}{Queue}{maxsize}
 Constructor for the class.  \var{maxsize} is an integer that sets the
 upperbound limit on the number of items that can be placed in the
 queue.  Insertion will block once this size has been reached, until
 queue items are consumed.  If \var{maxsize} is less than or equal to
 zero, the queue size is infinite.
-\end{funcdesc}
+\end{classdesc}
 
-\setindexsubitem{(qsize method)}
+\begin{excdesc}{Empty}
+Exception raised when non-blocking get (e.g. \method{get_nowait()}) is
+called on a \class{Queue} object which is empty, or for which the
+emptyiness cannot be determined (i.e. because the appropriate locks
+cannot be acquired).
+\end{excdesc}
+
+\subsection{Queue Objects}
+\label{QueueObjects}
+
+Class \class{Queue} implements queue objects and has the methods
+described below.  This class can be derived from in order to implement
+other queue organizations (e.g. stack) but the inheritable interface
+is not described here.  See the source code for details.  The public
+methods are:
+
+\setindexsubitem{(Queue method)}
 
 \begin{funcdesc}{qsize}{}
 Returns the approximate size of the queue.  Because of multithreading
 semantics, this number is not reliable.
 \end{funcdesc}
 
-\setindexsubitem{(empty method)}
-
 \begin{funcdesc}{empty}{}
-Returns 1 if the queue is empty, 0 otherwise.  Because of
-multithreading semantics, this is not reliable.
+Returns \code{1} if the queue is empty, \code{0} otherwise.  Because
+of multithreading semantics, this is not reliable.
 \end{funcdesc}
-
-\setindexsubitem{(full method)}
 
 \begin{funcdesc}{full}{}
-Returns 1 if the queue is full, 0 otherwise.  Because of
+Returns \code{1} if the queue is full, \code{0} otherwise.  Because of
 multithreading semantics, this is not reliable.
 \end{funcdesc}
-
-\setindexsubitem{(put method)}
 
 \begin{funcdesc}{put}{item}
 Puts \var{item} into the queue.
 \end{funcdesc}
-
-\setindexsubitem{(get method)}
 
 \begin{funcdesc}{get}{}
 Gets and returns an item from the queue, blocking if necessary until
 one is available.
 \end{funcdesc}
 
-\setindexsubitem{(get_nowait method)}
-
 \begin{funcdesc}{get_nowait}{}
 Gets and returns an item from the queue if one is immediately
-available.  Raises an \code{Empty} exception if the queue is empty or
-if the queue's emptiness cannot be determined.
+available.  Raises an \exception{Empty} exception if the queue is
+empty or if the queue's emptiness cannot be determined.
 \end{funcdesc}
