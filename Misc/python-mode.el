@@ -157,15 +157,15 @@ When this variable is non-nil, two things happen when a buffer is set
 to `python-mode':
 
     1. `py-indent-offset' is guess from existing code in the buffer.
-       Only guessed values between 2 and 8 are considered.  If a valid 
+       Only guessed values between 2 and 8 are considered.  If a valid
        guess can't be made (perhaps because you are visiting a new
-       file), then the value in py-indent-offset is used.
+       file), then the value in `py-indent-offset' is used.
 
-    2. `indent-tabs-mode' is set as follows: if `py-indent-offset'
-       equals `tab-width' then `indent-tabs-mode' is set to t,
-       otherwise it is set to nil.  This means that for newly written
-       code, tabs are only inserted in indentation if one tab is one
-       indentation level, otherwise only spaces are used.
+    2. `indent-tabs-mode' is turned off if `py-indent-offset' does not
+       equal `tab-width' (`indent-tabs-mode' is never turned on by
+       Python mode).  This means that for newly written code, tabs are
+       only inserted in indentation if one tab is one indentation
+       level, otherwise only spaces are used.
 
 Note that both these settings occur *after* `python-mode-hook' is run,
 so if you want to defeat the automagic configuration, you must also
@@ -960,7 +960,11 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
 	       (>= py-indent-offset 2))
 	  (setq offset py-indent-offset))
       (setq py-indent-offset offset)
-      (setq indent-tabs-mode (= tab-width py-indent-offset))
+      ;; Only turn indent-tabs-mode off if tab-width !=
+      ;; py-indent-offset.  Never turn it on, because the user must
+      ;; have explicitly turned it off.
+      (if (/= tab-width py-indent-offset)
+	  (setq indent-tabs-mode nil))
       )))
 
 
