@@ -150,18 +150,9 @@ void
 initmath()
 {
 	object *m, *d, *v;
-	struct methodlist *ml;
-	if ((m = new_module("math")) == NULL)
-		fatal("can't create math module");
+	
+	m = initmodule("math", math_methods);
 	d = getmoduledict(m);
-	for (ml = math_methods; ml->ml_name != NULL; ml++) {
-		v = newmethodobject(ml->ml_name, ml->ml_meth, (object *)NULL);
-		if (v == NULL || dictinsert(d, ml->ml_name, v) != 0) {
-			fatal("can't initialize math module");
-		}
-		DECREF(v);
-	}
 	dictinsert(d, "pi", newfloatobject(atan(1.0) * 4.0));
 	dictinsert(d, "e", newfloatobject(exp(1.0)));
-	DECREF(m);
 }
