@@ -8,15 +8,15 @@ This module implements some useful functions on pathnames.
 \index{path!operations}
 
 
-\begin{funcdesc}{abspath}{p}
-Return a normalized absolutized version of the pathname \var{p}.  On
-most platforms, this is equivalent to
-\code{normpath(join(os.getcwd()), \var{p})}.
+\begin{funcdesc}{abspath}{path}
+Return a normalized absolutized version of the pathname \var{path}.
+On most platforms, this is equivalent to
+\code{normpath(join(os.getcwd()), \var{path})}.
 \end{funcdesc}
 
-\begin{funcdesc}{basename}{p}
-Return the base name of pathname \var{p}.  This is the second half of
-the pair returned by \code{split(\var{p})}.
+\begin{funcdesc}{basename}{path}
+Return the base name of pathname \var{path}.  This is the second half
+of the pair returned by \code{split(\var{path})}.
 \end{funcdesc}
 
 \begin{funcdesc}{commonprefix}{list}
@@ -25,16 +25,16 @@ Return the longest string that is a prefix of all strings in
 (\code{''}).
 \end{funcdesc}
 
-\begin{funcdesc}{dirname}{p}
-Return the directory name of pathname \var{p}.  This is the first half
-of the pair returned by \code{split(\var{p})}.
+\begin{funcdesc}{dirname}{path}
+Return the directory name of pathname \var{path}.  This is the first
+half of the pair returned by \code{split(\var{path})}.
 \end{funcdesc}
 
-\begin{funcdesc}{exists}{p}
-Return true if \var{p} refers to an existing path.
+\begin{funcdesc}{exists}{path}
+Return true if \var{path} refers to an existing path.
 \end{funcdesc}
 
-\begin{funcdesc}{expanduser}{p}
+\begin{funcdesc}{expanduser}{path}
 Return the argument with an initial component of \samp{\~} or
 \samp{\~\var{user}} replaced by that \var{user}'s home directory.  An
 initial \samp{\~{}} is replaced by the environment variable
@@ -42,87 +42,87 @@ initial \samp{\~{}} is replaced by the environment variable
 password directory through the built-in module
 \refmodule{pwd}\refbimodindex{pwd}.  If the expansion fails, or if the
 path does not begin with a tilde, the path is returned unchanged.  On
-the Macintosh, this always returns \var{p} unchanged.
+the Macintosh, this always returns \var{path} unchanged.
 \end{funcdesc}
 
-\begin{funcdesc}{expandvars}{p}
+\begin{funcdesc}{expandvars}{path}
 Return the argument with environment variables expanded.  Substrings
 of the form \samp{\$\var{name}} or \samp{\$\{\var{name}\}} are
 replaced by the value of environment variable \var{name}.  Malformed
 variable names and references to non-existing variables are left
-unchanged.  On the Macintosh, this always returns \var{p} unchanged.
+unchanged.  On the Macintosh, this always returns \var{path}
+unchanged.
 \end{funcdesc}
 
-\begin{funcdesc}{getsize}{filename}
-\versionadded{1.5.2}
+\begin{funcdesc}{getsize}{path}
 Return the size, in bytes, of \var{filename}.  Raise
 \exception{os.error} if the file does not exist or is inaccessible.
+\versionadded{1.5.2}
 \end{funcdesc}
 
-\begin{funcdesc}{getmtime}{filename}
-\versionadded{1.5.2}
+\begin{funcdesc}{getmtime}{path}
 Return the time of last modification of \var{filename}.  The return
 value is integer giving the number of seconds since the epoch (see the 
 \refmodule{time} module).  Raise \exception{os.error} if the file does
 not exist or is inaccessible.
+\versionadded{1.5.2}
 \end{funcdesc}
 
-\begin{funcdesc}{getatime}{filename}
-\versionadded{1.5.2}
+\begin{funcdesc}{getatime}{path}
 Return the time of last access of \var{filename}.  The return
 value is integer giving the number of seconds since the epoch (see the 
 \refmodule{time} module).  Raise \exception{os.error} if the file does
 not exist or is inaccessible.
+\versionadded{1.5.2}
 \end{funcdesc}
 
-\begin{funcdesc}{isabs}{p}
-Return true if \var{p} is an absolute pathname (begins with a slash).
+\begin{funcdesc}{isabs}{path}
+Return true if \var{path} is an absolute pathname (begins with a
+slash).
 \end{funcdesc}
 
-\begin{funcdesc}{isfile}{p}
-Return true if \var{p} is an existing regular file.  This follows
+\begin{funcdesc}{isfile}{path}
+Return true if \var{path} is an existing regular file.  This follows
 symbolic links, so both \function{islink()} and \function{isfile()}
 can be true for the same path.
 \end{funcdesc}
 
-\begin{funcdesc}{isdir}{p}
-Return true if \var{p} is an existing directory.  This follows
+\begin{funcdesc}{isdir}{path}
+Return true if \var{path} is an existing directory.  This follows
 symbolic links, so both \function{islink()} and \function{isdir()} can
 be true for the same path.
 \end{funcdesc}
 
-\begin{funcdesc}{islink}{p}
-Return true if
-\var{p}
-refers to a directory entry that is a symbolic link.
-Always false if symbolic links are not supported.
+\begin{funcdesc}{islink}{path}
+Return true if \var{path} refers to a directory entry that is a
+symbolic link.  Always false if symbolic links are not supported.
 \end{funcdesc}
 
-\begin{funcdesc}{ismount}{p}
-Return true if pathname \var{p} is a \dfn{mount point}: a point in a
-file system where a different file system has been mounted.  The
-function checks whether \var{p}'s parent, \file{\var{p}/..}, is on a
-different device than \var{p}, or whether \file{\var{p}/..} and
-\var{p} point to the same i-node on the same device --- this should
-detect mount points for all \UNIX{} and \POSIX{} variants.
+\begin{funcdesc}{ismount}{path}
+Return true if pathname \var{path} is a \dfn{mount point}: a point in
+a file system where a different file system has been mounted.  The
+function checks whether \var{path}'s parent, \file{\var{path}/..}, is
+on a different device than \var{path}, or whether \file{\var{path}/..}
+and \var{path} point to the same i-node on the same device --- this
+should detect mount points for all \UNIX{} and \POSIX{} variants.
 \end{funcdesc}
 
-\begin{funcdesc}{join}{p\optional{, q\optional{, ...}}}
+\begin{funcdesc}{join}{path1\optional{, path2\optional{, ...}}}
 Joins one or more path components intelligently.  If any component is
 an absolute path, all previous components are thrown away, and joining
-continues.  The return value is the concatenation of \var{p}, and
-optionally \var{q}, etc., with exactly one slash (\code{'/'}) inserted
-between components, unless \var{p} is empty.
+continues.  The return value is the concatenation of \var{path1}, and
+optionally \var{path2}, etc., with exactly one slash (\code{'/'})
+inserted between components, unless \var{path} is empty.
 \end{funcdesc}
 
-\begin{funcdesc}{normcase}{p}
+\begin{funcdesc}{normcase}{path}
 Normalize the case of a pathname.  On \UNIX{}, this returns the path
 unchanged; on case-insensitive filesystems, it converts the path to
 lowercase.  On Windows, it also converts forward slashes to backward
 slashes.
 \end{funcdesc}
 
-\begin{funcdesc}{normpath}{p}
+\begin{funcdesc}{normpath}{path}
 Normalize a pathname.  This collapses redundant separators and
 up-level references, e.g. \code{A//B}, \code{A/./B} and
 \code{A/foo/../B} all become \code{A/B}.  It does not normalize the
@@ -130,40 +130,41 @@ case (use \function{normcase()} for that).  On Windows, it does
 converts forward slashes to backward slashes.
 \end{funcdesc}
 
-\begin{funcdesc}{samefile}{p, q}
+\begin{funcdesc}{samefile}{path1, path2}
 Return true if both pathname arguments refer to the same file or
 directory (as indicated by device number and i-node number).
 Raise an exception if a \function{os.stat()} call on either pathname
 fails.
 \end{funcdesc}
 
-\begin{funcdesc}{split}{p}
-Split the pathname \var{p} in a pair \code{(\var{head}, \var{tail})},
-where \var{tail} is the last pathname component and \var{head} is
-everything leading up to that.  The \var{tail} part will never contain
-a slash; if \var{p} ends in a slash, \var{tail} will be empty.  If
-there is no slash in \var{p}, \var{head} will be empty.  If \var{p} is
-empty, both \var{head} and \var{tail} are empty.  Trailing slashes are
-stripped from \var{head} unless it is the root (one or more slashes
-only).  In nearly all cases, \code{join(\var{head}, \var{tail})}
-equals \var{p} (the only exception being when there were multiple
-slashes separating \var{head} from \var{tail}).
+\begin{funcdesc}{split}{path}
+Split the pathname \var{path} in a pair \code{(\var{head},
+\var{tail})}, where \var{tail} is the last pathname component and
+\var{head} is everything leading up to that.  The \var{tail} part will
+never contain a slash; if \var{path} ends in a slash, \var{tail} will
+be empty.  If there is no slash in \var{path}, \var{head} will be
+empty.  If \var{path} is empty, both \var{head} and \var{tail} are
+empty.  Trailing slashes are stripped from \var{head} unless it is the
+root (one or more slashes only).  In nearly all cases,
+\code{join(\var{head}, \var{tail})} equals \var{path} (the only
+exception being when there were multiple slashes separating \var{head}
+from \var{tail}).
 \end{funcdesc}
 
-\begin{funcdesc}{splitext}{p}
-Split the pathname \var{p} in a pair \code{(\var{root}, \var{ext})}
-such that \code{\var{root} + \var{ext} == \var{p}},
+\begin{funcdesc}{splitext}{path}
+Split the pathname \var{path} in a pair \code{(\var{root}, \var{ext})} 
+such that \code{\var{root} + \var{ext} == \var{path}},
 and \var{ext} is empty or begins with a period and contains
 at most one period.
 \end{funcdesc}
 
-\begin{funcdesc}{walk}{p, visit, arg}
+\begin{funcdesc}{walk}{path, visit, arg}
 Calls the function \var{visit} with arguments
 \code{(\var{arg}, \var{dirname}, \var{names})} for each directory in the
-directory tree rooted at \var{p} (including \var{p} itself, if it is a
-directory).  The argument \var{dirname} specifies the visited directory,
-the argument \var{names} lists the files in the directory (gotten from
-\code{os.listdir(\var{dirname})}).
+directory tree rooted at \var{path} (including \var{path} itself, if it
+is a directory).  The argument \var{dirname} specifies the visited
+directory, the argument \var{names} lists the files in the directory
+(gotten from \code{os.listdir(\var{dirname})}).
 The \var{visit} function may modify \var{names} to
 influence the set of directories visited below \var{dirname}, e.g., to
 avoid visiting certain parts of the tree.  (The object referred to by
