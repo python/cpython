@@ -8,11 +8,19 @@
 #include "modsupport.h"
 #include "patchlevel.h"
 
+#define MS_DLL_ID "1.5.0"
+
 #define PYTHON_VERSION MS_DLL_ID "." PYTHON_API_STRING "\0"
 
 #ifndef PYTHON_DLL_NAME
-#define PYTHON_DLL_NAME "Python14.dll"
+#define PYTHON_DLL_NAME "Python15.dll"
 #endif
+
+// String Tables
+STRINGTABLE DISCARDABLE
+BEGIN
+	1000,	MS_DLL_ID
+END
 
 /////////////////////////////////////////////////////////////////////////////
 //
