@@ -49,7 +49,7 @@ global_stmt: 'global' NAME (',' NAME)*
 ## accesstype should be ('public' | 'protected' | 'private') ['read'] ['write']
 ## but can't be because that would create undesirable reserved words!
 exec_stmt: 'exec' expr ['in' test [',' test]]
-assert_stmt: '__assert__' test [',' test]
+assert_stmt: 'assert' test [',' test]
 
 compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
 if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
