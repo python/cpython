@@ -102,12 +102,16 @@ def index(s, sub):
 # Convert string to integer
 atoi_error = 'non-numeric argument to string.atoi'
 def atoi(str):
+	sign = ''
 	s = str
-	if s[:1] in '+-': s = s[1:]
+	if s[:1] in '+-':
+		sign = s[0]
+		s = s[1:]
 	if not s: raise atoi_error, str
+	while s[0] == '0' and len(s) > 1: s = s[1:]
 	for c in s:
 		if c not in digits: raise atoi_error, str
-	return eval(str)
+	return eval(sign + s)
 
 # Left-justify a string
 def ljust(s, width):
