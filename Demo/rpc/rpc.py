@@ -127,8 +127,13 @@ def make_auth_unix(seed, host, uid, gid, groups):
 	return p.get_buf()
 
 def make_auth_unix_default():
-	return make_auth_unix(0, socket.gethostname(), \
-		os.getuid(), os.getgid(), [])
+	try:
+		from os import getuid, getgid
+		uid = getuid()
+		gid = getgid()
+	except ImportError:
+		uid = gid = 0
+	return make_auth_unix(0, socket.gethostname(), uid, gid, [])
 
 
 # Common base class for clients
@@ -259,7 +264,11 @@ class RawUDPClient(Client):
 		p.pack_callheader(xid, self.prog, self.vers, proc, cred, verf)
 
 	def do_call(self, *rest):
-		from select import select
+		try:
+			from select import select
+		except ImportError:
+			print 'WARNING: select not found, RPC may hang'
+			select = None
 		if len(rest) == 0:
 			bufsize = 8192
 		elif len(rest) > 1:
@@ -271,7 +280,9 @@ class RawUDPClient(Client):
 		count = 5
 		self.sock.send(call)
 		while 1:
-			r, w, x = select([self.sock], [], [], timeout)
+			r, w, x = [self.sock], [], []
+			if select:
+				r, w, x = select(r, w, x, timeout)
 			if self.sock not in r:
 				count = count - 1
 				if count < 0: raise RuntimeError, 'timeout'
