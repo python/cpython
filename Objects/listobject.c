@@ -14,7 +14,7 @@ roundupsize(int n)
 	unsigned int nbits = 0;
 	unsigned int n2 = (unsigned int)n >> 5;
 
-	/* Round up: 
+	/* Round up:
 	 * If n <       256, to a multiple of        8.
 	 * If n <      2048, to a multiple of       64.
 	 * If n <     16384, to a multiple of      512.
@@ -301,7 +301,7 @@ list_repr(PyListObject *v)
 	if (s == NULL)
 		goto Done;
 	result = _PyString_Join(s, pieces);
-	Py_DECREF(s);	
+	Py_DECREF(s);
 
 Done:
 	Py_XDECREF(pieces);
@@ -598,7 +598,7 @@ list_ass_item(PyListObject *a, int i, PyObject *v)
 	Py_INCREF(v);
 	old_value = a->ob_item[i];
 	a->ob_item[i] = v;
-	Py_DECREF(old_value); 
+	Py_DECREF(old_value);
 	return 0;
 }
 
@@ -928,7 +928,7 @@ binarysort(PyObject **lo, PyObject **hi, PyObject **start, PyObject *compare)
    3 variant) down to N lg N.
 
    We also play lots of low-level tricks to cut the number of compares.
-   
+
    Very obscure:  To avoid using extra memory, the PPs are stored in the
    array and shuffled around as partitioning proceeds.  At the start of a
    partitioning step, we'll have 2**m-1 (for some m) PPs in sorted order,
@@ -1060,7 +1060,7 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 		/* note that if we fall out of the loop, the value of
 		   extra still makes *sense*, but may be smaller than
 		   we would like (but the array has more than ~= 2**31
-		   elements in this case!) */ 
+		   elements in this case!) */
 	}
 	/* Now k == extra - 1 + CUTOFFBASE.  The smallest value k can
 	   have is CUTOFFBASE-1, so
@@ -1157,7 +1157,7 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 		   (lo, hi) contains the unknown elements.
 		   [hi, hi+extra) contains the larger PPs.
 		*/
-		k = extra >>= 1;  /* num PPs to move */ 
+		k = extra >>= 1;  /* num PPs to move */
 		if (extraOnRight) {
 			/* Swap the smaller PPs to the left end.
 			   Note that this loop actually moves k+1 items:
@@ -1711,13 +1711,13 @@ list_subscript(PyListObject* self, PyObject* item)
 			result = PyList_New(slicelength);
 			if (!result) return NULL;
 
-			for (cur = start, i = 0; i < slicelength; 
+			for (cur = start, i = 0; i < slicelength;
 			     cur += step, i++) {
 				it = PyList_GET_ITEM(self, cur);
 				Py_INCREF(it);
 				PyList_SET_ITEM(result, i, it);
 			}
-			
+
 			return result;
 		}
 	}
@@ -1728,7 +1728,7 @@ list_subscript(PyListObject* self, PyObject* item)
 	}
 }
 
-static int 
+static int
 list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 {
 	if (PyInt_Check(item)) {
@@ -1761,7 +1761,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 			/* delete slice */
 			PyObject **garbage, **it;
 			int cur, i, j;
-			
+
 			if (slicelength <= 0)
 				return 0;
 
@@ -1773,8 +1773,8 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 
 			garbage = (PyObject**)
 				PyMem_MALLOC(slicelength*sizeof(PyObject*));
-			
-			/* drawing pictures might help 
+
+			/* drawing pictures might help
 			   understand these for loops */
 			for (cur = start, i = 0;
 			     cur < stop;
@@ -1783,7 +1783,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 				garbage[i] = PyList_GET_ITEM(self, cur);
 
 				for (j = 0; j < step; j++) {
-					PyList_SET_ITEM(self, cur + j - i, 
+					PyList_SET_ITEM(self, cur + j - i,
 						PyList_GET_ITEM(self,
 								cur + j + 1));
 				}
@@ -1828,21 +1828,21 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 				return 0;
 
 			/* protect against a[::-1] = a */
-			if (self == (PyListObject*)value) { 
+			if (self == (PyListObject*)value) {
 				value = list_slice((PyListObject*)value, 0,
 						   PyList_GET_SIZE(value));
-			} 
+			}
 			else {
 				Py_INCREF(value);
 			}
 
 			garbage = (PyObject**)
 				PyMem_MALLOC(slicelength*sizeof(PyObject*));
-			
-			for (cur = start, i = 0; i < slicelength; 
+
+			for (cur = start, i = 0; i < slicelength;
 			     cur += step, i++) {
 				garbage[i] = PyList_GET_ITEM(self, cur);
-				
+
 				ins = PyList_GET_ITEM(value, i);
 				Py_INCREF(ins);
 				PyList_SET_ITEM(self, cur, ins);
@@ -1851,15 +1851,15 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 			for (i = 0; i < slicelength; i++) {
 				Py_DECREF(garbage[i]);
 			}
-			
+
 			PyMem_FREE(garbage);
 			Py_DECREF(value);
-			
+
 			return 0;
 		}
-	} 
+	}
 	else {
-		PyErr_SetString(PyExc_TypeError, 
+		PyErr_SetString(PyExc_TypeError,
 				"list indices must be integers");
 		return -1;
 	}
