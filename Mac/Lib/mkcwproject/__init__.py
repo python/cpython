@@ -16,7 +16,8 @@ def mkproject(outputfile, modulename, settings):
 	#
 	dictcopy['mac_projectxmlname'] = outputfile + '.xml'
 	dictcopy['mac_exportname'] = os.path.split(outputfile)[1] + '.exp'
-	dictcopy['mac_outputdir'] = ':lib:'  # XXX Is this correct??
+	if not dictcopy.has_key('mac_outputdir'):
+		dictcopy['mac_outputdir'] = ':lib:'
 	dictcopy['mac_dllname'] = modulename + '.ppc.slb'
 	dictcopy['mac_targetname'] = modulename + '.ppc'
 	if os.path.isabs(dictcopy['sysprefix']):
@@ -36,6 +37,9 @@ def mkproject(outputfile, modulename, settings):
 	#
 	fp = open(outputfile + '.exp', 'w')
 	fp.write('init%s\n'%modulename)
+	if dictcopy.has_key('extraexportsymbols'):
+		for sym in dictcopy['extraexportsymbols']:
+			fp.write('%s\n'%sym)
 	fp.close()
 	#
 	# Generate the project from the xml
