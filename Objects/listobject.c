@@ -518,7 +518,7 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 	else
 		p = recycle = NULL;
 	if (d <= 0) { /* Delete -d items; recycle ihigh-ilow items */
-		memmove(p, &item[ilow], (ihigh - ilow)*sizeof(PyObject *));
+		memcpy(p, &item[ilow], (ihigh - ilow)*sizeof(PyObject *));
 		p += ihigh - ilow;
 		if (d < 0) {
 			memmove(&item[ihigh+d], &item[ihigh], 
@@ -537,7 +537,7 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		item = a->ob_item;
 		memmove(&item[ihigh+d], &item[ihigh],
 			(s - ihigh)*sizeof(PyObject *));
-		memmove(p, &item[ilow], (ihigh - ilow)*sizeof(PyObject *));
+		memcpy(p, &item[ilow], (ihigh - ilow)*sizeof(PyObject *));
 		p += ihigh - ilow;
 	}
 	for (k = 0; k < n; k++, ilow++) {
