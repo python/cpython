@@ -25,12 +25,12 @@
 ** These macros are used in the module init code. If we use toolbox object glue
 ** it sets the function pointer to point to the real function.
 */
-#define PyMac_INIT_TOOLBOX_OBJECT_NEW(rtn) { \
+#define PyMac_INIT_TOOLBOX_OBJECT_NEW(object, rtn) { \
 	extern PyObject *(*PyMacGluePtr_##rtn)(object); \
 	PyMacGluePtr_##rtn = _##rtn; \
 }
-#define PyMac_INIT_TOOLBOX_OBJECT_CONVERT(rtn) { \
-	extern int (*PyMacGluePtr_##rtn)(object); \
+#define PyMac_INIT_TOOLBOX_OBJECT_CONVERT(object, rtn) { \
+	extern int (*PyMacGluePtr_##rtn)(PyObject *, object *); \
 	PyMacGluePtr_##rtn = _##rtn; \
 }
 #else
@@ -38,8 +38,8 @@
 ** If we don't use toolbox object glue the init macros are empty. Moreover, we define
 ** _xxx_New to be the same as xxx_New, and the code in mactoolboxglue isn't included.
 */
-#define PyMac_INIT_TOOLBOX_OBJECT_NEW(rtn)
-#define PyMac_INIT_TOOLBOX_OBJECT_CONVERT(rtn)
+#define PyMac_INIT_TOOLBOX_OBJECT_NEW(object, rtn)
+#define PyMac_INIT_TOOLBOX_OBJECT_CONVERT(object, rtn)
 #endif /* USE_TOOLBOX_OBJECT_GLUE */
 
 /* AE exports */
