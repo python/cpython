@@ -1,0 +1,43 @@
+test_poll
+Running poll test 1
+ This is a test.
+ This is a test.
+ This is a test.
+ This is a test.
+ This is a test.
+ This is a test.
+ This is a test.
+ This is a test.
+ This is a test.
+ This is a test.
+ This is a test.
+ This is a test.
+Poll test 1 complete
+Running poll test 2
+timeout = 0
+timeout = 1000
+'testing...\012'
+timeout = 2000
+'testing...\012'
+timeout = 4000
+'testing...\012'
+timeout = 8000
+'testing...\012'
+timeout = 16000
+'testing...\012'
+timeout = -1
+'testing...\012'
+timeout = -1
+'testing...\012'
+timeout = -1
+'testing...\012'
+timeout = -1
+'testing...\012'
+timeout = -1
+'testing...\012'
+timeout = -1
+timeout = -1
+timeout = -1
+timeout = -1
+timeout = -1
+Poll test 2 complete
