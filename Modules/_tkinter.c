@@ -985,6 +985,7 @@ GetFileNo(file)
 
 static PyObject* Tkapp_ClientDataDict = NULL;
 
+#ifndef WIN32
 static PyObject *
 Tkapp_CreateFileHandler(self, args)
 	PyObject *self;
@@ -1088,6 +1089,7 @@ Tkapp_DeleteFileHandler(self, args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+#endif /* WIN32 */
 
 
 /**** Tktt Object (timer token) ****/
@@ -1338,8 +1340,10 @@ static PyMethodDef Tkapp_methods[] =
 	{"merge", 	       Tkapp_Merge, 0},
 	{"createcommand",      Tkapp_CreateCommand, 1},
 	{"deletecommand",      Tkapp_DeleteCommand, 1},
+#ifndef WIN32
 	{"createfilehandler",  Tkapp_CreateFileHandler, 1},
 	{"deletefilehandler",  Tkapp_DeleteFileHandler, 1},
+#endif
 	{"createtimerhandler", Tkapp_CreateTimerHandler, 1},
 	{"mainloop", 	       Tkapp_MainLoop, 1},
 	{"dooneevent", 	       Tkapp_DoOneEvent, 1},
@@ -1419,8 +1423,10 @@ Tkinter_Create(self, args)
 static PyMethodDef moduleMethods[] =
 {
 	{"create",             Tkinter_Create, 1},
+#ifndef WIN32
 	{"createfilehandler",  Tkapp_CreateFileHandler, 1},
 	{"deletefilehandler",  Tkapp_DeleteFileHandler, 1},
+#endif
 	{"createtimerhandler", Tkapp_CreateTimerHandler, 1},
 	{"mainloop",           Tkapp_MainLoop, 1},
 	{"dooneevent",         Tkapp_DoOneEvent, 1},
@@ -1473,7 +1479,9 @@ ins_string(d, name, val)
 void
 init_tkinter()
 {
+#ifndef WIN32
 	extern int (*Py_input_hook) ();
+#endif
 	PyObject *m, *d;
 
 	Tkapp_Type.ob_type = &PyType_Type;
@@ -1497,8 +1505,10 @@ init_tkinter()
 	ins_string(d, "TK_VERSION", TK_VERSION);
 	ins_string(d, "TCL_VERSION", TCL_VERSION);
 
+#ifndef WIN32
 	if (Py_input_hook == NULL)
 		Py_input_hook = EventHook;
+#endif
 
 	if (PyErr_Occurred())
 		Py_FatalError("can't initialize module _tkinter");
