@@ -45,8 +45,8 @@ restrictions:
 
 
 #define FOR_PYTHON
-#include "pcre-int.h"
 #include "Python.h"
+#include "pcre-int.h"
 #include <ctype.h>
 #include "graminit.h"
 
