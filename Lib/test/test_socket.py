@@ -590,6 +590,7 @@ class FileObjectClassTestCase(SocketConnectedTest):
 
     def tearDown(self):
         self.serv_file.close()
+        self.assert_(self.serv_file.closed)
         self.serv_file = None
         SocketConnectedTest.tearDown(self)
 
@@ -599,6 +600,7 @@ class FileObjectClassTestCase(SocketConnectedTest):
 
     def clientTearDown(self):
         self.cli_file.close()
+        self.assert_(self.cli_file.closed)
         self.cli_file = None
         SocketConnectedTest.clientTearDown(self)
 
@@ -644,6 +646,12 @@ class FileObjectClassTestCase(SocketConnectedTest):
     def _testReadline(self):
         self.cli_file.write(MSG)
         self.cli_file.flush()
+
+    def testClosedAttr(self):
+        self.assert_(not self.serv_file.closed)
+
+    def _testClosedAttr(self):
+        self.assert_(not self.cli_file.closed)
 
 class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
