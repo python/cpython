@@ -18,3 +18,6 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 
 * Separate modules which share a section.  (UserDict/UserList, and one
   other which I can't recall at the moment.)
+
+* Find a way to get the <PRE> for a {verbatim} *inside* the <dl> used to
+  indent the code sample even on the new LaTeX2HTML.  Needed for Lynx.
