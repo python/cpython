@@ -26,7 +26,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include <signal.h>
 
 #ifndef SIG_ERR
-#define SIG_ERR ((RETSIGTYPE (*)())-1)
+#define SIG_ERR ((RETSIGTYPE (*)(int))-1)
 #endif
 
 #if defined(PYOS_OS2)
@@ -92,7 +92,7 @@ static PyObject *DefaultHandler;
 static PyObject *IgnoreHandler;
 static PyObject *IntHandler;
 
-static RETSIGTYPE (*old_siginthandler)() = SIG_DFL;
+static RETSIGTYPE (*old_siginthandler)(int) = SIG_DFL;
 
 
 
@@ -110,6 +110,13 @@ The default handler for SIGINT instated by Python.\n\
 It raises KeyboardInterrupt.";
 
 
+
+static int
+checksignals_witharg(void * unused)
+{
+	return PyErr_CheckSignals();
+}
+
 static RETSIGTYPE
 signal_handler(int sig_num)
 {
@@ -119,8 +126,7 @@ signal_handler(int sig_num)
 #endif
 		is_tripped++;
 		Handlers[sig_num].tripped = 1;
-		Py_AddPendingCall(
-			(int (*)(ANY *))PyErr_CheckSignals, NULL);
+		Py_AddPendingCall(checksignals_witharg, NULL);
 #ifdef WITH_THREAD
 	}
 #endif
@@ -136,7 +142,10 @@ signal_handler(int sig_num)
 #ifdef HAVE_SIGINTERRUPT
 	siginterrupt(sig_num, 1);
 #endif
-	(void)signal(sig_num, &signal_handler);
+	signal(sig_num, signal_handler);
+#if RETSIGTYPE != void
+	return 0;
+#endif
 }
 
 
@@ -191,7 +200,7 @@ signal_signal(PyObject *self, PyObject *args)
 	PyObject *obj;
 	int sig_num;
 	PyObject *old_handler;
-	RETSIGTYPE (*func)();
+	RETSIGTYPE (*func)(int);
 	if (!PyArg_Parse(args, "(iO)", &sig_num, &obj))
 		return NULL;
 #ifdef WITH_THREAD
@@ -348,7 +357,7 @@ initsignal(void)
 
 	Handlers[0].tripped = 0;
 	for (i = 1; i < NSIG; i++) {
-		RETSIGTYPE (*t)();
+		RETSIGTYPE (*t)(int);
 #ifdef HAVE_SIGACTION
 		struct sigaction act;
 		sigaction(i,  0, &act);
