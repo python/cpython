@@ -121,14 +121,22 @@ gen_new(PyFrameObject *f)
 	}
 	gen->gi_frame = f;
 	gen->gi_running = 0;
+	PyObject_GC_Init(gen);
 	return (PyObject *)gen;
+}
+
+static int
+gen_traverse(genobject *gen, visitproc visit, void *arg)
+{
+	return visit((PyObject *)gen->gi_frame, arg);
 }
 
 static void
 gen_dealloc(genobject *gen)
 {
+	PyObject_GC_Fini(gen);
 	Py_DECREF(gen->gi_frame);
-	PyObject_DEL(gen);
+	PyObject_Del(gen);
 }
 
 static PyObject *
@@ -226,7 +234,7 @@ statichere PyTypeObject gentype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
 	"generator",				/* tp_name */
-	sizeof(genobject),			/* tp_basicsize */
+	sizeof(genobject) + PyGC_HEAD_SIZE,	/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
 	(destructor)gen_dealloc, 		/* tp_dealloc */
@@ -244,9 +252,9 @@ statichere PyTypeObject gentype = {
 	0,					/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
  	0,					/* tp_doc */
- 	0,					/* tp_traverse */
+ 	(traverseproc)gen_traverse,		/* tp_traverse */
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
