@@ -44,17 +44,23 @@ we use lpr.  For example:
 What if I find a bug?
 ---------------------
 
-First, check that the bug is present in the online version of the
-documentation at <http://www.python.org/docs/>; we may have already
-fixed it.
+First, check that the bug is present in the development version of the
+documentation at <http://python.sourceforge.net/devel-docs/>; we may
+have already fixed it.
 
 If we haven't, tell us about it.  We'd like the documentation to be
 complete and accurate, but have limited time.  If you discover any
 inconsistencies between the documentation and implementation, or just
 have suggestions as to how to improve the documentation, let is know!
-Send comments and patches to the Python Documentation Team:
+Specific bugs and patches should be reported using our bug & patch
+databases at:
 
-			   python-docs@python.org
+	http://sourceforge.net/projects/python
+
+Other suggestions or questions should be sent to the Python
+Documentation Team:
+
+	python-docs@python.org
 
 Thanks!
 
@@ -157,8 +163,9 @@ What if I want to use A4 paper?
 -------------------------------
 
 Instead of building the PostScript by giving the command "make", give
-the command "make PAPER=a4"; the output will be produced in the
-paper-a4/ subdirectory.
+the command "make PAPER=a4 ps"; the output will be produced in the
+paper-a4/ subdirectory.  (You can use "make PAPER=a4 pdf" if you'd
+rather have PDF output.)
 
 
 Making HTML files
@@ -174,13 +181,12 @@ What else is in here?
 
 There is a new LaTeX document class called "howto".  This is used for
 the new series of Python HOWTO documents which is being coordinated by
-Andrew Kuchling <amk@acm.org>.  The file templates/howto.tex is a
-commented example which may be used a template.  A script to "do the
-right thing" to format a howto document is included as
-tools/mkhowto.  These documents can be formatted as HTML, PDF,
-PostScript, or ASCII files.  Support for this document class is
-still new, but is expected to evolve rapidly.  Use "mkhowto --help"
-for information on using the formatting tool.
+Andrew Kuchling <akuchlin@mems-exchange.org>.  The file
+templates/howto.tex is a commented example which may be used as a
+template.  A Python script to "do the right thing" to format a howto
+document is included as tools/mkhowto.  These documents can be
+formatted as HTML, PDF, PostScript, or ASCII files.  Use "mkhowto
+--help" for information on using the formatting tool.
 
 For authors of module documentation, there is a file
 templates/module.tex which may be used as a template for a module
@@ -197,16 +203,18 @@ The Python source is copyrighted, but you can freely use and copy it
 as long as you don't change or remove the copyright notice:
 
 ----------------------------------------------------------------------
-Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
-The Netherlands.
-
-                        All Rights Reserved
-
-Copyright (c) 2000, BeOpen.com.
-Copyright (c) 1995-2000, Corporation for National Research Initiatives.
-Copyright (c) 1990-1995, Stichting Mathematisch Centrum.
+Copyright (c) 2000, 2001 Guido van Rossum.
 All rights reserved.
 
-See the file "Misc/COPYRIGHT" for information on usage and
+Copyright (c) 2000 BeOpen.com.
+All rights reserved.
+
+Copyright (c) 1995-2000 Corporation for National Research Initiatives.
+All rights reserved.
+
+Copyright (c) 1991-1995 Stichting Mathematisch Centrum.
+All rights reserved.
+
+See the file "LICENSE" for information on usage and
 redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 ----------------------------------------------------------------------
