@@ -340,24 +340,6 @@ PyLong_AsVoidPtr(vv)
  * here.
  */
 
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
-
-/* Hopefully this is portable... */
-#ifndef LONG_MAX
-#define LONG_MAX 2147483647L
-#endif
-#ifndef ULONG_MAX
-#define ULONG_MAX 4294967295U
-#endif
-#ifndef LONGLONG_MAX
-#define LONGLONG_MAX 9223372036854775807LL
-#endif
-#ifndef ULONGLONG_MAX
-#define ULONGLONG_MAX 0xffffffffffffffffULL
-#endif
-
 /* Create a new long int object from a C LONG_LONG int */
 
 PyObject *
