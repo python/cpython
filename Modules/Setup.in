@@ -93,6 +93,7 @@ regex regexmodule.c regexpr.c	# Regular expressions, GNU Emacs style
 pcre pcremodule.c pypcre.c	# Regular expressions, Perl style (for re.py)
 posix posixmodule.c		# posix (UNIX) system calls
 signal signalmodule.c		# signal(2)
+_sre _sre.c			# Fredrik Lundh's new regular expressions
 
 # The SGI specific GL module:
 
