@@ -254,13 +254,11 @@ Tkapp_New (screenName, baseName, className, interactive)
   else
     Tcl_SetVar (v->interp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
 
-#ifndef WITH_APPINIT
   if (Tcl_AppInit (v->interp) != TCL_OK)
     {
       PyErr_SetString (Tkinter_TclError, "Tcl_AppInit failed"); /* XXX */
       return NULL;
     }
-#endif /* !WITH_APPINIT */
 
   return v;
 }
@@ -768,15 +766,15 @@ Tkapp_DeleteCommand (self, args)
 
 void
 FileHandler (clientData, mask)
-     ClientData clientData;	/* Is: func */
+     ClientData clientData;	/* Is: (func, file) */
      int mask;
 {
-  PyObject *func;
-  PyObject *arg, *res;
+  PyObject *func, *file, *arg, *res;
 
-  func = (PyObject *) clientData;
+  func = PyTuple_GetItem ((PyObject *) clientData, 0);
+  file = PyTuple_GetItem ((PyObject *) clientData, 1);
 
-  arg = PyInt_FromLong ((long) mask);
+  arg = Py_BuildValue ("(Oi)", file, (long) mask);
   res = PyEval_CallObject (func, arg);
   Py_DECREF (arg);
   if (res == NULL)
@@ -784,6 +782,7 @@ FileHandler (clientData, mask)
       errorInCmd = 1;
       PyErr_GetAndClear (&excInCmd, &valInCmd);
     }
+  Py_DECREF (res);
 }
 
 static PyObject *
@@ -791,10 +790,8 @@ Tkapp_CreateFileHandler (self, args)
      PyObject *self;
      PyObject *args;		/* Is (file, mask, func) */
 {
-  PyObject *file;
-  int mask;
-  PyObject *func;
-  int id;
+  PyObject *file, *func, *data;
+  int mask, id;
 
   if (!PyArg_Parse (args, "(OiO)", &file, &mask, &func))
     return NULL;
@@ -805,10 +802,13 @@ Tkapp_CreateFileHandler (self, args)
       return NULL;
     }
 
+  /* ClientData is: (func, file) */
+  data = Py_BuildValue ("(OO)", func, file);
+
   id = fileno (PyFile_AsFile (file));
-  Py_DECREF (file);
-  Tk_CreateFileHandler (id, mask, FileHandler, (ClientData) func);
+  Tk_CreateFileHandler (id, mask, FileHandler, (ClientData) data);
   /* XXX fileHandlerDict */
+
   Py_INCREF (Py_None);
   return Py_None;
 }
