@@ -734,7 +734,7 @@ class PyBuildExt(build_ext):
         if sys.maxint == 0x7fffffff:
             # This requires sizeof(int) == sizeof(long) == sizeof(char*)
             dl_inc = find_file('dlfcn.h', [], inc_dirs)
-            if (dl_inc is not None) and (platform not in ['atheos']):
+            if (dl_inc is not None) and (platform not in ['atheos', 'darwin']):
                 exts.append( Extension('dl', ['dlmodule.c']) )
 
         # Platform-specific libraries
