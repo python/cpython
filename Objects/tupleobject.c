@@ -424,11 +424,10 @@ PyTypeObject PyTuple_Type = {
 /* The following function breaks the notion that tuples are immutable:
    it changes the size of a tuple.  We get away with this only if there
    is only one module referencing the object.  You can also think of it
-   as creating a new tuple object and destroying the old one, only
-   more efficiently.  In any case, don't use this if the tuple may
-   already be known to some other part of the code...
-   If last_is_sticky is set, the tuple will grow or shrink at the
-   front, otherwise it will grow or shrink at the end. */
+   as creating a new tuple object and destroying the old one, only more
+   efficiently.  In any case, don't use this if the tuple may already be
+   known to some other part of the code.  The last_is_sticky is not used
+   and must always be false. */
 
 int
 _PyTuple_Resize(PyObject **pv, int newsize, int last_is_sticky)
@@ -439,106 +438,45 @@ _PyTuple_Resize(PyObject **pv, int newsize, int last_is_sticky)
 	int sizediff;
 
 	v = (PyTupleObject *) *pv;
-	if (v == NULL || !PyTuple_Check(v) || v->ob_refcnt != 1) {
+	if (v == NULL || !PyTuple_Check(v) || v->ob_refcnt != 1 ||
+             last_is_sticky) {
 		*pv = 0;
-		Py_DECREF(v);
+		Py_XDECREF(v);
 		PyErr_BadInternalCall();
 		return -1;
 	}
 	sizediff = newsize - v->ob_size;
 	if (sizediff == 0)
 		return 0;
+
 	/* XXX UNREF/NEWREF interface should be more symmetrical */
 #ifdef Py_REF_DEBUG
 	--_Py_RefTotal;
 #endif
-	_Py_ForgetReference((PyObject *)v);
-	if (last_is_sticky && sizediff < 0) {
-		/* shrinking:
-		   move entries to the front and zero moved entries */
-		for (i = 0; i < newsize; i++) {
-			Py_XDECREF(v->ob_item[i]);
-			v->ob_item[i] = v->ob_item[i - sizediff];
-			v->ob_item[i - sizediff] = NULL;
-		}
-	}
+	_Py_ForgetReference((PyObject *) v);
 	for (i = newsize; i < v->ob_size; i++) {
 		Py_XDECREF(v->ob_item[i]);
 		v->ob_item[i] = NULL;
 	}
-#if MAXSAVESIZE > 0
-	if (newsize == 0 && free_tuples[0]) {
-		num_free_tuples[0]--;
-		sv = free_tuples[0];
-		sv->ob_size = 0;
-		Py_INCREF(sv);
-#ifdef COUNT_ALLOCS
-		tuple_zero_allocs++;
-#endif
-		tupledealloc(v);
-		*pv = (PyObject*) sv;
-		return 0;
+	PyObject_GC_Fini(v);
+	v = (PyTupleObject *) PyObject_AS_GC(v);
+	sv = (PyTupleObject *) PyObject_REALLOC((char *)v,
+						sizeof(PyTupleObject)
+						+ PyGC_HEAD_SIZE
+						+ newsize * sizeof(PyObject *));
+	if (sv == NULL) {
+		*pv = NULL;
+		PyObject_DEL(v);
+		PyErr_NoMemory();
+		return -1;
 	}
-	if (0 < newsize && newsize < MAXSAVESIZE &&
-	    (sv = free_tuples[newsize]) != NULL)
-	{
-		free_tuples[newsize] = (PyTupleObject *) sv->ob_item[0];
-		num_free_tuples[newsize]--;
-#ifdef COUNT_ALLOCS
-		fast_tuple_allocs++;
-#endif
-#ifdef Py_TRACE_REFS 
-		sv->ob_type = &PyTuple_Type; 
-#endif 
-		for (i = 0; i < newsize; ++i){
-			sv->ob_item[i] = v->ob_item[i];
-			v->ob_item[i] = NULL;
-		}
-		sv->ob_size = v->ob_size;
-		tupledealloc(v);
-		*pv = (PyObject *) sv;
-	} else 
-#endif		
-	{
-#ifdef WITH_CYCLE_GC
-		PyGC_Head *g = PyObject_AS_GC((PyObject *)v);
-		PyObject_GC_Fini((PyObject *)v);
-		g = (PyGC_Head *)
-			PyObject_REALLOC((char *)g, sizeof(PyTupleObject) 
-					+ PyGC_HEAD_SIZE
-					+ newsize * sizeof(PyObject *));
-		if (g == NULL) {
-			sv = NULL;
-		} else {
-			sv = (PyTupleObject *)PyObject_FROM_GC(g);
-		}
-#else
-		sv = (PyTupleObject *)
-			PyObject_REALLOC((char *)v, sizeof(PyTupleObject) 
-					+ PyGC_HEAD_SIZE
-					+ newsize * sizeof(PyObject *));
-#endif
-		*pv = (PyObject *) sv;
-		if (sv == NULL) {
-			PyObject_GC_Init((PyObject *)v);
-			v = (PyTupleObject *) PyObject_AS_GC(v);
-			PyObject_DEL(v);
-			PyErr_NoMemory();
-			return -1;
-		}
-	}
-	_Py_NewReference((PyObject *)sv);
+	sv = (PyTupleObject *) PyObject_FROM_GC(sv);
+	_Py_NewReference((PyObject *) sv);
 	for (i = sv->ob_size; i < newsize; i++)
 		sv->ob_item[i] = NULL;
-	if (last_is_sticky && sizediff > 0) {
-		/* growing: move entries to the end and zero moved entries */
-		for (i = newsize - 1; i >= sizediff; i--) {
-			sv->ob_item[i] = sv->ob_item[i - sizediff];
-			sv->ob_item[i - sizediff] = NULL;
-		}
-	}
-	PyObject_GC_Init(sv);
 	sv->ob_size = newsize;
+	*pv = (PyObject *) sv;
+	PyObject_GC_Init(sv);
 	return 0;
 }
 
