@@ -22,6 +22,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
+#ifdef __CFM68K__
+/* cfm68k InterfaceLib exports GetEventQueue, but Events.h doesn't know this
+** and defines it as GetEvQHdr (which is correct for PPC). This fix is for
+** CW9, check that the workaround is still needed for the next release.
+*/
+#define GetEvQHdr GetEventQueue
+#endif /* __CFM68K__ */
+
+#include <Events.h>
+
+#ifdef __CFM68K__
+#undef GetEventQueue
+#endif /* __CFM68K__ */
+
 #include "Python.h"
 
 #include "macglue.h"
@@ -35,7 +49,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <StandardFile.h>
 #include <Resources.h>
 #include <Memory.h>
-#include <Events.h>
 #include <Windows.h>
 #include <Desk.h>
 #include <Traps.h>
@@ -402,7 +415,7 @@ PyMac_DoYield()
 							NGetTrapAddress(_Unimplemented, ToolTrap));
 	}
 
-	if ( !PyMac_DoYieldEnabled ) {
+	if ( PyMac_DoYieldEnabled >= 0) {
 #ifndef THINK_C
 		/* Under think this has been done before in intrcheck() or intrpeek() */
 		scan_event_queue(0);
