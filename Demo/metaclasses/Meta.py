@@ -30,7 +30,7 @@ class MetaHelper:
         except AttributeError:
             try:
                 ga = self.__formalclass__.__getattr__('__usergetattr__')
-            except KeyError:
+            except (KeyError, AttributeError):
                 raise AttributeError, name
             return ga(self, name)
         if type(raw) != types.FunctionType:
