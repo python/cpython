@@ -1553,7 +1553,6 @@ local bindings to py-newline-and-indent."))
 
 
 ;; Helper functions
-
 (defvar py-parse-state-re
   (concat
    "^[ \t]*\\(if\\|elif\\|else\\|while\\|def\\|class\\)\\>"
@@ -1795,6 +1794,13 @@ local bindings to py-newline-and-indent."))
     (set-buffer cbuf))
   (sit-for 0))
 
+(defun py-keep-region-active ()
+  ;; do whatever is necessary to keep the region active in XEmacs.
+  ;; Ignore byte-compiler warnings you might see.  Also note that
+  ;; FSF's Emacs 19 does it differently and doesn't its policy doesn't
+  ;; require us to take explicit action.
+  (and (boundp 'zmacs-region-stays)
+       (setq zmacs-region-stays t)))
 
 
 (defconst py-version "$Revision$"
