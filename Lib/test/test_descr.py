@@ -3232,6 +3232,21 @@ def slottrash():
         o = trash(o)
     del o
 
+def testrmul():
+    # SF patch 592646
+    if verbose:
+        print "Testing correct invocation of __rmul__..."
+    class C(object):
+        def __mul__(self, other):
+            return "mul"
+        def __rmul__(self, other):
+            return "rmul"
+    a = C()
+    vereq(a*2, "mul")
+    vereq(a*2.2, "mul")
+    vereq(2*a, "rmul")
+    vereq(2.2*a, "rmul")
+
 def do_this_first():
     if verbose:
         print "Testing SF bug 551412 ..."
@@ -3324,6 +3339,7 @@ def test_main():
     slices()
     subtype_resurrection()
     slottrash()
+    testrmul()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
