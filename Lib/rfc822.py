@@ -297,35 +297,88 @@ def unquote(str):
 # Parse an address into (name, address) tuple
 
 def parseaddr(address):
-	# This is probably not perfect
-	address = string.strip(address)
-	# Case 1: part of the address is in <xx@xx> form.
-	pos = regex.search('<.*>', address)
-	if pos >= 0:
-		name = address[:pos]
-		address = address[pos:]
-		length = regex.match('<.*>', address)
-		name = name + address[length:]
-		address = address[:length]
-	else:
-		# Case 2: part of the address is in (comment) form
-		pos = regex.search('(.*)', address)
-		if pos >= 0:
-			name = address[pos:]
-			address = address[:pos]
-			length = regex.match('(.*)', name)
-			address = address + name[length:]
-			name = name[:length]
+	import string
+	str = ''
+	email = ''
+	comment = ''
+	backslash = 0
+	dquote = 0
+	space = 0
+	paren = 0
+	bracket = 0
+	seen_bracket = 0
+	for c in address:
+		if backslash:
+			str = str + c
+			backslash = 0
+			continue
+		if c == '\\':
+			backslash = 1
+			continue
+		if dquote:
+			if c == '"':
+				dquote = 0
+			else:
+				str = str + c
+			continue
+		if c == '"':
+			dquote = 1
+			continue
+		if c in string.whitespace:
+			space = 1
+			continue
+		if space:
+			str = str + ' '
+			space = 0
+		if paren:
+			if c == '(':
+				paren = paren + 1
+				str = str + c
+				continue
+			if c == ')':
+				paren = paren - 1
+				if paren == 0:
+					comment = comment + str
+					str = ''
+					continue
+		if c == '(':
+			paren = paren + 1
+			if bracket:
+				email = email + str
+				str = ''
+			elif not seen_bracket:
+				email = email + str
+				str = ''
+			continue
+		if bracket:
+			if c == '>':
+				bracket = 0
+				email = email + str
+				str = ''
+				continue
+		if c == '<':
+			bracket = 1
+			seen_bracket = 1
+			comment = comment + str
+			str = ''
+			email = ''
+			continue
+		if c == '#' and not bracket and not paren:
+			# rest is comment
+			break
+		str = str + c
+	if str:
+		if seen_bracket:
+			if bracket:
+				email = str
+			else:
+				comment = comment + str
 		else:
-			# Case 3: neither. Only an address
-			name = ''
-	name = string.strip(name)
-	address = string.strip(address)
-	if address and address[0] == '<' and address[-1] == '>':
-		address = address[1:-1]
-	if name and name[0] == '(' and name[-1] == ')':
-		name = name[1:-1]
-	return name, address
+			if paren:
+				comment = comment + str
+			else:
+				email = email + str
+	return string.strip(comment), string.strip(email)
 
 
 # Parse a date field
@@ -376,8 +429,8 @@ def parsedate(data):
 # message in RFC-822 format.
 
 if __name__ == '__main__':
-	import sys
-	file = '/ufs/guido/Mail/drafts/,1'
+	import sys, os
+	file = os.path.join(os.environ['HOME'], 'Mail/drafts/,1')
 	if sys.argv[1:]: file = sys.argv[1]
 	f = open(file, 'r')
 	m = Message(f)
