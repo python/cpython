@@ -77,6 +77,7 @@ class WorkQ:
 		self.mutex.release()
 
 	def _worker(self):
+		time.sleep(0.00001)	# Let other threads run
 		while 1:
 			job = self._getwork()
 			if not job:
@@ -97,6 +98,7 @@ class WorkQ:
 # Main program
 
 def main():
+	sys.argv.append("/tmp")
 	nworkers = 4
 	opts, args = getopt.getopt(sys.argv[1:], '-w:')
 	for opt, arg in opts:
