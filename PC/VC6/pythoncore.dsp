@@ -145,6 +145,10 @@ SOURCE=..\..\Modules\cjkcodecs\_gbk.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\_heapmodule.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\_hotshot.c
 # End Source File
 # Begin Source File
@@ -399,10 +403,6 @@ SOURCE=..\..\Python\graminit.c
 # Begin Source File
 
 SOURCE=..\..\Parser\grammar1.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Modules\heapqmodule.c
 # End Source File
 # Begin Source File
 
