@@ -274,6 +274,9 @@ Core and builtins
 
 Extension modules
 
+- If the size passed to mmap.mmap() is larger than the length of the
+  file on non-Windows platforms, a ValueError is raised. [SF bug 585792]
+
 - The xreadlines module is slated for obsolescence.
 
 - The strptime function in the time module is now always available (a
