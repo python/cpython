@@ -4,35 +4,36 @@
 
 \setindexsubitem{(in module mimetools)}
 
-This module defines a subclass of the class \code{rfc822.Message} and
+This module defines a subclass of the \class{rfc822.Message} class and
 a number of utility functions that are useful for the manipulation for
-MIME style multipart or encoded message.
+MIME multipart or encoded message.
 
 It defines the following items:
 
-\begin{funcdesc}{Message}{fp}
-Return a new instance of the \code{mimetools.Message} class.  This is
-a subclass of the \code{rfc822.Message} class, with some additional
-methods (see below).
-\end{funcdesc}
+\begin{classdesc}{Message}{fp\optional{, seekable}}
+Return a new instance of the \class{Message} class.  This is a
+subclass of the \class{rfc822.Message} class, with some additional
+methods (see below).  The \var{seekable} argument has the same meaning
+as for \class{rfc822.Message}.
+\end{classdesc}
 
 \begin{funcdesc}{choose_boundary}{}
 Return a unique string that has a high likelihood of being usable as a
 part boundary.  The string has the form
-\code{"\var{hostipaddr}.\var{uid}.\var{pid}.\var{timestamp}.\var{random}"}.
+\code{'\var{hostipaddr}.\var{uid}.\var{pid}.\var{timestamp}.\var{random}'}.
 \end{funcdesc}
 
-\begin{funcdesc}{decode}{input\, output\, encoding}
+\begin{funcdesc}{decode}{input, output, encoding}
 Read data encoded using the allowed MIME \var{encoding} from open file
 object \var{input} and write the decoded data to open file object
 \var{output}.  Valid values for \var{encoding} include
-\code{"base64"}, \code{"quoted-printable"} and \code{"uuencode"}.
+\code{'base64'}, \code{'quoted-printable'} and \code{'uuencode'}.
 \end{funcdesc}
 
 \begin{funcdesc}{encode}{input\, output\, encoding}
 Read data from open file object \var{input} and write it encoded using
 the allowed MIME \var{encoding} to open file object \var{output}.
-Valid values for \var{encoding} are the same as for \code{decode()}.
+Valid values for \var{encoding} are the same as for \method{decode()}.
 \end{funcdesc}
 
 \begin{funcdesc}{copyliteral}{input\, output}
@@ -49,49 +50,49 @@ open file \var{output}.  The block size is currently fixed at 8192.
 \subsection{Additional Methods of Message objects}
 \nodename{mimetools.Message Methods}
 
-The \code{mimetools.Message} class defines the following methods in
-addition to the \code{rfc822.Message} class:
+The \class{Message} class defines the following methods in
+addition to the \class{rfc822.Message} methods:
 
 \setindexsubitem{(mimetool.Message method)}
 
 \begin{funcdesc}{getplist}{}
-Return the parameter list of the \code{Content-type} header.  This is
+Return the parameter list of the \code{content-type} header.  This is
 a list if strings.  For parameters of the form
 \samp{\var{key}=\var{value}}, \var{key} is converted to lower case but
 \var{value} is not.  For example, if the message contains the header
 \samp{Content-type: text/html; spam=1; Spam=2; Spam} then
-\code{getplist()} will return the Python list \code{['spam=1',
+\method{getplist()} will return the Python list \code{['spam=1',
 'spam=2', 'Spam']}.
 \end{funcdesc}
 
 \begin{funcdesc}{getparam}{name}
 Return the \var{value} of the first parameter (as returned by
-\code{getplist()} of the form \samp{\var{name}=\var{value}} for the
+\method{getplist()} of the form \samp{\var{name}=\var{value}} for the
 given \var{name}.  If \var{value} is surrounded by quotes of the form
 `\code{<}...\code{>}' or `\code{"}...\code{"}', these are removed.
 \end{funcdesc}
 
 \begin{funcdesc}{getencoding}{}
-Return the encoding specified in the \samp{Content-transfer-encoding}
-message header.  If no such header exists, return \code{"7bit"}.  The
+Return the encoding specified in the \code{content-transfer-encoding}
+message header.  If no such header exists, return \code{'7bit'}.  The
 encoding is converted to lower case.
 \end{funcdesc}
 
 \begin{funcdesc}{gettype}{}
 Return the message type (of the form \samp{\var{type}/\var{subtype}})
-as specified in the \samp{Content-type} header.  If no such header
-exists, return \code{"text/plain"}.  The type is converted to lower
+as specified in the \code{content-type} header.  If no such header
+exists, return \code{'text/plain'}.  The type is converted to lower
 case.
 \end{funcdesc}
 
 \begin{funcdesc}{getmaintype}{}
-Return the main type as specified in the \samp{Content-type} header.
-If no such header exists, return \code{"text"}.  The main type is
+Return the main type as specified in the \code{content-type} header.
+If no such header exists, return \code{'text'}.  The main type is
 converted to lower case.
 \end{funcdesc}
 
 \begin{funcdesc}{getsubtype}{}
-Return the subtype as specified in the \samp{Content-type} header.  If
-no such header exists, return \code{"plain"}.  The subtype is
+Return the subtype as specified in the \code{content-type} header.  If
+no such header exists, return \code{'plain'}.  The subtype is
 converted to lower case.
 \end{funcdesc}
