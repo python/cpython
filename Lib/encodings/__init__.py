@@ -3,9 +3,9 @@
     Standard Python encoding modules are stored in this package
     directory.
 
-    Codec modules must have names corresponding to standard lower-case
-    encoding names with hyphens mapped to underscores, e.g. 'utf-8' is
-    implemented by the module 'utf_8.py'.
+    Codec modules must have names corresponding to normalized encoding
+    names as defined in the normalize_encoding() function below, e.g.
+    'utf-8' must be implemented by the module 'utf_8.py'.
 
     Each codec module must export the following interface:
 
@@ -18,9 +18,8 @@
 
     * getaliases() -> sequence of encoding name strings to use as aliases
 
-    Alias names returned by getaliases() must be standard encoding
-    names as defined above (lower-case, hyphens converted to
-    underscores).
+    Alias names returned by getaliases() must be normalized encoding
+    names as defined by normalize_encoding().
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 
@@ -28,15 +27,28 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """#"
 
-import codecs,exceptions
+import codecs, exceptions, re
 
 _cache = {}
 _unknown = '--unknown--'
 _import_tail = ['*']
+_norm_encoding_RE = re.compile('[^a-zA-Z0-9.]')
 
 class CodecRegistryError(exceptions.LookupError,
                          exceptions.SystemError):
     pass
+
+def normalize_encoding(encoding):
+
+    """ Normalize an encoding name.
+
+        Normalization works as follows: all non-alphanumeric
+        characters except the dot used for Python package names are
+        collapsed and replaced with a single underscore, e.g. '  -;#'
+        becomes '_'.
+        
+    """
+    return '_'.join(_norm_encoding_RE.split(encoding))
 
 def search_function(encoding):
 
@@ -51,7 +63,7 @@ def search_function(encoding):
     # encoding in the aliases mapping and retry the import using the
     # default import module lookup scheme with the alias name.
     #
-    modname = encoding.replace('-', '_')
+    modname = normalize_encoding(encoding)
     try:
         mod = __import__('encodings.' + modname,
                          globals(), locals(), _import_tail)
