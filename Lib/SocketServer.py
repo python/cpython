@@ -325,14 +325,14 @@ class ForkingMixIn:
 
 
 class ThreadingMixIn:
-
     """Mix-in class to handle each request in a new thread."""
 
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""
-        import thread
-        thread.start_new_thread(self.finish_request,
-                                (request, client_address))
+        import threading
+        t = threading.Thread(target = self.finish_request,
+                             args = (request, client_address))
+        t.start()
 
 
 class ForkingUDPServer(ForkingMixIn, UDPServer): pass
