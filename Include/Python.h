@@ -26,7 +26,7 @@
 #endif
 
 #if UCHAR_MAX != 255
-#error "Python's source code currently assumes 8-bit characters."
+#error "Python's source code assumes C's unsigned char is an 8-bit type."
 #endif
 
 #if defined(__sgi) && defined(WITH_THREAD) && !defined(_SGI_MP_SOURCE)
