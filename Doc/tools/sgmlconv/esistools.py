@@ -166,10 +166,10 @@ class ESISReader(xml.sax.xmlreader.XMLReader):
         elif token == '(':
             if self._is_empty:
                 self._empties[data] = 1
+                self._is_empty = 0
             if handler:
                 handler.startElement(data, self._attributes)
             self._attrs.clear()
-            self._is_empty = 0
         elif token == 'A':
             name, value = data.split(' ', 1)
             if value != "IMPLIED":
