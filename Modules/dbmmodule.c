@@ -13,6 +13,8 @@
  */
 #if defined(HAVE_NDBM_H)
 #include <ndbm.h>
+#elif defined(HAVE_DB1_NDBM_H)
+#include <db1/ndbm.h>
 #elif defined(HAVE_GDBM_NDBM_H)
 #include <gdbm/ndbm.h>
 #else
