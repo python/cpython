@@ -160,7 +160,7 @@ class ContentHandler:
         event must come from the same external entity so that the
         Locator provides useful information."""
 
-    def ignorableWhitespace(self ):
+    def ignorableWhitespace(self, whitespace):
         """Receive notification of ignorable whitespace in element content.
         
         Validating Parsers must use this method to report each chunk
