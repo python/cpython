@@ -910,6 +910,7 @@ class Tk(Misc, Wm):
 		self.readprofile(baseName, className)
 		if _support_default_root and not _default_root:
 			_default_root = self
+		self.protocol("WM_DELETE_WINDOW", self.destroy)
 	def destroy(self):
 		for c in self.children.values(): c.destroy()
 		self.tk.call('destroy', self._w)
@@ -1119,6 +1120,7 @@ class Toplevel(BaseWidget, Wm):
 		root = self._root()
 		self.iconname(root.iconname())
 		self.title(root.title())
+		self.protocol("WM_DELETE_WINDOW", self.destroy)
 
 class Button(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
