@@ -9,5 +9,6 @@ s = socket(AF_INET, SOCK_DGRAM)
 s.bind('', MYPORT)
 
 while 1:
-	data = s.recv(1500)
+	data, wherefrom = s.recvfrom(1500, 0)
+	sys.stderr.write(`wherefrom` + '\n')
 	sys.stdout.write(data)

@@ -86,7 +86,8 @@ def main():
 	mainloop.register(win)
 	mainloop.mainloop()
 
-def lpdispatch(type, win, detail):
+def lpdispatch(event):
+	type, win, detail = event
 	if type == WE_CLOSE or type == WE_CHAR and detail in ('q', 'Q'):
 		mainloop.unregister(win)
 	elif type == WE_DRAW:
