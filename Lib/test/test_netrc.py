@@ -38,6 +38,8 @@ class NetrcTestCase(unittest.TestCase):
         self.assert_(self.netrc.hosts['foo'] == ('log1', 'acct1', 'pass1'))
         self.assert_(self.netrc.hosts['default'] == ('log2', None, 'pass2'))
 
+def test_main():
+    test_support.run_unittest(NetrcTestCase)
 
 if __name__ == "__main__":
-    test_support.run_unittest(NetrcTestCase)
+    test_main()

@@ -1,7 +1,7 @@
 
 import imp
 import unittest
-from test_support import TestFailed
+from test_support import TestFailed, run_unittest
 
 class ImpLock(unittest.TestCase):
 
@@ -22,5 +22,8 @@ class ImpLock(unittest.TestCase):
                 raise TestFailed, \
                     "release_lock() without lock should raise RuntimeError"
 
+def test_main():
+    run_unittest(ImpLock)
+
 if __name__ == "__main__":
-    test_support.run_unittest(ImpLock)
+    test_main()
