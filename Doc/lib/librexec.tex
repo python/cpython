@@ -4,10 +4,10 @@
 
 
 This module contains the \class{RExec} class, which supports
-\method{r_exec()}, \method{r_eval()}, \method{r_execfile()}, and
+\method{r_eval()}, \method{r_execfile()}, \method{r_exec()}, and
 \method{r_import()} methods, which are restricted versions of the standard
-Python functions \method{exec()}, \method{eval()}, \method{execfile()}, and
-the \keyword{import} statement.
+Python functions \method{eval()}, \method{execfile()} and
+the \keyword{exec} and \keyword{import} statements.
 Code executed in this restricted environment will
 only have access to modules and functions that are deemed safe; you
 can subclass \class{RExec} to add or remove capabilities as desired.
