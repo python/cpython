@@ -142,6 +142,12 @@ way to exit a program when an error occurs.
   fatal internal error is detected, or when \code{os._exit()} is called.
 \end{datadesc}
 
+\begin{funcdesc}{getdefaultencoding}{}
+  Return the name of the current default string encoding used by the
+  Unicode implementation.
+  \versionadded{2.0}
+\end{funcdesc}
+
 \begin{funcdesc}{getrefcount}{object}
 Return the reference count of the \var{object}.  The count returned is
 generally one higher than you might expect, because it includes the
@@ -254,7 +260,7 @@ files (all except \file{config.h}) are stored in \code{prefix +
   Strings specifying the primary and secondary prompt of the
   interpreter.  These are only defined if the interpreter is in
   interactive mode.  Their initial values in this case are
-  \code{'>>> '} and \code{'... '}.  If a non-string object is assigned
+  \code{'>\code{>}> '} and \code{'... '}.  If a non-string object is assigned
   to either variable, its \function{str()} is re-evaluated each time
   the interpreter prepares to read a new interactive command; this can
   be used to implement a dynamic prompt.
@@ -268,6 +274,20 @@ the check is performed every 10 Python virtual instructions.  Setting
 it to a larger value may increase performance for programs using
 threads.  Setting it to a value \code{<=} 0 checks every virtual instruction,
 maximizing responsiveness as well as overhead.
+\end{funcdesc}
+
+\begin{funcdesc}{setdefaultencoding}{name}
+  Set the current default string encoding used by the Unicode
+  implementation.  If \var{name} does not match any available
+  encoding, \exception{LookupError} is raised.  This function is only
+  intended to be used by the \refmodule{site} module implementation
+  and, where needed, by \module{sitecustomize}.  Once used by the
+  \refmodule{site} module, it is removed from the \module{sys}
+  module's namespace.
+%  Note that \refmodule{site} is not imported if
+%  the \programopt{-S} option is passed to the interpreter, in which
+%  case this function will remain available.
+  \versionadded{2.0}
 \end{funcdesc}
 
 \begin{funcdesc}{setprofile}{profilefunc}
