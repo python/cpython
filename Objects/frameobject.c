@@ -78,9 +78,11 @@ frame_dealloc(PyFrameObject *f)
 	}
 
 	/* Free stack */
-	for (p = f->f_valuestack; p < f->f_stackbottom; p++) {
-		Py_XDECREF(*p);
+	if (f->f_stacktop != NULL) {
+		for (p = f->f_valuestack; p < f->f_stacktop; p++)
+			Py_XDECREF(*p);
 	}
+	
 	Py_XDECREF(f->f_back);
 	Py_XDECREF(f->f_code);
 	Py_XDECREF(f->f_builtins);
@@ -226,7 +228,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 		f->f_localsplus[extras] = NULL;
 
 	f->f_valuestack = f->f_localsplus + (f->f_nlocals + ncells + nfrees);
-	f->f_stackbottom = f->f_valuestack;
+	f->f_stacktop = f->f_valuestack;
 
 	return f;
 }

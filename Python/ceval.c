@@ -147,9 +147,8 @@ gen_iternext(genobject *gen)
 				"generator already executing");
 		return NULL;
 	}
-	if (f->f_stackbottom == NULL) {
+	if (f->f_stacktop == NULL)
 		return NULL;
-	}
 
 	/* Generators always return to their most recent caller, not
 	 * necessarily their creator. */
@@ -584,8 +583,9 @@ eval_frame(PyFrameObject *f)
 	freevars = f->f_localsplus + f->f_nlocals;
 	_PyCode_GETCODEPTR(co, &first_instr);
 	next_instr = first_instr + f->f_lasti;
-	stack_pointer = f->f_stackbottom;
-	f->f_stackbottom = NULL;
+	stack_pointer = f->f_stacktop;
+	assert(stack_pointer != NULL);
+	f->f_stacktop = NULL;
 
 #ifdef LLTRACE
 	lltrace = PyDict_GetItemString(f->f_globals,"__lltrace__") != NULL;
@@ -1371,7 +1371,7 @@ eval_frame(PyFrameObject *f)
 
 		case YIELD_VALUE:
 			retval = POP();
-			f->f_stackbottom = stack_pointer;
+			f->f_stacktop = stack_pointer;
 			f->f_lasti = INSTR_OFFSET();
 			why = WHY_YIELD;
 			break;
