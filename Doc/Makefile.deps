@@ -124,6 +124,7 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libglob.tex \
 	../lib/libuser.tex \
 	../lib/libanydbm.tex \
+	../lib/libdbhash.tex \
 	../lib/librandom.tex \
 	../lib/libsite.tex \
 	../lib/libwhichdb.tex \
