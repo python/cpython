@@ -694,7 +694,10 @@ bu_uint(p, f)
 	do {
 		x = (x<<8) | (*p++ & 0xFF);
 	} while (--i > 0);
-	return PyLong_FromUnsignedLong(x);
+	if (f->size >= 4)
+		return PyLong_FromUnsignedLong(x);
+	else
+		return PyInt_FromLong((long)x);
 }
 
 static PyObject *
@@ -825,7 +828,10 @@ lu_uint(p, f)
 	do {
 		x = (x<<8) | (p[--i] & 0xFF);
 	} while (i > 0);
-	return PyLong_FromUnsignedLong(x);
+	if (f->size >= 4)
+		return PyLong_FromUnsignedLong(x);
+	else
+		return PyInt_FromLong((long)x);
 }
 
 static PyObject *
