@@ -454,6 +454,24 @@ class TestCopy(unittest.TestCase):
         self.assert_(x[0] is not y[0])
         self.assert_(x.foo is not y.foo)
 
+    def test_copy_tuple_subclass(self):
+        class C(tuple):
+            pass
+        x = C([1, 2, 3])
+        self.assertEqual(tuple(x), (1, 2, 3))
+        y = copy.copy(x)
+        self.assertEqual(tuple(y), (1, 2, 3))
+
+    def test_deepcopy_tuple_subclass(self):
+        class C(tuple):
+            pass
+        x = C([[1, 2], 3])
+        self.assertEqual(tuple(x), ([1, 2], 3))
+        y = copy.deepcopy(x)
+        self.assertEqual(tuple(y), ([1, 2], 3))
+        self.assert_(x is not y)
+        self.assert_(x[0] is not y[0])
+
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestCopy))
