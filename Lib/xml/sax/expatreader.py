@@ -49,7 +49,7 @@ class ExpatLocator(xmlreader.Locator):
         parser = self._ref()
         if parser is None or parser._parser is None:
             return 1
-        return self._parser.ErrorLineNumber
+        return parser._parser.ErrorLineNumber
 
     def getPublicId(self):
         parser = self._ref()
