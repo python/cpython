@@ -1,0 +1,10 @@
+*.dll
+*.exp
+*.ilk
+*.lib
+*.ncb
+*.opt
+*.pdb
+*.plg
+*.pyd
+temp-*
