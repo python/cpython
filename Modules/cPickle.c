@@ -2609,20 +2609,6 @@ load_none(Unpicklerobject *self)
 }
 
 static int
-load_false(Unpicklerobject *self) 
-{
-	PDATA_APPEND(self->stack, Py_False, -1);
-	return 0;
-}
-
-static int
-load_true(Unpicklerobject *self) 
-{
-	PDATA_APPEND(self->stack, Py_True, -1);
-	return 0;
-}
-
-static int
 bad_readline(void) 
 {
 	PyErr_SetString(UnpicklingError, "pickle data was truncated");
