@@ -227,7 +227,10 @@ class dispatcher:
                 status.append('%s:%d' % self.addr)
             except TypeError:
                 status.append(repr(self.addr))
-        return '<%s at %#x>' % (' '.join(status), id(self))
+        # On some systems (RH10) id() can be a negative number. 
+        # work around this.
+        MAX = 2L*sys.maxint+1
+        return '<%s at %#x>' % (' '.join(status), id(self)&MAX)
 
     def add_channel(self, map=None):
         #self.log_info('adding channel %s' % self)

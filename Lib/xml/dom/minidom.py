@@ -14,6 +14,7 @@ Todo:
  * SAX 2 namespaces
 """
 
+import sys
 import xml.dom
 
 from xml.dom import EMPTY_NAMESPACE, EMPTY_PREFIX, XMLNS_NAMESPACE, domreg
@@ -794,7 +795,10 @@ class Element(Node):
             self, namespaceURI, localName, NodeList())
 
     def __repr__(self):
-        return "<DOM Element: %s at %#x>" % (self.tagName, id(self))
+        # On some systems (RH10) id() can be a negative number. 
+        # work around this.
+        MAX = 2L*sys.maxint+1
+        return "<DOM Element: %s at %#x>" % (self.tagName, id(self)&MAX)
 
     def writexml(self, writer, indent="", addindent="", newl=""):
         # indent = current indentation

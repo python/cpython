@@ -649,7 +649,11 @@ class TarInfo(object):
         self.offset_data = 0       # the file's data starts here
 
     def __repr__(self):
-        return "<%s %r at %#x>" % (self.__class__.__name__,self.name,id(self))
+        # On some systems (RH10) id() can be a negative number. 
+        # work around this.
+        MAX = 2L*sys.maxint+1
+        return "<%s %r at %#x>" % (self.__class__.__name__,self.name,
+                                   id(self)&MAX)
 
     def frombuf(cls, buf):
         """Construct a TarInfo object from a 512 byte string buffer.
