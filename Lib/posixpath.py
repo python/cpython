@@ -417,7 +417,4 @@ symbolic links encountered in the path."""
 
     return filename
 
-if sys.platform == "darwin": 
-    supports_unicode_filenames = True
-else:
-    supports_unicode_filenames = False
+supports_unicode_filenames = False
