@@ -4,21 +4,18 @@ Project: core implementation
 Still to do
 -----------
 
-Make __dynamic__ the default (this requires more performance work --
-one particular test, test_descr.inherits(), is about 10x slower when
-__dynamic__ is 1. :-(  There are two ways to go about the performance
-work:
+More performance work -- one particular test, test_descr.inherits(),
+is still about 50% slower with dynamic classes. :-(  The approach of
+choice would be:
 
- a) Add shortcuts to the slot_tp_XXX to recognize a PyWrapperDescr
-    with the correct wrap_tp_XXX function.
-
- b) Add a list or dict of weak refs to derived classes to each dynamic
+    Add a list of weak refs to derived classes to each dynamic
     class, and trap setattr+delattr on the base class so that they
     update the tp_XXX slot in each derived class when the base class
     __XXX__ gets set or deleted.  More work, but more gain (zero waste
-    in slot_tp_XXX when __XXX__ is not overridden).
+    in slot_tp_XXX when __XXX__ is not overridden).  This is currently
+    awaiting Fred turning the weak ref API into a standard object API.
 
-Add __del__ handlers.
+Add __del__ handlers?
 
 Allow assignment to __bases__ and __dict__?
 
@@ -38,6 +35,9 @@ implemented.
 
 Done (mostly)
 -------------
+
+Make __dynamic__ the default.  *** done (but more performance work
+needs to be done). ***
 
 Treat all binary operators the same way as I just did for rich
 comparison: in a <op> b, if type(a) is not type(b) and isinstance(b,
