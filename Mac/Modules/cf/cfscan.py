@@ -31,7 +31,7 @@ def main():
 		"CFDictionary.h",
 ##		"CFNumber.h",
 ##		"CFPlugIn.h",
-##		"CFPreferences.h",
+		"CFPreferences.h",
 		"CFPropertyList.h",
 ##		"CFSet.h",
 		"CFString.h",
@@ -54,7 +54,7 @@ class MyScanner(Scanner_OSX):
 	def destination(self, type, name, arglist):
 		classname = "Function"
 		listname = "functions"
-		if arglist:
+		if arglist and name[:13] != 'CFPreferences':
 			t, n, m = arglist[0]
 			if t in OBJECTS and m == "InMode":
 				classname = "Method"
