@@ -217,6 +217,7 @@ PyZlib_decompress(self, args)
         {
         case(Z_STREAM_END):
 	    break;
+	case(Z_BUF_ERROR):
         case(Z_OK):
 	    /* need more memory */
 	    if (_PyString_Resize(&result_str, r_strlen << 1) == -1)
