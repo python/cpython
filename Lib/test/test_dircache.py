@@ -5,7 +5,7 @@
 
 import unittest
 from test_support import run_unittest, TESTFN
-import dircache, os, time
+import dircache, os, time, sys
 
 
 class DircacheTests(unittest.TestCase):
@@ -40,14 +40,20 @@ class DircacheTests(unittest.TestCase):
         # Check that cache is actually caching, not just passing through.
         self.assert_(dircache.listdir(self.tempdir) is entries)
 
-        # Sadly, dircache has the same granularity as stat.mtime, and so
-        # can't notice any changes that occured within 1 sec of the last
-        # time it examined a directory.
-        time.sleep(1)
-        self.writeTemp("test1")
-        entries = dircache.listdir(self.tempdir)
-        self.assertEquals(entries, ['test1'])
-        self.assert_(dircache.listdir(self.tempdir) is entries)
+        # Directories aren't "files" on Windows, and directory mtime has
+        # nothing to do with when files under a directory get created.
+        # That is, this test can't possibly work under Windows -- dircache
+        # is only good for capturing a one-shot snapshot there.
+
+        if sys.platform[:3] not in ('win', 'os2'):
+            # Sadly, dircache has the same granularity as stat.mtime, and so
+            # can't notice any changes that occured within 1 sec of the last
+            # time it examined a directory.
+            time.sleep(1)
+            self.writeTemp("test1")
+            entries = dircache.listdir(self.tempdir)
+            self.assertEquals(entries, ['test1'])
+            self.assert_(dircache.listdir(self.tempdir) is entries)
 
         ## UNSUCCESSFUL CASES
         self.assertEquals(dircache.listdir(self.tempdir+"_nonexistent"), [])
