@@ -179,12 +179,18 @@ class IOBinding:
         self.filename_change_hook = hook
 
     filename = None
+    dirname = None
 
     def set_filename(self, filename):
-        self.filename = filename
-        self.set_saved(1)
-        if self.filename_change_hook:
-            self.filename_change_hook()
+        if filename and os.path.isdir(filename):
+            self.filename = None
+            self.dirname = filename
+        else:
+            self.filename = filename
+            self.dirname = None
+            self.set_saved(1)
+            if self.filename_change_hook:
+                self.filename_change_hook()
 
     def open(self, event=None, editFile=None):
         if self.editwin.flist:
@@ -505,6 +511,8 @@ class IOBinding:
     def defaultfilename(self, mode="open"):
         if self.filename:
             return os.path.split(self.filename)
+        elif self.dirname:
+            return self.dirname, ""
         else:
             try:
                 pwd = os.getcwd()
