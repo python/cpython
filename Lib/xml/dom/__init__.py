@@ -67,6 +67,9 @@ class DOMException(Exception):
                 "DOMException should not be instantiated directly")
         apply(Exception.__init__, (self,) + args, kw)
 
+    def _get_code(self):
+        return self.code
+
 
 class IndexSizeErr(DOMException):
     code = INDEX_SIZE_ERR
