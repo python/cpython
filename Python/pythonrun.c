@@ -235,7 +235,7 @@ Py_Initialize(void)
 	   initialized by other means. Also set the encoding of
 	   stdin and stdout if these are terminals.  */
 
-	saved_locale = setlocale(LC_CTYPE, NULL);
+	saved_locale = strdup(setlocale(LC_CTYPE, NULL));
 	setlocale(LC_CTYPE, "");
 	codeset = nl_langinfo(CODESET);
 	if (codeset && *codeset) {
@@ -250,6 +250,7 @@ Py_Initialize(void)
 	} else
 		codeset = NULL;
 	setlocale(LC_CTYPE, saved_locale);
+	free(saved_locale);
 
 	if (codeset) {
 		sys_stream = PySys_GetObject("stdin");

@@ -590,7 +590,7 @@ static void
 setup_readline(void)
 {
 #ifdef SAVE_LOCALE
-	char *saved_locale = setlocale(LC_CTYPE, NULL);
+	char *saved_locale = strdup(setlocale(LC_CTYPE, NULL));
 #endif
 
 	using_history();
@@ -631,6 +631,7 @@ setup_readline(void)
 
 #ifdef SAVE_LOCALE
 	setlocale(LC_CTYPE, saved_locale); /* Restore locale */
+	free(saved_locale);
 #endif
 }
 
