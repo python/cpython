@@ -1,4 +1,4 @@
-# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:AEDataModel.h'
+# Generated from 'moes:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:AEDataModel.h'
 
 def FOUR_CHAR_CODE(x): return x
 typeBoolean = FOUR_CHAR_CODE('bool')

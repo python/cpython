@@ -271,8 +271,7 @@ PyMac_LoadCodeResourceModule(name, pathname)
 	Py_XDECREF(s);
 #endif
 	if (Py_VerboseFlag)
-		fprintf(stderr,
-			"import %s # pyd fragment %#s loaded from %s\n",
+		PySys_WriteStderr("import %s # pyd fragment %#s loaded from %s\n",
 			name, fragmentname, pathname);
 	Py_INCREF(m);
 	return m;
@@ -389,7 +388,7 @@ packageerror:
 		m = NULL;
 	}
 	if (Py_VerboseFlag)
-		fprintf(stderr, "import %s # pyc resource from %s\n",
+		PySys_WriteStderr("import %s # pyc resource from %s\n",
 			module, filename);
 	return m;
 error:
@@ -459,7 +458,7 @@ PyMac_FindModuleExtension(char *buf, int *lenp, char *module)
 		strcpy((char *)fnbuf+1+modnamelen, fdp->suffix);
 		fnbuf[0] = strlen((char *)fnbuf+1);
 		if (Py_VerboseFlag > 1)
-			fprintf(stderr, "# trying %s%s\n", buf, fdp->suffix);
+			PySys_WriteStderr("# trying %s%s\n", buf, fdp->suffix);
 		if ( FSMakeFSSpec(refnum, dirid, fnbuf, &fss) == noErr ) {
 			/* Found it. */
 #if 0

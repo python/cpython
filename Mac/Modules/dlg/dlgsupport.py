@@ -59,7 +59,7 @@ static pascal Boolean Dlg_UnivFilterProc(DialogPtr dialog,
 		Py_DECREF(args);
 	}
 	if (res == NULL) {
-		fprintf(stderr, "Exception in Dialog Filter\\n");
+		PySys_WriteStderr("Exception in Dialog Filter\\n");
 		PyErr_Print();
 		*itemHit = -1; /* Fake return item */
 		return 1; /* We handled it */
@@ -110,7 +110,7 @@ static pascal void Dlg_UnivUserItemProc(DialogPtr dialog,
 		Py_DECREF(args);
 	}
 	if (res == NULL) {
-		fprintf(stderr, "Exception in Dialog UserItem proc\\n");
+		PySys_WriteStderr("Exception in Dialog UserItem proc\\n");
 		PyErr_Print();
 	}
 	Py_XDECREF(res);

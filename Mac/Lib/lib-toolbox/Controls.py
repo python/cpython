@@ -1,4 +1,4 @@
-# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Controls.h'
+# Generated from 'moes:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Controls.h'
 
 def FOUR_CHAR_CODE(x): return x
 from TextEdit import *

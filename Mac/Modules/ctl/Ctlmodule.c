@@ -1419,7 +1419,7 @@ mytracker(ctl, part)
 	if (rv)
 		Py_DECREF(rv);
 	else
-		fprintf(stderr, "TrackControl: exception in tracker function\n");
+		PySys_WriteStderr("TrackControl: exception in tracker function\n");
 }
 
 

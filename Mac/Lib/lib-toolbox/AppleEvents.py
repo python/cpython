@@ -1,4 +1,4 @@
-# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:AppleEvents.h'
+# Generated from 'moes:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:AppleEvents.h'
 
 def FOUR_CHAR_CODE(x): return x
 from AEDataModel import *
