@@ -371,9 +371,22 @@ character properties database.
 
 \item[\code{\e Z}]Matches only at the end of the string.
 
-\item[\code{\e \e}] Matches a literal backslash.
-
 \end{list}
+
+Most of the standard escapes supported by Python string literals are
+also accepted by the regular expression parser:
+
+\begin{verbatim}
+\a      \b      \f      \n
+\r      \t      \v      \x
+\\
+\end{verbatim}
+
+Note that octal escapes are not included.  While the parser can
+attempt to determine whether a character is being specified by it's
+ordinal value expressed in octal, doing so yields an expression which
+is relatively difficult to maintain, as the same syntax is used to
+refer to numbered groups.
 
 
 \subsection{Matching vs. Searching \label{matching-searching}}
@@ -544,6 +557,13 @@ ignored.
   \versionadded{1.5.2}
 \end{funcdesc}
 
+\begin{funcdesc}{finditer}{pattern, string}
+  Return an iterator over all non-overlapping matches for the RE
+  \var{pattern} in \var{string}.  For each match, the iterator returns
+  a match object.  Empty matches are included in the result.
+  \versionadded{2.2}
+\end{funcdesc}
+
 \begin{funcdesc}{sub}{pattern, repl, string\optional{, count}}
   Return the string obtained by replacing the leftmost non-overlapping
   occurrences of \var{pattern} in \var{string} by the replacement
@@ -668,6 +688,10 @@ Identical to the \function{split()} function, using the compiled pattern.
 
 \begin{methoddesc}[RegexObject]{findall}{string}
 Identical to the \function{findall()} function, using the compiled pattern.
+\end{methoddesc}
+
+\begin{methoddesc}[RegexObject]{finditer}{string}
+Identical to the \function{finditer()} function, using the compiled pattern.
 \end{methoddesc}
 
 \begin{methoddesc}[RegexObject]{sub}{repl, string\optional{, count\code{ = 0}}}
