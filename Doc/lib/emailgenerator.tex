@@ -15,7 +15,7 @@ generate most email in a standards-compliant way, should handle MIME
 and non-MIME email messages just fine, and is designed so that the
 transformation from flat text, to an object tree via the
 \class{Parser} class,
-and back to flat text, be idempotent (the input is identical to the
+and back to flat text, is idempotent (the input is identical to the
 output).
 
 Here are the public methods of the \class{Generator} class:
@@ -27,7 +27,7 @@ object called \var{outfp} for an argument.  \var{outfp} must support
 the \method{write()} method and be usable as the output file in a
 Python 2.0 extended print statement.
 
-Optional \var{mangle_from_} is a flag that, when true, puts a ``>''
+Optional \var{mangle_from_} is a flag that, when true, puts a \samp{>}
 character in front of any line in the body that starts exactly as
 \samp{From } (i.e. \code{From} followed by a space at the front of the
 line).  This is the only guaranteed portable way to avoid having such
