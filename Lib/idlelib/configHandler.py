@@ -152,27 +152,45 @@ class IdleConf:
         """
         #build idle install path
         if __name__ != '__main__': # we were imported
-            idledir=os.path.dirname(__file__)
+            idleDir=os.path.dirname(__file__)
         else: # we were exec'ed (for testing only)
-            idledir=os.path.abspath(sys.path[0])
-        #print idledir
-        try: #build user home path
-            userdir = os.environ['HOME'] #real home directory
-        except KeyError:
-            userdir = os.getcwd() #hack for os'es without real homedirs
-        userdir=os.path.join(userdir,'.idlerc')
-        #print userdir
-        if not os.path.exists(userdir):
-            os.mkdir(userdir)
+            idleDir=os.path.abspath(sys.path[0])
+        userDir=self.GetUserCfgDir()
         configTypes=('main','extensions','highlight','keys')
         defCfgFiles={}
         usrCfgFiles={}
         for cfgType in configTypes: #build config file names
-            defCfgFiles[cfgType]=os.path.join(idledir,'config-'+cfgType+'.def')                    
-            usrCfgFiles[cfgType]=os.path.join(userdir,'config-'+cfgType+'.cfg')                    
+            defCfgFiles[cfgType]=os.path.join(idleDir,'config-'+cfgType+'.def')                    
+            usrCfgFiles[cfgType]=os.path.join(userDir,'config-'+cfgType+'.cfg')                    
         for cfgType in configTypes: #create config parsers
             self.defaultCfg[cfgType]=IdleConfParser(defCfgFiles[cfgType])
             self.userCfg[cfgType]=IdleUserConfParser(usrCfgFiles[cfgType])
+    
+    def GetUserCfgDir(self):
+        """
+        Creates (if required) and returns a filesystem directory for storing 
+        user config files.
+        """
+        cfgDir='.idlerc'
+        userDir=os.path.expanduser('~')
+        if userDir != '~': #'HOME' exists as a key in os.environ
+            if not os.path.exists(userDir):
+                warn=('\n Warning: HOME environment variable points to\n '+
+                        userDir+'\n but the path does not exist.\n')
+                sys.stderr.write(warn)
+                userDir='~'
+        if userDir=='~': #we still don't have a home directory
+            #traditionally idle has defaulted to os.getcwd(), is this adeqate?
+            userDir = os.getcwd() #hack for no real homedir
+        userDir=os.path.join(userDir,cfgDir)    
+        if not os.path.exists(userDir):
+            try: #make the config dir if it doesn't exist yet 
+                os.mkdir(userDir)
+            except IOError:
+                warn=('\n Warning: unable to create user config directory\n '+
+                        userDir+'\n')
+                sys.stderr.write(warn)
+        return userDir
     
     def GetOption(self, configType, section, option, default=None, type=None):
         """
