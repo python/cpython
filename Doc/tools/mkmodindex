@@ -161,53 +161,53 @@ platform they are available on.</p>
 
 """
 
-NAVIGATION = """\
-<div class=navigation>
-<table width="100%%" cellpadding=0 cellspacing=2>
+NAVIGATION = '''\
+<div class="navigation">
+<table width="100%%" cellpadding="0" cellspacing="2">
 <tr>
-<td><img width=32 height=32 align=bottom border=0 alt=""
+<td><img width="32" height="32" align="bottom" border="0" alt=""
  src="%(iconserver)s/blank.%(imgtype)s"></td>
 <td><a href="%(uplink)s"
- title="%(uptitle)s"><img width=32 height=32 align=bottom border=0
+ title="%(uptitle)s"><img width="32" height="32" align="bottom" border="0"
  alt="%(uplinkalt)s"
  src="%(iconserver)s/%(uplinkicon)s.%(imgtype)s"></a></td>
-<td><img width=32 height=32 align=bottom border=0 alt=""
+<td><img width="32" height="32" align="bottom" border="0" alt=""
  src="%(iconserver)s/blank.%(imgtype)s"></td>
-<td align=center bgcolor="#99CCFF" width="100%%">
- <b class=title>%(title)s</b></td>
-<td><img width=32 height=32 align=bottom border=0 alt=""
+<td align="center" bgcolor="#99CCFF" width="100%%">
+ <b class="title">%(title)s</b></td>
+<td><img width="32" height="32" align="bottom" border="0" alt=""
  src="%(iconserver)s/blank.%(imgtype)s"></td>
-<td><img width=32 height=32 align=bottom border=0 alt=""
+<td><img width="32" height="32" align="bottom" border="0" alt=""
  src="%(iconserver)s/blank.%(imgtype)s"></td>
-<td><img width=32 height=32 align=bottom border=0 alt=""
+<td><img width="32" height="32" align="bottom" border="0" alt=""
  src="%(iconserver)s/blank.%(imgtype)s"></td>
 </tr></table>
-<b class=navlabel>Up:</b> <span class=sectref><a href="%(uplink)s"
+<b class="navlabel">Up:</b> <span class="sectref"><a href="%(uplink)s"
  title="%(uptitle)s">%(uptitle)s</A></span>
 <br></div>
-"""
+'''
 
-HEAD = """\
+HEAD = '''\
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
-<title>Global Module Index</title>
-<meta name="description" content="%(title)s">
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-<link rel="STYLESHEET" href="lib/lib.css">
+  <title>Global Module Index</title>
+  <meta name="description" content="%(title)s">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <link rel="STYLESHEET" href="lib/lib.css">
 </head>
 <body bgcolor=white>
-""" + NAVIGATION + """\
+''' + NAVIGATION + '''\
 <hr>
 
 <h2>%(title)s</h2>
 
-"""
+'''
 
-TAIL = "<hr>\n" + NAVIGATION + """\
+TAIL = "<hr>\n" + NAVIGATION + '''\
 %(address)s</body>
 </html>
-"""
+'''
 
 if __name__ == "__main__":
     main()
