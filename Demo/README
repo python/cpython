@@ -49,7 +49,3 @@ threads		Demos that use the 'thread' module.  (Currently these
 
 tkinter		Demos using the Tk interface (including Matt Conway's
 		excellent set of demos).
-
-
---Guido van Rossum, CWI, Amsterdam <mailto:Guido.van.Rossum@cwi.nl>
-<http://www.cwi.nl/cwi/people/Guido.van.Rossum.html>
