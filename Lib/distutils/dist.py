@@ -1181,11 +1181,7 @@ class DistributionMetadata:
         value = [v.strip() for v in value]
         for v in value:
             import distutils.versionpredicate
-            ver = distutils.versionpredicate.check_provision(v)
-            if ver:
-                import distutils.version
-                sv = distutils.version.StrictVersion()
-                sv.parse(ver.strip()[1:-1])
+            distutils.versionpredicate.split_provision(v)
         self.provides = value
 
     def get_obsoletes(self):
