@@ -35,7 +35,7 @@ class MiniApplication:
 		self.quitid = 2
 		Menu.ClearMenuBar()
 		self.applemenu = applemenu = Menu.NewMenu(self.appleid, "\024")
-		applemenu.AppendMenu("About %s...;(-" % self.__class__.__name__)
+		applemenu.AppendMenu("%s;(-" % self.getaboutmenutext())
 		applemenu.AppendResMenu('DRVR')
 		applemenu.InsertMenu(0)
 		self.quitmenu = Menu.NewMenu(self.quitid, "File")
@@ -104,6 +104,9 @@ class MiniApplication:
 	
 	def getabouttext(self):
 		return self.__class__.__name__
+	
+	def getaboutmenutext(self):
+		return "About %s\311" % self.__class__.__name__
 
 
 class AEServer:
