@@ -115,6 +115,111 @@ PyErr_Occurred()
 	return tstate->curexc_type;
 }
 
+
+int
+PyErr_GivenExceptionMatches(err, exc)
+     PyObject *err, *exc;
+{
+	if (PyTuple_Check(exc)) {
+		int i, n;
+		n = PyTuple_Size(exc);
+		for (i = 0; i < n; i++) {
+			/* Test recursively */
+		     if (PyErr_GivenExceptionMatches(
+			     err, PyTuple_GET_ITEM(exc, i)))
+		     {
+			     return 1;
+		     }
+		}
+		return 0;
+	}
+	/* err might be an instance, so check its class. */
+	if (PyInstance_Check(err))
+		err = (PyObject*)((PyInstanceObject*)err)->in_class;
+
+	if (PyClass_Check(err) && PyClass_Check(exc))
+		return PyClass_IsSubclass(err, exc);
+
+	return err == exc;
+}
+	
+
+int
+PyErr_ExceptionMatches(exc)
+     PyObject *exc;
+{
+	return PyErr_GivenExceptionMatches(PyErr_Occurred(), exc);
+}
+
+
+/* Used in many places to normalize a raised exception, including in
+   eval_code2(), do_raise(), and PyErr_Print()
+*/
+void
+PyErr_NormalizeException(exc, val, tb)
+     PyObject **exc;
+     PyObject **val;
+     PyObject **tb;
+{
+	PyObject *type = *exc;
+	PyObject *value = *val;
+	PyObject *inclass = NULL;
+
+	/* If PyErr_SetNone() was used, the value will have been actually
+	   set to NULL.
+	*/
+	if (!value) {
+		value = Py_None;
+		Py_INCREF(value);
+	}
+
+	if (PyInstance_Check(value))
+		inclass = (PyObject*)((PyInstanceObject*)value)->in_class;
+
+	/* Normalize the exception so that if the type is a class, the
+	   value will be an instance.
+	*/
+	if (PyClass_Check(type)) {
+		/* if the value was not an instance, or is not an instance
+		   whose class is (or is derived from) type, then use the
+		   value as an argument to instantiation of the type
+		   class.
+		*/
+		if (!inclass || !PyClass_IsSubclass(inclass, type)) {
+			PyObject *args, *res;
+
+			if (value == Py_None)
+				args = Py_BuildValue("()");
+			else if (PyTuple_Check(value)) {
+				Py_INCREF(value);
+				args = value;
+			}
+			else
+				args = Py_BuildValue("(O)", value);
+
+			if (args == NULL)
+				goto finally;
+			res = PyEval_CallObject(type, args);
+			Py_DECREF(args);
+			if (res == NULL)
+				goto finally;
+			Py_DECREF(value);
+			value = res;
+		}
+	}
+	*exc = type;
+	*val = value;
+	return;
+finally:
+	Py_DECREF(*exc);
+	Py_DECREF(*val);
+	Py_XDECREF(*tb);
+	PyErr_Fetch(exc, val, tb);
+	/* normalize recursively */
+	PyErr_NormalizeException(exc, val, tb);
+}
+
+
 void
 PyErr_Fetch(p_type, p_value, p_traceback)
 	PyObject **p_type;
