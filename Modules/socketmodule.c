@@ -293,6 +293,16 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #define SEGMENT_SIZE 65535
 #endif
 
+/*
+ * Constants for getnameinfo()
+ */
+#if !defined(NI_MAXHOST)
+#define NI_MAXHOST 1025
+#endif
+#if !defined(NI_MAXSERV)
+#define NI_MAXSERV 32
+#endif
+
 /* XXX There's a problem here: *static* functions are not supposed to have
    a Py prefix (or use CapitalizedWords).  Later... */
 
