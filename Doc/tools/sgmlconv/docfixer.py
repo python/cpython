@@ -227,6 +227,22 @@ def cleanup_trailing_parens(doc, element_names):
                     queue.append(child)
 
 
+def cleanup_synopses(doc):
+    # Actually, this should build a "moduleinfo" element from various
+    # parts of the meta-information in the section.  <moduleinfo> needs
+    # some design work before we can really do anything real.
+    synopses = doc.getElementsByTagName("modulesynopsis")
+    for node in synopses:
+        node._node.name = "synopsis"
+        parent = node.parentNode
+        if parent.tagName == "section":
+            children = parent.childNodes
+            parent.removeChild(node)
+            parent.insertBefore(node, children[2])
+            text = doc.createTextNode("\n  ")
+            parent.insertBefore(text, node)
+
+
 _token_rx = re.compile(r"[a-zA-Z][a-zA-Z0-9.-]*$")
   
 def write_esis(doc, ofp, knownempty):
@@ -275,6 +291,7 @@ def convert(ifp, ofp):
         })
     cleanup_root_text(doc)
     cleanup_trailing_parens(doc, ["function", "method", "cfunction"])
+    cleanup_synopses(doc)
     #
     d = {}
     for gi in p.get_empties():
