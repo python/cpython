@@ -219,10 +219,10 @@ SRE_AT(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
 	switch (at) {
 	case 'a':
 		/* beginning */
-		return (ptr == state->beginning);
+		return ((void*) ptr == state->beginning);
 	case 'z':
 		/* end */
-		return (ptr == state->end);
+		return ((void*) ptr == state->end);
 	case 'b':
 		/* word boundary */
 		if (state->beginning == state->end)
