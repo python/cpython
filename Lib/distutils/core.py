@@ -112,16 +112,7 @@ def setup (**attrs):
         except KeyboardInterrupt:
             raise SystemExit, "interrupted"
         except (IOError, os.error), exc:
-            # check for Python 1.5.2-style {IO,OS}Error exception objects
-            if hasattr (exc, 'filename') and hasattr (exc, 'strerror'):
-                if exc.filename:
-                    error = "error: %s: %s" % (exc.filename, exc.strerror)
-                else:
-                    # two-argument functions in posix module don't
-                    # include the filename in the exception object!
-                    error = "error: %s" % exc.strerror
-            else:
-                error = "error: " + str(exc[-1])
+            error = grok_environment_error(exc)
 
             if DEBUG:
                 sys.stderr.write(error + "\n")
