@@ -40,7 +40,7 @@ Options specifying formats to build:
     --dvi		"DeVice Indepentent" format from TeX
     --text		ASCII text
 
-    More than one output format may be specified.
+    More than one output format may be specified, or --all.
 
 HTML options:
     --address, -a	Specify an address for page footers.
@@ -59,6 +59,10 @@ Other options:
 			(stderr is also lost,  sorry; see *.how for errors)
 
 EOF
+    if [ "$2" ] ; then
+	echo "$2"
+	echo
+    fi
 
     exit $1
 }
@@ -159,6 +163,15 @@ cleanup() {
 # figure out what our targets are:
 while [ "$1" ] ; do
     case "$1" in
+	--all|--al)
+	    BUILD_PDF=true
+	    BUILD_PS=true
+	    BUILD_DVI=true
+	    BUILD_HTML=true
+	    BUILD_TEXT=true
+	    USE_DEFAULT_FORMAT=false
+	    shift 1
+	    ;;
 	--pdf|--pd)
 	    BUILD_PDF=true
 	    USE_DEFAULT_FORMAT=false
@@ -243,8 +256,10 @@ if [ $# = 0 ] ; then
     COUNT=`ls -1 *.tex | wc -l | sed 's/[ 	]//g'`
     if [ "$COUNT" -eq 1 ] ; then
 	set -- `ls -1 *.tex`
+    elif [ "$COUNT" -gt 1 ] ; then
+	usage 2 "Could not deduce which file(s) to process as HOWTO documents."
     else
-	usage 2
+	usage 2 "No file to process."
     fi
 fi
 
