@@ -62,7 +62,8 @@ RECIP_BPF = 2**-BPF
 try:
     from os import urandom as _urandom
     from binascii import hexlify as _hexlify
-except ImportError:
+    _urandom(1)                         # verify that urandom is implemented
+except (ImportError, NotImplementedError):
     _urandom = None
 
 
