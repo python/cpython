@@ -123,11 +123,14 @@ add2lib:	$(OBJS)
 		$(AR) cr $(LIBRARY) $(OBJS)
 		touch add2lib
 
+# Use ``EXE=.exe'' for Unix emulations on DOS/Windows
+EXE=
+
 # This target is used by the master Makefile to link the final binary.
 link:		$(MAINOBJ)
 		$(LINKCC) $(LDFLAGS) $(OPT) $(LINKFORSHARED) $(MAINOBJ) \
 		  $(LIBRARY) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python $(LDLAST)
-		mv python ../python
+		mv python$(EXE) ../python$(EXE)
 
 clean:
 		-rm -f *.o python core *~ [@,#]* *.old *.orig *.rej add2lib
