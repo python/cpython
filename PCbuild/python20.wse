@@ -1897,6 +1897,14 @@ end
 item: Remark
 end
 item: Install File
+  Source=..\Lib\email\*.py
+  Destination=%MAINDIR%\Lib\email
+  Description=Library email package
+  Flags=0000000000000010
+end
+item: Remark
+end
+item: Install File
   Source=..\lib\distutils\*.py
   Destination=%MAINDIR%\Lib\distutils
   Description=Distribution utility modules
@@ -2216,6 +2224,14 @@ end
 item: Install File
   Source=..\lib\test\*.out
   Destination=%MAINDIR%\Lib\test
+  Description=Python Test files
+  Flags=0000000000000010
+end
+item: Remark
+end
+item: Install File
+  Source=..\lib\test\data\*.*
+  Destination=%MAINDIR%\Lib\test\data
   Description=Python Test files
   Flags=0000000000000010
 end
