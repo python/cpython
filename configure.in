@@ -711,48 +711,6 @@ AC_MSG_RESULT($withval)
 LIBS="$withval $LIBS"
 ], AC_MSG_RESULT(no))
 
-#
-# These are used to generate Setup.config.  They autoconfigure several
-# features that are otherwise severe pains in the butt.
-#
-# ncurses
-AC_SUBST(USE_NCURSES_MODULE)
-AC_CHECK_LIB(ncurses, initscr, 
-	[USE_NCURSES_MODULE=""],
-	[USE_NCURSES_MODULE="#"],
-	-ltermcap)
-# GNU readline
-AC_SUBST(USE_READLINE_MODULE)
-AC_CHECK_LIB(readline, readline, 
-	[USE_READLINE_MODULE=""],
-	[USE_READLINE_MODULE="#"], 
-	-ltermcap)
-# gdbm(3)
-AC_SUBST(USE_GDBM_MODULE)
-AC_SUBST(HAVE_LIBGDBM)
-AC_CHECK_LIB(gdbm, gdbm_open, 
-	[USE_GDBM_MODULE="" 
-	HAVE_LIBGDBM=-lgdbm],
-	[USE_GDBM_MODULE="#"
-	HAVE_LIBGDBM=""])
-# ndbm(3)
-AC_SUBST(USE_NDBM_MODULE)
-AC_SUBST(HAVE_LIBNDBM)
-AC_CHECK_LIB(ndbm, ndbm_open, 
-	[USE_NDBM_MODULE=""
-	HAVE_LIBNDBM=-lndbm],
-	[USE_NDBM_MODULE="#"
-	HAVE_LIBNDBM=""])
-# crypt(3)
-AC_SUBST(USE_CRYPT_MODULE)
-AC_SUBST(HAVE_LIBCRYPT)
-AC_CHECK_LIB(crypt, crypt, 
-	[USE_CRYPT_MODULE=""
-	HAVE_LIBCRYPT=-lcrypt],
-	[USE_CRYPT_MODULE="#"
-	HAVE_LIBCRYPT=""])
-
-
 # Determine if signalmodule should be used.
 AC_SUBST(USE_SIGNAL_MODULE)
 AC_SUBST(SIGNAL_OBJS)
@@ -897,85 +855,6 @@ else
     AC_DEFINE(WITH_CYCLE_GC)
 fi
 AC_MSG_RESULT($with_cycle_gc)
-
-# Check for DBM support
-AC_SUBST(USE_DBM_MODULE)
-USE_DBM_MODULE=""
-AC_MSG_CHECKING(for --with-dbm)
-AC_ARG_WITH(dbm,
-[  --with(out)-dbm                 disable/enable dbm module])
-
-# enabled by default but one of the dbm.h files must be found
-if test "$ac_cv_header_ndbm_h" = "yes" -o "$ac_cv_header_db1_ndbm_h" = "yes" -o "$ac_cv_header_gdbm_ndbm_h" = "yes"
-then
-    if test "$with_dbm" != "no"
-    then with_dbm="yes"
-    fi
-else
-    # make sure user knows why dbm support wasn't enabled even though
-    # s/he requested it
-    if test "$with_dbm" = "yes"
-    then echo $ac_n "(requested but no ndbm.h was found) $ac_c"
-    fi
-    with_dbm="no"
-fi
-
-if test "$with_dbm" = "no"
-then
-    USE_DBM_MODULE="#"
-else
-    AC_DEFINE(WITH_LIBNDBM)
-fi
-AC_MSG_RESULT($with_dbm)
-
-if test "$with_dbm" = "yes"
-then
-    # check for libndbm
-    AC_SUBST(HAVE_LIBNDBM)
-    AC_CHECK_FUNC(dbmopen, [HAVE_LIBNDBM=], [HAVE_LIBNDBM=-lndbm])
-fi
-
-# Check for LIBDB support
-# either --with-libdb or, in its absence, the presence of db.h
-AC_SUBST(USE_BSDDB_MODULE)
-USE_BSDDB_MODULE=""
-AC_MSG_CHECKING(for --with-libdb)
-AC_ARG_WITH(libdb,
-[  --with(out)-libdb               disable/enable bsddb module])
-
-# enabled by default, but db.h must be found
-if test "$ac_cv_header_db_h" = "yes"
-then
-    if test "$with_libdb" != "no"
-    then with_libdb="yes"
-    fi
-else
-    # make sure user knows why bsddb support wasn't enabled even
-    # though s/he requested it
-    if test "$with_libdb" = "yes"
-    then echo $ac_n "(requested, but db.h was not found) $ac_c"
-    fi
-    with_libdb="no"
-fi
-
-if test "$with_libdb" = "no"
-then
-    USE_BSDDB_MODULE="#"
-else
-    AC_DEFINE(WITH_LIBDB)
-fi
-AC_MSG_RESULT($with_libdb)
-
-if test "$with_libdb" = "yes"
-then
-    # check for libdb; BSD systems have the DB routines in libc  --tg
-    AC_SUBST(HAVE_LIBDB)
-    # If dbopen is not in libc, then checking whether it is in libdb
-    # is difficult: db_185.h may #define it as __db185_open
-    # Instead, we just trust it is in libdb; linking will fail if it
-    # is not.
-    AC_CHECK_FUNC(dbopen, [HAVE_LIBDB=], [HAVE_LIBDB=-ldb])
-fi
 
 # Check for --with-wctype-functions
 AC_MSG_CHECKING(for --with-wctype-functions)
