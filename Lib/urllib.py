@@ -59,14 +59,11 @@ def urlopen(url, data=None):
 		return _urlopener.open(url)
 	else:
 		return _urlopener.open(url, data)
-def urlretrieve(url, filename=None):
+def urlretrieve(url, filename=None, reporthook=None):
 	global _urlopener
 	if not _urlopener:
 		_urlopener = FancyURLopener()
-	if filename:
-		return _urlopener.retrieve(url, filename)
-	else:
-		return _urlopener.retrieve(url)
+        return _urlopener.retrieve(url, filename, reporthook)
 def urlcleanup():
 	if _urlopener:
 		_urlopener.cleanup()
@@ -171,7 +168,7 @@ class URLopener:
 	# External interface
 	# retrieve(url) returns (filename, None) for a local object
 	# or (tempfilename, headers) for a remote object
-	def retrieve(self, url, filename=None):
+	def retrieve(self, url, filename=None, reporthook=None):
 		url = unwrap(url)
 		if self.tempcache and self.tempcache.has_key(url):
 			return self.tempcache[url]
@@ -200,10 +197,21 @@ class URLopener:
 			self.tempcache[url] = result
 		tfp = open(filename, 'wb')
 		bs = 1024*8
+		size = -1
+		blocknum = 1
+		if reporthook:
+			if headers.has_key("content-length"):
+                            size = int(headers["Content-Length"])
+			reporthook(0, bs, size)
 		block = fp.read(bs)
+		if reporthook:
+			reporthook(1, bs, size)
 		while block:
 			tfp.write(block)
 			block = fp.read(bs)
+			blocknum = blocknum + 1
+			if reporthook:
+				reporthook(blocknum, bs, size)
 		fp.close()
 		tfp.close()
 		del fp
@@ -366,9 +374,14 @@ class URLopener:
 				if string.lower(attr) == 'type' and \
 				   value in ('a', 'A', 'i', 'I', 'd', 'D'):
 					type = string.upper(value)
-			return addinfourl(
-				self.ftpcache[key].retrfile(file, type),
-				noheaders(), "ftp:" + url)
+                        (fp, retrlen) = self.ftpcache[key].retrfile(file, type)
+                        if retrlen >= 0:
+                            import mimetools, StringIO
+                            headers = mimetools.Message(StringIO.StringIO(
+                                'Content-Length: %d\n' % retrlen))
+                        else:
+                            headers = noheaders()
+                        return addinfourl(fp, headers, "ftp:" + url)
 		except ftperrors(), msg:
 			raise IOError, ('ftp error', msg), sys.exc_info()[2]
 
@@ -574,7 +587,7 @@ class ftpwrapper:
 			# Try to retrieve as a file
 			try:
 				cmd = 'RETR ' + file
-				conn = self.ftp.transfercmd(cmd)
+				conn = self.ftp.ntransfercmd(cmd)
 			except ftplib.error_perm, reason:
 				if reason[:3] != '550':
 					raise IOError, ('ftp error', reason), \
@@ -585,9 +598,10 @@ class ftpwrapper:
 			# Try a directory listing
 			if file: cmd = 'LIST ' + file
 			else: cmd = 'LIST'
-			conn = self.ftp.transfercmd(cmd)
+			conn = self.ftp.ntransfercmd(cmd)
 		self.busy = 1
-		return addclosehook(conn.makefile('rb'), self.endtransfer)
+                # Pass back both a suitably decorated object and a retrieval length
+		return (addclosehook(conn[0].makefile('rb'), self.endtransfer), conn[1])
 	def endtransfer(self):
 		if not self.busy:
 			return
@@ -977,6 +991,10 @@ def test1():
 	print round(t1 - t0, 3), 'sec'
 
 
+def reporthook(blocknum, blocksize, totalsize):
+    # Report during remote transfers
+    print "Block number: %d, Block size: %d, Total size: %d" % (blocknum, blocksize, totalsize)
+
 # Test program
 def test(args=[]):
 	if not args:
@@ -985,13 +1003,13 @@ def test(args=[]):
 			'file:/etc/passwd',
 			'file://localhost/etc/passwd',
 			'ftp://ftp.python.org/etc/passwd',
-			'gopher://gopher.micro.umn.edu/1/',
+## 			'gopher://gopher.micro.umn.edu/1/',
 			'http://www.python.org/index.html',
 			]
 	try:
 		for url in args:
 			print '-'*10, url, '-'*10
-			fn, h = urlretrieve(url)
+			fn, h = urlretrieve(url, None, reporthook)
 			print fn, h
 			if h:
 				print '======'
