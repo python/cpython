@@ -42,6 +42,7 @@ HTML options:
     --split, -s		Specify a section level for page splitting.
 
 Other options:
+    --a4		Format for A4 paper.
     --help, -H		Show this text.
     --logging, -l	Log stdout and stderr to a file (*.how).
     --debugging, -D	Echo commands as they are executed.
