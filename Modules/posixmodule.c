@@ -24,27 +24,31 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* POSIX module implementation */
 
+#ifdef AMOEBA
+#define NO_LSTAT
+#define SYSV
+#endif
+
 #include <signal.h>
 #include <string.h>
 #include <setjmp.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #ifdef SYSV
+#define UTIME_STRUCT
 #include <dirent.h>
 #define direct dirent
-#else
-#include <sys/dir.h>
+#ifdef i386
+#define mode_t int
 #endif
+#else /* !SYSV */
+#include <sys/dir.h>
+#endif /* !SYSV */
 
 #include "allobjects.h"
 #include "modsupport.h"
 
 extern char *strerror PROTO((int));
-
-#ifdef AMOEBA
-#define NO_LSTAT
-#endif
 
 
 /* Return a dictionary corresponding to the POSIX environment table */
@@ -258,6 +262,21 @@ posix_mkdir(self, args)
 	return posix_strint(args, mkdir);
 }
 
+#ifdef i386
+int
+rename(from, to)
+	char *from;
+	char *to;
+{
+	int status;
+	/* XXX Shouldn't this unlink the destination first? */
+	status = link(from, to);
+	if (status != 0)
+		return status;
+	return unlink(from);
+}
+#endif
+
 static object *
 posix_rename(self, args)
 	object *self;
@@ -321,26 +340,44 @@ posix_unlink(self, args)
 	return posix_1str(args, unlink);
 }
 
+#ifdef UTIME_STRUCT
+#include <utime.h>
+#endif
+
 static object *
-posix_utimes(self, args)
+posix_utime(self, args)
 	object *self;
 	object *args;
 {
 	object *path;
-	struct timeval tv[2];
+
+#ifdef UTIME_STRUCT
+	struct utimbuf buf;
+#define ATIME buf.actime
+#define MTIME buf.modtime
+#define UTIME_ARG &buf
+
+#else
+	time_t buf[2];
+#define ATIME buf[0]
+#define MTIME buf[1]
+#define UTIME_ARG buf
+#endif
+
 	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2) {
 		err_badarg();
 		return NULL;
 	}
 	if (!getstrarg(gettupleitem(args, 0), &path) ||
-				!getlonglongargs(gettupleitem(args, 1),
-					&tv[0].tv_sec, &tv[1].tv_sec))
+	    !getlonglongargs(gettupleitem(args, 1), &ATIME, &MTIME))
 		return NULL;
-	tv[0].tv_usec = tv[1].tv_usec = 0;
-	if (utimes(getstringvalue(path), tv) < 0)
+	if (utime(getstringvalue(path), UTIME_ARG) < 0)
 		return posix_error();
 	INCREF(None);
 	return None;
+#undef UTIME_ARG
+#undef ATIME
+#undef MTIME
 }
 
 
@@ -396,7 +433,8 @@ static struct methodlist posix_methods[] = {
 	{"system",	posix_system},
 	{"umask",	posix_umask},
 	{"unlink",	posix_unlink},
-	{"utimes",	posix_utimes},
+	{"utime",	posix_utime},
+	{"utimes",	posix_utime},	/* XXX for compatibility only */
 #ifndef NO_LSTAT
 	{"lstat",	posix_lstat},
 	{"readlink",	posix_readlink},
