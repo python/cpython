@@ -1417,7 +1417,7 @@ python setup.py bdist --formats=wininst
 If you have a pure module distribution (only containing pure Python
 modules and packages), the resulting installer will be version
 independent and have a name like \file{foo-1.0.win32.exe}.  These
-installers can even be created on \UNIX{} or MacOS platforms.
+installers can even be created on \UNIX{} or Mac OS platforms.
 
 If you have a non-pure distribution, the extensions can only be
 created on a Windows platform, and will be Python version dependent.
@@ -1454,13 +1454,13 @@ script must be specified, and the script filename must also be listed
 in the scripts argument to the setup function.
 
 This script will be run at installation time on the target system
-after all the files have been copied, with argv[1] set to '-install',
-and again at uninstallation time before the files are removed with argv[1]
-set to '-remove'.
+after all the files have been copied, with \code{argv[1]} set to
+\programopt{-install}, and again at uninstallation time before the
+files are removed with \code{argv[1]} set to \programopt{-remove}.
 
 The installation script runs embedded in the windows installer, every
-output (sys.stdout, sys.stderr) is redirected into a buffer and will
-be displayed in the GUI after the script has finished.
+output (\code{sys.stdout}, \code{sys.stderr}) is redirected into a
+buffer and will be displayed in the GUI after the script has finished.
 
 Some functions especially useful in this context are available in the
 installation script.
@@ -1502,11 +1502,11 @@ to the folder.  'csidl_string' must be one of the following strings:
 "CSIDL_FONTS"
 \end{verbatim}
 
-If the folder cannot be retrieved, OSError is raised.
+If the folder cannot be retrieved, \exception{OSError} is raised.
 
 Which folders are available depends on the exact Windows version, and probably
 also the configuration. For details refer to Microsoft's documentation of the
-\code{SHGetSpecialFolderPath} function.
+\cfunction{SHGetSpecialFolderPath()} function.
 
 \begin{verbatim}
 create_shortcut(target, description, filename[, arguments[,
@@ -1522,7 +1522,7 @@ This function creates a shortcut.
 \var{iconpath} is the file containing the icon for the shortcut,
 and \var{iconindex} is the index of the icon in the file
 \var{iconpath}.  Again, for details consult the Microsoft
-documentation for the \code{IShellLink} interface.
+documentation for the \class{IShellLink} interface.
 
 \section{Registering with the Package Index}
 \label{package-index}
