@@ -28,18 +28,19 @@ whose values are \class{Morsel}s. Note that upon setting a key to
 a value, the value is first converted to a \class{Morsel} containing
 the key and the value.
 
-If \var{input} is given, it is passed to the \method{load} method.
+If \var{input} is given, it is passed to the \method{load()} method.
 \end{classdesc}
 
 \begin{classdesc}{SimpleCookie}{\optional{input}}
-This class derives from \class{BaseCookie} and overrides \method{value_decode}
-and \method{value_encode} to be the identity and \function{str()} respectively.
+This class derives from \class{BaseCookie} and overrides
+\method{value_decode()} and \method{value_encode()} to be the identity
+and \function{str()} respectively.
 \end{classdesc}
 
 \begin{classdesc}{SerialCookie}{\optional{input}}
-This class derives from \class{BaseCookie} and overrides \method{value_decode}
-and \method{value_encode} to be the \function{pickle.loads()} and 
-\function{pickle.dumps}.  
+This class derives from \class{BaseCookie} and overrides
+\method{value_decode()} and \method{value_encode()} to be the
+\function{pickle.loads()} and \function{pickle.dumps()}.  
 
 Do not use this class.  Reading pickled values from a cookie is a
 security hole, as arbitrary client-code can be run on
@@ -49,11 +50,11 @@ compatibility.
 \end{classdesc}
 
 \begin{classdesc}{SmartCookie}{\optional{input}}
-This class derives from \class{BaseCookie}. It overrides \method{value_decode}
-to be \function{pickle.loads()} if it is a valid pickle, and otherwise
-the value itself. It overrides \method{value_encode} to be 
-\function{pickle.dumps()} unless it is a string, in which case it returns
-the value itself.
+This class derives from \class{BaseCookie}. It overrides
+\method{value_decode()} to be \function{pickle.loads()} if it is a
+valid pickle, and otherwise the value itself. It overrides
+\method{value_encode()} to be \function{pickle.dumps()} unless it is a
+string, in which case it returns the value itself.
 
 The same security warning from \class{SerialCookie} applies here.
 \end{classdesc}
@@ -75,18 +76,19 @@ so it can be overridden.
 
 \begin{methoddesc}[BaseCookie]{value_encode}{val}
 Return an encoded value. \var{val} can be any type, but return value
-must be a string. This method does nothing in \class{BaseCookie} --- it exists
-so it can be overridden
+must be a string. This method does nothing in \class{BaseCookie} ---
+it exists so it can be overridden
 
-In general, it should be the case that \method{value_encode} and 
-\method{value_decode} are inverses on the range of \var{value_decode}.
-\end{methoddesc}.
+In general, it should be the case that \method{value_encode()} and 
+\method{value_decode()} are inverses on the range of
+\var{value_decode}.
+\end{methoddesc}
 
 \begin{methoddesc}[BaseCookie]{output}{\optional{attrs\optional{, header\optional{, sep}}}}
 Return a string representation suitable to be sent as HTTP headers.
-\var{attrs} and \var{header} are sent to each \class{Morsel}'s \method{output}
-method. \var{sep} is used to join the headers together, and is by default
-a newline.
+\var{attrs} and \var{header} are sent to each \class{Morsel}'s
+\method{output()} method. \var{sep} is used to join the headers
+together, and is by default a newline.
 \end{methoddesc}
 
 \begin{methoddesc}[BaseCookie]{js_output}{\optional{attrs}}
@@ -161,7 +163,7 @@ Return an embeddable JavaScript snippet, which, if run on a browser which
 supports JavaScript, will act the same as if the HTTP header was sent.
 
 The meaning for \var{attrs} is the same as in \method{output()}.
-\end{methoddesc}.
+\end{methoddesc}
 
 \begin{methoddesc}[Morsel]{OutputString}{\optional{attrs}}
 Return a string representing the Morsel, without any surrounding HTTP
