@@ -95,7 +95,7 @@ TARGET=		python
 PYTHON=		python
 
 # Add more -I and -D options here
-CFLAGS=		$(OPT) -I$(INCLUDEPY) -I$(LIBPL) $(DEFS)
+CFLAGS=		$(OPT) -I$(INCLUDEPY) -I$(EXECINCLUDEPY) $(DEFS)
 
 # These two variables can be set in Setup to merge extensions.
 # See example[23].
@@ -148,6 +148,7 @@ SCRIPTDIR=	$(prefix)/lib
 BINLIBDEST=	$(LIBDIR)/python$(VERSION)
 LIBDEST=	$(SCRIPTDIR)/python$(VERSION)
 INCLUDEPY=	$(INCLUDEDIR)/python$(VERSION)
+EXECINCLUDEPY=	$(exec_installdir)/include/python$(VERSION)
 LIBP=		$(exec_installdir)/lib/python$(VERSION)
 DESTSHARED=	$(BINLIBDEST)/site-packages
 
