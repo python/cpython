@@ -796,7 +796,7 @@ then
 			# No framework. Ignore undefined symbols, assuming they come from Python
 			LDSHARED="$LDSHARED -flat_namespace -undefined suppress"
 		fi ;;
-	Linux*) LDSHARED="gcc -shared";;
+	Linux*|GNU*) LDSHARED="gcc -shared";;
 	dgux*) LDSHARED="ld -G";;
 	BSD/OS*/4*) LDSHARED="gcc -shared";;
 	OpenBSD*|NetBSD*|FreeBSD*)
@@ -832,7 +832,7 @@ then
 		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
 		 fi;;
-	Linux*) CCSHARED="-fPIC";;
+	Linux*|GNU*) CCSHARED="-fPIC";;
 	BSD/OS*/4*) CCSHARED="-fpic";;
 	FreeBSD*|NetBSD*|OpenBSD*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
@@ -860,7 +860,7 @@ then
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
 	BSD/OS/4*) LINKFORSHARED="-Xlinker -export-dynamic";;
-	Linux*) LINKFORSHARED="-Xlinker -export-dynamic";;
+	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
 	Darwin/*) 
 		# -u __dummy makes the linker aware of the objc runtime
@@ -1033,8 +1033,14 @@ else
     AC_MSG_RESULT($unistd_defines_pthreads)
 
     AC_DEFINE(_REENTRANT)
+    AC_CHECK_HEADER(cthreads.h, [AC_DEFINE(WITH_THREAD)
+    AC_DEFINE(C_THREADS)
+    AC_DEFINE(HURD_C_THREADS)
+    LIBS="$LIBS -lthreads"
+    LIBOBJS="$LIBOBJS thread.o"],[
     AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(C_THREADS)
+    AC_DEFINE(MACH_C_THREADS)
     LIBOBJS="$LIBOBJS thread.o"],[
     AC_MSG_CHECKING(for --with-pth)
     AC_ARG_WITH(pth,
@@ -1088,7 +1094,7 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     LIBS="$LIBS -lcma"
     LIBOBJS="$LIBOBJS thread.o"],[
     USE_THREAD_MODULE="#"])
-    ])])])])])])])])])
+    ])])])])])])])])])])
 
     if test "$posix_threads" = "yes"; then
       if test "$unistd_defines_pthreads" = "no"; then

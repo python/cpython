@@ -1,6 +1,11 @@
 
+#ifdef MACH_C_THREADS
 #include <mach/cthreads.h>
+#endif
 
+#ifdef HURD_C_THREADS
+#include <cthreads.h>
+#endif
 
 /*
  * Initialization.
@@ -8,7 +13,14 @@
 static void
 PyThread__init_thread(void)
 {
-	cthread_init();
+#ifndef HURD_C_THREADS
+	/* Roland McGrath said this should not be used since this is
+	done while linking to threads */
+	cthread_init(); 
+#else
+/* do nothing */
+	;
+#endif
 }
 
 /*
@@ -127,10 +139,10 @@ PyThread_acquire_lock(PyThread_type_lock lock, int waitflag)
 
 	dprintf(("PyThread_acquire_lock(%p, %d) called\n", lock, waitflag));
 	if (waitflag) { 	/* blocking */
-		mutex_lock(lock);
+		mutex_lock((mutex_t)lock);
 		success = TRUE;
 	} else {		/* non blocking */
-		success = mutex_try_lock(lock);
+		success = mutex_try_lock((mutex_t)lock);
 	}
 	dprintf(("PyThread_acquire_lock(%p, %d) -> %d\n", lock, waitflag, success));
 	return success;

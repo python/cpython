@@ -30,6 +30,8 @@ C API
 
 New platforms
 
+- GNU/Hurd is now supported.
+
 Tests
 
 Windows
