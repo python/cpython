@@ -46,6 +46,7 @@ typedef struct _symtable_entry {
 	int ste_nested;          /* true if scope is nested */
 	int ste_child_free;      /* true if a child scope has free variables,
 				    including free refs to globals */
+	int ste_generator;       /* true if namespace is a generator */
 	int ste_opt_lineno;      /* lineno of last exec or import * */
 	struct symtable *ste_table;
 } PySymtableEntryObject;

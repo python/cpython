@@ -67,6 +67,7 @@ frame_dealloc(PyFrameObject *f)
 {
 	int i, slots;
 	PyObject **fastlocals;
+	PyObject **p;
 
 	Py_TRASHCAN_SAFE_BEGIN(f)
 	/* Kill all local variables */
@@ -76,6 +77,10 @@ frame_dealloc(PyFrameObject *f)
 		Py_XDECREF(*fastlocals);
 	}
 
+	/* Free stack */
+	for (p = f->f_valuestack; p < f->f_stackbottom; p++) {
+		Py_XDECREF(*p);
+	}
 	Py_XDECREF(f->f_back);
 	Py_XDECREF(f->f_code);
 	Py_XDECREF(f->f_builtins);
@@ -221,6 +226,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 		f->f_localsplus[extras] = NULL;
 
 	f->f_valuestack = f->f_localsplus + (f->f_nlocals + ncells + nfrees);
+	f->f_stackbottom = f->f_valuestack;
 
 	return f;
 }

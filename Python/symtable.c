@@ -69,6 +69,7 @@ PySymtableEntry_New(struct symtable *st, char *name, int type, int lineno)
 	else
 		ste->ste_nested = 0;
 	ste->ste_child_free = 0;
+	ste->ste_generator = 0;
 
 	if (PyDict_SetItem(st->st_symbols, ste->ste_id, (PyObject *)ste) < 0)
 	    goto fail;

@@ -40,6 +40,7 @@ static PyObject *eval_code2(PyCodeObject *,
 			    PyObject **, int,
 			    PyObject *);
 
+static PyObject *eval_frame(PyFrameObject *);
 static char *get_func_name(PyObject *);
 static char *get_func_desc(PyObject *);
 static PyObject *call_object(PyObject *, PyObject *, PyObject *);
@@ -104,6 +105,124 @@ static PyObject *str_call = NULL;
 static PyObject *str_exception = NULL;
 static PyObject *str_line = NULL;
 static PyObject *str_return = NULL;
+
+
+staticforward PyTypeObject gentype;
+
+typedef struct {
+	PyObject_HEAD
+	PyFrameObject *frame;
+        int running; /* true if generator is being executed */ 
+} genobject;
+
+static PyObject *
+gen_new(PyFrameObject *f)
+{
+	genobject *gen = PyObject_New(genobject, &gentype);
+	if (gen == NULL) {
+		Py_DECREF(f);
+		return NULL;
+	}
+	gen->frame = f;
+	gen->running = 0;
+	return (PyObject *)gen;
+}
+
+static void
+gen_dealloc(genobject *gen)
+{
+	Py_DECREF(gen->frame);
+	PyObject_DEL(gen);
+}
+
+static PyObject *
+gen_iternext(genobject *gen)
+{
+	PyFrameObject *f = gen->frame;
+	PyObject *result;
+
+	if (gen->running) {
+		PyErr_SetString(PyExc_ValueError,
+				"generator already executing");
+		return NULL;
+	}
+	if (f->f_stackbottom == NULL) {
+		return NULL;
+	}
+        gen->running = 1;
+	result = eval_frame(f);
+        gen->running = 0;
+        return result;
+}
+
+static PyObject *
+gen_next(genobject *gen, PyObject *args)
+{
+	PyObject *result;
+
+	if (!PyArg_ParseTuple(args, ":next"))
+		return NULL;
+
+        result = gen_iternext(gen);
+
+        if (result == NULL && !PyErr_Occurred()) {
+		PyErr_SetObject(PyExc_StopIteration, Py_None);
+		return NULL;
+        }
+
+	return result;
+}
+
+static PyObject *
+gen_getiter(PyObject *gen)
+{
+	Py_INCREF(gen);
+	return gen;
+}
+
+static struct PyMethodDef gen_methods[] = {
+	{"next",     (PyCFunction)gen_next, METH_VARARGS,
+	 "next() -- get the next value, or raise StopIteration"},
+	{NULL,          NULL}   /* Sentinel */
+};
+
+static PyObject *
+gen_getattr(genobject *gen, char *name)
+{
+	return Py_FindMethod(gen_methods, (PyObject *)gen, name);
+}
+
+statichere PyTypeObject gentype = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,					/* ob_size */
+	"generator",				/* tp_name */
+	sizeof(genobject),			/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	(destructor)gen_dealloc, 		/* tp_dealloc */
+	0,					/* tp_print */
+	(getattrfunc)gen_getattr,		/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	0,					/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+ 	0,					/* tp_doc */
+ 	0,					/* tp_traverse */
+ 	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	(getiterfunc)gen_getiter,		/* tp_iter */
+	(iternextfunc)gen_iternext,		/* tp_iternext */
+};
 
 
 #ifdef WITH_THREAD
@@ -337,7 +456,8 @@ enum why_code {
 		WHY_RERAISE,	/* Exception re-raised by 'finally' */
 		WHY_RETURN,	/* 'return' statement */
 		WHY_BREAK,	/* 'break' statement */
-		WHY_CONTINUE	/* 'continue' statement */
+		WHY_CONTINUE,	/* 'continue' statement */
+		WHY_YIELD,	/* 'yield' operator */
 };
 
 static enum why_code do_raise(PyObject *, PyObject *, PyObject *);
@@ -358,10 +478,8 @@ PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
 
 /* Interpreter main loop */
 
-static PyObject *
-eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
-	   PyObject **args, int argcount, PyObject **kws, int kwcount,
-	   PyObject **defs, int defcount, PyObject *closure)
+PyObject *
+eval_frame(PyFrameObject *f)
 {
 #ifdef DXPAIRS
 	int lastopcode = 0;
@@ -378,17 +496,17 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	register PyObject *u;
 	register PyObject *t;
 	register PyObject *stream = NULL;    /* for PRINT opcodes */
-	register PyFrameObject *f; /* Current frame */
 	register PyObject **fastlocals, **freevars;
 	PyObject *retval = NULL;	/* Return value */
 	PyThreadState *tstate = PyThreadState_GET();
+	PyCodeObject *co;
 	unsigned char *first_instr;
 #ifdef LLTRACE
 	int lltrace;
 #endif
 #if defined(Py_DEBUG) || defined(LLTRACE)
 	/* Make it easier to find out where we are with a debugger */
-	char *filename = PyString_AsString(co->co_filename);
+	char *filename;
 #endif
 
 /* Code access macros */
@@ -426,6 +544,9 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 
 /* Start of code */
 
+	if (f == NULL)
+		return NULL;
+
 #ifdef USE_STACKCHECK
 	if (tstate->recursion_depth%10 == 0 && PyOS_CheckStack()) {
 		PyErr_SetString(PyExc_MemoryError, "Stack overflow");
@@ -433,256 +554,32 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	}
 #endif
 
-	if (globals == NULL) {
-		PyErr_SetString(PyExc_SystemError, "eval_code2: NULL globals");
-		return NULL;
-	}
-
-#ifdef LLTRACE
-	lltrace = PyDict_GetItemString(globals, "__lltrace__") != NULL;
-#endif
-
-	f = PyFrame_New(tstate,			/*back*/
-			co,			/*code*/
-			globals, locals);
-	if (f == NULL)
-		return NULL;
-
-	tstate->frame = f;
-	fastlocals = f->f_localsplus;
-	freevars = f->f_localsplus + f->f_nlocals;
-
-	if (co->co_argcount > 0 ||
-	    co->co_flags & (CO_VARARGS | CO_VARKEYWORDS)) {
-		int i;
-		int n = argcount;
-		PyObject *kwdict = NULL;
-		if (co->co_flags & CO_VARKEYWORDS) {
-			kwdict = PyDict_New();
-			if (kwdict == NULL)
-				goto fail;
-			i = co->co_argcount;
-			if (co->co_flags & CO_VARARGS)
-				i++;
-			SETLOCAL(i, kwdict);
-		}
-		if (argcount > co->co_argcount) {
-			if (!(co->co_flags & CO_VARARGS)) {
-				PyErr_Format(PyExc_TypeError,
-				    "%.200s() takes %s %d "
-				    "%sargument%s (%d given)",
-				    PyString_AsString(co->co_name),
-				    defcount ? "at most" : "exactly",
-				    co->co_argcount,
-				    kwcount ? "non-keyword " : "",
-				    co->co_argcount == 1 ? "" : "s",
-				    argcount);
-				goto fail;
-			}
-			n = co->co_argcount;
-		}
-		for (i = 0; i < n; i++) {
-			x = args[i];
-			Py_INCREF(x);
-			SETLOCAL(i, x);
-		}
-		if (co->co_flags & CO_VARARGS) {
-			u = PyTuple_New(argcount - n);
-			if (u == NULL)
-				goto fail;
-			SETLOCAL(co->co_argcount, u);
-			for (i = n; i < argcount; i++) {
-				x = args[i];
-				Py_INCREF(x);
-				PyTuple_SET_ITEM(u, i-n, x);
-			}
-		}
-		for (i = 0; i < kwcount; i++) {
-			PyObject *keyword = kws[2*i];
-			PyObject *value = kws[2*i + 1];
-			int j;
-			if (keyword == NULL || !PyString_Check(keyword)) {
-				PyErr_Format(PyExc_TypeError,
-				    "%.200s() keywords must be strings",
-				    PyString_AsString(co->co_name));
-				goto fail;
-			}
-			/* XXX slow -- speed up using dictionary? */
-			for (j = 0; j < co->co_argcount; j++) {
-				PyObject *nm = PyTuple_GET_ITEM(
-					co->co_varnames, j);
-				int cmp = PyObject_RichCompareBool(
-					keyword, nm, Py_EQ);
-				if (cmp > 0)
-					break;
-				else if (cmp < 0)
-					goto fail;
-			}
-			/* Check errors from Compare */
-			if (PyErr_Occurred())
-				goto fail;
-			if (j >= co->co_argcount) {
-				if (kwdict == NULL) {
-					PyErr_Format(PyExc_TypeError,
-					    "%.200s() got an unexpected "
-					    "keyword argument '%.400s'",
-					    PyString_AsString(co->co_name),
-					    PyString_AsString(keyword));
-					goto fail;
-				}
-				PyDict_SetItem(kwdict, keyword, value);
-			}
-			else {
-				if (GETLOCAL(j) != NULL) {
-					PyErr_Format(PyExc_TypeError,
-					     "%.200s() got multiple "
-					     "values for keyword "
-					     "argument '%.400s'",
-					     PyString_AsString(co->co_name),
-					     PyString_AsString(keyword));
-					goto fail;
-				}
-				Py_INCREF(value);
-				SETLOCAL(j, value);
-			}
-		}
-		if (argcount < co->co_argcount) {
-			int m = co->co_argcount - defcount;
-			for (i = argcount; i < m; i++) {
-				if (GETLOCAL(i) == NULL) {
-					PyErr_Format(PyExc_TypeError,
-					    "%.200s() takes %s %d "
-					    "%sargument%s (%d given)",
-					    PyString_AsString(co->co_name),
-					    ((co->co_flags & CO_VARARGS) ||
-					     defcount) ? "at least"
-						       : "exactly",
-					    m, kwcount ? "non-keyword " : "",
-					    m == 1 ? "" : "s", i);
-					goto fail;
-				}
-			}
-			if (n > m)
-				i = n - m;
-			else
-				i = 0;
-			for (; i < defcount; i++) {
-				if (GETLOCAL(m+i) == NULL) {
-					PyObject *def = defs[i];
-					Py_INCREF(def);
-					SETLOCAL(m+i, def);
-				}
-			}
-		}
-	}
-	else {
-		if (argcount > 0 || kwcount > 0) {
-			PyErr_Format(PyExc_TypeError,
-				     "%.200s() takes no arguments (%d given)",
-				     PyString_AsString(co->co_name),
-				     argcount + kwcount);
-			goto fail;
-		}
-	}
-	/* Allocate and initialize storage for cell vars, and copy free
-	   vars into frame.  This isn't too efficient right now. */
-	if (f->f_ncells) {
-		int i = 0, j = 0, nargs, found;
-		char *cellname, *argname;
-		PyObject *c;
-
-		nargs = co->co_argcount;
-		if (co->co_flags & CO_VARARGS)
-			nargs++;
-		if (co->co_flags & CO_VARKEYWORDS)
-			nargs++;
-
-		/* Check for cells that shadow args */
-		for (i = 0; i < f->f_ncells && j < nargs; ++i) {
-			cellname = PyString_AS_STRING(
-				PyTuple_GET_ITEM(co->co_cellvars, i));
-			found = 0;
-			while (j < nargs) {
-				argname = PyString_AS_STRING(
-					PyTuple_GET_ITEM(co->co_varnames, j));
-				if (strcmp(cellname, argname) == 0) {
-					c = PyCell_New(GETLOCAL(j));
-					if (c == NULL)
-						goto fail;
-					GETLOCAL(f->f_nlocals + i) = c;
-					found = 1;
-					break;
-				}
-				j++;
-			}
-			if (found == 0) {
-				c = PyCell_New(NULL);
-				if (c == NULL)
-					goto fail;
-				SETLOCAL(f->f_nlocals + i, c);
-			}
-		}
-		/* Initialize any that are left */
-		while (i < f->f_ncells) {
-			c = PyCell_New(NULL);
-			if (c == NULL)
-				goto fail;
-			SETLOCAL(f->f_nlocals + i, c);
-			i++;
-		}
-	}
-	if (f->f_nfreevars) {
-		int i;
-		for (i = 0; i < f->f_nfreevars; ++i) {
-			PyObject *o = PyTuple_GET_ITEM(closure, i);
-			Py_INCREF(o);
-			freevars[f->f_ncells + i] = o;
-		}
-	}
-
-	if (tstate->sys_tracefunc != NULL) {
-		/* tstate->sys_tracefunc, if defined, is a function that
-		   will be called  on *every* entry to a code block.
-		   Its return value, if not None, is a function that
-		   will be called at the start of each executed line
-		   of code.  (Actually, the function must return
-		   itself in order to continue tracing.)
-		   The trace functions are called with three arguments:
-		   a pointer to the current frame, a string indicating
-		   why the function is called, and an argument which
-		   depends on the situation.  The global trace function
-		   (sys.trace) is also called whenever an exception
-		   is detected. */
-		if (call_trace(&tstate->sys_tracefunc,
-			       &f->f_trace, f, str_call,
-			       Py_None/*XXX how to compute arguments now?*/)) {
-			/* Trace function raised an error */
-			goto fail;
-		}
-	}
-
-	if (tstate->sys_profilefunc != NULL) {
-		/* Similar for sys_profilefunc, except it needn't return
-		   itself and isn't called for "line" events */
-		if (call_trace(&tstate->sys_profilefunc,
-			       (PyObject**)0, f, str_call,
-			       Py_None/*XXX*/)) {
-			goto fail;
-		}
-	}
-
+	/* push frame */
 	if (++tstate->recursion_depth > recursion_limit) {
 		--tstate->recursion_depth;
 		PyErr_SetString(PyExc_RuntimeError,
 				"maximum recursion depth exceeded");
 		tstate->frame = f->f_back;
-		Py_DECREF(f);
 		return NULL;
 	}
 
+	f->f_back = tstate->frame;
+	tstate->frame = f;
+
+	co = f->f_code;
+	fastlocals = f->f_localsplus;
+	freevars = f->f_localsplus + f->f_nlocals;
 	_PyCode_GETCODEPTR(co, &first_instr);
-	next_instr = first_instr;
-	stack_pointer = f->f_valuestack;
+	next_instr = first_instr + f->f_lasti;
+	stack_pointer = f->f_stackbottom;
+	f->f_stackbottom = NULL;
+
+#ifdef LLTRACE
+	lltrace = PyDict_GetItemString(f->f_globals,"__lltrace__") != NULL;
+#endif
+#if defined(Py_DEBUG) || defined(LLTRACE)
+	filename = PyString_AsString(co->co_filename);
+#endif
 
 	why = WHY_NOT;
 	err = 0;
@@ -1459,6 +1356,14 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			why = WHY_RETURN;
 			break;
 
+		case YIELD_VALUE:
+			retval = POP();
+			f->f_stackbottom = stack_pointer;
+			f->f_lasti = INSTR_OFFSET();
+			why = WHY_YIELD;
+			break;
+
+
 		case EXEC_STMT:
 			w = POP();
 			v = POP();
@@ -1484,6 +1389,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			if (PyInt_Check(v)) {
 				why = (enum why_code) PyInt_AsLong(v);
 				if (why == WHY_RETURN ||
+				    why == WHY_YIELD ||
 				    why == CONTINUE_LOOP)
 					retval = POP();
 			}
@@ -2225,7 +2131,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 
 		/* Unwind stacks if a (pseudo) exception occurred */
 
-		while (why != WHY_NOT && f->f_iblock > 0) {
+		while (why != WHY_NOT && why != WHY_YIELD && f->f_iblock > 0) {
 			PyTryBlock *b = PyFrame_BlockPop(f);
 
 			if (b->b_type == SETUP_LOOP && why == WHY_CONTINUE) {
@@ -2295,16 +2201,18 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 
 	/* Pop remaining stack entries */
 
+	/*
 	while (!EMPTY()) {
 		v = POP();
 		Py_XDECREF(v);
 	}
+	*/
 
-	if (why != WHY_RETURN)
+	if (why != WHY_RETURN && why != WHY_YIELD)
 		retval = NULL;
 
 	if (f->f_trace) {
-		if (why == WHY_RETURN) {
+		if (why == WHY_RETURN || why == WHY_YIELD) {
 			if (call_trace(&f->f_trace, &f->f_trace, f,
 				       str_return, retval)) {
 				Py_XDECREF(retval);
@@ -2314,7 +2222,8 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		}
 	}
 
-	if (tstate->sys_profilefunc && why == WHY_RETURN) {
+	if (tstate->sys_profilefunc &&
+			(why == WHY_RETURN || why == WHY_YIELD)) {
 		if (call_trace(&tstate->sys_profilefunc, (PyObject**)0,
 			       f, str_return, retval)) {
 			Py_XDECREF(retval);
@@ -2325,17 +2234,271 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 
 	reset_exc_info(tstate);
 
+	/* pop frame */
 	--tstate->recursion_depth;
-
-  fail: /* Jump here from prelude on failure */
-
-	/* Restore previous frame and release the current one */
-
 	tstate->frame = f->f_back;
-	Py_DECREF(f);
 
 	return retval;
 }
+
+static PyObject *
+eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
+	   PyObject **args, int argcount, PyObject **kws, int kwcount,
+	   PyObject **defs, int defcount, PyObject *closure)
+{
+	register PyFrameObject *f;
+	register PyObject *retval = NULL;
+	register PyObject **fastlocals, **freevars;
+	PyThreadState *tstate = PyThreadState_GET();
+	PyObject *x, *u;
+
+	if (globals == NULL) {
+		PyErr_SetString(PyExc_SystemError, "eval_code2: NULL globals");
+		return NULL;
+	}
+
+	f = PyFrame_New(tstate,			/*back*/
+			co,			/*code*/
+			globals, locals);
+	if (f == NULL)
+		return NULL;
+
+	fastlocals = f->f_localsplus;
+	freevars = f->f_localsplus + f->f_nlocals;
+
+	if (co->co_argcount > 0 ||
+	    co->co_flags & (CO_VARARGS | CO_VARKEYWORDS)) {
+		int i;
+		int n = argcount;
+		PyObject *kwdict = NULL;
+		if (co->co_flags & CO_VARKEYWORDS) {
+			kwdict = PyDict_New();
+			if (kwdict == NULL)
+				goto fail;
+			i = co->co_argcount;
+			if (co->co_flags & CO_VARARGS)
+				i++;
+			SETLOCAL(i, kwdict);
+		}
+		if (argcount > co->co_argcount) {
+			if (!(co->co_flags & CO_VARARGS)) {
+				PyErr_Format(PyExc_TypeError,
+				    "%.200s() takes %s %d "
+				    "%sargument%s (%d given)",
+				    PyString_AsString(co->co_name),
+				    defcount ? "at most" : "exactly",
+				    co->co_argcount,
+				    kwcount ? "non-keyword " : "",
+				    co->co_argcount == 1 ? "" : "s",
+				    argcount);
+				goto fail;
+			}
+			n = co->co_argcount;
+		}
+		for (i = 0; i < n; i++) {
+			x = args[i];
+			Py_INCREF(x);
+			SETLOCAL(i, x);
+		}
+		if (co->co_flags & CO_VARARGS) {
+			u = PyTuple_New(argcount - n);
+			if (u == NULL)
+				goto fail;
+			SETLOCAL(co->co_argcount, u);
+			for (i = n; i < argcount; i++) {
+				x = args[i];
+				Py_INCREF(x);
+				PyTuple_SET_ITEM(u, i-n, x);
+			}
+		}
+		for (i = 0; i < kwcount; i++) {
+			PyObject *keyword = kws[2*i];
+			PyObject *value = kws[2*i + 1];
+			int j;
+			if (keyword == NULL || !PyString_Check(keyword)) {
+				PyErr_Format(PyExc_TypeError,
+				    "%.200s() keywords must be strings",
+				    PyString_AsString(co->co_name));
+				goto fail;
+			}
+			/* XXX slow -- speed up using dictionary? */
+			for (j = 0; j < co->co_argcount; j++) {
+				PyObject *nm = PyTuple_GET_ITEM(
+					co->co_varnames, j);
+				int cmp = PyObject_RichCompareBool(
+					keyword, nm, Py_EQ);
+				if (cmp > 0)
+					break;
+				else if (cmp < 0)
+					goto fail;
+			}
+			/* Check errors from Compare */
+			if (PyErr_Occurred())
+				goto fail;
+			if (j >= co->co_argcount) {
+				if (kwdict == NULL) {
+					PyErr_Format(PyExc_TypeError,
+					    "%.200s() got an unexpected "
+					    "keyword argument '%.400s'",
+					    PyString_AsString(co->co_name),
+					    PyString_AsString(keyword));
+					goto fail;
+				}
+				PyDict_SetItem(kwdict, keyword, value);
+			}
+			else {
+				if (GETLOCAL(j) != NULL) {
+					PyErr_Format(PyExc_TypeError,
+					     "%.200s() got multiple "
+					     "values for keyword "
+					     "argument '%.400s'",
+					     PyString_AsString(co->co_name),
+					     PyString_AsString(keyword));
+					goto fail;
+				}
+				Py_INCREF(value);
+				SETLOCAL(j, value);
+			}
+		}
+		if (argcount < co->co_argcount) {
+			int m = co->co_argcount - defcount;
+			for (i = argcount; i < m; i++) {
+				if (GETLOCAL(i) == NULL) {
+					PyErr_Format(PyExc_TypeError,
+					    "%.200s() takes %s %d "
+					    "%sargument%s (%d given)",
+					    PyString_AsString(co->co_name),
+					    ((co->co_flags & CO_VARARGS) ||
+					     defcount) ? "at least"
+						       : "exactly",
+					    m, kwcount ? "non-keyword " : "",
+					    m == 1 ? "" : "s", i);
+					goto fail;
+				}
+			}
+			if (n > m)
+				i = n - m;
+			else
+				i = 0;
+			for (; i < defcount; i++) {
+				if (GETLOCAL(m+i) == NULL) {
+					PyObject *def = defs[i];
+					Py_INCREF(def);
+					SETLOCAL(m+i, def);
+				}
+			}
+		}
+	}
+	else {
+		if (argcount > 0 || kwcount > 0) {
+			PyErr_Format(PyExc_TypeError,
+				     "%.200s() takes no arguments (%d given)",
+				     PyString_AsString(co->co_name),
+				     argcount + kwcount);
+			goto fail;
+		}
+	}
+	/* Allocate and initialize storage for cell vars, and copy free
+	   vars into frame.  This isn't too efficient right now. */
+	if (f->f_ncells) {
+		int i = 0, j = 0, nargs, found;
+		char *cellname, *argname;
+		PyObject *c;
+
+		nargs = co->co_argcount;
+		if (co->co_flags & CO_VARARGS)
+			nargs++;
+		if (co->co_flags & CO_VARKEYWORDS)
+			nargs++;
+
+		/* Check for cells that shadow args */
+		for (i = 0; i < f->f_ncells && j < nargs; ++i) {
+			cellname = PyString_AS_STRING(
+				PyTuple_GET_ITEM(co->co_cellvars, i));
+			found = 0;
+			while (j < nargs) {
+				argname = PyString_AS_STRING(
+					PyTuple_GET_ITEM(co->co_varnames, j));
+				if (strcmp(cellname, argname) == 0) {
+					c = PyCell_New(GETLOCAL(j));
+					if (c == NULL)
+						goto fail;
+					GETLOCAL(f->f_nlocals + i) = c;
+					found = 1;
+					break;
+				}
+				j++;
+			}
+			if (found == 0) {
+				c = PyCell_New(NULL);
+				if (c == NULL)
+					goto fail;
+				SETLOCAL(f->f_nlocals + i, c);
+			}
+		}
+		/* Initialize any that are left */
+		while (i < f->f_ncells) {
+			c = PyCell_New(NULL);
+			if (c == NULL)
+				goto fail;
+			SETLOCAL(f->f_nlocals + i, c);
+			i++;
+		}
+	}
+	if (f->f_nfreevars) {
+		int i;
+		for (i = 0; i < f->f_nfreevars; ++i) {
+			PyObject *o = PyTuple_GET_ITEM(closure, i);
+			Py_INCREF(o);
+			freevars[f->f_ncells + i] = o;
+		}
+	}
+
+	if (tstate->sys_tracefunc != NULL) {
+		/* tstate->sys_tracefunc, if defined, is a function that
+		   will be called  on *every* entry to a code block.
+		   Its return value, if not None, is a function that
+		   will be called at the start of each executed line
+		   of code.  (Actually, the function must return
+		   itself in order to continue tracing.)
+		   The trace functions are called with three arguments:
+		   a pointer to the current frame, a string indicating
+		   why the function is called, and an argument which
+		   depends on the situation.  The global trace function
+		   (sys.trace) is also called whenever an exception
+		   is detected. */
+		if (call_trace(&tstate->sys_tracefunc,
+			       &f->f_trace, f, str_call,
+			       Py_None/*XXX how to compute arguments now?*/)) {
+			/* Trace function raised an error */
+			goto fail;
+		}
+	}
+
+	if (tstate->sys_profilefunc != NULL) {
+		/* Similar for sys_profilefunc, except it needn't return
+		   itself and isn't called for "line" events */
+		if (call_trace(&tstate->sys_profilefunc,
+			       (PyObject**)0, f, str_call,
+			       Py_None/*XXX*/)) {
+			goto fail;
+		}
+	}
+
+	if (co->co_flags & CO_GENERATOR) {
+                /* create a new generator that owns the ready to run frame
+                 * and return that as the value */
+		return gen_new(f);
+	}
+
+        retval = eval_frame(f);
+
+  fail: /* Jump here from prelude on failure */
+
+        Py_DECREF(f);
+	return retval;
+}
+
 
 static void
 set_exc_info(PyThreadState *tstate,
@@ -2700,7 +2863,6 @@ _PyTrace_Init(void)
 	}
 	return 0;
 }
-
 
 PyObject *
 PyEval_GetBuiltins(void)

@@ -71,6 +71,7 @@ extern "C" {
 #define RETURN_VALUE	83
 #define IMPORT_STAR	84
 #define EXEC_STMT	85
+#define YIELD_VALUE	86
 
 #define POP_BLOCK	87
 #define END_FINALLY	88

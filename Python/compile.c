@@ -2634,13 +2634,37 @@ com_return_stmt(struct compiling *c, node *n)
 	if (!c->c_infunction) {
 		com_error(c, PyExc_SyntaxError, "'return' outside function");
 	}
-	if (NCH(n) < 2) {
-		com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
+	if (c->c_flags & CO_GENERATOR) {
+		if (NCH(n) > 1) {
+			com_error(c, PyExc_SyntaxError,
+				  "'return' with argument inside generator");
+		}
+		com_addoparg(c, LOAD_CONST,
+				com_addconst(c, PyExc_StopIteration));
 		com_push(c, 1);
+		com_addoparg(c, RAISE_VARARGS, 1);
 	}
-	else
-		com_node(c, CHILD(n, 1));
-	com_addbyte(c, RETURN_VALUE);
+	else {
+		if (NCH(n) < 2) {
+			com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
+			com_push(c, 1);
+		}
+		else
+			com_node(c, CHILD(n, 1));
+		com_addbyte(c, RETURN_VALUE);
+	}
+	com_pop(c, 1);
+}
+
+static void
+com_yield_stmt(struct compiling *c, node *n)
+{
+	REQ(n, yield_stmt); /* 'yield' testlist */
+	if (!c->c_infunction) {
+		com_error(c, PyExc_SyntaxError, "'yield' outside function");
+	}
+	com_node(c, CHILD(n, 1));
+	com_addbyte(c, YIELD_VALUE);
 	com_pop(c, 1);
 }
 
@@ -3455,6 +3479,9 @@ com_node(struct compiling *c, node *n)
 	case return_stmt:
 		com_return_stmt(c, n);
 		break;
+	case yield_stmt:
+		com_yield_stmt(c, n);
+		break;
 	case raise_stmt:
 		com_raise_stmt(c, n);
 		break;
@@ -3674,10 +3701,19 @@ compile_funcdef(struct compiling *c, node *n)
 	c->c_infunction = 1;
 	com_node(c, CHILD(n, 4));
 	c->c_infunction = 0;
-	com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
-	com_push(c, 1);
-	com_addbyte(c, RETURN_VALUE);
-	com_pop(c, 1);
+	if (c->c_flags & CO_GENERATOR) {
+		com_addoparg(c, LOAD_CONST,
+				com_addconst(c, PyExc_StopIteration));
+		com_push(c, 1);
+		com_addoparg(c, RAISE_VARARGS, 1);
+		com_pop(c, 1);
+	}
+	else {
+		com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
+		com_push(c, 1);
+		com_addbyte(c, RETURN_VALUE);
+		com_pop(c, 1);
+	}
 }
 
 static void
@@ -4342,6 +4378,8 @@ symtable_update_flags(struct compiling *c, PySymtableEntryObject *ste,
 {
 	if (c->c_future && c->c_future->ff_nested_scopes)
 		c->c_flags |= CO_NESTED;
+	if (ste->ste_generator)
+		c->c_flags |= CO_GENERATOR;
 	if (ste->ste_type != TYPE_MODULE)
 		c->c_flags |= CO_NEWLOCALS;
 	if (ste->ste_type == TYPE_FUNCTION) {
@@ -4900,6 +4938,10 @@ symtable_node(struct symtable *st, node *n)
 	case del_stmt:
 		symtable_assign(st, CHILD(n, 1), 0);
 		break;
+	case yield_stmt:
+		st->st_cur->ste_generator = 1;
+		n = CHILD(n, 1);
+		goto loop;
 	case expr_stmt:
 		if (NCH(n) == 1)
 			n = CHILD(n, 0);
