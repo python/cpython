@@ -175,11 +175,11 @@ class TimeoutTestCase(unittest.TestCase):
         pass
 
 
-def test_main():
+def main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(CreationTestCase))
     suite.addTest(unittest.makeSuite(TimeoutTestCase))
     test_support.run_suite(suite)
 
 if __name__ == "__main__":
-    test_main()
+    main()
