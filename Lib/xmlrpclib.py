@@ -166,11 +166,13 @@ __version__ = "1.0b3"
 
 class Error(Exception):
     """Base class for client errors."""
-    pass
+    def __str__(self):
+        return repr(self)
 
 class ProtocolError(Error):
     """Indicates an HTTP protocol error."""
     def __init__(self, url, errcode, errmsg, headers):
+        Error.__init__(self)
         self.url = url
         self.errcode = errcode
         self.errmsg = errmsg
@@ -188,12 +190,13 @@ class ResponseError(Error):
 class Fault(Error):
     """Indicates an XML-RPC fault package."""
     def __init__(self, faultCode, faultString, **extra):
+        Error.__init__(self)
         self.faultCode = faultCode
         self.faultString = faultString
     def __repr__(self):
         return (
             "<Fault %s: %s>" %
-            (repr(self.faultCode), repr(self.faultString))
+            (self.faultCode, repr(self.faultString))
             )
 
 # --------------------------------------------------------------------
@@ -399,8 +402,10 @@ class SlowParser:
         self.unknown_starttag = target.start
         self.handle_data = target.data
         self.unknown_endtag = target.end
-        xmllib.XMLParser.__init__(self)
-
+        try:
+            xmllib.XMLParser.__init__(self, accept_utf8=1)
+        except TypeError:
+            xmllib.XMLParser.__init__(self) # pre-2.0
 
 # --------------------------------------------------------------------
 # XML-RPC marshalling and unmarshalling code
@@ -521,11 +526,11 @@ class Marshaller:
 
 class Unmarshaller:
     """Unmarshal an XML-RPC response, based on incoming XML event
-    messages (start, data, end).  Call close to get the resulting
+    messages (start, data, end).  Call close() to get the resulting
     data structure.
 
-    Note that this reader is fairly tolerant, and gladly accepts
-    bogus XML-RPC data without complaining (but not bogus XML).
+    Note that this reader is fairly tolerant, and gladly accepts bogus
+    XML-RPC data without complaining (but not bogus XML).
     """
 
     # and again, if you don't understand what's going on in here,
@@ -688,8 +693,8 @@ class Unmarshaller:
 def getparser():
     """getparser() -> parser, unmarshaller
 
-    Create an instance of the fastest available parser, and attach
-    it to an unmarshalling object.  Return both objects.
+    Create an instance of the fastest available parser, and attach it
+    to an unmarshalling object.  Return both objects.
     """
     if FastParser and FastUnmarshaller:
         target = FastUnmarshaller(True, False, binary, datetime)
@@ -712,8 +717,8 @@ def dumps(params, methodname=None, methodresponse=None, encoding=None):
     Convert an argument tuple or a Fault instance to an XML-RPC
     request (or response, if the methodresponse option is used).
 
-    In addition to the data object, the following options can be
-    given as keyword arguments:
+    In addition to the data object, the following options can be given
+    as keyword arguments:
 
         methodname: the method name for a methodCall packet
 
@@ -725,7 +730,7 @@ def dumps(params, methodname=None, methodresponse=None, encoding=None):
 
     All 8-bit strings in the data structure are assumed to use the
     packet encoding.  Unicode strings are automatically converted,
-    as necessary.
+    where necessary.
     """
 
     assert isinstance(params, TupleType) or isinstance(params, Fault),\
