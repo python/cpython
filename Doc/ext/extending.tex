@@ -70,7 +70,7 @@ is evaluated (we'll see shortly how it ends up being called):
 static PyObject *
 spam_system(PyObject *self, PyObject *args)
 {
-    char *command;
+    const char *command;
     int sts;
 
     if (!PyArg_ParseTuple(args, "s", &command))
@@ -634,7 +634,7 @@ Some example calls:
     int ok;
     int i, j;
     long k, l;
-    char *s;
+    const char *s;
     int size;
 
     ok = PyArg_ParseTuple(args, ""); /* No arguments */
@@ -659,8 +659,8 @@ Some example calls:
 
 \begin{verbatim}
     {
-        char *file;
-        char *mode = "r";
+        const char *file;
+        const char *mode = "r";
         int bufsize = 0;
         ok = PyArg_ParseTuple(args, "s|si", &file, &mode, &bufsize);
         /* A string, and optionally another string and an integer */
@@ -1228,7 +1228,7 @@ declared \keyword{static} like everything else:
 
 \begin{verbatim}
 static int
-PySpam_System(char *command)
+PySpam_System(const char *command)
 {
     return system(command);
 }
@@ -1240,7 +1240,7 @@ The function \cfunction{spam_system()} is modified in a trivial way:
 static PyObject *
 spam_system(PyObject *self, PyObject *args)
 {
-    char *command;
+    const char *command;
     int sts;
 
     if (!PyArg_ParseTuple(args, "s", &command))
