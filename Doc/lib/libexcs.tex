@@ -213,6 +213,13 @@ Raised when an \keyword{assert} statement fails.
   not be found.
 \end{excdesc}
 
+\begin{excdesc}{NotImplementedError}
+  \versionadded{1.5.2}
+  This exception is derived from \exception{RuntimeError}.  In user
+  defined base classes, abstract methods should raise this exception
+  when they require derived classes to override the method.
+\end{excdesc}
+
 \begin{excdesc}{OSError}
   \versionadded{1.5.2}
   %xref for os module
@@ -239,15 +246,6 @@ Raised when an \keyword{assert} statement fails.
   precisely went wrong.  (This exception is mostly a relic from a
   previous version of the interpreter; it is not used very much any
   more.)
-\end{excdesc}
-
-\begin{excdesc}{NotImplementedError}
-  \versionadded{1.5.2}
-  This exception is derived from \exception{RuntimeError}.  Its
-  purpose is to provide a standard exception to be used when modeling
-  abstract class methods.  Abstract base class methods should raise
-  this exception when they expect derived classes to override the
-  method.
 \end{excdesc}
 
 \begin{excdesc}{SyntaxError}
