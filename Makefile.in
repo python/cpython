@@ -51,6 +51,9 @@
 # 
 # See also the section "Build instructions" in the README file.
 
+# Interpreter version number, for library destination pathnames
+VERSION=	1.4
+
 # Substitutions by configure
 srcdir=		@srcdir@
 VPATH=		@srcdir@
@@ -77,7 +80,7 @@ SO=		@SO@
 LDSHARED=	@LDSHARED@
 CCSHARED=	@CCSHARED@
 LINKFORSHARED=	@LINKFORSHARED@
-DESTSHARED=	$(SCRIPTDIR)/python/$(MACHDEP)
+DESTSHARED=	$(SCRIPTDIR)/python$(VERSION)/$(MACHDEP)
 
 # Shell used by make (some versions default to the login shell, which is bad)
 SHELL=		/bin/sh
@@ -131,6 +134,9 @@ test:		python
 install:	bininstall libinstall maninstall inclinstall \
 		libainstall sharedinstall
 
+# Install most things with $(VERSION) affixed
+altinstall:	altbininstall libinstall libainstall sharedinstall
+
 # Install the interpreter
 bininstall:	python
 		@for i in $(BINDIR); \
@@ -144,10 +150,23 @@ bininstall:	python
 		done
 		$(INSTALL_PROGRAM) python $(BINDIR)/python
 
+# Install the interpreter with $(VERSION) affixed
+altbininstall:	python
+		@for i in $(BINDIR); \
+		do \
+			if test ! -d $$i; then \
+				echo "Creating directory $$i"; \
+				mkdir $$i; \
+				chmod 755 $$i; \
+			else	true; \
+			fi; \
+		done
+		$(INSTALL_PROGRAM) python $(BINDIR)/python$(VERSION)
+
 # Install the library.
 # If your system does not support "cp -r", try "copy -r" or perhaps
 # something like find Lib -print | cpio -pacvdmu $(LIBDEST)
-LIBDEST=	$(SCRIPTDIR)/python
+LIBDEST=	$(SCRIPTDIR)/python$(VERSION)
 libinstall:	python
 		@for i in $(SCRIPTDIR) $(LIBDEST); \
 		do \
@@ -161,14 +180,6 @@ libinstall:	python
 		cp -r $(srcdir)/Lib/* $(LIBDEST)
 		PYTHONPATH=$(LIBDEST) \
 			./python $(LIBDEST)/compileall.py $(LIBDEST)
-		$(MAKE) \
-			OPT="$(OPT)" \
-			SO="$(SO)" \
-			LDSHARED="$(LDSHARED)" \
-			CCSHARED="$(CCSHARED)" \
-			LINKFORSHARED="$(LINKFORSHARED)" \
-			DESTSHARED="$(DESTSHARED)" \
-			sharedinstall
 
 # Install the manual page
 maninstall:
@@ -239,6 +250,8 @@ sharedinstall:
 			CCSHARED="$(CCSHARED)" \
 			LINKFORSHARED="$(LINKFORSHARED)" \
 			DESTSHARED="$(DESTSHARED)" \
+			prefix="$(prefix)" \
+			exec_prefix="$(exec_prefix)" \
 			sharedinstall
 
 # Build the sub-Makefiles
