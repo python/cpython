@@ -266,9 +266,6 @@ extern int lstat(const char *, struct stat *);
 extern int symlink(const char *, const char *);
 extern int fsync(int fd);
 
-/* From Modules/nismodule.c */
-CLIENT *clnt_create();
-
 #endif /* 0 */
 
 
