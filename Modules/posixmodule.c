@@ -2726,7 +2726,7 @@ posix_fork(PyObject *self, PyObject *args)
 #include <libutil.h>
 #endif /* HAVE_LIBUTIL_H */
 #endif /* HAVE_PTY_H */
-#ifdef sun
+#if defined(sun) || defined(__hpux)
 #include <sys/stropts.h>
 #endif
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX */
@@ -2789,9 +2789,9 @@ posix_openpty(PyObject *self, PyObject *args)
 #ifndef __CYGWIN__ 
 	ioctl(slave_fd, I_PUSH, "ptem"); /* push ptem */
 	ioctl(slave_fd, I_PUSH, "ldterm"); /* push ldterm */
-#ifndef _hpux
+#ifndef __hpux
 	ioctl(slave_fd, I_PUSH, "ttcompat"); /* push ttcompat */
-#endif /* _hpux */
+#endif /* __hpux */
 #endif /* HAVE_CYGWIN */
 #endif /* HAVE_OPENPTY */
 
