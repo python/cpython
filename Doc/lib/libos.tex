@@ -758,6 +758,15 @@ Availability: Macintosh, \UNIX{}, Windows.
 
 These functions may be used to create and manage processes.
 
+The various \function{exec*()} functions take a list of arguments for
+the new program loaded into the process.  In each case, the first of
+these arguments is passed to the new program as its own name rather
+than as an argument a user may have typed on a command line.  For the
+C programmer, this is the \code{argv[0]} passed to a program's
+\cfunction{main()}.  For example, \samp{os.execv('/bin/echo', ['foo',
+'bar'])} will only print \samp{bar} on standard output; \samp{foo}
+will seem to be ignored.
+
 
 \begin{funcdesc}{abort}{}
 Generate a \constant{SIGABRT} signal to the current process.  On
