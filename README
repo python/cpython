@@ -337,7 +337,7 @@ QNX:	Chris Herborth (chrish@qnx.com) writes:
 	I've only run small programs and the test cases), you're
 	probably running out of stack; the default 32k could be a
 	little tight.  To increase the stack size, edit the Makefile
-	in the Modules directory to read: LDFLAGS = -N 48k
+	to read: LDFLAGS = -N 48k
 
 BeOS:	Chris Herborth (chrish@qnx.com) writes:
 	See BeOS/README for notes about compiling/installing Python on
@@ -694,7 +694,7 @@ directory and you want to build in /usr/tmp/python):
 	[...]
 	$
 
-Note that Modules/Makefile copies the original Setup file to the build
+Note that configure copies the original Setup file to the build
 directory if it finds no Setup file there.  This means that you can
 edit the Setup file for each architecture independently.  For this
 reason, subsequent changes to the original Setup file are not tracked
