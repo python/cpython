@@ -94,7 +94,17 @@ distribution, to create or maintain whole documents or sections.
     \term{Document Sources}
 	The \LaTeX{} sources for each document are placed in a
 	separate directory.  These directories are given short,
-	three-character names.
+	three-character names:
+
+	\begin{tableii}{p{.75in}|p{3in}}{filenq}{Directory}{Document Title}
+	  \lineii{api/}{\emph{The Python/C API}}
+	  \lineii{doc/}{\emph{Documenting Python}}
+	  \lineii{ext/}{\emph{Extending and Embedding the Python Interpreter}}
+	  \lineii{lib/}{\emph{Python Library Reference}}
+	  \lineii{mac/}{\emph{Macintosh Module Reference}}
+	  \lineii{ref/}{\emph{Python Reference Manual}}
+	  \lineii{tut/}{\emph{Python Tutorial}}
+	\end{tableii}
 
     \term{Format-Specific Output}
 	Most output formats have a directory which contains a
@@ -107,6 +117,13 @@ distribution, to create or maintain whole documents or sections.
 	in the same place for each paper size, where they can be more
 	easily ignored).
 
+	\begin{tableii}{p{.75in}|p{3in}}{filenq}{Directory}{Output Formats}
+	  \lineii{html/}{HTML output}
+	  \lineii{info/}{GNU info output}
+	  \lineii{paper-a4/}{PDF and PostScript, A4 paper}
+	  \lineii{paper-letter/}{PDF and PostScript, US-Letter paper}
+	\end{tableii}
+
     \term{Supplemental Files}
 	Some additional directories are used to store supplemental
 	files used for the various processes.  Directories are
@@ -114,6 +131,14 @@ distribution, to create or maintain whole documents or sections.
 	\LaTeX2HTML support, template files for various document
 	components, and the scripts used to perform various steps in
 	the formatting processes.
+
+	\begin{tableii}{p{.75in}|p{3in}}{filenq}{Directory}{Contents}
+	  \lineii{perl/}{Support for \LaTeX2HTML processing}
+	  \lineii{templates/}{Example files for source documents}
+	  \lineii{texinputs/}{Style implementation for \LaTeX}
+	  \lineii{tools/}{Custom processing scripts}
+	\end{tableii}
+
   \end{definitions}
 
 
@@ -192,7 +217,7 @@ distribution, to create or maintain whole documents or sections.
 
   \subsection{Information Units \label{info-units}}
 
-    XXX Check Maler's book for proper terminology.
+    XXX Explain terminology, or come up with something more ``lay.''
 
     There are a number of environments used to describe specific
     features provided by modules.  Each environment requires
@@ -283,8 +308,182 @@ distribution, to create or maintain whole documents or sections.
 
   \subsection{Inline Markup}
 
-    This is where to explain \macro{code}, \macro{function},
-    \macro{email}, etc.
+
+    \begin{macrodesc}{bfcode}{\p{text}}
+      Like \macro{code}, but also makes the font bold-face.
+    \end{macrodesc}
+
+    \begin{macrodesc}{cdata}{\p{name}}
+      The name of a C-language variable.
+    \end{macrodesc}
+
+    \begin{macrodesc}{cfunction}{\p{name}}
+      The name of a C-language function.  \var{name} should include the
+      function name and the trailing parentheses.
+    \end{macrodesc}
+
+    \begin{macrodesc}{character}{\p{char}}
+      A character when discussing the character rather than a one-byte
+      string value.  The character will be typeset as with \macro{samp}.
+    \end{macrodesc}
+
+    \begin{macrodesc}{class}{\p{name}}
+      A class name; a dotted name may be used.
+    \end{macrodesc}
+
+    \begin{macrodesc}{code}{\p{text}}
+      A short code fragment or literal constant value.  Typically, it
+      should not include any spaces since no quotation marks are
+      added.
+    \end{macrodesc}
+
+    \begin{macrodesc}{constant}{\p{name}}
+      The name of a ``defined'' constant.  This may be a C-language
+      \code{\#define} or a Python variable that is not intended to be
+      changed.
+    \end{macrodesc}
+
+    \begin{macrodesc}{ctype}{\p{name}}
+      The name of a C \keyword{typedef} or structure.  For structures
+      defined without a \keyword{typedef}, use \code{\e ctype\{struct
+      struct_tag\}} to make it clear that the \keyword{struct} is
+      required.
+    \end{macrodesc}
+
+    \begin{macrodesc}{deprecated}{\p{version}\p{what to do}}
+      Declare whatever is being described as being deprecated starting 
+      with release \var{version}.  The text given as \var{what to do}
+      should recommend something to use instead.
+    \end{macrodesc}
+
+    \begin{macrodesc}{dfn}{\p{term}}
+      Mark the defining instance of \var{term} in the text.  (No index 
+      entries are generated.)
+    \end{macrodesc}
+
+    \begin{macrodesc}{email}{\p{address}}
+      An email address.  Note that this is \emph{not} hyperlinked in
+      any of the possible output formats.
+    \end{macrodesc}
+
+    \begin{macrodesc}{emph}{\p{text}}
+      Emphasized text; this will be presented in an italic font.
+    \end{macrodesc}
+
+    \begin{macrodesc}{envvar}{\p{name}}
+      An environment variable.  Index entries are generated.
+    \end{macrodesc}
+
+    \begin{macrodesc}{exception}{\p{name}}
+      The name of an exception.  A dotted name may be used.
+    \end{macrodesc}
+
+    \begin{macrodesc}{file}{\p{file or dir}}
+      The name of a file or directory.  In the PDF and PostScript
+      outputs, single quotes and a font change are used to indicate
+      the file name, but no quotes are used in the HTML output.
+    \end{macrodesc}
+
+    \begin{macrodesc}{filenq}{\p{file or dir}}
+      Like \macro{file}, but single quotes are never used.  This can
+      be used in conjunction with tables if a column will only contain 
+      file or directory names.
+    \end{macrodesc}
+
+    \begin{macrodesc}{function}{\p{name}}
+      The name of a Python function; dotted names may be used.
+    \end{macrodesc}
+
+    \begin{macrodesc}{kbd}{\p{key sequence}}
+      Mark a sequence of keystrokes.  What form \var{key sequence}
+      takes may depend on platform- or application-specific
+      conventions.  For example, an \program{xemacs} key sequence
+      may be marked like \code{\e kbd\{C-x C-f\}}.
+    \end{macrodesc}
+
+    \begin{macrodesc}{keyword}{\p{name}}
+      The name of a keyword in a programming language.
+    \end{macrodesc}
+
+    \begin{macrodesc}{makevar}{\p{name}}
+      The name of a \program{make} variable.
+    \end{macrodesc}
+
+    \begin{macrodesc}{manpage}{\p{name}\p{section}}
+      A reference to a \UNIX{} manual page.
+    \end{macrodesc}
+
+    \begin{macrodesc}{member}{\p{name}}
+      The name of a data attribute of an object.
+    \end{macrodesc}
+
+    \begin{macrodesc}{method}{\p{name}}
+      The name of a method of an object.  \var{name} should include the
+      method name and the trailing parentheses.  A dotted name may be
+      used.
+    \end{macrodesc}
+
+    \begin{macrodesc}{mimetype}{\p{name}}
+      The name of a MIME type.
+    \end{macrodesc}
+
+    \begin{macrodesc}{module}{\p{name}}
+       The name of a module; a dotted name may be used.
+    \end{macrodesc}
+
+    \begin{macrodesc}{newsgroup}{\p{name}}
+      The name of a USENET newsgroup.
+    \end{macrodesc}
+
+    \begin{macrodesc}{optional}{\p{text}}
+    \end{macrodesc}
+
+    \begin{macrodesc}{program}{\p{name}}
+      The name of an executable program.  This may differ from the
+      file name for the executable for some platforms.  In particular, 
+      the \file{.exe} (or other) extension should be omitted for DOS
+      and Windows programs.
+    \end{macrodesc}
+
+    \begin{macrodesc}{refmodule}{\op{key}\p{name}}
+      Like \macro{module}, but create a hyperlink to the documentation 
+      for the named module.  Note that the corresponding
+      \macro{declaremodule} must be in the same document.  If the
+      \macro{declaremodule} defines a module key different from the
+      module name, it must also be provided as \var{key} to the
+      \macro{refmodule} macro.
+    \end{macrodesc}
+
+    \begin{macrodesc}{regexp}{\p{string}}
+      Mark a regular expression.
+    \end{macrodesc}
+
+    \begin{macrodesc}{rfc}{\p{number}}
+      A reference to an Internet Request for Comments.  This generates 
+      appropriate index entries.  The text \samp{RFC \var{number}} is
+      generated; in the HTML output, this text is a hyperlink to an
+      online copy of the specified RFC.
+    \end{macrodesc}
+
+    \begin{macrodesc}{samp}{\p{text}}
+      A short code sample, but possibly longer than would be given
+      using \macro{code}.  Since quotation marks are added, spaces are 
+      acceptable.
+    \end{macrodesc}
+
+    \begin{macrodesc}{strong}{\p{text}}
+      Strongly emphasized text; this will be presented using a bold
+      font.
+    \end{macrodesc}
+
+    \begin{macrodesc}{var}{\p{name}}
+      The name of a variable or formal parameter in running text.
+    \end{macrodesc}
+
+    \begin{macrodesc}{version}{}
+      The version number for the documentation, as specified using
+      \macro{release} in the preamble.
+    \end{macrodesc}
 
 
   \subsection{Module-specific Markup}
