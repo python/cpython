@@ -1319,61 +1319,76 @@ static PyObject *
 handle_range_longs(PyObject *self, PyObject *args)
 {
 	PyObject *ilow;
-	PyObject *ihigh;
-	PyObject *zero = NULL;
+	PyObject *ihigh = NULL;
 	PyObject *istep = NULL;
+
 	PyObject *curnum = NULL;
 	PyObject *v = NULL;
 	long bign;
 	int i, n;
 	int cmp_result;
 
-	zero = PyLong_FromLong(0L);
+	PyObject *zero = PyLong_FromLong(0);
+
 	if (zero == NULL)
 		return NULL;
 
-	ilow = zero; /* Default lower bound */
-	if (!PyArg_ParseTuple(args, "O", &ihigh, &istep)) {
-		PyErr_Clear();
-		if (!PyArg_ParseTuple(args,
-			      "OO|O;range() requires 1-3 int arguments",
-			      &ilow, &ihigh, &istep))
-		goto Fail;
-	}
-
-	if (!PyInt_Check(ilow) && !PyLong_Check(ilow)) {
-		PyErr_SetString(PyExc_ValueError,
-				"integer start argument expected, got float.");
-		goto Fail;
+	if (!PyArg_UnpackTuple(args, "range", 1, 3, &ilow, &ihigh, &istep)) {
+		Py_DECREF(zero);
 		return NULL;
 	}
 
-	if (!PyInt_Check(ihigh) && !PyLong_Check(ihigh)) {
-		PyErr_SetString(PyExc_ValueError,
-				"integer end argument expected, got float.");
-		goto Fail;
-		return NULL;
+	/* Figure out which way we were called, supply defaults, and be
+	 * sure to incref everything so that the decrefs at the end
+	 * are correct.
+	 */
+	assert(ilow != NULL);
+	if (ihigh == NULL) {
+		/* only 1 arg -- it's the upper limit */
+		ihigh = ilow;
+		ilow = NULL;
 	}
+	assert(ihigh != NULL);
+	Py_INCREF(ihigh);
 
-	/* If no istep was supplied, default to 1. */
+	/* ihigh correct now; do ilow */
+	if (ilow == NULL)
+		ilow = zero;
+	Py_INCREF(ilow);
+
+	/* ilow and ihigh correct now; do istep */
 	if (istep == NULL) {
 		istep = PyLong_FromLong(1L);
 		if (istep == NULL)
 			goto Fail;
 	}
 	else {
-		if (!PyInt_Check(istep) && !PyLong_Check(istep)) {
-			PyErr_SetString(PyExc_ValueError,
-				"integer step argument expected, got float.");
-			goto Fail;
-		}
 		Py_INCREF(istep);
 	}
 
-	if (PyObject_Cmp(istep, zero, &cmp_result) == -1) {
+	/* XXX What reason do we have to believe that if an arg isn't an
+	 * XXX int, it must be a float?
+	 */
+	if (!PyInt_Check(ilow) && !PyLong_Check(ilow)) {
+		PyErr_SetString(PyExc_ValueError,
+				"integer start argument expected, got float.");
 		goto Fail;
 	}
 
+	if (!PyInt_Check(ihigh) && !PyLong_Check(ihigh)) {
+		PyErr_SetString(PyExc_ValueError,
+				"integer end argument expected, got float.");
+		goto Fail;
+	}
+
+	if (!PyInt_Check(istep) && !PyLong_Check(istep)) {
+		PyErr_SetString(PyExc_ValueError,
+			"integer step argument expected, got float.");
+		goto Fail;
+	}
+
+	if (PyObject_Cmp(istep, zero, &cmp_result) == -1)
+		goto Fail;
 	if (cmp_result == 0) {
 		PyErr_SetString(PyExc_ValueError,
 				"range() arg 3 must not be zero");
@@ -1419,15 +1434,19 @@ handle_range_longs(PyObject *self, PyObject *args)
 		Py_DECREF(curnum);
 		curnum = tmp_num;
 	}
-	Py_DECREF(curnum);
+	Py_DECREF(ilow);
+	Py_DECREF(ihigh);
 	Py_DECREF(istep);
 	Py_DECREF(zero);
+	Py_DECREF(curnum);
 	return v;
 
   Fail:
-	Py_XDECREF(curnum);
+	Py_DECREF(ilow);
+	Py_DECREF(ihigh);
 	Py_XDECREF(istep);
-	Py_XDECREF(zero);
+	Py_DECREF(zero);
+	Py_XDECREF(curnum);
 	Py_XDECREF(v);
 	return NULL;
 }
