@@ -11,7 +11,7 @@ import MacOS
 _code = 'reqd'
 
 from StdSuites.Required_Suite import *
-class Required_suite_Events:
+class Required_suite_Events(Required_Suite_Events):
 
 	def open(self, _object, _attributes={}, **_arguments):
 		"""open: Open the specified object(s)

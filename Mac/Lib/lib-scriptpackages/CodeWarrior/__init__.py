@@ -19,10 +19,10 @@ _code_to_module = {
 
 
 _code_to_fullname = {
-	'reqd' : 'CodeWarrior.Required',
-	'CoRe' : 'CodeWarrior.Standard_Suite',
-	'CWIE' : 'CodeWarrior.CodeWarrior_suite',
-	'MMPR' : 'CodeWarrior.Metrowerks_Shell_Suite',
+	'reqd' : ('CodeWarrior.Required', 'Required'),
+	'CoRe' : ('CodeWarrior.Standard_Suite', 'Standard_Suite'),
+	'CWIE' : ('CodeWarrior.CodeWarrior_suite', 'CodeWarrior_suite'),
+	'MMPR' : ('CodeWarrior.Metrowerks_Shell_Suite', 'Metrowerks_Shell_Suite'),
 }
 
 from Required import *
@@ -32,9 +32,9 @@ from Metrowerks_Shell_Suite import *
 
 
 class CodeWarrior(Required_Events,
-	Standard_Suite_Events,
-	CodeWarrior_suite_Events,
-	Metrowerks_Shell_Suite_Events,
-	aetools.TalkTo):
+		Standard_Suite_Events,
+		CodeWarrior_suite_Events,
+		Metrowerks_Shell_Suite_Events,
+		aetools.TalkTo):
 	_signature = 'CWIE'
 

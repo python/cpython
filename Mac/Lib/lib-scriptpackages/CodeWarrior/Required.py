@@ -11,7 +11,7 @@ import MacOS
 _code = 'reqd'
 
 from StdSuites.Required_Suite import *
-class Required_Events:
+class Required_Events(Required_Suite_Events):
 
 	_argmap_open = {
 		'converting' : 'Conv',
