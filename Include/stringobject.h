@@ -58,6 +58,7 @@ extern DL_IMPORT(char *) PyString_AsString(PyObject *);
 extern DL_IMPORT(void) PyString_Concat(PyObject **, PyObject *);
 extern DL_IMPORT(void) PyString_ConcatAndDel(PyObject **, PyObject *);
 extern DL_IMPORT(int) _PyString_Resize(PyObject **, int);
+extern DL_IMPORT(int) _PyString_Eq(PyObject *, PyObject*);
 extern DL_IMPORT(PyObject *) PyString_Format(PyObject *, PyObject *);
 extern DL_IMPORT(PyObject *) _PyString_FormatLong(PyObject*, int, int,
 						  int, char**, int*);

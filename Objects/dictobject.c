@@ -294,7 +294,7 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
  * this assumption allows testing for errors during PyObject_Compare() to
  * be dropped; string-string comparisons never raise exceptions.  This also
  * means we don't need to go through PyObject_Compare(); we can always use
- * the tp_compare slot of the string type object directly.
+ * _PyString_Eq directly.
  *
  * This really only becomes meaningful if proper error handling in lookdict()
  * is too expensive.
@@ -308,7 +308,6 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 	register unsigned int mask = mp->ma_size-1;
 	dictentry *ep0 = mp->ma_table;
 	register dictentry *ep;
-	cmpfunc compare = PyString_Type.tp_compare;
 
 	/* make sure this function doesn't have to handle non-string keys */
 	if (!PyString_Check(key)) {
@@ -328,7 +327,7 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 		freeslot = ep;
 	else {
 		if (ep->me_hash == hash
-		    && compare(ep->me_key, key) == 0) {
+		    && _PyString_Eq(ep->me_key, key)) {
 			return ep;
 		}
 		freeslot = NULL;
@@ -347,7 +346,7 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 		if (ep->me_key == key
 		    || (ep->me_hash == hash
 		        && ep->me_key != dummy
-			&& compare(ep->me_key, key) == 0))
+			&& _PyString_Eq(ep->me_key, key)))
 			return ep;
 		if (ep->me_key == dummy && freeslot == NULL)
 			freeslot = ep;
