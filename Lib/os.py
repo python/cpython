@@ -61,11 +61,10 @@ elif 'nt' in _names:
     curdir = '.'; pardir = '..'; sep = '\\'; pathsep = ';'
     defpath = '.;C:\\bin'
     from nt import *
-    for i in ['_exit']:
-        try:
-            exec "from nt import " + i
-        except ImportError:
-            pass
+    try:
+        from nt import _exit
+    except ImportError:
+        pass
     import ntpath
     path = ntpath
     del ntpath
@@ -127,11 +126,10 @@ elif 'ce' in _names:
     curdir = '.'; pardir = '..'; sep = '\\'; pathsep = ';'
     defpath = '\\Windows'
     from ce import *
-    for i in ['_exit']:
-        try:
-            exec "from ce import " + i
-        except ImportError:
-            pass
+    try:
+        from ce import _exit
+    except ImportError:
+        pass
     # We can use the standard Windows path.
     import ntpath
     path = ntpath
