@@ -1,4 +1,4 @@
-.TH PYTHON "7 September, 1997"
+.TH PYTHON "10 April, 1998"
 .SH NAME
 python \- an interpreted, interactive, object-oriented programming language
 .SH SYNOPSIS
@@ -14,6 +14,9 @@ python \- an interpreted, interactive, object-oriented programming language
 ]
 [
 .B \-S
+]
+[
+.B \-t
 ]
 [
 .B \-u
@@ -78,6 +81,11 @@ Disable the import of the module
 and the site-dependent manipulations of
 .I sys.path
 that it entails.
+.TP
+.B \-t
+Issue a warning when a source file mixes tabs and spaces for
+indentation in a way that makes it depend on the worth of a tab
+expressed in spaces.  Issue an error when the option is given twice.
 .TP
 .B \-u
 Force stdin, stdout and stderr to be totally unbuffered.
