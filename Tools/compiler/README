@@ -1,0 +1,21 @@
+This directory contains modules for a a Python source to bytecode compiler
+written in pure Python.	 To install the compiler modules so they're
+available for use by third-party Python software, run 'python setup.py
+install'.
+
+compile.py	Demo that compiles a Python module into a .pyc file
+		using the pure-Python compiler code.
+
+demo.py		Prints the names of all the methods defined in a module,
+		as a demonstration of walking through the abstract syntax
+		tree produced by the parser.
+
+dumppyc.py	Dumps the contents of a .pyc file, printing 
+		the attributes of the code object followed by a 
+		code disassembly.
+
+regrtest.py	Runs the Python test suite using bytecode generated 
+		by the pure-Python compiler code instead of the
+		builtin compiler.
+
+setup.py	Setup file for installing the compiler code as a package.
