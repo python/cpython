@@ -95,7 +95,7 @@ def readmap(filename):
         else:
             enc2uni[enc] = (uni,comment)
     # If there are more identity-mapped entries than unmapped entries,
-    # it pays to generate an identity dictionary first, add add explicit
+    # it pays to generate an identity dictionary first, and add explicit
     # mappings to None for the rest
     if len(identity)>=len(unmapped):
         for enc in unmapped:
