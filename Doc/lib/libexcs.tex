@@ -66,8 +66,8 @@ also available on the instance's \member{args} attribute, as a tuple.
 
 \begin{excdesc}{StandardError}
 The base class for all built-in exceptions except
-\exception{SystemExit}.  \exception{StandardError} itself is derived
-from the root class
+\exception{StopIteration} and \exception{SystemExit}.
+\exception{StandardError} itself is derived from the root class
 \exception{Exception}.
 \end{excdesc}
 
@@ -295,7 +295,8 @@ For class exceptions, \function{str()} returns only the message.
   can be executed, and so that a debugger can execute a script without
   running the risk of losing control.  The \function{os._exit()} function
   can be used if it is absolutely positively necessary to exit
-  immediately (e.g., after a \function{fork()} in the child process).
+  immediately (for example, in the child process after a call to
+  \function{fork()}).
 \end{excdesc}
 
 \begin{excdesc}{TypeError}
