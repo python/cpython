@@ -1099,18 +1099,9 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 			}
 		}
 	}
-	/* XXX The loop just above didn't used to break when hitting the
-	   end of kwlist, so could pass NULL on to PyMapping_HasKeyString,
-	   which sets a "NULL argument to internal routine" error then.
-	   However, the comment below doesn't give any clues about which
-	   'error string' it's talking about, so darned hard to say whether
-	   the PyErr_Clear() still serves a purpose.
-	*/
-	PyErr_Clear(); /* I'm not which Py functions set the error string */
-		
+
 	/* required arguments missing from args can be supplied by keyword 
 	   arguments */
-	
 	len = nargs;
 	if (keywords && nargs < min) {
 		for (i = nargs; i < min; i++) {
