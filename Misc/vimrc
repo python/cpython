@@ -1,10 +1,11 @@
-" vimrc file for following the coding style specified in PEP 7 & 8.
+" vimrc file for following the coding standards specified in PEP 7 & 8.
 "
 " To use this file, source it in your own personal .vimrc file (``source
 " <filename>``) or, if you don't have a .vimrc file, you can just symlink to it
-" (``ln -s <filename> ~/.vimrc``).  All options are protected by 'autocmd's
-" (read below for an explanation) so blind sourcing of this file is safe and
-" will not affect your settings for non-Python or non-C files.
+" (``ln -s <this file> ~/.vimrc``).  All options are protected by autocmds
+" (read below for an explanation of the command) so blind sourcing of this file
+" is safe and will not affect your settings for non-Python or non-C files.
+"
 "
 " All setting are protected by 'au' ('autocmd') statements.  Only files ending
 " in .py or .pyw will trigger the Python settings while files ending in *.c or
@@ -16,7 +17,6 @@
 "
 
 
-
 " Number of spaces to use for an indent.
 " This will affect Ctrl-T and 'autoindent'.
 " Python: 4 spaces
@@ -25,7 +25,7 @@ au BufRead,BufNewFile *.py,*pyw set shiftwidth=4
 au BufRead,BufNewFile *.c,*.h set shiftwidth=8
 
 " Number of spaces that a pre-existing tab is equal to.
-" For the amount of space used for a new tab, use shiftwidth.
+" For the amount of space used for a new tab use shiftwidth.
 " Python: 8
 " C: 8
 au BufRead,BufNewFile *py,*pyw,*.c,*.h set tabstop=8
@@ -34,6 +34,7 @@ au BufRead,BufNewFile *py,*pyw,*.c,*.h set tabstop=8
 " Also have an autocmd for Makefiles since they require hard tabs.
 " Python: yes
 " C: no
+" Makefile: no
 au BufRead,BufNewFile *.py,*.pyw set expandtab
 au BufRead,BufNewFile *.c,*.h set noexpandtab
 au BufRead,BufNewFile Makefile* set noexpandtab
@@ -60,16 +61,15 @@ au BufRead,BufNewFile *.c,*.h set formatoptions-=c formatoptions-=o formatoption
 au BufNewFile *.py,*.pyw,*.c,*.h set fileformat=unix
 
 
-
+" ----------------------------------------------------------------------------
 " The following section contains suggested settings.  While in no way required
 " to meet coding standards, they are helpful.
 
 " Set the default file encoding to UTF-8: ``set encoding=utf-8``
 
 " Put a marker at the beginning of the file to differentiate between UTF and
-" UCS encoding (warning: always done when reasonable, which can mess up shells
-" into thinking a text file is actually a binary file when executing the text
-" file): ``set bomb``
+" UCS encoding (WARNING: can trick shells into thinking a text file is actually
+" a binary file when executing the text file): ``set bomb``
 
 " For full syntax highlighting:
 "``let python_highlight_all=1``
@@ -77,7 +77,7 @@ au BufNewFile *.py,*.pyw,*.c,*.h set fileformat=unix
 
 " Automatically indent: ``filetype indent on``
 
-" Fold based on indentation: ``set foldmethod=indent``
+" Folding based on indentation: ``set foldmethod=indent``
 
 " Make trailing whitespace explicit:
 "highlight WhitespaceEOL ctermbg=red guibg=red 
