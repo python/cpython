@@ -499,7 +499,7 @@ com_addopname(c, op, n)
 			if (p + strlen(s) > buffer + (sizeof buffer) - 2) {
 				err_setstr(MemoryError,
 					   "dotted_name too long");
-				name == NULL;
+				name = NULL;
 				break;
 			}
 			if (p != buffer)
