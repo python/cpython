@@ -1,5 +1,5 @@
 /*
- * cPickle.c,v 1.63 1999/02/05 01:40:06 jim Exp
+ * cPickle.c,v 1.66 1999/04/13 17:23:48 jim Exp
  * 
  * Copyright (c) 1996-1998, Digital Creations, Fredericksburg, VA, USA.  
  * All rights reserved.
@@ -49,7 +49,7 @@
 static char cPickle_module_documentation[] = 
 "C implementation and optimization of the Python pickle module\n"
 "\n"
-"cPickle.c,v 1.63 1999/02/05 01:40:06 jim Exp\n"
+"cPickle.c,v 1.66 1999/04/13 17:23:48 jim Exp\n"
 ;
 
 #include "Python.h"
@@ -345,6 +345,7 @@ typedef struct {
      int buf_size;
      char *buf;
      PyObject *safe_constructors;
+     PyObject *find_class;
 } Unpicklerobject;
  
 staticforward PyTypeObject Unpicklertype;
@@ -2289,8 +2290,17 @@ static PyTypeObject Picklertype = {
 };
 
 static PyObject *
-find_class(PyObject *py_module_name, PyObject *py_global_name) {
+find_class(PyObject *py_module_name, PyObject *py_global_name, PyObject *fc) {
     PyObject *global = 0, *module;
+
+    if (fc) {
+      if (fc==Py_None) {
+	PyErr_SetString(UnpicklingError, 
+			"Global and instance pickles are not supported.");
+	return NULL;
+      }
+      return PyObject_CallFunction(fc, "OO", py_module_name, py_global_name);
+    }
 
     module = PySys_GetObject("modules");
     if (module == NULL)
@@ -2842,7 +2852,7 @@ load_inst(Unpicklerobject *self) {
     if ((len = (*self->readline_func)(self, &s)) >= 0) {
         if (len < 2) return bad_readline();
         if (class_name = PyString_FromStringAndSize(s, len - 1)) {
-            class = find_class(module_name, class_name);
+            class = find_class(module_name, class_name, self->find_class);
             Py_DECREF(class_name);
         }
     }
@@ -2876,7 +2886,7 @@ load_global(Unpicklerobject *self) {
     if ((len = (*self->readline_func)(self, &s)) >= 0) {
         if (len < 2) return bad_readline();
         if (class_name = PyString_FromStringAndSize(s, len - 1)) {
-            class = find_class(module_name, class_name);
+            class = find_class(module_name, class_name, self->find_class);
             Py_DECREF(class_name);
         }
     }
@@ -3889,6 +3899,7 @@ newUnpicklerobject(PyObject *f) {
     self->read = NULL;
     self->readline = NULL;
     self->safe_constructors = NULL;
+    self->find_class = NULL;
 
     UNLESS (self->memo = PyDict_New()) {
        Py_XDECREF((PyObject *)self);
@@ -3996,6 +4007,16 @@ Unpickler_getattr(Unpicklerobject *self, char *name) {
         return self->pers_func;
     }
 
+    if (!strcmp(name, "find_global")) {
+        if (!self->find_class) {
+            PyErr_SetString(PyExc_AttributeError, name);
+            return NULL;
+        }
+
+        Py_INCREF(self->find_class);
+        return self->find_class;
+    }
+
     if (!strcmp(name, "memo")) {
         if (!self->memo) {
             PyErr_SetString(PyExc_AttributeError, name);
@@ -4018,17 +4039,24 @@ Unpickler_getattr(Unpicklerobject *self, char *name) {
 static int
 Unpickler_setattr(Unpicklerobject *self, char *name, PyObject *value) {
 
+    if (!strcmp(name, "persistent_load")) {
+        Py_XDECREF(self->pers_func);
+        self->pers_func = value;
+        Py_XINCREF(value);
+        return 0;
+    }
+
+    if (!strcmp(name, "find_global")) {
+        Py_XDECREF(self->find_class);
+        self->find_class = value;
+        Py_XINCREF(value);
+        return 0;
+    }
+
     if (! value) {
         PyErr_SetString(PyExc_TypeError,
                         "attribute deletion is not supported");
         return -1;
-    }
-
-    if (!strcmp(name, "persistent_load")) {
-        Py_XDECREF(self->pers_func);
-        self->pers_func = value;
-        Py_INCREF(value);
-        return 0;
     }
 
     if (strcmp(name, "memo") == 0) {
@@ -4305,7 +4333,7 @@ init_stuff(PyObject *module, PyObject *module_dict) {
 DL_EXPORT(void)
 initcPickle() {
     PyObject *m, *d, *v;
-    char *rev="1.63";
+    char *rev="1.66";
     PyObject *format_version;
     PyObject *compatible_formats;
 
