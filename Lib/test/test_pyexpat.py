@@ -6,7 +6,7 @@
 import pyexpat
 from xml.parsers import expat
 
-from test_support import sortdict
+from test_support import sortdict, TestFailed
 
 class Outputter:
     def StartElementHandler(self, name, attrs):
@@ -218,3 +218,96 @@ for entry in L:
         print "(it didn't)"
         print "L =", `L`
         break
+
+# Tests of the buffer_text attribute.
+import sys
+
+class TextCollector:
+    def __init__(self, parser):
+        self.stuff = []
+
+    def check(self, expected, label):
+        require(self.stuff == expected,
+                "%s\nstuff    = %s\nexpected = %s"
+                % (label, `self.stuff`, `map(unicode, expected)`))
+
+    def CharacterDataHandler(self, text):
+        self.stuff.append(text)
+
+    def StartElementHandler(self, name, attrs):
+        self.stuff.append("<%s>" % name)
+        bt = attrs.get("buffer-text")
+        if bt == "yes":
+            parser.buffer_text = 1
+        elif bt == "no":
+            parser.buffer_text = 0
+
+    def EndElementHandler(self, name):
+        self.stuff.append("</%s>" % name)
+
+    def CommentHandler(self, data):
+        self.stuff.append("<!--%s-->" % data)
+
+def require(cond, label):
+    # similar to confirm(), but no extraneous output
+    if not cond:
+        raise TestFailed(label)
+
+def setup(handlers=[]):
+    parser = expat.ParserCreate()
+    require(not parser.buffer_text,
+            "buffer_text not disabled by default")
+    parser.buffer_text = 1
+    handler = TextCollector(parser)
+    parser.CharacterDataHandler = handler.CharacterDataHandler
+    for name in handlers:
+        setattr(parser, name, getattr(handler, name))
+    return parser, handler
+
+parser, handler = setup()
+require(parser.buffer_text,
+        "text buffering either not acknowledged or not enabled")
+parser.Parse("<a>1<b/>2<c/>3</a>", 1)
+handler.check(["123"],
+              "buffered text not properly collapsed")
+
+# XXX This test exposes more detail of Expat's text chunking than we
+# XXX like, but it tests what we need to concisely.
+parser, handler = setup(["StartElementHandler"])
+parser.Parse("<a>1<b buffer-text='no'/>2\n3<c buffer-text='yes'/>4\n5</a>", 1)
+handler.check(["<a>", "1", "<b>", "2", "\n", "3", "<c>", "4\n5"],
+              "buffering control not reacting as expected")
+
+parser, handler = setup()
+parser.Parse("<a>1<b/>&lt;2&gt;<c/>&#32;\n&#x20;3</a>", 1)
+handler.check(["1<2> \n 3"],
+              "buffered text not properly collapsed")
+
+parser, handler = setup(["StartElementHandler"])
+parser.Parse("<a>1<b/>2<c/>3</a>", 1)
+handler.check(["<a>", "1", "<b>", "2", "<c>", "3"],
+              "buffered text not properly split")
+
+parser, handler = setup(["StartElementHandler", "EndElementHandler"])
+parser.CharacterDataHandler = None
+parser.Parse("<a>1<b/>2<c/>3</a>", 1)
+handler.check(["<a>", "<b>", "</b>", "<c>", "</c>", "</a>"],
+              "huh?")
+
+parser, handler = setup(["StartElementHandler", "EndElementHandler"])
+parser.Parse("<a>1<b></b>2<c/>3</a>", 1)
+handler.check(["<a>", "1", "<b>", "</b>", "2", "<c>", "</c>", "3", "</a>"],
+              "huh?")
+
+parser, handler = setup(["CommentHandler", "EndElementHandler",
+                         "StartElementHandler"])
+parser.Parse("<a>1<b/>2<c></c>345</a> ", 1)
+handler.check(["<a>", "1", "<b>", "</b>", "2", "<c>", "</c>", "345", "</a>"],
+              "buffered text not properly split")
+
+parser, handler = setup(["CommentHandler", "EndElementHandler",
+                         "StartElementHandler"])
+parser.Parse("<a>1<b/>2<c></c>3<!--abc-->4<!--def-->5</a> ", 1)
+handler.check(["<a>", "1", "<b>", "</b>", "2", "<c>", "</c>", "3",
+               "<!--abc-->", "4", "<!--def-->", "5", "</a>"],
+              "buffered text not properly split")
