@@ -68,7 +68,7 @@ Py_UNICODE _PyUnicode_ToTitlecase(register Py_UNICODE ch)
     else
 	ch += ctype->upper;
 
-#ifdef USE_UCS4_STORAGE
+#ifdef Py_UNICODE_WIDE
     /* The database assumes that the values wrap around at 0x10000. */
     if (ch > 0x10000)
 	ch -= 0x10000;
@@ -360,7 +360,7 @@ Py_UNICODE _PyUnicode_ToUppercase(register Py_UNICODE ch)
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
     ch += ctype->upper;
-#ifdef USE_UCS4_STORAGE
+#ifdef Py_UNICODE_WIDE
     /* The database assumes that the values wrap around at 0x10000. */
     if (ch > 0x10000)
 	ch -= 0x10000;
@@ -376,7 +376,7 @@ Py_UNICODE _PyUnicode_ToLowercase(register Py_UNICODE ch)
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
     ch += ctype->lower;
-#ifdef USE_UCS4_STORAGE
+#ifdef Py_UNICODE_WIDE
     /* The database assumes that the values wrap around at 0x10000. */
     if (ch > 0x10000)
 	ch -= 0x10000;

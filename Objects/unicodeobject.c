@@ -106,7 +106,7 @@ static char unicode_default_encoding[100];
 Py_UNICODE
 PyUnicode_GetMax()
 {
-#ifdef USE_UCS4_STORAGE
+#ifdef Py_UNICODE_WIDE
 	return 0x10FFFF;
 #else
 	/* This is actually an illegal character, so it should
@@ -791,7 +791,7 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
                 errmsg = "illegal encoding";
 		goto utf8Error;
 	    }
-#if Py_UNICODE_SIZE == 4
+#ifdef Py_UNICODE_WIDE
 	    *p++ = (Py_UNICODE)ch;
 #else
             /*  compute and append the two surrogates: */
@@ -1080,7 +1080,7 @@ PyObject *PyUnicode_DecodeUTF16(const char *s,
 		    ch2 = (ch2 >> 8) | (ch2 << 8);
 #endif
 	    if (0xDC00 <= ch2 && ch2 <= 0xDFFF) {
-#if Py_UNICODE_SIZE == 2
+#ifndef Py_UNICODE_WIDE
 		/* This is valid data (a UTF-16 surrogate pair), but
 		   we are not able to store this information since our
 		   Py_UNICODE type only has 16 bits... this might
@@ -1326,7 +1326,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                 *p++ = (Py_UNICODE) chr;
             else if (chr <= 0x10ffff) {
                 /* UCS-4 character. Either store directly, or as surrogate pair. */
-#if Py_UNICODE_SIZE == 4
+#ifdef Py_UNICODE_WIDE
                 *p++ = chr;
 #else
                 chr -= 0x10000L;

@@ -325,7 +325,7 @@ builtin_unichr(PyObject *self, PyObject *args)
 		return PyUnicode_FromUnicode(s, 1);
 	}
 	else {
-#if Py_UNICODE_SIZE == 2
+#ifndef Py_UNICODE_WIDE
 		/* UCS-4 character.  store as two surrogate characters */
 		x -= 0x10000L;
 		s[0] = 0xD800 + (Py_UNICODE) (x >> 10);
