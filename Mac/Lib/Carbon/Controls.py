@@ -1,14 +1,14 @@
 # Generated from 'Controls.h'
 
 def FOUR_CHAR_CODE(x): return x
-from TextEdit import *
-from QuickDraw import *
-from Dragconst import *
-from CarbonEvents import *
-from Appearance import *
+from Carbon.TextEdit import *
+from Carbon.QuickDraw import *
+from Carbon.Dragconst import *
+from Carbon.CarbonEvents import *
+from Carbon.Appearance import *
 kDataBrowserItemAnyState = -1
 kControlBevelButtonCenterPopupGlyphTag = -1
-kDataBrowserClientPropertyFlagsMask = 0xFF << 24  # kDataBrowserClientPropertyFlagsOffset
+kDataBrowserClientPropertyFlagsMask = 0xFF000000
 
 kControlDefProcType = FOUR_CHAR_CODE('CDEF')
 kControlTemplateResourceType = FOUR_CHAR_CODE('CNTL')
