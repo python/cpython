@@ -8,7 +8,8 @@ from _symtable import USE, DEF_GLOBAL, DEF_LOCAL, DEF_PARAM, \
 
 import weakref
 
-__all__ = ["symtable", "SymbolTable", "newSymbolTable"]
+__all__ = ["symtable", "SymbolTable", "newSymbolTable", "Class",
+           "Function", "Symbol"]
 
 def symtable(code, filename, compile_type):
     raw = _symtable.symtable(code, filename, compile_type)
@@ -116,6 +117,10 @@ class SymbolTable:
         return [newSymbolTable(st, self._filename)
                 for st in self._table.children
                 if st.name == name]
+
+    def get_children(self):
+        return [newSymbolTable(st, self._filename)
+                for st in self._table.children]
 
 class Function(SymbolTable):
 
@@ -236,19 +241,6 @@ class Symbol:
             raise ValueError, "name is bound to multiple namespaces"
         return self.__namespaces[0]
 
-if __debug__:
-    class Foo:
-        version = 1
-
-    class Foo:
-        version = 2
-
-    class Foo:
-        version = 3
-
-    def execfunc(x):
-        exec x in y
-    
 if __name__ == "__main__":
     import os, sys
     src = open(sys.argv[0]).read()
