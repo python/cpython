@@ -5,7 +5,7 @@ This module tries to capture the various aspects of defining a server:
 For socket-based servers:
 
 - address family:
-        - AF_INET: IP (Internet Protocol) sockets (default)
+        - AF_INET{,6}: IP (Internet Protocol) sockets (default)
         - AF_UNIX: Unix domain sockets
         - others, e.g. AF_DECNET are conceivable (see <socket.h>
 - socket type:

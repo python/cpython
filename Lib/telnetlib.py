@@ -136,8 +136,18 @@ class Telnet:
             port = TELNET_PORT
         self.host = host
         self.port = port
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((self.host, self.port))
+	for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
+	    af, socktype, proto, canonname, sa = res
+	    try:
+		self.sock = socket.socket(af, socktype, proto)
+		self.sock.connect(sa)
+	    except socket.error, msg:
+		self.sock.close()
+		self.sock = None
+		continue
+	    break
+        if not self.sock:
+	    raise socket.error, msg
 
     def __del__(self):
         """Destructor -- close the connection."""
