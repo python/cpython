@@ -86,11 +86,17 @@ class Message:
 		self.headers = list = []
 		self.status = ''
 		headerseen = 0
+		firstline = 1
 		while 1:
 			line = self.fp.readline()
 			if not line:
 				self.status = 'EOF in headers'
 				break
+			# Skip unix From name time lines
+			if firstline and (line[:5] == 'From '
+					  or line[:6] == '>From '):
+			        continue
+			firstline = 0
 			if self.islast(line):
 				break
 			elif headerseen and line[0] in ' \t':
