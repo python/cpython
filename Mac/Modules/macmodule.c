@@ -479,7 +479,7 @@ static struct methodlist mac_methods[] = {
 #endif
 	{"getbootvol",	mac_getbootvol}, /* non-standard */
 	{"getcwd",	mac_getcwd},
-	{"listdir",	mac_listdir},
+	{"listdir",	mac_listdir, 0},
 #ifndef CW4
 	{"lseek",	mac_lseek},
 #endif
