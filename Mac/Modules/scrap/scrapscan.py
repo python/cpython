@@ -5,13 +5,9 @@
 
 import sys
 import os
-if os.sep == ':':
-	BGENDIR=os.path.join(sys.prefix, ':Tools:bgen:bgen')
-else:
-	BGENDIR="../../../Tools/bgen/bgen"
+from bgenlocations import TOOLBOXDIR, BGENDIR
 sys.path.append(BGENDIR)
 from scantools import Scanner
-from bgenlocations import TOOLBOXDIR
 
 LONG = "Scrap"
 SHORT = "scrap"

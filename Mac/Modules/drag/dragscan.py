@@ -1,11 +1,10 @@
 # Scan <Drag.h>, generating draggen.py.
 import sys
 import os
-BGENDIR=os.path.join(sys.prefix, ':Tools:bgen:bgen')
+from bgenlocations import TOOLBOXDIR, BGENDIR
 sys.path.append(BGENDIR)
 
 from scantools import Scanner
-from bgenlocations import TOOLBOXDIR, INCLUDEDIR
 
 MISSING_DEFINES="""
 kDragHasLeftSenderWindow	= (1 << 0)

@@ -4,9 +4,8 @@
 
 import sys
 import os
-BGENDIR=os.path.join(sys.prefix, ':Tools:bgen:bgen')
+from bgenlocations import TOOLBOXDIR, BGENDIR
 sys.path.append(BGENDIR)
-from bgenlocations import TOOLBOXDIR
 
 from scantools import Scanner
 
