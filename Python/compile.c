@@ -1803,13 +1803,13 @@ static void
 optimizer(co)
 	codeobject *co;
 {
-	char *next_instr, *cur_instr;
+	unsigned char *next_instr, *cur_instr;
 	object *locals;
 	int opcode;
 	int oparg;
 	object *name;
 	int star_used;
-	
+
 #define NEXTOP()	(*next_instr++)
 #define NEXTARG()	(next_instr += 2, (next_instr[-1]<<8) + next_instr[-2])
 #define GETITEM(v, i)	(getlistitem((v), (i)))
@@ -1821,7 +1821,7 @@ optimizer(co)
 		return; /* For now, this is OK */
 	}
 	
-	next_instr = GETSTRINGVALUE(co->co_code); 
+	next_instr = (unsigned char *) GETSTRINGVALUE(co->co_code); 
 	for (;;) {
 		opcode = NEXTOP();
 		if (opcode == STOP_CODE)
@@ -1838,7 +1838,7 @@ optimizer(co)
 	}
 	
 	star_used = (dictlookup(locals, "*") != NULL);
-	next_instr = GETSTRINGVALUE(co->co_code); 
+	next_instr = (unsigned char *) GETSTRINGVALUE(co->co_code); 
 	for (;;) {
 		cur_instr = next_instr;
 		opcode = NEXTOP();
