@@ -353,7 +353,8 @@ mark_restore(SRE_STATE* state, int lo, int hi)
     return 0;
 }
 
-void lastmark_restore(SRE_STATE *state, int lastmark)
+static void
+lastmark_restore(SRE_STATE *state, int lastmark)
 {
     if (state->lastmark > lastmark) {
         memset(
