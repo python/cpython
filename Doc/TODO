@@ -2,6 +2,11 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 ===============================
 
 
+* Describe implementing types in C, including use of the 'self'
+  parameter to the method implementation function.  (Missing material
+  mentioned in the Extending & Embedding manual, section 1.1; problem
+  reported by Clay Spence <cspence@sarnoff.com>.)
+
 * Update the pickle documentation to describe all of the current
   behavior; only a subset is described.  __reduce__, etc.
 
