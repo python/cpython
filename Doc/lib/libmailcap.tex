@@ -8,16 +8,19 @@ as mail readers and Web browsers react to files with different MIME
 types. (The name ``mailcap'' is derived from the phrase ``mail
 capability''.)  For example, a mailcap file might contain a line like
 \samp{video/mpeg; xmpeg \%s}.  Then, if the user encounters an email
-message or Web document with the MIME type video/mpeg, \code{\%s} will be
-replaced by a filename (usually one belonging to a temporary file) and
-the xmpeg program can be automatically started to view the file.
+message or Web document with the MIME type \mimetype{video/mpeg},
+\samp{\%s} will be replaced by a filename (usually one belonging to a
+temporary file) and the \program{xmpeg} program can be automatically
+started to view the file.
 
 The mailcap format is documented in \rfc{1524}, ``A User Agent
 Configuration Mechanism For Multimedia Mail Format Information,'' but
 is not an Internet standard.  However, mailcap files are supported on
 most \UNIX{} systems.
 
-\begin{funcdesc}{findmatch}{caps, MIMEtype, key, filename, plist}
+\begin{funcdesc}{findmatch}{caps, MIMEtype%
+                            \optional{, key\optional{,
+                            filename\optional{, plist}}}}
 Return a 2-tuple; the first element is a string containing the command
 line to be executed
 (which can be passed to \code{os.system()}), and the second element is
@@ -32,9 +35,9 @@ wanted to create a new body of the given MIME type or alter the
 existing body data.  See \rfc{1524} for a complete list of these
 fields.
 
-\var{filename} is the filename to be substituted for \%s in the
+\var{filename} is the filename to be substituted for \samp{\%s} in the
 command line; the default value is
-\file{/dev/null} which is almost certainly not what you want, so
+\code{'/dev/null'} which is almost certainly not what you want, so
 usually you'll override it by specifying a filename.
 
 \var{plist} can be a list containing named parameters; the default
@@ -43,7 +46,7 @@ string containing the parameter name, an equals sign (\code{=}), and the
 parameter's value.  Mailcap entries can contain 
 named parameters like \code{\%\{foo\}}, which will be replaced by the
 value of the parameter named 'foo'.  For example, if the command line
-\samp{showpartial \%\{id\} \%\{number\} \%\{total\}}
+\samp{showpartial \%\{id\}\ \%\{number\}\ \%\{total\}}
 was in a mailcap file, and \var{plist} was set to \code{['id=1',
 'number=2', 'total=3']}, the resulting command line would be 
 \code{"showpartial 1 2 3"}.  
