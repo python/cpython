@@ -96,7 +96,7 @@ class UserString:
     def rstrip(self): return self.__class__(self.data.rstrip())
     def split(self, sep=None, maxsplit=-1): 
         return self.data.split(sep, maxsplit)
-    def splitlines(self, maxsplit=-1): return self.data.splitlines(maxsplit)
+    def splitlines(self, keepends=0): return self.data.splitlines(keepends)
     def startswith(self, prefix, start=0, end=sys.maxint): 
         return self.data.startswith(prefix, start, end)
     def strip(self): return self.__class__(self.data.strip())

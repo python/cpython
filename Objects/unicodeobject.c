@@ -2516,7 +2516,7 @@ PyObject *split_whitespace(PyUnicodeObject *self,
 }
 
 PyObject *PyUnicode_Splitlines(PyObject *string,
-			       int maxcount)
+			       int keepends)
 {
     register int i;
     register int j;
@@ -2531,29 +2531,29 @@ PyObject *PyUnicode_Splitlines(PyObject *string,
     data = PyUnicode_AS_UNICODE(string);
     len = PyUnicode_GET_SIZE(string);
 
-    if (maxcount < 0)
-        maxcount = INT_MAX;
-
     list = PyList_New(0);
     if (!list)
         goto onError;
 
     for (i = j = 0; i < len; ) {
+	int eol;
+	
 	/* Find a line and append it */
 	while (i < len && !Py_UNICODE_ISLINEBREAK(data[i]))
 	    i++;
-	if (maxcount-- <= 0)
-	    break;
-	SPLIT_APPEND(data, j, i);
 
 	/* Skip the line break reading CRLF as one line break */
+	eol = i;
 	if (i < len) {
 	    if (data[i] == '\r' && i + 1 < len &&
 		data[i+1] == '\n')
 		i += 2;
 	    else
 		i++;
+	    if (keepends)
+		eol = i;
 	}
+	SPLIT_APPEND(data, j, eol);
 	j = i;
     }
     if (j < len) {
@@ -3785,21 +3785,21 @@ unicode_split(PyUnicodeObject *self, PyObject *args)
 }
 
 static char splitlines__doc__[] =
-"S.splitlines([maxsplit]]) -> list of strings\n\
+"S.splitlines([keepends]]) -> list of strings\n\
 \n\
 Return a list of the lines in S, breaking at line boundaries.\n\
-If maxsplit is given, at most maxsplit are done. Line breaks are not\n\
-included in the resulting list.";
+Line breaks are not included in the resulting list unless keepends\n\
+is given and true.";
 
 static PyObject*
 unicode_splitlines(PyUnicodeObject *self, PyObject *args)
 {
-    int maxcount = -1;
+    int keepends = 0;
 
-    if (!PyArg_ParseTuple(args, "|i:splitlines", &maxcount))
+    if (!PyArg_ParseTuple(args, "|i:splitlines", &keepends))
         return NULL;
 
-    return PyUnicode_Splitlines((PyObject *)self, maxcount);
+    return PyUnicode_Splitlines((PyObject *)self, keepends);
 }
 
 static
