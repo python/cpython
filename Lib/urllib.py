@@ -706,7 +706,7 @@ def splitpasswd(user):
 	    import re
 	    _passwdprog = re.compile('^([^:]*):(.*)$')
 
-        match = _passwdprog.match(host)
+        match = _passwdprog.match(user)
 	if match: return match.group(1, 2)
 	return user, None
 
