@@ -1095,8 +1095,9 @@ returns zero is considered to be false in a Boolean context.
 
 \begin{methoddesc}[mapping object]{__getitem__}{self, key}
 Called to implement evaluation of \code{\var{self}[\var{key}]}.
-For a sequence types, the accepted keys should be integers.  Note that
-the special interpretation of negative indices (if the class wishes to
+For sequence types, the accepted keys should be integers and slice
+objects.\obindex{slice}  Note that
+the special interpretation of negative indexes (if the class wishes to
 emulate a sequence type) is up to the \method{__getitem__()} method.
 If \var{key} is of an inappropriate type, \exception{TypeError} may be
 raised; if of a value outside the set of indexes for the sequence
