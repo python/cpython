@@ -119,6 +119,9 @@ extern int CtlObj_Convert(PyObject *, ControlHandle *);
 extern PyObject *GrafObj_New(GrafPtr);
 extern int GrafObj_Convert(PyObject *, GrafPtr *);
 
+extern PyObject *BMObj_New(BitMapPtr);
+extern int BMObj_Convert(PyObject *, BitMapPtr *);
+
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 """
 
