@@ -129,9 +129,10 @@ not five.
 \item[\code{\{\var{m},\var{n}\}}] Causes the resulting RE to match from
 \var{m} to \var{n} repetitions of the preceding RE, attempting to
 match as many repetitions as possible.  For example, \regexp{a\{3,5\}}
-will match from 3 to 5 \character{a} characters.  Omitting \var{n}
-specifies an infinite upper bound; you can't omit \var{m}.  As an
-example, \regexp{a\{4,\}b} will match \code{aaaab}, a thousand
+will match from 3 to 5 \character{a} characters.  Omitting \var{m}
+specifies a lower bound of zero, 
+and omitting \var{n} specifies an infinite upper bound.  As an
+example, \regexp{a\{4,\}b} will match \code{aaaab} or a thousand
 \character{a} characters followed by a \code{b}, but not \code{aaab}.
 The comma may not be omitted or the modifier would be confused with
 the previously described form.
