@@ -205,10 +205,10 @@ class SMTP:
 
         """
         if not port:
-            i = string.find(host, ':')
+            i = host.find(':')
             if i >= 0:
                 host, port = host[:i], host[i+1:]
-                try: port = string.atoi(port)
+                try: port = int(port)
                 except string.atoi_error:
                     raise socket.error, "nonnumeric port"
         if not port: port = SMTP_PORT
@@ -266,12 +266,12 @@ class SMTP:
                 self.close()
                 raise SMTPServerDisconnected("Connection unexpectedly closed")
             if self.debuglevel > 0: print 'reply:', `line`
-            resp.append(string.strip(line[4:]))
+            resp.append(line[4:].strip())
             code=line[:3]
             # Check that the error code is syntactically correct.
             # Don't attempt to read a continuation line if it is broken.
             try:
-                errcode = string.atoi(code)
+                errcode = int(code)
             except ValueError:
                 errcode = -1
                 break
@@ -279,7 +279,7 @@ class SMTP:
             if line[3:4]!="-":
                 break
 
-        errmsg = string.join(resp,"\n")
+        errmsg = "\n".join(resp)
         if self.debuglevel > 0:
             print 'reply: retcode (%s); Msg: %s' % (errcode,errmsg)
         return errcode, errmsg
@@ -323,19 +323,19 @@ class SMTP:
             return (code,msg)
         self.does_esmtp=1
         #parse the ehlo response -ddm
-        resp=string.split(self.ehlo_resp,'\n')
+        resp=self.ehlo_resp.split('\n')
         del resp[0]
         for each in resp:
             m=re.match(r'(?P<feature>[A-Za-z0-9][A-Za-z0-9\-]*)',each)
             if m:
-                feature=string.lower(m.group("feature"))
-                params=string.strip(m.string[m.end("feature"):])
+                feature=m.group("feature").lower()
+                params=m.string[m.end("feature"):].strip()
                 self.esmtp_features[feature]=params
         return (code,msg)
 
     def has_extn(self, opt):
         """Does the server support a given SMTP service extension?"""
-        return self.esmtp_features.has_key(string.lower(opt))
+        return self.esmtp_features.has_key(opt.lower())
 
     def help(self, args=''):
         """SMTP 'help' command.
@@ -355,7 +355,7 @@ class SMTP:
         """SMTP 'mail' command -- begins mail xfer session."""
         optionlist = ''
         if options and self.does_esmtp:
-            optionlist = ' ' + string.join(options, ' ')
+            optionlist = ' ' + ' '.join(options)
         self.putcmd("mail", "FROM:%s%s" % (quoteaddr(sender) ,optionlist))
         return self.getreply()
 
@@ -363,7 +363,7 @@ class SMTP:
         """SMTP 'rcpt' command -- indicates 1 recipient for this mail."""
         optionlist = ''
         if options and self.does_esmtp:
-            optionlist = ' ' + string.join(options, ' ')
+            optionlist = ' ' + ' '.join(options)
         self.putcmd("rcpt","TO:%s%s" % (quoteaddr(recip),optionlist))
         return self.getreply()
 
@@ -520,10 +520,10 @@ if __name__ == '__main__':
 
     def prompt(prompt):
         sys.stdout.write(prompt + ": ")
-        return string.strip(sys.stdin.readline())
+        return sys.stdin.readline().strip()
 
     fromaddr = prompt("From")
-    toaddrs  = string.splitfields(prompt("To"), ',')
+    toaddrs  = ','.split(prompt("To"))
     print "Enter message, end with ^D:"
     msg = ''
     while 1:
