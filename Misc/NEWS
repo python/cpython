@@ -20,6 +20,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- Patch #798534:  fixed memory leak in os.popen().
+
 - Bug #793826:  re-ordered the reference counting code in
   itertools.izip() to prevent re-entrancy anomalies.  Also,
   if given zero arguments, it now returns an empty iterator
