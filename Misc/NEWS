@@ -162,6 +162,12 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - #128930 - distutils/command/build_ext.py - split rpath argument
 
+- #131064, #129584, #127722 - PC/getpathp.c
+
+- asynchat.py - now checking for empty buffer with ==, not "is"
+
+- Lib/xml/sax/xmlreader.py - import the exceptions this module can raise
+
 What's New in Python 2.0?
 =========================
 
