@@ -789,29 +789,26 @@ typedef enum {
 	      OFFSET_AWARE,
 } naivety;
 
-/* Classify a datetime object as to whether it's naive or offset-aware.  See
+/* Classify an object as to whether it's naive or offset-aware.  See
  * the "naivety" typedef for details.  If the type is aware, *offset is set
  * to minutes east of UTC (as returned by the tzinfo.utcoffset() method).
- * If the type is offset-naive, *offset is set to 0.
+ * If the type is offset-naive (or unknown, or error), *offset is set to 0.
  */
 static naivety
-classify_object(PyObject *op, int *offset)
+classify_utcoffset(PyObject *op, int *offset)
 {
 	int none;
 	PyObject *tzinfo;
 
 	*offset = 0;
-	if (PyDateTime_CheckExact(op) ||
-	    PyTime_CheckExact(op) ||
-	    PyDate_CheckExact(op))
-		return OFFSET_NAIVE;
-
-	tzinfo = get_tzinfo_member(op);	/* NULL means none, not error */
+	tzinfo = get_tzinfo_member(op);	/* NULL means no tzinfo, not error */
 	if (tzinfo == Py_None)
 		return OFFSET_NAIVE;
-	if (tzinfo == NULL)
-		return OFFSET_UNKNOWN;
-
+	if (tzinfo == NULL) {
+		/* note that a datetime passes the PyDate_Check test */
+		return (PyTime_Check(op) || PyDate_Check(op)) ?
+		       OFFSET_NAIVE : OFFSET_UNKNOWN;
+	}
 	*offset = call_utcoffset(tzinfo, op, &none);
 	if (*offset == -1 && PyErr_Occurred())
 		return OFFSET_ERROR;
@@ -3089,12 +3086,12 @@ datetime_richcompare(PyDateTime_DateTime *self, PyObject *other, int op)
 			     other->ob_type->tp_name);
 		return NULL;
 	}
-	n1 = classify_object((PyObject *)self, &offset1);
+	n1 = classify_utcoffset((PyObject *)self, &offset1);
 	assert(n1 != OFFSET_UNKNOWN);
 	if (n1 == OFFSET_ERROR)
 		return NULL;
 
-	n2 = classify_object(other, &offset2);
+	n2 = classify_utcoffset(other, &offset2);
 	assert(n2 != OFFSET_UNKNOWN);
 	if (n2 == OFFSET_ERROR)
 		return NULL;
@@ -3150,7 +3147,7 @@ datetime_hash(PyDateTime_DateTime *self)
 		int offset;
 		PyObject *temp;
 
-		n = classify_object((PyObject *)self, &offset);
+		n = classify_utcoffset((PyObject *)self, &offset);
 		assert(n != OFFSET_UNKNOWN);
 		if (n == OFFSET_ERROR)
 			return -1;
@@ -3557,12 +3554,12 @@ time_richcompare(PyDateTime_Time *self, PyObject *other, int op)
 			     other->ob_type->tp_name);
 		return NULL;
 	}
-	n1 = classify_object((PyObject *)self, &offset1);
+	n1 = classify_utcoffset((PyObject *)self, &offset1);
 	assert(n1 != OFFSET_UNKNOWN);
 	if (n1 == OFFSET_ERROR)
 		return NULL;
 
-	n2 = classify_object(other, &offset2);
+	n2 = classify_utcoffset(other, &offset2);
 	assert(n2 != OFFSET_UNKNOWN);
 	if (n2 == OFFSET_ERROR)
 		return NULL;
@@ -3612,7 +3609,7 @@ time_hash(PyDateTime_Time *self)
 		int offset;
 		PyObject *temp;
 
-		n = classify_object((PyObject *)self, &offset);
+		n = classify_utcoffset((PyObject *)self, &offset);
 		assert(n != OFFSET_UNKNOWN);
 		if (n == OFFSET_ERROR)
 			return -1;
@@ -4466,12 +4463,12 @@ datetimetz_subtract(PyObject *left, PyObject *right)
 			int offset1, offset2;
 			PyDateTime_Delta *delta;
 
-			n1 = classify_object(left, &offset1);
+			n1 = classify_utcoffset(left, &offset1);
 			assert(n1 != OFFSET_UNKNOWN);
 			if (n1 == OFFSET_ERROR)
 				return NULL;
 
-			n2 = classify_object(right, &offset2);
+			n2 = classify_utcoffset(right, &offset2);
 			assert(n2 != OFFSET_UNKNOWN);
 			if (n2 == OFFSET_ERROR)
 				return NULL;
