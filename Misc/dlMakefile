@@ -1,0 +1,58 @@
+# Makefile to do general-coverage creation of dynamic-load libraries
+# from python C-module sources.
+
+# $Id$
+# Created by Ken Manheimer, Jul-1994.  ken.manheimer@nist.gov, 301 975-3539
+
+# To configure for your site, select the appropriate SOURCES and macro
+# def and assign the right path to the prefix macro.
+
+ARCH=		sun4
+prefix=		/depot/sundry
+DESTLIB=	$(prefix)/lib/python/$(ARCH)
+
+### For Sun Make; tested in v 1.0, under both SunOS 4.1.3 and SunOS 5.3:
+#SOURCES:sh=	echo *.c
+### For Gnu Make; works at least for v 3.59:
+SOURCES=	$(wildcard *.c)
+
+# To configure for a new module:
+#  - put the module in the current directory
+#  - if it doesn't require any special compile or load options, that's it.
+#  - if it does require special compile or load options, create a macro
+#    composed of the (full) module name, sans suffix, plus 'CFLAGS' or
+#    'LDFLAGS', depending on the compile phase in question.
+metalbasemoduleCFLAGS=  -I$(prefix)/include/mbase51 -DNO_TIMEB -DNO_USHORT -DNO_ENCRYPT
+metalbasemoduleLDFLAGS= -L/depot/sundry/plat/lib -lmb
+cursesmoduleCFLAGS=  -I/usr/5include
+cursesmoduleLDFLAGS= -L/usr/5lib -lcurses -ltermcap
+
+OBJS=		$(SOURCES:.c=.so)
+
+CC=		gcc
+OPT=		-g -O
+DEFS=		-DHAVE_CONFIG_H
+INCLDIR=	$(prefix)/include/python
+CFLAGS=		$(OPT) -I$(INCLDIR) -I.. $(DEFS)
+LD=		ld
+
+all:	$(OBJS)
+
+%.o: %.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $($*CFLAGS) -o $@ $<
+
+%.so: %.o
+	$(LD) $(LDFLAGS) -o $@ $< $($*LDFLAGS) $(LOADLIBES)
+
+PHONY: echo		# For testing derivation of $(OBJS).
+echo:
+	@echo "(Set SOURCES def if you don't see a '.so' for each '.c' between the brackets)"
+	@echo :$(OBJS):
+
+PHONY : install
+install:	$(OBJS)
+	ls $(OBJS) | cpio -pm $(DESTLIB)
+
+PHONY : clean
+clean:
+	rm -f *.o *.so
