@@ -166,32 +166,11 @@ gen_iternext(genobject *gen)
 }
 
 static PyObject *
-gen_next(genobject *gen)
-{
-	PyObject *result;
-
-	result = gen_iternext(gen);
-
-	if (result == NULL && !PyErr_Occurred()) {
-		PyErr_SetObject(PyExc_StopIteration, Py_None);
-		return NULL;
-	}
-
-	return result;
-}
-
-static PyObject *
 gen_getiter(PyObject *gen)
 {
 	Py_INCREF(gen);
 	return gen;
 }
-
-static struct PyMethodDef gen_methods[] = {
-	{"next",     (PyCFunction)gen_next, METH_NOARGS,
-	 	"next() -- get the next value, or raise StopIteration"},
-	{NULL,          NULL}   /* Sentinel */
-};
 
 static PyMemberDef gen_memberlist[] = {
 	{"gi_frame",	T_OBJECT, offsetof(genobject, gi_frame),	RO},
@@ -229,7 +208,7 @@ statichere PyTypeObject gentype = {
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)gen_getiter,		/* tp_iter */
 	(iternextfunc)gen_iternext,		/* tp_iternext */
-	gen_methods,				/* tp_methods */
+	0,					/* tp_methods */
 	gen_memberlist,				/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */
