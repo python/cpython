@@ -356,7 +356,9 @@ class install (Command):
         # it's the caller's problem if they supply a bad name!
         scheme = INSTALL_SCHEMES[name]
         for key in ('purelib', 'platlib', 'scripts', 'data'):
-            setattr (self, 'install_' + key, scheme[key])
+            attrname = 'install_' + key
+            if getattr(self, attrname) is None:
+                setattr(self, attrname, scheme[key])
 
 
     def _expand_attrs (self, attrs):
