@@ -4,22 +4,17 @@
 # correctly after being converted to a string.)
 
 
-def opendbm(filename, mode, perm):
-	return Dbm().init(filename, mode, perm)
-
-
 class Dbm:
 
-	def init(self, filename, mode, perm):
+	def __init__(self, filename, mode, perm):
 		import dbm
 		self.db = dbm.open(filename, mode, perm)
-		return self
 
 	def __repr__(self):
 		s = ''
 		for key in self.keys():
 			t = `key` + ': ' + `self[key]`
-			if s: t = t + ', '
+			if s: t = ', ' + t
 			s = s + t
 		return '{' + s + '}'
 
@@ -46,7 +41,7 @@ class Dbm:
 
 
 def test():
-	d = opendbm('@dbm', 'rw', 0666)
+	d = Dbm('@dbm', 'rw', 0666)
 	print d
 	while 1:
 		try:
@@ -54,7 +49,7 @@ def test():
 			if d.has_key(key):
 				value = d[key]
 				print 'currently:', value
-			value = eval(raw_input('value: '))
+			value = input('value: ')
 			if value == None:
 				del d[key]
 			else:
