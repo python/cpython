@@ -21,8 +21,6 @@ import AppleEvents
 from Metrowerks_Shell_Suite import Metrowerks_Shell_Suite
 from Required_Suite import Required_Suite 
 
-addpack.addpack('Mac')
-addpack.addpack('scripts')
 import mkapplet
 
 class MwShell(aetools.TalkTo, Metrowerks_Shell_Suite, Required_Suite):
