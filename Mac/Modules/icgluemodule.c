@@ -34,16 +34,29 @@ PERFORMANCE OF THIS SOFTWARE.
 
 extern int ResObj_Convert(PyObject *, Handle *); /* From Resmodule.c */
 
-#if TARGET_API_MAC_CARBON
+#ifdef WITHOUT_FRAMEWORKS
+#if !TARGET_API_MAC_OS8
 /* The Carbon headers define PRAGMA_ALIGN_SUPPORT to something illegal,
 ** because you shouldn't use it for Carbon. All good and well, but portable
 ** code still needs it. So, we undefine it here.
 */
 #undef PRAGMA_ALIGN_SUPPORTED
 #define PRAGMA_ALIGN_SUPPORTED 0
-#endif /* TARGET_API_MAC_CARBON */
+#endif /* !TARGET_API_MAC_OS8 */
 
 #include "ICAPI.h"
+#else
+#include <Carbon/Carbon.h>
+typedef OSStatus ICError;
+/* Some fields in ICMapEntry have changed names. */
+#define file_type fileType
+#define file_creator fileCreator
+#define post_creator postCreator
+#define creator_app_name creatorAppName
+#define post_app_name postAppName
+#define MIME_type MIMEType
+#define entry_name entryName
+#endif
 
 static PyObject *ErrorObject;
 
@@ -69,7 +82,7 @@ staticforward PyTypeObject Icitype;
 
 /* ---------------------------------------------------------------- */
 
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
 static char ici_ICFindConfigFile__doc__[] = 
 "()->None; Find config file in standard places"
 ;
@@ -129,8 +142,6 @@ ici_ICChooseConfig(self, args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
-#endif /* !TARGET_API_MAC_CARBON */
-
 
 static char ici_ICChooseNewConfig__doc__[] = 
 "()->None; Let the user choose a new config file"
@@ -150,6 +161,7 @@ ici_ICChooseNewConfig(self, args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+#endif /* TARGET_API_MAC_OS8 */
 
 
 static char ici_ICGetSeed__doc__[] = 
@@ -460,12 +472,12 @@ ici_ICMapTypeCreator(self, args)
 
 
 static struct PyMethodDef ici_methods[] = {
-#if !TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_OS8
  {"ICFindConfigFile",	(PyCFunction)ici_ICFindConfigFile,	METH_VARARGS,	ici_ICFindConfigFile__doc__},
  {"ICFindUserConfigFile",	(PyCFunction)ici_ICFindUserConfigFile,	METH_VARARGS,	ici_ICFindUserConfigFile__doc__},
  {"ICChooseConfig",	(PyCFunction)ici_ICChooseConfig,	METH_VARARGS,	ici_ICChooseConfig__doc__},
  {"ICChooseNewConfig",	(PyCFunction)ici_ICChooseNewConfig,	METH_VARARGS,	ici_ICChooseNewConfig__doc__},
-#endif /* !TARGET_API_MAC_CARBON */
+#endif /* TARGET_API_MAC_OS8 */
  {"ICGetSeed",	(PyCFunction)ici_ICGetSeed,	METH_VARARGS,	ici_ICGetSeed__doc__},
  {"ICBegin",	(PyCFunction)ici_ICBegin,	METH_VARARGS,	ici_ICBegin__doc__},
  {"ICFindPrefHandle",	(PyCFunction)ici_ICFindPrefHandle,	METH_VARARGS,	ici_ICFindPrefHandle__doc__},
