@@ -1,7 +1,11 @@
 # Test properties of bool promised by PEP 285
 
-from test.test_support import verbose, TestFailed, TESTFN, vereq, have_unicode
+import unittest
+from test import test_support
+
 import os
+
+from test.test_support import verbose, TestFailed, TESTFN, vereq, have_unicode
 
 def veris(a, b):
     if a is not b:
@@ -11,255 +15,326 @@ def verisnot(a, b):
     if a is b:
         raise TestFailed, "%r is %r" % (a, b)
 
-try:
-    class C(bool):
-        pass
-except TypeError:
-    pass
-else:
-    raise TestFailed, "bool should not be subclassable"
+class BoolTest(unittest.TestCase):
 
-try:
-    int.__new__(bool, 0)
-except TypeError:
-    pass
-else:
-    raise TestFailed, "should not be able to create new bool instances"
+    def assertIs(self, a, b):
+        self.assert_(a is b)
 
-# checking tp_print slot
-fo = open(TESTFN, "wb")
-print >> fo, False, True
-fo.close()
-fo = open(TESTFN, "rb")
-vereq(fo.read(), 'False True\n')
-fo.close()
-os.remove(TESTFN)
+    def assertIsNot(self, a, b):
+        self.assert_(a is not b)
 
-# checking repr and str
-vereq(str(False), 'False')
-vereq(str(True), 'True')
-vereq(repr(False), 'False')
-vereq(repr(True), 'True')
-vereq(eval(repr(False)), False)
-vereq(eval(repr(True)), True)
+    def test_subclass(self):
+        try:
+            class C(bool):
+                pass
+        except TypeError:
+            pass
+        else:
+            self.fail("bool should not be subclassable")
 
-vereq(int(False), 0)
-verisnot(int(False), False)
-vereq(int(True), 1)
-verisnot(int(True), True)
+        self.assertRaises(TypeError, int.__new__, bool, 0)
 
-vereq(+False, 0)
-verisnot(+False, False)
-vereq(-False, 0)
-verisnot(-False, False)
-vereq(abs(False), 0)
-verisnot(abs(False), False)
-vereq(+True, 1)
-verisnot(+True, True)
-vereq(-True, -1)
-vereq(abs(True), 1)
-verisnot(abs(True), True)
-vereq(~False, -1)
-vereq(~True, -2)
+    def test_print(self):
+        try:
+            fo = open(test_support.TESTFN, "wb")
+            print >> fo, False, True
+            fo.close()
+            fo = open(test_support.TESTFN, "rb")
+            self.assertEqual(fo.read(), 'False True\n')
+        finally:
+            fo.close()
+            os.remove(test_support.TESTFN)
 
-vereq(False+2, 2)
-vereq(True+2, 3)
-vereq(2+False, 2)
-vereq(2+True, 3)
+    def test_repr(self):
+        self.assertEqual(repr(False), 'False')
+        self.assertEqual(repr(True), 'True')
+        self.assertEqual(eval(repr(False)), False)
+        self.assertEqual(eval(repr(True)), True)
 
-vereq(False+False, 0)
-verisnot(False+False, False)
-vereq(False+True, 1)
-verisnot(False+True, True)
-vereq(True+False, 1)
-verisnot(True+False, True)
-vereq(True+True, 2)
+    def test_str(self):
+        self.assertEqual(str(False), 'False')
+        self.assertEqual(str(True), 'True')
 
-vereq(True-True, 0)
-verisnot(True-True, False)
-vereq(False-False, 0)
-verisnot(False-False, False)
-vereq(True-False, 1)
-verisnot(True-False, True)
-vereq(False-True, -1)
+    def test_int(self):
+        self.assertEqual(int(False), 0)
+        self.assertIsNot(int(False), False)
+        self.assertEqual(int(True), 1)
+        self.assertIsNot(int(True), True)
 
-vereq(True*1, 1)
-vereq(False*1, 0)
-verisnot(False*1, False)
+    def test_math(self):
+        self.assertEqual(+False, 0)
+        self.assertIsNot(+False, False)
+        self.assertEqual(-False, 0)
+        self.assertIsNot(-False, False)
+        self.assertEqual(abs(False), 0)
+        self.assertIsNot(abs(False), False)
+        self.assertEqual(+True, 1)
+        self.assertIsNot(+True, True)
+        self.assertEqual(-True, -1)
+        self.assertEqual(abs(True), 1)
+        self.assertIsNot(abs(True), True)
+        self.assertEqual(~False, -1)
+        self.assertEqual(~True, -2)
 
-vereq(True/1, 1)
-verisnot(True/1, True)
-vereq(False/1, 0)
-verisnot(False/1, False)
+        self.assertEqual(False+2, 2)
+        self.assertEqual(True+2, 3)
+        self.assertEqual(2+False, 2)
+        self.assertEqual(2+True, 3)
 
-for b in False, True:
-    for i in 0, 1, 2:
-        vereq(b**i, int(b)**i)
-        verisnot(b**i, bool(int(b)**i))
+        self.assertEqual(False+False, 0)
+        self.assertIsNot(False+False, False)
+        self.assertEqual(False+True, 1)
+        self.assertIsNot(False+True, True)
+        self.assertEqual(True+False, 1)
+        self.assertIsNot(True+False, True)
+        self.assertEqual(True+True, 2)
 
-for a in False, True:
-    for b in False, True:
-        veris(a&b, bool(int(a)&int(b)))
-        veris(a|b, bool(int(a)|int(b)))
-        veris(a^b, bool(int(a)^int(b)))
-        vereq(a&int(b), int(a)&int(b))
-        verisnot(a&int(b), bool(int(a)&int(b)))
-        vereq(a|int(b), int(a)|int(b))
-        verisnot(a|int(b), bool(int(a)|int(b)))
-        vereq(a^int(b), int(a)^int(b))
-        verisnot(a^int(b), bool(int(a)^int(b)))
-        vereq(int(a)&b, int(a)&int(b))
-        verisnot(int(a)&b, bool(int(a)&int(b)))
-        vereq(int(a)|b, int(a)|int(b))
-        verisnot(int(a)|b, bool(int(a)|int(b)))
-        vereq(int(a)^b, int(a)^int(b))
-        verisnot(int(a)^b, bool(int(a)^int(b)))
+        self.assertEqual(True-True, 0)
+        self.assertIsNot(True-True, False)
+        self.assertEqual(False-False, 0)
+        self.assertIsNot(False-False, False)
+        self.assertEqual(True-False, 1)
+        self.assertIsNot(True-False, True)
+        self.assertEqual(False-True, -1)
 
-veris(1==1, True)
-veris(1==0, False)
-# XXX <, <=, >, >=, !=
+        self.assertEqual(True*1, 1)
+        self.assertEqual(False*1, 0)
+        self.assertIsNot(False*1, False)
 
-x = [1]
-veris(x is x, True)
-veris(x is not x, False)
+        self.assertEqual(True/1, 1)
+        self.assertIsNot(True/1, True)
+        self.assertEqual(False/1, 0)
+        self.assertIsNot(False/1, False)
 
-veris(1 in x, True)
-veris(0 in x, False)
-veris(1 not in x, False)
-veris(0 not in x, True)
+        for b in False, True:
+            for i in 0, 1, 2:
+                self.assertEqual(b**i, int(b)**i)
+                self.assertIsNot(b**i, bool(int(b)**i))
 
-veris(not True, False)
-veris(not False, True)
+        for a in False, True:
+            for b in False, True:
+                self.assertIs(a&b, bool(int(a)&int(b)))
+                self.assertIs(a|b, bool(int(a)|int(b)))
+                self.assertIs(a^b, bool(int(a)^int(b)))
+                self.assertEqual(a&int(b), int(a)&int(b))
+                self.assertIsNot(a&int(b), bool(int(a)&int(b)))
+                self.assertEqual(a|int(b), int(a)|int(b))
+                self.assertIsNot(a|int(b), bool(int(a)|int(b)))
+                self.assertEqual(a^int(b), int(a)^int(b))
+                self.assertIsNot(a^int(b), bool(int(a)^int(b)))
+                self.assertEqual(int(a)&b, int(a)&int(b))
+                self.assertIsNot(int(a)&b, bool(int(a)&int(b)))
+                self.assertEqual(int(a)|b, int(a)|int(b))
+                self.assertIsNot(int(a)|b, bool(int(a)|int(b)))
+                self.assertEqual(int(a)^b, int(a)^int(b))
+                self.assertIsNot(int(a)^b, bool(int(a)^int(b)))
 
-veris(bool(10), True)
-veris(bool(1), True)
-veris(bool(-1), True)
-veris(bool(0), False)
-veris(bool("hello"), True)
-veris(bool(""), False)
-veris(bool(), False)
+        self.assertIs(1==1, True)
+        self.assertIs(1==0, False)
+        self.assertIs(0<1, True)
+        self.assertIs(1<0, False)
+        self.assertIs(0<=0, True)
+        self.assertIs(1<=0, False)
+        self.assertIs(1>0, True)
+        self.assertIs(1>1, False)
+        self.assertIs(1>=1, True)
+        self.assertIs(0>=1, False)
+        self.assertIs(0!=1, True)
+        self.assertIs(0!=0, False)
 
-veris(hasattr([], "append"), True)
-veris(hasattr([], "wobble"), False)
+        x = [1]
+        self.assertIs(x is x, True)
+        self.assertIs(x is not x, False)
 
-veris(callable(len), True)
-veris(callable(1), False)
+        self.assertIs(1 in x, True)
+        self.assertIs(0 in x, False)
+        self.assertIs(1 not in x, False)
+        self.assertIs(0 not in x, True)
 
-veris(isinstance(True, bool), True)
-veris(isinstance(False, bool), True)
-veris(isinstance(True, int), True)
-veris(isinstance(False, int), True)
-veris(isinstance(1, bool), False)
-veris(isinstance(0, bool), False)
+        x = {1: 2}
+        self.assertIs(x is x, True)
+        self.assertIs(x is not x, False)
 
-veris(issubclass(bool, int), True)
-veris(issubclass(int, bool), False)
+        self.assertIs(1 in x, True)
+        self.assertIs(0 in x, False)
+        self.assertIs(1 not in x, False)
+        self.assertIs(0 not in x, True)
 
-veris({}.has_key(1), False)
-veris({1:1}.has_key(1), True)
+        self.assertIs(not True, False)
+        self.assertIs(not False, True)
 
-veris("xyz".endswith("z"), True)
-veris("xyz".endswith("x"), False)
-veris("xyz0123".isalnum(), True)
-veris("@#$%".isalnum(), False)
-veris("xyz".isalpha(), True)
-veris("@#$%".isalpha(), False)
-veris("0123".isdigit(), True)
-veris("xyz".isdigit(), False)
-veris("xyz".islower(), True)
-veris("XYZ".islower(), False)
-veris(" ".isspace(), True)
-veris("XYZ".isspace(), False)
-veris("X".istitle(), True)
-veris("x".istitle(), False)
-veris("XYZ".isupper(), True)
-veris("xyz".isupper(), False)
-veris("xyz".startswith("x"), True)
-veris("xyz".startswith("z"), False)
+    def test_convert(self):
+        self.assertRaises(TypeError, bool, 42, 42)
+        self.assertIs(bool(10), True)
+        self.assertIs(bool(1), True)
+        self.assertIs(bool(-1), True)
+        self.assertIs(bool(0), False)
+        self.assertIs(bool("hello"), True)
+        self.assertIs(bool(""), False)
+        self.assertIs(bool(), False)
 
-if have_unicode:
-    veris(unicode("xyz", 'ascii').endswith(unicode("z", 'ascii')), True)
-    veris(unicode("xyz", 'ascii').endswith(unicode("x", 'ascii')), False)
-    veris(unicode("xyz0123", 'ascii').isalnum(), True)
-    veris(unicode("@#$%", 'ascii').isalnum(), False)
-    veris(unicode("xyz", 'ascii').isalpha(), True)
-    veris(unicode("@#$%", 'ascii').isalpha(), False)
-    veris(unicode("0123", 'ascii').isdecimal(), True)
-    veris(unicode("xyz", 'ascii').isdecimal(), False)
-    veris(unicode("0123", 'ascii').isdigit(), True)
-    veris(unicode("xyz", 'ascii').isdigit(), False)
-    veris(unicode("xyz", 'ascii').islower(), True)
-    veris(unicode("XYZ", 'ascii').islower(), False)
-    veris(unicode("0123", 'ascii').isnumeric(), True)
-    veris(unicode("xyz", 'ascii').isnumeric(), False)
-    veris(unicode(" ", 'ascii').isspace(), True)
-    veris(unicode("XYZ", 'ascii').isspace(), False)
-    veris(unicode("X", 'ascii').istitle(), True)
-    veris(unicode("x", 'ascii').istitle(), False)
-    veris(unicode("XYZ", 'ascii').isupper(), True)
-    veris(unicode("xyz", 'ascii').isupper(), False)
-    veris(unicode("xyz", 'ascii').startswith(unicode("x", 'ascii')), True)
-    veris(unicode("xyz", 'ascii').startswith(unicode("z", 'ascii')), False)
+    def test_hasattr(self):
+        self.assertIs(hasattr([], "append"), True)
+        self.assertIs(hasattr([], "wobble"), False)
 
-f = file(TESTFN, "w")
-veris(f.closed, False)
-f.close()
-veris(f.closed, True)
-os.remove(TESTFN)
+    def test_callable(self):
+        self.assertIs(callable(len), True)
+        self.assertIs(callable(1), False)
 
-import operator
-veris(operator.truth(0), False)
-veris(operator.truth(1), True)
-veris(operator.isCallable(0), False)
-veris(operator.isCallable(len), True)
-veris(operator.isNumberType(None), False)
-veris(operator.isNumberType(0), True)
-veris(operator.not_(1), False)
-veris(operator.not_(0), True)
-veris(operator.isSequenceType(0), False)
-veris(operator.isSequenceType([]), True)
-veris(operator.contains([], 1), False)
-veris(operator.contains([1], 1), True)
-veris(operator.isMappingType(1), False)
-veris(operator.isMappingType({}), True)
-veris(operator.lt(0, 0), False)
-veris(operator.lt(0, 1), True)
+    def test_isinstance(self):
+        self.assertIs(isinstance(True, bool), True)
+        self.assertIs(isinstance(False, bool), True)
+        self.assertIs(isinstance(True, int), True)
+        self.assertIs(isinstance(False, int), True)
+        self.assertIs(isinstance(1, bool), False)
+        self.assertIs(isinstance(0, bool), False)
 
-import marshal
-veris(marshal.loads(marshal.dumps(True)), True)
-veris(marshal.loads(marshal.dumps(False)), False)
+    def test_issubclass(self):
+        self.assertIs(issubclass(bool, int), True)
+        self.assertIs(issubclass(int, bool), False)
 
-import pickle
-veris(pickle.loads(pickle.dumps(True)), True)
-veris(pickle.loads(pickle.dumps(False)), False)
-veris(pickle.loads(pickle.dumps(True, True)), True)
-veris(pickle.loads(pickle.dumps(False, True)), False)
+    def test_haskey(self):
+        self.assertIs({}.has_key(1), False)
+        self.assertIs({1:1}.has_key(1), True)
 
-import cPickle
-veris(cPickle.loads(cPickle.dumps(True)), True)
-veris(cPickle.loads(cPickle.dumps(False)), False)
-veris(cPickle.loads(cPickle.dumps(True, True)), True)
-veris(cPickle.loads(cPickle.dumps(False, True)), False)
+    def test_string(self):
+        self.assertIs("xyz".endswith("z"), True)
+        self.assertIs("xyz".endswith("x"), False)
+        self.assertIs("xyz0123".isalnum(), True)
+        self.assertIs("@#$%".isalnum(), False)
+        self.assertIs("xyz".isalpha(), True)
+        self.assertIs("@#$%".isalpha(), False)
+        self.assertIs("0123".isdigit(), True)
+        self.assertIs("xyz".isdigit(), False)
+        self.assertIs("xyz".islower(), True)
+        self.assertIs("XYZ".islower(), False)
+        self.assertIs(" ".isspace(), True)
+        self.assertIs("XYZ".isspace(), False)
+        self.assertIs("X".istitle(), True)
+        self.assertIs("x".istitle(), False)
+        self.assertIs("XYZ".isupper(), True)
+        self.assertIs("xyz".isupper(), False)
+        self.assertIs("xyz".startswith("x"), True)
+        self.assertIs("xyz".startswith("z"), False)
 
-veris(pickle.loads(cPickle.dumps(True)), True)
-veris(pickle.loads(cPickle.dumps(False)), False)
-veris(pickle.loads(cPickle.dumps(True, True)), True)
-veris(pickle.loads(cPickle.dumps(False, True)), False)
+        if have_unicode:
+            self.assertIs(unicode("xyz", 'ascii').endswith(unicode("z", 'ascii')), True)
+            self.assertIs(unicode("xyz", 'ascii').endswith(unicode("x", 'ascii')), False)
+            self.assertIs(unicode("xyz0123", 'ascii').isalnum(), True)
+            self.assertIs(unicode("@#$%", 'ascii').isalnum(), False)
+            self.assertIs(unicode("xyz", 'ascii').isalpha(), True)
+            self.assertIs(unicode("@#$%", 'ascii').isalpha(), False)
+            self.assertIs(unicode("0123", 'ascii').isdecimal(), True)
+            self.assertIs(unicode("xyz", 'ascii').isdecimal(), False)
+            self.assertIs(unicode("0123", 'ascii').isdigit(), True)
+            self.assertIs(unicode("xyz", 'ascii').isdigit(), False)
+            self.assertIs(unicode("xyz", 'ascii').islower(), True)
+            self.assertIs(unicode("XYZ", 'ascii').islower(), False)
+            self.assertIs(unicode("0123", 'ascii').isnumeric(), True)
+            self.assertIs(unicode("xyz", 'ascii').isnumeric(), False)
+            self.assertIs(unicode(" ", 'ascii').isspace(), True)
+            self.assertIs(unicode("XYZ", 'ascii').isspace(), False)
+            self.assertIs(unicode("X", 'ascii').istitle(), True)
+            self.assertIs(unicode("x", 'ascii').istitle(), False)
+            self.assertIs(unicode("XYZ", 'ascii').isupper(), True)
+            self.assertIs(unicode("xyz", 'ascii').isupper(), False)
+            self.assertIs(unicode("xyz", 'ascii').startswith(unicode("x", 'ascii')), True)
+            self.assertIs(unicode("xyz", 'ascii').startswith(unicode("z", 'ascii')), False)
 
-veris(cPickle.loads(pickle.dumps(True)), True)
-veris(cPickle.loads(pickle.dumps(False)), False)
-veris(cPickle.loads(pickle.dumps(True, True)), True)
-veris(cPickle.loads(pickle.dumps(False, True)), False)
+    def test_boolean(self):
+        self.assertEqual(True & 1, 1)
+        self.assert_(not isinstance(True & 1, bool))
+        self.assertIs(True & True, True)
 
-# Test for specific backwards-compatible pickle values
-vereq(pickle.dumps(True), "I01\n.")
-vereq(pickle.dumps(False), "I00\n.")
-vereq(cPickle.dumps(True), "I01\n.")
-vereq(cPickle.dumps(False), "I00\n.")
-vereq(pickle.dumps(True, True), "I01\n.")
-vereq(pickle.dumps(False, True), "I00\n.")
-vereq(cPickle.dumps(True, True), "I01\n.")
-vereq(cPickle.dumps(False, True), "I00\n.")
+        self.assertEqual(True | 1, 1)
+        self.assert_(not isinstance(True | 1, bool))
+        self.assertIs(True | True, True)
 
-if verbose:
-    print "All OK"
+        self.assertEqual(True ^ 1, 0)
+        self.assert_(not isinstance(True ^ 1, bool))
+        self.assertIs(True ^ True, False)
+
+    def test_fileclosed(self):
+        try:
+            f = file(TESTFN, "w")
+            self.assertIs(f.closed, False)
+            f.close()
+            self.assertIs(f.closed, True)
+        finally:
+            os.remove(TESTFN)
+
+    def test_operator(self):
+        import operator
+        self.assertIs(operator.truth(0), False)
+        self.assertIs(operator.truth(1), True)
+        self.assertIs(operator.isCallable(0), False)
+        self.assertIs(operator.isCallable(len), True)
+        self.assertIs(operator.isNumberType(None), False)
+        self.assertIs(operator.isNumberType(0), True)
+        self.assertIs(operator.not_(1), False)
+        self.assertIs(operator.not_(0), True)
+        self.assertIs(operator.isSequenceType(0), False)
+        self.assertIs(operator.isSequenceType([]), True)
+        self.assertIs(operator.contains([], 1), False)
+        self.assertIs(operator.contains([1], 1), True)
+        self.assertIs(operator.isMappingType(1), False)
+        self.assertIs(operator.isMappingType({}), True)
+        self.assertIs(operator.lt(0, 0), False)
+        self.assertIs(operator.lt(0, 1), True)
+        self.assertIs(operator.is_(True, True), True)
+        self.assertIs(operator.is_(True, False), False)
+        self.assertIs(operator.is_not(True, True), False)
+        self.assertIs(operator.is_not(True, False), True)
+
+    def test_marshal(self):
+        import marshal
+        veris(marshal.loads(marshal.dumps(True)), True)
+        veris(marshal.loads(marshal.dumps(False)), False)
+
+    def test_pickle(self):
+        import pickle
+        self.assertIs(pickle.loads(pickle.dumps(True)), True)
+        self.assertIs(pickle.loads(pickle.dumps(False)), False)
+        self.assertIs(pickle.loads(pickle.dumps(True, True)), True)
+        self.assertIs(pickle.loads(pickle.dumps(False, True)), False)
+
+    def test_cpickle(self):
+        import cPickle
+        self.assertIs(cPickle.loads(cPickle.dumps(True)), True)
+        self.assertIs(cPickle.loads(cPickle.dumps(False)), False)
+        self.assertIs(cPickle.loads(cPickle.dumps(True, True)), True)
+        self.assertIs(cPickle.loads(cPickle.dumps(False, True)), False)
+
+    def test_mixedpickle(self):
+        import pickle, cPickle
+        self.assertIs(pickle.loads(cPickle.dumps(True)), True)
+        self.assertIs(pickle.loads(cPickle.dumps(False)), False)
+        self.assertIs(pickle.loads(cPickle.dumps(True, True)), True)
+        self.assertIs(pickle.loads(cPickle.dumps(False, True)), False)
+
+        self.assertIs(cPickle.loads(pickle.dumps(True)), True)
+        self.assertIs(cPickle.loads(pickle.dumps(False)), False)
+        self.assertIs(cPickle.loads(pickle.dumps(True, True)), True)
+        self.assertIs(cPickle.loads(pickle.dumps(False, True)), False)
+
+    def test_picklevalues(self):
+        import pickle, cPickle
+
+        # Test for specific backwards-compatible pickle values
+        self.assertEqual(pickle.dumps(True), "I01\n.")
+        self.assertEqual(pickle.dumps(False), "I00\n.")
+        self.assertEqual(cPickle.dumps(True), "I01\n.")
+        self.assertEqual(cPickle.dumps(False), "I00\n.")
+        self.assertEqual(pickle.dumps(True, True), "I01\n.")
+        self.assertEqual(pickle.dumps(False, True), "I00\n.")
+        self.assertEqual(cPickle.dumps(True, True), "I01\n.")
+        self.assertEqual(cPickle.dumps(False, True), "I00\n.")
+
+def test_main():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(BoolTest))
+    test_support.run_suite(suite)
+
+if __name__ == "__main__":
+    test_main()
+
