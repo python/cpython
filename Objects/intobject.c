@@ -113,7 +113,7 @@ PyInt_FromLong(long ival)
 		if ((free_list = fill_free_list()) == NULL)
 			return NULL;
 	}
-	/* PyObject_New is inlined */
+	/* Inline PyObject_New */
 	v = free_list;
 	free_list = (PyIntObject *)v->ob_type;
 	PyObject_INIT(v, &PyInt_Type);

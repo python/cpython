@@ -138,7 +138,7 @@ PyBuffer_New(int size)
 				"size must be zero or positive");
 		return NULL;
 	}
-	/* PyObject_New is inlined */
+	/* Inline PyObject_New */
 	o = PyObject_MALLOC(sizeof(*b) + size);
 	if ( o == NULL )
 		return PyErr_NoMemory();

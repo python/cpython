@@ -64,7 +64,7 @@ PyFloat_FromDouble(double fval)
 		if ((free_list = fill_free_list()) == NULL)
 			return NULL;
 	}
-	/* PyObject_New is inlined */
+	/* Inline PyObject_New */
 	op = free_list;
 	free_list = (PyFloatObject *)op->ob_type;
 	PyObject_INIT(op, &PyFloat_Type);
