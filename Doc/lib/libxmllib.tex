@@ -27,7 +27,8 @@ Stop processing tags.  Treat all following input as literal input
 \end{methoddesc}
 
 \begin{methoddesc}{setliteral}{}
-Enter literal mode (CDATA mode).
+Enter literal mode (CDATA mode).  This mode is automatically exited
+when the close tag matching the last unclosed open tag is encountered.
 \end{methoddesc}
 
 \begin{methoddesc}{feed}{data}
