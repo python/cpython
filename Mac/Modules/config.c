@@ -140,6 +140,9 @@ extern void initwaste();
 #ifdef USE_GDBM
 extern void initgdbm();
 #endif
+#ifdef USE_ZLIB
+extern void initzlib();
+#endif
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void PyMarshal_Init();
@@ -237,6 +240,9 @@ struct _inittab _PyImport_Inittab[] = {
 #ifdef USE_GDBM
 	{"gdbm",	initgdbm},
 #endif /* USE_GDBM */
+#ifdef USE_ZLIB
+	{"zlib",	initzlib},
+#endif
 
 /* -- ADDMODULE MARKER 2 -- */
 
