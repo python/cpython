@@ -307,28 +307,28 @@ comment in Python.
 
 It is possible to use encodings different than ASCII in Python source
 files. The best way to do it is to put one more special comment line
-right after \code{\#!} line making proper encoding declaration:
+right after the \code{\#!} line to define the source file encoding:
 
 \begin{verbatim}
 # -*- coding: iso-8859-1 -*- 
 \end{verbatim}
 
-With that declaration, all characters in the source file will be
-treated as belonging to \code{iso-8859-1} encoding, and it will be
+With that declaration, all characters in the source file will be treated as
+{}\code{iso-8859-1}, and it will be
 possible to directly write Unicode string literals in the selected
-encoding. The list of possible encodings can be found in the
+encoding.  The list of possible encodings can be found in the
 \citetitle[../lib/lib.html]{Python Library Reference}, in the section
 on \module{codecs}.
 
 If your editor supports saving files as \code{UTF-8} with an UTF-8
 signature (aka BOM -- Byte Order Mark), you can use that instead of an
-encoding declaration. IDLE supports such saving if
+encoding declaration. IDLE supports this capability if
 \code{Options/General/Default Source Encoding/UTF-8} is set. Notice
 that this signature is not understood in older Python releases (2.2
 and earlier), and also not understood by the operating system for
 \code{\#!} files. 
 
-By using UTF-8 (either through the signature, or a an encoding
+By using UTF-8 (either through the signature or an encoding
 declaration), characters of most languages in the world can be used
 simultaneously in string literals and comments. Using non-ASCII
 characters in identifiers is not supported. To display all these
