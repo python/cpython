@@ -513,3 +513,22 @@ is 2, \code{slice(TOS1, TOS)} is pushed; if it is 3,
 \code{slice(TOS2, TOS1, TOS)} is pushed.
 See the \code{slice()}\bifuncindex{slice} built-in function.
 \end{opcodedesc}
+
+\begin{opcodedesc}{CALL_FUNCTION_VAR}{argc}
+Calls a function. \var{argc} is interpreted as in \code{CALL_FUNCTION}.
+The top element on the stack contains the variable argument list, followed
+by keyword and positional arguments.
+\end{opcodedesc}
+
+\begin{opcodedesc}{CALL_FUNCTION_KW}{argc}
+Calls a function. \var{argc} is interpreted as in \code{CALL_FUNCTION}.
+The top element on the stack contains the keyword arguments dictionary, 
+followed by explicit keyword and positional arguments.
+\end{opcodedesc}
+
+\begin{opcodedesc}{CALL_FUNCTION_VAR_KW}{argc}
+Calls a function. \var{argc} is interpreted as in
+\code{CALL_FUNCTION}.  The top element on the stack contains the
+keyword arguments dictionary, followed by the variable-arguments
+tuple, followed by explicit keyword and positional arguments.
+\end{opcodedesc}
