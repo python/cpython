@@ -1,6 +1,6 @@
 Document Type: WSE
 item: Global
-  Version=8.11
+  Version=8.14
   Flags=00000100
   Split=1420
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
@@ -19,7 +19,16 @@ item: Global
   Patch Memory=4096
   Per-User Version ID=1
   Crystal Format=10111100101100000010001001001001
-  File Checksum=2338111989
+  Step View=&Properties
+end
+item: Remark
+  Text=Note from Tim:  This is a verbatim copy of Wise's Uninstal.wse, altered at the end to write
+end
+item: Remark
+  Text=uninstall info under HKCU instead of HKLM if the user doesn't have Admin privs.
+end
+item: Remark
+  Text=Hmm!  Also changed it to use the 32-bit uninstaller!
 end
 item: Remark
 end
@@ -431,7 +440,7 @@ item: Check Configuration
   Flags=10111111
 end
 item: Remark
-  Text=Write under HKLM.
+  Text=Write uninstall info under HKLM.  This if/else/end block added by Tim.
 end
 item: Edit Registry
   Total Keys=1
@@ -451,7 +460,7 @@ end
 item: Else Statement
 end
 item: Remark
-  Text=Write under HKCU, but identical otherwise.
+  Text=The same, but write under HKCU instead.
 end
 item: Edit Registry
   Total Keys=1
