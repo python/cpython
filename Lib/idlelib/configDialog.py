@@ -35,13 +35,13 @@ class ConfigDialog(Toplevel):
             'Python Definitions':('definition','02','both'),
             'Python Comments':('comment','03','both'),
             'Python Strings':('string','04','both'),
-            'Selected Text':('selected','05','both'),
-            'Found Text':('found','06','both'),
+            'Selected Text':('hilite','05','both'),
+            'Found Text':('hit','06','both'),
             'Cursor':('cursor','07','fg'),
             'Error Background':('error','08','bg'),
-            'Shell Foreground':('shfg','09','fg'),
-            'Shell Stdout Foreground':('shstdout','10','fg'),
-            'Shell Stderr Foreground':('shstderr','11','fg')}
+            'Shell Foreground':('console','09','fg'),
+            'Shell Stdout Foreground':('stdout','10','fg'),
+            'Shell Stderr Foreground':('stderr','11','fg')}
         self.CreateWidgets()
         self.resizable(height=FALSE,width=FALSE)
         self.ChangePage()
@@ -105,7 +105,7 @@ class ConfigDialog(Toplevel):
             pos=pos+1
     
     def SetThemeType(self):
-        if self.themeBuiltin.get():
+        if self.themeIsBuiltin.get():
             self.optMenuThemeBuiltin.config(state=NORMAL)
             self.optMenuThemeCustom.config(state=DISABLED)
             self.buttonDeleteCustomTheme.config(state=DISABLED)
@@ -115,11 +115,11 @@ class ConfigDialog(Toplevel):
             self.buttonDeleteCustomTheme.config(state=NORMAL)
 
     def SetKeysType(self):
-        if self.keysType.get()==0:
+        if self.keysAreDefault.get():
             self.optMenuKeysBuiltin.config(state=NORMAL)
             self.optMenuKeysCustom.config(state=DISABLED)
             self.buttonDeleteCustomKeys.config(state=DISABLED)
-        elif self.keysType.get()==1:
+        else:
             self.optMenuKeysBuiltin.config(state=DISABLED)
             self.optMenuKeysCustom.config(state=NORMAL)
             self.buttonDeleteCustomKeys.config(state=NORMAL)
@@ -300,7 +300,7 @@ class ConfigDialog(Toplevel):
         self.fgHilite=IntVar()
         self.colour=StringVar()
         self.fontName=StringVar()
-        self.themeBuiltin=IntVar() 
+        self.themeIsBuiltin=IntVar() 
         self.highlightTarget=StringVar()
         self.highlightTarget.trace_variable('w',self.SetHighlightTargetBinding)
         ##widget creation
@@ -320,11 +320,11 @@ class ConfigDialog(Toplevel):
             ('#to choose items','comment'),('\n','normal'),('def','keyword'),
             (' ','normal'),('func','definition'),('(param):','normal'),
             ('\n  ','normal'),('"""string"""','string'),('\n  var0 = ','normal'),
-            ("'string'",'string'),('\n  var1 = ','normal'),("'selected'",'selected'),
-            ('\n  var2 = ','normal'),("'found'",'found'),('\n\n','normal'),
+            ("'string'",'string'),('\n  var1 = ','normal'),("'selected'",'hilite'),
+            ('\n  var2 = ','normal'),("'found'",'hit'),('\n\n','normal'),
             (' error ','error'),(' ','normal'),('cursor |','cursor'),
-            ('\n ','normal'),('shell','shfg'),(' ','normal'),('stdout','shstdout'),
-            (' ','normal'),('stderr','shstderr'),('\n','normal'))
+            ('\n ','normal'),('shell','console'),(' ','normal'),('stdout','stdout'),
+            (' ','normal'),('stderr','stderr'),('\n','normal'))
         for txTa in textAndTags:
             text.insert(END,txTa[0],txTa[1])
         for element in self.themeElements.keys(): 
@@ -349,10 +349,10 @@ class ConfigDialog(Toplevel):
         #frameTheme
         labelThemeTitle=Label(frameTheme,text='Select a Highlighting Theme')
         labelTypeTitle=Label(frameTheme,text='Select : ')
-        self.radioThemeBuiltin=Radiobutton(frameTheme,variable=self.themeBuiltin,
-            value=0,command=self.SetThemeType,text='a Built-in Theme')
-        self.radioThemeCustom=Radiobutton(frameTheme,variable=self.themeBuiltin,
-            value=1,command=self.SetThemeType,text='a Custom Theme')
+        self.radioThemeBuiltin=Radiobutton(frameTheme,variable=self.themeIsBuiltin,
+            value=1,command=self.SetThemeType,text='a Built-in Theme')
+        self.radioThemeCustom=Radiobutton(frameTheme,variable=self.themeIsBuiltin,
+            value=0,command=self.SetThemeType,text='a Custom Theme')
         self.optMenuThemeBuiltin=DynOptionMenu(frameTheme,
             self.builtinTheme,None,command=None)
         self.optMenuThemeCustom=DynOptionMenu(frameTheme,
@@ -392,7 +392,7 @@ class ConfigDialog(Toplevel):
         self.keyCtrl=StringVar()
         self.keyAlt=StringVar()
         self.keyShift=StringVar()
-        self.keysType=IntVar() 
+        self.keysAreDefault=IntVar() 
         ##widget creation
         #body frame
         frame=Frame(self.framePages,borderwidth=2,relief=RAISED)
@@ -419,10 +419,10 @@ class ConfigDialog(Toplevel):
         #frameKeySets
         labelKeysTitle=Label(frameKeySets,text='Select a Key Set')
         labelTypeTitle=Label(frameKeySets,text='Select : ')
-        self.radioKeysBuiltin=Radiobutton(frameKeySets,variable=self.keysType,
-            value=0,command=self.SetKeysType,text='a Built-in Key Set')
-        self.radioKeysCustom=Radiobutton(frameKeySets,variable=self.keysType,
-            value=1,command=self.SetKeysType,text='a Custom Key Set')
+        self.radioKeysBuiltin=Radiobutton(frameKeySets,variable=self.keysAreDefault,
+            value=1,command=self.SetKeysType,text='a Built-in Key Set')
+        self.radioKeysCustom=Radiobutton(frameKeySets,variable=self.keysAreDefault,
+            value=0,command=self.SetKeysType,text='a Custom Key Set')
         self.optMenuKeysBuiltin=DynOptionMenu(frameKeySets,
             self.builtinKeys,None,command=None)
         self.optMenuKeysCustom=DynOptionMenu(frameKeySets,
@@ -536,35 +536,14 @@ class ConfigDialog(Toplevel):
         return frame
 
     def PaintThemeSample(self):
-        if self.themeBuiltin.get: #a default theme
+        if self.themeIsBuiltin.get(): #a default theme
             theme=self.builtinTheme.get()
         else: #a user theme
             theme=self.customTheme.get()
-        colours=idleConf.GetHighlight(theme, 'normal')
-        #normalBg=colours['background']
-        apply(self.textHighlightSample.tag_config,('normal',),colours)
-        colours=idleConf.GetHighlight(theme, 'keyword')
-        apply(self.textHighlightSample.tag_config,('keyword',),colours)
-        colours=idleConf.GetHighlight(theme, 'comment')
-        apply(self.textHighlightSample.tag_config,('comment',),colours)
-        colours=idleConf.GetHighlight(theme, 'definition')
-        apply(self.textHighlightSample.tag_config,('definition',),colours)
-        colours=idleConf.GetHighlight(theme, 'string')
-        apply(self.textHighlightSample.tag_config,('string',),colours)
-        colours=idleConf.GetHighlight(theme, 'hilite')
-        apply(self.textHighlightSample.tag_config,('selected',),colours)
-        colours=idleConf.GetHighlight(theme, 'hit')
-        apply(self.textHighlightSample.tag_config,('found',),colours)
-        colours=idleConf.GetHighlight(theme, 'cursor')
-        apply(self.textHighlightSample.tag_config,('cursor',),colours)
-        colours=idleConf.GetHighlight(theme, 'error')
-        apply(self.textHighlightSample.tag_config,('error',),colours)
-        colours=idleConf.GetHighlight(theme, 'console')
-        apply(self.textHighlightSample.tag_config,('shfg',),colours)
-        colours=idleConf.GetHighlight(theme, 'stdout')
-        apply(self.textHighlightSample.tag_config,('shstdout',),colours)
-        colours=idleConf.GetHighlight(theme, 'stderr')
-        apply(self.textHighlightSample.tag_config,('shstderr',),colours)
+        for element in self.themeElements.keys():
+            colours=idleConf.GetHighlight(theme, self.themeElements[element][0])
+            apply(self.textHighlightSample.tag_config,
+                (self.themeElements[element][0],),colours)
         
     def LoadFontCfg(self):
         ##base editor font selection list
@@ -600,11 +579,12 @@ class ConfigDialog(Toplevel):
     
     def LoadThemeCfg(self):
         ##current theme type radiobutton
-        self.themeBuiltin.set(idleConf.GetOption('main','Theme','user',type='int'))
+        self.themeIsBuiltin.set(idleConf.GetOption('main','Theme','default',
+            type='int',default=1))
         ##currently set theme
         currentOption=idleConf.GetOption('main','Theme','name')
         ##load available theme option menus
-        if self.themeBuiltin.get(): #default theme selected
+        if self.themeIsBuiltin.get(): #default theme selected
             itemList=idleConf.GetSectionList('default','highlight')
             self.optMenuThemeBuiltin.SetMenu(itemList,currentOption)
             itemList=idleConf.GetSectionList('user','highlight')
@@ -623,6 +603,10 @@ class ConfigDialog(Toplevel):
         themeNames=self.themeElements.keys()
         themeNames.sort(self.__ThemeNameIndexCompare)
         self.optMenuHighlightTarget.SetMenu(themeNames,themeNames[0])   
+        sampleBg=idleConf.GetHighlight(currentOption,
+            self.highlightTarget.get())['background']
+        self.fgHilite.set(0)
+        self.frameColourSet.config(bg=sampleBg)
         self.PaintThemeSample()
     
     def __ThemeNameIndexCompare(self,a,b):
@@ -632,11 +616,12 @@ class ConfigDialog(Toplevel):
     
     def LoadKeyCfg(self):
         ##current keys type radiobutton
-        self.keysType.set(idleConf.GetOption('main','Keys','user',type='int'))
+        self.keysAreDefault.set(idleConf.GetOption('main','Keys','default',
+            type='int',default=1))
         ##currently set keys
         currentOption=idleConf.GetOption('main','Keys','name')
         ##load available keyset option menus
-        if self.keysType.get() == 0: #default theme selected
+        if self.keysAreDefault.get(): #default theme selected
             itemList=idleConf.GetSectionList('default','keys')
             self.optMenuKeysBuiltin.SetMenu(itemList,currentOption)
             itemList=idleConf.GetSectionList('user','keys')
@@ -645,7 +630,7 @@ class ConfigDialog(Toplevel):
                 self.customKeys.set('- no custom keys -')    
             else:
                 self.optMenuKeysCustom.SetMenu(itemList,itemList[0])
-        elif self.keysType.get() == 1: #user theme selected
+        else: #user theme selected
             itemList=idleConf.GetSectionList('user','keys')
             self.optMenuKeysCustom.SetMenu(itemList,currentOption)
             itemList=idleConf.GetSectionList('default','keys')
