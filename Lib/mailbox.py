@@ -4,6 +4,8 @@
 # Jack Jansen, CWI, March 1994.
 #
 import rfc822
+import os
+import regex
 
 class _Mailbox:
 	def __init__(self, fp):
@@ -59,8 +61,13 @@ class _Subfile:
 	def tell(self):
 		return self.pos - self.start
 
-	def seek(self, pos):
-		self.pos = pos + self.start
+	def seek(self, pos, whence=0):
+	        if whence == 0:
+		    self.pos = self.start + pos
+		elif whence == 1:
+		    self.pos = self.pos + pos
+		elif whence == 2:
+		    self.pos = self.stop + pos
 
 	def close(self):
 		pass
@@ -103,14 +110,37 @@ class MmdfMailbox(_Mailbox):
 				self.fp.seek(pos)
 				return
 
+class MHMailbox:
+    def __init__(self, dirname):
+	pat = regex.compile('^[0-9][0-9]*$')
+	self.dirname = dirname
+	files = os.listdir(self.dirname)
+	self.boxes = []
+	for f in files:
+	    if pat.match(f) == len(f):
+		self.boxes.append(f)
+
+    def next(self):
+	if not self.boxes:
+	    return None
+	fn = self.boxes[0]
+	del self.boxes[0]
+	fp = open(os.path.join(self.dirname, fn))
+	return rfc822.Message(fp)
+	    
+    
 if __name__ == '__main__':
 	import posix
 	import time
 	import sys
 	import string
-	mbox = '/usr/mail/'+posix.environ['USER']
-	fp = open(mbox, 'r')
-	mb = UnixMailbox(fp)
+##	mbox = '/usr/mail/'+posix.environ['USER']
+##	fp = open(mbox, 'r')
+##	mb = UnixMailbox(fp)
+
+	mbox = posix.environ['HOME']+'/Mail/inbox'
+	mb = MHMailbox(mbox)
+	
 	msgs = []
 	while 1:
 		msg = mb.next()
