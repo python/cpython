@@ -21,7 +21,7 @@ import string, re
 from types import *
 from sysconfig import \
      CC, CCSHARED, CFLAGS, OPT, LDSHARED, LDFLAGS, RANLIB, AR, SO
-from ccompiler import CCompiler
+from ccompiler import CCompiler, gen_preprocess_options, gen_lib_options
 
 
 # XXX Things not currently handled:
@@ -101,8 +101,8 @@ class UnixCCompiler (CCompiler):
             raise TypeError, \
                   "'includes' (if supplied) must be a list of strings"
 
-        pp_opts = _gen_preprocess_options (self.macros + macros,
-                                           self.include_dirs + includes)
+        pp_opts = gen_preprocess_options (self.macros + macros,
+                                          self.include_dirs + includes)
 
         # use of ccflags_shared means we're blithely assuming that we're
         # compiling for inclusion in a shared object! (will have to fix
@@ -111,10 +111,9 @@ class UnixCCompiler (CCompiler):
                   self.ccflags + self.ccflags_shared + \
                   sources
 
-        # this will change to 'spawn' when I have it!
-        #print string.join ([self.cc] + cc_args, ' ')
         self.spawn ([self.cc] + cc_args)
-
+        return self.object_filenames (sources)
+    
 
     # XXX punting on 'link_static_lib()' for now -- it might be better for
     # CCompiler to mandate just 'link_binary()' or some such to build a new
@@ -149,12 +148,12 @@ class UnixCCompiler (CCompiler):
         if build_info is None:
             build_info = {}
         
-        lib_opts = _gen_lib_options (self.libraries + libraries,
-                                     self.library_dirs + library_dirs)
+        lib_opts = gen_lib_options (self.libraries + libraries,
+                                    self.library_dirs + library_dirs,
+                                    "-l%s", "-L%s")
         ld_args = self.ldflags_shared + lib_opts + \
                   objects + ['-o', output_filename]
 
-        #print string.join ([self.ld_shared] + ld_args, ' ')
         self.spawn ([self.ld_shared] + ld_args)
 
 
@@ -174,8 +173,6 @@ class UnixCCompiler (CCompiler):
     def shared_library_filename (self, libname):
         return "lib%s%s" % (libname, self._shared_lib_ext )
 
-
-
 # class UnixCCompiler
 
 
@@ -184,60 +181,3 @@ def _split_command (cmd):
        the list of arguments; return them as (cmd, arglist)."""
     args = string.split (cmd)
     return (args[0], args[1:])
-
-
-def _gen_preprocess_options (macros, includes):
-
-    # XXX it would be nice (mainly aesthetic, and so we don't generate
-    # stupid-looking command lines) to go over 'macros' and eliminate
-    # redundant definitions/undefinitions (ie. ensure that only the
-    # latest mention of a particular macro winds up on the command
-    # line).  I don't think it's essential, though, since most (all?)
-    # Unix C compilers only pay attention to the latest -D or -U
-    # mention of a macro on their command line.  Similar situation for
-    # 'includes'.  I'm punting on both for now.  Anyways, weeding out
-    # redundancies like this should probably be the province of
-    # CCompiler, since the data structures used are inherited from it
-    # and therefore common to all CCompiler classes.
-
-
-    pp_opts = []
-    for macro in macros:
-        if len (macro) == 1:        # undefine this macro
-            pp_opts.append ("-U%s" % macro[0])
-        elif len (macro) == 2:
-            if macro[1] is None:    # define with no explicit value
-                pp_opts.append ("-D%s" % macro[0])
-            else:
-                # XXX *don't* need to be clever about quoting the
-                # macro value here, because we're going to avoid the
-                # shell at all costs when we spawn the command!
-                pp_opts.append ("-D%s=%s" % macro)
-
-    for dir in includes:
-        pp_opts.append ("-I%s" % dir)
-
-    return pp_opts
-
-# _gen_preprocess_options ()
-
-
-def _gen_lib_options (libraries, library_dirs):
-
-    lib_opts = []
-
-    for dir in library_dirs:
-        lib_opts.append ("-L%s" % dir)
-
-    # XXX it's important that we *not* remove redundant library mentions!
-    # sometimes you really do have to say "-lfoo -lbar -lfoo" in order to
-    # resolve all symbols.  I just hope we never have to say "-lfoo obj.o
-    # -lbar" to get things to work -- that's certainly a possibility, but a
-    # pretty nasty way to arrange your C code.
-
-    for lib in libraries:
-        lib_opts.append ("-l%s" % lib)
-
-    return lib_opts
-
-# _gen_lib_options ()
