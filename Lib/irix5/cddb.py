@@ -192,6 +192,8 @@ class Cddb:
 			f.write('album.notes:\t' + note + '\n')
 		prevpref = None
 		for i in range(1, len(self.track)):
+			if self.trackartist[i]:
+				f.write('track'+`i`+'.artist:\t'+self.trackartist[i]+'\n')
 			track = self.track[i]
 			try:
 				off = string.index(track, ',')
