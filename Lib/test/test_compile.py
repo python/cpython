@@ -138,6 +138,21 @@ if 1:
         self.assertEqual(i, 1)
         self.assertEqual(j, -1)
 
+    def test_none_assignment(self):
+        stmts = [
+            'None = 0',
+            'None += 0',
+            '__builtins__.None = 0',
+            'def None(): pass',
+            'class None: pass',
+            '(a, None) = 0, 0',
+            'for None in range(10): pass',
+            'def f(None): pass',
+        ]
+        for stmt in stmts:
+            stmt += "\n"
+            self.assertRaises(SyntaxError, compile, stmt, 'tmp', 'single')
+            self.assertRaises(SyntaxError, compile, stmt, 'tmp', 'exec')
 
 def test_main():
     test_support.run_unittest(TestSpecifics)
