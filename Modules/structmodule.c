@@ -46,7 +46,7 @@ static PyObject *StructError;
 #ifdef __MWERKS__
 /*
 ** XXXX We have a problem here. There are no unique alignment rules
-** on the PowerPC mac. 
+** on the PowerPC mac.
 */
 #ifdef __powerc
 #pragma options align=mac68k
@@ -1112,7 +1112,7 @@ calcsize(const char *fmt, const formatdef *f)
 		}
 		else
 			num = 1;
-		
+
 		e = getentry(c, f);
 		if (e == NULL)
 			return -1;
@@ -1172,7 +1172,7 @@ struct_pack(PyObject *self, PyObject *args)
 	if (args == NULL || !PyTuple_Check(args) ||
 	    (n = PyTuple_Size(args)) < 1)
         {
-		PyErr_SetString(PyExc_TypeError, 
+		PyErr_SetString(PyExc_TypeError,
 			"struct.pack requires at least one argument");
 		return NULL;
 	}
