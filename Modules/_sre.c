@@ -20,6 +20,7 @@
  * 2000-09-02 fl  return -1 instead of None for start/end/span
  * 2000-09-20 fl  added expand method
  * 2000-09-21 fl  don't use the buffer interface for unicode strings
+ * 2000-10-03 fl  fixed assert_not primitive
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *
@@ -774,8 +775,6 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             i = SRE_MATCH(state, pattern + 2, level + 1);
             if (i <= 0)
                 return i;
-            if (pattern[1] > 0 && state->ptr != ptr)
-                return SRE_ERROR_STATE;
             pattern += pattern[0];
             break;
 
@@ -791,8 +790,6 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 return i;
             if (i)
                 return 0;
-            if (pattern[1] > 0 && state->ptr != ptr)
-                return SRE_ERROR_STATE;
             pattern += pattern[0];
             break;
 

@@ -615,4 +615,6 @@ xyzabc
     # bug 112468
     ('(', '', SYNTAX_ERROR),
     ('[\\41]', '!', SUCCEED, 'found', '!'),
+    # bug 115618
+    (r'(?<!abc)(d.f)', 'abcdefdof', SUCCEED, 'found', 'dof'),
 ]
