@@ -134,6 +134,26 @@ class MHMailbox:
 	return rfc822.Message(fp)
 	    
     
+class BabylMailbox(_Mailbox):
+    def _search_start(self):
+	while 1:
+	    line = self.fp.readline()
+	    if not line:
+		raise EOFError
+	    if line == '*** EOOH ***\n':
+		return
+
+    def _search_end(self):
+	while 1:
+	    pos = self.fp.tell()
+	    line = self.fp.readline()
+	    if not line:
+		return
+	    if line == '\037\014\n':
+		self.fp.seek(pos)
+		return
+
+
 def _test():
 	import time
 	import sys
