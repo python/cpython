@@ -1422,9 +1422,10 @@ sidestep the checking and if you were unlucky Python could segfault.
 Python 2.4's regular expression engine can match this pattern without
 problems.
 
-\item A new \function{socketpair()} function, returning a pair of
-connected sockets, was added to the \module{socket} module.
-(Contributed by Dave Cole.)
+\item Two new functions were added to the \module{socket} module.
+\function{socketpair()} returns a pair of connected sockets and
+\function{getservbyport(\var{port})} looks up the service name for a
+given port number. (Contributed by Dave Cole and Barry Warsaw.)
 
 \item The \function{sys.exitfunc()} function has been deprecated.  Code
 should be using the existing \module{atexit} module, which correctly
