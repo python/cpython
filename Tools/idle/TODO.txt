@@ -30,7 +30,7 @@ TO DO:
 - persistent user state (e.g. window and cursor positions, bindings)
 - make backups when saving
 - check file mtimes at various points
-- interface with RCS/CVS/Perforce ???
+- Pluggable interface with RCS/CVS/Perforce/Clearcase
 - status bar???
 - better help?
 - don't open second class browser on same module (nor second path browser)
