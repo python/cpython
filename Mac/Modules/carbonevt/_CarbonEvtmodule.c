@@ -215,19 +215,19 @@ static PyObject *EventRef_SetEventParameter(EventRefObject *_self, PyObject *_ar
 	OSStatus _err;
 	OSType inName;
 	OSType inType;
-	UInt32 inSize;
-	char* inDataPtr;
-	if (!PyArg_ParseTuple(_args, "O&O&ls",
+	char *inDataPtr__in__;
+	long inDataPtr__len__;
+	int inDataPtr__in_len__;
+	if (!PyArg_ParseTuple(_args, "O&O&s#",
 	                      PyMac_GetOSType, &inName,
 	                      PyMac_GetOSType, &inType,
-	                      &inSize,
-	                      &inDataPtr))
+	                      &inDataPtr__in__, &inDataPtr__in_len__))
 		return NULL;
+	inDataPtr__len__ = inDataPtr__in_len__;
 	_err = SetEventParameter(_self->ob_itself,
 	                         inName,
 	                         inType,
-	                         inSize,
-	                         inDataPtr);
+	                         inDataPtr__len__, inDataPtr__in__);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -386,7 +386,7 @@ static PyMethodDef EventRef_methods[] = {
 	{"ReleaseEvent", (PyCFunction)EventRef_ReleaseEvent, 1,
 	 "() -> None"},
 	{"SetEventParameter", (PyCFunction)EventRef_SetEventParameter, 1,
-	 "(OSType inName, OSType inType, UInt32 inSize, char* inDataPtr) -> None"},
+	 "(OSType inName, OSType inType, Buffer inDataPtr) -> None"},
 	{"GetEventClass", (PyCFunction)EventRef_GetEventClass, 1,
 	 "() -> (UInt32 _rv)"},
 	{"GetEventKind", (PyCFunction)EventRef_GetEventKind, 1,
