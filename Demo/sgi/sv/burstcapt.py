@@ -14,8 +14,8 @@ def main():
 
 	go = raw_input('Press return to capture ' + `queuesize` + ' frames: ')
 	result = v.CaptureBurst(svci)
-##	svci, buffer, bitvec = result # XXX Bit vector not yet implemented
-	svci, buffer = result
+	svci, buffer, bitvec = result
+##	svci, buffer = result # XXX If bit vector not yet implemented
 
 	print 'Captured', svci[3], 'frames, i.e.', len(buffer)/1024, 'K bytes'
 
