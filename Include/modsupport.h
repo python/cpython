@@ -16,8 +16,6 @@ extern "C" {
 
 /* Module support interface */
 
-#ifdef HAVE_STDARG_PROTOTYPES
-
 #include <stdarg.h>
 
 extern DL_IMPORT(int) PyArg_Parse(PyObject *, char *, ...);
@@ -25,17 +23,6 @@ extern DL_IMPORT(int) PyArg_ParseTuple(PyObject *, char *, ...);
 extern DL_IMPORT(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
                                                   char *, char **, ...);
 extern DL_IMPORT(PyObject *) Py_BuildValue(char *, ...);
-
-#else
-
-#include <varargs.h>
-
-/* Better to have no prototypes at all for varargs functions in this case */
-extern DL_IMPORT(int) PyArg_Parse();
-extern DL_IMPORT(int) PyArg_ParseTuple();
-extern DL_IMPORT(PyObject *) Py_BuildValue();
-
-#endif
 
 extern DL_IMPORT(int) PyArg_VaParse(PyObject *, char *, va_list);
 extern DL_IMPORT(PyObject *) Py_VaBuildValue(char *, va_list);
