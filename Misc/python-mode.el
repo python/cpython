@@ -5,44 +5,23 @@
 ;; Author: 1995 Barry A. Warsaw <bwarsaw@cnri.reston.va.us>
 ;;         1992-1994 Tim Peters <tim@ksr.com>
 ;; Maintainer:    bwarsaw@cnri.reston.va.us
-;; Created:       ???
+;; Created:       Feb 1992
 ;; Version:       $Revision$
 ;; Last Modified: $Date$
 ;; Keywords: python editing language major-mode
 
-;; This file is not part of GNU Emacs.
-
-;; This program is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2 of the License, or
-;; (at your option) any later version.
-;; 
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-;; 
-;; You should have received a copy of the GNU General Public License
-;; along with this program; if not, write to the Free Software
-;; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+;; This software is provided as-is, without express or implied
+;; warranty.  Permission to use, copy, modify, distribute or sell this
+;; software, without fee, for any purpose and by any individual or
+;; organization, is hereby granted, provided that the above copyright
+;; notice and this paragraph appear in all copies.
 
 ;;; Commentary:
 ;;
 ;; This is a major mode for editing Python programs.  It was developed
 ;; by Tim Peters <tim@ksr.com> after an original idea by Michael
 ;; A. Guravage.  Tim doesn't appear to be on the 'net any longer so I
-;; have undertaken maintenance of the mode.  Here is Tim's original
-;; copyright notice:
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Copyright (c) 1992,1993,1994  Tim Peters
-;;
-;; This software is provided as-is, without express or implied warranty.
-;; Permission to use, copy, modify, distribute or sell this software,
-;; without fee, for any purpose and by any individual or organization, is
-;; hereby granted, provided that the above copyright notice and this
-;; paragraph appear in all copies.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; have undertaken maintenance of the mode.
 
 ;; At some point this mode will undergo a rewrite to bring it more in
 ;; line with GNU Emacs Lisp coding standards.  But all in all, the
