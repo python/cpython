@@ -253,21 +253,6 @@ f = Function(void, 'MoviesTask',
 )
 functions.append(f)
 
-# Add manual routines for testing quicktime availability
-available_body = """
-void *ptr;
-
-if ( !PyArg_ParseTuple(_args, "") )
-	return NULL;
-ptr = (void *)&EnterMovies;
-return Py_BuildValue("i", ((long)ptr != 0));
-"""
-
-f = ManualGenerator("available", available_body)
-f.docstring = lambda : "Return true if Quicktime is available"
-
-functions.append(f)
-
 
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)
