@@ -32,6 +32,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <Events.h>
 
+#ifdef TARGET_API_MAC_CARBON
+/* Unfortunately this call is probably slower... */
+#define LMGetTicks() TickCount()
+#endif
+
 #ifdef __CFM68K__
 #undef GetEventQueue
 #endif /* __CFM68K__ */
@@ -147,8 +152,15 @@ struct hook_args {
 	int selectcur_hit;		/* Set to true when "select current" selected */
 	char *prompt;			/* The prompt */
 };
+#ifdef TARGET_API_MAC_CARBON
+/* The StandardFile hooks don't exist in Carbon. This breaks GetDirectory,
+** but the macfsn code will replace it by a NavServices version anyway.
+*/
+#define myhook_upp NULL
+#else
 static DlgHookYDUPP myhook_upp;
 static int upp_inited = 0;
+#endif
 
 /*
 ** The python-code event handler
@@ -400,6 +412,10 @@ static void
 scan_event_queue(flush)
 	int flush;
 {
+#ifdef TARGET_API_MAC_CARBON
+	/* CARBONXXXX To be implemented */
+	return;
+#else
 	register EvQElPtr q;
 	
 	q = (EvQElPtr) LMGetEventQueue()->qHead;
@@ -414,6 +430,7 @@ scan_event_queue(flush)
 			break;
 		}
 	}
+#endif
 }
 
 int
@@ -486,6 +503,7 @@ void
 PyMac_HandleEventIntern(evp)
 	EventRecord *evp;
 {
+#ifndef TARGET_API_MAC_CARBON
 	if ( evp->what == mouseDown ) {
 		WindowPtr wp;
 		
@@ -494,6 +512,7 @@ PyMac_HandleEventIntern(evp)
 			return;
 		}
 	}
+#endif
 #ifdef __MWERKS__
 	{
 		int siouxdidit;
@@ -561,9 +580,11 @@ PyMac_DoYield(int maxsleep, int maycallpython)
 	*/
 	if( in_here > 1 || !schedparams.process_events || 
 	    (python_event_handler && !maycallpython) ) {
+#ifndef TARGET_API_MAC_CARBON
 		if ( maxsleep >= 0 ) {
 			SystemTask();
 		}
+#endif
 	} else {
 		latest_time_ready = LMGetTicks() + maxsleep;
 		do {
@@ -743,10 +764,12 @@ PyMac_GetDirectory(dirfss, prompt)
 	StandardFileReply reply;
 	struct hook_args hook_args;
 	
+#ifndef TARGET_API_MAC_CARBON
 	if ( !upp_inited ) {
 		myhook_upp = NewDlgHookYDProc(myhook_proc);
 		upp_inited = 1;
 	}
+#endif
 	if ( prompt && *prompt )
 		hook_args.prompt = (char *)Pstring(prompt);
 	else
@@ -769,10 +792,12 @@ void PyMac_PromptGetFile(short numTypes, ConstSFTypeListPtr typeList,
 	static Point where = {-1, -1};
 	struct hook_args hook_args;
 	
+#ifndef TARGET_API_MAC_CARBON
 	if ( !upp_inited ) {
 		myhook_upp = NewDlgHookYDProc(myhook_proc);
 		upp_inited = 1;
 	}
+#endif
 	if ( prompt && *prompt )
 		hook_args.prompt = (char *)Pstring(prompt);
 	else
