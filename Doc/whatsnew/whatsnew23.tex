@@ -329,6 +329,8 @@ cause a \exception{UnicodeError} to be raised. Applications can test
 whether arbitrary Unicode strings are supported as file names by
 checking \member{os.path.supports_unicode_filenames}, a Boolean value.
 
+Under MacOS, \function{os.listdir()} may now return Unicode filenames.
+
 \begin{seealso}
 
 \seepep{277}{Unicode file name support for Windows NT}{Written by Neil
@@ -1359,7 +1361,7 @@ use with iterators, inspired by various functions provided by the ML
 and Haskell languages.  For example,
 \code{itertools.ifilter(predicate, iterator)} returns all elements in
 the iterator for which the function \function{predicate()} returns
-\constant{True}, and \code{itertools.times(\var{N}, obj)} returns
+\constant{True}, and \code{itertools.repeat(obj, \var{N})} returns
 \code{obj} \var{N} times.  There are a number of other functions in
 the module; see the \ulink{package's reference
 documentation}{../lib/module-itertools.html} for details.
@@ -1495,8 +1497,10 @@ a collaborative development process in action.)
 \item On Windows, the \module{socket} module now ships with Secure 
 Sockets Layer (SSL) support.
 
-\item The value of the C \constant{PYTHON_API_VERSION} macro is now exposed
-at the Python level as \code{sys.api_version}.
+\item The value of the C \constant{PYTHON_API_VERSION} macro is now
+exposed at the Python level as \code{sys.api_version}.  The current
+exception can be cleared by calling the new \function{sys.exc_clear()}
+function.
 
 \item The new \module{tarfile} module 
 allows reading from and writing to \program{tar}-format archive files.
