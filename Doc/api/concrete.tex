@@ -2479,32 +2479,38 @@ information on using these objects.
 \end{ctypedesc}
 
 \begin{cfuncdesc}{int}{PyCObject_Check}{PyObject *p}
-  Returns true if its argument is a \ctype{PyCObject}.
+  Return true if its argument is a \ctype{PyCObject}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyCObject_FromVoidPtr}{void* cobj,
                                                     void (*destr)(void *)}
-  Creates a \ctype{PyCObject} from the \code{void *}\var{cobj}.  The
+  Create a \ctype{PyCObject} from the \code{void *}\var{cobj}.  The
   \var{destr} function will be called when the object is reclaimed,
   unless it is \NULL.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyCObject_FromVoidPtrAndDesc}{void* cobj,
 	                          void* desc, void (*destr)(void *, void *)}
-  Creates a \ctype{PyCObject} from the \ctype{void *}\var{cobj}.  The
+  Create a \ctype{PyCObject} from the \ctype{void *}\var{cobj}.  The
   \var{destr} function will be called when the object is reclaimed.
   The \var{desc} argument can be used to pass extra callback data for
   the destructor function.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void*}{PyCObject_AsVoidPtr}{PyObject* self}
-  Returns the object \ctype{void *} that the \ctype{PyCObject}
+  Return the object \ctype{void *} that the \ctype{PyCObject}
   \var{self} was created with.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void*}{PyCObject_GetDesc}{PyObject* self}
-  Returns the description \ctype{void *} that the \ctype{PyCObject}
+  Return the description \ctype{void *} that the \ctype{PyCObject}
   \var{self} was created with.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyCObject_SetVoidPtr}{PyObject* self, void* cobj}
+  Set the void pointer inside \var{self} to \var{cobj}. 
+  The \ctype{PyCObject} must not have an associated destructor.
+  Return true on success, false on failure.
 \end{cfuncdesc}
 
 
