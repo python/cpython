@@ -102,7 +102,6 @@ import ftplib
 import sys
 import time
 import os
-import stat
 import gopherlib
 import posixpath
 
@@ -877,10 +876,9 @@ class FileHandler(BaseHandler):
         file = req.get_selector()
         localfile = url2pathname(file)
         stats = os.stat(localfile)
-        size = stats[stat.ST_SIZE]
-        modified = rfc822.formatdate(stats[stat.ST_MTIME])
+        size = stats.st_size
+        modified = rfc822.formatdate(stats.st_mtime)
         mtype = mimetypes.guess_type(file)[0]
-        stats = os.stat(localfile)
         headers = mimetools.Message(StringIO(
             'Content-Type: %s\nContent-Length: %d\nLast-modified: %s\n' %
             (mtype or 'text/plain', size, modified)))
