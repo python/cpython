@@ -561,6 +561,30 @@ PyObject *PyUnicode_Decode(const char *s,
     return NULL;
 }
 
+PyObject *PyUnicode_AsDecodedObject(PyObject *unicode,
+                                    const char *encoding,
+                                    const char *errors)
+{
+    PyObject *v;
+
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadArgument();
+        goto onError;
+    }
+
+    if (encoding == NULL)
+	encoding = PyUnicode_GetDefaultEncoding();
+
+    /* Decode via the codec registry */
+    v = PyCodec_Decode(unicode, encoding, errors);
+    if (v == NULL)
+        goto onError;
+    return v;
+
+ onError:
+    return NULL;
+}
+
 PyObject *PyUnicode_Encode(const Py_UNICODE *s,
 			   int size,
 			   const char *encoding,
@@ -574,6 +598,30 @@ PyObject *PyUnicode_Encode(const Py_UNICODE *s,
     v = PyUnicode_AsEncodedString(unicode, encoding, errors);
     Py_DECREF(unicode);
     return v;
+}
+
+PyObject *PyUnicode_AsEncodedObject(PyObject *unicode,
+                                    const char *encoding,
+                                    const char *errors)
+{
+    PyObject *v;
+
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadArgument();
+        goto onError;
+    }
+
+    if (encoding == NULL)
+	encoding = PyUnicode_GetDefaultEncoding();
+
+    /* Encode via the codec registry */
+    v = PyCodec_Encode(unicode, encoding, errors);
+    if (v == NULL)
+        goto onError;
+    return v;
+
+ onError:
+    return NULL;
 }
 
 PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
@@ -608,7 +656,6 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
     v = PyCodec_Encode(unicode, encoding, errors);
     if (v == NULL)
         goto onError;
-    /* XXX Should we really enforce this ? */
     if (!PyString_Check(v)) {
         PyErr_Format(PyExc_TypeError,
                      "encoder did not return a string object (type=%.400s)",
@@ -4869,10 +4916,10 @@ unicode_count(PyUnicodeObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(encode__doc__,
-"S.encode([encoding[,errors]]) -> string\n\
+"S.encode([encoding[,errors]]) -> string or unicode\n\
 \n\
-Return an encoded string version of S. Default encoding is the current\n\
-default string encoding. errors may be given to set a different error\n\
+Encodes S using the codec registered for encoding. encoding defaults\n\
+to the default encoding. errors may be given to set a different error\n\
 handling scheme. Default is 'strict' meaning that encoding errors raise\n\
 a UnicodeEncodeError. Other possible values are 'ignore', 'replace' and\n\
 'xmlcharrefreplace' as well as any other name registered with\n\
@@ -4883,9 +4930,51 @@ unicode_encode(PyUnicodeObject *self, PyObject *args)
 {
     char *encoding = NULL;
     char *errors = NULL;
+    PyObject *v;
+    
     if (!PyArg_ParseTuple(args, "|ss:encode", &encoding, &errors))
         return NULL;
-    return PyUnicode_AsEncodedString((PyObject *)self, encoding, errors);
+    v = PyUnicode_AsEncodedObject((PyObject *)self, encoding, errors);
+    if (!PyString_Check(v) && !PyUnicode_Check(v)) {
+        PyErr_Format(PyExc_TypeError,
+                     "encoder did not return a string/unicode object "
+                     "(type=%.400s)",
+                     v->ob_type->tp_name);
+        Py_DECREF(v);
+        return NULL;
+    }
+    return v;
+}
+
+PyDoc_STRVAR(decode__doc__,
+"S.decode([encoding[,errors]]) -> string or unicode\n\
+\n\
+Decodes S using the codec registered for encoding. encoding defaults\n\
+to the default encoding. errors may be given to set a different error\n\
+handling scheme. Default is 'strict' meaning that encoding errors raise\n\
+a UnicodeDecodeError. Other possible values are 'ignore' and 'replace'\n\
+as well as any other name registerd with codecs.register_error that is\n\
+able to handle UnicodeDecodeErrors.");
+
+static PyObject *
+unicode_decode(PyStringObject *self, PyObject *args)
+{
+    char *encoding = NULL;
+    char *errors = NULL;
+    PyObject *v;
+    
+    if (!PyArg_ParseTuple(args, "|ss:decode", &encoding, &errors))
+        return NULL;
+    v = PyUnicode_AsDecodedObject((PyObject *)self, encoding, errors);
+    if (!PyString_Check(v) && !PyUnicode_Check(v)) {
+        PyErr_Format(PyExc_TypeError,
+                     "decoder did not return a string/unicode object "
+                     "(type=%.400s)",
+                     v->ob_type->tp_name);
+        Py_DECREF(v);
+        return NULL;
+    }
+    return v;
 }
 
 PyDoc_STRVAR(expandtabs__doc__,
@@ -6138,6 +6227,7 @@ static PyMethodDef unicode_methods[] = {
     {"ljust", (PyCFunction) unicode_ljust, METH_VARARGS, ljust__doc__},
     {"lower", (PyCFunction) unicode_lower, METH_NOARGS, lower__doc__},
     {"lstrip", (PyCFunction) unicode_lstrip, METH_VARARGS, lstrip__doc__},
+    {"decode", (PyCFunction) unicode_decode, METH_VARARGS, decode__doc__},
 /*  {"maketrans", (PyCFunction) unicode_maketrans, METH_VARARGS, maketrans__doc__}, */
     {"rfind", (PyCFunction) unicode_rfind, METH_VARARGS, rfind__doc__},
     {"rindex", (PyCFunction) unicode_rindex, METH_VARARGS, rindex__doc__},
