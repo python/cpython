@@ -1,4 +1,4 @@
-# Generated from 'flap:CodeWarrior:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDraw.h'
+# Generated from 'flap:CW9 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDraw.h'
 
 invalColReq = -1
 srcCopy = 0
@@ -79,6 +79,11 @@ iBeamCursor = 1
 crossCursor = 2
 plusCursor = 3
 watchCursor = 4
+kQDGrafVerbFrame = 0
+kQDGrafVerbPaint = 1
+kQDGrafVerbErase = 2
+kQDGrafVerbInvert = 3
+kQDGrafVerbFill = 4
 singleDevicesBit = 0
 dontMatchSeedsBit = 1
 allDevicesBit = 2
@@ -90,7 +95,7 @@ kVerticalConstraint = 1
 kHorizontalConstraint = 2
 kCursorImageMajorVersion = 0x0001
 kCursorImageMinorVersion = 0x0000
-# Generated from 'flap:CodeWarrior:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDrawText.h'
+# Generated from 'flap:CW9 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDrawText.h'
 
 leftCaret = 0
 rightCaret = -1
