@@ -8,6 +8,8 @@ What's New in Python 2.2.4?
 - SF bug 763023: fix uncaught ZeroDivisionError in difflib ratio methods
   when there are no lines.
 
+- SF bug 753451: classmethod checks that it's argument is callable.
+
 What's New in Python 2.2.3 (final) ?
 Release date: 30-May-2003
 ====================================
