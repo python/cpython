@@ -270,37 +270,6 @@ func_repr(PyFunctionObject *op)
 }
 
 static int
-func_compare(PyFunctionObject *f, PyFunctionObject *g)
-{
-	int c;
-	if (f->func_globals != g->func_globals)
-		return (f->func_globals < g->func_globals) ? -1 : 1;
-	if (f->func_defaults != g->func_defaults) {
-		if (f->func_defaults == NULL)
-			return -1;
-		if (g->func_defaults == NULL)
-			return 1;
-		c = PyObject_Compare(f->func_defaults, g->func_defaults);
-		if (c != 0)
-			return c;
-	}
-	return PyObject_Compare(f->func_code, g->func_code);
-}
-
-static long
-func_hash(PyFunctionObject *f)
-{
-	long h,x;
-	h = PyObject_Hash(f->func_code);
-	if (h == -1) return h;
-	x = _Py_HashPointer(f->func_globals);
-	if (x == -1) return x;
-	h ^= x;
-	if (h == -1) h = -2;
-	return h;
-}
-
-static int
 func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 {
 	int err;
@@ -347,12 +316,12 @@ PyTypeObject PyFunction_Type = {
 	0,		/*tp_print*/
 	0, /*tp_getattr*/
 	0, /*tp_setattr*/
-	(cmpfunc)func_compare, /*tp_compare*/
+	0, /*tp_compare*/
 	(reprfunc)func_repr, /*tp_repr*/
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
-	(hashfunc)func_hash, /*tp_hash*/
+	0, /*tp_hash*/
 	0,		/*tp_call*/
 	0,		/*tp_str*/
 	(getattrofunc)func_getattro,	     /*tp_getattro*/
