@@ -105,7 +105,7 @@ class UnixCCompiler (CCompiler):
 	# generating output to stdout, or there's a target output file and 
 	# the source file is newer than the target (or the target doesn't
         # exist).
-        if self.force or output_file is None or newer(source, output_file)):
+        if self.force or output_file is None or newer(source, output_file):
             if output_file:
                 self.mkpath(os.path.dirname(output_file))
             try:
