@@ -197,7 +197,7 @@ staticforward int  parser_compare Py_PROTO((PyAST_Object *left,
 /* static */
 PyTypeObject PyAST_Type = {
 
-    PyObject_HEAD_INIT(&PyType_Type)
+    PyObject_HEAD_INIT(NULL)
     0,
     "ast",				/* tp_name		*/
     sizeof(PyAST_Object),		/* tp_basicsize		*/
@@ -2593,8 +2593,12 @@ static PyMethodDef parser_functions[] =  {
 void
 initparser()
  {
-    PyObject* module = Py_InitModule("parser", parser_functions);
-    PyObject* dict   = PyModule_GetDict(module);
+    PyObject* module;
+    PyObject* dict;
+	
+    PyAST_Type.ob_type = &PyType_Type;
+    module = Py_InitModule("parser", parser_functions);
+    dict = PyModule_GetDict(module);
 
     parser_error = PyString_FromString("parser.ParserError");
 
