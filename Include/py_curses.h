@@ -12,6 +12,21 @@
 #endif
 #endif
 
+#ifdef __FreeBSD__
+/*
+** On FreeBSD, [n]curses.h and stdlib.h/wchar.h use different guards
+** against multiple definition of wchar_t and wint_t.
+*/
+#ifdef	_XOPEN_SOURCE_EXTENDED
+#ifndef _WCHAR_T
+#define _WCHAR_T
+#endif
+#ifndef _WINT_T
+#define _WINT_T
+#endif
+#endif
+#endif
+
 #ifdef HAVE_NCURSES_H
 #include <ncurses.h>
 #else
