@@ -214,7 +214,7 @@ def read_setup_file (filename):
                 ext.extra_link_args.append(word)
                 if not value:
                     append_next_word = ext.extra_link_args
-            elif suffix in (".a", ".so", ".sl", ".o"):
+            elif suffix in (".a", ".so", ".sl", ".o", ".dylib"):
                 # NB. a really faithful emulation of makesetup would
                 # append a .o file to extra_objects only if it
                 # had a slash in it; otherwise, it would s/.o/.c/
