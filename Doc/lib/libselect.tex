@@ -91,7 +91,7 @@ want to check for, and can be a combination of the constants
 described in the table below.  If not specified, the default value
 used will check for all 3 types of events.
 
-\begin{tableii}{l|l}{code}{Constant}{Meaning}
+\begin{tableii}{l|l}{constant}{Constant}{Meaning}
   \lineii{POLLIN}{There is data to read}
   \lineii{POLLPRI}{There is urgent data to read}
   \lineii{POLLOUT}{Ready for output: writing will not block}
@@ -126,6 +126,10 @@ with bits set for the reported events for that descriptor
 so forth.
 An empty list indicates that the call timed out and no file
 descriptors had any events to report.
+If \var{timeout} is given, it specifies the length of time in
+milliseconds which the system will wait for events before returning.
+If \var{timeout} is omitted, negative, or \code{None}, the call will
+block until there is an event for this poll object.
 \end{methoddesc}
 
 
