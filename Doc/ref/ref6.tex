@@ -873,8 +873,9 @@ In all cases, if the optional parts are omitted, the code is executed
 in the current scope.  If only the first expression after \keyword{in}
 is specified, it should be a dictionary, which will be used for both
 the global and the local variables.  If two expressions are given,
-both must be dictionaries and they are used for the global and local
-variables, respectively.
+they are used for the global and local variables, respectively.
+If provided, \var{locals} can be any mapping object.
+\versionchanged[formerly \var{locals} was required to be a dictionary]{2.4}
 
 As a side effect, an implementation may insert additional keys into
 the dictionaries given besides those corresponding to variable names
