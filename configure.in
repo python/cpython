@@ -677,7 +677,7 @@ then
 	# crt1.o) gets erroneously defined as common, which breaks dynamic
 	# loading of any modules which reference it in System.framework
 	next/4*|next/5*) LINKFORSHARED="-u __dummy -framework System" ;;
-	Darwin/*) LINKFORSHARED="-u __dummy -framework System -framework Foundation" ;;
+	Darwin/*) LINKFORSHARED="-u __dummy -u _PyMac_Error -framework System -framework Foundation -framework Carbon" ;;
 	UnixWare*) LINKFORSHARED="-dy -Bdynamic -Wl,-Bexport";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
 	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
@@ -996,6 +996,22 @@ if test "$DYNLOADFILE" != "dynload_stub.o"
 then
 	AC_DEFINE(HAVE_DYNAMIC_LOADING)
 fi
+
+# MACHDEP_OBJS can be set to platform-specific object files needed by Python
+
+AC_SUBST(MACHDEP_OBJS)
+AC_MSG_CHECKING(MACHDEP_OBJS)
+if test -z "$MACHDEP_OBJS"
+then
+	case $ac_sys_system/$ac_sys_release in
+	Darwin/*)
+		MACHDEP_OBJS="Mac/Python/macglue.o"
+		AC_DEFINE(USE_TOOLBOX_OBJECT_GLUE)
+		;;
+	*) MACHDEP_OBJS="";;
+	esac
+fi
+AC_MSG_RESULT($DYNLOADFILE)
 
 # checks for library functions
 AC_CHECK_FUNCS(alarm chown clock confstr ctermid ctermid_r execv \
