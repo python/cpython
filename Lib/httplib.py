@@ -956,10 +956,7 @@ class HTTPSConnection(HTTPConnection):
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((self.host, self.port))
-        realsock = sock
-        if hasattr(sock, "_sock"):
-            realsock = sock._sock
-        ssl = socket.ssl(realsock, self.key_file, self.cert_file)
+        ssl = socket.ssl(sock, self.key_file, self.cert_file)
         self.sock = FakeSocket(sock, ssl)
 
 

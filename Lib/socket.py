@@ -65,16 +65,12 @@ if _have_ssl:
     __all__.extend(os._get_exports_list(_ssl))
 
 _realsocket = socket
-if (sys.platform.lower().startswith("win")
-    or (hasattr(os, 'uname') and os.uname()[0] == "BeOS")
-    or sys.platform=="riscos"):
-
-    if _have_ssl:
-        _realssl = ssl
-        def ssl(sock, keyfile=None, certfile=None):
-            if hasattr(sock, "_sock"):
-                sock = sock._sock
-            return _realssl(sock, keyfile, certfile)
+if _have_ssl:
+    _realssl = ssl
+    def ssl(sock, keyfile=None, certfile=None):
+        if hasattr(sock, "_sock"):
+            sock = sock._sock
+        return _realssl(sock, keyfile, certfile)
 
 # WSA error codes
 if sys.platform.lower().startswith("win"):
