@@ -15,8 +15,8 @@
 /* Define for SOLARIS 2.x */
 #undef SOLARIS
 
-/* Define if it's a bad idea to include <sys/select.h> and <sys/time.h>
-   in the same file (as it is on SCO ODT 3.0) */
+/* Define if  you can safely include both <sys/select.h> and <sys/time.h>
+   (which you can't on SCO ODT 3.0). */
 #undef SYS_SELECT_WITH_SYS_TIME
 
 /* Define if you want to compile in rudimentary thread support */
