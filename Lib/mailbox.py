@@ -14,14 +14,6 @@ class _Mailbox:
         self.seekp = 0
         self.factory = factory
 
-    def seek(self, pos, whence=0):
-        if whence==1:           # Relative to current position
-            self.pos = self.pos + pos
-        if whence==2:           # Relative to file's end
-            self.pos = self.stop + pos
-        else:                   # Default - absolute position
-            self.pos = self.start + pos
-
     def next(self):
         while 1:
             self.fp.seek(self.seekp)
