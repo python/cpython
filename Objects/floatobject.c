@@ -884,7 +884,7 @@ PyFloat_Fini(void)
 {
 	PyFloatObject *p;
 	PyFloatBlock *list, *next;
-	int i;
+	unsigned i;
 	int bc, bf;	/* block count, number of freed blocks */
 	int frem, fsum;	/* remaining unfreed floats per block, total */
 
