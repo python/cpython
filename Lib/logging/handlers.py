@@ -182,7 +182,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         else:
             raise ValueError("Invalid rollover interval specified: %s" % self.when)
 
-        self.interval *= interval # multiply by units requested
+        self.interval = self.interval * interval # multiply by units requested
         self.rolloverAt = currentTime + self.interval
 
         # If we are rolling over at midnight or weekly, then the interval is already known.
@@ -200,8 +200,8 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             currentSecond = t[5]
             # r is the number of seconds left between now and midnight
             r = (24 - currentHour) * 60 * 60 # number of hours in seconds
-            r += (59 - currentMinute) * 60 # plus the number of minutes (in secs)
-            r += (59 - currentSecond) # plus the number of seconds
+            r = r + (59 - currentMinute) * 60 # plus the number of minutes (in secs)
+            r = r + (59 - currentSecond) # plus the number of seconds
             self.rolloverAt = currentTime + r
             # If we are rolling over on a certain day, add in the number of days until
             # the next rollover, but offset by 1 since we just calculated the time
@@ -219,10 +219,10 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 day = t[6] # 0 is Monday
                 if day > self.dayOfWeek:
                     daysToWait = (day - self.dayOfWeek) - 1
-                    self.rolloverAt += (daysToWait * (60 * 60 * 24))
+                    self.rolloverAt = self.rolloverAt + (daysToWait * (60 * 60 * 24))
                 if day < self.dayOfWeek:
                     daysToWait = (6 - self.dayOfWeek) + day
-                    self.rolloverAt += (daysToWait * (60 * 60 * 24))
+                    self.rolloverAt = self.rolloverAt + (daysToWait * (60 * 60 * 24))
 
         #print "Will rollover at %d, %d seconds from now" % (self.rolloverAt, self.rolloverAt - currentTime)
 
@@ -656,6 +656,24 @@ class SMTPHandler(logging.Handler):
         """
         return self.subject
 
+    weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+    monthname = [None,
+                 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+    def date_time(self):
+        """
+        Return the current date and time formatted for a MIME header.
+        Needed for Python 1.5.2 (no email package available)
+        """
+        year, month, day, hh, mm, ss, wd, y, z = time.gmtime(time.time())
+        s = "%s, %02d %3s %4d %02d:%02d:%02d GMT" % (
+                self.weekdayname[wd],
+                day, self.monthname[month], year,
+                hh, mm, ss)
+        return s
+
     def emit(self, record):
         """
         Emit a record.
@@ -664,7 +682,10 @@ class SMTPHandler(logging.Handler):
         """
         try:
             import smtplib
-            from email.Utils import formatdate
+            try:
+                from email.Utils import formatdate
+            except:
+                formatdate = self.date_time
             port = self.mailport
             if not port:
                 port = smtplib.SMTP_PORT
