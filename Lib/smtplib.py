@@ -1,10 +1,13 @@
-"""SMTP Client class.
+#!/usr/bin/python
+"""SMTP/ESMTP client class.
 
 Author: The Dragon De Monsyne <dragondm@integral.org>
+ESMTP support, test code and doc fixes added by
+Eric S. Raymond <esr@thyrsus.com>
 
 (This was modified from the Python 1.5 library HTTP lib.)
 
-This should follow RFC 821. (it dosen't do esmtp (yet))
+This should follow RFC 821 (SMTP) and RFC 1869 (ESMTP).
 
 Example:
 
@@ -38,11 +41,16 @@ CRLF="\r\n"
 SMTPServerDisconnected="Server not connected"
 SMTPSenderRefused="Sender address refused"
 SMTPRecipientsRefused="All Recipients refused"
-SMTPDataError="Error transmoitting message data"
+SMTPDataError="Error transmitting message data"
 
 class SMTP:
-    """This class manages a connection to an SMTP server."""
-    
+    """This class manages a connection to an SMTP or ESMTP server."""
+    debuglevel = 0
+    file = None
+    helo_resp = None
+    ehlo_resp = None
+    esmtp_features = []
+
     def __init__(self, host = '', port = 0):
         """Initialize a new instance.
 
@@ -51,9 +59,6 @@ class SMTP:
         to connect.  By default, smtplib.SMTP_PORT is used.
 
         """
-        self.debuglevel = 0
-        self.file = None
-        self.helo_resp = None
         if host: self.connect(host, port)
     
     def set_debuglevel(self, debuglevel):
@@ -65,9 +70,18 @@ class SMTP:
         """
         self.debuglevel = debuglevel
 
+    def verify(self, address):
+        """ SMTP 'verify' command. Checks for address validity. """
+        self.putcmd("vrfy", address)
+        return self.getreply()
+
     def connect(self, host='localhost', port = 0):
         """Connect to a host on a given port.
-          
+
+        If the hostname ends with a colon (`:') followed by a number,
+        that suffix will be stripped off and the number interpreted as
+        the port number to use.
+
         Note:  This method is automatically invoked by __init__,
         if a host is specified during instantiation.
 
@@ -101,14 +115,14 @@ class SMTP:
         str = '%s %s%s' % (cmd, args, CRLF)
         self.send(str)
     
-    def getreply(self):
+    def getreply(self, linehook=None):
         """Get a reply from the server.
         
         Returns a tuple consisting of:
         - server response code (e.g. '250', or such, if all goes well)
-          Note: returns -1 if it can't read responce code.
+          Note: returns -1 if it can't read response code.
         - server response string corresponding to response code
-                (note : multiline responces converted to a single, 
+                (note : multiline responses converted to a single, 
                  multiline string)
         """
         resp=[]
@@ -121,6 +135,8 @@ class SMTP:
             #check if multiline resp
             if line[3:4]!="-":
                 break
+            elif linehook:
+                linehook(line)
         try:
             errcode = string.atoi(code)
         except(ValueError):
@@ -132,7 +148,7 @@ class SMTP:
         return errcode, errmsg
     
     def docmd(self, cmd, args=""):
-        """ Send a command, and return it's responce code """
+        """ Send a command, and return its response code """
         
         self.putcmd(cmd,args)
         (code,msg)=self.getreply()
@@ -150,6 +166,26 @@ class SMTP:
         self.helo_resp=msg
         return code
 
+    def ehlo(self, name=''):
+        """ SMTP 'ehlo' command. Hostname to send for this command  
+        defaults to the FQDN of the local host """
+        name=string.strip(name)
+        if len(name)==0:
+                name=socket.gethostbyaddr(socket.gethostname())[0]
+        self.putcmd("ehlo",name)
+        (code,msg)=self.getreply(self.ehlo_hook)
+        self.ehlo_resp=msg
+        return code
+
+    def ehlo_hook(self, line):
+        # Interpret EHLO response lines
+        if line[4] in string.uppercase+string.digits:
+            self.esmtp_features.append(string.lower(string.strip(line)[4:]))
+
+    def has_option(self, opt):
+        """Does the server support a given SMTP option?"""
+        return opt in self.esmtp_features
+
     def help(self, args=''):
         """ SMTP 'help' command. Returns help text from server """
         self.putcmd("help", args)
@@ -162,13 +198,17 @@ class SMTP:
         return code
 
     def noop(self):
-        """ SMTP 'noop' command. Dosen't do anything :> """
+        """ SMTP 'noop' command. Doesn't do anything :> """
         code=self.docmd("noop")
         return code
 
-    def mail(self,sender):
+    def mail(self,sender,options=[]):
         """ SMTP 'mail' command. Begins mail xfer session. """
-        self.putcmd("mail","from: %s" % sender)
+        if options:
+            options = " " + string.joinfields(options, ' ')
+        else:
+            options = ''
+        self.putcmd("mail from:", sender + options)
         return self.getreply()
 
     def rcpt(self,recip):
@@ -178,7 +218,7 @@ class SMTP:
 
     def data(self,msg):
         """ SMTP 'DATA' command. Sends message data to server. 
-            Automatically quotes lines beginning with a period per rfc821 """
+            Automatically quotes lines beginning with a period per rfc821. """
         #quote periods in msg according to RFC821
         # ps, I don't know why I have to do it this way... doing: 
         # quotepat=re.compile(r"^[.]",re.M)
@@ -202,26 +242,30 @@ class SMTP:
             if self.debuglevel >0 : print "data:", (code,msg)
             return code
 
-#some usefull methods
-    def sendmail(self,from_addr,to_addrs,msg):
+#some useful methods
+    def sendmail(self,from_addr,to_addrs,msg,options=[]):
         """ This command performs an entire mail transaction. 
             The arguments are: 
                - from_addr : The address sending this mail.
                - to_addrs :  a list of addresses to send this mail to
                - msg : the message to send. 
+               - encoding : list of ESMTP options (such as 8bitmime)
+
+	If there has been no previous EHLO or HELO command this session,
+	this method tries ESMTP EHLO first. If the server does ESMTP, message
+        size and each of the specified options will be passed to it (if the
+        option is in the feature set the server advertises).  If EHLO fails,
+        HELO will be tried and ESMTP options suppressed.
 
         This method will return normally if the mail is accepted for at least 
-        one recipiant.
-        Otherwise it will throw an exception (either SMTPSenderRefused,
-          SMTPRecipientsRefused, or SMTPDataError)
-
+        one recipient. Otherwise it will throw an exception (either
+        SMTPSenderRefused, SMTPRecipientsRefused, or SMTPDataError)
         That is, if this method does not throw an exception, then someone 
-        should get your mail.
-
-        It returns a dictionary , with one entry for each recipient that was 
+        should get your mail.  If this method does not throw an exception,
+        it returns a dictionary, with one entry for each recipient that was 
         refused. 
 
-        example:
+        Example:
       
          >>> import smtplib
          >>> s=smtplib.SMTP("localhost")
@@ -240,11 +284,19 @@ class SMTP:
          code 550. If all addresses are accepted, then the method
          will return an empty dictionary.  
          """
-
-        if not self.helo_resp:
-            self.helo()
-        (code,resp)=self.mail(from_addr)
-        if code <>250:
+        if not self.helo_resp and not self.ehlo_resp:
+            if self.ehlo() >= 400:
+                self.helo()
+        if self.esmtp_features:
+            self.esmtp_features.append('7bit')
+        esmtp_opts = []
+        if 'size' in self.esmtp_features:
+            esmtp_opts.append("size=" + `len(msg)`)
+        for option in options:
+            if option in self.esmtp_features:
+                esmtp_opts.append(option)
+        (code,resp) = self.mail(from_addr, esmtp_opts)
+        if code <> 250:
             self.rset()
             raise SMTPSenderRefused
         senderrs={}
@@ -253,7 +305,7 @@ class SMTP:
             if (code <> 250) and (code <> 251):
                 senderrs[each]=(code,resp)
         if len(senderrs)==len(to_addrs):
-            #th' server refused all our recipients
+            # the server refused all our recipients
             self.rset()
             raise SMTPRecipientsRefused
         code=self.data(msg)
@@ -275,5 +327,33 @@ class SMTP:
 
 
     def quit(self):
+        """Terminate the SMTP session."""
         self.docmd("quit")
         self.close()
+
+# Test the sendmail method, which tests most of the others.
+# Note: This always sends to localhost.
+if __name__ == '__main__':
+    import sys, rfc822
+
+    def prompt(prompt):
+        sys.stdout.write(prompt + ": ")
+        return string.strip(sys.stdin.readline())
+
+    fromaddr = prompt("From")
+    toaddrs  = string.splitfields(prompt("To"), ',')
+    print "Enter message, end with ^D:"
+    msg = ''
+    while 1:
+        line = sys.stdin.readline()
+        if not line:
+            break
+        msg = msg + line
+    print "Message length is " + `len(msg)`
+
+    server = SMTP('localhost')
+    server.set_debuglevel(1)
+    server.sendmail(fromaddr, toaddrs, msg)
+    server.quit()
+
+
