@@ -31,7 +31,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Dictionary object type -- mapping from hashable object to object */
 /* NB Should be moved back to dictobject.h */
 
-extern DL_IMPORT PyTypeObject PyDict_Type;
+extern DL_IMPORT(PyTypeObject) PyDict_Type;
 
 #define PyDict_Check(op) ((op)->ob_type == &PyDict_Type)
 

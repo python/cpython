@@ -32,7 +32,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 typedef struct _longobject PyLongObject; /* Revealed in longintrepr.h */
 
-extern DL_IMPORT PyTypeObject PyLong_Type;
+extern DL_IMPORT(PyTypeObject) PyLong_Type;
 
 #define PyLong_Check(op) ((op)->ob_type == &PyLong_Type)
 

@@ -35,12 +35,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  only turned on for the modules built as DL modules, not for python
  itself.
 */
-#define DL_IMPORT /* Save lots of #else/#if's */
+#define DL_IMPORT( RTYPE ) RTYPE /* Save lots of #else/#if's */
 #ifdef USE_DL_IMPORT
 #ifdef NT
 #undef DL_IMPORT
-#define DL_IMPORT __declspec(dllimport)
+#define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
 #endif /* NT */
+#ifdef __BORLANDC__
+#undef DL_IMPORT
+#define DL_IMPORT(RTYPE)  RTYPE __import
+#endif /* BORLANDC */
 #endif /* USE_DL_IMPORT */
 
 #ifdef HAVE_CONFIG_H

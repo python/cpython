@@ -35,8 +35,8 @@ int PySys_SetObject Py_PROTO((char *, PyObject *));
 FILE *PySys_GetFile Py_PROTO((char *, FILE *));
 void PySys_Init Py_PROTO((void));
 
-extern DL_IMPORT PyObject *_PySys_TraceFunc, *_PySys_ProfileFunc;
-extern DL_IMPORT int _PySys_CheckInterval;
+extern DL_IMPORT(PyObject *) _PySys_TraceFunc, *_PySys_ProfileFunc;
+extern DL_IMPORT(int) _PySys_CheckInterval;
 
 #ifdef __cplusplus
 }

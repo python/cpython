@@ -49,7 +49,7 @@ typedef struct {
 	PyObject **ob_item;
 } PyListObject;
 
-extern DL_IMPORT PyTypeObject PyList_Type;
+extern DL_IMPORT(PyTypeObject) PyList_Type;
 
 #define PyList_Check(op) ((op)->ob_type == &PyList_Type)
 

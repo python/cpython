@@ -40,7 +40,7 @@ typedef struct {
 	PyObject *func_doc;
 } PyFunctionObject;
 
-extern DL_IMPORT PyTypeObject PyFunction_Type;
+extern DL_IMPORT(PyTypeObject) PyFunction_Type;
 
 #define PyFunction_Check(op) ((op)->ob_type == &PyFunction_Type)
 

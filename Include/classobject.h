@@ -55,7 +55,7 @@ typedef struct {
 	PyObject	*in_dict;	/* A dictionary */
 } PyInstanceObject;
 
-extern DL_IMPORT PyTypeObject PyClass_Type, PyInstance_Type, PyMethod_Type;
+extern DL_IMPORT(PyTypeObject) PyClass_Type, PyInstance_Type, PyMethod_Type;
 
 #define PyClass_Check(op) ((op)->ob_type == &PyClass_Type)
 #define PyInstance_Check(op) ((op)->ob_type == &PyInstance_Type)
