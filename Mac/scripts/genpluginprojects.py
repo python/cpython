@@ -139,6 +139,7 @@ def	genallprojects(force=0):
 	
 	# bgen-generated Toolbox modules
 	genpluginproject("carbon", "_AE", outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "_AH", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_AE", libraries=["ObjectSupportLib"], 
 			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_App", libraries=["CarbonAccessors.o", "AppearanceLib"],
@@ -165,7 +166,7 @@ def	genallprojects(force=0):
 			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
 	genpluginproject("all", "_Fm", 
 			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
-	genpluginproject("all", "_Help", outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "_Help", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Icn", libraries=["IconServicesLib"], 
 			libraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_IBCarbon", sources=[":ibcarbon:_IBCarbon.c"], 
