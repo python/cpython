@@ -1,5 +1,6 @@
 # Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Lists.h'
 
+def FOUR_CHAR_CODE(x): return x
 listNotifyNothing = FOUR_CHAR_CODE('nada')
 listNotifyClick = FOUR_CHAR_CODE('clik')
 listNotifyDoubleClick = FOUR_CHAR_CODE('dblc')
