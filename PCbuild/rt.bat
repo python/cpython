@@ -19,7 +19,7 @@
 @set _qmode=no
 @set _dashO=
 @set _oldpath=%PATH%
-@PATH %PATH%;..\..\tcl84\bin
+@PATH %PATH%;..\..\tcltk\bin
 @goto CheckOpts
 :Again
 @shift
