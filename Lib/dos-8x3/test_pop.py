@@ -28,16 +28,20 @@ def _test():
     print "Testing os module:"
     import popen2
     cmd  = "cat"
-    teststr = "abc\n"
-    resultstr = teststr
+    teststr = "ab cd\n"
     if os.name == "nt":
         cmd = "more"
-        resultstr = "\n" + resultstr
+    # "more" doesn't act the same way across Windows flavors,
+    # sometimes adding an extra newline at the start or the
+    # end.  So we strip whitespace off both ends for comparison.
+    expected = teststr.strip()
     print "testing popen2..."
     w, r = os.popen2(cmd)
     w.write(teststr)
     w.close()
-    assert r.read() == resultstr
+    got = r.read()
+    if got.strip() != expected:
+        raise ValueError("wrote %s read %s" % (`teststr`, `got`))
     print "testing popen3..."
     try:
         w, r, e = os.popen3([cmd])
@@ -45,11 +49,16 @@ def _test():
         w, r, e = os.popen3(cmd)
     w.write(teststr)
     w.close()
-    assert r.read() == resultstr
-    assert e.read() == ""
+    got = r.read()
+    if got.strip() != expected:
+        raise ValueError("wrote %s read %s" % (`teststr`, `got`))
+    got = e.read()
+    if got:
+        raise ValueError("unexected %s on stderr" % `got`)
     for inst in popen2._active[:]:
         inst.wait()
-    assert not popen2._active
+    if popen2._active:
+        raise ValueError("_active not empty")
     print "All OK"
 
 main()
