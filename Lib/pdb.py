@@ -33,6 +33,7 @@ class Pdb(Cmd):
 		self.breaks = {}
 		self.botframe = None
 		self.stopframe = None
+		self.lastretval = None
 		self.forget()
 	
 	def forget(self):
@@ -41,20 +42,25 @@ class Pdb(Cmd):
 	def setup(self, f, t):
 		self.lineno = None
 		self.stack = []
+		self.curindex = 0
+		self.curframe = None
+		if f is None and t is None:
+			return
 		if t and t.tb_frame is f:
 			t = t.tb_next
-		while f and f is not self.botframe:
+		while f is not None:
 			self.stack.append((f, f.f_lineno))
+			if f is self.botframe:
+				break
 			f = f.f_back
+		else:
+			print '[Weird: bottom frame not in stack trace.]'
 		self.stack.reverse()
 		self.curindex = max(0, len(self.stack) - 1)
-		while t:
+		while t is not None:
 			self.stack.append((t.tb_frame, t.tb_lineno))
 			t = t.tb_next
-		if 0 <= self.curindex < len(self.stack):
-			self.curframe = self.stack[self.curindex][0]
-		else:
-			self.curframe = None
+		self.curframe = self.stack[self.curindex][0]
 	
 	def run(self, cmd):
 		import __main__
@@ -62,23 +68,38 @@ class Pdb(Cmd):
 		self.runctx(cmd, dict, dict)
 	
 	def runctx(self, cmd, globals, locals):
+		t = None
 		self.reset()
 		sys.trace = self.dispatch
 		try:
 			exec(cmd + '\n', globals, locals)
 		except PdbQuit:
-			pass
+			return
 		except:
 			print '***', sys.exc_type + ':', `sys.exc_value`
-			print '*** Post Mortem Debugging:'
-			sys.trace = None
-			del sys.trace
-			try:
-				self.ask_user(None, sys.exc_traceback)
-			except PdbQuit:
-				pass
+			t = sys.exc_traceback
 		finally:
-			self.reset()
+			self.trace = None
+			del self.trace
+			self.forget()
+		print '!!! Post-mortem debugging'
+		self.pmd(t)
+	
+	def pmd(self, traceback):
+		t = traceback
+		if self.botframe is not None:
+			while t is not None:
+				if t.tb_frame is not self.botframe:
+					break
+				t = t.tb_next
+			else:
+				t = sys.exc_traceback
+		try:
+			self.ask_user(self.botframe, t)
+		except PdbQuit:
+			pass
+		finally:
+			self.forget()
 	
 	def dispatch(self, frame, event, arg):
 		if self.quitting:
@@ -101,21 +122,24 @@ class Pdb(Cmd):
 	
 	def dispatch_call(self, frame, arg):
 		if self.botframe is None:
+			# First call dispatch since reset()
 			self.botframe = frame
-			return
+			return None
 		if not (self.stop_here(frame) or self.break_anywhere(frame)):
-			return
-		frame.f_locals['__args__'] = arg
+			return None
+		if arg is None:
+			print '[Entering non-function block.]'
+		else:
+			frame.f_locals['__args__'] = arg
 		return self.dispatch
 	
 	def dispatch_return(self, frame, arg):
-		if self.stop_here(frame):
-			print '!!! return', `arg`
-		return
+		self.lastretval = arg
+		return None
 	
 	def dispatch_exception(self, frame, arg):
 		if self.stop_here(frame):
-			print '!!! exception', arg[0] + ':', `arg[1]`
+			print '!!!', arg[0] + ':', `arg[1]`
 			self.ask_user(frame, arg[2])
 		return self.dispatch
 	
@@ -246,6 +270,10 @@ class Pdb(Cmd):
 		self.stopframe = self.curframe.f_back
 		return 1
 	do_r = do_return
+	
+	def do_retval(self, arg):
+		print self.lastretval
+	do_rv = do_retval
 	
 	def do_continue(self, arg):
 		self.stopframe = self.botframe
