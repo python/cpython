@@ -75,7 +75,7 @@ class Module(GeneratorGroup):
 			Output()
 
 	def exceptionInitializer(self):
-		return """PyString_FromString("%s.Error")""" % self.name
+		return """PyErr_NewException("%s.Error", NULL, NULL)""" % self.name
 
 
 def _test():
