@@ -590,6 +590,9 @@
 /* Define if you have the <gdbm/ndbm.h> header file.  */
 #undef HAVE_GDBM_NDBM_H
 
+/* Define if you have the <langinfo.h> header file.  */
+#undef HAVE_LANGINFO_H
+
 /* Define if you have the <libutil.h> header file.  */
 #undef HAVE_LIBUTIL_H
 
