@@ -84,7 +84,7 @@ extern long PyOS_GetLastModificationTime(); /* In getmtime.c */
 /* XXX Perhaps the magic number should be frozen and a version field
    added to the .pyc file header? */
 /* New way to come up with the magic number: (YEAR-1995), MONTH, DAY */
-#define MAGIC (20121 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (50428 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* See _PyImport_FixupExtension() below */
 static PyObject *extensions = NULL;
