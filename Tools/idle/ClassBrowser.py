@@ -36,6 +36,7 @@ class ClassBrowser:
 
     def close(self, event=None):
         self.top.destroy()
+        self.node.destroy()
 
     def init(self, flist):
         self.flist = flist
@@ -51,7 +52,7 @@ class ClassBrowser:
         sc = ScrolledCanvas(top, bg="white", highlightthickness=0, takefocus=1)
         sc.frame.pack(expand=1, fill="both")
         item = self.rootnode()
-        node = TreeNode(sc.canvas, None, item)
+        self.node = node = TreeNode(sc.canvas, None, item)
         node.update()
         node.expand()
 
