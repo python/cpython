@@ -595,12 +595,13 @@ class Pack:
 			dict[key] = value
 		return dict
 	info = newinfo
-	def propagate(self, boolean=None):
-		if boolean:
-			self.tk.call('pack', 'propagate', self._w)
-		else:
+	_noarg_ = ['_noarg_']
+	def propagate(self, flag=_noarg_):
+		if boolean is Pack._noarg_:
 			return self._getboolean(self.tk.call(
 				'pack', 'propagate', self._w))
+		else:
+			self.tk.call('pack', 'propagate', self._w, flag)
 	def slaves(self):
 		return map(self._nametowidget,
 			   self.tk.splitlist(
