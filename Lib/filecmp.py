@@ -30,14 +30,21 @@ def cmp(f1, f2, shallow=1,use_statcache=0):
 	and the cache will never grow stale.
 
 	"""
-	stat_function = (os.stat, statcache.stat)[use_statcache]
-	s1, s2 = _sig(stat_function(f1)), _sig(stat_function(f2))
-	if s1[0]!=stat.S_IFREG or s2[0]!=stat.S_IFREG: return 0
-	if shallow and s1 == s2: return 1
-	if s1[1]!=s2[1]:         return 0
+	if use_statcache:
+		stat_function = statcache.stat
+	else:
+		stat_function = os.stat
+	s1 = _sig(stat_function(f1))
+	s2 = _sig(stat_function(f2))
+	if s1[0] != stat.S_IFREG or s2[0] != stat.S_IFREG:
+		return 0
+	if shallow and s1 == s2:
+		return 1
+	if s1[1] != s2[1]:
+		return 0
 
 	result = _cache.get((f1, f2))
-	if result and (s1, s2)==result[:2]:
+	if result and (s1, s2) == result[:2]:
 		return result[2]
 	outcome = _do_cmp(f1, f2)
 	_cache[f1, f2] = s1, s2, outcome
@@ -50,8 +57,12 @@ def _sig(st):
 
 def _do_cmp(f1, f2):
 	bufsize = BUFSIZE
-	fp1 , fp2 = open(f1, 'rb'), open(f2, 'rb')
+	fp1 = open(f1, 'rb')
+	fp2 = open(f2, 'rb')
 	while 1:
-		b1, b2 = fp1.read(bufsize), fp2.read(bufsize)
-		if b1!=b2: return 0
-		if not b1: return 1
+		b1 = fp1.read(bufsize)
+		b2 = fp2.read(bufsize)
+		if b1 != b2:
+			return 0
+		if not b1:
+			return 1
