@@ -215,11 +215,11 @@ class Header:
             # charset.  Only do this for the second and subsequent chunks.
             nextcs = charset
             if uchunks:
-                if lastcs is not None:
-                    if nextcs is None or nextcs == 'us-ascii':
+                if lastcs not in (None, 'us-ascii'):
+                    if nextcs in (None, 'us-ascii'):
                         uchunks.append(USPACE)
                         nextcs = None
-                elif nextcs is not None and nextcs <> 'us-ascii':
+                elif nextcs not in (None, 'us-ascii'):
                     uchunks.append(USPACE)
             lastcs = nextcs
             uchunks.append(unicode(s, str(charset)))
