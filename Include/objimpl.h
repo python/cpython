@@ -57,43 +57,6 @@ Unless you have specific memory management requirements, it is
 recommended to use PyObject_{New, NewVar, Del}. */
 
 /*
- * Core object memory allocator
- * ============================
- */
-
-/* The purpose of the object allocator is to make the distinction
-   between "object memory" and the rest within the Python heap.
-
-   Object memory is the one allocated by PyObject_{New, NewVar}, i.e.
-   the one that holds the object's representation defined by its C
-   type structure, *excluding* any object-specific memory buffers that
-   might be referenced by the structure (for type structures that have
-   pointer fields).  By default, the object memory allocator is
-   implemented on top of the raw memory allocator.
-
-   The PyCore_* macros can be defined to make the interpreter use a
-   custom object memory allocator. They are reserved for internal
-   memory management purposes exclusively. Both the core and extension
-   modules should use the PyObject_* API. */
-
-#ifdef WITH_PYMALLOC
-void *_PyCore_ObjectMalloc(size_t nbytes);
-void *_PyCore_ObjectRealloc(void *p, size_t nbytes);
-void _PyCore_ObjectFree(void *p);
-#define PyCore_OBJECT_MALLOC    _PyCore_ObjectMalloc
-#define PyCore_OBJECT_REALLOC   _PyCore_ObjectRealloc
-#define PyCore_OBJECT_FREE      _PyCore_ObjectFree
-#endif /* !WITH_PYMALLOC */
-
-#ifndef PyCore_OBJECT_MALLOC
-#undef PyCore_OBJECT_REALLOC
-#undef PyCore_OBJECT_FREE
-#define PyCore_OBJECT_MALLOC(n)     PyCore_MALLOC(n)
-#define PyCore_OBJECT_REALLOC(p, n) PyCore_REALLOC((p), (n))
-#define PyCore_OBJECT_FREE(p)       PyCore_FREE(p)
-#endif
-
-/*
  * Raw object memory interface
  * ===========================
  */
@@ -111,19 +74,19 @@ void _PyCore_ObjectFree(void *p);
 
 /* Functions */
 
-/* Wrappers around PyCore_OBJECT_MALLOC and friends; useful if you
-   need to be sure that you are using the same object memory allocator
-   as Python. These wrappers *do not* make sure that allocating 0
-   bytes returns a non-NULL pointer. Returned pointers must be checked
-   for NULL explicitly; no action is performed on failure. */
+/* Wrappers that useful if you need to be sure that you are using the
+   same object memory allocator as Python. These wrappers *do not* make
+   sure that allocating 0 bytes returns a non-NULL pointer. Returned
+   pointers must be checked for NULL explicitly; no action is performed
+   on failure. */
 extern DL_IMPORT(void *) PyObject_Malloc(size_t);
 extern DL_IMPORT(void *) PyObject_Realloc(void *, size_t);
 extern DL_IMPORT(void) PyObject_Free(void *);
 
 /* Macros */
-#define PyObject_MALLOC(n)           PyCore_OBJECT_MALLOC(n)
-#define PyObject_REALLOC(op, n)      PyCore_OBJECT_REALLOC((void *)(op), (n))
-#define PyObject_FREE(op)            PyCore_OBJECT_FREE((void *)(op))
+#define PyObject_MALLOC(n)           _PyMalloc_MALLOC(n)
+#define PyObject_REALLOC(op, n)      _PyMalloc_REALLOC((void *)(op), (n))
+#define PyObject_FREE(op)            _PyMalloc_FREE((void *)(op))
 
 /*
  * Generic object allocator interface

@@ -2093,4 +2093,19 @@ _PyTrash_destroy_chain(void)
 
 #ifdef WITH_PYMALLOC
 #include "obmalloc.c"
-#endif
+#else
+void *_PyMalloc_Malloc(size_t n)
+{
+	return PyMem_MALLOC(n);
+}
+
+void *_PyMalloc_Realloc(void *p, size_t n)
+{
+	return PyMem_REALLOC(p, n);
+}
+
+void _PyMalloc_Free(void *p)
+{
+	PyMem_FREE(p);
+}
+#endif /* !WITH_PYMALLOC */
