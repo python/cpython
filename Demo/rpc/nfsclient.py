@@ -134,40 +134,28 @@ class NFSClient(UDPClient):
 		return self.cred
 
 	def Getattr(self, fh):
-		self.start_call(1)
-		self.packer.pack_fhandle(fh)
-		self.do_call()
-		as = self.unpacker.unpack_attrstat()
-		self.end_call()
-		return as
+		return self.make_call(1, fh, \
+			self.packer.pack_fhandle, \
+			self.unpacker.unpack_attrstat)
 
 	def Setattr(self, sa):
-		self.start_call(2)
-		self.packer.pack_sattrargs(sa)
-		self.do_call()
-		as = self.unpacker.unpack_attrstat()
-		self.end_call()
-		return as
+		return self.make_call(2, sa, \
+			self.packer.pack_sattrargs, \
+			self.unpacker.unpack_attrstat)
 
 	# Root() is obsolete
 
 	def Lookup(self, da):
-		self.start_call(4)
-		self.packer.pack_diropargs(da)
-		self.do_call()
-		dr = self.unpacker.unpack_diropres()
-		self.end_call()
-		return dr
+		return self.make_call(4, da, \
+			self.packer.pack_diropargs, \
+			self.unpacker.unpack_diropres)
 
 	# ...
 
 	def Readdir(self, ra):
-		self.start_call(16)
-		self.packer.pack_readdirargs(ra)
-		self.do_call()
-		rr = self.unpacker.unpack_readdirres()
-		self.end_call()
-		return rr
+		return self.make_call(16, ra, \
+			self.packer.pack_readdirargs, \
+			self.unpacker.unpack_readdirres)
 
 	# Shorthand to get the entire contents of a directory
 	def Listdir(self, dir):
