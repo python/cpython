@@ -26,9 +26,9 @@ else:
 # end of lines, so don't worry about that.
 #
 if sys.platform == 'mac':
-	_MWERKSDIR="Moes:Applications (Mac OS 9):Metrowerks CodeWarrior 7.0:Metrowerks CodeWarrior"
+	_MWERKSDIR="Sap:Applications (Mac OS 9):Metrowerks CodeWarrior 7.0:Metrowerks CodeWarrior"
 else:
-	_MWERKSDIR="/Volumes/Moes/Applications (Mac OS 9)/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/"
+	_MWERKSDIR="/Volumes/Sap/Applications (Mac OS 9)/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/"
 INCLUDEDIR=os.path.join(_MWERKSDIR, "MacOS Support", "Universal", "Interfaces", "CIncludes")
 
 #
