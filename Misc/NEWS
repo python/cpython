@@ -24,6 +24,9 @@ Extension modules
 Library
 -------
 
+- The classes in threading.py are now new-style classes.  That they
+  weren't before was an oversight.
+
 - SF bug 763023: fix uncaught ZeroDivisionError in difflib ratio methods
   when there are no lines.
 
