@@ -32,6 +32,8 @@ def main():
 			if arg[0] == -609:
 				print 'Connection invalid, is eudora running?'
 			else:
-				print 'Error, possibly ', arg[1]
+				print 'MacOS Error:', arg[1]
+		except aetools.Error, arg:
+			print 'Eudora returned error:', arg
 			
 main()
