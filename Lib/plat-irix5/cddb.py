@@ -30,8 +30,8 @@ def tochash(toc):
 		tracklist = []
 		for i in range(2, len(toc), 4):
 			tracklist.append((None,
-				  (string.atoi(toc[i:i+2]),
-				   string.atoi(toc[i+2:i+4]))))
+				  (int(toc[i:i+2]),
+				   int(toc[i+2:i+4]))))
 	else:
 		tracklist = toc
 	ntracks = len(tracklist)
@@ -58,7 +58,7 @@ class Cddb:
 	def __init__(self, tracklist):
 		if os.environ.has_key('CDDB_PATH'):
 			path = os.environ['CDDB_PATH']
-			cddb_path = string.splitfields(path, ',')
+			cddb_path = path.split(',')
 		else:
 			home = os.environ['HOME']
 			cddb_path = [home + '/' + _cddbrc]
@@ -73,7 +73,7 @@ class Cddb:
 				break
 			except IOError:
 				pass
-		ntracks = string.atoi(self.id[:2], 16)
+		ntracks = int(self.id[:2], 16)
 		self.artist = ''
 		self.title = ''
 		self.track = [None] + [''] * ntracks
@@ -106,7 +106,7 @@ class Cddb:
 					self.notes.append(value)
 			elif name1[:5] == 'track':
 				try:
-					trackno = string.atoi(name1[5:])
+					trackno = int(name1[5:])
 				except strings.atoi_error:
 					print 'syntax error in ' + file
 					continue
@@ -126,9 +126,8 @@ class Cddb:
 			# of previous track's title
 			if track and track[0] == ',':
 				try:
-					off = string.index(self.track[i - 1],
-							   ',')
-				except string.index_error:
+					off = self.track[i - 1].index(',')
+				except ValueError:
 					pass
 				else:
 					self.track[i] = self.track[i-1][:off] \
@@ -146,8 +145,8 @@ class Cddb:
 			t = []
 			for i in range(2, len(tracklist), 4):
 				t.append((None, \
-					  (string.atoi(tracklist[i:i+2]), \
-					   string.atoi(tracklist[i+2:i+4]))))
+					  (int(tracklist[i:i+2]), \
+					   int(tracklist[i+2:i+4]))))
 			tracklist = t
 		ntracks = len(tracklist)
 		self.id = _dbid((ntracks >> 4) & 0xF) + _dbid(ntracks & 0xF)
@@ -195,8 +194,8 @@ class Cddb:
 				f.write('track'+`i`+'.artist:\t'+self.trackartist[i]+'\n')
 			track = self.track[i]
 			try:
-				off = string.index(track, ',')
-			except string.index_error:
+				off = track.index(',')
+			except ValuError:
 				prevpref = None
 			else:
 				if prevpref and track[:off] == prevpref:
