@@ -1638,7 +1638,7 @@ static PyObject *MenuObj_GetMenuItemHierarchicalMenu(MenuObject *_self, PyObject
 	                                   &outHierMenu);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     MenuObj_New, outHierMenu);
+	                     OptMenuObj_New, outHierMenu);
 	return _res;
 }
 #endif

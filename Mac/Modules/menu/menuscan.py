@@ -144,6 +144,8 @@ class MyScanner(Scanner):
 			([("void", "*", "OutMode"), ("long", "*", "InMode"),
 			                            ("long", "*", "OutMode")],
 			 [("VarVarOutBuffer", "*", "InOutMode")]),
+			([("MenuRef", 'outHierMenu', "OutMode")],
+			 [("OptMenuRef", 'outHierMenu', "OutMode")]),
 			]
 
 	def writeinitialdefs(self):
