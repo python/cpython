@@ -105,6 +105,7 @@ read_history_file(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+static int history_length = -1; /* do not truncate history by default */
 static char doc_read_history_file[] = "\
 read_history_file([filename]) -> None\n\
 Load a readline history file.\n\
@@ -121,6 +122,8 @@ write_history_file(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "|z:write_history_file", &s))
 		return NULL;
 	errno = write_history(s);
+	if (!errno && history_length >= 0)
+		history_truncate_file(s, history_length);
 	if (errno)
 		return PyErr_SetFromErrno(PyExc_IOError);
 	Py_INCREF(Py_None);
@@ -132,6 +135,43 @@ write_history_file([filename]) -> None\n\
 Save a readline history file.\n\
 The default filename is ~/.history.\
 ";
+
+
+static char set_history_length_doc[] = "\
+set_history_length(length) -> None\n\
+set the maximal number of items which will be written to\n\
+the history file. A negative length is used to inhibit\n\
+history truncation.\n\
+";
+
+static PyObject*
+set_history_length(PyObject *self, PyObject *args)
+{
+    int length = history_length;
+    PyObject* ob;
+    if (!PyArg_ParseTuple(args, "i:set_history_length", &length))
+	return NULL;
+    history_length = length;
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
+
+static char get_history_length_doc[] = "\
+get_history_length() -> int\n\
+return the current history length value.\n\
+";
+
+static PyObject*
+get_history_length(PyObject *self, PyObject *args)
+{
+	PyObject* ob;
+	if (!PyArg_ParseTuple(args, ":get_history_length"))
+		return NULL;
+	return Py_BuildValue("i", history_length);
+}
+
 
 
 /* Exported function to specify a word completer in Python */
@@ -289,6 +329,8 @@ static struct PyMethodDef readline_methods[] =
 	{"read_init_file", read_init_file, 1, doc_read_init_file},
 	{"read_history_file", read_history_file, 1, doc_read_history_file},
 	{"write_history_file", write_history_file, 1, doc_write_history_file},
+ 	{"set_history_length", set_history_length, 1, set_history_length_doc},
+ 	{"get_history_length", get_history_length, 1, get_history_length_doc},
 	{"set_completer", set_completer, 1, doc_set_completer},
 	{"get_begidx", get_begidx, 0, doc_get_begidx},
 	{"get_endidx", get_endidx, 0, doc_get_endidx},
