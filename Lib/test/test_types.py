@@ -476,6 +476,21 @@ try: d.popitem()
 except KeyError: pass
 else: raise TestFailed, "{}.popitem doesn't raise KeyError"
 
+# Tests for pop with specified key
+d.clear()
+k, v = 'abc', 'def'
+d[k] = v
+try: d.pop('ghi')
+except KeyError: pass
+else: raise TestFailed, "{}.pop(k) doesn't raise KeyError when k not in dictionary"
+
+if d.pop(k) != v: raise TestFailed, "{}.pop(k) doesn't find known key/value pair"
+if len(d) > 0: raise TestFailed, "{}.pop(k) failed to remove the specified pair"
+
+try: d.pop(k)
+except KeyError: pass
+else: raise TestFailed, "{}.pop(k) doesn't raise KeyError when dictionary is empty"
+
 d[1] = 1
 try:
     for i in d:

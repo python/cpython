@@ -1495,6 +1495,39 @@ dict_clear(register dictobject *mp)
 }
 
 static PyObject *
+dict_pop(dictobject *mp, PyObject *key)
+{
+	long hash;
+	dictentry *ep;
+	PyObject *old_value, *old_key;
+
+	if (mp->ma_used == 0) {
+		PyErr_SetString(PyExc_KeyError,
+				"pop(): dictionary is empty");
+		return NULL;
+	}
+	if (!PyString_CheckExact(key) ||
+	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
+		hash = PyObject_Hash(key);
+		if (hash == -1)
+			return NULL;
+	}
+	ep = (mp->ma_lookup)(mp, key, hash);
+	if (ep->me_value == NULL) {
+		PyErr_SetObject(PyExc_KeyError, key);
+		return NULL;
+	}
+	old_key = ep->me_key;
+	Py_INCREF(dummy);
+	ep->me_key = dummy;
+	old_value = ep->me_value;
+	ep->me_value = NULL;
+	mp->ma_used--;
+	Py_DECREF(old_key);
+	return old_value;
+}
+
+static PyObject *
 dict_popitem(dictobject *mp)
 {
 	int i = 0;
@@ -1636,6 +1669,9 @@ static char get__doc__[] =
 static char setdefault_doc__[] =
 "D.setdefault(k[,d]) -> D.get(k,d), also set D[k]=d if not D.has_key(k)";
 
+static char pop__doc__[] =
+"D.pop(k) -> v, remove specified key and return the corresponding value";
+
 static char popitem__doc__[] =
 "D.popitem() -> (k, v), remove and return some (key, value) pair as a\n\
 2-tuple; but raise KeyError if D is empty";
@@ -1674,6 +1710,8 @@ static PyMethodDef mapp_methods[] = {
 	 get__doc__},
 	{"setdefault",  (PyCFunction)dict_setdefault,   METH_VARARGS,
 	 setdefault_doc__},
+	{"pop",         (PyCFunction)dict_pop,          METH_O,
+	 pop__doc__},	
 	{"popitem",	(PyCFunction)dict_popitem,	METH_NOARGS,
 	 popitem__doc__},
 	{"keys",	(PyCFunction)dict_keys,		METH_NOARGS,
