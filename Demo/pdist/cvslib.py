@@ -17,7 +17,6 @@ class File:
 	lseen -- true if the data for the local file is up to date
 	eseen -- true if the data from the CVS/Entries entry is up to date
 	         (this implies that the entry must be written back)
-	sseen -- true if the data from the CVS/Sums file is up to date
 	rseen -- true if the data for the remote file is up to date
 	proxy -- RCSProxy instance used to contact the server, or None
 
