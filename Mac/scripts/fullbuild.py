@@ -70,9 +70,17 @@ def buildmwproject(top, creator, projects):
 		else:
 			target = ''
 		file = os.path.join(top, file)
-		fss = macfs.FSSpec(file)
+		try:
+			fss = macfs.FSSpec(file)
+		except ValueError:
+			print '** file not found:', file
+			continue
 		print 'Building', file, target
-		mgr.open(fss)
+		try:
+			mgr.open(fss)
+		except aetools.Error, detail:
+			print '**', detail, file
+			continue
 		if target:
 			try:
 				mgr.Set_Current_Target(target)
