@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="zlib"
+	RootNamespace="zlib"
 	SccProjectName="zlib"
 	SccLocalPath="..">
 	<Platforms>
@@ -20,7 +21,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\..\zlib-1.1.4"
+				AdditionalIncludeDirectories="..\Include,..\PC,..\..\zlib-1.2.1"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
@@ -36,7 +37,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\zlib-1.1.4\zlib.lib"
+				AdditionalDependencies="..\..\zlib-1.2.1\zlib.lib"
 				OutputFile="./zlib_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -62,8 +63,8 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Checking static zlib has been built"
-				CommandLine="cd ..\..\zlib-1.1.4
-nmake -nologo -f msdos\makefile.w32 zlib.lib
+				CommandLine="cd ..\..\zlib-1.2.1
+nmake -nologo -f win32\Makefile.msc zlib.lib
 "/>
 			<Tool
 				Name="VCResourceCompilerTool"

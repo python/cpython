@@ -117,15 +117,15 @@ _tkinter
 
 zlib
     Python wrapper for the zlib compression library.  Get the source code
-    for version 1.1.4 from a convenient mirror at:
+    for version 1.2.1 from a convenient mirror at:
         http://www.gzip.org/zlib/
-    Unpack into dist\zlib-1.1.4.
+    Unpack into dist\zlib-1.2.1.
     A custom pre-link step in the zlib project settings should manage to
-    build zlib-1.1.4\zlib.lib by magic before zlib.pyd (or zlib_d.pyd) is
+    build zlib-1.2.1\zlib.lib by magic before zlib.pyd (or zlib_d.pyd) is
     linked in PCbuild\.
     However, the zlib project is not smart enough to remove anything under
-    zlib-1.1.4\ when you do a clean, so if you want to rebuild zlib.lib
-    you need to clean up zlib-1.1.4\ by hand.
+    zlib-1.2.1\ when you do a clean, so if you want to rebuild zlib.lib
+    you need to clean up zlib-1.2.1\ by hand.
 
 bz2
     Python wrapper for the libbz2 compression library.  Homepage
