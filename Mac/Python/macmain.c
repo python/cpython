@@ -242,6 +242,8 @@ init_common(int *argcp, char ***argvp, int embedded)
 /*	Py_SuppressPrintingFlag = options.suppress_print; */
 	Py_OptimizeFlag = options.optimize;
 	Py_DebugFlag = options.debugging;
+	Py_NoSiteFlag = options.nosite;
+	Py_UseClassExceptionsFlag = !(options.oldexc);
 	if ( options.noargs ) {
 		/* don't process events at all without the scripts permission */
 		PyMacSchedParams scp;
