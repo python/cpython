@@ -36,6 +36,15 @@ extern const char *PyWin_DLLVersionString;
 #include <unixlib.h>
 #endif
 
+#ifdef MS_WINDOWS
+#include <windows.h>
+#endif
+
+#ifdef HAVE_LANGINFO_H
+#include <locale.h>
+#include <langinfo.h>
+#endif
+
 PyObject *
 PySys_GetObject(char *name)
 {
@@ -881,6 +890,12 @@ _PySys_Init(void)
 	PyObject *m, *v, *sysdict;
 	PyObject *sysin, *sysout, *syserr;
 	char *s;
+#ifdef MS_WINDOWS
+	char buf[10];
+#endif
+#if defined(HAVE_LANGINFO_H) && defined(CODESET)
+	char *oldloc, *codeset;
+#endif
 
 	m = Py_InitModule3("sys", sys_methods, sys_doc);
 	sysdict = PyModule_GetDict(m);
@@ -890,6 +905,34 @@ _PySys_Init(void)
 	syserr = PyFile_FromFile(stderr, "<stderr>", "w", NULL);
 	if (PyErr_Occurred())
 		return NULL;
+#ifdef MS_WINDOWS
+	if(isatty(_fileno(stdin))){
+		sprintf(buf, "cp%d", GetConsoleCP());
+		if (!PyFile_SetEncoding(sysin, buf))
+			return NULL;
+	}
+	if(isatty(_fileno(stdout))) {
+		sprintf(buf, "cp%d", GetConsoleOutputCP());
+		if (!PyFile_SetEncoding(sysout, buf))
+			return NULL;
+	}
+#endif
+
+#if defined(HAVE_LANGINFO_H) && defined(CODESET)
+	oldloc = setlocale(LC_CTYPE, 0);
+	setlocale(LC_CTYPE, "");
+	codeset = nl_langinfo(CODESET);
+	setlocale(LC_CTYPE, oldloc);
+	if(codeset && isatty(fileno(stdin))){
+		if (!PyFile_SetEncoding(sysin, codeset))
+			return NULL;
+	}
+	if(codeset && isatty(fileno(stdout))) {
+		if (!PyFile_SetEncoding(sysout, codeset))
+			return NULL;
+	}
+#endif
+	
 	PyDict_SetItemString(sysdict, "stdin", sysin);
 	PyDict_SetItemString(sysdict, "stdout", sysout);
 	PyDict_SetItemString(sysdict, "stderr", syserr);

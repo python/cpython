@@ -2029,6 +2029,12 @@ implementation detail and may change in future releases of Python.
   creation.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PyFile_Encoding}{PyFileObject *p, char *enc}
+  Set the file's encoding for Unicode output to \var{enc}. Return
+  1 on success and 0 on failure.
+  \versionadded{2.3}
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{int}{PyFile_SoftSpace}{PyObject *p, int newflag}
   This function exists for internal use by the interpreter.  Sets the
   \member{softspace} attribute of \var{p} to \var{newflag} and
