@@ -317,7 +317,7 @@ class FTP:
 			raise error_reply, resp
 		return resp
 
-	def retrbinary(self, cmd, callback, blocksize):
+	def retrbinary(self, cmd, callback, blocksize=8192):
 		'''Retrieve data in binary mode.
 		The argument is a RETR command.
 		The callback function is called for each block.

@@ -125,14 +125,15 @@ Return nothing if a response code in the range 200--299 is received.
 Raise an exception otherwise.
 \end{funcdesc}
 
-\begin{funcdesc}{retrbinary}{command\, callback\, maxblocksize}
+\begin{funcdesc}{retrbinary}{command\, callback\optional{\, maxblocksize}}
 Retrieve a file in binary transfer mode.  \var{command} should be an
 appropriate \samp{RETR} command, i.e.\ \code{"RETR \var{filename}"}.
 The \var{callback} function is called for each block of data received,
 with a single string argument giving the data block.
-The \var{maxblocksize} argument specifies the maximum block size
-(which may not be the actual size of the data blocks passed to
-\var{callback}).
+The optional \var{maxblocksize} argument specifies the maximum chunk size to
+read on the low-level socket object created to do the actual transfer
+(which will also be the largest size of the data blocks passed to
+\var{callback}).  A reasonable default is chosen.
 \end{funcdesc}
 
 \begin{funcdesc}{retrlines}{command\optional{\, callback}}
