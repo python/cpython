@@ -38,6 +38,8 @@ static struct memberlist frame_memberlist[] = {
 	{"f_code",	T_OBJECT,	OFF(f_code)},
 	{"f_globals",	T_OBJECT,	OFF(f_globals)},
 	{"f_locals",	T_OBJECT,	OFF(f_locals)},
+	{"f_lasti",	T_INT,		OFF(f_lasti)},
+	{"f_lineno",	T_INT,		OFF(f_lineno)},
 	{NULL}	/* Sentinel */
 };
 
@@ -118,6 +120,8 @@ newframeobject(back, code, globals, locals, nvalues, nblocks)
 			DECREF(f);
 			f = NULL;
 		}
+		f->f_lasti = 0;
+		f->f_lineno = -1;
 	}
 	return f;
 }
