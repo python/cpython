@@ -7,8 +7,6 @@ import StringIO
 
 import unittest
 
-# placement is crucial!!!  move the start of _f and you have to adjust the
-# line numbers in dis_f
 def _f(a):
     print a
     return 1
