@@ -465,7 +465,7 @@ string_buffer_getreadbuf(self, index, ptr)
 {
 	if ( index != 0 ) {
 		PyErr_SetString(PyExc_SystemError,
-				"Accessing non-existent string segment");
+				"accessing non-existent string segment");
 		return -1;
 	}
 	*ptr = (void *)self->ob_sval;
@@ -493,6 +493,21 @@ string_buffer_getsegcount(self, lenp)
 	return 1;
 }
 
+static int
+string_buffer_getcharbuf(self, index, ptr)
+	PyStringObject *self;
+	int index;
+	const char **ptr;
+{
+	if ( index != 0 ) {
+		PyErr_SetString(PyExc_SystemError,
+				"accessing non-existent string segment");
+		return -1;
+	}
+	*ptr = self->ob_sval;
+	return self->ob_size;
+}
+
 static PySequenceMethods string_as_sequence = {
 	(inquiry)string_length, /*sq_length*/
 	(binaryfunc)string_concat, /*sq_concat*/
@@ -507,6 +522,7 @@ static PyBufferProcs string_as_buffer = {
 	(getreadbufferproc)string_buffer_getreadbuf,
 	(getwritebufferproc)string_buffer_getwritebuf,
 	(getsegcountproc)string_buffer_getsegcount,
+	(getcharbufferproc)string_buffer_getcharbuf,
 };
 
 PyTypeObject PyString_Type = {
@@ -530,7 +546,7 @@ PyTypeObject PyString_Type = {
 	0,		/*tp_getattro*/
 	0,		/*tp_setattro*/
 	&string_as_buffer,	/*tp_as_buffer*/
-	0,		/*tp_xxx4*/
+	Py_TPFLAGS_DEFAULT,	/*tp_flags*/
 	0,		/*tp_doc*/
 };
 
