@@ -420,7 +420,9 @@ PyObject *source;
 if ( !PyArg_ParseTuple(_args, "O!", &PyString_Type, &source) )
 	return NULL;
 if ( PyString_Size(source) != sizeof(BitMap) && PyString_Size(source) != sizeof(PixMap) ) {
-	PyErr_BadArgument();
+	PyErr_Format(PyExc_TypeError, 
+		"Argument size was %d, should be %d (sizeof BitMap) or %d (sizeof PixMap)", 
+		PyString_Size(source), sizeof(BitMap), sizeof(PixMap));
 	return NULL;
 }
 ptr = (BitMapPtr)PyString_AsString(source);

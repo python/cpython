@@ -14,9 +14,9 @@
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
-    	PyErr_SetString(PyExc_NotImplementedError, \
-    	"Not available in this shared library/OS version"); \
-    	return NULL; \
+        PyErr_SetString(PyExc_NotImplementedError, \
+        "Not available in this shared library/OS version"); \
+        return NULL; \
     }} while(0)
 
 
@@ -6258,7 +6258,9 @@ static PyObject *Qd_RawBitMap(PyObject *_self, PyObject *_args)
 	if ( !PyArg_ParseTuple(_args, "O!", &PyString_Type, &source) )
 		return NULL;
 	if ( PyString_Size(source) != sizeof(BitMap) && PyString_Size(source) != sizeof(PixMap) ) {
-		PyErr_BadArgument();
+		PyErr_Format(PyExc_TypeError, 
+			"Argument size was %d, should be %d (sizeof BitMap) or %d (sizeof PixMap)", 
+			PyString_Size(source), sizeof(BitMap), sizeof(PixMap));
 		return NULL;
 	}
 	ptr = (BitMapPtr)PyString_AsString(source);
