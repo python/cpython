@@ -26,9 +26,6 @@
 					/* ISTERMINAL() / ISNONTERMINAL() */
 #include "compile.h"			/* PyNode_Compile()		  */
 
-#ifndef MS_WINDOWS
-char *strdup();
-#endif
 
 /*  String constants used to initialize module attributes.
  *
@@ -747,7 +744,10 @@ build_node_children(tuple, root, line_num)
 	    if (check_terminal_tuple(elem)) {
 		PyObject *temp = PySequence_GetItem(elem, 1);
 
-		strn = strdup(PyString_AsString(temp));
+		/* check_terminal_tuple() already verified it's a string */
+		strn = (char *)malloc(PyString_GET_SIZE(temp) + 1);
+		if (strn != NULL)
+		    strcpy(strn, PyString_AS_STRING(temp));
 		Py_XDECREF(temp);
 
 		if (PyObject_Length(elem) == 3) {
