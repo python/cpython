@@ -18,9 +18,13 @@ sz = struct.calcsize('i')
 if sz * 3 <> struct.calcsize('iii'):
     raise TestFailed, 'inconsistent sizes'
 
-sz = struct.calcsize('cbhilfd')
-if sz * 3 <> struct.calcsize('3c3b3h3i3l3f3d'):
-    raise TestFailed, 'inconsistent sizes'
+fmt = 'cbxxxxxxhhhhiillffd'
+fmt3 = '3c3b18x12h6i6l6f3d'
+sz = struct.calcsize(fmt)
+sz3 = struct.calcsize(fmt3)
+if sz * 3 <> sz3:
+    raise TestFailed, 'inconsistent sizes (3*%s -> 3*%d = %d, %s -> %d)' % (
+	`fmt`, sz, 3*sz, `fmt3`, sz3)
 
 simple_err(struct.pack, 'iii', 3)
 simple_err(struct.pack, 'i', 3, 3, 3)
