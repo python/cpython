@@ -81,7 +81,7 @@ def is_zipfile(filename):
         fpin.close()
         if endrec[0:4] == "PK\005\006" and endrec[-2:] == "\000\000":
             return 1    # file has correct magic number
-    except:
+    except IOError:
         pass
 
 
