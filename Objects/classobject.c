@@ -250,7 +250,6 @@ set_bases(c, v)
 	PyClassObject *c;
 	PyObject *v;
 {
-	PyObject *temp;
 	int i, n;
 
 	if (v == NULL || !PyTuple_Check(v))
@@ -272,11 +271,9 @@ set_name(c, v)
 	PyClassObject *c;
 	PyObject *v;
 {
-	PyObject *temp;
-
 	if (v == NULL || !PyString_Check(v))
 		return "__name__ must be a string object";
-	if (strlen(PyString_AS_STRING(v)) != PyString_GET_SIZE(v))
+	if ((long)strlen(PyString_AS_STRING(v)) != PyString_GET_SIZE(v))
 		return "__name__ must not contain null bytes";
 	set_slot(&c->cl_name, v);
 	return "";
