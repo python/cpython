@@ -783,6 +783,11 @@ class CCompiler:
         if self.verbose >= level:
             print msg
 
+    def debug_print (self, msg):
+        from distutils.core import DEBUG
+        if DEBUG:
+            print msg
+
     def warn (self, msg):
         sys.stderr.write ("warning: %s\n" % msg)
 
