@@ -984,11 +984,32 @@ parsestrplus(n)
 	REQ(CHILD(n, 0), STRING);
 	if ((v = parsestr(STR(CHILD(n, 0)))) != NULL) {
 		/* String literal concatenation */
-		for (i = 1; i < NCH(n) && v != NULL; i++) {
-			PyString_ConcatAndDel(&v, parsestr(STR(CHILD(n, i))));
+		for (i = 1; i < NCH(n); i++) {
+		    PyObject *s;
+		    s = parsestr(STR(CHILD(n, i)));
+		    if (s == NULL)
+			goto onError;
+		    if (PyString_Check(v) && PyString_Check(s)) {
+			PyString_ConcatAndDel(&v, s);
+			if (v == NULL)
+			    goto onError;
+		    }
+		    else {
+			PyObject *temp;
+			temp = PyUnicode_Concat(v, s);
+			Py_DECREF(s);
+			if (temp == NULL)
+			    goto onError;
+			Py_DECREF(v);
+			v = temp;
+		    }
 		}
 	}
 	return v;
+
+ onError:
+	Py_XDECREF(v);
+	return NULL;
 }
 
 static void
