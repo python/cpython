@@ -7,7 +7,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 ******************************************************************/
 
 #ifndef Py_PYPORT_H
-#define Py_PYPORT_H 1
+#define Py_PYPORT_H
 
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic
