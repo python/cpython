@@ -197,7 +197,7 @@ class Distribution:
         self.ext_modules = None
         self.ext_package = None
         self.include_dirs = None
-        self.install_path = None
+        self.extra_path = None
 
         # And now initialize bookkeeping stuff that can't be supplied by
         # the caller at all.  'command_obj' maps command names to
@@ -840,7 +840,7 @@ class Command:
         # Option_pairs: list of (src_option, dst_option) tuples
 
         src_cmd_obj = self.distribution.find_command_obj (src_cmd)
-        src_cmd_obj.finalize_options ()
+        src_cmd_obj.ensure_ready ()
         try:
             for (src_option, dst_option) in option_pairs:
                 if getattr (self, dst_option) is None:
@@ -861,6 +861,10 @@ class Command:
            already be initialized to its satisfaction, in which case the
            second 'finalize_options()' invocation will have little or no
            effect."""
+
+        # XXX this won't work -- must call finalize_option to work, but
+        # calling finalize_option is wrong (it's only supposed to be called
+        # once).  Where is this needed?!??!
 
         cmd_obj = self.distribution.find_command_obj (command)
         cmd_obj.set_option (option, value)
