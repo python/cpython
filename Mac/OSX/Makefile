@@ -18,6 +18,8 @@ LDFLAGS=-framework System -framework Python -framework Carbon \
 	-framework Foundation
 CC=cc
 LD=cc
+REZ=/Developer/Tools/Rez
+DEREZ=/Developer/Tools/DeRez
 
 OBJECTS=$(PYTHONBUILDDIR)/Mac/Python/macmain.o \
 	$(PYTHONBUILDDIR)/Mac/Python/macgetargv.o
@@ -73,9 +75,9 @@ install: pythonforbundle
 	# Create a temporary version of the resources here
 	$(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/dialogs.rsrc dialogs.rsrc
 	$(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/errors.rsrc errors.rsrc
-	DeRez -useDF -skip ckid dialogs.rsrc > dialogs.r
-	DeRez -useDF -skip ckid errors.rsrc > errors.r
-	Rez -useDF -o $(RESOURCEFILE) dialogs.r errors.r 
+	$(DEREZ) -useDF -skip ckid dialogs.rsrc > dialogs.r
+	$(DEREZ) -useDF -skip ckid errors.rsrc > errors.r
+	$(REZ) -useDF -o $(RESOURCEFILE) dialogs.r errors.r 
 	$(INSTALL_DATA) $(RESOURCEFILE) $(APPINSTALLDIR)/Contents/Resources/$(RESOURCEFILE)
 		
 LIBDEST=$(INSTALLDIR)/Mac/Lib
