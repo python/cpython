@@ -193,41 +193,8 @@ wat_dos     A 32-bit extended DOS Python (console-mode) using the
 wat_os2     A 32-bit OS/2 Python (console-mode).
             Sockets are not included.
 
+
 IBM VisualAge C/C++ for OS/2
 ============================
 
-To build Python for OS/2, change into ./os2vacpp and issue an
-'NMAKE' command.  This will build a PyCore15.dll containing the
-set of Python modules listed in config.c and a small Python.exe
-to start the interpreter.
-
-During the build process you will see a couple of harmless warnings:
-
-  From the C Compiler, "No function prototype given for XXX", which
-  comes from the use of K&R parameters within Python for portability.
-
-  From the ILIB librarian, "Module Not Found (XXX)", which comes
-  from its attempt to perform the (-+) operation, which removes and
-  then adds a .OBJ to the library.  The first time a build is done,
-  it obviously cannot remove what is not yet built.
-
-This build includes support for most Python functionality as well
-as TCP/IP sockets.  It omits the Posix ability to 'fork' a process
-but supports threads using OS/2 native capabilities.  I have tried
-to support everything possible, even popen() to run a child process
-and communicate with it via a pipe.
-
-With respect to the environment variables for Python, I use the
-following setup:
-
-    Set PYTHONHOME=E:\Tau\Projects\Python
-    Set PYTHONPATH=.;E:\Tau\Projects\Python\Lib; \
-                     E:\Tau\Projects\Python\Lib\plat-win
-
-If you have questions or problems specifically with the VAC++ port
-of Python, please contact me at:
-
-    Jeff Rush <jrush@summit-research.com>.
-
-I support no other platform but OS/2 (and eventually AmigaDOS).
-
+See os2vacpp/readme.txt.  This platform is supported by Jeff Rush.
