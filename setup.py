@@ -173,7 +173,7 @@ class PyBuildExt(build_ext):
             exts.append( Extension('rgbimg', ['rgbimgmodule.c']) )
 
         # readline
-        if (self.compiler.find_library_file(self.compiler.library_dirs, 'readline')):
+        if (self.compiler.find_library_file(lib_dirs, 'readline')):
             exts.append( Extension('readline', ['readline.c'],
                                    libraries=['readline', 'termcap']) )
 
