@@ -877,7 +877,7 @@ struct SamplesortStackNode {
    is undesirable, so cutoff values are canned in the "cutoff" table
    below:  cutoff[i] is the smallest N such that k == CUTOFFBASE + i. */
 #define CUTOFFBASE 4
-static int cutoff[] = {
+static long cutoff[] = {
 	43,        /* smallest N such that k == 4 */
 	106,       /* etc */
 	250,
