@@ -1727,6 +1727,8 @@ immutable_list_op(void)
 static PyMethodDef immutable_list_methods[] = {
 	{"append",	(PyCFunction)immutable_list_op, METH_VARARGS},
 	{"insert",	(PyCFunction)immutable_list_op, METH_VARARGS},
+	{"extend",      (PyCFunction)immutable_list_op,  METH_O},
+	{"pop",		(PyCFunction)immutable_list_op, METH_VARARGS},
 	{"remove",	(PyCFunction)immutable_list_op, METH_VARARGS},
 	{"index",	(PyCFunction)listindex,         METH_O},
 	{"count",	(PyCFunction)listcount,         METH_O},
