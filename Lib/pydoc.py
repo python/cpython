@@ -322,11 +322,11 @@ class Doc:
                                  'thread', 'zipimport') or
              (file.startswith(basedir) and
               not file.startswith(os.path.join(basedir, 'site-packages'))))):
+            htmlfile = "module-%s.html" % object.__name__
             if docloc.startswith("http://"):
-                docloc = (docloc.rstrip("/") +
-                          "/module-%s.html" % object.__name__)
+                docloc = "%s/%s" % (docloc.rstrip("/"), htmlfile)
             else:
-                docloc = os.path.join(docloc, "module-%s.html" % name)
+                docloc = os.path.join(docloc, htmlfile)
         else:
             docloc = None
         return docloc
