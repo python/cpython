@@ -21,25 +21,26 @@ argument list to be parsed, without the leading reference to the
 running program. Typically, this means \samp{sys.argv[1:]}.
 \var{options} is the string of option letters that the script wants to
 recognize, with options that require an argument followed by a colon
-(i.e., the same format that \UNIX{} \cfunction{getopt()} uses).  If
-specified, \var{long_options} is a list of strings with the names of
-the long options which should be supported.  The leading
+(\character{:}; i.e., the same format that \UNIX{}
+\cfunction{getopt()} uses).
+
+\var{long_options}, if specified, must be a list of strings with the
+names of the long options which should be supported.  The leading
 \code{'-}\code{-'} characters should not be included in the option
-name.  Options which require an argument should be followed by an
-equal sign (\code{'='}).
+name.  Long options which require an argument should be followed by an
+equal sign (\character{=}).
 
 The return value consists of two elements: the first is a list of
 \code{(\var{option}, \var{value})} pairs; the second is the list of
 program arguments left after the option list was stripped (this is a
-trailing slice of the first argument).
-Each option-and-value pair returned has the option as its first
-element, prefixed with a hyphen for short options (e.g., \code{'-x'})
-or two hyphens for long options (e.g., \code{'-}\code{-long-option'}),
-and the option argument as its second element, or an empty string if
-the option has no argument.
-The options occur in the list in the same order in which they were
-found, thus allowing multiple occurrences.  Long and short options may
-be mixed.
+trailing slice of \var{args}).  Each option-and-value pair returned
+has the option as its first element, prefixed with a hyphen for short
+options (e.g., \code{'-x'}) or two hyphens for long options (e.g.,
+\code{'-}\code{-long-option'}), and the option argument as its second
+element, or an empty string if the option has no argument.  The
+options occur in the list in the same order in which they were found,
+thus allowing multiple occurrences.  Long and short options may be
+mixed.
 \end{funcdesc}
 
 \begin{excdesc}{GetoptError}
@@ -61,8 +62,8 @@ Alias for \exception{GetoptError}; for backward compatibility.
 An example using only \UNIX{} style options:
 
 \begin{verbatim}
->>> import getopt, string
->>> args = string.split('-a -b -cfoo -d bar a1 a2')
+>>> import getopt
+>>> args = '-a -b -cfoo -d bar a1 a2'.split()
 >>> args
 ['-a', '-b', '-cfoo', '-d', 'bar', 'a1', 'a2']
 >>> optlist, args = getopt.getopt(args, 'abc:d:')
@@ -70,14 +71,13 @@ An example using only \UNIX{} style options:
 [('-a', ''), ('-b', ''), ('-c', 'foo'), ('-d', 'bar')]
 >>> args
 ['a1', 'a2']
->>> 
 \end{verbatim}
 
 Using long option names is equally easy:
 
 \begin{verbatim}
 >>> s = '--condition=foo --testing --output-file abc.def -x a1 a2'
->>> args = string.split(s)
+>>> args = s.split()
 >>> args
 ['--condition=foo', '--testing', '--output-file', 'abc.def', '-x', 'a1', 'a2']
 >>> optlist, args = getopt.getopt(args, 'x', [
@@ -87,5 +87,29 @@ Using long option names is equally easy:
  '')]
 >>> args
 ['a1', 'a2']
->>> 
+\end{verbatim}
+
+In a script, typical usage is something like this:
+
+\begin{verbatim}
+import getopt, sys
+
+def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "ho:", ["help", "output="])
+    except getopt.GetoptError:
+        # print help information and exit:
+        usage()
+        sys.exit(2)
+    output = None
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            usage()
+            sys.exit()
+        if o in ("-o", "--output"):
+            output = a
+    # ...
+
+if __name__ == "__main__":
+    main()
 \end{verbatim}
