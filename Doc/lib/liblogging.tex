@@ -1133,8 +1133,7 @@ address via SMTP.
 \begin{classdesc}{SMTPHandler}{mailhost, fromaddr, toaddrs, subject}
 Returns a new instance of the \class{SMTPHandler} class. The
 instance is initialized with the from and to addresses and subject
-line of the email. The \var{toaddrs} should be a list of strings without
-domain names (That's what the \var{mailhost} is for). To specify a
+line of the email. The \var{toaddrs} should be a list of strings. To specify a
 non-standard SMTP port, use the (host, port) tuple format for the
 \var{mailhost} argument. If you use a string, the standard SMTP port
 is used.
@@ -1269,6 +1268,7 @@ Currently, the useful mapping keys in a \class{LogRecord} are:
 \lineii{\%(msecs)d}    {Millisecond portion of the time when the
                         \class{LogRecord} was created.}
 \lineii{\%(thread)d}   {Thread ID (if available).}
+\lineii{\%(threadName)s}   {Thread name (if available).}
 \lineii{\%(process)d}  {Process ID (if available).}
 \lineii{\%(message)s}  {The logged message, computed as \code{msg \% args}.}
 \end{tableii}
