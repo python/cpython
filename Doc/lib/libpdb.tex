@@ -138,6 +138,24 @@ function.  When an
 exception occurs in such a statement, the exception name is printed
 but the debugger's state is not changed.
 
+Multiple commands may be entered on a single line, separated by
+''\code{;;}''.  (A single ''\code{;}'' is not used as it is
+the separator for multiple commands in a line that is passed to
+the Python parser.)
+No intelligence is applied to separating the commands;
+the input is split at the first ''\code{;;}'' pair, even if it is in
+the middle of a quoted string.
+
+The debugger supports aliases.  Aliases can have parameters which
+allows one a certain level of adaptability to the context under
+examination.
+
+If a file \file{.pdbrc} exists in the user's home directory or in the
+current directory, it is read in and executed as if it had been typed
+at the debugger prompt.  This is particularly useful for aliases.  If
+both files exist, the one in the home directory is read first and
+aliases defined there can be overriden by the local file.
+
 \begin{description}
 
 \item[h(elp) \optional{\var{command}}]
@@ -167,27 +185,62 @@ Move the current frame one level up in the stack trace
 
 \item[b(reak) \optional{\optional{\var{filename}:}\var{lineno}%
               \code{\Large|}\var{function}%
-              \optional{, \code{'}\var{condition}\code{'}}}]
+              \optional{, \var{condition}}}]
 
 With a \var{lineno} argument, set a break there in the current
-file.  With a \var{function} argument, set a break at the entry of
-that function.  Without argument, list all breaks.
-If a second argument is present, it is a string (included in string
-quotes!) specifying an expression which must evaluate to true before
-the breakpoint is honored.
-
+file.  With a \var{function} argument, set a break at the first
+executable statement within that function.
 The line number may be prefixed with a filename and a colon,
 to specify a breakpoint in another file (probably one that
 hasn't been loaded yet).  The file is searched on \code{sys.path}.
+Note that each breakpoint is assigned a number to which all the other
+breakpoint commands refer.
 
-\item[cl(ear) \optional{\optional{\var{filename}:}\var{lineno}}]
+If a second argument is present, it is an expression which must
+evaluate to true before the breakpoint is honored.
 
-With a \var{lineno} argument, clear that break in the current file.
-Without argument, clear all breaks (but first ask confirmation).
+Without argument, list all breaks, including for each breakpoint,
+the number of times that breakpoint has been hit, the current
+ignore count, and the associated condition if any.
 
-The line number may be prefixed with a filename and a colon,
-to specify a breakpoint in another file (probably one that
-hasn't been loaded yet).  The file is searched on \code{sys.path}.
+\item[tbreak \optional{\optional{\var{filename}:}\var{lineno}%
+              \code{\Large|}\var{function}%
+              \optional{, \var{condition}}}]
+
+Temporary breakpoint, which is removed automatically when it is
+first hit.  The arguments are the same as break.
+
+\item[cl(ear) \optional{\var{bpnumber} \optional{\var{bpnumber ...}}}]
+
+With a space separated list of breakpoint numbers, clear those
+breakpoints.  Without argument, clear all breaks (but first
+ask confirmation).
+
+\item[disable \optional{\var{bpnumber} \optional{\var{bpnumber ...}}}]
+
+Disables the breakpoints given as a space separated list of
+breakpoint numbers.  Disabling a breakpoint means it cannot cause
+the program to stop execution, but unlike clearing a breakpoint, it
+remains in the list of breakpoints and can be (re-)enabled.
+
+\item[enable \optional{\var{bpnumber} \optional{\var{bpnumber ...}}}]
+
+Enables the breakpoints specified.
+
+\item[ignore \var{bpnumber} \optional{\var{count}}]
+
+Sets the ignore count for the given breakpoint number.  If
+count is omitted, the ignore count is set to 0.  A breakpoint
+becomes active when the ignore count is zero.  When non-zero,
+the count is decremented each time the breakpoint is reached
+and the breakpoint is not disabled and any associated condition
+evaluates to true.
+
+\item[condition \var{bpnumber} \optional{\var{condition}}]
+
+Condition is an expression which must evaluate to true before
+the breakpoint is honored.  If condition is absent, any existing
+condition is removed; i.e., the breakpoint is made unconditional.
 
 \item[s(tep)]
 
@@ -228,6 +281,36 @@ Print the argument list of the current function.
 Evaluate the \var{expression} in the current context and print its
 value.  (Note: \code{print} can also be used, but is not a debugger
 command --- this executes the Python \code{print} statement.)
+
+\item[alias \optional{\var{name} \optional{command}}]
+
+Creates an alias called \var{name} that executes \var{command}.  The
+command must \emph{not} be enclosed in quotes.  Replaceable parameters
+can be indicated by \samp{\%1}, \samp{\%2}, and so on, while \samp{\%*} is
+replaced by all the parameters.  If no command is given, the current
+alias for \var{name} is shown. If no arguments are given, all
+aliases are listed.
+
+Aliases may be nested and can contain anything that can be
+legally typed at the pdb prompt.  Note that internal pdb commands
+\emph{can} be overridden by aliases.  Such a command is
+then hidden until the alias is removed.  Aliasing is recursively
+applied to the first word of the command line; all other words
+in the line are left alone.
+
+As an example, here are two useful aliases (especially when placed
+in the \file{.pdbrc} file):
+
+\begin{verbatim}
+#Print instance variables (usage "pi classInst")
+alias pi for k in %1.__dict__.keys(): print "%1.",k,"=",%1.__dict__[k]
+#Print instance variables in self
+alias ps pi self
+\end{verbatim}
+		
+\item[unalias \var{name}]
+
+Deletes the specified alias.
 
 \item[\optional{!}\var{statement}]
 
