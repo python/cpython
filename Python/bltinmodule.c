@@ -2005,7 +2005,7 @@ bltin_exc[] = {
 	{"AttributeError",     &PyExc_AttributeError,     1},
 	{"EOFError",           &PyExc_EOFError,           1},
 	{"FloatingPointError", &PyExc_FloatingPointError, 1},
-	{"EnvironmentError",   &PyExc_EnvironmentError,   1},
+	{"EnvironmentError",   &PyExc_EnvironmentError,   0},
 	{"IOError",            &PyExc_IOError,            1},
 	{"OSError",            &PyExc_OSError,            1},
 	{"ImportError",        &PyExc_ImportError,        1},
