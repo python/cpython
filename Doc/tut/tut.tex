@@ -2161,11 +2161,11 @@ pattern, list comprehensions can compactly specify the key-value list.
 \section{Looping Techniques \label{loopidioms}}
 
 When looping through dictionaries, the key and corresponding value can
-be retrieved at the same time using the \method{items()} method.
+be retrieved at the same time using the \method{iteritems()} method.
 
 \begin{verbatim}
 >>> knights = {'gallahad': 'the pure', 'robin': 'the brave'}
->>> for k, v in knights.items():
+>>> for k, v in knights.iteritems():
 ...     print k, v
 ...
 gallahad the pure
@@ -3957,7 +3957,7 @@ list, and the function object is called with this new argument list.
 
 \section{Random Remarks \label{remarks}}
 
-[These should perhaps be placed more carefully...]
+% [These should perhaps be placed more carefully...]
 
 
 Data attributes override method attributes with the same name; to
