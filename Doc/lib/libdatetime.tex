@@ -139,21 +139,21 @@ between two dates or times.
 \begin{funcdesc}{timedelta}{days=0, seconds=0, microseconds=0,
                             milliseconds=0, minutes=0, hours=0, weeks=0}
 
-    All arguments are optional.  Arguments may be ints, longs, or floats,
-    and may be positive or negative.
+  All arguments are optional.  Arguments may be ints, longs, or floats,
+  and may be positive or negative.
 
-    Only \var{days}, \var{seconds} and \var{microseconds} are stored
-    internally.  Arguments are converted to those units:
+  Only \var{days}, \var{seconds} and \var{microseconds} are stored
+  internally.  Arguments are converted to those units:
 
 \begin{verbatim}
-        A millisecond is converted to 1000 microseconds.
-        A minute is converted to 60 seconds.
-        An hour is converted to 3600 seconds.
-        A week is converted to 7 days.
+A millisecond is converted to 1000 microseconds.
+A minute is converted to 60 seconds.
+An hour is converted to 3600 seconds.
+A week is converted to 7 days.
 \end{verbatim}
 
-    and days, seconds and microseconds are then normalized so that the
-    representation is unique, with
+  and days, seconds and microseconds are then normalized so that the
+  representation is unique, with
 
 \begin{itemize}
   \item \code{0 <= \var{microseconds} < 1000000}
@@ -161,17 +161,17 @@ between two dates or times.
   \item \code{-999999999 <= \var{days} <= 999999999}
 \end{itemize}
 
-    If any argument is a float, and there are fractional microseconds,
-    the fractional microseconds left over from all arguments are combined
-    and their sum is rounded to the nearest microsecond.  If no
-    argument is a float, the conversion and normalization processes
-    are exact (no information is lost).
+  If any argument is a float, and there are fractional microseconds,
+  the fractional microseconds left over from all arguments are combined
+  and their sum is rounded to the nearest microsecond.  If no
+  argument is a float, the conversion and normalization processes
+  are exact (no information is lost).
 
-    If the normalized value of days lies outside the indicated range,
-    \exception{OverflowError} is raised.
+  If the normalized value of days lies outside the indicated range,
+  \exception{OverflowError} is raised.
 
-    Note that normalization of negative values may be surprising at first.
-    For example,
+  Note that normalization of negative values may be surprising at first.
+  For example,
 
 \begin{verbatim}
 >>> d = timedelta(microseconds=-1)
@@ -219,7 +219,8 @@ Supported operations:
           {(1)}
   \lineiii{\var{t1} = \var{t2} * \var{i} or \var{t1} = \var{i} * \var{t2}}
           {Delta multiplied by an integer or long.
-           Afterwards \var{t1} // i == \var{t2} is true, provided \code{i != 0}.
+           Afterwards \var{t1} // i == \var{t2} is true,
+           provided \code{i != 0}.
            In general, \var{t1} * i == \var{t1} * (i-1) + \var{t1} is true.}
           {(1)}
   \lineiii{\var{t1} = \var{t2} // \var{i}}
@@ -233,25 +234,22 @@ Supported operations:
            -\var{t1.microseconds}),and to \var{t1}* -1.}
           {(1)(3)}
   \lineiii{abs(\var{t})}
-          {equivalent to +\var{t} when \code{t.days >= 0}, and to -\var{t} when
-           \code{t.days < 0}.}
+          {equivalent to +\var{t} when \code{t.days >= 0}, and to
+           -\var{t} when \code{t.days < 0}.}
           {(1)}
-
-
 \end{tableiii}
 \noindent
 Notes:
 
 \begin{description}
 \item[(1)]
-This is exact, but may overflow.
+  This is exact, but may overflow.
 
 \item[(2)]
-Division by 0 raises \exception{ZeroDivisionError}.
+  Division by 0 raises \exception{ZeroDivisionError}.
 
 \item[(3)]
--\var{timedelta.max} is not representable as a \class{timedelta} object.
-
+  -\var{timedelta.max} is not representable as a \class{timedelta} object.
 \end{description}
 
 In addition to the operations listed above \class{timedelta} objects
@@ -280,71 +278,71 @@ computations.  See the book for algorithms for converting between
 proleptic Gregorian ordinals and many other calendar systems.
 
 \begin{funcdesc}{date}{year, month, day}
+  All arguments are required.  Arguments may be ints or longs, in the
+  following ranges:
 
-    All arguments are required.  Arguments may be ints or longs, in the
-    following ranges:
+  \begin{itemize}
+    \item \code{MINYEAR <= \var{year} <= MAXYEAR}
+    \item \code{1 <= \var{month} <= 12}
+    \item \code{1 <= \var{day} <= number of days in the given month and year}
+  \end{itemize}
 
-\begin{itemize}
-  \item \code{MINYEAR <= \var{year} <= MAXYEAR}
-  \item \code{1 <= \var{month} <= 12}
-  \item \code{1 <= \var{day} <= number of days in the given month and year}
-\end{itemize}
-
-If an argument outside those ranges is given, \exception{ValueError}
-is raised.
+  If an argument outside those ranges is given, \exception{ValueError}
+  is raised.
 \end{funcdesc}
 
 Other constructors, all class methods:
 
 \begin{methoddesc}{today}{}
-    Return the current local date.  This is equivalent to
-    \code{date.fromtimestamp(time.time())}.
+  Return the current local date.  This is equivalent to
+  \code{date.fromtimestamp(time.time())}.
 \end{methoddesc}
 
 \begin{methoddesc}{fromtimestamp}{timestamp}
-    Return the local date corresponding to the POSIX timestamp, such
-    as is returned by \function{time.time()}.  This may raise
-    \exception{ValueError}, if the timestamp is out of the range of
-    values supported by the platform C \cfunction{localtime()}
-    function.  It's common for this to be restricted to years from 1970
-    through 2038.
+  Return the local date corresponding to the POSIX timestamp, such
+  as is returned by \function{time.time()}.  This may raise
+  \exception{ValueError}, if the timestamp is out of the range of
+  values supported by the platform C \cfunction{localtime()}
+  function.  It's common for this to be restricted to years from 1970
+  through 2038.
 \end{methoddesc}
 
 \begin{methoddesc}{fromordinal}{ordinal}
-    Return the date corresponding to the proleptic Gregorian ordinal,
-    where January 1 of year 1 has ordinal 1.  \exception{ValueError}
-    is raised unless \code{1 <= \var{ordinal} <= date.max.toordinal()}.  For any
-    date \var{d}, \code{date.fromordinal(\var{d}.toordinal()) == \var{d}}.
+  Return the date corresponding to the proleptic Gregorian ordinal,
+  where January 1 of year 1 has ordinal 1.  \exception{ValueError} is
+  raised unless \code{1 <= \var{ordinal} <= date.max.toordinal()}.
+  For any date \var{d}, \code{date.fromordinal(\var{d}.toordinal()) ==
+  \var{d}}.
 \end{methoddesc}
 
 Class attributes:
 
 \begin{memberdesc}{min}
-        The earliest representable date, \code{date(MINYEAR, 1, 1)}.
+  The earliest representable date, \code{date(MINYEAR, 1, 1)}.
 \end{memberdesc}
 
 \begin{memberdesc}{max}
-        The latest representable date, \code{date(MAXYEAR, 12, 31)}.
+  The latest representable date, \code{date(MAXYEAR, 12, 31)}.
 \end{memberdesc}
 
 \begin{memberdesc}{resolution}
-        The smallest possible difference between non-equal date
-        objects, \code{timedelta(days=1)}.
+  The smallest possible difference between non-equal date
+  objects, \code{timedelta(days=1)}.
 \end{memberdesc}
 
 Instance attributes (read-only):
 
 \begin{memberdesc}{year}
-Between \constant{MINYEAR} and \constant{MAXYEAR} inclusive
+  Between \constant{MINYEAR} and \constant{MAXYEAR} inclusive
 \end{memberdesc}
 
 \begin{memberdesc}{month}
-Between 1 and 12 inclusive.
+  Between 1 and 12 inclusive.
 \end{memberdesc}
 
 \begin{memberdesc}{day}
-Between 1 and the number of days in the given month
-                    of the given year.
+  Between 1 and the number of days in the given month of the given
+  year.
 \end{memberdesc}
 
 Supported operations:
@@ -391,84 +389,92 @@ Supported operations:
 Instance methods:
 
 \begin{methoddesc}{replace}{year, month, day}
-    Return a date with the same value, except for those fields given
-    new values by whichever keyword arguments are specified.  For
-    example, if \code{d == date(2002, 12, 31)}, then
-    \code{d.replace(day=26) == date(2000, 12, 26)}.
+  Return a date with the same value, except for those fields given
+  new values by whichever keyword arguments are specified.  For
+  example, if \code{d == date(2002, 12, 31)}, then
+  \code{d.replace(day=26) == date(2000, 12, 26)}.
 \end{methoddesc}
 
 \begin{methoddesc}{timetuple}{}
-    Return a 9-element tuple of the form returned by
-    \function{time.localtime()}.  The hours, minutes and seconds are
-    0, and the DST flag is -1.
-    \code{\var{d}.timetuple()} is equivalent to
-        \code{(\var{d}.year, \var{d}.month, \var{d}.day,
-               0, 0, 0,  \# h, m, s
-               \var{d}.weekday(),  \# 0 is Monday
-               \var{d}.toordinal() - date(\var{d}.year, 1, 1).toordinal() + 1,
-               \# day of year
-              -1)}
+  Return a 9-element tuple of the form returned by
+  \function{time.localtime()}.  The hours, minutes and seconds are
+  0, and the DST flag is -1.
+  \code{\var{d}.timetuple()} is equivalent to
+      \code{(\var{d}.year, \var{d}.month, \var{d}.day,
+             0, 0, 0,  \# h, m, s
+             \var{d}.weekday(),  \# 0 is Monday
+             \var{d}.toordinal() - date(\var{d}.year, 1, 1).toordinal() + 1,
+             \# day of year
+            -1)}
 \end{methoddesc}
+
 \begin{methoddesc}{toordinal}{}
-    Return the proleptic Gregorian ordinal of the date, where January 1
-    of year 1 has ordinal 1.  For any \class{date} object \var{d},
-    \code{date.fromordinal(\var{d}.toordinal()) == \var{d}}.
+  Return the proleptic Gregorian ordinal of the date, where January 1
+  of year 1 has ordinal 1.  For any \class{date} object \var{d},
+  \code{date.fromordinal(\var{d}.toordinal()) == \var{d}}.
 \end{methoddesc}
+
 \begin{methoddesc}{weekday}{}
-    Return the day of the week as an integer, where Monday is 0 and
-    Sunday is 6.  For example, date(2002, 12, 4).weekday() == 2, a
-    Wednesday.
-    See also \method{isoweekday()}.
+  Return the day of the week as an integer, where Monday is 0 and
+  Sunday is 6.  For example, date(2002, 12, 4).weekday() == 2, a
+  Wednesday.
+  See also \method{isoweekday()}.
 \end{methoddesc}
+
 \begin{methoddesc}{isoweekday}{}
-    Return the day of the week as an integer, where Monday is 1 and
-    Sunday is 7.  For example, date(2002, 12, 4).isoweekday() == 3, a
-    Wednesday.
-    See also \method{weekday()}, \method{isocalendar()}.
+  Return the day of the week as an integer, where Monday is 1 and
+  Sunday is 7.  For example, date(2002, 12, 4).isoweekday() == 3, a
+  Wednesday.
+  See also \method{weekday()}, \method{isocalendar()}.
 \end{methoddesc}
+
 \begin{methoddesc}{isocalendar}{}
-    Return a 3-tuple, (ISO year, ISO week number, ISO weekday).
+  Return a 3-tuple, (ISO year, ISO week number, ISO weekday).
 
-    The ISO calendar is a widely used variant of the Gregorian calendar.
-    See \url{http://www.phys.uu.nl/~vgent/calendar/isocalendar.htm}
-    for a good explanation.
+  The ISO calendar is a widely used variant of the Gregorian calendar.
+  See \url{http://www.phys.uu.nl/~vgent/calendar/isocalendar.htm}
+  for a good explanation.
 
-    The ISO year consists of 52 or 53 full weeks, and where a week starts
-    on a Monday and ends on a Sunday.  The first week of an ISO year is
-    the first (Gregorian) calendar week of a year containing a Thursday.
-    This is called week number 1, and the ISO year of that Thursday is
-    the same as its Gregorian year.
+  The ISO year consists of 52 or 53 full weeks, and where a week starts
+  on a Monday and ends on a Sunday.  The first week of an ISO year is
+  the first (Gregorian) calendar week of a year containing a Thursday.
+  This is called week number 1, and the ISO year of that Thursday is
+  the same as its Gregorian year.
 
-    For example, 2004 begins on a Thursday, so the first week of ISO
-    year 2004 begins on Monday, 29 Dec 2003 and ends on Sunday, 4 Jan
-    2004, so that
+  For example, 2004 begins on a Thursday, so the first week of ISO
+  year 2004 begins on Monday, 29 Dec 2003 and ends on Sunday, 4 Jan
+  2004, so that
 
-    date(2003, 12, 29).isocalendar() == (2004, 1, 1)
-    date(2004, 1, 4).isocalendar() == (2004, 1, 7)
+  date(2003, 12, 29).isocalendar() == (2004, 1, 1)
+  date(2004, 1, 4).isocalendar() == (2004, 1, 7)
 \end{methoddesc}
+
 \begin{methoddesc}{isoformat}{}
-    Return a string representing the date in ISO 8601 format,
-    'YYYY-MM-DD'.  For example,
-    date(2002, 12, 4).isoformat() == '2002-12-04'.
+  Return a string representing the date in ISO 8601 format,
+  'YYYY-MM-DD'.  For example,
+  date(2002, 12, 4).isoformat() == '2002-12-04'.
 \end{methoddesc}
+
 \begin{methoddesc}{__str__}{}
-    For a date \var{d}, \code{str(\var{d})} is equivalent to
-    \code{\var{d}.isoformat()}.
+  For a date \var{d}, \code{str(\var{d})} is equivalent to
+  \code{\var{d}.isoformat()}.
 \end{methoddesc}
+
 \begin{methoddesc}{ctime}{}
-    Return a string representing the date, for example
-    date(2002, 12, 4).ctime() == 'Wed Dec  4 00:00:00 2002'.
-    \code{\var{d}.ctime()} is equivalent to
-    \code{time.ctime(time.mktime(\var{d}.timetuple()))}
-    on platforms where the native C \cfunction{ctime()} function
-    (which \function{time.ctime()} invokes, but which
-    \method{date.ctime()} does not invoke) conforms to the C standard.
+  Return a string representing the date, for example
+  date(2002, 12, 4).ctime() == 'Wed Dec  4 00:00:00 2002'.
+  \code{\var{d}.ctime()} is equivalent to
+  \code{time.ctime(time.mktime(\var{d}.timetuple()))}
+  on platforms where the native C \cfunction{ctime()} function
+  (which \function{time.ctime()} invokes, but which
+  \method{date.ctime()} does not invoke) conforms to the C standard.
 \end{methoddesc}
+
 \begin{methoddesc}{strftime}{format}
-    Return a string representing the date, controlled by an explicit
-    format string.  Format codes referring to hours, minutes or seconds
-    will see 0 values.
-    See the section on \method{strftime()} behavior.
+  Return a string representing the date, controlled by an explicit
+  format string.  Format codes referring to hours, minutes or seconds
+  will see 0 values.
+  See the section on \method{strftime()} behavior.
 \end{methoddesc}
 
 
@@ -482,131 +488,132 @@ calendar extended in both directions; like a time object,
 day.
 
 \begin{funcdesc}{datetime}{year, month, day,
-             hour=0, minute=0, second=0, microsecond=0}
-The year, month and day arguments are required.  Arguments may be ints
-or longs, in the following ranges:
+                           hour=0, minute=0, second=0, microsecond=0}
+  The year, month and day arguments are required.  Arguments may be
+  ints or longs, in the following ranges:
 
-\begin{itemize}
-  \item \code{\member{MINYEAR} <= \var{year} <= \member{MAXYEAR}}
-  \item \code{1 <= \var{month} <= 12}
-  \item \code{1 <= \var{day} <= number of days in the given month and year}
-  \item \code{0 <= \var{hour} < 24}
-  \item \code{0 <= \var{minute} < 60}
-  \item \code{0 <= \var{second} < 60}
-  \item \code{0 <= \var{microsecond} < 1000000}
-\end{itemize}
+  \begin{itemize}
+    \item \code{\member{MINYEAR} <= \var{year} <= \member{MAXYEAR}}
+    \item \code{1 <= \var{month} <= 12}
+    \item \code{1 <= \var{day} <= number of days in the given month and year}
+    \item \code{0 <= \var{hour} < 24}
+    \item \code{0 <= \var{minute} < 60}
+    \item \code{0 <= \var{second} < 60}
+    \item \code{0 <= \var{microsecond} < 1000000}
+  \end{itemize}
 
-If an argument outside those ranges is given,
-\exception{ValueError} is raised.
+  If an argument outside those ranges is given, \exception{ValueError}
+  is raised.
 \end{funcdesc}
 
 Other constructors, all class methods:
 
 \begin{methoddesc}{today}{}
-    Return the current local datetime.  This is equivalent to
-    \code{datetime.fromtimestamp(time.time())}.
-    See also \method{now()}, \method{fromtimestamp()}.
+  Return the current local datetime.  This is equivalent to
+  \code{datetime.fromtimestamp(time.time())}.
+  See also \method{now()}, \method{fromtimestamp()}.
 \end{methoddesc}
 
 \begin{methoddesc}{now}{}
-    Return the current local datetime.  This is like \method{today()},
-    but, if possible, supplies more precision than can be gotten from
-    going through a \function{time.time()} timestamp (for example,
-    this may be possible on platforms that supply the C
-    \cfunction{gettimeofday()} function).
-    See also \method{today()}, \method{utcnow()}.
+  Return the current local datetime.  This is like \method{today()},
+  but, if possible, supplies more precision than can be gotten from
+  going through a \function{time.time()} timestamp (for example,
+  this may be possible on platforms that supply the C
+  \cfunction{gettimeofday()} function).
+  See also \method{today()}, \method{utcnow()}.
 \end{methoddesc}
 
 \begin{methoddesc}{utcnow}{}
-    Return the current UTC datetime.  This is like \method{now()}, but
-    returns the current UTC date and time.
-    See also \method{now()}.
+  Return the current UTC datetime.  This is like \method{now()}, but
+  returns the current UTC date and time.
+  See also \method{now()}.
 \end{methoddesc}
 
 \begin{methoddesc}{fromtimestamp}{timestamp}
-    Return the local \class{datetime} corresponding to the \POSIX{}
-    timestamp, such as is returned by \function{time.time()}.  This
-    may raise \exception{ValueError}, if the timestamp is out of the
-    range of values supported by the platform C
-    \cfunction{localtime()} function.  It's common for this to be
-    restricted to years in 1970 through 2038.
-    See also \method{utcfromtimestamp()}.
+  Return the local \class{datetime} corresponding to the \POSIX{}
+  timestamp, such as is returned by \function{time.time()}.  This
+  may raise \exception{ValueError}, if the timestamp is out of the
+  range of values supported by the platform C
+  \cfunction{localtime()} function.  It's common for this to be
+  restricted to years in 1970 through 2038.
+  See also \method{utcfromtimestamp()}.
 \end{methoddesc}
 
 \begin{methoddesc}{utcfromtimestamp}{timestamp}
-    Return the UTC \class{datetime} corresponding to the \POSIX{}
-    timestamp.  This may raise \exception{ValueError}, if the
-    timestamp is out of the range of values supported by the platform
-    C \cfunction{gmtime()} function.  It's common for this to be
-    restricted to years in 1970 through 2038.
-    See also \method{fromtimestamp()}.
+  Return the UTC \class{datetime} corresponding to the \POSIX{}
+  timestamp.  This may raise \exception{ValueError}, if the
+  timestamp is out of the range of values supported by the platform
+  C \cfunction{gmtime()} function.  It's common for this to be
+  restricted to years in 1970 through 2038.
+  See also \method{fromtimestamp()}.
 \end{methoddesc}
 
 \begin{methoddesc}{fromordinal}{ordinal}
-    Return the \class{datetime} corresponding to the proleptic
-    Gregorian ordinal, where January 1 of year 1 has ordinal 1.
-    \exception{ValueError} is raised unless 1 <= ordinal <=
-    datetime.max.toordinal().  The hour, minute, second and
-    microsecond of the result are all 0.
+  Return the \class{datetime} corresponding to the proleptic
+  Gregorian ordinal, where January 1 of year 1 has ordinal 1.
+  \exception{ValueError} is raised unless 1 <= ordinal <=
+  datetime.max.toordinal().  The hour, minute, second and
+  microsecond of the result are all 0.
 \end{methoddesc}
 
 \begin{methoddesc}{combine}{date, time}
-    Return a new \class{datetime} object whose date components are
-    equal to the given \class{date} object's, and whose time
-    components are equal to the given time object's.  For any
-    \class{datetime} object \var{d}, \code{\var{d} ==
-    datetime.combine(\var{d}.date(), \var{d}.time())}.  If date is a
-    \class{datetime} or \class{datetimetz} object, its time components
-    are ignored.  If date is \class{datetimetz} object, its
-    \member{tzinfo} component is also ignored.  If time is a
-    \class{timetz} object, its \member{tzinfo} component is ignored.
+  Return a new \class{datetime} object whose date components are
+  equal to the given \class{date} object's, and whose time
+  components are equal to the given time object's.  For any
+  \class{datetime} object \var{d}, \code{\var{d} ==
+  datetime.combine(\var{d}.date(), \var{d}.time())}.  If date is a
+  \class{datetime} or \class{datetimetz} object, its time components
+  are ignored.  If date is \class{datetimetz} object, its
+  \member{tzinfo} component is also ignored.  If time is a
+  \class{timetz} object, its \member{tzinfo} component is ignored.
 \end{methoddesc}
 
 Class attributes:
 
 \begin{memberdesc}{min}
-        The earliest representable \class{datetime},
-        \code{datetime(MINYEAR, 1, 1)}.
+  The earliest representable \class{datetime},
+  \code{datetime(MINYEAR, 1, 1)}.
 \end{memberdesc}
 
 \begin{memberdesc}{max}
-        The latest representable \class{datetime},
-        \code{datetime(MAXYEAR, 12, 31, 23, 59, 59, 999999)}.
+  The latest representable \class{datetime},
+  \code{datetime(MAXYEAR, 12, 31, 23, 59, 59, 999999)}.
 \end{memberdesc}
 
 \begin{memberdesc}{resolution}
-        The smallest possible difference between non-equal \class{datetime}
-        objects, \code{timedelta(microseconds=1)}.
+  The smallest possible difference between non-equal \class{datetime}
+  objects, \code{timedelta(microseconds=1)}.
 \end{memberdesc}
 
 Instance attributes (read-only):
 
 \begin{memberdesc}{year}
-Between \constant{MINYEAR} and \constant{MAXYEAR} inclusive
+  Between \constant{MINYEAR} and \constant{MAXYEAR} inclusive
 \end{memberdesc}
 
 \begin{memberdesc}{month}
-Between 1 and 12 inclusive
+  Between 1 and 12 inclusive
 \end{memberdesc}
 
 \begin{memberdesc}{day}
-Between 1 and the number of days in the given month of the given year.
+  Between 1 and the number of days in the given month of the given
+  year.
 \end{memberdesc}
 
 \begin{memberdesc}{hour}
-In \code{range(24)}.
+  In \code{range(24)}.
 \end{memberdesc}
 
 \begin{memberdesc}{minute}
-In \code{range(60)}.
+  In \code{range(60)}.
 \end{memberdesc}
 
 \begin{memberdesc}{second}
-In \code{range(60)}.
+  In \code{range(60)}.
 \end{memberdesc}
 
 \begin{memberdesc}{microsecond}
-In \code{range(1000000)}.
+  In \code{range(1000000)}.
 \end{memberdesc}
 
 Supported operations:
@@ -652,90 +659,91 @@ Supported operations:
 Instance methods:
 
 \begin{methoddesc}{date}{}
-    Return \class{date} object with same year, month and day.
+  Return \class{date} object with same year, month and day.
 \end{methoddesc}
 
 \begin{methoddesc}{time}{}
-    Return time object with same hour, minute, second and microsecond.
+  Return time object with same hour, minute, second and microsecond.
 \end{methoddesc}
 
-\begin{methoddesc}{replace}{year=, month=, day=, hour=, minute=, second=, microsecond=}
-    Return a datetime with the same value, except for those fields given
-    new values by whichever keyword arguments are specified.
+\begin{methoddesc}{replace}{year=, month=, day=, hour=, minute=,
+                            second=, microsecond=}
+  Return a datetime with the same value, except for those fields given
+  new values by whichever keyword arguments are specified.
 \end{methoddesc}
 
 \begin{methoddesc}{astimezone}{tz}
-    Return a \class{datetimetz} with the same date and time fields, and
-    with \member{tzinfo} member \var{tz}.  \var{tz} must be \code{None},
-    or an instance of a \class{tzinfo} subclass.
+  Return a \class{datetimetz} with the same date and time fields, and
+  with \member{tzinfo} member \var{tz}.  \var{tz} must be \code{None},
+  or an instance of a \class{tzinfo} subclass.
 \end{methoddesc}
 
 \begin{methoddesc}{timetuple}{}
-    Return a 9-element tuple of the form returned by
-    \function{time.localtime()}.
-    The DST flag is -1.   \code{\var{d}.timetuple()} is equivalent to
-    \code{(\var{d}.year, \var{d}.month, \var{d}.day,
-           \var{d}.hour, \var{d}.minute, \var{d}.second,
-           \var{d}.weekday(),  \# 0 is Monday
-           \var{d}.toordinal() - date(\var{d}.year, 1, 1).toordinal() + 1,
-           \# day of year
-           -1)}
+  Return a 9-element tuple of the form returned by
+  \function{time.localtime()}.
+  The DST flag is -1.   \code{\var{d}.timetuple()} is equivalent to
+  \code{(\var{d}.year, \var{d}.month, \var{d}.day,
+         \var{d}.hour, \var{d}.minute, \var{d}.second,
+         \var{d}.weekday(),  \# 0 is Monday
+         \var{d}.toordinal() - date(\var{d}.year, 1, 1).toordinal() + 1,
+         \# day of year
+         -1)}
 \end{methoddesc}
 
 \begin{methoddesc}{toordinal}{}
-    Return the proleptic Gregorian ordinal of the date.  The same as
-    \method{date.toordinal()}.
+  Return the proleptic Gregorian ordinal of the date.  The same as
+  \method{date.toordinal()}.
 \end{methoddesc}
 
 \begin{methoddesc}{weekday}{}
-    Return the day of the week as an integer, where Monday is 0 and
-    Sunday is 6.  The same as \method{date.weekday()}.
-    See also \method{isoweekday()}.
+  Return the day of the week as an integer, where Monday is 0 and
+  Sunday is 6.  The same as \method{date.weekday()}.
+  See also \method{isoweekday()}.
 \end{methoddesc}
 
 \begin{methoddesc}{isoweekday}{}
-    Return the day of the week as an integer, where Monday is 1 and
-    Sunday is 7.  The same as \method{date.isoweekday()}.
-    See also \method{weekday()}, \method{isocalendar()}.
+  Return the day of the week as an integer, where Monday is 1 and
+  Sunday is 7.  The same as \method{date.isoweekday()}.
+  See also \method{weekday()}, \method{isocalendar()}.
 \end{methoddesc}
 
 \begin{methoddesc}{isocalendar}{}
-    Return a 3-tuple, (ISO year, ISO week number, ISO weekday).  The
-    same as \method{date.isocalendar()}.
+  Return a 3-tuple, (ISO year, ISO week number, ISO weekday).  The
+  same as \method{date.isocalendar()}.
 \end{methoddesc}
 
 \begin{methoddesc}{isoformat}{sep='T'}
-    Return a string representing the date and time in ISO 8601 format,
-        YYYY-MM-DDTHH:MM:SS.mmmmmm
-    or, if self.microsecond is 0,
-        YYYY-MM-DDTHH:MM:SS
-    The optional argument \var{sep} (default \code{'T'}) is a
-    one-character separator, placed between the date and time portions
-    of the result.  For example,
-        datetime(2002, 12, 4, 1, 2, 3, 4).isoformat(' ') ==
-        '2002-12-04 01:02:03.000004'
+  Return a string representing the date and time in ISO 8601 format,
+      YYYY-MM-DDTHH:MM:SS.mmmmmm
+  or, if self.microsecond is 0,
+      YYYY-MM-DDTHH:MM:SS
+  The optional argument \var{sep} (default \code{'T'}) is a
+  one-character separator, placed between the date and time portions
+  of the result.  For example,
+      datetime(2002, 12, 4, 1, 2, 3, 4).isoformat(' ') ==
+      '2002-12-04 01:02:03.000004'
 \end{methoddesc}
 
 \begin{methoddesc}{__str__}{}
-    For a \class{datetime} instance \var{d}, \code{str(\var{d})} is
-    equivalent to \code{\var{d}.isoformat(' ')}.
+  For a \class{datetime} instance \var{d}, \code{str(\var{d})} is
+  equivalent to \code{\var{d}.isoformat(' ')}.
 \end{methoddesc}
 
 \begin{methoddesc}{ctime}{}
-    Return a string representing the date, for example
-    datetime(2002, 12, 4, 20, 30, 40).ctime() == 'Wed Dec  4 20:30:40 2002'.
-    \code{d.ctime()} is equivalent to
-    \code{time.ctime(time.mktime(d.timetuple()))} on platforms where
-    the native C \cfunction{ctime()} function (which
-    \function{time.ctime()} invokes, but which
-    \method{datetime.ctime()} does not invoke) conforms to the C
-    standard.
+  Return a string representing the date, for example
+  datetime(2002, 12, 4, 20, 30, 40).ctime() == 'Wed Dec  4 20:30:40 2002'.
+  \code{d.ctime()} is equivalent to
+  \code{time.ctime(time.mktime(d.timetuple()))} on platforms where
+  the native C \cfunction{ctime()} function (which
+  \function{time.ctime()} invokes, but which
+  \method{datetime.ctime()} does not invoke) conforms to the C
+  standard.
 \end{methoddesc}
 
 \begin{methoddesc}{strftime}{format}
-    Return a string representing the date and time, controlled by an
-    explicit format string.  See the section on \method{strftime()}
-    behavior.
+  Return a string representing the date and time, controlled by an
+  explicit format string.  See the section on \method{strftime()}
+  behavior.
 \end{methoddesc}
 
 
@@ -744,8 +752,7 @@ Instance methods:
 A \class{time} object represents an idealized time of day, independent
 of day and timezone.
 
-\begin{funcdesc}{hour=0, minute=0, second=0, microsecond=0}
-
+\begin{funcdesc}{time}{hour=0, minute=0, second=0, microsecond=0}
 All arguments are optional.  They may be ints or longs, in the
 following ranges:
 
@@ -763,32 +770,35 @@ raised.
 Class attributes:
 
 \begin{memberdesc}{min}
-        The earliest representable \class{time}, \code{time(0, 0, 0, 0)}.
+  The earliest representable \class{time}, \code{time(0, 0, 0, 0)}.
 \end{memberdesc}
 
 \begin{memberdesc}{max}
-        The latest representable \class{time}, \code{time(23, 59, 59, 999999)}.
+  The latest representable \class{time}, \code{time(23, 59, 59, 999999)}.
 \end{memberdesc}
 
 \begin{memberdesc}{resolution}
-        The smallest possible difference between non-equal \class{time}
-        objects, \code{timedelta(microseconds=1)}, although note that
-        arithmetic on \class{time} objects is not supported.
+  The smallest possible difference between non-equal \class{time}
+  objects, \code{timedelta(microseconds=1)}, although note that
+  arithmetic on \class{time} objects is not supported.
 \end{memberdesc}
 
 Instance attributes (read-only):
 
 \begin{memberdesc}{hour}
-In \code{range(24)}.
+  In \code{range(24)}.
 \end{memberdesc}
+
 \begin{memberdesc}{minute}
-In \code{range(60)}.
+  In \code{range(60)}.
 \end{memberdesc}
+
 \begin{memberdesc}{second}
-In \code{range(60)}.
+  In \code{range(60)}.
 \end{memberdesc}
+
 \begin{memberdesc}{microsecond}
-In \code{range(1000000)}.
+  In \code{range(1000000)}.
 \end{memberdesc}
 
 Supported operations:
@@ -812,25 +822,25 @@ Supported operations:
 Instance methods:
 
 \begin{methoddesc}{replace}{hour=, minute=, second=, microsecond=}
-    Return a time with the same value, except for those fields given
-    new values by whichever keyword arguments are specified.
+  Return a time with the same value, except for those fields given
+  new values by whichever keyword arguments are specified.
 \end{methoddesc}
 
 \begin{methoddesc}{isoformat}{}
-    Return a string representing the time in ISO 8601 format,
-        HH:MM:SS.mmmmmm
-    or, if self.microsecond is 0
-        HH:MM:SS
+  Return a string representing the time in ISO 8601 format,
+      HH:MM:SS.mmmmmm
+  or, if self.microsecond is 0
+      HH:MM:SS
 \end{methoddesc}
 
 \begin{methoddesc}{__str__}{}
-    For a time \var{t}, \code{str(\var{t})} is equivalent to
-    \code{\var{t}.isoformat()}.
+  For a time \var{t}, \code{str(\var{t})} is equivalent to
+  \code{\var{t}.isoformat()}.
 \end{methoddesc}
 
 \begin{methoddesc}{strftime}{format}
-    Return a string representing the time, controlled by an explicit
-    format string.  See the section on \method{strftime()} behavior.
+  Return a string representing the time, controlled by an explicit
+  format string.  See the section on \method{strftime()} behavior.
 \end{methoddesc}
 
 
@@ -861,47 +871,49 @@ uses made of aware \module{datetime} objects.  If in doubt, simply
 implement all of them.
 
 \begin{methoddesc}{utcoffset}{self, dt}
-    Return offset of local time from UTC, in minutes east of UTC.  If
-    local time is west of UTC, this should be negative.  Note that this
-    is intended to be the total offset from UTC; for example, if a
-    \class{tzinfo} object represents both time zone and DST adjustments,
-    \method{utcoffset()} should return their sum.  If the UTC offset
-    isn't known, return \code{None}.  Else the value returned must be
-    an integer, in the range -1439 to 1439 inclusive (1440 = 24*60;
-    the magnitude of the offset must be less than one day), or a
-    \class{timedelta} object representing a whole number of minutes
-    in the same range.  Most implementations of \method{utcoffset()}
-    will probably look like:
+  Return offset of local time from UTC, in minutes east of UTC.  If
+  local time is west of UTC, this should be negative.  Note that this
+  is intended to be the total offset from UTC; for example, if a
+  \class{tzinfo} object represents both time zone and DST adjustments,
+  \method{utcoffset()} should return their sum.  If the UTC offset
+  isn't known, return \code{None}.  Else the value returned must be
+  an integer, in the range -1439 to 1439 inclusive (1440 = 24*60;
+  the magnitude of the offset must be less than one day), or a
+  \class{timedelta} object representing a whole number of minutes
+  in the same range.  Most implementations of \method{utcoffset()}
+  will probably look like:
+
 \begin{verbatim}
-        return CONSTANT  # fixed-offset class
-        return CONSTANT + self.dst(dt)  # daylight-aware class
+    return CONSTANT  # fixed-offset class
+    return CONSTANT + self.dst(dt)  # daylight-aware class
 \end{verbatim}
 \end{methoddesc}
 
 \begin{methoddesc}{tzname}{self, dt}
-    Return the timezone name corresponding to the \class{datetime} represented
-    by dt, as a string.  Nothing about string names is defined by the
-    \module{datetime} module, and there's no requirement that it mean anything
-    in particular.  For example, "GMT", "UTC", "-500", "-5:00", "EDT",
-    "US/Eastern", "America/New York" are all valid replies.  Return
-    \code{None} if a string name isn't known.  Note that this is a method
-    rather than a fixed string primarily because some \class{tzinfo} objects
-    will wish to return different names depending on the specific value
-    of dt passed, especially if the \class{tzinfo} class is accounting for DST.
+  Return the timezone name corresponding to the \class{datetime} represented
+  by \var{dt}, as a string.  Nothing about string names is defined by the
+  \module{datetime} module, and there's no requirement that it mean anything
+  in particular.  For example, "GMT", "UTC", "-500", "-5:00", "EDT",
+  "US/Eastern", "America/New York" are all valid replies.  Return
+  \code{None} if a string name isn't known.  Note that this is a method
+  rather than a fixed string primarily because some \class{tzinfo} objects
+  will wish to return different names depending on the specific value
+  of \var{dt} passed, especially if the \class{tzinfo} class is
+  accounting for DST.
 \end{methoddesc}
 
 \begin{methoddesc}{dst}{self, dt}
-    Return the DST offset, in minutes east of UTC, or \code{None} if
-    DST information isn't known.  Return 0 if DST is not in effect.
-    If DST is in effect, return the offset as an integer or
-    \class{timedelta} object (see \method{utcoffset()} for details).
-    Note that DST offset, if applicable, has
-    already been added to the UTC offset returned by
-    \method{utcoffset()}, so there's no need to consult \method{dst()}
-    unless you're interested in displaying DST info separately.  For
-    example, \method{datetimetz.timetuple()} calls its \member{tzinfo}
-    member's \method{dst()} method to determine how the
-    \member{tm_isdst} flag should be set.
+  Return the DST offset, in minutes east of UTC, or \code{None} if
+  DST information isn't known.  Return \code{0} if DST is not in effect.
+  If DST is in effect, return the offset as an integer or
+  \class{timedelta} object (see \method{utcoffset()} for details).
+  Note that DST offset, if applicable, has
+  already been added to the UTC offset returned by
+  \method{utcoffset()}, so there's no need to consult \method{dst()}
+  unless you're interested in displaying DST info separately.  For
+  example, \method{datetimetz.timetuple()} calls its \member{tzinfo}
+  member's \method{dst()} method to determine how the
+  \member{tm_isdst} flag should be set.
 \end{methoddesc}
 
 These methods are called by a \class{datetimetz} or \class{timetz} object,
@@ -937,10 +949,9 @@ particular day, and subject to adjustment via a \class{tzinfo} object.
 Constructor:
 
 \begin{funcdesc}{time}{hour=0, minute=0, second=0, microsecond=0, tzinfo=None}
-
-    All arguments are optional.  \var{tzinfo} may be \code{None}, or
-    an instance of a \class{tzinfo} subclass.  The remaining arguments
-    may be ints or longs, in the following ranges:
+  All arguments are optional.  \var{tzinfo} may be \code{None}, or
+  an instance of a \class{tzinfo} subclass.  The remaining arguments
+  may be ints or longs, in the following ranges:
 
 \begin{itemize}
   \item \code{0 <= \var{hour} < 24}
@@ -949,35 +960,48 @@ Constructor:
   \item \code{0 <= \var{microsecond} < 1000000}.
 \end{itemize}
 
-    If an argument outside those ranges is given,
-    \exception{ValueError} is raised.
+  If an argument outside those ranges is given,
+  \exception{ValueError} is raised.
 \end{funcdesc}
 
 Class attributes:
 
 \begin{memberdesc}{min}
-        The earliest representable time, \code{timetz(0, 0, 0, 0)}.
+  The earliest representable time, \code{timetz(0, 0, 0, 0)}.
 \end{memberdesc}
 
 \begin{memberdesc}{max}
-        The latest representable time, \code{timetz(23, 59, 59, 999999)}.
+  The latest representable time, \code{timetz(23, 59, 59, 999999)}.
 \end{memberdesc}
 
 \begin{memberdesc}{resolution}
-        The smallest possible difference between non-equal \class{timetz}
-        objects, \code{timedelta(microseconds=1)}, although note that
-        arithmetic on \class{timetz} objects is not supported.
+  The smallest possible difference between non-equal \class{timetz}
+  objects, \code{timedelta(microseconds=1)}, although note that
+  arithmetic on \class{timetz} objects is not supported.
 \end{memberdesc}
 
 Instance attributes (read-only):
 
-    .hour           in range(24)
-    .minute         in range(60)
-    .second         in range(60)
-    .microsecond    in range(1000000)
-    .tzinfo         the object passed as the tzinfo argument to the
-                    \class{timetz} constructor, or \code{None} if none
-                    was passed.
+\begin{memberdesc}{hour}
+  In \code{range(24)}.
+\end{memberdesc}
+
+\begin{memberdesc}{minute}
+  In \code{range(60)}.
+\end{memberdesc}
+
+\begin{memberdesc}{second}
+  In \code{range(60)}.
+\end{memberdesc}
+
+\begin{memberdesc}{microsecond}
+  In \code{range(1000000)}.
+\end{memberdesc}
+
+\begin{memberdesc}{tzinfo}
+  The object passed as the tzinfo argument to the \class{timetz}
+  constructor, or \code{None} if none was passed.
+\end{memberdesc}
 
 Supported operations:
 
@@ -1009,49 +1033,49 @@ Supported operations:
 Instance methods:
 
 \begin{methoddesc}{replace}(hour=, minute=, second=, microsecond=, tzinfo=)
-    Return a \class{timetz} with the same value, except for those fields given
-    new values by whichever keyword arguments are specified.  Note that
-    \code{tzinfo=None} can be specified to create a naive \class{timetz} from an
-    aware \class{timetz}.
+  Return a \class{timetz} with the same value, except for those fields given
+  new values by whichever keyword arguments are specified.  Note that
+  \code{tzinfo=None} can be specified to create a naive \class{timetz} from an
+  aware \class{timetz}.
 \end{methoddesc}
 
 \begin{methoddesc}{isoformat}{}
-    Return a string representing the time in ISO 8601 format,
-        HH:MM:SS.mmmmmm
-    or, if self.microsecond is 0,
-        HH:MM:SS
-    If \method{utcoffset()} does not return \code{None}, a 6-character
-    string is appended, giving the UTC offset in (signed) hours and
-    minutes:
-        HH:MM:SS.mmmmmm+HH:MM
-    or, if self.microsecond is 0,
-        HH:MM:SS+HH:MM
+  Return a string representing the time in ISO 8601 format,
+      HH:MM:SS.mmmmmm
+  or, if self.microsecond is 0,
+      HH:MM:SS
+  If \method{utcoffset()} does not return \code{None}, a 6-character
+  string is appended, giving the UTC offset in (signed) hours and
+  minutes:
+      HH:MM:SS.mmmmmm+HH:MM
+  or, if self.microsecond is 0,
+      HH:MM:SS+HH:MM
 \end{methoddesc}
 
 \begin{methoddesc}{__str__}{}
-    For a \class{timetz} \var{t}, \code{str(\var{t})} is equivalent to
-    \code{\var{t}.isoformat()}.
+  For a \class{timetz} \var{t}, \code{str(\var{t})} is equivalent to
+  \code{\var{t}.isoformat()}.
 \end{methoddesc}
 
 \begin{methoddesc}{strftime}{format}
-    Return a string representing the time, controlled by an explicit
-    format string.  See the section on \method{strftime()} behavior.
+  Return a string representing the time, controlled by an explicit
+  format string.  See the section on \method{strftime()} behavior.
 \end{methoddesc}
 
 \begin{methoddesc}{utcoffset}{}
-    If \member{tzinfo} is \code{None}, returns \code{None}, else
-    \code{tzinfo.utcoffset(self)} converted to a \class{timedelta}
-    object.
+  If \member{tzinfo} is \code{None}, returns \code{None}, else
+  \code{tzinfo.utcoffset(self)} converted to a \class{timedelta}
+  object.
 \end{methoddesc}
 
 \begin{methoddesc}{tzname}{}
-    If \member{tzinfo} is \code{None}, returns \code{None}, else
-    \code{tzinfo.tzname(self)}.
+  If \member{tzinfo} is \code{None}, returns \code{None}, else
+  \code{tzinfo.tzname(self)}.
 \end{methoddesc}
 
 \begin{methoddesc}{dst}{}
-    If \member{tzinfo} is \code{None}, returns \code{None}, else
-    \code{tzinfo.dst(self)} converted to a \class{timedelta} object.
+  If \member{tzinfo} is \code{None}, returns \code{None}, else
+  \code{tzinfo.dst(self)} converted to a \class{timedelta} object.
 \end{methoddesc}
 
 
@@ -1069,97 +1093,103 @@ from a \class{date} object and a \class{timetz} object.
 Constructor:
 
 \begin{funcdesc}{datetimetz}{year, month, day,
-               hour=0, minute=0, second=0, microsecond=0, tzinfo=None}
+                             hour=0, minute=0, second=0, microsecond=0,
+                             tzinfo=None}
+  The year, month and day arguments are required.  \var{tzinfo} may
+  be \code{None}, or an instance of a \class{tzinfo} subclass.  The
+  remaining arguments may be ints or longs, in the following ranges:
 
-    The year, month and day arguments are required.  \var{tzinfo} may
-    be \code{None}, or an instance of a \class{tzinfo} subclass.  The
-    remaining arguments may be ints or longs, in the following ranges:
+  \begin{itemize}
+    \item \code{MINYEAR <= \var{year} <= MAXYEAR}
+    \item \code{1 <= \var{month} <= 12}
+    \item \code{1 <= \var{day} <= number of days in the given month and year}
+    \item \code{0 <= \var{hour} < 24}
+    \item \code{0 <= \var{minute} < 60}
+    \item \code{0 <= \var{second} < 60}
+    \item \code{0 <= \var{microsecond} < 1000000}
+  \end{itemize}
 
-\begin{itemize}
-  \item \code{MINYEAR <= \var{year} <= MAXYEAR}
-  \item \code{1 <= \var{month} <= 12}
-  \item \code{1 <= \var{day} <= number of days in the given month and year}
-  \item \code{0 <= \var{hour} < 24}
-  \item \code{0 <= \var{minute} < 60}
-  \item \code{0 <= \var{second} < 60}
-  \item \code{0 <= \var{microsecond} < 1000000}
-\end{itemize}
-
-    If an argument outside those ranges is given,
-    \exception{ValueError} is raised.
+  If an argument outside those ranges is given,
+  \exception{ValueError} is raised.
 \end{funcdesc}
 
 Other constructors (class methods):
 
 \begin{funcdesc}{today}{}
-  \methodline{utcnow}{}
-  \methodline{utcfromtimestamp}{timestamp}
-  \methodline{fromordinal}{ordinal}
-
-    These are the same as the \class{datetime} class methods of the
-    same names, except that they construct a \class{datetimetz}
-    object, with tzinfo \code{None}.
+\methodline{utcnow}{}
+\methodline{utcfromtimestamp}{timestamp}
+\methodline{fromordinal}{ordinal}
+  These are the same as the \class{datetime} class methods of the
+  same names, except that they construct a \class{datetimetz}
+  object, with tzinfo \code{None}.
 \end{funcdesc}
 
 \begin{funcdesc}{now}{\optional{tzinfo=None}}
-  \methodline{fromtimestamp}{timestamp\optional{, tzinfo=None}}
-
-    These are the same as the \class{datetime} class methods of the same names,
-    except that they accept an additional, optional tzinfo argument, and
-    construct a \class{datetimetz} object with that \class{tzinfo} object attached.
+\methodline{fromtimestamp}{timestamp\optional{, tzinfo=None}}
+  These are the same as the \class{datetime} class methods of the
+  same names, except that they accept an additional, optional tzinfo
+  argument, and construct a \class{datetimetz} object with that
+  \class{tzinfo} object attached.
 \end{funcdesc}
 
 \begin{funcdesc}{combine}{date, time}
-    This is the same as \method{datetime.combine()}, except that it constructs
-    a \class{datetimetz} object, and, if the time object is of type timetz,
-    the \class{datetimetz} object has the same \class{tzinfo} object as the time object.
+  This is the same as \method{datetime.combine()}, except that it
+  constructs a \class{datetimetz} object, and, if the time object is
+  of type timetz, the \class{datetimetz} object has the same
+  \class{tzinfo} object as the time object.
 \end{funcdesc}
 
 Class attributes:
 
 \begin{memberdesc}{min}
-        The earliest representable \class{datetimetz},
-        \code{datetimetz(MINYEAR, 1, 1)}.
+  The earliest representable \class{datetimetz},
+  \code{datetimetz(MINYEAR, 1, 1)}.
 \end{memberdesc}
 
 \begin{memberdesc}{max}
-        The latest representable \class{datetime},
-        \code{datetimetz(MAXYEAR, 12, 31, 23, 59, 59, 999999)}.
+  The latest representable \class{datetime},
+  \code{datetimetz(MAXYEAR, 12, 31, 23, 59, 59, 999999)}.
 \end{memberdesc}
 
 \begin{memberdesc}{resolution}
-        The smallest possible difference between non-equal \class{datetimetz}
-        objects, \code{timedelta(microseconds=1)}.
+  The smallest possible difference between non-equal \class{datetimetz}
+  objects, \code{timedelta(microseconds=1)}.
 \end{memberdesc}
 
 Instance attributes, all read-only:
 
 \begin{memberdesc}{year}
-Between MINYEAR and MAXYEAR inclusive
+  Between \constant{MINYEAR} and \constant{MAXYEAR}, inclusive.
 \end{memberdesc}
+
 \begin{memberdesc}{month}
-Between 1 and 12 inclusive
+  Between 1 and 12 inclusive
 \end{memberdesc}
+
 \begin{memberdesc}{day}
-Between 1 and the number of days in the given month
-                    of the given year
+  Between 1 and the number of days in the given month of the given
+  year.
 \end{memberdesc}
+
 \begin{memberdesc}{hour}
-In \code{range(24)}.
+  In \code{range(24)}.
 \end{memberdesc}
+
 \begin{memberdesc}{minute}
-In \code{range(60)}.
+  In \code{range(60)}.
 \end{memberdesc}
+
 \begin{memberdesc}{second}
-In \code{range(60)}.
+  In \code{range(60)}.
 \end{memberdesc}
+
 \begin{memberdesc}{microsecond}
-In \code{range(1000000)}.
+  In \code{range(1000000)}.
 \end{memberdesc}
+
 \begin{memberdesc}{tzinfo}
-The object passed as the \var{tzinfo} argument to
-                    the \class{datetimetz} constructor, or \code{None}
-                    if none was passed.
+  The object passed as the \var{tzinfo} argument to the
+  \class{datetimetz} constructor, or \code{None} if none was passed.
 \end{memberdesc}
 
 Supported operations:
@@ -1224,104 +1254,103 @@ Supported operations:
 Instance methods:
 
 \begin{methoddesc}{date}{}
-  \methodline{time}{}
-  \methodline{toordinal}{}
-  \methodline{weekday}{}
-  \methodline{isoweekday}{}
-  \methodline{isocalendar}{}
-  \methodline{ctime}{}
-  \methodline{__str__}{}
-  \methodline{strftime}{format}
-
-These are the same as the \class{datetime} methods of the same names.
+\methodline{time}{}
+\methodline{toordinal}{}
+\methodline{weekday}{}
+\methodline{isoweekday}{}
+\methodline{isocalendar}{}
+\methodline{ctime}{}
+\methodline{__str__}{}
+\methodline{strftime}{format}
+  These are the same as the \class{datetime} methods of the same names.
 \end{methoddesc}
 
 \begin{methoddesc}{timetz}{}
-    Return \class{timetz} object with same hour, minute, second, microsecond,
-    and tzinfo.
+  Return \class{timetz} object with same hour, minute, second, microsecond,
+  and tzinfo.
 \end{methoddesc}
 
-\begin{methoddesc}{replace}{year=, month=, day=, hour=, minute=, second=, microsecond=,
-            tzinfo=}
-    Return a datetimetz with the same value, except for those fields given
-    new values by whichever keyword arguments are specified.  Note that
-    \code{tzinfo=None} can be specified to create a naive datetimetz from
-    an aware datetimetz.
+\begin{methoddesc}{replace}{year=, month=, day=, hour=, minute=, second=,
+                            microsecond=, tzinfo=}
+  Return a datetimetz with the same value, except for those fields given
+  new values by whichever keyword arguments are specified.  Note that
+  \code{tzinfo=None} can be specified to create a naive datetimetz from
+  an aware datetimetz.
 \end{methoddesc}
 
 \begin{methoddesc}{astimezone}{tz}
-    Return a \class{datetimetz} with new tzinfo member \var{tz}.  \var{tz}
-    must be \code{None}, or an instance of a \class{tzinfo} subclass.  If
-    \var{tz} is \code{None}, self is naive, or
-    \code{tz.utcoffset(self)} returns \code{None},
-    \code{self.astimezone(tz)} is equivalent to
-    \code{self.replace(tzinfo=tz)}:  a new timezone object is attached
-    without any conversion of date or time fields.  If self is aware and
-    \code{tz.utcoffset(self)} does not return \code{None}, the date and
-    time fields are adjusted so that the result is local time in timezone
-    tz, representing the same UTC time as self.
-    XXX [The treatment of endcases remains unclear:  for DST-aware
-    classes, one hour per year has two spellings in local time, and
-    another hour has no spelling in local time.] XXX
+  Return a \class{datetimetz} with new tzinfo member \var{tz}.  \var{tz}
+  must be \code{None}, or an instance of a \class{tzinfo} subclass.  If
+  \var{tz} is \code{None}, self is naive, or
+  \code{tz.utcoffset(self)} returns \code{None},
+  \code{self.astimezone(tz)} is equivalent to
+  \code{self.replace(tzinfo=tz)}:  a new timezone object is attached
+  without any conversion of date or time fields.  If self is aware and
+  \code{tz.utcoffset(self)} does not return \code{None}, the date and
+  time fields are adjusted so that the result is local time in timezone
+  tz, representing the same UTC time as self.
+  XXX [The treatment of endcases remains unclear:  for DST-aware
+  classes, one hour per year has two spellings in local time, and
+  another hour has no spelling in local time.] XXX
 \end{methoddesc}
 
 \begin{methoddesc}{utcoffset}{}
-    If \member{tzinfo} is \code{None}, returns \code{None}, else
-    \code{tzinfo.utcoffset(self)} converted to a \class{timedelta}
-    object.
+  If \member{tzinfo} is \code{None}, returns \code{None}, else
+  \code{tzinfo.utcoffset(self)} converted to a \class{timedelta}
+  object.
 \end{methoddesc}
 
 \begin{methoddesc}{tzname}{}
-    If \member{tzinfo} is \code{None}, returns \code{None}, else
-    returns \code{tzinfo.tzname(self)}.
+  If \member{tzinfo} is \code{None}, returns \code{None}, else
+  returns \code{tzinfo.tzname(self)}.
 \end{methoddesc}
 
 \begin{methoddesc}{dst}{}
-    If \member{tzinfo} is \code{None}, returns \code{None}, else
-    \code{tzinfo.dst(self)} converted to a \class{timedelta}
-    object.
+  If \member{tzinfo} is \code{None}, returns \code{None}, else
+  \code{tzinfo.dst(self)} converted to a \class{timedelta}
+  object.
 \end{methoddesc}
 
 \begin{methoddesc}{timetuple}{}
-    Like \function{datetime.timetuple()}, but sets the
-    \member{tm_isdst} flag according to the \method{dst()} method:  if
-    \method{dst()} returns \code{None}, \member{tm_isdst} is set to
-    \code{-1}; else if \method{dst()} returns a non-zero value,
-    \member{tm_isdst} is set to \code{1}; else \code{tm_isdst} is set
-    to \code{0}.
+  Like \function{datetime.timetuple()}, but sets the
+  \member{tm_isdst} flag according to the \method{dst()} method:  if
+  \method{dst()} returns \code{None}, \member{tm_isdst} is set to
+  \code{-1}; else if \method{dst()} returns a non-zero value,
+  \member{tm_isdst} is set to \code{1}; else \code{tm_isdst} is set
+  to \code{0}.
 \end{methoddesc}
 
 \begin{methoddesc}{utctimetuple}{}
-    If \class{datetimetz} instance \var{d} is naive, this is the same as
-    \code{\var{d}.timetuple()} except that \member{tm_isdst} is forced to 0
-    regardless of what \code{d.dst()} returns.  DST is never in effect
-    for a UTC time.
+  If \class{datetimetz} instance \var{d} is naive, this is the same as
+  \code{\var{d}.timetuple()} except that \member{tm_isdst} is forced to 0
+  regardless of what \code{d.dst()} returns.  DST is never in effect
+  for a UTC time.
 
-    If \var{d} is aware, \var{d} is normalized to UTC time, by subtracting
-    \code{\var{d}.utcoffset()} minutes, and a timetuple for the
-    normalized time is returned.  \member{tm_isdst} is forced to 0.
-    Note that the result's \member{tm_year} field may be
-    \constant{MINYEAR}-1 or \constant{MAXYEAR}+1, if \var{d}.year was
-    \code{MINYEAR} or \code{MAXYEAR} and UTC adjustment spills over a
-    year boundary.
+  If \var{d} is aware, \var{d} is normalized to UTC time, by subtracting
+  \code{\var{d}.utcoffset()} minutes, and a timetuple for the
+  normalized time is returned.  \member{tm_isdst} is forced to 0.
+  Note that the result's \member{tm_year} field may be
+  \constant{MINYEAR}-1 or \constant{MAXYEAR}+1, if \var{d}.year was
+  \code{MINYEAR} or \code{MAXYEAR} and UTC adjustment spills over a
+  year boundary.
 \end{methoddesc}
 
 \begin{methoddesc}{isoformat}{sep='T'}
-    Return a string representing the date and time in ISO 8601 format,
-        YYYY-MM-DDTHH:MM:SS.mmmmmm
-    or, if \member{microsecond} is 0,
-        YYYY-MM-DDTHH:MM:SS
+  Return a string representing the date and time in ISO 8601 format,
+      YYYY-MM-DDTHH:MM:SS.mmmmmm
+  or, if \member{microsecond} is 0,
+      YYYY-MM-DDTHH:MM:SS
 
-    If \method{utcoffset()} does not return \code{None}, a 6-character
-    string is appended, giving the UTC offset in (signed) hours and
-    minutes:
-        YYYY-MM-DDTHH:MM:SS.mmmmmm+HH:MM
-    or, if \member{microsecond} is 0
-        YYYY-MM-DDTHH:MM:SS+HH:MM
+  If \method{utcoffset()} does not return \code{None}, a 6-character
+  string is appended, giving the UTC offset in (signed) hours and
+  minutes:
+      YYYY-MM-DDTHH:MM:SS.mmmmmm+HH:MM
+  or, if \member{microsecond} is 0
+      YYYY-MM-DDTHH:MM:SS+HH:MM
 
-    The optional argument \var{sep} (default \code{'T'}) is a
-    one-character separator, placed between the date and time portions
-    of the result.  For example,
+  The optional argument \var{sep} (default \code{'T'}) is a
+  one-character separator, placed between the date and time portions
+  of the result.  For example,
 
 \begin{verbatim}
 >>> from datetime import *
