@@ -458,12 +458,20 @@ def ints():
     class C(int):
         def __add__(self, other):
             return NotImplemented
+    vereq(C(5L), 5)
     try:
         C() + ""
     except TypeError:
         pass
     else:
         raise TestFailed, "NotImplemented should have caused TypeError"
+    import sys
+    try:
+        C(sys.maxint+1)
+    except OverflowError:
+        pass
+    else:
+        raise TestFailed, "should have raised OverflowError"
 
 def longs():
     if verbose: print "Testing long operations..."
