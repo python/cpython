@@ -1834,6 +1834,9 @@
 			</FileConfiguration>
 		</File>
 		<File
+			RelativePath="..\Python\pystrtod.c">
+		</File>
+		<File
 			RelativePath="..\PC\python_nt.rc">
 			<FileConfiguration
 				Name="Release|Win32">
