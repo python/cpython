@@ -1,0 +1,22 @@
+--- Modules/pyexpat.c.old	Tue Mar  6 02:30:48 2001
++++ Modules/pyexpat.c	Tue Mar  6 02:31:15 2001
+@@ -12,7 +12,7 @@
+ #define EXPAT_VERSION 0x015f00
+ #endif
+ #else /* !defined(HAVE_EXPAT_H) */
+-#include "xmlparse.h"
++#include "expat/xmlparse.h"
+ /* Assume Expat 1.1 unless told otherwise */
+ #ifndef EXPAT_VERSION
+ #define EXPAT_VERSION 0x010100
+--- setup.py-orig	Fri Feb  2 11:24:25 2001
++++ setup.py	Wed Feb 14 18:13:15 2001
+@@ -445,7 +445,7 @@
+             # expat.h was found
+             expat_defs = [('HAVE_EXPAT_H', 1)]
+         else:
+-            expat_incs = find_file('xmlparse.h', inc_dirs, [])
++            expat_incs = find_file('expat/xmlparse.h', inc_dirs, [])
+ 
+         if (expat_incs is not None and
+             self.compiler.find_library_file(lib_dirs, 'expat')):
