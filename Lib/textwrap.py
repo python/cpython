@@ -54,8 +54,12 @@ class TextWrapper:
                             r'\w{2,}-(?=\w{2,})|'     # hyphenated words
                             r'(?<=\w)-{2,}(?=\w))')   # em-dash
 
-    # Punctuation characters found at the end of a sentence.
-    sentence_end = ".?!"
+    # XXX will there be a locale-or-charset-aware version of
+    # string.lowercase in 2.3?
+    sentence_end_re = re.compile(r'[%s]'              # lowercase letter
+                                 r'[\.\!\?]'          # sentence-ending punct.
+                                 r'[\"\']?'           # optional end-of-quote
+                                 % string.lowercase)
 
 
     def __init__ (self):
@@ -107,13 +111,9 @@ class TextWrapper:
         space to two.
         """
         i = 0
-        punct = self.sentence_end
+        pat = self.sentence_end_re
         while i < len(chunks)-1:
-            # chunks[i] looks like the last word of a sentence,
-            # and it's followed by a single space.
-            if (chunks[i][-1] in punct and
-                  chunks[i+1] == " " and
-                  islower(chunks[i][-2])):
+            if chunks[i+1] == " " and pat.search(chunks[i]):
                 chunks[i+1] = "  "
                 i += 2
             else:
