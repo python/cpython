@@ -15,30 +15,8 @@ MULTILINE = M = 0x02
 DOTALL = S = 0x04
 VERBOSE = X = 0x08
 
-#
-# Initialize syntax table. This information should really come from the
-# syntax table in regexpr.c rather than being duplicated here.
-#
-
-syntax_table = {}
-
-for char in map(chr, range(0, 256)):
-    syntax_table[char] = []
-
-for char in string.lowercase:
-    syntax_table[char].append('word')
-
-for char in string.uppercase:
-    syntax_table[char].append('word')
-
-for char in string.digits:
-    syntax_table[char].append('word')
-    syntax_table[char].append('digit')
-
-for char in string.whitespace:
-    syntax_table[char].append('whitespace')
-
-syntax_table['_'].append('word')
+repetition_operators = ['*', '*?', '+', '+?', '?', '??', '{n}', '{n}?',
+			'{n,}', '{n,}?', '{n,m}', '{n,m}?']
 
 #
 #
@@ -47,10 +25,11 @@ syntax_table['_'].append('word')
 def valid_identifier(id):
     if len(id) == 0:
 	return 0
-    if ('word' not in syntax_table[id[0]]) or ('digit' in syntax_table[id[0]]):
+    if (not reop.syntax_table[id[0]] & reop.word) or \
+       (reop.syntax_table[id[0]] & reop.digit):
 	return 0
     for char in id[1:]:
-	if 'word' not in syntax_table[char]:
+	if not reop.syntax_table[char] & reop.word:
 	    return 0
     return 1
 
@@ -394,7 +373,6 @@ class SyntaxSpec(Instruction):
 	self.syntax = syntax
 	Instruction.__init__(self, chr(20), 2)
     def assemble(self, postition, labels):
-	# XXX
 	return self.opcode + chr(self.syntax)
 
 class NotSyntaxSpec(Instruction):
@@ -403,7 +381,6 @@ class NotSyntaxSpec(Instruction):
 	self.syntax = syntax
 	Instruction.__init__(self, chr(21), 2)
     def assemble(self, postition, labels):
-	# XXX
 	return self.opcode + chr(self.syntax)
 
 class Label(Instruction):
@@ -455,7 +432,7 @@ def assemble(instructions):
 def escape(pattern):
     result = []
     for char in pattern:
-	if 'word' not in syntax_table[char]:
+	if not reop.syntax_table[char] & reop.word:
 	    result.append('\\')
 	result.append(char)
     return string.join(result, '')
@@ -513,12 +490,12 @@ def build_fastmap_aux(code, pos, visited, fastmap):
 	    return
 	elif instruction.name == 'syntaxspec':
 	    for char in map(chr, range(256)):
-		if instruction.syntax in syntax_table[char]:
+		if reop.syntax_table[char] & instruction.syntax:
 		    fastmap.add(char)
 	    return
 	elif instruction.name == 'notsyntaxspec':
 	    for char in map(chr, range(256)):
-		if instruction.syntax not in syntax_table[char]:
+		if not reop.syntax_table[char] & instruction.syntax:
 		    fastmap.add(char)
 	    return
 	elif instruction.name == 'eol':
@@ -570,8 +547,8 @@ def build_fastmap(code, pos=0):
 #
 
 [NORMAL, CHARCLASS, REPLACEMENT] = range(3)
-[CHAR, MEMORY_REFERENCE, SYNTAX, SET, WORD_BOUNDARY, NOT_WORD_BOUNDARY,
- BEGINNING_OF_BUFFER, END_OF_BUFFER] = range(8)
+[CHAR, MEMORY_REFERENCE, SYNTAX, NOT_SYNTAX, SET, WORD_BOUNDARY,
+ NOT_WORD_BOUNDARY, BEGINNING_OF_BUFFER, END_OF_BUFFER] = range(9)
 
 def expand_escape(pattern, index, context=NORMAL):
     if index >= len(pattern):
@@ -646,11 +623,11 @@ def expand_escape(pattern, index, context=NORMAL):
     
     elif pattern[index] == 'w':
 	if context == NORMAL:
-	    return SYNTAX, 'word', index + 1
+	    return SYNTAX, reop.word, index + 1
 	elif context == CHARCLASS:
 	    set = []
-	    for char in syntax_table.keys():
-		if 'word' in syntax_table[char]:
+	    for char in reop.syntax_table.keys():
+		if reop.syntax_table[char] & reop.word:
 		    set.append(char)
 	    return SET, set, index + 1
 	else:
@@ -658,11 +635,11 @@ def expand_escape(pattern, index, context=NORMAL):
 	
     elif pattern[index] == 'W':
 	if context == NORMAL:
-	    return NOT_SYNTAX, 'word', index + 1
+	    return NOT_SYNTAX, reop.word, index + 1
 	elif context == CHARCLASS:
 	    set = []
-	    for char in syntax_table.keys():
-		if 'word' not in syntax_table[char]:
+	    for char in reop.syntax_table.keys():
+		if not reop.syntax_table[char] & reop.word:
 		    set.append(char)
 	    return SET, set, index + 1
 	else:
@@ -670,11 +647,11 @@ def expand_escape(pattern, index, context=NORMAL):
 	
     elif pattern[index] == 's':
 	if context == NORMAL:
-	    return SYNTAX, 'whitespace', index + 1
+	    return SYNTAX, reop.whitespace, index + 1
 	elif context == CHARCLASS:
 	    set = []
-	    for char in syntax_table.keys():
-		if 'whitespace' in syntax_table[char]:
+	    for char in reop.syntax_table.keys():
+		if reop.syntax_table[char] & reop.whitespace:
 		    set.append(char)
 	    return SET, set, index + 1
 	else:
@@ -682,11 +659,11 @@ def expand_escape(pattern, index, context=NORMAL):
 	
     elif pattern[index] == 'S':
 	if context == NORMAL:
-	    return NOT_SYNTAX, 'whitespace', index + 1
+	    return NOT_SYNTAX, reop.whitespace, index + 1
 	elif context == CHARCLASS:
 	    set = []
-	    for char in syntax_table.keys():
-		if 'whitespace' not in syntax_table[char]:
+	    for char in reop.syntax_table.keys():
+		if not reop.syntax_table[char] & reop.word:
 		    set.append(char)
 	    return SET, set, index + 1
 	else:
@@ -694,11 +671,11 @@ def expand_escape(pattern, index, context=NORMAL):
 	
     elif pattern[index] == 'd':
 	if context == NORMAL:
-	    return SYNTAX, 'digit', index + 1
+	    return SYNTAX, reop.digit, index + 1
 	elif context == CHARCLASS:
 	    set = []
-	    for char in syntax_table.keys():
-		if 'digit' in syntax_table[char]:
+	    for char in reop.syntax_table.keys():
+		if reop.syntax_table[char] & reop.digit:
 		    set.append(char)
 	    return SET, set, index + 1
 	else:
@@ -706,11 +683,11 @@ def expand_escape(pattern, index, context=NORMAL):
 	
     elif pattern[index] == 'D':
 	if context == NORMAL:
-	    return NOT_SYNTAX, 'digit', index + 1
+	    return NOT_SYNTAX, reop.digit, index + 1
 	elif context == CHARCLASS:
 	    set = []
-	    for char in syntax_table.keys():
-		if 'digit' not in syntax_table[char]:
+	    for char in reop.syntax_table.keys():
+		if not reop.syntax_table[char] & reop.digit:
 		    set.append(char)
 	    return SET, set, index + 1
 	else:
@@ -783,29 +760,31 @@ def compile(pattern, flags=0):
     register = 1
     groupindex = {}
     callouts = []
+    lastop = ''
 
-    # preprocess the pattern looking for embedded pattern modifiers
-
-    index = 0
-    while (index != -1):
-	index = string.find(pattern, '(?', index)
-	if index != -1:
-	    index = index + 2
-	    if (index < len(pattern)) and (pattern[index] in 'iImMsSxX'):
-		while (index < len(pattern)) and (pattern[index] != ')'):
-		    if pattern[index] in 'iI':
-			flags = flags | IGNORECASE
-		    elif pattern[index] in 'mM':
-			flags = flags | MULTILINE
-		    elif pattern[index] in 'sS':
-			flags = flags | DOTALL
-		    elif pattern[index] in 'xX':
-			flags = flags | VERBOSE
-		    else:
-			raise error, 'unknown flag'
-		    index = index + 1
+    # look for embedded pattern modifiers at the beginning of the pattern
 
     index = 0
+
+    if len(pattern) >= 3 and \
+       (pattern[:2] == '(?') and \
+       (pattern[2] in 'iImMsSxX'):
+	index = 2
+	while (index < len(pattern)) and (pattern[index] != ')'):
+	    if pattern[index] in 'iI':
+		flags = flags | IGNORECASE
+	    elif pattern[index] in 'mM':
+		flags = flags | MULTILINE
+	    elif pattern[index] in 'sS':
+		flags = flags | DOTALL
+	    elif pattern[index] in 'xX':
+		flags = flags | VERBOSE
+	    else:
+		raise error, 'unknown modifier'
+	    index = index + 1
+	index = index + 1
+
+    # compile the rest of the pattern
     
     while (index < len(pattern)):
 	char = pattern[index]
@@ -815,30 +794,52 @@ def compile(pattern, flags=0):
 
 	    if escape_type == CHAR:
 		stack.append([Exact(value)])
+		lastop = '\\' + value
 		
 	    elif escape_type == MEMORY_REFERENCE:
 		if value >= register:
 		    raise error, ('cannot reference a register '
 				  'not yet used')
 		stack.append([MatchMemory(value)])
+		lastop = '\\1'
 		
 	    elif escape_type == BEGINNING_OF_BUFFER:
 		stack.append([BegBuf()])
+		lastop = '\\A'
 		
 	    elif escape_type == END_OF_BUFFER:
 		stack.append([EndBuf()])
+		lastop = '\\Z'
 		
 	    elif escape_type == WORD_BOUNDARY:
 		stack.append([WordBound()])
+		lastop = '\\b'
 		
 	    elif escape_type == NOT_WORD_BOUNDARY:
 		stack.append([NotWordBound()])
+		lastop = '\\B'
 		
 	    elif escape_type == SYNTAX:
 		stack.append([SyntaxSpec(value)])
-		
+		if value == reop.word:
+		    lastop = '\\w'
+		elif value == reop.whitespace:
+		    lastop = '\\s'
+		elif value == reop.digit:
+		    lastop = '\\d'
+		else:
+		    lastop = '\\?'
+		    
 	    elif escape_type == NOT_SYNTAX:
 		stack.append([NotSyntaxSpec(value)])
+		if value == reop.word:
+		    lastop = '\\W'
+		elif value == reop.whitespace:
+		    lastop = '\\S'
+		elif value == reop.digit:
+		    lastop = '\\D'
+		else:
+		    lastop = '\\?'
 		
 	    elif escape_type == SET:
 		raise error, 'cannot use set escape type here'
@@ -860,7 +861,8 @@ def compile(pattern, flags=0):
 			  Label(label)])
 	    stack.append([Alternation()])
 	    label = label + 1
-
+	    lastop = '|'
+	    
 	elif char == '(':
 	    if index >= len(pattern):
 		raise error, 'no matching close paren'
@@ -891,6 +893,7 @@ def compile(pattern, flags=0):
 			groupindex[name] = register
 			stack.append([OpenParen(register)])
 			register = register + 1
+			lastop = '('
 
 		    elif pattern[index] == '=':
 			# backreference to symbolic group name
@@ -906,6 +909,7 @@ def compile(pattern, flags=0):
 					  ' has not been used yet')
 			stack.append([MatchMemory(groupindex[name])])
 			index = end + 1
+			lastop = '(?P=)'
 			
 		    elif pattern[index] == '!':
 			# function callout
@@ -920,7 +924,8 @@ def compile(pattern, flags=0):
 			    raise error, ('function callout name not listed '
 					  'in callouts dict')
 			stack.append([FunctionCallout(name)])
-
+			lastop = '(?P!)'
+			
 		    else:
 			raise error, ('unknown Python extension: ' + \
 				      pattern[index])
@@ -929,7 +934,8 @@ def compile(pattern, flags=0):
 		    # grouping, but no registers
 		    index = index + 1
 		    stack.append([OpenParen(-1)])
-
+		    lastop = '('
+		    
 		elif pattern[index] == '#':
 		    # comment
 		    index = index + 1
@@ -937,7 +943,8 @@ def compile(pattern, flags=0):
 		    if end == -1:
 			raise error, 'no end to comment'
 		    index = end + 1
-
+		    # do not change lastop
+		    
 		elif pattern[index] == '=':
 		    raise error, ('zero-width positive lookahead '
 				  'assertion is unsupported')
@@ -947,19 +954,16 @@ def compile(pattern, flags=0):
 				  'assertion is unsupported')
 
 		elif pattern[index] in 'iImMsSxX':
-		    # ignore embedded pattern modifiers here, they
-		    # have already been taken care of in the
-		    # preprocessing
-		    while (index < len(pattern)) and (pattern[index] != ')'):
-			index = index + 1
-		    index = index + 1
-		    
+		    raise error, ('embedded pattern modifiers are only '
+				  'allowed at the beginning of the pattern')
+
 		else:
 		    raise error, 'unknown extension'
 
 	    else:
 		stack.append([OpenParen(register)])
 		register = register + 1
+		lastop = '('
 
 	elif char == ')':
 	    # make one expression out of everything on the stack up to
@@ -991,6 +995,7 @@ def compile(pattern, flags=0):
 		       [EndMemory(stack[-1][0].register)]
 	    del stack[-1]
 	    stack.append(expr)
+	    lastop = ')'
 
 	elif char == '{':
 	    if len(stack) == 0:
@@ -1024,6 +1029,10 @@ def compile(pattern, flags=0):
 		    count = count - 1
 		del stack[-1]
 		stack.append(expr)
+		if minimal:
+		    lastop = '{n}?'
+		else:
+		    lastop = '{n}'
 
 	    elif len(fields) == 2:
 		# {n,} or {n,m}
@@ -1048,6 +1057,7 @@ def compile(pattern, flags=0):
 				stack[-1] + \
 				[Label(label + 1),
 				 FailureJump(label)])
+			lastop = '{n,}?'
 		    else:
 			expr = expr + \
 			       ([Label(label),
@@ -1055,6 +1065,7 @@ def compile(pattern, flags=0):
 				stack[-1] +
 				[StarJump(label),
 				 Label(label + 1)])
+			lastop = '{n,}'
 
 		    del stack[-1]
 		    stack.append(expr)
@@ -1099,6 +1110,7 @@ def compile(pattern, flags=0):
 			    label = label + 2
 			del stack[-1]
 			stack.append(expr)
+			lastop = '{n,m}?'
 		    else:
 			while max > 0:
 			    expr = expr + \
@@ -1108,11 +1120,11 @@ def compile(pattern, flags=0):
 			del stack[-1]
 			stack.append(expr + [Label(label)])
 			label = label + 1
+			lastop = '{n,m}'
 
 	    else:
 		raise error, ('there need to be one or two fields '
 			      'in a {} expression')
-	    index = end + 1
 
 	elif char == '}':
 	    raise error, 'unbalanced close curly brace'
@@ -1121,9 +1133,13 @@ def compile(pattern, flags=0):
 	    # Kleene closure
 	    if len(stack) == 0:
 		raise error, '* needs something to repeat'
-	    if (stack[-1][0].name == '(') or (stack[-1][0].name == '|'):
+
+	    if lastop in ['(', '|']:
 		raise error, '* needs something to repeat'
-	    registers = registers_used(stack[-1])
+
+	    if lastop in repetition_operators:
+		raise error, 'nested repetition operators'
+	    
 	    if (index < len(pattern)) and (pattern[index] == '?'):
 		# non-greedy matching
 		expr = [Jump(label + 1),
@@ -1132,6 +1148,7 @@ def compile(pattern, flags=0):
 		       [Label(label + 1),
 			FailureJump(label)]
 		index = index + 1
+		lastop = '*?'
 	    else:
 		# greedy matching
 		expr = [Label(label),
@@ -1139,6 +1156,7 @@ def compile(pattern, flags=0):
 		       stack[-1] + \
 		       [StarJump(label),
 			Label(label + 1)]
+		lastop = '*'
 	    del stack[-1]
 	    stack.append(expr)
 	    label = label + 2
@@ -1148,9 +1166,12 @@ def compile(pattern, flags=0):
 	    if len(stack) == 0:
 		raise error, '+ needs something to repeat'
 	    
-	    if (stack[-1][0].name == '(') or (stack[-1][0].name == '|'):
+	    if lastop in ['(', '|']:
 		raise error, '+ needs something to repeat'
-	    
+
+	    if lastop in repetition_operators:
+		raise error, 'nested repetition operators'
+
 	    if (index < len(pattern)) and (pattern[index] == '?'):
 		# non-greedy
 		expr = [Label(label)] + \
@@ -1158,6 +1179,8 @@ def compile(pattern, flags=0):
 		       [FailureJump(label)]
 		label = label + 1
 		index = index + 1
+		lastop = '+?'
+		
 	    else:
 		# greedy
 		expr = [DummyFailureJump(label + 1),
@@ -1168,12 +1191,24 @@ def compile(pattern, flags=0):
 		       [StarJump(label),
 			Label(label + 2)]
 		label = label + 3
+		lastop = '+'
+		
 	    del stack[-1]
 	    stack.append(expr)
 
 	elif char == '?':
 	    if len(stack) == 0:
 		raise error, 'need something to be optional'
+	    
+	    if len(stack) == 0:
+		raise error, '? needs something to repeat'
+	    
+	    if lastop in ['(', '|']:
+		raise error, '? needs something to repeat'
+
+	    if lastop in repetition_operators:
+		raise error, 'nested repetition operators'
+
 	    if (index < len(pattern)) and (pattern[index] == '?'):
 		# non-greedy matching
 		expr = [FailureJump(label),
@@ -1183,12 +1218,16 @@ def compile(pattern, flags=0):
 		       [Label(label + 1)]
 		label = label + 2
 		index = index + 1
+		lastop = '??'
+		
 	    else:
 		# greedy matching
 		expr = [FailureJump(label)] + \
 		       stack[-1] + \
 		       [Label(label)]
 		label = label + 1
+		lastop = '?'
+		
 	    del stack[-1]
 	    stack.append(expr)
 
@@ -1197,18 +1236,21 @@ def compile(pattern, flags=0):
 		stack.append([Set(map(chr, range(256)))])
 	    else:
 		stack.append([AnyChar()])
+	    lastop = '.'
 
 	elif char == '^':
 	    if flags & MULTILINE:
 		stack.append([Bol()])
 	    else:
 		stack.append([BegBuf()])
+	    lastop = '^'
 
 	elif char == '$':
 	    if flags & MULTILINE:
 		stack.append([Eol()])
 	    else:
 		stack.append([EndBuf()])
+	    lastop = '$'
 
 	elif char == '#':
 	    if flags & VERBOSE:
@@ -1219,12 +1261,15 @@ def compile(pattern, flags=0):
 		    index = len(pattern)
 		else:
 		    index = end + 1
+		# do not change lastop
 	    else:
 		stack.append([Exact(char)])
+		lastop = '#'
 
 	elif char in string.whitespace:
 	    if not (flags & VERBOSE):
 		stack.append([Exact(char)])
+		lastop = char
 
 	elif char == '[':
 	    # compile character class
@@ -1343,8 +1388,11 @@ def compile(pattern, flags=0):
 		    raise error, 'empty set'
 		stack.append([Set(set)])
 
+	    lastop = '[]'
+
 	else:
 	    stack.append([Exact(char)])
+	    lastop = char
 
     code = []
     while len(stack) > 0:
