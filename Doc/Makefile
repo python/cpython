@@ -267,6 +267,9 @@ l2hapi: api.dvi manual.perl python.perl
 info-$(VERSION).tar.gz: $(INFOFILES)
 	tar cf - python-???.info* | gzip -9 >$@
 
+latex-$(VERSION).tar.gz:
+	./mktarball.sh
+
 # This snags a PDF version if available, but doesn't fail if not.
 pdf-$(VERSION).tar.gz: $(PDFFILES)
 	if [ -f ref/ref.pdf ] ; then cp ref/ref.pdf . ; else true ; fi
@@ -291,7 +294,9 @@ tarps:	postscript-$(VERSION).tar.gz
 
 tarpdf:	pdf-$(VERSION).tar.gz
 
-tarballs:  tarpdf tarps tarhtml tarinfo
+tarlatex: latex-$(VERSION).tar.gz
+
+tarballs:  tarpdf tarps tarhtml tarinfo tarlatex
 
 
 # Housekeeping targets
@@ -302,8 +307,9 @@ tarballs:  tarpdf tarps tarhtml tarinfo
 clean:	l2hclean
 	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl *.py[co]
 	rm -f *.bak *.orig lib1.texi *.out
-	rm -f html-$(VERSION).tar.gz postscript-$(VERSION).tar.gz
-	rm -f pdf-$(VERSION).tar.gz
+	rm -f html-$(VERSION).tar.gz info-$(VERSION).tar.gz
+	rm -f pdf-$(VERSION).tar.gz postscript-$(VERSION).tar.gz
+	rm -f latex-$(VERSION).tar.gz
 
 l2hclean:
 	rm -rf api ext lib tut
