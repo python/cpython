@@ -28,7 +28,24 @@ extern int ftime(struct timeb *);
 #include <i86.h>
 #else
 #ifdef MS_WINDOWS
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include "pythread.h"
+
+/* helper to allow us to interrupt sleep() on Windows*/
+static HANDLE hInterruptEvent = NULL;
+static BOOL WINAPI PyCtrlHandler(DWORD dwCtrlType)
+{
+	SetEvent(hInterruptEvent);
+	/* allow other default handlers to be called.
+	   Default Python handler will setup the
+	   KeyboardInterrupt exception.
+	*/
+	return FALSE;
+}
+static long main_thread;
+
+
 #if defined(__BORLANDC__)
 /* These overrides not needed for Win32 */
 #define timezone _timezone
@@ -680,7 +697,15 @@ inittime(void)
 			   Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
 #endif /* __CYGWIN__ */
 #endif /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
-
+#ifdef MS_WINDOWS
+	/* Helper to allow interrupts for Windows.
+	   If Ctrl+C event delivered while not sleeping
+	   it will be ignored.
+	*/
+	main_thread = PyThread_get_thread_ident();
+	hInterruptEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	SetConsoleCtrlHandler( PyCtrlHandler, TRUE);
+#endif /* MS_WINDOWS */
         PyStructSequence_InitType(&StructTimeType, &struct_time_type_desc);
 	Py_INCREF(&StructTimeType);
 	PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType);
@@ -775,9 +800,27 @@ floatsleep(double secs)
 			PyErr_SetString(PyExc_OverflowError, "sleep length is too large");
 			return -1;
 		}
-		/* XXX Can't interrupt this sleep */
 		Py_BEGIN_ALLOW_THREADS
-		Sleep((unsigned long)millisecs);
+		/* allow sleep(0) to maintain win32 semantics, and as decreed by
+		   Guido, only the main thread can be interrupted. */
+		if ((unsigned long)millisecs==0 || main_thread != PyThread_get_thread_ident())
+			Sleep((unsigned long)millisecs);
+		else {
+			DWORD rc;
+			ResetEvent(hInterruptEvent);
+			rc = WaitForSingleObject(hInterruptEvent, (unsigned long)millisecs);
+			if (rc==WAIT_OBJECT_0) {
+				/* yield to make sure real Python signal handler called */
+				Sleep(1);
+				Py_BLOCK_THREADS
+				/* PyErr_SetFromErrno() does the "right thing" wrt signals
+				   if errno=EINTR
+				*/
+				errno = EINTR;
+				PyErr_SetFromErrno(PyExc_IOError);
+				return -1;
+			}
+		}
 		Py_END_ALLOW_THREADS
 	}
 #elif defined(PYOS_OS2)
