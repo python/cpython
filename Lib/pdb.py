@@ -11,6 +11,7 @@ import bdb
 from repr import Repr
 import os
 import re
+import pprint
 
 # Create a custom safe Repr instance and increase its maxstring.
 # The default of 30 truncates error messages too easily.
@@ -532,19 +533,29 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             print '*** Not yet returned!'
     do_rv = do_retval
 
-    def do_p(self, arg):
+    def _getval(self, arg):
         try:
-            value = eval(arg, self.curframe.f_globals,
-                            self.curframe.f_locals)
+            return eval(arg, self.curframe.f_globals,
+                        self.curframe.f_locals)
         except:
             t, v = sys.exc_info()[:2]
-            if type(t) == type(''):
+            if isinstance(t, str):
                 exc_type_name = t
             else: exc_type_name = t.__name__
             print '***', exc_type_name + ':', `v`
-            return
+            raise
 
-        print `value`
+    def do_p(self, arg):
+        try:
+            print repr(self._getval(arg))
+        except:
+            pass
+
+    def do_pp(self, arg):
+        try:
+            pprint.pprint(self._getval(arg))
+        except:
+            pass
 
     def do_list(self, arg):
         self.lastcmd = 'list'
@@ -816,6 +827,10 @@ Print the arguments of the current function."""
     def help_p(self):
         print """p expression
 Print the value of the expression."""
+
+    def help_pp(self):
+        print """pp expression
+Pretty-print the value of the expression."""
 
     def help_exec(self):
         print """(!) statement
