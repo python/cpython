@@ -371,7 +371,7 @@ def test_float_overflow():
     for x in -2.0, -1.0, 0.0, 1.0, 2.0:
         verify(float(long(x)) == x)
 
-    shuge = '12345' * 1000
+    shuge = '12345' * 120
     huge = 1L << 30000
     mhuge = -huge
     namespace = {'huge': huge, 'mhuge': mhuge, 'shuge': shuge, 'math': math}
