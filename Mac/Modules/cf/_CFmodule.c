@@ -14,9 +14,9 @@
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
-    	PyErr_SetString(PyExc_NotImplementedError, \
-    	"Not available in this shared library/OS version"); \
-    	return NULL; \
+        PyErr_SetString(PyExc_NotImplementedError, \
+        "Not available in this shared library/OS version"); \
+        return NULL; \
     }} while(0)
 
 
@@ -1458,7 +1458,7 @@ int CFStringRefObj_Convert(PyObject *v, CFStringRef *p_itself)
 	if (v == Py_None) { *p_itself = NULL; return 1; }
 	if (PyString_Check(v)) {
 	    char *cStr = PyString_AsString(v);
-		*p_itself = CFStringCreateWithCString((CFAllocatorRef)NULL, cStr, 0);
+		*p_itself = CFStringCreateWithCString((CFAllocatorRef)NULL, cStr, kCFStringEncodingASCII);
 		return 1;
 	}
 	if (PyUnicode_Check(v)) {

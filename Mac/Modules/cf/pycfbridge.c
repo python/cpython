@@ -292,8 +292,9 @@ PyCF_Python2CF_string(PyObject *src, CFStringRef *dst) {
 	UniChar *unichars;
 	
 	if (PyString_Check(src)) {
-		if ((chars = PyString_AsString(src)) == NULL ) goto err;
-		*dst = CFStringCreateWithCString((CFAllocatorRef)NULL, chars, 0);
+		if (!PyArg_Parse(src, "es", NULL, &chars))
+			return NULL; /* This error is more descriptive than the general one below */
+		*dst = CFStringCreateWithCString((CFAllocatorRef)NULL, chars, kCFStringEncodingASCII);
 		return 1;
 	}
 	if (PyUnicode_Check(src)) {

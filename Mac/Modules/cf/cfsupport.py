@@ -359,8 +359,10 @@ class CFStringRefObjectDefinition(MyGlobalObjectDefinition):
 		Out("""
 		if (v == Py_None) { *p_itself = NULL; return 1; }
 		if (PyString_Check(v)) {
-		    char *cStr = PyString_AsString(v);
-			*p_itself = CFStringCreateWithCString((CFAllocatorRef)NULL, cStr, 0);
+		    char *cStr;
+		    if (!PyArg_Parse(v, "et", "ascii", &cStr))
+		    	return NULL;
+			*p_itself = CFStringCreateWithCString((CFAllocatorRef)NULL, cStr, kCFStringEncodingASCII);
 			return 1;
 		}
 		if (PyUnicode_Check(v)) {
