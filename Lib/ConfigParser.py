@@ -315,7 +315,7 @@ class ConfigParser:
 
     def getboolean(self, section, option):
         v = self.get(section, option)
-        val = v.atoi()
+        val = int(v)
         if val not in (0, 1):
             raise ValueError, 'Not a boolean: %s' % v
         return val
