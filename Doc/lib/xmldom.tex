@@ -112,6 +112,40 @@ raise an \exception{ImportError}. The features list must be a sequence of
 (feature, version) pairs which are passed to hasFeature.
 \end{funcdesc}
 
+
+Some convenience constants are also provided:
+
+\begin{datadesc}{EMPTY_NAMESPACE}
+  The value used to indicate that no namespace is associated with a
+  node in the DOM.  This is typically found as the
+  \member{namespaceURI} of a node, or used as the \var{namespaceURI}
+  parameter to a namespaces-specific method.
+  \versionadded{2.2}
+\end{datadesc}
+
+\begin{datadesc}{XML_NAMESPACE}
+  The namespace URI associated with the reserved prefix \code{xml}, as
+  defined by
+  \citetitle[http://www.w3.org/TR/REC-xml-names/]{Namespaces in XML}
+  (section~4).
+  \versionadded{2.2}
+\end{datadesc}
+
+\begin{datadesc}{XMLNS_NAMESPACE}
+  The namespace URI for namespace declarations, as defined by
+  \citetitle[http://www.w3.org/TR/DOM-Level-2-Core/core.html]{Document
+  Object Model (DOM) Level 2 Core Specification} (section~1.1.8).
+  \versionadded{2.2}
+\end{datadesc}
+
+\begin{datadesc}{XHTML_NAMESPACE}
+  The URI of the XHTML namespace as defined by
+  \citetitle[http://www.w3.org/TR/xhtml1/]{XHTML 1.0: The Extensible
+  HyperText Markup Language} (section~3.1.1).
+  \versionadded{2.2}
+\end{datadesc}
+
+
 % Should the Node documentation go here?
 
 In addition, \module{xml.dom} contains a base \class{Node} class and
@@ -123,6 +157,7 @@ provide the constants used for the \member{nodeType} attribute on
 concrete \class{Node} objects; they are located within the class
 rather than at the module level to conform with the DOM
 specifications.
+
 
 \subsection{Objects in the DOM \label{dom-objects}}
 
