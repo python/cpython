@@ -37,7 +37,15 @@ Mynd you, møøse bites Kan be pretty nasti..."""
 
 # Note: this module is designed to deploy instantly and run under any
 # version of Python from 1.5 and up.  That's why it's a single file and
-# some 2.0 features (like string methods) are conspicuously avoided.
+# some 2.0 features (like string methods) are conspicuously absent.
+
+# Known bugs that can't be fixed here:
+#   - imp.load_module() cannot be prevented from clobbering existing
+#     loaded modules, so calling synopsis() on a binary module file
+#     changes the contents of any existing module with the same name.
+#   - If the __file__ attribute on a module is a relative path and
+#     the current directory is changed with os.chdir(), an incorrect
+#     path will be displayed.
 
 import sys, imp, os, stat, re, types, inspect
 from repr import Repr
@@ -49,23 +57,28 @@ def synopsis(filename, cache={}):
     """Get the one-line summary out of a module file."""
     mtime = os.stat(filename)[stat.ST_MTIME]
     lastupdate, result = cache.get(filename, (0, None))
-    # XXX what if ext is 'rb' type in imp_getsuffixes?
     if lastupdate < mtime:
+        info = inspect.getmoduleinfo(filename)
         file = open(filename)
-        line = file.readline()
-        while line[:1] == '#' or strip(line) == '':
+        if info and 'b' in info[2]: # binary modules have to be imported
+            try: module = imp.load_module(info[0], file, filename, info[1:])
+            except: return None
+            result = split(module.__doc__ or '', '\n')[0]
+        else: # text modules can be directly examined
             line = file.readline()
-            if not line: break
-        if line[-2:] == '\\\n':
-            line = line[:-2] + file.readline()
-        line = strip(line)
-        if line[:3] == '"""':
-            line = line[3:]
-            while strip(line) == '':
+            while line[:1] == '#' or strip(line) == '':
                 line = file.readline()
                 if not line: break
-            result = strip(split(line, '"""')[0])
-        else: result = None
+            line = strip(line)
+            if line[:4] == 'r"""': line = line[1:]
+            if line[:3] == '"""':
+                line = line[3:]
+                if line[-1:] == '\\': line = line[:-1]
+                while not strip(line):
+                    line = file.readline()
+                    if not line: break
+                result = strip(split(line, '"""')[0])
+            else: result = None
         file.close()
         cache[filename] = (mtime, result)
     return result
@@ -86,6 +99,15 @@ def getdoc(object):
     """Get the doc string or comments for an object."""
     result = inspect.getdoc(object) or inspect.getcomments(object)
     return result and re.sub('^ *\n', '', rstrip(result)) or ''
+
+def splitdoc(doc):
+    """Split a doc string into a synopsis line (if any) and the rest."""
+    lines = split(strip(doc), '\n')
+    if len(lines) == 1:
+        return lines[0], ''
+    elif len(lines) >= 2 and not rstrip(lines[1]):
+        return lines[0], join(lines[2:], '\n')
+    return '', join(lines, '\n')
 
 def classname(object, modname):
     """Get a class name and qualify it with a module name if necessary."""
@@ -117,22 +139,11 @@ def cram(text, maxlen):
 
 def stripid(text):
     """Remove the hexadecimal id from a Python object representation."""
-    # The behaviour of %p is implementation-dependent, so we need an example.
+    # The behaviour of %p is implementation-dependent; we check two cases.
     for pattern in [' at 0x[0-9a-f]{6,}>$', ' at [0-9A-F]{8,}>$']:
         if re.search(pattern, repr(Exception)):
             return re.sub(pattern, '>', text)
     return text
-
-def modulename(path):
-    """Return the Python module name for a given path, or None."""
-    filename = os.path.basename(path)
-    suffixes = map(lambda (suffix, mode, kind): (len(suffix), suffix),
-                   imp.get_suffixes())
-    suffixes.sort()
-    suffixes.reverse() # try longest suffixes first, in case they overlap
-    for length, suffix in suffixes:
-        if len(filename) > length and filename[-length:] == suffix:
-            return filename[:-length]
 
 def allmethods(cl):
     methods = {}
@@ -232,7 +243,7 @@ class HTMLRepr(Repr):
             # Backslashes are only literal in the string and are never
             # needed to make any special characters, so show a raw string.
             return 'r' + testrepr[0] + self.escape(test) + testrepr[0]
-        return re.sub(r'((\\[\\abfnrtv\'"]|\\x..|\\u....)+)',
+        return re.sub(r'((\\[\\abfnrtv\'"]|\\[0-9]..|\\x..|\\u....)+)',
                       r'<font color="#c040c0">\1</font>',
                       self.escape(testrepr))
 
@@ -275,11 +286,11 @@ TT { font-family: lucida console, lucida typewriter, courier }
 ><font color="%s" face="helvetica, arial">%s</font></td></tr></table>
     ''' % (bgcol, fgcol, title, fgcol, extras or '&nbsp;')
 
-    def section(self, title, fgcol, bgcol, contents, width=20,
+    def section(self, title, fgcol, bgcol, contents, width=10,
                 prelude='', marginalia=None, gap='&nbsp;&nbsp;'):
         """Format a section with a heading."""
         if marginalia is None:
-            marginalia = '&nbsp;' * width
+            marginalia = '<tt>' + '&nbsp;' * width + '</tt>'
         result = '''
 <p><table width="100%%" cellspacing=0 cellpadding=2 border=0>
 <tr bgcolor="%s">
@@ -295,7 +306,7 @@ TT { font-family: lucida console, lucida typewriter, courier }
             result = result + '''
 <tr><td bgcolor="%s">%s</td><td>%s</td>''' % (bgcol, marginalia, gap)
 
-        return result + '<td width="100%%">%s</td></tr></table>' % contents
+        return result + '\n<td width="100%%">%s</td></tr></table>' % contents
 
     def bigsection(self, title, *args):
         """Format a section with a big heading."""
@@ -445,15 +456,9 @@ TT { font-family: lucida console, lucida typewriter, courier }
 
         modules = inspect.getmembers(object, inspect.ismodule)
 
-        if 0 and hasattr(object, '__all__'): # disabled for now
-            visible = lambda key, all=object.__all__: key in all
-        else:
-            visible = lambda key: key[:1] != '_'
-
         classes, cdict = [], {}
         for key, value in inspect.getmembers(object, inspect.isclass):
-            if visible(key) and (
-                inspect.getmodule(value) or object) is object:
+            if (inspect.getmodule(value) or object) is object:
                 classes.append((key, value))
                 cdict[key] = cdict[value] = '#' + key
         for key, value in classes:
@@ -466,15 +471,13 @@ TT { font-family: lucida console, lucida typewriter, courier }
                             cdict[key] = cdict[base] = modname + '.html#' + key
         funcs, fdict = [], {}
         for key, value in inspect.getmembers(object, inspect.isroutine):
-            if visible(key) and (inspect.isbuiltin(value) or
-                                 inspect.getmodule(value) is object):
+            if inspect.isbuiltin(value) or inspect.getmodule(value) is object:
                 funcs.append((key, value))
                 fdict[key] = '#-' + key
                 if inspect.isfunction(value): fdict[value] = fdict[key]
         constants = []
         for key, value in inspect.getmembers(object, isconstant):
-            if visible(key):
-                constants.append((key, value))
+            constants.append((key, value))
 
         doc = self.markup(getdoc(object), self.preformat, fdict, cdict)
         doc = doc and '<tt>%s</tt>' % doc
@@ -484,14 +487,13 @@ TT { font-family: lucida console, lucida typewriter, courier }
             modpkgs = []
             modnames = []
             for file in os.listdir(object.__path__[0]):
-                if file[:1] != '_':
-                    path = os.path.join(object.__path__[0], file)
-                    modname = modulename(file)
-                    if modname and modname not in modnames:
-                        modpkgs.append((modname, name, 0, 0))
-                        modnames.append(modname)
-                    elif ispackage(path):
-                        modpkgs.append((file, name, 1, 0))
+                path = os.path.join(object.__path__[0], file)
+                modname = inspect.getmodulename(file)
+                if modname and modname not in modnames:
+                    modpkgs.append((modname, name, 0, 0))
+                    modnames.append(modname)
+                elif ispackage(path):
+                    modpkgs.append((file, name, 1, 0))
             modpkgs.sort()
             contents = self.multicolumn(modpkgs, self.modpkglink)
             result = result + self.bigsection(
@@ -563,8 +565,9 @@ TT { font-family: lucida console, lucida typewriter, courier }
             title = title + '(%s)' % join(parents, ', ')
         doc = self.markup(
             getdoc(object), self.preformat, funcs, classes, mdict)
-        doc = self.small(doc and '<tt>%s<br>&nbsp;</tt>' % doc or '<tt>&nbsp;</tt>')
-        return self.section(title, '#000000', '#ffc8d8', contents, 10, doc)
+        doc = self.small(doc and '<tt>%s<br>&nbsp;</tt>' % doc or
+                                 self.small('&nbsp;'))
+        return self.section(title, '#000000', '#ffc8d8', contents, 5, doc)
 
     def formatvalue(self, object):
         """Format an argument default value as text."""
@@ -625,8 +628,8 @@ TT { font-family: lucida console, lucida typewriter, courier }
         else:
             doc = self.markup(
                 getdoc(object), self.preformat, funcs, classes, methods)
-            doc = doc and '<tt>%s</tt>' % doc
-            return '<dl><dt>%s<dd>%s</dl>\n' % (decl, self.small(doc))
+            doc = doc and '<dd>' + self.small('<tt>%s</tt>' % doc)
+            return '<dl><dt>%s%s</dl>\n' % (decl, doc)
 
     def docother(self, object, name=None):
         """Produce HTML documentation for a data object."""
@@ -652,8 +655,8 @@ TT { font-family: lucida console, lucida typewriter, courier }
             if ispackage(path): found(file, 1)
         for file in files:
             path = os.path.join(dir, file)
-            if file[:1] != '_' and os.path.isfile(path):
-                modname = modulename(file)
+            if os.path.isfile(path):
+                modname = inspect.getmodulename(file)
                 if modname: found(modname, 0)
 
         modpkgs.sort()
@@ -736,23 +739,16 @@ class TextDoc(Doc):
     def docmodule(self, object, name=None):
         """Produce text documentation for a given module object."""
         name = object.__name__ # ignore the passed-in name
-        namesec = name
-        lines = split(strip(getdoc(object)), '\n')
-        if len(lines) == 1:
-            if lines[0]: namesec = namesec + ' - ' + lines[0]
-            lines = []
-        elif len(lines) >= 2 and not rstrip(lines[1]):
-            if lines[0]: namesec = namesec + ' - ' + lines[0]
-            lines = lines[2:]
-        result = self.section('NAME', namesec)
+        synop, desc = splitdoc(getdoc(object))
+        result = self.section('NAME', name + (synop and ' - ' + synop))
 
         try:
             file = inspect.getabsfile(object)
         except TypeError:
             file = '(built-in)'
         result = result + self.section('FILE', file)
-        if lines:
-            result = result + self.section('DESCRIPTION', join(lines, '\n'))
+        if desc:
+            result = result + self.section('DESCRIPTION', desc)
 
         classes = []
         for key, value in inspect.getmembers(object, inspect.isclass):
@@ -764,19 +760,17 @@ class TextDoc(Doc):
                 funcs.append((key, value))
         constants = []
         for key, value in inspect.getmembers(object, isconstant):
-            if key[:1] != '_':
-                constants.append((key, value))
+            constants.append((key, value))
 
         if hasattr(object, '__path__'):
             modpkgs = []
             for file in os.listdir(object.__path__[0]):
-                if file[:1] != '_':
-                    path = os.path.join(object.__path__[0], file)
-                    modname = modulename(file)
-                    if modname and modname not in modpkgs:
-                        modpkgs.append(modname)
-                    elif ispackage(path):
-                        modpkgs.append(file + ' (package)')
+                path = os.path.join(object.__path__[0], file)
+                modname = inspect.getmodulename(file)
+                if modname and modname not in modpkgs:
+                    modpkgs.append(modname)
+                elif ispackage(path):
+                    modpkgs.append(file + ' (package)')
             modpkgs.sort()
             result = result + self.section(
                 'PACKAGE CONTENTS', join(modpkgs, '\n'))
@@ -914,7 +908,10 @@ def getpager():
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         return plainpager
     if os.environ.has_key('PAGER'):
-        return lambda a: pipepager(a, os.environ['PAGER'])
+        if sys.platform == 'win32': # pipes completely broken in Windows
+            return lambda a: tempfilepager(a, os.environ['PAGER'])
+        else:
+            return lambda a: pipepager(a, os.environ['PAGER'])
     if sys.platform == 'win32':
         return lambda a: tempfilepager(a, 'more <')
     if hasattr(os, 'system') and os.system('less 2>/dev/null') == 0:
@@ -1072,7 +1069,7 @@ def locate(path):
                 continue
             else:
                 # Some other error occurred before executing the module.
-                raise DocImportError(filename, sys.exc_info())
+                raise ErrorDuringImport(filename, sys.exc_info())
         try:
             x = module
             for p in parts[n:]:
@@ -1118,7 +1115,7 @@ def writedoc(key):
         print value
     else:
         if object:
-            page = html.page('Python: ' + describe(object),
+            page = html.page(describe(object),
                              html.document(object, object.__name__))
             file = open(key + '.html', 'w')
             file.write(page)
@@ -1134,7 +1131,7 @@ def writedocs(dir, pkgpath='', done={}):
         if ispackage(path):
             writedocs(path, pkgpath + file + '.')
         elif os.path.isfile(path):
-            modname = modulename(path)
+            modname = inspect.getmodulename(path)
             if modname:
                 modname = pkgpath + modname
                 if not done.has_key(modname):
@@ -1227,7 +1224,7 @@ class ModuleScanner(Scanner):
             node = self.next()
             if not node: break
             path, package = node
-            modname = modulename(path)
+            modname = inspect.getmodulename(path)
             if os.path.isfile(path) and modname:
                 modname = package + (package and '.') + modname
                 if not seen.has_key(modname):
@@ -1242,7 +1239,10 @@ def apropos(key):
     def callback(path, modname, desc):
         if modname[-9:] == '.__init__':
             modname = modname[:-9] + ' (package)'
-        print modname, '-', desc or '(no description)'
+        print modname, desc and '- ' + desc
+    try: import warnings
+    except ImportError: pass
+    else: warnings.filterwarnings('ignore') # ignore problems during import
     ModuleScanner().run(key, callback)
 
 # --------------------------------------------------- web browser interface
@@ -1422,10 +1422,9 @@ def gui():
                 if sys.platform == 'win32':
                     os.system('start "%s"' % url)
                 elif sys.platform == 'mac':
-                    try:
-                        import ic
-                        ic.launchurl(url)
+                    try: import ic
                     except ImportError: pass
+                    else: ic.launchurl(url)
                 else:
                     rc = os.system('netscape -remote "openURL(%s)" &' % url)
                     if rc: os.system('netscape "%s" &' % url)
@@ -1583,11 +1582,12 @@ def cli():
     Start an HTTP server on the given port on the local machine.
 
 %s -g
-    Pop up a graphical interface for serving and finding documentation.
+    Pop up a graphical interface for finding and serving documentation.
 
 %s -w <name> ...
     Write out the HTML documentation for a module to a file in the current
-    directory.  If <name> contains a '%s', it is treated as a filename.
+    directory.  If <name> contains a '%s', it is treated as a filename; if
+    it names a directory, documentation is written for all the contents.
 """ % (cmd, os.sep, cmd, cmd, cmd, cmd, os.sep)
 
 if __name__ == '__main__': cli()
