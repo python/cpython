@@ -2638,11 +2638,34 @@ string to be applied to the right argument, and returns the string
 resulting from this formatting operation.
 
 One question remains, of course: how do you convert values to strings?
-Luckily, Python has a way to convert any value to a string: pass it to
-the \function{repr()} function, or just write the value between
-reverse quotes (\code{``}).  Some examples:
+Luckily, Python has ways to convert any value to a string: pass it to
+the \function{repr()}  or \function{str()} functions, or just write
+the value between reverse quotes (\code{``}, equivalent to
+\function{repr()}).
+
+The \function{str()} function is meant to return representations of
+values which are fairly human-readable, while \function{repr()} is
+meant to generate representations which can be read by the interpreter
+(or will force a \exception{SyntaxError} if there is not equivalent
+syntax).  For objects which don't have a particular representation for
+human consumption, \function{str()} will return the same value as
+\function{repr()}.  Many values, such as numbers or structures like
+lists and dictionaries, have the same representation using either
+function.  Strings and floating point numbers, in particular, have two
+distinct representations.
+
+Some examples:
 
 \begin{verbatim}
+>>> s = 'Hello, world.'
+>>> str(s)
+'Hello, world.'
+>>> `s`
+"'Hello, world.'"
+>>> str(0.1)
+'0.1'
+>>> `0.1`
+'0.10000000000000001'
 >>> x = 10 * 3.25
 >>> y = 200 * 200
 >>> s = 'The value of x is ' + `x` + ', and y is ' + `y` + '...'
