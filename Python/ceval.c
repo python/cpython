@@ -874,7 +874,7 @@ eval_code(co, globals, locals, owner, arg)
 				if (why == WHY_RETURN)
 					retval = POP();
 			}
-			else if (is_stringobject(v)) {
+			else if (is_stringobject(v) || is_classobject(v)) {
 				w = POP();
 				err_setval(v, w);
 				DECREF(w);
@@ -2357,13 +2357,14 @@ assign_subscript(w, key, v) /* w[key] = v */
 	typeobject *tp = w->ob_type;
 	sequence_methods *sq;
 	mapping_methods *mp;
-	int (*func)();
+	int (*func1)();
+	int (*func2)();
 	if ((mp = tp->tp_as_mapping) != NULL &&
-			(func = mp->mp_ass_subscript) != NULL) {
-		return (*func)(w, key, v);
+			(func1 = mp->mp_ass_subscript) != NULL) {
+		return (*func1)(w, key, v);
 	}
 	else if ((sq = tp->tp_as_sequence) != NULL &&
-			(func = sq->sq_ass_item) != NULL) {
+			(func2 = sq->sq_ass_item) != NULL) {
 		if (!is_intobject(key)) {
 			err_setstr(TypeError,
 			"sequence subscript must be integer (assign or del)");
@@ -2377,7 +2378,7 @@ assign_subscript(w, key, v) /* w[key] = v */
 					return -1;
 				i += len;
 			}
-			return (*func)(w, i, v);
+			return (*func2)(w, i, v);
 		}
 	}
 	else {
