@@ -44,13 +44,13 @@ API functions in detail.
 
 The Application Programmer's Interface to Python gives C and C++
 programmers access to the Python interpreter at a variety of levels.
-There are two fundamentally different reasons for using the Python/C 
-API.  (The API is equally usable from C++, but for brevity it is 
-generally referred to as the Python/C API.)  The first reason is to 
-write ``extension modules'' for specific purposes; these are C modules 
-that extend the Python interpreter.  This is probably the most common 
-use.  The second reason is to use Python as a component in a larger 
-application; this technique is generally referred to as ``embedding'' 
+The API is equally usable from C++, but for brevity it is generally
+referred to as the Python/C API.  There are two fundamentally
+different reasons for using the Python/C API.  The first reason is to
+write ``extension modules'' for specific purposes; these are C modules
+that extend the Python interpreter.  This is probably the most common
+use.  The second reason is to use Python as a component in a larger
+application; this technique is generally referred to as ``embedding''
 Python in an application.
 
 Writing an extension module is a relatively well-understood process, 
@@ -60,7 +60,7 @@ Python in other applications since its early existence, the process of
 embedding Python is less straightforward that writing an extension.  
 Python 1.5 introduces a number of new API functions as well as some 
 changes to the build process that make embedding much simpler.  
-This manual describes the 1.5 state of affair (as of Python 1.5a3).
+This manual describes the 1.5 state of affair.
 % XXX Eventually, take the historical notes out
 
 Many API functions are useful independent of whether you're embedding 
@@ -69,16 +69,36 @@ will need to provide a custom extension as well, so it's probably a
 good idea to become familiar with writing an extension before 
 attempting to embed Python in a real application.
 
+\section{Include Files}
+
+All function, type and macro definitions needed to use the Python/C
+API are included in your code by the following line:
+
+\code{\#include "Python.h"}
+
+This implies inclusion of the following standard header files:
+stdio.h, string.h, errno.h, and stdlib.h (if available).
+
+All user visible names defined by Python.h (except those defined by
+the included standard headers) have one of the prefixes \code{Py} or
+\code{_Py}.  Names beginning with \code{_Py} are for internal use
+only.  Structure member names do not have a reserved prefix.
+
+Important: user code should never define names that begin with
+\code{Py} or \code{_Py}.  This confuses the reader, and jeopardizes
+the portability of the user code to future Python versions, which may
+define additional names beginning with one of these prefixes.
+
 \section{Objects, Types and Reference Counts}
 
-Most Python/C API functions have one or more arguments as well as a 
-return value of type \code{PyObject *}.  This type is a pointer 
-(obviously!)  to an opaque data type representing an arbitrary Python 
-object.  Since all Python object types are treated the same way by the 
-Python language in most situations (e.g., assignments, scope rules, 
-and argument passing), it is only fitting that they should be 
+Most Python/C API functions have one or more arguments as well as a
+return value of type \code{PyObject *}.  This type is a pointer
+(obviously!)  to an opaque data type representing an arbitrary Python
+object.  Since all Python object types are treated the same way by the
+Python language in most situations (e.g., assignments, scope rules,
+and argument passing), it is only fitting that they should be
 represented by a single C type.  All Python objects live on the heap:
-you never declare an automatic or static variable of type 
+you never declare an automatic or static variable of type
 \code{PyObject}, only pointer variables of type \code{PyObject *} can 
 be declared.
 
@@ -92,7 +112,7 @@ iff the object pointed to by \code{a} is a Python list.
 
 \subsection{Reference Counts}
 
-The reference count is important only because today's computers have a 
+The reference count is important because today's computers have a 
 finite (and often severly limited) memory size; it counts how many 
 different places there are that have a reference to an object.  Such a 
 place could be another object, or a global (or static) C variable, or 
@@ -154,7 +174,7 @@ they are done with the result; this soon becomes second nature.
 
 The reference count behavior of functions in the Python/C API is best 
 expelained in terms of \emph{ownership of references}.  Note that we 
-talk of owning reference, never of owning objects; objects are always 
+talk of owning references, never of owning objects; objects are always 
 shared!  When a function owns a reference, it has to dispose of it 
 properly -- either by passing ownership on (usually to its caller) or 
 by calling \code{Py_DECREF()} or \code{Py_XDECREF()}.  When a function 
@@ -163,16 +183,17 @@ to receive a \emph{new} reference.  When to ownership is transferred,
 the caller is said to \emph{borrow} the reference.  Nothing needs to 
 be done for a borrowed reference.
 
-Conversely, when calling a function while passing it a reference to an 
+Conversely, when calling a function passes it a reference to an 
 object, there are two possibilities: the function \emph{steals} a 
 reference to the object, or it does not.  Few functions steal 
 references; the two notable exceptions are \code{PyList_SetItem()} and 
 \code{PyTuple_SetItem()}, which steal a reference to the item (but not to 
-the tuple or list into which the item it put!).  These functions were 
-designed to steal a reference because of a common idiom for 
-populating a tuple or list with newly created objects; e.g., the code 
-to create the tuple \code{(1, 2, "three")} could look like this 
-(forgetting about error handling for the moment):
+the tuple or list into which the item it put!).  These functions were
+designed to steal a reference because of a common idiom for populating
+a tuple or list with newly created objects; for example, the code to
+create the tuple \code{(1, 2, "three")} could look like this
+(forgetting about error handling for the moment; a better way to code
+this is shown below anyway):
 
 \begin{verbatim}
 PyObject *t;
@@ -203,10 +224,10 @@ x = PyString_FromString("three");
 PyObject_SetItem(l, 2, x); Py_DECREF(x);
 \end{verbatim}
 
-You might find it strange that the ``recommended'' approach takes 
-more code.  in practice, you will rarely use these ways of creating 
-and populating a tuple or list, however; there's a generic function,
-\code{Py_BuildValue()} that can create most common objects from C 
+You might find it strange that the ``recommended'' approach takes more
+code.  However, in practice, you will rarely use these ways of
+creating and populating a tuple or list.  There's a generic function,
+\code{Py_BuildValue()}, that can create most common objects from C 
 values, directed by a ``format string''.  For example, the above two 
 blocks of code could be replaced by the following (which also takes 
 care of the error checking!):
@@ -306,7 +327,7 @@ long sum_sequence(PyObject *sequence)
 \subsection{Types}
 
 There are few other data types that play a significant role in 
-the Python/C API; most are all simple C types such as \code{int}, 
+the Python/C API; most are simple C types such as \code{int}, 
 \code{long}, \code{double} and \code{char *}.  A few structure types 
 are used to describe static tables used to list the functions exported 
 by a module or the data attributes of a new object type.  These will 
@@ -325,7 +346,7 @@ All functions in the Python/C API can raise exceptions, unless an
 explicit claim is made otherwise in a function's documentation.  In 
 general, when a function encounters an error, it sets an exception, 
 discards any object references that it owns, and returns an 
-error indicator -- usually \code{NULL} or \code{-1}.  A few functions 
+error indicator -- usually \NULL{} or \code{-1}.  A few functions 
 return a Boolean true/false result, with false indicating an error.
 Very few functions return no explicit error indicator or have an 
 ambiguous return value, and require explicit testing for errors with 
@@ -336,13 +357,13 @@ equivalent to using global storage in an unthreaded application).  A
 thread can be on one of two states: an exception has occurred, or not.  
 The function \code{PyErr_Occurred()} can be used to check for this: it 
 returns a borrowed reference to the exception type object when an 
-exception has occurred, and \code{NULL} otherwise.  There are a number 
+exception has occurred, and \NULL{} otherwise.  There are a number 
 of functions to set the exception state: \code{PyErr_SetString()} is 
 the most common (though not the most general) function to set the 
 exception state, and \code{PyErr_Clear()} clears the exception state.
 
 The full exception state consists of three objects (all of which can 
-be \code{NULL} ): the exception type, the corresponding exception 
+be \NULL{} ): the exception type, the corresponding exception 
 value, and the traceback.  These have the same meanings as the Python 
 object \code{sys.exc_type}, \code{sys.exc_value}, 
 \code{sys.exc_traceback}; however, they are not the same: the Python 
@@ -376,37 +397,35 @@ A simple example of detecting exceptions and passing them on is shown
 in the \code{sum_sequence()} example above.  It so happens that that 
 example doesn't need to clean up any owned references when it detects 
 an error.  The following example function shows some error cleanup.  
-First we show the equivalent Python code (to remind you why you like 
-Python):
+First, to remind you why you like Python, we show the equivalent
+Python code:
 
 \begin{verbatim}
-def incr_item(seq, i):
+def incr_item(dict, key):
     try:
-        item = seq[i]
-    except IndexError:
+        item = dict[key]
+    except KeyError:
         item = 0
-    seq[i] = item + 1
+    return item + 1
 \end{verbatim}
 
 Here is the corresponding C code, in all its glory:
 
-% XXX Is it better to have fewer comments in the code?
-
 \begin{verbatim}
-int incr_item(PyObject *seq, int i)
+int incr_item(PyObject *dict, PyObject *key)
 {
     /* Objects all initialized to NULL for Py_XDECREF */
     PyObject *item = NULL, *const_one = NULL, *incremented_item = NULL;
     int rv = -1; /* Return value initialized to -1 (faulure) */
 
-    item = PySequence_GetItem(seq, i);
+    item = PyObject_GetItem(dict, key);
     if (item == NULL) {
-        /* Handle IndexError only: */
-        if (PyErr_Occurred() != PyExc_IndexError) goto error;
+        /* Handle keyError only: */
+        if (!PyErr_ExceptionMatches(PyExc_keyError)) goto error;
 
         /* Clear the error and use zero: */
         PyErr_Clear();
-        item = PyInt_FromLong(1L);
+        item = PyInt_FromLong(0L);
         if (item == NULL) goto error;
     }
 
@@ -416,7 +435,7 @@ int incr_item(PyObject *seq, int i)
     incremented_item = PyNumber_Add(item, const_one);
     if (incremented_item == NULL) goto error;
 
-    if (PyObject_SetItem(seq, i, incremented_item) < 0) goto error;
+    if (PyObject_SetItem(dict, key, incremented_item) < 0) goto error;
     rv = 0; /* Success */
     /* Continue with cleanup code */
 
@@ -433,24 +452,24 @@ int incr_item(PyObject *seq, int i)
 \end{verbatim}
 
 This example represents an endorsed use of the \code{goto} statement 
-in C!  It illustrates the use of \code{PyErr_Occurred()} and 
+in C!  It illustrates the use of \code{PyErr_ExceptionMatches()} and 
 \code{PyErr_Clear()} to handle specific exceptions, and the use of 
 \code{Py_XDECREF()} to dispose of owned references that may be 
-\code{NULL} (note the `X' in the name; \code{Py_DECREF()} would crash 
-when confronted with a \code{NULL} reference).  It is important that 
+\NULL{} (note the `X' in the name; \code{Py_DECREF()} would crash 
+when confronted with a \NULL{} reference).  It is important that 
 the variables used to hold owned references are initialized to 
-\code{NULL} for this to work; likewise, the proposed return value is 
-initialized to \code{-1} (failure) and only set to success  after 
+\NULL{} for this to work; likewise, the proposed return value is 
+initialized to \code{-1} (failure) and only set to success after
 the final call made is succesful.
 
 
 \section{Embedding Python}
 
-The one important task that only embedders of the Python interpreter 
-have to worry about is the initialization (and possibly the 
-finalization) of the Python interpreter.  Most functionality of the 
-interpreter can only be used after the interpreter has been 
-initialized.
+The one important task that only embedders (as opposed to extension
+writers) of the Python interpreter have to worry about is the
+initialization, and possibly the finalization, of the Python
+interpreter.  Most functionality of the interpreter can only be used
+after the interpreter has been initialized.
 
 The basic initialization function is \code{Py_Initialize()}.  This 
 initializes the table of loaded modules, and creates the fundamental 
@@ -476,189 +495,64 @@ path (the environment variable \code{\$PATH}).
 
 For instance, if the Python executable is found in
 \code{/usr/local/bin/python}, it will assume that the libraries are in
-\code{/usr/local/lib/python1.5}.  In fact, this also the ``fallback''
-location, used when no executable file named \code{python} is found
-along \code{\$PATH}.  The user can change this behavior by setting the
-environment variable \code{\$PYTHONHOME}, and can insert additional
-directories in front of the standard path by setting
-\code{\$PYTHONPATH}.
+\code{/usr/local/lib/python1.5}.  (In fact, this particular path is
+also the ``fallback'' location, used when no executable file named
+\code{python} is found along \code{\$PATH}.)  The user can override
+this behavior by setting the environment variable \code{\$PYTHONHOME},
+or insert additional directories in front of the standard path by
+setting \code{\$PYTHONPATH}.
 
 The embedding application can steer the search by calling 
 \code{Py_SetProgramName(\var{file})} \emph{before} calling 
 \code{Py_Initialize()}.  Note that \code{\$PYTHONHOME} still overrides 
 this and \code{\$PYTHONPATH} is still inserted in front of the 
-standard path.
+standard path.  An application that requires total control has to
+provide its own implementation of \code{Py_GetPath()},
+\code{Py_GetPrefix()}, \code{Py_GetExecPrefix()},
+\code{Py_GetProgramFullPath()} (all defined in
+\file{Modules/getpath.c}).
 
 Sometimes, it is desirable to ``uninitialize'' Python.  For instance, 
 the application may want to start over (make another call to 
 \code{Py_Initialize()}) or the application is simply done with its 
-use of Python and wants to free all memory allocated by Python.  This 
-can be accomplished by calling \code{Py_Finalize()}.
-% XXX More...
-
-\section{Embedding Python in Threaded Applications}
-
-
+use of Python and wants to free all memory allocated by Python.  This
+can be accomplished by calling \code{Py_Finalize()}.  The function
+\code{Py_IsInitialized()} returns true iff Python is currently in the
+initialized state.  More information about these functions is given in
+a later chapter.
 
 
+\chapter{Basic Utilities}
 
+XXX These utilities should be moved to some other section...
 
-
-
-
-
-\chapter{Old Introduction}
-
-(XXX This is the old introduction, mostly by Jim Fulton -- should be
-rewritten.)
-
-From the viewpoint of of C access to Python services, we have:
-
-\begin{enumerate}
-
-\item "Very high level layer": two or three functions that let you
-exec or eval arbitrary Python code given as a string in a module whose
-name is given, passing C values in and getting C values out using
-mkvalue/getargs style format strings.  This does not require the user
-to declare any variables of type \code{PyObject *}.  This should be
-enough to write a simple application that gets Python code from the
-user, execs it, and returns the output or errors.
-
-\item "Abstract objects layer": which is the subject of this chapter.
-It has many functions operating on objects, and lets you do many
-things from C that you can also write in Python, without going through
-the Python parser.
-
-\item "Concrete objects layer": This is the public type-dependent
-interface provided by the standard built-in types, such as floats,
-strings, and lists.  This interface exists and is currently documented
-by the collection of include files provides with the Python
-distributions.
-
-\end{enumerate}
-
-From the point of view of Python accessing services provided by C
-modules:
-
-\begin{enumerate}
-
-\item[4.] "Python module interface": this interface consist of the basic
-routines used to define modules and their members.  Most of the
-current extensions-writing guide deals with this interface.
-
-\item[5.] "Built-in object interface": this is the interface that a new
-built-in type must provide and the mechanisms and rules that a
-developer of a new built-in type must use and follow.
-
-\end{enumerate}
-
-The Python C API provides four groups of operations on objects,
-corresponding to the same operations in the Python language: object,
-numeric, sequence, and mapping.  Each protocol consists of a
-collection of related operations.  If an operation that is not
-provided by a particular type is invoked, then the standard exception
-\code{TypeError} is raised with a operation name as an argument.
-
-In addition, for convenience this interface defines a set of
-constructors for building objects of built-in types.  This is needed
-so new objects can be returned from C functions that otherwise treat
-objects generically.
-
-\section{Reference Counting}
-
-For most of the functions in the Python/C API, if a function retains a
-reference to a Python object passed as an argument, then the function
-will increase the reference count of the object.  It is unnecessary
-for the caller to increase the reference count of an argument in
-anticipation of the object's retention.
-
-Usually, Python objects returned from functions should be treated as
-new objects.  Functions that return objects assume that the caller
-will retain a reference and the reference count of the object has
-already been incremented to account for this fact.  A caller that does
-not retain a reference to an object that is returned from a function
-must decrement the reference count of the object (using
-\code{Py_DECREF()}) to prevent memory leaks.
-
-Exceptions to these rules will be noted with the individual functions.
-
-\section{Include Files}
-
-All function, type and macro definitions needed to use the Python/C
-API are included in your code by the following line:
-
-\code{\#include "Python.h"}
-
-This implies inclusion of the following standard header files:
-stdio.h, string.h, errno.h, and stdlib.h (if available).
-
-All user visible names defined by Python.h (except those defined by
-the included standard headers) have one of the prefixes \code{Py} or
-\code{_Py}.  Names beginning with \code{_Py} are for internal use
-only.
-
-
-\chapter{Initialization and Shutdown of an Embedded Python Interpreter}
-
-When embedding the Python interpreter in a C or C++ program, the
-interpreter must be initialized.
-
-\begin{cfuncdesc}{void}{PyInitialize}{}
-This function initializes the interpreter.  It must be called before
-any interaction with the interpreter takes place.  If it is called
-more than once, the second and further calls have no effect.
-
-The function performs the following tasks: create an environment in
-which modules can be imported and Python code can be executed;
-initialize the \code{__builtin__} module; initialize the \code{sys}
-module; initialize \code{sys.path}; initialize signal handling; and
-create the empty \code{__main__} module.
-
-In the current system, there is no way to undo all these
-initializations or to create additional interpreter environments.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{int}{Py_AtExit}{void (*func) ()}
-Register a cleanup function to be called when Python exits.  The
-cleanup function will be called with no arguments and should return no
-value.  At most 32 cleanup functions can be registered.  When the
-registration is successful, \code{Py_AtExit} returns 0; on failure, it
-returns -1.  Each cleanup function will be called t most once.  The
-cleanup function registered last is called first.
+\begin{cfuncdesc}{void}{Py_FatalError}{char *message}
+Print a fatal error message and kill the process.  No cleanup is
+performed.  This function should only be invoked when a condition is
+detected that would make it dangerous to continue using the Python
+interpreter; e.g., when the object administration appears to be
+corrupted.  On Unix, the standard C library function \code{abort()} is 
+called which will attempt to produce a \file{core} file.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_Exit}{int status}
-Exit the current process.  This calls \code{Py_Cleanup()} (see next
-item) and performs additional cleanup (under some circumstances it
-will attempt to delete all modules), and then calls the standard C
-library function \code{exit(status)}.
+Exit the current process.  This calls \code{Py_Finalize()} and then
+calls the standard C library function \code{exit(0)}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void}{Py_Cleanup}{}
-Perform some of the cleanup that \code{Py_Exit} performs, but don't
-exit the process.  In particular, this invokes the user's
-\code{sys.exitfunc} function (if defined at all), and it invokes the
-cleanup functions registered with \code{Py_AtExit()}, in reverse order
-of their registration.
+\begin{cfuncdesc}{int}{Py_AtExit}{void (*func) ()}
+Register a cleanup function to be called by \code{Py_Finalize()}.  The
+cleanup function will be called with no arguments and should return no
+value.  At most 32 cleanup functions can be registered.  When the
+registration is successful, \code{Py_AtExit} returns 0; on failure, it
+returns -1.  The cleanup function registered last is called first.
+Each cleanup function will be called at most once.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void}{Py_FatalError}{char *message}
-Print a fatal error message and die.  No cleanup is performed.  This
-function should only be invoked when a condition is detected that
-would make it dangerous to continue using the Python interpreter;
-e.g., when the object administration appears to be corrupted.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{void}{PyBuiltin_Init}{}
-Initialize the \code{__builtin__} module.  For internal use only.
-\end{cfuncdesc}
-
-XXX Other init functions: PyOS_InitInterrupts,
-PyMarshal_Init, PySys_Init.
 
 \chapter{Reference Counting}
 
-The functions in this chapter are used for managing reference counts
+The macros in this section are used for managing reference counts
 of Python objects.
 
 \begin{cfuncdesc}{void}{Py_INCREF}{PyObject *o}
@@ -669,7 +563,7 @@ not be \NULL{}; if you aren't sure that it isn't \NULL{}, use
 
 \begin{cfuncdesc}{void}{Py_XINCREF}{PyObject *o}
 Increment the reference count for object \code{o}.  The object may be
-\NULL{}, in which case the function has no effect.
+\NULL{}, in which case the macro has no effect.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_DECREF}{PyObject *o}
@@ -692,14 +586,18 @@ temporary variable.
 
 \begin{cfuncdesc}{void}{Py_XDECREF}{PyObject *o}
 Decrement the reference count for object \code{o}.The object may be
-\NULL{}, in which case the function has no effect; otherwise the
+\NULL{}, in which case the macro has no effect; otherwise the
 effect is the same as for \code{Py_DECREF()}, and the same warning
 applies.
 \end{cfuncdesc}
 
-The following functions are only for internal use:
+The following functions or macros are only for internal use:
 \code{_Py_Dealloc}, \code{_Py_ForgetReference}, \code{_Py_NewReference},
 as well as the global variable \code{_Py_RefTotal}.
+
+XXX Should mention Py_Malloc(), Py_Realloc(), Py_Free(),
+PyMem_Malloc(), PyMem_Realloc(), PyMem_Free(), PyMem_NEW(),
+PyMem_RESIZE(), PyMem_DEL(), PyMem_XDEL().
 
 
 \chapter{Exception Handling}
@@ -875,7 +773,7 @@ PyObject *base, PyObject *dict}
 This utility function creates and returns a new exception object.  The
 \var{name} argument must be the name of the new exception, a C string
 of the form \code{module.class}.  The \var{base} and \var{dict}
-arguments are normally \code{NULL}.  Normally, this creates a class
+arguments are normally \NULL{}.  Normally, this creates a class
 object derived from the root for all exceptions, the built-in name
 \code{Exception} (accessible in C as \code{PyExc_Exception}).  In this
 case the \code{__module__} attribute of the new class is set to the
@@ -883,7 +781,7 @@ first part (up to the last dot) of the \var{name} argument, and the
 class name is set to the last part (after the last dot).  When the
 user has specified the \code{-X} command line option to use string
 exceptions, for backward compatibility, or when the \var{base}
-argument is not a class object (and not \code{NULL}), a string object
+argument is not a class object (and not \NULL{}), a string object
 created from the entire \var{name} argument is returned.  The
 \var{base} argument can be used to specify an alternate base class.
 The \var{dict} argument can be used to specify a dictionary of class
@@ -952,7 +850,7 @@ the standard C library function \code{time()}.
 \begin{cfuncdesc}{PyObject *}{PyImport_ImportModule}{char *name}
 This is a simplified interface to \code{PyImport_ImportModuleEx}
 below, leaving the \var{globals} and \var{locals} arguments set to
-\code{NULL}.  When the \var{name} argument contains a dot (i.e., when
+\NULL{}.  When the \var{name} argument contains a dot (i.e., when
 it specifies a submodule of a package), the \var{fromlist} argument is
 set to the list \code{['*']} so that the return value is the named
 module rather than the top-level package containing it as would
@@ -960,7 +858,7 @@ otherwise be the case.  (Unfortunately, this has an additional side
 effect when \var{name} in fact specifies a subpackage instead of a
 submodule: the submodules specified in the package's \code{__all__}
 variable are loaded.)  Return a new reference to the imported module,
-or \code{NULL} with an exception set on failure (the module may still
+or \NULL{} with an exception set on failure (the module may still
 be created in this case).
 \end{cfuncdesc}
 
@@ -971,7 +869,7 @@ Python function \code{__import()__}, as the standard
 \code{__import__()} function calls this function directly.
 
 The return value is a new reference to the imported module or
-top-level package, or \code{NULL} with an exception set on failure
+top-level package, or \NULL{} with an exception set on failure
 (the module may still be created in this case).  Like for
 \code{__import__()}, the return value when a submodule of a package
 was requested is normally the top-level package, unless a non-empty
@@ -990,7 +888,7 @@ current environment, e.g. by \code{rexec} or \code{ihooks}.
 Reload a module.  This is best described by referring to the built-in
 Python function \code{reload()}, as the standard \code{reload()}
 function calls this function directly.  Return a new reference to the
-reloaded module, or \code{NULL} with an exception set on failure (the
+reloaded module, or \NULL{} with an exception set on failure (the
 module still exists in this case).
 \end{cfuncdesc}
 
@@ -1000,7 +898,7 @@ Return the module object corresponding to a module name.  The
 check the modules dictionary if there's one there, and if not, create
 a new one and insert in in the modules dictionary.  Because the former
 action is most common, this does not return a new reference, and you
-do not own the returned reference.  Return \code{NULL} with an
+do not own the returned reference.  Return \NULL{} with an
 exception set on failure.
 \end{cfuncdesc}
 
@@ -1008,7 +906,7 @@ exception set on failure.
 Given a module name (possibly of the form \code{package.module}) and a
 code object read from a Python bytecode file or obtained from the
 built-in function \code{compile()}, load the module.  Return a new
-reference to the module object, or \code{NULL} with an exception set
+reference to the module object, or \NULL{} with an exception set
 if an error occurred (the module may still be created in this case).
 (This function would reload the module if it was already imported.)
 \end{cfuncdesc}
@@ -1069,7 +967,7 @@ struct _frozen {
 
 \begin{cvardesc}{struct _frozen *}{PyImport_FrozenModules}
 This pointer is initialized to point to an array of \code{struct
-_frozen} records, terminated by one whose members are all \code{NULL}
+_frozen} records, terminated by one whose members are all \NULL{}
 or zero.  When a frozen module is imported, it is searched in this
 table.  Third party code could play tricks with this to provide a
 dynamically created collection of frozen modules.
@@ -1798,7 +1696,7 @@ The return value points to the first thread state created in the new
 sub-interpreter.  This thread state is made the current thread state.  
 Note that no actual thread is created; see the discussion of thread 
 states below.  If creation of the new interpreter is unsuccessful, 
-\code{NULL} is returned; no exception is set since the exception state 
+\NULL{} is returned; no exception is set since the exception state 
 is stored in the current thread state and there may not be a current 
 thread state.  (Like all other Python/C API functions, the global 
 interpreter lock must be held before calling this function and is 
@@ -1839,7 +1737,7 @@ a hard-to-fix bug that will be addressed in a future release.)
 Destroy the (sub-)interpreter represented by the given thread state.  
 The given thread state must be the current thread state.  See the 
 discussion of thread states below.  When the call returns, the current 
-thread state is \code{NULL}.  All thread states associated with this 
+thread state is \NULL{}.  All thread states associated with this 
 interpreted are destroyed.  (The global interpreter lock must be held 
 before calling this function and is still held when it returns.)  
 \code{Py_Finalize()} will destroy all sub-interpreters that haven't 
@@ -2205,7 +2103,7 @@ compile time.
 \begin{cfuncdesc}{void}{PyEval_AcquireThread}{PyThreadState *tstate}
 \strong{(NEW in 1.5a3!)}
 Acquire the global interpreter lock and then set the current thread
-state to \var{tstate}, which should not be \code{NULL}.  The lock must
+state to \var{tstate}, which should not be \NULL{}.  The lock must
 have been created earlier.  If this thread already has the lock,
 deadlock ensues.  This function is not available when thread support
 is disabled at
@@ -2214,10 +2112,10 @@ compile time.
 
 \begin{cfuncdesc}{void}{PyEval_ReleaseThread}{PyThreadState *tstate}
 \strong{(NEW in 1.5a3!)}
-Reset the current thread state to \code{NULL} and release the global
+Reset the current thread state to \NULL{} and release the global
 interpreter lock.  The lock must have been created earlier and must be
 held by the current thread.  The \var{tstate} argument, which must not
-be \code{NULL}, is only used to check that it represents the current
+be \NULL{}, is only used to check that it represents the current
 thread state -- if it isn't, a fatal error is reported.  This function
 is not available when thread support is disabled at
 compile time.
@@ -2226,8 +2124,8 @@ compile time.
 \begin{cfuncdesc}{PyThreadState *}{PyEval_SaveThread}{}
 \strong{(Different return type in 1.5a3!)}
 Release the interpreter lock (if it has been created and thread
-support is enabled) and reset the thread state to \code{NULL},
-returning the previous thread state (which is not \code{NULL}).  If
+support is enabled) and reset the thread state to \NULL{},
+returning the previous thread state (which is not \NULL{}).  If
 the lock has been created, the current thread must have acquired it.
 (This function is available even when thread support is disabled at
 compile time.)
@@ -2237,7 +2135,7 @@ compile time.)
 \strong{(Different argument type in 1.5a3!)}
 Acquire the interpreter lock (if it has been created and thread
 support is enabled) and set the thread state to \var{tstate}, which
-must not be \code{NULL}.  If the lock has been created, the current
+must not be \NULL{}.  If the lock has been created, the current
 thread must not have acquired it, otherwise deadlock ensues.  (This
 function is available even when thread support is disabled at compile
 time.)
@@ -2314,13 +2212,13 @@ call to \code{PyThreadState_Clear()}.
 
 \begin{cfuncdesc}{PyThreadState *}{PyThreadState_Get}{}
 Return the current thread state.  The interpreter lock must be held.
-When the current thread state is \code{NULL}, this issues a fatal
-error (so that the caller needn't check for \code{NULL}.
+When the current thread state is \NULL{}, this issues a fatal
+error (so that the caller needn't check for \NULL{}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyThreadState *}{PyThreadState_Swap}{PyThreadState *tstate}
 Swap the current thread state with the thread state given by the
-argument \var{tstate}, which may be \code{NULL}.  The interpreter lock
+argument \var{tstate}, which may be \NULL{}.  The interpreter lock
 must be held.
 \end{cfuncdesc}
 
