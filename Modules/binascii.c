@@ -227,8 +227,11 @@ binascii_a2b_uu(self, args)
 			*/
 			this_ch = 0;
 	        } else {
-			/* Check the character for legality */
-			if ( this_ch < ' ' || this_ch > (' ' + 63)) {
+			/* Check the character for legality
+			** The 64 in stead of the expected 63 is because there are a few
+			** uuencodes out there that use '@' as zero in stead of space.
+			*/
+			if ( this_ch < ' ' || this_ch > (' ' + 64)) {
 				PyErr_SetString(Error, "Illegal char");
 				Py_DECREF(rv);
 				return NULL;
