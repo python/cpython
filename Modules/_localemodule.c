@@ -482,19 +482,36 @@ struct langinfo_constant{
     LANGINFO(AM_STR),
     LANGINFO(PM_STR),
 
-    /* The following constants are available only with XPG4. AIX 3.2. only has
-       CODESET. */
+    /* The following constants are available only with XPG4, but...
+       AIX 3.2. only has CODESET.
+       OpenBSD doesn't have CODESET but has T_FMT_AMPM, and doesn't have
+       a few of the others.
+       Solution: ifdef-test them all. */
 #ifdef CODESET
     LANGINFO(CODESET),
 #endif
 #ifdef T_FMT_AMPM
     LANGINFO(T_FMT_AMPM),
+#endif
+#ifdef ERA
     LANGINFO(ERA),
+#endif
+#ifdef ERA_D_FMT
     LANGINFO(ERA_D_FMT),
+#endif
+#ifdef ERA_D_T_FMT
     LANGINFO(ERA_D_T_FMT),
+#endif
+#ifdef ERA_T_FMT
     LANGINFO(ERA_T_FMT),
+#endif
+#ifdef ALT_DIGITS
     LANGINFO(ALT_DIGITS),
+#endif
+#ifdef YESEXPR
     LANGINFO(YESEXPR),
+#endif
+#ifdef NOEXPR
     LANGINFO(NOEXPR),
 #endif
 #ifdef _DATE_FMT
