@@ -50,7 +50,7 @@ item: Set Variable
 end
 item: End Block
 end
-item: Check Configuration
+remarked item: Check Configuration
   Message=Sorry, but we can not install Python on your system unless you have Administrator Privileges.
   Message=
   Message=Please log on as an Administrator, and start the installation again.
@@ -981,6 +981,12 @@ item: Edit Registry
   Key=Python.CompiledFile\DefaultIcon
   New Value=%MAINDIR%\pyc.ico
 end
+item: Remark
+  Text=Write to HKLM for admin, else HKCU.  Keep these blocks otherwise identical!
+end
+item: Check Configuration
+  Flags=10111111
+end
 item: Edit Registry
   Key=Software\Python\PythonCore\CurrentVersion
   Root=130
@@ -1009,6 +1015,45 @@ item: Edit Registry
   New Value=%MAINDIR%\Python.exe
   Root=2
 end
+item: Else Statement
+end
+item: Display Message
+  Title=Doing non-admin install
+  Text=The current login does not have Administrator Privileges on this machine.  Python will install its registry information into the per-user area only for the current login, instead of into the per-machine area for every account on this machine.  Some advanced uses of Python may not work as a result (for example, running a Python script as a service).
+  Text=
+  Text=If this is not what you want, please log on as an Administrator, and start the installation again.
+  Flags=00001000
+end
+item: Edit Registry
+  Key=Software\Python\PythonCore\CurrentVersion
+  Root=129
+end
+item: Edit Registry
+  Key=Software\Python\PythonCore\%PY_VERSION%\InstallPath
+  New Value=%MAINDIR%
+  Root=1
+end
+item: Edit Registry
+  Key=Software\Python\PythonCore\%PY_VERSION%\InstallPath\InstallGroup
+  New Value=%GROUP%
+  Root=1
+end
+item: Edit Registry
+  Key=Software\Python\PythonCore\%PY_VERSION%\PythonPath
+  New Value=%MAINDIR%\Lib\plat-win;%MAINDIR%\Lib;%MAINDIR%\DLLs;%MAINDIR%\Lib\lib-tk
+  Root=1
+end
+item: Edit Registry
+  Key=Software\Python\PythonCore\%PY_VERSION%\Modules
+  Root=1
+end
+item: Edit Registry
+  Key=Software\Microsoft\Windows\CurrentVersion\App Paths\Python.exe
+  New Value=%MAINDIR%\Python.exe
+  Root=1
+end
+item: End Block
+end
 item: End Block
 end
 item: If/While Statement
@@ -1016,10 +1061,25 @@ item: If/While Statement
   Value=B
   Flags=00001010
 end
+item: Remark
+  Text=Write to HKLM for admin, else HKCU.  Keep these blocks otherwise identical!
+end
+item: Check Configuration
+  Flags=10111111
+end
 item: Edit Registry
   Key=Software\Python\PythonCore\%PY_VERSION%\Help\Main Python Documentation
   New Value=%MAINDIR%\Doc\index.html
   Root=2
+end
+item: Else Statement
+end
+item: Edit Registry
+  Key=Software\Python\PythonCore\%PY_VERSION%\Help\Main Python Documentation
+  New Value=%MAINDIR%\Doc\index.html
+  Root=1
+end
+item: End Block
 end
 item: End Block
 end
