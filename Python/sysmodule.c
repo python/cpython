@@ -1025,18 +1025,11 @@ mywrite(char *name, FILE *fp, const char *format, va_list va)
 		char buffer[1001];
 		const int written = PyOS_vsnprintf(buffer, sizeof(buffer),
 						   format, va);
-		const int trouble = written < 0 || written >= sizeof(buffer);
-		if (trouble) {
-			/* Ensure there's a trailing null byte -- MS
-			   vsnprintf fills the buffer to the very end
-			   if it's not big enough. */
-			buffer[sizeof(buffer) - 1] = '\0';
-		}
 		if (PyFile_WriteString(buffer, file) != 0) {
 			PyErr_Clear();
 			fputs(buffer, fp);
 		}
-		if (trouble) {
+		if (written < 0 || written >= sizeof(buffer)) {
 			const char *truncated = "... truncated";
 			if (PyFile_WriteString(truncated, file) != 0) {
 				PyErr_Clear();

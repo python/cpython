@@ -123,16 +123,11 @@ extern DL_IMPORT(PyObject *) PyErr_ProgramText(char *, int);
 # define vsnprintf _vsnprintf
 #endif
 
-#ifndef HAVE_SNPRINTF
 #include <stdarg.h>
 extern DL_IMPORT(int) PyOS_snprintf(char *str, size_t size, const char  *format, ...)
 			__attribute__((format(printf, 3, 4)));
 extern DL_IMPORT(int) PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va)
 			__attribute__((format(printf, 3, 0)));
-#else
-# define PyOS_vsnprintf	vsnprintf
-# define PyOS_snprintf	snprintf
-#endif
 
 #ifdef __cplusplus
 }

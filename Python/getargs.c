@@ -231,7 +231,7 @@ seterror(int iarg, char *msg, int *levels, char *fname, char *message)
 			p += strlen(p);
 		}
 		if (iarg != 0) {
-			PyOS_snprintf(p, sizeof(buf) - (buf - p),
+			PyOS_snprintf(p, sizeof(buf) - (p - buf),
 				      "argument %d", iarg);
 			i = 0;
 			p += strlen(p);
@@ -243,10 +243,10 @@ seterror(int iarg, char *msg, int *levels, char *fname, char *message)
 			}
 		}
 		else {
-			PyOS_snprintf(p, sizeof(buf) - (buf - p), "argument");
+			PyOS_snprintf(p, sizeof(buf) - (p - buf), "argument");
 			p += strlen(p);
 		}
-		PyOS_snprintf(p, sizeof(buf) - (buf - p), " %.256s", msg);
+		PyOS_snprintf(p, sizeof(buf) - (p - buf), " %.256s", msg);
 		message = buf;
 	}
 	PyErr_SetString(PyExc_TypeError, message);
