@@ -248,6 +248,13 @@ class AbstractPickleTests(unittest.TestCase):
         b = self.loads(s)
         self.assertEqual(a.__class__, b.__class__)
 
+    def test_structseq(self):
+        import time
+        t = time.localtime()
+        s = self.dumps(t)
+        u = self.loads(s)
+        self.assertEqual(t, u)        
+
 class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
