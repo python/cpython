@@ -43,8 +43,26 @@ class EditorWindow:
     from MultiStatusBar import MultiStatusBar
 
     vars = {}
+    help_url = None
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
+        if EditorWindow.help_url is None:
+            if sys.platform.count('linux'):
+                # look for html docs in a couple of standard places
+                pyver = 'python-docs-' + '%s.%s.%s' % sys.version_info[:3]
+                if os.path.isdir('/var/www/html/python/'):  # "python2" rpm
+                    dochome = '/var/www/html/python/index.html'
+                else:
+                    basepath = '/usr/share/doc/'  # standard location
+                    dochome = os.path.join(basepath, pyver,
+                                           'Doc', 'index.html')
+            else:
+                dochome =  os.path.join(sys.prefix, 'Doc', 'index.html')
+            dochome = os.path.normpath(dochome)
+            if os.path.isfile(dochome):
+                EditorWindow.help_url = dochome
+            else:
+                EditorWindow.help_url = "http://www.python.org/doc/current"
         currentTheme=idleConf.CurrentTheme()
         self.flist = flist
         root = root or flist.root
@@ -285,28 +303,20 @@ class EditorWindow:
         fn=os.path.join(os.path.abspath(os.path.dirname(__file__)),'help.txt')
         textView.TextViewer(self.top,'Help',fn)
 
-    help_url = "http://www.python.org/doc/current/"
-    if sys.platform[:3] == "win":
-        fn = os.path.dirname(__file__)
-        fn = os.path.join(fn, os.pardir, os.pardir, "pythlp.chm")
-        fn = os.path.normpath(fn)
-        if os.path.isfile(fn):
-            help_url = fn
-        else:
-            fn = os.path.dirname(__file__)
-            fn = os.path.join(fn, os.pardir, os.pardir, "Doc", "index.html")
-            fn = os.path.normpath(fn)
-            if os.path.isfile(fn):
-                help_url = fn
-        del fn
-        def python_docs(self, event=None):
+    def python_docs(self, event=None):
+        if sys.platform.count('win') or sys.platform.count('nt'):
             os.startfile(self.help_url)
-    else:
-        def python_docs(self, event=None):
-            self.display_docs(self.help_url)
+            return "break"
+        else:
+            webbrowser.open(self.help_url)
+            return "break"
 
     def display_docs(self, url):
-        webbrowser.open(url)
+        url = os.path.normpath(url)
+        if sys.platform.count('win') or sys.platform.count('nt'):
+            os.startfile(url)
+        else:
+            webbrowser.open(url)
 
     def cut(self,event):
         self.text.event_generate("<<Cut>>")
