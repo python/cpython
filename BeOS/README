@@ -44,7 +44,7 @@ Python 1.5.2 and later will compile "out of the box" on BeOS), try this:
    AR=$(pwd)/BeOS/ar-fake RANLIB=: ./configure --verbose \
    --prefix=/boot/home/config --with-thread
 
-   If you're on a PowerPC system, add this anywhere in config.h:
+   When configure is done, add this anywhere in config.h:
 
 #ifndef DL_EXPORT
 #  define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
@@ -68,14 +68,20 @@ Python 1.5.2 and later will compile "out of the box" on BeOS), try this:
    part of the Python shared library, be sure to uncomment the #*shared*
    line.
 
+   I've tried the following modules:
+
+   regex pcre posix signal readline array cmath math strop struct time
+   operator _locale fcntl pwd grp select _socket errno crypt termios
+   audioop imageop rgbimg md5 timing rotor syslog curses new gdbm soundex
+   binascii parser cStringIO cPickle zlib
+
 5) Make sure Modules/Makefile.pre has REALLIBRARY set to:
 
    REALLIBRARY=../libpython$(VERSION).so
 
 6) Make:
 
-   make AR=$(pwd)/BeOS/ar-fake RANLIB=: OPT=-DUSE_DL_EXPORT \
-   CCSHARED=-UUSE_DL_EXPORT MACHDEP=beos
+   make OPT=-DUSE_DL_EXPORT CCSHARED=-UUSE_DL_EXPORT MACHDEP=beos
 
    On PowerPC systems, you'll see lots of warnings about duplicate
    symbols when things get linked; don't worry about this, it's
@@ -83,8 +89,7 @@ Python 1.5.2 and later will compile "out of the box" on BeOS), try this:
 
 7) Test:
 
-   make AR=$(pwd)/BeOS/ar-fake RANLIB=: OPT=-DUSE_DL_EXPORT \
-   CCSHARED=-UUSE_DL_EXPORT test
+   make OPT=-DUSE_DL_EXPORT CCSHARED=-UUSE_DL_EXPORT test
 
    Expect the following errors:
 
@@ -100,8 +105,7 @@ Python 1.5.2 and later will compile "out of the box" on BeOS), try this:
 
 8) Install:
 
-   make AR=$(pwd)/BeOS/ar-fake RANLIB=: OPT=-DUSE_DL_EXPORT \
-   CCSHARED=-UUSE_DL_EXPORT install
+   make OPT=-DUSE_DL_EXPORT CCSHARED=-UUSE_DL_EXPORT install
 
    This will fail trying to copy libpython1.5.a; at that point in the
    install, everything you "normally" need is installed (all the Python
@@ -111,4 +115,4 @@ Python 1.5.2 and later will compile "out of the box" on BeOS), try this:
 9) Enjoy!
 
 - Chris Herborth (chrish@qnx.com)
-  December 18, 1998
+  December 22, 1998
