@@ -56,19 +56,21 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <tcl.h>
 #include <tk.h>
 
+#if TK_MAJOR_VERSION < 4
+#error "Tk 3.x is not supported"
+#endif
+
+#define TKMAJORMINOR (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION)
+
 extern char *Py_GetProgramName ();
 
-/* Internal declarations from tkInt.h.  */
-#if (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION) >= 4001
+#if TKMAJORMINOR >= 4001
 extern int Tk_GetNumMainWindows();
 #else
+/* Internal declarations from tkInt.h.  */
 extern int tk_NumMainWindows;
 #define Tk_GetNumMainWindows() (tk_NumMainWindows)
 #define NEED_TKCREATEMAINWINDOW 1
-#endif
-
-#if TK_MAJOR_VERSION < 4
-#error "Tk 3.x is not supported"
 #endif
 
 #ifdef macintosh
@@ -1018,8 +1020,10 @@ Tkapp_CreateFileHandler (self, args)
 	PyObject *file, *func, *data;
 	PyObject *idkey;
 	int mask, id;
-#if (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION) >= 4001
+#if TKMAJORMINOR < 8000
+#if TKMAJORMINOR >= 4001
 	Tcl_File tfile;
+#endif
 #endif
 
 	if (!Tkapp_ClientDataDict) {
@@ -1049,18 +1053,22 @@ Tkapp_CreateFileHandler (self, args)
 	}
 	Py_DECREF(idkey);
 
-#if (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION) >= 4001
+#if TKMAJORMINOR < 8000
+#if TKMAJORMINOR >= 4001
 #ifdef MS_WINDOWS
 	/* We assume this is a socket... */
 	tfile = Tcl_GetFile((ClientData)id, TCL_WIN_SOCKET);
-#else
+#else /* !MS_WINDOWS */
 	tfile = Tcl_GetFile((ClientData)id, TCL_UNIX_FD);
-#endif
+#endif /* !MS_WINDOWS */
 	/* Ought to check for null Tcl_File object... */
 	Tcl_CreateFileHandler(tfile, mask, FileHandler, (ClientData) data);
-#else
+#else /* ! >= 4001 */
 	Tk_CreateFileHandler(id, mask, FileHandler, (ClientData) data);
-#endif
+#endif /* ! >= 4001 */
+#else /* ! < 8000 */
+	Tcl_CreateFileHandler(id, mask, FileHandler, (ClientData) data);
+#endif  /* < 8000 */
 	/* XXX fileHandlerDict */
 	Py_INCREF (Py_None);
 	return Py_None;
@@ -1076,8 +1084,10 @@ Tkapp_DeleteFileHandler (self, args)
 	PyObject *idkey;
 	PyObject *data;
 	int id;
-#if (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION) >= 4001
+#if TKMAJORMINOR < 8000
+#if TKMAJORMINOR >= 4001
 	Tcl_File tfile;
+#endif
 #endif
   
 	if (!PyArg_Parse(args, "O", &file))
@@ -1097,7 +1107,8 @@ Tkapp_DeleteFileHandler (self, args)
 	PyDict_DelItem(Tkapp_ClientDataDict, idkey);
 	Py_DECREF(idkey);
 
-#if (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION) >= 4001
+#if TKMAJORMINOR < 8000
+#if TKMAJORMINOR >= 4001
 #ifdef MS_WINDOWS
 	/* We assume this is a socket... */
 	tfile = Tcl_GetFile((ClientData)id, TCL_WIN_SOCKET);
@@ -1108,6 +1119,9 @@ Tkapp_DeleteFileHandler (self, args)
 	Tcl_DeleteFileHandler(tfile);
 #else
 	Tk_DeleteFileHandler(id);
+#endif
+#else	
+	Tcl_DeleteFileHandler(id);
 #endif
 	/* XXX fileHandlerDict */
 	Py_INCREF (Py_None);
