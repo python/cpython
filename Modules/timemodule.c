@@ -321,6 +321,7 @@ time_strftime(self, args)
 	buf.tm_mon--;
 	buf.tm_wday = (buf.tm_wday + 1) % 7;
 	buf.tm_yday--;
+	(void) mktime(&buf);
 	/* I hate these functions that presume you know how big the output
 	 * will be ahead of time...
 	 */
@@ -471,8 +472,15 @@ inittime()
 	}
 #else
 #ifdef macintosh
+	/* The only thing we can obtain is the current timezone
+	** (and whether dst is currently _active_, but that is not what
+	** we're looking for:-( )
+	*/
 	initmactimezone();
 	ins(d, "timezone", PyInt_FromLong(timezone));
+	ins(d, "altzone", PyInt_FromLong(timezone));
+	ins(d, "daylight", PyInt_FromLong((long)0));
+	ins(d, "tzname", Py_BuildValue("(zz)", "", ""));
 #endif /* macintosh */
 #endif /* HAVE_TM_ZONE */
 #endif /* !HAVE_TZNAME */
