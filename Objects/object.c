@@ -522,6 +522,7 @@ static int
 default_3way_compare(PyObject *v, PyObject *w)
 {
 	int c;
+	char *vname, *wname;
 
 	if (v->ob_type == w->ob_type) {
 		/* When comparing these pointers, they must be cast to
@@ -550,8 +551,22 @@ default_3way_compare(PyObject *v, PyObject *w)
 	}
 
 	/* different type: compare type names */
-	c = strcmp(v->ob_type->tp_name, w->ob_type->tp_name);
-	return (c < 0) ? -1 : (c > 0) ? 1 : 0;
+	if (v->ob_type->tp_as_number)
+		vname = "";
+	else
+		vname = v->ob_type->tp_name;
+	if (w->ob_type->tp_as_number)
+		wname = "";
+	else
+		wname = w->ob_type->tp_name;
+	c = strcmp(vname, wname);
+	if (c < 0)
+		return -1;
+	if (c > 0)
+		return 1;
+	/* Same type name, or (more likely) incomparable numeric types */
+	return ((Py_uintptr_t)(v->ob_type) < (
+		Py_uintptr_t)(w->ob_type)) ? -1 : 1;
 }
 
 #define CHECK_TYPES(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_CHECKTYPES)
