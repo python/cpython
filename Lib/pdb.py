@@ -9,6 +9,8 @@
 # - Where and when to stop exactly when 'next' encounters a return?
 #   (should be level-based -- don't trace anything deeper than current)
 # - Show stack traces upside-down (like dbx/gdb)
+# - When stopping on an exception, show traceback stack
+# - Merge with tb (for post-mortem usage)
 
 import string
 import sys
@@ -120,6 +122,9 @@ class Pdb(Cmd):
 		if self.botframe is None:
 			self.botframe = frame
 		if where == 'exception':
+			if self.whatnext == 'continue' and \
+				arg[0] is not KeyboardInterrupt:
+				return self.trace
 			stop = 1
 		elif self.whatnext == 'continue':
 			stop = 0
