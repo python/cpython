@@ -1,5 +1,5 @@
 What's New in Python 2.1.3?
-Release date: 09-April-2002
+Release date: 08-April-2002
 ===========================
 
 Core
@@ -24,6 +24,11 @@ Library
   third party compression library used by some Python modules.  The
   hole was quickly plugged in zlib-1.1.4, and the Windows build of
   Python now ships with zlib-1.1.4.
+
+Windows
+
+- The installer now installs Start menu shortcuts under (the local
+  equivalent of) "All Users" when doing an Admin install.
 
 
 What's New in Python 2.1.2 (final)?
