@@ -421,13 +421,15 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
     else 
 	v = PyUnicode_Decode(s, len, encoding, errors);
  done:
-    if (owned)
+    if (owned) {
 	Py_DECREF(obj);
+    }
     return v;
 
  onError:
-    if (owned)
+    if (owned) {
 	Py_DECREF(obj);
+    }
     return NULL;
 }
 
@@ -632,11 +634,11 @@ int utf8_decoding_error(const char **source,
 }
 
 #define UTF8_ERROR(details) \
-  if (1) {                                                  \
+  do {                                                      \
       if (utf8_decoding_error(&s, &p, errors, (details)))   \
           goto onError;                                     \
-      continue;                                             \
-  } else
+      goto nextchar;                                        \
+  } while (0)
 
 PyObject *PyUnicode_DecodeUTF8(const char *s,
 			       int size,
@@ -732,6 +734,9 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
             UTF8_ERROR("unsupported Unicode code range");
         }
         s += n;
+
+      nextchar:
+        ;
     }
 
     /* Adjust length */
@@ -747,6 +752,8 @@ onError:
 
 #undef UTF8_ERROR
 
+/* NOT USED */
+#if 0
 static
 int utf8_encoding_error(const Py_UNICODE **source,
 			char **dest,
@@ -776,6 +783,7 @@ int utf8_encoding_error(const Py_UNICODE **source,
 	return -1;
     }
 }
+#endif /* NOT USED */
 
 PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 			       int size,
@@ -826,7 +834,7 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
                         ch = ((ch - 0xD800)<<10 | (ch2-0xDC00))+0x10000;
                     
                         *p++ = (char)((ch >> 18) | 0xf0);
-                        *p++ = (char)(0x80 | (ch >> 12) & 0x3f);
+                        *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));
                         i++;
                         cbWritten += 4;
                     }
