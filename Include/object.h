@@ -251,6 +251,8 @@ extern int PyObject_HasAttrString Py_PROTO((PyObject *, char *));
 extern PyObject *PyObject_GetAttr Py_PROTO((PyObject *, PyObject *));
 extern int PyObject_SetAttr Py_PROTO((PyObject *, PyObject *, PyObject *));
 extern long PyObject_Hash Py_PROTO((PyObject *));
+extern int PyObject_IsTrue Py_PROTO((PyObject *));
+extern int PyCallable_Check Py_PROTO((PyObject *));
 
 /* Flag bits for printing: */
 #define Py_PRINT_RAW	1	/* No string quotes etc. */
