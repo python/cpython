@@ -7246,6 +7246,9 @@ win32_urandom(PyObject *self, PyObject *args)
 	/* Read arguments */
 	if (! PyArg_ParseTuple(args, "i", &howMany))
 		return NULL;
+	if (howMany < 0)
+		return PyErr_Format(PyExc_ValueError,
+				    "negative argument not allowed");
 
 	if (hCryptProv == 0) {
 		HINSTANCE hAdvAPI32 = NULL;
