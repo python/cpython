@@ -28,14 +28,14 @@ NL = '\n'
 EMPTYSTRING = ''
 
 
-
+
 def openfile(filename):
     path = os.path.join(os.path.dirname(test.regrtest.__file__),
                         'data', filename)
     return open(path)
 
 
-
+
 # Base test class
 class TestEmailBase(unittest.TestCase):
     def _msgobj(self, filename):
@@ -47,7 +47,7 @@ class TestEmailBase(unittest.TestCase):
         return msg
 
 
-
+
 # Test various aspects of the Message class's API
 class TestMessageAPI(TestEmailBase):
     def test_get_charsets(self):
@@ -217,7 +217,7 @@ class TestMessageAPI(TestEmailBase):
         self.failIf(msg.has_key('headeri'))
 
 
-
+
 # Test the email.Encoders module
 class TestEncoders(unittest.TestCase):
     def test_encode_noop(self):
@@ -254,7 +254,8 @@ class TestEncoders(unittest.TestCase):
         eq(msg['content-transfer-encoding'], 'quoted-printable')
 
 
-
+
+# Test long header wrapping
 class TestLongHeaders(unittest.TestCase):
     def test_header_splitter(self):
         msg = MIMEText('')
@@ -266,17 +267,11 @@ class TestLongHeaders(unittest.TestCase):
         sfp = StringIO()
         g = Generator(sfp)
         g(msg)
-        self.assertEqual(sfp.getvalue(), '''\
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-X-Foobar-Spoink-Defrobnit: wasnipoop; giraffes="very-long-necked-animals";
-\tspooge="yummy"; hippos="gargantuan"; marshmallows="gooey"
-
-''')
+        self.assertEqual(sfp.getvalue(), openfile('msg_18.txt').read())
 
 
-
+
+# Test mangling of "From " lines in the body of a message
 class TestFromMangling(unittest.TestCase):
     def setUp(self):
         self.msg = Message()
@@ -309,7 +304,7 @@ Blah blah blah
 """)
 
 
-
+
 # Test the basic MIMEImage class
 class TestMIMEImage(unittest.TestCase):
     def setUp(self):
@@ -362,7 +357,7 @@ class TestMIMEImage(unittest.TestCase):
                                   header='foobar') is missing)
 
 
-
+
 # Test the basic MIMEText class
 class TestMIMEText(unittest.TestCase):
     def setUp(self):
@@ -383,7 +378,8 @@ class TestMIMEText(unittest.TestCase):
         self.failUnless(not self._msg.is_multipart())
 
 
-
+
+# Test a more complicated multipart/mixed type message
 class TestMultipartMixed(unittest.TestCase):
     def setUp(self):
         fp = openfile('PyBanner048.gif')
@@ -445,7 +441,8 @@ This is the dingus fish.
         unless(not m1.is_multipart())
 
 
-
+
+# Test some badly formatted messages
 class TestNonConformant(TestEmailBase):
     def test_parse_missing_minor_type(self):
         eq = self.assertEqual
@@ -466,7 +463,8 @@ class TestNonConformant(TestEmailBase):
         self.assertRaises(Errors.BoundaryError, p.parsestr, data)
 
 
-
+
+# Test RFC 2047 header encoding and decoding
 class TestRFC2047(unittest.TestCase):
     def test_iso_8859_1(self):
         eq = self.assertEqual
@@ -497,7 +495,8 @@ class TestRFC2047(unittest.TestCase):
            '=?iso-8859-2?b?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=')
 
 
-
+
+# Test the MIMEMessage class
 class TestMIMEMessage(TestEmailBase):
     def setUp(self):
         fp = openfile('msg_11.txt')
@@ -603,7 +602,12 @@ Your message cannot be delivered to the following recipients:
            '<002001c144a6$8752e060$56104586@oxy.edu>')
 
 
-
+
+# A general test of parser->model->generator idempotency.  IOW, read a message
+# in, parse it into a message object tree, then without touching the tree,
+# regenerate the plain text.  The original text and the transformed text
+# should be identical.  Note: that we ignore the Unix-From since that may
+# contain a changed date.
 class TestIdempotent(unittest.TestCase):
     def _msgobj(self, filename):
         fp = openfile(filename)
@@ -703,7 +707,8 @@ class TestIdempotent(unittest.TestCase):
         eq(msg1.get_payload(), '\n')
 
 
-
+
+# Test various other bits of the package's functionality
 class TestMiscellaneous(unittest.TestCase):
     def test_message_from_string(self):
         fp = openfile('msg_01.txt')
@@ -780,7 +785,8 @@ class TestMiscellaneous(unittest.TestCase):
             unless(isinstance(subpart, MyMessage))
 
 
-
+
+# Test the iterator/generators
 class TestIterators(TestEmailBase):
     def test_body_line_iterator(self):
         eq = self.assertEqual
@@ -799,51 +805,7 @@ class TestIterators(TestEmailBase):
         for line in it:
             lines.append(line)
         eq(len(lines), 43)
-        eq(EMPTYSTRING.join(lines), """\
-Send Ppp mailing list submissions to
-\tppp@zzz.org
-
-To subscribe or unsubscribe via the World Wide Web, visit
-\thttp://www.zzz.org/mailman/listinfo/ppp
-or, via email, send a message with subject or body 'help' to
-\tppp-request@zzz.org
-
-You can reach the person managing the list at
-\tppp-admin@zzz.org
-
-When replying, please edit your Subject line so it is more specific
-than "Re: Contents of Ppp digest..."
-
-Today's Topics:
-
-   1. testing #1 (Barry A. Warsaw)
-   2. testing #2 (Barry A. Warsaw)
-   3. testing #3 (Barry A. Warsaw)
-   4. testing #4 (Barry A. Warsaw)
-   5. testing #5 (Barry A. Warsaw)
-
-hello
-
-
-hello
-
-
-hello
-
-
-hello
-
-
-hello
-
-
-
-_______________________________________________
-Ppp mailing list
-Ppp@zzz.org
-http://www.zzz.org/mailman/listinfo/ppp
-
-""")
+        eq(EMPTYSTRING.join(lines), openfile('msg_19.txt').read())
 
     def test_typed_subpart_iterator(self):
         eq = self.assertEqual
@@ -863,7 +825,7 @@ to reflect upon our own
 """)
 
 
-
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestMessageAPI))
@@ -882,7 +844,7 @@ def suite():
     return suite
 
 
-
+
 if __name__ == '__main__':
     unittest.main(defaultTest='suite')
 else:
