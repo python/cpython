@@ -15,6 +15,12 @@ Core
   now use the Python warning framework (which makes it possible to
   write filters for these warnings).
 
+- A function's __dict__ (aka func_dict) will now always be a
+  dictionary.  It used to be possible to delete it or set it to None,
+  but now both actions raise TypeErrors.  It is still legal to set it
+  to a dictionary object.  Getting func.__dict__ before any attributes
+  have been assigned now returns an empty dictionary instead of None.
+
 Library
 
 - New class Differ and new functions ndiff() and restore() in difflib.py.
