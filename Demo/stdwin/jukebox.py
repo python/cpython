@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # XXX This only works on SGIs running IRIX 4.0 or higher
 
@@ -39,7 +39,7 @@ from Buttons import PushButton
 # Pathnames
 
 DEF_DB = '/usr/local/sounds'		# Default directory of sounds
-SOX = '/usr/local/sox'			# Sound format conversion program
+SOX = '/usr/local/bin/sox'		# Sound format conversion program
 SFPLAY = '/usr/sbin/sfplay'		# Sound playing program
 
 
@@ -311,7 +311,12 @@ validrates = (8000, 11025, 16000, 22050, 32000, 44100, 48000)
 
 def playfile(filename):
 	killchild()
-	tuple = sndhdr.what(filename)
+	try:
+		tuple = sndhdr.what(filename)
+	except IOError, msg:
+		print 'Can\'t open', filename, msg
+		stdwin.fleep()
+		return
 	raw = 0
 	if tuple:
 		mode, rate = tuple[:2]
