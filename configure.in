@@ -663,7 +663,7 @@ LIBS="$LIBS -ldl -ldld"], AC_MSG_RESULT(no))
 # checks for library functions
 AC_CHECK_FUNCS(alarm chown clock dlopen execv flock fork \
  fsync fdatasync ftime ftruncate \
- gethostbyname_r getpeername getpgrp getpid getpwent gettimeofday getwd \
+ getpeername getpgrp getpid getpwent gettimeofday getwd \
  kill link lstat mkfifo mktime nice pause plock pthread_init putenv readlink \
  select setgid setlocale setuid setsid setpgid setpgrp setvbuf \
  sigaction siginterrupt sigrelse strftime strptime symlink \
@@ -775,6 +775,69 @@ AC_TRY_COMPILE([
 ], [va_list list1, list2; list1 = list2;], , 
 AC_DEFINE(VA_LIST_IS_ARRAY) va_list_is_array=yes)
 AC_MSG_RESULT($va_list_is_array)
+
+# sigh -- gethostbyname_r is a mess; it can have 3, 5 or 6 arguments :-(
+AC_CHECK_FUNC(gethostbyname_r, [
+  AC_DEFINE(HAVE_GETHOSTBYNAME_R)
+  AC_MSG_CHECKING([gethostbyname_r with 6 args])
+  OLD_CFLAGS=$CFLAGS
+  CFLAGS="$CFLAGS $MY_CPPFLAGS $MY_THREAD_CPPFLAGS $MY_CFLAGS"
+  AC_TRY_COMPILE([
+#   include <netdb.h>
+  ], [
+    char *name;
+    struct hostent *he, *res;
+    char buffer[2048];
+    int buflen = 2048;
+    int h_errnop;
+
+    (void) gethostbyname_r(name, he, buffer, buflen, &res, &h_errnop)
+  ], [
+    AC_DEFINE(HAVE_GETHOSTBYNAME_R_6_ARG)
+    AC_MSG_RESULT(yes)
+  ], [
+    AC_MSG_RESULT(no)
+    AC_MSG_CHECKING([gethostbyname_r with 5 args])
+    AC_TRY_COMPILE([
+#     include <netdb.h>
+    ], [
+      char *name;
+      struct hostent *he;
+      char buffer[2048];
+      int buflen = 2048;
+      int h_errnop;
+
+      (void) gethostbyname_r(name, he, buffer, buflen, &h_errnop)
+    ], [
+      AC_DEFINE(HAVE_GETHOSTBYNAME_R_5_ARG)
+      AC_MSG_RESULT(yes)
+    ], [
+      AC_MSG_RESULT(no)
+      AC_MSG_CHECKING([gethostbyname_r with 3 args])
+      AC_TRY_COMPILE([
+#       include <netdb.h>
+      ], [
+        char *name;
+        struct hostent *he;
+        struct hostent_data data;
+
+        (void) gethostbyname_r(name, he, &data);
+      ], [
+        AC_DEFINE(HAVE_GETHOSTBYNAME_R_3_ARG)
+        AC_MSG_RESULT(yes)
+      ], [
+        AC_MSG_RESULT(no)
+      ])
+    ])
+  ])
+  CFLAGS=$OLD_CFLAGS
+], [
+  AC_CHECK_FUNC(gethostbyname, AC_DEFINE(HAVE_GETHOSTBYNAME))
+])
+AC_SUBST(HAVE_GETHOSTBYNAME_R_6_ARG)
+AC_SUBST(HAVE_GETHOSTBYNAME_R_5_ARG)
+AC_SUBST(HAVE_GETHOSTBYNAME_R_3_ARG)
+AC_SUBST(HAVE_GETHOSTBYNAME)
 
 # checks for system services
 # (none yet)
