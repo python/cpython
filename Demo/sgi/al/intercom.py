@@ -181,21 +181,22 @@ def ioloop1(s, otheraddr):
 		# Child -- microphone handler
 		log('child started')
 		try:
-			mike = al.openport('mike', 'r', config)
-			# Sleep a while to let the other side get started
-			time.sleep(1)
-			# Drain the queue before starting to read
-			data = mike.readsamps(mike.getfilled())
-			# Loop, sending packets from the mike to the net
-			while 1:
-				data = mike.readsamps(SAMPSPERBUF)
-				s.sendto(data, otheraddr)
-		except KeyboardInterrupt:
-			log('child got interrupt; exiting')
-			posix._exit(0)
-		except error:
-			log('child got error; exiting')
-			posix._exit(1)
+		    try:
+			    mike = al.openport('mike', 'r', config)
+			    # Sleep a while to let the other side get started
+			    time.sleep(1)
+			    # Drain the queue before starting to read
+			    data = mike.readsamps(mike.getfilled())
+			    # Loop, sending packets from the mike to the net
+			    while 1:
+				    data = mike.readsamps(SAMPSPERBUF)
+				    s.sendto(data, otheraddr)
+		    except KeyboardInterrupt:
+			    log('child got interrupt; exiting')
+			    posix._exit(0)
+		    except error:
+			    log('child got error; exiting')
+			    posix._exit(1)
 		finally:
 			log('child got unexpected error; leaving w/ traceback')
 
