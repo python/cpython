@@ -27,8 +27,7 @@
    The raw memory and object memory allocators both mimic the
    malloc/realloc/free interface from ANSI C, but the object memory
    allocator can (and, since 2.3, does by default) use a different
-   allocation strategy biased towards lots of lots of "small"
-   allocations.
+   allocation strategy biased towards lots of "small" allocations.
 
    The object family is used for allocating Python objects, and the
    initializers take care of some basic initialization (setting the
