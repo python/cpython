@@ -70,6 +70,7 @@ class PythonIDE(Wapplication.Application):
 		m = Wapplication.Menu(self.menubar, "File")
 		newitem = FrameWork.MenuItem(m, "New", "N", 'new')
 		openitem = FrameWork.MenuItem(m, "Open"+ELIPSES, "O", 'open')
+		openbynameitem = FrameWork.MenuItem(m, "Open File by Name"+ELIPSES, "D", 'openbyname')
 		FrameWork.Separator(m)
 		closeitem = FrameWork.MenuItem(m, "Close", "W", 'close')
 		saveitem = FrameWork.MenuItem(m, "Save", "S", 'save')
@@ -207,6 +208,22 @@ class PythonIDE(Wapplication.Application):
 	
 	def domenu_open(self, *args):
 		filename = EasyDialogs.AskFileForOpen(typeList=("TEXT",))
+		if filename:
+			self.openscript(filename)
+	
+	def domenu_openbyname(self, *args):
+		# Open a file by name. If the clipboard contains a filename
+		# use that as the default.
+		from Carbon import Scrap
+		try:
+			sc = Scrap.GetCurrentScrap()
+			dft = sc.GetScrapFlavorData("TEXT")
+		except Scrap.Error:
+			dft = ""
+		else:
+			if not os.path.exists(dft):
+				dft = ""
+		filename = EasyDialogs.AskString("Open File Named:", default=dft, ok="Open")
 		if filename:
 			self.openscript(filename)
 	
