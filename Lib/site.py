@@ -172,6 +172,19 @@ for prefix in prefixes:
                         os.path.join(prefix, "lib", "site-python")]
         else:
             sitedirs = [prefix, os.path.join(prefix, "lib", "site-packages")]
+        if sys.platform == 'darwin':
+            # for framework builds *only* we add the standard Apple
+            # locations. Currently only per-user, but /Library and
+            # /Network/Library could be added too
+            if 'Python.framework' in prefix:
+                home = os.environ['HOME']
+                if home:
+                    sitedirs.append(
+                        os.path.join(home,
+                                     'Library',
+                                     'Python',
+                                     sys.version[:3],
+                                     'site-packages'))
         for sitedir in sitedirs:
             if os.path.isdir(sitedir):
                 addsitedir(sitedir)
