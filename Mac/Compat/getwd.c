@@ -53,12 +53,8 @@ getwd(char *cwd)
 		sprintf(cwd, "I/O error %d in PBHGetVolSync", err);
 		return NULL;
 	}
-#if TARGET_API_MAC_CARBON
 	p2cstrcpy(cwd, (StringPtr)cwd);
 	ecwd = strchr(cwd, EOS);
-#else
-	ecwd= strchr((const char *)p2cstr((unsigned char*)cwd), EOS);
-#endif
 	ebuf= buf;
 	*ebuf = EOS;
 	
@@ -77,12 +73,8 @@ getwd(char *cwd)
 				return NULL;
 			}
 			dirid= pb.d.ioDrParID;
-#if TARGET_API_MAC_CARBON
 			p2cstrcpy(ebuf, (StringPtr)ebuf);
 			ebuf += strlen(ebuf);
-#else
-			ebuf += strlen((const char *)p2cstr((unsigned char *)ebuf));
-#endif
 			/* Should check for buf overflow */
 		}
 	}
