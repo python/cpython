@@ -64,6 +64,12 @@ class async_chat (asyncore.dispatcher):
         self.producer_fifo = fifo()
         asyncore.dispatcher.__init__ (self, conn)
 
+    def collect_incoming_data(self, data):
+        raise NotImplementedError, "must be implemented in subclass"
+        
+    def found_terminator(self):
+        raise NotImplementedError, "must be implemented in subclass"
+        
     def set_terminator (self, term):
         "Set the input delimiter.  Can be a fixed string of any length, an integer, or None"
         self.terminator = term
