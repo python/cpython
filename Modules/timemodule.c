@@ -48,11 +48,19 @@ time_time(self, args)
 	object *self;
 	object *args;
 {
-	long secs;
+	time_t secs;
 	if (!getnoarg(args))
 		return NULL;
 	secs = time((time_t *)NULL);
-	return newintobject(secs);
+#ifdef THINK_C
+#ifndef THINK_C_3_0
+/* Difference in origin between Mac and Unix clocks: */
+#define TIMEDIFF ((time_t) \
+	(((1970-1904)*365L + (1970-1904)/4) * 24 * 3600))
+	secs -= TIMEDIFF;
+#endif
+#endif
+	return newintobject((long)secs);
 }
 
 static jmp_buf sleep_intr;
@@ -164,7 +172,6 @@ inittime()
 
 #define MacTicks	(* (long *)0x16A)
 
-static
 sleep(msecs)
 	int msecs;
 {
@@ -177,7 +184,6 @@ sleep(msecs)
 	}
 }
 
-static
 millisleep(msecs)
 	long msecs;
 {
@@ -190,7 +196,7 @@ millisleep(msecs)
 	}
 }
 
-static long
+long
 millitimer()
 {
 	return MacTicks * 50 / 3; /* MacTicks * 1000 / 60 */
