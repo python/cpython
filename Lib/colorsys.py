@@ -3,7 +3,7 @@
 This modules provides two functions for each color system ABC:
 
   rgb_to_abc(r, g, b) --> a, b, c
-  abc_to_rgb(x, y, z) --> r, g, b
+  abc_to_rgb(a, b, c) --> r, g, b
 
 All inputs and outputs are triples of floats in the range [0.0...1.0].
 Inputs outside this range may cause exceptions or invalid outputs.
