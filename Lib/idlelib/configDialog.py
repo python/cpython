@@ -914,7 +914,7 @@ class ConfigDialog(Toplevel):
         ##font size dropdown
         fontSize=idleConf.GetOption('main','EditorWindow','font-size',
                 default='12')
-        self.optMenuFontSize.SetMenu(('10','11','12','13','14',
+        self.optMenuFontSize.SetMenu(('7','8','9','10','11','12','13','14',
                 '16','18','20','22'),fontSize )
         ##fontWeight
         self.fontBold.set(idleConf.GetOption('main','EditorWindow',
