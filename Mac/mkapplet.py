@@ -45,8 +45,7 @@ def main():
 		except IOError:
 			continue
 	else:
-		# XXX Ought to put up a dialog
-		print "Template", `template`, "not found"
+		die("Template %s not found" % `template`)
 		return
 	
 	# Ask for source text if not specified in sys.argv[1:]
@@ -79,15 +78,17 @@ def process(template, filename):
 	try:
 		code = compile(text, filename, "exec")
 	except (SyntaxError, EOFError):
-		print "Syntax error in script", `filename`
+		die("Syntax error in script %s" % `filename`)
 		return
 	
 	# Set the destination file name
 	
 	if string.lower(filename[-3:]) == ".py":
 		destname = filename[:-3]
+		rsrcname = destname + '.rsrc'
 	else:
 		destname = filename + ".applet"
+		rsrcname = filename + '.rsrc'
 	
 	# Copy the data from the template (creating the file as well)
 	
@@ -100,16 +101,16 @@ def process(template, filename):
 	tmpl.close()
 	
 	# Copy the creator of the template to the destination
-	# unless it already has one. Set type to APPL
+	# unless it already got one.  Set type to APPL
+	
 	tctor, ttype = MacOS.GetCreatorAndType(template)
 	ctor, type = MacOS.GetCreatorAndType(destname)
 	if type in undefs: type = 'APPL'
 	if ctor in undefs: ctor = tctor
 	MacOS.SetCreatorAndType(destname, ctor, type)
 	
-	# Open the input and output resource forks
+	# Open the output resource fork
 	
-	input = FSpOpenResFile(template, READ)
 	try:
 		output = FSpOpenResFile(destname, WRITE)
 	except MacOS.Error:
@@ -117,37 +118,21 @@ def process(template, filename):
 		CreateResFile(destname)
 		output = FSpOpenResFile(destname, WRITE)
 	
-	# Copy the resources from the template,
-	# except a 'PYC ' resource named __main__
+	# Copy the resources from the template
 	
-	UseResFile(input)
-	ntypes = Count1Types()
-	for itype in range(1, 1+ntypes):
-		type = Get1IndType(itype)
-		nresources = Count1Resources(type)
-		for ires in range(1, 1+nresources):
-			res = Get1IndResource(type, ires)
-			id, type, name = res.GetResInfo()
-			if (type, name) == (RESTYPE, RESNAME):
-				continue # Don't copy __main__ from template
-			size = res.SizeResource()
-			attrs = res.GetResAttrs()
-			print id, type, name, size, hex(attrs)
-			res.LoadResource()
-			res.DetachResource()
-			UseResFile(output)
-			try:
-				res2 = Get1Resource(type, id)
-			except MacOS.Error:
-				res2 = None
-			if res2:
-				print "Overwriting..."
-				res2.RmveResource()
-			res.AddResource(type, id, name)
-			#res.SetResAttrs(attrs)
-			res.WriteResource()
-			UseResFile(input)
+	input = FSpOpenResFile(template, READ)
+	copyres(input, output)
 	CloseResFile(input)
+	
+	# Copy the resources from the target specific resource template, if any
+	
+	try:
+		input = FSpOpenResFile(rsrcname, READ)
+	except MacOS.Error:
+		pass
+	else:
+		copyres(input, output)
+		CloseResFile(input)
 	
 	# Make sure we're manipulating the output resource file now
 	
@@ -177,11 +162,70 @@ def process(template, filename):
 	res.WriteResource()
 	res.ReleaseResource()
 	
-	# Close the resource file
+	# Close the output file
 	
 	CloseResFile(output)
 	
-	print "Done with", `filename`, "..."
+	# Give positive feedback
+	
+	message("Applet %s created." % `destname`)
+
+
+# Copy resources between two resource file descriptors
+# Exception: don't copy a __main__ resource
+
+def copyres(input, output):
+	UseResFile(input)
+	ntypes = Count1Types()
+	for itype in range(1, 1+ntypes):
+		type = Get1IndType(itype)
+		nresources = Count1Resources(type)
+		for ires in range(1, 1+nresources):
+			res = Get1IndResource(type, ires)
+			id, type, name = res.GetResInfo()
+			if (type, name) == (RESTYPE, RESNAME):
+				continue # Don't copy __main__ from template
+			size = res.SizeResource()
+			attrs = res.GetResAttrs()
+			print id, type, name, size, hex(attrs)
+			res.LoadResource()
+			res.DetachResource()
+			UseResFile(output)
+			try:
+				res2 = Get1Resource(type, id)
+			except MacOS.Error:
+				res2 = None
+			if res2:
+				print "Overwriting..."
+				res2.RmveResource()
+			res.AddResource(type, id, name)
+			#res.SetResAttrs(attrs)
+			res.WriteResource()
+			UseResFile(input)
+
+
+# Show a message and exit
+
+def die(str):
+	message(str)
+	sys.exit(1)
+
+
+# Show a message
+
+def message(str, id = 256):
+	from Dlg import *
+	d = GetNewDialog(id, -1)
+	if not d:
+		print "Error:", `str`
+		print "DLOG id =", id, "not found."
+		return
+	tp, h, rect = d.GetDItem(2)
+	SetIText(h, str)
+	while 1:
+		n = ModalDialog(None)
+		if n == 1: break
+	del d
 
 
 if __name__ == '__main__':
