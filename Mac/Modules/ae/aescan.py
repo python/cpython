@@ -14,6 +14,24 @@ import MacOS
 from scantools import Scanner
 
 def main():
+	print "=== Scanning AERegistry.h for defines ==="
+	input = "AERegistry.h"
+	output = "@dummy-registry.py"
+	defsoutput = "AERegistry.py"
+	scanner = AppleEventsScanner(input, output, defsoutput)
+	scanner.scan()
+	scanner.close()
+	print "=== Scanning AEObjects.h for defines ==="
+	# XXXX This isn't correct. We only scan AEObjects.h for defines, but there
+	# are some functions in there that are probably useful (the accessor stuff)
+	# once we start writing servers in python.
+	input = "AEObjects.h"
+	output = "@dummy-objects.py"
+	defsoutput = "AEObjects.py"
+	scanner = AppleEventsScanner(input, output, defsoutput)
+	scanner.scan()
+	scanner.close()
+	print "=== Scanning AppleEvents.py ==="
 	input = "AppleEvents.h"
 	output = "aegen.py"
 	defsoutput = "AppleEvents.py"
@@ -72,6 +90,9 @@ class AppleEventsScanner(Scanner):
 			 
 			([("AppleEvent", "theAppleEvent", "OutMode")],
 			 [("AppleEvent_ptr", "*", "InMode")]),
+			 
+			([("AEDescList", "theAEDescList", "OutMode")],
+			 [("AEDescList_ptr", "*", "InMode")]),
 			]
 
 if __name__ == "__main__":
