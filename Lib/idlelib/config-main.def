@@ -51,6 +51,7 @@ width= 80
 height= 30
 font= courier
 font-size= 12
+font-bold= 0
 
 [Indent]
 use-spaces= 1
