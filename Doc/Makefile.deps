@@ -141,6 +141,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libmath.tex \
 	lib/librand.tex \
 	lib/libwhrandom.tex \
+	lib/libdecimal.tex \
 	lib/libarray.tex \
 	lib/liballos.tex \
 	lib/libos.tex \
