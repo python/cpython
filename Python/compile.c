@@ -3451,7 +3451,7 @@ PyCode_Addr2Line(co, addrq)
 	int addrq;
 {
 	int size = PyString_Size(co->co_lnotab) / 2;
-	char *p = PyString_AsString(co->co_lnotab);
+	unsigned char *p = (unsigned char*)PyString_AsString(co->co_lnotab);
 	int line = co->co_firstlineno;
 	int addr = 0;
 	while (--size >= 0) {
