@@ -151,7 +151,11 @@ set_string(PyObject **str, PyObject *v)
 {
         if (check_delattr(v) < 0)
                 return -1;
-        if (!PyString_Check(v) && !PyUnicode_Check(v)) {
+        if (!PyString_Check(v)
+#ifdef Py_USING_UNICODE
+&& !PyUnicode_Check(v)
+#endif
+) {
                 PyErr_BadArgument();
                 return -1;
         }
@@ -311,7 +315,11 @@ dialect_init(DialectObj * self, PyObject * args, PyObject * kwargs)
                 PyObject * dir_list;
 
                 /* If dialect is a string, look it up in our registry */
-                if (PyString_Check(dialect) || PyUnicode_Check(dialect)) {
+                if (PyString_Check(dialect)
+#ifdef Py_USING_UNICODE
+|| PyUnicode_Check(dialect)
+#endif
+) {
                         PyObject * new_dia;
                         new_dia = get_dialect_from_registry(dialect);
                         Py_DECREF(dialect);
@@ -1010,9 +1018,9 @@ join_append_lineterminator(WriterObj *self)
 }
 
 PyDoc_STRVAR(csv_writerow_doc,
-"join(sequence) -> string\n"
+"writerow(sequence)\n"
 "\n"
-"Construct a CSV record from a sequence of fields.  Non-string\n"
+"Construct and write a CSV record from a sequence of fields.  Non-string\n"
 "elements will be converted to string.");
 
 static PyObject *
@@ -1088,6 +1096,12 @@ csv_writerow(WriterObj *self, PyObject *seq)
                                      "(s#)", self->rec, self->rec_len);
 }
 
+PyDoc_STRVAR(csv_writerows_doc,
+"writerows(sequence of sequences)\n"
+"\n"
+"Construct and write a series of sequences to a csv file.  Non-string\n"
+"elements will be converted to string.");
+
 static PyObject *
 csv_writerows(WriterObj *self, PyObject *seqseq)
 {
@@ -1118,7 +1132,7 @@ csv_writerows(WriterObj *self, PyObject *seqseq)
 
 static struct PyMethodDef Writer_methods[] = {
         { "writerow", (PyCFunction)csv_writerow, METH_O, csv_writerow_doc},
-        { "writerows", (PyCFunction)csv_writerows, METH_O},
+        { "writerows", (PyCFunction)csv_writerows, METH_O, csv_writerows_doc},
 	{ NULL, NULL }
 };
 
@@ -1238,7 +1252,11 @@ csv_register_dialect(PyObject *module, PyObject *args)
 
         if (!PyArg_ParseTuple(args, "OO", &name_obj, &dialect_obj))
                 return NULL;
-        if (!PyString_Check(name_obj) && !PyUnicode_Check(name_obj)) {
+        if (!PyString_Check(name_obj)
+#ifdef Py_USING_UNICODE
+&& !PyUnicode_Check(name_obj)
+#endif
+) {
                 PyErr_SetString(PyExc_TypeError, 
                                 "dialect name must be a string or unicode");
                 return NULL;
