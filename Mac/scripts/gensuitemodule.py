@@ -281,10 +281,15 @@ def compileevent(fp, event):
 	has_arg = (not is_null(accepts))
 	opt_arg = (has_arg and is_optional(accepts))
 	
+	fp.write("\tdef %s(self, "%funcname)
 	if has_arg:
-		fp.write("\tdef %s(self, object, *arguments):\n"%funcname)
+		if not opt_arg:
+			fp.write("_object, ")		# Include direct object, if it has one
+		else:
+			fp.write("_object=None, ")	# Also include if it is optional
 	else:
-		fp.write("\tdef %s(self, *arguments):\n"%funcname)
+		fp.write("_no_object=None, ")	# For argument checking
+	fp.write("_attributes={}, **_arguments):\n")	# include attribute dict and args
 	#
 	# Generate doc string (important, since it may be the only
 	# available documentation, due to our name-remaping)
@@ -306,65 +311,46 @@ def compileevent(fp, event):
 	#
 	fp.write("\t\t_code = %s\n"% `code`)
 	fp.write("\t\t_subcode = %s\n\n"% `subcode`)
-	if opt_arg:
-		fp.write("\t\tif len(arguments):\n")
-		fp.write("\t\t\tobject = arguments[0]\n")
-		fp.write("\t\t\targuments = arguments[1:]\n")
-		fp.write("\t\telse:\n")
-		fp.write("\t\t\tobject = None\n")
-	fp.write("\t\tif len(arguments) > 1:\n")
-	fp.write("\t\t\traise TypeError, 'Too many arguments'\n")
-	fp.write("\t\tif arguments:\n")
-	fp.write("\t\t\targuments = arguments[0]\n")
-	fp.write("\t\t\tif type(arguments) <> type({}):\n")
-	fp.write("\t\t\t\traise TypeError, 'Must be a mapping'\n")
-	fp.write("\t\telse:\n")
-	fp.write("\t\t\targuments = {}\n")
 	if has_arg:
-		fp.write("\t\targuments['----'] = object\n")
+		fp.write("\t\t_arguments['----'] = _object\n")
 	elif opt_arg:
-		fp.write("\t\tif object:\n")
-		fp.write("\t\t\targuments['----'] = object\n")
-	fp.write("\n")
-	#
-	# Extract attributes
-	#
-	fp.write("\t\tif arguments.has_key('_attributes'):\n")
-	fp.write("\t\t\tattributes = arguments['_attributes']\n")
-	fp.write("\t\t\tdel arguments['_attributes']\n")
-	fp.write("\t\telse:\n");
-	fp.write("\t\t\tattributes = {}\n")
+		fp.write("\t\tif _object:\n")
+		fp.write("\t\t\t_arguments['----'] = _object\n")
+	else:
+		fp.write("\t\tif _no_object != None: raise TypeError, 'No direct arg expected'\n")
 	fp.write("\n")
 	#
 	# Do key substitution
 	#
 	if arguments:
-		fp.write("\t\taetools.keysubst(arguments, self._argmap_%s)\n"%funcname)
+		fp.write("\t\taetools.keysubst(_arguments, self._argmap_%s)\n"%funcname)
+	else:
+		fp.write("\t\tif _arguments: raise TypeError, 'No optional args expected'\n")
 	for a in arguments:
 		if is_enum(a[2]):
 			kname = a[1]
 			ename = a[2][0]
-			fp.write("\t\taetools.enumsubst(arguments, %s, _Enum_%s)\n" %
+			fp.write("\t\taetools.enumsubst(_arguments, %s, _Enum_%s)\n" %
 					(`kname`, ename))
 	fp.write("\n")
 	#
 	# Do the transaction
 	#
-	fp.write("\t\treply, arguments, attributes = self.send(_code, _subcode,\n")
-	fp.write("\t\t\t\targuments, attributes)\n")
+	fp.write("\t\t_reply, _arguments, _attributes = self.send(_code, _subcode,\n")
+	fp.write("\t\t\t\t_arguments, _attributes)\n")
 	#
 	# Error handling
 	#
-	fp.write("\t\tif arguments.has_key('errn'):\n")
-	fp.write("\t\t\traise MacOS.Error, aetools.decodeerror(arguments)\n")
+	fp.write("\t\tif _arguments.has_key('errn'):\n")
+	fp.write("\t\t\traise MacOS.Error, aetools.decodeerror(_arguments)\n")
 	fp.write("\t\t# XXXX Optionally decode result\n")
 	#
 	# Decode result
 	#
-	fp.write("\t\tif arguments.has_key('----'):\n")
+	fp.write("\t\tif _arguments.has_key('----'):\n")
 	if is_enum(returns):
 		fp.write("\t\t\t# XXXX Should do enum remapping here...\n")
-	fp.write("\t\t\treturn arguments['----']\n")
+	fp.write("\t\t\treturn _arguments['----']\n")
 	fp.write("\n")
 	
 #	print "\n#    Command %s -- %s (%s, %s)" % (`name`, `desc`, `code`, `subcode`)

@@ -78,6 +78,7 @@ def packevent(ae, parameters = {}, attributes = {}):
 
 #
 # Support routine for automatically generated Suite interfaces
+# These routines are also useable for the reverse function.
 #
 def keysubst(arguments, keydict):
 	"""Replace long name keys by their 4-char counterparts, and check"""
