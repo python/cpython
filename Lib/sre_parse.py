@@ -15,7 +15,7 @@ from sre_constants import *
 MAXREPEAT = 65535
 
 SPECIAL_CHARS = ".\\[{()*+?^$|"
-REPEAT_CHARS  = "*+?{"
+REPEAT_CHARS = "*+?{"
 
 DIGITS = tuple("0123456789")
 
@@ -259,13 +259,12 @@ def _escape(source, escape, state):
             # hexadecimal escape
             while source.next in HEXDIGITS and len(escape) < 4:
                 escape = escape + source.get()
-            escape = escape[2:]
-            if len(escape) != 2:
-                raise error, "bogus escape: %s" % repr("\\" + escape)
-            return LITERAL, int(escape, 16) & 0xff
+            if len(escape) != 4:
+                raise ValueError
+            return LITERAL, int(escape[2:], 16) & 0xff
         elif escape[1:2] == "0":
             # octal escape
-            while source.next in OCTDIGITS and len(escape) < 5:
+            while source.next in OCTDIGITS and len(escape) < 4:
                 escape = escape + source.get()
             return LITERAL, int(escape[1:], 8) & 0xff
         elif escape[1:2] in DIGITS:
@@ -273,7 +272,8 @@ def _escape(source, escape, state):
             here = source.tell()
             if source.next in DIGITS:
                 escape = escape + source.get()
-                if escape[2] in OCTDIGITS and source.next in OCTDIGITS:
+                if (escape[1] in OCTDIGITS and escape[2] in OCTDIGITS and
+                    source.next in OCTDIGITS):
                     # got three octal digits; this is an octal escape
                     escape = escape + source.get()
                     return LITERAL, int(escape[1:], 8) & 0xff
@@ -281,7 +281,7 @@ def _escape(source, escape, state):
             group = _group(escape, state.groups)
             if group:
                 return GROUPREF, group
-            raise error, "bogus escape: %s" % repr(escape)
+            raise ValueError
         if len(escape) == 2:
             return LITERAL, ord(escape[1])
     except ValueError:
