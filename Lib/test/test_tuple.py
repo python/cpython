@@ -49,9 +49,13 @@ class TupleTest(seq_tests.CommonTest):
         #      should not exhibit cancellation in tuples like (x,(x,y))
         #      should be distinct from element hashes:  hash(x)!=hash((x,))
         # This test exercises those cases.
-        # For a pure random hash and N=50, the expected number of collisions
-        #      is 7.3.  Here we allow twice that number.
-        #      Any worse and the hash function is sorely suspect.
+        # For a pure random hash and N=50, the expected number of occupied
+        #      buckets when tossing 252,600 balls into 2**32 buckets
+        #      is 252,592.6, or about 7.4 expected collisions.  The
+        #      standard deviation is 2.73.  On a box with 64-bit hash
+        #      codes, no collisions are expected.  Here we accept no
+        #      more than 15 collisions.  Any worse and the hash function
+        #      is sorely suspect.
 
         N=50
         base = range(N)
