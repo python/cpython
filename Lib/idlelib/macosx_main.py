@@ -1,18 +1,18 @@
 #!/usr/bin/env pythonw
-"""IDLE.app
-
-Installation:
-  see the install_IDLE target in python/dist/src/Mac/OSX/Makefile
-
-Usage:
-
-1. Double clicking IDLE icon will open IDLE.
-2. Dropping file on IDLE icon will open that file in IDLE.
-3. Launch from command line with files with this command-line:
-
-     /Applications/Python/IDLE.app/Contents/MacOS/python file1 file2 file3
-
-"""
+# IDLE.app
+#
+# Installation:
+#   see the install_IDLE target in python/dist/src/Mac/OSX/Makefile
+#
+# Usage:
+#
+# 1. Double clicking IDLE icon will open IDLE.
+# 2. Dropping file on IDLE icon will open that file in IDLE.
+# 3. Launch from command line with files with this command-line:
+#
+#     /Applications/Python/IDLE.app/Contents/MacOS/python file1 file2 file3
+#
+#
 
 # Add IDLE.app/Contents/Resources/idlelib to path.
 # __file__ refers to this file when it is used as a module, sys.argv[0]
