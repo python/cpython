@@ -258,7 +258,7 @@ void initresource()
 	ins(d, "RUSAGE_SELF", RUSAGE_SELF);
 #endif
 
-#ifdef RUSAGE_CHILDERN
+#ifdef RUSAGE_CHILDREN
 	ins(d, "RUSAGE_CHILDREN", RUSAGE_CHILDREN);
 #endif
 
