@@ -2692,9 +2692,9 @@ Create a new module.  Do not enter it in sys.modules.\n\
 The module name must include the full package name, if any.");
 
 PyDoc_STRVAR(doc_lock_held,
-"lock_held() -> 0 or 1\n\
-Return 1 if the import lock is currently held.\n\
-On platforms without threads, return 0.");
+"lock_held() -> boolean\n\
+Return True if the import lock is currently held, else False.\n\
+On platforms without threads, return False.");
 
 PyDoc_STRVAR(doc_acquire_lock,
 "acquire_lock() -> None\n\
