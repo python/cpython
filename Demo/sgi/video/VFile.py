@@ -237,7 +237,6 @@ class VideoParams:
 			stuff = 2, 0, 0, 0, 0
 		if self.format == 'mono':
 			stuff = 1, 0, 0, 0, 0
-		print 'setcmapinfo:', stuff
 		self.c0bits, self.c1bits, self.c2bits, \
 			  self.offset, self.chrompack = stuff
 
