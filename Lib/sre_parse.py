@@ -19,8 +19,9 @@ from sre_constants import *
 # FIXME: should be 65535, but the arraymodule is still broken
 MAXREPEAT = 32767
 
-# FIXME: same here
-CHARMASK = 0x7fff
+# FIXME: might change in 2.0 final.  but for now, this seems
+# to be the best way to be compatible with 1.5.2
+CHARMASK = 0xff
 
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS  = "*+?{"
@@ -616,9 +617,9 @@ def expand_template(template, match):
     a = p.append
     sep = match.string[:0]
     if type(sep) is type(""):
-	char = chr
+        char = chr
     else:
-	char = unichr
+        char = unichr
     for c, s in template:
         if c is LITERAL:
             a(char(s))
