@@ -1032,7 +1032,7 @@ class ModuleScanner(Scanner):
         children = []
         for file in os.listdir(dir):
             path = os.path.join(dir, file)
-            if ispackage(path): 
+            if ispackage(path):
                 children.append((path, package + (package and '.') + file))
             else:
                 children.append((path, package))
@@ -1416,5 +1416,3 @@ def cli():
 """ % (cmd, os.sep, cmd, cmd, cmd, cmd, os.sep)
 
 if __name__ == '__main__': cli()
-
-
