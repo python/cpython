@@ -2,30 +2,15 @@
 
 __version__ = "$Revision$"
 
-try:
-	# See if modern _tkinter is present
-	import _tkinter
-	tkinter = _tkinter # b/w compat
-except ImportError:
-	# No modern _tkinter -- try oldfashioned tkinter
-	import tkinter
-	if hasattr(tkinter, "__path__"):
-		import sys, os
-		# Append standard platform specific directory
-		p = tkinter.__path__
-		for dir in sys.path:
-			if (dir not in p and
-			    os.path.basename(dir) == sys.platform):
-				p.append(dir)
-		del sys, os, p, dir
-		from tkinter import tkinter
-TclError = tkinter.TclError
+import _tkinter # If this fails your Python is not configured for Tk
+tkinter = _tkinter # b/w compat for export
+TclError = _tkinter.TclError
 from types import *
 from Tkconstants import *
 import string; _string = string; del string
 
-TkVersion = _string.atof(tkinter.TK_VERSION)
-TclVersion = _string.atof(tkinter.TCL_VERSION)
+TkVersion = _string.atof(_tkinter.TK_VERSION)
+TclVersion = _string.atof(_tkinter.TCL_VERSION)
 
 ######################################################################
 # Since the values of file event masks changed from Tk 4.0 to Tk 4.1,
@@ -667,7 +652,7 @@ class Tk(Misc, Wm):
 			baseName = os.path.basename(sys.argv[0])
 			baseName, ext = os.path.splitext(baseName)
 			if ext not in ('.py', 'pyc'): baseName = baseName + ext
-		self.tk = tkinter.create(screenName, baseName, className)
+		self.tk = _tkinter.create(screenName, baseName, className)
 		try:
 			# Disable event scanning except for Command-Period
 			import MacOS
@@ -679,15 +664,15 @@ class Tk(Misc, Wm):
 			self.update()
 		# Version sanity checks
 		tk_version = self.tk.getvar('tk_version')
-		if tk_version != tkinter.TK_VERSION:
+		if tk_version != _tkinter.TK_VERSION:
 		    raise RuntimeError, \
 		    "tk.h version (%s) doesn't match libtk.a version (%s)" \
-		    % (tkinter.TK_VERSION, tk_version)
+		    % (_tkinter.TK_VERSION, tk_version)
 		tcl_version = self.tk.getvar('tcl_version')
-		if tcl_version != tkinter.TCL_VERSION:
+		if tcl_version != _tkinter.TCL_VERSION:
 		    raise RuntimeError, \
 		    "tcl.h version (%s) doesn't match libtcl.a version (%s)" \
-		    % (tkinter.TCL_VERSION, tcl_version)
+		    % (_tkinter.TCL_VERSION, tcl_version)
 		if TkVersion < 4.0:
 			raise RuntimeError, \
 			"Tk 4.0 or higher is required; found Tk %s" \
