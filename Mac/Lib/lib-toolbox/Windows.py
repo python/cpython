@@ -1,4 +1,4 @@
-# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:MacWindows.h'
+# Generated from 'MacWindows.h'
 
 def FOUR_CHAR_CODE(x): return x
 kAlertWindowClass = 1L

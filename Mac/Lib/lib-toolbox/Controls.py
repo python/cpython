@@ -1,4 +1,4 @@
-# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Controls.h'
+# Generated from 'Controls.h'
 
 def FOUR_CHAR_CODE(x): return x
 from TextEdit import *

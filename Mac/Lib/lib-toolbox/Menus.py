@@ -1,4 +1,4 @@
-# Generated from "Sap:Programma's:Metrowerks CodeWarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Menus.h"
+# Generated from 'Menus.h'
 
 def FOUR_CHAR_CODE(x): return x
 noMark = 0                             

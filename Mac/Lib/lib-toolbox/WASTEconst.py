@@ -1,4 +1,4 @@
-# Generated from ':::::Waste 1.3 Distribution:WASTE C/C++ Headers:WASTE.h'
+# Generated from 'WASTE.h'
 
 kPascalStackBased = None # workaround for header parsing
 weCantUndoErr = -10015

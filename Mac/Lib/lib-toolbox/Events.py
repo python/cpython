@@ -1,4 +1,4 @@
-# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Events.h'
+# Generated from 'Events.h'
 
 nullEvent = 0
 mouseDown = 1

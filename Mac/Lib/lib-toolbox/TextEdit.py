@@ -1,4 +1,4 @@
-# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:TextEdit.h'
+# Generated from 'TextEdit.h'
 
 teJustLeft = 0
 teJustCenter = 1

@@ -1,4 +1,4 @@
-# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:AEDataModel.h'
+# Generated from 'AEDataModel.h'
 
 def FOUR_CHAR_CODE(x): return x
 typeBoolean = FOUR_CHAR_CODE('bool')
@@ -704,7 +704,7 @@ kFAEditCommand = FOUR_CHAR_CODE('edfa')
 kFAFileParam = FOUR_CHAR_CODE('faal')
 kFAIndexParam = FOUR_CHAR_CODE('indx')        
 kAEInternetSuite = FOUR_CHAR_CODE('gurl')
-kAEISWebStarSuite = FOUR_CHAR_CODE('WWW½')
+kAEISWebStarSuite = FOUR_CHAR_CODE('WWW‡')
 kAEISGetURL = FOUR_CHAR_CODE('gurl')
 KAEISHandleCGI = FOUR_CHAR_CODE('sdoc')
 cURL = FOUR_CHAR_CODE('url ')

@@ -1,4 +1,4 @@
-# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Sound.h'
+# Generated from 'Sound.h'
 
 def FOUR_CHAR_CODE(x): return x
 soundListRsrc = FOUR_CHAR_CODE('snd ')        

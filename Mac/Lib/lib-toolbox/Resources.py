@@ -1,4 +1,4 @@
-# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Resources.h'
+# Generated from 'Resources.h'
 
 resSysHeap = 64
 resPurgeable = 32

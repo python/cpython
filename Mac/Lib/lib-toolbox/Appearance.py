@@ -1,4 +1,4 @@
-# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Appearance.h'
+# Generated from 'Appearance.h'
 
 def FOUR_CHAR_CODE(x): return x
 kAppearanceEventClass = FOUR_CHAR_CODE('appr')
