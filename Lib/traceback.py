@@ -87,6 +87,8 @@ def format_exception(etype, value, tb, limit = None):
 	if tb:
 		list = ['Traceback (innermost last):\n']
 		list = list + format_tb(tb, limit)
+	else:
+		list = []
 	list = list + format_exception_only(etype, value)
 	return list
 
