@@ -123,9 +123,11 @@ class Distribution:
         # worth it.  Also delegate 'get_XXX()' methods to the 'metadata'
         # object in a sneaky and underhanded (but efficient!) way.
         self.metadata = DistributionMetadata ()
-        for attr in dir(self.metadata):
-            meth_name = "get_" + attr
-            setattr(self, meth_name, getattr(self.metadata, meth_name))
+        method_basenames = dir(self.metadata) + \
+                           ['fullname', 'contact', 'contact_email']
+        for basename in method_basenames:
+            method_name = "get_" + basename
+            setattr(self, method_name, getattr(self.metadata, method_name))
 
         # 'cmdclass' maps command names to class objects, so we
         # can 1) quickly figure out which class to instantiate when
