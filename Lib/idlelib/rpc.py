@@ -49,15 +49,16 @@ def pickle_code(co):
     ms = marshal.dumps(co)
     return unpickle_code, (ms,)
 
-def unpickle_function(ms):
-    return ms
+# XXX KBK 24Aug02 function pickling capability not used in Idle
+#  def unpickle_function(ms):
+#      return ms
 
-def pickle_function(fn):
-    assert isinstance(fn, type.FunctionType)
-    return `fn`
+#  def pickle_function(fn):
+#      assert isinstance(fn, type.FunctionType)
+#      return `fn`
  
 copy_reg.pickle(types.CodeType, pickle_code, unpickle_code)
-copy_reg.pickle(types.FunctionType, pickle_function, unpickle_function)
+# copy_reg.pickle(types.FunctionType, pickle_function, unpickle_function)
 
 BUFSIZE = 8*1024
 
@@ -66,8 +67,6 @@ class RPCServer(SocketServer.TCPServer):
     def __init__(self, addr, handlerclass=None):
         if handlerclass is None:
             handlerclass = RPCHandler
-# XXX KBK 25Jun02 Not used in Idlefork.
-#        self.objtable = objecttable 
         SocketServer.TCPServer.__init__(self, addr, handlerclass)
 
     def server_bind(self):
@@ -86,18 +85,6 @@ class RPCServer(SocketServer.TCPServer):
     def get_request(self):
         "Override TCPServer method, return already connected socket"
         return self.socket, self.server_address
-        
-
-# XXX The following two methods are not currently used in Idlefork.
-#      def register(self, oid, object):
-#          self.objtable[oid] = object
-
-#      def unregister(self, oid):
-#          try:
-#              del self.objtable[oid]
-#          except KeyError:
-#              pass
-
 
 objecttable = {}
 
@@ -405,16 +392,17 @@ class RPCClient(SocketIO):
     nextseq = 1 # Requests coming from the client are odd numbered
 
     def __init__(self, address, family=socket.AF_INET, type=socket.SOCK_STREAM):
-        self.sock = socket.socket(family, type)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.bind(address)
-        self.sock.listen(1)
+        self.listening_sock = socket.socket(family, type)
+        self.listening_sock.setsockopt(socket.SOL_SOCKET,
+                                       socket.SO_REUSEADDR, 1)
+        self.listening_sock.bind(address)
+        self.listening_sock.listen(1)
 
     def accept(self):
-        newsock, address = self.sock.accept()
+        working_sock, address = self.listening_sock.accept()
         if address[0] == '127.0.0.1':
             print>>sys.__stderr__, "Idle accepted connection from ", address
-            SocketIO.__init__(self, newsock)
+            SocketIO.__init__(self, working_sock)
         else:
             print>>sys.__stderr__, "Invalid host: ", address
             raise socket.error
