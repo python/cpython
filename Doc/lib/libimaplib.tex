@@ -91,11 +91,11 @@ All IMAP4rev1 commands are represented by methods of the same name,
 either upper-case or lower-case.
 
 All arguments to commands are converted to strings, except for
-AUTHENTICATE, and the last argument to APPEND which is passed as
-an IMAP4 literal.  If necessary (the string contains
-IMAP4 protocol-sensitive characters and isn't enclosed with either parentheses or
-double quotes) each string is quoted. However, the \var{password}
-argument to the LOGIN command is always quoted.
+\samp{AUTHENTICATE}, and the last argument to \samp{APPEND} which is
+passed as an IMAP4 literal.  If necessary (the string contains IMAP4
+protocol-sensitive characters and isn't enclosed with either
+parentheses or double quotes) each string is quoted. However, the
+\var{password} argument to the \samp{LOGIN} command is always quoted.
 
 Each command returns a tuple: \code{(\var{type}, [\var{data},
 ...])} where \var{type} is usually \code{'OK'} or \code{'NO'},
@@ -172,7 +172,7 @@ An \class{IMAP4} instance has the following methods:
 \end{methoddesc}
 
 \begin{methoddesc}{noop}{}
-  Send NOOP to server.
+  Send \samp{NOOP} to server.
 \end{methoddesc}
 
 \begin{methoddesc}{open}{host, port}
