@@ -22,6 +22,7 @@ def cmp_items((s1, line1), (s2, line2)):
     return rc
 
 
+
 def main():
     if sys.argv[1:]:
 	infile = sys.argv[1]
@@ -36,7 +37,7 @@ def main():
 	base, ext = os.path.splitext(infile)
 	outfile = base + ".ind"
 	ofp = open(outfile, "w")
-    ofp.write("\\begin{theindex}\n\n")
+    ofp.write("\\begin{theindex}\n\label{modindex}\n\n")
     lines = ifp.readlines()
     for i in range(len(lines)):
 	if lines[i][0] == '\\':
