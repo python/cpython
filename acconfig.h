@@ -60,6 +60,9 @@
 /* Define to empty if the keyword does not work.  */
 #undef volatile
 
+/* Define if you want SIGFPE handled (see Include/pyfpe.h). */
+#undef WANT_SIGFPE_HANDLER
+
 /* Define if you want to use SGI (IRIX 4) dynamic linking.
    This requires the "dl" library by Jack Jansen,
    ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
@@ -83,9 +86,6 @@
 
 /* Define if you want to use the GNU readline library */
 #undef WITH_READLINE
-
-/* Define if you want SIGFPE handled (see Include/pyfpe.h). */
-#undef WANT_SIGFPE_HANDLER
 
 
 /* Leave that blank line there-- autoheader needs it! */
