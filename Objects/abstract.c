@@ -1607,7 +1607,8 @@ PyMapping_Check(PyObject *o)
 
 	return  o && o->ob_type->tp_as_mapping &&
 		o->ob_type->tp_as_mapping->mp_subscript &&
-		!PyObject_HasAttrString(o, "__getslice__");
+		!(o->ob_type->tp_as_sequence && 
+		  o->ob_type->tp_as_sequence->sq_slice);
 }
 
 int
