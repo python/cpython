@@ -13,7 +13,7 @@
 #define PYTHON_VERSION MS_DLL_ID "." PYTHON_API_STRING "\0"
 
 #ifndef PYTHON_DLL_NAME
-#define PYTHON_DLL_NAME "Python20.dll"
+#define PYTHON_DLL_NAME "Python21.dll"
 #endif
 
 // String Tables

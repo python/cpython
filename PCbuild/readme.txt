@@ -3,8 +3,6 @@ Building Python using VC++ 6.0 or 5.0
 This directory is used to build Python for Win32 platforms, e.g. Windows
 95, 98 and NT.  It requires Microsoft Visual C++ 6.x or 5.x.
 (For other Windows platforms and compilers, see ../PC/readme.txt.)
-XXX There are still (Python 2.0b1) a few compiler warnings under VC6.
-XXX There are likely a few more under VC5.
 
 Unlike older versions, there's no longer a need to copy the project files
 from a subdirectory of PC/ to the PCbuild directory -- they come in PCbuild.
@@ -15,8 +13,8 @@ and build the projects.
 
 The proper order to build subprojects is:
 
-1) python20 (this builds the main Python DLL and library files,
-             python20.{dll, lib})
+1) pythoncore (this builds the main Python DLL and library files,
+               python21.{dll, lib})
 
 2) python   (this builds the main Python executable, python.exe)
 
@@ -26,16 +24,16 @@ The proper order to build subprojects is:
    to the subsystems they implement; see SUBPROJECTS below)
 
 When using the Debug setting, the output files have a _d added to
-their name:  python20_d.dll, python_d.exe, parser_d.pyd, and so on.
+their name:  python21_d.dll, python_d.exe, parser_d.pyd, and so on.
 
 SUBPROJECTS
 -----------
 These subprojects should build out of the box.  Subprojects other than the
-main ones (python20, python, pythonw) generally build a DLL (renamed to
+main ones (python21, python, pythonw) generally build a DLL (renamed to
 .pyd) from a specific module so that users don't have to load the code
 supporting that module unless they import the module.
 
-python20
+pythoncore
     .dll and .lib
 python
     .exe

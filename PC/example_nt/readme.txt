@@ -144,11 +144,11 @@ in the "Additional library path:" box.
 Now you need to add some mode-specific settings:
 
 Select "Win32 Release" in the "Settings for:" dropdown list.  Click the
-"Link" tab, choose the "Input" Category, and append "python20.lib" to the
+"Link" tab, choose the "Input" Category, and append "python21.lib" to the
 list in the "Object/library modules:" box.
 
 Select "Win32 Debug" in the "Settings for:" dropdown list, and append
-"python20_d.lib" to the list in the "Object/library modules:" box.  Then
+"python21_d.lib" to the list in the "Object/library modules:" box.  Then
 click on the C/C++ tab, select "Code Generation" from the "Category:"
 dropdown list, and select "Debug Multithreaded DLL" from the "Use run-time
 library:" dropdown list.
