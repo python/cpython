@@ -18,25 +18,63 @@ PyNode_New(int type)
 	return n;
 }
 
-#define XXX 3 /* Node alignment factor to speed up realloc */
-#define XXXROUNDUP(n) ((n) == 1 ? 1 : ((n) + XXX - 1) / XXX * XXX)
+/* See comments at XXXROUNDUP below.  Returns -1 on overflow. */
+static int
+fancy_roundup(int n)
+{
+	/* Round up to the closest power of 2 >= n. */
+	int result = 256;
+	assert(n > 128);
+	while (result < n) {
+		result <<= 1;
+		if (result <= 0)
+			return -1;
+	}
+	return result;
+}
+
+/* A gimmick to make massive numbers of reallocs quicker.  The result is
+ * a number >= the input.  For n=0 we must return 0.
+ * For n=1, we return 1, to avoid wasting memory in common 1-child nodes
+ * (XXX are those actually common?).
+ * Else for n <= 128, round up to the closest multiple of 4.  Why 4?
+ * Rounding up to a multiple of an exact power of 2 is very efficient.
+ * Else call fancy_roundup() to grow proportionately to n.  We've got an
+ * extreme case then (like test_longexp.py), and on many platforms doing
+ * anything less than proportional growth leads to exorbitant runtime
+ * (e.g., MacPython), or extreme fragmentation of user address space (e.g.,
+ * Win98).
+ * This would be straightforward if a node stored its current capacity.  The
+ * code is tricky to avoid that.
+ */
+#define XXXROUNDUP(n) ((n) == 1 ? 1 : \
+		       (n) <= 128 ? (((n) + 3) & ~3) : \
+		       fancy_roundup(n))
+
 
 int
 PyNode_AddChild(register node *n1, int type, char *str, int lineno)
 {
-	register int nch = n1->n_nchildren;
-	register int nch1 = nch+1;
-	register node *n;
+	const int nch = n1->n_nchildren;
+	int current_capacity;
+	int required_capacity;
+	node *n;
+
 	if (nch == INT_MAX || nch < 0)
 		return E_OVERFLOW;
-	if (XXXROUNDUP(nch) < nch1) {
+
+	current_capacity = XXXROUNDUP(nch);
+	required_capacity = XXXROUNDUP(nch + 1);
+	if (current_capacity < 0 || required_capacity < 0)
+		return E_OVERFLOW;
+	if (current_capacity < required_capacity) {
 		n = n1->n_child;
-		nch1 = XXXROUNDUP(nch1);
-		PyMem_RESIZE(n, node, nch1);
+		PyMem_RESIZE(n, node, required_capacity);
 		if (n == NULL)
 			return E_NOMEM;
 		n1->n_child = n;
 	}
+
 	n = &n1->n_child[n1->n_nchildren++];
 	n->n_type = type;
 	n->n_str = str;

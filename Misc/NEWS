@@ -4,6 +4,12 @@ Release date: dd-mmm-2002
 
 Core and builtins
 
+- Source that creates parse nodes with an extremely large number of
+  children (e.g.,  test_longexp.py) triggers problems with the
+  platform realloc() under several platforms (e.g., MacPython, and
+  Win98).  This has been fixed via a more-aggressive overallocation
+  strategy.
+
 - Fixed a bug with a continue inside a try block and a yield in the
   finally clause.  [SF bug 567538]
 
@@ -27,7 +33,7 @@ Core and builtins
 
 - String methods lstrip(), rstrip() and strip() now take an optional
   argument that specifies the characters to strip.  For example,
-  "Foo!!!?!?!?".rstrip("?!") -> "Foo". In addition, "200L".strip("L") 
+  "Foo!!!?!?!?".rstrip("?!") -> "Foo". In addition, "200L".strip("L")
   will return "200". This is useful for replacing code that assumed
   longs will always be printed with a trailing "L".
 
