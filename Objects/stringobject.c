@@ -1618,22 +1618,18 @@ string_join(PyStringObject *self, PyObject *orig)
 	}
 	if (seqlen == 1) {
 		item = PySequence_Fast_GET_ITEM(seq, 0);
-		if (!PyString_Check(item) && !PyUnicode_Check(item)) {
-			PyErr_Format(PyExc_TypeError,
-				     "sequence item 0: expected string,"
-				     " %.80s found",
-				     item->ob_type->tp_name);
+		if (PyString_CheckExact(item) || PyUnicode_CheckExact(item)) {
+			Py_INCREF(item);
 			Py_DECREF(seq);
-			return NULL;
+			return item;
 		}
-		Py_INCREF(item);
-		Py_DECREF(seq);
-		return item;
 	}
 
-	/* There are at least two things to join.  Do a pre-pass to figure out
-	 * the total amount of space we'll need (sz), see whether any argument
-	 * is absurd, and defer to the Unicode join if appropriate.
+	/* There are at least two things to join, or else we have a subclass
+	 * of the builtin types in the sequence.  
+	 * Do a pre-pass to figure out the total amount of space we'll
+	 * need (sz), see whether any argument is absurd, and defer to
+	 * the Unicode join if appropriate.
 	 */
 	for (i = 0; i < seqlen; i++) {
 		const size_t old_sz = sz;
