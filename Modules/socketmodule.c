@@ -9,8 +9,8 @@ Limitations:
 
 - only AF_INET, AF_INET6 and AF_UNIX address families are supported in a
   portable manner, though AF_PACKET is supported under Linux.
-- no read/write operations (use send/recv or makefile instead)
-- additional restrictions apply on Windows
+- no read/write operations (use sendall/recv or makefile instead)
+- additional restrictions apply on Windows (compensated for by socket.py)
 
 Module interface:
 
@@ -76,6 +76,9 @@ Socket methods:
 */
 
 #include "Python.h"
+
+/* XXX This is a terrible mess of of platform-dependent preprocessor hacks.
+   I hope some day someone can clean this up please... */
 
 /* Hacks for gethostbyname_r().  On some non-Linux platforms, the configure
    script doesn't get this right, so we hardcode some platform checks below.
@@ -266,6 +269,10 @@ typedef int SOCKET_T;
 #ifndef SOCKETCLOSE
 #define SOCKETCLOSE close
 #endif
+
+
+/* XXX There's a problem here: *static* functions are not supposed to have
+   a Py prefix (or use CapitalizedWords).  Later... */
 
 /* Global variable holding the exception type for errors detected
    by this module (but not argument type or memory errors, etc.). */
@@ -460,7 +467,7 @@ PyGAI_Err(int error)
 
 typedef struct {
 	PyObject_HEAD
-	SOCKET_T sock_fd;		/* Socket file descriptor */
+	SOCKET_T sock_fd;	/* Socket file descriptor */
 	int sock_family;	/* Address family, e.g., AF_INET */
 	int sock_type;		/* Socket type, e.g., SOCK_STREAM */
 	int sock_proto;		/* Protocol type, usually 0 */
@@ -511,6 +518,27 @@ staticforward PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args);
 staticforward PyTypeObject PySocketSock_Type;
 
 
+/* Initialize a new socket object. */
+
+static void
+init_sockobject(PySocketSockObject *s,
+		SOCKET_T fd, int family, int type, int proto)
+{
+#ifdef RISCOS
+	int block = 1;
+#endif
+	s->sock_fd = fd;
+	s->sock_family = family;
+	s->sock_type = type;
+	s->sock_proto = proto;
+#ifdef RISCOS
+	if(taskwindow) {
+		socketioctl(s->sock_fd, 0x80046679, (u_long*)&block);
+	}
+#endif
+}
+
+
 /* Create a new socket object.
    This just creates the object and initializes it.
    If the creation fails, return NULL and set an exception (implicit
@@ -519,23 +547,11 @@ staticforward PyTypeObject PySocketSock_Type;
 static PySocketSockObject *
 PySocketSock_New(SOCKET_T fd, int family, int type, int proto)
 {
-#ifdef RISCOS
-	int block = 1;
-#endif
 	PySocketSockObject *s;
-	PySocketSock_Type.ob_type = &PyType_Type;
-	s = PyObject_New(PySocketSockObject, &PySocketSock_Type);
-	if (s != NULL) {
-		s->sock_fd = fd;
-		s->sock_family = family;
-		s->sock_type = type;
-		s->sock_proto = proto;
-#ifdef RISCOS
-		if(taskwindow) {
-			socketioctl(s->sock_fd, 0x80046679, (u_long*)&block);
-		}
-#endif
-	}
+	s = (PySocketSockObject *)
+		PyType_GenericNew(&PySocketSock_Type, NULL, NULL);
+	if (s != NULL)
+		init_sockobject(s, fd, family, type, proto);
 	return s;
 }
 
@@ -1720,16 +1736,7 @@ PySocketSock_dealloc(PySocketSockObject *s)
 {
 	if (s->sock_fd != -1)
 		(void) SOCKETCLOSE(s->sock_fd);
-	PyObject_Del(s);
-}
-
-
-/* Return a socket object's named attribute. */
-
-static PyObject *
-PySocketSock_getattr(PySocketSockObject *s, char *name)
-{
-	return Py_FindMethod(PySocketSock_methods, (PyObject *) s, name);
+	s->ob_type->tp_free((PyObject *)s);
 }
 
 
@@ -1754,23 +1761,136 @@ PySocketSock_repr(PySocketSockObject *s)
 }
 
 
+/* Create a new, uninitialized socket object. */
+
+static PyObject *
+PySocketSock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *new;
+
+	new = type->tp_alloc(type, 0);
+	if (new != NULL)
+		((PySocketSockObject *)new)->sock_fd = -1;
+	return new;
+}
+
+
+/* Initialize a new socket object. */
+
+/*ARGSUSED*/
+static int
+PySocketSock_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	PySocketSockObject *s = (PySocketSockObject *)self;
+	SOCKET_T fd;
+	int family = AF_INET, type = SOCK_STREAM, proto = 0;
+	static char *keywords[] = {"family", "type", "proto", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds,
+					 "|iii:socket", keywords,
+					 &family, &type, &proto))
+		return -1;
+	Py_BEGIN_ALLOW_THREADS
+	fd = socket(family, type, proto);
+	Py_END_ALLOW_THREADS
+#ifdef MS_WINDOWS
+	if (fd == INVALID_SOCKET)
+#else
+	if (fd < 0)
+#endif
+	{
+		PySocket_Err();
+		return -1;
+	}
+	init_sockobject(s, fd, family, type, proto);
+	/* From now on, ignore SIGPIPE and let the error checking
+	   do the work. */
+#ifdef SIGPIPE
+	(void) signal(SIGPIPE, SIG_IGN);
+#endif
+	return 0;
+}
+
+
 /* Type object for socket objects. */
+
+static char socket_doc[] =
+"socket([family[, type[, proto]]]) -> socket object\n\
+\n\
+Open a socket of the given type.  The family argument specifies the\n\
+address family; it defaults to AF_INET.  The type argument specifies\n\
+whether this is a stream (SOCK_STREAM, this is the default)\n\
+or datagram (SOCK_DGRAM) socket.  The protocol argument defaults to 0,\n\
+specifying the default protocol.\n\
+\n\
+A socket represents one endpoint of a network connection.\n\
+\n\
+Methods:\n\
+\n\
+accept() -- accept a connection, returning new socket and client address\n\
+bind() -- bind the socket to a local address\n\
+close() -- close the socket\n\
+connect() -- connect the socket to a remote address\n\
+connect_ex() -- connect, return an error code instead of an exception \n\
+dup() -- return a new socket object identical to the current one (*)\n\
+fileno() -- return underlying file descriptor\n\
+getpeername() -- return remote address (*)\n\
+getsockname() -- return local address\n\
+getsockopt() -- get socket options\n\
+listen() -- start listening for incoming connections\n\
+makefile() -- return a file object corresponding tot the socket (*)\n\
+recv() -- receive data\n\
+recvfrom() -- receive data and sender's address\n\
+send() -- send data, may not send all of it\n\
+sendall() -- send all data\n\
+sendto() -- send data to a given address\n\
+setblocking() -- set or clear the blocking I/O flag\n\
+setsockopt() -- set socket options\n\
+shutdown() -- shut down traffic in one or both directions\n\
+\n\
+(*) not available on all platforms!)";
 
 static PyTypeObject PySocketSock_Type = {
 	PyObject_HEAD_INIT(0)	/* Must fill in type value later */
-	0,
-	"socket",
-	sizeof(PySocketSockObject),
-	0,
-	(destructor)PySocketSock_dealloc, /*tp_dealloc*/
-	0,		/*tp_print*/
-	(getattrfunc)PySocketSock_getattr, /*tp_getattr*/
-	0,		/*tp_setattr*/
-	0,		/*tp_compare*/
-	(reprfunc)PySocketSock_repr, /*tp_repr*/
-	0,		/*tp_as_number*/
-	0,		/*tp_as_sequence*/
-	0,		/*tp_as_mapping*/
+	0,					/* ob_size */
+	"socket.socket",			/* tp_name */
+	sizeof(PySocketSockObject),		/* tp_basicsize */
+	0,					/* tp_itemsize */
+	(destructor)PySocketSock_dealloc,	/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	(reprfunc)PySocketSock_repr,		/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+	socket_doc,				/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	PySocketSock_methods,			/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	PySocketSock_init,			/* tp_init */
+	PyType_GenericAlloc,			/* tp_alloc */
+	PySocketSock_new,			/* tp_new */
+	_PyObject_Del,				/* tp_free */
 };
 
 
@@ -2147,51 +2267,6 @@ static char getprotobyname_doc[] =
 "getprotobyname(name) -> integer\n\
 \n\
 Return the protocol number for the named protocol.  (Rarely used.)";
-
-
-/* Python interface to socket(family, type, proto).
-   The third (protocol) argument is optional.
-   Return a new socket object. */
-
-/*ARGSUSED*/
-static PyObject *
-PySocket_socket(PyObject *self, PyObject *args)
-{
-	PySocketSockObject *s;
-	SOCKET_T fd;
-	int family, type, proto = 0;
-	if (!PyArg_ParseTuple(args, "ii|i:socket", &family, &type, &proto))
-		return NULL;
-	Py_BEGIN_ALLOW_THREADS
-	fd = socket(family, type, proto);
-	Py_END_ALLOW_THREADS
-#ifdef MS_WINDOWS
-	if (fd == INVALID_SOCKET)
-#else
-	if (fd < 0)
-#endif
-		return PySocket_Err();
-	s = PySocketSock_New(fd, family, type, proto);
-	/* If the object can't be created, don't forget to close the
-	   file descriptor again! */
-	if (s == NULL)
-		(void) SOCKETCLOSE(fd);
-	/* From now on, ignore SIGPIPE and let the error checking
-	   do the work. */
-#ifdef SIGPIPE
-	(void) signal(SIGPIPE, SIG_IGN);
-#endif
-	return (PyObject *) s;
-}
-
-static char socket_doc[] =
-"socket(family, type[, proto]) -> socket object\n\
-\n\
-Open a socket of the given type.  The family argument specifies the\n\
-address family; it is normally AF_INET, sometimes AF_UNIX.\n\
-The type argument specifies whether this is a stream (SOCK_STREAM)\n\
-or datagram (SOCK_DGRAM) socket.  The protocol argument defaults to 0,\n\
-specifying the default protocol.";
 
 
 #ifndef NO_DUP
@@ -2792,7 +2867,7 @@ static PyObject *PySSL_getattr(PySSLObject *self, char *name)
 staticforward PyTypeObject PySSL_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/*ob_size*/
-	"SSL",			/*tp_name*/
+	"SSL",				/*tp_name*/
 	sizeof(PySSLObject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */
@@ -2886,8 +2961,6 @@ static PyMethodDef PySocket_methods[] = {
 	 METH_VARARGS, getservbyname_doc},
 	{"getprotobyname",	PySocket_getprotobyname,
 	 METH_VARARGS,getprotobyname_doc},
-	{"socket",		PySocket_socket,
-	 METH_VARARGS, socket_doc},
 #ifndef NO_DUP
 	{"fromfd",		PySocket_fromfd,
 	 METH_VARARGS, fromfd_doc},
@@ -3029,33 +3102,6 @@ static char module_doc[] =
 "Implementation module for socket operations.  See the socket module\n\
 for documentation.";
 
-static char sockettype_doc[] =
-"A socket represents one endpoint of a network connection.\n\
-\n\
-Methods:\n\
-\n\
-accept() -- accept a connection, returning new socket and client address\n\
-bind() -- bind the socket to a local address\n\
-close() -- close the socket\n\
-connect() -- connect the socket to a remote address\n\
-connect_ex() -- connect, return an error code instead of an exception \n\
-dup() -- return a new socket object identical to the current one (*)\n\
-fileno() -- return underlying file descriptor\n\
-getpeername() -- return remote address (*)\n\
-getsockname() -- return local address\n\
-getsockopt() -- get socket options\n\
-listen() -- start listening for incoming connections\n\
-makefile() -- return a file object corresponding tot the socket (*)\n\
-recv() -- receive data\n\
-recvfrom() -- receive data and sender's address\n\
-send() -- send data\n\
-sendto() -- send data to a given address\n\
-setblocking() -- set or clear the blocking I/O flag\n\
-setsockopt() -- set socket options\n\
-shutdown() -- shut down traffic in one or both directions\n\
-\n\
-(*) not available on all platforms!)";
-
 DL_EXPORT(void)
 init_socket(void)
 {
@@ -3076,6 +3122,7 @@ init_socket(void)
 #endif /* __TOS_OS2__ */
 #endif /* MS_WINDOWS */
 #endif /* RISCOS */
+	PySocketSock_Type.ob_type = &PyType_Type;
 #ifdef USE_SSL
 	PySSL_Type.ob_type = &PyType_Type;
 #endif
@@ -3117,9 +3164,10 @@ init_socket(void)
 	PyModule_AddIntConstant(m, "SSL_ERROR_SSL",
 				SSL_ERROR_SSL);
 #endif /* USE_SSL */
-	PySocketSock_Type.ob_type = &PyType_Type;
-	PySocketSock_Type.tp_doc = sockettype_doc;
 	if (PyDict_SetItemString(d, "SocketType",
+				 (PyObject *)&PySocketSock_Type) != 0)
+		return;
+	if (PyDict_SetItemString(d, "socket",
 				 (PyObject *)&PySocketSock_Type) != 0)
 		return;
 
