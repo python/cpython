@@ -20,6 +20,11 @@ Library
 
 C API
 
+- A type can now inherit its metatype from its base type.  Previously,
+  when PyType_Ready() was called, if ob_type was found to be NULL, it
+  was always set to &PyType_Type; now it is set to base->ob_type,
+  where base is tp_base, defaulting to &PyObject_Type.
+
 - PyType_Ready() accidentally did not inherit tp_is_gc; now it does.
 
 Windows
