@@ -1,7 +1,7 @@
 \documentclass{howto}
 
-\title{What's New in Python 1.6}
-\release{0.03}
+\title{What's New in Python 2.0}
+\release{0.04}
 \author{A.M. Kuchling and Moshe Zadka}
 \authoraddress{\email{amk1@bigfoot.com}, \email{moshez@math.huji.ac.il} }
 \begin{document}
@@ -11,32 +11,27 @@
 
 {\large This is a draft document; please report inaccuracies and
 omissions to the authors.  This document should not be treated as
-definitive; features described here might be removed or changed before
-Python 1.6final. \\ 
-
-XXX marks locations in the text where fact-checking or rewriting is
-still needed.  
-
+definitive; features described here might be removed or changed during
+the beta cycle before the final release of Python 2.0. 
 }
 
-A new release of Python, version 1.6, will be released some time this
+A new release of Python, version 2.0, will be released some time this
 summer.  Alpha versions are already available from
-\url{http://www.python.org/1.6/}.  This article talks about the
-exciting new features in 1.6, highlights some other useful changes,
-and points out a few incompatible changes that may require rewriting
-code.
+\url{http://www.python.org/2.0/}.  This article covers the exciting
+new features in 2.0, highlights some other useful changes, and points
+out a few incompatible changes that may require rewriting code.
 
 Python's development never completely stops between releases, and a
 steady flow of bug fixes and improvements are always being submitted.
 A host of minor fixes, a few optimizations, additional docstrings, and
-better error messages went into 1.6; to list them all would be
+better error messages went into 2.0; to list them all would be
 impossible, but they're certainly significant.  Consult the
 publicly-available CVS logs if you want to see the full list.
 
 % ======================================================================
 \section{Unicode}
 
-The largest new feature in Python 1.6 is a new fundamental data type:
+The largest new feature in Python 2.0 is a new fundamental data type:
 Unicode strings.  Unicode uses 16-bit numbers to represent characters
 instead of the 8-bit number used by ASCII, meaning that 65,536
 distinct characters can be supported.
@@ -172,7 +167,7 @@ strings and provide only Unicode strings.
 % ======================================================================
 \section{Distutils: Making Modules Easy to Install}
 
-Before Python 1.6, installing modules was a tedious affair -- there
+Before Python 2.0, installing modules was a tedious affair -- there
 was no way to figure out automatically where Python is installed, or
 what compiler options to use for extension modules.  Software authors
 had to go through an ardous ritual of editing Makefiles and
@@ -258,7 +253,7 @@ functions such as \function{string.replace()}, which takes 3 string
 arguments, that means eight possible permutations, and correspondingly
 complicated code.
 
-Instead, Python 1.6 pushes the problem onto the string type, making
+Instead, Python 2.0 pushes the problem onto the string type, making
 string manipulation functionality available through methods on both
 8-bit strings and Unicode strings.  
 
@@ -279,27 +274,26 @@ The old \module{string} module is still around for backwards
 compatibility, but it mostly acts as a front-end to the new string
 methods.
 
-Two methods which have no parallel in pre-1.6 versions, although they
+Two methods which have no parallel in pre-2.0 versions, although they
 did exist in JPython for quite some time, are \method{startswith()}
 and \method{endswith}.  \code{s.startswith(t)} is equivalent to \code{s[:len(t)]
 == t}, while \code{s.endswith(t)} is equivalent to \code{s[-len(t):] == t}.
 
-(XXX what'll happen to join? is this even worth mentioning?)  One
-other method which deserves special mention is \method{join}.  The
-\method{join} method of a string receives one parameter, a sequence of
-strings, and is equivalent to the \function{string.join} function from
-the old \module{string} module, with the arguments reversed. In other
-words, \code{s.join(seq)} is equivalent to the old
-\code{string.join(seq, s)}.
+%One other method which deserves special mention is \method{join}.  The
+%\method{join} method of a string receives one parameter, a sequence of
+%strings, and is equivalent to the \function{string.join} function from
+%the old \module{string} module, with the arguments reversed. In other
+%words, \code{s.join(seq)} is equivalent to the old
+%\code{string.join(seq, s)}.
 
 % ======================================================================
-\section{Porting to 1.6}
+\section{Porting to 2.0}
 
 New Python releases try hard to be compatible with previous releases,
 and the record has been pretty good.  However, some changes are
 considered useful enough, often fixing initial design decisions that
 turned to be actively mistaken, that breaking backward compatibility
-can't always be avoided.  This section lists the changes in Python 1.6
+can't always be avoided.  This section lists the changes in Python 2.0
 that may cause old Python code to break.
 
 The change which will probably break the most code is tightening up
@@ -307,7 +301,7 @@ the arguments accepted by some methods.  Some methods would take
 multiple arguments and treat them as a tuple, particularly various
 list methods such as \method{.append()} and \method{.insert()}.
 In earlier versions of Python, if \code{L} is a list, \code{L.append(
-1,2 )} appends the tuple \code{(1,2)} to the list.  In Python 1.6 this
+1,2 )} appends the tuple \code{(1,2)} to the list.  In Python 2.0 this
 causes a \exception{TypeError} exception to be raised, with the
 message: 'append requires exactly 1 argument; 2 given'.  The fix is to
 simply add an extra set of parentheses to pass both values as a tuple: 
@@ -315,10 +309,10 @@ simply add an extra set of parentheses to pass both values as a tuple:
 
 The earlier versions of these methods were more forgiving because they
 used an old function in Python's C interface to parse their arguments;
-1.6 modernizes them to use \function{PyArg_ParseTuple}, the current
+2.0 modernizes them to use \function{PyArg_ParseTuple}, the current
 argument parsing function, which provides more helpful error messages
 and treats multi-argument calls as errors.  If you absolutely must use
-1.6 but can't fix your code, you can edit \file{Objects/listobject.c}
+2.0 but can't fix your code, you can edit \file{Objects/listobject.c}
 and define the preprocessor symbol \code{NO_STRICT_LIST_APPEND} to
 preserve the old behaviour; this isn't recommended.
 
@@ -327,7 +321,7 @@ forgiving in this way.  For example, \function{socket.connect(
 ('hostname', 25) )} is the correct form, passing a tuple representing
 an IP address, but \function{socket.connect( 'hostname', 25 )} also
 works. \function{socket.connect_ex()} and \function{socket.bind()} are
-similarly easy-going.  1.6alpha1 tightened these functions up, but
+similarly easy-going.  2.0alpha1 tightened these functions up, but
 because the documentation actually used the erroneous multiple
 argument form, many people wrote code which would break with the
 stricter checking.  GvR backed out the changes in the face of public
@@ -341,7 +335,7 @@ to allow reading files larger than 2Gb; this made the \method{tell()}
 method of file objects return a long integer instead of a regular
 integer.  Some code would subtract two file offsets and attempt to use
 the result to multiply a sequence or slice a string, but this raised a
-\exception{TypeError}.  In 1.6, long integers can be used to multiply
+\exception{TypeError}.  In 2.0, long integers can be used to multiply
 or slice a sequence, and it'll behave as you'd intuitively expect it
 to; \code{3L * 'abc'} produces 'abcabcabc', and \code{
 (0,1,2,3)[2L:4L]} produces (2,3). Long integers can also be used in
@@ -353,7 +347,7 @@ of a long integer no longer has a trailing 'L' character, though
 \function{repr()} still includes it.  The 'L' annoyed many people who
 wanted to print long integers that looked just like regular integers,
 since they had to go out of their way to chop off the character.  This
-is no longer a problem in 1.6, but code which assumes the 'L' is
+is no longer a problem in 2.0, but code which assumes the 'L' is
 there, and does \code{str(longval)[:-1]} will now lose the final
 digit.  
 
@@ -367,8 +361,9 @@ For example, the number 8.1 can't be represented exactly in binary, so
 \code{repr(8.1)} is \code{'8.0999999999999996'}, while str(8.1) is
 \code{'8.1'}.
 
-%The \code{-X} command-line option, which turns all standard exceptions
-%into strings instead of classes, has been removed.  
+The \code{-X} command-line option, which turned all standard
+exceptions into strings instead of classes, has been removed;
+the standard exceptions will now always be classes.
 
 % ======================================================================
 \section{Optional Collection of Cycles}
@@ -411,26 +406,22 @@ cycle if they have references to each other, causing all of the
 objects to be leaked.
 
 An experimental step has been made toward fixing this problem.  When
-compiling Python, the \code{--with-cycle-gc} (XXX correct option
-flag?) option can be specified.  This causes a cycle detection
-algorithm to be periodically executed, which looks for inaccessible
-cycles and deletes the objects involved.  
+compiling Python, the \verb|--with-cycle-gc| option can be specified.
+This causes a cycle detection algorithm to be periodically executed,
+which looks for inaccessible cycles and deletes the objects involved.
 
-Why isn't this enabled by default?  Running the cycle detection
+Why isn't cycle detection enabled by default?  Running the cycle detection
 algorithm takes some time, and some tuning will be required to
 minimize the overhead cost.  It's not yet obvious how much performance
-is lost, because benchmarking this is tricky and depends sensitively
-on how often the program creates and destroys objects.  XXX is this
-actually the correct reason?  Or is it fear of breaking software that
-runs happily while leaving garbage?
+is lost, because benchmarking this is tricky and depends crucially
+on how often the program creates and destroys objects. 
 
-Several people worked on this problem.  Early versions were written by
-XXX1, XXX2.  (I vaguely remember several people writing first cuts at this.  
-Anyone recall who?)
-The implementation that's in Python 1.6 is a rewritten version, this
-time done by Neil Schemenauer.  Lots of other people offered
-suggestions along the way, such as (in alphabetical order)
-Marc-Andr\'e Lemburg, Tim Peters, Greg Stein, Eric Tiedemann.  The
+Several people tackled this problem and contributed to a solution.  An
+early implementation of the cycle detection approach was written by
+Toby Kelsey.  The current algorithm was suggested by Eric Tiedemann
+during a visit to CNRI, and Guido van Rossum and Neil Schemenauer
+wrote two different implementations, which were later integrated by
+Neil.  Lots of other people offered suggestions along the way; the
 March 2000 archives of the python-dev mailing list contain most of the
 relevant discussion, especially in the threads titled ``Reference
 cycle collection for Python'' and ``Finalization again''.
@@ -449,7 +440,7 @@ In Python 1.5 and earlier, you do this with the \function{apply()}
 built-in function: \code{apply(f, \var{args}, \var{kw})} calls the
 function \function{f()} with the argument tuple \var{args} and the
 keyword arguments in the dictionary \var{kw}.  Thanks to a patch from
-Greg Ewing, 1.6 adds \code{f(*\var{args}, **\var{kw})} as a shorter
+Greg Ewing, 2.0 adds \code{f(*\var{args}, **\var{kw})} as a shorter
 and clearer way to achieve the same effect.  This syntax is
 symmetrical with the syntax for defining functions:
 
@@ -516,8 +507,8 @@ An attempt has been made to alleviate one of Python's warts, the
 often-confusing \exception{NameError} exception when code refers to a
 local variable before the variable has been assigned a value.  For
 example, the following code raises an exception on the \keyword{print}
-statement in both 1.5.2 and 1.6; in 1.5.2 a \exception{NameError}
-exception is raised, while 1.6 raises a new
+statement in both 1.5.2 and 2.0; in 1.5.2 a \exception{NameError}
+exception is raised, while 2.0 raises a new
 \exception{UnboundLocalError} exception.
 \exception{UnboundLocalError} is a subclass of \exception{NameError},
 so any existing code that expects \exception{NameError} to be raised
@@ -533,7 +524,7 @@ f()
 A new variable holding more detailed version information has been
 added to the \module{sys} module.  \code{sys.version_info} is a tuple
 \code{(\var{major}, \var{minor}, \var{micro}, \var{level},
-\var{serial})} For example, in 1.6a2 \code{sys.version_info} is
+\var{serial})} For example, in 2.0a2 \code{sys.version_info} is
 \code{(1, 6, 0, 'alpha', 2)}.  \var{level} is a string such as
 \code{"alpha"}, \code{"beta"}, or \code{""} for a final release.
 
@@ -547,7 +538,7 @@ you can safely skip this section.
 
 The version number of the Python C API was incremented, so C
 extensions compiled for 1.5.2 must be recompiled in order to work with
-1.6.  On Windows, attempting to import a third party extension built
+2.0.  On Windows, attempting to import a third party extension built
 for Python 1.5.x usually results in an immediate crash; there's not
 much we can do about this.  (XXX can anyone tell me why it crashes?)
 
@@ -581,7 +572,7 @@ Threading support on Windows was enhanced, too.  Windows supports
 thread locks that use kernel objects only in case of contention; in
 the common case when there's no contention, they use simpler functions
 which are an order of magnitude faster.  A threaded version of Python
-1.5.2 on NT is twice as slow as an unthreaded version; with the 1.6
+1.5.2 on NT is twice as slow as an unthreaded version; with the 2.0
 changes, the difference is only 10\%.  These improvements were
 contributed by Yakov Markovitch.
 
@@ -626,7 +617,7 @@ is no longer compatible with operating systems that only have BSD
 curses, but there don't seem to be any currently maintained OSes that
 fall into this category.
 
-As mentioned in the earlier discussion of 1.6's Unicode support, the
+As mentioned in the earlier discussion of 2.0's Unicode support, the
 underlying implementation of the regular expressions provided by the
 \module{re} module has been changed.  SRE, a new regular expression
 engine written by Fredrik Lundh and partially funded by Hewlett
@@ -637,7 +628,7 @@ strings.
 \section{New modules}
 
 A number of new modules were added.  We'll simply list them with brief
-descriptions; consult the 1.6 documentation for the details of a
+descriptions; consult the 2.0 documentation for the details of a
 particular module.
 
 \begin{itemize}
@@ -675,10 +666,13 @@ checks Python source code for ambiguous indentation.
 
 \item{\module{UserString}:} A base class useful for deriving objects that behave like strings.  
 
-\item{\module{winreg}:} An interface to the Windows registry.
-\module{winreg} has been part of PythonWin since 1995, but now has
-been added to the core distribution, and enhanced to support Unicode.
-(Contributed by Bill Tutt and Mark Hammond.)
+\item{\module{winreg} and \module{_wingreg}:} An interface to the
+Windows registry.  \module{winreg} has been part of PythonWin since
+1995, but now has been added to the core distribution, and enhanced to
+support Unicode.  \module{_winreg} is a low-level wrapper of the
+Windows registry functions, contributed by Bill Tutt and Mark Hammond,
+while \module{winreg} is a higher-level, more object-oriented API on top of 
+\module{_winreg}, designed by Thomas Heller and implemented by Paul Prescod.
 
 \item{\module{zipfile}:} A module for reading and writing ZIP-format
 archives.  These are archives produced by \program{PKZIP} on
@@ -698,7 +692,7 @@ discussion on python-dev along the way.)
 \section{IDLE Improvements}
 
 IDLE is the official Python cross-platform IDE, written using Tkinter.
-Python 1.6 includes IDLE 0.6, which adds a number of new features and
+Python 2.0 includes IDLE 0.6, which adds a number of new features and
 improvements.  A partial list:
 
 \begin{itemize}
@@ -706,7 +700,7 @@ improvements.  A partial list:
 especially in the area of syntax highlighting and auto-indentation.
 
 \item The class browser now shows more information, such as the top
-level functions in a module (XXX did I interpret that right?).
+level functions in a module.
 
 \item Tab width is now a user settable option. When opening an existing Python
 file, IDLE automatically detects the indentation conventions, and adapts.
@@ -724,7 +718,7 @@ the vanilla Python interpreter.
 \item In the editor window, there is now a line/column bar at the bottom.
 
 \item Three new keystroke commands: Check module (Alt-F5), Import
-module (F5) and Run script (Ctrl-F5)
+module (F5) and Run script (Ctrl-F5).
 
 \end{itemize}
 
@@ -746,11 +740,13 @@ If you have code which relies on a module  that's been moved to
 to get them back, but you're encouraged to update any code that uses
 these modules.
 
-XXX any others deleted?
+\section{Acknowledgements}
 
-XXX Other candidates for deletion in 1.6: sgimodule.c, glmodule.c (and hence
-cgenmodule.c), imgfile.c, svmodule.c, flmodule.c, fmmodule.c,  almodule.c, clmodule.c, 
- knee.py.  
+The author would like to thank the following people for offering suggestions on earlier drafts of this article: 
+Skip Montanaro,
+Vladimir Marangozov,
+Guido van Rossum, 
+Neil Schemenauer.
 
 \end{document}
 
