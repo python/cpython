@@ -56,8 +56,16 @@ of Irix, but with Solaris 2.6 and 2.7 you need to do something like:
 
 \begin{verbatim}
 CFLAGS="`getconf LFS_CFLAGS`" OPT="-g -O2 $CFLAGS" \
-        configure
+        ./configure
 \end{verbatim} % $ <-- bow to font-lock
+
+On large-file-capable Linux systems, this might work:
+
+\begin{verbatim}
+CC="-D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
+export CC
+./configure
+\end{verbatim}
 
 
 \subsection{Module Contents \label{posix-contents}}
