@@ -2,7 +2,7 @@ Pynche - The PYthonically Natural Color and Hue Editor
 
 Contact: Barry A. Warsaw
 Email:   bwarsaw@python.org
-Version: 1.1
+Version: 1.2
 
 Introduction
 
@@ -31,7 +31,8 @@ Introduction
     the license only for rgb.txt and both files are in the X/
     subdirectory.
 
-    Pynche is pronounced `Pinch-ee'.
+    Pynche is pronounced: Pin'-chee
+
 
 Running Standalone
 
@@ -66,14 +67,15 @@ Running Standalone
         many shells, it is optional in the spec (e.g. #45dd1f is the
         same as 45dd1f).
 
+
 Running as a Modal Dialog
 
     Pynche can be run as a modal dialog, inside another application,
-    say as a general color chooser.  In fact, Grail 0.6 already uses
-    Pynche and a future version of IDLE may as well.  Pynche supports
-    the API implemented by the Tkinter standard tkColorChooser module,
-    with a few changes as described below.  By importing pyColorChooser
-    from the Pynche package, you can run
+    say as a general color chooser.  In fact, Grail 0.6 uses Pynche
+    and a future version of IDLE may as well.  Pynche supports the API
+    implemented by the Tkinter standard tkColorChooser module, with a
+    few changes as described below.  By importing pyColorChooser from
+    the Pynche package, you can run
 
         pyColorChooser.askcolor()
 
@@ -128,6 +130,7 @@ Running as a Modal Dialog
         [*] these arguments must be specified the first time
         askcolor() is used and cannot be changed on subsequent calls.
 
+
 The Colorstrip Window
 
     The top part of the main Pynche window contains the "variation
@@ -148,11 +151,12 @@ The Colorstrip Window
 
     Click on "Update while dragging" if you want Pynche to update the
     selected color while you drag along any variation strip (this will
-    be slower).  Click on "Hexadecimal" to display the arrow numbers
-    in hex.
+    be a bit slower).  Click on "Hexadecimal" to display the arrow
+    numbers in hex.
 
     There are also two shortcut buttons in this window, which
     auto-select Black (0/0/0) and White (255/255/255).
+
 
 The Proof Window
 
@@ -172,6 +176,7 @@ The Proof Window
     Nearest chip.  The other names are "aliases" and they are visible
     in the Color List Window (see below).
 
+
 The Type-in Window
 
     At the lower right of the main window are three entry fields.
@@ -185,11 +190,13 @@ The Type-in Window
     value!)  Click on "Hexadecimal" to display and enter color values
     in hex.
 
+
 Other Views
 
     There are three secondary windows which are not displayed by
     default.  You can bring these up via the "View" menu on the main
     Pynche window.
+
 
 The Text Window
 
@@ -214,6 +221,7 @@ The Text Window
     new text will be inserted as you type.  The insertion cursor only
     has a background.
 
+
 The Color List Window
 
     The "Color List" window shows every named color in the color name
@@ -234,6 +242,7 @@ The Color List Window
     from the main window.  There's no way to turn this feature off.  If
     the selected color has no matching color name you'll see
     "<no matching color>" in the Aliases window.
+
 
 The Details Window
 
@@ -288,12 +297,14 @@ The Details Window
     +10 == Control Right Arrow
     +25 == Shift Right Arrow
 
+
 Keyboard Accelerators
 
     Alt-w in any secondary window dismisses the window.  In the main
     window it exits Pynche (except when running as a modal).
 
     Alt-q in any window exits Pynche (except when running as a modal).
+
 
 Persistency
 
@@ -325,6 +336,7 @@ Persistency
     you really want to do this, use /dev/null as the init file, using
     --initfile.
 
+
 Color Name Database Files
 
     Pynche uses a color name database file to calculate the nearest
@@ -352,9 +364,10 @@ Color Name Database Files
     update the appropriate windows.  If not, it will bring up an error 
     dialog.
 
+
 To Do
 
-    Here's a brief list of things I want to do:
+    Here's a brief list of things I want to do (some mythical day):
 
     - Better support for resizing the top level windows
 
@@ -364,6 +377,8 @@ To Do
       new output view
 
     - Support setting the font in the text view
+
+    - Support distutils setup.py for installation
 
     I'm open to suggestions!
 
