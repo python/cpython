@@ -1010,10 +1010,14 @@ implement the operation for a given pair of arguments.
 
 \begin{methoddesc}[object]{__cmp__}{self, other}
 Called by comparison operations if rich comparison (see above) is not
-defined.  Should return a negative integer if
-\code{self < other},  zero if \code{self == other}, a positive integer if
-\code{self > other}.  If no \method{__cmp__()} operation is defined, class
-instances are compared by object identity (``address'').
+defined.  Should return a negative integer if \code{self < other},
+zero if \code{self == other}, a positive integer if \code{self >
+other}.  If no \method{__cmp__()}, \method{__eq__()} or
+\method{__ne__()} operation is defined, class instances are compared
+by object identity (``address'').  See also the description of
+\method{__hash__()} for some important notes on creating objects which
+support custom comparison operations and are usable as dictionary
+keys.
 (Note: the restriction that exceptions are not propagated by
 \method{__cmp__()} has been removed in Python 1.5.)
 \bifuncindex{cmp}
@@ -1035,12 +1039,13 @@ mix together (e.g., using exclusive or) the hash values for the
 components of the object that also play a part in comparison of
 objects.  If a class does not define a \method{__cmp__()} method it should
 not define a \method{__hash__()} operation either; if it defines
-\method{__cmp__()} but not \method{__hash__()} its instances will not be
-usable as dictionary keys.  If a class defines mutable objects and
-implements a \method{__cmp__()} method it should not implement
-\method{__hash__()}, since the dictionary implementation requires that
-a key's hash value is immutable (if the object's hash value changes, it
-will be in the wrong hash bucket).
+\method{__cmp__()} or \method{__eq__()} but not \method{__hash__()},
+its instances will not be usable as dictionary keys.  If a class
+defines mutable objects and implements a \method{__cmp__()} or
+\method{__eq__()} method, it should not implement \method{__hash__()},
+since the dictionary implementation requires that a key's hash value
+is immutable (if the object's hash value changes, it will be in the
+wrong hash bucket).
 \withsubitem{(object method)}{\ttindex{__cmp__()}}
 \end{methoddesc}
 
