@@ -440,6 +440,10 @@ Library
   all dictionary methods.  This eases the transition to persistent
   storage for scripts originally written with dictionaries in mind.
 
+- shelve.open and the various classes in shelve.py now accept an optional
+  binary flag, which defaults to False.  If True, the values stored in the
+  shelf are binary pickles.
+
 - A new package, logging, implements the logging API defined by PEP
   282.  The code is written by Vinay Sajip.
 
