@@ -992,8 +992,8 @@ class DistributionMetadata:
         pkg_info.write('Version: %s\n' % self.get_version() )
         pkg_info.write('Summary: %s\n' % self.get_description() )
         pkg_info.write('Home-page: %s\n' % self.get_url() )
-        pkg_info.write('Author: %s\n' % self.get_maintainer() )
-        pkg_info.write('Author-email: %s\n' % self.get_maintainer_email() )
+        pkg_info.write('Author: %s\n' % self.get_contact() )
+        pkg_info.write('Author-email: %s\n' % self.get_contact_email() )
         pkg_info.write('License: %s\n' % self.get_licence() )
 
         long_desc = rfc822_escape( self.get_long_description() )
