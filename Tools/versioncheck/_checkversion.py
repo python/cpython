@@ -9,8 +9,8 @@ _VERSION="1.0"
 _URL="http://www.cwi.nl/~jack/versioncheck/curversion.txt"
 
 try:
-	_myverbose=VERBOSE
+    _myverbose=VERBOSE
 except NameError:
-	_myverbose=1
-	
+    _myverbose=1
+
 pyversioncheck.versioncheck(_PACKAGE, _URL, _VERSION, verbose=_myverbose)

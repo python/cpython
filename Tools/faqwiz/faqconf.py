@@ -15,20 +15,20 @@ SECTION_TITLES = {
 
 # Parameters you definitely want to change
 
-SHORTNAME = "Generic"			# FAQ name with "FAQ" omitted
-PASSWORD = ""				# Password for editing
-OWNERNAME = "FAQ owner"			# Name for feedback
-OWNEREMAIL = "nobody@anywhere.org"	# Email for feedback
-HOMEURL = "http://www.python.org"	# Related home page
-HOMENAME = "Python home"		# Name of related home page
-RCSBINDIR = "/usr/local/bin/"		# Directory containing RCS commands
-					# (must end in a slash)
+SHORTNAME = "Generic"                   # FAQ name with "FAQ" omitted
+PASSWORD = ""                           # Password for editing
+OWNERNAME = "FAQ owner"                 # Name for feedback
+OWNEREMAIL = "nobody@anywhere.org"      # Email for feedback
+HOMEURL = "http://www.python.org"       # Related home page
+HOMENAME = "Python home"                # Name of related home page
+RCSBINDIR = "/usr/local/bin/"           # Directory containing RCS commands
+                                        # (must end in a slash)
 
 # Parameters you can normally leave alone
 
-MAXHITS = 10				# Max #hits to be shown directly
-COOKIE_LIFETIME = 28*24*3600		# Cookie expiration in seconds
-					# (28*24*3600 = 28 days = 4 weeks)
+MAXHITS = 10                            # Max #hits to be shown directly
+COOKIE_LIFETIME = 28*24*3600            # Cookie expiration in seconds
+                                        # (28*24*3600 = 28 days = 4 weeks)
 PROCESS_PREFORMAT = 1                   # toggle whether preformatted text
                                         # will replace urls and emails with 
                                         # HTML links
@@ -36,10 +36,10 @@ PROCESS_PREFORMAT = 1                   # toggle whether preformatted text
 # Markers appended to title to indicate recently change
 # (may contain HTML, e.g. <IMG>); and corresponding 
 
-MARK_VERY_RECENT = " **"		# Changed very recently
-MARK_RECENT = " *"			# Changed recently
-DT_VERY_RECENT = 24*3600		# 24 hours
-DT_RECENT = 7*24*3600			# 7 days
+MARK_VERY_RECENT = " **"                # Changed very recently
+MARK_RECENT = " *"                      # Changed recently
+DT_VERY_RECENT = 24*3600                # 24 hours
+DT_RECENT = 7*24*3600                   # 7 days
 
 EXPLAIN_MARKS = """
 <P>(Entries marked with ** were changed within the last 24 hours;
@@ -49,18 +49,18 @@ entries marked with * were changed within the last 7 days.)
 
 # Version -- don't change unless you edit faqwiz.py
 
-WIZVERSION = "1.0.4"			# FAQ Wizard version
+WIZVERSION = "1.0.4"                    # FAQ Wizard version
 
 import os, sys
 if os.name in ['nt',]:
     # On NT we'll probably be running python from a batch file,
     # so sys.argv[0] is not helpful
-    FAQCGI = 'faq.bat'			# Relative URL of the FAQ cgi script
+    FAQCGI = 'faq.bat'                  # Relative URL of the FAQ cgi script
     # LOGNAME is not typically set on NT
     os.environ[ 'LOGNAME' ] = "FAQWizard"
 else:
     # This parameter is normally overwritten with a dynamic value
-    FAQCGI = 'faqw.py'			# Relative URL of the FAQ cgi script
+    FAQCGI = 'faqw.py'                  # Relative URL of the FAQ cgi script
     FAQCGI = os.path.basename(sys.argv[0]) or FAQCGI
 del os, sys
 
@@ -84,8 +84,8 @@ except ImportError:
 
 # Calculated parameter names
 
-COOKIE_NAME = SHORTNAME + "-FAQ-Wizard"	# Name used for Netscape cookie
-FAQNAME = SHORTNAME + " FAQ"		# Name of the FAQ
+COOKIE_NAME = SHORTNAME + "-FAQ-Wizard" # Name used for Netscape cookie
+FAQNAME = SHORTNAME + " FAQ"            # Name of the FAQ
 
 # ----------------------------------------------------------------------
 
@@ -175,22 +175,22 @@ HOME = """
     <INPUT TYPE=submit VALUE="Search"><BR>
     <INPUT TYPE=radio NAME=querytype VALUE=simple CHECKED>
         Simple string
-	/
+        /
     <INPUT TYPE=radio NAME=querytype VALUE=regex>
         Regular expression
-	/<BR>
+        /<BR>
     <INPUT TYPE=radio NAME=querytype VALUE=anykeywords>
         Keywords (any)
-	/
+        /
     <INPUT TYPE=radio NAME=querytype VALUE=allkeywords>
         Keywords (all)
-	<BR>
+        <BR>
     <INPUT TYPE=radio NAME=casefold VALUE=yes CHECKED>
         Fold case
-	/
+        /
     <INPUT TYPE=radio NAME=casefold VALUE=no>
         Case sensitive
-	<BR>
+        <BR>
     <INPUT TYPE=hidden NAME=req VALUE=search>
 </FORM>
 
@@ -362,14 +362,14 @@ Log message (reason for the change):<BR>
 Please provide the following information for logging purposes:
 <TABLE FRAME=none COLS=2>
     <TR>
-	<TD>Name:
-	<TD><INPUT TYPE=text SIZE=40 NAME=author VALUE="%(author)s">
+        <TD>Name:
+        <TD><INPUT TYPE=text SIZE=40 NAME=author VALUE="%(author)s">
     <TR>
-	<TD>Email:
-	<TD><INPUT TYPE=text SIZE=40 NAME=email VALUE="%(email)s">
+        <TD>Email:
+        <TD><INPUT TYPE=text SIZE=40 NAME=email VALUE="%(email)s">
     <TR>
-	<TD>Password:
-	<TD><INPUT TYPE=password SIZE=20 NAME=password VALUE="%(password)s">
+        <TD>Password:
+        <TD><INPUT TYPE=password SIZE=20 NAME=password VALUE="%(password)s">
 </TABLE>
 
 <INPUT TYPE=submit NAME=review VALUE="Preview Edit">

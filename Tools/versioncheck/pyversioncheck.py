@@ -5,10 +5,10 @@ import urllib
 import sys
 
 # Verbose options
-VERBOSE_SILENT=0	# Single-line reports per package
-VERBOSE_NORMAL=1	# Single-line reports per package, more info if outdated
-VERBOSE_EACHFILE=2	# Report on each URL checked
-VERBOSE_CHECKALL=3	# Check each URL for each package
+VERBOSE_SILENT=0        # Single-line reports per package
+VERBOSE_NORMAL=1        # Single-line reports per package, more info if outdated
+VERBOSE_EACHFILE=2      # Report on each URL checked
+VERBOSE_CHECKALL=3      # Check each URL for each package
 
 # Test directory
 ## urllib bug: _TESTDIR="ftp://ftp.cwi.nl/pub/jack/python/versiontestdir/"
@@ -96,5 +96,4 @@ def _test():
 
 if __name__ == '__main__':
     _test()
-	
-    
+

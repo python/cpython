@@ -23,32 +23,32 @@ Values for verboselevel:
 3 - Check every URL for packages with multiple locations"""
 
 def check1dir(dummy, dir, files):
-	if CHECKNAME in files:
-		fullname = os.path.join(dir, CHECKNAME)
-		try:
-			execfile(fullname)
-		except:
-			print '** Exception in', fullname
-			
+    if CHECKNAME in files:
+        fullname = os.path.join(dir, CHECKNAME)
+        try:
+            execfile(fullname)
+        except:
+            print '** Exception in', fullname
+            
 def walk1tree(tree):
-	os.path.walk(tree, check1dir, None)
-	
+    os.path.walk(tree, check1dir, None)
+
 def main():
-	global VERBOSE
-	try:
-		options, arguments = getopt.getopt(sys.argv[1:], 'v:')
-	except getopt.error:
-		print USAGE
-		sys.exit(1)
-	for o, a in options:
-		if o == '-v':
-			VERBOSE = int(a)
-	if not arguments:
-		arguments = [sys.prefix]
-	for dir in arguments:
-		walk1tree(dir)
-		
+    global VERBOSE
+    try:
+        options, arguments = getopt.getopt(sys.argv[1:], 'v:')
+    except getopt.error:
+        print USAGE
+        sys.exit(1)
+    for o, a in options:
+        if o == '-v':
+            VERBOSE = int(a)
+    if not arguments:
+        arguments = [sys.prefix]
+    for dir in arguments:
+        walk1tree(dir)
+
 if __name__ == '__main__':
-	main()
-		
-	
+    main()
+
+

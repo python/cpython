@@ -34,7 +34,7 @@ o3.name = 'over-the-top object'
 o3.abbrev = 'ot'
 o3.methodlist = ['method1', 'method2']
 o3.funclist = ['new', 'tp_dealloc', 'tp_print', 'tp_getattr', 'tp_setattr',
-	    'tp_compare', 'tp_repr', 'tp_hash']
+            'tp_compare', 'tp_repr', 'tp_hash']
 o3.typelist = ['tp_as_sequence', 'structure']
 
 #
