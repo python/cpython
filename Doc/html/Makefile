@@ -18,6 +18,8 @@ WEBCHECKER=	$(PYTHON) $(TOPDIR)/../Tools/webchecker/webchecker.py
 MKHTML=		PAPER=$(PAPER) $(TOOLSDIR)/mkhtml.sh
 KPSEWHICH=	TEXINPUTS=$(TEXINPUTS) kpsewhich tex
 
+BUILDINDEX=	$(TOOLSDIR)/buildindex.py
+
 INDEXFILES=api/api.html \
 	ext/ext.html \
 	lib/lib.html \
@@ -43,21 +45,21 @@ tut: icons tut/tut.html
 
 $(INDEXFILES): $(COMMONPERL) $(TOPDIR)/html/about.dat
 
-api/api.html:  $(PAPERDIR)/api.aux
+api/api.html:  $(PAPERDIR)/api.aux $(BUILDINDEX)
 	$(MKHTML) api $(L2HARGS)
 
 ext/ext.html:  $(PAPERDIR)/ext.aux
 	$(MKHTML) ext $(L2HARGS)
 
-lib/lib.html:  $(PAPERDIR)/lib.aux
+lib/lib.html:  $(PAPERDIR)/lib.aux $(BUILDINDEX)
 	$(TOOLSDIR)/fix_libaux.sed <`$(KPSEWHICH) lib.aux` >lib1.aux
 	mv lib1.aux `$(KPSEWHICH) lib.aux`
 	$(MKHTML) lib $(L2HARGS)
 
-mac/mac.html:  $(MACFILES)
+mac/mac.html:  $(MACFILES) $(BUILDINDEX)
 	$(TOOLSDIR)/mkhowto.sh --address '<hr>Send comments to <a href="mailto:python-docs@python.org">python-docs@python.org</a>.' --html $(TOPDIR)/mac/mac.tex
 
-ref/ref.html:  $(PAPERDIR)/ref.aux
+ref/ref.html:  $(PAPERDIR)/ref.aux $(BUILDINDEX)
 	$(MKHTML) ref $(L2HARGS)
 
 tut/tut.html:  $(PAPERDIR)/tut.aux
