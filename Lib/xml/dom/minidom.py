@@ -85,6 +85,13 @@ class Node(_Node):
         self.writexml(writer)
         return writer.getvalue()
 
+    def toprettyxml(self, indent="\t", newl="\n"):
+      # indent = the indentation string to prepend, per level
+      # newl = the newline string to append
+      writer = _get_StringIO()
+      self.writexml(writer, "", indent, newl)
+      return writer.getvalue()
+
     def hasChildNodes(self):
         if self.childNodes:
             return 1
@@ -512,8 +519,11 @@ class Element(Node):
     def __repr__(self):
         return "<DOM Element: %s at %s>" % (self.tagName, id(self))
 
-    def writexml(self, writer):
-        writer.write("<" + self.tagName)
+    def writexml(self, writer, indent="", addindent="", newl=""):
+        # indent = current indentation
+        # addindent = indentation to add to higher levels
+        # newl = newline string
+        writer.write(indent+"<" + self.tagName)
 
         attrs = self._get_attributes()
         a_names = attrs.keys()
@@ -524,12 +534,12 @@ class Element(Node):
             _write_data(writer, attrs[a_name].value)
             writer.write("\"")
         if self.childNodes:
-            writer.write(">")
+            writer.write(">%s"%(newl))
             for node in self.childNodes:
-                node.writexml(writer)
-            writer.write("</%s>" % self.tagName)
+                node.writexml(writer,indent+addindent,addindent,newl)
+            writer.write("%s</%s>%s" % (indent,self.tagName,newl))
         else:
-            writer.write("/>")
+            writer.write("/>%s"%(newl))
 
     def _get_attributes(self):
         return AttributeList(self._attrs, self._attrsNS)
@@ -550,8 +560,8 @@ class Comment(Node):
         Node.__init__(self)
         self.data = self.nodeValue = data
 
-    def writexml(self, writer):
-        writer.write("<!--%s-->" % self.data)
+    def writexml(self, writer, indent="", addindent="", newl=""):
+        writer.write("%s<!--%s-->%s" % (indent,self.data,newl))
 
 class ProcessingInstruction(Node):
     nodeType = Node.PROCESSING_INSTRUCTION_NODE
@@ -563,8 +573,8 @@ class ProcessingInstruction(Node):
         self.target = self.nodeName = target
         self.data = self.nodeValue = data
 
-    def writexml(self, writer):
-        writer.write("<?%s %s?>" % (self.target, self.data))
+    def writexml(self, writer, indent="", addindent="", newl=""):
+        writer.write("%s<?%s %s?>%s" % (indent,self.target, self.data, newl))
 
 class Text(Node):
     nodeType = Node.TEXT_NODE
@@ -598,8 +608,8 @@ class Text(Node):
         self.data = self.data[:offset]
         return newText
 
-    def writexml(self, writer):
-        _write_data(writer, self.data)
+    def writexml(self, writer, indent="", addindent="", newl=""):
+        _write_data(writer, "%s%s%s"%(indent, self.data, newl))
 
 def _nssplit(qualifiedName):
     fields = _string.split(qualifiedName, ':', 1)
@@ -737,10 +747,10 @@ class Document(Node):
         _getElementsByTagNameHelper(self, name, rc)
         return rc
 
-    def writexml(self, writer):
+    def writexml(self, writer, indent="", addindent="", newl=""):
         writer.write('<?xml version="1.0" ?>\n')
         for node in self.childNodes:
-            node.writexml(writer)
+            node.writexml(writer, indent, addindent, newl)
 
 def _get_StringIO():
     # we can't use cStringIO since it doesn't support Unicode strings
