@@ -612,7 +612,7 @@ static HINSTANCE LoadPythonDll(char *fname)
 {
 	char fullpath[_MAX_PATH];
 	LONG size = sizeof(fullpath);
-	char subkeyname[80];
+	char subkey_name[80];
 	HINSTANCE h = LoadLibrary(fname);
 	if (h)
 		return h;
