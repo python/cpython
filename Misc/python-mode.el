@@ -1154,12 +1154,20 @@ with a zero argument, toggles the shell."
     (setq py-output-buffer (format "*%s Output*" py-which-bufname))))
 
 ;;;###autoload
-(defun py-shell ()
+(defun py-shell (&optional argprompt)
   "Start an interactive Python interpreter in another window.
 This is like Shell mode, except that Python is running in the window
 instead of a shell.  See the `Interactive Shell' and `Shell Mode'
 sections of the Emacs manual for details, especially for the key
 bindings active in the `*Python*' buffer.
+
+With optional \\[universal-argument], the user is prompted for the
+flags to pass to the Python interpreter.  This has no effect when this
+command is used to switch to an existing process, only when a new
+process is started.  If you use this, you will probably want to ensure
+that the current arguments are retained (they will be included in the
+prompt).  This argument is ignored when this function is called
+programmatically, or when running in Emacs 19.34 or older.
 
 Note: You can toggle between using the CPython interpreter and the
 JPython interpreter by hitting \\[py-toggle-shells].  This toggles
@@ -1183,9 +1191,7 @@ be lost if you do.  This appears to be an Emacs bug, an unfortunate
 interaction between undo and process filters; the same problem exists in
 non-Python process buffers using the default (Emacs-supplied) process
 filter."
-  ;; BAW - should undo be disabled in the python process buffer, if
-  ;; this bug still exists?
-  (interactive)
+  (interactive "P")
   (if (null py-which-shell)
       (cond ((eq py-default-interpreter 'cpython)
 	     (setq py-which-shell py-python-command
@@ -1195,14 +1201,26 @@ filter."
 		   py-which-args py-jpython-command-args))
 	    (t (error "Illegal value for `py-default-interpreter': %s"
 		      py-default-interpreter))))
-  (switch-to-buffer-other-window
-   (apply 'make-comint py-which-bufname py-which-shell nil py-which-args))
-  (make-local-variable 'comint-prompt-regexp)
-  (setq comint-prompt-regexp "^>>> \\|^[.][.][.] \\|^(pdb) ")
-  (add-hook 'comint-output-filter-functions 'py-comint-output-filter-function)
-  (set-syntax-table py-mode-syntax-table)
-  (use-local-map py-shell-map)
-  )
+  (let ((args py-which-args))
+    (when (and argprompt
+	       (interactive-p)
+	       (fboundp 'split-string))
+      ;; TBD: Perhaps force "-i" in the final list?
+      (setq args (split-string
+		  (read-string (concat py-which-bufname
+				       " arguments: ")
+			       (concat
+				(mapconcat 'identity py-which-args " ") " ")
+			       ))))
+    (switch-to-buffer-other-window
+     (apply 'make-comint py-which-bufname py-which-shell nil args))
+    (make-local-variable 'comint-prompt-regexp)
+    (setq comint-prompt-regexp "^>>> \\|^[.][.][.] \\|^(pdb) ")
+    (add-hook 'comint-output-filter-functions
+	      'py-comint-output-filter-function)
+    (set-syntax-table py-mode-syntax-table)
+    (use-local-map py-shell-map)
+    ))
 
 (defun py-clear-queue ()
   "Clear the queue of temporary files waiting to execute."
