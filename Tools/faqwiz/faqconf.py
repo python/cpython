@@ -49,7 +49,7 @@ entries marked with * were changed within the last 7 days.)
 
 # Version -- don't change unless you edit faqwiz.py
 
-WIZVERSION = "0.8.3"			# FAQ Wizard version
+WIZVERSION = "0.8.4"			# FAQ Wizard version
 
 # This parameter is normally overwritten with a dynamic value
 
