@@ -167,13 +167,11 @@ class PCVS(CVS):
 				continue
 			if e.lsum == e.rsum:
 				print 'c', file
-				print e.__dict__
 				e.rev = e.rrev
 				e.sum = e.rsum
 				e.new = e.sum is None and e.lsum is not None
 				if e.sum:
 					e.mtime, e.ctime = os.stat(e.file)[-2:]
-				print e.__dict__
 				self.entries[file] = e
 				continue
 			print 'C', file, '(not resolved)'
