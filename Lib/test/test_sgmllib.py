@@ -307,6 +307,19 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
         self.check_events(["<a b='>", "'>"], output)
         self.check_events(["<a b='>'", ">"], output)
 
+        output = [("comment", "abc")]
+        self._run_check(["", "<!--abc-->"], output)
+        self._run_check(["<", "!--abc-->"], output)
+        self._run_check(["<!", "--abc-->"], output)
+        self._run_check(["<!-", "-abc-->"], output)
+        self._run_check(["<!--", "abc-->"], output)
+        self._run_check(["<!--a", "bc-->"], output)
+        self._run_check(["<!--ab", "c-->"], output)
+        self._run_check(["<!--abc", "-->"], output)
+        self._run_check(["<!--abc-", "->"], output)
+        self._run_check(["<!--abc--", ">"], output)
+        self._run_check(["<!--abc-->", ""], output)
+
     def _test_starttag_junk_chars(self):
         self.check_parse_error("<")
         self.check_parse_error("<>")
