@@ -31,7 +31,7 @@ def get_platform ():
        
     For non-POSIX platforms, currently just returns 'sys.platform'.
     """
-    if os.name != "posix":
+    if os.name != "posix" or not hasattr(os, 'uname'):
         # XXX what about the architecture? NT is Intel or Alpha,
         # Mac OS is M68k or PPC, etc.
         return sys.platform
