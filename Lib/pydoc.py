@@ -1499,7 +1499,8 @@ class Helper:
                     '/usr/doc/python-docs-' + split(sys.version)[0],
                     '/usr/doc/python-' + split(sys.version)[0],
                     '/usr/doc/python-docs-' + sys.version[:3],
-                    '/usr/doc/python-' + sys.version[:3]]:
+                    '/usr/doc/python-' + sys.version[:3],
+                    os.path.join(sys.prefix, 'Resources/English.lproj/Documentation')]:
             if dir and os.path.isdir(os.path.join(dir, 'lib')):
                 self.docdir = dir
 
