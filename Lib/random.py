@@ -27,7 +27,10 @@ Translated from anonymously contributed C/C++ source.
 
 Multi-threading note: the random number generator used here is not
 thread-safe; it is possible that two calls return the same random
-value.
+value.  But you can instantiate a different instance of Random() in
+each thread to get generators that don't share state, then use
+.setstate() and .jumpahead() to move the generators to disjoint
+segments of the full period.
 """
 # XXX The docstring sucks.
 
@@ -71,9 +74,11 @@ class Random:
         self.seed(x)
         self.gauss_next = None
 
+## -------------------- core generator -------------------
+
     # Specific to Wichmann-Hill generator.  Subclasses wishing to use a
     # different core generator should override the seed(), random(),
-    # getstate(), setstate(), and jumpahead() methods.
+    # getstate(), setstate() and jumpahead() methods.
 
     def __whseed(self, x=0, y=0, z=0):
         """Set the Wichmann-Hill seed from (x, y, z).
@@ -95,66 +100,6 @@ class Random:
             t, z = divmod(t, 256)
         # Zero is a poor seed, so substitute 1
         self._seed = (x or 1, y or 1, z or 1)
-
-    def seed(self, a=None):
-        """Seed from hashable value
-
-        None or no argument seeds from current time.
-        """
-
-        if a is None:
-            self.__whseed()
-            return
-        a = hash(a)
-        a, x = divmod(a, 256)
-        a, y = divmod(a, 256)
-        a, z = divmod(a, 256)
-        x = (x + a) % 256 or 1
-        y = (y + a) % 256 or 1
-        z = (z + a) % 256 or 1
-        self.__whseed(x, y, z)
-
-    def getstate(self):
-        """Return internal state; can be passed to setstate() later."""
-        return self.VERSION, self._seed, self.gauss_next
-
-    def __getstate__(self): # for pickle
-        return self.getstate()
-
-    def setstate(self, state):
-        """Restore internal state from object returned by getstate()."""
-        version = state[0]
-        if version == 1:
-            version, self._seed, self.gauss_next = state
-        else:
-            raise ValueError("state with version %s passed to "
-                             "Random.setstate() of version %s" %
-                             (version, self.VERSION))
-
-    def __setstate__(self, state):  # for pickle
-        self.setstate(state)
-
-    def jumpahead(self, n):
-        """Act as if n calls to random() were made, but quickly.
-
-        n is an int, greater than or equal to 0.
-
-        Example use:  If you have 2 threads and know that each will
-        consume no more than a million random numbers, create two Random
-        objects r1 and r2, then do
-            r2.setstate(r1.getstate())
-            r2.jumpahead(1000000)
-        Then r1 and r2 will use guaranteed-disjoint segments of the full
-        period.
-        """
-
-        if not n >= 0:
-            raise ValueError("n must be >= 0")
-        x, y, z = self._seed
-        x = int(x * pow(171, n, 30269)) % 30269
-        y = int(y * pow(172, n, 30307)) % 30307
-        z = int(z * pow(170, n, 30323)) % 30323
-        self._seed = x, y, z
 
     def random(self):
         """Get the next random number in the range [0.0, 1.0)."""
@@ -186,6 +131,75 @@ class Random:
         # Note:  on a platform using IEEE-754 double arithmetic, this can
         # never return 0.0 (asserted by Tim; proof too long for a comment).
         return (x/30269.0 + y/30307.0 + z/30323.0) % 1.0
+
+    def seed(self, a=None):
+        """Seed from hashable object's hash code.
+
+        None or no argument seeds from current time.  It is not guaranteed
+        that objects with distinct hash codes lead to distinct internal
+        states.
+        """
+
+        if a is None:
+            self.__whseed()
+            return
+        a = hash(a)
+        a, x = divmod(a, 256)
+        a, y = divmod(a, 256)
+        a, z = divmod(a, 256)
+        x = (x + a) % 256 or 1
+        y = (y + a) % 256 or 1
+        z = (z + a) % 256 or 1
+        self.__whseed(x, y, z)
+
+    def getstate(self):
+        """Return internal state; can be passed to setstate() later."""
+        return self.VERSION, self._seed, self.gauss_next
+
+    def setstate(self, state):
+        """Restore internal state from object returned by getstate()."""
+        version = state[0]
+        if version == 1:
+            version, self._seed, self.gauss_next = state
+        else:
+            raise ValueError("state with version %s passed to "
+                             "Random.setstate() of version %s" %
+                             (version, self.VERSION))
+
+    def jumpahead(self, n):
+        """Act as if n calls to random() were made, but quickly.
+
+        n is an int, greater than or equal to 0.
+
+        Example use:  If you have 2 threads and know that each will
+        consume no more than a million random numbers, create two Random
+        objects r1 and r2, then do
+            r2.setstate(r1.getstate())
+            r2.jumpahead(1000000)
+        Then r1 and r2 will use guaranteed-disjoint segments of the full
+        period.
+        """
+
+        if not n >= 0:
+            raise ValueError("n must be >= 0")
+        x, y, z = self._seed
+        x = int(x * pow(171, n, 30269)) % 30269
+        y = int(y * pow(172, n, 30307)) % 30307
+        z = int(z * pow(170, n, 30323)) % 30323
+        self._seed = x, y, z
+
+## ---- Methods below this point do not need to be overridden when
+## ---- subclassing for the purpose of using a different core generator.
+
+## -------------------- pickle support  -------------------
+
+    def __getstate__(self): # for pickle
+        return self.getstate()
+
+    def __setstate__(self, state):  # for pickle
+        self.setstate(state)
+
+## -------------------- integer methods  -------------------
 
     def randrange(self, start, stop=None, step=1, int=int, default=None):
         """Choose a random item from range(start, stop[, step]).
@@ -227,13 +241,14 @@ class Random:
         return istart + istep*int(self.random() * n)
 
     def randint(self, a, b):
-        """Get a random integer in the range [a, b] including
-        both end points.
+        """Return random integer in range [a, b], including both end points.
 
-        (Deprecated; use randrange below.)
+        (Deprecated; use randrange(a, b+1).)
         """
 
         return self.randrange(a, b+1)
+
+## -------------------- sequence methods  -------------------
 
     def choice(self, seq):
         """Choose a random element from a non-empty sequence."""
@@ -254,17 +269,19 @@ class Random:
         if random is None:
             random = self.random
         for i in xrange(len(x)-1, 0, -1):
-        # pick an element in x[:i+1] with which to exchange x[i]
+            # pick an element in x[:i+1] with which to exchange x[i]
             j = int(random() * (i+1))
             x[i], x[j] = x[j], x[i]
 
-# -------------------- uniform distribution -------------------
+## -------------------- real-valued distributions  -------------------
+
+## -------------------- uniform distribution -------------------
 
     def uniform(self, a, b):
         """Get a random number in the range [a, b)."""
         return a + (b-a) * self.random()
 
-# -------------------- normal distribution --------------------
+## -------------------- normal distribution --------------------
 
     def normalvariate(self, mu, sigma):
         # mu = mean, sigma = standard deviation
@@ -284,12 +301,12 @@ class Random:
                 break
         return mu + z*sigma
 
-# -------------------- lognormal distribution --------------------
+## -------------------- lognormal distribution --------------------
 
     def lognormvariate(self, mu, sigma):
         return _exp(self.normalvariate(mu, sigma))
 
-# -------------------- circular uniform --------------------
+## -------------------- circular uniform --------------------
 
     def cunifvariate(self, mean, arc):
         # mean: mean angle (in radians between 0 and pi)
@@ -297,7 +314,7 @@ class Random:
 
         return (mean + arc * (self.random() - 0.5)) % _pi
 
-# -------------------- exponential distribution --------------------
+## -------------------- exponential distribution --------------------
 
     def expovariate(self, lambd):
         # lambd: rate lambd = 1/mean
@@ -309,7 +326,7 @@ class Random:
             u = random()
         return -_log(u)/lambd
 
-# -------------------- von Mises distribution --------------------
+## -------------------- von Mises distribution --------------------
 
     def vonmisesvariate(self, mu, kappa):
         # mu:    mean angle (in radians between 0 and 2*pi)
@@ -351,7 +368,7 @@ class Random:
 
         return theta
 
-# -------------------- gamma distribution --------------------
+## -------------------- gamma distribution --------------------
 
     def gammavariate(self, alpha, beta):
         # beta times standard gamma
@@ -410,7 +427,7 @@ class Random:
             return x
 
 
-# -------------------- Gauss (faster alternative) --------------------
+## -------------------- Gauss (faster alternative) --------------------
 
     def gauss(self, mu, sigma):
 
@@ -443,7 +460,7 @@ class Random:
 
         return mu + z*sigma
 
-# -------------------- beta --------------------
+## -------------------- beta --------------------
 
     def betavariate(self, alpha, beta):
 
@@ -453,7 +470,7 @@ class Random:
         z = self.expovariate(1.0/beta)
         return z/(y+z)
 
-# -------------------- Pareto --------------------
+## -------------------- Pareto --------------------
 
     def paretovariate(self, alpha):
         # Jain, pg. 495
@@ -461,7 +478,7 @@ class Random:
         u = self.random()
         return 1.0 / pow(u, 1.0/alpha)
 
-# -------------------- Weibull --------------------
+## -------------------- Weibull --------------------
 
     def weibullvariate(self, alpha, beta):
         # Jain, pg. 499; bug fix courtesy Bill Arms
@@ -469,7 +486,7 @@ class Random:
         u = self.random()
         return alpha * pow(-_log(u), 1.0/beta)
 
-# -------------------- test program --------------------
+## -------------------- test program --------------------
 
 def _test_generator(n, funccall):
     import time
@@ -493,17 +510,6 @@ def _test_generator(n, funccall):
     print 'avg %g, stddev %g, min %g, max %g' % \
               (avg, stddev, smallest, largest)
 
-    s = getstate()
-    N = 1019
-    jumpahead(N)
-    r1 = random()
-    setstate(s)
-    for i in range(N):  # now do it the slow way
-        random()
-    r2 = random()
-    if r1 != r2:
-        raise ValueError("jumpahead test failed " + `(N, r1, r2)`)
-
 def _test(N=200):
     print 'TWOPI         =', TWOPI
     print 'LOG4          =', LOG4
@@ -525,6 +531,18 @@ def _test(N=200):
     _test_generator(N, 'betavariate(3.0, 3.0)')
     _test_generator(N, 'paretovariate(1.0)')
     _test_generator(N, 'weibullvariate(1.0, 1.0)')
+
+    # Test jumpahead.
+    s = getstate()
+    jumpahead(N)
+    r1 = random()
+    # now do it the slow way
+    setstate(s)
+    for i in range(N):
+        random()
+    r2 = random()
+    if r1 != r2:
+        raise ValueError("jumpahead test failed " + `(N, r1, r2)`)
 
 # Initialize from current time.
 _inst = Random()
