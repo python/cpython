@@ -11,8 +11,6 @@
 MODOBJS=	_MODOBJS_
 MODLIBS=	_MODLIBS_
 
-# === Definitions added by makesetup ===
-
 # === Variables set by configure ===
 
 srcdir=		@srcdir@
@@ -45,8 +43,7 @@ CCSHARED=	@CCSHARED@
 LINKFORSHARED=	@LINKFORSHARED@
 DESTSHARED=	$(exec_prefix)/lib/python/$(MACHDEP)
 
-
-# === Variables that are customizable by hand ===
+# === Variables that are customizable by hand or by inclusion in Setup ===
 
 LINKCC=		$(CC)
 INCLDIR=	$(srcdir)/../Include
@@ -56,6 +53,14 @@ MKDEP=		mkdep
 SHELL=		/bin/sh
 
 MAKESETUP=	$(srcdir)/makesetup
+
+# (The makesetup script inserts all variable definitions found
+# found in the Setup file just below the following line.
+# This means that the Setup file can override any of the definitions
+# given before this point, but not any given below.
+# The script insert the definitions in reverse order,
+# for the benefits of independent extensions.)
+# === Definitions added by makesetup ===
 
 # === Fixed definitions ===
 
