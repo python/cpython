@@ -69,6 +69,8 @@ static PyObject *run_pyc_file Py_PROTO((FILE *fp, char *filename,
 static void err_input Py_PROTO((perrdetail *));
 static void initsigs Py_PROTO((void));
 static void finisigs Py_PROTO((void));
+static void call_sys_exitfunc Py_PROTO((void));
+static void call_ll_exitfuncs Py_PROTO((void));
 
 int Py_DebugFlag; /* Needed by parser.c */
 int Py_VerboseFlag; /* Needed by import.c */
@@ -162,6 +164,8 @@ Py_Finalize()
 	PyInterpreterState *interp;
 	PyThreadState *tstate;
 
+	call_sys_exitfunc();
+
 	if (!initialized)
 		Py_FatalError("Py_Finalize: not initialized");
 	initialized = 0;
@@ -177,9 +181,38 @@ Py_Finalize()
 	finisigs();
 	_PyImport_Fini();
 	_PyBuiltin_Fini();
+	PyMethod_Fini();
+	PyFrame_Fini();
+	PyCFunction_Fini();
+	PyTuple_Fini();
 	PyString_Fini();
+	PyInt_Fini();
+	PyFloat_Fini();
+
+	/* XXX Still allocated:
+	   - various static ad-hoc pointers to interned strings
+	   - int and float free list blocks
+	   - whatever various modules and libraries allocate
+	*/
 
 	PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
+
+	call_ll_exitfuncs();
+
+#ifdef COUNT_ALLOCS
+	dump_counts();
+#endif
+
+#ifdef Py_REF_DEBUG
+	fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
+#endif
+
+#ifdef Py_TRACE_REFS
+	if (_Py_AskYesNo("Print left references?")) {
+		_Py_PrintReferences(stderr);
+	}
+	_Py_ResetReferences();
+#endif /* Py_TRACE_REFS */
 }
 
 /* Create and initialize a new interpreter and thread, and return the
@@ -296,22 +329,6 @@ Py_GetProgramName()
 {
 	return progname;
 }
-
-/*
-  Py_Initialize()
-  -- do everything, no-op on second call, call fatal on failure, set path
-
-  #2
-  -- create new interp+tstate & make it current, return NULL on failure,
-     make it current, do all setup, set path
-
-  #3
-  -- #2 without set path
-
-  #4
-  -- is there any point to #3 for caller-provided current interp+tstate?
-
-*/
 
 /* Create __main__ module */
 
@@ -831,8 +848,8 @@ int Py_AtExit(func)
 	return 0;
 }
 
-void
-Py_Cleanup()
+static void
+call_sys_exitfunc()
 {
 	PyObject *exitfunc = PySys_GetObject("exitfunc");
 
@@ -849,9 +866,11 @@ Py_Cleanup()
 	}
 
 	Py_FlushLine();
+}
 
-	Py_Finalize();
-
+static void
+call_ll_exitfuncs()
+{
 	while (nexitfuncs > 0)
 		(*exitfuncs[--nexitfuncs])();
 
@@ -867,21 +886,7 @@ void
 Py_Exit(sts)
 	int sts;
 {
-	Py_Cleanup();
-
-#ifdef COUNT_ALLOCS
-	dump_counts();
-#endif
-
-#ifdef Py_REF_DEBUG
-	fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
-#endif
-
-#ifdef Py_TRACE_REFS
-	if (_Py_AskYesNo("Print left references?")) {
-		_Py_PrintReferences(stderr);
-	}
-#endif /* Py_TRACE_REFS */
+	Py_Finalize();
 
 #ifdef macintosh
 	PyMac_Exit(sts);
@@ -896,7 +901,9 @@ sighandler(sig)
 	int sig;
 {
 	signal(sig, SIG_DFL); /* Don't catch recursive signals */
-	Py_Cleanup(); /* Do essential clean-up */
+	/* Do essential exit processing only */
+	call_sys_exitfunc();
+	call_ll_exitfuncs();
 #ifdef HAVE_KILL
 	kill(getpid(), sig); /* Pretend the signal killed us */
 #else
