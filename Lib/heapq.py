@@ -142,27 +142,25 @@ def heappop(heap):
     returnitem = heap[0]
     item = heap.pop()
     pos = 0
-    while True:
-        child2pos = (pos + 1) * 2
-        child1pos = child2pos - 1
-        if child2pos < endpos:
-            child1 = heap[child1pos]
-            child2 = heap[child2pos]
-            if item <= child1 and item <= child2:
-                break
-            if child1 < child2:
-                heap[pos] = child1
-                pos = child1pos
-                continue
-            heap[pos] = child2
-            pos = child2pos
-            continue
-        if child1pos < endpos:
-            child1 = heap[child1pos]
-            if child1 < item:
-                heap[pos] = child1
-                pos = child1pos
-        break
+    # Sift item into position, down from the root, moving the smaller
+    # child up, until finding pos such that item <= pos's children.
+    childpos = 2*pos + 1    # leftmost child position
+    while childpos < endpos:
+        # Set childpos and child to reflect smaller child.
+        child = heap[childpos]
+        rightpos = childpos + 1
+        if rightpos < endpos:
+            rightchild = heap[rightpos]
+            if rightchild < child:
+                childpos = rightpos
+                child = rightchild
+        # If item is no larger than smaller child, we're done, else
+        # move the smaller child up.
+        if item <= child:
+            break
+        heap[pos] = child
+        pos = childpos
+        childpos = 2*pos + 1
     heap[pos] = item
     return returnitem
 
