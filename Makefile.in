@@ -44,8 +44,21 @@
 # Modules/Setup.  The python executable is built in the Modules
 # directory and then moved to the top-level directory.  The recursive
 # makes pass three options to subordinate makes: OPT (a quick way to
-# change some compiler options; it defaults to -O), prefix and
+# change some compiler options; it usually defaults to -O), prefix and
 # exec_prefix (the installation paths).
+# 
+# If you have a previous version of Python installed that you don't
+# want to overwrite, you can use "make altinstall" instead of "make
+# install".  This changes the install procedure so it installs the
+# Python binary as "python<version>".  The libraries and include files
+# are always installed in a subdirectory called "python<version>".
+# "make altinstall" does not install the manual page.  If you want to
+# make this installation the "official" installation but want to keep
+# the old binary around "just in case", rename the installed python
+# binary to "python<oldversion>" before running "make install".
+# (This only works between different versions, e.g. 1.3 and 1.4 --
+# different betas of the same version will overwrite each other in
+# installation unless you override the VERSION Make variable.)
 # 
 # If recursive makes fail, try invoking make as "make MAKE=make".
 # 
@@ -69,25 +82,25 @@ prefix=		@prefix@
 exec_prefix=	@exec_prefix@
 
 # Expanded directories
-MANDIR=$(prefix)/man
-BINDIR=$(exec_prefix)/bin
-LIBDIR=$(exec_prefix)/lib
-INCLUDEDIR=$(prefix)/include
-SCRIPTDIR=$(prefix)/lib
+BINDIR=		$(exec_prefix)/bin
+LIBDIR=		$(exec_prefix)/lib
+MANDIR=		$(prefix)/man
+INCLUDEDIR=	$(prefix)/include
+SCRIPTDIR=	$(prefix)/lib
 
 # Symbols used for using shared libraries
 SO=		@SO@
 LDSHARED=	@LDSHARED@
 CCSHARED=	@CCSHARED@
 LINKFORSHARED=	@LINKFORSHARED@
-DESTSHARED=	$(SCRIPTDIR)/python$(VERSION)/$(MACHDEP)
+DESTSHARED=	$(LIBDIR)/python$(VERSION)/sharedmodules
 
 # Shell used by make (some versions default to the login shell, which is bad)
 SHELL=		/bin/sh
 
 # Portable install script (configure doesn't always guess right)
 INSTALL=	@srcdir@/install-sh -c
-INSTALL_PROGRAM=${INSTALL}
+INSTALL_PROGRAM=${INSTALL} -m 755
 INSTALL_DATA=	${INSTALL} -m 644
 
 # --with-PACKAGE options for configure script
@@ -102,7 +115,7 @@ OPT=		@OPT@
 SUBDIRS=	Parser Objects Python Modules
 
 # Other subdirectories
-SUBDIRSTOO=	Include Lib Doc Misc Demo readline Grammar
+SUBDIRSTOO=	Include Lib Doc Misc Demo Grammar
 
 # Files and directories to be distributed
 CONFIGFILES=	configure configure.in acconfig.h config.h.in Makefile.in
@@ -118,6 +131,7 @@ python:		Makefiles
 		@for i in $(SUBDIRS); do \
 			(echo Making in subdirectory $$i; cd $$i; \
 			 $(MAKE) OPT="$(OPT)" \
+				 VERSION="$(VERSION)" \
 			         prefix="$(prefix)" \
 				 exec_prefix="$(exec_prefix)" \
 				 all); \
@@ -131,11 +145,11 @@ test:		python
 		PYTHONPATH=$(TESTPATH) ./python -c 'import autotest'
 
 # Install everything
-install:	bininstall libinstall maninstall inclinstall \
+install:	bininstall maninstall libinstall inclinstall \
 		libainstall sharedinstall
 
 # Install most things with $(VERSION) affixed
-altinstall:	altbininstall libinstall libainstall sharedinstall
+altinstall:	altbininstall libinstall inclinstall libainstall sharedinstall
 
 # Install the interpreter
 bininstall:	python
@@ -163,24 +177,6 @@ altbininstall:	python
 		done
 		$(INSTALL_PROGRAM) python $(BINDIR)/python$(VERSION)
 
-# Install the library.
-# If your system does not support "cp -r", try "copy -r" or perhaps
-# something like find Lib -print | cpio -pacvdmu $(LIBDEST)
-LIBDEST=	$(SCRIPTDIR)/python$(VERSION)
-libinstall:	python
-		@for i in $(SCRIPTDIR) $(LIBDEST); \
-		do \
-			if test ! -d $$i; then \
-				echo "Creating directory $$i"; \
-				mkdir $$i; \
-				chmod 755 $$i; \
-			else	true; \
-			fi; \
-		done
-		cp -r $(srcdir)/Lib/* $(LIBDEST)
-		PYTHONPATH=$(LIBDEST) \
-			./python $(LIBDEST)/compileall.py $(LIBDEST)
-
 # Install the manual page
 maninstall:
 		@for i in $(MANDIR) $(MANDIR)/man1; \
@@ -195,8 +191,68 @@ maninstall:
 		$(INSTALL_DATA) $(srcdir)/Misc/python.man \
 			$(MANDIR)/man1/python.1
 
+# Install the library
+LIBDEST=	$(SCRIPTDIR)/python$(VERSION)
+LIBSUBDIRS=	stdwin tkinter test $(MACHDEP)
+libinstall:	python
+		@for i in $(SCRIPTDIR) $(LIBDEST); \
+		do \
+			if test ! -d $$i; then \
+				echo "Creating directory $$i"; \
+				mkdir $$i; \
+				chmod 755 $$i; \
+			else	true; \
+			fi; \
+		done
+		@for d in $(LIBSUBDIRS); \
+		do \
+			a=$(srcdir)/Lib/$$d; \
+			if test ! -d $$a; then continue; else true; fi; \
+			b=$(LIBDEST)/$$d; \
+			if test ! -d $$b; then \
+				echo "Creating directory $$b"; \
+				mkdir $$b; \
+				chmod 755 $$b; \
+			else	true; \
+			fi; \
+		done
+		@for i in $(srcdir)/Lib/*.py $(srcdir)/Lib/*.doc; \
+		do \
+			if test -x $$i; then \
+				$(INSTALL_PROGRAM) $$i $(LIBDEST); \
+				echo $(INSTALL_PROGRAM) $$i $(LIBDEST); \
+			else \
+				$(INSTALL_DATA) $$i $(LIBDEST); \
+				echo $(INSTALL_DATA) $$i $(LIBDEST); \
+			fi; \
+		done
+		@for d in $(LIBSUBDIRS); \
+		do \
+			a=$(srcdir)/Lib/$$d; \
+			if test ! -d $$a; then continue; else true; fi; \
+			b=$(LIBDEST)/$$d; \
+			for i in $$a/*; \
+			do \
+				case $$i in \
+				*CVS) ;; \
+				*.pyc) ;; \
+				*~) ;; \
+				*) \
+					if test -x $$i; then \
+					    echo $(INSTALL_PROGRAM) $$i $$b; \
+					    $(INSTALL_PROGRAM) $$i $$b; \
+					else \
+					    echo $(INSTALL_DATA) $$i $$b; \
+					    $(INSTALL_DATA) $$i $$b; \
+					fi;; \
+				esac; \
+			done; \
+		done
+		PYTHONPATH=$(LIBDEST) \
+			./python $(LIBDEST)/compileall.py $(LIBDEST)
+
 # Install the include files
-INCLUDEPY=	$(INCLUDEDIR)/Py
+INCLUDEPY=	$(INCLUDEDIR)/python$(VERSION)
 inclinstall:
 		@for i in $(INCLUDEDIR) $(INCLUDEPY); \
 		do \
@@ -214,8 +270,8 @@ inclinstall:
 		done
 
 # Install the lib*.a files and miscellaneous stuff needed by extensions
-LIBP=		$(LIBDIR)/python
-LIBPL=		$(LIBP)/lib
+LIBP=		$(LIBDIR)/python$(VERSION)
+LIBPL=		$(LIBP)/config
 libainstall:	all
 		@for i in $(LIBDIR) $(LIBP) $(LIBPL); \
 		do \
@@ -245,6 +301,7 @@ libainstall:	all
 sharedinstall:
 		cd Modules; $(MAKE) \
 			OPT="$(OPT)" \
+			VERSION="$(VERSION)" \
 			SO="$(SO)" \
 			LDSHARED="$(LDSHARED)" \
 			CCSHARED="$(CCSHARED)" \
