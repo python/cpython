@@ -359,6 +359,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- posix.openpty now works on all systems that have /dev/ptmx.
+
 - A module zipimport exists to support importing code from zip
   archives.
 

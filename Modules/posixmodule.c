@@ -2718,7 +2718,7 @@ posix_fork(PyObject *self, PyObject *args)
 }
 #endif
 
-#if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY)
+#if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX)
 #ifdef HAVE_PTY_H
 #include <pty.h>
 #else
@@ -2726,9 +2726,12 @@ posix_fork(PyObject *self, PyObject *args)
 #include <libutil.h>
 #endif /* HAVE_LIBUTIL_H */
 #endif /* HAVE_PTY_H */
-#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) */
+#ifdef sun
+#include <sys/stropts.h>
+#endif
+#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX */
 
-#if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY)
+#if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)
 PyDoc_STRVAR(posix_openpty__doc__,
 "openpty() -> (master_fd, slave_fd)\n\n\
 Open a pseudo-terminal, returning open fd's for both master and slave end.\n");
@@ -2740,6 +2743,12 @@ posix_openpty(PyObject *self, PyObject *args)
 #ifndef HAVE_OPENPTY
 	char * slave_name;
 #endif
+#if defined(HAVE_DEV_PTMX) && !defined(HAVE_OPENPTY) && !defined(HAVE__GETPTY)
+	void *sig_saved;
+#ifdef sun
+	extern char *ptsname();
+#endif
+#endif
 
 	if (!PyArg_ParseTuple(args, ":openpty"))
 		return NULL;
@@ -2747,7 +2756,7 @@ posix_openpty(PyObject *self, PyObject *args)
 #ifdef HAVE_OPENPTY
 	if (openpty(&master_fd, &slave_fd, NULL, NULL, NULL) != 0)
 		return posix_error();
-#else
+#elif HAVE__GETPTY
 	slave_name = _getpty(&master_fd, O_RDWR, 0666, 0);
 	if (slave_name == NULL)
 		return posix_error();
@@ -2755,12 +2764,35 @@ posix_openpty(PyObject *self, PyObject *args)
 	slave_fd = open(slave_name, O_RDWR);
 	if (slave_fd < 0)
 		return posix_error();
+#else
+	master_fd = open("/dev/ptmx", O_RDWR | O_NOCTTY); /* open master */
+	if (master_fd < 0)
+		return posix_error();
+	sig_saved = signal(SIGCHLD, SIG_DFL);
+	if (grantpt(master_fd) < 0) /* change permission of slave */
+		return posix_error();
+	if (unlockpt(master_fd) < 0) /* unlock slave */
+		return posix_error();
+	signal(SIGCHLD, sig_saved);
+	slave_name = ptsname(master_fd); /* get name of slave */
+	if (slave_name == NULL)
+		return posix_error();
+	slave_fd = open(slave_name, O_RDWR | O_NOCTTY); /* open slave */
+	if (slave_fd < 0)
+		return posix_error();
+#ifndef __CYGWIN__ 
+	ioctl(slave_fd, I_PUSH, "ptem"); /* push ptem */
+	ioctl(slave_fd, I_PUSH, "ldterm"); /* push ldterm */
+#ifndef _hpux
+	ioctl(slave_fd, I_PUSH, "ttcompat"); /* push ttcompat */
+#endif /* _hpux */
+#endif /* HAVE_CYGWIN */
 #endif /* HAVE_OPENPTY */
 
 	return Py_BuildValue("(ii)", master_fd, slave_fd);
 
 }
-#endif /* defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) */
+#endif /* defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX) */
 
 #ifdef HAVE_FORKPTY
 PyDoc_STRVAR(posix_forkpty__doc__,
@@ -7229,9 +7261,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_FORK
 	{"fork",	posix_fork, METH_VARARGS, posix_fork__doc__},
 #endif /* HAVE_FORK */
-#if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY)
+#if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)
 	{"openpty",	posix_openpty, METH_VARARGS, posix_openpty__doc__},
-#endif /* HAVE_OPENPTY || HAVE__GETPTY */
+#endif /* HAVE_OPENPTY || HAVE__GETPTY || HAVE_DEV_PTMX */
 #ifdef HAVE_FORKPTY
 	{"forkpty",	posix_forkpty, METH_VARARGS, posix_forkpty__doc__},
 #endif /* HAVE_FORKPTY */
