@@ -205,8 +205,10 @@ Availability: \UNIX{}.
 \end{funcdesc}
 
 \begin{funcdesc}{setgroups}{groups}
-Set list of supplemental group ids associated with the current
-process to \var{groups}.
+Set the list of supplemental group ids associated with the current
+process to \var{groups}. \var{groups} must be a sequence, and each
+element must be an integer identifying a group. This operation is
+typical available only to the superuser.
 Availability: \UNIX{}.
 \versionadded{2.2}
 \end{funcdesc}
