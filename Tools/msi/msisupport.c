@@ -1,14 +1,16 @@
 #include "windows.h"
 #include "msiquery.h"
 
+int isWinNT;
+
 /* Print a debug message to the installer log file.
  * To see the debug messages, install with
  * msiexec /i pythonxy.msi /l*v python.log
  */
-static UINT debug(MSIHANDLE hInstall, LPCWSTR msg)
+static UINT debug(MSIHANDLE hInstall, LPCSTR msg)
 {
 	MSIHANDLE hRec = MsiCreateRecord(1);
-	if (!hRec || MsiRecordSetStringW(hRec, 1, msg) != ERROR_SUCCESS) {
+	if (!hRec || MsiRecordSetStringA(hRec, 1, msg) != ERROR_SUCCESS) {
 		return ERROR_INSTALL_FAILURE;
 	}
 	MsiProcessMessage(hInstall, INSTALLMESSAGE_INFO, hRec);
@@ -21,23 +23,34 @@ static UINT debug(MSIHANDLE hInstall, LPCWSTR msg)
  */
 UINT __declspec(dllexport) __stdcall CheckDir(MSIHANDLE hInstall)
 {
-	WCHAR path[1024];
+#define PSIZE 1024
+	WCHAR wpath[PSIZE];
+	char path[PSIZE];
 	UINT result;
-	DWORD size = sizeof(path)/sizeof(WCHAR);
+	DWORD size = PSIZE;
 	DWORD attributes;
+
+	isWinNT = (GetVersion() < 0x80000000) ? 1 : 0;
 	
-	result = MsiGetPropertyW(hInstall, L"TARGETDIR", path, &size);
+	if (isWinNT)
+		result = MsiGetPropertyW(hInstall, L"TARGETDIR", wpath, &size);
+	else
+		result = MsiGetPropertyA(hInstall, "TARGETDIR", path, &size);
 	if (result != ERROR_SUCCESS)
 		return result;
+	wpath[size] = L'\0';
 	path[size] = L'\0';
 
-	attributes = GetFileAttributesW(path);
+	if (isWinNT)
+		attributes = GetFileAttributesW(wpath);
+	else
+		attributes = GetFileAttributesA(path);
 	if (attributes == INVALID_FILE_ATTRIBUTES ||
 		!(attributes & FILE_ATTRIBUTE_DIRECTORY)) 
 	{
-		return MsiSetPropertyW(hInstall, L"TargetExists", L"0");
+		return MsiSetPropertyA(hInstall, "TargetExists", "0");
 	} else {
-		return MsiSetPropertyW(hInstall, L"TargetExists", L"1");
+		return MsiSetPropertyA(hInstall, "TargetExists", "1");
 	}
 }
 
@@ -50,10 +63,10 @@ UINT __declspec(dllexport) __stdcall UpdateEditIDLE(MSIHANDLE hInstall)
 	INSTALLSTATE ext_old, ext_new, tcl_old, tcl_new, reg_new;
 	UINT result;
 
-	result = MsiGetFeatureStateW(hInstall, L"Extensions", &ext_old, &ext_new);
+	result = MsiGetFeatureStateA(hInstall, "Extensions", &ext_old, &ext_new);
 	if (result != ERROR_SUCCESS)
 		return result;
-	result = MsiGetFeatureStateW(hInstall, L"TclTk", &tcl_old, &tcl_new);
+	result = MsiGetFeatureStateA(hInstall, "TclTk", &tcl_old, &tcl_new);
 	if (result != ERROR_SUCCESS)
 		return result;
 
@@ -76,7 +89,7 @@ UINT __declspec(dllexport) __stdcall UpdateEditIDLE(MSIHANDLE hInstall)
 	} else { 
 		reg_new = INSTALLSTATE_ABSENT;
 	}
-	result = MsiSetComponentStateW(hInstall, L"REGISTRY.tcl", reg_new);
+	result = MsiSetComponentStateA(hInstall, "REGISTRY.tcl", reg_new);
 	return result;
 }
 
