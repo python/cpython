@@ -100,6 +100,20 @@ getversion()
 	strcat(version, " [MW 68K compiler]");
 #endif
 #endif
+#ifdef THINK_C
+#ifdef __SC__
+	strcat(version, " [Symantec Think C compiler]");
+#else
+	strcat(version, " [Think C compiler]");
+#endif
+#endif
+#ifdef MPW
+#ifdef __SC__
+	strcat(version, " [Symantec MPW C compiler]");
+#else
+	strcat(version, " [Apple MPW C compiler]");
+#endif
+#endif
 	return version;
 }
 
@@ -335,6 +349,7 @@ struct {
 #ifdef THINK_C
 	{"Snd", initSnd},
 	{"Win", initWin},
+#endif
 
 /* -- ADDMODULE MARKER 2 -- */
 
