@@ -526,6 +526,18 @@ class ModifiedInterpreter(InteractiveInterpreter):
         linecache.cache[filename] = len(source)+1, 0, lines, filename
         return filename
 
+    def prepend_syspath(self, filename):
+        "Prepend sys.path with file's directory if not already included"
+        self.runcommand("""if 1:
+            _filename = %s
+            import sys as _sys
+            from os.path import dirname as _dirname
+            _dir = _dirname(_filename)
+            if not _dir in _sys.path:
+                _sys.path.insert(0, _dir)
+            del _filename, _sys, _dirname, _dir
+            \n""" % `filename`)
+
     def showsyntaxerror(self, filename=None):
         """Extend base class method: Add Colorizing
 
@@ -1069,9 +1081,9 @@ class PseudoFile:
 
 usage_msg = """\
 
-USAGE: idle  [-deis] [-t title] [file]*
-       idle  [-ds] [-t title] (-c cmd | -r file) [arg]*
-       idle  [-ds] [-t title] - [arg]*
+USAGE: idle  [-deins] [-t title] [file]*
+       idle  [-dns] [-t title] (-c cmd | -r file) [arg]*
+       idle  [-dns] [-t title] - [arg]*
 
   -h         print this help message and exit
   -n         run IDLE without a subprocess (see Help/IDLE Help for details)
@@ -1234,6 +1246,7 @@ def main():
         if cmd:
             shell.interp.execsource(cmd)
         elif script:
+            shell.interp.prepend_syspath(script)
             shell.interp.execfile(script)
     root.mainloop()
     root.destroy()
