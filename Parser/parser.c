@@ -320,7 +320,7 @@ dumptree(g, n)
 	else {
 		label l;
 		l.lb_type = TYPE(n);
-		l.lb_str = TYPE(str);
+		l.lb_str = STR(n);
 		printf("%s", labelrepr(&l));
 		if (ISNONTERMINAL(TYPE(n))) {
 			printf("(");
