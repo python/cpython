@@ -214,6 +214,9 @@ extern void initthread();
 #ifdef USE_SV
 extern void initsv();
 #endif
+#ifdef USE_CL
+extern void initcl();
+#endif
 #ifdef USE_TIME
 extern void inittime();
 #endif
@@ -333,6 +336,10 @@ struct {
 
 #ifdef USE_SV
 	{"sv",		initsv},
+#endif
+
+#ifdef USE_CL
+	{"cl",		initcl},
 #endif
 
 #ifdef USE_THREAD
