@@ -86,13 +86,7 @@ class Cmd:
 
         """
         self.cmdqueue = []
-        if completekey:
-            try:
-                import readline
-                readline.set_completer(self.complete)
-                readline.parse_and_bind(completekey+": complete")
-            except ImportError:
-                pass
+        self.completekey = completekey
 
     def cmdloop(self, intro=None):
         """Repeatedly issue a prompt, accept input, parse an initial prefix
@@ -142,14 +136,26 @@ class Cmd:
 
     def preloop(self):
         """Hook method executed once when the cmdloop() method is called."""
-        pass
+        if self.completekey:
+            try:
+                import readline
+                self.old_completer = readline.get_completer()
+                readline.set_completer(self.complete)
+                readline.parse_and_bind(self.completekey+": complete")
+            except ImportError:
+                pass
 
     def postloop(self):
         """Hook method executed once when the cmdloop() method is about to
         return.
 
         """
-        pass
+        if self.completekey:
+            try:
+                import readline
+                readline.set_completer(self.old_completer)
+            except ImportError:
+                pass
 
     def parseline(self, line):
         line = line.strip()
