@@ -38,17 +38,15 @@ if _os.name == 'mac':
 
 try:
     import fcntl as _fcntl
-    # If PYTHONCASEOK is set on Windows, stinking FCNTL.py gets
-    # imported, and we don't get an ImportError then.  Provoke
-    # an AttributeError instead in that case.
-    _fcntl.fcntl
-except (ImportError, AttributeError):
+except ImportError:
     def _set_cloexec(fd):
         pass
 else:
     def _set_cloexec(fd):
-        try: flags = _fcntl.fcntl(fd, _fcntl.F_GETFD, 0)
-        except IOError: pass
+        try:
+            flags = _fcntl.fcntl(fd, _fcntl.F_GETFD, 0)
+        except IOError:
+            pass
         else:
             # flags read successfully, modify
             flags |= _fcntl.FD_CLOEXEC
