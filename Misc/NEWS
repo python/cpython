@@ -26,6 +26,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- The SSL module now handles sockets with a timeout set correctly (SF
+  patch #675750, fixing SF bug #675552).
+
 - A new module _iconv_codec has been added, to expose the iconv(3)
   library.
 
