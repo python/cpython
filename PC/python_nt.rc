@@ -13,10 +13,10 @@
  *    PYTHON_DLL_NAME ditto.
  * MS_DLL_ID must match PY_VERSION in the Windows install script.
  */
-#define MS_DLL_ID "2.1"
+#define MS_DLL_ID "2.2"
 
 #ifndef PYTHON_DLL_NAME
-#define PYTHON_DLL_NAME "python21.dll"
+#define PYTHON_DLL_NAME "python22.dll"
 #endif
 
 /* Nothing below this should need to be changed except for copyright

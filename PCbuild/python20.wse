@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=5.0
-  Title=Python 2.1
+  Title=Python 2.2 pre-alpha
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -66,22 +66,22 @@ item: End Block
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Python 2.1
+  Value=Python 2.2 pre-alpha
 end
 item: Set Variable
   Variable=GROUP
-  Value=Python 2.1
+  Value=Python 2.2
 end
 item: Remark
   Text=PY_VERSION should be major.minor only; used to create the registry key; must match MS_DLL_ID in python_nt.rc
 end
 item: Set Variable
   Variable=PY_VERSION
-  Value=2.1
+  Value=2.2
 end
 item: Set Variable
   Variable=MAINDIR
-  Value=Python21
+  Value=Python22
 end
 item: Get Registry Key Value
   Variable=PROGRAM_FILES
@@ -828,8 +828,8 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\PCbuild\python21.lib
-  Destination=%MAINDIR%\libs\python21.lib
+  Source=%_SRC_%\PCbuild\python22.lib
+  Destination=%MAINDIR%\libs\python22.lib
   Flags=0000000000000010
 end
 item: Remark
@@ -851,8 +851,8 @@ item: Remark
   Text=*** Main Python DLL ***
 end
 item: Install File
-  Source=%_SRC_%\pcbuild\python21.dll
-  Destination=%DLLDEST%\python21.dll
+  Source=%_SRC_%\pcbuild\python22.dll
+  Destination=%DLLDEST%\python22.dll
   Flags=0000000000000010
 end
 item: Install File
