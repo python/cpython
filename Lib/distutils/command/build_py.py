@@ -307,7 +307,7 @@ class build_py (Command):
         outfile = self.get_module_outfile (self.build_lib, package, module)
         dir = os.path.dirname (outfile)
         self.mkpath (dir)
-        self.copy_file (module_file, outfile, preserve_mode=0)
+        return self.copy_file (module_file, outfile, preserve_mode=0)
 
 
     def build_modules (self):
