@@ -277,6 +277,21 @@ Or perhaps someone can propose a better rule?)
 \bifuncindex{chr}
 \bifuncindex{ord}
 
+\item[Unicode]
+The items of a Unicode object are Unicode characters.  A Unicode
+character is represented by a Unicode object of one item and can hold
+a 16-bit value representing a Unicode ordinal.  The built-in functions
+\function{unichr()}\bifuncindex{unichr} and
+\function{ord()}\bifuncindex{ord} convert between characters and
+nonnegative integers representing the Unicode ordinals as defined in
+the Unicode Standard 3.0. Conversion from and to other encodings are
+possible through the Unicode method \method{encode} and the built-in
+function \function{unicode()}\bifuncindex{unicode}.
+\obindex{unicode}
+\index{character}
+\index{integer}
+\index{Unicode@\UNICODE{}}
+
 \item[Tuples]
 The items of a tuple are arbitrary Python objects.
 Tuples of two or more items are formed by comma-separated lists
