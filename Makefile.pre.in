@@ -853,18 +853,19 @@ frameworkinstallstructure:	$(LDLIBRARY)
 # This installs Mac/Lib into the framework
 frameworkinstallmaclib:
 	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installmacsubtree \
-		BUILDPYTHON=./$(BUILDPYTHON) \
+		BUILDPYTHON=./$(BUILDPYTHON) DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
 		srcdir=$(srcdir) builddir=. prefix=$(prefix) LIBDEST=$(LIBDEST)
 
 # This installs the IDE, the Launcher and other apps into /Applications
 frameworkinstallapps:
 	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installapps \
-		BUILDPYTHON=./$(BUILDPYTHON) \
+		BUILDPYTHON=./$(BUILDPYTHON) DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
 		srcdir=$(srcdir) builddir=. dstroot=$(PYTHONFRAMEWORKPREFIX)/../..
 
 # This install the unix python and pythonw tools in /usr/local/bin
 frameworkinstallunixtools:
 	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installunixtools \
+		DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
 		srcdir=$(srcdir) builddir=. dstroot=$(PYTHONFRAMEWORKPREFIX)/../..
 
 # This installs IDLE

@@ -22,11 +22,12 @@ INSTALLED_PYTHONW=$(APPINSTALLDIR)/Contents/MacOS/python
 
 # Items more-or-less copied from the main Makefile
 DIRMODE=755
+FILEMODE=644
 INSTALL=/usr/bin/install -c
 INSTALL_SYMLINK=ln -fs
 INSTALL_PROGRAM=${INSTALL}
 INSTALL_SCRIPT= ${INSTALL_PROGRAM}
-INSTALL_DATA=	${INSTALL} -m 644
+INSTALL_DATA=	${INSTALL} -m ${FILEMODE}
 LN=ln
 STRIPFLAG=-s
 ##OPT=-g -O3 -Wall -Wstrict-prototypes -Wno-long-double -no-cpp-precomp \
