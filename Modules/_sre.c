@@ -1024,9 +1024,10 @@ entrance:
 
             state->ptr = ctx->ptr;
 
-            ctx->count = SRE_COUNT(state, ctx->pattern+3, ctx->pattern[2]);
-            RETURN_ON_ERROR(ctx->count);
-
+            ret = SRE_COUNT(state, ctx->pattern+3, ctx->pattern[2]);
+            RETURN_ON_ERROR(ret);
+            DATA_LOOKUP_AT(SRE_MATCH_CONTEXT, ctx, ctx_pos);
+            ctx->count = ret;
             ctx->ptr += ctx->count;
 
             /* when we arrive here, count contains the number of
@@ -1110,13 +1111,14 @@ entrance:
                 ctx->count = 0;
             else {
                 /* count using pattern min as the maximum */
-                ctx->count = SRE_COUNT(state, ctx->pattern+3,
-                                       ctx->pattern[1]);
-                RETURN_ON_ERROR(ctx->count);
-                if (ctx->count < (int) ctx->pattern[1])
+                ret = SRE_COUNT(state, ctx->pattern+3, ctx->pattern[1]);
+                RETURN_ON_ERROR(ret);
+                DATA_LOOKUP_AT(SRE_MATCH_CONTEXT, ctx, ctx_pos);
+                if (ret < (int) ctx->pattern[1])
                     /* didn't match minimum number of times */ 
                     RETURN_FAILURE;
                 /* advance past minimum matches of repeat */
+                ctx->count = ret;
                 ctx->ptr += ctx->count;
             }
 
@@ -1140,6 +1142,7 @@ entrance:
                     state->ptr = ctx->ptr;
                     ret = SRE_COUNT(state, ctx->pattern+3, 1);
                     RETURN_ON_ERROR(ret);
+                    DATA_LOOKUP_AT(SRE_MATCH_CONTEXT, ctx, ctx_pos);
                     if (ret == 0)
                         break;
                     assert(ret == 1);
