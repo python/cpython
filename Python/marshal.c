@@ -134,7 +134,7 @@ wr_object(v, fp)
 			extern object *getdict2key();
 			key = getdict2key(v, (int)i);
 			if (key != NULL) {
-				val = dictlookup(v, getstringvalue(key));
+				val = dict2lookup(v, key); /* Can't be NULL */
 				wr_object(key, fp);
 				wr_object(val, fp);
 			}
