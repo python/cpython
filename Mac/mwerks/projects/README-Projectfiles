@@ -49,3 +49,4 @@ to make it all work.
 All plugin modules use mwerks_plugin_config.h as their header file,
 with the exception of the _tkinter plugins, which use
 mwerks_tkplugin_config.h.
+
