@@ -1,0 +1,62 @@
+#! /usr/bin/env python
+#  -*- Python -*-
+
+import support
+import sys
+
+
+def collect(fp):
+    names = []
+    while 1:
+        line = fp.readline()
+        if not line:
+            break
+        line = line.strip()
+        if line:
+            names.append(line)
+        else:
+            names = []
+    return names
+
+
+def main():
+    options = support.Options()
+    options.columns = 4
+    options.variables["title"] = "Acknowledgements"
+    options.parse(sys.argv[1:])
+    names = collect(sys.stdin)
+    percol = (len(names) + options.columns - 1) / options.columns
+    colnums = [percol*i for i in range(options.columns)]
+    fp = options.get_output_file()
+    print >>fp, options.get_header().rstrip()
+    print >>fp, THANKS
+    print >>fp, '<table width="100%" align="center">'
+    for i in range(percol):
+        print >>fp, "  <tr>"
+        for j in colnums:
+            try:
+                print >>fp, "    <td>%s</td>" % names[i + j]
+            except IndexError:
+                print >>fp, "    <td>&nbsp;</td>"
+        print >>fp, "  </tr>"
+    print >>fp, "</table>"
+    print >>fp, options.get_footer().rstrip()
+
+
+THANKS = '''\
+
+<p>These people have contributed in some way to the Python
+documentation.  This list is probably not complete -- if you feel that
+you or anyone else should be on this list, please let us know (send
+email to <a
+href="mailto:python-docs@python.org">python-docs@python.org</a>), and
+we will be glad to correct the problem.</p>
+
+<p>It is only with the input and contributions of the Python community
+that Python has such wonderful documentation -- <b>Thank You!</b></p>
+
+'''
+
+
+if __name__ == "__main__":
+    main()
