@@ -1,29 +1,32 @@
-[See end for tips.]
+[See end for ** TIPS ]
 
 Click on the dotted line at the top of a menu to "tear it off": a
 separate window containing the menu is created.
 
-File menu:
+File Menu:
 
-	New window -- create a new editing window
+	New Window -- create a new editing window
 	Open... -- open an existing file
-	Open module... -- open an existing module (searches sys.path)
-	Class browser -- show classes and methods in current file
-	Path browser -- show sys.path directories, modules, classes
-		and methods
+	Recent Files... -- open a list of recent files
+	Open Module... -- open an existing module (searches sys.path)
+	Class Browser -- show classes and methods in current file
+	Path Browser -- show sys.path directories, modules, classes
+		        and methods
 	---
 	Save -- save current window to the associated file (unsaved
 		windows have a * before and after the window title)
 
 	Save As... -- save current window to new file, which becomes
-		the associated file
+		      the associated file
 	Save Copy As... -- save current window to different file
-		without changing the associated file
+		           without changing the associated file
+	---
+	Print Window -- print the current window
 	---
 	Close -- close current window (asks to save if unsaved)
 	Exit -- close all windows and quit IDLE (asks to save if unsaved)
 
-Edit menu:
+Edit Menu:
 
 	Undo -- Undo last change to current window (max 1000 changes)
 	Redo -- Redo last undone change to current window
@@ -34,41 +37,70 @@ Edit menu:
 	Select All -- Select the entire contents of the edit buffer
 	---
 	Find... -- Open a search dialog box with many options
-	Find again -- Repeat last search
-	Find selection -- Search for the string in the selection
+	Find Again -- Repeat last search
+	Find Selection -- Search for the string in the selection
 	Find in Files... -- Open a search dialog box for searching files
 	Replace... -- Open a search-and-replace dialog box
-	Go to line -- Ask for a line number and show that line
-	---
-	Indent region -- Shift selected lines right 4 spaces
-	Dedent region -- Shift selected lines left 4 spaces
-	Comment out region -- Insert ## in front of selected lines
-	Uncomment region -- Remove leading # or ## from selected lines
-	Tabify region -- Turns *leading* stretches of spaces into tabs
-	Untabify region -- Turn *all* tabs into the right number of spaces
-	Expand word -- Expand the word you have typed to match another
-		word in the same buffer; repeat to get a different expansion
+	Go to Line -- Ask for a line number and show that line
+	Expand Word -- Expand the word you have typed to match another
+		       word in the same buffer; repeat to get a different
+		       expansion
+
+Format Menu (only in Edit window):
+
+	Indent Region -- Shift selected lines right 4 spaces
+	Dedent Region -- Shift selected lines left 4 spaces
+	Comment Out Region -- Insert ## in front of selected lines
+	Uncomment Region -- Remove leading # or ## from selected lines
+	Tabify Region -- Turns *leading* stretches of spaces into tabs
+	Untabify Region -- Turn *all* tabs into the right number of spaces
+	New Indent Width... -- Open dialog to change indent width
 	Format Paragraph -- Reformat the current blank-line-separated paragraph
+
+Run Menu (only in Edit window):
+
+	Python Shell -- Open or wake up the Python shell window
 	---
-	Import module -- Import or reload the current module
-	Run script -- Execute the current file in the __main__ namespace
+	Check Module -- Run a syntax check on the module
+	Run Script -- Execute the current file in the __main__ namespace
 
-Windows menu:
+Settings Menu:
 
-	Zoom Height -- toggles the window between normal size (24x80)
+	Configure IDLE -- Open a configuration dialog.  Fonts, indentation,
+	                  keybindings, and color themes may be altered.
+                          Startup preferences may be set.
+	---
+	Revert to Default Settings -- Restore original settings
+
+Windows Menu:
+
+	Zoom Height -- toggles the window between configured size
 	and maximum height.
 	---
 	The rest of this menu lists the names of all open windows;
 	select one to bring it to the foreground (deiconifying it if
 	necessary).
 
-Debug menu (in the Python Shell window only):
+Debug Menu (in the Python Shell window only):
 
-	Go to file/line -- look around the insert point for a filename
-		and linenumber, open the file, and show the line
-	Open stack viewer -- show the stack traceback of the last exception
-	Debugger toggle -- Run commands in the shell under the debugger
-	JIT Stack viewer toggle -- Open stack viewer on traceback
+	Go to File/Line -- look around the insert point for a filename
+		           and linenumber, open the file, and show the line
+	Stack Viewer -- show the stack traceback of the last exception
+	Debugger (toggle) -- Run commands in the shell under the debugger
+	Auto-open Stack Viewer (toggle) -- Open stack viewer on traceback
+
+Help Menu:
+
+        IDLE Help -- Display this file
+	Python Documentation -- Access local Python documentation, if
+                                installed.  Otherwise access python.org.
+	Advice -- Emergency Only!
+	IDLE Readme -- Background discussion and change details
+	---
+	About IDLE --- Version, copyright, license, credits
+
+** TIPS
+========
 
 Basic editing and navigation:
 
@@ -76,7 +108,8 @@ Basic editing and navigation:
 	Arrow keys and Page Up/Down to move around
 	Home/End go to begin/end of line
 	Control-Home/End go to begin/end of file
-	Some Emacs bindings may also work, e.g. ^B/^P/^A/^E/^D/^L
+	Some Emacs or standard Windows bindings may work.
+	Keybindings are selected in the Settings Dialog, look there.
 
 Automatic indentation:
 
@@ -84,9 +117,9 @@ Automatic indentation:
 	4 spaces (in the Python Shell window by one tab).  After
 	certain keywords (break, return etc.) the next line is
 	dedented.  In leading indentation, Backspace deletes up to 4
-	spaces if they are there.  Tab inserts 1-4 spaces (in the
-	Python Shell window one tab).  See also the indent/dedent
-	region commands in the edit menu.
+	spaces if they are there.  Tab inserts spaces (in the
+	Python Shell window one tab), number depends on Indent Width
+        See also the indent/dedent region commands in the edit menu.
 
 Python Shell window:
 
@@ -104,17 +137,16 @@ Syntax colors:
 
 	The coloring is applied in a background "thread", so you may
 	occasionally see uncolorized text.  To change the color
-	scheme, edit the [Colors] section in config.txt (or add a
-	[Colors] section to ~/.idle).
+	scheme, use the Settings/Highlighting dialog.
 
-    Python syntax colors:
+    Python default syntax colors:
 
 	Keywords	orange
 	Strings		green
 	Comments	red
 	Definitions	blue
 
-    Shell colors:
+    Shell default colors:
 
 	Console output	brown
 	stdout		blue
@@ -123,43 +155,9 @@ Syntax colors:
 
 Other preferences:
 
-        To change the font open config-[win/unix/mac].txt and
-        change 
-  
-           font-name: courier new
-           font-size: 10 
-
-        to, for example:
-
-           font-name: courier new bold
-           font-size: 14
-
-        Note: a GUI based configuration screen will be provided
-           in the future.
-
-	To change keyboard bindings, edit Bindings.py
+	The font preferences, keybinding, and startup preferences can
+	be changed using the Settings dialog.
 
 Command line usage:
-
-	idle.py [-c command] [-d] [-e] [-s] [-t title] [arg] ...
-
-	-c command  run this command
-	-d          enable debugger
-	-e          edit mode; arguments are files to be edited
-	-s          run $IDLESTARTUP or $PYTHONSTARTUP first
-	-t title    set title of shell window
-
-	If there are arguments:
-
-	    If -e is used, arguments are files opened for editing and
-	    sys.argv reflects the arguments passed to IDLE itself.
-
-	    Otherwise, if -c is used, all arguments are placed in
-	    sys.argv[1:...], with sys.argv[0] set to '-c'.
-
-	    Otherwise, if neither -e nor -c is used, the first
-	    argument is a script which is executed with the remaining
-	    arguments in sys.argv[1:...]  and sys.argv[0] set to the
-	    script name.  If the script name is '-', no script is
-	    executed but an interactive Python session is started; the
-	    arguments are still available in sys.argv.
+	
+	Enter idle -h at the command prompt to get a usage message.
