@@ -458,27 +458,26 @@ class Pickler:
 
     def save_tuple(self, object):
         write = self.write
-        save  = self.save
-        memo  = self.memo
         proto = self.proto
 
-        if proto >= 1:
-            n = len(object)
-            if n <= 3:
-                if not object:
-                    write(EMPTY_TUPLE)
-                    return
-                if proto >= 2:
-                    for element in object:
-                        save(element)
-                    # Subtle.  Same as in the big comment below.
-                    if id(object) in memo:
-                        get = self.get(memo[id(object)][0])
-                        write(POP * n + get)
-                    else:
-                        write(_tuplesize2code[n])
-                        self.memoize(object)
-                    return
+        n = len(object)
+        if n == 0 and proto:
+            write(EMPTY_TUPLE)
+            return
+
+        save = self.save
+        memo = self.memo
+        if n <= 3 and proto >= 2:
+            for element in object:
+                save(element)
+            # Subtle.  Same as in the big comment below.
+            if id(object) in memo:
+                get = self.get(memo[id(object)][0])
+                write(POP * n + get)
+            else:
+                write(_tuplesize2code[n])
+                self.memoize(object)
+            return
 
         # proto 0, or proto 1 and tuple isn't empty, or proto > 1 and tuple
         # has more than 3 elements.
@@ -486,7 +485,7 @@ class Pickler:
         for element in object:
             save(element)
 
-        if object and id(object) in memo:
+        if n and id(object) in memo:
             # Subtle.  d was not in memo when we entered save_tuple(), so
             # the process of saving the tuple's elements must have saved
             # the tuple itself:  the tuple is recursive.  The proper action
@@ -498,7 +497,7 @@ class Pickler:
             if proto:
                 write(POP_MARK + get)
             else:   # proto 0 -- POP_MARK not available
-                write(POP * (len(object) + 1) + get)
+                write(POP * (n+1) + get)
             return
 
         # No recursion (including the empty-tuple case for protocol 0).
