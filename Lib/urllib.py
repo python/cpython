@@ -442,8 +442,12 @@ class addbase:
 	def __repr__(self):
 		return '<%s at %s whose fp = %s>' % (
 			  self.__class__.__name__, `id(self)`, `self.fp`)
-	def __del__(self):
-		self.close()
+# Removed this __del__ because it can't work like this.  If a
+# reference is kept to self.fp or any of its methods, but no reference
+# is kept to self, we don't want to close self.fp (which would happen
+# if this __del__ still existed).
+#	def __del__(self):
+#		self.close()
 	def close(self):
 		self.read = None
 		self.readline = None
