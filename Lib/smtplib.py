@@ -530,7 +530,7 @@ class SMTP:
             return encode_base64(response, eol="")
 
         def encode_plain(user, password):
-            return encode_base64("%s\0%s\0%s" % (user, user, password), eol="")
+            return encode_base64("\0%s\0%s" % (user, password), eol="")
 
 
         AUTH_PLAIN = "PLAIN"
