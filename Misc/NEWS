@@ -24,6 +24,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- Modified the fcntl.ioctl() function to allow modification of a passed
+  mutable buffer (for details see the reference documentation).
+
 - Made user requested changes to the itertools module.
   Subsumed the times() function into repeat().
   Added chain() and cycle().
