@@ -38,7 +38,7 @@ def test(name, input, output, *args):
                 value = apply(f, (input,) + args)
             if value is input:
                 if verbose:
-                   print 'no'
+                    print 'no'
                 print '*',f, `input`, `output`, `value`
                 return
     if value != output:

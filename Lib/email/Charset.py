@@ -13,7 +13,7 @@ QP     = 1  # Quoted-Printable
 BASE64 = 2  # Base64
 
 # In "=?charset?q?hello_world?=", the =?, ?q?, and ?= add up to 7
-MISC_LEN = 7 
+MISC_LEN = 7
 
 DEFAULT_CHARSET = 'us-ascii'
 
@@ -22,11 +22,11 @@ DEFAULT_CHARSET = 'us-ascii'
 # Defaults
 CHARSETS = {
     # input        header enc  body enc output conv
-    'iso-8859-1':  (QP,        QP,      None), 
+    'iso-8859-1':  (QP,        QP,      None),
     'iso-8859-2':  (QP,        QP,      None),
     'us-ascii':    (None,      None,    None),
     'big5':        (BASE64,    BASE64,  None),
-    'gb2312':      (BASE64,    BASE64,  None), 
+    'gb2312':      (BASE64,    BASE64,  None),
     'euc-jp':      (BASE64,    None,    'iso-2022-jp'),
     'shift_jis':   (BASE64,    None,    'iso-2022-jp'),
     'iso-2022-jp': (BASE64,    None,    None),
@@ -125,7 +125,7 @@ class Charset:
     converting between character sets, given the availability of the
     applicable codecs.  Given an character set, it will do its best to provide
     information on how to use that character set in an email.
-    
+
     Certain character sets must be encoded with quoted-printable or base64
     when used in email headers or bodies.  Certain character sets must be
     converted outright, and are not allowed in email.  Instances of this

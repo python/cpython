@@ -94,7 +94,7 @@ def input(files=None, inplace=0, backup="", bufsize=0):
     Create an instance of the FileInput class. The instance will be used
     as global state for the functions of this module, and is also returned
     to use during iteration. The parameters to this function will be passed
-    along to the constructor of the FileInput class. 
+    along to the constructor of the FileInput class.
     """
     global _state
     if _state and _state._file:
@@ -118,7 +118,7 @@ def nextfile():
     changed until after the first line of the next file has been read.
     Before the first line has been read, this function has no effect;
     it cannot be used to skip the first file. After the last line of the
-    last file has been read, this function has no effect. 
+    last file has been read, this function has no effect.
     """
     if not _state:
         raise RuntimeError, "no active input()"
@@ -127,7 +127,7 @@ def nextfile():
 def filename():
     """
     Return the name of the file currently being read.
-    Before the first line has been read, returns None. 
+    Before the first line has been read, returns None.
     """
     if not _state:
         raise RuntimeError, "no active input()"
@@ -137,7 +137,7 @@ def lineno():
     """
     Return the cumulative line number of the line that has just been read.
     Before the first line has been read, returns 0. After the last line
-    of the last file has been read, returns the line number of that line. 
+    of the last file has been read, returns the line number of that line.
     """
     if not _state:
         raise RuntimeError, "no active input()"
@@ -147,7 +147,7 @@ def filelineno():
     """
     Return the line number in the current file. Before the first line
     has been read, returns 0. After the last line of the last file has
-    been read, returns the line number of that line within the file. 
+    been read, returns the line number of that line within the file.
     """
     if not _state:
         raise RuntimeError, "no active input()"
@@ -156,7 +156,7 @@ def filelineno():
 def isfirstline():
     """
     Returns true the line just read is the first line of its file,
-    otherwise returns false. 
+    otherwise returns false.
     """
     if not _state:
         raise RuntimeError, "no active input()"
@@ -165,7 +165,7 @@ def isfirstline():
 def isstdin():
     """
     Returns true if the last line was read from sys.stdin,
-    otherwise returns false. 
+    otherwise returns false.
     """
     if not _state:
         raise RuntimeError, "no active input()"
@@ -173,14 +173,14 @@ def isstdin():
 
 class FileInput:
     """class FileInput([files[, inplace[, backup]]])
-    
+
     Class FileInput is the implementation of the module; its methods
     filename(), lineno(), fileline(), isfirstline(), isstdin(), nextfile()
     and close() correspond to the functions of the same name in the module.
     In addition it has a readline() method which returns the next
     input line, and a __getitem__() method which implements the
     sequence behavior. The sequence must be accessed in strictly
-    sequential order; random access and readline() cannot be mixed. 
+    sequential order; random access and readline() cannot be mixed.
     """
 
     def __init__(self, files=None, inplace=0, backup="", bufsize=0):

@@ -216,7 +216,7 @@ class Message:
     def get_charset(self):
         """Return the Charset object associated with the message's payload."""
         return self._charset
-        
+
     #
     # MAPPING INTERFACE (partial)
     #

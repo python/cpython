@@ -61,7 +61,7 @@ def decode_header(header):
         if not ecre.search(line):
             decoded.append((line, None))
             continue
-        
+
         parts = ecre.split(line)
         while parts:
             unenc = parts.pop(0).strip()
@@ -149,14 +149,14 @@ class Header:
         if charset is None:
             charset = self._charset
         self._chunks.append((s, charset))
-        
+
     def _split(self, s, charset):
         # Split up a header safely for use with encode_chunks.  BAW: this
         # appears to be a private convenience method.
         splittable = charset.to_splittable(s)
         encoded = charset.from_splittable(splittable)
         elen = charset.encoded_header_len(encoded)
-        
+
         if elen <= self._maxlinelen:
             return [(encoded, charset)]
         # BAW: should we use encoded?
@@ -185,7 +185,7 @@ class Header:
         Base64 or quoted-printable) header strings.  In addition, there is a
         75-character length limit on any given encoded header field, so
         line-wrapping must be performed, even with double-byte character sets.
-        
+
         This method will do its best to convert the string to the correct
         character set used in email, and encode and line wrap it safely with
         the appropriate scheme for that character set.

@@ -22,7 +22,7 @@ in To:/From:/Cc: etc. fields, as well as Subject: lines.
 This module does not do the line wrapping or end-of-line character
 conversion necessary for proper internationalized headers; it only
 does dumb encoding and decoding.  To deal with the various line
-wrapping issues, use the email.Header module.  
+wrapping issues, use the email.Header module.
 """
 
 import re
@@ -50,7 +50,7 @@ def body_quopri_check(c):
     """Return true if the character should be escaped with body quopri."""
     return bqre.match(c) and 1
 
-    
+
 def header_quopri_len(s):
     """Return the length of str when it is encoded with header quopri."""
     count = 0
@@ -131,7 +131,7 @@ def header_encode(header, charset="iso-8859-1", keep_eols=0, maxlinelen=76,
     # lenght, after the RFC chrome is added in.
     quoted = []
     max_encoded = maxlinelen - len(charset) - MISC_LEN
-    
+
     for c in header:
         # Space may be represented as _ instead of =20 for readability
         if c == ' ':
@@ -187,7 +187,7 @@ def encode(body, binary=0, maxlinelen=76, eol=NL):
             line = line[:-2]
         elif line[-1] in CRLF:
             line = line[:-1]
-            
+
         lineno += 1
         encoded_line = ''
         prev = None

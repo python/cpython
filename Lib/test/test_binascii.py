@@ -113,7 +113,7 @@ else:
 
 # Verify the treatment of Unicode strings
 if have_unicode:
-    verify(binascii.hexlify(unicode('a', 'ascii')) == '61', 
+    verify(binascii.hexlify(unicode('a', 'ascii')) == '61',
            "hexlify failed for Unicode")
 
 # A test for SF bug 534347 (segfaults without the proper fix)
