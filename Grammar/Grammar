@@ -1,8 +1,7 @@
 # Grammar for Python, version 10
 
 # Changes since version 9:
-#	Equality is now only tested with '=='; consequently
-#	Exprlist replaced by testlist everywhere except after 'for'
+#	Equality is now only tested with '=='
 
 # Changes since version 8:
 #	Trailing commas in formal parameter lists are allowed
@@ -64,7 +63,7 @@ fpdef: NAME | '(' fplist ')'
 stmt: simple_stmt | compound_stmt
 simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
 small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt
-expr_stmt: (testlist '=')* testlist
+expr_stmt: (exprlist '=')* exprlist
 # For assignments, additional restrictions enforced by the interpreter
 print_stmt: 'print' (test ',')* [test]
 del_stmt: 'del' exprlist
