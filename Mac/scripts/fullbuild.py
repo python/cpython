@@ -45,20 +45,22 @@ DIALOG_ID = 512
 
 I_OK=1
 I_CANCEL=2
-I_INC_BUILDNO=19
+# label 3
+I_PPC_EXTLIBS=4
+I_GEN_PROJECTS=5
+I_GEN_IMGPROJECTS=6
+I_INC_BUILDNO=7
+# label 8
+I_CORE=9
+I_PPC_PLUGINS=10
+I_PPC_EXTENSIONS=11
+# label 12
+I_PPC_FULL=13
+I_PPC_SMALL=14
+# label 15
+I_APPLETS=16
 
-I_CORE=3
-I_PPC_PLUGINS=4
-I_PPC_EXTENSIONS=5
-I_68K_PLUGINS=6
-I_68K_EXTENSIONS=7
-I_PPC_FULL=8
-I_PPC_SMALL=9
-I_68K_FULL=10
-I_68K_SMALL=11
-I_APPLETS=12
-
-N_BUTTONS=13
+N_BUTTONS=17
 
 if OLDAESUPPORT:
 	class MwShell(Metrowerks_Shell_Suite, CodeWarrior_suite, Metrowerks_Standard_Suite,
@@ -83,7 +85,7 @@ def buildmwproject(top, creator, projects):
 		file = os.path.join(top, file)
 		try:
 			fss = macfs.FSSpec(file)
-		except ValueError:
+		except MacOS.Error:
 			print '** file not found:', file
 			continue
 		print 'Building', file, target
@@ -128,6 +130,16 @@ def buildapplet(top, dummy, list):
 		print 'Building applet', dst
 		buildtools.process(template, src, dst, 1)
 		
+def buildprojectfile(top, dummy, list):
+	"""Create CodeWarrior project files with a script"""
+	for folder, module, routine in list:
+		print "Generating project files with", module
+		sys.path.insert(0, os.path.join(top, folder))
+		m = __import__(module)
+		r = getattr(m, routine)
+		r()
+		del sys.path[0]
+		
 def buildfat(top, dummy, list):
 	"""Build fat binaries"""
 	for dst, src1, src2 in list:
@@ -166,11 +178,24 @@ def handle_dialog(filename):
 # The build instructions. Entries are (routine, arg, list-of-files)
 # XXXX We could also include the builds for stdwin and such here...
 BUILD_DICT = {
+I_GEN_PROJECTS : (buildprojectfile, None, [
+	(":Mac:scripts", "genpluginprojects", "genallprojects")
+	]),
+	
+I_GEN_IMGPROJECTS : (buildprojectfile, None, [
+	(":Extensions:img:Mac", "genimgprojects", "genallprojects")
+	]),
+	
 I_CORE : (buildmwproject, "CWIE", [
 		(":Mac:Build:PythonCore.mcp", "PythonCore"),
 		(":Mac:Build:PythonInterpreter.mcp", "PythonInterpreter"),
 	]),
 
+I_PPC_EXTLIBS : (buildmwproject, "CWIE", [
+##	(":Mac:Build:buildlibs.mcp", "buildlibs ppc plus tcl/tk"),
+	(":Mac:Build:buildlibs.mcp", "buildlibs ppc"),
+	]),
+	
 I_PPC_PLUGINS : (buildmwproject, "CWIE", [
 	(":Mac:Build:ucnhash.mcp", "ucnhash.ppc"),
 	(":Mac:Build:pyexpat.mcp", "pyexpat.ppc"),
@@ -199,43 +224,6 @@ I_PPC_PLUGINS : (buildmwproject, "CWIE", [
 	(":Mac:Build:TE.mcp", "TE.ppc"),
 	]),
 
-I_68K_PLUGINS : (buildmwproject, "CWIE", [
-	(":Mac:Build:ucnhash.mcp", "ucnhash.CFM68K"),
-	(":Mac:Build:ucnhash.mcp", "ucnhash.CFM68K"),
-	(":Mac:Build:ctb.mcp", "ctb.CFM68K"),
-	(":Mac:Build:gdbm.mcp", "gdbm.CFM68K"),
-	(":Mac:Build:icglue.mcp", "icglue.CFM68K"),
-	(":Mac:Build:waste.mcp", "waste.CFM68K"),
-	(":Mac:Build:zlib.mcp", "zlib.CFM68K"),
-##	(":Mac:Build:_tkinter.mcp", "_tkinter.CFM68K"),
-	(":Extensions:Imaging:_tkinter.mcp", "_tkinter.CFM68K"),
-	(":Mac:Build:ColorPicker.mcp", "ColorPicker.CFM68K"),
-	(":Mac:Build:Printing.mcp", "Printing.CFM68K"),
-	(":Mac:Build:App.mcp", "App.CFM68K"),
-	(":Mac:Build:Cm.mcp", "Cm.CFM68K"),
-	(":Mac:Build:Fm.mcp", "Fm.CFM68K"),
-	(":Mac:Build:Help.mcp", "Help.CFM68K"),
-	(":Mac:Build:Icn.mcp", "Icn.CFM68K"),
-	(":Mac:Build:List.mcp", "List.CFM68K"),
-	(":Mac:Build:Qdoffs.mcp", "Qdoffs.CFM68K"),
-	(":Mac:Build:Qt.mcp", "Qt.CFM68K"),
-	(":Mac:Build:Scrap.mcp", "Scrap.CFM68K"),
-	(":Mac:Build:Snd.mcp", "Snd.CFM68K"),
-	(":Mac:Build:Sndihooks.mcp", "Sndihooks.CFM68K"),
-	(":Mac:Build:TE.mcp", "TE.CFM68K"),
-	]),
-
-I_68K_FULL : (buildmwproject, "CWIE", [
-		(":Mac:Build:PythonStandalone.mcp", "Python68K"),
-	]),
-	
-I_68K_SMALL : (buildmwproject, "CWIE", [
-		(":Mac:Build:PythonStandSmall.mcp", "PythonSmall68K"),
-	]),
-
-I_PPC_FULL : (buildmwproject, "CWIE", [
-		(":Mac:Build:PythonStandalone.mcp", "PythonStandalone"),
-	]),
 
 I_PPC_SMALL : (buildmwproject, "CWIE", [
 		(":Mac:Build:PythonStandSmall.mcp", "PythonStandSmall"),
@@ -253,13 +241,6 @@ I_PPC_EXTENSIONS : (buildmwproject, "CWIE", [
 ##		(":Extensions:Numerical:Packages:LALITE:Mac:lapack_lite.mcp", "lapack_lite.ppc"),
 ##		(":Extensions:Numerical:Packages:RANLIB:Mac:ranlib.mcp", "ranlib.ppc"),
 ##		(":Extensions:Numerical:Packages:RNG:Mac:RNG.mcp", "RNG.ppc"),
-	]),
-
-I_68K_EXTENSIONS : (buildmwproject, "CWIE", [
-		(":Extensions:Imaging:_imaging.mcp", "_imaging.CFM68K"),
-##		(":Extensions:Imaging:_tkinter.mcp", "_tkinter.CFM68K"),
-		(":Extensions:img:Mac:imgmodules.mcp", "imgmodules CFM68K"),
-##		(":Extensions:NumPy:numpymodules.mcp", "numpymodules.CFM68K"),
 	]),
 
 I_APPLETS : (buildapplet, None, [
@@ -308,7 +289,8 @@ def main():
 	for routine, arg, list in instructions:
 		routine(dir, arg, list)
 		
-	print "All done!"
+	if todo:
+		print "All done!"
 	
 if __name__ == '__main__':
 	main()
