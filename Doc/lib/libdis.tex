@@ -504,8 +504,8 @@ default parameters, which are found below TOS.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BUILD_SLICE}{argc}
-Pushes a slice object on the stack.  If \var{argc} is three, creates
-\code{TOS3[TOS2:TOS1:TOS]}.  Otherwise, expects three arguments.
+Pushes a slice object on the stack.  \var{argc} must be 2 or 3.  If it
+is 2, \code{slice(TOS1, TOS)} is pushed; if it is 3,
+\code{slice(TOS2, TOS1, TOS)} is pushed.
+See the \code{slice()} built-in function.
 \end{opcodedesc}
-
-
