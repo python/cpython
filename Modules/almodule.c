@@ -1519,7 +1519,8 @@ al_GetParams(PyObject *self, PyObject *args)
 	for (i = 0; i < npvs; i++) {
 		if (pvs[i].sizeOut < 0) {
 			char buf[32];
-			sprintf(buf, "problem with param %d", i);
+			PyOS_snprintf(buf, sizeof(buf),
+				      "problem with param %d", i);
 			PyErr_SetString(ErrorObject, buf);
 			goto error;
 		}

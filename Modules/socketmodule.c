@@ -3089,7 +3089,8 @@ OS2init(void)
 	    return 1; /* Indicate Success */
     }
 
-    sprintf(reason, "OS/2 TCP/IP Error# %d", sock_errno());
+    PyOS_snprintf(reason, sizeof(reason),
+		  "OS/2 TCP/IP Error# %d", sock_errno());
     PyErr_SetString(PyExc_ImportError, reason);
 
     return 0;  /* Indicate Failure */

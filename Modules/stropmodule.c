@@ -778,7 +778,8 @@ strop_atoi(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	else if (errno != 0) {
-		sprintf(buffer, "atoi() literal too large: %.200s", s);
+		PyOS_snprintf(buffer, sizeof(buffer), 
+			      "atoi() literal too large: %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
 	}
@@ -828,7 +829,8 @@ strop_atol(PyObject *self, PyObject *args)
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
 	if (*end != '\0') {
-		sprintf(buffer, "invalid literal for atol(): %.200s", s);
+		PyOS_snprintf(buffer, sizeof(buffer),
+			      "invalid literal for atol(): %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
 		Py_DECREF(x);
 		return NULL;

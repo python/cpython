@@ -2555,7 +2555,7 @@ _PyPopenCreateProcess(char *cmdstring,
 			x = i + strlen(s3) + strlen(cmdstring) + 1;
 			s2 = (char *)_alloca(x);
 			ZeroMemory(s2, x);
-			sprintf(s2, "%s%s%s", s1, s3, cmdstring);
+			PyOS_snprintf(s2, x, "%s%s%s", s1, s3, cmdstring);
 		}
 		else {
 			/*
@@ -2608,8 +2608,8 @@ _PyPopenCreateProcess(char *cmdstring,
 
 			s2 = (char *)_alloca(x);
 			ZeroMemory(s2, x);
-			sprintf(
-				s2,
+			PyOS_snprintf(
+				s2, x,
 				"%s \"%s%s%s\"",
 				modulepath,
 				s1,
