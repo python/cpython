@@ -394,13 +394,11 @@ static PyMethodDef cmath_methods[] = {
 DL_EXPORT(void)
 initcmath(void)
 {
-	PyObject *m, *d, *v;
+	PyObject *m;
 
 	m = Py_InitModule3("cmath", cmath_methods, module_doc);
-	d = PyModule_GetDict(m);
-	PyDict_SetItemString(d, "pi",
-			     v = PyFloat_FromDouble(atan(1.0) * 4.0));
-	Py_DECREF(v);
-	PyDict_SetItemString(d, "e", v = PyFloat_FromDouble(exp(1.0)));
-	Py_DECREF(v);
+
+	PyModule_AddObject(m, "pi",
+                           PyFloat_FromDouble(atan(1.0) * 4.0));
+	PyModule_AddObject(m, "e", PyFloat_FromDouble(exp(1.0)));
 }

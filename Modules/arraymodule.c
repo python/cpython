@@ -1731,12 +1731,14 @@ static PyMethodDef a_methods[] = {
 DL_EXPORT(void)
 initarray(void)
 {
-	PyObject *m, *d;
+	PyObject *m;
 
 	Arraytype.ob_type = &PyType_Type;
 	m = Py_InitModule3("array", a_methods, module_doc);
-	d = PyModule_GetDict(m);
-	PyDict_SetItemString(d, "ArrayType", (PyObject *)&Arraytype);
-	PyDict_SetItemString(d, "array", (PyObject *)&Arraytype);
+
+        Py_INCREF((PyObject *)&Arraytype);
+	PyModule_AddObject(m, "ArrayType", (PyObject *)&Arraytype);
+        Py_INCREF((PyObject *)&Arraytype);
+	PyModule_AddObject(m, "array", (PyObject *)&Arraytype);
 	/* No need to check the error here, the caller will do that */
 }
