@@ -2850,6 +2850,18 @@ PyString_Format(PyObject *format, PyObject *args)
 
 #ifdef INTERN_STRINGS
 
+/* This dictionary will leak at PyString_Fini() time.  That's acceptable
+ * because PyString_Fini() specifically frees interned strings that are
+ * only referenced by this dictionary.  The CVS log entry for revision 2.45
+ * says:
+ *
+ *    Change the Fini function to only remove otherwise unreferenced
+ *    strings from the interned table.  There are references in
+ *    hard-to-find static variables all over the interpreter, and it's not
+ *    worth trying to get rid of all those; but "uninterning" isn't fair
+ *    either and may cause subtle failures later -- so we have to keep them
+ *    in the interned table.
+ */
 static PyObject *interned;
 
 void
