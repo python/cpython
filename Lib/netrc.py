@@ -15,7 +15,8 @@ class netrc:
         self.hosts = {}
         self.macros = {}
         lexer = shlex.shlex(fp)
-        lexer.wordchars = lexer.wordchars + '.'
+	# Allows @ in hostnames.  Not a big deal...
+        lexer.wordchars = lexer.wordchars + '.-@'
         while 1:
             # Look for a machine, default, or macdef top-level keyword
             toplevel = tt = lexer.get_token()
