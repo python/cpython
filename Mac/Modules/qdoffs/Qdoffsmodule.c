@@ -44,6 +44,8 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <QDOffscreen.h>
 
+#define as_GrafPtr(gworld) ((GrafPtr)(gworld))
+
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
 
@@ -118,11 +120,27 @@ static PyObject *GWorldObj_GetGWorldPixMap(_self, _args)
 	return _res;
 }
 
+static PyObject *GWorldObj_as_GrafPtr(_self, _args)
+	GWorldObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	GrafPtr _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = as_GrafPtr(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     GrafObj_New, _rv);
+	return _res;
+}
+
 static PyMethodDef GWorldObj_methods[] = {
 	{"GetGWorldDevice", (PyCFunction)GWorldObj_GetGWorldDevice, 1,
 	 "() -> (GDHandle _rv)"},
 	{"GetGWorldPixMap", (PyCFunction)GWorldObj_GetGWorldPixMap, 1,
 	 "() -> (PixMapHandle _rv)"},
+	{"as_GrafPtr", (PyCFunction)GWorldObj_as_GrafPtr, 1,
+	 "() -> (GrafPtr _rv)"},
 	{NULL, NULL, 0}
 };
 
@@ -544,6 +562,42 @@ static PyObject *Qdoffs_PixMap32Bit(_self, _args)
 	return _res;
 }
 
+static PyObject *Qdoffs_GetPixMapBytes(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	PixMapHandle pm;
+	int from, length;
+	char *cp;
+
+	if ( !PyArg_ParseTuple(_args, "O&ii", ResObj_Convert, &pm, &from, &length) )
+		return NULL;
+	cp = GetPixBaseAddr(pm)+from;
+	return PyString_FromStringAndSize(cp, length);
+
+}
+
+static PyObject *Qdoffs_PutPixMapBytes(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	PixMapHandle pm;
+	int from, length;
+	char *cp, *icp;
+
+	if ( !PyArg_ParseTuple(_args, "O&is#", ResObj_Convert, &pm, &from, &icp, &length) )
+		return NULL;
+	cp = GetPixBaseAddr(pm)+from;
+	memcpy(cp, icp, length);
+	Py_INCREF(Py_None);
+	return Py_None;
+
+}
+
 static PyMethodDef Qdoffs_methods[] = {
 	{"NewGWorld", (PyCFunction)Qdoffs_NewGWorld, 1,
 	 "(short PixelDepth, Rect boundsRect, CTabHandle cTable, GDHandle aGDevice, GWorldFlags flags) -> (GWorldPtr offscreenGWorld)"},
@@ -587,6 +641,10 @@ static PyMethodDef Qdoffs_methods[] = {
 	 "(Rect globalRect, Boolean purgeable) -> (GDHandle gdh, PixMapHandle offscreenPixMap)"},
 	{"PixMap32Bit", (PyCFunction)Qdoffs_PixMap32Bit, 1,
 	 "(PixMapHandle pmHandle) -> (Boolean _rv)"},
+	{"GetPixMapBytes", (PyCFunction)Qdoffs_GetPixMapBytes, 1,
+	 "(pixmap, int start, int size) -> string. Return bytes from the pixmap"},
+	{"PutPixMapBytes", (PyCFunction)Qdoffs_PutPixMapBytes, 1,
+	 "(pixmap, int start, string data). Store bytes into the pixmap"},
 	{NULL, NULL, 0}
 };
 

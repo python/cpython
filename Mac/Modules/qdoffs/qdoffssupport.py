@@ -36,6 +36,8 @@ QDErr = OSErrType("QDErr", 'h')
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 
+#define as_GrafPtr(gworld) ((GrafPtr)(gworld))
+
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
 """
@@ -75,6 +77,42 @@ functions = []
 methods = []
 execfile(INPUTFILE)
 
+# A method to convert a GWorldPtr to a GrafPtr
+f = Method(GrafPtr, 'as_GrafPtr', (GWorldPtr, 'p', InMode))
+methods.append(f)
+
+#
+# Manual generator: get data out of a pixmap
+pixmapgetbytes_body = """
+PixMapHandle pm;
+int from, length;
+char *cp;
+
+if ( !PyArg_ParseTuple(_args, "O&ii", ResObj_Convert, &pm, &from, &length) )
+	return NULL;
+cp = GetPixBaseAddr(pm)+from;
+return PyString_FromStringAndSize(cp, length);
+"""
+f = ManualGenerator("GetPixMapBytes", pixmapgetbytes_body)
+f.docstring = lambda: """(pixmap, int start, int size) -> string. Return bytes from the pixmap"""
+functions.append(f)
+
+# Manual generator: store data in a pixmap
+pixmapputbytes_body = """
+PixMapHandle pm;
+int from, length;
+char *cp, *icp;
+
+if ( !PyArg_ParseTuple(_args, "O&is#", ResObj_Convert, &pm, &from, &icp, &length) )
+	return NULL;
+cp = GetPixBaseAddr(pm)+from;
+memcpy(cp, icp, length);
+Py_INCREF(Py_None);
+return Py_None;
+"""
+f = ManualGenerator("PutPixMapBytes", pixmapputbytes_body)
+f.docstring = lambda: """(pixmap, int start, string data). Store bytes into the pixmap"""
+functions.append(f)
 
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)
