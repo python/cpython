@@ -77,10 +77,28 @@ printobject(op, fp, flags)
 	}
 	else {
 		if (op->ob_refcnt <= 0)
-			fprintf(fp, "(refcnt %u):", op->ob_refcnt);
-		if (op->ob_type->tp_print == NULL)
-			fprintf(fp, "<%s object at %lx>",
-				op->ob_type->tp_name, (long)op);
+			fprintf(fp, "<refcnt %u at %lx>",
+				op->ob_refcnt, (long)op);
+		else if (op->ob_type->tp_print == NULL) {
+			if (op->ob_type->tp_repr == NULL) {
+				fprintf(fp, "<%s object at %lx>",
+					op->ob_type->tp_name, (long)op);
+			}
+			else {
+				object *s = reprobject(op);
+				if (s == NULL)
+					ret = -1;
+				else if (!is_stringobject(s)) {
+					err_setstr(TypeError,
+						   "repr not string");
+					ret = -1;
+				}
+				else {
+					fprintf(fp, "%s", getstringvalue(s));
+				}
+				XDECREF(s);
+			}
+		}
 		else
 			ret = (*op->ob_type->tp_print)(op, fp, flags);
 	}
@@ -252,6 +270,12 @@ UNREF(op)
 		fprintf(stderr, "UNREF negative refcnt\n");
 		abort();
 	}
+	if (op == &refchain ||
+	    op->_ob_prev->_ob_next != op || op->_ob_next->_ob_prev != op) {
+		fprintf(stderr, "UNREF invalid object\n");
+		abort();
+	}
+#ifdef SLOW_UNREF_CHECK
 	for (p = refchain._ob_next; p != &refchain; p = p->_ob_next) {
 		if (p == op)
 			break;
@@ -260,8 +284,10 @@ UNREF(op)
 		fprintf(stderr, "UNREF unknown object\n");
 		abort();
 	}
+#endif
 	op->_ob_next->_ob_prev = op->_ob_prev;
 	op->_ob_prev->_ob_next = op->_ob_next;
+	op->_ob_next = op->_ob_prev = NULL;
 }
 
 DELREF(op)
@@ -269,14 +295,17 @@ DELREF(op)
 {
 	UNREF(op);
 	(*(op)->ob_type->tp_dealloc)(op);
+	op->ob_type = NULL;
 }
 
 printrefs(fp)
 	FILE *fp;
 {
 	object *op;
-	fprintf(fp, "Remaining objects:\n");
+	fprintf(fp, "Remaining objects (except strings referenced once):\n");
 	for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
+		if (op->ob_refcnt == 1 && is_stringobject(op))
+			continue; /* Will be printed elsewhere */
 		fprintf(fp, "[%d] ", op->ob_refcnt);
 		if (printobject(op, fp, 0) != 0)
 			err_clear();
