@@ -59,9 +59,9 @@ def _structure(msg, fp=None, level=0, include_default=False):
     tab = ' ' * (level * 4)
     print >> fp, tab + msg.get_content_type(),
     if include_default:
-        print '[%s]' % msg.get_default_type()
+        print >> fp, '[%s]' % msg.get_default_type()
     else:
-        print
+        print >> fp
     if msg.is_multipart():
         for subpart in msg.get_payload():
             _structure(subpart, fp, level+1, include_default)
