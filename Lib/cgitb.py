@@ -146,7 +146,8 @@ function calls leading up to the error, in the order they occurred.'''
 <table width="100%%" cellspacing=0 cellpadding=0 border=0>
 %s</table>''' % '\n'.join(rows))
 
-    exception = ['<p>%s: %s' % (strong(str(etype)), str(evalue))]
+    exception = ['<p>%s: %s' % (strong(pydoc.html.escape(str(etype))),
+                                pydoc.html.escape(str(evalue)))]
     if type(evalue) is types.InstanceType:
         for name in dir(evalue):
             if name[:1] == '_': continue
