@@ -25,12 +25,11 @@ Python applications) or for parsing quoted strings.
 
 The \module{shlex} module defines the following functions:
 
-\begin{funcdesc}{split}{s\optional{, posix=\code{True}\optional{,
-			spaces=\code{True}}}}
-Split the string \var{s} using shell-like syntax. If \var{posix} is
-\code{True}, operate in \POSIX{} mode. If \var{spaces} is \code{True}, it
-will only split words in whitespaces (setting the
-\member{whitespace_split} member of the \class{shlex} instance).
+\begin{funcdesc}{split}{s\optional{, comments=\code{False}}}
+Split the string \var{s} using shell-like syntax. If \var{comments} is
+\code{False}, the parsing of comments in the given string will be
+disabled (setting the \member{commenters} member of the \class{shlex}
+instance to the empty string). This function operates in \POSIX{} mode.
 \versionadded{2.3}
 \end{funcdesc}
 

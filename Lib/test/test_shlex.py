@@ -151,9 +151,9 @@ class ShlexTest(unittest.TestCase):
         for item in self.posix_data:
             item[0] = item[0].replace(r"\n", "\n")
 
-    def splitTest(self, data, posix, spaces):
+    def splitTest(self, data, comments):
         for i in range(len(data)):
-            l = shlex.split(data[i][0], posix=posix, spaces=spaces)
+            l = shlex.split(data[i][0], comments=comments)
             self.assertEqual(l, data[i][1:],
                              "%s: %s != %s" %
                              (data[i][0], l, data[i][1:]))
@@ -167,13 +167,9 @@ class ShlexTest(unittest.TestCase):
             tok = lex.get_token()
         return ret
     
-    def testSplit(self):
-        """Test data splitting with non-posix parser"""
-        self.splitTest(self.data, posix=0, spaces=0) 
-
     def testSplitPosix(self):
         """Test data splitting with posix parser"""
-        self.splitTest(self.posix_data, posix=1, spaces=1) 
+        self.splitTest(self.posix_data, comments=True) 
 
     def testCompat(self):
         """Test compatibility interface"""
