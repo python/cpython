@@ -8,7 +8,7 @@
 ;; Created:    Feb 1992
 ;; Keywords:   python languages oop
 
-(defconst py-version "$Revision$"
+(defconst py-version "4.1"
   "`python-mode' version number.")
 
 ;; This software is provided as-is, without express or implied
@@ -120,6 +120,13 @@ mode buffer is visited during an Emacs session.  After that, use
   "*Amount of offset per level of indentation.
 `\\[py-guess-indent-offset]' can usually guess a good value when
 you're editing someone else's Python code."
+  :type 'integer
+  :group 'python)
+
+(defcustom py-continuation-offset 4
+  "*Additional amount of offset to give for continuation lines.
+Continuation lines are those that immediately follow a backslash
+terminated line."
   :type 'integer
   :group 'python)
 
@@ -1800,7 +1807,8 @@ dedenting."
 	      ;; chunk of non-whitespace characters on base line, + 1 more
 	      ;; column
 	      (end-of-line)
-	      (setq endpos (point)  searching t)
+	      (setq endpos (point)
+		    searching t)
 	      (back-to-indentation)
 	      (setq startpos (point))
 	      ;; look at all "=" from left to right, stopping at first
@@ -1825,7 +1833,8 @@ dedenting."
 		  (progn
 		    (goto-char startpos)
 		    (skip-chars-forward "^ \t\n")))
-	      (1+ (current-column))))))
+	      (+ (current-column) py-continuation-offset 1)
+	      ))))
 
        ;; not on a continuation line
        ((bobp) (current-indentation))
