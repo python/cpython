@@ -32,6 +32,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define PYTHONPATH ".:/usr/local/lib/python"
 #endif
 
+#ifndef PREFIX
+#define PREFIX "/usr/local"
+#endif
+
+#ifndef EXEC_PREFIX
+#define EXEC_PREFIX "/usr/local"
+#endif
+
 
 /* This is called once from pythonrun to initialize sys.path.  The
    environment variable PYTHONPATH is fetched and the default path
@@ -64,4 +72,19 @@ Py_GetPath()
 		*p++ = DELIM;
 	strcpy(p, defpath);
 	return buf;
+}
+
+
+/* Similar for Makefile variables $prefix and $exec_prefix */
+
+char *
+Py_GetPrefix()
+{
+	return PREFIX;
+}
+
+char *
+Py_GetExecPrefix()
+{
+	return EXEC_PREFIX;
 }

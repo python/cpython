@@ -106,6 +106,8 @@ clobber:	clean
 
 getpath.o:	getpath.c Makefile
 		$(CC) -c $(CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
+		      -DPREFIX='"$(prefix)"' \
+		      -DEXEC_PREFIX='"$(exec_prefix)"' \
 		      $(srcdir)/getpath.c
 
 config.c Makefile: Makefile.pre config.c.in $(MAKESETUP) Setup
