@@ -35,6 +35,14 @@ python_build = os.path.isfile(landmark)
 del argv0_path, landmark
 
 
+def get_python_version ():
+    """Return a string containing the major and minor Python version,
+    leaving off the patchlevel.  Sample return values could be '1.5'
+    or '2.2'.
+    """
+    return sys.version[:3]
+
+
 def get_python_inc(plat_specific=0, prefix=None):
     """Return the directory containing installed Python header files.
 
@@ -93,7 +101,7 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
 
     if os.name == "posix":
         libpython = os.path.join(prefix,
-                                 "lib", "python" + sys.version[:3])
+                                 "lib", "python" + get_python_version())
         if standard_lib:
             return libpython
         else:
