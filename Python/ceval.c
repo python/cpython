@@ -38,6 +38,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "graminit.h"
 #include "pythonrun.h"
 
+#include <ctype.h>
+
 /* Turn this on if your compiler chokes on the big switch: */
 /* #define CASE_TOO_BIG 1  	/**/
 
@@ -660,15 +662,14 @@ eval_code(co, globals, locals, owner, arg)
 			w = sysget("stdout");
 			if (softspace(w, 1))
 				writestring(" ", w);
-			if (is_stringobject(v)) {
+			err = writeobject(v, w, PRINT_RAW);
+			if (err == 0 && is_stringobject(v)) {
+				/* XXX move into writeobject() ? */
 				char *s = getstringvalue(v);
 				int len = getstringsize(v);
-				err = writeobject(v, w, PRINT_RAW);
-				if (err == 0 && len > 0 && s[len-1] == '\n')
+				if (len > 0 && isspace(s[len-1]) &&
+				    s[len-1] != ' ')
 					softspace(w, 0);
-			}
-			else {
-				err = writeobject(v, w, 0);
 			}
 			DECREF(v);
 			break;

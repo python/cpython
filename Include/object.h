@@ -214,6 +214,7 @@ extern typeobject Typetype; /* The type of type objects */
 /* Generic operations on objects */
 extern int printobject PROTO((object *, FILE *, int));
 extern object * reprobject PROTO((object *));
+extern object * strobject PROTO((object *));
 extern int cmpobject PROTO((object *, object *));
 extern object *getattr PROTO((object *, char *));
 extern int hasattr PROTO((object *, char *));

@@ -1096,12 +1096,7 @@ builtin_str(self, v)
 		err_badarg();
 		return NULL;
 	}
-	if (is_stringobject(v)) {
-		INCREF(v);
-		return v;
-	}
-	else
-		return reprobject(v);
+	return strobject(v);
 }
 
 static object *

@@ -680,16 +680,13 @@ writeobject(v, f, flags)
 	writer = getattr(f, "write");
 	if (writer == NULL)
 		return -1;
-	if ((flags & PRINT_RAW) && is_stringobject(v)) {
-		value = v;
-		INCREF(value);
-	}
-	else {
+	if (flags & PRINT_RAW)
+		value = strobject(v);
+	else
 		value = reprobject(v);
-		if (value == NULL) {
-			DECREF(writer);
-			return -1;
-		}
+	if (value == NULL) {
+		DECREF(writer);
+		return -1;
 	}
 	result = call_object(writer, value);
 	DECREF(writer);
