@@ -131,6 +131,12 @@ class Application(FrameWork.Application):
 				handler = getattr(window, attr)
 				apply(handler, args)
 				return 1
+				
+	def getfrontwindow(self):
+		wid = MyFrontWindow()
+		if wid and self._windows.has_key(wid):
+			return self._windows[wid]
+		return None
 	
 	def appendwindow(self, wid, window):
 		self._windows[wid] = window
