@@ -218,7 +218,7 @@ def _siftdown(heap, startpos, pos):
 #
 # The total compares needed by list.sort() on the same lists were 8627,
 # 8627, and 8632 (this should be compared to the sum of heapify() and
-# heappop() compares):  list.sort() is (unsurprisingly!) more efficent
+# heappop() compares):  list.sort() is (unsurprisingly!) more efficient
 # for sorting.
 
 def _siftup(heap, pos):
