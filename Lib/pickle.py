@@ -611,30 +611,29 @@ def _keep_alive(x, memo):
         memo[id(memo)]=[x]
 
 
-classmap = {}
+classmap = {} # called classmap for backwards compatibility
 
-# This is no longer used to find classes, but still for functions
-def whichmodule(cls, clsname):
-    """Figure out the module in which a class occurs.
+def whichmodule(func, funcname):
+    """Figure out the module in which a function occurs.
 
     Search sys.modules for the module.
     Cache in classmap.
     Return a module name.
-    If the class cannot be found, return __main__.
+    If the function cannot be found, return __main__.
     """
-    if cls in classmap:
-        return classmap[cls]
+    if func in classmap:
+        return classmap[func]
 
     for name, module in sys.modules.items():
-        if module is None: 
+        if module is None:
             continue # skip dummy package entries
         if name != '__main__' and \
-            hasattr(module, clsname) and \
-            getattr(module, clsname) is cls:
+            hasattr(module, funcname) and \
+            getattr(module, funcname) is func:
             break
     else:
         name = '__main__'
-    classmap[cls] = name
+    classmap[func] = name
     return name
 
 
