@@ -25,7 +25,7 @@ can log in on your machine.  Use with caution!
    Python.h defines a typedef destructor, which conflicts with pthread.h.
    So Python.h must be included after pthread.h. */
 
-#include <Python.h>
+#include "Python.h"
 
 extern int Py_VerboseFlag;
 
@@ -364,6 +364,7 @@ static void
 ps(void)
 {
 	char buffer[100];
-	sprintf(buffer, "ps -l -p %d </dev/null | tail +2l\n", getpid());
+	PyOS_snprintf(buffer, sizeof(buffer),
+		      "ps -l -p %d </dev/null | tail +2l\n", getpid());
 	system(buffer);
 }

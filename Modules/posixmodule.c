@@ -432,7 +432,8 @@ os2_strerror(char *msgbuf, int msgbuflen, int errorcode, char *reason)
     if (rc == NO_ERROR)
         os2_formatmsg(msgbuf, msglen, reason);
     else
-        sprintf(msgbuf, "unknown OS error #%d", errorcode);
+        PyOS_snprintf(msgbuf, sizeof(msgbuf),
+        	      "unknown OS error #%d", errorcode);
 
     return msgbuf;
 }
@@ -5814,8 +5815,9 @@ static int insertvalues(PyObject *d)
     case 40: ver = "4.00"; break;
     case 50: ver = "5.00"; break;
     default:
-        sprintf(tmp, "%d-%d", values[QSV_VERSION_MAJOR],
-                              values[QSV_VERSION_MINOR]);
+        PyOS_snprintf(tmp, sizeof(tmp),
+        	      "%d-%d", values[QSV_VERSION_MAJOR],
+                      values[QSV_VERSION_MINOR]);
         ver = &tmp[0];
     }
 

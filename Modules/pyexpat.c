@@ -129,7 +129,7 @@ set_error(xmlparseobject *self)
     int column = XML_GetErrorColumnNumber(parser);
     enum XML_Error code = XML_GetErrorCode(parser);
 
-    sprintf(buffer, "%.200s: line %i, column %i",
+    PyOS_snprintf(buffer, sizeof(buffer), "%.200s: line %i, column %i",
             XML_ErrorString(code), lineno, column);
     err = PyObject_CallFunction(ErrorObject, "s", buffer);
     if (  err != NULL

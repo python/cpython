@@ -1768,9 +1768,11 @@ PySocketSock_repr(PySocketSockObject *s)
 		return NULL;
 	}
 #endif
-	sprintf(buf,
-		"<socket object, fd=%ld, family=%d, type=%d, protocol=%d>",
-		(long)s->sock_fd, s->sock_family, s->sock_type, s->sock_proto);
+	PyOS_snprintf(buf, sizeof(buf),
+		      "<socket object, fd=%ld, family=%d, type=%d, protocol=%d>",
+		      (long)s->sock_fd, s->sock_family,
+		      s->sock_type,
+		      s->sock_proto);
 	return PyString_FromString(buf);
 }
 
@@ -3056,7 +3058,8 @@ NTinit(void)
 		    "WSAStartup failed: requested version not supported");
 		break;
 	default:
-		sprintf(buf, "WSAStartup failed: error code %d", ret);
+		PyOS_snprintf(buf, sizeof(buf),
+			      "WSAStartup failed: error code %d", ret);
 		PyErr_SetString(PyExc_ImportError, buf);
 		break;
 	}

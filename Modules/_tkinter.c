@@ -1579,8 +1579,8 @@ Tktt_Repr(PyObject *self)
 	TkttObject *v = (TkttObject *)self;
 	char buf[100];
 
-	sprintf(buf, "<tktimertoken at %p%s>", v,
-		v->func == NULL ? ", handler deleted" : "");
+	PyOS_snprintf(buf, sizeof(buf), "<tktimertoken at %p%s>", v,
+		      v->func == NULL ? ", handler deleted" : "");
 	return PyString_FromString(buf);
 }
 

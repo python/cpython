@@ -1313,12 +1313,13 @@ array_repr(arrayobject *a)
 	int i, len;
 	len = a->ob_size;
 	if (len == 0) {
-		sprintf(buf, "array('%c')", a->ob_descr->typecode);
+		PyOS_snprintf(buf, sizeof(buf), "array('%c')",
+			      a->ob_descr->typecode);
 		return PyString_FromString(buf);
 	}
 	if (a->ob_descr->typecode == 'c') {
 		PyObject *t_empty = PyTuple_New(0);
-		sprintf(buf, "array('c', ");
+		PyOS_snprintf(buf, sizeof(buf), "array('c', ");
 		s = PyString_FromString(buf);
 		v = array_tostring(a, t_empty);
 		Py_DECREF(t_empty);
@@ -1328,7 +1329,7 @@ array_repr(arrayobject *a)
 		PyString_ConcatAndDel(&s, PyString_FromString(")"));
 		return s;
 	}
-	sprintf(buf, "array('%c', [", a->ob_descr->typecode);
+	PyOS_snprintf(buf, sizeof(buf), "array('%c', [", a->ob_descr->typecode);
 	s = PyString_FromString(buf);
 	comma = PyString_FromString(", ");
 	for (i = 0; i < len && !PyErr_Occurred(); i++) {

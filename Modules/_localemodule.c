@@ -376,7 +376,7 @@ PyLocale_getdefaultlocale(PyObject* self, PyObject* args)
     if (!PyArg_NoArgs(args))
         return NULL;
 
-    sprintf(encoding, "cp%d", GetACP());
+    PyOS_snprintf(encoding, sizeof(encoding), "cp%d", GetACP());
 
     if (GetLocaleInfo(LOCALE_USER_DEFAULT,
                       LOCALE_SISO639LANGNAME,
