@@ -1,16 +1,19 @@
 """A lexical analyzer class for simple shell-like syntaxes."""
 
 # Module and documentation by Eric S. Raymond, 21 Dec 1998 
+# Input stacking and error message cleanup added by ESR, March 2000
 
 import sys
 
 class shlex:
     "A lexical analyzer class for simple shell-like syntaxes." 
-    def __init__(self, instream=None):
+    def __init__(self, instream=None, infile=None):
         if instream:
             self.instream = instream
+            self.infile = infile
         else:
             self.instream = sys.stdin
+            self.infile = None
         self.commenters = '#'
         self.wordchars = 'abcdfeghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_'
         self.whitespace = ' \t\r\n'
@@ -20,37 +23,76 @@ class shlex:
         self.lineno = 1
         self.debug = 0
         self.token = ''
+	self.filestack = []
+        self.source = None
+        if self.debug:
+            print 'shlex: reading from %s, line %d' % (self.instream,self.lineno)
 
     def push_token(self, tok):
         "Push a token onto the stack popped by the get_token method"
-        if (self.debug >= 1):
-            print "Pushing " + tok
+        if self.debug >= 1:
+            print "shlex: pushing token " + `tok`
         self.pushback = [tok] + self.pushback;
 
     def get_token(self):
-        "Get a token from the input stream (or from stack if it's monempty)"
+        "Get a token from the input stream (or from stack if it's nonempty)"
         if self.pushback:
             tok = self.pushback[0]
             self.pushback = self.pushback[1:]
-            if (self.debug >= 1):
-                print "Popping " + tok
+            if self.debug >= 1:
+                print "shlex: popping token " + `tok`
             return tok
+	# No pushback.  Get a token.
+        raw = self.read_token()
+        # Handle inclusions
+        while raw == self.source:
+            (newfile, newstream) = self.sourcehook(self.read_token())
+            self.filestack = [(self.infile,self.instream,self.lineno)] + self.filestack
+            self.infile = newfile
+            self.instream = newstream
+            self.lineno = 1
+            if self.debug:
+                print 'shlex: pushing to file %s' % (self.infile,)
+            raw = self.get_token()
+        # Maybe we got EOF instead?
+        while raw == "":
+            if len(self.filestack) == 0:
+                return ""
+            else:
+                self.instream.close()
+                (self.infile, self.instream, self.lineno) = self.filestack[0]
+                self.filestack = self.filestack[1:]
+                if self.debug:
+                    print 'shlex: popping to %s, line %d' % (self.instream, self.lineno)
+                self.state = ' '
+                raw = self.get_token()
+         # Neither inclusion nor EOF
+        if self.debug >= 1:
+            if raw:
+                print "shlex: token=" + `raw`
+            else:
+                print "shlex: token=EOF"
+        return raw
+
+    def read_token(self):
+        "Read a token from the input stream (no pushback or inclusions)"
         tok = ''
         while 1:
             nextchar = self.instream.read(1);
             if nextchar == '\n':
                 self.lineno = self.lineno + 1
             if self.debug >= 3:
-                print "In state " + repr(self.state) + " I see character: " + repr(nextchar) 
+                print "shlex: in state " + repr(self.state) + " I see character: " + repr(nextchar) 
             if self.state == None:
-                return ''
+                self.token = '';	# past end of file
+                break
             elif self.state == ' ':
                 if not nextchar:
                     self.state = None;	# end of file
                     break
                 elif nextchar in self.whitespace:
                     if self.debug >= 2:
-                        print "I see whitespace in whitespace state"
+                        print "shlex: I see whitespace in whitespace state"
                     if self.token:
                         break	# emit current token
                     else:
@@ -81,7 +123,7 @@ class shlex:
                     break
                 elif nextchar in self.whitespace:
                     if self.debug >= 2:
-                        print "I see whitespace in word state"
+                        print "shlex: I see whitespace in word state"
                     self.state = ' '
                     if self.token:
                         break	# emit current token
@@ -95,26 +137,33 @@ class shlex:
                 else:
                     self.pushback = [nextchar] + self.pushback
                     if self.debug >= 2:
-                        print "I see punctuation in word state"
+                        print "shlex: I see punctuation in word state"
                     self.state = ' '
                     if self.token:
                         break	# emit current token
                     else:
                         continue
-                
         result = self.token
         self.token = ''
-        if self.debug >= 1:
-            print "Token: " + result
+        if self.debug > 1:
+            if result:
+                print "shlex: raw token=" + `result`
+            else:
+                print "shlex: raw token=EOF"
         return result
+
+    def sourcehook(self, newfile):
+        "Hook called on a filename to be sourced."
+        if newfile[0] == '"':
+            newfile = newfile[1:-1]
+        return (newfile, open(newfile, "r"))
 
 if __name__ == '__main__': 
 
     lexer = shlex()
     while 1:
         tt = lexer.get_token()
-        if tt != None:
-            print "Token: " + repr(tt)
-        else:
+        print "Token: " + repr(tt)
+        if not tt:
             break
 
