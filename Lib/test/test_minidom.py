@@ -294,7 +294,7 @@ def testTooManyDocumentElements():
     elem = doc.createElement("extra")
     try:
         doc.appendChild(elem)
-    except TypeError:
+    except HierarchyRequestErr:
         print "Caught expected exception when adding extra document element."
     else:
         print "Failed to catch expected exception when" \
