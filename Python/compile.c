@@ -557,7 +557,8 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 		        "a and b or c"
 			"a and b and c"
 		   x:JUMP_IF_FALSE y   y:JUMP_IF_FALSE z  -->  x:JUMP_IF_FALSE z
-		   x:JUMP_IF_FALSE y   y:JUMP_IF_FALSE z  -->  x:JUMP_IF_FALSE y+3 
+		   x:JUMP_IF_FALSE y   y:JUMP_IF_TRUE z  -->  x:JUMP_IF_FALSE y+3
+			where y+3 is the instruction following the second test.
 		*/
 		case JUMP_IF_FALSE:
 		case JUMP_IF_TRUE:
