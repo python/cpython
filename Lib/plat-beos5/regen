@@ -1,0 +1,10 @@
+#! /bin/sh
+
+H2PY=../../Tools/scripts/h2py.py
+HEADERS=/boot/develop/headers
+
+set -v
+python $H2PY $HEADERS/posix/fcntl.h
+python $H2PY $HEADERS/be/net/socket.h
+python $H2PY -i '(u_long)' $HEADERS/be/net/netinet/in.h
+python $H2PY $HEADERS/posix/termios.h
