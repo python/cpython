@@ -14,14 +14,8 @@ Jack Jansen, CWI, January 1996.
 import sys
 
 import aetools
-import Standard_Suite
-import WWW_Suite
+import Netscape
 import MacOS
-
-class Netscape(aetools.TalkTo, Standard_Suite.Standard_Suite, WWW_Suite.WorldWideWeb_suite_2c__as_defined_in_Spyglass_spec_2e_):
-	pass	
-	
-SIGNATURE='MOSS'
 
 Error = 'nsremote.Error'
 
@@ -30,7 +24,7 @@ _talker = None
 def _init():
 	global _talker
 	if _talker == None:
-		_talker = Netscape(SIGNATURE)
+		_talker = Netscape.Netscape()
 
 def list(dpyinfo=""):
 	_init()
