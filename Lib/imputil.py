@@ -282,7 +282,8 @@ class Importer:
         if not is_module:
             exec code in module.__dict__
 
-        return module
+        # fetch from sys.modules instead of returning module directly.
+        return sys.modules[fqname]
 
     def _load_tail(self, m, parts):
         """Import the rest of the modules, down from the top-level module.
