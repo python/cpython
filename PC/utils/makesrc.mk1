@@ -1,0 +1,24 @@
+!define BLANK ""
+n:\python\python-1.4b0b\pc\utils\makesrc.obj : n:\python\python-1.4b0b\pc\ut&
+ils\makesrc.c .AUTODEPEND
+ @n:
+ cd n:\python\python-1.4b0b\pc\utils
+ *wcc386 makesrc.c -i=C:\WATCOM\h;C:\WATCOM\h\nt -w4 -e25 -ei -zp4 -zq -otex&
+an -d1 -5r -bt=nt -mf
+
+n:\python\python-1.4b0b\pc\utils\makesrc.exe : n:\python\python-1.4b0b\pc\ut&
+ils\makesrc.obj .AUTODEPEND
+ @n:
+ cd n:\python\python-1.4b0b\pc\utils
+ @%write makesrc.lk1 NAME makesrc
+ @%append makesrc.lk1 FIL makesrc.obj
+ @%append makesrc.lk1 
+!ifneq BLANK ""
+ *wlib -q -n -b makesrc.imp 
+ @%append makesrc.lk1 LIBR makesrc.imp
+!endif
+ *wlink SYS nt op m op st=20k op maxe=25 op q op symf @makesrc.lk1
+!ifneq BLANK ""
+ wrc -q -ad  makesrc.exe
+!endif
+

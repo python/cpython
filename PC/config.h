@@ -24,19 +24,23 @@ standard part of the Python distribution.
 #define HAVE_HYPOT
 #define DONT_HAVE_SIG_ALARM
 #define DONT_HAVE_SIG_PAUSE
+#define LONG_BIT	32
 
 /* Microsoft C defines _MSC_VER */
 
 #if defined(_MSC_VER) && _MSC_VER > 850
-/* Start of defines for NT using VC++ 2.0 and up */
-#define NT
+/* Start of defines for MS_WIN32 using VC++ 2.0 and up */
+#define NT	/* NT is obsolete - please use MS_WIN32 instead */
+#define MS_WIN32
+#define MS_WINDOWS
 #ifdef _M_IX86
 #define COMPILER "[MSC 32 bit (Intel)]"
 #else
 #define COMPILER "[MSC (Unknown)]"
 #endif
-#define PYTHONPATH "c:\\python\\lib"
+#define PYTHONPATH "c:\\python\\lib;c:\\python\\lib\\win"
 typedef int pid_t;
+#define WORD_BIT 32
 #pragma warning(disable:4113)
 #define hypot _hypot
 #include <stdio.h>
@@ -44,6 +48,7 @@ typedef int pid_t;
 #define HAVE_STRFTIME
 #define NT_THREADS
 #define WITH_THREAD
+#define _COMPLEX_DEFINED
 #ifndef NETSCAPE_PI
 #define USE_SOCKET
 #endif
@@ -53,15 +58,20 @@ typedef int pid_t;
 #ifdef USE_DL_EXPORT
 #define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
 #endif
-#endif /* NT */
+#endif /* MS_WIN32 */
 
 #if defined(_MSC_VER) && _MSC_VER <= 850
 /* Start of defines for 16-bit Windows using VC++ 1.5 */
 #define COMPILER "[MSC 16-bit]"
+#ifdef _WINDOWS
 #define MS_WIN16
-#define PYTHONPATH "c:\\python\\lib;c:\\python\\lib\\dos_8x3"
+#define MS_WINDOWS
+#endif
+#define PYTHONPATH "c:\\python\\lib;c:\\python\\lib\\win;c:\\python\\lib\\dos_8x3"
 #define IMPORT_8x3_NAMES
 typedef int pid_t;
+#define WORD_BIT 16
+#define _COMPLEX_DEFINED
 #pragma warning(disable:4113)
 #define memcpy memmove	/* memcpy dangerous pointer wrap in Win 3.1 */
 #define hypot _hypot
@@ -99,13 +109,30 @@ int sscanf(const char *, const char *, ...);
 /* The Watcom compiler defines __WATCOMC__ */
 #ifdef __WATCOMC__
 #define COMPILER "[Watcom]"
-#define PYTHONPATH "c:\\python\\lib;c:\\python\\lib\\dos_8x3"
+#define PYTHONPATH "c:\\python\\lib;c:\\python\\lib\\win;c:\\python\\lib\\dos_8x3"
 #define IMPORT_8x3_NAMES
 #include <ctype.h>
 #include <direct.h>
 typedef int mode_t;
 typedef int uid_t;
 typedef int gid_t;
+typedef int pid_t;
+#if defined(__NT__)
+#define NT	/* NT is obsolete - please use MS_WIN32 instead */
+#define MS_WIN32
+#define MS_WINDOWS
+#define NT_THREADS
+#define USE_SOCKET
+#define WITH_THREAD
+#elif defined(__WINDOWS__)
+#define MS_WIN16
+#define MS_WINDOWS
+#endif
+#ifdef M_I386
+#define WORD_BIT 32
+#else
+#define WORD_BIT 16
+#endif
 #define VA_LIST_IS_ARRAY
 #define HAVE_CLOCK
 #define HAVE_STRFTIME
@@ -117,7 +144,7 @@ typedef int gid_t;
 /* The Borland compiler defines __BORLANDC__ */
 #ifdef __BORLANDC__
 #define COMPILER "[Borland]"
-#define PYTHONPATH "c:\\python\\lib;c:\\python\\lib\\dos_8x3"
+#define PYTHONPATH "c:\\python\\lib;c:\\python\\lib\\win;c:\\python\\lib\\dos_8x3"
 #define IMPORT_8x3_NAMES
 #define HAVE_CLOCK
 #define HAVE_STRFTIME
