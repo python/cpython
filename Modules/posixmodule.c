@@ -2503,6 +2503,231 @@ posix_spawnve(PyObject *self, PyObject *args)
 	PyMem_Free(path);
 	return res;
 }
+
+/* OS/2 supports spawnvp & spawnvpe natively */
+#if defined(PYOS_OS2)
+PyDoc_STRVAR(posix_spawnvp__doc__,
+"spawnvp(mode, file, args)\n\n\
+Execute the program 'file' in a new process, using the environment\n\
+search path to find the file.\n\
+\n\
+	mode: mode of process creation\n\
+	file: executable file name\n\
+	args: tuple or list of strings");
+
+static PyObject *
+posix_spawnvp(PyObject *self, PyObject *args)
+{
+	char *path;
+	PyObject *argv;
+	char **argvlist;
+	int mode, i, argc;
+	Py_intptr_t spawnval;
+	PyObject *(*getitem)(PyObject *, int);
+
+	/* spawnvp has three arguments: (mode, path, argv), where
+	   argv is a list or tuple of strings. */
+
+	if (!PyArg_ParseTuple(args, "ietO:spawnvp", &mode,
+			      Py_FileSystemDefaultEncoding,
+			      &path, &argv))
+		return NULL;
+	if (PyList_Check(argv)) {
+		argc = PyList_Size(argv);
+		getitem = PyList_GetItem;
+	}
+	else if (PyTuple_Check(argv)) {
+		argc = PyTuple_Size(argv);
+		getitem = PyTuple_GetItem;
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError,
+				"spawnvp() arg 2 must be a tuple or list");
+		PyMem_Free(path);
+		return NULL;
+	}
+
+	argvlist = PyMem_NEW(char *, argc+1);
+	if (argvlist == NULL) {
+		PyMem_Free(path);
+		return PyErr_NoMemory();
+	}
+	for (i = 0; i < argc; i++) {
+		if (!PyArg_Parse((*getitem)(argv, i), "et",
+				 Py_FileSystemDefaultEncoding,
+				 &argvlist[i])) {
+			free_string_array(argvlist, i);
+			PyErr_SetString(
+				PyExc_TypeError,
+				"spawnvp() arg 2 must contain only strings");
+			PyMem_Free(path);
+			return NULL;
+		}
+	}
+	argvlist[argc] = NULL;
+
+	Py_BEGIN_ALLOW_THREADS
+#if defined(PYCC_GCC)
+	spawnval = spawnvp(mode, path, argvlist);
+#else
+	spawnval = _spawnvp(mode, path, argvlist);
+#endif
+	Py_END_ALLOW_THREADS
+
+	free_string_array(argvlist, argc);
+	PyMem_Free(path);
+
+	if (spawnval == -1)
+		return posix_error();
+	else
+		return Py_BuildValue("l", (long) spawnval);
+}
+
+
+PyDoc_STRVAR(posix_spawnvpe__doc__,
+"spawnvpe(mode, file, args, env)\n\n\
+Execute the program 'file' in a new process, using the environment\n\
+search path to find the file.\n\
+\n\
+	mode: mode of process creation\n\
+	file: executable file name\n\
+	args: tuple or list of arguments\n\
+	env: dictionary of strings mapping to strings");
+
+static PyObject *
+posix_spawnvpe(PyObject *self, PyObject *args)
+{
+	char *path;
+	PyObject *argv, *env;
+	char **argvlist;
+	char **envlist;
+	PyObject *key, *val, *keys=NULL, *vals=NULL, *res=NULL;
+	int mode, i, pos, argc, envc;
+	Py_intptr_t spawnval;
+	PyObject *(*getitem)(PyObject *, int);
+	int lastarg = 0;
+
+	/* spawnvpe has four arguments: (mode, path, argv, env), where
+	   argv is a list or tuple of strings and env is a dictionary
+	   like posix.environ. */
+
+	if (!PyArg_ParseTuple(args, "ietOO:spawnvpe", &mode,
+			      Py_FileSystemDefaultEncoding,
+			      &path, &argv, &env))
+		return NULL;
+	if (PyList_Check(argv)) {
+		argc = PyList_Size(argv);
+		getitem = PyList_GetItem;
+	}
+	else if (PyTuple_Check(argv)) {
+		argc = PyTuple_Size(argv);
+		getitem = PyTuple_GetItem;
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError,
+				"spawnvpe() arg 2 must be a tuple or list");
+		goto fail_0;
+	}
+	if (!PyMapping_Check(env)) {
+		PyErr_SetString(PyExc_TypeError,
+				"spawnvpe() arg 3 must be a mapping object");
+		goto fail_0;
+	}
+
+	argvlist = PyMem_NEW(char *, argc+1);
+	if (argvlist == NULL) {
+		PyErr_NoMemory();
+		goto fail_0;
+	}
+	for (i = 0; i < argc; i++) {
+		if (!PyArg_Parse((*getitem)(argv, i),
+			     "et;spawnvpe() arg 2 must contain only strings",
+				 Py_FileSystemDefaultEncoding,
+				 &argvlist[i]))
+		{
+			lastarg = i;
+			goto fail_1;
+		}
+	}
+	lastarg = argc;
+	argvlist[argc] = NULL;
+
+	i = PyMapping_Size(env);
+	if (i < 0)
+		goto fail_1;
+	envlist = PyMem_NEW(char *, i + 1);
+	if (envlist == NULL) {
+		PyErr_NoMemory();
+		goto fail_1;
+	}
+	envc = 0;
+	keys = PyMapping_Keys(env);
+	vals = PyMapping_Values(env);
+	if (!keys || !vals)
+		goto fail_2;
+	if (!PyList_Check(keys) || !PyList_Check(vals)) {
+		PyErr_SetString(PyExc_TypeError,
+			"spawnvpe(): env.keys() or env.values() is not a list");
+		goto fail_2;
+	}
+
+	for (pos = 0; pos < i; pos++) {
+		char *p, *k, *v;
+		size_t len;
+
+		key = PyList_GetItem(keys, pos);
+		val = PyList_GetItem(vals, pos);
+		if (!key || !val)
+			goto fail_2;
+
+		if (!PyArg_Parse(
+			    key,
+			    "s;spawnvpe() arg 3 contains a non-string key",
+			    &k) ||
+		    !PyArg_Parse(
+			    val,
+			    "s;spawnvpe() arg 3 contains a non-string value",
+			    &v))
+		{
+			goto fail_2;
+		}
+		len = PyString_Size(key) + PyString_Size(val) + 2;
+		p = PyMem_NEW(char, len);
+		if (p == NULL) {
+			PyErr_NoMemory();
+			goto fail_2;
+		}
+		PyOS_snprintf(p, len, "%s=%s", k, v);
+		envlist[envc++] = p;
+	}
+	envlist[envc] = 0;
+
+	Py_BEGIN_ALLOW_THREADS
+#if defined(PYCC_GCC)
+	spawnval = spawnve(mode, path, argvlist, envlist);
+#else
+	spawnval = _spawnve(mode, path, argvlist, envlist);
+#endif
+	Py_END_ALLOW_THREADS
+
+	if (spawnval == -1)
+		(void) posix_error();
+	else
+		res = Py_BuildValue("l", (long) spawnval);
+
+  fail_2:
+	while (--envc >= 0)
+		PyMem_DEL(envlist[envc]);
+	PyMem_DEL(envlist);
+  fail_1:
+	free_string_array(argvlist, lastarg);
+	Py_XDECREF(vals);
+	Py_XDECREF(keys);
+  fail_0:
+	PyMem_Free(path);
+	return res;
+}
+#endif /* PYOS_OS2 */
 #endif /* HAVE_SPAWNV */
 
 
@@ -6971,6 +7196,10 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_SPAWNV
 	{"spawnv",	posix_spawnv, METH_VARARGS, posix_spawnv__doc__},
 	{"spawnve",	posix_spawnve, METH_VARARGS, posix_spawnve__doc__},
+#if defined(PYOS_OS2)
+	{"spawnvp",	posix_spawnvp, METH_VARARGS, posix_spawnvp__doc__},
+	{"spawnvpe",	posix_spawnvpe, METH_VARARGS, posix_spawnvpe__doc__},
+#endif /* PYOS_OS2 */
 #endif /* HAVE_SPAWNV */
 #ifdef HAVE_FORK1
 	{"fork1",       posix_fork1, METH_NOARGS, posix_fork1__doc__},
