@@ -137,6 +137,7 @@ class InteractiveInterpreter:
                 except:
                     # If that failed, assume SyntaxError is a string
                     value = msg, (filename, lineno, offset, line)
+                sys.last_value = value
         list = traceback.format_exception_only(type, value)
         map(self.write, list)
 
