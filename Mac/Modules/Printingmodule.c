@@ -435,7 +435,7 @@ static struct PyMethodDef Pr_methods[] = {
 	{"PrOpenPage",	(PyCFunction)Pr_PrOpenPage,		METH_VARARGS,	Pr_PrOpenPage__doc__},
 	{"PrClosePage",	(PyCFunction)Pr_PrClosePage,	METH_VARARGS,	Pr_PrClosePage__doc__},
 	{"PrPicFile",	(PyCFunction)Pr_PrPicFile,		METH_VARARGS,	Pr_PrPicFile__doc__},
-	{"PrGeneral",	(PyCFunction)Pr_PrGeneral,		METH_VARARGS,	Pr_PrGeneral__doc__},
+//	{"PrGeneral",	(PyCFunction)Pr_PrGeneral,		METH_VARARGS,	Pr_PrGeneral__doc__},
 	{"PrDrvrVers",	(PyCFunction)Pr_PrDrvrVers,		METH_VARARGS,	Pr_PrDrvrVers__doc__},
 	
 	{NULL,	(PyCFunction)NULL, 0, NULL}		/* sentinel */
