@@ -182,27 +182,37 @@ int PyObject_AsCharBuffer(PyObject *obj,
 		return -1;
 	}
 	pb = obj->ob_type->tp_as_buffer;
-	if ( pb == NULL ||
+	if (pb == NULL ||
 	     pb->bf_getcharbuffer == NULL ||
-	     pb->bf_getsegcount == NULL ) {
+	     pb->bf_getsegcount == NULL) {
 		PyErr_SetString(PyExc_TypeError,
 				"expected a character buffer object");
-		goto onError;
+		return -1;
 	}
-	if ( (*pb->bf_getsegcount)(obj,NULL) != 1 ) {
+	if ((*pb->bf_getsegcount)(obj,NULL) != 1) {
 		PyErr_SetString(PyExc_TypeError,
 				"expected a single-segment buffer object");
-		goto onError;
+		return -1;
 	}
-	len = (*pb->bf_getcharbuffer)(obj,0,&pp);
+	len = (*pb->bf_getcharbuffer)(obj, 0, &pp);
 	if (len < 0)
-		goto onError;
+		return -1;
 	*buffer = pp;
 	*buffer_len = len;
 	return 0;
+}
 
- onError:
-	return -1;
+int
+PyObject_CheckReadBuffer(PyObject *obj)
+{
+	PyBufferProcs *pb = obj->ob_type->tp_as_buffer;
+
+	if (pb == NULL ||
+	    pb->bf_getreadbuffer == NULL ||
+	    pb->bf_getsegcount == NULL ||
+	    (*pb->bf_getsegcount)(obj, NULL) != 1)
+		return 0;
+	return 1;
 }
 
 int PyObject_AsReadBuffer(PyObject *obj,
@@ -218,27 +228,24 @@ int PyObject_AsReadBuffer(PyObject *obj,
 		return -1;
 	}
 	pb = obj->ob_type->tp_as_buffer;
-	if ( pb == NULL ||
+	if (pb == NULL ||
 	     pb->bf_getreadbuffer == NULL ||
-	     pb->bf_getsegcount == NULL ) {
+	     pb->bf_getsegcount == NULL) {
 		PyErr_SetString(PyExc_TypeError,
 				"expected a readable buffer object");
-		goto onError;
+		return -1;
 	}
-	if ( (*pb->bf_getsegcount)(obj,NULL) != 1 ) {
+	if ((*pb->bf_getsegcount)(obj, NULL) != 1) {
 		PyErr_SetString(PyExc_TypeError,
 				"expected a single-segment buffer object");
-		goto onError;
+		return -1;
 	}
-	len = (*pb->bf_getreadbuffer)(obj,0,&pp);
+	len = (*pb->bf_getreadbuffer)(obj, 0, &pp);
 	if (len < 0)
-		goto onError;
+		return -1;
 	*buffer = pp;
 	*buffer_len = len;
 	return 0;
-
- onError:
-	return -1;
 }
 
 int PyObject_AsWriteBuffer(PyObject *obj,
@@ -254,27 +261,24 @@ int PyObject_AsWriteBuffer(PyObject *obj,
 		return -1;
 	}
 	pb = obj->ob_type->tp_as_buffer;
-	if ( pb == NULL ||
+	if (pb == NULL ||
 	     pb->bf_getwritebuffer == NULL ||
-	     pb->bf_getsegcount == NULL ) {
+	     pb->bf_getsegcount == NULL) {
 		PyErr_SetString(PyExc_TypeError,
 				"expected a writeable buffer object");
-		goto onError;
+		return -1;
 	}
-	if ( (*pb->bf_getsegcount)(obj,NULL) != 1 ) {
+	if ((*pb->bf_getsegcount)(obj, NULL) != 1) {
 		PyErr_SetString(PyExc_TypeError,
 				"expected a single-segment buffer object");
-		goto onError;
+		return -1;
 	}
 	len = (*pb->bf_getwritebuffer)(obj,0,&pp);
 	if (len < 0)
-		goto onError;
+		return -1;
 	*buffer = pp;
 	*buffer_len = len;
 	return 0;
-
- onError:
-	return -1;
 }
 
 /* Operations on numbers */
@@ -1980,7 +1984,8 @@ PyObject_GetIter(PyObject *o)
 	if (f == NULL) {
 		if (PySequence_Check(o))
 			return PySeqIter_New(o);
-		PyErr_SetString(PyExc_TypeError, "iteration over non-sequence");
+		PyErr_SetString(PyExc_TypeError, 
+				"iteration over non-sequence");
 		return NULL;
 	}
 	else {
@@ -2021,3 +2026,4 @@ PyIter_Next(PyObject *iter)
 		PyErr_Clear();
 	return result;
 }
+
