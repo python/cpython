@@ -43,8 +43,8 @@ def clear_cache():
 # Return a 6-tuple: (scheme, netloc, path, params, query, fragment).
 # Note that we don't break the components up in smaller bits
 # (e.g. netloc is a single string) and we don't expand % escapes.
-def urlparse(url, scheme = '', allow_framents = 1):
-	key = url, scheme, allow_framents
+def urlparse(url, scheme = '', allow_fragments = 1):
+	key = url, scheme, allow_fragments
 	try:
 	    return _parse_cache[key]
 	except KeyError:
@@ -65,7 +65,7 @@ def urlparse(url, scheme = '', allow_framents = 1):
 			if i < 0:
 				i = len(url)
 			netloc, url = url[2:i], url[i:]
-	if allow_framents and scheme in uses_fragment:
+	if allow_fragments and scheme in uses_fragment:
 		i = string.rfind(url, '#')
 		if i >= 0:
 			url, fragment = url[:i], url[i+1:]
@@ -101,13 +101,13 @@ def urlunparse((scheme, netloc, url, params, query, fragment)):
 
 # Join a base URL and a possibly relative URL to form an absolute
 # interpretation of the latter.
-def urljoin(base, url, allow_framents = 1):
+def urljoin(base, url, allow_fragments = 1):
 	if not base:
 		return url
 	bscheme, bnetloc, bpath, bparams, bquery, bfragment = \
-		urlparse(base, '', allow_framents)
+		urlparse(base, '', allow_fragments)
 	scheme, netloc, path, params, query, fragment = \
-		urlparse(url, bscheme, allow_framents)
+		urlparse(url, bscheme, allow_fragments)
 	# XXX Unofficial hack: default netloc to bnetloc even if
 	# schemes differ
 	if scheme != bscheme and not netloc and \
