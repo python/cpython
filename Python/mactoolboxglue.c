@@ -528,10 +528,10 @@ int routinename(PyObject *pyobj, object *cobj) { \
     return (*PyMacGluePtr_##routinename)(pyobj, cobj); \
 }
 
-GLUE_NEW(FSSpec *, PyMac_BuildFSSpec, "macfs")
-GLUE_CONVERT(FSSpec, PyMac_GetFSSpec, "macfs")
-GLUE_NEW(FSRef *, PyMac_BuildFSRef, "macfs")
-GLUE_CONVERT(FSRef, PyMac_GetFSRef, "macfs")
+GLUE_NEW(FSSpec *, PyMac_BuildFSSpec, "Carbon.File")
+GLUE_CONVERT(FSSpec, PyMac_GetFSSpec, "Carbon.File")
+GLUE_NEW(FSRef *, PyMac_BuildFSRef, "Carbon.File")
+GLUE_CONVERT(FSRef, PyMac_GetFSRef, "Carbon.File")
 
 GLUE_NEW(AppleEvent *, AEDesc_New, "Carbon.AE") /* XXXX Why by address? */
 GLUE_NEW(AppleEvent *, AEDesc_NewBorrowed, "Carbon.AE")
