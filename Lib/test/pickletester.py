@@ -35,11 +35,12 @@ class metaclass(type):
 class use_metaclass(object):
     __metaclass__ = metaclass
 
-# DATA and BINDATA are the protocol 0 and protocol 1 pickles of the object
-# returned by create_data().
+# DATA0 .. DATA2 are the pickles we expect under the various protocols, for
+# the object returned by create_data().
+# XXX DATA2 doesn't exist yet, as it's not fully implemented in cPickle.
 
 # break into multiple strings to avoid confusing font-lock-mode
-DATA = """(lp1
+DATA0 = """(lp1
 I0
 aL1L
 aF2
@@ -84,14 +85,145 @@ aI5
 a.
 """
 
-BINDATA = ']q\x01(K\x00L1L\nG@\x00\x00\x00\x00\x00\x00\x00' + \
-          'c__builtin__\ncomplex\nq\x02(G@\x08\x00\x00\x00\x00\x00' + \
-          '\x00G\x00\x00\x00\x00\x00\x00\x00\x00tRq\x03K\x01J\xff\xff' + \
-          '\xff\xffK\xffJ\x01\xff\xff\xffJ\x00\xff\xff\xffM\xff\xff' + \
-          'J\x01\x00\xff\xffJ\x00\x00\xff\xffJ\xff\xff\xff\x7fJ\x01\x00' + \
-          '\x00\x80J\x00\x00\x00\x80(U\x03abcq\x04h\x04(c__main__\n' + \
-          'C\nq\x05oq\x06}q\x07(U\x03fooq\x08K\x01U\x03barq\tK\x02ubh' + \
-          '\x06tq\nh\nK\x05e.'
+# Disassembly of DATA0.
+DATA0_DIS = """\
+    0: (    MARK
+    1: l        LIST       (MARK at 0)
+    2: p    PUT        1
+    5: I    INT        0
+    8: a    APPEND
+    9: L    LONG       1L
+   13: a    APPEND
+   14: F    FLOAT      2.0
+   17: a    APPEND
+   18: c    GLOBAL     '__builtin__ complex'
+   39: p    PUT        2
+   42: (    MARK
+   43: F        FLOAT      3.0
+   46: F        FLOAT      0.0
+   49: t        TUPLE      (MARK at 42)
+   50: R    REDUCE
+   51: p    PUT        3
+   54: a    APPEND
+   55: I    INT        1
+   58: a    APPEND
+   59: I    INT        -1
+   63: a    APPEND
+   64: I    INT        255
+   69: a    APPEND
+   70: I    INT        -255
+   76: a    APPEND
+   77: I    INT        -256
+   83: a    APPEND
+   84: I    INT        65535
+   91: a    APPEND
+   92: I    INT        -65535
+  100: a    APPEND
+  101: I    INT        -65536
+  109: a    APPEND
+  110: I    INT        2147483647
+  122: a    APPEND
+  123: I    INT        -2147483647
+  136: a    APPEND
+  137: I    INT        -2147483648
+  150: a    APPEND
+  151: (    MARK
+  152: S        STRING     'abc'
+  159: p        PUT        4
+  162: g        GET        4
+  165: (        MARK
+  166: i            INST       '__main__ C' (MARK at 165)
+  178: p        PUT        5
+  181: (        MARK
+  182: d            DICT       (MARK at 181)
+  183: p        PUT        6
+  186: S        STRING     'foo'
+  193: p        PUT        7
+  196: I        INT        1
+  199: s        SETITEM
+  200: S        STRING     'bar'
+  207: p        PUT        8
+  210: I        INT        2
+  213: s        SETITEM
+  214: b        BUILD
+  215: g        GET        5
+  218: t        TUPLE      (MARK at 151)
+  219: p    PUT        9
+  222: a    APPEND
+  223: g    GET        9
+  226: a    APPEND
+  227: I    INT        5
+  230: a    APPEND
+  231: .    STOP
+highest protocol among opcodes = 0
+"""
+
+DATA1 = (']q\x01(K\x00L1L\nG@\x00\x00\x00\x00\x00\x00\x00'
+         'c__builtin__\ncomplex\nq\x02(G@\x08\x00\x00\x00\x00\x00'
+         '\x00G\x00\x00\x00\x00\x00\x00\x00\x00tRq\x03K\x01J\xff\xff'
+         '\xff\xffK\xffJ\x01\xff\xff\xffJ\x00\xff\xff\xffM\xff\xff'
+         'J\x01\x00\xff\xffJ\x00\x00\xff\xffJ\xff\xff\xff\x7fJ\x01\x00'
+         '\x00\x80J\x00\x00\x00\x80(U\x03abcq\x04h\x04(c__main__\n'
+         'C\nq\x05oq\x06}q\x07(U\x03fooq\x08K\x01U\x03barq\tK\x02ubh'
+         '\x06tq\nh\nK\x05e.'
+        )
+
+# Disassembly of DATA1.
+DATA1_DIS = """\
+    0: ]    EMPTY_LIST
+    1: q    BINPUT     1
+    3: (    MARK
+    4: K        BININT1    0
+    6: L        LONG       1L
+   10: G        BINFLOAT   2.0
+   19: c        GLOBAL     '__builtin__ complex'
+   40: q        BINPUT     2
+   42: (        MARK
+   43: G            BINFLOAT   3.0
+   52: G            BINFLOAT   0.0
+   61: t            TUPLE      (MARK at 42)
+   62: R        REDUCE
+   63: q        BINPUT     3
+   65: K        BININT1    1
+   67: J        BININT     -1
+   72: K        BININT1    255
+   74: J        BININT     -255
+   79: J        BININT     -256
+   84: M        BININT2    65535
+   87: J        BININT     -65535
+   92: J        BININT     -65536
+   97: J        BININT     2147483647
+  102: J        BININT     -2147483647
+  107: J        BININT     -2147483648
+  112: (        MARK
+  113: U            SHORT_BINSTRING 'abc'
+  118: q            BINPUT     4
+  120: h            BINGET     4
+  122: (            MARK
+  123: c                GLOBAL     '__main__ C'
+  135: q                BINPUT     5
+  137: o                OBJ        (MARK at 122)
+  138: q            BINPUT     6
+  140: }            EMPTY_DICT
+  141: q            BINPUT     7
+  143: (            MARK
+  144: U                SHORT_BINSTRING 'foo'
+  149: q                BINPUT     8
+  151: K                BININT1    1
+  153: U                SHORT_BINSTRING 'bar'
+  158: q                BINPUT     9
+  160: K                BININT1    2
+  162: u                SETITEMS   (MARK at 143)
+  163: b            BUILD
+  164: h            BINGET     6
+  166: t            TUPLE      (MARK at 112)
+  167: q        BINPUT     10
+  169: h        BINGET     10
+  171: K        BININT1    5
+  173: e        APPENDS    (MARK at 3)
+  174: .    STOP
+highest protocol among opcodes = 1
+"""
 
 def create_data():
     c = C()
@@ -114,74 +246,92 @@ def create_data():
     return x
 
 class AbstractPickleTests(unittest.TestCase):
+    # Subclass must define self.dumps, self.loads, self.error.
 
     _testdata = create_data()
 
     def setUp(self):
-        # subclass must define self.dumps, self.loads, self.error
         pass
 
     def test_misc(self):
         # test various datatypes not tested by testdata
-        x = myint(4)
-        s = self.dumps(x)
-        y = self.loads(s)
-        self.assertEqual(x, y)
+        for proto in protocols:
+            x = myint(4)
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertEqual(x, y)
 
-        x = (1, ())
-        s = self.dumps(x)
-        y = self.loads(s)
-        self.assertEqual(x, y)
+            x = (1, ())
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertEqual(x, y)
 
-        x = initarg(1, x)
-        s = self.dumps(x)
-        y = self.loads(s)
-        self.assertEqual(x, y)
+            x = initarg(1, x)
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assertEqual(x, y)
 
         # XXX test __reduce__ protocol?
 
-    def test_identity(self):
-        s = self.dumps(self._testdata)
-        x = self.loads(s)
-        self.assertEqual(x, self._testdata)
+    def test_roundtrip_equality(self):
+        expected = self._testdata
+        for proto in protocols:
+            s = self.dumps(expected, proto)
+            got = self.loads(s)
+            self.assertEqual(expected, got)
 
-    def test_constant(self):
-        x = self.loads(DATA)
-        self.assertEqual(x, self._testdata)
-        x = self.loads(BINDATA)
-        self.assertEqual(x, self._testdata)
+    def test_load_from_canned_string(self):
+        expected = self._testdata
+        for canned in DATA0, DATA1:
+            got = self.loads(canned)
+            self.assertEqual(expected, got)
 
-    def test_binary(self):
-        s = self.dumps(self._testdata, 1)
-        x = self.loads(s)
-        self.assertEqual(x, self._testdata)
+    # There are gratuitous differences between pickles produced by
+    # pickle and cPickle, largely because cPickle starts PUT indices at
+    # 1 and pickle starts them at 0.  See XXX comment in cPickle's put2() --
+    # there's a comment with an exclamation point there whose meaning
+    # is a mystery.  cPickle also suppresses PUT for objects with a refcount
+    # of 1.
+    def dont_test_disassembly(self):
+        from cStringIO import StringIO
+        from pickletools import dis
+
+        for proto, expected in (0, DATA0_DIS), (1, DATA1_DIS):
+            s = self.dumps(self._testdata, proto)
+            filelike = StringIO()
+            dis(s, out=filelike)
+            got = filelike.getvalue()
+            self.assertEqual(expected, got)
 
     def test_recursive_list(self):
         l = []
         l.append(l)
-        s = self.dumps(l)
-        x = self.loads(s)
-        self.assertEqual(x, l)
-        self.assertEqual(x, x[0])
-        self.assertEqual(id(x), id(x[0]))
+        for proto in protocols:
+            s = self.dumps(l, proto)
+            x = self.loads(s)
+            self.assertEqual(x, l)
+            self.assertEqual(x, x[0])
+            self.assertEqual(id(x), id(x[0]))
 
     def test_recursive_dict(self):
         d = {}
         d[1] = d
-        s = self.dumps(d)
-        x = self.loads(s)
-        self.assertEqual(x, d)
-        self.assertEqual(x[1], x)
-        self.assertEqual(id(x[1]), id(x))
+        for proto in protocols:
+            s = self.dumps(d, proto)
+            x = self.loads(s)
+            self.assertEqual(x, d)
+            self.assertEqual(x[1], x)
+            self.assertEqual(id(x[1]), id(x))
 
     def test_recursive_inst(self):
         i = C()
         i.attr = i
-        s = self.dumps(i)
-        x = self.loads(s)
-        self.assertEqual(x, i)
-        self.assertEqual(x.attr, x)
-        self.assertEqual(id(x.attr), id(x))
+        for proto in protocols:
+            s = self.dumps(i, 2)
+            x = self.loads(s)
+            self.assertEqual(x, i)
+            self.assertEqual(x.attr, x)
+            self.assertEqual(id(x.attr), id(x))
 
     def test_recursive_multi(self):
         l = []
@@ -189,14 +339,15 @@ class AbstractPickleTests(unittest.TestCase):
         i = C()
         i.attr = d
         l.append(i)
-        s = self.dumps(l)
-        x = self.loads(s)
-        self.assertEqual(x, l)
-        self.assertEqual(x[0], i)
-        self.assertEqual(x[0].attr, d)
-        self.assertEqual(x[0].attr[1], x)
-        self.assertEqual(x[0].attr[1][0], i)
-        self.assertEqual(x[0].attr[1][0].attr, d)
+        for proto in protocols:
+            s = self.dumps(l, proto)
+            x = self.loads(s)
+            self.assertEqual(x, l)
+            self.assertEqual(x[0], i)
+            self.assertEqual(x[0].attr, d)
+            self.assertEqual(x[0].attr[1], x)
+            self.assertEqual(x[0].attr[1][0], i)
+            self.assertEqual(x[0].attr[1][0].attr, d)
 
     def test_garyp(self):
         self.assertRaises(self.error, self.loads, 'garyp')
@@ -274,27 +425,30 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_metaclass(self):
         a = use_metaclass()
-        s = self.dumps(a)
-        b = self.loads(s)
-        self.assertEqual(a.__class__, b.__class__)
+        for proto in protocols:
+            s = self.dumps(a, proto)
+            b = self.loads(s)
+            self.assertEqual(a.__class__, b.__class__)
 
     def test_structseq(self):
         import time
-        t = time.localtime()
-        s = self.dumps(t)
-        u = self.loads(s)
-        self.assertEqual(t, u)
         import os
-        if hasattr(os, "stat"):
-            t = os.stat(os.curdir)
-            s = self.dumps(t)
+
+        t = time.localtime()
+        for proto in protocols:
+            s = self.dumps(t, proto)
             u = self.loads(s)
             self.assertEqual(t, u)
-        if hasattr(os, "statvfs"):
-            t = os.statvfs(os.curdir)
-            s = self.dumps(t)
-            u = self.loads(s)
-            self.assertEqual(t, u)
+            if hasattr(os, "stat"):
+                t = os.stat(os.curdir)
+                s = self.dumps(t, proto)
+                u = self.loads(s)
+                self.assertEqual(t, u)
+            if hasattr(os, "statvfs"):
+                t = os.statvfs(os.curdir)
+                s = self.dumps(t, proto)
+                u = self.loads(s)
+                self.assertEqual(t, u)
 
     # Tests for protocol 2
 
@@ -356,9 +510,6 @@ class AbstractPickleTests(unittest.TestCase):
         y = self.loads(s)
         self.assertEqual(tuple(x), tuple(y))
         self.assertEqual(x.__dict__, y.__dict__)
-##         import pickletools
-##         print
-##         pickletools.dis(s)
 
     def test_newobj_list(self):
         x = MyList([1, 2, 3])
@@ -368,9 +519,6 @@ class AbstractPickleTests(unittest.TestCase):
         y = self.loads(s)
         self.assertEqual(list(x), list(y))
         self.assertEqual(x.__dict__, y.__dict__)
-##         import pickletools
-##         print
-##         pickletools.dis(s)
 
     def test_newobj_generic(self):
         for proto in [0, 1, 2]:
@@ -379,9 +527,6 @@ class AbstractPickleTests(unittest.TestCase):
                 x = C(C.sample)
                 x.foo = 42
                 s = self.dumps(x, proto)
-##                import pickletools
-##                print
-##                pickletools.dis(s)
                 y = self.loads(s)
                 detail = (proto, C, B, x, y, type(y))
                 self.assertEqual(B(x), B(y), detail)

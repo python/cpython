@@ -719,6 +719,11 @@ put2(Picklerobject *self, PyObject *ob)
 		goto finally;
 
 	/* Make sure memo keys are positive! */
+	/* XXX Why?
+	 * XXX And does "positive" really mean non-negative?
+	 * XXX pickle.py starts with PUT index 0, not 1.  This makes for
+	 * XXX gratuitous differences between the pickling modules.
+	 */
 	p++;
 
 	if (!( py_ob_id = PyLong_FromVoidPtr(ob)))
