@@ -2730,6 +2730,17 @@ def deepcopyrecursive():
     b.a = a
     z = deepcopy(a) # This blew up before
 
+def modules():
+    if verbose: print "Testing uninitialized module objects..."
+    from types import ModuleType as M
+    m = M.__new__(M)
+    str(m)
+    vereq(hasattr(m, "__name__"), 0)
+    vereq(hasattr(m, "__file__"), 0)
+    vereq(hasattr(m, "foo"), 0)
+    vereq(m.__dict__, None)
+    m.foo = 1
+    vereq(m.__dict__, {"foo": 1})
 
 def test_main():
     class_docstrings()
@@ -2786,6 +2797,7 @@ def test_main():
     hashinherit()
     strops()
     deepcopyrecursive()
+    modules()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
