@@ -295,7 +295,7 @@ def compileaete(aete, resinfo, fname):
 	
 	# Generate property dicts and element dicts for all types declared in this module
 	fp.write("def getbaseclasses(v):\n")
-	fp.write("\tif hasattr(v, '_superclassnames') and v._superclassnames:\n")
+	fp.write("\tif hasattr(v, '_superclassnames') and not hasattr(v, '_propdict'):\n")
 	fp.write("\t\tv._propdict = {}\n")
 	fp.write("\t\tv._elemdict = {}\n")
 	fp.write("\t\tfor superclass in v._superclassnames:\n")
@@ -304,7 +304,6 @@ def compileaete(aete, resinfo, fname):
 	fp.write("\t\t\tv._elemdict.update(getattr(eval(superclass), '_privelemdict', {}))\n")
 	fp.write("\t\tv._propdict.update(v._privpropdict)\n")
 	fp.write("\t\tv._elemdict.update(v._privelemdict)\n")
-	fp.write("\t\tv._superclassnames = None\n")
 	fp.write("\n")
 	fp.write("import StdSuites\n")
 	if allprecompinfo:
