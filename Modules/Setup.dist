@@ -355,7 +355,10 @@ new newmodule.c
 # implementation independent wrapper for these; dumbdbm.py provides
 # similar functionality (but slower of course) implemented in Python.
 
-# The standard Unix dbm module:
+# The standard Unix dbm module has been moved to Setup.config so that
+# it will be compiled as a shared library by default.  Compiling it as
+# a built-in module causes conflicts with the pybsddb3 module since it
+# creates a static dependency on an out-of-date version of db.so.
 
 #dbm dbmmodule.c 	# dbm(3) may require -lndbm or similar
 

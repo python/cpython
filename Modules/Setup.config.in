@@ -22,3 +22,6 @@
 
 # bsddb module enabled by --with-libdb or presence of db.h
 @USE_BSDDB_MODULE@bsddb bsddbmodule.c @HAVE_LIBDB@
+
+# dbm(3) may require -lndbm or similar
+@USE_DBM_MODULE@dbm dbmmodule.c @HAVE_LIBNDBM@

@@ -888,6 +888,43 @@ else
 fi
 AC_MSG_RESULT($with_cycle_gc)
 
+# Check for DBM support
+AC_SUBST(USE_DBM_MODULE)
+USE_DBM_MODULE=""
+AC_MSG_CHECKING(for --with-dbm)
+AC_ARG_WITH(dbm,
+[  --with(out)-dbm                 disable/enable dbm module])
+
+# enabled by default but one of the dbm.h files must be found
+if test "$ac_cv_header_dbm_h" = "yes" -o "$ac_cv_header_db1_ndbm_h" = "yes" -o "$ac_cv_header_gdbm_ndbm_h" = "yes"
+then
+    if test "$with_dbm" != "no"
+    then with_dbm="yes"
+    fi
+else
+    # make sure user knows why dbm support wasn't enabled even though
+    # s/he requested it
+    if test "$with_dbm" = "yes"
+    then echo $ac_n "(requested by no ndbm.h was found) $ac_c"
+    fi
+    with_dbm="no"
+fi
+
+if test "$with_dbm" = "no"
+then
+    USE_DBM_MODULE="#"
+else
+    AC_DEFINE(WITH_LIBNDBM)
+fi
+AC_MSG_RESULT($with_dbm)
+
+if test "$with_dbm" = "yes"
+then
+    # check for libndbm
+    AC_SUBST(HAVE_LIBNDBM)
+    AC_CHECK_FUNC(dbmopen, [HAVE_LIBNDBM=], [HAVE_LIBNDBM=-lndbm])
+fi
+
 # Check for LIBDB support
 # either --with-libdb or, in its absence, the presence of db.h
 AC_SUBST(USE_BSDDB_MODULE)
