@@ -447,19 +447,20 @@ call_readline(char *prompt)
 {
 	size_t n;
 	char *p, *q;
-	void (*old_inthandler)(int);
-	old_inthandler = signal(SIGINT, onintr);
+	PyOS_sighandler_t old_inthandler;
+	
+	old_inthandler = PyOS_setsig(SIGINT, onintr);
 	if (setjmp(jbuf)) {
 #ifdef HAVE_SIGRELSE
 		/* This seems necessary on SunOS 4.1 (Rasmus Hahn) */
 		sigrelse(SIGINT);
 #endif
-		signal(SIGINT, old_inthandler);
+		PyOS_setsig(SIGINT, old_inthandler);
 		return NULL;
 	}
 	rl_event_hook = PyOS_InputHook;
 	p = readline(prompt);
-	signal(SIGINT, old_inthandler);
+	PyOS_setsig(SIGINT, old_inthandler);
 
 	/* We must return a buffer allocated with PyMem_Malloc. */
 	if (p == NULL) {
@@ -493,10 +494,16 @@ static char doc_module[] =
 DL_EXPORT(void)
 initreadline(void)
 {
-	PyObject *m;
+	PyObject *m, *d, *v;
 
 	m = Py_InitModule4("readline", readline_methods, doc_module,
 			   (PyObject *)NULL, PYTHON_API_VERSION);
+
+	d = PyModule_GetDict(m);
+	v = PyString_FromString(rl_library_version);
+	PyDict_SetItemString(d, "library_version", v);
+	Py_XDECREF(v);
+
 	if (isatty(fileno(stdin))) {
 		PyOS_ReadlineFunctionPointer = call_readline;
 		setup_readline();
