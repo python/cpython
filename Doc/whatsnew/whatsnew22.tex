@@ -688,6 +688,11 @@ See \url{http://www.xmlrpc.com/} for more information about XML-RPC.
   two. (SRE is maintained by Fredrik Lundh.  The BIGCHARSET patch was
   contributed by Martin von L\"owis.)
 
+  \item The \module{smtplib} module now supports \rfc{2487}, ``Secure
+  SMTP over TLS'', so it's now possible to encrypt the SMTP traffic
+  between a Python program and the mail transport agent being handed a
+  message.  (Contributed by Gerhard H\"aring.)
+
   \item The \module{imaplib} module, maintained by Piers Lauder, has
   support for several new extensions: the NAMESPACE extension defined
   in \rfc{2342}, SORT, GETACL and SETACL.  (Contributed by Anthony
