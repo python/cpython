@@ -1779,7 +1779,8 @@ format.
   dictionary, and false once all pairs have been reported.  The
   parameters \var{pkey} and \var{pvalue} should either point to
   \ctype{PyObject*} variables that will be filled in with each key and
-  value, respectively, or may be \NULL.
+  value, respectively, or may be \NULL.  Any references returned through
+  them are borrowed.
 
   For example:
 
