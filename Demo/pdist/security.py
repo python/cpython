@@ -5,10 +5,10 @@ class Security:
 		env = os.environ
 		if env.has_key('PYTHON_KEYFILE'):
 			keyfile = env['PYTHON_KEYFILE']
-		elif env.has_key('HOME'):
-			keyfile = env['HOME'] + '.python_keyfile'
 		else:
 			keyfile = '.python_keyfile'
+			if env.has_key('HOME'):
+				keyfile = os.path.join(env['HOME'], keyfile)
 		try:
 			self._key = eval(open(keyfile).readline())
 		except IOError:
@@ -23,4 +23,4 @@ class Security:
 
 	def _encode_challenge(self, challenge):
 		p, m = self._key
-		return pow(challenge, p, m)
+		return pow(long(challenge), p, m)

@@ -16,6 +16,10 @@ class Client:
 	"""RPC Client class.  No need to derive a class -- it's fully generic."""
 	
 	def __init__(self, address, verbose = VERBOSE):
+		self._pre_init(address, verbose)
+		self._post_init()
+	
+	def _pre_init(self, address, verbose = VERBOSE):
 		if type(address) == type(0):
 			address = ('', address)
 		self._address = address
@@ -29,6 +33,8 @@ class Client:
 		self._replies = {} # Unprocessed replies
 		self._rf = self._socket.makefile('r')
 		self._wf = self._socket.makefile('w')
+	
+	def _post_init(self):
 		self._methods = self._call('.methods')
 	
 	def __del__(self):
@@ -127,15 +133,16 @@ class SecureClient(Client, Security):
 
 	def __init__(self, *args):
 		import string
-		apply(Client.__init__, (self,) + args)
+		apply(self._pre_init, args)
 		Security.__init__(self)
 		line = self._rf.readline()
-		challenge = string.atoi(string.strip(firstline))
+		challenge = string.atoi(string.strip(line))
 		response = self._encode_challenge(challenge)
 		line = `long(response)`
 		if line[-1] in 'Ll': line = line[:-1]
 		self._wf.write(line + '\n')
 		self._wf.flush()
+		self._post_init()
 
 class _stub:
 	
