@@ -1504,5 +1504,5 @@ def compile(pattern, flags=0):
 
 # Replace expand_escape and _expand functions with their C equivalents.
 # If you suspect bugs in the C versions, comment out the next two lines
-##expand_escape = reop.expand_escape
-##_expand  = reop._expand
+expand_escape = reop.expand_escape
+_expand  = reop._expand
