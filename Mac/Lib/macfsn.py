@@ -129,6 +129,7 @@ if Nav and Nav.NavServicesAvailable():
 	StandardPutFile = _StandardPutFile
 	SetFolder = _SetFolder
 	GetDirectory = _GetDirectory
+	_install()
 else:
 	from macfs import StandardGetFile, PromptGetFile, StandardPutFile, SetFolder, GetDirectory
 	
