@@ -51,7 +51,7 @@ Importing is easy..
    >>> import Cookie
 
 Most of the time you start by creating a cookie.  Cookies come in
-three flavors, each with slighly different encoding semanitcs, but
+three flavors, each with slightly different encoding semantics, but
 more on that later.
 
    >>> C = Cookie.SimpleCookie()
