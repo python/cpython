@@ -9,6 +9,7 @@ TEMPLATELIST= [
 	("tmp_allsources", "file", "template-allsources.xml", "sources"),
 	("tmp_linkorder", "file", "template-linkorder.xml", "sources"),
 	("tmp_grouplist", "file", "template-grouplist.xml", "sources"),
+	("tmp_extrasearchdirs", "file", "template-searchdirs.xml", "extrasearchdirs"),
 	("tmp_projectxmldata", "file", "template.prj.xml", None)
 ]
 
@@ -66,11 +67,15 @@ class ProjectBuilder:
 		
 def _test():
 	dict = {
-		"mac_projectxmlname" : "xxnew.prj.xml",
-		"mac_targetname" : "xxnew.ppc",
-		"mac_dllname" : "xxnew.ppc.slb",
-		"sources" : ["xxnewmodule.c"],
-		"mac_exportname" : "xxnew.prj.exp",
+		"mac_projectxmlname" : "controlstrip.prj.xml",	# The XML filename (full path)
+		"mac_exportname" : "controlstrip.prj.exp",	# Export file (relative to project)
+		"mac_outputdir" : ":",	# The directory where the DLL is put (relative to project)
+		"mac_dllname" : "controlstrip.ppc.slb",	# The DLL filename (within outputdir)
+		"mac_targetname" : "controlstrip.ppc",	# The targetname within the project
+		"sysprefix" : sys.prefix,	# Where the Python sources live
+		"mac_sysprefixtype" : "Absolute",	# Type of previous pathname
+		"sources" : ["controlstripmodule.c"],
+		"extrasearchdirs": [],	# -I and -L, in unix terms
 	}
 	pb = ProjectBuilder(dict)
 	pb.generate()
