@@ -1619,7 +1619,7 @@ listsort(PyListObject *self, PyObject *args)
 
 	assert(self != NULL);
 	if (args != NULL) {
-		if (!PyArg_ParseTuple(args, "|O:msort", &compare))
+		if (!PyArg_ParseTuple(args, "|O:sort", &compare))
 			return NULL;
 	}
 	merge_init(&ms, compare);
