@@ -11,7 +11,7 @@
 
 \indexii{\POSIX{}}{file object}
 
-\emph{Note:} This module will become obsolete in a future release.
+\strong{Note:} This module will become obsolete in a future release.
 The locking operation that it provides is done better and more
 portably by the \function{fcntl.lockf()} call.%
 \withsubitem{(in module fcntl)}{\ttindex{lockf()}}
@@ -123,12 +123,15 @@ In addition the following modifiers can be added to the format:
               \code{None} if there is no conflict.}{(1)} 
 \end{tableiii}
 
+\noindent
 Note:
 
-(1) The lock returned is in the format \code{(\var{mode}, \var{len},
+\begin{description}
+\item[(1)] The lock returned is in the format \code{(\var{mode}, \var{len},
 \var{start}, \var{whence}, \var{pid})} where \var{mode} is a character
 representing the type of lock ('r' or 'w').  This modifier prevents a
 request from being granted; it is for query purposes only.
+\end{description}
 
 Format characters for the \method{flags()} method have the following
 meanings:
@@ -149,12 +152,15 @@ In addition the following modifiers can be added to the format:
   are set.}{(2)}
 \end{tableiii}
 
-Note:
+\noindent
+Notes:
 
-(1) The \samp{!} and \samp{=} modifiers are mutually exclusive.
+\begin{description}
+\item[(1)] The \samp{!} and \samp{=} modifiers are mutually exclusive.
 
-(2) This string represents the flags after they may have been altered
+\item[(2)] This string represents the flags after they may have been altered
 by the same call.
+\end{description}
 
 Examples:
 
