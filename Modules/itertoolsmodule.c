@@ -75,7 +75,7 @@ groupby_traverse(groupbyobject *gbo, visitproc visit, void *arg)
 static PyObject *
 groupby_next(groupbyobject *gbo)
 {
-	PyObject *newvalue, *newkey, *r, *grouper;
+	PyObject *newvalue, *newkey, *r, *grouper, *tmp;
 
 	/* skip to next iteration group */
 	for (;;) {
@@ -110,15 +110,19 @@ groupby_next(groupbyobject *gbo)
 			}
 		}
 
-		Py_XDECREF(gbo->currkey);
+		tmp = gbo->currkey;
 		gbo->currkey = newkey;
-		Py_XDECREF(gbo->currvalue);
+		Py_XDECREF(tmp);
+
+		tmp = gbo->currvalue;
 		gbo->currvalue = newvalue;
+		Py_XDECREF(tmp);
 	}
 
-	Py_XDECREF(gbo->tgtkey);
-	gbo->tgtkey = gbo->currkey;
 	Py_INCREF(gbo->currkey);
+	tmp = gbo->tgtkey;
+	gbo->tgtkey = gbo->currkey;
+	Py_XDECREF(tmp);
 
 	grouper = _grouper_create(gbo, gbo->tgtkey);
 	if (grouper == NULL)
