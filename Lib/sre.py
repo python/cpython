@@ -26,7 +26,7 @@ T = TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE
 U = UNICODE = sre_compile.SRE_FLAG_UNICODE
 
 # sre exception
-error = sre_parse.error
+error = sre_compile.error
 
 # --------------------------------------------------------------------
 # public interface
@@ -105,7 +105,7 @@ def _subn(pattern, template, string, count=0):
     n = i = 0
     s = []
     append = s.append
-    c = pattern.cursor(string)
+    c = pattern.scanner(string)
     while not count or n < count:
         m = c.search()
         if not m:
@@ -127,16 +127,20 @@ def _split(pattern, string, maxsplit=0):
     n = i = 0
     s = []
     append = s.append
-    c = pattern.cursor(string)
+    extend = s.extend
+    c = pattern.scanner(string)
+    g = c.groups
     while not maxsplit or n < maxsplit:
         m = c.search()
         if not m:
             break
-        j = m.start()
-        append(string[i:j])
-        i = m.end()
-	if i <= j:
-	    break
+	b, e = m.span()
+	if e == i:
+	    continue
+        append(string[i:b])
+	if g and b != e:
+	    extend(m.groups())
+	i = e
         n = n + 1
     if i < len(string):
         append(string[i:])

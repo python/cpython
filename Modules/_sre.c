@@ -14,11 +14,12 @@
  * 00-03-06 fl	first alpha, sort of (0.5)
  * 00-03-14 fl	removed most compatibility stuff (0.6)
  * 00-05-10 fl	towards third alpha (0.8.2)
- * 00-05-13 fl	added experimental cursor stuff (0.8.3)
+ * 00-05-13 fl	added experimental scanner stuff (0.8.3)
  * 00-05-27 fl	final bug hunt (0.8.4)
  * 00-06-21 fl	less bugs, more taste (0.8.5)
  * 00-06-25 fl	major changes to better deal with nested repeats (0.9)
  * 00-06-28 fl	fixed findall (0.9.1)
+ * 00-06-29 fl	fixed split, added more scanner features (0.9.2)
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *
@@ -384,7 +385,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 	int i, count;
 
     /* FIXME: this is a hack! */
-    void* mark_copy[64];
+    void* mark_copy[SRE_MARK_SIZE];
     void* mark = NULL;
 
     TRACE(("%8d: enter\n", PTR(ptr)));
@@ -954,7 +955,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 
 staticforward PyTypeObject Pattern_Type;
 staticforward PyTypeObject Match_Type;
-staticforward PyTypeObject Cursor_Type;
+staticforward PyTypeObject Scanner_Type;
 
 static PyObject *
 _compile(PyObject* self_, PyObject* args)
@@ -1074,7 +1075,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* args)
     state->lastmark = 0;
 
 	/* FIXME: dynamic! */
-	for (i = 0; i < 64; i++)
+	for (i = 0; i < SRE_MARK_SIZE; i++)
 		state->mark[i] = NULL;
 
 	state->stack = NULL;
@@ -1176,15 +1177,15 @@ pattern_new_match(PatternObject* pattern, SRE_STATE* state,
 }
 
 static PyObject*
-pattern_cursor(PatternObject* pattern, PyObject* args)
+pattern_scanner(PatternObject* pattern, PyObject* args)
 {
 	/* create search state object */
 
-	CursorObject* self;
+	ScannerObject* self;
     PyObject* string;
 
     /* create match object (with room for extra group marks) */
-    self = PyObject_NEW(CursorObject, &Cursor_Type);
+    self = PyObject_NEW(ScannerObject, &Scanner_Type);
     if (self == NULL)
         return NULL;
 
@@ -1431,7 +1432,7 @@ static PyMethodDef pattern_methods[] = {
 	{"split", (PyCFunction) pattern_split, 1},
 	{"findall", (PyCFunction) pattern_findall, 1},
     /* experimental */
-	{"cursor", (PyCFunction) pattern_cursor, 1},
+	{"scanner", (PyCFunction) pattern_scanner, 1},
 	{NULL, NULL}
 };
 
@@ -1467,7 +1468,7 @@ pattern_getattr(PatternObject* self, char* name)
 
 statichere PyTypeObject Pattern_Type = {
 	PyObject_HEAD_INIT(NULL)
-	0, "Pattern", sizeof(PatternObject), 0,
+	0, "SRE_Pattern", sizeof(PatternObject), 0,
 	(destructor)pattern_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
 	(getattrfunc)pattern_getattr, /*tp_getattr*/
@@ -1761,7 +1762,7 @@ match_getattr(MatchObject* self, char* name)
 
 statichere PyTypeObject Match_Type = {
 	PyObject_HEAD_INIT(NULL)
-	0, "Match",
+	0, "SRE_Match",
 	sizeof(MatchObject), /* size of basic object */
 	sizeof(int), /* space for group item */
 	(destructor)match_dealloc, /*tp_dealloc*/
@@ -1770,10 +1771,10 @@ statichere PyTypeObject Match_Type = {
 };
 
 /* -------------------------------------------------------------------- */
-/* cursor methods (experimental) */
+/* scanner methods (experimental) */
 
 static void
-cursor_dealloc(CursorObject* self)
+scanner_dealloc(ScannerObject* self)
 {
 	state_fini(&self->state);
     Py_DECREF(self->string);
@@ -1782,7 +1783,7 @@ cursor_dealloc(CursorObject* self)
 }
 
 static PyObject*
-cursor_match(CursorObject* self, PyObject* args)
+scanner_match(ScannerObject* self, PyObject* args)
 {
     SRE_STATE* state = &self->state;
     PyObject* match;
@@ -1811,7 +1812,7 @@ cursor_match(CursorObject* self, PyObject* args)
 
 
 static PyObject*
-cursor_search(CursorObject* self, PyObject* args)
+scanner_search(ScannerObject* self, PyObject* args)
 {
     SRE_STATE* state = &self->state;
     PyObject* match;
@@ -1830,24 +1831,26 @@ cursor_search(CursorObject* self, PyObject* args)
     match = pattern_new_match((PatternObject*) self->pattern,
                                state, self->string, status);
 
-    if (status >= 0)
+    if (status == 0 || state->ptr == state->start)
+        state->start = (void*) ((char*) state->ptr + state->charsize);
+    else
         state->start = state->ptr;
 
     return match;
 }
 
-static PyMethodDef cursor_methods[] = {
-	{"match", (PyCFunction) cursor_match, 0},
-	{"search", (PyCFunction) cursor_search, 0},
+static PyMethodDef scanner_methods[] = {
+	{"match", (PyCFunction) scanner_match, 0},
+	{"search", (PyCFunction) scanner_search, 0},
 	{NULL, NULL}
 };
 
 static PyObject*  
-cursor_getattr(CursorObject* self, char* name)
+scanner_getattr(ScannerObject* self, char* name)
 {
 	PyObject* res;
 
-	res = Py_FindMethod(cursor_methods, (PyObject*) self, name);
+	res = Py_FindMethod(scanner_methods, (PyObject*) self, name);
 	if (res)
 		return res;
 
@@ -1859,18 +1862,21 @@ cursor_getattr(CursorObject* self, char* name)
 		return self->pattern;
     }
 
+    if (!strcmp(name, "groups"))
+		return Py_BuildValue("i", ((PatternObject*) self->pattern)->groups);
+
 	PyErr_SetString(PyExc_AttributeError, name);
 	return NULL;
 }
 
-statichere PyTypeObject Cursor_Type = {
+statichere PyTypeObject Scanner_Type = {
 	PyObject_HEAD_INIT(NULL)
-	0, "Cursor",
-	sizeof(CursorObject), /* size of basic object */
+	0, "SRE_Scanner",
+	sizeof(ScannerObject), /* size of basic object */
 	0,
-	(destructor)cursor_dealloc, /*tp_dealloc*/
+	(destructor)scanner_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc)cursor_getattr, /*tp_getattr*/
+	(getattrfunc)scanner_getattr, /*tp_getattr*/
 };
 
 static PyMethodDef _functions[] = {
@@ -1888,7 +1894,7 @@ init_sre()
 {
 	/* Patch object types */
 	Pattern_Type.ob_type = Match_Type.ob_type =
-        Cursor_Type.ob_type = &PyType_Type;
+        Scanner_Type.ob_type = &PyType_Type;
 
 	Py_InitModule("_" MODULE, _functions);
 }
