@@ -982,7 +982,8 @@ strop_translate(PyObject *self, PyObject *args)
   found, or -1 if not found.  If len of PAT is greater than length of
   MEM, the function returns -1.
 */
-static int mymemfind(char *mem, int len, char *pat, int pat_len)
+static int
+mymemfind(const char *mem, int len, const char *pat, int pat_len)
 {
 	register int ii;
 
@@ -1006,7 +1007,8 @@ static int mymemfind(char *mem, int len, char *pat, int pat_len)
    meaning mem=1111 and pat==11 returns 2.
            mem=11111 and pat==11 also return 2.
  */
-static int mymemcnt(char *mem, int len, char *pat, int pat_len)
+static int
+mymemcnt(const char *mem, int len, const char *pat, int pat_len)
 {
 	register int offset = 0;
 	int nfound = 0;
@@ -1041,7 +1043,12 @@ static int mymemcnt(char *mem, int len, char *pat, int pat_len)
        the new string allocated locally, or
        NULL if an error occurred.
 */
-static char *mymemreplace(char *str, int len, char *pat, int pat_len, char *sub, int sub_len, int count, int *out_len)
+static char *
+mymemreplace(const char *str, int len,		/* input string */
+             const char *pat, int pat_len,	/* pattern string to find */
+             const char *sub, int sub_len,	/* substitution string */
+             int count,				/* number of replacements */
+             int *out_len)
 {
 	char *out_s;
 	char *new_s;
@@ -1052,14 +1059,20 @@ static char *mymemreplace(char *str, int len, char *pat, int pat_len, char *sub,
 
 	/* find length of output string */
 	nfound = mymemcnt(str, len, pat, pat_len);
-	if (count > 0)
-		nfound = nfound > count ? count : nfound;
+	if (count < 0)
+		count = INT_MAX;
+	else if (nfound > count)
+		nfound = count;
 	if (nfound == 0)
 		goto return_same;
 
 	new_len = len + nfound*(sub_len - pat_len);
 	if (new_len == 0) {
-		out_s = "";
+		/* Have to allocate something for the caller to free(). */
+		out_s = (char *)PyMem_MALLOC(1);
+		if (out_s == NULL)
+			return NULL;
+		out_s[0] = '\0';
 	}
 	else {
 		assert(new_len > 0);
@@ -1068,7 +1081,7 @@ static char *mymemreplace(char *str, int len, char *pat, int pat_len, char *sub,
 			return NULL;
 		out_s = new_s;
 
-		while (len > 0) {
+		for (; count > 0 && len > 0; --count) {
 			/* find index of next instance of pattern */
 			offset = mymemfind(str, len, pat, pat_len);
 			if (offset == -1)
@@ -1083,10 +1096,6 @@ static char *mymemreplace(char *str, int len, char *pat, int pat_len, char *sub,
 			new_s += offset;
 			memcpy(new_s, sub, sub_len);
 			new_s += sub_len;
-
-			/* note count==0 is effectively infinity */
-			if (--count == 0)
-				break;
 		}
 		/* copy any remaining values into output string */
 		if (len > 0)
@@ -1097,7 +1106,7 @@ static char *mymemreplace(char *str, int len, char *pat, int pat_len, char *sub,
 
   return_same:
 	*out_len = -1;
-	return str;
+	return (char *)str; /* cast away const */
 }
 
 
@@ -1113,7 +1122,7 @@ strop_replace(PyObject *self, PyObject *args)
 {
 	char *str, *pat,*sub,*new_s;
 	int len,pat_len,sub_len,out_len;
-	int count = 0;
+	int count = -1;
 	PyObject *new;
 
 	if (!PyArg_ParseTuple(args, "t#t#t#|i:replace",
@@ -1124,6 +1133,12 @@ strop_replace(PyObject *self, PyObject *args)
 		PyErr_SetString(PyExc_ValueError, "empty pattern string");
 		return NULL;
 	}
+	/* CAUTION:  strop treats a replace count of 0 as infinity, unlke
+	 * current (2.1) string.py and string methods.  Preserve this for
+	 * ... well, hard to say for what <wink>.
+	 */
+	if (count == 0)
+		count = -1;
 	new_s = mymemreplace(str,len,pat,pat_len,sub,sub_len,count,&out_len);
 	if (new_s == NULL) {
 		PyErr_NoMemory();

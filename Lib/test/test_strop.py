@@ -77,6 +77,8 @@ test('replace', 'one!two!three!', 'one@two!three!', '!', '@', 1)
 test('replace', 'one!two!three!', 'one@two@three!', '!', '@', 2)
 test('replace', 'one!two!three!', 'one@two@three@', '!', '@', 3)
 test('replace', 'one!two!three!', 'one@two@three@', '!', '@', 4)
+# CAUTION:  a replace count of 0 means infinity only to strop, not to the
+# string .replace() method or to the string.replace() function.
 test('replace', 'one!two!three!', 'one@two@three@', '!', '@', 0)
 test('replace', 'one!two!three!', 'one@two@three@', '!', '@')
 test('replace', 'one!two!three!', 'one!two!three!', 'x', '@')
