@@ -2806,14 +2806,23 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 		Py_INCREF(self);
 		return self;
 	}
+	if (obj == NULL)
+		obj = Py_None;
+	if (type == NULL)
+		type = Py_None;
 	return PyObject_CallFunction(get, "OOO", self, obj, type);
 }
 
 static int
 slot_tp_descr_set(PyObject *self, PyObject *target, PyObject *value)
 {
-	PyObject *res = PyObject_CallMethod(self, "__set__",
-					    "OO", target, value);
+	PyObject *res;
+
+	if (value == NULL)
+		res = PyObject_CallMethod(self, "__del__", "O", target);
+	else
+		res = PyObject_CallMethod(self, "__set__",
+					  "OO", target, value);
 	if (res == NULL)
 		return -1;
 	Py_DECREF(res);
