@@ -22,6 +22,7 @@
 
 int Py_DebugFlag;
 int Py_VerboseFlag;
+int Py_IgnoreEnvironmentFlag;
 
 /* Forward */
 grammar *getgrammar(char *filename);
