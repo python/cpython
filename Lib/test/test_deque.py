@@ -182,6 +182,10 @@ class TestBasic(unittest.TestCase):
         self.assertNotEqual(id(d), id(e))
         self.assertEqual(list(d), list(e))
 
+    def test_reversed(self):
+        for s in ('abcd', xrange(2000)):
+            self.assertEqual(list(reversed(deque(s))), list(reversed(s)))
+
 def R(seqn):
     'Regular generator'
     for i in seqn:
