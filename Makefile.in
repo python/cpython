@@ -126,10 +126,10 @@ WITH=
 OPT=		@OPT@
 
 # Subdirectories where to run make recursively
-SUBDIRS=	Parser Objects Python Modules
+SUBDIRS=	Parser Grammar Objects Python Modules
 
 # Other subdirectories
-SUBDIRSTOO=	Include Lib Misc Demo Grammar
+SUBDIRSTOO=	Include Lib Misc Demo
 
 # Files and directories to be distributed
 CONFIGFILES=	configure configure.in acconfig.h config.h.in Makefile.in
@@ -194,6 +194,10 @@ libpython$(VERSION).dylib: $(LIBRARY)
 		libtool -o $(LDLIBRARY) -dynamic $(OTHER_LIBTOOL_OPT) $(LIBRARY) -framework System @LIBTOOL_CRUFT@ 
 
 $(SUBDIRS):	Makefiles
+
+Grammar:
+		cd Grammar ; $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
+			prefix="$(prefix)" exec_prefix="$(exec_prefix)" all
 
 Parser:
 		cd Parser ; $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
