@@ -1035,6 +1035,11 @@ builtin_intern(PyObject *self, PyObject *args)
 	PyObject *s;
 	if (!PyArg_ParseTuple(args, "S:intern", &s))
 		return NULL;
+	if (!PyString_CheckExact(s)) {
+		PyErr_SetString(PyExc_TypeError,
+				"can't intern subclass of string");
+		return NULL;
+	}
 	Py_INCREF(s);
 	PyString_InternInPlace(&s);
 	return s;

@@ -608,6 +608,23 @@ class BuiltinTest(unittest.TestCase):
         s2 = s.swapcase().swapcase()
         self.assert_(intern(s2) is s)
 
+        # Subclasses of string can't be interned, because they
+        # provide too much opportunity for insane things to happen.
+        # We don't want them in the interned dict and if they aren't
+        # actually interned, we don't want to create the appearance
+        # that they are by allowing intern() to succeeed.
+        class S(str):
+            def __hash__(self):
+                return 123
+
+        self.assertRaises(TypeError, intern, S("abc"))
+
+        # It's still safe to pass these strings to routines that
+        # call intern internally, e.g. PyObject_SetAttr().
+        s = S("abc")
+        setattr(s, s, s)
+        self.assertEqual(getattr(s, s), s)
+
     def test_iter(self):
         self.assertRaises(TypeError, iter)
         self.assertRaises(TypeError, iter, 42, 42)

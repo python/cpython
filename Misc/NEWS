@@ -12,6 +12,12 @@ What's New in Python 2.4 alpha 3?
 Core and builtins
 -----------------
 
+Subclasses of string can no longer be interned.  The semantics of
+interning were not clear here -- a subclass could be mutable, for
+example -- and had bugs.  Explicitly interning a subclass of string
+via intern() will raise a TypeError.  Internal operations that attempt
+to intern a string subclass will have no effect.
+
 Extension modules
 -----------------
 
