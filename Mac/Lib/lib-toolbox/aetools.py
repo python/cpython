@@ -161,7 +161,10 @@ class TalkTo:
 		
 	def start(self):
 		"""Start the application, if it is not running yet"""
-		_launch(self.target_signature)
+		try:
+			self.send('ascr', 'noop')
+		except AE.Error:
+			_launch(self.target_signature)
 			
 	def newevent(self, code, subcode, parameters = {}, attributes = {}):
 		"""Create a complete structure for an apple event"""
