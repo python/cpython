@@ -217,8 +217,9 @@ extern int lstat(const char *, struct stat *);
 #include <io.h>
 #include <process.h>
 #include "osdefs.h"
-/* We don't want WIN32_LEAN_AND_MEAN here -- we need ShellExecute(). */
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <shellapi.h>	/* for ShellExecute() */
 #define popen	_popen
 #define pclose	_pclose
 #endif /* _MSC_VER */
