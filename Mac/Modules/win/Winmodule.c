@@ -522,6 +522,22 @@ static PyObject *WinObj_TrackBox(_self, _args)
 	return _res;
 }
 
+static PyObject *WinObj_SetWinColor(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	WCTabHandle newColorTable;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &newColorTable))
+		return NULL;
+	SetWinColor(_self->ob_itself,
+	            newColorTable);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *WinObj_GetWVariant(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -585,6 +601,23 @@ static PyObject *WinObj_DragWindow(_self, _args)
 	           &boundsRect);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_GetAuxWin(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	AuxWinHandle awHndl;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetAuxWin(_self->ob_itself,
+	                &awHndl);
+	_res = Py_BuildValue("bO&",
+	                     _rv,
+	                     ResObj_New, awHndl);
 	return _res;
 }
 
@@ -894,6 +927,8 @@ static PyMethodDef WinObj_methods[] = {
 	 "(Point startPt, Rect bBox) -> (long _rv)"},
 	{"TrackBox", (PyCFunction)WinObj_TrackBox, 1,
 	 "(Point thePt, short partCode) -> (Boolean _rv)"},
+	{"SetWinColor", (PyCFunction)WinObj_SetWinColor, 1,
+	 "(WCTabHandle newColorTable) -> None"},
 	{"GetWVariant", (PyCFunction)WinObj_GetWVariant, 1,
 	 "() -> (short _rv)"},
 	{"SetWTitle", (PyCFunction)WinObj_SetWTitle, 1,
@@ -902,6 +937,8 @@ static PyMethodDef WinObj_methods[] = {
 	 "(Point thePt) -> (Boolean _rv)"},
 	{"DragWindow", (PyCFunction)WinObj_DragWindow, 1,
 	 "(Point startPt, Rect boundsRect) -> None"},
+	{"GetAuxWin", (PyCFunction)WinObj_GetAuxWin, 1,
+	 "() -> (Boolean _rv, AuxWinHandle awHndl)"},
 	{"GetWindowPort", (PyCFunction)WinObj_GetWindowPort, 1,
 	 "() -> (CGrafPtr _rv)"},
 	{"SetPortWindowPort", (PyCFunction)WinObj_SetPortWindowPort, 1,
@@ -1204,6 +1241,21 @@ static PyObject *Win_GetCWMgrPort(_self, _args)
 	return _res;
 }
 
+static PyObject *Win_SetDeskCPat(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	PixPatHandle deskPixPat;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &deskPixPat))
+		return NULL;
+	SetDeskCPat(deskPixPat);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *Win_NewCWindow(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1302,6 +1354,8 @@ static PyMethodDef Win_methods[] = {
 	 "(Rect theRect, Point thePt) -> (long _rv)"},
 	{"GetCWMgrPort", (PyCFunction)Win_GetCWMgrPort, 1,
 	 "() -> (CGrafPtr wMgrCPort)"},
+	{"SetDeskCPat", (PyCFunction)Win_SetDeskCPat, 1,
+	 "(PixPatHandle deskPixPat) -> None"},
 	{"NewCWindow", (PyCFunction)Win_NewCWindow, 1,
 	 "(Rect boundsRect, Str255 title, Boolean visible, short procID, WindowPtr behind, Boolean goAwayFlag, long refCon) -> (WindowPtr _rv)"},
 	{"GetNewCWindow", (PyCFunction)Win_GetNewCWindow, 1,

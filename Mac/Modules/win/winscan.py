@@ -37,9 +37,6 @@ class MyScanner(Scanner):
 	def makeblacklisttypes(self):
 		return [
 			'ProcPtr',
-			'WCTabHandle',
-			'AuxWinHandle',
-			'PixPatHandle',
 			'DragGrayRgnUPP',
 			]
 

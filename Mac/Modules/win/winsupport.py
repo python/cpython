@@ -34,6 +34,9 @@ GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
 
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 PicHandle = OpaqueByValueType("PicHandle", "ResObj")
+WCTabHandle = OpaqueByValueType("WCTabHandle", "ResObj")
+AuxWinHandle = OpaqueByValueType("AuxWinHandle", "ResObj")
+PixPatHandle = OpaqueByValueType("PixPatHandle", "ResObj")
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
@@ -100,8 +103,8 @@ functions = []
 methods = []
 execfile(INPUTFILE)
 
-# Add a manual routine for converting integer WindowPtr's (as returned by
-# various event routines) to a WindowObject.
+# Add manual routines for converting integer WindowPtr's (as returned by
+# various event routines)  and Dialog objects to a WindowObject.
 whichwin_body = """
 long ptr;
 
