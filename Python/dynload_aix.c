@@ -28,7 +28,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #endif
 
 
-extern char *Py_GetProgramName();
+extern char *Py_GetProgramName(void);
 
 typedef struct Module {
 	struct Module *next;

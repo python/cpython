@@ -817,7 +817,8 @@ is_builtin(char *name)
    pathname and an open file.  Return NULL if the module is not found. */
 
 #ifdef MS_COREDLL
-extern FILE *PyWin_FindRegisteredModule();
+extern FILE *PyWin_FindRegisteredModule(const char *, struct filedescr **,
+					char *, int);
 #endif
 
 #ifdef CHECK_IMPORT_CASE

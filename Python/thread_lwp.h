@@ -106,7 +106,7 @@ void PyThread__exit_prog(int status)
 PyThread_type_lock PyThread_allocate_lock(void)
 {
 	struct lock *lock;
-	extern char *malloc();
+	extern char *malloc(size_t);
 
 	dprintf(("PyThread_allocate_lock called\n"));
 	if (!initialized)
