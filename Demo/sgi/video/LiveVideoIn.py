@@ -27,20 +27,26 @@ except ImportError:
 
 class LiveVideoIn:
 
-	# Initialize an instance.
-	# Parameters:
-	# - vw, vh specify the size of the video window.
-	# This initializes continuous capture.
+	# Initialize an instance.  Arguments:
+	# vw, vh: size of the video window data to be captured.
+	# For some reason, vw MUST be a multiples of 4.
+	# Note that the data has to be cropped unless vw and vh are
+	# just right for the video board (vw:vh == 4:3 and vh even).
 
 	def init(self, pktmax, vw, vh):
 		if not have_video:
 			raise RuntimeError, 'no video available'
+		if vw % 4 != 0:
+			raise ValueError, 'vw must be a multiple of 4'
+		self.pktmax = pktmax
 		realvw = vh*SV.PAL_XMAX/SV.PAL_YMAX
 		if realvw < vw:
-			print 'Funny, image too narrow...'
+			realvw = vw
 		self.realwidth, self.realheight = v.QuerySize(realvw, vh)
-		##print 'Recording video in size', \
-		##	self.realwidth, self.realheight
+		# Initialize capture
+		(mode, self.realwidth, self.realheight, qsize, rate) = \
+			v.InitContinuousCapture(SV.RGB8_FRAMES, \
+				self.realwidth, self.realheight, 1, 5)
 		self.width = vw
 		self.height = vh
 		self.x0 = (self.realwidth-self.width)/2
@@ -50,14 +56,21 @@ class LiveVideoIn:
 		# Compute # full lines per packet
 		self.lpp = pktmax / self.width
 		self.pktsize = self.lpp*self.width
-		##print 'lpp =', self.lpp, '; pktsize =', self.pktsize
-		# Initialize capture
-		v.SetSize(self.realwidth, self.realheight)
-		dummy = v.InitContinuousCapture(SV.RGB8_FRAMES, \
-			  self.realwidth, self.realheight, 1, 5)
 		self.data = None
+		self.dataoffset = 0
 		self.lpos = 0
+		self.justright = (self.realwidth == self.width and \
+			self.realheight == self.height)
+##		if not self.justright:
+##			print 'Want:', self.width, 'x', self.height,
+##			print '; grab:', self.realwidth, 'x', self.realheight
 		return self
+
+	# Change the size of the video being displayed.
+
+	def resizevideo(self, vw, vh):
+		self.close()
+		self = self.init(self.pktmax, vw, vh)
 
 	# Remove an instance.
 	# This turns off continuous capture.
@@ -75,21 +88,25 @@ class LiveVideoIn:
 	# - number of scan lines = self.lpp (PKTMAX / vw)
 
 	def getnextpacket(self):
-		if not self.data:
+		if not self.data or self.dataoffset >= len(self.data):
 			try:
 				cd, id = v.GetCaptureData()
 			except sv.error:
 				return None
 			data = cd.InterleaveFields(1)
 			cd.UnlockCaptureData()
-			self.data = imageop.crop(data, 1, \
-				  self.realwidth, \
-				  self.realheight, \
-				  self.x0, self.y0, \
-				  self.x1, self.y1)
+			if self.justright:
+				self.data = data
+			else:
+				self.data = imageop.crop(data, 1, \
+					  self.realwidth, \
+					  self.realheight, \
+					  self.x0, self.y0, \
+					  self.x1, self.y1)
 			self.lpos = 0
-		data = self.data[:self.pktsize]
-		self.data = self.data[self.pktsize:]
+			self.dataoffset = 0
+		data = self.data[self.dataoffset:self.dataoffset+self.pktsize]
 		lpos = self.lpos
+		self.dataoffset = self.dataoffset + self.pktsize
 		self.lpos = self.lpos + self.lpp
 		return lpos, data
