@@ -36,9 +36,6 @@ Attached Content.
 
 """
 
-boundaries = 0
-linecount = 0
-
 def getMIMEMsg(mf):
     global boundaries, linecount
     msg = mimetools.Message(mf)
@@ -57,6 +54,9 @@ def getMIMEMsg(mf):
         linecount += len(lines)
 
 def test_main():
+    global boundaries, linecount
+    boundaries = 0
+    linecount = 0
     f = cStringIO.StringIO(msg)
     getMIMEMsg(multifile.MultiFile(f))
     assert boundaries == 2
