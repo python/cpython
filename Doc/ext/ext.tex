@@ -1001,6 +1001,11 @@ exactly one format unit, it returns whatever object is described by
 that format unit.  To force it to return a tuple of size 0 or one,
 parenthesize the format string.
 
+When memory buffers are passed as parameters to supply data to build
+objects, as for the \samp{s} and \samp{s\#} formats, the required data
+is copied.  Buffers provided by the caller are never referenced by the
+objects created by \cfunction{Py_BuildValue()}.
+
 In the following description, the quoted form is the format unit; the
 entry in (round) parentheses is the Python object type that the format
 unit will return; and the entry in [square] brackets is the type of
@@ -1014,7 +1019,7 @@ used to make long format strings a tad more readable.
 
 \item[\samp{s} (string) {[char *]}]
 Convert a null-terminated C string to a Python object.  If the C
-string pointer is \NULL{}, \code{None} is returned.
+string pointer is \NULL{}, \code{None} is used.
 
 \item[\samp{s\#} (string) {[char *, int]}]
 Convert a C string and its length to a Python object.  If the C string
