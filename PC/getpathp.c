@@ -98,7 +98,9 @@ is_sep(char ch)	/* determine if "ch" is a separator character */
 #endif
 }
 
-
+/* assumes 'dir' null terminated in bounds.  Never writes
+   beyond existing terminator.
+*/
 static void
 reduce(char *dir)
 {
@@ -116,7 +118,9 @@ exists(char *filename)
 	return stat(filename, &buf) == 0;
 }
 
-
+/* Assumes 'filename' MAXPATHLEN+1 bytes long - 
+   may extend 'filename' by one character.
+*/
 static int
 ismodule(char *filename)	/* Is module -- check for .pyc/.pyo too */
 {
@@ -132,7 +136,7 @@ ismodule(char *filename)	/* Is module -- check for .pyc/.pyo too */
 	return 0;
 }
 
-
+/* guarantees buffer will never overflow MAXPATHLEN+1 bytes */
 static void
 join(char *buffer, char *stuff)
 {
@@ -151,7 +155,10 @@ join(char *buffer, char *stuff)
 	buffer[n+k] = '\0';
 }
 
-
+/* gotlandmark only called by search_for_prefix, which ensures
+   'prefix' is null terminated in bounds.  join() ensures
+   'landmark' can not overflow prefix if too long.
+*/
 static int
 gotlandmark(char *landmark)
 {
@@ -164,7 +171,8 @@ gotlandmark(char *landmark)
 	return ok;
 }
 
-
+/* assumes argv0_path is MAXPATHLEN+1 bytes long, already \0 term'd. 
+   assumption provided by only caller, calculate_path() */
 static int
 search_for_prefix(char *argv0_path, char *landmark)
 {
@@ -340,11 +348,20 @@ get_progpath(void)
 #ifdef MS_WIN32
 #ifdef UNICODE
 	WCHAR wprogpath[MAXPATHLEN+1];
+	/* Windows documents that GetModuleFileName() will "truncate",
+	   but makes no mention of the null terminator.  Play it safe.
+	   PLUS Windows itself defines MAX_PATH as the same, but anyway...
+	*/
+	wprogpath[MAXPATHLEN]=_T('\0')';
 	if (GetModuleFileName(NULL, wprogpath, MAXPATHLEN)) {
-		WideCharToMultiByte(CP_ACP, 0, wprogpath, -1, progpath, MAXPATHLEN+1, NULL, NULL);
+		WideCharToMultiByte(CP_ACP, 0, 
+		                    wprogpath, -1, 
+		                    progpath, MAXPATHLEN+1, 
+		                    NULL, NULL);
 		return;
 	}
 #else
+	/* static init of progpath ensures final char remains \0 */
 	if (GetModuleFileName(NULL, progpath, MAXPATHLEN))
 		return;
 #endif
@@ -362,19 +379,22 @@ get_progpath(void)
 #else
 	if (strchr(prog, SEP))
 #endif
-		strcpy(progpath, prog);
+		strncpy(progpath, prog, MAXPATHLEN);
 	else if (path) {
 		while (1) {
 			char *delim = strchr(path, DELIM);
 
 			if (delim) {
 				size_t len = delim - path;
+				/* ensure we can't overwrite buffer */
+				len = min(MAXPATHLEN,len);
 				strncpy(progpath, path, len);
 				*(progpath + len) = '\0';
 			}
 			else
-				strcpy(progpath, path);
+				strncpy(progpath, path, MAXPATHLEN);
 
+			/* join() is safe for MAXPATHLEN+1 size buffer */
 			join(progpath, prog);
 			if (exists(progpath))
 				break;
@@ -406,6 +426,7 @@ calculate_path(void)
 #endif
 
 	get_progpath();
+	/* progpath guaranteed \0 terminated in MAXPATH+1 bytes. */
 	strcpy(argv0_path, progpath);
 	reduce(argv0_path);
 	if (pythonhome == NULL || *pythonhome == '\0') {
@@ -415,7 +436,7 @@ calculate_path(void)
 			pythonhome = NULL;
 	}
 	else
-		strcpy(prefix, pythonhome);
+		strncpy(prefix, pythonhome, MAXPATHLEN);
 
 	if (envpath && *envpath == '\0')
 		envpath = NULL;
