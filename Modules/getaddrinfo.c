@@ -57,7 +57,7 @@
 #include "addrinfo.h"
 #endif
 
-#if defined(__KAME__) && defined(INET6)
+#if defined(__KAME__) && defined(ENABLE_IPV6)
 # define FAITH
 #endif
 
@@ -94,7 +94,7 @@ static struct gai_afd {
 	const char *a_addrany;
 	const char *a_loopback;	
 } gai_afdl [] = {
-#ifdef INET6
+#ifdef ENABLE_IPV6
 #define N_INET6 0
 	{PF_INET6, sizeof(struct in6_addr),
 	 sizeof(struct sockaddr_in6),
@@ -111,7 +111,7 @@ static struct gai_afd {
 	{0, 0, 0, 0, NULL, NULL},
 };
 
-#ifdef INET6
+#ifdef ENABLE_IPV6
 #define PTON_MAX	16
 #else
 #define PTON_MAX	4
@@ -288,7 +288,7 @@ getaddrinfo(const char*hostname, const char*servname,
 		switch (hints->ai_family) {
 		case PF_UNSPEC:
 		case PF_INET:
-#ifdef INET6
+#ifdef ENABLE_IPV6
 		case PF_INET6:
 #endif
 			break;
@@ -417,7 +417,7 @@ getaddrinfo(const char*hostname, const char*servname,
 	for (i = 0; gai_afdl[i].a_af; i++) {
 		if (inet_pton(gai_afdl[i].a_af, hostname, pton)) {
 			u_long v4a;
-#ifdef INET6
+#ifdef ENABLE_IPV6
 			u_char pfx;
 #endif
 
@@ -430,7 +430,7 @@ getaddrinfo(const char*hostname, const char*servname,
 				if (v4a == 0 || v4a == IN_LOOPBACKNET)
 					pai->ai_flags &= ~AI_CANONNAME;
 				break;
-#ifdef INET6
+#ifdef ENABLE_IPV6
 			case AF_INET6:
 				pfx = ((struct in6_addr *)pton)->s6_addr8[0];
 				if (pfx == 0 || pfx == 0xfe || pfx == 0xff)
@@ -495,11 +495,11 @@ get_name(addr, gai_afd, res, numaddr, pai, port0)
 	struct hostent *hp;
 	struct addrinfo *cur;
 	int error = 0;
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	int h_error;
 #endif
 	
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	hp = getipnodebyaddr(addr, gai_afd->a_addrlen, gai_afd->a_af, &h_error);
 #else
 	hp = gethostbyaddr(addr, gai_afd->a_addrlen, AF_INET);
@@ -510,7 +510,7 @@ get_name(addr, gai_afd, res, numaddr, pai, port0)
 	} else
 		GET_AI(cur, gai_afd, numaddr, port);
 	
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	if (hp)
 		freehostent(hp);
 #endif
@@ -519,7 +519,7 @@ get_name(addr, gai_afd, res, numaddr, pai, port0)
  free:
 	if (cur)
 		freeaddrinfo(cur);
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	if (hp)
 		freehostent(hp);
 #endif
@@ -547,7 +547,7 @@ get_addr(hostname, af, res, pai, port0)
 	top = NULL;
 	sentinel.ai_next = NULL;
 	cur = &sentinel;
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	if (af == AF_UNSPEC) {
 		hp = getipnodebyname(hostname, AF_INET6,
 				AI_ADDRCONFIG|AI_ALL|AI_V4MAPPED, &h_error);
@@ -582,18 +582,18 @@ get_addr(hostname, af, res, pai, port0)
 	
 	for (i = 0; (ap = hp->h_addr_list[i]) != NULL; i++) {
 		switch (af) {
-#ifdef INET6
+#ifdef ENABLE_IPV6
 		case AF_INET6:
 			gai_afd = &gai_afdl[N_INET6];
 			break;
 #endif
-#ifndef INET6
+#ifndef ENABLE_IPV6
 		default:	/* AF_UNSPEC */
 #endif
 		case AF_INET:
 			gai_afd = &gai_afdl[N_INET];
 			break;
-#ifdef INET6
+#ifdef ENABLE_IPV6
 		default:	/* AF_UNSPEC */
 			if (IN6_IS_ADDR_V4MAPPED((struct in6_addr *)ap)) {
 				ap += sizeof(struct in6_addr) -
@@ -622,7 +622,7 @@ get_addr(hostname, af, res, pai, port0)
 		}
 		cur = cur->ai_next;
 	}
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	freehostent(hp);
 #endif
 	*res = top;
@@ -630,7 +630,7 @@ get_addr(hostname, af, res, pai, port0)
  free:
 	if (top)
 		freeaddrinfo(top);
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	if (hp)
 		freehostent(hp);
 #endif

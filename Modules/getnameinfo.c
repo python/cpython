@@ -58,7 +58,7 @@ static struct gni_afd {
 	int a_socklen;
 	int a_off;
 } gni_afdl [] = {
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	{PF_INET6, sizeof(struct in6_addr), sizeof(struct sockaddr_in6),
 		offsetof(struct sockaddr_in6, sin6_addr)},
 #endif
@@ -102,7 +102,7 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
 	int family, len, i;
 	char *addr, *p;
 	u_long v4a;
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	u_char pfx;
 #endif
 	int h_error;
@@ -159,7 +159,7 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
 		if (v4a == 0 || v4a == IN_LOOPBACKNET)
 			flags |= NI_NUMERICHOST;			
 		break;
-#ifdef INET6
+#ifdef ENABLE_IPV6
 	case AF_INET6:
 		pfx = ((struct sockaddr_in6 *)sa)->sin6_addr.s6_addr8[0];
 		if (pfx == 0 || pfx == 0xfe || pfx == 0xff)
@@ -177,7 +177,7 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
 			return ENI_MEMORY;
 		strcpy(host, numaddr);
 	} else {
-#ifdef INET6
+#ifdef ENABLE_IPV6
 		hp = getipnodebyaddr(addr, gni_afd->a_addrlen, gni_afd->a_af, &h_error);
 #else
 		hp = gethostbyaddr(addr, gni_afd->a_addrlen, gni_afd->a_af);
@@ -190,13 +190,13 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
 				if (p) *p = '\0';
 			}
 			if (strlen(hp->h_name) > hostlen) {
-#ifdef INET6
+#ifdef ENABLE_IPV6
 				freehostent(hp);
 #endif
 				return ENI_MEMORY;
 			}
 			strcpy(host, hp->h_name);
-#ifdef INET6
+#ifdef ENABLE_IPV6
 			freehostent(hp);
 #endif
 		} else {
