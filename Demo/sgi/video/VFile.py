@@ -9,12 +9,14 @@ import colorsys
 
 Error = 'VFile.Error' # Exception
 
+MAXMAP = 4096 - 256
+
 def conv_grey(l,x,y): return colorsys.yiq_to_rgb(l,0,0)
 def conv_yiq (y,i,q): return colorsys.yiq_to_rgb(y, (i-0.5)*1.2, q-0.5)
 def conv_hls (l,h,s): return colorsys.hls_to_rgb(h,l,s)
 def conv_hsv (v,h,s): return colorsys.hsv_to_rgb(h,s,v)
 def conv_rgb (r,g,b):
-    raise Error, 'Attempt to make RGB colormap'
+	raise Error, 'Attempt to make RGB colormap'
 
 # Class VinFile represents a video file used for input.
 #
@@ -35,6 +37,7 @@ def conv_rgb (r,g,b):
 # format
 #
 # These writable data members provide additional parametrization:
+# magnify
 # xorigin, yorigin
 
 class VinFile():
@@ -43,7 +46,7 @@ class VinFile():
 	# init() raises whatever open() raises if the file can't be opened.
 
 	def init(self, filename):
-		if filename = '-':
+		if filename == '-':
 			return self.initfp(sys.stdin, filename)
 		return self.initfp(open(filename, 'r'), filename)
 
@@ -55,11 +58,11 @@ class VinFile():
 		self.filename = filename
 		#
 		line = self.fp.readline()
-		if line = 'CMIF video 1.0\n':
+		if line == 'CMIF video 1.0\n':
 			self.version = 1.0
-		elif line = 'CMIF video 2.0\n':
+		elif line == 'CMIF video 2.0\n':
 			self.version = 2.0
-		elif line = 'CMIF video 3.0\n':
+		elif line == 'CMIF video 3.0\n':
 			self.version = 3.0
 		else:
 			raise Error, self.filename + ': bad video format'
@@ -69,47 +72,50 @@ class VinFile():
 			self.chrompack = 0
 			self.offset = 0
 			self.format = 'grey'
-		elif self.version = 2.0:
+		elif self.version == 2.0:
 			line = self.fp.readline()
 			try:
 				self.c0bits, self.c1bits, self.c2bits, \
 					self.chrompack = eval(line[:-1])
 				if self.c1bits or self.c2bits:
-				    self.format = 'yiq'
+					self.format = 'yiq'
 				else:
-				    self.format = 'grey'
+					self.format = 'grey'
 				self.offset = 0
 			except:
-				raise Error, self.filename + ': bad 2.0 color info'
-		elif self.version = 3.0:
+				raise Error, \
+				  self.filename + ': bad 2.0 color info'
+		elif self.version == 3.0:
 			line = self.fp.readline()
 			try:
-			    self.format, rest = eval(line[:-1])
-			    if self.format = 'rgb':
-				pass
-			    elif self.format = 'grey':
-				self.offset = 0
-				self.c0bits = rest
-				self.c1bits = self.c2bits = \
+				self.format, rest = eval(line[:-1])
+				if self.format == 'rgb':
+					pass
+				elif self.format == 'grey':
+					self.offset = 0
+					self.c0bits = rest
+					self.c1bits = self.c2bits = \
 						self.chrompack = 0
-			    else:
-				self.c0bits,self.c1bits,self.c2bits,\
-				    self.chrompack,self.offset = rest
+				else:
+					self.c0bits,self.c1bits,self.c2bits,\
+					  self.chrompack,self.offset = rest
 			except:
-			    raise Error, self.filename + ': bad 3.0 color info'
+				raise Error, \
+					self.filename + ': bad 3.0 color info'
 
 		try:
-		    self.convcolor = eval('conv_'+self.format)
+			self.convcolor = eval('conv_'+self.format)
 		except:
-		    raise Error, self.filename + ': unknown colorsys ' + self.format
+			raise Error, \
+			  self.filename + ': unknown colorsys ' + self.format
 		#
 		line = self.fp.readline()
 		try:
 			x = eval(line[:-1])
-			if self.version > 1.0 or len(x) = 3:
+			if self.version > 1.0 or len(x) == 3:
 				self.width, self.height, self.packfactor = x
-				if self.packfactor = 0:
-				    self.format = 'rgb'
+				if self.packfactor == 0:
+					self.format = 'rgb'
 			else:
 				sef.width, self.height = x
 				self.packfactor = 2
@@ -153,11 +159,10 @@ class VinFile():
 	def skipnextframedata(self, (size, chromsize)):
 		# Note that this won't raise EOFError for a partial frame.
 		try:
-			self.fp.seek(size + chromsize, 1) # Relatc1ve seek
+			self.fp.seek(size + chromsize, 1) # Relative seek
 		except:
 			# Assume it's a pipe -- read the data to discard it
-			dummy = self.fp.read(size)
-			dummy = self.fp.read(chromsize)
+			dummy = self.fp.read(size + chromsize)
 
 	def getnextframeheader(self):
 		line = self.fp.readline()
@@ -169,11 +174,11 @@ class VinFile():
 			x = eval(line[:-1])
 			if type(x) in (type(0), type(0.0)):
 				time = x
-				if pf = 0:
+				if pf == 0:
 					size = w * h * 4
 				else:
 					size = (w/pf) * (h/pf)
-			elif len(x) = 2:
+			elif len(x) == 2:
 				time, size = x
 				cp = self.chrompack
 				if cp:
@@ -221,70 +226,80 @@ class VinFile():
 
 	def initcolormap(self):
 		self.colormapinited = 1
-		if self.format = 'rgb':
-		    gl.RGBmode()
-		    gl.gconfig()
-		    return
-		initcmap(self.convcolor, self.c0bits, self.c1bits, self.c2bits, self.chrompack, self.offset)
+		if self.format == 'rgb':
+			gl.RGBmode()
+			gl.gconfig()
+			return
+		gl.cmode()
+		gl.gconfig()
+		sys.stderr.write('Initializing color map...')
+		initcmap(self.convcolor, self.c0bits, self.c1bits, \
+			self.c2bits, self.chrompack, self.offset)
+		sys.stderr.write(' Done.\n')
 		if self.offset == 0:
-		    gl.color(0x800)
-		    self.mask = 0x7ff
+			gl.color(0x800)
+			self.mask = 0x7ff
 		else:
-		    self.mask = 0xfff
+			self.mask = 0xfff
 		gl.clear()
 
 
 def initcmap(convcolor, c0bits, c1bits, c2bits, chrompack, offset):
 	if c0bits+c1bits+c2bits > 11:
 		raise Error, 'Sorry, 11 bits max'
-	import colorsys
 	maxc0 = 1 << c0bits
 	maxc1 = 1 << c1bits
 	maxc2 = 1 << c2bits
-	if offset = 0:
-	    offset = 2048
-	rng = (offset, 4192-256)
-	for i in range(rng):
+	if offset == 0:
+		offset = 2048
+	for i in range(offset, MAXMAP):
 		gl.mapcolor(i, 0, 255, 0)
 	for c0 in range(maxc0):
 		c0v = c0/float(maxc0-1)
 		for c1 in range(maxc1):
-			if maxc1 = 1:
+			if maxc1 == 1:
 				c1v = 0
 			else:
 				c1v = c1/float(maxc1-1)
 			for c2 in range(maxc2):
-				if maxc2 = 1:
+				if maxc2 == 1:
 					c2v = 0
 				else:
 					c2v = c2/float(maxc2-1)
 				index = offset + c0 + \
-					(c1 << c0bits) + (c2 << (c0bits+c1bits))
+				  (c1<<c0bits) + (c2 << (c0bits+c1bits))
 				rv, gv, bv = convcolor(c0v, c1v, c2v)
 				r, g, b = \
-				    int(rv*255.0), int(gv*255.0), int(bv*255.0)
-				if index < 4096 - 256:
+				  int(rv*255.0), int(gv*255.0), int(bv*255.0)
+				if index < MAXMAP:
 					gl.mapcolor(index, r, g, b)
 
 
 def test():
-	import sys
+	import sys, time
 	filename = 'film.video'
 	if sys.argv[1:]: filename = sys.argv[1]
 	vin = VinFile().init(filename)
+	print 'File:    ', filename
 	print 'Version: ', vin.version
-	print 'Size: ', vin.width, 'x', vin.height
-	print 'Pack: ', vin.packfactor, vin.chrompack
-	print 'Bits: ', vin.c0bits, vin.c1bits, vin.c2bits
-	print 'Format: ', vin.format
-	print 'Offset: ', vin.offset
+	print 'Size:    ', vin.width, 'x', vin.height
+	print 'Pack:    ', vin.packfactor, '; chrom:', vin.chrompack
+	print 'Bits:    ', vin.c0bits, vin.c1bits, vin.c2bits
+	print 'Format:  ', vin.format
+	print 'Offset:  ', vin.offset
 	gl.foreground()
 	gl.prefsize(vin.width, vin.height)
-	wid = gl.winopen('VFile.test: ' + filename)
-	try:
-		while 1:
-			t = vin.shownextframe()
-	except EOFError:
-		pass
-	import time
-	time.sleep(5)
+	wid = gl.winopen(filename)
+	vin.initcolormap()
+	t0 = time.millitimer()
+	while 1:
+		try:
+			t, data, chromdata = vin.getnextframe()
+		except EOFError:
+			break
+		dt = t + t0 - time.millitimer()
+		if dt > 0:
+			time.millisleep(dt)
+		vin.showframe(data, chromdata)
+	print 'Done.'
+	time.sleep(2)
