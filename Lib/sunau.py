@@ -153,8 +153,8 @@ class Au_read:
 
 	def __init__(self, f):
 		if type(f) == type(''):
-			import builtin
-			f = builtin.open(f, 'r')
+			import __builtin__
+			f = __builtin__.open(f, 'r')
 		self.initfp(f)
 
 	def __del__(self):
@@ -284,8 +284,8 @@ class Au_write:
 
 	def __init__(self, f):
 		if type(f) == type(''):
-			import builtin
-			f = builtin.open(f, 'w')
+			import __builtin__
+			f = __builtin__.open(f, 'w')
 		self.initfp(f)
 
 	def __del__(self):
