@@ -317,7 +317,6 @@ PyDict_GetItem(op, key)
 {
 	long hash;
 	if (!PyDict_Check(op)) {
-		PyErr_BadInternalCall();
 		return NULL;
 	}
 	if (((dictobject *)op)->ma_table == NULL)
@@ -328,8 +327,10 @@ PyDict_GetItem(op, key)
 #endif
 	{
 		hash = PyObject_Hash(key);
-		if (hash == -1)
+		if (hash == -1) {
+			PyErr_Clear();
 			return NULL;
+		}
 	}
 	return lookdict((dictobject *)op, key, hash) -> me_value;
 }
