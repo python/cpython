@@ -22,14 +22,15 @@ class WindowParent() = ManageOneChild():
 		return self
 	#
 	def _reset(self):
-		self.child = 0
-		self.win = 0
+		self.child = None
+		self.win = None
 		self.itimer = 0
 		self.do_mouse = 0
 		self.do_keybd = 0
 		self.do_timer = 0
 		self.do_altdraw = 0
 		self.pending_destroy = 0
+		self.close_hook = None
 	#
 	def destroy(self):
 		if self.win in WindowList:
@@ -42,6 +43,9 @@ class WindowParent() = ManageOneChild():
 		# destroying a window from within a button hook
 		# is not a good idea...
 		self.pending_destroy = 1
+	#
+	def close_trigger(self):
+		if self.close_hook: self.close_hook(self)
 	#
 	def need_mouse(self, child): self.do_mouse = 1
 	def no_mouse(self, child): self.do_mouse = 0
@@ -63,10 +67,8 @@ class WindowParent() = ManageOneChild():
 		size = self.child.minsize(self.beginmeasuring())
 		self.size = max(self.size[0], size[0]), \
 					max(self.size[1], size[1])
-		stdwin.setdefscrollbars(0, 0)
-		# XXX Compensate stdwin bug:
-		# XXX should really be stdwin.setdefwinsize(self.size)
-		stdwin.setdefwinsize(self.size[0]+4, self.size[1]+2)
+		# XXX Don't... stdwin.setdefscrollbars(0, 0)
+		stdwin.setdefwinsize(self.size)
 		self.win = stdwin.open(self.title)
 		self.win.setdocsize(self.size)
 		if self.itimer:
@@ -82,6 +84,8 @@ class WindowParent() = ManageOneChild():
 		self.win.setdocsize(self.size)
 		bounds = (0, 0), self.win.getwinsize()
 		self.child.setbounds(bounds)
+		# Force a redraw of the entire window:
+		self.win.change((0, 0), (10000, 10000))
 	#
 	def beginmeasuring(self):
 		# Return something with which a child can measure text
@@ -137,7 +141,7 @@ class WindowParent() = ManageOneChild():
 		elif type = WE_SIZE:
 			self.fixup()
 		elif type = WE_CLOSE:
-			self.delayed_destroy()
+			self.close_trigger()
 		if self.pending_destroy:
 			self.destroy()
 	#
