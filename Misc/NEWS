@@ -4,6 +4,15 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.3.5?
+==============================
+
+*Release date: XX-XXX-2005*
+
+Core and builtins
+-----------------
+- Partially revert the fix for #1074011; don't try to fflush stdin anymore.
+
 What's New in Python 2.3.5rc1?
 ==============================
 
