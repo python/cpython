@@ -268,6 +268,31 @@ print >> sys.stdout
 print >> sys.stdout, 0 or 1, 0 or 1,
 print >> sys.stdout, 0 or 1
 
+# test print >> None
+class Gulp:
+	def write(self, msg): pass
+
+def driver():
+	oldstdout = sys.stdout
+	sys.stdout = Gulp()
+	try:
+		tellme(Gulp())
+		tellme()
+	finally:
+		sys.stdout = oldstdout
+
+# we should see this once
+def tellme(file=sys.stdout):
+	print >> file, 'hello world'
+
+driver()
+
+# we should not see this at all
+def tellme(file=None):
+	print >> file, 'goodbye universe'
+
+driver()
+
 # syntax errors
 def check_syntax(statement):
 	try:
