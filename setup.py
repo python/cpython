@@ -716,7 +716,7 @@ class PyBuildExt(build_ext):
             tcl_includes = find_file('tcl.h', inc_dirs, debian_tcl_include)
             tk_includes = find_file('tk.h', inc_dirs, debian_tk_include)
 
-        if (tcllib is None or tklib is None and
+        if (tcllib is None or tklib is None or
             tcl_includes is None or tk_includes is None):
             # Something's missing, so give up
             return
