@@ -2794,8 +2794,10 @@ long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (n < 0)
 		n = -n;
 	new = (PyLongObject *)type->tp_alloc(type, n);
-	if (new == NULL)
+	if (new == NULL) {
+		Py_DECREF(tmp);
 		return NULL;
+	}
 	assert(PyLong_Check(new));
 	new->ob_size = tmp->ob_size;
 	for (i = 0; i < n; i++)
