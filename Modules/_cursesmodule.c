@@ -1042,7 +1042,7 @@ PyCursesWindow_NoOutRefresh(self,arg)
       Py_BEGIN_ALLOW_THREADS
       rtn = pnoutrefresh(self->win,
 			 pminrow, pmincol, sminrow, 
-			 smincol, smaxrow, smaxcol),
+			 smincol, smaxrow, smaxcol);
       Py_END_ALLOW_THREADS
       return PyCursesCheckERR(rtn, "pnoutrefresh");
     default:
@@ -1111,8 +1111,7 @@ PyCursesWindow_Refresh(self,arg)
       Py_BEGIN_ALLOW_THREADS
       rtn = prefresh(self->win,
 		     pminrow, pmincol, sminrow, 
-		     smincol, smaxrow, smaxcol),
-	
+		     smincol, smaxrow, smaxcol);
       Py_END_ALLOW_THREADS
       return PyCursesCheckERR(rtn, "prefresh");
     default:
