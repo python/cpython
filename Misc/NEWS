@@ -55,6 +55,8 @@ Extension modules
 Library
 -------
 
+- urlparse is RFC 2396 compliant.
+
 - The fieldnames argument to the csv module's DictReader constructor is now
   optional.  If omitted, the first row of the file will be used as the
   list of fieldnames.
