@@ -183,23 +183,51 @@ except NameError:
     environ = {}
 
 def execl(file, *args):
+    """execl(file, *args)
+
+    Execute the executable file with argument list args, replacing the
+    current process. """
     execv(file, args)
 
 def execle(file, *args):
+    """execle(file, *args, env)
+
+    Execute the executable file with argument list args and
+    environment env, replacing the current process. """
     env = args[-1]
     execve(file, args[:-1], env)
 
 def execlp(file, *args):
+    """execlp(file, *args)
+
+    Execute the executable file (which is searched for along $PATH)
+    with argument list args, replacing the current process. """
     execvp(file, args)
 
 def execlpe(file, *args):
+    """execlpe(file, *args, env)
+
+    Execute the executable file (which is searched for along $PATH)
+    with argument list args and environment env, replacing the current
+    process. """    
     env = args[-1]
     execvpe(file, args[:-1], env)
 
 def execvp(file, args):
+    """execp(file, args)
+
+    Execute the executable file (which is searched for along $PATH)
+    with argument list args, replacing the current process.
+    args may be a list or tupe of strings. """
     _execvpe(file, args)
 
 def execvpe(file, args, env):
+    """execv(file, args, env)
+
+    Execute the executable file (which is searched for along $PATH)
+    with argument list args and environment env , replacing the
+    current process.
+    args may be a list or tupe of strings. """    
     _execvpe(file, args, env)
 
 _notfound = None
@@ -338,7 +366,7 @@ if _exists("fork") and not _exists("spawnv") and _exists("execv"):
 Execute file with arguments from args in a subprocess.
 If mode == P_NOWAIT return the pid of the process.
 If mode == P_WAIT return the process's exit code if it exits normally;
-otherwise return - (the signal that killed it). """   
+otherwise return -SIG, where SIG is the signal that killed it. """   
         return _spawnvef(mode, file, args, None, execv)
 
     def spawnve(mode, file, args, env):
