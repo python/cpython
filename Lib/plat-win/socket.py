@@ -1,7 +1,5 @@
 "Socket wrapper for Windows, which does not support dup()."
 
-print "new socket.py loading"
-
 # (And hence, fromfd() and makefile() are unimplemented in C....)
 
 # XXX Living dangerously here -- close() is implemented by deleting a
@@ -26,7 +24,6 @@ def socket(family, type, proto=0):
 class _socketobject:
 
     def __init__(self, sock):
-	print "creating _socketobject", sock
 	self._sock = sock
 
     def close(self):
