@@ -32,6 +32,12 @@ RE_NEWLINE_OR = 16
 #	*, +, ? - only special when not after the beginning, (, or |
 RE_CONTEXT_INDEP_OPS = 32
 
+# ANSI sequences (\n etc) and \xhh
+RE_ANSI_HEX = 64
+
+# No GNU extensions
+RE_NO_GNU_EXTENSIONS = 128
+
 # Now define combinations of bits for the standard possibilities.
 RE_SYNTAX_AWK = (RE_NO_BK_PARENS | RE_NO_BK_VBAR | RE_CONTEXT_INDEP_OPS)
 RE_SYNTAX_EGREP = (RE_SYNTAX_AWK | RE_NEWLINE_OR)

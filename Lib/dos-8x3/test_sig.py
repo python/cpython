@@ -4,9 +4,8 @@ import signal
 import os
 import sys
 
-if sys.platform[:3] == 'win':
-    raise ImportError, "Can't test signal on Windows"
-
+if sys.platform[:3] in ('win', 'os2'):
+    raise ImportError, "Can't test signal on %s" % sys.platform[:3]
 
 if verbose:
 	x = '-x'
