@@ -308,6 +308,54 @@ PyObject_Str(PyObject *v)
 	return res;
 }
 
+PyObject *
+PyObject_Unicode(PyObject *v)
+{
+	PyObject *res;
+	
+	if (v == NULL)
+		res = PyString_FromString("<NULL>");
+	else if (PyUnicode_Check(v)) {
+		Py_INCREF(v);
+		return v;
+	}
+	else if (PyString_Check(v))
+	    	res = v;
+	else if (v->ob_type->tp_str != NULL)
+		res = (*v->ob_type->tp_str)(v);
+	else {
+		PyObject *func;
+		static PyObject *strstr;
+		if (strstr == NULL) {
+			strstr= PyString_InternFromString("__str__");
+			if (strstr == NULL)
+				return NULL;
+		}
+		if (!PyInstance_Check(v) ||
+		    (func = PyObject_GetAttr(v, strstr)) == NULL) {
+			PyErr_Clear();
+			res = PyObject_Repr(v);
+		}
+		else {
+		    	res = PyEval_CallObject(func, (PyObject *)NULL);
+			Py_DECREF(func);
+		}
+	}
+	if (res == NULL)
+		return NULL;
+	if (!PyUnicode_Check(res)) {
+		PyObject* str;
+		str = PyUnicode_FromObject(res);
+		Py_DECREF(res);
+		if (str)
+			res = str;
+		else
+		    	return NULL;
+	}
+	return res;
+}
+
+
 /* Map rich comparison operators to their swapped version, e.g. LT --> GT */
 static int swapped_op[] = {Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE};
 
@@ -521,12 +569,14 @@ do_cmp(PyObject *v, PyObject *w)
 /* compare_nesting is incremented before calling compare (for
    some types) and decremented on exit.  If the count exceeds the
    nesting limit, enable code to detect circular data structures.
+
+   This is a tunable parameter that should only affect the performance
+   of comparisons, nothing else.  Setting it high makes comparing deeply
+   nested non-cyclical data structures faster, but makes comparing cyclical
+   data structures slower.
 */
-#ifdef macintosh
-#define NESTING_LIMIT 60
-#else
-#define NESTING_LIMIT 500
-#endif
+#define NESTING_LIMIT 20
+
 static int compare_nesting = 0;
 
 static PyObject*
@@ -546,6 +596,7 @@ get_inprogress_dict(void)
 		PyErr_BadInternalCall();
 		return NULL;
 	} 
+
 	inprogress = PyDict_GetItem(tstate_dict, key); 
 	if (inprogress == NULL) {
 		inprogress = PyDict_New();
@@ -557,81 +608,74 @@ get_inprogress_dict(void)
 		}
 		Py_DECREF(inprogress);
 	}
+
 	return inprogress;
 }
 
-PyObject *
-PyObject_Unicode(PyObject *v)
-{
-	PyObject *res;
-	
-	if (v == NULL)
-		res = PyString_FromString("<NULL>");
-	else if (PyUnicode_Check(v)) {
-		Py_INCREF(v);
-		return v;
-	}
-	else if (PyString_Check(v))
-	    	res = v;
-	else if (v->ob_type->tp_str != NULL)
-		res = (*v->ob_type->tp_str)(v);
-	else {
-		PyObject *func;
-		static PyObject *strstr;
-		if (strstr == NULL) {
-			strstr= PyString_InternFromString("__str__");
-			if (strstr == NULL)
-				return NULL;
-		}
-		if (!PyInstance_Check(v) ||
-		    (func = PyObject_GetAttr(v, strstr)) == NULL) {
-			PyErr_Clear();
-			res = PyObject_Repr(v);
-		}
-		else {
-		    	res = PyEval_CallObject(func, (PyObject *)NULL);
-			Py_DECREF(func);
-		}
-	}
-	if (res == NULL)
-		return NULL;
-	if (!PyUnicode_Check(res)) {
-		PyObject* str;
-		str = PyUnicode_FromObject(res);
-		Py_DECREF(res);
-		if (str)
-			res = str;
-		else
-		    	return NULL;
-	}
-	return res;
-}
-
 static PyObject *
-make_pair(PyObject *v, PyObject *w)
+check_recursion(PyObject *v, PyObject *w, int op)
 {
-	PyObject *pair;
+	PyObject *inprogress;
+	PyObject *token;
 	Py_uintptr_t iv = (Py_uintptr_t)v;
 	Py_uintptr_t iw = (Py_uintptr_t)w;
+	PyObject *x, *y, *z;
 
-	pair = PyTuple_New(2);
-	if (pair == NULL) {
+	inprogress = get_inprogress_dict();
+	if (inprogress == NULL)
+		return NULL;
+
+	token = PyTuple_New(3);
+	if (token == NULL)
+		return NULL;
+
+	if (iv <= iw) {
+		PyTuple_SET_ITEM(token, 0, x = PyLong_FromVoidPtr((void *)v));
+		PyTuple_SET_ITEM(token, 1, y = PyLong_FromVoidPtr((void *)w));
+		if (op >= 0)
+			op = swapped_op[op];
+	} else {
+		PyTuple_SET_ITEM(token, 0, x = PyLong_FromVoidPtr((void *)w));
+		PyTuple_SET_ITEM(token, 1, y = PyLong_FromVoidPtr((void *)v));
+	}
+	PyTuple_SET_ITEM(token, 2, z = PyInt_FromLong((long)op));
+	if (x == NULL || y == NULL || z == NULL) {
+		Py_DECREF(token);
 		return NULL;
 	}
-	if (iv <= iw) {
-		PyTuple_SET_ITEM(pair, 0, PyLong_FromVoidPtr((void *)v));
-		PyTuple_SET_ITEM(pair, 1, PyLong_FromVoidPtr((void *)w));
-	} else {
-		PyTuple_SET_ITEM(pair, 0, PyLong_FromVoidPtr((void *)w));
-		PyTuple_SET_ITEM(pair, 1, PyLong_FromVoidPtr((void *)v));
+
+	if (PyDict_GetItem(inprogress, token) != NULL) {
+		Py_DECREF(token);
+		return Py_None; /* Without INCREF! */
 	}
-	return pair;
+
+	if (PyDict_SetItem(inprogress, token, token) < 0) {
+		Py_DECREF(token);
+		return NULL;
+	}
+
+	return token;
+}
+
+static void
+delete_token(PyObject *token)
+{
+	PyObject *inprogress;
+
+	if (token == NULL || token == Py_None)
+		return;
+	inprogress = get_inprogress_dict();
+	if (inprogress == NULL)
+		PyErr_Clear();
+	else
+		PyDict_DelItem(inprogress, token);
+	Py_DECREF(token);
 }
 
 int
 PyObject_Compare(PyObject *v, PyObject *w)
 {
-	PyTypeObject *vtp, *wtp;
+	PyTypeObject *vtp;
 	int result;
 
 #if defined(USE_STACKCHECK)
@@ -647,41 +691,31 @@ PyObject_Compare(PyObject *v, PyObject *w)
 	if (v == w)
 		return 0;
 	vtp = v->ob_type;
-	wtp = w->ob_type;
 	compare_nesting++;
 	if (compare_nesting > NESTING_LIMIT &&
 		(vtp->tp_as_mapping
-		 || PyInstance_Check(v)
-		 || (vtp->tp_as_sequence && !PyString_Check(v)))) {
+		 || (vtp->tp_as_sequence
+		     && !PyString_Check(v)
+		     && !PyTuple_Check(v)))) {
 		/* try to detect circular data structures */
-		PyObject *inprogress, *pair;
+		PyObject *token = check_recursion(v, w, -1);
 
-		inprogress = get_inprogress_dict();
-		if (inprogress == NULL) {
-                        result = -1;
-                        goto exit_cmp;
+		if (token == NULL) {
+			result = -1;
 		}
-		pair = make_pair(v, w);
-		if (PyDict_GetItem(inprogress, pair)) {
+		else if (token == Py_None) {
 			/* already comparing these objects.  assume
 			   they're equal until shown otherwise */
-			Py_DECREF(pair);
                         result = 0;
-                        goto exit_cmp;
 		}
-		if (PyDict_SetItem(inprogress, pair, pair) == -1) {
-                        result = -1;
-                        goto exit_cmp;
+		else {
+			result = do_cmp(v, w);
+			delete_token(token);
 		}
-		result = do_cmp(v, w);
-		/* XXX DelItem shouldn't fail */
-		PyDict_DelItem(inprogress, pair);
-		Py_DECREF(pair);
 	}
 	else {
 		result = do_cmp(v, w);
 	}
-exit_cmp:
 	compare_nesting--;
 	return result < 0 ? -1 : result;
 }
@@ -733,41 +767,37 @@ PyObject_RichCompare(PyObject *v, PyObject *w, int op)
 	compare_nesting++;
 	if (compare_nesting > NESTING_LIMIT &&
 		(v->ob_type->tp_as_mapping
-		 || PyInstance_Check(v)
-		 || (v->ob_type->tp_as_sequence && !PyString_Check(v)))) {
+		 || (v->ob_type->tp_as_sequence
+		     && !PyString_Check(v)
+		     && !PyTuple_Check(v)))) {
 		/* try to detect circular data structures */
-		PyObject *inprogress, *pair;
+		PyObject *token = check_recursion(v, w, op);
 
-		inprogress = get_inprogress_dict();
-		if (inprogress == NULL) {
-                        res = NULL;
-                        goto exit_cmp;
+		if (token == NULL) {
+			res = NULL;
 		}
-		pair = make_pair(v, w);
-		if (PyDict_GetItem(inprogress, pair)) {
-			/* already comparing these objects.  assume
-			   they're equal until shown otherwise */
-			Py_DECREF(pair);
-			if (op == Py_EQ || op == Py_LE || op == Py_GE)
+		else if (token == Py_None) {
+			/* already comparing these objects with this operator.
+			   assume they're equal until shown otherwise */
+			if (op == Py_EQ)
 				res = Py_True;
-			else
+			else if (op == Py_NE)
 				res = Py_False;
-			Py_INCREF(res);
-                        goto exit_cmp;
+			else {
+				PyErr_SetString(PyExc_ValueError,
+					"can't order recursive values");
+				res = NULL;
+			}
+			Py_XINCREF(res);
 		}
-		if (PyDict_SetItem(inprogress, pair, pair) == -1) {
-                        res = NULL;
-                        goto exit_cmp;
+		else {
+			res = do_richcmp(v, w, op);
+			delete_token(token);
 		}
-		res = do_richcmp(v, w, op);
-		/* XXX DelItem shouldn't fail */
-		PyDict_DelItem(inprogress, pair);
-		Py_DECREF(pair);
 	}
 	else {
 		res = do_richcmp(v, w, op);
 	}
-  exit_cmp:
 	compare_nesting--;
 	return res;
 }
