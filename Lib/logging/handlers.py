@@ -26,7 +26,7 @@ Copyright (C) 2001-2002 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, logging, socket, types, os, string, cPickle, struct
+import sys, logging, socket, types, os, string, cPickle, struct, time
 
 from SocketServer import ThreadingTCPServer, StreamRequestHandler
 
@@ -145,8 +145,7 @@ class SocketHandler(logging.Handler):
         This function allows for partial sends which can happen when the
         network is busy.
         """
-        v = logging._verinfo
-        if v and (v[0] >= 2) and (v[1] >= 2):
+        if hasattr(self.sock, "sendall"):
             self.sock.sendall(s)
         else:
             sentsofar = 0
@@ -448,6 +447,21 @@ class SMTPHandler(logging.Handler):
         """
         return self.subject
 
+    weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+    monthname = [None,
+                 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+    def date_time(self):
+        """Return the current date and time formatted for a MIME header."""
+        year, month, day, hh, mm, ss, wd, y, z = time.gmtime(time.time())
+        s = "%s, %02d %3s %4d %02d:%02d:%02d GMT" % (
+                self.weekdayname[wd],
+                day, self.monthname[month], year,
+                hh, mm, ss)
+        return s
+
     def emit(self, record):
         """
         Emit a record.
@@ -461,11 +475,11 @@ class SMTPHandler(logging.Handler):
                 port = smtplib.SMTP_PORT
             smtp = smtplib.SMTP(self.mailhost, port)
             msg = self.format(record)
-            msg = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s" % (
+            msg = "From: %s\r\nTo: %s\r\nSubject: %s\r\nDate: %s\r\n\r\n%s" % (
                             self.fromaddr,
                             string.join(self.toaddrs, ","),
-                            self.getSubject(record), msg
-                            )
+                            self.getSubject(record),
+                            self.date_time(), msg)
             smtp.sendmail(self.fromaddr, self.toaddrs, msg)
             smtp.quit()
         except:
@@ -587,6 +601,14 @@ class HTTPHandler(logging.Handler):
         self.url = url
         self.method = method
 
+    def mapLogRecord(self, record):
+        """
+        Default implementation of mapping the log record into a dict
+        that is send as the CGI data. Overwrite in your class.
+        Contributed by Franz  Glasner.
+        """
+        return record.__dict__
+
     def emit(self, record):
         """
         Emit a record.
@@ -597,7 +619,7 @@ class HTTPHandler(logging.Handler):
             import httplib, urllib
             h = httplib.HTTP(self.host)
             url = self.url
-            data = urllib.urlencode(record.__dict__)
+            data = urllib.urlencode(self.mapLogRecord(record))
             if self.method == "GET":
                 if (string.find(url, '?') >= 0):
                     sep = '&'
