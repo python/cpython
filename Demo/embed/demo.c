@@ -2,16 +2,14 @@
 
 #include "Python.h"
 
-static char *argv0;
-
 void initxyzzy(); /* Forward */
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	/* Save a copy of argv0 */
-	argv0 = argv[0];
+	/* Pass argv[0] to the Python interpreter */
+	Py_SetProgramName(argv[0]);
 
 	/* Initialize the Python interpreter.  Required. */
 	Py_Initialize();
@@ -32,6 +30,7 @@ main(argc, argv)
 	PyRun_SimpleString("import sys\n");
 	PyRun_SimpleString("print sys.builtin_module_names\n");
 	PyRun_SimpleString("print sys.modules.keys()\n");
+	PyRun_SimpleString("print sys.executable\n");
 	PyRun_SimpleString("print sys.argv\n");
 
 	/* Note that you can call any public function of the Python
@@ -43,13 +42,6 @@ main(argc, argv)
 	/* Exit, cleaning up the interpreter */
 	Py_Exit(0);
 	/*NOTREACHED*/
-}
-
-/* This function is called by the interpreter to get its own name */
-char *
-getprogramname()
-{
-	return argv0;
 }
 
 /* A static module */
