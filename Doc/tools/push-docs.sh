@@ -6,6 +6,8 @@
 TARGETHOST=www.python.org
 TARGETDIR=/usr/home/fdrake/tmp
 
+PKGTYPE="bzip"  # must be one of: bzip, tar, zip  ("tar" implies gzip)
+
 TARGET="$TARGETHOST:$TARGETDIR"
 
 ADDRESSES='python-dev@python.org doc-sig@python.org python-list@python.org'
@@ -27,11 +29,16 @@ fi
 EXPLANATION=''
 ANNOUNCE=true
 
+# XXX Should use getopt(1) here.
 while [ "$#" -gt 0 ] ; do
   case "$1" in
       -m)
           EXPLANATION="$2"
           shift 2
+          ;;
+      -p)
+          PKGTYPE="$2"
+          shift 1
           ;;
       -q)
           ANNOUNCE=false
@@ -68,11 +75,22 @@ MYDIR="`dirname $0`"
 cd "$MYDIR"
 MYDIR="`pwd`"
 
+if [ "$PKGTYPE" = bzip ] ; then
+    PKGEXT=tar.bz2
+elif [ "$PKGTYPE" = tar ] ; then
+    PKGEXT=tgz
+elif [ "$PKGTYPE" = zip ] ; then
+    PKGEXT=zip
+else
+    echo 1>&2 "unsupported package type: $PKGTYPE"
+    exit 2
+fi
+
 cd ..
 
 # now in .../Doc/
-make --no-print-directory bziphtml || exit $?
-PACKAGE="html-$VERSION.tar.bz2"
+make --no-print-directory ${PKGTYPE}html || exit $?
+PACKAGE="html-$VERSION.$PKGEXT"
 scp "$PACKAGE" tools/update-docs.sh $TARGET/ || exit $?
 ssh "$TARGETHOST" tmp/update-docs.sh $DOCTYPE $PACKAGE '&&' rm tmp/update-docs.sh || exit $?
 
@@ -88,6 +106,10 @@ The $DOCLABEL version of the documentation has been updated:
     http://$TARGETHOST/dev/doc/$DOCTYPE/
 
 $EXPLANATION
+
+A downloadable package containing the HTML is also available:
+
+    http://$TARGETHOST/dev/doc/python-docs-$DOCTYPE.$PKGEXT
 EOF
     exit $?
 fi
