@@ -1,7 +1,7 @@
 /* zlibmodule.c -- gzip-compatible data compression */
 
-#include <Python.h>
-#include <zlib.h>
+#include "Python.h"
+#include "zlib.h"
 
 /* The following parameters are copied from zutil.h, version 0.95 */
 #define DEFLATED   8
@@ -75,7 +75,8 @@ PyZlib_compress(self, args)
                       "Can't allocate memory to compress data");
       return NULL;
     }
-  zst.zalloc=(alloc_func)zst.zfree=(free_func)Z_NULL;
+  zst.zalloc=(alloc_func)NULL;
+  zst.zfree=(free_func)Z_NULL;
   zst.next_out=(Byte *)output;
   zst.next_in =(Byte *)input;
   zst.avail_in=length;
@@ -137,7 +138,7 @@ PyZlib_compress(self, args)
       free(output);
       return NULL;
     }
-  ReturnVal=PyString_FromStringAndSize(output, zst.total_out);
+  ReturnVal=PyString_FromStringAndSize((char *)output, zst.total_out);
   free(output);
   return ReturnVal;
 }
@@ -168,7 +169,8 @@ PyZlib_decompress(self, args)
                       "Can't allocate memory to decompress data");
       return NULL;
     }
-  zst.zalloc=(alloc_func)zst.zfree=(free_func)Z_NULL;
+  zst.zalloc=(alloc_func)NULL;
+  zst.zfree=(free_func)Z_NULL;
   zst.next_out=(Byte *)output;
   zst.next_in =(Byte *)input;
   err=inflateInit(&zst);
@@ -236,7 +238,7 @@ PyZlib_decompress(self, args)
       free(output);
       return NULL;
     }
-  ReturnVal=PyString_FromStringAndSize(output, zst.total_out);
+  ReturnVal=PyString_FromStringAndSize((char *)output, zst.total_out);
   free(output);
   return ReturnVal;
 }
@@ -276,7 +278,8 @@ PyZlib_compressobj(selfptr, args)
     }
   self=newcompobject(&Comptype);
   if (self==NULL) return(NULL);
-  self->zst.zalloc=(alloc_func)self->zst.zfree=(free_func)Z_NULL;
+  self->zst.zalloc=(alloc_func)NULL;
+  self->zst.zfree=(free_func)Z_NULL;
   err=deflateInit2(&self->zst, level, method, wbits, memLevel, strategy);
   switch(err)
     {
@@ -319,7 +322,8 @@ PyZlib_decompressobj(selfptr, args)
     }  
   self=newcompobject(&Decomptype);
   if (self==NULL) return(NULL);
-  self->zst.zalloc=(alloc_func)self->zst.zfree=(free_func)Z_NULL;
+  self->zst.zalloc=(alloc_func)NULL;
+  self->zst.zfree=(free_func)Z_NULL;
   /* XXX If illegal values of wbits are allowed to get here, Python
      coredumps, instead of raising an exception as it should. 
      This is a bug in zlib 0.95; I have reported it. */
@@ -408,7 +412,7 @@ PyZlib_objcompress(self, args)
       PyErr_SetString(ZlibError, temp);
       return NULL;
     }
-  RetVal=PyString_FromStringAndSize(buf, self->zst.next_out-buf);
+  RetVal=PyString_FromStringAndSize((char *)buf, self->zst.next_out-buf);
   free(buf);
   return RetVal;
 }
@@ -456,7 +460,7 @@ PyZlib_objdecompress(self, args)
       PyErr_SetString(ZlibError, temp);
       return NULL;
     }
-  RetVal=PyString_FromStringAndSize(buf, self->zst.next_out-buf);
+  RetVal=PyString_FromStringAndSize((char *)buf, self->zst.next_out-buf);
   free(buf);
   return RetVal;
 }
@@ -501,7 +505,7 @@ PyZlib_flush(self, args)
       PyErr_SetString(ZlibError, temp);
       return NULL;
     }
-  RetVal=PyString_FromStringAndSize(buf, self->zst.next_out-buf);
+  RetVal=PyString_FromStringAndSize((char *)buf, self->zst.next_out-buf);
   free(buf);
   err=deflateEnd(&(self->zst));
   if (err!=Z_OK) 
@@ -555,7 +559,7 @@ PyZlib_unflush(self, args)
       PyErr_SetString(ZlibError, temp);
       return NULL;
     }
-  RetVal=PyString_FromStringAndSize(buf, self->zst.next_out - buf);
+  RetVal=PyString_FromStringAndSize((char *)buf, self->zst.next_out - buf);
   free(buf);
   err=inflateEnd(&(self->zst));
   if (err!=Z_OK) 
