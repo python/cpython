@@ -1267,18 +1267,20 @@ class Listbox(Widget):
 		i = self.tk.call(self._w, 'index', index)
 		if i == 'none': return None
 		return self.tk.getint(i)
-	def select_adjust(self, index):
-		self.tk.call(self._w, 'select', 'adjust', index)
 	def select_anchor(self, index):
 		self.tk.call(self._w, 'selection', 'anchor', index)
+	selection_anchor = select_anchor
 	def select_clear(self, first, last=None):
 		self.tk.call(self._w,
 			     'selection', 'clear', first, last)
+	selection_clear = select_clear
 	def select_includes(self, index):
 		return self.tk.getboolean(self.tk.call(
 			self._w, 'selection', 'includes', index))
+	selection_includes = select_includes
 	def select_set(self, first, last=None):
 		self.tk.call(self._w, 'selection', 'set', first, last)
+	selection_set = select_set
 	def size(self):
 		return self.tk.getint(self.tk.call(self._w, 'size'))
 	def xview(self, *what):
