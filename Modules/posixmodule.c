@@ -1852,6 +1852,17 @@ posix__exit(PyObject *self, PyObject *args)
 	return NULL; /* Make gcc -Wall happy */
 }
 
+#if defined(HAVE_EXECV) || defined(HAVE_SPAWNV)
+static void
+free_string_array(char **array, int count)
+{
+	int i;
+	for (i = 0; i < count; i++)
+		PyMem_Free(array[i]);
+	PyMem_DEL(array);
+}
+#endif
+
 
 #ifdef HAVE_EXECV
 PyDoc_STRVAR(posix_execv__doc__,
@@ -1873,7 +1884,9 @@ posix_execv(PyObject *self, PyObject *args)
 	/* execv has two arguments: (path, argv), where
 	   argv is a list or tuple of strings. */
 
-	if (!PyArg_ParseTuple(args, "sO:execv", &path, &argv))
+	if (!PyArg_ParseTuple(args, "etO:execv",
+                              Py_FileSystemDefaultEncoding,
+                              &path, &argv))
 		return NULL;
 	if (PyList_Check(argv)) {
 		argc = PyList_Size(argv);
@@ -1885,22 +1898,29 @@ posix_execv(PyObject *self, PyObject *args)
 	}
 	else {
 		PyErr_SetString(PyExc_TypeError, "execv() arg 2 must be a tuple or list");
+                PyMem_Free(path);
 		return NULL;
 	}
 
 	if (argc == 0) {
 		PyErr_SetString(PyExc_ValueError, "execv() arg 2 must not be empty");
+                PyMem_Free(path);
 		return NULL;
 	}
 
 	argvlist = PyMem_NEW(char *, argc+1);
-	if (argvlist == NULL)
+	if (argvlist == NULL) {
+		PyMem_Free(path);
 		return NULL;
+	}
 	for (i = 0; i < argc; i++) {
-		if (!PyArg_Parse((*getitem)(argv, i), "s", &argvlist[i])) {
-			PyMem_DEL(argvlist);
+		if (!PyArg_Parse((*getitem)(argv, i), "et",
+				 Py_FileSystemDefaultEncoding,
+				 &argvlist[i])) {
+			free_string_array(argvlist, i);
 			PyErr_SetString(PyExc_TypeError,
 					"execv() arg 2 must contain only strings");
+			PyMem_Free(path);
 			return NULL;
 
 		}
@@ -1915,7 +1935,8 @@ posix_execv(PyObject *self, PyObject *args)
 
 	/* If we get here it's definitely an error */
 
-	PyMem_DEL(argvlist);
+	free_string_array(argvlist, argc);
+	PyMem_Free(path);
 	return posix_error();
 }
 
@@ -1938,12 +1959,15 @@ posix_execve(PyObject *self, PyObject *args)
 	PyObject *key, *val, *keys=NULL, *vals=NULL;
 	int i, pos, argc, envc;
 	PyObject *(*getitem)(PyObject *, int);
+	int lastarg = 0;
 
 	/* execve has three arguments: (path, argv, env), where
 	   argv is a list or tuple of strings and env is a dictionary
 	   like posix.environ. */
 
-	if (!PyArg_ParseTuple(args, "sOO:execve", &path, &argv, &env))
+	if (!PyArg_ParseTuple(args, "etOO:execve",
+			      Py_FileSystemDefaultEncoding,
+			      &path, &argv, &env))
 		return NULL;
 	if (PyList_Check(argv)) {
 		argc = PyList_Size(argv);
@@ -1955,32 +1979,34 @@ posix_execve(PyObject *self, PyObject *args)
 	}
 	else {
 		PyErr_SetString(PyExc_TypeError, "execve() arg 2 must be a tuple or list");
-		return NULL;
+		goto fail_0;
 	}
 	if (!PyMapping_Check(env)) {
 		PyErr_SetString(PyExc_TypeError, "execve() arg 3 must be a mapping object");
-		return NULL;
+		goto fail_0;
 	}
 
 	if (argc == 0) {
 		PyErr_SetString(PyExc_ValueError,
 				"execve() arg 2 must not be empty");
-		return NULL;
+		goto fail_0;
 	}
 
 	argvlist = PyMem_NEW(char *, argc+1);
 	if (argvlist == NULL) {
 		PyErr_NoMemory();
-		return NULL;
+		goto fail_0;
 	}
 	for (i = 0; i < argc; i++) {
 		if (!PyArg_Parse((*getitem)(argv, i),
-				 "s;execve() arg 2 must contain only strings",
+				 "et;execve() arg 2 must contain only strings",
 				 &argvlist[i]))
 		{
+			lastarg = i;
 			goto fail_1;
 		}
 	}
+	lastarg = argc;
 	argvlist[argc] = NULL;
 
 	i = PyMapping_Size(env);
@@ -2044,9 +2070,11 @@ posix_execve(PyObject *self, PyObject *args)
 		PyMem_DEL(envlist[envc]);
 	PyMem_DEL(envlist);
  fail_1:
-	PyMem_DEL(argvlist);
+	free_string_array(argvlist,lastarg);
 	Py_XDECREF(vals);
 	Py_XDECREF(keys);
+ fail_0:
+	PyMem_Free(path);
 	return NULL;
 }
 #endif /* HAVE_EXECV */
@@ -2074,7 +2102,9 @@ posix_spawnv(PyObject *self, PyObject *args)
 	/* spawnv has three arguments: (mode, path, argv), where
 	   argv is a list or tuple of strings. */
 
-	if (!PyArg_ParseTuple(args, "isO:spawnv", &mode, &path, &argv))
+	if (!PyArg_ParseTuple(args, "ietO:spawnv", &mode,
+			      Py_FileSystemDefaultEncoding,
+			      &path, &argv))
 		return NULL;
 	if (PyList_Check(argv)) {
 		argc = PyList_Size(argv);
@@ -2086,17 +2116,23 @@ posix_spawnv(PyObject *self, PyObject *args)
 	}
 	else {
 		PyErr_SetString(PyExc_TypeError, "spawnv() arg 2 must be a tuple or list");
+		PyMem_Free(path);
 		return NULL;
 	}
 
 	argvlist = PyMem_NEW(char *, argc+1);
-	if (argvlist == NULL)
+	if (argvlist == NULL) {
+		PyMem_Free(path);
 		return NULL;
+	}
 	for (i = 0; i < argc; i++) {
-		if (!PyArg_Parse((*getitem)(argv, i), "s", &argvlist[i])) {
-			PyMem_DEL(argvlist);
+		if (!PyArg_Parse((*getitem)(argv, i), "et",
+				 Py_FileSystemDefaultEncoding,
+				 &argvlist[i])) {
+			free_string_array(argvlist, i);
 			PyErr_SetString(PyExc_TypeError,
 					"spawnv() arg 2 must contain only strings");
+			PyMem_Free(path);
 			return NULL;
 		}
 	}
@@ -2115,7 +2151,8 @@ posix_spawnv(PyObject *self, PyObject *args)
 	Py_END_ALLOW_THREADS
 #endif
 
-	PyMem_DEL(argvlist);
+	free_string_array(argvlist, argc);
+	PyMem_Free(path);
 
 	if (spawnval == -1)
 		return posix_error();
@@ -2148,12 +2185,15 @@ posix_spawnve(PyObject *self, PyObject *args)
 	int mode, i, pos, argc, envc;
 	Py_intptr_t spawnval;
 	PyObject *(*getitem)(PyObject *, int);
+	int lastarg = 0;
 
 	/* spawnve has four arguments: (mode, path, argv, env), where
 	   argv is a list or tuple of strings and env is a dictionary
 	   like posix.environ. */
 
-	if (!PyArg_ParseTuple(args, "isOO:spawnve", &mode, &path, &argv, &env))
+	if (!PyArg_ParseTuple(args, "ietOO:spawnve", &mode,
+			      Py_FileSystemDefaultEncoding,
+			      &path, &argv, &env))
 		return NULL;
 	if (PyList_Check(argv)) {
 		argc = PyList_Size(argv);
@@ -2165,26 +2205,29 @@ posix_spawnve(PyObject *self, PyObject *args)
 	}
 	else {
 		PyErr_SetString(PyExc_TypeError, "spawnve() arg 2 must be a tuple or list");
-		return NULL;
+		goto fail_0;
 	}
 	if (!PyMapping_Check(env)) {
 		PyErr_SetString(PyExc_TypeError, "spawnve() arg 3 must be a mapping object");
-		return NULL;
+		goto fail_0;
 	}
 
 	argvlist = PyMem_NEW(char *, argc+1);
 	if (argvlist == NULL) {
 		PyErr_NoMemory();
-		return NULL;
+		goto fail_0;
 	}
 	for (i = 0; i < argc; i++) {
 		if (!PyArg_Parse((*getitem)(argv, i),
-				 "s;spawnve() arg 2 must contain only strings",
+				 "et;spawnve() arg 2 must contain only strings",
+				 Py_FileSystemDefaultEncoding,
 				 &argvlist[i]))
 		{
+			lastarg = i;
 			goto fail_1;
 		}
 	}
+	lastarg = argc;
 	argvlist[argc] = NULL;
 
 	i = PyMapping_Size(env);
@@ -2251,9 +2294,11 @@ posix_spawnve(PyObject *self, PyObject *args)
 		PyMem_DEL(envlist[envc]);
 	PyMem_DEL(envlist);
  fail_1:
-	PyMem_DEL(argvlist);
+	free_string_array(argvlist, lastarg);
 	Py_XDECREF(vals);
 	Py_XDECREF(keys);
+  fail_0:
+	PyMem_Free(path);
 	return res;
 }
 #endif /* HAVE_SPAWNV */
