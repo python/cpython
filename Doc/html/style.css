@@ -39,7 +39,8 @@ body                    { color: #000000;
                           background-color: #ffffff; }
 
 a:active                { color: #ff0000; }
-a[href]:hover           { background-color: #bbeeff; }
+a:link:hover            { background-color: #bbeeff; }
+a:visited:hover         { background-color: #bbeeff; }
 a:visited               { color: #551a8b; }
 a:link                  { color: #0000bb; }
 
@@ -97,11 +98,16 @@ div.note .label         { margin-right: 0.5em;
 .grammar                { background-color: #99ccff;
                           margin-right: 0.5in;
                           padding: 0.05in; }
-.productions            { background-color: #bbeeff; }
-.productions a:hover    { background-color: #99ccff; }
-.productions table      { vertical-align: baseline; }
 .grammar-footer         { padding: 0.05in;
                           font-size: 85%; }
+
+.productions                  { background-color: #bbeeff; }
+.productions a:active         { color: #ff0000; }
+.productions a:link:hover     { background-color: #99ccff; }
+.productions a:visited:hover  { background-color: #99ccff; }
+.productions a:visited        { color: #551a8b; }
+.productions a:link           { color: #0000bb; }
+.productions table            { vertical-align: baseline; }
 
 .email                  { font-family: avantgarde, sans-serif; }
 .mailheader             { font-family: avantgarde, sans-serif; }
