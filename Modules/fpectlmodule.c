@@ -180,7 +180,11 @@ static void fpe_reset(Sigfunc *handler)
 
 /*-- Linux ----------------------------------------------------------------*/
 #elif defined(linux)
+#ifdef __GLIBC__
+#include <fpu_control.h>
+#else
 #include <i386/fpu_control.h>
+#endif
     __setfpucw(0x1372);
     signal(SIGFPE, handler);
 
