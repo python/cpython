@@ -657,6 +657,35 @@ gl_lrectread(self, args)
 	return parray;
 }
 
+% readdisplay
+
+static object *
+gl_readdisplay(self, args)
+	object *self;
+        object *args;
+{
+        short x1, y1, x2, y2;
+	unsigned long *parray, hints;
+	long size, size_ret;
+	object *rv;
+
+	if ( !getargs(args, "hhhhl", &x1, &y1, &x2, &y2, &hints) )
+	  return 0;
+	size = (long)(x2+1-x1) * (long)(y2+1-y1);
+	rv = newsizedstringobject((char *)NULL, size*sizeof(long));
+	if ( rv == NULL )
+	  return NULL;
+	parray = (unsigned long *)getstringvalue(rv);
+	size_ret = readdisplay(x1, y1, x2, y2, parray, hints);
+	if ( size_ret != size ) {
+	    printf("gl_readdisplay: got %d pixels, expected %d\n",
+		   size_ret, size);
+	    err_setstr(RuntimeError, "readdisplay returned unexpected length");
+	    return NULL;
+	}
+	return rv;
+}
+
 /* Desperately needed, here are tools to compress and decompress
    the data manipulated by lrectread/lrectwrite.
 
