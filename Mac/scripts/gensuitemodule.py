@@ -33,13 +33,14 @@ def usage():
 --resource       Parse resource file in stead of launching application (-r)
 --base package   Use another base package in stead of default StdSuites (-b)
 --edit old=new   Edit suite names, use empty new to skip a suite (-e)
+--creator code   Set creator code for package (-c)
 """)
 	sys.exit(1)
 
 def main():
 	if len(sys.argv) > 1:
-		SHORTOPTS = "rb:o:e:"
-		LONGOPTS = ("resource", "base=", "output=", "edit=")
+		SHORTOPTS = "rb:o:e:c:"
+		LONGOPTS = ("resource", "base=", "output=", "edit=", "creator=")
 		try:
 			opts, args = getopt.getopt(sys.argv[1:], SHORTOPTS, LONGOPTS)
 		except getopt.GetoptError:
@@ -49,6 +50,7 @@ def main():
 		basepkgname = 'StdSuites'
 		output = None
 		edit_modnames = []
+		creatorsignature = None
 		
 		for o, a in opts:
 			if o in ('-r', '--resource'):
@@ -62,6 +64,12 @@ def main():
 				if len(split) != 2:
 					usage()
 				edit_modnames.append(split)
+			if o in ('-c', '--creator'):
+				if len(a) != 4:
+					sys.stderr.write("creator must be 4-char string\n")
+					sys.exit(1)
+				creatorsignature = a
+				
 					
 		if output and len(args) > 1:
 			sys.stderr.write("%s: cannot specify --output with multiple inputs\n" % sys.argv[0])
@@ -69,7 +77,7 @@ def main():
 			
 		for filename in args:
 			process_func(filename, output=output, basepkgname=basepkgname, 
-				edit_modnames=edit_modnames)
+				edit_modnames=edit_modnames, creatorsignature=creatorsignature)
 	else:
 		# The dialogOptionFlags below allows selection of .app bundles.
 		filename = EasyDialogs.AskFileForOpen(
@@ -84,7 +92,8 @@ def main():
 			print "Retry, manually parsing resources"
 			processfile_fromresource(filename)
 
-def processfile_fromresource(fullname, output=None, basepkgname=None, edit_modnames=None):
+def processfile_fromresource(fullname, output=None, basepkgname=None, 
+		edit_modnames=None, creatorsignature=None):
 	"""Process all resources in a single file"""
 	cur = CurResFile()
 	print "Processing", fullname
@@ -112,9 +121,11 @@ def processfile_fromresource(fullname, output=None, basepkgname=None, edit_modna
 	# switch back (needed for dialogs in Python)
 	UseResFile(cur)
 	compileaetelist(aetelist, fullname, output=output, 
-		basepkgname=basepkgname, edit_modnames=edit_modnames)
+		basepkgname=basepkgname, edit_modnames=edit_modnames,
+		creatorsignature=creatorsignature)
 
-def processfile(fullname, output=None, basepkgname=None, edit_modnames=None):
+def processfile(fullname, output=None, basepkgname=None, 
+		edit_modnames=None, creatorsignature=None):
 	"""Ask an application for its terminology and process that"""
 	aedescobj, launched = OSATerminology.GetSysTerminology(fullname)
 	if launched:
@@ -128,12 +139,15 @@ def processfile(fullname, output=None, basepkgname=None, edit_modnames=None):
 		return
 	aedata = raw[0]
 	aete = decode(aedata.data)
-	compileaete(aete, None, fullname, output=output, basepkgname=basepkgname)
+	compileaete(aete, None, fullname, output=output, basepkgname=basepkgname,
+		creatorsignature=creatorsignature)
 
-def compileaetelist(aetelist, fullname, output=None, basepkgname=None, edit_modnames=None):
+def compileaetelist(aetelist, fullname, output=None, basepkgname=None, 
+			edit_modnames=None, creatorsignature=None):
 	for aete, resinfo in aetelist:
 		compileaete(aete, resinfo, fullname, output=output, 
-			basepkgname=basepkgname, edit_modnames=edit_modnames)
+			basepkgname=basepkgname, edit_modnames=edit_modnames,
+			creatorsignature=creatorsignature)
 		
 def decode(data):
 	"""Decode a resource into a python data structure"""
@@ -298,11 +312,13 @@ getaete = [
 	(getlist, "suites", getsuite)
 	]
 
-def compileaete(aete, resinfo, fname, output=None, basepkgname=None, edit_modnames=None):
+def compileaete(aete, resinfo, fname, output=None, basepkgname=None, 
+		edit_modnames=None, creatorsignature=None):
 	"""Generate code for a full aete resource. fname passed for doc purposes"""
 	[version, language, script, suites] = aete
 	major, minor = divmod(version, 256)
-	creatorsignature, dummy = MacOS.GetCreatorAndType(fname)
+	if not creatorsignature:
+		creatorsignature, dummy = MacOS.GetCreatorAndType(fname)
 	packagename = identify(os.path.splitext(os.path.basename(fname))[0])
 	if language:
 		packagename = packagename+'_lang%d'%language
@@ -344,7 +360,8 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None, edit_modnam
 		suitelist.append((code, modname))
 		allsuites.append(suiteinfo)
 	for suiteinfo in allsuites:
-		compilesuite(suiteinfo, major, minor, language, script, fname, basepackage, allprecompinfo)
+		compilesuite(suiteinfo, major, minor, language, script, fname, basepackage, 
+				allprecompinfo, interact=(edit_modnames is None))
 	initfilename = os.path.join(output, '__init__.py')
 	fp = open(initfilename, 'w')
 	MacOS.SetCreatorAndType(initfilename, 'Pyth', 'TEXT')
@@ -443,7 +460,7 @@ def precompilesuite(suite, basepackage=None, edit_modnames=None, output=None):
 	for event in events:
 		findenumsinevent(event, enumsneeded)
 
-	objc = ObjectCompiler(None, basemodule)
+	objc = ObjectCompiler(None, basemodule, interact=(edit_modnames is None))
 	for cls in classes:
 		objc.compileclass(cls)
 	for cls in classes:
@@ -462,7 +479,8 @@ def precompilesuite(suite, basepackage=None, edit_modnames=None, output=None):
 	
 	return code, suite, pathname, modname, precompinfo
 
-def compilesuite((suite, pathname, modname), major, minor, language, script, fname, basepackage, precompinfo):
+def compilesuite((suite, pathname, modname), major, minor, language, script, 
+		fname, basepackage, precompinfo, interact=1):
 	"""Generate code for a single suite"""
 	[name, desc, code, level, version, events, classes, comps, enums] = suite
 	
@@ -500,7 +518,7 @@ def compilesuite((suite, pathname, modname), major, minor, language, script, fna
 	else:
 		fp.write("\tpass\n\n")
 
-	objc = ObjectCompiler(fp, basemodule, precompinfo)
+	objc = ObjectCompiler(fp, basemodule, precompinfo, interact=interact)
 	for cls in classes:
 		objc.compileclass(cls)
 	for cls in classes:
@@ -654,7 +672,7 @@ def findenumsinevent(event, enumsneeded):
 #
 class CodeNameMapper:
 	
-	def __init__(self):
+	def __init__(self, interact=1):
 		self.code2name = {
 			"property" : {},
 			"class" : {},
@@ -669,6 +687,7 @@ class CodeNameMapper:
 		}
 		self.modulename = None
 		self.star_imported = 0
+		self.can_interact = interact
 		
 	def addnamecode(self, type, name, code):
 		self.name2code[type][name] = code
@@ -712,16 +731,17 @@ class CodeNameMapper:
 		return self
 			
 class ObjectCompiler:
-	def __init__(self, fp, basesuite=None, othernamemappers=None):
+	def __init__(self, fp, basesuite=None, othernamemappers=None, interact=1):
 		self.fp = fp
 		self.basesuite = basesuite
-		self.namemappers = [CodeNameMapper()]
+		self.can_interact = interact
+		self.namemappers = [CodeNameMapper(self.can_interact)]
 		if othernamemappers:
 			self.othernamemappers = othernamemappers[:]
 		else:
 			self.othernamemappers = []
 		if basesuite:
-			basemapper = CodeNameMapper()
+			basemapper = CodeNameMapper(self.can_interact)
 			basemapper.addmodule(basesuite, '', 1)
 			self.namemappers.append(basemapper)
 		
@@ -755,11 +775,14 @@ class ObjectCompiler:
 				else:
 					m = None
 				if not m: return None, None, None
-				mapper = CodeNameMapper()
+				mapper = CodeNameMapper(self.can_interact)
 				mapper.addmodule(m, m.__name__, 0)
 				self.namemappers.append(mapper)
 	
 	def askdefinitionmodule(self, type, code):
+		if not self.can_interact:
+			print "** No definition for %s '%s' found" % (type, code)
+			return None
 		path = EasyDialogs.AskFileForSave(message='Where is %s %s declared?'%(type, code))
 		if not path: return
 		path, file = os.path.split(path)
