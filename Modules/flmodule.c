@@ -1902,7 +1902,7 @@ form_setattr(f, name, v)
 
 	if (v == NULL) {
 		err_setstr(TypeError, "can't delete form attributes");
-		return NULL;
+		return 0;
 	}
 
 	return setmember((char *)f->ob_form, form_memberlist, name, v);
