@@ -653,23 +653,25 @@ float_int(PyObject *v)
 {
 	double x = PyFloat_AsDouble(v);
 	double wholepart;	/* integral portion of x, rounded toward 0 */
-	long aslong;		/* (long)wholepart */
 
 	(void)modf(x, &wholepart);
-#ifdef RISCOS
-	/* conversion from floating to integral type would raise exception */
-	if (wholepart>LONG_MAX || wholepart<LONG_MIN) {
-		return float_long(v);
-	}
-#endif
-	/* doubles may have more bits than longs, or vice versa; and casting
-	   to long may yield gibberish in either case.  What really matters
-	   is whether converting back to double again reproduces what we
-	   started with. */
-	aslong = (long)wholepart;
-	if ((double)aslong == wholepart)
+	/* Try to get out cheap if this fits in a Python int.  The attempt
+	 * to cast to long must be protected, as C doesn't define what
+	 * happens if the double is too big to fit in a long.  Some rare
+	 * systems raise an exception then (RISCOS was mentioned as one,
+	 * and someone using a non-default option on Sun also bumped into
+	 * that).  Note that checking for >= and <= LONG_{MIN,MAX} would
+	 * still be vulnerable:  if a long has more bits of precision than
+	 * a double, casting MIN/MAX to double may yield an approximation,
+	 * and if that's rounded up, then, e.g., wholepart=LONG_MAX+1 would
+	 * yield true from the C expression wholepart<=LONG_MAX, despite
+	 * that wholepart is actually greater than LONG_MAX.
+	 */
+	if (LONG_MIN < wholepart && wholepart < LONG_MAX) {
+		const long aslong = (long)wholepart;
 		return PyInt_FromLong(aslong);
-	return float_long(v);
+	}
+	return PyLong_FromDouble(wholepart);
 }
 
 static PyObject *
