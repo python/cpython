@@ -38,6 +38,24 @@ def ggrep(syntax, pat, files):
 				showline(filename, lineno, line, prog)
 		fp.close()
 
+def pgrep(pat, *files):
+	if len(files) == 1 and type(files[0]) == type([]):
+		files = files[0]
+	global opt_show_filename
+	opt_show_filename = (len(files) != 1)
+	import re
+	prog = re.compile(pat)
+	for filename in files:
+		fp = open(filename, 'r')
+		lineno = 0
+		while 1:
+			line = fp.readline()
+			if not line: break
+			lineno = lineno + 1
+			if prog.search(line):
+				showline(filename, lineno, line, prog)
+		fp.close()
+
 def showline(filename, lineno, line, prog):
 	if line[-1:] == '\n': line = line[:-1]
 	if opt_show_lineno:
