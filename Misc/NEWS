@@ -36,6 +36,7 @@ Library
 
 - Patch 817379: Allow absolute ftp paths in urllib2.
 
+- Patch 711838: Support non-anonymous ftp URLs in urllib2.
 
 What's New in Python 2.3.3 (final)?
 ===================================
