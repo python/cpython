@@ -2,6 +2,7 @@
 
 import unittest
 import os
+from test import test_support
 from Tkinter import Tcl
 from _tkinter import TclError
 
@@ -152,8 +153,9 @@ class TclTest(unittest.TestCase):
         finally:
             if old_display is not None:
                 os.environ['DISPLAY'] = old_display
-        
+
+def test_main():
+    test_support.run_unittest(TclTest)
+
 if __name__ == "__main__":
-    unittest.main()
-
-
+    test_main()
