@@ -1,6 +1,15 @@
-# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDraw.h'
+# Generated from 'flap:CodeWarrior Pro 4:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDraw.h'
+
 
 def FOUR_CHAR_CODE(x): return x
+normal						= 0
+bold						= 1
+italic						= 2
+underline					= 4
+outline						= 8
+shadow						= 0x10
+condense					= 0x20
+extend						= 0x40
 invalColReq = -1
 srcCopy = 0
 srcOr = 1
@@ -130,9 +139,18 @@ kUYVY422PixelFormat = FOUR_CHAR_CODE('UYVY')
 kYUV211PixelFormat = FOUR_CHAR_CODE('Y211')
 kCursorImageMajorVersion = 0x0001
 kCursorImageMinorVersion = 0x0000
-# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDrawText.h'
+# Generated from 'flap:CodeWarrior Pro 4:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDrawText.h'
+
 
 def FOUR_CHAR_CODE(x): return x
+normal						= 0
+bold						= 1
+italic						= 2
+underline					= 4
+outline						= 8
+shadow						= 0x10
+condense					= 0x20
+extend						= 0x40
 leftCaret = 0
 rightCaret = -1
 kHilite = 1
