@@ -1187,7 +1187,7 @@ def _normalize_module(module):
         module = sys._getframe(2).f_globals['__name__']
         module = sys.modules[module]
 
-    elif isinstance(module, (str, unicode)):
+    elif isinstance(module, basestring):
         # The ["*"] at the end is a mostly meaningless incantation with
         # a crucial property:  if, e.g., module is 'a.b.c', it convinces
         # __import__ to return c instead of a.
