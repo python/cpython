@@ -193,7 +193,7 @@ long PyThread_start_new_thread(void (*func)(void *), void *arg)
 	obj->arg = arg;
 	obj->done = CreateSemaphore(NULL, 0, 1, NULL);
 
-	rv = _beginthread(func, 0, obj); /* use default stack size */
+	rv = _beginthread(bootstrap, 0, obj); /* use default stack size */
  
 	if (rv != (unsigned long)-1) {
 		success = 1;
