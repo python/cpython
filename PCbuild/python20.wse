@@ -72,6 +72,9 @@ item: Remark
   Text=Other things that need fiddling:
 end
 item: Remark
+  Text=    The APPTITLE setting above.
+end
+item: Remark
   Text=    The "Title:" in the upper left corner of the GUI.
 end
 item: Remark

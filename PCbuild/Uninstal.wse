@@ -28,9 +28,6 @@ item: Remark
   Text=uninstall info under HKCU instead of HKLM if the user doesn't have Admin privs.
 end
 item: Remark
-  Text=Hmm!  Also changed it to use the 32-bit uninstaller!
-end
-item: Remark
 end
 item: Remark
   Text=     Install Support for uninstalling the application.
