@@ -202,6 +202,8 @@ class TestCase:
         try:
             try:
                 self.setUp()
+            except KeyboardInterrupt:
+                raise
             except:
                 result.addError(self, self.__exc_info())
                 return
@@ -212,11 +214,15 @@ class TestCase:
                 ok = 1
             except self.failureException, e:
                 result.addFailure(self, self.__exc_info())
+            except KeyboardInterrupt:
+                raise
             except:
                 result.addError(self, self.__exc_info())
 
             try:
                 self.tearDown()
+            except KeyboardInterrupt:
+                raise
             except:
                 result.addError(self, self.__exc_info())
                 ok = 0
