@@ -832,6 +832,47 @@ CC="$ac_save_cc"])
 AC_MSG_RESULT($ac_cv_pthread)
 fi
 
+# If we have set a CC compiler flag for thread support then
+# check if it works for CXX, too.
+ac_cv_cxx_thread=no
+if test ! -z "$CXX"
+then
+AC_MSG_CHECKING(whether $CXX also accepts flags for thread support)
+ac_save_cxx="$CXX"
+
+if test "$ac_cv_kpthread" = "yes"
+then
+  CXX="$CXX -Kpthread"
+  ac_cv_cxx_thread=yes
+elif test "$ac_cv_kthread" = "yes"
+then
+  CXX="$CXX -Kthread"
+  ac_cv_cxx_thread=yes
+elif test "$ac_cv_pthread" = "yes"
+then 
+  CXX="$CXX -pthread"
+  ac_cv_cxx_thread=yes
+fi
+
+if test $ac_cv_cxx_thread = yes
+then
+  echo 'void foo();int main(){foo();}void foo(){}' > conftest.$ac_ext
+  $CXX -c conftest.$ac_ext 2>&5
+  if $CXX -o conftest$ac_exeext conftest.$ac_objext 2>&5 \
+     && test -s conftest$ac_exeext && ./conftest$ac_exeext
+  then
+    ac_cv_cxx_thread=yes
+  else
+    ac_cv_cxx_thread=no
+    CXX="$ac_save_cxx"
+  fi
+  rm -fr conftest*
+else
+ CXX="$ac_save_cxx"
+fi
+fi
+AC_MSG_RESULT($ac_cv_cxx_thread)
+
 dnl # check for ANSI or K&R ("traditional") preprocessor
 dnl AC_MSG_CHECKING(for C preprocessor type)
 dnl AC_TRY_COMPILE([
