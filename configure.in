@@ -117,19 +117,12 @@ AC_ARG_WITH(gcc, [  --without-gcc                   never use gcc], [
 	OSF1)	CC=cc
 		without_gcc=;;
 	BeOS*)
-		# Dunno if it's a good idea to get this over with all at once, or
-		# to handle it in with the other goodies.
-		MACHDEP=beos
-
 		case $BE_HOST_CPU in
 		ppc)
-			CC="mwcc -I$PWD/BeOS -nodup"
+			CC=mwcc
 			without_gcc=yes
-			case `uname -r` in
-				4.0*) OPT="-DUSE_DL_EXPORT -O7 -opt schedule604 -export pragma" ;;
-				*) OPT="-DUSE_DL_EXPORT -O2 -proc 604e -export pragma" ;;
-			esac
-			CCSHARED=-UUSE_DL_EXPORT
+			OPT="-O -D'DL_EXPORT(RTYPE)=__declspec(dllexport) RTYPE' -D'DL_IMPORT(RTYPE)=__declspec(dllexport) RTYPE' -export pragma"
+			CCSHARED="UDL_IMPORT -D'DL_IMPORT(RTYPE)=__declspec(dllimport) RTYPE'"
 			LDFLAGS="$LDFLAGS -nodup"
 
 			AR="$PWD/BeOS/ar-fake"
@@ -138,18 +131,15 @@ AC_ARG_WITH(gcc, [  --without-gcc                   never use gcc], [
 			AC_DEFINE(DL_EXPORT_HEADER,"dl_export.h")
 			;;
 		x86)
-			CC="gcc -I$PWD/BeOS"
+			CC=gcc
 			without_gcc=no
-			OPT="-DUSE_DL_EXPORT -O"
-			CCSHARED=-UUSE_DL_EXPORT
-
+			OPT=-O
+			# Really should use srcdir instead of PWD
 			AR="$PWD/BeOS/ar-fake"
 			RANLIB=:
-			
-			AC_DEFINE(DL_EXPORT_HEADER,"dl_export.h")
 			;;
 		*)
-			AC_ERROR(Your BeOS system isn't PowerPC or x86... neat, but this won't work...)
+			AC_ERROR(Unknown BeOS platform \"$BE_HOST_CPU\")
 			;;
 		esac
 		;;
@@ -220,10 +210,6 @@ hp*|HP*)
     case $CC in
     cc|*/cc) CC="$CC -Ae";;
     esac;;
-BeOS*)
-    case $CC in
-    cc) CC=cc;;
-    esac;;
 Monterey*)
     case $CC in
     cc) CC="$CC -Wl,-Bexport";;
@@ -239,7 +225,7 @@ AC_SUBST(LDLIBRARY)
 LDLIBRARY=''
 
 # LINKCC is the command that links the python executable -- default is $(CC).
-# This is altered for AIX and BeOS in order to build the export list before 
+# This is altered for AIX in order to build the export list before 
 # linking.
 AC_SUBST(LINKCC)
 AC_MSG_CHECKING(LINKCC)
@@ -252,9 +238,6 @@ then
 	case $ac_sys_system in
 	AIX*)
 	   LINKCC="\$(srcdir)/makexp_aix python.exp \"\" \$(LIBRARY); \$(PURIFY) \$(CC)";;
-	BeOS*)
-	   LINKCC="\$(srcdir)/../BeOS/linkcc \$(LIBRARY) \$(PURIFY) \$(CC) \$(OPT)"
-	   LDLIBRARY='libpython$(VERSION).so';;
 	dgux*)
 	   LINKCC="LD_RUN_PATH=$libdir \$(PURIFY) \$(CC)";;
 	Monterey64*)
@@ -274,11 +257,15 @@ then
 fi  
 
 # DG/UX requires some fancy ld contortions to produce a .so from an .a
-if test "$MACHDEP" = "dguxR4"
-then
-  LDLIBRARY='libpython$(VERSION).so'
-  OPT="$OPT -pic"
-fi
+case $MACHDEP in
+dguxR4)
+      LDLIBRARY='libpython$(VERSION).so'
+      OPT="$OPT -pic"
+      ;;
+beos*)
+      LDLIBRARY='libpython$(VERSION).so'
+      ;;
+esac
 AC_MSG_RESULT($LDLIBRARY)
 
 # If LDLIBRARY is different from LIBRARY, emit a rule to build it.
@@ -841,7 +828,7 @@ then
     then with_libdb="yes"
     fi
 else
-    # make sure user knows why bsddb support wasn't enabled event
+    # make sure user knows why bsddb support wasn't enabled even
     # though s/he requested it
     if test "$with_libdb" = "yes"
     then echo $ac_n "(requested, but db.h was not found) $ac_c"
