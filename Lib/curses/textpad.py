@@ -15,7 +15,7 @@ def rectangle(win, uly, ulx, lry, lrx):
     win.addch(lry, lrx, curses.ACS_LRCORNER)
     win.addch(lry, ulx, curses.ACS_LLCORNER)
 
-class textbox:
+class Textbox:
     """Editing widget using the interior of a window object.
      Supports the following Emacs-like key bindings:
 
@@ -25,6 +25,7 @@ class textbox:
     Ctrl-E      Go to right edge (nospaces off) or end of line (nospaces on).
     Ctrl-F      Cursor right, wrapping to next line when appropriate.
     Ctrl-G      Terminate, returning the window contents.
+    Ctrl-H      Delete character backward.
     Ctrl-J      Terminate if the window is 1 line, otherwise insert newline.
     Ctrl-K      If line is blank, delete it, otherwise clear to end of line.
     Ctrl-L      Refresh screen
@@ -36,6 +37,7 @@ class textbox:
     is not possible.  The following synonyms are supported where possible:
 
     KEY_LEFT = Ctrl-B, KEY_RIGHT = Ctrl-F, KEY_UP = Ctrl-P, KEY_DOWN = Ctrl-N
+    KEY_BACKSPACE = Ctrl-h
     """
     def __init__(self, win):
         self.win = win
@@ -43,26 +45,25 @@ class textbox:
         self.maxy = self.maxy - 1
         self.maxx = self.maxx - 1
         self.stripspaces = 1
+        self.lastcmd = None
         win.keypad(1)
 
     def firstblank(self, y):
         "Go to the location of the first blank on the given line."
-        (oldy, oldx) = self.win.getyx()
-        self.win.move(y, self.maxx-1)
-        last = self.maxx-1
+        last = self.maxx
         while 1:
-            if last == 0:
-                break
             if ascii.ascii(self.win.inch(y, last)) != ascii.SP:
                 last = last + 1
                 break
+            elif last == 0:
+                break
             last = last - 1
-        self.win.move(oldy, oldx)
         return last
 
     def do_command(self, ch):
         "Process a single editing command."
         (y, x) = self.win.getyx()
+        self.lastcmd = ch
         if ascii.isprint(ch):
             if y < self.maxy or x < self.maxx:
                 # The try-catch ignores the error we trigger from some curses
@@ -72,9 +73,9 @@ class textbox:
                     self.win.addch(ch)
                 except ERR:
                     pass
-        elif ch == ascii.SOH:				# Ctrl-a
+        elif ch == ascii.SOH:				# ^a
             self.win.move(y, 0)
-        elif ch in (ascii.STX, curses.KEY_LEFT):	# Ctrl-b
+        elif ch in (ascii.STX,curses.KEY_LEFT, ascii.BS,curses.KEY_BACKSPACE):
             if x > 0:
                 self.win.move(y, x-1)
             elif y == 0:
@@ -83,43 +84,44 @@ class textbox:
                 self.win.move(y-1, self.firstblank(y-1))
             else:
                 self.win.move(y-1, self.maxx)
-        elif ch == ascii.EOT:				# Ctrl-d
+            if ch in (ascii.BS, curses.KEY_BACKSPACE):
+                self.win.delch()
+        elif ch == ascii.EOT:				# ^d
             self.win.delch()
-        elif ch == ascii.ENQ:				# Ctrl-e
+        elif ch == ascii.ENQ:				# ^e
             if self.stripspaces:
                 self.win.move(y, self.firstblank(y, maxx))
             else:
                 self.win.move(y, self.maxx)
-        elif ch in (ascii.ACK, curses.KEY_RIGHT):	# Ctrl-f
+        elif ch in (ascii.ACK, curses.KEY_RIGHT):	# ^f
             if x < self.maxx:
                 self.win.move(y, x+1)
-            elif y == self.maxx:
+            elif y == self.maxy:
                 pass
             else:
                 self.win.move(y+1, 0)
-        elif ch == ascii.BEL:				# Ctrl-g
+        elif ch == ascii.BEL:				# ^g
             return 0
-        elif ch == ascii.NL:				# Ctrl-j
+        elif ch == ascii.NL:				# ^j
             if self.maxy == 0:
                 return 0
             elif y < self.maxy:
                 self.win.move(y+1, 0)
-        elif ch == ascii.VT:				# Ctrl-k
+        elif ch == ascii.VT:				# ^k
             if x == 0 and self.firstblank(y) == 0:
                 self.win.deleteln()
             else:
                 self.win.clrtoeol()
-        elif ch == ascii.FF:				# Ctrl-l
+        elif ch == ascii.FF:				# ^l
             self.win.refresh()
-        elif ch in (ascii.SO, curses.KEY_DOWN):		# Ctrl-n
+        elif ch in (ascii.SO, curses.KEY_DOWN):		# ^n
             if y < self.maxy:
                 self.win.move(y+1, x)
-        elif ch == ascii.SI:				# Ctrl-o
+        elif ch == ascii.SI:				# ^o
             self.win.insertln()
-        elif ch in (ascii.DLE, curses.KEY_UP):		# Ctrl-p
+        elif ch in (ascii.DLE, curses.KEY_UP):		# ^p
             if y > 0:
                 self.win.move(y-1, x)
-        self.win.refresh()
         return 1
         
     def gather(self):
@@ -128,6 +130,7 @@ class textbox:
         for y in range(self.maxy+1):
             self.win.move(y, 0)
             stop = self.firstblank(y)
+            #sys.stderr.write("y=%d, firstblank(y)=%d\n" % (y, stop))
             if stop == 0 and self.stripspaces:
                 continue
             for x in range(self.maxx+1):
@@ -144,8 +147,11 @@ class textbox:
             ch = self.win.getch()
             if validate:
                 ch = validate(ch)
+            if not ch:
+                continue
             if not self.do_command(ch):
                 break
+            self.win.refresh()
         return self.gather()
 
 if __name__ == '__main__':
@@ -153,7 +159,7 @@ if __name__ == '__main__':
         win = curses.newwin(4, 9, 15, 20)
         rectangle(stdscr, 14, 19, 19, 29)
         stdscr.refresh()
-        return textbox(win).edit()
+        return Textbox(win).edit()
 
     str = curses.wrapper(test_editbox)
     print str
