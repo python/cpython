@@ -292,17 +292,10 @@ class CCompiler:
         pass
 
 
-    # XXX this is kind of useless without 'link_binary()' or
-    # 'link_executable()' or something -- or maybe 'link_static_lib()'
-    # should not exist at all, and we just have 'link_binary()'?
     def link_static_lib (self,
                          objects,
                          output_libname,
-                         output_dir=None,
-                         libraries=None,
-                         library_dirs=None,
-                         extra_preargs=None,
-                         extra_postargs=None):
+                         output_dir=None):
         """Link a bunch of stuff together to create a static library
            file.  The "bunch of stuff" consists of the list of object
            files supplied as 'objects', the extra object files supplied
@@ -366,6 +359,23 @@ class CCompiler:
            (i.e. 'output_filename' can provide directory components if
            needed)."""
         pass
+
+
+    def link_executable (self,
+                         objects,
+                         output_progname,
+                         output_dir=None,
+                         libraries=None,
+                         library_dirs=None,
+                         extra_preargs=None,
+                         extra_postargs=None):
+        """Link a bunch of stuff together to create a binary executable
+           file.  The "bunch of stuff" is as for 'link_static_lib()'.
+           'output_progname' should be the base name of the executable
+           program--e.g. on Unix the same as the output filename, but
+           on DOS/Windows ".exe" will be appended."""
+        pass
+
 
 
     # -- Filename mangling methods -------------------------------------
