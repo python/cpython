@@ -213,15 +213,19 @@
 % which are used to refer to instances of specific language constructs.  See
 % the names for specific semantic assignments.
 %
-% For now, don't do anything really fancy with them, but note that \func and
-% \method append trailing parentheses.
+% For now, don't do anything really fancy with them; just use them as logical
+% markup.  This might change in the future.
 %
 \let\module=\code
-\let\kw=\code
-\let\exc=\code
+\let\keyword=\code
+\let\exception=\code
 \let\class=\code
-\newcommand{\func}[1]{\code{#1()}}
-\newcommand{\method}[1]{\code{#1()}}
+\let\function=\code
+\let\cfunction=\code
+\let\method=\code
+
+% constants defined in Python modules, not language constants:
+\let\constant=\code
 
 \newcommand{\manpage}[2]{{\emph{#1}(#2)}}
 \let\email=\code
