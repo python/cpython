@@ -1,7 +1,7 @@
 \section{\module{logging} ---
          Logging facility for Python}
 
-\declaremodule{standard}{logging}	% standard library, in Python
+\declaremodule{standard}{logging}
 
 % These apply to all modules, and may be given more than once:
 
@@ -478,7 +478,7 @@ It inherits the output functionality from \class{StreamHandler}.
 \begin{classdesc}{FileHandler}{filename\optional{, mode}}
 Returns a new instance of the \class{FileHandler} class. The specified
 file is opened and used as the stream for logging. If \var{mode} is
-not specified, \constant{"a"} is used. By default, the file grows
+not specified, \constant{'a'} is used. By default, the file grows
 indefinitely.
 \end{classdesc}
 
@@ -494,8 +494,8 @@ Outputs the record to the file.
 
 The \class{RotatingFileHandler} class supports rotation of disk log files.
 
-\begin{classdesc}{RotatingFileHandler}{filename\optional{, mode, maxBytes,
-																			 backupCount}}
+\begin{classdesc}{RotatingFileHandler}{filename\optional{, mode\optional{,
+                                       maxBytes\optional{, backupCount}}}}
 Returns a new instance of the \class{RotatingFileHandler} class. The
 specified file is opened and used as the stream for logging. If
 \var{mode} is not specified, \code{'a'} is used. By default, the
@@ -635,21 +635,21 @@ to a local Windows NT, Windows 2000 or Windows XP event log. Before
 you can use it, you need Mark Hammond's Win32 extensions for Python
 installed.
 
-\begin{classdesc}{NTEventLogHandler}{appname
-                                     \optional{, dllname\optional{, logtype}}}
+\begin{classdesc}{NTEventLogHandler}{appname\optional{,
+                                     dllname\optional{, logtype}}}
 Returns a new instance of the \class{NTEventLogHandler} class. The
 \var{appname} is used to define the application name as it appears in the
 event log. An appropriate registry entry is created using this name.
 The \var{dllname} should give the fully qualified pathname of a .dll or .exe
 which contains message definitions to hold in the log (if not specified,
-\constant{"win32service.pyd"} is used - this is installed with the Win32
+\code{'win32service.pyd'} is used - this is installed with the Win32
 extensions and contains some basic placeholder message definitions.
 Note that use of these placeholders will make your event logs big, as the
 entire message source is held in the log. If you want slimmer logs, you have
 to pass in the name of your own .dll or .exe which contains the message
 definitions you want to use in the event log). The \var{logtype} is one of
-\constant{"Application"}, \constant{"System"} or \constant{"Security"}, and
-defaults to \constant{"Application"}.
+\code{'Application'}, \code{'System'} or \code{'Security'}, and
+defaults to \code{'Application'}.
 \end{classdesc}
 
 \begin{methoddesc}{close}{}
@@ -687,7 +687,7 @@ own messages, you could do this by having the \var{msg} passed to the
 logger being an ID rather than a format string. Then, in here,
 you could use a dictionary lookup to get the message ID. This
 version returns 1, which is the base message ID in
-\constant{win32service.pyd}.
+\file{win32service.pyd}.
 \end{methoddesc}
 
 \subsubsection{SMTPHandler}
@@ -797,7 +797,7 @@ responsible for converting a \class{LogRecord} to (usually) a string
 which can be interpreted by either a human or an external system. The
 base
 \class{Formatter} allows a formatting string to be specified. If none is
-supplied, the default value of "\%s(message)\\n" is used.
+supplied, the default value of \code{'\%(message)s\e'} is used.
 
 A Formatter can be initialized with a format string which makes use of
 knowledge of the \class{LogRecord} attributes - such as the default value
@@ -809,35 +809,40 @@ Operations,'' for more information on string formatting.
 
 Currently, the useful mapping keys in a LogRecord are:
 
-\begin{tableii}{l|l}{formats}{Format}{Description}
-\lineii{\%(name)s}{Name of the logger (logging channel).}
-\lineii{\%(levelno)s}{Numeric logging level for the message (DEBUG, INFO,
-WARNING, ERROR, CRITICAL).}
-\lineii{\%(levelname)s}{Text logging level for the message ("DEBUG", "INFO",
-"WARNING", "ERROR", "CRITICAL").}
-\lineii{\%(pathname)s}{Full pathname of the source file where the logging
-call was issued (if available).}
-\lineii{\%(filename)s}{Filename portion of pathname.}
-\lineii{\%(module)s}{Module (name portion of filename).}
-\lineii{\%(lineno)d}{Source line number where the logging call was issued
-(if available).}
-\lineii{\%(created)f}{Time when the LogRecord was created (as returned by
-\code{time.time()}).}
-\lineii{\%(asctime)s}{Human-readable time when the LogRecord was created.
-By default this is of the form ``2003-07-08 16:49:45,896'' (the numbers
-after the comma are millisecond portion of the time).}
-\lineii{\%(msecs)d}{Millisecond portion of the time when the LogRecord
-was created.}
-\lineii{\%(thread)d}{Thread ID (if available).}
-\lineii{\%(process)d}{Process ID (if available).}
-\lineii{\%(message)s}{The logged message, computed as  msg \% args.}
+\begin{tableii}{l|l}{code}{Format}{Description}
+\lineii{\%(name)s}     {Name of the logger (logging channel).}
+\lineii{\%(levelno)s}  {Numeric logging level for the message
+                        (\constant{DEBUG}, \constant{INFO},
+                        \constant{WARNING}, \constant{ERROR},
+                        \constant{CRITICAL}).}
+\lineii{\%(levelname)s}{Text logging level for the message
+                        (\code{'DEBUG'}, \code{'INFO'},
+                        \code{'WARNING'}, \code{'ERROR'},
+                        \code{'CRITICAL'}).}
+\lineii{\%(pathname)s} {Full pathname of the source file where the logging
+                        call was issued (if available).}
+\lineii{\%(filename)s} {Filename portion of pathname.}
+\lineii{\%(module)s}   {Module (name portion of filename).}
+\lineii{\%(lineno)d}   {Source line number where the logging call was issued
+                        (if available).}
+\lineii{\%(created)f}  {Time when the LogRecord was created (as
+                        returned by \function{time.time()}).}
+\lineii{\%(asctime)s}  {Human-readable time when the LogRecord was created.
+                        By default this is of the form
+                        ``2003-07-08 16:49:45,896'' (the numbers after the
+                        comma are millisecond portion of the time).}
+\lineii{\%(msecs)d}    {Millisecond portion of the time when the
+                        \class{LogRecord} was created.}
+\lineii{\%(thread)d}   {Thread ID (if available).}
+\lineii{\%(process)d}  {Process ID (if available).}
+\lineii{\%(message)s}  {The logged message, computed as \code{msg \% args}.}
 \end{tableii}
 
 \begin{classdesc}{Formatter}{\optional{fmt\optional{, datefmt}}}
 Returns a new instance of the \class{Formatter} class. The
 instance is initialized with a format string for the message as a whole,
 as well as a format string for the date/time portion of a message. If
-no \var{fmt} is specified, "\%(message)s" is used. If no \var{datefmt}
+no \var{fmt} is specified, \code{\%(message)s'} is used. If no \var{datefmt}
 is specified, the ISO8601 date format is used.
 \end{classdesc}
 
@@ -847,7 +852,7 @@ string formatting operation. Returns the resulting string.
 Before formatting the dictionary, a couple of preparatory steps
 are carried out. The \var{message} attribute of the record is computed
 using \var{msg} \% \var{args}. If the formatting string contains
-\constant{"(asctime)"}, \method{formatTime()} is called to format the
+\code{'(asctime)'}, \method{formatTime()} is called to format the
 event time. If there is exception information, it is formatted using
 \method{formatException()} and appended to the message.
 \end{methoddesc}
@@ -905,7 +910,7 @@ logging event. The only reason it's a class rather than a dictionary is to
 facilitate extension.
 
 \begin{classdesc}{LogRecord}{name, lvl, pathname, lineno, msg, args,
-														 exc_info}
+                             exc_info}
 Returns an instance of \class{LogRecord} initialized with interesting
 information. The \var{name} is the logger name; \var{lvl} is the
 numeric level; \var{pathname} is the absolute pathname of the source
@@ -931,10 +936,11 @@ I/O.
 
 \subsubsection{Configuration functions}
 
-The following functions allow the logging module to be configured. Before
-they can be used, you must import \module{logging.config}. Their use is optional -
-you can configure the logging module entirely by making calls to the main
-API (defined in \module{logging} itself) and defining handlers which are declared
+The following functions allow the logging module to be
+configured. Before they can be used, you must import
+\module{logging.config}.  Their use is optional --- you can configure
+the logging module entirely by making calls to the main API (defined
+in \module{logging} itself) and defining handlers which are declared
 either in \module{logging} or \module{logging.handlers}.
 
 \begin{funcdesc}{fileConfig}{fname\optional{, defaults}}
