@@ -432,6 +432,7 @@ Makefiles:	config.status Modules/Makefile.pre
 			(echo making Makefile in subdirectory $$i; cd $$i; \
 			 $(MAKE) Makefile); \
 		done
+		-(rm -f Modules/hassignal; cd Modules; $(MAKE) hassignal)
 
 # Build the intermediate Makefile in Modules
 Modules/Makefile.pre: config.status
