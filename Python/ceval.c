@@ -134,14 +134,19 @@ newframeobject(back, code, locals, globals, nvalues, nblocks)
 	return f;
 }
 
+#define GETUSTRINGVALUE(s) ((unsigned char *)GETSTRINGVALUE(s))
+
 #define Push(f, v)	((f)->f_valuestack[(f)->f_ivalue++] = (v))
 #define Pop(f)		((f)->f_valuestack[--(f)->f_ivalue])
 #define Top(f)		((f)->f_valuestack[(f)->f_ivalue-1])
 #define Empty(f)	((f)->f_ivalue == 0)
 #define Full(f)		((f)->f_ivalue == (f)->f_nvalues)
-#define Nextbyte(f)	(GETSTRINGVALUE((f)->f_code->co_code)[(f)->f_nexti++])
-#define Peekbyte(f)	(GETSTRINGVALUE((f)->f_code->co_code)[(f)->f_nexti])
-#define Prevbyte(f)	(GETSTRINGVALUE((f)->f_code->co_code)[(f)->f_nexti-1])
+#define Nextbyte(f)	(GETUSTRINGVALUE((f)->f_code->co_code)[(f)->f_nexti++])
+#define Peekbyte(f)	(GETUSTRINGVALUE((f)->f_code->co_code)[(f)->f_nexti])
+#define Peekint(f)	\
+	(GETUSTRINGVALUE((f)->f_code->co_code)[(f)->f_nexti] + \
+	 GETUSTRINGVALUE((f)->f_code->co_code)[(f)->f_nexti+1])
+#define Prevbyte(f)	(GETUSTRINGVALUE((f)->f_code->co_code)[(f)->f_nexti-1])
 #define Jumpto(f, x)	((f)->f_nexti = (x))
 #define Jumpby(f, x)	((f)->f_nexti += (x))
 #define Getconst(f, i)	(GETITEM((f)->f_code->co_consts, (i)))
@@ -192,7 +197,22 @@ nextbyte(f)
 		printf("ran off end of instructions\n");
 		abort();
 	}
-	return GETSTRINGVALUE(code)[f->f_nexti++];
+	return GETUSTRINGVALUE(code)[f->f_nexti++];
+}
+
+static int
+nextint(f)
+	frameobject *f;
+{
+	int a, b;
+#ifdef NDEBUG
+	a = Nextbyte(f);
+	b = Nextbyte(f);
+#else
+	a = nextbyte(f);
+	b = nextbyte(f);
+#endif
+	return a + (b << 8);
 }
 
 /* Tracing versions */
@@ -244,8 +264,8 @@ trace_nextop(f)
 	if (op < HAVE_ARGUMENT)
 		printf("op %3d\n", op);
 	else {
-		arg = Peekbyte(f);
-		printf("op %3d arg %3d\n", op, arg);
+		arg = Peekint(f);
+		printf("op %d arg %d\n", op, arg);
 	}
 	return op;
 }
@@ -720,6 +740,68 @@ cmp_outcome(ctx, op, v, w)
 	return v;
 }
 
+static void
+import_from(ctx, v, name)
+	context *ctx;
+	object *v;
+	char *name;
+{
+	object *w, *x;
+	w = getmoduledict(v);
+	if (name[0] == '*') {
+		int i;
+		int n = getdictsize(w);
+		for (i = 0; i < n; i++) {
+			name = getdictkey(w, i);
+			if (name == NULL || name[0] == '_')
+				continue;
+			x = dictlookup(w, name);
+			if (x == NULL) {
+				/* XXX can't happen? */
+				name_error(ctx, name);
+				break;
+			}
+			if (dictinsert(ctx->ctx_locals, name, x) != 0) {
+				puterrno(ctx);
+				break;
+			}
+		}
+	}
+	else {
+		x = dictlookup(w, name);
+		if (x == NULL)
+			name_error(ctx, name);
+		else if (dictinsert(ctx->ctx_locals, name, x) != 0)
+			puterrno(ctx);
+	}
+}
+
+static object *
+build_class(ctx, v, w)
+	context *ctx;
+	object *v; /* None or tuple containing base classes */
+	object *w; /* dictionary */
+{
+	if (is_tupleobject(v)) {
+		int i;
+		for (i = gettuplesize(v); --i >= 0; ) {
+			object *x = gettupleitem(v, i);
+			if (!is_classobject(x)) {
+				type_error(ctx, "base is not a class object");
+				return NULL;
+			}
+		}
+	}
+	else {
+		v = NULL;
+	}
+	if (!is_dictobject(w)) {
+		sys_error(ctx, "build_class with non-dictionary");
+		return NULL;
+	}
+	return checkerror(ctx, newclassobject(v, w));
+}
+
 static object *
 eval_compiled(ctx, co, arg, needvalue)
 	context *ctx;
@@ -733,8 +815,7 @@ eval_compiled(ctx, co, arg, needvalue)
 	register object *u;
 	register object *x;
 	char *name;
-	int n, i;
-	enum cmp_op op;
+	int i, op;
 	FILE *fp;
 #ifndef NDEBUG
 	int trace = dictlookup(ctx->ctx_globals, "__trace") != NULL;
@@ -764,16 +845,12 @@ eval_compiled(ctx, co, arg, needvalue)
 #define PUSH(v) 	Push(f, v)
 #define TOP()		Top(f)
 #define POP()		Pop(f)
-#define NEXTOP()	Nextbyte(f)
-#define NEXTI()		Nextbyte(f)
 
 #else
 
 #define PUSH(v) if(trace) trace_push(f, v); else push(f, v)
 #define TOP() (trace ? trace_top(f) : top(f))
 #define POP() (trace ? trace_pop(f) : pop(f))
-#define NEXTOP() (trace ? trace_nextop(f) : nextbyte(f))
-#define NEXTI()  (nextbyte(f))
 
 #endif
 
@@ -784,8 +861,14 @@ eval_compiled(ctx, co, arg, needvalue)
 	
 	while (f->f_nexti < getstringsize((object *)f->f_code->co_code) &&
 				!ctx->ctx_exception) {
-		
-		switch (NEXTOP()) {
+#ifdef NDEBUG
+		op = Nextbyte(f);
+#else
+		op = trace ? trace_nextop(f) : nextbyte(f);
+#endif
+		if (op >= HAVE_ARGUMENT)
+			i = nextint(f);
+		switch (op) {
 		
 		case DUP_TOP:
 			v = TOP();
@@ -844,7 +927,7 @@ eval_compiled(ctx, co, arg, needvalue)
 		
 		case UNARY_CALL:
 			v = POP();
-			if (is_classmemberobject(v) || is_funcobject(v))
+			if (is_classmethodobject(v) || is_funcobject(v))
 				u = call_function(ctx, v, (object *)NULL);
 			else
 				u = call_builtin(ctx, v, (object *)NULL);
@@ -909,7 +992,7 @@ eval_compiled(ctx, co, arg, needvalue)
 		case BINARY_CALL:
 			w = POP();
 			v = POP();
-			if (is_classmemberobject(v) || is_funcobject(v))
+			if (is_classmethodobject(v) || is_funcobject(v))
 				u = call_function(ctx, v, w);
 			else
 				u = call_builtin(ctx, v, w);
@@ -918,128 +1001,68 @@ eval_compiled(ctx, co, arg, needvalue)
 			PUSH(u);
 			break;
 		
-		case SLICE:
-			w = NULL;
-			v = NULL;
-			u = POP();
-			x = apply_slice(ctx, u, v, w);
-			DECREF(u);
-			PUSH(x);
-			break;
-		
+		case SLICE+0:
 		case SLICE+1:
-			w = NULL;
-			v = POP();
-			u = POP();
-			x = apply_slice(ctx, u, v, w);
-			DECREF(u);
-			DECREF(v);
-			PUSH(x);
-			break;
-		
 		case SLICE+2:
-			w = POP();
-			v = NULL;
-			u = POP();
-			x = apply_slice(ctx, u, v, w);
-			DECREF(u);
-			DECREF(w);
-			PUSH(x);
-			break;
-		
 		case SLICE+3:
-			w = POP();
-			v = POP();
+			op -= SLICE;
+			if (op & 2)
+				w = POP();
+			else
+				w = NULL;
+			if (op & 1)
+				v = POP();
+			else
+				v = NULL;
 			u = POP();
 			x = apply_slice(ctx, u, v, w);
 			DECREF(u);
-			DECREF(v);
-			DECREF(w);
+			XDECREF(v);
+			XDECREF(w);
 			PUSH(x);
 			break;
 		
-		case STORE_SLICE:
-			w = NULL;
-			v = NULL;
-			u = POP();
-			x = POP();
-			assign_slice(ctx, u, v, w, x); /* u[:] = x */
-			DECREF(x);
-			DECREF(u);
-			break;
-		
+		case STORE_SLICE+0:
 		case STORE_SLICE+1:
-			w = NULL;
-			v = POP();
-			u = POP();
-			x = POP();
-			assign_slice(ctx, u, v, w, x); /* u[v:] = x */
-			DECREF(x);
-			DECREF(u);
-			DECREF(v);
-			break;
-		
 		case STORE_SLICE+2:
-			w = POP();
-			v = NULL;
-			u = POP();
-			x = POP();
-			assign_slice(ctx, u, v, w, x); /* u[:w] = x */
-			DECREF(x);
-			DECREF(u);
-			DECREF(w);
-			break;
-		
 		case STORE_SLICE+3:
-			w = POP();
-			v = POP();
+			op -= SLICE;
+			if (op & 2)
+				w = POP();
+			else
+				w = NULL;
+			if (op & 1)
+				v = POP();
+			else
+				v = NULL;
 			u = POP();
 			x = POP();
 			assign_slice(ctx, u, v, w, x); /* u[v:w] = x */
 			DECREF(x);
 			DECREF(u);
-			DECREF(v);
-			DECREF(w);
+			XDECREF(v);
+			XDECREF(w);
 			break;
 		
-		case DELETE_SLICE:
-			w = NULL;
-			v = NULL;
-			u = POP();
-			x = NULL;
-			assign_slice(ctx, u, v, w, x); /* del u[:] */
-			DECREF(u);
-			break;
-		
+		case DELETE_SLICE+0:
 		case DELETE_SLICE+1:
-			w = NULL;
-			v = POP();
-			u = POP();
-			x = NULL;
-			assign_slice(ctx, u, v, w, x); /* del u[v:] */
-			DECREF(u);
-			DECREF(v);
-			break;
-		
 		case DELETE_SLICE+2:
-			w = POP();
-			v = NULL;
-			u = POP();
-			x = NULL;
-			assign_slice(ctx, u, v, w, x); /* del u[:w] */
-			DECREF(u);
-			DECREF(w);
-			break;
-		
 		case DELETE_SLICE+3:
-			w = POP();
-			v = POP();
+			op -= SLICE;
+			if (op & 2)
+				w = POP();
+			else
+				w = NULL;
+			if (op & 1)
+				v = POP();
+			else
+				v = NULL;
 			u = POP();
 			x = NULL;
 			assign_slice(ctx, u, v, w, x); /* del u[v:w] */
 			DECREF(u);
-			DECREF(v);
-			DECREF(w);
+			XDECREF(v);
+			XDECREF(w);
 			break;
 		
 		case STORE_SUBSCR:
@@ -1118,6 +1141,12 @@ eval_compiled(ctx, co, arg, needvalue)
 			}
 			break;
 		
+		case LOAD_LOCALS:
+			v = ctx->ctx_locals;
+			INCREF(v);
+			PUSH(v);
+			break;
+		
 		case RETURN_VALUE:
 			v = POP();
 			raise_pseudo(ctx, RETURN_PSEUDO);
@@ -1169,8 +1198,16 @@ eval_compiled(ctx, co, arg, needvalue)
 			}
 			break;
 		
+		case BUILD_CLASS:
+			w = POP();
+			v = POP();
+			x = build_class(ctx, v, w);
+			PUSH(x);
+			DECREF(v);
+			DECREF(w);
+			break;
+		
 		case STORE_NAME:
-			i = NEXTI();
 			name = GETNAME(i);
 			v = POP();
 			if (dictinsert(ctx->ctx_locals, name, v) != 0)
@@ -1179,23 +1216,21 @@ eval_compiled(ctx, co, arg, needvalue)
 			break;
 		
 		case DELETE_NAME:
-			i = NEXTI();
 			name = GETNAME(i);
 			if (dictremove(ctx->ctx_locals, name) != 0)
 				name_error(ctx, name);
 			break;
 		
 		case UNPACK_TUPLE:
-			n = NEXTI();
 			v = POP();
 			if (!is_tupleobject(v)) {
 				type_error(ctx, "unpack non-tuple");
 			}
-			else if (gettuplesize(v) != n) {
+			else if (gettuplesize(v) != i) {
 				error(ctx, "unpack tuple of wrong size");
 			}
 			else {
-				for (i = n; --i >= 0; ) {
+				for (; --i >= 0; ) {
 					w = gettupleitem(v, i);
 					INCREF(w);
 					PUSH(w);
@@ -1205,16 +1240,15 @@ eval_compiled(ctx, co, arg, needvalue)
 			break;
 		
 		case UNPACK_LIST:
-			n = NEXTI();
 			v = POP();
 			if (!is_listobject(v)) {
 				type_error(ctx, "unpack non-list");
 			}
-			else if (getlistsize(v) != n) {
+			else if (getlistsize(v) != i) {
 				error(ctx, "unpack tuple of wrong size");
 			}
 			else {
-				for (i = n; --i >= 0; ) {
+				for (; --i >= 0; ) {
 					w = getlistitem(v, i);
 					INCREF(w);
 					PUSH(w);
@@ -1224,7 +1258,6 @@ eval_compiled(ctx, co, arg, needvalue)
 			break;
 		
 		case STORE_ATTR:
-			i = NEXTI();
 			name = GETNAME(i);
 			v = POP();
 			u = POP();
@@ -1241,7 +1274,6 @@ eval_compiled(ctx, co, arg, needvalue)
 			break;
 		
 		case DELETE_ATTR:
-			i = NEXTI();
 			name = GETNAME(i);
 			v = POP();
 			/* del v.name */
@@ -1258,14 +1290,12 @@ eval_compiled(ctx, co, arg, needvalue)
 			break;
 		
 		case LOAD_CONST:
-			i = NEXTI();
 			v = GETCONST(i);
 			INCREF(v);
 			PUSH(v);
 			break;
 		
 		case LOAD_NAME:
-			i = NEXTI();
 			name = GETNAME(i);
 			v = dictlookup(ctx->ctx_locals, name);
 			if (v == NULL) {
@@ -1282,10 +1312,9 @@ eval_compiled(ctx, co, arg, needvalue)
 			break;
 		
 		case BUILD_TUPLE:
-			n = NEXTI();
-			v = checkerror(ctx, newtupleobject(n));
+			v = checkerror(ctx, newtupleobject(i));
 			if (v != NULL) {
-				for (i = n; --i >= 0;) {
+				for (; --i >= 0;) {
 					w = POP();
 					settupleitem(v, i, w);
 				}
@@ -1294,10 +1323,9 @@ eval_compiled(ctx, co, arg, needvalue)
 			break;
 		
 		case BUILD_LIST:
-			n = NEXTI();
-			v = checkerror(ctx, newlistobject(n));
+			v = checkerror(ctx, newlistobject(i));
 			if (v != NULL) {
-				for (i = n; --i >= 0;) {
+				for (; --i >= 0;) {
 					w = POP();
 					setlistitem(v, i, w);
 				}
@@ -1306,13 +1334,11 @@ eval_compiled(ctx, co, arg, needvalue)
 			break;
 		
 		case BUILD_MAP:
-			(void) NEXTI();
 			v = checkerror(ctx, newdictobject());
 			PUSH(v);
 			break;
 		
 		case LOAD_ATTR:
-			i = NEXTI();
 			name = GETNAME(i);
 			v = POP();
 			if (v->ob_type->tp_getattr == NULL) {
@@ -1328,17 +1354,15 @@ eval_compiled(ctx, co, arg, needvalue)
 			break;
 		
 		case COMPARE_OP:
-			op = NEXTI();
 			w = POP();
 			v = POP();
-			u = cmp_outcome(ctx, op, v, w);
+			u = cmp_outcome(ctx, (enum cmp_op)i, v, w);
 			DECREF(v);
 			DECREF(w);
 			PUSH(u);
 			break;
 		
 		case IMPORT_NAME:
-			i = NEXTI();
 			name = GETNAME(i);
 			u = import_module(ctx, name);
 			if (u != NULL) {
@@ -1348,44 +1372,27 @@ eval_compiled(ctx, co, arg, needvalue)
 			break;
 		
 		case IMPORT_FROM:
-			i = NEXTI();
 			name = GETNAME(i);
 			v = TOP();
-			w = getmoduledict(v);
-			x = dictlookup(w, name);
-			if (x == NULL)
-				name_error(ctx, name);
-			else if (dictinsert(ctx->ctx_locals, name, x) != 0)
-				puterrno(ctx);
+			import_from(ctx, v, name);
 			break;
 		
-		/* WARNING!
-		   Don't assign an expression containing NEXTI() directly
-		   to nexti.  This expands to "nexti = ... + *nexti++"
-		   which has undefined evaluation order.  On some machines
-		   (e.g., mips!) the nexti++ is done after the assignment
-		   to nexti. */
-		
 		case JUMP_FORWARD:
-			n = NEXTI();
-			JUMPBY(n);
+			JUMPBY(i);
 			break;
 		
 		case JUMP_IF_FALSE:
-			n = NEXTI();
 			if (!testbool(ctx, TOP()))
-				JUMPBY(n);
+				JUMPBY(i);
 			break;
 		
 		case JUMP_IF_TRUE:
-			n = NEXTI();
 			if (testbool(ctx, TOP()))
-				JUMPBY(n);
+				JUMPBY(i);
 			break;
 		
 		case JUMP_ABSOLUTE:
-			n = NEXTI();
-			JUMPTO(n);
+			JUMPTO(i);
 			/* XXX Should check for interrupts more often? */
 			if (intrcheck())
 				intr_error(ctx);
@@ -1396,8 +1403,7 @@ eval_compiled(ctx, co, arg, needvalue)
 			   On entry: stack contains s, i.
 			   On exit: stack contains s, i+1, s[i];
 			   but if loop exhausted:
-			   	s, i are popped, and we jump n bytes */
-			n = NEXTI();
+			   	s, i are popped, and we jump */
 			w = POP(); /* Loop index */
 			v = POP(); /* Sequence object */
 			x = loop_subscript(ctx, v, w);
@@ -1412,27 +1418,24 @@ eval_compiled(ctx, co, arg, needvalue)
 			else {
 				DECREF(v);
 				DECREF(w);
-				JUMPBY(n);
+				JUMPBY(i);
 			}
 			break;
 		
 		case SETUP_LOOP:
-			n = NEXTI();
-			setup_block(f, SETUP_LOOP, n);
+			setup_block(f, SETUP_LOOP, i);
 			break;
 		
 		case SETUP_EXCEPT:
-			n = NEXTI();
-			setup_block(f, SETUP_EXCEPT, n);
+			setup_block(f, SETUP_EXCEPT, i);
 			break;
 		
 		case SETUP_FINALLY:
-			n = NEXTI();
-			setup_block(f, SETUP_FINALLY, n);
+			setup_block(f, SETUP_FINALLY, i);
 			break;
 		
 		default:
-			printf("opcode %d\n", Prevbyte(f));
+			printf("opcode %d\n", op);
 			sys_error(ctx, "eval_compiled: unknown opcode");
 			break;
 		
@@ -1510,8 +1513,6 @@ eval_compiled(ctx, co, arg, needvalue)
 #undef JUMPTO
 #undef JUMPBY
 
-#undef NEXTOP
-#undef NEXTI
 #undef POP
 #undef TOP
 #undef PUSH
@@ -1534,6 +1535,7 @@ eval_or_exec(ctx, n, arg, needvalue)
 {
 	object *v;
 	codeobject *co = compile(n);
+	freenode(n); /* XXX A rather strange place to do this! */
 	if (co == NULL) {
 		puterrno(ctx);
 		return NULL;
