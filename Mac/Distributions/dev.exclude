@@ -11,6 +11,7 @@
 *.xSYM
 *Icon
 .#*
+.DS_Store
 .cvsignore
 @*
 CVS
