@@ -80,6 +80,8 @@ Library
 IDLE
 ----
 
+- Bug #788378: Handle locale.error.
+
 - Bug #774680: IDLE now does not fail to save the file anymore
   if the Tk buffer is not a Unicode string, yet eol_convention is.
 
