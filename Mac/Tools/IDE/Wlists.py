@@ -43,6 +43,7 @@ class List(Wbase.SelectableWidget):
 		self.SetPort()
 		rect = self._bounds
 		rect = rect[0]+1, rect[1]+1, rect[2]-16, rect[3]-1
+		self._viewbounds = rect
 		self._list = LNew(rect, (0, 0, self._cols, 0), (0, 0), self.LDEF_ID, self._parentwindow.wid,
 					0, 1, 0, 1)
 		if self.drawingmode:
@@ -67,6 +68,8 @@ class List(Wbase.SelectableWidget):
 			l, t, r, b = self._bounds
 			width = r - l - 17
 			height = b - t - 2
+			vl, vt, vr, vb = self._viewbounds
+			self._viewbounds = vl, vt, vl + width, vt + height
 			self._list.LSize(width, height)
 			# now *why* doesn't the list manager recalc the cellrect???
 			l, t, r, b = self._list.LRect((0,0))
@@ -383,6 +386,7 @@ class CustomList(List):
 		self.SetPort()
 		rect = self._bounds
 		rect = rect[0]+1, rect[1]+1, rect[2]-16, rect[3]-1
+		self._viewbounds = rect
 		self._list = CreateCustomList(
 				rect,
 				(0, 0, 1, 0),
