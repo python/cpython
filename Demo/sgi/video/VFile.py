@@ -5,9 +5,16 @@
 import sys
 import gl
 import GL
+import colorsys
 
 Error = 'VFile.Error' # Exception
 
+def conv_grey(l,x,y): return colorsys.yiq_to_rgb(l,0,0)
+def conv_yiq (y,i,q): return colorsys.yiq_to_rgb(y, (i-0.5)*1.2, q-0.5)
+def conv_hls (l,h,s): return colorsys.hls_to_rgb(h,l,s)
+def conv_hsv (v,h,s): return colorsys.hsv_to_rgb(h,s,v)
+def conv_rgb (r,g,b):
+    raise Error, 'Attempt to make RGB colormap'
 
 # Class VinFile represents a video file used for input.
 #
@@ -23,7 +30,9 @@ Error = 'VFile.Error' # Exception
 # filename
 # width, height
 # packfactor
-# ybits, ibits, qbits, chrompack
+# c0bits, c1bits, c2bits, chrompack
+# offset
+# format
 #
 # These writable data members provide additional parametrization:
 # xorigin, yorigin
@@ -50,25 +59,57 @@ class VinFile():
 			self.version = 1.0
 		elif line = 'CMIF video 2.0\n':
 			self.version = 2.0
+		elif line = 'CMIF video 3.0\n':
+			self.version = 3.0
 		else:
 			raise Error, self.filename + ': bad video format'
 		#
 		if self.version < 2.0:
-			self.ybits, self.ibits, self.qbits = 8, 0, 0
+			self.c0bits, self.c1bits, self.c2bits = 8, 0, 0
 			self.chrompack = 0
-		else:
+			self.offset = 0
+			self.format = 'grey'
+		elif self.version = 2.0:
 			line = self.fp.readline()
 			try:
-				self.ybits, self.ibits, self.qbits, \
+				self.c0bits, self.c1bits, self.c2bits, \
 					self.chrompack = eval(line[:-1])
+				if self.c1bits or self.c2bits:
+				    self.format = 'yiq'
+				else:
+				    self.format = 'grey'
+				self.offset = 0
 			except:
-				raise Error, self.filename + ': bad color info'
+				raise Error, self.filename + ': bad 2.0 color info'
+		elif self.version = 3.0:
+			line = self.fp.readline()
+			try:
+			    self.format, rest = eval(line[:-1])
+			    if self.format = 'rgb':
+				pass
+			    elif self.format = 'grey':
+				self.offset = 0
+				self.c0bits = rest
+				self.c1bits = self.c2bits = \
+						self.chrompack = 0
+			    else:
+				self.c0bits,self.c1bits,self.c2bits,\
+				    self.chrompack,self.offset = rest
+			except:
+			    raise Error, self.filename + ': bad 3.0 color info'
+
+		try:
+		    self.convcolor = eval('conv_'+self.format)
+		except:
+		    raise Error, self.filename + ': unknown colorsys ' + self.format
 		#
 		line = self.fp.readline()
 		try:
 			x = eval(line[:-1])
 			if self.version > 1.0 or len(x) = 3:
 				self.width, self.height, self.packfactor = x
+				if self.packfactor = 0:
+				    self.format = 'rgb'
 			else:
 				sef.width, self.height = x
 				self.packfactor = 2
@@ -112,7 +153,7 @@ class VinFile():
 	def skipnextframedata(self, (size, chromsize)):
 		# Note that this won't raise EOFError for a partial frame.
 		try:
-			self.fp.seek(size + chromsize, 1) # Relative seek
+			self.fp.seek(size + chromsize, 1) # Relatc1ve seek
 		except:
 			# Assume it's a pipe -- read the data to discard it
 			dummy = self.fp.read(size)
@@ -154,6 +195,8 @@ class VinFile():
 
 	def showframe(self, (data, chromdata)):
 		w, h, pf = self.width, self.height, self.packfactor
+		if not self.colormapinited:
+			self.initcolormap()
 		factor = self.magnify
 		if pf: factor = factor * pf
 		if chromdata:
@@ -162,15 +205,13 @@ class VinFile():
 			ch = (h+cp-1)/cp
 			gl.rectzoom(factor*cp, factor*cp)
 			gl.pixmode(GL.PM_SIZE, 16)
-			gl.writemask(0x7ff - ((1 << self.ybits) - 1))
+			gl.writemask(self.mask - ((1 << self.c0bits) - 1))
 			gl.lrectwrite(self.xorigin, self.yorigin, \
 				self.xorigin + cw - 1, self.yorigin + ch - 1, \
 				chromdata)
 		#
 		if pf:
-			if not self.colormapinited:
-				self.initcolormap()
-			gl.writemask((1 << self.ybits) - 1)
+			gl.writemask((1 << self.c0bits) - 1)
 			gl.pixmode(GL.PM_SIZE, 8)
 			gl.rectzoom(factor, factor)
 			w = w/pf
@@ -179,36 +220,47 @@ class VinFile():
 			self.xorigin + w - 1, self.yorigin + h - 1, data)
 
 	def initcolormap(self):
-		initcmap(self.ybits, self.ibits, self.qbits, self.chrompack)
-		gl.color(0x800)
-		gl.clear()
 		self.colormapinited = 1
+		if self.format = 'rgb':
+		    gl.RGBmode()
+		    gl.gconfig()
+		    return
+		initcmap(self.convcolor, self.c0bits, self.c1bits, self.c2bits, self.chrompack, self.offset)
+		if self.offset == 0:
+		    gl.color(0x800)
+		    self.mask = 0x7ff
+		else:
+		    self.mask = 0xfff
+		gl.clear()
 
 
-def initcmap(ybits, ibits, qbits, chrompack):
-	if ybits+ibits+qbits > 11:
+def initcmap(convcolor, c0bits, c1bits, c2bits, chrompack, offset):
+	if c0bits+c1bits+c2bits > 11:
 		raise Error, 'Sorry, 11 bits max'
 	import colorsys
-	maxy = 1 << ybits
-	maxi = 1 << ibits
-	maxq = 1 << qbits
-	for i in range(2048, 4096-256):
+	maxc0 = 1 << c0bits
+	maxc1 = 1 << c1bits
+	maxc2 = 1 << c2bits
+	if offset = 0:
+	    offset = 2048
+	rng = (offset, 4192-256)
+	for i in range(rng):
 		gl.mapcolor(i, 0, 255, 0)
-	for y in range(maxy):
-		yv = y/float(maxy-1)
-		for i in range(maxi):
-			if maxi = 1:
-				iv = 0
+	for c0 in range(maxc0):
+		c0v = c0/float(maxc0-1)
+		for c1 in range(maxc1):
+			if maxc1 = 1:
+				c1v = 0
 			else:
-				iv = (i/float(maxi-1))-0.5
-			for q in range(maxq):
-				if maxq = 1:
-					qv = 0
+				c1v = c1/float(maxc1-1)
+			for c2 in range(maxc2):
+				if maxc2 = 1:
+					c2v = 0
 				else:
-					qv = (q/float(maxq-1))-0.5
-				index = 2048 + y + \
-					(i << ybits) + (q << (ybits+ibits))
-				rv, gv, bv = colorsys.yiq_to_rgb(yv, iv, qv)
+					c2v = c2/float(maxc2-1)
+				index = offset + c0 + \
+					(c1 << c0bits) + (c2 << (c0bits+c1bits))
+				rv, gv, bv = convcolor(c0v, c1v, c2v)
 				r, g, b = \
 				    int(rv*255.0), int(gv*255.0), int(bv*255.0)
 				if index < 4096 - 256:
@@ -220,6 +272,12 @@ def test():
 	filename = 'film.video'
 	if sys.argv[1:]: filename = sys.argv[1]
 	vin = VinFile().init(filename)
+	print 'Version: ', vin.version
+	print 'Size: ', vin.width, 'x', vin.height
+	print 'Pack: ', vin.packfactor, vin.chrompack
+	print 'Bits: ', vin.c0bits, vin.c1bits, vin.c2bits
+	print 'Format: ', vin.format
+	print 'Offset: ', vin.offset
 	gl.foreground()
 	gl.prefsize(vin.width, vin.height)
 	wid = gl.winopen('VFile.test: ' + filename)
@@ -228,3 +286,5 @@ def test():
 			t = vin.shownextframe()
 	except EOFError:
 		pass
+	import time
+	time.sleep(5)
