@@ -656,6 +656,7 @@ edist:		disthtml zipisilo
 
 distfiles:	paperdist edist
 	$(TOOLSDIR)/mksourcepkg --all $(RELEASE)
+	$(TOOLSDIR)/mkpkglist >pkglist.html
 
 
 # Housekeeping targets
