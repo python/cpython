@@ -139,6 +139,10 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	register unsigned int mask = mp->ma_size-1;
 	dictentry *ep0 = mp->ma_table;
 	register dictentry *ep;
+	register int restore_error = 0;
+	register int checked_error = 0;
+	register int cmp;
+	PyObject *err_type, *err_value, *err_tb;
 	/* We must come up with (i, incr) such that 0 <= i < ma_size
 	   and 0 < incr < ma_size and both are a function of hash */
 	i = (~hash) & mask;
@@ -151,14 +155,25 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	if (ep->me_key == dummy)
 		freeslot = ep;
 	else {
-		if (ep->me_hash == hash &&
-		    PyObject_Compare(ep->me_key, key) == 0)
-		{
-			return ep;
+		if (ep->me_hash == hash) {
+			/* error can't have been checked yet */
+			checked_error = 1;
+			if (PyErr_Occurred()) {
+				restore_error = 1;
+				PyErr_Fetch(&err_type, &err_value, &err_tb);
+			}
+			cmp = PyObject_Compare(ep->me_key, key);
+			if (PyErr_Occurred())
+				PyErr_Clear();
+			else if (cmp == 0) {
+				if (restore_error)
+					PyErr_Restore(err_type, err_value,
+						      err_tb);
+				return ep;
+			}
 		}
 		freeslot = NULL;
 	}
-	/* XXX What if PyObject_Compare returned an exception? */
 	/* Derive incr from hash, just to make it more arbitrary. Note that
 	   incr must not be 0, or we will get into an infinite loop.*/
 	incr = (hash ^ ((unsigned long)hash >> 3)) & mask;
@@ -167,6 +182,8 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	for (;;) {
 		ep = &ep0[(i+incr)&mask];
 		if (ep->me_key == NULL) {
+			if (restore_error)
+				PyErr_Restore(err_type, err_value, err_tb);
 			if (freeslot != NULL)
 				return freeslot;
 			else
@@ -176,12 +193,30 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 			if (freeslot == NULL)
 				freeslot = ep;
 		}
-		else if (ep->me_key == key ||
-			 (ep->me_hash == hash &&
-			  PyObject_Compare(ep->me_key, key) == 0)) {
+		else if (ep->me_key == key) {
+			if (restore_error)
+				PyErr_Restore(err_type, err_value, err_tb);
 			return ep;
+                }
+                else if (ep->me_hash == hash) {
+			if (!checked_error) {
+				checked_error = 1;
+				if (PyErr_Occurred()) {
+					restore_error = 1;
+					PyErr_Fetch(&err_type, &err_value,
+						    &err_tb);
+				}
+			}
+			cmp = PyObject_Compare(ep->me_key, key);
+			if (PyErr_Occurred())
+				PyErr_Clear();
+			else if (cmp == 0) {
+				if (restore_error)
+					PyErr_Restore(err_type, err_value,
+						      err_tb);
+				return ep;
+			}
 		}
-		/* XXX What if PyObject_Compare returned an exception? */
 		/* Cycle through GF(2^n)-{0} */
 		incr = incr << 1;
 		if (incr > mask)
