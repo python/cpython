@@ -203,3 +203,8 @@ it) in the PyShell.  (Martijn Faassen)
 - Output of Run Script should go to a separate output window, not to
 the shell window.  Output of separate runs should all go to the same
 window but clearly delimited.  (David Scherer)
+
+- GUI form designer to kick VB's butt.  (Robert Geiger)
+
+- Printing!  Possibly via generation of PDF files which the user must
+then send to the printer separately.  (Dinu Gherman)
