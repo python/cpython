@@ -27,8 +27,18 @@ LIBS=		@LIBS@
 LIBM=		@LIBM@
 LIBC=		@LIBC@
 
+# Machine-dependent subdirectories
+MACHDEP=	@MACHDEP@
+
 # Install prefix, may be changed by configure
 prefix=		/usr/local
+
+# Symbols used for using shared libraries
+SO=		@SO@
+LDSHARED=	@LDSHARED@
+CCSHARED=	@CCSHARED@
+LINKFORSHARED=	@LINKFORSHARED@
+DESTSHARED=	$(prefix)/lib/python/$(MACHDEP)
 
 
 # === Variables that are customizable by hand ===
@@ -60,13 +70,13 @@ SYSLIBS=	$(LIBM) $(LIBC)
 
 all:		$(LIB) ../python
 
-$(LIB):		$(OBJS)
+$(LIB):		$(OBJS) Makefile
 		-rm -f $(LIB)
 		$(AR) cr $(LIB) $(OBJS)
 		$(RANLIB) $(LIB)
 
-../python:	config.o $(MYLIBS)
-		$(CC) $(OPT) config.o \
+../python:	config.o $(MYLIBS) Makefile
+		$(CC) $(OPT) config.o $(LINKFORSHARED) \
 		      $(MYLIBS) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python
 		mv python ../python
 
@@ -136,8 +146,9 @@ timingmodule.o: timingmodule.c
 xxmodule.o: xxmodule.c
 yuvconvert.o: yuvconvert.c
 
-# === Rules added by makesetup ===
+# Rules to build and install all shared modules
+sharedmods:	$(SHAREDMODS)
+sharedinstall:	$(SHAREDMODS)
+		mv $(SHAREDMODS) $(DESTSHARED)
 
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
+# Stuff is appended here by makesetup and make depend
