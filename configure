@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.97 
+# From configure.in Revision: 1.99 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -3155,7 +3155,7 @@ fi
 # checks for library functions
 for ac_func in alarm chown clock dlopen execv flock fork \
  fsync fdatasync ftime ftruncate \
- gethostname_r getpeername getpgrp getpid getpwent gettimeofday getwd \
+ getpeername getpgrp getpid getpwent gettimeofday getwd \
  kill link lstat mkfifo mktime nice pause plock pthread_init putenv readlink \
  select setgid setlocale setuid setsid setpgid setpgrp setvbuf \
  sigaction siginterrupt sigrelse strftime strptime symlink \
@@ -4081,12 +4081,239 @@ fi
 rm -f conftest*
 echo "$ac_t""$va_list_is_array" 1>&6
 
+# sigh -- gethostbyname_r is a mess; it can have 3, 5 or 6 arguments :-(
+echo $ac_n "checking for gethostbyname_r""... $ac_c" 1>&6
+echo "configure:4087: checking for gethostbyname_r" >&5
+if eval "test \"`echo '$''{'ac_cv_func_gethostbyname_r'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 4092 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char gethostbyname_r(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char gethostbyname_r();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_gethostbyname_r) || defined (__stub___gethostbyname_r)
+choke me
+#else
+gethostbyname_r();
+#endif
+
+; return 0; }
+EOF
+if { (eval echo configure:4115: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_func_gethostbyname_r=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_func_gethostbyname_r=no"
+fi
+rm -f conftest*
+fi
+
+if eval "test \"`echo '$ac_cv_func_'gethostbyname_r`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+  
+  cat >> confdefs.h <<\EOF
+#define HAVE_GETHOSTBYNAME_R 1
+EOF
+
+  echo $ac_n "checking gethostbyname_r with 6 args""... $ac_c" 1>&6
+echo "configure:4135: checking gethostbyname_r with 6 args" >&5
+  OLD_CFLAGS=$CFLAGS
+  CFLAGS="$CFLAGS $MY_CPPFLAGS $MY_THREAD_CPPFLAGS $MY_CFLAGS"
+  cat > conftest.$ac_ext <<EOF
+#line 4139 "configure"
+#include "confdefs.h"
+
+#   include <netdb.h>
+  
+int main() {
+
+    char *name;
+    struct hostent *he, *res;
+    char buffer[2048];
+    int buflen = 2048;
+    int h_errnop;
+
+    (void) gethostbyname_r(name, he, buffer, buflen, &res, &h_errnop)
+  
+; return 0; }
+EOF
+if { (eval echo configure:4156: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  
+    cat >> confdefs.h <<\EOF
+#define HAVE_GETHOSTBYNAME_R_6_ARG 1
+EOF
+
+    echo "$ac_t""yes" 1>&6
+  
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  
+    echo "$ac_t""no" 1>&6
+    echo $ac_n "checking gethostbyname_r with 5 args""... $ac_c" 1>&6
+echo "configure:4172: checking gethostbyname_r with 5 args" >&5
+    cat > conftest.$ac_ext <<EOF
+#line 4174 "configure"
+#include "confdefs.h"
+
+#     include <netdb.h>
+    
+int main() {
+
+      char *name;
+      struct hostent *he;
+      char buffer[2048];
+      int buflen = 2048;
+      int h_errnop;
+
+      (void) gethostbyname_r(name, he, buffer, buflen, &h_errnop)
+    
+; return 0; }
+EOF
+if { (eval echo configure:4191: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  
+      cat >> confdefs.h <<\EOF
+#define HAVE_GETHOSTBYNAME_R_5_ARG 1
+EOF
+
+      echo "$ac_t""yes" 1>&6
+    
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  
+      echo "$ac_t""no" 1>&6
+      echo $ac_n "checking gethostbyname_r with 3 args""... $ac_c" 1>&6
+echo "configure:4207: checking gethostbyname_r with 3 args" >&5
+      cat > conftest.$ac_ext <<EOF
+#line 4209 "configure"
+#include "confdefs.h"
+
+#       include <netdb.h>
+      
+int main() {
+
+        char *name;
+        struct hostent *he;
+        struct hostent_data data;
+
+        (void) gethostbyname_r(name, he, &data);
+      
+; return 0; }
+EOF
+if { (eval echo configure:4224: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  
+        cat >> confdefs.h <<\EOF
+#define HAVE_GETHOSTBYNAME_R_3_ARG 1
+EOF
+
+        echo "$ac_t""yes" 1>&6
+      
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  
+        echo "$ac_t""no" 1>&6
+      
+fi
+rm -f conftest*
+    
+fi
+rm -f conftest*
+  
+fi
+rm -f conftest*
+  CFLAGS=$OLD_CFLAGS
+
+else
+  echo "$ac_t""no" 1>&6
+
+  echo $ac_n "checking for gethostbyname""... $ac_c" 1>&6
+echo "configure:4254: checking for gethostbyname" >&5
+if eval "test \"`echo '$''{'ac_cv_func_gethostbyname'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 4259 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char gethostbyname(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char gethostbyname();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_gethostbyname) || defined (__stub___gethostbyname)
+choke me
+#else
+gethostbyname();
+#endif
+
+; return 0; }
+EOF
+if { (eval echo configure:4282: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_func_gethostbyname=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_func_gethostbyname=no"
+fi
+rm -f conftest*
+fi
+
+if eval "test \"`echo '$ac_cv_func_'gethostbyname`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+  cat >> confdefs.h <<\EOF
+#define HAVE_GETHOSTBYNAME 1
+EOF
+
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+
+fi
+
+
+
+
+
+
 # checks for system services
 # (none yet)
 
 # Linux requires this for correct f.p. operations
 echo $ac_n "checking for __fpu_control in -lieee""... $ac_c" 1>&6
-echo "configure:4090: checking for __fpu_control in -lieee" >&5
+echo "configure:4317: checking for __fpu_control in -lieee" >&5
 ac_lib_var=`echo ieee'_'__fpu_control | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -4094,7 +4321,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-lieee  $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 4098 "configure"
+#line 4325 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -4105,7 +4332,7 @@ int main() {
 __fpu_control()
 ; return 0; }
 EOF
-if { (eval echo configure:4109: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:4336: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -4135,7 +4362,7 @@ fi
 
 # Check for --with-fpectl
 echo $ac_n "checking for --with-fpectl""... $ac_c" 1>&6
-echo "configure:4139: checking for --with-fpectl" >&5
+echo "configure:4366: checking for --with-fpectl" >&5
 # Check whether --with-fpectl or --without-fpectl was given.
 if test "${with_fpectl+set}" = set; then
   withval="$with_fpectl"
@@ -4158,7 +4385,7 @@ BeOS) ;;
 *) LIBM=-lm
 esac
 echo $ac_n "checking for --with-libm=STRING""... $ac_c" 1>&6
-echo "configure:4162: checking for --with-libm=STRING" >&5
+echo "configure:4389: checking for --with-libm=STRING" >&5
 # Check whether --with-libm or --without-libm was given.
 if test "${with_libm+set}" = set; then
   withval="$with_libm"
@@ -4179,7 +4406,7 @@ fi
 # check for --with-libc=...
 
 echo $ac_n "checking for --with-libc=STRING""... $ac_c" 1>&6
-echo "configure:4183: checking for --with-libc=STRING" >&5
+echo "configure:4410: checking for --with-libc=STRING" >&5
 # Check whether --with-libc or --without-libc was given.
 if test "${with_libc+set}" = set; then
   withval="$with_libc"
@@ -4203,12 +4430,12 @@ LIBS="$LIBS $LIBM"
 for ac_func in hypot
 do
 echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
-echo "configure:4207: checking for $ac_func" >&5
+echo "configure:4434: checking for $ac_func" >&5
 if eval "test \"`echo '$''{'ac_cv_func_$ac_func'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 4212 "configure"
+#line 4439 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char $ac_func(); below.  */
@@ -4231,7 +4458,7 @@ $ac_func();
 
 ; return 0; }
 EOF
-if { (eval echo configure:4235: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:4462: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_func_$ac_func=yes"
 else
@@ -4258,12 +4485,12 @@ done
 for ac_func in hypot
 do
 echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
-echo "configure:4262: checking for $ac_func" >&5
+echo "configure:4489: checking for $ac_func" >&5
 if eval "test \"`echo '$''{'ac_cv_func_$ac_func'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 4267 "configure"
+#line 4494 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char $ac_func(); below.  */
@@ -4286,7 +4513,7 @@ $ac_func();
 
 ; return 0; }
 EOF
-if { (eval echo configure:4290: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:4517: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_func_$ac_func=yes"
 else
@@ -4316,7 +4543,7 @@ LIBS=$LIBS_SAVE
 
 # check for getopt
 echo $ac_n "checking for genuine getopt""... $ac_c" 1>&6
-echo "configure:4320: checking for genuine getopt" >&5
+echo "configure:4547: checking for genuine getopt" >&5
 if eval "test \"`echo '$''{'ac_cv_func_getopt'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -4324,7 +4551,7 @@ else
   ac_cv_func_getopt=no
 else
   cat > conftest.$ac_ext <<EOF
-#line 4328 "configure"
+#line 4555 "configure"
 #include "confdefs.h"
 #include <stdio.h>
 extern int optind, opterr, getopt();
@@ -4336,7 +4563,7 @@ int main() {
 	exit(0);
 }
 EOF
-if { (eval echo configure:4340: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:4567: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
 then
   ac_cv_func_getopt=yes
 else
@@ -4354,7 +4581,7 @@ test $ac_cv_func_getopt = no && LIBOBJS="$LIBOBJS getopt.o"
 
 # check whether malloc(0) returns NULL or not
 echo $ac_n "checking what malloc(0) returns""... $ac_c" 1>&6
-echo "configure:4358: checking what malloc(0) returns" >&5
+echo "configure:4585: checking what malloc(0) returns" >&5
 if eval "test \"`echo '$''{'ac_cv_malloc_zero'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -4362,7 +4589,7 @@ else
     { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
 else
   cat > conftest.$ac_ext <<EOF
-#line 4366 "configure"
+#line 4593 "configure"
 #include "confdefs.h"
 #include <stdio.h>
 #ifdef HAVE_STDLIB
@@ -4381,7 +4608,7 @@ main() {
 	exit(0);
 }
 EOF
-if { (eval echo configure:4385: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:4612: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
 then
   ac_cv_malloc_zero=nonnull
 else
@@ -4567,6 +4794,10 @@ s%@USE_THREAD_MODULE@%$USE_THREAD_MODULE%g
 s%@LDLAST@%$LDLAST%g
 s%@DLINCLDIR@%$DLINCLDIR%g
 s%@LIBOBJS@%$LIBOBJS%g
+s%@HAVE_GETHOSTBYNAME_R_6_ARG@%$HAVE_GETHOSTBYNAME_R_6_ARG%g
+s%@HAVE_GETHOSTBYNAME_R_5_ARG@%$HAVE_GETHOSTBYNAME_R_5_ARG%g
+s%@HAVE_GETHOSTBYNAME_R_3_ARG@%$HAVE_GETHOSTBYNAME_R_3_ARG%g
+s%@HAVE_GETHOSTBYNAME@%$HAVE_GETHOSTBYNAME%g
 s%@LIBM@%$LIBM%g
 s%@LIBC@%$LIBC%g
 
