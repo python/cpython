@@ -681,7 +681,10 @@ class Page:
 
     # Method to retrieve names.
     def getnames(self):
-        return self.parser.names
+        if self.parser:
+            return self.parser.names
+        else:
+            return []
 
     def getlinkinfos(self):
         # File reading is done in __init__() routine.  Store parser in
