@@ -8,34 +8,33 @@
 \indexii{flattening}{objects}
 \indexii{pickling}{objects}
 
-\setindexsubitem{(in module pickle)}
 
-The \code{pickle} module implements a basic but powerful algorithm for
+The \module{pickle} module implements a basic but powerful algorithm for
 ``pickling'' (a.k.a.\ serializing, marshalling or flattening) nearly
 arbitrary Python objects.  This is the act of converting objects to a
 stream of bytes (and back: ``unpickling'').
 This is a more primitive notion than
-persistency --- although \code{pickle} reads and writes file objects,
+persistency --- although \module{pickle} reads and writes file objects,
 it does not handle the issue of naming persistent objects, nor the
 (even more complicated) area of concurrent access to persistent
-objects.  The \code{pickle} module can transform a complex object into
+objects.  The \module{pickle} module can transform a complex object into
 a byte stream and it can transform the byte stream into an object with
 the same internal structure.  The most obvious thing to do with these
 byte streams is to write them onto a file, but it is also conceivable
 to send them across a network or store them in a database.  The module
-\code{shelve} provides a simple interface to pickle and unpickle
+\module{shelve} provides a simple interface to pickle and unpickle
 objects on ``dbm''-style database files.
 \refstmodindex{shelve}
 
-\strong{Note:} The \code{pickle} module is rather slow.  A
-reimplementation of the same algorithm in C, which is up to 1000 times
-faster, is available as the \code{cPickle}\refbimodindex{cPickle}
+\strong{Note:} The \module{pickle} module is rather slow.  A
+reimplementation of the same algorithm in \C{}, which is up to 1000 times
+faster, is available as the \module{cPickle}\refbimodindex{cPickle}
 module.  This has the same interface except that \code{Pickler} and
 \code{Unpickler} are factory functions, not classes (so they cannot be
-used as a base class for inheritance).
+used as base classes for inheritance).
 
-Unlike the built-in module \code{marshal}, \code{pickle} handles the
-following correctly:
+Unlike the built-in module \module{marshal}, \module{pickle} handles
+the following correctly:
 \refbimodindex{marshal}
 
 \begin{itemize}
@@ -48,7 +47,7 @@ following correctly:
 
 \end{itemize}
 
-The data format used by \code{pickle} is Python-specific.  This has
+The data format used by \module{pickle} is Python-specific.  This has
 the advantage that there are no restrictions imposed by external
 standards such as XDR%
 \index{XDR}
@@ -57,36 +56,36 @@ standards such as XDR%
 it means that non-Python programs may not be able to reconstruct
 pickled Python objects.
 
-By default, the \code{pickle} data format uses a printable \ASCII{}
+By default, the \module{pickle} data format uses a printable \ASCII{}
 representation.  This is slightly more voluminous than a binary
 representation.  The big advantage of using printable \ASCII{} (and of
-some other characteristics of \code{pickle}'s representation) is that
+some other characteristics of \module{pickle}'s representation) is that
 for debugging or recovery purposes it is possible for a human to read
 the pickled file with a standard text editor.
 
 A binary format, which is slightly more efficient, can be chosen by
 specifying a nonzero (true) value for the \var{bin} argument to the
-\code{Pickler} constructor or the \code{dump()} and \code{dumps()}
+\class{Pickler} constructor or the \function{dump()} and \function{dumps()}
 functions.  The binary format is not the default because of backwards
 compatibility with the Python 1.4 pickle module.  In a future version,
 the default may change to binary.
 
-The \code{pickle} module doesn't handle code objects, which the
-\code{marshal} module does.  I suppose \code{pickle} could, and maybe
+The \module{pickle} module doesn't handle code objects, which the
+\module{marshal} module does.  I suppose \module{pickle} could, and maybe
 it should, but there's probably no great need for it right now (as
-long as \code{marshal} continues to be used for reading and writing
+long as \module{marshal} continues to be used for reading and writing
 code objects), and at least this avoids the possibility of smuggling
 Trojan horses into a program.
 \refbimodindex{marshal}
 
-For the benefit of persistency modules written using \code{pickle}, it
+For the benefit of persistency modules written using \module{pickle}, it
 supports the notion of a reference to an object outside the pickled
 data stream.  Such objects are referenced by a name, which is an
 arbitrary string of printable \ASCII{} characters.  The resolution of
-such names is not defined by the \code{pickle} module --- the
+such names is not defined by the \module{pickle} module --- the
 persistent object module will have to implement a method
-\code{persistent_load()}.  To write references to persistent objects,
-the persistent module must define a method \code{persistent_id()} which
+\method{persistent_load()}.  To write references to persistent objects,
+the persistent module must define a method \method{persistent_id()} which
 returns either \code{None} or the persistent ID of the object.
 
 There are some restrictions on the pickling of class instances.
@@ -96,38 +95,38 @@ Furthermore, all its instance variables must be picklable.
 
 \setindexsubitem{(pickle protocol)}
 
-When a pickled class instance is unpickled, its \code{__init__()} method
+When a pickled class instance is unpickled, its \method{__init__()} method
 is normally \emph{not} invoked.  \strong{Note:} This is a deviation
 from previous versions of this module; the change was introduced in
 Python 1.5b2.  The reason for the change is that in many cases it is
 desirable to have a constructor that requires arguments; it is a
-(minor) nuisance to have to provide a \code{__getinitargs__()} method.
+(minor) nuisance to have to provide a \method{__getinitargs__()} method.
 
-If it is desirable that the \code{__init__()} method be called on
-unpickling, a class can define a method \code{__getinitargs__()},
+If it is desirable that the \method{__init__()} method be called on
+unpickling, a class can define a method \method{__getinitargs__()},
 which should return a \emph{tuple} containing the arguments to be
-passed to the class constructor (\code{__init__()}).  This method is
+passed to the class constructor (\method{__init__()}).  This method is
 called at pickle time; the tuple it returns is incorporated in the
 pickle for the instance.
-\ttindex{__getinitargs__}
-\ttindex{__init__}
+\ttindex{__getinitargs__()}
+\ttindex{__init__()}
 
 Classes can further influence how their instances are pickled --- if the class
-defines the method \code{__getstate__()}, it is called and the return
+defines the method \method{__getstate__()}, it is called and the return
 state is pickled as the contents for the instance, and if the class
-defines the method \code{__setstate__()}, it is called with the
+defines the method \method{__setstate__()}, it is called with the
 unpickled state.  (Note that these methods can also be used to
 implement copying class instances.)  If there is no
-\code{__getstate__()} method, the instance's \code{__dict__} is
-pickled.  If there is no \code{__setstate__()} method, the pickled
+\method{__getstate__()} method, the instance's \member{__dict__} is
+pickled.  If there is no \method{__setstate__()} method, the pickled
 object must be a dictionary and its items are assigned to the new
-instance's dictionary.  (If a class defines both \code{__getstate__()}
-and \code{__setstate__()}, the state object needn't be a dictionary
+instance's dictionary.  (If a class defines both \method{__getstate__()}
+and \method{__setstate__()}, the state object needn't be a dictionary
 --- these methods can do what they want.)  This protocol is also used
-by the shallow and deep copying operations defined in the \code{copy}
-module.
-\ttindex{__getstate__}
-\ttindex{__setstate__}
+by the shallow and deep copying operations defined in the \module{copy}
+module.\refstmodindex{copy}
+\ttindex{__getstate__()}
+\ttindex{__setstate__()}
 \ttindex{__dict__}
 
 Note that when class instances are pickled, their class's code and
@@ -137,7 +136,7 @@ add methods and still load objects that were created with an earlier
 version of the class.  If you plan to have long-lived objects that
 will see many versions of a class, it may be worthwhile to put a version
 number in the objects so that suitable conversions can be made by the
-class's \code{__setstate__()} method.
+class's \method{__setstate__()} method.
 
 When a class itself is pickled, only its name is pickled --- the class
 definition is not pickled, but re-imported by the unpickling process.
@@ -154,39 +153,39 @@ To pickle an object \code{x} onto a file \code{f}, open for writing:
 p = pickle.Pickler(f)
 p.dump(x)
 \end{verbatim}
-%
+
 A shorthand for this is:
 
 \begin{verbatim}
 pickle.dump(x, f)
 \end{verbatim}
-%
+
 To unpickle an object \code{x} from a file \code{f}, open for reading:
 
 \begin{verbatim}
 u = pickle.Unpickler(f)
 x = u.load()
 \end{verbatim}
-%
+
 A shorthand is:
 
 \begin{verbatim}
 x = pickle.load(f)
 \end{verbatim}
-%
-The \code{Pickler} class only calls the method \code{f.write()} with a
-string argument.  The \code{Unpickler} calls the methods \code{f.read()}
+
+The \class{Pickler} class only calls the method \code{f.write()} with a
+string argument.  The \class{Unpickler} calls the methods \code{f.read()}
 (with an integer argument) and \code{f.readline()} (without argument),
 both returning a string.  It is explicitly allowed to pass non-file
 objects here, as long as they have the right methods.
 \ttindex{Unpickler}
 \ttindex{Pickler}
 
-The constructor for the \code{Pickler} class has an optional second
+The constructor for the \class{Pickler} class has an optional second
 argument, \var{bin}.  If this is present and nonzero, the binary
 pickle format is used; if it is zero or absent, the (less efficient,
 but backwards compatible) text pickle format is used.  The
-\code{Unpickler} class does not have an argument to distinguish
+\class{Unpickler} class does not have an argument to distinguish
 between binary and text pickle formats; it accepts either format.
 
 The following types can be pickled:
@@ -202,37 +201,37 @@ The following types can be pickled:
 
 \item classes that are defined at the top level in a module
 
-\item instances of such classes whose \code{__dict__} or
-\code{__setstate__()} is picklable
+\item instances of such classes whose \member{__dict__} or
+\method{__setstate__()} is picklable
 
 \end{itemize}
 
 Attempts to pickle unpicklable objects will raise the
-\code{PicklingError} exception; when this happens, an unspecified
+\exception{PicklingError} exception; when this happens, an unspecified
 number of bytes may have been written to the file.
 
-It is possible to make multiple calls to the \code{dump()} method of
-the same \code{Pickler} instance.  These must then be matched to the
-same number of calls to the \code{load()} instance of the
-corresponding \code{Unpickler} instance.  If the same object is
-pickled by multiple \code{dump()} calls, the \code{load()} will all
+It is possible to make multiple calls to the \method{dump()} method of
+the same \class{Pickler} instance.  These must then be matched to the
+same number of calls to the \method{load()} method of the
+corresponding \class{Unpickler} instance.  If the same object is
+pickled by multiple \method{dump()} calls, the \method{load()} will all
 yield references to the same object.  \emph{Warning}: this is intended
 for pickling multiple objects without intervening modifications to the
 objects or their parts.  If you modify an object and then pickle it
-again using the same \code{Pickler} instance, the object is not
+again using the same \class{Pickler} instance, the object is not
 pickled again --- a reference to it is pickled and the
-\code{Unpickler} will return the old value, not the modified one.
+\class{Unpickler} will return the old value, not the modified one.
 (There are two problems here: (a) detecting changes, and (b)
 marshalling a minimal set of changes.  I have no answers.  Garbage
 Collection may also become a problem here.)
 
-Apart from the \code{Pickler} and \code{Unpickler} classes, the
+Apart from the \class{Pickler} and \class{Unpickler} classes, the
 module defines the following functions, and an exception:
 
 \begin{funcdesc}{dump}{object, file\optional{, bin}}
 Write a pickled representation of \var{obect} to the open file object
 \var{file}.  This is equivalent to
-\code{Pickler(\var{file}, \var{bin}).dump(\var{object})}.
+\samp{Pickler(\var{file}, \var{bin}).dump(\var{object})}.
 If the optional \var{bin} argument is present and nonzero, the binary
 pickle format is used; if it is zero or absent, the (less efficient)
 text pickle format is used.
@@ -240,7 +239,7 @@ text pickle format is used.
 
 \begin{funcdesc}{load}{file}
 Read a pickled object from the open file object \var{file}.  This is
-equivalent to \code{Unpickler(\var{file}).load()}.
+equivalent to \samp{Unpickler(\var{file}).load()}.
 \end{funcdesc}
 
 \begin{funcdesc}{dumps}{object\optional{, bin}}
@@ -262,6 +261,12 @@ This exception is raised when an unpicklable object is passed to
 
 
 \begin{seealso}
+\seemodule{copy}{shallow and deep object copying}
+
 \seemodule[copyreg]{copy_reg}{pickle interface constructor
 registration}
+
+\seemodule{marshal}{high-performance serialization of built-in types}
+
+\seemodule{shelve}{indexed databases of objects; uses \module{pickle}}
 \end{seealso}
