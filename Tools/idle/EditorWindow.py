@@ -45,6 +45,7 @@ class EditorWindow:
         self.text.bind("<<help>>", self.help_dialog)
         self.text.bind("<<about-idle>>", self.about_dialog)
         self.text.bind("<<open-module>>", self.open_module)
+        self.text.bind("<<do-nothing>>", lambda event: "break")
 
         vbar['command'] = text.yview
         vbar.pack(side=RIGHT, fill=Y)
