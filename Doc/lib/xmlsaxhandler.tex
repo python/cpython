@@ -37,6 +37,13 @@ methods get default implementations.
  external entities.
 \end{classdesc}
 
+\begin{classdesc}{ErrorHandler}{}
+  Interface used by the parser to present error and warning messages
+  to the application.  The methods of this object control whether errors
+  are immediately converted to exceptions or are handled in some other
+  way.
+\end{classdesc}
+
 In addition to these classes, \module{xml.sax.handler} provides
 symbolic constants for the feature and property names.
 
@@ -326,4 +333,37 @@ appropriate events in the input document:
   Resolve the system identifier of an entity and return either the
   system identifier to read from as a string, or an InputSource to
   read from. The default implementation returns \var{systemId}.
+\end{methoddesc}
+
+
+\subsection{ErrorHandler Objects \label{sax-error-handler}}
+
+Objects with this interface are used to receive error and warning
+information from the \class{XMLReader}.  If you create an object that
+implements this interface, then register the object with your
+\class{XMLReader}, the parser will call the methods in your object to
+report all warnings and errors. There are three levels of errors
+available: warnings, (possibly) recoverable errors, and unrecoverable
+errors.  All methods take a \exception{SAXParseException} as the only
+parameter.  Errors and warnings may be converted to an exception by
+raising the passed-in exception object.
+
+\begin{methoddesc}[ErrorHandler]{error}{exception}
+  Called when the parser encounters a recoverable error.  If this method
+  does not raise an exception, parsing may continue, but further document
+  information should not be expected by the application.  Allowing the
+  parser to continue may allow additional errors to be discovered in the
+  input document.
+\end{methoddesc}
+
+\begin{methoddesc}[ErrorHandler]{fatalError}{exception}
+  Called when the parser encounters an error it cannot recover from;
+  parsing is expected to terminate when this method returns.
+\end{methoddesc}
+
+\begin{methoddesc}[ErrorHandler]{warning}{exception}
+  Called when the parser presents minor warning information to the
+  application.  Parsing is expected to continue when this method returns,
+  and document information will continue to be passed to the application.
+  Raising an exception in this method will cause parsing to end.
 \end{methoddesc}
