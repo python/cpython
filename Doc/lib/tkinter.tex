@@ -471,17 +471,17 @@ class of the widget; buttons have a \code{command} option, labels do not.
 
 The options supported by a given widget are listed in that widget's
 man page, or can be queried at runtime by calling the
-\kbd{config()} method with arguments, or by calling the keys()
-method on that widget. The return value of these calls is a dictionary
-whose key is the name of the option (e.g. \kbd{relief}) and whose
-values are 5 tuples. 
+\method{config()} method without arguments, or by calling the
+\method{keys()} method on that widget.  The return value of these
+calls is a dictionary whose key is the name of the option as a string
+(for example, \code{'relief'}) and whose values are 5-tuples.
 
-(Some options, like \kbd{bg} are synonyms for common options with
-hard-to-type names (\kbd{bg} is shorthand for "background"). 
-Passing the \kbd{config()} method the name of a
-shorthand option will return a 2-tuple, not 5-tuple. The 2-tuple
-passed back will contain the name of the synonym ``real''
-option. (\kbd{bg}, \kbd{background}))
+Some options, like \code{bg} are synonyms for common options with long
+names (\code{bg} is shorthand for "background"). Passing the
+\code{config()} method the name of a shorthand option will return a
+2-tuple, not 5-tuple. The 2-tuple passed back will contain the name of
+the synonym and the ``real'' option (such as \code{('bg',
+'background')}).
 
 \begin{tableiii}{c|l|l}{textrm}{Index}{Meaning}{Example}
   \lineiii{0}{option name}                       {\code{'relief'}}
