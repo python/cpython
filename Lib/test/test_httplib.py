@@ -16,7 +16,7 @@ class FakeSocket:
 body = "HTTP/1.1 200 Ok\r\n\r\nText"
 sock = FakeSocket(body)
 resp = httplib.HTTPResponse(sock,1)
-resp.begin()
+resp._begin()
 print resp.read()
 resp.close()
 
@@ -24,7 +24,7 @@ body = "HTTP/1.1 400.100 Not Ok\r\n\r\nText"
 sock = FakeSocket(body)
 resp = httplib.HTTPResponse(sock,1)
 try:
-    resp.begin()
+    resp._begin()
 except httplib.BadStatusLine:
     print "BadStatusLine raised as expected"
 else:
