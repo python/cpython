@@ -1366,6 +1366,11 @@ def inherits():
     a = hexint(12345)
     verify(int(a) == 12345)
     verify(int(a).__class__ is int)
+    verify((+a).__class__ is int)
+    verify((a >> 0).__class__ is int)
+    verify((a << 0).__class__ is int)
+    verify((hexint(0) << 12).__class__ is int)
+    verify((hexint(0) >> 12).__class__ is int)
 
     class octlong(long):
         __slots__ = []
