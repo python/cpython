@@ -77,7 +77,7 @@ static int n_audio_types = sizeof(audio_types) / sizeof(audio_types[0]);
 
 static PyTypeObject Ladtype;
 
-static PyObject *LinuxAudioError;
+static PyObject *OSSAudioError;
 
 static lad_t *
 newladobject(PyObject *arg)
@@ -106,7 +106,7 @@ newladobject(PyObject *arg)
     else if (strcmp(mode, "rw") == 0)
         imode = O_RDWR;
     else {
-        PyErr_SetString(LinuxAudioError, "mode must be 'r', 'w', or 'rw'");
+        PyErr_SetString(OSSAudioError, "mode must be 'r', 'w', or 'rw'");
         return NULL;
     }
 
@@ -126,11 +126,11 @@ newladobject(PyObject *arg)
     }
 
     if ((fd = open(basedev, imode)) == -1) {
-        PyErr_SetFromErrnoWithFilename(LinuxAudioError, basedev);
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, basedev);
         return NULL;
     }
     if (ioctl(fd, SNDCTL_DSP_GETFMTS, &afmts) == -1) {
-        PyErr_SetFromErrnoWithFilename(LinuxAudioError, basedev);
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, basedev);
         return NULL;
     }
     /* Create and initialize the object */
@@ -184,7 +184,7 @@ _do_ioctl_1(lad_t *self, PyObject *args, char *fname, int cmd)
 	return NULL;
 
     if (ioctl(self->x_fd, cmd, &arg) == -1)
-        return PyErr_SetFromErrno(LinuxAudioError);
+        return PyErr_SetFromErrno(PyExc_IOError);
     return PyInt_FromLong(arg);
 }
 
@@ -201,7 +201,7 @@ _do_ioctl_0(lad_t *self, PyObject *args, char *fname, int cmd)
 	return NULL;
 
     if (ioctl(self->x_fd, cmd, 0) == -1)
-        return PyErr_SetFromErrno(LinuxAudioError);
+        return PyErr_SetFromErrno(PyExc_IOError);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -215,7 +215,7 @@ lad_nonblock(lad_t *self, PyObject *args)
     if (!PyArg_ParseTuple(args, ":nonblock"))
 	return NULL;
     if (ioctl(self->x_fd, SNDCTL_DSP_NONBLOCK, NULL) == -1)
-        return PyErr_SetFromErrno(LinuxAudioError);
+        return PyErr_SetFromErrno(PyExc_IOError);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -233,7 +233,7 @@ lad_getfmts(lad_t *self, PyObject *args)
     if (!PyArg_ParseTuple(args, ":getfmts"))
 	return NULL;
     if (ioctl(self->x_fd, SNDCTL_DSP_GETFMTS, &mask) == -1)
-        return PyErr_SetFromErrno(LinuxAudioError);
+        return PyErr_SetFromErrno(PyExc_IOError);
     return PyInt_FromLong(mask);
 }
 
@@ -285,7 +285,7 @@ lad_read(lad_t *self, PyObject *args)
         return NULL;
     cp = PyString_AS_STRING(rv);
     if ((count = read(self->x_fd, cp, size)) < 0) {
-        PyErr_SetFromErrno(LinuxAudioError);
+        PyErr_SetFromErrno(PyExc_IOError);
         Py_DECREF(rv);
         return NULL;
     }
@@ -304,7 +304,7 @@ lad_write(lad_t *self, PyObject *args)
 	return NULL;
     }
     if ((rv = write(self->x_fd, cp, size)) == -1) {
-        return PyErr_SetFromErrno(LinuxAudioError);
+        return PyErr_SetFromErrno(PyExc_IOError);
     } else {
         self->x_ocount += rv;
     }
@@ -337,7 +337,7 @@ lad_writeall(lad_t *self, PyObject *args)
         select_rv = select(self->x_fd+1, NULL, &write_set_fds, NULL, NULL);
         assert(select_rv != 0);         /* no timeout, can't expire */
         if (select_rv == -1)
-            return PyErr_SetFromErrno(LinuxAudioError);
+            return PyErr_SetFromErrno(PyExc_IOError);
 
         rv = write(self->x_fd, cp, size);
         if (rv == -1) {
@@ -345,7 +345,7 @@ lad_writeall(lad_t *self, PyObject *args)
                 errno = 0;
                 continue;
             } else                      /* it's a real error */
-                return PyErr_SetFromErrno(LinuxAudioError);
+                return PyErr_SetFromErrno(PyExc_IOError);
         } else {                        /* wrote rv bytes */
             self->x_ocount += rv;
             size -= rv;
@@ -431,15 +431,15 @@ lad_setparameters(lad_t *self, PyObject *args)
     }
     if (ioctl(self->x_fd, SNDCTL_DSP_SETFMT, 
 	      &audio_types[n].a_fmt) == -1) {
-        PyErr_SetFromErrno(LinuxAudioError);
+        PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
     if (ioctl(self->x_fd, SNDCTL_DSP_CHANNELS, &nchannels) == -1) {
-        PyErr_SetFromErrno(LinuxAudioError);
+        PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
     if (ioctl(self->x_fd, SNDCTL_DSP_SPEED, &rate) == -1) {
-        PyErr_SetFromErrno(LinuxAudioError);
+        PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
 
@@ -492,11 +492,11 @@ lad_bufsize(lad_t *self, PyObject *args)
     if (!PyArg_ParseTuple(args, ":bufsize")) return NULL;
 
     if (_ssize(self, &nchannels, &ssize) < 0) {
-        PyErr_SetFromErrno(LinuxAudioError);
+        PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
     if (ioctl(self->x_fd, SNDCTL_DSP_GETOSPACE, &ai) < 0) {
-        PyErr_SetFromErrno(LinuxAudioError);
+        PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
     return PyInt_FromLong((ai.fragstotal * ai.fragsize) / (nchannels * ssize));
@@ -514,11 +514,11 @@ lad_obufcount(lad_t *self, PyObject *args)
         return NULL;
 
     if (_ssize(self, &nchannels, &ssize) < 0) {
-        PyErr_SetFromErrno(LinuxAudioError);
+        PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
     if (ioctl(self->x_fd, SNDCTL_DSP_GETOSPACE, &ai) < 0) {
-        PyErr_SetFromErrno(LinuxAudioError);
+        PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
     return PyInt_FromLong((ai.fragstotal * ai.fragsize - ai.bytes) / 
@@ -537,11 +537,11 @@ lad_obuffree(lad_t *self, PyObject *args)
         return NULL;
 
     if (_ssize(self, &nchannels, &ssize) < 0) {
-        PyErr_SetFromErrno(LinuxAudioError);
+        PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
     if (ioctl(self->x_fd, SNDCTL_DSP_GETOSPACE, &ai) < 0) {
-        PyErr_SetFromErrno(LinuxAudioError);
+        PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
     return PyInt_FromLong(ai.bytes / (ssize * nchannels));
@@ -561,7 +561,7 @@ lad_getptr(lad_t *self, PyObject *args)
     else
 	req = SNDCTL_DSP_GETOPTR;
     if (ioctl(self->x_fd, req, &info) == -1) {
-        PyErr_SetFromErrno(LinuxAudioError);
+        PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
     return Py_BuildValue("iii", info.bytes, info.blocks, info.ptr);
@@ -641,9 +641,9 @@ initlinuxaudiodev(void)
   
     m = Py_InitModule("linuxaudiodev", linuxaudiodev_methods);
 
-    LinuxAudioError = PyErr_NewException("linuxaudiodev.error", NULL, NULL);
-    if (LinuxAudioError)
-	PyModule_AddObject(m, "error", LinuxAudioError);
+    OSSAudioError = PyErr_NewException("ossaudiodev.error", NULL, NULL);
+    if (OSSAudioError)
+	PyModule_AddObject(m, "error", OSSAudioError);
 
     /* Expose the audio format numbers -- essential! */
     _EXPORT_INT(m, AFMT_QUERY);
