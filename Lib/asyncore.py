@@ -53,15 +53,8 @@ import sys
 import types
 
 import os
-if os.name == 'nt':
-    EWOULDBLOCK = 10035
-    EINPROGRESS = 10036
-    EALREADY    = 10037
-    ECONNRESET  = 10054
-    ENOTCONN    = 10057
-    ESHUTDOWN   = 10058
-else:
-    from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, ENOTCONN, ESHUTDOWN
+from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, \
+     ENOTCONN, ESHUTDOWN  
 
 try:
     socket_map
@@ -264,7 +257,8 @@ class dispatcher:
         try:
             self.socket.setsockopt (
                 socket.SOL_SOCKET, socket.SO_REUSEADDR,
-                self.socket.getsockopt (socket.SOL_SOCKET, socket.SO_REUSEADDR) | 1
+                self.socket.getsockopt (socket.SOL_SOCKET,
+                                        socket.SO_REUSEADDR) | 1
                 )
         except socket.error:
             pass
@@ -398,7 +392,7 @@ class dispatcher:
         self.handle_expt()
 
     def handle_error (self):
-        (file,fun,line), t, v, tbinfo = compact_traceback()
+        nil, t, v, tbinfo = compact_traceback()
 
         # sometimes a user repr method will crash.
         try:
