@@ -49,26 +49,30 @@ class IndexOptions(support.Options):
 
 
 class Node(buildindex.Node):
-    annotation = ""
-
-    def __init__(self, link, str, seqno):
-        parts = string.split(str, None, 1)
-        if parts[0][-5:] == "</tt>":
-            self.modname = parts[0][:-5]
-        else:
-            self.modname = parts[0]
-        if len(parts) == 2:
-            self.annotation = parts[1]
+    def __init__(self, link, str, seqno, platinfo):
+        self.annotation = platinfo or None
+        if str[0][-5:] == "</tt>":
+            str = str[:-5]
+        self.modname = str
         buildindex.Node.__init__(self, link, self.modname, seqno)
+        if platinfo:
+            s = '<tt class="module">%s</tt> %s' \
+                % (self.modname, self.annotation)
+        else:
+            s = '<tt class="module">%s</tt>' % str
+        self.text = [s]
 
     def __str__(self):
-        return '<tt class="module">%s</tt> %s' \
-               % (self.modname, self.annotation)
+        if self.annotation:
+            return '<tt class="module">%s</tt> %s' \
+                   % (self.modname, self.annotation)
+        else:
+            return '<tt class="module">%s</tt>' % self.modname
 
 _rx = re.compile(
-    "<dt><a href='(module-.*\.html)#l2h-\d+'><tt class='module'>"
-    "([a-zA-Z_][a-zA-Z0-9_.]*</tt>(\s*<em>"
-    "\(<span class='platform'>.*</span>\)</em>)?)</a>")
+    "<dt><a href=['\"](module-.*\.html)(?:#l2h-\d+)?['\"]>"
+    "<tt class=['\"]module['\"]>([a-zA-Z_][a-zA-Z0-9_.]*)</tt>\s*(<em>"
+    "\(<span class=['\"]platform['\"]>.*</span>\)</em>)?</a>")
 
 def main():
     options = IndexOptions()
@@ -81,7 +85,6 @@ def main():
     # Collect the input data:
     #
     nodes = []
-    seqno = 0
     has_plat_flag = 0
     for ifn in args:
         if ifn == "-":
@@ -97,11 +100,11 @@ def main():
             m = _rx.match(line)
             if m:
                 # This line specifies a module!
-                basename, modname = m.group(1, 2)
-                has_plat_flag = has_plat_flag or m.group(3)
+                basename, modname, platinfo = m.group(1, 2, 3)
+                has_plat_flag = has_plat_flag or platinfo
                 linkfile = os.path.join(dirname, basename)
-                nodes.append(Node('<a href="%s">' % linkfile, modname, seqno))
-                seqno = seqno + 1
+                nodes.append(Node('<a href="%s">' % linkfile, modname,
+                                  len(nodes), platinfo))
         ifp.close()
     #
     # Generate all output:
