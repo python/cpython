@@ -832,9 +832,10 @@ def dynamics():
     verify(list.__dynamic__ == 0)
     class S1:
         __metaclass__ = type
+        __dynamic__ = 0
     verify(S1.__dynamic__ == 0)
     class S(object):
-        pass
+        __dynamic__ = 0
     verify(S.__dynamic__ == 0)
     class D(object):
         __dynamic__ = 1
@@ -1522,6 +1523,7 @@ def inherits():
     verify((+a).__class__ is float)
 
     class madcomplex(complex):
+        __dynamic__ = 0
         def __repr__(self):
             return "%.17gj%+.17g" % (self.imag, self.real)
     a = madcomplex(-3, 4)
@@ -1901,11 +1903,12 @@ def rich_comparisons():
     if verbose:
         print "Testing rich comparisons..."
     class Z(complex):
-        pass
+        __dynamic__ = 0
     z = Z(1)
     verify(z == 1+0j)
     verify(1+0j == z)
     class ZZ(complex):
+        __dynamic__ = 0
         def __eq__(self, other):
             try:
                 return abs(self - other) <= 1e-6
@@ -1992,7 +1995,8 @@ def coercions():
     coerce(0, F(0))
     coerce(0L, F(0))
     coerce(0., F(0))
-    class C(complex): pass
+    class C(complex):
+        __dynamic__ = 0
     coerce(C(0), 0)
     coerce(C(0), 0L)
     coerce(C(0), 0.)
