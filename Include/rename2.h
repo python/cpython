@@ -428,6 +428,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define import_filetab _PyImport_Filetab
 #define import_maxsuffixsize _PyImport_MaxSuffixSize
 #define load_dynamic_module _PyImport_LoadDynamicModule
+#define inittab _PyImport_Inittab
 
 #ifdef __cplusplus
 }
