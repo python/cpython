@@ -21,12 +21,6 @@ EXIT  = WHAT_EXIT
 LINE  = WHAT_LINENO
 
 
-try:
-    StopIteration
-except NameError:
-    StopIteration = IndexError
-
-
 class LogReader:
     def __init__(self, logfn):
         # fileno -> filename
@@ -53,6 +47,10 @@ class LogReader:
 
     def close(self):
         self._reader.close()
+
+    def fileno(self):
+        """Return the file descriptor of the log reader's log file."""
+        return self._reader.fileno()
 
     def addinfo(self, key, value):
         """This method is called for each additional ADD_INFO record.
