@@ -53,7 +53,7 @@ class Range:
 # Small test program
 
 def test():
-	import time, builtin
+	import time, __builtin__
 	print range(10), range(-10, 10), range(0, 10, 2)
 	for i in range(100, -100, -10): print i,
 	print
@@ -61,7 +61,7 @@ def test():
 	for i in range(1000):
 		pass
 	t2 = time.millitimer()
-	for i in builtin.range(1000):
+	for i in __builtin__.range(1000):
 		pass
 	t3 = time.millitimer()
 	print t2-t1, 'msec (class)'
