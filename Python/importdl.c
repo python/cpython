@@ -242,6 +242,12 @@ load_dynamic_module(name, pathname, fp)
 		void *handle;
 	} handles[128];
 	static int nhandles = 0;
+	char pathbuf[260];
+	if (strchr(pathname, '/') == NULL) {
+		/* Prefix bare filename with "./" */
+		sprintf(pathbuf, "./%-.255s", pathname);
+		pathname = pathbuf;
+	}
 #endif
 	sprintf(funcname, FUNCNAME_PATTERN, name);
 #ifdef USE_SHLIB
