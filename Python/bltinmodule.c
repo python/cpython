@@ -80,15 +80,15 @@ builtin_apply(self, args)
 	object *self;
 	object *args;
 {
-	object *func, *arglist;
+	object *func, *alist;
 
-	if (!newgetargs(args, "OO:apply", &func, &arglist))
+	if (!newgetargs(args, "OO:apply", &func, &alist))
 		return NULL;
-	if (!is_tupleobject(arglist)) {
+	if (!is_tupleobject(alist)) {
 		err_setstr(TypeError, "apply() 2nd argument must be tuple");
 		return NULL;
 	}
-	return call_object(func, arglist);
+	return call_object(func, alist);
 }
 
 static object *
@@ -566,13 +566,13 @@ builtin_map(self, args)
 
 	/* XXX Special case map(None, single_list) could be more efficient */
 	for (i = 0; ; ++i) {
-		object *arglist, *item, *value;
+		object *alist, *item, *value;
 		int any = 0;
 
 		if (func == None && n == 1)
-			arglist = NULL;
+			alist = NULL;
 		else {
-			if ((arglist = newtupleobject(n)) == NULL)
+			if ((alist = newtupleobject(n)) == NULL)
 				goto Fail_1;
 		}
 
@@ -600,32 +600,32 @@ builtin_map(self, args)
 					any = 1;
 
 			}
-			if (!arglist)
+			if (!alist)
 				break;
-			if (settupleitem(arglist, j, item) < 0) {
+			if (settupleitem(alist, j, item) < 0) {
 				DECREF(item);
 				goto Fail_0;
 			}
 			continue;
 
 		Fail_0:
-			XDECREF(arglist);
+			XDECREF(alist);
 			goto Fail_1;
 		}
 
-		if (!arglist)
-			arglist = item;
+		if (!alist)
+			alist = item;
 
 		if (!any) {
-			DECREF(arglist);
+			DECREF(alist);
 			break;
 		}
 
 		if (func == None)
-			value = arglist;
+			value = alist;
 		else {
-			value = call_object(func, arglist);
-			DECREF(arglist);
+			value = call_object(func, alist);
+			DECREF(alist);
 			if (value == NULL)
 				goto Fail_1;
 		}
