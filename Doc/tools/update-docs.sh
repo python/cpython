@@ -1,9 +1,9 @@
 #! /bin/sh
 
 # Script which installs a development snapshot of the documentation
-# into the "Python @ SourceForge" website.
+# into the development website.
 #
-# The push-docs.sh script pushes this to the SourceForge when needed
+# The push-docs.sh script pushes this to the server when needed
 # and removes it when done.
 
 if [ -z "$HOME" ] ; then
@@ -16,15 +16,15 @@ UPDATES="$HOME/tmp/$2"
 
 TMPDIR="$$-docs"
 
-cd /home/groups/p/py/python/htdocs || exit $?
+cd /ftp/ftp.python.org/pub/www.python.org/dev/doc/ || exit $?
 mkdir $TMPDIR || exit $?
 cd $TMPDIR || exit $?
 (bzip2 -dc "$UPDATES" | tar xf -) || exit $?
 cd .. || exit $?
 
-if [ -d $DOCTYPE-docs ] ; then
-    mv $DOCTYPE-docs $DOCTYPE-temp
+if [ -d $DOCTYPE ] ; then
+    mv $DOCTYPE $DOCTYPE-temp
 fi
-mv $TMPDIR $DOCTYPE-docs
+mv $TMPDIR $DOCTYPE
 rm -rf $DOCTYPE-temp || exit $?
 rm "$UPDATES" || exit $?

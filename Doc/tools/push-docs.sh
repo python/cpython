@@ -3,7 +3,10 @@
 #  Script to push docs from my development area to SourceForge, where the
 #  update-docs.sh script unpacks them into their final destination.
 
-TARGET=python.sourceforge.net:/home/users/f/fd/fdrake/tmp
+TARGETHOST=www.python.org
+TARGETDIR=/usr/home/fdrake/tmp
+
+TARGET="$TARGETHOST:$TARGETDIR"
 
 ADDRESSES='python-dev@python.org doc-sig@python.org python-list@python.org'
 
@@ -68,7 +71,7 @@ make --no-print-directory bziphtml || exit $?
 RELEASE=`grep '^RELEASE=' Makefile | sed 's|RELEASE=||'`
 PACKAGE="html-$RELEASE.tar.bz2"
 scp "$PACKAGE" tools/update-docs.sh $TARGET/ || exit $?
-ssh python.sourceforge.net tmp/update-docs.sh $DOCTYPE $PACKAGE '&&' rm tmp/update-docs.sh || exit $?
+ssh "$TARGETHOST" tmp/update-docs.sh $DOCTYPE $PACKAGE '&&' rm tmp/update-docs.sh || exit $?
 
 if $ANNOUNCE ; then
     sendmail $ADDRESSES <<EOF
@@ -78,7 +81,7 @@ Subject: [$DOCLABEL doc updates]
 
 The $DOCLABEL version of the documentation has been updated:
 
-    http://python.sourceforge.net/$DOCTYPE-docs/
+    http://$TARGETHOST/dev/doc/$DOCTYPE/
 
 $EXPLANATION
 EOF
