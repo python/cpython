@@ -103,6 +103,7 @@ SETITEMS        = 'u'
 BINFLOAT        = 'G'
 
 __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$",x)])
+del x
 
 class Pickler:
 
