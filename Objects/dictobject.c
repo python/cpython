@@ -740,7 +740,6 @@ dict_print(register dictobject *mp, register FILE *fp, register int flags)
 {
 	register int i;
 	register int any;
-	register dictentry *ep;
 
 	i = Py_ReprEnter((PyObject*)mp);
 	if (i != 0) {
@@ -752,19 +751,27 @@ dict_print(register dictobject *mp, register FILE *fp, register int flags)
 
 	fprintf(fp, "{");
 	any = 0;
-	for (i = 0, ep = mp->ma_table; i < mp->ma_size; i++, ep++) {
-		if (ep->me_value != NULL) {
+	for (i = 0; i < mp->ma_size; i++) {
+		dictentry *ep = mp->ma_table + i;
+		PyObject *pvalue = ep->me_value;
+		if (pvalue != NULL) {
+			/* Prevent PyObject_Repr from deleting value during
+			   key format */
+			Py_INCREF(pvalue);
 			if (any++ > 0)
 				fprintf(fp, ", ");
 			if (PyObject_Print((PyObject *)ep->me_key, fp, 0)!=0) {
+				Py_DECREF(pvalue);
 				Py_ReprLeave((PyObject*)mp);
 				return -1;
 			}
 			fprintf(fp, ": ");
 			if (PyObject_Print(ep->me_value, fp, 0) != 0) {
+				Py_DECREF(pvalue);
 				Py_ReprLeave((PyObject*)mp);
 				return -1;
 			}
+			Py_DECREF(pvalue);
 		}
 	}
 	fprintf(fp, "}");
@@ -779,7 +786,6 @@ dict_repr(dictobject *mp)
 	PyObject *sepa, *colon;
 	register int i;
 	register int any;
-	register dictentry *ep;
 
 	i = Py_ReprEnter((PyObject*)mp);
 	if (i != 0) {
@@ -792,13 +798,19 @@ dict_repr(dictobject *mp)
 	sepa = PyString_FromString(", ");
 	colon = PyString_FromString(": ");
 	any = 0;
-	for (i = 0, ep = mp->ma_table; i < mp->ma_size && v; i++, ep++) {
-		if (ep->me_value != NULL) {
+	for (i = 0; i < mp->ma_size && v; i++) {
+		dictentry *ep = mp->ma_table + i;
+		PyObject *pvalue = ep->me_value;
+		if (pvalue != NULL) {
+			/* Prevent PyObject_Repr from deleting value during
+			   key format */
+			Py_INCREF(pvalue);
 			if (any++)
 				PyString_Concat(&v, sepa);
 			PyString_ConcatAndDel(&v, PyObject_Repr(ep->me_key));
 			PyString_Concat(&v, colon);
-			PyString_ConcatAndDel(&v, PyObject_Repr(ep->me_value));
+			PyString_ConcatAndDel(&v, PyObject_Repr(pvalue));
+			Py_DECREF(pvalue);
 		}
 	}
 	PyString_ConcatAndDel(&v, PyString_FromString("}"));
