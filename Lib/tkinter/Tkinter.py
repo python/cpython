@@ -167,7 +167,7 @@ class Misc:
 		self.tk.call('focus', 'none')
 	def focus_get(self):
 		name = self.tk.call('focus')
-		if name == 'none': return None
+		if name == 'none' or not Name: return None
 		return self._nametowidget(name)
 	def tk_focusNext(self):
 		name = self.tk.call('tk_focusNext', self._w)
@@ -963,7 +963,8 @@ class Canvas(Widget):
 		return self.tk.getdouble(self.tk.call(
 			self._w, 'canvasy', screeny, gridspacing))
 	def coords(self, *args):
-		return self._do('coords', args)
+		return map(self.tk.getdouble,
+                           self.tk.splitlist(self._do('coords', args))
 	def _create(self, itemType, args, kw): # Args: (val, val, ..., cnf={})
 		args = _flatten(args)
 		cnf = args[-1]
