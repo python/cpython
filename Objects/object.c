@@ -319,6 +319,39 @@ testbool(v)
 	return res;
 }
 
+/* Coerce two numeric types to the "larger" one.
+   Increment the reference count on each argument.
+   Return -1 and raise an exception if no coercion is possible
+   (and then no reference count is incremented).
+*/
+
+int
+coerce(pv, pw)
+	object **pv, **pw;
+{
+	register object *v = *pv;
+	register object *w = *pw;
+	int res;
+
+	if (v->ob_type == w->ob_type && !is_instanceobject(v)) {
+		INCREF(v);
+		INCREF(w);
+		return 0;
+	}
+	if (v->ob_type->tp_as_number && v->ob_type->tp_as_number->nb_coerce) {
+		res = (*v->ob_type->tp_as_number->nb_coerce)(pv, pw);
+		if (res <= 0)
+			return res;
+	}
+	if (w->ob_type->tp_as_number && w->ob_type->tp_as_number->nb_coerce) {
+		res = (*w->ob_type->tp_as_number->nb_coerce)(pw, pv);
+		if (res <= 0)
+			return res;
+	}
+	err_setstr(TypeError, "number coercion failed");
+	return -1;
+}
+
 
 /*
 NoObject is usable as a non-NULL undefined value, used by the macro None.

@@ -256,31 +256,21 @@ builtin_cmp(self, args)
 }
 
 static object *
-do_coerce(v, w)
-	object *v, *w;
+builtin_coerce(self, args)
+	object *self;
+	object *args;
 {
+	object *v, *w;
 	object *res;
-	if (is_instanceobject(v) || is_instanceobject(w))
-		return instancebinop(v, w, "__coerce__", "__rcoerce__",
-				     do_coerce);
+
+	if (!newgetargs(args, "OO:coerce", &v, &w))
+		return NULL;
 	if (coerce(&v, &w) < 0)
 		return NULL;
 	res = mkvalue("(OO)", v, w);
 	DECREF(v);
 	DECREF(w);
 	return res;
-}
-
-static object *
-builtin_coerce(self, args)
-	object *self;
-	object *args;
-{
-	object *v, *w;
-
-	if (!newgetargs(args, "OO:coerce", &v, &w))
-		return NULL;
-	return do_coerce(v, w);
 }
 
 static object *
@@ -1462,39 +1452,6 @@ initbuiltin()
 	INCREF(builtin_dict);
 	initerrors();
 	(void) dictinsert(builtin_dict, "None", None);
-}
-
-/* Coerce two numeric types to the "larger" one.
-   Increment the reference count on each argument.
-   Return -1 and raise an exception if no coercion is possible
-   (and then no reference count is incremented).
-*/
-
-int
-coerce(pv, pw)
-	object **pv, **pw;
-{
-	register object *v = *pv;
-	register object *w = *pw;
-	int res;
-
-	if (v->ob_type == w->ob_type && !is_instanceobject(v)) {
-		INCREF(v);
-		INCREF(w);
-		return 0;
-	}
-	if (v->ob_type->tp_as_number && v->ob_type->tp_as_number->nb_coerce) {
-		res = (*v->ob_type->tp_as_number->nb_coerce)(pv, pw);
-		if (res <= 0)
-			return res;
-	}
-	if (w->ob_type->tp_as_number && w->ob_type->tp_as_number->nb_coerce) {
-		res = (*w->ob_type->tp_as_number->nb_coerce)(pw, pv);
-		if (res <= 0)
-			return res;
-	}
-	err_setstr(TypeError, "number coercion failed");
-	return -1;
 }
 
 
