@@ -61,14 +61,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #else
 #ifdef MS_WINDOWS
 #include <windows.h>
+#ifdef MS_WIN16
+/* These overrides not needed for Win32 */
 #define timezone _timezone
-#ifndef tzname
 #define tzname _tzname
-#endif
-#ifndef daylight
 #define daylight _daylight
-#endif
 #define altzone _altzone
+#endif /* MS_WIN16 */
 #endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ */
 
@@ -473,13 +472,13 @@ floatsleep(secs)
 			break;
 	}
 #else /* !MSDOS */
-#ifdef MS_WINDOWS
+#ifdef MS_WIN32
 	/* XXX Can't interrupt this sleep */
 	Sleep((int)(secs*1000));
-#else /* !MS_WINDOWS */
+#else /* !MS_WIN32 */
 	/* XXX Can't interrupt this sleep */
 	sleep((int)secs);
-#endif /* !MS_WINDOWS */
+#endif /* !MS_WIN32 */
 #endif /* !MSDOS */
 #endif /* !__WATCOMC__ */
 #endif /* !macintosh */
