@@ -546,6 +546,11 @@ PyObject *PyString_DecodeEscape(const char *s,
 			continue;
 		}
 		s++;
+                if (s==end) {
+			PyErr_SetString(PyExc_ValueError,
+					"Trailing \\ in string");
+			goto failed;
+		}
 		switch (*s++) {
 		/* XXX This assumes ASCII! */
 		case '\n': break;
@@ -594,10 +599,9 @@ PyObject *PyString_DecodeEscape(const char *s,
 				break;
 			}
 			if (!errors || strcmp(errors, "strict") == 0) {
-				Py_DECREF(v);
 				PyErr_SetString(PyExc_ValueError, 
 						"invalid \\x escape");
-				return NULL;
+				goto failed;
 			}
 			if (strcmp(errors, "replace") == 0) {
 				*p++ = '?';
@@ -608,18 +612,17 @@ PyObject *PyString_DecodeEscape(const char *s,
 					     "decoding error; "
 					     "unknown error handling code: %.400s",
 					     errors);
-				return NULL;
+				goto failed;
 			}
 #ifndef Py_USING_UNICODE
 		case 'u':
 		case 'U':
 		case 'N':
 			if (unicode) {
-				Py_DECREF(v);
 				com_error(com, PyExc_ValueError,
 					  "Unicode escapes not legal "
 					  "when Unicode disabled");
-				return NULL;
+				goto failed;
 			}
 #endif
 		default:
