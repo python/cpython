@@ -82,7 +82,8 @@ create and return a new iterator for the object; if the object is its
 own iterator, this method can just return \code{self}.  In particular,
 iterators will usually be their own iterators.  Extension types
 implemented in C can implement a \code{tp_iter} function in order to
-return an iterator, too.
+return an iterator, and extension types that want to behave as
+iterators can define a \code{tp_iternext} function.
 
 So what do iterators do?  They have one required method,
 \method{next()}, which takes no arguments and returns the next value.
@@ -201,19 +202,25 @@ def generate_ints(N):
 A new keyword, \keyword{yield}, was introduced for generators.  Any
 function containing a \keyword{yield} statement is a generator
 function; this is detected by Python's bytecode compiler which
-compiles the function specially.  When you call a generator function,
-it doesn't return a single value; instead it returns a generator
-object that supports the iterator interface.  On executing the
-\keyword{yield} statement, the generator outputs the value of
-\code{i}, similar to a \keyword{return} statement.  The big difference
-between \keyword{yield} and a \keyword{return} statement is that, on
-reaching a \keyword{yield} the generator's state of execution is
-suspended and local variables are preserved.  On the next call to the
-generator's \code{.next()} method, the function will resume executing
-immediately after the \keyword{yield} statement.  (For complicated
-reasons, the \keyword{yield} statement isn't allowed inside the
-\keyword{try} block of a \code{try...finally} statement; read PEP 255
-for a full explanation of the interaction between \keyword{yield} and
+compiles the function specially.  Because a new keyword was
+introduced, generators must be explicitly enabled in a module by
+including a \code{from __future__ import generators} statement near
+the top of the module's source code.  In Python 2.3 this statement
+will become unnecessary.
+
+When you call a generator function, it doesn't return a single value;
+instead it returns a generator object that supports the iterator
+interface.  On executing the \keyword{yield} statement, the generator
+outputs the value of \code{i}, similar to a \keyword{return}
+statement.  The big difference between \keyword{yield} and a
+\keyword{return} statement is that, on reaching a \keyword{yield} the
+generator's state of execution is suspended and local variables are
+preserved.  On the next call to the generator's \code{.next()} method,
+the function will resume executing immediately after the
+\keyword{yield} statement.  (For complicated reasons, the
+\keyword{yield} statement isn't allowed inside the \keyword{try} block
+of a \code{try...finally} statement; read PEP 255 for a full
+explanation of the interaction between \keyword{yield} and
 exceptions.)
 
 Here's a sample usage of the \function{generate_ints} generator:
@@ -240,16 +247,16 @@ You could equally write \code{for i in generate_ints(5)}, or
 \code{a,b,c = generate_ints(3)}.
 
 Inside a generator function, the \keyword{return} statement can only
-be used without a value, and is equivalent to raising the
-\exception{StopIteration} exception; afterwards the generator cannot
-return any further values.  \keyword{return} with a value, such as
-\code{return 5}, is a syntax error inside a generator function.  You
-can also raise \exception{StopIteration} manually, or just let the
-thread of execution fall off the bottom of the function, to achieve
-the same effect.
+be used without a value, and signals the end of the procession of
+values; afterwards the generator cannot return any further values.
+\keyword{return} with a value, such as \code{return 5}, is a syntax
+error inside a generator function.  The end of the generator's results
+can also be indicated by raising \exception{StopIteration} manually,
+or by just letting the flow of execution fall off the bottom of the
+function.
 
 You could achieve the effect of generators manually by writing your
-own class, and storing all the local variables of the generator as
+own class and storing all the local variables of the generator as
 instance variables.  For example, returning a list of integers could
 be done by setting \code{self.count} to 0, and having the
 \method{next()} method increment \code{self.count} and return it.
@@ -308,9 +315,9 @@ structure.
 
 \begin{seealso}
 
-\seepep{255}{Simple Generators}{Written by Neil Schemenauer, 
-Tim Peters, Magnus Lie Hetland.  Implemented mostly by Neil
-Schemenauer, with fixes from the Python Labs crew.}
+\seepep{255}{Simple Generators}{Written by Neil Schemenauer, Tim
+Peters, Magnus Lie Hetland.  Implemented mostly by Neil Schemenauer
+and Tim Peters, with other fixes from the Python Labs crew.}
 
 \end{seealso}
 
@@ -516,19 +523,23 @@ See \url{http://www.xmlrpc.com} for more information about XML-RPC.
   (Contributed by Guido van Rossum, using Ka-Ping Yee's \module{pydoc} module.)
 
   \item Various bugfixes and performance improvements have been made
-to the SRE engine underlying the \module{re} module.  For example,
-\function{re.sub()} will now use \function{string.replace()}
-automatically when the pattern and its replacement are both just
-literal strings without regex metacharacters.  Another contributed
-patch speeds up certain Unicode character ranges by a factor of
-two. (SRE is maintained by Fredrik Lundh.  The BIGCHARSET patch
-was contributed by Martin von L\"owis.)
+  to the SRE engine underlying the \module{re} module.  For example,
+  \function{re.sub()} will now use \function{string.replace()}
+  automatically when the pattern and its replacement are both just
+  literal strings without regex metacharacters.  Another contributed
+  patch speeds up certain Unicode character ranges by a factor of
+  two. (SRE is maintained by Fredrik Lundh.  The BIGCHARSET patch was
+  contributed by Martin von L\"owis.)
 
   \item The \module{imaplib} module now has support for the IMAP
-NAMESPACE extension defined in \rfc{2342}.  (Contributed by Michel
-Pelletier.)
+  NAMESPACE extension defined in \rfc{2342}.  (Contributed by Michel
+  Pelletier.)
 
-
+  \item The \module{rfc822} module's parsing of e-mail addresses is
+  now compliant with \rfc{2822}, an update to \rfc{822}.  The module's
+  name is \emph{not} going to be changed to \samp{rfc2822}.
+  (Contributed by Barry Warsaw.)
+  
 \end{itemize}
 
 
@@ -556,33 +567,34 @@ changes are:
   again.  The license changes were also applied to the Python 2.0.1
   and 2.1.1 releases.
 
-\item Profiling and tracing functions can now be implemented in C,
-which can operate at much higher speeds than Python-based functions
-and should reduce the overhead of enabling profiling and tracing, so
-it will be of interest to authors of development environments for
-Python.  Two new C functions were added to Python's API,
-\cfunction{PyEval_SetProfile()} and \cfunction{PyEval_SetTrace()}.
-The existing \function{sys.setprofile()} and \function{sys.settrace()}
-functions still exist, and have simply been changed to use the new
-C-level interface.
-
+  \item Profiling and tracing functions can now be implemented in C,
+  which can operate at much higher speeds than Python-based functions
+  and should reduce the overhead of enabling profiling and tracing, so
+  it will be of interest to authors of development environments for
+  Python.  Two new C functions were added to Python's API,
+  \cfunction{PyEval_SetProfile()} and \cfunction{PyEval_SetTrace()}.
+  The existing \function{sys.setprofile()} and
+  \function{sys.settrace()} functions still exist, and have simply
+  been changed to use the new C-level interface.
 
   \item The \file{Tools/scripts/ftpmirror.py} script
   now parses a \file{.netrc} file, if you have one.
-  (Contributed by XXX.) Patch \#430754: Makes ftpmirror.py .netrc aware
+  (Contributed by Mike Romberg.) 
 
-\item Some features of the object returned by the \function{xrange()}
-function are now deprecated, and trigger warnings when they're
-accessed; they'll disappear in Python 2.3.  \class{xrange} objects
-tried to pretend they were full sequence types by supporting slicing,
-sequence multiplication, and the \keyword{in} operator, but these
-features were rarely used and therefore buggy.  (The implementation of
-the \keyword{in} operator had an off-by-one error introduced in Python
-XXX that no one noticed until XXX, XXX years later.  The
-\method{tolist()} method and the \member{start}, \member{stop}, and
-\member{step} attributes are also being deprecated.  At the C level,
-the fourth argument to the \cfunction{PyRange_New()} function,
-\samp{repeat}, has also been deprecated.  
+  \item Some features of the object returned by the
+  \function{xrange()} function are now deprecated, and trigger
+  warnings when they're accessed; they'll disappear in Python 2.3.
+  \class{xrange} objects tried to pretend they were full sequence
+  types by supporting slicing, sequence multiplication, and the
+  \keyword{in} operator, but these features were rarely used and
+  therefore buggy.  The \method{tolist()} method and the
+  \member{start}, \member{stop}, and \member{step} attributes are also
+  being deprecated.  At the C level, the fourth argument to the
+  \cfunction{PyRange_New()} function, \samp{repeat}, has also been
+  deprecated.
+
+  \item On Windows, Python can now be compiled with Borland C thanks 
+  to a number of patches contribued by Stephen Hansen.
 
   \item XXX C API: Reorganization of object calling 
 
@@ -604,9 +616,9 @@ the tp_call slot, or raise an exception if that's NULL.
 %PyEval_GetFuncDesc(), PyEval_EvalCodeEx() (formerly get_func_name(),
 %get_func_desc(), and eval_code2().
 
-  \item XXX SF patch \#418147 Fixes to allow compiling w/ Borland, from Stephen Hansen.
-
-   \item XXX Add support for Windows using "mbcs" as the default Unicode encoding when dealing with the file system.  As discussed on python-dev and in patch 410465.
+  \item XXX Add support for Windows using "mbcs" as the default
+  Unicode encoding when dealing with the file system.  As discussed on
+  python-dev and in patch 410465.
 
   \item XXX Lots of patches to dictionaries; measure performance improvement, if any.
 
@@ -618,6 +630,6 @@ the tp_call slot, or raise an exception if that's NULL.
 \section{Acknowledgements}
 
 The author would like to thank the following people for offering
-suggestions on various drafts of this article: No one yet.
+suggestions on various drafts of this article: Tim Peters, Neil Schemenauer.
 
 \end{document}
