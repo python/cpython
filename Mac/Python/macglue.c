@@ -882,7 +882,7 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
 	}
 	err = FSMakeFSSpec(refnum, parid, path, fs);
 	if ( err && err != fnfErr ) {
-		PyErr_Mac(PyExc_ValueError, err);
+		PyMac_Error(err);
 		return 0;
 	}
 	return 1;
