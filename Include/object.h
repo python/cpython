@@ -1,3 +1,9 @@
+#ifndef Py_OBJECT_H
+#define Py_OBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -347,3 +353,8 @@ times.
 
 123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
 */
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_OBJECT_H */

@@ -1,3 +1,9 @@
+#ifndef Py_YUV_H
+#define Py_YUV_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * SVideo YUV 4:1:1 format.
  *
@@ -85,3 +91,8 @@ struct yuv422 {
 void yuv_sv411_to_cl422dc(int, void *, void *, int, int);
 void yuv_sv411_to_cl422dc_quartersize(int, void *, void *, int, int);
 void yuv_sv411_to_cl422dc_sixteenthsize(int, void *, void *, int, int);
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_YUV_H */

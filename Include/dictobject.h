@@ -1,3 +1,9 @@
+#ifndef Py_DICTOBJECT_H
+#define Py_DICTOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -39,3 +45,8 @@ extern int dictremove PROTO((object *dp, char *key));
 #define dict2lookup mappinglookup
 #define dict2insert mappinginsert
 #define dict2remove mappingremove
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_DICTOBJECT_H */

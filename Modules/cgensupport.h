@@ -1,3 +1,9 @@
+#ifndef Py_CGENSUPPORT_H
+#define Py_CGENSUPPORT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -36,3 +42,8 @@ extern int getilongarg PROTO((object *args, int nargs, int i, long *p_a));
 extern int getishortarg PROTO((object *args, int nargs, int i, short *p_a));
 extern int getifloatarg PROTO((object *args, int nargs, int i, float *p_a));
 extern int getistringarg PROTO((object *args, int nargs, int i, string *p_a));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_CGENSUPPORT_H */

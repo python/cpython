@@ -1,3 +1,9 @@
+#ifndef Py_BITSET_H
+#define Py_BITSET_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -44,3 +50,8 @@ void mergebitset PROTO((bitset bs1, bitset bs2, int nbits));
 #define BYTE2BIT(ibyte)	((ibyte) * BITSPERBYTE)
 
 #define testbit(ss, ibit) (((ss)[BIT2BYTE(ibit)] & BIT2MASK(ibit)) != 0)
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_BITSET_H */

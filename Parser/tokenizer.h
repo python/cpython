@@ -1,3 +1,9 @@
+#ifndef Py_TOKENIZER_H
+#define Py_TOKENIZER_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -54,3 +60,8 @@ extern struct tok_state *tok_setups PROTO((char *));
 extern struct tok_state *tok_setupf PROTO((FILE *, char *ps1, char *ps2));
 extern void tok_free PROTO((struct tok_state *));
 extern int tok_get PROTO((struct tok_state *, char **, char **));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_TOKENIZER_H */

@@ -1,3 +1,9 @@
+#ifndef Py_ACCESSOBJECT_H
+#define Py_ACCESSOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -53,3 +59,8 @@ object *cloneaccessobject PROTO((object *));
 int hasaccessvalue PROTO((object *));
 
 extern typeobject Anynumbertype, Anysequencetype, Anymappingtype;
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_ACCESSOBJECT_H */

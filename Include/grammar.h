@@ -1,3 +1,9 @@
+#ifndef Py_GRAMMAR_H
+#define Py_GRAMMAR_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -103,3 +109,8 @@ void addaccelerators PROTO((grammar *g));
 
 void printgrammar PROTO((grammar *g, FILE *fp));
 void printnonterminals PROTO((grammar *g, FILE *fp));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_GRAMMAR_H */

@@ -1,3 +1,9 @@
+#ifndef Py_PYTHONRUN_H
+#define Py_PYTHONRUN_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -48,3 +54,8 @@ object *compile_string PROTO((char *, char *, int));
 void print_error PROTO((void));
 
 void goaway PROTO((int));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_PYTHONRUN_H */

@@ -1,3 +1,9 @@
+#ifndef Py_MARSHAL_H
+#define Py_MARSHAL_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -32,3 +38,8 @@ long rd_long PROTO((FILE *));
 int rd_short PROTO((FILE *));
 object *rd_object PROTO((FILE *));
 object *rds_object PROTO((char *, int));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_MARSHAL_H */

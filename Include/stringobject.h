@@ -1,3 +1,9 @@
+#ifndef Py_STRINGOBJECT_H
+#define Py_STRINGOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -62,3 +68,8 @@ extern object *formatstring PROTO((object *, object *));
 
 /* Macro, trading safety for speed */
 #define GETSTRINGVALUE(op) ((op)->ob_sval)
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_STRINGOBJECT_H */

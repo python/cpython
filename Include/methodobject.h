@@ -1,3 +1,9 @@
+#ifndef Py_METHODOBJECT_H
+#define Py_METHODOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -42,3 +48,8 @@ struct methodlist {
 };
 
 extern object *findmethod PROTO((struct methodlist *, object *, char *));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_METHODOBJECT_H */

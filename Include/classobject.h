@@ -1,3 +1,9 @@
+#ifndef Py_CLASSOBJECT_H
+#define Py_CLASSOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -56,3 +62,8 @@ extern object *instancemethodgetclass PROTO((object *));
 extern object *instance_convert PROTO((object *, char *));
 
 extern int issubclass PROTO((object *, object *));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_CLASSOBJECT_H */

@@ -1,3 +1,9 @@
+#ifndef Py_LONGOBJECT_H
+#define Py_LONGOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -37,3 +43,8 @@ extern double dgetlongvalue PROTO((object *));
 
 object *long_format PROTO((object *, int));
 object *long_scan PROTO((char *, int));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_LONGOBJECT_H */
