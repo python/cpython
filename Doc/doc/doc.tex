@@ -297,21 +297,88 @@ This \UNIX\ is also followed by a space.
 \UNIX, followed by a comma, needs no additional markup.
 \end{verbatim}
 
-    An \dfn{environment} is ...
+    An \dfn{environment} is a larger construct than a macro, and can
+    be used for things with more content that would conveniently fit
+    in a macro parameter.  They are primarily used when formatting
+    parameters need to be changed before and after a large chunk of
+    content, but the content itself needs to be highly flexible.  Code
+    samples are presented using an environment, and descriptions of
+    functions, methods, and classes are also marked using envionments.
+
+    Since the content of an environment is free-form and can consist
+    of several paragraphs, they are actually marked using a pair of
+    macros: \macro{begin} and \macro{end}.  These macros both take the
+    name of the environment as a parameter.  An example is the
+    environment used to mark the abstract of a document:
+
+\begin{verbatim}
+\begin{abstract}
+  This is the text of the abstract.  It concisely explains what
+  information is found in the document.
+
+  It can consist of multiple paragraphs.
+\end{abstract}
+\end{verbatim}
+
+    An environment can also have required and optional parameters of
+    its own.  These follow the parameter of the \macro{begin} macro.
+    This example shows an environment which takes a single required
+    parameter:
+
+\begin{verbatim}
+\begin{datadesc}{datadesc}{controlnames}
+  A 33-element string array that contains the \ASCII{} mnemonics for
+  the thirty-two \ASCII{} control characters from 0 (NUL) to 0x1f
+  (US), in order, plus the mnemonic \samp{SP} for the space character.
+\end{datadesc}
+\end{verbatim}
 
     There are a number of less-used marks in \LaTeX{} are used to
     enter non-\ASCII{} characters, especially those used in European
-    names.  Some which are found in the Python documentation are:
+    names.  Given that these are often used adjacent to other
+    characters, the markup required to produce the proper character
+    may need to be followed by a space or an empty group, or the the
+    markup can be enclosed in a group.  Some which are found in Python
+    documentation are:
 
-    XXX Table of Latin-1 characters that we've actually used in the
-    Python documentation, pointer to other, more complete
-    documentation elsewhere.
+\begin{tableii}{c|l}{textrm}{Character}{Markup}
+  \lineii{\c c}{\code{\e c c}}
+  \lineii{\"o}{\code{\e"o}}
+  \lineii{\o}{\code{\e o}}
+\end{tableii}
 
 
   \subsection{Hierarchical Structure}
 
-    XXX Talk about the traditional sectional hierarchy and how it's
-    marked in \LaTeX.
+    \LaTeX{} expects documents to be arranged in a conventional,
+    hierarchical way, with chapters, sections, sub-sections,
+    appendixes, and the like.  These are marked using macros rather
+    than environments, probably because the end of a section can be
+    safely inferred when a section of equal or higher level starts.
+
+    There are six ``levels'' of sectioning in the document classes
+    used for Python documentation, and the lowest two levels are not
+    used.  The levels are:
+
+      \begin{tableiii}{c|l|c}{textrm}{Level}{Macro Name}{Notes}
+        \lineiii{1}{\macro{chapter}}{(1)}
+        \lineiii{2}{\macro{section}}{}
+        \lineiii{3}{\macro{subsection}}{}
+        \lineiii{4}{\macro{subsubsections}}{}
+        \lineiii{5}{\macro{paragraph}}{(2)}
+        \lineiii{6}{\macro{subparagraph}}{}
+      \end{tableiii}
+
+    \noindent
+    Notes:
+
+    \begin{description}
+      \item[(1)]
+      Only used for the \code{manual} documents, as described in
+      section \ref{classes}, ``Document Classes.''
+      \item[(2)]
+      Not the same as a paragraph of text; nobody seems to use this.
+    \end{description}
 
 
 \section{Document Classes \label{classes}}
