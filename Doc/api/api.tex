@@ -4186,8 +4186,8 @@ current thread state.  When releasing the lock and saving the thread
 state, the current thread state pointer must be retrieved before the
 lock is released (since another thread could immediately acquire the
 lock and store its own thread state in the global variable).
-Reversely, when acquiring the lock and restoring the thread state, the
-lock must be acquired before storing the thread state pointer.
+Conversely, when acquiring the lock and restoring the thread state,
+the lock must be acquired before storing the thread state pointer.
 
 Why am I going on with so much detail about this?  Because when
 threads are created from C, they don't have the global interpreter
