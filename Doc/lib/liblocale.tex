@@ -61,40 +61,6 @@ locale.setlocale(locale.LC_ALL,"")
   Returns the database of of the local conventions as a dictionary.
   This dictionary has the following strings as keys:
 
-  \begin{tableiii}{l|l|l}{code}{Key}{Category}{Meaning}
-    \lineiii{'decimal_point'}{\constant{LC_NUMERIC}}
-            {Decimal point character.}
-    \lineiii{'grouping'}{\constant{LC_NUMERIC}}
-            {Sequence of numbers specifying which relative positions
-             the \code{'thousands_sep'} is expected.  If the sequence is
-             terminated with \constant{CHAR_MAX}, no further grouping
-             is performed. If the sequence terminates with a \code{0}, 
-             the last group size is repeatedly used.}
-    \lineiii{'thousands_sep'}{\constant{LC_NUMERIC}}
-            {Character used between groups.}\hline
-    \lineiii{'int_curr_symbol'}{\constant{LC_MONETARY}}
-            {International currency symbol.}
-    \lineiii{'currency_symbol'}{\constant{LC_MONETARY}}
-            {Local currency symbol.}
-    \lineiii{'mon_decimal_point'}{\constant{LC_MONETARY}}
-            {Decimal point used for monetary values.}
-    \lineiii{'mon_thousands_sep'}{\constant{LC_MONETARY}}
-            {Group separator used for monetary values.}
-    \lineiii{'mon_grouping'}{\constant{LC_MONETARY}}
-            {Equivalent to \code{'grouping'}, used for monetary
-             values.}
-    \lineiii{'positive_sign'}{\constant{LC_MONETARY}}
-            {Symbol used to annotate a positive monetary value.}
-    \lineiii{'negative_sign'}{\constant{LC_MONETARY}}
-            {Symbol used to annotate a nnegative monetary value.}
-    \lineiii{'frac_digits'}{\constant{LC_MONETARY}}
-            {Number of fractional digits used in local formatting
-             of monetary values.}
-    \lineiii{'int_frac_digits'}{\constant{LC_MONETARY}}
-            {Number of fractional digits used in international
-             formatting of monetary values.}
-  \end{tableiii}
-
   \begin{itemize}
     \item
     \code{'decimal_point'} specifies the decimal point used in floating
