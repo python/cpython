@@ -1,10 +1,10 @@
-Python main documentation -- in Latex
+Python main documentation -- in LaTeX
 -------------------------------------
 
-This directory contains the Latex sources to the Python documentation.
-They now require latex2e (latex 2.09 compatibility is dropped).
+This directory contains the LaTeX sources to the Python documentation.
+They now require LaTeX2e (LaTeX 2.09 compatibility is dropped).
 
-The Python Reference Manual is no longer maintained in Latex.  It is
+The Python Reference Manual is no longer maintained in LaTeX.  It is
 now a FrameMaker document.  The FrameMaker 5.0 files (ref.book,
 ref*.doc) as well as PostScript generated (ref.ps) from it are in the
 subdirectory ref/.  (See ftp://ftp.adobe.com/pub/adobe/framereader for
@@ -12,53 +12,97 @@ a free reader for FrameMaker documents, for some platforms.)  Many
 thanks to Robin Friedrich for the conversion of the Reference Manual
 to FrameMaker and his work on its index.
 
-If you don't have Latex, you can ftp a tar file containing PostScript
-of all documents.  It should be in the same place where you fetched
-the main Python distribution (try http://www.python.org or
+If you don't have LaTeX, or if you'd rather not format the
+documentation yourself, you can ftp a tar file containing HTML, PDF,
+or PostScript versions of all documents.  Additional formats may be
+available.  These should be in the same place where you fetched the
+main Python distribution (try http://www.python.org or
 ftp://ftp.python.org).
 
-The following are the Latex source files:
+The following are the LaTeX source files:
 
 	tut.tex				The tutorial
 	lib.tex, lib*.tex		The library reference
 	ext.tex				How to extend Python
 	api.tex				Reference for the Python/C API
 
-All use the style option file "myformat.sty".  This contains some
-macro definitions and sets some style parameters.
+All use the "manual" document class and "python" package, derived from 
+the old "myformat.sty" style file.  These contains many macro
+definitions useful in documenting Python, and set some style parameters.
 
-You need the makeindex utility to produce the index for lib.tex.
-
-There's a Makefile to call Latex and the other utilities in the right
+There's a Makefile to call LaTeX and the other utilities in the right
 order and the right number of times.  This will produce DVI files for
 each document made; to preview them, use xdvi.  PostScript is produced
 by the same Makefile target that produces the DVI files.  This uses
 the dvips tool.  Printing depends on local conventions; at my site, I
-use lp.  For example:
+use lpr.  For example:
 
 	make lib			# create lib.dvi and lib.ps
 	xdvi lib			# preview lib.dvi
-	lp lib.ps			# print on default printer
+	lpr lib.ps			# print on default printer
 
 
-Using Times fonts
------------------
+What tools do I need?
+---------------------
 
-As distributed, the Latex documents use the default Tex fonts (CMR).
-These qre quite ugly.  If you have the "PSfont" Latex add-on
-installed, you can produce versions using Times fonts (and Courier for
-fixed text) by inserting "times," in the list of options in the
-documentstyle macro in the first line of the files lib.tex, tut.tex,
-ext.tex, api.tex, e.g.
+You need to install Python; some of the scripts used to produce the
+documentation are written in Python.
 
-	\documentstyle[twoside,times,myformat]{report}
+The simplest way to get the rest of the tools in the configuration we
+used is to install the teTeX TeX distribution, version 0.9.  More
+information is available on teTeX at http://www.tug.org/tetex/.  This
+is a UNIX-only TeX distribution at this time.
+
+If you don't want to get teTeX, or if you're not using UNIX, here is
+what you'll need:
+
+To create DVI, PDF, or PostScript files:
+
+	- LaTeX2e, 1995/12/01 or newer.  Older versions are likely to 
+	  choke.
+
+	- makeindex.  This is used to produce the indexes for the
+	  library reference and Python/C API reference.
+
+To create PDF files:
+
+	- pdflatex.  We used the one in the teTeX 0.9 distribution
+	  (version 0.11 at the time of this writing).
+
+To create PostScript files:
+
+	- dvips.  Most TeX installations include this.  If you don't
+	  have one, check CTAN (ftp://ctan.tug.org/tex-archive/).
+
+To create info files:
+
+	- makeinfo.  This is available from any GNU mirror.
+
+To create HTML files:
+
+	- Perl 5.004_04 or newer.  Try www.perl.org for pointers.
+
+	- LaTeX2HTML 98.1p1, or newer.  Releases are available at
+	  http://www-dsed.llnl.gov/files/programs/unix/latex2html/.
+
+
+What if Times fonts are not available?
+--------------------------------------
+
+As distributed, the LaTeX documents use PostScript Times fonts.  This
+is done since they are much better looking and produce smaller
+PostScript files.  If, however, your TeX installation does not support 
+them, they may be easily disabled.  Edit the file manual.cls and
+comment out the line that starts "\RequirePackage{times}" using a "%"
+character at the beginning of the line.  An alternative is to install
+the right fonts and LaTeX style file.
 
 
 Making HTML files
 -----------------
 
-The Latex documents can be converted to HTML using Nikos Drakos'
-Latex2html converter.  See the Makefile; after some twiddling, "make
+The LaTeX documents can be converted to HTML using Nikos Drakos'
+LaTeX2HTML converter.  See the Makefile; after some twiddling, "make
 l2h" should do the trick.
 
 For the reference manual, I use Harlequin's webmaker.  I'm not very
