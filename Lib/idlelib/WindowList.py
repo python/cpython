@@ -39,7 +39,7 @@ class WindowList:
 
     def unregister_callback(self, callback):
         try:
-           self.callbacks.remove(callback)
+            self.callbacks.remove(callback)
         except ValueError:
             pass
 
