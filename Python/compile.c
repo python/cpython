@@ -312,7 +312,6 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 		co->co_firstlineno = firstlineno;
 		Py_INCREF(lnotab);
 		co->co_lnotab = lnotab;
-/*		PyObject_Print((PyObject *)co, stderr, 0); */
 	}
 	return co;
 }
@@ -1151,7 +1150,8 @@ parsestr(char *s)
 			*p++ = c;
 			break;
 		case 'x':
-			if (isxdigit(Py_CHARMASK(s[0])) && isxdigit(Py_CHARMASK(s[1]))) {
+			if (isxdigit(Py_CHARMASK(s[0])) 
+			    && isxdigit(Py_CHARMASK(s[1]))) {
 				unsigned int x = 0;
 				c = Py_CHARMASK(*s);
 				s++;
@@ -1173,7 +1173,8 @@ parsestr(char *s)
 				*p++ = x;
 				break;
 			}
-			PyErr_SetString(PyExc_ValueError, "invalid \\x escape");
+			PyErr_SetString(PyExc_ValueError, 
+					"invalid \\x escape");
 			Py_DECREF(v);
 			return NULL;
 		default:
@@ -2647,7 +2648,7 @@ com_import_stmt(struct compiling *c, node *n)
 			for (i = 3; i < NCH(n); i += 2) {
 				PyTuple_SET_ITEM(tup, (i-3)/2, 
 					PyString_FromString(STR(
-							CHILD(CHILD(n, i), 0))));
+						CHILD(CHILD(n, i), 0))));
 			}
 		}
 		com_addoparg(c, LOAD_CONST, com_addconst(c, tup));
@@ -3985,7 +3986,7 @@ get_ref_type(struct compiling *c, char *name)
 
 /* Helper function to issue symbol table warnings */
 
-static void
+static int
 symtable_warn(struct symtable *st, char *msg)
 {
 	if (PyErr_WarnExplicit(PyExc_SyntaxWarning, msg, st->st_filename,
@@ -3996,7 +3997,9 @@ symtable_warn(struct symtable *st, char *msg)
 					     st->st_cur->ste_lineno);
 		}
 		st->st_errors++;
+		return -1;
 	}
+	return 0;
 }
 
 /* Helper function for setting lineno and filename */
@@ -4120,6 +4123,98 @@ symtable_freevar_offsets(PyObject *freevars, int offset)
 }
 
 static int
+symtable_check_unoptimized(struct compiling *c,
+			   PySymtableEntryObject *ste, 
+			   struct symbol_info *si)
+{
+	char buf[300];
+
+	if (!(si->si_ncells || si->si_nfrees || ste->ste_child_free
+	      || (ste->ste_nested && si->si_nimplicit)))
+		return 0;
+
+#define ILLEGAL_IMPORT_STAR \
+"import * is not allowed in function '%.100s' " \
+"because it contains a nested function with free variables"
+
+#define ILLEGAL_BARE_EXEC \
+"unqualified exec is not allowed in function '%.100s' " \
+"because it contains a nested function with free variables"
+
+#define ILLEGAL_EXEC_AND_IMPORT_STAR \
+"function '%.100s' uses import * and bare exec, which are illegal" \
+"because it contains a nested function with free variables"
+
+	/* XXX perhaps the linenos for these opt-breaking statements
+	   should be stored so the exception can point to them. */
+
+	if (ste->ste_optimized == OPT_IMPORT_STAR)
+		sprintf(buf, ILLEGAL_IMPORT_STAR, 
+			PyString_AS_STRING(ste->ste_name));
+	else if (ste->ste_optimized == (OPT_BARE_EXEC | OPT_EXEC))
+		sprintf(buf, ILLEGAL_BARE_EXEC,
+			PyString_AS_STRING(ste->ste_name));
+	else {
+		sprintf(buf, ILLEGAL_EXEC_AND_IMPORT_STAR,
+			PyString_AS_STRING(ste->ste_name));
+	}
+	
+	if (c->c_symtable->st_nested_scopes) {
+		PyErr_SetString(PyExc_SyntaxError, buf);
+		PyErr_SyntaxLocation(c->c_symtable->st_filename,
+				     ste->ste_lineno);
+		return -1;
+	} else {
+		/* XXX if the warning becomes an exception, we should
+		   attached more info to it. */
+		if (PyErr_Warn(PyExc_SyntaxWarning, buf) < 0)
+			return -1;
+	}
+	return 0;
+}
+
+static int
+symtable_check_shadow(struct symtable *st, PyObject *name, int flags)
+{
+	char buf[500];
+	PyObject *children, *v;
+	PySymtableEntryObject *child;
+	int i;
+
+	if (!(flags & DEF_BOUND))
+		return 0;
+	/* The semantics of this code will change with nested scopes.
+	   It is defined in the current scope and referenced in a
+	   child scope.  Under the old rules, the child will see a
+	   global.  Under the new rules, the child will see the
+	   binding in the current scope.
+	*/
+
+	/* Find name of child function that has free variable */
+	children = st->st_cur->ste_children;
+	for (i = 0; i < PyList_GET_SIZE(children); i++) {
+		int cflags;
+		child = (PySymtableEntryObject *)PyList_GET_ITEM(children, i);
+		v = PyDict_GetItem(child->ste_symbols, name);
+		if (v == NULL)
+			continue;
+		cflags = PyInt_AS_LONG(v);
+		if (!(cflags & DEF_BOUND))
+			break;
+	}
+	
+	sprintf(buf, "local name '%.100s' in '%.100s' shadows "
+		"use of '%.100s' as global in nested scope '%.100s'",
+		PyString_AS_STRING(name),
+		PyString_AS_STRING(st->st_cur->ste_name),
+		PyString_AS_STRING(name),
+		PyString_AS_STRING(child->ste_name)
+		);
+
+	return symtable_warn(st, buf);
+}
+
+static int
 symtable_update_flags(struct compiling *c, PySymtableEntryObject *ste,
 		      struct symbol_info *si)
 {
@@ -4129,26 +4224,8 @@ symtable_update_flags(struct compiling *c, PySymtableEntryObject *ste,
 		c->c_nlocals = si->si_nlocals;
 		if (ste->ste_optimized == 0)
 			c->c_flags |= CO_OPTIMIZED;
-		else if (si->si_ncells || si->si_nfrees 
-			 || (ste->ste_nested && si->si_nimplicit)
-			 || ste->ste_child_free) {
-			if (c->c_symtable->st_nested_scopes) {
-				PyErr_Format(PyExc_SyntaxError,
-					     ILLEGAL_DYNAMIC_SCOPE, 
-				     PyString_AS_STRING(ste->ste_name));
-				PyErr_SyntaxLocation(c->c_symtable->st_filename,
-						   ste->ste_lineno);
-				return -1;
-			} else {
-				char buf[200];
-				sprintf(buf, ILLEGAL_DYNAMIC_SCOPE,
-					PyString_AS_STRING(ste->ste_name));
-				if (PyErr_Warn(PyExc_SyntaxWarning,
-					       buf) < 0) {
-					return -1;
-				}
-			}
-		}
+		else if (ste->ste_optimized != OPT_EXEC) 
+			return symtable_check_unoptimized(c, ste, si);
 	}
 	return 0;
 }
@@ -4190,6 +4267,12 @@ symtable_load_symbols(struct compiling *c)
 	pos = 0;
 	while (PyDict_Next(ste->ste_symbols, &pos, &name, &v)) {
 		flags = PyInt_AS_LONG(v);
+
+		if (st->st_nested_scopes == 0 
+		    && (flags & (DEF_FREE | DEF_FREE_CLASS))) {
+			if (symtable_check_shadow(st, name, flags) < 0)
+				goto fail;
+		}
 
 		if (flags & DEF_FREE_GLOBAL)
 			/* undo the original DEF_FREE */
@@ -4340,6 +4423,16 @@ symtable_update_free_vars(struct symtable *st)
 				return -1;
 			}
 		}
+/*
+		if (st->st_nested_scopes == 0 
+		    && list && PyList_GET_SIZE(list) > 0) {
+			fprintf(stderr, "function %s has children with "
+				"the following free vars:\n%s\n",
+				PyString_AS_STRING(ste->ste_name),
+				PyObject_REPR(list));
+			continue; 
+		}
+*/
 		for (j = 0; list && j < PyList_GET_SIZE(list); j++) {
 			name = PyList_GET_ITEM(list, j);
 			if (ste->ste_nested) {
@@ -4432,7 +4525,7 @@ symtable_exit_scope(struct symtable *st)
 {
 	int end;
 
-	if (st->st_pass == 1 && st->st_nested_scopes)
+	if (st->st_pass == 1)
 		symtable_update_free_vars(st);
 	Py_DECREF(st->st_cur);
 	end = PyList_GET_SIZE(st->st_stack) - 1;
