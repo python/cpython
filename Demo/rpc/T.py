@@ -1,3 +1,6 @@
+# Simple interface to report execution times of program fragments.
+# Call TSTART() to reset the timer, TSTOP(...) to report times.
+
 import sys, os, time
 
 def TSTART():
