@@ -35,6 +35,10 @@ extern int errno;
 
 #include <math.h>
 
+#ifndef __STDC__
+extern double fmod();
+#endif
+
 #ifdef HUGE_VAL
 #define CHECK(x) if (errno != 0) ; \
 	else if (-HUGE_VAL <= (x) && (x) <= HUGE_VAL) ; \
@@ -109,10 +113,7 @@ FUNC1(math_cosh, cosh)
 FUNC1(math_exp, exp)
 FUNC1(math_fabs, fabs)
 FUNC1(math_floor, floor)
-#ifndef AMOEBA
-/* XXX This one is not in the Amoeba library yet, so what the heck... */
 FUNC2(math_fmod, fmod)
-#endif
 FUNC1(math_log, log)
 FUNC1(math_log10, log10)
 #ifdef MPW_3_1 /* This hack is needed for MPW 3.1 but not for 3.2 ... */
@@ -212,9 +213,7 @@ static struct methodlist math_methods[] = {
 	{"exp", math_exp},
 	{"fabs", math_fabs},
 	{"floor", math_floor},
-#ifndef AMOEBA
 	{"fmod", math_fmod},
-#endif
 	{"frexp", math_frexp},
 	{"ldexp", math_ldexp},
 	{"log", math_log},
