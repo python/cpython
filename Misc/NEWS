@@ -67,8 +67,9 @@ Core and builtins
 - Added a workaround for proper string operations in BSDs.  str.split
   and str.is* methods can now work correctly with UTF-8 locales.
 
-- unicode.iswide() and unicode.width() is dropped and the East Asian
-  Width support is moved to unicodedata extension module.
+- Bug #989185: unicode.iswide() and unicode.width() is dropped and
+  the East Asian Width support is moved to unicodedata extension
+  module.
 
 - Patch #941229: The source code encoding in interactive mode
   now refers sys.stdin.encoding not just ISO-8859-1 anymore.  This
