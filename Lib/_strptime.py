@@ -258,13 +258,12 @@ class LocaleTime(object):
                     ('17', '%d'), ('03', '%m'), ('3', '%m'),
                     # '3' needed for when no leading zero.
                     ('2', '%w'), ('10', '%I')):
-                try:
-                    # Done this way to deal with possible lack of locale info
-                    # manifesting itself as the empty string (i.e., Swedish's
-                    # lack of AM/PM info).
+                # Must deal with possible lack of locale info
+                # manifesting itself as the empty string (e.g., Swedish's
+                # lack of AM/PM info) or a platform returning a tuple of empty
+                # strings (e.g., MacOS 9 having timezone as ('','')).
+                if old:
                     current_format = current_format.replace(old, new)
-                except ValueError:
-                    pass
             time_tuple = time.struct_time((1999,1,3,1,1,1,6,3,0))
             if time.strftime(directive, time_tuple).find('00'):
                 U_W = '%U'
@@ -351,7 +350,7 @@ class TimeRE(dict):
                 raise
 
     def __seqToRE(self, to_convert, directive):
-        """Convert a list to a regex string for matching directive."""
+        """Convert a list to a regex string for matching a directive."""
         def sorter(a, b):
             """Sort based on length.
 
@@ -370,6 +369,11 @@ class TimeRE(dict):
             return cmp(b_length, a_length)
 
         to_convert = to_convert[:]  # Don't want to change value in-place.
+        for value in to_convert:
+            if value != '':
+                break
+        else:
+            return ''
         to_convert.sort(sorter)
         regex = '|'.join(to_convert)
         regex = '(?P<%s>%s' % (directive, regex)
@@ -473,7 +477,7 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                 found_zone = found_dict['Z'].lower()
                 if locale_time.timezone[0] == locale_time.timezone[1]:
                     pass #Deals with bad locale setup where timezone info is
-                         # the same; first found on FreeBSD 4.4 -current
+                         # the same; first found on FreeBSD 4.4.
                 elif locale_time.timezone[0].lower() == found_zone:
                     tz = 0
                 elif locale_time.timezone[1].lower() == found_zone:
