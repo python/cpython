@@ -7,6 +7,7 @@ Implements the Distutils 'build_scripts' command."""
 __revision__ = "$Id$"
 
 import sys, os, re
+from distutils import sysconfig
 from distutils.core import Command
 from distutils.dep_util import newer
 from distutils.util import convert_path
@@ -86,8 +87,16 @@ class build_scripts (Command):
                               (script, self.build_dir))
                 if not self.dry_run:
                     outf = open(outfile, "w")
-                    outf.write("#!%s%s\n" % 
-                               (os.path.normpath(sys.executable), post_interp))
+                    if not sysconfig.python_build:
+                        outf.write("#!%s%s\n" % 
+                                   (os.path.normpath(sys.executable),
+                                    post_interp))
+                    else:
+                        outf.write("#!%s%s" %
+                                   (os.path.join(
+                            sysconfig.get_config_var("BINDIR"),
+                            "python" + sysconfig.get_config_var("EXE")),
+                                    post_interp))
                     outf.writelines(f.readlines())
                     outf.close()
                 if f:
