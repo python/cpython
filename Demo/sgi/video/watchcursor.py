@@ -33,6 +33,7 @@ watch.reverse() # Turn it upside-down
 def defwatch(index):
 	import gl
 	gl.defcursor(index, watch*8)
+	gl.curorigin(index, 8, 8)
 
 def test():
 	import gl
