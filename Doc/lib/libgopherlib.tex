@@ -3,4 +3,28 @@
 
 \renewcommand{\indexsubitem}{(in module gopherlib)}
 
-To be provided.
+This module provides a minimal implementation of client side of the
+the Gopher protocol.  It is used by the module \code{urllib} to handle
+URLs that use the Gopher protocol.
+
+The module defines the following functions:
+
+\begin{funcdesc}{send_selector}{selector\, host\optional{\, port}}
+Send a \var{selector} string to the gopher server at \var{host} and
+\var{port} (default 70).  Return an open file object from which the
+returned document can be read.
+\end{funcdesc}
+
+\begin{funcdesc}{send_query}{selector\, query\, host\optional{\, port}}
+Send a \var{selector} string and a \var{query} string to a gopher
+server at \var{host} and \var{port} (default 70).  Return an open file
+object from which the returned document can be read.
+\end{funcdesc}
+
+Note that the data returned by the Gopher server can be of any type,
+depending on the first character of the selector string.  If the data
+is text (first character of the selector is \samp{0}), lines are
+terminated by CRLF, and the data is terminated by a line consisting of
+a single \samp{.}, and a leading \samp{.} should be stripped from
+lines that begin with \samp{..}.  Directory listings (first charactger
+of the selector is \samp{1}) are transferred using the same protocol.
