@@ -109,6 +109,7 @@ emacs_bindings = [
     
     ("debug", "Go to line from traceback", None, "<<goto-traceback-line>>"),
     ("debug", "Open stack viewer", None, "<<open-stack-viewer>>"),
+    ("debug", "Toggle debugger", None, "<<toggle-debugger>>"),
     
     # Help menu
     
