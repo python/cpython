@@ -44,7 +44,7 @@
 #include "Python.h"
 
 static PyObject *fpe_error;
-void initfpetest(void);
+DL_EXPORT(void) initfpetest(void);
 static PyObject *test(PyObject *self,PyObject *args);
 static double db0(double);
 static double overflow(double);
