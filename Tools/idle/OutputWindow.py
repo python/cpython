@@ -41,6 +41,9 @@ class OutputWindow(EditorWindow):
     def writelines(self, l):
         map(self.write, l)
 
+    def flush(self):
+        pass
+
     # Our own right-button menu
 
     rmenu_specs = [
