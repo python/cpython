@@ -618,9 +618,9 @@
                 <SETTING><NAME>MWMerge_MacOS_copyResources</NAME><VALUE>1</VALUE></SETTING>
                 <SETTING><NAME>MWMerge_MacOS_skipResources</NAME>
                     <SETTING><VALUE></VALUE></SETTING>
-                    <SETTING><VALUE>ª¿°</VALUE></SETTING>
-                    <SETTING><VALUE>ß^h</VALUE></SETTING>
-                    <SETTING><VALUE>Ñ§0</VALUE></SETTING>
+                    <SETTING><VALUE>&#170;&#191;&#176;</VALUE></SETTING>
+                    <SETTING><VALUE>&#223;^h</VALUE></SETTING>
+                    <SETTING><VALUE>&#209;&#167;0</VALUE></SETTING>
                 </SETTING>
 
                 <!-- Settings for "PPC CodeGen" panel -->
