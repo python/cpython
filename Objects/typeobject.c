@@ -8,10 +8,16 @@
 /* The *real* layout of a type object when allocated on the heap */
 /* XXX Should we publish this in a header file? */
 typedef struct {
+	/* Note: there's a dependency on the order of these members
+	   in slotptr() below. */
 	PyTypeObject type;
 	PyNumberMethods as_number;
-	PySequenceMethods as_sequence;
 	PyMappingMethods as_mapping;
+	PySequenceMethods as_sequence; /* as_sequence comes after as_mapping,
+					  so that the mapping wins when both
+					  the mapping and the sequence define
+					  a given operator (e.g. __getitem__).
+					  see add_operators() below. */
 	PyBufferProcs as_buffer;
 	PyObject *name, *slots;
 	PyMemberDef members[1];
@@ -3870,15 +3876,16 @@ slotptr(PyTypeObject *type, int offset)
 {
 	char *ptr;
 
+	/* Note: this depends on the order of the members of etype! */
 	assert(offset >= 0);
 	assert(offset < offsetof(etype, as_buffer));
-	if (offset >= offsetof(etype, as_mapping)) {
-		ptr = (void *)type->tp_as_mapping;
-		offset -= offsetof(etype, as_mapping);
-	}
-	else if (offset >= offsetof(etype, as_sequence)) {
+	if (offset >= offsetof(etype, as_sequence)) {
 		ptr = (void *)type->tp_as_sequence;
 		offset -= offsetof(etype, as_sequence);
+	}
+	else if (offset >= offsetof(etype, as_mapping)) {
+		ptr = (void *)type->tp_as_mapping;
+		offset -= offsetof(etype, as_mapping);
 	}
 	else if (offset >= offsetof(etype, as_number)) {
 		ptr = (void *)type->tp_as_number;
@@ -4113,24 +4120,32 @@ fixup_slot_dispatchers(PyTypeObject *type)
 
 /* This function is called by PyType_Ready() to populate the type's
    dictionary with method descriptors for function slots.  For each
-   function slot (like tp_repr) that's defined in the type, one or
-   more corresponding descriptors are added in the type's tp_dict
-   dictionary under the appropriate name (like __repr__).  Some
-   function slots cause more than one descriptor to be added (for
-   example, the nb_add slot adds both __add__ and __radd__
-   descriptors) and some function slots compete for the same
-   descriptor (for example both sq_item and mp_subscript generate a
-   __getitem__ descriptor).  This only adds new descriptors and
-   doesn't overwrite entries in tp_dict that were previously
-   defined.  The descriptors contain a reference to the C function
-   they must call, so that it's safe if they are copied into a
-   subtype's __dict__ and the subtype has a different C function in
-   its slot -- calling the method defined by the descriptor will call
-   the C function that was used to create it, rather than the C
-   function present in the slot when it is called.  (This is important
-   because a subtype may have a C function in the slot that calls the
-   method from the dictionary, and we want to avoid infinite recursion
-   here.) */
+   function slot (like tp_repr) that's defined in the type, one or more
+   corresponding descriptors are added in the type's tp_dict dictionary
+   under the appropriate name (like __repr__).  Some function slots
+   cause more than one descriptor to be added (for example, the nb_add
+   slot adds both __add__ and __radd__ descriptors) and some function
+   slots compete for the same descriptor (for example both sq_item and
+   mp_subscript generate a __getitem__ descriptor).
+
+   In the latter case, the first slotdef entry encoutered wins.  Since
+   slotdef entries are sorted by the offset of the slot in the etype
+   struct, this gives us some control over disambiguating between
+   competing slots: the members of struct etype are listed from most
+   general to least general, so the most general slot is preferred.  In
+   particular, because as_mapping comes before as_sequence, for a type
+   that defines both mp_subscript and sq_item, mp_subscript wins.
+
+   This only adds new descriptors and doesn't overwrite entries in
+   tp_dict that were previously defined.  The descriptors contain a
+   reference to the C function they must call, so that it's safe if they
+   are copied into a subtype's __dict__ and the subtype has a different
+   C function in its slot -- calling the method defined by the
+   descriptor will call the C function that was used to create it,
+   rather than the C function present in the slot when it is called.
+   (This is important because a subtype may have a C function in the
+   slot that calls the method from the dictionary, and we want to avoid
+   infinite recursion here.) */
 
 static int
 add_operators(PyTypeObject *type)
