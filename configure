@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.207 
+# From configure.in Revision: 1.208 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -717,7 +717,7 @@ echo "$ac_t""$without_gcc" 1>&6
 
 
 
-MAINOBJ=Modules/python.o
+MAINOBJ=python.o
 echo $ac_n "checking for --with-cxx=<compiler>""... $ac_c" 1>&6
 echo "configure:723: checking for --with-cxx=<compiler>" >&5
 # Check whether --with-cxx or --without-cxx was given.
@@ -729,7 +729,7 @@ if test "${with_cxx+set}" = set; then
 	no)	CXX=
 		with_cxx=no;;
 	*)	CXX=$withval
-		MAINOBJ=Modules/ccpython.o
+		MAINOBJ=ccpython.o
 		with_cxx=$withval;;
 	esac
 else
@@ -5041,7 +5041,7 @@ else
 int main() {
 
 /* Ultrix mips cc rejects this.  */
-typedef int charset[2]; const charset x = {0,0};
+typedef int charset[2]; const charset x;
 /* SunOS 4.1.1 cc rejects this.  */
 char const *const *ccp;
 char **p;
