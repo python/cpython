@@ -523,9 +523,15 @@ new_buffersize(PyFileObject *f, size_t currentsize)
 		   works.  We can't use the lseek() value either, because we
 		   need to take the amount of buffered data into account.
 		   (Yet another reason why stdio stinks. :-) */
+#ifdef USE_GUSI2
+		pos = lseek(fileno(f->f_fp), 1L, SEEK_CUR);
+		pos = lseek(fileno(f->f_fp), -1L, SEEK_CUR);
+#else
 		pos = lseek(fileno(f->f_fp), 0L, SEEK_CUR);
-		if (pos >= 0)
+#endif
+		if (pos >= 0) {
 			pos = ftell(f->f_fp);
+		}
 		if (pos < 0)
 			clearerr(f->f_fp);
 		if (end > pos && pos >= 0)
