@@ -98,6 +98,7 @@ conv_atts_using_string(XML_Char **atts)
             }
             if (PyDict_SetItemString(attrs_obj,
                                      (char*)*attrs_k, rv) < 0) {
+                Py_DECREF(rv);
                 Py_DECREF(attrs_obj);
                 attrs_obj = NULL;
                 goto finally;
