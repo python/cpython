@@ -901,8 +901,6 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 
 PyObject *PyUnicode_AsUTF8String(PyObject *unicode)
 {
-    PyObject *str;
-    
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
