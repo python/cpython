@@ -40,6 +40,10 @@ Module interface:
 - socket.gethostname() --> host name (string: 'spam' or 'spam.domain.com')
 - socket.getservbyname(servicename, protocolname) --> port number
 - socket.socket(family, type [, proto]) --> new socket object
+- socket.ntohs(16 bit value) --> new int object
+- socket.ntohl(32 bit value) --> new int object
+- socket.htons(16 bit value) --> new int object
+- socket.htonl(32 bit value) --> new int object
 - socket.AF_INET, socket.SOCK_STREAM, etc.: constants from <socket.h>
 - an Internet socket address is a pair (hostname, port)
   where hostname can be anything recognized by gethostbyname()
@@ -1199,6 +1203,54 @@ static PyObject * PySocket_WSACleanup(self, args)
 	return Py_None;
 }
 
+static PyObject *
+BUILD_FUNC_DEF_2(PySocket_ntohs, PyObject *, self, PyObject *, args)
+{
+	int x1, x2;
+
+	if (!PyArg_Parse(args, "i", &x1)) {
+		return NULL;
+	}
+	x2 = (int)ntohs((short)x1);
+	return PyInt_FromLong(x2);
+}
+
+static PyObject *
+BUILD_FUNC_DEF_2(PySocket_ntohl, PyObject *, self, PyObject *, args)
+{
+	int x1, x2;
+
+	if (!PyArg_Parse(args, "i", &x1)) {
+		return NULL;
+	}
+	x2 = ntohl(x1);
+	return PyInt_FromLong(x2);
+}
+
+static PyObject *
+BUILD_FUNC_DEF_2(PySocket_htons, PyObject *, self, PyObject *, args)
+{
+	int x1, x2;
+
+	if (!PyArg_Parse(args, "i", &x1)) {
+		return NULL;
+	}
+	x2 = (int)htons((short)x1);
+	return PyInt_FromLong(x2);
+}
+
+static PyObject *
+BUILD_FUNC_DEF_2(PySocket_htonl, PyObject *, self, PyObject *, args)
+{
+	int x1, x2;
+
+	if (!PyArg_Parse(args, "i", &x1)) {
+		return NULL;
+	}
+	x2 = htonl(x1);
+	return PyInt_FromLong(x2);
+}
+
 /* List of functions exported by this module. */
 
 static PyMethodDef PySocket_methods[] = {
@@ -1212,6 +1264,10 @@ static PyMethodDef PySocket_methods[] = {
 #ifndef NO_DUP
 	{"fromfd",		PySocket_fromfd},
 #endif
+	{"ntohs",		PySocket_ntohs},
+	{"ntohl",		PySocket_ntohl},
+	{"htons",		PySocket_htons},
+	{"htonl",		PySocket_htonl},
 	{NULL,			NULL}		 /* Sentinel */
 };
 
