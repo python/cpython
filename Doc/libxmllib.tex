@@ -4,11 +4,14 @@
 \stmodindex{xmllib}
 \index{XML}
 
-This module defines a class \code{XMLParser} which serves as the basis 
+This module defines a class \class{XMLParser} which serves as the basis 
 for parsing text files formatted in XML (eXtended Markup Language).
 
-The \code{XMLParser} class must be instantiated without arguments.  It 
-has the following interface methods:
+\begin{classdesc}{XMLParser}{}
+The \class{XMLParser} class must be instantiated without arguments.
+\end{classdesc}
+
+This class provides the following interface methods:
 
 \setindexsubitem{(XMLParser method)}
 
@@ -29,40 +32,40 @@ Enter literal mode (CDATA mode).
 \begin{funcdesc}{feed}{data}
 Feed some text to the parser.  It is processed insofar as it consists
 of complete elements; incomplete data is buffered until more data is
-fed or \code{close()} is called.
+fed or \method{close()} is called.
 \end{funcdesc}
 
 \begin{funcdesc}{close}{}
 Force processing of all buffered data as if it were followed by an
 end-of-file mark.  This method may be redefined by a derived class to
 define additional processing at the end of the input, but the
-redefined version should always call \code{XMLParser.close()}.
+redefined version should always call \method{close()}.
 \end{funcdesc}
 
 \begin{funcdesc}{translate_references}{data}
-Translate all entity and character references in \code{data} and
+Translate all entity and character references in \var{data} and
 returns the translated string.
 \end{funcdesc}
 
-\begin{funcdesc}{handle_xml}{encoding\, standalone}
+\begin{funcdesc}{handle_xml}{encoding, standalone}
 This method is called when the \code{<?xml ...?>} tag is processed.
 The arguments are the values of the encoding and standalone attributes 
 in the tag.  Both encoding and standalone are optional.  The values
-passed to \code{handle_xml} default to \code{None} and the string
+passed to \method{handle_xml()} default to \code{None} and the string
 \code{'no'} respectively.
 \end{funcdesc}
 
-\begin{funcdesc}{handle_doctype}{tag\, data}
+\begin{funcdesc}{handle_doctype}{tag, data}
 This method is called when the \code{<!DOCTYPE...>} tag is processed.
 The arguments are the name of the root element and the uninterpreted
 contents of the tag, starting after the white space after the name of
 the root element.
 \end{funcdesc}
 
-\begin{funcdesc}{handle_starttag}{tag\, method\, attributes}
+\begin{funcdesc}{handle_starttag}{tag, method, attributes}
 This method is called to handle start tags for which a
-\code{start_\var{tag}()} method has been defined.  The \code{tag}
-argument is the name of the tag, and the \code{method} argument is the
+\code{start_\var{tag}()} method has been defined.  The \var{tag}
+argument is the name of the tag, and the \method{method} argument is the
 bound method which should be used to support semantic interpretation
 of the start tag.  The \var{attributes} argument is a dictionary of
 attributes, the key being the \var{name} and the value being the
@@ -71,19 +74,19 @@ Character and entity references in the \var{value} have
 been interpreted.  For instance, for the tag
 \code{<A HREF="http://www.cwi.nl/">}, this method would be called as
 \code{handle_starttag('A', self.start_A, \{'HREF': 'http://www.cwi.nl/'\})}.
-The base implementation simply calls \code{method} with \code{attributes}
+The base implementation simply calls \var{method} with \var{attributes}
 as the only argument.
 \end{funcdesc}
 
 \begin{funcdesc}{handle_endtag}{tag\, method}
 This method is called to handle endtags for which an
-\code{end_\var{tag}()} method has been defined.  The \code{tag}
+\code{end_\var{tag}()} method has been defined.  The \var{tag}
 argument is the name of the tag, and the
-\code{method} argument is the bound method which should be used to
+\var{method} argument is the bound method which should be used to
 support semantic interpretation of the end tag.  If no
 \code{end_\var{tag}()} method is defined for the closing element, this
 handler is not called.  The base implementation simply calls
-\code{method}.
+\var{method}.
 \end{funcdesc}
 
 \begin{funcdesc}{handle_data}{data}
@@ -98,7 +101,7 @@ This method is called to process a character reference of the form
 or a hexadecimal number when preceded by \code{x}.
 In the base implementation, \var{ref} must be a number in the
 range 0-255.  It translates the character to \ASCII{} and calls the
-method \code{handle_data()} with the character as argument.  If
+method \method{handle_data()} with the character as argument.  If
 \var{ref} is invalid or out of range, the method
 \code{unknown_charref(\var{ref})} is called to handle the error.  A
 subclass must override this method to provide support for character
@@ -106,21 +109,21 @@ references outside of the \ASCII{} range.
 \end{funcdesc}
 
 \begin{funcdesc}{handle_entityref}{ref}
-This method is called to process a general entity reference of the form
-\samp{\&\var{ref};} where \var{ref} is an general entity
+This method is called to process a general entity reference of the
+form \samp{\&\var{ref};} where \var{ref} is an general entity
 reference.  It looks for \var{ref} in the instance (or class)
-variable \code{entitydefs} which should be a mapping from entity names
-to corresponding translations.
-If a translation is found, it calls the method \code{handle_data()}
+variable \member{entitydefs} which should be a mapping from entity
+names to corresponding translations.
+If a translation is found, it calls the method \method{handle_data()}
 with the translation; otherwise, it calls the method
-\code{unknown_entityref(\var{ref})}.  The default \code{entitydefs}
+\code{unknown_entityref(\var{ref})}.  The default \member{entitydefs}
 defines translations for \code{\&amp;}, \code{\&apos}, \code{\&gt;},
 \code{\&lt;}, and \code{\&quot;}.
 \end{funcdesc}
 
 \begin{funcdesc}{handle_comment}{comment}
 This method is called when a comment is encountered.  The
-\code{comment} argument is a string containing the text between the
+\var{comment} argument is a string containing the text between the
 \samp{<!--} and \samp{-->} delimiters, but not the delimiters
 themselves.  For example, the comment \samp{<!--text-->} will
 cause this method to be called with the argument \code{'text'}.  The
@@ -129,27 +132,27 @@ default method does nothing.
 
 \begin{funcdesc}{handle_cdata}{data}
 This method is called when a CDATA element is encountered.  The
-\code{data} argument is a string containing the text between the
+\var{data} argument is a string containing the text between the
 \samp{<![CDATA[} and \samp{]]>} delimiters, but not the delimiters
 themselves.  For example, the entity \samp{<![CDATA[text]]>} will
 cause this method to be called with the argument \code{'text'}.  The
-default method does nothing.
+default method does nothing, and is intended to be overridden.
 \end{funcdesc}
 
-\begin{funcdesc}{handle_proc}{name\, data}
-This method is called when a processing instruction (PI) is encountered.  The
-\code{name} is the PI target, and the \code{data} argument is a
-string containing the text between the PI target and the closing delimiter,
-but not the delimiter itself.  For example, the instruction
-\samp{<?XML text?>} will cause this method to be called with the
-arguments \code{'XML'} and \code{'text'}.  The default method does
-nothing.  Note that if a document starts with a \code{<?xml ...?>}
-tag, \code{handle_xml} is called to handle it.
+\begin{funcdesc}{handle_proc}{name, data}
+This method is called when a processing instruction (PI) is
+encountered.  The \var{name} is the PI target, and the \var{data}
+argument is a string containing the text between the PI target and the
+closing delimiter, but not the delimiter itself.  For example, the
+instruction \samp{<?XML text?>} will cause this method to be called
+with the arguments \code{'XML'} and \code{'text'}.  The default method
+does nothing.  Note that if a document starts with \code{<?xml
+...?>}, \method{handle_xml()} is called to handle it.
 \end{funcdesc}
 
 \begin{funcdesc}{handle_special}{data}
 This method is called when a declaration is encountered.  The
-\code{data} argument is a string containing the text between the
+\var{data} argument is a string containing the text between the
 \samp{<!} and \samp{>} delimiters, but not the delimiters
 themselves.  For example, the entity \samp{<!ENTITY text>} will
 cause this method to be called with the argument \code{'ENTITY text'}.  The
@@ -159,11 +162,12 @@ handled separately if it is located at the start of the document.
 
 \begin{funcdesc}{syntax_error}{message}
 This method is called when a syntax error is encountered.  The
-\code{message} is a description of what was wrong.  The default method 
-raises a \code{RuntimeError} exception.  If this method is overridden, 
-it is permissable for it to return.  This method is only called when
-the error can be recovered from.  Unrecoverable errors raise a
-\code{RuntimeError} without first calling \code{syntax_error}.
+\var{message} is a description of what was wrong.  The default method 
+raises a \exception{RuntimeError} exception.  If this method is
+overridden, it is permissable for it to return.  This method is only
+called when the error can be recovered from.  Unrecoverable errors
+raise a \exception{RuntimeError} without first calling
+\method{syntax_error()}.
 \end{funcdesc}
 
 \begin{funcdesc}{unknown_starttag}{tag\, attributes}
@@ -199,8 +203,8 @@ correct case:
 \begin{funcdescni}{start_\var{tag}}{attributes}
 This method is called to process an opening tag \var{tag}.  The
 \var{attributes} argument has the same meaning as described for
-\code{handle_starttag()} above.  In fact, the base implementation of
-\code{handle_starttag()} calls this method.
+\method{handle_starttag()} above.  In fact, the base implementation of
+\method{handle_starttag()} calls this method.
 \end{funcdescni}
 
 \begin{funcdescni}{end_\var{tag}}{}
@@ -215,7 +219,7 @@ the keys are the valid attributes for the element \var{tag}, and the
 values the default values of the attributes, or \code{None} if there
 is no default.
 In addition to the attributes that were present in the tag, the
-attribute dictionary that is passed to \code{handle_starttag()} and
-\code{unknown_starttag()} contains values for all attributes that have a
-default value.
+attribute dictionary that is passed to \method{handle_starttag()} and
+\method{unknown_starttag()} contains values for all attributes that
+have a default value.
 \end{datadescni}
