@@ -98,6 +98,17 @@ def exists(s):
 		return 0
 	return 1
 
+#
+# dummy expandvars to retain interface-compatability with other
+# operating systems.
+def expandvars(path):
+	return path
+
+#
+# dummy expanduser to retain interface-compatability with other
+# operating systems.
+def expanduser(path):
+	return path
 
 # Normalize a pathname: get rid of '::' sequences by backing up,
 # e.g., 'foo:bar::bletch' becomes 'foo:bletch'.
