@@ -635,7 +635,7 @@ file_readinto(PyFileObject *f, PyObject *args)
 }
 
 /**************************************************************************
-Win32 MS routine to get next line.
+Routine to get next line using platform fgets().
 
 Under MSVC 6:
 
@@ -651,23 +651,41 @@ So we use fgets for speed(!), despite that it's painful.
 
 MS realloc is also slow.
 
-In the usual case, we have one pleasantly small line already sitting in a
-stdio buffer, and we optimize heavily for that case.
+Reports from other platforms on this method vs getc_unlocked (which MS doesn't
+have):
+	Linux		a wash
+	Solaris		a wash
+	Tru64 Unix	getline_via_fgets significantly faster
 
-CAUTION:  This routine cheats, relying on that MSVC 6 fgets doesn't overwrite
-any buffer positions to the right of the terminating null byte.  Seems
-unlikely that will change in the future, but ... std test test_bufio should
-catch it if that changes.
+CAUTION:  The C std isn't clear about this:  in those cases where fgets
+writes something into the buffer, can it write into any position beyond the
+required trailing null byte?  MSVC 6 fgets does not, and no platform is (yet)
+known on which it does; and it would be a strange way to code fgets. Still,
+getline_via_fgets may not work correctly if it does.  The std test
+test_bufio.py should fail if platform fgets() routinely writes beyond the
+trailing null byte.  #define DONT_USE_FGETS_IN_GETLINE to disable this code.
 **************************************************************************/
 
-/* if Win32 and MS's compiler */
-#if defined(MS_WIN32) && defined(_MSC_VER)
-#define USE_MS_GETLINE_HACK
+/* Use this routine if told to, or by default on non-get_unlocked()
+ * platforms unless told not to.  Yikes!  Let's spell that out:
+ * On a platform with getc_unlocked():
+ *     By default, use getc_unlocked().
+ *     If you want to use fgets() instead, #define USE_FGETS_IN_GETLINE.
+ * On a platform without getc_unlocked():
+ *     By default, use fgets().
+ *     If you don't want to use fgets(), #define DONT_USE_FGETS_IN_GETLINE.
+ */
+#if !defined(USE_FGETS_IN_GETLINE) && !defined(HAVE_GETC_UNLOCKED)
+#define USE_FGETS_IN_GETLINE
 #endif
 
-#ifdef USE_MS_GETLINE_HACK
+#if defined(DONT_USE_FGETS_IN_GETLINE) && defined(USE_FGETS_IN_GETLINE)
+#undef USE_FGETS_IN_GETLINE
+#endif
+
+#ifdef USE_FGETS_IN_GETLINE
 static PyObject*
-ms_getline_hack(FILE *fp)
+getline_via_fgets(FILE *fp)
 {
 /* INITBUFSIZE is the maximum line length that lets us get away with the fast
  * no-realloc path.  get_line uses 100 for its initial size, but isn't trying
@@ -686,14 +704,14 @@ ms_getline_hack(FILE *fp)
 	char* pvfree;	/* address of next free slot */
 	char* pvend;    /* address one beyond last free slot */
 	char* p;	/* temp */
-	char msbuf[INITBUFSIZE];
+	char buf[INITBUFSIZE];
 
 	/* Optimize for normal case:  avoid _PyString_Resize if at all
-	 * possible via first reading into auto msbuf.
+	 * possible via first reading into auto buf.
 	 */
 	Py_BEGIN_ALLOW_THREADS
-	memset(msbuf, '\n', INITBUFSIZE);
-	p = fgets(msbuf, INITBUFSIZE, fp);
+	memset(buf, '\n', INITBUFSIZE);
+	p = fgets(buf, INITBUFSIZE, fp);
 	Py_END_ALLOW_THREADS
 
 	if (p == NULL) {
@@ -704,7 +722,7 @@ ms_getline_hack(FILE *fp)
 		return v;
 	}
 	/* fgets read *something* */
-	p = memchr(msbuf, '\n', INITBUFSIZE);
+	p = memchr(buf, '\n', INITBUFSIZE);
 	if (p != NULL) {
 		/* Did the \n come from fgets or from us?
 		 * Since fgets stops at the first \n, and then writes \0, if
@@ -712,34 +730,34 @@ ms_getline_hack(FILE *fp)
 		 * could not have come from us, since the \n's we filled the
 		 * buffer with have only more \n's to the right.
 		 */
-		pvend = msbuf + INITBUFSIZE;
+		pvend = buf + INITBUFSIZE;
 		if (p+1 < pvend && *(p+1) == '\0') {
 			/* It's from fgets:  we win!  In particular, we
 			 * haven't done any mallocs yet, and can build the
 			 * final result on the first try.
 			 */
-			v = PyString_FromStringAndSize(msbuf, p - msbuf + 1);
+			v = PyString_FromStringAndSize(buf, p - buf + 1);
 			return v;
 		}
 		/* Must be from us:  fgets didn't fill the buffer and didn't
 		 * find a newline, so it must be the last and newline-free
 		 * line of the file.
 		 */
-		assert(p > msbuf && *(p-1) == '\0');
-		v = PyString_FromStringAndSize(msbuf, p - msbuf - 1);
+		assert(p > buf && *(p-1) == '\0');
+		v = PyString_FromStringAndSize(buf, p - buf - 1);
 		return v;
 	}
 	/* yuck:  fgets overwrote all the newlines, i.e. the entire buffer.
 	 * So this line isn't over yet, or maybe it is but we're exactly at
 	 * EOF; in either case, we're tired <wink>.
 	 */
-	assert(msbuf[INITBUFSIZE-1] == '\0');
+	assert(buf[INITBUFSIZE-1] == '\0');
 	total_v_size = INITBUFSIZE + INCBUFSIZE;
 	v = PyString_FromStringAndSize((char*)NULL, (int)total_v_size);
 	if (v == NULL)
 		return v;
 	/* copy over everything except the last null byte */
-	memcpy(BUF(v), msbuf, INITBUFSIZE-1);
+	memcpy(BUF(v), buf, INITBUFSIZE-1);
 	pvfree = BUF(v) + INITBUFSIZE - 1;
 
 	/* Keep reading stuff into v; if it ever ends successfully, break
@@ -798,7 +816,7 @@ ms_getline_hack(FILE *fp)
 #undef INITBUFSIZE
 #undef INCBUFSIZE
 }
-#endif	/* ifdef USE_MS_GETLINE_HACK */
+#endif	/* ifdef USE_FGETS_IN_GETLINE */
 
 /* Internal routine to get a line.
    Size argument interpretation:
@@ -825,10 +843,9 @@ get_line(PyFileObject *f, int n)
 	size_t n1, n2;
 	PyObject *v;
 
-#ifdef USE_MS_GETLINE_HACK
-	
+#ifdef USE_FGETS_IN_GETLINE
 	if (n <= 0)
-		return ms_getline_hack(fp);
+		return getline_via_fgets(fp);
 #endif
 	n2 = n > 0 ? n : 100;
 	v = PyString_FromStringAndSize((char *)NULL, n2);
@@ -967,10 +984,10 @@ static PyObject *
 file_xreadlines(PyFileObject *f, PyObject *args)
 {
 	static PyObject* xreadlines_function = NULL;
-	
+
 	if (!PyArg_ParseTuple(args, ":xreadlines"))
 		return NULL;
-	
+
 	if (!xreadlines_function) {
 		PyObject *xreadlines_module =
 			PyImport_ImportModule("xreadlines");
