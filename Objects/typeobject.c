@@ -1468,21 +1468,6 @@ static PyGetSetDef subtype_getsets_weakref_only[] = {
 	{0}
 };
 
-/* bozo: __getstate__ that raises TypeError */
-
-static PyObject *
-bozo_func(PyObject *self, PyObject *args)
-{
-	PyErr_SetString(PyExc_TypeError,
-			"a class that defines __slots__ without "
-			"defining __getstate__ cannot be pickled");
-	return NULL;
-}
-
-static PyMethodDef bozo_ml = {"__getstate__", bozo_func, METH_VARARGS};
-
-static PyObject *bozo_obj = NULL;
-
 static int
 valid_identifier(PyObject *s)
 {
@@ -1739,23 +1724,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		nslots = j;
 		Py_DECREF(slots);
 		slots = newslots;
-
-		/* See if *this* class defines __getstate__ */
-		if (PyDict_GetItemString(dict, "__getstate__") == NULL) {
-			/* If not, provide a bozo that raises TypeError */
-			if (bozo_obj == NULL) {
-				bozo_obj = PyCFunction_New(&bozo_ml, NULL);
-				if (bozo_obj == NULL)
-					goto bad_slots;
-			}
-			if (PyDict_SetItemString(dict,
-						 "__getstate__",
-						 bozo_obj) < 0)
-			{
-				Py_DECREF(bozo_obj);
-				goto bad_slots;
-			}
-		}
 
 		/* Secondary bases may provide weakrefs or dict */
 		if (nbases > 1 &&

@@ -2835,7 +2835,7 @@ def pickleslots():
             pass
         else:
             raise TestFailed, "should fail: cPickle D instance - %s" % base
-        # Give C a __getstate__ and __setstate__
+        # Give C a nice generic __getstate__ and __setstate__
         class C(base):
             __slots__ = ['a']
             def __getstate__(self):
@@ -2843,10 +2843,12 @@ def pickleslots():
                     d = self.__dict__.copy()
                 except AttributeError:
                     d = {}
-                try:
-                    d['a'] = self.a
-                except AttributeError:
-                    pass
+                for cls in self.__class__.__mro__:
+                    for sn in cls.__dict__.get('__slots__', ()):
+                        try:
+                            d[sn] = getattr(self, sn)
+                        except AttributeError:
+                            pass
                 return d
             def __setstate__(self, d):
                 for k, v in d.items():
@@ -2871,21 +2873,18 @@ def pickleslots():
         vereq(y.a + y.b, 142)
         y = cPickle.loads(cPickle.dumps(x))
         vereq(y.a + y.b, 142)
-        # But a subclass that adds a slot should not work
+        # A subclass that adds a slot should also work
         class E(C):
             __slots__ = ['b']
-        try:
-            pickle.dumps(E())
-        except TypeError:
-            pass
-        else:
-            raise TestFailed, "should fail: pickle E instance - %s" % base
-        try:
-            cPickle.dumps(E())
-        except TypeError:
-            pass
-        else:
-            raise TestFailed, "should fail: cPickle E instance - %s" % base
+        x = E()
+        x.a = 42
+        x.b = "foo"
+        y = pickle.loads(pickle.dumps(x))
+        vereq(y.a, x.a)
+        vereq(y.b, x.b)
+        y = cPickle.loads(cPickle.dumps(x))
+        vereq(y.a, x.a)
+        vereq(y.b, x.b)
 
 def copies():
     if verbose: print "Testing copy.copy() and copy.deepcopy()..."
