@@ -87,6 +87,9 @@ class BundleBuilder(Defaults):
     # The creator code of the bundle.
     creator = None
 
+    # the CFBundleIdentifier (this is used for the preferences file name)
+    bundle_id = None
+
     # List of files that have to be copied to <bundle>/Contents/Resources.
     resources = []
 
@@ -126,7 +129,9 @@ class BundleBuilder(Defaults):
             else:
                 self.creator = "????"
         plist.CFBundleSignature = self.creator
-        if not hasattr(plist, "CFBundleIdentifier"):
+        if self.bundle_id:
+            plist.CFBundleIdentifier = self.bundle_id
+        elif not hasattr(plist, "CFBundleIdentifier"):
             plist.CFBundleIdentifier = self.name
 
     def build(self):
@@ -278,9 +283,15 @@ libdir = os.path.join(os.path.dirname(execdir), "Frameworks")
 mainprogram = os.path.join(resdir, "%(mainprogram)s")
 
 sys.argv.insert(1, mainprogram)
-os.environ["PYTHONPATH"] = resdir
-if %(standalone)s:
-    os.environ["PYTHONHOME"] = resdir
+if %(standalone)s or %(semi_standalone)s:
+    os.environ["PYTHONPATH"] = resdir
+    if %(standalone)s:
+        os.environ["PYTHONHOME"] = resdir
+else:
+    pypath = os.getenv("PYTHONPATH", "")
+    if pypath:
+        pypath = ":" + pypath
+    os.environ["PYTHONPATH"] = resdir + pypath
 os.environ["PYTHONEXECUTABLE"] = executable
 os.environ["DYLD_LIBRARY_PATH"] = libdir
 os.environ["DYLD_FRAMEWORK_PATH"] = libdir
@@ -475,6 +486,7 @@ class AppBuilder(BundleBuilder):
             else:
                 hashbang = os.path.realpath(sys.executable)
             standalone = self.standalone
+            semi_standalone = self.semi_standalone
             open(bootstrappath, "w").write(BOOTSTRAP_SCRIPT % locals())
             os.chmod(bootstrappath, 0775)
 
@@ -779,6 +791,9 @@ Options:
   -c, --creator=CCCC     4-char creator code (default: '????')
       --iconfile=FILE    filename of the icon (an .icns file) to be used
                          as the Finder icon
+      --bundle-id=ID     the CFBundleIdentifier, in reverse-dns format
+                         (eg. org.python.BuildApplet; this is used for
+                         the preferences file name)
   -l, --link             symlink files/folder instead of copying them
       --link-exec        symlink the executable instead of copying it
       --standalone       build a standalone application, which is fully
@@ -813,7 +828,7 @@ def main(builder=None):
         "mainprogram=", "creator=", "nib=", "plist=", "link",
         "link-exec", "help", "verbose", "quiet", "argv", "standalone",
         "exclude=", "include=", "package=", "strip", "iconfile=",
-        "lib=", "python=", "semi-standalone")
+        "lib=", "python=", "semi-standalone", "bundle-id=")
 
     try:
         options, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -841,6 +856,8 @@ def main(builder=None):
             builder.argv_emulation = 1
         elif opt in ('-c', '--creator'):
             builder.creator = arg
+        elif opt == '--bundle-id':
+            builder.bundle_id = arg
         elif opt == '--iconfile':
             builder.iconfile = arg
         elif opt == "--lib":
