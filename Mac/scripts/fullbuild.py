@@ -221,6 +221,7 @@ def buildcarbonplugins(top, dummy1, dummy2):
 		(":Mac:Build:_Drag.carbon.mcp", "_Drag.carbon"),
 		(":Mac:Build:_Evt.carbon.mcp", "_Evt.carbon"),
 		(":Mac:Build:_Fm.carbon.mcp", "_Fm.carbon"),
+		(":Mac:Build:_IBCarbon.carbon.mcp", "_IBCarbon.carbon"),
 		(":Mac:Build:_Icn.carbon.mcp", "_Icn.carbon"),
 		(":Mac:Build:_List.carbon.mcp", "_List.carbon"),
 		(":Mac:Build:_Menu.carbon.mcp", "_Menu.carbon"),
