@@ -292,9 +292,10 @@ as other Python numeric types.
 \begin{classdesc}{Decimal}{\optional{value \optional{, context}}}
   Constructs a new \class{Decimal} object based from \var{value}.
 
-  \var{value} can be an integer, string, or another \class{Decimal} object.
-  If no \var{value} is given, returns \code{Decimal("0")}.  If \var{value} is
-  a string, it should conform to the decimal numeric string syntax:
+  \var{value} can be an integer, string, tuple, or another \class{Decimal}
+  object. If no \var{value} is given, returns \code{Decimal("0")}.  If
+  \var{value} is a string, it should conform to the decimal numeric string
+  syntax:
     
   \begin{verbatim}
     sign           ::=  '+' | '-'
@@ -308,6 +309,12 @@ as other Python numeric types.
     numeric-value  ::=  decimal-part [exponent-part] | infinity
     numeric-string ::=  [sign] numeric-value | [sign] nan  
   \end{verbatim}
+
+  If \var{value} is a \class{tuple}, it should have three components,
+  a sign (\constant{0} for positive or \constant{1} for negative),
+  a \class{tuple} of digits, and an exponent represented as an integer.
+  For example, \samp{Decimal((0, (1, 4, 1, 4), -3))} returns
+  \samp{Decimal("1.414")}.
 
   The supplied \var{context} or, if not specified, the current context
   governs only the handling of mal-formed strings not conforming to the
@@ -706,7 +713,6 @@ exception is raised upon encountering the condition.
     reduced to fit by adding zeroes to the coefficient.
 \end{classdesc*}
 
-
 \begin{classdesc*}{ConversionSyntax}
     Trying to convert a mal-formed string such as:  \code{Decimal('jump')}.
 
@@ -714,11 +720,9 @@ exception is raised upon encountering the condition.
     syntax.  If this signal is not trapped, returns \constant{NaN}.
 \end{classdesc*}
 
-
 \begin{classdesc*}{DecimalException}
     Base class for other signals.
 \end{classdesc*}
-
 
 \begin{classdesc*}{DivisionByZero}
     Signals the division of a non-infinite number by zero.
@@ -728,7 +732,6 @@ exception is raised upon encountering the condition.
     \constant{Infinity} or \constant{-Infinity} with sign determined by
     the inputs to the calculation.
 \end{classdesc*}
-
 
 \begin{classdesc*}{DivisionImpossible}
     Error performing a division operation.  Caused when an intermediate result
@@ -742,7 +745,6 @@ exception is raised upon encountering the condition.
 
     It occurs only in the context of division operations.
 \end{classdesc*}
-
 
 \begin{classdesc*}{Inexact}
     Indicates that rounding occurred and the result is not exact.
@@ -759,7 +761,6 @@ exception is raised upon encountering the condition.
     Indicates an error within the Context object such as an unknown
     rounding operation.  If not trapped, returns \constant{NaN}.
 \end{classdesc*}
-
 
 \begin{classdesc*}{InvalidOperation}
     An invalid operation was performed.
@@ -781,7 +782,6 @@ exception is raised upon encountering the condition.
     \end{verbatim}    
 \end{classdesc*}
 
-
 \begin{classdesc*}{Overflow}
     Numerical overflow.
 
@@ -802,7 +802,6 @@ exception is raised upon encountering the condition.
     loss of significant digits.
 \end{classdesc*}
 
-
 \begin{classdesc*}{Subnormal}
     Exponent was lower than \member{Emin} prior to rounding.
           
@@ -810,14 +809,12 @@ exception is raised upon encountering the condition.
     If not trapped, returns the result unchanged.
 \end{classdesc*}
 
-
 \begin{classdesc*}{Underflow}
     Numerical underflow with result rounded to zero.
 
     Occurs when a subnormal result is pushed to zero by rounding.
     \class{Inexact} and \class{Subnormal} are also signaled.
 \end{classdesc*}
-
 
 The following table summarizes the hierarchy of signals:
 
@@ -837,6 +834,8 @@ The following table summarizes the hierarchy of signals:
             Rounded
             Subnormal
 \end{verbatim}            
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Working with threads \label{decimal-threads}}
@@ -875,8 +874,129 @@ t3.start()
  
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Recipes \label{decimal-recipes}}
 
+Here are some functions demonstrating ways to work with the
+\class{Decimal} class:
 
+\begin{verbatim}
+from decimal import Decimal, getcontext
 
+def moneyfmt(value, places=2, curr='$', sep=',', dp='.', pos='', neg='-'):
+    """Convert Decimal to a money formatted string.
 
-                                                  
+    places:  required number of places after the decimal point
+    curr:    optional currency symbol before the sign (may be blank)
+    sep:     optional grouping separator (comma, period, or blank)
+    dp:      decimal point indicator (comma or period)
+             only set to blank if places is zero
+    pos:     optional sign for positive numbers ("+" or blank)
+    neg:     optional sign for negative numbers ("-" or blank)
+             leave blank to separately add brackets or a trailing minus
+
+    >>> d = Decimal('-1234567.8901')
+    >>> moneyfmt(d)
+    '-$1,234,567.89'
+    >>> moneyfmt(d, places=0, curr='', sep='.', dp='')
+    '-1.234.568'
+    >>> '($%s)' % moneyfmt(d, curr='', neg='')
+    '($1,234,567.89)'
+    """
+    q = Decimal((0, (1,), -places))    # 2 places --> '0.01'
+    sign, digits, exp = value.quantize(q).as_tuple()
+    result = []
+    digits = map(str, digits)
+    build, next = result.append, digits.pop    
+    for i in range(places):
+        build(next())
+    build(dp)
+    try:
+        while 1:
+            for i in range(3):
+                build(next())
+            if digits:
+                build(sep)
+    except IndexError:
+        pass
+    build(curr)
+    if sign:
+        build(neg)
+    else:
+        build(pos)
+    result.reverse()
+    return ''.join(result)
+
+def pi():
+    "Compute Pi to the current precision"
+    getcontext().prec += 9  # extra digits for intermediate steps
+    one = Decimal(1)        # substitute "one=1.0" for regular floats
+    lastc, t, c, n, na, d, da = 0*one, 3*one, 3*one, 1, 0, 0, 24*one
+    while c != lastc:
+        lastc = c
+        n, na = n+na, na+8
+        d, da = d+da, da+32
+        t = (t * n) / d
+        c += t
+    getcontext().prec -= 10
+    return c
+
+def exp(x):
+    """Return e raised to the power of x.
+
+    >>> print exp(Decimal(1))
+    2.718281828459045235360287471352662498
+    >>> print exp(Decimal(2))
+    7.389056098930650227230427460575007813
+    """
+    getcontext().prec += 9  # extra digits for intermediate steps
+    one = Decimal(1)        # substitute "one=1.0" for regular floats
+    i, laste, e, fact, num = 0*one, 0*one, one, one, one
+    while e != laste:
+        laste = e    
+        i += 1
+        fact *= i
+        num *= x     
+        e += num / fact   
+    getcontext().prec -= 9        
+    return e
+
+def cos(x):
+    """Return the cosine of x as measured in radians.
+
+    >>> print cos(Decimal('0.5'))
+    0.8775825618903727161162815826038296521
+    """
+    getcontext().prec += 9  # extra digits for intermediate steps
+    one = Decimal(1)        # substitute "one=1.0" for regular floats
+    i, laste, e, fact, num, sign = 0*one, 0*one, one, one, one, one
+    while e != laste:
+        laste = e    
+        i += 2
+        fact *= i * (i-1)
+        num *= x * x
+        sign *= -1
+        e += num / fact * sign 
+    getcontext().prec -= 9        
+    return e    
+
+def sin(x):
+    """Return the cosine of x as measured in radians.
+
+    >>> print sin(Decimal('0.5'))
+    0.4794255386042030002732879352155713880
+    """
+    getcontext().prec += 9  # extra digits for intermediate steps
+    one = Decimal(1)        # substitute "one=1.0" for regular floats
+    i, laste, e, fact, num, sign = one, 0*one, x, one, x, one
+    while e != laste:
+        laste = e    
+        i += 2
+        fact *= i * (i-1)
+        num *= x * x
+        sign *= -1
+        e += num / fact * sign 
+    getcontext().prec -= 9        
+    return e  
+
+\end{verbatim}                                             
