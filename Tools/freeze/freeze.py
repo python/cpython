@@ -10,14 +10,14 @@ Options:
               in the Python build directory.
               (If you never ran this, freeze won't work.)
               The default is whatever sys.prefix evaluates to.
-	      It can also be the top directory of the Python source
-	      tree; then -P must point to the build tree.
+              It can also be the top directory of the Python source
+              tree; then -P must point to the build tree.
 
 -P exec_prefix: Like -p but this is the 'exec_prefix', used to
-		install objects etc.  The default is whatever sys.exec_prefix
-		evaluates to, or the -p argument if given.
-		If -p points to the Python source tree, -P must point
-		to the build tree, if different.
+                install objects etc.  The default is whatever sys.exec_prefix
+                evaluates to, or the -p argument if given.
+                If -p points to the Python source tree, -P must point
+                to the build tree, if different.
 
 -e extension: A directory containing additional .o files that
               may be used to resolve modules.  This directory
@@ -31,7 +31,7 @@ Options:
 Arguments:
 
 script.py:    The Python script to be executed by the resulting binary.
-	      It *must* end with a .py suffix!
+              It *must* end with a .py suffix!
 
 module ...:   Additional Python modules (referenced by pathname)
               that will be included in the resulting binary.  These
@@ -70,245 +70,249 @@ import parsesetup
 # Main program
 
 def main():
-	# overridable context
-	prefix = None			# settable with -p option
-	exec_prefix = None		# settable with -P option
-	extensions = []
-	path = sys.path
-	odir = ''
+    # overridable context
+    prefix = None                       # settable with -p option
+    exec_prefix = None                  # settable with -P option
+    extensions = []
+    path = sys.path
+    odir = ''
 
-	# output files
-	frozen_c = 'frozen.c'
-	config_c = 'config.c'
-	target = 'a.out'		# normally derived from script name
-	makefile = 'Makefile'
+    # output files
+    frozen_c = 'frozen.c'
+    config_c = 'config.c'
+    target = 'a.out'                    # normally derived from script name
+    makefile = 'Makefile'
 
-	# parse command line
-	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'he:o:p:P:')
-	except getopt.error, msg:
-		usage('getopt error: ' + str(msg))
+    # parse command line
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'he:o:p:P:')
+    except getopt.error, msg:
+        usage('getopt error: ' + str(msg))
 
-	# proces option arguments
-	for o, a in opts:
-		if o == '-h':
-			print __doc__
-			return
-		if o == '-e':
-			extensions.append(a)
-		if o == '-o':
-			odir = a
-		if o == '-p':
-			prefix = a
-		if o == '-P':
-			exec_prefix = a
-	
-	# default prefix and exec_prefix
-	if not exec_prefix:
-		if prefix:
-			exec_prefix = prefix
-		else:
-			exec_prefix = sys.exec_prefix
-	if not prefix:
-		prefix = sys.prefix
+    # proces option arguments
+    for o, a in opts:
+        if o == '-h':
+            print __doc__
+            return
+        if o == '-e':
+            extensions.append(a)
+        if o == '-o':
+            odir = a
+        if o == '-p':
+            prefix = a
+        if o == '-P':
+            exec_prefix = a
 
-	# determine whether -p points to the Python source tree
-	ishome = os.path.exists(os.path.join(prefix, 'Include', 'pythonrun.h'))
+    # default prefix and exec_prefix
+    if not exec_prefix:
+        if prefix:
+            exec_prefix = prefix
+        else:
+            exec_prefix = sys.exec_prefix
+    if not prefix:
+        prefix = sys.prefix
 
-	# locations derived from options
-	version = sys.version[:3]
-	if ishome:
-	    print "(Using Python source directory)"
-	    binlib = exec_prefix
-	    incldir = os.path.join(prefix, 'Include')
-	    config_c_in = os.path.join(prefix, 'Modules', 'config.c.in')
-	    frozenmain_c = os.path.join(prefix, 'Modules', 'frozenmain.c')
-	    makefile_in = os.path.join(exec_prefix, 'Modules', 'Makefile')
-	else:
-	    binlib = os.path.join(exec_prefix,
-				  'lib', 'python%s' % version, 'config')
-	    incldir = os.path.join(prefix, 'include', 'python%s' % version)
-	    config_c_in = os.path.join(binlib, 'config.c.in')
-	    frozenmain_c = os.path.join(binlib, 'frozenmain.c')
-	    makefile_in = os.path.join(binlib, 'Makefile')
-	supp_sources = []
-	defines = []
-	includes = ['-I' + incldir, '-I' + binlib]
+    # determine whether -p points to the Python source tree
+    ishome = os.path.exists(os.path.join(prefix, 'Include', 'pythonrun.h'))
 
-	# sanity check of directories and files
-	for dir in [prefix, exec_prefix, binlib, incldir] + extensions:
-		if not os.path.exists(dir):
-			usage('needed directory %s not found' % dir)
-		if not os.path.isdir(dir):
-			usage('%s: not a directory' % dir)
-	for file in [config_c_in, makefile_in] + supp_sources:
-		if not os.path.exists(file):
-			usage('needed file %s not found' % file)
-		if not os.path.isfile(file):
-			usage('%s: not a plain file' % file)
-	for dir in extensions:
-		setup = os.path.join(dir, 'Setup')
-		if not os.path.exists(setup):
-			usage('needed file %s not found' % setup)
-		if not os.path.isfile(setup):
-			usage('%s: not a plain file' % setup)
+    # locations derived from options
+    version = sys.version[:3]
+    if ishome:
+        print "(Using Python source directory)"
+        binlib = exec_prefix
+        incldir = os.path.join(prefix, 'Include')
+        config_c_in = os.path.join(prefix, 'Modules', 'config.c.in')
+        frozenmain_c = os.path.join(prefix, 'Modules', 'frozenmain.c')
+        makefile_in = os.path.join(exec_prefix, 'Modules', 'Makefile')
+    else:
+        binlib = os.path.join(exec_prefix,
+                              'lib', 'python%s' % version, 'config')
+        incldir = os.path.join(prefix, 'include', 'python%s' % version)
+        config_c_in = os.path.join(binlib, 'config.c.in')
+        frozenmain_c = os.path.join(binlib, 'frozenmain.c')
+        makefile_in = os.path.join(binlib, 'Makefile')
+    supp_sources = []
+    defines = []
+    includes = ['-I' + incldir, '-I' + binlib]
 
-	# check that enough arguments are passed
-	if not args:
-		usage('at least one filename argument required')
+    # sanity check of directories and files
+    for dir in [prefix, exec_prefix, binlib, incldir] + extensions:
+        if not os.path.exists(dir):
+            usage('needed directory %s not found' % dir)
+        if not os.path.isdir(dir):
+            usage('%s: not a directory' % dir)
+    for file in [config_c_in, makefile_in] + supp_sources:
+        if not os.path.exists(file):
+            usage('needed file %s not found' % file)
+        if not os.path.isfile(file):
+            usage('%s: not a plain file' % file)
+    for dir in extensions:
+        setup = os.path.join(dir, 'Setup')
+        if not os.path.exists(setup):
+            usage('needed file %s not found' % setup)
+        if not os.path.isfile(setup):
+            usage('%s: not a plain file' % setup)
 
-	# check that the script name ends in ".py"
-	if args[0][-3:] != ".py":
-		usage('the script name must have a .py suffix')
+    # check that enough arguments are passed
+    if not args:
+        usage('at least one filename argument required')
 
-	# check that file arguments exist
-	for arg in args:
-		if not os.path.exists(arg):
-			usage('argument %s not found' % arg)
-		if not os.path.isfile(arg):
-			usage('%s: not a plain file' % arg)
+    # check that the script name ends in ".py"
+    if args[0][-3:] != ".py":
+        usage('the script name must have a .py suffix')
 
-	# process non-option arguments
-	scriptfile = args[0]
-	modules = args[1:]
+    # check that file arguments exist
+    for arg in args:
+        if not os.path.exists(arg):
+            usage('argument %s not found' % arg)
+        if not os.path.isfile(arg):
+            usage('%s: not a plain file' % arg)
 
-	# derive target name from script name
-	base = os.path.basename(scriptfile)
-	base, ext = os.path.splitext(base)
-	if base:
-		if base != scriptfile:
-			target = base
-		else:
-			target = base + '.bin'
-	
-	# handle -o option
-	base_frozen_c = frozen_c
-	base_config_c = config_c
-	base_target = target
-	if odir and not os.path.isdir(odir):
-		try:
-			os.mkdir(odir)
-			print "Created output directory", odir
-		except os.error, msg:
-			usage('%s: mkdir failed (%s)' % (odir, str(msg)))
-	if odir:
-		frozen_c = os.path.join(odir, frozen_c)
-		config_c = os.path.join(odir, config_c)
-		target = os.path.join(odir, target)
-		makefile = os.path.join(odir,makefile)
+    # process non-option arguments
+    scriptfile = args[0]
+    modules = args[1:]
 
-	# Actual work starts here...
+    # derive target name from script name
+    base = os.path.basename(scriptfile)
+    base, ext = os.path.splitext(base)
+    if base:
+        if base != scriptfile:
+            target = base
+        else:
+            target = base + '.bin'
 
-	dict = findmodules.findmodules(scriptfile, modules, path)
-	names = dict.keys()
-	names.sort()
-	print "Modules being frozen:"
-	for name in names:
-	    print '\t', name
+    # handle -o option
+    base_frozen_c = frozen_c
+    base_config_c = config_c
+    base_target = target
+    if odir and not os.path.isdir(odir):
+        try:
+            os.mkdir(odir)
+            print "Created output directory", odir
+        except os.error, msg:
+            usage('%s: mkdir failed (%s)' % (odir, str(msg)))
+    if odir:
+        frozen_c = os.path.join(odir, frozen_c)
+        config_c = os.path.join(odir, config_c)
+        target = os.path.join(odir, target)
+        makefile = os.path.join(odir, makefile)
 
-	backup = frozen_c + '~'
-	try:
-		os.rename(frozen_c, backup)
-	except os.error:
-		backup = None
-	outfp = open(frozen_c, 'w')
-	try:
-		makefreeze.makefreeze(outfp, dict)
-	finally:
-		outfp.close()
-	if backup:
-		if cmp.cmp(backup, frozen_c):
-			sys.stderr.write('%s not changed, not written\n' %
-					 frozen_c)
-			os.rename(backup, frozen_c)
+    # Actual work starts here...
 
-	builtins = []
-	unknown = []
-	mods = dict.keys()
-	mods.sort()
-	for mod in mods:
-		if dict[mod] == '<builtin>':
-			builtins.append(mod)
-		elif dict[mod] == '<unknown>':
-			unknown.append(mod)
+    dict = findmodules.findmodules(scriptfile, modules, path)
+    names = dict.keys()
+    names.sort()
+    print "Modules being frozen:"
+    for name in names:
+        print '\t', name
 
-	addfiles = []
-	if unknown:
-		addfiles, addmods = \
-			  checkextensions.checkextensions(unknown, extensions)
-		for mod in addmods:
-			unknown.remove(mod)
-		builtins = builtins + addmods
-	if unknown:
-		sys.stderr.write('Warning: unknown modules remain: %s\n' %
-				 string.join(unknown))
+    backup = frozen_c + '~'
+    try:
+        os.rename(frozen_c, backup)
+    except os.error:
+        backup = None
+    outfp = open(frozen_c, 'w')
+    try:
+        makefreeze.makefreeze(outfp, dict)
+    finally:
+        outfp.close()
+    if backup:
+        if cmp.cmp(backup, frozen_c):
+            sys.stderr.write('%s not changed, not written\n' %
+                             frozen_c)
+            os.rename(backup, frozen_c)
 
-	builtins.sort()
-	infp = open(config_c_in)
-	backup = config_c + '~'
-	try:
-		os.rename(config_c, backup)
-	except os.error:
-		backup = None
-	outfp = open(config_c, 'w')
-	try:
-		makeconfig.makeconfig(infp, outfp, builtins)
-	finally:
-		outfp.close()
-	infp.close()
-	if backup:
-		if cmp.cmp(backup, config_c):
-			sys.stderr.write('%s not changed, not written\n' %
-					 config_c)
-			os.rename(backup, config_c)
+    builtins = []
+    unknown = []
+    mods = dict.keys()
+    mods.sort()
+    for mod in mods:
+        if dict[mod] == '<builtin>':
+            builtins.append(mod)
+        elif dict[mod] == '<unknown>':
+            unknown.append(mod)
 
-	cflags = defines + includes + ['$(OPT)']
-	libs = [os.path.join(binlib, 'libpython$(VERSION).a')]
+    addfiles = []
+    if unknown:
+        addfiles, addmods = \
+                  checkextensions.checkextensions(unknown, extensions)
+        for mod in addmods:
+            unknown.remove(mod)
+        builtins = builtins + addmods
+    if unknown:
+        sys.stderr.write('Warning: unknown modules remain: %s\n' %
+                         string.join(unknown))
 
-	makevars = parsesetup.getmakevars(makefile_in)
-	somevars = {}
-	for key in makevars.keys():
-		somevars[key] = makevars[key]
+    builtins.sort()
+    infp = open(config_c_in)
+    backup = config_c + '~'
+    try:
+        os.rename(config_c, backup)
+    except os.error:
+        backup = None
+    outfp = open(config_c, 'w')
+    try:
+        makeconfig.makeconfig(infp, outfp, builtins)
+    finally:
+        outfp.close()
+    infp.close()
+    if backup:
+        if cmp.cmp(backup, config_c):
+            sys.stderr.write('%s not changed, not written\n' %
+                             config_c)
+            os.rename(backup, config_c)
 
-	somevars['CFLAGS'] = string.join(cflags) # override
-	files = ['$(OPT)', '$(LDFLAGS)', base_config_c, base_frozen_c] + \
-		supp_sources +  addfiles + libs + \
-		['$(MODLIBS)', '$(LIBS)', '$(SYSLIBS)']
+    cflags = defines + includes + ['$(OPT)']
+    libs = [os.path.join(binlib, 'libpython$(VERSION).a')]
 
-	backup = makefile + '~'
-	try:
-		os.rename(makefile, backup)
-	except os.error:
-		backup = None
-	outfp = open(makefile, 'w')
-	try:
-		makemakefile.makemakefile(outfp, somevars, files, base_target)
-	finally:
-		outfp.close()
-	if backup:
-		if not cmp.cmp(backup, makefile):
-			print 'previous Makefile saved as', backup
-		else:
-			sys.stderr.write('%s not changed, not written\n' %
-					 makefile)
-			os.rename(backup, makefile)
+    makevars = parsesetup.getmakevars(makefile_in)
+    somevars = {}
+    for key in makevars.keys():
+        somevars[key] = makevars[key]
 
-	# Done!
+    somevars['CFLAGS'] = string.join(cflags) # override
+    files = ['$(OPT)', '$(LDFLAGS)', base_config_c, base_frozen_c] + \
+            supp_sources +  addfiles + libs + \
+            ['$(MODLIBS)', '$(LIBS)', '$(SYSLIBS)']
 
-	if odir:
-		print 'Now run "make" in', odir,
-		print 'to build the target:', base_target
-	else:
-		print 'Now run "make" to build the target:', base_target
+    backup = makefile + '~'
+    try:
+        os.rename(makefile, backup)
+    except os.error:
+        backup = None
+    outfp = open(makefile, 'w')
+    try:
+        makemakefile.makemakefile(outfp, somevars, files, base_target)
+    finally:
+        outfp.close()
+    if backup:
+        if not cmp.cmp(backup, makefile):
+            print 'previous Makefile saved as', backup
+        else:
+            sys.stderr.write('%s not changed, not written\n' %
+                             makefile)
+            os.rename(backup, makefile)
+
+    # Done!
+
+    if odir:
+        print 'Now run "make" in', odir,
+        print 'to build the target:', base_target
+    else:
+        print 'Now run "make" to build the target:', base_target
 
 
 # Print usage message and exit
 
 def usage(msg):
-	sys.stdout = sys.stderr
-	print "Error:", msg
-	print "Use ``%s -h'' for help" % sys.argv[0]
-	sys.exit(2)
+    sys.stdout = sys.stderr
+    print "Error:", msg
+    print "Use ``%s -h'' for help" % sys.argv[0]
+    sys.exit(2)
 
 
 main()
+
+# Local Variables:
+# indent-tabs-mode: nil
+# End:
