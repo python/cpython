@@ -35,20 +35,13 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "patchlevel.h"
 
-#define VERSION "%s (%s) %s"
-
-#ifdef __DATE__
-#define DATE __DATE__
-#else
-#define DATE "October 13 1995"
-#endif
-
 extern const char *Py_GetCompiler();
+extern const char *Py_GetBuildInfo();
 
 const char *
 Py_GetVersion()
 {
 	static char version[80];
-	sprintf(version, VERSION, PATCHLEVEL, DATE, Py_GetCompiler());
+	sprintf(version, "%.10s (%.30s) %.30s", PATCHLEVEL, Py_GetBuildInfo(), Py_GetCompiler());
 	return version;
 }
