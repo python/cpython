@@ -174,9 +174,8 @@ SunOS:  On SunOS 4.x, when using the native "cc" compiler, you have to
 	overcome the limitation to pre-ANSI C.  (Or, of course, you
 	could get gcc :-).
 
-NeXT:   Some more changes are in the works, but were submitted too
-	late to make it to beta2.  You may want to remove "-Wall" from
-	the OPT variable, for instance, unless you are a masochist.
+NeXT:   To build fat binaries, use the --with-next-archs switch
+	described below.
 
 
 Configuring additional built-in modules
@@ -380,7 +379,7 @@ Parser/myreadline.o.
 --with-next-archs='arch1 arch2': Under NEXTSTEP, this will build
 	all compiled binaries with the architectures listed.  Includes
 	correctly setting the target architecture specific resource
-	directory.
+	directory.  (This option is not supported on other platforms.)
 
 --with-libs='libs': Add 'libs' to the LIBS that the python
 	linked against.
@@ -528,7 +527,7 @@ Bug reports
 -----------
 
 Bugs are best reported to the comp.lang.python newsgroup or the Python
-mailing list -- see the section "Newsgroup and mailing list" below.
+mailing list -- see the section "Newsgroup and mailing list" above.
 Before posting, check the newsgroup archives (see above) to see if
 your bug has already been reported!  If you specifically don't want to
 involve the newsgroup or mailing list, send them to
