@@ -773,6 +773,12 @@ sub do_cmd_dataline{
     return "<dt><b>$idx</b><dd>" . $_;
 }
 
+sub do_cmd_datalineni{
+    local($_) = @_;
+    my $data_name = next_argument();
+    return "<dt><b><tt>$data_name</tt></b><dd>" . $_;
+}
+
 sub do_env_excdesc{
     local($_) = @_;
     my $excname = next_argument();
