@@ -1,6 +1,7 @@
 import difflib
 from test import test_support
 import unittest
+import doctest
 
 class TestSFbugs(unittest.TestCase):
 
@@ -11,5 +12,7 @@ class TestSFbugs(unittest.TestCase):
         self.assertEqual(s.quick_ratio(), 1)
         self.assertEqual(s.real_quick_ratio(), 1)
 
-test_support.run_unittest(TestSFbugs)
-test_support.run_doctest(difflib)
+Doctests = doctest.DocTestSuite(difflib)
+
+test_support.run_unittest(TestSFbugs, Doctests)
+
