@@ -3245,13 +3245,18 @@ Macro form of \cfunction{PyList_GetItem()} without error checking.
 \begin{cfuncdesc}{int}{PyList_SetItem}{PyObject *list, int index,
                                        PyObject *item}
 Sets the item at index \var{index} in list to \var{item}.
-\strong{Note:}  This function ``steals'' a reference to \var{item}.
+\strong{Note:}  This function ``steals'' a reference to \var{item} and
+discards a reference to an item already in the list at the affected
+position.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_SET_ITEM}{PyObject *list, int i,
                                               PyObject *o}
 Macro form of \cfunction{PyList_SetItem()} without error checking.
-\strong{Note:}  This function ``steals'' a reference to \var{item}.
+\strong{Note:}  This function ``steals'' a reference to \var{item},
+and, unlike \cfunction{PyList_SetItem()}, does \emph{not} discard a
+reference to any item that it being replaced.  This is normally only
+used to fill in new lists where there is no previous content..
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Insert}{PyObject *list, int index,
