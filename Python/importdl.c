@@ -33,6 +33,11 @@ PERFORMANCE OF THIS SOFTWARE.
 /* If no dynamic linking is supported, this file still generates some code! */
 
 #include "Python.h"
+
+#ifdef HAVE_SYS_PARAM_H
+/* osdefs.h will define MAXPATHLEN if it's not already defined. */
+#include <sys/param.h>
+#endif
 #include "osdefs.h"
 #include "importdl.h"
 
@@ -87,10 +92,6 @@ typedef int (* APIENTRY dl_funcptr)();
 #define _DL_FUNCPTR_DEFINED 1
 #define SHORT_EXT ".pyd"
 #define LONG_EXT ".dll"
-#endif
-
-#ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>
 #endif
 
 #if defined(__NetBSD__) && (NetBSD < 199712)
