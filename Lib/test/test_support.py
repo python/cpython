@@ -73,7 +73,7 @@ def findfile(file, here=__file__):
 def verify(condition, reason='test failed'):
     """Verify that condition is true. If not, raise TestFailed.
 
-       The optinal argument reason can be given to provide
+       The optional argument reason can be given to provide
        a better error text.
     """
 
