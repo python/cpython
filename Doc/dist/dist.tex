@@ -391,7 +391,7 @@ and nothing else might be:
 \begin{verbatim}
 from distutils.core import setup, Extension
 setup(name = "foo", version = "1.0",
-      extensions = [Extension("foo", ["foo.c"])])
+      ext_modules = [Extension("foo", ["foo.c"])])
 \end{verbatim}
 
 The \class{Extension} class (actually, the underlying extension-building
@@ -422,8 +422,8 @@ to \function{setup()}.  For example,
 \begin{verbatim}
 setup(...
       ext_package = "pkg",
-      extensions = [Extension("foo", ["foo.c"]),
-                    Extension("subpkg.bar", ["bar.c"])]
+      ext_modules = [Extension("foo", ["foo.c"]),
+                     Extension("subpkg.bar", ["bar.c"])]
      )
 \end{verbatim}
 will compile \file{foo.c} to the extension \module{pkg.foo}, and
