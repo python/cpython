@@ -70,7 +70,7 @@ getfloatvalue(op)
 
 /* Methods */
 
-static void
+void
 float_buf_repr(buf, v)
 	char *buf;
 	floatobject *v;
