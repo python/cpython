@@ -12,7 +12,7 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 
 * The "Very High Level Interface" in the API document has been
   requested; I guess it wouldn't hurt to fill in a bit there.  Request 
-  by Albert Hofkamp <a.hofkamp@wtb.tue.nl>.
+  by Albert Hofkamp <a.hofkamp@wtb.tue.nl>.  (Partly done.)
 
 * In the extensions manual, more information is needed about building
   dynamically linked extensions in C++.  Specifically, the extensions
@@ -26,10 +26,12 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 
 * In the indexes, some subitem entries are separated from the item
   entries by column- or page-breaks.  Reported by Lorenzo M. Catucci
-  <lorenzo@argon.roma2.infn.it>.  This one will be hard.
+  <lorenzo@argon.roma2.infn.it>.  This one will be hard; probably not
+  really worth the pain.
 
 * Fix problem with howto documents getting the last module synopsis
   twice (in \localmoduletable) so we can get rid of the ugly 'uniq'
-  hack in tools/mkhowto.sh.
+  hack in tools/mkhowto.sh.  (Probably not worth the trouble of
+  fixing.)
 
 * Figure out HTMLHelp generation for the Windows world.
