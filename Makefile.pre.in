@@ -80,8 +80,8 @@ exec_prefix=	@exec_prefix@
 # Expanded directories
 BINDIR=		$(exec_prefix)/bin
 LIBDIR=		$(exec_prefix)/lib
-MANDIR=		$(prefix)/man
-INCLUDEDIR=	$(prefix)/include
+MANDIR=		@mandir@
+INCLUDEDIR=	@includedir@
 CONFINCLUDEDIR=	$(exec_prefix)/include
 SCRIPTDIR=	$(prefix)/lib
 
