@@ -15,6 +15,7 @@ import pyclbr
 from Tkinter import *
 import tkMessageBox
 from WindowList import ListedToplevel
+from Separator import HSeparator
 
 from ScrolledList import ScrolledList
 
@@ -37,10 +38,14 @@ class ClassBrowser:
         self.root = root
         self.top = top = ListedToplevel(root)
         self.top.protocol("WM_DELETE_WINDOW", self.close)
+        self.top.bind("<Escape>", self.close)
         top.wm_title("Class Browser - " + name)
         top.wm_iconname("ClBrowser")
-        self.leftframe = leftframe = Frame(top)
-        self.leftframe.pack(side="left", fill="both", expand=1)
+        self.sepa = HSeparator(top)
+        leftframe, rightframe = self.sepa.parts()
+        self.leftframe = leftframe
+        self.rightframe = rightframe
+        leftframe.pack(side="left", fill="both", expand=1)
         # Create help label
         self.helplabel = Label(leftframe, text="Module %s" % name,
                                relief="groove", borderwidth=2)
@@ -51,30 +56,30 @@ class ClassBrowser:
         # Load the classes
         self.load_classes(dict, name)
 
-    def close(self):
+    def close(self, event=None):
         self.classviewer = None
         self.methodviewer = None
         self.top.destroy()
 
     def load_classes(self, dict, module):
         self.classviewer.load_classes(dict, module)
-        if self.botframe:
-            self.botframe.destroy()
-            self.botframe = None
+        if self.methodframe:
+            self.methodframe.destroy()
+            self.methodframe = None
         self.methodviewer = None
 
-    botframe = None
+    methodframe = None
     methodhelplabel = None
     methodviewer = None
 
     def show_methods(self, cl):
-        if not self.botframe:
-            self.botframe = Frame(self.top)
-            self.botframe.pack(side="right", expand=1, fill="both")
-            self.methodhelplabel = Label(self.botframe,
+        if not self.methodframe:
+            self.methodframe = Frame(self.rightframe)
+            self.methodframe.pack(side="right", expand=1, fill="both")
+            self.methodhelplabel = Label(self.methodframe,
                                relief="groove", borderwidth=2)
             self.methodhelplabel.pack(fill="x")
-            self.methodviewer = MethodViewer(self.botframe, self.flist)
+            self.methodviewer = MethodViewer(self.methodframe, self.flist)
         self.methodhelplabel.config(text="Class %s" % cl.name)
         self.methodviewer.load_methods(cl)
 
@@ -82,7 +87,7 @@ class ClassBrowser:
 class ClassViewer(ScrolledList):
 
     def __init__(self, master, flist, browser):
-        ScrolledList.__init__(self, master)
+        ScrolledList.__init__(self, master, width=40)
         self.flist = flist
         self.browser = browser
 
