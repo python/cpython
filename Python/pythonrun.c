@@ -78,6 +78,14 @@ int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
 
 static int initialized = 0;
 
+/* API to access the initialized flag -- useful for eroteric use */
+
+int
+Py_IsInitialized()
+{
+	return initialized;
+}
+
 /* Global initializations.  Can be undone by Py_Finalize().  Don't
    call this twice without an intervening Py_Finalize() call.  When
    initializations fail, a fatal error is issued and the function does
