@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
-Amsterdam, The Netherlands.
+Copyright 1994 by Lance Ellinghouse,
+Cathedral City, California Republic, United States of America.
 
                         All Rights Reserved
 
@@ -8,31 +8,18 @@ Permission to use, copy, modify, and distribute this software and its
 documentation for any purpose and without fee is hereby granted, 
 provided that the above copyright notice appear in all copies and that
 both that copyright notice and this permission notice appear in 
-supporting documentation, and that the names of Stichting Mathematisch
-Centrum or CWI not be used in advertising or publicity pertaining to
-distribution of the software without specific, written prior permission.
+supporting documentation, and that the name of Lance Ellinghouse
+not be used in advertising or publicity pertaining to distribution 
+of the software without specific, written prior permission.
 
-STICHTING MATHEMATISCH CENTRUM DISCLAIMS ALL WARRANTIES WITH REGARD TO
+LANCE ELLINGHOUSE DISCLAIMS ALL WARRANTIES WITH REGARD TO
 THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH CENTRUM BE LIABLE
-FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
-OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+FITNESS, IN NO EVENT SHALL LANCE ELLINGHOUSE BE LIABLE FOR ANY SPECIAL, 
+INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING 
+FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, 
+NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION 
+WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-******************************************************************/
-/******************************************************************
-Copyright 1992 by Lance Ellinghouse (lance@markv.com)
-
-All Rights Reserved
-
-Permission to use, copy, distribute for any purpose and without fee
-is hereby granted, provided that this copyright notice appear in
-all copies and that both this copyright notice and this permission
-notice appear in supporting documentation.
-Permission to make any changes is granted on the basis that all
-changes and improvements are also forwarded to Lance Ellinghouse
-before distribution.
 ******************************************************************/
 
 /* This creates an encryption and decryption engine I am calling
@@ -641,14 +628,14 @@ PyRotor_Dealloc(xp)
 	PyMem_DEL(xp);
 }
 
-static PyObject *
+static PyObject * 
 PyRotor_Encrypt(self, args)
 	PyRotorObject *self;
-	PyObject *args;
+	PyObject * args;
 {
 	char *string = (char *)NULL;
 	int len = 0;
-	PyObject *rtn = (PyObject *)NULL;
+	PyObject * rtn = (PyObject * )NULL;
 	char *tmp;
 
 	if (!PyArg_Parse(args,"s#",&string, &len))
@@ -665,14 +652,14 @@ PyRotor_Encrypt(self, args)
 	return(rtn);
 }
 
-static PyObject *
+static PyObject * 
 PyRotor_EncryptMore(self, args)
 	PyRotorObject *self;
-	PyObject *args;
+	PyObject * args;
 {
 	char *string = (char *)NULL;
 	int len = 0;
-	PyObject *rtn = (PyObject *)NULL;
+	PyObject * rtn = (PyObject * )NULL;
 	char *tmp;
 
 	if (!PyArg_Parse(args,"s#",&string, &len))
@@ -689,14 +676,14 @@ PyRotor_EncryptMore(self, args)
 	return(rtn);
 }
 
-static PyObject *
+static PyObject * 
 PyRotor_Decrypt(self, args)
 	PyRotorObject *self;
-	PyObject *args;
+	PyObject * args;
 {
 	char *string = (char *)NULL;
 	int len = 0;
-	PyObject *rtn = (PyObject *)NULL;
+	PyObject * rtn = (PyObject * )NULL;
 	char *tmp;
 
 	if (!PyArg_Parse(args,"s#",&string, &len))
@@ -713,14 +700,14 @@ PyRotor_Decrypt(self, args)
 	return(rtn);
 }
 
-static PyObject *
+static PyObject * 
 PyRotor_DecryptMore(self, args)
 	PyRotorObject *self;
-	PyObject *args;
+	PyObject * args;
 {
 	char *string = (char *)NULL;
 	int len = 0;
-	PyObject *rtn = (PyObject *)NULL;
+	PyObject * rtn = (PyObject * )NULL;
 	char *tmp;
 
 	if (!PyArg_Parse(args,"s#",&string, &len))
@@ -737,21 +724,21 @@ PyRotor_DecryptMore(self, args)
 	return(rtn);
 }
 
-static PyObject *
+static PyObject * 
 PyRotor_SetKey(self, args)
 	PyRotorObject *self;
-	PyObject *args;
+	PyObject * args;
 {
 	char *key;
 	char *string;
 
 	if (PyArg_Parse(args,"s",&string))
 		set_key(self,string);
-	Py_INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static PyMethodDef PyRotor_Methods[] = {
+static struct methodlist PyRotor_Methods[] = {
 	{"encrypt",	(PyCFunction)PyRotor_Encrypt},
 	{"encryptmore",	(PyCFunction)PyRotor_EncryptMore},
 	{"decrypt",	(PyCFunction)PyRotor_Decrypt},
@@ -762,12 +749,12 @@ static PyMethodDef PyRotor_Methods[] = {
 
 
 /* Return a rotor object's named attribute. */
-static PyObject *
+static PyObject * 
 PyRotor_GetAttr(s, name)
 	PyRotorObject *s;
 	char *name;
 {
-	return Py_FindMethod(PyRotor_Methods, (PyObject *) s, name);
+	return Py_FindMethod(PyRotor_Methods, (PyObject * ) s, name);
 }
 
 static PyTypeObject PyRotor_Type = {
@@ -787,10 +774,10 @@ static PyTypeObject PyRotor_Type = {
 };
 
 
-static PyObject *
+static PyObject * 
 PyRotor_Rotor(self, args)
-	PyObject *self;
-	PyObject *args;
+	PyObject * self;
+	PyObject * args;
 {
 	char *string;
 	PyRotorObject *r;
@@ -805,10 +792,10 @@ PyRotor_Rotor(self, args)
 			return NULL;
 	}
 	r = PyRotor_New(num_rotors, string);
-	return (PyObject *)r;
+	return (PyObject * )r;
 }
 
-static PyMethodDef PyRotor_Rotor_Methods[] = {
+static struct methodlist PyRotor_Rotor_Methods[] = {
 	{"newrotor",		(PyCFunction)PyRotor_Rotor},
 	{NULL,			NULL}		 /* Sentinel */
 };
@@ -822,7 +809,7 @@ static PyMethodDef PyRotor_Rotor_Methods[] = {
 void
 initrotor()
 {
-	PyObject *m;
+	PyObject * m;
 
 	m = Py_InitModule("rotor", PyRotor_Rotor_Methods);
 }

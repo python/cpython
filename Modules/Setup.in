@@ -15,9 +15,9 @@
 # Comment out lines to suppress modules.
 # Lines have the following structure:
 #
-# <module> ... [<objectfile> ...] [<cpparg> ...] [<library> ...]
+# <module> ... [<sourcefile> ...] [<cpparg> ...] [<library> ...]
 #
-# <objectfile> is anything ending in .o
+# <sourcefile> is anything ending in .c (.C, .cc, .c++ are C++ files)
 # <cpparg> is anything starting with -I, -D, -U or -C
 # <library> is anything ending in .a or beginning with -l or -L
 # <module> is anything else but should be a valid Python
@@ -61,41 +61,42 @@ PYTHONPATH=.:$(DESTLIB)$(TESTPATH)$(ARCHPATH)$(STDWINPATH)
 
 # Modules that should always be present (non UNIX dependent)
 
-array arraymodule.o	# array objects
-math mathmodule.o	# math library functions, e.g. sin()
-parser parsermodule.o	# raw interface to the Python parser
-posix posixmodule.o	# posix (UNIX) system calls
-regex regexmodule.o regexpr.o	# Regular expressions, GNU Emacs style
-strop stropmodule.o	# fast string operations implemented in C
-struct structmodule.o	# binary structure packing/unpacking
-time timemodule.o	# time operations and variables
+array arraymodule.c	# array objects
+math mathmodule.c	# math library functions, e.g. sin()
+parser parsermodule.c	# raw interface to the Python parser
+posix posixmodule.c	# posix (UNIX) system calls
+regex regexmodule.c regexpr.c	# Regular expressions, GNU Emacs style
+strop stropmodule.c	# fast string operations implemented in C
+struct structmodule.c	# binary structure packing/unpacking
+time timemodule.c	# time operations and variables
 
 
 # Modules with some UNIX dependencies -- on by default.
 # (If you have a really backward UNIX, select and socket may not be
 # supported...)
 
-fcntl fcntlmodule.o	# fcntl(2) and ioctl(2)
-pwd pwdmodule.o		# pwd(3) 
-grp grpmodule.o		# grp(3)
-crypt cryptmodule.o	# crypt(3)
-select selectmodule.o	# select(2); not on ancient System V
-socket socketmodule.o	# socket(2); not on ancient System V
+fcntl fcntlmodule.c	# fcntl(2) and ioctl(2)
+pwd pwdmodule.c		# pwd(3) 
+grp grpmodule.c		# grp(3)
+crypt cryptmodule.c	# crypt(3)
+select selectmodule.c	# select(2); not on ancient System V
+socket socketmodule.c	# socket(2); not on ancient System V
+signal signalmodule.c	# signal(2)
 
 
 # Some more UNIX dependent modules -- off by default, since these
 # are not supported by all UNIX systems.
 
-#dbm dbmmodule.o 	# dbm(3) may require -lndbm or similar
-#nis nismodule.o 	# Sun yellow pages -- not everywhere
+#dbm dbmmodule.c 	# dbm(3) may require -lndbm or similar
+#nis nismodule.c 	# Sun yellow pages -- not everywhere
 
 
 # Multimedia modules -- on by default.
 # These represent audio samples or images as strings
 
-audioop audioop.o	# Operations on audio samples
-imageop imageop.o	# Operations on images
-rgbimg rgbimgmodule.o   # Read SGI RGB image files (but coded portably)
+audioop audioop.c	# Operations on audio samples
+imageop imageop.c	# Operations on images
+rgbimg rgbimgmodule.c   # Read SGI RGB image files (but coded portably)
 
 
 # The stdwin module provides a simple, portable (between X11 and Mac)
@@ -108,14 +109,14 @@ rgbimg rgbimgmodule.o   # Read SGI RGB image files (but coded portably)
 
 #STDWIN=/ufs/guido/src/stdwin
 #ARCH=???
-#stdwin stdwinmodule.o -I$(STDWIN)/H $(STDWIN)/Build/$(ARCH)/x11/lib/lib.a -lX11
+#stdwin stdwinmodule.c -I$(STDWIN)/H $(STDWIN)/Build/$(ARCH)/x11/lib/lib.a -lX11
 
 
 # The md5 module implements the RSA Data Security, Inc. MD5
 # Message-Digest Algorithm, described in RFC 1321.  The necessary files
 # md5c.c and md5.h are included here.
 
-md5 md5module.o md5c.o
+md5 md5module.c md5c.c
 
 
 # The mpz module interfaces to the GNU Multiple Precision library.
@@ -127,13 +128,7 @@ md5 md5module.o md5c.o
 # it).
 
 #GMP=/ufs/guido/src/gmp
-#mpz mpzmodule.o -I$(GMP) $(GMP)/libgmp.a
-
-
-# The rotor module (contributed by Lance Ellinghouse) implements a
-# rotor-based encryption algorithm.  It is self-contained.
-
-rotor rotormodule.o
+#mpz mpzmodule.c -I$(GMP) $(GMP)/libgmp.a
 
 
 # SGI IRIX specific modules -- off by default.
@@ -143,14 +138,14 @@ rotor rotormodule.o
 # (Font Manager and Graphics Library).
 
 #                               # ADD THESE FOR IRIX5:
-#al almodule.o -laudio
-#cd cdmodule.o -lcdaudio -lds	# -lmediad
-#cl clmodule.o -lcl		# -lawareaudio
-#fm fmmodule.o -lfm_s -lgl_s
-#gl glmodule.o -lgl_s -lX11_s
-#imgfile imgfile.o -limage -lgutil
-#sgi sgimodule.o
-#sv svmodule.o yuvconvert.o -lsvideo -lXext -lX11_s
+#al almodule.c -laudio
+#cd cdmodule.c -lcdaudio -lds	# -lmediad
+#cl clmodule.c -lcl		# -lawareaudio
+#fm fmmodule.c -lfm_s -lgl_s
+#gl glmodule.c -lgl_s -lX11_s
+#imgfile imgfile.c -limage -lgutil
+#sgi sgimodule.c
+#sv svmodule.c yuvconvert.c -lsvideo -lXext -lX11_s
 
 # The FORMS library, by Mark Overmars, implements user interface
 # components such as dialogs and buttons using SGI's GL and FM
@@ -160,53 +155,51 @@ rotor rotormodule.o
 # toplevel directory.
 
 #FORMS=/ufs/guido/src/forms/FORMS
-#fl flmodule.o -I$(FORMS) $(FORMS)/libforms.a
+#fl flmodule.c -I$(FORMS) $(FORMS)/libforms.a
 
 
 # SunOS specific modules -- off by default
 
-# sunaudiodev sunaudiodev.o
+# sunaudiodev sunaudiodev.c
 
 
 # Thread module -- works on SGI IRIX and on SunOS 5.x (SOLARIS) only.
 # Note that you must have configured (and built!) Python with the
 # --with-thread option passed to the configure script for this to work.
 
-# thread threadmodule.o
+# thread threadmodule.c
 
 
 # GNN's timing module
-# timing timingmodule.o
+# timing timingmodule.c
 
 
-# Lance Ellinghouse's signal module
-# signal signalmodule.o
+# Lance Ellinghouse's modules
+rotor rotormodule.c		# enigma-inspired en-, decryption
+# syslog syslogmodule.c		# syslog daemon interface
+# curses cursesmodule.c -lcurses -ltermcap	# guess what?
 
 
 # Tommy Burnette's 'new' module (creates new empty objects of certain kinds)
-# new newmodule.o
+# new newmodule.c
 
 
 # John Redford's sybase module
-# sybase sybasemodule.o
+# sybase sybasemodule.c
 
 
 # Generic (SunOS / SVR4) dynamic loading module
-# dl dlmodule.o
+# dl dlmodule.c
 
 
 # Jack Jansen's imgformat module
-# imgformat imgformat.o
-
-
-# Lance Ellinghouse's syslog module
-# syslog syslogmodule.o
+# imgformat imgformat.c
 
 
 # Anthony Baxter's gdbm module (derived from Jack's dbm module)
 # GNU dbm(3) will require -lgdbm
-# gdbm gdbmmodule.o -I/usr/local/include -L/usr/local/lib -lgdbm
+# gdbm gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm
 
 
 # Example -- included for reference only
-# xx xxmodule.o
+# xx xxmodule.c
