@@ -2,10 +2,44 @@
 ==> Release 1.4 (October 25 1996) <==
 =====================================
 
-(XXX Sorry, this is in totally random order.  I hope I can find the
-time to fix it.)
+(Starting in reverse chronological order:)
 
-- Changed copyright.
+- Changed disclaimer notice.
+
+- Added SHELL=/bin/sh to Misc/Makefile.pre.in -- some Make versions
+default to the user's login shell.
+
+- In Lib/tkinter/Tkinter.py, removed bogus binding of <Delete> in Text
+widget, and bogus bspace() function.
+
+- In Lib/cgi.py, bumped __version__ to 2.0 and restored a truncated
+paragraph.
+
+- Fixed the NT Makefile (PC/vc40.mak) for VC 4.0 to set /MD for all
+subprojects, and to remove the (broken) experimental NumPy
+subprojects.
+
+- In Lib/py_compile.py, cast mtime to long() so it will work on Mac
+(where os.stat() returns mtimes as floats.)
+- Set self.rfile unbuffered (like self.wfile) in SocketServer.py, to
+fix POST in CGIHTTPServer.py.
+
+- Version 2.83 of Misc/python-mode.el for Emacs is included.
+
+- In Modules/regexmodule.c, fixed symcomp() to correctly handle a new
+group starting immediately after a group tag.
+
+- In Lib/SocketServer.py, changed the mode for rfile to unbuffered.
+
+- In Objects/stringobject.c, fixed the compare function to do the
+first char comparison in unsigned mode, for consistency with the way
+other characters are compared by memcmp().
+
+- In Lib/tkinter/Tkinter.py, fixed Scale.get() to support floats.
+
+- In Lib/urllib.py, fix another case where openedurl wasn't set.
+
+(XXX Sorry, the rest is in totally random order.  No time to fix it.)
 
 - SyntaxError exceptions detected during code generation
 (e.g. assignment to an expression) now include a line number.
@@ -92,7 +126,7 @@ will execute os.system("rm -f *") when unpickling.
 - dis.py will print the name of local variables referenced by local
 load/store/delete instructions.
 
-- Improved portability of SimpleHttpServer module to non-Unix
+- Improved portability of SimpleHTTPServer module to non-Unix
 platform.
 
 - The thread.h interface adds an extra argument to down_sema().  This
