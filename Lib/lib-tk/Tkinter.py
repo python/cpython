@@ -2838,11 +2838,11 @@ class Text(Widget):
         """Shift the x-view according to NUMBER which is measured
         in "units" or "pages" (WHAT)."""
         self.tk.call(self._w, 'xview', 'scroll', number, what)
-    def yview(self, *args):
+    def yview(self, *what):
         """Query and change vertical position of the view."""
-        if not args:
+        if not what:
             return self._getdoubles(self.tk.call(self._w, 'yview'))
-        self.tk.call((self._w, 'yview') + args)
+        self.tk.call((self._w, 'yview') + what)
     def yview_moveto(self, fraction):
         """Adjusts the view in the window so that FRACTION of the
         total height of the canvas is off-screen to the top."""
@@ -3060,7 +3060,11 @@ def _test():
     root = Tk()
     text = "This is Tcl/Tk version %s" % TclVersion
     if TclVersion >= 8.1:
-        text = text + u"\nThis should be a cedilla: \347"
+        try:
+            text = text + unicode("\nThis should be a cedilla: \347",
+                                  "iso-8859-1")
+        except NameError:
+            pass # no unicode support
     label = Label(root, text=text)
     label.pack()
     test = Button(root, text="Click me!",
