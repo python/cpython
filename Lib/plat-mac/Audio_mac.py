@@ -100,10 +100,9 @@ class Play_Audio_mac:
 
 def test():
 	import aifc
-	import macfs
-	fss, ok = macfs.PromptGetFile("Select an AIFF soundfile", "AIFF")
-	if not ok: return
-	fn = fss.as_pathname()
+	import EasyDialogs
+	fn = EasyDialogs.AskFileForOpen(message="Select an AIFF soundfile", typeList=("AIFF",))
+	if not fn: return
 	af = aifc.open(fn, 'r')
 	print af.getparams()
 	p = Play_Audio_mac()
