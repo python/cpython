@@ -301,7 +301,10 @@ def _reconstruct(x, info, deep, memo=None):
     if state:
         if deep:
             state = deepcopy(state, memo)
-        y.__dict__.update(state)
+        if hasattr(y, '__setstate__'):
+            y.__setstate__(state)
+        else:
+            y.__dict__.update(state)
     return y
 
 del d
