@@ -79,17 +79,18 @@ then \function{cbreak()} leaves the terminal in cbreak mode.
 
 \begin{funcdesc}{color_content}{color_number}
 Returns the intensity of the red, green, and blue (RGB) components in
-the color \var{color_number}, which must be between 0 and COLORS.  A
-3-tuple is returned, containing the R,G,B values for the given color,
-which will be between 0 (no component) and 1000 (maximum amount of
-component).
+the color \var{color_number}, which must be between \code{0} and
+\constant{COLORS}.  A 3-tuple is returned, containing the R,G,B values
+for the given color, which will be between \code{0} (no component) and
+\code{1000} (maximum amount of component).
 \end{funcdesc}
 
 \begin{funcdesc}{color_pair}{color_number}
 Returns the attribute value for displaying text in the specified
 color.  This attribute value can be combined with
 \constant{A_STANDOUT}, \constant{A_REVERSE}, and the other
-\constant{A_*} attributes.  \function{pair_number()} is the counterpart to this function.
+\constant{A_*} attributes.  \function{pair_number()} is the
+counterpart to this function.
 \end{funcdesc}
 
 \begin{funcdesc}{curs_set}{visibility}
@@ -231,30 +232,32 @@ Used for half-delay mode, which is similar to cbreak mode in that
 characters typed by the user are immediately available to the program.
 However, after blocking for \var{tenths} tenths of seconds, an
 exception is raised if nothing has been typed.  The value of
-\var{tenths} must be a number between 1 and 255.  Use \function{nocbreak()} to
-leave half-delay mode.
+\var{tenths} must be a number between 1 and 255.  Use
+\function{nocbreak()} to leave half-delay mode.
 \end{funcdesc}
 
 \begin{funcdesc}{init_color}{color_number, r, g, b}
 Changes the definition of a color, taking the number of the color to
 be changed followed by three RGB values (for the amounts of red,
 green, and blue components).  The value of \var{color_number} must be
-between 0 and COLORS.  Each of \var{r}, \var{g}, \var{b}, must be a
-value between 0 and 1000.  When \function{init_color()} is used, all
-occurrences of that color on the screen immediately change to the new
-definition.  This function is a no-op on most terminals; it is active
-only if \function{can_change_color()} returns 1.
+between \code{0} and \constant{COLORS}.  Each of \var{r}, \var{g},
+\var{b}, must be a value between \code{0} and \code{1000}.  When
+\function{init_color()} is used, all occurrences of that color on the
+screen immediately change to the new definition.  This function is a
+no-op on most terminals; it is active only if
+\function{can_change_color()} returns \code{1}.
 \end{funcdesc}
 
 \begin{funcdesc}{init_pair}{pair_number, fg, bg}
 Changes the definition of a color-pair.  It takes three arguments: the
 number of the color-pair to be changed, the foreground color number,
 and the background color number.  The value of \var{pair_number} must
-be between 1 and COLOR_PAIRS-1 (the 0 color pair is wired to white on
-black and cannot be changed).  The value of \var{fg} and \var{bg}
-arguments must be between 0 and COLORS.  If the color-pair was
-previously initialized, the screen is refreshed and all occurrences of
-that color-pair are changed to the new definition.
+be between \code{1} and \code{COLOR_PAIRS - 1} (the \code{0} color
+pair is wired to white on black and cannot be changed).  The value of
+\var{fg} and \var{bg} arguments must be between \code{0} and
+\constant{COLORS}.  If the color-pair was previously initialized, the
+screen is refreshed and all occurrences of that color-pair are changed
+to the new definition.
 \end{funcdesc}
 
 \begin{funcdesc}{initscr}{}
@@ -429,8 +432,9 @@ If \var{y} and \var{x} are both -1, then leaveok is set.
 \begin{funcdesc}{setupterm}{\optional{termstr, fd}}
 Initializes the terminal.  \var{termstr} is a string giving the
 terminal name; if omitted, the value of the TERM environment variable
-will be used.  \var{fd} is the file descriptor to which any initialization sequences will be sent; if not supplied, the file descriptor for 
-\code{sys.stdout} will be used.
+will be used.  \var{fd} is the file descriptor to which any
+initialization sequences will be sent; if not supplied, the file
+descriptor for \code{sys.stdout} will be used.
 \end{funcdesc}
 
 \begin{funcdesc}{start_color}{}
@@ -440,10 +444,11 @@ practice to call this routine right after \function{initscr()}.
 
 \function{start_color()} initializes eight basic colors (black, red, 
 green, yellow, blue, magenta, cyan, and white), and two global
-variables in the \module{curses} module, COLORS and COLOR_PAIRS,
-containing the maximum number of colors and color-pairs the terminal
-can support.  It also restores the colors on the terminal to the
-values they had when the terminal was just turned on.
+variables in the \module{curses} module, \constant{COLORS} and
+\constant{COLOR_PAIRS}, containing the maximum number of colors and
+color-pairs the terminal can support.  It also restores the colors on
+the terminal to the values they had when the terminal was just turned
+on.
 \end{funcdesc}
 
 \begin{funcdesc}{termattrs}{}
@@ -459,16 +464,16 @@ characters.
 
 \begin{funcdesc}{tigetflag}{capname}
 Returns the value of the Boolean capability corresponding to the
-terminfo capability name \var{capname}.  The value -1 is returned if
-\var{capname} is not a Boolean capability, or 0 if it is canceled or
-absent from the terminal description.
+terminfo capability name \var{capname}.  The value \code{-1} is
+returned if \var{capname} is not a Boolean capability, or \code{0} if
+it is canceled or absent from the terminal description.
 \end{funcdesc}
 
 \begin{funcdesc}{tigetnum}{capname}
 Returns the value of the numeric capability corresponding to the
-terminfo capability name \var{capname}.  The value -2 is returned if
-\var{capname} is not a numeric capability, or -1 if it is canceled or absent
-from the terminal description.  
+terminfo capability name \var{capname}.  The value \code{-2} is
+returned if \var{capname} is not a numeric capability, or \code{-1} if
+it is canceled or absent from the terminal description.  
 \end{funcdesc}
 
 \begin{funcdesc}{tigetstr}{capname}
@@ -481,13 +486,14 @@ from the terminal description.
 \begin{funcdesc}{tparm}{str\optional{,...}}
 Instantiates the string \var{str} with the supplied parameters, where 
 \var{str} should be a parameterized string obtained from the terminfo 
-database.  E.g. \code{tparm(tigetstr("cup"),5,3)} could result in 
-\code{"\e{}033[6;4H"}, the exact result depending on terminal type.
+database.  E.g. \code{tparm(tigetstr("cup"), 5, 3)} could result in 
+\code{'\e{}033[6;4H'}, the exact result depending on terminal type.
 \end{funcdesc}
 
 \begin{funcdesc}{typeahead}{fd}
 Specifies that the file descriptor \var{fd} be used for typeahead
-checking.  If \var{fd} is -1, then no typeahead checking is done.
+checking.  If \var{fd} is \code{-1}, then no typeahead checking is
+done.
 
 The curses library does ``line-breakout optimization'' by looking for
 typeahead periodically while updating the screen.  If input is found,
@@ -516,13 +522,13 @@ the given state data with it.
 \end{funcdesc}
 
 \begin{funcdesc}{use_env}{flag}
-If used, this function should be called before \function{initscr} or
+If used, this function should be called before \function{initscr()} or
 newterm are called.  When \var{flag} is false, the values of
 lines and columns specified in the terminfo database will be
-used, even if environment variables LINES and COLUMNS (used by
-default) are set, or if curses is running in a window (in which
-case default behavior would be to use the window size if LINES
-and COLUMNS are not set).
+used, even if environment variables \envvar{LINES} and
+\envvar{COLUMNS} (used by default) are set, or if curses is running in
+a window (in which case default behavior would be to use the window
+size if \envvar{LINES} and \envvar{COLUMNS} are not set).
 \end{funcdesc}
 
 \subsection{Window Objects \label{curses-window-objects}}
@@ -669,7 +675,7 @@ derived window.
 
 \begin{methoddesc}{echochar}{ch\optional{, attr}}
 Add character \var{ch} with attribute \var{attr}, and immediately 
-call \method{refresh} on the window.
+call \method{refresh()} on the window.
 \end{methoddesc}
 
 \begin{methoddesc}{enclose}{y, x}
@@ -691,7 +697,7 @@ corner.
 \begin{methoddesc}{getch}{\optional{x, y}}
 Get a character. Note that the integer returned does \emph{not} have to
 be in \ASCII{} range: function keys, keypad keys and so on return numbers
-higher then 256. In no-delay mode, an exception is raised if there is 
+higher than 256. In no-delay mode, an exception is raised if there is 
 no input.
 \end{methoddesc}
 
@@ -840,18 +846,19 @@ position on the screen.
 \end{methoddesc}
 
 \begin{methoddesc}{mvwin}{new_y, new_x}
-Move the window so its upper-left corner is at \code{(\var{new_y}, \var{new_x})}.
+Move the window so its upper-left corner is at
+\code{(\var{new_y}, \var{new_x})}.
 \end{methoddesc}
 
 \begin{methoddesc}{nodelay}{yes}
-If \var{yes} is 1, \method{getch()} will be non-blocking.
+If \var{yes} is \code{1}, \method{getch()} will be non-blocking.
 \end{methoddesc}
 
 \begin{methoddesc}{notimeout}{yes}
-If \var{yes} is 1, escape sequences will not be timed out.
+If \var{yes} is \code{1}, escape sequences will not be timed out.
 
-If \var{yes} is 0, after a few milliseconds, an escape sequence will
-not be interpreted, and will be left in the input stream as is.
+If \var{yes} is \code{0}, after a few milliseconds, an escape sequence
+will not be interpreted, and will be left in the input stream as is.
 \end{methoddesc}
 
 \begin{methoddesc}{noutrefresh}{}
@@ -861,27 +868,27 @@ an update of the physical screen.
 \end{methoddesc}
 
 \begin{methoddesc}{overlay}{destwin\optional{, sminrow, smincol,
-      dminrow, dmincol, dmaxrow, dmaxcol}}
+                            dminrow, dmincol, dmaxrow, dmaxcol}}
 Overlay the window on top of \var{destwin}. The windows need not be
 the same size, only the overlapping region is copied. This copy is
 non-destructive, which means that the current background character
 does not overwrite the old contents of \var{destwin}.
 
 To get fine-grained control over the copied region, the second form
-of \method{overlay} can be used. \var{sminrow} and \var{smincol} are
+of \method{overlay()} can be used. \var{sminrow} and \var{smincol} are
 the upper-left coordinates of the source window, and the other variables
 mark a rectangle in the destination window.
 \end{methoddesc}
 
 \begin{methoddesc}{overwrite}{destwin\optional{, sminrow, smincol,
-      dminrow, dmincol, dmaxrow, dmaxcol}}
+                              dminrow, dmincol, dmaxrow, dmaxcol}}
 Overwrite the window on top of \var{destwin}. The windows need not be
-the same size, in which case only the overlapping region is copied. This copy is
-destructive, which means that the current background character
-overwrites the old contents of \var{destwin}.
+the same size, in which case only the overlapping region is
+copied. This copy is destructive, which means that the current
+background character overwrites the old contents of \var{destwin}.
 
 To get fine-grained control over the copied region, the second form
-of \method{overwrite} can be used. \var{sminrow} and \var{smincol} are
+of \method{overwrite()} can be used. \var{sminrow} and \var{smincol} are
 the upper-left coordinates of the source window, the other variables
 mark a rectangle in the destination window.
 \end{methoddesc}
@@ -904,7 +911,8 @@ Touches the entire window, causing it to be completely redrawn on the
 next \method{refresh()} call.
 \end{methoddesc}
 
-\begin{methoddesc}{refresh}{ \optional{pminrow, pmincol, sminrow, smincol, smaxrow, smaxcol} }
+\begin{methoddesc}{refresh}{\optional{pminrow, pmincol, sminrow,
+                                      smincol, smaxrow, smaxcol}}
 Update the display immediately (sync actual screen with previous
 drawing/deleting methods).
 
@@ -913,7 +921,8 @@ pad created with \function{newpad()}.  The additional parameters are
 needed to indicate what part of the pad and screen are involved.
 \var{pminrow} and \var{pmincol} specify the upper left-hand corner of the
 rectangle to be displayed in the pad.  \var{sminrow}, \var{smincol},
-\var{smaxrow}, and \var{smaxcol} specify the edges of the rectangle to be displayed on the screen.  The lower right-hand corner of the
+\var{smaxrow}, and \var{smaxcol} specify the edges of the rectangle to
+be displayed on the screen.  The lower right-hand corner of the
 rectangle to be displayed in the pad is calculated from the screen
 coordinates, since the rectangles must be the same size.  Both
 rectangles must be entirely contained within their respective
@@ -1283,7 +1292,8 @@ keystrokes:
   \lineii{Ctrl-A}{Go to left edge of window.}
   \lineii{Ctrl-B}{Cursor left, wrapping to previous line if appropriate.}
   \lineii{Ctrl-D}{Delete character under cursor.}
-  \lineii{Ctrl-E}{Go to right edge (stripspaces off) or end of line (stripspaces on).}
+  \lineii{Ctrl-E}{Go to right edge (stripspaces off) or end of line
+                  (stripspaces on).}
   \lineii{Ctrl-F}{Cursor right, wrapping to next line when appropriate.}
   \lineii{Ctrl-G}{Terminate, returning the window contents.}
   \lineii{Ctrl-H}{Delete character backward.}
