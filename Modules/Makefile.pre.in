@@ -158,6 +158,7 @@ audioop.o: audioop.c
 cdmodule.o: cdmodule.c
 clmodule.o: clmodule.c
 dbmmodule.o: dbmmodule.c
+errnomodule.o: errnomodule.c
 fcntlmodule.o: fcntlmodule.c
 flmodule.o: flmodule.c
 fmmodule.o: fmmodule.c
@@ -170,6 +171,7 @@ md5c.o: md5c.c
 md5module.o: md5module.c
 mpzmodule.o: mpzmodule.c
 nismodule.o: nismodule.c
+operator.o: operator.c
 parsermodule.o: parsermodule.c
 posixmodule.o: posixmodule.c
 pwdmodule.o: pwdmodule.c

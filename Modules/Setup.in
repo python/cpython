@@ -46,6 +46,11 @@
 # to ftp sources from elsewhere.
 
 
+# -------> Uncomment this line if you are running AIX    <----------
+# -------> and if you are building with shared libraries <----------
+#LINKCC= makexp_aix python.exp "" $(MYLIBS) $(ADDOBJS) ; $(CC)
+
+
 # Some special rules to define PYTHONPATH.
 # Edit the definitions below to indicate which options you are using.
 # Don't add any whitespace or comments!
@@ -102,7 +107,7 @@ signal signalmodule.c		# signal(2)
 
 array arraymodule.c	# array objects
 cmath cmathmodule.c	# complex math library functions
-math mathmodule.c -lm	# math library functions, e.g. sin()
+math mathmodule.c	# math library functions, e.g. sin()
 regex regexmodule.c regexpr.c	# Regular expressions, GNU Emacs style
 strop stropmodule.c	# fast string operations implemented in C
 struct structmodule.c	# binary structure packing/unpacking
@@ -194,7 +199,7 @@ md5 md5module.c md5c.c
 # This module requires the header file
 # /usr/people/4Dgifts/iristools/include/izoom.h:
 
-#imgfile imgfile.c -limage -lgutil -lm	# Image Processing Utilities
+#imgfile imgfile.c -limage -lgutil	# Image Processing Utilities
 
 
 # These modules require the Multimedia Development Option (I think):
