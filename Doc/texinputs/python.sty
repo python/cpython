@@ -698,13 +698,28 @@
 % second is the action the should be taken by users of the feature.
 %
 % Example:
-%
 %  \deprecated{1.5.1}{Use \method{frobnicate()} instead.}
 %
 \newcommand{\deprecated}[2]{%
   \strong{Deprecated since release #1.}  #2\par}
 
+% New stuff.
+% This should be used to mark things which have been added to the
+% development tree but that aren't in the release, but are documented.
+% This allows release of documentation that already includes updated
+% descriptions.
+%
+% Example:
+%  \versionadded{1.5.2}
+%
+\newcommand{\versionadded}[1]{%
+  \strong{New in version #1.}\par}
+\newcommand{\versionchanged}[1]{%
+  \strong{Changed in version #1.}\par}
 
+
+% Tables.
+%
 \newenvironment{tableii}[4]{%
   \begin{center}%
     \def\lineii##1##2{\csname#2\endcsname{##1}&##2\\}%
@@ -786,7 +801,7 @@
 }{\par}
 
 
-% Allow the release number to be specified independently of the
+% Allow the Python release number to be specified independently of the
 % \date{}.  This allows the date to reflect the document's date and
 % release to specify the Python release that is documented.
 %
