@@ -114,7 +114,7 @@ builtin_buffer(PyObject *self, PyObject *args)
 static char buffer_doc[] =
 "buffer(object [, offset[, size]]) -> object\n\
 \n\
-Creates a new buffer object which references the given object.\n\
+Create a new buffer object which references the given object.\n\
 The buffer will reference a slice of the target object from the\n\
 start of the object (or at the specified offset). The slice will\n\
 extend to the end of the target object (or with the specified size).";
@@ -135,7 +135,7 @@ builtin_unicode(PyObject *self, PyObject *args)
 static char unicode_doc[] =
 "unicode(string [, encoding[, errors]]) -> object\n\
 \n\
-Creates a new Unicode object from the given encoded string.\n\
+Create a new Unicode object from the given encoded string.\n\
 encoding defaults to the current default string encoding and \n\
 errors, defining the error handling, to 'strict'.";
 
@@ -411,9 +411,9 @@ complex_from_string(PyObject *v)
 				 "complex() literal too large to convert");
 			return NULL;
 		}
-		if (PyUnicode_EncodeDecimal(PyUnicode_AS_UNICODE(v), 
+		if (PyUnicode_EncodeDecimal(PyUnicode_AS_UNICODE(v),
 					    PyUnicode_GET_SIZE(v),
-					    s_buffer, 
+					    s_buffer,
 					    NULL))
 			return NULL;
 		s = s_buffer;
@@ -438,7 +438,7 @@ complex_from_string(PyObject *v)
 	z = -1.0;
 	sign = 1;
 	do {
-	
+
 		switch (*s) {
 
 		case '\0':
@@ -450,7 +450,7 @@ complex_from_string(PyObject *v)
 			}
 			if(!done) sw_error=1;
 			break;
-						
+
 		case '-':
 			sign = -1;
 				/* Fallthrough */
@@ -509,7 +509,7 @@ complex_from_string(PyObject *v)
 				}
 			s=end;
 			if  (*s=='J' || *s=='j') {
-							
+
 				break;
 			}
 			if  (got_re) {
@@ -524,7 +524,7 @@ complex_from_string(PyObject *v)
 			z = -1.0;
 			sign = 1;
 			break;
-					
+
 		}  /* end of switch  */
 
 	} while (*s!='\0' && !sw_error);
@@ -935,7 +935,7 @@ builtin_map(PyObject *self, PyObject *args)
 	for (len = 0, i = 0, sqp = seqs; i < n; ++i, ++sqp) {
 		int curlen;
 		PySequenceMethods *sqf;
-	
+
 		if ((sqp->seq = PyTuple_GetItem(args, i + 1)) == NULL)
 			goto Fail_2;
 
@@ -1135,7 +1135,7 @@ builtin_hex(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "O:hex", &v))
 		return NULL;
-	
+
 	if ((nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_hex == NULL) {
 		PyErr_SetString(PyExc_TypeError,
@@ -1244,7 +1244,7 @@ builtin_long(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 	int base = -909;		     /* unlikely! */
-	
+
 	if (!PyArg_ParseTuple(args, "O|i:long", &v, &base))
 		return NULL;
 	if (base == -909)
@@ -1529,7 +1529,7 @@ builtin_ord(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	PyErr_Format(PyExc_TypeError, 
+	PyErr_Format(PyExc_TypeError,
 		     "ord() expected a character, "
 		     "but string of length %d found",
 		     size);
@@ -1539,7 +1539,7 @@ builtin_ord(PyObject *self, PyObject *args)
 static char ord_doc[] =
 "ord(c) -> integer\n\
 \n\
-Return the integer ordinal of a one character string.";
+Return the integer ordinal of a one-character string.";
 
 
 static PyObject *
@@ -2014,9 +2014,9 @@ abstract_issubclass(PyObject *derived, PyObject *cls, int first)
 	if (first) {
 		bases = PyObject_GetAttr(cls, __bases__);
 		if (bases == NULL || !PyTuple_Check(bases)) {
-		        Py_XDECREF(bases);
-	        	PyErr_SetString(PyExc_TypeError,
-					"arg 2 must be a class or type");
+			Py_XDECREF(bases);
+			PyErr_SetString(PyExc_TypeError,
+					"issubclass() arg 2 must be a class");
 			return -1;
 		}
 		Py_DECREF(bases);
@@ -2029,7 +2029,7 @@ abstract_issubclass(PyObject *derived, PyObject *cls, int first)
 	if (bases == NULL || !PyTuple_Check(bases)) {
 	        Py_XDECREF(bases);
 		PyErr_SetString(PyExc_TypeError,
-				"arg 2 must be a class or type");
+				"issubclass() arg 1 must be a class");
 		return -1;
 	}
 
@@ -2068,23 +2068,29 @@ builtin_isinstance(PyObject *self, PyObject *args)
 		retval = ((PyObject *)(inst->ob_type) == cls);
 	}
 	else if (!PyInstance_Check(inst)) {
-	        if (__class__ == NULL) {
+		if (__class__ == NULL) {
 			__class__ = PyString_FromString("__class__");
 			if (__class__ == NULL)
 				return NULL;
 		}
 		icls = PyObject_GetAttr(inst, __class__);
 		if (icls != NULL) {
-			retval = abstract_issubclass( icls, cls, 1);
+			retval = abstract_issubclass(icls, cls, 1);
 			Py_DECREF(icls);
-			if (retval < 0)
+			if (retval < 0 &&
+			    !PyErr_ExceptionMatches(PyExc_TypeError))
 				return NULL;
 		}
-		else {
-			PyErr_SetString(PyExc_TypeError,
-					"arg 2 must be a class or type");
-			return NULL;
-		}
+		else
+			retval = -1;
+	}
+	else
+		retval = -1;
+
+	if (retval < 0) {
+		PyErr_SetString(PyExc_TypeError,
+				"isinstance() arg 2 must be a class or type");
+		return NULL;
 	}
 	return PyInt_FromLong(retval);
 }
@@ -2108,7 +2114,7 @@ builtin_issubclass(PyObject *self, PyObject *args)
 
 	if (!PyClass_Check(derived) || !PyClass_Check(cls)) {
 		retval = abstract_issubclass(derived, cls, 1);
-		if (retval < 0) 
+		if (retval < 0)
 			return NULL;
 	}
 	else {
@@ -2261,7 +2267,7 @@ _PyBuiltin_Init(void)
 		return NULL;
 	if (PyDict_SetItemString(dict, "Ellipsis", Py_Ellipsis) < 0)
 		return NULL;
-	if (PyDict_SetItemString(dict, "NotImplemented", 
+	if (PyDict_SetItemString(dict, "NotImplemented",
 				 Py_NotImplemented) < 0)
 		return NULL;
 	debug = PyInt_FromLong(Py_OptimizeFlag == 0);
