@@ -188,7 +188,10 @@ import binascii
 class IntTester:
 
     # XXX Most std integer modes fail to test for out-of-range.
-    BUGGY_RANGE_CHECK = "bBhHIL"
+    # The "i" and "l" codes appear to range-check OK on 32-bit boxes, but
+    # fail to check correctly on some 64-bit ones (Tru64 Unix + Compaq C
+    # reported by Mark Favas).
+    BUGGY_RANGE_CHECK = "bBhHiIlL"
 
     def __init__(self, formatpair, bytesize):
         assert len(formatpair) == 2
