@@ -181,7 +181,7 @@ try_exc_stmt:   "try" ":" suite
                ("except" [expression ["," target]] ":" suite)+
                ["else" ":" suite]
 try_fin_stmt:   "try" ":" suite
-               "finally" ":" suite
+                "finally" ":" suite
 \end{verbatim}
 
 There are two forms of \keyword{try} statement:
@@ -242,12 +242,17 @@ that handled an exception.
 \withsubitem{(in module sys)}{\ttindex{exc_type}
   \ttindex{exc_value}\ttindex{exc_traceback}}
 
-The optional \keyword{else} clause is executed when the \keyword{try} clause
-terminates by any means other than an exception or executing a
-\keyword{return}, \keyword{continue} or \keyword{break} statement.  
-Exceptions in the \keyword{else} clause are not handled by the preceding
-\keyword{except} clauses.
+The optional \keyword{else} clause is executed if and when control
+flows off the end of the \keyword{try} clause.\footnote{
+  Currently, control ``flows off the end'' except in the case of an
+  exception or the execution of a \keyword{return},
+  \keyword{continue}, or \keyword{break} statement.
+} Exceptions in the \keyword{else} clause are not handled by the
+preceding \keyword{except} clauses.
 \kwindex{else}
+\stindex{return}
+\stindex{break}
+\stindex{continue}
 
 The \keyword{try}...\keyword{finally} form specifies a `cleanup' handler.  The
 \keyword{try} clause is executed.  When no exception occurs, the
