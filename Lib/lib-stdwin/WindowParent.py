@@ -35,7 +35,9 @@ class WindowParent() = ManageOneChild():
 		size = self.child.minsize(self.beginmeasuring())
 		self.size = max(self.size[0], size[0]), \
 						max(self.size[1], size[1])
-		stdwin.setdefwinsize(self.size)
+		#stdwin.setdefwinsize(self.size)
+		# XXX Compensate stdwin bug:
+		stdwin.setdefwinsize(self.size[0]+4, self.size[1]+2)
 		self.win = stdwin.open(self.title)
 		if self.itimer:
 			self.win.settimer(self.itimer)
