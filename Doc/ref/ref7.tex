@@ -318,10 +318,10 @@ section~\ref{types}):
              {"def" \token{funcname} "(" [\token{parameter_list}] ")"
               ":" \token{suite}}
   \production{parameter_list}
-             {(\token{defparameter} ",")*}
-  \productioncont{("*" \token{identifier} [, "**" \token{identifier}]}
-  \productioncont{| "**" \token{identifier}
-                  | \token{defparameter} [","])}
+                 {(\token{defparameter} ",")*}
+  \productioncont{(~~"*" \token{identifier} [, "**" \token{identifier}]}
+  \productioncont{ | "**" \token{identifier}}
+  \productioncont{ | \token{defparameter} [","] )}
   \production{defparameter}
              {\token{parameter} ["=" \token{expression}]}
   \production{sublist}
