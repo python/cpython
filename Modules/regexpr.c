@@ -1379,7 +1379,7 @@ regexp_registers_t regs;
   char anchor;
   
   assert(size1 >= 0 && size2 >= 0 && pos >= 0 && mstop >= 0);
-  assert(pos + range + 1 >= 0 && pos + range - 1 <= size1 + size2);
+  assert(pos + range >= 0 && pos + range <= size1 + size2); /* Bugfix by ylo */
   assert(pos <= mstop);
   
   fastmap = bufp->fastmap;
@@ -1396,6 +1396,7 @@ regexp_registers_t regs;
     }
   else
     dir = 1;
+  /* range--; /* Bugfix by Guido */
   if (anchor == 2)
     if (pos != 0)
       return -1;
