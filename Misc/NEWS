@@ -49,6 +49,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- collections.deque objects now support a remove() method.
+
 - operator.itemgetter() and operator.attrgetter() now support retrieving
   multiple fields.  This provides direct support for sorting on multiple
   keys (primary, secondary, etc).

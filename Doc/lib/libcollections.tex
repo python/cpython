@@ -64,6 +64,12 @@ Deque objects support the following methods:
    If no elements are present, raises a \exception{IndexError}.   
 \end{methoddesc}
 
+\begin{methoddesc}{remove}{value}
+   Removed the first occurrence of \var{value}.  If not found,
+   raises a \exception{ValueError}.
+   \versionadded{2.5}
+\end{methoddesc}
+
 \begin{methoddesc}{rotate}{n}
    Rotate the deque \var{n} steps to the right.  If \var{n} is
    negative, rotate to the left.  Rotating one step to the right

@@ -368,6 +368,41 @@ deque_len(dequeobject *deque)
 	return deque->len;
 }
 
+static PyObject *
+deque_remove(dequeobject *deque, PyObject *value)
+{
+	int i, n=deque->len;
+
+	for (i=0 ; i<n ; i++) {
+		PyObject *item = deque->leftblock->data[deque->leftindex];
+		int cmp = PyObject_RichCompareBool(item, value, Py_EQ);
+		if (cmp > 0) {
+			PyObject *tgt;
+			if (deque->len != n) {
+				PyErr_SetString(PyExc_IndexError, 
+					"deque mutated during remove().");
+				return NULL;
+			}
+			tgt = deque_popleft(deque, NULL);
+			assert (tgt != NULL);
+			Py_DECREF(tgt);
+			if (_deque_rotate(deque, i) == -1)
+				return NULL;
+			Py_RETURN_NONE;
+		}
+		else if (cmp < 0) {
+			_deque_rotate(deque, i);
+			return NULL;
+		}
+		_deque_rotate(deque, -1);
+	}
+	PyErr_SetString(PyExc_ValueError, "deque.remove(x): x not in deque");
+	return NULL;
+}
+
+PyDoc_STRVAR(remove_doc,
+"D.remove(value) -- remove first occurrence of value.");
+
 static int
 deque_clear(dequeobject *deque)
 {
@@ -764,7 +799,7 @@ static PyMethodDef deque_methods[] = {
 		METH_NOARGS,	 copy_doc},
 	{"extend",		(PyCFunction)deque_extend,
 		METH_O,		 extend_doc},
-	{"extendleft",	(PyCFunction)deque_extendleft,
+	{"extendleft",		(PyCFunction)deque_extendleft,
 		METH_O,		 extendleft_doc},
 	{"pop",			(PyCFunction)deque_pop,
 		METH_NOARGS,	 pop_doc},
@@ -772,6 +807,8 @@ static PyMethodDef deque_methods[] = {
 		METH_NOARGS,	 popleft_doc},
 	{"__reduce__",	(PyCFunction)deque_reduce,
 		METH_NOARGS,	 reduce_doc},
+	{"remove",		(PyCFunction)deque_remove,
+		METH_O,		 remove_doc},
 	{"__reversed__",	(PyCFunction)deque_reviter,
 		METH_NOARGS,	 reversed_doc},
 	{"rotate",		(PyCFunction)deque_rotate,
