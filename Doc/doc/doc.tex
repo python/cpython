@@ -1772,15 +1772,20 @@ This \UNIX\ is also followed by a space.
         right.''  The proper way to use this script is to make a
         symbolic link to it or run it in place; the actual script file
         must be stored as part of the documentation source tree,
-        though it may be used to format documents outside the
-        tree.  Use \program{mkhowto} \longprogramopt{help}
-        for a list of
+        though it may be used to format documents outside the tree.
+        Use \program{mkhowto} \longprogramopt{help} for a list of
         command line options.
 
         \program{mkhowto} can be used for both \code{howto} and
         \code{manual} class documents.  It is usually a good idea to
         always use the latest version of this tool rather than a
-        version from an older source release of Python.
+        version from an older source release of Python.  It can be
+        used to generate DVI, HTML, PDF, PostScript, and plain text
+        documents.  The GNU info and iSilo formats will be supported
+        by this script in some future version.
+
+        Use the \longprogramopt{help} option on this script's command
+        line to get a summary of options for this script.
 
         XXX  Need more here.
     \end{description}
@@ -1819,7 +1824,7 @@ This \UNIX\ is also followed by a space.
 % configure && make install
 \end{verbatim}
 
-    You should now be able to build at least the HTML, PDF, and
+    You should now be able to build at least the DVI, HTML, PDF, and
     PostScript versions of the formatted documentation.
 
 
