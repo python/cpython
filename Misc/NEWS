@@ -59,6 +59,13 @@ Tests
 
 Windows
 
+- os.waitpid() is now implemented for Windows, and can be used to block
+  until a specified process exits.  This is similar to, but not exactly
+  the same as, os.waitpid() on POSIX systems.  If you're waiting for
+  a specific process whose pid was obtained from one of the spawn()
+  functions, the same Python os.waitpid() code works across platforms.
+  See the docs for details.
+
 - New tempfile.TemporaryFile implementation for Windows:  this doesn't
   need a TemproraryFileWrapper wrapper anymore, and should be immune
   to a nasty problem:  before 2.3, if you got a temp file on Windows, it

@@ -78,6 +78,7 @@ corresponding Unix manual entries for more information on calls.";
 #define HAVE_PIPE       1
 #define HAVE_POPEN      1
 #define HAVE_SYSTEM	1
+#define HAVE_CWAIT	1
 #else /* 16-bit Windows */
 #endif /* !MS_WIN32 */
 #else			/* all other compilers */
@@ -3333,8 +3334,33 @@ posix_waitpid(PyObject *self, PyObject *args)
 	else
 		return Py_BuildValue("ii", pid, status_i);
 }
-#endif /* HAVE_WAITPID */
 
+#elif defined(HAVE_CWAIT)
+
+/* MS C has a variant of waitpid() that's usable for most purposes. */
+static char posix_waitpid__doc__[] =
+"waitpid(pid, options) -> (pid, status << 8)\n"
+"Wait for completion of a given process.  options is ignored on Windows.";
+
+static PyObject *
+posix_waitpid(PyObject *self, PyObject *args)
+{
+	int pid, options;
+	int status;
+
+	if (!PyArg_ParseTuple(args, "ii:waitpid", &pid, &options))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	pid = _cwait(&status, pid, options);
+	Py_END_ALLOW_THREADS
+	if (pid == -1)
+		return posix_error();
+	else
+		/* shift the status left a byte so this is more like the
+		   POSIX waitpid */
+		return Py_BuildValue("ii", pid, status << 8);
+}
+#endif /* HAVE_WAITPID || HAVE_CWAIT */
 
 #ifdef HAVE_WAIT
 static char posix_wait__doc__[] =
@@ -5678,7 +5704,7 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_WAIT
 	{"wait",	posix_wait, METH_VARARGS, posix_wait__doc__},
 #endif /* HAVE_WAIT */
-#ifdef HAVE_WAITPID
+#if defined(HAVE_WAITPID) || defined(HAVE_CWAIT)
 	{"waitpid",	posix_waitpid, METH_VARARGS, posix_waitpid__doc__},
 #endif /* HAVE_WAITPID */
 #ifdef HAVE_SETSID
