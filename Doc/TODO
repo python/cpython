@@ -6,10 +6,6 @@ General
 
 * Figure out HTMLHelp generation for the Windows world.
 
-* Straighten out random/whrandom.  Things are generally in the right
-  place, but need to respond to comments in email from Jan Kim
-  <kim@mpiz-koeln.mpg.de>.
-
 
 Python/C API
 ------------
@@ -45,12 +41,8 @@ Reference Manual
 * Document new comparison support for recursive objects (lang. ref.?
   library ref.? (cmp() function).  [Jeremy Hylton]
 
-* Augmented assignment.  [Thomas Wouters]
-
 Library Reference
 -----------------
-
-* urllib2 module reference.  [Jeremy Hylton]
 
 * Update the pickle documentation to describe all of the current
   behavior; only a subset is described.  __reduce__, etc.  Partial
@@ -58,8 +50,6 @@ Library Reference
 
 * Update the httplib documentation to match Greg Stein's HTTP/1.1
   support and new classes.  (Greg, this is yours!)
-
-* SSL support in the socket module is not documented.
 
 Tutorial
 --------
