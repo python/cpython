@@ -1717,6 +1717,47 @@ def keywords():
             raise TestFailed("expected TypeError from bogus keyword "
                              "argument to %r" % constructor)
 
+def restricted():
+    import rexec
+    if verbose:
+        print "Testing interaction with restricted execution ..."
+
+    sandbox = rexec.RExec()
+
+    code1 = """f = open(%r, 'w')""" % TESTFN
+    code2 = """f = file(%r, 'w')""" % TESTFN
+    code3 = """\
+f = open(%r)
+t = type(f)  # a sneaky way to get the file() constructor
+f.close()
+f = t(%r, 'w')  # rexec can't catch this by itself
+""" % (TESTFN, TESTFN)
+
+    f = open(TESTFN, 'w')  # Create the file so code3 can find it.
+    f.close()
+
+    try:
+        for code in code1, code2, code3:
+            try:
+                sandbox.r_exec(code)
+            except IOError, msg:
+                if str(msg).find("restricted") >= 0:
+                    outcome = "OK"
+                else:
+                    outcome = "got an exception, but not an expected one"
+            else:
+                outcome = "expected a restricted-execution exception"
+
+            if outcome != "OK":
+                raise TestFailed("%s, in %r" % (outcome, code))
+
+    finally:
+        try:
+            import os
+            os.unlink(TESTFN)
+        except:
+            pass
+
 def all():
     lists()
     dicts()
@@ -1752,6 +1793,7 @@ def all():
     supers()
     inherits()
     keywords()
+    restricted()
 
 all()
 

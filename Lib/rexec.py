@@ -132,7 +132,7 @@ class RExec(ihooks._Verbose):
     ok_sys_names = ('ps1', 'ps2', 'copyright', 'version',
                     'platform', 'exit', 'maxint')
 
-    nok_builtin_names = ('open', 'reload', '__import__')
+    nok_builtin_names = ('open', 'file', 'reload', '__import__')
 
     def __init__(self, hooks = None, verbose = 0):
         ihooks._Verbose.__init__(self, verbose)
@@ -186,7 +186,7 @@ class RExec(ihooks._Verbose):
         m = self.copy_except(__builtin__, self.nok_builtin_names)
         m.__import__ = self.r_import
         m.reload = self.r_reload
-        m.open = self.r_open
+        m.open = m.file = self.r_open
 
     def make_main(self):
         m = self.add_module('__main__')
