@@ -14,7 +14,7 @@ from cStringIO import StringIO
 from types import ListType
 
 from rfc822 import unquote, quote
-from rfc822 import AddrlistClass as _AddrlistClass
+from rfc822 import AddressList as _AddressList
 from rfc822 import mktime_tz
 
 # We need wormarounds for bugs in these methods in older Pythons (see below)
@@ -96,7 +96,7 @@ def dump_address_pair(pair):
 def getaddresses(fieldvalues):
     """Return a list of (REALNAME, EMAIL) for each fieldvalue."""
     all = COMMASPACE.join(fieldvalues)
-    a = _AddrlistClass(all)
+    a = _AddressList(all)
     return a.getaddrlist()
 
 
