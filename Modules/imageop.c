@@ -37,9 +37,21 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+#if SIZEOF_INT == 4
+typedef int Py_Int32;
+typedef unsigned int Py_UInt32;
+#else
+#if SIZEOF_LONG == 4
+typedef long Py_Int32;
+typedef unsigned long Py_UInt32;
+#else
+#error "No 4-byte integral type"
+#endif
+#endif
+
 #define CHARP(cp, xmax, x, y) ((char *)(cp+y*xmax+x))
 #define SHORTP(cp, xmax, x, y) ((short *)(cp+2*(y*xmax+x)))
-#define LONGP(cp, xmax, x, y) ((long *)(cp+4*(y*xmax+x)))
+#define LONGP(cp, xmax, x, y) ((Py_Int32 *)(cp+4*(y*xmax+x)))
 
 static PyObject *ImageopError;
  
@@ -50,7 +62,7 @@ PyObject *args;
 {
 	char *cp, *ncp;
 	short *nsp;
-	long *nlp;
+	Py_Int32 *nlp;
 	int len, size, x, y, newx1, newx2, newy1, newy2;
 	int ix, iy, xstep, ystep;
 	PyObject *rv;
@@ -76,7 +88,7 @@ PyObject *args;
 		return 0;
 	ncp = (char *)PyString_AsString(rv);
 	nsp = (short *)ncp;
-	nlp = (long *)ncp;
+	nlp = (Py_Int32 *)ncp;
 	newy2 += ystep;
 	newx2 += xstep;
 	for( iy = newy1; iy != newy2; iy+=ystep ) {
@@ -106,7 +118,7 @@ PyObject *args;
 {
 	char *cp, *ncp;
 	short *nsp;
-	long *nlp;
+	Py_Int32 *nlp;
 	int len, size, x, y, newx, newy;
 	int ix, iy;
 	int oix, oiy;
@@ -130,7 +142,7 @@ PyObject *args;
 		return 0;
 	ncp = (char *)PyString_AsString(rv);
 	nsp = (short *)ncp;
-	nlp = (long *)ncp;
+	nlp = (Py_Int32 *)ncp;
 	for( iy = 0; iy < newy; iy++ ) {
 		for ( ix = 0; ix < newx; ix++ ) {
 			oix = ix * x / newx;
@@ -539,11 +551,11 @@ imageop_rgb2rgb8(self, args)
 PyObject *args;
 {
 	int x, y, len, nlen;
-	unsigned long *cp;
+	Py_UInt32 *cp;
 	unsigned char *ncp;
 	PyObject *rv;
 	int i, r, g, b;
-	unsigned long value, nvalue;
+	Py_UInt32 value, nvalue;
     
 	if ( !PyArg_Parse(args, "(s#ii)", &cp, &len, &x, &y) )
 		return 0;
@@ -584,10 +596,10 @@ PyObject *args;
 {
 	int x, y, len, nlen;
 	unsigned char *cp;
-	unsigned long *ncp;
+	Py_UInt32 *ncp;
 	PyObject *rv;
 	int i, r, g, b;
-	unsigned long value, nvalue;
+	Py_UInt32 value, nvalue;
     
 	if ( !PyArg_Parse(args, "(s#ii)", &cp, &len, &x, &y) )
 		return 0;
@@ -601,7 +613,7 @@ PyObject *args;
 	rv = PyString_FromStringAndSize(NULL, nlen*4);
 	if ( rv == 0 )
 		return 0;
-	ncp = (unsigned long *)PyString_AsString(rv);
+	ncp = (Py_UInt32 *)PyString_AsString(rv);
 
 	for ( i=0; i < nlen; i++ ) {
 		/* Bits in source: RRRBBGGG
@@ -626,11 +638,11 @@ imageop_rgb2grey(self, args)
 PyObject *args;
 {
 	int x, y, len, nlen;
-	unsigned long *cp;
+	Py_UInt32 *cp;
 	unsigned char *ncp;
 	PyObject *rv;
 	int i, r, g, b;
-	unsigned long value, nvalue;
+	Py_UInt32 value, nvalue;
     
 	if ( !PyArg_Parse(args, "(s#ii)", &cp, &len, &x, &y) )
 		return 0;
@@ -665,10 +677,10 @@ PyObject *args;
 {
 	int x, y, len, nlen;
 	unsigned char *cp;
-	unsigned long *ncp;
+	Py_UInt32 *ncp;
 	PyObject *rv;
 	int i;
-	unsigned long value;
+	Py_UInt32 value;
     
 	if ( !PyArg_Parse(args, "(s#ii)", &cp, &len, &x, &y) )
 		return 0;
@@ -682,7 +694,7 @@ PyObject *args;
 	rv = PyString_FromStringAndSize(NULL, nlen*4);
 	if ( rv == 0 )
 		return 0;
-	ncp = (unsigned long *)PyString_AsString(rv);
+	ncp = (Py_UInt32 *)PyString_AsString(rv);
 
 	for ( i=0; i < nlen; i++ ) {
 		value = *cp++;
