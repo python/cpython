@@ -982,7 +982,7 @@ strop_translate(PyObject *self, PyObject *args)
   MEM, the function returns -1.
 */
 static int 
-mymemfind(char *mem, int len, char *pat, int pat_len)
+mymemfind(const char *mem, int len, const char *pat, int pat_len)
 {
 	register int ii;
 
@@ -1007,7 +1007,7 @@ mymemfind(char *mem, int len, char *pat, int pat_len)
            mem=11111 and pat==11 also return 2.
  */
 static int 
-mymemcnt(char *mem, int len, char *pat, int pat_len)
+mymemcnt(const char *mem, int len, const char *pat, int pat_len)
 {
 	register int offset = 0;
 	int nfound = 0;
@@ -1043,10 +1043,11 @@ mymemcnt(char *mem, int len, char *pat, int pat_len)
        NULL if an error occurred.
 */
 static char *
-mymemreplace(char *str, int len,
-             char *pat, int pat_len,
-             char *sub, int sub_len,
-             int count, int *out_len)
+mymemreplace(const char *str, int len,		/* input string */
+             const char *pat, int pat_len,	/* pattern string to find */
+             const char *sub, int sub_len,	/* substitution string */
+             int count,				/* number of replacements */
+	     int *out_len)
 {
 	char *out_s;
 	char *new_s;
@@ -1064,7 +1065,11 @@ mymemreplace(char *str, int len,
 
 	new_len = len + nfound*(sub_len - pat_len);
 	if (new_len == 0) {
-		out_s = "";
+		/* Have to allocate something for the caller to free(). */
+		out_s = (char *)PyMem_MALLOC(1);
+		if (out_s = NULL)
+			return NULL;
+		out_s[0] = '\0';
 	}
 	else {
 		assert(new_len > 0);
@@ -1102,7 +1107,7 @@ mymemreplace(char *str, int len,
 
   return_same:
 	*out_len = -1;
-	return str;
+	return (char *)str; /* cast away const */
 }
 
 
