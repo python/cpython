@@ -244,8 +244,10 @@ class TextWrapper:
 
 # Convenience interface
 
-def wrap(text, width):
-    return TextWrapper(width=width).wrap(text)
+def wrap(text, width=70, **kwargs):
+    w = TextWrapper(width=width, **kwargs)
+    return w.wrap(text)
 
-def fill(text, width, initial_tab="", subsequent_tab=""):
-    return TextWrapper(width=width).fill(text, initial_tab, subsequent_tab)
+def fill(text, width=70, initial_tab="", subsequent_tab="", **kwargs):
+    w = TextWrapper(width=width, **kwargs)
+    return w.fill(text, initial_tab, subsequent_tab)
