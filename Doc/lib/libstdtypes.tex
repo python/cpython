@@ -313,6 +313,57 @@ division by \code{pow(2, \var{n})} without overflow check.
 \end{description}
 
 
+\subsection{Iterator Types \label{typeiter}}
+
+\versionadded{2.1}
+\index{iterator protocol}
+\index{protocol!iterator}
+\index{sequence!iteration}
+\index{container!iteration over}
+
+Python supports a concept of iteration over containers.  This is
+implemented using two distinct methods; these are used to allow
+user-defined classes to support iteration.  Sequences, described below
+in more detail, always support the iteration methods.
+
+One method needs to be defined for container objects to provide
+iteration support:
+
+\begin{methoddesc}[container]{__iter__}{}
+  Return an interator object.  The object is required to support the
+  iterator protocol described below.  If a container supports
+  different types of iteration, additional methods can be provided to
+  specifically request iterators for those iteration types.  (An
+  example of an object supporting multiple forms of iteration would be
+  a tree structure which supports both breadth-first and depth-first
+  traversal.)  This method corresponds to the \member{tp_iter} slot of
+  the type structure for Python objects in the Python/C API.
+\end{methoddesc}
+
+The iterator objects themselves are required to support the following
+two methods, which together form the \dfn{iterator protocol}:
+
+\begin{methoddesc}[iterator]{__iter__}{}
+  Return the iterator object itself.  This is required to allow both
+  containers and iterators to be used with the \keyword{for} and
+  \keyword{in} statements.  This method corresponds to the
+  \member{tp_iter} slot of the type structure for Python objects in
+  the Python/C API.
+\end{methoddesc}
+
+\begin{methoddesc}[iteratpr]{next}{}
+  Return the next item from the container.  If there are no further
+  items, raise the \exception{StopIteration} exception.  This method
+  corresponds to the \member{tp_iternext} slot of the type structure
+  for Python objects in the Python/C API.
+\end{methoddesc}
+
+Python defines several iterator objects to support iteration over
+general and specific sequence types, dictionaries, and other more
+specialized forms.  The specific types are not important beyond their
+implementation of the iterator protocol.
+
+
 \subsection{Sequence Types \label{typesseq}}
 
 There are six sequence types: strings, Unicode strings, lists,
