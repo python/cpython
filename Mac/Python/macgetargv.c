@@ -39,7 +39,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Errors.h>
 #include <AppleEvents.h>
 #include <AEObjects.h>
-#include <Desk.h>
 #include <Fonts.h>
 #include <TextEdit.h>
 #include <Menus.h>

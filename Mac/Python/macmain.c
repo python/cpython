@@ -35,7 +35,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <stdio.h>
 #include <Events.h>
 #include <Windows.h>
-#include <Desk.h>
 #include <Fonts.h>
 
 #ifdef __MWERKS__
