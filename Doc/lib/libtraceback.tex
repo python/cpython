@@ -118,10 +118,10 @@ A shorthand for \code{format_list(extract_stack(\var{f}, \var{limit}))}.
 
 \begin{funcdesc}{tb_lineno}{tb}
 This function returns the current line number set in the traceback
-object.  This is normally the same as the \code{\var{tb}.tb_lineno}
-field of the object, but when optimization is used (the -O flag) this
-field is not updated correctly; this function calculates the correct
-value.
+object.  This function was necessary because in versions of Python
+prior to 2.3 when the \programopt{O} flag was passed to Python the
+\code{\var{tb}.tb_lineno} was not updated correctly.  This function
+has no use in versions past 2.3.
 \end{funcdesc}
 
 

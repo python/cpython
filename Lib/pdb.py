@@ -105,7 +105,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 if len(line) > 0 and line[0] != '#':
                     self.onecmd(line)
 
-    # Override Bdb methods (except user_call, for now)
+    # Override Bdb methods 
+
+    def user_call(self, frame, argument_list):
+        """This method is called when there is the remote possibility
+        that we ever need to stop in this function."""
+        print '--Call--'
+        self.interaction(frame, None)
 
     def user_line(self, frame):
         """This function is called when we stop or break at this line."""

@@ -71,6 +71,9 @@ extern "C" {
 #define INPLACE_OR	79
 #define BREAK_LOOP	80
 
+#define RETURN_NONE	81 /* *only* for function epilogues 
+			      -- see comments in 
+			      ceval.c:maybe_call_line_trace for why */
 #define LOAD_LOCALS	82
 #define RETURN_VALUE	83
 #define IMPORT_STAR	84
@@ -118,8 +121,6 @@ extern "C" {
 #define LOAD_FAST	124	/* Local variable number */
 #define STORE_FAST	125	/* Local variable number */
 #define DELETE_FAST	126	/* Local variable number */
-
-#define SET_LINENO	127	/* Current line number */
 
 #define RAISE_VARARGS	130	/* Number of raise arguments (1, 2 or 3) */
 /* CALL_FUNCTION_XXX opcodes defined below depend on this definition */

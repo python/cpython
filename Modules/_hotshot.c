@@ -152,7 +152,7 @@ logreader_tp_iter(LogReaderObject *self)
  * Low bits:    Opcode:        Meaning:
  *       0x00         ENTER     enter a frame
  *       0x01          EXIT     exit a frame
- *       0x02        LINENO     SET_LINENO instruction was executed
+ *       0x02        LINENO     execution moved onto a different line
  *       0x03         OTHER     more bits are needed to deecode
  *
  * If the type is OTHER, the record is not packed so tightly, and the
@@ -888,9 +888,12 @@ tracer_callback(ProfilerObject *self, PyFrameObject *frame, int what,
 
     case PyTrace_LINE:
         if (self->linetimings)
-            return pack_lineno_tdelta(self, frame->f_lineno, get_tdelta(self));
+            return pack_lineno_tdelta(self, PyCode_Addr2Line(frame->f_code, 
+							     frame->f_lasti),
+				      get_tdelta(self));
         else
-            return pack_lineno(self, frame->f_lineno);
+            return pack_lineno(self, PyCode_Addr2Line(frame->f_code,
+						      frame->f_lasti));
 
     default:
         /* ignore PyTrace_EXCEPTION */
@@ -1227,8 +1230,8 @@ PyDoc_STRVAR(profiler_object__doc__,
 "\n"
 "closed:       True if the profiler has already been closed.\n"
 "frametimings: True if ENTER/EXIT events collect timing information.\n"
-"lineevents:   True if SET_LINENO events are reported to the profiler.\n"
-"linetimings:  True if SET_LINENO events collect timing information.");
+"lineevents:   True if line events are reported to the profiler.\n"
+"linetimings:  True if line events collect timing information.");
 
 static PyTypeObject ProfilerType = {
     PyObject_HEAD_INIT(NULL)

@@ -658,7 +658,6 @@ In 2.3, you get this:
 
 \end{itemize}
 
-
 %======================================================================
 \section{New and Improved Modules}
 
@@ -987,9 +986,9 @@ allocate objects, and \cfunction{PyObject_GC_Del} to deallocate them.
 when running Python's \file{configure} script.  (Contributed by Ondrej
 Palkovsky.)
 
-\item The  \csimplemacro{DL_EXPORT} and \csimplemacro{DL_IMPORT} macros are now
-deprecated.  Initialization functions for Python extension modules
-should now be declared using the new macro
+\item The \csimplemacro{DL_EXPORT} and \csimplemacro{DL_IMPORT} macros
+are now deprecated.  Initialization functions for Python extension
+modules should now be declared using the new macro
 \csimplemacro{PyMODINIT_FUNC}, while the Python core will generally
 use the \csimplemacro{PyAPI_FUNC} and \csimplemacro{PyAPI_DATA}
 macros.
@@ -1075,6 +1074,29 @@ Finally, there are various miscellaneous fixes:
 
 \item The tools used to build the documentation now work under Cygwin
 as well as \UNIX.
+
+\item The \code{SET_LINENO} opcode has been removed.  Back in the
+mists of time, this opcode was needed to produce line numbers in
+tracebacks and support trace functions (for, e.g., \module{pdb}).
+Since Python 1.5, the line numbers in tracebacks have been computed
+using a different mechanism that works with ``python -O''.  For Python
+2.3 Michael Hudson implemented a similar scheme to determine when to
+call the trace function, removing the need for \code{SET_LINENO}
+entirely.
+
+Python code will be hard pushed to notice a difference from this
+change, apart from a slight speed up when python is run without
+\programopt{-O}.
+
+C extensions that access the \member{f_lineno} field of frame objects
+should instead call \code{PyCode_Addr2Line(f->f_code, f->f_lasti)}.
+This will have the added effect of making the code work as desired
+under ``python -O'' in earlier versions of Python.
+
+To make tracing work as expected, it was found necessary to add a new
+opcode, \cdata{RETURN_NONE}, to the VM.  If you want to know why, read
+the comments in the function \cfunction{maybe_call_line_trace} in
+\file{Python/ceval.c}.
 
 \end{itemize}
 

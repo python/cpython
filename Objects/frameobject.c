@@ -16,7 +16,6 @@ static PyMemberDef frame_memberlist[] = {
 	{"f_builtins",	T_OBJECT,	OFF(f_builtins),RO},
 	{"f_globals",	T_OBJECT,	OFF(f_globals),	RO},
 	{"f_lasti",	T_INT,		OFF(f_lasti),	RO},
-	{"f_lineno",	T_INT,		OFF(f_lineno),	RO},
 	{"f_restricted",T_INT,		OFF(f_restricted),RO},
 	{"f_trace",	T_OBJECT,	OFF(f_trace)},
 	{"f_exc_type",	T_OBJECT,	OFF(f_exc_type)},
@@ -33,8 +32,19 @@ frame_getlocals(PyFrameObject *f, void *closure)
 	return f->f_locals;
 }
 
+static PyObject *
+frame_getlineno(PyFrameObject *f, void *closure)
+{
+	int lineno;
+
+	lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
+
+	return PyInt_FromLong(lineno);
+}
+
 static PyGetSetDef frame_getsetlist[] = {
 	{"f_locals",	(getter)frame_getlocals, NULL, NULL},
+	{"f_lineno",	(getter)frame_getlineno, NULL, NULL},
 	{0}
 };
 
@@ -306,7 +316,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 	f->f_exc_type = f->f_exc_value = f->f_exc_traceback = NULL;
 	f->f_tstate = tstate;
 
-	f->f_lasti = 0;
+	f->f_lasti = -1;
 	f->f_lineno = code->co_firstlineno;
 	f->f_restricted = (builtins != tstate->interp->builtins);
 	f->f_iblock = 0;

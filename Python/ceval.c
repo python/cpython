@@ -51,6 +51,9 @@ static int call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
 static void call_trace_protected(Py_tracefunc, PyObject *,
 				 PyFrameObject *, int);
 static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
+static void maybe_call_line_trace(int, Py_tracefunc, PyObject *, 
+				  PyFrameObject *, int *, int *);
+
 static PyObject *apply_slice(PyObject *, PyObject *, PyObject *);
 static int assign_slice(PyObject *, PyObject *,
 			PyObject *, PyObject *);
@@ -499,6 +502,16 @@ eval_frame(PyFrameObject *f)
 	PyObject *retval = NULL;	/* Return value */
 	PyThreadState *tstate = PyThreadState_GET();
 	PyCodeObject *co;
+
+	/* when tracing we set things up so that 
+
+               not (instr_lb <= current_bytecode_offset < instr_ub)
+
+	   is true when the line being executed has changed.  The 
+           initial values are such as to make this false the first
+           time it is tested. */
+	int instr_ub = -1, instr_lb = 0;
+
 	unsigned char *first_instr;
 	PyObject *names;
 	PyObject *consts;
@@ -586,7 +599,12 @@ eval_frame(PyFrameObject *f)
 	fastlocals = f->f_localsplus;
 	freevars = f->f_localsplus + f->f_nlocals;
 	_PyCode_GETCODEPTR(co, &first_instr);
-	next_instr = first_instr + f->f_lasti;
+	if (f->f_lasti < 0) {
+		next_instr = first_instr;
+	}
+	else {
+		next_instr = first_instr + f->f_lasti;
+	}
 	stack_pointer = f->f_stacktop;
 	assert(stack_pointer != NULL);
 	f->f_stacktop = NULL;	/* remains NULL unless yield suspends frame */
@@ -637,8 +655,9 @@ eval_frame(PyFrameObject *f)
 	w = NULL;
 
 	for (;;) {
-		assert(stack_pointer >= f->f_valuestack);	/* else underflow */
-		assert(STACK_LEVEL() <= f->f_stacksize);	/* else overflow */
+		assert(stack_pointer >= f->f_valuestack); /* else underflow */
+		assert(STACK_LEVEL() <= f->f_stacksize);  /* else overflow */
+
 		/* Do periodic things.  Doing this every time through
 		   the loop would add too much overhead, so we do it
 		   only every Nth instruction.  We also do it if
@@ -658,8 +677,8 @@ eval_frame(PyFrameObject *f)
 #if !defined(HAVE_SIGNAL_H) || defined(macintosh)
 			/* If we have true signals, the signal handler
 			   will call Py_AddPendingCall() so we don't
-			   have to call sigcheck().  On the Mac and
-			   DOS, alas, we have to call it. */
+			   have to call PyErr_CheckSignals().  On the 
+			   Mac and DOS, alas, we have to call it. */
 			if (PyErr_CheckSignals()) {
 				why = WHY_EXCEPTION;
 				goto on_error;
@@ -686,9 +705,7 @@ eval_frame(PyFrameObject *f)
 	fast_next_opcode:
 		/* Extract opcode and argument */
 
-#if defined(Py_DEBUG) || defined(LLTRACE)
 		f->f_lasti = INSTR_OFFSET();
-#endif
 
 		opcode = NEXTOP();
 		if (HAS_ARG(opcode))
@@ -708,15 +725,26 @@ eval_frame(PyFrameObject *f)
 		if (lltrace) {
 			if (HAS_ARG(opcode)) {
 				printf("%d: %d, %d\n",
-					(int) (INSTR_OFFSET() - 3),
-					opcode, oparg);
+				       f->f_lasti, opcode, oparg);
 			}
 			else {
 				printf("%d: %d\n",
-					(int) (INSTR_OFFSET() - 1), opcode);
+				       f->f_lasti, opcode);
 			}
 		}
 #endif
+
+		/* line-by-line tracing support */
+
+		if (tstate->c_tracefunc != NULL && !tstate->tracing) {
+			/* see maybe_call_line_trace
+			   for expository comments */
+			maybe_call_line_trace(opcode, 
+					      tstate->c_tracefunc,
+					      tstate->c_traceobj,
+					      f, &instr_lb, &instr_ub);
+		}
+
 		/* Main switch on opcode */
 
 		switch (opcode) {
@@ -727,26 +755,6 @@ eval_frame(PyFrameObject *f)
 		   and that no operation that succeeds does this! */
 
 		/* case STOP_CODE: this is an error! */
-
-		case SET_LINENO:
-#ifdef LLTRACE
-			if (lltrace)
-				printf("--- %s:%d \n", filename, oparg);
-#endif
-			f->f_lineno = oparg;
-			if (tstate->c_tracefunc == NULL || tstate->tracing)
-				goto fast_next_opcode;
-			/* Trace each line of code reached */
-			f->f_lasti = INSTR_OFFSET();
-			/* Inline call_trace() for performance: */
-			tstate->tracing++;
-			tstate->use_tracing = 0;
-			err = (tstate->c_tracefunc)(tstate->c_traceobj, f,
-						    PyTrace_LINE, Py_None);
-			tstate->use_tracing = (tstate->c_tracefunc
-					       || tstate->c_profilefunc);
-			tstate->tracing--;
-			break;
 
 		case LOAD_FAST:
 			x = GETLOCAL(oparg);
@@ -1504,9 +1512,17 @@ eval_frame(PyFrameObject *f)
 			why = WHY_RETURN;
 			break;
 
+		case RETURN_NONE:
+			retval = Py_None;
+			Py_INCREF(retval);
+			why = WHY_RETURN;
+			break;
+
 		case YIELD_VALUE:
 			retval = POP();
 			f->f_stacktop = stack_pointer;
+			/* abuse the lasti field: here it points to 
+			   the *next* instruction */
 			f->f_lasti = INSTR_OFFSET();
 			why = WHY_YIELD;
 			break;
@@ -1954,7 +1970,6 @@ eval_frame(PyFrameObject *f)
 		    int n = na + 2 * nk;
 		    PyObject **pfunc = stack_pointer - n - 1;
 		    PyObject *func = *pfunc;
-		    f->f_lasti = INSTR_OFFSET() - 3; /* For tracing */
 
 		    /* Always dispatch PyCFunction first, because
 		       these are presumed to be the most frequent
@@ -2022,7 +2037,6 @@ eval_frame(PyFrameObject *f)
 			    n++;
 		    pfunc = stack_pointer - n - 1;
 		    func = *pfunc;
-		    f->f_lasti = INSTR_OFFSET() - 3; /* For tracing */
 
 		    if (PyMethod_Check(func)
 			&& PyMethod_GET_SELF(func) != NULL) {
@@ -2134,7 +2148,8 @@ eval_frame(PyFrameObject *f)
 		default:
 			fprintf(stderr,
 				"XXX lineno: %d, opcode: %d\n",
-				f->f_lineno, opcode);
+				PyCode_Addr2Line(f->f_code, f->f_lasti),
+				opcode);
 			PyErr_SetString(PyExc_SystemError, "unknown opcode");
 			why = WHY_EXCEPTION;
 			break;
@@ -2189,9 +2204,6 @@ eval_frame(PyFrameObject *f)
 		/* Log traceback info if this is a real exception */
 
 		if (why == WHY_EXCEPTION) {
-			f->f_lasti = INSTR_OFFSET() - 1;
-			if (HAS_ARG(opcode))
-				f->f_lasti -= 2;
 			PyTraceBack_Here(f);
 
 			if (tstate->c_tracefunc != NULL)
@@ -2873,6 +2885,125 @@ call_trace(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
 			       || (tstate->c_profilefunc != NULL));
 	tstate->tracing--;
 	return result;
+}
+
+static void
+maybe_call_line_trace(int opcode, Py_tracefunc func, PyObject *obj, 
+		      PyFrameObject *frame, int *instr_lb, int *instr_ub)
+{
+	/* The theory of SET_LINENO-less tracing.
+	   
+	   In a nutshell, we use the co_lnotab field of the code object
+	   to tell when execution has moved onto a different line.
+
+	   As mentioned above, the basic idea is so set things up so
+	   that
+
+	         *instr_lb <= frame->f_lasti < *instr_ub
+
+	   is true so long as execution does not change lines.
+
+	   This is all fairly simple.  Digging the information out of
+	   co_lnotab takes some work, but is conceptually clear.
+
+	   Somewhat harder to explain is why we don't call the line
+	   trace function when executing a POP_TOP or RETURN_NONE
+	   opcodes.  An example probably serves best.
+
+	   Consider this code:
+
+	   1: def f(a):
+	   2:     if a:
+	   3:        print 1
+	   4:     else:
+	   5:        print 2
+
+	   which compiles to this:
+
+	   2           0 LOAD_FAST                0 (a)
+		       3 JUMP_IF_FALSE            9 (to 15)
+		       6 POP_TOP             
+
+	   3           7 LOAD_CONST               1 (1)
+		      10 PRINT_ITEM          
+		      11 PRINT_NEWLINE       
+		      12 JUMP_FORWARD             6 (to 21)
+		 >>   15 POP_TOP             
+
+	   5          16 LOAD_CONST               2 (2)
+		      19 PRINT_ITEM          
+		      20 PRINT_NEWLINE       
+		 >>   21 RETURN_NONE         
+
+	   If a is false, execution will jump to instruction at offset
+	   15 and the co_lnotab will claim that execution has moved to
+	   line 3.  This is at best misleading.  In this case we could
+	   associate the POP_TOP with line 4, but that doesn't make
+	   sense in all cases (I think).
+
+	   On the other hand, if a is true, execution will jump from
+	   instruction offset 12 to offset 21.  Then the co_lnotab would
+	   imply that execution has moved to line 5, which is again
+	   misleading.
+
+	   This is why it is important that RETURN_NONE is *only* used
+	   for the "falling off the end of the function" form of
+	   returning None -- using it for code like
+
+	   1: def f():
+	   2:     return
+
+	   would, once again, lead to misleading tracing behaviour.
+
+	   It is also worth mentioning that getting tracing behaviour
+	   right is the *entire* motivation for adding the RETURN_NONE
+	   opcode.
+	*/
+
+	if (opcode != POP_TOP && opcode != RETURN_NONE &&
+	    (frame->f_lasti < *instr_lb || frame->f_lasti > *instr_ub)) {
+		PyCodeObject* co = frame->f_code;
+		int size, addr;
+		unsigned char* p;
+
+		call_trace(func, obj, frame, PyTrace_LINE, Py_None);
+
+		size = PyString_Size(co->co_lnotab) / 2;
+		p = (unsigned char*)PyString_AsString(co->co_lnotab);
+
+		/* possible optimization: if f->f_lasti == instr_ub
+		   (likely to be a common case) then we already know
+		   instr_lb -- if we stored the matching value of p
+		   somwhere we could skip the first while loop. */
+
+		addr = 0;
+
+		/* see comments in compile.c for the description of
+		   co_lnotab.  A point to remember: increments to p
+		   should come in pairs -- although we don't care about
+		   the line increments here, treating them as byte
+		   increments gets confusing, to say the least. */
+
+		while (size >= 0) {
+			if (addr + *p > frame->f_lasti)
+				break;
+			addr += *p++;
+			p++;
+			--size;
+		}
+		*instr_lb = addr;
+		if (size > 0) {
+			while (--size >= 0) {
+				addr += *p++;
+				if (*p++)
+					break;
+			}
+			*instr_ub = addr;
+		}
+		else {
+			*instr_ub = INT_MAX;
+		}
+	}
 }
 
 void
