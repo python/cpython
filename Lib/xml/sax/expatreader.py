@@ -20,6 +20,9 @@ from xml.sax._exceptions import *
 from xml.parsers import expat
 from xml.sax import xmlreader
 
+AttributesImpl = xmlreader.AttributesImpl
+AttributesNSImpl = xmlreader.AttributesNSImpl
+
 # --- ExpatParser
 
 class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
@@ -31,7 +34,6 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._parser = None
         self._namespaces = namespaceHandling
         self._parsing = 0
-        self._attrs = xmlreader.AttributesImpl({}, {})
 
     # XMLReader methods
 
@@ -137,7 +139,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
     
     # event handlers
     def start_element(self, name, attrs):
-        self._cont_handler.startElement(name, self._attrs)
+        self._cont_handler.startElement(name, AttributesImpl(attrs))
 
     def end_element(self, name):
         self._cont_handler.endElement(name)
@@ -147,12 +149,23 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         if len(pair) == 1:
             pair = (None, name)
 
-        self._cont_handler.startElementNS(pair, None, self._attrs)
+        newattrs = {}
+        for (aname, value) in attrs.items():
+            apair = aname.split()
+            if len(apair) == 1:
+                apair = (None, aname)
+            else:
+                apair = tuple(apair)
+
+            newattrs[apair] = value
+
+        self._cont_handler.startElementNS(pair, None, 
+                                          AttributesNSImpl(newattrs, {}))
 
     def end_element_ns(self, name):
         pair = name.split()
         if len(pair) == 1:
-            name = (None, name)
+            pair = (None, name)
             
         self._cont_handler.endElementNS(pair, None)
 
