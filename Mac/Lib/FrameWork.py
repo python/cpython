@@ -453,10 +453,11 @@ class MenuBar:
 		if DEBUG: print 'Newmenu', title, id # XXXX
 		m = NewMenu(id, title)
 		m.InsertMenu(after)
-		if self.parent:
-			self.parent.needmenubarredraw = 1
-		else:
-			DrawMenuBar()
+		if after >= 0:
+			if self.parent:
+				self.parent.needmenubarredraw = 1
+			else:
+				DrawMenuBar()
 		return id, m
 		
 	def delmenu(self, id):
@@ -582,6 +583,27 @@ class Menu:
 			self.menu.EnableItem(0)
 		else:
 			self.menu.DisableItem(0)
+			
+class PopupMenu(Menu):
+	def __init__(self, bar):
+		Menu.__init__(self, bar, '(popup)', -1)
+		
+	def popup(self, x, y, event, default=1, window=None):
+		# NOTE that x and y are global coordinates, and they should probably
+		# be topleft of the button the user clicked (not mouse-coordinates),
+		# so the popup nicely overlaps.
+		reply = self.menu.PopUpMenuSelect(x, y, default)
+		if not reply:
+			return
+		id = (reply & 0xffff0000) >> 16
+		item = reply & 0xffff
+		if not window:
+			wid = Win.FrontWindow()
+			try:
+				window = self.bar.parent._windows[wid]
+			except:
+				pass # If we can't find the window we pass None
+		self.dispatch(id, item, window, event)
 
 class MenuItem:
 	def __init__(self, menu, title, shortcut=None, callback=None, kind=None):
