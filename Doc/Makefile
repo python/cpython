@@ -166,8 +166,15 @@ api.ps:	api.dvi
 
 .PRECIOUS:	lib.texi
 
+# The sed script in this target fixes a really nasty little condition in
+# libcgi.tex where \e has to be used in a group to get the right behavior,
+# and makeinfo can't handle a group with a leading @command.  But at least
+# the info file gets generated.
+
 lib1.texi: lib*.tex texipre.dat texipost.dat partparse.pyc
 	$(PARTPARSE) -o lib1.texi `./whichlibs`
+	sed 's/"{\\}n{\\}n/"\\n\\n/' lib1.texi >lib2.texi
+	mv lib2.texi lib1.texi
 
 lib.texi: lib1.texi fix.el
 	$(EMACS) -batch -l fix.el -f save-buffer -kill
