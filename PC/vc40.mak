@@ -72,6 +72,7 @@ CLEAN :
 	-@erase "$(INTDIR)\config.obj"
 	-@erase "$(INTDIR)\cPickle.obj"
 	-@erase "$(INTDIR)\cStringIO.obj"
+	-@erase "$(INTDIR)\dictobject.obj"
 	-@erase "$(INTDIR)\dl_nt.obj"
 	-@erase "$(INTDIR)\errnomodule.obj"
 	-@erase "$(INTDIR)\errors.obj"
@@ -99,7 +100,6 @@ CLEAN :
 	-@erase "$(INTDIR)\listobject.obj"
 	-@erase "$(INTDIR)\longobject.obj"
 	-@erase "$(INTDIR)\main.obj"
-	-@erase "$(INTDIR)\mappingobject.obj"
 	-@erase "$(INTDIR)\marshal.obj"
 	-@erase "$(INTDIR)\mathmodule.obj"
 	-@erase "$(INTDIR)\md5c.obj"
@@ -220,6 +220,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\config.obj" \
 	"$(INTDIR)\cPickle.obj" \
 	"$(INTDIR)\cStringIO.obj" \
+	"$(INTDIR)\dictobject.obj" \
 	"$(INTDIR)\dl_nt.obj" \
 	"$(INTDIR)\errnomodule.obj" \
 	"$(INTDIR)\errors.obj" \
@@ -247,7 +248,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\listobject.obj" \
 	"$(INTDIR)\longobject.obj" \
 	"$(INTDIR)\main.obj" \
-	"$(INTDIR)\mappingobject.obj" \
 	"$(INTDIR)\marshal.obj" \
 	"$(INTDIR)\mathmodule.obj" \
 	"$(INTDIR)\md5c.obj" \
@@ -497,6 +497,7 @@ CLEAN :
 	-@erase "$(INTDIR)\config.obj"
 	-@erase "$(INTDIR)\cPickle.obj"
 	-@erase "$(INTDIR)\cStringIO.obj"
+	-@erase "$(INTDIR)\dictobject.obj"
 	-@erase "$(INTDIR)\dl_nt.obj"
 	-@erase "$(INTDIR)\errnomodule.obj"
 	-@erase "$(INTDIR)\errors.obj"
@@ -524,7 +525,6 @@ CLEAN :
 	-@erase "$(INTDIR)\listobject.obj"
 	-@erase "$(INTDIR)\longobject.obj"
 	-@erase "$(INTDIR)\main.obj"
-	-@erase "$(INTDIR)\mappingobject.obj"
 	-@erase "$(INTDIR)\marshal.obj"
 	-@erase "$(INTDIR)\mathmodule.obj"
 	-@erase "$(INTDIR)\md5c.obj"
@@ -644,6 +644,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\config.obj" \
 	"$(INTDIR)\cPickle.obj" \
 	"$(INTDIR)\cStringIO.obj" \
+	"$(INTDIR)\dictobject.obj" \
 	"$(INTDIR)\dl_nt.obj" \
 	"$(INTDIR)\errnomodule.obj" \
 	"$(INTDIR)\errors.obj" \
@@ -671,7 +672,6 @@ LINK32_OBJS= \
 	"$(INTDIR)\listobject.obj" \
 	"$(INTDIR)\longobject.obj" \
 	"$(INTDIR)\main.obj" \
-	"$(INTDIR)\mappingobject.obj" \
 	"$(INTDIR)\marshal.obj" \
 	"$(INTDIR)\mathmodule.obj" \
 	"$(INTDIR)\md5c.obj" \
@@ -794,6 +794,7 @@ DEP_CPP_LONGO=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -803,7 +804,6 @@ DEP_CPP_LONGO=\
 	".\Include\listobject.h"\
 	".\Include\longintrepr.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -893,6 +893,7 @@ DEP_CPP_LISTO=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -901,7 +902,6 @@ DEP_CPP_LISTO=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -990,6 +990,7 @@ DEP_CPP_INTOB=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -998,7 +999,6 @@ DEP_CPP_INTOB=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -1095,6 +1095,7 @@ DEP_CPP_IMPOR=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -1103,7 +1104,6 @@ DEP_CPP_IMPOR=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -1200,6 +1200,7 @@ DEP_CPP_IMAGE=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -1208,7 +1209,6 @@ DEP_CPP_IMAGE=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -1336,6 +1336,7 @@ DEP_CPP_GETVE=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -1344,7 +1345,6 @@ DEP_CPP_GETVE=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -1433,6 +1433,7 @@ DEP_CPP_GETPL=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -1441,7 +1442,6 @@ DEP_CPP_GETPL=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -1544,6 +1544,7 @@ DEP_CPP_GETCO=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -1552,7 +1553,6 @@ DEP_CPP_GETCO=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -1640,6 +1640,7 @@ DEP_CPP_GETCOM=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -1648,7 +1649,6 @@ DEP_CPP_GETCOM=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -1736,6 +1736,7 @@ DEP_CPP_GETAR=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -1744,7 +1745,6 @@ DEP_CPP_GETAR=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -1835,6 +1835,7 @@ DEP_CPP_FUNCO=\
 	".\Include\cobject.h"\
 	".\Include\compile.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -1843,7 +1844,6 @@ DEP_CPP_FUNCO=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -1932,6 +1932,7 @@ DEP_CPP_FROZE=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -1940,7 +1941,6 @@ DEP_CPP_FROZE=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -2033,6 +2033,7 @@ DEP_CPP_FRAME=\
 	".\Include\cobject.h"\
 	".\Include\compile.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\frameobject.h"\
@@ -2042,7 +2043,6 @@ DEP_CPP_FRAME=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -2183,6 +2183,7 @@ DEP_CPP_FILEO=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -2191,7 +2192,6 @@ DEP_CPP_FILEO=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -2282,6 +2282,7 @@ DEP_CPP_ERROR=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -2290,7 +2291,6 @@ DEP_CPP_ERROR=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -2378,6 +2378,7 @@ DEP_CPP_CONFI=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -2386,7 +2387,6 @@ DEP_CPP_CONFI=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -2475,6 +2475,7 @@ DEP_CPP_COMPL=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -2483,7 +2484,6 @@ DEP_CPP_COMPL=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -2579,6 +2579,7 @@ DEP_CPP_COMPI=\
 	".\Include\cobject.h"\
 	".\Include\compile.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -2588,7 +2589,6 @@ DEP_CPP_COMPI=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -2680,6 +2680,7 @@ DEP_CPP_COBJE=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -2688,7 +2689,6 @@ DEP_CPP_COBJE=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -2777,6 +2777,7 @@ DEP_CPP_CMATH=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -2785,7 +2786,6 @@ DEP_CPP_CMATH=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -2875,6 +2875,7 @@ DEP_CPP_CLASS=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -2883,7 +2884,6 @@ DEP_CPP_CLASS=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -2978,6 +2978,7 @@ DEP_CPP_CEVAL=\
 	".\Include\cobject.h"\
 	".\Include\compile.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\eval.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
@@ -2988,7 +2989,6 @@ DEP_CPP_CEVAL=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -3083,6 +3083,7 @@ DEP_CPP_BLTIN=\
 	".\Include\cobject.h"\
 	".\Include\compile.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\eval.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
@@ -3092,7 +3093,6 @@ DEP_CPP_BLTIN=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -3182,6 +3182,7 @@ DEP_CPP_BINAS=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -3190,7 +3191,6 @@ DEP_CPP_BINAS=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -3279,6 +3279,7 @@ DEP_CPP_AUDIO=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -3287,7 +3288,6 @@ DEP_CPP_AUDIO=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -3377,6 +3377,7 @@ DEP_CPP_ARRAY=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -3385,7 +3386,6 @@ DEP_CPP_ARRAY=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -3496,6 +3496,7 @@ DEP_CPP_ABSTR=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -3504,7 +3505,6 @@ DEP_CPP_ABSTR=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -3605,6 +3605,7 @@ DEP_CPP_TYPEO=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -3613,7 +3614,6 @@ DEP_CPP_TYPEO=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -3701,6 +3701,7 @@ DEP_CPP_TUPLE=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -3709,7 +3710,6 @@ DEP_CPP_TUPLE=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -3802,6 +3802,7 @@ DEP_CPP_TRACE=\
 	".\Include\cobject.h"\
 	".\Include\compile.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\frameobject.h"\
@@ -3811,7 +3812,6 @@ DEP_CPP_TRACE=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -3926,6 +3926,7 @@ DEP_CPP_TIMEM=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -3934,7 +3935,6 @@ DEP_CPP_TIMEM=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -3973,31 +3973,6 @@ DEP_CPP_TIMEM=\
 # Begin Source File
 
 SOURCE=.\Python\thread.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
-DEP_CPP_THREA=\
-	".\Include\thread.h"\
-	".\PC\config.h"\
-	".\Python\thread_cthread.h"\
-	".\Python\thread_foobar.h"\
-	".\Python\thread_lwp.h"\
-	".\Python\thread_nt.h"\
-	".\Python\thread_pthread.h"\
-	".\Python\thread_sgi.h"\
-	".\Python\thread_solaris.h"\
-	{$(INCLUDE)}"\sys\TYPES.H"\
-	
-NODEP_CPP_THREA=\
-	"..\..\usr\include\thread.h"\
-	
-
-"$(INTDIR)\thread.obj" : $(SOURCE) $(DEP_CPP_THREA) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
 DEP_CPP_THREA=\
 	".\Include\thread.h"\
 	".\PC\config.h"\
@@ -4013,8 +3988,6 @@ DEP_CPP_THREA=\
 "$(INTDIR)\thread.obj" : $(SOURCE) $(DEP_CPP_THREA) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -4076,6 +4049,7 @@ DEP_CPP_STRUC=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -4084,7 +4058,6 @@ DEP_CPP_STRUC=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -4174,6 +4147,7 @@ DEP_CPP_STRUCT=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -4182,7 +4156,6 @@ DEP_CPP_STRUCT=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -4271,6 +4244,7 @@ DEP_CPP_STROP=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -4279,7 +4253,6 @@ DEP_CPP_STROP=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -4336,6 +4309,7 @@ DEP_CPP_STRIN=\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
 	".\Include\mymalloc.h"\
+	".\Include\mymath.h"\
 	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
@@ -4367,6 +4341,7 @@ DEP_CPP_STRIN=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -4375,11 +4350,11 @@ DEP_CPP_STRIN=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
 	".\Include\mymalloc.h"\
+	".\Include\mymath.h"\
 	".\Include\myproto.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
@@ -4463,6 +4438,7 @@ DEP_CPP_SOUND=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -4471,7 +4447,6 @@ DEP_CPP_SOUND=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -4560,6 +4535,7 @@ DEP_CPP_SIGNA=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -4568,7 +4544,6 @@ DEP_CPP_SIGNA=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -4658,6 +4633,7 @@ DEP_CPP_ROTOR=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -4666,7 +4642,6 @@ DEP_CPP_ROTOR=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -4755,6 +4730,7 @@ DEP_CPP_RGBIM=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -4763,7 +4739,6 @@ DEP_CPP_RGBIM=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -4867,6 +4842,7 @@ DEP_CPP_REGEXM=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -4875,7 +4851,6 @@ DEP_CPP_REGEXM=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -4964,6 +4939,7 @@ DEP_CPP_RANGE=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -4972,7 +4948,6 @@ DEP_CPP_RANGE=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -5071,6 +5046,7 @@ DEP_CPP_PYTHO=\
 	".\Include\cobject.h"\
 	".\Include\compile.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\errcode.h"\
 	".\Include\eval.h"\
 	".\Include\fileobject.h"\
@@ -5082,7 +5058,6 @@ DEP_CPP_PYTHO=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\marshal.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
@@ -5222,6 +5197,7 @@ DEP_CPP_OBJEC=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -5230,7 +5206,6 @@ DEP_CPP_OBJEC=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -5338,6 +5313,7 @@ DEP_CPP_NEWMO=\
 	".\Include\cobject.h"\
 	".\Include\compile.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -5346,7 +5322,6 @@ DEP_CPP_NEWMO=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -5438,6 +5413,7 @@ DEP_CPP_MARSH=\
 	".\Include\cobject.h"\
 	".\Include\compile.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -5447,7 +5423,6 @@ DEP_CPP_MARSH=\
 	".\Include\listobject.h"\
 	".\Include\longintrepr.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\marshal.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
@@ -5565,6 +5540,7 @@ DEP_CPP_MODUL=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -5573,7 +5549,6 @@ DEP_CPP_MODUL=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -5661,6 +5636,7 @@ DEP_CPP_MODSU=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -5669,7 +5645,6 @@ DEP_CPP_MODSU=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -5758,6 +5733,7 @@ DEP_CPP_METHO=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -5766,7 +5742,6 @@ DEP_CPP_METHO=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -5856,6 +5831,7 @@ DEP_CPP_MD5MO=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -5864,7 +5840,6 @@ DEP_CPP_MD5MO=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -5968,6 +5943,7 @@ DEP_CPP_MATHM=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -5976,7 +5952,6 @@ DEP_CPP_MATHM=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -6001,65 +5976,6 @@ DEP_CPP_MATHM=\
 	
 
 "$(INTDIR)\mathmodule.obj" : $(SOURCE) $(DEP_CPP_MATHM) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
-
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=.\Objects\mappingobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
-
-"$(INTDIR)\mappingobject.obj" : $(SOURCE) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_MAPPI=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\mappingobject.obj" : $(SOURCE) $(DEP_CPP_MAPPI) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -6126,6 +6042,7 @@ DEP_CPP_SOCKE=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -6134,7 +6051,6 @@ DEP_CPP_SOCKE=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -6227,6 +6143,7 @@ DEP_CPP_SELEC=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -6235,7 +6152,6 @@ DEP_CPP_SELEC=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -6327,6 +6243,7 @@ DEP_CPP_SYSMO=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -6335,7 +6252,6 @@ DEP_CPP_SYSMO=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -6436,6 +6352,7 @@ DEP_CPP_IMPORT=\
 	".\Include\cobject.h"\
 	".\Include\compile.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\errcode.h"\
 	".\Include\eval.h"\
 	".\Include\fileobject.h"\
@@ -6446,7 +6363,6 @@ DEP_CPP_IMPORT=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\marshal.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
@@ -6546,6 +6462,7 @@ DEP_CPP_POSIX=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -6554,7 +6471,6 @@ DEP_CPP_POSIX=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -6646,6 +6562,7 @@ DEP_CPP_OPERA=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -6654,7 +6571,6 @@ DEP_CPP_OPERA=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -6742,6 +6658,7 @@ DEP_CPP_ERRNO=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -6750,7 +6667,6 @@ DEP_CPP_ERRNO=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -6838,6 +6754,7 @@ DEP_CPP_SLICE=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -6846,7 +6763,6 @@ DEP_CPP_SLICE=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -6934,6 +6850,7 @@ DEP_CPP_MAIN_=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -6942,7 +6859,6 @@ DEP_CPP_MAIN_=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -7042,6 +6958,7 @@ DEP_CPP_IMPORT_=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -7050,7 +6967,6 @@ DEP_CPP_IMPORT_=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -7141,6 +7057,7 @@ DEP_CPP_GETPA=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -7149,7 +7066,6 @@ DEP_CPP_GETPA=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -7238,6 +7154,7 @@ DEP_CPP_DL_NT=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -7246,7 +7163,6 @@ DEP_CPP_DL_NT=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -7347,6 +7263,7 @@ DEP_CPP_THREAD=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -7355,7 +7272,6 @@ DEP_CPP_THREAD=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -7417,8 +7333,11 @@ SOURCE=.\PC\python_nt.rc
 # Begin Source File
 
 SOURCE=.\Modules\getbuildinfo.c
+DEP_CPP_GETBU=\
+	".\PC\config.h"\
+	
 
-"$(INTDIR)\getbuildinfo.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\getbuildinfo.obj" : $(SOURCE) $(DEP_CPP_GETBU) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -7481,6 +7400,7 @@ DEP_CPP_PYSTA=\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -7489,7 +7409,6 @@ DEP_CPP_PYSTA=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -7579,6 +7498,7 @@ DEP_CPP_CSTRI=\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
 	".\Include\cStringIO.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -7587,7 +7507,6 @@ DEP_CPP_CSTRI=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -7678,6 +7597,7 @@ DEP_CPP_CPICK=\
 	".\Include\cobject.h"\
 	".\Include\complexobject.h"\
 	".\Include\cStringIO.h"\
+	".\Include\dictobject.h"\
 	".\Include\fileobject.h"\
 	".\Include\floatobject.h"\
 	".\Include\funcobject.h"\
@@ -7686,7 +7606,6 @@ DEP_CPP_CPICK=\
 	".\Include\intrcheck.h"\
 	".\Include\listobject.h"\
 	".\Include\longobject.h"\
-	".\Include\mappingobject.h"\
 	".\Include\methodobject.h"\
 	".\Include\modsupport.h"\
 	".\Include\moduleobject.h"\
@@ -7715,6 +7634,53 @@ DEP_CPP_CPICK=\
 
 
 !ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\Objects\dictobject.c
+DEP_CPP_DICTO=\
+	".\Include\abstract.h"\
+	".\Include\bltinmodule.h"\
+	".\Include\ceval.h"\
+	".\Include\classobject.h"\
+	".\Include\cobject.h"\
+	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
+	".\Include\fileobject.h"\
+	".\Include\floatobject.h"\
+	".\Include\funcobject.h"\
+	".\Include\import.h"\
+	".\Include\intobject.h"\
+	".\Include\intrcheck.h"\
+	".\Include\listobject.h"\
+	".\Include\longobject.h"\
+	".\Include\methodobject.h"\
+	".\Include\modsupport.h"\
+	".\Include\moduleobject.h"\
+	".\Include\mymalloc.h"\
+	".\Include\myproto.h"\
+	".\Include\object.h"\
+	".\Include\objimpl.h"\
+	".\Include\pydebug.h"\
+	".\Include\pyerrors.h"\
+	".\Include\pyfpe.h"\
+	".\Include\pystate.h"\
+	".\Include\Python.h"\
+	".\Include\pythonrun.h"\
+	".\Include\rangeobject.h"\
+	".\Include\sliceobject.h"\
+	".\Include\stringobject.h"\
+	".\Include\sysmodule.h"\
+	".\Include\traceback.h"\
+	".\Include\tupleobject.h"\
+	".\PC\config.h"\
+	
+
+"$(INTDIR)\dictobject.obj" : $(SOURCE) $(DEP_CPP_DICTO) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
 
 # End Source File
 # End Target
@@ -7767,6 +7733,8 @@ DEP_CPP__TKIN=\
 	".\Include\moduleobject.h"\
 	".\Include\mymalloc.h"\
 	".\Include\myproto.h"\
+	".\Include\myselect.h"\
+	".\Include\mytime.h"\
 	".\Include\object.h"\
 	".\Include\objimpl.h"\
 	".\Include\pydebug.h"\
@@ -7782,11 +7750,6 @@ DEP_CPP__TKIN=\
 	".\Include\traceback.h"\
 	".\Include\tupleobject.h"\
 	".\PC\config.h"\
-	"C:\TCL80A2\include\tcl.h"\
-	"C:\TCL80A2\include\tk.h"\
-	"C:\TCL80A2\include\X11\X.h"\
-	"C:\TCL80A2\include\X11\Xfuncproto.h"\
-	"C:\TCL80A2\include\X11\Xlib.h"\
 	
 
 "$(INTDIR)\_tkinter.obj" : $(SOURCE) $(DEP_CPP__TKIN) "$(INTDIR)"
