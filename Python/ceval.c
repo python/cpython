@@ -514,7 +514,6 @@ eval_frame(PyFrameObject *f)
 
 /* Code access macros */
 
-#define GETNAMEV(i)	(GETITEM(names, (i)))
 #define INSTR_OFFSET()	(next_instr - first_instr)
 #define NEXTOP()	(*next_instr++)
 #define NEXTARG()	(next_instr += 2, (next_instr[-1]<<8) + next_instr[-2])
@@ -1563,7 +1562,7 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case STORE_NAME:
-			w = GETNAMEV(oparg);
+			w = GETITEM(names, oparg);
 			v = POP();
 			if ((x = f->f_locals) == NULL) {
 				PyErr_Format(PyExc_SystemError,
@@ -1576,7 +1575,7 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case DELETE_NAME:
-			w = GETNAMEV(oparg);
+			w = GETITEM(names, oparg);
 			if ((x = f->f_locals) == NULL) {
 				PyErr_Format(PyExc_SystemError,
 					     "no locals when deleting %s",
@@ -1631,7 +1630,7 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case STORE_ATTR:
-			w = GETNAMEV(oparg);
+			w = GETITEM(names, oparg);
 			v = POP();
 			u = POP();
 			err = PyObject_SetAttr(v, w, u); /* v.w = u */
@@ -1640,7 +1639,7 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case DELETE_ATTR:
-			w = GETNAMEV(oparg);
+			w = GETITEM(names, oparg);
 			v = POP();
 			err = PyObject_SetAttr(v, w, (PyObject *)NULL);
 							/* del v.w */
@@ -1648,21 +1647,21 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case STORE_GLOBAL:
-			w = GETNAMEV(oparg);
+			w = GETITEM(names, oparg);
 			v = POP();
 			err = PyDict_SetItem(f->f_globals, w, v);
 			Py_DECREF(v);
 			break;
 
 		case DELETE_GLOBAL:
-			w = GETNAMEV(oparg);
+			w = GETITEM(names, oparg);
 			if ((err = PyDict_DelItem(f->f_globals, w)) != 0)
 				format_exc_check_arg(
 				    PyExc_NameError, GLOBAL_NAME_ERROR_MSG, w);
 			break;
 
 		case LOAD_NAME:
-			w = GETNAMEV(oparg);
+			w = GETITEM(names, oparg);
 			if ((x = f->f_locals) == NULL) {
 				PyErr_Format(PyExc_SystemError,
 					     "no locals when loading %s",
@@ -1687,7 +1686,7 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case LOAD_GLOBAL:
-			w = GETNAMEV(oparg);
+			w = GETITEM(names, oparg);
 			x = PyDict_GetItem(f->f_globals, w);
 			if (x == NULL) {
 				x = PyDict_GetItem(f->f_builtins, w);
@@ -1788,7 +1787,7 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case LOAD_ATTR:
-			w = GETNAMEV(oparg);
+			w = GETITEM(names, oparg);
 			v = POP();
 			x = PyObject_GetAttr(v, w);
 			Py_DECREF(v);
@@ -1830,7 +1829,7 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case IMPORT_NAME:
-			w = GETNAMEV(oparg);
+			w = GETITEM(names, oparg);
 			x = PyDict_GetItemString(f->f_builtins, "__import__");
 			if (x == NULL) {
 				PyErr_SetString(PyExc_ImportError,
@@ -1870,7 +1869,7 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case IMPORT_FROM:
-			w = GETNAMEV(oparg);
+			w = GETITEM(names, oparg);
 			v = TOP();
 			x = import_from(v, w);
 			PUSH(x);
