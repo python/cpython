@@ -138,6 +138,18 @@ def dotest(pickle):
         else:
             print "accepted insecure string: %s" % repr(buf)
 
+    # Test some Unicode end cases
+    endcases = [u'', u'<\\u>', u'<\\\u1234>', u'<\n>',  u'<\\>']
+    for u in endcases:
+        try:
+            u2 = pickle.loads(pickle.dumps(u))
+        except Exception, msg:
+            print "Endcase exception: %s => %s(%s)" % \
+                  (`u`, msg.__class__.__name__, str(msg))
+        else:
+            if u2 != u:
+                print "Endcase failure: %s => %s" % (`u`, `u2`)
+
 
 import pickle
 dotest(pickle)
