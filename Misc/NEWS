@@ -16,6 +16,10 @@ C API
 
 Windows
 
+- Sometimes the uninstall executable (UNWISE.EXE) vanishes.  One cause
+  of that has been fixed in the installer (disabled Wise's "delete in-
+  use files" uninstall option).
+
 
 What's New in Python 2.2.1 final?
 Release date: 10-Apr-2002

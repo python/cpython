@@ -2869,7 +2869,16 @@ item: Self-Register OCXs/DLLs
 end
 item: Remark
 end
-item: Add Text to INSTALL.LOG
+remarked item: Remark
+  Text=Don't enable "Delete in-use files".  Here's what happens:
+end
+remarked item: Remark
+  Text=Install Python; uninstall Python; install Python again.  Reboot the machine.
+end
+remarked item: Remark
+  Text=Now UNWISE.EXE is missing.  I think this is a Wise bug, but so it goes.
+end
+remarked item: Add Text to INSTALL.LOG
   Text=Delete in-use files: On
 end
 item: Remark
