@@ -14,7 +14,7 @@ AIX-NOTES	Notes for building Python on AIX (all new!)
 BLURB		A quick description of Python for newcomers
 BLURB.LUTZ	A testimonial from a converted Tcl/Perl hacker :-)
 COPYRIGHT	The Python copyright notice
-FAQ		Frequently Asked Questions about Python (and answers)
+FAQ		(deleted -- see http://www.python.org for the online FAQ)
 Fixcprt.py	Fix the copyright message (a yearly chore :-)
 HISTORY		News from previous releases -- oldest last
 HPUX-NOTES	Notes about dynamic loading under HP-UX
