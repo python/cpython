@@ -404,7 +404,11 @@ def metaclass():
         __new__ = staticmethod(__new__)
         def __call__(self):
             it = _instance()
-            # XXX Should do more, but that doesn't work yet
+            # Early binding of methods
+            for key in self.dict:
+                if key.startswith("__"):
+                    continue
+                setattr(it, key, self.dict[key].__get__(it, self))
             return it
     class C:
         __metaclass__ = M2
@@ -414,6 +418,7 @@ def metaclass():
     verify(C.bases == ())
     verify('spam' in C.dict)
     c = C()
+    verify(c.spam() == 42)
 
 def pymods():
     if verbose: print "Testing Python subclass of module..."
