@@ -55,7 +55,7 @@
 /* CONFIGURATION SECTION */
 
 #ifndef FULL_PATH	/* so that this can be specified from the Makefile */
-/* Ccomment out the following line:
+/* Uncomment the following line:
 #define FULL_PATH	"/full/path/of/script" 
 * Then comment out the #error line. */
 #error "You must define FULL_PATH somewhere"
