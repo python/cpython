@@ -5162,6 +5162,15 @@ formatint(Py_UNICODE *buf,
      * Compaq Tru64) violate the std by converting 0 w/ leading 0x anyway.
      * So add it only if the platform doesn't already.
      */
+#if defined(PYOS_OS2) && defined(PYCC_GCC)
+    if ((flags & F_ALT) && (type == 'x' || type == 'X')) {
+        /* the EMX runtime gives 0x as the base marker when we want 0X
+         * so we cover all bets by supplying our own for both cases.
+         */
+        use_native_c_format = 0;
+        PyOS_snprintf(fmt, sizeof(fmt), "0%c%%.%dl%c", type, prec, type);
+    }
+#else
     if (x == 0 && (flags & F_ALT) && (type == 'x' || type == 'X')) {
         /* Only way to know what the platform does is to try it. */
         PyOS_snprintf(fmt, sizeof(fmt), type == 'x' ? "%#x" : "%#X", 0);
@@ -5171,6 +5180,7 @@ formatint(Py_UNICODE *buf,
             PyOS_snprintf(fmt, sizeof(fmt), "0%c%%#.%dl%c", type, prec, type);
         }
     }
+#endif
     if (use_native_c_format)
          PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%dl%c",
 		       (flags & F_ALT) ? "#" : "", prec, type);
