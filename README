@@ -266,7 +266,7 @@ DEC Ultrix: compile with GCC to avoid bugs in the native compiler,
 	and pass SHELL=/bin/sh5 to Make when installing.
 
 AIX:	A complete overhaul of the shared library support is now in
-	place.  See Misc/AIX-NOTES for some notes on how it's done. 
+	place.  See Misc/AIX-NOTES for some notes on how it's done.
 	(The optimizer bug reported at this place in previous releases
 	has been worked around by a minimal code change.) If you get
 	errors about ptread_* functions, during compile or during
@@ -321,10 +321,10 @@ QNX:	Chris Herborth (chrish@qnx.com) writes:
 		select, signal, socket, soundex, strop, struct,
 		syslog, termios, time, timing, zlib, audioop, imageop, rgbimg
 
-	3) make SHELL=/usr/local/bin/bash 
-	
+	3) make SHELL=/usr/local/bin/bash
+
 	   or, if you feel the need for speed:
-	   
+
 	   make SHELL=/usr/local/bin/bash OPT="-5 -Oil+nrt"
 
 	4) make SHELL=/usr/local/bin/bash test
@@ -400,7 +400,7 @@ Mac OS X: You need to add the "-traditional-cpp" option to the
 Cygwin: Cygwin Python builds OOTB when configured as follows:
 
             configure --with-threads=no
-        
+
         assuming Cygwin 1.1.8-2 and gcc 2.95.3-1 or later.  At the time
         of this writing, Cygwin pthread support is being significantly
         enhanced.  Hopefully, there will be a Cygwin Python with thread
@@ -408,17 +408,17 @@ Cygwin: Cygwin Python builds OOTB when configured as follows:
 
         Cygwin Python supports the building of shared extensions via the
         traditional Misc/Makefile.pre.in and the newer distutils methods.
-        
+
         On NT/2000, the following regression tests fail:
 
             test_poll (hang)
             test_strftime
-        
+
         Due to the test_poll hang on NT/2000, one should run the
         regression test using the following:
 
             PYTHONPATH= ./python.exe -tt ./Lib/test/regrtest.py -l -x test_poll
-        
+
         On 9X/Me, in addition the above NT/2000 failures, it has been
         reported that the following regression tests also fail:
 
@@ -433,7 +433,7 @@ Cygwin: Cygwin Python builds OOTB when configured as follows:
 
         Help trying to track down the root causes for these known problems
         will be greatly appreciated.
-        
+
 
 Configuring threads
 -------------------
@@ -462,17 +462,17 @@ incorrectly, please report that as a bug.
 
     SunOS 5.{1-5}/{gcc,SunPro cc}/solaris   -mt
     SunOS 5.5/{gcc,SunPro cc}/POSIX         (nothing)
-    DEC OSF/1 3.x/cc/DCE                    -threads 
+    DEC OSF/1 3.x/cc/DCE                    -threads
 	    (butenhof@zko.dec.com)
-    Digital UNIX 4.x/cc/DCE                 -threads 
+    Digital UNIX 4.x/cc/DCE                 -threads
 	    (butenhof@zko.dec.com)
-    Digital UNIX 4.x/cc/POSIX               -pthread 
+    Digital UNIX 4.x/cc/POSIX               -pthread
 	    (butenhof@zko.dec.com)
-    AIX 4.1.4/cc_r/d7                       (nothing)                       
+    AIX 4.1.4/cc_r/d7                       (nothing)
 	    (buhrt@iquest.net)
-    AIX 4.1.4/cc_r4/DCE                     (nothing)                       
+    AIX 4.1.4/cc_r4/DCE                     (nothing)
 	    (buhrt@iquest.net)
-    IRIX 6.2/cc/POSIX                       (nothing)                       
+    IRIX 6.2/cc/POSIX                       (nothing)
 	    (robertl@cwi.nl)
 
 
@@ -483,15 +483,15 @@ Linker (ld) libraries and flags for threads
 
     SunOS 5.{1-5}/solaris               -lthread
     SunOS 5.5/POSIX                     -lpthread
-    DEC OSF/1 3.x/DCE                   -lpthreads -lmach -lc_r -lc     
+    DEC OSF/1 3.x/DCE                   -lpthreads -lmach -lc_r -lc
 	    (butenhof@zko.dec.com)
     Digital UNIX 4.x/DCE                -lpthreads -lpthread -lmach -lexc -lc
 	    (butenhof@zko.dec.com)
-    Digital UNIX 4.x/POSIX              -lpthread -lmach -lexc -lc      
+    Digital UNIX 4.x/POSIX              -lpthread -lmach -lexc -lc
 	    (butenhof@zko.dec.com)
-    AIX 4.1.4/{draft7,DCE}              (nothing)                       
+    AIX 4.1.4/{draft7,DCE}              (nothing)
 	    (buhrt@iquest.net)
-    IRIX 6.2/POSIX                      -lpthread                       
+    IRIX 6.2/POSIX                      -lpthread
 	    (jph@emilia.engr.sgi.com)
 
 
@@ -683,7 +683,7 @@ Modules/getpath.o.
 	emulation of the SGI dl library mentioned above (the emulation
 	can be found at
 	ftp://ftp.cwi.nl/pub/dynload/dld-3.2.3.tar.Z).  To
-	enable this, ftp and compile both libraries, then call 
+	enable this, ftp and compile both libraries, then call
 	configure, passing it the option
 	--with-dl-dld=DL_DIRECTORY,DLD_DIRECTORY where DL_DIRECTORY is
 	the absolute pathname of the dl emulation library and
@@ -700,7 +700,7 @@ Modules/getpath.o.
 	compiler to use the shared C library, you can pass
 	--with-libc=-lc_s. These libraries are passed after all other
 	libraries, the C library last.
-	
+
 --with-next-archs='arch1 arch2': Under NEXTSTEP, this will build
 	all compiled binaries with the architectures listed.  This will
 	also correctly set the target architecture-specific resource
