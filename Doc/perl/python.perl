@@ -867,19 +867,25 @@ sub do_cmd_maketitle {
 
 require SynopsisTable;
 
-$MY_CHAPTER_COUNTER = 0;
-
-sub get_chapter_id{
-    return $MY_CHAPTER_COUNTER;
+sub get_chapter_id(){
+    my $id = do_cmd_thechapter('');
+    $id =~ s/<SPAN CLASS="arabic">(\d+)<\/SPAN>\./\1/;
+    return $id;
 }
 
-sub get_synopsis_table{
-    my $chap = @_;
+%ModuleSynopses = ('chapter' => 'SynopsisTable instance');
+
+sub get_synopsis_table($){
+    my($chap) = @_;
     my $st = $ModuleSynopses{$chap};
-    if (!$st) {
-	$st = SynopsisTable->new();
-	$ModuleSynopses{$chap} = $st;
+    my $key;
+    foreach $key (keys %ModuleSynopses) {
+	if ($key eq $chap) {
+	    return $ModuleSynopses{$chap};
+	}
     }
+    $st = SynopsisTable->new();
+    $ModuleSynopses{$chap} = $st;
     return $st;
 }
 
@@ -907,17 +913,17 @@ sub do_cmd_modulesynopsis{
 
 sub do_cmd_localmoduletable{
     local($_) = @_;
-    $MY_CHAPTER_COUNTER = $MY_CHAPTER_COUNTER + 1;
     my $chap = get_chapter_id();
     "<tex2htmllocalmoduletable><$chap>" . $_;
 }
 
 sub process_all_localmoduletables{
     while (/<tex2htmllocalmoduletable><(\d+)>/) {
+	my $match = $&;
 	my $chap = $1;
 	my $st = get_synopsis_table($chap);
 	my $data = $st->tohtml();
-	s/$&/$data/;
+	s/$match/$data/;
     }
 }
 
