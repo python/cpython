@@ -24,7 +24,7 @@
 #include <CFString.h>
 #include <CFURL.h>
 #else
-#include <CoreFoundation.h>
+#include <CoreServices/CoreServices.h>
 #endif
 
 /* For now we declare them forward here. They'll go to mactoolbox later */
