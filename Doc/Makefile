@@ -119,7 +119,8 @@ LIBFILES = lib.tex \
     libbase64.tex libfnmatch.tex libquopri.tex libzlib.tex libsocksvr.tex \
     libmailbox.tex libcommands.tex libcmath.tex libni.tex libgzip.tex \
     libpprint.tex libcode.tex libmimify.tex libre.tex libmacic.tex \
-    libuserdict.tex libdis.tex libxmllib.tex libqueue.tex liblocale.tex
+    libuserdict.tex libdis.tex libxmllib.tex libqueue.tex \
+    liblocale.tex libbasehttp.tex
 
 # Library document
 lib.dvi: $(LIBFILES)
@@ -182,16 +183,16 @@ lib.info: python-lib.info
 # HTML converter.  For more info on this program, see
 # <URL:http://cbl.leeds.ac.uk/nikos/tex2html/doc/latex2html/latex2html.html>.
 
-# Note that LaTeX2HTML inserts references to an "icons" directory in
-# each page that it generates.  You can customize where these icons
-# are to be found; I generally make it point to "../icons" and then
-# create a symbolic link to the icons directory in the LaTeX2HTML
-# source at the appropriate place.  Change the definition of
-# $ICONSERVER in .latex2html-init to point to a different location.
+# Note that LaTeX2HTML inserts references to an icons directory in
+# each page that it generates.  I have placed a copy of this directory
+# in the distribution to simplify the process of creating a
+# self-contained HTML distribution; for this purpose I have also added
+# a (trivial) index.html.  Change the definition of $ICONSERVER in
+# .latex2html-init to use a different location for the icons directory.
 
-# The sed hack rips out a superfluous comma which I haven't found the source
-# of; the prominent location makes it worth the extra step.  This affects the
-# title pages!
+# The sed hack rips out a superfluous comma which I haven't found the
+# source of.  The prominent location makes it worth the extra step;
+# this affects the title pages!
 
 l2h: l2htut l2hext l2hlib l2hapi
 
