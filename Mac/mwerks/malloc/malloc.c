@@ -105,7 +105,7 @@ union	overhead {
 #ifdef USE_CACHE_ALIGNED
 	struct cachealigner {
 		u_long	ovalign[USE_CACHE_ALIGNED];
-	};
+	} ovu_aligner;
 #endif /* USE_CACHE_ALIGN */
 };
 
