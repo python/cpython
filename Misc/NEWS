@@ -12,6 +12,9 @@ What's New in Python 2.3 beta 2?
 Core and builtins
 -----------------
 
+- list.index() now accepts optional start and stop arguments.  Similar
+  changes were made to UserList.index(). SF feature request 754014.
+
 - SF patch 751998 fixes an unwanted side effect of the previous fix
   for SF bug 742860 (the next item).
 

@@ -366,7 +366,23 @@ b.insert(200, "right")
 if b != ["left",-2,-1,0,0,"foo",1,2,"right"]: raise TestFailed, 'list insert2'
 if a.count(0) != 2: raise TestFailed, ' list count'
 if a.index(0) != 2: raise TestFailed, 'list index'
+if a.index(0,2) != 2: raise TestFailed, 'list index, start argument'
+if a.index(-2,-10) != 0: raise TestFailed, 'list index, negative start argument'
+if a.index(0,3) != 3: raise TestFailed, 'list index, start argument'
+if a.index(0,3,4) != 3: raise TestFailed, 'list index, stop argument'
+try:
+    a.index(2,0,-10)
+except ValueError:
+    pass
+else:
+    raise TestFailed, 'list index, negative stop argument'
 a.remove(0)
+try:
+    a.index(2,0,4)
+except ValueError:
+    pass
+else:
+    raise TestFailed, 'list index, stop argument.'
 if a != [-2,-1,0,1,2]: raise TestFailed, 'list remove'
 a.reverse()
 if a != [2,1,0,-1,-2]: raise TestFailed, 'list reverse'
