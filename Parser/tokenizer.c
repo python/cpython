@@ -88,7 +88,7 @@ char *_PyParser_TokenNames[] = {
 /* Create and initialize a new tok_state structure */
 
 static struct tok_state *
-tok_new()
+tok_new(void)
 {
 	struct tok_state *tok = PyMem_NEW(struct tok_state, 1);
 	if (tok == NULL)
@@ -116,8 +116,7 @@ tok_new()
 /* Set up tokenizer for string */
 
 struct tok_state *
-PyTokenizer_FromString(str)
-	char *str;
+PyTokenizer_FromString(char *str)
 {
 	struct tok_state *tok = tok_new();
 	if (tok == NULL)
@@ -130,9 +129,7 @@ PyTokenizer_FromString(str)
 /* Set up tokenizer for file */
 
 struct tok_state *
-PyTokenizer_FromFile(fp, ps1, ps2)
-	FILE *fp;
-	char *ps1, *ps2;
+PyTokenizer_FromFile(FILE *fp, char *ps1, char *ps2)
 {
 	struct tok_state *tok = tok_new();
 	if (tok == NULL)
@@ -153,8 +150,7 @@ PyTokenizer_FromFile(fp, ps1, ps2)
 /* Free a tok_state structure */
 
 void
-PyTokenizer_Free(tok)
-	struct tok_state *tok;
+PyTokenizer_Free(struct tok_state *tok)
 {
 	if (tok->fp != NULL && tok->buf != NULL)
 		PyMem_DEL(tok->buf);
@@ -165,8 +161,7 @@ PyTokenizer_Free(tok)
 /* Get next char, updating state; error code goes into tok->done */
 
 static int
-tok_nextc(tok)
-	register struct tok_state *tok;
+tok_nextc(register struct tok_state *tok)
 {
 	for (;;) {
 		if (tok->cur != tok->inp) {
@@ -321,9 +316,7 @@ tok_nextc(tok)
 /* Back-up one character */
 
 static void
-tok_backup(tok, c)
-	register struct tok_state *tok;
-	register int c;
+tok_backup(register struct tok_state *tok, register int c)
 {
 	if (c != EOF) {
 		if (--tok->cur < tok->buf)
@@ -337,8 +330,7 @@ tok_backup(tok, c)
 /* Return the token corresponding to a single character */
 
 int
-PyToken_OneChar(c)
-	int c;
+PyToken_OneChar(int c)
 {
 	switch (c) {
 	case '(':	return LPAR;
@@ -370,8 +362,7 @@ PyToken_OneChar(c)
 
 
 int
-PyToken_TwoChars(c1, c2)
-	int c1, c2;
+PyToken_TwoChars(int c1, int c2)
 {
 	switch (c1) {
 	case '=':
@@ -408,8 +399,7 @@ PyToken_TwoChars(c1, c2)
 
 
 static int
-indenterror(tok)
-	struct tok_state *tok;
+indenterror(struct tok_state *tok)
 {
 	if (tok->alterror) {
 		tok->done = E_TABSPACE;
@@ -428,9 +418,8 @@ indenterror(tok)
 /* Get next token, after space stripping etc. */
 
 int
-PyTokenizer_Get(tok, p_start, p_end)
-	register struct tok_state *tok; /* In/out: tokenizer state */
-	char **p_start, **p_end; /* Out: point to start/end of token */
+PyTokenizer_Get(register struct tok_state *tok, char **p_start,
+		char **p_end)
 {
 	register int c;
 	int blankline;
@@ -812,9 +801,7 @@ PyTokenizer_Get(tok, p_start, p_end)
 #ifdef Py_DEBUG
 
 void
-tok_dump(type, start, end)
-	int type;
-	char *start, *end;
+tok_dump(int type, char *start, char *end)
 {
 	printf("%s", _PyParser_TokenNames[type]);
 	if (type == NAME || type == NUMBER || type == STRING || type == OP)

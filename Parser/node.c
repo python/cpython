@@ -17,8 +17,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "errcode.h"
 
 node *
-PyNode_New(type)
-	int type;
+PyNode_New(int type)
 {
 	node *n = PyMem_NEW(node, 1);
 	if (n == NULL)
@@ -35,11 +34,7 @@ PyNode_New(type)
 #define XXXROUNDUP(n) ((n) == 1 ? 1 : ((n) + XXX - 1) / XXX * XXX)
 
 int
-PyNode_AddChild(n1, type, str, lineno)
-	register node *n1;
-	int type;
-	char *str;
-	int lineno;
+PyNode_AddChild(register node *n1, int type, char *str, int lineno)
 {
 	register int nch = n1->n_nchildren;
 	register int nch1 = nch+1;
@@ -68,8 +63,7 @@ static void freechildren(node *);
 
 
 void
-PyNode_Free(n)
-	node *n;
+PyNode_Free(node *n)
 {
 	if (n != NULL) {
 		freechildren(n);
@@ -78,8 +72,7 @@ PyNode_Free(n)
 }
 
 static void
-freechildren(n)
-	node *n;
+freechildren(node *n)
 {
 	int i;
 	for (i = NCH(n); --i >= 0; )

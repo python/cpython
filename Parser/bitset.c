@@ -14,8 +14,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "bitset.h"
 
 bitset
-newbitset(nbits)
-	int nbits;
+newbitset(int nbits)
 {
 	int nbytes = NBYTES(nbits);
 	bitset ss = PyMem_NEW(BYTE, nbytes);
@@ -30,16 +29,13 @@ newbitset(nbits)
 }
 
 void
-delbitset(ss)
-	bitset ss;
+delbitset(bitset ss)
 {
 	PyMem_DEL(ss);
 }
 
 int
-addbit(ss, ibit)
-	bitset ss;
-	int ibit;
+addbit(bitset ss, int ibit)
 {
 	int ibyte = BIT2BYTE(ibit);
 	BYTE mask = BIT2MASK(ibit);
@@ -52,18 +48,14 @@ addbit(ss, ibit)
 
 #if 0 /* Now a macro */
 int
-testbit(ss, ibit)
-	bitset ss;
-	int ibit;
+testbit(bitset ss, int ibit)
 {
 	return (ss[BIT2BYTE(ibit)] & BIT2MASK(ibit)) != 0;
 }
 #endif
 
 int
-samebitset(ss1, ss2, nbits)
-	bitset ss1, ss2;
-	int nbits;
+samebitset(bitset ss1, bitset ss2, int nbits)
 {
 	int i;
 	
@@ -74,9 +66,7 @@ samebitset(ss1, ss2, nbits)
 }
 
 void
-mergebitset(ss1, ss2, nbits)
-	bitset ss1, ss2;
-	int nbits;
+mergebitset(bitset ss1, bitset ss2, int nbits)
 {
 	int i;
 	

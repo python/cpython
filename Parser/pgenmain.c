@@ -39,16 +39,13 @@ char *askfile(void);
 #endif
 
 void
-Py_Exit(sts)
-	int sts;
+Py_Exit(int sts)
 {
 	exit(sts);
 }
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	grammar *g;
 	FILE *fp;
@@ -85,8 +82,7 @@ main(argc, argv)
 }
 
 grammar *
-getgrammar(filename)
-	char *filename;
+getgrammar(char *filename)
 {
 	FILE *fp;
 	node *n;
@@ -132,7 +128,7 @@ getgrammar(filename)
 
 #ifdef THINK_C
 char *
-askfile()
+askfile(void)
 {
 	char buf[256];
 	static char name[256];
@@ -151,8 +147,7 @@ askfile()
 #endif
 
 void
-Py_FatalError(msg)
-	char *msg;
+Py_FatalError(char *msg)
 {
 	fprintf(stderr, "pgen: FATAL ERROR: %s\n", msg);
 	Py_Exit(1);
@@ -161,8 +156,7 @@ Py_FatalError(msg)
 #ifdef macintosh
 /* ARGSUSED */
 int
-guesstabsize(path)
-	char *path;
+guesstabsize(char *path)
 {
 	return 4;
 }
@@ -171,8 +165,7 @@ guesstabsize(path)
 /* No-nonsense my_readline() for tokenizer.c */
 
 char *
-PyOS_Readline(prompt)
-	char *prompt;
+PyOS_Readline(char *prompt)
 {
 	size_t n = 1000;
 	char *p = PyMem_MALLOC(n);
@@ -191,29 +184,14 @@ PyOS_Readline(prompt)
 	return PyMem_REALLOC(p, n+1);
 }
 
-#ifdef HAVE_STDARG_PROTOTYPES
 #include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
 
 void
-#ifdef HAVE_STDARG_PROTOTYPES
 PySys_WriteStderr(const char *format, ...)
-#else
-PySys_WriteStderr(va_alist)
-	va_dcl
-#endif
 {
 	va_list va;
 
-#ifdef HAVE_STDARG_PROTOTYPES
 	va_start(va, format);
-#else
-	char *format;
-	va_start(va);
-	format = va_arg(va, char *);
-#endif
 	vfprintf(stderr, format, va);
 	va_end(va);
 }

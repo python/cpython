@@ -23,16 +23,13 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include <limits.h>
 #endif
 
-int (*PyOS_InputHook)() = NULL;
+int (*PyOS_InputHook)(void) = NULL;
 
 /* This function restarts a fgets() after an EINTR error occurred
    except if PyOS_InterruptOccurred() returns true. */
 
 static int
-my_fgets(buf, len, fp)
-	char *buf;
-	int len;
-	FILE *fp;
+my_fgets(char *buf, int len, FILE *fp)
 {
 	char *p;
 	for (;;) {
@@ -65,8 +62,7 @@ my_fgets(buf, len, fp)
 /* Readline implementation using fgets() */
 
 char *
-PyOS_StdioReadline(prompt)
-	char *prompt;
+PyOS_StdioReadline(char *prompt)
 {
 	size_t n;
 	char *p;
@@ -124,8 +120,7 @@ char *(*PyOS_ReadlineFunctionPointer)(char *);
 /* Interface used by tokenizer.c and bltinmodule.c */
 
 char *
-PyOS_Readline(prompt)
-	char *prompt;
+PyOS_Readline(char *prompt)
 {
 	char *rv;
 	if (PyOS_ReadlineFunctionPointer == NULL) {

@@ -20,8 +20,7 @@ extern int Py_DebugFlag;
 static void calcfirstset(grammar *, dfa *);
 
 void
-addfirstsets(g)
-	grammar *g;
+addfirstsets(grammar *g)
 {
 	int i;
 	dfa *d;
@@ -35,9 +34,7 @@ addfirstsets(g)
 }
 
 static void
-calcfirstset(g, d)
-	grammar *g;
-	dfa *d;
+calcfirstset(grammar *g, dfa *d)
 {
 	int i, j;
 	state *s;

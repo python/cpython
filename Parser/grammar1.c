@@ -18,9 +18,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 /* Return the DFA for the given type */
 
 dfa *
-PyGrammar_FindDFA(g, type)
-	grammar *g;
-	register int type;
+PyGrammar_FindDFA(grammar *g, register int type)
 {
 	register dfa *d;
 #if 1
@@ -42,8 +40,7 @@ PyGrammar_FindDFA(g, type)
 }
 
 char *
-PyGrammar_LabelRepr(lb)
-	label *lb;
+PyGrammar_LabelRepr(label *lb)
 {
 	static char buf[100];
 	

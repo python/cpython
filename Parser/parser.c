@@ -36,21 +36,15 @@ extern int Py_DebugFlag;
 static void s_reset(stack *);
 
 static void
-s_reset(s)
-	stack *s;
+s_reset(stack *s)
 {
 	s->s_top = &s->s_base[MAXSTACK];
 }
 
 #define s_empty(s) ((s)->s_top == &(s)->s_base[MAXSTACK])
 
-static int s_push(stack *, dfa *, node *);
-
 static int
-s_push(s, d, parent)
-	register stack *s;
-	dfa *d;
-	node *parent;
+s_push(register stack *s, dfa *d, node *parent)
 {
 	register stackentry *top;
 	if (s->s_top == s->s_base) {
@@ -66,11 +60,8 @@ s_push(s, d, parent)
 
 #ifdef Py_DEBUG
 
-static void s_pop(stack *);
-
 static void
-s_pop(s)
-	register stack *s;
+s_pop(register stack *s)
 {
 	if (s_empty(s))
 		Py_FatalError("s_pop: parser stack underflow -- FATAL");
@@ -87,9 +78,7 @@ s_pop(s)
 /* PARSER CREATION */
 
 parser_state *
-PyParser_New(g, start)
-	grammar *g;
-	int start;
+PyParser_New(grammar *g, int start)
 {
 	parser_state *ps;
 	
@@ -110,8 +99,7 @@ PyParser_New(g, start)
 }
 
 void
-PyParser_Delete(ps)
-	parser_state *ps;
+PyParser_Delete(parser_state *ps)
 {
 	/* NB If you want to save the parse tree,
 	   you must set p_tree to NULL before calling delparser! */
@@ -122,15 +110,8 @@ PyParser_Delete(ps)
 
 /* PARSER STACK OPERATIONS */
 
-static int shift(stack *, int, char *, int, int);
-
 static int
-shift(s, type, str, newstate, lineno)
-	register stack *s;
-	int type;
-	char *str;
-	int newstate;
-	int lineno;
+shift(register stack *s, int type, char *str, int newstate, int lineno)
 {
 	int err;
 	assert(!s_empty(s));
@@ -141,15 +122,8 @@ shift(s, type, str, newstate, lineno)
 	return 0;
 }
 
-static int push(stack *, int, dfa *, int, int);
-
 static int
-push(s, type, d, newstate, lineno)
-	register stack *s;
-	int type;
-	dfa *d;
-	int newstate;
-	int lineno;
+push(register stack *s, int type, dfa *d, int newstate, int lineno)
 {
 	int err;
 	register node *n;
@@ -165,13 +139,8 @@ push(s, type, d, newstate, lineno)
 
 /* PARSER PROPER */
 
-static int classify(grammar *, int, char *);
-
 static int
-classify(g, type, str)
-	grammar *g;
-	register int type;
-	char *str;
+classify(grammar *g, int type, char *str)
 {
 	register int n = g->g_ll.ll_nlabels;
 	
@@ -205,12 +174,8 @@ classify(g, type, str)
 }
 
 int
-PyParser_AddToken(ps, type, str, lineno, expected_ret)
-	register parser_state *ps;
-	register int type;
-	char *str;
-	int lineno;
-	int *expected_ret;
+PyParser_AddToken(register parser_state *ps, register int type, char *str,
+	          int lineno, int *expected_ret)
 {
 	register int ilabel;
 	int err;
@@ -305,9 +270,7 @@ PyParser_AddToken(ps, type, str, lineno, expected_ret)
 /* DEBUG OUTPUT */
 
 void
-dumptree(g, n)
-	grammar *g;
-	node *n;
+dumptree(grammar *g, node *n)
 {
 	int i;
 	
@@ -331,9 +294,7 @@ dumptree(g, n)
 }
 
 void
-showtree(g, n)
-	grammar *g;
-	node *n;
+showtree(grammar *g, node *n)
 {
 	int i;
 	
@@ -354,8 +315,7 @@ showtree(g, n)
 }
 
 void
-printtree(ps)
-	parser_state *ps;
+printtree(parser_state *ps)
 {
 	if (Py_DebugFlag) {
 		printf("Parse tree:\n");

@@ -30,8 +30,7 @@ static void fixdfa(grammar *, dfa *);
 static void fixstate(grammar *, state *);
 
 void
-PyGrammar_AddAccelerators(g)
-	grammar *g;
+PyGrammar_AddAccelerators(grammar *g)
 {
 	dfa *d;
 	int i;
@@ -48,8 +47,7 @@ PyGrammar_AddAccelerators(g)
 }
 
 void
-PyGrammar_RemoveAccelerators(g)
-	grammar *g;
+PyGrammar_RemoveAccelerators(grammar *g)
 {
 	dfa *d;
 	int i;
@@ -68,9 +66,7 @@ PyGrammar_RemoveAccelerators(g)
 }
 
 static void
-fixdfa(g, d)
-	grammar *g;
-	dfa *d;
+fixdfa(grammar *g, dfa *d)
 {
 	state *s;
 	int j;
@@ -80,9 +76,7 @@ fixdfa(g, d)
 }
 
 static void
-fixstate(g, s)
-	grammar *g;
-	state *s;
+fixstate(grammar *g, state *s)
 {
 	arc *a;
 	int k;
