@@ -276,6 +276,9 @@ def test_func_name():
     verify(f.func_name == "h")
     cantset(f, "func_globals", 1)
     cantset(f, "__name__", 1)
+    # test that you can access func.__name__ in restricted mode
+    s = """def f(): pass\nf.__name__"""
+    exec s in {'__builtins__':{}}
 
 
 def test_func_code():
