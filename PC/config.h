@@ -213,6 +213,12 @@ typedef int pid_t;
 #define SIZEOF_LONG 4
 #define SIZEOF_LONG_LONG 8
 
+#ifdef _M_ALPHA
+#define SIZEOF_VOID_P 8
+#else
+#define SIZEOF_VOID_P 4
+#endif
+
 /* EXPERIMENTAL FEATURE: When CHECK_IMPORT_CASE is defined, check case of
    imported modules against case of file; this causes "import String" to fail
    with a NameError exception when it finds "string.py".  Normally, you set

@@ -215,12 +215,14 @@ EXPORTS
 	PyLong_AsLongLong
 	PyLong_AsUnsignedLong
 	PyLong_AsUnsignedLongLong
+	PyLong_AsVoidPtr
 	PyLong_FromDouble
 	PyLong_FromLong
 	PyLong_FromLongLong
 	PyLong_FromString
 	PyLong_FromUnsignedLong
 	PyLong_FromUnsignedLongLong
+	PyLong_FromVoidPtr
 	PyMapping_Check
 	PyMapping_GetItemString
 	PyMapping_HasKey
