@@ -1,4 +1,4 @@
-This is Python release 1.4 beta 2
+This is Python release 1.4 beta 3
 =================================
 
 It's a beta release.  Use this if you want to help me iron the last
@@ -6,18 +6,20 @@ wrinkles out of the distribution before I release the real version
 1.4.  In particular, I'm interested in porting experiences to Unix
 boxes.  Python should build out of the box using "./configure; make".
 Also try running configue with the --with-thread and --with-readline
-options (described below).  AIX users: please try the new shared
-library support!
+options (described below).
+
+I really expect this to be the last beta release.  I declare a "feature 
+freeze" until 1.4 final is released.  Changes in 1.4 final will be 
+restricted to urgent bugfixes, portability enhancements, and added 
+documentation only.
 
 
 What's new in this release?
 ---------------------------
 
-A list of things that changed since 1.4 beta 1 can be found in
-Misc/NEWS.  This file will eventually be updated to also list what's
-new since to 1.3; in the mean time, you can have a look at
-http://www.python.org/workshops/1996-06/future.html (though there are
-some minor deviations from what was promised there, as usual).
+A list of (nearly) all things that changed in each of the 1.4 beta releases 
+can be found in the file Misc/NEWS -- together this comprises a list of 
+everything that's changed since 1.3.
 
 
 What is Python anyway?
@@ -61,8 +63,8 @@ A modest plug
 *     If you use Python, please consider joining the Python Software    *
 *     Activity (PSA).  See http://www.python.org/psa/.                  *
 *                                                                       *
-*     Organizations making heavy use of Python are especially invited   *
-*     to become corporate members!                                      *
+*     Organizations that make heavy use of Python are especially        *
+*     encouraged to become corporate members!                           *
 *                                                                       *
 *************************************************************************
 
@@ -113,6 +115,9 @@ object files by running "make clean" before rebuilding.  Believe it or
 not, "make clean" sometimes helps to clean up other inexplicable
 problems as well.  Try it before sending in a bug report!
 
+If the configure script fails or doesn't seem to find things that
+should be there, inspect the config.log file.
+
 
 Platform specific notes
 -----------------------
@@ -126,20 +131,26 @@ Linux:  On Linux version 1.x, once you've built Python, use it to run
 	the files as distributed don't match the system headers on
 	some Linux versions.  (The "h2py" command refers to
 	Tools/scripts/h2py.py.)  The modules distributed for Linux 2.x
-	should be okay.
+	should be okay.  Shared library support now works by default
+	on ELF-based x86 Linux systems.
 
-AIX:    The notes in Misc/AIX-NOTES probably no longer apply.  A
-	complete overhaul of the shared library support is now in
-	place, the only thing that's missing is a bit of explanation.
-	Search for AIX in Modules/Setup(.in) for a clue.
+AIX:	A complete overhaul of the shared library support is now in
+	place.  To enable it, uncomment the LINKCC line in the Setup
+	file.  See Misc/AIX-NOTES for some notes on how it's done.
 
-	WARNING!  In some versions of AIX, you get errors about
+	WARNING!  In some versions of AIX 3.x, you get errors about
 	Invalid Indent when running the Python test set.  This appears
 	to be a bug in the AIX compiler.  Rebuild Parser/tokenizer.c
 	using OPT="" or OPT=-g, or use gcc.
 
-HP-UX:  Read the file Misc/HPUX-NOTES if you want to be able to
-	use shared libraries for dynamically loaded modules.
+HP-UX:	Shared library support now works by default (at least on HP-UX
+	9.x).  One other problem remains: the HP ANSI C compiler (cc
+	-Aa) is too pedantic to use, but in K&R mode, it barfs on a
+	few files (complexobject.c, getargs.c and operator.c).  Until
+	this is fixed, the following seems to work:
+
+		make -k		# this compiles all but a few files
+		make OPT=-Aa	# compile the remaining files
 
 Minix:  When using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
 
@@ -185,7 +196,7 @@ toplevel directory.  (When working inside the Modules directory, use
 
 The default collection of modules should build on any Unix system, but
 many optional modules should work on all modern Unices (e.g. try dbm,
-mis, termios, timing, syslog, curses, new, soundex, parser).  Often
+nis, termios, timing, syslog, curses, new, soundex, parser).  Often
 the quickest way to determine whether a particular module works or not
 is to see if it will build: enable it in Setup, then if you get
 compilation or link errors, disable it -- you're missing support.
@@ -387,8 +398,8 @@ architecture, and in each directory run the configure script (on the
 appropriate machine with the appropriate options).  This creates the
 necessary subdirectories and the Makefiles therein.  The Makefiles
 contain a line VPATH=... which points to directory containing the
-actual sources.  (On SGI systems, use "smake" instead of "make" if you
-use VPATH -- don't try gnumake.)
+actual sources.  (On SGI systems, use "smake -J1" instead of "make" if
+you use VPATH -- don't try gnumake.)
 
 For example, the following is all you need to build a minimal Python
 in /usr/tmp/python (assuming ~guido/src/python is the toplevel
@@ -441,10 +452,7 @@ configuration of your system.  Most symbols must simply be defined as
 1 only if the corresponding feature is present and can be left alone
 otherwise; however RETSIGTYPE must always be defined, either as int or
 as void, and the *_t type symbols must be defined as some variant of
-int if they need to be defined at all. Then arrange that the symbol
-HAVE_CONFIG_H is defined during compilation (usually by passing an
-argument of the form `-DHAVE_CONFIG_H' to the compiler, but this is
-necessarily system-dependent).
+int if they need to be defined at all.
 
 
 
@@ -461,42 +469,24 @@ Especially the Library Reference is of immense value since much of
 Python's power (including the built-in data types and functions!) is
 described here.
 
-To print the documentation from the LaTeX files, chdir into the Doc
-subdirectory, type "make" (let's hope you have LaTeX installed!), and
-send the four resulting PostScript files (tut.ps, lib.ps, ref.ps, and
-ext.ps) to the printer.  See the README file there.
+To print the documentation from the LaTeX files, chdir into the Doc 
+subdirectory, type "make" (let's hope you have LaTeX installed!), and send 
+the four resulting PostScript files (tut.ps, lib.ps, ref.ps, and ext.ps) to 
+the printer.  See the README file there.  If you don't have LaTeX, you can 
+ftp the PostScript files from the ftp archives (see below).
 
-All documentation is also available on-line via the World-Wide Web
-(WWW): http://www.python.org.  It can also be downloaded
-separately from the ftp archives (see below) in Emacs INFO, HTML or
-PostScript form -- see the FAQ (file Misc/FAQ) for more info.
+All documentation is also available on-line via the Python web site 
+(http://www.python.org/, see below).  It can also be downloaded separately 
+from the ftp archives (see below) in Emacs INFO, HTML or PostScript form -- 
+see the web site or the FAQ (file Misc/FAQ) for more info.
 
 
 Emacs mode
 ----------
 
-There's an excellent Emacs editing mode for Python code; see the file
-Misc/python-mode.el.  Originally written by Tim Peters, who's no
-longer on the net, it is now maintained by Barry Warsaw
-<bwarsaw@cnri.reston.va.com>.
-
-BTW, if you want to use font-lock for Python sources, here's something
-to put in your .emacs file:
-
-	(defun my-python-mode-hook ()
-	  (setq font-lock-keywords python-font-lock-keywords)
-	  (font-lock-mode 1))
-	(add-hook 'python-mode-hook 'my-python-mode-hook)
-
-
-
-Bug reports
------------
-
-Bugs are best reported to the comp.lang.python newsgroup or the Python
-mailing list -- see the section "Newsgroup and mailing list" below.
-Before posting, read the FAQ (file Misc/FAQ) first to see if your
-problem has already been answered!
+There's an excellent Emacs editing mode for Python code; see the file 
+Misc/python-mode.el.  Originally written by Tim Peters, it is now 
+maintained by Barry Warsaw <bwarsaw@cnri.reston.va.us>.
 
 
 Web site
@@ -507,8 +497,8 @@ There are a number of mirrors, listed on the home page -- try a mirror
 that's close you you.
 
 
-Ftp access
-----------
+Ftp site
+--------
 
 Python's own ftp site is ftp.python.org, directory /pub/python.  See
 the FAQ (file Misc/FAQ) for a list of other ftp sites carrying the
@@ -518,13 +508,38 @@ Python distribution.
 Newsgroup and mailing list
 --------------------------
 
-There are a newsgroup and a mailing list devoted to Python.  The
-newsgroup, comp.lang.python, contains exactly the same messages as the
-mailing list (though not always in the same order, due to the
-mysterious nature of Usenet news' flooding algorithms).  To subscribe
-to the mailing list, send mail containing your real name and e-mail
-address to "python-list-request@cwi.nl" (a real person reads these
-messages, so no LISTPROC or Majordomo commands, please).
+There are a newsgroup and a mailing list devoted to Python.  The newsgroup, 
+comp.lang.python, contains exactly the same messages as the mailing list 
+(though not always in the same order, due to the mysterious nature of the 
+Usenet news distribution algorithm).  To subscribe to the mailing list, 
+send mail containing your real name and e-mail address to 
+"python-list-request@cwi.nl".  Use the same address if you want to 
+unsibscribed.  (A real person reads these messages, so no LISTPROC or 
+Majordomo commands, please, and please be patient -- normal turn-around 
+time is about one working day.)
+
+The Python web site contains a search form that lets you search the 
+newsgroup archives (or the web site itself).  Click on the "search" link 
+in the banner menu on any page of http://www.python.org/.
+
+
+Bug reports
+-----------
+
+Bugs are best reported to the comp.lang.python newsgroup or the Python 
+mailing list -- see the section "Newsgroup and mailing list" below.  Before 
+posting, check the newsgroup archives (see above) to see if your bug has 
+already been reported!  If you specifically don't want to involve the 
+newsgroup or mailing list, send them to python-bugs@python.org.
+
+
+Questions
+---------
+
+For help, if you can't find it in the manuals, the FAQ or on the web
+site, it's best to post to the comp.lang.python or the Python mailing
+list (see above).  If you specifically don't want to involve the
+newsgroup or mailing list, send questions to python-help@python.org.
 
 
 The Tk interface
@@ -614,7 +629,7 @@ tags, TAGS      Tags files for vi and Emacs
 
 
 Author's address
-----------------
+================
 
 Guido van Rossum
 CNRI
@@ -622,7 +637,7 @@ CNRI
 Reston, VA 20191
 USA
 
-E-mail: guido@cnri.reston.va.or or guido@python.org
+E-mail: guido@cnri.reston.va.us or guido@python.org
 
 
 
