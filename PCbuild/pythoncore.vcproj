@@ -1777,25 +1777,6 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\Modules\pcremodule.c">
-			<FileConfiguration
-				Name="Release|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="2"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="0"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;WIN32;_WINDOWS;$(NoInherit)"/>
-			</FileConfiguration>
-		</File>
-		<File
 			RelativePath="..\Modules\posixmodule.c">
 			<FileConfiguration
 				Name="Release|Win32">
@@ -1816,25 +1797,6 @@
 		</File>
 		<File
 			RelativePath="..\Python\pyfpe.c">
-			<FileConfiguration
-				Name="Release|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="2"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="0"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;WIN32;_WINDOWS;$(NoInherit)"/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="..\Modules\pypcre.c">
 			<FileConfiguration
 				Name="Release|Win32">
 				<Tool
