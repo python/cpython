@@ -24,16 +24,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Python interpreter main program for frozen scripts */
 
-#include "allobjects.h"
+#include "Python.h"
 
 extern char *getenv();
 
 extern char *getversion();
 extern char *getcopyright();
 
-extern int debugging;
-extern int verbose;
-extern int suppress_print;
+extern int Py_DebugFlag;
+extern int Py_VerboseFlag;
+extern int Py_SuppressPrintingFlag;
 
 static char *argv0;
 
@@ -49,11 +49,11 @@ main(argc, argv)
 	argv0 = argv[0];
 
 	if ((p = getenv("PYTHONDEBUG")) && *p != '\0')
-		debugging = 1;
+		Py_DebugFlag = 1;
 	if ((p = getenv("PYTHONSUPPRESS")) && *p != '\0')
-		suppress_print = 1;
+		Py_SuppressPrintingFlag = 1;
 	if ((p = getenv("PYTHONVERBOSE")) && *p != '\0')
-		verbose = 1;
+		Py_VerboseFlag = 1;
 	if ((p = getenv("PYTHONINSPECT")) && *p != '\0')
 		inspect = 1;
 	if ((p = getenv("PYTHONUNBUFFERED")) && *p != '\0')
@@ -64,26 +64,26 @@ main(argc, argv)
 		setbuf(stderr, (char *)NULL);
 	}
 
-	if (verbose)
+	if (Py_VerboseFlag)
 		fprintf(stderr, "Python %s\n%s\n",
 			getversion(), getcopyright());
-	initall();
-	setpythonargv(argc, argv);
+	Py_Initialize();
+	PySys_SetArgv(argc, argv);
 
-	n = init_frozen("__main__");
+	n = PyImport_ImportFrozenModule("__main__");
 	if (n == 0)
-		fatal("__main__ not frozen");
+		Py_FatalError("__main__ not frozen");
 	if (n < 0) {
-		print_error();
+		PyErr_Print();
 		sts = 1;
 	}
 	else
 		sts = 0;
 
 	if (inspect && isatty((int)fileno(stdin)))
-		sts = run(stdin, "<stdin>") != 0;
+		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
 
-	goaway(sts);
+	Py_Exit(sts);
 	/*NOTREACHED*/
 }
 
