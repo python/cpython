@@ -118,6 +118,34 @@ class TestTemplate(unittest.TestCase):
         d = dict(who=u't\xffm', what=u'f\xfe\fed')
         self.assertEqual(s.substitute(d), u't\xffm likes f\xfe\x0ced')
 
+    def test_keyword_arguments(self):
+        eq = self.assertEqual
+        s = Template('$who likes $what')
+        eq(s.substitute(who='tim', what='ham'), 'tim likes ham')
+        eq(s.substitute(dict(who='tim'), what='ham'), 'tim likes ham')
+        eq(s.substitute(dict(who='fred', what='kung pao'),
+                        who='tim', what='ham'),
+           'tim likes ham')
+        s = Template('the mapping is $mapping')
+        eq(s.substitute(dict(foo='none'), mapping='bozo'),
+           'the mapping is bozo')
+        eq(s.substitute(dict(mapping='one'), mapping='two'),
+           'the mapping is two')
+
+    def test_keyword_arguments_safe(self):
+        eq = self.assertEqual
+        s = Template('$who likes $what')
+        eq(s.safe_substitute(who='tim', what='ham'), 'tim likes ham')
+        eq(s.safe_substitute(dict(who='tim'), what='ham'), 'tim likes ham')
+        eq(s.safe_substitute(dict(who='fred', what='kung pao'),
+                        who='tim', what='ham'),
+           'tim likes ham')
+        s = Template('the mapping is $mapping')
+        eq(s.safe_substitute(dict(foo='none'), mapping='bozo'),
+           'the mapping is bozo')
+        eq(s.safe_substitute(dict(mapping='one'), mapping='two'),
+           'the mapping is two')
+
 
 def suite():
     suite = unittest.TestSuite()
