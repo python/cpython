@@ -123,7 +123,8 @@ dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 case $ac_sys_system/$ac_sys_release in
   # On OpenBSD, select(2) is not available if _XOPEN_SOURCE is defined,
   # even though select is a POSIX function. Reported by J. Ribbens.
-  OpenBSD/2.* | OpenBSD/3.@<:@012@:>@) 
+  # Reconfirmed for OpenBSD 3.3 by Zachary Hamm.
+  OpenBSD/2.* | OpenBSD/3.@<:@0123@:>@) 
     define_xopen_source=no;;
   # On Solaris 2.6, sys/wait.h is inconsistent in the usage
   # of union __?sigval. Reported by Stuart Bishop.
