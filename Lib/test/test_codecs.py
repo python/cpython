@@ -27,11 +27,20 @@ class EscapeDecodeTest(unittest.TestCase):
     def test_empty_escape_decode(self):
         self.assertEquals(codecs.escape_decode(""), ("", 0))
 
+class RecodingTest(unittest.TestCase):
+    def test_recoding(self):
+        f = StringIO.StringIO()
+        f2 = codecs.EncodedFile(f, "unicode_internal", "utf-8")
+        f2.write(u"a")
+        f2.close()
+        # Python used to crash on this at exit because of a refcount
+        # bug in _codecsmodule.c
 
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(UTF16Test))
     suite.addTest(unittest.makeSuite(EscapeDecodeTest))
+    suite.addTest(unittest.makeSuite(RecodingTest))
     test_support.run_suite(suite)
 
 

@@ -167,8 +167,10 @@ unicode_internal_decode(PyObject *self,
 			  &obj, &errors))
 	return NULL;
 
-    if (PyUnicode_Check(obj))
+    if (PyUnicode_Check(obj)) {
+	Py_INCREF(obj);
 	return codec_tuple(obj, PyUnicode_GET_SIZE(obj));
+    }
     else {
 	if (PyObject_AsReadBuffer(obj, (const void **)&data, &size))
 	    return NULL;
