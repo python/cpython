@@ -36,7 +36,7 @@ static PyStringObject *nullstring;
 PyObject *
 PyString_FromStringAndSize(const char *str, int size)
 {
-	PyStringObject *op;
+	register PyStringObject *op;
 #ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0 && (op = nullstring) != NULL) {
 #ifdef COUNT_ALLOCS
@@ -73,11 +73,13 @@ PyString_FromStringAndSize(const char *str, int size)
 	op->ob_sval[size] = '\0';
 #ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0) {
-		PyString_InternInPlace(&(PyObject *)op);
+		PyObject *t = (PyObject *)op;
+		PyString_InternInPlace(&t);
 		nullstring = op;
 		Py_INCREF(op);
 	} else if (size == 1 && str != NULL) {
-		PyString_InternInPlace(&(PyObject *)op);
+		PyObject *t = (PyObject *)op;
+		PyString_InternInPlace(&t);
 		characters[*str & UCHAR_MAX] = op;
 		Py_INCREF(op);
 	}
@@ -89,7 +91,7 @@ PyObject *
 PyString_FromString(const char *str)
 {
 	register size_t size = strlen(str);
-	PyStringObject *op;
+	register PyStringObject *op;
 	if (size > INT_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
 			"string is too long for a Python string");
@@ -127,11 +129,13 @@ PyString_FromString(const char *str)
 	strcpy(op->ob_sval, str);
 #ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0) {
-		PyString_InternInPlace(&(PyObject *)op);
+		PyObject *t = (PyObject *)op;
+		PyString_InternInPlace(&t);
 		nullstring = op;
 		Py_INCREF(op);
 	} else if (size == 1) {
-		PyString_InternInPlace(&(PyObject *)op);
+		PyObject *t = (PyObject *)op;
+		PyString_InternInPlace(&t);
 		characters[*str & UCHAR_MAX] = op;
 		Py_INCREF(op);
 	}
