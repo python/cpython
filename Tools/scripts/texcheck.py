@@ -5,13 +5,13 @@
 
 Designed to catch common markup errors including:
 * Unbalanced or mismatched parenthesis, brackets, and braces.
-* Unbalanced of mismatched \begin and \end blocks.
+* Unbalanced or mismatched \\begin and \\end blocks.
 * Misspelled or invalid LaTeX commands.
 * Use of forward slashes instead of backslashes for commands.
-* Table line size mismatches (only \lineii used in a tableii).
+* Table line size mismatches.
 
-Command line usage:
-    python texcheck.py [-h] [-k keyword] foobar.tex
+Sample command line usage:
+    python texcheck.py -k chapterheading -m lib/librandomtex *.tex
 
 Options:
     -m          Munge parenthesis and brackets. [0,n) would normally mismatch.
@@ -19,7 +19,7 @@ Options:
     -d:         Delimiter check only (useful for non-LaTeX files).
     -h:         Help
     -s lineno:  Start at lineno (useful for skipping complex sections).
-    -v:         Verbose.  Shows current delimiter and unclosed delimiters.
+    -v:         Verbose.  Trace the matching of //begin and //end blocks.
 """
 
 import re
@@ -27,6 +27,7 @@ import sets
 import sys
 import getopt
 from itertools import izip, count, islice
+import glob
 
 cmdstr = r"""
     \section \module \declaremodule \modulesynopsis \moduleauthor
@@ -63,11 +64,11 @@ def matchclose(c_lineno, c_symbol, openers, pairmap):
     try:
         o_lineno, o_symbol = openers.pop()
     except IndexError:
-        msg = "Delimiter mismatch.  On line %d, encountered closing '%s' without corresponding open" % (c_lineno, c_symbol)
-        raise Exception, msg
+        print "\nDelimiter mismatch.  On line %d, encountered closing '%s' without corresponding open" % (c_lineno, c_symbol)
+        return
     if o_symbol in pairmap.get(c_symbol, [c_symbol]): return
-    msg = "Opener '%s' on line %d was not closed before encountering '%s' on line %d" % (o_symbol, o_lineno, c_symbol, c_lineno)
-    raise Exception, msg
+    print "\nOpener '%s' on line %d was not closed before encountering '%s' on line %d" % (o_symbol, o_lineno, c_symbol, c_lineno)
+    return
 
 def checkit(source, opts, morecmds=[]):
     """Check the LaTeX formatting in a sequence of lines.
@@ -75,7 +76,7 @@ def checkit(source, opts, morecmds=[]):
     Opts is a mapping of options to option values if any:
         -m          munge parenthesis and brackets
         -d          delimiters only checking
-        -v          verbose listing of delimiters
+        -v          verbose trace of delimiter matching
         -s lineno:  linenumber to start scan (default is 1).
 
     Morecmds is a sequence of LaTeX commands (without backslashes) that
@@ -93,7 +94,7 @@ def checkit(source, opts, morecmds=[]):
         pairmap = {']':'[(', ')':'(['}      # Munged openers
     else:
         pairmap = {']':'[', ')':'('}        # Normal opener for a given closer
-    openpunct = sets.Set('([')  # Set of valid openers
+    openpunct = sets.Set('([')              # Set of valid openers
 
     delimiters = re.compile(r'\\(begin|end){([_a-zA-Z]+)}|([()\[\]])')
     braces = re.compile(r'({)|(})')
@@ -113,24 +114,7 @@ def checkit(source, opts, morecmds=[]):
     for lineno, line in izip(count(startline), islice(source, startline-1, None)):
         line = line.rstrip()
 
-        if '/' in line and '-d' not in opts:
-            # Warn whenever forward slashes encountered with a LaTeX command
-            for cmd in falsetexcmd.findall(line):
-                if '\\' + cmd in validcmds:
-                    print 'Warning, forward slash used on line %d with cmd: /%s' % (lineno, cmd)
-
-        if '-d' not in opts:
-            # Validate commands
-            nc = line.find(r'\newcommand')
-            if nc != -1:
-                start = line.find('{', nc)
-                end = line.find('}', start)
-                validcmds.add(line[start+1:end])
-            for cmd in texcmd.findall(line):
-                if cmd not in validcmds:
-                    print r'Warning, unknown tex cmd on line %d: \%s' % (lineno, cmd)
-
-        # Check balancing of open/close parenthesis and brackets
+        # Check balancing of open/close parenthesis, brackets, and begin/end blocks
         for begend, name, punct in delimiters.findall(line):
             if '-v' in opts:
                 print lineno, '|', begend, name, punct,
@@ -154,8 +138,27 @@ def checkit(source, opts, morecmds=[]):
                     bracestack.pop()
                 except IndexError:
                     print r'Warning, unmatched } on line %s.' % (lineno,)
-            if '-v' in opts:
-                print '   --> ', bracestack
+
+        # Optionally, skip LaTeX specific checks
+        if '-d' in opts:
+            continue
+
+        # Warn whenever forward slashes encountered with a LaTeX command
+        for cmd in falsetexcmd.findall(line):
+            if '822' in line or '.html' in line:
+                continue    # Ignore false positives for urls and for /rfc822
+            if '\\' + cmd in validcmds:
+                print 'Warning, forward slash used on line %d with cmd: /%s' % (lineno, cmd)
+
+        # Validate commands
+        nc = line.find(r'\newcommand')
+        if nc != -1:
+            start = line.find('{', nc)
+            end = line.find('}', start)
+            validcmds.add(line[start+1:end])
+        for cmd in texcmd.findall(line):
+            if cmd not in validcmds:
+                print r'Warning, unknown tex cmd on line %d: \%s' % (lineno, cmd)
 
         # Check table levels (make sure lineii only inside tableii)
         m = tablestart.search(line)
@@ -167,6 +170,11 @@ def checkit(source, opts, morecmds=[]):
             print r'Warning, \line%s on line %d does not match \table%s on line %d' % (m.group(1), lineno, tablelevel, tablestartline)
         if tableend.search(line):
             tablelevel = ''
+
+        # Style guide warnings
+        if 'e.g.' in line or 'i.e.' in line:
+            print r'Style warning, avoid use of i.e or e.g. on line %d' % (lineno,)
+
 
     lastline = lineno
     for lineno, symbol in openers:
@@ -189,15 +197,28 @@ def main(args=None):
         print 'Please specify a file to be checked'
         return 1
 
+    for i, filespec in enumerate(arglist):
+        if '*' in filespec or '?' in filespec:
+            arglist[i:i+1] = glob.glob(filespec)
+
     morecmds = [v for k,v in optitems if k=='-k']
+    err = []
 
-    try:
-        f = open(arglist[0])
-    except IOError:
-        print 'Cannot open file %s.' % arglist[0]
-        return 2
+    for filename in arglist:
+        print '=' * 30
+        print "Checking", filename
+        try:
+            f = open(filename)
+        except IOError:
+            print 'Cannot open file %s.' % arglist[0]
+            return 2
 
-    return(checkit(f, opts, morecmds))
+        try:
+            err.append(checkit(f, opts, morecmds))
+        finally:
+            f.close()
+
+    return max(err)
 
 if __name__ == '__main__':
     sys.exit(main())
