@@ -607,6 +607,10 @@ optional ``base'' parameter when the first argument is a string.
 291.  \code{int(123, 16)} raises a \exception{TypeError} exception
 with the message ``can't convert non-string with explicit base''.
 
+Modules can now be renamed on importing them, using the syntax
+\code{import \var{module} as \var{name}} or \code{from \var{module}
+import \var{name} as \var{othername}}.
+
 Previously there was no way to implement a class that overrode
 Python's built-in \keyword{in} operator and implemented a custom
 version.  \code{\var{obj} in \var{seq}} returns true if \var{obj} is
