@@ -1,6 +1,8 @@
-#! /depot/sundry/plat/bin/python1.4
-
 """Interactive FAQ project.
+
+Note that this is not an executable script; it's an importable module.
+The actual CGI script can be kept minimal; it's appended at the end of
+this file as a string constant.
 
 XXX TO DO
 
@@ -22,6 +24,7 @@ XXX TO DO
 - Browse should display menu of 7 sections & let you pick
   (or frontpage should have the option to browse a section or all)
 - support adding annotations, too
+- make it more generic (so you can create your own FAQ)
 
 """
 
@@ -52,6 +55,11 @@ class FAQServer:
 	if key not in self.KEYS:
 	    raise AttributeError
 	try:
+	    form = self.form
+	    try:
+		item = form[key]
+	    except TypeError, msg:
+		raise KeyError, msg, sys.exc_traceback
 	    value = self.form[key].value
 	    setattr(self, key, value)
 	    return value
@@ -121,7 +129,7 @@ class FAQServer:
 	if not headers:
 	    print "Invalid file name", name
 	    return
-	self.show(name, headers['title'], text, 1)
+	self.show(name, headers['title'], text)
 
     def do_all(self):
 	self.prologue("The Whole Python FAQ")
@@ -139,7 +147,7 @@ class FAQServer:
 		    section = nsec
 		    print "<H1>Section %s</H1>" % section
 		    print "<HR>"
-		self.show(name, title, text, 1)
+		self.show(name, title, text)
 	if not section:
 	    print "No FAQ entries?!?!"
 
@@ -157,8 +165,8 @@ class FAQServer:
 	    name = whrandom.choice(names)
 	    headers, text = self.read(name)
 	    if headers:
-		self.show(name, headers['title'], text, 1)
-		print '<P><A HREF="faq.py?req=roulette">Show another one</A>'
+		self.show(name, headers['title'], text)
+		print "<P>Use `Reload' to show another one."
 		break
 	    else:
 		names.remove(name)
@@ -187,7 +195,7 @@ class FAQServer:
 	for (mtime, name) in list:
 	    headers, text = self.read(name)
 	    if headers:
-		self.show(name, headers['title'], text, 1)
+		self.show(name, headers['title'], text)
 		n = n+1
 	if not n:
 	    print "No FAQ entries?!?!"
@@ -209,7 +217,7 @@ class FAQServer:
 	    if headers:
 		title = headers['title']
 		if p.search(title) >= 0 or p.search(text) >= 0:
-		    self.show(name, title, text, 1)
+		    self.show(name, title, text)
 		    n = n+1
 	if not n:
 	    print "No hits."
@@ -274,7 +282,7 @@ class FAQServer:
 	</FORM>
 	<HR>
 	""" % (name, version)
-	self.show(name, title, text)
+	self.show(name, title, text, edit=0)
 
     def do_review(self):
 	if self.commit:
@@ -289,7 +297,7 @@ class FAQServer:
 	    return
 	self.prologue("Python FAQ Review Form")
 	print "<HR>"
-	self.show(name, title, text)
+	self.show(name, title, text, edit=0)
 	print "<FORM METHOD=POST ACTION=faq.py>"
 	if self.log and self.author and '@' in self.email:
 	    print """
@@ -447,7 +455,7 @@ class FAQServer:
 	if not sts:
 	    self.prologue("Python FAQ Entry Edited")
 	    print "<HR>"
-	    self.show(name, title, text, 1)
+	    self.show(name, title, text)
 	    if output:
 		print "<PRE>%s</PRE>" % cgi.escape(output)
 	else:
@@ -460,15 +468,17 @@ class FAQServer:
 
     def showedit(self, name, title, text):
 	print """
-	Title: <INPUT TYPE=text SIZE=70 NAME=title VALUE="%s"<BR>
+	Title: <INPUT TYPE=text SIZE=70 NAME=title VALUE="%s"><BR>
 	<TEXTAREA COLS=80 ROWS=20 NAME=text>""" % title
 	print cgi.escape(string.strip(text))
 	print """</TEXTAREA>
 	<BR>
 	Please provide the following information for logging purposes:
 	<BR>
-	<CODE>Name : </CODE><INPUT TYPE=text SIZE=70 NAME=author VALUE="%s"<BR>
-	<CODE>Email: </CODE><INPUT TYPE=text SIZE=70 NAME=email VALUE="%s"<BR>
+	<CODE>Name : </CODE><INPUT TYPE=text SIZE=40 NAME=author VALUE="%s">
+	<BR>
+	<CODE>Email: </CODE><INPUT TYPE=text SIZE=40 NAME=email VALUE="%s">
+	<BR>
 	Log message (reason for the change):<BR>
 	<TEXTAREA COLS=80 ROWS=5 NAME=log>\n%s\n</TEXTAREA>
 	""" % (self.author, self.email, self.log)
@@ -482,7 +492,10 @@ class FAQServer:
 					 headers[key] or '')
 	print "</UL>"
 
+    headers = None
+
     def read(self, name):
+	self.headers = None
 	import fnmatch, rfc822
 	if not fnmatch.fnmatch(name, NAMEPAT):
 	    return None, None
@@ -496,14 +509,15 @@ class FAQServer:
 		return None, None
 	    headers = {'title': "%s.%s. " % (self.section, self.number)}
 	    text = ""
-	    return headers, text
-	f = open(name)
-	headers = rfc822.Message(f)
-	text = f.read()
-	f.close()
+	else:
+	    f = open(name)
+	    headers = rfc822.Message(f)
+	    text = f.read()
+	    f.close()
+	self.headers = headers
 	return headers, text
 
-    def show(self, name, title, text, edit=0):
+    def show(self, name, title, text, edit=1):
 	# XXX Should put <A> tags around recognizable URLs
 	# XXX Should also turn "see section N" into hyperlinks
 	print "<H2>%s</H2>" % cgi.escape(title)
@@ -534,6 +548,16 @@ class FAQServer:
 	    <A HREF="faq.py?req=edit&name=%s">Edit this entry</A> /
 	    <A HREF="faq.py?req=info&name=%s" TARGET=_blank>Log info</A>
 	    """ % (name, name)
+	    if self.headers:
+		try:
+		    date = self.headers['last-changed-date']
+		    author = self.headers['last-changed-author']
+		    email = self.headers['last-changed-email']
+		except KeyError:
+		    pass
+		else:
+		    s = '(last changed on %s by <A HREF="%s">%s</A>)'
+		    print s % (date, email, author)
 	    print '<P>'
 	print "<HR>"
 
@@ -568,6 +592,8 @@ class FAQServer:
 	print '''
 	<P>
 	<HR>
+	<A HREF="http://www.python.org">Python home</A> /
+	<A HREF="faq.py">FAQ home</A> /
 	<A HREF="mailto:guido@python.org">GvR</A>
 	</BODY>
 	</HTML>
@@ -587,3 +613,13 @@ except:
     print "<HR>Sorry, an error occurred"
     cgi.print_exception()
 print "<P>(running time = %s seconds)" % str(round(dt, 3))
+
+# The following bootstrap script must be placed in cgi-bin/faq.py:
+BOOTSTRAP = """
+#! /usr/local/bin/python
+FAQDIR = "/usr/people/guido/python/FAQ"
+import os, sys
+os.chdir(FAQDIR)
+sys.path.insert(0, os.curdir)
+import faqmain
+"""
