@@ -645,7 +645,7 @@ int_lshift(PyIntObject *v, PyIntObject *w)
 	if (b >= LONG_BIT) {
 		return PyInt_FromLong(0L);
 	}
-	a = (unsigned long)a << b;
+	a = (long)((unsigned long)a << b);
 	return PyInt_FromLong(a);
 }
 

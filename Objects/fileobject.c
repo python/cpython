@@ -473,7 +473,7 @@ static size_t
 new_buffersize(PyFileObject *f, size_t currentsize)
 {
 #ifdef HAVE_FSTAT
-	long pos, end;
+	off_t pos, end;
 	struct stat st;
 	if (fstat(fileno(f->f_fp), &st) == 0) {
 		end = st.st_size;
