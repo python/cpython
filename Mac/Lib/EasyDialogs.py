@@ -17,6 +17,18 @@ from Dlg import GetNewDialog, SetDialogItemText, GetDialogItemText, ModalDialog
 import Qd
 import QuickDraw
 import Dlg,Win,Evt,Events # sdm7g
+import MacOS
+import string
+
+def cr2lf(text):
+	if '\r' in text:
+		text = string.join(string.split(text, '\r'), '\n')
+	return text
+
+def lf2cr(text):
+	if '\n' in text:
+		text = string.join(string.split(text, '\n'), '\r')
+	return text
 
 def Message(msg, id=256):
 	"""Display a MESSAGE string.
@@ -31,7 +43,7 @@ def Message(msg, id=256):
 		print "Can't get DLOG resource with id =", id
 		return
 	tp, h, rect = d.GetDialogItem(2)
-	SetDialogItemText(h, msg)
+	SetDialogItemText(h, lf2cr(msg))
 	d.SetDialogDefaultItem(1)
 	while 1:
 		n = ModalDialog(None)
@@ -58,9 +70,9 @@ def AskString(prompt, default = "", id=257):
 		print "Can't get DLOG resource with id =", id
 		return
 	tp, h, rect = d.GetDialogItem(3)
-	SetDialogItemText(h, prompt)
+	SetDialogItemText(h, lf2cr(prompt))
 	tp, h, rect = d.GetDialogItem(4)
-	SetDialogItemText(h, default)
+	SetDialogItemText(h, lf2cr(default))
 #	d.SetDialogItem(4, 0, 255)
 	d.SetDialogDefaultItem(1)
 	d.SetDialogCancelItem(2)
@@ -68,7 +80,7 @@ def AskString(prompt, default = "", id=257):
 		n = ModalDialog(None)
 		if n == 1:
 			tp, h, rect = d.GetDialogItem(4)
-			return GetDialogItemText(h)
+			return cr2lf(GetDialogItemText(h))
 		if n == 2: return None
 
 
@@ -96,7 +108,7 @@ def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=258
 	# 4 = Cancel
 	# The question string is item 5
 	tp, h, rect = d.GetDialogItem(5)
-	SetDialogItemText(h, question)
+	SetDialogItemText(h, lf2cr(question))
 	if yes != None:
 		tp, h, rect = d.GetDialogItem(2)
 		h.as_Control().SetControlTitle(yes)
@@ -152,7 +164,7 @@ class ProgressBar:
 		"""label(text) - Set text in progress box"""
 		self.d.BringToFront()
 		if newstr:
-			self._label = newstr[0]
+			self._label = lf2cr(newstr[0])
 		tp, text_h, rect = self.d.GetDialogItem(2)
 		SetDialogItemText(text_h, self._label)		
 
@@ -209,14 +221,13 @@ class ProgressBar:
 
 def test():
 	import time
-	import MacOS
 
 	Message("Testing EasyDialogs.")
 	ok = AskYesNoCancel("Do you want to proceed?")
 	ok = AskYesNoCancel("Do you want to identify?", yes="Indentify", no="Don't identify")
 	if ok > 0:
 		s = AskString("Enter your first name")
-		Message("Thank you,\015%s" % `s`)
+		Message("Thank you,\n%s" % `s`)
 	text = ( "Working Hard...", "Hardly Working..." , 
 			"So far, so good!", "Keep on truckin'" )
 	bar = ProgressBar("Progress, progress...", 100)
