@@ -58,11 +58,11 @@ num-spaces= 4
 tab-cols= 4
 
 [Theme]
-user= 0  
+default= 1  
 name= IDLE Classic New
 
 [Keys]
-user= 0  
+default= 1  
 name= IDLE Classic - windows
 
 [RecentFiles]
