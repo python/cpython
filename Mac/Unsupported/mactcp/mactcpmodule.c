@@ -36,6 +36,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define STATE_ESTAB		8
 #define STATE_CWAIT		18
 
+/* Python code has an additional reason for asr call: open done */
+#define MY_OPEN_DONE	32766
+
 static object *ErrorObject;
 
 TCPIOCompletionUPP	upp_tcp_done;
@@ -334,7 +337,7 @@ tcps_done(pb)
 	/* Extension of mactcp semantics: also call asr on open complete */
 	if ( self->asr == None )
 		return;
-	self->asr_ec = lastEvent-1;
+	self->asr_ec = MY_OPEN_DONE;
 	self->asr_reason = 0;
 	Py_AddPendingCall(tcps_asr_safe, (void *)self);
 }
