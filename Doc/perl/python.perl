@@ -1326,6 +1326,12 @@ sub do_cmd_memberlineni{
 }
 
 
+# For tables, we include a class on every cell to allow the CSS to set
+# the text-align property; this is because support for styling columns
+# via the <col> element appears nearly non-existant on even the latest
+# browsers (Mozilla 1.7 is stable at the time of this writing).
+# Hopefully this can be improved as browsers evolve.
+
 @col_aligns = ('<td>', '<td>', '<td>', '<td>', '<td>');
 
 %FontConversions = ('cdata' => 'tt class="cdata"',
