@@ -178,8 +178,12 @@ class instances are callable if they have a \method{__call__()} method.
   operand types, the rules for binary arithmetic operators apply.  For
   plain and long integers, the result is the same as
   \code{(\var{a} / \var{b}, \var{a} \%{} \var{b})}.
-  For floating point numbers the result is the same as
-  \code{(math.floor(\var{a} / \var{b}), \var{a} \%{} \var{b})}.
+  For floating point numbers the result is \code{(\var{q}, \var{a} \%{}
+  \var{b})}, where \var{q} is usually \code{math.floor(\var{a} /
+  \var{b})} but may be 1 less than that.  In any case \code{\var{q} *
+  \var{b} + \var{a} \%{} \var{b}} is very close to \var{a}, if
+  \code{\var{a} \%{} \var{b}} is non-zero it has the same sign as
+  \var{b}, and \code{0 <= abs(\var{a} \%{} \var{b}) < abs(\var{b})}.
 \end{funcdesc}
 
 \begin{funcdesc}{eval}{expression\optional{, globals\optional{, locals}}}
