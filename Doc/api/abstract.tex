@@ -81,6 +81,48 @@ for which they do not apply, they will raise a Python exception.
 \end{cfuncdesc}
 
 
+\begin{cfuncdesc}{PyObject*}{PyObject_RichCompare}{PyObject *o1,
+                                                   PyObject *o2, int op}
+  Compare the values of \var{o1} and \var{o2} using the operation
+  specified by \var{op}, which must be one of 
+  \constant{Py_LT},
+  \constant{Py_LE},
+  \constant{Py_EQ},
+  \constant{Py_NE},
+  \constant{Py_GT}, or
+  \constant{Py_GE}, corresponding to
+  \code{<},
+  \code{<=},
+  \code{==},
+  \code{!=},
+  \code{>}, or
+  \code{>=} respectively. This is the equivalent of the Python expression
+  \samp{\var{o1} \emph{op} \var{o2}}, where \emph{op} is the operator
+  corresponding to \var{op}. Returns the value of the comparison on
+  success, or \NULL{} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyObject_RichCompareBool}{PyObject *o1,
+                                                 PyObject *o2, int op}
+  Compare the values of \var{o1} and \var{o2} using the operation
+  specified by \var{op}, which must be one of 
+  \constant{Py_LT},
+  \constant{Py_LE},
+  \constant{Py_EQ},
+  \constant{Py_NE},
+  \constant{Py_GT}, or
+  \constant{Py_GE}, corresponding to
+  \code{<},
+  \code{<=},
+  \code{==},
+  \code{!=},
+  \code{>}, or
+  \code{>=} respectively. Returns \code{-1} on error, \code{0} if the
+  result is false, \code{1} otherwise. This is the equivalent of the
+  Python expression \samp{\var{o1} \emph{op} \var{o2}}, where
+  \emph{op} is the operator corresponding to \var{op}.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{int}{PyObject_Cmp}{PyObject *o1, PyObject *o2, int *result}
   Compare the values of \var{o1} and \var{o2} using a routine provided
   by \var{o1}, if one exists, otherwise with a routine provided by
