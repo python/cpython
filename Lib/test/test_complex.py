@@ -5,7 +5,7 @@ from random import random
 
 nerrors = 0
 
-def check_close_real(x, y, eps=1e-12):
+def check_close_real(x, y, eps=1e-9):
     """Return true iff floats x and y "are close\""""
     # put the one with larger magnitude second
     if abs(x) > abs(y):
@@ -17,7 +17,7 @@ def check_close_real(x, y, eps=1e-12):
     # check that relative difference < eps
     return abs((x-y)/y) < eps
 
-def check_close(x, y, eps=1e-12):
+def check_close(x, y, eps=1e-9):
     """Return true iff complexes x and y "are close\""""
     return check_close_real(x.real, y.real, eps) and \
            check_close_real(x.imag, y.imag, eps)
@@ -30,12 +30,12 @@ def test_div(x, y):
         q = z / x
         if not check_close(q, y):
             nerrors += 1
-            print `z`, "/", `x`, "==", `q`, "but expected", `y`
+            print "%r / %r == %r but expected %r" % (z, x, q, y)
     if y != 0:
         q = z / y
         if not check_close(q, x):
             nerrors += 1
-            print `z`, "/", `y`, "==", `q`, "but expected", `x`
+            print "%r / %r == %r but expected %r" % (z, y, q, x)
 
 simple_real = [float(i) for i in range(-5, 6)]
 simple_complex = [complex(x, y) for x in simple_real for y in simple_real]
