@@ -51,7 +51,7 @@ extern int _MenuObj_Convert(PyObject *, MenuHandle *);
 #define as_Resource(h) ((Handle)h)
 
 
-/* Alternative version of ResObj_New, which returns None for null argument */
+/* Alternative version of MenuObj_New, which returns None for NULL argument */
 PyObject *OptMenuObj_New(MenuRef itself)
 {
 	if (itself == NULL) {
@@ -61,6 +61,7 @@ PyObject *OptMenuObj_New(MenuRef itself)
 	return MenuObj_New(itself);
 }
 
+/* Alternative version of MenuObj_Convert, which returns NULL for a None argument */
 int OptMenuObj_Convert(PyObject *v, MenuRef *p_itself)
 {
 	PyObject *tmp;
