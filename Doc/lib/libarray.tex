@@ -13,20 +13,20 @@ constrained.  The type is specified at object creation time by using a
 \dfn{type code}, which is a single character.  The following type
 codes are defined:
 
-\begin{tableiii}{c|l|c}{code}{Type code}{C Type}{Minimum size in bytes}
-\lineiii{'c'}{character}{1}
-\lineiii{'b'}{signed int}{1}
-\lineiii{'B'}{unsigned int}{1}
-\lineiii{'u'}{Unicode character}{2}
-\lineiii{'h'}{signed int}{2}
-\lineiii{'H'}{unsigned int}{2}
-\lineiii{'i'}{signed int}{2}
-\lineiii{'I'}{unsigned int}{2}
-\lineiii{'l'}{signed int}{4}
-\lineiii{'L'}{unsigned int}{4}
-\lineiii{'f'}{float}{4}
-\lineiii{'d'}{double}{8}
-\end{tableiii}
+\begin{tableiv}{c|l|l|c}{code}{Type code}{C Type}{Python Type}{Minimum size in bytes}
+  \lineiv{'c'}{char}          {character}        {1}
+  \lineiv{'b'}{signed char}   {int}              {1}
+  \lineiv{'B'}{unsigned char} {int}              {1}
+  \lineiv{'u'}{Py_UNICODE}    {Unicode character}{2}
+  \lineiv{'h'}{signed short}  {int}              {2}
+  \lineiv{'H'}{unsigned short}{int}              {2}
+  \lineiv{'i'}{signed int}    {int}              {2}
+  \lineiv{'I'}{unsigned int}  {long}             {2}
+  \lineiv{'l'}{signed long}   {int}              {4}
+  \lineiv{'L'}{unsigned long} {long}             {4}
+  \lineiv{'f'}{float}         {float}            {4}
+  \lineiv{'d'}{double}        {float}            {8}
+\end{tableiv}
 
 The actual representation of values is determined by the machine
 architecture (strictly speaking, by the C implementation).  The actual
@@ -53,8 +53,13 @@ Obsolete alias for \function{array}.
 
 
 Array objects support the ordinary sequence operations of
-indexing, slicing, concatenation, and multiplication.  The
-following data items and methods are also supported:
+indexing, slicing, concatenation, and multiplication.  When using
+slice assignment, the assigned value must be an array object with the
+same type code; in all other cases, \exception{TypeError} is raised.
+Array objects also implement the buffer interface, and may be used
+wherever buffer objects are supported.
+
+The following data items and methods are also supported:
 
 \begin{memberdesc}[array]{typecode}
 The typecode character used to create the array.
@@ -100,7 +105,9 @@ Return the number of occurences of \var{x} in the array.
 \end{methoddesc}
 
 \begin{methoddesc}[array]{extend}{a}
-Append array items from \var{a} to the end of the array.
+Append array items from \var{a} to the end of the array.  The two
+arrays must have \emph{exactly} the same type code; if not,
+\exception{TypeError} will be raised.
 \end{methoddesc}
 
 \begin{methoddesc}[array]{fromfile}{f, n}
