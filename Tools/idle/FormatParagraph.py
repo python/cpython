@@ -63,7 +63,7 @@ def find_paragraph(text, mark):
     first = "%d.0" % (lineno+1)
     return first, last, text.get(first, last)
 
-def reformat_paragraph(data, limit=72):
+def reformat_paragraph(data, limit=70):
     lines = string.split(data, "\n")
     i = 0
     n = len(lines)
