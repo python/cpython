@@ -172,6 +172,7 @@ tupledealloc(op)
 {
 	register int i;
 
+	Py_TRASHCAN_SAFE_BEGIN(op)
 	if (op->ob_size > 0) {
 		i = op->ob_size;
 		while (--i >= 0)
@@ -180,11 +181,13 @@ tupledealloc(op)
 		if (op->ob_size < MAXSAVESIZE) {
 			op->ob_item[0] = (PyObject *) free_tuples[op->ob_size];
 			free_tuples[op->ob_size] = op;
-			return;
+			goto done; /* return */
 		}
 #endif
 	}
 	free((ANY *)op);
+done:
+	Py_TRASHCAN_SAFE_END(op)
 }
 
 static int

@@ -215,6 +215,7 @@ list_dealloc(op)
 	PyListObject *op;
 {
 	int i;
+	Py_TRASHCAN_SAFE_BEGIN(op)
 	if (op->ob_item != NULL) {
 		/* Do it backwards, for Christian Tismer.
 		   There's a simple test case where somehow this reduces
@@ -227,6 +228,7 @@ list_dealloc(op)
 		free((ANY *)op->ob_item);
 	}
 	free((ANY *)op);
+	Py_TRASHCAN_SAFE_END(op)
 }
 
 static int

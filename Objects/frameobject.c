@@ -103,6 +103,7 @@ frame_dealloc(f)
 	int i;
 	PyObject **fastlocals;
 
+	Py_TRASHCAN_SAFE_BEGIN(f)
 	/* Kill all local variables */
 	fastlocals = f->f_localsplus;
 	for (i = f->f_nlocals; --i >= 0; ++fastlocals) {
@@ -120,6 +121,7 @@ frame_dealloc(f)
 	Py_XDECREF(f->f_exc_traceback);
 	f->f_back = free_list;
 	free_list = f;
+	Py_TRASHCAN_SAFE_END(f)
 }
 
 PyTypeObject PyFrame_Type = {
