@@ -57,7 +57,7 @@ Library
 
 - The email package from the Python 2.3 development tree has been
   backported, including updated documentation.  This version
-  corresponds to email 2.4 and should be nearly completely backward
+  corresponds to email 2.4.1 and should be nearly completely backward
   compatible.  However there have been lots of improvements in the
   API, so you should read the section in the library manual about the
   changes since email v1.
