@@ -6,6 +6,14 @@ from types import ClassType
 print '5. Built-in exceptions'
 # XXX This is not really enough, each *operation* should be tested!
 
+# Reloading the built-in exceptions module failed prior to Py2.2, while it
+# should act the same as reloading built-in sys.
+try:
+    import exceptions
+    reload(exceptions)
+except ImportError, e:
+    raise TestFailed, e
+
 def test_raise_catch(exc):
     try:
         raise exc, "spam"
