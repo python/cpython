@@ -1783,6 +1783,21 @@ static char posix_symlink__doc__[] =
 "symlink(src, dst) -> None\n\
 Create a symbolic link.";
 
+static PyObject *
+posix_symlink(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	return posix_2str(args, symlink);
+}
+#endif /* HAVE_SYMLINK */
+
+
+#ifdef HAVE_TIMES
+#ifndef HZ
+#define HZ 60 /* Universal constant :-) */
+#endif /* HZ */
+	
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
 static long
 system_uptime()
@@ -1812,21 +1827,7 @@ posix_times(self, args)
 			     (double)0 /* t.tms_cstime / HZ */,
 			     (double)system_uptime() / 1000);
 }
-#else
-static PyObject *
-posix_symlink(self, args)
-	PyObject *self;
-	PyObject *args;
-{
-	return posix_2str(args, symlink);
-}
-#endif /* HAVE_SYMLINK */
-
-#ifdef HAVE_TIMES
-#ifndef HZ
-#define HZ 60 /* Universal constant :-) */
-#endif /* HZ */
-	
+#else /* not OS2 */
 static PyObject *
 posix_times(self, args)
 	PyObject *self;
@@ -1847,8 +1848,10 @@ posix_times(self, args)
 			     (double)t.tms_cstime / HZ,
 			     (double)c / HZ);
 }
-#endif
+#endif /* not OS2 */
 #endif /* HAVE_TIMES */
+
+
 #ifdef MS_WIN32
 #define HAVE_TIMES	/* so the method table will pick it up */
 static PyObject *
@@ -1871,9 +1874,12 @@ posix_times(self, args)
 		(double)0);
 }
 #endif /* MS_WIN32 */
+
+#ifdef HAVE_TIMES
 static char posix_times__doc__[] =
 "times() -> (utime, stime, cutime, cstime, elapsed_time)\n\
 Return a tuple of floating point numbers indicating process times.";
+#endif
 
 
 #ifdef HAVE_SETSID
