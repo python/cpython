@@ -41,13 +41,14 @@ class CarbonEvents_Scanner(Scanner_OSX):
 		listname = "functions"
 		if arglist:
 			t, n, m = arglist[0]
-			print "*********", t,
 			if t in RefObjectTypes and m == "InMode":
-				print "method"
-				classname = "CarbonEventsMethod"
+				if t == "EventHandlerRef":
+					classname = "EventHandlerRefMethod"
+				else:
+					classname = "CarbonEventsMethod"
 				listname = t + "methods"
-			else:
-				print "not method"
+			#else:
+			#	print "not method"
 		return classname, listname
 
 	def writeinitialdefs(self):
@@ -82,6 +83,7 @@ class CarbonEvents_Scanner(Scanner_OSX):
 
 			# Wrote by hand
 			"InstallEventHandler",
+			"RemoveEventHandler",
 			"RunApplicationEventLoop",
 						
 			# Write by hand?
