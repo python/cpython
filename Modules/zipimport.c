@@ -655,7 +655,7 @@ read_directory(char *archive)
 	PyObject *files = NULL;
 	FILE *fp;
 	long compress, crc, data_size, file_size, file_offset, date, time;
-	long header_offset, name_size, header_size, header_end;
+	long header_offset, name_size, header_size;
 	long i, l, length, count;
 	char path[MAXPATHLEN + 5];
 	char name[MAXPATHLEN + 5];
@@ -675,7 +675,6 @@ read_directory(char *archive)
 		return NULL;
 	}
 	fseek(fp, -22, SEEK_END);
-	header_end = ftell(fp);
 	if (fread(endof_central_dir, 1, 22, fp) != 22) {
 		fclose(fp);
 		PyErr_Format(ZipImportError, "can't read Zip file: "
