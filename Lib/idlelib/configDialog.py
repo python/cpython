@@ -9,7 +9,7 @@ from configHandler import idleConf
 from dynOptionMenuWidget import DynOptionMenu
 from tabpage import TabPageSet
 from keybindingDialog import GetKeysDialog
-
+from configSectionNameDialog import GetCfgSectionNameDialog
 class ConfigDialog(Toplevel):
     """
     configuration dialog for idle
@@ -222,7 +222,7 @@ class ConfigDialog(Toplevel):
             value=0,text='Background',command=self.SetColourSampleBinding)
         self.fgHilite.set(1)
         buttonSaveCustomTheme=Button(frameCustom, 
-            text='Save as a Custom Theme')
+            text='Save as New Custom Theme')
         #frameTheme
         labelThemeTitle=Label(frameTheme,text='Select a Highlighting Theme')
         labelTypeTitle=Label(frameTheme,text='Select : ')
@@ -287,7 +287,7 @@ class ConfigDialog(Toplevel):
         self.listBindings.config(xscrollcommand=scrollTargetX.set)
         self.buttonNewKeys=Button(frameCustom,text='Get New Keys for Selection',
             command=self.GetNewKeys,state=DISABLED)
-        buttonSaveCustomKeys=Button(frameCustom,text='Save as a Custom Key Set')
+        buttonSaveCustomKeys=Button(frameCustom,text='Save as New Custom Key Set')
         #frameKeySets
         labelKeysTitle=Label(frameKeySets,text='Select a Key Set')
         labelTypeTitle=Label(frameKeySets,text='Select : ')
@@ -496,6 +496,7 @@ class ConfigDialog(Toplevel):
             self.buttonDeleteCustomTheme.config(state=DISABLED)
         else:
             self.optMenuThemeBuiltin.config(state=DISABLED)
+            self.radioThemeCustom.config(state=NORMAL)
             self.optMenuThemeCustom.config(state=NORMAL)
             self.buttonDeleteCustomTheme.config(state=NORMAL)
 
@@ -506,8 +507,62 @@ class ConfigDialog(Toplevel):
             self.buttonDeleteCustomKeys.config(state=DISABLED)
         else:
             self.optMenuKeysBuiltin.config(state=DISABLED)
+            self.radioKeysCustom.config(state=NORMAL)
             self.optMenuKeysCustom.config(state=NORMAL)
             self.buttonDeleteCustomKeys.config(state=NORMAL)
+    
+    def GetNewKeys(self):
+        listIndex=self.listBindings.index(ANCHOR)
+        binding=self.listBindings.get(listIndex)
+        bindName=binding.split()[0] #first part, up to first space
+        currentKeySequences=idleConf.GetCurrentKeySet().values()
+        newKeys=GetKeysDialog(self,'Get New Keys',bindName,currentKeySequences)
+        if newKeys.result: #new keys were specified
+            if self.keysAreDefault.get(): #current key set is a built-in
+                message=('Your changes will be saved as a new Custom Key Set. '+
+                        'Enter a name for your new Custom Key Set below.')
+                usedNames=idleConf.GetSectionList('user','keys')
+                newKeySet=GetCfgSectionNameDialog(self,'New Custom Key Set',
+                        message,usedNames)
+                if not newKeySet.result: #user cancelled custom key set creation
+                    self.listBindings.select_set(listIndex)
+                    self.listBindings.select_anchor(listIndex)
+                    return
+                else: #create new custom key set based on previously active key set 
+                    self.CreateNewKeySet(newKeySet.result)    
+            self.listBindings.delete(listIndex)
+            self.listBindings.insert(listIndex,bindName+' - '+newKeys.result)
+            self.listBindings.select_set(listIndex)
+            self.listBindings.select_anchor(listIndex)
+            self.keyBinding.set(newKeys.result)
+        else:
+            self.listBindings.select_set(listIndex)
+            self.listBindings.select_anchor(listIndex)
+
+    def KeyBindingSelected(self,event):
+        self.buttonNewKeys.config(state=NORMAL)
+
+    def CreateNewKeySet(self,newKeySetName):
+        #creates new custom key set based on the previously active key set,
+        #and makes the new key set active
+        if self.keysAreDefault.get(): 
+            keySetName=self.builtinKeys.get()
+        else:  
+            keySetName=self.customKeys.get()
+        prevKeySet=idleConf.GetKeySet(keySetName)
+        #add the new key set to changedItems
+        for event in prevKeySet.keys():
+            eventName=event[2:-2] #trim off the angle brackets
+            self.AddChangedItem('keys',newKeySetName,eventName,
+                    prevKeySet[event])
+        #change gui over to the new key set
+        customKeyList=idleConf.GetSectionList('user','keys')
+        customKeyList.append(newKeySetName)
+        customKeyList.sort()
+        print newKeySetName,customKeyList,self.changedItems['keys'][newKeySetName]
+        self.optMenuKeysCustom.SetMenu(customKeyList,newKeySetName)
+        self.keysAreDefault.set(0)
+        self.SetKeysType()
     
     def GetColour(self):
         target=self.highlightTarget.get()
@@ -515,12 +570,43 @@ class ConfigDialog(Toplevel):
             title='Pick new colour for : '+target,
             initialcolor=self.frameColourSet.cget('bg'))
         if colourString: #user didn't cancel
+            if self.themeIsBuiltin.get(): #current theme is a built-in
+                message=('Your changes will be saved as a new Custom Theme. '+
+                        'Enter a name for your new Custom Theme below.')
+                usedNames=idleConf.GetSectionList('user','highlight')
+                newTheme=GetCfgSectionNameDialog(self,'New Custom Theme',
+                        message,usedNames)
+                if not newTheme.result: #user cancelled custom theme creation
+                    return
+                else: #create new custom theme based on previously active theme 
+                    self.CreateNewTheme(newTheme.result)    
             self.colour.set(colourString)
             self.frameColourSet.config(bg=colourString)#set sample
             if self.fgHilite.get(): plane='foreground'
             else: plane='background'
             apply(self.textHighlightSample.tag_config,
                 (self.themeElements[target][0],),{plane:colourString})
+    
+    def CreateNewTheme(self,newThemeName):
+        #creates new custom theme based on the previously active theme,
+        #and makes the new theme active
+        if self.themeIsBuiltin.get(): 
+            themeType='default'
+            themeName=self.builtinTheme.get()
+        else:  
+            themeType='user'
+            themeName=self.customTheme.get()
+        newTheme=idleConf.GetThemeDict(themeType,themeName)
+        #add the new theme to changedItems
+        self.changedItems['highlight'][newThemeName]=newTheme    
+        #change gui over to the new theme
+        customThemeList=idleConf.GetSectionList('user','highlight')
+        customThemeList.append(newThemeName)
+        customThemeList.sort()
+        print newThemeName,customThemeList,newTheme
+        self.optMenuThemeCustom.SetMenu(customThemeList,newThemeName)
+        self.themeIsBuiltin.set(0)
+        self.SetThemeType()
     
     def OnListFontButtonRelease(self,event):
         self.fontName.set(self.listFontName.get(ANCHOR))
@@ -620,8 +706,10 @@ class ConfigDialog(Toplevel):
         ##load available theme option menus
         if self.themeIsBuiltin.get(): #default theme selected
             itemList=idleConf.GetSectionList('default','highlight')
+            itemList.sort()
             self.optMenuThemeBuiltin.SetMenu(itemList,currentOption)
             itemList=idleConf.GetSectionList('user','highlight')
+            itemList.sort()
             if not itemList:
                 self.radioThemeCustom.config(state=DISABLED)
                 self.customTheme.set('- no custom themes -')    
@@ -629,8 +717,10 @@ class ConfigDialog(Toplevel):
                 self.optMenuThemeCustom.SetMenu(itemList,itemList[0])
         else: #user theme selected
             itemList=idleConf.GetSectionList('user','highlight')
+            itemList.sort()
             self.optMenuThemeCustom.SetMenu(itemList,currentOption)
             itemList=idleConf.GetSectionList('default','highlight')
+            itemList.sort()
             self.optMenuThemeBuiltin.SetMenu(itemList,itemList[0])
         self.SetThemeType()
         ##load theme element option menu
@@ -654,8 +744,10 @@ class ConfigDialog(Toplevel):
         ##load available keyset option menus
         if self.keysAreDefault.get(): #default theme selected
             itemList=idleConf.GetSectionList('default','keys')
+            itemList.sort()
             self.optMenuKeysBuiltin.SetMenu(itemList,currentOption)
             itemList=idleConf.GetSectionList('user','keys')
+            itemList.sort()
             if not itemList:
                 self.radioKeysCustom.config(state=DISABLED)    
                 self.customKeys.set('- no custom keys -')    
@@ -663,8 +755,10 @@ class ConfigDialog(Toplevel):
                 self.optMenuKeysCustom.SetMenu(itemList,itemList[0])
         else: #user theme selected
             itemList=idleConf.GetSectionList('user','keys')
+            itemList.sort()
             self.optMenuKeysCustom.SetMenu(itemList,currentOption)
             itemList=idleConf.GetSectionList('default','keys')
+            itemList.sort()
             self.optMenuKeysBuiltin.SetMenu(itemList,itemList[0])
         self.SetKeysType()   
         ##load keyset element list
@@ -676,25 +770,6 @@ class ConfigDialog(Toplevel):
             bindName=bindName[2:-2] #trim off the angle brackets
             self.listBindings.insert(END, bindName+' - '+key)
    
-    def GetNewKeys(self):
-        listIndex=self.listBindings.index(ANCHOR)
-        binding=self.listBindings.get(listIndex)
-        bindName=binding.split()[0] #first part, up to first space
-        currentKeySequences=idleConf.GetCurrentKeySet().values()
-        newKeys=GetKeysDialog(self,'Get New Keys',bindName,currentKeySequences)
-        if newKeys.result: #new keys were specified
-            self.listBindings.delete(listIndex)
-            self.listBindings.insert(listIndex,bindName+' - '+newKeys.result)
-            self.listBindings.select_set(listIndex)
-            self.listBindings.select_anchor(listIndex)
-            self.keyBinding.set(newKeys.result)
-        else:
-            self.listBindings.select_set(listIndex)
-            self.listBindings.select_anchor(listIndex)
-
-    def KeyBindingSelected(self,event):
-        self.buttonNewKeys.config(state=NORMAL)
-
     def LoadGeneralCfg(self):
         #startup state
         self.startupEdit.set(idleConf.GetOption('main','General',
