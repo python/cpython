@@ -66,7 +66,7 @@ def check(file):
         tokenize.tokenize(f.readline, tokeneater)
 
     except tokenize.TokenError, msg:
-        print "%s: Token Error: %s" % (`fname`, str(msg))
+        print "%s: Token Error: %s" % (`file`, str(msg))
         return
 
     except NannyNag, nag:
