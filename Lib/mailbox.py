@@ -6,7 +6,8 @@
 import rfc822
 import os
 
-__all__ = ["UnixMailbox","MmdfMailbox","MHMailbox","Maildir","BabylMailbox"]
+__all__ = ["UnixMailbox","MmdfMailbox","MHMailbox","Maildir","BabylMailbox",
+           "PortableUnixMailbox"]
 
 class _Mailbox:
     def __init__(self, fp, factory=rfc822.Message):
@@ -91,6 +92,7 @@ class _Subfile:
         del self.fp
 
 
+# Recommended to use PortableUnixMailbox instead!
 class UnixMailbox(_Mailbox):
     def _search_start(self):
         while 1:
@@ -282,7 +284,7 @@ def _test():
             mb = MHMailbox(mbox)
     else:
         fp = open(mbox, 'r')
-        mb = UnixMailbox(fp)
+        mb = PortableUnixMailbox(fp)
 
     msgs = []
     while 1:
