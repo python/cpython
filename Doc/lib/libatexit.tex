@@ -1,5 +1,5 @@
 \section{\module{atexit} ---
-         exit handlers}
+         Exit handlers}
 
 \declaremodule{standard}{atexit}
 \moduleauthor{Skip Montanaro}{skip@mojam.com}
@@ -14,7 +14,7 @@ executed upon normal interpreter termination.
 
 Note: the functions registered via this module are not called when the program is killed by a
 signal, when a Python fatal internal error is detected, or when
-\code{os._exit()} is called.
+\function{os._exit()} is called.
 
 This is an alternate interface to the functionality provided by the
 \code{sys.exitfunc} variable.
@@ -67,7 +67,8 @@ import atexit
 atexit.register(savecounter)
 \end{verbatim}
 
+
 \begin{seealso}
-  \seemodule{readline}{useful example of atexit to read and write readline
-  history files}
+  \seemodule{readline}{Useful example of atexit to read and write
+                       \refmodule{readline} history files.}
 \end{seealso}
