@@ -14,8 +14,8 @@ hexbin(inputfilename, outputfilename)
 # (we should probably use ISO-Latin-1 on all but the mac platform).
 # XXXX The simeple routines are too simple: they expect to hold the complete
 # files in-core. Should be fixed.
-# XXXX It would be nice to handle AppleDouble format on unix (for servers serving
-# macs).
+# XXXX It would be nice to handle AppleDouble format on unix
+# (for servers serving macs).
 # XXXX I don't understand what happens when you get 0x90 times the same byte on
 # input. The resulting code (xx 90 90) would appear to be interpreted as an
 # escaped *value* of 0x90. All coders I've seen appear to ignore this nicety...
@@ -37,9 +37,7 @@ LINELEN=64
 RUNCHAR=chr(0x90)	# run-length introducer
 
 #
-# The code is currently byte-order dependent
-if struct.pack('i', 0177) != '\0\0\0\177':
-	raise ImportError, 'Module binhex is big-endian only'
+# This code is no longer byte-order dependent
 
 #
 # Workarounds for non-mac machines.
@@ -92,9 +90,10 @@ else:
 		fp = open(name)
 		data = open(name).read(256)
 		for c in data:
-			if not c in string.whitespace and (c<' ' or ord(c) > 0177):
-				break
-		else:
+		    if not c in string.whitespace \
+			and (c<' ' or ord(c) > 0177):
+			break
+		    else:
 			finfo.Type = 'TEXT'
 		fp.seek(0, 2)
 		dsize = fp.tell()
@@ -149,7 +148,8 @@ class _Hqxcoderengine:
 
 	def close(self):
 		if self.data:
-			self.hqxdata = self.hqxdata + binascii.b2a_hqx(self.data)
+			self.hqxdata = \
+			     self.hqxdata + binascii.b2a_hqx(self.data)
 		self._flush(1)
 		self.ofp.close()
 		del self.ofp
@@ -202,8 +202,10 @@ class BinHex:
 			raise Error, 'Filename too long'
 		d = chr(nl) + name + '\0'
 		d2 = finfo.Type + finfo.Creator
-		d3 = struct.pack('h', finfo.Flags)
-		d4 = struct.pack('ii', self.dlen, self.rlen)
+
+		# Force all structs to be packed with big-endian
+		d3 = struct.pack('>h', finfo.Flags)
+		d4 = struct.pack('>ii', self.dlen, self.rlen)
 		info = d + d2 + d3 + d4
 		self._write(info)
 		self._writecrc()
@@ -213,9 +215,10 @@ class BinHex:
 		self.ofp.write(data)
 
 	def _writecrc(self):
-##		self.crc = binascii.crc_hqx('\0\0', self.crc) # XXXX Should this be here??
-		self.ofp.write(struct.pack('h', self.crc))
-		self.crc = 0
+	    # XXXX Should this be here??
+	    # self.crc = binascii.crc_hqx('\0\0', self.crc)
+	    self.ofp.write(struct.pack('>h', self.crc))
+	    self.crc = 0
 
 	def write(self, data):
 		if self.state != _DID_HEADER:
@@ -243,7 +246,8 @@ class BinHex:
 		if self.state != _DID_DATA:
 			raise Error, 'Close at the wrong time'
 		if self.rlen <> 0:
-			raise Error, "Incorrect resource-datasize, diff="+`self.rlen`
+			raise Error, \
+			      "Incorrect resource-datasize, diff="+`self.rlen`
 		self._writecrc()
 		self.ofp.close()
 		self.state = None
@@ -283,25 +287,28 @@ class _Hqxdecoderengine:
 		decdata = ''
 		wtd = totalwtd
 		#
-		# The loop here is convoluted, since we don't really now how much
-		# to decode: there may be newlines in the incoming data.
+		# The loop here is convoluted, since we don't really now how 
+		# much to decode: there may be newlines in the incoming data.
 		while wtd > 0:
 			if self.eof: return decdata
 			wtd = ((wtd+2)/3)*4
 			data = self.ifp.read(wtd)
 			#
-			# Next problem: there may not be a complete number of bytes in what we
-			# pass to a2b. Solve by yet another loop.
+			# Next problem: there may not be a complete number of
+			# bytes in what we pass to a2b. Solve by yet another
+			# loop.
 			#
 			while 1:
 				try:
-					decdatacur, self.eof = binascii.a2b_hqx(data)
+					decdatacur, self.eof = \
+						    binascii.a2b_hqx(data)
 					break
 				except binascii.Incomplete:
 					pass
 				newdata = self.ifp.read(1)
 				if not newdata:
-					raise Error, 'Premature EOF on binhex file'
+					raise Error, \
+					      'Premature EOF on binhex file'
 				data = data + newdata
 			decdata = decdata + decdatacur
 			wtd = totalwtd - len(decdata)
@@ -330,9 +337,10 @@ class _Rledecoderengine:
 
 	def _fill(self, wtd):
 		#
-		# Obfuscated code ahead. We keep at least one byte in the pre_buffer,
-		# so we don't stumble over an orphaned RUNCHAR later on. If the
-		# last or second-last char is a RUNCHAR we keep more bytes.
+		# Obfuscated code ahead. We keep at least one byte in the
+		# pre_buffer, so we don't stumble over an orphaned RUNCHAR
+		# later on. If the last or second-last char is a RUNCHAR
+		# we keep more bytes.
 		#
 		self.pre_buffer = self.pre_buffer + self.ifp.read(wtd+2)
 		if self.ifp.eof:
@@ -384,11 +392,13 @@ class HexBin:
 		return data
 		
 	def _checkcrc(self):
-		filecrc = struct.unpack('h', self.ifp.read(2))[0] & 0xffff
-##		self.crc = binascii.crc_hqx('\0\0', self.crc) # XXXX Is this needed??
+		filecrc = struct.unpack('>h', self.ifp.read(2))[0] & 0xffff
+		#self.crc = binascii.crc_hqx('\0\0', self.crc)
+		# XXXX Is this needed??
 		self.crc = self.crc & 0xffff
 		if filecrc != self.crc:
-			raise Error, 'CRC error, computed %x, read %x'%(self.crc, filecrc)
+			raise Error, 'CRC error, computed %x, read %x' \
+			      %(self.crc, filecrc)
 		self.crc = 0
 
 	def _readheader(self):
@@ -399,9 +409,9 @@ class HexBin:
 		
 		type = rest[1:5]
 		creator = rest[5:9]
-		flags = struct.unpack('h', rest[9:11])[0]
-		self.dlen = struct.unpack('l', rest[11:15])[0]
-		self.rlen = struct.unpack('l', rest[15:19])[0]
+		flags = struct.unpack('>h', rest[9:11])[0]
+		self.dlen = struct.unpack('>l', rest[11:15])[0]
+		self.rlen = struct.unpack('>l', rest[15:19])[0]
 		
 		self.FName = fname
 		self.FInfo = FInfo()
@@ -496,9 +506,9 @@ def _test():
 		fname = fss.as_pathname()
 	else:
 		fname = sys.argv[1]
-	#binhex(fname, fname+'.hqx')
-	#hexbin(fname+'.hqx', fname+'.viahqx')
-	hexbin(fname, fname+'.unpacked')
+	binhex(fname, fname+'.hqx')
+	hexbin(fname+'.hqx', fname+'.viahqx')
+	#hexbin(fname, fname+'.unpacked')
 	sys.exit(1)
 	
 if __name__ == '__main__':
