@@ -221,7 +221,7 @@ static PyMethodDef xx_methods[] = {
 DL_EXPORT(void)
 initxx(void)
 {
-	PyObject *m, *d;
+	PyObject *m;
 
 	/* Initialize the type of the new type object here; doing it here
 	 * is required for portability to Windows without requiring C++. */
@@ -237,5 +237,5 @@ initxx(void)
 			return;
 	}
 	Py_INCREF(ErrorObject);
-	PyModule_AddObject(d, "error", ErrorObject);
+	PyModule_AddObject(m, "error", ErrorObject);
 }
