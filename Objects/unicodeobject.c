@@ -452,7 +452,6 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
 {
     const char *s = NULL;
     int len;
-    int owned = 0;
     PyObject *v;
     
     if (obj == NULL) {
@@ -510,15 +509,9 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
     else 
 	v = PyUnicode_Decode(s, len, encoding, errors);
 
-    if (owned) {
-	Py_DECREF(obj);
-    }
     return v;
 
  onError:
-    if (owned) {
-	Py_DECREF(obj);
-    }
     return NULL;
 }
 
