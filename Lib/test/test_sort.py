@@ -1,7 +1,6 @@
 from test.test_support import verbose
 import random
 from UserList import UserList
-from sets import Set
 
 nerrors = 0
 
@@ -230,7 +229,7 @@ class TestSorted(unittest.TestCase):
             self.assertEqual(list.sorted(s), list.sorted(T(s)))
 
         s = ''.join(dict.fromkeys(s).keys())  # unique letters only
-        for T in [unicode, Set, list, tuple, dict.fromkeys]:
+        for T in [unicode, set, frozenset, list, tuple, dict.fromkeys]:
             self.assertEqual(list.sorted(s), list.sorted(T(s)))
 
     def test_baddecorator(self):

@@ -1,8 +1,6 @@
 # Check every path through every method of UserDict
 
 import test.test_support, unittest
-from sets import Set
-
 import UserDict
 
 class TestMappingProtocol(unittest.TestCase):
@@ -69,7 +67,7 @@ class TestMappingProtocol(unittest.TestCase):
             self.assert_(hasattr(iter, 'next'))
             self.assert_(hasattr(iter, '__iter__'))
             x = list(iter)
-            self.assert_(Set(x)==Set(lst)==Set(ref))
+            self.assert_(set(x)==set(lst)==set(ref))
         check_iterandlist(d.iterkeys(), d.keys(), self.reference.keys())
         check_iterandlist(iter(d), d.keys(), self.reference.keys())
         check_iterandlist(d.itervalues(), d.values(), self.reference.values())
@@ -242,7 +240,7 @@ class UserDictTest(TestMappingProtocol):
         for k in u2:
             ikeys.append(k)
         keys = u2.keys()
-        self.assertEqual(Set(ikeys), Set(keys))
+        self.assertEqual(set(ikeys), set(keys))
 
         # Test setdefault
         t = UserDict.UserDict()

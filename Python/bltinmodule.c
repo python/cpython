@@ -2116,12 +2116,14 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("dict",		&PyDict_Type);
  	SETBUILTIN("enumerate",		&PyEnum_Type);
 	SETBUILTIN("float",		&PyFloat_Type);
+	SETBUILTIN("frozenset",		&PyFrozenSet_Type);
 	SETBUILTIN("property",		&PyProperty_Type);
 	SETBUILTIN("int",		&PyInt_Type);
 	SETBUILTIN("list",		&PyList_Type);
 	SETBUILTIN("long",		&PyLong_Type);
 	SETBUILTIN("object",		&PyBaseObject_Type);
 	SETBUILTIN("reversed",		&PyReversed_Type);
+	SETBUILTIN("set",		&PySet_Type);
 	SETBUILTIN("slice",		&PySlice_Type);
 	SETBUILTIN("staticmethod",	&PyStaticMethod_Type);
 	SETBUILTIN("str",		&PyString_Type);

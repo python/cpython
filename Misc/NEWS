@@ -12,6 +12,8 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Added two builtin types, set() and frozenset().
+
 - Critical bugfix, for SF bug 840829:  if cyclic garbage collection
   happened to occur during a weakref callback for a new-style class
   instance, subtle memory corruption was the result (in a release build;

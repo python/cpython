@@ -4,7 +4,6 @@ import UserList
 import weakref
 
 from test import test_support
-from sets import Set
 
 
 class C:
@@ -392,7 +391,7 @@ class MappingTestCase(TestBase):
                          "wrong object returned by weak dict!")
         items1 = dict.items()
         items2 = dict.copy().items()
-        self.assert_(Set(items1) == Set(items2),
+        self.assert_(set(items1) == set(items2),
                      "cloning of weak-keyed dictionary did not work!")
         del items1, items2
         self.assert_(len(dict) == self.COUNT)

@@ -1,5 +1,4 @@
 import unittest
-from sets import Set
 
 from test import test_support
 
@@ -105,8 +104,8 @@ class EnumerateTestCase(unittest.TestCase):
     def test_tuple_reuse(self):
         # Tests an implementation detail where tuple is reused
         # whenever nothing else holds a reference to it
-        self.assertEqual(len(Set(map(id, list(enumerate(self.seq))))), len(self.seq))
-        self.assertEqual(len(Set(map(id, enumerate(self.seq)))), min(1,len(self.seq)))
+        self.assertEqual(len(set(map(id, list(enumerate(self.seq))))), len(self.seq))
+        self.assertEqual(len(set(map(id, enumerate(self.seq)))), min(1,len(self.seq)))
 
 class MyEnum(enumerate):
     pass

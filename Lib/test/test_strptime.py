@@ -4,7 +4,6 @@ import unittest
 import time
 import locale
 import re
-import sets
 import sys
 from test import test_support
 
@@ -17,10 +16,10 @@ class getlang_Tests(unittest.TestCase):
 
 class LocaleTime_Tests(unittest.TestCase):
     """Tests for _strptime.LocaleTime.
-    
+
     All values are lower-cased when stored in LocaleTime, so make sure to
     compare values after running ``lower`` on them.
-    
+
     """
 
     def setUp(self):
@@ -167,7 +166,7 @@ class TimeRETests(unittest.TestCase):
         # Make sure when tuple or something has no values no regex is generated.
         # Fixes bug #661354
         test_locale = _strptime.LocaleTime()
-        test_locale.timezone = (sets.ImmutableSet(), sets.ImmutableSet())
+        test_locale.timezone = (frozenset(), frozenset())
         self.failUnless(_strptime.TimeRE(test_locale).pattern("%Z") == '',
                         "with timezone == ('',''), TimeRE().pattern('%Z') != ''")
 

@@ -75,7 +75,6 @@ import traceback
 import random
 import cStringIO
 import warnings
-from sets import Set
 
 # I see no other way to suppress these warnings;
 # putting them in test_grammar.py has no effect:
@@ -306,7 +305,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         e = _ExpectedSkips()
         plat = sys.platform
         if e.isvalid():
-            surprise = Set(skipped) - e.getexpected() - Set(resource_denieds)
+            surprise = set(skipped) - e.getexpected() - set(resource_denieds)
             if surprise:
                 print count(len(surprise), "skip"), \
                       "unexpected on", plat + ":"
@@ -948,7 +947,7 @@ class _ExpectedSkips:
         self.valid = False
         if sys.platform in _expectations:
             s = _expectations[sys.platform]
-            self.expected = Set(s.split())
+            self.expected = set(s.split())
 
             if not os.path.supports_unicode_filenames:
                 self.expected.add('test_pep277')
