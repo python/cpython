@@ -4,6 +4,62 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.3 beta 1?
+================================
+
+*Release date: XX-XXX-2003*
+
+Core and builtins
+-----------------
+
+TBD
+
+Extension modules
+-----------------
+
+TBD
+
+Library
+-------
+
+TBD
+
+Tools/Demos
+-----------
+
+TBD
+
+Build
+-----
+
+TBD
+
+C API
+-----
+
+TBD
+
+New platforms
+-------------
+
+TBD
+
+Tests
+-----
+
+TBD
+
+Windows
+-------
+
+TBD
+
+Mac
+---
+
+TBD
+
+
 What's New in Python 2.3 alpha 2?
 =================================
 
@@ -1510,6 +1566,7 @@ Mac
   mac-roman (or whatever your local Mac encoding was) but "ascii", like on
   other platforms. If you really need sourcefiles with Mac characters in them
   you can change this in site.py.
+
 
 What's New in Python 2.2 final?
 ===============================
