@@ -1249,6 +1249,10 @@ class Unpickler:
                 # the instance variables.  This is a semantic
                 # difference when unpickling in restricted
                 # vs. unrestricted modes.
+                # Note, however, that cPickle has never tried to do the
+                # .update() business, and always uses
+                #     PyObject_SetItem(inst.__dict__, key, value) in a
+                # loop over state.items().
                 for k, v in state.items():
                     setattr(inst, k, v)
         if slotstate:

@@ -642,7 +642,17 @@ PyDict_Clear(PyObject *op)
 		PyMem_DEL(table);
 }
 
-/* CAUTION:  In general, it isn't safe to use PyDict_Next in a loop that
+/*
+ * Iterate over a dict.  Use like so:
+ *
+ *     int i;
+ *     PyObject *key, *value;
+ *     i = 0;   # important!  i should not otherwise be changed by you
+ *     while (PyDict_Next(yourdict, &i, &key, &value) {
+ *              Refer to borrowed references in key and value.
+ *     }
+ *
+ * CAUTION:  In general, it isn't safe to use PyDict_Next in a loop that
  * mutates the dict.  One exception:  it is safe if the loop merely changes
  * the values associated with the keys (but doesn't insert new keys or
  * delete keys), via PyDict_SetItem().

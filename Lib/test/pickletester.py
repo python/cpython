@@ -728,12 +728,6 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(y.abc, 666)
             self.assertEqual(x.__dict__, y.__dict__)
 
-# XXX Temporary hack, so long as the C implementation of pickle protocol
-# XXX 2 isn't ready.  When it is, move the methods in TempAbstractPickleTests
-# XXX into AbstractPickleTests above, and get rid of TempAbstractPickleTests
-# XXX along with the references to it in test_pickle.py.
-class TempAbstractPickleTests(unittest.TestCase):
-
     def test_newobj_list_slots(self):
         x = SlotList([1, 2, 3])
         x.foo = 42
@@ -744,6 +738,7 @@ class TempAbstractPickleTests(unittest.TestCase):
         self.assertEqual(x.__dict__, y.__dict__)
         self.assertEqual(x.foo, y.foo)
         self.assertEqual(x.bar, y.bar)
+
 
 class MyInt(int):
     sample = 1
