@@ -5,16 +5,17 @@ import os
 
 class InputViewer:
 
-	def init(self, filename, title, qsize):
+	def init(self, filename, title, *args):
 		try:
 			self.vin = VFile.VinFile().init(filename)
 		except (EOFError, VFile.Error):
 			raise IOError, 'bad video input file'
+		self.vin.warmcache()
 		if not title:
 			title = os.path.split(filename)[1]
 		self.filename = filename
 		self.title = title
-		self.qsize = qsize
+		self.qsize = len(self.vin.index)
 		gl.foreground()
 		gl.prefsize(self.vin.width, self.vin.height)
 		self.wid = -1
@@ -39,27 +40,7 @@ class InputViewer:
 			gl.winset(self.wid)
 			gl.clear()
 			self.vin.initcolormap()
-		self.queue = []
 		self.qindex = 0
-		self.lost = 0
-		self.lastt = 0
-		self.eofread = 0
-
-	# Internal
-	def fillq(self):
-		if self.qindex < len(self.queue) or self.eofread: return
-		try:
-			t, d, cd = self.vin.getnextframe()
-		except EOFError:
-			self.eofread = 1
-			return
-		dt = t - self.lastt
-		self.lastt = t
-		self.queue.append(dt, d, cd)
-		while len(self.queue) > self.qsize:
-			del self.queue[0]
-			self.qindex = self.qindex - 1
-			self.lost = self.lost + 1
 
 	def show(self):
 		if self.wid < 0:
@@ -68,12 +49,11 @@ class InputViewer:
 			self.wid = gl.winopen(self.title)
 			gl.clear()
 			self.vin.initcolormap()
-		self.fillq()
 		gl.winset(self.wid)
-		if self.qindex >= len(self.queue):
+		if self.qindex >= self.qsize:
 			self.vin.clear()
 			return
-		dt, d, cd = self.queue[self.qindex]
+		dt, d, cd = self.vin.getrandomframe(self.qindex)
 		self.vin.showframe(d, cd)
 
 	def redraw(self, wid):
@@ -84,13 +64,16 @@ class InputViewer:
 			self.show()
 
 	def get(self):
-		if self.qindex >= len(self.queue):
-			self.fillq()
-			if self.eofread:
-				return None
-		item = self.queue[self.qindex]
+		if self.qindex >= self.qsize:
+			return None
+		if self.qindex > 0:
+			prevt, ds, cs = \
+				  self.vin.getrandomframeheader(self.qindex-1)
+		else:
+			prevt = 0
+		t, data, cdata = self.vin.getrandomframe(self.qindex)
 		self.qindex = self.qindex + 1
-		return item
+		return t-prevt, data, cdata
 
 	def backup(self):
 		if self.qindex == 0:
@@ -98,11 +81,20 @@ class InputViewer:
 		self.qindex = self.qindex - 1
 		return 1
 
+	def seek(self, i):
+		if not 0 <= i <= self.qsize:
+			return 0
+		self.qindex = i
+		return 1
+
 	def tell(self):
-		return self.lost + self.qindex
+		return self.qindex
 
 	def qsizes(self):
-		return self.qindex, len(self.queue) - self.qindex
+		return self.qindex, self.qsize - self.qindex
+
+	def qinfo(self):
+		return 0, self.qindex, self.qsize
 
 
 class OutputViewer:
@@ -206,11 +198,32 @@ class OutputViewer:
 		while len(self.queue) > self.qsize:
 			self.flushq()
 
+	def seek(self, i):
+		i = i - self.written
+		if not 0 <= i <= len(self.queue) + len(self.spares):
+			return 0
+		while i < len(self.queue):
+			if not self.backup():
+				return 0
+		while i > len(self.queue):
+			if not self.forward():
+				return 0
+		return 1
+
+	def trunc(self):
+		del self.spares[:]
+
 	def tell(self):
 		return self.written + len(self.queue)
 
 	def qsizes(self):
 		return len(self.queue), len(self.spares)
+
+	def qinfo(self):
+		first = self.written
+		pos = first + len(self.queue)
+		last = pos + len(self.spares)
+		return first, pos, last
 
 
 def test():

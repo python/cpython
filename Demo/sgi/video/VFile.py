@@ -978,8 +978,8 @@ class RandomVinFile(BasicVinFile):
 
 	def getrandomframe(self, i):
 		t, ds, cs = self.getrandomframeheader(i)
-		data, cdata = self.getnextframedata()
-		return t, ds, cs
+		data, cdata = self.getnextframedata(ds, cs)
+		return t, data, cdata
 
 	def getrandomframeheader(self, i):
 		if i < 0: raise ValueError, 'negative frame index'
