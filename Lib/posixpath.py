@@ -4,11 +4,26 @@ import posix
 import stat
 
 
+# Normalize the case of a pathname.  Trivial in Posix, string.lower on Mac.
+# On MS-DOS this may also turn slashes into backslashes; however, other
+# normalizations (such as optimizing '../' away) are not allowed
+# (another function should be defined to do that).
+
+def normcase(s):
+	return s
+
+
+# Return wheter a path is absolute.
+# Trivial in Posix, harder on the Mac or MS-DOS.
+
+def isabs(s):
+	return s[:1] == '/'
+
+
 # Join two pathnames.
+# Ignore the first part if the second part is absolute.
 # Insert a '/' unless the first part is empty or already ends in '/'.
-# Ignore the first part altogether if the second part is absolute
-# (begins with '/').
-#
+
 def join(a, b):
 	if b[:1] == '/': return b
 	if a == '' or a[-1:] == '/': return a + b
@@ -16,13 +31,14 @@ def join(a, b):
 	return a + '/' + b
 
 
-cat = join # For compatibility
-
-
 # Split a path in head (empty or ending in '/') and tail (no '/').
 # The tail will be empty if the path ends in '/'.
-# It is always true that head+tail = p.
-#
+# It is always true that head + tail == p; also join(head, tail) == p.
+# Note that because head ends in '/', if you want to find all components
+# of a path by repeatedly getting the head, you will have to strip off
+# the trailing '/' yourself (another function should be defined to
+# split an entire path into components.)
+
 def split(p):
 	head, tail = '', ''
 	for c in p:
@@ -35,8 +51,8 @@ def split(p):
 # Split a path in root and extension.
 # The extension is everything starting at the first dot in the last
 # pathname component; the root is everything before that.
-# It is always true that root+ext = p.
-#
+# It is always true that root + ext == p.
+
 def splitext(p):
 	root, ext = '', ''
 	for c in p:
@@ -50,13 +66,13 @@ def splitext(p):
 
 
 # Return the tail (basename) part of a path.
-#
+
 def basename(p):
 	return split(p)[1]
 
 
 # Return the longest prefix of all list elements.
-#
+
 def commonprefix(m):
 	if not m: return ''
 	prefix = m[0]
@@ -69,8 +85,20 @@ def commonprefix(m):
 	return prefix
 
 
-# Does a file/directory exist?
-#
+# Is a path a symbolic link?
+# This will always return false on systems where posix.lstat doesn't exist.
+
+def islink(path):
+	try:
+		st = posix.lstat(path)
+	except (posix.error, AttributeError):
+		return 0
+	return stat.S_ISLNK(st[stat.ST_MODE])
+
+
+# Does a path exist?
+# This is false for dangling symbolic links.
+
 def exists(path):
 	try:
 		st = posix.stat(path)
@@ -80,7 +108,9 @@ def exists(path):
 
 
 # Is a path a posix directory?
-#
+# This follows symbolic links, so both islink() and isdir() can be true
+# for the same path.
+
 def isdir(path):
 	try:
 		st = posix.stat(path)
@@ -89,19 +119,20 @@ def isdir(path):
 	return stat.S_ISDIR(st[stat.ST_MODE])
 
 
-# Is a path a symbolic link?
-# This will always return false on systems where posix.lstat doesn't exist.
-#
-def islink(path):
+# Is a path a regulat file?
+# This follows symbolic links, so both islink() and isdir() can be true
+# for the same path.
+
+def isfile(path):
 	try:
-		st = posix.lstat(path)
-	except (posix.error, AttributeError):
+		st = posix.stat(path)
+	except posix.error:
 		return 0
-	return stat.S_ISLNK(st[stat.ST_MODE])
+	return stat.S_ISREG(st[stat.ST_MODE])
 
 
 # Are two filenames really pointing to the same file?
-#
+
 def samefile(f1, f2):
 	s1 = posix.stat(f1)
 	s2 = posix.stat(f2)
@@ -111,7 +142,7 @@ def samefile(f1, f2):
 # Are two open files really referencing the same file?
 # (Not necessarily the same file descriptor!)
 # XXX Oops, posix.fstat() doesn't exist yet!
-#
+
 def sameopenfile(fp1, fp2):
 	s1 = posix.fstat(fp1)
 	s2 = posix.fstat(fp2)
@@ -120,7 +151,7 @@ def sameopenfile(fp1, fp2):
 
 # Are two stat buffers (obtained from stat, fstat or lstat)
 # describing the same file?
-#
+
 def samestat(s1, s2):
 	return s1[stat.ST_INO] == s2[stat.ST_INO] and \
 		s1[stat.ST_DEV] == s2[stat.STD_DEV]
@@ -143,24 +174,28 @@ def _getmounts():
 
 
 # Is a path a mount point?
-# This only works for normalized, absolute paths,
+# This only works for normalized paths,
 # and only if the mount table as printed by /etc/mount is correct.
-# Sorry.
-#
+# It tries to make relative paths absolute by prefixing them with the
+# current directory, but it won't normalize arguments containing '../'
+# or symbolic links.
+
 def ismount(path):
+	if not isabs(path):
+		path = join(posix.getcwd(), path)
 	if not _mounts:
 		_mounts[:] = _getmounts()
 	return path in _mounts
 
 
 # Directory tree walk.
-# For each directory under top (including top itself),
-# func(arg, dirname, filenames) is called, where dirname
-# is the name of the directory and filenames is the list of
-# files (and subdirectories etc.) in the directory.
-# func may modify the filenames list, to implement a filter,
+# For each directory under top (including top itself, but excluding
+# '.' and '..'), func(arg, dirname, filenames) is called, where
+# dirname is the name of the directory and filenames is the list
+# files files (and subdirectories etc.) in the directory.
+# The func may modify the filenames list, to implement a filter,
 # or to impose a different order of visiting.
-#
+
 def walk(top, func, arg):
 	try:
 		names = posix.listdir(top)
@@ -173,3 +208,32 @@ def walk(top, func, arg):
 			name = join(top, name)
 			if isdir(name):
 				walk(name, func, arg)
+
+
+# Expand paths beginning with '~' or '~user'.
+# '~' means $HOME; '~user' means that user's home directory.
+# If the path doesn't begin with '~', or if the user or $HOME is unknown,
+# the path is returned unchanged (leaving error reporting to whatever
+# function is called with the expanded path as argument).
+# See also module 'glob' for expansion of *, ? and [...] in pathnames.
+# (A function should also be defined to do full *sh-style environment
+# variable expansion.)
+
+def expanduser(path):
+	if path[:1] <> '~':
+		return path
+	i, n = 1, len(path)
+	while i < n and path[i] <> '/':
+		i = i+1
+	if i == 1:
+		if not posix.environ.has_key('HOME'):
+			return path
+		userhome = posix.environ['HOME']
+	else:
+		import pwd
+		try:
+			pwent = pwd.getpwnam(path[1:i])
+		except KeyError:
+			return path
+		userhome = pwent[5]
+	return userhome + path[i:]
