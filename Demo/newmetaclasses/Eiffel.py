@@ -4,6 +4,11 @@ from new import function
 
 class EiffelBaseMetaClass(type):
 
+    def __new__(meta, name, bases, dict):
+        meta.convert_methods(dict)
+        return super(EiffelBaseMetaClass, meta).__new__(meta, name, bases,
+                                                        dict)
+
     def convert_methods(cls, dict):
         """Replace functions in dict with EiffelMethod wrappers.
 
@@ -29,10 +34,6 @@ class EiffelBaseMetaClass(type):
 
 class EiffelMetaClass1(EiffelBaseMetaClass):
     # an implementation of the "eiffel" meta class that uses nested functions
-
-    def __new__(meta, name, bases, dict):
-        meta.convert_methods(dict)
-        return super(EiffelMetaClass1, meta).__new__(meta, name, bases, dict)
 
     def make_eiffel_method(func, pre, post):
         def method(self, *args, **kwargs):
@@ -80,7 +81,7 @@ class EiffelDescriptor(object):
             self._post(inst, x, *args, **kwargs)
         return x
 
-class EiffelMetaClass2(EiffelMetaClass1):
+class EiffelMetaClass2(EiffelBaseMetaClass):
     # an implementation of the "eiffel" meta class that uses descriptors
 
     make_eiffel_method = EiffelDescriptor
