@@ -118,6 +118,9 @@
 /* Define to empty if the keyword does not work.  */
 #undef volatile
 
+/* Define if you want SIGFPE handled (see Include/pyfpe.h). */
+#undef WANT_SIGFPE_HANDLER
+
 /* Define if you want to use SGI (IRIX 4) dynamic linking.
    This requires the "dl" library by Jack Jansen,
    ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
@@ -295,6 +298,9 @@
 /* Define if you have the <ndir.h> header file.  */
 #undef HAVE_NDIR_H
 
+/* Define if you have the <pthread.h> header file.  */
+#undef HAVE_PTHREAD_H
+
 /* Define if you have the <signal.h> header file.  */
 #undef HAVE_SIGNAL_H
 
@@ -342,9 +348,6 @@
 
 /* Define if you have the <sys/wait.h> header file.  */
 #undef HAVE_SYS_WAIT_H
-
-/* Define if you want SIGFPE handled (see Include/pyfpe.h). */
-#undef WANT_SIGFPE_HANDLER
 
 /* Define if you have the <thread.h> header file.  */
 #undef HAVE_THREAD_H
