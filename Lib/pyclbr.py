@@ -327,7 +327,7 @@ def _main():
     for obj in objs:
         if isinstance(obj, Class):
             print "class", obj.name, obj.super, obj.lineno
-            methods = list.sorted(obj.methods.iteritems(), key=itemgetter(1))
+            methods = sorted(obj.methods.iteritems(), key=itemgetter(1))
             for name, lineno in methods:
                 if name != "__path__":
                     print "  def", name, lineno

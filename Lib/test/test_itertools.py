@@ -97,16 +97,16 @@ class TestBasicOps(unittest.TestCase):
         # Exercise pipes and filters style
         s = 'abracadabra'
         # sort s | uniq
-        r = [k for k, g in groupby(list.sorted(s))]
+        r = [k for k, g in groupby(sorted(s))]
         self.assertEqual(r, ['a', 'b', 'c', 'd', 'r'])
         # sort s | uniq -d
-        r = [k for k, g in groupby(list.sorted(s)) if list(islice(g,1,2))]
+        r = [k for k, g in groupby(sorted(s)) if list(islice(g,1,2))]
         self.assertEqual(r, ['a', 'b', 'r'])
         # sort s | uniq -c
-        r = [(len(list(g)), k) for k, g in groupby(list.sorted(s))]
+        r = [(len(list(g)), k) for k, g in groupby(sorted(s))]
         self.assertEqual(r, [(5, 'a'), (2, 'b'), (1, 'c'), (1, 'd'), (2, 'r')])
         # sort s | uniq -c | sort -rn | head -3
-        r = list.sorted([(len(list(g)) , k) for k, g in groupby(list.sorted(s))], reverse=True)[:3]
+        r = sorted([(len(list(g)) , k) for k, g in groupby(sorted(s))], reverse=True)[:3]
         self.assertEqual(r, [(5, 'a'), (2, 'r'), (2, 'b')])
 
         # iter.next failure
@@ -669,7 +669,7 @@ Samuele
 
 >>> from operator import itemgetter
 >>> d = dict(a=1, b=2, c=1, d=2, e=1, f=2, g=3)
->>> di = list.sorted(d.iteritems(), key=itemgetter(1))
+>>> di = sorted(d.iteritems(), key=itemgetter(1))
 >>> for k, g in groupby(di, itemgetter(1)):
 ...     print k, map(itemgetter(0), g)
 ...
