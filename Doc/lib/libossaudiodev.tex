@@ -115,7 +115,7 @@ three audio parameters at once.  This is more convenient, but may not be
 as flexible in all cases.
 
 The audio device objects returned by \function{open()} define the
-following methods:
+following methods and (read-only) attributes:
 
 \begin{methoddesc}[audio device]{close}{}
 Explicitly close the audio device.  When you are done writing to or
@@ -288,6 +288,21 @@ played.
 Returns the number of samples that could be queued into the hardware
 buffer to be played without blocking.
 \end{methoddesc}
+
+Audio device objects also support several read-only attributes:
+
+\begin{memberdesc}[audio device]{closed}{}
+Boolean indicating whether the device has been closed.
+\end{memberdesc}
+
+\begin{memberdesc}[audio device]{name}{}
+String containing the name of the device file.
+\end{memberdesc}
+
+\begin{memberdesc}[audio device]{mode}{}
+The I/O mode for the file, either \code{"r"}, \code{"rw"}, or \code{"w"}.
+\end{memberdesc}
+
 
 \subsection{Mixer Device Objects \label{mixer-device-objects}}
 
