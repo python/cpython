@@ -94,6 +94,7 @@ if complex(0j, 3.14j) <> -3.14+0j: raise TestFailed, 'complex(0j, 3.14j)'
 if complex(0.0, 3.14j) <> -3.14+0j: raise TestFailed, 'complex(0.0, 3.14j)'
 if complex(0j, 3.14) <> 3.14j: raise TestFailed, 'complex(0j, 3.14)'
 if complex(0.0, 3.14) <> 3.14j: raise TestFailed, 'complex(0.0, 3.14)'
+if complex("  3.14+J  ") <> 3.14+1j:  raise TestFailed, 'complex("  3.14+J  )"'
 class Z:
     def __complex__(self): return 3.14j
 z = Z()
@@ -206,6 +207,7 @@ print 'float'
 if float(3.14) <> 3.14: raise TestFailed, 'float(3.14)'
 if float(314) <> 314.0: raise TestFailed, 'float(314)'
 if float(314L) <> 314.0: raise TestFailed, 'float(314L)'
+if float("  3.14  ") <> 3.14:  raise TestFailed, 'float("  3.14  ")'
 
 print 'getattr'
 import sys
