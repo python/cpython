@@ -748,7 +748,6 @@ PyFrame_FastToLocals(PyFrameObject *f)
 	if (f->f_ncells || f->f_nfreevars) {
 		if (!(PyTuple_Check(f->f_code->co_cellvars)
 		      && PyTuple_Check(f->f_code->co_freevars))) {
-			Py_DECREF(locals);
 			return;
 		}
 		map_to_dict(f->f_code->co_cellvars, 
