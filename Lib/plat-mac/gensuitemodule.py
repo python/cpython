@@ -467,17 +467,16 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
 	allprecompinfo = []
 	allsuites = []
 	for suite in suites:
-		code, suite, pathname, modname, precompinfo = precompilesuite(suite, basepackage, 
-				output=output, edit_modnames=edit_modnames, verbose=verbose)
+		compiler = SuiteCompiler(suite, basepackage, output, edit_modnames, verbose)
+		code, modname, precompinfo = compiler.precompilesuite()
 		if not code:
 			continue
 		allprecompinfo = allprecompinfo + precompinfo
 		suiteinfo = suite, pathname, modname
 		suitelist.append((code, modname))
-		allsuites.append(suiteinfo)
-	for suiteinfo in allsuites:
-		compilesuite(suiteinfo, major, minor, language, script, fname, basepackage, 
-				allprecompinfo, interact=(edit_modnames is None), verbose=verbose)
+		allsuites.append(compiler)
+	for compiler in allsuites:
+		compiler.compilesuite(major, minor, language, script, fname, allprecompinfo)
 	initfilename = os.path.join(output, '__init__.py')
 	fp = open(initfilename, 'w')
 	MacOS.SetCreatorAndType(initfilename, 'Pyth', 'TEXT')
@@ -540,268 +539,273 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
 		fp.write("\t_signature = %s\n\n"%`creatorsignature`)
 		fp.write("\t_moduleName = '%s'\n\n"%packagename)
 	fp.close()
-	
-def precompilesuite(suite, basepackage=None, edit_modnames=None, output=None,
-		verbose=None):
-	"""Parse a single suite without generating the output. This step is needed
-	so we can resolve recursive references by suites to enums/comps/etc declared
-	in other suites"""
-	[name, desc, code, level, version, events, classes, comps, enums] = suite
-	
-	modname = identify(name)
-	if len(modname) > 28:
-		modname = modname[:27]
-	if edit_modnames is None:
-		pathname = EasyDialogs.AskFileForSave(message='Python output file',
-			savedFileName=modname+'.py')
-	else:
-		for old, new in edit_modnames:
-			if old == modname:
-				modname = new
-		if modname:
-			pathname = os.path.join(output, modname + '.py')
+
+class SuiteCompiler:
+	def __init__(self, suite, basepackage, output, edit_modnames, verbose):
+		self.suite = suite
+		self.basepackage = basepackage
+		self.edit_modnames = edit_modnames
+		self.output = output
+		self.verbose = verbose
+		
+		# Set by precompilesuite
+		self.pathname = None
+		self.modname = None
+		
+		# Set by compilesuite
+		self.fp = None
+		self.basemodule = None
+		self.enumsneeded = {}
+			
+	def precompilesuite(self):
+		"""Parse a single suite without generating the output. This step is needed
+		so we can resolve recursive references by suites to enums/comps/etc declared
+		in other suites"""
+		[name, desc, code, level, version, events, classes, comps, enums] = self.suite
+		
+		modname = identify(name)
+		if len(modname) > 28:
+			modname = modname[:27]
+		if self.edit_modnames is None:
+			self.pathname = EasyDialogs.AskFileForSave(message='Python output file',
+				savedFileName=modname+'.py')
 		else:
-			pathname = None
-	if not pathname:
-		return None, None, None, None, None
-
-	modname = os.path.splitext(os.path.split(pathname)[1])[0]
+			for old, new in self.edit_modnames:
+				if old == modname:
+					modname = new
+			if modname:
+				self.pathname = os.path.join(self.output, modname + '.py')
+			else:
+				self.pathname = None
+		if not self.pathname:
+			return None, None, None
 	
-	if basepackage and basepackage._code_to_module.has_key(code):
-		# We are an extension of a baseclass (usually an application extending
-		# Standard_Suite or so). Import everything from our base module
-		basemodule = basepackage._code_to_module[code]
-	else:
-		# We are not an extension.
-		basemodule = None
-
-	enumsneeded = {}
-	for event in events:
-		findenumsinevent(event, enumsneeded)
-
-	objc = ObjectCompiler(None, basemodule, interact=(edit_modnames is None),
-		verbose=verbose)
-	for cls in classes:
-		objc.compileclass(cls)
-	for cls in classes:
-		objc.fillclasspropsandelems(cls)
-	for comp in comps:
-		objc.compilecomparison(comp)
-	for enum in enums:
-		objc.compileenumeration(enum)
-	
-	for enum in enumsneeded.keys():
-		objc.checkforenum(enum)
+		self.modname = os.path.splitext(os.path.split(self.pathname)[1])[0]
 		
-	objc.dumpindex()
+		if self.basepackage and self.basepackage._code_to_module.has_key(code):
+			# We are an extension of a baseclass (usually an application extending
+			# Standard_Suite or so). Import everything from our base module
+			basemodule = self.basepackage._code_to_module[code]
+		else:
+			# We are not an extension.
+			basemodule = None
 	
-	precompinfo = objc.getprecompinfo(modname)
-	
-	return code, suite, pathname, modname, precompinfo
-
-def compilesuite((suite, pathname, modname), major, minor, language, script, 
-		fname, basepackage, precompinfo, interact=1, verbose=None):
-	"""Generate code for a single suite"""
-	[name, desc, code, level, version, events, classes, comps, enums] = suite
-	# Sort various lists, so re-generated source is easier compared
-	def class_sorter(k1, k2):
-		"""Sort classes by code, and make sure main class sorts before synonyms"""
-		# [name, code, desc, properties, elements] = cls
-		if k1[1] < k2[1]: return -1
-		if k1[1] > k2[1]: return 1
-		if not k2[3] or k2[3][0][1] == 'c@#!':
-			# This is a synonym, the other one is better
-			return -1
-		if not k1[3] or k1[3][0][1] == 'c@#!':
-			# This is a synonym, the other one is better
-			return 1
-		return 0
-		
-	events.sort()
-	classes.sort(class_sorter)
-	comps.sort()
-	enums.sort()
-	
-	fp = open(pathname, 'w')
-	MacOS.SetCreatorAndType(pathname, 'Pyth', 'TEXT')
-	
-	fp.write('"""Suite %s: %s\n' % (ascii(name), ascii(desc)))
-	fp.write("Level %d, version %d\n\n" % (level, version))
-	fp.write("Generated from %s\n"%ascii(fname))
-	fp.write("AETE/AEUT resource version %d/%d, language %d, script %d\n" % \
-		(major, minor, language, script))
-	fp.write('"""\n\n')
-	
-	fp.write('import aetools\n')
-	fp.write('import MacOS\n\n')
-	fp.write("_code = %s\n\n"% `code`)
-	if basepackage and basepackage._code_to_module.has_key(code):
-		# We are an extension of a baseclass (usually an application extending
-		# Standard_Suite or so). Import everything from our base module
-		fp.write('from %s import *\n'%basepackage._code_to_fullname[code][0])
-		basemodule = basepackage._code_to_module[code]
-	elif basepackage and basepackage._code_to_module.has_key(code.lower()):
-		# This is needed by CodeWarrior and some others.
-		fp.write('from %s import *\n'%basepackage._code_to_fullname[code.lower()][0])
-		basemodule = basepackage._code_to_module[code.lower()]
-	else:
-		# We are not an extension.
-		basemodule = None
-	compileclassheader(fp, modname, basemodule)
-
-	enumsneeded = {}
-	if events:
+		self.enumsneeded = {}
 		for event in events:
-			compileevent(fp, event, enumsneeded)
-	else:
-		fp.write("\tpass\n\n")
-
-	objc = ObjectCompiler(fp, basemodule, precompinfo, interact=interact,
-		verbose=verbose)
-	for cls in classes:
-		objc.compileclass(cls)
-	for cls in classes:
-		objc.fillclasspropsandelems(cls)
-	for comp in comps:
-		objc.compilecomparison(comp)
-	for enum in enums:
-		objc.compileenumeration(enum)
+			self.findenumsinevent(event)
 	
-	for enum in enumsneeded.keys():
-		objc.checkforenum(enum)
+		objc = ObjectCompiler(None, basemodule, interact=(self.edit_modnames is None),
+			verbose=self.verbose)
+		for cls in classes:
+			objc.compileclass(cls)
+		for cls in classes:
+			objc.fillclasspropsandelems(cls)
+		for comp in comps:
+			objc.compilecomparison(comp)
+		for enum in enums:
+			objc.compileenumeration(enum)
 		
-	objc.dumpindex()
-	
-	return code, modname
-	
-def compileclassheader(fp, name, module=None):
-	"""Generate class boilerplate"""
-	classname = '%s_Events'%name
-	if module:
-		modshortname = string.split(module.__name__, '.')[-1]
-		baseclassname = '%s_Events'%modshortname
-		fp.write("class %s(%s):\n\n"%(classname, baseclassname))
-	else:
-		fp.write("class %s:\n\n"%classname)
-	
-def compileevent(fp, event, enumsneeded):
-	"""Generate code for a single event"""
-	[name, desc, code, subcode, returns, accepts, arguments] = event
-	funcname = identify(name)
-	#
-	# generate name->keyword map
-	#
-	if arguments:
-		fp.write("\t_argmap_%s = {\n"%funcname)
-		for a in arguments:
-			fp.write("\t\t%s : %s,\n"%(`identify(a[0])`, `a[1]`))
-		fp.write("\t}\n\n")
+		for enum in self.enumsneeded.keys():
+			objc.checkforenum(enum)
+			
+		objc.dumpindex()
 		
-	#
-	# Generate function header
-	#
-	has_arg = (not is_null(accepts))
-	opt_arg = (has_arg and is_optional(accepts))
+		precompinfo = objc.getprecompinfo(self.modname)
+		
+		return code, self.modname, precompinfo
 	
-	fp.write("\tdef %s(self, "%funcname)
-	if has_arg:
-		if not opt_arg:
-			fp.write("_object, ")		# Include direct object, if it has one
+	def compilesuite(self, major, minor, language, script, fname, precompinfo):
+		"""Generate code for a single suite"""
+		[name, desc, code, level, version, events, classes, comps, enums] = self.suite
+		# Sort various lists, so re-generated source is easier compared
+		def class_sorter(k1, k2):
+			"""Sort classes by code, and make sure main class sorts before synonyms"""
+			# [name, code, desc, properties, elements] = cls
+			if k1[1] < k2[1]: return -1
+			if k1[1] > k2[1]: return 1
+			if not k2[3] or k2[3][0][1] == 'c@#!':
+				# This is a synonym, the other one is better
+				return -1
+			if not k1[3] or k1[3][0][1] == 'c@#!':
+				# This is a synonym, the other one is better
+				return 1
+			return 0
+			
+		events.sort()
+		classes.sort(class_sorter)
+		comps.sort()
+		enums.sort()
+		
+		self.fp = fp = open(self.pathname, 'w')
+		MacOS.SetCreatorAndType(self.pathname, 'Pyth', 'TEXT')
+		
+		fp.write('"""Suite %s: %s\n' % (ascii(name), ascii(desc)))
+		fp.write("Level %d, version %d\n\n" % (level, version))
+		fp.write("Generated from %s\n"%ascii(fname))
+		fp.write("AETE/AEUT resource version %d/%d, language %d, script %d\n" % \
+			(major, minor, language, script))
+		fp.write('"""\n\n')
+		
+		fp.write('import aetools\n')
+		fp.write('import MacOS\n\n')
+		fp.write("_code = %s\n\n"% `code`)
+		if self.basepackage and self.basepackage._code_to_module.has_key(code):
+			# We are an extension of a baseclass (usually an application extending
+			# Standard_Suite or so). Import everything from our base module
+			fp.write('from %s import *\n'%self.basepackage._code_to_fullname[code][0])
+			basemodule = self.basepackage._code_to_module[code]
+		elif self.basepackage and self.basepackage._code_to_module.has_key(code.lower()):
+			# This is needed by CodeWarrior and some others.
+			fp.write('from %s import *\n'%self.basepackage._code_to_fullname[code.lower()][0])
+			basemodule = self.basepackage._code_to_module[code.lower()]
 		else:
-			fp.write("_object=None, ")	# Also include if it is optional
-	else:
-		fp.write("_no_object=None, ")	# For argument checking
-	fp.write("_attributes={}, **_arguments):\n")	# include attribute dict and args
-	#
-	# Generate doc string (important, since it may be the only
-	# available documentation, due to our name-remaping)
-	#
-	fp.write('\t\t"""%s: %s\n'%(ascii(name), ascii(desc)))
-	if has_arg:
-		fp.write("\t\tRequired argument: %s\n"%getdatadoc(accepts))
-	elif opt_arg:
-		fp.write("\t\tOptional argument: %s\n"%getdatadoc(accepts))
-	for arg in arguments:
-		fp.write("\t\tKeyword argument %s: %s\n"%(identify(arg[0]),
-				getdatadoc(arg[2])))
-	fp.write("\t\tKeyword argument _attributes: AppleEvent attribute dictionary\n")
-	if not is_null(returns):
-		fp.write("\t\tReturns: %s\n"%getdatadoc(returns))
-	fp.write('\t\t"""\n')
-	#
-	# Fiddle the args so everything ends up in 'arguments' dictionary
-	#
-	fp.write("\t\t_code = %s\n"% `code`)
-	fp.write("\t\t_subcode = %s\n\n"% `subcode`)
-	#
-	# Do keyword name substitution
-	#
-	if arguments:
-		fp.write("\t\taetools.keysubst(_arguments, self._argmap_%s)\n"%funcname)
-	else:
-		fp.write("\t\tif _arguments: raise TypeError, 'No optional args expected'\n")
-	#
-	# Stuff required arg (if there is one) into arguments
-	#
-	if has_arg:
-		fp.write("\t\t_arguments['----'] = _object\n")
-	elif opt_arg:
-		fp.write("\t\tif _object:\n")
-		fp.write("\t\t\t_arguments['----'] = _object\n")
-	else:
-		fp.write("\t\tif _no_object != None: raise TypeError, 'No direct arg expected'\n")
-	fp.write("\n")
-	#
-	# Do enum-name substitution
-	#
-	for a in arguments:
-		if is_enum(a[2]):
-			kname = a[1]
-			ename = a[2][0]
-			if ename <> '****':
-				fp.write("\t\taetools.enumsubst(_arguments, %s, _Enum_%s)\n" %
-					(`kname`, identify(ename)))
-				enumsneeded[ename] = 1
-	fp.write("\n")
-	#
-	# Do the transaction
-	#
-	fp.write("\t\t_reply, _arguments, _attributes = self.send(_code, _subcode,\n")
-	fp.write("\t\t\t\t_arguments, _attributes)\n")
-	#
-	# Error handling
-	#
-	fp.write("\t\tif _arguments.get('errn', 0):\n")
-	fp.write("\t\t\traise aetools.Error, aetools.decodeerror(_arguments)\n")
-	fp.write("\t\t# XXXX Optionally decode result\n")
-	#
-	# Decode result
-	#
-	fp.write("\t\tif _arguments.has_key('----'):\n")
-	if is_enum(returns):
-		fp.write("\t\t\t# XXXX Should do enum remapping here...\n")
-	fp.write("\t\t\treturn _arguments['----']\n")
-	fp.write("\n")
+			# We are not an extension.
+			basemodule = None
+		self.basemodule = basemodule
+		self.compileclassheader()
 	
-#	print "\n#    Command %s -- %s (%s, %s)" % (`name`, `desc`, `code`, `subcode`)
-#	print "#        returns", compiledata(returns)
-#	print "#        accepts", compiledata(accepts)
-#	for arg in arguments:
-#		compileargument(arg)
-
-def compileargument(arg):
-	[name, keyword, what] = arg
-	print "#        %s (%s)" % (name, `keyword`), compiledata(what)
-
-def findenumsinevent(event, enumsneeded):
-	"""Find all enums for a single event"""
-	[name, desc, code, subcode, returns, accepts, arguments] = event
-	for a in arguments:
-		if is_enum(a[2]):
-			ename = a[2][0]
-			if ename <> '****':
-				enumsneeded[ename] = 1
-
+		self.enumsneeded = {}
+		if events:
+			for event in events:
+				self.compileevent(event)
+		else:
+			fp.write("\tpass\n\n")
+	
+		objc = ObjectCompiler(fp, basemodule, precompinfo, interact=(self.edit_modnames is None),
+			verbose=self.verbose)
+		for cls in classes:
+			objc.compileclass(cls)
+		for cls in classes:
+			objc.fillclasspropsandelems(cls)
+		for comp in comps:
+			objc.compilecomparison(comp)
+		for enum in enums:
+			objc.compileenumeration(enum)
+		
+		for enum in self.enumsneeded.keys():
+			objc.checkforenum(enum)
+			
+		objc.dumpindex()
+		
+	def compileclassheader(self):
+		"""Generate class boilerplate"""
+		classname = '%s_Events'%self.modname
+		if self.basemodule:
+			modshortname = string.split(self.basemodule.__name__, '.')[-1]
+			baseclassname = '%s_Events'%modshortname
+			self.fp.write("class %s(%s):\n\n"%(classname, baseclassname))
+		else:
+			self.fp.write("class %s:\n\n"%classname)
+		
+	def compileevent(self, event):
+		"""Generate code for a single event"""
+		[name, desc, code, subcode, returns, accepts, arguments] = event
+		fp = self.fp
+		funcname = identify(name)
+		#
+		# generate name->keyword map
+		#
+		if arguments:
+			fp.write("\t_argmap_%s = {\n"%funcname)
+			for a in arguments:
+				fp.write("\t\t%s : %s,\n"%(`identify(a[0])`, `a[1]`))
+			fp.write("\t}\n\n")
+			
+		#
+		# Generate function header
+		#
+		has_arg = (not is_null(accepts))
+		opt_arg = (has_arg and is_optional(accepts))
+		
+		fp.write("\tdef %s(self, "%funcname)
+		if has_arg:
+			if not opt_arg:
+				fp.write("_object, ")		# Include direct object, if it has one
+			else:
+				fp.write("_object=None, ")	# Also include if it is optional
+		else:
+			fp.write("_no_object=None, ")	# For argument checking
+		fp.write("_attributes={}, **_arguments):\n")	# include attribute dict and args
+		#
+		# Generate doc string (important, since it may be the only
+		# available documentation, due to our name-remaping)
+		#
+		fp.write('\t\t"""%s: %s\n'%(ascii(name), ascii(desc)))
+		if has_arg:
+			fp.write("\t\tRequired argument: %s\n"%getdatadoc(accepts))
+		elif opt_arg:
+			fp.write("\t\tOptional argument: %s\n"%getdatadoc(accepts))
+		for arg in arguments:
+			fp.write("\t\tKeyword argument %s: %s\n"%(identify(arg[0]),
+					getdatadoc(arg[2])))
+		fp.write("\t\tKeyword argument _attributes: AppleEvent attribute dictionary\n")
+		if not is_null(returns):
+			fp.write("\t\tReturns: %s\n"%getdatadoc(returns))
+		fp.write('\t\t"""\n')
+		#
+		# Fiddle the args so everything ends up in 'arguments' dictionary
+		#
+		fp.write("\t\t_code = %s\n"% `code`)
+		fp.write("\t\t_subcode = %s\n\n"% `subcode`)
+		#
+		# Do keyword name substitution
+		#
+		if arguments:
+			fp.write("\t\taetools.keysubst(_arguments, self._argmap_%s)\n"%funcname)
+		else:
+			fp.write("\t\tif _arguments: raise TypeError, 'No optional args expected'\n")
+		#
+		# Stuff required arg (if there is one) into arguments
+		#
+		if has_arg:
+			fp.write("\t\t_arguments['----'] = _object\n")
+		elif opt_arg:
+			fp.write("\t\tif _object:\n")
+			fp.write("\t\t\t_arguments['----'] = _object\n")
+		else:
+			fp.write("\t\tif _no_object != None: raise TypeError, 'No direct arg expected'\n")
+		fp.write("\n")
+		#
+		# Do enum-name substitution
+		#
+		for a in arguments:
+			if is_enum(a[2]):
+				kname = a[1]
+				ename = a[2][0]
+				if ename <> '****':
+					fp.write("\t\taetools.enumsubst(_arguments, %s, _Enum_%s)\n" %
+						(`kname`, identify(ename)))
+					self.enumsneeded[ename] = 1
+		fp.write("\n")
+		#
+		# Do the transaction
+		#
+		fp.write("\t\t_reply, _arguments, _attributes = self.send(_code, _subcode,\n")
+		fp.write("\t\t\t\t_arguments, _attributes)\n")
+		#
+		# Error handling
+		#
+		fp.write("\t\tif _arguments.get('errn', 0):\n")
+		fp.write("\t\t\traise aetools.Error, aetools.decodeerror(_arguments)\n")
+		fp.write("\t\t# XXXX Optionally decode result\n")
+		#
+		# Decode result
+		#
+		fp.write("\t\tif _arguments.has_key('----'):\n")
+		if is_enum(returns):
+			fp.write("\t\t\t# XXXX Should do enum remapping here...\n")
+		fp.write("\t\t\treturn _arguments['----']\n")
+		fp.write("\n")
+			
+	def findenumsinevent(self, event):
+		"""Find all enums for a single event"""
+		[name, desc, code, subcode, returns, accepts, arguments] = event
+		for a in arguments:
+			if is_enum(a[2]):
+				ename = a[2][0]
+				if ename <> '****':
+					self.enumsneeded[ename] = 1
+	
 #
 # This class stores the code<->name translations for a single module. It is used
 # to keep the information while we're compiling the module, but we also keep these objects
