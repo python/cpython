@@ -10,7 +10,7 @@
 % 
 
 \title{What's New in Python 2.4}
-\release{0.5}
+\release{0.9}
 \author{A.M.\ Kuchling}
 \authoraddress{
 	\strong{Python Software Foundation}\\
@@ -21,29 +21,27 @@
 \maketitle
 \tableofcontents
 
-This article explains the new features in Python 2.4 beta1, scheduled
-for release in mid-October.  The final version of Python 2.4 is
-expected to be released around December 2004.
+This article explains the new features in Python 2.4, scheduled for
+release in December 2004.
 
 Python 2.4 is a medium-sized release.  It doesn't introduce as many
 changes as the radical Python 2.2, but introduces more features than
-the conservative 2.3 release did.  The most significant new language
-features (as of this writing) are function decorators and generator
-expressions; most other changes are to the standard library.
+the conservative 2.3 release.  The most significant new language
+features are function decorators and generator expressions; most other
+changes are to the standard library.
+
 % XXX update these figures as we go
 According to the CVS change logs, there were 421 patches applied and
 413 bugs fixed between Python 2.3 and 2.4.  Both figures are likely to
 be underestimates.
 
-
 This article doesn't attempt to provide a complete specification of
-every single new feature, but instead provides a convenient overview.
-For full details, you should refer to the documentation for Python
-2.4, such as the \citetitle[../lib/lib.html]{Python Library Reference}
-and the \citetitle[../ref/ref.html]{Python Reference Manual}.  If you
-want to understand the complete implementation and design rationale,
-refer to the PEP for a particular new feature or to the module
-documentation.
+every single new feature, but instead provides a brief introduction to
+each feature.  For full details, you should refer to the documentation
+for Python 2.4, such as the \citetitle[../lib/lib.html]{Python Library
+Reference} and the \citetitle[../ref/ref.html]{Python Reference
+Manual}.  Often you will be referred to the PEP for a particular new
+feature for explanations of the implementation and design rationale.
 
 
 %======================================================================
@@ -98,6 +96,7 @@ classes.  There are currently no plans to deprecate the module.
 Greg Wilson and ultimately implemented by Raymond Hettinger.}
 \end{seealso}
 
+
 %======================================================================
 \section{PEP 237: Unifying Long Integers and Integers}
 
@@ -121,6 +120,7 @@ written by Moshe Zadka and GvR.  The changes for 2.4 were implemented by
 Kalle Svensson.}
 \end{seealso}
 
+
 %======================================================================
 \section{PEP 289: Generator Expressions}
 
@@ -129,7 +129,8 @@ The iterator feature introduced in Python 2.2 and the
 through large data sets without having the entire data set in memory
 at one time.  List comprehensions don't fit into this picture very
 well because they produce a Python list object containing all of the
-items, unavoidably pulling them all into memory.  When trying to write
+items.  This unavoidably pulls all of the objects into memory, which
+can be a problem if your data set is very large.  When trying to write
 a functionally-styled program, it would be natural to write something
 like:
 
@@ -149,9 +150,9 @@ for link in get_all_links():
 \end{verbatim}
 
 The first form is more concise and perhaps more readable, but if
-you're dealing with a large number of link objects the second form
-would have to be used to avoid having all link objects in memory at
-the same time.
+you're dealing with a large number of link objects you'd have to write
+the second form to avoid having all link objects in memory at the same
+time.
 
 Generator expressions work similarly to list comprehensions but don't
 materialize the entire list; instead they create a generator that will
@@ -188,9 +189,10 @@ implemented by Jiwon Seo with early efforts steered by Hye-Shik Chang.}
 %======================================================================
 \section{PEP 292: Simpler String Substitutions}
 
-Some new classes in the standard library provide a
-alternative mechanism for substituting variables into strings that's 
-better-suited for applications where untrained users need to edit templates.
+Some new classes in the standard library provide an alternative
+mechanism for substituting variables into strings; this style of
+substitution may be better for applications where untrained
+users need to edit templates.
 
 The usual way of substituting variables by name is the \code{\%}
 operator:
@@ -206,9 +208,9 @@ problem if the template is in a Python module, because you run the
 code, get an ``Unsupported format character'' \exception{ValueError},
 and fix the problem.  However, consider an application such as Mailman
 where template strings or translations are being edited by users who
-aren't aware of the Python language; the syntax is complicated to
-explain to such users, and if they make a mistake, it's difficult to
-provide helpful feedback to them.
+aren't aware of the Python language.  The format string's syntax is
+complicated to explain to such users, and if they make a mistake, it's
+difficult to provide helpful feedback to them.
 
 PEP 292 adds a \class{Template} class to the \module{string} module
 that uses \samp{\$} to indicate a substitution.  \class{Template} is a
@@ -244,7 +246,7 @@ by Barry Warsaw.}
 
 
 %======================================================================
-\section{PEP 318: Decorators for Functions, Methods and Classes}
+\section{PEP 318: Decorators for Functions and Methods}
 
 Python 2.2 extended Python's object model by adding static methods and
 class methods, but it didn't extend Python's syntax to provide any new
@@ -267,14 +269,14 @@ If the method was very long, it would be easy to miss or forget the
 
 The intention was always to add some syntax to make such definitions
 more readable, but at the time of 2.2's release a good syntax was not
-obvious.  Years later, when Python 2.4 is coming out, a good syntax
-\emph{still} isn't obvious but users are asking for easier access to
-the feature, so a new syntactic feature has been added.
+obvious.  Today a good syntax \emph{still} isn't obvious but users are
+asking for easier access to the feature; a new syntactic feature has
+been added to meet this need.
 
-The feature is called ``function decorators''.  The name comes from
-the idea that \function{classmethod}, \function{staticmethod}, and
-friends are storing additional information on a function object; they're
-\emph{decorating} functions with more details.  
+The new feature is called ``function decorators''.  The name comes
+from the idea that \function{classmethod}, \function{staticmethod},
+and friends are storing additional information on a function object;
+they're \emph{decorating} functions with more details.
 
 The notation borrows from Java and uses the \character{@} character as an
 indicator.  Using the new syntax, the example above would be written:
@@ -298,7 +300,7 @@ def f ():
     ...
 \end{verbatim}
 
-It's equivalent to:
+It's equivalent to the following pre-decorator code:
 
 \begin{verbatim}
 def f(): ...
@@ -308,7 +310,7 @@ f = A(B(C(f)))
 Decorators must come on the line before a function definition, and
 can't be on the same line, meaning that \code{@A def f(): ...} is
 illegal.  You can only decorate function definitions, either at the
-module-level or inside a class; you can't decorate class definitions.
+module level or inside a class; you can't decorate class definitions.
 
 A decorator is just a function that takes the function to be decorated
 as an argument and returns either the same function or some new
@@ -352,12 +354,11 @@ def p2(arg):
 \end{verbatim}
 
 An example in \pep{318} contains a fancier version of this idea that
-lets you specify the required type and check the returned type as
-well.
+lets you both specify the required type and check the returned type.
 
 Decorator functions can take arguments.  If arguments are supplied,
-the decorator function is called with only those arguments and must
-return a new decorator function; this new function must take a single
+your decorator function is called with only those arguments and must
+return a new decorator function; this function must take a single
 function and return a function, as previously described.  In other
 words, \code{@A @B @C(args)} becomes:
 
@@ -375,17 +376,15 @@ functions writable.  This attribute is used to display function names
 in tracebacks, so decorators should change the name of any new
 function that's constructed and returned.
 
-The new syntax was provisionally added in 2.4alpha2, and is subject to
-change during the 2.4beta release cycle depending on the Python
-community's reaction.  Post-2.4 versions of Python will preserve
-compatibility with whatever syntax is used in 2.4final.
-
 \begin{seealso}
 \seepep{318}{Decorators for Functions, Methods and Classes}{Written 
 by Kevin D. Smith, Jim Jewett, and Skip Montanaro.  Several people
 wrote patches implementing function decorators, but the one that was
 actually checked in was patch \#979728, written by Mark Russell.}
 \end{seealso}
+
+% XXX add link to decorators module in Wiki
+
 
 %======================================================================
 \section{PEP 322: Reverse Iteration}
@@ -412,7 +411,7 @@ iterators.  If you want to reverse an iterator, first convert it to
 a list with \function{list()}.
 
 \begin{verbatim}
->>> input= open('/etc/passwd', 'r')
+>>> input = open('/etc/passwd', 'r')
 >>> for line in reversed(list(input)):
 ...   print line
 ... 
@@ -429,17 +428,17 @@ root:*:0:0:System Administrator:/var/root:/bin/tcsh
 %======================================================================
 \section{PEP 324: New subprocess Module}
 
-The standard library provides a number of ways to 
-execute a subprocess, each of which offers different features and 
-levels of difficulty.  \function{os.system(\var{command})} is easy, but 
-slow -- it runs a shell process which executes the command -- 
-and dangerous -- you have to be careful about escaping metacharacters.
-The \module{popen2} module offers classes that can capture 
-standard output and standard error from the subprocess, but the naming 
-is confusing.
+The standard library provides a number of ways to execute a
+subprocess, offering different features and different levels of
+complexity.  \function{os.system(\var{command})} is easy to use, but
+slow (it runs a shell process which executes the command) and
+dangerous (you have to be careful about escaping the shell's
+metacharacters).  The \module{popen2} module offers classes that can
+capture standard output and standard error from the subprocess, but
+the naming is confusing.  The \module{subprocess} module cleans 
+this up, providing a unified interface that offers all the features
+you might need.
 
-The \module{subprocess} module cleans all this up, providing a unified 
-interface that offers all the features you might need.
 Instead of \module{popen2}'s collection of classes,
 \module{subprocess} contains a single class called \class{Popen} 
 whose constructor supports a number of different keyword arguments.
@@ -452,39 +451,51 @@ class Popen(args, bufsize=0, executable=None,
 	    startupinfo=None, creationflags=0):
 \end{verbatim}
 
-\var{args} is commonly a sequence of strings that will be the arguments to
-the program executed as the subprocess.  (If the \var{shell} argument is true,
-\var{args} can be a string which will then be passed on to the shell for interpretation.)  
+\var{args} is commonly a sequence of strings that will be the
+arguments to the program executed as the subprocess.  (If the
+\var{shell} argument is true, \var{args} can be a string which will
+then be passed on to the shell for interpretation, just as
+\function{os.system()} does.)
 
 \var{stdin}, \var{stdout}, and \var{stderr} specify what the
 subprocess's input, output, and error streams will be.  You can
-provide a file object or a file descriptor, or you can 
-use \code{subprocess.PIPE} to create a pipe between the subprocess 
-and the parent.
+provide a file object or a file descriptor, or you can use the
+constant \code{subprocess.PIPE} to create a pipe between the
+subprocess and the parent.
 
 The constructor has a number of handy options:
 
 \begin{itemize}
-  \item \var{close_fds} requests that all file descriptors be closed before running the subprocess.
-  \item \var{cwd} specifies the working directory in which the subprocess will be executed (defaulting to whatever the parent's working directory is).
+  \item \var{close_fds} requests that all file descriptors be closed
+  before running the subprocess.
+
+  \item \var{cwd} specifies the working directory in which the
+  subprocess will be executed (defaulting to whatever the parent's
+  working directory is).
+
   \item \var{env} is a dictionary specifying environment variables.
-  \item \var{preexec_fn} is a function that gets called before the child is started.
-  \item \var{universal_newlines} opens the child's input and output using
-Python's universal newline feature.
+
+  \item \var{preexec_fn} is a function that gets called before the
+  child is started.
+
+  \item \var{universal_newlines} opens the child's input and output
+  using Python's universal newline feature.
+
 \end{itemize}
 
 Once you've created the \class{Popen} instance, 
-you can call \method{wait()} to pause until the subprocess has exited,
-\method{poll()} to check if it's exited without pausing, 
-or \method{communicate(\var{data})} to send the string \var{data} to 
+you can call its \method{wait()} method to pause until the subprocess
+has exited, \method{poll()} to check if it's exited without pausing, 
+or \method{communicate(\var{data})} to send the string \var{data} to
 the subprocess's standard input.   \method{communicate(\var{data})} 
-then reads any data that the subprocess has sent to its standard output or error, returning a tuple \code{(\var{stdout_data}, \var{stderr_data})}.
+then reads any data that the subprocess has sent to its standard output 
+or standard error, returning a tuple \code{(\var{stdout_data},
+\var{stderr_data})}.
 
-\function{call()} is a shortcut that passes its arguments along to
-the \class{Popen} constructor, waits for the command to complete, and
-returns the status code of the subprocess.  It can serve as an analog
-to
-\function{os.system()}:
+\function{call()} is a shortcut that passes its arguments along to the
+\class{Popen} constructor, waits for the command to complete, and
+returns the status code of the subprocess.  It can serve as a safer
+analog to \function{os.system()}:
 
 \begin{verbatim}
 sts = subprocess.call(['dpkg', '-i', '/tmp/new-package.deb'])
@@ -516,12 +527,12 @@ Reading this section of the PEP is highly recommended.
 %======================================================================
 \section{PEP 327: Decimal Data Type}
 
-Python has always supported floating-point (FP) numbers as a data
-type, based on the underlying C \ctype{double} type.  However, while
-most programming languages provide a floating-point type, most people
-(even programmers) are unaware that computing with floating-point
-numbers entails certain unavoidable inaccuracies.  The new decimal
-type provides a way to avoid these inaccuracies.
+Python has always supported floating-point (FP) numbers, based on the
+underlying C \ctype{double} type, as a data type.  However, while most
+programming languages provide a floating-point type, most people (even
+programmers) are unaware that computing with floating-point numbers
+entails certain unavoidable inaccuracies.  The new decimal type
+provides a way to avoid these inaccuracies.
 
 \subsection{Why is Decimal needed?}
 
@@ -540,20 +551,20 @@ For example, the number 1.25 has positive sign, a mantissa value of
 1.01 (in binary), and an exponent of 0 (the decimal point doesn't need
 to be shifted).  The number 5 has the same sign and mantissa, but the
 exponent is 2 because the mantissa is multiplied by 4 (2 to the power
-of the exponent 2).
+of the exponent 2); 1.25 * 4 equals 5.
 
 Modern systems usually provide floating-point support that conforms to
-a relevant standard called IEEE 754.  C's \ctype{double} type is
-usually implemented as a 64-bit IEEE 754 number, which uses 52 bits of
-space for the mantissa.  This means that numbers can only be specified
-to 52 bits of precision.  If you're trying to represent numbers whose
+a standard called IEEE 754.  C's \ctype{double} type is usually
+implemented as a 64-bit IEEE 754 number, which uses 52 bits of space
+for the mantissa.  This means that numbers can only be specified to 52
+bits of precision.  If you're trying to represent numbers whose
 expansion repeats endlessly, the expansion is cut off after 52 bits.
 Unfortunately, most software needs to produce output in base 10, and
-base 10 often gives rise to such repeating decimals in the binary
-expansion.  For example, 1.1 decimal is binary \code{1.0001100110011
-...}; .1 = 1/16 + 1/32 + 1/256 plus an infinite number of additional
-terms.  IEEE 754 has to chop off that infinitely repeated decimal
-after 52 digits, so the representation is slightly inaccurate.
+common fractions in base 10 are often repeating decimals in binary.
+For example, 1.1 decimal is binary \code{1.0001100110011 ...}; .1 =
+1/16 + 1/32 + 1/256 plus an infinite number of additional terms.  IEEE
+754 has to chop off that infinitely repeated decimal after 52 digits,
+so the representation is slightly inaccurate.
 
 Sometimes you can see this inaccuracy when the number is printed:
 \begin{verbatim}
@@ -579,15 +590,16 @@ Hence, the \class{Decimal} type was created.
 
 \subsection{The \class{Decimal} type}
 
-A new module, \module{decimal}, was added to Python's standard library.
-It contains two classes, \class{Decimal} and \class{Context}.
-\class{Decimal} instances represent numbers, and
-\class{Context} instances are used to wrap up various settings such as the precision and default rounding mode.
+A new module, \module{decimal}, was added to Python's standard
+library.  It contains two classes, \class{Decimal} and
+\class{Context}.  \class{Decimal} instances represent numbers, and
+\class{Context} instances are used to wrap up various settings such as
+the precision and default rounding mode.
 
-\class{Decimal} instances, like regular Python integers and FP
-numbers, are immutable; once they've been created, you can't change
-the value it represents.  \class{Decimal} instances can be created
-from integers or strings: 
+\class{Decimal} instances are immutable, like regular Python integers
+and FP numbers; once it's been created, you can't change the value an
+instance represents.  \class{Decimal} instances can be created from
+integers or strings:
 
 \begin{verbatim}
 >>> import decimal
@@ -611,10 +623,10 @@ Cautionary note: the sign bit is a Boolean value, so 0 is positive and
 Converting from floating-point numbers poses a bit of a problem:
 should the FP number representing 1.1 turn into the decimal number for
 exactly 1.1, or for 1.1 plus whatever inaccuracies are introduced?
-The decision was to leave such a conversion out of the API.  Instead,
-you should convert the floating-point number into a string using the
-desired precision and pass the string to the \class{Decimal}
-constructor:
+The decision was to dodge the issue and leave such a conversion out of
+the API.  Instead, you should convert the floating-point number into a
+string using the desired precision and pass the string to the
+\class{Decimal} constructor:
 
 \begin{verbatim}
 >>> f = 1.1
@@ -675,9 +687,9 @@ regular floating-point number and not a \class{Decimal}.
 351364.18288201344j
 \end{verbatim}
 
-Instances also have a \method{sqrt()} method that returns a
-\class{Decimal}, but if you need other things such as trigonometric
-functions you'll have to implement them.
+\class{Decimal} instances have a \method{sqrt()} method that
+returns a \class{Decimal}, but if you need other things such as
+trigonometric functions you'll have to implement them.
 
 \begin{verbatim}
 >>> d.sqrt()
@@ -694,7 +706,8 @@ decimal operations:
  \item \member{prec} is the precision, the number of decimal places.
  \item \member{rounding} specifies the rounding mode.  The \module{decimal}
        module has constants for the various possibilities:
-       \constant{ROUND_DOWN}, \constant{ROUND_CEILING}, \constant{ROUND_HALF_EVEN}, and various others.
+       \constant{ROUND_DOWN}, \constant{ROUND_CEILING}, 
+       \constant{ROUND_HALF_EVEN}, and various others.
  \item \member{traps} is a dictionary specifying what happens on
 encountering certain error conditions: either  an exception is raised or 
 a value is returned.  Some examples of error conditions are
@@ -703,7 +716,9 @@ division by zero, loss of precision, and overflow.
 
 There's a thread-local default context available by calling
 \function{getcontext()}; you can change the properties of this context
-to alter the default precision, rounding, or trap handling.
+to alter the default precision, rounding, or trap handling.  The
+following example shows the effect of changing the precision of the default
+context:
 
 \begin{verbatim}
 >>> decimal.getcontext().prec
@@ -764,7 +779,7 @@ easier to import many names from a module.  In a
 \code{from \var{module} import \var{names}} statement, 
 \var{names} is a sequence of names separated by commas.  If the sequence is 
 very long, you can either write multiple imports from the same module,
-or you can use backslashes to escape the line endings:
+or you can use backslashes to escape the line endings like this:
 
 \begin{verbatim}
 from SimpleXMLRPCServer import SimpleXMLRPCServer,\
@@ -773,20 +788,21 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer,\
             resolve_dotted_attribute
 \end{verbatim}
 
-The syntactic change simply allows putting the names within
-parentheses.  Python ignores newlines within a parenthesized
+The syntactic change in Python 2.4 simply allows putting the names
+within parentheses.  Python ignores newlines within a parenthesized
 expression, so the backslashes are no longer needed:
 
 \begin{verbatim}
 from SimpleXMLRPCServer import (SimpleXMLRPCServer,
-            SimpleXMLRPCRequestHandler,
-            CGIXMLRPCRequestHandler,
-            resolve_dotted_attribute)
+                                SimpleXMLRPCRequestHandler,
+                                CGIXMLRPCRequestHandler,
+                                resolve_dotted_attribute)
 \end{verbatim}
 
-The PEP also proposes that all \keyword{import} statements be
-absolute imports, with a leading \samp{.} character to indicate a
-relative import.  This part of the PEP is not yet implemented.
+The PEP also proposes that all \keyword{import} statements be absolute
+imports, with a leading \samp{.} character to indicate a relative
+import.  This part of the PEP is not yet implemented, and will have to
+wait for Python 2.5 or some other future version.
 
 \begin{seealso}
 \seepep{328}{Imports: Multi-Line and Absolute/Relative}
@@ -808,6 +824,7 @@ implementation required that the numeric locale remain set to the
 
 Not setting the numeric locale caused trouble for extensions that used
 third-party C libraries, however, because they wouldn't have the
+% XXX is it GTK or GTk?
 correct locale set.  The motivating example was GTK+, whose user
 interface widgets weren't displaying numbers in the current locale.
 
@@ -830,7 +847,8 @@ can now change the numeric locale, letting extensions such as GTK+
 produce the correct results.
 
 \begin{seealso}
-\seepep{331}{Locale-Independent Float/String Conversions}{Written by Christian R. Reis, and implemented by Gustavo Carneiro.}
+\seepep{331}{Locale-Independent Float/String Conversions}
+{Written by Christian R. Reis, and implemented by Gustavo Carneiro.}
 \end{seealso}      
 
 %======================================================================
@@ -840,6 +858,18 @@ Here are all of the changes that Python 2.4 makes to the core Python
 language.
 
 \begin{itemize}
+
+\item Decorators for functions and methods were added (\pep{318}).
+
+\item Built-in \function{set} and \function{frozenset} types were 
+added (\pep{218}).  Other new built-ins include the \function{reversed(\var{seq})} function (\pep{322}).
+
+\item Generator expressions were added (\pep{289}).
+
+\item Certain numeric expressions no longer return values restricted to 32 or 64 bits (\pep{237}).
+
+\item You can now put parentheses around the list of names in a
+\code{from \var{module} import \var{names}} statement (\pep{328}).
 
 \item The \method{dict.update()} method now accepts the same
 argument forms as the \class{dict} constructor.  This includes any
@@ -862,17 +892,18 @@ the string.
 ['www.python', 'org']        
 \end{verbatim}      
 
-\item The \method{sort()} method of lists gained three keyword
-arguments: \var{cmp}, \var{key}, and \var{reverse}.  These arguments
-make some common usages of \method{sort()} simpler.  All are optional.
-(Contributed by Raymond Hettinger.)
+\item Three keyword parameters, \var{cmp}, \var{key}, and
+\var{reverse}, were added to the \method{sort()} method of lists.
+These parameters make some common usages of \method{sort()} simpler.
+All of these parameters are optional.
 
-\var{cmp} is the same as the previous single argument to
-\method{sort()}; if provided, the value should be a comparison
-function that takes two arguments and returns -1, 0, or +1 depending
-on how the arguments compare.  
+For the \var{cmp} parameter, the value should be a comparison function
+that takes two parameters and returns -1, 0, or +1 depending on how
+the parameters compare.  This function will then be used to sort the
+list.  Previously this was the only parameter that could be provided
+to \method{sort()}.
 
-\var{key} should be a single-argument function that takes a list
+\var{key} should be a single-parameter function that takes a list
 element and returns a comparison key for the element.  The list is
 then sorted using the comparison keys.  The following example sorts a
 list case-insensitively:
@@ -882,24 +913,27 @@ list case-insensitively:
 >>> L.sort()                 # Case-sensitive sort
 >>> L
 ['A', 'D', 'b', 'c']
+>>> # Using 'key' parameter to sort list
 >>> L.sort(key=lambda x: x.lower())
 >>> L
 ['A', 'b', 'c', 'D']
+>>> # Old-fashioned way
 >>> L.sort(cmp=lambda x,y: cmp(x.lower(), y.lower()))
 >>> L
 ['A', 'b', 'c', 'D']
 \end{verbatim}
 
 The last example, which uses the \var{cmp} parameter, is the old way
-to perform a case-insensitive sort.  It works but is slower than
-using a \var{key} parameter.  Using \var{key} results in calling the
-\method{lower()} method once for each element in the list while using
-\var{cmp} will call it twice for each comparison.
+to perform a case-insensitive sort.  It works but is slower than using
+a \var{key} parameter.  Using \var{key} calls \method{lower()} method
+once for each element in the list while using \var{cmp} will call it
+twice for each comparison, so using \var{key} saves on invocations of
+the \method{lower()} method.
 
 For simple key functions and comparison functions, it is often
 possible to avoid a \keyword{lambda} expression by using an unbound
 method instead.  For example, the above case-insensitive sort is best
-coded as:
+written as:
 
 \begin{verbatim}
 >>> L.sort(key=str.lower)
@@ -907,17 +941,18 @@ coded as:
 ['A', 'b', 'c', 'D']
 \end{verbatim}       
 
-The \var{reverse} parameter should have a Boolean value.  If the value
-is \constant{True}, the list will be sorted into reverse order.
-Instead of \code{L.sort(lambda x,y: cmp(x.score, y.score)) ;
-L.reverse()}, you can now write: \code{L.sort(key = lambda x: x.score,
-reverse=True)}.
+Finally, the \var{reverse} parameter takes a Boolean value.  If the
+value is true, the list will be sorted into reverse order.
+Instead of \code{L.sort() ; L.reverse()}, you can now write
+\code{L.sort(reverse=True)}.
 
 The results of sorting are now guaranteed to be stable.  This means
 that two entries with equal keys will be returned in the same order as
 they were input.  For example, you can sort a list of people by name,
 and then sort the list by age, resulting in a list sorted by age where
 people with the same age are in name-sorted order.
+
+(All changes to \method{sort()} contributed by Raymond Hettinger.)
 
 \item There is a new built-in function
 \function{sorted(\var{iterable})} that works like the in-place
@@ -964,7 +999,7 @@ you can now run the Python profiler with \code{python -m profile}.
 \item The \function{eval(\var{expr}, \var{globals}, \var{locals})}
 and \function{execfile(\var{filename}, \var{globals}, \var{locals})}
 functions and the \keyword{exec} statement now accept any mapping type
-for the \var{locals} argument.  Previously this had to be a regular
+for the \var{locals} parameter.  Previously this had to be a regular
 Python dictionary.  (Contributed by Raymond Hettinger.)
 
 \item The \function{zip()} built-in function and \function{itertools.izip()}
@@ -988,6 +1023,7 @@ Python dictionary.  (Contributed by Raymond Hettinger.)
 a partially-initialized module object in \code{sys.modules}.  The
 incomplete module object left behind would fool further imports of the
 same module into succeeding, leading to confusing errors.  
+% (XXX contributed by Tim?)
 
 \item \constant{None} is now a constant; code that binds a new value to 
 the name \samp{None} is now a syntax error.
@@ -1003,7 +1039,7 @@ the name \samp{None} is now a syntax error.
 
 \item The inner loops for list and tuple slicing
  were optimized and now run about one-third faster.  The inner loops
- were also optimized for dictionaries, resulting in performance boosts for
+ for dictionaries were also optimized , resulting in performance boosts for
  \method{keys()}, \method{values()}, \method{items()},
  \method{iterkeys()}, \method{itervalues()}, and \method{iteritems()}.
  (Contributed by Raymond Hettinger.)
@@ -1024,7 +1060,7 @@ the name \samp{None} is now a syntax error.
 \item The methods \method{list.__getitem__()},
   \method{dict.__getitem__()}, and \method{dict.__contains__()} are
   are now implemented as \class{method_descriptor} objects rather
-  than \class{wrapper_descriptor} objects.  This form of optimized
+  than \class{wrapper_descriptor} objects.  This form of 
   access doubles their performance and makes them more suitable for
   use as arguments to functionals:
   \samp{map(mydict.__getitem__, keylist)}.
@@ -1035,7 +1071,7 @@ the name \samp{None} is now a syntax error.
   by about a third.  (Contributed by Raymond Hettinger.)
 
 \item The peephole bytecode optimizer has been improved to 
-produce shorter, faster bytecode; remarkably the resulting bytecode is 
+produce shorter, faster bytecode; remarkably, the resulting bytecode is 
 more readable.  (Enhanced by Raymond Hettinger.)
 
 \item String concatenations in statements of the form \code{s = s +
@@ -1048,6 +1084,7 @@ you want to efficiently glue a large number of strings together.
 
 \end{itemize}
 
+% XXX fill in these figures
 The net result of the 2.4 optimizations is that Python 2.4 runs the
 pystone benchmark around XX\% faster than Python 2.3 and YY\% faster
 than Python 2.2.
@@ -1065,8 +1102,8 @@ details.
 
 \begin{itemize}
 
-\item The \module{asyncore} module's \function{loop()} now has a 
-   \var{count} parameter that lets you perform a limited number 
+\item The \module{asyncore} module's \function{loop()} function now
+   has a \var{count} parameter that lets you perform a limited number
    of passes through the polling loop.  The default is still to loop
    forever.
 
@@ -1093,21 +1130,21 @@ euc-jisx0213, iso-2022-jp, iso-2022-jp-1, iso-2022-jp-2,
  \item Korean: cp949, euc-kr, johab, iso-2022-kr
 \end{itemize} 
 
+\item Some other new encodings were added: HP Roman8, 
+ISO_8859-11, ISO_8859-16, PCTP-154, and TIS-620.
+
 \item The UTF-8 and UTF-16 codecs now cope better with receiving partial input.
 Previously the \class{StreamReader} class would try to read more data,
-which made it impossible to resume decoding from the stream.  The
+making it impossible to resume decoding from the stream.  The
 \method{read()} method will now return as much data as it can and future
 calls will resume decoding where previous ones left off. 
 (Implemented by Walter D\"orwald.)
-
-\item Some other new encodings were added: HP Roman8, 
-ISO_8859-11, ISO_8859-16, PCTP-154, and TIS-620.
 
 \item There is a new \module{collections} module for 
    various specialized collection datatypes.  
    Currently it contains just one type, \class{deque}, 
    a double-ended queue that supports efficiently adding and removing
-   elements from either end.
+   elements from either end:
 
 \begin{verbatim}
 >>> from collections import deque
@@ -1126,9 +1163,9 @@ deque(['f', 'g', 'h', 'i', 'j'])
 True  
 \end{verbatim}
 
-Several modules now take advantage of \class{collections.deque} for
-improved performance, such as the \module{Queue} and
-\module{threading} modules.  (Contributed by Raymond Hettinger.)
+Several modules, such as the \module{Queue} and \module{threading}
+modules, now take advantage of \class{collections.deque} for improved
+performance.  (Contributed by Raymond Hettinger.)
 
 \item The \module{ConfigParser} classes have been enhanced slightly.
    The \method{read()} method now returns a list of the files that
@@ -1148,10 +1185,10 @@ of two versions of a text.   (Contributed by Dan Gass.)
 \item The \module{email} package was updated to version 3.0, 
 which dropped various deprecated APIs and removes support for Python
 versions earlier than 2.3.  The 3.0 version of the package uses a new
-incremental parser for MIME message, available in the
+incremental parser for MIME messages, available in the
 \module{email.FeedParser} module.  The new parser doesn't require
 reading the entire message into memory, and doesn't throw exceptions
-if a message is malformed; instead it records any problems as a
+if a message is malformed; instead it records any problems in the 
 \member{defect} attribute of the message.  (Developed by Anthony
 Baxter, Barry Warsaw, Thomas Wouters, and others.)
 
@@ -1174,20 +1211,22 @@ get a full list.  (Contributed by Andrew Eland.)
 
 \item The \module{itertools} module gained a
   \function{groupby(\var{iterable}\optional{, \var{func}})} function.
-  \var{iterable} returns a succession of elements, and the optional
-  \var{func} is a function that takes an element and returns a key
-  value; if omitted, the key is simply the element itself.
-  \function{groupby()} then groups the elements into subsequences
-  which have matching values of the key, and returns a series of 2-tuples
-  containing the key value and an iterator over the subsequence.
+  \var{iterable} is something that can be iterated over to return a
+  stream of elements, and the optional \var{func} parameter is a
+  function that takes an element and returns a key value; if omitted,
+  the key is simply the element itself.  \function{groupby()} then
+  groups the elements into subsequences which have matching values of
+  the key, and returns a series of 2-tuples containing the key value
+  and an iterator over the subsequence.
  
-Here's an example.  The \var{key} function simply returns whether a
-number is even or odd, so the result of \function{groupby()} is to
-return consecutive runs of odd or even numbers.
+Here's an example to make this clearer.  The \var{key} function simply
+returns whether a number is even or odd, so the result of
+\function{groupby()} is to return consecutive runs of odd or even
+numbers.
 
 \begin{verbatim}
 >>> import itertools
->>> L = [2,4,6, 7,8,9,11, 12, 14]
+>>> L = [2, 4, 6, 7, 8, 9, 11, 12, 14]
 >>> for key_val, it in itertools.groupby(L, lambda x: x % 2):
 ...    print key_val, list(it)
 ... 
@@ -1255,27 +1294,28 @@ bookmarking, windowing, or lookahead iterators.
 
 \item  A number of functions were added to the \module{locale} 
 module, such as \function{bind_textdomain_codeset()} to specify a
-particular encoding, and a family of \function{l*gettext()} functions
+particular encoding and a family of \function{l*gettext()} functions
 that return messages in the chosen encoding.
 (Contributed by Gustavo Niemeyer.)
 
-\item The \module{logging} package's \function{basicConfig} function 
-gained some keyword arguments to simplify log configuration.  The
-default behavior is to log messages to standard error, but
-various keyword arguments can be specified to log to a particular file,
-change the logging format, or set the logging level.  For example:
+\item Some keyword arguments were added to the \module{logging}
+package's \function{basicConfig} function to simplify log
+configuration.  The default behavior is to log messages to standard
+error, but various keyword arguments can be specified to log to a
+particular file, change the logging format, or set the logging level.
+For example:
 
 \begin{verbatim}
 import logging
-logging.basicConfig(filename = '/var/log/application.log',
-    level=0,  # Log all messages, including debugging,
+logging.basicConfig(filename='/var/log/application.log',
+    level=0,  # Log all messages
     format='%(levelname):%(process):%(thread):%(message)')	            
 \end{verbatim}
 
-Other additions to \module{logging} include a \method{log(\var{level},
-\var{msg})} convenience method, and a
-\class{TimedRotatingFileHandler} class that rotates its log files at
-a timed interval.  The module already had \class{RotatingFileHandler},
+Other additions to the \module{logging} package include a
+\method{log(\var{level}, \var{msg})} convenience method, as well as a
+\class{TimedRotatingFileHandler} class that rotates its log files at a
+timed interval.  The module already had \class{RotatingFileHandler},
 which rotated logs once the file exceeded a certain size.  Both
 classes derive from a new \class{BaseRotatingHandler} class that can
 be used to implement other rotating handlers.
@@ -1292,7 +1332,7 @@ but the primary effect is to make \file{.pyc} files significantly smaller.
 newsgroup descriptions for a single group or for a range of groups.
 (Contributed by J\"urgen A. Erhard.)
 
-\item The \module{operator} module gained two new functions, 
+\item Two new functions were added to the \module{operator} module, 
 \function{attrgetter(\var{attr})} and \function{itemgetter(\var{index})}.
 Both functions return callables that take a single argument and return
 the corresponding attribute or item; these callables make excellent
@@ -1311,11 +1351,12 @@ data extractors when used with \function{map()} or
 
 (Contributed by Raymond Hettinger.)       
 
-\item The \module{optparse} module was updated.  The module now passes
-its messages through \function{gettext.gettext()}, making it possible
-to internationalize Optik's help and error messages.  Help messages
-for options can now include the string \code{'\%default'}, which will
-be replaced by the option's default value.
+\item The \module{optparse} module was updated in various ways.  The
+module now passes its messages through \function{gettext.gettext()},
+making it possible to internationalize Optik's help and error
+messages.  Help messages for options can now include the string
+\code{'\%default'}, which will be replaced by the option's default
+value.  (Contributed by Greg Ward.)
 
 \item The long-term plan is to deprecate the \module{rfc822} module
 in some future Python release in favor of the \module{email} package.
@@ -1325,12 +1366,11 @@ changed to make it usable as a replacement for
 processing code with this in mind.  (Change implemented by Anthony
 Baxter.)
 
-\item A new \function{urandom(\var{n})} function 
-was added to the \module{os} module, providing access to
-platform-specific sources of randomness such as
-\file{/dev/urandom} on Linux or the Windows CryptoAPI.  The
-function returns a string containing \var{n} bytes of random data.
-(Contributed by Trevor Perrin.)
+\item A new \function{urandom(\var{n})} function was added to the
+\module{os} module, returning a string containing \var{n} bytes of
+random data.  This function provides access to platform-specific
+sources of randomness such as \file{/dev/urandom} on Linux or the
+Windows CryptoAPI.  (Contributed by Trevor Perrin.)
 
 \item Another new function: \function{os.path.lexists(\var{path})} 
 returns true if the file specified by \var{path} exists, whether or
@@ -1349,11 +1389,12 @@ not it's a symbolic link.  This differs from the existing
 % XXX more to say about this?
 (Contributed by Nick Bastin.)
 
-\item The \module{random} module has a new method called \method{getrandbits(N)} 
-   which returns an N-bit long integer.  This method supports the existing
-   \method{randrange()} method, making it possible to efficiently generate
-   arbitrarily large random numbers.
-   (Contributed by Raymond Hettinger.)
+\item The \module{random} module has a new method called
+   \method{getrandbits(\var{N})} that returns a long integer \var{N}
+   bits in length.  The existing \method{randrange()} method now uses
+   \method{getrandbits()} where appropriate, making generation of
+   arbitrarily large random numbers more efficient.  (Contributed by
+   Raymond Hettinger.)
 
 \item The regular expression language accepted by the \module{re} module
    was extended with simple conditional expressions, written as
@@ -1363,19 +1404,20 @@ not it's a symbolic link.  This differs from the existing
    regular expression pattern \var{A} will be tested against the string; if
    the group didn't match, the pattern \var{B} will be used instead.
 
-\item The \module{re} module is also no longer recursive, thanks 
-to a massive amount of work by Gustavo Niemeyer.  In a recursive
-regular expression engine, certain patterns result in a large amount
-of C stack space being consumed, and it was possible to overflow the
-stack.  For example, if you matched a 30000-byte string of \samp{a}
-characters against the expression \regexp{(a|b)+}, one stack frame was
-consumed per character.  Python 2.3 tried to check for stack overflow
-and raise a \exception{RuntimeError} exception, but if you were
-unlucky Python could dump core.  Python 2.4's regular expression
-engine can match this pattern without problems.
+\item The \module{re} module is also no longer recursive, thanks to a
+massive amount of work by Gustavo Niemeyer.  In a recursive regular
+expression engine, certain patterns result in a large amount of C
+stack space being consumed, and it was possible to overflow the stack.
+For example, if you matched a 30000-byte string of \samp{a} characters
+against the expression \regexp{(a|b)+}, one stack frame was consumed
+per character.  Python 2.3 tried to check for stack overflow and raise
+a \exception{RuntimeError} exception, but certain patterns could
+sidestep the checking and if you were unlucky Python could segfault.
+Python 2.4's regular expression engine can match this pattern without
+problems.
 
-\item A new \function{socketpair()} function was added to the
-\module{socket} module, returning a pair of connected sockets. 
+\item A new \function{socketpair()} function, returning a pair of
+connected sockets, was added to the \module{socket} module.
 (Contributed by Dave Cole.)
 
 \item The \function{sys.exitfunc()} function has been deprecated.  Code
@@ -1385,7 +1427,7 @@ handles calling multiple exit functions.  Eventually
 accessed only by \module{atexit}.
 
 \item The \module{tarfile} module now generates GNU-format tar files
-by default.
+by default.  (Contributed by Lars Gustaebel.)
 
 \item The \module{threading} module now has an elegantly simple way to support 
 thread-local data.  The module contains a \class{local} class whose
@@ -1425,36 +1467,142 @@ been removed.
 %======================================================================
 % whole new modules get described in subsections here
 
+%=====================
 \subsection{cookielib}
 
 The \module{cookielib} library supports client-side handling for HTTP
-cookies, just as the \module{Cookie} provides server-side cookie
-support in CGI scripts. Cookies are stored in cookie jars; the library
-transparently stores cookies offered by the web server in the cookie
-jar, and fetches the cookie from the jar when connecting to the
-server. Similar to web browsers, policy objects control whether
-cookies are accepted or not.
+cookies, mirroring the \module{Cookie} module's server-side cookie
+support. Cookies are stored in cookie jars; the library transparently
+stores cookies offered by the web server in the cookie jar, and
+fetches the cookie from the jar when connecting to the server. As in
+web browsers, policy objects control whether cookies are accepted or
+not.
 
 In order to store cookies across sessions, two implementations of
 cookie jars are provided: one that stores cookies in the Netscape
-format, so applications can use the Mozilla or Lynx cookie jars, and
+format so applications can use the Mozilla or Lynx cookie files, and
 one that stores cookies in the same format as the Perl libwww libary.
 
 \module{urllib2} has been changed to interact with \module{cookielib}:
 \class{HTTPCookieProcessor} manages a cookie jar that is used when
 accessing URLs.
 
+% ==================
 \subsection{doctest}
 
 The \module{doctest} module underwent considerable refactoring thanks
-to Edward Loper and Tim Peters.
+to Edward Loper and Tim Peters.  Testing can still be as simple as
+running \function{doctest.testmod()}, but the refactorings allow
+customizing the module's operation in various ways
 
-% XXX describe this
+The new \class{DocTestFinder} class extracts the tests from a given 
+object's docstrings:
+
+\begin{verbatim}
+def f (x, y):
+    """>>> f(2,2)
+4
+>>> f(3,2)
+6
+    """
+    return x*y
+
+finder = doctest.DocTestFinder()
+
+# Get list of DocTest instances
+tests = finder.find(f)
+\end{verbatim}
+
+The new \class{DocTestRunner} class then runs individual tests and can
+produce a summary of the results:
+
+\begin{verbatim}
+runner = doctest.DocTestRunner()
+for t in tests:
+    tried, failed = runner.run(t)
+    
+runner.summarize(verbose=1)
+\end{verbatim}
+
+The above example produces the following output:
+
+\begin{verbatim}
+1 items passed all tests:
+   2 tests in f
+2 tests in 1 items.
+2 passed and 0 failed.
+Test passed.
+\end{verbatim}
+
+\class{DocTestRunner} uses an instance of the \class{OutputChecker}
+class to compare the expected output with the actual output.  This
+class takes a number of different flags that customize its behaviour;
+ambitious users can also write a completely new subclass of
+\class{OutputChecker}.
+
+The default output checker provides a number of handy features.
+For example, with the \constant{doctest.ELLIPSIS} option flag,
+an ellipsis (\samp{...}) in the expected output matches any substring, 
+making it easier to accommodate outputs that vary in minor ways:
+
+\begin{verbatim}
+def o (n):
+    """>>> o(1)
+<__main__.C instance at 0x...>
+>>>
+"""
+\end{verbatim}
+
+Another special string, \samp{<BLANKLINE>}, matches a blank line:
+
+\begin{verbatim}
+def p (n):
+    """>>> p(1)
+<BLANKLINE>
+>>>
+"""
+\end{verbatim}
+
+Another new capability is producing a diff-style display of the output
+by specifying the \constant{doctest.REPORT_UDIFF} (unified diffs),
+\constant{doctest.REPORT_CDIFF} (context diffs), or
+\constant{doctest.REPORT_NDIFF} (delta-style) option flags.  For example:
+
+\begin{verbatim}
+def g (n):
+    """>>> g(4)
+here
+is
+a
+lengthy
+>>>"""
+    L = 'here is a rather lengthy list of words'.split()
+    for word in L[:n]:
+        print word
+\end{verbatim}
+
+Running the above function's tests with
+\constant{doctest.REPORT_UDIFF} specified, you get the following output:
+
+\begin{verbatim}
+**********************************************************************
+File ``t.py'', line 15, in g
+Failed example:
+    g(4)
+Differences (unified diff with -expected +actual):
+    @@ -2,3 +2,3 @@
+     is
+     a
+    -lengthy
+    +rather
+**********************************************************************
+\end{verbatim}
+
 
 % ======================================================================
 \section{Build and C API Changes}
 
-Changes to Python's build process and to the C API include:
+Some of the changes to Python's build process and to the C API are:
 
 \begin{itemize}
 
@@ -1496,14 +1644,15 @@ Changes to Python's build process and to the C API include:
   \method{set.__contains__()}.  (Contributed by Raymond Hettinger.)
 
   \item Python can now be built with additional profiling for the
-  interpreter itself.  This is intended for people developing on the
+  interpreter itself, intended as an aid to people developing the
   Python core.  Providing \longprogramopt{--enable-profiling} to the
   \program{configure} script will let you profile the interpreter with
   \program{gprof}, and providing the \longprogramopt{--with-tsc}
   switch enables profiling using the Pentium's Time-Stamp-Counter
-  register.  The switch is slightly misnamed, because the profiling
-  feature also works on the PowerPC platform, though that processor
-  architecture doesn't call that register a TSC.
+  register.  (The \longprogramopt{--with-tsc} switch is slightly
+  misnamed, because the profiling feature also works on the PowerPC
+  platform, though that processor architecture doesn't call that
+  register ``the TSC register''.)
    
   \item The \ctype{tracebackobject} type has been renamed to \ctype{PyTracebackObject}.
 
@@ -1530,6 +1679,13 @@ changes to your code:
 
 \begin{itemize}
 
+\item Left shifts and hexadecimal/octal constants that are too 
+  large no longer trigger a \exception{FutureWarning} and return 
+  a value limited to 32 or 64 bits; instead they return a long integer.
+
+\item Integer operations will no longer trigger an \exception{OverflowWarning}.
+The \exception{OverflowWarning} warning will disappear in Python 2.5.
+
 \item The \function{zip()} built-in function and \function{itertools.izip()}
   now return  an empty list instead of raising a \exception{TypeError}
   exception if called with no arguments.
@@ -1547,6 +1703,12 @@ changes to your code:
 
 \item The \module{tarfile} module now generates GNU-format tar files
 by default.
+
+\item Encountering a failure while importing a module no longer leaves
+a partially-initialized module object in \code{sys.modules}.  
+
+\item \constant{None} is now a constant; code that binds a new value to 
+the name \samp{None} is now a syntax error.
 
 \end{itemize}
 
