@@ -819,7 +819,7 @@ Mappings (dictionaries) compare equal if and only if their sorted
 (key, value) lists compare equal.\footnote{The implementation computes
    this efficiently, without constructing lists or sorting.}
 Outcomes other than equality are resolved consistently, but are not
-otherwise defined.\footnote{Earlier versions of Python used\
+otherwise defined.\footnote{Earlier versions of Python used
   lexicographic comparison of the sorted (key, value) lists, but this
   was very expensive for the common case of comparing for equality.  An
   even earlier version of Python compared dictionaries by identity only,
