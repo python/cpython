@@ -125,7 +125,8 @@ The \module{signal} module defines the following functions:
 
 \begin{funcdesc}{signal}{signalnum, handler}
   Set the handler for signal \var{signalnum} to the function
-  \var{handler}.  \var{handler} can be any callable Python object, or
+  \var{handler}.  \var{handler} can be a callable Python object
+  taking two arguments (see below), or
   one of the special values \constant{signal.SIG_IGN} or
   \constant{signal.SIG_DFL}.  The previous signal handler will be returned
   (see the description of \function{getsignal()} above).  (See the
