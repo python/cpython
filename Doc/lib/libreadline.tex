@@ -15,6 +15,10 @@ interpreter.
 The \module{readline} module defines the following functions:
 
 
+\begin{funcdesc}{readline}{\optional{prompt}}
+Get a single line of input from the user.
+\end{funcdesc}
+
 \begin{funcdesc}{parse_and_bind}{string}
 Parse and execute single line of a readline init file.
 \end{funcdesc}
@@ -154,3 +158,4 @@ import atexit
 atexit.register(readline.write_history_file, histfile)
 del os, histfile
 \end{verbatim}
+
