@@ -15,6 +15,7 @@ import os
 import sys
 from Carbon import Res # For Res.Error
 import pythonprefs
+import macresource
 import EasyDialogs
 try:
 	from Carbon import Help
@@ -195,10 +196,7 @@ def edit_applet(name):
 		handler.save(result)
 
 def main():
-	try:
-		h = FSpOpenResFile('EditPythonPrefs.rsrc', 1)
-	except Res.Error:
-		pass	# Assume we already have acces to our own resource
+	macresource.need('DLOG', DIALOG_ID, 'EditPythonPrefs.rsrc')
 	
 	MacOS.SchedParams(1, 0)
 	if len(sys.argv) <= 1:

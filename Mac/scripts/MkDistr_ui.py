@@ -23,6 +23,7 @@ import EasyDialogs
 import macfs
 import os
 import sys
+import macresource
 
 # Resource IDs
 ID_MAIN = 514
@@ -321,7 +322,7 @@ def GetType():
 			
 def InitUI():
 	"""Initialize stuff needed by UI (a resource file)"""
-	Res.FSpOpenResFile('MkDistr.rsrc', 1)
+	macresource.need('DLOG', ID_MAIN, 'MkDistr.rsrc', modname=__name__)
 
 class _testerhelp:
 	def __init__(self, which):
@@ -340,7 +341,7 @@ class _testerhelp:
 class _test:
 	def __init__(self):
 		import sys
-		Res.FSpOpenResFile('MkDistr.rsrc', 1)
+		InitUI()
 		self.inc = _testerhelp('include')
 		self.exc = _testerhelp('exclude')
 		self.ui = MkDistrUI(self)

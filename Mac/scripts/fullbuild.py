@@ -19,6 +19,7 @@ import EasyDialogs
 import re
 import string
 import genpluginprojects
+import macresource
 
 import aetools
 from Carbon import AppleEvents
@@ -369,11 +370,7 @@ def incbuildno(filename):
 	fp.close()
 				
 def main():
-	try:
-		h = Res.FSpOpenResFile('fullbuild.rsrc', 1)
-	except Res.Error:
-		pass	# Assume we already have acces to our own resource
-
+	macresource.need('DLOG', DIALOG_ID, 'fullbuild.rsrc')
 	dir, ok = macfs.GetDirectory('Python source folder:')
 	if not ok:
 		sys.exit(0)
