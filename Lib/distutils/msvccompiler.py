@@ -293,7 +293,7 @@ class MSVCCompiler (CCompiler) :
                 output_dir=None, macros=None, include_dirs=None, debug=0,
                 extra_preargs=None, extra_postargs=None, depends=None):
 
-	if not self.initialized: self.initialize()
+        if not self.initialized: self.initialize()
         macros, objects, extra_postargs, pp_opts, build = \
                 self._setup_compile(output_dir, macros, include_dirs, sources,
                                     depends, extra_postargs)
