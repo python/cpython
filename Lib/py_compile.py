@@ -3,10 +3,25 @@
 This module has intimate knowledge of the format of .pyc files.
 """
 
+import __builtin__
 import imp
+import marshal
+import os
+import sys
+import traceback
+
 MAGIC = imp.get_magic()
 
 __all__ = ["compile"]
+
+# Define an internal helper according to the platform
+if os.name == "mac":
+    import macfs
+    def set_creator_type(file):
+        macfs.FSSpec(file).SetCreatorType('Pyth', 'PYC ')
+else:
+    def set_creator_type(file):
+        pass
 
 def wr_long(f, x):
     """Internal; write a 32-bit int to a file in little-endian order."""
@@ -43,29 +58,22 @@ def compile(file, cfile=None, dfile=None):
     directories).
 
     """
-    import os, marshal, __builtin__
     f = open(file, 'U')
     try:
         timestamp = long(os.fstat(f.fileno()).st_mtime)
     except AttributeError:
         timestamp = long(os.stat(file).st_mtime)
     codestring = f.read()
-    # If parsing from a string, line breaks are \n (see parsetok.c:tok_nextc)
-    # Replace will return original string if pattern is not found, so
-    # we don't need to check whether it is found first.
-    codestring = codestring.replace("\r\n","\n")
-    codestring = codestring.replace("\r","\n")
     f.close()
     if codestring and codestring[-1] != '\n':
         codestring = codestring + '\n'
     try:
         codeobject = __builtin__.compile(codestring, dfile or file, 'exec')
     except SyntaxError, detail:
-        import traceback, sys
         lines = traceback.format_exception_only(SyntaxError, detail)
         for line in lines:
             sys.stderr.write(line.replace('File "<string>"',
-                                            'File "%s"' % (dfile or file)))
+                                          'File "%s"' % (dfile or file)))
         return
     if cfile is None:
         cfile = file + (__debug__ and 'c' or 'o')
@@ -77,6 +85,4 @@ def compile(file, cfile=None, dfile=None):
     fc.seek(0, 0)
     fc.write(MAGIC)
     fc.close()
-    if os.name == 'mac':
-        import macfs
-        macfs.FSSpec(cfile).SetCreatorType('Pyth', 'PYC ')
+    set_creator_type(cfile)
