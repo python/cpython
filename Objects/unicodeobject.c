@@ -5331,7 +5331,7 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyUnicodeObject *tmp, *new;
+	PyUnicodeObject *tmp, *pnew;
 	int n;
 
 	assert(PyType_IsSubtype(type, &PyUnicode_Type));
@@ -5339,19 +5339,20 @@ unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (tmp == NULL)
 		return NULL;
 	assert(PyUnicode_Check(tmp));
-	new = (PyUnicodeObject *) type->tp_alloc(type, n = tmp->length);
-	if (new == NULL)
+	pnew = (PyUnicodeObject *) type->tp_alloc(type, n = tmp->length);
+	if (pnew == NULL)
 		return NULL;
-	new->str = PyMem_NEW(Py_UNICODE, n+1);
-	if (new->str == NULL) {
-		_Py_ForgetReference((PyObject *)new);
-		PyObject_DEL(new);
+	pnew->str = PyMem_NEW(Py_UNICODE, n+1);
+	if (pnew->str == NULL) {
+		_Py_ForgetReference((PyObject *)pnew);
+		PyObject_DEL(pnew);
 		return NULL;
 	}
-	Py_UNICODE_COPY(new->str, tmp->str, n+1);
-	new->length = n;
+	Py_UNICODE_COPY(pnew->str, tmp->str, n+1);
+	pnew->length = n;
+	pnew->hash = tmp->hash;
 	Py_DECREF(tmp);
-	return (PyObject *)new;
+	return (PyObject *)pnew;
 }
 
 static char unicode_doc[] =
