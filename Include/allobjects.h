@@ -89,6 +89,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 #include "ceval.h"
 
+#include "abstract.h"
+
 extern void Py_FatalError Py_PROTO((char *));
 
 #define PyArg_GetInt(v, a)	PyArg_Parse((v), "i", (a))
