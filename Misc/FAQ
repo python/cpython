@@ -6,8 +6,8 @@ Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.3
-Last-modified: 26 Jan 1994
+Version: 1.4
+Last-modified: 2 Feb 1994
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -83,26 +83,39 @@ Here's an overview of the questions per chapter:
        find anything wrong with them.
   3.4. Q. I get an OverflowError on evaluating 2*2.  What is going on?
   3.5. Q. Trouble building Python 0.9.9 or earlier on platform X.
-  3.6. Q. Trouble building Python 1.0.0 on platform X.
+  3.6. Q. Link errors building Python with STDWIN on SGI Irix.
+  3.7. Q. Link errors for dlopen, dlsym, dlerror from import.o.
+  3.8. Q. Link errors after rerunning the configure script.
+  3.9. Q. The python interpreter complains about options passed to a
+       script (after the script name).
+  3.10. Q. When building on the SGI, make tries to run python to create
+        glmodule.c, but python hasn't been built or installed yet.
+  3.11. Q. Intermittent core dumps and complaints about perfectly valid
+        argument lists to built-in functions (e.g. posix.stat(filename) says
+        "no arguments needed").
+  3.12. Q. Trouble building Python 1.0.0 on NeXT.
+  3.13. Q. Other trouble building Python 1.0.0 on platform X.
 
  4. Programming in Python
-  4.1. Q. Can I create an object class with some methods implemented in
+  4.1. Q. Is there a source code level debugger with breakpoints, step,
+       etc.?
+  4.2. Q. Can I create an object class with some methods implemented in
        C and others in Python (e.g. through inheritance)?  (Also phrased as:
        Can I use a built-in type as base class?)
-  4.2. Q. I assign to a variable in a call to exec() but when I try to
-       use it on the next line I get an error.  What is going on?
-  4.3. Q. Why does that work?
-  4.4. Q. Is there a curses/termcap package for Python?
-  4.5. Q. Is there an equivalent to C's onexit() in Python?
-  4.6. Q. When I define a function nested inside another function, the
+  4.3. Q. Is there a curses/termcap package for Python?
+  4.4. Q. Is there an equivalent to C's onexit() in Python?
+  4.5. Q. When I define a function nested inside another function, the
        nested function seemingly can't access the local variables of the
        outer function.  What is going on?  How do I pass local data to a
        nested function?
-  4.7. Q. How do I iterate over a sequence in reverse order?
-  4.8. Q. My program is too slow.  How do I speed it up?
-  4.9. Q. When I have imported a module, then edit it, and import it
+  4.6. Q. How do I iterate over a sequence in reverse order?
+  4.7. Q. My program is too slow.  How do I speed it up?
+  4.8. Q. When I have imported a module, then edit it, and import it
        again (into the same Python process), the changes don't seem to take
        place.  What is going on?
+  4.9. Q. I have a module in which I want to execute some extra code when it
+       is run as a script.  How do I find out whether I am running as a
+       script?
 
  5. Extending Python
   5.1. Q. Can I create my own functions in C?
@@ -363,7 +376,54 @@ LONG_BIT in int_[lr]shift.
 
 Please convert to Python 1.0.0 -- it is much more portable.
 
-3.6. Q. Trouble building Python 1.0.0 on platform X.
+3.6. Q. Link errors building Python with STDWIN on SGI IRIX.
+
+A. Rebuild STDWIN, specifying "CC=cc -cckr" in the Makefile.
+
+3.7. Q. Link errors for dlopen, dlsym, dlerror from import.o.
+
+A. You are probably using the GNU loader which doesn't understand
+dynamic linking.  Manually comment out #define HAVE_DLFCN_H from
+config.h.  (Should be fixed in 1.0.1.)
+
+3.8. Q. Link errors after rerunning the configure script.
+
+A. It is generally necessary to run "make clean" after a configuration
+change.
+
+3.9. Q. The python interpreter complains about options passed to a
+script (after the script name).
+
+A. You are probably linking with GNU getopt, e.g. through -liberty.
+Don't.  (If you are using this because you link with -lreadline, use
+the readline distributed with Python instead.)
+
+3.10. Q. When building on the SGI, make tries to run python to create
+glmodule.c, but python hasn't been built or installed yet.
+
+A. Comment out the line mentioning glmodule.c in Setup and build a
+python without gl first; install it or make sure it is in your $PATH,
+then edit the Setup file again to turn on the gl module, and make
+again.  You don't need to do "make clean"; you do need to run "make
+Makefile" in the Modules subdirectory (or just run "make" at the
+toplevel).
+
+3.11. Q. Intermittent core dumps and complaints about perfectly valid
+argument lists to built-in functions (e.g. posix.stat(filename) says
+"no arguments needed").
+
+A. You are probably using <stdarg.h> instead of <varargs.h>, or the
+other way around.  It may also be that your <stdarg.h> or <varargs.h>
+does not match the code generated by your compiler.  In simple cases,
+it may help to turn comment out the #define HAVE_STDARG_H from the
+generated config.h.
+
+3.12. Q. Trouble building Python 1.0.0 on NeXT.
+
+A. Manually add #define _POSIX_SOURCE to config.h.  (Should be fixed
+in 1.0.1.)
+
+3.13. Q. Other trouble building Python 1.0.0 on platform X.
 
 A. Please email the details to <guido@cwi.nl> and I'll look into it.
 
@@ -371,7 +431,15 @@ A. Please email the details to <guido@cwi.nl> and I'll look into it.
 4. Programming in Python
 ========================
 
-4.1. Q. Can I create an object class with some methods implemented in
+4.1. Q. Is there a source code level debugger with breakpoints, step,
+etc.?
+
+A. Yes.  Check out module pdb; pdb.help() prints the documentation (or
+you can read it as Lib/pdb.doc).  If you use the STDWIN option,
+there's also a windowing interface, wdb.  You can write your own
+debugger by using the code for pdb or wdb as an example.
+
+4.2. Q. Can I create an object class with some methods implemented in
 C and others in Python (e.g. through inheritance)?  (Also phrased as:
 Can I use a built-in type as base class?)
 
@@ -397,30 +465,7 @@ wrapper around a built-in object, e.g. (for dictionaries):
 		def values(self): return self.data.values()
 		def has_key(self, key): return self.data.has_key(key)
 
-4.2. Q. I assign to a variable in a call to exec() but when I try to
-use it on the next line I get an error.  What is going on?
-
-A. The reason why this occurs is too complicated to explain (but see
-the next question).  To fix it is easy, however: simply assign None to
-the variable *before* calling exec().  This will be fixed in the 1.0
-release.
-
-4.3. Q. Why does that work?
-
-A. When parsing your program and converting it into internal pseudo
-code, the interpreter does some optimizations to speed up function
-execution: it figures out the names of all the local variables and
-treats them specially.  Because your assignment is done by exec(), it
-is not seen initially by the parser and the variable is not recognized
-as a local variable.  The default treatment is as a global variable,
-but the exec() statement places it in the local scope, where it is not
-found.  This will be fixed in release 1.0 by making exec into a
-statement; the parser will then be able to switch off the
-optimizations for local variables if it encounters an exec statement
-(recognizing calls to built-in functions is not possible for the
-parser, hence the syntax change to a statement).
-
-4.4. Q. Is there a curses/termcap package for Python?
+4.3. Q. Is there a curses/termcap package for Python?
 
 A. No, but you can use the "alfa" (== character cell) version of
 STDWIN.  (STDWIN == Standard Windows, a portable windowing system
@@ -428,13 +473,13 @@ interface by the same author, URL ftp://ftp.cwi.nl/pub/stdwin.)
 This will also prepare your program for porting to windowing
 environments such as X11 or the Macintosh.
 
-4.5. Q. Is there an equivalent to C's onexit() in Python?
+4.4. Q. Is there an equivalent to C's onexit() in Python?
 
 A. Yes, if you import sys and assign a function to sys.exitfunc, it
 will be called when your program exits, is killed by an unhandled
 exception, or (on UNIX) receives a SIGHUP or SIGTERM signal.
 
-4.6. Q. When I define a function nested inside another function, the
+4.5. Q. When I define a function nested inside another function, the
 nested function seemingly can't access the local variables of the
 outer function.  What is going on?  How do I pass local data to a
 nested function?
@@ -457,7 +502,7 @@ method of an instance of that class, e.g.:
 	print twice(10)
 	# Output: 20
 
-4.7. Q. How do I iterate over a sequence in reverse order?
+4.6. Q. How do I iterate over a sequence in reverse order?
 
 A. If it is a list, the fastest solution is
 
@@ -505,7 +550,7 @@ You can now simply write:
 Unfortunately, this solution is slowest of all, due the the method
 call overhead...
 
-4.8. Q. My program is too slow.  How do I speed it up?
+4.7. Q. My program is too slow.  How do I speed it up?
 
 A. That's a tough one, in general.  There are many tricks to speed up
 Python code; I would consider rewriting parts in C only as a last
@@ -520,7 +565,7 @@ your program is spending most of its time (if you have some patience
 -- the profiling itself can slow your program down by an order of
 magnitude).
 
-4.9. Q. When I have imported a module, then edit it, and import it
+4.8. Q. When I have imported a module, then edit it, and import it
 again (into the same Python process), the changes don't seem to take
 place.  What is going on?
 
@@ -541,6 +586,18 @@ modules containing statements like
 will continue to work with the old version of the objects imported
 thus.
 
+4.9. Q. I have a module in which I want to execute some extra code when it
+is run as a script.  How do I find out whether I am running as a
+script?
+
+A. A module can find out its own module name by alooking at the
+(predefined) global variable __name__.  If this has the value
+'__main__' you are running as a script.  E.g. if you put the following
+on the last line of your module, main() is called only when your
+module is running as a script:
+
+	if __name__ == '__main__': main()
+
 
 5. Extending Python
 ===================
@@ -548,9 +605,9 @@ thus.
 5.1. Q. Can I create my own functions in C?
 
 A. Yes, you can create built-in modules containing functions,
-variables, exceptions and even new types in C.  This is all explained
-in the file "python/misc/EXTENDING".  Also read the file "DYNLOAD"
-there for hints on how to load such extension modules
+variables, exceptions and even new types in C.  This is explained in
+the document "Extending and Embedding the Python Interpreter" (the
+LaTeX file Doc/ext.tex).  Also read the chapter on dynamic loading.
 
 5.2. Q. Can I create my own functions in C++?
 
