@@ -776,6 +776,8 @@ class PyBuildExt(build_ext):
             exts.append( Extension('_CF', ['cf/_CFmodule.c', 'cf/pycfbridge.c'],
                         extra_link_args=['-framework', 'CoreFoundation']) )
 
+            exts.append( Extension('ColorPicker', ['ColorPickermodule.c'],
+                        extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('autoGIL', ['autoGIL.c'],
                         extra_link_args=['-framework', 'CoreFoundation']) )
             exts.append( Extension('gestalt', ['gestaltmodule.c'],
