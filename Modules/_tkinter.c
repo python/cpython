@@ -2071,7 +2071,7 @@ panic(char * format, ...)
 	
 	va_start(varg, format);
 	
-	vPySys_WriteStderr(format, varg);
+	vfprintf(stderr, format, varg);
 	(void) fflush(stderr);
 	
 	va_end(varg);
