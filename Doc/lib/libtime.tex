@@ -80,20 +80,27 @@ this, where available).
 \item
 The time tuple as returned by \function{gmtime()},
 \function{localtime()}, and \function{strptime()}, and accepted by
-\function{asctime()}, \function{mktime()} and \function{strftime()}, is a
-tuple of 9 integers: year (e.g.\ 1993), month (1--12), day (1--31),
-hour (0--23), minute (0--59), second (0--59), weekday (0--6, monday is
-0), Julian day (1--366) and daylight savings flag (-1, 0  or 1).
-Note that unlike the \C{} structure, the month value is a range of 1-12, not
-0-11.  A year value less than 100 will typically be silently converted to
-1900 plus the year value.  A \code{-1} argument as daylight savings
-flag, passed to \function{mktime()} will usually result in the correct
-daylight savings state to be filled in.
+\function{asctime()}, \function{mktime()} and \function{strftime()},
+is a tuple of 9 integers: year (e.g.\ 1993), month (1--12), day
+(1--31), hour (0--23), minute (0--59), second (0--59), weekday (0--6,
+monday is 0), Julian day (1--366) and daylight savings flag (-1, 0 or
+1).  Note that unlike the \C{} structure, the month value is a range
+of 1-12, not 0-11.  A year value will be handled as descibed under
+``Year 2000 (Y2K) issues'' above.  A \code{-1} argument as daylight
+savings flag, passed to \function{mktime()} will usually result in the
+correct daylight savings state to be filled in.
 
 \end{itemize}
 
 The module defines the following functions and data items:
 
+
+\begin{datadesc}{accept2dyear}
+Boolean value indicating whether two-digit year values will be
+accepted.  This is true by default, but will be set to false if the
+environment variable \envvar{PYTHONY2K} has been set to a non-empty
+string.  It may also be modified at run time.
+\end{datadesc}
 
 \begin{datadesc}{altzone}
 The offset of the local DST timezone, in seconds west of the 0th
