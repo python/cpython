@@ -10,6 +10,35 @@ conform to the following interface:
       should call update_views() on the Switchboard object.  Not that the
       Viewer typically does *not* update itself before calling update_views(), 
       since this would cause it to get updated twice.
+
+Optionally, Viewers can also implement:
+
+    - save_options() which takes an optiondb (a dictionary).  Store into this
+      dictionary any values the Viewer wants to save in the persistent
+      ~/.pynche file.  This dictionary is saved using marshal.  The namespace
+      for the keys is ad-hoc; make sure you don't clobber some other Viewer's
+      keys!
+
+    - withdraw() which takes no arguments.  This is called when Pynche is
+      unmapped.  All Viewers should implement this.
+
+    - colordb_changed() which takes a single argument, an instance of
+      ColorDB.  This is called whenever the color name database is changed and 
+      gives a chance for the Viewers to do something on those events.  See
+      ListViewer for details.
+
+External Viewers are found dynamically.  Viewer modules should have names such 
+as FooViewer.py.  If such a named module has a module global variable called
+ADDTOVIEW and this variable is true, the Viewer will be added dynamically to
+the `View' menu.  ADDTOVIEW contains a string which is used as the menu item
+to display the Viewer (one kludge: if the string contains a `%', this is used
+to indicate that the next character will get an underline in the menu,
+otherwise the first character is underlined).
+
+FooViewer.py should contain a class called FooViewer, and its constructor
+should take two arguments, an instance of Switchboard, and optionally a Tk
+master window.
+
 """
 
 import sys
@@ -65,6 +94,10 @@ class Switchboard:
 
     def set_colordb(self, colordb):
         self.__colordb = colordb
+        for v in self.__views:
+            if hasattr(v, 'colordb_changed'):
+                v.colordb_changed(colordb)
+        self.update_views_current()
 
     def optiondb(self):
         return self.__optiondb
