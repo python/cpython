@@ -62,6 +62,7 @@ There are several possible recommendations and observations:
   multi-line statement, it's not clear whether both were executed.  In
   practice, they usually are, so the default action is make the same
   recommendation for all / operators, based on the above criteria.
+  The -m option issues warnings for these cases instead.
 
 Notes:
 
@@ -99,9 +100,11 @@ import re
 import tokenize
 from pprint import pprint
 
+multi_ok = 1
+
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "h")
+        opts, args = getopt.getopt(sys.argv[1:], "hm")
     except getopt.error, msg:
         usage(msg)
         return 2
@@ -109,6 +112,9 @@ def main():
         if o == "-h":
             print __doc__
             return
+        if o == "-m":
+            global multi_ok
+            multi_ok = 0
     if not args:
         usage("at least one file argument is required")
         return 2
@@ -130,7 +136,7 @@ def main():
 
 def usage(msg):
     sys.stderr.write("%s: %s\n" % (sys.argv[0], msg))
-    sys.stderr.write("Usage: %s warnings\n" % sys.argv[0])
+    sys.stderr.write("Usage: %s [-m] warnings\n" % sys.argv[0])
     sys.stderr.write("Try `%s -h' for more information.\n" % sys.argv[0])
 
 PATTERN = ("^(.+?):(\d+): DeprecationWarning: "
@@ -197,24 +203,29 @@ def process(file, list):
             reportphantomwarnings(warnings, f)
         else:
             if len(slashes) > 1:
-                report(slashes, "More than one / operator")
-            else:
-                (row, col), line = slashes[0]
+                if not multi_ok:
+                    report(slashes, "More than one / operator per statement")
+                    continue
+            intlong = []
+            floatcomplex = []
+            bad = []
+            for lineno, what in warnings:
+                if what in ("int", "long"):
+                    intlong.append(what)
+                elif what in ("float", "complex"):
+                    floatcomplex.append(what)
+                else:
+                    bad.append(what)
+            lastrow = None
+            for (row, col), line in slashes:
+                if row == lastrow:
+                    continue
+                lastrow = row
                 line = chop(line)
                 if line[col:col+1] != "/":
                     print "*** Can't find the / operator in line %d:" % row
                     print "*", line
                     continue
-                intlong = []
-                floatcomplex = []
-                bad = []
-                for lineno, what in warnings:
-                    if what in ("int", "long"):
-                        intlong.append(what)
-                    elif what in ("float", "complex"):
-                        floatcomplex.append(what)
-                    else:
-                        bad.append(what)
                 if bad:
                     print "*** Bad warning for line %d:" % row, bad
                     print "*", line
