@@ -209,7 +209,7 @@ parser_getattr Py_PROTO((PyObject *self, char *name));
 static
 PyTypeObject PyAST_Type = {
 
-    PyObject_HEAD_INIT(&PyType_Type)
+    PyObject_HEAD_INIT(NULL)
     0,
     "ast",				/* tp_name		*/
     (int) sizeof(PyAST_Object),		/* tp_basicsize		*/
