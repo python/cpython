@@ -13,9 +13,9 @@ all supported platforms.
 
 In version 2.3 of Python, this module was overhauled for enhanced
 security.  It now provides three new functions,
-\function{NamedTemporaryFile}, \function{mkstemp}, and
-\function{mkdtemp}, which should eliminate all remaining need to use
-the insecure \function{mktemp} function.  Temporary file names created
+\function{NamedTemporaryFile()}, \function{mkstemp()}, and
+\function{mkdtemp()}, which should eliminate all remaining need to use
+the insecure \function{mktemp()} function.  Temporary file names created
 by this module no longer contain the process ID; instead a string of
 six random characters is used.
 
@@ -39,8 +39,8 @@ be destroyed as soon as it is closed (including an implicit close when
 the object is garbage collected).  Under \UNIX, the directory entry
 for the file is removed immediately after the file is created.  Other
 platforms do not support this; your code should not rely on a
-\class{TemporaryFile} having or not having a visible name in the file
-system.
+temporary file created using this function having or not having a
+visible name in the file system.
 
 The \var{mode} parameter defaults to \code{'w+b'} so that the file
 created can be read and written without being closed.  Binary mode is
@@ -49,7 +49,7 @@ for the data that is stored.  \var{bufsize} defaults to \code{-1},
 meaning that the operating system default is used.
 
 The \var{dir}, \var{prefix} and \var{suffix} parameters are passed to
-\function{mkstemp}.
+\function{mkstemp()}.
 \end{funcdesc}
 
 \begin{funcdesc}{NamedTemporaryFile}{\optional{mode='w+b'}
@@ -57,7 +57,7 @@ The \var{dir}, \var{prefix} and \var{suffix} parameters are passed to
 				     \optional{, suffix}
 				     \optional{, prefix}
 				     \optional{, dir}}
-This function operates exactly as \function{TemporaryFile} does,
+This function operates exactly as \function{TemporaryFile()} does,
 except that the file is guaranteed to have a visible name in the file
 system (on \UNIX, the directory entry is not unlinked).  That name can
 be retrieved from the \member{name} member of the file object.  Whether
@@ -74,16 +74,16 @@ be so used on \UNIX; it cannot on Windows NT or later).
 Creates a temporary file in the most secure manner possible.  There
 are no race conditions in the file's creation, assuming that the
 platform properly implements the \constant{O_EXCL} flag for
-\function{os.open}.  The file is readable and writable only by the
+\function{os.open()}.  The file is readable and writable only by the
 creating user ID.  If the platform uses permission bits to indicate
 whether a file is executable, the file is executable by no one.  The
 file descriptor is not inherited by child processes.
 
-Unlike \function{TemporaryFile}, the user of \function{mkstemp} is
+Unlike \function{TemporaryFile()}, the user of \function{mkstemp()} is
 responsible for deleting the temporary file when done with it.
 
 If \var{suffix} is specified, the file name will end with that suffix,
-otherwise there will be no suffix.  \function{mkstemp} does not put a
+otherwise there will be no suffix.  \function{mkstemp()} does not put a
 dot between the file name and the suffix; if you need one, put it at
 the beginning of \var{suffix}.
 
@@ -97,8 +97,8 @@ If \var{text} is specified, it indicates whether to open the file in
 binary mode (the default) or text mode.  On some platforms, this makes
 no difference.
 
-\function{mkstemp} returns a tuple containing an OS-level handle to
-an open file (as would be returned by \function{os.open}) and the
+\function{mkstemp()} returns a tuple containing an OS-level handle to
+an open file (as would be returned by \function{os.open()}) and the
 absolute pathname of that file, in that order.
 \versionadded{2.3}
 \end{funcdesc}
@@ -111,13 +111,13 @@ There are no race conditions in the directory's creation.  The
 directory is readable, writable, and searchable only by the
 creating user ID.
 
-The user of \function{mkdtemp} is responsible for deleting the
+The user of \function{mkdtemp()} is responsible for deleting the
 temporary directory and its contents when done with it.
 
 The \var{prefix}, \var{suffix}, and \var{dir} arguments are the same
-as for \function{mkstemp}.
+as for \function{mkstemp()}.
 
-\function{mkdtemp} returns the absolute pathname of the new directory.
+\function{mkdtemp()} returns the absolute pathname of the new directory.
 \versionadded{2.3}
 \end{funcdesc}
 
@@ -127,7 +127,7 @@ as for \function{mkstemp}.
 \deprecated{2.3}{Use \function{mkstemp()} instead.}
 Return an absolute pathname of a file that did not exist at the time
 the call is made.  The \var{prefix}, \var{suffix}, and \var{dir}
-arguments are the same as for \function{mkstemp}.
+arguments are the same as for \function{mkstemp()}.
 
 \warning{Use of this function may introduce a security hole in your
 program.  By the time you get around to doing anything with the file
