@@ -35,16 +35,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 
 static object *
-strop_split(self, args)
-	object *self; /* Not used */
-	object *args;
-{
-	int len, i, j, err;
+split_whitespace(s, len)
 	char *s;
+	int len;
+{
+	int i, j, err;
 	object *list, *item;
 
-	if (!getargs(args, "s#", &s, &len))
-		return NULL;
 	list = newlistobject(0);
 	if (list == NULL)
 		return NULL;
@@ -86,8 +83,12 @@ strop_splitfields(self, args)
 	char *s, *sub;
 	object *list, *item;
 
-	if (!getargs(args, "(s#s#)", &s, &len, &sub, &n))
+	sub = NULL;
+	n = 0;
+	if (!newgetargs(args, "s#|z#", &s, &len, &sub, &n))
 		return NULL;
+	if (sub == NULL)
+		return split_whitespace(s, len);
 	if (n == 0) {
 		err_setstr(ValueError, "empty separator");
 		return NULL;
@@ -138,8 +139,14 @@ strop_joinfields(self, args)
 	char *sep, *p;
 	int seplen, seqlen, reslen, itemlen, i;
 
-	if (!getargs(args, "(Os#)", &seq, &sep, &seplen))
+	sep = NULL;
+	seplen = 0;
+	if (!newgetargs(args, "O|s#", &seq, &sep, &seplen))
 		return NULL;
+	if (sep == NULL) {
+		sep = " ";
+		seplen = 1;
+	}
 	if (is_listobject(seq)) {
 		getitem = getlistitem;
 		seqlen = getlistsize(seq);
@@ -503,11 +510,12 @@ static struct methodlist strop_methods[] = {
 	{"atoi",	strop_atoi},
 	{"atol",	strop_atol},
 	{"find",	strop_find},
-	{"joinfields",	strop_joinfields},
+	{"join",	strop_joinfields, 1},
+	{"joinfields",	strop_joinfields, 1},
 	{"lower",	strop_lower},
 	{"rfind",	strop_rfind},
-	{"split",	strop_split},
-	{"splitfields",	strop_splitfields},
+	{"split",	strop_splitfields, 1},
+	{"splitfields",	strop_splitfields, 1},
 	{"strip",	strop_strip},
 	{"swapcase",	strop_swapcase},
 	{"upper",	strop_upper},
