@@ -58,6 +58,10 @@ Core language, builtins, and interpreter
   includes support for "explicit" weak references, proxy objects, and
   mappings with weakly held values.
 
+- A 'continue' statement can now appear in a try block within the body
+  of a loop.  It is still not possible to use continue in a finally
+  clause. 
+
 Standard library
 
 - mailbox.py now has a new class, PortableUnixMailbox which is
