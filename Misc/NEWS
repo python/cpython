@@ -91,6 +91,11 @@ Library
 - distutils.commands.upload was added to support uploading distribution
   files to PyPI.
 
+- decimal operator and comparison methods now return NotImplemented
+  instead of raising a TypeError when interacting with other types.  This
+  allows other classes to implement __radd__ style methods and have them
+  work as expected.
+
 - Bug #1163325:  Decimal infinities failed to hash.  Attempting to
   hash a NaN raised an InvalidOperation instead of a TypeError.
 

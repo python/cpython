@@ -24,8 +24,6 @@ you're working through IDLE, you can import this test module and call test_main(
 with the corresponding argument.
 """
 
-from __future__ import division
-
 import unittest
 import glob
 import os, sys
@@ -54,9 +52,9 @@ if __name__ == '__main__':
 else:
     file = __file__
 testdir = os.path.dirname(file) or os.curdir
-dir = testdir + os.sep + TESTDATADIR + os.sep
+directory = testdir + os.sep + TESTDATADIR + os.sep
 
-skip_expected = not os.path.isdir(dir)
+skip_expected = not os.path.isdir(directory)
 
 # Make sure it actually raises errors when not expected and caught in flags
 # Slower, since it runs some things several times.
@@ -109,7 +107,6 @@ class DecimalTest(unittest.TestCase):
     Changed for unittest.
     """
     def setUp(self):
-        global dir
         self.context = Context()
         for key in DefaultContext.traps.keys():
             DefaultContext.traps[key] = 1
@@ -302,11 +299,11 @@ class DecimalTest(unittest.TestCase):
 # Dynamically build custom test definition for each file in the test
 # directory and add the definitions to the DecimalTest class.  This
 # procedure insures that new files do not get skipped.
-for filename in os.listdir(dir):
+for filename in os.listdir(directory):
     if '.decTest' not in filename:
         continue
     head, tail = filename.split('.')
-    tester = lambda self, f=filename: self.eval_file(dir + f)
+    tester = lambda self, f=filename: self.eval_file(directory + f)
     setattr(DecimalTest, 'test_' + head, tester)
     del filename, head, tail, tester
 
@@ -476,6 +473,52 @@ class DecimalImplicitConstructionTest(unittest.TestCase):
     def test_implicit_from_Decimal(self):
         self.assertEqual(Decimal(5) + Decimal(45), Decimal(50))
 
+    def test_rop(self):
+        # Allow other classes to be trained to interact with Decimals
+        class E:
+            def __divmod__(self, other):
+                return 'divmod ' + str(other)
+            def __rdivmod__(self, other):
+                return str(other) + ' rdivmod'
+            def __lt__(self, other):
+                return 'lt ' + str(other)
+            def __gt__(self, other):
+                return 'gt ' + str(other)
+            def __le__(self, other):
+                return 'le ' + str(other)
+            def __ge__(self, other):
+                return 'ge ' + str(other)
+            def __eq__(self, other):
+                return 'eq ' + str(other)
+            def __ne__(self, other):
+                return 'ne ' + str(other)
+
+        self.assertEqual(divmod(E(), Decimal(10)), 'divmod 10')
+        self.assertEqual(divmod(Decimal(10), E()), '10 rdivmod')
+        self.assertEqual(eval('Decimal(10) < E()'), 'gt 10')
+        self.assertEqual(eval('Decimal(10) > E()'), 'lt 10')
+        self.assertEqual(eval('Decimal(10) <= E()'), 'ge 10')
+        self.assertEqual(eval('Decimal(10) >= E()'), 'le 10')
+        self.assertEqual(eval('Decimal(10) == E()'), 'eq 10')
+        self.assertEqual(eval('Decimal(10) != E()'), 'ne 10')
+
+        # insert operator methods and then exercise them
+        for sym, lop, rop in (
+                ('+', '__add__', '__radd__'),
+                ('-', '__sub__', '__rsub__'),
+                ('*', '__mul__', '__rmul__'),
+                ('/', '__div__', '__rdiv__'),
+                ('%', '__mod__', '__rmod__'),
+                ('//', '__floordiv__', '__rfloordiv__'),
+                ('**', '__pow__', '__rpow__'),
+            ):
+
+            setattr(E, lop, lambda self, other: 'str' + lop + str(other))
+            setattr(E, rop, lambda self, other: str(other) + rop + 'str')
+            self.assertEqual(eval('E()' + sym + 'Decimal(10)'),
+                             'str' + lop + '10')
+            self.assertEqual(eval('Decimal(10)' + sym + 'E()'),
+                             '10' + rop + 'str')
 
 class DecimalArithmeticOperatorsTest(unittest.TestCase):
     '''Unit tests for all arithmetic operators, binary and unary.'''
