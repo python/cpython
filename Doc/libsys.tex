@@ -104,6 +104,12 @@ where \emph{VER} is equal to \code{sys.version[:3]}.
   cannot be trusted).
 \end{datadesc}
 
+\begin{funcdesc}{getrefcount}{object}
+Return the reference count of the \var{object}.  The count returned is
+generally one higher than you might expect, because it includes the
+(temporary) reference as an argument to \code{getrefcount()}.
+\end{funcdesc}
+
 \begin{datadesc}{last_type}
 \dataline{last_value}
 \dataline{last_traceback}
