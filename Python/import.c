@@ -1306,7 +1306,8 @@ PyImport_ReloadModule(m)
 	PyObject *m;
 {
 	PyObject *modules = PyImport_GetModuleDict();
-	char *name;
+	PyObject *path = NULL;
+	char *name, *subname;
 	char buf[MAXPATHLEN+1];
 	struct filedescr *fdp;
 	FILE *fp = NULL;
@@ -1325,8 +1326,29 @@ PyImport_ReloadModule(m)
 			     name);
 		return NULL;
 	}
+	subname = strrchr(name, '.');
+	if (subname == NULL)
+		subname = name;
+	else {
+		PyObject *parentname, *parent;
+		parentname = PyString_FromStringAndSize(name, (subname-name));
+		if (parentname == NULL)
+			return NULL;
+		parent = PyDict_GetItem(modules, parentname);
+		if (parent == NULL) {
+			PyErr_Format(PyExc_ImportError,
+			    "reload(): parent %.200s not in sys.modules",
+			    name);
+			return NULL;
+		}
+		subname++;
+		path = PyObject_GetAttrString(parent, "__path__");
+		if (path == NULL)
+			PyErr_Clear();
+	}
 	buf[0] = '\0';
-	fdp = find_module(name, (PyObject *)NULL, buf, MAXPATHLEN+1, &fp);
+	fdp = find_module(subname, path, buf, MAXPATHLEN+1, &fp);
+	Py_XDECREF(path);
 	if (fdp == NULL)
 		return NULL;
 	m = load_module(name, fp, buf, fdp->type);
