@@ -121,10 +121,6 @@ SOURCE=..\..\Modules\cjkcodecs\_codecs_tw.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\cjkcodecs\_codecs_unicode.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Modules\_codecsmodule.c
 # End Source File
 # Begin Source File
