@@ -7,8 +7,8 @@ They now require LaTeX2e (LaTeX 2.09 compatibility is dropped).
 The Python Reference Manual is no longer maintained in LaTeX.  It is
 now a FrameMaker document.  The FrameMaker 5.0 files (ref.book,
 ref*.doc) as well as PostScript generated (ref.ps) from it are in the
-subdirectory ref/.  (See ftp://ftp.adobe.com/pub/adobe/framereader for
-a free reader for FrameMaker documents, for some platforms.)  Many
+subdirectory ref/.  (See <ftp://ftp.adobe.com/pub/adobe/framereader>
+for a free reader for FrameMaker documents, for some platforms.)  Many 
 thanks to Robin Friedrich for the conversion of the Reference Manual
 to FrameMaker and his work on its index.
 
@@ -16,8 +16,8 @@ If you don't have LaTeX, or if you'd rather not format the
 documentation yourself, you can ftp a tar file containing HTML, PDF,
 or PostScript versions of all documents.  Additional formats may be
 available.  These should be in the same place where you fetched the
-main Python distribution (try http://www.python.org or
-ftp://ftp.python.org).
+main Python distribution (try <http://www.python.org> or
+<ftp://ftp.python.org>).
 
 The following are the LaTeX source files:
 
@@ -34,12 +34,30 @@ There's a Makefile to call LaTeX and the other utilities in the right
 order and the right number of times.  This will produce DVI files for
 each document made; to preview them, use xdvi.  PostScript is produced
 by the same Makefile target that produces the DVI files.  This uses
-the dvips tool.  Printing depends on local conventions; at my site, I
-use lpr.  For example:
+the dvips tool.  Printing depends on local conventions; at our site,
+we use lpr.  For example:
 
 	make lib			# create lib.dvi and lib.ps
 	xdvi lib			# preview lib.dvi
 	lpr lib.ps			# print on default printer
+
+
+What if I find a bug?
+---------------------
+
+First, check that the bug is present in the online version of the
+documentation at <http://www.python.org/docs/>; we may have already
+fixed it.
+
+If we haven't, tell us about it.  We'd like the documentation to be
+complete and accurate, but have limited time.  If you discover any
+inconsistencies between the documentation and implementation, or just
+have suggestions as to how to improve the documentation, let is know!
+Send comments and patches to the Python Documentation Team:
+
+			   python-docs@python.org
+
+Thanks!
 
 
 What tools do I need?
@@ -50,8 +68,8 @@ documentation are written in Python.
 
 The simplest way to get the rest of the tools in the configuration we
 used is to install the teTeX TeX distribution, version 0.9.  More
-information is available on teTeX at http://www.tug.org/tetex/.  This
-is a UNIX-only TeX distribution at this time.
+information is available on teTeX at <http://www.tug.org/tetex/>.
+This is a UNIX-only TeX distribution at this time.
 
 If you don't want to get teTeX, or if you're not using UNIX, here is
 what you'll need:
@@ -72,7 +90,7 @@ To create PDF files:
 To create PostScript files:
 
 	- dvips.  Most TeX installations include this.  If you don't
-	  have one, check CTAN (ftp://ctan.tug.org/tex-archive/).
+	  have one, check CTAN (<ftp://ctan.tug.org/tex-archive/>).
 
 To create info files:
 
@@ -80,10 +98,11 @@ To create info files:
 
 To create HTML files:
 
-	- Perl 5.004_04 or newer.  Try www.perl.org for pointers.
+	- Perl 5.004_04 or newer.  Find the software at
+	  <http://language.perl.com/info/software.html>.
 
 	- LaTeX2HTML 98.1p1, or newer.  Releases are available at
-	  http://www-dsed.llnl.gov/files/programs/unix/latex2html/.
+	  <http://www-dsed.llnl.gov/files/programs/unix/latex2html/>.
 
 
 What if Times fonts are not available?
@@ -105,6 +124,6 @@ The LaTeX documents can be converted to HTML using Nikos Drakos'
 LaTeX2HTML converter.  See the Makefile; after some twiddling, "make
 l2h" should do the trick.
 
-For the reference manual, I use Harlequin's webmaker.  I'm not very
+For the reference manual, we use Harlequin's webmaker.  We're not very 
 happy with it and hope that eventually FrameMaker will be able to
 produce HTML without third party help.
