@@ -239,16 +239,16 @@ def main():
 
     if dump:
 	print 'Non-geographic domains:'
-	codes = nameorg.keys()
+	codes = nameorgs.keys()
 	codes.sort()
 	for code in codes:
-	    print '    %4s:' % code, nameorg[code]
+	    print '    %4s:' % code, nameorgs[code]
 
 	print '\nCountry coded domains:'
-	codes = country.keys()
+	codes = countries.keys()
 	codes.sort()
 	for code in codes:
-	    print '    %2s:' % code, country[code]
+	    print '    %2s:' % code, countries[code]
     elif parsefile:
 	parse(parsefile, normalize)
     else:
