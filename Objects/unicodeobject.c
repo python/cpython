@@ -4000,6 +4000,13 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
     	return NULL;
     }
 
+    /* Grrrr.  A codec may be invoked to convert str objects to
+     * Unicode, and so it's possible to call back into Python code
+     * during PyUnicode_FromObject(), and so it's possible for a sick
+     * codec to change the size of fseq (if seq is a list).  Therefore
+     * we have to keep refetching the size -- can't assume seqlen
+     * is invariant.
+     */
     seqlen = PySequence_Fast_GET_SIZE(fseq);
     /* If empty sequence, return u"". */
     if (seqlen == 0) {
@@ -4029,6 +4036,8 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
 	        goto onError;
 	    sep = PyUnicode_AS_UNICODE(internal_separator);
 	    seplen = PyUnicode_GET_SIZE(internal_separator);
+	    /* In case PyUnicode_FromObject() mutated seq. */
+	    seqlen = PySequence_Fast_GET_SIZE(fseq);
         }
     }
 
@@ -4056,6 +4065,9 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
 	if (item == NULL)
 	    goto onError;
 	/* We own a reference to item from here on. */
+
+	/* In case PyUnicode_FromObject() mutated seq. */
+	seqlen = PySequence_Fast_GET_SIZE(fseq);
 
         /* Make sure we have enough space for the separator and the item. */
 	itemlen = PyUnicode_GET_SIZE(item);
