@@ -86,6 +86,12 @@
 Note that `\\[py-guess-indent-offset]' can usually guess a good value
 when you're editing someone else's Python code.")
 
+(defvar py-align-multiline-strings-p t
+  "*Flag describing how multiline triple quoted strings are aligned.
+When this flag is non-nil, continuation lines are lined up under the
+preceding line's indentation.  When this flag is nil, continuation
+lines are aligned to column zero.")
+
 (defvar py-block-comment-prefix "##"
   "*String used by `py-comment-region' to comment out a block of code.
 This should follow the convention for non-indenting comment lines so
@@ -793,116 +799,109 @@ the new line indented."
 
 (defun py-compute-indentation ()
   (save-excursion
-    (beginning-of-line)
-    (cond
-     ;; are we inside a string or comment?
-     ((save-excursion
-	(let ((pps (parse-partial-sexp (save-excursion
-					 (beginning-of-python-def-or-class)
-					 (point))
-				       (point))))
-	  (or (nth 3 pps) (nth 4 pps))))
-      (save-excursion
+    (let ((pps (parse-partial-sexp (save-excursion
+				     (beginning-of-python-def-or-class)
+				     (point))
+				   (point))))
+      (beginning-of-line)
+      (cond
+       ;; are we inside a string or comment?
+       ((or (nth 3 pps) (nth 4 pps))
+	(save-excursion
+	  (if (not py-align-multiline-strings-p) 0
+	    ;; skip back over blank & non-indenting comment lines
+	    ;; note: will skip a blank or non-indenting comment line
+	    ;; that happens to be a continuation line too
+	    (re-search-backward "^[ \t]*\\([^ \t\n#]\\|#[ \t\n]\\)" nil 'move)
+	    (back-to-indentation)
+	    (current-column))))
+       ;; are we on a continuation line?
+       ((py-continuation-line-p)
+	(let ((startpos (point))
+	      (open-bracket-pos (py-nesting-level))
+	      endpos searching found)
+	  (if open-bracket-pos
+	      (progn
+		;; align with first item in list; else a normal
+		;; indent beyond the line with the open bracket
+		(goto-char (1+ open-bracket-pos)) ; just beyond bracket
+		;; is the first list item on the same line?
+		(skip-chars-forward " \t")
+		(if (null (memq (following-char) '(?\n ?# ?\\)))
+					; yes, so line up with it
+		    (current-column)
+		  ;; first list item on another line, or doesn't exist yet
+		  (forward-line 1)
+		  (while (and (< (point) startpos)
+			      (looking-at "[ \t]*[#\n\\\\]")) ; skip noise
+		    (forward-line 1))
+		  (if (< (point) startpos)
+		      ;; again mimic the first list item
+		      (current-indentation)
+		    ;; else they're about to enter the first item
+		    (goto-char open-bracket-pos)
+		    (+ (current-indentation) py-indent-offset))))
+
+	    ;; else on backslash continuation line
+	    (forward-line -1)
+	    (if (py-continuation-line-p) ; on at least 3rd line in block
+		(current-indentation)	; so just continue the pattern
+	      ;; else started on 2nd line in block, so indent more.
+	      ;; if base line is an assignment with a start on a RHS,
+	      ;; indent to 2 beyond the leftmost "="; else skip first
+	      ;; chunk of non-whitespace characters on base line, + 1 more
+	      ;; column
+	      (end-of-line)
+	      (setq endpos (point)  searching t)
+	      (back-to-indentation)
+	      (setq startpos (point))
+	      ;; look at all "=" from left to right, stopping at first
+	      ;; one not nested in a list or string
+	      (while searching
+		(skip-chars-forward "^=" endpos)
+		(if (= (point) endpos)
+		    (setq searching nil)
+		  (forward-char 1)
+		  (setq state (parse-partial-sexp startpos (point)))
+		  (if (and (zerop (car state)) ; not in a bracket
+			   (null (nth 3 state))) ; & not in a string
+		      (progn
+			(setq searching nil) ; done searching in any case
+			(setq found
+			      (not (or
+				    (eq (following-char) ?=)
+				    (memq (char-after (- (point) 2))
+					  '(?< ?> ?!)))))))))
+	      (if (or (not found)	; not an assignment
+		      (looking-at "[ \t]*\\\\")) ; <=><spaces><backslash>
+		  (progn
+		    (goto-char startpos)
+		    (skip-chars-forward "^ \t\n")))
+	      (1+ (current-column))))))
+
+       ;; not on a continuation line
+
+       ;; if at start of restriction, or on a non-indenting comment
+       ;; line, assume they intended whatever's there
+       ((or (bobp) (looking-at "[ \t]*#[^ \t\n]"))
+	(current-indentation))
+
+       ;; else indentation based on that of the statement that
+       ;; precedes us; use the first line of that statement to
+       ;; establish the base, in case the user forced a non-std
+       ;; indentation for the continuation lines (if any)
+       (t
 	;; skip back over blank & non-indenting comment lines note:
 	;; will skip a blank or non-indenting comment line that
 	;; happens to be a continuation line too
 	(re-search-backward "^[ \t]*\\([^ \t\n#]\\|#[ \t\n]\\)" nil 'move)
-	(back-to-indentation)
-	(current-column)))
-     ;; are we on a continuation line?
-     ((py-continuation-line-p)
-      (let ((startpos (point))
-	    (open-bracket-pos (py-nesting-level))
-	    endpos searching found)
-	(if open-bracket-pos
-	    (progn
-	      ;; align with first item in list; else a normal
-	      ;; indent beyond the line with the open bracket
-	      (goto-char (1+ open-bracket-pos)) ; just beyond bracket
-	      ;; is the first list item on the same line?
-	      (skip-chars-forward " \t")
-	      (if (null (memq (following-char) '(?\n ?# ?\\)))
-					; yes, so line up with it
-		  (current-column)
-		;; first list item on another line, or doesn't exist yet
-		(forward-line 1)
-		(while (and (< (point) startpos)
-			    (looking-at "[ \t]*[#\n\\\\]")) ; skip noise
-		  (forward-line 1))
-		(if (< (point) startpos)
-		    ;; again mimic the first list item
-		    (current-indentation)
-		  ;; else they're about to enter the first item
-		  (goto-char open-bracket-pos)
-		  (+ (current-indentation) py-indent-offset))))
-
-	  ;; else on backslash continuation line
-	  (forward-line -1)
-	  (if (py-continuation-line-p)	; on at least 3rd line in block
-	      (current-indentation)	; so just continue the pattern
-	    ;; else started on 2nd line in block, so indent more.
-	    ;; if base line is an assignment with a start on a RHS,
-	    ;; indent to 2 beyond the leftmost "="; else skip first
-	    ;; chunk of non-whitespace characters on base line, + 1 more
-	    ;; column
-	    (end-of-line)
-	    (setq endpos (point)  searching t)
-	    (back-to-indentation)
-	    (setq startpos (point))
-	    ;; look at all "=" from left to right, stopping at first
-	    ;; one not nested in a list or string
-	    (while searching
-	      (skip-chars-forward "^=" endpos)
-	      (if (= (point) endpos)
-		  (setq searching nil)
-		(forward-char 1)
-		(setq state (parse-partial-sexp startpos (point)))
-		(if (and (zerop (car state)) ; not in a bracket
-			 (null (nth 3 state))) ; & not in a string
-		    (progn
-		      (setq searching nil) ; done searching in any case
-		      (setq found
-			    (not (or
-				  (eq (following-char) ?=)
-				  (memq (char-after (- (point) 2))
-					'(?< ?> ?!)))))))))
-	    (if (or (not found)		; not an assignment
-		    (looking-at "[ \t]*\\\\")) ; <=><spaces><backslash>
-		(progn
-		  (goto-char startpos)
-		  (skip-chars-forward "^ \t\n")))
-	    (1+ (current-column))))))
-
-     ;; not on a continuation line
-
-     ;; if at start of restriction, or on a non-indenting comment line,
-     ;; assume they intended whatever's there
-     ((or (bobp) (looking-at "[ \t]*#[^ \t\n]"))
-      (current-indentation))
-
-     ;; else indentation based on that of the statement that precedes
-     ;; us; use the first line of that statement to establish the base,
-     ;; in case the user forced a non-std indentation for the
-     ;; continuation lines (if any)
-     (t
-      ;; skip back over blank & non-indenting comment lines
-      ;; note:  will skip a blank or non-indenting comment line that
-      ;; happens to be a continuation line too
-      (re-search-backward "^[ \t]*\\([^ \t\n#]\\|#[ \t\n]\\)"
-			  nil 'move)
-      ;; if we landed inside a string, go to the beginning of that
-      ;; string. this handles triple quoted, multi-line spanning
-      ;; strings.
-      (let ((state (parse-partial-sexp
-		    (save-excursion (beginning-of-python-def-or-class)
-				    (point))
-		    (point))))
-	(if (nth 3 state)
-	    (goto-char (nth 2 state))))
-      (py-goto-initial-line)
-      (if (py-statement-opens-block-p)
-	  (+ (current-indentation) py-indent-offset)
-	(current-indentation))))))
+	;; if we landed inside a string, go to the beginning of that
+	;; string. this handles triple quoted, multi-line spanning
+	;; strings.
+	(py-goto-initial-line)
+	(if (py-statement-opens-block-p)
+	    (+ (current-indentation) py-indent-offset)
+	  (current-indentation)))))))
 
 (defun py-guess-indent-offset (&optional global)
   "Guess a good value for, and change, `py-indent-offset'.
