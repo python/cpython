@@ -40,6 +40,8 @@ This module provides a subset of the operating system dependent
 functionality provided by the optional built-in module \code{posix}.
 It is best accessed through the more portable standard module
 \code{os}.
+\refbimodindex{posix}
+\refstmodindex{os}
 
 The following functions are available in this module:
 \code{chdir},
@@ -59,11 +61,11 @@ The following functions are available in this module:
 \code{unlink},
 \code{write},
 as well as the exception \code{error}. Note that the times returned by
-\code{stat} are floating-point values, like all time values in
+\code{stat()} are floating-point values, like all time values in
 MacPython.
 
-One additional function is available: \code{xstat}. This function
-returns the same information as \code{stat}, but with three extra
+One additional function is available: \code{xstat()}. This function
+returns the same information as \code{stat()}, but with three extra
 values appended: the size of the resource fork of the file and its
 4-char creator and type.
 
@@ -74,6 +76,8 @@ This module provides a subset of the pathname manipulation functions
 available from the optional standard module \code{posixpath}.  It is
 best accessed through the more portable standard module \code{os}, as
 \code{os.path}.
+\refstmodindex{posixpath}
+\refstmodindex{os}
 
 The following functions are available in this module:
 \code{normcase},
