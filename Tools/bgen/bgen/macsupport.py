@@ -52,6 +52,9 @@ ExistingDialogPtr = OpaqueByValueType("DialogPtr", "WinObj_WhichWindow", "BUG")
 # NULL pointer passed in as optional storage -- not present in Python version
 NullStorage = FakeType("(void *)0")
 
+# More standard datatypes
+Fixed = OpaqueByValueType("Fixed", "PyMac_BuildFixed", "PyMac_GetFixed")
+
 # Quickdraw data types
 Rect = Rect_ptr = OpaqueType("Rect", "PyMac_BuildRect", "PyMac_GetRect")
 Point = OpaqueByValueType("Point", "PyMac_BuildPoint", "PyMac_GetPoint")
@@ -99,6 +102,8 @@ extern int ResObj_Convert(PyObject *, Handle *);
 
 extern PyObject *WinObj_New(WindowPtr);
 extern int WinObj_Convert(PyObject *, WindowPtr *);
+extern PyTypeObject Window_Type;
+#define WinObj_Check(x) ((x)->ob_type == &Window_Type)
 
 extern PyObject *DlgObj_New(DialogPtr);
 extern int DlgObj_Convert(PyObject *, DialogPtr *);
@@ -110,6 +115,9 @@ extern int MenuObj_Convert(PyObject *, MenuHandle *);
 
 extern PyObject *CtlObj_New(ControlHandle);
 extern int CtlObj_Convert(PyObject *, ControlHandle *);
+
+extern PyObject *GrafObj_New(GrafPtr);
+extern int GrafObj_Convert(PyObject *, GrafPtr *);
 
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 """
