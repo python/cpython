@@ -65,6 +65,14 @@ def unpackevent(ae, formodulename=""):
 	else:
 		parameters['----'] = unpack(dirobj, formodulename)
 		del dirobj
+	# Workaround for what I feel is a bug in OSX 10.2: 'errn' won't show up in missed...
+	try:
+		dirobj = ae.AEGetParamDesc('errn', '****')
+	except AE.Error:
+		pass
+	else:
+		parameters['errn'] = unpack(dirobj, formodulename)
+		del dirobj
 	while 1:
 		key = missed(ae)
 		if not key: break
