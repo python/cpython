@@ -183,12 +183,12 @@ testboth("%#X", 0, "0X0")
 testboth("%#X", 0L, "0X0")
 
 testboth("%x", 0x42, "42")
-# testboth("%x", -0x42, "ffffffbe") # specific to 32-bit boxes; see below
+testboth("%x", -0x42, "-42")
 testboth("%x", 0x42L, "42")
 testboth("%x", -0x42L, "-42")
 
 testboth("%o", 042, "42")
-# testboth("%o", -042, "37777777736") # specific to 32-bit boxes; see below
+testboth("%o", -042, "-42")
 testboth("%o", 042L, "42")
 testboth("%o", -042L, "-42")
 
@@ -238,6 +238,3 @@ if sys.maxint == 2**32-1:
         pass
     else:
         raise TestFailed, '"%*d"%(sys.maxint, -127) should fail'
-    # (different things go wrong on a 64 bit box...)
-    testboth("%x", -0x42, "ffffffbe")
-    testboth("%o", -042, "37777777736")

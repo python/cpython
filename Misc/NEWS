@@ -12,6 +12,15 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Removed FutureWarnings related to hex/oct literals and conversions
+  and left shifts.  (Thanks to Kalle Svensson for SF patch 849227.)
+  This addresses most of the remaining semantic changes promised by
+  PEP 237, except for repr() of a long, which still shows the trailing
+  'L'.  The PEP appears to promise warnings for operations that
+  changed semantics compared to Python 2.3, but this is not
+  implemented; we've suffered through enough warnings related to
+  hex/oct literals and I think it's best to be silent now.
+
 - For str and unicode objects, the ljust(), center(), and rjust()
   methods now accept an optional argument specifying a fill
   character other than a space.

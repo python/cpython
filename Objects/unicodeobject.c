@@ -6177,24 +6177,26 @@ formatint(Py_UNICODE *buf,
      *                   = 24
      */
     char fmt[64]; /* plenty big enough! */
+    char *sign;
     long x;
 
     x = PyInt_AsLong(v);
     if (x == -1 && PyErr_Occurred())
         return -1;
-    if (x < 0 && type != 'd' && type != 'i') {
-	if (PyErr_Warn(PyExc_FutureWarning,
-		       "%u/%o/%x/%X of negative int will return "
-		       "a signed string in Python 2.4 and up") < 0)
-	    return -1;
+    if (x < 0 && type == 'u') {
+        type = 'd';
     }
+    if (x < 0 && (type == 'x' || type == 'X' || type == 'o'))
+        sign = "-";
+    else
+        sign = "";
     if (prec < 0)
         prec = 1;
 
-    /* buf = '+'/'-'/'0'/'0x' + '[0-9]'*max(prec,len(x in octal))
-     * worst case buf = '0x' + [0-9]*prec, where prec >= 11
+    /* buf = '+'/'-'/'' + '0'/'0x'/'' + '[0-9]'*max(prec, len(x in octal))
+     * worst case buf = '-0x' + [0-9]*prec, where prec >= 11
      */
-    if (buflen <= 13 || buflen <= (size_t)2 + (size_t)prec) {
+    if (buflen <= 14 || buflen <= (size_t)3 + (size_t)prec) {
         PyErr_SetString(PyExc_OverflowError,
     	        "formatted integer is too long (precision too large?)");
         return -1;
@@ -6222,15 +6224,18 @@ formatint(Py_UNICODE *buf,
          * Note that this is the same approach as used in
          * formatint() in stringobject.c
          */
-        PyOS_snprintf(fmt, sizeof(fmt), "0%c%%.%dl%c",
-                      type, prec, type);
+        PyOS_snprintf(fmt, sizeof(fmt), "%s0%c%%.%dl%c",
+                      sign, type, prec, type);
     }
     else {
-        PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%dl%c",
-                      (flags&F_ALT) ? "#" : "",
+        PyOS_snprintf(fmt, sizeof(fmt), "%s%%%s.%dl%c",
+                      sign, (flags&F_ALT) ? "#" : "",
                       prec, type);
     }
-    return usprintf(buf, fmt, x);
+    if (sign[0])
+        return usprintf(buf, fmt, -x);
+    else
+        return usprintf(buf, fmt, x);
 }
 
 static int
@@ -6566,8 +6571,6 @@ PyObject *PyUnicode_Format(PyObject *format,
 			goto onError;
 		    pbuf = PyUnicode_AS_UNICODE(temp);
 		    len = PyUnicode_GET_SIZE(temp);
-		    /* unbounded ints can always produce
-		       a sign character! */
 		    sign = 1;
 		}
 		else {
@@ -6576,8 +6579,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 				    flags, prec, c, v);
 		    if (len < 0)
 			goto onError;
-		    /* only d conversion is signed */
-		    sign = c == 'd';
+		    sign = 1;
 		}
 		if (flags & F_ZERO)
 		    fill = '0';

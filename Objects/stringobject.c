@@ -3565,6 +3565,7 @@ formatint(char *buf, size_t buflen, int flags,
 	   worst case length = 3 + 19 (worst len of INT_MAX on 64-bit machine)
 	   + 1 + 1 = 24 */
 	char fmt[64];	/* plenty big enough! */
+	char *sign;
 	long x;
 
 	x = PyInt_AsLong(v);
@@ -3572,12 +3573,13 @@ formatint(char *buf, size_t buflen, int flags,
 		PyErr_SetString(PyExc_TypeError, "int argument required");
 		return -1;
 	}
-	if (x < 0 && type != 'd' && type != 'i') {
-		if (PyErr_Warn(PyExc_FutureWarning,
-			       "%u/%o/%x/%X of negative int will return "
-			       "a signed string in Python 2.4 and up") < 0)
-			return -1;
+	if (x < 0 && type == 'u') {
+		type = 'd';
 	}
+	if (x < 0 && (type == 'x' || type == 'X' || type == 'o'))
+		sign = "-";
+	else
+		sign = "";
 	if (prec < 0)
 		prec = 1;
 
@@ -3603,24 +3605,27 @@ formatint(char *buf, size_t buflen, int flags,
 		 * Note that this is the same approach as used in
 		 * formatint() in unicodeobject.c
 		 */
-		PyOS_snprintf(fmt, sizeof(fmt), "0%c%%.%dl%c",
-			      type, prec, type);
+		PyOS_snprintf(fmt, sizeof(fmt), "%s0%c%%.%dl%c",
+			      sign, type, prec, type);
 	}
 	else {
-		PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%dl%c",
-			      (flags&F_ALT) ? "#" : "",
+		PyOS_snprintf(fmt, sizeof(fmt), "%s%%%s.%dl%c",
+			      sign, (flags&F_ALT) ? "#" : "",
 			      prec, type);
 	}
 
-	/* buf = '+'/'-'/'0'/'0x' + '[0-9]'*max(prec, len(x in octal))
-	 * worst case buf = '0x' + [0-9]*prec, where prec >= 11
+	/* buf = '+'/'-'/'' + '0'/'0x'/'' + '[0-9]'*max(prec, len(x in octal))
+	 * worst case buf = '-0x' + [0-9]*prec, where prec >= 11
 	 */
-	if (buflen <= 13 || buflen <= (size_t)2 + (size_t)prec) {
+	if (buflen <= 14 || buflen <= (size_t)3 + (size_t)prec) {
 		PyErr_SetString(PyExc_OverflowError,
 		    "formatted integer is too long (precision too large?)");
 		return -1;
 	}
-	PyOS_snprintf(buf, buflen, fmt, x);
+	if (sign[0])
+		PyOS_snprintf(buf, buflen, fmt, -x);
+	else
+		PyOS_snprintf(buf, buflen, fmt, x);
 	return strlen(buf);
 }
 
@@ -3907,8 +3912,6 @@ PyString_Format(PyObject *format, PyObject *args)
 						prec, c, &pbuf, &len);
 					if (!temp)
 						goto error;
-					/* unbounded ints can always produce
-					   a sign character! */
 					sign = 1;
 				}
 				else {
@@ -3918,8 +3921,7 @@ PyString_Format(PyObject *format, PyObject *args)
 							flags, prec, c, v);
 					if (len < 0)
 						goto error;
-					/* only d conversion is signed */
-					sign = c == 'd';
+					sign = 1;
 				}
 				if (flags & F_ZERO)
 					fill = '0';

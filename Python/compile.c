@@ -1258,19 +1258,7 @@ parsenumber(struct compiling *c, char *s)
 	if (s[0] == '0') {
 		x = (long) PyOS_strtoul(s, &end, 0);
 		if (x < 0 && errno == 0) {
-			if (PyErr_WarnExplicit(
-				    PyExc_FutureWarning,
-				    "hex/oct constants > sys.maxint "
-				    "will return positive values "
-				    "in Python 2.4 and up",
-				    /* XXX: Give WarnExplicit
-				       a const char* argument. */
-				    (char*)c->c_filename,
-				    c->c_lineno,
-				    NULL,
-				    NULL) < 0)
-				return NULL;
-			errno = 0; /* Might be changed by PyErr_Warn() */
+			return PyLong_FromString(s, (char **)0, 0);
 		}
 	}
 	else
