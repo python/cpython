@@ -195,7 +195,7 @@ tb_displayline(PyObject *f, char *filename, int lineno, char *name)
 			}
 		}
 	}
-	sprintf(linebuf, FMT, filename, lineno, name);
+	PyOS_snprintf(linebuf, sizeof(linebuf), FMT, filename, lineno, name);
 	err = PyFile_WriteString(linebuf, f);
 	if (xfp == NULL || err != 0)
 		return err;
