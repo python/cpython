@@ -474,6 +474,21 @@ class CodecCallbackTest(unittest.TestCase):
             codecs.lookup_error("backslashreplace")
         )
 
+    def test_unencodablereplacement(self):
+        def unencrepl(exc):
+            if isinstance(exc, UnicodeEncodeError):
+                return (u"\u4242", exc.end)
+            else:
+                raise TypeError("don't know how to handle %r" % exc)
+        codecs.register_error("test.unencreplhandler", unencrepl)
+        for enc in ("ascii", "iso-8859-1", "iso-8859-15"):
+            self.assertRaises(
+                UnicodeEncodeError,
+                u"\u4242".encode,
+                enc,
+                "test.unencreplhandler"
+            )
+
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(CodecCallbackTest))
