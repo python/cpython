@@ -32,7 +32,7 @@ internationalized, to the local language and cultural habits.
 # Francois Pinard and Marc-Andre Lemburg also contributed valuably to this
 # module.
 #
-# J. David Ibanez implemented plural forms.
+# J. David Ibanez implemented plural forms. Bruno Haible fixed some bugs.
 #
 # TODO:
 # - Lazy loading of .mo files.  Currently the entire catalog is loaded into
@@ -80,16 +80,21 @@ def c2py(plural):
     from StringIO import StringIO
     import token, tokenize
     tokens = tokenize.generate_tokens(StringIO(plural).readline)
-    danger = [ x for x in tokens if x[0] == token.NAME and x[1] != 'n' ]
-    if danger:
-        raise ValueError, 'dangerous expression'
+    try:
+        danger = [ x for x in tokens if x[0] == token.NAME and x[1] != 'n' ]
+    except tokenize.TokenError:
+        raise ValueError, \
+              'plural forms expression error, maybe unbalanced parenthesis'
+    else:
+        if danger:
+            raise ValueError, 'plural forms expression could be dangerous'
 
     # Replace some C operators by their Python equivalents
     plural = plural.replace('&&', ' and ')
     plural = plural.replace('||', ' or ')
 
-    expr = re.compile(r'\![^=]')
-    plural = expr.sub(' not ', plural)
+    expr = re.compile(r'\!([^=])')
+    plural = expr.sub(' not \\1', plural)
 
     # Regular expression and replacement function used to transform
     # "a?b:c" to "test(a,b,c)".
@@ -104,7 +109,10 @@ def c2py(plural):
         if c == '(':
             stack.append('')
         elif c == ')':
-            if len(stack) == 0:
+            if len(stack) == 1:
+                # Actually, we never reach this code, because unbalanced
+                # parentheses get caught in the security check at the
+                # beginning.
                 raise ValueError, 'unbalanced parenthesis in plural form'
             s = expr.sub(repl, stack.pop())
             stack[-1] += '(%s)' % s
@@ -225,6 +233,7 @@ class GNUTranslations(NullTranslations):
         # Parse the .mo file header, which consists of 5 little endian 32
         # bit words.
         self._catalog = catalog = {}
+        self.plural = lambda n: int(n != 1) # germanic plural by default
         buf = fp.read()
         buflen = len(buf)
         # Are we big endian or little endian?
@@ -258,7 +267,7 @@ class GNUTranslations(NullTranslations):
             else:
                 raise IOError(0, 'File is corrupt', filename)
             # See if we're looking at GNU .mo conventions for metadata
-            if mlen == 0 and tmsg.lower().startswith('project-id-version:'):
+            if mlen == 0:
                 # Catalog description
                 for item in tmsg.split('\n'):
                     item = item.strip()
