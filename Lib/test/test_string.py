@@ -67,6 +67,15 @@ class Sequence:
 test('join', ['a', 'b', 'c', 'd'], 'a b c d')
 test('join', ('a', 'b', 'c', 'd'), 'abcd', '')
 test('join', Sequence(), 'w x y z')
+test('join', 7, TypeError)
+
+class BadStr:
+    def __str__(self): raise RuntimeError
+
+class BadSeq(Sequence):
+    def __init__(self): self.seq = [7, 'hello', BadStr()]
+
+test('join', BadSeq(), RuntimeError)
 
 # try a few long ones
 print string.join(['x' * 100] * 100, ':')
