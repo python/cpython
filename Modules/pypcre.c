@@ -1735,7 +1735,7 @@ for (;; ptr++)
 	      if (*errorptr) {
 		goto FAILED;
 	      }
-	      string = PyString_FromStringAndSize(ptr, idlen);
+	      string = PyString_FromStringAndSize((char*)ptr, idlen);
 	      intobj = PyInt_FromLong( brackets[0] );
 	      if (intobj == NULL || string==NULL)
 		{
@@ -1760,7 +1760,7 @@ for (;; ptr++)
 	      if (*errorptr) {
 		goto FAILED;
 	      }
-	      string = PyString_FromStringAndSize(ptr, idlen);
+	      string = PyString_FromStringAndSize((char*)ptr, idlen);
 	      if (string==NULL)	{
 		  Py_XDECREF(string);
 		  *errorptr = "exception raised";
@@ -3004,9 +3004,9 @@ for (;;)
     int number = (*ecode - OP_BRA) << 1;
     int save_offset1 = 0, save_offset2 = 0;
 
-    #ifdef DEBUG
+#ifdef DEBUG
     printf("start bracket %d\n", number/2);
-    #endif
+#endif
 
     if (number > 0 && number < md->offset_end)
       {
@@ -3014,9 +3014,9 @@ for (;;)
       save_offset2 = md->offset_vector[number+1];
       md->offset_vector[number] = eptr - md->start_subject;
 
-      #ifdef DEBUG
+#ifdef DEBUG
       printf("saving %d %d\n", save_offset1, save_offset2);
-      #endif
+#endif
       }
 
     /* Recurse for all the alternatives. */
@@ -3028,9 +3028,9 @@ for (;;)
       }
     while (*ecode == OP_ALT);
 
-    #ifdef DEBUG
+#ifdef DEBUG
     printf("bracket %d failed\n", number/2);
-    #endif
+#endif
 
     if (number > 0 && number < md->offset_end)
       {
@@ -3137,9 +3137,9 @@ for (;;)
 
       number = (*prev - OP_BRA) << 1;
 
-      #ifdef DEBUG
+#ifdef DEBUG
       printf("end bracket %d\n", number/2);
-      #endif
+#endif
 
       if (number > 0)
         {
@@ -3522,7 +3522,7 @@ for (;;)
       register int length = ecode[1];
       ecode += 2;
 
-      #ifdef DEBUG
+#ifdef DEBUG
       if (eptr >= md->end_subject)
         printf("matching subject <null> against pattern ");
       else
@@ -3533,7 +3533,7 @@ for (;;)
         }
       pchars(ecode, length, FALSE, md);
       printf("\n");
-      #endif
+#endif
 
       if (length > md->end_subject - eptr) FAIL;
       if (md->caseless)
@@ -3590,10 +3590,10 @@ for (;;)
     maximum. Alternatively, if maximizing, find the maximum number of
     characters and work backwards. */
 
-    #ifdef DEBUG
+#ifdef DEBUG
     printf("matching %c{%d,%d} against subject %.*s\n", c, min, max,
       max, eptr);
-    #endif
+#endif
 
     if (md->caseless)
       {
@@ -3842,9 +3842,9 @@ for (;;)
     /* There's been some horrible disaster. */
 
     default:
-    #ifdef DEBUG
+#ifdef DEBUG
     printf("Unknown opcode %d\n", *ecode);
-    #endif
+#endif
     md->errorcode = PCRE_ERROR_UNKNOWN_NODE;
     FAIL;
     }
@@ -4038,11 +4038,11 @@ do
       }
     }
 
-  #ifdef DEBUG
+#ifdef DEBUG
   printf(">>>> Match against: ");
   pchars(start_match, end_subject - start_match, TRUE, &match_block);
   printf("\n");
-  #endif
+#endif
 
   /* When a match occurs, substrings will be set for all internal extractions;
   we just need to set up the whole thing as substring 0 before returning. If
@@ -4056,9 +4056,9 @@ do
       offsets[0] = start_match - match_block.start_subject;
       offsets[1] = match_block.end_match_ptr - match_block.start_subject;
       }
-    #ifdef DEBUG
+#ifdef DEBUG
     printf(">>>> returning %d\n", rc);
-    #endif
+#endif
     free_stack(&match_block);
     return rc;
     }
