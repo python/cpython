@@ -87,7 +87,7 @@ Core and builtins
   as directory names.
 
 - The built-ins slice() and buffer() are now callable types.  The
-0  types classobj (formerly class), code, function, instance, and
+  types classobj (formerly class), code, function, instance, and
   instancemethod (formerly instance-method), which have no built-in
   names but are accessible through the types module, are now also
   callable.  The type dict-proxy is renamed to dictproxy.
