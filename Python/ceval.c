@@ -1723,6 +1723,7 @@ eval_code2(co, globals, locals,
 		if (why == WHY_NOT) {
 			if (err == 0 && x != NULL) {
 #ifdef CHECKEXC
+				/* This check is expensive! */
 				if (PyErr_Occurred())
 					fprintf(stderr,
 						"XXX undetected error\n");
@@ -1735,18 +1736,18 @@ eval_code2(co, globals, locals,
 			err = 0;
 		}
 
-#ifdef CHECKEXC
 		/* Double-check exception status */
 		
 		if (why == WHY_EXCEPTION || why == WHY_RERAISE) {
 			if (!PyErr_Occurred()) {
-				fprintf(stderr, "XXX ghost error\n");
 				PyErr_SetString(PyExc_SystemError,
-						"ghost error");
+					"error return without exception set");
 				why = WHY_EXCEPTION;
 			}
 		}
+#ifdef CHECKEXC
 		else {
+			/* This check is expensive! */
 			if (PyErr_Occurred()) {
 				fprintf(stderr,
 					"XXX undetected error (why=%d)\n",
