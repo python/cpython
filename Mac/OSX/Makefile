@@ -49,7 +49,7 @@ RESOURCEFILE=python.rsrc
 RFCONVERTER=$(srcdir)/Mac/Lib/applesingle.py
 CACHERSRC=$(srcdir)/Mac/scripts/cachersrc.py
 
-installapps: install_PythonLauncher install_Python install_BuildApplet install_IDE
+installapps: install_PythonLauncher install_Python install_BuildApplet install_IDE install_IDLE
 
 install_PythonLauncher:
 	cd $(srcdir)/Mac/OSX/PythonLauncher/PythonLauncher.pbproj ; \
@@ -130,6 +130,26 @@ install_IDE: $(INSTALLED_PYTHONW)
 	$(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
 		--output $(PYTHONAPPSDIR)/PythonIDE.app --noargv \
 		$(srcdir)/Mac/Tools/IDE/PythonIDE.py
+
+install_IDLE: $(INSTALLED_PYTHONW)
+	@if ! $(INSTALLED_PYTHONW) -c "import _tkinter"; then \
+		echo IDLE needs the \"Tkinter\" extension module; \
+		echo See Mac/OSX/README for details; \
+	else \
+		echo $(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
+			--output $(PYTHONAPPSDIR)/IDLE.app \
+			--extra $(srcdir)/Tools/idle \
+			$(srcdir)/Tools/idle/idle ; \
+		$(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
+			--output $(PYTHONAPPSDIR)/IDLE.app \
+			--extra $(srcdir)/Tools/idle \
+			$(srcdir)/Tools/idle/idle ; \
+		echo mv $(PYTHONAPPSDIR)/IDLE.app/Contents/Resources/idle \
+			$(PYTHONAPPSDIR)/IDLE.app/Contents/Resources/idlelib; \
+		mv $(PYTHONAPPSDIR)/IDLE.app/Contents/Resources/idle \
+			$(PYTHONAPPSDIR)/IDLE.app/Contents/Resources/idlelib; \
+	fi
+
 		
 install_BuildApplet: $(INSTALLED_PYTHONW)
 	$(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
