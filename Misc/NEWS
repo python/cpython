@@ -142,6 +142,9 @@ Tools/Demos
 
 Build
 
+- XXX WITH_UNIVERSAL_NEWLINES Somebody fill this in; the PEP doesn't
+  say how or when to configure it, or how to turn it off.
+
 - On Unix, a shared libpython2.3.so can be created with --enable-shared.
 
 - All uses of the CACHE_HASH, INTERN_STRINGS, and DONT_SHARE_SHORT_STRINGS

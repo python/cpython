@@ -509,6 +509,9 @@ typedef int pid_t;
 /* Use Python's own small-block memory-allocator. */
 #define WITH_PYMALLOC 1
 
+/* Enable \n, \r, \r\n line ends on import; also the 'U' mode flag for open. */
+#define WITH_UNIVERSAL_NEWLINES 1
+
 /* Define if you have clock.  */
 /* #define HAVE_CLOCK */
 
