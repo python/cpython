@@ -531,8 +531,6 @@ def _run_examples_inner(out, fakeout, examples, globs, verbose, name):
 
 # Run list of examples, in a shallow copy of context (dict) globs.
 # Return (#failures, #tries).
-# CAUTION:  globs is cleared before returning.  This is to help break
-# cycles that may have been created by the examples.
 
 def _run_examples(examples, globs, verbose, name):
     import sys
@@ -549,7 +547,9 @@ def _run_examples(examples, globs, verbose, name):
         # generator tests that raise exceptions, because a named generator-
         # iterator gets an entry in globs, and the generator-iterator
         # object's frame's traceback info points back to globs.  This is
-        # easy to break just by clearing the namespace.
+        # easy to break just by clearing the namespace.  This can also
+        # help to break other kinds of cycles, and even for cycles that
+        # gc can break itself it's better to break them ASAP.
         globs.clear()
     return x
 
