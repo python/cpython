@@ -262,13 +262,29 @@ static drawingobject *Drawing; /* Set to current drawing object, or NULL */
 
 /* Drawing methods */
 
+static object *
+drawing_close(dp)
+	drawingobject *dp;
+{
+	if (dp->d_ref != NULL) {
+		wenddrawing(dp->d_ref->w_win);
+		Drawing = NULL;
+		DECREF(dp->d_ref);
+		dp->d_ref = NULL;
+	}
+	INCREF(None);
+	return None;
+}
 static void
 drawing_dealloc(dp)
 	drawingobject *dp;
 {
-	wenddrawing(dp->d_ref->w_win);
-	Drawing = NULL;
-	DECREF(dp->d_ref);
+	if (dp->d_ref != NULL) {
+		wenddrawing(dp->d_ref->w_win);
+		Drawing = NULL;
+		DECREF(dp->d_ref);
+		dp->d_ref = NULL;
+	}
 	free((char *)dp);
 }
 
@@ -704,7 +720,9 @@ static struct methodlist drawing_methods[] = {
 	{"box",		drawing_box},
 	{"circle",	drawing_circle},
 	{"cliprect",	drawing_cliprect},
+	{"close",	drawing_close},
 	{"elarc",	drawing_elarc},
+	{"enddrawing",	drawing_close},
 	{"erase",	drawing_erase},
 	{"fillcircle",	drawing_fillcircle},
 	{"fillelarc",	drawing_fillelarc},
@@ -802,10 +820,30 @@ text_dealloc(tp)
 {
 	if (tp->t_text != NULL)
 		tefree(tp->t_text);
-	if (tp->t_attr != NULL)
-		DECREF(tp->t_attr);
-	DECREF(tp->t_ref);
+	XDECREF(tp->t_attr);
+	XDECREF(tp->t_ref);
 	DEL(tp);
+}
+
+static object *
+text_close(tp, args)
+	textobject *tp;
+	object *args;
+{
+	if (tp->t_text != NULL) {
+		tefree(tp->t_text);
+		tp->t_text = NULL;
+	}
+	if (tp->t_attr != NULL) {
+		DECREF(tp->t_attr);
+		tp->t_attr = NULL;
+	}
+	if (tp->t_ref != NULL) {
+		DECREF(tp->t_ref);
+		tp->t_ref = NULL;
+	}
+	INCREF(None);
+	return None;
 }
 
 static object *
@@ -1018,19 +1056,20 @@ text_setview(self, args)
 }
 
 static struct methodlist text_methods[] = {
-	"arrow",	text_arrow,
-	"draw",		text_draw,
-	"event",	text_event,
-	"getfocus",	text_getfocus,
-	"getfocustext",	text_getfocustext,
-	"getrect",	text_getrect,
-	"gettext",	text_gettext,
-	"move",		text_move,
-	"replace",	text_replace,
-	"setactive",	text_setactive,
-	"setfocus",	text_setfocus,
-	"settext",	text_settext,
-	"setview",	text_setview,
+	{"arrow",	text_arrow},
+	{"close",	text_close},
+	{"draw",	text_draw},
+	{"event",	text_event},
+	{"getfocus",	text_getfocus},
+	{"getfocustext",	text_getfocustext},
+	{"getrect",	text_getrect},
+	{"gettext",	text_gettext},
+	{"move",		text_move},
+	{"replace",	text_replace},
+	{"setactive",	text_setactive},
+	{"setfocus",	text_setfocus},
+	{"settext",	text_settext},
+	{"setview",	text_setview},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -1211,10 +1250,10 @@ menu_check(self, args)
 }
 
 static struct methodlist menu_methods[] = {
-	"additem",	menu_additem,
-	"setitem",	menu_setitem,
-	"enable",	menu_enable,
-	"check",	menu_check,
+	{"additem",	menu_additem},
+	{"setitem",	menu_setitem},
+	{"enable",	menu_enable},
+	{"check",	menu_check},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -1304,8 +1343,26 @@ window_print(wp, fp, flags)
 	FILE *fp;
 	int flags;
 {
-	fprintf(fp, "<window titled '%s'>", getstringvalue(wp->w_title));
+	fprintf(fp, "<%s window titled '%s'>",
+		wp->w_win == NULL ? "closed" : "open",
+		getstringvalue(wp->w_title));
 	return 0;
+}
+
+static object *
+window_close(wp, args)
+	windowobject *wp;
+	object *args;
+{
+	if (wp->w_win != NULL) {
+		int tag = wgettag(wp->w_win);
+		if (tag >= 0 && tag < MAXNWIN)
+			windowlist[tag] = NULL;
+		wclose(wp->w_win);
+		wp->w_win = NULL;
+	}
+	INCREF(None);
+	return None;
 }
 
 static object *
@@ -1561,6 +1618,7 @@ window_getxwindowid(self, args)
 static struct methodlist window_methods[] = {
 	{"begindrawing",window_begindrawing},
 	{"change",	window_change},
+	{"close",	window_close},
 	{"getdocsize",	window_getdocsize},
 	{"getorigin",	window_getorigin},
 	{"gettitle",	window_gettitle},
