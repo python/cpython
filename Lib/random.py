@@ -20,7 +20,7 @@
 # value.  See whrandom.py for more info.
 
 import whrandom
-from whrandom import random, uniform, randint, choice # Also for export!
+from whrandom import random, uniform, randint, choice, randrange # For export!
 from math import log, exp, pi, e, sqrt, acos, cos, sin
 
 # Interfaces to replace remaining needs for importing whrandom
