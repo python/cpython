@@ -5,7 +5,7 @@
 typedef struct {
 	PyObject_HEAD
 	long      it_index;
-	PyObject *it_seq;
+	PyObject *it_seq; /* Set to NULL when iterator is exhausted */
 } seqiterobject;
 
 PyObject *
@@ -26,29 +26,21 @@ PySeqIter_New(PyObject *seq)
 	_PyObject_GC_TRACK(it);
 	return (PyObject *)it;
 }
+
 static void
 iter_dealloc(seqiterobject *it)
 {
 	_PyObject_GC_UNTRACK(it);
-	Py_DECREF(it->it_seq);
+	Py_XDECREF(it->it_seq);
 	PyObject_GC_Del(it);
 }
 
 static int
 iter_traverse(seqiterobject *it, visitproc visit, void *arg)
 {
+	if (it->it_seq == NULL)
+		return 0;
 	return visit(it->it_seq, arg);
-}
-
-static PyObject *
-iter_next(seqiterobject *it)
-{
-	PyObject *seq = it->it_seq;
-	PyObject *result = PySequence_GetItem(seq, it->it_index++);
-
-	if (result == NULL && PyErr_ExceptionMatches(PyExc_IndexError))
-		PyErr_SetObject(PyExc_StopIteration, Py_None);
-	return result;
 }
 
 static PyObject *
@@ -67,6 +59,8 @@ iter_iternext(PyObject *iterator)
 	assert(PySeqIter_Check(iterator));
 	it = (seqiterobject *)iterator;
 	seq = it->it_seq;
+	if (seq == NULL)
+		return NULL;
 
 	if (PyTuple_CheckExact(seq)) {
 		if (it->it_index < PyTuple_GET_SIZE(seq)) {
@@ -76,30 +70,26 @@ iter_iternext(PyObject *iterator)
 			Py_INCREF(item);
 			return item;
 		}
+		Py_DECREF(seq);
+		it->it_seq = NULL;
 		return NULL;
 	}
 	else {
-		PyObject *result = PySequence_ITEM(seq, it->it_index);
-		it->it_index++;
+		PyObject *result = PySequence_GetItem(seq, it->it_index);
 		if (result != NULL) {
+			it->it_index++;
 			return result;
 		}
 		if (PyErr_ExceptionMatches(PyExc_IndexError) ||
-			PyErr_ExceptionMatches(PyExc_StopIteration)) {
+		    PyErr_ExceptionMatches(PyExc_StopIteration))
+		{
 			PyErr_Clear();
-			return NULL;
+			Py_DECREF(seq);
+			it->it_seq = NULL;
 		}
-		else {
-			return NULL;
-		}
+		return NULL;
 	}
 }
-
-static PyMethodDef iter_methods[] = {
-	{"next",	(PyCFunction)iter_next,	METH_NOARGS,
-	 "it.next() -- get the next value, or raise StopIteration"},
-	{NULL,		NULL}		/* sentinel */
-};
 
 PyTypeObject PySeqIter_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -131,7 +121,7 @@ PyTypeObject PySeqIter_Type = {
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)iter_getiter,		/* tp_iter */
 	(iternextfunc)iter_iternext,		/* tp_iternext */
-	iter_methods,				/* tp_methods */
+	0,					/* tp_methods */
 	0,					/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */
@@ -144,8 +134,8 @@ PyTypeObject PySeqIter_Type = {
 
 typedef struct {
 	PyObject_HEAD
-	PyObject *it_callable;
-	PyObject *it_sentinel;
+	PyObject *it_callable; /* Set to NULL when iterator is exhausted */
+	PyObject *it_sentinel; /* Set to NULL when iterator is exhausted */
 } calliterobject;
 
 PyObject *
@@ -166,8 +156,8 @@ static void
 calliter_dealloc(calliterobject *it)
 {
 	_PyObject_GC_UNTRACK(it);
-	Py_DECREF(it->it_callable);
-	Py_DECREF(it->it_sentinel);
+	Py_XDECREF(it->it_callable);
+	Py_XDECREF(it->it_sentinel);
 	PyObject_GC_Del(it);
 }
 
@@ -175,47 +165,42 @@ static int
 calliter_traverse(calliterobject *it, visitproc visit, void *arg)
 {
 	int err;
-	if ((err = visit(it->it_callable, arg)))
+	if (it->it_callable != NULL && (err = visit(it->it_callable, arg)))
 		return err;
-	if ((err = visit(it->it_sentinel, arg)))
+	if (it->it_sentinel != NULL && (err = visit(it->it_sentinel, arg)))
 		return err;
 	return 0;
 }
 
 static PyObject *
-calliter_next(calliterobject *it, PyObject *args)
-{
-	PyObject *result = PyObject_CallObject(it->it_callable, NULL);
-	if (result != NULL) {
-		if (PyObject_RichCompareBool(result, it->it_sentinel, Py_EQ)) {
-			PyErr_SetObject(PyExc_StopIteration, Py_None);
-			Py_DECREF(result);
-			result = NULL;
-		}
-	}
-	return result;
-}
-
-static PyMethodDef calliter_methods[] = {
-	{"next",	(PyCFunction)calliter_next,	METH_VARARGS,
-	 "it.next() -- get the next value, or raise StopIteration"},
-	{NULL,		NULL}		/* sentinel */
-};
-
-static PyObject *
 calliter_iternext(calliterobject *it)
 {
-	PyObject *result = PyObject_CallObject(it->it_callable, NULL);
-	if (result != NULL) {
-		if (PyObject_RichCompareBool(result, it->it_sentinel, Py_EQ)) {
+	if (it->it_callable != NULL) {
+		PyObject *result = PyObject_CallObject(it->it_callable, NULL);
+		if (result != NULL) {
+			int ok;
+			ok = PyObject_RichCompareBool(result,
+						      it->it_sentinel,
+						      Py_EQ);
+			if (ok == 0)
+				return result; /* Common case, fast path */
 			Py_DECREF(result);
-			result = NULL;
+			if (ok > 0) {
+				Py_DECREF(it->it_callable);
+				it->it_callable = NULL;
+				Py_DECREF(it->it_sentinel);
+				it->it_sentinel = NULL;
+			}
+		}
+		else if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+			PyErr_Clear();
+			Py_DECREF(it->it_callable);
+			it->it_callable = NULL;
+			Py_DECREF(it->it_sentinel);
+			it->it_sentinel = NULL;
 		}
 	}
-	else if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
-		PyErr_Clear();
-	}
-	return result;
+	return NULL;
 }
 
 PyTypeObject PyCallIter_Type = {
@@ -248,7 +233,7 @@ PyTypeObject PyCallIter_Type = {
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)iter_getiter,		/* tp_iter */
 	(iternextfunc)calliter_iternext,	/* tp_iternext */
-	calliter_methods,			/* tp_methods */
+	0,					/* tp_methods */
 	0,					/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */
