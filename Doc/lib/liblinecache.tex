@@ -1,0 +1,41 @@
+\section{\module{linecache} ---
+         Treat files like lists of lines}
+
+\declaremodule{standard}{linecache}
+\sectionauthor{Moshe Zadka}{mzadka@geocities.com}
+\modulesynopsis{This module treats files like random-access lists of lines.}
+
+
+The \module{linecache} module allows one to get any line from any file,
+while attempting to optimize internally, using a cache, the common case
+where many lines are read from a file.
+
+The \module{linecache} module defines the following functions:
+
+\begin{funcdesc}{getline}{filename, lineno}
+Get line \var{lineno} from file named \var{filename}. This function
+will never throw an exception --- it will return \code{''} on errors.
+
+If a file named \var{filename} is not found, the function will look
+for it in the module search path.
+\end{funcdesc}
+
+\begin{funcdesc}{clearcache}{}
+Clear the cache. You might want to use this function if you know that
+you do not need to read lines from many of files you already read from
+using this module.
+\end{funcdesc}
+
+\begin{funcdesc}{checkcache}{}
+Check the cache is still valid. You might want to use this function if
+you suspect that files you read from using this module might have
+changed.
+\end{funcdesc}
+
+Example:
+
+\begin{verbatim}
+>>> import linecache
+>>> linecache.getline('/etc/passwd', 4)
+'sys:x:3:3:sys:/dev:/bin/sh\012'
+\end{verbatim}
