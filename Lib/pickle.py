@@ -255,6 +255,7 @@ class Pickler:
 
         t = type(object)
 
+        # XXX Why are tuples a special case here?
         if (t is TupleType) and (len(object) == 0):
             if self.bin:
                 self.save_empty_tuple(object)
