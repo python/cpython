@@ -236,45 +236,7 @@ def _write_float(f, x):
 	_write_long(f, himant)
 	_write_long(f, lomant)
 
-class Chunk:
-	def __init__(self, file):
-		self.file = file
-		self.chunkname = self.file.read(4)
-		if len(self.chunkname) < 4:
-			raise EOFError
-		self.chunksize = _read_long(self.file)
-		self.size_read = 0
-		self.offset = self.file.tell()
-
-	def rewind(self):
-		self.file.seek(self.offset, 0)
-		self.size_read = 0
-
-	def setpos(self, pos):
-		if pos < 0 or pos > self.chunksize:
-			raise RuntimeError
-		self.file.seek(self.offset + pos, 0)
-		self.size_read = pos
-		
-	def read(self, length):
-		if self.size_read >= self.chunksize:
-			return ''
-		if length > self.chunksize - self.size_read:
- 			length = self.chunksize - self.size_read
-		data = self.file.read(length)
-		self.size_read = self.size_read + len(data)
-		return data
-
-	def skip(self):
-		try:
-			self.file.seek(self.chunksize - self.size_read, 1)
-		except RuntimeError:
-			while self.size_read < self.chunksize:
-				dummy = self.read(8192)
-				if not dummy:
-					raise EOFError
-		if self.chunksize & 1:
-			dummy = self.read(1)
+from chunk import Chunk
 
 class Aifc_read:
 	# Variables used in this class:
@@ -312,26 +274,16 @@ class Aifc_read:
 	# _ssnd_chunk -- instantiation of a chunk class for the SSND chunk
 	# _framesize -- size of one frame in the file
 
-## 	if 0: access _file, _nchannels, _nframes, _sampwidth, _framerate, \
-## 		  _comptype, _compname, _markers, _soundpos, _version, \
-## 		  _decomp, _comm_chunk_read, __aifc, _ssnd_seek_needed, \
-## 		  _ssnd_chunk, _framesize: private
-
 	def initfp(self, file):
-		self._file = file
 		self._version = 0
 		self._decomp = None
 		self._convert = None
 		self._markers = []
 		self._soundpos = 0
-		form = self._file.read(4)
-		if form != 'FORM':
+		self._file = Chunk(file)
+		if self._file.getname() != 'FORM':
 			raise Error, 'file does not start with FORM id'
-		formlength = _read_long(self._file)
-		if formlength <= 0:
-			raise Error, 'invalid FORM chunk data size'
 		formdata = self._file.read(4)
-		formlength = formlength - 4
 		if formdata == 'AIFF':
 			self._aifc = 0
 		elif formdata == 'AIFC':
@@ -339,38 +291,31 @@ class Aifc_read:
 		else:
 			raise Error, 'not an AIFF or AIFF-C file'
 		self._comm_chunk_read = 0
-		while formlength > 0:
+		while 1:
 			self._ssnd_seek_needed = 1
 			#DEBUG: SGI's soundfiler has a bug.  There should
 			# be no need to check for EOF here.
 			try:
 				chunk = Chunk(self._file)
 			except EOFError:
-				if formlength == 8:
-					print 'Warning: FORM chunk size too large'
-					formlength = 0
-					break
-				raise EOFError # different error, raise exception
-			if chunk.chunkname == 'COMM':
+				break
+			chunkname = chunk.getname()
+			if chunkname == 'COMM':
 				self._read_comm_chunk(chunk)
 				self._comm_chunk_read = 1
-			elif chunk.chunkname == 'SSND':
+			elif chunkname == 'SSND':
 				self._ssnd_chunk = chunk
 				dummy = chunk.read(8)
 				self._ssnd_seek_needed = 0
-			elif chunk.chunkname == 'FVER':
+			elif chunkname == 'FVER':
 				self._version = _read_long(chunk)
-			elif chunk.chunkname == 'MARK':
+			elif chunkname == 'MARK':
 				self._readmark(chunk)
-			elif chunk.chunkname in _skiplist:
+			elif chunkname in _skiplist:
 				pass
 			else:
 				raise Error, 'unrecognized chunk type '+chunk.chunkname
-			formlength = formlength - 8 - chunk.chunksize
-			if chunk.chunksize & 1:
-				formlength = formlength - 1
-			if formlength > 0:
-				chunk.skip()
+			chunk.skip()
 		if not self._comm_chunk_read or not self._ssnd_chunk:
 			raise Error, 'COMM chunk and/or SSND chunk missing'
 		if self._aifc and self._decomp:
@@ -460,7 +405,7 @@ class Aifc_read:
 
 	def readframes(self, nframes):
 		if self._ssnd_seek_needed:
-			self._ssnd_chunk.rewind()
+			self._ssnd_chunk.seek(0)
 			dummy = self._ssnd_chunk.read(8)
 			pos = self._soundpos * self._framesize
 			if pos:
@@ -477,7 +422,6 @@ class Aifc_read:
 	#
 	# Internal methods.
 	#
-## 	if 0: access *: private
 
 	def _decomp_data(self, data):
 		import cl
@@ -610,10 +554,6 @@ class Aifc_write:
 	# _nframeswritten -- the number of audio frames actually written
 	# _datalength -- the size of the audio samples written to the header
 	# _datawritten -- the size of the audio samples actually written
-
-## 	if 0: access _file, _comptype, _compname, _nchannels, _sampwidth, \
-## 		  _framerate, _nframes, _aifc, _version, _comp, \
-## 		  _nframeswritten, _datalength, _datawritten: private
 
 	def __init__(self, f):
 		if type(f) == type(''):
@@ -805,7 +745,6 @@ class Aifc_write:
 	#
 	# Internal methods.
 	#
-## 	if 0: access *: private
 
 	def _comp_data(self, data):
 		import cl
