@@ -471,7 +471,9 @@ Availability: \UNIX, Windows.
 
 \begin{funcdesc}{read}{fd, n}
 Read at most \var{n} bytes from file descriptor \var{fd}.
-Return a string containing the bytes read.
+Return a string containing the bytes read.  If the end of the file
+referred to by \var{fd} has been reached, an empty string is
+returned.
 Availability: Macintosh, \UNIX, Windows.
 
 Note: this function is intended for low-level I/O and must be applied
