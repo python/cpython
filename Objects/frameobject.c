@@ -79,6 +79,7 @@ frame_dealloc(PyFrameObject *f)
 	Py_XDECREF(f->f_builtins);
 	Py_XDECREF(f->f_globals);
 	Py_XDECREF(f->f_locals);
+	Py_XDECREF(f->f_closure);
 	Py_XDECREF(f->f_trace);
 	Py_XDECREF(f->f_exc_type);
 	Py_XDECREF(f->f_exc_value);
@@ -106,14 +107,14 @@ PyTypeObject PyFrame_Type = {
 };
 
 PyFrameObject *
-PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
-            PyObject *globals, PyObject *locals)
+PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals, 
+	    PyObject *locals, PyObject *closure)
 {
 	PyFrameObject *back = tstate->frame;
 	static PyObject *builtin_object;
 	PyFrameObject *f;
 	PyObject *builtins;
-	int extras;
+	int extras, ncells;
 
 	if (builtin_object == NULL) {
 		builtin_object = PyString_InternFromString("__builtins__");
@@ -128,6 +129,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
 		return NULL;
 	}
 	extras = code->co_stacksize + code->co_nlocals;
+	ncells = PyTuple_GET_SIZE(code->co_cellvars);
 	if (back == NULL || back->f_globals != globals) {
 		builtins = PyDict_GetItem(globals, builtin_object);
 		if (builtins != NULL && PyModule_Check(builtins))
@@ -197,6 +199,22 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
 			locals = globals;
 		Py_INCREF(locals);
 	}
+	if (closure || ncells) {
+		int i, size;
+		size = ncells;
+		if (closure)
+			size += PyTuple_GET_SIZE(closure);
+		f->f_closure = PyTuple_New(size);
+		for (i = 0; i < ncells; ++i)
+			PyTuple_SET_ITEM(f->f_closure, i, PyCell_New(NULL));
+		for (i = ncells; i < size; ++i) {
+			PyObject *o = PyTuple_GET_ITEM(closure, i - ncells);
+			Py_INCREF(o);
+			PyTuple_SET_ITEM(f->f_closure, i, o);
+		}
+	}
+	else
+		f->f_closure = NULL;
 	f->f_locals = locals;
 	f->f_trace = NULL;
 	f->f_exc_type = f->f_exc_value = f->f_exc_traceback = NULL;

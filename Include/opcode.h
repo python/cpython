@@ -114,16 +114,16 @@ extern "C" {
 
 #define SET_LINENO	127	/* Current line number */
 
-/* It used to be the case that opcodes should fit in 7 bits.  This is
-   no longer the case -- 8 bits is fine (the instruction stream is now
-   a sequence of unsigned characters).  We gladly use the new space
-   for new opcodes. */
-
 #define RAISE_VARARGS	130	/* Number of raise arguments (1, 2 or 3) */
 /* CALL_FUNCTION_XXX opcodes defined below depend on this definition */
 #define CALL_FUNCTION	131	/* #args + (#kwargs<<8) */
 #define MAKE_FUNCTION	132	/* #defaults */
 #define BUILD_SLICE 	133	/* Number of items */
+
+#define MAKE_CLOSURE    134     /* #free vars */
+#define LOAD_CLOSURE    135     /* Load free variable from closure */
+#define LOAD_DEREF      136     /* Load and dereference from closure cell */ 
+#define STORE_DEREF     137     /* Store into cell */ 
 
 /* The next 3 opcodes must be contiguous and satisfy
    (CALL_FUNCTION_VAR - CALL_FUNCTION) & 3 == 1  */

@@ -33,13 +33,16 @@
 
 typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
+#define REPR(ob) PyString_AS_STRING(PyObject_Repr(ob))
+
 /* Forward declarations */
 
 static PyObject *eval_code2(PyCodeObject *,
 			    PyObject *, PyObject *,
 			    PyObject **, int,
 			    PyObject **, int,
-			    PyObject **, int);
+			    PyObject **, int,
+			    PyObject *);
 
 static PyObject *call_object(PyObject *, PyObject *, PyObject *);
 static PyObject *call_cfunction(PyObject *, PyObject *, PyObject *);
@@ -78,6 +81,8 @@ static void format_exc_check_arg(PyObject *, char *, PyObject *);
 
 #define NAME_ERROR_MSG \
 	"name '%.200s' is not defined"
+#define GLOBAL_NAME_ERROR_MSG \
+	"global name '%.200s' is not defined"
 #define UNBOUNDLOCAL_ERROR_MSG \
 	"local variable '%.200s' referenced before assignment"
 
@@ -335,7 +340,8 @@ PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
 			  globals, locals,
 			  (PyObject **)NULL, 0,
 			  (PyObject **)NULL, 0,
-			  (PyObject **)NULL, 0);
+			  (PyObject **)NULL, 0,
+			  NULL);
 }
 
 
@@ -344,7 +350,7 @@ PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
 static PyObject *
 eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	   PyObject **args, int argcount, PyObject **kws, int kwcount,
-	   PyObject **defs, int defcount)
+	   PyObject **defs, int defcount, PyObject *closure)
 {
 #ifdef DXPAIRS
 	int lastopcode = 0;
@@ -425,11 +431,9 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	lltrace = PyDict_GetItemString(globals, "__lltrace__") != NULL;
 #endif
 
-	f = PyFrame_New(
-			tstate,			/*back*/
+	f = PyFrame_New(tstate,			/*back*/
 			co,			/*code*/
-			globals,		/*globals*/
-			locals);		/*locals*/
+			globals, locals, closure);
 	if (f == NULL)
 		return NULL;
 
@@ -1535,7 +1539,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			w = GETNAMEV(oparg);
 			if ((err = PyDict_DelItem(f->f_globals, w)) != 0)
 				format_exc_check_arg(
-				    PyExc_NameError, NAME_ERROR_MSG ,w);
+				    PyExc_NameError, GLOBAL_NAME_ERROR_MSG, w);
 			break;
 
 		case LOAD_CONST:
@@ -1577,7 +1581,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				if (x == NULL) {
 					format_exc_check_arg(
 						    PyExc_NameError,
-						    NAME_ERROR_MSG ,w);
+						    GLOBAL_NAME_ERROR_MSG ,w);
 					break;
 				}
 			}
@@ -1616,6 +1620,25 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				break;
 			}
 			SETLOCAL(oparg, NULL);
+			continue;
+
+		case LOAD_CLOSURE:
+			x = PyTuple_GET_ITEM(f->f_closure, oparg);
+			Py_INCREF(x);
+			PUSH(x);
+			break;
+
+		case LOAD_DEREF:
+			x = PyTuple_GET_ITEM(f->f_closure, oparg);
+			w = PyCell_Get(x);
+			Py_INCREF(w);
+			PUSH(w);
+			break;
+
+		case STORE_DEREF:
+			w = POP();
+			x = PyTuple_GET_ITEM(f->f_closure, oparg);
+			PyCell_Set(x, w);
 			continue;
 
 		case BUILD_TUPLE:
@@ -1938,6 +1961,46 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			}
 			PUSH(x);
 			break;
+
+		case MAKE_CLOSURE:
+		{
+			int nfree;
+			v = POP(); /* code object */
+			x = PyFunction_New(v, f->f_globals);
+			nfree = PyTuple_GET_SIZE(((PyCodeObject *)v)->co_freevars);
+			Py_DECREF(v);
+			/* XXX Maybe this should be a separate opcode? */
+			if (x != NULL && nfree > 0) {
+				v = PyTuple_New(nfree);
+				if (v == NULL) {
+					Py_DECREF(x);
+					x = NULL;
+					break;
+				}
+				while (--nfree >= 0) {
+					w = POP();
+					PyTuple_SET_ITEM(v, nfree, w);
+				}
+				err = PyFunction_SetClosure(x, v);
+				Py_DECREF(v);
+			}
+			if (x != NULL && oparg > 0) {
+				v = PyTuple_New(oparg);
+				if (v == NULL) {
+					Py_DECREF(x);
+					x = NULL;
+					break;
+				}
+				while (--oparg >= 0) {
+					w = POP();
+					PyTuple_SET_ITEM(v, oparg, w);
+				}
+				err = PyFunction_SetDefaults(x, v);
+				Py_DECREF(v);
+			}
+			PUSH(x);
+			break;
+		}
 
 		case BUILD_SLICE:
 			if (oparg == 3)
@@ -2761,8 +2824,8 @@ call_eval_code2(PyObject *func, PyObject *arg, PyObject *kw)
 		(PyCodeObject *)PyFunction_GET_CODE(func),
 		PyFunction_GET_GLOBALS(func), (PyObject *)NULL,
 		&PyTuple_GET_ITEM(arg, 0), PyTuple_Size(arg),
-		k, nk,
-		d, nd);
+		k, nk, d, nd,
+		PyFunction_GET_CLOSURE(func));
 
 	if (k != NULL)
 		PyMem_DEL(k);
@@ -2805,6 +2868,7 @@ fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 	PyObject *co = PyFunction_GET_CODE(func);
 	PyObject *globals = PyFunction_GET_GLOBALS(func);
 	PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
+	PyObject *closure = PyFunction_GET_CLOSURE(func);
 	PyObject **d = NULL;
 	int nd = 0;
 
@@ -2814,7 +2878,8 @@ fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 	}
 	return eval_code2((PyCodeObject *)co, globals,
 			  (PyObject *)NULL, (*pp_stack)-n, na,
-			  (*pp_stack)-2*nk, nk, d, nd);
+			  (*pp_stack)-2*nk, nk, d, nd,
+			  closure);
 }
 
 static PyObject *
