@@ -37,7 +37,6 @@
 import sys
 import os
 import time
-import string
 import marshal
 
 
