@@ -847,6 +847,23 @@ class FPTest(NumberTest):
 class FloatTest(FPTest):
     typecode = 'f'
     minitemsize = 4
+
+    def test_byteswap(self):
+        a = array.array(self.typecode, self.example)
+        self.assertRaises(TypeError, a.byteswap, 42)
+        if a.itemsize in (1, 2, 4, 8):
+            b = array.array(self.typecode, self.example)
+            b.byteswap()
+            if a.itemsize==1:
+                self.assertEqual(a, b)
+            else:
+                # On alphas treating the byte swapped bit patters as
+                # floats/doubles results in floating point exceptions
+                # => compare the 8bit string values instead
+                self.assertNotEqual(a.tostring(), b.tostring())
+            b.byteswap()
+            self.assertEqual(a, b)
+
 tests.append(FloatTest)
 
 class DoubleTest(FPTest):
