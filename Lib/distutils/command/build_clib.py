@@ -38,7 +38,9 @@ class build_clib (Command):
         ('debug', 'g',
          "compile with debugging information"),
         ('force', 'f',
-         "forcibly build everything (ignore file timestamps"),
+         "forcibly build everything (ignore file timestamps)"),
+        ('compiler=', 'c',
+         "specify the compiler type"),
         ]
 
     def initialize_options (self):
@@ -54,6 +56,7 @@ class build_clib (Command):
         self.undef = None
         self.debug = None
         self.force = 0
+        self.compiler = None
 
     # initialize_options()
 
@@ -68,6 +71,7 @@ class build_clib (Command):
         self.set_undefined_options ('build',
                                     ('build_temp', 'build_clib'),
                                     ('build_temp', 'build_temp'),
+                                    ('compiler', 'compiler'),
                                     ('debug', 'debug'),
                                     ('force', 'force'))
 
@@ -93,9 +97,11 @@ class build_clib (Command):
             return
 
         # Yech -- this is cut 'n pasted from build_ext.py!
-        self.compiler = new_compiler (verbose=self.verbose,
+        self.compiler = new_compiler (compiler=self.compiler,
+                                      verbose=self.verbose,
                                       dry_run=self.dry_run,
                                       force=self.force)
+
         if self.include_dirs is not None:
             self.compiler.set_include_dirs (self.include_dirs)
         if self.define is not None:
