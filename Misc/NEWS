@@ -3,6 +3,9 @@ What's New in Python 2.2a3?
 
 Core
 
++ An old tokenizer bug allowed floating point literals with an incomplete
+  exponent, such as 1e and 3.1e-.  Such literals now raise SyntaxError.
+
 Library
 
 Tools
