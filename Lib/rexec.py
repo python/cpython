@@ -552,25 +552,15 @@ def test():
             print "%s: can't open file %s" % (sys.argv[0], `args[0]`)
             return 1
     if fp.isatty():
-        print "*** RESTRICTED *** Python", sys.version
-        print 'Type "help", "copyright", "credits" or "license" ' \
-              'for more information.'
-
-        while 1:
-            try:
-                try:
-                    s = raw_input('>>> ')
-                except EOFError:
-                    print
-                    break
-                if s and s[0] != '#':
-                    s = s + '\n'
-                    c = compile(s, '<stdin>', 'single')
-                    r.s_exec(c)
-            except SystemExit, n:
-                return n
-            except:
-                traceback.print_exc()
+        import code
+        interp = code.InteractiveConsole(r.modules['__main__'].__dict__)
+        try:
+            interp.interact(
+                "*** RESTRICTED *** Python %s on %s\n"
+                'Type "help", "copyright", "credits" or "license" '
+                "for more information." % (sys.version, sys.platform))
+        except SystemExit, n:
+            return n
     else:
         text = fp.read()
         fp.close()
