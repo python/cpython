@@ -43,11 +43,6 @@ testmeths = [
     "neg",
     "pos",
     "abs",
-    "int",
-    "long",
-    "float",
-    "oct",
-    "hex",
 
 # generic operations
     "init",
@@ -58,6 +53,11 @@ testmeths = [
 #    "hash",
 #    "str",
 #    "repr",
+#    "int",
+#    "long",
+#    "float",
+#    "oct",
+#    "hex",
 
 # These are separate because they can influence the test of other methods.
 #    "getattr",
@@ -80,6 +80,26 @@ class AllTests:
     def __repr__(self, *args):
         print "__repr__:", args
         return "AllTests"
+
+    def __int__(self, *args):
+        print "__int__:", args
+        return 1
+
+    def __float__(self, *args):
+        print "__float__:", args
+        return 1.0
+
+    def __long__(self, *args):
+        print "__long__:", args
+        return 1L
+
+    def __oct__(self, *args):
+        print "__oct__:", args
+        return '01'
+
+    def __hex__(self, *args):
+        print "__hex__:", args
+        return '0x1'
 
     def __cmp__(self, *args):
         print "__cmp__:", args
@@ -195,21 +215,11 @@ else:
 -testme
 +testme
 abs(testme)
-if sys.platform[:4] != 'java':
-    int(testme)
-    long(testme)
-    float(testme)
-    oct(testme)
-    hex(testme)
-else:
-    # Jython enforced that these methods return
-    # a value of the expected type.
-    print "__int__: ()"
-    print "__long__: ()"
-    print "__float__: ()"
-    print "__oct__: ()"
-    print "__hex__: ()"
-
+int(testme)
+long(testme)
+float(testme)
+oct(testme)
+hex(testme)
 
 # And the rest...
 
@@ -254,6 +264,54 @@ testme.eggs = "spam, spam, spam and ham"
 del testme.cardinal
 
 
+# return values of some method are type-checked
+class BadTypeClass:
+    def __int__(self):
+        return None
+    __float__ = __int__
+    __long__ = __int__
+    __str__ = __int__
+    __repr__ = __int__
+    __oct__ = __int__
+    __hex__ = __int__
+
+def check_exc(stmt, exception):
+    """Raise TestFailed if executing 'stmt' does not raise 'exception'
+    """
+    try:
+        exec stmt
+    except exception:
+        pass
+    else:
+        raise TestFailed, "%s should raise %s" % (stmt, exception)
+
+check_exc("int(BadTypeClass())", TypeError)
+check_exc("float(BadTypeClass())", TypeError)
+check_exc("long(BadTypeClass())", TypeError)
+check_exc("str(BadTypeClass())", TypeError)
+check_exc("repr(BadTypeClass())", TypeError)
+check_exc("oct(BadTypeClass())", TypeError)
+check_exc("hex(BadTypeClass())", TypeError)
+
+# mixing up ints and longs is okay
+class IntLongMixClass:
+    def __int__(self):
+        return 0L
+
+    def __long__(self):
+        return 0
+
+try:
+    int(IntLongMixClass())
+except TypeError:
+    raise TestFailed, "TypeError should not be raised"
+
+try:
+    long(IntLongMixClass())
+except TypeError:
+    raise TestFailed, "TypeError should not be raised"
+
+
 # Test correct errors from hash() on objects with comparisons but no __hash__
 
 class C0:
@@ -264,17 +322,12 @@ hash(C0()) # This should work; the next two should raise TypeError
 class C1:
     def __cmp__(self, other): return 0
 
-try: hash(C1())
-except TypeError: pass
-else: raise TestFailed, "hash(C1()) should raise an exception"
+check_exc("hash(C1())", TypeError)
 
 class C2:
     def __eq__(self, other): return 1
 
-try: hash(C2())
-except TypeError: pass
-else: raise TestFailed, "hash(C2()) should raise an exception"
-
+check_exc("hash(C2())", TypeError)
 
 # Test for SF bug 532646
 
