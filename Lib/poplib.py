@@ -240,7 +240,7 @@ class POP3:
 		"""Signoff: commit changes on server, unlock mailbox, close connection."""
 		try:
 			resp = self._shortcmd('QUIT')
-		except error_proto(val):
+		except error_proto, val:
 			resp = val
 		self.file.close()
 		self.sock.close()
