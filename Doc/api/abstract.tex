@@ -183,31 +183,52 @@ determination.
   \bifuncindex{apply}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyObject_CallFunction}{PyObject *callable_object,
-                                                    char *format, ...}
-  Call a callable Python object \var{callable_object}, with a variable
+\begin{cfuncdesc}{PyObject*}{PyObject_CallFunction}{PyObject *callable,
+                                                    char *format, \moreargs}
+  Call a callable Python object \var{callable}, with a variable
   number of C arguments.  The C arguments are described using a
   \cfunction{Py_BuildValue()} style format string.  The format may be
   \NULL, indicating that no arguments are provided.  Returns the
   result of the call on success, or \NULL{} on failure.  This is the
-  equivalent of the Python expression
-  \samp{apply(\var{callable_object}\var{args})} or
-  \samp{\var{callable_object}(*\var{args})}.
+  equivalent of the Python expression \samp{apply(\var{callable},
+  \var{args})} or \samp{\var{callable}(*\var{args})}.
   \bifuncindex{apply}
 \end{cfuncdesc}
 
 
 \begin{cfuncdesc}{PyObject*}{PyObject_CallMethod}{PyObject *o,
-                                           char *method, char *format, ...}
+                                                  char *method, char *format,
+                                                  \moreargs}
   Call the method named \var{m} of object \var{o} with a variable
   number of C arguments.  The C arguments are described by a
   \cfunction{Py_BuildValue()} format string.  The format may be \NULL,
   indicating that no arguments are provided. Returns the result of the
   call on success, or \NULL{} on failure.  This is the equivalent of
-  the Python expression \samp{\var{o}.\var{method}(\var{args})}.  Note
-  that special method names, such as \method{__add__()},
-  \method{__getitem__()}, and so on are not supported.  The specific
-  abstract-object routines for these must be used.
+  the Python expression \samp{\var{o}.\var{method}(\var{args})}.
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyObject_CallFunctionObArgs}{PyObject *callable,
+                                                          \moreargs,
+                                                          \code{NULL}}
+  Call a callable Python object \var{callable}, with a variable
+  number of \ctype{PyObject*} arguments.  The arguments are provided
+  as a variable number of parameters followed by \NULL.
+  Returns the result of the call on success, or \NULL{} on failure.
+  \versionadded{2.2}
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyObject_CallMethodObArgs}{PyObject *o,
+                                                        PyObject *name,
+                                                        \moreargs,
+                                                        \code{NULL}}
+  Calls a method of the object \var{o}, where the name of the method
+  is given as a Python string object in \var{name}.  It is called with
+  a variable number of \ctype{PyObject*} arguments.  The arguments are
+  provided as a variable number of parameters followed by \NULL.
+  Returns the result of the call on success, or \NULL{} on failure.
+  \versionadded{2.2}
 \end{cfuncdesc}
 
 
