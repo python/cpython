@@ -84,6 +84,21 @@ crc.  This is consistent with the ZIP file checksum.  Use as follows:
 \end{verbatim}
 \end{funcdesc}
  
+\begin{funcdesc}{b2a_hex}{data}
+Return the hexadecimal representation of the binary \var{data}.  Every
+byte of \var{data} is converted into the corresponding 2-digit hex
+representation.  The resulting string is therefore, twice as long as
+the length of \var{data}.  This function is also available as
+\function{hexlify()}.
+\end{funcdesc}
+
+\begin{funcdesc}{a2b_hex}{hexstr}
+Return the binary data represented by the hexadecimal string
+\var{hexstr}.  This function is the inverse of \function{b2a_hex()}.
+\var{hexstr} must contain an even number of hexadecimal digits (which
+can be upper or lower case), otherwise a \exception{TypeError} is
+raised.  This function is also available as \function{unhexlify()}.
+
 \begin{excdesc}{Error}
 Exception raised on errors. These are usually programming errors.
 \end{excdesc}
