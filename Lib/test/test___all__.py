@@ -158,3 +158,5 @@ check_all("weakref")
 check_all("webbrowser")
 check_all("xdrlib")
 check_all("zipfile")
+
+warnings.resetwarnings()
