@@ -18,6 +18,13 @@ The information density in this file is high, so you should probably
 print it and read it at your leasure. Most things are explained only
 once (and probably in the wrong place:-). <p>
 
+<blockquote>
+First a warning: this information may become outdated if a new CodeWarrior is
+released after MacPython. The 
+<a href="http://www.cwi.nl/~jack/macpython.html">MacPython homepage</a> will
+hopefully have updated instructions in that case.
+</blockquote>
+
 I am very interested in feedback on this document, send your
 comments to the <A
 HREF="http://www.python.org/sigs/pythonmac-sig/">Mac Python Special
@@ -136,6 +143,12 @@ Top-level-folder:
 		png
 	gdbm
 	Python
+		Modules
+		...
+		Mac
+			Modules
+			Build
+			...
 	Tcl/Tk Folder
 		tcl8.0
 		tk8.0
@@ -451,16 +464,24 @@ something like <code>Python:dist:src</code>, and under that the
 <code>src</code> folder should be renamed to <code>Python</code>, and
 is what this document refers to as the "toplevel Python folder". <P>
 
-Next, within the toplevel Python folder, you check out the
-mac-specific sources in a Mac folder. The CVS path to use can be found
+Next, <em>in a separate folder</em>, you check out the
+mac-specific sources. You then move the <code>Mac</code> folder from this
+checkout (the only folder with anything in it) to the Python source folder.
+Note that the checking out in a separate folder and moving is necessary,
+due to the way cvs works.
+
+The CVS path to use for the mac stuff can be found
 at the <a href="http://www.cwi.nl/~jack/macpython.html">MacPython
 homepage</a>. Finally, you check out the external libraries needed in
-the parent of the Python folder. The CVS path for these libraries is
+the parent of the toplevel Python folder. The CVS path for these libraries is
 also mentioned at the MacPython homepage. <p>
 
 Neither of the pages mentioned above contains the passwords for the
 CVS sites, for obvious reasons, but they do contain instructions on
 how to obtain the passwords. <p>
+
+You should end up with a folder structure as described at the top of this
+document. <p>
 
 <H2>Odds and ends</H2>
 
