@@ -3582,7 +3582,7 @@ formatfloat(char *buf, size_t buflen, int flags,
 	PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%d%c",
 		      (flags&F_ALT) ? "#" : "",
 		      prec, type);
-	PyOS_snprintf(buf, buflen, fmt, x);
+        PyOS_ascii_formatd(buf, buflen, fmt, x);
 	return strlen(buf);
 }
 

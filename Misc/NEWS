@@ -12,6 +12,10 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Python no longer relies on the LC_NUMERIC locale setting to be
+  the "C" locale; as a result, it no longer tries to prevent changing
+  the LC_NUMERIC category.
+
 - Bug #952807:  Unpickling pickled instances of subclasses of
   datetime.date, datetime.datetime and datetime.time could yield insane
   objects.  Thanks to Jiwon Seo for a fix.

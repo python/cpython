@@ -1379,7 +1379,7 @@ parsenumber(struct compiling *c, char *s)
 		Py_complex z;
 		z.real = 0.;
 		PyFPE_START_PROTECT("atof", return 0)
-		z.imag = atof(s);
+		z.imag = PyOS_ascii_atof(s);
 		PyFPE_END_PROTECT(z)
 		return PyComplex_FromCComplex(z);
 	}
@@ -1387,7 +1387,7 @@ parsenumber(struct compiling *c, char *s)
 #endif
 	{
 		PyFPE_START_PROTECT("atof", return 0)
-		dx = atof(s);
+		dx = PyOS_ascii_atof(s);
 		PyFPE_END_PROTECT(dx)
 		return PyFloat_FromDouble(dx);
 	}

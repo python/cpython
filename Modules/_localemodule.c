@@ -51,13 +51,6 @@ static PyObject *Error;
 PyDoc_STRVAR(setlocale__doc__,
 "(integer,string=None) -> string. Activates/queries locale processing.");
 
-/* to record the LC_NUMERIC settings */
-static PyObject* grouping = NULL;
-static PyObject* thousands_sep = NULL;
-static PyObject* decimal_point = NULL;
-/* if non-null, indicates that LC_NUMERIC is different from "C" */
-static char* saved_numeric = NULL;
-
 /* the grouping is terminated by either 0 or CHAR_MAX */
 static PyObject*
 copy_grouping(char* s)
@@ -167,7 +160,6 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
     int category;
     char *locale = NULL, *result;
     PyObject *result_object;
-    struct lconv *lc;
 
     if (!PyArg_ParseTuple(args, "i|z:setlocale", &category, &locale))
         return NULL;
@@ -183,29 +175,6 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
         result_object = PyString_FromString(result);
         if (!result_object)
             return NULL;
-        /* record changes to LC_NUMERIC */
-        if (category == LC_NUMERIC || category == LC_ALL) {
-            if (strcmp(locale, "C") == 0 || strcmp(locale, "POSIX") == 0) {
-                /* user just asked for default numeric locale */
-                if (saved_numeric)
-                    free(saved_numeric);
-                saved_numeric = NULL;
-            } else {
-                /* remember values */
-                lc = localeconv();
-                Py_XDECREF(grouping);
-                grouping = copy_grouping(lc->grouping);
-                Py_XDECREF(thousands_sep);
-                thousands_sep = PyString_FromString(lc->thousands_sep);
-                Py_XDECREF(decimal_point);
-                decimal_point = PyString_FromString(lc->decimal_point);
-                if (saved_numeric)
-                    free(saved_numeric);
-                saved_numeric = strdup(locale);
-                /* restore to "C" */
-                setlocale(LC_NUMERIC, "C");
-            }
-        }
         /* record changes to LC_CTYPE */
         if (category == LC_CTYPE || category == LC_ALL)
             fixup_ulcase();
@@ -213,18 +182,12 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
         PyErr_Clear();
     } else {
         /* get locale */
-        /* restore LC_NUMERIC first, if appropriate */
-        if (saved_numeric)
-            setlocale(LC_NUMERIC, saved_numeric);
         result = setlocale(category, NULL);
         if (!result) {
             PyErr_SetString(Error, "locale query failed");
             return NULL;
         }
         result_object = PyString_FromString(result);
-        /* restore back to "C" */
-        if (saved_numeric)
-            setlocale(LC_NUMERIC, "C");
     }
     return result_object;
 }
@@ -262,20 +225,13 @@ PyLocale_localeconv(PyObject* self)
     Py_XDECREF(x)
 
     /* Numeric information */
-    if (saved_numeric){
-        /* cannot use localeconv results */
-        PyDict_SetItemString(result, "decimal_point", decimal_point);
-        PyDict_SetItemString(result, "grouping", grouping);
-        PyDict_SetItemString(result, "thousands_sep", thousands_sep);
-    } else {
-        RESULT_STRING(decimal_point);
-        RESULT_STRING(thousands_sep);
-        x = copy_grouping(l->grouping);
-        if (!x)
-            goto failed;
-        PyDict_SetItemString(result, "grouping", x);
-        Py_XDECREF(x);
-    }
+    RESULT_STRING(decimal_point);
+    RESULT_STRING(thousands_sep);
+    x = copy_grouping(l->grouping);
+    if (!x)
+        goto failed;
+    PyDict_SetItemString(result, "grouping", x);
+    Py_XDECREF(x);
 
     /* Monetary information */
     RESULT_STRING(int_curr_symbol);
@@ -579,18 +535,6 @@ PyLocale_nl_langinfo(PyObject* self, PyObject* args)
     /* Check whether this is a supported constant. GNU libc sometimes
        returns numeric values in the char* return value, which would
        crash PyString_FromString.  */
-#ifdef RADIXCHAR
-    if (saved_numeric) {
-	if(item == RADIXCHAR) {
-            Py_INCREF(decimal_point);
-            return decimal_point;
-        }
-        if(item == THOUSEP) {
-            Py_INCREF(thousands_sep);
-            return thousands_sep;
-        }
-    }
-#endif
     for (i = 0; langinfo_constants[i].name; i++)
         if (langinfo_constants[i].value == item) {
             /* Check NULL as a workaround for GNU libc's returning NULL

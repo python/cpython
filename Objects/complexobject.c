@@ -272,13 +272,19 @@ complex_dealloc(PyObject *op)
 static void
 complex_to_buf(char *buf, int bufsz, PyComplexObject *v, int precision)
 {
-	if (v->cval.real == 0.)
-		PyOS_snprintf(buf, bufsz, "%.*gj",
-			      precision, v->cval.imag);
-	else
-		PyOS_snprintf(buf, bufsz, "(%.*g%+.*gj)",
-			      precision, v->cval.real,
-			      precision, v->cval.imag);
+	char format[32];
+	if (v->cval.real == 0.) {
+		PyOS_snprintf(format, 32, "%%.%ig", precision);
+		PyOS_ascii_formatd(buf, bufsz, format, v->cval.imag);
+		strncat(buf, "j", bufsz);
+	} else {
+		char re[64], im[64];
+		
+		PyOS_snprintf(format, 32, "%%.%ig", precision);
+		PyOS_ascii_formatd(re, 64, format, v->cval.real);
+		PyOS_ascii_formatd(im, 64, format, v->cval.imag);
+		PyOS_snprintf(buf, bufsz, "(%s+%sj)", re, im);
+	}
 }
 
 static int
@@ -662,7 +668,6 @@ static PyMemberDef complex_members[] = {
 static PyObject *
 complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 {
-	extern double strtod(const char *, char **);
 	const char *s, *start;
 	char *end;
 	double x=0.0, y=0.0, z;
@@ -774,7 +779,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 			}
 			errno = 0;
 			PyFPE_START_PROTECT("strtod", return 0)
-				z = strtod(s, &end) ;
+				z = PyOS_ascii_strtod(s, &end) ;
 			PyFPE_END_PROTECT(z)
 				if (errno != 0) {
 					PyOS_snprintf(buffer, sizeof(buffer),

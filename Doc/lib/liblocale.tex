@@ -456,25 +456,6 @@ find out what the current locale is.  But since the return value can
 only be used portably to restore it, that is not very useful (except
 perhaps to find out whether or not the locale is \samp{C}).
 
-When Python is embedded in an application, if the application sets the
-locale to something specific before initializing Python, that is
-generally okay, and Python will use whatever locale is set,
-\emph{except} that the \constant{LC_NUMERIC} locale should always be
-\samp{C}.
-
-The \function{setlocale()} function in the \module{locale} module
-gives the Python programmer the impression that you can manipulate the
-\constant{LC_NUMERIC} locale setting, but this not the case at the C
-level: C code will always find that the \constant{LC_NUMERIC} locale
-setting is \samp{C}.  This is because too much would break when the
-decimal point character is set to something else than a period
-(e.g. the Python parser would break).  Caveat: threads that run
-without holding Python's global interpreter lock may occasionally find
-that the numeric locale setting differs; this is because the only
-portable way to implement this feature is to set the numeric locale
-settings to what the user requests, extract the relevant
-characteristics, and then restore the \samp{C} numeric locale.
-
 When Python code uses the \module{locale} module to change the locale,
 this also affects the embedding application.  If the embedding
 application doesn't want this to happen, it should remove the
