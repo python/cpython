@@ -70,10 +70,8 @@ PERFORMANCE OF THIS SOFTWARE.
    XXX more?
 */
 
-#include "allobjects.h"
-#include "modsupport.h"
-#include "ceval.h"
-#include "sysmodule.h"
+#include "Python.h"
+
 #ifdef macintosh
 #include "macglue.h"
 #endif
@@ -91,60 +89,61 @@ PERFORMANCE OF THIS SOFTWARE.
 
 static type_lock StdwinLock; /* Lock held when interpreter not locked */
 
-#define BGN_STDWIN BGN_SAVE acquire_lock(StdwinLock, 1);
-#define RET_STDWIN release_lock(StdwinLock); RET_SAVE
-#define END_STDWIN release_lock(StdwinLock); END_SAVE
+#define BGN_STDWIN Py_BEGIN_ALLOW_THREADS acquire_lock(StdwinLock, 1);
+#define RET_STDWIN release_lock(StdwinLock); Py_BLOCK_THREADS
+#define END_STDWIN release_lock(StdwinLock); Py_END_ALLOW_THREADS
 
 #else
 
-#define BGN_STDWIN BGN_SAVE
-#define RET_STDWIN RET_SAVE
-#define END_STDWIN END_SAVE
+#define BGN_STDWIN Py_BEGIN_ALLOW_THREADS
+#define RET_STDWIN Py_BLOCK_THREADS
+#define END_STDWIN Py_END_ALLOW_THREADS
 
 #endif
 
-#define getpointarg(v, a) getargs(v, "(ii)", a, (a)+1)
-#define get3pointarg(v, a) getargs(v, "((ii)(ii)(ii))", \
-				a, a+1, a+2, a+3, a+4, a+5)
-#define getrectarg(v, a) getargs(v, "((ii)(ii))", a, a+1, a+2, a+3)
-#define getrectintarg(v, a) getargs(v, "(((ii)(ii))i)", a, a+1, a+2, a+3, a+4)
-#define getpointintarg(v, a) getargs(v, "((ii)i)", a, a+1, a+2)
-#define getrectpointarg(v, a) getargs(v, "(((ii)(ii))(ii))", \
-				a, a+1, a+2, a+3, a+4, a+5)
+#define getpointarg(v, a) PyArg_Parse(v, "(ii)", a, (a)+1)
+#define get3pointarg(v, a) PyArg_Parse(v, "((ii)(ii)(ii))", \
+                                       a, a+1, a+2, a+3, a+4, a+5)
+#define getrectarg(v, a) PyArg_Parse(v, "((ii)(ii))", a, a+1, a+2, a+3)
+#define getrectintarg(v, a) PyArg_Parse(v, "(((ii)(ii))i)", \
+                                        a, a+1, a+2, a+3, a+4)
+#define getpointintarg(v, a) PyArg_Parse(v, "((ii)i)", a, a+1, a+2)
+#define getrectpointarg(v, a) PyArg_Parse(v, "(((ii)(ii))(ii))", \
+                                          a, a+1, a+2, a+3, a+4, a+5)
 
-static object *StdwinError; /* Exception stdwin.error */
+static PyObject *StdwinError; /* Exception stdwin.error */
 
 /* Window and menu object types declared here because of forward references */
 
 typedef struct {
-	OB_HEAD
-	object	*w_title;
-	WINDOW	*w_win;
-	object	*w_attr;	/* Attributes dictionary */
+	PyObject_HEAD
+	PyObject	*w_title;
+	WINDOW  	*w_win;
+	PyObject	*w_attr;             /* Attributes dictionary */
 } windowobject;
 
-staticforward typeobject Windowtype;
+staticforward PyTypeObject Windowtype;
 
 #define is_windowobject(wp) ((wp)->ob_type == &Windowtype)
 
 typedef struct {
-	OB_HEAD
-	MENU	*m_menu;
-	int	 m_id;
-	object	*m_attr;	/* Attributes dictionary */
+	PyObject_HEAD
+	MENU    	*m_menu;
+	int     	 m_id;
+	PyObject	*m_attr;             /* Attributes dictionary */
 } menuobject;
 
-staticforward typeobject Menutype;
+staticforward PyTypeObject Menutype;
 
 #define is_menuobject(mp) ((mp)->ob_type == &Menutype)
 
 typedef struct {
-	OB_HEAD
-	BITMAP	*b_bitmap;
-	object	*b_attr;	/* Attributes dictionary */
+	PyObject_HEAD
+	BITMAP  	*b_bitmap;
+	PyObject	*b_attr;             /* Attributes dictionary */
 } bitmapobject;
 
-staticforward typeobject Bitmaptype;
+staticforward PyTypeObject Bitmaptype;
 
 #define is_bitmapobject(mp) ((mp)->ob_type == &Bitmaptype)
 
@@ -153,37 +152,37 @@ staticforward typeobject Bitmaptype;
 
 static int
 getmenudetail(v, ep)
-	object *v;
+	PyObject *v;
 	EVENT *ep;
 {
 	menuobject *mp;
-	if (!getargs(v, "(Oi)", &mp, &ep->u.m.item))
+	if (!PyArg_Parse(v, "(Oi)", &mp, &ep->u.m.item))
 		return 0;
 	if (!is_menuobject(mp))
-		return err_badarg();
+		return PyErr_BadArgument();
 	ep->u.m.id = mp->m_id;
 	return 1;
 }
 
 static int
 geteventarg(v, ep)
-	object *v;
+	PyObject *v;
 	EVENT *ep;
 {
-	object *wp, *detail;
+	PyObject *wp, *detail;
 	int a[4];
-	if (!getargs(v, "(iOO)", &ep->type, &wp, &detail))
+	if (!PyArg_Parse(v, "(iOO)", &ep->type, &wp, &detail))
 		return 0;
 	if (is_windowobject(wp))
 		ep->window = ((windowobject *)wp) -> w_win;
-	else if (wp == None)
+	else if (wp == Py_None)
 		ep->window = NULL;
 	else
-		return err_badarg();
+		return PyErr_BadArgument();
 	switch (ep->type) {
 	case WE_CHAR: {
 			char c;
-			if (!getargs(detail, "c", &c))
+			if (!PyArg_Parse(detail, "c", &c))
 				return 0;
 			ep->u.character = c;
 			return 1;
@@ -201,16 +200,16 @@ geteventarg(v, ep)
 	case WE_MOUSE_DOWN:
 	case WE_MOUSE_UP:
 	case WE_MOUSE_MOVE:
-		return getargs(detail, "((ii)iii)",
-				&ep->u.where.h, &ep->u.where.v,
-				&ep->u.where.clicks,
-				&ep->u.where.button,
-				&ep->u.where.mask);
+		return PyArg_Parse(detail, "((ii)iii)",
+                                   &ep->u.where.h, &ep->u.where.v,
+                                   &ep->u.where.clicks,
+                                   &ep->u.where.button,
+                                   &ep->u.where.mask);
 	case WE_MENU:
 		return getmenudetail(detail, ep);
 	case WE_KEY:
-		return getargs(detail, "(ii)",
-			       &ep->u.key.code, &ep->u.key.mask);
+		return PyArg_Parse(detail, "(ii)",
+                                   &ep->u.key.code, &ep->u.key.mask);
 	default:
 		return 1;
 	}
@@ -219,25 +218,25 @@ geteventarg(v, ep)
 
 /* Return construction tools */
 
-static object *
+static PyObject *
 makepoint(a, b)
 	int a, b;
 {
-	return mkvalue("(ii)", a, b);
+	return Py_BuildValue("(ii)", a, b);
 }
 
-static object *
+static PyObject *
 makerect(a, b, c, d)
 	int a, b, c, d;
 {
-	return mkvalue("((ii)(ii))", a, b, c, d);
+	return Py_BuildValue("((ii)(ii))", a, b, c, d);
 }
 
 
 /* Drawing objects */
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	windowobject	*d_ref;
 } drawingobject;
 
@@ -245,18 +244,18 @@ static drawingobject *Drawing; /* Set to current drawing object, or NULL */
 
 /* Drawing methods */
 
-static object *
+static PyObject *
 drawing_close(dp)
 	drawingobject *dp;
 {
 	if (dp->d_ref != NULL) {
 		wenddrawing(dp->d_ref->w_win);
 		Drawing = NULL;
-		DECREF(dp->d_ref);
+		Py_DECREF(dp->d_ref);
 		dp->d_ref = NULL;
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 static void
@@ -266,189 +265,189 @@ drawing_dealloc(dp)
 	if (dp->d_ref != NULL) {
 		wenddrawing(dp->d_ref->w_win);
 		Drawing = NULL;
-		DECREF(dp->d_ref);
+		Py_DECREF(dp->d_ref);
 		dp->d_ref = NULL;
 	}
 	free((char *)dp);
 }
 
-static object *
+static PyObject *
 drawing_generic(dp, args, func)
 	drawingobject *dp;
-	object *args;
-	void (*func) FPROTO((int, int, int, int));
+	PyObject *args;
+	void (*func) Py_FPROTO((int, int, int, int));
 {
 	int a[4];
 	if (!getrectarg(args, a))
 		return NULL;
 	(*func)(a[0], a[1], a[2], a[3]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 drawing_line(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	return drawing_generic(dp, args, wdrawline);
 }
 
-static object *
+static PyObject *
 drawing_xorline(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	return drawing_generic(dp, args, wxorline);
 }
 
-static object *
+static PyObject *
 drawing_circle(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	int a[3];
 	if (!getpointintarg(args, a))
 		return NULL;
 	wdrawcircle(a[0], a[1], a[2]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 drawing_fillcircle(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	int a[3];
 	if (!getpointintarg(args, a))
 		return NULL;
 	wfillcircle(a[0], a[1], a[2]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 drawing_xorcircle(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	int a[3];
 	if (!getpointintarg(args, a))
 		return NULL;
 	wxorcircle(a[0], a[1], a[2]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 drawing_elarc(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	int a[6];
 	if (!get3pointarg(args, a))
 		return NULL;
 	wdrawelarc(a[0], a[1], a[2], a[3], a[4], a[5]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 drawing_fillelarc(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	int a[6];
 	if (!get3pointarg(args, a))
 		return NULL;
 	wfillelarc(a[0], a[1], a[2], a[3], a[4], a[5]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 drawing_xorelarc(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	int a[6];
 	if (!get3pointarg(args, a))
 		return NULL;
 	wxorelarc(a[0], a[1], a[2], a[3], a[4], a[5]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 drawing_box(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	return drawing_generic(dp, args, wdrawbox);
 }
 
-static object *
+static PyObject *
 drawing_erase(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	return drawing_generic(dp, args, werase);
 }
 
-static object *
+static PyObject *
 drawing_paint(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	return drawing_generic(dp, args, wpaint);
 }
 
-static object *
+static PyObject *
 drawing_invert(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	return drawing_generic(dp, args, winvert);
 }
 
 static POINT *
 getpointsarray(v, psize)
-	object *v;
+	PyObject *v;
 	int *psize;
 {
 	int n = -1;
-	object * (*getitem) PROTO((object *, int));
+	PyObject * (*getitem) Py_PROTO((PyObject *, int));
 	int i;
 	POINT *points;
 
 	if (v == NULL)
 		;
-	else if (is_listobject(v)) {
-		n = getlistsize(v);
-		getitem = getlistitem;
+	else if (PyList_Check(v)) {
+		n = PyList_Size(v);
+		getitem = PyList_GetItem;
 	}
-	else if (is_tupleobject(v)) {
-		n = gettuplesize(v);
-		getitem = gettupleitem;
+	else if (PyTuple_Check(v)) {
+		n = PyTuple_Size(v);
+		getitem = PyTuple_GetItem;
 	}
 
 	if (n <= 0) {
-		(void) err_badarg();
+		(void) PyErr_BadArgument();
 		return NULL;
 	}
 
-	points = NEW(POINT, n);
+	points = PyMem_NEW(POINT, n);
 	if (points == NULL) {
-		(void) err_nomem();
+		(void) PyErr_NoMemory();
 		return NULL;
 	}
 
 	for (i = 0; i < n; i++) {
-		object *w = (*getitem)(v, i);
+		PyObject *w = (*getitem)(v, i);
 		int a[2];
 		if (!getpointarg(w, a)) {
-			DEL(points);
+			PyMem_DEL(points);
 			return NULL;
 		}
 		points[i].h = a[0];
@@ -459,171 +458,171 @@ getpointsarray(v, psize)
 	return points;
 }
 
-static object *
+static PyObject *
 drawing_poly(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	int n;
 	POINT *points = getpointsarray(args, &n);
 	if (points == NULL)
 		return NULL;
 	wdrawpoly(n, points);
-	DEL(points);
-	INCREF(None);
-	return None;
+	PyMem_DEL(points);
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 drawing_fillpoly(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	int n;
 	POINT *points = getpointsarray(args, &n);
 	if (points == NULL)
 		return NULL;
 	wfillpoly(n, points);
-	DEL(points);
-	INCREF(None);
-	return None;
+	PyMem_DEL(points);
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 drawing_xorpoly(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	int n;
 	POINT *points = getpointsarray(args, &n);
 	if (points == NULL)
 		return NULL;
 	wxorpoly(n, points);
-	DEL(points);
-	INCREF(None);
-	return None;
+	PyMem_DEL(points);
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 drawing_cliprect(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	return drawing_generic(dp, args, wcliprect);
 }
 
-static object *
+static PyObject *
 drawing_noclip(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	wnoclip();
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 drawing_shade(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	int a[5];
 	if (!getrectintarg(args, a))
 		return NULL;
 	wshade(a[0], a[1], a[2], a[3], a[4]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 drawing_text(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	int h, v, size;
 	char *text;
-	if (!getargs(args, "((ii)s#)", &h, &v, &text, &size))
+	if (!PyArg_Parse(args, "((ii)s#)", &h, &v, &text, &size))
 		return NULL;
 	wdrawtext(h, v, text, size);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 /* The following four are also used as stdwin functions */
 
-static object *
+static PyObject *
 drawing_lineheight(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	return newintobject((long)wlineheight());
+	return PyInt_FromLong((long)wlineheight());
 }
 
-static object *
+static PyObject *
 drawing_baseline(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	return newintobject((long)wbaseline());
+	return PyInt_FromLong((long)wbaseline());
 }
 
-static object *
+static PyObject *
 drawing_textwidth(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	char *text;
 	int size;
-	if (!getargs(args, "s#", &text, &size))
+	if (!PyArg_Parse(args, "s#", &text, &size))
 		return NULL;
-	return newintobject((long)wtextwidth(text, size));
+	return PyInt_FromLong((long)wtextwidth(text, size));
 }
 
-static object *
+static PyObject *
 drawing_textbreak(dp, args)
 	drawingobject *dp;
-	object *args;
+	PyObject *args;
 {
 	char *text;
 	int size, width;
-	if (!getargs(args, "(s#i)", &text, &size, &width))
+	if (!PyArg_Parse(args, "(s#i)", &text, &size, &width))
 		return NULL;
-	return newintobject((long)wtextbreak(text, size, width));
+	return PyInt_FromLong((long)wtextbreak(text, size, width));
 }
 
-static object *
+static PyObject *
 drawing_setfont(self, args)
 	drawingobject *self;
-	object *args;
+	PyObject *args;
 {
 	char *font;
 	char style = '\0';
 	int size = 0;
-	if (args == NULL || !is_tupleobject(args)) {
-		if (!getargs(args, "z", &font))
+	if (args == NULL || !PyTuple_Check(args)) {
+		if (!PyArg_Parse(args, "z", &font))
 			return NULL;
 	}
 	else {
-		int n = gettuplesize(args);
+		int n = PyTuple_Size(args);
 		if (n == 2) {
-			if (!getargs(args, "(zi)", &font, &size))
+			if (!PyArg_Parse(args, "(zi)", &font, &size))
 				return NULL;
 		}
-		else if (!getargs(args, "(zic)", &font, &size, &style)) {
-			err_clear();
-			if (!getargs(args, "(zci)", &font, &style, &size))
+		else if (!PyArg_Parse(args, "(zic)", &font, &size, &style)) {
+			PyErr_Clear();
+			if (!PyArg_Parse(args, "(zci)", &font, &style, &size))
 				return NULL;
 		}
 	}
 	if (font != NULL) {
 		if (!wsetfont(font)) {
-			err_setstr(StdwinError, "font not found");
+			PyErr_SetString(StdwinError, "font not found");
 			return NULL;
 		}
 	}
@@ -646,84 +645,84 @@ drawing_setfont(self, args)
 		wsetplain();
 		break;
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 drawing_getbgcolor(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	return newintobject((long)wgetbgcolor());
+	return PyInt_FromLong((long)wgetbgcolor());
 }
 
-static object *
+static PyObject *
 drawing_getfgcolor(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	return newintobject((long)wgetfgcolor());
+	return PyInt_FromLong((long)wgetfgcolor());
 }
 
-static object *
+static PyObject *
 drawing_setbgcolor(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	long color;
 	if (!getlongarg(args, &color))
 		return NULL;
 	wsetbgcolor((COLOR)color);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 drawing_setfgcolor(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	long color;
 	if (!getlongarg(args, &color))
 		return NULL;
 	wsetfgcolor((COLOR)color);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 #ifdef HAVE_BITMAPS
 
-static object *
+static PyObject *
 drawing_bitmap(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int h, v;
-	object *bp;
-	object *mask = NULL;
-	if (!getargs(args, "((ii)O)", &h, &v, &bp)) {
-		err_clear();
-		if (!getargs(args, "((ii)OO)", &h, &v, &bp, &mask))
+	PyObject *bp;
+	PyObject *mask = NULL;
+	if (!PyArg_Parse(args, "((ii)O)", &h, &v, &bp)) {
+		PyErr_Clear();
+		if (!PyArg_Parse(args, "((ii)OO)", &h, &v, &bp, &mask))
 			return NULL;
-		if (mask == None)
+		if (mask == Py_None)
 			mask = NULL;
 		else if (!is_bitmapobject(mask)) {
-			err_badarg();
+			PyErr_BadArgument();
 			return NULL;
 		}
 	}
 	if (!is_bitmapobject(bp)) {
-		err_badarg();
+		PyErr_BadArgument();
 		return NULL;
 	}
 	if (((bitmapobject *)bp)->b_bitmap == NULL ||
 	    mask != NULL && ((bitmapobject *)mask)->b_bitmap == NULL) {
-		err_setstr(StdwinError, "bitmap object already close");
+		PyErr_SetString(StdwinError, "bitmap object already close");
 		return NULL;
 	}
 	if (mask == NULL)
@@ -732,70 +731,70 @@ drawing_bitmap(self, args)
 		wdrawbitmap(h, v,
 			    ((bitmapobject *)bp)->b_bitmap,
 			    ((bitmapobject *)bp)->b_bitmap);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 #endif /* HAVE_BITMAPS */
 
-static struct methodlist drawing_methods[] = {
+static PyMethodDef drawing_methods[] = {
 #ifdef HAVE_BITMAPS
-	{"bitmap",	(method)drawing_bitmap},
+	{"bitmap",	(PyCFunction)drawing_bitmap},
 #endif
-	{"box",		(method)drawing_box},
-	{"circle",	(method)drawing_circle},
-	{"cliprect",	(method)drawing_cliprect},
-	{"close",	(method)drawing_close},
-	{"elarc",	(method)drawing_elarc},
-	{"enddrawing",	(method)drawing_close},
-	{"erase",	(method)drawing_erase},
-	{"fillcircle",	(method)drawing_fillcircle},
-	{"fillelarc",	(method)drawing_fillelarc},
-	{"fillpoly",	(method)drawing_fillpoly},
-	{"invert",	(method)drawing_invert},
-	{"line",	(method)drawing_line},
-	{"noclip",	(method)drawing_noclip},
-	{"paint",	(method)drawing_paint},
-	{"poly",	(method)drawing_poly},
-	{"shade",	(method)drawing_shade},
-	{"text",	(method)drawing_text},
-	{"xorcircle",	(method)drawing_xorcircle},
-	{"xorelarc",	(method)drawing_xorelarc},
-	{"xorline",	(method)drawing_xorline},
-	{"xorpoly",	(method)drawing_xorpoly},
+	{"box",		(PyCFunction)drawing_box},
+	{"circle",	(PyCFunction)drawing_circle},
+	{"cliprect",	(PyCFunction)drawing_cliprect},
+	{"close",	(PyCFunction)drawing_close},
+	{"elarc",	(PyCFunction)drawing_elarc},
+	{"enddrawing",	(PyCFunction)drawing_close},
+	{"erase",	(PyCFunction)drawing_erase},
+	{"fillcircle",	(PyCFunction)drawing_fillcircle},
+	{"fillelarc",	(PyCFunction)drawing_fillelarc},
+	{"fillpoly",	(PyCFunction)drawing_fillpoly},
+	{"invert",	(PyCFunction)drawing_invert},
+	{"line",	(PyCFunction)drawing_line},
+	{"noclip",	(PyCFunction)drawing_noclip},
+	{"paint",	(PyCFunction)drawing_paint},
+	{"poly",	(PyCFunction)drawing_poly},
+	{"shade",	(PyCFunction)drawing_shade},
+	{"text",	(PyCFunction)drawing_text},
+	{"xorcircle",	(PyCFunction)drawing_xorcircle},
+	{"xorelarc",	(PyCFunction)drawing_xorelarc},
+	{"xorline",	(PyCFunction)drawing_xorline},
+	{"xorpoly",	(PyCFunction)drawing_xorpoly},
 	
 	/* Text measuring methods: */
-	{"baseline",	(method)drawing_baseline},
-	{"lineheight",	(method)drawing_lineheight},
-	{"textbreak",	(method)drawing_textbreak},
-	{"textwidth",	(method)drawing_textwidth},
+	{"baseline",	(PyCFunction)drawing_baseline},
+	{"lineheight",	(PyCFunction)drawing_lineheight},
+	{"textbreak",	(PyCFunction)drawing_textbreak},
+	{"textwidth",	(PyCFunction)drawing_textwidth},
 
 	/* Font setting methods: */
-	{"setfont",	(method)drawing_setfont},
+	{"setfont",	(PyCFunction)drawing_setfont},
 	
 	/* Color methods: */
-	{"getbgcolor",	(method)drawing_getbgcolor},
-	{"getfgcolor",	(method)drawing_getfgcolor},
-	{"setbgcolor",	(method)drawing_setbgcolor},
-	{"setfgcolor",	(method)drawing_setfgcolor},
+	{"getbgcolor",	(PyCFunction)drawing_getbgcolor},
+	{"getfgcolor",	(PyCFunction)drawing_getfgcolor},
+	{"setbgcolor",	(PyCFunction)drawing_setbgcolor},
+	{"setfgcolor",	(PyCFunction)drawing_setfgcolor},
 
 	{NULL,		NULL}		/* sentinel */
 };
 
-static object *
+static PyObject *
 drawing_getattr(dp, name)
 	drawingobject *dp;
 	char *name;
 {
 	if (dp->d_ref == NULL) {
-		err_setstr(StdwinError, "drawing object already closed");
+		PyErr_SetString(StdwinError, "drawing object already closed");
 		return NULL;
 	}
-	return findmethod(drawing_methods, (object *)dp, name);
+	return Py_FindMethod(drawing_methods, (PyObject *)dp, name);
 }
 
-typeobject Drawingtype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject Drawingtype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
 	"drawing",		/*tp_name*/
 	sizeof(drawingobject),	/*tp_size*/
@@ -813,13 +812,13 @@ typeobject Drawingtype = {
 /* Text(edit) objects */
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	TEXTEDIT	*t_text;
 	windowobject	*t_ref;
-	object		*t_attr;	/* Attributes dictionary */
+	PyObject	*t_attr;	     /* Attributes dictionary */
 } textobject;
 
-staticforward typeobject Texttype;
+staticforward PyTypeObject Texttype;
 
 static textobject *
 newtextobject(wp, left, top, right, bottom)
@@ -827,16 +826,16 @@ newtextobject(wp, left, top, right, bottom)
 	int left, top, right, bottom;
 {
 	textobject *tp;
-	tp = NEWOBJ(textobject, &Texttype);
+	tp = PyObject_NEW(textobject, &Texttype);
 	if (tp == NULL)
 		return NULL;
 	tp->t_attr = NULL;
-	INCREF(wp);
+	Py_INCREF(wp);
 	tp->t_ref = wp;
 	tp->t_text = tecreate(wp->w_win, left, top, right, bottom);
 	if (tp->t_text == NULL) {
-		DECREF(tp);
-		return (textobject *) err_nomem();
+		Py_DECREF(tp);
+		return (textobject *) PyErr_NoMemory();
 	}
 	return tp;
 }
@@ -849,49 +848,49 @@ text_dealloc(tp)
 {
 	if (tp->t_text != NULL)
 		tefree(tp->t_text);
-	XDECREF(tp->t_attr);
-	XDECREF(tp->t_ref);
-	DEL(tp);
+	Py_XDECREF(tp->t_attr);
+	Py_XDECREF(tp->t_ref);
+	PyMem_DEL(tp);
 }
 
-static object *
+static PyObject *
 text_close(tp, args)
 	textobject *tp;
-	object *args;
+	PyObject *args;
 {
 	if (tp->t_text != NULL) {
 		tefree(tp->t_text);
 		tp->t_text = NULL;
 	}
 	if (tp->t_attr != NULL) {
-		DECREF(tp->t_attr);
+		Py_DECREF(tp->t_attr);
 		tp->t_attr = NULL;
 	}
 	if (tp->t_ref != NULL) {
-		DECREF(tp->t_ref);
+		Py_DECREF(tp->t_ref);
 		tp->t_ref = NULL;
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 text_arrow(self, args)
 	textobject *self;
-	object *args;
+	PyObject *args;
 {
 	int code;
 	if (!getintarg(args, &code))
 		return NULL;
 	tearrow(self->t_text, code);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 text_draw(self, args)
 	textobject *self;
-	object *args;
+	PyObject *args;
 {
 	register TEXTEDIT *tp = self->t_text;
 	int a[4];
@@ -899,7 +898,7 @@ text_draw(self, args)
 	if (!getrectarg(args, a))
 		return NULL;
 	if (Drawing != NULL) {
-		err_setstr(StdwinError, "already drawing");
+		PyErr_SetString(StdwinError, "already drawing");
 		return NULL;
 	}
 	/* Clip to text area and ignore if area is empty */
@@ -916,14 +915,14 @@ text_draw(self, args)
 		tedrawnew(tp, a[0], a[1], a[2], a[3]);
 		wenddrawing(self->t_ref->w_win);
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 text_event(self, args)
 	textobject *self;
-	object *args;
+	PyObject *args;
 {
 	register TEXTEDIT *tp = self->t_text;
 	EVENT e;
@@ -942,40 +941,40 @@ text_event(self, args)
 		else if (e.u.where.v > height && tegetright(tp) == height)
 			e.u.where.v = height;
 	}
-	return newintobject((long) teevent(tp, &e));
+	return PyInt_FromLong((long) teevent(tp, &e));
 }
 
-static object *
+static PyObject *
 text_getfocus(self, args)
 	textobject *self;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	return makepoint(tegetfoc1(self->t_text), tegetfoc2(self->t_text));
 }
 
-static object *
+static PyObject *
 text_getfocustext(self, args)
 	textobject *self;
-	object *args;
+	PyObject *args;
 {
 	int f1, f2;
 	char *text;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	f1 = tegetfoc1(self->t_text);
 	f2 = tegetfoc2(self->t_text);
 	text = tegettext(self->t_text);
-	return newsizedstringobject(text + f1, f2-f1);
+	return PyString_FromStringAndSize(text + f1, f2-f1);
 }
 
-static object *
+static PyObject *
 text_getrect(self, args)
 	textobject *self;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	return makerect(tegetleft(self->t_text),
 			tegettop(self->t_text),
@@ -983,172 +982,172 @@ text_getrect(self, args)
 			tegetbottom(self->t_text));
 }
 
-static object *
+static PyObject *
 text_gettext(self, args)
 	textobject *self;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	return newsizedstringobject(tegettext(self->t_text),
-					tegetlen(self->t_text));
+	return PyString_FromStringAndSize(tegettext(self->t_text),
+					  tegetlen(self->t_text));
 }
 
-static object *
+static PyObject *
 text_move(self, args)
 	textobject *self;
-	object *args;
+	PyObject *args;
 {
 	int a[4];
 	if (!getrectarg(args, a))
 		return NULL;
 	temovenew(self->t_text, a[0], a[1], a[2], a[3]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 text_replace(self, args)
 	textobject *self;
-	object *args;
+	PyObject *args;
 {
 	char *text;
 	if (!getstrarg(args, &text))
 		return NULL;
 	tereplace(self->t_text, text);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 text_setactive(self, args)
 	textobject *self;
-	object *args;
+	PyObject *args;
 {
 	int flag;
 	if (!getintarg(args, &flag))
 		return NULL;
 	tesetactive(self->t_text, flag);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 text_setfocus(self, args)
 	textobject *self;
-	object *args;
+	PyObject *args;
 {
 	int a[2];
 	if (!getpointarg(args, a))
 		return NULL;
 	tesetfocus(self->t_text, a[0], a[1]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 text_settext(self, args)
 	textobject *self;
-	object *args;
+	PyObject *args;
 {
 	char *text;
 	char *buf;
 	int size;
-	if (!getargs(args, "s#", &text, &size))
+	if (!PyArg_Parse(args, "s#", &text, &size))
 		return NULL;
-	if ((buf = NEW(char, size)) == NULL) {
-		return err_nomem();
+	if ((buf = PyMem_NEW(char, size)) == NULL) {
+		return PyErr_NoMemory();
 	}
 	memcpy(buf, text, size);
 	tesetbuf(self->t_text, buf, size); /* Becomes owner of buffer */
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 text_setview(self, args)
 	textobject *self;
-	object *args;
+	PyObject *args;
 {
 	int a[4];
-	if (args == None)
+	if (args == Py_None)
 		tenoview(self->t_text);
 	else {
 		if (!getrectarg(args, a))
 			return NULL;
 		tesetview(self->t_text, a[0], a[1], a[2], a[3]);
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static struct methodlist text_methods[] = {
-	{"arrow",	(method)text_arrow},
-	{"close",	(method)text_close},
-	{"draw",	(method)text_draw},
-	{"event",	(method)text_event},
-	{"getfocus",	(method)text_getfocus},
-	{"getfocustext",(method)text_getfocustext},
-	{"getrect",	(method)text_getrect},
-	{"gettext",	(method)text_gettext},
-	{"move",	(method)text_move},
-	{"replace",	(method)text_replace},
-	{"setactive",	(method)text_setactive},
-	{"setfocus",	(method)text_setfocus},
-	{"settext",	(method)text_settext},
-	{"setview",	(method)text_setview},
+static PyMethodDef text_methods[] = {
+	{"arrow",	(PyCFunction)text_arrow},
+	{"close",	(PyCFunction)text_close},
+	{"draw",	(PyCFunction)text_draw},
+	{"event",	(PyCFunction)text_event},
+	{"getfocus",	(PyCFunction)text_getfocus},
+	{"getfocustext",(PyCFunction)text_getfocustext},
+	{"getrect",	(PyCFunction)text_getrect},
+	{"gettext",	(PyCFunction)text_gettext},
+	{"move",	(PyCFunction)text_move},
+	{"replace",	(PyCFunction)text_replace},
+	{"setactive",	(PyCFunction)text_setactive},
+	{"setfocus",	(PyCFunction)text_setfocus},
+	{"settext",	(PyCFunction)text_settext},
+	{"setview",	(PyCFunction)text_setview},
 	{NULL,		NULL}		/* sentinel */
 };
 
-static object *
+static PyObject *
 text_getattr(tp, name)
 	textobject *tp;
 	char *name;
 {
-	object *v = NULL;
+	PyObject *v = NULL;
 	if (tp->t_ref == NULL) {
-		err_setstr(StdwinError, "text object already closed");
+		PyErr_SetString(StdwinError, "text object already closed");
 		return NULL;
 	}
 	if (strcmp(name, "__dict__") == 0) {
 		v = tp->t_attr;
 		if (v == NULL)
-			v = None;
+			v = Py_None;
 	}
 	else if (tp->t_attr != NULL) {
-		v = dictlookup(tp->t_attr, name);
+		v = PyDict_GetItemString(tp->t_attr, name);
 	}
 	if (v != NULL) {
-		INCREF(v);
+		Py_INCREF(v);
 		return v;
 	}
-	return findmethod(text_methods, (object *)tp, name);
+	return Py_FindMethod(text_methods, (PyObject *)tp, name);
 }
 
 static int
 text_setattr(tp, name, v)
 	textobject *tp;
 	char *name;
-	object *v;
+	PyObject *v;
 {
 	if (tp->t_attr == NULL) {
-		tp->t_attr = newdictobject();
+		tp->t_attr = PyDict_New();
 		if (tp->t_attr == NULL)
 			return -1;
 	}
 	if (v == NULL) {
-		int rv = dictremove(tp->t_attr, name);
+		int rv = PyDict_DelItemString(tp->t_attr, name);
 		if (rv < 0)
-			err_setstr(AttributeError,
-			        "delete non-existing text object attribute");
+			PyErr_SetString(PyExc_AttributeError,
+				  "delete non-existing text object attribute");
 		return rv;
 	}
 	else
-		return dictinsert(tp->t_attr, name, v);
+		return PyDict_SetItemString(tp->t_attr, name, v);
 }
 
-statichere typeobject Texttype = {
-	OB_HEAD_INIT(&Typetype)
+statichere PyTypeObject Texttype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
 	"textedit",		/*tp_name*/
 	sizeof(textobject),	/*tp_size*/
@@ -1169,7 +1168,7 @@ statichere typeobject Texttype = {
 #define MAXNMENU 200		/* Max #menus we allow */
 static menuobject *menulist[MAXNMENU];
 
-static menuobject *newmenuobject PROTO((char *));
+static menuobject *newmenuobject Py_PROTO((char *));
 static menuobject *
 newmenuobject(title)
 	char *title;
@@ -1182,13 +1181,13 @@ newmenuobject(title)
 			break;
 	}
 	if (id >= MAXNMENU) {
-		err_setstr(StdwinError, "creating too many menus");
+		PyErr_SetString(StdwinError, "creating too many menus");
 		return NULL;
 	}
 	menu = wmenucreate(id + IDOFFSET, title);
 	if (menu == NULL)
-		return (menuobject *) err_nomem();
-	mp = NEWOBJ(menuobject, &Menutype);
+		return (menuobject *) PyErr_NoMemory();
+	mp = PyObject_NEW(menuobject, &Menutype);
 	if (mp != NULL) {
 		mp->m_menu = menu;
 		mp->m_id = id + IDOFFSET;
@@ -1213,14 +1212,14 @@ menu_dealloc(mp)
 	}
 	if (mp->m_menu != NULL)
 		wmenudelete(mp->m_menu);
-	XDECREF(mp->m_attr);
-	DEL(mp);
+	Py_XDECREF(mp->m_attr);
+	PyMem_DEL(mp);
 }
 
-static object *
+static PyObject *
 menu_close(mp, args)
 	menuobject *mp;
-	object *args;
+	PyObject *args;
 {
 	int id = mp->m_id - IDOFFSET;
 	if (id >= 0 && id < MAXNMENU && menulist[id] == mp) {
@@ -1230,132 +1229,132 @@ menu_close(mp, args)
 	if (mp->m_menu != NULL)
 		wmenudelete(mp->m_menu);
 	mp->m_menu = NULL;
-	XDECREF(mp->m_attr);
+	Py_XDECREF(mp->m_attr);
 	mp->m_attr = NULL;
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 menu_additem(self, args)
 	menuobject *self;
-	object *args;
+	PyObject *args;
 {
 	char *text;
 	int shortcut = -1;
-	if (is_tupleobject(args)) {
+	if (PyTuple_Check(args)) {
 		char c;
-		if (!getargs(args, "(sc)", &text, &c))
+		if (!PyArg_Parse(args, "(sc)", &text, &c))
 			return NULL;
 		shortcut = c;
 	}
 	else if (!getstrarg(args, &text))
 		return NULL;
 	wmenuadditem(self->m_menu, text, shortcut);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 menu_setitem(self, args)
 	menuobject *self;
-	object *args;
+	PyObject *args;
 {
 	int index;
 	char *text;
-	if (!getargs(args, "(is)", &index, &text))
+	if (!PyArg_Parse(args, "(is)", &index, &text))
 		return NULL;
 	wmenusetitem(self->m_menu, index, text);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 menu_enable(self, args)
 	menuobject *self;
-	object *args;
+	PyObject *args;
 {
 	int index;
 	int flag;
-	if (!getargs(args, "(ii)", &index, &flag))
+	if (!PyArg_Parse(args, "(ii)", &index, &flag))
 		return NULL;
 	wmenuenable(self->m_menu, index, flag);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 menu_check(self, args)
 	menuobject *self;
-	object *args;
+	PyObject *args;
 {
 	int index;
 	int flag;
-	if (!getargs(args, "(ii)", &index, &flag))
+	if (!PyArg_Parse(args, "(ii)", &index, &flag))
 		return NULL;
 	wmenucheck(self->m_menu, index, flag);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static struct methodlist menu_methods[] = {
-	{"additem",	(method)menu_additem},
-	{"setitem",	(method)menu_setitem},
-	{"enable",	(method)menu_enable},
-	{"check",	(method)menu_check},
-	{"close",	(method)menu_close},
+static PyMethodDef menu_methods[] = {
+	{"additem",	(PyCFunction)menu_additem},
+	{"setitem",	(PyCFunction)menu_setitem},
+	{"enable",	(PyCFunction)menu_enable},
+	{"check",	(PyCFunction)menu_check},
+	{"close",	(PyCFunction)menu_close},
 	{NULL,		NULL}		/* sentinel */
 };
 
-static object *
+static PyObject *
 menu_getattr(mp, name)
 	menuobject *mp;
 	char *name;
 {
-	object *v = NULL;
+	PyObject *v = NULL;
 	if (mp->m_menu == NULL) {
-		err_setstr(StdwinError, "menu object already closed");
+		PyErr_SetString(StdwinError, "menu object already closed");
 		return NULL;
 	}
 	if (strcmp(name, "__dict__") == 0) {
 		v = mp->m_attr;
 		if (v == NULL)
-			v = None;
+			v = Py_None;
 	}
 	else if (mp->m_attr != NULL) {
-		v = dictlookup(mp->m_attr, name);
+		v = PyDict_GetItemString(mp->m_attr, name);
 	}
 	if (v != NULL) {
-		INCREF(v);
+		Py_INCREF(v);
 		return v;
 	}
-	return findmethod(menu_methods, (object *)mp, name);
+	return Py_FindMethod(menu_methods, (PyObject *)mp, name);
 }
 
 static int
 menu_setattr(mp, name, v)
 	menuobject *mp;
 	char *name;
-	object *v;
+	PyObject *v;
 {
 	if (mp->m_attr == NULL) {
-		mp->m_attr = newdictobject();
+		mp->m_attr = PyDict_New();
 		if (mp->m_attr == NULL)
 			return -1;
 	}
 	if (v == NULL) {
-		int rv = dictremove(mp->m_attr, name);
+		int rv = PyDict_DelItemString(mp->m_attr, name);
 		if (rv < 0)
-			err_setstr(AttributeError,
-			        "delete non-existing menu object attribute");
+			PyErr_SetString(PyExc_AttributeError,
+				  "delete non-existing menu object attribute");
 		return rv;
 	}
 	else
-		return dictinsert(mp->m_attr, name, v);
+		return PyDict_SetItemString(mp->m_attr, name, v);
 }
 
-statichere typeobject Menutype = {
-	OB_HEAD_INIT(&Typetype)
+statichere PyTypeObject Menutype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
 	"menu",			/*tp_name*/
 	sizeof(menuobject),	/*tp_size*/
@@ -1374,7 +1373,7 @@ statichere typeobject Menutype = {
 
 /* Bitmaps objects */
 
-static bitmapobject *newbitmapobject PROTO((int, int));
+static bitmapobject *newbitmapobject Py_PROTO((int, int));
 static bitmapobject *
 newbitmapobject(width, height)
 	int width, height;
@@ -1383,8 +1382,8 @@ newbitmapobject(width, height)
 	bitmapobject *bp;
 	bitmap = wnewbitmap(width, height);
 	if (bitmap == NULL)
-		return (bitmapobject *) err_nomem();
-	bp = NEWOBJ(bitmapobject, &Bitmaptype);
+		return (bitmapobject *) PyErr_NoMemory();
+	bp = PyObject_NEW(bitmapobject, &Bitmaptype);
 	if (bp != NULL) {
 		bp->b_bitmap = bitmap;
 		bp->b_attr = NULL;
@@ -1402,117 +1401,117 @@ bitmap_dealloc(bp)
 {
 	if (bp->b_bitmap != NULL)
 		wfreebitmap(bp->b_bitmap);
-	XDECREF(bp->b_attr);
-	DEL(bp);
+	Py_XDECREF(bp->b_attr);
+	PyMem_DEL(bp);
 }
 
-static object *
+static PyObject *
 bitmap_close(bp, args)
 	bitmapobject *bp;
-	object *args;
+	PyObject *args;
 {
 	if (bp->b_bitmap != NULL)
 		wfreebitmap(bp->b_bitmap);
 	bp->b_bitmap = NULL;
-	XDECREF(bp->b_attr);
+	Py_XDECREF(bp->b_attr);
 	bp->b_attr = NULL;
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 bitmap_setbit(self, args)
 	bitmapobject *self;
-	object *args;
+	PyObject *args;
 {
 	int a[3];
 	if (!getpointintarg(args, a))
 		return NULL;
 	wsetbit(self->b_bitmap, a[0], a[1], a[2]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 bitmap_getbit(self, args)
 	bitmapobject *self;
-	object *args;
+	PyObject *args;
 {
 	int a[2];
 	if (!getpointarg(args, a))
 		return NULL;
-	return newintobject((long) wgetbit(self->b_bitmap, a[0], a[1]));
+	return PyInt_FromLong((long) wgetbit(self->b_bitmap, a[0], a[1]));
 }
 
-static object *
+static PyObject *
 bitmap_getsize(self, args)
 	bitmapobject *self;
-	object *args;
+	PyObject *args;
 {
 	int width, height;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	wgetbitmapsize(self->b_bitmap, &width, &height);
-	return mkvalue("(ii)", width, height);
+	return Py_BuildValue("(ii)", width, height);
 }
 
-static struct methodlist bitmap_methods[] = {
-	{"close",	(method)bitmap_close},
-	{"getsize",	(method)bitmap_getsize},
-	{"getbit",	(method)bitmap_getbit},
-	{"setbit",	(method)bitmap_setbit},
+static PyMethodDef bitmap_methods[] = {
+	{"close",	(PyCFunction)bitmap_close},
+	{"getsize",	(PyCFunction)bitmap_getsize},
+	{"getbit",	(PyCFunction)bitmap_getbit},
+	{"setbit",	(PyCFunction)bitmap_setbit},
 	{NULL,		NULL}		/* sentinel */
 };
 
-static object *
+static PyObject *
 bitmap_getattr(bp, name)
 	bitmapobject *bp;
 	char *name;
 {
-	object *v = NULL;
+	PyObject *v = NULL;
 	if (bp->b_bitmap == NULL) {
-		err_setstr(StdwinError, "bitmap object already closed");
+		PyErr_SetString(StdwinError, "bitmap object already closed");
 		return NULL;
 	}
 	if (strcmp(name, "__dict__") == 0) {
 		v = bp->b_attr;
 		if (v == NULL)
-			v = None;
+			v = Py_None;
 	}
 	else if (bp->b_attr != NULL) {
-		v = dictlookup(bp->b_attr, name);
+		v = PyDict_GetItemString(bp->b_attr, name);
 	}
 	if (v != NULL) {
-		INCREF(v);
+		Py_INCREF(v);
 		return v;
 	}
-	return findmethod(bitmap_methods, (object *)bp, name);
+	return Py_FindMethod(bitmap_methods, (PyObject *)bp, name);
 }
 
 static int
 bitmap_setattr(bp, name, v)
 	bitmapobject *bp;
 	char *name;
-	object *v;
+	PyObject *v;
 {
 	if (bp->b_attr == NULL) {
-		bp->b_attr = newdictobject();
+		bp->b_attr = PyDict_New();
 		if (bp->b_attr == NULL)
 			return -1;
 	}
 	if (v == NULL) {
-		int rv = dictremove(bp->b_attr, name);
+		int rv = PyDict_DelItemString(bp->b_attr, name);
 		if (rv < 0)
-			err_setstr(AttributeError,
+			PyErr_SetString(PyExc_AttributeError,
 			        "delete non-existing bitmap object attribute");
 		return rv;
 	}
 	else
-		return dictinsert(bp->b_attr, name, v);
+		return PyDict_SetItemString(bp->b_attr, name, v);
 }
 
-statichere typeobject Bitmaptype = {
-	OB_HEAD_INIT(&Typetype)
+statichere PyTypeObject Bitmaptype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
 	"bitmap",			/*tp_name*/
 	sizeof(bitmapobject),	/*tp_size*/
@@ -1549,16 +1548,16 @@ window_dealloc(wp)
 				tag);
 		wclose(wp->w_win);
 	}
-	DECREF(wp->w_title);
+	Py_DECREF(wp->w_title);
 	if (wp->w_attr != NULL)
-		DECREF(wp->w_attr);
+		Py_DECREF(wp->w_attr);
 	free((char *)wp);
 }
 
-static object *
+static PyObject *
 window_close(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
 	if (wp->w_win != NULL) {
 		int tag = wgettag(wp->w_win);
@@ -1567,215 +1566,215 @@ window_close(wp, args)
 		wclose(wp->w_win);
 		wp->w_win = NULL;
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 window_begindrawing(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
 	drawingobject *dp;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if (Drawing != NULL) {
-		err_setstr(StdwinError, "already drawing");
+		PyErr_SetString(StdwinError, "already drawing");
 		return NULL;
 	}
-	dp = NEWOBJ(drawingobject, &Drawingtype);
+	dp = PyObject_NEW(drawingobject, &Drawingtype);
 	if (dp == NULL)
 		return NULL;
 	Drawing = dp;
-	INCREF(wp);
+	Py_INCREF(wp);
 	dp->d_ref = wp;
 	wbegindrawing(wp->w_win);
-	return (object *)dp;
+	return (PyObject *)dp;
 }
 
-static object *
+static PyObject *
 window_change(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
 	int a[4];
 	if (!getrectarg(args, a))
 		return NULL;
 	wchange(wp->w_win, a[0], a[1], a[2], a[3]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 window_gettitle(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	INCREF(wp->w_title);
+	Py_INCREF(wp->w_title);
 	return wp->w_title;
 }
 
-static object *
+static PyObject *
 window_getwinpos(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
 	int h, v;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	wgetwinpos(wp->w_win, &h, &v);
 	return makepoint(h, v);
 }
 
-static object *
+static PyObject *
 window_getwinsize(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
 	int width, height;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	wgetwinsize(wp->w_win, &width, &height);
 	return makepoint(width, height);
 }
 
-static object *
+static PyObject *
 window_setwinpos(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
 	int a[2];
 	if (!getpointarg(args, a))
 		return NULL;
 	wsetwinpos(wp->w_win, a[0], a[1]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 window_setwinsize(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
 	int a[2];
 	if (!getpointarg(args, a))
 		return NULL;
 	wsetwinsize(wp->w_win, a[0], a[1]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 window_getdocsize(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
 	int width, height;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	wgetdocsize(wp->w_win, &width, &height);
 	return makepoint(width, height);
 }
 
-static object *
+static PyObject *
 window_getorigin(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
 	int width, height;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	wgetorigin(wp->w_win, &width, &height);
 	return makepoint(width, height);
 }
 
-static object *
+static PyObject *
 window_scroll(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
 	int a[6];
 	if (!getrectpointarg(args, a))
 		return NULL;
 	wscroll(wp->w_win, a[0], a[1], a[2], a[3], a[4], a[5]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 window_setdocsize(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
 	int a[2];
 	if (!getpointarg(args, a))
 		return NULL;
 	wsetdocsize(wp->w_win, a[0], a[1]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 window_setorigin(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
 	int a[2];
 	if (!getpointarg(args, a))
 		return NULL;
 	wsetorigin(wp->w_win, a[0], a[1]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 window_settitle(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
-	object *title;
-	if (!getargs(args, "S", &title))
+	PyObject *title;
+	if (!PyArg_Parse(args, "S", &title))
 		return NULL;
-	DECREF(wp->w_title);
-	INCREF(title);
+	Py_DECREF(wp->w_title);
+	Py_INCREF(title);
 	wp->w_title = title;
-	wsettitle(wp->w_win, getstringvalue(title));
-	INCREF(None);
-	return None;
+	wsettitle(wp->w_win, PyString_AsString(title));
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 window_show(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
 	int a[4];
 	if (!getrectarg(args, a))
 		return NULL;
 	wshow(wp->w_win, a[0], a[1], a[2], a[3]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 window_settimer(wp, args)
 	windowobject *wp;
-	object *args;
+	PyObject *args;
 {
 	int a;
 	if (!getintarg(args, &a))
 		return NULL;
 	wsettimer(wp->w_win, a);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 window_menucreate(self, args)
 	windowobject *self;
-	object *args;
+	PyObject *args;
 {
 	menuobject *mp;
 	char *title;
@@ -1786,157 +1785,156 @@ window_menucreate(self, args)
 	if (mp == NULL)
 		return NULL;
 	wmenuattach(self->w_win, mp->m_menu);
-	return (object *)mp;
+	return (PyObject *)mp;
 }
 
-static object *
+static PyObject *
 window_textcreate(self, args)
 	windowobject *self;
-	object *args;
+	PyObject *args;
 {
 	int a[4];
 	if (!getrectarg(args, a))
 		return NULL;
-	return (object *)
-		newtextobject(self, a[0], a[1], a[2], a[3]);
+	return (PyObject *)newtextobject(self, a[0], a[1], a[2], a[3]);
 }
 
-static object *
+static PyObject *
 window_setselection(self, args)
 	windowobject *self;
-	object *args;
+	PyObject *args;
 {
 	int sel, size, ok;
 	char *text;
-	if (!getargs(args, "(is#)", &sel, &text, &size))
+	if (!PyArg_Parse(args, "(is#)", &sel, &text, &size))
 		return NULL;
 	ok = wsetselection(self->w_win, sel, text, size);
-	return newintobject(ok);
+	return PyInt_FromLong(ok);
 }
 
-static object *
+static PyObject *
 window_setwincursor(self, args)
 	windowobject *self;
-	object *args;
+	PyObject *args;
 {
 	char *name;
 	CURSOR *c;
-	if (!getargs(args, "z", &name))
+	if (!PyArg_Parse(args, "z", &name))
 		return NULL;
 	if (name == NULL)
 		c = NULL;
 	else {
 		c = wfetchcursor(name);
 		if (c == NULL) {
-			err_setstr(StdwinError, "no such cursor");
+			PyErr_SetString(StdwinError, "no such cursor");
 			return NULL;
 		}
 	}
 	wsetwincursor(self->w_win, c);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 window_setactive(self, args)
 	windowobject *self;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	wsetactive(self->w_win);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 #ifdef CWI_HACKS
-static object *
+static PyObject *
 window_getxwindowid(self, args)
 	windowobject *self;
-	object *args;
+	PyObject *args;
 {
 	long wid = wgetxwindowid(self->w_win);
-	return newintobject(wid);
+	return PyInt_FromLong(wid);
 }
 #endif
 
-static struct methodlist window_methods[] = {
-	{"begindrawing",(method)window_begindrawing},
-	{"change",	(method)window_change},
-	{"close",	(method)window_close},
-	{"getdocsize",	(method)window_getdocsize},
-	{"getorigin",	(method)window_getorigin},
-	{"gettitle",	(method)window_gettitle},
-	{"getwinpos",	(method)window_getwinpos},
-	{"getwinsize",	(method)window_getwinsize},
-	{"menucreate",	(method)window_menucreate},
-	{"scroll",	(method)window_scroll},
-	{"setactive",	(method)window_setactive},
-	{"setdocsize",	(method)window_setdocsize},
-	{"setorigin",	(method)window_setorigin},
-	{"setselection",(method)window_setselection},
-	{"settimer",	(method)window_settimer},
-	{"settitle",	(method)window_settitle},
-	{"setwincursor",(method)window_setwincursor},
-	{"setwinpos",	(method)window_setwinpos},
-	{"setwinsize",	(method)window_setwinsize},
-	{"show",	(method)window_show},
-	{"textcreate",	(method)window_textcreate},
+static PyMethodDef window_methods[] = {
+	{"begindrawing",(PyCFunction)window_begindrawing},
+	{"change",	(PyCFunction)window_change},
+	{"close",	(PyCFunction)window_close},
+	{"getdocsize",	(PyCFunction)window_getdocsize},
+	{"getorigin",	(PyCFunction)window_getorigin},
+	{"gettitle",	(PyCFunction)window_gettitle},
+	{"getwinpos",	(PyCFunction)window_getwinpos},
+	{"getwinsize",	(PyCFunction)window_getwinsize},
+	{"menucreate",	(PyCFunction)window_menucreate},
+	{"scroll",	(PyCFunction)window_scroll},
+	{"setactive",	(PyCFunction)window_setactive},
+	{"setdocsize",	(PyCFunction)window_setdocsize},
+	{"setorigin",	(PyCFunction)window_setorigin},
+	{"setselection",(PyCFunction)window_setselection},
+	{"settimer",	(PyCFunction)window_settimer},
+	{"settitle",	(PyCFunction)window_settitle},
+	{"setwincursor",(PyCFunction)window_setwincursor},
+	{"setwinpos",	(PyCFunction)window_setwinpos},
+	{"setwinsize",	(PyCFunction)window_setwinsize},
+	{"show",	(PyCFunction)window_show},
+	{"textcreate",	(PyCFunction)window_textcreate},
 #ifdef CWI_HACKS
-	{"getxwindowid",(method)window_getxwindowid},
+	{"getxwindowid",(PyCFunction)window_getxwindowid},
 #endif
 	{NULL,		NULL}		/* sentinel */
 };
 
-static object *
+static PyObject *
 window_getattr(wp, name)
 	windowobject *wp;
 	char *name;
 {
-	object *v = NULL;
+	PyObject *v = NULL;
 	if (wp->w_win == NULL) {
-		err_setstr(StdwinError, "window already closed");
+		PyErr_SetString(StdwinError, "window already closed");
 		return NULL;
 	}
 	if (strcmp(name, "__dict__") == 0) {
 		v = wp->w_attr;
 		if (v == NULL)
-			v = None;
+			v = Py_None;
 	}
 	else if (wp->w_attr != NULL) {
-		v = dictlookup(wp->w_attr, name);
+		v = PyDict_GetItemString(wp->w_attr, name);
 	}
 	if (v != NULL) {
-		INCREF(v);
+		Py_INCREF(v);
 		return v;
 	}
-	return findmethod(window_methods, (object *)wp, name);
+	return Py_FindMethod(window_methods, (PyObject *)wp, name);
 }
 
 static int
 window_setattr(wp, name, v)
 	windowobject *wp;
 	char *name;
-	object *v;
+	PyObject *v;
 {
 	if (wp->w_attr == NULL) {
-		wp->w_attr = newdictobject();
+		wp->w_attr = PyDict_New();
 		if (wp->w_attr == NULL)
 			return -1;
 	}
 	if (v == NULL) {
-		int rv = dictremove(wp->w_attr, name);
+		int rv = PyDict_DelItemString(wp->w_attr, name);
 		if (rv < 0)
-			err_setstr(AttributeError,
-			        "delete non-existing menu object attribute");
+			PyErr_SetString(PyExc_AttributeError,
+			          "delete non-existing menu object attribute");
 		return rv;
 	}
 	else
-		return dictinsert(wp->w_attr, name, v);
+		return PyDict_SetItemString(wp->w_attr, name, v);
 }
 
-statichere typeobject Windowtype = {
-	OB_HEAD_INIT(&Typetype)
+statichere PyTypeObject Windowtype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
 	"window",		/*tp_name*/
 	sizeof(windowobject),	/*tp_size*/
@@ -1952,85 +1950,86 @@ statichere typeobject Windowtype = {
 
 /* Stdwin methods */
 
-static object *
+static PyObject *
 stdwin_done(sw, args)
-	object *sw;
-	object *args;
+	PyObject *sw;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	wdone();
 	/* XXX There is no protection against continued use of
 	   XXX stdwin functions or objects after this call is made.
 	   XXX Use at own risk */
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 stdwin_open(sw, args)
-	object *sw;
-	object *args;
+	PyObject *sw;
+	PyObject *args;
 {
 	int tag;
-	object *title;
+	PyObject *title;
 	windowobject *wp;
-	if (!getargs(args, "S", &title))
+	if (!PyArg_Parse(args, "S", &title))
 		return NULL;
 	for (tag = 0; tag < MAXNWIN; tag++) {
 		if (windowlist[tag] == NULL)
 			break;
 	}
 	if (tag >= MAXNWIN) {
-		err_setstr(StdwinError, "creating too many windows");
+		PyErr_SetString(StdwinError, "creating too many windows");
 		return NULL;
 	}
-	wp = NEWOBJ(windowobject, &Windowtype);
+	wp = PyObject_NEW(windowobject, &Windowtype);
 	if (wp == NULL)
 		return NULL;
-	INCREF(title);
+	Py_INCREF(title);
 	wp->w_title = title;
-	wp->w_win = wopen(getstringvalue(title), (void (*)()) NULL);
+	wp->w_win = wopen(PyString_AsString(title), (void (*)()) NULL);
 	wp->w_attr = NULL;
 	if (wp->w_win == NULL) {
-		DECREF(wp);
+		Py_DECREF(wp);
 		return NULL;
 	}
 	windowlist[tag] = wp;
 	wsettag(wp->w_win, tag);
-	return (object *)wp;
+	return (PyObject *)wp;
 }
 
-static object *
+static PyObject *
 window2object(win)
 	WINDOW *win;
 {
-	object *w;
+	PyObject *w;
 	if (win == NULL)
-		w = None;
+		w = Py_None;
 	else {
 		int tag = wgettag(win);
 		if (tag < 0 || tag >= MAXNWIN || windowlist[tag] == NULL ||
 			windowlist[tag]->w_win != win)
-			w = None;
+			w = Py_None;
 		else
-			w = (object *)windowlist[tag];
+			w = (PyObject *)windowlist[tag];
 	}
-	INCREF(w);
+	Py_INCREF(w);
 	return w;
 }
 
-static object *
+static PyObject *
 stdwin_get_poll_event(poll, args)
 	int poll;
-	object *args;
+	PyObject *args;
 {
 	EVENT e;
-	object *u, *v, *w;
-	if (!getnoarg(args))
+	PyObject *u, *v, *w;
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if (Drawing != NULL) {
-		err_setstr(StdwinError, "cannot getevent() while drawing");
+		PyErr_SetString(StdwinError,
+				"cannot getevent() while drawing");
 		return NULL;
 	}
  again:
@@ -2038,8 +2037,8 @@ stdwin_get_poll_event(poll, args)
 	if (poll) {
 		if (!wpollevent(&e)) {
 			RET_STDWIN
-			INCREF(None);
-			return None;
+			Py_INCREF(Py_None);
+			return Py_None;
 		}
 	}
 	else
@@ -2047,7 +2046,7 @@ stdwin_get_poll_event(poll, args)
 	END_STDWIN
 	if (e.type == WE_COMMAND && e.u.command == WC_CANCEL) {
 		/* Turn keyboard interrupts into exceptions */
-		err_set(KeyboardInterrupt);
+		PyErr_SetNone(PyExc_KeyboardInterrupt);
 		return NULL;
 	}
 	if (e.type == WE_COMMAND && e.u.command == WC_CLOSE) {
@@ -2060,11 +2059,11 @@ stdwin_get_poll_event(poll, args)
 		{
 			char c[1];
 			c[0] = e.u.character;
-			w = newsizedstringobject(c, 1);
+			w = PyString_FromStringAndSize(c, 1);
 		}
 		break;
 	case WE_COMMAND:
-		w = newintobject((long)e.u.command);
+		w = PyInt_FromLong((long)e.u.command);
 		break;
 	case WE_DRAW:
 		w = makerect(e.u.area.left, e.u.area.top,
@@ -2073,159 +2072,163 @@ stdwin_get_poll_event(poll, args)
 	case WE_MOUSE_DOWN:
 	case WE_MOUSE_MOVE:
 	case WE_MOUSE_UP:
-		w = mkvalue("((ii)iii)",
-				e.u.where.h, e.u.where.v,
-				e.u.where.clicks,
-				e.u.where.button,
-				e.u.where.mask);
+		w = Py_BuildValue("((ii)iii)",
+				  e.u.where.h, e.u.where.v,
+				  e.u.where.clicks,
+				  e.u.where.button,
+				  e.u.where.mask);
 		break;
 	case WE_MENU:
-		if (e.u.m.id >= IDOFFSET && e.u.m.id < IDOFFSET+MAXNMENU &&
-				menulist[e.u.m.id - IDOFFSET] != NULL)
-			w = mkvalue("(Oi)",
-				    menulist[e.u.m.id - IDOFFSET], e.u.m.item);
+		if (e.u.m.id >= IDOFFSET &&
+		    e.u.m.id < IDOFFSET+MAXNMENU &&
+		    menulist[e.u.m.id - IDOFFSET] != NULL)
+		{
+			w = Py_BuildValue("(Oi)",
+					  menulist[e.u.m.id - IDOFFSET],
+					  e.u.m.item);
+		}
 		else {
 			/* Ghost menu event.
 			   Can occur only on the Mac if another part
 			   of the aplication has installed a menu;
 			   like the THINK C console library. */
-			DECREF(v);
+			Py_DECREF(v);
 			goto again;
 		}
 		break;
 	case WE_KEY:
-		w = mkvalue("(ii)", e.u.key.code, e.u.key.mask);
+		w = Py_BuildValue("(ii)", e.u.key.code, e.u.key.mask);
 		break;
 	case WE_LOST_SEL:
-		w = newintobject((long)e.u.sel);
+		w = PyInt_FromLong((long)e.u.sel);
 		break;
 	default:
-		w = None;
-		INCREF(w);
+		w = Py_None;
+		Py_INCREF(w);
 		break;
 	}
 	if (w == NULL) {
-		DECREF(v);
+		Py_DECREF(v);
 		return NULL;
 	}
-	u = mkvalue("(iOO)", e.type, v, w);
-	XDECREF(v);
-	XDECREF(w);
+	u = Py_BuildValue("(iOO)", e.type, v, w);
+	Py_XDECREF(v);
+	Py_XDECREF(w);
 	return u;
 }
 
-static object *
+static PyObject *
 stdwin_getevent(sw, args)
-	object *sw;
-	object *args;
+	PyObject *sw;
+	PyObject *args;
 {
 	return stdwin_get_poll_event(0, args);
 }
 
-static object *
+static PyObject *
 stdwin_pollevent(sw, args)
-	object *sw;
-	object *args;
+	PyObject *sw;
+	PyObject *args;
 {
 	return stdwin_get_poll_event(1, args);
 }
 
-static object *
+static PyObject *
 stdwin_setdefwinpos(sw, args)
-	object *sw;
-	object *args;
+	PyObject *sw;
+	PyObject *args;
 {
 	int a[2];
 	if (!getpointarg(args, a))
 		return NULL;
 	wsetdefwinpos(a[0], a[1]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 stdwin_setdefwinsize(sw, args)
-	object *sw;
-	object *args;
+	PyObject *sw;
+	PyObject *args;
 {
 	int a[2];
 	if (!getpointarg(args, a))
 		return NULL;
 	wsetdefwinsize(a[0], a[1]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 stdwin_setdefscrollbars(sw, args)
-	object *sw;
-	object *args;
+	PyObject *sw;
+	PyObject *args;
 {
 	int a[2];
 	if (!getpointarg(args, a))
 		return NULL;
 	wsetdefscrollbars(a[0], a[1]);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 stdwin_getdefwinpos(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int h, v;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	wgetdefwinpos(&h, &v);
 	return makepoint(h, v);
 }
 
-static object *
+static PyObject *
 stdwin_getdefwinsize(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int width, height;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	wgetdefwinsize(&width, &height);
 	return makepoint(width, height);
 }
 
-static object *
+static PyObject *
 stdwin_getdefscrollbars(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int h, v;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	wgetdefscrollbars(&h, &v);
 	return makepoint(h, v);
 }
 
-static object *
+static PyObject *
 stdwin_menucreate(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *title;
 	if (!getstrarg(args, &title))
 		return NULL;
 	wmenusetdeflocal(0);
-	return (object *)newmenuobject(title);
+	return (PyObject *)newmenuobject(title);
 }
 
-static object *
+static PyObject *
 stdwin_askfile(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *prompt, *dflt;
 	int new, ret;
 	char buf[256];
-	if (!getargs(args, "(ssi)", &prompt, &dflt, &new))
+	if (!PyArg_Parse(args, "(ssi)", &prompt, &dflt, &new))
 		return NULL;
 	strncpy(buf, dflt, sizeof buf);
 	buf[sizeof buf - 1] = '\0';
@@ -2233,40 +2236,40 @@ stdwin_askfile(self, args)
 	ret = waskfile(prompt, buf, sizeof buf, new);
 	END_STDWIN
 	if (!ret) {
-		err_set(KeyboardInterrupt);
+		PyErr_SetNone(PyExc_KeyboardInterrupt);
 		return NULL;
 	}
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
-static object *
+static PyObject *
 stdwin_askync(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *prompt;
 	int new, ret;
-	if (!getargs(args, "(si)", &prompt, &new))
+	if (!PyArg_Parse(args, "(si)", &prompt, &new))
 		return NULL;
 	BGN_STDWIN
 	ret = waskync(prompt, new);
 	END_STDWIN
 	if (ret < 0) {
-		err_set(KeyboardInterrupt);
+		PyErr_SetNone(PyExc_KeyboardInterrupt);
 		return NULL;
 	}
-	return newintobject((long)ret);
+	return PyInt_FromLong((long)ret);
 }
 
-static object *
+static PyObject *
 stdwin_askstr(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *prompt, *dflt;
 	int ret;
 	char buf[256];
-	if (!getargs(args, "(ss)", &prompt, &dflt))
+	if (!PyArg_Parse(args, "(ss)", &prompt, &dflt))
 		return NULL;
 	strncpy(buf, dflt, sizeof buf);
 	buf[sizeof buf - 1] = '\0';
@@ -2274,16 +2277,16 @@ stdwin_askstr(self, args)
 	ret = waskstr(prompt, buf, sizeof buf);
 	END_STDWIN
 	if (!ret) {
-		err_set(KeyboardInterrupt);
+		PyErr_SetNone(PyExc_KeyboardInterrupt);
 		return NULL;
 	}
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
-static object *
+static PyObject *
 stdwin_message(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *msg;
 	if (!getstrarg(args, &msg))
@@ -2291,48 +2294,48 @@ stdwin_message(self, args)
 	BGN_STDWIN
 	wmessage(msg);
 	END_STDWIN
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 stdwin_fleep(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	wfleep();
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 stdwin_setcutbuffer(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int i, size;
 	char *str;
-	if (!getargs(args, "(is#)", &i, &str, &size))
+	if (!PyArg_Parse(args, "(is#)", &i, &str, &size))
 		return NULL;
 	wsetcutbuffer(i, str, size);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 stdwin_getactive(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	return window2object(wgetactive());
 }
 
-static object *
+static PyObject *
 stdwin_getcutbuffer(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int i;
 	char *str;
@@ -2344,26 +2347,26 @@ stdwin_getcutbuffer(self, args)
 		str = "";
 		len = 0;
 	}
-	return newsizedstringobject(str, len);
+	return PyString_FromStringAndSize(str, len);
 }
 
-static object *
+static PyObject *
 stdwin_rotatecutbuffers(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int i;
 	if (!getintarg(args, &i))
 		return NULL;
 	wrotatecutbuffers(i);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 stdwin_getselection(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int sel;
 	char *data;
@@ -2375,26 +2378,26 @@ stdwin_getselection(self, args)
 		data = "";
 		len = 0;
 	}
-	return newsizedstringobject(data, len);
+	return PyString_FromStringAndSize(data, len);
 }
 
-static object *
+static PyObject *
 stdwin_resetselection(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int sel;
 	if (!getintarg(args, &sel))
 		return NULL;
 	wresetselection(sel);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 stdwin_fetchcolor(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *colorname;
 	COLOR color;
@@ -2403,92 +2406,92 @@ stdwin_fetchcolor(self, args)
 	color = wfetchcolor(colorname);
 #ifdef BADCOLOR
 	if (color == BADCOLOR) {
-		err_setstr(StdwinError, "color name not found");
+		PyErr_SetString(StdwinError, "color name not found");
 		return NULL;
 	}
 #endif
-	return newintobject((long)color);
+	return PyInt_FromLong((long)color);
 }
 
-static object *
+static PyObject *
 stdwin_getscrsize(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int width, height;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	wgetscrsize(&width, &height);
 	return makepoint(width, height);
 }
 
-static object *
+static PyObject *
 stdwin_getscrmm(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int width, height;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	wgetscrmm(&width, &height);
 	return makepoint(width, height);
 }
 
 #ifdef unix
-static object *
+static PyObject *
 stdwin_connectionnumber(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	return newintobject((long) wconnectionnumber());
+	return PyInt_FromLong((long) wconnectionnumber());
 }
 #endif
 
-static object *
+static PyObject *
 stdwin_listfontnames(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *pattern;
 	char **fontnames;
 	int count;
-	object *list;
-	if (!getargs(args, "z", &pattern))
+	PyObject *list;
+	if (!PyArg_Parse(args, "z", &pattern))
 		return NULL;
 	fontnames = wlistfontnames(pattern, &count);
-	list = newlistobject(count);
+	list = PyList_New(count);
 	if (list != NULL) {
 		int i;
 		for (i = 0; i < count; i++) {
-			object *v = newstringobject(fontnames[i]);
+			PyObject *v = PyString_FromString(fontnames[i]);
 			if (v == NULL) {
-				DECREF(list);
+				Py_DECREF(list);
 				list = NULL;
 				break;
 			}
-			setlistitem(list, i, v);
+			PyList_SetItem(list, i, v);
 		}
 	}
 	return list;
 }
 
 #ifdef HAVE_BITMAPS
-static object *
+static PyObject *
 stdwin_newbitmap(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int width, height;
 	bitmapobject *bp;
-	if (!getargs(args, "(ii)", &width, &height))
+	if (!PyArg_Parse(args, "(ii)", &width, &height))
 		return NULL;
-	return (object *)newbitmapobject(width, height);
+	return (PyObject *)newbitmapobject(width, height);
 }
 #endif
 
-static struct methodlist stdwin_methods[] = {
+static PyMethodDef stdwin_methods[] = {
 	{"askfile",		stdwin_askfile},
 	{"askstr",		stdwin_askstr},
 	{"askync",		stdwin_askync},
@@ -2524,19 +2527,19 @@ static struct methodlist stdwin_methods[] = {
 	{"setdefwinsize",	stdwin_setdefwinsize},
 	
 	/* Text measuring methods borrow code from drawing objects: */
-	{"baseline",		(method)drawing_baseline},
-	{"lineheight",		(method)drawing_lineheight},
-	{"textbreak",		(method)drawing_textbreak},
-	{"textwidth",		(method)drawing_textwidth},
+	{"baseline",		(PyCFunction)drawing_baseline},
+	{"lineheight",		(PyCFunction)drawing_lineheight},
+	{"textbreak",		(PyCFunction)drawing_textbreak},
+	{"textwidth",		(PyCFunction)drawing_textwidth},
 
 	/* Same for font setting methods: */
-	{"setfont",		(method)drawing_setfont},
+	{"setfont",		(PyCFunction)drawing_setfont},
 
 	/* Same for color setting/getting methods: */
-	{"getbgcolor",		(method)drawing_getbgcolor},
-	{"getfgcolor",		(method)drawing_getfgcolor},
-	{"setbgcolor",		(method)drawing_setbgcolor},
-	{"setfgcolor",		(method)drawing_setfgcolor},
+	{"getbgcolor",		(PyCFunction)drawing_getbgcolor},
+	{"getfgcolor",		(PyCFunction)drawing_getfgcolor},
+	{"setbgcolor",		(PyCFunction)drawing_setbgcolor},
+	{"setfgcolor",		(PyCFunction)drawing_setfgcolor},
 
 	{NULL,			NULL}		/* sentinel */
 };
@@ -2544,29 +2547,30 @@ static struct methodlist stdwin_methods[] = {
 #ifndef macintosh
 static int
 checkstringlist(args, ps, pn)
-	object *args;
+	PyObject *args;
 	char ***ps;
 	int *pn;
 {
 	int i, n;
 	char **s;
-	if (!is_listobject(args)) {
-		err_setstr(TypeError, "list of strings expected");
+	if (!PyList_Check(args)) {
+		PyErr_SetString(PyExc_TypeError, "list of strings expected");
 		return 0;
 	}
-	n = getlistsize(args);
-	s = NEW(char *, n+1);
+	n = PyList_Size(args);
+	s = PyMem_NEW(char *, n+1);
 	if (s == NULL) {
-		err_nomem();
+		PyErr_NoMemory();
 		return 0;
 	}
 	for (i = 0; i < n; i++) {
-		object *item = getlistitem(args, i);
-		if (!is_stringobject(item)) {
-			err_setstr(TypeError, "list of strings expected");
+		PyObject *item = PyList_GetItem(args, i);
+		if (!PyString_Check(item)) {
+			PyErr_SetString(PyExc_TypeError,
+					"list of strings expected");
 			return 0;
 		}
-		s[i] = getstringvalue(item);
+		s[i] = PyString_AsString(item);
 	}
 	s[n] = NULL; /* In case caller wants a NULL-terminated list */
 	*ps = s;
@@ -2576,30 +2580,30 @@ checkstringlist(args, ps, pn)
 
 static int
 putbackstringlist(list, s, n)
-	object *list;
+	PyObject *list;
 	char **s;
 	int n;
 {
-	int oldsize = getlistsize(list);
-	object *newlist;
+	int oldsize = PyList_Size(list);
+	PyObject *newlist;
 	int i;
 	if (n == oldsize)
 		return 1;
-	newlist = newlistobject(n);
+	newlist = PyList_New(n);
 	for (i = 0; i < n && newlist != NULL; i++) {
-		object *item = newstringobject(s[i]);
+		PyObject *item = PyString_FromString(s[i]);
 		if (item == NULL) {
-			DECREF(newlist);
+			Py_DECREF(newlist);
 			newlist = NULL;
 		}
 		else
-			setlistitem(newlist, i, item);
+			PyList_SetItem(newlist, i, item);
 	}
 	if (newlist == NULL)
 		return 0;
 	(*list->ob_type->tp_as_sequence->sq_ass_slice)
 		(list, 0, oldsize, newlist);
-	DECREF(newlist);
+	Py_DECREF(newlist);
 	return 1;
 }
 #endif /* macintosh */
@@ -2607,7 +2611,7 @@ putbackstringlist(list, s, n)
 void
 initstdwin()
 {
-	object *m, *d;
+	PyObject *m, *d;
 	static int inited = 0;
 
 	if (!inited) {
@@ -2618,10 +2622,10 @@ initstdwin()
 		char buf[1000];
 		int argc = 0;
 		char **argv = NULL;
-		object *sys_argv = sysget("argv");
+		PyObject *sys_argv = PySys_GetObject("argv");
 		if (sys_argv != NULL) {
 			if (!checkstringlist(sys_argv, &argv, &argc))
-				err_clear();
+				PyErr_Clear();
 		}
 		if (argc > 0) {
 			/* If argv[0] has a ".py" suffix, remove the suffix */
@@ -2638,21 +2642,22 @@ initstdwin()
 		winitargs(&argc, &argv);
 		if (argv != NULL) {
 			if (!putbackstringlist(sys_argv, argv, argc))
-				err_clear();
+				PyErr_Clear();
 		}
 #endif
 		inited = 1;
 	}
-	m = initmodule("stdwin", stdwin_methods);
-	d = getmoduledict(m);
+	m = Py_InitModule("stdwin", stdwin_methods);
+	d = PyModule_GetDict(m);
 	
 	/* Initialize stdwin.error exception */
-	StdwinError = newstringobject("stdwin.error");
-	if (StdwinError == NULL || dictinsert(d, "error", StdwinError) != 0)
-		fatal("can't define stdwin.error");
+	StdwinError = PyString_FromString("stdwin.error");
+	if (StdwinError == NULL ||
+	    PyDict_SetItemString(d, "error", StdwinError) != 0)
+		Py_FatalError("can't define stdwin.error");
 #ifdef WITH_THREAD
 	StdwinLock = allocate_lock();
 	if (StdwinLock == NULL)
-		fatal("can't allocate stdwin lock");
+		Py_FatalError("can't allocate stdwin lock");
 #endif
 }
