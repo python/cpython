@@ -22,4 +22,7 @@ s|<EOF/>|\&EOF;|g
 s|<NULL/>|\&NULL;|g
 s|<POSIX/>|\&POSIX;|g
 s|<UNIX/>|\&UNIX;|g
+s|<e/>|\&bsol;|g
+s|<ldots/>|\&hellip|g
+s|---|\&mdash;|g
 ' || exit $?
