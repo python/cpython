@@ -38,9 +38,10 @@ typedef struct {
 static void
 descr_dealloc(PyDescrObject *descr)
 {
+	_PyObject_GC_UNTRACK(descr);
 	Py_XDECREF(descr->d_type);
 	Py_XDECREF(descr->d_name);
-	PyObject_DEL(descr);
+	PyObject_GC_Del(descr);
 }
 
 static char *
@@ -352,6 +353,20 @@ static PyGetSetDef wrapper_getset[] = {
 	{0}
 };
 
+static int
+descr_traverse(PyObject *self, visitproc visit, void *arg)
+{
+	PyDescrObject *descr = (PyDescrObject *)self;
+	int err;
+
+	if (descr->d_type) {
+		err = visit((PyObject *)(descr->d_type), arg);
+		if (err)
+			return err;
+	}
+	return 0;
+}
+
 static PyTypeObject PyMethodDescr_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -373,9 +388,9 @@ static PyTypeObject PyMethodDescr_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
 	0,					/* tp_doc */
-	0,					/* tp_traverse */
+	descr_traverse,				/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
@@ -411,9 +426,9 @@ static PyTypeObject PyMemberDescr_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
 	0,					/* tp_doc */
-	0,					/* tp_traverse */
+	descr_traverse,				/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
@@ -449,9 +464,9 @@ static PyTypeObject PyGetSetDescr_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
 	0,					/* tp_doc */
-	0,					/* tp_traverse */
+	descr_traverse,				/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
@@ -487,9 +502,9 @@ static PyTypeObject PyWrapperDescr_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
 	0,					/* tp_doc */
-	0,					/* tp_traverse */
+	descr_traverse,				/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
@@ -679,8 +694,9 @@ static PyMethodDef proxy_methods[] = {
 static void
 proxy_dealloc(proxyobject *pp)
 {
+	_PyObject_GC_UNTRACK(pp);
 	Py_DECREF(pp->dict);
-	PyObject_DEL(pp);
+	PyObject_GC_Del(pp);
 }
 
 static PyObject *
@@ -693,6 +709,20 @@ PyObject *
 proxy_str(proxyobject *pp)
 {
 	return PyObject_Str(pp->dict);
+}
+
+static int
+proxy_traverse(PyObject *self, visitproc visit, void *arg)
+{
+	proxyobject *pp = (proxyobject *)self;
+	int err;
+
+	if (pp->dict) {
+		err = visit(pp->dict, arg);
+		if (err)
+			return err;
+	}
+	return 0;
 }
 
 PyTypeObject proxytype = {
@@ -717,9 +747,9 @@ PyTypeObject proxytype = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
  	0,					/* tp_doc */
- 	0,					/* tp_traverse */
+	proxy_traverse,				/* tp_traverse */
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
@@ -739,10 +769,11 @@ PyDictProxy_New(PyObject *dict)
 {
 	proxyobject *pp;
 
-	pp = PyObject_NEW(proxyobject, &proxytype);
+	pp = PyObject_GC_New(proxyobject, &proxytype);
 	if (pp != NULL) {
 		Py_INCREF(dict);
 		pp->dict = dict;
+		_PyObject_GC_TRACK(pp);
 	}
 	return (PyObject *)pp;
 }
@@ -762,9 +793,10 @@ typedef struct {
 static void
 wrapper_dealloc(wrapperobject *wp)
 {
+	_PyObject_GC_UNTRACK(wp);
 	Py_XDECREF(wp->descr);
 	Py_XDECREF(wp->self);
-	PyObject_DEL(wp);
+	PyObject_GC_Del(wp);
 }
 
 static PyMethodDef wrapper_methods[] = {
@@ -808,6 +840,25 @@ wrapper_call(wrapperobject *wp, PyObject *args, PyObject *kwds)
 	return (*wrapper)(self, args, wp->descr->d_wrapped);
 }
 
+static int
+wrapper_traverse(PyObject *self, visitproc visit, void *arg)
+{
+	wrapperobject *wp = (wrapperobject *)self;
+	int err;
+
+	if (wp->descr) {
+		err = visit((PyObject *)(wp->descr), arg);
+		if (err)
+			return err;
+	}
+	if (wp->self) {
+		err = visit(wp->self, arg);
+		if (err)
+			return err;
+	}
+	return 0;
+}
+
 PyTypeObject wrappertype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
@@ -830,9 +881,9 @@ PyTypeObject wrappertype = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
  	0,					/* tp_doc */
- 	0,					/* tp_traverse */
+	wrapper_traverse,			/* tp_traverse */
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
@@ -857,12 +908,13 @@ PyWrapper_New(PyObject *d, PyObject *self)
 	descr = (PyWrapperDescrObject *)d;
 	assert(PyObject_IsInstance(self, (PyObject *)(descr->d_type)));
 
-	wp = PyObject_NEW(wrapperobject, &wrappertype);
+	wp = PyObject_GC_New(wrapperobject, &wrappertype);
 	if (wp != NULL) {
 		Py_INCREF(descr);
 		wp->descr = descr;
 		Py_INCREF(self);
 		wp->self = self;
+		_PyObject_GC_TRACK(wp);
 	}
 	return (PyObject *)wp;
 }
@@ -919,6 +971,7 @@ property_dealloc(PyObject *self)
 {
 	propertyobject *gs = (propertyobject *)self;
 
+	_PyObject_GC_UNTRACK(self);
 	Py_XDECREF(gs->prop_get);
 	Py_XDECREF(gs->prop_set);
 	Py_XDECREF(gs->prop_del);
@@ -1012,6 +1065,26 @@ static char property_doc[] =
 "    def delx(self): del self.__x\n"
 "    x = property(getx, setx, delx, \"I'm the 'x' property.\")";
 
+static int
+property_traverse(PyObject *self, visitproc visit, void *arg)
+{
+	propertyobject *pp = (propertyobject *)self;
+	int err;
+
+#define VISIT(SLOT) \
+	if (pp->SLOT) { \
+		err = visit((PyObject *)(pp->SLOT), arg); \
+		if (err) \
+			return err; \
+	}
+
+	VISIT(prop_get);
+	VISIT(prop_set);
+	VISIT(prop_del);
+
+	return 0;
+}
+
 PyTypeObject PyProperty_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
@@ -1034,9 +1107,10 @@ PyTypeObject PyProperty_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_BASETYPE,		/* tp_flags */
  	property_doc,				/* tp_doc */
- 	0,					/* tp_traverse */
+	property_traverse,			/* tp_traverse */
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
@@ -1053,5 +1127,5 @@ PyTypeObject PyProperty_Type = {
 	property_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
-	_PyObject_Del,				/* tp_free */
+	_PyObject_GC_Del,			/* tp_free */
 };

@@ -285,6 +285,7 @@ typedef struct _typeobject {
 	allocfunc tp_alloc;
 	newfunc tp_new;
 	destructor tp_free; /* Low-level free-memory routine */
+	inquiry tp_is_gc; /* For PyObject_IS_GC */
 	PyObject *tp_bases;
 	PyObject *tp_mro; /* method resolution order */
 	PyObject *tp_defined;

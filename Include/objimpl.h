@@ -217,13 +217,18 @@ extern DL_IMPORT(void) _PyObject_Del(PyObject *);
 /*
  * Garbage Collection Support
  * ==========================
+ *
+ * Some of the functions and macros below are always defined; when
+ * WITH_CYCLE_GC is undefined, they simply don't do anything different
+ * than their non-GC counterparts.
  */
 
 /* Test if a type has a GC head */
 #define PyType_IS_GC(t) PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
 
 /* Test if an object has a GC head */
-#define PyObject_IS_GC(o) PyType_IS_GC((o)->ob_type)
+#define PyObject_IS_GC(o) (PyType_IS_GC((o)->ob_type) && \
+	((o)->ob_type->tp_is_gc == NULL || (o)->ob_type->tp_is_gc(o)))
 
 extern DL_IMPORT(PyObject *) _PyObject_GC_Malloc(PyTypeObject *, int);
 extern DL_IMPORT(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, int);
@@ -231,13 +236,13 @@ extern DL_IMPORT(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, int);
 #define PyObject_GC_Resize(type, op, n) \
 		( (type *) _PyObject_GC_Resize((PyVarObject *)(op), (n)) )
 
-#ifdef WITH_CYCLE_GC
-
 extern DL_IMPORT(PyObject *) _PyObject_GC_New(PyTypeObject *);
 extern DL_IMPORT(PyVarObject *) _PyObject_GC_NewVar(PyTypeObject *, int);
 extern DL_IMPORT(void) _PyObject_GC_Del(PyObject *);
 extern DL_IMPORT(void) _PyObject_GC_Track(PyObject *);
 extern DL_IMPORT(void) _PyObject_GC_UnTrack(PyObject *);
+
+#ifdef WITH_CYCLE_GC
 
 /* GC information is stored BEFORE the object structure */
 typedef struct _gc_head {
