@@ -271,8 +271,6 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_weakref', ['_weakref.c']) )
         exts.append( Extension('xreadlines', ['xreadlinesmodule.c']) )
 
-        exts.append( Extension("bits", ["bits.c"]) )
-
         # array objects
         exts.append( Extension('array', ['arraymodule.c']) )
         # complex math library functions
