@@ -188,8 +188,8 @@ PyObject_Print(op, fp, flags)
 					ret = -1;
 				}
 				else {
-					fprintf(fp, "%s",
-						PyString_AsString(s));
+					ret = PyObject_Print(s, fp,
+							     Py_PRINT_RAW);
 				}
 				Py_XDECREF(s);
 			}
