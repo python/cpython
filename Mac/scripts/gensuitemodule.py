@@ -39,7 +39,10 @@ def process(fullname):
 			print "decoding", res.GetResInfo(), "..."
 			data = res.data
 			aete = decode(data)
+			# switch back (needed for dialogs in Python)
+			UseResFile(cur)
 			compileaete(aete, fullname)
+			UseResFile(rf)
 	finally:
 		if rf <> cur:
 			CloseResFile(rf)
@@ -237,27 +240,35 @@ def compilesuite(suite, major, minor, language, script, fname):
 	fp.write('import MacOS\n\n')
 	fp.write("_code = %s\n\n"% `code`)
 	
-	enum_names = []
-	for enum in enums:
-		name = compileenumeration(fp, enum)
-		enum_names.append(enum)
-		
 	compileclassheader(fp, modname)
+
+	enumsneeded = {}
 	if events:
 		for event in events:
-			compileevent(fp, event)
+			compileevent(fp, event, enumsneeded)
 	else:
 		fp.write("\tpass\n\n")
+
+	objc = ObjectCompiler(fp)
 	for cls in classes:
-		compileclass(fp, cls)
+		objc.compileclass(cls)
+	for cls in classes:
+		objc.fillclasspropsandelems(cls)
 	for comp in comps:
-		compilecomparison(fp, comp)
+		objc.compilecomparison(comp)
+	for enum in enums:
+		objc.compileenumeration(enum)
+	
+	for enum in enumsneeded.keys():
+		objc.checkforenum(enum)
+		
+	objc.dumpindex()
 
 def compileclassheader(fp, name):
 	"""Generate class boilerplate"""
 	fp.write("class %s:\n\n"%name)
 	
-def compileevent(fp, event):
+def compileevent(fp, event, enumsneeded):
 	"""Generate code for a single event"""
 	[name, desc, code, subcode, returns, accepts, arguments] = event
 	funcname = identify(name)
@@ -334,6 +345,7 @@ def compileevent(fp, event):
 			if ename <> '****':
 				fp.write("\t\taetools.enumsubst(_arguments, %s, _Enum_%s)\n" %
 					(`kname`, ename))
+				enumsneeded[ename] = 1
 	fp.write("\n")
 	#
 	# Do the transaction
@@ -365,37 +377,182 @@ def compileargument(arg):
 	[name, keyword, what] = arg
 	print "#        %s (%s)" % (name, `keyword`), compiledata(what)
 
-def compileclass(fp, cls):
-	[name, code, desc, properties, elements] = cls
-	fp.write("\n#    Class %s (%s) -- %s\n" % (`name`, `code`, `desc`))
-	for prop in properties:
-		compileproperty(fp, prop)
-	for elem in elements:
-		compileelement(fp, elem)
+class ObjectCompiler:
+	def __init__(self, fp):
+		self.fp = fp
+		self.propnames = {}
+		self.classnames = {}
+		self.propcodes = {}
+		self.classcodes = {}
+		self.compcodes = {}
+		self.enumcodes = {}
+		self.othersuites = []
+		
+	def findcodename(self, type, code):
+		while 1:
+			if type == 'property':
+				if self.propcodes.has_key(code):
+					return self.propcodes[code], self.propcodes[code], None
+				for s in self.othersuites:
+					if s._propdeclarations.has_key(code):
+						name = s._propdeclarations[code].__name__
+						return name, '%s.%s' % (s.__name__, name), s.__name__
+			if type == 'class':
+				if self.classcodes.has_key(code):
+					return self.classcodes[code], self.classcodes[code], None
+				for s in self.othersuites:
+					if s._classdeclarations.has_key(code):
+						name = s._classdeclarations[code].__name__
+						return name, '%s.%s' % (s.__name__, name), s.__name__
+			if type == 'enum':
+				if self.enumcodes.has_key(code):
+					return self.enumcodes[code], self.enumcodes[code], None
+				for s in self.othersuites:
+					if s._enumdeclarations.has_key(code):
+						name = '_Enum_' + identify(code)
+						return name, '%s.%s' % (s.__name__, name), s.__name__
+			if type == 'comparison':
+				if self.compcodes.has_key(code):
+					return self.compcodes[code], self.compcodes[code], None
+				for s in self.othersuites:
+					if s._compdeclarations.has_key(code):
+						name = s._compdeclarations[code].__name__
+						return name, '%s.%s' % (s.__name__, name), s.__name__
+						
+			m = self.askdefinitionmodule(type, code)
+			if not m: return None, None, None
+			self.othersuites.append(m)
+	
+	def askdefinitionmodule(self, type, code):
+		fss, ok = macfs.PromptGetFile('Where is %s %s declared?'%(type, code))
+		if not ok: return
+		path, file = os.path.split(fss.as_pathname())
+		modname = os.path.splitext(file)[0]
+		if not path in sys.path:
+			sys.path.insert(0, path)
+		m = __import__(modname)
+		self.fp.write("import %s\n"%modname)
+		return m
+		
+	def compileclass(self, cls):
+		[name, code, desc, properties, elements] = cls
+		pname = identify(name)
+		if self.classcodes.has_key(code):
+			# plural forms and such
+			self.fp.write("\n%s = %s\n"%(pname, self.classcodes[code]))
+			self.classnames[pname] = code
+		else:
+			self.fp.write('\nclass %s(aetools.ComponentItem):\n' % pname)
+			self.fp.write('\t"""%s - %s"""\n' % (name, desc))
+			self.fp.write('\twant = %s\n' % `code`)
+			self.classnames[pname] = code
+			self.classcodes[code] = pname
+		for prop in properties:
+			self.compileproperty(prop)
+		for elem in elements:
+			self.compileelement(elem)
+	
+	def compileproperty(self, prop):
+		[name, code, what] = prop
+		if code == 'c@#!':
+			# Something silly with plurals. Skip it.
+			return
+		pname = identify(name)
+		if self.propcodes.has_key(code):
+			self.fp.write("# repeated property %s %s\n"%(pname, what[1]))
+		else:
+			self.fp.write("class %s(aetools.NProperty):\n" % pname)
+			self.fp.write('\t"""%s - %s"""\n' % (name, what[1]))
+			self.fp.write("\twhich = %s\n" % `code`)
+			self.fp.write("\twant = %s\n" % `what[0]`)
+			self.propnames[pname] = code
+			self.propcodes[code] = pname
+	
+	def compileelement(self, elem):
+		[code, keyform] = elem
+		self.fp.write("#        element %s as %s\n" % (`code`, keyform))
 
-def compileproperty(fp, prop):
-	[name, code, what] = prop
-	fp.write("#        property %s (%s) %s\n" % (`name`, `code`, compiledata(what)))
-
-def compileelement(fp, elem):
-	[code, keyform] = elem
-	fp.write("#        element %s as %s\n" % (`code`, keyform))
-
-def compilecomparison(fp, comp):
-	[name, code, comment] = comp
-	fp.write("#    comparison  %s (%s) -- %s\n" % (`name`, `code`, comment))
-
-def compileenumeration(fp, enum):
-	[code, items] = enum
-	fp.write("_Enum_%s = {\n" % identify(code))
-	for item in items:
-		compileenumerator(fp, item)
-	fp.write("}\n\n")
-	return code
-
-def compileenumerator(fp, item):
-	[name, code, desc] = item
-	fp.write("\t%s : %s,\t# %s\n" % (`identify(name)`, `code`, desc))
+	def fillclasspropsandelems(self, cls):
+		[name, code, desc, properties, elements] = cls
+		cname = identify(name)
+		if self.classcodes[code] != cname:
+			# This is an other name (plural or so) for something else. Skip.
+			return
+		plist = []
+		elist = []
+		for prop in properties:
+			[pname, pcode, what] = prop
+			if pcode == 'c@#!':
+				continue
+			pname = identify(pname)
+			plist.append(pname)
+		for elem in elements:
+			[ecode, keyform] = elem
+			if ecode == 'c@#!':
+				continue
+			name, ename, module = self.findcodename('class', ecode)
+			if not name:
+				self.fp.write("# XXXX %s element %s not found!!\n"%(cname, `ecode`))
+			else:
+				elist.append(name, ename)
+			
+		self.fp.write("%s._propdict = {\n"%cname)
+		for n in plist:
+			self.fp.write("\t'%s' : %s,\n"%(n, n))
+		self.fp.write("}\n")
+		self.fp.write("%s._elemdict = {\n"%cname)
+		for n, fulln in elist:
+			self.fp.write("\t'%s' : %s,\n"%(n, fulln))
+		self.fp.write("}\n")
+	
+	def compilecomparison(self, comp):
+		[name, code, comment] = comp
+		iname = identify(name)
+		self.compcodes[code] = iname
+		self.fp.write("class %s(aetools.NComparison):\n" % iname)
+		self.fp.write('\t"""%s - %s"""\n' % (name, comment))
+		
+	def compileenumeration(self, enum):
+		[code, items] = enum
+		name = "_Enum_%s" % identify(code)
+		self.fp.write("%s = {\n" % name)
+		for item in items:
+			self.compileenumerator(item)
+		self.fp.write("}\n\n")
+		self.enumcodes[code] = name
+		return code
+	
+	def compileenumerator(self, item):
+		[name, code, desc] = item
+		self.fp.write("\t%s : %s,\t# %s\n" % (`identify(name)`, `code`, desc))
+		
+	def checkforenum(self, enum):
+		"""This enum code is used by an event. Make sure it's available"""
+		name, fullname, module = self.findcodename('enum', enum)
+		if not name:
+			self.fp.write("# XXXX enum %s not found!!\n"%(enum))
+			return
+		if module:
+			self.fp.write("from %s import %s\n"%(module, name))
+		
+	def dumpindex(self):
+		self.fp.write("\n#\n# Indices of types declared in this module\n#\n")
+		self.fp.write("_classdeclarations = {\n")
+		for k in self.classcodes.keys():
+			self.fp.write("\t%s : %s,\n" % (`k`, self.classcodes[k]))
+		self.fp.write("}\n")
+		self.fp.write("\n_propdeclarations = {\n")
+		for k in self.propcodes.keys():
+			self.fp.write("\t%s : %s,\n" % (`k`, self.propcodes[k]))
+		self.fp.write("}\n")
+		self.fp.write("\n_compdeclarations = {\n")
+		for k in self.compcodes.keys():
+			self.fp.write("\t%s : %s,\n" % (`k`, self.compcodes[k]))
+		self.fp.write("}\n")
+		self.fp.write("\n_enumdeclarations = {\n")
+		for k in self.enumcodes.keys():
+			self.fp.write("\t%s : %s,\n" % (`k`, self.enumcodes[k]))
+		self.fp.write("}\n")
 
 def compiledata(data):
 	[type, description, flags] = data
@@ -432,7 +589,8 @@ def compiledataflags(flags):
 	return '[%s]' % string.join(bits)
 	
 # XXXX Do we have a set of python keywords somewhere?
-illegal_ids = [ "for", "in", "from", "and", "or", "not", "print" ]
+illegal_ids = [ "for", "in", "from", "and", "or", "not", "print", "class", "return",
+	"def" ]
 
 def identify(str):
 	"""Turn any string into an identifier:
@@ -440,6 +598,8 @@ def identify(str):
 	- replace other illegal chars by _xx_ (hex code)
 	- prepend _ if the result is a python keyword
 	"""
+	if not str:
+		return "_empty_ae_name"
 	rv = ''
 	ok = string.letters  + '_'
 	ok2 = ok + string.digits
