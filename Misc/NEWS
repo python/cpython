@@ -101,6 +101,8 @@ Build
 C API
 -----
 
+- LONG_LONG was renamed to PY_LONG_LONG.
+
 - Added PyObject_SelfIter() to fill the tp_iter slot for the
   typical case where the method returns its self argument.
 

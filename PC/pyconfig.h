@@ -167,7 +167,7 @@ typedef int pid_t;
 
 #define COMPILER "[gcc]"
 #define hypot _hypot
-#define LONG_LONG long long
+#define PY_LONG_LONG long long
 #endif /* GNUC */
 
 /* ------------------------------------------------------------------------*/
@@ -191,8 +191,8 @@ typedef int pid_t;
 
 /* 64 bit ints are usually spelt __int64 unless compiler has overridden */
 #define HAVE_LONG_LONG 1
-#ifndef LONG_LONG
-#	define LONG_LONG __int64
+#ifndef PY_LONG_LONG
+#	define PY_LONG_LONG __int64
 #endif
 
 /* For Windows the Python core is in a DLL by default.  Test
@@ -237,7 +237,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #	define SIZEOF_FPOS_T 8
 #	define SIZEOF_HKEY 8
 /* configure.in defines HAVE_LARGEFILE_SUPPORT iff HAVE_LONG_LONG,
-   sizeof(off_t) > sizeof(long), and sizeof(LONG_LONG) >= sizeof(off_t).
+   sizeof(off_t) > sizeof(long), and sizeof(PY_LONG_LONG) >= sizeof(off_t).
    On Win64 the second condition is not true, but if fpos_t replaces off_t
    then this is true. The uses of HAVE_LARGEFILE_SUPPORT imply that Win64
    should define this. */

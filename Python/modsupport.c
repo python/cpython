@@ -291,7 +291,7 @@ do_mkvalue(char **p_format, va_list *p_va)
 
 #ifdef HAVE_LONG_LONG
 		case 'L':
-			return PyLong_FromLongLong((LONG_LONG)va_arg(*p_va, LONG_LONG));
+			return PyLong_FromLongLong((PY_LONG_LONG)va_arg(*p_va, PY_LONG_LONG));
 #endif
 #ifdef Py_USING_UNICODE
 		case 'u':

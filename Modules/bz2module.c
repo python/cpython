@@ -36,7 +36,7 @@ static char __author__[] =
 	(((long)bzs->total_out_hi32 << 32) + bzs->total_out_lo32)
 #elif SIZEOF_LONG_LONG >= 8
 #define BZS_TOTAL_OUT(bzs) \
-	(((LONG_LONG)bzs->total_out_hi32 << 32) + bzs->total_out_lo32)
+	(((PY_LONG_LONG)bzs->total_out_hi32 << 32) + bzs->total_out_lo32)
 #else
 #define BZS_TOTAL_OUT(bzs) \
 	bzs->total_out_lo32;
@@ -1490,7 +1490,7 @@ BZ2Comp_compress(BZ2CompObject *self, PyObject *args)
 	char *data;
 	int datasize;
 	int bufsize = SMALLCHUNK;
-	LONG_LONG totalout;
+	PY_LONG_LONG totalout;
 	PyObject *ret = NULL;
 	bz_stream *bzs = &self->bzs;
 	int bzerror;
@@ -1562,7 +1562,7 @@ BZ2Comp_flush(BZ2CompObject *self)
 	int bufsize = SMALLCHUNK;
 	PyObject *ret = NULL;
 	bz_stream *bzs = &self->bzs;
-	LONG_LONG totalout;
+	PY_LONG_LONG totalout;
 	int bzerror;
 
 	ACQUIRE_LOCK(self);
@@ -1768,7 +1768,7 @@ BZ2Decomp_decompress(BZ2DecompObject *self, PyObject *args)
 	char *data;
 	int datasize;
 	int bufsize = SMALLCHUNK;
-	LONG_LONG totalout;
+	PY_LONG_LONG totalout;
 	PyObject *ret = NULL;
 	bz_stream *bzs = &self->bzs;
 	int bzerror;

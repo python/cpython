@@ -68,8 +68,8 @@ typedef struct { char c; void *x; } st_void_p;
 /* We can't support q and Q in native mode unless the compiler does;
    in std mode, they're 8 bytes on all platforms. */
 #ifdef HAVE_LONG_LONG
-typedef struct { char c; LONG_LONG x; } s_long_long;
-#define LONG_LONG_ALIGN (sizeof(s_long_long) - sizeof(LONG_LONG))
+typedef struct { char c; PY_LONG_LONG x; } s_long_long;
+#define LONG_LONG_ALIGN (sizeof(s_long_long) - sizeof(PY_LONG_LONG))
 #endif
 
 #define STRINGIFY(x)    #x
@@ -146,9 +146,9 @@ get_ulong(PyObject *v, unsigned long *p)
 /* Same, but handling native long long. */
 
 static int
-get_longlong(PyObject *v, LONG_LONG *p)
+get_longlong(PyObject *v, PY_LONG_LONG *p)
 {
-	LONG_LONG x;
+	PY_LONG_LONG x;
 
 	v = get_pylong(v);
 	if (v == NULL)
@@ -156,7 +156,7 @@ get_longlong(PyObject *v, LONG_LONG *p)
 	assert(PyLong_Check(v));
 	x = PyLong_AsLongLong(v);
 	Py_DECREF(v);
-	if (x == (LONG_LONG)-1 && PyErr_Occurred())
+	if (x == (PY_LONG_LONG)-1 && PyErr_Occurred())
 		return -1;
 	*p = x;
 	return 0;
@@ -165,9 +165,9 @@ get_longlong(PyObject *v, LONG_LONG *p)
 /* Same, but handling native unsigned long long. */
 
 static int
-get_ulonglong(PyObject *v, unsigned LONG_LONG *p)
+get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 {
-	unsigned LONG_LONG x;
+	unsigned PY_LONG_LONG x;
 
 	v = get_pylong(v);
 	if (v == NULL)
@@ -175,7 +175,7 @@ get_ulonglong(PyObject *v, unsigned LONG_LONG *p)
 	assert(PyLong_Check(v));
 	x = PyLong_AsUnsignedLongLong(v);
 	Py_DECREF(v);
-	if (x == (unsigned LONG_LONG)-1 && PyErr_Occurred())
+	if (x == (unsigned PY_LONG_LONG)-1 && PyErr_Occurred())
 		return -1;
 	*p = x;
 	return 0;
@@ -315,7 +315,7 @@ nu_ulong(const char *p, const formatdef *f)
 static PyObject *
 nu_longlong(const char *p, const formatdef *f)
 {
-	LONG_LONG x;
+	PY_LONG_LONG x;
 	memcpy((char *)&x, p, sizeof x);
 	return PyLong_FromLongLong(x);
 }
@@ -323,7 +323,7 @@ nu_longlong(const char *p, const formatdef *f)
 static PyObject *
 nu_ulonglong(const char *p, const formatdef *f)
 {
-	unsigned LONG_LONG x;
+	unsigned PY_LONG_LONG x;
 	memcpy((char *)&x, p, sizeof x);
 	return PyLong_FromUnsignedLongLong(x);
 }
@@ -480,7 +480,7 @@ np_ulong(char *p, PyObject *v, const formatdef *f)
 static int
 np_longlong(char *p, PyObject *v, const formatdef *f)
 {
-	LONG_LONG x;
+	PY_LONG_LONG x;
 	if (get_longlong(v, &x) < 0)
 		return -1;
 	memcpy(p, (char *)&x, sizeof x);
@@ -490,7 +490,7 @@ np_longlong(char *p, PyObject *v, const formatdef *f)
 static int
 np_ulonglong(char *p, PyObject *v, const formatdef *f)
 {
-	unsigned LONG_LONG x;
+	unsigned PY_LONG_LONG x;
 	if (get_ulonglong(v, &x) < 0)
 		return -1;
 	memcpy(p, (char *)&x, sizeof x);
@@ -556,8 +556,8 @@ static formatdef native_table[] = {
 	{'d',	sizeof(double),	DOUBLE_ALIGN,	nu_double,	np_double},
 	{'P',	sizeof(void *),	VOID_P_ALIGN,	nu_void_p,	np_void_p},
 #ifdef HAVE_LONG_LONG
-	{'q',	sizeof(LONG_LONG), LONG_LONG_ALIGN, nu_longlong, np_longlong},
-	{'Q',	sizeof(LONG_LONG), LONG_LONG_ALIGN, nu_ulonglong,np_ulonglong},
+	{'q',	sizeof(PY_LONG_LONG), LONG_LONG_ALIGN, nu_longlong, np_longlong},
+	{'Q',	sizeof(PY_LONG_LONG), LONG_LONG_ALIGN, nu_ulonglong,np_ulonglong},
 #endif
 	{0}
 };
