@@ -1,7 +1,5 @@
-This is Python release 1.3b1
-============================
-
-I.e., the first beta release of Python 1.3.
+This is Python release 1.3
+==========================
 
 
 What's new in this release?
@@ -15,29 +13,8 @@ What's new in this release?
 - Rewritten htmllib.py (HTML parser), with new formatter.py.
 - Rewritten rexec.py (restricted execution).
 - New modules ni.py and ihooks.py (package support and more).
-- And lots more that you'll have to discover on your own.
-
-
-Why is it called a beta release?
---------------------------------
-
-Because it is.  There's no documentation except the source.  A few
-things are broken by the changes for keyword parameters (the access
-statement, the profiler, half of newmodule.c).  It has only been tested
-on two Unix platforms (IRIX 5.3 and Solaris 2.4).  The Mac and Windows
-sopport has not been fully re-integrated.
-
-
-Why do I release it anyway?
----------------------------
-
-Because I'm also releasing a prototype of Grail, an extensible web
-browser that is its answer to Java and could become Python's "Killer
-App".  Grail depends heavily on some features of Python 1.3 (such as
-keyword parameters).  The release date for Grail is determined by other
-factors and I don't want to release it without full source.
-
-Oh, and I'm going on a two week holiday as well :-)
+- And lots more that you'll have to discover on your own (see chapter
+  12 of the Tutorial).
 
 
 What is Python anyway?
@@ -74,13 +51,18 @@ A modest plug
 =============
 
 
-Python exists, and is free, thanks to the contributed efforts of many
-people.  The PSA was created to maximize the results of those efforts,
-by helping to coordinate them.  The PSA operates web, ftp and email
-servers, organizes Python workshops, and engages in other activities
-that benefit the Python user community.  The PSA is seeking support
-for these activities.  See this URL for information on how to join:
-http://www.python.org/psa/Joining.html
+*************************************************************************
+*									*
+*   Python exists, and is free, thanks to the contributed efforts	*
+*   of many people.  The PSA was created to maximize the results	*
+*   of those efforts, by helping to coordinate them.  The PSA		*
+*   operates web, ftp and email servers, organizes Python		*
+*   workshops, and engages in other activities that benefit the		*
+*   Python user community.  The PSA is seeking support for these	*
+*   activities.  See this URL for information on how to join:		*
+*   http://www.python.org/psa/Joining.html				*
+*									*
+*************************************************************************
 
 
 Build instructions
@@ -114,11 +96,9 @@ hints on what can go wrong, and how to fix it.
 Platform specific notes
 -----------------------
 
-Linux:	It is possible that "makesetup" fails with an obscure sed
-	error.  This is a bug in bash.  Replace /bin/sh with /bin/ash
-	in both makesetup and Makefile.pre.in.  This has been observed
-	in Slackware version 2.2, bash 1.14.3; Slackware 2.1 did not
-	have the problem.
+(Some of these may no longer apply.  If you find you can build Python
+on these platforms without the special directions mentioned here, let
+me know so I can remove them!)
 
 AIX:	Read the file Misc/AIX-NOTES before trying to build.
 
@@ -495,7 +475,7 @@ also use dynamic loading for the C tkinter module, in which case you
 must manually fix up sys.path or set $PYTHONPATH for the Python
 Tkinter module.)
 
-See <URL:http://www.sunlabs.com/research/tcl/> for more info on where
+See <URL:http://www.smli.com/research/tcl/> for more info on where
 to get Tcl/Tk.
 
 
