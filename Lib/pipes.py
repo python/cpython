@@ -288,7 +288,6 @@ def quote(file):
 # Small test program and example
 
 def test():
-	import os
 	print 'Testing...'
 	t = Template()
 	t.append('togif $IN $OUT', 'ff')
