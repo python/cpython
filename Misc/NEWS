@@ -99,7 +99,12 @@ Core and builtins
   access to the current frame during destruction of a local variable
   could access a pointer to freed memory.
 
-- The optional object allocator has been enabled by default.
+- The optional object allocator ("pymalloc") has been enabled by
+  default.  The recommended practice for memory allocation and
+  deallocation has been streamlined.  A header file is included,
+  Misc/pymemcompat.h, which can be bundled with 3rd party extensions
+  and lets them use the same API with Python versions from 1.5.2
+  onwards.
 
 - If you try to pickle an instance of a class that has __slots__ but
   doesn't define or override __getstate__, a TypeError is now raised.
