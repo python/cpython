@@ -352,7 +352,7 @@ sub my_parword_index_helper{
 #
 # It is used from &make_mod_index_entry() and &make_str_index_entry().
 #
-$STRIP_INDEX_TT = 0;
+$STRIP_INDEX_TT = 1;
 
 sub make_mod_index_entry{
     my($br_id,$str,$define) = @_;
