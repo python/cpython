@@ -8,7 +8,7 @@
 # See the sre.py file for information on usage and redistribution.
 #
 
-import _sre
+import _sre,sys
 
 from sre_constants import *
 
@@ -281,7 +281,10 @@ def _optimize_unicode(charset, fixup):
     header = [block]
     assert MAXCODE == 65535
     for i in range(128):
-        header.append(mapping[2*i]+256*mapping[2*i+1])
+        if sys.byteorder == 'big':
+            header.append(256*mapping[2*i]+mapping[2*i+1])
+        else:
+            header.append(mapping[2*i]+256*mapping[2*i+1])
     data[0:0] = header
     return [(BIGCHARSET, data)]    
 
