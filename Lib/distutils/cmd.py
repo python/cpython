@@ -172,6 +172,15 @@ class Command:
         if self.verbose >= level:
             print msg
 
+    def debug_print (self, msg):
+        """Print 'msg' to stdout if the global DEBUG (taken from the
+        DISTUTILS_DEBUG environment variable) flag is true.
+        """
+        from distutils.core import DEBUG
+        if DEBUG:
+            print msg
+        
+
 
     # -- Option validation methods -------------------------------------
     # (these are very handy in writing the 'finalize_options()' method)
