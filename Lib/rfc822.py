@@ -351,7 +351,7 @@ class Message:
                     addr = h[i+1:]
                 raw.append(addr)
         alladdrs = ''.join(raw)
-        a = AddrlistClass(alladdrs)
+        a = AddressList(alladdrs)
         return a.getaddrlist()
 
     def getdate(self, name):
@@ -494,7 +494,7 @@ def quote(str):
 
 def parseaddr(address):
     """Parse an address into a (realname, mailaddr) tuple."""
-    a = AddrlistClass(address)
+    a = AddressList(address)
     list = a.getaddrlist()
     if not list:
         return (None, None)
