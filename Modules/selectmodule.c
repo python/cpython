@@ -1,4 +1,3 @@
-
 /* select - Module containing unix select(2) call.
    Under Unix, the file descriptors are small integers.
    Under Win32, select only exists for sockets, and sockets may
@@ -8,6 +7,16 @@
 */
 
 #include "Python.h"
+
+/* Windows #defines FD_SETSIZE to 64 if FD_SETSIZE isn't already defined.
+   64 is too small (too many people have bumped into that limit).
+   Here we boost it.
+   Users who want even more than the boosted limit should #define
+   FD_SETSIZE higher before this; e.g., via compiler /D switch.
+*/
+#if defined(MS_WINDOWS) && !defined(FD_SETSIZE)
+#define FD_SETSIZE 512
+#endif 
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
