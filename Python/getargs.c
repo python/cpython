@@ -556,22 +556,36 @@ convertsimple1(PyObject *arg, char **p_format, va_list *p_va)
 	
 	case 's': /* string */
 		{
-			if (*format == '#') { /* any buffer-like object */
+			if (*format == '#') {
 				void **p = (void **)va_arg(*p_va, char **);
-				PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 				int *q = va_arg(*p_va, int *);
-				int count;
 
-				if ( pb == NULL ||
-				     pb->bf_getreadbuffer == NULL ||
-				     pb->bf_getsegcount == NULL )
-				  return "read-only buffer";
-				if ( (*pb->bf_getsegcount)(arg, NULL) != 1 )
-				  return "single-segment read-only buffer";
-				if ( (count =
-				      (*pb->bf_getreadbuffer)(arg, 0, p)) < 0 )
-				  return "(unspecified)";
-				*q = count;
+				if (PyString_Check(arg)) {
+				    *p = PyString_AS_STRING(arg);
+				    *q = PyString_GET_SIZE(arg);
+				}
+				else if (PyUnicode_Check(arg)) {
+				    arg = _PyUnicode_AsDefaultEncodedString(
+							            arg, NULL);
+				    if (arg == NULL)
+					return "unicode conversion error";
+				    *p = PyString_AS_STRING(arg);
+				    *q = PyString_GET_SIZE(arg);
+				}
+				else { /* any buffer-like object */
+				    PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
+				    int count;
+				    if ( pb == NULL ||
+					 pb->bf_getreadbuffer == NULL ||
+					 pb->bf_getsegcount == NULL )
+					return "read-only buffer";
+				    if ( (*pb->bf_getsegcount)(arg, NULL) != 1 )
+					return "single-segment read-only buffer";
+				    if ( (count =
+					  (*pb->bf_getreadbuffer)(arg, 0, p)) < 0 )
+					return "(unspecified)";
+				    *q = count;
+				}
 				format++;
 			} else {
 				char **p = va_arg(*p_va, char **);
@@ -597,24 +611,37 @@ convertsimple1(PyObject *arg, char **p_format, va_list *p_va)
 		{
 			if (*format == '#') { /* any buffer-like object */
 				void **p = (void **)va_arg(*p_va, char **);
-				PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 				int *q = va_arg(*p_va, int *);
-				int count;
 
 				if (arg == Py_None) {
 				  *p = 0;
 				  *q = 0;
-				} else {
-				  if ( pb == NULL ||
-				       pb->bf_getreadbuffer == NULL ||
-				       pb->bf_getsegcount == NULL )
-				    return "read-only buffer";
-				  if ( (*pb->bf_getsegcount)(arg, NULL) != 1 )
-				  return "single-segment read-only buffer";
-				  if ( (count = (*pb->bf_getreadbuffer)
-					                    (arg, 0, p)) < 0 )
-				    return "(unspecified)";
-				  *q = count;
+				}
+				else if (PyString_Check(arg)) {
+				    *p = PyString_AS_STRING(arg);
+				    *q = PyString_GET_SIZE(arg);
+				}
+				else if (PyUnicode_Check(arg)) {
+				    arg = _PyUnicode_AsDefaultEncodedString(
+							            arg, NULL);
+				    if (arg == NULL)
+					return "unicode conversion error";
+				    *p = PyString_AS_STRING(arg);
+				    *q = PyString_GET_SIZE(arg);
+				}
+				else { /* any buffer-like object */
+				    PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
+				    int count;
+				    if ( pb == NULL ||
+					 pb->bf_getreadbuffer == NULL ||
+					 pb->bf_getsegcount == NULL )
+					return "read-only buffer";
+				    if ( (*pb->bf_getsegcount)(arg, NULL) != 1 )
+					return "single-segment read-only buffer";
+				    if ( (count =
+					  (*pb->bf_getreadbuffer)(arg, 0, p)) < 0 )
+					return "(unspecified)";
+				    *q = count;
 				}
 				format++;
 			} else {
