@@ -305,7 +305,8 @@ class PimpInterface:
 			name = pkg.fullname()
 			status, _ = pkg.installed()
 			description = pkg.description()
-			rv.append((status, name, description))
+			description_line1 = description.split('\n')[0]
+			rv.append((status, name, description_line1))
 		return rv
 		
 	def getstatus(self, number):
@@ -333,19 +334,22 @@ class PackageBrowser(PimpInterface):
 		self.closepimp()
 	
 	def setupwidgets(self):
+		DESCRIPTION_HEIGHT = 140
 		INSTALL_POS = -30
-		STATUS_POS = INSTALL_POS - 70
-		self.w = W.Window((580, 400), "Python Install Manager", minsize = (400, 200), tabbable = 0)
+		STATUS_POS = INSTALL_POS - (70 + DESCRIPTION_HEIGHT)
+		self.w = W.Window((580, 600), "Python Install Manager", minsize = (400, 400), tabbable = 0)
 		self.w.titlebar = W.TextBox((4, 8, 60, 18), 'Packages:')
 		self.w.hidden_button = W.CheckBox((-100, 4, 0, 18), 'Show Hidden', self.updatestatus)
 		data = self.getbrowserdata()
 		self.w.packagebrowser = W.MultiList((4, 24, 0, STATUS_POS-2), data, self.listhit, cols=3)
 		
-		self.w.installed_l = W.TextBox((4, STATUS_POS, 60, 12), 'Installed:')
-		self.w.installed = W.TextBox((64, STATUS_POS, 0, 12), '')
-		self.w.message_l = W.TextBox((4, STATUS_POS+20, 60, 12), 'Status:')
-		self.w.message = W.TextBox((64, STATUS_POS+20, 0, 12), '')
+		self.w.installed_l = W.TextBox((4, STATUS_POS, 70, 12), 'Installed:')
+		self.w.installed = W.TextBox((74, STATUS_POS, 0, 12), '')
+		self.w.message_l = W.TextBox((4, STATUS_POS+20, 70, 12), 'Status:')
+		self.w.message = W.TextBox((74, STATUS_POS+20, 0, 12), '')
 		self.w.homepage_button = W.Button((4, STATUS_POS+40, 96, 18), 'View homepage', self.do_homepage)
+		self.w.description_l = W.TextBox((4, STATUS_POS+70, 70, 12), 'Description:')
+		self.w.description = W.EditText((74, STATUS_POS+70, 0, DESCRIPTION_HEIGHT-4))
 		
 		self.w.divline = W.HorizontalLine((0, INSTALL_POS-4, 0, 0))
 		self.w.verbose_button = W.CheckBox((84, INSTALL_POS+4, 60, 18), 'Verbose')
@@ -355,6 +359,7 @@ class PackageBrowser(PimpInterface):
 		self.w.user_button = W.CheckBox((340, INSTALL_POS+4, 140, 18), 'For Current User Only', self.do_user)
 		self.w.install_button = W.Button((4, INSTALL_POS+4, 56, 18), 'Install:', self.do_install)
 		self.w.open()
+		self.w.description.enable(0)
 		
 	def updatestatus(self):
 		sel = self.w.packagebrowser.getselection()
@@ -366,6 +371,7 @@ class PackageBrowser(PimpInterface):
 			self.w.message.set('')
 			self.w.install_button.enable(0)
 			self.w.homepage_button.enable(0)
+			self.w.description.set('')
 			self.w.verbose_button.enable(0)
 			self.w.recursive_button.enable(0)
 			self.w.force_button.enable(0)
@@ -378,6 +384,10 @@ class PackageBrowser(PimpInterface):
 			self.w.message.set(message)
 			self.w.install_button.enable(installed != "yes" or self.w.force_button.get())
 			self.w.homepage_button.enable(not not self.packages[sel].homepage())
+			description = self.packages[sel].description()
+			description = description.split('\r\n')
+			description = '\r'.join(description)
+			self.w.description.set(description)
 			self.w.verbose_button.enable(1)
 			self.w.recursive_button.enable(1)
 			self.w.force_button.enable(1)
