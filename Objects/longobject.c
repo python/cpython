@@ -549,9 +549,9 @@ x_divrem(v1, w1, prem)
 /* Methods */
 
 /* Forward */
-static void long_dealloc PROTO((longobject *));
-static int long_print PROTO((longobject *, FILE *, int));
-static object *long_repr PROTO((longobject *));
+static void long_dealloc PROTO((object *));
+static int long_print PROTO((object *, FILE *, int));
+static object *long_repr PROTO((object *));
 static int long_compare PROTO((longobject *, longobject *));
 
 static object *long_add PROTO((longobject *, longobject *));
@@ -574,18 +574,19 @@ static object *long_or PROTO((longobject *, longobject *));
 
 static void
 long_dealloc(v)
-	longobject *v;
+	object *v;
 {
 	DEL(v);
 }
 
+/* ARGSUSED */
 static int
 long_print(v, fp, flags)
-	longobject *v;
+	object *v;
 	FILE *fp;
-	int flags;
+	int flags; /* Not used but required by interface */
 {
-	stringobject *str = (stringobject *) long_format((object *)v, 10);
+	stringobject *str = (stringobject *) long_format(v, 10);
 	if (str == NULL)
 		return -1;
 	fprintf(fp, "%s", GETSTRINGVALUE(str));
@@ -595,9 +596,9 @@ long_print(v, fp, flags)
 
 static object *
 long_repr(v)
-	longobject *v;
+	object *v;
 {
-	return long_format((object *)v, 10);
+	return long_format(v, 10);
 }
 
 static int
@@ -1151,7 +1152,7 @@ long_bitwise(a, op, b)
 	int size_a, size_b, size_z;
 	longobject *z;
 	int i;
-	digit diga, digb, digz;
+	digit diga, digb;
 	object *v;
 	
 	if (a->ob_size < 0) {
@@ -1252,24 +1253,28 @@ long_or(a, b)
 	return long_bitwise(a, '|', b);
 }
 
+#define UF (object* (*) FPROTO((object *))) /* Unary function */
+#define BF (object* (*) FPROTO((object *, object *))) /* Binary function */
+#define IF (int (*) FPROTO((object *))) /* Int function */
+
 static number_methods long_as_number = {
-	long_add,	/*nb_add*/
-	long_sub,	/*nb_subtract*/
-	long_mul,	/*nb_multiply*/
-	long_div,	/*nb_divide*/
-	long_mod,	/*nb_remainder*/
-	long_divmod,	/*nb_divmod*/
-	long_pow,	/*nb_power*/
-	long_neg,	/*nb_negative*/
-	long_pos,	/*tp_positive*/
-	long_abs,	/*tp_absolute*/
-	long_nonzero,	/*tp_nonzero*/
-	long_invert,	/*nb_invert*/
-	long_lshift,	/*nb_lshift*/
-	long_rshift,	/*nb_rshift*/
-	long_and,	/*nb_and*/
-	long_xor,	/*nb_xor*/
-	long_or,	/*nb_or*/
+	BF long_add,	/*nb_add*/
+	BF long_sub,	/*nb_subtract*/
+	BF long_mul,	/*nb_multiply*/
+	BF long_div,	/*nb_divide*/
+	BF long_mod,	/*nb_remainder*/
+	BF long_divmod,	/*nb_divmod*/
+	BF long_pow,	/*nb_power*/
+	UF long_neg,	/*nb_negative*/
+	UF long_pos,	/*tp_positive*/
+	UF long_abs,	/*tp_absolute*/
+	IF long_nonzero,/*tp_nonzero*/
+	UF long_invert,	/*nb_invert*/
+	BF long_lshift,	/*nb_lshift*/
+	BF long_rshift,	/*nb_rshift*/
+	BF long_and,	/*nb_and*/
+	BF long_xor,	/*nb_xor*/
+	BF long_or,	/*nb_or*/
 };
 
 typeobject Longtype = {
@@ -1282,6 +1287,7 @@ typeobject Longtype = {
 	long_print,	/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
+	(int (*) FPROTO((object *, object *)))
 	long_compare,	/*tp_compare*/
 	long_repr,	/*tp_repr*/
 	&long_as_number,/*tp_as_number*/
