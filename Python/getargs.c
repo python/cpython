@@ -259,6 +259,8 @@ seterror(iarg, msg, levels, fname, message)
 	int i;
 	char *p = buf;
 
+	if (err_occurred())
+		return;
 	if (iarg == 0 && message == NULL)
 		message = msg;
 	else if (message == NULL) {
@@ -583,7 +585,7 @@ convertsimple1(arg, p_format, p_va)
 				void *addr = va_arg(*p_va, void *);
 				format++;
 				if (! (*convert)(arg, addr))
-					return "";
+					return "(unspecified)";
 			}
 			else {
 				p = va_arg(*p_va, object **);
