@@ -55,6 +55,18 @@ thus allowing multiple occurrences.  Long and short options may be
 mixed.
 \end{funcdesc}
 
+\begin{funcdesc}{gnu_getopt}{args, options\optional{, long_options}}
+This function works like \function{getopt()}, except that GNU style
+scanning mode is used by default. This means that option and
+non-option arguments may be intermixed. The \function{getopt()}
+function stops processing options as soon as a non-option argument is
+encountered.
+
+If the first character of the option string is `+', or if the
+environment variable POSIXLY_CORRECT is set, then option processing
+stops as soon as a non-option argument is encountered.
+\end{funcdesc}
+
 \begin{excdesc}{GetoptError}
 This is raised when an unrecognized option is found in the argument
 list or when an option requiring an argument is given none.

@@ -4,6 +4,7 @@
 import getopt
 from getopt import GetoptError
 from test_support import verify, verbose
+import os
 
 def expectException(teststr, expected, failure=AssertionError):
     """Executes a statement passed in teststr, and raises an exception
@@ -105,6 +106,25 @@ verify(args == ['arg1', 'arg2'])
 expectException(
     "opts, args = getopt.getopt(cmdline, 'a:b', ['alpha', 'beta'])",
     GetoptError)
+
+# Test handling of GNU style scanning mode.
+if verbose:
+    print 'Running tests on getopt.gnu_getopt'
+cmdline = ['-a', 'arg1', '-b', '1', '--alpha', '--beta=2']
+# GNU style
+opts, args = getopt.gnu_getopt(cmdline, 'ab:', ['alpha', 'beta='])
+verify(opts == [('-a', ''), ('-b', '1'), ('--alpha', ''), ('--beta', '2')])
+verify(args == ['arg1'])
+# Posix style via +
+opts, args = getopt.gnu_getopt(cmdline, '+ab:', ['alpha', 'beta='])
+verify(opts == [('-a', '')])
+verify(args == ['arg1', '-b', '1', '--alpha', '--beta=2'])
+# Posix style via POSIXLY_CORRECT
+os.environ["POSIXLY_CORRECT"] = "1"
+opts, args = getopt.gnu_getopt(cmdline, 'ab:', ['alpha', 'beta='])
+verify(opts == [('-a', '')])
+verify(args == ['arg1', '-b', '1', '--alpha', '--beta=2'])
+
 
 if verbose:
     print "Module getopt: tests completed successfully."
