@@ -16,9 +16,9 @@
 #endif
 
 #define ENCMAP(encoding)                                    \
-    const static encode_map *encoding##encmap;
+    static const encode_map *encoding##encmap;
 #define DECMAP(encoding)                                    \
-    const static decode_map *encoding##decmap;
+    static const decode_map *encoding##decmap;
 
 #define ENCODER_INIT(encoding)                              \
     static int encoding##_encode_init(                      \
