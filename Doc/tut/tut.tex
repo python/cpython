@@ -549,7 +549,20 @@ operator, and repeated with \code{*}:
 
 Two string literals next to each other are automatically concatenated;
 the first line above could also have been written \samp{word = 'Help'
-'A'}; this only works with two literals, not with arbitrary string expressions.
+'A'}; this only works with two literals, not with arbitrary string
+expressions:
+
+\begin{verbatim}
+>>> 'str' 'ing'                   #  <-  This is ok
+'string'
+>>> string.strip('str') + 'ing'   #  <-  This is ok
+'string'
+>>> string.strip('str') 'ing'     #  <-  This is invalid
+  File "<stdin>", line 1
+    string.strip('str') 'ing'
+                            ^
+SyntaxError: invalid syntax
+\end{verbatim}
 
 Strings can be subscripted (indexed); like in \C{}, the first character
 of a string has subscript (index) 0.  There is no separate character
@@ -853,6 +866,7 @@ Perhaps the most well-known statement type is the \keyword{if}
 statement.  For example:
 
 \begin{verbatim}
+>>> #  [Code which sets 'x' to a value...]
 >>> if x < 0:
 ...      x = 0
 ...      print 'Negative changed to zero'
