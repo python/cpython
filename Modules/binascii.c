@@ -1036,13 +1036,16 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
 	      &datalen, &header))
 		return NULL;
 
-	/* We allocate the output same size as input, this is overkill */
-	odata = (unsigned char *) calloc(1, datalen);
-
+	/* We allocate the output same size as input, this is overkill.
+	 * The previous implementation used calloc() so we'll zero out the
+	 * memory here too, since PyMem_Malloc() does not guarantee that.
+	 */
+	odata = (unsigned char *) PyMem_Malloc(datalen);
 	if (odata == NULL) {
 		PyErr_NoMemory();
 		return NULL;
 	}
+	memset(odata, datalen, 0);
 
 	in = out = 0;
 	while (in < datalen) {
@@ -1090,10 +1093,10 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
 		}
 	}
 	if ((rv = PyString_FromStringAndSize((char *)odata, out)) == NULL) {
-		free (odata);
+		PyMem_Free(odata);
 		return NULL;
 	}
-	free (odata);
+	PyMem_Free(odata);
 	return rv;
 }
 
@@ -1207,12 +1210,16 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 		}
 	}
 
-	odata = (unsigned char *) calloc(1, odatalen);
-
+	/* We allocate the output same size as input, this is overkill.
+	 * The previous implementation used calloc() so we'll zero out the
+	 * memory here too, since PyMem_Malloc() does not guarantee that.
+	 */
+	odata = (unsigned char *) PyMem_Malloc(odatalen);
 	if (odata == NULL) {
 		PyErr_NoMemory();
 		return NULL;
 	}
+	memset(odata, odatalen, 0);
 
 	in = out = linelen = 0;
 	while (in < datalen) {
@@ -1281,10 +1288,10 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 		}
 	}
 	if ((rv = PyString_FromStringAndSize((char *)odata, out)) == NULL) {
-		free (odata);
+		PyMem_Free(odata);
 		return NULL;
 	}
-	free (odata);
+	PyMem_Free(odata);
 	return rv;
 }
 
