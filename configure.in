@@ -1453,21 +1453,6 @@ if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 	fi
 fi
 
-# Check for GC support
-AC_MSG_CHECKING(for --with-cycle-gc)
-AC_ARG_WITH(cycle-gc,
-[  --with(out)-cycle-gc            disable/enable garbage collection])
-
-if test -z "$with_cycle_gc"
-then with_cycle_gc="yes"
-fi
-if test "$with_cycle_gc" != "no"
-then
-    AC_DEFINE(WITH_CYCLE_GC, 1, 
-     [Define if you want to compile in cycle garbage collection.])
-fi
-AC_MSG_RESULT($with_cycle_gc)
-
 # Check for universal newline support
 AC_MSG_CHECKING(for --with-universal-newline)
 AC_ARG_WITH(universal-newlines,
