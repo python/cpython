@@ -493,6 +493,12 @@ class HTTPResponse:
             raise ResponseNotReady()
         return self.msg.getheader(name, default)
 
+    def getheaders(self):
+        """Return list of (header, value) tuples."""
+        if self.msg is None:
+            raise ResponseNotReady()
+        return self.msg.items()
+
 
 class HTTPConnection:
 

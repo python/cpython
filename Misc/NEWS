@@ -44,6 +44,8 @@ Extension modules
 Library
 -------
 
+- HTTPResponse has now a getheaders method.
+
 - Patch #1006219: let inspect.getsource handle '@' decorators. Thanks Simon
   Percivall.
 
