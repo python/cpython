@@ -997,6 +997,10 @@ Mac
   with an interpreter living in such a .app bundle, this interpreter should
   be used to run any Python script using the window manager (including
   Tkinter or wxPython scripts).
+  
+- Most of Mac/Lib has moved to Lib/plat-mac, which is again used both in
+  MacPython-OSX and MacPython-OS9. The only modules remaining in Mac/Lib
+  are specifically for MacPython-OS9 (CFM support, preference resources, etc).
 
 - A new utility PythonLauncher will start a Python interpreter when a .py or
   .pyw script is double-clicked in the Finder. By default .py scripts are
