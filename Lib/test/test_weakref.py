@@ -1,3 +1,4 @@
+import gc
 import sys
 import unittest
 import UserList
@@ -590,6 +591,37 @@ class ReferencesTestCase(TestBase):
         del alist[:]
         gc.collect()
         self.assertEqual(alist, [])
+
+    def test_gc_during_ref_creation(self):
+        self.check_gc_during_creation(weakref.ref)
+
+    def test_gc_during_proxy_creation(self):
+        self.check_gc_during_creation(weakref.proxy)
+
+    def check_gc_during_creation(self, makeref):
+        thresholds = gc.get_threshold()
+        gc.set_threshold(1, 1, 1)
+        gc.collect()
+        class A:
+            pass
+
+        def callback(*args):
+            pass
+
+        referenced = A()
+
+        a = A()
+        a.a = a
+        a.wr = makeref(referenced)
+
+        try:
+            # now make sure the object and the ref get labeled as
+            # cyclic trash:
+            a = A()
+            a.wrc = weakref.ref(referenced, callback)
+
+        finally:
+            gc.set_threshold(*thresholds)
 
 class Object:
     def __init__(self, arg):
