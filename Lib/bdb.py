@@ -339,7 +339,7 @@ class Bdb:
 			locals = globals
 		self.reset()
 		sys.settrace(self.trace_dispatch)
-		if type(cmd) <> types.CodeType:
+		if not isinstance(cmd, types.CodeType):
 			cmd = cmd+'\n'
 		try:
 			try:
@@ -358,7 +358,7 @@ class Bdb:
 			locals = globals
 		self.reset()
 		sys.settrace(self.trace_dispatch)
-		if type(expr) <> types.CodeType:
+		if not isinstance(expr, types.CodeType):
 			expr = expr+'\n'
 		try:
 			try:
