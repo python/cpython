@@ -56,6 +56,20 @@ network servers and clients a snap.
   \end{tableii}
 \end{classdesc}
 
+\begin{funcdesc}{loop}{\optional{timeout\optional{, use_poll\optional{,
+                       map}}}}
+  Enter a polling loop that only terminates after all open channels
+  have been closed.  All arguments are optional.  The \var{timeout}
+  argument sets the timeout parameter for the appropriate
+  \function{select()} or \function{poll()} call, measured in seconds;
+  the default is 30 seconds.  The \var{use_poll} parameter, if true,
+  indicates that \function{poll()} should be used in preference to
+  \function{select()} (the default is false).  The \var{map} parameter
+  is a dictionary that gives a list of channels to watch.  As channels
+  are closed they are deleted from their map.  If \var{map} is
+  omitted, a global map is used.
+\end{funcdesc}
+
 This set of user-level events is larger than the basics.  The 
 full set of methods that can be overridden in your subclass are:
 
