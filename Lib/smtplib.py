@@ -8,7 +8,7 @@ ESMTP support, test code and doc fixes added by
 Better RFC 821 compliance (MAIL and RCPT, and CRLF in data)
     by Carey Evans <c.evans@clear.net.nz>, for picky mail servers.
    
-(This was modified from the Python 1.5 library HTTP lib.)
+This was modified from the Python 1.5 library HTTP lib.
 
 This should follow RFC 821 (SMTP) and RFC 1869 (ESMTP).
 
@@ -20,23 +20,23 @@ and MAIL commands!
 
 Example:
 
->>> import smtplib
->>> s=smtplib.SMTP("localhost")
->>> print s.help()
-This is Sendmail version 8.8.4
-Topics:
-    HELO    EHLO    MAIL    RCPT    DATA
-    RSET    NOOP    QUIT    HELP    VRFY
-    EXPN    VERB    ETRN    DSN
-For more info use "HELP <topic>".
-To report bugs in the implementation send email to
-    sendmail-bugs@sendmail.org.
-For local information send email to Postmaster at your site.
-End of HELP info
->>> s.putcmd("vrfy","someone@here")
->>> s.getreply()
-(250, "Somebody OverHere <somebody@here.my.org>")
->>> s.quit()
+  >>> import smtplib
+  >>> s=smtplib.SMTP("localhost")
+  >>> print s.help()
+  This is Sendmail version 8.8.4
+  Topics:
+      HELO    EHLO    MAIL    RCPT    DATA
+      RSET    NOOP    QUIT    HELP    VRFY
+      EXPN    VERB    ETRN    DSN
+  For more info use "HELP <topic>".
+  To report bugs in the implementation send email to
+      sendmail-bugs@sendmail.org.
+  For local information send email to Postmaster at your site.
+  End of HELP info
+  >>> s.putcmd("vrfy","someone@here")
+  >>> s.getreply()
+  (250, "Somebody OverHere <somebody@here.my.org>")
+  >>> s.quit()
 
 '''
 
@@ -57,8 +57,8 @@ SMTPDataError="Error transmitting message data"
 def quoteaddr(addr):
     """Quote a subset of the email addresses defined by RFC 821.
 
-    Should be able to handle anything rfc822.parseaddr can handle."""
-
+    Should be able to handle anything rfc822.parseaddr can handle.
+    """
     m=None
     try:
         m=rfc822.parseaddr(addr)[1]
@@ -74,7 +74,8 @@ def quotedata(data):
     """Quote data for email.
 
     Double leading '.', and change Unix newline '\n', or Mac '\r' into
-    Internet CRLF end-of-line."""
+    Internet CRLF end-of-line.
+    """
     return re.sub(r'(?m)^\.', '..',
         re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data))
 
@@ -105,8 +106,8 @@ class SMTP:
         For method docs, see each method's docstrings. In general, there is 
             a method of the same name to perform each SMTP command, and there 
             is a method called 'sendmail' that will do an entire mail 
-            transaction."""
-
+            transaction.
+    """
     debuglevel = 0
     file = None
     helo_resp = None
@@ -116,9 +117,9 @@ class SMTP:
     def __init__(self, host = '', port = 0):
         """Initialize a new instance.
 
-        If specified, `host' is the name of the remote host to which
-        to connect.  If specified, `port' specifies the port to which
-        to connect.  By default, smtplib.SMTP_PORT is used.
+        If specified, `host' is the name of the remote host to which to
+        connect.  If specified, `port' specifies the port to which to connect.
+        By default, smtplib.SMTP_PORT is used.
 
         """
         self.esmtp_features = {}
@@ -127,8 +128,8 @@ class SMTP:
     def set_debuglevel(self, debuglevel):
         """Set the debug output level.
 
-        A non-false value results in debug messages for connection and
-        for all messages sent to and received from the server.
+        A non-false value results in debug messages for connection and for all
+        messages sent to and received from the server.
 
         """
         self.debuglevel = debuglevel
@@ -140,8 +141,8 @@ class SMTP:
         there is no port specified, that suffix will be stripped off and the
         number interpreted as the port number to use.
 
-        Note:  This method is automatically invoked by __init__,
-        if a host is specified during instantiation.
+        Note: This method is automatically invoked by __init__, if a host is
+        specified during instantiation.
 
         """
         if not port:
@@ -171,8 +172,7 @@ class SMTP:
             raise SMTPServerDisconnected
  
     def putcmd(self, cmd, args=""):
-        """Send a command to the server.
-        """
+        """Send a command to the server."""
         str = '%s %s%s' % (cmd, args, CRLF)
         self.send(str)
     
@@ -180,11 +180,12 @@ class SMTP:
         """Get a reply from the server.
         
         Returns a tuple consisting of:
-        - server response code (e.g. '250', or such, if all goes well)
-          Note: returns -1 if it can't read response code.
-        - server response string corresponding to response code
-                (note : multiline responses converted to a single, 
-                 multiline string)
+
+          - server response code (e.g. '250', or such, if all goes well)
+            Note: returns -1 if it can't read response code.
+
+          - server response string corresponding to response code (multiline
+            responses are converted to a single, multiline string).
         """
         resp=[]
         self.file = self.sock.makefile('rb')
@@ -207,30 +208,33 @@ class SMTP:
         return errcode, errmsg
     
     def docmd(self, cmd, args=""):
-        """ Send a command, and return its response code """
-        
+        """Send a command, and return its response code."""
         self.putcmd(cmd,args)
         (code,msg)=self.getreply()
         return code
-# std smtp commands
 
+    # std smtp commands
     def helo(self, name=''):
-        """ SMTP 'helo' command. Hostname to send for this command  
-        defaults to the FQDN of the local host """
+        """SMTP 'helo' command.
+        Hostname to send for this command defaults to the FQDN of the local
+        host.
+        """
         name=string.strip(name)
         if len(name)==0:
-                name=socket.gethostbyaddr(socket.gethostname())[0]
+            name=socket.gethostbyaddr(socket.gethostname())[0]
         self.putcmd("helo",name)
         (code,msg)=self.getreply()
         self.helo_resp=msg
         return code
 
     def ehlo(self, name=''):
-        """ SMTP 'ehlo' command. Hostname to send for this command  
-        defaults to the FQDN of the local host.  """
+        """ SMTP 'ehlo' command.
+        Hostname to send for this command defaults to the FQDN of the local
+        host.
+        """
         name=string.strip(name)
         if len(name)==0:
-                name=socket.gethostbyaddr(socket.gethostname())[0]
+            name=socket.gethostbyaddr(socket.gethostname())[0]
         self.putcmd("ehlo",name)
         (code,msg)=self.getreply()
         # According to RFC1869 some (badly written) 
@@ -258,23 +262,24 @@ class SMTP:
         return self.esmtp_features.has_key(string.lower(opt))
 
     def help(self, args=''):
-        """SMTP 'help' command. Returns help text from server."""
+        """SMTP 'help' command.
+        Returns help text from server."""
         self.putcmd("help", args)
         (code,msg)=self.getreply()
         return msg
 
     def rset(self):
-        """SMTP 'rset' command. Resets session."""
+        """SMTP 'rset' command -- resets session."""
         code=self.docmd("rset")
         return code
 
     def noop(self):
-        """SMTP 'noop' command. Doesn't do anything :>"""
+        """SMTP 'noop' command -- doesn't do anything :>"""
         code=self.docmd("noop")
         return code
 
     def mail(self,sender,options=[]):
-        """SMTP 'mail' command. Begins mail xfer session."""
+        """SMTP 'mail' command -- begins mail xfer session."""
         optionlist = ''
         if options and self.does_esmtp:
             optionlist = string.join(options, ' ')
@@ -282,7 +287,7 @@ class SMTP:
         return self.getreply()
 
     def rcpt(self,recip,options=[]):
-        """SMTP 'rcpt' command. Indicates 1 recipient for this mail."""
+        """SMTP 'rcpt' command -- indicates 1 recipient for this mail."""
         optionlist = ''
         if options and self.does_esmtp:
             optionlist = string.join(options, ' ')
@@ -290,7 +295,7 @@ class SMTP:
         return self.getreply()
 
     def data(self,msg):
-        """SMTP 'DATA' command. Sends message data to server. 
+        """SMTP 'DATA' command -- sends message data to server. 
         Automatically quotes lines beginning with a period per rfc821.
         """
         self.putcmd("data")
@@ -306,14 +311,14 @@ class SMTP:
             return code
 
     def verify(self, address):
-        """SMTP 'verify' command. Checks for address validity."""
+        """SMTP 'verify' command -- checks for address validity."""
         self.putcmd("vrfy", quoteaddr(address))
         return self.getreply()
     # a.k.a.
     vrfy=verify
 
     def expn(self, address):
-        """SMTP 'verify' command. Checks for address validity."""
+        """SMTP 'verify' command -- checks for address validity."""
         self.putcmd("expn", quoteaddr(address))
         return self.getreply()
 
