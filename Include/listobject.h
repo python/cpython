@@ -74,6 +74,7 @@ extern PyObject *PyList_AsTuple Py_PROTO((PyObject *));
 
 /* Macro, trading safety for speed */
 #define PyList_GET_ITEM(op, i) (((PyListObject *)(op))->ob_item[i])
+#define PyList_SET_ITEM(op, i, v) (((PyListObject *)(op))->ob_item[i] = (v))
 #define PyList_GET_SIZE(op)    (((PyListObject *)(op))->ob_size)
 
 #ifdef __cplusplus
