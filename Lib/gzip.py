@@ -182,7 +182,7 @@ class GzipFile:
             self.fileobj.seek(0, 2)     # Seek to end of file
             if pos == self.fileobj.tell():
                 self.fileobj = None
-                return EOFError, "Reached EOF"
+                raise EOFError, "Reached EOF"
             else: 
                 self.fileobj.seek( pos ) # Return to original position
   
