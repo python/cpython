@@ -601,6 +601,16 @@
       \withsubitem{(class in \py@thismodule)}{\ttindex{#1}}]
 }{\end{fulllineitems}}
 
+% \begin{excclassdesc}{name}{constructor args}
+% but indexes as an exception
+\newenvironment{excclassdesc}[2]{
+  % Using \renewcommand doesn't work for this, for unknown reasons:
+  \global\def\py@thisclass{#1}
+  \begin{fulllineitems}
+    \item[\code{\bfcode{#1}(\py@varvars{#2})}%
+      \withsubitem{(exception in \py@thismodule)}{\ttindex{#1}}]
+}{\end{fulllineitems}}
+
 
 \let\py@classbadkey=\@undefined
 
@@ -803,6 +813,7 @@
 \newcommand{\constant}[1]{\code{#1}}	% manifest constant, not syntactic
 
 \newcommand{\manpage}[2]{{\emph{#1}(#2)}}
+\newcommand{\pep}[1]{PEP #1\index{Python Enhancement Proposals!PEP #1}}
 \newcommand{\rfc}[1]{RFC #1\index{RFC!RFC #1}}
 \newcommand{\program}[1]{\strong{#1}}
 \newcommand{\programopt}[1]{\strong{#1}}
@@ -910,6 +921,14 @@
       #3
     \end{fulllineitems}
   }
+}
+% \seepep{number}{title}{why it's interesting}
+\newcommand{\py@seepep}[3]{%
+  \par%
+  \begin{fulllineitems}
+    \item[\pep{#1}, ``\emph{#2}'']
+    #3
+  \end{fulllineitems}
 }
 % \seerfc{number}{title}{why it's interesting}
 \newcommand{\py@seerfc}[3]{%
