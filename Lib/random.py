@@ -725,20 +725,20 @@ def _test_generator(n, funccall):
     import time
     print n, 'times', funccall
     code = compile(funccall, funccall, 'eval')
-    sum = 0.0
+    total = 0.0
     sqsum = 0.0
     smallest = 1e10
     largest = -1e10
     t0 = time.time()
     for i in range(n):
         x = eval(code)
-        sum = sum + x
+        total += x
         sqsum = sqsum + x*x
         smallest = min(x, smallest)
         largest = max(x, largest)
     t1 = time.time()
     print round(t1-t0, 3), 'sec,',
-    avg = sum/n
+    avg = total/n
     stddev = _sqrt(sqsum/n - avg*avg)
     print 'avg %g, stddev %g, min %g, max %g' % \
               (avg, stddev, smallest, largest)
