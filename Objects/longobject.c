@@ -260,25 +260,34 @@ PyLong_AsUnsignedLong(PyObject *vv)
 	return x;
 }
 
+int
+_PyLong_Sign(PyObject *vv)
+{
+	PyLongObject *v = (PyLongObject *)vv;
+	const int ndigits = v->ob_size;
+
+	assert(v != NULL);
+	assert(PyLong_Check(v));
+	assert(ndigits == 0 || v->ob_digit[ndigits - 1] != 0);
+
+	return ndigits == 0 ? 0 : (ndigits < 0 ? -1 : 1);
+}
+
 size_t
 _PyLong_NumBits(PyObject *vv)
 {
 	PyLongObject *v = (PyLongObject *)vv;
-	size_t result = 1;	/* for the sign bit */
-	size_t ndigits = ABS(v->ob_size);
+	size_t result = 0;
+	int ndigits = ABS(v->ob_size);
 
 	assert(v != NULL);
 	assert(PyLong_Check(v));
 	assert(ndigits == 0 || v->ob_digit[ndigits - 1] != 0);
 	if (ndigits > 0) {
-		size_t product;
 		digit msd = v->ob_digit[ndigits - 1];
 
-		product = (ndigits - 1) * SHIFT;
-		if (product / SHIFT != ndigits - 1)
-			goto Overflow;
-		result += product;
-		if (result < product)
+		result = (ndigits - 1) * SHIFT;
+		if (result / SHIFT != ndigits - 1)
 			goto Overflow;
 		do {
 			++result;
