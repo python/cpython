@@ -1,20 +1,19 @@
 """Class based built-in exception hierarchy.
 
-This is an experimental new feature whereby all the standard built-in
-exceptions, traditionally string object, are replaced with classes.
-This gives Python's exception handling mechanism a more
-object-oriented feel.
+This is a new feature whereby all the standard built-in exceptions,
+traditionally string objects, are replaced with classes.  This gives
+Python's exception handling mechanism a more object-oriented feel.
 
 Most existing code should continue to work with class based
 exceptions.  Some tricky uses of IOError may break, but the most
 common uses should work.
 
-To use this new feature, start the python executable with the -X option.
+To disable this feature, start the Python executable with the -X option.
 
 Here is a rundown of the class hierarchy.  You can change this by
 editing this file, but it isn't recommended.  The classes with a `*'
-are new with this feature and are not available unless class based
-exceptions are used.
+are new with this feature.  They are defined as tuples containing the
+derived exceptions when string-based exceptions are used.
 
 StandardError(*)
  |
