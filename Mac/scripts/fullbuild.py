@@ -135,8 +135,8 @@ def handle_dialog(filename):
 			continue
 		if n < len(results):
 			results[n] = (not results[n])
-			tp, h, rect = d.GetDialogItem(n)
-			h.as_Control().SetControlValue(results[n])
+			ctl = d.GetDialogItemAsControl(n)
+			ctl.SetControlValue(results[n])
 	rv = []
 	for i in range(len(results)):
 		if results[i]:
