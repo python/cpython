@@ -2251,7 +2251,7 @@ posix_execv(PyObject *self, PyObject *args)
 	argvlist = PyMem_NEW(char *, argc+1);
 	if (argvlist == NULL) {
 		PyMem_Free(path);
-		return NULL;
+		return PyErr_NoMemory();
 	}
 	for (i = 0; i < argc; i++) {
 		if (!PyArg_Parse((*getitem)(argv, i), "et",
@@ -2480,7 +2480,7 @@ posix_spawnv(PyObject *self, PyObject *args)
 	argvlist = PyMem_NEW(char *, argc+1);
 	if (argvlist == NULL) {
 		PyMem_Free(path);
-		return NULL;
+		return PyErr_NoMemory();
 	}
 	for (i = 0; i < argc; i++) {
 		if (!PyArg_Parse((*getitem)(argv, i), "et",
