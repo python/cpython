@@ -20,6 +20,13 @@ __all__ = [ "QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
             "unregister_dialect", "__version__", "DictReader", "DictWriter" ]
 
 class Dialect:
+    """Describe an Excel dialect.
+
+    This must be subclassed (see csv.excel).  Valid attributes are:
+    delimiter, quotechar, escapechar, doublequote, skipinitialspace,
+    lineterminator, quoting.
+
+    """
     _name = ""
     _valid = False
     # placeholders
@@ -78,6 +85,7 @@ class Dialect:
         return errors
 
 class excel(Dialect):
+    """Describe the usual properties of Excel-generated CSV files."""
     delimiter = ','
     quotechar = '"'
     doublequote = True
@@ -87,6 +95,7 @@ class excel(Dialect):
 register_dialect("excel", excel)
 
 class excel_tab(excel):
+    """Describe the usual properties of Excel-generated TAB-delimited files."""
     delimiter = '\t'
 register_dialect("excel-tab", excel_tab)
 
