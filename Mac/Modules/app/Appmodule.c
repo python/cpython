@@ -600,6 +600,553 @@ static PyObject *App_GetThemeMenuTitleExtra(_self, _args)
 	return _res;
 }
 
+static PyObject *App_DrawThemeTabPane(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Rect inRect;
+	ThemeDrawState inState;
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      PyMac_GetRect, &inRect,
+	                      &inState))
+		return NULL;
+	_err = DrawThemeTabPane(&inRect,
+	                        inState);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_GetThemeTabRegion(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Rect inRect;
+	ThemeTabStyle inStyle;
+	ThemeTabDirection inDirection;
+	if (!PyArg_ParseTuple(_args, "O&hh",
+	                      PyMac_GetRect, &inRect,
+	                      &inStyle,
+	                      &inDirection))
+		return NULL;
+	_err = GetThemeTabRegion(&inRect,
+	                         inStyle,
+	                         inDirection,
+	                         (RgnHandle)0);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_SetThemeCursor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ThemeCursor inCursor;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &inCursor))
+		return NULL;
+	_err = SetThemeCursor(inCursor);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_SetAnimatedThemeCursor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ThemeCursor inCursor;
+	UInt32 inAnimationStep;
+	if (!PyArg_ParseTuple(_args, "ll",
+	                      &inCursor,
+	                      &inAnimationStep))
+		return NULL;
+	_err = SetAnimatedThemeCursor(inCursor,
+	                              inAnimationStep);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_GetThemeScrollBarThumbStyle(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ThemeScrollBarThumbStyle outStyle;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetThemeScrollBarThumbStyle(&outStyle);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("h",
+	                     outStyle);
+	return _res;
+}
+
+static PyObject *App_GetThemeScrollBarArrowStyle(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ThemeScrollBarArrowStyle outStyle;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetThemeScrollBarArrowStyle(&outStyle);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("h",
+	                     outStyle);
+	return _res;
+}
+
+static PyObject *App_GetThemeCheckBoxStyle(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ThemeCheckBoxStyle outStyle;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetThemeCheckBoxStyle(&outStyle);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("h",
+	                     outStyle);
+	return _res;
+}
+
+static PyObject *App_UseThemeFont(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ThemeFontID inFontID;
+	ScriptCode inScript;
+	if (!PyArg_ParseTuple(_args, "hh",
+	                      &inFontID,
+	                      &inScript))
+		return NULL;
+	_err = UseThemeFont(inFontID,
+	                    inScript);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_DrawThemeScrollBarArrows(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Rect bounds;
+	ThemeTrackEnableState enableState;
+	ThemeTrackPressState pressState;
+	Boolean isHoriz;
+	Rect trackBounds;
+	if (!PyArg_ParseTuple(_args, "O&bbb",
+	                      PyMac_GetRect, &bounds,
+	                      &enableState,
+	                      &pressState,
+	                      &isHoriz))
+		return NULL;
+	_err = DrawThemeScrollBarArrows(&bounds,
+	                                enableState,
+	                                pressState,
+	                                isHoriz,
+	                                &trackBounds);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &trackBounds);
+	return _res;
+}
+
+static PyObject *App_GetThemeScrollBarTrackRect(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Rect bounds;
+	ThemeTrackEnableState enableState;
+	ThemeTrackPressState pressState;
+	Boolean isHoriz;
+	Rect trackBounds;
+	if (!PyArg_ParseTuple(_args, "O&bbb",
+	                      PyMac_GetRect, &bounds,
+	                      &enableState,
+	                      &pressState,
+	                      &isHoriz))
+		return NULL;
+	_err = GetThemeScrollBarTrackRect(&bounds,
+	                                  enableState,
+	                                  pressState,
+	                                  isHoriz,
+	                                  &trackBounds);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &trackBounds);
+	return _res;
+}
+
+static PyObject *App_HitTestThemeScrollBarArrows(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	Rect scrollBarBounds;
+	ThemeTrackEnableState enableState;
+	ThemeTrackPressState pressState;
+	Boolean isHoriz;
+	Point ptHit;
+	Rect trackBounds;
+	ControlPartCode partcode;
+	if (!PyArg_ParseTuple(_args, "O&bbbO&",
+	                      PyMac_GetRect, &scrollBarBounds,
+	                      &enableState,
+	                      &pressState,
+	                      &isHoriz,
+	                      PyMac_GetPoint, &ptHit))
+		return NULL;
+	_rv = HitTestThemeScrollBarArrows(&scrollBarBounds,
+	                                  enableState,
+	                                  pressState,
+	                                  isHoriz,
+	                                  ptHit,
+	                                  &trackBounds,
+	                                  &partcode);
+	_res = Py_BuildValue("bO&h",
+	                     _rv,
+	                     PyMac_BuildRect, &trackBounds,
+	                     partcode);
+	return _res;
+}
+
+static PyObject *App_DrawThemeScrollBarDelimiters(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ThemeWindowType flavor;
+	Rect inContRect;
+	ThemeDrawState state;
+	ThemeWindowAttributes attributes;
+	if (!PyArg_ParseTuple(_args, "hO&ll",
+	                      &flavor,
+	                      PyMac_GetRect, &inContRect,
+	                      &state,
+	                      &attributes))
+		return NULL;
+	_err = DrawThemeScrollBarDelimiters(flavor,
+	                                    &inContRect,
+	                                    state,
+	                                    attributes);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_PlayThemeSound(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ThemeSoundKind kind;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetOSType, &kind))
+		return NULL;
+	_err = PlayThemeSound(kind);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_BeginThemeDragSound(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ThemeDragSoundKind kind;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetOSType, &kind))
+		return NULL;
+	_err = BeginThemeDragSound(kind);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_EndThemeDragSound(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = EndThemeDragSound();
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_DrawThemeTickMark(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Rect bounds;
+	ThemeDrawState state;
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      PyMac_GetRect, &bounds,
+	                      &state))
+		return NULL;
+	_err = DrawThemeTickMark(&bounds,
+	                         state);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_DrawThemeStandaloneGrowBox(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Point origin;
+	ThemeGrowDirection growDirection;
+	Boolean isSmall;
+	ThemeDrawState state;
+	if (!PyArg_ParseTuple(_args, "O&hbl",
+	                      PyMac_GetPoint, &origin,
+	                      &growDirection,
+	                      &isSmall,
+	                      &state))
+		return NULL;
+	_err = DrawThemeStandaloneGrowBox(origin,
+	                                  growDirection,
+	                                  isSmall,
+	                                  state);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_DrawThemeStandaloneNoGrowBox(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Point origin;
+	ThemeGrowDirection growDirection;
+	Boolean isSmall;
+	ThemeDrawState state;
+	if (!PyArg_ParseTuple(_args, "O&hbl",
+	                      PyMac_GetPoint, &origin,
+	                      &growDirection,
+	                      &isSmall,
+	                      &state))
+		return NULL;
+	_err = DrawThemeStandaloneNoGrowBox(origin,
+	                                    growDirection,
+	                                    isSmall,
+	                                    state);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_GetThemeStandaloneGrowBoxBounds(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Point origin;
+	ThemeGrowDirection growDirection;
+	Boolean isSmall;
+	Rect bounds;
+	if (!PyArg_ParseTuple(_args, "O&hb",
+	                      PyMac_GetPoint, &origin,
+	                      &growDirection,
+	                      &isSmall))
+		return NULL;
+	_err = GetThemeStandaloneGrowBoxBounds(origin,
+	                                       growDirection,
+	                                       isSmall,
+	                                       &bounds);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &bounds);
+	return _res;
+}
+
+static PyObject *App_NormalizeThemeDrawingState(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = NormalizeThemeDrawingState();
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_ApplyThemeBackground(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ThemeBackgroundKind inKind;
+	Rect bounds;
+	ThemeDrawState inState;
+	SInt16 inDepth;
+	Boolean inColorDev;
+	if (!PyArg_ParseTuple(_args, "lO&lhb",
+	                      &inKind,
+	                      PyMac_GetRect, &bounds,
+	                      &inState,
+	                      &inDepth,
+	                      &inColorDev))
+		return NULL;
+	_err = ApplyThemeBackground(inKind,
+	                            &bounds,
+	                            inState,
+	                            inDepth,
+	                            inColorDev);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_SetThemeTextColorForWindow(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr window;
+	Boolean isActive;
+	SInt16 depth;
+	Boolean isColorDev;
+	if (!PyArg_ParseTuple(_args, "O&bhb",
+	                      WinObj_Convert, &window,
+	                      &isActive,
+	                      &depth,
+	                      &isColorDev))
+		return NULL;
+	_err = SetThemeTextColorForWindow(window,
+	                                  isActive,
+	                                  depth,
+	                                  isColorDev);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_IsValidAppearanceFileType(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	OSType fileType;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetOSType, &fileType))
+		return NULL;
+	_rv = IsValidAppearanceFileType(fileType);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *App_GetThemeBrushAsColor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ThemeBrush inBrush;
+	SInt16 inDepth;
+	Boolean inColorDev;
+	RGBColor outColor;
+	if (!PyArg_ParseTuple(_args, "hhb",
+	                      &inBrush,
+	                      &inDepth,
+	                      &inColorDev))
+		return NULL;
+	_err = GetThemeBrushAsColor(inBrush,
+	                            inDepth,
+	                            inColorDev,
+	                            &outColor);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     QdRGB_New, &outColor);
+	return _res;
+}
+
+static PyObject *App_GetThemeTextColor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ThemeTextColor inColor;
+	SInt16 inDepth;
+	Boolean inColorDev;
+	RGBColor outColor;
+	if (!PyArg_ParseTuple(_args, "hhb",
+	                      &inColor,
+	                      &inDepth,
+	                      &inColorDev))
+		return NULL;
+	_err = GetThemeTextColor(inColor,
+	                         inDepth,
+	                         inColorDev,
+	                         &outColor);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     QdRGB_New, &outColor);
+	return _res;
+}
+
 static PyMethodDef App_methods[] = {
 	{"RegisterAppearanceClient", (PyCFunction)App_RegisterAppearanceClient, 1,
 	 "() -> None"},
@@ -657,6 +1204,56 @@ static PyMethodDef App_methods[] = {
 	 "(ThemeMenuItemType inItemType) -> (SInt16 outHeight, SInt16 outWidth)"},
 	{"GetThemeMenuTitleExtra", (PyCFunction)App_GetThemeMenuTitleExtra, 1,
 	 "(Boolean inIsSquished) -> (SInt16 outWidth)"},
+	{"DrawThemeTabPane", (PyCFunction)App_DrawThemeTabPane, 1,
+	 "(Rect inRect, ThemeDrawState inState) -> None"},
+	{"GetThemeTabRegion", (PyCFunction)App_GetThemeTabRegion, 1,
+	 "(Rect inRect, ThemeTabStyle inStyle, ThemeTabDirection inDirection) -> None"},
+	{"SetThemeCursor", (PyCFunction)App_SetThemeCursor, 1,
+	 "(ThemeCursor inCursor) -> None"},
+	{"SetAnimatedThemeCursor", (PyCFunction)App_SetAnimatedThemeCursor, 1,
+	 "(ThemeCursor inCursor, UInt32 inAnimationStep) -> None"},
+	{"GetThemeScrollBarThumbStyle", (PyCFunction)App_GetThemeScrollBarThumbStyle, 1,
+	 "() -> (ThemeScrollBarThumbStyle outStyle)"},
+	{"GetThemeScrollBarArrowStyle", (PyCFunction)App_GetThemeScrollBarArrowStyle, 1,
+	 "() -> (ThemeScrollBarArrowStyle outStyle)"},
+	{"GetThemeCheckBoxStyle", (PyCFunction)App_GetThemeCheckBoxStyle, 1,
+	 "() -> (ThemeCheckBoxStyle outStyle)"},
+	{"UseThemeFont", (PyCFunction)App_UseThemeFont, 1,
+	 "(ThemeFontID inFontID, ScriptCode inScript) -> None"},
+	{"DrawThemeScrollBarArrows", (PyCFunction)App_DrawThemeScrollBarArrows, 1,
+	 "(Rect bounds, ThemeTrackEnableState enableState, ThemeTrackPressState pressState, Boolean isHoriz) -> (Rect trackBounds)"},
+	{"GetThemeScrollBarTrackRect", (PyCFunction)App_GetThemeScrollBarTrackRect, 1,
+	 "(Rect bounds, ThemeTrackEnableState enableState, ThemeTrackPressState pressState, Boolean isHoriz) -> (Rect trackBounds)"},
+	{"HitTestThemeScrollBarArrows", (PyCFunction)App_HitTestThemeScrollBarArrows, 1,
+	 "(Rect scrollBarBounds, ThemeTrackEnableState enableState, ThemeTrackPressState pressState, Boolean isHoriz, Point ptHit) -> (Boolean _rv, Rect trackBounds, ControlPartCode partcode)"},
+	{"DrawThemeScrollBarDelimiters", (PyCFunction)App_DrawThemeScrollBarDelimiters, 1,
+	 "(ThemeWindowType flavor, Rect inContRect, ThemeDrawState state, ThemeWindowAttributes attributes) -> None"},
+	{"PlayThemeSound", (PyCFunction)App_PlayThemeSound, 1,
+	 "(ThemeSoundKind kind) -> None"},
+	{"BeginThemeDragSound", (PyCFunction)App_BeginThemeDragSound, 1,
+	 "(ThemeDragSoundKind kind) -> None"},
+	{"EndThemeDragSound", (PyCFunction)App_EndThemeDragSound, 1,
+	 "() -> None"},
+	{"DrawThemeTickMark", (PyCFunction)App_DrawThemeTickMark, 1,
+	 "(Rect bounds, ThemeDrawState state) -> None"},
+	{"DrawThemeStandaloneGrowBox", (PyCFunction)App_DrawThemeStandaloneGrowBox, 1,
+	 "(Point origin, ThemeGrowDirection growDirection, Boolean isSmall, ThemeDrawState state) -> None"},
+	{"DrawThemeStandaloneNoGrowBox", (PyCFunction)App_DrawThemeStandaloneNoGrowBox, 1,
+	 "(Point origin, ThemeGrowDirection growDirection, Boolean isSmall, ThemeDrawState state) -> None"},
+	{"GetThemeStandaloneGrowBoxBounds", (PyCFunction)App_GetThemeStandaloneGrowBoxBounds, 1,
+	 "(Point origin, ThemeGrowDirection growDirection, Boolean isSmall) -> (Rect bounds)"},
+	{"NormalizeThemeDrawingState", (PyCFunction)App_NormalizeThemeDrawingState, 1,
+	 "() -> None"},
+	{"ApplyThemeBackground", (PyCFunction)App_ApplyThemeBackground, 1,
+	 "(ThemeBackgroundKind inKind, Rect bounds, ThemeDrawState inState, SInt16 inDepth, Boolean inColorDev) -> None"},
+	{"SetThemeTextColorForWindow", (PyCFunction)App_SetThemeTextColorForWindow, 1,
+	 "(WindowPtr window, Boolean isActive, SInt16 depth, Boolean isColorDev) -> None"},
+	{"IsValidAppearanceFileType", (PyCFunction)App_IsValidAppearanceFileType, 1,
+	 "(OSType fileType) -> (Boolean _rv)"},
+	{"GetThemeBrushAsColor", (PyCFunction)App_GetThemeBrushAsColor, 1,
+	 "(ThemeBrush inBrush, SInt16 inDepth, Boolean inColorDev) -> (RGBColor outColor)"},
+	{"GetThemeTextColor", (PyCFunction)App_GetThemeTextColor, 1,
+	 "(ThemeTextColor inColor, SInt16 inDepth, Boolean inColorDev) -> (RGBColor outColor)"},
 	{NULL, NULL, 0}
 };
 
