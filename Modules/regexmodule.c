@@ -656,6 +656,9 @@ initregex(void)
 	
 	m = Py_InitModule("regex", regex_global_methods);
 	d = PyModule_GetDict(m);
+
+	PyErr_Warn(PyExc_DeprecationWarning,
+		"the regex module is deprecated; please use the re module");
 	
 	/* Initialize regex.error exception */
 	v = RegexError = PyErr_NewException("regex.error", NULL, NULL);
