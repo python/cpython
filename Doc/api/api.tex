@@ -1966,12 +1966,12 @@ Returns the size of the object's internal buffer in bytes. o has to be
 a PyUnicodeObject (not checked).
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyUnicode_AS_UNICODE}{PyObject *o}
+\begin{cfuncdesc}{Py_UNICODE*}{PyUnicode_AS_UNICODE}{PyObject *o}
 Returns a pointer to the internal Py_UNICODE buffer of the object. o
 has to be a PyUnicodeObject (not checked).
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyUnicode_AS_DATA}{PyObject *o}
+\begin{cfuncdesc}{const char*}{PyUnicode_AS_DATA}{PyObject *o}
 Returns a (const char *) pointer to the internal buffer of the object.
 o has to be a PyUnicodeObject (not checked).
 \end{cfuncdesc}
