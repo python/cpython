@@ -301,7 +301,9 @@ PyCode_New(argcount, nlocals, stacksize, flags,
 struct compiling {
 	PyObject *c_code;		/* string */
 	PyObject *c_consts;	/* list of objects */
+	PyObject *c_const_dict; /* inverse of c_consts */
 	PyObject *c_names;	/* list of strings (names) */
+	PyObject *c_name_dict;  /* inverse of c_names */
 	PyObject *c_globals;	/* dictionary (value=None) */
 	PyObject *c_locals;	/* dictionary (value=localID) */
 	PyObject *c_varnames;	/* list (inverse of c_locals) */
@@ -403,7 +405,7 @@ static void com_addint Py_PROTO((struct compiling *, int));
 static void com_addoparg Py_PROTO((struct compiling *, int, int));
 static void com_addfwref Py_PROTO((struct compiling *, int, int *));
 static void com_backpatch Py_PROTO((struct compiling *, int));
-static int com_add Py_PROTO((struct compiling *, PyObject *, PyObject *));
+static int com_add Py_PROTO((struct compiling *, PyObject *, PyObject *, PyObject *));
 static int com_addconst Py_PROTO((struct compiling *, PyObject *));
 static int com_addname Py_PROTO((struct compiling *, PyObject *));
 static void com_addopname Py_PROTO((struct compiling *, int, node *));
@@ -421,22 +423,27 @@ com_init(c, filename)
 	struct compiling *c;
 	char *filename;
 {
+	memset((void *)c, '\0', sizeof(struct compiling));
 	if ((c->c_code = PyString_FromStringAndSize((char *)NULL,
 						    1000)) == NULL)
-		goto fail_3;
+		goto fail;
 	if ((c->c_consts = PyList_New(0)) == NULL)
-		goto fail_2;
+		goto fail;
+	if ((c->c_const_dict = PyDict_New()) == NULL)
+		goto fail;
 	if ((c->c_names = PyList_New(0)) == NULL)
-		goto fail_1;
+		goto fail;
+	if ((c->c_name_dict = PyDict_New()) == NULL)
+		goto fail;
 	if ((c->c_globals = PyDict_New()) == NULL)
-		goto fail_0;
+		goto fail;
 	if ((c->c_locals = PyDict_New()) == NULL)
-		goto fail_00;
+		goto fail;
 	if ((c->c_varnames = PyList_New(0)) == NULL)
-		goto fail_000;
+		goto fail;
 	if ((c->c_lnotab = PyString_FromStringAndSize((char *)NULL,
 						      1000)) == NULL)
-		goto fail_0000;
+		goto fail;
 	c->c_nlocals = 0;
 	c->c_argcount = 0;
 	c->c_flags = 0;
@@ -458,19 +465,8 @@ com_init(c, filename)
 	c-> c_lnotab_next = 0;
 	return 1;
 	
-  fail_0000:
-  	Py_DECREF(c->c_varnames);
-  fail_000:
-  	Py_DECREF(c->c_locals);
-  fail_00:
-  	Py_DECREF(c->c_globals);
-  fail_0:
-  	Py_DECREF(c->c_names);
-  fail_1:
-	Py_DECREF(c->c_consts);
-  fail_2:
-	Py_DECREF(c->c_code);
-  fail_3:
+  fail:
+	com_free(c);
  	return 0;
 }
 
@@ -480,7 +476,9 @@ com_free(c)
 {
 	Py_XDECREF(c->c_code);
 	Py_XDECREF(c->c_consts);
+	Py_XDECREF(c->c_const_dict);
 	Py_XDECREF(c->c_names);
+	Py_XDECREF(c->c_name_dict);
 	Py_XDECREF(c->c_globals);
 	Py_XDECREF(c->c_locals);
 	Py_XDECREF(c->c_varnames);
@@ -665,24 +663,39 @@ com_backpatch(c, anchor)
 /* Handle literals and names uniformly */
 
 static int
-com_add(c, list, v)
+com_add(c, list, dict, v)
 	struct compiling *c;
 	PyObject *list;
+	PyObject *dict;
 	PyObject *v;
 {
-	int n = PyList_Size(list);
-	int i;
-	/* XXX This is quadratic in the number of names per compilation unit.
-	   XXX Should use a dictionary. */
-	for (i = n; --i >= 0; ) {
-		PyObject *w = PyList_GetItem(list, i);
-		if (v->ob_type == w->ob_type && PyObject_Compare(v, w) == 0)
-			return i;
+	PyObject *w, *t, *np=NULL;
+	long n;
+
+	t = Py_BuildValue("(OO)", v, v->ob_type);
+	if (t == NULL)
+	    goto fail;
+	w = PyDict_GetItem(dict, t);
+	if (w != NULL) {
+		n = PyInt_AsLong(w);
+	} else {
+		n = PyList_Size(list);
+		np = PyInt_FromLong(n);
+		if (np == NULL)
+		    goto fail;
+		if (PyList_Append(list, v) != 0)
+		    goto fail;
+		if (PyDict_SetItem(dict, t, np) != 0)
+		    goto fail;
+		Py_DECREF(np);
 	}
-	/* Check for error from PyObject_Compare */
-	if (PyErr_Occurred() || PyList_Append(list, v) != 0)
-		c->c_errors++;
+	Py_DECREF(t);
 	return n;
+  fail:
+	Py_XDECREF(np);
+	Py_XDECREF(t);
+	c->c_errors++;
+	return 0;
 }
 
 static int
@@ -690,7 +703,7 @@ com_addconst(c, v)
 	struct compiling *c;
 	PyObject *v;
 {
-	return com_add(c, c->c_consts, v);
+	return com_add(c, c->c_consts, c->c_const_dict, v);
 }
 
 static int
@@ -698,7 +711,7 @@ com_addname(c, v)
 	struct compiling *c;
 	PyObject *v;
 {
-	return com_add(c, c->c_names, v);
+	return com_add(c, c->c_names, c->c_name_dict, v);
 }
 
 #ifdef PRIVATE_NAME_MANGLING
