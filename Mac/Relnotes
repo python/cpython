@@ -1,18 +1,20 @@
-Changes in 2.1b2 since 2.0
+Changes in 2.1 since 2.0
 --------------------------
 
 These release notes refer to Mac-specific changes only. See NEWS (in the Misc folder)
-for machine-independent changes. Changes since 2.1b1 are
+for machine-independent changes. Changes since 2.1b2 are
 marked with [*] and at the bottom of the list.
 
-- This release is Carbon-based, so it runs natively on MacOS 8.6 or
+- This release is optionally Carbon-based, so it runs natively on MacOS 8.1 or
   later and MacOSX. (Note that on MacOSX MacPython will run as a normal Mac application,
   if you want to run Python from the BSD commandline get a unix-Python distribution
-  from www.python.org).
+  from www.python.org). 
 - Alternatively there is a classic PPC interpreter as well. There are two reasons you
   might want to use this: (a) you have a pre-MacOS9 system and don't want to install
   CarbonLib, or (b) you need Tkinter, for which no Carbon version is available yet.
-- Distutils is included and seems to work.
+- Distutils is included and seems to work. On 8.1 you may want to get Apple's
+  CarbonLib installer even if you plan to run classic, it contains the newer Appearance 
+  Mgr which Python needs (according to rumour).
 - There's a new module (package, actually) mkcwproject which builds CodeWarrior
   projects from simple templates. See Distutils or :Mac:scripts:genpluginprojects.py
   for examples of use.
@@ -66,9 +68,15 @@ marked with [*] and at the bottom of the list.
 - A BBEdit language module by Chris Stern is included in the :Mac:Contrib folder.
 - The ConfigurePython applets will now detect if the preference file refers to a different
   folder than where they live. They offer to remove the preference file in this case.
-- Import case-check was broken in 2.1b1, this is fixed. [*]
-- A side-effect of the previous fix is that getpass works again. [*]
-- BuildApplication was broken under Carbon. Fixed. [*]
+- Import case-check was broken in 2.1b1, this is fixed.
+- A side-effect of the previous fix is that getpass works again.
+- BuildApplication was broken under Carbon. Fixed.
+- Morefindertools functionality integrated into findertools. [*]
+- ped.py from Mac:Demo crashed, this has been fixed by making Win.WhichWindow more robust. [*]
+- Tkinter mainloop is now a little less aggressive in eating events. [*]
+- The Python console window is raised to the front when input is read. This fixes a hang
+  (for Carbon only) when crashing with a modal dialog open. [*]
+- The menu bar is (again) restored when Python is terminating. [*]
 
 
 What is not in this distribution
@@ -81,24 +89,16 @@ What is not in this distribution
 Known problems
 --------------
 
-This list is far from complete, more problems may be listed on the MacPython homepage,
+This list is probably incomplete, more problems may be listed on the MacPython homepage,
 http://www.cwi.nl/~jack/macpython.html.
 
 - Tkinter does not work under Carbon.
 - The IDE and Tkinter do not work together. Run tkinter programs under PythonInterpreter.
-- After running a Tkinter program your menubar may end up dead, with command-alt-escape
-  the only way to terminate Python.
 - Tkinter file events do not work, unless you have opened the file through Tcl (but then
   you cannot access it from Python).
-- Aliases do not work in sys.path entries.
-- The menu bar isn't always correctly restored before MacPython turns to <<terminated>>.
-- Under Carbon only you may occasionally see a spurious KeyboardInterrupt. I have absolutely
+- Aliases may not work in sys.path entries.
+- Under Carbon on OS9 only you may occasionally see a spurious KeyboardInterrupt. I have absolutely
   no clue as to what is causing this.
 - PythonInterpreter used interactively will eat a lot of processor cycles. You should use
-  PythonIDE for interactive work and PythonInterpreter for scripts only.
-- Under MacOSX Public Beta ConfigurePython cannot put PythonCore in the global CFMSupport
-  folder. Therefore applets have to live in the Python folder, otherwise they cannot find
-  PythonCore. There is a workaround if you want to have an applet in a different folder:
-  put an alias PythonCoreCarbon (pointing to the PythonCoreCarbon in the Python folder)
-  in the same folder as your applet.
-  This problem should in all probability not occur in the release version of MacOSX.
+  PythonIDE for interactive work and PythonInterpreter for scripts only. This is especially
+  true under OSX.

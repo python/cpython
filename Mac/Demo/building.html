@@ -6,7 +6,10 @@
 <H1>Building Mac Python from source</H1>
 <HR>
 
-<B>Note</B>: This document is still for Python 2.0. It is wildly incorrect.
+<B>Note</B>: This document is mostly still for Python 2.0, so
+it is not correct. See the <a href="http://www.cwi.nl/~jack/macpython.html">
+MacPython homepage</a> for an updated version, and if none is available
+complain bitterly to me and work on it should progress faster.
 <p>
 
 This document explains how to build MacPython from source. This is
@@ -52,7 +55,7 @@ available through CVS. Check the section on <a href="#cvs">CVS
 repository use</a> below.
 
 <LI> You need MetroWerks CodeWarrior. The current distribution has
-been built with CodeWarrior Pro 5.2. Ordering information is
+been built with CodeWarrior Pro 6.1. Ordering information is
 available on the <A HREF="http://www.metrowerks.com/">MetroWerks
 homepage</A>. Building Python with MPW or Think/Symantec C is
 probably impossible without major surgery.
@@ -67,10 +70,9 @@ HREF="http://www.cwi.nl/~jack/macpython.html">MacPython homepage</A>
 for a GUSI that is most easily used for building Python. 
 <br>
 
-The modified GUSI is also in the MacPython cvs source repository, in the
-directory <code>lib-src/GUSI2</code>. As GUSI is moving to sourceforge
-this info may be outdated by the time you read it so better check the
-MacPython homepage, probably.
+If nothing is listed there (yet) you will have problems building a
+Carbon Python. Complaining loudly on the pythonmac-sig@python.org mailing
+list will make me work faster towards distributing Carbon-GUSI:-).
 </UL>
 
 <A NAME="optional">The MacPython project files are configured to
@@ -92,7 +94,8 @@ below.
 
 <LI> Waste, a TextEdit replacement written by Marco Piovanelli, <A
 HREF="mailto:piovanel@kagi.com">&lt;piovanel@kagi.com&gt;</A>.  Python
-was built using version 1.3, which you can obtain from <A
+was built using version 2.0, which is included in the CodeWarrior
+package. You can also obtain it from <A
 HREF="http://www.boingo.com/waste">&lt;http://www.boingo.com/waste&gt;</A>
 and various other places.
 
@@ -129,6 +132,7 @@ access paths try to set things up as follows:
 <PRE>
 Top-level-folder:
 	GUSI2
+	GUSI2Carbon
 	imglibs
 		jpeg
 		netpbm
@@ -147,7 +151,6 @@ Top-level-folder:
 		tcl8.0
 		tk8.0
 		MoreFiles 1.4.3
-	Waste 1.3 distribution (if you want waste)
 </PRE>
 
 If your setup of the libraries is exactly the same as mine (which is
@@ -157,9 +160,7 @@ repository) you can use the project <code>buildlibs.prj</code> in the
 fell swoop, otherwise you will have to build the libraries one by
 one. <p>
 
-First build GUSI. If you didn't get the python-specific GUSI you have to 
-massage some of the Python code (missing routines) and you'll miss the
-functionality of "delay console".
+First build GUSI, both the norla one and the Carbon variant.
  <p>
 
 Next, in
@@ -301,7 +302,7 @@ possibly changing the list of files included in the project window, of
 course).
 
 <DT> PlugIns
-<DD> This is where the PPC and CFM68K dynamically-loaded plugin modules live.
+<DD> This is where the Classic and Carbon dynamically-loaded plugin modules live.
 
 <DT> Python
 <DD> Mac-specific parts of the core interpreter.
@@ -329,18 +330,19 @@ but for more control over the freezing process you can run the main script here.
 <H2>Building the 68K interpreter</H2>
 
 68K Python is no longer supported, and the projects are not included in the
-source distirbution anymore. If you really want to build Python for the 68K
+source distribution anymore. If you really want to build Python for the 68K
 your best bet is to check the sources out of the CVS repository. The latest
 projects (in :Mac:build:) that support 68K development are tagged as such,
 and are dated around August 2000. If you plan on doing this announce it on
 the SIG, please. <p>
 
 <H2>Building the PPC interpreter</H2>
-
+<em>This is different under 2.1. You are best off using the fullbuild.py
+script. </em><p>
 First you optionally build the external libraries with buildlibs.prj. Next, 
 the projects for
 interpreter, core library and applet skeleton  are all linked together, so
-building the fat target in <code>PythonEngine.prj</code> 
+building the PythonInterpreter target in <code>PythonEngine.prj</code> 
 will result in everything being built. The
 resulting applications and fat shared library are deposited in the main
 Python folder. Finally, you build all the plugins with the plugins.prj project.
@@ -400,7 +402,7 @@ in handy if you need to debug things (which is easier in a static program). <p>
 You are all set now, and should read the release notes and
 <code>ReadMe</code> file from the <code>Mac</code> folder.
 
-<H2>Rebuilding <code>.exp</code> files for PPC and CFM68K</H2>
+<H2>Rebuilding <code>.exp</code> files</H2>
 
 Occasionally it may be necessary to rebuild your PythonCore <code>.exp</code>
 file, a file that controls which symbols are exported by your PythonCore
@@ -421,6 +423,9 @@ accidentally link with those entrypoints from PythonCore, which will not work be
 those routines have to be in the same code fragment as they are used from.
 
 <H2><a name="cvs">Using the CVS source archive</a></H2>
+
+<em>Please check the MacPython homepage to see whether this information is
+still current: MacPython should move to sourceforge shortly. </em><p>
 
 It is possible (and probably best) to access the Python sources through remote CVS. The
 advantage of this is that you get the very latest sources, so any bug
@@ -462,9 +467,6 @@ homepage</a>. Finally, you check out the external libraries needed in
 the parent of the toplevel Python folder. The CVS path for these libraries is
 also mentioned at the MacPython homepage. <p>
 
-Neither of the pages mentioned above contains the passwords for the
-CVS sites, for obvious reasons, but they do contain instructions on
-how to obtain the passwords. <p>
 
 You should end up with a folder structure as described at the top of this
 document. <p>
