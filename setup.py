@@ -303,8 +303,12 @@ class PyBuildExt(build_ext):
                                       '/usr/contrib/ssl/lib/'
                                      ] )
 
-        if (ssl_incs is not None and
-            ssl_libs is not None):
+        krb5_h = find_file('krb5.h', inc_dirs,
+                           ['/usr/kerberos/include'])
+        if krb5_h:
+            ssl_incs += krb5_h
+
+        if ssl_incs is not None and ssl_libs is not None:
             exts.append( Extension('_socket', ['socketmodule.c'],
                                    include_dirs = ssl_incs,
                                    library_dirs = ssl_libs,
