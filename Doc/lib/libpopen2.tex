@@ -1,5 +1,5 @@
 \section{\module{popen2} ---
-         Subprocesses with accessible standard I/O streams}
+         Subprocesses with accessible I/O streams}
 
 \declaremodule{standard}{popen2}
   \platform{Unix, Windows}
@@ -41,8 +41,7 @@ specifies the size of the I/O buffers to/from the child process.
 \end{classdesc}
 
 
-\subsection{Popen3 Objects}
-\label{popen3-objects}
+\subsection{Popen3 Objects \label{popen3-objects}}
 
 Instances of the \class{Popen3} class have the following methods:
 
@@ -58,15 +57,19 @@ Waits for and returns the return code of the child process.
 
 The following attributes of \class{Popen3} objects are also available: 
 
-\begin{datadesc}{fromchild}
+\begin{memberdesc}{fromchild}
 A file object that provides output from the child process.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{tochild}
+\begin{memberdesc}{tochild}
 A file object that provides input to the child process.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{childerr}
+\begin{memberdesc}{childerr}
 Where the standard error from the child process goes is
 \var{capturestderr} was true for the constructor, or \code{None}.
-\end{datadesc}
+\end{memberdesc}
+
+\begin{memberdesc}{pid}
+The process ID of the child process.
+\end{memberdesc}
