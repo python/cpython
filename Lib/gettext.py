@@ -48,8 +48,10 @@ import sys
 import struct
 from errno import ENOENT
 
-__all__ = ["bindtextdomain","textdomain","gettext","dgettext",
-           "find","translation","install","Catalog"]
+__all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
+           'find', 'translation', 'install', 'textdomain', 'bindtextdomain',
+           'dgettext', 'gettext',
+           ]
 
 _default_localedir = os.path.join(sys.prefix, 'share', 'locale')
 
@@ -173,14 +175,19 @@ class GNUTranslations(NullTranslations):
             # See if we're looking at GNU .mo conventions for metadata
             if mlen == 0 and tmsg.lower().startswith('project-id-version:'):
                 # Catalog description
+                lastk = None
                 for item in tmsg.split('\n'):
                     item = item.strip()
                     if not item:
                         continue
-                    k, v = item.split(':', 1)
-                    k = k.strip().lower()
-                    v = v.strip()
-                    self._info[k] = v
+                    if ':' in item:
+                        k, v = item.split(':', 1)
+                        k = k.strip().lower()
+                        v = v.strip()
+                        self._info[k] = v
+                        lastk = k
+                    elif lastk:
+                        self._info[lastk] += '\n' + item
                     if k == 'content-type':
                         self._charset = v.split('charset=')[1]
             # advance to next entry in the seek tables
