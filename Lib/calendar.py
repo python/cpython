@@ -5,10 +5,10 @@
 # Revision 2: uses funtions from built-in time module
 
 # Import functions and variables from time module
-from time import gmtime, localtime, mktime, asctime, ctime
+from time import localtime, mktime
 
 # Exception raised for bad input (with string parameter for details)
-error = 'calendar.error'
+error = ValueError
 
 # Note when comparing these calendars to the ones printed by cal(1):
 # My calendars have Monday as the first day of the week, and Sunday as
