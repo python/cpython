@@ -2,7 +2,7 @@
  * _codecs_hk.c: Codecs collection for encodings from Hong Kong
  *
  * Written by Hye-Shik Chang <perky@FreeBSD.org>
- * $CJKCodecs: _codecs_hk.c,v 1.3 2004/07/07 14:59:26 perky Exp $
+ * $CJKCodecs: _codecs_hk.c,v 1.4 2004/07/18 04:44:27 perky Exp $
  */
 
 #define USING_IMPORTED_MAPS

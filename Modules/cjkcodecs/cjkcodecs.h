@@ -2,7 +2,7 @@
  * cjkcodecs.h: common header for cjkcodecs
  *
  * Written by Hye-Shik Chang <perky@FreeBSD.org>
- * $CJKCodecs: cjkcodecs.h,v 1.5 2004/07/06 17:05:24 perky Exp $
+ * $CJKCodecs: cjkcodecs.h,v 1.6 2004/07/18 15:22:31 perky Exp $
  */
 
 #ifndef _CJKCODECS_H_
@@ -230,7 +230,7 @@ static const struct dbcs_map *mapping_list;
 },
 #define END_CODECS_LIST					\
 	{"", NULL,} };					\
-	static const MultibyteCodec *codec_list = 	\
+	static const MultibyteCodec *codec_list =	\
 		(const MultibyteCodec *)_codec_list;
 
 static PyObject *
