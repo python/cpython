@@ -134,7 +134,7 @@ def commonprefix(m):
 # This will always return false on systems where posix.lstat doesn't exist.
 
 def islink(path):
-	return false
+	return 0
 
 
 # Does a path exist?
