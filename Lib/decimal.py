@@ -78,30 +78,30 @@ Traceback (most recent call last):
   ...
 DivisionByZero: x / 0
 >>> c = Context()
->>> c.trap_enablers[DivisionUndefined] = 0
->>> print c.flags[DivisionUndefined]
+>>> c.trap_enablers[InvalidOperation] = 0
+>>> print c.flags[InvalidOperation]
 0
 >>> c.divide(Decimal(0), Decimal(0))
 Decimal("NaN")
->>> c.trap_enablers[DivisionUndefined] = 1
->>> print c.flags[DivisionUndefined]
+>>> c.trap_enablers[InvalidOperation] = 1
+>>> print c.flags[InvalidOperation]
 1
->>> c.flags[DivisionUndefined] = 0
->>> print c.flags[DivisionUndefined]
+>>> c.flags[InvalidOperation] = 0
+>>> print c.flags[InvalidOperation]
 0
 >>> print c.divide(Decimal(0), Decimal(0))
 Traceback (most recent call last):
   ...
   ...
   ...
-DivisionUndefined: 0 / 0
->>> print c.flags[DivisionUndefined]
+InvalidOperation: 0 / 0
+>>> print c.flags[InvalidOperation]
 1
->>> c.flags[DivisionUndefined] = 0
->>> c.trap_enablers[DivisionUndefined] = False
+>>> c.flags[InvalidOperation] = 0
+>>> c.trap_enablers[InvalidOperation] = 0
 >>> print c.divide(Decimal(0), Decimal(0))
 NaN
->>> print c.flags[DivisionUndefined]
+>>> print c.flags[InvalidOperation]
 1
 >>>
 """
@@ -152,19 +152,13 @@ ALWAYS_ROUND = 'ALWAYS_ROUND'  # Every operation rounds at end.
 #Errors
 
 class DecimalException(ArithmeticError):
-    """Base exception class, defines default things.
+    """Base exception class.
 
     Used exceptions derive from this.
     If an exception derives from another exception besides this (such as
     Underflow (Inexact, Rounded, Subnormal) that indicates that it is only
     called if the others are present.  This isn't actually used for
     anything, though.
-
-    Attributes:
-
-    default -- If the context is basic, the trap_enablers are set to
-               this by default.  Extended contexts start out with them set
-               to 0, regardless.
 
     handle  -- Called when context._raise_error is called and the
                trap_enabler is set.  First argument is self, second is the
@@ -176,7 +170,6 @@ class DecimalException(ArithmeticError):
     To define a new exception, it should be sufficient to have it derive
     from DecimalException.
     """
-    default = 1
     def handle(self, context, *args):
         pass
 
@@ -288,7 +281,7 @@ class Inexact(DecimalException):
     The inexact signal may be tested (or trapped) to determine if a given
     operation (or sequence of operations) was inexact.
     """
-    default = 0
+    pass
 
 class InvalidContext(InvalidOperation):
     """Invalid context.  Unknown rounding, for example.
@@ -315,7 +308,7 @@ class Rounded(DecimalException):
     The rounded signal may be tested (or trapped) to determine if a given
     operation (or sequence of operations) caused a loss of precision.
     """
-    default = 0
+    pass
 
 class Subnormal(DecimalException):
     """Exponent < Emin before rounding.
@@ -382,19 +375,15 @@ class Underflow(Inexact, Rounded, Subnormal):
     In all cases, Inexact, Rounded, and Subnormal will also be raised.
     """
 
+# List of public traps and flags
+Signals = [Clamped, DivisionByZero, Inexact, Overflow, Rounded,
+           Underflow, InvalidOperation, Subnormal]
 
-def _filterfunc(obj):
-    """Returns true if a subclass of DecimalException"""
-    try:
-        return issubclass(obj, DecimalException)
-    except TypeError:
-        return False
-
-#Signals holds the exceptions
-Signals = filter(_filterfunc, globals().values())
-
-del _filterfunc
-
+# Map conditions (per the spec) to signals
+_condition_map = {ConversionSyntax:InvalidOperation,
+                  DivisionImpossible:InvalidOperation,
+                  DivisionUndefined:InvalidOperation,
+                  InvalidContext:InvalidOperation}
 
 ##### Context Functions #######################################
 
@@ -2168,7 +2157,7 @@ class Context(object):
         return nc
     __copy__ = copy
 
-    def _raise_error(self, error, explanation = None, *args):
+    def _raise_error(self, condition, explanation = None, *args):
         """Handles an error
 
         If the flag is in _ignored_flags, returns the default response.
@@ -2176,6 +2165,7 @@ class Context(object):
         trap_enabler is set, it reaises the exception.  Otherwise, it returns
         the default value after incrementing the flag.
         """
+        error = _condition_map.get(condition, condition)
         if error in self._ignored_flags:
             #Don't touch the flag
             return error().handle(self, *args)
@@ -2183,7 +2173,7 @@ class Context(object):
         self.flags[error] += 1
         if not self.trap_enablers[error]:
             #The errors define how to handle themselves.
-            return error().handle(self, *args)
+            return condition().handle(self, *args)
 
         # Errors should only be risked on copies of the context
         #self._ignored_flags = []
@@ -2206,6 +2196,11 @@ class Context(object):
             flags = flags[0]
         for flag in flags:
             self._ignored_flags.remove(flag)
+
+    def __hash__(self):
+        """A Context cannot be hashed."""
+        # We inherit object.__hash__, so we must deny this explicitly
+        raise TypeError, "Cannot hash a Context."
 
     def Etiny(self):
         """Returns Etiny (= Emin - prec + 1)"""

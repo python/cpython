@@ -66,10 +66,8 @@ context for arithmetic, and signals.
 A decimal number is immutable.  It has a sign, coefficient digits, and an
 exponent.  To preserve significance, the coefficient digits do not truncate
 trailing zeroes.  Decimals also include special values such as
-\constant{Infinity} (the result of \samp{1 / 0}), \constant{-Infinity},
-(the result of \samp{-1 / 0}), and \constant{NaN} (the result of
-\samp{0 / 0}).  The standard also differentiates \constant{-0} from
-\constant{+0}.
+\constant{Infinity}, \constant{-Infinity}, and \constant{NaN}.  The standard
+also differentiates \constant{-0} from \constant{+0}.
                                                    
 The context for arithmetic is an environment specifying precision, rounding
 rules, limits on exponents, flags that indicate the results of operations,
@@ -82,9 +80,7 @@ Signals are types of information that arise during the course of a
 computation.  Depending on the needs of the application, some signals may be
 ignored, considered as informational, or treated as exceptions. The signals in
 the decimal module are: \constant{Clamped}, \constant{InvalidOperation},
-\constant{ConversionSyntax}, \constant{DivisionByZero},
-\constant{DivisionImpossible}, \constant{DivisionUndefined},
-\constant{Inexact}, \constant{InvalidContext}, \constant{Rounded},
+\constant{DivisionByZero}, \constant{Inexact}, \constant{Rounded},
 \constant{Subnormal}, \constant{Overflow}, and \constant{Underflow}.
 
 For each signal there is a flag and a trap enabler.  When a signal is
@@ -124,7 +120,7 @@ Context(prec=28, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
 Decimal instances can be constructed from integers, strings or tuples.  To
 create a Decimal from a \class{float}, first convert it to a string.  This
 serves as an explicit reminder of the details of the conversion (including
-representation error).  Malformed strings signal \constant{ConversionSyntax}
+representation error).  Malformed strings signal \constant{InvalidOperation}
 and return a special kind of Decimal called a \constant{NaN} which stands for
 ``Not a number''. Positive and negative \constant{Infinity} is yet another
 special kind of Decimal.        
@@ -274,10 +270,8 @@ To turn all the traps on or off all at once, use a loop.  Also, the
 >>> getcontext().trap_enablers.update({Rounded:0, Inexact:0, Subnormal:0})
 >>> getcontext()
 Context(prec=9, rounding=ROUND_HALF_EVEN, Emin=-999999999, Emax=999999999,
-        setflags=[], settraps=['Underflow', 'DecimalException', 'Clamped',
-        'InvalidContext', 'InvalidOperation', 'ConversionSyntax',
-        'DivisionByZero', 'DivisionImpossible', 'DivisionUndefined',
-        'Overflow'])
+        setflags=[], settraps=['Clamped', 'Underflow', 'InvalidOperation',
+        'DivisionByZero', 'Overflow'])
 \end{verbatim}
 
 Applications typically set the context once at the beginning of a program
@@ -320,7 +314,7 @@ as other Python numeric types.
 
   The supplied \var{context} or, if not specified, the current context
   governs only the handling of malformed strings not conforming to the
-  numeric string syntax.  If the context traps \constant{ConversionSyntax},
+  numeric string syntax.  If the context traps \constant{InvalidOperation},
   an exception is raised; otherwise, the constructor returns a new Decimal
   with the value of \constant{NaN}.
 
@@ -730,13 +724,6 @@ exception is raised upon encountering the condition.
     reduced to fit by adding zeroes to the coefficient.
 \end{classdesc*}
 
-\begin{classdesc*}{ConversionSyntax}
-    Trying to convert a malformed string such as:  \code{Decimal('jump')}.
-
-    Decimal converts only strings conforming to the numeric string
-    syntax.  If this signal is not trapped, returns \constant{NaN}.
-\end{classdesc*}
-
 \begin{classdesc*}{DecimalException}
     Base class for other signals.
 \end{classdesc*}
@@ -750,33 +737,12 @@ exception is raised upon encountering the condition.
     the inputs to the calculation.
 \end{classdesc*}
 
-\begin{classdesc*}{DivisionImpossible}
-    Error performing a division operation.  Caused when an intermediate result
-    has more digits that the allowed by the current precision.  If not trapped,
-    returns \constant{NaN}.
-\end{classdesc*}
-
-
-\begin{classdesc*}{DivisionUndefined}
-    This is a subclass of \class{DivisionByZero}.
-
-    It occurs only in the context of division operations.
-\end{classdesc*}
-
 \begin{classdesc*}{Inexact}
     Indicates that rounding occurred and the result is not exact.
 
     Signals whenever non-zero digits were discarded during rounding.
     The rounded result is returned.  The signal flag or trap is used
     to detect when results are inexact.
-\end{classdesc*}
-
-
-\begin{classdesc*}{InvalidContext}
-    This is a subclass of \class{InvalidOperation}.
-
-    Indicates an error within the Context object such as an unknown
-    rounding operation.  If not trapped, returns \constant{NaN}.
 \end{classdesc*}
 
 \begin{classdesc*}{InvalidOperation}
@@ -808,7 +774,6 @@ exception is raised upon encountering the condition.
     outward to \constant{Infinity}.  In either case, \class{Inexact} and
     \class{Rounded} are also signaled.   
 \end{classdesc*}
-
 
 \begin{classdesc*}{Rounded}
     Rounding occurred though possibly no information was lost.
@@ -844,14 +809,9 @@ The following table summarizes the hierarchy of signals:
                 Overflow(Inexact, Rounded)
                 Underflow(Inexact, Rounded, Subnormal)
             InvalidOperation
-                ConversionSyntax
-                DivisionImpossible
-                DivisionUndefined(InvalidOperation, exceptions.ZeroDivisionError)
-                InvalidContext
             Rounded
             Subnormal
 \end{verbatim}            
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -60,12 +60,12 @@ EXTENDEDERRORTEST = False
 #Map the test cases' error names to the actual errors
 
 ErrorNames = {'clamped' : Clamped,
-              'conversion_syntax' : ConversionSyntax,
+              'conversion_syntax' : InvalidOperation,
               'division_by_zero' : DivisionByZero,
-              'division_impossible' : DivisionImpossible,
-              'division_undefined' : DivisionUndefined,
+              'division_impossible' : InvalidOperation,
+              'division_undefined' : InvalidOperation,
               'inexact' : Inexact,
-              'invalid_context' : InvalidContext,
+              'invalid_context' : InvalidOperation,
               'invalid_operation' : InvalidOperation,
               'overflow' : Overflow,
               'rounded' : Rounded,
@@ -131,6 +131,7 @@ class DecimalTest(unittest.TestCase):
             return
         for line in open(file).xreadlines():
             line = line.replace('\r\n', '').replace('\n', '')
+            #print line
             try:
                 t = self.eval_line(line)
             except ConversionSyntax:
@@ -648,7 +649,6 @@ class DecimalArithmeticOperatorsTest(unittest.TestCase):
         self.assertEqual(d1, Decimal('-0.625'))
 
     def test_floor_division(self):
-        '''Test floor division in all its ways.'''
 
         d1 = Decimal('5')
         d2 = Decimal('2')
@@ -676,7 +676,6 @@ class DecimalArithmeticOperatorsTest(unittest.TestCase):
         self.assertEqual(d1, Decimal('1'))
 
     def test_powering(self):
-        '''Test powering in all its ways.'''
 
         d1 = Decimal('5')
         d2 = Decimal('2')

@@ -26,6 +26,9 @@ Extension modules
 Library
 -------
 
+- decimal.py now only uses signals in the spec.  The other conditions are
+  no longer part of the public API.
+
 Tools/Demos
 -----------
 
