@@ -167,7 +167,7 @@ PyMac_GetFullPath (FSSpec *fss, char *buf)
 /* Check that there aren't any args remaining in the event */
 
 static OSErr 
-get_missing_params(AppleEvent *theAppleEvent)
+get_missing_params(const AppleEvent *theAppleEvent)
 {
 	DescType theType;
 	Size actualSize;
@@ -186,7 +186,7 @@ static int got_one; /* Flag that we can stop getting events */
 /* Handle the Print or Quit events (by failing) */
 
 static pascal OSErr
-handle_not(AppleEvent *theAppleEvent, AppleEvent *reply, long refCon)
+handle_not(const AppleEvent *theAppleEvent, AppleEvent *reply, unsigned long refCon)
 {
 	#pragma unused (reply, refCon)
 	got_one = 1;
@@ -196,7 +196,7 @@ handle_not(AppleEvent *theAppleEvent, AppleEvent *reply, long refCon)
 /* Handle the Open Application event (by ignoring it) */
 
 static pascal OSErr
-handle_open_app(AppleEvent *theAppleEvent, AppleEvent *reply, long refCon)
+handle_open_app(const AppleEvent *theAppleEvent, AppleEvent *reply, unsigned long refCon)
 {
 	#pragma unused (reply, refCon)
 #if 0
@@ -209,7 +209,7 @@ handle_open_app(AppleEvent *theAppleEvent, AppleEvent *reply, long refCon)
 /* Handle the Open Document event, by adding an argument */
 
 static pascal OSErr
-handle_open_doc(AppleEvent *theAppleEvent, AppleEvent *reply, long refCon)
+handle_open_doc(const AppleEvent *theAppleEvent, AppleEvent *reply, unsigned long refCon)
 {
 	#pragma unused (reply, refCon)
 	OSErr err;
@@ -281,6 +281,7 @@ reset_ae_handlers()
 static void 
 event_loop()
 {
+#ifndef TARGET_API_MAC_CARBON
 	EventRecord event;
 	int n;
 	int ok;
@@ -293,6 +294,7 @@ event_loop()
 			AEProcessAppleEvent(&event);
 		}
 	}
+#endif
 }
 
 /* Get the argv vector, return argc */
