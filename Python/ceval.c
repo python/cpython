@@ -103,6 +103,17 @@ static int exec_statement PROTO((object *, object *, object *));
 static object *find_from_args PROTO((frameobject *, int));
 
 
+/* Dynamic execution profile */
+#ifdef DYNAMIC_EXECUTION_PROFILE
+#ifdef DXPAIRS
+static long dxpairs[257][256];
+#define dxp dxpairs[256]
+#else
+static long dxp[256];
+#endif
+#endif
+
+
 /* Pointer to current frame, used to link new frames to */
 
 static frameobject *current_frame;
@@ -315,6 +326,9 @@ eval_code2(co, globals, locals,
 	int defcount;
 	object *owner;
 {
+#ifdef DXPAIRS
+	int lastopcode = 0;
+#endif
 	register unsigned char *next_instr;
 	register int opcode = 0; /* Current opcode */
 	register int oparg = 0;	/* Current opcode argument, if any */
@@ -592,6 +606,13 @@ eval_code2(co, globals, locals,
 		opcode = NEXTOP();
 		if (HAS_ARG(opcode))
 			oparg = NEXTARG();
+#ifdef DYNAMIC_EXECUTION_PROFILE
+#ifdef DXPAIRS
+		dxpairs[lastopcode][opcode]++;
+		lastopcode = opcode;
+#endif
+		dxp[opcode]++;
+#endif
 
 #ifdef LLTRACE
 		/* Instruction tracing */
@@ -2961,3 +2982,50 @@ find_from_args(f, nexti)
 	
 	return list;
 }
+
+
+#ifdef DYNAMIC_EXECUTION_PROFILE
+
+PyObject *
+getarray(a)
+	long a[256];
+{
+	int i;
+	PyObject *l = PyList_New(256);
+	if (l == NULL) return NULL;
+	for (i = 0; i < 256; i++) {
+		PyObject *x = PyInt_FromLong(a[i]);
+		if (x == NULL) {
+			Py_DECREF(l);
+			return NULL;
+		}
+		PyList_SetItem(l, i, x);
+	}
+	for (i = 0; i < 256; i++)
+		a[i] = 0;
+	return l;
+}
+
+PyObject *
+_Py_GetDXProfile(self, args)
+	PyObject *self, *args;
+{
+#ifndef DXPAIRS
+	return getarray(dxp);
+#else
+	int i;
+	PyObject *l = PyList_New(257);
+	if (l == NULL) return NULL;
+	for (i = 0; i < 257; i++) {
+		PyObject *x = getarray(dxpairs[i]);
+		if (x == NULL) {
+			Py_DECREF(l);
+			return NULL;
+		}
+		PyList_SetItem(l, i, x);
+	}
+	return l;
+#endif
+}
+
+#endif
