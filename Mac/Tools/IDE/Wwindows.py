@@ -556,7 +556,7 @@ def FrontWindowInsert(stuff):
 				pass
 	import EasyDialogs
 	if EasyDialogs.AskYesNoCancel(
-			"Can’t find window or widget to insert text into; copy to clipboard instead?", 
+			"Canπt find window or widget to insert text into; copy to clipboard instead?", 
 			1) == 1:
 		import Scrap
 		Scrap.ZeroScrap()

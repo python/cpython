@@ -185,10 +185,10 @@ class Editor(W.Window):
 		self.linefield.bind("<click>", self.clicklinefield)
 	
 	def makeoptionsmenu(self):
-		menuitems = [('Font settings…', self.domenu_fontsettings), 
+		menuitems = [('Font settingsä', self.domenu_fontsettings), 
 				('\0' + chr(self.run_as_main) + 'Run as __main__', self.domenu_toggle_run_as_main), 
 				('Modularize', self.domenu_modularize),
-				('Browse namespace…', self.domenu_browsenamespace), 
+				('Browse namespaceä', self.domenu_browsenamespace), 
 				'-']
 		if self.profiling:
 			menuitems = menuitems + [('Disable profiler', self.domenu_toggleprofiler)]
@@ -197,7 +197,7 @@ class Editor(W.Window):
 		if self.editgroup.editor._debugger:
 			menuitems = menuitems + [('Disable debugger', self.domenu_toggledebugger),
 				('Clear breakpoints', self.domenu_clearbreakpoints),
-				('Edit breakpoints…', self.domenu_editbreakpoints)]
+				('Edit breakpointsä', self.domenu_editbreakpoints)]
 		else:
 			menuitems = menuitems + [('Enable debugger', self.domenu_toggledebugger)]
 		self.editgroup.optionsmenu.set(menuitems)
@@ -236,7 +236,7 @@ class Editor(W.Window):
 	def domenu_modularize(self, *args):
 		modname = _filename_as_modname(self.title)
 		if not modname:
-			raise W.AlertError, 'Can’t modularize “%s”' % self.title
+			raise W.AlertError, 'Canπt modularize ≥%s≤' % self.title
 		run_as_main = self.run_as_main
 		self.run_as_main = 0
 		self.run()
@@ -305,7 +305,7 @@ class Editor(W.Window):
 			import EasyDialogs
 			import Qd
 			Qd.InitCursor() # XXX should be done by dialog
-			save = EasyDialogs.AskYesNoCancel('Save window “%s” before closing?' % self.title, 1)
+			save = EasyDialogs.AskYesNoCancel('Save window ≥%s≤ before closing?' % self.title, 1)
 			if save > 0:
 				if self.domenu_save():
 					return 1
@@ -365,7 +365,7 @@ class Editor(W.Window):
 			import buildtools
 		except ImportError:
 			# only have buildtools in Python >= 1.5.2
-			raise W.AlertError, "“Save as Applet” is only supported in\rPython 1.5.2 and up."
+			raise W.AlertError, "≥Save as Applet≤ is only supported in\rPython 1.5.2 and up."
 		
 		buildtools.DEBUG = 0	# ouch.
 		
@@ -468,23 +468,23 @@ class Editor(W.Window):
 					classname = string.split(string.strip(line[6:]))[0]
 					classend = identifieRE_match(classname)
 					if classend < 1:
-						raise W.AlertError, 'Can’t find a class.'
+						raise W.AlertError, 'Canπt find a class.'
 					classname = classname[:classend]
 					break
 				elif line and line[0] not in '\t#':
-					raise W.AlertError, 'Can’t find a class.'
+					raise W.AlertError, 'Canπt find a class.'
 			else:
-				raise W.AlertError, 'Can’t find a class.'
+				raise W.AlertError, 'Canπt find a class.'
 			if globals.has_key(classname):
 				locals = globals[classname].__dict__
 			else:
-				raise W.AlertError, 'Can’t find class “%s”.' % classname
+				raise W.AlertError, 'Canπt find class ≥%s≤.' % classname
 			# dedent to top level
 			for i in range(len(lines)):
 				lines[i] = lines[i][1:]
 			pytext = string.join(lines, '\r')
 		elif indent > 0:
-			raise W.AlertError, 'Can’t run indented code.'
+			raise W.AlertError, 'Canπt run indented code.'
 		
 		# add "newlines" to fool compile/exec: 
 		# now a traceback will give the right line number
@@ -674,7 +674,7 @@ class SearchEngine:
 		self.buttons = [	("Find",		"cmdf",	 self.find), 
 					("Replace",	     "cmdr",	 self.replace), 
 					("Replace all",	 None,   self.replaceall), 
-					("Don’t find",  "cmdd",	 self.dont), 
+					("Donπt find",  "cmdd",	 self.dont), 
 					("Cancel",	      "cmd.",	 self.cancel)
 				]
 		for i in range(len(self.buttons)):
@@ -683,7 +683,7 @@ class SearchEngine:
 			self.w[title] = W.Button(bounds, title, callback)
 			if shortcut:
 				self.w.bind(shortcut, self.w[title].push)
-		self.w.setdefaultbutton(self.w["Don’t find"])
+		self.w.setdefaultbutton(self.w["Donπt find"])
 		self.w.find.edit.bind("<key>", self.key)
 		self.w.bind("<activate>", self.activate)
 		self.w.bind("<close>", self.close)
@@ -716,11 +716,11 @@ class SearchEngine:
 			else:
 				for title, cmd, call in self.buttons[:-2]:
 					self.w[title].enable(0)
-				self.w.setdefaultbutton(self.w["Don’t find"])
+				self.w.setdefaultbutton(self.w["Donπt find"])
 		else:
 			for title, cmd, call in self.buttons[:-2]:
 				self.w[title].enable(0)
-			self.w.setdefaultbutton(self.w["Don’t find"])
+			self.w.setdefaultbutton(self.w["Donπt find"])
 	
 	def find(self):
 		self.getparmsfromwindow()
@@ -1019,7 +1019,7 @@ class _EditorDefaultSettings:
 		self.template = "%s, %d point"
 		self.fontsettings, self.tabsettings, self.windowsize = geteditorprefs()
 		self.w = W.Dialog((328, 120), "Editor default settings")
-		self.w.setfontbutton = W.Button((8, 8, 80, 16), "Set font…", self.dofont)
+		self.w.setfontbutton = W.Button((8, 8, 80, 16), "Set fontä", self.dofont)
 		self.w.fonttext = W.TextBox((98, 10, -8, 14), self.template % (self.fontsettings[0], self.fontsettings[2]))
 		
 		self.w.picksizebutton = W.Button((8, 50, 80, 16), "Front window", self.picksize)

@@ -38,13 +38,13 @@ class PythonIDE(Wapplication.Application):
 	def makeusermenus(self):
 		m = Wapplication.Menu(self.menubar, "File")
 		newitem = FrameWork.MenuItem(m, "New", "N", 'new')
-		openitem = FrameWork.MenuItem(m, "Open…", "O", 'open')
+		openitem = FrameWork.MenuItem(m, "Openä", "O", 'open')
 		FrameWork.Separator(m)
 		closeitem = FrameWork.MenuItem(m, "Close", "W", 'close')
 		saveitem = FrameWork.MenuItem(m, "Save", "S", 'save')
-		saveasitem = FrameWork.MenuItem(m, "Save as…", None, 'save_as')
+		saveasitem = FrameWork.MenuItem(m, "Save asä", None, 'save_as')
 		FrameWork.Separator(m)
-		saveasappletitem = FrameWork.MenuItem(m, "Save as Applet…", None, 'save_as_applet')
+		saveasappletitem = FrameWork.MenuItem(m, "Save as Appletä", None, 'save_as_applet')
 		FrameWork.Separator(m)
 		quititem = FrameWork.MenuItem(m, "Quit", "Q", 'quit')
 		
@@ -59,7 +59,7 @@ class PythonIDE(Wapplication.Application):
 		selallitem = FrameWork.MenuItem(m, "Select all", "A", "selectall")
 		sellineitem = FrameWork.MenuItem(m, "Select line", "L", "selectline")
 		FrameWork.Separator(m)
-		finditem = FrameWork.MenuItem(m, "Find…", "F", "find")
+		finditem = FrameWork.MenuItem(m, "Findä", "F", "find")
 		findagainitem = FrameWork.MenuItem(m, "Find again", 'G', "findnext")
 		enterselitem = FrameWork.MenuItem(m, "Enter search string", "E", "entersearchstring")
 		replaceitem = FrameWork.MenuItem(m, "Replace", None, "replace")
@@ -72,11 +72,11 @@ class PythonIDE(Wapplication.Application):
 		runitem = FrameWork.MenuItem(m, "Run window", "R", 'run')
 		runselitem = FrameWork.MenuItem(m, "Run selection", None, 'runselection')
 		FrameWork.Separator(m)
-		moditem = FrameWork.MenuItem(m, "Module browser…", "M", self.domenu_modulebrowser)
+		moditem = FrameWork.MenuItem(m, "Module browserä", "M", self.domenu_modulebrowser)
 		FrameWork.Separator(m)
 		mm = FrameWork.SubMenu(m, "Preferences")
-		FrameWork.MenuItem(mm, "Set Scripts folder…", None, self.do_setscriptsfolder)
-		FrameWork.MenuItem(mm, "Editor default settings…", None, self.do_editorprefs)
+		FrameWork.MenuItem(mm, "Set Scripts folderä", None, self.do_setscriptsfolder)
+		FrameWork.MenuItem(mm, "Editor default settingsä", None, self.do_editorprefs)
 		
 		self.openwindowsmenu = Wapplication.Menu(self.menubar, 'Windows')
 		self.makeopenwindowsmenu()
@@ -139,10 +139,10 @@ class PythonIDE(Wapplication.Application):
 		if ftype == 'TEXT':
 			self.openscript(path)
 		else:
-			W.Message("Can’t open file of type '%s'." % ftype)
+			W.Message("Canπt open file of type '%s'." % ftype)
 	
 	def getabouttext(self):
-		return "About Python IDE…"
+		return "About Python IDEä"
 	
 	def do_about(self, id, item, window, event):
 		Splash.about()
