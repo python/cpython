@@ -703,6 +703,27 @@ from modemcable093.139-201-24.que.mc.videotron.ca ([24.201.139.93]
 \tid 17k4h5-00034i-00
 \tfor test@mems-exchange.org; Wed, 28 Aug 2002 11:25:20 -0400""")
 
+    def test_long_8bit_header(self):
+        eq = self.ndiffAssertEqual
+        msg = Message()
+        h = Header('Britische Regierung gibt', 'iso-8859-1')
+        h.append('gr\xfcnes Licht f\xfcr Offshore-Windkraftprojekte')
+        msg['Subject'] = h
+        eq(msg.as_string(), """\
+Subject: =?iso-8859-1?q?Britische_Regierung_gibt?=
+ =?iso-8859-1?q?gr=FCnes_Licht_f=FCr_Offshore-Windkraftprojekte?=
+
+""")
+
+    def test_long_8bit_header_no_charset(self):
+        eq = self.ndiffAssertEqual
+        msg = Message()
+        msg['Reply-To'] = 'Britische Regierung gibt gr\xfcnes Licht f\xfcr Offshore-Windkraftprojekte <a-very-long-address@example.com>'
+        eq(msg.as_string(), """\
+Reply-To: Britische Regierung gibt gr\xfcnes Licht f\xfcr Offshore-Windkraftprojekte <a-very-long-address@example.com>
+
+""")
+
 
 
 # Test mangling of "From " lines in the body of a message

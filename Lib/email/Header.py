@@ -153,6 +153,8 @@ class Header:
         """
         if charset is None:
             charset = USASCII
+        if not isinstance(charset, Charset):
+            charset = Charset(charset)
         self._charset = charset
         self._continuation_ws = continuation_ws
         cws_expanded_len = len(continuation_ws.replace('\t', SPACE8))
@@ -216,31 +218,52 @@ class Header:
             charset = self._charset
         elif not isinstance(charset, Charset):
             charset = Charset(charset)
-        # Normalize and check the string
-        if isinstance(s, StringType):
-            # Possibly raise UnicodeError if it can't e encoded
-            unicode(s, charset.get_output_charset())
-        elif isinstance(s, UnicodeType):
-            # Convert Unicode to byte string for later concatenation
-            for charset in USASCII, charset, UTF8:
-                try:
-                    s = s.encode(charset.get_output_charset())
-                    break
-                except UnicodeError:
-                    pass
-            else:
-                assert False, 'Could not encode to utf-8'
+        # If the charset is our faux 8bit charset, leave the string unchanged
+        if charset <> '8bit':
+            # We need to test that the string can be converted to unicode and
+            # back to a byte string, given the input and output codecs of the
+            # charset.
+            if isinstance(s, StringType):
+                # Possibly raise UnicodeError if the byte string can't be
+                # converted to a unicode with the input codec of the charset.
+                incodec = charset.input_codec or 'us-ascii'
+                ustr = unicode(s, incodec)
+                # Now make sure that the unicode could be converted back to a
+                # byte string with the output codec, which may be different
+                # than the iput coded.  Still, use the original byte string.
+                outcodec = charset.output_codec or 'us-ascii'
+                ustr.encode(outcodec)
+            elif isinstance(s, UnicodeType):
+                # Now we have to be sure the unicode string can be converted
+                # to a byte string with a reasonable output codec.  We want to
+                # use the byte string in the chunk.
+                for charset in USASCII, charset, UTF8:
+                    try:
+                        outcodec = charset.output_codec or 'us-ascii'
+                        s = s.encode(outcodec)
+                        break
+                    except UnicodeError:
+                        pass
+                else:
+                    assert False, 'utf-8 conversion failed'
         self._chunks.append((s, charset))
 
     def _split(self, s, charset, firstline=False):
-        # Split up a header safely for use with encode_chunks.  BAW: this
-        # appears to be a private convenience method.
+        # Split up a header safely for use with encode_chunks.
         splittable = charset.to_splittable(s)
         encoded = charset.from_splittable(splittable)
         elen = charset.encoded_header_len(encoded)
 
         if elen <= self._maxlinelen:
             return [(encoded, charset)]
+        # If we have undetermined raw 8bit characters sitting in a byte
+        # string, we really don't know what the right thing to do is.  We
+        # can't really split it because it might be multibyte data which we
+        # could break if we split it between pairs.  The least harm seems to
+        # be to not split the header at all, but that means they could go out
+        # longer than maxlinelen.
+        elif charset == '8bit':
+            return [(s, charset)]
         # BAW: I'm not sure what the right test here is.  What we're trying to
         # do is be faithful to RFC 2822's recommendation that ($2.2.3):
         #
@@ -346,27 +369,27 @@ class Header:
                 rtn.append(EMPTYSTRING.join(sublines))
         return [(chunk, charset) for chunk in rtn]
 
-    def _encode_chunks(self):
-        """MIME-encode a header with many different charsets and/or encodings.
-
-        Given a list of pairs (string, charset), return a MIME-encoded string
-        suitable for use in a header field.  Each pair may have different
-        charsets and/or encodings, and the resulting header will accurately
-        reflect each setting.
-
-        Each encoding can be email.Utils.QP (quoted-printable, for ASCII-like
-        character sets like iso-8859-1), email.Utils.BASE64 (Base64, for
-        non-ASCII like character sets like KOI8-R and iso-2022-jp), or None
-        (no encoding).
-
-        Each pair will be represented on a separate line; the resulting string
-        will be in the format:
-
-        "=?charset1?q?Mar=EDa_Gonz=E1lez_Alonso?=\n
-          =?charset2?b?SvxyZ2VuIEL2aW5n?="
-        """
+    def _encode_chunks(self, newchunks):
+        # MIME-encode a header with many different charsets and/or encodings.
+        #
+        # Given a list of pairs (string, charset), return a MIME-encoded
+        # string suitable for use in a header field.  Each pair may have
+        # different charsets and/or encodings, and the resulting header will
+        # accurately reflect each setting.
+        #
+        # Each encoding can be email.Utils.QP (quoted-printable, for
+        # ASCII-like character sets like iso-8859-1), email.Utils.BASE64
+        # (Base64, for non-ASCII like character sets like KOI8-R and
+        # iso-2022-jp), or None (no encoding).
+        #
+        # Each pair will be represented on a separate line; the resulting
+        # string will be in the format:
+        #
+        # =?charset1?q?Mar=EDa_Gonz=E1lez_Alonso?=\n
+        #  =?charset2?b?SvxyZ2VuIEL2aW5n?="
+        #
         chunks = []
-        for header, charset in self._chunks:
+        for header, charset in newchunks:
             if charset is None or charset.header_encoding is None:
                 # There's no encoding for this chunk's charsets
                 _max_append(chunks, header, self._maxlinelen)
@@ -397,5 +420,4 @@ class Header:
         newchunks = []
         for s, charset in self._chunks:
             newchunks += self._split(s, charset, True)
-        self._chunks = newchunks
-        return self._encode_chunks()
+        return self._encode_chunks(newchunks)
