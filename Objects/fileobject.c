@@ -1697,6 +1697,16 @@ static char file_doc[] =
 "Add a '+' to the mode to allow simultaneous reading and writing.\n"
 "If the buffering argument is given, 0 means unbuffered, 1 means line\n"
 "buffered, and larger numbers specify the buffer size.\n"
+#ifdef WITH_UNIVERSAL_NEWLINES
+"Add a 'U' to mode to open the file for input with universal newline\n"
+"support.  Any line ending in the input file will be seen as a '\\n'\n"
+"in Python.  Also, a file so opened gains the attribute 'newlines';\n"
+"the value for this attribute is one of None (no newline read yet),\n"
+"'\\r', '\\n', '\\r\\n' or a tuple containing all the newline types seen.\n"
+"\n"
+"'U' cannot be combined with 'w' or '+' mode.\n"
+#endif /* WITH_UNIVERSAL_NEWLINES */
+"\n"
 "Note:  open() is an alias for file().\n";
 
 PyTypeObject PyFile_Type = {
