@@ -59,6 +59,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1110248: SYNC_FLUSH the zlib buffer for GZipFile.flush.
+
 - Patch #1107973: Allow to iterate over the lines of a tarfile.ExFileObject.
 
 - Patch #1104111: Alter setup.py --help and --help-commands.
