@@ -786,6 +786,12 @@ PyEval_EvalFrame(PyFrameObject *f)
 					why = WHY_EXCEPTION;
 					goto on_error;
 				}
+				if (things_to_do)
+					/* MakePendingCalls() didn't succeed.
+					   Force early re-execution of this
+					   "periodic" code, possibly after
+					   a thread switch */
+					_Py_Ticker = 0;
 			}
 #ifdef WITH_THREAD
 			if (interpreter_lock) {
