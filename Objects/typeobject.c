@@ -1,4 +1,3 @@
-
 /* Type object implementation */
 
 #include "Python.h"
@@ -2111,7 +2110,8 @@ PyType_Ready(PyTypeObject *type)
 			PyDict_SetItemString(type->tp_dict, "__doc__", doc);
 			Py_DECREF(doc);
 		} else {
-			PyDict_SetItemString(type->tp_dict, "__doc__", Py_None);
+			PyDict_SetItemString(type->tp_dict,
+					     "__doc__", Py_None);
 		}
 	}
 
@@ -3364,7 +3364,8 @@ slot_tp_iter(PyObject *self)
 	PyErr_Clear();
 	func = lookup_method(self, "__getitem__", &getitem_str);
 	if (func == NULL) {
-		PyErr_SetString(PyExc_TypeError, "iteration over non-sequence");
+		PyErr_SetString(PyExc_TypeError,
+				"iteration over non-sequence");
 		return NULL;
 	}
 	Py_DECREF(func);
@@ -4068,7 +4069,8 @@ super_getattro(PyObject *self, PyObject *name)
 				Py_INCREF(res);
 				f = res->ob_type->tp_descr_get;
 				if (f != NULL) {
-					tmp = f(res, su->obj, (PyObject *)starttype);
+					tmp = f(res, su->obj,
+						(PyObject *)starttype);
 					Py_DECREF(res);
 					res = tmp;
 				}
