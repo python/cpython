@@ -91,9 +91,8 @@ extern void initmacspeech();
 extern void initmacdnr();
 extern void initmactcp();
 #endif
-#ifdef USE_BGEN
+#ifdef USE_TOOLBOX
 extern void initAE();
-extern void initCm();
 extern void initCtl();
 extern void initDlg();
 extern void initEvt();
@@ -101,12 +100,15 @@ extern void initFm();
 extern void initList();
 extern void initMenu();
 extern void initQd();
-extern void initQt();
 extern void initRes();
 extern void initSnd();
 extern void initScrap();
 extern void initTE();
 extern void initWin();
+#endif
+#ifdef USE_QT
+extern void initCm();
+extern void initQt();
 #endif
 
 #ifdef USE_IMG
@@ -180,9 +182,8 @@ struct _inittab inittab[] = {
 	{"macdnr", initmacdnr},
 	{"mactcp", initmactcp},
 #endif
-#ifdef USE_BGEN
+#ifdef USE_TOOLBOX
 	{"AE", initAE},
-	{"Cm", initCm},
 	{"Ctl", initCtl},
 	{"Dlg", initDlg},
 	{"Evt", initEvt},
@@ -190,12 +191,15 @@ struct _inittab inittab[] = {
 	{"Menu", initMenu},
 	{"List", initList},
 	{"Qd", initQd},
-	{"Qt", initQt},
 	{"Snd", initSnd},
 	{"Scrap", initScrap},
 	{"TE", initTE},
 	{"Win", initWin},
 	{"Res", initRes},
+#endif
+#ifdef USE_QT
+	{"Cm", initCm},
+	{"Qt", initQt},
 #endif
 #ifdef USE_IMG
 	{"imgcolormap",	initimgcolormap},
