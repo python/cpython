@@ -1947,6 +1947,7 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 {
     PyUnicodeObject *v;
     Py_UNICODE *p;
+    int extrachars = 0;
     
     /* Default to Latin-1 */
     if (mapping == NULL)
@@ -1998,14 +1999,33 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 	    }
 	}
 	else if (PyUnicode_Check(x)) {
-	    if (PyUnicode_GET_SIZE(x) != 1) {
+	    int targetsize = PyUnicode_GET_SIZE(x);
+
+	    if (targetsize == 1)
+		/* 1-1 mapping */
+		*p++ = *PyUnicode_AS_UNICODE(x);
+
+	    else if (targetsize > 1) {
 		/* 1-n mapping */
-		PyErr_SetString(PyExc_NotImplementedError,
-				"1-n mappings are currently not implemented");
+		if (targetsize > extrachars) {
+		    /* resize first */
+		    int oldpos = (int)(p - PyUnicode_AS_UNICODE(v));
+		    int needed = (targetsize - extrachars) + \
+			         (targetsize << 2);
+		    extrachars += needed;
+		    if (_PyUnicode_Resize(v, PyUnicode_GET_SIZE(v) + needed)) {
 		Py_DECREF(x);
 		goto onError;
 	    }
-	    *p++ = *PyUnicode_AS_UNICODE(x);
+		    p = PyUnicode_AS_UNICODE(v) + oldpos;
+		}
+		Py_UNICODE_COPY(p,
+				PyUnicode_AS_UNICODE(x),
+				targetsize);
+		p += targetsize;
+		extrachars -= targetsize;
+	    }
+	    /* 1-0 mapping: skip the character */
 	}
 	else {
 	    /* wrong return value */
@@ -2063,6 +2083,7 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 {
     PyObject *v;
     char *s;
+    int extrachars = 0;
 
     /* Default to Latin-1 */
     if (mapping == NULL)
@@ -2114,14 +2135,33 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 	    }
 	}
 	else if (PyString_Check(x)) {
-	    if (PyString_GET_SIZE(x) != 1) {
+	    int targetsize = PyString_GET_SIZE(x);
+
+	    if (targetsize == 1)
+		/* 1-1 mapping */
+		*s++ = *PyString_AS_STRING(x);
+
+	    else if (targetsize > 1) {
 		/* 1-n mapping */
-		PyErr_SetString(PyExc_NotImplementedError,
-		      "1-n mappings are currently not implemented");
+		if (targetsize > extrachars) {
+		    /* resize first */
+		    int oldpos = (int)(s - PyString_AS_STRING(v));
+		    int needed = (targetsize - extrachars) + \
+			         (targetsize << 2);
+		    extrachars += needed;
+		    if (_PyString_Resize(&v, PyString_GET_SIZE(v) + needed)) {
 		Py_DECREF(x);
 		goto onError;
 	    }
-	    *s++ = *PyString_AS_STRING(x);
+		    s = PyString_AS_STRING(v) + oldpos;
+		}
+		memcpy(s,
+		       PyString_AS_STRING(x),
+		       targetsize);
+		s += targetsize;
+		extrachars -= targetsize;
+	    }
+	    /* 1-0 mapping: skip the character */
 	}
 	else {
 	    /* wrong return value */
