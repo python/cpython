@@ -384,8 +384,11 @@ int PyUnicode_AsWideChar(PyUnicodeObject *unicode,
 	PyErr_BadInternalCall();
 	return -1;
     }
+
+    /* If possible, try to copy the 0-termination as well */
     if (size > PyUnicode_GET_SIZE(unicode))
-	size = PyUnicode_GET_SIZE(unicode);
+	size = PyUnicode_GET_SIZE(unicode) + 1;
+
 #ifdef HAVE_USABLE_WCHAR_T
     memcpy(w, unicode->str, size * sizeof(wchar_t));
 #else
@@ -398,6 +401,9 @@ int PyUnicode_AsWideChar(PyUnicodeObject *unicode,
     }
 #endif
 
+    if (size > PyUnicode_GET_SIZE(unicode))
+        return PyUnicode_GET_SIZE(unicode);
+    else
     return size;
 }
 

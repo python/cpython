@@ -512,10 +512,16 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromWideChar(
     int size                    /* size of buffer */
     );
 
-/* Copies the Unicode Object contents into the whcar_t buffer w.  At
+/* Copies the Unicode Object contents into the wchar_t buffer w.  At
    most size wchar_t characters are copied.
 
-   Returns the number of wchar_t characters copied or -1 in case of an
+   Note that the resulting wchar_t string may or may not be
+   0-terminated.  It is the responsibility of the caller to make sure
+   that the wchar_t string is 0-terminated in case this is required by
+   the application.
+
+   Returns the number of wchar_t characters copied (excluding a
+   possibly trailing 0-termination character) or -1 in case of an
    error. */
 
 PyAPI_FUNC(int) PyUnicode_AsWideChar(
