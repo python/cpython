@@ -20,11 +20,8 @@ def plus(a, b):
 	return normalize(res)
 
 def minus(a, b):
-	if len(a) < len(b): a, b = b, a # make sure a is the longest
-	res = a[:] # make a copy
-	for i in range(len(b)):
-		res[i] = res[i] - b[i]
-	return normalize(res)
+	neg_b = map(lambda x: -x, b[:])
+	return plus(a, neg_b)
 
 def one(power, coeff): # Representation of coeff * x**power
 	res = []
