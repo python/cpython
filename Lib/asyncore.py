@@ -53,7 +53,7 @@ import sys
 
 import os
 from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, \
-     ENOTCONN, ESHUTDOWN
+     ENOTCONN, ESHUTDOWN, EINTR
 
 try:
     socket_map
@@ -66,7 +66,6 @@ class ExitNow (exceptions.Exception):
 DEBUG = 0
 
 def poll (timeout=0.0, map=None):
-    global DEBUG
     if map is None:
         map = socket_map
     if map:
@@ -76,7 +75,11 @@ def poll (timeout=0.0, map=None):
                 r.append (fd)
             if obj.writable():
                 w.append (fd)
-        r,w,e = select.select (r,w,e, timeout)
+        try:
+            r,w,e = select.select (r,w,e, timeout)
+        except select.error, err:
+            if err[0] != EINTR:
+                raise
 
         if DEBUG:
             print r,w,e
@@ -158,7 +161,12 @@ def poll3 (timeout=0.0, map=None):
                 flags = flags | select.POLLOUT
             if flags:
                 pollster.register(fd, flags)
-        r = pollster.poll (timeout)
+        try:
+            r = pollster.poll (timeout)
+        except select.error, err:
+            if err[0] != EINTR:
+                raise
+            r = []
         for fd, flags in r:
             try:
                 obj = map[fd]
@@ -205,6 +213,8 @@ class dispatcher:
             self.socket.setblocking (0)
             self.connected = 1
             self.addr = sock.getpeername()
+        else:
+            self.socket = None
 
     def __repr__ (self):
         status = [self.__class__.__module__+"."+self.__class__.__name__]
@@ -241,7 +251,8 @@ class dispatcher:
         self.add_channel()
 
     def set_socket (self, sock, map=None):
-        self.__dict__['socket'] = sock
+        self.socket = sock
+##        self.__dict__['socket'] = sock
         self._fileno = sock.fileno()
         self.add_channel (map)
 
