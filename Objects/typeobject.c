@@ -281,9 +281,9 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 	Py_DECREF(temp);
 
 	/* any base that was in __bases__ but now isn't, we
-	   need to remove |type| from it's tp_subclasses.
+	   need to remove |type| from its tp_subclasses.
 	   conversely, any class now in __bases__ that wasn't
-	   needs to have |type| added to it's subclasses. */
+	   needs to have |type| added to its subclasses. */
 
 	/* for now, sod that: just remove from all old_bases,
 	   add to all new_bases */
