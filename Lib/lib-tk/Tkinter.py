@@ -495,7 +495,7 @@ class Misc:
 					v = self._register(v)
 				res = res + ('-'+k, v)
 		return res
-	def _nametowidget(self, name):
+	def nametowidget(self, name):
 		w = self
 		if name[0] == '.':
 			w = w._root()
@@ -510,6 +510,7 @@ class Misc:
 			w = w.children[name]
 			name = tail
 		return w
+	_nametowidget = nametowidget
 	def _register(self, func, subst=None, needcleanup=1):
 		f = CallWrapper(func, subst, self).__call__
 		name = `id(f)`
