@@ -100,7 +100,7 @@ class VariablesTreeItem(ObjectTreeItem):
             item = make_objecttreeitem(key + " =", value, setfunction)
             sublist.append(item)
         return sublist
-        
+
 def get_stack(t=None, f=None):
     if t is None:
         t = sys.last_traceback
