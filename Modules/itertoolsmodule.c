@@ -329,6 +329,7 @@ typedef struct {
 	PyObject_HEAD
 	teedataobject *dataobj;
 	int index;
+	PyObject *weakreflist;
 } teeobject;
 
 static PyTypeObject teedataobject_type;
@@ -452,6 +453,7 @@ tee_copy(teeobject *to)
 	Py_INCREF(to->dataobj);
 	newto->dataobj = to->dataobj;
 	newto->index = to->index;
+	newto->weakreflist = NULL;
 	return (PyObject *)newto;
 }
 
@@ -476,6 +478,7 @@ tee_fromiterable(PyObject *iterable)
 		goto done;
 	to->dataobj = (teedataobject *)teedataobject_new(it);
 	to->index = 0;
+	to->weakreflist = NULL;
 done:
 	Py_XDECREF(it);
 	return (PyObject *)to;
@@ -494,6 +497,8 @@ tee_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 static void
 tee_dealloc(teeobject *to)
 {
+	if (to->weakreflist != NULL)
+		PyObject_ClearWeakRefs((PyObject *) to);
 	Py_XDECREF(to->dataobj);
 	PyObject_Del(to);
 }
@@ -533,7 +538,7 @@ static PyTypeObject tee_type = {
 	0,				/* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
-	0,				/* tp_weaklistoffset */
+	offsetof(teeobject, weakreflist),	/* tp_weaklistoffset */
 	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)tee_next,		/* tp_iternext */
 	tee_methods,			/* tp_methods */
