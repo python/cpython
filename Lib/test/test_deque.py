@@ -6,8 +6,13 @@ import copy
 import cPickle as pickle
 from cStringIO import StringIO
 import random
+import os
 
 BIG = 100000
+
+def fail():
+    raise SyntaxError
+    yield 1
 
 class TestBasic(unittest.TestCase):
 
@@ -58,6 +63,10 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(TypeError, d.extendleft, 1)
         d.extendleft('bcd')
         self.assertEqual(list(d), list(reversed('abcd')))
+        d = deque()
+        d.extendleft(range(1000))
+        self.assertEqual(list(d), list(reversed(range(1000))))
+        self.assertRaises(SyntaxError, d.extendleft, fail())
 
     def test_getitem(self):
         n = 200
@@ -151,6 +160,13 @@ class TestBasic(unittest.TestCase):
             dr()
         self.assertEqual(tuple(d), tuple(e))
 
+        self.assertRaises(TypeError, d.rotate, 'x')   # Wrong arg type
+        self.assertRaises(TypeError, d.rotate, 1, 10) # Too many args
+
+        d = deque()
+        d.rotate()              # rotate an empty deque
+        self.assertEqual(d, deque())
+
     def test_len(self):
         d = deque('ab')
         self.assertEqual(len(d), 2)
@@ -178,6 +194,8 @@ class TestBasic(unittest.TestCase):
         d.clear()
         self.assertEqual(len(d), 0)
         self.assertEqual(list(d), [])
+        d.clear()               # clear an emtpy deque
+        self.assertEqual(list(d), [])
 
     def test_repr(self):
         d = deque(xrange(200))
@@ -189,10 +207,19 @@ class TestBasic(unittest.TestCase):
     def test_print(self):
         d = deque(xrange(200))
         d.append(d)
-        f = StringIO()
-        print >> f, d,
-        self.assertEqual(f.getvalue(), repr(d))
-        f.close()
+        try:
+            fo = open(test_support.TESTFN, "wb")
+            print >> fo, d,
+            fo.close()
+            fo = open(test_support.TESTFN, "rb")
+            self.assertEqual(fo.read(), repr(d))
+        finally:
+            fo.close()
+            os.remove(test_support.TESTFN)
+
+    def test_init(self):
+        self.assertRaises(TypeError, deque, 'abc', 2);
+        self.assertRaises(TypeError, deque, 1);
 
     def test_hash(self):
         self.assertRaises(TypeError, hash, deque('abc'))

@@ -245,7 +245,7 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 		deque->leftblock->data[deque->leftindex] = item;
 	}
 	Py_DECREF(it);
-	if (PyErr_Occurred()) 
+	if (PyErr_Occurred())
 		return NULL;
 	Py_RETURN_NONE;
 }
@@ -274,8 +274,7 @@ deque_rotate(dequeobject *deque, PyObject *args)
 
 	for (i=0 ; i<n ; i++) {
 		item = deque_pop(deque, NULL);
-		if (item == NULL)
-			return NULL;
+		assert (item != NULL);
 		rv = deque_appendleft(deque, item);
 		Py_DECREF(item);
 		if (rv == NULL)
@@ -284,8 +283,7 @@ deque_rotate(dequeobject *deque, PyObject *args)
 	}
 	for (i=0 ; i>n ; i--) {
 		item = deque_popleft(deque, NULL);
-		if (item == NULL)
-			return NULL;
+		assert (item != NULL);
 		rv = deque_append(deque, item);
 		Py_DECREF(item);
 		if (rv == NULL)
@@ -311,8 +309,7 @@ deque_clear(dequeobject *deque)
 
 	while (deque_len(deque)) {
 		item = deque_pop(deque, NULL);
-		if (item == NULL)
-			return -1;
+		assert (item != NULL);
 		Py_DECREF(item);
 	}
 	assert(deque->leftblock == deque->rightblock &&
@@ -388,8 +385,7 @@ deque_del_item(dequeobject *deque, int i)
 	Py_DECREF(item);
 
 	item = deque_popleft(deque, NULL);
-	if (item == NULL) 
-		goto fail;
+	assert (item != NULL);
 	Py_DECREF(item);
 
 	item = deque_rotate(deque, plus_i);
@@ -409,9 +405,9 @@ deque_ass_item(dequeobject *deque, int i, PyObject *v)
 {
 	PyObject *old_value;
 	block *b;
-	int n;
+	int n, len=deque->len, halflen=(len+1)>>1, index=i;
 
-	if (i < 0 || i >= deque->len) {
+	if (i < 0 || i >= len) {
 		PyErr_SetString(PyExc_IndexError,
 				"deque index out of range");
 		return -1;
@@ -422,12 +418,12 @@ deque_ass_item(dequeobject *deque, int i, PyObject *v)
 	i += deque->leftindex;
 	n = i / BLOCKLEN;
 	i %= BLOCKLEN;
-	if (i < (deque->len >> 1)) {
+	if (index <= halflen) {
 		b = deque->leftblock;
 		while (n--)
 			b = b->rightlink;
 	} else {
-		n = (deque->leftindex + deque->len - 1) / BLOCKLEN - n;
+		n = (deque->leftindex + len - 1) / BLOCKLEN - n;
 		b = deque->rightblock;
 		while (n--)
 			b = b->leftlink;
@@ -442,8 +438,10 @@ deque_ass_item(dequeobject *deque, int i, PyObject *v)
 static PyObject *
 deque_clearmethod(dequeobject *deque)
 {
-	if (deque_clear(deque) == -1)
-		return NULL;
+	int rv;
+
+	rv = deque_clear(deque);
+	assert (rv != -1);
 	Py_RETURN_NONE;
 }
 
