@@ -39,6 +39,9 @@ C API
 Windows
 -------
 
+- The tempfile module could do insane imports on Windows if PYTHONCASEOK
+  was set, making temp file creation impossible.  Repaired.
+
 Mac
 ---
 
