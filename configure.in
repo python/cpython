@@ -45,7 +45,7 @@ then
 			   tr -d '[/ ]' | sed 's/\..*//'`
 	MACHDEP="$ac_md_system$ac_md_release"
 
-	case MACHDEP in
+	case $MACHDEP in
 	'')	MACHDEP=unknown;;
 	esac
 fi
