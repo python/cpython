@@ -1649,7 +1649,8 @@ slice objects.
 \subsection{Special Attributes \label{specialattrs}}
 
 The implementation adds a few special read-only attributes to several
-object types, where they are relevant:
+object types, where they are relevant.  Some of these are not reported
+by the \function{dir()} built-in function.
 
 \begin{memberdesc}[object]{__dict__}
 A dictionary or other mapping object used to store an
@@ -1673,4 +1674,8 @@ The class to which a class instance belongs.
 \begin{memberdesc}[class]{__bases__}
 The tuple of base classes of a class object.  If there are no base
 classes, this will be an empty tuple.
+\end{memberdesc}
+
+\begin{memberdesc}[class]{__name__}
+The name of the class or type.
 \end{memberdesc}
