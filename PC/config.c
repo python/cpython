@@ -51,6 +51,7 @@ extern void initregex();
 extern void initrgbimg();
 extern void initrotor();
 extern void initsignal();
+extern void initsha();
 extern void initselect();
 extern void init_socket();
 extern void initsoundex();
@@ -91,6 +92,7 @@ struct _inittab _PyImport_Inittab[] = {
         {"rgbimg", initrgbimg},
         {"rotor", initrotor},
         {"signal", initsignal},
+        {"sha", initsha},
 #ifdef USE_SOCKET
         {"_socket", init_socket},
         {"select", initselect},
