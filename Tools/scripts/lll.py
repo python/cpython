@@ -5,17 +5,17 @@
 # No recursion.
 # (This is a totally different program from "findsymlinks.py"!)
 
-import sys, posix, path
+import sys, os
 
 def lll(dirname):
-	for name in posix.listdir(dirname):
-		if name not in ['.', '..']:
-			full = path.join(dirname, name)
-			if path.islink(full):
-				print name, '->', posix.readlink(full)
+	for name in os.listdir(dirname):
+		if name not in (os.curdir, os.pardir):
+			full = os.path.join(dirname, name)
+			if os.path.islink(full):
+				print name, '->', os.readlink(full)
 
 args = sys.argv[1:]
-if not args: args = ['.']
+if not args: args = [os.curdir]
 first = 1
 for arg in args:
 	if len(args) > 1:
