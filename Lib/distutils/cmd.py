@@ -388,3 +388,7 @@ class Command:
     # make_file ()
 
 # class Command
+
+
+if __name__ == "__main__":
+    print "ok"
