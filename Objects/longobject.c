@@ -109,6 +109,27 @@ newlongobject(ival)
 	return (object *)v;
 }
 
+/* Create a new long int object from a C unsigned long int */
+
+object *
+PyLong_FromUnsignedLong(ival)
+	unsigned long ival;
+{
+	/* Assume a C long fits in at most 5 'digits' */
+	/* Works on both 32- and 64-bit machines */
+	longobject *v = alloclongobject(5);
+	if (v != NULL) {
+		unsigned long t = ival;
+		int i;
+		for (i = 0; i < 5; i++) {
+			v->ob_digit[i] = t & MASK; 
+			t >>= SHIFT;
+		}
+		v = long_normalize(v);
+	}
+	return (object *)v;
+}
+
 /* Create a new long int object from a C double */
 
 object *
@@ -179,6 +200,41 @@ getlongvalue(vv)
 		}
 	}
 	return x * sign;
+}
+
+/* Get a C long int from a long int object.
+   Returns -1 and sets an error condition if overflow occurs. */
+
+unsigned long
+PyLong_AsUnsignedLong(vv)
+	object *vv;
+{
+	register longobject *v;
+	unsigned long x, prev;
+	int i;
+	
+	if (vv == NULL || !is_longobject(vv)) {
+		err_badcall();
+		return (unsigned long) -1;
+	}
+	v = (longobject *)vv;
+	i = v->ob_size;
+	x = 0;
+	if (i < 0) {
+		err_setstr(OverflowError,
+			   "can't convert negative value to unsigned long");
+		return (unsigned long) -1;
+	}
+	while (--i >= 0) {
+		prev = x;
+		x = (x << SHIFT) + v->ob_digit[i];
+		if ((x >> SHIFT) != prev) {
+			err_setstr(OverflowError,
+				"long int too long to convert");
+			return (unsigned long) -1;
+		}
+	}
+	return x;
 }
 
 /* Get a C double from a long int object.  No overflow check. */

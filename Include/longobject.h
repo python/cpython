@@ -44,8 +44,10 @@ extern DL_IMPORT(PyTypeObject) PyLong_Type;
 #define PyLong_Check(op) ((op)->ob_type == &PyLong_Type)
 
 extern PyObject *PyLong_FromLong Py_PROTO((long));
+extern PyObject *PyLong_FromUnsignedLong Py_PROTO((unsigned long));
 extern PyObject *PyLong_FromDouble Py_PROTO((double));
 extern long PyLong_AsLong Py_PROTO((PyObject *));
+extern unsigned long PyLong_AsUnsignedLong Py_PROTO((PyObject *));
 extern double PyLong_AsDouble Py_PROTO((PyObject *));
 
 PyObject *PyLong_FromString Py_PROTO((char *, char **, int));
