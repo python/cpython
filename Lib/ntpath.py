@@ -255,7 +255,7 @@ def ismount(path):
 def walk(top, func, arg):
     """Directory tree walk whth callback function.
 
-    walk(top, func, args) calls func(arg, d, files) for each directory d 
+    walk(top, func, arg) calls func(arg, d, files) for each directory d 
     in the tree rooted at top (including top itself); files is a list
     of all the files and subdirs in directory d."""
     try:
