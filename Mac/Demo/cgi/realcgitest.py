@@ -11,7 +11,9 @@ class CGITest(AEServer, MiniApplication):
 		self.installaehandler('aevt', 'oapp', self.open_app)
 		self.installaehandler('aevt', 'quit', self.quit)
 		self.installaehandler('WWW\275', 'sdoc', self.cgihandler)
+		oldparams = MacOS.SchedParams(0, 0)
 		self.mainloop()
+		apply(MacOS.SchedParams, oldparams)
 
 	def quit(self, **args):
 		self.quitting = 1
