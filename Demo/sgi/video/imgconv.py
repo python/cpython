@@ -21,14 +21,14 @@ def rgb2jpeg(img, x, y):
 
 def jpeggrey2grey(img, width, height):
 	import jpeg
-	data, width, height, bytesperpixel = jpeg.decompress(data)
+	data, width, height, bytesperpixel = jpeg.decompress(img)
 	if bytesperpixel <> 1: raise RuntimeError, 'not grayscale jpeg'
 	return data
 
 def jpeg2rgb(img, width, height):
 	import cl, CL
 	import jpeg
-	data, width, height, bytesperpixel = jpeg.decompress(data)
+	data, width, height, bytesperpixel = jpeg.decompress(img)
 	if bytesperpixel <> 4: raise RuntimeError, 'not rgb jpeg'
 	return data
 
@@ -44,9 +44,9 @@ converters = [ \
 	  ('rgb',   'grey',  imageop.rgb2grey,     LOSSY), \
 	  ('grey',  'rgb',   imageop.grey2rgb,     NOT_LOSSY), \
 	  ('jpeggrey','grey',jpeggrey2grey,        NOT_LOSSY), \
-	  ('grey',  'jpeggrey',grey2jpeggrey,      NOT_LOSSY), \
+	  ('grey',  'jpeggrey',grey2jpeggrey,      LOSSY), \
 	  ('jpeg',  'rgb',   jpeg2rgb,             NOT_LOSSY), \
-	  ('rgb',   'jpeg',  rgb2jpeg,             NOT_LOSSY), \
+	  ('rgb',   'jpeg',  rgb2jpeg,             LOSSY), \
 ]
 
 built = {}
