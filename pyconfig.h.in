@@ -42,7 +42,7 @@
 /* Define to 1 if you have the `chown' function. */
 #undef HAVE_CHOWN
 
-/* Define to 1 if you have the `chroot' function. */
+/* Define if you have the 'chroot' function. */
 #undef HAVE_CHROOT
 
 /* Define to 1 if you have the `clock' function. */
@@ -235,7 +235,7 @@
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
-/* Define to 1 if you have the `link' function. */
+/* Define if you have the 'link' function. */
 #undef HAVE_LINK
 
 /* Define to 1 if you have the <locale.h> header file. */
@@ -444,7 +444,7 @@
    `HAVE_STRUCT_STAT_ST_BLOCKS' instead. */
 #undef HAVE_ST_BLOCKS
 
-/* Define to 1 if you have the `symlink' function. */
+/* Define if you have the 'symlink' function. */
 #undef HAVE_SYMLINK
 
 /* Define to 1 if you have the `sysconf' function. */
