@@ -2,7 +2,7 @@
 /* Execute compiled code */
 
 /* XXX TO DO:
-   XXX how to pass arguments to call_trace?
+   XXX how to pass arguments to profile and trace functions?
    XXX speed up searching for keywords by using a dictionary
    XXX document it!
    */
@@ -61,9 +61,9 @@ static PyObject *load_args(PyObject ***, int);
 #ifdef LLTRACE
 static int prtrace(PyObject *, char *);
 #endif
-static void call_exc_trace(PyObject **, PyObject**, PyFrameObject *);
-static int call_trace(PyObject **, PyObject **,
-		      PyFrameObject *, PyObject *, PyObject *);
+static int call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
+		      int, PyObject *);
+static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
 static PyObject *loop_subscript(PyObject *, PyObject *);
 static PyObject *apply_slice(PyObject *, PyObject *, PyObject *);
 static int assign_slice(PyObject *, PyObject *,
@@ -97,14 +97,6 @@ static long dxpairs[257][256];
 static long dxp[256];
 #endif
 #endif
-
-/* Cached interned string objects used for calling the profile and
- * trace functions.
- */
-static PyObject *str_call = NULL;
-static PyObject *str_exception = NULL;
-static PyObject *str_line = NULL;
-static PyObject *str_return = NULL;
 
 
 staticforward PyTypeObject gentype;
@@ -1892,12 +1884,15 @@ eval_frame(PyFrameObject *f)
 				printf("--- %s:%d \n", filename, oparg);
 #endif
 			f->f_lineno = oparg;
-			if (f->f_trace == NULL)
+			if (tstate->c_tracefunc == NULL || tstate->tracing)
 				continue;
 			/* Trace each line of code reached */
 			f->f_lasti = INSTR_OFFSET();
-			err = call_trace(&f->f_trace, &f->f_trace,
-					 f, str_line, Py_None);
+			/* Inline call_trace() for performance: */
+			tstate->tracing++;
+			err = (tstate->c_tracefunc)(tstate->c_traceobj, f,
+						    PyTrace_LINE, Py_None);
+			tstate->tracing--;
 			break;
 
 		case CALL_FUNCTION:
@@ -2147,11 +2142,12 @@ eval_frame(PyFrameObject *f)
 				f->f_lasti -= 2;
 			PyTraceBack_Here(f);
 
-			if (f->f_trace)
-				call_exc_trace(&f->f_trace, &f->f_trace, f);
-			if (tstate->sys_profilefunc)
-				call_exc_trace(&tstate->sys_profilefunc,
-					       (PyObject**)0, f);
+			if (tstate->c_tracefunc)
+				call_exc_trace(tstate->c_tracefunc,
+					       tstate->c_traceobj, f);
+			if (tstate->c_profilefunc)
+				call_exc_trace(tstate->c_profilefunc,
+					       tstate->c_profileobj, f);
 		}
 
 		/* For the rest, treat WHY_RERAISE as WHY_EXCEPTION */
@@ -2232,10 +2228,10 @@ eval_frame(PyFrameObject *f)
 	if (why != WHY_RETURN && why != WHY_YIELD)
 		retval = NULL;
 
-	if (f->f_trace) {
+	if (tstate->c_tracefunc && !tstate->tracing) {
 		if (why == WHY_RETURN || why == WHY_YIELD) {
-			if (call_trace(&f->f_trace, &f->f_trace, f,
-				       str_return, retval)) {
+			if (call_trace(tstate->c_tracefunc, tstate->c_traceobj,
+				       f, PyTrace_RETURN, retval)) {
 				Py_XDECREF(retval);
 				retval = NULL;
 				why = WHY_EXCEPTION;
@@ -2243,10 +2239,10 @@ eval_frame(PyFrameObject *f)
 		}
 	}
 
-	if (tstate->sys_profilefunc &&
-			(why == WHY_RETURN || why == WHY_YIELD)) {
-		if (call_trace(&tstate->sys_profilefunc, (PyObject**)0,
-			       f, str_return, retval)) {
+	if (tstate->c_profilefunc && !tstate->tracing
+	    && (why == WHY_RETURN || why == WHY_YIELD)) {
+		if (call_trace(tstate->c_profilefunc, tstate->c_profileobj,
+			       f, PyTrace_RETURN, retval)) {
 			Py_XDECREF(retval);
 			retval = NULL;
 			why = WHY_EXCEPTION;
@@ -2475,7 +2471,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		}
 	}
 
-	if (tstate->sys_tracefunc != NULL) {
+	if (tstate->c_tracefunc != NULL && !tstate->tracing) {
 		/* tstate->sys_tracefunc, if defined, is a function that
 		   will be called  on *every* entry to a code block.
 		   Its return value, if not None, is a function that
@@ -2488,20 +2484,21 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		   depends on the situation.  The global trace function
 		   (sys.trace) is also called whenever an exception
 		   is detected. */
-		if (call_trace(&tstate->sys_tracefunc,
-			       &f->f_trace, f, str_call,
-			       Py_None/*XXX how to compute arguments now?*/)) {
+		if (call_trace(tstate->c_tracefunc, tstate->c_traceobj,
+			       f, PyTrace_CALL, Py_None)) {
+			/* XXX Need way to compute arguments?? */
 			/* Trace function raised an error */
 			goto fail;
 		}
 	}
 
-	if (tstate->sys_profilefunc != NULL) {
+	if (tstate->c_profilefunc != NULL) {
 		/* Similar for sys_profilefunc, except it needn't return
 		   itself and isn't called for "line" events */
-		if (call_trace(&tstate->sys_profilefunc,
-			       (PyObject**)0, f, str_call,
-			       Py_None/*XXX*/)) {
+		if (call_trace(tstate->c_profilefunc, tstate->c_profileobj,
+			       f, PyTrace_CALL, Py_None)) {
+			/* XXX Need way to compute arguments?? */
+			/* Profile function raised an error */
 			goto fail;
 		}
 	}
@@ -2772,7 +2769,7 @@ prtrace(PyObject *v, char *str)
 #endif
 
 static void
-call_exc_trace(PyObject **p_trace, PyObject **p_newtrace, PyFrameObject *f)
+call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
 {
 	PyObject *type, *value, *traceback, *arg;
 	int err;
@@ -2786,7 +2783,7 @@ call_exc_trace(PyObject **p_trace, PyObject **p_newtrace, PyFrameObject *f)
 		PyErr_Restore(type, value, traceback);
 		return;
 	}
-	err = call_trace(p_trace, p_newtrace, f, str_exception, arg);
+	err = call_trace(func, self, f, PyTrace_EXCEPTION, arg);
 	Py_DECREF(arg);
 	if (err == 0)
 		PyErr_Restore(type, value, traceback);
@@ -2797,110 +2794,44 @@ call_exc_trace(PyObject **p_trace, PyObject **p_newtrace, PyFrameObject *f)
 	}
 }
 
-/* PyObject **p_trace: in/out; may not be NULL;
- 				may not point to NULL variable initially
-   PyObject **p_newtrace: in/out; may be NULL;
-  				may point to NULL variable;
- 				may be same variable as p_newtrace
-   PyObject *msg: in; must not be NULL
-*/
-
 static int
-call_trace(PyObject **p_trace, PyObject **p_newtrace, PyFrameObject *f,
-	   PyObject *msg, PyObject *arg)
+call_trace(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
+	   int what, PyObject *arg)
 {
-	PyThreadState *tstate = f->f_tstate;
-	PyObject *args;
-	PyObject *res = NULL;
-
-	if (tstate->tracing) {
-		/* Don't do recursive traces */
-		if (p_newtrace) {
-			Py_XDECREF(*p_newtrace);
-			*p_newtrace = NULL;
-		}
+	register PyThreadState *tstate = frame->f_tstate;
+	int result;
+	if (tstate->tracing)
 		return 0;
-	}
-
-	args = PyTuple_New(3);
-	if (args == NULL)
-		goto cleanup;
-	Py_INCREF(msg);
-	Py_INCREF(f);
-	PyTuple_SET_ITEM(args, 0, (PyObject *)f);
-	PyTuple_SET_ITEM(args, 1, msg);
-	if (arg == NULL)
-		arg = Py_None;
-	Py_INCREF(arg);
-	PyTuple_SET_ITEM(args, 2, arg);
 	tstate->tracing++;
-	PyFrame_FastToLocals(f);
-	res = PyEval_CallObject(*p_trace, args); /* May clear *p_trace! */
-	PyFrame_LocalsToFast(f, 1);
+	result = func(obj, frame, what, arg);
 	tstate->tracing--;
- cleanup:
-	Py_XDECREF(args);
-	if (res == NULL) {
-		/* The trace proc raised an exception */
-		PyTraceBack_Here(f);
-		Py_XDECREF(*p_trace);
-		*p_trace = NULL;
-		if (p_newtrace) {
-			Py_XDECREF(*p_newtrace);
-			*p_newtrace = NULL;
-		}
-		/* to be extra double plus sure we don't get recursive
-		 * calls inf either tracefunc or profilefunc gets an
-		 * exception, zap the global variables.
-		 */
-		Py_XDECREF(tstate->sys_tracefunc);
-		tstate->sys_tracefunc = NULL;
-		Py_XDECREF(tstate->sys_profilefunc);
-		tstate->sys_profilefunc = NULL;
-		return -1;
-	}
-	else {
-		if (p_newtrace) {
-			Py_XDECREF(*p_newtrace);
-			if (res == Py_None)
-				*p_newtrace = NULL;
-			else {
-				Py_INCREF(res);
-				*p_newtrace = res;
-			}
-		}
-		Py_DECREF(res);
-		return 0;
-	}
+	return result;
 }
 
-/* Initialize the strings that get passed to the profile and trace functions;
- * this avoids doing this while we're actually profiling/tracing.
- */
-int
-_PyTrace_Init(void)
+void
+PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 {
-	if (str_call == NULL) {
-		str_call = PyString_InternFromString("call");
-		if (str_call == NULL)
-			return -1;
-	}
-	if (str_exception == NULL) {
-		str_exception = PyString_InternFromString("exception");
-		if (str_exception == NULL)
-			return -1;
-	}
-	if (str_line == NULL) {
-		str_line = PyString_InternFromString("line");
-		if (str_line == NULL)
-			return -1;
-	}
-	if (str_return == NULL) {
-		str_return = PyString_InternFromString("return");
-		if (str_return == NULL)
-			return -1;
-	}
-	return 0;
+	PyThreadState *tstate = PyThreadState_Get();
+	PyObject *temp = tstate->c_profileobj;
+	Py_XINCREF(arg);
+	tstate->c_profilefunc = NULL;
+	tstate->c_profileobj = NULL;
+	Py_XDECREF(temp);
+	tstate->c_profilefunc = func;
+	tstate->c_profileobj = arg;
+}
+
+void
+PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
+{
+	PyThreadState *tstate = PyThreadState_Get();
+	PyObject *temp = tstate->c_traceobj;
+	Py_XINCREF(arg);
+	tstate->c_tracefunc = NULL;
+	tstate->c_traceobj = NULL;
+	Py_XDECREF(temp);
+	tstate->c_tracefunc = func;
+	tstate->c_traceobj = arg;
 }
 
 PyObject *
