@@ -48,6 +48,8 @@ else
 	mkdir -p $BUILDROOT
 fi
 rm -rf $DMGDIR
+mkdir $TMPDIR
+chgrp admin $TMPDIR
 mkdir -p $DMGDIR/root
 
 
