@@ -49,6 +49,10 @@ Data members:
 #define DELIM ' '
 #endif
 
+#ifdef MSDOS
+#define DELIM ';'
+#endif
+
 #ifndef DELIM
 #define DELIM ':'
 #endif
