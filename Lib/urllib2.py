@@ -141,7 +141,7 @@ def install_opener(opener):
 
 # do these error classes make sense?
 # make sure all of the IOError stuff is overridden.  we just want to be
- # subtypes.
+# subtypes.
 
 class URLError(IOError):
     # URLError is a sub-type of IOError, but it doesn't share any of
@@ -350,9 +350,9 @@ class OpenerDirector:
             return self._call_chain(*args)
 
 # XXX probably also want an abstract factory that knows things like
- # the fact that a ProxyHandler needs to get inserted first.
+# the fact that a ProxyHandler needs to get inserted first.
 # would also know when it makes sense to skip a superclass in favor of
- # a subclass and when it might make sense to include both
+# a subclass and when it might make sense to include both
 
 def build_opener(*handlers):
     """Create an opener object from a list of handlers.
