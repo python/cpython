@@ -48,6 +48,13 @@ SndChannelPtr = SndChannelPtrType('SndChannelPtr', 'SndCh')
 SndCommand = OpaqueType('SndCommand', 'SndCmd')
 SndCommand_ptr = OpaqueType('SndCommand', 'SndCmd')
 SndListHandle = OpaqueByValueType("SndListHandle", "ResObj")
+SPBPtr = OpaqueByValueType("SPBPtr", "SPBObj")
+
+#
+# NOTE: the following is pretty dangerous. For void pointers we pass buffer addresses
+# but we have no way to check that the buffer is big enough. This is the same problem
+# as in C, though (but Pythoneers may not be suspecting this...)
+void_ptr = Type("void *", "w")
 
 class SndCallBackType(InputOnlyType):
 	def __init__(self):
@@ -118,6 +125,8 @@ SndCmd_Convert(PyObject *v, SndCommand *pc)
 }
 
 static pascal void SndCh_UserRoutine(SndChannelPtr chan, SndCommand *cmd); /* Forward */
+static pascal void SPB_completion(SPBPtr my_spb); /* Forward */
+static pascal void SPB_interrupt(SPBPtr my_spb); /* Forward */
 """
 
 
@@ -152,6 +161,52 @@ SndCh_UserRoutine(SndChannelPtr chan, SndCommand *cmd)
 		SetA5(A5);
 	}
 }
+
+/* SPB callbacks - Schedule callbacks to Python */
+static int
+SPB_CallCallBack(arg)
+	void *arg;
+{
+	SPBObject *p = (SPBObject *)arg;
+	PyObject *args;
+	PyObject *res;
+	
+	if ( p->ob_thiscallback == 0 ) return 0;
+	args = Py_BuildValue("(O)", p);
+	res = PyEval_CallObject(p->ob_thiscallback, args);
+	p->ob_thiscallback = 0;
+	Py_DECREF(args);
+	if (res == NULL)
+		return -1;
+	Py_DECREF(res);
+	return 0;
+}
+
+static pascal void
+SPB_completion(SPBPtr my_spb)
+{
+	SPBObject *p = (SPBObject *)(my_spb->userLong);
+	
+	if (p && p->ob_completion) {
+		long A5 = SetA5(p->ob_A5);
+		p->ob_thiscallback = p->ob_completion;	/* Hope we cannot get two at the same time */
+		Py_AddPendingCall(SPB_CallCallBack, (void *)p);
+		SetA5(A5);
+	}
+}
+
+static pascal void
+SPB_interrupt(SPBPtr my_spb)
+{
+	SPBObject *p = (SPBObject *)(my_spb->userLong);
+	
+	if (p && p->ob_interrupt) {
+		long A5 = SetA5(p->ob_A5);
+		p->ob_thiscallback = p->ob_interrupt;	/* Hope we cannot get two at the same time */
+		Py_AddPendingCall(SPB_CallCallBack, (void *)p);
+		SetA5(A5);
+	}
+}
 """
 
 
@@ -177,11 +232,118 @@ class SndObjectDefinition(ObjectDefinition):
 	
 	def outputFreeIt(self, itselfname):
 		Output("SndDisposeChannel(%s, 1);", itselfname)
+		
+#
 
+class SpbObjectDefinition(ObjectDefinition):
+
+	def outputStructMembers(self):
+		Output("/* Members used to implement callbacks: */")
+		Output("PyObject *ob_completion;")
+		Output("PyObject *ob_interrupt;")
+		Output("PyObject *ob_thiscallback;");
+		Output("long ob_A5;")
+		Output("SPB ob_spb;")
+
+	def outputNew(self):
+		Output()
+		Output("%sPyObject *%s_New()", self.static, self.prefix)
+		OutLbrace()
+		Output("%s *it;", self.objecttype)
+		self.outputCheckNewArg()
+		Output("it = PyObject_NEW(%s, &%s);", self.objecttype, self.typename)
+		Output("if (it == NULL) return NULL;")
+		self.outputInitStructMembers()
+		Output("return (PyObject *)it;")
+		OutRbrace()
+
+	def outputInitStructMembers(self):
+		Output("it->ob_completion = NULL;")
+		Output("it->ob_interrupt = NULL;")
+		Output("it->ob_thiscallback = NULL;")
+		Output("it->ob_A5 = SetCurrentA5();")
+		Output("memset((char *)&it->ob_spb, 0, sizeof(it->ob_spb));")
+		Output("it->ob_spb.userLong = (long)it;")
+
+	def outputCleanupStructMembers(self):
+		ObjectDefinition.outputCleanupStructMembers(self)
+		Output("self->ob_spb.userLong = 0;")
+		Output("self->ob_thiscallback = 0;")
+		Output("Py_XDECREF(self->ob_completion);")
+		Output("Py_XDECREF(self->ob_interrupt);")
+	
+	def outputConvert(self):
+		Output("%s%s_Convert(v, p_itself)", self.static, self.prefix)
+		IndentLevel()
+		Output("PyObject *v;")
+		Output("%s *p_itself;", self.itselftype)
+		DedentLevel()
+		OutLbrace()
+		self.outputCheckConvertArg()
+		Output("if (!%s_Check(v))", self.prefix)
+		OutLbrace()
+		Output('PyErr_SetString(PyExc_TypeError, "%s required");', self.name)
+		Output("return 0;")
+		OutRbrace()
+		Output("*p_itself = &((%s *)v)->ob_spb;", self.objecttype)
+		Output("return 1;")
+		OutRbrace()
+
+	def outputSetattr(self):
+		Output()
+		Output("static int %s_setattr(self, name, value)", self.prefix)
+		IndentLevel()
+		Output("%s *self;", self.objecttype)
+		Output("char *name;")
+		Output("PyObject *value;")
+		DedentLevel()
+		OutLbrace()
+		self.outputSetattrBody()
+		OutRbrace()
+
+	def outputSetattrBody(self):
+		Output("""
+			if (strcmp(name, "inRefNum") == 0)
+				return PyArg_Parse(value, "l", &self->ob_spb.inRefNum);
+			else if (strcmp(name, "count") == 0)
+				return PyArg_Parse(value, "l", &self->ob_spb.count);
+			else if (strcmp(name, "milliseconds") == 0)
+				return PyArg_Parse(value, "l", &self->ob_spb.milliseconds);
+			else if (strcmp(name, "buffer") == 0)
+				return PyArg_Parse(value, "w#", &self->ob_spb.bufferPtr, &self->ob_spb.bufferLength);
+			else if (strcmp(name, "completionRoutine") == 0) {
+				self->ob_spb.completionRoutine = NewSICompletionProc(SPB_completion);
+				self->ob_completion = value;
+				Py_INCREF(value);
+				return 0;
+			} else if (strcmp(name, "interruptRoutine") == 0) {
+				self->ob_spb.completionRoutine = NewSIInterruptProc(SPB_interrupt);
+				self->ob_interrupt = value;
+				Py_INCREF(value);
+				return 0;
+			}
+			return -1;""")
+			
+	def outputGetattrHook(self):
+		Output("""
+			if (strcmp(name, "inRefNum") == 0)
+				return Py_BuildValue("l", self->ob_spb.inRefNum);
+			else if (strcmp(name, "count") == 0)
+				return Py_BuildValue("l", self->ob_spb.count);
+			else if (strcmp(name, "milliseconds") == 0)
+				return Py_BuildValue("l", self->ob_spb.milliseconds);
+			else if (strcmp(name, "error") == 0)
+				return Py_BuildValue("h", self->ob_spb.error);""")
+		
+					
 
 sndobject = SndObjectDefinition('SndChannel', 'SndCh', 'SndChannelPtr')
+spbobject = SpbObjectDefinition('SPB', 'SPBObj', 'SPBPtr')
+spbgenerator = ManualGenerator("SPB", "return SPBObj_New();")
 module = MacModule('Snd', 'Snd', includestuff, finalstuff, initstuff)
 module.addobject(sndobject)
+module.addobject(spbobject)
+module.add(spbgenerator)
 
 
 # create lists of functions and object methods
