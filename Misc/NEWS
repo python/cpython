@@ -4,6 +4,39 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.3 release candidate?
+===========================================
+
+Core and builtins
+-----------------
+
+Extension modules
+-----------------
+
+- weakref.proxy() can now handle "del obj[i]" for proxy objects
+  defining __delitem__.  Formerly, it generated a SystemError.
+
+- SSL no longer crashes the interpreter when the remote side disconnects.
+
+Library
+-------
+
+Tools/Demos
+-----------
+
+Build
+-----
+
+C API
+-----
+
+Windows
+-------
+
+Mac
+---
+
+
 What's New in Python 2.3 beta 2?
 ================================
 
