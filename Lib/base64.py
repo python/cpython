@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 # Conversions to/from base64 transport encoding as per RFC-MIME (Dec 1991
 # version).
 
