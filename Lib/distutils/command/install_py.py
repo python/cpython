@@ -23,15 +23,23 @@ class InstallPy (Command):
         self.optimize = 1
 
     def set_final_options (self):
-        # If we don't have a 'dir' value, we'll have to ask the 'install'
-        # command for one.  (This usually means the user ran 'install_py'
-        # directly, rather than going through 'install' -- so in reality,
-        # 'find_command_obj()' will create an 'install' command object,
-        # which we then query.
 
+        # Find out from the 'build_ext' command if we were asked to build
+        # any extensions.  If so, that means even pure-Python modules in
+        # this distribution have to be installed to the "platlib"
+        # directory.
+        extensions = self.get_peer_option ('build_ext', 'extensions')
+        if extensions:
+            dir_option = 'install_site_platlib'
+        else:
+            dir_option = 'install_site_lib'
+
+        # Get all the information we need to install pure Python modules
+        # from the umbrella 'install' command -- build (source) directory,
+        # install (target) directory, and whether to compile .py files.
         self.set_undefined_options ('install',
                                     ('build_lib', 'build_dir'),
-                                    ('install_site_lib', 'dir'),
+                                    (dir_option, 'dir'),
                                     ('compile_py', 'compile'),
                                     ('optimize_py', 'optimize'))
 
