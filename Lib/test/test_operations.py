@@ -11,12 +11,21 @@ print '3.1 Dictionary lookups succeed even if __cmp__() raises an exception'
 # http://sourceforge.net/bugs/?func=detailbug&bug_id=112558&group_id=5470
 
 class BadDictKey:
+    already_printed_raising_error = 0
+
     def __hash__(self):
         return hash(self.__class__)
 
     def __cmp__(self, other):
         if isinstance(other, self.__class__):
-            print "raising error"
+            if not BadDictKey.already_printed_raising_error:
+                # How many times __cmp__ gets called depends on the hash
+                # code and the internals of the dict implementation; we
+                # know it will be called at least once, but that's it.
+                # already_printed_raising_error makes sure the expected-
+                # output file prints the msg at most once.
+                BadDictKey.already_printed_raising_error = 1
+                print "raising error"
             raise RuntimeError, "gotcha"
         return other
 
