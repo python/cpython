@@ -35,11 +35,15 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #endif
 
 #ifndef NSIG
-#ifdef _SIGMAX
-#define NSIG (_SIGMAX + 1)	/* For QNX */
-#else
-#define NSIG (SIGMAX + 1)	/* for djgpp */
-#endif
+# if defined(_NSIG)
+#  define NSIG _NSIG		/* For BSD/SysV */
+# elif defined(_SIGMAX)
+#  define NSIG (_SIGMAX + 1)	/* For QNX */
+# elif defined(SIGMAX)
+#  define NSIG (SIGMAX + 1)	/* For djgpp */
+# else
+#  define NSIG 64		/* Use a reasonable default value */
+# endif
 #endif
 
 
