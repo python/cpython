@@ -999,8 +999,18 @@ dict_update(PyObject *mp, PyObject *args)
 	return Py_None;
 }
 
+/* Update unconditionally replaces existing items.
+   Merge has a 3rd argument 'override'; if set, it acts like Update,
+   otherwise it leaves existing items unchanged. */
+
 int
 PyDict_Update(PyObject *a, PyObject *b)
+{
+	return PyDict_Merge(a, b, 1);
+}
+
+int
+PyDict_Merge(PyObject *a, PyObject *b, int override)
 {
 	register PyDictObject *mp, *other;
 	register int i;
@@ -1031,7 +1041,9 @@ PyDict_Update(PyObject *a, PyObject *b)
 		}
 		for (i = 0; i <= other->ma_mask; i++) {
 			entry = &other->ma_table[i];
-			if (entry->me_value != NULL) {
+			if (entry->me_value != NULL &&
+			    (override ||
+			     PyDict_GetItem(a, entry->me_key) == NULL)) {
 				Py_INCREF(entry->me_key);
 				Py_INCREF(entry->me_value);
 				insertdict(mp, entry->me_key, entry->me_hash,
@@ -1060,13 +1072,17 @@ PyDict_Update(PyObject *a, PyObject *b)
 			return -1;
 
 		for (key = PyIter_Next(iter); key; key = PyIter_Next(iter)) {
+			if (!override && PyDict_GetItem(a, key) != NULL) {
+				Py_DECREF(key);
+				continue;
+			}
 			value = PyObject_GetItem(b, key);
 			if (value == NULL) {
 				Py_DECREF(iter);
 				Py_DECREF(key);
 				return -1;
 			}
-			status = PyDict_SetItem((PyObject*)mp, key, value);
+			status = PyDict_SetItem(a, key, value);
 			Py_DECREF(key);
 			Py_DECREF(value);
 			if (status < 0) {
