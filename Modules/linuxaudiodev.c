@@ -71,6 +71,7 @@ static struct {
     { 16, 	AFMT_U16_LE, "linear unsigned 16-bit little-endian audio" },
     { 16, 	AFMT_S16_BE, "linear signed 16-bit big-endian audio" },
     { 16, 	AFMT_S16_LE, "linear signed 16-bit little-endian audio" },
+    { 16, 	AFMT_S16_NE, "linear signed 16-bit native-endian audio" },
 };
 
 static int n_audio_types = sizeof(audio_types) / sizeof(audio_types[0]);
