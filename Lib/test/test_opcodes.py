@@ -49,10 +49,9 @@ a = AClass()
 b = BClass()
 
 try: raise AClass, b
-except BClass, v: raise TestFailed
-except AClass, v:
+except BClass, v:
 	if v != b: raise TestFailed
-
+else: raise TestFailed
 
 try: raise b
 except AClass, v:
