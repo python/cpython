@@ -133,17 +133,6 @@ class TestTranforms(unittest.TestCase):
         asm = dis_single('a="x"*1000')
         self.assert_('(1000)' in asm)
 
-    def test_set_conversion(self):
-        for line in (
-                'x in [1,2,3]',
-                'x in (1,2,3)',
-                'x not in (1,2,3)',
-                'not x in (1,2,3)',
-                'not x not in (1,2,3)',
-            ):
-            asm = dis_single(line)
-            self.assert_('frozenset' in asm)
-
     def test_elim_extra_return(self):
         # RETURN LOAD_CONST None RETURN  -->  RETURN
         def f(x):
