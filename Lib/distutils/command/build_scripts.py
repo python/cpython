@@ -51,7 +51,6 @@ class build_scripts (Command):
         ie. starts with "\#!" and contains "python"), then adjust the first
         line to refer to the current Python interpreter as we copy.
         """
-        outfiles = []
         self.mkpath(self.build_dir)
         for script in self.scripts:
             adjust = 0
