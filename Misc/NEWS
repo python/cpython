@@ -1,5 +1,5 @@
 What's New in Python 2.1.3?
-Release date: 08-April-2002
+Release date: 09-April-2002
 ===========================
 
 Core
@@ -19,6 +19,11 @@ Library
 - The xml.sax.expatreader.ExpatParser class will no longer create
   circular references by using itself as the locator that gets passed
   to the content handler implementation.  [SF bug #535474]
+
+- A security hole ("double free") was found in zlib-1.1.3, a popular
+  third party compression library used by some Python modules.  The
+  hole was quickly plugged in zlib-1.1.4, and the Windows build of
+  Python now ships with zlib-1.1.4.
 
 
 What's New in Python 2.1.2 (final)?
