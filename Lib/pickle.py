@@ -380,7 +380,7 @@ class Pickler:
         t = type(obj)
         getnewargs = getattr(obj, "__getnewargs__", None)
         if getnewargs:
-            args = getnewargs()         # This bette not reference obj
+            args = getnewargs()         # This better not reference obj
         else:
             args = ()
 
