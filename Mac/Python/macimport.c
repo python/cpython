@@ -223,7 +223,7 @@ PyMac_LoadCodeResourceModule(name, pathname)
 		packagecontext = name;
 		shortname = lastdot+1;
 	}
-	sprintf(funcname, FUNCNAME_PATTERN, shortname);
+	PyOS_snprintf(funcname, sizeof(funcname), FUNCNAME_PATTERN, shortname);
 	if( !findnamedresource((PyStringObject *)0, name, pathname, 'PYD ', fragmentname)) {
 		PyErr_SetString(PyExc_ImportError, "PYD resource not found");
 		return NULL;
@@ -235,7 +235,7 @@ PyMac_LoadCodeResourceModule(name, pathname)
 			      kLoadCFrag, &connID, &mainAddr,
 			      errMessage);
 	if ( err ) {
-		sprintf(buf, "%.*s: %.200s",
+		PyOS_snprintf(buf, sizeof(buf), "%.*s: %.200s",
 			errMessage[0], errMessage+1,
 			PyMac_StrError(err));
 		PyErr_SetString(PyExc_ImportError, buf);
@@ -244,7 +244,7 @@ PyMac_LoadCodeResourceModule(name, pathname)
 	/* Locate the address of the correct init function */
 	err = FindSymbol(connID, Pstring(funcname), &symAddr, &class);
 	if ( err ) {
-		sprintf(buf, "%s: %.200s",
+		PyOS_snprintf(buf, sizeof(buf), "%s: %.200s",
 			funcname, PyMac_StrError(err));
 		PyErr_SetString(PyExc_ImportError, buf);
 		return NULL;
@@ -405,7 +405,7 @@ error:
 	{
 		char buf[512];
 		
-		sprintf(buf, "%s: %s", filename, PyMac_StrError(err));
+		PyOS_snprintf(buf, sizeof(buf), "%s: %s", filename, PyMac_StrError(err));
 		PyErr_SetString(PyExc_ImportError, buf);
 		return NULL;
 	}

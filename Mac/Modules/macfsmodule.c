@@ -706,7 +706,7 @@ mfss_repr(mfssobject *self)
 {
 	char buf[512];
 
-	sprintf(buf, "FSSpec((%d, %ld, '%.*s'))",
+	PyOS_snprintf(buf, sizeof(buf), "FSSpec((%d, %ld, '%.*s'))",
 		self->fsspec.vRefNum, 
 		self->fsspec.parID,
 		self->fsspec.name[0], self->fsspec.name+1);
