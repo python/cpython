@@ -80,6 +80,14 @@ def write(obj):
     except:
         obj.handle_error()
 
+def _exception (obj):
+    try:
+        obj.handle_expt_event()
+    except ExitNow:
+        raise
+    except:
+        obj.handle_error()
+
 def readwrite(obj, flags):
     try:
         if flags & (select.POLLIN | select.POLLPRI):
@@ -99,6 +107,7 @@ def poll(timeout=0.0, map=None):
     if map:
         r = []; w = []; e = []
         for fd, obj in map.items():
+            e.append(fd)
             if obj.readable():
                 r.append(fd)
             if obj.writable():
@@ -125,6 +134,12 @@ def poll(timeout=0.0, map=None):
             if obj is None:
                 continue
             write(obj)
+
+        for fd in e:
+            obj = map.get(fd)
+            if obj is None:
+                continue
+            _exception(obj)
 
 def poll2(timeout=0.0, map=None):
     # Use the poll() support added to the select module in Python 2.0
