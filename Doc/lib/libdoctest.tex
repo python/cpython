@@ -525,7 +525,7 @@ are run.
                           globs}\optional{, verbose}\optional{,
                           isprivate}\optional{, report}\optional{,
                           optionflags}\optional{, extraglobs}\optional{,
-                          raise_on_error}}
+                          raise_on_error}\optional{, exclude_empty}}
 
   All arguments are optional, and all except for \var{m} should be
   specified in keyword form.
@@ -582,6 +582,14 @@ are run.
   in an example.  This allows failures to be post-mortem debugged.
   Default behavior is to continue running examples.
 
+  Optional argument \var{exclude_empty} defaults to false.  If true,
+  objects for which no doctests are found are excluded from consideration.
+  The default is a backward compatibility hack, so that code still
+  using \method{doctest.master.summarize()} in conjunction with
+  \function{testmod()} continues to get output for objects with no tests.
+  The \var{exclude_empty} argument to the newer \class{DocTestFinder}
+  constructor defaults to true.
+
   Optional argument \var{isprivate} specifies a function used to
   determine whether a name is private.  The default function treats
   all names as public.  \var{isprivate} can be set to
@@ -593,8 +601,8 @@ are run.
 
   \versionchanged[The parameter \var{optionflags} was added]{2.3}
 
-  \versionchanged[The parameters \var{extraglobs} and \var{raise_on_error}
-                  were added]{2.4}
+  \versionchanged[The parameters \var{extraglobs}, \var{raise_on_error}
+                  and \var{exclude_empty} were added]{2.4}
 \end{funcdesc}
 
 \begin{funcdesc}{testsource}{module, name}
