@@ -84,6 +84,11 @@ Library
   SourceForge) is now included as Lib/idlelib.  The old Tools/idle is
   no more.
 
+- The threading module has new functions settrace() and setprofile()
+  that cooperate with the functions of the same name in the sys
+  module.  A function registered with the threading module will
+  be used for all threads it creates.
+
 - copy.py: applied SF patch 707900, fixing bug 702858, by Steven
   Taschuk.  Copying a new-style class that had a reference to itself
   didn't work.  (The same thing worked fine for old-style classes.)
