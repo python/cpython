@@ -49,6 +49,17 @@ spamlist_init(spamlistobject *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
+static PyObject *
+spamlist_state_get(spamlistobject *self)
+{
+	return PyInt_FromLong(self->state);
+}
+
+static struct getsetlist spamlist_getsets[] = {
+	{"state", (getter)spamlist_state_get, NULL, NULL},
+	{0}
+};
+
 static PyTypeObject spamlist_type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -80,7 +91,7 @@ static PyTypeObject spamlist_type = {
 	0,					/* tp_iternext */
 	spamlist_methods,			/* tp_methods */
 	0,					/* tp_members */
-	0,					/* tp_getset */
+	spamlist_getsets,			/* tp_getset */
 	&PyList_Type,				/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
