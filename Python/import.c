@@ -65,28 +65,35 @@ new_module(name)
 	return m;
 }
 
-void
-define_module(ctx, name)
+static void
+use_module(ctx, d)
 	context *ctx;
-	char *name;
+	object *d;
 {
-	object *m, *d;
-	m = new_module(name);
-	if (m == NULL) {
-		puterrno(ctx);
-		return;
-	}
-	d = getmoduledict(m);
 	INCREF(d);
 	DECREF(ctx->ctx_locals);
 	ctx->ctx_locals = d;
 	INCREF(d);
 	DECREF(ctx->ctx_globals);
 	ctx->ctx_globals = d;
+}
+
+static void
+define_module(ctx, name)
+	context *ctx;
+	char *name;
+{
+	object *m;
+	m = new_module(name);
+	if (m == NULL) {
+		puterrno(ctx);
+		return;
+	}
+	use_module(ctx, getmoduledict(m));
 	DECREF(m);
 }
 
-object *
+static object *
 parsepath(path, delim)
 	char *path;
 	int delim;
@@ -179,7 +186,7 @@ load_module(ctx, name)
 	object *m;
 	char **p;
 	FILE *fp;
-	node *n, *mh;
+	node *n;
 	int err;
 	object *mtab;
 	object *save_locals, *save_globals;
@@ -191,19 +198,9 @@ load_module(ctx, name)
 	}
 	fp = open_module(name, ".py");
 	if (fp == NULL) {
-		/* XXX Compatibility hack */
-		fprintf(stderr,
-			"Can't find '%s.py' in sys.path, trying '%s'\n",
-			name, name);
-		fp = open_module(name, "");
-	}
-	if (fp == NULL) {
 		name_error(ctx, name);
 		return NULL;
 	}
-#ifdef DEBUG
-	fprintf(stderr, "Reading module %s from file '%s'\n", name, namebuf);
-#endif
 	err = parseinput(fp, file_input, &n);
 	fclose(fp);
 	if (err != E_DONE) {
@@ -249,4 +246,52 @@ import_module(ctx, name)
 		m = load_module(ctx, name);
 	}
 	return m;
+}
+
+object *
+reload_module(ctx, m)
+	context *ctx;
+	object *m;
+{
+	char *name;
+	FILE *fp;
+	node *n;
+	int err;
+	object *d;
+	object *save_locals, *save_globals;
+	if (m == NULL || !is_moduleobject(m)) {
+		type_error(ctx, "reload() argument must be module");
+		return NULL;
+	}
+	/* XXX Ought to check for builtin module */
+	name = getmodulename(m);
+	fp = open_module(name, ".py");
+	if (fp == NULL) {
+		error(ctx, "reload() cannot find module source file");
+		return NULL;
+	}
+	err = parseinput(fp, file_input, &n);
+	fclose(fp);
+	if (err != E_DONE) {
+		input_error(ctx, err);
+		return NULL;
+	}
+	d = newdictobject();
+	if (d == NULL)
+		return NULL;
+	setmoduledict(m, d);
+	save_locals = ctx->ctx_locals;
+	INCREF(save_locals);
+	save_globals = ctx->ctx_globals;
+	INCREF(save_globals);
+	use_module(ctx, d);
+	exec_node(ctx, n);
+	DECREF(ctx->ctx_locals);
+	ctx->ctx_locals = save_locals;
+	DECREF(ctx->ctx_globals);
+	ctx->ctx_globals = save_globals;
+	if (ctx->ctx_exception)
+		return NULL;
+	INCREF(None);
+	return None;
 }
