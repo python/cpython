@@ -346,7 +346,6 @@ read_other(ARG(Unpicklerobject *, self), ARG(char **, s), ARG(int, n))
     ARGDECL(int, n)
 {
   PyObject *bytes, *str;
-  char *ret_str;
 
   UNLESS(bytes = PyInt_FromLong(n))
   {
@@ -543,7 +542,7 @@ whichmodule(ARG(PyObject *, class))
     return NULL;
 
   i = 0;
-  while (j = PyDict_Next(modules_dict, &i, &name, &module))
+  while ((j = PyDict_Next(modules_dict, &i, &name, &module)))
   {
     UNLESS(name_str = PyString_AsString(name))
       return NULL;
@@ -1032,10 +1031,10 @@ save_inst(ARG(Picklerobject *, self), ARG(PyObject *, args))
     ARGDECL(Picklerobject *, self)
     ARGDECL(PyObject *, args)
 {
-  PyObject *class = 0, *module = 0, *name = 0, *py_inst_id = 0, *init_args = 0,
+  PyObject *class = 0, *module = 0, *name = 0,
            *junk = 0, *state = 0, *getinitargs_func = 0, *getstate_func = 0;
   char *module_str, *name_str, *c_str;
-  int len, p, module_size, name_size, size;
+  int module_size, name_size, size;
   static char build = BUILD;
 
   if ((*self->write_func)(self, &MARKv, 1) == -1)
@@ -1051,7 +1050,7 @@ save_inst(ARG(Picklerobject *, self), ARG(PyObject *, args))
     Py_DECREF(junk);
   }
 
-  if (getinitargs_func = PyObject_GetAttrString(args, "__getinitargs__"))
+  if ((getinitargs_func = PyObject_GetAttrString(args, "__getinitargs__")))
   {
     PyObject *class_args = 0, *element = 0;
     int i, len;
@@ -1140,7 +1139,7 @@ save_inst(ARG(Picklerobject *, self), ARG(PyObject *, args))
     }
   }
 
-  if (getstate_func = PyObject_GetAttrString(args, "__getstate__"))
+  if ((getstate_func = PyObject_GetAttrString(args, "__getstate__")))
   {
     UNLESS(state = PyObject_CallObject(getstate_func, empty_tuple))
     {
@@ -2172,7 +2171,7 @@ load_binstring(ARG(Unpicklerobject *, self), ARG(PyObject *, args))
     ARGDECL(PyObject *, args)
 {
   PyObject *py_string = 0;
-  char *s, *endptr;
+  char *s;
   int len, i;
 
   if ((len = (*self->readline_func)(self, &s)) == -1)
@@ -2279,11 +2278,6 @@ load_short_binstring(ARG(Unpicklerobject *, self), ARG(PyObject *, args))
 
   Py_INCREF(Py_None);
   return Py_None;
-
-err:
-  Py_XDECREF(py_string);
-
-  return NULL;
 }
 
 
@@ -2485,7 +2479,7 @@ load_inst(ARG(Unpicklerobject *, self), ARG(PyObject *, args))
     ARGDECL(PyObject *, args)
 {
   PyObject *arg_tup = 0, *arg_slice = 0, *class = 0, *obj = 0;
-  int i, j, len;
+  int i, j;
   char *s, *module_name, *class_name;
 
   if ((i = marker(self)) == -1)
@@ -3091,8 +3085,7 @@ Unpickler_load(ARG(Unpicklerobject *, self), ARG(PyObject *, args))
     ARGDECL(PyObject *, args)
 {
   PyObject *stack = 0, *key = 0, *junk = 0, *err = 0,
-           *exc = 0, *val = 0, *tb = 0, *str = 0,
-           *key_repr = 0;
+           *val = 0, *str = 0, *key_repr = 0;
   char c;
   char *c_str;
   int len;
@@ -3284,7 +3277,7 @@ Unpickler_load(ARG(Unpicklerobject *, self), ARG(PyObject *, args))
           return NULL;
 
         sprintf(PyString_AS_STRING((PyStringObject *)str), 
-            "invalid load key, \%s\.", PyString_AS_STRING((PyStringObject *)key_repr));
+            "invalid load key, \%s.", PyString_AS_STRING((PyStringObject *)key_repr));
 
         PyErr_SetObject(UnpicklingError, str);
 
@@ -3686,10 +3679,10 @@ init_stuff()
   PyObject *builtins, *apply_func, *string;
 
   UNLESS(builtins = PyImport_ImportModule("__builtin__"))
-    return NULL;
+    return 1;
 
   UNLESS(apply_func = PyObject_GetAttrString(builtins, "apply"))
-    return NULL;
+    return 1;
 
   BuiltinFunctionType = apply_func->ob_type;
 
@@ -3698,29 +3691,30 @@ init_stuff()
   Py_DECREF(builtins);
 
   UNLESS(string = PyImport_ImportModule("string"))
-    return NULL;
+    return 1;
 
   UNLESS(atol_func = PyObject_GetAttrString(string, "atol"))
-    return NULL;
+    return 1;
 
   Py_DECREF(string);
 
   UNLESS(empty_list = PyList_New(0))
-    return NULL;
+    return 1;
 
   UNLESS(empty_tuple = PyTuple_New(0))
-    return NULL;
+    return 1;
 
   UNLESS(class_map = PyDict_New())
-    return NULL;
+    return 1;
 
   UNLESS(PicklingError = PyString_FromString("cPickle.PicklingError"))
-    return NULL;
+    return 1;
 
   UNLESS(UnpicklingError = PyString_FromString("cPickle.UnpicklingError"))
-    return NULL;
+    return 1;
 
   PycString_IMPORT;
+  return 0;
 }
 
 
@@ -3756,7 +3750,9 @@ initcPickle()
 
   /* XXXX Add constants here */
 
-  init_stuff();
+  if (init_stuff())
+	  Py_FatalError("can't initialize module cPickle");
+
   CHECK_FOR_ERRORS("can't initialize module cPickle");
 
   PyDict_SetItemString(d, "PicklingError", PicklingError);
