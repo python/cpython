@@ -31,10 +31,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 extern void PyMac_InitApplet();
+#ifdef USE_MAC_APPLET_SUPPORT
 extern void PyMac_InitApplication();
+#endif /* USE_MAC_APPLET_SUPPORT */
 
 void
 main() {
+#ifdef USE_MAC_APPLET_SUPPORT
         Handle mainpyc;
 
         mainpyc = Get1NamedResource('PYC ', "\p__main__");
@@ -42,4 +45,7 @@ main() {
                 PyMac_InitApplet();
         else
                 PyMac_InitApplication();
+#else
+	PyMac_InitApplication();
+#endif /* USE_MAC_APPLET_SUPPORT */
 }
