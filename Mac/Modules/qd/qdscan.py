@@ -79,6 +79,7 @@ class MyScanner(Scanner):
 			'ColorSearchUPP',
 			'ConstPatternParam',
 			'Pattern_ptr',
+			'Pattern',
 			'Cursor_ptr',
 			'DeviceLoopDrawingProcPtr',
 			'DeviceLoopFlags',
@@ -105,6 +106,22 @@ class MyScanner(Scanner):
 			
 			([('Point', '*', 'OutMode')],
 			 [('*', '*', 'InOutMode')]),
+			 
+			 # InsetRect, OffsetRect
+			 ([('Rect', 'r', 'OutMode'),
+			 	('short', 'dh', 'InMode'),
+			 	('short', 'dv', 'InMode')],
+			  [('Rect', 'r', 'InOutMode'),
+			 	('short', 'dh', 'InMode'),
+			 	('short', 'dv', 'InMode')]),
+
+			 # MapRect
+			 ([('Rect', 'r', 'OutMode'),
+			 	('Rect_ptr', 'srcRect', 'InMode'),
+			 	('Rect_ptr', 'dstRect', 'InMode')],
+			  [('Rect', 'r', 'InOutMode'),
+			 	('Rect_ptr', 'srcRect', 'InMode'),
+			 	('Rect_ptr', 'dstRect', 'InMode')]),
 			
 			]
 

@@ -1,4 +1,4 @@
-# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:QuickDraw.h'
+# Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDraw.h'
 
 invalColReq = -1
 srcCopy = 0
@@ -58,6 +58,7 @@ clutType = 0
 fixedType = 1
 directType = 2
 gdDevType = 0
+interlacedDevice = 2
 roundedDevice = 5
 hasAuxMenuBar = 6
 burstDevice = 7
@@ -73,6 +74,11 @@ pHiliteBit = 0
 defQDColors = 127
 RGBDirect = 16
 baseAddr32 = 4
+sysPatListID = 0
+iBeamCursor = 1
+crossCursor = 2
+plusCursor = 3
+watchCursor = 4
 singleDevicesBit = 0
 dontMatchSeedsBit = 1
 allDevicesBit = 2
@@ -82,7 +88,9 @@ allDevices = 1 << allDevicesBit
 kNoConstraint = 0
 kVerticalConstraint = 1
 kHorizontalConstraint = 2
-# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:QuickDrawText.h'
+kCursorImageMajorVersion = 0x0001
+kCursorImageMinorVersion = 0x0000
+# Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDrawText.h'
 
 leftCaret = 0
 rightCaret = -1

@@ -1,4 +1,4 @@
-# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:QuickDraw.h'
+# Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDraw.h'
 
 f = Function(void, 'OpenPort',
     (GrafPtr, 'port', InMode),
@@ -156,14 +156,14 @@ f = Function(void, 'SetRect',
 functions.append(f)
 
 f = Function(void, 'OffsetRect',
-    (Rect, 'r', OutMode),
+    (Rect, 'r', InOutMode),
     (short, 'dh', InMode),
     (short, 'dv', InMode),
 )
 functions.append(f)
 
 f = Function(void, 'InsetRect',
-    (Rect, 'r', OutMode),
+    (Rect, 'r', InOutMode),
     (short, 'dh', InMode),
     (short, 'dv', InMode),
 )
@@ -530,7 +530,7 @@ f = Function(void, 'MapPt',
 functions.append(f)
 
 f = Function(void, 'MapRect',
-    (Rect, 'r', OutMode),
+    (Rect, 'r', InOutMode),
     (Rect_ptr, 'srcRect', InMode),
     (Rect_ptr, 'dstRect', InMode),
 )
@@ -713,7 +713,40 @@ f = Function(short, 'QDError',
 )
 functions.append(f)
 
-# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:QuickDrawText.h'
+f = Function(PatHandle, 'GetPattern',
+    (short, 'patternID', InMode),
+)
+functions.append(f)
+
+f = Function(CursHandle, 'GetCursor',
+    (short, 'cursorID', InMode),
+)
+functions.append(f)
+
+f = Function(PicHandle, 'GetPicture',
+    (short, 'pictureID', InMode),
+)
+functions.append(f)
+
+f = Function(long, 'DeltaPoint',
+    (Point, 'ptA', InMode),
+    (Point, 'ptB', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'ShieldCursor',
+    (Rect_ptr, 'shieldRect', InMode),
+    (Point, 'offsetPt', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'ScreenRes',
+    (short, 'scrnHRes', OutMode),
+    (short, 'scrnVRes', OutMode),
+)
+functions.append(f)
+
+# Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDrawText.h'
 
 f = Function(void, 'TextFont',
     (short, 'font', InMode),
