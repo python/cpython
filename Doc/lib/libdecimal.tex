@@ -993,6 +993,8 @@ def moneyfmt(value, places=2, curr='', sep=',', dp='.',
     '1.234.568-'
     >>> moneyfmt(d, curr='$', neg='(', trailneg=')')
     '($1,234,567.89)'
+    >>> moneyfmt(Decimal(123456))
+    '123,456.00'
     
     """
     q = Decimal((0, (1,), -places))    # 2 places --> '0.01'
@@ -1009,7 +1011,7 @@ def moneyfmt(value, places=2, curr='', sep=',', dp='.',
     while digits:
         build(next())
         i += 1
-        if i == 3:
+        if i == 3 and digits:
             i = 0
             build(sep)
     build(curr)
