@@ -41,6 +41,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef HAVE_SYS_WAIT_H
+#include <sys/wait.h>		/* For WNOHANG */
+#endif
 
 #include "mytime.h"		/* For clock_t on some systems */
 
@@ -64,11 +67,23 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define HAVE_WAIT	1
 #define HAVE_OPENDIR	1
 #define HAVE_PIPE	1
+#define HAVE_GETCWD	1
 #endif
 
 #ifndef NT
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#ifdef NeXT
+/* NeXT's <unistd.h> and <utime.h> aren't worth much */
+#undef HAVE_UNISTD_H
+#undef HAVE_UTIME_H
+/* #undef HAVE_GETCWD */
+#endif
+
+#ifdef HAVE_UNISTD_H
 /* XXX These are for SunOS4.1.3 but shouldn't hurt elsewhere */
 extern int rename();
 extern int pclose();
@@ -94,6 +109,7 @@ extern int symlink PROTO((const char *, const char *));
 extern int lstat PROTO((const char *, struct stat *));
 #endif /* HAVE_LSTAT */
 #endif /* !HAVE_UNISTD_H */
+
 #endif /* !NT */
 
 #ifdef HAVE_UTIME_H
@@ -329,6 +345,7 @@ posix_chown(self, args)
 }
 #endif /* HAVE_CHOWN */
 
+#ifdef HAVE_GETCWD
 static object *
 posix_getcwd(self, args)
 	object *self;
@@ -345,6 +362,7 @@ posix_getcwd(self, args)
 		return posix_error();
 	return newstringobject(buf);
 }
+#endif
 
 #ifdef HAVE_LINK
 static object *
@@ -1370,7 +1388,9 @@ static struct methodlist posix_methods[] = {
 #ifdef HAVE_CHOWN
 	{"chown",	posix_chown},
 #endif /* HAVE_CHOWN */
+#ifdef HAVE_GETCWD
 	{"getcwd",	posix_getcwd},
+#endif
 #ifdef HAVE_LINK
 	{"link",	posix_link},
 #endif /* HAVE_LINK */
