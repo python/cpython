@@ -10,7 +10,13 @@
 .boldmath               { font-family: "Century Schoolbook", serif;
                           font-weight: bold }
 
-/* Implement both fixed-size and relative sizes: */
+/*
+ * Implement both fixed-size and relative sizes.
+ *
+ * I think these can be safely removed, as it doesn't appear that
+ * LaTeX2HTML ever generates these, even though these are carried
+ * over from the LaTeX2HTML stylesheet.
+ */
 small.xtiny             { font-size : xx-small; }
 small.tiny              { font-size : x-small; }
 small.scriptsize        { font-size : smaller; }
@@ -56,6 +62,14 @@ var                     { font-family: times, serif;
 .titlegraphic           { vertical-align: top; }
 
 .verbatim               { color: #00008b; }
+
+.grammar                { background-color: #99ccff;
+                          margin-right: 0.5in;
+                          padding: 0.05in; }
+.productions            { background-color: #bbeeff; }
+.productions table      { vertical-align: baseline; }
+.grammar-footer         { padding: 0.05in;
+                          font-size: 85%; }
 
 .email                  { font-family: avantgarde, sans-serif; }
 .mimetype               { font-family: avantgarde, sans-serif; }
