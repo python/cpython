@@ -167,6 +167,7 @@ class RegexObject:
             regs = match(source, pos, end, 0)
             if not regs:
                 break
+            self._num_regs = len(regs)
             i, j = regs[0]
             if i == j == lastmatch:
                 # Empty match adjacent to previous match
