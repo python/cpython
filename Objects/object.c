@@ -117,11 +117,26 @@ cmpobject(v, w)
 		return -1;
 	if (w == NULL)
 		return 1;
-	if ((tp = v->ob_type) != w->ob_type)
+	if ((tp = v->ob_type) != w->ob_type) {
+		if (tp->tp_as_number != NULL &&
+				w->ob_type->tp_as_number != NULL) {
+			if (coerce(&v, &w) != 0) {
+				err_clear();
+				/* XXX Should report the error,
+				   XXX but the interface isn't there... */
+			}
+			else {
+				int cmp = (*v->ob_type->tp_compare)(v, w);
+				DECREF(v);
+				DECREF(w);
+				return cmp;
+			}
+		}
 		return strcmp(tp->tp_name, w->ob_type->tp_name);
+	}
 	if (tp->tp_compare == NULL)
 		return (v < w) ? -1 : 1;
-	return ((*tp->tp_compare)(v, w));
+	return (*tp->tp_compare)(v, w);
 }
 
 object *
