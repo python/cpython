@@ -50,7 +50,6 @@ extern void initos2();
 extern void initoperator();
 extern void initposix();
 extern void initregex();
-extern void initreop();
 extern void initrgbimg();
 extern void initrotor();
 extern void initsignal();
@@ -97,7 +96,6 @@ struct _inittab _PyImport_Inittab[] = {
 #endif
         {"operator", initoperator},
         {"regex", initregex},
-        {"reop", initreop},
 //        {"rgbimg", initrgbimg},
 //        {"rotor", initrotor},
         {"signal", initsignal},

@@ -1,0 +1,8 @@
+LIBRARY        _TKINTER INITINSTANCE TERMINSTANCE
+DESCRIPTION    'Python Extension DLL v1.0 for Access to Tcl/Tk Environment'
+PROTMODE
+DATA           MULTIPLE NONSHARED
+
+EXPORTS
+               init_tkinter
+
