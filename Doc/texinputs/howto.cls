@@ -47,9 +47,10 @@
   \@ifundefined{ChTitleVar}{}{
     \mghrulefill{\RW}}
   \@ifundefined{pdfinfo}{}{
-    \pdfinfo
-      author {\@author}
-      title {\@title}
+    \pdfinfo{
+      /Author (\@author)
+      /Title (\@title)
+    }
   }
   \begin{flushright}
     {\rm\Huge\HeaderFamily \@title} \par
