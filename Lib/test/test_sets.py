@@ -292,11 +292,11 @@ class TestMutate(unittest.TestCase):
 
     def test_add_present(self):
         self.set.add("c")
-        self.assertEqual(self.set, Set(("a", "b", "c")))
+        self.assertEqual(self.set, Set("abc"))
 
     def test_add_absent(self):
         self.set.add("d")
-        self.assertEqual(self.set, Set(("a", "b", "c", "d")))
+        self.assertEqual(self.set, Set("abcd"))
 
     def test_add_until_full(self):
         tmp = Set()
@@ -309,7 +309,7 @@ class TestMutate(unittest.TestCase):
 
     def test_remove_present(self):
         self.set.remove("b")
-        self.assertEqual(self.set, Set(("a", "c")))
+        self.assertEqual(self.set, Set("ac"))
 
     def test_remove_absent(self):
         try:
@@ -327,11 +327,11 @@ class TestMutate(unittest.TestCase):
 
     def test_discard_present(self):
         self.set.discard("c")
-        self.assertEqual(self.set, Set(("a", "b")))
+        self.assertEqual(self.set, Set("ab"))
 
     def test_discard_absent(self):
         self.set.discard("d")
-        self.assertEqual(self.set, Set(("a", "b", "c")))
+        self.assertEqual(self.set, Set("abc"))
 
     def test_clear(self):
         self.set.clear()
