@@ -2,7 +2,7 @@
 \label{module-syslog}
 \bimodindex{syslog}
 
-This module provides an interface to the Unix \code{syslog} library
+This module provides an interface to the \UNIX{} \code{syslog} library
 routines.  Refer to the \UNIX{} manual pages for a detailed description
 of the \code{syslog} facility.
 
@@ -19,7 +19,7 @@ The optional \var{priority} argument, which defaults to
 \code{(LOG_USER | LOG_INFO)}, determines the message priority.
 \end{funcdesc}
 
-\begin{funcdesc}{openlog}{ident\, \optional{logopt\, \optional{facility}}}
+\begin{funcdesc}{openlog}{ident\optional{, logopt\optional{, facility}}}
 Logging options other than the defaults can be set by explicitly opening
 the log file with \code{openlog()} prior to calling \code{syslog()}.
 The defaults are (usually) \var{ident} = \samp{syslog}, \var{logopt} = 0,
