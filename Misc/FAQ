@@ -180,6 +180,7 @@ Here's an overview of the questions per chapter:
         automatically saved to and restored from disk.)
   4.40. Q. I try to use __spam and I get an error about _SomeClassName__spam.
   4.41. Q. How do I delete a file?  And other file questions.
+  4.42. Q. How to modify urllib or httplib to support HTTP/1.1?
 
  5. Extending Python
   5.1. Q. Can I create my own functions in C?
@@ -1689,6 +1690,16 @@ To truncate a file, open it using f = open(filename, "w+"), and use
 f.truncate(offset); offset defaults to the current seek position.
 There's also os.ftruncate(fd, offset) for files opened with os.open()
 -- for advanced Unix hacks only.
+
+4.42. Q. How to modify urllib or httplib to support HTTP/1.1?
+
+A. Apply the following patch to httplib.py:
+
+41c41
+< replypat = regsub.gsub('\\.', '\\\\.', HTTP_VERSION) + \
+---
+> replypat = regsub.gsub('\\.', '\\\\.', 'HTTP/1.[0-9]+') + \
+
 
 
 5. Extending Python
