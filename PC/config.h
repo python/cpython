@@ -85,6 +85,8 @@ typedef int pid_t;
 #define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
 #endif
 
+#define HAVE_LONG_LONG 1
+#define LONG_LONG __int64
 #endif /* _MSC_VER && > 850 */
 
 #if defined(_MSC_VER) && _MSC_VER <= 850

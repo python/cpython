@@ -279,7 +279,7 @@ PyLong_AsDouble(vv)
 
 #ifdef HAVE_LONG_LONG
 /*
- * long long support by Chris Herborth (chrish@qnx.com)
+ * LONG_LONG support by Chris Herborth (chrish@qnx.com)
  *
  * For better or worse :-), I tried to follow the coding style already
  * here.
@@ -303,30 +303,30 @@ PyLong_AsDouble(vv)
 #define ULONGLONG_MAX 0xffffffffffffffffULL
 #endif
 
-/* Create a new long int object from a C long long int */
+/* Create a new long int object from a C LONG_LONG int */
 
 PyObject *
 PyLong_FromLongLong(ival)
-	long long ival;
+	LONG_LONG ival;
 {
 #if SIZEOF_LONG_LONG == SIZEOF_LONG
 	/* In case the compiler is faking it. */
 	return PyLong_FromLong( (long)ival );
 #else
-	if( ival <= (long long)LONG_MAX ) {
+	if( ival <= (LONG_LONG)LONG_MAX ) {
 		return PyLong_FromLong( (long)ival );
 	}
-	else if( ival <= (unsigned long long)ULONG_MAX ) {
+	else if( ival <= (unsigned LONG_LONG)ULONG_MAX ) {
 		return PyLong_FromUnsignedLong( (unsigned long)ival );
 	}
 	else {
-		/* Assume a C long long fits in at most 10 'digits'.
+		/* Assume a C LONG_LONG fits in at most 10 'digits'.
 		 * Should be OK if we're assuming long fits in 5.
 		 */
 		PyLongObject *v = _PyLong_New(10);
 
 		if (v != NULL) {
-			unsigned long long t = ival;
+			unsigned LONG_LONG t = ival;
 			int i;
 			if (ival < 0) {
 				t = -ival;
@@ -350,16 +350,16 @@ PyLong_FromLongLong(ival)
 #endif
 }
 
-/* Create a new long int object from a C unsigned long long int */
+/* Create a new long int object from a C unsigned LONG_LONG int */
 PyObject *
 PyLong_FromUnsignedLongLong(ival)
-	unsigned long long ival;
+	unsigned LONG_LONG ival;
 {
 #if SIZEOF_LONG_LONG == SIZEOF_LONG
 	/* In case the compiler is faking it. */
 	return PyLong_FromUnsignedLong( (unsigned long)ival );
 #else
-	if( ival <= (unsigned long long)ULONG_MAX ) {
+	if( ival <= (unsigned LONG_LONG)ULONG_MAX ) {
 		return PyLong_FromUnsignedLong( (unsigned long)ival );
 	}
 	else {
@@ -367,7 +367,7 @@ PyLong_FromUnsignedLongLong(ival)
 		PyLongObject *v = _PyLong_New(10);
 
 		if (v != NULL) {
-			unsigned long long t = ival;
+			unsigned LONG_LONG t = ival;
 			int i;
 			for (i = 0; i < 10; i++) {
 				v->ob_digit[i] = (digit) (t & MASK);
@@ -386,19 +386,19 @@ PyLong_FromUnsignedLongLong(ival)
 #endif
 }
 
-/* Get a C long long int from a long int object.
+/* Get a C LONG_LONG int from a long int object.
    Returns -1 and sets an error condition if overflow occurs. */
 
-long long
+LONG_LONG
 PyLong_AsLongLong(vv)
 	PyObject *vv;
 {
 #if SIZEOF_LONG_LONG == SIZEOF_LONG
 	/* In case the compiler is faking it. */
-	return (long long)PyLong_AsLong( vv );
+	return (LONG_LONG)PyLong_AsLong( vv );
 #else
 	register PyLongObject *v;
-	long long x, prev;
+	LONG_LONG x, prev;
 	int i, sign;
 	
 	if (vv == NULL || !PyLong_Check(vv)) {
@@ -430,21 +430,21 @@ PyLong_AsLongLong(vv)
 #endif
 }
 
-unsigned long long
+unsigned LONG_LONG
 PyLong_AsUnsignedLongLong(vv)
 	PyObject *vv;
 {
 #if SIZEOF_LONG_LONG == 4
 	/* In case the compiler is faking it. */
-	return (unsigned long long)PyLong_AsUnsignedLong( vv );
+	return (unsigned LONG_LONG)PyLong_AsUnsignedLong( vv );
 #else
 	register PyLongObject *v;
-	unsigned long long x, prev;
+	unsigned LONG_LONG x, prev;
 	int i;
 	
 	if (vv == NULL || !PyLong_Check(vv)) {
 		PyErr_BadInternalCall();
-		return (unsigned long long) -1;
+		return (unsigned LONG_LONG) -1;
 	}
 
 	v = (PyLongObject *)vv;
@@ -454,7 +454,7 @@ PyLong_AsUnsignedLongLong(vv)
 	if (i < 0) {
 		PyErr_SetString(PyExc_OverflowError,
 			   "can't convert negative value to unsigned long");
-		return (unsigned long long) -1;
+		return (unsigned LONG_LONG) -1;
 	}
 
 	while (--i >= 0) {
@@ -463,7 +463,7 @@ PyLong_AsUnsignedLongLong(vv)
 		if ((x >> SHIFT) != prev) {
 			PyErr_SetString(PyExc_OverflowError,
 				"long int too long to convert");
-			return (unsigned long long) -1;
+			return (unsigned LONG_LONG) -1;
 		}
 	}
 
@@ -907,7 +907,7 @@ x_divrem(v1, w1, prem)
 static void long_dealloc Py_PROTO((PyObject *));
 static PyObject *long_repr Py_PROTO((PyObject *));
 static int long_compare Py_PROTO((PyLongObject *, PyLongObject *));
-static long long_hash Py_PROTO((PyLongObject *));
+static LONG_LONG_hash Py_PROTO((PyLongObject *));
 
 static PyObject *long_add Py_PROTO((PyLongObject *, PyLongObject *));
 static PyObject *long_sub Py_PROTO((PyLongObject *, PyLongObject *));

@@ -500,11 +500,11 @@ convertsimple1(arg, p_format, p_va)
 		}
 	
 #if HAVE_LONG_LONG
-	case 'L': /* long long */
+	case 'L': /* LONG_LONG */
 		{
-			long long *p = va_arg( *p_va, long long * );
-			long long ival = PyLong_AsLongLong( arg );
-			if( ival == (long long)-1 && PyErr_Occurred() ) {
+			LONG_LONG *p = va_arg( *p_va, LONG_LONG * );
+			LONG_LONG ival = PyLong_AsLongLong( arg );
+			if( ival == (LONG_LONG)-1 && PyErr_Occurred() ) {
 				return "long<L>";
 			} else {
 				*p = ival;
@@ -1003,9 +1003,9 @@ skipitem(p_format, p_va)
 		}
 	
 #if HAVE_LONG_LONG
-	case 'L': /* long long int */
+	case 'L': /* LONG_LONG int */
 		{
-			(void) va_arg(*p_va, long long *);
+			(void) va_arg(*p_va, LONG_LONG *);
 			break;
 		}
 #endif

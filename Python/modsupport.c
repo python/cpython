@@ -293,7 +293,7 @@ do_mkvalue(p_format, p_va)
 
 #if HAVE_LONG_LONG
 		case 'L':
-			return PyLong_FromLongLong((long long)va_arg(*p_va, long long));
+			return PyLong_FromLongLong((LONG_LONG)va_arg(*p_va, LONG_LONG));
 #endif
 
 		case 'f':
