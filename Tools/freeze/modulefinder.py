@@ -229,8 +229,8 @@ class ModuleFinder:
         else:
             co = None
         m = self.add_module(fqname)
+        m.__file__ = pathname
         if co:
-            m.__file__ = pathname
             m.__code__ = co
             self.scan_code(co, m)
         self.msgout(2, "load_module ->", m)
