@@ -997,7 +997,7 @@ the window.
 
 \begin{methoddesc}[window]{timeout}{delay}
 Sets blocking or non-blocking read behavior for the window.  If
-\var{delay} is negative, blocking read is used, which will wait
+\var{delay} is negative, blocking read is used (which will wait
 indefinitely for input).  If \var{delay} is zero, then non-blocking
 read is used, and -1 will be returned by \method{getch()} if no input
 is waiting.  If \var{delay} is positive, then \method{getch()} will
