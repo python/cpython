@@ -817,6 +817,8 @@ class AbstractHTTPHandler(BaseHandler):
                 h.putheader(*args)
         for k, v in req.headers.items():
             h.putheader(k, v)
+        # httplib will attempt to connect() here.  be prepared
+        # to convert a socket error to a URLError.
         try:
             h.endheaders()
         except socket.error, err:
