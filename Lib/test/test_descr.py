@@ -2005,6 +2005,33 @@ def descrdoc():
     check(file.closed, "flag set if the file is closed") # getset descriptor
     check(file.name, "file name") # member descriptor
 
+def setclass():
+    if verbose: print "Testing __class__ assignment..."
+    class C(object): pass
+    class D(object): pass
+    class E(object): pass
+    class F(D, E): pass
+    for cls in C, D, E, F:
+        for cls2 in C, D, E, F:
+            x = cls()
+            x.__class__ = cls2
+            verify(x.__class__ is cls2)
+            x.__class__ = cls
+            verify(x.__class__ is cls)
+    def cant(x, C):
+        try:
+            x.__class__ = C
+        except TypeError:
+            pass
+        else:
+            raise TestFailed, "shouldn't allow %r.__class__ = %r" % (x, C)
+    cant(C(), list)
+    cant(list(), C)
+    cant(C(), 1)
+    cant(C(), object)
+    cant(object(), list)
+    cant(list(), object)
+
 
 def test_main():
     lists()
@@ -2047,6 +2074,7 @@ def test_main():
     rich_comparisons()
     coercions()
     descrdoc()
+    setclass()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
