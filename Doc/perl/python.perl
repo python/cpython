@@ -238,6 +238,23 @@ sub do_cmd_manpage{
     return "<span class='manpage'><i>$page</i>($section)</span>" . $_;
 }
 
+sub get_pep_url{
+    my $rfcnum = sprintf("%04d", @_[0]);
+    return "http://python.sourceforge.net/peps/pep-$rfcnum.html";
+}
+
+sub do_cmd_pep{
+    local($_) = @_;
+    my $rfcnumber = next_argument();
+    my $id = "rfcref-" . ++$global{'max_id'};
+    my $href = get_pep_url($rfcnumber);
+    # Save the reference
+    my $nstr = gen_index_id("Python Enhancement Proposals!PEP $rfcnumber", '');
+    $index{$nstr} .= make_half_href("$CURRENT_FILE#$id");
+    return ("<a class=\"rfc\" name=\"$id\"\nhref=\"$href\">PEP $rfcnumber</a>"
+            . $_);
+}
+
 sub get_rfc_url{
     my $rfcnum = sprintf("%04d", @_[0]);
     return "http://www.ietf.org/rfc/rfc$rfcnum.txt";
@@ -814,14 +831,22 @@ sub do_env_excdesc{
 sub do_env_fulllineitems{ return do_env_itemize(@_); }
 
 
-sub do_env_classdesc{
-    local($_) = @_;
+sub handle_classlike_descriptor{
+    local($_, $what) = @_;
     $THIS_CLASS = next_argument();
     my $arg_list = next_argument();
     $idx = make_str_index_entry(
-		"<tt class='class'>$THIS_CLASS</tt> (class in $THIS_MODULE)" );
+		"<tt class='$what'>$THIS_CLASS</tt> ($what in $THIS_MODULE)" );
     $idx =~ s/ \(.*\)//;
     return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
+}
+
+sub do_env_classdesc{
+    return handle_classlike_descriptor(@_[0], "class");
+}
+
+sub do_env_excclassdesc{
+    return handle_classlike_descriptor(@_[0], "exception");
 }
 
 
@@ -1269,18 +1294,18 @@ sub get_chapter_id(){
     return $id;
 }
 
-%ModuleSynopses = ('chapter' => 'SynopsisTable instance');
+# 'chapter' => 'SynopsisTable instance'
+%ModuleSynopses = ();
 
 sub get_synopsis_table($){
     my($chap) = @_;
-    my $st = $ModuleSynopses{$chap};
     my $key;
     foreach $key (keys %ModuleSynopses) {
 	if ($key eq $chap) {
 	    return $ModuleSynopses{$chap};
 	}
     }
-    $st = SynopsisTable->new();
+    my $st = SynopsisTable->new();
     $ModuleSynopses{$chap} = $st;
     return $st;
 }
@@ -1323,10 +1348,33 @@ sub do_cmd_modulesynopsis{
 sub do_cmd_localmoduletable{
     local($_) = @_;
     my $chap = get_chapter_id();
+    my $st = get_synopsis_table($chap);
+    $st->set_file("$CURRENT_FILE");
     return "<tex2html-localmoduletable><$chap>\\tableofchildlinks[off]" . $_;
 }
 
 sub process_all_localmoduletables{
+    my $key;
+    my $st, $file;
+    foreach $key (keys %ModuleSynopses) {
+        $st = $ModuleSynopses{$key};
+        $file = $st->get_file();
+        if ($file) {
+            process_localmoduletables_in_file($file);
+        }
+        else {
+            print "\nsynopsis table $key has no file association";
+        }
+    }
+}
+
+sub process_localmoduletables_in_file{
+    my $file = @_[0];
+    open(MYFILE, "<$file");
+    local($_);
+    sysread(MYFILE, $_, 1024*1024);
+    close(MYFILE);
+    # need to get contents of file in $_
     while (/<tex2html-localmoduletable><(\d+)>/) {
 	my $match = $&;
 	my $chap = $1;
@@ -1334,6 +1382,9 @@ sub process_all_localmoduletables{
 	my $data = $st->tohtml();
 	s/$match/$data/;
     }
+    open(MYFILE,">$file");
+    print MYFILE $_;
+    close(MYFILE);
 }
 sub process_python_state{
     process_all_localmoduletables();
@@ -1371,8 +1422,8 @@ sub do_cmd_seemodule{
       . $_;
 }
 
-sub do_cmd_seerfc{
-    local($_) = @_;
+sub handle_rfclike_reference{
+    local($_, $what) = @_;
     my $rfcnum = next_argument();
     my $title = next_argument();
     my $text = next_argument();
@@ -1380,9 +1431,17 @@ sub do_cmd_seerfc{
     return '<dl compact class="seerfc">'
       . "\n    <dt><a href=\"$url\""
       . "\n        title=\"$title\""
-      . "\n        >RFC $rfcnum, <em>$title</em></a>:"
+      . "\n        >$what $rfcnum, <em>$title</em></a>:"
       . "\n    <dd>$text\n  </dl>"
       . $_;
+}
+
+sub do_cmd_seepep{
+    return handle_rfclike_reference(@_[0], "PEP");
+}
+
+sub do_cmd_seerfc{
+    return handle_rfclike_reference(@_[0], "RFC");
 }
 
 sub do_cmd_seeurl{
