@@ -57,7 +57,7 @@ see the \function{urlencode()} function below.
 
 \end{funcdesc}
 
-\begin{funcdesc}{urlretrieve}{url\optional{, filename}\optional{, hook}}}
+\begin{funcdesc}{urlretrieve}{url\optional{, filename}\optional{, hook}}
 Copy a network object denoted by a URL to a local file, if necessary.
 If the URL points to a local file, or a valid cached copy of the
 object exists, the object is not copied.  Return a tuple
@@ -74,8 +74,8 @@ The third argument, if present, is a hook function that will be called
 once on establishment of the network connection and once after each
 block read thereafter.  The hook will be passed three arguments; a
 count of blocks transferred so far, a block size in bytes, and the
-total size of the file.  The third argument may be -1 on older FTP
-servers which do not return a file size in response to a retrieval
+total size of the file.  The third argument may be \code{-1} on older
+FTP servers which do not return a file size in response to a retrieval 
 request.
 \end{funcdesc}
 
@@ -114,9 +114,10 @@ required for unquoting HTML form values.
 Convert a dictionary to a ``url-encoded'' string, suitable to pass to
 \function{urlopen()} above as the optional \var{data} argument.  This
 is useful to pass a dictionary of form fields to a \code{POST}
-request.  The resulting string is a series of \var{key}\code{=}\var{value}
-pairs separated by \code{\&} characters, where both \var{key} and
-\var{value} are quoted using \function{quote_plus()} above.
+request.  The resulting string is a series of
+\code{\var{key}=\var{value}} pairs separated by \character{\&}
+characters, where both \var{key} and \var{value} are quoted using
+\function{quote_plus()} above.
 \end{funcdesc}
 
 Restrictions:
