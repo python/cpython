@@ -46,7 +46,7 @@ class MIMEAudio(MIMEBase.MIMEBase):
 
         _audiodata is a string containing the raw audio data.  If this data
         can be decoded by the standard Python `sndhdr' module, then the
-        subtype will be automatically included in the Content-TYpe: header.
+        subtype will be automatically included in the Content-Type: header.
         Otherwise, you can specify  the specific audio subtype via the
         _subtype parameter.  If _subtype is not given, and no subtype can be
         guessed, a TypeError is raised.
