@@ -234,8 +234,8 @@ def runtest(test, generate, verbose, quiet, testdir = None):
             print "test", test,
             print "skipped -- ", msg
         return -1
-    except KeyboardInterrupt, v:
-        raise KeyboardInterrupt, v, sys.exc_info()[2]
+    except KeyboardInterrupt:
+        raise
     except test_support.TestFailed, msg:
         print "test", test, "failed --", msg
         return 0
