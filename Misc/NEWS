@@ -46,6 +46,12 @@ Extension modules
 
 Library
 
+- Symbolic group names in regular expressions must be unique.  For
+  example, the regexp r'(?P<abc>)(?P<abc>)' is not allowed, because a
+  single name can't mean both "group 1" and "group 2" simultaneously.
+  Python 2.2 detects this error at regexp compilation time; previously,
+  the error went undetected, and results were unpredictable.
+
 - Tix exposes more commands through the classes DirSelectBox,
   DirSelectDialog, ListNoteBook, Meter, CheckList, and the
   methods tix_addbitmapdir, tix_cget, tix_configure, tix_filedialog,
