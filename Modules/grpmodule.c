@@ -90,7 +90,7 @@ grp_getgrgid(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:getgrgid", &gid))
         return NULL;
     if ((p = getgrgid(gid)) == NULL) {
-        PyErr_SetString(PyExc_KeyError, "getgrgid(): gid not found");
+	PyErr_Format(PyExc_KeyError, "getgrgid(): gid not found: %d", gid);
         return NULL;
     }
     return mkgrent(p);
@@ -104,7 +104,7 @@ grp_getgrnam(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s:getgrnam", &name))
         return NULL;
     if ((p = getgrnam(name)) == NULL) {
-        PyErr_SetString(PyExc_KeyError, "getgrnam(): name not found");
+	PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %s", name);
         return NULL;
     }
     return mkgrent(p);
