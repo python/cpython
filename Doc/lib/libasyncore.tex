@@ -44,20 +44,20 @@ channel (including any that have been added to the map during asynchronous
 service) is closed.
 
 \begin{funcdesc}{loop}{\optional{timeout\optional{, use_poll\optional{,
-                       map}}}}
-  Enter a polling loop that only terminates after all open channels
-  have been closed.  All arguments are optional.  The \var{timeout}
-  argument sets the timeout parameter for the appropriate
-  \function{select()} or \function{poll()} call, measured in seconds;
-  the default is 30 seconds.  The \var{use_poll} parameter, if true,
-  indicates that \function{poll()} should be used in preference to
-  \function{select()} (the default is \code{False}).  The \var{map} parameter
-  is a dictionary whose items are the channels to watch.  As channels
-  are closed they are deleted from their map.  If \var{map} is
-  omitted, a global map is used (this map is updated by the default
-  class \method{__init__()}
-  -- make sure you extend, rather than override, \method{__init__()}
-  if you want to retain this behavior).
+                       map\optional{,count}}}}}
+  Enter a polling loop that terminates after count passes or all open
+  channels have been closed.  All arguments are optional.  The \var(count)
+  parameter defaults to None, resulting in the loop terminating only
+  when all channels have been closed.  The \var{timeout} argument sets the
+  timeout parameter for the appropriate \function{select()} or
+  \function{poll()} call, measured in seconds; the default is 30 seconds.
+  The \var{use_poll} parameter, if true, indicates that \function{poll()}
+  should be used in preference to \function{select()} (the default is
+  \code{False}).  The \var{map} parameter is a dictionary whose items are
+  the channels to watch.  As channels are closed they are deleted from their
+  map.  If \var{map} is omitted, a global map is used (this map is updated
+  by the default class \method{__init__()} -- make sure you extend, rather
+  than override, \method{__init__()} if you want to retain this behavior).
 
   Channels (instances of \class{asyncore.dispatcher}, \class{asynchat.async_chat}
   and subclasses thereof) can freely be mixed in the map.

@@ -157,7 +157,7 @@ def poll2(timeout=0.0, map=None):
 
 poll3 = poll2                           # Alias for backward compatibility
 
-def loop(timeout=30.0, use_poll=False, map=None):
+def loop(timeout=30.0, use_poll=False, map=None, count=None):
     if map is None:
         map = socket_map
 
@@ -166,8 +166,14 @@ def loop(timeout=30.0, use_poll=False, map=None):
     else:
         poll_fun = poll
 
-    while map:
-        poll_fun(timeout, map)
+    if count is None:
+        while map:
+            poll_fun(timeout, map)
+
+    else:
+        while map and count > 0:
+            poll_fun(timeout, map)
+            count = count - 1
 
 class dispatcher:
 
@@ -523,3 +529,4 @@ if os.name == 'posix':
             self._fileno = fd
             self.socket = file_wrapper(fd)
             self.add_channel()
+
