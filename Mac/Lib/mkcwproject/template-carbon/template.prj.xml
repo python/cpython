@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-<?codewarrior exportversion="1.0.1" ideversion="4.1" ?>
+<?codewarrior exportversion="1.0.1" ideversion="4.2" ?>
 
 <!DOCTYPE PROJECT [
 <!ELEMENT PROJECT (TARGETLIST, TARGETORDER, GROUPLIST, DESIGNLIST?)>
 <!ELEMENT TARGETLIST (TARGET+)>
-<!ELEMENT TARGET (NAME, SETTINGLIST, FILELIST?, LINKORDER?, SEGMENTLIST?, OVERLAYGROUPLIST?, SUBTARGETLIST?, SUBPROJECTLIST?)>
+<!ELEMENT TARGET (NAME, SETTINGLIST, FILELIST?, LINKORDER?, SEGMENTLIST?, OVERLAYGROUPLIST?, SUBTARGETLIST?, SUBPROJECTLIST?, FRAMEWORKLIST)>
 <!ELEMENT NAME (#PCDATA)>
 <!ELEMENT USERSOURCETREETYPE (#PCDATA)>
 <!ELEMENT PATH (#PCDATA)>
@@ -37,6 +37,10 @@
 <!ELEMENT SUBPROJECT (FILEREF, SUBPROJECTTARGETLIST)>
 <!ELEMENT SUBPROJECTTARGETLIST (SUBPROJECTTARGET*)>
 <!ELEMENT SUBPROJECTTARGET (TARGETNAME, ATTRIBUTES?, FILEREF?)>
+<!ELEMENT FRAMEWORKLIST (FRAMEWORK+)>
+<!ELEMENT FRAMEWORK (FILEREF, LIBRARYFILE?, VERSION?)>
+<!ELEMENT LIBRARYFILE (FILEREF)>
+<!ELEMENT VERSION (#PCDATA)>
 <!ELEMENT TARGETORDER (ORDEREDTARGET|ORDEREDDESIGN)*>
 <!ELEMENT ORDEREDTARGET (NAME)>
 <!ELEMENT ORDEREDDESIGN (NAME, ORDEREDTARGET+)>
@@ -59,6 +63,7 @@
                 <!-- Settings for "Access Paths" panel -->
                 <SETTING><NAME>AlwaysSearchUserPaths</NAME><VALUE>true</VALUE></SETTING>
                 <SETTING><NAME>InterpretDOSAndUnixPaths</NAME><VALUE>true</VALUE></SETTING>
+                <SETTING><NAME>RequireFrameworkStyleIncludes</NAME><VALUE>false</VALUE></SETTING>
                 <SETTING><NAME>UserSearchPaths</NAME>
                     <SETTING>
                         <SETTING><NAME>SearchPath</NAME>
@@ -393,7 +398,17 @@
                 <SETTING><NAME>DumpBrowserInfo</NAME><VALUE>false</VALUE></SETTING>
                 <SETTING><NAME>CacheSubprojects</NAME><VALUE>true</VALUE></SETTING>
                 <SETTING><NAME>UseThirdPartyDebugger</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>DebuggerCommandLine</NAME><VALUE></VALUE></SETTING>
+                <SETTING><NAME>DebuggerAppPath</NAME>
+                    <SETTING><NAME>Path</NAME><VALUE></VALUE></SETTING>
+                    <SETTING><NAME>PathFormat</NAME><VALUE>Generic</VALUE></SETTING>
+                    <SETTING><NAME>PathRoot</NAME><VALUE>Absolute</VALUE></SETTING>
+                </SETTING>
+                <SETTING><NAME>DebuggerCmdLineArgs</NAME><VALUE></VALUE></SETTING>
+                <SETTING><NAME>DebuggerWorkingDir</NAME>
+                    <SETTING><NAME>Path</NAME><VALUE></VALUE></SETTING>
+                    <SETTING><NAME>PathFormat</NAME><VALUE>Generic</VALUE></SETTING>
+                    <SETTING><NAME>PathRoot</NAME><VALUE>Absolute</VALUE></SETTING>
+                </SETTING>
 
                 <!-- Settings for "Debugger Target" panel -->
                 <SETTING><NAME>LogSystemMessages</NAME><VALUE>true</VALUE></SETTING>
@@ -410,125 +425,18 @@
                 <SETTING><NAME>StopAtTempBPOnLaunch</NAME><VALUE>true</VALUE></SETTING>
                 <SETTING><NAME>CacheSymbolics</NAME><VALUE>true</VALUE></SETTING>
                 <SETTING><NAME>TempBPFunctionName</NAME><VALUE>main</VALUE></SETTING>
-                <SETTING><NAME>TempBPType</NAME><VALUE>false</VALUE></SETTING>
-                <PANELDATA><NAME>Remote Debug</NAME><VALUE>
-                    00030000002E680044726167055AF500055C7EA0000000000000030005D8AFC0
-                    726F6365737365732E680051055AF50073637265656E2E680049636F6E732E68
-                    00436F6465467261676D656E74732E680054657874456469742E6800436F6E74
-                    726F6C732E680070796D6163746F6F6C626F782E68004D656D6F72792E68004C
-                    697374732E68004D6F766965732E6800496D616765436F6D7072657373696F6E
-                    2E68004572726F72732E6800447261674C6962004D6F65733A53576465763A4A
-                    61636B3A47555349323A696E636C7564653A7379733A004D6F65733A53576465
-                    763A4A61636B3A47555349323A696E636C7564653A6D616368696E653A003A73
-                    79733A730061742E6800737461742E6800000000000000000000000000000000
-                    0000000000000000000000000000000000000000000000000000000000000000
-                    0000000000000000000000000000000000000000000000000000000000000000
-                    055BEB10AB00000400000790002F9B440000000000000001000000000000000F
-                    00000002000000000000001C0000000300000000000000290000000400000000
-                    0000003700000005000000000000003E00000006000000000000004500000007
-                    0000000000000056000000080000000000000065000000090000000000000070
-                    0000000A00000000000000710000000B00000000000000860000000C00000000
-                    000000AA0000000D00000000000000B50000000E00000000000000C00000000F
-                    00000000000000C80000001000000000000000EB0000001100000000000000F8
-                    00000012000000000000010F0000001300000000000001170000001400000000
-                    0000012900000015000000000000014200000016000000000000014C00000017
-                    000000000000016600000018000000000000016F00000019000000000000017C
-                    0000001A00000000000001850000001B000000000000018E0000001C00000000
-                    000001970000001D000000000000019F0000001E00000000000001AC0000001F
-                    00000000000001B90000002000000000000001C10000002100000000000001C8
-                    000000220000
-                </VALUE></PANELDATA>
-                <PANELDATA><NAME>Auto-target</NAME><VALUE>
-                    00010000
-                </VALUE></PANELDATA>
+                <SETTING><NAME>TempBPType</NAME><VALUE>0</VALUE></SETTING>
 
-                <!-- Settings for "Custom Keywords" panel -->
-                <SETTING><NAME>CustomColor1</NAME>
-                    <SETTING><NAME>Red</NAME><VALUE>0</VALUE></SETTING>
-                    <SETTING><NAME>Green</NAME><VALUE>39321</VALUE></SETTING>
-                    <SETTING><NAME>Blue</NAME><VALUE>0</VALUE></SETTING>
-                </SETTING>
-                <SETTING><NAME>CustomColor2</NAME>
-                    <SETTING><NAME>Red</NAME><VALUE>0</VALUE></SETTING>
-                    <SETTING><NAME>Green</NAME><VALUE>32767</VALUE></SETTING>
-                    <SETTING><NAME>Blue</NAME><VALUE>0</VALUE></SETTING>
-                </SETTING>
-                <SETTING><NAME>CustomColor3</NAME>
-                    <SETTING><NAME>Red</NAME><VALUE>0</VALUE></SETTING>
-                    <SETTING><NAME>Green</NAME><VALUE>32767</VALUE></SETTING>
-                    <SETTING><NAME>Blue</NAME><VALUE>0</VALUE></SETTING>
-                </SETTING>
-                <SETTING><NAME>CustomColor4</NAME>
-                    <SETTING><NAME>Red</NAME><VALUE>0</VALUE></SETTING>
-                    <SETTING><NAME>Green</NAME><VALUE>32767</VALUE></SETTING>
-                    <SETTING><NAME>Blue</NAME><VALUE>0</VALUE></SETTING>
-                </SETTING>
+                <!-- Settings for "Remote Debug" panel -->
+                <SETTING><NAME>Enabled</NAME><VALUE>false</VALUE></SETTING>
+                <SETTING><NAME>ConnectionName</NAME><VALUE></VALUE></SETTING>
+                <SETTING><NAME>DownloadPath</NAME><VALUE></VALUE></SETTING>
+                <SETTING><NAME>LaunchRemoteApp</NAME><VALUE>false</VALUE></SETTING>
+                <SETTING><NAME>RemoteAppPath</NAME><VALUE></VALUE></SETTING>
 
-                <!-- Settings for "68K CodeGen" panel -->
-                <SETTING><NAME>MWCodeGen_68K_codesize</NAME><VALUE>Smart</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_68K_structalignment</NAME><VALUE>MC68K</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_68K_fp_mode</NAME><VALUE>SANE</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_68K_code68020</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_68K_profiler</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_68K_mpwc</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_68K_fourbyteints</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_68K_IEEEdoubles</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_68K_fardata</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_68K_farvtables</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_68K_farstrings</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_68K_pcrelstrings</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_68K_macsbug</NAME><VALUE>New</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_68K_a6frames</NAME><VALUE>1</VALUE></SETTING>
+                <!-- Settings for "Auto-target" panel -->
+                <SETTING><NAME>OtherExecutables</NAME><VALUE></VALUE></SETTING>
 
-                <!-- Settings for "68K Disassembler" panel -->
-                <SETTING><NAME>MWDisassembler_68K_showcode</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWDisassembler_68K_mix</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWDisassembler_68K_nohex</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWDisassembler_68K_showdata</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWDisassembler_68K_showexceptions</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWDisassembler_68K_showsym</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWDisassembler_68K_shownames</NAME><VALUE>1</VALUE></SETTING>
-
-                <!-- Settings for "68K Global Optimizer" panel -->
-                <SETTING><NAME>GlobalOptimizer_68K_optimizationlevel</NAME><VALUE>Level0</VALUE></SETTING>
-                <SETTING><NAME>GlobalOptimizer_68K_optfor</NAME><VALUE>Speed</VALUE></SETTING>
-
-                <!-- Settings for "68K Linker" panel -->
-                <SETTING><NAME>MWLinker_68K_linksym</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_68K_symfullpath</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_68K_linksingle</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_68K_fastlink</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_68K_generateMap</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_68K_nolinkwarnings</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_68K_glueintosegone</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_68K_dontdeadstripinitcode</NAME><VALUE>0</VALUE></SETTING>
-
-                <!-- Settings for "68K Project" panel -->
-                <SETTING><NAME>MWProject_68K_type</NAME><VALUE>Application</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_outfile</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_symfilename</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_filecreator</NAME><VALUE>1061109567</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_filetype</NAME><VALUE>1095782476</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_size</NAME><VALUE>384</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_flags</NAME><VALUE>22656</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_rsrcheader</NAME><VALUE>Standard</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_rsrcname</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_rsrctype</NAME><VALUE>1061109567</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_rsrcid</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_rsrcmulti</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_rsrcstore</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_rsrcmerge</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_rsrcflags</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_a4</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_minsize</NAME><VALUE>384</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_rsrcsegtype</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_cfm68kcodegen</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_stacksize</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_thedebugger</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_rsrc_custom</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_is_rseg_app</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_is_pilot_lib</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWProject_68K_pilot_main_entry</NAME><VALUE></VALUE></SETTING>
 
                 <!-- Settings for "C/C++ Compiler" panel -->
                 <SETTING><NAME>MWFrontEnd_C_cplusplus</NAME><VALUE>0</VALUE></SETTING>
@@ -573,128 +481,6 @@
                 <SETTING><NAME>MWWarning_C_warn_notinlined</NAME><VALUE>0</VALUE></SETTING>
                 <SETTING><NAME>MWWarning_C_warn_structclass</NAME><VALUE>0</VALUE></SETTING>
 
-                <!-- Settings for "CFM68K" panel -->
-                <SETTING><NAME>MWCFM68K_exports</NAME><VALUE>None</VALUE></SETTING>
-                <SETTING><NAME>MWCFM68K_olddefversion</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCFM68K_oldimpversion</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCFM68K_currentversion</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCFM68K_farthreshold</NAME><VALUE>256</VALUE></SETTING>
-                <SETTING><NAME>PCFM68K_sharedata</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCFM68K_fragmentname</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWCFM68K_initname</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWCFM68K_mainname</NAME><VALUE>__start</VALUE></SETTING>
-                <SETTING><NAME>MWCFM68K_termname</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWCFM68K_libfolder</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCFM68K_alignment</NAME><VALUE>Align_2</VALUE></SETTING>
-
-                <!-- Settings for "FTP Panel" panel -->
-                <SETTING><NAME>MWFTP_Post_hostName</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWFTP_Post_username</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWFTP_Post_password</NAME><VALUE>0C&#164;&#224;</VALUE></SETTING>
-                <SETTING><NAME>MWFTP_Post_remoteDir</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWFTP_Post_ftp_PathVersion</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWFTP_Post_ftp_PathType</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWFTP_Post_ftp_PathFormat</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWFTP_Post_ftp_tree</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWFTP_Post_uploadDir</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWFTP_Post_ftp_port</NAME><VALUE>21</VALUE></SETTING>
-                <SETTING><NAME>MWFTP_Post_SendBin</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWFTP_Post_ShouldLog</NAME><VALUE>1</VALUE></SETTING>
-
-                <!-- Settings for "Java Command Line" panel -->
-                <SETTING><NAME>MWCommandLine_Java_clsName</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWCommandLine_Java_args</NAME><VALUE></VALUE></SETTING>
-
-                <!-- Settings for "Java Language" panel -->
-                <SETTING><NAME>MWJava_Language_optimize</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Language_warnDeprecated</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Language_emitMap</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Language_strictFileNames</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Language_strictFileHierarchy</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Language_1_1_Compatible</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Language_emitHeaders</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Language_headerType</NAME><VALUE>JNINativeHeaders</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Language_packageFilter</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_Language_genComments</NAME><VALUE>true</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Language_genHeaders</NAME><VALUE>false</VALUE></SETTING>
-
-                <!-- Settings for "Java MRJAppBuilder" panel -->
-                <SETTING><NAME>MWJava_MRJAppBuilder_outFile</NAME><VALUE>MRJApplication</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_merge</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_quitMenu</NAME><VALUE>true</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_grow</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stdoutType</NAME><VALUE>Console</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stderrType</NAME><VALUE>Console</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stdinType</NAME><VALUE>Console</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_appIconPVersion</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_appIconPType</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_appIconPFormat</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_appIconPTree</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_appIconFile</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_splashScreenPVersion</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_splashScreenPType</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_splashScreenPFormat</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_splashScreenPTree</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_splashScreenPICTFile</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_aboutName</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stdoutPVersion</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stdoutPType</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stdoutPFormat</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stdoutPTree</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stdoutFile</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stdoutAppend</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stderrPType</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stderrPFormat</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stderrPTree</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stderrFile</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stderrAppend</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stdinPType</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stdinPFormat</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stdinPTree</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_MRJAppBuilder_stdinFile</NAME><VALUE></VALUE></SETTING>
-
-                <!-- Settings for "Java Output" panel -->
-                <SETTING><NAME>MWJava_Output_outputtype</NAME><VALUE>JarFile</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Output_outfile</NAME><VALUE>JavaClasses.jar</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Output_ftype</NAME><VALUE>1514754080</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Output_fcreator</NAME><VALUE>1297570384</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Output_compress</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Output_genManifest</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Output_trunctype</NAME><VALUE>Front</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Output_deleteClasses</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Output_consoleApp</NAME><VALUE>1</VALUE></SETTING>
-
-                <!-- Settings for "Java Project" panel -->
-                <SETTING><NAME>MWJava_Proj_projtype</NAME><VALUE>Applet</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Proj_mainClassName</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_Proj_HTMLAppCreator</NAME><VALUE>1463898714</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Proj_HTMLAppName</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_Proj_PathVersion</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Proj_PathType</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Proj_PathFormat</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Proj_tree</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_Proj_HTMLAppWin32Name</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_Proj_compress</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Proj_useVM</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWJava_Proj_vmarguments</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJava_Proj_vmName</NAME><VALUE></VALUE></SETTING>
-
-                <!-- Settings for "JavaDoc Project" panel -->
-                <SETTING><NAME>MWJavaDoc_Proj_Version</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWJavaDoc_Proj_Depricated</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWJavaDoc_Proj_Author</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWJavaDoc_Proj_Index</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWJavaDoc_Proj_Tree</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWJavaDoc_Proj_SunResolveToSame</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJavaDoc_Proj_Shortnames</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWJavaDoc_Proj_Folder</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJavaDoc_Proj_GenerateAPILinks</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWJavaDoc_Proj_scope</NAME><VALUE>Public</VALUE></SETTING>
-                <SETTING><NAME>MWJavaDoc_Proj_fcreator</NAME><VALUE>1297303877</VALUE></SETTING>
-                <SETTING><NAME>MWJavaDoc_Proj_encodingName</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJavaDoc_Proj_decodingName</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWJavaDoc_Proj_javaPackagePath</NAME><VALUE>http://java.sun.com/products/jdk/1.1/docs/api/</VALUE></SETTING>
-
                 <!-- Settings for "MacOS Merge Panel" panel -->
                 <SETTING><NAME>MWMerge_MacOS_projectType</NAME><VALUE>Application</VALUE></SETTING>
                 <SETTING><NAME>MWMerge_MacOS_outputName</NAME><VALUE>Merge Out</VALUE></SETTING>
@@ -703,6 +489,13 @@
                 <SETTING><NAME>MWMerge_MacOS_suppressWarning</NAME><VALUE>0</VALUE></SETTING>
                 <SETTING><NAME>MWMerge_MacOS_copyFragments</NAME><VALUE>1</VALUE></SETTING>
                 <SETTING><NAME>MWMerge_MacOS_copyResources</NAME><VALUE>1</VALUE></SETTING>
+                <SETTING><NAME>MWMerge_MacOS_flattenResource</NAME><VALUE>0</VALUE></SETTING>
+                <SETTING><NAME>MWMerge_MacOS_flatFileName</NAME><VALUE>a.rsrc</VALUE></SETTING>
+                <SETTING><NAME>MWMerge_MacOS_flatFileOutputPath</NAME>
+                    <SETTING><NAME>Path</NAME><VALUE>:</VALUE></SETTING>
+                    <SETTING><NAME>PathFormat</NAME><VALUE>MacOS</VALUE></SETTING>
+                    <SETTING><NAME>PathRoot</NAME><VALUE>Project</VALUE></SETTING>
+                </SETTING>
                 <SETTING><NAME>MWMerge_MacOS_skipResources</NAME>
                     <SETTING><VALUE>    </VALUE></SETTING>
                     <SETTING><VALUE>&#170;&#191;&#176;</VALUE></SETTING>
@@ -710,70 +503,23 @@
                     <SETTING><VALUE>&#209;&#167;0</VALUE></SETTING>
                 </SETTING>
 
-                <!-- Settings for "Output Flags" panel -->
-                <SETTING><NAME>FileLocked</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>ResourcesMapIsReadOnly</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>PrinterDriverIsMultiFinderCompatible</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>Invisible</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>HasBundle</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>NameLocked</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>Stationery</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>HasCustomIcon</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>Shared</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>HasBeenInited</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>Label</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>Comments</NAME><VALUE></VALUE></SETTING>
-                <PANELDATA><NAME>Packager Panel</NAME><VALUE>
-                    000100003F3F3F3F4150504C055C0001005CB8F0000000000000061005D8AFC0
-                    01000079000000000000008F055CAFD054455854435749450100020000000000
-                    B5ACBD0600000000000000000000000000000000000000000000000000000000
-                    000001680000000C000000031000000000000000000000000000000000000000
-                    000000000100007A00000000000000900000000E544558544357494501000200
-                    00000000B5ACBD06000000000000000000000000000000000000000000000000
-                    00000000000001680000000C0000000310000000000000000000000000000000
-                    00000000000000000100007B00000000000000910000000E5445585443574945
-                    0100020000000000B5ACBD080000000000000000000000000000000000000000
-                    0000000000000000000001680000000C00000003100000000000000000000000
-                    0000000000000000000000000100007C00000000000000920000000E54455854
-                    435749450100020000000000B5ACBD0600000000000000000000000000000000
-                    000000000000000000000000000001680000000C000000031000000000000000
-                    000000000000000000000000000000000100007D000000000000009300000009
-                    54455854435749450000020000000000B65AFA69000000000000000000000000
-                    00000000000000000000000000000000000001680000000C0000000310000000
-                    00000000000000000000000000000000000000000100007E0000000000000094
-                    0000000E54455854435749450100020000000000B5ACBD070000000000000000
-                    0000000000000000000000000000000000000000000001680000000C00000003
-                    1000000000000000000000000000000000000000000000000100007F00000000
-                    000000950000000E54455854435749450100020000000000B5ACBD0700000000
-                    000000000000000000000000000000000000000000000000000001680000000C
-                    0000000310000000000000000000000000000000000000000000000001000080
-                    00000000000000960000000E54455854435749450100020000000000B5ACBD07
-                    0000000000000000000000000000000000000001000000000000000000000168
-                    0000000C00000003100000000000000000000000000000000000000000000000
-                    0100008100000000000000970000000E54455854435749450100020000000000
-                    B5ACBD0700000000000000000000000000000000000000000000000000000000
-                    000001680000000C000000031000000000000000000000000000000000000000
-                    000000000100008200000000000000980000000E544558544357494501000200
-                    00000000B5ACBD06000000000000000000000000000000000000000000000000
-                    00000000000001680000000C0000000310000000000000000000000000000000
-                    000000000000000001000083010000040000009900000004737475624D505320
-                    0100020000000000B5ACBC68B5ACBC6800000000000000000000000000000000
-                    0000000000000000000001000000040C00000008000000000000000000000000
-                    0000000000000000B650822901000084000000000000009D0000000B54455854
-                    435749450100020000000000B4AA816A00000000000000000000000000000000
-                    000000000000000000000000000001080000000C000000031000000000000000
-                    0000000000000000000000000000000000000000000000000000000000000000
-                    0000000000000000000000000000000000000000000000000000000000000000
-                    0000000000000000000000000000000000000000000000000000000000000000
-                    0000000000000000000000000000000000000000000000000000000000000000
-                    0000000000000000000000000000000000000000000000000000000000000000
-                    0000000000000000000000000000000000000000000000000000000000000000
-                    0000000000000000000000000000000000000000000000000000000000000000
-                    0000000000000000000000000000000000000000000000000000000000000000
-                    0000000000000000000000000000000000000000000000000000000000000000
-                    0000000000000000000000000000000000000000000000000000000000000000
-                    0000000000000000000000000000000000000000
-                </VALUE></PANELDATA>
+                <!-- Settings for "Packager Panel" panel -->
+                <SETTING><NAME>MWMacOSPackager_UsePackager</NAME><VALUE>0</VALUE></SETTING>
+                <SETTING><NAME>MWMacOSPackager_FolderToPackage</NAME>
+                    <SETTING><NAME>Path</NAME><VALUE>:</VALUE></SETTING>
+                    <SETTING><NAME>PathFormat</NAME><VALUE>MacOS</VALUE></SETTING>
+                    <SETTING><NAME>PathRoot</NAME><VALUE>Project</VALUE></SETTING>
+                </SETTING>
+                <SETTING><NAME>MWMacOSPackager_CreateClassicAlias</NAME><VALUE>0</VALUE></SETTING>
+                <SETTING><NAME>MWMacOSPackager_ClassicAliasMethod</NAME><VALUE>UseTargetOutput</VALUE></SETTING>
+                <SETTING><NAME>MWMacOSPackager_ClassicAliasPath</NAME>
+                    <SETTING><NAME>Path</NAME><VALUE>:</VALUE></SETTING>
+                    <SETTING><NAME>PathFormat</NAME><VALUE>MacOS</VALUE></SETTING>
+                    <SETTING><NAME>PathRoot</NAME><VALUE>Project</VALUE></SETTING>
+                </SETTING>
+                <SETTING><NAME>MWMacOSPackager_CreatePkgInfo</NAME><VALUE>0</VALUE></SETTING>
+                <SETTING><NAME>MWMacOSPackager_PkgCreatorType</NAME><VALUE>????</VALUE></SETTING>
+                <SETTING><NAME>MWMacOSPackager_PkgFileType</NAME><VALUE>APPL</VALUE></SETTING>
 
                 <!-- Settings for "PPC CodeGen" panel -->
                 <SETTING><NAME>MWCodeGen_PPC_structalignment</NAME><VALUE>PPC</VALUE></SETTING>
@@ -864,98 +610,12 @@
                 <SETTING><NAME>MWRez_Language_escapecontrolchars</NAME><VALUE>1</VALUE></SETTING>
                 <SETTING><NAME>MWRez_Language_prefixname</NAME><VALUE></VALUE></SETTING>
                 <SETTING><NAME>MWRez_Language_filteredtypes</NAME><VALUE>'CODE' 'DATA' 'PICT'</VALUE></SETTING>
-
-                <!-- Settings for "WinRC Compiler" panel -->
-                <SETTING><NAME>MWWinRC_prefixname</NAME><VALUE></VALUE></SETTING>
-
-                <!-- Settings for "x86 CodeGen" panel -->
-                <SETTING><NAME>MWCodeGen_X86_processor</NAME><VALUE>Generic</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_X86_alignment</NAME><VALUE>bytes8</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_X86_exceptions</NAME><VALUE>ZeroOverhead</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_X86_extinst_mmx</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_X86_extinst_3dnow</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_X86_use_mmx_3dnow_convention</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_X86_machinecodelisting</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_X86_intrinsics</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_X86_syminfo</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_X86_codeviewinfo</NAME><VALUE>1</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_X86_extinst_cmov_fcomi</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWCodeGen_X86_extinst_sse</NAME><VALUE>0</VALUE></SETTING>
-
-                <!-- Settings for "x86 Disassembler" panel -->
-                <SETTING><NAME>PDisasmX86_showHeaders</NAME><VALUE>true</VALUE></SETTING>
-                <SETTING><NAME>PDisasmX86_showSymTab</NAME><VALUE>true</VALUE></SETTING>
-                <SETTING><NAME>PDisasmX86_showCode</NAME><VALUE>true</VALUE></SETTING>
-                <SETTING><NAME>PDisasmX86_showSource</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>PDisasmX86_showHex</NAME><VALUE>true</VALUE></SETTING>
-                <SETTING><NAME>PDisasmX86_showRelocation</NAME><VALUE>true</VALUE></SETTING>
-                <SETTING><NAME>PDisasmX86_showComments</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>PDisasmX86_showDebug</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>PDisasmX86_showExceptions</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>PDisasmX86_showData</NAME><VALUE>true</VALUE></SETTING>
-                <SETTING><NAME>PDisasmX86_showRaw</NAME><VALUE>false</VALUE></SETTING>
-                <SETTING><NAME>PDisasmX86_verbose</NAME><VALUE>false</VALUE></SETTING>
-
-                <!-- Settings for "x86 Exceptions Panel" panel -->
-                <SETTING><NAME>MWDebugger_X86_Exceptions</NAME>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                    <SETTING><VALUE>0</VALUE></SETTING>
-                </SETTING>
-
-                <!-- Settings for "x86 Global Optimizer" panel -->
-                <SETTING><NAME>GlobalOptimizer_X86_optimizationlevel</NAME><VALUE>Level0</VALUE></SETTING>
-                <SETTING><NAME>GlobalOptimizer_X86_optfor</NAME><VALUE>Speed</VALUE></SETTING>
-
-                <!-- Settings for "x86 Linker" panel -->
-                <SETTING><NAME>MWLinker_X86_entrypointusage</NAME><VALUE>Default</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_X86_entrypoint</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWLinker_X86_subsystem</NAME><VALUE>WinGUI</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_X86_subsysmajorid</NAME><VALUE>4</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_X86_subsysminorid</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_X86_usrmajorid</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_X86_usrminorid</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_X86_commandfile</NAME><VALUE></VALUE></SETTING>
-                <SETTING><NAME>MWLinker_X86_generatemap</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_X86_linksym</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWLinker_X86_linkCV</NAME><VALUE>1</VALUE></SETTING>
-
-                <!-- Settings for "x86 Project" panel -->
-                <SETTING><NAME>MWProject_X86_type</NAME><VALUE>Application</VALUE></SETTING>
-                <SETTING><NAME>MWProject_X86_outfile</NAME><VALUE>noname.exe</VALUE></SETTING>
-                <SETTING><NAME>MWProject_X86_baseaddress</NAME><VALUE>4194304</VALUE></SETTING>
-                <SETTING><NAME>MWProject_X86_maxstacksize</NAME><VALUE>1024</VALUE></SETTING>
-                <SETTING><NAME>MWProject_X86_minstacksize</NAME><VALUE>4</VALUE></SETTING>
-                <SETTING><NAME>MWProject_X86_size</NAME><VALUE>1024</VALUE></SETTING>
-                <SETTING><NAME>MWProject_X86_minsize</NAME><VALUE>4</VALUE></SETTING>
-                <SETTING><NAME>MWProject_X86_importlib</NAME><VALUE></VALUE></SETTING>
             </SETTINGLIST>
             <FILELIST>
 %(tmp_allsources)s
                 <FILE>
                     <PATHTYPE>Name</PATHTYPE>
-                    <PATH>MSL ShLibRuntime.Lib</PATH>
+                    <PATH>MSL_ShLibRuntime_PPC.Lib</PATH>
                     <PATHFORMAT>MacOS</PATHFORMAT>
                     <FILEKIND>Library</FILEKIND>
                     <FILEFLAGS>Debug</FILEFLAGS>
@@ -987,7 +647,7 @@
 %(tmp_linkorder)s
                 <FILEREF>
                     <PATHTYPE>Name</PATHTYPE>
-                    <PATH>MSL ShLibRuntime.Lib</PATH>
+                    <PATH>MSL_ShLibRuntime_PPC.Lib</PATH>
                     <PATHFORMAT>MacOS</PATHFORMAT>
                 </FILEREF>
                 <FILEREF>
@@ -1028,7 +688,7 @@
             <FILEREF>
                 <TARGETNAME>%(mac_targetname)s</TARGETNAME>
                 <PATHTYPE>Name</PATHTYPE>
-                <PATH>MSL ShLibRuntime.Lib</PATH>
+                <PATH>MSL_ShLibRuntime_PPC.Lib</PATH>
                 <PATHFORMAT>MacOS</PATHFORMAT>
             </FILEREF>
 %(tmp_grouplistlib)s
