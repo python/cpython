@@ -55,24 +55,27 @@ def search_function(encoding):
     try:
         mod = __import__('encodings.' + modname,
                          globals(), locals(), _import_tail)
-    except ImportError,why:
+    except ImportError:
         import aliases
         modname = aliases.aliases.get(modname, modname)
         try:
-            mod = __import__('encodings.' + modname, globals(), locals(), _import_tail)
-        except ImportError,why:
+            mod = __import__(modname, globals(), locals(), _import_tail)
+        except ImportError:
             mod = None
+
+    try:
+        getregentry = mod.getregentry
+    except AttributeError:
+        # Not a codec module
+        mod = None
+
     if mod is None:
         # Cache misses
         _cache[encoding] = None
-        return None
-        
+        return None    
     
     # Now ask the module for the registry entry
-    try:
-        entry = tuple(mod.getregentry())
-    except AttributeError:
-        entry = ()
+    entry = tuple(getregentry())
     if len(entry) != 4:
         raise CodecRegistryError,\
               'module "%s" (%s) failed to register' % \
