@@ -26,12 +26,12 @@ class GetKeysDialog(Toplevel):
         self.result=''
         self.keyString=StringVar(self)
         self.keyString.set('')
-        self.keyCtrl=StringVar(self)
-        self.keyCtrl.set('')
-        self.keyAlt=StringVar(self)
-        self.keyAlt.set('')
-        self.keyShift=StringVar(self)
-        self.keyShift.set('')
+        self.SetModifiersForPlatform()
+        self.modifier_vars = []
+        for modifier in self.modifiers:
+            variable = StringVar(self)
+            variable.set('')
+            self.modifier_vars.append(variable)
         self.CreateWidgets()
         self.LoadFinalKeyList()
         self.withdraw() #hide while setting geometry
@@ -74,18 +74,16 @@ class GetKeysDialog(Toplevel):
         labelKeysBasic = Label(self.frameKeySeqBasic,justify=LEFT,
                 textvariable=self.keyString,relief=GROOVE,borderwidth=2)
         labelKeysBasic.pack(ipadx=5,ipady=5,fill=X)
-        checkCtrl=Checkbutton(self.frameControlsBasic,
+        self.modifier_checkbuttons = {}
+        column = 0
+        for modifier, variable in zip(self.modifiers, self.modifier_vars):
+            label = self.modifier_label.get(modifier, modifier)
+            check=Checkbutton(self.frameControlsBasic,
                 command=self.BuildKeyString,
-                text='Ctrl',variable=self.keyCtrl,onvalue='Control',offvalue='')
-        checkCtrl.grid(row=0,column=0,padx=2,sticky=W)
-        checkAlt=Checkbutton(self.frameControlsBasic,
-                command=self.BuildKeyString,
-                text='Alt',variable=self.keyAlt,onvalue='Alt',offvalue='')
-        checkAlt.grid(row=0,column=1,padx=2,sticky=W)
-        checkShift=Checkbutton(self.frameControlsBasic,
-                command=self.BuildKeyString,
-                text='Shift',variable=self.keyShift,onvalue='Shift',offvalue='')
-        checkShift.grid(row=0,column=3,padx=2,sticky=W)
+                text=label,variable=variable,onvalue=modifier,offvalue='')
+            check.grid(row=0,column=column,padx=2,sticky=W)
+            self.modifier_checkbuttons[modifier] = check
+            column += 1
         labelFnAdvice=Label(self.frameControlsBasic,justify=LEFT,
                 text="Select the desired modifier\n"+
                      "keys above, and final key\n"+
@@ -118,6 +116,21 @@ class GetKeysDialog(Toplevel):
                  "Multiple separate bindings for one action should be\n"+
                  "separated by a space, eg., <Alt-v> <Meta-v>." )
         labelHelpAdvanced.grid(row=0,column=0,sticky=NSEW)
+
+    def SetModifiersForPlatform(self):
+        """Determine list of names of key modifiers for this platform.
+
+        The names are used to build Tk bindings -- it doesn't matter if the
+        keyboard has these keys, it matters if Tk understands them. The
+        order is also important: key binding equality depends on it, so
+        config-keys.def must use the same ordering.
+        """
+        import sys
+        if sys.platform == 'darwin' and sys.executable.count('.app'):
+            self.modifiers = ['Shift', 'Control', 'Option', 'Command']
+        else:
+            self.modifiers = ['Control', 'Alt', 'Shift']
+        self.modifier_label = {'Control': 'Ctrl'}
 
     def ToggleLevel(self):
         if  self.buttonLevel.cget('text')[:8]=='Advanced':
@@ -152,22 +165,15 @@ class GetKeysDialog(Toplevel):
         self.keyString.set(keyStr)
         
     def GetModifiers(self):
-        modList=[]
-        ctrl=self.keyCtrl.get()
-        alt=self.keyAlt.get()
-        shift=self.keyShift.get()
-        if ctrl: modList.append(ctrl)
-        if alt: modList.append(alt)
-        if shift: modList.append(shift)
-        return modList
+        modList = [variable.get() for variable in self.modifier_vars]
+        return filter(None, modList)
 
     def ClearKeySeq(self):
         self.listKeysFinal.select_clear(0,END)
         self.listKeysFinal.yview(MOVETO, '0.0')
-        self.keyCtrl.set('')
-        self.keyAlt.set(''),
-        self.keyShift.set('')
-        self.keyString.set('')    
+        for variable in self.modifier_vars:
+            variable.set('')
+        self.keyString.set('')
     
     def LoadFinalKeyList(self):
         #these tuples are also available for use in validity checks
