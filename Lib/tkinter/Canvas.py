@@ -1,6 +1,6 @@
 # This module exports classes for the various canvas item types
 
-from Tkinter import Canvas, _flatten
+from Tkinter import Canvas, _cnfmerge, _flatten
 
 
 class CanvasItem:
@@ -42,8 +42,8 @@ class CanvasItem:
 		return (x1, y1), (x2, y2)
 	def bind(self, sequence=None, command=None):
 		return self.canvas.tag_bind(self.id, sequence, command)
-	def config(self, cnf=None):
-		return self.canvas.itemconfig(self.id, cnf)
+	def config(self, cnf={}, **kw):
+		return self.canvas.itemconfig(self.id, _cnfmerge((cnf, kw)))
 	def coords(self, pts = ()):
 		flat = ()
 		for x, y in pts: flat = flat + (x, y)
@@ -120,6 +120,7 @@ class Group:
 		self.canvas.dtag(self.tag)
 	def str(self):
 		return self.tag
+	__str__ = str
 	def _do(self, cmd, *args):
 		return self.canvas._do(cmd, (self.tag,) + _flatten(args))
 	def addtag_above(self, tagOrId):
@@ -158,8 +159,8 @@ class Group:
 		return self.canvas.tk.getint(self._do('index', index))
 	def insert(self, beforeThis, string):
 		self._do('insert', beforeThis, string)
-	def config(self, cnf=None):
-		return self.canvas.itemconfigure(self.tag, cnf)
+	def config(self, cnf={}, **kw):
+		return self.canvas.itemconfigure(self.tag, _cnfmerge((cnf,kw)))
 	def lower(self, belowThis=None):
 		self._do('lower', belowThis)
 	def move(self, xAmount, yAmount):
