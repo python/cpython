@@ -34,6 +34,9 @@ GENFAT_BUTTON = 4
 GENPPC_BUTTON = 5
 GEN68K_BUTTON = 6
 
+# Define this if we cannot generate 68/fat binaries (Python 1.6)
+PPC_ONLY=1
+
 
 try:
 	Res.GetResource('DITL', DLG_ID)
@@ -108,6 +111,8 @@ class radio:
 
 
 def interact(scriptname):
+	if PPC_ONLY:
+		return 'pwpc'
 	d = Dlg.GetNewDialog(DLG_ID, -1)
 	if not d:
 		print "Can't get DLOG resource with id =", DLG_ID
