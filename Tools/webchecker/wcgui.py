@@ -4,18 +4,22 @@
 
 This works as a Grail applet too!  E.g.
 
-  <APPLET CODE=wcgui.py NAME=CheckerWindow>
-  <PARAM NAME=roots VALUE="http://<yourfavoritehost>">
-  </APPLET>
+  <APPLET CODE=wcgui.py NAME=CheckerWindow></APPLET>
 
 Checkpoints are not (yet?) supported.
 
 User interface:
 
-When the 'Go' checkbutton is checked, web pages will be checked, one
-at a time in the Tk 'idle' time.  The other checkbuttons determine
-whether the corresponding output panel is shown.  There are six
-panels:
+Enter a root to check in the text entry box.  To enter more than one root, 
+enter each root and press <Return>.
+
+Command buttons Start, Stop and "Check one" govern the checking process in 
+the obvious way.  Start and "Check one" also enter the root from the text 
+entry box if one is present.
+
+A series of checkbuttons determines whether the corresponding output panel 
+is shown.  List panels are also automatically shown or hidden when their 
+status changes between empty to non-empty.  There are six panels:
 
 Log        -- raw output from the checker (-v, -q affect this)
 To check   -- local links discovered but not yet checked
@@ -28,6 +32,10 @@ Details    -- details about one URL; double click on a URL in any of
 XXX There ought to be a list of pages known to contain at least one
 bad link.
 
+XXX The checking of off site links should be made more similar to the 
+checking of local links (even if they are checked after all local links are 
+checked).
+
 Use your window manager's Close command to quit.
 
 Command line options:
@@ -36,7 +44,6 @@ Command line options:
 -n        -- reports only, no checking (use with -R)
 -q        -- quiet operation (also suppresses external links report)
 -v        -- verbose operation; repeating -v will increase verbosity
--x        -- check external links (during report phase)
 
 Command line arguments:
 
@@ -45,10 +52,7 @@ rooturl   -- URL to start checking
 
 XXX The command line options should all be GUI accessible.
 
-XXX The roots should be a list and there should be a GUI way to add a
-root.
-
-XXX The alphabetizing of the lists makes the display very jumpy.
+XXX The roots should be visible as a list (?).
 
 XXX The multipanel user interface is bogus.
 
@@ -65,11 +69,15 @@ import tktools
 import webchecker
 import random
 
+# Override some for a weaker platform
+if sys.platform == 'mac':
+    webchecker.DEFROOT = "http://grail.cnri.reston.va.us/"
+    webchecker.MAXPAGE = 50000
+    webchecker.verbose = 4
 
 def main():
-    checkext = 0
     try:
-	opts, args = getopt.getopt(sys.argv[1:], 'm:qvx')
+	opts, args = getopt.getopt(sys.argv[1:], 'm:qv')
     except getopt.error, msg:
 	sys.stdout = sys.stderr
 	print msg
@@ -82,28 +90,36 @@ def main():
 	    webchecker.verbose = 0
 	if o == '-v':
 	    webchecker.verbose = webchecker.verbose + 1
-	if o == '-x':
-	    checkext = 1
     root = Tk(className='Webchecker')
     root.protocol("WM_DELETE_WINDOW", root.quit)
-    c = CheckerWindow(root, checkext)
-    for arg in args or [webchecker.DEFROOT]:
-	c.addroot(arg)
+    c = CheckerWindow(root)
+    if args:
+    	for arg in args[:-1]:
+    	    c.addroot(arg)
+    	c.suggestroot(args[-1])
     root.mainloop()
 
 
 class CheckerWindow(webchecker.Checker):
 
-    def __init__(self, parent, checkext=0, roots=None):
+    def __init__(self, parent, root=webchecker.DEFROOT):
 	self.__parent = parent
-	self.__checkext = checkext
 	self.__controls = Frame(parent)
 	self.__controls.pack(side=TOP, fill=X)
-	self.__govar = IntVar()
-	self.__go = Checkbutton(self.__controls, text="GO",
-				variable=self.__govar,
-				command=self.go)
-	self.__go.pack(side=LEFT)
+	self.__label = Label(self.__controls, text="Root URL:")
+	self.__label.pack(side=LEFT)
+	self.__rootentry = Entry(self.__controls, width=60)
+	self.__rootentry.pack(side=LEFT)
+	self.__rootentry.bind('<Return>', self.enterroot)
+	self.__rootentry.focus_set()
+	self.__running = 0
+	self.__start = Button(self.__controls, text="Run", command=self.start)
+	self.__start.pack(side=LEFT)
+	self.__stop = Button(self.__controls, text="Stop", command=self.stop,
+			     state=DISABLED)
+	self.__stop.pack(side=LEFT)
+	self.__step = Button(self.__controls, text="Check one", command=self.step)
+	self.__step.pack(side=LEFT)
 	self.__status = Label(parent, text="Status: initial", anchor=W)
 	self.__status.pack(side=TOP, fill=X)
 	self.__checking = Label(parent, text="Checking: none", anchor=W)
@@ -117,62 +133,115 @@ class CheckerWindow(webchecker.Checker):
 	self.__details = LogPanel(mp, "Details")
 	self.__extodo = []
 	webchecker.Checker.__init__(self)
-	if roots:
-	    roots = string.split(roots)
-	    for root in roots:
-		self.addroot(root)
+	if root:
+	    root = string.strip(str(root))
+	    if root:
+		self.suggestroot(root)
+
+    def suggestroot(self, root):
+	self.__rootentry.delete(0, END)
+	self.__rootentry.insert(END, root)
+	self.__rootentry.select_range(0, END)
+
+    def enterroot(self, event=None):
+	root = self.__rootentry.get()
+	root = string.strip(root)
+	if root:
+	    self.addroot(root)
+	    try:
+		i = self.__todo.items.index(root)
+	    except (ValueError, IndexError):
+		pass
+	    else:
+		self.__todo.list.select_clear(0, END)
+		self.__todo.list.select_set(i)
+		self.__todo.list.yview(i)
+	self.__rootentry.delete(0, END)
+
+    def start(self):
+	self.__start.config(state=DISABLED, relief=SUNKEN)
+	self.__stop.config(state=NORMAL)
+	self.__step.config(state=DISABLED)
+	self.enterroot()
+	self.__running = 1
+	self.go()
+
+    def stop(self):
+	self.__stop.config(state=DISABLED)
+	self.__running = 0
+
+    def step(self):
+	self.__start.config(state=DISABLED)
+	self.__step.config(state=DISABLED, relief=SUNKEN)
+	self.enterroot()
+	self.__running = 0
+	self.dosomething()
 
     def go(self):
-	if self.__govar.get():
+	if self.__running:
 	    self.__parent.after_idle(self.dosomething)
 	else:
 	    self.__checking.config(text="Checking: none")
+	    self.__start.config(state=NORMAL, relief=RAISED)
+	    self.__step.config(state=NORMAL, relief=RAISED)
+
+    __busy = 0
 
     def dosomething(self):
+	if self.__busy: return
+	self.__busy = 1
 	if self.todo:
-	    i = random.randint(0, len(self.todo)-1)
+	    l = self.__todo.selectedindices()
+	    if l:
+		i = l[0]
+	    else:
+	        i = 0
+		self.__todo.list.select_set(i)
+	    self.__todo.list.yview(i)
 	    url = self.__todo.items[i]
 	    self.__checking.config(text="Checking: "+url)
 	    self.__parent.update()
 	    self.dopage(url)
-	elif self.__checkext and self.__extodo:
+	elif self.__extodo:
 	    # XXX Should have an indication of these in the todo window...
-	    i = random.randint(0, len(self.__extodo)-1)
+	    ##i = random.randint(0, len(self.__extodo)-1)
+	    i = 0
 	    url = self.__extodo[i]
 	    del self.__extodo[i]
 	    self.__checking.config(text="Checking: "+url)
 	    self.__parent.update()
 	    self.checkextpage(url)
 	else:
-	    self.__govar.set(0)
+	    self.stop()
+	self.__busy = 0
 	self.go()
 
     def showinfo(self, url):
 	d = self.__details
 	d.clear()
-	d.write("URL: %s\n" % url)
+	d.write("URL:    %s\n" % url)
 	if self.bad.has_key(url):
-	    d.write("Error: %s\n" % str(self.bad[url]))
+	    d.write("Error:  %s\n" % str(self.bad[url]))
+	if url in self.roots:
+	    d.write("Note:   This is a root URL\n")
 	if self.done.has_key(url):
-	    d.write("Status: done\n")
+	    d.write("Status: checked\n")
 	    o = self.done[url]
 	elif self.todo.has_key(url):
-	    d.write("Status: todo\n")
+	    d.write("Status: to check\n")
 	    o = self.todo[url]
 	elif self.ext.has_key(url):
-	    d.write("Status: ext\n")
+	    d.write("Status: off site\n")
 	    o = self.ext[url]
 	else:
 	    d.write("Status: unknown (!)\n")
 	    o = []
-	if url in self.roots:
-	    d.write("This is a root URL\n")
+	self.__mp.showpanel("Details")
 	for source, rawlink in o:
 	    d.write("Origin: %s" % source)
 	    if rawlink != url:
 		d.write(" (%s)" % rawlink)
 	    d.write("\n")
-	self.__mp.showpanel("Details")
 
     def newstatus(self):
 	self.__status.config(text="Status: "+self.status()[1:-1])
@@ -220,13 +289,18 @@ class ListPanel:
 	    self.panel, width=60, height=5)
 	self.list.config(exportselection=0)
 	if showinfo:
-	    self.list.bind('<Double-Button-1>', self.event)
+	    self.list.bind('<Double-Button-1>', self.doubleclick)
 	self.items = []
 
-    def event(self, dummy):
-	l = self.list.curselection()
-	if not l: return
-	self.showinfo(self.list.get(string.atoi(l[0])))
+    def doubleclick(self, event):
+	l = self.selectedindices()
+	if l:
+	    self.showinfo(self.list.get(l[0]))
+
+    def selectedindices(self):
+    	l = self.list.curselection()
+    	if not l: return []
+    	return map(string.atoi, l)
 
     def insert(self, url):
 	if url not in self.items:
@@ -235,9 +309,7 @@ class ListPanel:
 	    # (I tried sorting alphabetically, but the display is too jumpy)
 	    i = len(self.items)
 	    self.list.insert(i, url)
-	    self.list.select_clear(0, END)
-	    self.list.select_set(i)
-	    self.list.yview(i)
+##	    self.list.yview(i)
 	    self.items.insert(i, url)
 
     def remove(self, url):
@@ -246,11 +318,15 @@ class ListPanel:
 	except (ValueError, IndexError):
 	    pass
 	else:
+	    was_selected = i in self.selectedindices()
 	    self.list.delete(i)
-	    self.list.select_clear(i)
 	    del self.items[i]
 	    if not self.items:
 		self.mp.hidepanel(self.name)
+	    elif was_selected:
+		if i >= len(self.items):
+		    i = len(self.items) - 1
+		self.list.select_set(i)
 
 
 class LogPanel:
@@ -268,8 +344,9 @@ class LogPanel:
 
     def write(self, s):
 	self.text.insert(END, s)
-	self.text.yview(END)
-	self.panel.update()
+	if '\n' in s:
+	    self.text.yview(END)
+	    self.panel.update()
 
 
 class MultiPanel:
