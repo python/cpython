@@ -30,7 +30,9 @@ shouldn't happen often.
 
 BUGS
 Continuation lines are not dealt with at all and strings may confuse
-the hell out of the parser, but it usually works.''' # ' <-- bow to font lock
+the hell out of the parser, but it usually works.
+Nested classes are not recognized.
+Nested defs may be mistaken for class methods.''' # ' <-- bow to font lock
 
 import os
 import sys
@@ -38,16 +40,70 @@ import imp
 import re
 import string
 
-id = '[A-Za-z_][A-Za-z0-9_]*'	# match identifier
-blank_line = re.compile('^[ \t]*($|#)')
-is_class = re.compile('^class[ \t]+(?P<id>'+id+')[ \t]*(?P<sup>\([^)]*\))?[ \t]*:')
-is_method = re.compile('^[ \t]+def[ \t]+(?P<id>'+id+')[ \t]*\(')
-is_import = re.compile('^import[ \t]*(?P<imp>[^#;]+)')
-is_from = re.compile('^from[ \t]+(?P<module>'+id+'([ \t]*\\.[ \t]*'+id+')*)[ \t]+import[ \t]+(?P<imp>[^#;]+)')
-dedent = re.compile('^[^ \t]')
-indent = re.compile('^[^ \t]*')
+_getnext = re.compile(r"""
+## String slows it down by more than a factor of 2 (not because the
+## string regexp is slow, but because there are often a lot of strings,
+## which means the regexp has to get called that many more times).
+##    (?P<String>
+##	" [^"\\\n]* (?: \\. [^"\\\n]* )* "
+##
+##    |   ' [^'\\\n]* (?: \\. [^'\\\n]* )* '
+##
+##    |  \""" [^"\\]* (?:
+##			(?: \\. | "(?!"") )
+##			[^"\\]*
+##		    )*
+##       \"""
+##
+##    |   ''' [^'\\]* (?:
+##			(?: \\. | '(?!'') )
+##			[^'\\]*
+##		    )*
+##	'''
+##    )
+##
+##|   (?P<Method>
+    (?P<Method>
+	# dicey trick:  assume a def not at top level is a method
+	^ [ \t]+ def [ \t]+
+	(?P<MethodName> [a-zA-Z_] \w* )
+	[ \t]* \(
+    )
 
-_modules = {}				# cache of modules we've seen
+|   (?P<Class>
+	# lightly questionable:  assume only top-level classes count
+	^ class [ \t]+
+	(?P<ClassName> [a-zA-Z_] \w* )
+	[ \t]*
+	(?P<ClassSupers> \( [^)\n]* \) )?
+	[ \t]* :
+    )
+
+|   (?P<Import>
+	^ import [ \t]+
+	(?P<ImportList> [^#;\n]+ )
+    )
+
+|   (?P<ImportFrom>
+	^ from [ \t]+
+	(?P<ImportFromPath>
+	    [a-zA-Z_] \w*
+	    (?:
+		[ \t]* \. [ \t]* [a-zA-Z_] \w*
+	    )*
+	)
+	[ \t]+
+	import [ \t]+
+	(?P<ImportFromList> [^#;\n]+ )
+    )
+
+|   (?P<AtTopLevel>
+	# cheap trick: anything other than ws in first column
+	^ \S
+    )
+""", re.VERBOSE | re.DOTALL | re.MULTILINE).search
+
+_modules = {}                           # cache of modules we've seen
 
 # each Python class is represented by an instance of this class
 class Class:
@@ -117,66 +173,49 @@ def readmodule(module, path=[], inpackage=0):
 	dict = {}
 	_modules[module] = dict
 	imports = []
-	lineno = 0
+	src = f.read()
+	f.close()
+
+	# To avoid having to stop the regexp at each newline, instead
+	# when we need a line number we simply string.count the number of
+	# newlines in the string since the last time we did this; i.e.,
+	#    lineno = lineno + \
+	#             string.count(src, '\n', last_lineno_pos, here)
+	#    last_lineno_pos = here
+	countnl = string.count
+	lineno, last_lineno_pos = 1, 0
+	i = 0
 	while 1:
-		line = f.readline()
-		if not line:
+		m = _getnext(src, i)
+		if not m:
 			break
-		lineno = lineno + 1	# count lines
-		line = line[:-1]	# remove line feed
-		if blank_line.match(line):
-			# ignore blank (and comment only) lines
-			continue
-## 		res = indent.match(line)
-## 		if res:
-## 			indentation = len(string.expandtabs(res.group(0), 8))
-		res = is_import.match(line)
-		if res:
-			# import module
-			for n in string.splitfields(res.group('imp'), ','):
-				n = string.strip(n)
-				try:
-					# recursively read the
-					# imported module
-					d = readmodule(n, path, inpackage)
-				except:
-					print 'module',n,'not found'
-					pass
-			continue
-		res = is_from.match(line)
-		if res:
-			# from module import stuff
-			mod = res.group('module')
-			names = string.splitfields(res.group('imp'), ',')
-			try:
-				# recursively read the imported module
-				d = readmodule(mod, path, inpackage)
-			except:
-				print 'module',mod,'not found'
-				continue
-			# add any classes that were defined in the
-			# imported module to our name space if they
-			# were mentioned in the list
-			for n in names:
-				n = string.strip(n)
-				if d.has_key(n):
-					dict[n] = d[n]
-				elif n == '*':
-					# only add a name if not
-					# already there (to mimic what
-					# Python does internally)
-					# also don't add names that
-					# start with _
-					for n in d.keys():
-						if n[0] != '_' and \
-						   not dict.has_key(n):
-							dict[n] = d[n]
-			continue
-		res = is_class.match(line)
-		if res:
+		start, i = m.span()
+
+		if m.start("AtTopLevel") >= 0:
+			# end of class definition
+			cur_class = None
+
+##		elif m.start("String") >= 0:
+##			pass
+
+		elif m.start("Method") >= 0:
+			# found a method definition
+			if cur_class:
+				# and we know the class it belongs to
+				meth_name = m.group("MethodName")
+				lineno = lineno + \
+					 countnl(src, '\n',
+						 last_lineno_pos, start)
+				last_lineno_pos = start
+				cur_class._addmethod(meth_name, lineno)
+
+		elif m.start("Class") >= 0:
 			# we found a class definition
-			class_name = res.group('id')
-			inherit = res.group('sup')
+			lineno = lineno + \
+				 countnl(src, '\n', last_lineno_pos, start)
+			last_lineno_pos = start
+			class_name = m.group("ClassName")
+			inherit = m.group("ClassSupers")
 			if inherit:
 				# the class inherits from other classes
 				inherit = string.strip(inherit[1:-1])
@@ -203,20 +242,48 @@ def readmodule(module, path=[], inpackage=0):
 					names.append(n)
 				inherit = names
 			# remember this class
-			cur_class = Class(module, class_name, inherit, file, lineno)
+			cur_class = Class(module, class_name, inherit,
+					  file, lineno)
 			dict[class_name] = cur_class
-			continue
-		res = is_method.match(line)
-		if res:
-			# found a method definition
-			if cur_class:
-				# and we know the class it belongs to
-				meth_name = res.group('id')
-				cur_class._addmethod(meth_name, lineno)
-			continue
-		if dedent.match(line):
-			# end of class definition
-			cur_class = None
-	f.close()
-	return dict
 
+		elif m.start("Import") >= 0:
+			# import module
+			for n in string.split(m.group("ImportList"), ','):
+				n = string.strip(n)
+				try:
+					# recursively read the imported module
+					d = readmodule(n, path, inpackage)
+				except:
+					print 'module', n, 'not found'
+
+		elif m.start("ImportFrom") >= 0:
+			# from module import stuff
+			mod = m.group("ImportFromPath")
+			names = string.split(m.group("ImportFromList"), ',')
+			try:
+				# recursively read the imported module
+				d = readmodule(mod, path, inpackage)
+			except:
+				print 'module', mod, 'not found'
+				continue
+			# add any classes that were defined in the
+			# imported module to our name space if they
+			# were mentioned in the list
+			for n in names:
+				n = string.strip(n)
+				if d.has_key(n):
+					dict[n] = d[n]
+				elif n == '*':
+					# only add a name if not
+					# already there (to mimic what
+					# Python does internally)
+					# also don't add names that
+					# start with _
+					for n in d.keys():
+						if n[0] != '_' and \
+						   not dict.has_key(n):
+							dict[n] = d[n]
+		else:
+			assert 0, "regexp _getnext found something unexpected"
+
+	return dict
