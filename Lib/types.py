@@ -17,6 +17,7 @@ except NameError:
     pass
 
 StringType = type('')
+UnicodeType = type(u'')
 BufferType = type(buffer(''))
 
 TupleType = type(())
