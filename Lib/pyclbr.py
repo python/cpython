@@ -29,11 +29,8 @@ are recognized and imported modules are scanned as well, this
 shouldn't happen often.
 
 BUGS
-- Continuation lines are not dealt with at all.
-- While triple-quoted strings won't confuse it, lines that look like
-  def, class, import or "from ... import" stmts inside backslash-continued
-  single-quoted strings are treated like code.  The expense of stopping
-  that isn't worth it.
+- Continuation lines are not dealt with at all, except inside strings.
+- Nested classes and functions can confuse it.
 - Code that doesn't pass tabnanny or python -t will confuse it, unless
   you set the module TABWIDTH vrbl (default 8) to the correct tab width
   for the file.
@@ -76,6 +73,10 @@ _getnext = re.compile(r"""
                         [^'\\]*
                     )*
         '''
+
+    |   " [^"\\\n]* (?: \\. [^"\\\n]*)* "
+
+    |   ' [^'\\\n]* (?: \\. [^'\\\n]*)* '
     )
 
 |   (?P<Method>
