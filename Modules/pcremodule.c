@@ -2,7 +2,6 @@
 
 #include "Python.h"
 
-#include <assert.h>
 #ifndef Py_eval_input
 /* For Python 1.4, graminit.h has to be explicitly included */
 #include "graminit.h"
