@@ -613,9 +613,13 @@ must explicitly call it to ensure proper deletion of the base class
 part of the instance.  Note that it is possible for the \code{__del__}
 method to postpone destruction of the instance by creating a new
 reference to it.  It may then be called at a later time when this new
-reference is deleted.  Also note that it is not guaranteed that
+reference is deleted.  It is not guaranteed that
 \code{__del__} methods are called for objects that still exist when
 the interpreter exits.
+
+Note that \code{del x} doesn't directly call \code{x.__del__} -- the
+former decrements the reference count for \code{x} by one, but
+\code{x,__del__} is only called when its reference count reaches zero.
 
 \item[\tt __repr__(self)]
 Called by the \verb@repr()@ built-in function and by conversions
@@ -635,7 +639,8 @@ exceptions raised by comparisons are ignored, and the objects will be
 considered equal in this case.)
 
 \item[\tt __hash__(self)]
-Called by dictionary operations and by the built-in function
+Called for the key object for dictionary operations,
+and by the built-in function
 \code{hash()}.  Should return a 32-bit integer usable as a hash value
 for dictionary operations.  The only required property is that objects
 which compare equal have the same hash value; it is advised to somehow
@@ -649,6 +654,50 @@ implements a \code{__cmp__} method it should not implement
 \code{__hash__}, since the dictionary implementation assumes that a
 key's hash value is a constant.
 \obindex{dictionary}
+
+\item[\tt __call__(self, *args)]
+Called when the instance is ``called'' as a function.
+
+\end{description}
+
+
+\subsection{Special methods for attribute access}
+
+The following methods can be used to change the meaning of attribute
+access for class instances.
+
+\begin{description}
+
+\item[\tt __getattr__(self, name)]
+Called when an attribute lookup has not found the attribute in the
+usual places (i.e. it is not an instance attribute nor is it found in
+the class tree for \code{self}).  \code{name} is the attribute name.
+
+Note that if the attribute is found through the normal mechanism,
+\code{__getattr__} is not called.  (This is an asymmetry between
+\code{__getattr__} and \code{__setattr__}.)
+This is done both for efficiency reasons and because otherwise
+\code{__getattr__} would have no way to access other attributes of the
+instance.
+Note that at least for instance variables, \code{__getattr__} can fake
+total control by simply not inserting any values in the instance
+attribute dictionary.
+
+\item[\tt __setattr__(self, name, value)]
+Called when an attribute assignment is attempted.  This is called
+instead of the normal mechanism (i.e. store the value as an instance
+attribute).  \code{name} is the attribute name, \code{value} is the
+value to be assigned to it.
+
+If \code{__setattr__} wants to assign to an instance attribute, it
+should not simply execute \code{self.\var{name} = value} -- this would
+cause a recursive call.  Instead, it should insert the value in the
+dictionary of instance attributes, e.g. \code{self.__dict__[name] =
+value}.
+
+\item[\tt __delattr__(self, name)]
+Like \code{__setattr__} but for attribute deletion instead of
+assignment.
 
 \end{description}
 
