@@ -1173,6 +1173,48 @@ involving extended slice notation, or in absence of the slice methods,
 \method{__getitem__()}, \method{__setitem__()} or \method{__delitem__()} is
 called with a slice object as argument.
 
+The following example demonstrate how to make your program or module
+compatible with earlier versions of Python (assuming that methods
+\method{__getitem__()}, \method{__setitem__()} and \method{__delitem__()}
+support slice objects as arguments):
+
+\begin{verbatim}
+class MyClass:
+    ...
+    def __getitem__(self, index):
+        ...
+    def __setitem__(self, index, value):
+        ...
+    def __delitem__(self, index):
+        ...
+
+    if sys.version_info < (2, 0):
+        # They won't be defined if version is at least 2.0 final
+
+        def __getslice__(self, i, j):
+            return self[max(0, i):max(0, j):]
+        def __setslice__(self, i, j, seq):
+            self[max(0, i):max(0, j):] = seq
+        def __delslice__(self, i, j):
+            del self[max(0, i):max(0, j):]
+    ...
+\end{verbatim}
+
+Note the calls to \function{max()}; these are actually necessary due
+to the handling of negative indices before the
+\method{__*slice__()} methods are called.  When negative indexes are
+used, the \method{__*item__()} methods receive them as provided, but
+the \method{__*slice__()} methods get a ``cooked'' form of the index
+values.  For each negative index value, the length of the sequence is
+added to the index before calling the method (which may still result
+in a negative index); this is the customary handling of negative
+indexes by the built-in sequence types, and the \method{__*item__()}
+methods are expected to do this as well.  However, since they should
+already be doing that, negative indexes cannot be passed in; they must
+be be constrained to the bounds of the sequence before being passed to
+the \method{__*item__()} methods.
+Calling \code{max(0, i)} conveniently returns the proper value.
+
 The membership test operators (\keyword{in} and \keyword{not in}) are
 normally implemented as iteration loop through the sequence.  However,
 sequence objects can supply the following special method with a more
