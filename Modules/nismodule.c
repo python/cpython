@@ -294,9 +294,12 @@ nis_maplist ()
 	CLIENT *cl, *clnt_create();
 	char *server = "";
 	int mapi = 0;
+        int err;
 
-	if ((err = yp_get_default_domain (&dom)) != 0)
-		return nis_error(err);
+	if ((err = yp_get_default_domain (&dom)) != 0) {
+		nis_error(err);
+		return NULL;
+	}
 
 	while (!strcmp("", server) && aliases[mapi].map != 0L) {
 		yp_master (dom, aliases[mapi].map, &server);
