@@ -193,26 +193,28 @@ class IdleConf:
         """
         Creates (if required) and returns a filesystem directory for storing
         user config files.
+        
         """
-        cfgDir='.idlerc'
-        userDir=os.path.expanduser('~')
-        if userDir != '~': #'HOME' exists as a key in os.environ
+        cfgDir = '.idlerc'
+        userDir = os.path.expanduser('~')
+        if userDir != '~': # expanduser() found user home dir
             if not os.path.exists(userDir):
-                warn=('\n Warning: HOME environment variable points to\n '+
-                        userDir+'\n but the path does not exist.\n')
+                warn = ('\n Warning: os.path.expanduser("~") points to\n '+
+                        userDir+',\n but the path does not exist.\n')
                 sys.stderr.write(warn)
-                userDir='~'
-        if userDir=='~': #we still don't have a home directory
-            #traditionally idle has defaulted to os.getcwd(), is this adeqate?
-            userDir = os.getcwd() #hack for no real homedir
-        userDir=os.path.join(userDir,cfgDir)
+                userDir = '~'
+        if userDir == "~": # still no path to home!
+            # traditionally IDLE has defaulted to os.getcwd(), is this adequate?
+            userDir = os.getcwd()
+        userDir = os.path.join(userDir, cfgDir)
         if not os.path.exists(userDir):
-            try: #make the config dir if it doesn't exist yet
+            try:
                 os.mkdir(userDir)
-            except IOError:
-                warn=('\n Warning: unable to create user config directory\n '+
-                        userDir+'\n')
+            except (OSError, IOError):
+                warn = ('\n Warning: unable to create user config directory\n'+
+                        userDir+'\n Check path and permissions.\n Exiting!\n\n')
                 sys.stderr.write(warn)
+                raise SystemExit
         return userDir
 
     def GetOption(self, configType, section, option, default=None, type=None,
