@@ -12,6 +12,7 @@ __rcsid__ = "$Id$"
 
 import sys, os
 import string, re
+from types import *
 from distutils.errors import *
 from distutils.fancy_getopt import fancy_getopt
 from distutils import util
