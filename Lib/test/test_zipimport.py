@@ -49,7 +49,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         zipimport._zip_directory_cache.clear()
         ImportHooksBaseTestCase.setUp(self)
 
-    def doTest(self, expected_ext, files, *modules):
+    def doTest(self, expected_ext, files, *modules, **kw):
         z = ZipFile(TEMP_ZIP, "w")
         try:
             for name, (mtime, data) in files.items():
@@ -57,6 +57,19 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                 zinfo.compress_type = self.compression
                 z.writestr(zinfo, data)
             z.close()
+
+            stuff = kw.get("stuff", None)
+            if stuff is not None:
+                # Prepend 'stuff' to the start of the zipfile
+                f = open(TEMP_ZIP, "rb")
+                data = f.read()
+                f.close()
+
+                f = open(TEMP_ZIP, "wb")
+                f.write(stuff)
+                f.write(data)
+                f.close()
+
             sys.path.insert(0, TEMP_ZIP)
 
             mod = __import__(".".join(modules), globals(), locals(),
@@ -181,6 +194,12 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                  "some.data": (NOW, "some data")}
         self.doTest(pyc_ext, files, TESTMOD)
 
+    def testImport_WithStuff(self):
+        # try importing from a zipfile which contains additional
+        # stuff at the beginning of the file
+        files = {TESTMOD + ".py": (NOW, test_src)}
+        self.doTest(".py", files, TESTMOD,
+                    stuff="Some Stuff"*31)
 
 class CompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_DEFLATED
