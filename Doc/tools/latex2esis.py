@@ -26,7 +26,7 @@ _end_env_rx = re.compile(r"[\\]end{([^}]*)}")
 _begin_macro_rx = re.compile("[\\\\]([a-zA-Z]+[*]?)({|\\s*\n?)")
 _comment_rx = re.compile("%+[ \t]*(.*)\n")
 _text_rx = re.compile(r"[^]%\\{}]+")
-_optional_rx = re.compile(r"[[]([^]]*)[]]")
+_optional_rx = re.compile(r"\s*[[]([^]]*)[]]")
 _parameter_rx = re.compile("[ \n]*{([^}]*)}")
 _token_rx = re.compile(r"[a-zA-Z][a-zA-Z0-9.-]*$")
 _start_group_rx = re.compile("[ \n]*{")
@@ -181,8 +181,8 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
                     m = _parameter_rx.match(line)
                     if not m:
                         raise LaTeXFormatError(
-                            "could not extract parameter group: "
-                            + `line`)
+                            "could not extract parameter %s for %s: %s"
+                            % (attrname, macroname, `line[:100]`))
                     value = m.group(1)
                     if _token_rx.match(value):
                         dtype = "TOKEN"
