@@ -34,13 +34,15 @@ class UserDict:
             self.data.update(dict)
         else:
             for k, v in dict.items():
-                self.data[k] = v
+                self[k] = v
     def get(self, key, failobj=None):
-        return self.data.get(key, failobj)
+        if not self.has_key(key):
+            return failobj
+        return self[key]
     def setdefault(self, key, failobj=None):
-        if not self.data.has_key(key):
-            self.data[key] = failobj
-        return self.data[key]
+        if not self.has_key(key):
+            self[key] = failobj
+        return self[key]
     def popitem(self):
         return self.data.popitem()
     def __contains__(self, key):
