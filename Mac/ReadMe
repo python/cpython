@@ -3,9 +3,7 @@ How to install Python 2.1.1 on your Macintosh
 
 This is a MacPython that can run on classic MacOS (from 8.1
 onwards) and natively on MacOSX. The installer tries to work out whether you can
-use the Carbon version or not. This is also the first MacPython distribution
-to be packaged as an active installer, which only downloads the parts you actually
-need. Let me hear about problems in these areas.
+use the Carbon version or not.
 
 You should definitely read the Relnotes file too.
 
