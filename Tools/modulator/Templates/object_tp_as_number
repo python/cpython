@@ -1,101 +1,82 @@
+
 /* Code to access $name$ objects as numbers */
 
-static object *
+static PyObject *
 $abbrev$_add(v, w)
 	$abbrev$object *v;
 	$abbrev$object *w;
 {
 	/* XXXX Add them */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_sub(v, w)
 	$abbrev$object *v;
 	$abbrev$object *w;
 {
 	/* XXXX Subtract them */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_mul(v, w)
 	$abbrev$object *v;
 	$abbrev$object *w;
 {
 	/* XXXX Multiply them */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_div(x, y)
 	$abbrev$object *x;
 	$abbrev$object *y;
 {
 	/* XXXX Divide them */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_mod(x, y)
 	$abbrev$object *x;
 	$abbrev$object *y;
 {
 	/* XXXX Modulo them */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_divmod(x, y)
 	$abbrev$object *x;
 	$abbrev$object *y;
 {
 	/* XXXX Return 2-tuple with div and mod */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_pow(v, w, z)
 	$abbrev$object *v;
 	$abbrev$object *w;
 	$abbrev$object *z;
 {
 	/* XXXX */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }				
 
-static object *
+static PyObject *
 $abbrev$_neg(v)
 	$abbrev$object *v;
 {
 	/* XXXX */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_pos(v)
 	$abbrev$object *v;
 {
 	/* XXXX */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_abs(v)
 	$abbrev$object *v;
 {
 	/* XXXX */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
 static int
@@ -103,124 +84,100 @@ $abbrev$_nonzero(v)
 	$abbrev$object *v;
 {
 	/* XXXX Return 1 if non-zero */
-	err_setstr(SystemError, "not implemented");
-	return -1;
 }
 
-static object *
+static PyObject *
 $abbrev$_invert(v)
 	$abbrev$object *v;
 {
 	/* XXXX */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_lshift(v, w)
 	$abbrev$object *v;
 	$abbrev$object *w;
 {
 	/* XXXX */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_rshift(v, w)
 	$abbrev$object *v;
 	$abbrev$object *w;
 {
 	/* XXXX */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_and(v, w)
 	$abbrev$object *v;
 	$abbrev$object *w;
 {
 	/* XXXX */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_xor(v, w)
 	$abbrev$object *v;
 	$abbrev$object *w;
 {
 	/* XXXX */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_or(v, w)
 	$abbrev$object *v;
 	$abbrev$object *w;
 {
 	/* XXXX */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
 static int
 $abbrev$_coerce(pv, pw)
-	object **pv;
-	object **pw;
+	PyObject **pv;
+	PyObject **pw;
 {
 	/* XXXX I haven't a clue... */
 	return 1;
 }
 
-static object *
+static PyObject *
 $abbrev$_int(v)
 	$abbrev$object *v;
 {
 	/* XXXX */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_long(v)
 	$abbrev$object *v;
 {
 	/* XXXX */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_float(v)
 	$abbrev$object *v;
 {
 	/* XXXX */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_oct(v)
 	$abbrev$object *v;
 {
 	/* XXXX Return object as octal stringobject */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static object *
+static PyObject *
 $abbrev$_hex(v)
 	$abbrev$object *v;
 {
 	/* XXXX Return object as hex stringobject */
-	err_setstr(SystemError, "not implemented");
-	return NULL;
 }
 
-static number_methods $abbrev$_as_number = {
+static PyNumberMethods $abbrev$_as_number = {
 	(binaryfunc)$abbrev$_add,	/*nb_add*/
 	(binaryfunc)$abbrev$_sub,	/*nb_subtract*/
 	(binaryfunc)$abbrev$_mul,	/*nb_multiply*/

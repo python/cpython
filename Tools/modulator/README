@@ -1,7 +1,11 @@
-This is release 1.0 of modulator, a generator of boilerplate code for
+This is release 1.1 of modulator, a generator of boilerplate code for
 modules to be written in C.
 
-Usage when you have tk is *reall* simple: start modulator, fill out
+There is only one difference with release 1.0, really: the templates
+now use "new-style" naming conventions. Many thanks to Chak Tan
+<tan@ee.rochester.edu> for supplying them.
+
+Usage when you have tk is *really* simple: start modulator, fill out
 the forms specifying all the objects and methods, tell modulator
 whether objects should also be accessible as sequences, etc and press
 'generate code'. It will write a complete skeleton module for you.

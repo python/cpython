@@ -1,6 +1,6 @@
 
-static typeobject $Abbrev$type = {
-	OB_HEAD_INIT(&Typetype)
+static PyTypeObject $Abbrev$type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
 	"$name$",			/*tp_name*/
 	sizeof($abbrev$object),		/*tp_basicsize*/
@@ -20,3 +20,4 @@ static typeobject $Abbrev$type = {
 
 /* End of code for $name$ objects */
 /* -------------------------------------------------------- */
+

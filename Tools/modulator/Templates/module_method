@@ -1,12 +1,12 @@
 
-static object *
+static PyObject *
 $abbrev$_$method$(self, args)
-	object *self;	/* Not used */
-	object *args;
+	PyObject *self;	/* Not used */
+	PyObject *args;
 {
 
-	if (!newgetargs(args, ""))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }

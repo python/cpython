@@ -1,3 +1,4 @@
+
 /* Code to access $name$ objects as mappings */
 
 static int
@@ -7,10 +8,10 @@ $abbrev$_length(self)
 	/* XXXX Return the size of the mapping */
 }
 
-static object *
+static PyObject *
 $abbrev$_subscript(self, key)
 	$abbrev$object *self;
-	object *key;
+	PyObject *key;
 {
 	/* XXXX Return the item of self indexed by key */
 }
@@ -18,13 +19,13 @@ $abbrev$_subscript(self, key)
 static int
 $abbrev$_ass_sub(self, v, w)
 	$abbrev$object *self;
-	object *v, *w;
+	PyObject *v, *w;
 {
 	/* XXXX Put w in self under key v */
 	return 0;
 }
 
-static mapping_methods $abbrev$_as_mapping = {
+static PyMappingMethods $abbrev$_as_mapping = {
 	(inquiry)$abbrev$_length,		/*mp_length*/
 	(binaryfunc)$abbrev$_subscript,		/*mp_subscript*/
 	(objobjargproc)$abbrev$_ass_sub,	/*mp_ass_subscript*/

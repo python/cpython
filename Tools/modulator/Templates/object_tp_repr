@@ -1,9 +1,9 @@
 
-static object *
+static PyObject *
 $abbrev$_repr(self)
 	$abbrev$object *self;
 {
-	object *s;
+	PyObject *s;
 
 	/* XXXX Add code here to put self into s */
 	return s;

@@ -1,9 +1,9 @@
 
-static object *
+static PyObject *
 $abbrev$_getattr(self, name)
 	$abbrev$object *self;
 	char *name;
 {
 	/* XXXX Add your own getattr code here */
-	return findmethod($abbrev$_methods, (object *)self, name);
+	return Py_FindMethod($abbrev$_methods, (PyObject *)self, name);
 }

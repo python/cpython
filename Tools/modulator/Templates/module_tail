@@ -1,9 +1,9 @@
 
 /* List of methods defined in the module */
 
-static struct methodlist $abbrev$_methods[] = {
- $methodlist$
- {NULL,		NULL}		/* sentinel */
+static struct PyMethodDef $abbrev$_methods[] = {
+	$methodlist$
+	{NULL,		NULL}		/* sentinel */
 };
 
 
@@ -12,19 +12,20 @@ static struct methodlist $abbrev$_methods[] = {
 void
 init$name$()
 {
-	object *m, *d;
+	PyObject *m, *d;
 
 	/* Create the module and add the functions */
-	m = initmodule("$name$", $abbrev$_methods);
+	m = Py_InitModule("$name$", $abbrev$_methods);
 
 	/* Add some symbolic constants to the module */
-	d = getmoduledict(m);
-	ErrorObject = newstringobject("$name$.error");
-	dictinsert(d, "error", ErrorObject);
+	d = PyModule_GetDict(m);
+	ErrorObject = PyString_FromString("$name$.error");
+	PyDict_SetItemString(d, "error", ErrorObject);
 
 	/* XXXX Add constants here */
 	
 	/* Check for errors */
-	if (err_occurred())
-		fatal("can't initialize module $name$");
+	if (PyErr_Occurred())
+		Py_FatalError("can't initialize module $name$");
 }
+
