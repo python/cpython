@@ -13,8 +13,6 @@
 
 \begin{document}
 
-\pagenumbering{roman}
-
 \maketitle
 
 \input{copyright}
@@ -64,8 +62,6 @@ modules described in the \emph{Python Library Reference}.
 \end{abstract}
 
 \tableofcontents
-
-\pagenumbering{arabic}
 
 
 \chapter{Whetting Your Appetite}
@@ -166,9 +162,9 @@ on those machines where it is available; putting \file{/usr/local/bin} in
 your \UNIX{} shell's search path makes it possible to start it by
 typing the command
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 python
-\end{verbatim}\ecode
+\end{verbatim}
 %
 to the shell.  Since the choice of the directory where the interpreter
 lives is an installation option, other places are possible; check with
@@ -178,7 +174,7 @@ your local Python guru or system administrator.  (E.g.,
 Typing an EOF character (Control-D on \UNIX{}, Control-Z or F6 on DOS
 or Windows) at the primary prompt causes the interpreter to exit with
 a zero exit status.  If that doesn't work, you can exit the
-interpreter by typing the following commands: \code{import sys ;
+interpreter by typing the following commands: \samp{import sys;
 sys.exit()}.
 
 The interpreter's line-editing features usually aren't very
@@ -238,19 +234,19 @@ command to handle.
 When commands are read from a tty, the interpreter is said to be in
 \emph{interactive mode}.  In this mode it prompts for the next command
 with the \emph{primary prompt}, usually three greater-than signs
-(\code{>>>}); for continuation lines it prompts with the
+(\samp{>>> }); for continuation lines it prompts with the
 \emph{secondary prompt},
-by default three dots (\code{...}).  
+by default three dots (\samp{... }).  
 
 The interpreter prints a welcome message stating its version number
 and a copyright notice before printing the first prompt, e.g.:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 python
 Python 1.5b1 (#1, Dec  3 1997, 00:02:06)  [GCC 2.7.2.2] on sunos5
 Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam
 >>>
-\end{verbatim}\ecode
+\end{verbatim}
 
 \section{The Interpreter and its Environment}
 
@@ -283,18 +279,18 @@ Typing an interrupt while a command is executing raises the
 On BSD'ish \UNIX{} systems, Python scripts can be made directly
 executable, like shell scripts, by putting the line
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 #! /usr/bin/env python
-\end{verbatim}\ecode
+\end{verbatim}
 %
 (assuming that the interpreter is on the user's PATH) at the beginning
-of the script and giving the file an executable mode.  The \code{\#!}
+of the script and giving the file an executable mode.  The \samp{\#!}
 must be the first two characters of the file.
 
 \subsection{The Interactive Startup File}
 
-XXX This should probably be dumped in an appendix, since most people
-don't use Python interactively in non-trivial ways.
+% XXX This should probably be dumped in an appendix, since most people
+% don't use Python interactively in non-trivial ways.
 
 When you use Python interactively, it is frequently handy to have some
 standard commands executed every time the interpreter is started.  You
@@ -314,14 +310,18 @@ this file.
 
 If you want to read an additional start-up file from the current
 directory, you can program this in the global start-up file, e.g.
-\code{execfile('.pythonrc')}.  If you want to use the startup file
-in a script, you must write this explicitly in the script, e.g.
-\code{import os;} \code{execfile(os.environ['PYTHONSTARTUP'])}.
+\samp{execfile('.pythonrc')}.  If you want to use the startup file
+in a script, you must write this explicitly in the script:
+
+\begin{verbatim}
+import os
+execfile(os.environ['PYTHONSTARTUP'])
+\end{verbatim}
 
 \chapter{An Informal Introduction to Python}
 
 In the following examples, input and output are distinguished by the
-presence or absence of prompts (\code{>>>} and \code{...}): to repeat
+presence or absence of prompts (\samp{>>> } and \samp{... }): to repeat
 the example, you must type everything after the prompt, when the
 prompt appears; lines that do not begin with a prompt are output from
 the interpreter.%
@@ -336,7 +336,7 @@ you must type a blank line; this is used to end a multi-line command.
 \section{Using Python as a Calculator}
 
 Let's try some simple Python commands.  Start the interpreter and wait
-for the primary prompt, \code{>>>}.  (It shouldn't take long.)
+for the primary prompt, \samp{>>> }.  (It shouldn't take long.)
 
 \subsection{Numbers}
 
@@ -346,7 +346,7 @@ straightforward: the operators \code{+}, \code{-}, \code{*} and \code{/}
 work just like in most other languages (e.g., Pascal or \C{}); parentheses
 can be used for grouping.  For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> 2+2
 4
 >>> # This is a comment
@@ -361,23 +361,21 @@ can be used for grouping.  For example:
 2
 >>> 7/-3
 -3
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Like in \C{}, the equal sign (\code{=}) is used to assign a value to a
 variable.  The value of an assignment is not written:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> width = 20
 >>> height = 5*9
 >>> width * height
 900
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 A value can be assigned to several variables simultaneously:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> x = y = z = 0  # Zero x, y and z
 >>> x
 0
@@ -385,25 +383,24 @@ A value can be assigned to several variables simultaneously:
 0
 >>> z
 0
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 There is full support for floating point; operators with mixed type
 operands convert the integer operand to floating point:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> 4 * 2.5 / 3.3
 3.0303030303
 >>> 7.0 / 2
 3.5
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Complex numbers are also supported; imaginary numbers are written with
-a suffix of \code{'j'} or \code{'J'}.  Complex numbers with a nonzero
-real component are written as \code{(\var{real}+\var{imag}j)}, or can
-be created with the \code{complex(\var{real}, \var{imag})} function.
+a suffix of \samp{j} or \samp{J}.  Complex numbers with a nonzero
+real component are written as \samp{(\var{real}+\var{imag}j)}, or can
+be created with the \samp{complex(\var{real}, \var{imag})} function.
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> 1j * 1J
 (-1+0j)
 >>> 1j * complex(0,1)
@@ -414,27 +411,27 @@ be created with the \code{complex(\var{real}, \var{imag})} function.
 (9+3j)
 >>> (1+2j)/(1+1j)
 (1.5+0.5j)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Complex numbers are always represented as two floating point numbers,
 the real and imaginary part.  To extract these parts from a complex
-number \code{z}, use \code{z.real} and \code{z.imag}.  
+number \var{z}, use \code{\var{z}.real} and \code{\var{z}.imag}.  
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> a=1.5+0.5j
 >>> a.real
 1.5
 >>> a.imag
 0.5
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The conversion functions to floating point and integer
-(\code{float()}, \code{int()} and \code{long()}) don't work for
-complex numbers --- there is no one correct way to convert a complex
-number to a real number.  Use \code{abs(z)} to get its magnitude (as a
-float) or \code{z.real} to get its real part.
+(\function{float()}, \function{int()} and \function{long()}) don't
+work for complex numbers --- there is no one correct way to convert a
+complex number to a real number.  Use \code{abs(\var{z})} to get its
+magnitude (as a float) or \code{z.real} to get its real part.
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> a=1.5+0.5j
 >>> float(a)
 Traceback (innermost last):
@@ -444,7 +441,7 @@ TypeError: can't convert complex to float; use e.g. abs(z)
 1.5
 >>> abs(a)
 1.58113883008
-\end{verbatim}\ecode
+\end{verbatim}
 %
 In interactive mode, the last printed expression is assigned to the
 variable \code{_}.  This means that when you are using Python as a
@@ -473,7 +470,7 @@ Besides numbers, Python can also manipulate strings, which can be
 expressed in several ways.  They can be enclosed in single quotes or
 double quotes:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> 'spam eggs'
 'spam eggs'
 >>> 'doesn\'t'
@@ -486,10 +483,10 @@ double quotes:
 '"Yes," he said.'
 >>> '"Isn\'t," she said.'
 '"Isn\'t," she said.'
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
-String literals can span multiple lines in several ways.  Newlines can be escaped with backslashes, e.g.
+String literals can span multiple lines in several ways.  Newlines can
+be escaped with backslashes, e.g.:
 
 \begin{verbatim}
 hello = "This is a rather long string containing\n\
@@ -500,6 +497,7 @@ print hello
 \end{verbatim}
 
 which would print the following:
+
 \begin{verbatim}
 This is a rather long string containing
 several lines of text just as you would do in C.
@@ -520,93 +518,88 @@ Usage: thingy [OPTIONS]
 
 produces the following output:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 Usage: thingy [OPTIONS] 
      -h                        Display this usage message
      -H hostname               Hostname to connect to
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The interpreter prints the result of string operations in the same way
 as they are typed for input: inside quotes, and with quotes and other
 funny characters escaped by backslashes, to show the precise
 value.  The string is enclosed in double quotes if the string contains
 a single quote and no double quotes, else it's enclosed in single
-quotes.  (The \code{print} statement, described later, can be used to
-write strings without quotes or escapes.)
+quotes.  (The \keyword{print} statement, described later, can be used
+to write strings without quotes or escapes.)
 
 Strings can be concatenated (glued together) with the \code{+}
 operator, and repeated with \code{*}:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> word = 'Help' + 'A'
 >>> word
 'HelpA'
 >>> '<' + word*5 + '>'
 '<HelpAHelpAHelpAHelpAHelpA>'
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Two string literals next to each other are automatically concatenated;
-the first line above could also have been written \code{word = 'Help'
+the first line above could also have been written \samp{word = 'Help'
 'A'}; this only works with two literals, not with arbitrary string expressions.
 
 Strings can be subscripted (indexed); like in \C{}, the first character
 of a string has subscript (index) 0.  There is no separate character
 type; a character is simply a string of size one.  Like in Icon,
-substrings can be specified with the \emph{slice} notation: two indices
+substrings can be specified with the \emph{slice notation}: two indices
 separated by a colon.
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> word[4]
 'A'
 >>> word[0:2]
 'He'
 >>> word[2:4]
 'lp'
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Slice indices have useful defaults; an omitted first index defaults to
 zero, an omitted second index defaults to the size of the string being
 sliced.
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> word[:2]    # The first two characters
 'He'
 >>> word[2:]    # All but the first two characters
 'lpA'
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Here's a useful invariant of slice operations: \code{s[:i] + s[i:]}
 equals \code{s}.
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> word[:2] + word[2:]
 'HelpA'
 >>> word[:3] + word[3:]
 'HelpA'
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Degenerate slice indices are handled gracefully: an index that is too
 large is replaced by the string size, an upper bound smaller than the
 lower bound returns an empty string.
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> word[1:100]
 'elpA'
 >>> word[10:]
 ''
 >>> word[2:1]
 ''
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Indices may be negative numbers, to start counting from the right.
 For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> word[-1]     # The last character
 'A'
 >>> word[-2]     # The last-but-one character
@@ -615,43 +608,40 @@ For example:
 'pA'
 >>> word[:-2]    # All but the last two characters
 'Hel'
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
 But note that -0 is really the same as 0, so it does not count from
 the right!
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> word[-0]     # (since -0 equals 0)
 'H'
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Out-of-range negative slice indices are truncated, but don't try this
 for single-element (non-slice) indices:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> word[-100:]
 'HelpA'
 >>> word[-10]    # error
 Traceback (innermost last):
   File "<stdin>", line 1
 IndexError: string index out of range
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The best way to remember how slices work is to think of the indices as
 pointing \emph{between} characters, with the left edge of the first
 character numbered 0.  Then the right edge of the last character of a
 string of \var{n} characters has index \var{n}, for example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
  +---+---+---+---+---+ 
  | H | e | l | p | A |
  +---+---+---+---+---+ 
  0   1   2   3   4   5 
 -5  -4  -3  -2  -1
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The first row of numbers gives the position of the indices 0...5 in
 the string; the second row gives the corresponding negative indices.
@@ -662,14 +652,13 @@ For nonnegative indices, the length of a slice is the difference of
 the indices, if both are within bounds, e.g., the length of
 \code{word[1:3]} is 2.
 
-The built-in function \code{len()} returns the length of a string:
+The built-in function \function{len()} returns the length of a string:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> s = 'supercalifragilisticexpialidocious'
 >>> len(s)
 34
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 
 \subsection{Lists}
 
@@ -678,17 +667,16 @@ together other values.  The most versatile is the \emph{list}, which
 can be written as a list of comma-separated values (items) between
 square brackets.  List items need not all have the same type.
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> a = ['spam', 'eggs', 100, 1234]
 >>> a
 ['spam', 'eggs', 100, 1234]
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Like string indices, list indices start at 0, and lists can be sliced,
 concatenated and so on:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> a[0]
 'spam'
 >>> a[3]
@@ -701,25 +689,23 @@ concatenated and so on:
 ['spam', 'eggs', 'bacon', 4]
 >>> 3*a[:3] + ['Boe!']
 ['spam', 'eggs', 100, 'spam', 'eggs', 100, 'spam', 'eggs', 100, 'Boe!']
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Unlike strings, which are \emph{immutable}, it is possible to change
 individual elements of a list:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> a
 ['spam', 'eggs', 100, 1234]
 >>> a[2] = a[2] + 23
 >>> a
 ['spam', 'eggs', 123, 1234]
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Assignment to slices is also possible, and this can even change the size
 of the list:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> # Replace some items:
 ... a[0:2] = [1, 12]
 >>> a
@@ -735,21 +721,19 @@ of the list:
 >>> a[:0] = a     # Insert (a copy of) itself at the beginning
 >>> a
 [123, 'bletch', 'xyzzy', 1234, 123, 'bletch', 'xyzzy', 1234]
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
-The built-in function \code{len()} also applies to lists:
+The built-in function \function{len()} also applies to lists:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> len(a)
 8
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 It is possible to nest lists (create lists containing other lists),
 for example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> q = [2, 3]
 >>> p = [1, q, 4]
 >>> len(p)
@@ -763,8 +747,7 @@ for example:
 [1, [2, 3, 'xtra'], 4]
 >>> q
 [2, 3, 'xtra']
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Note that in the last example, \code{p[1]} and \code{q} really refer to
 the same object!  We'll come back to \emph{object semantics} later.
@@ -775,7 +758,7 @@ Of course, we can use Python for more complicated tasks than adding
 two and two together.  For instance, we can write an initial
 subsequence of the \emph{Fibonacci} series as follows:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> # Fibonacci series:
 ... # the sum of two elements defines the next
 ... a, b = 0, 1
@@ -789,8 +772,7 @@ subsequence of the \emph{Fibonacci} series as follows:
 3
 5
 8
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 This example introduces several new features.
 
@@ -804,13 +786,14 @@ the right-hand side are all evaluated first before any of the
 assignments take place.
 
 \item
-The \code{while} loop executes as long as the condition (here: \code{b <
-10}) remains true.  In Python, like in \C{}, any non-zero integer value is
-true; zero is false.  The condition may also be a string or list value,
-in fact any sequence; anything with a non-zero length is true, empty
-sequences are false.  The test used in the example is a simple
-comparison.  The standard comparison operators are written the same as
-in \C{}: \code{<}, \code{>}, \code{==}, \code{<=}, \code{>=} and \code{!=}.
+The \keyword{while} loop executes as long as the condition (here:
+\code{b < 10}) remains true.  In Python, like in \C{}, any non-zero
+integer value is true; zero is false.  The condition may also be a
+string or list value, in fact any sequence; anything with a non-zero
+length is true, empty sequences are false.  The test used in the
+example is a simple comparison.  The standard comparison operators are
+written the same as in \C{}: \code{<}, \code{>}, \code{==}, \code{<=},
+\code{>=} and \code{!=}.
 
 \item
 The \emph{body} of the loop is \emph{indented}: indentation is Python's
@@ -824,31 +807,29 @@ completion (since the parser cannot guess when you have typed the last
 line).
 
 \item
-The \code{print} statement writes the value of the expression(s) it is
+The \keyword{print} statement writes the value of the expression(s) it is
 given.  It differs from just writing the expression you want to write
 (as we did earlier in the calculator examples) in the way it handles
 multiple expressions and strings.  Strings are printed without quotes,
 and a space is inserted between items, so you can format things nicely,
 like this:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> i = 256*256
 >>> print 'The value of i is', i
 The value of i is 65536
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 A trailing comma avoids the newline after the output:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> a, b = 0, 1
 >>> while b < 1000:
 ...     print b,
 ...     a, b = b, a+b
 ... 
 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Note that the interpreter inserts a newline before it prints the next
 prompt if the last line was not completed.
@@ -858,16 +839,16 @@ prompt if the last line was not completed.
 
 \chapter{More Control Flow Tools}
 
-Besides the \code{while} statement just introduced, Python knows the
-usual control flow statements known from other languages, with some
-twists.
+Besides the \keyword{while} statement just introduced, Python knows
+the usual control flow statements known from other languages, with
+some twists.
 
 \section{If Statements}
 
-Perhaps the most well-known statement type is the \code{if} statement.
-For example:
+Perhaps the most well-known statement type is the \keyword{if}
+statement.  For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> if x < 0:
 ...      x = 0
 ...      print 'Negative changed to zero'
@@ -878,25 +859,29 @@ For example:
 ... else:
 ...      print 'More'
 ... 
-\end{verbatim}\ecode
+\end{verbatim}
 %
-There can be zero or more \code{elif} parts, and the \code{else} part is
-optional.  The keyword `\code{elif}' is short for `\code{else if}', and is
-useful to avoid excessive indentation.  An \code{if...elif...elif...}
-sequence is a substitute for the \emph{switch} or \emph{case} statements
-found in other languages.
+There can be zero or more \keyword{elif} parts, and the \keyword{else}
+part is optional.  The keyword `\keyword{elif}' is short for `else
+if', and is useful to avoid excessive indentation.  An
+\keyword{if} \ldots\ \keyword{elif} \ldots\ \keyword{elif}
+\ldots\ sequence is a substitute for the  \emph{switch} or
+%    ^^^^
+%    Weird spacings happen here if the wrapping of the source text
+%    gets changed in the wrong way.
+\emph{case} statements found in other languages.
 
 \section{For Statements}
 
-The \code{for} statement in Python differs a bit from what you may be
+The \keyword{for} statement in Python differs a bit from what you may be
 used to in \C{} or Pascal.  Rather than always iterating over an
 arithmetic progression of numbers (like in Pascal), or leaving the user
 completely free in the iteration test and step (as \C{}), Python's
-\code{for} statement iterates over the items of any sequence (e.g., a
+\keyword{for} statement iterates over the items of any sequence (e.g., a
 list or a string), in the order that they appear in the sequence.  For 
 example (no pun intended):
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> # Measure some strings:
 ... a = ['cat', 'window', 'defenestrate']
 >>> for x in a:
@@ -905,8 +890,7 @@ example (no pun intended):
 cat 3
 window 6
 defenestrate 12
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 It is not safe to modify the sequence being iterated over in the loop
 (this can only happen for mutable sequence types, i.e., lists).  If
@@ -914,46 +898,44 @@ you need to modify the list you are iterating over, e.g., duplicate
 selected items, you must iterate over a copy.  The slice notation
 makes this particularly convenient:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> for x in a[:]: # make a slice copy of the entire list
 ...    if len(x) > 6: a.insert(0, x)
 ... 
 >>> a
 ['defenestrate', 'cat', 'window', 'defenestrate']
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 
 \section{The \sectcode{range()} Function}
 
 If you do need to iterate over a sequence of numbers, the built-in
-function \code{range()} comes in handy.  It generates lists containing
-arithmetic progressions, e.g.:
+function \function{range()} comes in handy.  It generates lists
+containing arithmetic progressions, e.g.:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> range(10)
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
-The given end point is never part of the generated list; \code{range(10)}
-generates a list of 10 values, exactly the legal indices for items of a
-sequence of length 10.  It is possible to let the range start at another
-number, or to specify a different increment (even negative):
+The given end point is never part of the generated list;
+\code{range(10)} generates a list of 10 values, exactly the legal
+indices for items of a sequence of length 10.  It is possible to let
+the range start at another number, or to specify a different increment
+(even negative):
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> range(5, 10)
 [5, 6, 7, 8, 9]
 >>> range(0, 10, 3)
 [0, 3, 6, 9]
 >>> range(-10, -100, -30)
 [-10, -40, -70]
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
-To iterate over the indices of a sequence, combine \code{range()} and
-\code{len()} as follows:
+To iterate over the indices of a sequence, combine \function{range()}
+and \function{len()} as follows:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> a = ['Mary', 'had', 'a', 'little', 'lamb']
 >>> for i in range(len(a)):
 ...     print i, a[i]
@@ -963,24 +945,24 @@ To iterate over the indices of a sequence, combine \code{range()} and
 2 a
 3 little
 4 lamb
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 
 \section{Break and Continue Statements, and Else Clauses on Loops}
 
-The \code{break} statement, like in \C{}, breaks out of the smallest
-enclosing \code{for} or \code{while} loop.
+The \keyword{break} statement, like in \C{}, breaks out of the smallest
+enclosing \keyword{for} or \keyword{while} loop.
 
-The \code{continue} statement, also borrowed from \C{}, continues with the
-next iteration of the loop.
+The \keyword{continue} statement, also borrowed from \C{}, continues
+with the next iteration of the loop.
 
-Loop statements may have an \code{else} clause; it is executed when the
-loop terminates through exhaustion of the list (with \code{for}) or when
-the condition becomes false (with \code{while}), but not when the loop is
-terminated by a \code{break} statement.  This is exemplified by the
-following loop, which searches for prime numbers:
+Loop statements may have an \code{else} clause; it is executed when
+the loop terminates through exhaustion of the list (with
+\keyword{for}) or when the condition becomes false (with
+\keyword{while}), but not when the loop is terminated by a
+\keyword{break} statement.  This is exemplified by the following loop,
+which searches for prime numbers:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> for n in range(2, 10):
 ...     for x in range(2, n):
 ...         if n % x == 0:
@@ -997,28 +979,27 @@ following loop, which searches for prime numbers:
 7 is a prime number
 8 equals 2 * 4
 9 equals 3 * 3
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 
 \section{Pass Statements}
 
-The \code{pass} statement does nothing.
+The \keyword{pass} statement does nothing.
 It can be used when a statement is required syntactically but the
 program requires no action.
 For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> while 1:
 ...       pass # Busy-wait for keyboard interrupt
 ... 
-\end{verbatim}\ecode
+\end{verbatim}
 
 \section{Defining Functions}
 
 We can create a function that writes the Fibonacci series to an
 arbitrary boundary:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> def fib(n):    # write Fibonacci series up to n
 ...     "Print a Fibonacci series up to n"
 ...     a, b = 0, 1
@@ -1029,16 +1010,15 @@ arbitrary boundary:
 >>> # Now call the function we just defined:
 ... fib(2000)
 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
-The keyword \code{def} introduces a function \emph{definition}.  It must
-be followed by the function name and the parenthesized list of formal
-parameters.  The statements that form the body of the function start
-at the next line, indented by a tab stop.  The first statement of the
-function body can optionally be a string literal; this string literal
-is the function's documentation string, or \dfn{docstring}.  There are
-tools which use docstrings to automatically produce printed
+The keyword \keyword{def} introduces a function \emph{definition}.  It
+must be followed by the function name and the parenthesized list of
+formal parameters.  The statements that form the body of the function
+start at the next line, indented by a tab stop.  The first statement
+of the function body can optionally be a string literal; this string
+literal is the function's documentation string, or \dfn{docstring}.
+There are tools which use docstrings to automatically produce printed
 documentation, or to let the user interactively browse through code;
 it's good practice to include docstrings in code that you write, so
 try to make a habit of it.
@@ -1048,9 +1028,8 @@ for the local variables of the function.  More precisely, all variable
 assignments in a function store the value in the local symbol table;
 whereas variable references first look in the local symbol table, then
 in the global symbol table, and then in the table of built-in names.
-Thus, 
-global variables cannot be directly assigned a value within a
-function (unless named in a \code{global} statement), although
+Thus,  global variables cannot be directly assigned a value within a
+function (unless named in a \keyword{global} statement), although
 they may be referenced.
 
 The actual parameters (arguments) to a function call are introduced in
@@ -1065,23 +1044,20 @@ arguments are passed using \emph{call by value}.%
 When a function calls another function, a new local symbol table is
 created for that call.
 
-A function definition introduces the function name in the
-current
-symbol table.  The value
-of the function name
+A function definition introduces the function name in the current
+symbol table.  The value of the function name
 has a type that is recognized by the interpreter as a user-defined
 function.  This value can be assigned to another name which can then
 also be used as a function.  This serves as a general renaming
 mechanism:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> fib
 <function object at 10042ed0>
 >>> f = fib
 >>> f(100)
 1 1 2 3 5 8 13 21 34 55 89
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 You might object that \code{fib} is not a function but a procedure.  In
 Python, like in \C{}, procedures are just functions that don't return a
@@ -1091,16 +1067,15 @@ built-in name).  Writing the value \code{None} is normally suppressed by
 the interpreter if it would be the only value written.  You can see it
 if you really want to:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> print fib(0)
 None
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 It is simple to write a function that returns a list of the numbers of
 the Fibonacci series, instead of printing it:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> def fib2(n): # return Fibonacci series up to n
 ...     "Return a list containing the Fibonacci series up to n"
 ...     result = []
@@ -1113,16 +1088,15 @@ the Fibonacci series, instead of printing it:
 >>> f100 = fib2(100)    # call it
 >>> f100                # write the result
 [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 This example, as usual, demonstrates some new Python features:
 
 \begin{itemize}
 
 \item
-The \code{return} statement returns with a value from a function.
-\code{return} without an expression argument is used to return from
+The \keyword{return} statement returns with a value from a function.
+\keyword{return} without an expression argument is used to return from 
 the middle of a procedure (falling off the end also returns from a
 procedure), in which case the \code{None} value is returned.
 
@@ -1136,10 +1110,10 @@ define different methods.  Methods of different types may have the
 same name without causing ambiguity.  (It is possible to define your
 own object types and methods, using \emph{classes}, as discussed later
 in this tutorial.)
-The method \code{append} shown in the example, is defined for
+The method \method{append()} shown in the example, is defined for
 list objects; it adds a new element at the end of the list.  In this
-example
-it is equivalent to \code{result = result + [b]}, but more efficient.
+example it is equivalent to \samp{result = result + [b]}, but more
+efficient.
 
 \end{itemize}
 
@@ -1155,14 +1129,14 @@ arguments.  This creates a function that can be called with fewer
 arguments than it is defined, e.g.
 
 \begin{verbatim}
-    def ask_ok(prompt, retries=4, complaint='Yes or no, please!'):
-        while 1:
-            ok = raw_input(prompt)
-            if ok in ('y', 'ye', 'yes'): return 1
-            if ok in ('n', 'no', 'nop', 'nope'): return 0
-            retries = retries - 1
-            if retries < 0: raise IOError, 'refusenik user'
-            print complaint
+def ask_ok(prompt, retries=4, complaint='Yes or no, please!'):
+    while 1:
+        ok = raw_input(prompt)
+        if ok in ('y', 'ye', 'yes'): return 1
+        if ok in ('n', 'no', 'nop', 'nope'): return 0
+        retries = retries - 1
+        if retries < 0: raise IOError, 'refusenik user'
+        print complaint
 \end{verbatim}
 
 This function can be called either like this:
@@ -1173,10 +1147,10 @@ The default values are evaluated at the point of function definition
 in the \emph{defining} scope, so that e.g.
 
 \begin{verbatim}
-    i = 5
-    def f(arg = i): print arg
-    i = 6
-    f()
+i = 5
+def f(arg = i): print arg
+i = 6
+f()
 \end{verbatim}
 
 will print \code{5}.
@@ -1184,7 +1158,7 @@ will print \code{5}.
 \subsection{Keyword Arguments}
 
 Functions can also be called using
-keyword arguments of the form \code{\var{keyword} = \var{value}}.  For
+keyword arguments of the form \samp{\var{keyword} = \var{value}}.  For
 instance, the following function:
 
 \begin{verbatim}
@@ -1269,8 +1243,8 @@ arguments will be wrapped up in a tuple.  Before the variable number
 of arguments, zero or more normal arguments may occur.
 
 \begin{verbatim}
-    def fprintf(file, format, *args):
-        file.write(format % args)
+def fprintf(file, format, *args):
+    file.write(format % args)
 \end{verbatim}
 
 \chapter{Data Structures}
@@ -1315,7 +1289,7 @@ Return the number of times \code{x} appears in the list.
 
 An example that uses all list methods:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> a = [66.6, 333, 333, 1, 1234.5]
 >>> print a.count(333), a.count(66.6), a.count('x')
 2 1 0
@@ -1334,69 +1308,65 @@ An example that uses all list methods:
 >>> a.sort()
 >>> a
 [-1, 1, 66.6, 333, 333, 1234.5]
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 
 \subsection{Functional Programming Tools}
 
 There are three built-in functions that are very useful when used with
-lists: \code{filter()}, \code{map()}, and \code{reduce()}.
+lists: \function{filter()}, \function{map()}, and \function{reduce()}.
 
-\code{filter(function, sequence)} returns a sequence (of the same
-type, if possible) consisting of those items from the sequence for
-which \code{function(item)} is true.  For example, to compute some
-primes:
+\samp{filter(\var{function}, \var{sequence})} returns a sequence (of
+the same type, if possible) consisting of those items from the
+sequence for which \code{\var{function}(\var{item})} is true.  For
+example, to compute some primes:
 
 \begin{verbatim}
-    >>> def f(x): return x%2 != 0 and x%3 != 0
-    ...
-    >>> filter(f, range(2, 25))
-    [5, 7, 11, 13, 17, 19, 23]
-    >>>
+>>> def f(x): return x%2 != 0 and x%3 != 0
+...
+>>> filter(f, range(2, 25))
+[5, 7, 11, 13, 17, 19, 23]
 \end{verbatim}
 
-\code{map(function, sequence)} calls \code{function(item)} for each of
-the sequence's items and returns a list of the return values.  For
-example, to compute some cubes:
+\samp{map(\var{function}, \var{sequence})} calls
+\code{\var{function}(\var{item})} for each of the sequence's items and
+returns a list of the return values.  For example, to compute some
+cubes:
 
 \begin{verbatim}
-    >>> def cube(x): return x*x*x
-    ...
-    >>> map(cube, range(1, 11))
-    [1, 8, 27, 64, 125, 216, 343, 512, 729, 1000]
-    >>>
+>>> def cube(x): return x*x*x
+...
+>>> map(cube, range(1, 11))
+[1, 8, 27, 64, 125, 216, 343, 512, 729, 1000]
 \end{verbatim}
 
 More than one sequence may be passed; the function must then have as
 many arguments as there are sequences and is called with the
-corresponding item from each sequence (or \verb\None\ if some sequence
-is shorter than another).  If \verb\None\ is passed for the function,
+corresponding item from each sequence (or \code{None} if some sequence
+is shorter than another).  If \code{None} is passed for the function,
 a function returning its argument(s) is substituted.
 
 Combining these two special cases, we see that
-\verb\map(None, list1, list2)\  is a convenient way of turning a pair
-of lists into a list of pairs.  For example:
+\samp{map(None, \var{list1}, \var{list2})} is a convenient way of
+turning a pair of lists into a list of pairs.  For example:
 
 \begin{verbatim}
-    >>> seq = range(8)
-    >>> def square(x): return x*x
-    ...
-    >>> map(None, seq, map(square, seq))
-    [(0, 0), (1, 1), (2, 4), (3, 9), (4, 16), (5, 25), (6, 36), (7, 49)]
-    >>> 
+>>> seq = range(8)
+>>> def square(x): return x*x
+...
+>>> map(None, seq, map(square, seq))
+[(0, 0), (1, 1), (2, 4), (3, 9), (4, 16), (5, 25), (6, 36), (7, 49)]
 \end{verbatim}
 
-\verb\reduce(func, sequence)\ returns a single value constructed
-by calling the binary function \verb\func\ on the first two items of the
-sequence, then on the result and the next item, and so on.  For
-example, to compute the sum of the numbers 1 through 10:
+\samp{reduce(\var{func}, \var{sequence})} returns a single value
+constructed by calling the binary function \var{func} on the first two
+items of the sequence, then on the result and the next item, and so
+on.  For example, to compute the sum of the numbers 1 through 10:
 
 \begin{verbatim}
-    >>> def add(x,y): return x+y
-    ...
-    >>> reduce(add, range(1, 11))
-    55
-    >>> 
+>>> def add(x,y): return x+y
+...
+>>> reduce(add, range(1, 11))
+55
 \end{verbatim}
 
 If there's only one item in the sequence, its value is returned; if
@@ -1408,15 +1378,14 @@ function is first applied to the starting value and the first sequence
 item, then to the result and the next item, and so on.  For example,
 
 \begin{verbatim}
-    >>> def sum(seq):
-    ...     def add(x,y): return x+y
-    ...     return reduce(add, seq, 0)
-    ... 
-    >>> sum(range(1, 11))
-    55
-    >>> sum([])
-    0
-    >>> 
+>>> def sum(seq):
+...     def add(x,y): return x+y
+...     return reduce(add, seq, 0)
+... 
+>>> sum(range(1, 11))
+55
+>>> sum([])
+0
 \end{verbatim}
 
 \section{The \sectcode{del} statement}
@@ -1426,7 +1395,7 @@ of its value: the \code{del} statement.  This can also be used to
 remove slices from a list (which we did earlier by assignment of an
 empty list to the slice).  For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> a
 [-1, 1, 66.6, 333, 333, 1234.5]
 >>> del a[0]
@@ -1435,15 +1404,13 @@ empty list to the slice).  For example:
 >>> del a[2:4]
 >>> a
 [1, 66.6, 1234.5]
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \code{del} can also be used to delete entire variables:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> del a
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Referencing the name \code{a} hereafter is an error (at least until
 another value is assigned to it).  We'll find other uses for \code{del}
@@ -1460,7 +1427,7 @@ standard sequence data type: the \emph{tuple}.
 A tuple consists of a number of values separated by commas, for
 instance:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> t = 12345, 54321, 'hello!'
 >>> t[0]
 12345
@@ -1470,8 +1437,7 @@ instance:
 ... u = t, (1, 2, 3, 4, 5)
 >>> u
 ((12345, 54321, 'hello!'), (1, 2, 3, 4, 5))
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
 As you see, on output tuples are alway enclosed in parentheses, so
 that nested tuples are interpreted correctly; they may be input with
@@ -1491,7 +1457,7 @@ one item is constructed by following a value with a comma
 (it is not sufficient to enclose a single value in parentheses).
 Ugly, but effective.  For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> empty = ()
 >>> singleton = 'hello',    # <-- note trailing comma
 >>> len(empty)
@@ -1500,18 +1466,16 @@ Ugly, but effective.  For example:
 1
 >>> singleton
 ('hello',)
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The statement \code{t = 12345, 54321, 'hello!'} is an example of
 \emph{tuple packing}: the values \code{12345}, \code{54321} and
 \code{'hello!'} are packed together in a tuple.  The reverse operation
 is also possible, e.g.:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> x, y, z = t
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
 This is called, appropriately enough, \emph{tuple unpacking}.  Tuple
 unpacking requires that the list of variables on the left has the same
@@ -1523,11 +1487,10 @@ Occasionally, the corresponding operation on lists is useful: \emph{list
 unpacking}.  This is supported by enclosing the list of variables in
 square brackets:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> a = ['spam', 'eggs', 100, 1234]
 >>> [a1, a2, a3, a4] = a
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 
 \section{Dictionaries}
 
@@ -1564,7 +1527,7 @@ method of the dictionary.
 
 Here is a small example using a dictionary:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> tel = {'jack': 4098, 'sape': 4139}
 >>> tel['guido'] = 4127
 >>> tel
@@ -1579,8 +1542,7 @@ Here is a small example using a dictionary:
 ['guido', 'irv', 'jack']
 >>> tel.has_key('guido')
 1
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 
 \section{More on Conditions}
 
@@ -1616,13 +1578,12 @@ not as a Boolean, is the last evaluated argument.
 It is possible to assign the result of a comparison or other Boolean
 expression to a variable.  For example,
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> string1, string2, string3 = '', 'Trondheim', 'Hammer Dance'
 >>> non_null = string1 or string2 or string3
 >>> non_null
 'Trondheim'
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Note that in Python, unlike \C{}, assignment cannot occur inside expressions.
 
@@ -1641,7 +1602,7 @@ shorted sequence is the smaller one.  Lexicographical ordering for
 strings uses the \ASCII{} ordering for individual characters.  Some
 examples of comparisons between sequences with the same types:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 (1, 2, 3)              < (1, 2, 4)
 [1, 2, 3]              < [1, 2, 4]
 'ABC' < 'C' < 'Pascal' < 'Python'
@@ -1649,7 +1610,7 @@ examples of comparisons between sequences with the same types:
 (1, 2)                 < (1, 2, -1)
 (1, 2, 3)              = (1.0, 2.0, 3.0)
 (1, 2, ('aa', 'ab'))   < (1, 2, ('abc', 'a'), 4)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Note that comparing objects of different types is legal.  The outcome
 is deterministic but arbitrary: the types are ordered by their name.
@@ -1690,7 +1651,7 @@ the global variable \code{__name__}.  For instance, use your favorite text
 editor to create a file called \file{fibo.py} in the current directory
 with the following contents:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 # Fibonacci numbers module
 
 def fib(n):    # write Fibonacci series up to n
@@ -1706,15 +1667,14 @@ def fib2(n): # return Fibonacci series up to n
         result.append(b)
         a, b = b, a+b
     return result
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Now enter the Python interpreter and import this module with the
 following command:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import fibo
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 This does not enter the names of the functions defined in
 \code{fibo}
@@ -1723,24 +1683,22 @@ directly in the current symbol table; it only enters the module name
 there.
 Using the module name you can access the functions:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> fibo.fib(1000)
 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987
 >>> fibo.fib2(100)
 [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
 >>> fibo.__name__
 'fibo'
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 If you intend to use a function often you can assign it to a local name:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> fib = fibo.fib
 >>> fib(500)
 1 1 2 3 5 8 13 21 34 55 89 144 233 377
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 
 
 \section{More on Modules}
@@ -1780,12 +1738,11 @@ statement that imports names from a module directly into the importing
 module's symbol table.
 For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> from fibo import fib, fib2
 >>> fib(500)
 1 1 2 3 5 8 13 21 34 55 89 144 233 377
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 This does not introduce the module name from which the imports are taken
 in the local symbol table (so in the example, \code{fibo} is not
@@ -1793,26 +1750,25 @@ defined).
 
 There is even a variant to import all names that a module defines:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> from fibo import *
 >>> fib(500)
 1 1 2 3 5 8 13 21 34 55 89 144 233 377
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 This imports all names except those beginning with an underscore
 (\code{_}).
 
 \subsection{The Module Search Path}
 
-When a module named \code{spam} is imported, the interpreter searches
+When a module named \module{spam} is imported, the interpreter searches
 for a file named \file{spam.py} in the current directory,
 and then in the list of directories specified by
 the environment variable \code{PYTHONPATH}.  This has the same syntax as
 the \UNIX{} shell variable \code{PATH}, i.e., a list of colon-separated
 directory names.  When \code{PYTHONPATH} is not set, or when the file
 is not found there, the search continues in an installation-dependent
-default path, usually \code{.:/usr/local/lib/python}.
+default path, usually \file{.:/usr/local/lib/python}.
 
 Actually, modules are searched in the list of directories given by the 
 variable \code{sys.path} which is initialized from the directory 
@@ -1826,8 +1782,8 @@ module search path.  See the section on Standard Modules later.
 As an important speed-up of the start-up time for short programs that
 use a lot of standard modules, if a file called \file{spam.pyc} exists
 in the directory where \file{spam.py} is found, this is assumed to
-contain an already-``compiled'' version of the module \code{spam}.  The
-modification time of the version of \file{spam.py} used to create
+contain an already-``compiled'' version of the module \module{spam}.
+The modification time of the version of \file{spam.py} used to create
 \file{spam.pyc} is recorded in \file{spam.pyc}, and the file is
 ignored if these don't match.
 
@@ -1839,25 +1795,27 @@ completely, the resulting \file{spam.pyc} file will be recognized as
 invalid and thus ignored later.  The contents of the \file{spam.pyc}
 file is platform independent, so a Python module directory can be
 shared by machines of different architectures.  (Tip for experts:
-the module \code{compileall} creates file{.pyc} files for all modules.)
+the module \module{compileall} creates file{.pyc} files for all
+modules.)
 
-XXX Should optimization with -O be covered here?
+% XXX Should optimization with -O be covered here?
 
 \section{Standard Modules}
 
 Python comes with a library of standard modules, described in a separate
-document (Python Library Reference).  Some modules are built into the
-interpreter; these provide access to operations that are not part of the
-core of the language but are nevertheless built in, either for
-efficiency or to provide access to operating system primitives such as
-system calls.  The set of such modules is a configuration option; e.g.,
-the \code{amoeba} module is only provided on systems that somehow support
-Amoeba primitives.  One particular module deserves some attention:
-\code{sys}, which is built into every Python interpreter.  The
-variables \code{sys.ps1} and \code{sys.ps2} define the strings used as
-primary and secondary prompts:
+document, the \emph{Python Library Reference} (``Library Reference''
+hereafter).  Some modules are built into the interpreter; these
+provide access to operations that are not part of the core of the
+language but are nevertheless built in, either for efficiency or to
+provide access to operating system primitives such as system calls.
+The set of such modules is a configuration option; e.g., the
+\module{amoeba} module is  only provided on systems that somehow
+support Amoeba primitives.  One particular module deserves some
+attention: \module{sys}, which is built into every Python interpreter.
+The variables \code{sys.ps1} and \code{sys.ps2} define the strings
+used as primary and secondary prompts:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import sys
 >>> sys.ps1
 '>>> '
@@ -1867,7 +1825,7 @@ primary and secondary prompts:
 C> print 'Yuck!'
 Yuck!
 C> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 These two variables are only defined if the interpreter is in
 interactive mode.
@@ -1883,18 +1841,17 @@ or from a built-in default if
 is not set.
 You can modify it using standard list operations, e.g.:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import sys
 >>> sys.path.append('/ufs/guido/lib/python')
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 
 \section{The \sectcode{dir()} function}
 
-The built-in function \code{dir()} is used to find out which names a module
-defines.  It returns a sorted list of strings:
+The built-in function \function{dir()} is used to find out which names
+a module defines.  It returns a sorted list of strings:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import fibo, sys
 >>> dir(fibo)
 ['__name__', 'fib', 'fib2']
@@ -1902,27 +1859,26 @@ defines.  It returns a sorted list of strings:
 ['__name__', 'argv', 'builtin_module_names', 'copyright', 'exit',
 'maxint', 'modules', 'path', 'ps1', 'ps2', 'setprofile', 'settrace',
 'stderr', 'stdin', 'stdout', 'version']
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
-Without arguments, \code{dir()} lists the names you have defined currently:
+Without arguments, \function{dir()} lists the names you have defined
+currently:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> a = [1, 2, 3, 4, 5]
 >>> import fibo, sys
 >>> fib = fibo.fib
 >>> dir()
 ['__name__', 'a', 'fib', 'fibo', 'sys']
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Note that it lists all types of names: variables, modules, functions, etc.
 
-\code{dir()} does not list the names of built-in functions and variables.
-If you want a list of those, they are defined in the standard module
-\code{__builtin__}:
+\function{dir()} does not list the names of built-in functions and
+variables.  If you want a list of those, they are defined in the
+standard module \module{__builtin__}:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import __builtin__
 >>> dir(__builtin__)
 ['AccessError', 'AttributeError', 'ConflictError', 'EOFError', 'IOError',
@@ -1934,8 +1890,7 @@ If you want a list of those, they are defined in the standard module
 'getattr', 'hasattr', 'hash', 'hex', 'id', 'input', 'int', 'len', 'long',
 'map', 'max', 'min', 'oct', 'open', 'ord', 'pow', 'range', 'raw_input',
 'reduce', 'reload', 'repr', 'round', 'setattr', 'str', 'type', 'xrange']
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 
 
 \chapter{Input and Output}
@@ -1946,29 +1901,29 @@ This chapter will discuss some of the possibilities.
 
 \section{Fancier Output Formatting}
 So far we've encountered two ways of writing values: \emph{expression
-statements} and the \code{print} statement.  (A third way is using the
-\code{write} method of file objects; the standard output file can be
-referenced as \code{sys.stdout}.  See the Library Reference for more
-information on this.)
+statements} and the \keyword{print} statement.  (A third way is using
+the \method{write()} method of file objects; the standard output file
+can be referenced as \code{sys.stdout}.  See the Library Reference for
+more information on this.)
 
 Often you'll want more control over the formatting of your output than
 simply printing space-separated values.  There are two ways to format
 your output; the first way is to do all the string handling yourself;
 using string slicing and concatenation operations you can create any
-lay-out you can imagine.  The standard module \code{string} contains
+lay-out you can imagine.  The standard module \module{string} contains
 some useful operations for padding strings to a given column width;
 these will be discussed shortly.  The second way is to use the
 \code{\%} operator with a string as the left argument.  \code{\%}
-interprets the left argument as a \C{} \code{sprintf()}-style format
-string to be applied to the right argument, and returns the string
-resulting from this formatting operation.
+interprets the left argument as a \C{} \cfunction{sprintf()}-style
+format string to be applied to the right argument, and returns the
+string resulting from this formatting operation.
 
 One question remains, of course: how do you convert values to strings?
 Luckily, Python has a way to convert any value to a string: pass it to
-the \code{repr()} function, or just write the value between reverse
-quotes (\code{``}).  Some examples:
+the \function{repr()} function, or just write the value between
+reverse quotes (\code{``}).  Some examples:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> x = 10 * 3.14
 >>> y = 200*200
 >>> s = 'The value of x is ' + `x` + ', and y is ' + `y` + '...'
@@ -1987,12 +1942,11 @@ The value of x is 31.4, and y is 40000...
 >>> # The argument of reverse quotes may be a tuple:
 ... `x, y, ('spam', 'eggs')`
 "(31.4, 40000, ('spam', 'eggs'))"
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Here are two ways to write a table of squares and cubes:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import string
 >>> for x in range(1, 11):
 ...     print string.rjust(`x`, 2), string.rjust(`x*x`, 3),
@@ -2022,66 +1976,63 @@ Here are two ways to write a table of squares and cubes:
  8  64  512
  9  81  729
 10 100 1000
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
-(Note that one space between each column was added by the way \code{print}
-works: it always adds spaces between its arguments.)
+(Note that one space between each column was added by the way
+\keyword{print} works: it always adds spaces between its arguments.)
 
-This example demonstrates the function \code{string.rjust()}, which
-right-justifies a string in a field of a given width by padding it with
-spaces on the left.  There are similar functions \code{string.ljust()}
-and \code{string.center()}.  These functions do not write anything, they
-just return a new string.  If the input string is too long, they don't
-truncate it, but return it unchanged; this will mess up your column
-lay-out but that's usually better than the alternative, which would be
-lying about a value.  (If you really want truncation you can always add
-a slice operation, as in \code{string.ljust(x,~n)[0:n]}.)
+This example demonstrates the function \function{string.rjust()},
+which right-justifies a string in a field of a given width by padding
+it with spaces on the left.  There are similar functions
+\function{string.ljust()} and \function{string.center()}.  These
+functions do not write anything, they just return a new string.  If
+the input string is too long, they don't truncate it, but return it
+unchanged; this will mess up your column lay-out but that's usually
+better than the alternative, which would be lying about a value.  (If
+you really want truncation you can always add a slice operation, as in
+\samp{string.ljust(x,~n)[0:n]}.)
 
-There is another function, \code{string.zfill()}, which pads a numeric
-string on the left with zeros.  It understands about plus and minus
-signs:
+There is another function, \function{string.zfill()}, which pads a
+numeric string on the left with zeros.  It understands about plus and
+minus signs:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> string.zfill('12', 5)
 '00012'
 >>> string.zfill('-3.14', 7)
 '-003.14'
 >>> string.zfill('3.14159265359', 5)
 '3.14159265359'
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Using the \code{\%} operator looks like this:
 
 \begin{verbatim}
-    >>> import math
-    >>> print 'The value of PI is approximately %5.3f.' % math.pi
-    The value of PI is approximately 3.142.
-    >>> 
+>>> import math
+>>> print 'The value of PI is approximately %5.3f.' % math.pi
+The value of PI is approximately 3.142.
 \end{verbatim}
 
 If there is more than one format in the string you pass a tuple as
 right operand, e.g.
 
 \begin{verbatim}
-    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
-    >>> for name, phone in table.items():
-    ...     print '%-10s ==> %10d' % (name, phone)
-    ... 
-    Jack       ==>       4098
-    Dcab       ==>    8637678
-    Sjoerd     ==>       4127
-    >>> 
+>>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
+>>> for name, phone in table.items():
+...     print '%-10s ==> %10d' % (name, phone)
+... 
+Jack       ==>       4098
+Dcab       ==>    8637678
+Sjoerd     ==>       4127
 \end{verbatim}
 
 Most formats work exactly as in \C{} and require that you pass the proper
 type; however, if you don't you get an exception, not a core dump.
 The \verb\%s\ format is more relaxed: if the corresponding argument is
-not a string object, it is converted to string using the \verb\str()\
-built-in function.  Using \verb\*\ to pass the width or precision in
-as a separate (integer) argument is supported.  The \C{} formats
-\verb\%n\ and \verb\%p\ are not supported.
+not a string object, it is converted to string using the
+\function{str()} built-in function.  Using \code{*} to pass the width
+or precision in as a separate (integer) argument is supported.  The
+\C{} formats \verb\%n\ and \verb\%p\ are not supported.
 
 If you have a really long format string that you don't want to split
 up, it would be nice if you could reference the variables to be
@@ -2089,26 +2040,25 @@ formatted by name instead of by position.  This can be done by using
 an extension of \C{} formats using the form \verb\%(name)format\, e.g.
 
 \begin{verbatim}
-    >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
-    >>> print 'Jack: %(Jack)d; Sjoerd: %(Sjoerd)d; Dcab: %(Dcab)d' % table
-    Jack: 4098; Sjoerd: 4127; Dcab: 8637678
-    >>> 
+>>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
+>>> print 'Jack: %(Jack)d; Sjoerd: %(Sjoerd)d; Dcab: %(Dcab)d' % table
+Jack: 4098; Sjoerd: 4127; Dcab: 8637678
 \end{verbatim}
 
 This is particularly useful in combination with the new built-in
-\verb\vars()\ function, which returns a dictionary containing all
+\function{vars()} function, which returns a dictionary containing all
 local variables.
 
 \section{Reading and Writing Files}
 % Opening files 
-\code{open()} returns a file object, and is most commonly used with
-two arguments: \code{open(\var{filename},\var{mode})}.  
+\function{open()} returns a file object, and is most commonly used with
+two arguments: \samp{open(\var{filename}, \var{mode})}.
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> f=open('/tmp/workfile', 'w')
 >>> print f
 <open file '/tmp/workfile', mode 'w' at 80a0960>
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The first argument is a string containing the filename.  The second
 argument is another string containing a few characters describing the
@@ -2126,8 +2076,8 @@ mode opens the file in binary mode, so there are also modes like
 distinction between text and binary files; the end-of-line characters
 in text files are automatically altered slightly when data is read or
 written.  This behind-the-scenes modification to file data is fine for
-ASCII text files, but it'll corrupt binary data like that in JPEGs or
-.EXE files.  Be very careful to use binary mode when reading and
+\ASCII{} text files, but it'll corrupt binary data like that in JPEGs or
+\file{.EXE} files.  Be very careful to use binary mode when reading and
 writing such files.
 
 \subsection{Methods of file objects}
@@ -2143,57 +2093,57 @@ problem if the file is twice as large as your machine's memory.
 Otherwise, at most \var{size} bytes are read and returned.  If the end
 of the file has been reached, \code{f.read()} will return an empty
 string (\code {""}).
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> f.read()
 'This is the entire file.\012'
 >>> f.read()
 ''
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \code{f.readline()} reads a single line from the file; a newline
-character (\code{\\n}) is left at the end of the string, and is only
+character (\code{\e n}) is left at the end of the string, and is only
 omitted on the last line of the file if the file doesn't end in a
 newline.  This makes the return value unambiguous; if
 \code{f.readline()} returns an empty string, the end of the file has
-been reached, while a blank line is represented by \code{'\\n'}, a
+been reached, while a blank line is represented by \code{'\e n'}, a
 string containing only a single newline.  
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> f.readline()
 'This is the first line of the file.\012'
 >>> f.readline()
 'Second line of the file\012'
 >>> f.readline()
 ''
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \code{f.readlines()} uses \code{f.readline()} repeatedly, and returns
 a list containing all the lines of data in the file.
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> f.readlines()
 ['This is the first line of the file.\012', 'Second line of the file\012']
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \code{f.write(\var{string})} writes the contents of \var{string} to
 the file, returning \code{None}.  
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> f.write('This is a test\n')
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \code{f.tell()} returns an integer giving the file object's current
 position in the file, measured in bytes from the beginning of the
 file.  To change the file object's position, use
-\code{f.seek(\var{offset}, \var{from_what})}.  The position is
+\samp{f.seek(\var{offset}, \var{from_what})}.  The position is
 computed from adding \var{offset} to a reference point; the reference
 point is selected by the \var{from_what} argument.  A \var{from_what}
 value of 0 measures from the beginning of the file, 1 uses the current
 file position, and 2 uses the end of the file as the reference point.
-\var{from_what}
-can be omitted and defaults to 0, using the beginning of the file as the reference point.
+\var{from_what} can be omitted and defaults to 0, using the beginning
+of the file as the reference point.
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> f=open('/tmp/workfile', 'r+')
 >>> f.write('0123456789abcdef')
 >>> f.seek(5)     # Go to the 5th byte in the file
@@ -2202,37 +2152,37 @@ can be omitted and defaults to 0, using the beginning of the file as the referen
 >>> f.seek(-3, 2) # Go to the 3rd byte before the end
 >>> f.read(1)
 'd'
-\end{verbatim}\ecode
+\end{verbatim}
 %
 When you're done with a file, call \code{f.close()} to close it and
 free up any system resources taken up by the open file.  After calling
 \code{f.close()}, attempts to use the file object will automatically fail.
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> f.close()
 >>> f.read()
 Traceback (innermost last):
   File "<stdin>", line 1, in ?
 ValueError: I/O operation on closed file
-\end{verbatim}\ecode
+\end{verbatim}
 %
-File objects have some additional methods, such as \code{isatty()} and
-\code{truncate()} which are less frequently used; consult the Library
-Reference for a complete guide to file objects.
+File objects have some additional methods, such as \method{isatty()}
+and \method{truncate()} which are less frequently used; consult the
+Library Reference for a complete guide to file objects.
 
 \subsection{The pickle module}
 
 Strings can easily be written to and read from a file. Numbers take a
-bit more effort, since the \code{read()} method only returns strings,
-which will have to be passed to a function like \code{string.atoi()},
-which takes a string like \code{'123'} and returns its numeric value
-123.  However, when you want to save more complex data types like
-lists, dictionaries, or class instances, things get a lot more
-complicated.  
+bit more effort, since the \method{read()} method only returns
+strings, which will have to be passed to a function like
+\function{string.atoi()}, which takes a string like \code{'123'} and
+returns its numeric value 123.  However, when you want to save more
+complex data types like lists, dictionaries, or class instances,
+things get a lot more complicated.
 
 Rather than have users be constantly writing and debugging code to
 save complicated data types, Python provides a standard module called
-\code{pickle}.  This is an amazing module that can take almost
+\module{pickle}.  This is an amazing module that can take almost
 any Python object (even some forms of Python code!), and convert it to
 a string representation; this process is called \dfn{pickling}.  
 Reconstructing the object from the string representation is called
@@ -2244,25 +2194,25 @@ If you have an object \code{x}, and a file object \code{f} that's been
 opened for writing, the simplest way to pickle the object takes only
 one line of code:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 pickle.dump(x, f)
-\end{verbatim}\ecode
+\end{verbatim}
 %
-To unpickle the object again, if \code{f} is a file object which has been
-opened for reading:
+To unpickle the object again, if \code{f} is a file object which has
+been opened for reading:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 x = pickle.load(f)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 (There are other variants of this, used when pickling many objects or
 when you don't want to write the pickled data to a file; consult the
-complete documentation for \code{pickle} in the Library Reference.)
+complete documentation for \module{pickle} in the Library Reference.)
 
-\code{pickle} is the standard way to make Python objects which can be
+\module{pickle} is the standard way to make Python objects which can be
 stored and reused by other programs or by a future invocation of the
 same program; the technical term for this is a \dfn{persistent}
-object.  Because \code{pickle} is so widely used, many authors who
+object.  Because \module{pickle} is so widely used, many authors who
 write Python extensions take care to ensure that new data types such
 as matrices, XXX more examples needed XXX, can be properly pickled and
 unpickled.
@@ -2281,21 +2231,20 @@ and \emph{exceptions}.
 Syntax errors, also known as parsing errors, are perhaps the most common
 kind of complaint you get while you are still learning Python:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> while 1 print 'Hello world'
   File "<stdin>", line 1
     while 1 print 'Hello world'
                 ^
 SyntaxError: invalid syntax
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The parser repeats the offending line and displays a little `arrow'
 pointing at the earliest point in the line where the error was detected.
 The error is caused by (or at least detected at) the token
 \emph{preceding}
 the arrow: in the example, the error is detected at the keyword
-\code{print}, since a colon (\code{:}) is missing before it.
+\keyword{print}, since a colon (\code{:}) is missing before it.
 File name and line number are printed so you know where to look in case
 the input came from a script.
 
@@ -2308,7 +2257,7 @@ not unconditionally fatal: you will soon learn how to handle them in
 Python programs.  Most exceptions are not handled by programs,
 however, and result in error messages as shown here:
 
-\bcode\small\begin{verbatim}
+\begin{verbatim}
 >>> 10 * (1/0)
 Traceback (innermost last):
   File "<stdin>", line 1
@@ -2321,16 +2270,15 @@ NameError: spam
 Traceback (innermost last):
   File "<stdin>", line 1
 TypeError: illegal argument type for built-in operation
->>> 
-\end{verbatim}\normalsize\ecode
+\end{verbatim}
 %
 The last line of the error message indicates what happened.
 Exceptions come in different types, and the type is printed as part of
 the message: the types in the example are
-\code{ZeroDivisionError},
-\code{NameError}
+\exception{ZeroDivisionError},
+\exception{NameError}
 and
-\code{TypeError}.
+\exception{TypeError}.
 The string printed as the exception type is the name of the built-in
 name for the exception that occurred.  This is true for all built-in
 exceptions, but need not be true for user-defined exceptions (although
@@ -2346,8 +2294,8 @@ exception happened, in the form of a stack backtrace.
 In general it contains a stack backtrace listing source lines; however,
 it will not display lines read from standard input.
 
-The Python Library Reference Manual lists the built-in exceptions and
-their meanings.
+The Library Reference lists the built-in exceptions and their
+meanings.
 
 \section{Handling Exceptions}
 
@@ -2355,7 +2303,7 @@ It is possible to write programs that handle selected exceptions.
 Look at the following example, which prints a table of inverses of
 some floating point numbers:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> numbers = [0.3333, 2.5, 0, 10]
 >>> for x in numbers:
 ...     print x,
@@ -2368,85 +2316,80 @@ some floating point numbers:
 2.5 0.4
 0 *** has no inverse ***
 10 0.1
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
-The \code{try} statement works as follows.
+The \keyword{try} statement works as follows.
 \begin{itemize}
 \item
-First, the
-\emph{try\ clause}
-(the statement(s) between the \code{try} and \code{except} keywords) is
-executed.
+First, the \emph{try clause}
+(the statement(s) between the \keyword{try} and \keyword{except}
+keywords) is executed.
 \item
 If no exception occurs, the
 \emph{except\ clause}
-is skipped and execution of the \code{try} statement is finished.
+is skipped and execution of the \keyword{try} statement is finished.
 \item
 If an exception occurs during execution of the try clause,
-the rest of the clause is skipped.  Then if
-its type matches the exception named after the \code{except} keyword,
-the rest of the try clause is skipped, the except clause is executed,
-and then execution continues after the \code{try} statement.
+the rest of the clause is skipped.  Then if its type matches the
+exception named after the \keyword{except} keyword, the rest of the
+try clause is skipped, the except clause is executed, and then
+execution continues after the \keyword{try} statement.
 \item
 If an exception occurs which does not match the exception named in the
-except clause, it is passed on to outer try statements; if no handler is
-found, it is an
-\emph{unhandled exception}
+except clause, it is passed on to outer \keyword{try} statements; if
+no handler is found, it is an \emph{unhandled exception}
 and execution stops with a message as shown above.
 \end{itemize}
-A \code{try} statement may have more than one except clause, to specify
-handlers for different exceptions.
+A \keyword{try} statement may have more than one except clause, to
+specify handlers for different exceptions.
 At most one handler will be executed.
 Handlers only handle exceptions that occur in the corresponding try
-clause, not in other handlers of the same \code{try} statement.
+clause, not in other handlers of the same \keyword{try} statement.
 An except clause may name multiple exceptions as a parenthesized list,
 e.g.:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 ... except (RuntimeError, TypeError, NameError):
 ...     pass
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The last except clause may omit the exception name(s), to serve as a
 wildcard.
 Use this with extreme caution, since it is easy to mask a real
 programming error in this way!
 
-The \verb\try...except\ statement has an optional \verb\else\ clause,
-which must follow all \verb\except\ clauses.  It is useful to place
-code that must be executed if the \verb\try\ clause does not raise an
-exception.  For example:
+The \keyword{try} \ldots\ \keyword{except} statement has an optional
+\emph{else clause}, which must follow all except clauses.  It is
+useful to place code that must be executed if the try clause does not
+raise an exception.  For example:
 
 \begin{verbatim}
-    for arg in sys.argv:
-        try:
-            f = open(arg, 'r')
-        except IOError:
-            print 'cannot open', arg
-        else:
-            print arg, 'has', len(f.readlines()), 'lines'
-            f.close()
+for arg in sys.argv:
+    try:
+        f = open(arg, 'r')
+    except IOError:
+        print 'cannot open', arg
+    else:
+        print arg, 'has', len(f.readlines()), 'lines'
+        f.close()
 \end{verbatim}
 
 
 When an exception occurs, it may have an associated value, also known as
-the exceptions's
-\emph{argument}.
+the exceptions's \emph{argument}.
 The presence and type of the argument depend on the exception type.
 For exception types which have an argument, the except clause may
 specify a variable after the exception name (or list) to receive the
 argument's value, as follows:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> try:
 ...     spam()
 ... except NameError, x:
 ...     print 'name', x, 'undefined'
 ... 
 name spam undefined
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 If an exception has an argument, it is printed as the last part
 (`detail') of the message for unhandled exceptions.
@@ -2456,7 +2399,7 @@ immediately in the try clause, but also if they occur inside functions
 that are called (even indirectly) in the try clause.
 For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> def this_fails():
 ...     x = 1/0
 ... 
@@ -2466,26 +2409,25 @@ For example:
 ...     print 'Handling run-time error:', detail
 ... 
 Handling run-time error: integer division or modulo
->>>
-\end{verbatim}\ecode
+\end{verbatim}
 %
 
 \section{Raising Exceptions}
 
-The \code{raise} statement allows the programmer to force a specified
-exception to occur.
+The \keyword{raise} statement allows the programmer to force a
+specified exception to occur.
 For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> raise NameError, 'HiThere'
 Traceback (innermost last):
   File "<stdin>", line 1
 NameError: HiThere
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
-The first argument to \code{raise} names the exception to be raised.
-The optional second argument specifies the exception's argument.
+The first argument to \keyword{raise} names the exception to be
+raised.  The optional second argument specifies the exception's
+argument.
 
 %
 
@@ -2495,7 +2437,7 @@ Programs may name their own exceptions by assigning a string to a
 variable.
 For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> my_exc = 'my_exc'
 >>> try:
 ...     raise my_exc, 2*2
@@ -2507,8 +2449,7 @@ My exception occurred, value: 4
 Traceback (innermost last):
   File "<stdin>", line 1
 my_exc: 1
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Many standard modules use this to report errors that may occur in
 functions they define.
@@ -2517,11 +2458,11 @@ functions they define.
 
 \section{Defining Clean-up Actions}
 
-The \code{try} statement has another optional clause which is intended to
-define clean-up actions that must be executed under all circumstances.
-For example:
+The \keyword{try} statement has another optional clause which is
+intended to define clean-up actions that must be executed under all
+circumstances.  For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> try:
 ...     raise KeyboardInterrupt
 ... finally:
@@ -2531,18 +2472,16 @@ Goodbye, world!
 Traceback (innermost last):
   File "<stdin>", line 2
 KeyboardInterrupt
->>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
-A \code{finally} clause is executed whether or not an exception has
-occurred in the \code{try} clause.  When an exception has occurred, it
-is re-raised after the \code{finally} clause is executed.  The
-\code{finally} clause is also executed ``on the way out'' when the
-\code{try} statement is left via a \code{break} or \code{return}
-statement.
+A \emph{finally clause} is executed whether or not an exception has
+occurred in the try clause.  When an exception has occurred, it is
+re-raised after the finally clause is executed.  The finally clause is
+also executed ``on the way out'' when the \keyword{try} statement is
+left via a \keyword{break} or \keyword{return} statement.
 
-A \code{try} statement must either have one or more \code{except}
-clauses or one \code{finally} clause, but not both.
+A \keyword{try} statement must either have one or more except clauses
+or one finally clause, but not both.
 
 \chapter{Classes}
 
@@ -2576,16 +2515,16 @@ subscripting etc.) can be redefined for class members.
 Lacking universally accepted terminology to talk about classes, I'll
 make occasional use of Smalltalk and \Cpp{} terms.  (I'd use Modula-3
 terms, since its object-oriented semantics are closer to those of
-Python than \Cpp{}, but I expect that few readers have heard of it...)
+Python than \Cpp{}, but I expect that few readers have heard of it.)
 
 I also have to warn you that there's a terminological pitfall for
 object-oriented readers: the word ``object'' in Python does not
-necessarily mean a class instance.  Like \Cpp{} and Modula-3, and unlike
-Smalltalk, not all types in Python are classes: the basic built-in
-types like integers and lists aren't, and even somewhat more exotic
-types like files aren't.  However, \emph{all} Python types share a little
-bit of common semantics that is best described by using the word
-object.
+necessarily mean a class instance.  Like \Cpp{} and Modula-3, and
+unlike Smalltalk, not all types in Python are classes: the basic
+built-in types like integers and lists aren't, and even somewhat more
+exotic types like files aren't.  However, \emph{all} Python types
+share a little bit of common semantics that is best described by using
+the word object.
 
 Objects have individuality, and multiple names (in multiple scopes)
 can be bound to the same object.  This is known as aliasing in other
@@ -2617,7 +2556,7 @@ A \emph{name space} is a mapping from names to objects.  Most name
 spaces are currently implemented as Python dictionaries, but that's
 normally not noticeable in any way (except for performance), and it
 may change in the future.  Examples of name spaces are: the set of
-built-in names (functions such as \verb\abs()\, and built-in exception
+built-in names (functions such as \function{abs()}, and built-in exception
 names); the global names in a module; and the local names in a
 function invocation.  In a sense the set of attributes of an object
 also form a name space.  The important thing to know about name
@@ -2627,11 +2566,11 @@ define a function ``maximize'' without confusion --- users of the
 modules must prefix it with the module name.
 
 By the way, I use the word \emph{attribute} for any name following a
-dot --- for example, in the expression \verb\z.real\, \verb\real\ is
-an attribute of the object \verb\z\.  Strictly speaking, references to
+dot --- for example, in the expression \code{z.real}, \code{real} is
+an attribute of the object \code{z}.  Strictly speaking, references to
 names in modules are attribute references: in the expression
-\verb\modname.funcname\, \verb\modname\ is a module object and
-\verb\funcname\ is an attribute of it.  In this case there happens to
+\code{modname.funcname}, \code{modname} is a module object and
+\code{funcname} is an attribute of it.  In this case there happens to
 be a straightforward mapping between the module's attributes and the
 global names defined in the module: they share the same name space!%
 \footnote{
@@ -2641,14 +2580,14 @@ global names defined in the module: they share the same name space!%
         \code{__dict__} is an attribute but not a global name.
         Obviously, using this violates the abstraction of name space
         implementation, and should be restricted to things like
-        post-mortem debuggers...
+        post-mortem debuggers.
 }
 
 Attributes may be read-only or writable.  In the latter case,
 assignment to attributes is possible.  Module attributes are writable:
-you can write \verb\modname.the_answer = 42\.  Writable attributes may
+you can write \samp{modname.the_answer = 42}.  Writable attributes may
 also be deleted with the del statement, e.g.
-\verb\del modname.the_answer\.
+\samp{del modname.the_answer}.
 
 Name spaces are created at different moments and have different
 lifetimes.  The name space containing the built-in names is created
@@ -2657,9 +2596,10 @@ global name space for a module is created when the module definition
 is read in; normally, module name spaces also last until the
 interpreter quits.  The statements executed by the top-level
 invocation of the interpreter, either read from a script file or
-interactively, are considered part of a module called \verb\__main__\,
-so they have their own global name space.  (The built-in names
-actually also live in a module; this is called \verb\__builtin__\.)
+interactively, are considered part of a module called
+\module{__main__}, so they have their own global name space.  (The
+built-in names actually also live in a module; this is called
+\module{__builtin__}.)
 
 The local name space for a function is created when the function is
 called, and deleted when the function returns or raises an exception
@@ -2697,11 +2637,11 @@ statically.)
 A special quirk of Python is that assignments always go into the
 innermost scope.  Assignments do not copy data --- they just
 bind names to objects.  The same is true for deletions: the statement
-\verb\del x\ removes the binding of x from the name space referenced by the
+\samp{del x} removes the binding of x from the name space referenced by the
 local scope.  In fact, all operations that introduce new names use the
 local scope: in particular, import statements and function definitions
 bind the module or function name in the local scope.  (The
-\verb\global\ statement can be used to indicate that particular
+\keyword{global} statement can be used to indicate that particular
 variables live in the global scope.)
 
 
@@ -2716,18 +2656,18 @@ and some new semantics.
 The simplest form of class definition looks like this:
 
 \begin{verbatim}
-    class ClassName:
-        <statement-1>
-        .
-        .
-        .
-        <statement-N>
+class ClassName:
+    <statement-1>
+    .
+    .
+    .
+    <statement-N>
 \end{verbatim}
 
-Class definitions, like function definitions (\verb\def\ statements)
-must be executed before they have any effect.  (You could conceivably
-place a class definition in a branch of an \verb\if\ statement, or
-inside a function.)
+Class definitions, like function definitions (\keyword{def}
+statements) must be executed before they have any effect.  (You could
+conceivably place a class definition in a branch of an \keyword{if}
+statement, or inside a function.)
 
 In practice, the statements inside a class definition will usually be
 function definitions, but other statements are allowed, and sometimes
@@ -2747,7 +2687,7 @@ of the name space created by the class definition; we'll learn more
 about class objects in the next section.  The original local scope
 (the one in effect just before the class definitions was entered) is
 reinstated, and the class object is bound here to class name given in
-the class definition header (ClassName in the example).
+the class definition header (\code{ClassName} in the example).
 
 
 \subsection{Class objects}
@@ -2756,32 +2696,32 @@ Class objects support two kinds of operations: attribute references
 and instantiation.
 
 \emph{Attribute references} use the standard syntax used for all
-attribute references in Python: \verb\obj.name\.  Valid attribute
+attribute references in Python: \code{obj.name}.  Valid attribute
 names are all the names that were in the class's name space when the
 class object was created.  So, if the class definition looked like
 this:
 
 \begin{verbatim}
-    class MyClass:
-        "A simple example class"
-        i = 12345
-        def f(x):
-            return 'hello world'
+class MyClass:
+    "A simple example class"
+    i = 12345
+    def f(x):
+        return 'hello world'
 \end{verbatim}
 
-then \verb\MyClass.i\ and \verb\MyClass.f\ are valid attribute
+then \code{MyClass.i} and \code{MyClass.f} are valid attribute
 references, returning an integer and a function object, respectively.
 Class attributes can also be assigned to, so you can change the value
-of \verb\MyClass.i\ by assignment.  \verb\__doc__\ is also a valid
+of \code{MyClass.i} by assignment.  \code{__doc__} is also a valid
 attribute that's read-only, returning the docstring belonging to
-the class: \verb\"A simple example class"\).  
+the class: \code{"A simple example class"}).  
 
 Class \emph{instantiation} uses function notation.  Just pretend that
 the class object is a parameterless function that returns a new
 instance of the class.  For example, (assuming the above class):
 
 \begin{verbatim}
-    x = MyClass()
+x = MyClass()
 \end{verbatim}
 
 creates a new \emph{instance} of the class and assigns this object to
@@ -2795,19 +2735,19 @@ understood by instance objects are attribute references.  There are
 two kinds of valid attribute names.
 
 The first I'll call \emph{data attributes}.  These correspond to
-``instance variables'' in Smalltalk, and to ``data members'' in \Cpp{}.
-Data attributes need not be declared; like local variables, they
-spring into existence when they are first assigned to.  For example,
-if \verb\x\ in the instance of \verb\MyClass\ created above, the
-following piece of code will print the value 16, without leaving a
-trace:
+``instance variables'' in Smalltalk, and to ``data members'' in
+\Cpp{}.  Data attributes need not be declared; like local variables,
+they spring into existence when they are first assigned to.  For
+example, if \code{x} is the instance of \class{MyClass} created above,
+the following piece of code will print the value \code{16}, without
+leaving a trace:
 
 \begin{verbatim}
-    x.counter = 1
-    while x.counter < 10:
-        x.counter = x.counter * 2
-    print x.counter
-    del x.counter
+x.counter = 1
+while x.counter < 10:
+    x.counter = x.counter * 2
+print x.counter
+del x.counter
 \end{verbatim}
 
 The second kind of attribute references understood by instance objects
@@ -2819,13 +2759,13 @@ below, we'll use the term method exclusively to mean methods of class
 instance objects, unless explicitly stated otherwise.)
 
 Valid method names of an instance object depend on its class.  By
-definition, all attributes of a class that are (user-defined) function
+definition, all attributes of a class that are (user-defined) function 
 objects define corresponding methods of its instances.  So in our
 example, \code{x.f} is a valid method reference, since
 \code{MyClass.f} is a function, but \code{x.i} is not, since
-\code{MyClass.i} is not.  But \code{x.f} is not the
-same thing as \verb\MyClass.f\ --- it is a \emph{method object}, not a
-function object.
+\code{MyClass.i} is not.  But \code{x.f} is not the same thing as
+\code{MyClass.f} --- it is a \emph{method object}, not a function
+object.
 
 
 \subsection{Method objects}
@@ -2833,33 +2773,33 @@ function object.
 Usually, a method is called immediately, e.g.:
 
 \begin{verbatim}
-    x.f()
+x.f()
 \end{verbatim}
 
-In our example, this will return the string \verb\'hello world'\.
-However, it is not necessary to call a method right away: \verb\x.f\
+In our example, this will return the string \code{'hello world'}.
+However, it is not necessary to call a method right away: \code{x.f}
 is a method object, and can be stored away and called at a later
 moment, for example:
 
 \begin{verbatim}
-    xf = x.f
-    while 1:
-        print xf()
+xf = x.f
+while 1:
+    print xf()
 \end{verbatim}
 
-will continue to print \verb\hello world\ until the end of time.
+will continue to print \samp{hello world} until the end of time.
 
 What exactly happens when a method is called?  You may have noticed
-that \verb\x.f()\ was called without an argument above, even though
-the function definition for \verb\f\ specified an argument.  What
+that \code{x.f()} was called without an argument above, even though
+the function definition for \method{f} specified an argument.  What
 happened to the argument?  Surely Python raises an exception when a
 function that requires an argument is called without any --- even if
 the argument isn't actually used...
 
 Actually, you may have guessed the answer: the special thing about
 methods is that the object is passed as the first argument of the
-function.  In our example, the call \verb\x.f()\ is exactly equivalent
-to \verb\MyClass.f(x)\.  In general, calling a method with a list of
+function.  In our example, the call \code{x.f()} is exactly equivalent
+to \code{MyClass.f(x)}.  In general, calling a method with a list of
 \var{n} arguments is equivalent to calling the corresponding function
 with an argument list that is created by inserting the method's object
 before the first argument.
@@ -2915,8 +2855,8 @@ variables and instance variables when glancing through a method.
 
 
 Conventionally, the first argument of methods is often called
-\verb\self\.  This is nothing more than a convention: the name
-\verb\self\ has absolutely no special meaning to Python.  (Note,
+\code{self}.  This is nothing more than a convention: the name
+\code{self} has absolutely no special meaning to Python.  (Note,
 however, that by not following the convention your code may be less
 readable by other Python programmers, and it is also conceivable that
 a \emph{class browser} program be written which relies upon such a
@@ -2930,63 +2870,64 @@ function object to a local variable in the class is also ok.  For
 example:
 
 \begin{verbatim}
-    # Function defined outside the class
-    def f1(self, x, y):
-        return min(x, x+y)
-    
-    class C:
-        f = f1
-        def g(self):
-            return 'hello world'
-        h = g
+# Function defined outside the class
+def f1(self, x, y):
+    return min(x, x+y)
+
+class C:
+    f = f1
+    def g(self):
+        return 'hello world'
+    h = g
 \end{verbatim}
 
-Now \verb\f\, \verb\g\ and \verb\h\ are all attributes of class
-\verb\C\ that refer to function objects, and consequently they are all
-methods of instances of \verb\C\ --- \verb\h\ being exactly equivalent
-to \verb\g\.  Note that this practice usually only serves to confuse
+Now \code{f}, \code{g} and \code{h} are all attributes of class
+\class{C} that refer to function objects, and consequently they are all
+methods of instances of \class{C} --- \code{h} being exactly equivalent
+to \code{g}.  Note that this practice usually only serves to confuse
 the reader of a program.
 
 
 Methods may call other methods by using method attributes of the
-\verb\self\ argument, e.g.:
+\code{self} argument, e.g.:
 
 \begin{verbatim}
-    class Bag:
-        def empty(self):
-            self.data = []
-        def add(self, x):
-            self.data.append(x)
-        def addtwice(self, x):
-            self.add(x)
-            self.add(x)
+class Bag:
+    def empty(self):
+        self.data = []
+    def add(self, x):
+        self.data.append(x)
+    def addtwice(self, x):
+        self.add(x)
+        self.add(x)
 \end{verbatim}
 
 
 The instantiation operation (``calling'' a class object) creates an
 empty object.  Many classes like to create objects in a known initial
 state.  Therefore a class may define a special method named
-\code{__init__()}, like this:
+\method{__init__()}, like this:
 
 \begin{verbatim}
-        def __init__(self):
-            self.empty()
+    def __init__(self):
+        self.empty()
 \end{verbatim}
 
-When a class defines an \code{__init__()} method, class instantiation
-automatically invokes \code{__init__()} for the newly-created class
-instance.  So in the \code{Bag} example, a new and initialized instance
-can be obtained by:
+When a class defines an \method{__init__()} method, class
+instantiation automatically invokes \method{__init__()} for the
+newly-created class instance.  So in the \class{Bag} example, a new
+and initialized instance can be obtained by:
 
 \begin{verbatim}
-    x = Bag()
+x = Bag()
 \end{verbatim}
 
-Of course, the \verb\__init__\ method may have arguments for greater
-flexibility.  In that case, arguments given to the class instantiation
-operator are passed on to \verb\__init__\.  For example,
+Of course, the \method{__init__()} method may have arguments for
+greater flexibility.  In that case, arguments given to the class
+instantiation operator are passed on to \method{__init__()}.  For
+example,
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> class Complex:
 ...     def __init__(self, realpart, imagpart):
 ...         self.r = realpart
@@ -2995,9 +2936,8 @@ operator are passed on to \verb\__init__\.  For example,
 >>> x = Complex(3.0,-4.5)
 >>> x.r, x.i
 (3.0, -4.5)
->>> 
-\end{verbatim}\ecode
-%
+\end{verbatim}
+
 Methods may reference global names in the same way as ordinary
 functions.  The global scope associated with a method is the module
 containing the class definition.  (The class itself is never used as a
@@ -3017,21 +2957,21 @@ without supporting inheritance.  The syntax for a derived class
 definition looks as follows:
 
 \begin{verbatim}
-    class DerivedClassName(BaseClassName):
-        <statement-1>
-        .
-        .
-        .
-        <statement-N>
+class DerivedClassName(BaseClassName):
+    <statement-1>
+    .
+    .
+    .
+    <statement-N>
 \end{verbatim}
 
-The name \verb\BaseClassName\ must be defined in a scope containing
+The name \class{BaseClassName} must be defined in a scope containing
 the derived class definition.  Instead of a base class name, an
 expression is also allowed.  This is useful when the base class is
 defined in another module, e.g.,
 
 \begin{verbatim}
-    class DerivedClassName(modname.BaseClassName):
+class DerivedClassName(modname.BaseClassName):
 \end{verbatim}
 
 Execution of a derived class definition proceeds the same as for a
@@ -3042,7 +2982,7 @@ base class.  This rule is applied recursively if the base class itself
 is derived from some other class.
 
 There's nothing special about instantiation of derived classes:
-\verb\DerivedClassName()\ creates a new instance of the class.  Method
+\code{DerivedClassName()} creates a new instance of the class.  Method
 references are resolved as follows: the corresponding class attribute
 is searched, descending down the chain of base classes if necessary,
 and the method reference is valid if this yields a function object.
@@ -3057,7 +2997,7 @@ in Python are ``virtual functions''.)
 An overriding method in a derived class may in fact want to extend
 rather than simply replace the base class method of the same name.
 There is a simple way to call the base class method directly: just
-call \verb\BaseClassName.methodname(self, arguments)\.  This is
+call \samp{BaseClassName.methodname(self, arguments)}.  This is
 occasionally useful to clients as well.  (Note that this only works if
 the base class is defined or imported directly in the global scope.)
 
@@ -3068,29 +3008,29 @@ Python supports a limited form of multiple inheritance as well.  A
 class definition with multiple base classes looks as follows:
 
 \begin{verbatim}
-    class DerivedClassName(Base1, Base2, Base3):
-        <statement-1>
-        .
-        .
-        .
-        <statement-N>
+class DerivedClassName(Base1, Base2, Base3):
+    <statement-1>
+    .
+    .
+    .
+    <statement-N>
 \end{verbatim}
 
 The only rule necessary to explain the semantics is the resolution
 rule used for class attribute references.  This is depth-first,
 left-to-right.  Thus, if an attribute is not found in
-\verb\DerivedClassName\, it is searched in \verb\Base1\, then
-(recursively) in the base classes of \verb\Base1\, and only if it is
-not found there, it is searched in \verb\Base2\, and so on.
+\class{DerivedClassName}, it is searched in \class{Base1}, then
+(recursively) in the base classes of \class{Base1}, and only if it is
+not found there, it is searched in \class{Base2}, and so on.
 
-(To some people breadth first---searching \verb\Base2\ and
-\verb\Base3\ before the base classes of \verb\Base1\---looks more
+(To some people breadth first --- searching \class{Base2} and
+\class{Base3} before the base classes of \class{Base1} --- looks more
 natural.  However, this would require you to know whether a particular
-attribute of \verb\Base1\ is actually defined in \verb\Base1\ or in
+attribute of \class{Base1} is actually defined in \class{Base1} or in
 one of its base classes before you can figure out the consequences of
-a name conflict with an attribute of \verb\Base2\.  The depth-first
+a name conflict with an attribute of \class{Base2}.  The depth-first
 rule makes no differences between direct and inherited attributes of
-\verb\Base1\.)
+\class{Base1}.)
 
 It is clear that indiscriminate use of multiple inheritance is a
 maintenance nightmare, given the reliance in Python on conventions to
@@ -3178,15 +3118,15 @@ Sometimes it is useful to have a data type similar to the Pascal
 items.  An empty class definition will do nicely, e.g.:
 
 \begin{verbatim}
-    class Employee:
-        pass
+class Employee:
+    pass
 
-    john = Employee() # Create an empty employee record
+john = Employee() # Create an empty employee record
 
-    # Fill the fields of the record
-    john.name = 'John Doe'
-    john.dept = 'computer lab'
-    john.salary = 1000
+# Fill the fields of the record
+john.name = 'John Doe'
+john.dept = 'computer lab'
+john.salary = 1000
 \end{verbatim}
 
 
@@ -3194,17 +3134,17 @@ A piece of Python code that expects a particular abstract data type
 can often be passed a class that emulates the methods of that data
 type instead.  For instance, if you have a function that formats some
 data from a file object, you can define a class with methods
-\verb\read()\ and \verb\readline()\ that gets the data from a string
+\method{read()} and \method{readline()} that gets the data from a string
 buffer instead, and pass it as an argument.  (Unfortunately, this
 technique has its limitations: a class can't define operations that
 are accessed by special syntax such as sequence subscripting or
 arithmetic operators, and assigning such a ``pseudo-file'' to
-\verb\sys.stdin\ will not cause the interpreter to read further input
+\code{sys.stdin} will not cause the interpreter to read further input
 from it.)
 
 
-Instance method objects have attributes, too: \verb\m.im_self\ is the
-object of which the method is an instance, and \verb\m.im_func\ is the
+Instance method objects have attributes, too: \code{m.im_self} is the
+object of which the method is an instance, and \code{m.im_func} is the
 function object corresponding to the method.
 
 \subsection{Exceptions Can Be Classes}
@@ -3221,7 +3161,7 @@ raise Class, instance
 raise instance
 \end{verbatim}
 
-In the first form, \code{instance} must be an instance of \code{Class}
+In the first form, \code{instance} must be an instance of \class{Class}
 or of a class derived from it.  The second form is a shorthand for
 
 \begin{verbatim}
@@ -3254,14 +3194,14 @@ for c in [B, C, D]:
         print "B"
 \end{verbatim}
 
-Note that if the except clauses were reversed (with ``\code{except B}''
+Note that if the except clauses were reversed (with \samp{except B}
 first), it would have printed B, B, B --- the first matching except
 clause is triggered.
 
 When an error message is printed for an unhandled exception which is a
 class, the class name is printed, then a colon and a space, and
 finally the instance converted to a string using the built-in function
-\code{str()}.
+\function{str()}.
 
 In this release, the built-in exceptions are still strings.
 
@@ -3275,10 +3215,10 @@ which gives complete (though terse) reference material about types,
 functions, and modules that can save you a lot of time when writing
 Python programs.  The standard Python distribution includes a
 \emph{lot} of code in both \C{} and Python; there are modules to read
-\UNIX{} mailboxes, retrieve documents via HTTP, generate random numbers,
-parse command-line options, write CGI programs, compress data, and a
-lot more; skimming through the Library Reference will give you an idea
-of what's available.
+\UNIX{} mailboxes, retrieve documents via HTTP, generate random
+numbers, parse command-line options, write CGI programs, compress
+data, and a lot more; skimming through the Library Reference will give
+you an idea of what's available.
 
 The major Python Web site is \url{http://www.python.org}; it contains
 code, documentation, and pointers to Python-related pages around the
@@ -3291,7 +3231,7 @@ downloadable software here.
 
 For Python-related questions and problem reports, you can post to the
 newsgroup \code{comp.lang.python}, or send them to the mailing list at
-\code{python-list@cwi.nl}.  The newsgroup and mailing list are
+\email{python-list@cwi.nl}.  The newsgroup and mailing list are
 gatewayed, so messages posted to one will automatically be forwarded
 to the other.  There are around 20--30 postings a day, asking (and
 answering) questions, suggesting new features, and announcing new
@@ -3310,17 +3250,18 @@ information on how to join.
 
 \chapter{Recent Additions as of Release 1.1}
 
-XXX Should the stuff in this chapter be deleted, or can a home be found or it elsewhere in the Tutorial?
+% XXX Should the stuff in this chapter be deleted, or can a home be
+% found or it elsewhere in the Tutorial?
 
 \section{Lambda Forms}
 
-XXX Where to put this?  Or just leave it out?
+% XXX Where to put this?  Or just leave it out?
 
 By popular demand, a few features commonly found in functional
 programming languages and Lisp have been added to Python.  With the
-\verb\lambda\ keyword, small anonymous functions can be created.
+\keyword{lambda} keyword, small anonymous functions can be created.
 Here's a function that returns the sum of its two arguments:
-\verb\lambda a, b: a+b\.  Lambda forms can be used wherever function
+\samp{lambda a, b: a+b}.  Lambda forms can be used wherever function
 objects are required.  They are syntactically restricted to a single
 expression.  Semantically, they are just syntactic sugar for a normal
 function definition.  Like nested function definitions, lambda forms
@@ -3328,13 +3269,13 @@ cannot reference variables from the containing scope, but this can be
 overcome through the judicious use of default argument values, e.g.
 
 \begin{verbatim}
-    def make_incrementor(n):
-        return lambda x, incr=n: x+incr
+def make_incrementor(n):
+    return lambda x, incr=n: x+incr
 \end{verbatim}
 
 \section{Documentation Strings}
 
-XXX Where to put this?  Or just leave it out?
+% XXX Where to put this?  Or just leave it out?
 
 There are emerging conventions about the content and formatting of
 documentation strings.
@@ -3407,25 +3348,25 @@ The key bindings and some other parameters of the Readline library can
 be customized by placing commands in an initialization file called
 \file{\$HOME/.inputrc}.  Key bindings have the form
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 key-name: function-name
-\end{verbatim}\ecode
-%
+\end{verbatim}
+
 or
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 "string": function-name
-\end{verbatim}\ecode
-%
+\end{verbatim}
+
 and options can be set with
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 set option-name value
-\end{verbatim}\ecode
-%
+\end{verbatim}
+
 For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 # I prefer vi-style editing:
 set editing-mode vi
 # Edit using a single line:
@@ -3434,16 +3375,16 @@ set horizontal-scroll-mode On
 Meta-h: backward-kill-word
 "\C-u": universal-argument
 "\C-x\C-r": re-read-init-file
-\end{verbatim}\ecode
-%
+\end{verbatim}
+
 Note that the default binding for TAB in Python is to insert a TAB
 instead of Readline's default filename completion function.  If you
 insist, you can override this by putting
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 TAB: complete
-\end{verbatim}\ecode
-%
+\end{verbatim}
+
 in your \file{\$HOME/.inputrc}.  (Of course, this makes it hard to type
 indented continuation lines...)
 
@@ -3457,7 +3398,7 @@ completion mechanism might use the interpreter's symbol table.  A
 command to check (or even suggest) matching parentheses, quotes etc.
 would also be useful.
 
-XXX Lele Gaifax's readline module, which adds name completion...
+% XXX Lele Gaifax's readline module, which adds name completion...
 
 \end{document}
 
