@@ -246,26 +246,68 @@ list_print(PyListObject *op, FILE *fp, int flags)
 static PyObject *
 list_repr(PyListObject *v)
 {
-	PyObject *s, *comma;
 	int i;
+	PyObject *s, *temp;
+	PyObject *pieces = NULL, *result = NULL;
 
 	i = Py_ReprEnter((PyObject*)v);
 	if (i != 0) {
-		if (i > 0)
-			return PyString_FromString("[...]");
-		return NULL;
+		return i > 0 ? PyString_FromString("[...]") : NULL;
 	}
+
+	if (v->ob_size == 0) {
+		result = PyString_FromString("[]");
+		goto Done;
+	}
+
+	pieces = PyList_New(0);
+	if (pieces == NULL)
+		goto Done;
+
+	/* Do repr() on each element.  Note that this may mutate the list,
+	   so must refetch the list size on each iteration. */
+	for (i = 0; i < v->ob_size; ++i) {
+		int status;
+		s = PyObject_Repr(v->ob_item[i]);
+		if (s == NULL)
+			goto Done;
+		status = PyList_Append(pieces, s);
+		Py_DECREF(s);  /* append created a new ref */
+		if (status < 0)
+			goto Done;
+	}
+
+	/* Add "[]" decorations to the first and last items. */
+	assert(PyList_GET_SIZE(pieces) > 0);
 	s = PyString_FromString("[");
-	comma = PyString_FromString(", ");
-	for (i = 0; i < v->ob_size && s != NULL; i++) {
-		if (i > 0)
-			PyString_Concat(&s, comma);
-		PyString_ConcatAndDel(&s, PyObject_Repr(v->ob_item[i]));
-	}
-	Py_XDECREF(comma);
-	PyString_ConcatAndDel(&s, PyString_FromString("]"));
+	if (s == NULL)
+		goto Done;
+	temp = PyList_GET_ITEM(pieces, 0);
+	PyString_ConcatAndDel(&s, temp);
+	PyList_SET_ITEM(pieces, 0, s);
+	if (s == NULL)
+		goto Done;
+
+	s = PyString_FromString("]");
+	if (s == NULL)
+		goto Done;
+	temp = PyList_GET_ITEM(pieces, PyList_GET_SIZE(pieces) - 1);
+	PyString_ConcatAndDel(&temp, s);
+	PyList_SET_ITEM(pieces, PyList_GET_SIZE(pieces) - 1, temp);
+	if (temp == NULL)
+		goto Done;
+
+	/* Paste them all together with ", " between. */
+	s = PyString_FromString(", ");
+	if (s == NULL)
+		goto Done;
+	result = _PyString_Join(s, pieces);
+	Py_DECREF(s);	
+
+Done:
+	Py_XDECREF(pieces);
 	Py_ReprLeave((PyObject *)v);
-	return s;
+	return result;
 }
 
 static int

@@ -1031,6 +1031,23 @@ string_join(PyStringObject *self, PyObject *args)
 	return res;
 }
 
+PyObject *_PyString_Join(PyObject *sep, PyObject *x)
+{
+	PyObject* args;
+	PyObject* result = NULL;
+
+	assert(sep != NULL && PyString_Check(sep));
+	assert(x != NULL);
+	args = PyTuple_New(1);
+	if (args != NULL) {
+		Py_INCREF(x);
+		PyTuple_SET_ITEM(args, 0, x);
+		result = string_join((PyStringObject *)sep, args);
+		Py_DECREF(args);
+	}
+	return result;
+}
+
 static long
 string_find_internal(PyStringObject *self, PyObject *args, int dir)
 {
