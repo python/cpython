@@ -247,6 +247,7 @@ do_mkvalue(char **p_format, va_list *p_va)
 					 countformat(*p_format, '}'));
 
 		case 'b':
+		case 'B':
 		case 'h':
 		case 'i':
 			return PyInt_FromLong((long)va_arg(*p_va, int));
