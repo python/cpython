@@ -106,8 +106,13 @@ typedef int (* APIENTRY dl_funcptr)();
 #include <windows.h>
 typedef FARPROC dl_funcptr;
 #define _DL_FUNCPTR_DEFINED
+#ifdef _DEBUG
+#define SHORT_EXT "_d.pyd"
+#define LONG_EXT "_d.dll"
+#else
 #define SHORT_EXT ".pyd"
 #define LONG_EXT ".dll"
+#endif
 #endif
 
 #ifdef NeXT
