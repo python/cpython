@@ -102,7 +102,7 @@ dsttmp=$dstdir/#inst.$$#
 
 # Move or copy the file name to the temp name
 
-$doit $instcmd $src $dsttmp
+$doit $instcmd $src $dsttmp || exit $?
 
 # and set any options; do chmod last to preserve setuid bits
 
@@ -114,7 +114,7 @@ if [ x"$chmodcmd" != x ]; then $doit $chmodcmd $dsttmp; fi
 # Now rename the file to the real destination.
 
 $doit $rmcmd $dst
-$doit $mvcmd $dsttmp $dst
+$doit $mvcmd $dsttmp $dst || exit $?
 
 
 exit 0
