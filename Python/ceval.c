@@ -442,8 +442,8 @@ eval_code(co, globals, locals, arg)
 			if (is_stringobject(v)) {
 				char *s = getstringvalue(v);
 				int len = getstringsize(v);
-				fwrite(s, 1, len, fp);
-				if (len > 0 && s[len-1] == '\n')
+				err = printobject(v, fp, PRINT_RAW);
+				if (err == 0 && len > 0 && s[len-1] == '\n')
 					softspace(sysget("stdout"), 0);
 			}
 			else {
