@@ -1,15 +1,16 @@
 #!/usr/local/bin/tkpython
-# Tkinter interface to Linux `ps' command.
+# Tkinter interface to Linux `kill' command.
 
 from Tkinter import *
 from string import splitfields
 from string import split
+import commands
+import posix
 
 class BarButton(Menubutton):
+	_CNF = {Pack: {'side': 'left'}}
 	def __init__(self, master=None, cnf={}):
-		Menubutton.__init__(self, master)
-		self.pack({'side': 'left'})
-		self.config(cnf)
+		Menubutton.__init__(self, master, (self._CNF, cnf))
 		self.menu = Menu(self, {'name': 'menu'})
 		self['menu'] = self.menu		
 
@@ -26,11 +27,11 @@ class Kill(Frame):
 	def kill(self, selected):
 		c = self.format_list[self.format.get()][2]
 		pid = split(selected)[c]
-		self.tk.call('exec', 'kill', '-9', pid)
+		posix.system('kill' + ' -9 ' + pid)
 		self.do_update()
 	def do_update(self):
 		name, option, column = self.format_list[self.format.get()]
-		s = self.tk.call('exec', 'ps', '-w', option)
+		s = commands.getoutput('ps -w ' + option)
 		list = splitfields(s, '\n')
 		self.header.set(list[0])
 		del list[0]
