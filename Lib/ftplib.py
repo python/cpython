@@ -8,20 +8,26 @@
 # Example:
 #
 # >>> from ftplib import FTP
-# >>> ftp = FTP('ftp.cwi.nl') # connect to host, default port
+# >>> ftp = FTP('ftp.python.org') # connect to host, default port
 # >>> ftp.login() # default, i.e.: user anonymous, passwd user@hostname
 # >>> ftp.retrlines('LIST') # list directory contents
-# total 43
-# d--x--x--x   2 root     root         512 Jul  1 16:50 bin
-# d--x--x--x   2 root     root         512 Sep 16  1991 etc
-# drwxr-xr-x   2 root     ftp        10752 Sep 16  1991 lost+found
-# drwxr-srwt  15 root     ftp        10240 Nov  5 20:43 pub
+# total 9
+# drwxr-xr-x   8 root     wheel        1024 Jan  3  1994 .
+# drwxr-xr-x   8 root     wheel        1024 Jan  3  1994 ..
+# drwxr-xr-x   2 root     wheel        1024 Jan  3  1994 bin
+# drwxr-xr-x   2 root     wheel        1024 Jan  3  1994 etc
+# d-wxrwxr-x   2 ftp      wheel        1024 Sep  5 13:43 incoming
+# drwxr-xr-x   2 root     wheel        1024 Nov 17  1993 lib
+# drwxr-xr-x   6 1094     wheel        1024 Sep 13 19:07 pub
+# drwxr-xr-x   3 root     wheel        1024 Jan  3  1994 usr
+# -rw-r--r--   1 root     root          312 Aug  1  1994 welcome.msg
 # >>> ftp.quit()
+# >>> 
 #
 # To download a file, use ftp.retrlines('RETR ' + filename),
 # or ftp.retrbinary() with slightly different arguments.
 # To upload a file, use ftp.storlines() or ftp.storbinary(), which have
-# an open file as argument.
+# an open file as argument (see their definitions below for details).
 # The download/upload functions first issue appropriate TYPE and PORT
 # commands.
 
@@ -55,7 +61,7 @@ error_proto = 'ftplib.error_proto'	# response does not begin with [1-5]
 # All exceptions (hopefully) that may be raised here and that aren't
 # (always) programming errors on our side
 all_errors = (error_reply, error_temp, error_perm, error_proto, \
-	      socket.error, IOError)
+	      socket.error, IOError, EOFError)
 
 
 # Line terminators (we always output CRLF, but accept any of CRLF, CR, LF)
@@ -285,6 +291,7 @@ class FTP:
 		fp = conn.makefile('r')
 		while 1:
 			line = fp.readline()
+			if self.debugging > 2: print '*retr*', `line`
 			if not line:
 				break
 			if line[-2:] == CRLF:
