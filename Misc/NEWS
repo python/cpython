@@ -80,6 +80,14 @@ New platforms
 - 2.1 should compile and run out of the box on Cygwin.  Thanks to Jason
   Tishler!
 
+- 2.1 contains new files and patches for RISCOS, thanks to Dietmar
+  Schwertberger!  See RISCOS/README for more information -- it seems
+  that because of the bizarre filename conventions on RISCOS, no port
+  to that platform is easy.  Note that the new variable os.endsep is
+  silently supported in order to make life easier on this platform,
+  but we don't advertise it because it's not worth for most folks to
+  care about RISCOS portability.
+
 
 What's New in Python 2.1 alpha 2?
 =================================
