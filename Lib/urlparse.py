@@ -17,14 +17,14 @@ uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet', 'wais',
 	       'https', 'shttp', 'snews',
 	       'prospero', 'rtsp', 'rtspu', '']
 non_hierarchical = ['gopher', 'hdl', 'mailto', 'news', 'telnet', 'wais',
-		    'snews',
+		    'snews', 'sip',
 		    ]
 uses_params = ['ftp', 'hdl', 'prospero', 'http',
-	       'https', 'shttp', 'rtsp', 'rtspu',
+	       'https', 'shttp', 'rtsp', 'rtspu', 'sip',
 	       '']
 uses_query = ['http', 'wais',
 	      'https', 'shttp',
-	      'gopher', 'rtsp', 'rtspu',
+	      'gopher', 'rtsp', 'rtspu', 'sip',
 	      '']
 uses_fragment = ['ftp', 'hdl', 'http', 'gopher', 'news', 'nntp', 'wais',
 		 'https', 'shttp', 'snews',
