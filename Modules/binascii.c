@@ -300,7 +300,7 @@ binascii_a2b_hqx(self, args)
 	unsigned char *ascii_data, *bin_data;
 	int leftbits = 0;
 	unsigned char this_ch;
-	unsigned int leftchar;
+	unsigned int leftchar = 0;
 	PyObject *rv;
 	int len;
 	int done = 0;
@@ -412,7 +412,7 @@ binascii_b2a_hqx(self, args)
 	unsigned char *ascii_data, *bin_data;
 	int leftbits = 0;
 	unsigned char this_ch;
-	unsigned int leftchar;
+	unsigned int leftchar = 0;
 	PyObject *rv;
 	int len;
 	
