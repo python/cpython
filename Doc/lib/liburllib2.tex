@@ -423,10 +423,8 @@ if you can't but another \class{Handler} might.
  requests must not be automatically redirected without confirmation by
  the user.  In reality, browsers do allow automatic redirection of
  these responses, changing the POST to a GET, and the default
- implementation reproduces this behaviour.}
-
+ implementation reproduces this behavior.}
 \end{methoddesc}
-
 
 \begin{methoddesc}[HTTPRedirectHandler]{http_error_301}{req,
                                                   fp, code, msg, hdrs}
@@ -451,6 +449,8 @@ The same as \method{http_error_301()}, but called for the
                                                   fp, code, msg, hdrs}
 The same as \method{http_error_301()}, but called for the
 `temporary redirect' response.
+\end{methoddesc}
+
 
 \subsection{ProxyHandler Objects \label{proxy-handler}}
 
