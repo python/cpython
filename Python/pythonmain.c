@@ -41,9 +41,7 @@ extern char *getpythonpath();
 
 extern grammar gram; /* From graminit.c */
 
-#ifdef DEBUG
 int debugging; /* Needed by parser.c */
-#endif
 
 /* Interface to getopt(): */
 extern int optind;
@@ -62,7 +60,7 @@ main(argc, argv)
 	
 	initargs(&argc, &argv); /* Defined in config*.c */
 
-	while ((c = getopt(argc, argv, "c:")) != EOF) {
+	while ((c = getopt(argc, argv, "c:d")) != EOF) {
 		if (c == 'c') {
 			/* -c is the last option; following arguments
 			   that look like options are left for the
@@ -75,6 +73,10 @@ main(argc, argv)
 		}
 		
 		switch (c) {
+
+		case 'd':
+			debugging++;
+			break;
 
 		/* This space reserved for other options */
 
