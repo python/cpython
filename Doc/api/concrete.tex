@@ -1449,7 +1449,7 @@ They all return \NULL{} or \code{-1} if an exception occurs.
   resulting Unicode string.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyUnicode_Tailmatch}{PyObject *str,
+\begin{cfuncdesc}{int}{PyUnicode_Tailmatch}{PyObject *str,
                                                   PyObject *substr,
                                                   int start,
                                                   int end,
@@ -1457,6 +1457,7 @@ They all return \NULL{} or \code{-1} if an exception occurs.
   Return 1 if \var{substr} matches \var{str}[\var{start}:\var{end}] at
   the given tail end (\var{direction} == -1 means to do a prefix
   match, \var{direction} == 1 a suffix match), 0 otherwise.
+  Returns \code{-1} if an error occurred.                         
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyUnicode_Find}{PyObject *str,
