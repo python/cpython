@@ -33,7 +33,6 @@ typedef struct methodlist PyMethodDef;
 #include <tk.h>
 
 extern char *getprogramname ();
-extern int isatty (int);
 
 /* Internal declarations from tkInt.h.  */ 
 extern int tk_NumMainWindows;
@@ -1012,18 +1011,10 @@ EventHook ()
       PyErr_Print ();
      }
   if (tk_NumMainWindows > 0)
-    Tk_DoOneEvent (0);
+    Tk_DoOneEvent (TK_DONT_WAIT);
   return 0;
 }
 #endif /* WITH_READLINE */
-
-static void
-StdinProc (clientData, mask)
-     ClientData clientData;
-     int mask;
-{
-  /* Do nothing. */
-}
 
 static void
 Tkinter_Cleanup ()
@@ -1055,10 +1046,6 @@ PyInit_tkinter ()
   PyDict_SetItemString (d, "WRITABLE", v);
   v = Py_BuildValue ("i", TK_EXCEPTION);
   PyDict_SetItemString (d, "EXCEPTION", v);
-
-  /* Unblock stdin. */
-  if (isatty (0))
-    Tk_CreateFileHandler (0, TK_READABLE, StdinProc, (ClientData) 0);
 
 #ifdef WITH_READLINE
   rl_event_hook = EventHook;
