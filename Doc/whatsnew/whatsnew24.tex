@@ -608,8 +608,10 @@ yellow 5
 \end{verbatim}
 
 \item The \function{eval(\var{expr}, \var{globals}, \var{locals})}
-function now accepts any mapping type for the \var{locals} argument.
-Previously this had to be a regular Python dictionary.
+and \function{execfile(\var{filename}, \var{globals}, \var{locals})}
+functions and the \keyword{exec} statement now accept any mapping type
+for the \var{locals} argument.  Previously this had to be a regular
+Python dictionary.  (Contributed by Raymond Hettinger.)
 
 \item The \function{zip()} built-in function and \function{itertools.izip()}
   now return an empty list if called with no arguments.
