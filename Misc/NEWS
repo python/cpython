@@ -36,6 +36,10 @@ Core and builtins
   exceptions (which could mask bugs in a __getattr__ hook, for
   example).
 
+- Weak reference objects are now part of the core and offers a C API.
+  A bug which could allow a core dump when binary operations involved
+  proxy reference has been fixed.
+
 Extension modules
 
 - thread.start_new_thread() now returns the thread ID (previously None).
