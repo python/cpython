@@ -1,0 +1,60 @@
+Subject: Re: What language would you use?
+From: Tom Christiansen <tchrist@mox.perl.com>
+Date: 6 Nov 1994 15:14:51 GMT
+Newsgroups: comp.lang.python,comp.lang.tcl,comp.lang.scheme,comp.lang.misc,comp.lang.perl
+Message-Id: <39irtb$3t4@csnews.cs.Colorado.EDU>
+References: <39b7ha$j9v@zeno.nscf.org> <39hhjp$lgn@csnews.cs.Colorado.EDU> <39hvsu$dus@mathserv.mps.ohio-state.edu>
+
+[...]
+If you're really into benchmarks, I'd love it if someone were to code up
+the following problems in tcl, python, and scheme (and whatever else you'd
+like).  Separate versions (one optimized for speed, one for beauty :-) are
+ok.  Post your code so we can time it on our own systems.
+
+0)  Factorial Test  (numerics and function calls)
+
+        (we did this already)
+
+1)  Regular Expressions Test
+
+    Read a file of (extended per egrep) regular expressions (one per line), 
+    and apply those to all files whose names are listed on the command line.
+    Basically, an 'egrep -f' simulator.  Test it with 20 "vt100" patterns
+    against a five /etc/termcap files.  Tests using more elaborate patters
+    would also be interesting.  Your code should not break if given hundreds
+    of regular expressions or binary files to scan.  
+
+2)  Sorting Test
+
+    Sort an input file that consists of lines like this
+
+        var1=23 other=14 ditto=23 fred=2
+
+    such that each output line is sorted WRT to the number.  Order
+    of output lines does not change.  Resolve collisions using the
+    variable name.   e.g.
+
+        fred=2 other=14 ditto=23 var1=23 
+
+    Lines may be up to several kilobytes in length and contain
+    zillions of variables.
+
+3)  System Test
+
+    Given a list of directories, report any bogus symbolic links contained
+    anywhere in those subtrees.  A bogus symbolic link is one that cannot
+    be resolved because it points to a nonexistent or otherwise
+    unresolvable file.  Do *not* use an external find executable.
+    Directories may be very very deep.  Print a warning immediately if the
+    system you're running on doesn't support symbolic links.
+
+
+I'll post perl solutions if people post the others.
+
+
+--tom
+-- 
+Tom Christiansen      Perl Consultant, Gamer, Hiker      tchrist@mox.perl.com
+
+ "But Billy! A *small* allowance prepares you for a lifetime of small
+ salaries and for your Social Security payments."    --Family Circus
