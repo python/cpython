@@ -16,14 +16,14 @@ OVERRIDE_POPT_ID = 129
 OVERRIDE_GUSI_ID = 10241
 
 # version
-CUR_VERSION=3
+CUR_VERSION=4
 
 preffilename = PstringLoader(AnyResLoader('STR ', resname=PREFNAME_NAME)).load()
 pref_fss = preferencefile(preffilename, 'Pyth', 'pref')
 
 class PoptLoader(VersionLoader):
 	def __init__(self, loader):
-		VersionLoader.__init__(self, "bbbbbbbbbb", loader)
+		VersionLoader.__init__(self, "bbbbbbbbbbbb", loader)
 		
 	def versioncheck(self, data):
 		if data[0] == CUR_VERSION:
@@ -89,7 +89,8 @@ class PythonOptions:
 		flags = self.popt.load()
 		dict['version'], dict['inspect'], dict['verbose'], dict['optimize'], \
 			dict['unbuffered'], dict['debugging'], dict['keepopen'], dict['keeperror'], \
-			dict['nointopt'], dict['noargs'] = flags
+			dict['nointopt'], dict['noargs'], dict['oldexc'], \
+			dict['nosite'] = flags
 		return dict
 		
 	def save(self, dict):
@@ -99,7 +100,8 @@ class PythonOptions:
 		self.gusi.save((dict['creator'], dict['type'], dict['delayconsole']))
 		flags = dict['version'], dict['inspect'], dict['verbose'], dict['optimize'], \
 			dict['unbuffered'], dict['debugging'], dict['keepopen'], dict['keeperror'], \
-			dict['nointopt'], dict['noargs'] 
+			dict['nointopt'], dict['noargs'], dict['oldexc'], \
+			dict['nosite']
 		self.popt.save(flags)
 
 def AppletOptions(file):
