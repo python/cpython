@@ -182,9 +182,6 @@ typedef void (*dl_funcptr)();
 #ifndef RTLD_LAZY
 #define RTLD_LAZY 1
 #endif
-#ifndef RTLD_GLOBAL
-#define RTLD_GLOBAL 0
-#endif
 #define SHORT_EXT ".so"
 #define LONG_EXT "module.so"
 #endif /* USE_SHLIB */
@@ -376,13 +373,13 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 #ifdef RTLD_NOW
 		/* RTLD_NOW: resolve externals now
 		   (i.e. core dump now if some are missing) */
-		void *handle = dlopen(pathname, RTLD_NOW | RTLD_GLOBAL);
+		void *handle = dlopen(pathname, RTLD_NOW);
 #else
 		void *handle;
 		if (Py_VerboseFlag)
 			printf("dlopen(\"%s\", %d);\n", pathname,
-			       RTLD_LAZY | RTLD_GLOBAL);
-		handle = dlopen(pathname, RTLD_LAZY | RTLD_GLOBAL);
+			       RTLD_LAZY);
+		handle = dlopen(pathname, RTLD_LAZY);
 #endif /* RTLD_NOW */
 		if (handle == NULL) {
 			PyErr_SetString(PyExc_ImportError, dlerror());
@@ -562,6 +559,7 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
                         printf("shl_load %s\n",pathname);
                 }
                 lib = shl_load(pathname, flags, 0);
+                /* XXX Chuck Blake once wrote that 0 should be BIND_NOSTART? */
                 if (lib == NULL)
                 {
                         char buf[256];
