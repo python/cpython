@@ -469,6 +469,9 @@ Currently-active file is at the head of the list.")
 (defvar python-mode-hook nil
   "*Hook called by `python-mode'.")
 
+(defvar py-shell-hook nil
+  "*Hook called by `py-shell'.")
+
 ;; In previous version of python-mode.el, the hook was incorrectly
 ;; called py-mode-hook, and was not defvar'd.  Deprecate its use.
 (and (fboundp 'make-obsolete-variable)
@@ -1336,6 +1339,7 @@ filter."
     (setq py-pdbtrack-do-tracking-p t)
     (set-syntax-table py-mode-syntax-table)
     (use-local-map py-shell-map)
+    (run-hooks 'py-shell-hook)
     ))
 
 (defun py-clear-queue ()
@@ -2995,6 +2999,16 @@ the Elisp manual for details.
 Obscure:  When python-mode is first loaded, it looks for all bindings
 to newline-and-indent in the global keymap, and shadows them with
 local bindings to py-newline-and-indent."))
+
+(require 'info-look)
+(info-lookup-maybe-add-help
+ :mode 'python-mode
+ :regexp "[a-zA-Z0-9_]+"
+ :doc-spec '(("(python-lib)Module Index")
+	     ("(python-lib)Class-Exception-Object Index")
+	     ("(python-lib)Function-Method-Variable Index")
+	     ("(python-lib)Miscellaneous Index")))
+
 
 
 ;; Helper functions
