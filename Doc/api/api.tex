@@ -4975,10 +4975,10 @@ to provide any explicit support for garbage collection.
 
 To create a container type, the \member{tp_flags} field of the type
 object must include the \constant{Py_TPFLAGS_GC} and provide an
-implementation of the \member{tp_traverse} handler.  The value of the
-\member{tp_basicsize} field must include \constant{PyGC_HEAD_SIZE} as
-well.  If instances of the type are mutable, a \member{tp_clear}
-implementation must also be provided.
+implementation of the \member{tp_traverse} handler.  The computed
+value of the \member{tp_basicsize} field must include
+\constant{PyGC_HEAD_SIZE} as well.  If instances of the type are
+mutable, a \member{tp_clear} implementation must also be provided.
 
 \begin{datadesc}{Py_TPFLAGS_GC}
   Objects with a type with this flag set must conform with the rules
@@ -4992,6 +4992,17 @@ implementation must also be provided.
   collector is disabled at compile time then this is \code{0}.
 \end{datadesc}
 
+Constructors for container types must conform to two rules:
+
+\begin{enumerate}
+\item  The memory for the object must be allocated using
+       \cfunction{PyObject_New()} or \cfunction{PyObject_VarNew()}.
+
+\item  Once all the fields which may contain references to other
+       containers are initialized, it must call
+       \cfunction{PyObject_GC_Init()}.
+\end{enumerate}
+
 \begin{cfuncdesc}{void}{PyObject_GC_Init}{PyObject *op}
   Adds the object \var{op} to the set of container objects tracked by
   the collector.  The collector can run at unexpected times so objects
@@ -4999,6 +5010,17 @@ implementation must also be provided.
   the fields followed by the \member{tp_traverse} handler become valid,
   usually near the end of the constructor.
 \end{cfuncdesc}
+
+Similarly, the deallocator for the object must conform to a similar
+pair of rules:
+
+\begin{enumerate}
+\item  Before fields which refer to other containers are invalidated,
+       \cfunction{PyObject_GC_Fini()} must be called.
+
+\item  The object's memory must be deallocated using
+       \cfunction{PyObject_Del()}.
+\end{enumerate}
 
 \begin{cfuncdesc}{void}{PyObject_GC_Fini}{PyObject *op}
   Remove the object \var{op} from the set of container objects tracked
@@ -5043,6 +5065,106 @@ The \member{tp_clear} handler must be of the \ctype{inquiry} type, or
   this method if it detects that this object is involved in a
   reference cycle.
 \end{ctypedesc}
+
+
+\subsection{Example Cycle Collector Support
+            \label{example-cycle-support}}
+
+This example shows only enough of the implementation of an extension
+type to show how the garbage collector support needs to be added.  It
+shows the definition of the object structure, the
+\member{tp_traverse}, \member{tp_clear} and \member{tp_dealloc}
+implementations, the type structure, and a constructor --- the module
+initialization needed to export the constructor to Python is not shown
+as there are no special considerations there for the collector.  To
+make this interesting, assume that the module exposes ways for the
+\member{container} field of the object to be modified.  Note that
+since no checks are made on the type of the object used to initialize
+\member{container}, we have to assume that it may be a container.
+
+\begin{verbatim}
+#include "Python.h"
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *container;
+} MyObject;
+
+static int
+my_traverse(MyObject *self, visitproc visit, void *arg)
+{
+    if (self->container != NULL)
+        return visit(self->container, arg);
+    else
+        return 0;
+}
+
+static int
+my_clear(MyObject *self)
+{
+    Py_XDECREF(self->container);
+    self->container = NULL;
+
+    return 0;
+}
+
+static void
+my_dealloc(MyObject *self)
+{
+    PyObject_GC_Fini((PyObject *) self);
+    Py_XDECREF(self->container);
+    PyObject_Del(self);
+}
+\end{verbatim}
+
+\begin{verbatim}
+statichere PyTypeObject
+MyObject_Type = {
+    PyObject_HEAD_INIT(NULL)
+    0,
+    "MyObject",
+    sizeof(MyObject) + PyGC_HEAD_SIZE,
+    0,
+    (destructor)my_dealloc,     /* tp_dealloc */
+    0,                          /* tp_print */
+    0,                          /* tp_getattr */
+    0,                          /* tp_setattr */
+    0,                          /* tp_compare */
+    0,                          /* tp_repr */
+    0,                          /* tp_as_number */
+    0,                          /* tp_as_sequence */
+    0,                          /* tp_as_mapping */
+    0,                          /* tp_hash */
+    0,                          /* tp_call */
+    0,                          /* tp_str */
+    0,                          /* tp_getattro */
+    0,                          /* tp_setattro */
+    0,                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,
+    0,                          /* tp_doc */
+    (traverseproc)my_traverse,  /* tp_traverse */
+    (inquiry)my_clear,          /* tp_clear */
+    0,                          /* tp_richcompare */
+    0,                          /* tp_weaklistoffset */
+};
+
+/* This constructor should be made accessible from Python. */
+static PyObject *
+new_object(PyObject *unused, PyObject *args)
+{
+    PyObject *container = NULL;
+    MyObject *result = NULL;
+
+    if (PyArg_ParseTuple(args, "|O:new_object", &container)) {
+        result = PyObject_New(MyObject, &MyObject_Type);
+        if (result != NULL) {
+            result->container = container;
+            PyObject_GC_Init();
+        }
+    }
+    return (PyObject *) result;
+}
+\end{verbatim}
 
 
 % \chapter{Debugging \label{debugging}}
