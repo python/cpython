@@ -1,4 +1,4 @@
-# Module 'dospath' -- common operations on DOS pathnames
+# Module 'ntpath' -- common operations on DOS pathnames
 
 import os
 import stat
@@ -7,26 +7,21 @@ import string
 
 # Normalize the case of a pathname.
 # On MS-DOS it maps the pathname to lowercase, turns slashes into
-# backslashes and maps invalid consecutive characters to a single '_'.
+# backslashes.
 # Other normalizations (such as optimizing '../' away) are not allowed
 # (this is done by normpath).
-
-mapchar = '_'
+# Previously, this version mapped invalid consecutive characters to a 
+# single '_', but this has been removed.  This functionality should 
+# possibly be added as a new function.
 
 def normcase(s):
 	res, s = splitdrive(s)
 	for c in s:
 		if c in '/\\':
 			res = res + os.sep
-		elif c == '.' and res[-1:] == os.sep:
-			res = res + mapchar + c
-		elif ord(c) < 32 or c in ' "*+,:;<=>?[]|':
-			if res[-1:] != mapchar:
-				res = res + mapchar
 		else:
 			res = res + c
 	return string.lower(res)
-
 
 # Return wheter a path is absolute.
 # Trivial in Posix, harder on the Mac or MS-DOS.
@@ -243,9 +238,13 @@ def expanduser(path):
 	while i < n and path[i] not in '/\\':
 		i = i+1
 	if i == 1:
-		if not os.environ.has_key('HOME'):
+		try:
+			drive=os.environ['HOMEDRIVE']
+		except KeyError:
+			drive = ''
+		if not os.environ.has_key('HOMEPATH'):
 			return path
-		userhome = os.environ['HOME']
+		userhome = join(drive, os.environ['HOMEPATH'])
 	else:
 		return path
 	return userhome + path[i:]
