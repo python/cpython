@@ -1539,20 +1539,21 @@ x_mul(PyLongObject *a, PyLongObject *b)
 		twodigits carry = 0;
 		twodigits f = a->ob_digit[i];
 		int j;
+		digit *pz = z->ob_digit + i;
 
 		SIGCHECK({
 			Py_DECREF(z);
 			return NULL;
 		})
 		for (j = 0; j < size_b; ++j) {
-			carry += z->ob_digit[i+j] + b->ob_digit[j] * f;
-			z->ob_digit[i+j] = (digit) (carry & MASK);
+			carry += *pz + b->ob_digit[j] * f;
+			*pz++ = (digit) (carry & MASK);
 			carry >>= SHIFT;
 		}
 		for (; carry != 0; ++j) {
 			assert(i+j < z->ob_size);
-			carry += z->ob_digit[i+j];
-			z->ob_digit[i+j] = (digit) (carry & MASK);
+			carry += *pz;
+			*pz++ = (digit) (carry & MASK);
 			carry >>= SHIFT;
 		}
 	}
