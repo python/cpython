@@ -33,6 +33,9 @@ Extension modules
 Library
 -------
 
+- The csv module's DictReader and DictWriter classes now accept keyword
+  arguments.  This was an omission in the initial implementation.
+
 - The email package handles some RFC 2231 parameters with missing
   CHARSET fields better.  It also includes a patch to parameter
   parsing when semicolons appear inside quotes.
