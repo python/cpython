@@ -940,9 +940,9 @@ subtype_getweakref(PyObject *obj, void *context)
 	}
 	assert(obj->ob_type->tp_weaklistoffset > 0);
 	assert(obj->ob_type->tp_weaklistoffset + sizeof(PyObject *) <=
-	       obj->ob_type->tp_basicsize);
+	       (size_t)(obj->ob_type->tp_basicsize));
 	weaklistptr = (PyObject **)
-		((void *)obj + obj->ob_type->tp_weaklistoffset);
+		((char *)obj + obj->ob_type->tp_weaklistoffset);
 	if (*weaklistptr == NULL)
 		result = Py_None;
 	else
