@@ -114,7 +114,7 @@ SO=		@SO@
 LDSHARED=	@LDSHARED@
 CCSHARED=	@CCSHARED@
 LINKFORSHARED=	@LINKFORSHARED@
-DESTSHARED=	$(BINLIBDEST)/sharedmodules
+DESTSHARED=	$(BINLIBDEST)/lib-dynload
 
 # Shell used by make (some versions default to the login shell, which is bad)
 SHELL=		/bin/sh
@@ -204,7 +204,7 @@ TESTOPTS=
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
 TESTPYTHON=	./python
 test:		python
-		-rm -f $(srcdir)/Lib/test/*.pyc
+		-rm -f $(srcdir)/Lib/test/*.py[co]
 		-PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
 		PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
 
@@ -295,7 +295,7 @@ libinstall:	python $(srcdir)/Lib/$(PLATDIR)
 			do \
 				case $$i in \
 				*CVS) ;; \
-				*.pyc) ;; \
+				*.py[co]) ;; \
 				*~) ;; \
 				*) \
 					if test -x $$i; then \
