@@ -139,8 +139,6 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libstruct.tex \
 	lib/libmisc.tex \
 	lib/libmath.tex \
-	lib/librand.tex \
-	lib/libwhrandom.tex \
 	lib/libdecimal.tex \
 	lib/libarray.tex \
 	lib/liballos.tex \
@@ -321,7 +319,6 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libnew.tex \
 	lib/libdircache.tex \
 	lib/libfilecmp.tex \
-	lib/libstatcache.tex \
 	lib/libsunau.tex \
 	lib/libwave.tex \
 	lib/libchunk.tex \
