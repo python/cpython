@@ -21,6 +21,7 @@ import Tkinter
 
 # weight/slant
 NORMAL = "normal"
+ROMAN = "roman"
 BOLD   = "bold"
 ITALIC = "italic"
 
@@ -37,7 +38,7 @@ class Font:
     family -- font 'family', e.g. Courier, Times, Helvetica
     size -- font size in points
     weight -- font thickness: NORMAL, BOLD
-    slant -- font slant: NORMAL, ITALIC
+    slant -- font slant: ROMAN, ITALIC
     underline -- font underlining: false (0), true (1)
     overstrike -- font strikeout: false (0), true (1)
     name -- name to use for this font configuration (defaults to a unique name)
