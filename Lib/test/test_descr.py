@@ -190,6 +190,7 @@ def test_dir():
 
     cstuff = ['Cdata', 'Cmethod', '__doc__', '__module__']
     verify(dir(C) == cstuff)
+    verify('im_self' in dir(C.Cmethod))
 
     c = C()  # c.__doc__ is an odd thing to see here; ditto c.__module__.
     verify(dir(c) == cstuff)
@@ -197,6 +198,7 @@ def test_dir():
     c.cdata = 2
     c.cmethod = lambda self: 0
     verify(dir(c) == cstuff + ['cdata', 'cmethod'])
+    verify('im_self' in dir(c.Cmethod))
 
     class A(C):
         Adata = 1
@@ -204,8 +206,10 @@ def test_dir():
 
     astuff = ['Adata', 'Amethod'] + cstuff
     verify(dir(A) == astuff)
+    verify('im_self' in dir(A.Amethod))
     a = A()
     verify(dir(a) == astuff)
+    verify('im_self' in dir(a.Amethod))
     a.adata = 42
     a.amethod = lambda self: 3
     verify(dir(a) == astuff + ['adata', 'amethod'])
@@ -224,10 +228,12 @@ def test_dir():
 
     c = C()
     verify(interesting(dir(c)) == cstuff)
+    verify('im_self' in dir(C.Cmethod))
 
     c.cdata = 2
     c.cmethod = lambda self: 0
     verify(interesting(dir(c)) == cstuff + ['cdata', 'cmethod'])
+    verify('im_self' in dir(c.Cmethod))
 
     class A(C):
         Adata = 1
@@ -235,11 +241,13 @@ def test_dir():
 
     astuff = ['Adata', 'Amethod'] + cstuff
     verify(interesting(dir(A)) == astuff)
+    verify('im_self' in dir(A.Amethod))
     a = A()
     verify(interesting(dir(a)) == astuff)
     a.adata = 42
     a.amethod = lambda self: 3
     verify(interesting(dir(a)) == astuff + ['adata', 'amethod'])
+    verify('im_self' in dir(a.Amethod))
 
     # Try a module subclass.
     import sys
