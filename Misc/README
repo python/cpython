@@ -21,6 +21,7 @@ Makefile	Used for administrative chores like cleaning up
 NEWS		News for this release
 README		The file you're reading now
 RFD		Request For Discussion about a Python newsgroup
+cheatsheet	Quick sommary of Python by Ken Mannheimer
 fixfuncptrs.sh	Shell script to fix function pointer initializers
 python-mode.el	Emacs mode for editing Python programs (thanks, Tim!)
 python.gif	4-level grayscale image of a Python (snake)
