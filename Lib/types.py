@@ -57,12 +57,7 @@ BuiltinFunctionType = type(len)
 BuiltinMethodType = type([].append)     # Same as BuiltinFunctionType
 
 ModuleType = type(sys)
-
-try:
-    FileType = type(sys.__stdin__)
-except AttributeError:
-    # Not available in restricted mode
-    pass
+FileType = file
 XRangeType = type(xrange(0))
 
 try:

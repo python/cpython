@@ -3,6 +3,11 @@ What's New in Python 2.2a4?
 
 Core
 
+- The builtin file type can be subclassed now.  In the usual pattern,
+  "file" is the name of the builtin type, and file() is a new builtin
+  constructor, with the same signature as the builtin open() function.
+  file() is now the preferred way to open a file.
+
 - In 2.2a3, hash() applied to an instance of a subclass of str or unicode
   always returned 0.  This has been repaired.
 

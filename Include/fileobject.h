@@ -9,7 +9,8 @@ extern "C" {
 
 extern DL_IMPORT(PyTypeObject) PyFile_Type;
 
-#define PyFile_Check(op) ((op)->ob_type == &PyFile_Type)
+#define PyFile_Check(op) PyObject_TypeCheck(op, &PyFile_Type)
+#define PyFile_CheckExact(op) ((op)->ob_type == &PyFile_Type)
 
 extern DL_IMPORT(PyObject *) PyFile_FromString(char *, char *);
 extern DL_IMPORT(void) PyFile_SetBufSize(PyObject *, int);

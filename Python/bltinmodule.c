@@ -1192,31 +1192,20 @@ Return the octal representation of an integer or long integer.";
 static PyObject *
 builtin_open(PyObject *self, PyObject *args)
 {
-	char *name = NULL;
-	char *mode = "r";
-	int bufsize = -1;
-	PyObject *f;
-
-	if (!PyArg_ParseTuple(args, "et|si:open", Py_FileSystemDefaultEncoding, 
-	                      &name, &mode, &bufsize))
-		return NULL;
-	f = PyFile_FromString(name, mode);
-	PyMem_Free(name); /* free the encoded string */
-	if (f != NULL)
-		PyFile_SetBufSize(f, bufsize);
-	return f;
+	return PyFile_Type.tp_new(&PyFile_Type, args, NULL);
 }
 
+/* XXX Keep this in synch with file_doc in fileobject.c. */
 static char open_doc[] =
-"open(filename[, mode[, buffering]]) -> file object\n\
-\n\
-Open a file.  The mode can be 'r', 'w' or 'a' for reading (default),\n\
-writing or appending.  The file will be created if it doesn't exist\n\
-when opened for writing or appending; it will be truncated when\n\
-opened for writing.  Add a 'b' to the mode for binary files.\n\
-Add a '+' to the mode to allow simultaneous reading and writing.\n\
-If the buffering argument is given, 0 means unbuffered, 1 means line\n\
-buffered, and larger numbers specify the buffer size.";
+"open(name[, mode[, buffering]]) -> file object\n"
+"\n"
+"Open a file.  The mode can be 'r', 'w' or 'a' for reading (default),\n"
+"writing or appending.  The file will be created if it doesn't exist\n"
+"when opened for writing or appending; it will be truncated when\n"
+"opened for writing.  Add a 'b' to the mode for binary files.\n"
+"Add a '+' to the mode to allow simultaneous reading and writing.\n"
+"If the buffering argument is given, 0 means unbuffered, 1 means line\n"
+"buffered, and larger numbers specify the buffer size.";
 
 
 static PyObject *
@@ -1893,6 +1882,8 @@ _PyBuiltin_Init(void)
 				 (PyObject *) &PyTuple_Type) < 0)
 		return NULL;
 	if (PyDict_SetItemString(dict, "type", (PyObject *) &PyType_Type) < 0)
+		return NULL;
+	if (PyDict_SetItemString(dict, "file", (PyObject *) &PyFile_Type) < 0)
 		return NULL;
 #ifdef Py_USING_UNICODE
 	if (PyDict_SetItemString(dict, "unicode",
