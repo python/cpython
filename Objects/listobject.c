@@ -624,6 +624,15 @@ docompare(x, y, compare)
 	return 0;
 }
 
+/* MINSIZE is the smallest array we care to partition; smaller arrays
+   are sorted using a straight insertion sort (above).  It must be at
+   least 3 for the quicksort implementation to work.  Assuming that
+   comparisons are more expensive than everything else (and this is a
+   good assumption for Python), it should be 10, which is the cutoff
+   point: quicksort requires more comparisons than insertion sort for
+   smaller arrays. */
+#define MINSIZE 12
+
 /* Straight insertion sort.  More efficient for sorting small arrays. */
 
 static int
@@ -640,29 +649,22 @@ insertionsort(array, size, compare)
 		register PyObject *key = *p;
 		register PyObject **q = p;
 		while (--q >= a) {
-			register int k = docompare(*q, key, compare);
+			register int k = docompare(key, *q, compare);
 			/* if (p-q >= MINSIZE)
 			   fprintf(stderr, "OUCH! %d\n", p-q); */
 			if (k == CMPERROR)
 				return -1;
-			if (k <= 0)
+			if (k < 0) {
+				*(q+1) = *q;
+				*q = key; /* For consistency */
+			}
+			else
 				break;
-			*(q+1) = *q;
-			*q = key; /* For consistency */
 		}
 	}
 
 	return 0;
 }
-
-/* MINSIZE is the smallest array we care to partition; smaller arrays
-   are sorted using a straight insertion sort (above).  It must be at
-   least 2 for the quicksort implementation to work.  Assuming that
-   comparisons are more expensive than everything else (and this is a
-   good assumption for Python), it should be 10, which is the cutoff
-   point: quicksort requires more comparisons than insertion sort for
-   smaller arrays. */
-#define MINSIZE 10
 
 /* STACKSIZE is the size of our work stack.  A rough estimate is that
    this allows us to sort arrays of MINSIZE * 2**STACKSIZE, or large
@@ -682,8 +684,9 @@ quicksort(array, size, compare)
 	PyObject *compare;/* Comparison function object, or NULL for default */
 {
 	register PyObject *tmp, *pivot;
-	register PyObject **lo, **hi, **l, **r;
-	int top, k, n, n2;
+	register PyObject **l, **r, **p;
+	register PyObject **lo, **hi;
+	int top, k, n;
 	PyObject **lostack[STACKSIZE];
 	PyObject **histack[STACKSIZE];
 
@@ -699,88 +702,117 @@ quicksort(array, size, compare)
 
 		/* If it's a small one, use straight insertion sort */
 		n = hi - lo;
-		if (n < MINSIZE) {
-			/* 
-			 * skip it.  The insertion sort at the end will 
-			 * catch these 
-			 */
+		if (n < MINSIZE)
 			continue;
-		}
 
-		/* Choose median of first, middle and last item as pivot */
-		
-		l = lo + (n>>1); /* Middle */
-		r = hi - 1;	/* Last */
+		/* Choose median of first, middle and last as pivot;
+		   these 3 are reverse-sorted in the process; the ends
+		   will be swapped on the first do-loop iteration.
+		*/
+		l = lo;		 /* First  */
+		p = lo + (n>>1); /* Middle */
+		r = hi - 1;	 /* Last   */
 
-		k = docompare(*l, *lo, compare);
+		k = docompare(*l, *p, compare);
 		if (k == CMPERROR)
 			return -1;
 		if (k < 0)
-			{ tmp = *lo; *lo = *l; *l = tmp; }
+			{ tmp = *l; *l = *p; *p = tmp; }
 
-		k = docompare(*r, *l, compare);
+		k = docompare(*p, *r, compare);
 		if (k == CMPERROR)
 			return -1;
 		if (k < 0)
-			{ tmp = *r; *r = *l; *l = tmp; }
+			{ tmp = *p; *p = *r; *r = tmp; }
 
-		k = docompare(*l, *lo, compare);
+		k = docompare(*l, *p, compare);
 		if (k == CMPERROR)
 			return -1;
 		if (k < 0)
-			{ tmp = *l; *l = *lo; *lo = tmp; }
-		pivot = *l;
+			{ tmp = *l; *l = *p; *p = tmp; }
 
-		/* Move pivot off to the side (swap with lo+1) */
-		*l = *(lo+1); *(lo+1) = pivot;
+		pivot = *p;
 
 		/* Partition the array */
-		l = lo+2;
-		r = hi-2;
 		do {
-			/* Move left index to element >= pivot */
-			while (l < hi) {
-				k = docompare(*l, pivot, compare); 
-				if (k == CMPERROR)
-					return -1;
-				if (k >= 0)
-					break;
+			tmp = *l; *l = *r; *r = tmp;
+			if (l == p) {
+				p = r;
 				l++;
 			}
-			/* Move right index to element <= pivot */
-			while (r > lo) {
-				k = docompare(pivot, *r, compare);
-				if (k == CMPERROR)
-					return -1;
-				if (k >= 0)
-					break;
+			else if (r == p) {
+				p = l;
+				r--;
+			}
+			else {
+				l++;
 				r--;
 			}
 
-			/* If they crossed, we're through */
-			if (l <= r) {
-				/* Swap elements and continue */
-				tmp = *l; *l = *r; *r = tmp; 
-				l++; r--;
+			/* Move left index to element >= pivot */
+			while (l < p) {
+				k = docompare(*l, pivot, compare);
+				if (k == CMPERROR)
+					return -1;
+				if (k < 0)
+					l++;
+				else
+					break;
+			}
+			/* Move right index to element <= pivot */
+			while (r > p) {
+				k = docompare(pivot, *r, compare);
+				if (k == CMPERROR)
+					return -1;
+				if (k < 0)
+					r--;
+				else
+					break;
 			}
 
-		} while (l <= r);
+		} while (l < r);
 
-		/* Swap pivot back into place; *r <= pivot */
-		*(lo+1) = *r; *r = pivot;
+		/* lo < l == p == r < hi-1
+		   *p == pivot
 
-		/* We have now reached the following conditions:
-			lo <= r < l <= hi
-			all x in [lo,r) are <= pivot
-			all x in [r,l)  are == pivot
-			all x in [l,hi) are >= pivot
-		   The partitions are [lo,r) and [l,hi)
-		 */
+		   All in [lo,p)   are <= pivot
+		   At p                == pivot
+		   All in [p+1,hi) are >= pivot
+
+		   Now extend as far as possible (around p) so that:
+		   All in [lo,r) are <= pivot
+		   All in [r,l)  are == pivot
+		   All in [l,hi) are >= pivot
+		   This wastes two compares if no elements are == to the
+		   pivot, but can win big when there are duplicates.
+		   Mildly tricky: continue using only "<" -- we deduce
+		   equality indirectly.
+		*/
+		while (r > lo) {
+			/* because r-1 < p, *(r-1) <= pivot is known */
+			k = docompare(*(r-1), pivot, compare);
+			if (k == CMPERROR)
+				return -1;
+			if (k < 0)
+				break;
+			/* <= and not < implies == */
+			r--;
+		}
+
+		l++;
+		while (l < hi) {
+			/* because l > p, pivot <= *l is known */
+			k = docompare(pivot, *l, compare);
+			if (k == CMPERROR)
+				return -1;
+			if (k < 0)
+				break;
+			/* <= and not < implies == */
+			l++;
+		}
 
 		/* Push biggest partition first */
-		n = r - lo;
-		n2 = hi - l;
-		if (n > n2) {
+		if (r - lo >= hi - l) {
 			/* First one is bigger */
 			lostack[top] = lo;
 			histack[top++] = r;
@@ -793,22 +825,21 @@ quicksort(array, size, compare)
 			lostack[top] = lo;
 			histack[top++] = r;
 		}
-
 		/* Should assert top <= STACKSIZE */
 	}
 
 	/*
 	 * Ouch - even if I screwed up the quicksort above, the
 	 * insertionsort below will cover up the problem - just a
-	 * performance hit would be noticable.   
+	 * performance hit would be noticable.
 	 */
 
 	/* insertionsort is pretty fast on the partially sorted list */
 
 	if (insertionsort(array, size, compare) < 0)
 		return -1;
-	
-	/* Succes */
+
+	/* Success */
 	return 0;
 }
 
