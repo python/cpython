@@ -207,17 +207,17 @@ class dispatcher:
             self.addr = sock.getpeername()
 
     def __repr__ (self):
-            status = [self.__class__.__module__+"."+self.__class__.__name__]
-            if self.accepting and self.addr:
-                status.append ('listening')
-            elif self.connected:
-                status.append ('connected')
-            if self.addr is not None:
-                try:
-                    status.append ('%s:%d' % self.addr)
-                except TypeError:
-                    status.append (repr(self.addr))
-            return '<%s at %#x>' % (' '.join (status), id (self))
+        status = [self.__class__.__module__+"."+self.__class__.__name__]
+        if self.accepting and self.addr:
+            status.append ('listening')
+        elif self.connected:
+            status.append ('connected')
+        if self.addr is not None:
+            try:
+                status.append ('%s:%d' % self.addr)
+            except TypeError:
+                status.append (repr(self.addr))
+        return '<%s at %#x>' % (' '.join (status), id (self))
 
     def add_channel (self, map=None):
         #self.log_info ('adding channel %s' % self)
