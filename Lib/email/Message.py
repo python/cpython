@@ -10,9 +10,9 @@ from cStringIO import StringIO
 from types import ListType, StringType
 
 # Intrapackage imports
-import Errors
-import Utils
-import Charset
+from email import Errors
+from email import Utils
+from email import Charset
 
 SEMISPACE = '; '
 
@@ -78,10 +78,10 @@ class Message:
         Optional `unixfrom' when true, means include the Unix From_ envelope
         header.
         """
-        from Generator import Generator
+        from email.Generator import Generator
         fp = StringIO()
         g = Generator(fp)
-        g(self, unixfrom=unixfrom)
+        g.flatten(self, unixfrom=unixfrom)
         return fp.getvalue()
 
     def is_multipart(self):
