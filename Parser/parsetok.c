@@ -36,6 +36,8 @@ PyParser_ParseString(char *s, grammar *g, int start, perrdetail *err_ret)
 	err_ret->lineno = 0;
 	err_ret->offset = 0;
 	err_ret->text = NULL;
+	err_ret->token = -1;
+	err_ret->expected = -1;
 
 	if ((tok = PyTokenizer_FromString(s)) == NULL) {
 		err_ret->error = E_NOMEM;
