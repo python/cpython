@@ -45,15 +45,15 @@ def symbols(lib=PYTHONLIB,types=('T','C','D')):
     lines = map(string.strip,lines)
     symbols = {}
     for line in lines:
-	if len(line) == 0 or ':' in line:
-	    continue
-	items = string.split(line)
-	if len(items) != 3:
-	    continue
-	address, type, name = items
-	if type not in types:
-	    continue
-	symbols[name] = address,type
+        if len(line) == 0 or ':' in line:
+            continue
+        items = string.split(line)
+        if len(items) != 3:
+            continue
+        address, type, name = items
+        if type not in types:
+            continue
+        symbols[name] = address,type
     return symbols
 
 def export_list(symbols):
@@ -61,10 +61,10 @@ def export_list(symbols):
     data = []
     code = []
     for name,(addr,type) in symbols.items():
-	if type in ('C','D'):
-	    data.append('\t'+name)
-	else:
-	    code.append('\t'+name)
+        if type in ('C','D'):
+            data.append('\t'+name)
+        else:
+            code.append('\t'+name)
     data.sort()
     data.append('')
     code.sort()
@@ -84,10 +84,10 @@ SPECIALS = (
 def filter_Python(symbols,specials=SPECIALS):
 
     for name in symbols.keys():
-	if name[:2] == 'Py' or name[:3] == '_Py':
-	    pass
-	elif name not in specials:
-	    del symbols[name]
+        if name[:2] == 'Py' or name[:3] == '_Py':
+            pass
+        elif name not in specials:
+            del symbols[name]
 
 def main():
 
