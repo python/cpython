@@ -255,6 +255,23 @@ def _init_posix():
 
         g['LDSHARED'] = "%s %s -bI:%s" % (ld_so_aix, g['CC'], python_exp)
 
+    if sys.platform == 'beos':
+
+        # Linker script is in the config directory.  In the Makefile it is
+        # relative to the srcdir, which after installation no longer makes
+        # sense.
+        python_lib = get_python_lib(standard_lib=1)
+        linkerscript_name = os.path.basename(string.split(g['LDSHARED'])[0])
+        linkerscript = os.path.join(python_lib, 'config', linkerscript_name)
+
+        # XXX this isn't the right place to do this: adding the Python
+        # library to the link, if needed, should be in the "build_ext"
+        # command.  (It's also needed for non-MS compilers on Windows, and
+        # it's taken care of for them by the 'build_ext.get_libraries()'
+        # method.)
+        g['LDSHARED'] = ("%s -L%s/lib -lpython%s" %
+                         (linkerscript, sys.prefix, sys.version[0:3]))
+
 
 def _init_nt():
     """Initialize the module as appropriate for NT"""
