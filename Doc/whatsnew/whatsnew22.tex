@@ -25,7 +25,7 @@ most of the changes, significant and far-reaching though they may be,
 are aimed at cleaning up irregularities and dark corners of the
 language design.
 
-This article doesn't attempt to provide a complete specification for
+This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
 full details, you should refer to the documentation for Python 2.2,
 such as the
@@ -38,7 +38,16 @@ Reference Manual}.
 If you want to understand the complete implementation and design
 rationale for a change, refer to the PEP for a particular new feature.
 
+
 The final release of Python 2.2 is planned for October 2001.
+
+\begin{seealso}
+
+\url{http://www.unixreview.com/documents/s=1356/urm0109h/0109h.htm}
+{``What's So Special About Python 2.2?'' is also about the new 2.2
+features, and was written by Cameron Laird and Kathryn Soraiz.}
+
+\end{seealso}
 
 
 %======================================================================
@@ -912,7 +921,7 @@ to experiment with these modules can uncomment them manually.
 
   \item The \function{pow()} built-in function no longer supports 3
   arguments when floating-point numbers are supplied.
-  \code{pow(\var{x}, \var{y}, \var{z})} returns \code{(x**y) % z}, but
+  \code{pow(\var{x}, \var{y}, \var{z})} returns \code{(x**y) \% z}, but
   this is never useful for floating point numbers, and the final
   result varies unpredictably depending on the platform.  A call such
   as \code{pow(2.0, 8.0, 7.0)} will now raise a \exception{TypeError}
