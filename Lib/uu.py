@@ -1,4 +1,5 @@
-# uu.py
+#! /usr/bin/env python
+
 # Copyright 1994 by Lance Ellinghouse
 # Cathedral City, California Republic, United States of America.
 #                        All Rights Reserved
