@@ -774,6 +774,8 @@ class Misc:
         data = self.tk.split(
             self.tk.call('winfo', 'visualsavailable', self._w,
                      includeids and 'includeids' or None))
+        if type(data) is StringType:
+            data = [self.tk.split(data)]
         return map(self.__winfo_parseitem, data)
     def __winfo_parseitem(self, t):
         """Internal function."""
