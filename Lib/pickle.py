@@ -417,29 +417,29 @@ class Pickler:
 
         getstate = getattr(obj, "__getstate__", None)
 
-        # A class may define both __getstate__ and __getnewargs__.
-        # If they are the same function, we ignore __getstate__.
-        # This is for the benefit of protocols 0 and 1, which don't
-        # use __getnewargs__.  Note that the only way to make them
-        # the same function is something like this:
-        #
-        #   class C(object):
-        #       def __getstate__(self):
-        #           return ...
-        #       __getnewargs__ = __getstate__
-        #
-        # No tricks are needed to ignore __setstate__; it simply
-        # won't be called when we don't generate BUILD.
-        # Also note that when __getnewargs__ and __getstate__ are
-        # the same function, we don't do the default thing of
-        # looking for __dict__ and slots either -- it is assumed
-        # that __getnewargs__ returns all the state there is
-        # (which should be a safe assumption since __getstate__
-        # returns the *same* state).
-        if getstate and getstate == getnewargs:
-            return
-
         if getstate:
+            # A class may define both __getstate__ and __getnewargs__.
+            # If they are the same function, we ignore __getstate__.
+            # This is for the benefit of protocols 0 and 1, which don't
+            # use __getnewargs__.  Note that the only way to make them
+            # the same function is something like this:
+            #
+            #   class C(object):
+            #       def __getstate__(self):
+            #           return ...
+            #       __getnewargs__ = __getstate__
+            #
+            # No tricks are needed to ignore __setstate__; it simply
+            # won't be called when we don't generate BUILD.
+            # Also note that when __getnewargs__ and __getstate__ are
+            # the same function, we don't do the default thing of
+            # looking for __dict__ and slots either -- it is assumed
+            # that __getnewargs__ returns all the state there is
+            # (which should be a safe assumption since __getstate__
+            # returns the *same* state).
+            if getstate == getnewargs:
+                return
+
             try:
                 state = getstate()
             except TypeError, err:
@@ -450,6 +450,7 @@ class Pickler:
                     print repr(str(err))
                     raise # Not that specific exception
                 getstate = None
+
         if not getstate:
             state = getattr(obj, "__dict__", None)
             if not state:
