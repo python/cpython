@@ -28,7 +28,6 @@ seekable stream object.
 """
 
 import sys
-import string
 
 __all__ = ["MultiFile","Error"]
 
@@ -88,10 +87,7 @@ class MultiFile:
             return line
         else:
             # Ignore trailing whitespace on marker lines
-            k = len(line) - 1
-            while line[k] in string.whitespace:
-                k = k - 1
-            marker = line[:k+1]
+            marker = line.rstrip()
         # No?  OK, try to match a boundary.
         # Return the line (unstripped) if we don't.
         for i in range(len(self.stack)):
@@ -121,7 +117,7 @@ class MultiFile:
         return list
 
     def read(self): # Note: no size argument -- read until EOF only!
-        return string.joinfields(self.readlines(), '')
+        return self.readlines().join('')
 
     def next(self):
         while self.readline(): pass
