@@ -12,7 +12,6 @@
 %
 \RequirePackage[Bjarne]{fncychap}\typeout{Using fancy chapter headings.}
 
-
 % for PDF output, use maximal compression
 \@ifundefined{pdfannotlink}{
   \let\LinkColor=\relax
@@ -22,6 +21,10 @@
   \let\LinkColor=\NavyBlue
   \let\NormalColor=\Black
   \pdfcompresslevel=9
+  %
+  % This definition allows the entries in the page-view of the ToC to be
+  % active links.  Some work, some don't.
+  %
   \let\OldContentsline=\contentsline
   \renewcommand{\contentsline}[3]{%
     \OldContentsline{#1}{%
@@ -29,6 +32,14 @@
         \LinkColor#2\NormalColor%
       \pdfendlink%
     }{#3}%
+  }
+  \renewcommand{\thepage}{\roman{page}}
+  %
+  % This is supposed to build the "outline" view of the document; it seems
+  % quite fragile.  The breakages are the same as in the ToC.
+  %
+  \AtEndDocument{
+    \InputIfFileExists{\jobname.bkm}{\pdfcatalog pagemode{/UseOutlines}}{}
   }
   \let\OldLabel=\label
   \renewcommand{\label}[1]{%
@@ -44,11 +55,8 @@
   \def\@begindvi{%
     \unvbox \@begindvibox
     \@hyperfixhead
-    \global\let \@begindvi \@hyperfixhead
   }
-  \def\hyperpageanchor{%
-       \hyper@anchorstart{page.\thepage}\hyper@anchorend
-   }
+  \def\hyperpageanchor{\pdfdest name{page.\thepage}}
   \let\HYPERPAGEANCHOR\hyperpageanchor
   \def\@hyperfixhead{%
    \let\H@old@thehead\@thehead
@@ -494,12 +502,49 @@
 %  \begin{seealso}
 %    \seemodule{rand}{Uniform random number generator}; % Module xref
 %    \seetext{\emph{Encyclopedia Britannica}}.          % Ref to a book
+% 
+%    % A funky case: module name contains '_'; have to supply an optional key
+%    \seemodule[copyreg]{copy_reg}{pickle interface constructor registration}
+%
 %  \end{seealso}
 
+\newif\if@keyedmodule\@keyedmodulefalse
+\newcommand{\@modulebadkey}{{--just-some-junk--}}
+
+\@ifundefined{pdfannotlink}{%
+  \newcommand{\seemodule}[3][\@modulebadkey]{%
+    \ifx\@modulebadkey#1\def\@modulekey{#2}\else\def\@modulekey{#1}\fi%
+    \ref{module-\@modulekey}:\quad %
+    Module \module{#2}%
+    \quad (#3)%
+  }
+}{\newcommand{\seemodule}[3][\@modulebadkey]{%
+    \ifx\@modulebadkey#1\def\@modulekey{#2}\else\def\@modulekey{#1}\fi%
+    \ref{module-\@modulekey}:\quad %
+    {\pdfannotlink attr{/Border [0 0 0]} goto name{label.module-\@modulekey}%
+     \LinkColor Module \module{#2} \NormalColor%
+     \pdfendlink%
+    }%
+    \quad (#3)%
+  }
+}
 \newenvironment{seealso}[0]{
   \strong{See Also:}\par
   % These should only be defined within the {seealso} environment:
-  \def\seemodule##1##2{\ref{module-##1}:\quad Module \module{##1}\quad (##2)}
+  %\def\see@module##1##2{\ref{module-##1}:\quad Module \module{##1}\quad (##2)}
+%  \def\@seemodule[##1]##2##3{%
+%    \ref{module-##2}:\quad %
+%    \@ifundefined{pdfannotlink}{%
+%      Module \module{##2}%
+%    }{\if@keyedmodule\@keyedmodulefalse\fi%
+%      {\pdfannotlink attr{/Border [0 0 0]} goto name{module.##1}%
+%       \LinkColor Module \module{##2}\NormalColor\pdfendlink}%
+%      }%
+%    \quad (##3)%
+%  }
+%  \def\seemodule{%
+%    \@ifnextchar [\@seemodule{\@keyedmoduletrue \@seemodule[]}%
+%  }
   \def\seetext##1{\par{##1}}
 }{\par}
 
