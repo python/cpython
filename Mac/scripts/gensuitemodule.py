@@ -670,6 +670,8 @@ class ObjectCompiler:
 		if self.namemappers[0].hascode('property', code):
 			# plural forms and such
 			othername, dummy, dummy = self.namemappers[0].findcodename('property', code)
+			if pname == othername:
+				return
 			if self.fp:
 				self.fp.write("\n%s = %s\n"%(pname, othername))
 		else:
