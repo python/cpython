@@ -43,6 +43,28 @@ define pylocals
     end
 end
 
+# A rewrite of the Python interpreter's line number calculator in GDB's
+# command language
+define lineno
+    set $__co = f->f_code
+    set $__lasti = f->f_lasti
+    set $__sz = ((PyStringObject *)$__co->co_lnotab)->ob_size/2
+    set $__p = (unsigned char *)((PyStringObject *)$__co->co_lnotab)->ob_sval
+    set $__li = $__co->co_firstlineno
+    set $__ad = 0
+    while ($__sz-1 >= 0)
+      set $__sz = $__sz - 1
+      set $__ad = $__ad + *$__p
+      set $__p = $__p + 1
+      if ($__ad > $__lasti)
+	break
+      end
+      set $__li = $__li + *$__p
+      set $__p = $__p + 1
+    end
+    printf "%d", $__li
+end
+
 # print the current frame - verbose
 define pyframev
     pyframe
@@ -52,7 +74,35 @@ end
 define pyframe
     set $__fn = (char *)((PyStringObject *)co->co_filename)->ob_sval
     set $__n = (char *)((PyStringObject *)co->co_name)->ob_sval
-    printf "%s (%d): %s\n",  $__fn, f->f_lineno, $__n
+    printf "%s (", $__fn
+    lineno
+    printf "): %s\n", $__n
+### Uncomment these lines when using from within Emacs/XEmacs so it will
+### automatically track/display the current Python source line
+#    printf "%c%c%s:", 032, 032, $__fn
+#    lineno
+#    printf ":1\n"
+end
+
+### Use these at your own risk.  It appears that a bug in gdb causes it
+### to crash in certain circumstances.
+
+#define up
+#    up-silently 1
+#    printframe
+#end
+
+#define down
+#    down-silently 1
+#    printframe
+#end
+
+define printframe
+    if $pc > PyEval_EvalFrame && $pc < PyEval_EvalCodeEx
+	pyframe
+    else
+        frame
+    end
 end
 
 # Here's a somewhat fragile way to print the entire Python stack from gdb.
@@ -64,7 +114,7 @@ end
 # interpreter, but the test can be extended by an interested party).  If
 # Py_Main <= $pc <= Py_GetArgcArv is true, $pc is in Py_Main(), so the while
 # tests succeeds as long as it's not true.  In a similar fashion the if
-# statement tests to see if we are in eval_frame().
+# statement tests to see if we are in PyEval_EvalFrame().
 
 # print the entire Python call stack
 define pystack
