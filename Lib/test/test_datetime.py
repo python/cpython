@@ -1458,9 +1458,110 @@ class TestTime(unittest.TestCase):
         self.failUnless(not cls(0))
         self.failUnless(not cls())
 
+# A mixin for classes with a tzinfo= argument.  Subclasses must define
+# theclass as a class atribute, and theclass(1, 1, 1, tzinfo=whatever)
+# must be legit (which is true for timetz and datetimetz).
+class TZInfoBase(unittest.TestCase):
 
-class TestTimeTZ(TestTime):
+    def test_bad_tzinfo_classes(self):
+        cls = self.theclass
+        self.assertRaises(TypeError, cls, 1, 1, 1, tzinfo=12)
 
+        class NiceTry(object):
+            def __init__(self): pass
+            def utcoffset(self, dt): pass
+        self.assertRaises(TypeError, cls, 1, 1, 1, tzinfo=NiceTry)
+
+        class BetterTry(tzinfo):
+            def __init__(self): pass
+            def utcoffset(self, dt): pass
+        b = BetterTry()
+        t = cls(1, 1, 1, tzinfo=b)
+        self.failUnless(t.tzinfo is b)
+
+    def test_utc_offset_out_of_bounds(self):
+        class Edgy(tzinfo):
+            def __init__(self, offset):
+                self.offset = offset
+            def utcoffset(self, dt):
+                return self.offset
+
+        cls = self.theclass
+        for offset, legit in ((-1440, False),
+                              (-1439, True),
+                              (1439, True),
+                              (1440, False)):
+            if cls is timetz:
+                t = cls(1, 2, 3, tzinfo=Edgy(offset))
+            elif cls is datetimetz:
+                t = cls(6, 6, 6, 1, 2, 3, tzinfo=Edgy(offset))
+            if legit:
+                aofs = abs(offset)
+                h, m = divmod(aofs, 60)
+                tag = "%c%02d:%02d" % (offset < 0 and '-' or '+', h, m)
+                if isinstance(t, datetimetz):
+                    t = t.timetz()
+                self.assertEqual(str(t), "01:02:03" + tag)
+            else:
+                self.assertRaises(ValueError, str, t)
+
+    def test_tzinfo_classes(self):
+        cls = self.theclass
+        class C1(tzinfo):
+            def utcoffset(self, dt): return None
+            def dst(self, dt): return None
+            def tzname(self, dt): return None
+        for t in (cls(1, 1, 1),
+                  cls(1, 1, 1, tzinfo=None),
+                  cls(1, 1, 1, tzinfo=C1())):
+            self.failUnless(t.utcoffset() is None)
+            self.failUnless(t.dst() is None)
+            self.failUnless(t.tzname() is None)
+
+        class C2(tzinfo):
+            def utcoffset(self, dt): return -1439
+            def dst(self, dt): return 1439
+            def tzname(self, dt): return "aname"
+        class C3(tzinfo):
+            def utcoffset(self, dt): return timedelta(minutes=-1439)
+            def dst(self, dt): return timedelta(minutes=1439)
+            def tzname(self, dt): return "aname"
+        for t in cls(1, 1, 1, tzinfo=C2()), cls(1, 1, 1, tzinfo=C3()):
+            self.assertEqual(t.utcoffset(), timedelta(minutes=-1439))
+            self.assertEqual(t.dst(), timedelta(minutes=1439))
+            self.assertEqual(t.tzname(), "aname")
+
+        # Wrong types.
+        class C4(tzinfo):
+            def utcoffset(self, dt): return "aname"
+            def dst(self, dt): return ()
+            def tzname(self, dt): return 0
+        t = cls(1, 1, 1, tzinfo=C4())
+        self.assertRaises(TypeError, t.utcoffset)
+        self.assertRaises(TypeError, t.dst)
+        self.assertRaises(TypeError, t.tzname)
+
+        # Offset out of range.
+        class C5(tzinfo):
+            def utcoffset(self, dt): return -1440
+            def dst(self, dt): return 1440
+        class C6(tzinfo):
+            def utcoffset(self, dt): return timedelta(hours=-24)
+            def dst(self, dt): return timedelta(hours=24)
+        for t in cls(1, 1, 1, tzinfo=C5()), cls(1, 1, 1, tzinfo=C6()):
+            self.assertRaises(ValueError, t.utcoffset)
+            self.assertRaises(ValueError, t.dst)
+
+        # Not a whole number of minutes.
+        class C7(tzinfo):
+            def utcoffset(self, dt): return timedelta(seconds=61)
+            def dst(self, dt): return timedelta(microseconds=-81)
+        t = cls(1, 1, 1, tzinfo=C7())
+        self.assertRaises(ValueError, t.utcoffset)
+        self.assertRaises(ValueError, t.dst)
+
+
+class TestTimeTZ(TestTime, TZInfoBase):
     theclass = timetz
 
     def test_empty(self):
@@ -1470,22 +1571,6 @@ class TestTimeTZ(TestTime):
         self.assertEqual(t.second, 0)
         self.assertEqual(t.microsecond, 0)
         self.failUnless(t.tzinfo is None)
-
-    def test_bad_tzinfo_classes(self):
-        tz = self.theclass
-        self.assertRaises(TypeError, tz, tzinfo=12)
-
-        class NiceTry(object):
-            def __init__(self): pass
-            def utcoffset(self, dt): pass
-        self.assertRaises(TypeError, tz, tzinfo=NiceTry)
-
-        class BetterTry(tzinfo):
-            def __init__(self): pass
-            def utcoffset(self, dt): pass
-        b = BetterTry()
-        t = tz(tzinfo=b)
-        self.failUnless(t.tzinfo is b)
 
     def test_zones(self):
         est = FixedOffset(-300, "EST", 1)
@@ -1503,9 +1588,9 @@ class TestTimeTZ(TestTime):
         self.failUnless(t4.tzinfo is None)
         self.assertEqual(t5.tzinfo, utc)
 
-        self.assertEqual(t1.utcoffset(), -300)
-        self.assertEqual(t2.utcoffset(), 0)
-        self.assertEqual(t3.utcoffset(), 60)
+        self.assertEqual(t1.utcoffset(), timedelta(minutes=-300))
+        self.assertEqual(t2.utcoffset(), timedelta(minutes=0))
+        self.assertEqual(t3.utcoffset(), timedelta(minutes=60))
         self.failUnless(t4.utcoffset() is None)
         self.assertRaises(TypeError, t1.utcoffset, "no args")
 
@@ -1515,9 +1600,9 @@ class TestTimeTZ(TestTime):
         self.failUnless(t4.tzname() is None)
         self.assertRaises(TypeError, t1.tzname, "no args")
 
-        self.assertEqual(t1.dst(), 1)
-        self.assertEqual(t2.dst(), -2)
-        self.assertEqual(t3.dst(), 3)
+        self.assertEqual(t1.dst(), timedelta(minutes=1))
+        self.assertEqual(t2.dst(), timedelta(minutes=-2))
+        self.assertEqual(t3.dst(), timedelta(minutes=3))
         self.failUnless(t4.dst() is None)
         self.assertRaises(TypeError, t1.dst, "no args")
 
@@ -1578,26 +1663,6 @@ class TestTimeTZ(TestTime):
         t2 = self.theclass(23, 48, 6, 100, tzinfo=FixedOffset(-1010, ""))
         self.assertEqual(hash(t1), hash(t2))
 
-    def test_utc_offset_out_of_bounds(self):
-        class Edgy(tzinfo):
-            def __init__(self, offset):
-                self.offset = offset
-            def utcoffset(self, dt):
-                return self.offset
-
-        for offset, legit in ((-1440, False),
-                              (-1439, True),
-                              (1439, True),
-                              (1440, False)):
-            t = timetz(1, 2, 3, tzinfo=Edgy(offset))
-            if legit:
-                aofs = abs(offset)
-                h, m = divmod(aofs, 60)
-                tag = "%c%02d:%02d" % (offset < 0 and '-' or '+', h, m)
-                self.assertEqual(str(t), "01:02:03" + tag)
-            else:
-                self.assertRaises(ValueError, str, t)
-
     def test_pickling(self):
         import pickle, cPickle
 
@@ -1623,7 +1688,7 @@ class TestTimeTZ(TestTime):
         derived.__setstate__(state)
         self.assertEqual(orig, derived)
         self.failUnless(isinstance(derived.tzinfo, PicklableFixedOffset))
-        self.assertEqual(derived.utcoffset(), -300)
+        self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
         self.assertEqual(derived.tzname(), 'cookie')
 
         for pickler in pickle, cPickle:
@@ -1633,7 +1698,7 @@ class TestTimeTZ(TestTime):
                 self.assertEqual(orig, derived)
                 self.failUnless(isinstance(derived.tzinfo,
                                 PicklableFixedOffset))
-                self.assertEqual(derived.utcoffset(), -300)
+                self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
                 self.assertEqual(derived.tzname(), 'cookie')
 
     def test_more_bool(self):
@@ -1664,8 +1729,7 @@ class TestTimeTZ(TestTime):
         t = cls(0, tzinfo=FixedOffset(-24*60, ""))
         self.assertRaises(ValueError, lambda: bool(t))
 
-class TestDateTimeTZ(TestDateTime):
-
+class TestDateTimeTZ(TestDateTime, TZInfoBase):
     theclass = datetimetz
 
     def test_trivial(self):
@@ -1744,22 +1808,6 @@ class TestDateTimeTZ(TestDateTime):
         t2 = self.theclass(2, 2, 2, tzinfo=FixedOffset(0, ""))
         self.assertRaises(ValueError, lambda: t1 == t1)
 
-    def test_bad_tzinfo_classes(self):
-        tz = self.theclass
-        self.assertRaises(TypeError, tz, 1, 2, 3, tzinfo=12)
-
-        class NiceTry(object):
-            def __init__(self): pass
-            def utcoffset(self, dt): pass
-        self.assertRaises(TypeError, tz, 1, 2, 3, tzinfo=NiceTry)
-
-        class BetterTry(tzinfo):
-            def __init__(self): pass
-            def utcoffset(self, dt): pass
-        b = BetterTry()
-        t = tz(1, 2, 3, tzinfo=b)
-        self.failUnless(t.tzinfo is b)
-
     def test_pickling(self):
         import pickle, cPickle
 
@@ -1785,7 +1833,7 @@ class TestDateTimeTZ(TestDateTime):
         derived.__setstate__(state)
         self.assertEqual(orig, derived)
         self.failUnless(isinstance(derived.tzinfo, PicklableFixedOffset))
-        self.assertEqual(derived.utcoffset(), -300)
+        self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
         self.assertEqual(derived.tzname(), 'cookie')
 
         for pickler in pickle, cPickle:
@@ -1795,7 +1843,7 @@ class TestDateTimeTZ(TestDateTime):
                 self.assertEqual(orig, derived)
                 self.failUnless(isinstance(derived.tzinfo,
                                 PicklableFixedOffset))
-                self.assertEqual(derived.utcoffset(), -300)
+                self.assertEqual(derived.utcoffset(), timedelta(minutes=-300))
                 self.assertEqual(derived.tzname(), 'cookie')
 
     def test_extreme_hashes(self):
@@ -1822,9 +1870,9 @@ class TestDateTimeTZ(TestDateTime):
         self.assertEqual(t1.tzinfo, est)
         self.assertEqual(t2.tzinfo, utc)
         self.assertEqual(t3.tzinfo, met)
-        self.assertEqual(t1.utcoffset(), -300)
-        self.assertEqual(t2.utcoffset(), 0)
-        self.assertEqual(t3.utcoffset(), 60)
+        self.assertEqual(t1.utcoffset(), timedelta(minutes=-300))
+        self.assertEqual(t2.utcoffset(), timedelta(minutes=0))
+        self.assertEqual(t3.utcoffset(), timedelta(minutes=60))
         self.assertEqual(t1.tzname(), "EST")
         self.assertEqual(t2.tzname(), "UTC")
         self.assertEqual(t3.tzname(), "MET")
@@ -1914,8 +1962,7 @@ class TestDateTimeTZ(TestDateTime):
         #            (nowaware base - nowawareplus base) +
         #            (nowawareplus offset - nowaware offset) =
         #            -delta + nowawareplus offset - nowaware offset
-        expected = timedelta(minutes=nowawareplus.utcoffset() -
-                                     nowaware.utcoffset()) - delta
+        expected = nowawareplus.utcoffset() - nowaware.utcoffset() - delta
         self.assertEqual(got, expected)
 
         # Try max possible difference.
@@ -1935,7 +1982,7 @@ class TestDateTimeTZ(TestDateTime):
         another = meth(off42)
         again = meth(tzinfo=off42)
         self.failUnless(another.tzinfo is again.tzinfo)
-        self.assertEqual(another.utcoffset(), 42)
+        self.assertEqual(another.utcoffset(), timedelta(minutes=42))
         # Bad argument with and w/o naming the keyword.
         self.assertRaises(TypeError, meth, 16)
         self.assertRaises(TypeError, meth, tzinfo=16)
@@ -1955,7 +2002,7 @@ class TestDateTimeTZ(TestDateTime):
         another = meth(ts, off42)
         again = meth(ts, tzinfo=off42)
         self.failUnless(another.tzinfo is again.tzinfo)
-        self.assertEqual(another.utcoffset(), 42)
+        self.assertEqual(another.utcoffset(), timedelta(minutes=42))
         # Bad argument with and w/o naming the keyword.
         self.assertRaises(TypeError, meth, ts, 16)
         self.assertRaises(TypeError, meth, ts, tzinfo=16)
