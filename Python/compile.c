@@ -66,6 +66,9 @@ int Py_OptimizeFlag = 0;
 #define LATE_FUTURE \
 "from __future__ imports must occur at the beginning of the file"
 
+#define ASSIGN_DEBUG \
+"can not assign to __debug__"
+
 #define MANGLE_LEN 256
 
 #define OFF(x) offsetof(PyCodeObject, x)
@@ -5181,8 +5184,16 @@ symtable_assign(struct symtable *st, node *n, int flag)
 		if (TYPE(tmp) == LPAR || TYPE(tmp) == LSQB) {
 			n = CHILD(n, 1);
 			goto loop;
-		} else if (TYPE(tmp) == NAME)
+		} else if (TYPE(tmp) == NAME) {
+			if (strcmp(STR(tmp), "__debug__") == 0) {
+				PyErr_SetString(PyExc_SyntaxError,
+						ASSIGN_DEBUG);
+ 				PyErr_SyntaxLocation(st->st_filename,
+						   n->n_lineno);
+				st->st_errors++;
+			}
 			symtable_add_def(st, STR(tmp), DEF_LOCAL | flag);
+		}
 		return;
 	case dotted_as_name:
 		if (NCH(n) == 3)
