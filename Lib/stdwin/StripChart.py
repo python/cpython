@@ -52,7 +52,6 @@ class StripChart() = LabelAppearance(), NoReactivity():
 	def draw(self, (d, area)):
 		area = rect.intersect(area, self.bounds)
 		if area = rect.empty:
-			print 'mt'
 			return
 		d.cliprect(area)
 		d.erase(self.bounds)
