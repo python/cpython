@@ -294,7 +294,8 @@ class CCompiler:
                          objects,
                          output_libname,
                          libraries=None,
-                         library_dirs=None):
+                         library_dirs=None,
+                         build_info=None):
         """Link a bunch of stuff together to create a shared library
            file.  Has the same effect as 'link_static_lib()' except
            that the filename inferred from 'output_libname' will most
@@ -306,7 +307,8 @@ class CCompiler:
                             objects,
                             output_filename,
                             libraries=None,
-                            library_dirs=None):
+                            library_dirs=None,
+                            build_info=None):
         """Link a bunch of stuff together to create a shared object
            file.  Much like 'link_shared_lib()', except the output
            filename is explicitly supplied as 'output_filename'."""
@@ -315,27 +317,35 @@ class CCompiler:
 
     # -- Filename mangling methods -------------------------------------
 
-    def object_filenames (source_filenames):
+    def object_filenames (self, source_filenames):
         """Return the list of object filenames corresponding to each
            specified source filename."""
         pass
 
-    def shared_object_filename (source_filename):
+    def shared_object_filename (self, source_filename):
         """Return the shared object filename corresponding to a
            specified source filename."""
         pass    
 
-    def library_filename (libname):
+    def library_filename (self, libname):
         """Return the static library filename corresponding to the
            specified library name."""
         
         pass
 
-    def shared_library_filename (libname):
+    def shared_library_filename (self, libname):
         """Return the shared library filename corresponding to the
            specified library name."""
         pass
 
+    
+    def object_name (self, inname):
+        """Given a name with no extension, return the name + object extension"""
+        return inname + self._obj_ext
+
+    def shared_library_name (self, inname):
+        """Given a name with no extension, return the name + shared object extension"""
+        return inname + self._shared_lib_ext
 
     # -- Utility methods -----------------------------------------------
 
@@ -357,6 +367,9 @@ def new_compiler (plat=None,
     if plat == 'posix':
         from unixccompiler import UnixCCompiler
         return UnixCCompiler (verbose, dry_run)
+    elif plat in  ['nt', 'win95' ]:
+        from msvccompiler import MSVCCompiler
+        return MSVCCompiler ( verbose, dry_run )
     else:
         raise DistutilsPlatformError, \
               "don't know how to compile C/C++ code on platform %s" % plat
