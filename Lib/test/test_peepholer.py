@@ -75,9 +75,11 @@ class TestTranforms(unittest.TestCase):
 
     def test_folding_of_tuples_of_constants(self):
         for line, elem in (
-            ('a = 1,2,3', '((1, 2, 3))',),
-            ('("a","b","c")', "(('a', 'b', 'c'))",),
-            ('a,b,c = 1,2,3', '((1, 2, 3))',),
+            ('a = 1,2,3', '((1, 2, 3))'),
+            ('("a","b","c")', "(('a', 'b', 'c'))"),
+            ('a,b,c = 1,2,3', '((1, 2, 3))'),
+            ('(None, 1, None)', '((None, 1, None))'),
+            ('((1, 2), 3, 4)', '(((1, 2), 3, 4))'),
             ):
             asm = dis_single(line)
             self.assert_(elem in asm)

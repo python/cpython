@@ -586,6 +586,7 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 				if (PyList_GET_ITEM(consts, j) == Py_None) {
 					codestr[i] = LOAD_CONST;
 					SETARG(codestr, i, j);
+					cumlc = lastlc + 1;
 					break;
 				}
 			}
@@ -601,6 +602,7 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 			    !PyObject_IsTrue(PyList_GET_ITEM(consts, j)))
 				continue;
 			memset(codestr+i, NOP, 7);
+			cumlc = 0;
 			break;
 
 		/* Try to fold tuples of constants.
@@ -615,6 +617,8 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 			    codestr[h] == LOAD_CONST  && 
 			    ISBASICBLOCK(blocks, h, 3*(j+1))  &&
 			    tuple_of_constants(&codestr[h], j, consts)) {
+				assert(codestr[i] == LOAD_CONST);
+				cumlc = 1;
 				break;
 			}
 			/* Intentional fallthrough */
