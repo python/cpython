@@ -610,10 +610,13 @@ floatsleep(double secs)
 #else /* !MS_WIN32 */
 #ifdef PYOS_OS2
 	/* This Sleep *IS* Interruptable by Exceptions */
+	Py_BEGIN_ALLOW_THREADS
 	if (DosSleep(secs * 1000) != NO_ERROR) {
+		Py_BLOCK_THREADS
 		PyErr_SetFromErrno(PyExc_IOError);
 		return -1;
 	}
+	Py_END_ALLOW_THREADS
 #else /* !PYOS_OS2 */
 	/* XXX Can't interrupt this sleep */
 	Py_BEGIN_ALLOW_THREADS
