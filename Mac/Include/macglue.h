@@ -69,7 +69,6 @@ void PyMac_GetSchedParams(PyMacSchedParams *);	/* Get schedulers params */
 void PyMac_SetSchedParams(PyMacSchedParams *);	/* Set schedulers params */
 PyObject *PyErr_Mac(PyObject *, int);		/* Exception with a mac error */
 PyObject *PyMac_Error(OSErr);			/* Uses PyMac_GetOSErrException */
-int PyOS_CheckStack(void);		/* Check that we aren't overflowing our stack */
 int PyMac_DoYield(int, int);	/* Yield cpu. First arg is maxtime, second ok to call python */
 int PyMac_HandleEvent(EventRecord *);	/* Handle one event, possibly in Python */
 void PyMac_HandleEventIntern(EventRecord *); /* Handle one event internal only */
