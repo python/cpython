@@ -845,6 +845,41 @@ builtin_len(self, args)
 }
 
 static object *
+builtin_list(self, args)
+	object *self;
+	object *args;
+{
+	object *v;
+	sequence_methods *sqf;
+
+	if (!newgetargs(args, "O:list", &v))
+		return NULL;
+	if ((sqf = v->ob_type->tp_as_sequence) != NULL) {
+		int n = (*sqf->sq_length)(v);
+		int i;
+		object *l;
+		if (n < 0)
+			return NULL;
+		l = newlistobject(n);
+		if (l == NULL)
+			return NULL;
+		for (i = 0; i < n; i++) {
+			object *item = (*sqf->sq_item)(v, i);
+			if (item == NULL) {
+				DECREF(l);
+				l = NULL;
+				break;
+			}
+			setlistitem(l, i, item);
+		}
+		/* XXX Should support indefinite-length sequences */
+		return l;
+	}
+	err_setstr(TypeError, "list() argument must be a sequence");
+	return NULL;
+}
+
+static object *
 builtin_locals(self, args)
 	object *self;
 	object *args;
@@ -1462,6 +1497,7 @@ static struct methodlist builtin_methods[] = {
 	{"input",	builtin_input, 1},
 	{"int",		builtin_int, 1},
 	{"len",		builtin_len, 1},
+	{"list",	builtin_list, 1},
 	{"locals",	builtin_locals, 1},
 	{"long",	builtin_long, 1},
 	{"map",		builtin_map, 1},
