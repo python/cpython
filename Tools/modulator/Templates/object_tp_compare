@@ -1,0 +1,7 @@
+
+static int
+$abbrev$_compare(v, w)
+	$abbrev$object *v, *w;
+{
+	/* XXXX Compare objects and return -1, 0 or 1 */
+}

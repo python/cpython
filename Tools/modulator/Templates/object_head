@@ -1,0 +1,12 @@
+/* Declarations for objects of type $name$ */
+
+typedef struct {
+	OB_HEAD
+	/* XXXX Add your own stuff here */
+} $abbrev$object;
+
+staticforward typeobject $Abbrev$type;
+
+#define is_$abbrev$object(v)		((v)->ob_type == &$Abbrev$type)
+
+/* ---------------------------------------------------------------- */

@@ -1,0 +1,73 @@
+
+/* Code to handle accessing $name$ objects as sequence objects */
+
+static int
+$abbrev$_length(self)
+	$abbrev$object *self;
+{
+	/* XXXX Return the size of the object */
+}
+
+static object *
+$abbrev$_concat(self, bb)
+	$abbrev$object *self;
+	object *bb;
+{
+	/* XXXX Return the concatenation of self and bb */
+}
+
+static object *
+$abbrev$_repeat(self, n)
+	$abbrev$object *self;
+	int n;
+{
+	/* XXXX Return a new object that is n times self */
+}
+
+static object *
+$abbrev$_item(self, i)
+	$abbrev$object *self;
+	int i;
+{
+	/* XXXX Return the i-th object of self */
+}
+
+static object *
+$abbrev$_slice(self, ilow, ihigh)
+	$abbrev$object *self;
+	int ilow, ihigh;
+{
+	/* XXXX Return the ilow..ihigh slice of self in a new object */
+}
+
+static int
+$abbrev$_ass_item(self, i, v)
+	$abbrev$object *self;
+	int i;
+	object *v;
+{
+	/* XXXX Assign to the i-th element of self */
+	return 0;
+}
+
+static int
+$abbrev$_ass_slice(self, ilow, ihigh, v)
+	listobject *self;
+	int ilow, ihigh;
+	object *v;
+{
+	/* XXXX Replace ilow..ihigh slice of self with v */
+	return 0;
+}
+
+static sequence_methods $abbrev$_as_sequence = {
+	(inquiry)$abbrev$_length,		/*sq_length*/
+	(binaryfunc)$abbrev$_concat,		/*sq_concat*/
+	(intargfunc)$abbrev$_repeat,		/*sq_repeat*/
+	(intargfunc)$abbrev$_item,		/*sq_item*/
+	(intintargfunc)$abbrev$_slice,		/*sq_slice*/
+	(intobjargproc)$abbrev$_ass_item,	/*sq_ass_item*/
+	(intintobjargproc)$abbrev$_ass_slice,	/*sq_ass_slice*/
+};
+
+/* -------------------------------------------------------------- */

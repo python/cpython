@@ -1,0 +1,22 @@
+
+static typeobject $Abbrev$type = {
+	OB_HEAD_INIT(&Typetype)
+	0,				/*ob_size*/
+	"$name$",			/*tp_name*/
+	sizeof($abbrev$object),		/*tp_basicsize*/
+	0,				/*tp_itemsize*/
+	/* methods */
+	(destructor)$tp_dealloc$,	/*tp_dealloc*/
+	(printfunc)$tp_print$,		/*tp_print*/
+	(getattrfunc)$tp_getattr$,	/*tp_getattr*/
+	(setattrfunc)$tp_setattr$,	/*tp_setattr*/
+	(cmpfunc)$tp_compare$,		/*tp_compare*/
+	(reprfunc)$tp_repr$,		/*tp_repr*/
+	$tp_as_number$,			/*tp_as_number*/
+	$tp_as_sequence$,		/*tp_as_sequence*/
+	$tp_as_mapping$,		/*tp_as_mapping*/
+	(hashfunc)$tp_hash$,		/*tp_hash*/
+};
+
+/* End of code for $name$ objects */
+/* -------------------------------------------------------- */

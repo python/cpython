@@ -1,0 +1,10 @@
+
+static object *
+$abbrev$_repr(self)
+	$abbrev$object *self;
+{
+	object *s;
+
+	/* XXXX Add code here to put self into s */
+	return s;
+}

@@ -1,0 +1,10 @@
+
+static int
+$abbrev$_setattr(self, name, v)
+	$abbrev$object *self;
+	char *name;
+	object *v;
+{
+	/* XXXX Add your own setattr code here */
+	return -1;
+}
