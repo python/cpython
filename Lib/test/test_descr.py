@@ -3973,15 +3973,18 @@ def test_init():
         def __init__(self):
             return 10
 
-    oldfilters = warnings.filters
-    warnings.filterwarnings("error", category=RuntimeWarning)
+    oldfilters = warnings.filters[:]
     try:
-        Foo()
-    except RuntimeWarning:
         pass
-    else:
-        raise TestFailed, "did not test __init__() for None return"
-    warnings.filters = oldfilters
+        warnings.filterwarnings("error", category=RuntimeWarning)
+        try:
+            Foo()
+        except RuntimeWarning:
+            pass
+        else:
+            raise TestFailed, "did not test __init__() for None return"
+    finally:
+        warnings.filters = oldfilters
 
 
 def test_main():
