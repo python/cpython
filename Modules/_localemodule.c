@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright (C) 1997 Martin von Loewis
+Copyright (C) 1997, 2002 Martin von Loewis
 
 Permission to use, copy, modify, and distribute this software and its
 documentation for any purpose and without fee is hereby granted,
@@ -415,6 +415,94 @@ PyLocale_getdefaultlocale(PyObject* self, PyObject* args)
 #endif
 
 #ifdef HAVE_LANGINFO_H
+#define LANGINFO(X) {#X, X}
+struct langinfo_constant{
+	char* name;
+	int value;
+} langinfo_constants[] = 
+{
+    /* These constants should exist on any langinfo implementation */
+    LANGINFO(DAY_1),
+    LANGINFO(DAY_2),
+    LANGINFO(DAY_3),
+    LANGINFO(DAY_4),
+    LANGINFO(DAY_5),
+    LANGINFO(DAY_6),
+    LANGINFO(DAY_7),
+
+    LANGINFO(ABDAY_1),
+    LANGINFO(ABDAY_2),
+    LANGINFO(ABDAY_3),
+    LANGINFO(ABDAY_4),
+    LANGINFO(ABDAY_5),
+    LANGINFO(ABDAY_6),
+    LANGINFO(ABDAY_7),
+
+    LANGINFO(MON_1),
+    LANGINFO(MON_2),
+    LANGINFO(MON_3),
+    LANGINFO(MON_4),
+    LANGINFO(MON_5),
+    LANGINFO(MON_6),
+    LANGINFO(MON_7),
+    LANGINFO(MON_8),
+    LANGINFO(MON_9),
+    LANGINFO(MON_10),
+    LANGINFO(MON_11),
+    LANGINFO(MON_12),
+
+    LANGINFO(ABMON_1),
+    LANGINFO(ABMON_2),
+    LANGINFO(ABMON_3),
+    LANGINFO(ABMON_4),
+    LANGINFO(ABMON_5),
+    LANGINFO(ABMON_6),
+    LANGINFO(ABMON_7),
+    LANGINFO(ABMON_8),
+    LANGINFO(ABMON_9),
+    LANGINFO(ABMON_10),
+    LANGINFO(ABMON_11),
+    LANGINFO(ABMON_12),
+
+#ifdef RADIXCHAR
+    /* The following are not available with glibc 2.0 */
+    LANGINFO(RADIXCHAR),
+    LANGINFO(THOUSEP),
+    /* YESSTR and NOSTR are deprecated in glibc, since they are
+       a special case of message translation, which should be rather
+       done using gettext. So we don't expose it to Python in the
+       first place.
+    LANGINFO(YESSTR),
+    LANGINFO(NOSTR),
+    */
+    LANGINFO(CRNCYSTR),
+#endif
+
+    LANGINFO(D_T_FMT),
+    LANGINFO(D_FMT),
+    LANGINFO(T_FMT),
+    LANGINFO(AM_STR),
+    LANGINFO(PM_STR),
+
+#ifdef CODESET
+    /* The following constants are available only with XPG4. */
+    LANGINFO(CODESET),
+    LANGINFO(T_FMT_AMPM),
+    LANGINFO(ERA),
+    LANGINFO(ERA_D_FMT),
+    LANGINFO(ERA_D_T_FMT),
+    LANGINFO(ERA_T_FMT),
+    LANGINFO(ALT_DIGITS),
+    LANGINFO(YESEXPR),
+    LANGINFO(NOEXPR),
+#endif
+#ifdef _DATE_FMT
+    /* This is not available in all glibc versions that have CODESET. */
+    LANGINFO(_DATE_FMT),
+#endif
+    {0, 0}
+};
+
 static char nl_langinfo__doc__[] =
 "nl_langinfo(key) -> string\n"
 "Return the value for the locale information associated with key."
@@ -423,12 +511,19 @@ static char nl_langinfo__doc__[] =
 static PyObject*
 PyLocale_nl_langinfo(PyObject* self, PyObject* args)
 {
-    int item;
+    int item, i;
     if (!PyArg_ParseTuple(args, "i:nl_langinfo", &item))
         return NULL;
-    return PyString_FromString(nl_langinfo(item));
+    /* Check whether this is a supported constant. GNU libc sometimes
+       returns numeric values in the char* return value, which would
+       crash PyString_FromString.  */
+    for (i = 0; langinfo_constants[i].name; i++)
+	    if (langinfo_constants[i].value == item)
+		    return PyString_FromString(nl_langinfo(item));
+    PyErr_SetString(PyExc_ValueError, "unsupported langinfo constant");
+    return NULL;
 }
-#endif
+#endif /* HAVE_LANGINFO_H */
     
 
 static struct PyMethodDef PyLocale_Methods[] = {
@@ -455,6 +550,9 @@ DL_EXPORT(void)
 init_locale(void)
 {
     PyObject *m, *d, *x;
+#ifdef HAVE_LANGINFO_H
+    int i;
+#endif
 
     m = Py_InitModule("_locale", PyLocale_Methods);
 
@@ -501,86 +599,10 @@ init_locale(void)
     PyDict_SetItemString(d, "__doc__", x);
     Py_XDECREF(x);
 
-#define ADDINT(X) PyModule_AddIntConstant(m, #X, X)
 #ifdef HAVE_LANGINFO_H
-    /* These constants should exist on any langinfo implementation */
-    ADDINT(DAY_1);
-    ADDINT(DAY_2);
-    ADDINT(DAY_3);
-    ADDINT(DAY_4);
-    ADDINT(DAY_5);
-    ADDINT(DAY_6);
-    ADDINT(DAY_7);
-
-    ADDINT(ABDAY_1);
-    ADDINT(ABDAY_2);
-    ADDINT(ABDAY_3);
-    ADDINT(ABDAY_4);
-    ADDINT(ABDAY_5);
-    ADDINT(ABDAY_6);
-    ADDINT(ABDAY_7);
-
-    ADDINT(MON_1);
-    ADDINT(MON_2);
-    ADDINT(MON_3);
-    ADDINT(MON_4);
-    ADDINT(MON_5);
-    ADDINT(MON_6);
-    ADDINT(MON_7);
-    ADDINT(MON_8);
-    ADDINT(MON_9);
-    ADDINT(MON_10);
-    ADDINT(MON_11);
-    ADDINT(MON_12);
-
-    ADDINT(ABMON_1);
-    ADDINT(ABMON_2);
-    ADDINT(ABMON_3);
-    ADDINT(ABMON_4);
-    ADDINT(ABMON_5);
-    ADDINT(ABMON_6);
-    ADDINT(ABMON_7);
-    ADDINT(ABMON_8);
-    ADDINT(ABMON_9);
-    ADDINT(ABMON_10);
-    ADDINT(ABMON_11);
-    ADDINT(ABMON_12);
-
-#ifdef RADIXCHAR
-    /* The following are not available with glibc 2.0 */
-    ADDINT(RADIXCHAR);
-    ADDINT(THOUSEP);
-    /* YESSTR and NOSTR are deprecated in glibc, since they are
-       a special case of message translation, which should be rather
-       done using gettext. So we don't expose it to Python in the
-       first place.
-    ADDINT(YESSTR);
-    ADDINT(NOSTR);
-    */
-    ADDINT(CRNCYSTR);
+    for (i = 0; langinfo_constants[i].name; i++) {
+	    PyModule_AddIntConstant(m, langinfo_constants[i].name,
+				    langinfo_constants[i].value);
+    }
 #endif
-
-    ADDINT(D_T_FMT);
-    ADDINT(D_FMT);
-    ADDINT(T_FMT);
-    ADDINT(AM_STR);
-    ADDINT(PM_STR);
-
-#ifdef CODESET
-    /* The following constants are available only with XPG4. */
-    ADDINT(CODESET);
-    ADDINT(T_FMT_AMPM);
-    ADDINT(ERA);
-    ADDINT(ERA_D_FMT);
-    ADDINT(ERA_D_T_FMT);
-    ADDINT(ERA_T_FMT);
-    ADDINT(ALT_DIGITS);
-    ADDINT(YESEXPR);
-    ADDINT(NOEXPR);
-#endif
-#ifdef _DATE_FMT
-    /* This is not available in all glibc versions that have CODESET. */
-    ADDINT(_DATE_FMT);
-#endif
-#endif /* HAVE_LANGINFO_H */
 }
