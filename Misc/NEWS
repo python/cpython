@@ -192,6 +192,10 @@ Build
 
 C API
 
+- Added new macro PySequence_ITEM(o, i) that directly calls
+  sq_item without rechecking that o is a sequence and without
+  adjusting for negative indices.
+
 - PyRange_New() now raises ValueError if the fourth argument is not 1.
   This is part of the removal of deprecated features of the xrange
   object.

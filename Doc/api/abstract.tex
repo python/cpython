@@ -765,6 +765,13 @@ determination.
   and that \var{i} is within bounds.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PySequence_ITEM}{PyObject *o, int i}
+  Return the \var{i}th element of \var{o} or \NULL on failure.
+  Macro form of \cfunction{PySequence_GetItem()} but without checking
+  that \cfunction{PySequence_Check(\var{o})} is true and without
+  adjustment for negative indices.  
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{int}{PySequence_Fast_GET_SIZE}{PyObject *o}
   Returns the length of \var{o}, assuming that \var{o} was
   returned by \cfunction{PySequence_Fast()} and that \var{o} is

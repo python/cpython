@@ -1015,6 +1015,12 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
          PySequence_Fast, and that i is within bounds.
        */
 
+#define PySequence_ITEM(o, i)\
+	( o->ob_type->tp_as_sequence->sq_item(o, i) )
+       /* Assume tp_as_sequence and sq_item exist and that i does not
+	  need to be corrected for a negative index
+       */     
+
      DL_IMPORT(int) PySequence_Count(PyObject *o, PyObject *value);
 
        /*
