@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.122 
+# From configure.in Revision: 1.123 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -713,7 +713,7 @@ EOF
 		x86)
 			CC="gcc -I$PWD/BeOS"
 			without_gcc=no
-			OPT="-DUSE_DL_EXPORT -O3 -mpentiumpro"
+			OPT="-DUSE_DL_EXPORT -O"
 			CCSHARED=-UUSE_DL_EXPORT
 
 			AR="$PWD/BeOS/ar-fake"
