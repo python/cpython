@@ -49,7 +49,7 @@ boundary will raise an error.
 \begin{methoddesc}{readline}{str}
 Read a line.  If the line is data (not a section-divider or end-marker
 or real EOF) return it.  If the line matches the most-recently-stacked
-boundary, return EOF and set \code{self.last} to 1 or 0 according as
+boundary, return \code{''} and set \code{self.last} to 1 or 0 according as
 the match is or is not an end-marker.  If the line matches any other
 stacked boundary, raise an error.  If the line is a real EOF, raise an
 error unless all boundaries have been popped.
