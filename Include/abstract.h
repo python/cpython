@@ -383,7 +383,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      DL_IMPORT(int) PyObject_Size(PyObject *o);
 
-#define PyObject_Length(O) PyObject_Size((O))
+#define PyObject_Length PyObject_Size
 
        /*
          Return the size of object o.  If the object, o, provides
@@ -685,7 +685,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      DL_IMPORT(int) PySequence_Size(PyObject *o);
 
-#define PySequence_Length(O) PySequence_Size((O))
+#define PySequence_Length PySequence_Size
 
        /*
          Return the size of sequence object o, or -1 on failure.
@@ -839,7 +839,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      DL_IMPORT(int) PyMapping_Size(PyObject *o);
 
-#define PyMapping_Length(O) PyMapping_Size((O))
+#define PyMapping_Length PyMapping_Size
 
        /*
          Returns the number of keys in object o on success, and -1 on
