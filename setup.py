@@ -470,14 +470,10 @@ class PyBuildExt(build_ext):
         # Sleepycat Berkeley DB interface.  http://www.sleepycat.com
         #
         # This requires the Sleepycat DB code. The earliest supported version
-        # of that library is 3.1, the latest supported version is 4.2.  A list
+        # of that library is 3.2, the latest supported version is 4.2.  A list
         # of available releases can be found at
         #
         # http://www.sleepycat.com/update/index.html
-        #
-        # NOTE: 3.1 is only partially supported; expect the extended bsddb module
-        # test suite to show failures due to some missing methods and behaviours
-        # in BerkeleyDB 3.1.
 
         # when sorted in reverse order, keys for this dict must appear in the
         # order you wish to search - e.g., search for db4 before db3
@@ -500,17 +496,15 @@ class PyBuildExt(build_ext):
                                 '/sw/include/db4',
                                 '/usr/include/db4',
                                 )},
-            'db3': {'libs': ('db-3.3', 'db-3.2', 'db-3.1', 'db3',),
+            'db3': {'libs': ('db-3.3', 'db-3.2', 'db3',),
                     'libdirs': ('/usr/local/BerkeleyDB.3.3/lib',
                                 '/usr/local/BerkeleyDB.3.2/lib',
-                                '/usr/local/BerkeleyDB.3.1/lib',
                                 '/usr/local/lib',
                                 '/opt/sfw/lib',
                                 '/sw/lib',
                                 ),
                     'incdirs': ('/usr/local/BerkeleyDB.3.3/include',
                                 '/usr/local/BerkeleyDB.3.2/include',
-                                '/usr/local/BerkeleyDB.3.1/include',
                                 '/usr/local/include/db3',
                                 '/opt/sfw/include/db3',
                                 '/sw/include/db3',
