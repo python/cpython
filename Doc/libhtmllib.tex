@@ -27,7 +27,7 @@ The following is a summary of the interface defined by
 \item
 The interface to feed data to an instance is through the \code{feed()}
 method, which takes a string argument.  This can be called with as
-little or as much text at a time.  When the data contains complete
+little or as much text at a time as desired.  When the data contains complete
 HTML elements, these are processed immediately; incomplete elements
 are saved in a buffer.  To force processing of all unprocessed data,
 call the \code{close()} method.
@@ -92,7 +92,7 @@ Instances of \code{CollectingParser} (and thus also instances of
 instance variables:
 
 \begin{datadesc}{anchornames}
-A list of the values if the \code{NAME} attributes of the \code{<A>}
+A list of the values of the \code{NAME} attributes of the \code{<A>}
 tags encountered.
 \end{datadesc}
 
@@ -102,12 +102,12 @@ encountered.
 \end{datadesc}
 
 \begin{datadesc}{anchortypes}
-A list of the values if the \code{TYPE} attributes of the \code{<A>}
+A list of the values of the \code{TYPE} attributes of the \code{<A>}
 tags encountered.
 \end{datadesc}
 
 \begin{datadesc}{inanchor}
-Outside an \code{<A>...</A>} tag pair, this is zero.  inside such a
+Outside an \code{<A>...</A>} tag pair, this is zero.  Inside such a
 pair, it is a unique integer, which is positive if the anchor has a
 \code{HREF} attribute, negative if it hasn't.  Its absolute value is
 one more than the index of the anchor in the \code{anchors},
@@ -131,7 +131,7 @@ The text inside the last \code{<TITLE>...</TITLE>} tag pair, or
 The \code{anchors}, \code{anchornames} and \code{anchortypes} lists
 are ``parallel arrays'': items in these lists with the same index
 pertain to the same anchor.  Missing attributes default to the empty
-string.  Anchors with neither a \code{HREF} not a \code{NAME}
+string.  Anchors with neither a \code{HREF} nor a \code{NAME}
 attribute are not entered in these lists at all.
 
 The module also defines a number of style sheet classes.  These should
@@ -237,7 +237,7 @@ Require at least \var{n} blank lines before the next line.  Implies
 \end{funcdesc}
 
 \begin{funcdesc}{addword}{word\, space}
-Add a var{word} to the current paragraph, followed by \var{space}
+Add a \var{word} to the current paragraph, followed by \var{space}
 spaces.
 \end{funcdesc}
 
@@ -264,8 +264,9 @@ End an anchor.  The \var{id} parameter is the value of the parser's
 \code{inanchor} attribute.
 \end{funcdesc}
 
-A sample formatters implementation can be found in the module
-\code{fmt}, which in turn uses the module \code{Para}.  These are
-currently not intended as a 
+A sample formatter implementation can be found in the module
+\code{fmt}, which in turn uses the module \code{Para}.  These modules are
+not intended as standard library modules; they are available as an
+example of how to write a formatter.
 \ttindex{fmt}
 \ttindex{Para}
