@@ -2329,14 +2329,27 @@ static void
 com_import_stmt(struct compiling *c, node *n)
 {
 	int i;
+	PyObject *tup;
 	REQ(n, import_stmt);
 	/* 'import' dotted_name (',' dotted_name)* |
 	   'from' dotted_name 'import' ('*' | NAME (',' NAME)*) */
 	if (STR(CHILD(n, 0))[0] == 'f') {
 		/* 'from' dotted_name 'import' ... */
 		REQ(CHILD(n, 1), dotted_name);
-		com_addopname(c, IMPORT_NAME, CHILD(n, 1));
+		
+		if (TYPE(CHILD(n, 3)) == STAR) {
+			tup = Py_BuildValue("(s)", "*");
+		} else {
+			tup = PyTuple_New((NCH(n) - 2)/2);
+			for (i = 3; i < NCH(n); i += 2) {
+				PyTuple_SET_ITEM(tup, (i-3)/2, 
+					PyString_FromString(STR(
+							CHILD(CHILD(n, i), 0))));
+			}
+		}
+		com_addoparg(c, LOAD_CONST, com_addconst(c, tup));
 		com_push(c, 1);
+		com_addopname(c, IMPORT_NAME, CHILD(n, 1));
 		if (TYPE(CHILD(n, 3)) == STAR) 
 			com_addbyte(c, IMPORT_STAR);
 		else {
@@ -2351,8 +2364,9 @@ com_import_stmt(struct compiling *c, node *n)
 		for (i = 1; i < NCH(n); i += 2) {
 			node *subn = CHILD(n, i);
 			REQ(subn, dotted_as_name);
-			com_addopname(c, IMPORT_NAME, CHILD(subn, 0));
+			com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
 			com_push(c, 1);
+			com_addopname(c, IMPORT_NAME, CHILD(subn, 0));
 			if (NCH(subn) > 1) {
 				int j;
 				if (strcmp(STR(CHILD(subn, 1)), "as") != 0) {

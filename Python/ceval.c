@@ -71,7 +71,6 @@ static int import_all_from(PyObject *, PyObject *);
 static PyObject *build_class(PyObject *, PyObject *, PyObject *);
 static int exec_statement(PyFrameObject *,
 			  PyObject *, PyObject *, PyObject *);
-static PyObject *find_from_args(PyFrameObject *, int);
 static void set_exc_info(PyThreadState *, PyObject *, PyObject *, PyObject *);
 static void reset_exc_info(PyThreadState *);
 
@@ -1627,11 +1626,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 						"__import__ not found");
 				break;
 			}
-			u = find_from_args(f, INSTR_OFFSET());
-			if (u == NULL) {
-				x = u;
-				break;
-			}
+			u = POP();
 			w = Py_BuildValue("(OOOO)",
 				    w,
 				    f->f_globals,
@@ -3066,55 +3061,6 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 		return -1;
 	Py_DECREF(v);
 	return 0;
-}
-
-/* Hack for ni.py */
-static PyObject *
-find_from_args(PyFrameObject *f, int nexti)
-{
-	int opcode;
-	int oparg;
-	PyObject *list, *name;
-	unsigned char *next_instr;
-	
-	_PyCode_GETCODEPTR(f->f_code, &next_instr);
-	next_instr += nexti;
-
-	opcode = (*next_instr++);
-	if (opcode != IMPORT_FROM && opcode != IMPORT_STAR) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
-	
-	list = PyList_New(0);
-	if (list == NULL)
-		return NULL;
-
-	if (opcode == IMPORT_STAR) {
-		name = PyString_FromString("*");
-		if (!name)
-			Py_DECREF(list);
-		else {
-			if (PyList_Append(list, name) < 0) {
-				Py_DECREF(list);
-			}
-			Py_DECREF(name);
-		}
-	} else {
-		do {
-			oparg = (next_instr[1]<<8) + next_instr[0];
-			/* Jump over our own argument, the next instruction
-			   (which is a STORE), and its argument.*/
-			next_instr += 5;
-			name = Getnamev(f, oparg);
-			if (PyList_Append(list, name) < 0) {
-				Py_DECREF(list);
-				break;
-			}
-			opcode = (*next_instr++);
-		} while (opcode == IMPORT_FROM);
-	}
-	return list;
 }
 
 
