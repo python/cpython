@@ -2,7 +2,7 @@
 
 import os
 import sys
-from ConfigParser import ConfigParser, NoOptionError
+from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 
 class IdleConfParser(ConfigParser):
 
@@ -26,7 +26,7 @@ class IdleConfParser(ConfigParser):
         """Get an option value for given section or return default"""
 	try:
             return self.get(sec, options, raw, vars)
-	except NoOptionError:
+	except (NoSectionError, NoOptionError):
 	    return default
 
     def getsection(self, section):
