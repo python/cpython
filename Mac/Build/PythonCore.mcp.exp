@@ -63,10 +63,10 @@ PyArg_ParseTuple
 PyArg_Parse
 Py_GetCopyright
 PyOS_GetLastModificationTime
-opterr
-optind
-optarg
-getopt
+_PyOS_opterr
+_PyOS_optind
+_PyOS_optarg
+_PyOS_GetOpt
 Py_GetVersion
 _PyParser_Grammar
 PyImport_Inittab
