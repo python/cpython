@@ -279,14 +279,19 @@ class StrptimeTests(unittest.TestCase):
         # when time.tzname[0] == time.tzname[1] and time.daylight
         if sys.platform == "mac":
             return #MacOS9 has severely broken timezone support.
-        tz_name= time.tzname[0]
+        tz_name = time.tzname[0]
+        if tz_name.lower() in ("UTC", "GMT"):
+            return
         try:
             original_tzname = time.tzname
             original_daylight = time.daylight
             time.tzname = (tz_name, tz_name)
             time.daylight = 1
             tz_value = _strptime.strptime(tz_name, "%Z")[8]
-            self.failUnlessEqual(tz_value, -1)
+            self.failUnlessEqual(tz_value, -1,
+                    "%s lead to a timezone value of %s instead of -1 when "
+                    "time.daylight set to %s and passing in %s" %
+                    (time.tzname, tz_value, time.daylight, tz_name))
         finally:
             time.tzname = original_tzname
             time.daylight = original_daylight
