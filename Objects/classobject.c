@@ -1213,6 +1213,9 @@ typedef struct {
 	PyObject *im_class;	/* The class that defined the method */
 } PyMethodObject;
 
+
+static PyMethodObject *free_list;
+
 PyObject *
 PyMethod_New(func, self, class)
 	PyObject *func;
@@ -1224,9 +1227,17 @@ PyMethod_New(func, self, class)
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	im = PyObject_NEW(PyMethodObject, &PyMethod_Type);
-	if (im == NULL)
-		return NULL;
+	im = free_list;
+	if (im != NULL) {
+		free_list = (PyMethodObject *)(im->im_self);
+		im->ob_type = &PyMethod_Type;
+		_Py_NewReference(im);
+	}
+	else {
+		im = PyObject_NEW(PyMethodObject, &PyMethod_Type);
+		if (im == NULL)
+			return NULL;
+	}
 	Py_INCREF(func);
 	im->im_func = func;
 	Py_XINCREF(self);
@@ -1315,7 +1326,8 @@ instancemethod_dealloc(im)
 	Py_DECREF(im->im_func);
 	Py_XDECREF(im->im_self);
 	Py_DECREF(im->im_class);
-	free((ANY *)im);
+	im->im_self = (PyObject *)free_list;
+	free_list = im;
 }
 
 static int
@@ -1399,3 +1411,15 @@ PyTypeObject PyMethod_Type = {
 	(getattrofunc)instancemethod_getattr, /*tp_getattro*/
 	0,			/*tp_setattro*/
 };
+
+/* Clear out the free list */
+
+void
+PyMethod_Fini()
+{
+	while (free_list) {
+		PyMethodObject *v = free_list;
+		free_list = (PyMethodObject *)(v->im_self);
+		PyMem_DEL(v);
+	}
+}
