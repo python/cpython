@@ -1803,6 +1803,12 @@ format.
   \versionchanged[Allowed subtypes to be accepted]{2.2}
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PyDict_CheckExact}{PyObject *p}
+  Return true if \var{p} is a dict object, but not an instance of a
+  subtype of the dict type.
+  \versionadded{2.4}
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{PyObject*}{PyDict_New}{}
   Returns a new empty dictionary, or \NULL{} on failure.
 \end{cfuncdesc}
