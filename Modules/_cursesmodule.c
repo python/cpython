@@ -39,12 +39,12 @@ A number of SysV or ncurses functions don't have wrappers yet; if you need
 a given function, add it and send a patch.  Here's a list of currently
 unsupported functions:
 
-	addchnstr addchstr chgat color_set copywin define_key
+	addchnstr addchstr chgat color_set define_key
 	del_curterm delscreen dupwin inchnstr inchstr innstr keyok
 	mcprint mvaddchnstr mvaddchstr mvchgat mvcur mvinchnstr
 	mvinchstr mvinnstr mmvwaddchnstr mvwaddchstr mvwchgat
 	mvwgetnstr mvwinchnstr mvwinchstr mvwinnstr newterm
-	overlay overwrite resizeterm restartterm ripoffline scr_dump
+	resizeterm restartterm ripoffline scr_dump
 	scr_init scr_restore scr_set scrl set_curterm set_term setterm
 	tgetent tgetflag tgetnum tgetstr tgoto timeout tputs
 	use_default_colors vidattr vidputs waddchnstr waddchstr wchgat
@@ -1082,6 +1082,82 @@ PyCursesWindow_NoOutRefresh(PyCursesWindowObject *self, PyObject *args)
 }
 
 static PyObject *
+PyCursesWindow_Overlay(PyCursesWindowObject *self, PyObject *args)
+{
+    PyCursesWindowObject *temp;
+    int use_copywin = FALSE;
+    int sminrow, smincol, dminrow, dmincol, dmaxrow, dmaxcol;
+    int rtn;
+    
+    switch (ARG_COUNT(args)) {
+    case 1:
+	if (!PyArg_ParseTuple(args, "O!;window object",
+			      &PyCursesWindow_Type, &temp))
+	    return NULL;
+	break;
+    case 7:
+	if (!PyArg_ParseTuple(args, "(O!iiiiii);window object, int, int, int, int, int, int",
+			      &PyCursesWindow_Type, &temp, &sminrow, &smincol,
+			      &dminrow, &dmincol, &dmaxrow, &dmaxcol))
+	    return NULL;
+	use_copywin = TRUE;
+	break;
+    default:
+	PyErr_SetString(PyExc_TypeError,
+			"overlay requires one or seven arguments");
+	return NULL;
+    }
+
+    if (use_copywin == TRUE) {
+	    rtn = copywin(self->win, temp->win, sminrow, smincol,
+			  dminrow, dmincol, dmaxrow, dmaxcol, TRUE);
+	    return PyCursesCheckERR(rtn, "copywin");
+    }
+    else {
+	    rtn = overlay(self->win, temp->win);
+	    return PyCursesCheckERR(rtn, "overlay");
+    }
+}
+
+static PyObject *
+PyCursesWindow_Overwrite(PyCursesWindowObject *self, PyObject *args)
+{
+    PyCursesWindowObject *temp;
+    int use_copywin = FALSE;
+    int sminrow, smincol, dminrow, dmincol, dmaxrow, dmaxcol;
+    int rtn;
+    
+    switch (ARG_COUNT(args)) {
+    case 1:
+	if (!PyArg_ParseTuple(args, "O!;window object",
+			      &PyCursesWindow_Type, &temp))
+	    return NULL;
+	break;
+    case 7:
+	if (!PyArg_ParseTuple(args, "(O!iiiiii);window object, int, int, int, int, int, int",
+			      &PyCursesWindow_Type, &temp, &sminrow, &smincol,
+			      &dminrow, &dmincol, &dmaxrow, &dmaxcol))
+	    return NULL;
+	use_copywin = TRUE;
+	break;
+    default:
+	PyErr_SetString(PyExc_TypeError,
+			"overwrite requires one or seven arguments");
+	return NULL;
+    }
+
+    if (use_copywin == TRUE) {
+	rtn = copywin(self->win, temp->win, sminrow, smincol,
+		      dminrow, dmincol, dmaxrow, dmaxcol, FALSE);
+        return PyCursesCheckERR(rtn, "copywin");
+    }
+    else {
+	    rtn = overwrite(self->win, temp->win);
+	    return PyCursesCheckERR(rtn, "overwrite");
+    }
+}
+
+static PyObject *
 PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *args)
 {
   PyObject *temp;
@@ -1323,7 +1399,9 @@ static PyMethodDef PyCursesWindow_Methods[] = {
 	{"notimeout",       (PyCFunction)PyCursesWindow_notimeout},
 	{"noutrefresh",     (PyCFunction)PyCursesWindow_NoOutRefresh},
         /* Backward compatibility alias -- remove in Python 2.1 */
-	{"nooutrefresh",     (PyCFunction)PyCursesWindow_NoOutRefresh},
+	{"nooutrefresh",    (PyCFunction)PyCursesWindow_NoOutRefresh},
+	{"overlay",       (PyCFunction)PyCursesWindow_Overlay, METH_VARARGS},
+	{"overwrite",     (PyCFunction)PyCursesWindow_Overwrite, METH_VARARGS},
 	{"putwin",          (PyCFunction)PyCursesWindow_PutWin},
 	{"redrawln",        (PyCFunction)PyCursesWindow_RedrawLine},
 	{"redrawwin",       (PyCFunction)PyCursesWindow_redrawwin},
