@@ -849,7 +849,7 @@ def ttypager(text):
         old = tty.tcgetattr(fd)
         tty.setcbreak(fd)
         getchar = lambda: sys.stdin.read(1)
-    except ImportError:
+    except (ImportError, AttributeError):
         tty = None
         getchar = lambda: sys.stdin.readline()[:-1][:1]
 
