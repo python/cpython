@@ -5,7 +5,7 @@ convenience of application and driver writers.
 $Id$
 """
 
-import types, string, sys, urllib
+import types, string, sys
 import handler
 
 def escape(data, entities = {}):
