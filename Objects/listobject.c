@@ -1718,11 +1718,14 @@ listreverse(PyListObject *self)
 int
 PyList_Reverse(PyObject *v)
 {
+	PyListObject *self = (PyListObject *)v;
+
 	if (v == NULL || !PyList_Check(v)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
-	listreverse((PyListObject *)v);
+	if (self->ob_size > 1)
+		reverse_slice(self->ob_item, self->ob_item + self->ob_size);
 	return 0;
 }
 
