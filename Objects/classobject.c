@@ -1460,6 +1460,7 @@ instance_inplace_pow(PyObject *v, PyObject *w, PyObject *z)
 	if (func == NULL) {
 		if (!PyErr_ExceptionMatches(PyExc_AttributeError))
 			return NULL;
+		PyErr_Clear();
 		return instance_pow(v, w, z);
 	}
 	args = Py_BuildValue("(OO)", w, z);
