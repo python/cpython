@@ -59,6 +59,9 @@ static PyObject *garbage;
 /* Python string to use if unhandled exception occurs */
 static PyObject *gc_str;
 
+/* Python string used to looked for __del__ attribute. */
+static PyObject *delstr;
+
 /* set for debugging information */
 #define DEBUG_STATS		(1<<0) /* print collection statistics */
 #define DEBUG_COLLECTABLE	(1<<1) /* print collectable objects */
@@ -340,30 +343,51 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 static int
 has_finalizer(PyObject *op)
 {
-	static PyObject *delstr = NULL;
-	if (delstr == NULL) {
-		delstr = PyString_InternFromString("__del__");
-		if (delstr == NULL)
-			Py_FatalError("PyGC: can't initialize __del__ string");
-	}
 	return PyInstance_Check(op) ? PyObject_HasAttr(op, delstr) :
 	        PyType_HasFeature(op->ob_type, Py_TPFLAGS_HEAPTYPE) ?
 		op->ob_type->tp_del != NULL : 0;
 }
 
-/* Move all objects with finalizers (instances with __del__) */
+/* Move all objects out of unreachable and into collectable or finalizers.
+ */
 static void
-move_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
+move_finalizers(PyGC_Head *unreachable, PyGC_Head *collectable,
+		PyGC_Head *finalizers)
 {
-	PyGC_Head *next;
-	PyGC_Head *gc = unreachable->gc.gc_next;
-	for (; gc != unreachable; gc=next) {
+	while (!gc_list_is_empty(unreachable)) {
+		PyGC_Head *gc = unreachable->gc.gc_next;
 		PyObject *op = FROM_GC(gc);
-		next = gc->gc.gc_next;
-		if (has_finalizer(op)) {
+		int finalizer;
+
+		if (PyInstance_Check(op)) {
+			/* The HasAttr() check may run enough Python
+			   code to deallocate the object or make it
+			   reachable again.  INCREF the object before
+			   calling HasAttr() to guard against the client
+			   code deallocating the object.
+			*/
+			Py_INCREF(op);
+			finalizer = PyObject_HasAttr(op, delstr);
+			if (op->ob_refcnt == 1) {
+				/* The object will be deallocated. 
+				   Nothing left to do.
+				 */
+				Py_DECREF(op);
+				continue;
+			}
+			Py_DECREF(op);
+		}
+		else
+			finalizer = has_finalizer(op);
+		if (finalizer) {
 			gc_list_remove(gc);
 			gc_list_append(gc, finalizers);
 			gc->gc.gc_refs = GC_REACHABLE;
+		}
+		else {
+			gc_list_remove(gc);
+			gc_list_append(gc, collectable);
+			/* XXX change gc_refs? */
 		}
 	}
 }
@@ -437,6 +461,7 @@ handle_finalizers(PyGC_Head *finalizers, PyGC_Head *old)
 	for (gc = finalizers->gc.gc_next; gc != finalizers;
 			gc = finalizers->gc.gc_next) {
 		PyObject *op = FROM_GC(gc);
+		/* XXX has_finalizer() is not safe here. */
 		if ((debug & DEBUG_SAVEALL) || has_finalizer(op)) {
 			/* If SAVEALL is not set then just append objects with
 			 * finalizers to the list of garbage.  All objects in
@@ -457,12 +482,12 @@ handle_finalizers(PyGC_Head *finalizers, PyGC_Head *old)
  * objects may be freed.  It is possible I screwed something up here.
  */
 static void
-delete_garbage(PyGC_Head *unreachable, PyGC_Head *old)
+delete_garbage(PyGC_Head *collectable, PyGC_Head *old)
 {
 	inquiry clear;
 
-	while (!gc_list_is_empty(unreachable)) {
-		PyGC_Head *gc = unreachable->gc.gc_next;
+	while (!gc_list_is_empty(collectable)) {
+		PyGC_Head *gc = collectable->gc.gc_next;
 		PyObject *op = FROM_GC(gc);
 
 		assert(IS_TENTATIVELY_UNREACHABLE(op));
@@ -476,7 +501,7 @@ delete_garbage(PyGC_Head *unreachable, PyGC_Head *old)
 				Py_DECREF(op);
 			}
 		}
-		if (unreachable->gc.gc_next == gc) {
+		if (collectable->gc.gc_next == gc) {
 			/* object is still alive, move it, it may die later */
 			gc_list_remove(gc);
 			gc_list_append(gc, old);
@@ -496,6 +521,7 @@ collect(int generation)
 	PyGC_Head *young; /* the generation we are examining */
 	PyGC_Head *old; /* next older generation */
 	PyGC_Head unreachable;
+	PyGC_Head collectable;
 	PyGC_Head finalizers;
 	PyGC_Head *gc;
 
@@ -552,14 +578,19 @@ collect(int generation)
 	 * finalizers can't safely be deleted.  Python programmers should take
 	 * care not to create such things.  For Python, finalizers means
 	 * instance objects with __del__ methods.
+	 * 
+	 * Move each object into the collectable set or the finalizers set.
+	 * It's possible that a classic class with a getattr() hook will
+	 * be revived or deallocated in this step.
 	 */
+	gc_list_init(&collectable);
 	gc_list_init(&finalizers);
-	move_finalizers(&unreachable, &finalizers);
+	move_finalizers(&unreachable, &collectable, &finalizers);
 	move_finalizer_reachable(&finalizers);
 
 	/* Collect statistics on collectable objects found and print
 	 * debugging information. */
-	for (gc = unreachable.gc.gc_next; gc != &unreachable;
+	for (gc = collectable.gc.gc_next; gc != &collectable;
 			gc = gc->gc.gc_next) {
 		m++;
 		if (debug & DEBUG_COLLECTABLE) {
@@ -569,7 +600,7 @@ collect(int generation)
 	/* Call tp_clear on objects in the collectable set.  This will cause
 	 * the reference cycles to be broken. It may also cause some objects in
 	 * finalizers to be freed */
-	delete_garbage(&unreachable, old);
+	delete_garbage(&collectable, old);
 
 	/* Collect statistics on uncollectable objects found and print
 	 * debugging information. */
@@ -938,6 +969,9 @@ initgc(void)
 	PyObject *m;
 	PyObject *d;
 
+	delstr = PyString_InternFromString("__del__");
+	if (!delstr)
+		return;
 	m = Py_InitModule4("gc",
 			      GcMethods,
 			      gc__doc__,
