@@ -70,7 +70,7 @@ NaN
 -Infinity
 >>> print dig / 0
 Infinity
->>> getcontext().trap_enablers[DivisionByZero] = 1
+>>> getcontext().traps[DivisionByZero] = 1
 >>> print dig / 0
 Traceback (most recent call last):
   ...
@@ -78,12 +78,12 @@ Traceback (most recent call last):
   ...
 DivisionByZero: x / 0
 >>> c = Context()
->>> c.trap_enablers[InvalidOperation] = 0
+>>> c.traps[InvalidOperation] = 0
 >>> print c.flags[InvalidOperation]
 0
 >>> c.divide(Decimal(0), Decimal(0))
 Decimal("NaN")
->>> c.trap_enablers[InvalidOperation] = 1
+>>> c.traps[InvalidOperation] = 1
 >>> print c.flags[InvalidOperation]
 1
 >>> c.flags[InvalidOperation] = 0
@@ -98,7 +98,7 @@ InvalidOperation: 0 / 0
 >>> print c.flags[InvalidOperation]
 1
 >>> c.flags[InvalidOperation] = 0
->>> c.trap_enablers[InvalidOperation] = 0
+>>> c.traps[InvalidOperation] = 0
 >>> print c.divide(Decimal(0), Decimal(0))
 NaN
 >>> print c.flags[InvalidOperation]
@@ -495,7 +495,11 @@ class Decimal(object):
             self._int  = value._int
             return
 
-        raise TypeError("Can't convert %r" % value)
+        if isinstance(value, float):
+            raise TypeError("Cannot convert float to Decimal.  " +
+                            "First convert the float to a string")
+
+        raise TypeError("Cannot convert %r" % value)
 
     def _convert_other(self, other):
         """Convert other to Decimal.
@@ -2096,7 +2100,7 @@ class Context(object):
     prec - precision (for use in rounding, division, square roots..)
     rounding - rounding type. (how you round)
     _rounding_decision - ALWAYS_ROUND, NEVER_ROUND -- do you round?
-    trap_enablers - If trap_enablers[exception] = 1, then the exception is
+    traps - If traps[exception] = 1, then the exception is
                     raised when it is caused.  Otherwise, a value is
                     substituted in.
     flags  - When an exception is caused, flags[exception] is incremented.
@@ -2110,13 +2114,15 @@ class Context(object):
     """
 
     def __init__(self, prec=None, rounding=None,
-                 trap_enablers=None, flags=None,
+                 traps=None, flags=[],
                  _rounding_decision=None,
                  Emin=None, Emax=None,
                  capitals=None, _clamp=0,
                  _ignored_flags=[]):
-        if flags is None:
-            flags = dict.fromkeys(Signals, 0)
+        if not isinstance(flags, dict):
+            flags = dict([(s,s in flags) for s in Signals])
+        if traps is not None and not isinstance(traps, dict):
+            traps = dict([(s,s in traps) for s in Signals])
         for name, val in locals().items():
             if val is None:
                 setattr(self, name, copy.copy(getattr(DefaultContext, name)))
@@ -2125,11 +2131,11 @@ class Context(object):
         del self.self
 
     def __repr__(self):
-        """Show the current context in readable form, not in a form for eval()."""
+        """Show the current context."""
         s = []
-        s.append('Context(prec=%(prec)d, rounding=%(rounding)s, Emin=%(Emin)d, Emax=%(Emax)d' % vars(self))
-        s.append('setflags=%r' % [f.__name__ for f, v in self.flags.items() if v])
-        s.append('settraps=%r' % [t.__name__ for t, v in self.trap_enablers.items() if v])
+        s.append('Context(prec=%(prec)d, rounding=%(rounding)s, Emin=%(Emin)d, Emax=%(Emax)d, capitals=%(capitals)d' % vars(self))
+        s.append('flags=[' + ', '.join([f.__name__ for f, v in self.flags.items() if v]) + ']')
+        s.append('traps=[' + ', '.join([t.__name__ for t, v in self.traps.items() if v]) + ']')
         return ', '.join(s) + ')'
 
     def clear_flags(self):
@@ -2139,7 +2145,7 @@ class Context(object):
 
     def copy(self):
         """Returns a copy from self."""
-        nc = Context(self.prec, self.rounding, self.trap_enablers, self.flags,
+        nc = Context(self.prec, self.rounding, self.traps, self.flags,
                          self._rounding_decision, self.Emin, self.Emax,
                          self.capitals, self._clamp, self._ignored_flags)
         return nc
@@ -2159,7 +2165,7 @@ class Context(object):
             return error().handle(self, *args)
 
         self.flags[error] += 1
-        if not self.trap_enablers[error]:
+        if not self.traps[error]:
             #The errors define how to handle themselves.
             return condition().handle(self, *args)
 
@@ -2946,13 +2952,10 @@ def _isnan(num):
 # The default context prototype used by Context()
 # Is mutable, so than new contexts can have different default values
 
-_default_traps = dict.fromkeys(Signals, 0)
-_default_traps.update({DivisionByZero:1, Overflow:1, InvalidOperation:1})
-
 DefaultContext = Context(
         prec=28, rounding=ROUND_HALF_EVEN,
-        trap_enablers=_default_traps,
-        flags=None,
+        traps=[DivisionByZero, Overflow, InvalidOperation],
+        flags=[],
         _rounding_decision=ALWAYS_ROUND,
         Emax=DEFAULT_MAX_EXPONENT,
         Emin=DEFAULT_MIN_EXPONENT,
@@ -2964,20 +2967,17 @@ DefaultContext = Context(
 # contexts and be able to reproduce results from other implementations
 # of the spec.
 
-_basic_traps = dict.fromkeys(Signals, 1)
-_basic_traps.update({Inexact:0, Rounded:0, Subnormal:0})
-
 BasicContext = Context(
         prec=9, rounding=ROUND_HALF_UP,
-        trap_enablers=_basic_traps,
-        flags=None,
+        traps=[DivisionByZero, Overflow, InvalidOperation, Clamped, Underflow],
+        flags=[],
         _rounding_decision=ALWAYS_ROUND,
 )
 
 ExtendedContext = Context(
         prec=9, rounding=ROUND_HALF_EVEN,
-        trap_enablers=dict.fromkeys(Signals, 0),
-        flags=None,
+        traps=[],
+        flags=[],
         _rounding_decision=ALWAYS_ROUND,
 )
 
