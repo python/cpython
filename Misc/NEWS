@@ -311,6 +311,10 @@ Extension modules
 Library
 -------
 
+- Added a new module: cookielib.  Automatic cookie handling for HTTP
+  clients.  Also, support for cookielib has been added to urllib2, so
+  urllib2.urlopen() can transparently handle cookies.
+
 - stringprep.py now uses built-in set() instead of sets.Set().
 
 - Bug #876278: Unbounded recursion in modulefinder

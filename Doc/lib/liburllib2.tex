@@ -10,14 +10,13 @@
 
 The \module{urllib2} module defines functions and classes which help
 in opening URLs (mostly HTTP) in a complex world --- basic and digest
-authentication, redirections and more.
+authentication, redirections, cookies and more.
 
 The \module{urllib2} module defines the following functions:
 
 \begin{funcdesc}{urlopen}{url\optional{, data}}
 Open the URL \var{url}, which can be either a string or a \class{Request}
-object (currently the code checks that it really is a \class{Request}
-instance, or an instance of a subclass of \class{Request}).
+object.
 
 \var{data} should be a string, which specifies additional data to
 send to the server. In HTTP requests, which are the only ones that
@@ -87,13 +86,32 @@ Gopher handler.
 
 The following classes are provided:
 
-\begin{classdesc}{Request}{url\optional{, data\optional{, headers}}}
+\begin{classdesc}{Request}{url\optional{, data}\optional{, headers}
+    \optional{, origin_req_host}\optional{, unverifiable}}
 This class is an abstraction of a URL request.
 
 \var{url} should be a string which is a valid URL.  For a description
 of \var{data} see the \method{add_data()} description.
 \var{headers} should be a dictionary, and will be treated as if
 \method{add_header()} was called with each key and value as arguments.
+
+The final two arguments are only of interest for correct handling of
+third-party HTTP cookies:
+
+\var{origin_req_host} should be the request-host of the origin
+transaction, as defined by \rfc{2965}.  It defaults to
+\code{cookielib.request_host(self)}.  This is the host name or IP
+address of the original request that was initiated by the user.  For
+example, if the request is for an image in an HTML document, this
+should be the request-host of the request for the page containing the
+image.
+
+\var{unverifiable} should indicate whether the request is
+unverifiable, as defined by RFC 2965.  It defaults to False.  An
+unverifiable request is one whose URL the user did not have the option
+to approve.  For example, if the request is for an image in an HTML
+document, and the user had no option to approve the automatic fetching
+of the image, this should be true.
 \end{classdesc}
 
 \begin{classdesc}{OpenerDirector}{}
@@ -114,6 +132,10 @@ responses are turned into \exception{HTTPError} exceptions.
 
 \begin{classdesc}{HTTPRedirectHandler}{}
 A class to handle redirections.
+\end{classdesc}
+
+\begin{classdesc}{HTTPCookieProcessor}{\optional{cookiejar}}
+A class to handle HTTP Cookies.
 \end{classdesc}
 
 \begin{classdesc}{ProxyHandler}{\optional{proxies}}
@@ -217,10 +239,10 @@ The following methods describe all of \class{Request}'s public interface,
 and so all must be overridden in subclasses.
 
 \begin{methoddesc}[Request]{add_data}{data}
-Set the \class{Request} data to \var{data}.  This is ignored
-by all handlers except HTTP handlers --- and there it should be an
-\mimetype{application/x-www-form-encoded} buffer, and will change the
-request to be \code{POST} rather than \code{GET}. 
+Set the \class{Request} data to \var{data}.  This is ignored by all
+handlers except HTTP handlers --- and there it should be a byte
+string, and will change the request to be \code{POST} rather than
+\code{GET}.
 \end{methoddesc}
 
 \begin{methoddesc}[Request]{get_method}{}
@@ -282,6 +304,17 @@ and \var{type} will replace those of the instance, and the instance's
 selector will be the original URL given in the constructor.
 \end{methoddesc}
 
+\begin{methoddesc}[Request]{get_origin_req_host}{}
+Return the request-host of the origin transaction, as defined by
+\rfc{2965}.  See the documentation for the \class{Request}
+constructor.
+\end{methoddesc}
+
+\begin{methoddesc}[Request]{is_unverifiable}{}
+Return whether the request is unverifiable, as defined by RFC 2965.
+See the documentation for the \class{Request} constructor.
+\end{methoddesc}
+
 
 \subsection{OpenerDirector Objects \label{opener-director-objects}}
 
@@ -289,14 +322,18 @@ selector will be the original URL given in the constructor.
 
 \begin{methoddesc}[OpenerDirector]{add_handler}{handler}
 \var{handler} should be an instance of \class{BaseHandler}.  The
-following methods are searched, and added to the possible chains.
+following methods are searched, and added to the possible chains (note
+that HTTP errors are a special case).
 
 \begin{itemize}
   \item \method{\var{protocol}_open()} ---
     signal that the handler knows how to open \var{protocol} URLs.
-  \item \method{\var{protocol}_error_\var{type}()} ---
-    signal that the handler knows how to handle \var{type} errors from
-    \var{protocol}.
+  \item \method{http_error_\var{type}()} ---
+    signal that the handler knows how to handle HTTP errors with HTTP
+    error code \var{type}.
+  \item \method{\var{protocol}_error()} ---
+    signal that the handler knows how to handle errors from
+    (non-\code{http}) \var{protocol}.
   \item \method{\var{protocol}_request()} ---
     signal that the handler knows how to pre-process \var{protocol}
     requests.
@@ -306,26 +343,17 @@ following methods are searched, and added to the possible chains.
 \end{itemize}
 \end{methoddesc}
 
-\begin{methoddesc}[OpenerDirector]{close}{}
-Explicitly break cycles, and delete all the handlers.
-Because the \class{OpenerDirector} needs to know the registered handlers,
-and a handler needs to know who the \class{OpenerDirector} who called
-it is, there is a reference cycle.  Even though recent versions of Python
-have cycle-collection, it is sometimes preferable to explicitly break
-the cycles.
-\end{methoddesc}
-
 \begin{methoddesc}[OpenerDirector]{open}{url\optional{, data}}
 Open the given \var{url} (which can be a request object or a string),
 optionally passing the given \var{data}.
 Arguments, return values and exceptions raised are the same as those
 of \function{urlopen()} (which simply calls the \method{open()} method
-on the default installed \class{OpenerDirector}).
+on the currently installed global \class{OpenerDirector}).
 \end{methoddesc}
 
 \begin{methoddesc}[OpenerDirector]{error}{proto\optional{,
                                           arg\optional{, \moreargs}}}
-Handle an error in a given protocol.  This will call the registered
+Handle an error of the given protocol.  This will call the registered
 error handlers for the given protocol with the given arguments (which
 are protocol specific).  The HTTP protocol is a special case which
 uses the HTTP response code to determine the specific error handler;
@@ -335,6 +363,45 @@ Return values and exceptions raised are the same as those
 of \function{urlopen()}.
 \end{methoddesc}
 
+OpenerDirector objects open URLs in three stages:
+
+\begin{enumerate}
+  \item Every handler with a method named like
+    \method{\var{protocol}_request()} has that method called to
+    pre-process the request.
+
+    The order in which these methods are called is determined by
+    sorting the handler instances by the \member{.processor_order}
+    attribute.
+
+  \item Handlers with a method named like
+    \method{\var{protocol}_open()} are called to handle the request.
+    This stage ends when a handler either returns a
+    non-\constant{None} value (ie. a response), or raises an exception
+    (usually URLError).  Exceptions are allowed to propagate.
+
+    In fact, the above algorithm is first tried for methods named
+    \method{default_open}.  If all such methods return
+    \constant{None}, the algorithm is repeated for methods named like
+    \method{\var{protocol}_open()}.  If all such methods return
+    \constant{None}, the algorithm is repeated for methods named
+    \method{unknown_open()}.
+
+    Note that the implementation of these methods may involve calls of
+    the parent \class{OpenerDirector} instance's \method{.open()} and
+    \method{.error()} methods.
+
+    The order in which these methods are called is determined by
+    sorting the handler instances.
+
+  \item Every handler with a method named like
+    \method{\var{protocol}_response()} has that method called to
+    post-process the response.
+
+    The order in which these methods are called is determined by
+    sorting the handler instances by the \member{.processor_order}
+    attribute.
+\end{enumerate}
 
 \subsection{BaseHandler Objects \label{base-handler-objects}}
 
@@ -351,7 +418,11 @@ Remove any parents.
 \end{methoddesc}
 
 The following members and methods should only be used by classes
-derived from \class{BaseHandler}:
+derived from \class{BaseHandler}.  \note{The convention has been
+adopted that subclasses defining \method{\var{protocol}_request()} or
+\method{\var{protocol}_response()} methods are named
+\class{*Processor}; all others are named \class{*Handler}.}
+
 
 \begin{memberdesc}[BaseHandler]{parent}
 A valid \class{OpenerDirector}, which can be used to open using a
@@ -423,6 +494,29 @@ Arguments, return values and exceptions raised should be the same as
 for \method{http_error_default()}.
 \end{methoddesc}
 
+\begin{methoddescni}[BaseHandler]{\var{protocol}_request}{req}
+This method is \emph{not} defined in \class{BaseHandler}, but
+subclasses should define it if they want to pre-process requests of
+the given protocol.
+
+This method, if defined, will be called by the parent
+\class{OpenerDirector}.  \var{req} will be a \class{Request} object.
+The return value should be a \class{Request} object.
+\end{methoddescni}
+
+\begin{methoddescni}[BaseHandler]{\var{protocol}_response}{req, response}
+This method is \emph{not} defined in \class{BaseHandler}, but
+subclasses should define it if they want to post-process responses of
+the given protocol.
+
+This method, if defined, will be called by the parent
+\class{OpenerDirector}.  \var{req} will be a \class{Request} object.
+\var{response} will be an object implementing the same interface as
+the return value of \function{urlopen()}.  The return value should
+implement the same interface as the return value of
+\function{urlopen()}.
+\end{methoddescni}
+
 \subsection{HTTPRedirectHandler Objects \label{http-redirect-handler}}
 
 \note{Some HTTP redirections require action from this module's client
@@ -434,12 +528,12 @@ for \method{http_error_default()}.
                                                   fp, code, msg, hdrs}
 Return a \class{Request} or \code{None} in response to a redirect.
 This is called by the default implementations of the
-\method{http_error_30*()} methods when a redirection is received
-from the server.  If a redirection should take place, return a new
+\method{http_error_30*()} methods when a redirection is received from
+the server.  If a redirection should take place, return a new
 \class{Request} to allow \method{http_error_30*()} to perform the
-redirect.  Otherwise, raise \exception{HTTPError} if no other
-\class{Handler} should try to handle this URL, or return \code{None}
-if you can't but another \class{Handler} might.
+redirect.  Otherwise, raise \exception{HTTPError} if no other handler
+should try to handle this URL, or return \code{None} if you can't but
+another handler might.
 
 \begin{notice}
  The default implementation of this method does not strictly
@@ -476,6 +570,15 @@ The same as \method{http_error_301()}, but called for the
 The same as \method{http_error_301()}, but called for the
 `temporary redirect' response.
 \end{methoddesc}
+
+
+\subsection{HTTPCookieProcessor Objects \label{http-cookie-processor}}
+
+\class{HTTPCookieProcessor} instances have one attribute:
+
+\begin{memberdesc}{cookiejar}
+The \class{cookielib.CookieJar} in which cookies are stored.
+\end{memberdesc}
 
 
 \subsection{ProxyHandler Objects \label{proxy-handler}}

@@ -106,6 +106,7 @@ import sys
 import time
 import urlparse
 import bisect
+import cookielib
 
 try:
     from cStringIO import StringIO
@@ -176,7 +177,8 @@ class GopherError(URLError):
 
 class Request:
 
-    def __init__(self, url, data=None, headers={}):
+    def __init__(self, url, data=None, headers={},
+                 origin_req_host=None, unverifiable=False):
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
         self.__original = unwrap(url)
         self.type = None
@@ -188,6 +190,10 @@ class Request:
         for key, value in headers.items():
             self.add_header(key, value)
         self.unredirected_hdrs = {}
+        if origin_req_host is None:
+            origin_req_host = cookielib.request_host(self)
+        self.origin_req_host = origin_req_host
+        self.unverifiable = unverifiable
 
     def __getattr__(self, attr):
         # XXX this is a fallback mechanism to guard against these
@@ -242,6 +248,12 @@ class Request:
         self.host, self.type = host, type
         self.__r_host = self.__original
 
+    def get_origin_req_host(self):
+        return self.origin_req_host
+
+    def is_unverifiable(self):
+        return self.unverifiable
+
     def add_header(self, key, val):
         # useful for something like authentication
         self.headers[key.capitalize()] = val
@@ -254,6 +266,15 @@ class Request:
         return bool(header_name in self.headers or
                     header_name in self.unredirected_hdrs)
 
+    def get_header(self, header_name, default=None):
+        return self.headers.get(
+            header_name,
+            self.unredirected_hdrs.get(header_name, default))
+
+    def header_items(self):
+        hdrs = self.unredirected_hdrs.copy()
+        hdrs.update(self.headers)
+        return hdrs.items()
 
 class OpenerDirector:
     def __init__(self):
@@ -460,7 +481,11 @@ class HTTPDefaultErrorHandler(BaseHandler):
         raise HTTPError(req.get_full_url(), code, msg, hdrs, fp)
 
 class HTTPRedirectHandler(BaseHandler):
-    # maximum number of redirections before assuming we're in a loop
+    # maximum number of redirections to any single URL
+    # this is needed because of the state that cookies introduce
+    max_repeats = 4
+    # maximum total number of redirections (regardless of URL) before
+    # assuming we're in a loop
     max_redirections = 10
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -481,7 +506,10 @@ class HTTPRedirectHandler(BaseHandler):
             # from the user (of urllib2, in this case).  In practice,
             # essentially all clients do redirect in this case, so we
             # do the same.
-            return Request(newurl, headers=req.headers)
+            return Request(newurl,
+                           headers=req.headers,
+                           origin_req_host=req.get_origin_req_host(),
+                           unverifiable=True)
         else:
             raise HTTPError(req.get_full_url(), code, msg, headers, fp)
 
@@ -490,10 +518,12 @@ class HTTPRedirectHandler(BaseHandler):
     # have already seen.  Do this by adding a handler-specific
     # attribute to the Request object.
     def http_error_302(self, req, fp, code, msg, headers):
+        # Some servers (incorrectly) return multiple Location headers
+        # (so probably same goes for URI).  Use first header.
         if 'location' in headers:
-            newurl = headers['location']
+            newurl = headers.getheaders('location')[0]
         elif 'uri' in headers:
-            newurl = headers['uri']
+            newurl = headers.getheaders('uri')[0]
         else:
             return
         newurl = urlparse.urljoin(req.get_full_url(), newurl)
@@ -506,20 +536,16 @@ class HTTPRedirectHandler(BaseHandler):
             return
 
         # loop detection
-        # .redirect_dict has a key (url, code) if url was previously
-        # visited as a result of a redirection with that code.  The
-        # code is needed in addition to the URL because visiting a URL
-        # twice isn't necessarily a loop: there is more than one way
-        # to redirect (301, 302, 303, 307, refresh).
-        key = (newurl, code)
+        # .redirect_dict has a key url if url was previously visited.
         if hasattr(req, 'redirect_dict'):
             visited = new.redirect_dict = req.redirect_dict
-            if key in visited or len(visited) >= self.max_redirections:
+            if (visited.get(newurl, 0) >= self.max_repeats or
+                len(visited) >= self.max_redirections):
                 raise HTTPError(req.get_full_url(), code,
                                 self.inf_msg + msg, headers, fp)
         else:
             visited = new.redirect_dict = req.redirect_dict = {}
-        visited[key] = None
+        visited[newurl] = visited.get(newurl, 0) + 1
 
         # Don't close the fp until we are sure that we won't use it
         # with HTTPError.
@@ -912,7 +938,7 @@ class AbstractHTTPHandler(BaseHandler):
     def set_http_debuglevel(self, level):
         self._debuglevel = level
 
-    def do_request(self, request):
+    def do_request_(self, request):
         host = request.get_host()
         if not host:
             raise URLError('no host given')
@@ -987,7 +1013,7 @@ class HTTPHandler(AbstractHTTPHandler):
     def http_open(self, req):
         return self.do_open(httplib.HTTPConnection, req)
 
-    http_request = AbstractHTTPHandler.do_request
+    http_request = AbstractHTTPHandler.do_request_
 
 if hasattr(httplib, 'HTTPS'):
     class HTTPSHandler(AbstractHTTPHandler):
@@ -995,7 +1021,24 @@ if hasattr(httplib, 'HTTPS'):
         def https_open(self, req):
             return self.do_open(httplib.HTTPSConnection, req)
 
-        https_request = AbstractHTTPHandler.do_request
+        https_request = AbstractHTTPHandler.do_request_
+
+class HTTPCookieProcessor(BaseHandler):
+    def __init__(self, cookiejar=None):
+        if cookiejar is None:
+            cookiejar = CookieJar()
+        self.cookiejar = cookiejar
+
+    def http_request(self, request):
+        self.cookiejar.add_cookie_header(request)
+        return request
+
+    def http_response(self, request, response):
+        self.cookiejar.extract_cookies(response, request)
+        return response
+
+    https_request = http_request
+    https_response = http_response
 
 class UnknownHandler(BaseHandler):
     def unknown_open(self, req):
