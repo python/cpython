@@ -55,6 +55,7 @@ Format Menu (only in Edit window):
 	Comment Out Region  -- Insert ## in front of selected lines
 	Uncomment Region    -- Remove leading # or ## from selected lines
 	Tabify Region       -- Turns *leading* stretches of spaces into tabs
+		(Note: We recommend using 4 space blocks to indent Python code.)
 	Untabify Region     -- Turn *all* tabs into the right number of spaces
 	New Indent Width... -- Open dialog to change indent width
 	Format Paragraph    -- Reformat the current blank-line-separated
@@ -117,9 +118,9 @@ Help Menu:
 
 Additional Help Sources:
 
-	Windows users can Google on pythlp.chm and zopeshelf.chm to access help
-	files in the Windows help format.  The Additional Help Sources feature
-	of the configuration GUI supports .chm, along with any other filetypes
+	Windows users can Google on zopeshelf.chm to access Zope help files in
+	the Windows help format.  The Additional Help Sources feature of the
+	configuration GUI supports .chm, along with any other filetypes
 	supported by your browser.  Supply a Menu Item title, and enter the
 	location in the Help File Path slot of the New Help Source dialog.  Use
 	http:// and/or www. to identify external URLs, or download the file and
@@ -131,48 +132,52 @@ Additional Help Sources:
 
 Basic editing and navigation:
 
-	Backspace deletes to the left; DEL deletes to the right
-	Arrow keys and Page Up/Down to move around
-	Home/End go to begin/end of line
-	Control-Home/End go to begin/end of file
-	Some Emacs or standard Windows bindings may work.
+	Backspace deletes to the left; DEL deletes to the right.
+	Arrow keys and Page Up/Down move around.
+	Control-left/right Arrow moves by words in a strange but useful way.
+	Home/End go to begin/end of line.
+	Control-Home/End go to begin/end of file.
+	Some useful Emacs bindings (Control-a, Control-e, Control-k, etc.)
+		are inherited from Tcl/Tk.
+	Standard Windows bindings may work on that platform.
 	Keybindings are selected in the Settings Dialog, look there.
 
 Automatic indentation:
 
-	After a block-opening statement, the next line is indented by
-	4 spaces (in the Python Shell window by one tab).  After
-	certain keywords (break, return etc.) the next line is
-	dedented.  In leading indentation, Backspace deletes up to 4
-	spaces if they are there.  Tab inserts spaces (in the
-	Python Shell window one tab), number depends on Indent Width.
-	(N.B. Currently tabs are restricted to four spaces due to Tcl/Tk
-	issues.)
+	After a block-opening statement, the next line is indented by 4 spaces
+	(in the Python Shell window by one tab).  After certain keywords
+	(break, return etc.) the next line is dedented.  In leading
+	indentation, Backspace deletes up to 4 spaces if they are there.  Tab
+	inserts spaces (in the Python Shell window one tab), number depends on
+	Indent Width.  (N.B. Currently tabs are restricted to four spaces due
+	to Tcl/Tk issues.)
 
         See also the indent/dedent region commands in the edit menu.
 
 Python Shell window:
 
-	Control-c interrupts executing command
+	Control-c interrupts executing command.
 	Control-d sends end-of-file; closes window if typed at >>> prompt
+		(this is Control-z on Windows).
 
     Command history:
 
-	Alt-p retrieves previous command matching what you have typed
-	Alt-n retrieves next
+	Alt-p retrieves previous command matching what you have typed.
+	Alt-n retrieves next.
 	      (These are Control-p, Control-n on the Mac)      
-	Return while cursor is on a previous command retrieves that command
-	Expand word is also useful to reduce typing
+	Return while cursor is on a previous command retrieves that command.
+	Expand word is also useful to reduce typing.
 
     Syntax colors:
 
 	The coloring is applied in a background "thread", so you may
 	occasionally see uncolorized text.  To change the color
-	scheme, use the Settings/Highlighting dialog.
+	scheme, use the Configure IDLE / Highlighting dialog.
 
     Python default syntax colors:
 
 	Keywords	orange
+	Builtins	royal purple
 	Strings		green
 	Comments	red
 	Definitions	blue
@@ -181,7 +186,7 @@ Python Shell window:
 
 	Console output	brown
 	stdout		blue
-	stderr		dark green
+	stderr		red
 	stdin		black
 
 Other preferences:
