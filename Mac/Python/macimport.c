@@ -35,23 +35,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Types.h>
 #include <Files.h>
 #include <Resources.h>
-#if 0
-#include <OSUtils.h> /* for Set(Current)A5 */
-#include <StandardFile.h>
-#include <Memory.h>
-#include <Windows.h>
-#include <Traps.h>
-#include <Processes.h>
-#include <Fonts.h>
-#include <Menus.h>
-#include <TextUtils.h>
-#endif
 #include <CodeFragments.h>
 #include <StringCompare.h>
-
-#ifdef USE_GUSI1
-#include "TFileSpec.h"	/* for Path2FSSpec() */
-#endif
 
 typedef void (*dl_funcptr)();
 #define FUNCNAME_PATTERN "init%.200s"
@@ -82,7 +67,6 @@ findnamedresource(
 	int ok;
 	Handle h;
 
-#ifdef INTERN_STRINGS
 	/*
 	** If we have interning find_module takes care of interning all
 	** sys.path components. We then keep a record of all sys.path
@@ -100,16 +84,9 @@ findnamedresource(
 			if ( obj == not_a_file[i] )
 				return 0;
 	}
-#endif /* INTERN_STRINGS */
-#ifdef USE_GUSI1
-	if ( Path2FSSpec(filename, &fss) != noErr ) {
-#else
 	if ( FSMakeFSSpec(0, 0, Pstring(filename), &fss) != noErr ) {
-#endif
-#ifdef INTERN_STRINGS
 		if ( obj && max_not_a_file < MAXPATHCOMPONENTS && obj->ob_sinterned )
 			not_a_file[max_not_a_file++] = obj;
-#endif /* INTERN_STRINGS */
 	     	/* doesn't exist or is folder */
 		return 0;
 	}			
@@ -123,14 +100,12 @@ findnamedresource(
 		UseResFile(PyMac_AppRefNum);
 		filerh = -1;
 	} else {
-#ifdef INTERN_STRINGS
 	     	if ( FSpGetFInfo(&fss, &finfo) != noErr ) {
 			if ( obj && max_not_a_file < MAXPATHCOMPONENTS && obj->ob_sinterned )
 				not_a_file[max_not_a_file++] = obj;
 	     		/* doesn't exist or is folder */
 			return 0;
 		}			
-#endif /* INTERN_STRINGS */
 		oldrh = CurResFile();
 		filerh = FSpOpenResFile(&fss, fsRdPerm);
 		if ( filerh == -1 )
@@ -270,14 +245,12 @@ PyMac_LoadCodeResourceModule(name, pathname)
 				"dynamic module not initialized properly");
 		return NULL;
 	}
-#if 1
 	/* Remember the filename as the __file__ attribute */
 	d = PyModule_GetDict(m);
 	s = PyString_FromString(pathname);
 	if (s == NULL || PyDict_SetItemString(d, "__file__", s) != 0)
 		PyErr_Clear(); /* Not important enough to report */
 	Py_XDECREF(s);
-#endif
 	if (Py_VerboseFlag)
 		PySys_WriteStderr("import %s # pyd fragment %#s loaded from %s\n",
 			name, fragmentname, pathname);
@@ -301,12 +274,7 @@ char *filename;
 	PyObject *m, *co;
 	long num, size;
 	
-#ifdef USE_GUSI1
-	if ( (err=Path2FSSpec(filename, &fss)) != noErr ||
-	     FSpGetFInfo(&fss, &finfo) != noErr )
-#else
 	if ( (err=FSMakeFSSpec(0, 0, Pstring(filename), &fss)) != noErr )
-#endif
 		goto error;
 	if ( fssequal(&fss, &PyMac_ApplicationFSSpec) ) {
 		/*
@@ -423,9 +391,6 @@ PyMac_FindModuleExtension(char *buf, size_t *lenp, char *module)
 	unsigned char fnbuf[64];
 	int modnamelen = strlen(module);
 	FSSpec fss;
-#ifdef USE_GUSI1
-	FInfo finfo;
-#endif
 	short refnum;
 	long dirid;
 	
@@ -438,14 +403,8 @@ PyMac_FindModuleExtension(char *buf, size_t *lenp, char *module)
 		return 0;
 		
 	strcpy(buf+*lenp, _PyImport_Filetab[0].suffix);
-#ifdef USE_GUSI1
-	if ( Path2FSSpec(buf, &fss) == noErr && 
-			FSpGetFInfo(&fss, &finfo) == noErr)
-		return _PyImport_Filetab;
-#else
 	if ( FSMakeFSSpec(0, 0, Pstring(buf), &fss) == noErr )
 		return _PyImport_Filetab;
-#endif
 	/*
 	** We cannot check for fnfErr (unfortunately), it can mean either that
 	** the file doesn't exist (fine, we try others) or the path leading to it.

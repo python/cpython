@@ -45,10 +45,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <CFBase.h>
 #include <CFArray.h>
 #endif /* TARGET_API_MAC_CARBON */
-#ifdef USE_APPEARANCE
 #include <Gestalt.h>
 #include <Appearance.h>
-#endif /* USE_APPEARANCE */
 #else
 #include <Carbon/Carbon.h>
 #endif /* WITHOUT_FRAMEWORKS */
@@ -91,21 +89,6 @@ PyMac_PrefRecord PyMac_options;
 static void Py_Main(int, char **, char *); /* Forward */
 void PyMac_Exit(int); /* Forward */
 
-static void init_appearance(void)
-{
-#ifdef USE_APPEARANCE
-	OSErr err;
-	SInt32 response;
-
-	err = Gestalt(gestaltAppearanceAttr,&response);
-	if ( err ) goto no_appearance;
-	if ( !(response&(1<<gestaltAppearanceExists)) ) goto no_appearance;
-	/* XXXX Should we check the version? Compat-mode? */
-	PyMac_AppearanceCompliant = 1;
-no_appearance:
-	return;
-#endif /* USE_APPEARANCE */
-}
 /* Initialize the Mac toolbox world */
 
 static void
@@ -122,7 +105,6 @@ init_mac_world(void)
 	InitMenus();
 #endif
 	InitCursor();
-	init_appearance();
 }
 
 /*
@@ -283,21 +265,12 @@ init_common(int *argcp, char ***argvp, int embedded)
 	PyMac_AddLibResources();
 #endif
 
-#if defined(USE_GUSI1)
-	/* Setup GUSI */
-	GUSIDefaultSetup();
-	PyMac_SetGUSISpin();
-	PyMac_SetGUSIOptions();
-#endif
 #if defined(USE_GUSI)
 	atexit(PyMac_StopGUSISpin);
 #endif	
 
 #ifdef USE_SIOUX
 	/* Set various SIOUX flags. Some are changed later based on options */
-#if 0
-	SIOUXSettings.standalone = 0;	/* XXXX Attempting to keep sioux from eating events */
-#endif
 	SIOUXSettings.asktosaveonclose = 0;
 	SIOUXSettings.showstatusline = 0;
 	SIOUXSettings.tabspaces = 4;
@@ -598,10 +571,6 @@ PyMac_InitApplication(void)
 			*endp = '\0';
 
 			chdir(curwd);
-#ifdef USE_GUSI1
-			/* Change MacOS's idea of wd too */
-			PyMac_FixGUSIcd();
-#endif
 		}
 		/* Check that the first argument is a text file */
 		if ( PyMac_getfiletype(argv[1]) != 'TEXT' ) {
