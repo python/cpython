@@ -35,11 +35,6 @@ menudefs = [
    ('_Paste', '<<Paste>>'),
    ('Select _All', '<<select-all>>'),
   ]),
- ('script', [
-   ('Run module', '<<run-module>>'),
-   ('Run script', '<<run-script>>'),
-   ('New shell', '<<new-shell>>'),
-  ]),
  ('debug', [
    ('_Go to file/line', '<<goto-file-line>>'),
    ('_Stack viewer', '<<open-stack-viewer>>'),
