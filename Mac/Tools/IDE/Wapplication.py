@@ -202,7 +202,10 @@ class Application(FrameWork.Application):
 				import sys
 				sys.stderr.write("XXX killed unknown (crashed?) Python window.\n")
 			else:
-				MacOS.HandleEvent(event)
+				if hasattr(MacOS, 'HandleEvent'):
+					MacOS.HandleEvent(event)
+				else:
+					print 'Unexpected updateEvent:', event
 	
 	def suspendresume(self, onoff):
 		pass

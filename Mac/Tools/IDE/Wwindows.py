@@ -519,7 +519,10 @@ class ModalDialog(Dialog):
 			name = "do_%d" % partcode
 		
 		if name == "do_inDesk":
-			MacOS.HandleEvent(event)
+			if hasattr(MacOS, "HandleEvent"):
+				MacOS.HandleEvent(event)
+			else:
+				print 'Unexpected inDesk event:', event
 			return
 		if wid == self.wid:
 			try:
