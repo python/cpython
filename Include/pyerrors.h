@@ -72,6 +72,7 @@ extern DL_IMPORT(PyObject *) PyExc_ZeroDivisionError;
 extern int PyErr_BadArgument Py_PROTO((void));
 extern PyObject *PyErr_NoMemory Py_PROTO((void));
 extern PyObject *PyErr_SetFromErrno Py_PROTO((PyObject *));
+extern PyObject *PyErr_Format Py_PROTO((PyObject *, const char *, ...));
 
 extern void PyErr_BadInternalCall Py_PROTO((void));
 
