@@ -24,6 +24,7 @@ class BadColor(Exception):
 
 DEFAULT_DB = None
 
+
 
 # generic class
 class ColorDB:
@@ -169,7 +170,7 @@ def triplet_to_rrggbb(rgbtuple):
 
 
 _maxtuple = (256.0,) * 3
-def triplet_to_pmwrgb(rgbtuple):
+def triplet_to_fractional_rgb(rgbtuple):
     return map(operator.__div__, rgbtuple, _maxtuple)
 
 
@@ -183,10 +184,9 @@ if __name__ == '__main__':
 	sys.exit(1)
     # on my system, this color matches exactly
     target = 'navy'
-    target = 'snow'
-    red, green, blue = colordb.find_byname(target)
-    print target, ':', red, green, blue, hex(rrggbb)
-    name, aliases = colordb.find_byrgb((red, green, blue))
+    red, green, blue = rgbtuple = colordb.find_byname(target)
+    print target, ':', red, green, blue, triplet_to_rrggbb(rgbtuple)
+    name, aliases = colordb.find_byrgb(rgbtuple)
     print 'name:', name, 'aliases:', string.join(aliases, ", ")
     target = (1, 1, 128)			  # nearest to navy
     target = (145, 238, 144)			  # nearest to lightgreen
@@ -194,7 +194,7 @@ if __name__ == '__main__':
     print 'finding nearest to', target, '...'
     import time
     t0 = time.time()
-    nearest = apply(colordb.nearest, target)
+    nearest = colordb.nearest(target)
     t1 = time.time()
     print 'found nearest color', nearest, 'in', t1-t0, 'seconds'
 
