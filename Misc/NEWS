@@ -1,3 +1,13 @@
+What's New in Python 2.1 final?
+===============================
+
+- An updated python-mode.el version 4.0 which integrates Ken
+  Manheimer's pdbtrack.el.  This makes debugging Python code via pdb
+  much nicer in XEmacs and Emacs.  When stepping through your program
+  with pdb, in either the shell window or the *Python* window, the
+  source file and line will be tracked by an arrow.
+
+
 What's New in Python 2.1 beta 2?
 ================================
 
