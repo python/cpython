@@ -334,16 +334,16 @@ def dedent(text):
     lines = text.expandtabs().split('\n')
     margin = None
     for line in lines:
-        content = len(line.lstrip())
+        content = line.lstrip()
         if not content:
             continue
-        indent = len(line) - content
+        indent = len(line) - len(content)
         if margin is None:
             margin = indent
         else:
             margin = min(margin, indent)
 
-    if margin is not None:
+    if margin is not None and margin > 0:
         for i in range(len(lines)):
             lines[i] = lines[i][margin:]
 
