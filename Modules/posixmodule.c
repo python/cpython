@@ -123,6 +123,7 @@ PERFORMANCE OF THIS SOFTWARE.
 /* NeXT's <unistd.h> and <utime.h> aren't worth much */
 #undef HAVE_UNISTD_H
 #undef HAVE_UTIME_H
+#define HAVE_WAITPID
 /* #undef HAVE_GETCWD */
 #endif
 
@@ -1168,7 +1169,11 @@ posix_waitpid(self, args)
 	if (!PyArg_Parse(args, "(ii)", &pid, &options))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
+#ifdef NeXT
+	pid = wait4(pid, (union wait *)&sts, options, NULL);
+#else
 	pid = waitpid(pid, &sts, options);
+#endif
 	Py_END_ALLOW_THREADS
 	if (pid == -1)
 		return posix_error();
@@ -1185,7 +1190,11 @@ posix_wait(self, args)
 {
 	int pid, sts;
 	Py_BEGIN_ALLOW_THREADS
+#ifdef NeXT
+	pid = wait((union wait *)&sts);
+#else
 	pid = wait(&sts);
+#endif
 	Py_END_ALLOW_THREADS
 	if (pid == -1)
 		return posix_error();
@@ -1615,6 +1624,84 @@ posix_ftruncate(self, args)
 	return Py_None;
 }
 #endif
+
+#ifdef NeXT
+#define HAVE_PUTENV
+/* Steve Spicklemire got this putenv from NeXTAnswers */
+static int
+putenv(char *newval)
+{
+	extern char **environ;
+
+	static int firstTime = 1;
+	char **ep;
+	char *cp;
+	int esiz;
+	char *np;
+
+	if (!(np = strchr(newval, '=')))
+		return 1;
+	*np = '\0';
+
+	/* look it up */
+	for (ep=environ ; *ep ; ep++)
+	{
+		/* this should always be true... */
+		if (cp = strchr(*ep, '='))
+		{
+			*cp = '\0';
+			if (!strcmp(*ep, newval))
+			{
+				/* got it! */
+				*cp = '=';
+				break;
+			}
+			*cp = '=';
+		}
+		else
+		{
+			*np = '=';
+			return 1;
+		}
+	}
+
+	*np = '=';
+	if (*ep)
+	{
+		/* the string was already there:
+		   just replace it with the new one */
+		*ep = newval;
+		return 0;
+	}
+
+	/* expand environ by one */
+	for (esiz=2, ep=environ ; *ep ; ep++)
+		esiz++;
+	if (firstTime)
+	{
+		char **epp;
+		char **newenv;
+		if (!(newenv = malloc(esiz * sizeof(char *))))
+			return 1;
+   
+		for (ep=environ, epp=newenv ; *ep ;)
+			*epp++ = *ep++;
+		*epp++ = newval;
+		*epp = (char *) 0;
+		environ = newenv;
+	}
+	else
+	{
+		if (!(environ = realloc(environ, esiz * sizeof(char *))))
+			return 1;
+		environ[esiz - 2] = newval;
+		environ[esiz - 1] = (char *) 0;
+		firstTime = 0;
+	}
+
+	return 0;
+}
+#endif NeXT
 
 #ifdef HAVE_PUTENV
 static PyObject * 
