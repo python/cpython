@@ -1483,7 +1483,9 @@ PyObject *PyUnicode_AsASCIIString(PyObject *unicode)
 }
 
 #ifdef MS_WIN32
+
 /* --- MBCS codecs for Windows -------------------------------------------- */
+
 PyObject *PyUnicode_DecodeMBCS(const char *s,
 				int size,
 				const char *errors)
@@ -1536,6 +1538,7 @@ PyObject *PyUnicode_EncodeMBCS(const Py_UNICODE *p,
     }
     return repr;
 }
+
 #endif /* MS_WIN32 */
 
 /* --- Character Mapping Codec -------------------------------------------- */
