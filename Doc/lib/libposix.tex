@@ -55,7 +55,7 @@ this mode. For example, it is enabled by default with recent versions
 of Irix, but with Solaris 2.6 and 2.7 you need to do something like:
 
 \begin{verbatim}
-CFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64" OPT="-g -O2 $CFLAGS" \
+CFLAGS="`getconf LFS_CFLAGS`" OPT="-g -O2 $CFLAGS" \
         configure
 \end{verbatim} % $ <-- bow to font-lock
 
