@@ -553,14 +553,14 @@ def pydicts():
         state = -1
         def __init__(self, *a, **kw):
             if a:
-                assert len(a) == 1
+                vereq(len(a), 1)
                 self.state = a[0]
             if kw:
                 for k, v in kw.items(): self[v] = k
         def __getitem__(self, key):
             return self.get(key, 0)
         def __setitem__(self, key, value):
-            assert isinstance(key, type(0))
+            verify(isinstance(key, type(0)))
             dict.__setitem__(self, key, value)
         def setstate(self, state):
             self.state = state
@@ -2257,6 +2257,21 @@ def pickles():
         def __repr__(self):
             return "C2(%r, %r)<%r>" % (self.a, self.b, int(self))
 
+    global C3
+    class C3(object):
+        def __init__(self, foo):
+            self.foo = foo
+        def __getstate__(self):
+            return self.foo
+        def __setstate__(self, foo):
+            self.foo = foo
+
+    global C4classic, C4
+    class C4classic: # classic
+        pass
+    class C4(C4classic, object): # mixed inheritance
+        pass
+
     for p in pickle, cPickle:
         for bin in 0, 1:
             if verbose:
@@ -2271,15 +2286,28 @@ def pickles():
             b = C2("hello", "world", 42)
             s = p.dumps((a, b), bin)
             x, y = p.loads(s)
-            assert x.__class__ == a.__class__
-            assert sorteditems(x.__dict__) == sorteditems(a.__dict__)
-            assert y.__class__ == b.__class__
-            assert sorteditems(y.__dict__) == sorteditems(b.__dict__)
-            assert `x` == `a`
-            assert `y` == `b`
+            vereq(x.__class__, a.__class__)
+            vereq(sorteditems(x.__dict__), sorteditems(a.__dict__))
+            vereq(y.__class__, b.__class__)
+            vereq(sorteditems(y.__dict__), sorteditems(b.__dict__))
+            vereq(`x`, `a`)
+            vereq(`y`, `b`)
             if verbose:
                 print "a = x =", a
                 print "b = y =", b
+            # Test for __getstate__ and __setstate__ on new style class
+            u = C3(42)
+            s = p.dumps(u, bin)
+            v = p.loads(s)
+            veris(u.__class__, v.__class__)
+            vereq(u.foo, v.foo)
+            # Test for picklability of hybrid class
+            u = C4()
+            u.foo = 42
+            s = p.dumps(u, bin)
+            v = p.loads(s)
+            veris(u.__class__, v.__class__)
+            vereq(u.foo, v.foo)
 
     # Testing copy.deepcopy()
     if verbose:
@@ -2292,12 +2320,12 @@ def pickles():
     a = C1(1, 2); a.append(42); a.append(24)
     b = C2("hello", "world", 42)
     x, y = copy.deepcopy((a, b))
-    assert x.__class__ == a.__class__
-    assert sorteditems(x.__dict__) == sorteditems(a.__dict__)
-    assert y.__class__ == b.__class__
-    assert sorteditems(y.__dict__) == sorteditems(b.__dict__)
-    assert `x` == `a`
-    assert `y` == `b`
+    vereq(x.__class__, a.__class__)
+    vereq(sorteditems(x.__dict__), sorteditems(a.__dict__))
+    vereq(y.__class__, b.__class__)
+    vereq(sorteditems(y.__dict__), sorteditems(b.__dict__))
+    vereq(`x`, `a`)
+    vereq(`y`, `b`)
     if verbose:
         print "a = x =", a
         print "b = y =", b
