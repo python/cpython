@@ -4,12 +4,12 @@ Followup-to: comp.lang.python
 From: guido@cwi.nl (Guido van Rossum)
 Reply-to: guido@cnri.reston.va.us (Guido van Rossum)
 Expires: Fri, 1 Sep 1995 00:00:00 GMT
-Supersedes: <D9G7ow.IDL@cwi.nl>
+Supersedes: <DCA29p.A9A@cwi.nl>
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
 Submitted-by: Guido van Rossum <guido@cwi.nl>
-Version: 1.25
+Version: 1.25++
 Last-modified: 25 July 1995
 
 This article contains answers to Frequently Asked Questions about
@@ -208,8 +208,7 @@ Here's an overview of the questions per chapter:
   7.5. Q. Is there a Windows 95 version of Python?
   7.6. Q. Is there an OS/2 version of Python?
   7.7. Q. Is there a VMS version of Python?
-  7.8. Q. What about IBM mainframes, or other esoteric non-UNIX
-       platforms?
+  7.8. Q. What about IBM mainframes, or other non-UNIX platforms?
   7.9. Q. Where are the source or Makefiles for the non-UNIX versions?
   7.10. Q. What is the status and support for the non-UNIX versions?
   7.11. Q. I have a PC version but it appears to be only a binary.
@@ -323,7 +322,10 @@ are also available by ftp, e.g.
 <URL:ftp://ftp.python.org/pub/python/mail/mailinglist.gz>.  The
 uncompressed versions of these files can be read with the standard
 UNIX Mail program ("Mail -f file") or with nn ("nn file").  To read
-them using MH, you could use "inc -file file".
+them using MH, you could use "inc -file file".  (The archival service
+has stopped archiving new articles around the end of April 1995.  I
+hope to revive it on the PSA server www.python.org sometime in the
+future.)
 
 1.7. Q. Is there a WWW page devoted to Python?
 
@@ -453,7 +455,9 @@ features.
 CWI.  We needed a better way to do system administration than by
 writing either C programs or Bourne shell scripts, since Amoeba had
 its own system call interface which wasn't easily accessible from the
-Bourne shell.  My experience with error handling
+Bourne shell.  My experience with error handling in Amoeba made me
+acutely aware of the importance of exceptions as a programming
+language feature.
 
 - It occurred to me that a scripting language with a syntax like ABC
 but with access to the Amoeba system calls would fill the need.  I
@@ -520,7 +524,7 @@ included in the list above, send me email!
 A. Several companies have revealed to me that they are planning or
 considering use of Python in a future product.
 
-Sunrise Software, have a product out using Python -- they use Python
+Sunrise Software has a product out using Python -- they use Python
 for a GUI management application and an SNMP network management
 application.  Contact: <info@sunrise.com>.
 
@@ -556,15 +560,14 @@ If you'd like to be included in the list above, send me email!
 
 A. Very stable.  While the current version number would suggest it is
 in the early stages of development, in fact new, stable releases
-(numbered 0.9.x through 1.1.x) have been coming out roughly every 3 to
+(numbered 0.9.x through 1.2) have been coming out roughly every 3 to
 6 months for the past four years.
 
 2.5. Q. When will the next version be released?
 
-A. I am planning to release 1.2 in February or early March 1995.  It
-will contain hooks into the implementation of the import command, a
-(still limited) form of persistent objects, and the usual complement
-of bug fixes (including many fixed memory leaks and thread problems).
+A. I am planning to release 1.3 in September or early October 1995.
+It will contain keyword parameters as the most important new language
+feature.  Beta versions may be available as early as August.
 
 2.6. Q. What new developments are expected for Python in the future?
 
@@ -1032,8 +1035,7 @@ the easiest to install and use, and the most complete widget set.  It
 is also very likely that in the future the standard Python GUI API
 will be based on or at least look very much like the Tkinter
 interface.  For more info about Tk, including pointers to the source,
-see John Ousterhout's home page
-<URL:http://playground.sun.com/~ouster/>.
+see the Tcl/Tk home page <URL:http://www.sunlabs.com/research/tcl/>.
 
 - The standard Python distribution comes with an interface to STDWIN,
 a platform-independent low-level windowing interface.  You have to ftp
@@ -1073,6 +1075,11 @@ API based upon Tk (though not necessarily on Tkinter); see
 Athena widget sets.  Last I heard about it it was included in the WAFE
 1.0 prerelease
 <URL:ftp://ftp.wu-wien.ac.at/pub/src/X11/wafe/wafe-1.0.tar.gz-prerelease>.
+
+- The NT port by Mark Hammond (see question 7.4) includes an interface
+to the Microsoft Foundation Classes and a Python programming
+environment using it that's written mostly in Python.  See
+<URL:ftp://ftp.python.org/pub/python/nt/>.
 
 - There's an interface to wxWindows.  wxWindows is a portable GUI
 class library written in C++.  It supports XView, Motif, MS-Windows as
@@ -1557,9 +1564,6 @@ list, to call a function without arguments, pass "()" for the format,
 and to call a function with one argument, surround the argument in
 parentheses, e.g. "(i)".
 
-(This function and a companion will be available in 1.2 under the
-names PyEval_CallFunction and PyEval_CallMethod.)
-
 5.9. Q. How do I catch the output from print_error()?
 
 A. (Due to Mark Hammond):
@@ -1863,13 +1867,16 @@ e.g. <URL:ftp://ftp.python.org/pub/python/pc/>.
 
 A. Donn Cave <donn@cac.washington.edu> did a partial port.  The
 results of his efforts are on public display in
-<<URL:ftp://ftp.python.org/pub/python/contrib/vms.tar.gz/>.
+<<URL:ftp://ftp.python.org/pub/python/contrib/vms.tar.gz/>.  Someone
+else is working on a more complete port, for details watch the list.
 
 7.8. Q. What about IBM mainframes, or other non-UNIX platforms?
 
 A. I haven't heard about these, except I remember once hearing about
 an attempt at an OS/9 port.  If you're interested in any of this, go
-directly to the newsgroup and ask there, who knows what you may find.
+directly to the newsgroup and ask there, you may find exactly what you
+need.  For example, a port to MPE/iX 5.0 on HP3000 computers was just
+announced, see <URL:http://www.allegro.com/software/>.
 
 7.9. Q. Where are the source or Makefiles for the non-UNIX versions?
 
