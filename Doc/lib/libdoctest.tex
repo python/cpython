@@ -2,8 +2,8 @@
          Test interactive Python examples}
 
 \declaremodule{standard}{doctest}
-\moduleauthor{Tim Peters}{tim_one@users.sourceforge.net}
-\sectionauthor{Tim Peters}{tim_one@users.sourceforge.net}
+\moduleauthor{Tim Peters}{tim@python.org}
+\sectionauthor{Tim Peters}{tim@python.org}
 \sectionauthor{Moshe Zadka}{moshez@debian.org}
 \sectionauthor{Edward Loper}{edloper@users.sourceforge.net}
 
@@ -11,17 +11,21 @@
 
 The \module{doctest} module searches for pieces of text that look like
 interactive Python sessions, and then executes those sessions to
-verify that they work exactly as shown.  There are two common ways to
+verify that they work exactly as shown.  There are several common ways to
 use doctest:
 
-\begin{enumerate}
+\begin{itemize}
 \item To check that a module's docstrings are up-to-date by verifying
       that all interactive examples still work as documented.
 \item To perform regression testing by verifying that interactive
       examples from a test file or a test object work as expected.
-\end{enumerate}
+\item To write tutorial documentation for a package, liberally
+      illustrated with input-ouput examples.  Depending on whether
+      the examples or the expository text are emphasized, this has
+      the flavor of "literate testing" or "executable documentation".
+\end{itemize}
 
-Here's a complete but small example:
+Here's a complete but small example module:
 
 \begin{verbatim}
 """
@@ -81,16 +85,13 @@ def factorial(n):
     result = 1
     factor = 2
     while factor <= n:
-        try:
-            result *= factor
-        except OverflowError:
-            result *= long(factor)
+        result *= factor
         factor += 1
     return result
 
 def _test():
     import doctest
-    return doctest.testmod()
+    doctest.testmod()
 
 if __name__ == "__main__":
     _test()
@@ -138,10 +139,12 @@ Expecting:
         ...
     OverflowError: n too large
 ok
+1 items had no tests:
+    __main__._test
 2 items passed all tests:
-   1 tests in example
-   8 tests in example.factorial
-9 tests in 2 items.
+   1 tests in __main__
+   8 tests in __main__.factorial
+9 tests in 3 items.
 9 passed and 0 failed.
 Test passed.
 $
@@ -150,9 +153,10 @@ $
 That's all you need to know to start making productive use of
 \module{doctest}!  Jump in.  The following sections provide full
 details.  Note that there are many examples of doctests in
-the standard Python test suite and libraries.
+the standard Python test suite and libraries.  Especially useful examples
+can be found in the standard test file \file{Lib/test/test_doctest.py}.
 
-\subsection{Simple Usage: Checking Examples in 
+\subsection{Simple Usage: Checking Examples in
             Docstrings\label{doctest-simple-testmod}}
 
 The simplest way to start using doctest (but not necessarily the way
@@ -1262,7 +1266,7 @@ initialized by the constructor, and should not be modified directly.
 
 \class{DocTestFinder} defines the following method:
 
-\begin{methoddesc}{find}{obj\optional{, name}\optional{, 
+\begin{methoddesc}{find}{obj\optional{, name}\optional{,
                    module}\optional{, globs}\optional{, extraglobs}}
     Return a list of the \class{DocTest}s that are defined by
     \var{obj}'s docstring, or by any of its contained objects'
