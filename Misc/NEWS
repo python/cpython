@@ -9,15 +9,6 @@ What's New in Python 2.3 final?
 
 *Release date: 29-Jul-2003*
 
-Core and builtins
------------------
-
-Extension modules
------------------
-
-Library
--------
-
 IDLE
 ----
 
@@ -35,15 +26,6 @@ IDLE
   asking whether to let pythonw.exe talk to address 127.0.0.1, say yes,
   and rest assured no communication external to your machine is taking
   place.  If you don't allow it, IDLE won't be able to start.
-
-Build
------
-
-C API
------
-
-Windows
--------
 
 
 What's New in Python 2.3 release candidate 2?
