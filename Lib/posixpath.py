@@ -17,7 +17,8 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime","islink","exists","isdir","isfile","ismount",
            "walk","expanduser","expandvars","normpath","abspath",
-           "samefile","sameopenfile","samestat","supports_unicode_filenames"]
+           "samefile","sameopenfile","samestat",
+           "realpath","supports_unicode_filenames"]
 
 # Normalize the case of a pathname.  Trivial in Posix, string.lower on Mac.
 # On MS-DOS this may also turn slashes into backslashes; however, other
