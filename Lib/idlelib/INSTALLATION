@@ -1,0 +1,54 @@
+IDLE Fork Installation on Linux:
+
+Until the tarball is released, you must download a CVS copy.  An excellent
+place for it is
+
+/usr/local/src/PythonX.X/Tools/idlefork, assuming that's where your Python
+source is located. Put the correct version in for X.X .
+
+# cd /usr/local/src/PythonX.X/Tools
+
+Now do the CVS login and checkout:
+
+# cvs -d:pserver:anonymous@cvs.idlefork.sourceforge.net:/cvsroot/idlefork login
+
+Type an <enter> for the password.
+
+# cvs -z3 -d:pserver:anonymous@cvs.idlefork.sourceforge.net:/cvsroot/idlefork \
+      -d idlefork checkout idle
+
+The -d option to checkout puts the files in an idlefork directory, so you don't
+step on "official" idle.
+
+# cd idlefork
+# su      to root
+
+# python setup.py install
+
+# echo  "idle" > /usr/local/lib/pythonX.X/site-packages.pth
+
+This last is necessary so idle can find itself.  I hope we can create/append
+this file via setup.py at some point, but it needs to be done manually now, and
+it only needs to be done once (unless you totally remove and reinstall python
+itself).
+
+# exit    from root
+
+NOTE that the above procedure will install idlefork IDLE on top of any
+"official" IDLE that may be already installed.  If you wish to avoid doing
+that, there is a patch file, coexist.patch, in the idlefork directory. If,
+_*before*_ you install idle, you run
+
+# patch -p0 < coexist.patch
+
+idlefork will be modified so that it installs as .../site-packages/fildlelib,
+idle as fidle, and idles as fidles. (If you previously installed without
+patching, remove the idlefork/build directory before running the install.)
+
+NOTE: You must then append "fidlelib" to site-packages.pth !
+
+Then "official" IDLE and idlefork IDLE will exist side by side for comparision.
+And if idlefork is temporarily broken :-(, well, you have your old IDLE ways.
+
+This is obviously an expedient development hack, but if popular, I imagine
+there could be a setup option.
