@@ -1,6 +1,7 @@
 /* Math module -- standard C math library functions, pi and e */
 
 #include "Python.h"
+#include "longintrepr.h"
 
 #ifndef _MSC_VER
 #ifndef __STDC__
@@ -136,10 +137,6 @@ FUNC2(fmod, fmod,
       "  x % y may differ.")
 FUNC2(hypot, hypot,
       "hypot(x,y)\n\nReturn the Euclidean distance, sqrt(x*x + y*y).")
-FUNC1(log, log,
-      "log(x)\n\nReturn the natural logarithm of x.")
-FUNC1(log10, log10,
-      "log10(x)\n\nReturn the base-10 logarithm of x.")
 #ifdef MPW_3_1 /* This hack is needed for MPW 3.1 but not for 3.2 ... */
 FUNC2(pow, power,
       "pow(x,y)\n\nReturn x**y (x to the power of y).")
@@ -230,6 +227,69 @@ static char math_modf_doc [] =
 "\n"
 "Return the fractional and integer parts of x.  Both results carry the sign\n"
 "of x.  The integer part is returned as a real.";
+
+/* A decent logarithm is easy to compute even for huge longs, but libm can't
+   do that by itself -- loghelper can.  func is log or log10, and name is
+   "log" or "log10".  Note that overflow isn't possible:  a long can contain
+   no more than INT_MAX * SHIFT bits, so has value certainly less than
+   2**(2**64 * 2**16) == 2**2**80, and log2 of that is 2**80, which is
+   small enough to fit in an IEEE single.  log and log10 are even smaller.
+*/
+
+static PyObject*
+loghelper(PyObject* args, double (*func)(double), char *name)
+{
+	PyObject *arg;
+	char format[16];
+
+	/* See whether this is a long. */
+	format[0] = 'O';
+	format[1] = ':';
+	strcpy(format + 2, name);
+	if (! PyArg_ParseTuple(args, format, &arg))
+		return NULL;
+
+	/* If it is long, do it ourselves. */
+	if (PyLong_Check(arg)) {
+		double x;
+		int e;
+		x = _PyLong_AsScaledDouble(arg, &e);
+		if (x <= 0.0) {
+			PyErr_SetString(PyExc_ValueError,
+					"math domain error");
+			return NULL;
+		}
+		/* Value is ~= x * 2**(e*SHIFT), so the log ~=
+		   log(x) + log(2) * e * SHIFT.
+		   CAUTION:  e*SHIFT may overflow using int arithmetic,
+		   so force use of double. */
+		x = func(x) + func(2.0) * (double)e * (double)SHIFT;
+		return PyFloat_FromDouble(x);
+	}
+
+	/* Else let libm handle it by itself. */
+	format[0] = 'd';
+	return math_1(args, func, format);
+}
+
+static PyObject *
+math_log(PyObject *self, PyObject *args)
+{
+	return loghelper(args, log, "log");
+}
+
+static char math_log_doc[] =
+"log(x) -> the natural logarithm (base e) of x.";
+
+static PyObject *
+math_log10(PyObject *self, PyObject *args)
+{
+	return loghelper(args, log10, "log10");
+}
+
+static char math_log10_doc[] =
+"log10(x) -> the base 10 logarithm of x.";
+
 
 static PyMethodDef math_methods[] = {
 	{"acos",	math_acos,	METH_VARARGS,	math_acos_doc},

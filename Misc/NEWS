@@ -81,6 +81,9 @@ Core
 
 Library
 
+- math.log and math.log10 now return sensible results for even huge
+  long arguments.  For example, math.log10(10 ** 10000) ~= 10000.0.
+
 - A new function, imp.lock_held(), returns 1 when the import lock is
   currently held.  See the docs for the imp module.
 

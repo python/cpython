@@ -1,4 +1,4 @@
-from test_support import verify, verbose, TestFailed
+from test_support import verify, verbose, TestFailed, fcmp
 from string import join
 from random import random, randint
 
@@ -353,9 +353,7 @@ def test_float_overflow():
                  "1. / huge", "huge / 1.", "1. / mhuge", "mhuge / 1.",
                  "1. ** huge", "huge ** 1.", "1. ** mhuge", "mhuge ** 1.",
                  "math.sin(huge)", "math.sin(mhuge)",
-                 "math.log(huge)", "math.log(mhuge)", # should do better
                  "math.sqrt(huge)", "math.sqrt(mhuge)", # should do better
-                 "math.log10(huge)", "math.log10(mhuge)", # should do better
                  "math.floor(huge)", "math.floor(mhuge)"]:
 
         try:
@@ -364,6 +362,41 @@ def test_float_overflow():
             pass
         else:
             raise TestFailed("expected OverflowError from %s" % test)
+
+# ---------------------------------------------- test huge log and log10
+
+def test_logs():
+    import math
+
+    if verbose:
+        print "log and log10"
+
+    LOG10E = math.log10(math.e)
+
+    for exp in range(10) + [100, 1000, 10000]:
+        value = 10 ** exp
+        log10 = math.log10(value)
+        verify(fcmp(log10, exp) == 0)
+
+        # log10(value) == exp, so log(value) == log10(value)/log10(e) ==
+        # exp/LOG10E
+        expected = exp / LOG10E
+        log = math.log(value)
+        verify(fcmp(log, expected) == 0)
+
+    for bad in -(1L << 10000), -2L, 0L:
+        try:
+            math.log(bad)
+            raise TestFailed("expected ValueError from log(<= 0)")
+        except ValueError:
+            pass
+
+        try:
+            math.log10(bad)
+            raise TestFailed("expected ValueError from log10(<= 0)")
+        except ValueError:
+            pass
+
 # ---------------------------------------------------------------- do it
 
 test_division()
@@ -372,3 +405,4 @@ test_format()
 test_misc()
 test_auto_overflow()
 test_float_overflow()
+test_logs()
