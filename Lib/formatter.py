@@ -1,5 +1,3 @@
-import regex
-import regsub
 import string
 import sys
 from types import StringType
