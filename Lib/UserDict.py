@@ -113,7 +113,7 @@ class DictMixin:
     def clear(self):
         for key in self.keys():
             del self[key]
-    def setdefault(self, key, default):
+    def setdefault(self, key, default=None):
         try:
             return self[key]
         except KeyError:
