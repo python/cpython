@@ -28,6 +28,7 @@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 INSTALL=	@INSTALL@
+RANLIB=		@RANLIB@
 
 # Machine-dependent subdirectories
 MACHDEP=	@MACHDEP@
@@ -133,6 +134,7 @@ libainstall:	all
 		fi
 		for i in $(SUBDIRS); do \
 			echo $$i; $(INSTALL) $$i/lib$$i.a $(LIBPL)/lib$$i.a; \
+			$(RANLIB) $(LIBPL)/lib$$i.a; \
 		done
 		$(INSTALL) Modules/config.c $(LIBPL)/config.c
 		$(INSTALL) $(srcdir)/Modules/config.c.in $(LIBPL)/config.c.in
