@@ -854,25 +854,23 @@ def splitgophertype(selector):
 		return selector[1], selector[2:]
 	return None, selector
 
-_quoteprog = None
 def unquote(s):
-	global _quoteprog
-	if _quoteprog is None:
-		import re
-		_quoteprog = re.compile('%[0-9a-fA-F][0-9a-fA-F]')
-
-	i = 0
-	n = len(s)
-	res = []
-	while 0 <= i < n:
-		match = _quoteprog.search(s, i)
-		if not match:
-			res.append(s[i:])
-			break
-		j = match.start(0)
-		res.append(s[i:j] + chr(string.atoi(s[j+1:j+3], 16)))
-		i = j+3
-	return string.joinfields(res, '')
+	mychr = chr
+	myatoi = string.atoi
+	list = string.split(s, '%')
+	res = [list[0]]
+	myappend = res.append
+	del list[0]
+	for item in list:
+		if item[1:2]:
+			try:
+				myappend(mychr(myatoi(item[:2], 16))
+					 + item[2:])
+			except:
+				myappend(item)
+		else:
+			myappend(item)
+	return string.join(res, "")
 
 def unquote_plus(s):
 	if '+' in s:
