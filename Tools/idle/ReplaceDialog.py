@@ -1,8 +1,4 @@
-import os
-import re
-import fnmatch
 from Tkinter import *
-import tkMessageBox
 import SearchEngine
 from SearchDialogBase import SearchDialogBase
 
