@@ -135,6 +135,7 @@ database.
 \begin{methoddesc}{first}{}
 Set the cursor to the first item in the DB file and return it.  The order of 
 keys in the file is unspecified, except in the case of B-Tree databases.
+This method raises \exception{bsddb.error} if the database is empty.
 \end{methoddesc}
 
 \begin{methoddesc}{next}{}
@@ -153,6 +154,7 @@ with \function{hashopen()}).
 Set the cursor to the last item in the DB file and return it.  The
 order of keys in the file is unspecified.  This is not supported on
 hashtable databases (those opened with \function{hashopen()}).
+This method raises \exception{bsddb.error} if the database is empty.
 \end{methoddesc}
 
 \begin{methoddesc}{sync}{}
