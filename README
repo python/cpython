@@ -387,6 +387,13 @@ Reliant UNIX: The thread support does not compile on Reliant UNIX, and
         platform as well.  This should be resolved in time for a
         future release.
 
+MaxOS X:  You need to add the "-traditional-cpp" option to the
+        compiler command line for the MacOS X Public Beta.  This is
+        appearantly a bug in the default pre-processor, and is
+        expected not to be a problem with future versions.  Run
+        configure with "OPT=-traditional-cpp ./configure" to add this
+        option.
+
 
 Configuring threads
 -------------------
