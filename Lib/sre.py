@@ -75,7 +75,7 @@ def split(pattern, string, maxsplit=0):
     returning a list containing the resulting substrings."""
     return _compile(pattern, 0).split(string, maxsplit)
 
-def findall(pattern, string, maxsplit=0):
+def findall(pattern, string):
     """Return a list of all non-overlapping matches in the string.
 
     If one or more groups are present in the pattern, return a
@@ -83,7 +83,7 @@ def findall(pattern, string, maxsplit=0):
     has more than one group.
 
     Empty matches are included in the result."""
-    return _compile(pattern, 0).findall(string, maxsplit)
+    return _compile(pattern, 0).findall(string)
 
 def compile(pattern, flags=0):
     "Compile a regular expression pattern, returning a pattern object."
