@@ -14,7 +14,7 @@
 # -jh
 
 
-import sys, string, regex
+import sys, string, regex, getopt, os
 
 # Different parse modes for phase 1
 MODE_REGULAR = 0
@@ -270,21 +270,21 @@ comment_stopcodes = [CC_ENDLINE]
 
 # gather all characters together, specified by a list of catcodes
 def code2string(cc, codelist):
-	print 'code2string: codelist = ' + pcl(codelist),
+	##print 'code2string: codelist = ' + pcl(codelist),
 	result = ''
-	for catagory in codelist:
-		if cc[catagory]:
-			result = result + cc[catagory]
-	print 'result = ' + `result`
+	for category in codelist:
+		if cc[category]:
+			result = result + cc[category]
+	##print 'result = ' + `result`
 	return result
 
 # automatically generate all characters of catcode other, being the
 # complement set in the ASCII range (128 characters)
 def make_other_codes(cc):
-	otherchars = range(128)		# could be made 256, no problem
-	for catagory in all_but_other_codes:
-		if cc[catagory]:
-			for c in cc[catagory]:
+	otherchars = range(256)		# could be made 256, no problem
+	for category in all_but_other_codes:
+		if cc[category]:
+			for c in cc[category]:
 				otherchars[ord(c)] = None
 	result = ''
 	for i in otherchars:
@@ -294,12 +294,12 @@ def make_other_codes(cc):
 
 # catcode dump (which characters have which catcodes).
 def dump_cc(name, cc):
-	print '\t' + name
-	print '=' * (8+len(name))
+	##print '\t' + name
+	##print '=' * (8+len(name))
 	if len(cc) != 16:
 		raise TypeError, 'cc not good cat class'
-	for i in range(16):
-		print pc(i) + '\t' + `cc[i]`
+##	for i in range(16):
+##		print pc(i) + '\t' + `cc[i]`
 		
 
 # In the beginning,....
@@ -707,7 +707,7 @@ def handlecs(buf, where, curpmode, lvl, result, end):
 		if x2 == end:
 			raise error, 'premature end of command.' + lle(lvl, buf, where)
 		delimchar = buf[x2]
-		print 'VERB: delimchar ' + `delimchar`
+		##print 'VERB: delimchar ' + `delimchar`
 		pos = regex.compile(un_re(delimchar)).search(buf, x2 + 1)
 		if pos < 0:
 			raise error, 'end of \'verb\' argument (' + \
@@ -877,7 +877,7 @@ for_texi = ('emph', 'var', 'strong', 'code', 'kbd', 'key', 'dfn', 'samp', \
 # try to remove macros and return flat text
 def flattext(buf, pp):
 	pp = crcopy(pp)
-	print '---> FLATTEXT ' + `pp`
+	##print '---> FLATTEXT ' + `pp`
 	wobj = Wobj().init()
 
 	i, length = 0, len(pp)
@@ -942,7 +942,7 @@ def flattext(buf, pp):
 			pass
 		
 	dumpit(buf, wobj.write, pp)
-	print 'FLATTEXT: RETURNING ' + `wobj.data`
+	##print 'FLATTEXT: RETURNING ' + `wobj.data`
 	return wobj.data
 
 # try to generate node names (a bit shorter than the chapter title)
@@ -950,7 +950,7 @@ def flattext(buf, pp):
 def invent_node_names(text):
 	words = string.split(text)
 
-	print 'WORDS ' + `words`
+	##print 'WORDS ' + `words`
 
 	if len(words) == 2 \
 		  and string.lower(words[0]) == 'built-in' \
@@ -1268,7 +1268,7 @@ def changeit(buf, pp):
 		elif ch.chtype == chunk_type(IF):
 			# \if...
 			flag, negate, data = ch.data
-			print 'IF: flag, negate = ' + `flag, negate`
+			##print 'IF: flag, negate = ' + `flag, negate`
 			if flag not in flags.keys():
 				raise error, 'unknown flag ' + `flag`
 				
@@ -1533,7 +1533,7 @@ def changeit(buf, pp):
 					  ('exception', 'object'):
 					command = 'vindex'
 				else:
-					print 'WARNING: can\'t catagorize ' + `idxsi` + ' for \'ttindex\' command'
+					print 'WARNING: can\'t categorize ' + `idxsi` + ' for \'ttindex\' command'
 					command = 'cindex'
 
 				if not cat_class:
@@ -1670,7 +1670,7 @@ def changeit(buf, pp):
 					text = flattext(buf, cp1)
 				if text[-1] == '.':
 					text = text[:-1]
-				print 'FLATTEXT:', `text`
+##				print 'FLATTEXT:', `text`
 				if text in hist.nodenames:
 					print 'WARNING: node name ' + `text` + ' already used'
 					out.doublenodes.append(text)
@@ -2058,7 +2058,7 @@ def dumpit(buf, wm, pp):
 				wm('\n')
 			
 		elif ch.chtype == chunk_type(COMMENT):
-			print 'COMMENT: previous chunk =', pp[i-2]
+##			print 'COMMENT: previous chunk =', pp[i-2]
 			if pp[i-2].chtype == chunk_type(PLAIN):
 				print 'PLAINTEXT =', `s(buf, pp[i-2].data)`
 			if s(buf, ch.data) and \
@@ -2083,55 +2083,47 @@ def dumpit(buf, wm, pp):
 
 
 
-from posix import popen
-
 def main():
+	outfile = None
+	headerfile = 'texipre.dat'
+	trailerfile = 'texipost.dat'
 
-	
-	buf = open(sys.argv[1], 'r').read()
-	restargs = sys.argv[2:]
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], 'o:h:t:')
+	except getopt.error:
+		args = []
 
-	w, pp = parseit(buf)
-	startchange()
-##	try:
-	while 1:
+	if not args:
+		print 'usage: partparse [-o outfile] [-h headerfile]',
+		print '[-t trailerfile] file ...'
+		sys.exit(2)
+
+	for opt, arg in opts:
+		if opt == '-o': outfile = arg
+		if opt == '-h': headerfile = arg
+		if opt == '-t': trailerfile = arg
+
+	if not outfile:
+		root, ext = os.path.splitext(args[0])
+		outfile = root + '.texi'
+
+	if outfile in args:
+		print 'will not overwrite input file', outfile
+		sys.exit(2)
+
+	outf = open(outfile, 'w')
+	outf.write(open(headerfile, 'r').read())
+
+	for file in args:
+		if len(args) > 1: print '='*20, file, '='*20
+		buf = open(file, 'r').read()
+		w, pp = parseit(buf)
+		startchange()
 		changeit(buf, pp)
-##		pass
-		break
-
-##	finally:
-	while 1:
-		outf = open('@out.texi', 'w')
-		preamble = open('texipre.dat', 'r')
-		while 1:
-			l = preamble.readline()
-			if not l:
-				preamble.close()
-				break
-			outf.write(l)
-		
 		dumpit(buf, outf.write, pp)
 
-		while restargs:
-			del buf, pp
-			buf = open(restargs[0], 'r').read()
-			del restargs[0]
-			w, pp = parseit(buf)
-			startchange()
-			changeit(buf, pp)
-			dumpit(buf, outf.write, pp)
+	outf.write(open(trailerfile, 'r').read())
 
-		postamble = open('texipost.dat', 'r')
-		while 1:
-			l = postamble.readline()
-			if not l:
-				postamble.close()
-				break
-			outf.write(l)
-		
-		outf.close()
+	outf.close()
 
-##		pass
-		break
-	
-	
+main()

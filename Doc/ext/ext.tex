@@ -1,0 +1,709 @@
+\documentstyle[twoside,11pt,myformat]{report}
+
+\title{\bf Extending and Embedding the Python Interpreter}
+
+\author{
+	Guido van Rossum \\
+	Dept. CST, CWI, Kruislaan 413 \\
+	1098 SJ Amsterdam, The Netherlands \\
+	E-mail: {\tt guido@cwi.nl}
+}
+
+% Tell \index to actually write the .idx file
+\makeindex
+
+\begin{document}
+
+\pagenumbering{roman}
+
+\maketitle
+
+\begin{abstract}
+
+\noindent
+This document describes how you can extend the Python interpreter with
+new modules written in C or C++.  It also describes how to use the
+interpreter as a library package from applications using Python as an
+``embedded'' language.
+
+\end{abstract}
+
+\pagebreak
+
+{
+\parskip = 0mm
+\tableofcontents
+}
+
+\pagebreak
+
+\pagenumbering{arabic}
+
+\chapter{Extending Python with C or C++ code}
+
+It is quite easy to add non-standard built-in modules to Python, if
+you know how to program in C.  A built-in module known to the Python
+programmer as foo is generally implemented in a file called
+foomodule.c.  The standard built-in modules also adhere to this
+convention, and in fact some of them form excellent examples of how to
+create an extension.
+
+Extension modules can do two things that can't be done directly in
+Python: implement new data types and provide access to system calls or
+C library functions.  Since the latter is usually the most important
+reason for adding an extension, I'll concentrate on adding "wrappers"
+around C library functions; the concrete example uses the wrapper for
+system() in module posix, found in (of course) the file posixmodule.c.
+
+It is important not to be impressed by the size and complexity of
+the average extension module; much of this is straightforward
+"boilerplate" code (starting right with the copyright notice!).
+
+Let's skip the boilerplate and jump right to an interesting function:
+
+\begin{verbatim}
+    static object *
+    posix_system(self, args)
+        object *self;
+        object *args;
+    {
+        char *command;
+        int sts;
+        if (!getargs(args, "s", &command))
+            return NULL;
+        sts = system(command);
+        return newintobject((long)sts);
+    }
+\end{verbatim}
+
+This is the prototypical top-level function in an extension module.
+It will be called (we'll see later how this is made possible) when the
+Python program executes statements like
+
+\begin{verbatim}
+    >>> import posix
+    >>> sts = posix.system('ls -l')
+\end{verbatim}
+
+There is a straightforward translation from the arguments to the call
+in Python (here the single value 'ls -l') to the arguments that are
+passed to the C function.  The C function always has two parameters,
+conventionally named 'self' and 'args'.  In this example, 'self' will
+always be a NULL pointer, since this is a function, not a method (this
+is done so that the interpreter doesn't have to understand two
+different types of C functions).
+
+The 'args' parameter will be a pointer to a Python object, or NULL if
+the Python function/method was called without arguments.  It is
+necessary to do full argument type checking on each call, since
+otherwise the Python user could cause a core dump by passing the wrong
+arguments (or no arguments at all).  Because argument checking and
+converting arguments to C is such a common task, there's a general
+function in the Python interpreter which combines these tasks:
+getargs().  It uses a template string to determine both the types of
+the Python argument and the types of the C variables into which it
+should store the converted values.
+
+When getargs returns nonzero, the argument list has the right type and
+its components have been stored in the variables whose addresses are
+passed.  When it returns zero, an error has occurred.  In the latter
+case it has already raised an appropriate exception by calling
+err_setstr(), so the calling function can just return NULL.
+
+The form of the format string is described at the end of this file.
+(There are convenience macros getstrarg(), getintarg(), etc., for many
+common forms of argument lists.  These are relics from the past; it's
+better to call getargs() directly.)
+
+
+\section{Intermezzo: errors and exceptions}
+
+An important convention throughout the Python interpreter is the
+following: when a function fails, it should set an exception condition
+and return an error value (often a NULL pointer).  Exceptions are set
+in a global variable in the file errors.c; if this variable is NULL no
+exception has occurred.  A second variable is the "associated value"
+of the exception.
+
+The file errors.h declares a host of err_* functions to set various
+types of exceptions.  The most common one is err_setstr() -- its
+arguments are an exception object (e.g. RuntimeError -- actually it
+can be any string object) and a C string indicating the cause of the
+error (this is converted to a string object and stored as the
+"associated value" of the exception).  Another useful function is
+err_errno(), which only takes an exception argument and constructs the
+associated value by inspection of the (UNIX) global variable errno.
+
+You can test non-destructively whether an exception has been set with
+err_occurred().  However, most code never calls err_occurred() to see
+whether an error occurred or not, but relies on error return values
+from the functions it calls instead:
+
+When a function that calls another function detects that the called
+function fails, it should return an error value but not set an
+condition -- one is already set.  The caller is then supposed to also
+return an error indication to *its* caller, again *without* calling
+err_setstr(), and so on -- the most detailed cause of the error was
+already reported by the function that detected it in the first place.
+Once the error has reached Python's interpreter main loop, this aborts
+the currently executing Python code and tries to find an exception
+handler specified by the Python programmer.
+
+To ignore an exception set by a function call that failed, the
+exception condition must be cleared explicitly by calling err_clear().
+The only time C code should call err_clear() is if it doesn't want to
+pass the error on to the interpreter but wants to handle it completely
+by itself (e.g. by trying something else or pretending nothing
+happened).
+
+Finally, the function err_get() gives you both error variables
+*and clears them*.  Note that even if an error occurred the second one
+may be NULL.  I doubt you will need to use this function.
+
+Note that a failing malloc() call must also be turned into an
+exception -- the direct caller of malloc() (or realloc()) must call
+err_nomem() and return a failure indicator itself.  All the
+object-creating functions (newintobject() etc.) already do this, so
+only if you call malloc() directly this note is of importance.
+
+Also note that, with the important exception of getargs(), functions
+that return an integer status usually use 0 for success and -1 for
+failure.
+
+Finally, be careful about cleaning up garbage (making appropriate
+[X]DECREF() calls) when you return an error!
+
+
+\section{Back to the example}
+
+Going back to posix_system, you should now be able to understand this
+bit:
+
+\begin{verbatim}
+        if (!getargs(args, "s", &command))
+            return NULL;
+\end{verbatim}
+
+It returns NULL (the error indicator for functions of this kind) if an
+error is detected in the argument list, relying on the exception set
+by getargs().  The string value of the argument is now copied to the
+local variable 'command'.
+
+If a Python function is called with multiple arguments, the argument
+list is turned into a tuple.  Python programs can us this feature, for
+instance, to explicitly create the tuple containing the arguments
+first and make the call later.
+
+The next statement in posix_system is a call tothe C library function
+system(), passing it the string we just got from getargs():
+
+\begin{verbatim}
+        sts = system(command);
+\end{verbatim}
+
+Python strings may contain internal null bytes; but if these occur in
+this example the rest of the string will be ignored by system().
+
+Finally, posix.system() must return a value: the integer status
+returned by the C library system() function.  This is done by the
+function newintobject(), which takes a (long) integer as parameter.
+
+\begin{verbatim}
+        return newintobject((long)sts);
+\end{verbatim}
+
+(Yes, even integers are represented as objects on the heap in Python!)
+If you had a function that returned no useful argument, you would need
+this idiom:
+
+\begin{verbatim}
+        INCREF(None);
+        return None;
+\end{verbatim}
+
+'None' is a unique Python object representing 'no value'.  It differs
+from NULL, which means 'error' in most contexts (except when passed as
+a function argument -- there it means 'no arguments').
+
+
+\section{The module's function table}
+
+I promised to show how I made the function posix_system() available to
+Python programs.  This is shown later in posixmodule.c:
+
+\begin{verbatim}
+    static struct methodlist posix_methods[] = {
+        ...
+        {"system",  posix_system},
+        ...
+        {NULL,      NULL}        /* Sentinel */
+    };
+
+    void
+    initposix()
+    {
+        (void) initmodule("posix", posix_methods);
+    }
+\end{verbatim}
+
+(The actual initposix() is somewhat more complicated, but most
+extension modules are indeed as simple as that.)  When the Python
+program first imports module 'posix', initposix() is called, which
+calls initmodule() with specific parameters.  This creates a module
+object (which is inserted in the table sys.modules under the key
+'posix'), and adds built-in-function objects to the newly created
+module based upon the table (of type struct methodlist) that was
+passed as its second parameter.  The function initmodule() returns a
+pointer to the module object that it creates, but this is unused here.
+It aborts with a fatal error if the module could not be initialized
+satisfactorily.
+
+
+\section{Calling the module initialization function}
+
+There is one more thing to do: telling the Python module to call the
+initfoo() function when it encounters an 'import foo' statement.
+This is done in the file config.c.  This file contains a table mapping
+module names to parameterless void function pointers.  You need to add
+a declaration of initfoo() somewhere early in the file, and a line
+saying
+
+\begin{verbatim}
+    {"foo",     initfoo},
+\end{verbatim}
+
+to the initializer for inittab[].  It is conventional to include both
+the declaration and the initializer line in preprocessor commands
+\verb\#ifdef USE_FOO\ / \verb\#endif\, to make it easy to turn the foo
+extension on or off.  Note that the Macintosh version uses a different
+configuration file, distributed as configmac.c.  This strategy may be
+extended to other operating system versions, although usually the
+standard config.c file gives a pretty useful starting point for a new
+config*.c file.
+
+And, of course, I forgot the Makefile.  This is actually not too hard,
+just follow the examples for, say, AMOEBA.  Just find all occurrences
+of the string AMOEBA in the Makefile and do the same for FOO that's
+done for AMOEBA...
+
+(Note: if you are using dynamic loading for your extension, you don't
+need to edit config.c and the Makefile.  See "./DYNLOAD" for more info
+about this.)
+
+
+\section{Calling Python functions from C}
+
+The above concentrates on making C functions accessible to the Python
+programmer.  The reverse is also often useful: calling Python
+functions from C.  This is especially the case for libraries that
+support so-called "callback" functions.  If a C interface makes heavy
+use of callbacks, the equivalent Python often needs to provide a
+callback mechanism to the Python programmer; the implementation may
+require calling the Python callback functions from a C callback.
+Other uses are also possible.
+
+Fortunately, the Python interpreter is easily called recursively, and
+there is a standard interface to call a Python function.  I won't
+dwell on how to call the Python parser with a particular string as
+input -- if you're interested, have a look at the implementation of
+the "-c" command line option in pythonmain.c.
+
+Calling a Python function is easy.  First, the Python program must
+somehow pass you the Python function object.  You should provide a
+function (or some other interface) to do this.  When this function is
+called, save a pointer to the Python function object (be careful to
+INCREF it!) in a global variable -- or whereever you see fit.
+For example, the following function might be part of a module
+definition:
+
+\begin{verbatim}
+    static object *my_callback;
+
+    static object *
+    my_set_callback(dummy, arg)
+        object *dummy, *arg;
+    {
+        XDECREF(my_callback); /* Dispose of previous callback */
+        my_callback = arg;
+        XINCREF(my_callback); /* Remember new callback */
+        /* Boilerplate for "void" return */
+        INCREF(None);
+        return None;
+    }
+\end{verbatim}
+
+Later, when it is time to call the function, you call the C function
+call_object().  This function has two arguments, both pointers to
+arbitrary Python objects: the Python function, and the argument.  The
+argument can be NULL to call the function without arguments.  For
+example:
+
+\begin{verbatim}
+    object *result;
+    ...
+    /* Time to call the callback */
+    result = call_object(my_callback, (object *)NULL);
+\end{verbatim}
+
+call_object() returns a Python object pointer: this is
+the return value of the Python function.  call_object() is
+"reference-count-neutral" with respect to its arguments, but the
+return value is "new": either it is a brand new object, or it is an
+existing object whose reference count has been incremented.  So, you
+should somehow apply DECREF to the result, even (especially!) if you
+are not interested in its value.
+
+Before you do this, however, it is important to check that the return
+value isn't NULL.  If it is, the Python function terminated by raising
+an exception.  If the C code that called call_object() is called from
+Python, it should now return an error indication to its Python caller,
+so the interpreter can print a stack trace, or the calling Python code
+can handle the exception.  If this is not possible or desirable, the
+exception should be cleared by calling err_clear().  For example:
+
+\begin{verbatim}
+    if (result == NULL)
+        return NULL; /* Pass error back */
+    /* Here maybe use the result */
+    DECREF(result); 
+\end{verbatim}
+
+Depending on the desired interface to the Python callback function,
+you may also have to provide an argument to call_object().  In some
+cases the argument is also provided by the Python program, through the
+same interface that specified the callback function.  It can then be
+saved and used in the same manner as the function object.  In other
+cases, you may have to construct a new object to pass as argument.  In
+this case you must dispose of it as well.  For example, if you want to
+pass an integral event code, you might use the following code:
+
+\begin{verbatim}
+    object *argument;
+    ...
+    argument = newintobject((long)eventcode);
+    result = call_object(my_callback, argument);
+    DECREF(argument);
+    if (result == NULL)
+        return NULL; /* Pass error back */
+    /* Here maybe use the result */
+    DECREF(result);
+\end{verbatim}
+
+Note the placement of DECREF(argument) immediately after the call,
+before the error check!  Also note that strictly spoken this code is
+not complete: newintobject() may run out of memory, and this should be
+checked.
+
+In even more complicated cases you may want to pass the callback
+function multiple arguments.  To this end you have to construct (and
+dispose of!) a tuple object.  Details (mostly concerned with the
+errror checks and reference count manipulation) are left as an
+exercise for the reader; most of this is also needed when returning
+multiple values from a function.
+
+XXX TO DO: explain objects and reference counting.
+XXX TO DO: defining new object types.
+
+
+\section{Format strings for getargs()}
+
+The getargs() function is declared in "modsupport.h" as follows:
+
+\begin{verbatim}
+    int getargs(object *arg, char *format, ...);
+\end{verbatim}
+
+The remaining arguments must be addresses of variables whose type is
+determined by the format string.  For the conversion to succeed, the
+`arg' object must match the format and the format must be exhausted.
+Note that while getargs() checks that the Python object really is of
+the specified type, it cannot check that the addresses provided in the
+call match: if you make mistakes there, your code will probably dump
+core.
+
+A format string consists of a single `format unit'.  A format unit
+describes one Python object; it is usually a single character or a
+parenthesized string.  The type of a format units is determined from
+its first character, the `format letter':
+
+'s'	(string)
+	The Python object must be a string object.  The C argument
+	must be a char** (i.e., the address of a character pointer),
+	and a pointer to the C string contained in the Python object
+	is stored into it. If the next character in the format string
+	is \verb\'#'\, another C argument of type int* must be present, and
+	the length of the Python string (not counting the trailing
+	zero byte) is stored into it.
+
+'z'	(string or zero, i.e., NULL)
+	Like 's', but the object may also be None.  In this case the
+	string pointer is set to NULL and if a \verb\'#'\ is present the size
+	it set to 0.
+
+'b'	(byte, i.e., char interpreted as tiny int)
+	The object must be a Python integer.  The C argument must be a
+	char*.
+
+'h'	(half, i.e., short)
+	The object must be a Python integer.  The C argument must be a
+	short*.
+
+'i'	(int)
+	The object must be a Python integer.  The C argument must be
+	an int*.
+
+'l'	(long)
+	The object must be a (plain!) Python integer.  The C argument
+	must be a long*.
+
+'c'	(char)
+	The Python object must be a string of length 1.  The C
+	argument must be a char*.  (Don't pass an int*!)
+
+'f'	(float)
+	The object must be a Python int or float.  The C argument must
+	be a float*.
+
+'d'	(double)
+	The object must be a Python int or float.  The C argument must
+	be a double*.
+
+'S'	(string object)
+	The object must be a Python string.  The C argument must be an
+	object** (i.e., the address of an object pointer).  The C
+	program thus gets back the actual string object that was
+	passed, not just a pointer to its array of characters and its
+	size as for format character 's'.
+
+'O'	(object)
+	The object can be any Python object, including None, but not
+	NULL.  The C argument must be an object**.  This can be used
+	if an argument list must contain objects of a type for which
+	no format letter exist: the caller must then check that it has
+	the right type.
+
+'('	(tuple)
+	The object must be a Python tuple.  Following the '('
+	character in the format string must come a number of format
+	units describing the elements of the tuple, followed by a ')'
+	character.  Tuple format units may be nested.  (There are no
+	exceptions for empty and singleton tuples; "()" specifies an
+	empty tuple and "(i)" a singleton of one integer.  Normally
+	you don't want to use the latter, since it is hard for the
+	user to specify.
+
+
+More format characters will probably be added as the need arises.  It
+should be allowed to use Python long integers whereever integers are
+expected, and perform a range check.  (A range check is in fact always
+necessary for the 'b', 'h' and 'i' format letters, but this is
+currently not implemented.)
+
+
+Some example calls:
+
+\begin{verbatim}
+    int ok;
+    int i, j;
+    long k, l;
+    char *s;
+    int size;
+
+    ok = getargs(args, "(lls)", &k, &l, &s); /* Two longs and a string */
+        /* Possible Python call: f(1, 2, 'three') */
+    
+    ok = getargs(args, "s", &s); /* A string */
+        /* Possible Python call: f('whoops!') */
+
+    ok = getargs(args, ""); /* No arguments */
+        /* Python call: f() */
+    
+    ok = getargs(args, "((ii)s#)", &i, &j, &s, &size);
+        /* A pair of ints and a string, whose size is also returned */
+        /* Possible Python call: f(1, 2, 'three') */
+
+    {
+        int left, top, right, bottom, h, v;
+        ok = getargs(args, "(((ii)(ii))(ii))",
+                 &left, &top, &right, &bottom, &h, &v);
+                 /* A rectangle and a point */
+                 /* Possible Python call:
+                    f( ((0, 0), (400, 300)), (10, 10)) */
+    }
+\end{verbatim}
+
+Note that a format string must consist of a single unit; strings like
+\verb\'is'\ and \verb\'(ii)s#'\ are not valid format strings.  (But
+\verb\'s#'\ is.)
+
+
+The getargs() function does not support variable-length argument
+lists.  In simple cases you can fake these by trying several calls to
+getargs() until one succeeds, but you must take care to call
+err_clear() before each retry.  For example:
+
+\begin{verbatim}
+    static object *my_method(self, args) object *self, *args; {
+        int i, j, k;
+
+        if (getargs(args, "(ii)", &i, &j)) {
+            k = 0; /* Use default third argument */
+        }
+        else {
+            err_clear();
+            if (!getargs(args, "(iii)", &i, &j, &k))
+                return NULL;
+        }
+        /* ... use i, j and k here ... */
+        INCREF(None);
+        return None;
+    }
+\end{verbatim}
+
+(It is possible to think of an extension to the definition of format
+strings to accomodate this directly, e.g., placing a '|' in a tuple
+might specify that the remaining arguments are optional.  getargs()
+should then return 1 + the number of variables stored into.)
+
+
+Advanced users note: If you set the `varargs' flag in the method list
+for a function, the argument will always be a tuple (the `raw argument
+list').  In this case you must enclose single and empty argument lists
+in parentheses, e.g., "(s)" and "()".
+
+
+\section{The mkvalue() function}
+
+This function is the counterpart to getargs().  It is declared in
+"modsupport.h" as follows:
+
+\begin{verbatim}
+    object *mkvalue(char *format, ...);
+\end{verbatim}
+
+It supports exactly the same format letters as getargs(), but the
+arguments (which are input to the function, not output) must not be
+pointers, just values.  If a byte, short or float is passed to a
+varargs function, it is widened by the compiler to int or double, so
+'b' and 'h' are treated as 'i' and 'f' is treated as 'd'.  'S' is
+treated as 'O', 's' is treated as 'z'.  \verb\'z#'\ and \verb\'s#'\
+are supported: a second argument specifies the length of the data
+(negative means use strlen()).  'S' and 'O' add a reference to their
+argument (so you should DECREF it if you've just created it and aren't
+going to use it again).
+
+If the argument for 'O' or 'S' is a NULL pointer, it is assumed that
+this was caused because the call producing the argument found an error
+and set an exception.  Therefore, mkvalue() will return NULL but won't
+set an exception if one is already set.  If no exception is set,
+SystemError is set.
+
+If there is an error in the format string, the SystemError exception
+is set, since it is the calling C code's fault, not that of the Python
+user who sees the exception.
+
+Example:
+
+\begin{verbatim}
+    return mkvalue("(ii)", 0, 0);
+\end{verbatim}
+
+returns a tuple containing two zeros.  (Outer parentheses in the
+format string are actually superfluous, but you can use them for
+compatibility with getargs(), which requires them if more than one
+argument is expected.)
+
+\section{Reference counts}
+
+Here's a useful explanation of INCREF and DECREF by Sjoerd Mullender.
+
+Use XINCREF or XDECREF instead of INCREF/DECREF when the argument may
+be NULL.
+
+The basic idea is, if you create an extra reference to an object, you
+must INCREF it, if you throw away a reference to an object, you must
+DECREF it.  Functions such as newstringobject, newsizedstringobject,
+newintobject, etc. create a reference to an object.  If you want to
+throw away the object thus created, you must use DECREF.
+
+If you put an object into a tuple, list, or dictionary, the idea is
+that you usually don't want to keep a reference of your own around, so
+Python does not INCREF the elements.  It does DECREF the old value.
+This means that if you put something into such an object using the
+functions Python provides for this, you must INCREF the object if you
+want to keep a separate reference to the object around.  Also, if you
+replace an element, you should INCREF the old element first if you
+want to keep it.  If you didn't INCREF it before you replaced it, you
+are not allowed to look at it anymore, since it may have been freed.
+
+Returning an object to Python (i.e., when your module function
+returns) creates a reference to an object, but it does not change the
+reference count.  When your module does not keep another reference to
+the object, you should not INCREF or DECREF it.  When you do keep a
+reference around, you should INCREF the object.  Also, when you return
+a global object such as None, you should INCREF it.
+
+If you want to return a tuple, you should consider using mkvalue.
+Mkvalue creates a new tuple with a reference count of 1 which you can
+return.  If any of the elements you put into the tuple are objects,
+they are INCREFfed by mkvalue.  If you don't want to keep references
+to those elements around, you should DECREF them after having called
+mkvalue.
+
+Usually you don't have to worry about arguments.  They are INCREFfed
+before your function is called and DECREFfed after your function
+returns.  When you keep a reference to an argument, you should INCREF
+it and DECREF when you throw it away.  Also, when you return an
+argument, you should INCREF it, because returning the argument creates
+an extra reference to it.
+
+If you use getargs() to parse the arguments, you can get a reference
+to an object (by using "O" in the format string).  This object was not
+INCREFfed, so you should not DECREF it.  If you want to keep the
+object, you must INCREF it yourself.
+
+If you create your own type of objects, you should use NEWOBJ to
+create the object.  This sets the reference count to 1.  If you want
+to throw away the object, you should use DECREF.  When the reference
+count reaches 0, the dealloc function is called.  In it, you should
+DECREF all object to which you keep references in your object, but you
+should not use DECREF on your object.  You should use DEL instead.
+
+\chapter{Embedding Python in another application}
+
+Embedding Python is similar to extending it, but not quite.  The
+difference is that when you extend Python, the main program of the
+application is still the Python interpreter, while of you embed
+Python, the main program may have nothing to do with Python --
+instead, some parts of the application occasionally call the Python
+interpreter to run some Python code.
+
+So if you are embedding Python, you are providing your own main
+program.  One of the things this main program has to do is initialize
+the Python interpreter.  At the very least, you have to call the
+function initall().  There are optional calls to pass command line
+arguments to Python.  Then later you can call the interpreter from any
+part of the application.
+
+There are several different ways to call the interpreter: you can pass
+a string containing Python statements to run_command(), or you can
+pass a stdio file pointer and a file name (for identification in error
+messages only) to run_script().  You can also call the lower-level
+operations described (partly) in the file \verb\<pythonroot>/misc/EXTENDING\
+to construct and use Python objects.
+
+A simple demo of embedding Python can be found in the directory
+\verb\<pythonroot>/embed/\.
+
+\section{Using C++}
+
+It is also possible to embed Python in a C++ program; how this is done
+exactly will depend on the details of the C++ system used; in general
+you will need to write the main program in C++, enclosing the include
+files in \verb\"extern "C" { ... }"\, and compile and link this with
+the C++ compiler.  (There is no need to recompile Python itself with
+C++.)
+
+\input{ext.ind}
+
+\end{document}
