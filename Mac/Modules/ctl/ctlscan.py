@@ -1,11 +1,10 @@
 # Scan <Controls.h>, generating ctlgen.py.
 import sys
 import os
-BGENDIR=os.path.join(sys.prefix, ':Tools:bgen:bgen')
+from bgenlocations import TOOLBOXDIR, BGENDIR
 sys.path.append(BGENDIR)
 
 from scantools import Scanner
-from bgenlocations import TOOLBOXDIR
 
 def main():
 #	input = "Controls.h" # Universal Headers < 3.3

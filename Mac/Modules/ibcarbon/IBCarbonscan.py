@@ -3,12 +3,9 @@
 import sys
 import os
 import string
-import MacOS
 
-BGENDIR= '/Users/jack/src/python/Tools/bgen/bgen'
+from bgenlocations import TOOLBOXDIR, BGENDIR
 sys.path.append(BGENDIR)
-print sys.path, sys.prefix
-from bgenlocations import TOOLBOXDIR
 
 from scantools import Scanner_OSX
 
