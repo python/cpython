@@ -794,7 +794,6 @@ array_extend(self, args)
 {
 	int size;
         PyObject    *bb;
-        arrayobject *np;
         
 	if (!PyArg_ParseTuple(args, "O:extend", &bb))
             return NULL;
