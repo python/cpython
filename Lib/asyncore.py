@@ -145,15 +145,51 @@ def poll2 (timeout=0.0, map=None):
             except KeyError:
                 pass
 
+def poll3 (timeout=0.0, map=None):
+    # Use the poll() support added to the select module in Python 2.0
+    if map is None:
+        map=socket_map
+    # timeout is in milliseconds
+    timeout = int(timeout*1000)
+    pollster = select.poll()
+    if map:
+        l = []
+        for fd, obj in map.items():
+            flags = 0
+            if obj.readable():
+                flags = select.POLLIN
+            if obj.writable():
+                flags = flags | select.POLLOUT
+            if flags:
+                pollster.register(fd, flags)
+        r = pollster.poll (timeout)
+        for fd, flags in r:
+            try:
+                obj = map[fd]
+                try:
+                    if (flags  & select.POLLIN):
+                        obj.handle_read_event()
+                    if (flags & select.POLLOUT):
+                        obj.handle_write_event()
+                except ExitNow:
+                    raise ExitNow
+                except:
+                    obj.handle_error()
+            except KeyError:
+                pass
+
 def loop (timeout=30.0, use_poll=0, map=None):
 
+    if map is None:
+        map=socket_map
+
     if use_poll:
-        poll_fun = poll2
+        if hasattr (select, 'poll'):
+            poll_fun = poll3
+        else:
+            poll_fun = poll2
     else:
         poll_fun = poll
-
-        if map is None:
-            map=socket_map
 
     while map:
         poll_fun (timeout, map)
