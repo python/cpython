@@ -4089,6 +4089,64 @@ There are very few functions specific to instance objects.
 \end{cfuncdesc}
 
 
+\subsection{Method Objects \label{method-objects}}
+
+\obindex{method}
+There are some useful functions that are useful for working with
+method objects.
+
+\begin{cvardesc}{PyTypeObject}{PyMethod_Type}
+  This instance of \ctype{PyTypeObject} represents the Python method
+  type.  This is exposed to Python programs as \code{types.MethodType}.
+  \withsubitem{(in module types)}{\ttindex{MethodType}}
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PyMethod_Check}{PyObject *o}
+  Return true if \var{o} is a method object (has type
+  \cdata{PyMethod_Type}).  The parameter must not be \NULL.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyMethod_New}{PyObject *func.
+                                           PyObject *self, PyObject *class}
+  Return a new method object, with \var{func} being any callable
+  object; this is the function that will be called when the method is
+  called.  If this method should be bound to an instance, \var{self}
+  should be the instance and \var{class} should be the class of
+  \var{self}, otherwise \var{self} should be \NULL{} and \var{class}
+  should be the class which provides the unbound method..
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyMethod_Class}{PyObject *meth}
+  Return the class object from which the method \var{meth} was
+  created; if this was created from an instance, it will be the class
+  of the instance.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyMethod_GET_CLASS}{PyObject *meth}
+  Macro version of \cfunction{PyMethod_Class()} which avoids error
+  checking.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyMethod_Function}{PyObject *meth}
+  Return the function object associated with the method \var{meth}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyMethod_GET_FUNCTION}{PyObject *meth}
+  Macro version of \cfunction{PyMethod_Function()} which avoids error
+  checking.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyMethod_Self}{PyObject *meth}
+  Return the instance associated with the method \var{meth} if it is
+  bound, otherwise return \NULL.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyMethod_GET_SELF}{PyObject *meth}
+  Macro version of \cfunction{PyMethod_Self()} which avoids error
+  checking.
+\end{cfuncdesc}
+
+
 \subsection{Module Objects \label{moduleObjects}}
 
 \obindex{module}
