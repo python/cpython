@@ -92,9 +92,7 @@ def main():
 	gl.qdevice(DEVICE.WINTHAW)
 	width, height = gl.getsize()
 
-	x, y = gl.getorigin()
-	lvo = LiveVideoOut.LiveVideoOut().init(wid, (x, y, width, height), \
-		width, height)
+	lvo = LiveVideoOut.LiveVideoOut().init(wid, width, height)
 
 	lvi = LiveVideoIn.LiveVideoIn().init(pktmax, width, height)
 
@@ -124,11 +122,7 @@ def main():
 					width, height = w, h
 					lvi = LiveVideoIn.LiveVideoIn() \
 						.init(pktmax, width, height)
-					lvo.close()
-					lvo = LiveVideoOut.LiveVideoOut() \
-						.init(wid, \
-						      (x, y, width, height), \
-						      width, height)
+					lvo.resizevideo(width, height)
 
 		rv = lvi.getnextpacket()
 		if not rv:

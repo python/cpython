@@ -8,7 +8,11 @@ from VFile import Displayer
 
 class LiveVideoOut:
 
-	def init(self, wid, xywh, vw, vh):
+	# Call this to initialize things.  Arguments:
+	# wid:    the window id where the video is to be displayed (centered)
+	# vw, vh: size of the video image to be displayed
+
+	def init(self, wid, vw, vh):
 		##print 'Init', wid, xywh
 		##print 'video', vw, vw
 		self.vw = vw
@@ -20,38 +24,48 @@ class LiveVideoOut:
 		oldwid = gl.winget()
 		gl.winset(wid)
 		self.disp.initcolormap()
-		self.resize(xywh)
+		self.reshapewindow()
 		gl.winset(oldwid)
 		return self
 
-	def resize(self, (x, y, w, h)):
+	# Call this in response to every REDRAW event for the window
+	# or if the window size has changed for other reasons.
+
+	def reshapewindow(self):
 		oldwid = gl.winget()
 		gl.winset(self.wid)
-		##print 'Resize', x, y, w, h
-		gl.winposition(x, x+w-1, y, y+h-1)
 		gl.reshapeviewport()
-		if w < self.vw or h < self.vh:
-			self.toosmall = 1
-		else:
-			self.disp.xorigin = (w-self.vw)/2
-			self.disp.yorigin = (h-self.vh)/2
-			self.toosmall = 0
-			##print 'VIDEO OFFSET:', \
-			##	self.disp.xorigin, self.disp.yorigin
+		w, h = gl.getsize()
+		self.disp.xorigin = (w-self.vw)/2
+		self.disp.yorigin = (h-self.vh)/2
 		self.disp.clear()
 		gl.winset(oldwid)
 
+	# Call this to change the size of the video images being displayed.
+	# Implies reshapewindow().
+
+	def resizevideo(self, vw, vh):
+		self.vw, self.vh = vw, vh
+		self.disp.setsize(vw, vh)
+		self.reshapewindow()
+
+	# Call this to display the next video packet.  Arguments:
+	# pos:  line number where the packet begins
+	# data: image data of the packet
+	# (these correspond directly to the return values from
+	# LiveVideoIn.getnextpacket()).
+
 	def putnextpacket(self, pos, data):
-		if self.toosmall:
+		nline = len(data)/self.vw
+		if nline*self.vw <> len(data):
+			print 'Incorrect-sized video fragment ignored'
 			return
 		oldwid = gl.winget()
 		gl.winset(self.wid)
-		nline = len(data)/self.vw
-		if nline*self.vw <> len(data):
-			print 'Incorrect-sized video fragment'
 		self.disp.showpartframe(data, None, (0, pos, self.vw, nline))
 		gl.winset(oldwid)
 
+	# Call this to close the window.
+
 	def close(self):
-		##print 'Done video out'
 		pass
