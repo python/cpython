@@ -1262,6 +1262,9 @@ PyUnicode_Contains:PyObject*:element:0:
 Py_AtExit:int:::
 Py_AtExit:void (*)():func::
 
+Py_BuildValue:PyObject*::+1:
+Py_BuildValue:char*:format::
+
 Py_CompileString:PyObject*::+1:
 Py_CompileString:char*:str::
 Py_CompileString:char*:filename::
