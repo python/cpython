@@ -1833,7 +1833,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
         }
 
         /* Map non-printable US ASCII to '\xhh' */
-        else if (ch < ' ' || ch >= 128) {
+        else if (ch < ' ' || ch >= 0x7F) {
             *p++ = '\\';
             *p++ = 'x';
             *p++ = hexdigit[(ch >> 4) & 0x000F];
