@@ -145,9 +145,14 @@ def interact(list, pythondir, options, title):
 	tp, h, rect = d.GetDialogItem(TITLE_ITEM)
 	SetDialogItemText(h, title)
 	tp, h, rect = d.GetDialogItem(TEXT_ITEM)
-	SetDialogItemText(h, string.joinfields(list, '\r'))
+##	SetDialogItemText(h, string.joinfields(list, '\r'))
+	h.data = string.joinfields(list, '\r')
+	d.SelectDialogItemText(TEXT_ITEM, 0, 32767)
+	d.SelectDialogItemText(TEXT_ITEM, 0, 0)
 ##	d.SetDialogDefaultItem(OK_ITEM)
 	d.SetDialogCancelItem(CANCEL_ITEM)
+	d.GetDialogWindow().ShowWindow()
+	d.DrawDialog()
 	while 1:
 		n = ModalDialog(None)
 		if n == OK_ITEM:
@@ -162,7 +167,7 @@ def interact(list, pythondir, options, title):
 				pythondir = fss
 		if n == OPTIONS_ITEM:
 			options = optinteract(options)
-	tmp = string.splitfields(GetDialogItemText(h), '\r')
+	tmp = string.splitfields(h.data, '\r')
 	rv = []
 	for i in tmp:
 		if i:
