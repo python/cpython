@@ -26,7 +26,7 @@ class build_py (Command):
 
     def initialize_options (self):
         self.build_lib = None
-        self.modules = None
+        self.py_modules = None
         self.package = None
         self.package_dir = None
         self.force = None
@@ -39,7 +39,7 @@ class build_py (Command):
         # Get the distribution options that are aliases for build_py
         # options -- list of packages and list of modules.
         self.packages = self.distribution.packages
-        self.modules = self.distribution.py_modules
+        self.py_modules = self.distribution.py_modules
         self.package_dir = self.distribution.package_dir
 
 
@@ -62,7 +62,7 @@ class build_py (Command):
         # installing).
 
         # Two options control which modules will be installed: 'packages'
-        # and 'modules'.  The former lets us work with whole packages, not
+        # and 'py_modules'.  The former lets us work with whole packages, not
         # specifying individual modules at all; the latter is for
         # specifying modules one-at-a-time.  Currently they are mutually
         # exclusive: you can define one or the other (or neither), but not
@@ -70,17 +70,17 @@ class build_py (Command):
 
         # Dispose of the two "unusual" cases first: no pure Python modules
         # at all (no problem, just return silently), and over-specified
-        # 'packages' and 'modules' options.
+        # 'packages' and 'py_modules' options.
 
-        if not self.modules and not self.packages:
+        if not self.py_modules and not self.packages:
             return
-        if self.modules and self.packages:
+        if self.py_modules and self.packages:
             raise DistutilsOptionError, \
-                  "build_py: supplying both 'packages' and 'modules' " + \
+                  "build_py: supplying both 'packages' and 'py_modules' " + \
                   "options is not allowed"
 
-        # Now we're down to two cases: 'modules' only and 'packages' only.
-        if self.modules:
+        # Now we're down to two cases: 'py_modules' only and 'packages' only.
+        if self.py_modules:
             self.build_modules ()
         else:
             self.build_packages ()
@@ -194,7 +194,7 @@ class build_py (Command):
 
     def find_modules (self):
         """Finds individually-specified Python modules, ie. those listed by
-        module name in 'self.modules'.  Returns a list of tuples (package,
+        module name in 'self.py_modules'.  Returns a list of tuples (package,
         module_base, filename): 'package' is a tuple of the path through
         package-space to the module; 'module_base' is the bare (no
         packages, no dots) module name, and 'filename' is the path to the
@@ -218,7 +218,7 @@ class build_py (Command):
         # string or empty list, depending on context).  Differences:
         #   - don't check for __init__.py in directory for empty package
 
-        for module in self.modules:
+        for module in self.py_modules:
             path = string.split (module, '.')
             package = tuple (path[0:-1])
             module_base = path[-1]
@@ -251,12 +251,12 @@ class build_py (Command):
 
     def find_all_modules (self):
         """Compute the list of all modules that will be built, whether
-        they are specified one-module-at-a-time ('self.modules') or
+        they are specified one-module-at-a-time ('self.py_modules') or
         by whole packages ('self.packages').  Return a list of tuples
         (package, module, module_file), just like 'find_modules()' and
         'find_package_modules()' do."""
 
-        if self.modules:
+        if self.py_modules:
             modules = self.find_modules ()
         else:
             modules = []
