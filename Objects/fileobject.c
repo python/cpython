@@ -1400,8 +1400,8 @@ get_closed(PyFileObject *f, void *closure)
 	return PyInt_FromLong((long)(f->f_fp == 0));
 }
 
-static struct getsetlist file_getsetlist[] = {
-	{"closed", (getter)get_closed, NULL, NULL},
+static PyGetSetDef file_getsetlist[] = {
+	{"closed", (getter)get_closed, NULL, "flag set if the file is closed"},
 	{0},
 };
 

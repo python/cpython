@@ -2036,10 +2036,10 @@ im_get_name(PyMethodObject *im)
 	return PyObject_GetAttrString(im->im_func, "__name__");
 }
 
-static struct getsetlist instancemethod_getsetlist[] = {
-	{"__dict__", (getter)im_get_dict},
-	{"__doc__", (getter)im_get_doc},
-	{"__name__", (getter)im_get_name},
+static PyGetSetDef instancemethod_getsetlist[] = {
+	{"__dict__", (getter)im_get_dict, NULL, "same as im_func.__dict__"},
+	{"__doc__", (getter)im_get_doc, NULL, "same as im_func.__doc__"},
+	{"__name__", (getter)im_get_name, NULL, "same as im_func.__name__"},
 	{NULL}  /* Sentinel */
 };
 

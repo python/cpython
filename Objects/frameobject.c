@@ -33,7 +33,7 @@ frame_getlocals(PyFrameObject *f, void *closure)
 	return f->f_locals;
 }
 
-static struct getsetlist frame_getsetlist[] = {
+static PyGetSetDef frame_getsetlist[] = {
 	{"f_locals",	(getter)frame_getlocals, NULL, NULL},
 	{0}
 };
