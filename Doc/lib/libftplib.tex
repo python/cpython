@@ -169,7 +169,8 @@ the line to \code{sys.stdout}.
 
 \begin{methoddesc}{set_pasv}{boolean}
 Enable ``passive'' mode if \var{boolean} is true, other disable
-passive mode.
+passive mode.  (In Python 2.0 and before, passive mode was off by
+default; in Python 2.1 and later, it is on by default.)
 \end{methoddesc}
 
 \begin{methoddesc}{storbinary}{command, file, blocksize}
