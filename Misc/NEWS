@@ -15,6 +15,13 @@ Core language, builtins, and interpreter
 
 Standard library
 
+- mailbox.py now has a new class, PortableUnixMailbox which is
+  identical to UnixMailbox but uses a more portable scheme for
+  determining From_ separators.  Also, the constructors for all the
+  classes in this module have a new optional `factory' argument, which
+  is a callable used when new message classes must be instantiated by
+  the next() method.
+
 - random.py is now self-contained, and offers all the functionality of
   the now-deprecated whrandom.py.  See the docs for details.  random.py
   also supports new functions getstate() and setstate(), for saving
