@@ -89,6 +89,10 @@ Library
 - Bug #1083110: ``zlib.decompress.flush()`` would segfault if called immediately
   after creating the object, without any intervening ``.decompress()`` calls.
 
+- Bug #1149508: ``textwrap`` now handles hyphenated numbers (eg. "2004-03-05")
+  correctly.
+
+
 Build
 -----
 
