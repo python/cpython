@@ -138,7 +138,7 @@ static PyObject *ScrapObj_PutScrapFlavor(ScrapObject *_self, PyObject *_args)
 	ScrapFlavorFlags flavorFlags;
 	char *flavorData__in__;
 	int flavorData__in_len__;
-	if (!PyArg_ParseTuple(_args, "O&ls#",
+	if (!PyArg_ParseTuple(_args, "O&Ks#",
 	                      PyMac_GetOSType, &flavorType,
 	                      &flavorFlags,
 	                      &flavorData__in__, &flavorData__in_len__))

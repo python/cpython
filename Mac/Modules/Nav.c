@@ -167,10 +167,10 @@ filldialogoptions(PyObject *d,
 			}
 			*defaultLocationP = defaultLocation_storage;
 		} else if( strcmp(keystr, "version") == 0 ) {
-			if ( !PyArg_Parse(value, "h", &opt->version) )
+			if ( !PyArg_Parse(value, "H", &opt->version) )
 				return 0;
 		} else if( strcmp(keystr, "dialogOptionFlags") == 0 ) {
-			if ( !PyArg_Parse(value, "l", &opt->dialogOptionFlags) )
+			if ( !PyArg_Parse(value, "K", &opt->dialogOptionFlags) )
 				return 0;
 		} else if( strcmp(keystr, "location") == 0 ) {
 			if ( !PyArg_Parse(value, "O&", PyMac_GetPoint, &opt->location) )
@@ -247,7 +247,7 @@ nav_NavTranslateFile(navrrobject *self, PyObject *args)
 	NavTranslationOptions howToTranslate;
 	OSErr err;
 
-	if (!PyArg_ParseTuple(args, "l", &howToTranslate))
+	if (!PyArg_ParseTuple(args, "K", &howToTranslate))
 		return NULL;
 	err = NavTranslateFile(&self->itself, howToTranslate);
 	if ( err ) {
@@ -268,7 +268,7 @@ nav_NavCompleteSave(navrrobject *self, PyObject *args)
 	NavTranslationOptions howToTranslate;
 	OSErr err;
 
-	if (!PyArg_ParseTuple(args, "l", &howToTranslate))
+	if (!PyArg_ParseTuple(args, "K", &howToTranslate))
 		return NULL;
 	err = NavCompleteSave(&self->itself, howToTranslate);
 	if ( err ) {
@@ -528,7 +528,7 @@ nav_NavAskSaveChanges(PyObject *self, PyObject *args, PyObject *kw)
 	OSErr err;
 
 	if ( kw && PyObject_IsTrue(kw) ) {
-		if (!PyArg_ParseTuple(args, "l", &action))
+		if (!PyArg_ParseTuple(args, "K", &action))
 			return NULL;
 		dict = kw;
 	} else if (!PyArg_ParseTuple(args, "lO!", &action, &PyDict_Type, &dict))

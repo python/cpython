@@ -415,7 +415,7 @@ PyMac_BuildPoint(Point p)
 int
 PyMac_GetEventRecord(PyObject *v, EventRecord *e)
 {
-	return PyArg_Parse(v, "(Hll(hh)H)",
+	return PyArg_Parse(v, "(HKK(hh)H)",
 	                   &e->what,
 	                   &e->message,
 	                   &e->when,
@@ -471,7 +471,7 @@ PyMac_Getwide(PyObject *v, wide *rv)
 			rv->hi = -1;
 		return 1;
 	}
-	return PyArg_Parse(v, "(ll)", &rv->hi, &rv->lo);
+	return PyArg_Parse(v, "(KK)", &rv->hi, &rv->lo);
 }
 
 
