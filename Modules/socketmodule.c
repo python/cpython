@@ -933,15 +933,12 @@ socket_socket(self, args)
 	object *args;
 {
 	sockobject *s;
-	int family, type, proto, fd;
-	if (args != NULL && is_tupleobject(args) && gettuplesize(args) == 3) {
-		if (!getintintintarg(args, &family, &type, &proto))
+	int fd, family, type, proto;
+	proto = 0;
+	if (!getargs(args, "(ii)", &family, &type)) {
+		err_clear();
+		if (!getargs(args, "(iii)", &family, &type, &proto))
 			return NULL;
-	}
-	else {
-		if (!getintintarg(args, &family, &type))
-			return NULL;
-		proto = 0;
 	}
 	BGN_SAVE
 	fd = socket(family, type, proto);
@@ -960,6 +957,32 @@ socket_socket(self, args)
 }
 
 
+/* Create a socket object from a numeric file description.
+   Useful e.g. if stdin is a socket.
+   Additional arguments as for socket(). */
+
+/*ARGSUSED*/
+static object *
+socket_fromfd(self, args)
+	object *self;
+	object *args;
+{
+	sockobject *s;
+	int fd, family, type, proto;
+	proto = 0;
+	if (!getargs(args, "(iii)", &fd, &family, &type)) {
+		err_clear();
+		if (!getargs(args, "(iiii)", &fd, &family, &type, &proto))
+			return NULL;
+	}
+	s = newsockobject(fd, family, type, proto);
+	/* From now on, ignore SIGPIPE and let the error checking
+	   do the work. */
+	(void) signal(SIGPIPE, SIG_IGN);
+	return (object *) s;
+}
+
+
 /* List of functions exported by this module. */
 
 static struct methodlist socket_methods[] = {
@@ -967,6 +990,7 @@ static struct methodlist socket_methods[] = {
 	{"gethostname",		socket_gethostname},
 	{"getservbyname",	socket_getservbyname},
 	{"socket",		socket_socket},
+	{"fromfd",		socket_fromfd},
 	{NULL,			NULL}		 /* Sentinel */
 };
 
