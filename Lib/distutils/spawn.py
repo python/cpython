@@ -33,7 +33,7 @@ def spawn (cmd,
 
     if os.name == 'posix':
         _spawn_posix (cmd, search_path, verbose, dry_run)
-    elif os.name in ( 'nt', 'windows' ):          # ???
+    elif os.name == 'nt':
         _spawn_nt (cmd, search_path, verbose, dry_run)
     else:
         raise DistutilsPlatformError, \
@@ -41,11 +41,11 @@ def spawn (cmd,
 
 # spawn ()
 
+
 def _spawn_nt ( cmd,
                 search_path=1,
                 verbose=0,
                 dry_run=0):
-    import string
     executable = cmd[0]
     if search_path:
         paths = string.split( os.environ['PATH'], os.pathsep)
