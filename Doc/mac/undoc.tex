@@ -11,13 +11,19 @@ touch with \email{python-docs@python.org}.
 \section{\module{buildtools} --- Helper module for BuildApplet and Friends}
 \declaremodule{standard}{buildtools}
   \platform{Mac}
-\modulesynopsis{Helper module for BuildApplet, BuildApplication and macfreeze}
+\modulesynopsis{Helper module for BuildApplet, BuildApplication and
+                macfreeze}
 
 
-\section{\module{py_resource} --- }
+\section{\module{py_resource} --- Resources from Python code}
 \declaremodule[pyresource]{standard}{py_resource}
   \platform{Mac}
-\modulesynopsis{}
+\modulesynopsis{Helper to create \texttt{'PYC '} resources for compiled
+                applications}
+
+This module is primarily used as a help module for BuildApplet and
+BuildApplication.  It is able to store compiled Python code as
+\texttt{'PYC '} resources in a file.
 
 
 \section{\module{cfmfile} --- Code Fragment Resource module}
@@ -61,10 +67,10 @@ with a version that uses Internet Config to set file type and creator
 for new files.
 
 
-\section{\module{mactty} --- }
+\section{\module{mactty} --- Serial line connections}
 \declaremodule{standard}{mactty}
   \platform{Mac}
-\modulesynopsis{}
+\modulesynopsis{Easy access serial to line connections}
 
 
 \section{\module{nsremote} --- Wrapper around Netscape OSA modules}
@@ -89,16 +95,27 @@ allows access to the fields by name. It also has methods to convert
 to and from \module{PIL} images.
 
 
-\section{\module{preferences} --- }
+\section{\module{preferences} --- Application preferences manager}
 \declaremodule{standard}{preferences}
   \platform{Mac}
-\modulesynopsis{}
+\modulesynopsis{Nice application preferences manager with support for
+                defaults}
+
+The \module{preferences} module allows storage of user preferences in
+the system-wide preferences folder, with defaults coming from the
+application itself and the possibility to override preferences for
+specific situations.
 
 
-\section{\module{pythonprefs} --- }
+\section{\module{pythonprefs} --- Preferences manager for Python}
 \declaremodule{standard}{pythonprefs}
   \platform{Mac}
-\modulesynopsis{}
+\modulesynopsis{Specialized preferences manager for the Python
+                interpreter}
+
+This module is a specialization of the \refmodule{preferences} module
+that allows reading and writing of the preferences for the Python
+interpreter.
 
 
 \section{\module{quietconsole} --- non-visible stdout output}
