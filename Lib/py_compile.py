@@ -50,7 +50,7 @@ def compile(file, cfile=None, dfile=None):
     codestring = f.read()
     f.close()
     if codestring and codestring[-1] != '\n':
-	coestring = codestring + '\n'
+	codestring = codestring + '\n'
     codeobject = __builtin__.compile(codestring, dfile or file, 'exec')
     if not cfile:
 	cfile = file + (__debug__ and 'c' or 'o')
