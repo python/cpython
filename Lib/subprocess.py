@@ -619,6 +619,33 @@ class Popen(object):
         data = data.replace("\r", "\n")
         return data
 
+    def communicate(self, input=None):
+        """Interact with process: Send data to stdin.  Read data from
+        stdout and stderr, until end-of-file is reached.  Wait for
+        process to terminate.  The optional input argument should be a
+        string to be sent to the child process, or None, if no data
+        should be sent to the child.
+        
+        communicate() returns a tuple (stdout, stderr)."""
+
+        # Optimization: If we are only using one pipe, or no pipe at
+        # all, using select() or threads is unnecessary.
+        if [self.stdin, self.stdout, self.stderr].count(None) >= 2:
+            stdout = None 
+            stderr = None 
+            if self.stdin:
+                if input:
+                    self.stdin.write(input)
+                self.stdin.close()
+            elif self.stdout:
+                stdout = self.stdout.read()
+            elif self.stderr:
+                stderr = self.stderr.read()
+            self.wait()
+            return (stdout, stderr)
+        
+        return self._communicate(input)
+
 
     if mswindows:
         #
@@ -811,14 +838,7 @@ class Popen(object):
             buffer.append(fh.read())
 
 
-        def communicate(self, input=None):
-            """Interact with process: Send data to stdin.  Read data from
-            stdout and stderr, until end-of-file is reached.  Wait for
-            process to terminate.  The optional input argument should be a
-            string to be sent to the child process, or None, if no data
-            should be sent to the child.
-
-            communicate() returns a tuple (stdout, stderr)."""
+        def _communicate(self, input):
             stdout = None # Return
             stderr = None # Return
 
@@ -1066,14 +1086,7 @@ class Popen(object):
             return self.returncode
 
 
-        def communicate(self, input=None):
-            """Interact with process: Send data to stdin.  Read data from
-            stdout and stderr, until end-of-file is reached.  Wait for
-            process to terminate.  The optional input argument should be a
-            string to be sent to the child process, or None, if no data
-            should be sent to the child.
-
-            communicate() returns a tuple (stdout, stderr)."""
+        def _communicate(self, input):
             read_set = []
             write_set = []
             stdout = None # Return
