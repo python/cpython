@@ -246,7 +246,7 @@ sub get_version_text() {
 
 
 sub top_navigation_panel() {
-    return "\n<div id='top-navigation-panel'>\n"
+    return "\n<div id='top-navigation-panel' xml:id='top-navigation-panel'>\n"
            . make_nav_panel()
            . "<hr /></div>\n";
 }
