@@ -1437,7 +1437,7 @@ PyCurses_color_pair(PyObject *self, PyObject *args)
   PyCursesInitialised
   PyCursesInitialisedColor
 
-  if (ARG_COUNT(args)!=1) {
+  if (ARG_COUNT(args) != 1) {
     PyErr_SetString(PyExc_TypeError, "color_pair requires 1 argument");
     return NULL;
   }
@@ -1452,7 +1452,7 @@ PyCurses_Curs_Set(PyObject *self, PyObject *args)
 
   PyCursesInitialised
 
-  if (ARG_COUNT(args)==1) {
+  if (ARG_COUNT(args)!=1) {
     PyErr_SetString(PyExc_TypeError, "curs_set requires 1 argument");
     return NULL;
   }
@@ -1472,7 +1472,7 @@ PyCurses_Delay_Output(PyObject *self, PyObject *args)
 
   PyCursesInitialised
 
-  if (ARG_COUNT(args)==1) {
+  if (ARG_COUNT(args) != 1) {
     PyErr_SetString(PyExc_TypeError, "delay_output requires 1 argument");
     return NULL;
   }
@@ -1637,7 +1637,7 @@ PyCurses_Init_Pair(PyObject *self, PyObject *args)
   PyCursesInitialised
   PyCursesInitialisedColor
 
-  if (ARG_COUNT(args) == 3) {
+  if (ARG_COUNT(args) != 3) {
     PyErr_SetString(PyExc_TypeError, "init_pair requires 3 arguments");
     return NULL;
   }
