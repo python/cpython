@@ -19,7 +19,7 @@ def get_info(fp):
             date = time.strftime("%B %d, %Y", time.localtime(time.time()))
         d["DATE"] = date
     return d
-    
+
 
 def main():
     s = sys.stdin.read()
