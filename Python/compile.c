@@ -1186,7 +1186,8 @@ static PyObject *
 decode_utf8(char **sPtr, char *end, char* encoding)
 {
 #ifndef Py_USING_UNICODE
-	abort();
+	Py_FatalError("decode_utf8 should not be called in this build.");
+        return NULL;
 #else
 	PyObject *u, *v;
 	char *s, *t;
@@ -1319,7 +1320,7 @@ parsestr(struct compiling *com, char *s)
 #ifndef Py_USING_UNICODE
 			/* This should not happen - we never see any other
 			   encoding. */
-			abort();
+			Py_FatalError("cannot deal with encodings in this build.");
 #else
 			PyObject* u = PyUnicode_DecodeUTF8(s, len, NULL);
 			if (u == NULL)
