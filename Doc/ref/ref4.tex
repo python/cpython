@@ -1,4 +1,4 @@
-\chapter{Execution model}
+\chapter{Execution model\label{execmodel}}
 \index{execution model}
 
 \section{Code blocks, execution frames, and namespaces} \label{execframes}
@@ -6,7 +6,7 @@
 \indexii{execution}{frame}
 \index{namespace}
 
-A {\em code block} is a piece of Python program text that can be
+A \dfn{code block} is a piece of Python program text that can be
 executed as a unit, such as a module, a class definition or a function
 body.  Some code blocks (like modules) are normally executed only once, others
 (like function bodies) may be executed many times.  Code blocks may
@@ -29,7 +29,7 @@ passed to the built-in function \function{eval()} and to the
 read and evaluated by the built-in function \function{input()} is a
 code block.
 
-A code block is executed in an execution frame.  An {\em execution
+A code block is executed in an execution frame.  An \dfn{execution
 frame} contains some administrative information (used for debugging),
 determines where and how execution continues after the code block's
 execution has completed, and (perhaps most importantly) defines two
@@ -37,11 +37,11 @@ namespaces, the local and the global namespace, that affect
 execution of the code block.
 \indexii{execution}{frame}
 
-A {\em namespace} is a mapping from names (identifiers) to objects.
+A \dfn{namespace} is a mapping from names (identifiers) to objects.
 A particular namespace may be referenced by more than one execution
 frame, and from other places as well.  Adding a name to a namespace
-is called {\em binding} a name (to an object); changing the mapping of
-a name is called {\em rebinding}; removing a name is {\em unbinding}.
+is called \dfn{binding} a name (to an object); changing the mapping of
+a name is called \dfn{rebinding}; removing a name is \dfn{unbinding}.
 Namespaces are functionally equivalent to dictionaries (and often
 implemented as dictionaries).
 \index{namespace}
@@ -49,8 +49,8 @@ implemented as dictionaries).
 \indexii{rebinding}{name}
 \indexii{unbinding}{name}
 
-The {\em local namespace} of an execution frame determines the default
-place where names are defined and searched.  The {\em global
+The \dfn{local namespace} of an execution frame determines the default
+place where names are defined and searched.  The \dfn{global
 namespace} determines the place where names listed in \keyword{global}
 statements are defined and searched, and where names that are not
 bound anywhere in the current code block are searched.
@@ -105,36 +105,43 @@ imported (i.e., when it is loaded).  Note that in almost all cases,
 the global namespace is the namespace of the containing module ---
 scopes in Python do not nest!
 
-\begin{center}
-\begin{tabular}{|l|l|l|l|}
-\hline
-Code block type & Global namespace & Local namespace & Notes \\
-\hline
-Module & n.s. for this module & same as global & \\
-Script (file or command) & n.s. for \module{__main__} & same as global
-	& (1) \\
-Interactive command & n.s. for \module{__main__} & same as global & \\
-Class definition & global n.s. of containing block & new n.s. & \\
-Function body & global n.s. of containing block & new n.s. & (2) \\
-String passed to \keyword{exec} statement
-	& global n.s. of containing block
-		& local n.s. of containing block & (2), (3) \\
-String passed to \function{eval()}
-	& global n.s. of caller & local n.s. of caller & (2), (3) \\
-File read by \function{execfile()}
-	& global n.s. of caller & local n.s. of caller & (2), (3) \\
-Expression read by \function{input()}
-	& global n.s. of caller & local n.s. of caller & \\
-\hline
-\end{tabular}
-\end{center}
+\begin{tableiv}{l|l|l|l}{textrm}%
+  {Code block type}{Global namespace}{Local namespace}{Notes}
+  \lineiv{Module}%
+         {n.s. for this module}%
+         {same as global}{}
+  \lineiv{Script (file or command)}%
+         {n.s. for \module{__main__}}%
+         {same as global}{(1)}
+  \lineiv{Interactive command}%
+         {n.s. for \module{__main__}}%
+         {same as global}{}
+  \lineiv{Class definition}%
+         {global n.s. of containing block}%
+         {new n.s.}{}
+  \lineiv{Function body}%
+         {global n.s. of containing block}%
+         {new n.s.}{(2)}
+  \lineiv{String passed to \keyword{exec} statement}%
+         {global n.s. of containing block}%
+         {local n.s. of containing block}{(2), (3)}
+  \lineiv{String passed to \function{eval()}}%
+         {global n.s. of caller}%
+         {local n.s. of caller}{(2), (3)}
+  \lineiv{File read by \function{execfile()}}%
+         {global n.s. of caller}%
+         {local n.s. of caller}{(2), (3)}
+  \lineiv{Expression read by \function{input()}}%
+         {global n.s. of caller}%
+         {local n.s. of caller}{}
+\end{tableiv}
 \refbimodindex{__main__}
 
 Notes:
 
 \begin{description}
 
-\item[n.s.] means {\em namespace}
+\item[n.s.] means \emph{namespace}
 
 \item[(1)] The main module for a script is always called
 \module{__main__}; ``the filename don't enter into it.''
@@ -154,7 +161,7 @@ dictionary representing the current global and local namespace,
 respectively.  The effect of modifications to this dictionary on the
 namespace are undefined.%
 \footnote{The current implementations return the dictionary actually 
-used to implement the namespace, {\em except} for functions, where
+used to implement the namespace, \emph{except} for functions, where
 the optimizer may cause the local namespace to be implemented
 differently, and \function{locals()} returns a read-only dictionary.}
 
@@ -162,8 +169,8 @@ differently, and \function{locals()} returns a read-only dictionary.}
 
 Exceptions are a means of breaking out of the normal flow of control
 of a code block in order to handle errors or other exceptional
-conditions.  An exception is {\em raised} at the point where the error
-is detected; it may be {\em handled} by the surrounding code block or
+conditions.  An exception is \emph{raised} at the point where the error
+is detected; it may be \emph{handled} by the surrounding code block or
 by any code block that directly or indirectly invoked the code block
 where the error occurred.
 \index{exception}
