@@ -73,6 +73,7 @@ extern DL_IMPORT(PyObject *) PyExc_MemoryError;
 extern DL_IMPORT(PyObject *) PyExc_NameError;
 extern DL_IMPORT(PyObject *) PyExc_OverflowError;
 extern DL_IMPORT(PyObject *) PyExc_RuntimeError;
+extern DL_IMPORT(PyObject *) PyExc_NotImplementedError;
 extern DL_IMPORT(PyObject *) PyExc_SyntaxError;
 extern DL_IMPORT(PyObject *) PyExc_SystemError;
 extern DL_IMPORT(PyObject *) PyExc_SystemExit;
