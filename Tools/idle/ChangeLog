@@ -1,4 +1,23 @@
-Tue Feb 15 17:17:58 2000  Guido van Rossum  <guido@cnri.reston.va.us>
+Tue Feb 15 18:08:19 2000  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* NEWS.txt: Notice status bar and stack viewer.
+
+	* EditorWindow.py: Support for Moshe's status bar.
+
+	* MultiStatusBar.py: Status bar code -- by Moshe Zadka.
+
+	* OldStackViewer.py:
+	Adding the old stack viewer implementation back, for the debugger.
+
+	* StackViewer.py: New stack viewer, uses a tree widget.
+	(XXX: the debugger doesn't yet use this.)
+
+	* WindowList.py:
+	Correct a typo and remove an unqualified except that was hiding the error.
+
+	* ClassBrowser.py: Add an XXX comment about the ClassBrowser AIP.
+
+	* ChangeLog: Updated change log.
 
 	* NEWS.txt: News update.  Probably incomplete; what else is new?
 
