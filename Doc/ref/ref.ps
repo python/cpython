@@ -2162,7 +2162,7 @@ end
 %%EndProlog
 %%BeginSetup
 (5.0) FMVERSION
-1 1 0 0 612 792 0 1 26 FMDOCUMENT
+1 1 0 0 612 792 0 1 27 FMDOCUMENT
 0 0 /Helvetica-Bold FMFONTDEFINE
 1 0 /Times-Roman FMFONTDEFINE
 2 0 /Courier FMFONTDEFINE
@@ -4033,21 +4033,6 @@ FrameNoSep
 (digit:          "0"..."9") 99 213.33 T
 1 11 Q
 (Identifiers are unlimited in length. Case is significant.) 99 188.67 T
-0 12 Q
-(2.3.1) 99 163 T
-(Keywords) 144 163 T
-1 11 Q
--0.54 (The following identifiers are used as reserved words, or) 99 143.67 P
-3 F
--0.54 (keywords) 342.17 143.67 P
-1 F
--0.54 ( of the language, and cannot be used) 383.72 143.67 P
-(as ordinary identifiers. They must be spelled exactly as written here:) 99 130.67 T
-2 10 Q
-(and        elif       global     not        try) 99 112.33 T
-(break      else       if         or         while) 99 100.33 T
-(class      except     import     pass) 99 88.33 T
-(continue   finally    in         print) 99 76.33 T
 0 0 0 1 0 0 0 K
 FMENDPAGE
 %%EndPage: "5" 11
@@ -4077,180 +4062,210 @@ FrameNoSep
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-2 F
-(def        for        is         raise) 72 713.33 T
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-(del        from       lambda     return) 72 701.33 T
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
 0 12 Q
-(2.3.2) 72 676 T
+(2.3.1) 72 712 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(Reserved classes of identifiers) 117 676 T
+(Keywords) 117 712 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 1 11 Q
-(Certain classes of identifiers \050besides keywords\051 have special meanings. These are:) 72 650 T
+0.38 (The following identifiers are used as reserved words, or) 72 692.67 P
+3 F
+0.38 (keywords) 323.45 692.67 P
+1 F
+0.38 ( of the language, and cannot be used as) 364.99 692.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(\050XXX need section references here.\051) 72 502.67 T
+(ordinary identifiers. They must be spelled exactly as written here:) 72 679.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+2 10 Q
+(and       del       for       is        raise) 72 661.33 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(assert    elif      from      lambda    return) 72 649.33 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(break     else      global    not       try) 72 637.33 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(class     except    if        or        while) 72 625.33 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(continue  exec      import    pass) 72 613.33 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(def       finally   in        print) 72 601.33 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 12 Q
+(2.3.2) 72 576 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(Reserved classes of identifiers) 117 576 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+1 11 Q
+(Certain classes of identifiers \050besides keywords\051 have special meanings. These are:) 72 550 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(\050XXX need section references here.\051) 72 402.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0 14 Q
-(2.4) 72 475.67 T
+(2.4) 72 375.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(Literals) 108 475.67 T
+(Literals) 108 375.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 1 11 Q
-(Literals are notations for constant values of some built-in types) 72 450.67 T
+(Literals are notations for constant values of some built-in types) 72 350.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0 12 Q
-(2.4.1) 72 425 T
+(2.4.1) 72 325 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(String literals) 117 425 T
+(String literals) 117 325 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 1 11 Q
-(String literals are described by the following lexical definitions:) 72 405.67 T
+(String literals are described by the following lexical definitions:) 72 305.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 2 10 Q
-(stringliteral:   shortstring | longstring) 72 387.33 T
+(stringliteral:   shortstring | longstring) 72 287.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(shortstring:     "\325" shortstringitem* "\325" | \325"\325 shortstringitem* \325"\325) 72 375.33 T
+(shortstring:     "\325" shortstringitem* "\325" | \325"\325 shortstringitem* \325"\325) 72 275.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(longstring:      "\325\325\325" longstringitem* "\325\325\325" | \325"""\325 longstringitem* \325"""\325) 72 363.33 T
+(longstring:      "\325\325\325" longstringitem* "\325\325\325" | \325"""\325 longstringitem* \325"""\325) 72 263.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(shortstringitem: shortstringchar | escapeseq) 72 351.33 T
+(shortstringitem: shortstringchar | escapeseq) 72 251.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(longstringitem:  longstringchar | escapeseq) 72 339.33 T
+(longstringitem:  longstringchar | escapeseq) 72 239.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(shortstringchar: <any ASCII character except "\134" or newline or the quote>) 72 327.33 T
+(shortstringchar: <any ASCII character except "\134" or newline or the quote>) 72 227.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(longstringchar:  <any ASCII character except "\134">) 72 315.33 T
+(longstringchar:  <any ASCII character except "\134">) 72 215.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(escapeseq:       "\134" <any ASCII character>) 72 303.33 T
+(escapeseq:       "\134" <any ASCII character>) 72 203.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 1 11 Q
-0.21 (In plain English: String literals can be enclosed in single quotes \050\325\051 or double quotes \050"\051. They can also be) 72 278.67 P
+0.21 (In plain English: String literals can be enclosed in single quotes \050\325\051 or double quotes \050"\051. They can also be) 72 178.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.33 (enclosed in groups of three single or double quotes \050these are generally referred to as) 72 265.67 P
+-0.33 (enclosed in groups of three single or double quotes \050these are generally referred to as) 72 165.67 P
 3 F
--0.33 (triple-quoted strings) 443.77 265.67 P
+-0.33 (triple-quoted strings) 443.77 165.67 P
 1 F
--0.33 (\051.) 533.59 265.67 P
+-0.33 (\051.) 533.59 165.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.39 (The backslash \050\134\051 character is used to escape characters that otherwise have a special meaning, such as new-) 72 252.67 P
+-0.39 (The backslash \050\134\051 character is used to escape characters that otherwise have a special meaning, such as new-) 72 152.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(line, backslash itself, or the quote character.) 72 239.67 T
+(line, backslash itself, or the quote character.) 72 139.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-0.32 (In \322long strings\323 \050strings surrounded by sets of three quotes\051, unescaped newlines and quotes are allowed) 72 214.67 P
+0.32 (In \322long strings\323 \050strings surrounded by sets of three quotes\051, unescaped newlines and quotes are allowed) 72 114.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.03 (\050and are retained\051, except that three unescaped quotes in a row terminate the string. \050A \322quote\323 is the char-) 72 201.67 P
+-0.03 (\050and are retained\051, except that three unescaped quotes in a row terminate the string. \050A \322quote\323 is the char-) 72 101.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(acter used to open the string, i.e. either) 72 188.67 T
+(acter used to open the string, i.e. either) 72 88.67 T
 2 F
-(\325) 245.22 188.67 T
+(\325) 245.22 88.67 T
 1 F
-( or) 251.82 188.67 T
+( or) 251.82 88.67 T
 2 F
-(") 266.48 188.67 T
+(") 266.48 88.67 T
 1 F
-(.\051) 273.08 188.67 T
+(.\051) 273.08 88.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 4 12 Q
-(T) 132.71 626 T
-(able 1: Special Meanings of Identi\336ers) 139.61 626 T
+(T) 132.71 526 T
+(able 1: Special Meanings of Identi\336ers) 139.61 526 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 1 F
-(F) 95.09 600 T
-(orm) 101.58 600 T
+(F) 95.09 500 T
+(orm) 101.58 500 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(Meaning) 248.67 600 T
+(Meaning) 248.67 500 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 2 10 Q
-(  _*) 78 577.33 T
+(  _*) 78 477.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 1 12 Q
-(Not imported by) 150 576 T
+(Not imported by) 150 476 T
 2 F
-(from) 232.33 576 T
+(from) 232.33 476 T
 3 F
-( module) 261.13 576 T
+( module) 261.13 476 T
 2 F
-(import) 302.46 576 T
-(*) 348.66 576 T
+(import) 302.46 476 T
+(*) 348.66 476 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(  __*__) 78 554 T
+(  __*__) 78 454 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 1 F
-(System-de\336ned name) 150 554 T
+(System-de\336ned name) 150 454 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 2 F
-(  __*) 78 532 T
+(  __*) 78 432 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 1 F
-(Class-pri) 150 532 T
-(v) 193.03 532 T
-(ate name mangling) 198.73 532 T
+(Class-pri) 150 432 T
+(v) 193.03 432 T
+(ate name mangling) 198.73 432 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-72 615.75 72 524.25 2 L
+72 515.75 72 424.25 2 L
 V
 0.5 H
 0 Z
 N
-144 616.25 144 523.75 2 L
+144 516.25 144 423.75 2 L
 V
 N
-396 615.75 396 524.25 2 L
+396 515.75 396 424.25 2 L
 V
 N
-71.75 616 396.25 616 2 L
+71.75 516 396.25 516 2 L
 V
 N
-72.25 591.25 395.75 591.25 2 L
+72.25 491.25 395.75 491.25 2 L
 V
 N
-72.25 588.75 395.75 588.75 2 L
+72.25 488.75 395.75 488.75 2 L
 V
 N
-71.75 568 396.25 568 2 L
+71.75 468 396.25 468 2 L
 V
 N
-71.75 546 396.25 546 2 L
+71.75 446 396.25 446 2 L
 V
 N
-71.75 524 396.25 524 2 L
+71.75 424 396.25 424 2 L
 V
 N
 0 0 0 1 0 0 0 K
@@ -8502,14 +8517,14 @@ FrameNoSep
 (simple_slicing:   primary "[" short_slice "]") 99 496.33 T
 (extended_slicing: primary "[" slice_list "]") 99 484.33 T
 (slice_list:       slice_item \050"," slice_item\051* [","]) 99 472.33 T
-(slice_item:       expression | proper_slice | ellipses) 99 460.33 T
+(slice_item:       expression | proper_slice | ellipsis) 99 460.33 T
 (proper_slice:     short_slice | long_slice) 99 448.33 T
 (short_slice:      [lower_bound] ":" [upper_bound]) 99 436.33 T
 (long_slice:       short_slice ":" [stride]) 99 424.33 T
 (lower_bound:      expression) 99 412.33 T
 (upper_bound:      expression) 99 400.33 T
 (stride:           expression) 99 388.33 T
-(ellipses:         "...") 99 376.33 T
+(ellipsis:         "...") 99 376.33 T
 1 11 Q
 -0.09 (There\325s an ambiguity in the formal syntax here: anything that looks like an expression list also looks) 99 351.67 P
 0.3 (like a slice list, so any subscription can be interpreted as a slicing. Rather than further complicating) 99 338.67 P
@@ -8559,30 +8574,31 @@ FrameNoSep
 -0.01 (and it is indexed with a key that is constructed from the slice list, as follows. If the slice list contains) 99 158.67 P
 -0.42 (at least one comma, the key is a tuple containing the conversion of the slice items; otherwise, the con-) 99 145.67 P
 -0.39 (version of the lone slice item is the key. The conversion of a slice item that is an expression is that ex-) 99 132.67 P
-0.32 (pression. The conversion of an ellipses slice item is the built-in) 99 119.67 P
+-0.38 (pression. The conversion of an ellipsis slice item is the built-in) 99 119.67 P
 2 F
-0.76 (Ellipses) 382.99 119.67 P
+-0.9 (Ellipsis) 373.53 119.67 P
 1 F
-0.32 ( object. The conversion) 435.79 119.67 P
--0.22 (of a proper slice is a slice object \050see page) 99 106.67 P
--0.22 (17\051 whose) 285.15 106.67 P
+-0.38 ( object. The conversion of) 426.33 119.67 P
+-0.18 (a proper slice is a slice object \050see page) 99 106.67 P
+-0.18 (17\051 whose) 273.78 106.67 P
 2 F
--0.54 (start) 332.97 106.67 P
+-0.44 (start) 321.68 106.67 P
 1 F
--0.22 (,) 365.97 106.67 P
+-0.18 (,) 354.68 106.67 P
 2 F
--0.54 (stop) 371.24 106.67 P
+-0.44 (stop) 360 106.67 P
 1 F
--0.22 ( and) 397.64 106.67 P
+-0.18 ( and) 386.4 106.67 P
 2 F
--0.54 (step) 418.58 106.67 P
+-0.44 (step) 407.42 106.67 P
 1 F
--0.22 ( attributes are the val-) 444.98 106.67 P
--0.31 (ues of the expressions given as lower bound, upper bound and stride, respectively, substituting) 99 93.67 P
+-0.18 ( attributes are the values) 433.82 106.67 P
+-0.17 (of the expressions given as lower bound, upper bound and stride, respectively, substituting) 99 93.67 P
 2 F
--0.73 (None) 513.6 93.67 P
+-0.42 (None) 498.2 93.67 P
 1 F
-(for missing expressions.) 99 80.67 T
+-0.17 ( for) 524.6 93.67 P
+(missing expressions.) 99 80.67 T
 0 0 0 1 0 0 0 K
 FMENDPAGE
 %%EndPage: "30" 36
@@ -9993,66 +10009,118 @@ FrameNoSep
 (a single line separated by semicolons. The syntax for simple statements is:) 99 659.67 T
 2 10 Q
 (simple_stmt:    expression_stmt) 99 641.33 T
-(              | assignment_stmt) 99 629.33 T
-(              | pass_stmt) 99 617.33 T
-(              | del_stmt) 99 605.33 T
-(              | print_stmt) 99 593.33 T
-(              | return_stmt) 99 581.33 T
-(              | raise_stmt) 99 569.33 T
-(              | break_stmt) 99 557.33 T
-(              | continue_stmt) 99 545.33 T
-(              | import_stmt) 99 533.33 T
-(              | global_stmt) 99 521.33 T
-(              | exec_stmt) 99 509.33 T
+(              | assert_stmt) 99 629.33 T
+(              | assignment_stmt) 99 617.33 T
+(              | pass_stmt) 99 605.33 T
+(              | del_stmt) 99 593.33 T
+(              | print_stmt) 99 581.33 T
+(              | return_stmt) 99 569.33 T
+(              | raise_stmt) 99 557.33 T
+(              | break_stmt) 99 545.33 T
+(              | continue_stmt) 99 533.33 T
+(              | import_stmt) 99 521.33 T
+(              | global_stmt) 99 509.33 T
+(              | exec_stmt) 99 497.33 T
 0 14 Q
-(6.1) 99 482.67 T
-(Expression statements) 135 482.67 T
+(6.1) 99 470.67 T
+(Expression statements) 135 470.67 T
 1 11 Q
-0.58 (Expression statements are used \050mostly interactively\051 to compute and write a value, or \050usually\051 to) 99 457.67 P
--0.01 (call a procedure \050a function that returns no meaningful result; in Python, procedures return the value) 99 444.67 P
+0.58 (Expression statements are used \050mostly interactively\051 to compute and write a value, or \050usually\051 to) 99 445.67 P
+-0.01 (call a procedure \050a function that returns no meaningful result; in Python, procedures return the value) 99 432.67 P
 2 F
-0.9 (None) 99 431.67 P
+0.9 (None) 99 419.67 P
 1 F
-0.38 (\051. Other uses of expression statements are allowed and occasionally useful. The syntax for an) 125.4 431.67 P
-(expression statement is:) 99 418.67 T
+0.38 (\051. Other uses of expression statements are allowed and occasionally useful. The syntax for an) 125.4 419.67 P
+(expression statement is:) 99 406.67 T
 2 10 Q
-(expression_stmt: expression_list) 99 400.33 T
+(expression_stmt: expression_list) 99 388.33 T
 1 11 Q
--0.16 (An expression statement evaluates the expression list \050which may be a single expression\051. In interac-) 99 375.67 P
--0.35 (tive mode, if the value is not) 99 362.67 P
+-0.16 (An expression statement evaluates the expression list \050which may be a single expression\051. In interac-) 99 363.67 P
+-0.35 (tive mode, if the value is not) 99 350.67 P
 2 F
--0.84 (None) 224.89 362.67 P
+-0.84 (None) 224.89 350.67 P
 1 F
--0.35 (, it is converted to a string using the built-in) 251.29 362.67 P
+-0.35 (, it is converted to a string using the built-in) 251.29 350.67 P
 2 F
--0.84 (repr\050\051) 443.05 362.67 P
+-0.84 (repr\050\051) 443.05 350.67 P
 1 F
--0.35 ( function and) 482.65 362.67 P
-0.28 (the resulting string is written to standard output \050see \322The print statement\323 on page) 99 349.67 P
-0.28 (41\051 on a line by) 469.84 349.67 P
--0.24 (itself. \050Expression statements yielding) 99 336.67 P
+-0.35 ( function and) 482.65 350.67 P
+0.28 (the resulting string is written to standard output \050see \322The print statement\323 on page) 99 337.67 P
+0.28 (41\051 on a line by) 469.84 337.67 P
+-0.24 (itself. \050Expression statements yielding) 99 324.67 P
 2 F
--0.58 (None) 268.83 336.67 P
+-0.58 (None) 268.83 324.67 P
 1 F
--0.24 ( are not written, so that procedure calls do not cause any) 295.23 336.67 P
-(output.\051) 99 323.67 T
+-0.24 ( are not written, so that procedure calls do not cause any) 295.23 324.67 P
+(output.\051) 99 311.67 T
 0 14 Q
-(6.2) 99 296.67 T
-(Assignment statements) 135 296.67 T
+(6.2) 99 284.67 T
+(Assert statements) 135 284.67 T
 1 11 Q
--0.09 (Assignment statements are used to \050re\051bind names to values and to modify attributes or items of mu-) 99 271.67 P
-(table objects:) 99 258.67 T
+(Assert statements are a convenient way to insert) 99 259.67 T
+3 F
+(debugging assertions) 313.46 259.67 T
+1 F
+( into a program:) 407.26 259.67 T
 2 10 Q
-(assignment_stmt: \050target_list "="\051+ expression_list) 99 240.33 T
-(target_list:     target \050"," target\051* [","]) 99 228.33 T
-(target:          identifier | "\050" target_list "\051" | "[" target_list "]") 99 216.33 T
-(               | attributeref | subscription | slicing) 99 204.33 T
+(assert_statement: "assert" expression ["," expression]) 99 241.33 T
 1 11 Q
-(\050See \322Primaries\323 on page) 99 179.67 T
-(29 for the syntax definitions for the last three symbols.\051) 213.25 179.67 T
--0.14 (An assignment statement evaluates the expression list \050remember that this can be a single expression) 99 154.67 P
-0.31 (or a comma-separated list, the latter yielding a tuple\051 and assigns the single resulting object to each) 99 141.67 P
-(of the target lists, from left to right.) 99 128.67 T
+(The simple form, \322) 99 216.67 T
+2 F
+(assert) 182.71 216.67 T
+6 F
+(expression) 228.91 216.67 T
+1 F
+(\323, is equivalent to) 294.91 216.67 T
+2 10 Q
+(if __debug__:) 99 198.33 T
+(   if not) 99 186.33 T
+6 F
+(expression) 159 186.33 T
+2 F
+(: raise AssertionError) 219 186.33 T
+1 11 Q
+(The extended form, \322) 99 161.67 T
+2 F
+(assert) 193.08 161.67 T
+6 F
+(expression1, expression2) 239.28 161.67 T
+1 F
+(\323, is equivalent to) 397.68 161.67 T
+2 10 Q
+(if __debug__:) 99 143.33 T
+(   if not) 99 130.67 T
+6 F
+(expression1) 159 130.67 T
+2 F
+(: raise AssertionError,) 225 130.67 T
+6 11 Q
+(expression2) 369 130.67 T
+1 F
+-0.34 (These equivalences assume that) 99 105.67 P
+2 F
+-0.82 (__debug__) 240.6 105.67 P
+1 F
+-0.34 ( and) 300 105.67 P
+2 F
+-0.82 (AssertionError) 320.7 105.67 P
+1 F
+-0.34 ( refer to the built-in variables) 413.1 105.67 P
+-0.46 (with those names. In the current implementation, the built-in variable) 99 92.67 P
+2 F
+-1.1 (__debug__) 402.39 92.67 P
+1 F
+-0.46 ( is 1 under normal) 461.79 92.67 P
+-0.2 (circumstances, 0 when optimization is requested \050command line option) 99 79.67 P
+2 F
+-0.49 (-O) 413.08 79.67 P
+1 F
+-0.2 (\051. The current code gener-) 426.28 79.67 P
+(ator omits no code for an) 99 66.67 T
+2 F
+(assert) 212.04 66.67 T
+1 F
+( statement when optimization is requested at compile time.) 251.64 66.67 T
 0 0 0 1 0 0 0 K
 FMENDPAGE
 %%EndPage: "39" 45
@@ -10082,178 +10150,169 @@ FrameNoSep
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
+0 14 Q
+(6.3) 72 710.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(Assignment statements) 108 710.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
 1 11 Q
--0.07 (Assignment is defined recursively depending on the form of the target \050list\051. When a target is part of a mu-) 72 712.67 P
+0.49 (Assignment statements are used to \050re\051bind names to values and to modify attributes or items of mutable) 72 685.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.18 (table object \050an attribute reference, subscription or slicing\051, the mutable object must ultimately perform the) 72 699.67 P
+(objects:) 72 672.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.27 (assignment and decide about its validity, and may raise an exception if the assignment is unacceptable. The) 72 686.67 P
+2 10 Q
+(assignment_stmt: \050target_list "="\051+ expression_list) 72 654.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-0.27 (rules observed by various types and the exceptions raised are given with the definition of the object types) 72 673.67 P
+(target_list:     target \050"," target\051* [","]) 72 642.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(\050See \322The standard type hierarchy\323 on page) 72 660.67 T
-(12.\051) 267.18 660.67 T
+(target:          identifier | "\050" target_list "\051" | "[" target_list "]") 72 630.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(Assignment of an object to a target list is recursively defined as follows.) 72 635.67 T
+(               | attributeref | subscription | slicing) 72 618.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(\245) 72 616.67 T
+1 11 Q
+(\050See \322Primaries\323 on page) 72 593.67 T
+(29 for the syntax definitions for the last three symbols.\051) 186.25 593.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(If the target list is a single target: the object is assigned to that target.) 86.4 616.67 T
+0.34 (An assignment statement evaluates the expression list \050remember that this can be a single expression or a) 72 568.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(\245) 72 597.67 T
+-0.25 (comma-separated list, the latter yielding a tuple\051 and assigns the single resulting object to each of the target) 72 555.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.14 (If the target list is a comma-separated list of targets: the object must be a tuple with the same number of) 86.4 597.67 P
+(lists, from left to right.) 72 542.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.62 (items as there are targets in the target list, and the items are assigned, from left to right, to the correspond-) 86.4 584.67 P
+-0.07 (Assignment is defined recursively depending on the form of the target \050list\051. When a target is part of a mu-) 72 517.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(ing targets.) 86.4 571.67 T
+-0.18 (table object \050an attribute reference, subscription or slicing\051, the mutable object must ultimately perform the) 72 504.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(Assignment of an object to a single target is recursively defined as follows.) 72 546.67 T
+-0.27 (assignment and decide about its validity, and may raise an exception if the assignment is unacceptable. The) 72 491.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(\245) 72 527.67 T
+0.27 (rules observed by various types and the exceptions raised are given with the definition of the object types) 72 478.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(If the target is an identifier \050name\051:) 86.4 527.67 T
+(\050See \322The standard type hierarchy\323 on page) 72 465.67 T
+(12.\051) 267.18 465.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(\245) 100.8 508.67 T
+(Assignment of an object to a target list is recursively defined as follows.) 72 440.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-0.19 (If the name does not occur in a) 115.2 508.67 P
+(\245) 72 421.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(If the target list is a single target: the object is assigned to that target.) 86.4 421.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(\245) 72 402.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+-0.14 (If the target list is a comma-separated list of targets: the object must be a tuple with the same number of) 86.4 402.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+-0.62 (items as there are targets in the target list, and the items are assigned, from left to right, to the correspond-) 86.4 389.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(ing targets.) 86.4 376.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(Assignment of an object to a single target is recursively defined as follows.) 72 351.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(\245) 72 332.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(If the target is an identifier \050name\051:) 86.4 332.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(\245) 100.8 313.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0.19 (If the name does not occur in a) 115.2 313.67 P
 2 F
-0.44 (global) 255.37 508.67 P
+0.44 (global) 255.37 313.67 P
 1 F
-0.19 ( statement in the current code block: the name is bound) 294.96 508.67 P
+0.19 ( statement in the current code block: the name is bound) 294.96 313.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(to the object in the current local name space.) 115.2 495.67 T
+(to the object in the current local name space.) 115.2 300.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(\245) 100.8 476.67 T
+(\245) 100.8 281.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(Otherwise: the name is bound to the object in the current global name space.) 115.2 476.67 T
+(Otherwise: the name is bound to the object in the current global name space.) 115.2 281.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.58 (The name is rebound if it was already bound. This can cause the reference count for the object previously) 86.4 459.67 P
+-0.58 (The name is rebound if it was already bound. This can cause the reference count for the object previously) 86.4 264.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(bound to the name to reach zero, causing the object to be deallocated and its) 86.4 446.67 T
+(bound to the name to reach zero, causing the object to be deallocated and its) 86.4 251.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(\245) 72 427.67 T
+(\245) 72 232.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-0.16 (If the target is a target list enclosed in parentheses: the object is assigned to that target list as described) 86.4 427.67 P
+0.16 (If the target is a target list enclosed in parentheses: the object is assigned to that target list as described) 86.4 232.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(above.) 86.4 414.67 T
+(above.) 86.4 219.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(\245) 72 395.67 T
+(\245) 72 200.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.24 (If the target is a target list enclosed in square brackets: the object must be a list with the same number of) 86.4 395.67 P
+-0.24 (If the target is a target list enclosed in square brackets: the object must be a list with the same number of) 86.4 200.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.38 (items as the target list contains targets, and its items are assigned, from left to right, to the corresponding) 86.4 382.67 P
+-0.38 (items as the target list contains targets, and its items are assigned, from left to right, to the corresponding) 86.4 187.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(targets.) 86.4 369.67 T
+(targets.) 86.4 174.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(\245) 72 350.67 T
+(\245) 72 155.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.56 (If the target is an attribute reference: The primary expression in the reference is evaluated. It should yield) 86.4 350.67 P
+-0.56 (If the target is an attribute reference: The primary expression in the reference is evaluated. It should yield) 86.4 155.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-0.7 (an object with assignable attributes; if this is not the case,) 86.4 337.67 P
+0.7 (an object with assignable attributes; if this is not the case,) 86.4 142.67 P
 2 F
-1.69 (TypeError) 350.19 337.67 P
+1.69 (TypeError) 350.19 142.67 P
 1 F
-0.7 ( is raised. That object is then) 409.59 337.67 P
+0.7 ( is raised. That object is then) 409.59 142.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.34 (asked to assign the assigned object to the given attribute; if it cannot perform the assignment, it raises an) 86.4 324.67 P
+-0.34 (asked to assign the assigned object to the given attribute; if it cannot perform the assignment, it raises an) 86.4 129.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(exception \050usually but not necessarily) 86.4 311.67 T
+(exception \050usually but not necessarily) 86.4 116.67 T
 2 F
-(AttributeError) 255.35 311.67 T
+(AttributeError) 255.35 116.67 T
 1 F
-(\051.) 347.75 311.67 T
+(\051.) 347.75 116.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(\245) 72 292.67 T
+(\245) 72 97.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.31 (If the target is a subscription: The primary expression in the reference is evaluated. It should yield either) 86.4 292.67 P
+-0.31 (If the target is a subscription: The primary expression in the reference is evaluated. It should yield either) 86.4 97.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.25 (a mutable sequence \050list\051 object or a mapping \050dictionary\051 object. Next, the subscript expression is eval-) 86.4 279.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-(uated.) 86.4 266.67 T
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
--0.11 (If the primary is a mutable sequence object \050a list\051, the subscript must yield a plain integer. If it is nega-) 86.4 249.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
--0.26 (tive, the sequence\325s length is added to it. The resulting value must be a nonnegative integer less than the) 86.4 236.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-0.01 (sequence\325s length, and the sequence is asked to assign the assigned object to its item with that index. If) 86.4 223.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
--0.39 (the index is out of range,) 86.4 210.67 P
-2 F
--0.93 (IndexError) 196.2 210.67 P
-1 F
--0.39 ( is raised \050assignment to a subscripted sequence cannot add new) 262.2 210.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-(items to a list\051.) 86.4 197.67 T
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
--0.28 (If the primary is a mapping \050dictionary\051 object, the subscript must have a type compatible with the map-) 86.4 180.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-0.27 (ping\325s key type, and the mapping is then asked to create a key/datum pair which maps the subscript to) 86.4 167.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
--0.15 (the assigned object. This can either replace an existing key/value pair with the same key value, or insert) 86.4 154.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-(a new key/value pair \050if no key with the same value existed\051.) 86.4 141.67 T
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-(\245) 72 122.67 T
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-0.06 (If the target is a slicing: The primary expression in the reference is evaluated. It should yield a mutable) 86.4 122.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
--0.31 (sequence object \050e.g. a list\051. The assigned object should be a sequence object of the same type. Next, the) 86.4 109.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
--0.04 (lower and upper bound expressions are evaluated, insofar they are present; defaults are zero and the se-) 86.4 96.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-1.16 (quence\325s length. The bounds should evaluate to \050small\051 integers. If either bound is negative, the se-) 86.4 83.67 P
+-0.25 (a mutable sequence \050list\051 object or a mapping \050dictionary\051 object. Next, the subscript expression is eval-) 86.4 84.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
@@ -10293,92 +10352,86 @@ FrameNoSep
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 1 11 Q
-1.71 (quence\325s length is added to it. The resulting bounds are clipped to lie between zero and the) 113.4 712.67 P
-0.95 (sequence\325s length, inclusive. Finally, the sequence object is asked to replace the slice with the) 113.4 699.67 P
--0.15 (items of the assigned sequence. The length of the slice may be different from the length of the as-) 113.4 686.67 P
-(signed sequence, thus changing the length of the target sequence, if the object allows it.) 113.4 673.67 T
-0.15 (\050In the current implementation, the syntax for targets is taken to be the same as for expressions, and) 99 648.67 P
-(invalid syntax is rejected during the code generation phase, causing less detailed error messages.\051) 99 635.67 T
-0.14 (WARNING: Although the definition of assignment implies that overlaps between the left-hand side) 99 610.67 P
--0.28 (and the right-hand side are \324safe\325 \050e.g. \324\324) 99 597.67 P
+(uated.) 113.4 712.67 T
+-0.11 (If the primary is a mutable sequence object \050a list\051, the subscript must yield a plain integer. If it is) 113.4 695.67 P
+0.31 (negative, the sequence\325s length is added to it. The resulting value must be a nonnegative integer) 113.4 682.67 P
+-0.14 (less than the sequence\325s length, and the sequence is asked to assign the assigned object to its item) 113.4 669.67 P
+0 (with that index. If the index is out of range,) 113.4 656.67 P
 2 F
--0.68 (a,) 274.49 597.67 P
--0.68 (b) 290.16 597.67 P
--0.68 (=) 299.23 597.67 P
--0.68 (b,) 308.3 597.67 P
--0.68 (a) 323.96 597.67 P
+0.01 (IndexError) 307.15 656.67 P
 1 F
--0.28 (\325\325 swaps two variables\051, overlaps) 330.56 597.67 P
+0 ( is raised \050assignment to a subscripted) 373.15 656.67 P
+(sequence cannot add new items to a list\051.) 113.4 643.67 T
+-0.4 (If the primary is a mapping \050dictionary\051 object, the subscript must have a type compatible with the) 113.4 626.67 P
+-0.53 (mapping\325s key type, and the mapping is then asked to create a key/datum pair which maps the sub-) 113.4 613.67 P
+0.03 (script to the assigned object. This can either replace an existing key/value pair with the same key) 113.4 600.67 P
+(value, or insert a new key/value pair \050if no key with the same value existed\051.) 113.4 587.67 T
+(\245) 99 568.67 T
+-0.45 (If the target is a slicing: The primary expression in the reference is evaluated. It should yield a mu-) 113.4 568.67 P
+0.68 (table sequence object \050e.g. a list\051. The assigned object should be a sequence object of the same) 113.4 555.67 P
+-0.49 (type. Next, the lower and upper bound expressions are evaluated, insofar they are present; defaults) 113.4 542.67 P
+-0.46 (are zero and the sequence\325s length. The bounds should evaluate to \050small\051 integers. If either bound) 113.4 529.67 P
+0.35 (is negative, the sequence\325s length is added to it. The resulting bounds are clipped to lie between) 113.4 516.67 P
+-0.32 (zero and the sequence\325s length, inclusive. Finally, the sequence object is asked to replace the slice) 113.4 503.67 P
+0.15 (with the items of the assigned sequence. The length of the slice may be different from the length) 113.4 490.67 P
+(of the assigned sequence, thus changing the length of the target sequence, if the object allows it.) 113.4 477.67 T
+0.15 (\050In the current implementation, the syntax for targets is taken to be the same as for expressions, and) 99 452.67 P
+(invalid syntax is rejected during the code generation phase, causing less detailed error messages.\051) 99 439.67 T
+0.14 (WARNING: Although the definition of assignment implies that overlaps between the left-hand side) 99 414.67 P
+-0.28 (and the right-hand side are \324safe\325 \050e.g. \324\324) 99 401.67 P
+2 F
+-0.68 (a,) 274.49 401.67 P
+-0.68 (b) 290.16 401.67 P
+-0.68 (=) 299.23 401.67 P
+-0.68 (b,) 308.3 401.67 P
+-0.68 (a) 323.96 401.67 P
+1 F
+-0.28 (\325\325 swaps two variables\051, overlaps) 330.56 401.67 P
 3 F
--0.28 (within) 477.01 597.67 P
+-0.28 (within) 477.01 401.67 P
 1 F
--0.28 ( the col-) 504.52 597.67 P
--0.19 (lection of assigned-to variables are not safe! For instance, the following program prints \324\324) 99 584.67 P
+-0.28 ( the col-) 504.52 401.67 P
+-0.19 (lection of assigned-to variables are not safe! For instance, the following program prints \324\324) 99 388.67 P
 2 F
--0.46 ([0,) 490.02 584.67 P
--0.46 (2]) 516.42 584.67 P
+-0.46 ([0,) 490.02 388.67 P
+-0.46 (2]) 516.42 388.67 P
 1 F
--0.19 (\325\325:) 529.62 584.67 P
+-0.19 (\325\325:) 529.62 388.67 P
 2 10 Q
-(x = [0, 1]) 99 566.33 T
-(i = 0) 99 554.33 T
-(i, x[i] = 1, 2) 99 542.33 T
-(print x) 99 530.33 T
+(x = [0, 1]) 99 370.33 T
+(i = 0) 99 358.33 T
+(i, x[i] = 1, 2) 99 346.33 T
+(print x) 99 334.33 T
 0 14 Q
-(6.3) 99 503.67 T
-(The) 135 503.67 T
+(6.4) 99 307.67 T
+(The) 135 307.67 T
 2 F
-(pass) 163.78 503.67 T
+(pass) 163.78 307.67 T
 0 F
-( statement) 197.38 503.67 T
+( statement) 197.38 307.67 T
 2 10 Q
-(pass_stmt:      "pass") 99 479.33 T
+(pass_stmt:      "pass") 99 283.33 T
 2 11 Q
-0.21 (pass) 99 454.67 P
+0.21 (pass) 99 258.67 P
 1 F
-0.09 ( is a null operation \321 when it is executed, nothing happens. It is useful as a placeholder when) 125.4 454.67 P
-(a statement is required syntactically, but no code needs to be executed, for example:) 99 441.67 T
+0.09 ( is a null operation \321 when it is executed, nothing happens. It is useful as a placeholder when) 125.4 258.67 P
+(a statement is required syntactically, but no code needs to be executed, for example:) 99 245.67 T
 2 10 Q
-(def f\050arg\051: pass    # a function that does nothing \050yet\051) 99 423.33 T
-(class C: pass       # a class with no methods \050yet\051) 99 411.33 T
+(def f\050arg\051: pass    # a function that does nothing \050yet\051) 99 227.33 T
+(class C: pass       # a class with no methods \050yet\051) 99 215.33 T
 0 14 Q
-(6.4) 99 384.67 T
-(The) 135 384.67 T
+(6.5) 99 188.67 T
+(The) 135 188.67 T
 2 F
-(del) 163.78 384.67 T
+(del) 163.78 188.67 T
 0 F
-( statement) 188.98 384.67 T
+( statement) 188.98 188.67 T
 2 10 Q
-(del_stmt:       "del" target_list) 99 360.33 T
+(del_stmt:       "del" target_list) 99 164.33 T
 1 11 Q
-0.19 (Deletion is recursively defined very similar to the way assignment is defined. Rather that spelling it) 99 335.67 P
-(out in full details, here are some hints.) 99 322.67 T
-(Deletion of a target list recursively deletes each target, from left to right.) 99 297.67 T
-0.41 0.09 (Deletion of a name removes the binding of that name \050which must exist\051 from the local or global) 99 272.67 B
--0 (name space, depending on whether the name occurs in a) 99 259.67 P
-2 F
--0 (global) 349.18 259.67 P
-1 F
--0 ( statement in the same code block.) 388.78 259.67 P
-0.32 (Deletion of attribute references, subscriptions and slicings is passed to the primary object involved;) 99 234.67 P
--0.54 (deletion of a slicing is in general equivalent to assignment of an empty slice of the right type \050but even) 99 221.67 P
-(this is determined by the sliced object\051.) 99 208.67 T
-0 14 Q
-(6.5) 99 181.67 T
-(The) 135 181.67 T
-2 F
-(print) 163.78 181.67 T
-0 F
-( statement) 205.78 181.67 T
-2 10 Q
-(print_stmt:     "print" [ expression \050"," expression\051* [","] ]) 99 157.33 T
-2 11 Q
-0.81 (print) 99 132.67 P
-1 F
-0.34 ( evaluates each expression in turn and writes the resulting object to standard output \050see be-) 132 132.67 P
--0.02 (low\051. If an object is not a string, it is first converted to a string using the rules for string conversions.) 99 119.67 P
-0.32 (The \050resulting or original\051 string is then written. A space is written before each object is \050converted) 99 106.67 P
-0.23 (and\051 written, unless the output system believes it is positioned at the beginning of a line. This is the) 99 93.67 P
+0.19 (Deletion is recursively defined very similar to the way assignment is defined. Rather that spelling it) 99 139.67 P
+(out in full details, here are some hints.) 99 126.67 T
+(Deletion of a target list recursively deletes each target, from left to right.) 99 101.67 T
 0 0 0 1 0 0 0 K
 FMENDPAGE
 %%EndPage: "41" 47
@@ -10409,237 +10462,202 @@ FrameNoSep
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 1 11 Q
--0.27 (case: \0501\051 when no characters have yet been written to standard output; or \0502\051 when the last character written) 72 712.67 P
+0.41 0.08 (Deletion of a name removes the binding of that name \050which must exist\051 from the local or global name) 72 712.67 B
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-0.41 0.02 (to standard output is) 72 699.67 B
+(space, depending on whether the name occurs in a) 72 699.67 T
 2 F
-0.99 0.02 (\134n) 166.45 699.67 B
+(global) 295.61 699.67 T
 1 F
-0.41 0.02 (; or \0503\051 when the last write operation on standard output was not a) 179.7 699.67 B
-2 F
-0.99 0.02 (print) 479.77 699.67 B
-1 F
-0.41 0.02 ( state-) 512.89 699.67 B
+( statement in the same code block.) 335.21 699.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(ment. \050In some cases it may be functional to write an empty string to standard output for this reason.\051) 72 686.67 T
+-0.51 (Deletion of attribute references, subscriptions and slicings is passed to the primary object involved; deletion) 72 674.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-0.36 (A) 72 661.67 P
-2 F
-0.87 ("\134n") 83.05 661.67 P
-1 F
-0.36 ( character is written at the end, unless the) 109.45 661.67 P
-2 F
-0.87 (print) 297.21 661.67 P
-1 F
-0.36 ( statement ends with a comma. This is the only) 330.21 661.67 P
+-0.1 (of a slicing is in general equivalent to assignment of an empty slice of the right type \050but even this is deter-) 72 661.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.54 (action if the statement contains just the keyword) 72 648.67 P
-2 F
--1.3 (print) 283.36 648.67 P
-1 F
--0.54 (. Standard output is defined as the file object named) 316.36 648.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-2 F
--0.69 (stdout) 72 635.67 P
-1 F
--0.29 (in the built-in module) 117.5 635.67 P
-2 F
--0.69 (sys) 214.74 635.67 P
-1 F
--0.29 (. If no such object exists, or if it is not a writable file, a) 234.54 635.67 P
-2 F
--0.69 (RuntimeEr-) 474 635.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-0.99 0 (ror) 72 622.67 B
-1 F
-0.41 0 ( exception is raised. \050The original implementation attempts to write to the system\325s original standard) 91.81 622.67 B
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-(output instead, but this is not safe, and should be fixed.\051) 72 609.67 T
+(mined by the sliced object\051.) 72 648.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0 14 Q
-(6.6) 72 582.67 T
+(6.6) 72 621.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(The) 108 582.67 T
+(The) 108 621.67 T
 2 F
-(return) 136.78 582.67 T
+(print) 136.78 621.67 T
 0 F
-( statement) 187.18 582.67 T
+( statement) 178.78 621.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 2 10 Q
-(return_stmt:    "return" [expression_list]) 72 558.33 T
+(print_stmt:     "print" [ expression \050"," expression\051* [","] ]) 72 597.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 2 11 Q
-(return) 72 533.67 T
+0.41 (print) 72 572.67 P
 1 F
-( may only occur syntactically nested in a function definition, not within a nested class definition.) 111.6 533.67 T
+0.17 ( evaluates each expression in turn and writes the resulting object to standard output \050see below\051. If) 105 572.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(If an expression list is present, it is evaluated, else) 72 508.67 T
+-0.13 (an object is not a string, it is first converted to a string using the rules for string conversions. The \050resulting) 72 559.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+-0.48 (or original\051 string is then written. A space is written before each object is \050converted and\051 written, unless the) 72 546.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0.41 0.01 (output system believes it is positioned at the beginning of a line. This is the case: \0501\051 when no characters) 72 533.67 B
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+-0 (have yet been written to standard output; or \0502\051 when the last character written to standard output is) 72 520.67 P
 2 F
-(None) 295.02 508.67 T
+-0.01 (\134n) 511.83 520.67 P
 1 F
-(is substituted.) 328.02 508.67 T
+-0 (; or) 525.03 520.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0.06 (\0503\051 when the last write operation on standard output was not a) 72 507.67 P
+2 F
+0.15 (print) 347.7 507.67 P
+1 F
+0.06 ( statement. \050In some cases it may be) 380.7 507.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(functional to write an empty string to standard output for this reason.\051) 72 494.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0.36 (A) 72 469.67 P
+2 F
+0.87 ("\134n") 83.05 469.67 P
+1 F
+0.36 ( character is written at the end, unless the) 109.45 469.67 P
+2 F
+0.87 (print) 297.21 469.67 P
+1 F
+0.36 ( statement ends with a comma. This is the only) 330.21 469.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+-0.54 (action if the statement contains just the keyword) 72 456.67 P
+2 F
+-1.3 (print) 283.36 456.67 P
+1 F
+-0.54 (. Standard output is defined as the file object named) 316.36 456.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 2 F
-(return) 72 483.67 T
+-0.69 (stdout) 72 443.67 P
 1 F
-( leaves the current function call with the expression list \050or) 111.6 483.67 T
+-0.29 (in the built-in module) 117.5 443.67 P
 2 F
-(None) 372.81 483.67 T
+-0.69 (sys) 214.74 443.67 P
 1 F
-(\051 as return value.) 399.21 483.67 T
+-0.29 (. If no such object exists, or if it is not a writable file, a) 234.54 443.67 P
+2 F
+-0.69 (RuntimeEr-) 474 443.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-0.36 (When) 72 458.67 P
-2 F
-0.87 (return) 101.38 458.67 P
+0.99 0 (ror) 72 430.67 B
 1 F
-0.36 ( passes control out of a) 140.98 458.67 P
-2 F
-0.87 (try) 247.04 458.67 P
-1 F
-0.36 ( statement with a) 266.84 458.67 P
-2 F
-0.87 (finally) 345.9 458.67 P
-1 F
-0.36 ( clause, that finally clause is exe-) 392.1 458.67 P
+0.41 0 ( exception is raised. \050The original implementation attempts to write to the system\325s original standard) 91.81 430.67 B
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(cuted before really leaving the function.) 72 445.67 T
+(output instead, but this is not safe, and should be fixed.\051) 72 417.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0 14 Q
-(6.7) 72 418.67 T
+(6.7) 72 390.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(The) 108 418.67 T
+(The) 108 390.67 T
 2 F
-(raise) 136.78 418.67 T
+(return) 136.78 390.67 T
 0 F
-( statement) 178.78 418.67 T
+( statement) 187.18 390.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 2 10 Q
-(raise_stmt:     "raise" expression ["," expression ["," expression]]) 72 394.33 T
+(return_stmt:    "return" [expression_list]) 72 366.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 2 11 Q
--0.98 (raise) 72 369.67 P
+(return) 72 341.67 T
 1 F
--0.41 ( evaluates its first expression, which must yield a string, class, or instance object. If there is a second) 105 369.67 P
+( may only occur syntactically nested in a function definition, not within a nested class definition.) 111.6 341.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-0.02 (expression, this is evaluated, else) 72 356.67 P
+(If an expression list is present, it is evaluated, else) 72 316.67 T
 2 F
-0.06 (None) 220.91 356.67 P
+(None) 295.02 316.67 T
 1 F
-0.02 ( is substituted. If the first expression is a class object, then the sec-) 247.31 356.67 P
+(is substituted.) 328.02 316.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.54 (ond expression must be an instance of that class or one of its derivatives. If the first expression is an instance) 72 343.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-(object, the second expression must be) 72 330.67 T
 2 F
-(None) 240.95 330.67 T
+(return) 72 291.67 T
 1 F
-(.) 267.35 330.67 T
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
--0.45 (If the first object is a class or string, it then raises the exception identified by the first object, with the second) 72 305.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
--0.47 (one \050or) 72 292.67 P
+( leaves the current function call with the expression list \050or) 111.6 291.67 T
 2 F
--1.12 (None) 105.28 292.67 P
+(None) 372.81 291.67 T
 1 F
--0.47 (\051 as its parameter. If the first object is an instance, it raises the exception identified by the class) 131.68 292.67 P
+(\051 as return value.) 399.21 291.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.08 (of the object, with the instance as its parameter \050and there should be no second object, or the second object) 72 279.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-(should be) 72 266.67 T
+0.36 (When) 72 266.67 P
 2 F
-(None) 117.22 266.67 T
+0.87 (return) 101.38 266.67 P
 1 F
-(\051.) 143.62 266.67 T
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-0.34 (If a third object is present, and it is not) 72 241.67 P
+0.36 ( passes control out of a) 140.98 266.67 P
 2 F
-0.82 (None) 248.05 241.67 P
+0.87 (try) 247.04 266.67 P
 1 F
-0.34 (, it should be a traceback object \050see  page) 274.45 241.67 P
-0.34 (17 traceback ob-) 466.01 241.67 P
+0.36 ( statement with a) 266.84 266.67 P
+2 F
+0.87 (finally) 345.9 266.67 P
+1 F
+0.36 ( clause, that finally clause is exe-) 392.1 266.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.14 (jects\051, and it is substituted instead of the current location as the place where the exception occurred. This is) 72 228.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-(useful to re-raise an exception transparently in an except clause.) 72 215.67 T
+(cuted before really leaving the function.) 72 253.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0 14 Q
-(6.8) 72 188.67 T
+(6.8) 72 226.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(The) 108 188.67 T
+(The) 108 226.67 T
 2 F
-(break) 136.78 188.67 T
+(raise) 136.78 226.67 T
 0 F
-( statement) 178.78 188.67 T
+( statement) 178.78 226.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 2 10 Q
-(break_stmt:     "break") 72 164.33 T
+(raise_stmt:     "raise" expression ["," expression ["," expression]]) 72 202.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 2 11 Q
--0.27 (break) 72 139.67 P
+-0.98 (raise) 72 177.67 P
 1 F
--0.11 ( may only occur syntactically nested in a) 105 139.67 P
+-0.41 ( evaluates its first expression, which must yield a string, class, or instance object. If there is a second) 105 177.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0.02 (expression, this is evaluated, else) 72 164.67 P
 2 F
--0.27 (for) 286.17 139.67 P
+0.06 (None) 220.91 164.67 P
 1 F
--0.11 (or) 312.3 139.67 P
+0.02 ( is substituted. If the first expression is a class object, then the sec-) 247.31 164.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+-0.54 (ond expression must be an instance of that class or one of its derivatives. If the first expression is an instance) 72 151.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(object, the second expression must be) 72 138.67 T
 2 F
--0.27 (while) 324.1 139.67 P
+(None) 240.95 138.67 T
 1 F
--0.11 ( loop, but not nested in a function or class) 357.1 139.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-(definition within that loop.) 72 126.67 T
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-(It terminates the nearest enclosing loop, skipping the optional) 72 101.67 T
-2 F
-(else) 345.76 101.67 T
-1 F
-( clause if the loop has one.) 372.16 101.67 T
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-(If a) 72 76.67 T
-2 F
-(for) 89.71 76.67 T
-1 F
-( loop is terminated by) 109.51 76.67 T
-2 F
-(break) 208.2 76.67 T
-1 F
-(, the loop control target keeps its current value.) 241.2 76.67 T
+(.) 267.35 138.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
@@ -10679,156 +10697,158 @@ FrameNoSep
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 1 11 Q
--0.55 (When) 99 712.67 P
+-0.16 (If the first object is a class or string, it then raises the exception identified by the first object, with the) 99 712.67 P
+-0.12 (second one \050or) 99 699.67 P
 2 F
--1.32 (break) 127.47 712.67 P
+-0.28 (None) 166.16 699.67 P
 1 F
--0.55 ( passes control out of a) 160.47 712.67 P
+-0.12 (\051 as its parameter. If the first object is an instance, it raises the exception identi-) 192.56 699.67 P
+0.19 (fied by the class of the object, with the instance as its parameter \050and there should be no second ob-) 99 686.67 P
+(ject, or the second object should be) 99 673.67 T
 2 F
--1.32 (try) 261.05 712.67 P
+(None) 256.64 673.67 T
 1 F
--0.55 ( statement with a) 280.85 712.67 P
+(\051.) 283.04 673.67 T
+-0.12 (If a third object is present, and it is not) 99 648.67 P
 2 F
--1.32 (finally) 356.26 712.67 P
+-0.29 (None) 270.43 648.67 P
 1 F
--0.55 ( clause, that finally clause is ex-) 402.46 712.67 P
-(ecuted before really leaving the loop.) 99 699.67 T
+-0.12 (, it should be a traceback object \050see  page) 296.83 648.67 P
+-0.12 (17 traceback) 484.23 648.67 P
+-0.5 (objects\051, and it is substituted instead of the current location as the place where the exception occurred.) 99 635.67 P
+(This is useful to re-raise an exception transparently in an except clause.) 99 622.67 T
 0 14 Q
-(6.9) 99 672.67 T
-(The) 135 672.67 T
+(6.9) 99 595.67 T
+(The) 135 595.67 T
 2 F
-(continue) 163.78 672.67 T
+(break) 163.78 595.67 T
 0 F
-( statement) 230.98 672.67 T
+( statement) 205.78 595.67 T
 2 10 Q
-(continue_stmt:  "continue") 99 648.33 T
+(break_stmt:     "break") 99 571.33 T
 2 11 Q
--1.3 (continue) 99 623.67 P
+-0.64 (break) 99 546.67 P
 1 F
--0.54 ( may only occur syntactically nested in a) 151.8 623.67 P
+-0.27 ( may only occur syntactically nested in a) 132 546.67 P
 2 F
--1.3 (for) 329.54 623.67 P
+-0.64 (for) 311.94 546.67 P
 1 F
--0.54 ( or) 349.34 623.67 P
+-0.27 (or) 337.7 546.67 P
 2 F
--1.3 (while) 362.92 623.67 P
+-0.64 (while) 349.34 546.67 P
 1 F
--0.54 ( loop, but not nested in a function) 395.92 623.67 P
-0.04 (or class definition or) 99 610.67 P
+-0.27 ( loop, but not nested in a function or) 382.34 546.67 P
+(class definition within that loop.) 99 533.67 T
+(It terminates the nearest enclosing loop, skipping the optional) 99 508.67 T
 2 F
-0.1 (try) 192.65 610.67 P
+(else) 372.76 508.67 T
 1 F
-0.04 ( statement within that loop.) 212.45 610.67 P
-1 8.8 Q
-0.03 (1) 332.7 615.07 P
-1 11 Q
-0.04 ( It continues with the next cycle of the nearest) 337.1 610.67 P
-(enclosing loop.) 99 597.67 T
+( clause if the loop has one.) 399.16 508.67 T
+(If a) 99 483.67 T
+2 F
+(for) 116.71 483.67 T
+1 F
+( loop is terminated by) 136.51 483.67 T
+2 F
+(break) 235.2 483.67 T
+1 F
+(, the loop control target keeps its current value.) 268.2 483.67 T
+-0.55 (When) 99 458.67 P
+2 F
+-1.32 (break) 127.47 458.67 P
+1 F
+-0.55 ( passes control out of a) 160.47 458.67 P
+2 F
+-1.32 (try) 261.05 458.67 P
+1 F
+-0.55 ( statement with a) 280.85 458.67 P
+2 F
+-1.32 (finally) 356.26 458.67 P
+1 F
+-0.55 ( clause, that finally clause is ex-) 402.46 458.67 P
+(ecuted before really leaving the loop.) 99 445.67 T
 0 14 Q
-(6.10) 99 570.67 T
-(The) 135 570.67 T
+(6.10) 99 418.67 T
+(The) 135 418.67 T
 2 F
-(import) 163.78 570.67 T
+(continue) 163.78 418.67 T
 0 F
-( statement) 214.18 570.67 T
+( statement) 230.98 418.67 T
 2 10 Q
-(import_stmt:    "import" identifier \050"," identifier\051*) 99 546.33 T
-(              | "from" identifier "import" identifier \050"," identifier\051*) 99 534.33 T
-(            | "from" identifier "import" "*") 99 522.33 T
+(continue_stmt:  "continue") 99 394.33 T
+2 11 Q
+-1.3 (continue) 99 369.67 P
+1 F
+-0.54 ( may only occur syntactically nested in a) 151.8 369.67 P
+2 F
+-1.3 (for) 329.54 369.67 P
+1 F
+-0.54 ( or) 349.34 369.67 P
+2 F
+-1.3 (while) 362.92 369.67 P
+1 F
+-0.54 ( loop, but not nested in a function) 395.92 369.67 P
+0.04 (or class definition or) 99 356.67 P
+2 F
+0.1 (try) 192.65 356.67 P
+1 F
+0.04 ( statement within that loop.) 212.45 356.67 P
+1 8.8 Q
+0.03 (1) 332.7 361.07 P
 1 11 Q
--0.55 (Import statements are executed in two steps: \0501\051 find a module, and initialize it if necessary; \0502\051 define) 99 497.67 P
--0.53 (a name or names in the local name space \050of the scope where the) 99 484.67 P
+0.04 ( It continues with the next cycle of the nearest) 337.1 356.67 P
+(enclosing loop.) 99 343.67 T
+0 14 Q
+(6.11) 99 316.67 T
+(The) 135 316.67 T
 2 F
--1.26 (import) 379.39 484.67 P
-1 F
--0.53 ( statement occurs\051. The first) 418.99 484.67 P
--0.12 (form \050without) 99 471.67 P
+(import) 163.78 316.67 T
+0 F
+( statement) 214.18 316.67 T
+2 10 Q
+(import_stmt:    "import" identifier \050"," identifier\051*) 99 292.33 T
+(              | "from" identifier "import" identifier \050"," identifier\051*) 99 280.33 T
+(            | "from" identifier "import" "*") 99 268.33 T
+1 11 Q
+-0.55 (Import statements are executed in two steps: \0501\051 find a module, and initialize it if necessary; \0502\051 define) 99 243.67 P
+-0.53 (a name or names in the local name space \050of the scope where the) 99 230.67 P
 2 F
--0.29 (from) 162.92 471.67 P
+-1.26 (import) 379.39 230.67 P
 1 F
--0.12 (\051 repeats these steps for each identifier in the list, the) 189.32 471.67 P
+-0.53 ( statement occurs\051. The first) 418.99 230.67 P
+-0.12 (form \050without) 99 217.67 P
 2 F
--0.29 (from) 422.62 471.67 P
+-0.29 (from) 162.92 217.67 P
 1 F
--0.12 ( form performs them) 449.02 471.67 P
-(once, with the first identifier specifying the module name.) 99 458.67 T
-0.38 (The system maintains a table of modules that have been initialized, indexed by module name. \050The) 99 433.67 P
-0.41 0.1 (current implementation makes this table accessible as) 99 420.67 B
+-0.12 (\051 repeats these steps for each identifier in the list, the) 189.32 217.67 P
 2 F
-0.99 0.1 (sys.modules) 346.17 420.67 B
+-0.29 (from) 422.62 217.67 P
 1 F
-0.41 0.1 (.\051 When a module name is) 419.93 420.67 B
-0.41 0.03 (found in this table, step \0501\051 is finished. If not, a search for a module definition is started. This first) 99 407.67 B
--0.42 (looks for a built-in module definition, and if no built-in module if the given name is found, it searches) 99 394.67 P
-0.12 (a user-specified list of directories for a file whose name is the module name with extension) 99 381.67 P
+-0.12 ( form performs them) 449.02 217.67 P
+(once, with the first identifier specifying the module name.) 99 204.67 T
+0.38 (The system maintains a table of modules that have been initialized, indexed by module name. \050The) 99 179.67 P
+0.41 0.1 (current implementation makes this table accessible as) 99 166.67 B
 2 F
-0.3 (".py") 504.25 381.67 P
+0.99 0.1 (sys.modules) 346.17 166.67 B
 1 F
-0.12 (.) 537.25 381.67 P
-0.41 0.05 (\050The current implementation uses the list of strings) 99 368.67 B
+0.41 0.1 (.\051 When a module name is) 419.93 166.67 B
+0.41 0.03 (found in this table, step \0501\051 is finished. If not, a search for a module definition is started. This first) 99 153.67 B
+-0.42 (looks for a built-in module definition, and if no built-in module if the given name is found, it searches) 99 140.67 P
+0.12 (a user-specified list of directories for a file whose name is the module name with extension) 99 127.67 P
 2 F
-0.99 0.05 (sys.path) 332.42 368.67 B
+0.3 (".py") 504.25 127.67 P
 1 F
-0.41 0.05 ( as the search path; it is initialized) 385.64 368.67 B
-(from the shell environment variable) 99 355.67 T
+0.12 (.) 537.25 127.67 P
+0.41 0.05 (\050The current implementation uses the list of strings) 99 114.67 B
 2 F
-($PYTHONPATH) 259.39 355.67 T
+0.99 0.05 (sys.path) 332.42 114.67 B
 1 F
-(, with an installation-dependent default.\051) 331.99 355.67 T
-0.12 (If a built-in module is found, its built-in initialization code is executed and step \0501\051 is finished. If no) 99 330.67 P
--0.42 (matching file is found,) 99 317.67 P
+0.41 0.05 ( as the search path; it is initialized) 385.64 114.67 B
+(from the shell environment variable) 99 101.67 T
 2 F
--1 (ImportError) 199.69 317.67 P
+($PYTHONPATH) 259.39 101.67 T
 1 F
--0.42 ( is raised. If a file is found, it is parsed, yielding an executable) 272.29 317.67 P
-0.41 0.01 (code block. If a syntax error occurs,) 99 304.67 B
-2 F
-0.99 0.01 (SyntaxError) 263.44 304.67 B
-1 F
-0.41 0.01 ( is raised. Otherwise, an empty module of the) 336.21 304.67 B
--0.52 (given name is created and inserted in the module table, and then the code block is executed in the con-) 99 291.67 P
-(text of this module. Exceptions during this execution terminate step \0501\051.) 99 278.67 T
-(When step \0501\051 finishes without raising an exception, step \0502\051 can begin.) 99 253.67 T
-0.38 (The first form of) 99 228.67 P
-2 F
-0.9 (import) 176.87 228.67 P
-1 F
-0.38 ( statement binds the module name in the local name space to the module) 216.47 228.67 P
--0.05 (object, and then goes on to import the next identifier, if any. The) 99 215.67 P
-2 F
--0.12 (from) 385.56 215.67 P
-1 F
--0.05 ( form does not bind the mod-) 411.96 215.67 P
--0.36 (ule name: it goes through the list of identifiers, looks each one of them up in the module found in step) 99 202.67 P
--0.11 (\0501\051, and binds the name in the local name space to the object thus found. If a name is not found,) 99 189.67 P
-2 F
--0.25 (Im-) 520.2 189.67 P
--0.68 (portError) 99 176.67 P
-1 F
--0.28 ( is raised. If the list of identifiers is replaced by a star \050) 158.4 176.67 P
-2 F
--0.68 (*) 394.86 176.67 P
-1 F
--0.28 (\051, all names defined in the mod-) 401.46 176.67 P
-(ule are bound, except those beginning with an underscore\050) 99 163.67 T
-2 F
-(_) 355.92 163.67 T
-1 F
-(\051.) 362.52 163.67 T
-(Names bound by import statements may not occur in) 99 138.67 T
-2 F
-(global) 334.57 138.67 T
-1 F
-( statements in the same scope.) 374.17 138.67 T
-(The) 99 113.67 T
-2 F
-(from) 118.86 113.67 T
-1 F
-( form with) 145.26 113.67 T
-2 F
-(*) 194.45 113.67 T
-1 F
-( may only occur in a module scope.) 201.05 113.67 T
+(, with an installation-dependent default.\051) 331.99 101.67 T
 0 0 0 1 0 0 0 K
 99 76 540 91 C
 0 0 0 1 0 0 0 K
@@ -10884,230 +10904,355 @@ FrameNoSep
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 1 11 Q
--0.37 (\050The current implementation does not enforce the latter two restrictions, but programs should not abuse this) 72 712.67 P
+-0.21 (If a built-in module is found, its built-in initialization code is executed and step \0501\051 is finished. If no match-) 72 712.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(freedom, as future implementations may enforce them or silently change the meaning of the program.\051) 72 699.67 T
+-0.35 (ing file is found,) 72 699.67 P
+2 F
+-0.84 (ImportError) 146.07 699.67 P
+1 F
+-0.35 ( is raised. If a file is found, it is parsed, yielding an executable code block.) 218.67 699.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+-0.21 (If a syntax error occurs,) 72 686.67 P
+2 F
+-0.5 (SyntaxError) 178.47 686.67 P
+1 F
+-0.21 ( is raised. Otherwise, an empty module of the given name is creat-) 251.07 686.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0.09 (ed and inserted in the module table, and then the code block is executed in the context of this module. Ex-) 72 673.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(ceptions during this execution terminate step \0501\051.) 72 660.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(When step \0501\051 finishes without raising an exception, step \0502\051 can begin.) 72 635.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0.05 (The first form of) 72 610.67 P
+2 F
+0.13 (import) 148.59 610.67 P
+1 F
+0.05 ( statement binds the module name in the local name space to the module object,) 188.19 610.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0.41 0.02 (and then goes on to import the next identifier, if any. The) 72 597.67 B
+2 F
+0.99 0.02 (from) 332.89 597.67 B
+1 F
+0.41 0.02 ( form does not bind the module name: it) 359.37 597.67 B
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+-0.25 (goes through the list of identifiers, looks each one of them up in the module found in step \0501\051, and binds the) 72 584.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+-0.01 (name in the local name space to the object thus found. If a name is not found,) 72 571.67 P
+2 F
+-0.03 (ImportError) 415.5 571.67 P
+1 F
+-0.01 ( is raised. If) 488.1 571.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0.13 (the list of identifiers is replaced by a star \050) 72 558.67 P
+2 F
+0.31 (*) 258.58 558.67 P
+1 F
+0.13 (\051, all names defined in the module are bound, except those be-) 265.18 558.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(ginning with an underscore\050) 72 545.67 T
+2 F
+(_) 195.73 545.67 T
+1 F
+(\051.) 202.33 545.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(Names bound by import statements may not occur in) 72 520.67 T
+2 F
+(global) 307.57 520.67 T
+1 F
+( statements in the same scope.) 347.17 520.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(The) 72 495.67 T
+2 F
+(from) 91.86 495.67 T
+1 F
+( form with) 118.25 495.67 T
+2 F
+(*) 167.45 495.67 T
+1 F
+( may only occur in a module scope.) 174.05 495.67 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+-0.37 (\050The current implementation does not enforce the latter two restrictions, but programs should not abuse this) 72 470.67 P
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+(freedom, as future implementations may enforce them or silently change the meaning of the program.\051) 72 457.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0 14 Q
-(6.11) 72 672.67 T
+(6.12) 72 430.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(The) 108 672.67 T
+(The) 108 430.67 T
 2 F
-(global) 136.78 672.67 T
+(global) 136.78 430.67 T
 0 F
-( statement) 187.18 672.67 T
+( statement) 187.18 430.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 2 10 Q
-(global_stmt:    "global" identifier \050"," identifier\051*) 72 648.33 T
+(global_stmt:    "global" identifier \050"," identifier\051*) 72 406.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 1 11 Q
--0.25 (The) 72 623.67 P
+-0.25 (The) 72 381.67 P
 2 F
--0.6 (global) 91.61 623.67 P
+-0.6 (global) 91.61 381.67 P
 1 F
--0.25 ( statement is a declaration which holds for the entire current code block. It means that the list-) 131.21 623.67 P
+-0.25 ( statement is a declaration which holds for the entire current code block. It means that the list-) 131.21 381.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.19 (ed identifiers are to be interpreted as globals. While) 72 610.67 P
+-0.19 (ed identifiers are to be interpreted as globals. While) 72 368.67 P
 3 F
--0.19 (using) 300.64 610.67 P
+-0.19 (using) 300.64 368.67 P
 1 F
--0.19 ( global names is automatic if they are not defined) 324.48 610.67 P
+-0.19 ( global names is automatic if they are not defined) 324.48 368.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(in the local scope,) 72 597.67 T
+(in the local scope,) 72 355.67 T
 3 F
-(assigning) 154.18 597.67 T
+(assigning) 154.18 355.67 T
 1 F
-( to global names would be impossible without) 196.35 597.67 T
+( to global names would be impossible without) 196.35 355.67 T
 2 F
-(global) 401.69 597.67 T
+(global) 401.69 355.67 T
 1 F
-(.) 441.29 597.67 T
+(.) 441.29 355.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-0.28 (Names listed in a) 72 572.67 P
+0.28 (Names listed in a) 72 330.67 P
 2 F
-0.68 (global) 151.95 572.67 P
+0.68 (global) 151.95 330.67 P
 1 F
-0.28 ( statement must not be used in the same code block before that) 191.55 572.67 P
+0.28 ( statement must not be used in the same code block before that) 191.55 330.67 P
 2 F
-0.68 (global) 473.54 572.67 P
+0.68 (global) 473.54 330.67 P
 1 F
-0.28 ( state-) 513.14 572.67 P
+0.28 ( state-) 513.14 330.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(ment is executed.) 72 559.67 T
+(ment is executed.) 72 317.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.41 (Names listed in a) 72 534.67 P
+-0.41 (Names listed in a) 72 292.67 P
 2 F
--0.99 (global) 149.18 534.67 P
+-0.99 (global) 149.18 292.67 P
 1 F
--0.41 ( statement must not be defined as formal parameters or in a) 188.78 534.67 P
+-0.41 ( statement must not be defined as formal parameters or in a) 188.78 292.67 P
 2 F
--0.99 (for) 447.19 534.67 P
+-0.99 (for) 447.19 292.67 P
 1 F
--0.41 ( loop control tar-) 466.99 534.67 P
+-0.41 ( loop control tar-) 466.99 292.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(get,) 72 521.67 T
+(get,) 72 279.67 T
 2 F
-(class) 90.94 521.67 T
+(class) 90.94 279.67 T
 1 F
-(definition, function definition, or) 130.54 521.67 T
+(definition, function definition, or) 130.54 279.67 T
 2 F
-(import) 278.43 521.67 T
+(import) 278.43 279.67 T
 1 F
-( statement.) 318.03 521.67 T
+( statement.) 318.03 279.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.37 (\050The current implementation does not enforce the latter two restrictions, but programs should not abuse this) 72 496.67 P
+-0.37 (\050The current implementation does not enforce the latter two restrictions, but programs should not abuse this) 72 254.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(freedom, as future implementations may enforce them or silently change the meaning of the program.\051) 72 483.67 T
+(freedom, as future implementations may enforce them or silently change the meaning of the program.\051) 72 241.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.03 (Note: the) 72 458.67 P
+-0.03 (Note: the) 72 216.67 P
 2 F
--0.06 (global) 115.33 458.67 P
+-0.06 (global) 115.33 216.67 P
 1 F
--0.03 ( is a directive to the parser. Therefore, it applies only to code parsed at the same time as) 154.93 458.67 P
+-0.03 ( is a directive to the parser. Therefore, it applies only to code parsed at the same time as) 154.93 216.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.32 (the) 72 445.67 P
+-0.32 (the) 72 203.67 P
 2 F
--0.77 (global) 87.87 445.67 P
+-0.77 (global) 87.87 203.67 P
 1 F
--0.32 (statement. In particular, a) 133.29 445.67 P
+-0.32 (statement. In particular, a) 133.29 203.67 P
 2 F
--0.77 (global) 246.86 445.67 P
+-0.77 (global) 246.86 203.67 P
 1 F
--0.32 ( statement contained in an) 286.46 445.67 P
+-0.32 ( statement contained in an) 286.46 203.67 P
 2 F
--0.77 (exec) 402.47 445.67 P
+-0.77 (exec) 402.47 203.67 P
 1 F
--0.32 ( statement does not affect) 428.87 445.67 P
+-0.32 ( statement does not affect) 428.87 203.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
--0.12 (the code block) 72 432.67 P
+-0.12 (the code block) 72 190.67 P
 3 F
--0.12 (containing) 138.56 432.67 P
+-0.12 (containing) 138.56 190.67 P
 1 F
--0.12 (the) 188.25 432.67 P
+-0.12 (the) 188.25 190.67 P
 2 F
--0.28 (exec) 204.33 432.67 P
+-0.28 (exec) 204.33 190.67 P
 1 F
--0.12 ( statement, and code contained in an) 230.73 432.67 P
+-0.12 ( statement, and code contained in an) 230.73 190.67 P
 2 F
--0.28 (exec) 392.45 432.67 P
+-0.28 (exec) 392.45 190.67 P
 1 F
--0.12 (statement is unaffected by) 425.17 432.67 P
+-0.12 (statement is unaffected by) 425.17 190.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 2 F
--0.24 (global) 72 419.67 P
+-0.24 (global) 72 177.67 P
 1 F
--0.1 ( statements in the code containing the) 111.6 419.67 P
+-0.1 ( statements in the code containing the) 111.6 177.67 P
 2 F
--0.24 (exec) 279.25 419.67 P
+-0.24 (exec) 279.25 177.67 P
 1 F
--0.1 ( statement. The same applies to the) 305.65 419.67 P
+-0.1 ( statement. The same applies to the) 305.65 177.67 P
 2 F
--0.24 (eval\050\051) 462 419.67 P
+-0.24 (eval\050\051) 462 177.67 P
 1 F
--0.1 (,) 501.6 419.67 P
+-0.1 (,) 501.6 177.67 P
 2 F
--0.24 (exec-) 507 419.67 P
+-0.24 (exec-) 507 177.67 P
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(file\050\051) 72 406.67 T
+(file\050\051) 72 164.67 T
 1 F
-( and) 111.6 406.67 T
+( and) 111.6 164.67 T
 2 F
-(compile\050\051) 132.98 406.67 T
+(compile\050\051) 132.98 164.67 T
 1 F
-( functions.) 192.38 406.67 T
+( functions.) 192.38 164.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0 14 Q
-(6.12) 72 379.67 T
+(6.13) 72 137.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
-(The) 108 379.67 T
+(The) 108 137.67 T
 2 F
-(exec) 136.78 379.67 T
+(exec) 136.78 137.67 T
 0 F
-( statement) 170.38 379.67 T
+( statement) 170.38 137.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 2 10 Q
-(exec_stmt:    "exec" expression ["in" expression ["," expression]]) 72 355.33 T
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-1 11 Q
--0.21 (This statement supports dynamic execution of Python code. The first expression should evaluate to either a) 72 330.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-0.41 (string, an open file object, or a code object. If it is a string, the string is parsed as a suite of Python state-) 72 317.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
--0.22 (ments which is then executed \050unless a syntax error occurs\051. If it is an open file, the file is parsed until EOF) 72 304.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-(and executed. If it is a code object, it is simply executed.) 72 291.67 T
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-0.14 (In all cases, if the optional parts are omitted, the code is executed in the current scope. If only the first ex-) 72 266.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
--0.17 (pression after) 72 253.67 P
-2 F
--0.42 (in) 133.97 253.67 P
-1 F
--0.17 ( is specified, it should be a dictionary, which will be used for both the global and the local) 147.17 253.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
--0.1 (variables. If two expressions are given, both must be dictionaries and they are used for the global and local) 72 240.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-(variables, respectively.) 72 227.67 T
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
--0.06 (Hints: dynamic evaluation of expressions is supported by the built-in function) 72 202.67 P
-2 F
--0.15 (eval\050\051) 416.88 202.67 P
-1 F
--0.06 (. The built-in func-) 456.48 202.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
--0.15 (tions) 72 189.67 P
-2 F
--0.36 (globals\050\051) 96 189.67 P
-1 F
--0.15 ( and) 155.4 189.67 P
-2 F
--0.36 (locals\050\051) 176.48 189.67 P
-1 F
--0.15 ( return the current global and local dictionary, respectively, which may) 229.28 189.67 P
-0 0 0 1 0 0 0 K
-0 0 0 1 0 0 0 K
-(be useful to pass around for use by) 72 176.67 T
-2 F
-(exec) 227.8 176.67 T
-1 F
-(.) 254.2 176.67 T
+(exec_stmt:    "exec" expression ["in" expression ["," expression]]) 72 113.33 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 FMENDPAGE
 %%EndPage: "44" 50
 %%Page: "45" 51
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+1 10 Q
+0 X
+0 0 0 1 0 0 0 K
+(45) 530 37.33 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+585 292.5 598.5 720 R
+5 9 Q
+(\245) 0 -90 592.5 720 TF
+(Simple statements) 0 -90 592.5 711 TF
+585 292.5 598.5 720 R
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+1 11 Q
+0.41 (This statement supports dynamic execution of Python code. The first expression should evaluate to) 99 712.67 P
+0.33 (either a string, an open file object, or a code object. If it is a string, the string is parsed as a suite of) 99 699.67 P
+0.13 (Python statements which is then executed \050unless a syntax error occurs\051. If it is an open file, the file) 99 686.67 P
+(is parsed until EOF and executed. If it is a code object, it is simply executed.) 99 673.67 T
+-0.36 (In all cases, if the optional parts are omitted, the code is executed in the current scope. If only the first) 99 648.67 P
+-0.03 (expression after) 99 635.67 P
+2 F
+-0.07 (in) 171.64 635.67 P
+1 F
+-0.03 ( is specified, it should be a dictionary, which will be used for both the global and) 184.84 635.67 P
+0.23 (the local variables. If two expressions are given, both must be dictionaries and they are used for the) 99 622.67 P
+(global and local variables, respectively.) 99 609.67 T
+-0.15 (Hints: dynamic evaluation of expressions is supported by the built-in function) 99 584.67 P
+2 F
+-0.35 (eval\050\051) 442.95 584.67 P
+1 F
+-0.15 (. The built-in) 482.54 584.67 P
+0.26 (functions) 99 571.67 P
+2 F
+0.62 (globals\050\051) 142.95 571.67 P
+1 F
+0.26 ( and) 202.35 571.67 P
+2 F
+0.62 (locals\050\051) 224.25 571.67 P
+1 F
+0.26 ( return the current global and local dictionary, respectively,) 277.05 571.67 P
+(which may be useful to pass around for use by) 99 558.67 T
+2 F
+(exec) 306.13 558.67 T
+1 F
+(.) 332.53 558.67 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "45" 51
+%%Page: "46" 52
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+1 10 Q
+0 X
+0 0 0 1 0 0 0 K
+(46) 76.5 37.33 T
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "46" 52
+%%Page: "45" 53
 612 792 0 FMBEGINPAGE
 [0 0 0 1 0 0 0]
 [ 0 1 1 0 1 0 0]
@@ -11263,8 +11408,8 @@ FrameNoSep
 ( clause, if present, is executed.) 219.49 66.67 T
 0 0 0 1 0 0 0 K
 FMENDPAGE
-%%EndPage: "45" 51
-%%Page: "46" 52
+%%EndPage: "45" 53
+%%Page: "46" 54
 612 792 0 FMBEGINPAGE
 [0 0 0 1 0 0 0]
 [ 0 1 1 0 1 0 0]
@@ -11483,8 +11628,8 @@ FrameNoSep
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 FMENDPAGE
-%%EndPage: "46" 52
-%%Page: "47" 53
+%%EndPage: "46" 54
+%%Page: "47" 55
 612 792 0 FMBEGINPAGE
 [0 0 0 1 0 0 0]
 [ 0 1 1 0 1 0 0]
@@ -11672,8 +11817,8 @@ FrameNoSep
 ( statement, the saved exception is lost.) 112.2 82.67 T
 0 0 0 1 0 0 0 K
 FMENDPAGE
-%%EndPage: "47" 53
-%%Page: "48" 54
+%%EndPage: "47" 55
+%%Page: "48" 56
 612 792 0 FMBEGINPAGE
 [0 0 0 1 0 0 0]
 [ 0 1 1 0 1 0 0]
@@ -11908,8 +12053,8 @@ N
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 FMENDPAGE
-%%EndPage: "48" 54
-%%Page: "49" 55
+%%EndPage: "48" 56
+%%Page: "49" 57
 612 792 0 FMBEGINPAGE
 [0 0 0 1 0 0 0]
 [ 0 1 1 0 1 0 0]
@@ -11990,8 +12135,8 @@ FrameNoSep
 (class object in the original local name space.) 99 335.67 T
 0 0 0 1 0 0 0 K
 FMENDPAGE
-%%EndPage: "49" 55
-%%Page: "50" 56
+%%EndPage: "49" 57
+%%Page: "50" 58
 612 792 0 FMBEGINPAGE
 [0 0 0 1 0 0 0]
 [ 0 1 1 0 1 0 0]
@@ -12019,8 +12164,8 @@ FrameNoSep
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 FMENDPAGE
-%%EndPage: "50" 56
-%%Page: "51" 57
+%%EndPage: "50" 58
+%%Page: "51" 59
 612 792 0 FMBEGINPAGE
 [0 0 0 1 0 0 0]
 [ 0 1 1 0 1 0 0]
@@ -12146,8 +12291,8 @@ FrameNoSep
 (is needed to help the parser detect the end of the input.) 99 116.67 T
 0 0 0 1 0 0 0 K
 FMENDPAGE
-%%EndPage: "51" 57
-%%Page: "52" 58
+%%EndPage: "51" 59
+%%Page: "52" 60
 612 792 0 FMBEGINPAGE
 [0 0 0 1 0 0 0]
 [ 0 1 1 0 1 0 0]
@@ -12223,8 +12368,8 @@ FrameNoSep
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 FMENDPAGE
-%%EndPage: "52" 58
-%%Page: "53" 59
+%%EndPage: "52" 60
+%%Page: "53" 61
 612 792 0 FMBEGINPAGE
 [0 0 0 1 0 0 0]
 [ 0 1 1 0 1 0 0]
@@ -12785,8 +12930,8 @@ N
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 FMENDPAGE
-%%EndPage: "53" 59
-%%Page: "54" 60
+%%EndPage: "53" 61
+%%Page: "54" 62
 612 792 0 FMBEGINPAGE
 [0 0 0 1 0 0 0]
 [ 0 1 1 0 1 0 0]
@@ -13484,8 +13629,8 @@ N
 (45) 470.5 92.67 T
 0 0 0 1 0 0 0 K
 FMENDPAGE
-%%EndPage: "54" 60
-%%Page: "55" 61
+%%EndPage: "54" 62
+%%Page: "55" 63
 612 792 0 FMBEGINPAGE
 [0 0 0 1 0 0 0]
 [ 0 1 1 0 1 0 0]
@@ -14206,8 +14351,8 @@ N
 (8) 494 96.67 T
 0 0 0 1 0 0 0 K
 FMENDPAGE
-%%EndPage: "55" 61
-%%Page: "56" 62
+%%EndPage: "55" 63
+%%Page: "56" 64
 612 792 0 FMBEGINPAGE
 [0 0 0 1 0 0 0]
 [ 0 1 1 0 1 0 0]
@@ -14822,8 +14967,8 @@ N
 (40) 470.5 79.67 T
 0 0 0 1 0 0 0 K
 FMENDPAGE
-%%EndPage: "56" 62
-%%Page: "57" 63
+%%EndPage: "56" 64
+%%Page: "57" 65
 612 792 0 FMBEGINPAGE
 [0 0 0 1 0 0 0]
 [ 0 1 1 0 1 0 0]
@@ -15398,8 +15543,8 @@ N
 (29) 488.5 87.67 T
 0 0 0 1 0 0 0 K
 FMENDPAGE
-%%EndPage: "57" 63
-%%Page: "58" 64
+%%EndPage: "57" 65
+%%Page: "58" 66
 612 792 0 FMBEGINPAGE
 [0 0 0 1 0 0 0]
 [ 0 1 1 0 1 0 0]
@@ -16036,8 +16181,8 @@ N
 (6) 476 66.67 T
 0 0 0 1 0 0 0 K
 FMENDPAGE
-%%EndPage: "58" 64
-%%Page: "59" 65
+%%EndPage: "58" 66
+%%Page: "59" 67
 612 792 0 FMBEGINPAGE
 [0 0 0 1 0 0 0]
 [ 0 1 1 0 1 0 0]
@@ -16302,11 +16447,11 @@ N
 (33) 488.5 476.67 T
 0 0 0 1 0 0 0 K
 FMENDPAGE
-%%EndPage: "59" 65
+%%EndPage: "59" 67
 %%Trailer
 %%BoundingBox: 0 0 612 792
 %%PageOrder: Ascend
-%%Pages: 65
+%%Pages: 67
 %%DocumentFonts: Helvetica-Bold
 %%+ Times-Roman
 %%+ Courier
