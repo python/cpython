@@ -2,12 +2,12 @@
 
 ;; Copyright (C) 1992,1993,1994  Tim Peters
 
-;; Author: 1995 Barry A. Warsaw <bwarsaw@cnri.reston.va.us>
-;;         1992-1994 Tim Peters <tim@ksr.com>
-;; Maintainer:    bwarsaw@cnri.reston.va.us
+;; Author: 1995 Barry A. Warsaw
+;;         1992-1994 Tim Peters
+;; Maintainer:    python-mode@python.org
 ;; Created:       Feb 1992
-;; Version:       2.19
-;; Last Modified: 1995/03/20 18:32:14
+;; Version:       2.26
+;; Last Modified: 1995/07/05 23:26:15
 ;; Keywords: python editing language major-mode
 
 ;; This software is provided as-is, without express or implied
@@ -58,6 +58,7 @@
 ;; - even better support for outdenting.  Guido suggests outdents of
 ;;   at least one level after a return, raise, break, or continue
 ;;   statement.
+;; - de-electrify colon inside literals (e.g. comments and strings)
 
 ;; If you can think of more things you'd like to see, drop me a line.
 ;; If you want to report bugs, use py-submit-bug-report (C-c C-b).
@@ -67,9 +68,9 @@
 ;; patches.
 
 ;; LCD Archive Entry:
-;; python-mode|Barry A. Warsaw|bwarsaw@cnri.reston.va.us
+;; python-mode|Barry A. Warsaw|python-mode@python.org
 ;; |Major mode for editing Python programs
-;; |1995/03/20 18:32:14|2.19|
+;; |1995/07/05 23:26:15|2.26|
 
 ;;; Code:
 
@@ -162,30 +163,75 @@ equal <number>, `tab-width' is set to <number>, a message saying so is
 displayed in the echo area, and if `py-beep-if-tab-change' is non-nil
 the Emacs bell is also rung as a warning.")
 
+;; These were the previous font-lock keywords, but I think I now
+;; prefer the ones from XEmacs 19.12's font-lock.el.  I've merged the
+;; two into the new definition below.
+;;
+;;(defvar python-font-lock-keywords
+;;  (list
+;;   (cons
+;;    (concat
+;;     "\\<\\("
+;;     (mapconcat
+;;      'identity
+;;      '("access"  "and"      "break"  "continue"
+;;	"del"     "elif"     "else"   "except"
+;;	"exec"    "finally"  "for"    "from"
+;;	"global"  "if"       "import" "in"
+;;	"is"      "lambda"   "not"    "or"
+;;	"pass"    "print"    "raise"  "return"
+;;	"try"     "while"    "def"    "class"
+;;	)
+;;      "\\|")
+;;     "\\)\\>")
+;;    1)
+;;   ;; functions
+;;   '("\\bdef\\s +\\(\\sw+\\)(" 1 font-lock-function-name-face)
+;;   ;; classes
+;;   '("\\bclass\\s +\\(\\sw+\\)[(:]" 1 font-lock-function-name-face)
+;;   )
+;;  "*Additional keywords to highlight `python-mode' buffers.")
+
+;; These are taken from XEmacs 19.12's font-lock.el file, but have the
+;; more complete list of keywords from the previous definition in
+;; python-mode.el.  There are a few other minor stylistic changes as
+;; well.
+;; 
 (defvar python-font-lock-keywords
-  (list
-   (cons
-    (concat
-     "\\<\\("
-     (mapconcat
-      'identity
-      '("access"  "and"      "break"  "continue"
-	"del"     "elif"     "else"   "except"
-	"exec"    "finally"  "for"    "from"
-	"global"  "if"       "import" "in"
-	"is"      "lambda"   "not"    "or"
-	"pass"    "print"    "raise"  "return"
-	"try"     "while"    "def"    "class"
-	)
-      "\\|")
-     "\\)\\>")
-    1)
-   ;; functions
-   '("\\bdef\\s +\\(\\sw+\\)(" 1 font-lock-function-name-face)
-   ;; classes
-   '("\\bclass\\s +\\(\\sw+\\)[(:]" 1 font-lock-function-name-face)
-   )
-  "*Additional keywords to highlight `python-mode' buffers.")
+   (list
+    (cons (concat
+	   "\\b\\("
+	   (mapconcat
+	    'identity
+	    '("access"     "and"      "break"    "continue"
+	      "del"        "elif"     "else:"    "except"
+	      "except:"    "exec"     "finally:" "for"
+	      "from"       "global"   "if"       "import"
+	      "in"         "is"       "lambda"   "not"
+	      "or"         "pass"     "print"    "raise"
+	      "return"     "try:"     "while"
+	      )
+	    "\\|")
+	   "\\)[ \n\t(]")
+          1)
+    ;; classes
+    '("\\bclass[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
+      1 font-lock-type-face)
+    ;; functions
+    '("\\bdef[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
+      1 font-lock-function-name-face)
+    )
+  "*Additional expressions to highlight in Python mode.")
+
+;; R Lindsay Todd <toddr@rpi.edu> suggests these changes to the
+;; original keywords, which wouldn't be necessary if we go with the
+;; XEmacs defaults, but which I agree makes sense without them.
+;;
+;; functions
+;; '("\\bdef\\s +\\(\\sw+\\)\\s *(" 1 font-lock-function-name-face)
+;; classes
+;; '("\\bclass\\s +\\(\\sw+\\)\\s *[(:]" 1 font-lock-type-face)
+
 
 
 ;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -525,7 +571,8 @@ filter."
     (progn
       (require 'shell)
       (switch-to-buffer-other-window
-       (make-shell "Python" py-python-command))))
+       (apply (if (boundp 'make-shell) 'make-shell 'make-comint)
+	      "Python" py-python-command nil))))
   (make-local-variable 'shell-prompt-pattern)
   (setq shell-prompt-pattern "^>>> \\|^\\.\\.\\. ")
   (set-process-filter (get-buffer-process (current-buffer))
@@ -615,6 +662,7 @@ See the `\\[py-shell]' docs for additional warnings."
     (set-buffer pbuf)
     (let* ((start (point))
 	   (goback (< start pmark))
+	   (goend (and (not goback) (= start (point-max))))
 	   (buffer-read-only nil))
       (goto-char pmark)
       (insert string)
@@ -631,14 +679,18 @@ See the `\\[py-shell]' docs for additional warnings."
 	(if py-scroll-process-buffer
 	    (let* ((pop-up-windows t)
 		   (pwin (display-buffer pbuf)))
-	      (set-window-point pwin (point))))))
-    (set-buffer curbuf)
-    (if file-finished
-	(progn
-	  (py-delete-file-silently (car py-file-queue))
-	  (setq py-file-queue (cdr py-file-queue))
-	  (if py-file-queue
-		(py-execute-file pyproc (car py-file-queue)))))))
+	      (set-window-point pwin (point)))))
+      (set-buffer curbuf)
+      (if file-finished
+	  (progn
+	    (py-delete-file-silently (car py-file-queue))
+	    (setq py-file-queue (cdr py-file-queue))
+	    (if py-file-queue
+		(py-execute-file pyproc (car py-file-queue)))))
+      (and goend
+	   (progn (set-buffer pbuf)
+		  (goto-char (point-max))))
+      )))
 
 (defun py-execute-buffer ()
   "Send the contents of the buffer to a Python interpreter.
@@ -1893,10 +1945,12 @@ local bindings to py-newline-and-indent."))
     (set-buffer pbuf)
     (goto-char (point-max))
     (move-marker (process-mark process) (point))
-    (if (not py-this-is-emacs-19-p)
+    (if (not (or py-this-is-emacs-19-p
+		 py-this-is-lucid-emacs-p))
 	(move-marker last-input-start (point))) ; muck w/ shell-mode
     (funcall (process-filter process) process string)
-    (if (not py-this-is-emacs-19-p)
+    (if (not (or py-this-is-emacs-19-p
+		 py-this-is-lucid-emacs-p))
 	(move-marker last-input-end (point))) ; muck w/ shell-mode
     (set-buffer cbuf))
   (sit-for 0))
@@ -1910,9 +1964,9 @@ local bindings to py-newline-and-indent."))
        (setq zmacs-region-stays t)))
 
 
-(defconst py-version "2.19"
+(defconst py-version "2.26"
   "`python-mode' version number.")
-(defconst py-help-address "bwarsaw@cnri.reston.va.us"
+(defconst py-help-address "python-mode@python.org"
   "Address accepting submission of bug reports.")
 
 (defun py-version ()
