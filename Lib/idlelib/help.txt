@@ -123,10 +123,19 @@ Syntax colors:
 
 Other preferences:
 
-	To change the font on Windows, open EditorWindow.py and change
-	    text['font'] = ("lucida console", 8)
-	to, e.g.,
-	    text['font'] = ("courier new", 10)
+        To change the font open config-[win/unix/mac].txt and
+        change 
+  
+           font-name: courier new
+           font-size: 10 
+
+        to, for example:
+
+           font-name: courier new bold
+           font-size: 14
+
+        Note: a GUI based configuration screen will be provided
+           in the future.
 
 	To change keyboard bindings, edit Bindings.py
 
