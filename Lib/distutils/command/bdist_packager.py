@@ -2,7 +2,7 @@
 
 Modified from bdist_dumb by Mark W. Alexander <slash@dotnetslash.net>
 
-Implements the Distutils 'bdist_packager' abstract command 
+Implements the Distutils 'bdist_packager' abstract command
 to be subclassed by binary package creation commands."""
 
 
@@ -33,7 +33,7 @@ class bdist_packager (Command):
          "Software category (packager dependent format)"),
         ('revision=', None,
          "package revision number"),
-	# the following have moved into the distribution class
+        # the following have moved into the distribution class
         #('packager=', None,
          #"Package maintainer"),
         #('packager-mail=', None,
@@ -199,10 +199,10 @@ class bdist_packager (Command):
         self.ensure_string('category')
         self.ensure_string('revision',"1")
         #self.ensure_string('url',d.get_url())
-	if type(self.distribution.packages) == type([]):
-		self.root_package=self.distribution.packages[0]
-	else:
-		self.root_package=self.name
+        if type(self.distribution.packages) == type([]):
+            self.root_package=self.distribution.packages[0]
+        else:
+            self.root_package=self.name
         self.ensure_string('root_package',self.root_package)
         #self.ensure_string_list('keywords')
         #self.ensure_string_not_none('author', d.get_author())
