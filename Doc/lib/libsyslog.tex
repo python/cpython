@@ -1,0 +1,67 @@
+\section{Built-in Module \sectcode{syslog}}
+\bimodindex{syslog}
+
+This module provides an interface to the Unix \code{syslog} library
+routines.  Refer to the \UNIX{} manual pages for a detailed description
+of the \code{syslog} facility.
+
+The module defines the following functions:
+
+\begin{funcdesc}{syslog}{\optional{priority\,} message}
+Send the string \var{message} to the system logger.
+A trailing newline is added if necessary.
+Each message is tagged with a priority composed of a \var{facility} and
+a \var{level}.
+The optional \var{priority} argument, which defaults to
+\code{(LOG_USER | LOG_INFO)}, determines the message priority.
+\end{funcdesc}
+
+\begin{funcdesc}{openlog}{ident\, \optional{logopt\, \optional{facility}}}
+Logging options other than the defaults can be set by explicitly opening
+the log file with \code{openlog()} prior to calling \code{syslog()}.
+The defaults are (usually) \var{ident} = \samp{syslog}, \var{logopt} = 0,
+\var{facility} = \code{LOG_USER}.
+The \var{ident} argument is a string which is prepended to every message.
+The optional \var{logopt} argument is a bit field - see below for possible
+values to combine.
+The optional \var{facility} argument sets the default facility for messages
+which do not have a facility explicitly encoded.
+\end{funcdesc}
+
+\begin{funcdesc}{closelog}{}
+Close the log file.
+\end{funcdesc}
+
+\begin{funcdesc}{setlogmask}{maskpri}
+This function set the priority mask to \var{maskpri} and returns the
+previous mask value.
+Calls to \code{syslog} with a priority level not set in \var{maskpri}
+are ignored.
+The default is to log all priorities.
+The function \code{LOG_MASK(\var{pri})} calculates the mask for the
+individual priority \var{pri}.
+The function \code{LOG_UPTO(\var{pri})} calculates the mask for all priorities
+up to and including \var{pri}.
+\end{funcdesc}
+
+The module defines the following constants:
+
+\begin{description}
+
+\item[Priority levels (high to low):]
+
+\code{LOG_EMERG}, \code{LOG_ALERT}, \code{LOG_CRIT}, \code{LOG_ERR},
+\code{LOG_WARNING}, \code{LOG_NOTICE}, \code{LOG_INFO}, \code{LOG_DEBUG}.
+
+\item[Facilities:]
+
+\code{LOG_KERN}, \code{LOG_USER}, \code{LOG_MAIL}, \code{LOG_DAEMON},
+\code{LOG_AUTH}, \code{LOG_LPR}, \code{LOG_NEWS}, \code{LOG_UUCP},
+\code{LOG_CRON} and \code{LOG_LOCAL0} to \code{LOG_LOCAL7}.
+
+\item[Log options:]
+
+\code{LOG_PID}, \code{LOG_CONS}, \code{LOG_NDELAY}, \code{LOG_NOWAIT}
+and \code{LOG_PERROR} if defined in \file{syslog.h}.
+
+\end{description}
