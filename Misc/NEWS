@@ -94,6 +94,11 @@ Library
 
 - Bug #891637, patch #1005466: fix inspect.getargs() crash on def foo((bar)).
 
+Tools/Demos
+-----------
+
+- pygettext.py: Generate POT-Creation-Date header in ISO format.
+
 Build
 -----
 
