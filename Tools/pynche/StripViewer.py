@@ -101,10 +101,15 @@ class StripWidget:
                  generator  = None,
                  axis       = None,
                  label      = ''):
+        # instance variables
+	self.__generator = generator
+	self.__axis = axis
+	assert self.__axis in (0, 1, 2)
+	self.__update_while_dragging = 0
         # the last chip selected
         self.__lastchip = None
         self.__sb = switchboard
-
+        
 	canvaswidth = numchips * (chipwidth + 1)
 	canvasheight = chipheight + 43		  # TBD: Kludge
 
@@ -152,11 +157,6 @@ class StripWidget:
 
 	chipx = self.__arrow_x(len(chips) - 1)
 	self.__rightarrow = RightArrow(canvas, chipx)
-
-	self.__generator = generator
-	self.__axis = axis
-	assert self.__axis in (0, 1, 2)
-	self.__update_while_dragging = 0
 
     # Invoked when one of the chips is clicked.  This should just tell the
     # switchboard to set the color on all the output components
