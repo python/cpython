@@ -95,9 +95,19 @@ _CS_REQ_SENT = 'Request-sent'
 
 
 class HTTPResponse:
-    def __init__(self, sock, debuglevel=0):
+
+    # strict: If true, raise BadStatusLine if the status line can't be
+    # parsed as a valid HTTP/1.0 or 1.1 status line.  By default it is
+    # false because it prvents clients from talking to HTTP/0.9
+    # servers.  Note that a response with a sufficiently corrupted
+    # status line will look like an HTTP/0.9 response.
+
+    # See RFC 2616 sec 19.6 and RFC 1945 sec 6 for details.
+
+    def __init__(self, sock, debuglevel=0, strict=0):
         self.fp = sock.makefile('rb', 0)
         self.debuglevel = debuglevel
+        self.strict = strict
 
         self.msg = None
 
@@ -112,6 +122,7 @@ class HTTPResponse:
         self.will_close = _UNKNOWN      # conn will close at end of response
 
     def _read_status(self):
+        # Initialize with Simple-Response defaults
         line = self.fp.readline()
         if self.debuglevel > 0:
             print "reply:", repr(line)
@@ -122,12 +133,17 @@ class HTTPResponse:
                 [version, status] = line.split(None, 1)
                 reason = ""
             except ValueError:
-                version = "HTTP/0.9"
-                status = "200"
-                reason = ""
-        if version[:5] != 'HTTP/':
-            self.close()
-            raise BadStatusLine(line)
+                # empty version will cause next test to fail and status
+                # will be treated as 0.9 response.
+                version = ""
+        if not version.startswith('HTTP/'):
+            if self.strict:
+                self.close()
+                raise BadStatusLine(line)
+            else:
+                # assume it's a Simple-Response from an 0.9 server
+                self.fp = LineAndFileWrapper(line, self.fp)
+                return "HTTP/0.9", 200, ""
 
         # The status code is a three-digit number
         try:
@@ -169,6 +185,7 @@ class HTTPResponse:
 
         if self.version == 9:
             self.chunked = 0
+            self.will_close = 1
             self.msg = mimetools.Message(StringIO())
             return
 
@@ -353,13 +370,16 @@ class HTTPConnection:
     default_port = HTTP_PORT
     auto_open = 1
     debuglevel = 0
+    strict = 0
 
-    def __init__(self, host, port=None):
+    def __init__(self, host, port=None, strict=None):
         self.sock = None
         self.__response = None
         self.__state = _CS_IDLE
-
+        
         self._set_hostport(host, port)
+        if strict is not None:
+            self.strict = strict
 
     def _set_hostport(self, host, port):
         if port is None:
@@ -610,9 +630,10 @@ class HTTPConnection:
             raise ResponseNotReady()
 
         if self.debuglevel > 0:
-            response = self.response_class(self.sock, self.debuglevel)
+            response = self.response_class(self.sock, self.debuglevel,
+                                           strict=self.strict)
         else:
-            response = self.response_class(self.sock)
+            response = self.response_class(self.sock, strict=self.strict)
 
         response._begin()
         assert response.will_close != _UNKNOWN
@@ -733,8 +754,9 @@ class HTTPSConnection(HTTPConnection):
 
     default_port = HTTPS_PORT
 
-    def __init__(self, host, port=None, key_file=None, cert_file=None):
-        HTTPConnection.__init__(self, host, port)
+    def __init__(self, host, port=None, key_file=None, cert_file=None,
+                 strict=None):
+        HTTPConnection.__init__(self, host, port, strict)
         self.key_file = key_file
         self.cert_file = cert_file
 
@@ -760,7 +782,7 @@ class HTTP:
 
     _connection_class = HTTPConnection
 
-    def __init__(self, host='', port=None):
+    def __init__(self, host='', port=None, strict=None):
         "Provide a default host, since the superclass requires one."
 
         # some joker passed 0 explicitly, meaning default port
@@ -770,7 +792,7 @@ class HTTP:
         # Note that we may pass an empty string as the host; this will throw
         # an error when we attempt to connect. Presumably, the client code
         # will call connect before then, with a proper host.
-        self._setup(self._connection_class(host, port))
+        self._setup(self._connection_class(host, port, strict))
 
     def _setup(self, conn):
         self._conn = conn
@@ -850,18 +872,20 @@ if hasattr(socket, 'ssl'):
 
         _connection_class = HTTPSConnection
 
-        def __init__(self, host='', port=None, **x509):
+        def __init__(self, host='', port=None, key_file=None, cert_file=None,
+                     strict=None):
             # provide a default host, pass the X509 cert info
 
             # urf. compensate for bad input.
             if port == 0:
                 port = None
-            self._setup(self._connection_class(host, port, **x509))
+            self._setup(self._connection_class(host, port, key_file,
+                                               cert_file, strict))
 
             # we never actually use these for anything, but we keep them
             # here for compatibility with post-1.5.2 CVS.
-            self.key_file = x509.get('key_file')
-            self.cert_file = x509.get('cert_file')
+            self.key_file = key_file
+            self.cert_file = cert_file
 
 
 class HTTPException(Exception):
@@ -906,6 +930,65 @@ class BadStatusLine(HTTPException):
 # for backwards compatibility
 error = HTTPException
 
+class LineAndFileWrapper:
+    """A limited file-like object for HTTP/0.9 responses."""
+
+    # The status-line parsing code calls readline(), which normally
+    # get the HTTP status line.  For a 0.9 response, however, this is
+    # actually the first line of the body!  Clients need to get a
+    # readable file object that contains that line.
+
+    def __init__(self, line, file):
+        self._line = line
+        self._file = file
+        self._line_consumed = 0
+        self._line_offset = 0
+        self._line_left = len(line)
+
+    def __getattr__(self, attr):
+        return getattr(self._file, attr)
+
+    def _done(self):
+        # called when the last byte is read from the line.  After the
+        # call, all read methods are delegated to the underlying file
+        # obhect.
+        self._line_consumed = 1
+        self.read = self._file.read
+        self.readline = self._file.readline
+        self.readlines = self._file.readlines
+
+    def read(self, amt=None):
+        assert not self._line_consumed and self._line_left
+        if amt is None or amt > self._line_left:
+            s = self._line[self._line_offset:]
+            self._done()
+            if amt is None:
+                return s + self._file.read()
+            else:
+                return s + self._file.read(amt - len(s))                
+        else:
+            assert amt <= self._line_left
+            i = self._line_offset
+            j = i + amt
+            s = self._line[i:j]
+            self._line_offset = j
+            self._line_left -= amt
+            if self._line_left == 0:
+                self._done()
+            return s
+        
+    def readline(self):
+        s = self._line[self._line_offset:]
+        self._done()
+        return s
+
+    def readlines(self, size=None):
+        L = [self._line[self._line_offset:]]
+        self._done()
+        if size is None:
+            return L + self._file.readlines()
+        else:
+            return L + self._file.readlines(size)
 
 #
 # snarfed from httplib.py for now...
@@ -970,6 +1053,36 @@ def test():
         print
         print "read", len(hs.getfile().read())
 
+
+    # Test a buggy server -- returns garbled status line.
+    # http://www.yahoo.com/promotions/mom_com97/supermom.html
+    c = HTTPConnection("promotions.yahoo.com")
+    c.set_debuglevel(1)
+    c.connect()
+    c.request("GET", "/promotions/mom_com97/supermom.html")
+    r = c.getresponse()
+    print r.status, r.version
+    lines = r.read().split("\n")
+    print "\n".join(lines[:5])
+
+    c = HTTPConnection("promotions.yahoo.com", strict=1)
+    c.set_debuglevel(1)
+    c.connect()
+    c.request("GET", "/promotions/mom_com97/supermom.html")
+    try:
+        r = c.getresponse()
+    except BadStatusLine, err:
+        print "strict mode failed as expected"
+    else:
+        print "XXX strict mode should have failed"
+
+    for strict in 0, 1:
+        h = HTTP(strict=strict)
+        h.connect("promotions.yahoo.com")
+        h.putrequest('GET', "/promotions/mom_com97/supermom.html")
+        h.endheaders()
+        status, reason, headers = h.getreply()
+        assert (strict and status == -1) or status == 200, (strict, status)
 
 if __name__ == '__main__':
     test()
