@@ -263,8 +263,8 @@ class Request:
         self.unredirected_hdrs[key.capitalize()] = val
 
     def has_header(self, header_name):
-        return bool(header_name in self.headers or
-                    header_name in self.unredirected_hdrs)
+        return (header_name in self.headers or
+                header_name in self.unredirected_hdrs)
 
     def get_header(self, header_name, default=None):
         return self.headers.get(
@@ -295,7 +295,7 @@ class OpenerDirector:
             condition = meth[i+1:]
 
             if condition.startswith("error"):
-                j = meth[i+1:].find("_") + i + 1
+                j = condition.find("_") + i + 1
                 kind = meth[j+1:]
                 try:
                     kind = int(kind)
@@ -1026,7 +1026,7 @@ if hasattr(httplib, 'HTTPS'):
 class HTTPCookieProcessor(BaseHandler):
     def __init__(self, cookiejar=None):
         if cookiejar is None:
-            cookiejar = CookieJar()
+            cookiejar = cookielib.CookieJar()
         self.cookiejar = cookiejar
 
     def http_request(self, request):
