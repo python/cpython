@@ -28,6 +28,9 @@ xml:
 	     $(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR) xml) \
 	done
 
+tarball:
+	tar cf - tools/sgmlconv */*.sgml | gzip -9 >sgml-1.5.2b1.tgz
+
 clean:
 	for DIR in $(SUBDIRS) ; do \
 	    (cd $$DIR; \
