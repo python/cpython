@@ -65,7 +65,6 @@ def getopt(args, shortopts, longopts = []):
         longopts = [longopts]
     else:
         longopts = list(longopts)
-    longopts.sort()
     while args and args[0].startswith('-') and args[0] != '-':
         if args[0] == '--':
             args = args[1:]
@@ -99,19 +98,10 @@ def do_longs(opts, opt, longopts, args):
 # Return:
 #   has_arg?
 #   full option name
-# Assumes longopts has been sorted (ASCII order).
 def long_has_args(opt, longopts):
-    for i in range(len(longopts)):
-        if longopts[i].startswith(opt):
-            break
-    else:
+    possibilities = [o for o in longopts if o.startswith(opt)]
+    if not possibilities:
         raise GetoptError('option --%s not recognized' % opt, opt)
-    # opt is a prefix of longopts[i]; find j s.t. opt is a prefix of
-    # each possibility in longopts[i:j]
-    j = i+1
-    while j < len(longopts) and longopts[j].startswith(opt):
-        j += 1
-    possibilities = longopts[i:j]
     # Is there an exact match?
     if opt in possibilities:
         return 0, opt
