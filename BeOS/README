@@ -75,7 +75,7 @@ Python 1.5.2 and later will compile "out of the box" on BeOS), try this:
 6) Make:
 
    make AR=$(pwd)/BeOS/ar-fake RANLIB=: OPT=-DUSE_DL_EXPORT \
-   CCSHARED=-UUSE_DL_EXPORT
+   CCSHARED=-UUSE_DL_EXPORT MACHDEP=beos
 
    On PowerPC systems, you'll see lots of warnings about duplicate
    symbols when things get linked; don't worry about this, it's
