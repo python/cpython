@@ -1752,16 +1752,22 @@ local bindings to py-newline-and-indent."))
 ;; returns the parse state at point (see parse-partial-sexp docs)
 (defun py-parse-state ()
   (save-excursion
-    (let ((here (point)) )
-      ;; back up to the first preceding line (if any; else start of
-      ;; buffer) that begins with a popular Python keyword, or a non-
-      ;; whitespace and non-comment character.  These are good places
-      ;; to start parsing to see whether where we started is at a
-      ;; non-zero nesting level.  It may be slow for people who write
-      ;; huge code blocks or huge lists ... tough beans.
-      (re-search-backward py-parse-state-re nil 'move)
-      (beginning-of-line)
-      (parse-partial-sexp (point) here))))
+    (let ((here (point))
+	  pps done)
+      (while (not done)
+	;; back up to the first preceding line (if any; else start of
+	;; buffer) that begins with a popular Python keyword, or a
+	;; non- whitespace and non-comment character.  These are good
+	;; places to start parsing to see whether where we started is
+	;; at a non-zero nesting level.  It may be slow for people who
+	;; write huge code blocks or huge lists ... tough beans.
+	(re-search-backward py-parse-state-re nil 'move)
+	(beginning-of-line)
+	(save-excursion
+	  (setq pps (parse-partial-sexp (point) here)))
+	;; make sure we don't land inside a triple-quoted string
+	(setq done (or (not (nth 3 pps)) (bobp))))
+      pps)))
 
 ;; if point is at a non-zero nesting level, returns the number of the
 ;; character that opens the smallest enclosing unclosed list; else
