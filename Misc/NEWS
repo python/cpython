@@ -57,7 +57,7 @@ Library
   + a configurable limit to the size of parsed fields has been added -
     previously, an unmatched quote character could result in the entire
     file being read into the field buffer before an error was reported.
-  + A new module method csv.set_field_limit() has been added that sets
+  + A new module method csv.field_size_limit() has been added that sets
     the parser field size limit (returning the former limit). The initial
     limit is 128kB.
   + reader and writer objects were not being registered with the cyclic-GC.
