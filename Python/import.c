@@ -181,6 +181,18 @@ unlock_import(void)
 
 #endif
 
+static PyObject *
+imp_lock_held(PyObject *self, PyObject *args)
+{
+	if (!PyArg_ParseTuple(args, ":lock_held"))
+		return NULL;
+#ifdef WITH_THREAD
+	return PyInt_FromLong(import_lock_thread != -1);
+#else
+	return PyInt_FromLong(0);
+#endif
+}
+
 /* Helper for sys */
 
 PyObject *
@@ -2339,12 +2351,19 @@ Create a new module.  Do not enter it in sys.modules.\n\
 The module name must include the full package name, if any.\
 ";
 
+static char doc_lock_held[] = "\
+lock_held() -> 0 or 1\n\
+Return 1 if the import lock is currently held.\n\
+On platforms without threads, return 0.\
+";
+
 static PyMethodDef imp_methods[] = {
 	{"find_module",		imp_find_module,	1, doc_find_module},
 	{"get_magic",		imp_get_magic,		1, doc_get_magic},
 	{"get_suffixes",	imp_get_suffixes,	1, doc_get_suffixes},
 	{"load_module",		imp_load_module,	1, doc_load_module},
 	{"new_module",		imp_new_module,		1, doc_new_module},
+	{"lock_held",		imp_lock_held,		1, doc_lock_held},
 	/* The rest are obsolete */
 	{"get_frozen_object",	imp_get_frozen_object,	1},
 	{"init_builtin",	imp_init_builtin,	1},

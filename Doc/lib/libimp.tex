@@ -93,6 +93,19 @@ Return a new empty module object called \var{name}.  This object is
 \emph{not} inserted in \code{sys.modules}.
 \end{funcdesc}
 
+\begin{funcdesc}{lock_held}{}
+Return 1 if the import lock is currently held, else 0.
+On platforms without threads, always return 0.
+
+On platforms with threads, a thread executing an import holds an internal
+lock until the import is complete.
+This lock blocks other threads from doing an import until the original
+import completes, which in turn prevents other threads from seeing
+incomplete module objects constructed by the original thread while in
+the process of completing its import (and the imports, if any,
+triggered by that).
+\end{funcdesc}
+
 The following constants with integer values, defined in this module,
 are used to indicate the search result of \function{find_module()}.
 

@@ -32,10 +32,12 @@ def task():
 
 def test_main():        # magic name!  see above
     global N, done
-    import sys
-    for modname in sys.modules:
-        if modname.find('autotest') >= 0:
-            raise TestSkipped("can't run from autotest")
+
+    import imp
+    if imp.lock_held():
+        # This triggers on, e.g., from test import autotest.
+        raise TestSkipped("can't run when import lock is held")
+
     done.acquire()
     for N in (20, 50) * 3:
         if verbose:
