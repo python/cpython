@@ -132,7 +132,7 @@ class MutableString(UserString):
     But the purpose of this class is an educational one: to prevent
     people from inventing their own mutable string class derived
     from UserString and than forget thereby to remove (override) the
-    __hash__ method inherited from ^UserString.  This would lead to
+    __hash__ method inherited from UserString.  This would lead to
     errors that would be very hard to track down.
 
     A faster and better solution is to rewrite your program using lists."""
