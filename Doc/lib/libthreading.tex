@@ -49,6 +49,25 @@ reset to false with the \method{clear()} method.  The \method{wait()}
 method blocks until the flag is true.
 \end{funcdesc}
 
+\begin{classdesc*}{local}{}
+A class that represents thread-local data.  Thread-local data are data
+who's values are thread specific.  To manage thread-local data, just
+create an instance of \class{local} (or a subclass) and store
+attributes on it:
+
+\begin{verbatim}
+  >>> mydata = threading.local()
+  >>> mydata.x = 1
+\end{verbatim}
+
+The instance's values will be different for separate threads.
+
+For more details and extensive examples, see the documentation string
+of the _threading_local module.
+
+\versionadded{2.4}
+\end{classdesc*}
+
 \begin{funcdesc}{Lock}{}
 A factory function that returns a new primitive lock object.  Once
 a thread has acquired it, subsequent attempts to acquire it block,
