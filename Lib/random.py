@@ -315,8 +315,6 @@ class Random:
 
     def randint(self, a, b):
         """Return random integer in range [a, b], including both end points.
-
-        (Deprecated; use randrange(a, b+1).)
         """
 
         return self.randrange(a, b+1)
