@@ -226,6 +226,12 @@ extern void inittime();
 #ifdef USE_IMAGEOP
 extern void initimageop();
 #endif
+#ifdef USE_MPZ
+extern void initmpz();
+#endif
+#ifdef USE_MD5
+extern void initmd5();
+#endif
 /* -- ADDMODULE MARKER 1 -- */
 
 struct {
@@ -363,6 +369,14 @@ struct {
 
 #ifdef USE_IMAGEOP
        {"imageop", initimageop},
+#endif
+
+#ifdef USE_MPZ
+       {"mpz", initmpz},
+#endif
+
+#ifdef USE_MD5
+       {"md5", initmd5},
 #endif
 
 /* -- ADDMODULE MARKER 2 -- */
