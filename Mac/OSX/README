@@ -58,7 +58,7 @@ portions of the Mac subtree into the Python.framework.
 
 It is normally invoked indirectly through the main Makefile, as the last step
 in the sequence
-1. configure --enable-framework
+1. ./configure --enable-framework
 2. make
 3. make frameworkinstall
 
