@@ -376,10 +376,8 @@ _Py_NoneStruct
 _Py_NotImplementedStruct
 _Py_cobject_hack
 _Py_abstract_hack
-_PyCompareState_Key
 _PyTrash_delete_later
 _PyTrash_delete_nesting
-_PyCompareState_nesting
 _PyTrash_destroy_chain
 _PyTrash_deposit_object
 Py_ReprLeave
@@ -671,8 +669,6 @@ initunicodedata
 _PyUnicode_Database_Records
 _PyUnicode_CategoryNames
 _PyUnicode_BidirectionalNames
-_PyUnicode_Database_GetDecomposition
-_PyUnicode_Database_GetRecord
 _PyCodecRegistry_Fini
 _PyCodecRegistry_Init
 PyCodec_Decode

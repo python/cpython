@@ -404,7 +404,6 @@ _Py_HashPointer
 _Py_HashDouble
 PyObject_RichCompareBool
 PyObject_RichCompare
-do_richcmp
 PyObject_Compare
 PyObject_Unicode
 PyObject_Str
@@ -681,8 +680,6 @@ initunicodedata
 _PyUnicode_Database_Records
 _PyUnicode_CategoryNames
 _PyUnicode_BidirectionalNames
-_PyUnicode_Database_GetDecomposition
-_PyUnicode_Database_GetRecord
 _PyCodecRegistry_Fini
 _PyCodecRegistry_Init
 PyCodec_Decode
