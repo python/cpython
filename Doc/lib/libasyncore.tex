@@ -103,7 +103,7 @@ def handle_write(self):
   indicating that by default, all channels will be interested.
 \end{methoddesc}
 
-\begin{methoddesc}{writeable}{}
+\begin{methoddesc}{writable}{}
   Each time through the \method{select()} loop, the set of sockets 
   is scanned, and this method is called to see if there is any 
   interest in writing.  The default method simply returns \code{1}, 
@@ -187,7 +187,7 @@ class http_client(asyncore.dispatcher):
         data = self.recv(8192)
         print data
         
-    def writeable(self):
+    def writable(self):
         return (len(self.buffer) > 0)
     
     def handle_write(self):
