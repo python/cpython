@@ -3,22 +3,18 @@
   Reference Cycle Garbage Collection
   ==================================
 
-  Neil Schemenauer <nascheme@enme.ucalgary.ca>
+  Neil Schemenauer <nas@arctrix.com>
 
   Based on a post on the python-dev list.  Ideas from Guido van Rossum,
   Eric Tiedemann, and various others.
 
-  http://www.enme.calgary.ca/~nascheme/python/gc.html
+  http://www.arctrix.com/nas/python/gc.html
   http://www.python.org/pipermail/python-dev/2000-March/003869.html
   http://www.python.org/pipermail/python-dev/2000-March/004010.html
   http://www.python.org/pipermail/python-dev/2000-March/004022.html
 
   For a highlevel view of the collection process, read the collect
   function.
-
-  TODO:
-	use a different interface for set_debug() (keywords)?
-	tune parameters
 
 */
 
