@@ -672,7 +672,7 @@ PyTokenizer_Get(tok, p_start, p_end)
   letter_quote:
 	/* String */
 	if (c == '\'' || c == '"') {
-		char *quote2 = tok->cur+1;
+		int quote2 = tok->cur - tok->start + 1;
 		int quote = c;
 		int triple = 0;
 		int tripcount = 0;
@@ -693,7 +693,7 @@ PyTokenizer_Get(tok, p_start, p_end)
 			}
 			else if (c == quote) {
 				tripcount++;
-				if (tok->cur == quote2) {
+				if (tok->cur - tok->start == quote2) {
 					c = tok_nextc(tok);
 					if (c == quote) {
 						triple = 1;
