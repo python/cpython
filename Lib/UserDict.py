@@ -38,3 +38,5 @@ class UserDict:
         if not self.data.has_key(key):
             self.data[key] = failobj
         return self.data[key]
+    def popitem(self):
+        return self.data.popitem()
