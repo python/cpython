@@ -79,9 +79,9 @@ Availability: Macintosh, \UNIX{}, Windows.
 \end{funcdesc}
 
 \begin{datadesc}{environ}
-A mapping representing the string environment. For example,
-\code{environ['HOME']} is the pathname of your home directory,
-equivalent to \code{getenv("HOME")} in C.
+A mapping object representing the string environment. For example,
+\code{environ['HOME']} is the pathname of your home directory (on some
+platforms), and is equivalent to \code{getenv("HOME")} in C.
 
 If the platform supports the \function{putenv()} function, this
 mapping may be used to modify the environment as well as query the
