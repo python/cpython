@@ -1002,6 +1002,9 @@ static PyBufferProcs string_as_buffer = {
 #define RIGHTSTRIP 1
 #define BOTHSTRIP 2
 
+/* Arrays indexed by above */
+static const char *stripname[] = {"lstrip", "rstrip", "strip"};
+
 
 static PyObject *
 split_whitespace(const char *s, int len, int maxsplit)
@@ -1377,6 +1380,39 @@ string_rindex(PyStringObject *self, PyObject *args)
 
 
 static PyObject *
+do_xstrip(PyStringObject *self, int striptype, PyObject *sepobj)
+{
+	char *s = PyString_AS_STRING(self);
+	int len = PyString_GET_SIZE(self);
+	char *sep = PyString_AS_STRING(sepobj);
+	int seplen = PyString_GET_SIZE(sepobj);
+	int i, j;
+
+	i = 0;
+	if (striptype != RIGHTSTRIP) {
+		while (i < len && memchr(sep, Py_CHARMASK(s[i]), seplen)) {
+			i++;
+		}
+	}
+
+	j = len;
+	if (striptype != LEFTSTRIP) {
+		do {
+			j--;
+		} while (j >= i && memchr(sep, Py_CHARMASK(s[j]), seplen));
+		j++;
+	}
+
+	if (i == 0 && j == len && PyString_CheckExact(self)) {
+		Py_INCREF(self);
+		return (PyObject*)self;
+	}
+	else
+		return PyString_FromStringAndSize(s+i, j-i);
+}
+
+
+static PyObject *
 do_strip(PyStringObject *self, int striptype)
 {
 	char *s = PyString_AS_STRING(self);
@@ -1406,40 +1442,75 @@ do_strip(PyStringObject *self, int striptype)
 }
 
 
+static PyObject *
+do_argstrip(PyStringObject *self, int striptype, PyObject *args)
+{
+	PyObject *sep = NULL;
+
+	if (!PyArg_ParseTuple(args, "|O:[lr]strip", &sep))
+		return NULL;
+
+	if (sep != NULL && sep != Py_None) {
+		/* XXX What about Unicode? */
+		if (!PyString_Check(sep)) {
+			PyErr_Format(PyExc_TypeError,
+				     "%s arg must be None or string",
+				     stripname[striptype]);
+			return NULL;
+		}
+		return do_xstrip(self, striptype, sep);
+	}
+
+	return do_strip(self, striptype);
+}
+
+
 static char strip__doc__[] =
-"S.strip() -> string\n\
+"S.strip([sep]) -> string\n\
 \n\
 Return a copy of the string S with leading and trailing\n\
-whitespace removed.";
+whitespace removed.\n\
+If sep is given and not None, remove characters in sep instead.";
 
 static PyObject *
-string_strip(PyStringObject *self)
+string_strip(PyStringObject *self, PyObject *args)
 {
-	return do_strip(self, BOTHSTRIP);
+	if (PyTuple_GET_SIZE(args) == 0)
+		return do_strip(self, BOTHSTRIP); /* Common case */
+	else
+		return do_argstrip(self, BOTHSTRIP, args);
 }
 
 
 static char lstrip__doc__[] =
-"S.lstrip() -> string\n\
+"S.lstrip([sep]) -> string\n\
 \n\
-Return a copy of the string S with leading whitespace removed.";
+Return a copy of the string S with leading whitespace removed.\n\
+If sep is given and not None, remove characters in sep instead.";
 
 static PyObject *
-string_lstrip(PyStringObject *self)
+string_lstrip(PyStringObject *self, PyObject *args)
 {
-	return do_strip(self, LEFTSTRIP);
+	if (PyTuple_GET_SIZE(args) == 0)
+		return do_strip(self, LEFTSTRIP); /* Common case */
+	else
+		return do_argstrip(self, LEFTSTRIP, args);
 }
 
 
 static char rstrip__doc__[] =
-"S.rstrip() -> string\n\
+"S.rstrip([sep]) -> string\n\
 \n\
-Return a copy of the string S with trailing whitespace removed.";
+Return a copy of the string S with trailing whitespace removed.\n\
+If sep is given and not None, remove characters in sep instead.";
 
 static PyObject *
-string_rstrip(PyStringObject *self)
+string_rstrip(PyStringObject *self, PyObject *args)
 {
-	return do_strip(self, RIGHTSTRIP);
+	if (PyTuple_GET_SIZE(args) == 0)
+		return do_strip(self, RIGHTSTRIP); /* Common case */
+	else
+		return do_argstrip(self, RIGHTSTRIP, args);
 }
 
 
@@ -2644,13 +2715,13 @@ string_methods[] = {
 	{"endswith",   (PyCFunction)string_endswith,    METH_VARARGS, endswith__doc__},
 	{"find",       (PyCFunction)string_find,        METH_VARARGS, find__doc__},
 	{"index",      (PyCFunction)string_index,       METH_VARARGS, index__doc__},
-	{"lstrip",     (PyCFunction)string_lstrip,      METH_NOARGS, lstrip__doc__},
+	{"lstrip",     (PyCFunction)string_lstrip,      METH_VARARGS, lstrip__doc__},
 	{"replace",     (PyCFunction)string_replace,    METH_VARARGS, replace__doc__},
 	{"rfind",       (PyCFunction)string_rfind,      METH_VARARGS, rfind__doc__},
 	{"rindex",      (PyCFunction)string_rindex,     METH_VARARGS, rindex__doc__},
-	{"rstrip",      (PyCFunction)string_rstrip,     METH_NOARGS, rstrip__doc__},
+	{"rstrip",      (PyCFunction)string_rstrip,     METH_VARARGS, rstrip__doc__},
 	{"startswith",  (PyCFunction)string_startswith, METH_VARARGS, startswith__doc__},
-	{"strip",       (PyCFunction)string_strip,      METH_NOARGS, strip__doc__},
+	{"strip",       (PyCFunction)string_strip,      METH_VARARGS, strip__doc__},
 	{"swapcase",    (PyCFunction)string_swapcase,   METH_NOARGS, swapcase__doc__},
 	{"translate",   (PyCFunction)string_translate,  METH_VARARGS, translate__doc__},
 	{"title",       (PyCFunction)string_title,      METH_NOARGS, title__doc__},

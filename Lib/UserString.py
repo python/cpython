@@ -108,7 +108,7 @@ class UserString:
     def join(self, seq): return self.data.join(seq)
     def ljust(self, width): return self.__class__(self.data.ljust(width))
     def lower(self): return self.__class__(self.data.lower())
-    def lstrip(self): return self.__class__(self.data.lstrip())
+    def lstrip(self, sep=None): return self.__class__(self.data.lstrip(sep))
     def replace(self, old, new, maxsplit=-1):
         return self.__class__(self.data.replace(old, new, maxsplit))
     def rfind(self, sub, start=0, end=sys.maxint):
@@ -116,13 +116,13 @@ class UserString:
     def rindex(self, sub, start=0, end=sys.maxint):
         return self.data.rindex(sub, start, end)
     def rjust(self, width): return self.__class__(self.data.rjust(width))
-    def rstrip(self): return self.__class__(self.data.rstrip())
+    def rstrip(self, sep=None): return self.__class__(self.data.rstrip(sep))
     def split(self, sep=None, maxsplit=-1):
         return self.data.split(sep, maxsplit)
     def splitlines(self, keepends=0): return self.data.splitlines(keepends)
     def startswith(self, prefix, start=0, end=sys.maxint):
         return self.data.startswith(prefix, start, end)
-    def strip(self): return self.__class__(self.data.strip())
+    def strip(self, sep=None): return self.__class__(self.data.strip(sep))
     def swapcase(self): return self.__class__(self.data.swapcase())
     def title(self): return self.__class__(self.data.title())
     def translate(self, *args):
