@@ -6,7 +6,7 @@
 import os
 import bsddb
 import tempfile
-from test_support import verbose
+from test_support import verbose, verify
 
 def test(openmethod, what):
 
@@ -15,6 +15,7 @@ def test(openmethod, what):
 
     fname = tempfile.mktemp()
     f = openmethod(fname, 'c')
+    verify(f.keys() == [])
     if verbose:
         print 'creation...'
     f['0'] = ''
