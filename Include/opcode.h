@@ -88,6 +88,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* unused:		94 */
 #define STORE_ATTR	95	/* Index in name list */
 #define DELETE_ATTR	96	/* "" */
+#define STORE_GLOBAL	97	/* "" */
+#define DELETE_GLOBAL	98	/* "" */
 
 #define LOAD_CONST	100	/* Index in const list */
 #define LOAD_NAME	101	/* Index in name list */
