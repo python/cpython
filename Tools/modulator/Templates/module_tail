@@ -3,7 +3,7 @@
 
 static struct PyMethodDef $abbrev$_methods[] = {
 	$methodlist$
-	{NULL,		NULL}		/* sentinel */
+	{NULL,	 (PyCFunction)NULL, 0, NULL}		/* sentinel */
 };
 
 

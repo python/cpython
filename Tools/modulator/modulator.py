@@ -17,7 +17,8 @@
 #
 
 import sys, os
-sys.path.append(os.path.join(os.environ['HOME'], 'src/python/Tools/modulator'))
+if os.name <> 'mac':
+	sys.path.append(os.path.join(os.environ['HOME'], 'src/python/Tools/modulator'))
 
 from Tkinter import *
 from Tkextra import *
