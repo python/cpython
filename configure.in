@@ -1346,6 +1346,10 @@ AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 AC_SEARCH_LIBS(sem_init, pthread rt posix4) # 'Real Time' functions on Solaris
 					    # posix4 on Solaris 2.6
 					    # pthread (first!) on Linux
+# check if we need libintl for locale functions
+AC_CHECK_LIB(intl, textdomain,
+	AC_DEFINE(WITH_LIBINTL, 1,
+	[Define to 1 if libintl is needed for locale functions.]))
 
 # checks for system dependent C++ extensions support
 case "$ac_sys_system" in
