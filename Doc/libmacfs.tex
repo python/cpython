@@ -28,6 +28,10 @@ alias as a string.  This is mainly useful if you have obtained an
 FSSpec structure over a network.
 \end{funcdesc}
 
+\begin{funcdesc}{FInfo}{}
+Create a zero-filled FInfo object.
+\end{funcdesc}
+
 \begin{funcdesc}{ResolveAliasFile}{file}
 Resolve an alias file. Returns a 3-tuple \code{(\var{fsspec}, \var{isfolder},
 \var{aliased})} where \var{fsspec} is the resulting FSSpec object,
@@ -55,6 +59,16 @@ the dialog without cancelling.
 \begin{funcdesc}{GetDirectory}{}
 Present the user with a non-standard ``select a directory''
 dialog. Return an FSSpec object and a success-indicator.
+\end{funcdesc}
+
+\begin{funcdesc}{FindFolder}{where\, which\, create}
+Locates one of the ``special'' folders that MacOS knows about, such as
+the trash or the Preferences folder. \var{Where} is the disk to search
+(\code{0x8000} for the boot disk), \var{which} is the 4-char string
+specifying which folder to locate. Setting \var{create} causes the
+folder to be created if it does not exist. Returns a \code{(vrefnum,
+dirid)} tuple. See Inside Mac VI for a complete description, including
+4-char names.
 \end{funcdesc}
 
 \subsection{FSSpec objects}
@@ -93,6 +107,15 @@ Return the 4-char creator and type of the file.
 Set the 4-char creator and type of the file.
 \end{funcdesc}
 
+\begin{funcdesc}{GetFInfo}{}
+Return a FInfo object describing the finder info for the file.
+\end{funcdesc}
+
+\begin{funcdesc}{SetFInfo}{finfo}
+Set the finder info for the file to the values specified in the
+\var{finfo} object.
+\end{funcdesc}
+
 \subsection{alias objects}
 
 \renewcommand{\indexsubitem}{(alias object attribute)}
@@ -125,3 +148,28 @@ is responsible for getting the \var{data} from the alias object and
 modifying the resource.
 
 
+\subsection{FInfo objects}
+
+See Inside Mac for a complete description of what the various fields
+mean.
+
+\renewcommand{\indexsubitem}{(FInfo object attribute)}
+\begin{datadesc}{Creator}
+The 4-char creator code of the file.
+\end{datadesc}
+
+\begin{datadesc}{Type}
+The 4-char type code of the file.
+\end{datadesc}
+
+\begin{datadesc}{Flags}
+The finder flags for the file as 16-bit integer.
+\end{datadesc}
+
+\begin{datadesc}{Location}
+A Point giving the position of the file's icon in its folder.
+\end{datadesc}
+
+\begin{datadesc}{Fldr}
+The folder the file is in (as an integer).
+\end{datadesc}
