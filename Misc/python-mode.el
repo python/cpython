@@ -307,7 +307,15 @@ the Emacs bell is also rung as a warning."
   "*Jump to innermost exception frame in *Python Output* buffer.
 When this variable is non-nil and ane exception occurs when running
 Python code synchronously in a subprocess, jump immediately to the
-source code of the innermost frame.")
+source code of the innermost frame."
+  :type 'boolean
+  :group 'python)
+
+(defcustom py-ask-about-save t
+  "If not nil, ask about which buffers to save before executing some code.
+Otherwise, all modified buffers are saved without asking."
+  :type 'boolean
+  :group 'python)
 
 (defcustom py-backspace-function 'backward-delete-char-untabify
   "*Function called by `py-electric-backspace' when deleting backwards."
@@ -1385,7 +1393,8 @@ the latest version.  If the file's name does not end in \".py\", then
 do execfile instead.  If the current buffer is not visiting a file, do
 `py-execute-buffer' instead.  If the file local variable
 `py-master-file' is non-nil, import or reload the named file instead
-of the buffer's file.  The file is saved if necessary.
+of the buffer's file.  The file may be saved based on the value of
+`py-execute-import-or-reload-save-p'.
 
 See the `\\[py-execute-region]' docs for an account of some subtleties.
 
@@ -1406,9 +1415,8 @@ This is may be preferable to `\\[py-execute-buffer]' because:
   (let ((file (buffer-file-name (current-buffer))))
     (if file
         (progn
-;          (if (buffer-modified-p)
-;	      ;; avoid message if unmodified
-;	      (save-buffer))
+	  ;; Maybe save some buffers
+	  (save-some-buffers (not py-ask-about-save) nil)
           (py-execute-string
            (if (string-match "\\.py$" file)
                (let ((f (file-name-sans-extension
