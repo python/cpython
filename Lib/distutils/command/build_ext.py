@@ -160,7 +160,7 @@ class build_ext (Command):
 
         # 'self.extensions', as supplied by setup.py, is a list of
         # Extension instances.  See the documentation for Extension (in
-        # distutils.core) for details.
+        # distutils.extension) for details.
         # 
         # For backwards compatibility with Distutils 0.8.2 and earlier, we
         # also allow the 'extensions' list to be a list of tuples:
@@ -395,6 +395,11 @@ class build_ext (Command):
             if os.environ.has_key('CFLAGS'):
                 extra_args.extend(string.split(os.environ['CFLAGS']))
                 
+            # Run any platform/compiler-specific hooks needed before
+            # compiling (currently none, but any hypothetical subclasses
+            # might find it useful to override this).
+            self.precompile_hook()
+
             objects = self.compiler.compile (sources,
                                              output_dir=self.build_temp,
                                              #macros=macros,
@@ -409,41 +414,9 @@ class build_ext (Command):
                 objects.extend (ext.extra_objects)
             extra_args = ext.extra_link_args
 
-            # XXX this is a kludge!  Knowledge of specific compilers or
-            # platforms really doesn't belong here; in an ideal world, the
-            # CCompiler interface would provide access to everything in a
-            # compiler/linker system needs to build Python extensions, and
-            # we would just do everything nicely and cleanly through that
-            # interface.  However, this is a not an ideal world and the
-            # CCompiler interface doesn't handle absolutely everything.
-            # Thus, kludges like this slip in occasionally.  (This is no
-            # excuse for committing more platform- and compiler-specific
-            # kludges; they are to be avoided if possible!)
-            if self.compiler.compiler_type == 'msvc':
-                def_file = ext.export_symbol_file
-                if def_file is None:
-                    source_dir = os.path.dirname (sources[0])
-                    ext_base = (string.split (ext.name, '.'))[-1]
-                    def_file = os.path.join (source_dir, "%s.def" % ext_base)
-                    if not os.path.exists (def_file):
-                        def_file = None
-
-                if def_file is not None:
-                    extra_args.append ('/DEF:' + def_file)
-                else:
-                    modname = string.split (ext.name, '.')[-1]
-                    extra_args.append('/export:init%s'%modname)
-
-                # The MSVC linker generates unneeded .lib and .exp files,
-                # which cannot be suppressed by any linker switches.  So
-                # make sure they are generated in the temporary build
-                # directory.
-                implib_file = os.path.join (
-                    self.build_temp,
-                    self.get_ext_libname (ext.name))
-                extra_args.append ('/IMPLIB:' + implib_file)
-                self.mkpath (os.path.dirname (implib_file))
-            # if MSVC
+            # Run any platform/compiler-specific hooks needed between
+            # compiling and linking (currently needed only on Windows).
+            self.prelink_hook()
 
             self.compiler.link_shared_object (
                 objects, ext_filename, 
@@ -456,6 +429,55 @@ class build_ext (Command):
     # build_extensions ()
 
 
+    # -- Hooks ---------------------------------------------------------
+
+    def precompile_hook (self):
+        pass
+
+    def prelink_hook (self):
+
+        # XXX this is a kludge!  Knowledge of specific compilers or
+        # platforms really doesn't belong here; in an ideal world, the
+        # CCompiler interface would provide access to everything in a
+        # compiler/linker system needs to build Python extensions, and
+        # we would just do everything nicely and cleanly through that
+        # interface.  However, this is a not an ideal world and the
+        # CCompiler interface doesn't handle absolutely everything.
+        # Thus, kludges like this slip in occasionally.  (This is no
+        # excuse for committing more platform- and compiler-specific
+        # kludges; they are to be avoided if possible!)
+        if self.compiler.compiler_type == 'msvc':
+            def_file = ext.export_symbol_file
+            if def_file is None:
+                source_dir = os.path.dirname (sources[0])
+                ext_base = (string.split (ext.name, '.'))[-1]
+                def_file = os.path.join (source_dir, "%s.def" % ext_base)
+                if not os.path.exists (def_file):
+                    def_file = None
+
+            if def_file is not None:
+                extra_args.append ('/DEF:' + def_file)
+            else:
+                modname = string.split (ext.name, '.')[-1]
+                extra_args.append('/export:init%s'%modname)
+
+            # The MSVC linker generates unneeded .lib and .exp files,
+            # which cannot be suppressed by any linker switches.  So
+            # make sure they are generated in the temporary build
+            # directory.
+            implib_file = os.path.join (
+                self.build_temp,
+                self.get_ext_libname (ext.name))
+            extra_args.append ('/IMPLIB:' + implib_file)
+            self.mkpath (os.path.dirname (implib_file))
+        # if MSVC
+
+    # prelink_hook ()
+
+
+    # -- Name generators -----------------------------------------------
+    # (extension names, filenames, whatever)
+
     def get_ext_fullname (self, ext_name):
         if self.package is None:
             return ext_name
@@ -463,6 +485,11 @@ class build_ext (Command):
             return self.package + '.' + ext_name
 
     def get_ext_filename (self, ext_name):
+        """Convert the name of an extension (eg. "foo.bar") into the name
+        of the file from which it will be loaded (eg. "foo/bar.so", or
+        "foo\bar.pyd").
+        """
+
         from distutils import sysconfig
         ext_path = string.split (ext_name, '.')
         # extensions in debug_mode are named 'module_d.pyd' under windows
