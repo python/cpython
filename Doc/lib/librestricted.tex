@@ -1,0 +1,61 @@
+\chapter{Restricted Execution}
+
+In general, executing Python programs have complete access to the
+underlying operating system through the various functions and classes
+contained in Python's modules.  For example, a Python program can open
+any file\footnote{Provided the underlying OS gives you permission!}
+for reading and writing by using the
+\code{open()} built-in function.  This is exactly what you want for
+most applications.
+
+There is a class of applications for which this ``openness'' is
+inappropriate.  Imagine a web browser that accepts ``applets'', snippets of
+Python code, from anywhere on the Internet for execution on the local
+system.  Since the originator of the code is unknown, it is obvious that it
+cannot be trusted with the full resources of the local machine.
+
+\emph{Restricted execution} is the basic Python framework that allows
+for the segregation of trusted and untrusted code.  It is based on the
+notion that trusted Python code (a \emph{supervisor}) can create a
+``padded cell' (or environment) of limited permissions, and run the
+untrusted code within this cell.  The untrusted code cannot break out
+of its cell, and can only interact with sensitive system resources
+through interfaces defined, and managed by the trusted code.  The term
+``restricted execution'' is favored over the term ``safe-Python''
+since true safety is hard to define, and is determined by the way the
+restricted environment is created.  Note that the restricted
+environments can be nested, with inner cells creating subcells of
+lesser, but never greater, privledge.
+
+An interesting aspect of Python's restricted execution model is that
+the attributes presented to untrusted code usually have the same names
+as those presented to trusted code.  Therefore no special interfaces
+need to be learned to write code designed to run in a restricted
+environment.  And because the exact nature of the padded cell is
+determined by the supervisor, different restrictions can be imposed,
+depending on the application.  For example, it might be deemed
+``safe'' for untrusted code to read any file within a specified
+directory, but never to write a file.  In this case, the supervisor
+may redefine the built-in
+\code{open()} function so that it raises an exception whenever the
+\var{mode} parameter is \code{'w'}.  It might also perform a
+\code{chroot()}-like operation on the \var{filename} parameter, such
+that root is always relative to some safe ``sandbox'' area of the
+filesystem.  In this case, the untrusted code would still see an
+\code{open()} function in its \code{__builtin__} module, with the same
+calling interface.  The semantics would be identical too, with
+\code{IOError}s being raised when the supervisor determined that an
+unallowable parameter is being used.
+
+Two modules provide the framework for setting up restricted execution
+environments:
+
+\begin{description}
+
+\item[rexec]
+--- Basic restricted execution framework.
+
+\item[Bastion]
+--- Providing restricted access to objects.
+
+\end{description}
