@@ -662,7 +662,9 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   (set-syntax-table py-mode-syntax-table)
   (setq major-mode 'python-mode
 	mode-name "Python"
-	local-abbrev-table python-mode-abbrev-table)
+	local-abbrev-table python-mode-abbrev-table
+	font-lock-defaults '(python-font-lock-keywords)
+	)
   (use-local-map py-mode-map)
   ;; add the menu
   (if py-menu
