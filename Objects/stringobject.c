@@ -464,7 +464,8 @@ string_buffer_getreadbuf(self, index, ptr)
 	const void **ptr;
 {
 	if ( index != 0 ) {
-		PyErr_SetString(PyExc_SystemError, "Accessing non-existent string segment");
+		PyErr_SetString(PyExc_SystemError,
+				"Accessing non-existent string segment");
 		return -1;
 	}
 	*ptr = (void *)self->ob_sval;
@@ -477,7 +478,8 @@ string_buffer_getwritebuf(self, index, ptr)
 	int index;
 	const void **ptr;
 {
-	PyErr_SetString(PyExc_TypeError, "Cannot use string as modifyable buffer");
+	PyErr_SetString(PyExc_TypeError,
+			"Cannot use string as modifyable buffer");
 	return -1;
 }
 
@@ -753,6 +755,7 @@ PyString_Format(format, args)
 				char *keystart;
 				int keylen;
 				PyObject *key;
+				int pcount = 1;
 
 				if (dict == NULL) {
 					PyErr_SetString(PyExc_TypeError,
@@ -762,11 +765,16 @@ PyString_Format(format, args)
 				++fmt;
 				--fmtcnt;
 				keystart = fmt;
-				while (--fmtcnt >= 0 && *fmt != ')')
+				/* Skip over balanced parentheses */
+				while (pcount > 0 && --fmtcnt >= 0) {
+					if (*fmt == ')')
+						--pcount;
+					else if (*fmt == '(')
+						++pcount;
 					fmt++;
-				keylen = fmt - keystart;
-				++fmt;
-				if (fmtcnt < 0) {
+				}
+				keylen = fmt - keystart - 1;
+				if (fmtcnt < 0 || pcount > 0) {
 					PyErr_SetString(PyExc_ValueError,
 						   "incomplete format key");
 					goto error;
@@ -945,8 +953,9 @@ PyString_Format(format, args)
 					goto error;
 				break;
 			default:
-				PyErr_SetString(PyExc_ValueError,
-					   "unsupported format character");
+				PyErr_Format(PyExc_ValueError,
+				"unsupported format character '%c' (0x%x)",
+					c, c);
 				goto error;
 			}
 			if (sign) {
