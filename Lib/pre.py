@@ -229,7 +229,7 @@ def escape(pattern):
         if char not in alphanum:
             if char=='\000': result[i] = '\\000'
             else: result[i] = '\\'+char
-    return string.join(result, '')
+    return ''.join(result)
 
 def compile(pattern, flags=0):
     """compile(pattern[, flags]) -> RegexObject
@@ -398,7 +398,7 @@ class RegexObject:
                 append(source[lastmatch:pos])
             n = n + 1
         append(source[pos:])
-        return (string.join(results, ''), n)
+        return (''.join(results), n)
 
     def split(self, source, maxsplit=0):
         """split(source[, maxsplit=0]) -> list of strings

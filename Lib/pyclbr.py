@@ -160,11 +160,11 @@ def readmodule_ex(module, path=[], inpackage=0):
 
     dict = {}
 
-    i = string.rfind(module, '.')
+    i = module.rfind('.')
     if i >= 0:
         # Dotted module name
-        package = string.strip(module[:i])
-        submodule = string.strip(module[i+1:])
+        package = module[:i].strip()
+        submodule = module[i+1:].strip()
         parent = readmodule(package, path, inpackage)
         child = readmodule(submodule, parent['__path__'], 1)
         return child
@@ -260,15 +260,15 @@ def readmodule_ex(module, path=[], inpackage=0):
             inherit = m.group("ClassSupers")
             if inherit:
                 # the class inherits from other classes
-                inherit = string.strip(inherit[1:-1])
+                inherit = inherit[1:-1].strip()
                 names = []
-                for n in string.splitfields(inherit, ','):
-                    n = string.strip(n)
+                for n in inherit.split(','):
+                    n = n.strip()
                     if dict.has_key(n):
                         # we know this super class
                         n = dict[n]
                     else:
-                        c = string.splitfields(n, '.')
+                        c = n.split('.')
                         if len(c) > 1:
                             # super class
                             # is of the
@@ -291,8 +291,8 @@ def readmodule_ex(module, path=[], inpackage=0):
 
         elif m.start("Import") >= 0:
             # import module
-            for n in string.split(m.group("ImportList"), ','):
-                n = string.strip(n)
+            for n in m.group("ImportList").split(','):
+                n = n.strip()
                 try:
                     # recursively read the imported module
                     d = readmodule(n, path, inpackage)
@@ -303,7 +303,7 @@ def readmodule_ex(module, path=[], inpackage=0):
         elif m.start("ImportFrom") >= 0:
             # from module import stuff
             mod = m.group("ImportFromPath")
-            names = string.split(m.group("ImportFromList"), ',')
+            names = m.group("ImportFromList").split(',')
             try:
                 # recursively read the imported module
                 d = readmodule(mod, path, inpackage)
@@ -314,7 +314,7 @@ def readmodule_ex(module, path=[], inpackage=0):
             # imported module to our name space if they
             # were mentioned in the list
             for n in names:
-                n = string.strip(n)
+                n = n.strip()
                 if d.has_key(n):
                     dict[n] = d[n]
                 elif n == '*':
@@ -334,3 +334,4 @@ def readmodule_ex(module, path=[], inpackage=0):
 
 def _indent(ws, _expandtabs=string.expandtabs):
     return len(_expandtabs(ws, TABWIDTH))
+
