@@ -25,7 +25,7 @@ def openpty():
 	except (AttributeError, OSError):
 		pass
 	master_fd, slave_name = _open_terminal()
-	slave_fd = _slave_open(slave_name)
+	slave_fd = slave_open(slave_name)
 	return master_fd, slave_fd
 
 def master_open():
