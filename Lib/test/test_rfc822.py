@@ -185,7 +185,7 @@ class MessageTestCase(unittest.TestCase):
         self.check('To: User J. Person <person@dom.ain>\n\n',
                    [('User J. Person', 'person@dom.ain')])
 
-    # This takes to long to add to the test suite
+    # This takes too long to add to the test suite
 ##    def test_an_excrutiatingly_long_address_field(self):
 ##        OBSCENELY_LONG_HEADER_MULTIPLIER = 10000
 ##        oneaddr = ('Person' * 10) + '@' + ('.'.join(['dom']*10)) + '.com'
@@ -193,6 +193,25 @@ class MessageTestCase(unittest.TestCase):
 ##        lst = rfc822.AddrlistClass(addr).getaddrlist()
 ##        self.assertEqual(len(lst), OBSCENELY_LONG_HEADER_MULTIPLIER)
 
+    def test_2getaddrlist(self):
+        eq = self.assertEqual
+        msg = self.create_message("""\
+To: aperson@dom.ain
+Cc: bperson@dom.ain
+Cc: cperson@dom.ain
+Cc: dperson@dom.ain
+
+A test message.
+""")
+        ccs = [('', a) for a in
+               ['bperson@dom.ain', 'cperson@dom.ain', 'dperson@dom.ain']]
+        addrs = msg.getaddrlist('cc')
+        addrs.sort()
+        eq(addrs, ccs)
+        # Try again, this one used to fail
+        addrs = msg.getaddrlist('cc')
+        addrs.sort()
+        eq(addrs, ccs)
 
 def test_main():
     test_support.run_unittest(MessageTestCase)

@@ -352,7 +352,7 @@ class Message:
                 raw.append(addr)
         alladdrs = ''.join(raw)
         a = AddressList(alladdrs)
-        return a.getaddrlist()
+        return a.addresslist
 
     def getdate(self, name):
         """Retrieve a date field from a header.
