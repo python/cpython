@@ -62,6 +62,8 @@ def main():
             method, args, kwargs = request
             ret = method(*args, **kwargs)
             rpc.response_queue.put((seq, ret))
+        except KeyboardInterrupt:
+            continue
         except:
             print_exception()
             rpc.response_queue.put((seq, None))
