@@ -1034,7 +1034,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	char *formatsave;
 	int i, len, nargs, nkeywords;
 	char *msg, *ks, **p;
-	int nkwds, pos, match, converted;
+	int nkwlist, pos, match, converted;
 	PyObject *key, *value;
 
 	assert(args != NULL && PyTuple_Check(args));
@@ -1080,24 +1080,11 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	format = formatsave;
 
 	nargs = PyTuple_GET_SIZE(args);
+	nkeywords = keywords == NULL ? 0 : PyDict_Size(keywords);
 
-	/* do a cursory check of the keywords just to see how many we got */
-
-	nkeywords = 0;
-	if (keywords) { 	
-		if (!PyDict_Check(keywords)) {
-			PyErr_Format(PyExc_SystemError,
-				"%s received when keyword dictionary expected",
-				keywords->ob_type->tp_name);
-			return 0;
-		}	
-		nkeywords = PyDict_Size(keywords);
-	}
-			
 	/* make sure there are no duplicate values for an argument;
 	   its not clear when to use the term "keyword argument vs. 
 	   keyword parameter in messages */
-
 	if (keywords) {
 		for (i = 0; i < nargs; i++) {
 			char *thiskw = kwlist[i];
@@ -1175,14 +1162,14 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	/* make sure the number of keywords in the keyword list matches the 
 	   number of items in the format string */
 	  
-	nkwds = 0;
+	nkwlist = 0;
 	p =  kwlist;
 	for (;;) {
 		if (!*(p++)) break;
-		nkwds++;
+		nkwlist++;
 	}
 
-	if (nkwds != max) {
+	if (nkwlist != max) {
 		PyErr_SetString(PyExc_SystemError,
 	  "number of items in format string and keyword list do not match");
 		return 0;
@@ -1192,7 +1179,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	   string where it was left after processing args */
 	
 	converted = 0;
-	for (i = nargs; i < nkwds; i++) {
+	for (i = nargs; i < nkwlist; i++) {
 		PyObject *item;
 		if (*format == '|')
 			format++;
@@ -1223,7 +1210,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 		while (PyDict_Next(keywords, &pos, &key, &value)) {
 			match = 0;
 			ks = PyString_AsString(key);
-			for (i = 0; i < nkwds; i++) {
+			for (i = 0; i < nkwlist; i++) {
 				if (!strcmp(ks, kwlist[i])) {
 					match = 1;
 					break;
