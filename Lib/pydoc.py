@@ -1284,7 +1284,7 @@ class Helper:
             self.intro()
             self.interact()
             self.output.write('''
-You're now leaving help and returning to the Python interpreter.
+You are now leaving help and returning to the Python interpreter.
 If you want to ask for help on a particular object directly from the
 interpreter, you can type "help(object)".  Executing "help('string')"
 has the same effect as typing a particular string at the help> prompt.
