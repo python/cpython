@@ -15,13 +15,17 @@ in case I change my mind about them.
 
 classes		Some examples of how to use classes.
 
-embed		An example of embedding Python in another application.
+embed		An example of embedding Python in another application
+		(see also pysvr).
 
 ibrowse		An Emacs info file browser (uses stdwin).
 		See also ../doc (the Python library documentation can
 		be converted to info format).
 
 md5test		Test program for the optional md5 module.
+
+pysvr		An example of embedding Python in a threaded
+		application.
 
 rpc		A set of classes for building clients and servers for
 		Sun RPC.
