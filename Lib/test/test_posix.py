@@ -29,10 +29,17 @@ class PosixTester(unittest.TestCase):
         # test posix functions which take no arguments and have
         # no side-effects which we need to cleanup (e.g., fork, wait, abort)
         NO_ARG_FUNCTIONS = [ "ctermid", "getcwd", "getcwdu", "uname",
-                             "times", "getlogin", "getloadavg", "tmpnam",
+                             "times", "getloadavg", "tmpnam",
                              "getegid", "geteuid", "getgid", "getgroups",
                              "getpid", "getpgrp", "getppid", "getuid",
                            ]
+        # getlogin() only works when run from a tty (terminal)
+        try:
+            if os.isatty(sys.stdin.fileno()):
+                NO_ARG_FUNCTIONS.append("getlogin")
+        except:
+            pass
+
         for name in NO_ARG_FUNCTIONS:
             posix_func = getattr(posix, name, None)
             if posix_func is not None:
