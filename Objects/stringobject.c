@@ -643,7 +643,7 @@ formatstring(format, args)
 			int width = -1;
 			int prec = -1;
 			int size = 0;
-			int c;
+			int c = '\0';
 			int fill;
 			object *v;
 			char *buf;
@@ -788,15 +788,13 @@ formatstring(format, args)
 				buf = formatchar(v);
 				if (buf == NULL)
 					goto error;
-				len = strlen(buf);
+				len = 1;
 				break;
 			default:
 				err_setstr(ValueError,
 					   "unsupported format character");
 				goto error;
 			}
-			/* XXX There's a bug somewhere here so that
-			   XXX '%4d'%-1 yields '-  1' ... */
 			if (sign) {
 				if (*buf == '-' || *buf == '+') {
 					sign = *buf++;
@@ -820,7 +818,6 @@ formatstring(format, args)
 				res = getstringvalue(result) + reslen - rescnt;
 			}
 			if (sign) {
-				*res++ = sign;
 				rescnt--;
 				if (width > len)
 					width--;
@@ -831,6 +828,8 @@ formatstring(format, args)
 					*res++ = fill;
 				} while (--width > len);
 			}
+			if (sign)
+				*res++ = sign;
 			memcpy(res, buf, len);
 			res += len;
 			rescnt -= len;
