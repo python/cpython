@@ -492,8 +492,8 @@ class FTP:
             try:
                 return self.voidcmd('CDUP')
             except error_perm, msg:
-                if msg[:3] != '500':
-                    raise error_perm, msg
+                if msg.args[0][:3] != '500':
+                    raise
         elif dirname == '':
             dirname = '.'  # does nothing, but could return error
         cmd = 'CWD ' + dirname
