@@ -36,6 +36,8 @@ continue_stmt
 return_stmt
 raise_stmt
 import_stmt
+SyntaxError expected for "def f(): from sys import *"
+SyntaxError expected for "def f(): global time; import "
 global_stmt
 exec_stmt
 if_stmt
