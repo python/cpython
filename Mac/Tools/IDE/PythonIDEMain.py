@@ -353,12 +353,14 @@ class PythonIDE(Wapplication.Application):
 		PackageManager.PackageBrowser()
 		
 	def makehelpmenu(self):
-		docs = self.installdocumentation()
+		hashelp, hasdocs = self.installdocumentation()
 		self.helpmenu = m = self.gethelpmenu()
+		helpitem = FrameWork.MenuItem(m, "MacPython Help", None, self.domenu_localhelp)
+		helpitem.enable(hashelp)
 		docitem = FrameWork.MenuItem(m, "Python Documentation", None, self.domenu_localdocs)
-		docitem.enable(docs)
+		docitem.enable(hasdocs)
 		finditem = FrameWork.MenuItem(m, "Lookup in Python Documentation", None, 'lookuppython')
-		finditem.enable(docs)
+		finditem.enable(hasdocs)
 		if runningOnOSX():
 			FrameWork.Separator(m)
 			doc2item = FrameWork.MenuItem(m, "Apple Developer Documentation", None, self.domenu_appledocs)
@@ -370,7 +372,11 @@ class PythonIDE(Wapplication.Application):
 		
 	def domenu_localdocs(self, *args):
 		from Carbon import AH
-		AH.AHGotoPage("Python Help", None, None)
+		AH.AHGotoPage("Python Documentation", None, None)
+		
+	def domenu_localhelp(self, *args):
+		from Carbon import AH
+		AH.AHGotoPage("MacPython Help", None, None)
 		
 	def domenu_appledocs(self, *args):
 		from Carbon import AH, AppleHelp
@@ -388,7 +394,7 @@ class PythonIDE(Wapplication.Application):
 		if not searchstring:
 			return
 		try:
-			AH.AHSearch("Python Help", searchstring)
+			AH.AHSearch("Python Documentation", searchstring)
 		except AH.Error, arg:
 			W.Message("AppleHelp Error: %s" % `arg`)
 			
@@ -441,16 +447,17 @@ class PythonIDE(Wapplication.Application):
 		# And as AHRegisterHelpBook wants a bundle (with the right bits in
 		# the plist file) we refer it to Python.app
 		python_app = os.path.join(sys.prefix, 'Resources/Python.app')
-		doc_source = os.path.join(python_app, 'Contents/Resources/English.lproj/Documentation')
-		if not os.path.isdir(doc_source):
-			return 0
-		try:
-			from Carbon import AH
-			AH.AHRegisterHelpBook(python_app)
-		except (ImportError, MacOS.Error), arg:
-			W.Message("Cannot register Python documentation: %s" % `arg`)
-			return 0
-		return 1
+		help_source = os.path.join(python_app, 'Contents/Resources/English.lproj/Documentation')
+		doc_source = os.path.join(python_app, 'Contents/Resources/English.lproj/PythonDocumentation')
+		has_help = os.path.isdir(help_source)
+		has_doc = os.path.isdir(doc_source)
+		if has_help or has_doc:
+			try:
+				from Carbon import AH
+				AH.AHRegisterHelpBook(python_app)
+			except (ImportError, MacOS.Error), arg:
+				pass # W.Message("Cannot register Python Documentation: %s" % str(arg))
+		return has_help, has_doc
 	
 
 PythonIDE()
