@@ -893,4 +893,4 @@ if __name__=='__main__':
 	# Insert script directory in front of module search path
 	sys.path.insert(0, os.path.dirname(filename))
 
-	run('execfile(' + `filename` + ')', {'__name__': '__main__'})
+	run('execfile(' + `filename` + ')')
