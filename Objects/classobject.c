@@ -490,9 +490,10 @@ PyClass_IsSubclass(PyObject *class, PyObject *base)
 	if (PyTuple_Check(base)) {
 		n = PyTuple_GET_SIZE(base);
 		for (i = 0; i < n; i++) {
-			if (class == PyTuple_GET_ITEM(base, i))
+			if (PyClass_IsSubclass(class, PyTuple_GET_ITEM(base, i)))
 				return 1;
 		}
+		return 0;
 	}
 	if (class == NULL || !PyClass_Check(class))
 		return 0;

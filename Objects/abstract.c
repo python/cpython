@@ -2021,11 +2021,11 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 			int i;
 			int n = PyTuple_GET_SIZE(cls);
 			for (i = 0; i < n; ++i) {
-				if (!check_class(PyTuple_GET_ITEM(cls, i),
-						"issubclass() arg 2 must be a class"
-						" or tuple of classes"))
-					return -1;
+				retval = PyObject_IsSubclass(derived, PyTuple_GET_ITEM(cls, i));
+				if (retval != 0) /* either found it, or got an error */
+					return retval;
 			}
+			return 0;
 		}
 		else {
 			if (!check_class(cls,
