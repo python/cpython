@@ -9,17 +9,7 @@ import path
 import dircache
 import cmpcache
 import statcache
-
-
-# File type constants from <sys/stat.h>.
-#
-S_IFDIR = 4
-S_IFREG = 8
-
-# Extract the file type from a stat buffer.
-#
-def S_IFMT(st): return st[0] / 4096
-
+from stat import *
 
 # Directory comparison class.
 #
@@ -79,13 +69,13 @@ class dircmp():
 				ok = 0
 			#
 			if ok:
-				a_type = S_IFMT(a_stat)
-				b_type = S_IFMT(b_stat)
+				a_type = S_IFMT(a_stat[ST_MODE])
+				b_type = S_IFMT(b_stat[ST_MODE])
 				if a_type <> b_type:
 					dd.common_funny.append(x)
-				elif a_type = S_IFDIR:
+				elif S_ISDIR(a_type):
 					dd.common_dirs.append(x)
-				elif a_type = S_IFREG:
+				elif S_ISREG(a_type):
 					dd.common_files.append(x)
 				else:
 					dd.common_funny.append(x)
