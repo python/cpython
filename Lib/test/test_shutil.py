@@ -16,6 +16,13 @@ class TestShutil(unittest.TestCase):
         self.assertEqual(shutil.rmtree(filename, True), None)
         shutil.rmtree(filename, False, lambda func, arg, exc: None)
 
+    def test_rmtree_dont_delete_file(self):
+        # When called on a file instead of a directory, don't delete it.
+        handle, path = tempfile.mkstemp()
+        os.fdopen(handle).close()
+        self.assertRaises(OSError, shutil.rmtree, path)
+        os.remove(path)
+
     def test_dont_move_dir_in_itself(self):
         src_dir = tempfile.mkdtemp()
         try:
