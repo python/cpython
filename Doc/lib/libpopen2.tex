@@ -114,3 +114,65 @@ This will always be \code{None} for \class{Popen4} instances.
 \begin{memberdesc}{pid}
 The process ID of the child process.
 \end{memberdesc}
+
+
+\subsection{Flow Control Issues \label{popen2-flow-control}}
+
+Any time you are working with any form of inter-process communication,
+control flow needs to be carefully thought out.  This remains the case
+with the file objects provided by this module (or the \refmodule{os}
+module equivalents).
+
+% Example explanation and suggested work-arounds substantially stolen
+% from Martin von Löwis:
+% http://mail.python.org/pipermail/python-dev/2000-September/009460.html
+
+When reading output from a child process that writes a lot of data to
+standard error while the parent is reading from the child's standard
+out, a dead lock can occur.  A similar situation can occur with other
+combinations of reads and writes.  The essential factors are that more
+than \constant{_PC_PIPE_BUF} bites are being written by one process in
+a blocking fashion, while the other process is reading from the other
+process, also in a blocking fashion.
+
+There are several ways to deal with this situation.
+
+The simplest application change, in many cases, will be to follow this
+model in the parent process:
+
+\begin{verbatim}
+import popen2
+
+r, w, e = popen2.popen3('python slave.py')
+e.readlines()
+r.readlines()
+r.close()
+e.close()
+w.close()
+\end{verbatim}
+
+with code like this in the child:
+
+\begin{verbatim}
+import os
+import sys
+
+# note that each of these print statements
+# writes a single long string
+
+print >>sys.stderr, 400 * 'this is a test\n'
+os.close(sys.stderr.fileno())
+print >>sys.stdout, 400 * 'this is another test\n'
+\end{verbatim}
+
+In particular, note that \code{sys.stderr} must be closed after
+writing all data, or \method{readlines()} won't return.  Also note
+that \function{os.close()} must be used, as \code{sys.stderr.close()}
+won't close \code{stderr} (otherwise assigning to \code{sys.stderr}
+will silently close it, so no further errors can be printed).
+
+Applications which need to support a more general approach should
+integrate I/O over pipes with their \function{select()} loops, or use
+separate threads to read each of the individual files provided by
+whichever \function{popen*()} function or \class{Popen*} class was
+used.
