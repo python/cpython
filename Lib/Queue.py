@@ -15,7 +15,7 @@ except TypeError:
     Full = 'Queue.Full'
 
 class Queue:
-    def __init__(self, maxsize):
+    def __init__(self, maxsize=0):
         """Initialize a queue object with a given maximum size.
 
         If maxsize is <= 0, the queue size is infinite.
