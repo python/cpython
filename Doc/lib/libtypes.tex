@@ -330,7 +330,7 @@ equal to \var{x}, else \code{1}}{}
   \hline
   \lineiii{\var{s} + \var{t}}{the concatenation of \var{s} and \var{t}}{}
   \hline
-  \lineiii{\var{s} * \var{n}{\rm ,} \var{n} * \var{s}}{\var{n} copies of \var{s} concatenated}{}
+  \lineiii{\var{s} * \var{n}{\rm ,} \var{n} * \var{s}}{\var{n} copies of \var{s} concatenated}{(3)}
   \hline
   \lineiii{\var{s}[\var{i}]}{\var{i}'th item of \var{s}, origin 0}{(1)}
   \lineiii{\var{s}[\var{i}:\var{j}]}{slice of \var{s} from \var{i} to \var{j}}{(1), (2)}
@@ -366,6 +366,10 @@ Notes:
   \code{len(\var{s})}, use \code{len(\var{s})}.  If \var{i} is omitted,
   use \code{0}.  If \var{j} is omitted, use \code{len(\var{s})}.  If
   \var{i} is greater than or equal to \var{j}, the slice is empty.
+
+\item[(3)] Values of \var{n} less than \code{0} are treated as
+  \code{0} (which yields an empty sequence of the same type as
+  \var{s}).
 
 \end{description}
 
