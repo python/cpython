@@ -44,4 +44,5 @@ extern typeobject Codetype;
 
 
 /* Public interface */
+struct _node; /* Declare the existence of this type */
 codeobject *compile PROTO((struct _node *, char *));
