@@ -326,7 +326,9 @@ meanings.  These are:
 \lineiii{__*}{Class-private name mangling}{}
 \end{tableiii}
 
-(XXX need section references here.)
+See sections: \ref{import}, ``The \keyword{import} statement'';
+\ref{specialnames}, ``Special method names'';
+\ref{atom-identifiers}, ``Identifiers (Names)''.
 
 Note:
 
@@ -562,18 +564,25 @@ allowed as suffix for long integers, it is strongly recommended to always
 use \character{L}, since the letter \character{l} looks too much like the
 digit \character{1}.
 
-Plain integer decimal literals must be at most 2147483647 (i.e., the
-largest positive integer, using 32-bit arithmetic).  Plain octal and
-hexadecimal literals may be as large as 4294967295, but values larger
-than 2147483647 are converted to a negative value by subtracting
-4294967296.  There is no limit for long integer literals apart from
-what can be stored in available memory.
+Plain integer decimal literals that are above the largest representable
+plain integer (e.g., 2147483647 when using 32-bit arithmetic) are accepted
+as if they were long integers instead.  Octal and hexadecimal literals
+behave similarly, but when in the range just above the largest representable
+plain integer but below the largest unsigned 32-bit number (on a machine
+using 32-bit arithmetic), 4294967296, they are taken as the negative plain
+integer obtained by subtracting 4294967296 from their unsigned value.  There
+is no limit for long integer literals apart from what can be stored in
+available memory.  For example, 0xdeadbeef is taken, on a 32-bit machine,
+as the value -559038737, while 0xdeadbeeffeed is taken as the value
+244837814107885L.
 
-Some examples of plain and long integer literals:
+Some examples of plain integer literals (first row) and long integer
+literals (second and third rows):
 
 \begin{verbatim}
 7     2147483647                        0177    0x80000000
 3L    79228162514264337593543950336L    0377L   0x100000000L
+      79228162514264337593543950336             0xdeadbeeffeed						    
 \end{verbatim}
 
 
