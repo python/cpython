@@ -247,8 +247,8 @@ assert u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", 1, -2, 3) == u'abc, abc, 1, -2
 assert u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", -1, -2, 3.5) == u'abc, abc, -1, -2.000000,  3.50'
 assert u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", -1, -2, 3.57) == u'abc, abc, -1, -2.000000,  3.57'
 assert u"%s, %s, %i, %f, %5.2f" % (u"abc", "abc", -1, -2, 1003.57) == u'abc, abc, -1, -2.000000, 1003.57'
-assert u"%c" % (u"abc",) == u'a'
-assert u"%c" % ("abc",) == u'a'
+assert u"%c" % (u"a",) == u'a'
+assert u"%c" % ("a",) == u'a'
 assert u"%c" % (34,) == u'"'
 assert u"%c" % (36,) == u'$'
 assert u"%r, %r" % (u"abc", "abc") == u"u'abc', 'abc'"
