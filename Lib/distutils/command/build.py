@@ -105,7 +105,7 @@ class build (Command):
         if self.distribution.has_ext_modules():
             self.run_peer ('build_ext')
 
-        if self.distribution.scripts:
+        if self.distribution.has_scripts():
             self.run_peer ('build_scripts')
 
 # class build
