@@ -84,11 +84,10 @@ class BuildPy (Command):
         for i in range (len (infiles)):
             outdir = os.path.split (outfiles[i])[0]
             if not created.get(outdir):
-                mkpath (outdir, verbose=self.distribution.verbose)
+                self.mkpath (outdir)
                 created[outdir] = 1
 
-            copy_file (infiles[i], outfiles[i],
-                       update=1, verbose=self.distribution.verbose)
+            self.copy_file (infiles[i], outfiles[i])
 
         # (Optionally) compile .py to .pyc
         # XXX hey! we can't control whether we optimize or not; that's up
@@ -102,9 +101,9 @@ class BuildPy (Command):
                 # XXX can't assume this filename mapping!
                 out_fn = string.replace (f, '.py', '.pyc')
                 
-                make_file (f, out_fn, compile, (f,),
-                           verbose=self.distribution.verbose,
-                           update_message="compiling %s" % f)
+                self.make_file (f, out_fn, compile, (f,),
+                                "compiling %s -> %s" % (f, out_fn),
+                                "compilation of %s skipped" % f)
 
         # XXX ignore self.optimize for now, since we don't really know if
         # we're compiling optimally or not, and couldn't pick what to do
