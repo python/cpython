@@ -54,6 +54,7 @@ if sz * 3 != sz3:
 simple_err(struct.pack, 'iii', 3)
 simple_err(struct.pack, 'i', 3, 3, 3)
 simple_err(struct.pack, 'i', 'foo')
+simple_err(struct.pack, 'P', 'foo')
 simple_err(struct.unpack, 'd', 'flap')
 s = struct.pack('ii', 1, 2)
 simple_err(struct.unpack, 'iii', s)
