@@ -77,9 +77,16 @@ class IMAP4:
 		port - port number (default: standard IMAP4 port).
 
 	All IMAP4rev1 commands are supported by methods of the same
-	name (in lower-case). Each command returns a tuple: (type, [data, ...])
-	where 'type' is usually 'OK' or 'NO', and 'data' is either the
-	text from the tagged response, or untagged results from command.
+	name (in lower-case).
+
+	All arguments to commands are converted to strings, except for
+	the last argument to APPEND which is passed as an IMAP4
+	literal.  If necessary (the string isn't enclosed with either
+	parentheses or double quotes) each converted string is quoted.
+
+	Each command returns a tuple: (type, [data, ...]) where 'type'
+	is usually 'OK' or 'NO', and 'data' is either the text from the
+	tagged response, or untagged results from command.
 
 	Errors raise the exception class <instance>.error("<reason>").
 	IMAP4 server errors raise <instance>.abort("<reason>"),
@@ -95,6 +102,7 @@ class IMAP4:
 		self.port = port
 		self.debug = Debug
 		self.state = 'LOGOUT'
+		self.literal = None		# A literal argument to a command
 		self.tagged_commands = {}	# Tagged commands awaiting response
 		self.untagged_responses = {}	# {typ: [data, ...], ...}
 		self.continuation_response = ''	# Last continuation response
@@ -109,7 +117,7 @@ class IMAP4:
 		# Create unique tag for this session,
 		# and compile tagged response matcher.
 
-		self.tagpre = Int2AP(random.random()*32000)
+		self.tagpre = Int2AP(random.randint(0, 31999))
 		self.tagre = re.compile(r'(?P<tag>'
 				+ self.tagpre
 				+ r'\d+) (?P<type>[A-Z]+) (?P<data>.*)')
@@ -172,7 +180,8 @@ class IMAP4:
 			date_time = Time2Internaldate(date_time)
 		else:
 			date_time = None
-		return self._simple_command(name, mailbox, flags, date_time, message)
+		self.literal = message
+		return self._simple_command(name, mailbox, flags, date_time)
 
 
 	def authenticate(self, func):
@@ -310,10 +319,18 @@ class IMAP4:
 		return self._untagged_response(typ, name)
 
 
-	def recent(self):
-		"""Prompt server for an update.
+	def noop(self):
+		"""Send NOOP command.
 
-		Flush all untagged responses.
+		(typ, data) = <instance>.noop()
+		"""
+		return self._simple_command('NOOP')
+
+
+	def recent(self):
+		"""Return most recent 'RECENT' response if it exists,
+		else prompt server for an update using the 'NOOP' command,
+		and flush all untagged responses.
 
 		(typ, [data]) = <instance>.recent()
 
@@ -468,15 +485,16 @@ class IMAP4:
 			print '\tuntagged_responses[%s] += %.20s..' % (typ, `dat`)
 
 
-	def _command(self, name, dat1=None, dat2=None, dat3=None, literal=None):
+	def _command(self, name, *args):
 
 		if self.state not in Commands[name]:
+			self.literal = None
 			raise self.error(
 			'command %s illegal in state %s' % (name, self.state))
 
 		tag = self._new_tag()
 		data = '%s %s' % (tag, name)
-		for d in (dat1, dat2, dat3):
+		for d in args:
 			if d is None: continue
 			if type(d) is type(''):
 				l = len(string.split(d))
@@ -486,7 +504,10 @@ class IMAP4:
 				data = '%s "%s"' % (data, d)
 			else:
 				data = '%s %s' % (data, d)
+
+		literal = self.literal
 		if literal is not None:
+			self.literal = None
 			data = '%s {%s}' % (data, len(literal))
 
 		try:
