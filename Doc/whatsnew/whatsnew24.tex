@@ -294,6 +294,21 @@ return consecutive runs of odd or even numbers.
 >>> 
 \end{verbatim}
 
+Like its SQL counterpart, \function{groupby()} is typically used with
+sorted input.  The logic for \function{groupby()} is similar to the
+\UNIX{} \code{uniq} filter which makes it handy for eliminating,
+counting, or identifying duplicate elements:
+
+\begin{verbatim}
+>>> word = 'abracadabra'
+>>> [k for k, g in groupby(list.sorted(word))]
+['a', 'b', 'c', 'd', 'r']
+>>> [(k, len(list(g))) for k, g in groupby(list.sorted(word))]
+[('a', 5), ('b', 2), ('c', 1), ('d', 1), ('r', 2)]
+>>> [k for k, g in groupby(list.sorted(word)) if len(list(g)) > 1]
+['a', 'b', 'r']
+\end{verbatim}
+
 \item A new \function{getsid()} function was added to the
 \module{posix} module that underlies the \module{os} module.
 (Contributed by J. Raynor.)
