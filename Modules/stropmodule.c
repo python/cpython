@@ -384,7 +384,7 @@ strop_capitalize(self, args)
 		return NULL;
 	s_new = getstringvalue(new);
 	changed = 0;
-	{
+	if (0 < n) {
 		int c = Py_CHARMASK(*s++);
 		if (islower(c)) {
 			changed = 1;
