@@ -20,6 +20,14 @@ This is an alternate interface to the functionality provided by the
 \code{sys.exitfunc} variable.
 \withsubitem{(in sys)}{\ttindex{exitfunc}}
 
+Note: This module is unlikely to work correctly when used with other code
+that sets \code{sys.exitfunc}.  In particular, other core Python modules are
+free to use \module{atexit} without the programmer's knowledge.  Authors who
+use \code{sys.exitfunc} should convert their code to use
+\module{atexit} instead.  The simplest way to convert code that sets
+\code{sys.exitfunc} is to import \module{atexit} and register the function
+that had been bound to \code{sys.exitfunc}.
+
 \begin{funcdesc}{register}{func\optional{, *args\optional{, **kargs}}}
 Register \var{func} as a function to be executed at termination.  Any
 optional arguments that are to be passed to \var{func} must be passed
