@@ -46,9 +46,15 @@ extern DL_IMPORT(PyObject *) PyCFunction_New(PyMethodDef *, PyObject *);
 #define METH_OLDARGS  0x0000
 #define METH_VARARGS  0x0001
 #define METH_KEYWORDS 0x0002
-/* METH_NOARGS and METH_O must not be combined with any other flag. */
+/* METH_NOARGS and METH_O must not be combined with the flags above. */
 #define METH_NOARGS   0x0004
 #define METH_O        0x0008
+
+/* METH_CLASS and METH_STATIC are a little different; these control
+   the construction of methods for a class.  These cannot be used for
+   functions in modules. */
+#define METH_CLASS    0x0010
+#define METH_STATIC   0x0020
 
 typedef struct PyMethodChain {
     PyMethodDef *methods;		/* Methods of this type */

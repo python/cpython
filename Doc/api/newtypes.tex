@@ -152,8 +152,12 @@ a cast in the method table.  Even though \ctype{PyCFunction} defines
 the first parameter as \ctype{PyObject*}, it is common that the method
 implementation uses a the specific C type of the \var{self} object.
 
-The flags can have the following values. Only \constant{METH_VARARGS}
-and \constant{METH_KEYWORDS} can be combined; the others can't.
+The \member{ml_flags} field is a bitfield which can include the
+following flags.  The individual flags indicate either a calling
+convention or a binding convention.  Of the calling convention flags,
+only \constant{METH_VARARGS} and \constant{METH_KEYWORDS} can be
+combined.  Any of the calling convention flags can be combined with a
+binding flag.
 
 \begin{datadesc}{METH_VARARGS}
   This is the typical calling convention, where the methods have the
@@ -202,6 +206,30 @@ and \constant{METH_KEYWORDS} can be combined; the others can't.
   call with multiple arguments and a call with a tuple as the only
   argument.
 \end{datadesc}
+
+These two constants are not used to indicate the calling convention
+but the binding when use with methods of classes.  These may not be
+used for functions defined for modules.  At most one of these flags
+may be set for any given method.
+
+\begin{datadesc}{METH_CLASS}
+  The method will be passed the type object as the first parameter
+  rather than an instance of the type.  This is used to create
+  \emph{class methods}, similar to what is created when using the
+  \function{classmethod()}\bifuncindex{classmethod} built-in
+  function.
+  \versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{METH_STATIC}
+  The method will be passed \NULL{} as the first parameter rather than
+  an instance of the type.  This is used to create \emph{static
+  methods}, similar to what is created when using the
+  \function{staticmethod()}\bifuncindex{staticmethod} built-in
+  function.
+  \versionadded{2.3}
+\end{datadesc}
+
 
 \begin{cfuncdesc}{PyObject*}{Py_FindMethod}{PyMethodDef table[],
                                             PyObject *ob, char *name}

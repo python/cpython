@@ -57,6 +57,13 @@ Py_InitModule4(char *name, PyMethodDef *methods, char *doc,
 		return NULL;
 	d = PyModule_GetDict(m);
 	for (ml = methods; ml->ml_name != NULL; ml++) {
+		if ((ml->ml_flags & METH_CLASS) ||
+		    (ml->ml_flags & METH_STATIC)) {
+			PyErr_SetString(PyExc_ValueError,
+					"module functions cannot set"
+					" METH_CLASS or METH_STATIC");
+			return NULL;
+		}
 		v = PyCFunction_New(ml, passthrough);
 		if (v == NULL)
 			return NULL;

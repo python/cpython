@@ -62,7 +62,7 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 	PyCFunctionObject* f = (PyCFunctionObject*)func;
 	PyCFunction meth = PyCFunction_GET_FUNCTION(func);
 	PyObject *self = PyCFunction_GET_SELF(func);
-	int flags = PyCFunction_GET_FLAGS(func);
+	int flags = PyCFunction_GET_FLAGS(func) & ~(METH_CLASS | METH_STATIC);
 	int size = PyTuple_GET_SIZE(arg);
 
 	if (flags & METH_KEYWORDS) {
