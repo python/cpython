@@ -211,7 +211,7 @@ PyLong_AsLong(PyObject *vv)
 
  overflow:
 	PyErr_SetString(PyExc_OverflowError,
-			"long int too large to convert");
+			"long int too large to convert to int");
 	return -1;
 }
 
