@@ -1,60 +1,11 @@
-source = '''# line 1
-'A module docstring.'
+import sys
+import unittest
+import inspect
 
-import sys, inspect
-# line 5
+from test.test_support import TESTFN, run_unittest
 
-# line 7
-def spam(a, b, c, d=3, (e, (f,))=(4, (5,)), *g, **h):
-    eggs(b + d, c + f)
-
-# line 11
-def eggs(x, y):
-    "A docstring."
-    global fr, st
-    fr = inspect.currentframe()
-    st = inspect.stack()
-    p = x
-    q = y / 0
-
-# line 20
-class StupidGit:
-    """A longer,
-
-    indented
-
-    docstring."""
-# line 27
-
-    def abuse(self, a, b, c):
-        """Another
-
-\tdocstring
-
-        containing
-
-\ttabs
-\t
-        """
-        self.argue(a, b, c)
-# line 40
-    def argue(self, a, b, c):
-        try:
-            spam(a, b, c)
-        except:
-            self.ex = sys.exc_info()
-            self.tr = inspect.trace()
-
-# line 48
-class MalodorousPervert(StupidGit):
-    pass
-
-class ParrotDroppings:
-    pass
-
-class FesteringGob(MalodorousPervert, ParrotDroppings):
-    pass
-'''
+from test import inspect_fodder as mod
+from test import inspect_fodder2 as mod2
 
 # Functions tested in this suite:
 # ismodule, isclass, ismethod, isfunction, istraceback, isframe, iscode,
@@ -63,363 +14,366 @@ class FesteringGob(MalodorousPervert, ParrotDroppings):
 # getargvalues, formatargspec, formatargvalues, currentframe, stack, trace
 # isdatadescriptor
 
-from test.test_support import TestFailed, TESTFN
-import sys, imp, os, string
+modfile = mod.__file__
+if modfile.endswith('c') or modfile.endswith('o'):
+    modfile = modfile[:-1]
 
-def test(assertion, message, *args):
-    if not assertion:
-        raise TestFailed, message % args
+import __builtin__
 
-import inspect
-
-file = open(TESTFN, 'w')
-file.write(source)
-file.close()
-
-# Note that load_source creates file TESTFN+'c' or TESTFN+'o'.
-mod = imp.load_source('testmod', TESTFN)
-files_to_clean_up = [TESTFN, TESTFN + 'c', TESTFN + 'o']
-
-def istest(func, exp):
-    obj = eval(exp)
-    test(func(obj), '%s(%s)' % (func.__name__, exp))
-    for other in [inspect.isbuiltin, inspect.isclass, inspect.iscode,
-                  inspect.isframe, inspect.isfunction, inspect.ismethod,
-                  inspect.ismodule, inspect.istraceback]:
-        if other is not func:
-            test(not other(obj), 'not %s(%s)' % (other.__name__, exp))
-
-git = mod.StupidGit()
 try:
     1/0
 except:
     tb = sys.exc_traceback
 
-istest(inspect.isbuiltin, 'sys.exit')
-istest(inspect.isbuiltin, '[].append')
-istest(inspect.isclass, 'mod.StupidGit')
-istest(inspect.iscode, 'mod.spam.func_code')
-istest(inspect.isframe, 'tb.tb_frame')
-istest(inspect.isfunction, 'mod.spam')
-istest(inspect.ismethod, 'mod.StupidGit.abuse')
-istest(inspect.ismethod, 'git.argue')
-istest(inspect.ismodule, 'mod')
-istest(inspect.istraceback, 'tb')
-import __builtin__
-istest(inspect.isdatadescriptor, '__builtin__.file.closed')
-istest(inspect.isdatadescriptor, '__builtin__.file.softspace')
-test(inspect.isroutine(mod.spam), 'isroutine(mod.spam)')
-test(inspect.isroutine([].count), 'isroutine([].count)')
+git = mod.StupidGit()
 
-classes = inspect.getmembers(mod, inspect.isclass)
-test(classes ==
-     [('FesteringGob', mod.FesteringGob),
-      ('MalodorousPervert', mod.MalodorousPervert),
-      ('ParrotDroppings', mod.ParrotDroppings),
-      ('StupidGit', mod.StupidGit)], 'class list')
-tree = inspect.getclasstree(map(lambda x: x[1], classes), 1)
-test(tree ==
-     [(mod.ParrotDroppings, ()),
-      (mod.StupidGit, ()),
-      [(mod.MalodorousPervert, (mod.StupidGit,)),
-       [(mod.FesteringGob, (mod.MalodorousPervert, mod.ParrotDroppings))
-       ]
-      ]
-     ], 'class tree')
+class IsTestBase(unittest.TestCase):
+    predicates = set([inspect.isbuiltin, inspect.isclass, inspect.iscode,
+                      inspect.isframe, inspect.isfunction, inspect.ismethod,
+                      inspect.ismodule, inspect.istraceback])
+    
+    def istest(self, predicate, exp):
+        obj = eval(exp)
+        self.failUnless(predicate(obj), '%s(%s)' % (predicate.__name__, exp))
+        
+        for other in self.predicates - set([predicate]):
+            self.failIf(other(obj), 'not %s(%s)' % (other.__name__, exp))
 
-functions = inspect.getmembers(mod, inspect.isfunction)
-test(functions == [('eggs', mod.eggs), ('spam', mod.spam)], 'function list')
+class TestPredicates(IsTestBase):
+    def test_eleven(self):
+        # Doc/lib/libinspect.tex claims there are 11 such functions
+        count = len(filter(lambda x:x.startswith('is'), dir(inspect)))
+        self.assertEqual(count, 11, "There are %d (not 11) is* functions" % count)
+    
+    def test_excluding_predicates(self):
+        self.istest(inspect.isbuiltin, 'sys.exit')
+        self.istest(inspect.isbuiltin, '[].append')
+        self.istest(inspect.isclass, 'mod.StupidGit')
+        self.istest(inspect.iscode, 'mod.spam.func_code')
+        self.istest(inspect.isframe, 'tb.tb_frame')
+        self.istest(inspect.isfunction, 'mod.spam')
+        self.istest(inspect.ismethod, 'mod.StupidGit.abuse')
+        self.istest(inspect.ismethod, 'git.argue')
+        self.istest(inspect.ismodule, 'mod')
+        self.istest(inspect.istraceback, 'tb')
+        self.istest(inspect.isdatadescriptor, '__builtin__.file.closed')
+        self.istest(inspect.isdatadescriptor, '__builtin__.file.softspace')
 
-test(inspect.getdoc(mod) == 'A module docstring.', 'getdoc(mod)')
-test(inspect.getcomments(mod) == '# line 1\n', 'getcomments(mod)')
-test(inspect.getmodule(mod.StupidGit) == mod, 'getmodule(mod.StupidGit)')
-test(inspect.getfile(mod.StupidGit) == TESTFN, 'getfile(mod.StupidGit)')
-test(inspect.getsourcefile(mod.spam) == TESTFN, 'getsourcefile(mod.spam)')
-test(inspect.getsourcefile(git.abuse) == TESTFN, 'getsourcefile(git.abuse)')
+    def test_isroutine(self):
+        self.assert_(inspect.isroutine(mod.spam))
+        self.assert_(inspect.isroutine([].count))
 
-def sourcerange(top, bottom):
-    lines = string.split(source, '\n')
-    return string.join(lines[top-1:bottom], '\n') + '\n'
+class TestInterpreterStack(IsTestBase):
+    def __init__(self, *args, **kwargs):
+        unittest.TestCase.__init__(self, *args, **kwargs)
+    
+        git.abuse(7, 8, 9)
 
-test(inspect.getsource(git.abuse) == sourcerange(29, 39),
-     'getsource(git.abuse)')
-test(inspect.getsource(mod.StupidGit) == sourcerange(21, 46),
-     'getsource(mod.StupidGit)')
-test(inspect.getdoc(mod.StupidGit) ==
-     'A longer,\n\nindented\n\ndocstring.', 'getdoc(mod.StupidGit)')
-test(inspect.getdoc(git.abuse) ==
-     'Another\n\ndocstring\n\ncontaining\n\ntabs', 'getdoc(git.abuse)')
-test(inspect.getcomments(mod.StupidGit) == '# line 20\n',
-     'getcomments(mod.StupidGit)')
+    def test_abuse_done(self):
+        self.istest(inspect.istraceback, 'git.ex[2]')
+        self.istest(inspect.isframe, 'mod.fr')
 
-git.abuse(7, 8, 9)
+    def test_stack(self):
+        self.assert_(len(mod.st) >= 5)
+        self.assertEqual(mod.st[0][1:],
+             (modfile, 16, 'eggs', ['    st = inspect.stack()\n'], 0))             
+        self.assertEqual(mod.st[1][1:],
+             (modfile, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0))
+        self.assertEqual(mod.st[2][1:],
+             (modfile, 43, 'argue', ['            spam(a, b, c)\n'], 0))
+        self.assertEqual(mod.st[3][1:],
+             (modfile, 39, 'abuse', ['        self.argue(a, b, c)\n'], 0))
 
-istest(inspect.istraceback, 'git.ex[2]')
-istest(inspect.isframe, 'mod.fr')
+    def test_trace(self):
+        self.assertEqual(len(git.tr), 3)
+        self.assertEqual(git.tr[0][1:], (modfile, 43, 'argue',
+                                         ['            spam(a, b, c)\n'], 0))
+        self.assertEqual(git.tr[1][1:], (modfile, 9, 'spam',
+                                         ['    eggs(b + d, c + f)\n'], 0))
+        self.assertEqual(git.tr[2][1:], (modfile, 18, 'eggs',
+                                         ['    q = y / 0\n'], 0))
 
-test(len(git.tr) == 3, 'trace() length')
-test(git.tr[0][1:] == (TESTFN, 43, 'argue',
-                       ['            spam(a, b, c)\n'], 0),
-     'trace() row 2')
-test(git.tr[1][1:] == (TESTFN, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0),
-     'trace() row 2')
-test(git.tr[2][1:] == (TESTFN, 18, 'eggs', ['    q = y / 0\n'], 0),
-     'trace() row 3')
+    def test_frame(self):
+        args, varargs, varkw, locals = inspect.getargvalues(mod.fr)
+        self.assertEqual(args, ['x', 'y'])
+        self.assertEqual(varargs, None)
+        self.assertEqual(varkw, None)
+        self.assertEqual(locals, {'x': 11, 'p': 11, 'y': 14})
+        self.assertEqual(inspect.formatargvalues(args, varargs, varkw, locals),
+                         '(x=11, y=14)')
 
-test(len(mod.st) >= 5, 'stack() length')
-test(mod.st[0][1:] ==
-     (TESTFN, 16, 'eggs', ['    st = inspect.stack()\n'], 0),
-     'stack() row 1')
-test(mod.st[1][1:] ==
-     (TESTFN, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0),
-     'stack() row 2')
-test(mod.st[2][1:] ==
-     (TESTFN, 43, 'argue', ['            spam(a, b, c)\n'], 0),
-     'stack() row 3')
-test(mod.st[3][1:] ==
-     (TESTFN, 39, 'abuse', ['        self.argue(a, b, c)\n'], 0),
-     'stack() row 4')
+    def test_previous_frame(self):
+        args, varargs, varkw, locals = inspect.getargvalues(mod.fr.f_back)
+        self.assertEqual(args, ['a', 'b', 'c', 'd', ['e', ['f']]])
+        self.assertEqual(varargs, 'g')
+        self.assertEqual(varkw, 'h')
+        self.assertEqual(inspect.formatargvalues(args, varargs, varkw, locals),
+             '(a=7, b=8, c=9, d=3, (e=4, (f=5,)), *g=(), **h={})')
 
-args, varargs, varkw, locals = inspect.getargvalues(mod.fr)
-test(args == ['x', 'y'], 'mod.fr args')
-test(varargs == None, 'mod.fr varargs')
-test(varkw == None, 'mod.fr varkw')
-test(locals == {'x': 11, 'p': 11, 'y': 14}, 'mod.fr locals')
-test(inspect.formatargvalues(args, varargs, varkw, locals) ==
-     '(x=11, y=14)', 'mod.fr formatted argvalues')
+class GetSourceBase(unittest.TestCase):
+    # Subclasses must override.
+    fodderFile = None
+    
+    def __init__(self, *args, **kwargs):
+        unittest.TestCase.__init__(self, *args, **kwargs)
 
-args, varargs, varkw, locals = inspect.getargvalues(mod.fr.f_back)
-test(args == ['a', 'b', 'c', 'd', ['e', ['f']]], 'mod.fr.f_back args')
-test(varargs == 'g', 'mod.fr.f_back varargs')
-test(varkw == 'h', 'mod.fr.f_back varkw')
-test(inspect.formatargvalues(args, varargs, varkw, locals) ==
-     '(a=7, b=8, c=9, d=3, (e=4, (f=5,)), *g=(), **h={})',
-     'mod.fr.f_back formatted argvalues')
+        self.source = file(inspect.getsourcefile(self.fodderFile)).read()
 
-for fname in files_to_clean_up:
-    try:
-        os.unlink(fname)
-    except:
-        pass
+    def sourcerange(self, top, bottom):
+        lines = self.source.split("\n")
+        return "\n".join(lines[top-1:bottom]) + "\n"
 
-# Test for decorators as well.
+    def assertSourceEqual(self, obj, top, bottom):
+        self.assertEqual(inspect.getsource(obj),
+                         self.sourcerange(top, bottom))
+    
+class TestRetrievingSourceCode(GetSourceBase):
+    fodderFile = mod
+    
+    def test_getclasses(self):
+        classes = inspect.getmembers(mod, inspect.isclass)
+        self.assertEqual(classes,
+                         [('FesteringGob', mod.FesteringGob),
+                          ('MalodorousPervert', mod.MalodorousPervert),
+                          ('ParrotDroppings', mod.ParrotDroppings),
+                          ('StupidGit', mod.StupidGit)])
+        tree = inspect.getclasstree([cls[1] for cls in classes], 1)
+        self.assertEqual(tree,
+                         [(mod.ParrotDroppings, ()),
+                          (mod.StupidGit, ()),
+                          [(mod.MalodorousPervert, (mod.StupidGit,)),
+                           [(mod.FesteringGob, (mod.MalodorousPervert,
+                                                   mod.ParrotDroppings))
+                            ]
+                           ]
+                          ])
+        
+    def test_getfunctions(self):
+        functions = inspect.getmembers(mod, inspect.isfunction)
+        self.assertEqual(functions, [('eggs', mod.eggs),
+                                     ('spam', mod.spam)])
 
-source = r"""
-def wrap(foo=None):
-  def wrapper(func):
-    return func
-  return wrapper
+    def test_getdoc(self):
+        self.assertEqual(inspect.getdoc(mod), 'A module docstring.')
+        self.assertEqual(inspect.getdoc(mod.StupidGit),
+                         'A longer,\n\nindented\n\ndocstring.')
+        self.assertEqual(inspect.getdoc(git.abuse),
+                         'Another\n\ndocstring\n\ncontaining\n\ntabs')
 
-def replace(func):
-  def insteadfunc():
-    print 'hello'
-  return insteadfunc
+    def test_getcomments(self):
+        self.assertEqual(inspect.getcomments(mod), '# line 1\n')
+        self.assertEqual(inspect.getcomments(mod.StupidGit), '# line 20\n')
 
-# two decorators, one with argument
-@wrap()
-@wrap(wrap)
-def wrapped():
-  pass
+    def test_getmodule(self):
+        self.assertEqual(inspect.getmodule(mod.StupidGit), mod)
 
-@replace
-def gone():
-  pass"""
+    def test_getsource(self):
+        self.assertSourceEqual(git.abuse, 29, 39)
+        self.assertSourceEqual(mod.StupidGit, 21, 46)
 
-file = open(TESTFN + "2", "w")
-file.write(source)
-file.close()
-files_to_clean_up = [TESTFN + "2", TESTFN + '2c', TESTFN + '2o']
+    def test_getsourcefile(self):
+         self.assertEqual(inspect.getsourcefile(mod.spam), modfile)
+         self.assertEqual(inspect.getsourcefile(git.abuse), modfile)
 
-mod2 = imp.load_source("testmod3", TESTFN + "2")
+    def test_getfile(self):
+        self.assertEqual(inspect.getfile(mod.StupidGit), mod.__file__)
 
-test(inspect.getsource(mod2.wrapped) == sourcerange(13, 16),
-     "inspect.getsource(mod.wrapped)")
-test(inspect.getsource(mod2.gone) == sourcerange(8, 9),
-     "inspect.getsource(mod.gone)")
+class TestDecorators(GetSourceBase):
+    fodderFile = mod2
 
-for fname in files_to_clean_up:
-    try:
-        os.unlink(fname)
-    except:
-        pass
+    def test_wrapped_decorator(self):
+        self.assertSourceEqual(mod2.wrapped, 14, 17)
 
-# Test classic-class method resolution order.
-class A:    pass
-class B(A): pass
-class C(A): pass
-class D(B, C): pass
+    def test_replacing_decorator(self):
+        self.assertSourceEqual(mod2.gone, 9, 10)
 
-expected = (D, B, A, C)
-got = inspect.getmro(D)
-test(expected == got, "expected %r mro, got %r", expected, got)
-
-# The same w/ new-class MRO.
-class A(object):    pass
-class B(A): pass
-class C(A): pass
-class D(B, C): pass
-
-expected = (D, B, C, A, object)
-got = inspect.getmro(D)
-test(expected == got, "expected %r mro, got %r", expected, got)
-
-# Test classify_class_attrs.
+# Helper for testing classify_class_attrs.
 def attrs_wo_objs(cls):
     return [t[:3] for t in inspect.classify_class_attrs(cls)]
 
-class A:
-    def s(): pass
-    s = staticmethod(s)
+class TestClassesAndFunctions(unittest.TestCase):    
+    def test_classic_mro(self):
+        # Test classic-class method resolution order.
+        class A:    pass
+        class B(A): pass
+        class C(A): pass
+        class D(B, C): pass
 
-    def c(cls): pass
-    c = classmethod(c)
+        expected = (D, B, A, C)
+        got = inspect.getmro(D)
+        self.assertEqual(expected, got)
 
-    def getp(self): pass
-    p = property(getp)
+    def test_newstyle_mro(self):
+        # The same w/ new-class MRO.
+        class A(object):    pass
+        class B(A): pass
+        class C(A): pass
+        class D(B, C): pass
 
-    def m(self): pass
+        expected = (D, B, C, A, object)
+        got = inspect.getmro(D)
+        self.assertEqual(expected, got)
 
-    def m1(self): pass
+    def assertArgSpecEquals(self, routine, args_e, varargs_e = None,
+                            varkw_e = None, defaults_e = None,
+                            formatted = None):
+        args, varargs, varkw, defaults = inspect.getargspec(routine)
+        self.assertEqual(args, args_e)
+        self.assertEqual(varargs, varargs_e)
+        self.assertEqual(varkw, varkw_e)
+        self.assertEqual(defaults, defaults_e)
+        if formatted is not None:
+            self.assertEqual(inspect.formatargspec(args, varargs, varkw, defaults),
+                             formatted)
 
-    datablob = '1'
+    def test_getargspec(self):
+        self.assertArgSpecEquals(mod.eggs, ['x', 'y'], formatted = '(x, y)')
 
-attrs = attrs_wo_objs(A)
-test(('s', 'static method', A) in attrs, 'missing static method')
-test(('c', 'class method', A) in attrs, 'missing class method')
-test(('p', 'property', A) in attrs, 'missing property')
-test(('m', 'method', A) in attrs, 'missing plain method')
-test(('m1', 'method', A) in attrs, 'missing plain method')
-test(('datablob', 'data', A) in attrs, 'missing data')
+        self.assertArgSpecEquals(mod.spam,
+                                 ['a', 'b', 'c', 'd', ['e', ['f']]],
+                                 'g', 'h', (3, (4, (5,))),
+                                 '(a, b, c, d=3, (e, (f,))=(4, (5,)), *g, **h)')
 
-class B(A):
-    def m(self): pass
+    def test_getargspec_method(self):
+        class A(object):
+            def m(self):
+                pass
+        self.assertArgSpecEquals(A.m, ['self'])
 
-attrs = attrs_wo_objs(B)
-test(('s', 'static method', A) in attrs, 'missing static method')
-test(('c', 'class method', A) in attrs, 'missing class method')
-test(('p', 'property', A) in attrs, 'missing property')
-test(('m', 'method', B) in attrs, 'missing plain method')
-test(('m1', 'method', A) in attrs, 'missing plain method')
-test(('datablob', 'data', A) in attrs, 'missing data')
+    def test_getargspec_sublistofone(self):
+        def sublistOfOne((foo)): return 1
+        
+        self.assertArgSpecEquals(sublistOfOne, [['foo']])
 
+    def test_classify_oldstyle(self):
+        class A:
+            def s(): pass
+            s = staticmethod(s)
 
-class C(A):
-    def m(self): pass
-    def c(self): pass
+            def c(cls): pass
+            c = classmethod(c)
 
-attrs = attrs_wo_objs(C)
-test(('s', 'static method', A) in attrs, 'missing static method')
-test(('c', 'method', C) in attrs, 'missing plain method')
-test(('p', 'property', A) in attrs, 'missing property')
-test(('m', 'method', C) in attrs, 'missing plain method')
-test(('m1', 'method', A) in attrs, 'missing plain method')
-test(('datablob', 'data', A) in attrs, 'missing data')
+            def getp(self): pass
+            p = property(getp)
 
-class D(B, C):
-    def m1(self): pass
+            def m(self): pass
 
-attrs = attrs_wo_objs(D)
-test(('s', 'static method', A) in attrs, 'missing static method')
-test(('c', 'class method', A) in attrs, 'missing class method')
-test(('p', 'property', A) in attrs, 'missing property')
-test(('m', 'method', B) in attrs, 'missing plain method')
-test(('m1', 'method', D) in attrs, 'missing plain method')
-test(('datablob', 'data', A) in attrs, 'missing data')
+            def m1(self): pass
 
-# Repeat all that, but w/ new-style classes.
+            datablob = '1'
 
-class A(object):
+        attrs = attrs_wo_objs(A)
+        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
+        self.assert_(('c', 'class method', A) in attrs, 'missing class method')
+        self.assert_(('p', 'property', A) in attrs, 'missing property')
+        self.assert_(('m', 'method', A) in attrs, 'missing plain method')
+        self.assert_(('m1', 'method', A) in attrs, 'missing plain method')
+        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
 
-    def s(): pass
-    s = staticmethod(s)
+        class B(A):
+            def m(self): pass
 
-    def c(cls): pass
-    c = classmethod(c)
-
-    def getp(self): pass
-    p = property(getp)
-
-    def m(self): pass
-
-    def m1(self): pass
-
-    datablob = '1'
-
-attrs = attrs_wo_objs(A)
-test(('s', 'static method', A) in attrs, 'missing static method')
-test(('c', 'class method', A) in attrs, 'missing class method')
-test(('p', 'property', A) in attrs, 'missing property')
-test(('m', 'method', A) in attrs, 'missing plain method')
-test(('m1', 'method', A) in attrs, 'missing plain method')
-test(('datablob', 'data', A) in attrs, 'missing data')
-
-class B(A):
-
-    def m(self): pass
-
-attrs = attrs_wo_objs(B)
-test(('s', 'static method', A) in attrs, 'missing static method')
-test(('c', 'class method', A) in attrs, 'missing class method')
-test(('p', 'property', A) in attrs, 'missing property')
-test(('m', 'method', B) in attrs, 'missing plain method')
-test(('m1', 'method', A) in attrs, 'missing plain method')
-test(('datablob', 'data', A) in attrs, 'missing data')
+        attrs = attrs_wo_objs(B)
+        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
+        self.assert_(('c', 'class method', A) in attrs, 'missing class method')
+        self.assert_(('p', 'property', A) in attrs, 'missing property')
+        self.assert_(('m', 'method', B) in attrs, 'missing plain method')
+        self.assert_(('m1', 'method', A) in attrs, 'missing plain method')
+        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
 
 
-class C(A):
+        class C(A):
+            def m(self): pass
+            def c(self): pass
 
-    def m(self): pass
-    def c(self): pass
+        attrs = attrs_wo_objs(C)
+        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
+        self.assert_(('c', 'method', C) in attrs, 'missing plain method')
+        self.assert_(('p', 'property', A) in attrs, 'missing property')
+        self.assert_(('m', 'method', C) in attrs, 'missing plain method')
+        self.assert_(('m1', 'method', A) in attrs, 'missing plain method')
+        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
 
-attrs = attrs_wo_objs(C)
-test(('s', 'static method', A) in attrs, 'missing static method')
-test(('c', 'method', C) in attrs, 'missing plain method')
-test(('p', 'property', A) in attrs, 'missing property')
-test(('m', 'method', C) in attrs, 'missing plain method')
-test(('m1', 'method', A) in attrs, 'missing plain method')
-test(('datablob', 'data', A) in attrs, 'missing data')
+        class D(B, C):
+            def m1(self): pass
 
-class D(B, C):
+        attrs = attrs_wo_objs(D)
+        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
+        self.assert_(('c', 'class method', A) in attrs, 'missing class method')
+        self.assert_(('p', 'property', A) in attrs, 'missing property')
+        self.assert_(('m', 'method', B) in attrs, 'missing plain method')
+        self.assert_(('m1', 'method', D) in attrs, 'missing plain method')
+        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
 
-    def m1(self): pass
+    # Repeat all that, but w/ new-style classes.
+    def test_classify_newstyle(self):
+        class A(object):
 
-attrs = attrs_wo_objs(D)
-test(('s', 'static method', A) in attrs, 'missing static method')
-test(('c', 'method', C) in attrs, 'missing plain method')
-test(('p', 'property', A) in attrs, 'missing property')
-test(('m', 'method', B) in attrs, 'missing plain method')
-test(('m1', 'method', D) in attrs, 'missing plain method')
-test(('datablob', 'data', A) in attrs, 'missing data')
+            def s(): pass
+            s = staticmethod(s)
 
-args, varargs, varkw, defaults = inspect.getargspec(mod.eggs)
-test(args == ['x', 'y'], 'mod.eggs args')
-test(varargs == None, 'mod.eggs varargs')
-test(varkw == None, 'mod.eggs varkw')
-test(defaults == None, 'mod.eggs defaults')
-test(inspect.formatargspec(args, varargs, varkw, defaults) ==
-     '(x, y)', 'mod.eggs formatted argspec')
-args, varargs, varkw, defaults = inspect.getargspec(mod.spam)
-test(args == ['a', 'b', 'c', 'd', ['e', ['f']]], 'mod.spam args')
-test(varargs == 'g', 'mod.spam varargs')
-test(varkw == 'h', 'mod.spam varkw')
-test(defaults == (3, (4, (5,))), 'mod.spam defaults')
-test(inspect.formatargspec(args, varargs, varkw, defaults) ==
-     '(a, b, c, d=3, (e, (f,))=(4, (5,)), *g, **h)',
-     'mod.spam formatted argspec')
-args, varargs, varkw, defaults = inspect.getargspec(A.m)
-test(args == ['self'], 'A.m args')
-test(varargs is None, 'A.m varargs')
-test(varkw is None, 'A.m varkw')
-test(defaults is None, 'A.m defaults')
+            def c(cls): pass
+            c = classmethod(c)
 
-# Doc/lib/libinspect.tex claims there are 11 such functions
-count = len(filter(lambda x:x.startswith('is'), dir(inspect)))
-test(count == 11, "There are %d (not 11) is* functions", count)
+            def getp(self): pass
+            p = property(getp)
 
-def sublistOfOne((foo)): return 1
+            def m(self): pass
 
-args, varargs, varkw, defaults = inspect.getargspec(sublistOfOne)
-test(args == [['foo']], 'sublistOfOne args')
-test(varargs is None, 'sublistOfOne varargs')
-test(varkw is None, 'sublistOfOne varkw')
-test(defaults is None, 'sublistOfOn defaults')
+            def m1(self): pass
+
+            datablob = '1'
+
+        attrs = attrs_wo_objs(A)
+        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
+        self.assert_(('c', 'class method', A) in attrs, 'missing class method')
+        self.assert_(('p', 'property', A) in attrs, 'missing property')
+        self.assert_(('m', 'method', A) in attrs, 'missing plain method')
+        self.assert_(('m1', 'method', A) in attrs, 'missing plain method')
+        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
+
+        class B(A):
+
+            def m(self): pass
+
+        attrs = attrs_wo_objs(B)
+        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
+        self.assert_(('c', 'class method', A) in attrs, 'missing class method')
+        self.assert_(('p', 'property', A) in attrs, 'missing property')
+        self.assert_(('m', 'method', B) in attrs, 'missing plain method')
+        self.assert_(('m1', 'method', A) in attrs, 'missing plain method')
+        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
+
+
+        class C(A):
+
+            def m(self): pass
+            def c(self): pass
+
+        attrs = attrs_wo_objs(C)
+        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
+        self.assert_(('c', 'method', C) in attrs, 'missing plain method')
+        self.assert_(('p', 'property', A) in attrs, 'missing property')
+        self.assert_(('m', 'method', C) in attrs, 'missing plain method')
+        self.assert_(('m1', 'method', A) in attrs, 'missing plain method')
+        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
+
+        class D(B, C):
+
+            def m1(self): pass
+
+        attrs = attrs_wo_objs(D)
+        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
+        self.assert_(('c', 'method', C) in attrs, 'missing plain method')
+        self.assert_(('p', 'property', A) in attrs, 'missing property')
+        self.assert_(('m', 'method', B) in attrs, 'missing plain method')
+        self.assert_(('m1', 'method', D) in attrs, 'missing plain method')
+        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
+
+def test_main():
+    run_unittest(TestDecorators, TestRetrievingSourceCode,
+                 TestInterpreterStack, TestClassesAndFunctions, TestPredicates)
+
+if __name__ == "__main__":
+    test_main()
+    
