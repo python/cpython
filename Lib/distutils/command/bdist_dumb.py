@@ -20,6 +20,9 @@ class bdist_dumb (Command):
 
     user_options = [('bdist-dir=', 'd',
                      "temporary directory for creating the distribution"),
+                    ('plat-name=', 'p',
+                     "platform name to embed in generated filenames "
+                     "(default: %s)" % get_platform()),
                     ('format=', 'f',
                      "archive format to create (tar, ztar, gztar, zip)"),
                     ('keep-tree', 'k',
@@ -35,6 +38,7 @@ class bdist_dumb (Command):
 
     def initialize_options (self):
         self.bdist_dir = None
+        self.plat_name = None
         self.format = None
         self.keep_tree = 0
         self.dist_dir = None
@@ -43,6 +47,7 @@ class bdist_dumb (Command):
 
 
     def finalize_options (self):
+
         if self.bdist_dir is None:
             bdist_base = self.get_finalized_command('bdist').bdist_base
             self.bdist_dir = os.path.join(bdist_base, 'dumb')
@@ -55,7 +60,9 @@ class bdist_dumb (Command):
                       ("don't know how to create dumb built distributions " +
                        "on platform %s") % os.name
 
-        self.set_undefined_options('bdist', ('dist_dir', 'dist_dir'))
+        self.set_undefined_options('bdist',
+                                   ('dist_dir', 'dist_dir'),
+                                   ('plat_name', 'plat_name'))
 
     # finalize_options()
 
@@ -74,7 +81,7 @@ class bdist_dumb (Command):
         # And make an archive relative to the root of the
         # pseudo-installation tree.
         archive_basename = "%s.%s" % (self.distribution.get_fullname(),
-                                      get_platform())
+                                      self.plat_name)
         print "self.bdist_dir = %s" % self.bdist_dir
         print "self.format = %s" % self.format
         self.make_archive (os.path.join(self.dist_dir, archive_basename),

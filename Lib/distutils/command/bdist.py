@@ -32,6 +32,9 @@ class bdist (Command):
 
     user_options = [('bdist-base=', 'b',
                      "temporary directory for creating built distributions"),
+                    ('plat-name=', 'p',
+                     "platform name to embed in generated filenames "
+                     "(default: %s)" % get_platform()),
                     ('formats=', None,
                      "formats for distribution (comma-separated list)"),
                     ('dist-dir=', 'd',
@@ -70,6 +73,7 @@ class bdist (Command):
 
     def initialize_options (self):
         self.bdist_base = None
+        self.plat_name = None
         self.formats = None
         self.dist_dir = None
 
@@ -77,13 +81,16 @@ class bdist (Command):
 
 
     def finalize_options (self):
+        # have to finalize 'plat_name' before 'bdist_base'
+        if self.plat_name is None:
+            self.plat_name = get_platform()
+
         # 'bdist_base' -- parent of per-built-distribution-format
         # temporary directories (eg. we'll probably have
         # "build/bdist.<plat>/dumb", "build/bdist.<plat>/rpm", etc.)
         if self.bdist_base is None:
             build_base = self.get_finalized_command('build').build_base
-            plat = get_platform()
-            self.bdist_base = os.path.join (build_base, 'bdist.' + plat)
+            self.bdist_base = os.path.join(build_base, 'bdist.' + self.plat_name)
 
         self.ensure_string_list('formats')
         if self.formats is None:
