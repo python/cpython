@@ -258,8 +258,9 @@ class HTMLDoc(Doc):
         return '''
 <!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html><head><title>Python: %s</title>
-<style>TT { font-family: lucida console, lucida typewriter, courier }</style>
-</head><body bgcolor="#f0f0f8">
+<style type="text/css"><!--
+TT { font-family: lucida console, lucida typewriter, courier }
+--></style></head><body bgcolor="#f0f0f8">
 %s
 </body></html>''' % (title, contents)
 
@@ -440,7 +441,7 @@ class HTMLDoc(Doc):
 
         modules = inspect.getmembers(object, inspect.ismodule)
 
-        if 0 and hasattr(object, '__all__'):
+        if 0 and hasattr(object, '__all__'): # disabled for now
             visible = lambda key, all=object.__all__: key in all
         else:
             visible = lambda key: key[:1] != '_'
@@ -473,7 +474,7 @@ class HTMLDoc(Doc):
 
         doc = self.markup(getdoc(object), self.preformat, fdict, cdict)
         doc = doc and '<tt>%s</tt>' % doc
-        result = result + '<p>%s\n' % self.small(doc)
+        result = result + '<p>%s</p>\n' % self.small(doc)
 
         if hasattr(object, '__path__'):
             modpkgs = []
@@ -575,7 +576,7 @@ class HTMLDoc(Doc):
         skipdocs = 0
         if inspect.ismethod(object):
             if cl:
-                if not cl.__dict__.has_key(name):
+                if object.im_class is not cl:
                     base = object.im_class
                     url = '#%s-%s' % (base.__name__, name)
                     basename = base.__name__
@@ -595,7 +596,7 @@ class HTMLDoc(Doc):
         else:
             if (cl and cl.__dict__.has_key(realname) and
                 cl.__dict__[realname] is object):
-                reallink = '<a href="%s">%s</a>' % (
+                reallink = '<a href="#%s">%s</a>' % (
                     cl.__name__ + '-' + realname, realname)
                 skipdocs = 1
             else:
@@ -846,7 +847,7 @@ class TextDoc(Doc):
         skipdocs = 0
         if inspect.ismethod(object):
             if cl:
-                if not cl.__dict__.has_key(name):
+                if object.im_class is not cl:
                     base = object.im_class
                     basename = base.__name__
                     if base.__module__ != cl.__module__:
