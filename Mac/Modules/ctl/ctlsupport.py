@@ -75,12 +75,12 @@ ControlFontStyle_Convert(v, itself)
 	ControlFontStyleRec *itself;
 {
 	return PyArg_ParseTuple(v, "hhhhhhO&O&", &itself->flags,
-		&itself->font, &itself->size, &itself->style, &itself->mode, 
-		&itself->just, QdRGB_Convert, &itself->foreColor, 
+		&itself->font, &itself->size, &itself->style, &itself->mode,
+		&itself->just, QdRGB_Convert, &itself->foreColor,
 		QdRGB_Convert, &itself->backColor);
 }
 
-/* TrackControl callback support */
+/* TrackControl and HandleControlClick callback support */
 static PyObject *tracker;
 static ControlActionUPP mytracker_upp;
 
@@ -104,7 +104,7 @@ PyObject *
 CtlObj_WhichControl(ControlHandle c)
 {
 	PyObject *it;
-	
+
 	if (c == NULL)
 		it = Py_None;
 	else {
@@ -145,7 +145,7 @@ mytracker(ctl, part)
 	short part;
 {
 	PyObject *args, *rv=0;
-	
+
 	args = Py_BuildValue("(O&i)", CtlObj_WhichControl, ctl, (int)part);
 	if (args && tracker) {
 		rv = PyEval_CallObject(tracker, args);
@@ -154,7 +154,7 @@ mytracker(ctl, part)
 	if (rv)
 		Py_DECREF(rv);
 	else
-		PySys_WriteStderr("TrackControl: exception in tracker function\\n");
+		PySys_WriteStderr("TrackControl or HandleControlClick: exception in tracker function\\n");
 }
 """
 
@@ -169,8 +169,8 @@ class MyObjectDefinition(ObjectIdentityMixin, GlobalObjectDefinition):
 		GlobalObjectDefinition.outputInitStructMembers(self)
 		Output("SetControlReference(itself, (long)it);")
 	def outputCleanupStructMembers(self):
-		Output("if (self->ob_itself) SetControlReference(self->ob_itself, (long)0); /* Make it forget about us */")
-		
+		Output("if (self->ob_itself)SetControlReference(self->ob_itself, (long)0); /* Make it forget about us */")
+
 # Create the generator groups and link them
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)
 object = MyObjectDefinition(OBJECTNAME, OBJECTPREFIX, OBJECTTYPE)
@@ -220,6 +220,119 @@ return _res;
 f = ManualGenerator("TrackControl", trackcontrol_body);
 #f.docstring = "(Point startPoint [,trackercallback]) -> (ControlPartCode _rv)"
 object.add(f)
+
+# CJW - added 5/12/99
+# Manual generator for HandleControlClick, as for TrackControl
+handlecontrolclick_body = """
+ControlPartCode _rv;
+Point startPoint;
+SInt16 modifiers;
+ControlActionUPP upp = 0;
+PyObject *callback = 0;
+
+if (!PyArg_ParseTuple(_args, "O&h|O",
+                      PyMac_GetPoint, &startPoint,
+                      &modifiers,
+                      &callback))
+	return NULL;
+if (callback && callback != Py_None) {
+	if (PyInt_Check(callback) && PyInt_AS_LONG(callback) == -1)
+		upp = (ControlActionUPP)-1;
+	else {
+		settrackfunc(callback);
+		upp = mytracker_upp;
+	}
+}
+_rv = HandleControlClick(_self->ob_itself,
+                   startPoint,
+                   modifiers,
+                   upp);
+clrtrackfunc();
+_res = Py_BuildValue("h",
+                     _rv);
+return _res;
+"""
+
+f = ManualGenerator("HandleControlClick", handlecontrolclick_body);
+#f.docstring = "(Point startPoint, Integer modifiers, [,trackercallback])
+-> (ControlPartCode _rv)"
+object.add(f)
+
+# Manual Generator for SetControlData
+setcontroldata_body = """
+OSErr _err;
+ControlPartCode inPart;
+ResType inTagName;
+Size bufferSize;
+Ptr buffer;
+
+if (!PyArg_ParseTuple(_args, "hO&s#",
+                      &inPart,
+                      PyMac_GetOSType, &inTagName,
+                      &buffer, &bufferSize))
+	return NULL;
+
+_err = SetControlData(_self->ob_itself,
+	              inPart,
+	              inTagName,
+	              bufferSize,
+                      buffer);
+
+if (_err != noErr)
+	return PyMac_Error(_err);
+_res = Py_None;
+return _res;
+"""
+
+f = ManualGenerator("SetControlData", setcontroldata_body);
+#f.docstring = "(stuff) -> None"
+object.add(f)
+
+# Manual Generator for GetControlData
+getcontroldata_body = """
+OSErr _err;
+ControlPartCode inPart;
+ResType inTagName;
+Size bufferSize;
+Ptr buffer;
+Size outSize;
+
+if (!PyArg_ParseTuple(_args, "hO&",
+                      &inPart,
+                      PyMac_GetOSType, &inTagName))
+	return NULL;
+
+/* allocate a buffer for the data */
+_err = GetControlDataSize(_self->ob_itself,
+	                  inPart,
+	                  inTagName,
+                          &bufferSize);
+if (_err != noErr)
+	return PyMac_Error(_err);
+buffer = PyMem_NEW(char, bufferSize);
+if (buffer == NULL)
+	return PyErr_NoMemory();
+
+_err = GetControlData(_self->ob_itself,
+	              inPart,
+	              inTagName,
+	              bufferSize,
+                      buffer,
+                      &outSize);
+
+if (_err != noErr) {
+	PyMem_DEL(buffer);
+	return PyMac_Error(_err);
+}
+_res = Py_BuildValue("s#", buffer, outSize);
+PyMem_DEL(buffer);
+return _res;
+"""
+
+f = ManualGenerator("GetControlData", getcontroldata_body);
+#f.docstring = "(part, type) -> String"
+object.add(f)
+# end CJW
 
 # And manual generators to get/set popup menu information
 getpopupdata_body = """
