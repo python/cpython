@@ -70,8 +70,8 @@ def powtest(type):
                         except TypeError:
                             pass
                         else:
-                            raise TestFailed("expected TypeError from "
-                                "pow%r" % ((type(i), j, k)))
+                            raise ValueError, "expected TypeError from " + \
+                                "pow%r" % ((type(i), j, k),)
                         continue
                     if compare(pow(type(i),j,k), pow(type(i),j)% type(k)):
                         raise ValueError, "pow(" +str(i)+ "," +str(j)+ \

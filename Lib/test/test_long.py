@@ -326,7 +326,7 @@ def test_auto_overflow():
                                 pass
                             else:
                                 raise TestFailed("pow%r should have raised "
-                                "TypeError" % ((longx, longy, long(z))))
+                                "TypeError" % ((longx, longy, long(z)),))
 
 # ---------------------------------------- tests of long->float overflow
 
