@@ -954,34 +954,6 @@ class DecimalUsabilityTest(unittest.TestCase):
         d = Decimal("Infinity")
         self.assertEqual(d.as_tuple(), (0, (0,), 'F') )
 
-    def test_immutability_onpurpose(self):
-        #Try to change internal objects and see if immutable.
-
-        d = Decimal(42)
-
-        #you can get the attributes...
-        d.exp
-        d.int
-        d.sign
-
-        #...but not change them!
-        try:
-            d.exp = 20
-            d.int = 3
-            d.sign = 1
-        except AttributeError:
-            pass
-        else:
-            self.fail('Did not raised an error!')
-
-        #some new attribute
-        try:
-            d.newone = None
-        except AttributeError:
-            pass
-        else:
-            self.fail('Did not raised an error!')
-
     def test_immutability_operations(self):
         # Do operations and check that it didn't change change internal objects.
 

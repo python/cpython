@@ -2054,17 +2054,6 @@ class Decimal(object):
         except TypeError:
             return 0
 
-    #properties to immutability-near feature
-    def _get_sign(self):
-        return self._sign
-    def _get_int(self):
-        return self._int
-    def _get_exp(self):
-        return self._exp
-    sign = property(_get_sign)
-    int = property(_get_int)
-    exp = property(_get_exp)
-
     # support for pickling, copy, and deepcopy
     def __reduce__(self):
         return (self.__class__, (str(self),))
@@ -2120,8 +2109,10 @@ class Context(object):
                  _ignored_flags=[]):
         if not isinstance(flags, dict):
             flags = dict([(s,s in flags) for s in _signals])
+            del s
         if traps is not None and not isinstance(traps, dict):
             traps = dict([(s,s in traps) for s in _signals])
+            del s
         for name, val in locals().items():
             if val is None:
                 setattr(self, name, copy.copy(getattr(DefaultContext, name)))
