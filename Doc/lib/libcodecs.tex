@@ -1,0 +1,126 @@
+\section{\module{codecs} ---
+         Python codec registry and base classes}
+
+\declaremodule{standard}{codec}
+\modulesynopsis{Encode and decode data and streams.}
+\moduleauthor{Marc-Andre Lemburg}{mal@lemburg.com}
+\sectionauthor{Marc-Andre Lemburg}{mal@lemburg.com}
+
+
+\index{Unicode}
+\index{Codecs}
+\indexii{Codecs}{encode}
+\indexii{Codecs}{decode}
+\index{streams}
+\indexii{stackable}{streams}
+
+
+This module defines base classes for standard Python codecs (encoders
+and decoders) and provides access to the internal Python codec
+registry which manages the codec lookup process.
+
+It defines the following functions:
+
+\begin{funcdesc}{register}{search_function}
+Register a codec search function. Search functions are expected to
+take one argument, the encoding name in all lower case letters, and
+return a tuple of functions \code{(\var{encoder}, \var{decoder}, \var{stream_reader},
+\var{stream_writer})} taking the following arguments:
+
+  \var{encoder} and \var{decoder}: These must be functions or methods
+  which have the same interface as the .encode/.decode methods of
+  Codec instances (see Codec Interface). The functions/methods are
+  expected to work in a stateless mode.
+
+  \var{stream_reader} and \var{stream_writer}: These have to be
+  factory functions providing the following interface:
+
+	\code{factory(\var{stream},\var{errors}='strict')}
+
+  The factory functions must return objects providing the interfaces
+  defined by the base classes
+  \class{StreamWriter}/\class{StreamReader} resp. Stream codecs can
+  maintain state.
+
+  Possible values for errors are 'strict' (raise an exception in case
+  of an encoding error), 'replace' (replace malformed data with a
+  suitable replacement marker, e.g. '?') and 'ignore' (ignore
+  malformed data and continue without further notice).
+
+In case a search function cannot find a given encoding, it should
+return None.
+\end{funcdesc}
+
+\begin{funcdesc}{lookup}{encoding}
+Looks up a codec tuple in the Python codec registry and returns the
+function tuple as defined above.
+
+Encodings are first looked up in the registry's cache. If not found,
+the list of registered search functions is scanned. If no codecs tuple
+is found, a LookupError is raised. Otherwise, the codecs tuple is
+stored in the cache and returned to the caller.
+\end{funcdesc}
+
+To simplify working with encoded files or stream, the module
+also defines these utility functions:
+
+\begin{funcdesc}{open}{filename, mode\optional{, encoding=None, errors='strict', buffering=1}}
+Open an encoded file using the given \var{mode} and return
+a wrapped version providing transparent encoding/decoding.
+
+Note: The wrapped version will only accept the object format defined
+by the codecs, i.e. Unicode objects for most builtin codecs. Output is
+also codec dependent and will usually by Unicode as well.
+
+\var{encoding} specifies the encoding which is to be used for the
+the file.
+
+\var{errors} may be given to define the error handling. It defaults
+to 'strict' which causes a \exception{ValueError} to be raised in case
+an encoding error occurs.
+
+\var{buffering} has the same meaning as for the builtin open() API.
+It defaults to line buffered.
+\end{funcdesc}
+
+\begin{funcdesc}{EncodedFile}{file, input\optional{, output=None, errors='strict'}}
+
+Return a wrapped version of file which provides transparent
+encoding translation.
+
+Strings written to the wrapped file are interpreted according to the
+given \var{input} encoding and then written to the original file as
+string using the \var{output} encoding. The intermediate encoding will
+usually be Unicode but depends on the specified codecs.
+
+If \var{output} is not given, it defaults to input.
+
+\var{errors} may be given to define the error handling. It defaults to
+'strict' which causes \exception{ValueError} to be raised in case
+an encoding error occurs.
+\end{funcdesc}
+
+
+
+...XXX document codec base classes...
+
+
+
+The module also provides the following constants which are useful
+for reading and writing to platform dependent files:
+
+\begin{datadesc}{BOM}
+\dataline{BOM_BE}
+\dataline{BOM_LE}
+\dataline{BOM32_BE}
+\dataline{BOM32_LE}
+\dataline{BOM64_BE}
+\dataline{BOM64_LE}
+These constants define the byte order marks (BOM) used in data
+streams to indicate the byte order used in the stream or file.
+\constant{BOM} is either \constant{BOM_BE} or \constant{BOM_LE}
+depending on the platform's native byte order, while the others
+represent big endian (\samp{_BE} suffix) and little endian
+(\samp{_LE} suffix) byte order using 32-bit and 64-bit encodings.
+\end{datadesc}
+
