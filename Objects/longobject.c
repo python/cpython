@@ -31,12 +31,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <math.h>
 #include <assert.h>
 
-/* Forward: */
-extern object *long_mul PROTO((longobject *, object *));
-extern object *long_add PROTO((longobject *, object *));
-extern object *long_neg PROTO((longobject *));
-
 static int ticker;	/* XXX Could be shared with ceval? */
+
+#define ZABS(x) ((x) < 0 ? ~(x) : (x))
 
 #define INTRCHECK(block) \
 	if (--ticker < 0) { \
@@ -52,13 +49,31 @@ longobject *
 long_normalize(v)
 	register longobject *v;
 {
-	int j = ABS(v->ob_size);
+	int j = ZABS(v->ob_size);
 	register int i = j;
 	
 	while (i > 0 && v->ob_digit[i-1] == 0)
 		--i;
 	if (i != j)
-		v->ob_size = (v->ob_size < 0) ? -i : i;
+		v->ob_size = (v->ob_size < 0) ? ~i : i;
+	if (v->ob_size == ~0)
+		v->ob_size = 0;
+	return v;
+}
+
+/* Normalize except leave ~0 unchanged */
+
+longobject *
+long_znormalize(v)
+	register longobject *v;
+{
+	int j = ZABS(v->ob_size);
+	register int i = j;
+	
+	while (i > 0 && v->ob_digit[i-1] == 0)
+		--i;
+	if (i != j)
+		v->ob_size = (v->ob_size < 0) ? ~i : i;
 	return v;
 }
 
@@ -83,7 +98,7 @@ newlongobject(ival)
 	if (v != NULL) {
 		if (ival < 0) {
 			ival = -ival;
-			v->ob_size = -v->ob_size;
+			v->ob_size = ~v->ob_size;
 		}
 		v->ob_digit[0] = ival & MASK;
 		v->ob_digit[1] = (ival >> SHIFT) & MASK;
@@ -122,7 +137,7 @@ dnewlongobject(dval)
 		frac = ldexp(frac, SHIFT);
 	}
 	if (neg)
-		v->ob_size = -v->ob_size;
+		v->ob_size = ~v->ob_size;
 	return (object *)v;
 }
 
@@ -147,7 +162,7 @@ getlongvalue(vv)
 	x = 0;
 	if (i < 0) {
 		sign = -1;
-		i = -i;
+		i = ~i;
 	}
 	while (--i >= 0) {
 		prev = x;
@@ -182,7 +197,7 @@ dgetlongvalue(vv)
 	x = 0.0;
 	if (i < 0) {
 		sign = -1;
-		i = -i;
+		i = ~i;
 	}
 	while (--i >= 0) {
 		x = x*multiplier + v->ob_digit[i];
@@ -208,7 +223,7 @@ muladd1(a, n, extra)
 	wdigit n;
 	wdigit extra;
 {
-	int size_a = ABS(a->ob_size);
+	int size_a = ZABS(a->ob_size);
 	longobject *z = alloclongobject(size_a+1);
 	twodigits carry = extra;
 	int i;
@@ -234,7 +249,7 @@ divrem1(a, n, prem)
 	wdigit n;
 	digit *prem;
 {
-	int size = ABS(a->ob_size);
+	int size = ZABS(a->ob_size);
 	longobject *z;
 	int i;
 	twodigits rem = 0;
@@ -263,7 +278,7 @@ long_format(a, base)
 {
 	stringobject *str;
 	int i;
-	int size_a = ABS(a->ob_size);
+	int size_a = ZABS(a->ob_size);
 	char *p;
 	int bits;
 	char sign = '\0';
@@ -277,14 +292,19 @@ long_format(a, base)
 		++bits;
 		i >>= 1;
 	}
-	i = 3 + (size_a*SHIFT + bits-1) / bits;
+	i = 6 + (size_a*SHIFT + bits-1) / bits;
 	str = (stringobject *) newsizedstringobject((char *)0, i);
 	if (str == NULL)
 		return NULL;
 	p = GETSTRINGVALUE(str) + i;
 	*p = '\0';
-	if (a->ob_size < 0)
-		sign = '-';
+	*--p = 'L';
+	if (a->ob_size < 0) {
+		if (a->ob_size < ~0)
+			sign = '-';
+		else
+			sign = '~';
+	}
 	
 	INCREF(a);
 	do {
@@ -309,13 +329,19 @@ long_format(a, base)
 			err_set(KeyboardInterrupt);
 			return NULL;
 		})
-	} while (a->ob_size != 0);
+	} while (ZABS(a->ob_size) != 0);
 	DECREF(a);
 	if (base == 8)
 		*--p = '0';
 	else if (base == 16) {
 		*--p = 'x';
 		*--p = '0';
+	}
+	else if (base != 10) {
+		*--p = '#';
+		*--p = '0' + base%10;
+		if (base > 10)
+			*--p = '0' + base/10;
 	}
 	if (sign)
 		*--p = sign;
@@ -375,12 +401,13 @@ long_scan(str, base)
 		DECREF(z);
 		z = temp;
 	}
-	if (z != NULL)
-		z->ob_size *= sign;
+	if (sign < 0 && z != NULL && z->ob_size != 0)
+		z->ob_size = ~z->ob_size;
 	return (object *) z;
 }
 
 static longobject *x_divrem PROTO((longobject *, longobject *, longobject **));
+static object *long_pos PROTO((longobject *));
 
 /* Long division with remainder, top-level routine */
 
@@ -389,7 +416,7 @@ long_divrem(a, b, prem)
 	longobject *a, *b;
 	longobject **prem;
 {
-	int size_a = ABS(a->ob_size), size_b = ABS(b->ob_size);
+	int size_a = ZABS(a->ob_size), size_b = ZABS(b->ob_size);
 	longobject *z;
 	
 	if (size_b == 0) {
@@ -403,8 +430,8 @@ long_divrem(a, b, prem)
 			a->ob_digit[size_a-1] < b->ob_digit[size_b-1]) {
 		/* |a| < |b|. */
 		if (prem != NULL) {
-			INCREF(a);
-			*prem = a;
+			object *long_pos();
+			*prem = (longobject *) long_pos(a);
 		}
 		return alloclongobject(0);
 	}
@@ -427,9 +454,10 @@ long_divrem(a, b, prem)
 	   so a = b*z + r. */
 	if (z != NULL) {
 		if ((a->ob_size < 0) != (b->ob_size < 0))
-			z->ob_size = - z->ob_size;
-		if (prem != NULL && *prem != NULL && a->ob_size < 0)
-			(*prem)->ob_size = - (*prem)->ob_size;
+			z->ob_size = ~ z->ob_size;
+		if (prem != NULL && *prem != NULL && a->ob_size < 0 &&
+						(*prem)->ob_size != 0)
+			(*prem)->ob_size = ~ (*prem)->ob_size;
 	}
 	return z;
 }
@@ -441,7 +469,7 @@ x_divrem(v1, w1, prem)
 	longobject *v1, *w1;
 	longobject **prem;
 {
-	int size_v = ABS(v1->ob_size), size_w = ABS(w1->ob_size);
+	int size_v = ZABS(v1->ob_size), size_w = ZABS(w1->ob_size);
 	digit d = (twodigits)BASE / (w1->ob_digit[size_w-1] + 1);
 	longobject *v = mul1(v1, d);
 	longobject *w = mul1(w1, d);
@@ -458,9 +486,9 @@ x_divrem(v1, w1, prem)
 	
 	assert(size_v >= size_w && size_w > 1); /* Assert checks by div() */
 	assert(v->ob_refcnt == 1); /* Since v will be used as accumulator! */
-	assert(size_w == ABS(w->ob_size)); /* That's how d was calculated */
+	assert(size_w == ZABS(w->ob_size)); /* That's how d was calculated */
 	
-	size_v = ABS(v->ob_size);
+	size_v = ZABS(v->ob_size);
 	a = alloclongobject(size_v - size_w + 1);
 	
 	for (j = size_v, k = a->ob_size-1; a != NULL && k >= 0; --j, --k) {
@@ -517,14 +545,20 @@ x_divrem(v1, w1, prem)
 		}
 	} /* for j, k */
 	
-	if (a != NULL)
-		a = long_normalize(a);
-	if (prem != 0) {
-		if (a == NULL)
+	if (a == NULL) {
+		if (prem != NULL)
 			*prem = NULL;
-		else
+	}
+	else {
+		a = long_normalize(a);
+		if (prem != NULL) {
 			*prem = divrem1(v, d, &d);
-		/* Using d as a dummy to receive the - unused - remainder */
+			/* d receives the (unused) remainder */
+			if (*prem == NULL) {
+				DECREF(a);
+				a = NULL;
+			}
+		}
 	}
 	DECREF(v);
 	DECREF(w);
@@ -549,7 +583,7 @@ long_print(v, fp, flags)
 	stringobject *str = long_format(v, 10);
 	if (str == NULL)
 		return -1;
-	fprintf(fp, "%sL", GETSTRINGVALUE(str));
+	fprintf(fp, "%s", GETSTRINGVALUE(str));
 	DECREF(str);
 	return 0;
 }
@@ -558,14 +592,7 @@ static object *
 long_repr(v)
 	longobject *v;
 {
-	stringobject *str = long_format(v, 10);
-	if (str != NULL) {
-		int len = getstringsize((object *)str);
-		resizestring((object **)&str, len + 1);
-		if (str != NULL)
-			GETSTRINGVALUE(str)[len] = 'L';
-	}
-	return (object *)str;
+	return (object *) long_format(v, 10);
 }
 
 static int
@@ -574,10 +601,14 @@ long_compare(a, b)
 {
 	int sign;
 	
-	if (a->ob_size != b->ob_size)
-		sign = a->ob_size - b->ob_size;
+	if (a->ob_size != b->ob_size) {
+		if (ZABS(a->ob_size) == 0 && ZABS(b->ob_size) == 0)
+			sign = 0;
+		else
+			sign = a->ob_size - b->ob_size;
+	}
 	else {
-		int i = ABS(a->ob_size);
+		int i = ZABS(a->ob_size);
 		while (--i >= 0 && a->ob_digit[i] == b->ob_digit[i])
 			;
 		if (i < 0)
@@ -585,7 +616,7 @@ long_compare(a, b)
 		else
 			sign = (int)a->ob_digit[i] - (int)b->ob_digit[i];
 	}
-	return sign;
+	return sign < 0 ? -1 : sign > 0 ? 1 : 0;
 }
 
 /* Add the absolute values of two long integers. */
@@ -595,7 +626,7 @@ static longobject *
 x_add(a, b)
 	longobject *a, *b;
 {
-	int size_a = ABS(a->ob_size), size_b = ABS(b->ob_size);
+	int size_a = ZABS(a->ob_size), size_b = ZABS(b->ob_size);
 	longobject *z;
 	int i;
 	digit carry = 0;
@@ -631,7 +662,7 @@ static longobject *
 x_sub(a, b)
 	longobject *a, *b;
 {
-	int size_a = ABS(a->ob_size), size_b = ABS(b->ob_size);
+	int size_a = ZABS(a->ob_size), size_b = ZABS(b->ob_size);
 	longobject *z;
 	int i;
 	int sign = 1;
@@ -673,7 +704,8 @@ x_sub(a, b)
 		borrow >>= SHIFT;
 	}
 	assert(borrow == 0);
-	z->ob_size *= sign;
+	if (sign < 0)
+		z->ob_size = ~z->ob_size;
 	return long_normalize(z);
 }
 
@@ -694,8 +726,8 @@ long_add(a, w)
 	if (a->ob_size < 0) {
 		if (b->ob_size < 0) {
 			z = x_add(a, b);
-			if (z != NULL)
-				z->ob_size = -z->ob_size;
+			if (z != NULL && z->ob_size != 0)
+				z->ob_size = ~z->ob_size;
 		}
 		else
 			z = x_sub(b, a);
@@ -728,8 +760,8 @@ long_sub(a, w)
 			z = x_sub(a, b);
 		else
 			z = x_add(a, b);
-		if (z != NULL)
-			z->ob_size = -z->ob_size;
+		if (z != NULL && z->ob_size != 0)
+			z->ob_size = ~z->ob_size;
 	}
 	else {
 		if (b->ob_size < 0)
@@ -756,8 +788,8 @@ long_mul(a, w)
 		return NULL;
 	}
 	b = (longobject *)w;
-	size_a = ABS(a->ob_size);
-	size_b = ABS(b->ob_size);
+	size_a = ZABS(a->ob_size);
+	size_b = ZABS(b->ob_size);
 	z = alloclongobject(size_a + size_b);
 	if (z == NULL)
 		return NULL;
@@ -786,9 +818,9 @@ long_mul(a, w)
 		}
 	}
 	if (a->ob_size < 0)
-		z->ob_size = -z->ob_size;
+		z->ob_size = ~z->ob_size;
 	if (b->ob_size < 0)
-		z->ob_size = -z->ob_size;
+		z->ob_size = ~z->ob_size;
 	return (object *) long_normalize(z);
 }
 
@@ -903,7 +935,9 @@ long_pow(a, w)
 	
 	b = (longobject *)w;
 	size_b = b->ob_size;
-	if (size_b < 0) {
+	if (size_b == ~0)
+		size_b = 0;
+	else if (size_b < 0) {
 		err_setstr(RuntimeError, "long integer to the negative power");
 		return NULL;
 	}
@@ -945,25 +979,14 @@ long_pow(a, w)
 }
 
 static object *
-long_pos(v)
-	longobject *v;
-{
-	INCREF(v);
-	return (object *)v;
-}
-
-static object *
-long_neg(v)
+long_invert(v)
 	longobject *v;
 {
 	longobject *z;
-	int i = v->ob_size;
-	if (i == 0)
-		return long_pos(v);
-	i = ABS(i);
+	int i = ZABS(v->ob_size);
 	z = alloclongobject(i);
 	if (z != NULL) {
-		z->ob_size = - v->ob_size;
+		z->ob_size = ~ v->ob_size;
 		while (--i >= 0)
 			z->ob_digit[i] = v->ob_digit[i];
 	}
@@ -971,20 +994,327 @@ long_neg(v)
 }
 
 static object *
+long_pos(v)
+	longobject *v;
+{
+	if (v->ob_size == ~0)
+		return long_invert(v);
+	else {
+		INCREF(v);
+		return (object *)v;
+	}
+}
+
+static object *
+long_neg(v)
+	longobject *v;
+{
+	if (v->ob_size != 0)
+		return long_invert(v);
+	else {
+		INCREF(v);
+		return (object *)v;
+	}
+}
+
+static object *
 long_abs(v)
 	longobject *v;
 {
 	if (v->ob_size < 0)
-		return long_neg(v);
-	else
-		return long_pos(v);
+		return long_invert(v);
+	else {
+		INCREF(v);
+		return (object *)v;
+	}
 }
 
 static int
 long_nonzero(v)
 	longobject *v;
 {
-	return v->ob_size != 0;
+	return ZABS(v->ob_size) != 0;
+}
+
+static object *
+long_rshift(a, b)
+	longobject *a;
+	object *b;
+{
+	longobject *z;
+	long shiftby;
+	int newsize, wordshift, loshift, hishift, i, j;
+	digit lomask, himask;
+	
+	if (!is_longobject(b)) {
+		err_badarg();
+		return NULL;
+	}
+	shiftby = getlongvalue(b);
+	if (shiftby == -1L && err_occurred())
+		return NULL;
+	if (shiftby < 0) {
+		err_setstr(RuntimeError, "negative shift count");
+		return NULL;
+	}
+	if (shiftby > MASK) {
+		err_setstr(RuntimeError, "outrageous shift count");
+		return NULL;
+	}
+	wordshift = shiftby / SHIFT;
+	newsize = ZABS(a->ob_size) - wordshift;
+	if (newsize <= 0) {
+		z = alloclongobject(0);
+		if (a->ob_size < 0 && z != NULL)
+			z->ob_size = ~0;
+		return (object *)z;
+	}
+	loshift = shiftby % SHIFT;
+	hishift = SHIFT - loshift;
+	lomask = ((digit)1 << hishift) - 1;
+	himask = MASK ^ lomask;
+	z = alloclongobject(newsize);
+	if (z == NULL)
+		return NULL;
+	if (a->ob_size < 0)
+		z->ob_size = ~z->ob_size;
+	for (i = 0, j = wordshift; i < newsize; i++, j++) {
+		z->ob_digit[i] = (a->ob_digit[j] >> loshift) & lomask;
+		if (i+1 < newsize)
+			z->ob_digit[i] |=
+			  (a->ob_digit[j+1] << hishift) & himask;
+	}
+	return (object *) long_znormalize(z);
+}
+
+static object *
+long_lshift(a, b)
+	longobject *a;
+	object *b;
+{
+	longobject *z;
+	long shiftby;
+	int newsize, wordshift, loshift, hishift, i, j;
+	digit lomask, himask;
+	
+	if (!is_longobject(b)) {
+		err_badarg();
+		return NULL;
+	}
+	shiftby = getlongvalue(b);
+	if (shiftby == -1L && err_occurred())
+		return NULL;
+	if (shiftby < 0) {
+		err_setstr(RuntimeError, "negative shift count");
+		return NULL;
+	}
+	if (shiftby > MASK) {
+		err_setstr(RuntimeError, "outrageous shift count");
+		return NULL;
+	}
+	if (shiftby % SHIFT == 0) {
+		wordshift = shiftby / SHIFT;
+		loshift = 0;
+		hishift = SHIFT;
+		newsize = ZABS(a->ob_size) + wordshift;
+		lomask = MASK;
+		himask = 0;
+	}
+	else {
+		wordshift = shiftby / SHIFT + 1;
+		loshift = SHIFT - shiftby%SHIFT;
+		hishift = shiftby % SHIFT;
+		newsize = ZABS(a->ob_size) + wordshift;
+		lomask = ((digit)1 << hishift) - 1;
+		himask = MASK ^ lomask;
+	}
+	z = alloclongobject(newsize);
+	if (z == NULL)
+		return NULL;
+	if (a->ob_size < 0)
+		z->ob_size = ~z->ob_size;
+	for (i = 0; i < wordshift; i++)
+		z->ob_digit[i] = 0;
+	for (i = wordshift, j = 0; i < newsize; i++, j++) {
+		if (i > 0)
+			z->ob_digit[i-1] |=
+				(a->ob_digit[j] << hishift) & himask;
+		z->ob_digit[i] =
+			(a->ob_digit[j] >> loshift) & lomask;
+	}
+	return (object *) long_znormalize(z);
+}
+
+/* Logical or the absolute values of two long integers.
+   The second value is first xor'ed with 'mask'. */
+
+static longobject *x_or PROTO((longobject *, longobject *, int));
+static longobject *
+x_or(a, b, mask)
+	longobject *a, *b;
+	int mask;
+{
+	int size_a = ZABS(a->ob_size), size_b = ZABS(b->ob_size);
+	longobject *z;
+	int i;
+	
+	/* Ensure a is the larger of the two: */
+	if (size_a < size_b) {
+		{ longobject *temp = a; a = b; b = temp; }
+		{ int size_temp = size_a; size_a = size_b; size_b = size_temp; }
+	}
+	z = alloclongobject(size_a);
+	if (z == NULL)
+		return NULL;
+	for (i = 0; i < size_b; ++i) {
+		z->ob_digit[i] = a->ob_digit[i] | (b->ob_digit[i] ^ mask);
+	}
+	for (; i < size_a; ++i) {
+		z->ob_digit[i] = a->ob_digit[i] | mask;
+	}
+	return long_znormalize(z);
+}
+
+/* Logical and the absolute values of two long integers.
+   The second value is first xor'ed with 'mask'. */
+
+static longobject *x_and PROTO((longobject *, longobject *, int));
+static longobject *
+x_and(a, b, mask)
+	longobject *a, *b;
+	int mask;
+{
+	int size_a = ZABS(a->ob_size), size_b = ZABS(b->ob_size);
+	longobject *z;
+	int i;
+	
+	/* Ensure a is the larger of the two: */
+	if (size_a < size_b) {
+		{ longobject *temp = a; a = b; b = temp; }
+		{ int size_temp = size_a; size_a = size_b; size_b = size_temp; }
+	}
+	z = alloclongobject(size_a);
+	if (z == NULL)
+		return NULL;
+	for (i = 0; i < size_b; ++i) {
+		z->ob_digit[i] = a->ob_digit[i] & (b->ob_digit[i] ^ mask);
+	}
+	for (; i < size_a; ++i) {
+		z->ob_digit[i] = a->ob_digit[i] & mask;
+	}
+	return long_znormalize(z);
+}
+
+/* Logical xor the absolute values of two long integers.
+   The second value is first xor'ed with 'mask'. */
+
+static longobject *x_and PROTO((longobject *, longobject *, int));
+static longobject *
+x_xor(a, b, mask)
+	longobject *a, *b;
+	int mask;
+{
+	int size_a = ZABS(a->ob_size), size_b = ZABS(b->ob_size);
+	longobject *z;
+	int i;
+	
+	/* Ensure a is the larger of the two: */
+	if (size_a < size_b) {
+		{ longobject *temp = a; a = b; b = temp; }
+		{ int size_temp = size_a; size_a = size_b; size_b = size_temp; }
+	}
+	z = alloclongobject(size_a);
+	if (z == NULL)
+		return NULL;
+	for (i = 0; i < size_b; ++i) {
+		z->ob_digit[i] = a->ob_digit[i] ^ (b->ob_digit[i] ^ mask);
+	}
+	for (; i < size_a; ++i) {
+		z->ob_digit[i] = a->ob_digit[i] ^ mask;
+	}
+	return long_znormalize(z);
+}
+
+#define MAX(x, y) ((x) < (y) ? (y) : (x))
+#define MIN(x, y) ((x) > (y) ? (y) : (x))
+
+static object *
+long_and(a, w)
+	longobject *a;
+	object *w;
+{
+	longobject *b, *z;
+	
+	if (!is_longobject(w)) {
+		err_badarg();
+		return NULL;
+	}
+	b = (longobject *)w;
+	
+	if (a->ob_size >= 0 && b->ob_size >= 0)
+		z = x_and(a, b, 0);
+	else if (a->ob_size >= 0 && b->ob_size < 0)
+		z = x_and(a, b, MASK);
+	else if (a->ob_size < 0 && b->ob_size >= 0)
+		z = x_and(b, a, MASK);
+	else {
+		z = x_or(a, b, 0);
+		z->ob_size = ~z->ob_size;
+	}
+	return (object *)z;
+}
+
+static object *
+long_xor(a, w)
+	longobject *a;
+	object *w;
+{
+	longobject *b, *z;
+	
+	if (!is_longobject(w)) {
+		err_badarg();
+		return NULL;
+	}
+	b = (longobject *)w;
+	
+	if (a->ob_size >= 0 && b->ob_size >= 0)
+		z = x_xor(a, b, 0);
+	else if (a->ob_size >= 0 && b->ob_size < 0)
+		z = x_xor(a, b, MASK);
+	else if (a->ob_size < 0 && b->ob_size >= 0)
+		z = x_xor(b, a, MASK);
+	else {
+		z = x_xor(a, b, 0);
+		z->ob_size = ~z->ob_size;
+	}
+	return (object *)z;
+}
+
+static object *
+long_or(a, w)
+	longobject *a;
+	object *w;
+{
+	longobject *b, *z;
+	
+	if (!is_longobject(w)) {
+		err_badarg();
+		return NULL;
+	}
+	b = (longobject *)w;
+	
+	if (a->ob_size >= 0 && b->ob_size >= 0)
+		z = x_or(a, b, 0);
+	else {
+		if (a->ob_size < 0 && b->ob_size >= 0)
+			z = x_and(a, b, MASK);
+		else if (a->ob_size >= 0 && b->ob_size < 0)
+			z = x_and(b, a, MASK);
+		else
+			z = x_and(a, b, 0);
+		z->ob_size = ~z->ob_size;
+	}
+	return (object *)z;
 }
 
 static number_methods long_as_number = {
@@ -999,12 +1329,12 @@ static number_methods long_as_number = {
 	long_pos,	/*tp_positive*/
 	long_abs,	/*tp_absolute*/
 	long_nonzero,	/*tp_nonzero*/
-	0,		/*nb_invert*/
-	0,		/*nb_lshift*/
-	0,		/*nb_rshift*/
-	0,		/*nb_and*/
-	0,		/*nb_xor*/
-	0,		/*nb_or*/
+	long_invert,	/*nb_invert*/
+	long_lshift,	/*nb_lshift*/
+	long_rshift,	/*nb_rshift*/
+	long_and,	/*nb_and*/
+	long_xor,	/*nb_xor*/
+	long_or,	/*nb_or*/
 };
 
 typeobject Longtype = {
