@@ -659,7 +659,7 @@ float_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	tmp = float_new(&PyFloat_Type, args, kwds);
 	if (tmp == NULL)
 		return NULL;
-	assert(PyFloat_Check(tmp));
+	assert(PyFloat_CheckExact(tmp));
 	new = type->tp_alloc(type, 0);
 	if (new == NULL)
 		return NULL;

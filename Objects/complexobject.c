@@ -489,8 +489,12 @@ complex_neg(PyComplexObject *v)
 static PyObject *
 complex_pos(PyComplexObject *v)
 {
-	Py_INCREF(v);
-	return (PyObject *)v;
+	if (PyComplex_CheckExact(v)) {
+		Py_INCREF(v);
+		return (PyObject *)v;
+	}
+	else
+		return PyComplex_FromCComplex(v->cval);
 }
 
 static PyObject *
@@ -792,11 +796,12 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 	if (PyString_Check(r) || PyUnicode_Check(r))
 		return complex_subtype_from_string(type, r);
-	if ((nbr = r->ob_type->tp_as_number) == NULL ||
-	    nbr->nb_float == NULL ||
-	    (i != NULL &&
-	     ((nbi = i->ob_type->tp_as_number) == NULL ||
-	      nbi->nb_float == NULL))) {
+
+	nbr = r->ob_type->tp_as_number;
+	if (i != NULL)
+		nbi = i->ob_type->tp_as_number;
+	if (nbr == NULL || nbr->nb_float == NULL ||
+	    ((i != NULL) && (nbi == NULL || nbi->nb_float == NULL))) {
 		PyErr_SetString(PyExc_TypeError,
 			   "complex() arg can't be converted to complex");
 		return NULL;
@@ -826,6 +831,9 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		}
 	}
 	if (PyComplex_Check(r)) {
+		/* Note that if r is of a complex subtype, we're only
+		   retaining its real & imag parts here, and the return
+		   value is (properly) of the builtin complex type. */
 		cr = ((PyComplexObject*)r)->cval;
 		if (own_r) {
 			Py_DECREF(r);
@@ -868,10 +876,10 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static char complex_doc[] =
-"complex(real[, imag]) -> complex number\n\
-\n\
-Create a complex number from a real part and an optional imaginary part.\n\
-This is equivalent to (real + imag*1j) where imag defaults to 0.";
+"complex(real[, imag]) -> complex number\n"
+"\n"
+"Create a complex number from a real part and an optional imaginary part.\n"
+"This is equivalent to (real + imag*1j) where imag defaults to 0.";
 
 static PyNumberMethods complex_as_number = {
 	(binaryfunc)complex_add, 		/* nb_add */
