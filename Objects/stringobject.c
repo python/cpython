@@ -265,7 +265,7 @@ PyObject *PyString_AsEncodedString(PyObject *str,
 {
     PyObject *v;
 
-    v = PyString_AsEncodedString(str, encoding, errors);
+    v = PyString_AsEncodedObject(str, encoding, errors);
     if (v == NULL)
         goto onError;
 
