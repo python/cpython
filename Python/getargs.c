@@ -1216,7 +1216,13 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 		int pos = 0;
 		while (PyDict_Next(keywords, &pos, &key, &value)) {
 			int match = 0;
-			char *ks = PyString_AsString(key);
+			char *ks;
+			if (!PyString_Check(key)) {
+				PyErr_SetString(PyExc_TypeError, 
+					        "keywords must be strings");
+				return 0;
+			}
+			ks = PyString_AsString(key);
 			for (i = 0; i < max; i++) {
 				if (!strcmp(ks, kwlist[i])) {
 					match = 1;
