@@ -69,3 +69,8 @@ try:
             test_with_extension(ext)
 finally:
     del sys.path[0]
+
+# Verify that the imp module can correctly load and find .py files
+import imp
+x = imp.find_module("os")
+os = imp.load_module("os", *x)
