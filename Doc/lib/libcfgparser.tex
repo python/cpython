@@ -47,8 +47,8 @@ Return a new instance of the \class{ConfigParser} class.  When
 \var{defaults} is given, it is initialized into the dictionary of
 intrinsic defaults.  They keys must be strings, and the values must be 
 appropriate for the \samp{\%()s} string interpolation.  Note that
-\var{__name__} is always an intrinsic default; its value is the 
-section name.
+\var{__name__} is an intrinsic default; its value is the section name,
+and will override any value provided in \var{defaults}.
 \end{classdesc}
 
 \begin{excdesc}{NoSectionError}
@@ -70,6 +70,11 @@ section.
 Exception raised when problems occur performing string interpolation.
 \end{excdesc}
 
+\begin{excdesc}{InterpolationDepthError}
+Exception raised when string interpolation cannot be completed because
+the number of iterations exceeds \constant{MAX_INTERPOLATION_DEPTH}.
+\end{excdesc}
+
 \begin{excdesc}{MissingSectionHeaderError}
 Exception raised when attempting to parse a file which has no section
 headers.
@@ -78,6 +83,12 @@ headers.
 \begin{excdesc}{ParsingError}
 Exception raised when errors occur attempting to parse a file.
 \end{excdesc}
+
+\begin{datadesc}{MAX_INTERPOLATION_DEPTH}
+The maximum depth for recursive interpolation for \method{get()} when
+the \var{raw} parameter is false.  Setting this does not change the
+allowed recursion depth.
+\end{datadesc}
 
 
 \begin{seealso}
