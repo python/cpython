@@ -47,7 +47,8 @@ homepage</A>. You might still be able to build Python with MPW or
 Think/Symantec C but you are basically on your own.
 
 <LI> You need GUSI, the Grand Unified Socket Interface, by Matthias
-Neeracher. The current distribution has been built with CWGUSI 1.7.2,
+Neeracher. The current distribution has been built with a modified version of
+CWGUSI 1.7.2. CWGUSI is
 obtainable from <A
 HREF="ftp://ftp.switch.ch/software/mac/src/mw_c">ftp://ftp.switch.ch/software/mac/src/mw_c</A>.
 It is possible to build a non-GUSI Python, see below.
@@ -120,9 +121,16 @@ Top-level-folder:
 	Waste 1.2 distribution (if you want waste)
 </PRE>
 
-Now build all the libraries. In <code>CWGUSI</code> you build the
+First build GUSI. Move the files from the "CWGUSI-mods" to the right
+place in the CWGUSI distribution folder, and build the
 projects <code>GUSI.68K.µ</code>, <code>GUSI.CFM68K.µ</code>
-and <code>GUSI.PPC.µ</code>, in
+and <code>GUSI.PPC.µ</code>. If you have a CWGUSI version more recent than
+1.7.2 it could be that the fixes are already included, check it. Alternatively,
+you can forget about the fixes and remove the one reference to GUSILoadPreferences
+in the Python sources. This will disable the "default file creator/type" and
+"Delay Sioux window" preferences in Python.
+
+Next, in
 <code>MoreFiles</code>, <code>libjpeg</code>, <code>pbmplus</code>
 and<code>libtiff</code> you build all projects. Tcl/tk is a special
 case, see below. Of course, if you are only interested in one of
