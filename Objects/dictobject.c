@@ -1160,20 +1160,8 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
 			return NULL;
 		res = (cmp == (op == Py_EQ)) ? Py_True : Py_False;
 	}
-	else {
-		cmp = dict_compare((dictobject *)v, (dictobject *)w);
-		if (cmp < 0 && PyErr_Occurred())
-			return NULL;
-		switch (op) {
-			case Py_LT: cmp = cmp <  0; break;
-			case Py_LE: cmp = cmp <= 0; break;
-			case Py_GT: cmp = cmp >  0; break;
-			case Py_GE: cmp = cmp >= 0; break;
-			default:
-				assert(!"op unexpected");
-		}
-		res = cmp ? Py_True : Py_False;
-	}
+	else
+		res = Py_NotImplemented;
 	Py_INCREF(res);
 	return res;
  }
@@ -1541,7 +1529,7 @@ PyTypeObject PyDict_Type = {
 	(printfunc)dict_print,			/* tp_print */
 	(getattrfunc)dict_getattr,		/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	(cmpfunc)dict_compare,			/* tp_compare */
 	(reprfunc)dict_repr,			/* tp_repr */
 	0,					/* tp_as_number */
 	&dict_as_sequence,			/* tp_as_sequence */
