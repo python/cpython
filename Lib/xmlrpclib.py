@@ -50,6 +50,7 @@
 # 2003-04-25 ak  Add support for nil
 # 2003-06-15 gn  Add support for time.struct_time
 # 2003-07-12 gp  Correct marshalling of Faults
+# 2003-10-31 mvl Add multicall support
 #
 # Copyright (c) 1999-2002 by Secret Labs AB.
 # Copyright (c) 1999-2002 by Fredrik Lundh.
@@ -108,6 +109,7 @@ Exported classes:
 
   ServerProxy    Represents a logical connection to an XML-RPC server
 
+  MultiCall      Executor of boxcared xmlrpc requests 
   Boolean        boolean wrapper to generate a "boolean" XML-RPC value
   DateTime       dateTime wrapper for an ISO 8601 string or time tuple or
                  localtime integer value to generate a "dateTime.iso8601"
@@ -875,7 +877,69 @@ class Unmarshaller:
         self._type = "methodName" # no params
     dispatch["methodName"] = end_methodName
 
+## Multicall support
+#
 
+class _MultiCallMethod:
+    # some lesser magic to store calls made to a MultiCall object
+    # for batch execution
+    def __init__(self, call_list, name):
+        self.__call_list = call_list
+        self.__name = name
+    def __getattr__(self, name):
+        return _MultiCallMethod(self.__call_list, "%s.%s" % (self.__name, name))
+    def __call__(self, *args):
+        self.__call_list.append((self.__name, args))
+
+def MultiCallIterator(results):
+    """Iterates over the results of a multicall. Exceptions are
+    thrown in response to xmlrpc faults."""
+    
+    for i in results:
+        if type(i) == type({}):
+            raise Fault(i['faultCode'], i['faultString'])
+        elif type(i) == type([]):
+            yield i[0]
+        else:
+            raise ValueError,\
+                  "unexpected type in multicall result"
+        
+class MultiCall:
+    """server -> a object used to boxcar method calls
+
+    server should be a ServerProxy object.
+
+    Methods can be added to the MultiCall using normal
+    method call syntax e.g.:
+
+    multicall = MultiCall(server_proxy)
+    multicall.add(2,3)
+    multicall.get_address("Guido")
+
+    To execute the multicall, call the MultiCall object e.g.:
+
+    add_result, address = multicall()
+    """
+    
+    def __init__(self, server):
+        self.__server = server
+        self.__call_list = []
+        
+    def __repr__(self):
+        return "<MultiCall at %x>" % id(self)
+    
+    __str__ = __repr__
+
+    def __getattr__(self, name):
+        return _MultiCallMethod(self.__call_list, name)
+
+    def __call__(self):
+        marshalled_list = []
+        for name, args in self.__call_list:
+            marshalled_list.append({'methodName' : name, 'params' : args})
+
+        return MultiCallIterator(self.__server.system.multicall(marshalled_list))
+        
 # --------------------------------------------------------------------
 # convenience functions
 
@@ -1328,7 +1392,7 @@ class ServerProxy:
             )
 
     __str__ = __repr__
-
+    
     def __getattr__(self, name):
         # magic method dispatcher
         return _Method(self.__request, name)
