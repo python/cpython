@@ -6,7 +6,9 @@ Type/class unification and new-style classes
 
 Core and builtins
 
-- Encoding declarations (PEP 263, phase 1) have been implemented.
+- Encoding declarations (PEP 263, phase 1) have been implemented.  A
+  comment of the form "# -*- coding: <encodingname> -*-" in the first
+  or second line of a Python source file indicates the encoding.
 
 - list.sort() has a new implementation.  While cross-platform results
   may vary, and in data-dependent ways, this is much faster on many
