@@ -310,24 +310,25 @@ class sdist (Command):
             # for the given action (which is the first word)
             if action in ('include','exclude',
                           'global-include','global-exclude'):
-                if len (words) != 2:
+                if len (words) < 2:
                     template.warn \
                         ("invalid manifest template line: " +
-                         "'%s' expects a single <pattern>" %
+                         "'%s' expects <pattern1> <pattern2> ..." %
                          action)
                     continue
 
-                pattern = native_path (words[1])
+                pattern_list = map(native_path, words[1:])
 
             elif action in ('recursive-include','recursive-exclude'):
-                if len (words) != 3:
+                if len (words) < 3:
                     template.warn \
                         ("invalid manifest template line: " +
-                         "'%s' expects <dir> <pattern>" %
+                         "'%s' expects <dir> <pattern1> <pattern2> ..." %
                          action)
                     continue
 
-                (dir, pattern) = map (native_path, words[1:3])
+                dir = native_path(words[1])
+                pattern_list = map (native_path, words[2:])
 
             elif action in ('graft','prune'):
                 if len (words) != 2:
@@ -352,58 +353,64 @@ class sdist (Command):
             # digging stuff up out of 'words'.
 
             if action == 'include':
-                print "include", pattern
-                files = select_pattern (all_files, pattern, anchor=1)
-                if not files:
-                    template.warn ("no files found matching '%s'" % pattern)
-                else:
-                    self.files.extend (files)
+                print "include", string.join(pattern_list)
+                for pattern in pattern_list:
+                    files = select_pattern (all_files, pattern, anchor=1)
+                    if not files:
+                        template.warn ("no files found matching '%s'" % pattern)
+                    else:
+                        self.files.extend (files)
 
             elif action == 'exclude':
-                print "exclude", pattern
-                num = exclude_pattern (self.files, pattern, anchor=1)
-                if num == 0:
-                    template.warn \
-                        ("no previously-included files found matching '%s'" %
-                         pattern)
+                print "exclude", string.join(pattern_list)
+                for pattern in pattern_list:
+                    num = exclude_pattern (self.files, pattern, anchor=1)
+                    if num == 0:
+                        template.warn (
+                            "no previously-included files found matching '%s'"%
+                            pattern)
 
             elif action == 'global-include':
-                print "global-include", pattern
-                files = select_pattern (all_files, pattern, anchor=0)
-                if not files:
-                    template.warn (("no files found matching '%s' " +
-                                    "anywhere in distribution") %
-                                   pattern)
-                else:
-                    self.files.extend (files)
+                print "global-include", string.join(pattern_list)
+                for pattern in pattern_list:
+                    files = select_pattern (all_files, pattern, anchor=0)
+                    if not files:
+                        template.warn (("no files found matching '%s' " +
+                                        "anywhere in distribution") %
+                                       pattern)
+                    else:
+                        self.files.extend (files)
 
             elif action == 'global-exclude':
-                print "global-exclude", pattern
-                num = exclude_pattern (self.files, pattern, anchor=0)
-                if num == 0:
-                    template.warn \
-                        (("no previously-included files matching '%s' " +
-                          "found anywhere in distribution") %
-                         pattern)
+                print "global-exclude", string.join(pattern_list)
+                for pattern in pattern_list:
+                    num = exclude_pattern (self.files, pattern, anchor=0)
+                    if num == 0:
+                        template.warn \
+                            (("no previously-included files matching '%s' " +
+                              "found anywhere in distribution") %
+                             pattern)
 
             elif action == 'recursive-include':
-                print "recursive-include", dir, pattern
-                files = select_pattern (all_files, pattern, prefix=dir)
-                if not files:
-                    template.warn (("no files found matching '%s' " +
-                                    "under directory '%s'") %
-                                   (pattern, dir))
-                else:
-                    self.files.extend (files)
+                print "recursive-include", dir, string.join(pattern_list)
+                for pattern in pattern_list:
+                    files = select_pattern (all_files, pattern, prefix=dir)
+                    if not files:
+                        template.warn (("no files found matching '%s' " +
+                                        "under directory '%s'") %
+                                       (pattern, dir))
+                    else:
+                        self.files.extend (files)
 
             elif action == 'recursive-exclude':
-                print "recursive-exclude", dir, pattern
-                num = exclude_pattern (self.files, pattern, prefix=dir)
-                if num == 0:
-                    template.warn \
-                        (("no previously-included files matching '%s' " +
-                          "found under directory '%s'") %
-                         (pattern, dir))
+                print "recursive-exclude", dir, string.join(pattern_list)
+                for pattern in pattern_list:
+                    num = exclude_pattern (self.files, pattern, prefix=dir)
+                    if num == 0:
+                        template.warn \
+                            (("no previously-included files matching '%s' " +
+                              "found under directory '%s'") %
+                             (pattern, dir))
 
             elif action == 'graft':
                 print "graft", dir_pattern
