@@ -441,9 +441,6 @@ class AddressList(AddrlistClass):
     def __len__(self):
         return len(self.addresslist)
 
-    def __str__(self):
-        return COMMASPACE.join(map(dump_address_pair, self.addresslist))
-
     def __add__(self, other):
         # Set union
         newaddr = AddressList(None)
