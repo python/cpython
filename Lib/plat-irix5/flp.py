@@ -6,7 +6,6 @@
 import string
 import path
 import sys
-import fl
 import FL
 
 SPLITLINE = '--------------------'
@@ -23,30 +22,132 @@ error = 'flp.error'
 # Externally visible function. Load form.
 #
 def parse_form(filename, formname):
+    forms = checkcache(filename)
+    if forms != None:
+	if forms.has_key(formname):
+	    return forms[formname]
+    else:
+	forms = {}
     fp = _open_formfile(filename)
     nforms = _parse_fd_header(fp)
     for i in range(nforms):
 	form = _parse_fd_form(fp, formname)
 	if form <> None:
-	    return form
-    raise error, 'No such form in fd file'
+	    break
+    else:
+	raise error, 'No such form in fd file'
+    forms[formname] = form
+    writecache(filename, forms)
+    return form
 
 #
 # Externally visible function. Load all forms.
 #
 def parse_forms(filename):
+    forms = checkcache(filename)
+    if forms != None: return forms
     fp = _open_formfile(filename)
     nforms = _parse_fd_header(fp)
     forms = {}
     for i in range(nforms):
 	form = _parse_fd_form(fp, None)
 	forms[form[0].Name] = form
+    writecache(filename, forms)
     return forms
+
+#
+# Internal: see if a cached version of the file exists
+#
+MAGIC = '.fdc'
+def checkcache(filename):
+    import marshal
+    fp, filename = _open_formfile2(filename)
+    fp.close()
+    cachename = filename + 'c'
+    try:
+	fp = open(cachename, 'r')
+    except IOError:
+	print 'flp: no cache file', cachename
+	return None
+    try:
+	if fp.read(4) != MAGIC:
+	    print 'flp: bad magic word in cache file', cachename
+	    return None
+	cache_mtime = rdlong(fp)
+	file_mtime = getmtime(filename)
+	if cache_mtime != file_mtime:
+	    print 'flp: outdated cache file', cachename
+	    return None
+	print 'flp: valid cache file', cachename
+	altforms = marshal.load(fp)
+	forms = {}
+	for name in altforms.keys():
+	    altobj, altlist = altforms[name]
+	    obj = _newobj().init()
+	    obj.make(altobj)
+	    list = []
+	    for altobj in altlist:
+		nobj = _newobj().init()
+		nobj.make(altobj)
+		list.append(nobj)
+	    forms[name] = obj, list
+	return forms
+    finally:
+	fp.close()
+
+def rdlong(fp):
+    s = fp.read(4)
+    if len(s) != 4: return None
+    a, b, c, d = s[0], s[1], s[2], s[3]
+    return ord(a)<<24 | ord(b)<<16 | ord(c)<<8 | ord(d)
+
+def wrlong(fp, x):
+    a, b, c, d = (x>>24)&0xff, (x>>16)&0xff, (x>>8)&0xff, x&0xff
+    fp.write(chr(a) + chr(b) + chr(c) + chr(d))
+
+def getmtime(filename):
+    import posix
+    from stat import ST_MTIME
+    try:
+	return posix.stat(filename)[ST_MTIME]
+    except posix.error:
+	return None
+
+#
+# Internal: write cached version of the form (parsing is too slow!)
+#
+def writecache(filename, forms):
+    import marshal
+    fp, filename = _open_formfile2(filename)
+    fp.close()
+    cachename = filename + 'c'
+    try:
+	fp = open(cachename, 'w')
+    except IOError:
+	print 'flp: can\'t create cache file', cachename
+	return # Never mind
+    fp.write('\0\0\0\0') # Seek back and write MAGIC when done
+    wrlong(fp, getmtime(filename))
+    altforms = {}
+    for name in forms.keys():
+	obj, list = forms[name]
+	altobj = obj.__dict__
+	altlist = []
+	for obj in list: altlist.append(obj.__dict__)
+	altforms[name] = altobj, altlist
+    marshal.dump(altforms, fp)
+    fp.seek(0)
+    fp.write(MAGIC)
+    fp.close()
+    print 'flp: wrote cache file', cachename
     
 #
 # Internal: Locate form file (using PYTHONPATH) and open file
 #
 def _open_formfile(filename):
+    return _open_formfile2(filename)[0]
+
+def _open_formfile2(filename):
     if filename[-3:] <> '.fd':
 	filename = filename + '.fd'
     if filename[0] == '/':
@@ -59,12 +160,13 @@ def _open_formfile(filename):
 	    pn = path.join(pc, filename)
 	    try:
 		fp = open(pn, 'r')
+		filename = pn
 		break
 	    except IOError:
 		fp = None
     if fp == None:
 	raise error, 'Cannot find forms file ' + filename
-    return fp
+    return fp, filename
 
 #
 # Internal: parse the fd file header, return number of forms
@@ -107,8 +209,10 @@ class _newobj:
     def init(self):
 	return self
     def add(self, (name, value)):
-	cmd = 'self.'+name+' = '+`value`+'\n'
-	exec(cmd)
+	self.__dict__[name] = value
+    def make(self, dict):
+	for name in dict.keys():
+	    self.add(name, dict[name])
 
 #
 # Internal parsing routines.
@@ -225,7 +329,8 @@ def merge_full_form(inst, form, (fdata, odatalist)):
 # External Create_form - Create form from parameters
 #
 def create_form(fdata):
-    return fl.make_form(FL.NO_BOX,fdata.Width, fdata.Height)
+    import fl
+    return fl.make_form(FL.NO_BOX, fdata.Width, fdata.Height)
 
 #
 # External create_object - Create an object. Make sure there are
@@ -292,12 +397,20 @@ def _select_crfunc(fm, cl):
 
 
 def test():
+    import time
+    t0 = time.millitimer()
     if len(sys.argv) == 2:
 	forms = parse_forms(sys.argv[1])
-	for i in forms.keys():
+	t1 = time.millitimer()
+	print 'parse time:', 0.001*(t1-t0), 'sec.'
+	keys = forms.keys()
+	keys.sort()
+	for i in keys:
 	    _printform(forms[i])
     elif len(sys.argv) == 3:
 	form = parse_form(sys.argv[1], sys.argv[2])
+	t1 = time.millitimer()
+	print 'parse time:', 0.001*(t1-t0), 'sec.'
 	_printform(form)
     else:
 	print 'Usage: test fdfile [form]'
@@ -312,3 +425,7 @@ def _printform(form):
 	print '    Label ', i.Label, ' size/style/col/align ', i.Size,i.Style, i.Lcol, i.Alignment
 	print '    cols ', i.Colors
 	print '    cback ', i.Callback, i.Argument
+
+# Local variables:
+# py-indent-offset: 4
+# end:
