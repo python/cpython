@@ -1,5 +1,7 @@
-# Copyright (C) 2001,2002 Python Software Foundation
-# Author: che@debian.org (Ben Gertzfield), barry@zope.com (Barry Warsaw)
+# Copyright (C) 2001-2004 Python Software Foundation
+# Author: che@debian.org (Ben Gertzfield), barry@python.org (Barry Warsaw)
+
+# XXX The following information needs updating.
 
 # Python 2.3 doesn't come with any Asian codecs by default.  Two packages are
 # currently available and supported as of this writing (30-Dec-2003):
@@ -12,20 +14,9 @@
 # http://www.asahi-net.or.jp/~rd6t-kjym/python
 # Some Japanese users prefer this codec package
 
-from types import UnicodeType
-from email.Encoders import encode_7or8bit
 import email.base64MIME
 import email.quopriMIME
-
-def _isunicode(s):
-    return isinstance(s, UnicodeType)
-
-# Python 2.2.1 and beyond has these symbols
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
+from email.Encoders import encode_7or8bit
 
 
 
@@ -280,7 +271,7 @@ class Charset:
         Characters that could not be converted to Unicode will be replaced
         with the Unicode replacement character U+FFFD.
         """
-        if _isunicode(s) or self.input_codec is None:
+        if isinstance(s, unicode) or self.input_codec is None:
             return s
         try:
             return unicode(s, self.input_codec, 'replace')
@@ -306,7 +297,7 @@ class Charset:
             codec = self.output_codec
         else:
             codec = self.input_codec
-        if not _isunicode(ustr) or codec is None:
+        if not isinstance(ustr, unicode) or codec is None:
             return ustr
         try:
             return ustr.encode(codec, 'replace')
