@@ -1,5 +1,5 @@
-This archive contains the standard Python documentation in GNU info format.
-Five manuals are included:
+This archive contains the standard Python documentation in GNU info
+format.  Five manuals are included:
 
     python-ref.info*	Python Reference Manual
     python-mac.info*	Python Macintosh Modules
@@ -9,12 +9,13 @@ Five manuals are included:
     python-tut.info*	Python Tutorial
 
 The file python.dir is a fragment of a "dir" file that can be used to
-incorporate these documents into an existing GNU info installation: insert
-the contents of this file into the "dir" or "localdir" file at an
-appropriate point and copy the python-*.info* files to the same directory.
+incorporate these documents into an existing GNU info installation:
+insert the contents of this file into the "dir" or "localdir" file at
+an appropriate point and copy the python-*.info* files to the same
+directory.
 
-Thanks go to Milan Zamazal <pdm@pvt.net> for providing this conversion to
-the info format.
+Thanks go to Milan Zamazal <pdm@freesoft.cz> for providing this
+conversion to the info format.
 
 Questions and comments on these documents should be directed to
 python-docs@python.org.
