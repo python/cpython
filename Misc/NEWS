@@ -24,6 +24,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- select.select() now accepts sequences for its first three arguments.
+
 - cStringIO now supports the f.closed attribute.
 
 - The signal module now exposes SIGRTMIN and SIGRTMAX (if available).
