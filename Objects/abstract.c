@@ -1363,46 +1363,51 @@ PySequence_Count(PyObject *s, PyObject *o)
 	return n;
 }
 
+/* Return -1 if error; 1 if v in w; 0 if v not in w. */
 int
 PySequence_Contains(PyObject *w, PyObject *v) /* v in w */
 {
-	int i, cmp;
-	PyObject *x;
-	PySequenceMethods *sq;
+	PyObject *it;  /* iter(w) */
+	int result;
 
-	if(PyType_HasFeature(w->ob_type, Py_TPFLAGS_HAVE_SEQUENCE_IN)) {
-		sq = w->ob_type->tp_as_sequence;
-	        if(sq != NULL && sq->sq_contains != NULL)
-			return (*sq->sq_contains)(w, v);
+	if (PyType_HasFeature(w->ob_type, Py_TPFLAGS_HAVE_SEQUENCE_IN)) {
+		PySequenceMethods *sq = w->ob_type->tp_as_sequence;
+	        if (sq != NULL && sq->sq_contains != NULL) {
+			result = (*sq->sq_contains)(w, v);
+			if (result >= 0)
+				return result;
+			assert(PyErr_Occurred());
+			if (PyErr_ExceptionMatches(PyExc_AttributeError))
+				PyErr_Clear();
+			else
+				return result;
+		}
 	}
 	
-	/* If there is no better way to check whether an item is is contained,
-	   do it the hard way */
-	sq = w->ob_type->tp_as_sequence;
-	if (sq == NULL || sq->sq_item == NULL) {
+	/* Try exhaustive iteration. */
+	it = PyObject_GetIter(w);
+	if (it == NULL) {
 		PyErr_SetString(PyExc_TypeError,
-			"'in' or 'not in' needs sequence right argument");
+			"'in' or 'not in' needs iterable right argument");
 		return -1;
 	}
 
-	for (i = 0; ; i++) {
-		x = (*sq->sq_item)(w, i);
-		if (x == NULL) {
-			if (PyErr_ExceptionMatches(PyExc_IndexError)) {
-				PyErr_Clear();
-				break;
-			}
-			return -1;
+	for (;;) {
+		int cmp;
+		PyObject *item = PyIter_Next(it);
+		if (item == NULL) {
+			result = PyErr_Occurred() ? -1 : 0;
+			break;
 		}
-		cmp = PyObject_RichCompareBool(v, x, Py_EQ);
-		Py_XDECREF(x);
-		if (cmp > 0)
-			return 1;
-		if (cmp < 0)
-			return -1;
+		cmp = PyObject_RichCompareBool(v, item, Py_EQ);
+		Py_DECREF(item);
+		if (cmp == 0)
+			continue;
+		result = cmp > 0 ? 1 : -1;
+		break;
 	}
-
-	return 0;
+	Py_DECREF(it);
+	return result;
 }
 
 /* Backwards compatibility */

@@ -23,11 +23,11 @@ Core
     max()
     min()
     reduce()
-    string.join()
+    .join() method of strings
     tuple()
     unicode.join()
     XXX TODO zip()
-    XXX TODO 'x in y'
+    'x in y' and 'x not in y'
 
 What's New in Python 2.1 (final)?
 =================================
