@@ -93,6 +93,8 @@ else:
 
 del _names
 
+sys.modules['os.path'] = path
+
 # Super directory utilities.
 # (Inspired by Eric Raymond; the doc strings are mostly his)
 
