@@ -111,7 +111,7 @@ class Popen4(Popen3):
 
 if sys.platform[:3] == "win":
     # Some things don't make sense on non-Unix platforms.
-    del Popen3, Popen4, _active, _cleanup
+    del Popen3, Popen4
 
     def popen2(cmd, bufsize=-1, mode='t'):
         """Execute the shell command 'cmd' in a sub-process.  If 'bufsize' is
