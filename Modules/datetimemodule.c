@@ -4805,7 +4805,11 @@ datetimetz_astimezone(PyDateTime_DateTimeTZ *self, PyObject *args,
 	resdst = call_dst(tzinfo, result, &none);
 	if (resdst == -1 && PyErr_Occurred())
 		goto Fail;
-	/* None and 0 dst() results are the same to us here.  Debatable. */
+	if (none) {
+		PyErr_SetString(PyExc_ValueError, "astimezone(): utcoffset() "
+		"returned a duration but dst() returned None");
+		goto Fail;
+	}
 	total_added_to_result = resoff - resdst - selfoff;
 	if (total_added_to_result != 0) {
 		mm += total_added_to_result;
