@@ -54,7 +54,7 @@ typedef struct {
 #endif
 
 #ifdef USE_GUSI1
-void PyMac_FixGUSIcd Py_PROTO((void));		/* Workaround for GUSI chdir() call */
+void PyMac_FixGUSIcd(void);		/* Workaround for GUSI chdir() call */
 extern void PyMac_SetGUSISpin(void);		/* Install our private GUSI spin routine */
 #endif
 
@@ -69,22 +69,22 @@ extern void PyMac_StopGUSISpin(void);		/* Stop eventprocessing during exit() */
 extern short PyMac_AppRefNum;			/* RefNum of application rsrcfork (from macmain.c) */
 extern FSSpec PyMac_ApplicationFSSpec;		/* Application location (from macargv.c) */
 extern char PyMac_ApplicationPath[];		/* Application location (from macargv.c) */
-extern OSErr PyMac_init_application_location Py_PROTO((void));	/* Init the above */
-extern OSErr PyMac_GetFullPath Py_PROTO((FSSpec *, char *)); /* convert fsspec->path (macargv.c) */
-extern int PyMac_GetArgv Py_PROTO((char ***, int));	/* Get argc, argv (from macargv.c) */
+extern OSErr PyMac_init_application_location(void);	/* Init the above */
+extern OSErr PyMac_GetFullPath(FSSpec *, char *); /* convert fsspec->path (macargv.c) */
+extern int PyMac_GetArgv(char ***, int);	/* Get argc, argv (from macargv.c) */
 extern int PyMac_AppearanceCompliant;	/* True if in appearance support mode */
 
 extern PyObject *PyMac_OSErrException;		/* Exception for OSErr */
 PyObject *PyMac_GetOSErrException(void);	/* Initialize & return it */
 
-void PyMac_GetSchedParams Py_PROTO((PyMacSchedParams *));	/* Get schedulers params */
-void PyMac_SetSchedParams Py_PROTO((PyMacSchedParams *));	/* Set schedulers params */
+void PyMac_GetSchedParams(PyMacSchedParams *);	/* Get schedulers params */
+void PyMac_SetSchedParams(PyMacSchedParams *);	/* Set schedulers params */
 PyObject *PyErr_Mac(PyObject *, int);		/* Exception with a mac error */
 PyObject *PyMac_Error(OSErr);			/* Uses PyMac_GetOSErrException */
-int PyMac_DoYield Py_PROTO((int, int));	/* Yield cpu. First arg is maxtime, second ok to call python */
-int PyMac_HandleEvent Py_PROTO((EventRecord *));	/* Handle one event, possibly in Python */
-void PyMac_HandleEventIntern Py_PROTO((EventRecord *)); /* Handle one event internal only */
-int PyMac_SetEventHandler Py_PROTO((PyObject *));	/* set python-coded event handler */
+int PyMac_DoYield(int, int);	/* Yield cpu. First arg is maxtime, second ok to call python */
+int PyMac_HandleEvent(EventRecord *);	/* Handle one event, possibly in Python */
+void PyMac_HandleEventIntern(EventRecord *); /* Handle one event internal only */
+int PyMac_SetEventHandler(PyObject *);	/* set python-coded event handler */
 
 void PyMac_InitMenuBar(void);			/* Setup menu bar as we want it */
 void PyMac_RestoreMenuBar(void);		/* Restore menu bar for ease of exiting */

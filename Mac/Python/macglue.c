@@ -104,13 +104,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Declared in macfsmodule.c: */
 extern FSSpec *mfs_GetFSSpecFSSpec();
-extern PyObject *newmfssobject Py_PROTO((FSSpec *));
+extern PyObject *newmfssobject(FSSpec *);
 
 /* Interrupt code variables: */
 static int interrupted;			/* Set to true when cmd-. seen */
-static RETSIGTYPE intcatcher Py_PROTO((int));
+static RETSIGTYPE intcatcher(int);
 
-static int PyMac_Yield Py_PROTO((void));
+static int PyMac_Yield(void);
 
 /*
 ** These are the real scheduling parameters that control what we check

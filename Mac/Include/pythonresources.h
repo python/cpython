@@ -170,6 +170,6 @@ typedef struct PyMac_PrefRecord {
 
 #ifndef rez
 /* From macgetpath.c: */
-void PyMac_PreferenceOptions Py_PROTO((PyMac_PrefRecord *));
-char * PyMac_GetPythonDir Py_PROTO((void));
+void PyMac_PreferenceOptions(PyMac_PrefRecord *);
+char * PyMac_GetPythonDir(void);
 #endif
