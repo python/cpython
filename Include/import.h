@@ -54,11 +54,6 @@ DL_IMPORT(int) PyImport_ImportFrozenModule Py_PROTO((char *));
 extern DL_IMPORT(PyObject *)_PyImport_FindExtension Py_PROTO((char *, char *));
 extern DL_IMPORT(PyObject *)_PyImport_FixupExtension Py_PROTO((char *, char *));
 
-#ifdef __BEOS__
-#include <kernel/image.h>
-extern DL_IMPORT(image_id) PyImport_BeImageID( char *name );
-#endif
-
 struct _inittab {
 	char *name;
 	void (*initfunc)();
