@@ -34,6 +34,9 @@
 %
 \RequirePackage{python}
 
+% support for module synopsis sections:
+\newcommand{\py@ModSynopsisFilename}{\jobname.syn}
+
 
 % need to do one of these....
 \newcommand{\py@doHorizontalRule}{\rule{\textwidth}{1pt}}
