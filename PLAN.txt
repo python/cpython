@@ -4,11 +4,6 @@ Project: core implementation
 Still to do
 -----------
 
-Fix comparisons.  There's some nasty stuff here: when two types are
-not the same, and they're not instances, the fallback code doesn't
-account for the possibility that they might be subtypes of a common
-base type that defines a comparison.
-
 Check for conflicts between base classes.  I fear that the rules used
 to decide whether multiple bases have conflicting instance variables
 aren't strict enough.  I think that sometimes two different classes
@@ -21,7 +16,7 @@ order should the base classes X and Y be searched?  This is an order
 conflict, and should be disallowed; currently the test for this is not
 implemented.
 
-Allow __class__ assignment (and __bases__ and __dict__?).
+Allow assignment to __bases__ and __dict__?
 
 Make __dynamic__ the default.
 
@@ -29,15 +24,24 @@ Add __del__ handlers.
 
 Add __coerce__?
 
-Support pickling (via __reduce__?)
+Support pickling (via __reduce__)
 
 Support mixed multiple inheritance from classic and new-style classes?
 
-Change __getattr__ to be more like classic __getattr__, and introduce
-a new name for new-style __getattr__?
-
 Done (mostly)
 -------------
+
+Fix comparisons.  There's some nasty stuff here: when two types are
+not the same, and they're not instances, the fallback code doesn't
+account for the possibility that they might be subtypes of a common
+base type that defines a comparison.  *** I believe this is now done,
+but it's a bit of a mess. ***
+
+Allow __class__ assignment. *** done ***
+
+Change __getattr__ to be more like classic __getattr__, and introduce
+a new name for new-style __getattr__.  *** Done.  The new-style method
+is called __getattribute__. ***
 
 Make inspect and pydoc do the right thing for new-style classes.  ***
 done ***
