@@ -104,23 +104,21 @@ class_getattr(op, name)
 {
 	register object *v;
 	classobject *class;
-	if (name[0] == '_' && name[1] == '_') {
-		if (strcmp(name, "__dict__") == 0) {
-			INCREF(op->cl_dict);
-			return op->cl_dict;
-		}
-		if (strcmp(name, "__bases__") == 0) {
-			INCREF(op->cl_bases);
-			return op->cl_bases;
-		}
-		if (strcmp(name, "__name__") == 0) {
-			if (op->cl_name == NULL)
-				v = None;
-			else
-				v = op->cl_name;
-			INCREF(v);
-			return v;
-		}
+	if (strcmp(name, "__dict__") == 0) {
+		INCREF(op->cl_dict);
+		return op->cl_dict;
+	}
+	if (strcmp(name, "__bases__") == 0) {
+		INCREF(op->cl_bases);
+		return op->cl_bases;
+	}
+	if (strcmp(name, "__name__") == 0) {
+		if (op->cl_name == NULL)
+			v = None;
+		else
+			v = op->cl_name;
+		INCREF(v);
+		return v;
 	}
 	v = class_lookup(op, name, &class);
 	if (v == NULL) {
@@ -282,25 +280,11 @@ newinstanceobject(class, arg)
 	INCREF(class);
 	inst->in_class = (classobject *)class;
 	inst->in_dict = newdictobject();
-	inst->in_getattr = NULL;
-	inst->in_setattr = NULL;
-#ifdef WITH_THREAD
-	inst->in_lock = NULL;
-	inst->in_ident = 0;
-#endif
 	if (inst->in_dict == NULL ||
 	    addaccess((classobject *)class, inst) != 0) {
 		DECREF(inst);
 		return NULL;
 	}
-	inst->in_setattr = instance_getattr(inst, "__setattr__");
-	err_clear();
-	inst->in_getattr = instance_getattr(inst, "__getattr__");
-	err_clear();
-#ifdef WITH_THREAD
-	if (inst->in_getattr != NULL)
-		inst->in_lock = allocate_lock();
-#endif
 	init = instance_getattr(inst, "__init__");
 	if (init == NULL) {
 		err_clear();
@@ -361,17 +345,81 @@ instance_dealloc(inst)
 		return; /* __del__ added a reference; don't delete now */
 	DECREF(inst->in_class);
 	XDECREF(inst->in_dict);
-	XDECREF(inst->in_getattr);
-	XDECREF(inst->in_setattr);
-#ifdef WITH_THREAD
-	if (inst->in_lock != NULL)
-		free_lock(inst->in_lock);
-#endif
 	free((ANY *)inst);
 }
 
+static object *instance_getattr1();
+static int instance_setattr1();
+
 static object *
-instance_getattr(inst, name)
+instance_getslot_meth(self, args)
+	instanceobject *self;
+	object *args;
+{
+	object *v;
+	char *name;
+	if (!getargs(args, "s", &name))
+		return NULL;
+	return instance_getattr1(self, name);
+}
+
+static object *
+instance_hasslot_meth(self, args)
+	instanceobject *self;
+	object *args;
+{
+	object *v;
+	char *name;
+	if (!getargs(args, "s", &name))
+		return NULL;
+	v = instance_getattr1(self, name);
+	if (v == NULL) {
+		err_clear();
+		return newintobject(0L);
+	}
+	DECREF(v);
+	return newintobject(1L);
+}
+
+static object *
+instance_setslot_meth(self, args)
+	instanceobject *self;
+	object *args;
+{
+	char*name;
+	object*value;
+	value = NULL;
+	if (!getargs(args, "s", &name)) {
+		err_clear();
+		if (!getargs(args, "(sO)", &name, &value))
+			return NULL;
+	}
+	if(instance_setattr1(self, name, value)<0) {
+		return NULL;
+	}
+	INCREF(None);
+	return None;
+}
+
+static object *
+instance_delslot_meth(self, args)
+	instanceobject *self;
+	object *args;
+{
+	char*name;
+	if (!getargs(args, "s", &name)) {
+			return NULL;
+	}
+	if(instance_setattr1(self, name, 0)<0) {
+		return NULL;
+	}
+	INCREF(None);
+	return None;
+}
+
+
+static object *
+instance_getattr1(inst, name)
 	register instanceobject *inst;
 	register char *name;
 {
@@ -392,32 +440,6 @@ instance_getattr(inst, name)
 	if (v == NULL) {
 		v = class_lookup(inst->in_class, name, &class);
 		if (v == NULL) {
-			object *func;
-			long ident;
-			if ((func = inst->in_getattr) != NULL &&
-			    inst->in_ident != (ident = get_thread_ident())) {
-				object *args;
-#ifdef WITH_THREAD
-				type_lock lock = inst->in_lock;
-				if (lock != NULL) {
-					BGN_SAVE
-					acquire_lock(lock, 0);
-					END_SAVE
-				}
-#endif
-				inst->in_ident = ident;
-				args = mkvalue("(s)", name);
-				if (args != NULL) {
-					v = call_object(func, args);
-					DECREF(args);
-				}
-				inst->in_ident = 0;
-#ifdef WITH_THREAD
-				if (lock != NULL)
-					release_lock(lock);
-#endif
-				return v;
-			}
 			err_setstr(AttributeError, name);
 			return NULL;
 		}
@@ -451,29 +473,76 @@ instance_getattr(inst, name)
 	return v;
 }
 
+static object *
+instance_getattr(inst, name)
+	register instanceobject *inst;
+	register char *name;
+{
+	register object *func, *res;
+	if (name[0] == '_' && name[1] == '_') {
+		/* Let's not compare the first "__": */
+		/* use &name[2] :-) */
+		if (strcmp(&name[2], "setslot__") == 0) {
+			return newmethodobject(name, 
+				(method)instance_setslot_meth,
+				(object*)inst,
+				0);
+		}
+		if (strcmp(&name[2], "getslot__") == 0) {
+			return newmethodobject(name, 
+				(method)instance_getslot_meth,
+				(object*)inst,
+				0);
+		}
+		if (strcmp(&name[2], "hasslot__") == 0) {
+			return newmethodobject(name, 
+				(method)instance_hasslot_meth,
+				(object*)inst,
+				0);
+		}
+		if (strcmp(&name[2], "delslot__") == 0) {
+			return newmethodobject(name, 
+				(method)instance_delslot_meth,
+				(object*)inst,
+				0);
+		}
+		/* The following methods should not be forwarded! */
+		if (   strcmp(&name[2], "init__") == 0
+		    || strcmp(&name[2], "del__") == 0) {
+			return instance_getattr1(inst,name);
+		}
+	}
+	res=instance_getattr1(inst,name);
+	if (res == NULL) {
+		/* Self doesn't have this attribute, */
+		/* so let's try to call self.__getattr__(name) */
+		object* func;
+		object *arg;
+		/* Well, lets get a funcobject for __getattr__ ...*/
+		func = instance_getattr1(inst,"__getattr__");
+		if (func == NULL) {
+			/* OOPS, we don't have a  __getattr__. */
+			/* Set the error ... */
+			err_clear();
+			err_setstr(AttributeError, name);
+			return NULL;
+		}
+		arg = newstringobject(name);
+		/*... and call it */ 
+		res = call_object(func,arg);
+		DECREF(arg);
+		DECREF(func);
+	}
+	return res;
+}
+
 static int
-instance_setattr(inst, name, v)
+instance_setattr1(inst, name, v)
 	instanceobject *inst;
 	char *name;
 	object *v;
 {
 	object *ac;
-	if (inst->in_setattr != NULL) {
-		object *args;
-		if (v == NULL)
-			args = mkvalue("(s)", name);
-		else
-			args = mkvalue("(sO)", name, v);
-		if (args != NULL) {
-			object *res = call_object(inst->in_setattr, args);
-			DECREF(args);
-			if (res != NULL) {
-				DECREF(res);
-				return 0;
-			}
-		}
-		return -1;
-	}
 	if (name[0] == '_' && name[1] == '_') {
 		int n = strlen(name);
 		if (name[n-1] == '_' && name[n-2] == '_') {
@@ -493,6 +562,58 @@ instance_setattr(inst, name, v)
 	}
 	else
 		return dictinsert(inst->in_dict, name, v);
+}
+
+static int
+instance_setattr(inst, name, v)
+	instanceobject *inst;
+	char *name;
+	object *v;
+{
+	object *ac, *func;
+	classobject *class;
+	char* setattrname;
+	/* I think I saw something in the news, that deletion of an attribute */
+	/* is done by setattr with the value being NULL. */
+	/* Let's be prepared for this case :-)*/
+	if (v != NULL)
+		setattrname = "__setattr__";
+	else
+		setattrname = "__delattr__";
+		   
+	/* Here is the only performance loss: */
+	/* We have to check if there is a method __setattr__.*/
+	/* Only class can have a __setattr__ because it's forbidden to */
+	/* assign to self.__setattr__.*/
+	/* So, lets do a class_lookup which is (hopefully) cheap */
+	class = NULL;
+	func = class_lookup(inst->in_class, setattrname, &class);
+	if (func == NULL) {
+		/* Call the original instance_setattr */
+		return instance_setattr1(inst,name,v);
+	} else {
+		object *arg, *res;
+		/* class_lookup did'nt REF(func) - so we won't UNREF(func). */
+		/* Let's get the function (could be optimized....) */
+		func = instance_getattr(inst,setattrname);
+		if (func == 0)
+			return -1;
+		/* Deleting an attribute is done by v==NULL */
+		if (v == NULL)
+			/* __delattr__ has only one argument: the name */
+			arg = mkvalue("s",name);
+		else
+			arg = mkvalue("(sO)",name,v);
+		res = call_object(func,arg);
+		DECREF(func);
+		DECREF(arg);
+		if (res == NULL) {
+			/* Oops, something went wrong :-( */
+			return -1;
+		}
+		DECREF(res);
+	}
+	return 0;
 }
 
 static object *
@@ -888,32 +1009,10 @@ BINARY(instance_mul, "__mul__")
 BINARY(instance_div, "__div__")
 BINARY(instance_mod, "__mod__")
 BINARY(instance_divmod, "__divmod__")
+BINARY(instance_pow, "__pow__")
 UNARY(instance_neg, "__neg__")
 UNARY(instance_pos, "__pos__")
 UNARY(instance_abs, "__abs__")
-
-static object *
-instance_pow(self, other, modulus)
-	instanceobject *self;
-	object *other, *modulus;
-{
-	object *func, *arg, *res;
-
-	if ((func = instance_getattr(self, "__pow__")) == NULL)
-		return NULL;
-	if (modulus == None)
-		arg = mkvalue("O", other);
-	else
-		arg = mkvalue("(OO)", other, modulus);
-	if (arg == NULL) {
-		DECREF(func);
-		return NULL;
-	}
-	res = call_object(func, arg);
-	DECREF(func);
-	DECREF(arg);
-	return res;
-}
 
 static int
 instance_nonzero(self)
@@ -1008,7 +1107,7 @@ static number_methods instance_as_number = {
 	(binaryfunc)instance_div, /*nb_divide*/
 	(binaryfunc)instance_mod, /*nb_remainder*/
 	(binaryfunc)instance_divmod, /*nb_divmod*/
-	(ternaryfunc)instance_pow, /*nb_power*/
+	(binaryfunc)instance_pow, /*nb_power*/
 	(unaryfunc)instance_neg, /*nb_negative*/
 	(unaryfunc)instance_pos, /*nb_positive*/
 	(unaryfunc)instance_abs, /*nb_absolute*/
