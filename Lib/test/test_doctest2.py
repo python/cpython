@@ -1,17 +1,31 @@
-"""A module to test whether doctest recognizes some 2.2 features,
+# -*- coding: utf-8 -*-
+u"""A module to test whether doctest recognizes some 2.2 features,
 like static and class methods.
 
 >>> print 'yup'  # 1
 yup
+
+We include some (random) encoded (utf-8) text in the text surrounding
+the example.  It should be ignored:
+
+ЉЊЈЁЂ
+
 """
 
 from test import test_support
 
 class C(object):
-    """Class C.
+    u"""Class C.
 
     >>> print C()  # 2
     42
+
+
+    We include some (random) encoded (utf-8) text in the text surrounding
+    the example.  It should be ignored:
+
+        ЉЊЈЁЂ
+
     """
 
     def __init__(self):

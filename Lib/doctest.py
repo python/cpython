@@ -962,7 +962,9 @@ class DocTestFinder:
                 if obj.__doc__ is None:
                     docstring = ''
                 else:
-                    docstring = str(obj.__doc__)
+                    docstring = obj.__doc__
+                    if not isinstance(docstring, basestring):
+                        docstring = str(docstring)
             except (TypeError, AttributeError):
                 docstring = ''
 
