@@ -10,7 +10,7 @@ diff -ur tix-8.1.4/win/common.mak tix-8.1.4.new/win/common.mak
  ITCL_VER          = 
  
 -INSTALLDIR      = C:\progra~1\tcl
-+INSTALLDIR      = ..\..\tcl84
++INSTALLDIR      = ..\..\tcltk
  
  !IFNDEF TIX_DEBUG
  NODEBUG = 1
