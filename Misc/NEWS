@@ -2,6 +2,12 @@ What's New in Python 2.2.1 XXX?
 Release date: XXX
 ===============================
 
+Core and builtins
+
+- PyErr_Display will provide file and line information for all exceptions
+  that have an attribute print_file_and_line, not just SyntaxErrors. This
+  fixes the bug that no proper line number is given for bad \x escapes.
+
 Library
 
 - webbrowser: tightened up the command passed to os.system() so that
