@@ -2,7 +2,7 @@ import sys
 import unittest
 import weakref
 
-from test_support import run_unittest, verify
+from test_support import run_unittest
 
 
 class C:
@@ -63,6 +63,25 @@ class ReferencesTestCase(TestBase):
         self.assert_(self.cbcalled == 2,
                      "callback not called the right number of times")
 
+    def test_multiple_selfref_callbacks(self):
+        """Make sure all references are invalidated before callbacks
+        are called."""
+        #
+        # What's important here is that we're using the first
+        # reference in the callback invoked on the second reference
+        # (the most recently created ref is cleaned up first).  This
+        # tests that all references to the object are invalidated
+        # before any of the callbacks are invoked, so that we only
+        # have one invocation of _weakref.c:cleanup_helper() active
+        # for a particular object at a time.
+        #
+        def callback(object, self=self):
+            self.ref()
+        c = C()
+        self.ref = weakref.ref(c, callback)
+        ref1 = weakref.ref(c, callback)
+        del c
+
     def test_proxy_ref(self):
         o = C()
         o.bar = 1
@@ -91,10 +110,10 @@ class ReferencesTestCase(TestBase):
         o = factory()
         ref = weakref.ref(o, self.callback)
         del o
-        verify(self.cbcalled == 1,
-               "callback did not properly set 'cbcalled'")
-        verify(ref() is None,
-               "ref2 should be dead after deleting object reference")
+        self.assert_(self.cbcalled == 1,
+                     "callback did not properly set 'cbcalled'")
+        self.assert_(ref() is None,
+                     "ref2 should be dead after deleting object reference")
 
     def test_ref_reuse(self):
         o = C()
