@@ -18,14 +18,14 @@
 int
 Tcl_AppInit(Tcl_Interp *interp)
 {
-	Tk_Window main;
+	Tk_Window main_window;
 
 	if (Tcl_Init (interp) == TCL_ERROR)
 		return TCL_ERROR;
 	if (Tk_Init (interp) == TCL_ERROR)
 		return TCL_ERROR;
 
-	main = Tk_MainWindow(interp);
+	main_window = Tk_MainWindow(interp);
 
 #ifdef WITH_MOREBUTTONS
 	{
@@ -33,9 +33,9 @@ Tcl_AppInit(Tcl_Interp *interp)
 		extern Tcl_CmdProc triButtonCmd;
 
 		Tcl_CreateCommand(interp, "studbutton", studButtonCmd,
-				  (ClientData) main, NULL);
+				  (ClientData) main_window, NULL);
 		Tcl_CreateCommand(interp, "tributton", triButtonCmd,
-				  (ClientData) main, NULL);
+				  (ClientData) main_window, NULL);
 	}
 #endif
 
