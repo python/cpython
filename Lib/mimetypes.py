@@ -193,7 +193,7 @@ def init(files=None):
         if os.path.isfile(file):
             db.readfp(open(file))
     encodings_map = db.encodings_map
-    suffix_map = db.encodings_map
+    suffix_map = db.suffix_map
     types_map = db.types_map
     guess_extension = db.guess_extension
     guess_type = db.guess_type
