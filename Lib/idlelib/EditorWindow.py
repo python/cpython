@@ -102,6 +102,9 @@ class EditorWindow:
             self.vars = flist.vars
         self.menubar = Menu(root)
         self.top = top = self.Toplevel(root, menu=self.menubar)
+        #self.top.instanceDict makes flist.inversedict avalable to
+        #configDialog.py so it can access all EditorWindow instaces
+        self.top.instanceDict=flist.inversedict
         self.vbar = vbar = Scrollbar(top, name='vbar')
         self.text_frame = text_frame = Frame(top)
         self.text = text = Text(text_frame, name='text', padx=5, wrap=None,
@@ -467,6 +470,13 @@ class EditorWindow:
         self.per.removefilter(self.color)
         self.color = None
         self.per.insertfilter(self.undo)
+        
+    def ResetColorizer(self):
+        #this function is called from configDialog.py
+        #to update the colour theme if it is changed
+        if self.color:
+            self.color = self.ColorDelegator()
+            self.per.insertfilter(self.color)
 
     def saved_change_hook(self):
         short = self.short_title()

@@ -110,6 +110,13 @@ class IdleUserConfParser(IdleConfParser):
             self.set(section,option,value)
             return 1
      
+    def RemoveFile(self):
+        """
+        Removes the user config file from disk if it exists.
+        """
+        if os.path.exists(self.file):
+            os.remove(self.file)    
+    
     def Save(self):
         """
         If config isn't empty, write file to disk. If config is empty,
@@ -119,8 +126,7 @@ class IdleUserConfParser(IdleConfParser):
             cfgFile=open(self.file,'w')
             self.write(cfgFile)
         else:
-            if os.path.exists(self.file):
-                os.remove(self.file)    
+            self.RemoveFile()
 
 class IdleConf:
     """

@@ -23,8 +23,6 @@ class ConfigDialog(Toplevel):
         #Theme Elements. Each theme element key is it's display name.
         #The first value of the tuple is the sample area tag name.
         #The second value is the display name list sort index. 
-        #The third value indicates whether the element can have a foreground 
-        #or background colour or both. 
         self.themeElements={'Normal Text':('normal','00'),
             'Python Keywords':('keyword','01'),
             'Python Definitions':('definition','02'),
@@ -180,8 +178,8 @@ class ConfigDialog(Toplevel):
         frameTheme=Frame(frame,borderwidth=2,relief=GROOVE)
         #frameCustom
         self.textHighlightSample=Text(frameCustom,relief=SOLID,borderwidth=1,
-            font=('courier',12,''),cursor='hand2',width=10,height=10,
-            takefocus=FALSE,highlightthickness=0)
+            font=('courier',12,''),cursor='hand2',width=21,height=10,
+            takefocus=FALSE,highlightthickness=0,wrap=NONE)
         text=self.textHighlightSample
         text.bind('<Double-Button-1>',lambda e: 'break')
         text.bind('<B1-Motion>',lambda e: 'break')
@@ -514,7 +512,7 @@ class ConfigDialog(Toplevel):
         self.AddChangedItem('main','General','editor-on-startup',value)
 
     def ResetChangedItems(self):
-        #changedItems. When any config item is changed in this dialog, an entry
+        #When any config item is changed in this dialog, an entry
         #should be made in the relevant section (config type) of this 
         #dictionary. The key should be the config file section name and the 
         #value a dictionary, whose key:value pairs are item=value pairs for
@@ -1086,14 +1084,15 @@ class ConfigDialog(Toplevel):
     def ActivateConfigChanges(self):
         #things that need to be done to make 
         #applied config changes dynamic:
-        #    
         #update editor/shell font and repaint
         #dynamically update indentation setttings
         #update theme and repaint
         #update keybindings and re-bind
         #update user help sources menu
-        pass
-    
+        winInstances=self.parent.instanceDict.keys()
+        for instance in winInstances:
+            instance.ResetColorizer()
+        
     def Cancel(self):
         self.destroy()
 
