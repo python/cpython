@@ -9,7 +9,7 @@ static struct memberlist type_members[] = {
 	{"__itemsize__", T_INT, offsetof(PyTypeObject, tp_itemsize), READONLY},
 	{"__flags__", T_LONG, offsetof(PyTypeObject, tp_flags), READONLY},
 	{"__doc__", T_STRING, offsetof(PyTypeObject, tp_doc), READONLY},
-	{"__weaklistoffset__", T_LONG,
+	{"__weakrefoffset__", T_LONG,
 	 offsetof(PyTypeObject, tp_weaklistoffset), READONLY},
 	{"__base__", T_OBJECT, offsetof(PyTypeObject, tp_base), READONLY},
 	{"__dictoffset__", T_LONG,
@@ -201,6 +201,7 @@ static void
 subtype_dealloc(PyObject *self)
 {
 	int dictoffset = self->ob_type->tp_dictoffset;
+	int weaklistoffset = self->ob_type->tp_weaklistoffset;
 	PyTypeObject *type, *base;
 	destructor f;
 
@@ -223,6 +224,10 @@ subtype_dealloc(PyObject *self)
 			*dictptr = NULL;
 		}
 	}
+
+	/* If we added weaklist, we clear it */
+	if (weaklistoffset && !base->tp_weaklistoffset)
+		PyObject_ClearWeakRefs(self);
 
 	/* Finalize GC if the base doesn't do GC and we do */
 	if (PyType_IS_GC(type) && !PyType_IS_GC(base))
@@ -455,22 +460,23 @@ best_base(PyObject *bases)
 static int
 extra_ivars(PyTypeObject *type, PyTypeObject *base)
 {
-	int t_size = PyType_BASICSIZE(type);
-	int b_size = PyType_BASICSIZE(base);
+	size_t t_size = PyType_BASICSIZE(type);
+	size_t b_size = PyType_BASICSIZE(base);
 
-	assert(t_size >= b_size); /* type smaller than base! */
+	assert(t_size >= b_size); /* Else type smaller than base! */
 	if (type->tp_itemsize || base->tp_itemsize) {
 		/* If itemsize is involved, stricter rules */
 		return t_size != b_size ||
 			type->tp_itemsize != base->tp_itemsize;
 	}
-	if (t_size == b_size)
-		return 0;
-	if (type->tp_dictoffset != 0 && base->tp_dictoffset == 0 &&
-	    type->tp_dictoffset == b_size &&
-	    (size_t)t_size == b_size + sizeof(PyObject *))
-		return 0; /* "Forgive" adding a __dict__ only */
-	return 1;
+	if (type->tp_weaklistoffset && base->tp_weaklistoffset == 0 &&
+	    type->tp_weaklistoffset + sizeof(PyObject *) == t_size)
+		t_size -= sizeof(PyObject *);
+	if (type->tp_dictoffset && base->tp_dictoffset == 0 &&
+	    type->tp_dictoffset + sizeof(PyObject *) == t_size)
+		t_size -= sizeof(PyObject *);
+
+	return t_size != b_size;
 }
 
 static PyTypeObject *
@@ -500,7 +506,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	PyTypeObject *type, *base, *tmptype, *winner;
 	etype *et;
 	struct memberlist *mp;
-	int i, nbases, nslots, slotoffset, dynamic;
+	int i, nbases, nslots, slotoffset, dynamic, add_dict, add_weak;
 
 	/* Special case: type(x) should return x->ob_type */
 	if (metatype == &PyType_Type &&
@@ -613,6 +619,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	/* Check for a __slots__ sequence variable in dict, and count it */
 	slots = PyDict_GetItemString(dict, "__slots__");
 	nslots = 0;
+	add_dict = 0;
+	add_weak = 0;
 	if (slots != NULL) {
 		/* Make it into a tuple */
 		if (PyString_Check(slots))
@@ -629,12 +637,19 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 				Py_DECREF(slots);
 				return NULL;
 			}
+			/* XXX Check against null bytes in name */
 		}
 	}
 	if (slots == NULL && base->tp_dictoffset == 0 &&
 	    (base->tp_setattro == PyObject_GenericSetAttr ||
-	     base->tp_setattro == NULL))
-		nslots = 1;
+	     base->tp_setattro == NULL)) {
+		nslots++;
+		add_dict++;
+	}
+	if (slots == NULL && base->tp_weaklistoffset == 0) {
+		nslots++;
+		add_weak++;
+	}
 
 	/* XXX From here until type is safely allocated,
 	   "return NULL" may leak slots! */
@@ -716,16 +731,31 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 				PyTuple_GET_ITEM(slots, i));
 			mp->type = T_OBJECT;
 			mp->offset = slotoffset;
+			if (base->tp_weaklistoffset == 0 &&
+			    strcmp(mp->name, "__weakref__") == 0)
+				type->tp_weaklistoffset = slotoffset;
 			slotoffset += sizeof(PyObject *);
 		}
 	}
-	else if (nslots) {
-		type->tp_dictoffset = slotoffset;
-		mp->name = "__dict__";
-		mp->type = T_OBJECT;
-		mp->offset = slotoffset;
-		mp->readonly = 1;
-		slotoffset += sizeof(PyObject *);
+	else {
+		if (add_dict) {
+			type->tp_dictoffset = slotoffset;
+			mp->name = "__dict__";
+			mp->type = T_OBJECT;
+			mp->offset = slotoffset;
+			mp->readonly = 1;
+			mp++;
+			slotoffset += sizeof(PyObject *);
+		}
+		if (add_weak) {
+			type->tp_weaklistoffset = slotoffset;
+			mp->name = "__weakref__";
+			mp->type = T_OBJECT;
+			mp->offset = slotoffset;
+			mp->readonly = 1;
+			mp++;
+			slotoffset += sizeof(PyObject *);
+		}
 	}
 	type->tp_basicsize = slotoffset;
 	type->tp_members = et->members;
