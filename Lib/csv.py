@@ -419,7 +419,7 @@ class Sniffer:
             else: # attempt typecast
                 try:
                     colType(header[col])
-                except ValueError, TypeError:
+                except (ValueError, TypeError):
                     hasHeader += 1
                 else:
                     hasHeader -= 1
