@@ -131,27 +131,33 @@ def getfqdn(name=''):
 _socketmethods = (
     'bind', 'connect', 'connect_ex', 'fileno', 'listen',
     'getpeername', 'getsockname', 'getsockopt', 'setsockopt',
-    'recv', 'recvfrom', 'send', 'sendall', 'sendto', 'setblocking',
+    'sendall', 'setblocking',
     'settimeout', 'gettimeout', 'shutdown')
 
 class _closedsocket(object):
     __slots__ = []
-    def __getattr__(self, name):
+    def _dummy(*args):
         raise error(9, 'Bad file descriptor')
+    send = recv = sendto = recvfrom = __getattr__ = _dummy
 
 class _socketobject(object):
 
     __doc__ = _realsocket.__doc__
 
-    __slots__ = ["_sock"]
+    __slots__ = ["_sock", "send", "recv", "sendto", "recvfrom"]
 
     def __init__(self, family=AF_INET, type=SOCK_STREAM, proto=0, _sock=None):
         if _sock is None:
             _sock = _realsocket(family, type, proto)
         self._sock = _sock
+        self.send = self._sock.send
+        self.recv = self._sock.recv
+        self.sendto = self._sock.sendto
+        self.recvfrom = self._sock.recvfrom
 
     def close(self):
         self._sock = _closedsocket()
+        self.send = self.recv = self.sendto = self.recvfrom = self._sock._dummy
     close.__doc__ = _realsocket.close.__doc__
 
     def accept(self):
