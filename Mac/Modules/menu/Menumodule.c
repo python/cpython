@@ -522,6 +522,16 @@ static PyObject *MenuObj_InsertIntlResMenu(_self, _args)
 	return _res;
 }
 
+static PyObject *MenuObj_as_Resource(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	return ResObj_New((Handle)_self->ob_itself);
+
+}
+
 static PyMethodDef MenuObj_methods[] = {
 	{"DisposeMenu", (PyCFunction)MenuObj_DisposeMenu, 1,
 	 "() -> None"},
@@ -573,6 +583,8 @@ static PyMethodDef MenuObj_methods[] = {
 	 "(short afterItem, short scriptFilter) -> None"},
 	{"InsertIntlResMenu", (PyCFunction)MenuObj_InsertIntlResMenu, 1,
 	 "(ResType theType, short afterItem, short scriptFilter) -> None"},
+	{"as_Resource", (PyCFunction)MenuObj_as_Resource, 1,
+	 "Return this Menu as a Resource"},
 	{NULL, NULL, 0}
 };
 
