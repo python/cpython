@@ -22,7 +22,7 @@ class PyncheWidget:
         # create the menubar
         #
         menubar = self.__menubar = Frame(root, relief=RAISED, borderwidth=2)
-        menubar.pack(fill=X)
+        menubar.grid(row=0, column=0, columnspan=2, sticky='EW')
         #
         # File menu
         #
