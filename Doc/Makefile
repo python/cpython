@@ -168,7 +168,7 @@ LIBFILES = lib.tex \
     libuserdict.tex libdis.tex libxmllib.tex libqueue.tex \
     liblocale.tex libbasehttp.tex libcopyreg.tex libsymbol.tex libtoken.tex \
     libframework.tex libminiae.tex libbinhex.tex libuu.tex libsunaudio.tex \
-    libfileinput.tex
+    libfileinput.tex libimaplib.tex
 
 # Library document
 lib.dvi: tools/indfix.py $(LIBFILES)
