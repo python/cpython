@@ -137,34 +137,27 @@ class UnixCCompiler (CCompiler):
             for skipped_pair in skipped:
                 self.announce ("skipping %s (%s up-to-date)" % skipped_pair)
 
-        # If anything left to compile, compile it
-        if sources:
-            # XXX use of ccflags_shared means we're blithely assuming
-            # that we're compiling for inclusion in a shared object!
-            # (will have to fix this when I add the ability to build a
-            # new Python)
-            cc_args = ['-c'] + pp_opts + \
-                      self.ccflags + self.ccflags_shared + \
-                      sources
-            if extra_preargs:
-                cc_args[:0] = extra_preargs
-            if extra_postargs:
-                cc_args.extend (extra_postargs)
-            self.spawn ([self.cc] + cc_args)
-        
+        # Build list of (source,object) tuples for convenience
+        srcobj = []
+        for i in range (len (sources)):
+            srcobj.append ((sources[i], objects[i]))
 
-        # Note that compiling multiple source files in the same go like
-        # we've just done drops the .o file in the current directory, which
-        # may not be what the caller wants (depending on the 'output_dir'
-        # parameter).  So, if necessary, fix that now by moving the .o
-        # files into the desired output directory.  (The alternative, of
-        # course, is to compile one-at-a-time with a -o option.  6 of one,
-        # 12/2 of the other...)
+        # Compile all source files that weren't eliminated by
+        # 'newer_pairwise()'.
+        # XXX use of ccflags_shared means we're blithely assuming
+        # that we're compiling for inclusion in a shared object!
+        # (will have to fix this when I add the ability to build a
+        # new Python)
+        cc_args = ['-c'] + pp_opts + self.ccflags + self.ccflags_shared
+        if extra_preargs:
+            cc_args[:0] = extra_preargs
+        if extra_postargs is None:
+            extra_postargs = []
 
-        if output_dir:
-            for i in range (len (objects)):
-                src = os.path.basename (objects[i])
-                objects[i] = self.move_file (src, output_dir)
+        for (source,object) in srcobj:
+            self.spawn ([self.cc] + cc_args +
+                        [source, '-o', object] +
+                        extra_postargs)
 
         # Have to re-fetch list of object filenames, because we want to
         # return *all* of them, including those that weren't recompiled on
