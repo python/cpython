@@ -138,6 +138,7 @@ gen_dealloc(genobject *gen)
 static PyObject *
 gen_iternext(genobject *gen)
 {
+	PyThreadState *tstate = PyThreadState_GET();
 	PyFrameObject *f = gen->frame;
 	PyObject *result;
 
@@ -149,15 +150,24 @@ gen_iternext(genobject *gen)
 	if (f->f_stackbottom == NULL) {
 		return NULL;
 	}
-        gen->running = 1;
+
+	/* Generators always return to their most recent caller, not
+	 * necessarily their creator. */
+	Py_INCREF(tstate->frame);
+	assert(f->f_back == NULL);
+	f->f_back = tstate->frame;
+
+	gen->running = 1;
 	result = eval_frame(f);
-        gen->running = 0;
-        /* The connection between this frame and its parent is over now, so
-           must NULL out f_back lest it get decref'ed when gen dies (note
-           that eval_frame sets f->f_back without bumping its refcount:  we
-           never had a fully legit reference to it). */
+	gen->running = 0;
+
+	/* Don't keep the reference to f_back any longer than necessary.  It
+	 * may keep a chain of frames alive or it could create a reference
+	 * cycle. */
+	Py_DECREF(f->f_back);
 	f->f_back = NULL;
-        return result;
+
+	return result;
 }
 
 static PyObject *
@@ -168,12 +178,12 @@ gen_next(genobject *gen, PyObject *args)
 	if (!PyArg_ParseTuple(args, ":next"))
 		return NULL;
 
-        result = gen_iternext(gen);
+	result = gen_iternext(gen);
 
-        if (result == NULL && !PyErr_Occurred()) {
+	if (result == NULL && !PyErr_Occurred()) {
 		PyErr_SetObject(PyExc_StopIteration, Py_None);
 		return NULL;
-        }
+	}
 
 	return result;
 }
@@ -568,9 +578,7 @@ eval_frame(PyFrameObject *f)
 		return NULL;
 	}
 
-	f->f_back = tstate->frame;
 	tstate->frame = f;
-
 	co = f->f_code;
 	fastlocals = f->f_localsplus;
 	freevars = f->f_localsplus + f->f_nlocals;
@@ -2482,8 +2490,13 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	}
 
 	if (co->co_flags & CO_GENERATOR) {
-                /* create a new generator that owns the ready to run frame
-                 * and return that as the value */
+		/* Don't need to keep the reference to f_back, it will be set
+		 * when the generator is resumed. */
+		Py_DECREF(f->f_back);
+		f->f_back = NULL;
+
+		/* Create a new generator that owns the ready to run frame
+		 * and return that as the value. */
 		return gen_new(f);
 	}
 
