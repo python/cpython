@@ -16,7 +16,10 @@
 # Refcount behavior is given for all PyObject* types: 0 (no change), +1
 # (increment) and -1 (decrement).  A blank refcount field indicates the
 # parameter or function value is not a PyObject* and is therefore not
-# subject to reference counting.
+# subject to reference counting.  A special case for the value "null"
+# (without quotes) is used for functions which return a PyObject* type but
+# always return NULL.  This is used by some of the PyErr_*() functions, in
+# particular.
 
 # The parameter names are as they appear in the API manual, not the source
 # code. 
