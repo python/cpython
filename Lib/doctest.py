@@ -1468,7 +1468,7 @@ class OutputChecker:
         # This flag causes doctest to ignore any differences in the
         # contents of whitespace strings.  Note that this can be used
         # in conjunction with the ELLISPIS flag.
-        if (optionflags & NORMALIZE_WHITESPACE):
+        if optionflags & NORMALIZE_WHITESPACE:
             got = ' '.join(got.split())
             want = ' '.join(want.split())
             if got == want:
@@ -1477,10 +1477,14 @@ class OutputChecker:
         # The ELLIPSIS flag says to let the sequence "..." in `want`
         # match any substring in `got`.  We implement this by
         # transforming `want` into a regular expression.
-        if (optionflags & ELLIPSIS):
+        if optionflags & ELLIPSIS:
+            # Remove \n from ...\n, else the newline will be required,
+            # and (for example) ... on a line by itself can't match
+            # nothing gracefully.
+            want_re = want.replace(ELLIPSIS_MARKER + '\n', ELLIPSIS_MARKER)
             # Escape any special regexp characters
-            want_re = re.escape(want)
-            # Replace ellipsis markers ('...') with .*
+            want_re = re.escape(want_re)
+            # Replace escaped ellipsis markers ('\.\.\.') with .*
             want_re = want_re.replace(re.escape(ELLIPSIS_MARKER), '.*')
             # Require that it matches the entire string; and set the
             # re.DOTALL flag (with '(?s)').

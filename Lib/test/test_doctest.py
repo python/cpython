@@ -780,6 +780,29 @@ output to match any substring in the actual output:
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
     (0, 1)
 
+... should also match nothing gracefully:
+XXX This can be provoked into requiring exponential time by adding more
+XXX ellipses; the implementation should change.  It's much easier to
+XXX provoke exponential time with expected output that doesn't match,
+XXX BTW (then multiple regexp .* thingies each try all possiblities,
+XXX multiplicatively, without hope of success).  That's the real danger,
+XXX that a failing test will appear to be hung.
+
+    >>> for i in range(100):
+    ...     print i**2 #doctest: +ELLIPSIS
+    0
+    ...
+    1
+    ...
+    36
+    ...
+    ...
+    49
+    64
+    ......
+    9801
+    ...
+
 The UNIFIED_DIFF flag causes failures that involve multi-line expected
 and actual outputs to be displayed using a unified diff:
 
