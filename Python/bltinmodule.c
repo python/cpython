@@ -13,7 +13,14 @@
 #include <unistd.h>
 #endif
 
-extern const char *Py_FileSystemDefaultEncoding;
+/* The default encoding used by the platform file system APIs
+   Can remain NULL for all platforms that don't have such a concept
+*/
+#ifdef MS_WIN32
+const char *Py_FileSystemDefaultEncoding = "mbcs";
+#else
+const char *Py_FileSystemDefaultEncoding = NULL; /* use default */
+#endif
 
 /* Forward */
 static PyObject *filterstring(PyObject *, PyObject *);

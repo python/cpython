@@ -23,6 +23,11 @@ extern DL_IMPORT(int) PyFile_SoftSpace(PyObject *, int);
 extern DL_IMPORT(int) PyFile_WriteString(char *, PyObject *);
 extern DL_IMPORT(int) PyObject_AsFileDescriptor(PyObject *);
 
+/* The default encoding used by the platform file system APIs
+   If non-NULL, this is different than the default encoding for strings 
+*/
+extern DL_IMPORT(const char *) Py_FileSystemDefaultEncoding;
+
 #ifdef __cplusplus
 }
 #endif
