@@ -1,5 +1,6 @@
 # Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDraw.h'
 
+def FOUR_CHAR_CODE(x): return x
 invalColReq = -1
 srcCopy = 0
 srcOr = 1
@@ -131,6 +132,7 @@ kCursorImageMajorVersion = 0x0001
 kCursorImageMinorVersion = 0x0000
 # Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDrawText.h'
 
+def FOUR_CHAR_CODE(x): return x
 leftCaret = 0
 rightCaret = -1
 kHilite = 1
