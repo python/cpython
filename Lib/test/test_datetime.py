@@ -23,13 +23,13 @@ pickle_choices = [
     (pickle, pickle, 2),
     (cPickle, cPickle, 0),
     (cPickle, cPickle, 1),
-##    (cPickle, cPickle, 2),
+    (cPickle, cPickle, 2),
     (pickle, cPickle, 0),
     (pickle, cPickle, 1),
-##    (pickle, cPickle, 2),
+    (pickle, cPickle, 2),
     (cPickle, pickle, 0),
     (cPickle, pickle, 1),
-##    (cPickle, pickle, 2),
+    (cPickle, pickle, 2),
     ]
 
 
