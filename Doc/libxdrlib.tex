@@ -1,0 +1,235 @@
+\section{Standard module \sectcode{xdrlib}}
+\stmodindex{xdrlib}
+\index{XDR}
+
+\renewcommand{\indexsubitem}{(in module xdrlib)}
+
+
+The \code{xdrlib} module supports the External Data Representation
+Standard as described in RFC 1014, written by Sun Microsystems,
+Inc. June 1987.  It supports most of the data types described in the
+RFC, although some, most notably \code{float} and \code{double} are
+only supported on those operating systems that provide an XDR
+library.
+
+The \code{xdrlib} module defines two classes, one for packing
+variables into XDR representation, and another for unpacking from XDR
+representation.  There are also two exception classes.
+
+
+\subsection{Packer Objects}
+
+\code{Packer} is the class for packing data into XDR representation.
+The \code{Packer} class is instantiated with no arguments.
+
+\begin{funcdesc}{get_buffer}{}
+Returns the current pack buffer as a string.
+\end{funcdesc}
+
+\begin{funcdesc}{reset}{}
+Resets the pack buffer to the empty string.
+\end{funcdesc}
+
+In general, you can pack any of the most common XDR data types by
+calling the appropriate \code{pack_\var{type}} method.  Each method
+takes a single argument, the value to pack.  The following simple data
+type packing methods are supported: \code{pack_uint}, \code{pack_int},
+\code{pack_enum}, \code{pack_bool}, \code{pack_uhyper},
+and \code{pack_hyper}.
+
+The following methods pack floating point numbers, however they
+require C library support.  Without the optional C built-in module,
+both of these methods will raise an \code{xdrlib.ConversionError}
+exception.  See the note at the end of this chapter for details.
+
+\begin{funcdesc}{pack_float}{value}
+Packs the single-precision floating point number \var{value}.
+\end{funcdesc}
+
+\begin{funcdesc}{pack_double}{value}
+Packs the double-precision floating point number \var{value}.
+\end{funcdesc}
+
+The following methods support packing strings, bytes, and opaque data:
+
+\begin{funcdesc}{pack_fstring}{n\, s}
+Packs a fixed length string, \var{s}.  \var{n} is the length of the
+string but it is \emph{not} packed into the data buffer.  The string
+is padded with null bytes if necessary to guaranteed 4 byte alignment.
+\end{funcdesc}
+
+\begin{funcdesc}{pack_fopaque}{n\, data}
+Packs a fixed length opaque data stream, similarly to
+\code{pack_fstring}.
+\end{funcdesc}
+
+\begin{funcdesc}{pack_string}{s}
+Packs a variable length string, \var{s}.  The length of the string is
+first packed as an unsigned integer, then the string data is packed
+with \code{pack_fstring}.
+\end{funcdesc}
+
+\begin{funcdesc}{pack_opaque}{data}
+Packs a variable length opaque data string, similarly to
+\code{pack_string}.
+\end{funcdesc}
+
+\begin{funcdesc}{pack_bytes}{bytes}
+Packs a variable length byte stream, similarly to \code{pack_string}.
+\end{funcdesc}
+
+The following methods support packing arrays and lists:
+
+\begin{funcdesc}{pack_list}{list\, pack_item}
+Packs a \var{list} of homogeneous items.  This method is useful for
+lists with an indeterminate size; i.e. the size is not available until
+the entire list has been walked.  For each item in the list, an
+unsigned integer \code{1} is packed first, followed by the data value
+from the list.  \var{pack_item} is the function that is called to pack
+the individual item.  At the end of the list, an unsigned integer
+\code{0} is packed.
+\end{funcdesc}
+
+\begin{funcdesc}{pack_farray}{n\, array\, pack_item}
+Packs a fixed length list (\var{array}) of homogeneous items.  \var{n}
+is the length of the list; it is \emph{not} packed into the buffer,
+but a \code{ValueError} exception is raised if \code{len(array)} is not
+equal to \var{n}.  As above, \var{pack_item} is the function used to
+pack each element.
+\end{funcdesc}
+
+\begin{funcdesc}{pack_array}{list\, pack_item}
+Packs a variable length \var{list} of homogeneous items.  First, the
+length of the list is packed as an unsigned integer, then each element
+is packed as in \code{pack_farray} above.
+\end{funcdesc}
+
+\subsection{Unpacker Objects}
+
+\code{Unpacker} is the complementary class which unpacks XDR data
+values from a string buffer, and has the following methods:
+
+\begin{funcdesc}{__init__}{data}
+Instantiates an \code{Unpacker} object with the string buffer
+\var{data}.
+\end{funcdesc}
+
+\begin{funcdesc}{reset}{data}
+Resets the string buffer with the given \var{data}.
+\end{funcdesc}
+
+\begin{funcdesc}{get_position}{}
+Returns the current unpack position in the data buffer.
+\end{funcdesc}
+
+\begin{funcdesc}{set_position}{position}
+Sets the data buffer unpack position to \var{position}.  You should be
+careful about using \code{get_position()} and \code{set_position()}.
+\end{funcdesc}
+
+\begin{funcdesc}{done}{}
+Indicates unpack completion.  Raises an \code{xdrlib.Error} exception
+if all of the data has not been unpacked.
+\end{funcdesc}
+
+In addition, every data type that can be packed with a \code{Packer},
+can be unpacked with an \code{Unpacker}.  Unpacking methods are of the
+form \code{unpack_\var{type}}, and take no arguments.  They return the
+unpacked object.  The same caveats apply for \code{unpack_float} and
+\code{unpack_double} as above.
+
+In addition, the following methods unpack strings, bytes, and opaque
+data:
+
+\begin{funcdesc}{unpack_fstring}{n}
+Unpacks and returns a fixed length string.  \var{n} is the number of
+characters expected.  Padding with null bytes to guaranteed 4 byte
+alignment is assumed.
+\end{funcdesc}
+
+\begin{funcdesc}{unpack_fopaque}{n}
+Unpacks and returns a fixed length opaque data stream, similarly to
+\code{unpack_fstring}.
+\end{funcdesc}
+
+\begin{funcdesc}{pack_string}{}
+Unpacks and returns a variable length string.  The length of the
+string is first unpacked as an unsigned integer, then the string data
+is unpacked with \code{unpack_fstring}.
+\end{funcdesc}
+
+\begin{funcdesc}{unpack_opaque}{}
+Unpacks and returns a variable length opaque data string, similarly to
+\code{pack_string}.
+\end{funcdesc}
+
+\begin{funcdesc}{unpack_bytes}{}
+Unpacks and returns a variable length byte stream, similarly to
+\code{pack_string}.
+\end{funcdesc}
+
+The following methods support unpacking arrays and lists:
+
+\begin{funcdesc}{unpack_list}{unpack_item}
+Unpacks and returns a list of homogeneous items.  The list is unpacked
+one element at a time
+by first unpacking an unsigned integer flag.  If the flag is \code{1},
+then the item is unpacked and appended to the list.  A flag of
+\code{0} indicates the end of the list.  \var{unpack_item} is the
+function that is called to unpack the items.
+\end{funcdesc}
+
+\begin{funcdesc}{unpack_farray}{n\, unpack_item}
+Unpacks and returns (as a list) a fixed length array of homogeneous
+items.  \var{n} is number of list elements to expect in the buffer.
+As above, \var{unpack_item} is the function used to unpack each element.
+\end{funcdesc}
+
+\begin{funcdesc}{unpack_array}{unpack_item}
+Unpacks and returns a variable length \var{list} of homogeneous items.
+First, the length of the list is unpacked as an unsigned integer, then
+each element is unpacked as in \code{unpack_farray} above.
+\end{funcdesc}
+
+\subsection{Exceptions}
+
+Exceptions in this module are coded as class instances:
+
+\begin{excdesc}{Error}
+The base exception class.  \code{Error} has a single public data
+member \code{msg} containing the description of the error.
+\end{excdesc}
+
+\begin{excdesc}{ConversionError}
+Class derived from \code{Error}.  Contains no additional instance
+variables.
+\end{excdesc}
+
+Here is an example of how you would catch one of these exceptions:
+
+\begin{verbatim}
+import xdrlib
+p = xdrlib.Packer()
+try:
+    p.pack_double(8.01)
+except xdrlib.ConversionError, instance:
+    print 'packing the double failed:', instance.msg
+\end{verbatim}
+
+\subsection{Supporting Floating Point Data}
+
+Packing and unpacking floating point data,
+i.e. \code{Packer.pack_float}, \code{Packer.pack_double},
+\code{Unpacker.unpack_float}, and \code{Unpacker.unpack_double}, are
+only supported with the helper built-in \code{_xdr} module, which
+relies on your operating system having the appropriate XDR library
+routines.
+
+If you have built the Python interpeter with the \code{_xdr} module,
+or have built the \code{_xdr} module as a shared library,
+\code{xdrlib} will use these to pack and unpack floating point
+numbers.  Otherwise, using these routines will raise a
+\code{ConversionError} exception.
+
+See the Python installation instructions for details on building the
+\code{_xdr} module.

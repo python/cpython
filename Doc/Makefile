@@ -108,37 +108,26 @@ ref.ps:	ref.dvi
 
 # LaTeX source files for the Python Library Reference
 LIBFILES = lib.tex \
-libal.tex libaifc.tex liballos.tex \
-	libamoeba.tex libarray.tex libaudio.tex libaudioop.tex \
-libbltin.tex libbinascii.tex \
-libcd.tex \
-libcgi.tex libcopy.tex libctb.tex libcrypto.tex \
-libdbm.tex \
-libexcs.tex \
-libfcntl.tex libfl.tex libfm.tex libftplib.tex libfuncs.tex \
-libgdbm.tex libgetopt.tex libgl.tex libgopherlib.tex libgrp.tex \
-libhtmllib.tex libhttplib.tex \
-libimageop.tex libimgfile.tex libintro.tex \
-libjpeg.tex \
-libmac.tex libmacconsole.tex libmacdnr.tex \
-	libmacfs.tex libmacos.tex libmacostools.tex libmactcp.tex \
-	libmacspeech.tex libmacui.tex \
-	libmain.tex libmarshal.tex libmath.tex \
-	libmd5.tex libmimetools.tex libmisc.tex \
-	libmm.tex libmpz.tex \
-libnntplib.tex \
-libobjs.tex libos.tex \
-libpanel.tex libparser.tex libpickle.tex libposix.tex libposixfile.tex \
-	libppath.tex libprofile.tex libpwd.tex libpython.tex \
-librand.tex libregex.tex libregsub.tex \
-	librfc822.tex librgbimg.tex librotor.tex \
-libselect.tex libsgi.tex libsgmllib.tex \
-	libshelve.tex libsocket.tex libsomeos.tex libstdwin.tex \
-	libstring.tex libstrings.tex libstruct.tex libsun.tex libsys.tex \
-libtempfile.tex libtermios.tex libthread.tex libtime.tex \
-	libtraceback.tex libtypes.tex libtypes2.tex \
-libunix.tex liburllib.tex liburlparse.tex \
-libwhrandom.tex libwww.tex
+    libintro.tex libobjs.tex libtypes.tex libexcs.tex libfuncs.tex \
+    libpython.tex libsys.tex libtypes2.tex libtraceback.tex libpickle.tex \
+    libshelve.tex libcopy.tex libmarshal.tex libimp.tex libparser.tex \
+    libbltin.tex libmain.tex libstrings.tex libstring.tex libregex.tex \
+    libregsub.tex libstruct.tex libmisc.tex libmath.tex librand.tex \
+    libwhrandom.tex libarray.tex liballos.tex libos.tex libtime.tex \
+    libgetopt.tex libtempfile.tex liberrno.tex libsomeos.tex libsignal.tex \
+    libsocket.tex libselect.tex libthread.tex libunix.tex libposix.tex \
+    libppath.tex libpwd.tex libgrp.tex libcrypt.tex libdbm.tex libgdbm.tex \
+    libtermios.tex libfcntl.tex libposixfile.tex libsyslog.tex libpdb.tex \
+    libprofile.tex libwww.tex libcgi.tex liburllib.tex libhttplib.tex \
+    libftplib.tex libgopherlib.tex libnntplib.tex liburlparse.tex \
+    libhtmllib.tex libsgmllib.tex librfc822.tex libmimetools.tex \
+    libbinascii.tex libmm.tex libaudioop.tex libimageop.tex libaifc.tex \
+    libjpeg.tex librgbimg.tex libcrypto.tex libmd5.tex libmpz.tex \
+    librotor.tex libmac.tex libctb.tex libmacconsole.tex libmacdnr.tex \
+    libmacfs.tex libmacos.tex libmacostools.tex libmactcp.tex \
+    libmacspeech.tex libmacui.tex libstdwin.tex libsgi.tex libal.tex \
+    libcd.tex libfl.tex libfm.tex libgl.tex libimgfile.tex libsun.tex \
+    libxdrlib.tex libimghdr.tex
 
 # Library document
 lib.dvi: $(LIBFILES)
