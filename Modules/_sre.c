@@ -310,7 +310,9 @@ SRE_AT(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
                 SRE_IS_LINEBREAK((int) ptr[-1]));
 
 	case SRE_AT_END:
-		return ((void*) ptr == state->end);
+        return (((void*) (ptr+1) == state->end &&
+                 SRE_IS_LINEBREAK((int) ptr[0])) ||
+                ((void*) ptr == state->end));
 
 	case SRE_AT_END_LINE:
 		return ((void*) ptr == state->end ||
