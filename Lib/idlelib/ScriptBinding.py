@@ -37,11 +37,8 @@ class ScriptBinding:
 
     menudefs = [
         ('run', [None,
-#                 ('Check module', '<<check-module>>'),
-                  ('Run script', '<<run-script>>'),
-                 ]
-        ),
-    ]
+                 ('Check module', '<<check-module>>'),
+                 ('Run script', '<<run-script>>'), ]), ]
 
     def __init__(self, editwin):
         self.editwin = editwin
