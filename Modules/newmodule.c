@@ -69,12 +69,12 @@ new_code(unused, args)
   
     if (!getargs(args, "(OOOOO)", &code, &consts, &names, &filename, &name)) {
 	return NULL;
-    } else if (!is_stringobject(code) || !is_listobject(consts) ||    \
-	       !is_listobject(names) || !is_stringobject(filename) || \
+    } else if (!is_stringobject(code) || !is_listobject(consts) ||
+	       !is_listobject(names) || !is_stringobject(filename) ||
 	       !is_stringobject(name)) {
-	err_setstr(TypeError, "expected a string of compiled code, a list of constants,   \
-                               a list of names used, a string filename, and a string name \
-                               as args");
+	err_setstr(TypeError,
+"expected a string of compiled code, a list of constants, \
+a list of names used, a string filename, and a string name as args");
 	return NULL;
     }
     return (object *)newcodeobject(code, consts, names, filename, name);
