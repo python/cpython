@@ -329,7 +329,7 @@ PyErr_Print()
 	PyObject *exception, *v, *tb, *f;
 	PyErr_Fetch(&exception, &v, &tb);
 	if (exception == NULL)
-		return 0;
+		return;
 	if (exception == PyExc_SystemExit) {
 		err = Py_FlushLine();
 		fflush(stdout);
