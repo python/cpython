@@ -1,4 +1,4 @@
-/* config.h for Macintosh THINK C 6.0 and MPW 3.2.  */
+/* config.h for Macintosh THINK C 6.0, CodeWarrior 4 and MPW 3.2.  */
 
 #ifdef MPW
 /* This must be is MPW 3.x */
@@ -93,7 +93,11 @@
 
 /* Define if your compiler botches static forward declarations
    (as it does on SCI ODT 3.0) */
+#ifdef __MWERKS__
+#define BAD_STATIC_FORWARD
+#else /* MPW and THINK */
 #undef BAD_STATIC_FORWARD
+#endif
 
 /* Define to `long' if <time.h> doesn't define.  */
 #undef clock_t
