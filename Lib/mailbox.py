@@ -10,6 +10,7 @@ __all__ = ["UnixMailbox","MmdfMailbox","MHMailbox","Maildir","BabylMailbox",
            "PortableUnixMailbox"]
 
 class _Mailbox:
+
     def __init__(self, fp, factory=rfc822.Message):
         self.fp = fp
         self.seekp = 0
@@ -35,6 +36,7 @@ class _Mailbox:
 
 
 class _Subfile:
+
     def __init__(self, fp, start, stop):
         self.fp = fp
         self.start = start
@@ -94,6 +96,7 @@ class _Subfile:
 
 # Recommended to use PortableUnixMailbox instead!
 class UnixMailbox(_Mailbox):
+
     def _search_start(self):
         while 1:
             pos = self.fp.tell()
@@ -161,6 +164,7 @@ class PortableUnixMailbox(UnixMailbox):
 
 
 class MmdfMailbox(_Mailbox):
+
     def _search_start(self):
         while 1:
             line = self.fp.readline()
@@ -181,6 +185,7 @@ class MmdfMailbox(_Mailbox):
 
 
 class MHMailbox:
+
     def __init__(self, dirname, factory=rfc822.Message):
         import re
         pat = re.compile('^[1-9][0-9]*$')
@@ -204,7 +209,12 @@ class MHMailbox:
             return None
         fn = self.boxes.pop(0)
         fp = open(os.path.join(self.dirname, fn))
-        return self.factory(fp)
+        msg = self.factory(fp)
+        try:
+            msg._mh_msgno = fn
+        except (AttributeError, TypeError):
+            pass
+        return msg
 
 
 class Maildir:
@@ -238,6 +248,7 @@ class Maildir:
 
 
 class BabylMailbox(_Mailbox):
+
     def _search_start(self):
         while 1:
             line = self.fp.readline()
