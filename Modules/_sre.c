@@ -2672,15 +2672,58 @@ pattern_deepcopy(PatternObject* self, PyObject* args)
 #endif
 }
 
+PyDoc_STRVAR(pattern_match_doc,
+"match(string[, pos[, endpos]]) --> match object or None.\n\
+    Matches zero or more characters at the beginning of the string");
+
+PyDoc_STRVAR(pattern_search_doc,
+"search(string[, pos[, endpos]]) --> match object or None.\n\
+    Scan through string looking for a match, and return a corresponding\n\
+    MatchObject instance. Return None if no position in the string matches.");
+
+PyDoc_STRVAR(pattern_split_doc,
+"split(string[, maxsplit = 0])  --> list.\n\
+    Split string by the occurrences of pattern.");
+
+PyDoc_STRVAR(pattern_findall_doc,
+"findall(string[, pos[, endpos]]) --> list.\n\
+   Return a list of all non-overlapping matches of pattern in string.");
+
+PyDoc_STRVAR(pattern_finditer_doc,
+"finditer(string[, pos[, endpos]]) --> iterator.\n\
+    Return an iterator over all non-overlapping matches for the \n\
+    RE pattern in string. For each match, the iterator returns a\n\
+    match object.");
+
+PyDoc_STRVAR(pattern_sub_doc,
+"sub(repl, string[, count = 0]) --> newstring\n\
+    Return the string obtained by replacing the leftmost non-overlapping\n\
+    occurrences of pattern in string by the replacement repl."); 
+
+PyDoc_STRVAR(pattern_subn_doc,
+"subn(repl, string[, count = 0]) --> (newstring, number of subs)\n\
+    Return the tuple (new_string, number_of_subs_made) found by replacing\n\
+    the leftmost non-overlapping occurrences of pattern with the\n\
+    replacement repl."); 
+
+PyDoc_STRVAR(pattern_doc, "Compiled regular expression objects");
+
 static PyMethodDef pattern_methods[] = {
-    {"match", (PyCFunction) pattern_match, METH_VARARGS|METH_KEYWORDS},
-    {"search", (PyCFunction) pattern_search, METH_VARARGS|METH_KEYWORDS},
-    {"sub", (PyCFunction) pattern_sub, METH_VARARGS|METH_KEYWORDS},
-    {"subn", (PyCFunction) pattern_subn, METH_VARARGS|METH_KEYWORDS},
-    {"split", (PyCFunction) pattern_split, METH_VARARGS|METH_KEYWORDS},
-    {"findall", (PyCFunction) pattern_findall, METH_VARARGS|METH_KEYWORDS},
+    {"match", (PyCFunction) pattern_match, METH_VARARGS|METH_KEYWORDS, 
+	pattern_match_doc},
+    {"search", (PyCFunction) pattern_search, METH_VARARGS|METH_KEYWORDS, 
+	pattern_search_doc},
+    {"sub", (PyCFunction) pattern_sub, METH_VARARGS|METH_KEYWORDS,
+	pattern_sub_doc},
+    {"subn", (PyCFunction) pattern_subn, METH_VARARGS|METH_KEYWORDS,
+	pattern_subn_doc},
+    {"split", (PyCFunction) pattern_split, METH_VARARGS|METH_KEYWORDS, 
+	pattern_split_doc},
+    {"findall", (PyCFunction) pattern_findall, METH_VARARGS|METH_KEYWORDS, 
+	pattern_findall_doc},
 #if PY_VERSION_HEX >= 0x02020000
-    {"finditer", (PyCFunction) pattern_finditer, METH_VARARGS},
+    {"finditer", (PyCFunction) pattern_finditer, METH_VARARGS,
+	pattern_finditer_doc},
 #endif
     {"scanner", (PyCFunction) pattern_scanner, METH_VARARGS},
     {"__copy__", (PyCFunction) pattern_copy, METH_VARARGS},
@@ -2741,7 +2784,7 @@ statichere PyTypeObject Pattern_Type = {
     0,					/* tp_setattro */
     0,					/* tp_as_buffer */
     Py_TPFLAGS_HAVE_WEAKREFS,		/* tp_flags */
-    0,					/* tp_doc */
+    pattern_doc,			/* tp_doc */
     0,					/* tp_traverse */
     0,					/* tp_clear */
     0,					/* tp_richcompare */
