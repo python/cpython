@@ -27,7 +27,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* XXX TO DO:
    XXX Compute maximum needed stack sizes while compiling
    XXX Generate simple jump for break/return outside 'try...finally'
-   XXX Include function name in code (and module names?)
 */
 
 #include "allobjects.h"
@@ -2032,7 +2031,7 @@ compile_funcdef(c, n)
 	node *ch;
 	REQ(n, funcdef); /* funcdef: 'def' NAME parameters ':' suite */
 	c->c_name = STR(CHILD(n, 1));
-	com_addoparg(c, RESERVE_FAST, 0); /* Patched up later */
+	com_addoparg(c, RESERVE_FAST, com_addconst(c, None)); /* Patched! */
 	ch = CHILD(n, 2); /* parameters: '(' [varargslist] ')' */
 	ch = CHILD(ch, 1); /* ')' | varargslist */
 	if (TYPE(ch) == RPAR)
@@ -2100,79 +2099,95 @@ compile_node(c, n)
 	}
 }
 
-/* Optimization for local and global variables.
+/* Optimization for local variables in functions (and *only* functions).
 
-   XXX Need to update this text for LOAD_FAST stuff...
-
-   Attempt to replace all LOAD_NAME instructions that refer to a local
-   variable with LOAD_LOCAL instructions, and all that refer to a global
-   variable with LOAD_GLOBAL instructions.
+   This replaces all LOAD_NAME, STORE_NAME and DELETE_NAME
+   instructions that refer to local variables with LOAD_FAST etc.
+   The latter instructions are much faster because they don't need to
+   look up the variable name in a dictionary.
    
    To find all local variables, we check all STORE_NAME and IMPORT_FROM
    instructions.  This yields all local variables, including arguments,
    function definitions, class definitions and import statements.
+   (We don't check DELETE_NAME instructions, since if there's no
+   STORE_NAME the DELETE_NAME will surely fail.)
    
-   There is one leak: 'from foo import *' introduces local variables
-   that we can't know while compiling.  If this is the case, LOAD_GLOBAL
-   instructions are not generated -- LOAD_NAME is left in place for
-   globals, since it first checks for globals (LOAD_LOCAL is still used
-   for recognized locals, since it doesn't hurt).
-   
-   This optimization means that using the same name as a global and
-   as a local variable within the same scope is now illegal, which
-   is a change to the language!  Also using eval() to introduce new
-   local variables won't work.  But both were bad practice at best.
-   
-   The optimization doesn't save much: basically, it saves one
-   unsuccessful dictionary lookup per global (or built-in) variable
-   reference.  On the (slow!) Mac Plus, with 4 local variables,
-   this saving was measured to be about 0.18 ms.  We might save more
-   by using a different data structure to hold local variables, like
-   an array indexed by variable number.
+   There is one problem: 'from foo import *' introduces local variables
+   that we can't know while compiling.  If this is the case, wo don't
+   optimize at all (this rarely happens, since import is mostly used
+   at the module level).
+
+   Note that, because of this optimization, code like the following
+   won't work:
+	eval('x = 1')
+	print x
    
    NB: this modifies the string object co->co_code!
 */
 
 static void
-optimizer(co)
-	codeobject *co;
+optimize(c)
+	struct compiling *c;
 {
 	unsigned char *next_instr, *cur_instr;
 	object *locals;
+	int nlocals;
 	int opcode;
 	int oparg;
 	object *name;
-	int star_used;
-
+	int fast_reserved;
+	object *error_type, *error_value;
+	
 #define NEXTOP()	(*next_instr++)
 #define NEXTARG()	(next_instr += 2, (next_instr[-1]<<8) + next_instr[-2])
 #define GETITEM(v, i)	(getlistitem((v), (i)))
-#define GETNAMEOBJ(i)	(GETITEM(co->co_names, (i)))
-
+#define GETNAMEOBJ(i)	(GETITEM(c->c_names, (i)))
+	
 	locals = newdictobject();
 	if (locals == NULL) {
-		err_clear();
-		return; /* For now, this is OK */
+		c->c_errors++;
+		return;
 	}
+	nlocals = 0;
+
+	err_get(&error_type, &error_value);
 	
-	next_instr = (unsigned char *) GETSTRINGVALUE(co->co_code); 
+	next_instr = (unsigned char *) getstringvalue(c->c_code);
 	for (;;) {
 		opcode = NEXTOP();
 		if (opcode == STOP_CODE)
 			break;
 		if (HAS_ARG(opcode))
 			oparg = NEXTARG();
-		if (opcode == STORE_NAME || opcode == IMPORT_FROM) {
+		if (opcode == STORE_NAME || opcode == DELETE_NAME ||
+		    opcode == IMPORT_FROM) {
+			object *v;
 			name = GETNAMEOBJ(oparg);
-			if (dict2insert(locals, name, None) != 0) {
-				DECREF(locals);
-				return; /* Sorry */
+			if (dict2lookup(locals, name) != NULL)
+				continue;
+			err_clear();
+			v = newintobject(nlocals);
+			if (v == NULL) {
+				c->c_errors++;
+				goto err;
 			}
+			nlocals++;
+			if (dict2insert(locals, name, v) != 0) {
+				DECREF(v);
+				c->c_errors++;
+				goto err;
+			}
+			DECREF(v);
 		}
 	}
 	
-	star_used = (dictlookup(locals, "*") != NULL);
-	next_instr = (unsigned char *) GETSTRINGVALUE(co->co_code); 
+	if (nlocals == 0 || dictlookup(locals, "*") != NULL) {
+		/* Don't optimize anything */
+		goto end;
+	}
+	
+	next_instr = (unsigned char *) getstringvalue(c->c_code);
+	fast_reserved = 0;
 	for (;;) {
 		cur_instr = next_instr;
 		opcode = NEXTOP();
@@ -2180,18 +2195,40 @@ optimizer(co)
 			break;
 		if (HAS_ARG(opcode))
 			oparg = NEXTARG();
-		if (opcode == LOAD_NAME) {
+		if (opcode == RESERVE_FAST) {
+			int i = com_addconst(c, locals);
+			cur_instr[1] = i & 0xff;
+			cur_instr[2] = (i>>8) & 0xff;
+			fast_reserved = 1;
+			continue;
+		}
+		if (!fast_reserved)
+			continue;
+		if (opcode == LOAD_NAME ||
+		    opcode == STORE_NAME ||
+		    opcode == DELETE_NAME) {
+			object *v;
+			int i;
 			name = GETNAMEOBJ(oparg);
-			if (dict2lookup(locals, name) != NULL)
-				*cur_instr = LOAD_LOCAL;
-			else {
+			v = dict2lookup(locals, name);
+			if (v == NULL) {
 				err_clear();
-				if (!star_used)
-					*cur_instr = LOAD_GLOBAL;
+				continue;
 			}
+			i = getintvalue(v);
+			switch (opcode) {
+			case LOAD_NAME: cur_instr[0] = LOAD_FAST; break;
+			case STORE_NAME: cur_instr[0] = STORE_FAST; break;
+			case DELETE_NAME: cur_instr[0] = DELETE_FAST; break;
+			}
+			cur_instr[1] = i & 0xff;
+			cur_instr[2] = (i>>8) & 0xff;
 		}
 	}
-	
+
+ end:
+	err_setval(error_type, error_value);
+ err:
 	DECREF(locals);
 }
 
@@ -2206,6 +2243,8 @@ compile(n, filename)
 		return NULL;
 	compile_node(&sc, n);
 	com_done(&sc);
+	if (TYPE(n) == funcdef && sc.c_errors == 0)
+		optimize(&sc);
 	co = NULL;
 	if (sc.c_errors == 0) {
 		object *v, *w;
@@ -2218,7 +2257,5 @@ compile(n, filename)
 		XDECREF(w);
 	}
 	com_free(&sc);
-	if (co != NULL && filename[0] != '<')
-		optimizer(co);
 	return co;
 }

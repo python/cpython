@@ -304,16 +304,23 @@ run_node(n, filename, globals, locals)
 	char *filename;
 	/*dict*/object *globals, *locals;
 {
+	object *res;
+	int needmerge = 0;
 	if (globals == NULL) {
 		globals = getglobals();
-		if (locals == NULL)
+		if (locals == NULL) {
 			locals = getlocals();
+			needmerge = 1;
+		}
 	}
 	else {
 		if (locals == NULL)
 			locals = globals;
 	}
-	return eval_node(n, filename, globals, locals);
+	res = eval_node(n, filename, globals, locals);
+	if (needmerge)
+		mergelocals();
+	return res;
 }
 
 object *

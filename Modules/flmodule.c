@@ -1201,6 +1201,14 @@ get_menu (g, args)
 }
 
 static object *
+get_menu_text (g, args)
+	genericobject *g;
+	object *args;
+{
+	return call_forms_Rstr (fl_get_menu_text, g-> ob_generic, args);
+}
+
+static object *
 addto_menu (g, args)
 	genericobject *g;
 	object *args;
@@ -1211,6 +1219,7 @@ addto_menu (g, args)
 static struct methodlist menu_methods[] = {
 	{"set_menu",		set_menu},
 	{"get_menu",		get_menu},
+	{"get_menu_text",	get_menu_text},
 	{"addto_menu",		addto_menu},
 	{NULL,			NULL}		/* sentinel */
 };

@@ -54,7 +54,7 @@ extern char *argv0;
 
 /* Magic word to reject pre-0.9.9 .pyc files */
 
-#define MAGIC 0x99BE2AL
+#define MAGIC 0x99BE3AL
 
 static object *modules;
 
