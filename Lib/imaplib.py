@@ -133,8 +133,6 @@ class IMAP4:
     mustquote = re.compile(r"[^\w!#$%&'*+,.:;<=>?^`|~-]")
 
     def __init__(self, host = '', port = IMAP4_PORT):
-        self.host = host
-        self.port = port
         self.debug = Debug
         self.state = 'LOGOUT'
         self.literal = None             # A literal argument to a command
@@ -205,13 +203,16 @@ class IMAP4:
     #       Overridable methods
 
 
-    def open(self, host, port):
-        """Setup connection to remote server on "host:port".
+    def open(self, host = '', port = IMAP4_PORT):
+        """Setup connection to remote server on "host:port"
+            (default: localhost:standard IMAP4 port).
         This connection will be used by the routines:
             read, readline, send, shutdown.
         """
+        self.host = host
+        self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((self.host, self.port))
+        self.sock.connect((host, port))
         self.file = self.sock.makefile('rb')
 
 
@@ -1005,14 +1006,17 @@ class IMAP4_SSL(IMAP4):
         IMAP4.__init__(self, host, port)
 
 
-    def open(self, host, port):
+    def open(self, host = '', port = IMAP4_SSL_PORT):
         """Setup connection to remote server on "host:port".
+            (default: localhost:standard IMAP4 SSL port).
         This connection will be used by the routines:
             read, readline, send, shutdown.
         """
+        self.host = host
+        self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((self.host, self.port))
-        self.sslobj = socket.ssl(self.sock,self.keyfile, self.certfile)
+        self.sock.connect((host, port))
+        self.sslobj = socket.ssl(self.sock, self.keyfile, self.certfile)
 
 
     def read(self, size):
