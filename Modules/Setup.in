@@ -277,7 +277,7 @@ rotor rotormodule.c		# enigma-inspired encryption
 #gdbm gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm
 
 
-# Berkeley DB hash interface.
+# Berkeley DB interface.
 #
 # This requires the Berkeley DB code, see
 # ftp://ftp.cs.berkeley.edu/pub/4bsd/db.1.85.tar.gz
@@ -287,7 +287,7 @@ rotor rotormodule.c		# enigma-inspired encryption
 
 #DB=/depot/sundry/src/db.1.85/
 #DBPORT=$(DB)/PORT/sunos.5.2
-#dbhash dbhashmodule.o -I$(DB)/include -I$(DBPORT) $(DBPORT)/libdb.a
+#dbhash bsddbmodule.o -I$(DB)/include -I$(DBPORT) $(DBPORT)/libdb.a
 
 
 
