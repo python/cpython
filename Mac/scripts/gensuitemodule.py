@@ -269,6 +269,7 @@ def compileaete(aete, resinfo, fname):
 	fp.write("Resource %s resid %d %s\n"%(resinfo[1], resinfo[0], resinfo[2]))
 	fp.write('"""\n')
 	fp.write('import aetools\n')
+	fp.write('Error = aetools.Error\n')
 	for code, modname in suitelist:
 		fp.write("import %s\n" % modname)
 	fp.write("\n\n_code_to_module = {\n")
@@ -474,7 +475,7 @@ def compileevent(fp, event, enumsneeded):
 			ename = a[2][0]
 			if ename <> '****':
 				fp.write("\t\taetools.enumsubst(_arguments, %s, _Enum_%s)\n" %
-					(`kname`, ename))
+					(`kname`, identify(ename)))
 				enumsneeded[ename] = 1
 	fp.write("\n")
 	#
@@ -741,7 +742,7 @@ class ObjectCompiler:
 	
 	def compileenumerator(self, item):
 		[name, code, desc] = item
-		self.fp.write("\t%s : %s,\t# %s\n" % (`identify(name)`, `code`, desc))
+		self.fp.write("\t%s : %s,\t# %s\n" % (`name`, `code`, desc))
 		
 	def checkforenum(self, enum):
 		"""This enum code is used by an event. Make sure it's available"""
