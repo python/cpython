@@ -198,7 +198,7 @@ oppourtunity --- in \cfunction{initnoddy()}.
     0,                          /* ob_size */
 \end{verbatim}
 
-The \member{ob_size} field of the header is not used; it's presence in
+The \member{ob_size} field of the header is not used; its presence in
 the type structure is a historical artifact that is maintained for
 binary compatibility with extension modules compiled for older
 versions of Python.  Always set this field to zero.
@@ -442,7 +442,7 @@ uniquely-identifying value for the object.
 The \member{tp_str} handler is to \function{str()} what the
 \member{tp_repr} handler described above is to \function{repr()}; that
 is, it is called when Python code calls \function{str()} on an
-instance of your object.  It's implementation is very similar to the
+instance of your object.  Its implementation is very similar to the
 \member{tp_repr} function, but the resulting string is intended for
 human consumption.  If \member{tp_str} is not specified, the
 \member{tp_repr} handler is used instead.
@@ -880,7 +880,7 @@ XXX some fields need to be added here...
 \end{verbatim}
 
 These functions provide support for the iterator protocol.  Any object
-which wishes to support iteration over it's contents (which may be
+which wishes to support iteration over its contents (which may be
 generated during iteration) must implement the \code{tp_iter}
 handler.  Objects which are returned by a \code{tp_iter} handler must
 implement both the \code{tp_iter} and \code{tp_iternext} handlers.
