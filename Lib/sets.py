@@ -319,10 +319,16 @@ class BaseSet(object):
             data.update(iterable)
             return
 
-        value = True
+        # If the mere process of iterating may raise TypeError, materialize
+        # the iterable into a tuple first.  Then the TypeError will get
+        # raised here and propagated back to the caller.  Once we get into
+        # the loop following, TypeError is assumed to mean that element
+        # can't be used as a dict key.
         if type(iterable) not in (list, tuple, dict, file, xrange, str):
-            iterable = list(iterable)
+            iterable = tuple(iterable)
+
         it = iter(iterable)
+        value = True
         while True:
             try:
                 for element in it:
