@@ -23,31 +23,31 @@ def make_ctlpoints():
 	c = []
 	#
 	ci = []
-	ci.append(-2.5,  -3.7,  1.0)
-	ci.append(-1.5,  -3.7,  3.0)
-	ci.append(1.5,  -3.7, -2.5)
-	ci.append(2.5,  -3.7,  -0.75)
+	ci.append((-2.5,  -3.7,  1.0))
+	ci.append((-1.5,  -3.7,  3.0))
+	ci.append((1.5,  -3.7, -2.5))
+	ci.append((2.5,  -3.7,  -0.75))
 	c.append(ci)
 	#
 	ci = []
-	ci.append(-2.5,  -2.0,  3.0)
-	ci.append(-1.5,  -2.0,  4.0)
-	ci.append(1.5,  -2.0,  -3.0)
-	ci.append(2.5,  -2.0,  0.0)
+	ci.append((-2.5,  -2.0,  3.0))
+	ci.append((-1.5,  -2.0,  4.0))
+	ci.append((1.5,  -2.0,  -3.0))
+	ci.append((2.5,  -2.0,  0.0))
 	c.append(ci)
 	#
 	ci = []
-	ci.append(-2.5, 2.0,  1.0)
-	ci.append(-1.5, 2.0,  0.0)
-	ci.append(1.5,  2.0,  -1.0)
-	ci.append(2.5,  2.0,  2.0)
+	ci.append((-2.5, 2.0,  1.0))
+	ci.append((-1.5, 2.0,  0.0))
+	ci.append((1.5,  2.0,  -1.0))
+	ci.append((2.5,  2.0,  2.0))
 	c.append(ci)
 	#
 	ci = []
-	ci.append(-2.5,  2.7,  1.25)
-	ci.append(-1.5,  2.7,  0.1)
-	ci.append(1.5,  2.7,  -0.6)
-	ci.append(2.5,  2.7,  0.2)
+	ci.append((-2.5,  2.7,  1.25))
+	ci.append((-1.5,  2.7,  0.1))
+	ci.append((1.5,  2.7,  -0.6))
+	ci.append((2.5,  2.7,  0.2))
 	c.append(ci)
 	#
 	return c
@@ -58,15 +58,15 @@ trimknots = [0., 0., 0.,  1., 1.,  2., 2.,  3., 3.,   4., 4., 4.]
 
 def make_trimpoints():
 	c = []
-	c.append(1.0, 0.0, 1.0)
-	c.append(1.0, 1.0, 1.0)
-	c.append(0.0, 2.0, 2.0)
-	c.append(-1.0, 1.0, 1.0)
-	c.append(-1.0, 0.0, 1.0)
-	c.append(-1.0, -1.0, 1.0)
-	c.append(0.0, -2.0, 2.0)
-	c.append(1.0, -1.0, 1.0) 
-	c.append(1.0, 0.0, 1.0)
+	c.append((1.0, 0.0, 1.0))
+	c.append((1.0, 1.0, 1.0))
+	c.append((0.0, 2.0, 2.0))
+	c.append((-1.0, 1.0, 1.0))
+	c.append((-1.0, 0.0, 1.0))
+	c.append((-1.0, -1.0, 1.0))
+	c.append((0.0, -2.0, 2.0))
+	c.append((1.0, -1.0, 1.0) )
+	c.append((1.0, 0.0, 1.0))
 	return c
 
 trimpoints = make_trimpoints()
