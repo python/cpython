@@ -79,9 +79,7 @@ in Python, there are no arbitrary limits to what you can do with it,
 though you should be careful about putting arbitrarily expensive
 operations in your setup script. Unlike, say, Autoconf-style configure
 scripts, the setup script may be run multiple times in the course of
-building and installing your module distribution.  If you need to
-insert potentially expensive processing steps into the Distutils
-chain, see section~\ref{extending} on extending the Distutils.
+building and installing your module distribution.  
 
 If all you want to do is distribute a module called \module{foo},
 contained in a file \file{foo.py}, then your setup script can be as
@@ -1365,8 +1363,7 @@ the \file{.spec} file manually:
 
 (Although a better way to do this is probably to override the standard
 \command{bdist\_rpm} command with one that writes whatever else you want
-to the \file{.spec} file; see section~\ref{extending} for information on
-extending the Distutils.)
+to the \file{.spec} file.)
 
 
 \subsection{Creating Windows Installers}
