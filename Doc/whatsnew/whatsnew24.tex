@@ -439,17 +439,18 @@ The limitations arise from the representation used for floating-point numbers.
 FP numbers are made up of three components:
 
 \begin{itemize}
-\item The sign, which is -1 or +1.
+\item The sign, which is positive or negative.
 \item The mantissa, which is a single-digit binary number  
 followed by a fractional part.  For example, \code{1.01} in base-2 notation
 is \code{1 + 0/2 + 1/4}, or 1.25 in decimal notation.
 \item The exponent, which tells where the decimal point is located in the number represented.  
 \end{itemize}
 
-For example, the number 1.25 has sign +1, mantissa 1.01 (in binary),
-and exponent of 0 (the decimal point doesn't need to be shifted).  The
-number 5 has the same sign and mantissa, but the exponent is 2
-because the mantissa is multiplied by 4 (2 to the power of the exponent 2).
+For example, the number 1.25 has positive sign, a mantissa value of
+1.01 (in binary), and an exponent of 0 (the decimal point doesn't need
+to be shifted).  The number 5 has the same sign and mantissa, but the
+exponent is 2 because the mantissa is multiplied by 4 (2 to the power
+of the exponent 2).
 
 Modern systems usually provide floating-point support that conforms to
 a relevant standard called IEEE 754.  C's \ctype{double} type is
@@ -458,11 +459,11 @@ space for the mantissa.  This means that numbers can only be specified
 to 52 bits of precision.  If you're trying to represent numbers whose
 expansion repeats endlessly, the expansion is cut off after 52 bits.
 Unfortunately, most software needs to produce output in base 10, and
-base 10 often gives rise to such repeating decimals.  For example, 1.1
-decimal is binary \code{1.0001100110011 ...}; .1 = 1/16 + 1/32 + 1/256
-plus an infinite number of additional terms.  IEEE 754 has to chop off
-that infinitely repeated decimal after 52 digits, so the
-representation is slightly inaccurate.  
+base 10 often gives rise to such repeating decimals in the binary
+expansion.  For example, 1.1 decimal is binary \code{1.0001100110011
+...}; .1 = 1/16 + 1/32 + 1/256 plus an infinite number of additional
+terms.  IEEE 754 has to chop off that infinitely repeated decimal
+after 52 digits, so the representation is slightly inaccurate.
 
 Sometimes you can see this inaccuracy when the number is printed:
 \begin{verbatim}
@@ -471,9 +472,10 @@ Sometimes you can see this inaccuracy when the number is printed:
 \end{verbatim}
 
 The inaccuracy isn't always visible when you print the number because
-the FP-to-decimal-string conversion is provided by the C library and
-most C libraries try to produce sensible output, but the inaccuracy is
-still there and subsequent operations can magnify the error.
+the FP-to-decimal-string conversion is provided by the C library, and
+most C libraries try to produce sensible output.  Even if it's not
+displayed, however, the inaccuracy is still there and subsequent
+operations can magnify the error.
 
 For many applications this doesn't matter.  If I'm plotting points and
 displaying them on my monitor, the difference between 1.1 and
@@ -483,6 +485,8 @@ number to two or three or even eight decimal places, the error is
 never apparent.  However, for applications where it does matter, 
 it's a lot of work to implement your own custom arithmetic routines.
 
+Hence, the \class{Decimal} type was created.
+
 \subsection{The \class{Decimal} type}
 
 A new module, \module{decimal}, was added to Python's standard library.
@@ -490,8 +494,10 @@ It contains two classes, \class{Decimal} and \class{Context}.
 \class{Decimal} instances represent numbers, and
 \class{Context} instances are used to wrap up various settings such as the precision and default rounding mode.
 
-\class{Decimal} instances, like regular Python integers and FP numbers, are immutable; once they've been created, you can't change the value it represents.  
-\class{Decimal} instances can be created from integers or strings:
+\class{Decimal} instances, like regular Python integers and FP
+numbers, are immutable; once they've been created, you can't change
+the value it represents.  \class{Decimal} instances can be created
+from integers or strings: 
 
 \begin{verbatim}
 >>> import decimal
@@ -501,22 +507,24 @@ Decimal("1972")
 Decimal("1.1")
 \end{verbatim}
 
-You can also provide tuples containing the sign, mantissa represented 
-as a tuple of decimal digits, and exponent:
+You can also provide tuples containing the sign, the mantissa represented 
+as a tuple of decimal digits, and the exponent:
 
 \begin{verbatim}
 >>> decimal.Decimal((1, (1, 4, 7, 5), -2))
 Decimal("-14.75")
 \end{verbatim}
 
-Cautionary note: the sign bit is a Boolean value, so 0 is positive and 1 is negative.
+Cautionary note: the sign bit is a Boolean value, so 0 is positive and
+1 is negative. 
 
-Floating-point numbers posed a bit of a problem: should the FP number
-representing 1.1 turn into the decimal number for exactly 1.1, or for
-1.1 plus whatever inaccuracies are introduced?  The decision was to
-leave such a conversion out of the API.  Instead, you should convert
-the floating-point number into a string using the desired precision and 
-pass the string to the \class{Decimal} constructor:
+Converting from floating-point numbers poses a bit of a problem:
+should the FP number representing 1.1 turn into the decimal number for
+exactly 1.1, or for 1.1 plus whatever inaccuracies are introduced?
+The decision was to leave such a conversion out of the API.  Instead,
+you should convert the floating-point number into a string using the
+desired precision and pass the string to the \class{Decimal}
+constructor:
 
 \begin{verbatim}
 >>> f = 1.1
