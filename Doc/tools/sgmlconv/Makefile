@@ -27,3 +27,15 @@ xml:
 	    (cd $$DIR; \
 	     $(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR) xml) \
 	done
+
+clean:
+	for DIR in $(SUBDIRS) ; do \
+	    (cd $$DIR; \
+	     $(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR) clean) \
+	done
+
+clobber:
+	for DIR in $(SUBDIRS) ; do \
+	    (cd $$DIR; \
+	     $(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR) clobber) \
+	done
