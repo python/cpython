@@ -725,6 +725,42 @@ gc_get_referents(PyObject *self, PyObject* args)
 	return result;
 }
 
+static char gc_get_objects__doc__[] =
+"get_objects() -> [...]\n"
+"\n"
+"Return a list of objects tracked by the collector (excluding the list\n"
+"returned).\n"
+;
+
+/* appending objects in a GC list to a Python list */
+static void
+append_objects(PyObject *py_list, PyGC_Head *gc_list)
+{
+	PyGC_Head *gc;
+	for (gc = gc_list->gc_next; gc != gc_list; gc = gc->gc_next) {
+		PyObject *op = PyObject_FROM_GC(gc);
+		if (op != py_list) {
+			Py_INCREF(op);
+			PyList_Append(py_list, op);
+		}
+	}
+}
+
+static PyObject *
+gc_get_objects(PyObject *self, PyObject *args)
+{
+	PyObject* result;
+
+	if (!PyArg_ParseTuple(args, ":get_objects")) /* check no args */
+		return NULL;
+	result = PyList_New(0);
+	append_objects(result, &generation0);
+	append_objects(result, &generation1);
+	append_objects(result, &generation2);
+	return result;
+}
+
+
 static char gc__doc__ [] =
 "This module provides access to the garbage collector for reference cycles.\n"
 "\n"
@@ -736,6 +772,7 @@ static char gc__doc__ [] =
 "get_debug() -- Get debugging flags.\n"
 "set_threshold() -- Set the collection thresholds.\n"
 "get_threshold() -- Return the current the collection thresholds.\n"
+"get_objects() -- Return a list of all objects tracked by the collector.\n"
 "get_referents() -- Return the list of objects that refer to an object.\n"
 ;
 
@@ -748,6 +785,7 @@ static PyMethodDef GcMethods[] = {
 	{"set_threshold",  gc_set_thresh, METH_VARARGS, gc_set_thresh__doc__},
 	{"get_threshold",  gc_get_thresh, METH_VARARGS, gc_get_thresh__doc__},
 	{"collect",	   gc_collect,	  METH_VARARGS, gc_collect__doc__},
+	{"get_objects",    gc_get_objects,METH_VARARGS, gc_get_objects__doc__},
 	{"get_referents",  gc_get_referents, METH_VARARGS,
 		gc_get_referents__doc__},
 	{NULL,	NULL}		/* Sentinel */
