@@ -15,7 +15,8 @@ INSTALL_PROGRAM=${INSTALL}
 INSTALL_SCRIPT= ${INSTALL_PROGRAM}
 INSTALL_DATA=	${INSTALL} -m 644
 STRIPFLAG=-s
-OPT=-g -O3 -Wall -Wstrict-prototypes -no-cpp-precomp -fno-common -dynamic
+OPT=-g -O3 -Wall -Wstrict-prototypes -Wno-long-double -no-cpp-precomp \
+	-fno-common -dynamic
 INCLUDES=-I$(PYTHONBUILDDIR) -I$(PYTHONBUILDDIR)/Include \
 	-I$(PYTHONBUILDDIR)/Mac/Include
 DEFINES=-DHAVE_CONFIG_H
