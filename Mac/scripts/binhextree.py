@@ -24,7 +24,7 @@ TOP=''
 # Where to put CW projects, relative to TOP
 CWDIR=':Mac:mwerks:projects'
 # From which folders to put projects there
-CWDIRDIRS=['build.mac', 'build.macstand', 'PlugIns']
+CWDIRDIRS=['build.mac', 'build.macstand', 'build.macfreeze', 'PlugIns']
 
 # Helper routines
 def binhexit(path, name):
