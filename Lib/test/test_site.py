@@ -5,7 +5,7 @@ executing have not been removed.
 
 """
 import unittest
-from test.test_support import TestSkipped, run_unittest, TESTFN
+from test.test_support import TestSkipped, TestFailed, run_unittest, TESTFN
 import __builtin__
 import os
 import sys
@@ -58,51 +58,96 @@ class HelperFunctionsTests(unittest.TestCase):
 
     def test_addpackage(self):
         # Make sure addpackage() imports if the line starts with 'import',
-        # otherwise add a directory combined from sitedir and 'name'.
-        # Must also skip comment lines.
-        dir_path, file_name, new_dir  = createpth()
+        # adds directories to sys.path for any line in the file that is not a
+        # comment or import that is a valid directory name for where the .pth
+        # file resides; invalid directories are not added
+        pth_file = PthFile()
+        pth_file.cleanup()  # to make sure that nothing is pre-existing that
+                            # shouldn't be
         try:
-            site.addpackage(dir_path, file_name, set())
-            self.failUnless(site.makepath(os.path.join(dir_path, new_dir))[0] in
-                    sys.path)
+            pth_file.create()
+            site.addpackage(pth_file.base_dir, pth_file.filename, set())
+            unittest.FunctionTestCase(pth_file.test)
         finally:
-            cleanuppth(dir_path, file_name, new_dir)
+            pth_file.cleanup()
 
     def test_addsitedir(self):
-        dir_path, file_name, new_dir = createpth()
+        # Same tests for test_addpackage since addsitedir() essentially just
+        # calls addpackage() for every .pth file in the directory
+        pth_file = PthFile()
+        pth_file.cleanup() # Make sure that nothing is pre-existing that is
+                           # tested for
         try:
-            site.addsitedir(dir_path, set())
-            self.failUnless(site.makepath(os.path.join(dir_path, new_dir))[0] in
-            sys.path)
+            site.addsitedir(pth_file.base_dir, set())
+            unittest.FunctionTestCase(pth_file.test)
         finally:
-            cleanuppth(dir_path, file_name, new_dir)
+            pth_file.cleanup()
 
-def createpth():
-    """Create a temporary .pth file at the returned location and return the
-    directory where it was created, the pth file name, and the directory
-    specified in the pth file.
+class PthFile(object):
+    """Helper class for handling testing of .pth files"""
 
-    Make sure to delete the file when finished.
+    def __init__(self, filename_base=TESTFN, imported="time",
+                    good_dirname="__testdir__", bad_dirname="__bad"):
+        """Initialize instance variables"""
+        self.filename = filename_base + ".pth"
+        self.base_dir = os.path.abspath('')
+        self.file_path = os.path.join(self.base_dir, self.filename)
+        self.imported = "time"
+        self.good_dirname = good_dirname
+        self.bad_dirname = bad_dirname
+        self.good_dir_path = os.path.join(self.base_dir, self.good_dirname)
+        self.bad_dir_path = os.path.join(self.base_dir, self.bad_dirname)
 
-    """
-    pth_dirname = "__testdir__"
-    file_name = TESTFN + ".pth"
-    full_dirname = os.path.dirname(os.path.abspath(file_name))
-    FILE = file(os.path.join(full_dirname, file_name), 'w')
-    try:
-        print>>FILE, "#import @bad module name"
-        print>>FILE, ''
-        print>>FILE, "import os"
-        print>>FILE, pth_dirname
-    finally:
-        FILE.close()
-    os.mkdir(os.path.join(full_dirname, pth_dirname))
-    return full_dirname, file_name, pth_dirname
+    def create(self):
+        """Create a .pth file with a comment, blank lines, an ``import
+        <self.imported>``, a line with self.good_dirname, and a line with
+        self.bad_dirname.
+        
+        Creation of the directory for self.good_dir_path (based off of
+        self.good_dirname) is also performed.
 
-def cleanuppth(full_dirname, file_name, pth_dirname):
-    """Clean up what createpth() made"""
-    os.remove(os.path.join(full_dirname, file_name))
-    os.rmdir(os.path.join(full_dirname, pth_dirname))
+        Make sure to call self.cleanup() to undo anything done by this method.
+        
+        """
+        FILE = open(self.file_path, 'wU')
+        try:
+            print>>FILE, "#import @bad module name"
+            print>>FILE, "\n"
+            print>>FILE, "import %s" % self.imported
+            print>>FILE, self.good_dirname
+            print>>FILE, self.bad_dirname
+        finally:
+            FILE.close()
+        os.mkdir(self.good_dir_path)
+
+    def cleanup(self):
+        """Make sure that the .pth file is deleted, self.imported is not in
+        sys.modules, and that both self.good_dirname and self.bad_dirname are
+        not existing directories."""
+        try:
+            os.remove(self.file_path)
+        except OSError:
+            pass
+        try:
+            del sys.modules[self.imported]
+        except KeyError:
+            pass
+        try:
+            os.rmdir(self.good_dir_path)
+        except OSError:
+            pass
+        try:
+            os.rmdir(self.bad_dir_path)
+        except OSError:
+            pass
+
+    def test(self):
+        """Test to make sure that was and was not supposed to be created by
+        using the .pth file occurred"""
+        assert site.makepath(self.good_dir_path)[0] in sys.path
+        assert self.imported in sys.modules
+        assert not os.path.exists(self.bad_dir_path)
+
 
 class ImportSideEffectTests(unittest.TestCase):
     """Test side-effects from importing 'site'."""
