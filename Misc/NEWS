@@ -8,6 +8,11 @@ Core
   constructor, with the same signature as the builtin open() function.
   file() is now the preferred way to open a file.
 
+- In 2.2a3, __new__ would only see sequential arguments passed to the
+  type in a constructor call; __init__ would see both sequential and
+  positional arguments.  This made no sense whatsoever any more, so
+  now both __new__ and __init__ see all arguments.
+
 - In 2.2a3, hash() applied to an instance of a subclass of str or unicode
   always returned 0.  This has been repaired.
 
@@ -18,28 +23,77 @@ Core
   type.  For example, if s was of a str sublass type, s[:] returned s
   as-is.  Now it returns a str with the same value as s.
 
+- Applications using Jim Fulton's ExtensionClass module can now safely
+  be used with Python 2.2.  In particular, Zope 2.4.1 now works with
+  Python 2.2 (as well as with Python 2.1.1).  The Demo/metaclass
+  examples also work again.
+
+- Thread scheduling on Solaris should be improved; it is no longer
+  necessary to insert a small sleep at the start of a thread in order
+  to let other runnable threads be scheduled.
+
 Library
+
+- SimpleXMLRPCServer: a new module (based upon SimpleHTMLServer)
+  simplifies writing XML RPC servers.
+
+- os.path.realpath(): a new function that returns the absoute pathname
+  after interpretation of symbolic links.  On non-Unix systems, this
+  is an alias for os.path.abspath().
 
 - operator.indexOf() (PySequence_Index() in the C API) now works with any
   iterable object.
 
-- The smtplib module now supports various authentication and security
-  features of the SMTP protocol through the new login() and starttls()
-  methods.
+- smtplib now supports various authentication and security features of
+  the SMTP protocol through the new login() and starttls() methods.
 
-- A new hmac module implementing keyed hashing for message authentication.
+- hmac: a new module implementing keyed hashing for message
+  authentication.
+
+- mimetypes now recognizes more extensions and file types.  At the
+  same time, some mappings not sanctioned by IANA were removed.
 
 Tools
 
+- The "compiler" package has been brought up to date to the state of
+  Python 2.2 bytecode generation.
+
 Build
+
+- Large file support (LFS) is now automatic when the platform supports
+  it; no more manual configuration tweaks are needed.  On Linux, at
+  least, it's possible to have a system whose C library supports large
+  files but whose kernel doesn't; in this case, large file support is
+  still enabled but doesn't do you any good unless you upgrade your
+  kernel or share your Python executable with another system whose
+  kernel has large file support.
+
+- The configure script now supplies plausible defaults in a
+  cross-compilation environment.  This doesn't mean that the supplied
+  values are always correct, or that cross-compilation now works
+  flawlessly -- but it's a first step (and it shuts up most of
+  autoconf's warnings about AC_TRY_RUN).
+
+- The Unix build is now a bit less chatty, courtesy of the parser
+  generator.  The build is completely silent (except for errors) when
+  using "make -s", thanks to a -q option to setup.py.
 
 C API
 
+- The "structmember" API now supports some new flag bits to deny read
+  and/or write access to attributes in restricted execution mode.
+
 New platforms
+
+- Compaq's iPAQ handheld, running the "familiar" Linux distribution
+  (http://familiar.handhelds.org).
 
 Tests
 
 Windows
+
+- Large file support now also works for files > 4GB, on filesystems
+  that support it (NTFS under Windows 2000).
 
 
 What's New in Python 2.2a3?
