@@ -29,7 +29,10 @@ part boundary.  The string has the form
 Read data encoded using the allowed MIME \var{encoding} from open file
 object \var{input} and write the decoded data to open file object
 \var{output}.  Valid values for \var{encoding} include
-\code{'base64'}, \code{'quoted-printable'} and \code{'uuencode'}.
+\code{'base64'}, \code{'quoted-printable'}, \code{'uuencode'},
+\code{'x-uuencode'}, \code{'uue'}, \code{'x-uue'}, \code{'7bit'}, and 
+\code{'8bit'}.  Decoding messages encoded in \code{'7bit'} or \code{'8bit'}
+has no effect.  The input is simply copied to the output.
 \end{funcdesc}
 
 \begin{funcdesc}{encode}{input, output, encoding}
