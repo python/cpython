@@ -1,53 +1,37 @@
-import unittest
-from test import test_support
-import base64
-from binascii import Error as binascii_error
+from unittest import TestCase
+from test.test_support import vereq, run_unittest
+from base64 import encodestring, decodestring
 
-class Base64TestCase(unittest.TestCase):
-    def test_encode_string(self):
-        """Testing encode string"""
-        test_support.verify(base64.encodestring("www.python.org") ==
-            "d3d3LnB5dGhvbi5vcmc=\n",
-            reason="www.python.org encodestring failed")
-        test_support.verify(base64.encodestring("a") ==
-            "YQ==\n",
-            reason="a encodestring failed")
-        test_support.verify(base64.encodestring("ab") ==
-            "YWI=\n",
-            reason="ab encodestring failed")
-        test_support.verify(base64.encodestring("abc") ==
-            "YWJj\n",
-            reason="abc encodestring failed")
-        test_support.verify(base64.encodestring("") ==
-            "",
-            reason="null encodestring failed")
-        test_support.verify(base64.encodestring(
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#0^&*();:<>,. []{}") ==
-            "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0\nNTY3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==\n",
-            reason = "long encodestring failed")
+class Base64TestCase(TestCase):
 
-    def test_decode_string(self):
-        """Testing decode string"""
-        test_support.verify(base64.decodestring("d3d3LnB5dGhvbi5vcmc=\n") ==
-            "www.python.org",
-            reason="www.python.org decodestring failed")
-        test_support.verify(base64.decodestring("YQ==\n") ==
-            "a",
-            reason="a decodestring failed")
-        test_support.verify(base64.decodestring("YWI=\n") ==
-            "ab",
-            reason="ab decodestring failed")
-        test_support.verify(base64.decodestring("YWJj\n") ==
-            "abc",
-            reason="abc decodestring failed")
-        test_support.verify(base64.decodestring(
-            "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0\nNTY3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==\n") ==
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#0^&*();:<>,. []{}",
-            reason = "long decodestring failed")
-        test_support.verify(base64.decodestring('') == '')
+    def test_encodestring(self):
+        vereq(encodestring("www.python.org"), "d3d3LnB5dGhvbi5vcmc=\n")
+        vereq(encodestring("a"), "YQ==\n")
+        vereq(encodestring("ab"), "YWI=\n")
+        vereq(encodestring("abc"), "YWJj\n")
+        vereq(encodestring(""), "")
+        vereq(encodestring("abcdefghijklmnopqrstuvwxyz"
+                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                           "0123456789!@#0^&*();:<>,. []{}"),
+              "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNE"
+              "RUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0\nNT"
+              "Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==\n")
+
+    def test_decodestring(self):
+        vereq(decodestring("d3d3LnB5dGhvbi5vcmc=\n"), "www.python.org")
+        vereq(decodestring("YQ==\n"), "a")
+        vereq(decodestring("YWI=\n"), "ab")
+        vereq(decodestring("YWJj\n"), "abc")
+        vereq(decodestring("YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNE"
+                           "RUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0\nNT"
+                           "Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==\n"),
+              "abcdefghijklmnopqrstuvwxyz"
+              "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+              "0123456789!@#0^&*();:<>,. []{}")
+        vereq(decodestring(''), '')
 
 def test_main():
-    test_support.run_unittest(Base64TestCase)
+    run_unittest(Base64TestCase)
 
 if __name__ == "__main__":
     test_main()
