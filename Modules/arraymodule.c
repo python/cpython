@@ -1027,7 +1027,7 @@ array_fromfile(self, args)
 	if (n > 0) {
 		char *item = self->ob_item;
 		int itemsize = self->ob_descr->itemsize;
-		int nread;
+		size_t nread;
 		int newlength;
 		size_t newbytes;
 		/* Be careful here about overflow */
@@ -1045,7 +1045,7 @@ array_fromfile(self, args)
 		self->ob_size += n;
 		nread = fread(item + (self->ob_size - n) * itemsize,
 			      itemsize, n, fp);
-		if (nread < n) {
+		if (nread < (size_t)n) {
 			self->ob_size -= (n - nread);
 			PyMem_RESIZE(item, char, self->ob_size*itemsize);
 			self->ob_item = item;
