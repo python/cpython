@@ -489,6 +489,15 @@ Currently-active file is at the head of the list.")
   (mapcar #'(lambda (key)
 	      (define-key py-mode-map key 'py-newline-and-indent))
 	  (where-is-internal 'newline-and-indent))
+  ;; Force RET to be py-newline-and-indent even if it didn't get
+  ;; mapped by the above code.  motivation: Emacs' default binding for
+  ;; RET is `newline' and C-j is `newline-and-indent'.  Most Pythoneers
+  ;; expect RET to do a `py-newline-and-indent' and any Emacsers who
+  ;; dislike this are probably knowledgeable enough to do a rebind.
+  ;; However, we do *not* change C-j since many Emacsers have already
+  ;; swapped RET and C-j and they don't want C-j bound to `newline' to 
+  ;; change.
+  (define-key py-mode-map "\C-m" 'py-newline-and-indent)
   )
 
 (defvar py-mode-output-map nil
