@@ -8,7 +8,7 @@
 
 #include <ctype.h>
 
-#if !defined(__STDC__) && !defined(macintosh)
+#if !defined(__STDC__)
 extern double fmod(double, double);
 extern double pow(double, double);
 #endif

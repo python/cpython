@@ -27,9 +27,6 @@
 #include "windows.h"
 #endif
 
-#ifdef macintosh
-#include "macglue.h"
-#endif
 extern char *Py_GetPath(void);
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
@@ -754,13 +751,6 @@ maybe_pyc_file(FILE *fp, const char* filename, const char* ext, int closeit)
 {
 	if (strcmp(ext, ".pyc") == 0 || strcmp(ext, ".pyo") == 0)
 		return 1;
-
-#ifdef macintosh
-	/* On a mac, we also assume a pyc file for types 'PYC ' and 'APPL' */
-	if (PyMac_getfiletype((char *)filename) == 'PYC '
-	    || PyMac_getfiletype((char *)filename) == 'APPL')
-		return 1;
-#endif /* macintosh */
 
 	/* Only look into the file if we are allowed to close it, since
 	   it then should also be seekable. */
@@ -1542,11 +1532,7 @@ Py_Exit(int sts)
 {
 	Py_Finalize();
 
-#ifdef macintosh
-	PyMac_Exit(sts);
-#else
 	exit(sts);
-#endif
 }
 
 static void

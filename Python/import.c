@@ -11,9 +11,6 @@
 #include "eval.h"
 #include "osdefs.h"
 #include "importdl.h"
-#ifdef macintosh
-#include "macglue.h"
-#endif
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -835,9 +832,6 @@ write_compiled_module(PyCodeObject *co, char *cpathname, long mtime)
 	fclose(fp);
 	if (Py_VerboseFlag)
 		PySys_WriteStderr("# wrote %s\n", cpathname);
-#ifdef macintosh
-	PyMac_setfiletype(cpathname, 'Pyth', 'PYC ');
-#endif
 }
 
 
@@ -1123,13 +1117,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 		strcat(buf, ".");
 		strcat(buf, name);
 		strcpy(name, buf);
-#ifdef macintosh
-		/* Freezing on the mac works different, and the modules are
-		** actually on sys.path. So we don't take the quick exit but
-		** continue with the normal flow.
-		*/
-		path = NULL;
-#else
 		if (find_frozen(name) != NULL) {
 			strcpy(buf, name);
 			return &fd_frozen;
@@ -1137,7 +1124,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 		PyErr_Format(PyExc_ImportError,
 			     "No frozen submodule named %.200s", name);
 		return NULL;
-#endif
 	}
 	if (path == NULL) {
 		if (is_builtin(name)) {
@@ -1233,33 +1219,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 			/* no hook was successful, use builtin import */
 		}
 
-#ifdef macintosh
-		/*
-		** Speedup: each sys.path item is interned, and
-		** FindResourceModule remembers which items refer to
-		** folders (so we don't have to bother trying to look
-		** into them for resources). We only do this for string
-		** items.
-		*/
-		if (PyString_Check(PyList_GET_ITEM(path, i))) {
-			PyString_InternInPlace(&PyList_GET_ITEM(path, i));
-			v = PyList_GET_ITEM(path, i);
-			if (PyMac_FindResourceModule((PyStringObject *)v, name, buf)) {
-				static struct filedescr resfiledescr =
-					{"", "", PY_RESOURCE};
-
-				Py_XDECREF(copy);
-				return &resfiledescr;
-			}
-			if (PyMac_FindCodeResourceModule((PyStringObject *)v, name, buf)) {
-				static struct filedescr resfiledescr =
-					{"", "", PY_CODERESOURCE};
-
-				Py_XDECREF(copy);
-				return &resfiledescr;
-			}
-		}
-#endif
 		if (len > 0 && buf[len-1] != SEP
 #ifdef ALTSEP
 		    && buf[len-1] != ALTSEP
@@ -1290,10 +1249,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 		}
 #endif
 #endif
-#ifdef macintosh
-		fdp = PyMac_FindModuleExtension(buf, &len, name);
-		if (fdp) {
-#else
 #if defined(PYOS_OS2)
 		/* take a snapshot of the module spec for restoration
 		 * after the 8 character DLL hackery
@@ -1331,7 +1286,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 			strcpy(buf+len, fdp->suffix);
 			if (Py_VerboseFlag > 1)
 				PySys_WriteStderr("# trying %s\n", buf);
-#endif /* !macintosh */
 			filemode = fdp->mode;
 			if (filemode[0] == 'U') 
 				filemode = "r" PY_STDIOTEXTMODE;
@@ -1408,9 +1362,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 #elif defined(DJGPP)
 #include <dir.h>
 
-#elif defined(macintosh)
-#include <TextUtils.h>
-
 #elif defined(__MACH__) && defined(__APPLE__) && defined(HAVE_DIRENT_H)
 #include <sys/types.h>
 #include <dirent.h>
@@ -1474,24 +1425,6 @@ case_ok(char *buf, int len, int namelen, char *name)
 		return 0;
 	}
 	return strncmp(ffblk.ff_name, name, namelen) == 0;
-
-/* macintosh */
-#elif defined(macintosh)
-	FSSpec fss;
-	OSErr err;
-
-	if (Py_GETENV("PYTHONCASEOK") != NULL)
-		return 1;
-
-	err = FSMakeFSSpec(0, 0, Pstring(buf), &fss);
-	if (err) {
-		PyErr_Format(PyExc_NameError,
-		     "Can't find file for module %.100s\n(filename %.300s)",
-		     name, buf);
-		return 0;
-	}
-	return fss.name[0] >= namelen &&
-	       strncmp(name, (char *)fss.name+1, namelen) == 0;
 
 /* new-fangled macintosh (macosx) */
 #elif defined(__MACH__) && defined(__APPLE__) && defined(HAVE_DIRENT_H)
@@ -1706,15 +1639,6 @@ load_module(char *name, FILE *fp, char *buf, int type, PyObject *loader)
 #ifdef HAVE_DYNAMIC_LOADING
 	case C_EXTENSION:
 		m = _PyImport_LoadDynamicModule(name, buf, fp);
-		break;
-#endif
-
-#ifdef macintosh
-	case PY_RESOURCE:
-		m = PyMac_LoadResourceModule(name, buf);
-		break;
-	case PY_CODERESOURCE:
-		m = PyMac_LoadCodeResourceModule(name, buf);
 		break;
 #endif
 
@@ -2678,21 +2602,6 @@ imp_load_source(PyObject *self, PyObject *args)
 	return m;
 }
 
-#ifdef macintosh
-static PyObject *
-imp_load_resource(PyObject *self, PyObject *args)
-{
-	char *name;
-	char *pathname;
-	PyObject *m;
-
-	if (!PyArg_ParseTuple(args, "ss:load_resource", &name, &pathname))
-		return NULL;
-	m = PyMac_LoadResourceModule(name, pathname);
-	return m;
-}
-#endif /* macintosh */
-
 static PyObject *
 imp_load_module(PyObject *self, PyObject *args)
 {
@@ -2822,9 +2731,6 @@ static PyMethodDef imp_methods[] = {
 	{"load_dynamic",	imp_load_dynamic,	METH_VARARGS},
 #endif
 	{"load_package",	imp_load_package,	METH_VARARGS},
-#ifdef macintosh
-	{"load_resource",	imp_load_resource,	METH_VARARGS},
-#endif
 	{"load_source",		imp_load_source,	METH_VARARGS},
 	{NULL,			NULL}		/* sentinel */
 };

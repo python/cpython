@@ -153,15 +153,6 @@ Py_FatalError(const char *msg)
 	Py_Exit(1);
 }
 
-#ifdef macintosh
-/* ARGSUSED */
-int
-guesstabsize(char *path)
-{
-	return 4;
-}
-#endif
-
 /* No-nonsense my_readline() for tokenizer.c */
 
 char *

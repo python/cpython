@@ -784,7 +784,6 @@ tok_nextc(register struct tok_state *tok)
 				done = tok->inp[-1] == '\n';
 			}
 			tok->cur = tok->buf + cur;
-#ifndef macintosh
 			/* replace "\r\n" with "\n" */
 			/* For Mac we leave the \r, giving a syntax error */
 			pt = tok->inp - 2;
@@ -793,7 +792,6 @@ tok_nextc(register struct tok_state *tok)
 				*pt = '\0';
 				tok->inp = pt;
 			}
-#endif
 		}
 		if (tok->done != E_OK) {
 			if (tok->prompt != NULL)
@@ -1185,15 +1183,6 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 		return NEWLINE;
 	}
 	
-#ifdef macintosh
-	if (c == '\r') {
-		PySys_WriteStderr(
-		  "File contains \\r characters (incorrect line endings?)\n");
-		tok->done = E_TOKEN;
-		tok->cur = tok->inp;
-		return ERRORTOKEN;
-	}
-#endif	
 	/* Period or number starting with period? */
 	if (c == '.') {
 		c = tok_nextc(tok);

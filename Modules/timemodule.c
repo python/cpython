@@ -6,12 +6,7 @@
 
 #include <ctype.h>
 
-#ifdef macintosh
-#include <time.h>
-#include <OSUtils.h>
-#else
 #include <sys/types.h>
-#endif
 
 #ifdef QUICKWIN
 #include <io.h>
@@ -88,37 +83,6 @@ static double floattime(void);
 
 /* For Y2K check */
 static PyObject *moddict;
-
-#ifdef macintosh
-/* Our own timezone. We have enough information to deduce whether
-** DST is on currently, but unfortunately we cannot put it to good
-** use because we don't know the rules (and that is needed to have
-** localtime() return correct tm_isdst values for times other than
-** the current time. So, we cop out and only tell the user the current
-** timezone.
-*/
-static long timezone;
-
-static void
-initmactimezone(void)
-{
-	MachineLocation	loc;
-	long		delta;
-
-	ReadLocation(&loc);
-
-	if (loc.latitude == 0 && loc.longitude == 0 && loc.u.gmtDelta == 0)
-		return;
-
-	delta = loc.u.gmtDelta & 0x00FFFFFF;
-
-	if (delta & 0x00800000)
-		delta |= 0xFF000000;
-
-	timezone = -delta;
-}
-#endif /* macintosh */
-
 
 static PyObject *
 time_time(PyObject *self, PyObject *args)
@@ -636,17 +600,6 @@ void inittimezone(PyObject *m) {
 		}
 	}
 #else
-#ifdef macintosh
-	/* The only thing we can obtain is the current timezone
-	** (and whether dst is currently _active_, but that is not what
-	** we're looking for:-( )
-	*/
-	initmactimezone();
-	PyModule_AddIntConstant(m, "timezone", timezone);
-	PyModule_AddIntConstant(m, "altzone", timezone);
-	PyModule_AddIntConstant(m, "daylight", 0);
-	PyModule_AddObject(m, "tzname", Py_BuildValue("(zz)", "", ""));
-#endif /* macintosh */
 #endif /* HAVE_STRUCT_TM_TM_ZONE */
 #ifdef __CYGWIN__
 	tzset();
@@ -829,15 +782,6 @@ floatsleep(double secs)
 		}
 	}
 	Py_END_ALLOW_THREADS
-#elif defined(macintosh)
-#define MacTicks	(* (long *)0x16A)
-	long deadline;
-	deadline = MacTicks + (long)(secs * 60.0);
-	while (MacTicks < deadline) {
-		/* XXX Should call some yielding function here */
-		if (PyErr_CheckSignals())
-			return -1;
-	}
 #elif defined(__WATCOMC__) && !defined(__QNX__)
 	/* XXX Can't interrupt this sleep */
 	Py_BEGIN_ALLOW_THREADS
