@@ -8,6 +8,9 @@ Core
 
 Library
 
++ A new function, imp.lock_held(), returns 1 when the import lock is
+  currently held.  See the docs for the imp module.
+
 + pickle, cPickle and marshal on 32-bit platforms can now correctly read
   dumps containing ints written on platforms where Python ints are 8 bytes.
   When read on a box where Python ints are 4 bytes, such values are
@@ -16,6 +19,12 @@ Library
 Tools
 
 Build
+
+API
+
++ XXX Say something about Neil's GC rework, and that extensions that
+  don't upgrade to the new scheme will still compile but not actually
+  participate in GC.
 
 New platforms
 
