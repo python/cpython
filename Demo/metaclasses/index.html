@@ -27,7 +27,7 @@ allowing the Python class syntax to be used to define other class-like
 entities.  Don Beaudry has used this in his infamous <A
 HREF="http://maigret.cog.brown.edu/pyutil/">MESS</A> package; Jim
 Fulton has used it in his <A
-HREF="http://www.digicool.com/papers/ExtensionClass.html">Extension
+HREF="http://www.digicool.com/releases/ExtensionClass/">Extension
 Classes</A> package.  (It has also been referred to as the ``Don
 Beaudry <i>hack</i>,'' but that's a misnomer.  There's nothing hackish
 about it -- in fact, it is rather elegant and deep, even though
@@ -62,7 +62,7 @@ type of the base class is callable.''
 
 <P>(Types are not classes, by the way.  See questions 4.2, 4.19 and in
 particular 6.22 in the <A
-HREF="http://grail.cnri.reston.va.us/cgi-bin/faqw.py" >Python FAQ</A>
+HREF="http://www.python.org/cgi-bin/faqw.py" >Python FAQ</A>
 for more on this topic.)
 
 <P>
@@ -193,7 +193,7 @@ C = B.__class__('C', (B,), {'a': 1, 'b': 2})
 
 This is exactly the same as before except that instead of type(B),
 B.__class__ is invoked.  If you have read <A HREF=
-"http://grail.cnri.reston.va.us/cgi-bin/faqw.py?req=show&file=faq06.022.htp"
+"http://www.python.org/cgi-bin/faqw.py?req=show&file=faq06.022.htp"
 >FAQ question 6.22</A> you will understand that while there is a big
 technical difference between type(B) and B.__class__, they play the
 same role at different abstraction levels.  And perhaps at some point
