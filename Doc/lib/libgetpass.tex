@@ -1,0 +1,31 @@
+\section{\module{getpass}
+         --- Portable password reading.}
+
+\declaremodule{standard}{getpass}
+\moduleauthor{Piers Lauder}{piers@cs.su.oz.au}
+% Windows support by Guido van Rossum.
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+
+\modulesynopsis{Portable reading of passwords and retrieval of the userid.}
+
+
+The \module{getpass} module provides two functions:
+
+
+\begin{funcdesc}{getpass}{\optional{prompt}}
+  Prompt the user for a password without echoing.  The user is
+  prompted using the string \var{prompt}, which defaults to
+  \code{'Password: '}.
+\end{funcdesc}
+
+
+\begin{funcdesc}{getuser}{}
+  Return the ``login name'' of the user.
+
+  This function checks the environment variables \envvar{LOGNAME},
+  \envvar{USER}, \envvar{LNAME} and \envvar{USERNAME}, in order, and
+  returns the value of the first one which is set to a non-empty
+  string.  If none are set, the login name from the password database
+  is returned on systems which support the \module{pwd} module,
+  otherwise, an exception is raised.
+\end{funcdesc}
