@@ -109,6 +109,17 @@ def _better_reduce(obj):
         dictitems = obj.iteritems()
     return __newobj__, (cls,) + args, state, listitems, dictitems
 
+# Extended reduce:
+
+def _reduce_ex(obj, proto=0):
+    obj_reduce = getattr(obj, "__reduce__", None)
+    if obj_reduce and obj.__class__.__reduce__ is not object.__reduce__:
+        return obj_reduce()
+    elif proto < 2:
+        return _reduce(obj)
+    else:
+        return _better_reduce(obj)
+
 def _slotnames(cls):
     """Return a list of slot names for a given class.
 

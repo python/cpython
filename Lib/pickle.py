@@ -304,21 +304,20 @@ class Pickler:
 
         # Check copy_reg.dispatch_table
         reduce = dispatch_table.get(t)
-        if not reduce:
-            # Check for a __reduce__ method.
-            # Subtle: get the unbound method from the class, so that
-            # protocol 2 can override the default __reduce__ that all
-            # classes inherit from object.  This has the added
-            # advantage that the call always has the form reduce(obj)
-            reduce = getattr(t, "__reduce__", None)
-            if self.proto >= 2:
-                # Protocol 2 can do better than the default __reduce__
-                if reduce is object.__reduce__:
-                    reduce = _better_reduce
-            if not reduce:
-                raise PicklingError("Can't pickle %r object: %r" %
-                                    (t.__name__, obj))
-        rv = reduce(obj)
+        if reduce:
+            rv = reduce(obj)
+        else:
+            # Check for a __reduce_ex__ method, fall back to __reduce__
+            reduce = getattr(obj, "__reduce_ex__", None)
+            if reduce:
+                rv = reduce(self.proto)
+            else:
+                reduce = getattr(obj, "__reduce__", None)
+                if reduce:
+                    rv = reduce()
+                else:
+                    raise PicklingError("Can't pickle %r object: %r" %
+                                        (t.__name__, obj))
 
         # Check for string returned by reduce(), meaning "save as global"
         if type(rv) is StringType:

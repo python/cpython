@@ -2441,11 +2441,15 @@ static PyGetSetDef object_getsets[] = {
 };
 
 static PyObject *
-object_reduce(PyObject *self, PyObject *args)
+object_reduce_ex(PyObject *self, PyObject *args)
 {
-	/* Call copy_reg._reduce(self) */
+	/* Call copy_reg._reduce_ex(self, proto) */
 	static PyObject *copy_reg_str;
 	PyObject *copy_reg, *res;
+	int proto = 0;
+
+	if (!PyArg_ParseTuple(args, "|i:__reduce_ex__", &proto))
+		return NULL;
 
 	if (!copy_reg_str) {
 		copy_reg_str = PyString_InternFromString("copy_reg");
@@ -2455,13 +2459,15 @@ object_reduce(PyObject *self, PyObject *args)
 	copy_reg = PyImport_Import(copy_reg_str);
 	if (!copy_reg)
 		return NULL;
-	res = PyEval_CallMethod(copy_reg, "_reduce", "(O)", self);
+	res = PyEval_CallMethod(copy_reg, "_reduce_ex", "(Oi)", self, proto);
 	Py_DECREF(copy_reg);
 	return res;
 }
 
 static PyMethodDef object_methods[] = {
-	{"__reduce__", object_reduce, METH_NOARGS,
+	{"__reduce_ex__", object_reduce_ex, METH_VARARGS,
+	 PyDoc_STR("helper for pickle")},
+	{"__reduce__", object_reduce_ex, METH_VARARGS,
 	 PyDoc_STR("helper for pickle")},
 	{0}
 };
