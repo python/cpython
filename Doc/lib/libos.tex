@@ -296,6 +296,36 @@ Availability: \UNIX{}.
 \end{funcdesc}
 
 
+For each of these \function{popen()} variants, if \var{bufsize} is
+specified, it specifies the buffer size for the I/O pipes.
+\var{mode}, if provided, should be the string \code{'b'} or
+\code{'t'}; on Windows this is needed to determine whether the file
+objects should be opened in binary or text mode.  The default value
+for \var{mode} is \code{'t'}.
+
+\begin{funcdesc}{popen2}{cmd\optional{, bufsize\optional{, mode}}}
+Executes \var{cmd} as a sub-process.  Returns the file objects
+\code{(\var{child_stdin}, \var{child_stdout})}.
+\versionadded{2.0}
+\end{funcdesc}
+
+\begin{funcdesc}{popen3}{cmd\optional{, bufsize\optional{, mode}}}
+Executes \var{cmd} as a sub-process.  Returns the file objects
+\code{(\var{child_stdin}, \var{child_stdout}, \var{child_stderr})}.
+\versionadded{2.0}
+\end{funcdesc}
+
+\begin{funcdesc}{popen4}{cmd\optional{, bufsize\optional{, mode}}}
+Executes \var{cmd} as a sub-process.  Returns the file objects
+\code{(\var{child_stdin}, \var{child_stdout_and_stderr})}.
+\versionadded{2.0}
+\end{funcdesc}
+
+This functionality is also available in the \refmodule{popen2} module
+using functions of the same names, but the return values of those
+functions have a different order.
+
+
 \subsection{File Descriptor Operations \label{os-fd-ops}}
 
 These functions operate on I/O streams referred to
