@@ -80,15 +80,17 @@ http://default-namespace.org/ root
 http://www.python.org/ns/ elem1
 elem2
 \end{verbatim}
-
 \end{funcdesc}
+
+
+\subsection{XMLParser Objects \label{xmlparser-objects}}
 
 \class{xmlparser} objects have the following methods:
 
 \begin{methoddesc}[xmlparser]{Parse}{data\optional{, isfinal}}
 Parses the contents of the string \var{data}, calling the appropriate
 handler functions to process the parsed data.  \var{isfinal} must be
-true on the final call to this method.    \var{data} can be the empty
+true on the final call to this method.  \var{data} can be the empty
 string at any time.
 \end{methoddesc}
 
@@ -110,6 +112,14 @@ and \function{UnparsedEntityDeclHandler} functions.
 Returns a string containing the base set by a previous call to
 \method{SetBase()}, or \code{None} if 
 \method{SetBase()} hasn't been called.
+\end{methoddesc}
+
+\begin{methoddesc}[xmlparser]{ExternalEntityParserCreate}{context\optional{,
+                                                          encoding}}
+Create a ``child'' parser which can be used to parse an external
+parsed entity referred to by content parsed by the parent parser.  The
+\var{content} parameter should be the string passed to the
+\method{ExternalEntityRefHandler()} handler function, described below.
 \end{methoddesc}
 
 
