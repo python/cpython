@@ -329,6 +329,7 @@ class Telnet:
                     opt = self.rawq_getchar()
                     self.msg('IAC %s %d',
                              c == WILL and 'WILL' or 'WONT', ord(c))
+                    self.sock.send(IAC + DONT + opt)
                 else:
                     self.msg('IAC %s not recognized' % `c`)
         except EOFError: # raised by self.rawq_getchar()
