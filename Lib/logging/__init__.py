@@ -37,14 +37,14 @@ except ImportError:
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "beta"
 __version__ = "0.4.9.6"
-__date__    = "20 October 2004"
+__date__    = "03 February 2005"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
 #---------------------------------------------------------------------------
 
 #
-#_srcfile is used when walking the stack to check when we've got the first
+# _srcfile is used when walking the stack to check when we've got the first
 # caller stack frame.
 #
 if string.lower(__file__[-4:]) in ['.pyc', '.pyo']:
@@ -53,12 +53,23 @@ else:
     _srcfile = __file__
 _srcfile = os.path.normcase(_srcfile)
 
+# next bit filched from 1.5.2's inspect.py
+def currentframe():
+    """Return the frame object for the caller's stack frame."""
+    try:
+        raise 'catch me'
+    except:
+        return sys.exc_traceback.tb_frame.f_back
+
+if hasattr(sys, '_getframe'): currentframe = sys._getframe
+# done filching
+
 # _srcfile is only used in conjunction with sys._getframe().
 # To provide compatibility with older versions of Python, set _srcfile
 # to None if _getframe() is not available; this value will prevent
 # findCaller() from being called.
-if not hasattr(sys, "_getframe"):
-    _srcfile = None
+#if not hasattr(sys, "_getframe"):
+#    _srcfile = None
 
 #
 #_startTime is used as the base when calculating the relative time of events
@@ -1005,16 +1016,16 @@ class Logger(Filterer):
     def findCaller(self):
         """
         Find the stack frame of the caller so that we can note the source
-        file name and line number.
+        file name, line number and function name.
         """
-        f = sys._getframe(1)
+        f = currentframe().f_back
         while 1:
             co = f.f_code
             filename = os.path.normcase(co.co_filename)
             if filename == _srcfile:
                 f = f.f_back
                 continue
-            return filename, f.f_lineno
+            return filename, f.f_lineno, co.co_name
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info):
         """
@@ -1029,9 +1040,9 @@ class Logger(Filterer):
         all the handlers of this logger to handle the record.
         """
         if _srcfile:
-            fn, lno = self.findCaller()
+            fn, lno, func = self.findCaller()
         else:
-            fn, lno = "<unknown file>", 0
+            fn, lno, func = "(unknown file)", 0, "(unknown function)"
         if exc_info:
             if type(exc_info) != types.TupleType:
                 exc_info = sys.exc_info()
