@@ -134,7 +134,7 @@ static void
 reduce(dir)
 	char *dir;
 {
-	int i = strlen(dir);
+	size_t i = strlen(dir);
 	while (i > 0 && !is_sep(dir[i]))
 		--i;
 	dir[i] = '\0';
@@ -172,7 +172,7 @@ join(buffer, stuff)
 	char *buffer;
 	char *stuff;
 {
-	int n, k;
+	size_t n, k;
 	if (is_sep(stuff[0]))
 		n = 0;
 	else {
@@ -207,7 +207,6 @@ search_for_prefix(argv0_path, landmark)
 	char *argv0_path;
 	char *landmark;
 {
-
 	/* Search from argv0_path, until landmark is found */
 	strcpy(prefix, argv0_path);
 	do {
@@ -244,7 +243,7 @@ getpythonregpath(HKEY keyBase, int skipcore)
 	TCHAR *dataBuf = NULL;
 	static const TCHAR keyPrefix[] = _T("Software\\Python\\PythonCore\\");
 	static const TCHAR keySuffix[] = _T("\\PythonPath");
-	int versionLen;
+	size_t versionLen;
 	DWORD index;
 	TCHAR *keyBuf = NULL;
 	TCHAR *keyBufPtr;
@@ -402,7 +401,7 @@ get_progpath()
 			char *delim = strchr(path, DELIM);
 
 			if (delim) {
-				int len = delim - path;
+				size_t len = delim - path;
 				strncpy(progpath, path, len);
 				*(progpath + len) = '\0';
 			}
@@ -429,7 +428,7 @@ calculate_path()
 {
 	char argv0_path[MAXPATHLEN+1];
 	char *buf;
-	int bufsz;
+	size_t bufsz;
 	char *pythonhome = Py_GetPythonHome();
 	char *envpath = getenv("PYTHONPATH");
 
@@ -554,7 +553,7 @@ calculate_path()
 	else {
 		char *p = PYTHONPATH;
 		char *q;
-		int n;
+		size_t n;
 		for (;;) {
 			q = strchr(p, DELIM);
 			if (q == NULL)
