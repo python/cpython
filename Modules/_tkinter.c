@@ -1,7 +1,15 @@
 /* tkintermodule.c -- Interface to libtk.a and libtcl.a.
    Copyright (C) 1994 Steen Lumholt */
 
-#include <Python.h>
+#include "Python.h"
+
+#ifdef macintosh
+#define MAC_TCL
+#endif
+
+#ifdef MAC_TCL
+#define WITH_APPINIT
+#endif
 
 #define PyInit_tkinter inittkinter
 
@@ -10,9 +18,17 @@
 
 extern char *getprogramname ();
 
-/* Internal declarations from tkInt.h.  */ 
+/* Internal declarations from tkInt.h.  */
+#if (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION) >= 4001
+extern int Tk_GetNumMainWindows();
+#else
 extern int tk_NumMainWindows;
+#define Tk_GetNumMainWindows() (tk_NumMainWindows)
+#endif
+
+#if TK_MAJOR_VERSION < 4
 extern struct { Tk_Window win; } *tkMainWindowList;
+#endif
 
 /**** Tkapp Object Declaration ****/
 
@@ -1009,7 +1025,7 @@ Tkapp_MainLoop (self, args)
     return NULL;
 
   quitMainLoop = 0;
-  while (tk_NumMainWindows > threshold && !quitMainLoop && !errorInCmd)
+  while (Tk_GetNumMainWindows() > threshold && !quitMainLoop && !errorInCmd)
     {
       if (PyOS_InterruptOccurred ())
 	{
@@ -1184,7 +1200,7 @@ EventHook ()
       excInCmd = valInCmd = trbInCmd = NULL;
       PyErr_Print ();
      }
-  if (tk_NumMainWindows > 0)
+  if (Tk_GetNumMainWindows() > 0)
     Tk_DoOneEvent (TK_DONT_WAIT);
   return 0;
 }
@@ -1255,3 +1271,21 @@ PyInit_tkinter ()
   if (PyErr_Occurred ())
     Py_FatalError ("can't initialize module tkinter");
 }
+
+#ifdef macintosh
+void
+panic(char * format, ...)
+{
+    va_list varg;
+	
+    va_start(varg, format);
+	
+    vfprintf(stderr, format, varg);
+    (void) fflush(stderr);
+	
+    va_end(varg);
+
+    Py_FatalError("Tcl/Tk panic");
+}
+
+#endif
