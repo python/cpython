@@ -156,6 +156,11 @@ case $ac_sys_system/$ac_sys_release in
   # This should hopefully be fixed in FreeBSD 4.9
   FreeBSD/4.8* | Darwin/6* )
     define_xopen_source=no;;
+  # On AIX 4, mbstate_t is defined only when _XOPEN_SOURCE == 500 but used in
+  # wcsnrtombs() and mbsnrtowcs() even if _XOPEN_SOURCE is not defined or
+  # has another value. By not (re)defining it, the defaults come in place.
+  AIX/4)
+    define_xopen_source=no;;
 esac
 
 if test $define_xopen_source = yes
@@ -2036,7 +2041,12 @@ AC_MSG_CHECKING(DYNLOADFILE)
 if test -z "$DYNLOADFILE"
 then
 	case $ac_sys_system/$ac_sys_release in
-	AIX*) DYNLOADFILE="dynload_aix.o";;
+	AIX*) # Use dynload_shlib.c and dlopen() if we have it; otherwise dynload_aix.c
+	if test "$ac_cv_func_dlopen" = yes
+	then DYNLOADFILE="dynload_shlib.o"
+	else DYNLOADFILE="dynload_aix.o"
+	fi
+	;;
 	BeOS*) DYNLOADFILE="dynload_beos.o";;
 	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
 	Darwin/*) DYNLOADFILE="dynload_next.o";;
