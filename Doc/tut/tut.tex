@@ -1215,7 +1215,7 @@ program requires no action.
 For example:
 
 \begin{verbatim}
->>> while 1:
+>>> while True:
 ...       pass # Busy-wait for keyboard interrupt
 ... 
 \end{verbatim}
@@ -1358,7 +1358,7 @@ arguments than it is defined
 
 \begin{verbatim}
 def ask_ok(prompt, retries=4, complaint='Yes or no, please!'):
-    while 1:
+    while True:
         ok = raw_input(prompt)
         if ok in ('y', 'ye', 'yes'): return 1
         if ok in ('n', 'no', 'nop', 'nope'): return 0
@@ -3076,10 +3076,10 @@ Syntax errors, also known as parsing errors, are perhaps the most common
 kind of complaint you get while you are still learning Python:
 
 \begin{verbatim}
->>> while 1 print 'Hello world'
+>>> while True print 'Hello world'
   File "<stdin>", line 1, in ?
-    while 1 print 'Hello world'
-                ^
+    while True print 'Hello world'
+                   ^
 SyntaxError: invalid syntax
 \end{verbatim}
 
@@ -3149,7 +3149,7 @@ supports); note that a user-generated interruption is signalled by
 raising the \exception{KeyboardInterrupt} exception.
 
 \begin{verbatim}
->>> while 1:
+>>> while True:
 ...     try:
 ...         x = int(raw_input("Please enter a number: "))
 ...         break
@@ -3760,7 +3760,7 @@ later time.  For example:
 
 \begin{verbatim}
 xf = x.f
-while 1:
+while True:
     print xf()
 \end{verbatim}
 
