@@ -1,13 +1,13 @@
 Subject: FAQ: Python -- an object-oriented language
-Newsgroups: comp.lang.misc,comp.answers,news.answers
-Followup-to: comp.lang.misc
+Newsgroups: comp.lang.python,comp.answers,news.answers
+Followup-to: comp.lang.python
 From: guido@cwi.nl (Guido van Rossum)
 Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.5
-Last-modified: 15 Feb 1994
+Version: 1.6
+Last-modified: 11 April 1994
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -29,7 +29,7 @@ Email:	guido@cwi.nl
 The latest version of this FAQ is available by anonymous ftp from
 ftp.cwi.nl [192.16.184.180] in the directory /pub/python, with
 filename python-FAQ.  It will also be posted regularly to the
-newsgroups comp.answers and comp.lang.misc.
+newsgroups comp.answers and comp.lang.python.
 
 Many FAQs, including this one, are available by anonymous ftp from
 rtfm.mit.edu [18.70.0.209] in the directory pub/usenet/news.answers.  
@@ -66,6 +66,7 @@ Here's an overview of the questions per chapter:
   1.6. Q. Is there a book on Python, or will there be one out soon?
   1.7. Q. Are there any published articles about Python that I can quote?
   1.8. Q. How does the Python version numbering scheme work?
+  1.9. Q. Are there other ftp sites that carry Python related material?
 
  2. Python in the real world
   2.1. Q. How many people are using Python?
@@ -84,7 +85,7 @@ Here's an overview of the questions per chapter:
   3.5. Q. The python interpreter complains about options passed to a
        script (after the script name).
   3.6. Q. When building on the SGI, make tries to run python to create
-        glmodule.c, but python hasn't been built or installed yet.
+       glmodule.c, but python hasn't been built or installed yet.
   3.7. Q. Other trouble building Python 1.0.1 on platform X.
 
  4. Programming in Python
@@ -161,35 +162,38 @@ down).
 
 A. Apart from being a computer wizard, I'm also a fan of "Monty
 Python's Flying Circus" (a BBC comedy series from the seventies, in
-case you didn't know).  It occurred to me one day that I needed a name
-that was short, unique, and slightly mysterious.  And I happened to be
-reading some scripts from the series at the time...  So then I decided
-to call my language Python.  But Python is not a joke.  And don't you
-associate it with dangerous reptiles either!
+the -- unlikely -- case you didn't know).  It occurred to me one day
+that I needed a name that was short, unique, and slightly mysterious.
+And I happened to be reading some scripts from the series at the
+time...  So then I decided to call my language Python.  But Python is
+not a joke.  And don't you associate it with dangerous reptiles
+either!
 
 1.3. Q. How do I obtain a copy of the Python source?
 
 A. The latest Python source distribution is always available by
 anonymous ftp from ftp.cwi.nl [192.16.184.180] in the directory
-/pub/python, with filename python<version>.tar.Z.  It is a compressed
-tar file containing the complete C source, LaTeX documentation, Python
-library modules, example programs, and several useful pieces of freely
-distributable software.  This will compile and run out of the box on
-most UNIX platforms.  Currently <version> is 1.0.1.  (See section 7
-for non-UNIX information.)
+/pub/python, with filename python<version>.tar.Z.  (In the future and
+on some archive sites the extension will be .gz, indicating use of
+gzip compression.)  It is a compressed (gzip'ed if the extension is
+.gz) tar file containing the complete C source, LaTeX documentation,
+Python library modules, example programs, and several useful pieces of
+freely distributable software.  This will compile and run out of the
+box on most UNIX platforms.  At the time of writing, <version> is
+1.0.1.  (See section 7 for non-UNIX information.)
 
 1.4. Q. How do I get documentation on Python?
 
 A. The latest Python documentation set is always available by
 anonymous ftp from ftp.cwi.nl [192.16.184.180] in the directory
-/pub/python, with filename pythondoc-ps<version>.tar.Z.  It is a
-compressed tar file containing PostScript files of the reference
-manual, the library manual, and the tutorial.  Currently <version> is
-1.0.1.  (Note that the library manual is the most important one of the
-set, as much of Python's power stems from the standard or built-in
-types, functions and modules, all of which are described here.)
-PostScript for a high-level description of Python is in the file
-nluug-paper.ps.
+/pub/python, with filename pythondoc-ps<version>.tar.Z.  (Or .gz --
+see the previous question.)  It is a compressed (or gzip'ed) tar file
+containing PostScript files of the reference manual, the library
+manual, and the tutorial.  At the time of writing <version> is 1.0.1.
+Note that the library manual is the most important one of the set, as
+much of Python's power stems from the standard or built-in types,
+functions and modules, all of which are described here.  PostScript
+for a high-level description of Python is in the file nluug-paper.ps.
 
 The following sites keep mirrors of the Python distribution:
 
@@ -199,18 +203,18 @@ gatekeeper.dec.com	16.1.0.2	/pub/plan/python/cwi
 ftp.uu.net		192.48.96.9	/languages/python
 ftp.wustl.edu		128.252.135.4	/graphics/graphics/sgi-stuff/python
 ftp.funet.fi		128.214.6.100	/pub/languages/python (old?)
-ftp.fu-berlin.de	130.133.4.50	/pub/unix/languages/python (python* only)
+ftp.fu-berlin.de	130.133.4.50	/pub/unix/languages/python (*python* only)
 
-Or try archie on e.g. python1.0.1.tar.Z to locate the nearest copy of
-that version...
+Or try archie on e.g. python1.0 to locate the nearest copy of that
+version...
 
 1.5. Q. Is there a newsgroup or mailing list devoted to Python?
 
-A. There is no Python newsgroup yet; if you want to post to the net
-about Python, use comp.lang.misc.  There is a mailing list devoted to
-Python; send e-mail to python-list-request@cwi.nl to (un)subscribe.  A
-Request For Discussion about create comp.lang.python has been posted
-to news.groups.  So far it has not elicited any negative responses.
+A. There is a newsgroup, comp.lang.python, and a mailing list.  The
+newsgroup and mailing list are gatewayed into each other -- if you can
+read news it is not necessary to subscribe to the mailing list.  Send
+e-mail to python-list-request@cwi.nl to (un)subscribe to the mailing
+list.
 
 1.6. Q. Is there a book on Python, or will there be one out soon?
 
@@ -254,22 +258,35 @@ incremented for each new release.  Note that in the past, patches have
 added significant changes; in fact the changeover from 0.9.9 to 1.0.0
 was the first time that either A or B changed!
 
+1.9. Q. Are there other ftp sites that carry Python related material?
+
+A. An interesting ftp site for Python users is ftp.markv.com
+(192.122.251.1); the directory pub/python contains a growing
+collection of interesting Python scripts.  To submit a script for
+inclusion, place it together with a readme file (with extension
+.readme) in the publicly writable directory /incoming/python.  This
+service is maintained by Lance Ellinghouse <lance@markv.com>.
+
+
 
 2. Python in the real world
 ===========================
 
 2.1. Q. How many people are using Python?
 
-A. I don't know, but at the last count there were at least 130
-addresses on the Python mailing list (several of which are local
-redistribution lists).  I suspect that many users don't bother
-to subscribe to the list.
+A. I don't know, but the maximum number of simultaneous subscriptions
+to the Python mailing list before it was gatewayed into the newsgroup
+was about 180 (several of which were local redistribution lists).  I
+believe that many active Python users don't bother to subscribe to the
+list, and now that there's a newsgroup the mailing list subscription
+is even less meaningful.
 
 2.2. Q. Have any significant projects been done in Python?
 
 A. Here at CWI (the home of Python), we have written a 20,000 line
 authoring environment for transportable hypermedia presentations, a
-multimedia teleconferencing tool, as well as many smaller programs.
+5,000 line multimedia teleconferencing tool, as well as many many
+smaller programs.
 
 The University of Virginia uses Python to control a virtual reality
 engine.  Contact: Matt Conway <conway@virginia.edu>.
@@ -286,7 +303,7 @@ manangement application.  Contact: <info@sunrise.com>.
 
 Individuals at many other companies are using Python for
 internal development (witness their contributions to the Python
-mailing list).
+mailing list or newsgroup).
 
 Python has also been elected as an extension language by MADE, a
 consortium supported by the European Committee's ESPRIT program and
@@ -632,6 +649,20 @@ you can get the file pythonlib1.0.1.tar.Z from most ftp sites carrying
 Python; this is a subset of the distribution containing just those
 file.
 
+Once you have installed the library, you need to point sys.path to it.
+Assuming the library is in C:\misc\python\lib, the following commands
+will point your Python interpreter to it (note the doubled backslashes
+-- you can also use single forward slashes instead):
+
+	>>> import sys
+	>>> sys.path.insert(0, 'C:\\misc\\python\\lib')
+	>>>
+
+For a more permanent effect, set the environment variable PYTHONPATH,
+as follows (talking to a DOS prompt):
+
+	C> SET PYTHONPATH=C:\misc\python\lib
+
 7.6. Q. Where's the documentation for the Mac or PC version?
 
 A. There isn't any.  The documentation for the Unix version also
@@ -649,3 +680,12 @@ System 7.  I work like this: start the interpreter; edit a module file
 using Sigma Edit; import and test it in the interpreter; edit again in
 Sigma Edit; then use the built-in function reload() to re-read the
 imported module; etc.
+
+Regarding the same question for the PC, Kurt Wm. Hemr writes: "While
+anyone with a pulse could certainly figure out how to do the same on
+MS-Windows, I would recommend the NotGNU Emacs clone for MS-Windows.
+Not only can you easily resave and "reload()" from Python after making
+changes, but since WinNot auto-copies to the clipboard any text you
+select, you can simply select the entire procedure (function) which
+you changed in WinNot, switch to QWPython, and shift-ins to reenter
+the changed program unit."
