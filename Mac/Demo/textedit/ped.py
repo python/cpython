@@ -21,8 +21,14 @@ class TEWindow(ScrolledWindow):
 		r = windowbounds(400, 400)
 		w = Win.NewWindow(r, name, 1, 0, -1, 1, 0x55555555)
 		self.wid = w
-		vr = 0, 0, r[2]-r[0]-15, r[3]-r[1]-15
-		dr = (0, 0, vr[2], 0)
+		x0, y0, x1, y1 = self.wid.GetWindowPort().portRect
+		x0 = x0 + 4
+		y0 = y0 + 4
+		x1 = x1 - 20
+		y1 = y1 - 20
+		vr = dr = x0, y0, x1, y1
+		##vr = 4, 0, r[2]-r[0]-15, r[3]-r[1]-15
+		##dr = (0, 0, vr[2], 0)
 		Qd.SetPort(w)
 		Qd.TextFont(4)
 		Qd.TextSize(9)
