@@ -866,7 +866,8 @@ will not be interpreted, and will be left in the input stream as is.
 \begin{methoddesc}{noutrefresh}{}
 Mark for refresh but wait.  This function updates the data structure
 representing the desired state of the window, but does not force
-an update of the physical screen.
+an update of the physical screen.  To accomplish that, call 
+\function{doupdate()}.
 \end{methoddesc}
 
 \begin{methoddesc}{overlay}{destwin\optional{, sminrow, smincol,
@@ -933,7 +934,7 @@ structures.  Negative values of \var{pminrow}, \var{pmincol},
 \end{methoddesc}
 
 \begin{methoddesc}{scroll}{\optional{lines\code{ = 1}}}
-Scroll the screen upward by \var{lines} lines.
+Scroll the screen or scrolling region upward by \var{lines} lines.
 \end{methoddesc}
 
 \begin{methoddesc}{scrollok}{flag}
