@@ -143,7 +143,7 @@ list2set(list, set, fd2obj)
 			"argument must be an int, or have a fileno() method.");
 			goto finally;
 		}
-#if defined(_MSC_VER) || defined(__BEOS__)
+#if defined(_MSC_VER)
 		max = 0;		     /* not used for Win32 */
 #else  /* !_MSC_VER */
 		if (v < 0 || v >= FD_SETSIZE) {
