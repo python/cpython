@@ -1,9 +1,7 @@
-from Carbon import Ctl
-from Carbon import Controls
-from Carbon import Win
+from Carbon import Ctl, Controls
+from Carbon import Evt, Qd, Win
 import Wbase
-from Carbon import Qd
-from Carbon import Evt
+
 
 class ControlWidget(Wbase.ClickableWidget):
 	
@@ -117,45 +115,21 @@ class Button(ControlWidget):
 		if self._control and self._enabled <> onoff:
 			self._control.HiliteControl((not onoff) and 255)
 			self._enabled = onoff
-			if self._isdefault and self._visible:
-				self.SetPort()
-				self.drawfatframe(onoff)
 	
 	def activate(self, onoff):
 		self._activated = onoff
 		if self._enabled:
 			self._control.HiliteControl((not onoff) and 255)
-			if self._isdefault and self._visible:
-				self.SetPort()
-				self.drawfatframe(onoff)
 	
 	def show(self, onoff):
 		ControlWidget.show(self, onoff)
-		if self._isdefault:
-			self.drawfatframe(onoff and self._enabled)
 	
 	def draw(self, visRgn = None):
 		if self._visible:
 			self._control.Draw1Control()
-			if self._isdefault and self._activated:
-				self.drawfatframe(self._enabled)
-	
-	def drawfatframe(self, onoff):
-		state = Qd.GetPenState()
-		if onoff:
-			Qd.PenPat(Qd.qd.black)
-		else:
-			Qd.PenPat(Qd.qd.white)
-		fatrect = Qd.InsetRect(self._bounds, -4, -4)
-		Qd.PenSize(3, 3)
-		Qd.FrameRoundRect(fatrect, 16, 16)
-		Qd.SetPenState(state)
 	
 	def _setdefault(self, onoff):
 		self._isdefault = onoff
-		if self._control and self._enabled:
-			self.SetPort()
-			self.drawfatframe(onoff)
 	
 	def adjust(self, oldbounds):
 		if self._isdefault:
