@@ -11,7 +11,6 @@ import sys
 sys.stdout = sys.stderr
 
 import os
-import macfs
 import MacOS
 import EasyDialogs
 import buildtools
@@ -36,7 +35,7 @@ def buildapplet():
 	
 	if not sys.argv[1:]:
 		filename = EasyDialogs.AskFileForOpen(message='Select Python source or applet:', 
-			fileTypes=('TEXT', 'APPL'))
+			typeList=('TEXT', 'APPL'))
 		if not filename:
 			return
 		tp, tf = os.path.split(filename)
@@ -86,7 +85,7 @@ def buildapplet():
 			verbose = 'default'
 		# Loop over all files to be processed
 		for filename in args:
-			cr, tp = MacOS.GetCreatorAndType(macfs.FSRef(filename))
+			cr, tp = MacOS.GetCreatorAndType(filename)
 			if tp == 'APPL':
 				buildtools.update(template, filename, dstfilename)
 			else:

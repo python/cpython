@@ -7,29 +7,29 @@ Reading and understanding this code is left as an exercise to the reader.
 """
 
 import MacOS
+import EasyDialogs
 import os
 import string
 import sys
 import types
 import StringIO
-import macfs
 import keyword
 import macresource
 from aetools import unpack
 
 from Carbon.Res import *
 
-DEFAULT_PACKAGEFOLDER=os.path.join(sys.prefix, 'Mac', 'Lib', 'lib-scriptpackages')
+DEFAULT_PACKAGEFOLDER=os.path.join(sys.prefix, 'Lib', 'plat-mac', 'lib-scriptpackages')
 
 def main():
 	if len(sys.argv) > 1:
 		for filename in sys.argv[1:]:
 			processfile(filename)
 	else:
-		fss, ok = macfs.PromptGetFile('Select file with aeut/aete resource:')
-		if not ok:
+		filename = EasyDialogs.AskFileForOpen(message='Select file with aeut/aete resource:')
+		if not filename:
 			sys.exit(0)
-		processfile(fss.as_pathname())
+		processfile(filename)
 
 def processfile(fullname):
 	"""Process all resources in a single file"""
@@ -231,8 +231,7 @@ def compileaete(aete, resinfo, fname):
 	"""Generate code for a full aete resource. fname passed for doc purposes"""
 	[version, language, script, suites] = aete
 	major, minor = divmod(version, 256)
-	fss = macfs.FSSpec(fname)
-	creatorsignature, dummy = fss.GetCreatorType()
+	creatorsignature, dummy = MacOS.GetCreatorAndType(fname)
 	packagename = identify(os.path.splitext(os.path.basename(fname))[0])
 	if language:
 		packagename = packagename+'_lang%d'%language
@@ -240,39 +239,39 @@ def compileaete(aete, resinfo, fname):
 		packagename = packagename+'_script%d'%script
 	if len(packagename) > 27:
 		packagename = packagename[:27]
-	macfs.SetFolder(DEFAULT_PACKAGEFOLDER)
-	fss, ok = macfs.GetDirectory('Create and select package folder for %s'%packagename)
-	if not ok:
+	pathname = EasyDialogs.AskFolder(message='Create and select package folder for %s'%packagename,
+		defaultLocation=DEFAULT_PACKAGEFOLDER)
+	if not pathname:
 		return
-	pathname = fss.as_pathname()
 	packagename = os.path.split(os.path.normpath(pathname))[1]
-	fss, ok = macfs.GetDirectory('Package folder for base suite (usually StdSuites)')
-	if ok:
-		dirname, basepkgname = os.path.split(os.path.normpath(fss.as_pathname()))
+	basepkgname = EasyDialogs.AskFolder(message='Package folder for base suite (usually StdSuites)',
+		defaultLocation=DEFAULT_PACKAGEFOLDER)
+	if basepkgname:
+		dirname, basepkgname = os.path.split(os.path.normpath(basepkgname))
 		if not dirname in sys.path:
 			sys.path.insert(0, dirname)
 		basepackage = __import__(basepkgname)
 	else:
 		basepackage = None
-	macfs.SetFolder(pathname)
 	suitelist = []
 	allprecompinfo = []
 	allsuites = []
 	for suite in suites:
-		code, suite, fss, modname, precompinfo = precompilesuite(suite, basepackage)
+		code, suite, pathname, modname, precompinfo = precompilesuite(suite, basepackage)
 		if not code:
 			continue
 		allprecompinfo = allprecompinfo + precompinfo
-		suiteinfo = suite, fss, modname
+		suiteinfo = suite, pathname, modname
 		suitelist.append((code, modname))
 		allsuites.append(suiteinfo)
 	for suiteinfo in allsuites:
 		compilesuite(suiteinfo, major, minor, language, script, fname, basepackage, allprecompinfo)
-	fss, ok = macfs.StandardPutFile('Package module', '__init__.py')
-	if not ok:
+	initfilename = EasyDialogs.AskFileForSave(message='Package module', 
+		savedFileName='__init__.py')
+	if not initfilename:
 		return
-	fp = open(fss.as_pathname(), 'w')
-	fss.SetCreatorType('Pyth', 'TEXT')
+	fp = open(initfilename, 'w')
+	MacOS.SetCreatorAndType(initfilename, 'Pyth', 'TEXT')
 	fp.write('"""\n')
 	fp.write("Package generated from %s\n"%fname)
 	if resinfo:
@@ -339,11 +338,11 @@ def precompilesuite(suite, basepackage=None):
 	modname = identify(name)
 	if len(modname) > 28:
 		modname = modname[:27]
-	fss, ok = macfs.StandardPutFile('Python output file', modname+'.py')
-	if not ok:
+	pathname = EasyDialogs.AskFileForSave(message='Python output file',
+		savedFileName=modname+'.py')
+	if not pathname:
 		return None, None, None, None, None
 
-	pathname = fss.as_pathname()
 	modname = os.path.splitext(os.path.split(pathname)[1])[0]
 	
 	if basepackage and basepackage._code_to_module.has_key(code):
@@ -375,15 +374,14 @@ def precompilesuite(suite, basepackage=None):
 	
 	precompinfo = objc.getprecompinfo(modname)
 	
-	return code, suite, fss, modname, precompinfo
+	return code, suite, pathname, modname, precompinfo
 
-def compilesuite((suite, fss, modname), major, minor, language, script, fname, basepackage, precompinfo):
+def compilesuite((suite, pathname, modname), major, minor, language, script, fname, basepackage, precompinfo):
 	"""Generate code for a single suite"""
 	[name, desc, code, level, version, events, classes, comps, enums] = suite
 	
-	pathname = fss.as_pathname()
-	fp = open(fss.as_pathname(), 'w')
-	fss.SetCreatorType('Pyth', 'TEXT')
+	fp = open(pathname, 'w')
+	MacOS.SetCreatorAndType(pathname, 'Pyth', 'TEXT')
 	
 	fp.write('"""Suite %s: %s\n' % (ascii(name), ascii(desc)))
 	fp.write("Level %d, version %d\n\n" % (level, version))
@@ -676,9 +674,9 @@ class ObjectCompiler:
 				self.namemappers.append(mapper)
 	
 	def askdefinitionmodule(self, type, code):
-		fss, ok = macfs.PromptGetFile('Where is %s %s declared?'%(type, code))
-		if not ok: return
-		path, file = os.path.split(fss.as_pathname())
+		path = EasyDialogs.AskFileForSave(message='Where is %s %s declared?'%(type, code))
+		if not path: return
+		path, file = os.path.split(path)
 		modname = os.path.splitext(file)[0]
 		if not path in sys.path:
 			sys.path.insert(0, path)

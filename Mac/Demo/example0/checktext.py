@@ -1,15 +1,13 @@
 """checktext - Check that a text file has macintosh-style newlines"""
 
-import macfs
 import sys
 import EasyDialogs
 import string
 
 def main():
-	fsspec, ok = macfs.PromptGetFile('File to check end-of-lines in:', 'TEXT')
-	if not ok:
+	pathname = EasyDialogs.AskFileForOpen(message='File to check end-of-lines in:')
+	if not pathname:
 		sys.exit(0)
-	pathname = fsspec.as_pathname()
 	fp = open(pathname, 'rb')
 	try:
 		data = fp.read()
