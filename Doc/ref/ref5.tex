@@ -422,10 +422,10 @@ series of arguments:
   \production{call}
              {\token{primary} "(" [\token{argument_list} [","]] ")"}
   \production{argument_list}
-             {\token{positional_arguments} ["," \token{keyword_arguments}}
-  \productioncont{   ["," "*" \token{expression} ["," "**" \token{expression}]]]}
-  \productioncont{| \token{keyword_arguments} ["," "*" \token{expression}}
-  \productioncont{                             ["," "**" \token{expression}]]}
+             {\token{positional_arguments} ["," \token{keyword_arguments}
+              ["," "*" \token{expression} ["," "**" \token{expression}]]]}
+  \productioncont{| \token{keyword_arguments} ["," "*" \token{expression}
+                                               ["," "**" \token{expression}]]}
   \productioncont{| "*" \token{expression} ["," "**" \token{expression}]}
   \productioncont{| "**" \token{expression}}
   \production{positional_arguments}
