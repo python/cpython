@@ -53,7 +53,8 @@ textual displays.''')
         # track toggle
         self.__t = Checkbutton(root, text='Track color changes',
                                variable=self.__trackp,
-                               relief=GROOVE)
+                               relief=GROOVE,
+                               command=self.__toggletrack)
         self.__t.pack(fill=X, expand=YES)
         frame = self.__frame = Frame(root)
         frame.pack()
@@ -85,6 +86,7 @@ textual displays.''')
                                 value=(row-2)*2 + col-1)
                 r.grid(row=row, column=col)
                 self.__radios.append(r)
+        self.__toggletrack()
 
     def __quit(self, event=None):
         sys.exit(0)
@@ -98,16 +100,29 @@ textual displays.''')
     def __forceupdate(self, event=None):
         self.__sb.update_views_current()
 
+    def __toggletrack(self, event=None):
+        if self.__trackp.get():
+            state = NORMAL
+            fg = self.__radios[0]['foreground']
+        else:
+            state = DISABLED
+            fg = self.__radios[0]['disabledforeground']
+        for r in self.__radios:
+            r.configure(state=state)
+        for l in self.__labels:
+            l.configure(foreground=fg)
+
     def update_yourself(self, red, green, blue):
-        colorname = ColorDB.triplet_to_rrggbb((red, green, blue))
-        which = self.__which.get()
-        if which == 0:
-            self.__text.configure(foreground=colorname)
-        elif which == 1:
-            self.__text.configure(background=colorname)
-        elif which == 2:
-            self.__text.configure(selectforeground=colorname)
-        elif which == 3:
-            self.__text.configure(selectbackground=colorname)
-        elif which == 5:
-            self.__text.configure(insertbackground=colorname)
+        if self.__trackp.get():
+            colorname = ColorDB.triplet_to_rrggbb((red, green, blue))
+            which = self.__which.get()
+            if which == 0:
+                self.__text.configure(foreground=colorname)
+            elif which == 1:
+                self.__text.configure(background=colorname)
+            elif which == 2:
+                self.__text.configure(selectforeground=colorname)
+            elif which == 3:
+                self.__text.configure(selectbackground=colorname)
+            elif which == 5:
+                self.__text.configure(insertbackground=colorname)
