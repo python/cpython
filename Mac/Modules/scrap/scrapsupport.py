@@ -27,17 +27,19 @@ includestuff = includestuff + """
 /*
 ** Generate ScrapInfo records
 */
-PyObject *SCRRec_New(itself)
+static PyObject *
+SCRRec_New(itself)
 	ScrapStuff *itself;
 {
 
 	return Py_BuildValue("lO&hhO&", itself->scrapSize,
 		ResObj_New, itself->scrapHandle, itself->scrapCount, itself->scrapState,
-		PyMac_BuildStr255, itself->scrapName;
+		PyMac_BuildStr255, itself->scrapName);
 }
 """
 
-ScrapStuffPtr = OpaqueType('ScrapStuff', 'SCRRec')
+ScrapStuffPtr = OpaqueByValueType('ScrapStuffPtr', 'SCRRec')
+ScrapFlavorType = OSTypeType('ScrapFlavorType')
 putscrapbuffer = FixedInputBufferType('void *')
 
 # Create the generator groups and link them
