@@ -13,9 +13,9 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "Python.h"
 
 #ifdef MS_WIN32
-extern void PyWinFreeze_ExeInit();
-extern void PyWinFreeze_ExeTerm();
-extern int PyInitFrozenExtensions();
+extern void PyWinFreeze_ExeInit(void);
+extern void PyWinFreeze_ExeTerm(void);
+extern int PyInitFrozenExtensions(void);
 #endif
 
 #ifdef HAVE_UNISTD_H

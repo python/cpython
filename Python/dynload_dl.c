@@ -16,7 +16,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "importdl.h"
 
 
-extern char *Py_GetProgramName();
+extern char *Py_GetProgramName(void);
 
 const struct filedescr _PyImport_DynLoadFiletab[] = {
 	{".o", "rb", C_EXTENSION},
