@@ -337,6 +337,9 @@ Tkapp_New(screenName, baseName, className, interactive)
 
 	v->interp = Tcl_CreateInterp();
 
+	/* Delete the 'exit' command, which can screw things up */
+	Tcl_DeleteCommand(v->interp, "exit");
+
 	if (screenName != NULL)
 		Tcl_SetVar2(v->interp, "env", "DISPLAY",
 			    screenName, TCL_GLOBAL_ONLY);
