@@ -47,10 +47,6 @@ chdir into each subdirectory in turn and run make there manually
 (do the Modules subdirectory last!).  If you run into trouble, first
 see the section Troubleshooting later in this file.
 
-EXCEPTIONS: on SVR4 derived systems, you need to pass the configure
-script the option --with-svr4.  See below for more options you can
-pass to the configure script.
-
 AIX users: read the file Misc/AIX-NOTES before trying to build.
 
 HP-UX users: read the file Misc/HPUX-NOTES if you want to be able to
@@ -117,14 +113,11 @@ options to the configure script:
 
 - The configure script uses gcc (the GNU C compiler) if it finds it.
 If you don't want this, or if this compiler is installed but broken on
-your platform, pass "CC=cc" (or whatever the name of the proper C
-compiler is) in the environment.
-
-- On System V, Release 4 derived systems (e.g. SOLARIS 2, but not
-IRIX 5) you need to call the configure script with the option
---with-svr4.  This is needed so the libraries -lnsl and -lsocket are
-found.  (On some other systems, e.g. IRIX 5, these libraries exist but
-are incompatible with other system libraries such as X11 and GL.)
+your platform, pass the option --without-gcc.  You can also pass
+"CC=cc" (or whatever the name of the proper C compiler is) in the
+environment, but the advantage of using --without-gcc is that this
+option is remembered by the config.status script for its --recheck
+option.
 
 - On SCO, a number of notes apply:
 
