@@ -10,9 +10,28 @@ The source compiles and runs out of the box on more platforms than
 ever -- including Windows NT.  Makefiles or projects for a variety of
 non-UNIX platforms are provided.
 
-Apology: many new features are badly documented or not at all.  I had
+APOLOGY: some new features are badly documented or not at all.  I had
 the choice -- postpone the new release indefinitely, or release it
-now, with working code but some undocumented areas...
+now, with working code but some undocumented areas.  The problem with
+postponing the release is that people continue to suffer from existing
+bugs, and send me patches based on the previous release -- which I
+can't apply directly because my own source has changed.  Also, some
+new modules (like signal) have been ready for release for quite some
+time, and people are anxiously waiting for them.  In the case of
+signal, the interface is simple enough to figure out without
+documentation (if you're anxious enough :-).  In this case it was not
+simple to release the module on its own, since it relies on many small
+patches elsewhere in the source.
+
+For most new Python modules, the source code contains comments that
+explain how to use them.  Documentation for the Tk interface, written
+by Matt Conway, is available as tkinter-doc.tar.gz from the Python
+home and mirror ftp sites (see Misc/FAQ for ftp addresses).  For the
+new operator overloading facilities, have a look at Demo/classes:
+Complex.py and Rat.py show how to implement a numeric type without and
+with __coerce__ method.  Also have a look at the end of the Tutorial
+document (Doc/tut.tex).  If you're still confused: use the newsgroup
+or mailing list.
 
 
 New language features:
