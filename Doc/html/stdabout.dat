@@ -28,8 +28,8 @@
 <h2>Comments and Questions</h2>
 
 <p> General comments and questions regarding this document should
-  be sent by email to <a href="mailto:python-docs@python.org"
-    >python-docs@python.org</a>.  If you find specific errors in
+  be sent by email to <a href="mailto:docs@python.org"
+    >docs@python.org</a>.  If you find specific errors in
   this document, either in the content or the presentation, please
   report the bug at the <a
     href="http://sourceforge.net/bugs/?group_id=5470">Python Bug

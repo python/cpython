@@ -1,5 +1,5 @@
 This message is being sent in response to your message to the Python
-documentation maintainers (python-docs@python.org).  Your message will
+documentation maintainers (docs@python.org).  Your message will
 be handled by a human, but this message serves to answer the most
 common questions sent to this address.
 
@@ -96,7 +96,7 @@ Answers to the Questions
 
       Start by reading the documentation for XXX.  If the
       documentation doesn't make sense or seems incomplete, please
-      file a specific bug report to python-docs@python.org (the
+      file a specific bug report to docs@python.org (the
       address you sent your question to).  Otherwise, you probably
       sent your question to the wrong place (which does not preclude
       an answer, if I know it).
@@ -124,14 +124,14 @@ Answers to the Questions
 	  http://www.jython.org/
 
       Chances are very good that the person who answers questions
-      posted to python-docs@python.org doesn't use Jython very often, 
+      posted to docs@python.org doesn't use Jython very often, 
       and won't be able to give you a meaningful answer beyond "Look
       at the Jython website."  Sorry, I don't have *all* the answers!
 
   8.  I found a bug in the documentation, who should I tell?
 
       If you're reading this, you've found the right address!  Send
-      all documentation bug reports to python-docs@python.org.  If
+      all documentation bug reports to docs@python.org.  If
       you prefer to use a Web-based reporting mechanism, you can use
       the bug database at http://www.python.org/python-bugs/.
 
