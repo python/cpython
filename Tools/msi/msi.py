@@ -831,10 +831,6 @@ def add_files(db):
     root.add_file("PCBuild/python.exe")
     root.start_component("pythonw.exe", keyfile="pythonw.exe")
     root.add_file("PCBuild/pythonw.exe")
-    root.start_component("extpy.exe", feature=ext_feature, keyfile="extpy.exe")
-    root.add_file("extpy.exe", src="PCBuild/python.exe")
-    root.start_component("extpyw.exe", feature=ext_feature, keyfile="extpyw.exe")
-    root.add_file("extpyw.exe", src="PCBuild/pythonw.exe")
 
     # msidbComponentAttributesSharedDllRefCount = 8, see "Component Table"
     dlldir = PyDirectory(db, cab, root, srcdir, "DLLDIR", ".")
