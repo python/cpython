@@ -16,10 +16,26 @@ import os
 import gestalt
 
 MAKEFILE='/System/Library/Frameworks/Python.framework/Versions/2.3/lib/python2.3/config/Makefile'
-OLD_LDSHARED='LDSHARED=\t$(CC) $(LDFLAGS) -bundle -framework $(PYTHONFRAMEWORK)\n'
-OLD_BLDSHARED='B' + OLD_LDSHARED
-NEW_LDSHARED='LDSHARED=\tenv MACOSX_DEPLOYMENT_TARGET=10.3 $(CC) $(LDFLAGS) -bundle -undefined dynamic_lookup\n'
-NEW_BLDSHARED='B' + NEW_LDSHARED
+CHANGES=((
+    'LDSHARED=\t$(CC) $(LDFLAGS) -bundle -framework $(PYTHONFRAMEWORK)\n',
+    'LDSHARED=\t$(CC) $(LDFLAGS) -bundle -undefined dynamic_lookup\n'
+    ),(
+    'BLDSHARED=\t$(CC) $(LDFLAGS) -bundle -framework $(PYTHONFRAMEWORK)\n',
+    'BLDSHARED=\t$(CC) $(LDFLAGS) -bundle -undefined dynamic_lookup\n'
+    ),(
+    'CC=\t\tgcc\n',
+    'CC=\t\t/System/Library/Frameworks/Python.framework/Versions/2.3/lib/python2.3/config/PantherPythonFix/run-gcc\n'
+    ),(
+    'CXX=\t\tc++\n',
+    'CXX=\t\t/System/Library/Frameworks/Python.framework/Versions/2.3/lib/python2.3/config/PantherPythonFix/run-g++\n'
+))
+
+GCC_SCRIPT='/System/Library/Frameworks/Python.framework/Versions/2.3/lib/python2.3/config/PantherPythonFix/run-gcc'
+GXX_SCRIPT='/System/Library/Frameworks/Python.framework/Versions/2.3/lib/python2.3/config/PantherPythonFix/run-g++'
+SCRIPT="""#!/bin/sh
+export MACOSX_DEPLOYMENT_TARGET=10.3
+exec %s "${@}"
+"""
 
 def findline(lines, start):
     """return line starting with given string or -1"""
@@ -33,28 +49,19 @@ def fix(makefile, do_apply):
     fixed = False
     lines = open(makefile).readlines()
     
-    i = findline(lines, 'LDSHARED=')
-    if i < 0:
-        print 'fixapplepython23: Python installation not fixed (appears broken, no LDSHARED)'
-        return 2
-    if lines[i] == OLD_LDSHARED:
-        lines[i] = NEW_LDSHARED
+    for old, new in CHANGES:
+        i = findline(lines, new)
+        if i >= 0:
+            # Already fixed
+            continue
+        i = findline(lines, old)
+        if i < 0:
+            print 'fixapplepython23: Python installation not fixed (appears broken)'
+            print 'fixapplepython23: missing line:', old
+            return 2
+        lines[i] = new
         fixed = True
-    elif lines[i] != NEW_LDSHARED:
-        print 'fixapplepython23: Python installation not fixed (appears modified, unexpected LDSHARED)'
-        return 2
-        
-    i = findline(lines, 'BLDSHARED=')
-    if i < 0:
-        print 'fixapplepython23: Python installation not fixed (appears broken, no BLDSHARED)'
-        return 2
-    if lines[i] == OLD_BLDSHARED:
-        lines[i] = NEW_BLDSHARED
-        fixed = True
-    elif lines[i] != NEW_BLDSHARED:
-        print 'fixapplepython23: Python installation not fixed (appears modified, unexpected BLDSHARED)'
-        return 2
-        
+       
     if fixed:
         if do_apply:
             print 'fixapplepython23: Fix to Apple-installed Python 2.3 applied'
@@ -68,6 +75,17 @@ def fix(makefile, do_apply):
         print 'fixapplepython23: No fix needed, appears to have been applied before'
         return 0
         
+def makescript(filename, compiler):
+    """Create a wrapper script for a compiler"""
+    dirname = os.path.split(filename)[0]
+    if not os.access(dirname, os.X_OK):
+        os.mkdir(dirname, 0755)
+    fp = open(filename, 'w')
+    fp.write(SCRIPT % compiler)
+    fp.close()
+    os.chmod(filename, 0755)
+    print 'fixapplepython23: Created', filename
+    
 def main():
     # Check for -n option
     if len(sys.argv) > 1 and sys.argv[1] == '-n':
@@ -86,7 +104,13 @@ def main():
     if do_apply and not os.access(MAKEFILE, os.W_OK):
         print 'fixapplepython23: No write permission, please run with "sudo"'
         sys.exit(2)
-    # And finally fix it
+    # Create the shell scripts
+    if do_apply:
+        if not os.access(GCC_SCRIPT, os.X_OK):
+            makescript(GCC_SCRIPT, "gcc")
+        if not os.access(GXX_SCRIPT, os.X_OK):
+            makescript(GXX_SCRIPT, "g++")
+    #  Finally fix the makefile
     rv = fix(MAKEFILE, do_apply)
     sys.exit(rv)
     
