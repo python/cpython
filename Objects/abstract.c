@@ -31,7 +31,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define SPAM printf("line %d\n",__LINE__)
 
 static PyObject *
-Py_ReturnMethodError(char *name)
+Py_ReturnMethodError(name)
+  char *name;
 {
   if(! name) name = "Unknown Error";
   PyErr_SetString(PyExc_AttributeError,name);
@@ -48,7 +49,10 @@ Py_ReturnNullError()
 }
 
 int 
-PyObject_Cmp(PyObject *o1, PyObject *o2, int *result)
+PyObject_Cmp(o1, o2, result)
+  PyObject *o1;
+  PyObject *o2;
+  int *result;
 {
   int r;
 
@@ -61,7 +65,8 @@ PyObject_Cmp(PyObject *o1, PyObject *o2, int *result)
 
 #if 0 /* Already in object.c */
 int
-PyCallable_Check(PyObject *x)
+PyCallable_Check(x)
+  PyObject *x;
 {
 	if (x == NULL)
 		return 0;
@@ -74,7 +79,7 @@ PyCallable_Check(PyObject *x)
 	if (PyInstance_Check(x)) {
 		PyObject *call = PyObject_GetAttrString(x, "__call__");
 		if (call == NULL) {
-			err_clear();
+			PyErr_Clear();
 			return 0;
 		}
 		/* Could test recursively but don't, for fear of endless
@@ -87,7 +92,8 @@ PyCallable_Check(PyObject *x)
 #endif
 
 PyObject *
-PyObject_Type(PyObject *o)
+PyObject_Type(o)
+	PyObject *o;
 {
 	PyObject *v;
 
@@ -98,7 +104,8 @@ PyObject_Type(PyObject *o)
 }
 
 int
-PyObject_Length(PyObject *o)
+PyObject_Length(o)
+  PyObject *o;
 {
   PySequenceMethods *m;
 
@@ -111,7 +118,9 @@ PyObject_Length(PyObject *o)
 }
 
 PyObject *
-PyObject_GetItem(PyObject *o, PyObject *key)
+PyObject_GetItem(o, key)
+  PyObject *o;
+  PyObject *key;
 {
   PyMappingMethods *m;
 
@@ -128,7 +137,10 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 }
 
 int
-PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
+PyObject_SetItem(o, key, value)
+  PyObject *o;
+  PyObject *key;
+  PyObject *value;
 {
   PyMappingMethods *m;
 
@@ -144,7 +156,8 @@ PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
 }
 
 int 
-PyNumber_Check(PyObject *o)
+PyNumber_Check(o)
+  PyObject *o;
 {
   return o && o->ob_type->tp_as_number;
 }
@@ -514,7 +527,8 @@ PyNumber_Invert(v)
 }
 
 PyObject *
-PyNumber_Absolute(PyObject *o)
+PyNumber_Absolute(o)
+  PyObject *o;
 {
   PyNumberMethods *m;
 
@@ -526,7 +540,8 @@ PyNumber_Absolute(PyObject *o)
 }
 
 PyObject *
-PyNumber_Int(PyObject *o)
+PyNumber_Int(o)
+  PyObject *o;
 {
   PyNumberMethods *m;
 
@@ -538,7 +553,8 @@ PyNumber_Int(PyObject *o)
 }
 
 PyObject *
-PyNumber_Long(PyObject *o)
+PyNumber_Long(o)
+  PyObject *o;
 {
   PyNumberMethods *m;
 
@@ -550,7 +566,8 @@ PyNumber_Long(PyObject *o)
 }
 
 PyObject *
-PyNumber_Float(PyObject *o)
+PyNumber_Float(o)
+  PyObject *o;
 {
   PyNumberMethods *m;
 
@@ -563,13 +580,15 @@ PyNumber_Float(PyObject *o)
 
 
 int 
-PySequence_Check(PyObject *o)
+PySequence_Check(o)
+  PyObject *o;
 {
   return o && o->ob_type->tp_as_sequence;
 }
 
 int 
-PySequence_Length(PyObject *s)
+PySequence_Length(s)
+  PyObject *s;
 {
   PySequenceMethods *m;
 
@@ -583,7 +602,9 @@ PySequence_Length(PyObject *s)
 }
 
 PyObject *
-PySequence_Concat(PyObject *s, PyObject *o)
+PySequence_Concat(s, o)
+  PyObject *s;
+  PyObject *o;
 {
   PySequenceMethods *m;
 
@@ -596,7 +617,9 @@ PySequence_Concat(PyObject *s, PyObject *o)
 }
 
 PyObject *
-PySequence_Repeat(PyObject *o, int count)
+PySequence_Repeat(o, count)
+  PyObject *o;
+  int count;
 {
   PySequenceMethods *m;
 
@@ -609,7 +632,9 @@ PySequence_Repeat(PyObject *o, int count)
 }
 
 PyObject *
-PySequence_GetItem(PyObject *s, int i)
+PySequence_GetItem(s, i)
+  PyObject *s;
+  int i;
 {
   PySequenceMethods *m;
   int l;
@@ -627,7 +652,10 @@ PySequence_GetItem(PyObject *s, int i)
 }
 
 PyObject *
-PySequence_GetSlice(PyObject *s, int i1, int i2)
+PySequence_GetSlice(s, i1, i2)
+  PyObject *s;
+  int i1;
+  int i2;
 {
   PySequenceMethods *m;
   int l;
@@ -646,7 +674,10 @@ PySequence_GetSlice(PyObject *s, int i1, int i2)
 }
 
 int
-PySequence_SetItem(PyObject *s, int i, PyObject *o)
+PySequence_SetItem(s, i, o)
+  PyObject *s;
+  int i;
+  PyObject *o;
 {
   PySequenceMethods *m;
   int l;
@@ -665,7 +696,11 @@ PySequence_SetItem(PyObject *s, int i, PyObject *o)
 }
 
 int 
-PySequence_SetSlice(PyObject *s, int i1, int i2, PyObject *o)
+PySequence_SetSlice(s, i1, i2, o)
+  PyObject *s;
+  int i1;
+  int i2;
+  PyObject *o;
 {
   PySequenceMethods *m;
   int l;
@@ -684,7 +719,8 @@ PySequence_SetSlice(PyObject *s, int i1, int i2, PyObject *o)
 }
 
 PyObject *
-PySequence_Tuple(PyObject *s)
+PySequence_Tuple(s)
+  PyObject *s;
 {
   int l, i;
   PyObject *t, *item;
@@ -715,7 +751,9 @@ PySequence_Tuple(PyObject *s)
 }
 
 int 
-PySequence_Count(PyObject *s, PyObject *o)
+PySequence_Count(s, o)
+  PyObject *s;
+  PyObject *o;
 {
   int l, i, n=0, not_equal, err;
   PyObject *item;
@@ -735,7 +773,9 @@ PySequence_Count(PyObject *s, PyObject *o)
 }
 
 int 
-PySequence_In(PyObject *s, PyObject *o)
+PySequence_In(s, o)
+  PyObject *s;
+  PyObject *o;
 {
   int l, i, not_equal, err;
   PyObject *item;
@@ -755,7 +795,9 @@ PySequence_In(PyObject *s, PyObject *o)
 }
 
 int 
-PySequence_Index(PyObject *s, PyObject *o)
+PySequence_Index(s, o)
+  PyObject *s;
+  PyObject *o;
 {
   int l, i, n=0, not_equal, err;
   PyObject *item;
@@ -775,13 +817,15 @@ PySequence_Index(PyObject *s, PyObject *o)
 }
 
 int 
-PyMapping_Check(PyObject *o)
+PyMapping_Check(o)
+  PyObject *o;
 {
   return o && o->ob_type->tp_as_mapping;
 }
 
 int 
-PyMapping_Length(PyObject *s)
+PyMapping_Length(s)
+  PyObject *s;
 {
   PyMappingMethods *m;
 
@@ -795,30 +839,34 @@ PyMapping_Length(PyObject *s)
 }
 
 int 
-PyMapping_HasKeyString(PyObject *o, char *key)
+PyMapping_HasKeyString(o, key)
+  PyObject *o;
+  char *key;
 {
   PyObject *v;
 
   v=PyMapping_GetItemString(o,key);
   if(v) return 1;
-  err_clear();
+  PyErr_Clear();
   return 0;
 }
 
 int 
-PyMapping_HasKey(PyObject *o, PyObject *key)
+PyMapping_HasKey(o, key)
+  PyObject *o;
+  PyObject *key;
 {
   PyObject *v;
 
   v=PyObject_GetItem(o,key);
   if(v) return 1;
-  err_clear();
+  PyErr_Clear();
   return 0;
 }
 
 PyObject *
-PyObject_CallObject(o,a)
-     PyObject *o, *a;
+PyObject_CallObject(o, a)
+  PyObject *o, *a;
 {
   PyObject *r;
 
@@ -894,6 +942,7 @@ PyObject_CallMethod(va_alist) va_dcl
   va_start(va, format);
 #else
   PyObject *o;
+  char *name;
   char *format;
   va_start(va);
   o      = va_arg(va, PyObject *);
@@ -947,7 +996,9 @@ PyObject_CallMethod(va_alist) va_dcl
 }
 
 PyObject *
-PyMapping_GetItemString(PyObject *o, char *key)
+PyMapping_GetItemString(o, key)
+  PyObject *o;
+  char *key;
 {
   PyObject *okey, *r;
 
@@ -959,7 +1010,10 @@ PyMapping_GetItemString(PyObject *o, char *key)
 }
 
 int
-PyMapping_SetItemString(PyObject *o, char *key, PyObject *value)
+PyMapping_SetItemString(o, key, value)
+ PyObject *o;
+ char *key;
+ PyObject *value;
 {
   PyObject *okey;
   int r;
