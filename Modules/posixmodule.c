@@ -522,7 +522,7 @@ posix_do_stat(self, args, statfunc)
 /* POSIX methods */
 
 static char posix_access__doc__[] =
-"access(path, mode) -> None\n\
+"access(path, mode) -> 1 if granted, 0 otherwise\n\
 Test for access to a file.";
 
 static PyObject *
@@ -530,7 +530,16 @@ posix_access(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	return posix_strint(args, access);
+	char *path;
+	int mode;
+	int res;
+
+	if (!PyArg_Parse(args, "(si)", &path, &mode))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = access(path, mode);
+	Py_END_ALLOW_THREADS
+	return(PyInt_FromLong(res == 0 ? 1L : 0L));
 }
 
 static char posix_ttyname__doc__[] =
@@ -546,11 +555,9 @@ posix_ttyname(self, args)
 	int id;
 	char *ret;
 
-
 	if (!PyArg_Parse(args, "i", &id))
 		return NULL;
 
-	/* XXX Use ttyname_r if it exists? */
 	ret = ttyname(id);
 	if (ret == NULL)
 		return(posix_error());
