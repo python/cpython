@@ -2033,7 +2033,8 @@ def setclass():
     cant(list(), object)
 
 def pickles():
-    if verbose: print "Testing pickling new-style classes and objects..."
+    if verbose:
+        print "Testing pickling and copying new-style classes and objects..."
     import pickle, cPickle
 
     def sorteditems(d):
@@ -2092,6 +2093,46 @@ def pickles():
                 print "a = x =", a
                 print "b = y =", b
 
+        # Testing copy.deepcopy()
+        import copy
+        for cls in C, C1, C2:
+            cls2 = copy.deepcopy(cls)
+            verify(cls2 is cls)
+
+        a = C1(1, 2); a.append(42); a.append(24)
+        b = C2("hello", "world", 42)
+        x, y = copy.deepcopy((a, b))
+        assert x.__class__ == a.__class__
+        assert sorteditems(x.__dict__) == sorteditems(a.__dict__)
+        assert y.__class__ == b.__class__
+        assert sorteditems(y.__dict__) == sorteditems(b.__dict__)
+        assert `x` == `a`
+        assert `y` == `b`
+        if verbose:
+            print "a = x =", a
+            print "b = y =", b
+
+def copies():
+    if verbose: print "Testing copy.copy() and copy.deepcopy()..."
+    import copy
+    class C(object):
+        pass
+
+    a = C()
+    a.foo = 12
+    b = copy.copy(a)
+    verify(b.__dict__ == a.__dict__)
+
+    a.bar = [1,2,3]
+    c = copy.copy(a)
+    verify(c.bar == a.bar)
+    verify(c.bar is a.bar)
+
+    d = copy.deepcopy(a)
+    verify(d.__dict__ == a.__dict__)
+    a.bar.append(4)
+    verify(d.bar == [1,2,3])
+
 
 def test_main():
     lists()
@@ -2136,6 +2177,7 @@ def test_main():
     descrdoc()
     setclass()
     pickles()
+    copies()
     if verbose: print "All OK"
 
 if __name__ == "__main__":

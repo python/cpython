@@ -61,7 +61,7 @@ try:
 except ImportError:
     PyStringMap = None
 
-__all__ = ["Error","error","copy","deepcopy"]
+__all__ = ["Error", "error", "copy", "deepcopy"]
 
 def copy(x):
     """Shallow copy operation on arbitrary Python objects.
@@ -75,9 +75,15 @@ def copy(x):
         try:
             copier = x.__copy__
         except AttributeError:
-            raise error, \
-                  "un(shallow)copyable object of type %s" % type(x)
-        y = copier()
+            try:
+                reductor = x.__reduce__
+            except AttributeError:
+                raise error, \
+                      "un(shallow)copyable object of type %s" % type(x)
+            else:
+                y = _reconstruct(x, reductor(), 0)
+        else:
+            y = copier()
     else:
         y = copierfunction(x)
     return y
@@ -156,9 +162,15 @@ def deepcopy(x, memo = None):
         try:
             copier = x.__deepcopy__
         except AttributeError:
-            raise error, \
-                  "un-deep-copyable object of type %s" % type(x)
-        y = copier(memo)
+            try:
+                reductor = x.__reduce__
+            except AttributeError:
+                raise error, \
+                      "un-deep-copyable object of type %s" % type(x)
+            else:
+                y = _reconstruct(x, reductor(), 1)
+        else:
+            y = copier(memo)
     else:
         y = copierfunction(x, memo)
     memo[d] = y
@@ -258,6 +270,26 @@ def _deepcopy_inst(x, memo):
         y.__dict__.update(state)
     return y
 d[types.InstanceType] = _deepcopy_inst
+
+def _reconstruct(x, info, deep):
+    if isinstance(info, str):
+        return x
+    assert isinstance(info, tuple)
+    n = len(info)
+    assert n in (2, 3)
+    callable, args = info[:2]
+    if n > 2:
+        state = info[2]
+    else:
+        state = {}
+    if deep:
+        args = deepcopy(args)
+    y = callable(*args)
+    if state:
+        if deep:
+            state = deepcopy(state)
+        y.__dict__.update(state)
+    return y
 
 del d
 
