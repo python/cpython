@@ -12,6 +12,7 @@ from test_support import verbose
 import socket
 import os
 import time
+import string
 
 def missing_ok(str):
     try:
@@ -67,14 +68,19 @@ for optional in ("AF_UNIX",
 hostname = socket.gethostname()
 ip = socket.gethostbyname(hostname)
 hname, aliases, ipaddrs = socket.gethostbyaddr(ip)
+all_host_names = [hname] + aliases
 
 if verbose:
     print hostname
     print ip
     print hname, aliases, ipaddrs
+    print all_host_names
 
-if hostname <> hname:
-    print 'hostname mismatch'
+for name in all_host_names:
+    if string.find(name, '.'):
+	break
+else:
+    print 'FQDN not found'
 
 print socket.getservbyname('telnet', 'tcp')
 try:
