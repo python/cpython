@@ -421,14 +421,26 @@ list_repeat(PyListObject *a, int n)
 	int size;
 	PyListObject *np;
 	PyObject **p;
+	PyObject *elem;
 	if (n < 0)
 		n = 0;
 	size = a->ob_size * n;
+	if (size == 0)
+              return PyList_New(0);
 	if (n && size/n != a->ob_size)
 		return PyErr_NoMemory();
 	np = (PyListObject *) PyList_New(size);
 	if (np == NULL)
 		return NULL;
+
+	if (a->ob_size == 1) {
+		elem = a->ob_item[0];
+		for (i = 0; i < n; i++) {
+			np->ob_item[i] = elem;
+			Py_INCREF(elem);
+		}
+		return (PyObject *) np;
+	}
 	p = np->ob_item;
 	for (i = 0; i < n; i++) {
 		for (j = 0; j < a->ob_size; j++) {
