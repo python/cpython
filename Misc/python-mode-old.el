@@ -6,8 +6,8 @@
 ;;         1992-1994 Tim Peters
 ;; Maintainer:    python-mode@python.org
 ;; Created:       Feb 1992
-;; Version:       2.72
-;; Last Modified: 1996/08/12 19:52:27
+;; Version:       2.73
+;; Last Modified: 1996/08/20 19:57:34
 ;; Keywords: python languages oop
 
 ;; This software is provided as-is, without express or implied
@@ -19,9 +19,9 @@
 ;;; Commentary:
 
 ;; This is a major mode for editing Python programs.  It was developed
-;; by Tim Peters after an original idea by Michael A. Guravage.  In
-;; 1995, Barry Warsaw inherited the mode after Tim left the net, and
-;; is the current maintainer.
+;; by Tim Peters after an original idea by Michael A. Guravage.  Tim
+;; subsequently left the net; in 1995, Barry Warsaw inherited the
+;; mode and is the current maintainer.
 
 ;; At some point this mode will undergo a rewrite to bring it more in
 ;; line with GNU Emacs Lisp coding standards, and to wax all the Emacs
@@ -2321,7 +2321,7 @@ local bindings to py-newline-and-indent."))
 
 
 
-(defconst py-version "2.72"
+(defconst py-version "2.73"
   "`python-mode' version number.")
 (defconst py-help-address "python-mode@python.org"
   "Address accepting submission of bug reports.")
