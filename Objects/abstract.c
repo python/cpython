@@ -586,16 +586,6 @@ do_pow(v, w)
 				"pow(x, y) requires numeric arguments");
 		return NULL;
 	}
-	if (
-#ifndef WITHOUT_COMPLEX
-            !PyComplex_Check(v) && 
-#endif
-            PyFloat_Check(w) && PyFloat_AsDouble(v) < 0.0) {
-		if (!PyErr_Occurred())
-		    PyErr_SetString(PyExc_ValueError,
-				    "negative number to float power");
-		return NULL;
-	}
 	if (PyNumber_Coerce(&v, &w) != 0)
 		return NULL;
 	if ((f = v->ob_type->tp_as_number->nb_power) != NULL)
