@@ -6,8 +6,8 @@
 ;;         1992-1994 Tim Peters <tim@ksr.com>
 ;; Maintainer:    bwarsaw@cnri.reston.va.us
 ;; Created:       Feb 1992
-;; Version:       2.12
-;; Last Modified: 1995/03/14 20:53:08
+;; Version:       2.13
+;; Last Modified: 1995/03/14 22:05:53
 ;; Keywords: python editing language major-mode
 
 ;; This software is provided as-is, without express or implied
@@ -68,7 +68,7 @@
 ;; LCD Archive Entry:
 ;; python-mode|Barry A. Warsaw|bwarsaw@cnri.reston.va.us
 ;; |Major mode for editing Python programs
-;; |1995/03/14 20:53:08|2.12|
+;; |1995/03/14 22:05:53|2.13|
 
 ;;; Code:
 
@@ -403,6 +403,19 @@ py-beep-if-tab-change\tring the bell if tab-width is changed"
 
 
 ;; electric characters
+(defun py-outdent-p ()
+  ;; returns non-nil if the current line should outdent one level
+  (save-excursion
+    (and (progn (back-to-indentation)
+		(looking-at py-outdent-re))
+	 (progn (backward-to-indentation 1)
+		(while (or (looking-at py-blank-or-comment-re)
+			   (bobp))
+		  (backward-to-indentation 1))
+		(not (looking-at py-no-outdent-re)))
+	 )))
+      
+
 (defun py-electric-colon (arg)
   "Insert a colon.
 In certain cases the line is outdented appropriately.  If a numeric
@@ -414,13 +427,7 @@ argument is provided, that many colons are inserted non-electrically."
 	  (outdent 0)
 	  (indent (py-compute-indentation)))
       (if (and (not arg)
-	       (progn
-		 (back-to-indentation)
-		 (looking-at py-outdent-re))
-	       (prog2
-		   (backward-to-indentation 1)
-		   (not (looking-at py-no-outdent-re))
-		 (goto-char here))
+	       (py-outdent-p)
 	       (= indent (progn
 			   (forward-line -1)
 			   (py-compute-indentation)))
@@ -650,11 +657,7 @@ needed so that only a single column position is deleted."
 	 (move-to-indentation-p (<= (current-column) ci))
 	 (need (py-compute-indentation)))
     ;; see if we need to outdent
-    (if (save-excursion
-	  (and (progn (back-to-indentation)
-		      (looking-at py-outdent-re))
-	       (progn (backward-to-indentation 1)
-		      (not (looking-at py-no-outdent-re)))))
+    (if (py-outdent-p)
 	(setq need (- need py-indent-offset)))
     (if (/= ci need)
 	(save-excursion
@@ -1860,7 +1863,7 @@ local bindings to py-newline-and-indent."))
        (setq zmacs-region-stays t)))
 
 
-(defconst py-version "2.12"
+(defconst py-version "2.13"
   "`python-mode' version number.")
 (defconst py-help-address "bwarsaw@cnri.reston.va.us"
   "Address accepting submission of bug reports.")
