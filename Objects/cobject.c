@@ -82,9 +82,9 @@ PyCObject_Import(module_name, name)
   PyObject *m, *c;
   void *r=NULL;
   
-  if(m=PyImport_ImportModule(module_name))
+  if((m=PyImport_ImportModule(module_name)))
     {
-      if(c=PyObject_GetAttrString(m,name))
+      if((c=PyObject_GetAttrString(m,name)))
 	{
 	  r=PyCObject_AsVoidPtr(c);
 	  Py_DECREF(c);
