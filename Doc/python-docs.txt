@@ -23,7 +23,7 @@ Frequently Asked Questions about the Python Documentation
   1.  Can I download HTML/PDF/PostScript versions of the docs?
   2.  Where can I download Python?
   3.  I can't unpack a downloaded copy on Windows; what should I do?
-  4.  I can't unpack a downloaded copy on MacOS; what should I do?
+  4.  I can't unpack a downloaded copy on Mac OS; what should I do?
   5.  What can I use Python for?
   6.  How do I use module/function/whatever XXX?
   7.  What about JPython?
@@ -32,6 +32,7 @@ Frequently Asked Questions about the Python Documentation
  10.  How do I decode an XXX file from my email on a YYY computer?
  11.  Acrobat Reader won't print the PDF.  What's wrong?
  12.  Where can I find documentation in my native language?
+ 13.  Why is Python installed on my computer?
 
 
 Answers to the Questions
@@ -77,7 +78,7 @@ Answers to the Questions
 
 	  http://www.winzip.com/
 
-  4.  I can't unpack a downloaded archive on MacOS; what should I do?
+  4.  I can't unpack a downloaded archive on Mac OS; what should I do?
 
       Stuffit Expander 4.5 (and probably other versions) cannot handle 
       the "tar" archive, although it can decompress it from the .tgz
@@ -163,9 +164,20 @@ Answers to the Questions
 
           http://www.foolabs.com/xpdf/
 
- 12.  There is a lot of contributed documentation in languages other
+ 12.  Where can I find documentation in my native language?
+
+      There is a lot of contributed documentation in languages other
       than English.  Some of the documents are translations of English
       documents, and others were originally authored in other
       languages.  If we know about it, it will be listed at:
 
           http://www.python.org/doc/NonEnglish.html
+
+ 13.  Why is Python installed on my computer?
+
+      We're increasingly seeing Python being installed on computers
+      as delivered by vendors.  For more information on why, and
+      whether it's safe to remove, see the "Why is Python Installed on
+      my Computer?" FAQ, found at:
+
+          http://www.python.org/doc/faq/installed.html
