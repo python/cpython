@@ -1,7 +1,7 @@
 \section{\module{tempfile} ---
-         Generate temporary file names.}
-\declaremodule{standard}{tempfile}
+         Generate temporary file names}
 
+\declaremodule{standard}{tempfile}
 \modulesynopsis{Generate temporary file names.}
 
 \indexii{temporary}{file name}
@@ -47,6 +47,6 @@ other systems).
 \strong{Warning:} if a \UNIX{} process uses \code{mktemp()}, then
 calls \function{fork()} and both parent and child continue to use
 \function{mktemp()}, the processes will generate conflicting temporary
-names.  To resolve this, the child process should assign \code{None}
-to \code{template}, to force recomputing the default on the next call
+names.  To resolve this, the child process should assign \code{None} to
+\code{template}, to force recomputing the default on the next call
 to \function{mktemp()}.
