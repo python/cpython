@@ -11,8 +11,12 @@ def basic(src):
     cf.readfp(sio)
     L = cf.sections()
     L.sort()
-    verify(L == ['Commented Bar', 'Foo Bar',
-                 'Internationalized Stuff', 'Spacey Bar'],
+    verify(L == [r'Commented Bar',
+                 r'Foo Bar',
+                 r'Internationalized Stuff',
+                 r'Section\with$weird%characters[' '\t',
+                 r'Spacey Bar',
+                 ],
            "unexpected list of section names")
 
     # The use of spaces in the section names serves as a regression test for
@@ -138,6 +142,7 @@ foo=bar
 foo = bar
 [Commented Bar]
 foo: bar ; comment
+[Section\with$weird%characters[""" '\t' r"""]
 [Internationalized Stuff]
 foo[bg]: Bulgarian
 foo=Default
