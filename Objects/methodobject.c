@@ -170,6 +170,6 @@ findmethod(ml, op, name)
 		if (strcmp(name, ml->ml_name) == 0)
 			return newmethodobject(ml->ml_name, ml->ml_meth, op);
 	}
-	err_setstr(NameError, name);
+	err_setstr(AttributeError, name);
 	return NULL;
 }
