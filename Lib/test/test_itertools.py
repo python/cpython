@@ -6,7 +6,7 @@ import operator
 
 def onearg(x):
     'Test function of one argument'
-    return x
+    return 2*x
 
 def errfunc(*args):
     'Test function that raises an error'
@@ -21,12 +21,17 @@ def isEven(x):
     'Test predicate'
     return x%2==0
 
+def isOdd(x):
+    'Test predicate'
+    return x%2==1
+
 class StopNow:
     'Class emulating an empty iterable.'
     def __iter__(self):
         return self
     def next(self):
         raise StopIteration
+
 
 class TestBasicOps(unittest.TestCase):
     def test_chain(self):
@@ -80,8 +85,12 @@ class TestBasicOps(unittest.TestCase):
         # Check tuple re-use (implementation detail)
         self.assertEqual([tuple(list(pair)) for pair in izip('abc', 'def')],
                          zip('abc', 'def'))
+        self.assertEqual([pair for pair in izip('abc', 'def')],
+                         zip('abc', 'def'))
         ids = map(id, izip('abc', 'def'))
         self.assertEqual(min(ids), max(ids))
+        ids = map(id, list(izip('abc', 'def')))
+        self.assertEqual(len(dict.fromkeys(ids)), len(ids))
 
     def test_repeat(self):
         self.assertEqual(zip(xrange(3),repeat('a')),
@@ -188,8 +197,182 @@ class TestBasicOps(unittest.TestCase):
             self.assertRaises(StopIteration, f(lambda x:x, []).next)
             self.assertRaises(StopIteration, f(lambda x:x, StopNow()).next)
 
+def R(seqn):
+    'Regular generator'
+    for i in seqn:
+        yield i
 
-libreftest = """ Doctest for examples in the library reference, libitertools.tex
+class G:
+    'Sequence using __getitem__'
+    def __init__(self, seqn):
+        self.seqn = seqn
+    def __getitem__(self, i):
+        return self.seqn[i]
+
+class I:
+    'Sequence using iterator protocol'
+    def __init__(self, seqn):
+        self.seqn = seqn
+        self.i = 0
+    def __iter__(self):
+        return self
+    def next(self):
+        if self.i >= len(self.seqn): raise StopIteration
+        v = self.seqn[self.i]
+        self.i += 1
+        return v
+
+class Ig:
+    'Sequence using iterator protocol defined with a generator'
+    def __init__(self, seqn):
+        self.seqn = seqn
+        self.i = 0
+    def __iter__(self):
+        for val in self.seqn:
+            yield val
+
+class X:
+    'Missing __getitem__ and __iter__'
+    def __init__(self, seqn):
+        self.seqn = seqn
+        self.i = 0
+    def next(self):
+        if self.i >= len(self.seqn): raise StopIteration
+        v = self.seqn[self.i]
+        self.i += 1
+        return v
+
+class N:
+    'Iterator missing next()'
+    def __init__(self, seqn):
+        self.seqn = seqn
+        self.i = 0
+    def __iter__(self):
+        return self
+
+class E:
+    'Test propagation of exceptions'
+    def __init__(self, seqn):
+        self.seqn = seqn
+        self.i = 0
+    def __iter__(self):
+        return self
+    def next(self):
+        3/0
+
+class S:
+    'Test immediate stop'
+    def __init__(self, seqn):
+        pass
+    def __iter__(self):
+        return self
+    def next(self):
+        raise StopIteration
+
+def L(seqn):
+    'Test multiple tiers of iterators'
+    return chain(imap(lambda x:x, R(Ig(G(seqn)))))
+
+
+class TestVariousIteratorArgs(unittest.TestCase):
+
+    def test_chain(self):
+        for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
+            for g in (G, I, Ig, S, L, R):
+                self.assertEqual(list(chain(g(s))), list(g(s)))
+                self.assertEqual(list(chain(g(s), g(s))), list(g(s))+list(g(s)))
+            self.assertRaises(TypeError, chain, X(s))
+            self.assertRaises(TypeError, list, chain(N(s)))
+            self.assertRaises(ZeroDivisionError, list, chain(E(s)))
+
+    def test_cycle(self):
+        for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
+            for g in (G, I, Ig, S, L, R):
+                tgtlen = len(s) * 3
+                expected = list(g(s))*3
+                actual = list(islice(cycle(g(s)), tgtlen))
+                self.assertEqual(actual, expected)
+            self.assertRaises(TypeError, cycle, X(s))
+            self.assertRaises(TypeError, list, cycle(N(s)))
+            self.assertRaises(ZeroDivisionError, list, cycle(E(s)))
+
+    def test_ifilter(self):
+        for s in (range(10), range(0), range(1000), (7,11), xrange(2000,2200,5)):
+            for g in (G, I, Ig, S, L, R):
+                self.assertEqual(list(ifilter(isEven, g(s))), filter(isEven, g(s)))
+            self.assertRaises(TypeError, ifilter, isEven, X(s))
+            self.assertRaises(TypeError, list, ifilter(isEven, N(s)))
+            self.assertRaises(ZeroDivisionError, list, ifilter(isEven, E(s)))
+
+    def test_ifilterfalse(self):
+        for s in (range(10), range(0), range(1000), (7,11), xrange(2000,2200,5)):
+            for g in (G, I, Ig, S, L, R):
+                self.assertEqual(list(ifilterfalse(isEven, g(s))), filter(isOdd, g(s)))
+            self.assertRaises(TypeError, ifilterfalse, isEven, X(s))
+            self.assertRaises(TypeError, list, ifilterfalse(isEven, N(s)))
+            self.assertRaises(ZeroDivisionError, list, ifilterfalse(isEven, E(s)))
+
+    def test_izip(self):
+        for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
+            for g in (G, I, Ig, S, L, R):
+                self.assertEqual(list(izip(g(s))), zip(g(s)))
+                self.assertEqual(list(izip(g(s), g(s))), zip(g(s), g(s)))
+            self.assertRaises(TypeError, izip, X(s))
+            self.assertRaises(TypeError, list, izip(N(s)))
+            self.assertRaises(ZeroDivisionError, list, izip(E(s)))
+
+    def test_imap(self):
+        for s in (range(10), range(0), range(100), (7,11), xrange(20,50,5)):
+            for g in (G, I, Ig, S, L, R):
+                self.assertEqual(list(imap(onearg, g(s))), map(onearg, g(s)))
+                self.assertEqual(list(imap(operator.pow, g(s), g(s))), map(operator.pow, g(s), g(s)))
+            self.assertRaises(TypeError, imap, onearg, X(s))
+            self.assertRaises(TypeError, list, imap(onearg, N(s)))
+            self.assertRaises(ZeroDivisionError, list, imap(onearg, E(s)))
+
+    def test_islice(self):
+        for s in ("12345", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
+            for g in (G, I, Ig, S, L, R):
+                self.assertEqual(list(islice(g(s),1,None,2)), list(g(s))[1::2])
+            self.assertRaises(TypeError, islice, X(s), 10)
+            self.assertRaises(TypeError, list, islice(N(s), 10))
+            self.assertRaises(ZeroDivisionError, list, islice(E(s), 10))
+
+    def test_starmap(self):
+        for s in (range(10), range(0), range(100), (7,11), xrange(20,50,5)):
+            for g in (G, I, Ig, S, L, R):
+                ss = zip(s, s)
+                self.assertEqual(list(starmap(operator.pow, g(ss))), map(operator.pow, g(s), g(s)))
+            self.assertRaises(TypeError, starmap, operator.pow, X(ss))
+            self.assertRaises(TypeError, list, starmap(operator.pow, N(ss)))
+            self.assertRaises(ZeroDivisionError, list, starmap(operator.pow, E(ss)))
+
+    def test_takewhile(self):
+        for s in (range(10), range(0), range(1000), (7,11), xrange(2000,2200,5)):
+            for g in (G, I, Ig, S, L, R):
+                tgt = []
+                for elem in g(s):
+                    if not isEven(elem): break
+                    tgt.append(elem)
+                self.assertEqual(list(takewhile(isEven, g(s))), tgt)
+            self.assertRaises(TypeError, takewhile, isEven, X(s))
+            self.assertRaises(TypeError, list, takewhile(isEven, N(s)))
+            self.assertRaises(ZeroDivisionError, list, takewhile(isEven, E(s)))
+
+    def test_dropwhile(self):
+        for s in (range(10), range(0), range(1000), (7,11), xrange(2000,2200,5)):
+            for g in (G, I, Ig, S, L, R):
+                tgt = []
+                for elem in g(s):
+                    if not tgt and isOdd(elem): continue
+                    tgt.append(elem)
+                self.assertEqual(list(dropwhile(isOdd, g(s))), tgt)
+            self.assertRaises(TypeError, dropwhile, isOdd, X(s))
+            self.assertRaises(TypeError, list, dropwhile(isOdd, N(s)))
+            self.assertRaises(ZeroDivisionError, list, dropwhile(isOdd, E(s)))
+
+
+libreftest = """ Doctest for examples in the library reference: libitertools.tex
 
 
 >>> amounts = [120.15, 764.05, 823.14]
@@ -307,13 +490,14 @@ False
 __test__ = {'libreftest' : libreftest}
 
 def test_main(verbose=None):
-    test_support.run_unittest(TestBasicOps)
+    test_classes = (TestBasicOps, TestVariousIteratorArgs)
+    test_support.run_unittest(*test_classes)
 
     # verify reference counting
     if verbose and hasattr(sys, "gettotalrefcount"):
         counts = [None] * 5
         for i in xrange(len(counts)):
-            test_support.run_unittest(TestBasicOps)
+            test_support.run_unittest(*test_classes)
             counts[i] = sys.gettotalrefcount()
         print counts
 
