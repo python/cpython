@@ -119,6 +119,9 @@ so this usage is not yet documented.
           {Processing instruction representation.}
 \end{tableiii}
 
+An additional section describes the exceptions defined for working
+with the DOM in Python.
+
 
 \subsubsection{DOMImplementation Objects
                \label{dom-implementation-objects}}
@@ -592,6 +595,132 @@ character.  This is a read-only attribute.
 The content of the processing instruction following the first
 whitespace character.
 \end{memberdesc}
+
+
+\subsubsection{Exceptions \label{dom-exceptions}}
+
+\versionadded{2.1}
+
+The DOM Level 2 recommendation defines a single exception,
+\exception{DOMException}, and a number of constants that allow
+applications to determine what sort of error occurred.
+\exception{DOMException} instances carry a \member{code} attribute
+that provides the appropriate value for the specific exception.
+
+The Python DOM interface provides the constants, but also expands the
+set of exceptions so that a specific exception exists for each of the
+exception codes defined by the DOM.  The implementations must raise
+the appropriate specific exception, each of which carries the
+appropriate value for the \member{code} attribute.
+
+\begin{excdesc}{DOMException}
+  Base exception class used for all specific DOM exceptions.  This
+  exception class cannot be directly instantiated.
+\end{excdesc}
+
+\begin{excdesc}{DomstringSizeErr}
+  Raised when a specified range of text does not fit into a string.
+  This is not known to be used in the Python DOM implementations, but
+  may be received from DOM implementations not written in Python.
+\end{excdesc}
+
+\begin{excdesc}{HierarchyRequestErr}
+  Raised when an attempt is made to insert a node where the node type
+  is not allowed.
+\end{excdesc}
+
+\begin{excdesc}{IndexSizeErr}
+  Raised when an index or size parameter to a method is negative or
+  exceeds the allowed values.
+\end{excdesc}
+
+\begin{excdesc}{InuseAttributeErr}
+  Raised when an attempt is made to insert an \class{Attr} node that
+  is already present elsewhere in the document.
+\end{excdesc}
+
+\begin{excdesc}{InvalidAccessErr}
+  Raised if a parameter or an operation is not supported on the
+  underlying object.
+\end{excdesc}
+
+\begin{excdesc}{InvalidCharacterErr}
+  This exception is raised when a string parameter contains a
+  character that is not permitted in the context it's being used in by
+  the XML 1.0 recommendation.  For example, attempting to create an
+  \class{Element} node with a space in the element type name will
+  cause this error to be raised.
+\end{excdesc}
+
+\begin{excdesc}{InvalidModificationErr}
+  Raised when an attempt is made to modify the type of a node.
+\end{excdesc}
+
+\begin{excdesc}{InvalidStateErr}
+  Raised when an attempt is made to use an object that is not or is no
+  longer usable.
+\end{excdesc}
+
+\begin{excdesc}{NamespaceErr}
+  If an attempt is made to change any object in a way that is not
+  permitted with regard to the
+  \citetitle[http://www.w3.org/TR/REC-xml-names/]{Namespaces in XML}
+  recommendation, this exception is raised.
+\end{excdesc}
+
+\begin{excdesc}{NotFoundErr}
+  Exception when a node does not exist in the referenced context.  For
+  example, \method{NamedNodeMap.removeNamedItem()} will raise this if
+  the node passed in does not exist in the map.
+\end{excdesc}
+
+\begin{excdesc}{NotSupportedErr}
+  Raised when the implementation does not support the requested type
+  of object or operation.
+\end{excdesc}
+
+\begin{excdesc}{NoDataAllowedErr}
+  This is raised if data is specified for a node which does not
+  support data.
+  % XXX  a better explanation is needed!
+\end{excdesc}
+
+\begin{excdesc}{NoModificationAllowedErr}
+  Raised on attempts to modify an object where modifications are not
+  allowed (such as for read-only nodes).
+\end{excdesc}
+
+\begin{excdesc}{SyntaxErr}
+  Raised when an invalid or illegal string is specified.
+  % XXX  how is this different from InvalidCharacterErr ???
+\end{excdesc}
+
+\begin{excdesc}{WrongDocumentErr}
+  Raised when a node is inserted in a different document than it
+  currently belongs to, and the implementation does not support
+  migrating the node from one document to the other.
+\end{excdesc}
+
+The exception codes defined in the DOM recommendation map to the
+exceptions described above according to this table:
+
+\begin{tableii}{l|l}{constant}{Constant}{Exception}
+  \lineii{DOMSTRING_SIZE_ERR}{\exception{DomstringSizeErr}}
+  \lineii{HIERARCHY_REQUEST_ERR}{\exception{HierarchyRequestErr}}
+  \lineii{INDEX_SIZE_ERR}{\exception{IndexSizeErr}}
+  \lineii{INUSE_ATTRIBUTE_ERR}{\exception{InuseAttributeErr}}
+  \lineii{INVALID_ACCESS_ERR}{\exception{InvalidAccessErr}}
+  \lineii{INVALID_CHARACTER_ERR}{\exception{InvalidCharacterErr}}
+  \lineii{INVALID_MODIFICATION_ERR}{\exception{InvalidModificationErr}}
+  \lineii{INVALID_STATE_ERR}{\exception{InvalidStateErr}}
+  \lineii{NAMESPACE_ERR}{\exception{NamespaceErr}}
+  \lineii{NOT_FOUND_ERR}{\exception{NotFoundErr}}
+  \lineii{NOT_SUPPORTED_ERR}{\exception{NotSupportedErr}}
+  \lineii{NO_DATA_ALLOWED_ERR}{\exception{NoDataAllowedErr}}
+  \lineii{NO_MODIFICATION_ALLOWED_ERR}{\exception{NoModificationAllowedErr}}
+  \lineii{SYNTAX_ERR}{\exception{SyntaxErr}}
+  \lineii{WRONG_DOCUMENT_ERR}{\exception{WrongDocumentErr}}
+\end{tableii}
 
 
 \subsection{Conformance \label{dom-conformance}}
