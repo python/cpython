@@ -1927,6 +1927,10 @@ string_isspace(PyStringObject *self, PyObject *args)
 	isspace(*p))
 	return PyInt_FromLong(1);
 
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
+
     e = p + PyString_GET_SIZE(self);
     for (; p < e; p++) {
 	if (!isspace(*p))
@@ -1956,6 +1960,10 @@ string_isdigit(PyStringObject *self, PyObject *args)
 	isdigit(*p))
 	return PyInt_FromLong(1);
 
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
+
     e = p + PyString_GET_SIZE(self);
     for (; p < e; p++) {
 	if (!isdigit(*p))
@@ -1984,6 +1992,10 @@ string_islower(PyStringObject *self, PyObject *args)
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1)
 	return PyInt_FromLong(islower(*p) != 0);
+
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
 
     e = p + PyString_GET_SIZE(self);
     cased = 0;
@@ -2017,6 +2029,10 @@ string_isupper(PyStringObject *self, PyObject *args)
     if (PyString_GET_SIZE(self) == 1)
 	return PyInt_FromLong(isupper(*p) != 0);
 
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
+
     e = p + PyString_GET_SIZE(self);
     cased = 0;
     for (; p < e; p++) {
@@ -2049,6 +2065,10 @@ string_istitle(PyStringObject *self, PyObject *args)
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1)
 	return PyInt_FromLong(isupper(*p) != 0);
+
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
 
     e = p + PyString_GET_SIZE(self);
     cased = 0;

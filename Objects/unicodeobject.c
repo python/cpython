@@ -3306,6 +3306,10 @@ unicode_islower(PyUnicodeObject *self, PyObject *args)
     if (PyUnicode_GET_SIZE(self) == 1)
 	return PyInt_FromLong(Py_UNICODE_ISLOWER(*p) != 0);
 
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
+
     e = p + PyUnicode_GET_SIZE(self);
     cased = 0;
     for (; p < e; p++) {
@@ -3338,6 +3342,10 @@ unicode_isupper(PyUnicodeObject *self, PyObject *args)
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1)
 	return PyInt_FromLong(Py_UNICODE_ISUPPER(*p) != 0);
+
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
     cased = 0;
@@ -3373,6 +3381,10 @@ unicode_istitle(PyUnicodeObject *self, PyObject *args)
     if (PyUnicode_GET_SIZE(self) == 1)
 	return PyInt_FromLong((Py_UNICODE_ISTITLE(*p) != 0) ||
 			      (Py_UNICODE_ISUPPER(*p) != 0));
+
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
     cased = 0;
@@ -3418,6 +3430,10 @@ unicode_isspace(PyUnicodeObject *self, PyObject *args)
 	Py_UNICODE_ISSPACE(*p))
 	return PyInt_FromLong(1);
 
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
+
     e = p + PyUnicode_GET_SIZE(self);
     for (; p < e; p++) {
 	if (!Py_UNICODE_ISSPACE(*p))
@@ -3445,6 +3461,10 @@ unicode_isdecimal(PyUnicodeObject *self, PyObject *args)
     if (PyUnicode_GET_SIZE(self) == 1 &&
 	Py_UNICODE_ISDECIMAL(*p))
 	return PyInt_FromLong(1);
+
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
     for (; p < e; p++) {
@@ -3474,6 +3494,10 @@ unicode_isdigit(PyUnicodeObject *self, PyObject *args)
 	Py_UNICODE_ISDIGIT(*p))
 	return PyInt_FromLong(1);
 
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
+
     e = p + PyUnicode_GET_SIZE(self);
     for (; p < e; p++) {
 	if (!Py_UNICODE_ISDIGIT(*p))
@@ -3501,6 +3525,10 @@ unicode_isnumeric(PyUnicodeObject *self, PyObject *args)
     if (PyUnicode_GET_SIZE(self) == 1 &&
 	Py_UNICODE_ISNUMERIC(*p))
 	return PyInt_FromLong(1);
+
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
 
     e = p + PyUnicode_GET_SIZE(self);
     for (; p < e; p++) {
