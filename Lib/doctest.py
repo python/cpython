@@ -170,19 +170,47 @@ executed.
 __docformat__ = 'reStructuredText en'
 
 __all__ = [
+    # 0, Option Flags
+    'register_optionflag',
+    'DONT_ACCEPT_TRUE_FOR_1',
+    'DONT_ACCEPT_BLANKLINE',
+    'NORMALIZE_WHITESPACE',
+    'ELLIPSIS',
+    'UNIFIED_DIFF',
+    'CONTEXT_DIFF',
+    # 1. Utility Functions
     'is_private',
+    # 2. Example & DocTest
     'Example',
     'DocTest',
+    # 3. Doctest Parser
+    'DocTestParser',
+    # 4. Doctest Finder
     'DocTestFinder',
+    # 5. Doctest Runner
     'DocTestRunner',
+    'OutputChecker',
+    'DocTestFailure',
+    'UnexpectedException',
+    'DebugRunner',
+    # 6. Test Functions
     'testmod',
     'run_docstring_examples',
+    # 7. Tester
     'Tester',
+    # 8. Unittest Support
     'DocTestCase',
+    'nooutput',
     'DocTestSuite',
+    'DocFileCase',
+    'DocFileTest',
+    'DocFileSuite',
+    # 9. Debugging Support
+    'script_from_examples',
     'testsource',
+    'debug_src',
+    'debug_script',
     'debug',
-#    'master',
 ]
 
 import __future__
@@ -526,7 +554,7 @@ class DocTest:
                    (other.name, other.filename, other.lineno, id(other)))
 
 ######################################################################
-## 2. DocTestParser
+## 3. DocTestParser
 ######################################################################
 
 class DocTestParser:
