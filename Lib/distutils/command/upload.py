@@ -4,7 +4,6 @@ Implements the Distutils 'upload' subcommand (upload package to PyPI)."""
 
 from distutils.errors import *
 from distutils.core import Command
-from distutils.sysconfig import get_python_version
 from distutils.spawn import spawn
 from distutils import log
 from md5 import md5
@@ -61,10 +60,10 @@ class upload(Command):
     def run(self):
         if not self.distribution.dist_files:
             raise DistutilsOptionError("No dist file created in earlier command")
-        for command, filename in self.distribution.dist_files:
-            self.upload_file(command, filename)
+        for command, pyversion, filename in self.distribution.dist_files:
+            self.upload_file(command, pyversion, filename)
 
-    def upload_file(self, command, filename):
+    def upload_file(self, command, pyversion, filename):
         # Sign if requested
         if self.sign:
             spawn(("gpg", "--detach-sign", "-a", filename),
@@ -79,7 +78,7 @@ class upload(Command):
             'version':self.distribution.get_version(),
             'content':(os.path.basename(filename),content),
             'filetype':command,
-            'pyversion':get_python_version(),
+            'pyversion':pyversion,
             'md5_digest':md5(content).hexdigest(),
             }
         comment = ''
@@ -89,8 +88,6 @@ class upload(Command):
                 comment = 'built for %s %s' % (dist, version)
         elif command == 'bdist_dumb':
             comment = 'built for %s' % platform.platform(terse=1)
-        elif command == 'sdist':
-            data['pyversion'] = ''
         data['comment'] = comment
 
         if self.sign:
