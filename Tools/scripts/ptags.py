@@ -11,8 +11,8 @@
 # No warnings about duplicate tags.
 
 import sys
-import regexp
-import path
+import regex
+import os
 
 tags = []	# Modified global variable!
 
@@ -24,7 +24,9 @@ def main():
 		tags.sort()
 		for s in tags: fp.write(s)
 
-matcher = regexp.compile('^[ \t]*(def|class)[ \t]+([a-zA-Z0-9_]+)[ \t]*\(')
+
+expr = '^[ \t]*\(def\|class\)[ \t]+\([a-zA-Z0-9_]+\)[ \t]*[:(]'
+matcher = regex.compile(expr)
 
 def treat_file(file):
 	try:
@@ -32,16 +34,15 @@ def treat_file(file):
 	except:
 		print 'Cannot open', file
 		return
-	base = path.basename(file)
+	base = os.path.basename(file)
 	if base[-3:] == '.py': base = base[:-3]
 	s = base + '\t' + file + '\t' + '1\n'
 	tags.append(s)
 	while 1:
 		line = fp.readline()
 		if not line: break
-		res = matcher.exec(line)
-		if res:
-			(a, b), (a1, b1), (a2, b2) = res
+		if matcher.search(line) >= 0:
+			(a, b), (a1, b1), (a2, b2) = matcher.regs[:3]
 			name = line[a2:b2]
 			s = name + '\t' + file + '\t/^' + line[a:b] + '/\n'
 			tags.append(s)
