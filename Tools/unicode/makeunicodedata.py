@@ -8,6 +8,7 @@
 # 2000-09-24 fl   created (based on bits and pieces from unidb)
 # 2000-09-25 fl   merged tim's splitbin fixes, separate decomposition table
 # 2000-09-25 fl   added character type table
+# 2000-09-26 fl   added LINEBREAK flags
 #
 # written by Fredrik Lundh (fredrik@pythonware.com), September 2000
 #
@@ -28,11 +29,12 @@ BIDIRECTIONAL_NAMES = [ "", "L", "LRE", "LRO", "R", "AL", "RLE", "RLO",
     "PDF", "EN", "ES", "ET", "AN", "CS", "NSM", "BN", "B", "S", "WS",
     "ON" ]
 
+# note: should match definitions in Objects/unicodectype.c
 ALPHA_MASK = 0x01
 DECIMAL_MASK = 0x02
 DIGIT_MASK = 0x04
 LOWER_MASK = 0x08
-NUMERIC_MASK = 0x10
+LINEBREAK_MASK = 0x10
 SPACE_MASK = 0x20
 TITLE_MASK = 0x40
 UPPER_MASK = 0x80
@@ -144,7 +146,7 @@ def maketables():
     # 3) unicode type data
 
     # extract unicode types
-    dummy = (0, 0, 0, 0)
+    dummy = (0, 0, 0, 0, 0, 0)
     table = [dummy]
     cache = {0: dummy}
     index = [0] * len(unicode.chars)
@@ -160,6 +162,8 @@ def maketables():
                 flags |= ALPHA_MASK
             if category == "Ll":
                 flags |= LOWER_MASK
+            if category == "Zl" or bidirectional == "B":
+                flags |= LINEBREAK_MASK
             if category == "Zs" or bidirectional in ("WS", "B", "S"):
                 flags |= SPACE_MASK
             if category in ["Lt", "Lu"]:
@@ -179,8 +183,17 @@ def maketables():
                 title = (int(record[14], 16) - char) & 0xffff
             else:
                 title = 0
+            # decimal digit, integer digit
+            decimal = 0
+            if record[6]:
+                flags |= DECIMAL_MASK
+                decimal = int(record[6])
+            digit = 0
+            if record[7]:
+                flags |= DIGIT_MASK
+                digit = int(record[7])
             item = (
-                flags, upper, lower, title
+                flags, upper, lower, title, decimal, digit
                 )
             # add entry to index and item tables
             i = cache.get(item)
@@ -188,6 +201,8 @@ def maketables():
                 cache[item] = i = len(table)
                 table.append(item)
             index[char] = i
+
+    print len(table), "ctype entries"
 
     FILE = "Objects/unicodetype_db.h"
 
@@ -198,7 +213,7 @@ def maketables():
     print "/* a list of unique character type descriptors */"
     print "const _PyUnicode_TypeRecord _PyUnicode_TypeRecords[] = {"
     for item in table:
-        print "    {%d, %d, %d, %d}," % item
+        print "    {%d, %d, %d, %d, %d, %d}," % item
     print "};"
     print
 
