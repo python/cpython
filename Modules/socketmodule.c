@@ -2344,7 +2344,7 @@ PySocket_getaddrinfo(PyObject *self, PyObject *args)
 {
 	struct addrinfo hints, *res0, *res;
 	PyObject *pobj = (PyObject *)NULL;
-	char pbuf[10];
+	char pbuf[30];
 	char *hptr, *pptr;
 	int family, socktype, protocol, flags;
 	int error;
