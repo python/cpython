@@ -3144,6 +3144,29 @@ def dict_type_with_metaclass():
         __metaclass__ = M
     veris(type(C.__dict__), type(B.__dict__))
 
+def weakref_segfault():
+    # SF 742911
+    if verbose:
+        print "Testing weakref segfault..."
+
+    import weakref
+
+    class Provoker:
+        def __init__(self, referrent):
+            self.ref = weakref.ref(referrent)
+
+        def __del__(self):
+            x = self.ref()
+            print x
+            return x
+
+    class Oops(object):
+        pass
+
+    o = Oops()
+    o.whatever = Provoker(o)
+    del o
+
 
 def test_main():
     class_docstrings()
@@ -3209,6 +3232,7 @@ def test_main():
     funnynew()
     subclass_right_op()
     dict_type_with_metaclass()
+    weakref_segfault()
 
     if verbose: print "All OK"
 
