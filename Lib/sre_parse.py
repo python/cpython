@@ -482,9 +482,15 @@ def _parse(source, state):
                         if source.next is None or source.next == ")":
                             break
                         source.get()
-                elif source.next in ("=", "!"):
+                elif source.next in ("=", "!", "<"):
                     # lookahead assertions
                     char = source.get()
+                    dir = 1
+                    if char == "<":
+                        if source.next not in ("=", "!"):
+                            raise error, "syntax error"
+                        dir = -1 # lookbehind
+                        char = source.get()
                     b = []
                     while 1:
                         p = _parse(source, state)
@@ -493,9 +499,9 @@ def _parse(source, state):
                                 b.append(p)
                                 p = _branch(state, b)
                             if char == "=":
-                                subpattern.append((ASSERT, p))
+                                subpattern.append((ASSERT, (dir, p)))
                             else:
-                                subpattern.append((ASSERT_NOT, p))
+                                subpattern.append((ASSERT_NOT, (dir, p)))
                             break
                         elif source.match("|"):
                             b.append(p)

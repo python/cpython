@@ -10,17 +10,9 @@
 # other compatibility work.
 #
 
-import array
 import _sre
 
 from sre_constants import *
-
-# find an array type code that matches the engine's code size
-for WORDSIZE in "Hil":
-    if len(array.array(WORDSIZE, [0]).tostring()) == _sre.getcodesize():
-        break
-else:
-    raise RuntimeError, "cannot find a useable array type"
 
 MAXCODE = 65535
 
@@ -170,7 +162,20 @@ def _compile(code, pattern, flags):
                 emit((group-1)*2+1)
         elif op in (SUCCESS, FAILURE):
             emit(OPCODES[op])
-        elif op in (ASSERT, ASSERT_NOT, CALL):
+        elif op in (ASSERT, ASSERT_NOT):
+            emit(OPCODES[op])
+            skip = len(code); emit(0)
+            if av[0] >= 0:
+                emit(0) # look ahead
+            else:
+                lo, hi = av[1].getwidth()
+                if lo != hi:
+                    raise error, "look-behind requires fixed-width pattern"
+                emit(lo) # look behind
+            _compile(code, av[1], flags)
+            emit(OPCODES[SUCCESS])
+            code[skip] = len(code) - skip
+        elif op is CALL:
             emit(OPCODES[op])
             skip = len(code); emit(0)
             _compile(code, av, flags)
@@ -305,7 +310,7 @@ def compile(p, flags=0):
         indexgroup[i] = k
 
     return _sre.compile(
-        pattern, flags,
-        array.array(WORDSIZE, code).tostring(),
-        p.pattern.groups-1, groupindex, indexgroup
+        pattern, flags, code,
+        p.pattern.groups-1,
+        groupindex, indexgroup
         )

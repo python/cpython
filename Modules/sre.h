@@ -17,26 +17,27 @@
 #define SRE_CODE unsigned short
 
 typedef struct {
-    PyObject_HEAD
-    PyObject* code; /* link to the code string object */
+    PyObject_VAR_HEAD
     int groups;
     PyObject* groupindex;
     PyObject* indexgroup;
     /* compatibility */
     PyObject* pattern; /* pattern source (or None) */
     int flags; /* flags used when compiling pattern source */
+    /* pattern code */
+    SRE_CODE code[1];
 } PatternObject;
 
-#define PatternObject_GetCode(o)\
-    ((void*) PyString_AS_STRING(((PatternObject*)(o))->code))
+#define PatternObject_GetCode(o) (((PatternObject*)(o))->code)
 
 typedef struct {
-    PyObject_HEAD
+    PyObject_VAR_HEAD
     PyObject* string; /* link to the target string */
     PatternObject* pattern; /* link to the regex (pattern) object */
-    int index; /* last index marker seen by the engine (-1 if none) */
+    int pos, endpos; /* current target slice */
+    int lastindex; /* last index marker seen by the engine (-1 if none) */
     int groups; /* number of groups (start/end marks) */
-    int mark[2];
+    int mark[1];
 } MatchObject;
 
 typedef unsigned int (*SRE_TOLOWER_HOOK)(unsigned int ch);
@@ -59,7 +60,7 @@ typedef struct {
     /* character size */
     int charsize;
     /* registers */
-    int index;
+    int lastindex;
     int lastmark;
     void* mark[SRE_MARK_SIZE];
     /* backtracking stack */
