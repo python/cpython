@@ -247,6 +247,13 @@ Otherwise, all modified buffers are saved without asking."
   :type 'function
   :group 'python)
 
+(defcustom py-imenu-show-method-args-p nil 
+  "*Controls echoing of arguments of functions & methods in the Imenu buffer.
+When non-nil, arguments are printed."
+  :type 'boolean
+  :group 'python)
+(make-variable-buffer-local 'py-indent-offset)
+
 ;; Not customizable
 (defvar py-master-file nil
   "If non-nil, execute the named file instead of the buffer's file.
@@ -312,13 +319,6 @@ support for features needed by `python-mode'.")
      ))
   "Additional expressions to highlight in Python mode.")
 (put 'python-mode 'font-lock-defaults '(python-font-lock-keywords))
-
-
-(defvar imenu-example--python-show-method-args-p nil 
-  "*Controls echoing of arguments of functions & methods in the imenu buffer.
-When non-nil, arguments are printed.")
-
-(make-variable-buffer-local 'py-indent-offset)
 
 ;; have to bind py-file-queue before installing the kill-emacs-hook
 (defvar py-file-queue nil
@@ -687,8 +687,8 @@ package.  Note that the latest X/Emacs releases contain this package.")
 
 
 
-;; imenu definitions, courtesy of Perry A. Stoll <stoll@atr-sw.atr.co.jp>
-(defvar imenu-example--python-class-regexp
+;; Imenu definitions
+(defvar py-imenu-class-regexp
   (concat				; <<classes>>
    "\\("				;
    "^[ \t]*"				; newline and maybe whitespace
@@ -698,10 +698,10 @@ package.  Note that the latest X/Emacs releases contain this package.")
    "[ \t]*:"				; and the final :
    "\\)"				; >>classes<<
    )
-  "Regexp for Python classes for use with the imenu package."
+  "Regexp for Python classes for use with the Imenu package."
   )
 
-(defvar imenu-example--python-method-regexp
+(defvar py-imenu-method-regexp
   (concat                               ; <<methods and functions>>
    "\\("                                ; 
    "^[ \t]*"                            ; new line and maybe whitespace
@@ -713,68 +713,66 @@ package.  Note that the latest X/Emacs releases contain this package.")
    "[ \t]*:"                            ; and then the :
    "\\)"                                ; >>methods and functions<<
    )
-  "Regexp for Python methods/functions for use with the imenu package."
+  "Regexp for Python methods/functions for use with the Imenu package."
   )
 
-(defvar imenu-example--python-method-no-arg-parens '(2 8)
-  "Indices into groups of the Python regexp for use with imenu.
+(defvar py-imenu-method-no-arg-parens '(2 8)
+  "Indices into groups of the Python regexp for use with Imenu.
 
-Using these values will result in smaller imenu lists, as arguments to
+Using these values will result in smaller Imenu lists, as arguments to
 functions are not listed.
 
-See the variable `imenu-example--python-show-method-args-p' for more
+See the variable `py-imenu-show-method-args-p' for more
 information.")
 
-(defvar imenu-example--python-method-arg-parens '(2 7)
+(defvar py-imenu-method-arg-parens '(2 7)
   "Indices into groups of the Python regexp for use with imenu.
-Using these values will result in large imenu lists, as arguments to
+Using these values will result in large Imenu lists, as arguments to
 functions are listed.
 
-See the variable `imenu-example--python-show-method-args-p' for more
+See the variable `py-imenu-show-method-args-p' for more
 information.")
 
 ;; Note that in this format, this variable can still be used with the
 ;; imenu--generic-function. Otherwise, there is no real reason to have
 ;; it.
-(defvar imenu-example--generic-python-expression
+(defvar py-imenu-generic-expression
   (cons
    (concat 
-    imenu-example--python-class-regexp
+    py-imenu-class-regexp
     "\\|"				; or...
-    imenu-example--python-method-regexp
+    py-imenu-method-regexp
     )
-   imenu-example--python-method-no-arg-parens)
-  "Generic Python expression which may be used directly with imenu.
+   py-imenu-method-no-arg-parens)
+  "Generic Python expression which may be used directly with Imenu.
 Used by setting the variable `imenu-generic-expression' to this value.
-Also, see the function \\[imenu-example--create-python-index] for a
-better alternative for finding the index.")
+Also, see the function \\[py-imenu-create-index] for a better
+alternative for finding the index.")
 
-;; These next two variables are used when searching for the python
+;; These next two variables are used when searching for the Python
 ;; class/definitions. Just saving some time in accessing the
 ;; generic-python-expression, really.
-(defvar imenu-example--python-generic-regexp nil)
-(defvar imenu-example--python-generic-parens nil)
+(defvar py-imenu-generic-regexp nil)
+(defvar py-imenu-generic-parens nil)
 
 
-(defun imenu-example--create-python-index ()
-  "Python interface function for imenu package.
-Finds all python classes and functions/methods. Calls function
-\\[imenu-example--create-python-index-engine].  See that function for
-the details of how this works."
-  (setq imenu-example--python-generic-regexp
-	(car imenu-example--generic-python-expression))
-  (setq imenu-example--python-generic-parens
-	(if imenu-example--python-show-method-args-p
-	    imenu-example--python-method-arg-parens
-	  imenu-example--python-method-no-arg-parens))
+(defun py-imenu-create-index-function ()
+  "Python interface function for the Imenu package.
+Finds all Python classes and functions/methods. Calls function
+\\[py-imenu-create-index-engine].  See that function for the details
+of how this works."
+  (setq py-imenu-generic-regexp (car py-imenu-generic-expression)
+	py-imenu-generic-parens (if py-imenu-show-method-args-p
+				    py-imenu-method-arg-parens
+				  py-imenu-method-no-arg-parens))
   (goto-char (point-min))
-  (imenu-example--create-python-index-engine nil))
+  (py-imenu-create-index-engine nil))
 
-(defun imenu-example--create-python-index-engine (&optional start-indent)
-  "Function for finding imenu definitions in Python.
+(defun py-imenu-create-index-engine (&optional start-indent)
+  "Function for finding Imenu definitions in Python.
 
 Finds all definitions (classes, methods, or functions) in a Python
-file for the imenu package.
+file for the Imenu package.
 
 Returns a possibly nested alist of the form
 
@@ -787,82 +785,70 @@ list as in
 
 This function should not be called directly, as it calls itself
 recursively and requires some setup.  Rather this is the engine for
-the function \\[imenu-example--create-python-index].
+the function \\[py-imenu-create-index-function].
 
 It works recursively by looking for all definitions at the current
 indention level.  When it finds one, it adds it to the alist.  If it
 finds a definition at a greater indentation level, it removes the
 previous definition from the alist. In its place it adds all
 definitions found at the next indentation level.  When it finds a
-definition that is less indented then the current level, it retuns the
-alist it has created thus far.
+definition that is less indented then the current level, it returns
+the alist it has created thus far.
 
 The optional argument START-INDENT indicates the starting indentation
 at which to continue looking for Python classes, methods, or
 functions.  If this is not supplied, the function uses the indentation
 of the first definition found."
-  (let ((index-alist '())
-	(sub-method-alist '())
+  (let (index-alist
+	sub-method-alist
 	looking-p
 	def-name prev-name
 	cur-indent def-pos
-	(class-paren (first  imenu-example--python-generic-parens)) 
-	(def-paren   (second imenu-example--python-generic-parens)))
+	(class-paren (first  py-imenu-generic-parens)) 
+	(def-paren   (second py-imenu-generic-parens)))
     (setq looking-p
-	  (re-search-forward imenu-example--python-generic-regexp
-			     (point-max) t))
+	  (re-search-forward py-imenu-generic-regexp (point-max) t))
     (while looking-p
       (save-excursion
-	;; used to set def-name to this value but generic-extract-name is
-	;; new to imenu-1.14. this way it still works with imenu-1.11
-	;;(imenu--generic-extract-name imenu-example--python-generic-parens))
+	;; used to set def-name to this value but generic-extract-name
+	;; is new to imenu-1.14. this way it still works with
+	;; imenu-1.11
+	;;(imenu--generic-extract-name py-imenu-generic-parens))
 	(let ((cur-paren (if (match-beginning class-paren)
 			     class-paren def-paren)))
 	  (setq def-name
 		(buffer-substring-no-properties (match-beginning cur-paren)
-						(match-end  cur-paren))))
+						(match-end cur-paren))))
 	(save-match-data
-	  (py-beginning-of-def-or-class))
+	  (py-beginning-of-def-or-class 'either))
 	(beginning-of-line)
 	(setq cur-indent (current-indentation)))
-
-      ;; HACK: want to go to the next correct definition location. we
-      ;; explicitly list them here. would be better to have them in a
-      ;; list.
+      ;; HACK: want to go to the next correct definition location.  We
+      ;; explicitly list them here but it would be better to have them
+      ;; in a list.
       (setq def-pos
-	    (or  (match-beginning class-paren)
-		 (match-beginning def-paren)))
-
+	    (or (match-beginning class-paren)
+		(match-beginning def-paren)))
       ;; if we don't have a starting indent level, take this one
       (or start-indent
 	  (setq start-indent cur-indent))
-
       ;; if we don't have class name yet, take this one
       (or prev-name
 	  (setq prev-name def-name))
-
       ;; what level is the next definition on?  must be same, deeper
       ;; or shallower indentation
       (cond
        ;; at the same indent level, add it to the list...
        ((= start-indent cur-indent)
-
-	;; if we don't have push, use the following...
-	;;(setf index-alist (cons (cons def-name def-pos) index-alist))
 	(push (cons def-name def-pos) index-alist))
-
-       ;; deeper indented expression, recur...
+       ;; deeper indented expression, recurse
        ((< start-indent cur-indent)
-
 	;; the point is currently on the expression we're supposed to
 	;; start on, so go back to the last expression. The recursive
 	;; call will find this place again and add it to the correct
 	;; list
-	(re-search-backward imenu-example--python-generic-regexp
-			    (point-min) 'move)
-	(setq sub-method-alist (imenu-example--create-python-index-engine
-				cur-indent))
-
+	(re-search-backward py-imenu-generic-regexp (point-min) 'move)
+	(setq sub-method-alist (py-imenu-create-index-engine cur-indent))
 	(if sub-method-alist
 	    ;; we put the last element on the index-alist on the start
 	    ;; of the submethod alist so the user can still get to it.
@@ -870,16 +856,15 @@ of the first definition found."
 	      (push (cons prev-name
 			  (cons save-elmt sub-method-alist))
 		    index-alist))))
-
        ;; found less indented expression, we're done.
        (t 
 	(setq looking-p nil)
-	(re-search-backward imenu-example--python-generic-regexp 
-			    (point-min) t)))
+	(re-search-backward py-imenu-generic-regexp (point-min) t)))
+      ;; end-cond
       (setq prev-name def-name)
       (and looking-p
 	   (setq looking-p
-		 (re-search-forward imenu-example--python-generic-regexp
+		 (re-search-forward py-imenu-generic-regexp
 				    (point-max) 'move))))
     (nreverse index-alist)))
 
@@ -945,13 +930,10 @@ py-beep-if-tab-change\t\tring the bell if `tab-width' is changed"
   ;; Emacs 19 requires this
   (if (boundp 'comment-multi-line)
       (setq comment-multi-line nil))
-  ;; Install Imenu, only works for Emacs.
+  ;; Install Imenu if available
   (when (py-safe (require 'imenu))
-    (make-variable-buffer-local 'imenu-create-index-function)
-    (setq imenu-create-index-function
-	  (function imenu-example--create-python-index))
-    (setq imenu-generic-expression
-	  imenu-example--generic-python-expression)
+    (setq imenu-create-index-function #'py-imenu-create-index-function)
+    (setq imenu-generic-expression py-imenu-generic-expression)
     (if (fboundp 'imenu-add-to-menubar)
 	(imenu-add-to-menubar (format "%s-%s" "IM" mode-name)))
     )
@@ -2077,8 +2059,7 @@ start of the buffer each time.
 
 To mark the current `def', see `\\[py-mark-def-or-class]'."
   (interactive "P")			; raw prefix arg
-  (if (not count)
-      (setq count 1))
+  (setq count (or count 1))
   (let ((at-or-before-p (<= (current-column) (current-indentation)))
 	(start-of-line (goto-char (py-point 'bol)))
 	(start-of-stmt (goto-char (py-point 'bos)))
