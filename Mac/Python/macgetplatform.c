@@ -1,0 +1,7 @@
+
+char *
+getplatform()
+{
+	return "mac";
+}
+
