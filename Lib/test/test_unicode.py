@@ -261,7 +261,8 @@ test('islower', u'abc\n', 1)
 test('isupper', u'a', 0)
 test('isupper', u'A', 1)
 test('isupper', u'\n', 0)
-test('isupper', u'\u1FFc', 0)
+if sys.platform[:4] != 'java':
+    test('isupper', u'\u1FFc', 0)
 test('isupper', u'ABC', 1)
 test('isupper', u'AbC', 0)
 test('isupper', u'ABC\n', 1)
@@ -339,13 +340,17 @@ verify(u"%c" % (u"a",) == u'a')
 verify(u"%c" % ("a",) == u'a')
 verify(u"%c" % (34,) == u'"')
 verify(u"%c" % (36,) == u'$')
-value = u"%r, %r" % (u"abc", "abc")
-if value != u"u'abc', 'abc'":
-    print '*** formatting failed for "%s"' % 'u"%r, %r" % (u"abc", "abc")'
+if sys.platform[:4] != 'java':
+    value = u"%r, %r" % (u"abc", "abc")
+    if value != u"u'abc', 'abc'":
+        print '*** formatting failed for "%s"' % 'u"%r, %r" % (u"abc", "abc")'
 
 verify(u"%(x)s, %(y)s" % {'x':u"abc", 'y':"def"} == u'abc, def')
 try:
-    value = u"%(x)s, %(ä)s" % {'x':u"abc", u'ä'.encode('utf-8'):"def"}
+    if sys.platform[:4] != 'java':
+        value = u"%(x)s, %(ä)s" % {'x':u"abc", u'ä'.encode('utf-8'):"def"}
+    else:
+        value = u"%(x)s, %(ä)s" % {'x':u"abc", u'ä':"def"}
 except KeyError:
     print '*** formatting failed for "%s"' % "u'abc, def'"
 else:
