@@ -52,7 +52,7 @@ tut: tut/tut.html
 $(INDEXFILES): $(COMMONPERL) $(TOPDIR)/html/about.dat
 
 modindex.html: lib/lib.html mac/mac.html $(TOOLSDIR)/mkmodindex
-	$(TOOLSDIR)/mkmodindex --columns 5 --output modindex.html \
+	$(TOOLSDIR)/mkmodindex --columns 4 --output modindex.html \
 		lib/modindex.html mac/modindex.html
 
 api/api.html:  $(PAPERDIR)/api.aux $(BUILDINDEX)
