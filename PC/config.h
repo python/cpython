@@ -99,6 +99,9 @@ typedef int pid_t;
 #define IMPORT_8x3_NAMES
 typedef int pid_t;
 #define WORD_BIT 16
+#define SIZEOF_INT 2
+#define SIZEOF_LONG 4
+#define SIZEOF_VOID_P 4
 #pragma warning(disable:4113)
 #define memcpy memmove	/* memcpy dangerous pointer wrap in Win 3.1 */
 #define hypot _hypot
@@ -163,8 +166,14 @@ typedef int pid_t;
 #endif
 #ifdef M_I386
 #define WORD_BIT 32
+#define SIZEOF_INT 4
+#define SIZEOF_LONG 4
+#define SIZEOF_VOID_P 4
 #else
 #define WORD_BIT 16
+#define SIZEOF_INT 2
+#define SIZEOF_LONG 4
+#define SIZEOF_VOID_P 4
 #endif
 #define VA_LIST_IS_ARRAY
 #define HAVE_CLOCK
