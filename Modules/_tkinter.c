@@ -121,6 +121,11 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #endif /* HAVE_CREATEFILEHANDLER */
 
+#ifdef MS_WINDOWS
+#include <conio.h>
+#define WAIT_FOR_STDIN
+#endif
+
 #ifdef WITH_THREAD
 
 /* The threading situation is complicated.  Tcl is not thread-safe, except for
@@ -1822,6 +1827,7 @@ static PyMethodDef moduleMethods[] =
 
 static int stdin_ready = 0;
 
+#ifndef MS_WINDOWS
 static void
 MyFileProc(clientData, mask)
 	void *clientData;
@@ -1829,22 +1835,34 @@ MyFileProc(clientData, mask)
 {
 	stdin_ready = 1;
 }
+#endif
 
 static PyThreadState *event_tstate = NULL;
 
 static int
 EventHook()
 {
+#ifndef MS_WINDOWS
 	FHANDLE tfile;
-
-	ENTER_PYTHON(event_tstate)
-	tfile = MAKEFHANDLE(fileno(stdin));
+#endif
+	if (PyThreadState_Swap(NULL) != NULL)
+		Py_FatalError("EventHook with non-NULL tstate\n");
+	PyEval_RestoreThread(event_tstate);
 	stdin_ready = 0;
+	errorInCmd = 0;
+#ifndef MS_WINDOWS
+	tfile = MAKEFHANDLE(fileno(stdin));
 	Tcl_CreateFileHandler(tfile, TCL_READABLE, MyFileProc, NULL);
+#endif
 	while (!errorInCmd && !stdin_ready) {
 		int result;
-
-#ifdef WITH_THREAD
+#ifdef MS_WINDOWS
+		if (_kbhit()) {
+			stdin_ready = 1;
+			break;
+		}
+#endif
+#if defined(WITH_THREAD) || defined(MS_WINDOWS)
 		ENTER_TCL
 		result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 		release_lock(tcl_lock);
@@ -1858,14 +1876,16 @@ EventHook()
 		if (result < 0)
 			break;
 	}
+#ifndef MS_WINDOWS
 	Tcl_DeleteFileHandler(tfile);
+#endif
 	if (errorInCmd) {
 		errorInCmd = 0;
 		PyErr_Restore(excInCmd, valInCmd, trbInCmd);
 		excInCmd = valInCmd = trbInCmd = NULL;
 		PyErr_Print();
 	}
-	LEAVE_PYTHON
+	PyEval_SaveThread();
 	return 0;
 }
 
