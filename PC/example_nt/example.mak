@@ -1,4 +1,4 @@
-# Microsoft Developer Studio Generated NMAKE File, Format Version 4.00
+# Microsoft Developer Studio Generated NMAKE File, Format Version 4.20
 # ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
@@ -34,8 +34,8 @@ NULL=nul
 # Begin Project
 # PROP Target_Last_Scanned "example - Win32 Debug"
 CPP=cl.exe
-RSC=rc.exe
 MTL=mktyplib.exe
+RSC=rc.exe
 
 !IF  "$(CFG)" == "example - Win32 Release"
 
@@ -55,20 +55,20 @@ INTDIR=.\Release
 ALL : "$(OUTDIR)\example.dll"
 
 CLEAN : 
-	-@erase ".\Release\example.dll"
-	-@erase ".\Release\example.obj"
-	-@erase ".\Release\example.lib"
-	-@erase ".\Release\example.exp"
+	-@erase "$(INTDIR)\example.obj"
+	-@erase "$(OUTDIR)\example.dll"
+	-@erase "$(OUTDIR)\example.exp"
+	-@erase "$(OUTDIR)\example.lib"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../Include" /I "../PC" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "../Include" /I "../PC" /D "WIN32" /D\
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "../Include" /I "../PC" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
+CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "../Include" /I "../PC" /D "WIN32" /D\
  "NDEBUG" /D "_WINDOWS" /Fp"$(INTDIR)/example.pch" /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\Release/
-CPP_SBRS=
+CPP_SBRS=.\.
 # ADD BASE MTL /nologo /D "NDEBUG" /win32
 # ADD MTL /nologo /D "NDEBUG" /win32
 MTL_PROJ=/nologo /D "NDEBUG" /win32 
@@ -78,7 +78,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 BSC32_FLAGS=/nologo /o"$(OUTDIR)/example.bsc" 
-BSC32_SBRS=
+BSC32_SBRS= \
+	
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
@@ -90,8 +91,8 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 DEF_FILE= \
 	".\example.def"
 LINK32_OBJS= \
-	"$(INTDIR)/example.obj" \
-	"..\vc40\python14.lib"
+	"$(INTDIR)\example.obj" \
+	"..\vc40\python15.lib"
 
 "$(OUTDIR)\example.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -116,25 +117,25 @@ INTDIR=.\Debug
 ALL : "$(OUTDIR)\example.dll"
 
 CLEAN : 
-	-@erase ".\Debug\example.dll"
-	-@erase ".\Debug\example.obj"
-	-@erase ".\Debug\example.ilk"
-	-@erase ".\Debug\example.lib"
-	-@erase ".\Debug\example.exp"
-	-@erase ".\Debug\example.pdb"
-	-@erase ".\Debug\vc40.pdb"
-	-@erase ".\Debug\vc40.idb"
+	-@erase "$(INTDIR)\example.obj"
+	-@erase "$(INTDIR)\vc40.idb"
+	-@erase "$(INTDIR)\vc40.pdb"
+	-@erase "$(OUTDIR)\example.dll"
+	-@erase "$(OUTDIR)\example.exp"
+	-@erase "$(OUTDIR)\example.ilk"
+	-@erase "$(OUTDIR)\example.lib"
+	-@erase "$(OUTDIR)\example.pdb"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /I "../Include" /I "../PC" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
-CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /I "../Include" /I "../PC" /D "WIN32"\
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../Include" /I "../PC" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
+CPP_PROJ=/nologo /MDd /W3 /Gm /GX /Zi /Od /I "../Include" /I "../PC" /D "WIN32"\
  /D "_DEBUG" /D "_WINDOWS" /Fp"$(INTDIR)/example.pch" /YX /Fo"$(INTDIR)/"\
  /Fd"$(INTDIR)/" /c 
 CPP_OBJS=.\Debug/
-CPP_SBRS=
+CPP_SBRS=.\.
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
 # ADD MTL /nologo /D "_DEBUG" /win32
 MTL_PROJ=/nologo /D "_DEBUG" /win32 
@@ -144,7 +145,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 BSC32_FLAGS=/nologo /o"$(OUTDIR)/example.bsc" 
-BSC32_SBRS=
+BSC32_SBRS= \
+	
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386
@@ -156,8 +158,8 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 DEF_FILE= \
 	".\example.def"
 LINK32_OBJS= \
-	"$(INTDIR)/example.obj" \
-	"..\vc40\python14.lib"
+	"$(INTDIR)\example.obj" \
+	"..\vc40\python15.lib"
 
 "$(OUTDIR)\example.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -201,43 +203,41 @@ LINK32_OBJS= \
 
 SOURCE=.\example.c
 DEP_CPP_EXAMP=\
-	".\../Include\Python.h"\
-	"..\Include\allobjects.h"\
-	".\../PC\config.h"\
+	"..\Include\abstract.h"\
+	"..\Include\bltinmodule.h"\
+	"..\Include\ceval.h"\
+	"..\Include\classobject.h"\
+	"..\Include\cobject.h"\
+	"..\Include\complexobject.h"\
+	"..\Include\dictobject.h"\
+	"..\Include\fileobject.h"\
+	"..\Include\floatobject.h"\
+	"..\Include\funcobject.h"\
+	"..\Include\import.h"\
+	"..\Include\intobject.h"\
+	"..\Include\intrcheck.h"\
+	"..\Include\listobject.h"\
+	"..\Include\longobject.h"\
+	"..\Include\methodobject.h"\
+	"..\Include\modsupport.h"\
+	"..\Include\moduleobject.h"\
+	"..\Include\mymalloc.h"\
 	"..\Include\myproto.h"\
 	"..\Include\object.h"\
 	"..\Include\objimpl.h"\
 	"..\Include\pydebug.h"\
-	"..\Include\accessobject.h"\
-	"..\Include\intobject.h"\
-	"..\Include\longobject.h"\
-	"..\Include\floatobject.h"\
-	"..\Include\complexobject.h"\
-	"..\Include\rangeobject.h"\
-	"..\Include\stringobject.h"\
-	"..\Include\tupleobject.h"\
-	"..\Include\listobject.h"\
-	"..\Include\mappingobject.h"\
-	"..\Include\methodobject.h"\
-	"..\Include\moduleobject.h"\
-	"..\Include\funcobject.h"\
-	"..\Include\classobject.h"\
-	"..\Include\fileobject.h"\
-	"..\Include\cobject.h"\
-	"..\Include\traceback.h"\
-	"..\Include\sliceobject.h"\
 	"..\Include\pyerrors.h"\
-	"..\Include\mymalloc.h"\
-	"..\Include\modsupport.h"\
-	"..\Include\ceval.h"\
+	"..\Include\pyfpe.h"\
+	"..\Include\pystate.h"\
 	"..\Include\pythonrun.h"\
+	"..\Include\rangeobject.h"\
+	"..\Include\sliceobject.h"\
+	"..\Include\stringobject.h"\
 	"..\Include\sysmodule.h"\
-	"..\Include\intrcheck.h"\
-	"..\Include\import.h"\
-	"..\Include\bltinmodule.h"\
-	"..\Include\abstract.h"\
-	"..\Include\rename2.h"\
-	"..\Include\thread.h"\
+	"..\Include\traceback.h"\
+	"..\Include\tupleobject.h"\
+	".\../Include\Python.h"\
+	".\../PC\config.h"\
 	
 
 "$(INTDIR)\example.obj" : $(SOURCE) $(DEP_CPP_EXAMP) "$(INTDIR)"
@@ -247,31 +247,31 @@ DEP_CPP_EXAMP=\
 ################################################################################
 # Begin Source File
 
-SOURCE=.\example.def
-
-!IF  "$(CFG)" == "example - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "example - Win32 Debug"
-
-!ENDIF 
-
-# End Source File
-################################################################################
-# Begin Source File
-
-SOURCE=..\vc40\python14.lib
-
-!IF  "$(CFG)" == "example - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "example - Win32 Debug"
-
-!ENDIF 
-
-# End Source File
-################################################################################
-# Begin Source File
-
 SOURCE=.\readme.txt
+
+!IF  "$(CFG)" == "example - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "example - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=\python\src\vc40\python15.lib
+
+!IF  "$(CFG)" == "example - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "example - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\example.def
 
 !IF  "$(CFG)" == "example - Win32 Release"
 
