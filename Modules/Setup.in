@@ -305,7 +305,7 @@ rotor rotormodule.c		# enigma-inspired encryption
 
 #DB=/depot/sundry/src/berkeley-db/db.1.85
 #DBPORT=$(DB)/PORT/irix.5.3
-#bsddb bsddbmodule.o -I$(DBPORT)/include $(DBPORT)/libdb.a
+#bsddb bsddbmodule.c -I$(DBPORT)/include $(DBPORT)/libdb.a
 
 
 
