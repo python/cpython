@@ -149,6 +149,9 @@
 /* Define to empty if the keyword does not work.  */
 #undef signed
 
+/* Define to `int' if <sys/types.h> doesn't define.  */
+#undef socklen_t
+
 /* Define if  you can safely include both <sys/select.h> and <sys/time.h>
    (which you can't on SCO ODT 3.0). */
 #undef SYS_SELECT_WITH_SYS_TIME
