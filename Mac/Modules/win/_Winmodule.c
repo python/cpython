@@ -1172,7 +1172,7 @@ static PyObject *WinObj_GetWindowProxyFSSpec(WindowObject *_self, PyObject *_arg
 	                            &outFile);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     PyMac_BuildFSSpec, outFile);
+	                     PyMac_BuildFSSpec, &outFile);
 	return _res;
 }
 
