@@ -168,6 +168,10 @@ setup_readline()
 	rl_bind_key_in_map ('\033', rl_complete, emacs_meta_keymap);
 	/* Set our completion function */
 	rl_completion_entry_function = (Function *) on_completion;
+	/* Set Python word break characters */
+	rl_completer_word_break_characters =
+		" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?";
+		/* All nonalphanums except '.' */
 	/* Initialize (allows .inputrc to override) */
 	rl_initialize();
 }
