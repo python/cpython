@@ -627,13 +627,11 @@ call_utc_tzinfo_method(PyObject *tzinfo, char *name, PyObject *tzinfoarg,
 	if (u == NULL)
 		return -1;
 
-	if (u == Py_None) {
+	else if (u == Py_None) {
 		result = 0;
 		*none = 1;
-		goto Done;
 	}
-
-	if (PyInt_Check(u))
+	else if (PyInt_Check(u))
 		result = PyInt_AS_LONG(u);
 
 	else if (PyLong_Check(u))
@@ -655,7 +653,6 @@ call_utc_tzinfo_method(PyObject *tzinfo, char *name, PyObject *tzinfoarg,
 					     "whole number of minutes",
 					     name);
 				result = -1;
-				goto Done;
 			}
 		}
 	}
@@ -664,10 +661,8 @@ call_utc_tzinfo_method(PyObject *tzinfo, char *name, PyObject *tzinfoarg,
 			     "tzinfo.%s() must return None, integer or "
 			     "timedelta, not '%s'",
 			     name, u->ob_type->tp_name);
-		goto Done;
 	}
 
-Done:
 	Py_DECREF(u);
 	if (result < -1439 || result > 1439) {
 		PyErr_Format(PyExc_ValueError,
