@@ -113,18 +113,14 @@ PyControlID_Convert(v, itself)
 /* TrackControl and HandleControlClick callback support */
 static PyObject *tracker;
 static ControlActionUPP mytracker_upp;
-#if !TARGET_API_MAC_CARBON_NOTYET
 static ControlUserPaneDrawUPP mydrawproc_upp;
 static ControlUserPaneIdleUPP myidleproc_upp;
 static ControlUserPaneHitTestUPP myhittestproc_upp;
 static ControlUserPaneTrackingUPP mytrackingproc_upp;
-#endif
 
 extern int settrackfunc(PyObject *); 	/* forward */
 extern void clrtrackfunc(void);	/* forward */
-#if !TARGET_API_MAC_CARBON_NOTYET
 staticforward int setcallback(PyObject *, OSType, PyObject *, UniversalProcPtr *);
-#endif
 """
 
 finalstuff = finalstuff + """
@@ -196,7 +192,6 @@ mytracker(ControlHandle ctl, short part)
 		PySys_WriteStderr("TrackControl or HandleControlClick: exception in tracker function\\n");
 }
 
-#if !TARGET_API_MAC_CARBON_NOTYET
 static int
 setcallback(myself, which, callback, uppp)
 	PyObject *myself;
@@ -313,17 +308,14 @@ mytrackingproc(ControlHandle control, Point startPt, ControlActionUPP actionProc
 	Py_XDECREF(rv);
 	return (ControlPartCode)c_rv;
 }
-#endif
 """
 
 initstuff = initstuff + """
 mytracker_upp = NewControlActionProc(mytracker);
-#if !TARGET_API_MAC_CARBON_NOTYET
 mydrawproc_upp = NewControlUserPaneDrawProc(mydrawproc);
 myidleproc_upp = NewControlUserPaneIdleProc(myidleproc);
 myhittestproc_upp = NewControlUserPaneHitTestProc(myhittestproc);
 mytrackingproc_upp = NewControlUserPaneTrackingProc(mytrackingproc);
-#endif
 """
 
 class MyObjectDefinition(ObjectIdentityMixin, GlobalObjectDefinition):
@@ -600,7 +592,7 @@ _res = Py_None;
 return _res;
 """
 
-f = ManualGenerator("SetControlData_Callback", setcontroldata_callback_body, condition="#if !TARGET_API_MAC_CARBON_NOTYET");
+f = ManualGenerator("SetControlData_Callback", setcontroldata_callback_body);
 f.docstring = lambda: "(callbackfunc) -> None"
 object.add(f)
 
@@ -618,7 +610,7 @@ _res = Py_BuildValue("O&i", MenuObj_New, (*hdl)->mHandle, (int)(*hdl)->mID);
 HUnlock((Handle)hdl);
 return _res;
 """
-f = ManualGenerator("GetPopupData", getpopupdata_body, condition="#if !TARGET_API_MAC_CARBON_NOTYET")
+f = ManualGenerator("GetPopupData", getpopupdata_body, condition="#if !TARGET_API_MAC_CARBON")
 object.add(f)
 
 setpopupdata_body = """
@@ -638,7 +630,7 @@ hdl = (PopupPrivateDataHandle)(*_self->ob_itself)->contrlData;
 Py_INCREF(Py_None);
 return Py_None;
 """
-f = ManualGenerator("SetPopupData", setpopupdata_body, condition="#if !TARGET_API_MAC_CARBON_NOTYET")
+f = ManualGenerator("SetPopupData", setpopupdata_body, condition="#if !TARGET_API_MAC_CARBON")
 object.add(f)
 
 

@@ -72,18 +72,14 @@ PyControlID_Convert(v, itself)
 /* TrackControl and HandleControlClick callback support */
 static PyObject *tracker;
 static ControlActionUPP mytracker_upp;
-#if !TARGET_API_MAC_CARBON_NOTYET
 static ControlUserPaneDrawUPP mydrawproc_upp;
 static ControlUserPaneIdleUPP myidleproc_upp;
 static ControlUserPaneHitTestUPP myhittestproc_upp;
 static ControlUserPaneTrackingUPP mytrackingproc_upp;
-#endif
 
 extern int settrackfunc(PyObject *); 	/* forward */
 extern void clrtrackfunc(void);	/* forward */
-#if !TARGET_API_MAC_CARBON_NOTYET
 staticforward int setcallback(PyObject *, OSType, PyObject *, UniversalProcPtr *);
-#endif
 
 static PyObject *Ctl_Error;
 
@@ -1876,8 +1872,6 @@ static PyObject *CtlObj_GetControlData_Handle(_self, _args)
 
 }
 
-#if !TARGET_API_MAC_CARBON_NOTYET
-
 static PyObject *CtlObj_SetControlData_Callback(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -1910,9 +1904,8 @@ static PyObject *CtlObj_SetControlData_Callback(_self, _args)
 	return _res;
 
 }
-#endif
 
-#if !TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_GetPopupData(_self, _args)
 	ControlObject *_self;
@@ -1935,7 +1928,7 @@ static PyObject *CtlObj_GetPopupData(_self, _args)
 }
 #endif
 
-#if !TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_SetPopupData(_self, _args)
 	ControlObject *_self;
@@ -2217,18 +2210,15 @@ static PyMethodDef CtlObj_methods[] = {
 	 "(ResObj) -> None"},
 	{"GetControlData_Handle", (PyCFunction)CtlObj_GetControlData_Handle, 1,
 	 "(part, type) -> ResObj"},
-
-#if !TARGET_API_MAC_CARBON_NOTYET
 	{"SetControlData_Callback", (PyCFunction)CtlObj_SetControlData_Callback, 1,
 	 "(callbackfunc) -> None"},
-#endif
 
-#if !TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON
 	{"GetPopupData", (PyCFunction)CtlObj_GetPopupData, 1,
 	 NULL},
 #endif
 
-#if !TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON
 	{"SetPopupData", (PyCFunction)CtlObj_SetPopupData, 1,
 	 NULL},
 #endif
@@ -2805,7 +2795,6 @@ mytracker(ControlHandle ctl, short part)
 		PySys_WriteStderr("TrackControl or HandleControlClick: exception in tracker function\n");
 }
 
-#if !TARGET_API_MAC_CARBON_NOTYET
 static int
 setcallback(myself, which, callback, uppp)
 	PyObject *myself;
@@ -2922,7 +2911,6 @@ mytrackingproc(ControlHandle control, Point startPt, ControlActionUPP actionProc
 	Py_XDECREF(rv);
 	return (ControlPartCode)c_rv;
 }
-#endif
 
 
 void initCtl()
@@ -2933,12 +2921,10 @@ void initCtl()
 
 
 	mytracker_upp = NewControlActionProc(mytracker);
-#if !TARGET_API_MAC_CARBON_NOTYET
 	mydrawproc_upp = NewControlUserPaneDrawProc(mydrawproc);
 	myidleproc_upp = NewControlUserPaneIdleProc(myidleproc);
 	myhittestproc_upp = NewControlUserPaneHitTestProc(myhittestproc);
 	mytrackingproc_upp = NewControlUserPaneTrackingProc(mytrackingproc);
-#endif
 
 
 	m = Py_InitModule("Ctl", Ctl_methods);
