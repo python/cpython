@@ -297,6 +297,33 @@ if test $have_long_long = yes ; then
 AC_CHECK_SIZEOF(long long)
 fi
 
+# Hmph. AC_CHECK_SIZEOF() doesn't include <sys/types.h>.
+AC_MSG_CHECKING(size of off_t)
+AC_CACHE_VAL(ac_cv_sizeof_off_t,
+[AC_TRY_RUN([#include <stdio.h>
+#include <sys/types.h>
+main()
+{
+  FILE *f=fopen("conftestval", "w");
+  if (!f) exit(1);
+  fprintf(f, "%d\n", sizeof(off_t));
+  exit(0);
+}], ac_cv_sizeof_off_t=`cat conftestval`, ac_cv_sizeof_off_t=0)
+])
+AC_MSG_RESULT($ac_cv_sizeof_off_t)
+AC_DEFINE_UNQUOTED(SIZEOF_OFF_T, $ac_cv_sizeof_off_t)
+
+AC_MSG_CHECKING(whether to enable large file support)
+if test $have_long_long = yes -a \
+	$ac_cv_sizeof_off_t -gt $ac_cv_sizeof_long -a \
+	$ac_cv_sizeof_long_long -ge $ac_cv_sizeof_off_t; then
+  AC_DEFINE(HAVE_LARGEFILE_SUPPORT)
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+fi
+
+
 # Set info about shared libraries.
 AC_SUBST(SO)
 AC_SUBST(LDSHARED)
@@ -516,6 +543,10 @@ AC_CHECK_FUNCS(alarm chown clock dlopen execv flock fork ftime ftruncate \
  select setgid setlocale setuid setsid setpgid setpgrp setvbuf \
  sigaction siginterrupt sigrelse strftime strptime symlink \
  tcgetpgrp tcsetpgrp timegm times truncate uname waitpid)
+
+# check for long file support functions
+AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)
+
 AC_REPLACE_FUNCS(dup2 getcwd strdup strerror memmove)
 AC_CHECK_FUNC(getpgrp, AC_TRY_COMPILE([#include <unistd.h>], [getpgrp(0);], AC_DEFINE(GETPGRP_HAVE_ARG)))
 AC_CHECK_FUNC(setpgrp, AC_TRY_COMPILE([#include <unistd.h>], [setpgrp(0,0);], AC_DEFINE(SETPGRP_HAVE_ARG)))
