@@ -225,7 +225,7 @@ class Main:
 				else:
 					rv.append(fullname)
 		for d in todo:
-			if len(rv) > 100:
+			if len(rv) > 500:
 				if istop:
 					rv.append('... and more ...')
 				return rv
