@@ -5,20 +5,24 @@
 import os
 import sys
 import getopt
-import string
 import tokenize
 
 verbose = 0
+quiet = 0
 
 def main():
-	global verbose
+	global verbose, quiet
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "v")
+		opts, args = getopt.getopt(sys.argv[1:], "qv")
 	except getopt.error, msg:
 		print msg
 	for o, a in opts:
 		if o == '-v':
 			verbose = verbose + 1
+			quiet = 0
+		if o == '-q':
+			quiet = 1
+			verbose = 0
 	for arg in args:
 		check(arg)
 
@@ -61,7 +65,12 @@ def check(file):
 		print "%s: Token Error: %s" % (`file`, str(msg))
 	f.close()
 
-	if tokens != alttokens:
+	if tokens == alttokens:
+		if verbose:
+			print "%s: Clean bill of health." % `file`
+	elif quiet:
+		print file
+	else:
 		badline = 0
 		n, altn = len(tokens), len(alttokens)
 		for i in range(max(n, altn)):
@@ -86,9 +95,6 @@ def check(file):
 			print "offending line:", `line`
 		else:
 			print file, badline, `line`
-	else:
-		if verbose:
-			print "%s: Clean bill of health." % `file`
 
 if __name__ == '__main__':
 	main()
