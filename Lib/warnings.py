@@ -3,7 +3,7 @@
 # Note: function level imports should *not* be used
 # in this module as it may cause import lock deadlock.
 # See bug 683658.
-import sys, re, types
+import sys, types
 import linecache
 
 __all__ = ["warn", "showwarning", "formatwarning", "filterwarnings",
@@ -129,6 +129,7 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     """Insert an entry into the list of warnings filters (at the front).
 
     Use assertions to check that all arguments have the right type."""
+    import re
     assert action in ("error", "ignore", "always", "default", "module",
                       "once"), "invalid action: %s" % `action`
     assert isinstance(message, basestring), "message must be a string"
@@ -162,6 +163,7 @@ def _processoptions(args):
 
 # Helper for _processoptions()
 def _setoption(arg):
+    import re
     parts = arg.split(':')
     if len(parts) > 5:
         raise _OptionError("too many fields (max 5): %s" % `arg`)
@@ -198,6 +200,7 @@ def _getaction(action):
 
 # Helper for _setoption()
 def _getcategory(category):
+    import re
     if not category:
         return Warning
     if re.match("^[a-zA-Z0-9_]+$", category):
