@@ -61,6 +61,9 @@ Exception(*)
       |    +-- FloatingPointError
       |
       +-- ValueError
+      |    |
+      |    +-- UnicodeError(*)
+      |
       +-- SystemError
       +-- MemoryError
 """
@@ -222,6 +225,10 @@ class NameError(StandardError):
 
 class UnboundLocalError(NameError):
     """Local name referenced but not bound to a value."""
+    pass
+
+class UnicodeError(ValueError):
+    """Unicode related error."""
     pass
 
 class MemoryError(StandardError):
