@@ -48,7 +48,7 @@ def control(hostname):
 	# Create control connection
 	#
 	s = socket(AF_INET, SOCK_STREAM)
-	s.connect(hostname, FTP_PORT)
+	s.connect((hostname, FTP_PORT))
 	f = s.makefile('r') # Reading the replies is easier from a file...
 	#
 	# Control loop
@@ -79,7 +79,7 @@ def newdataport(s, f):
 	port = nextport + FTP_DATA_PORT
 	nextport = (nextport+1) % 16
 	r = socket(AF_INET, SOCK_STREAM)
-	r.bind(gethostbyname(gethostname()), port)
+	r.bind((gethostbyname(gethostname()), port))
 	r.listen(1)
 	sendportcmd(s, f, port)
 	return r

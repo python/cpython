@@ -44,7 +44,7 @@ def server():
 	else:
 		port = MY_PORT
 	s = socket(AF_INET, SOCK_STREAM)
-	s.bind('', port)
+	s.bind(('', port))
 	s.listen(1)
 	print 'Server ready...'
 	while 1:
@@ -72,7 +72,7 @@ def client():
 	t1 = time.time()
 	s = socket(AF_INET, SOCK_STREAM)
 	t2 = time.time()
-	s.connect(host, port)
+	s.connect((host, port))
 	t3 = time.time()
 	i = 0
 	while i < count:

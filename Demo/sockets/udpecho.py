@@ -33,7 +33,7 @@ def server():
 	else:
 		port = ECHO_PORT
 	s = socket(AF_INET, SOCK_DGRAM)
-	s.bind('', port)
+	s.bind(('', port))
 	print 'udp echo server ready'
 	while 1:
 		data, addr = s.recvfrom(BUFSIZE)
@@ -50,7 +50,7 @@ def client():
 		port = ECHO_PORT
 	addr = host, port
 	s = socket(AF_INET, SOCK_DGRAM)
-	s.bind('', 0)
+	s.bind(('', 0))
 	print 'udp echo client ready, reading stdin'
 	while 1:
 		line = sys.stdin.readline()
