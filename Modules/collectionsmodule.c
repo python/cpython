@@ -52,8 +52,21 @@ typedef struct BLOCK {
 } block;
 
 static block *
-newblock(block *leftlink, block *rightlink) {
-	block *b = PyMem_Malloc(sizeof(block));
+newblock(block *leftlink, block *rightlink, int len) {
+	block *b;
+	/* To prevent len from overflowing INT_MAX on 64-bit machines, we
+	 * refuse to allocate new blocks if the current len is dangerously
+	 * close.  There is some extra margin to prevent spurious arithmetic
+	 * overflows at various places.  The following check ensures that
+	 * the blocks allocated to the deque, in the worst case, can only
+	 * have INT_MAX-2 entries in total.
+	 */
+	if (len >= INT_MAX - 2*BLOCKLEN) {
+		PyErr_SetString(PyExc_OverflowError,
+				"cannot add more blocks to the deque");
+		return NULL;
+	}
+	b = PyMem_Malloc(sizeof(block));
 	if (b == NULL) {
 		PyErr_NoMemory();
 		return NULL;
@@ -87,7 +100,7 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (deque == NULL)
 		return NULL;
 
-	b = newblock(NULL, NULL);
+	b = newblock(NULL, NULL, 0);
 	if (b == NULL) {
 		Py_DECREF(deque);
 		return NULL;
@@ -110,7 +123,7 @@ deque_append(dequeobject *deque, PyObject *item)
 {
 	deque->state++;
 	if (deque->rightindex == BLOCKLEN-1) {
-		block *b = newblock(deque->rightblock, NULL);
+		block *b = newblock(deque->rightblock, NULL, deque->len);
 		if (b == NULL)
 			return NULL;
 		assert(deque->rightblock->rightlink == NULL);
@@ -132,7 +145,7 @@ deque_appendleft(dequeobject *deque, PyObject *item)
 {
 	deque->state++;
 	if (deque->leftindex == 0) {
-		block *b = newblock(NULL, deque->leftblock);
+		block *b = newblock(NULL, deque->leftblock, deque->len);
 		if (b == NULL)
 			return NULL;
 		assert(deque->leftblock->leftlink == NULL);
@@ -235,7 +248,8 @@ deque_extend(dequeobject *deque, PyObject *iterable)
 	while ((item = PyIter_Next(it)) != NULL) {
 		deque->state++;
 		if (deque->rightindex == BLOCKLEN-1) {
-			block *b = newblock(deque->rightblock, NULL);
+			block *b = newblock(deque->rightblock, NULL,
+					    deque->len);
 			if (b == NULL) {
 				Py_DECREF(item);
 				Py_DECREF(it);
@@ -271,7 +285,8 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 	while ((item = PyIter_Next(it)) != NULL) {
 		deque->state++;
 		if (deque->leftindex == 0) {
-			block *b = newblock(NULL, deque->leftblock);
+			block *b = newblock(NULL, deque->leftblock,
+					    deque->len);
 			if (b == NULL) {
 				Py_DECREF(item);
 				Py_DECREF(it);
