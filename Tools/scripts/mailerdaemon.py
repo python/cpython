@@ -131,10 +131,34 @@ def emparse_aol(fp):
 	else:
 	    raise Unparseable
     return errors
+    
+def emparse_compuserve(fp):
+    while 1:
+	line = fp.readline()
+	if not line:
+	    raise Unparseable
+	line = line[:-1]
+	if line:
+	    break
+    exp = 'Your message could not be delivered for the following reason:'
+    if line[:len(exp)] != exp:
+	raise Unparseable
+    errors = []
+    while 1:
+	line = fp.readline()
+	if not line: break
+	if line[:3] == '---': break
+	line = line[:-1]
+	if not line: continue
+	if line == 'Please resend your message at a later time.':
+	    continue
+	line = 'Compuserve: ' + line
+	errors.append(line)
+    return errors
 
 
 
-EMPARSERS = [emparse_sendmail, emparse_aol, emparse_cts]
+EMPARSERS = [emparse_sendmail, emparse_aol, emparse_cts, emparse_compuserve]
 
 def parsedir(dir, modify):
     os.chdir(dir)
