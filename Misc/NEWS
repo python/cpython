@@ -69,6 +69,9 @@ Extension modules
   possible to have timestamps that differ by a second, yet where
   datetimes constructed from them are equal.
 
+- Fix a crash on Solaris that occurred when calling close() on
+  an mmap'ed file which was already closed.  (SF patch #665913)
+
 Library
 -------
 
