@@ -33,7 +33,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* XXX TO DO:
    XXX how to pass arguments to call_trace?
-   XXX totally get rid of access stuff
    XXX speed up searching for keywords by using a dictionary
    XXX document it!
    */
@@ -66,7 +65,6 @@ static object *eval_code2 PROTO((codeobject *,
 				 object **, int,
 				 object **, int,
 				 object *));
-static int do_raise PROTO((object *, object *, object *));
 #ifdef LLTRACE
 static int prtrace PROTO((object *, char *));
 #endif
@@ -102,9 +100,6 @@ static int cmp_member PROTO((object *, object *));
 static object *cmp_outcome PROTO((int, object *, object *));
 static int import_from PROTO((object *, object *, object *));
 static object *build_class PROTO((object *, object *, object *));
-#ifdef SUPPORT_OBSOLETE_ACCESS
-static int access_statement PROTO((object *, object *, frameobject *));
-#endif
 static int exec_statement PROTO((object *, object *, object *));
 static object *find_from_args PROTO((frameobject *, int));
 
@@ -238,7 +233,7 @@ Py_MakePendingCalls()
 {
 	static int busy = 0;
 #ifdef WITH_THREAD
-	if (get_thread_ident() != main_thread) {
+	if (main_thread && get_thread_ident() != main_thread) {
 		ticker = 0; /* We're not done yet */
 		return 0;
 	}
@@ -278,6 +273,8 @@ enum why_code {
 		WHY_RETURN,	/* 'return' statement */
 		WHY_BREAK	/* 'break' statement */
 };
+
+static enum why_code do_raise PROTO((object *, object *, object *));
 
 
 /* Backward compatible interface */
@@ -333,9 +330,6 @@ eval_code2(co, globals, locals,
 	register frameobject *f; /* Current frame */
 	register object **fastlocals = NULL;
 	object *retval = NULL;	/* Return value */
-#ifdef SUPPORT_OBSOLETE_ACCESS
-	int defmode = 0;	/* Default access mode for new variables */
-#endif
 #ifdef LLTRACE
 	int lltrace;
 #endif
@@ -363,11 +357,6 @@ eval_code2(co, globals, locals,
 #define TOP()		(stack_pointer[-1])
 #define BASIC_PUSH(v)	(*stack_pointer++ = (v))
 #define BASIC_POP()	(*--stack_pointer)
-
-#if 0
-#define CHECK_STACK(n)	(STACK_LEVEL() + (n) < f->f_nvalues || \
-			  (stack_pointer = extend_stack(f, STACK_LEVEL(), n)))
-#endif
 
 #ifdef LLTRACE
 #define PUSH(v)		(BASIC_PUSH(v), lltrace && prtrace(TOP(), "push"))
@@ -622,13 +611,6 @@ eval_code2(co, globals, locals,
 				printf("%d: %d\n",
 					(int) (INSTR_OFFSET() - 1), opcode);
 			}
-		}
-#endif
-
-#ifdef CHECK_STACK
-		if (!CHECK_STACK(3)) {
-			x = NULL;
-			break;
 		}
 #endif
 
@@ -1060,29 +1042,6 @@ eval_code2(co, globals, locals,
 				err_setstr(SystemError, "no locals");
 				break;
 			}
-#ifdef SUPPORT_OBSOLETE_ACCESS
-			u = dict2lookup(x, w);
-			if (u == NULL) {
-				if (defmode != 0) {
-					if (v != None)
-						u = (object *)v->ob_type;
-					else
-						u = NULL;
-					x = newaccessobject(v, x,
-							    (typeobject *)u,
-							    defmode);
-					DECREF(v);
-					if (x == NULL)
-						break;
-					v = x;
-				}
-			}
-			else if (is_accessobject(u)) {
-				err = setaccessvalue(u, x, v);
-				DECREF(v);
-				break;
-			}
-#endif
 			err = dict2insert(x, w, v);
 			DECREF(v);
 			break;
@@ -1093,14 +1052,6 @@ eval_code2(co, globals, locals,
 				err_setstr(SystemError, "no locals");
 				break;
 			}
-#ifdef SUPPORT_OBSOLETE_ACCESS
-			u = dict2lookup(x, w);
-			if (u != NULL && is_accessobject(u)) {
-				err = setaccessvalue(u, x,
-						     (object *)NULL);
-				break;
-			}
-#endif
 			if ((err = dict2remove(x, w)) != 0)
 				err_setval(NameError, w);
 			break;
@@ -1121,12 +1072,6 @@ eval_code2(co, globals, locals,
 				why = WHY_EXCEPTION;
 			}
 			else {
-#ifdef CHECK_STACK
-				if (!CHECK_STACK(oparg)) {
-					x = NULL;
-					break;
-				}
-#endif
 				for (; --oparg >= 0; ) {
 					w = GETTUPLEITEM(v, oparg);
 					INCREF(w);
@@ -1148,12 +1093,6 @@ eval_code2(co, globals, locals,
 				why = WHY_EXCEPTION;
 			}
 			else {
-#ifdef CHECK_STACK
-				if (!CHECK_STACK(oparg)) {
-					x = NULL;
-					break;
-				}
-#endif
 				for (; --oparg >= 0; ) {
 					w = getlistitem(v, oparg);
 					INCREF(w);
@@ -1182,33 +1121,12 @@ eval_code2(co, globals, locals,
 		case STORE_GLOBAL:
 			w = GETNAMEV(oparg);
 			v = POP();
-#ifdef SUPPORT_OBSOLETE_ACCESS
-			if (f->f_locals != NULL) {
-				u = dict2lookup(f->f_locals, w);
-				if (u != NULL && is_accessobject(u)) {
-					err = setaccessvalue(u, f->f_globals,
-							     v);
-					DECREF(v);
-					break;
-				}
-			}
-#endif
 			err = dict2insert(f->f_globals, w, v);
 			DECREF(v);
 			break;
 		
 		case DELETE_GLOBAL:
 			w = GETNAMEV(oparg);
-#ifdef SUPPORT_OBSOLETE_ACCESS
-			if (f->f_locals != NULL) {
-				u = dict2lookup(f->f_locals, w);
-				if (u != NULL && is_accessobject(u)) {
-					err = setaccessvalue(u, f->f_globals,
-							     (object *)NULL);
-					break;
-				}
-			}
-#endif
 			if ((err = dict2remove(f->f_globals, w)) != 0)
 				err_setval(NameError, w);
 			break;
@@ -1238,15 +1156,7 @@ eval_code2(co, globals, locals,
 					}
 				}
 			}
-#ifdef SUPPORT_OBSOLETE_ACCESS
-			if (is_accessobject(x)) {
-				x = getaccessvalue(x, f->f_globals /* XXX */);
-				if (x == NULL)
-					break;
-			}
-			else
-#endif
-				INCREF(x);
+			INCREF(x);
 			PUSH(x);
 			break;
 		
@@ -1261,40 +1171,9 @@ eval_code2(co, globals, locals,
 					break;
 				}
 			}
-#ifdef SUPPORT_OBSOLETE_ACCESS
-			if (is_accessobject(x)) {
-				x = getaccessvalue(x, f->f_globals);
-				if (x == NULL)
-					break;
-			}
-			else
-#endif
-				INCREF(x);
+			INCREF(x);
 			PUSH(x);
 			break;
-
-#if 0
-		case LOAD_LOCAL:
-			w = GETNAMEV(oparg);
-			if ((x = f->f_locals) == NULL) {
-				err_setstr(SystemError, "no locals");
-				break;
-			}
-			x = dict2lookup(x, w);
-			if (x == NULL) {
-				err_setval(NameError, w);
-				break;
-			}
-			if (is_accessobject(x)) {
-				x = getaccessvalue(x, f->f_locals);
-				if (x == NULL)
-					break;
-			}
-			else
-				INCREF(x);
-			PUSH(x);
-			break;
-#endif
 
 		case LOAD_FAST:
 			x = GETLOCAL(oparg);
@@ -1304,47 +1183,17 @@ eval_code2(co, globals, locals,
 							oparg));
 				break;
 			}
-#ifdef SUPPORT_OBSOLETE_ACCESS
-			if (is_accessobject(x)) {
-				x = getaccessvalue(x, f->f_locals);
-				if (x == NULL)
-					break;
-			}
-			else
-#endif
-				INCREF(x);
+			INCREF(x);
 			PUSH(x);
 			if (x != NULL) continue;
 			break;
 
 		case STORE_FAST:
 			v = POP();
-#ifdef SUPPORT_OBSOLETE_ACCESS
-			w = GETLOCAL(oparg);
-			if (w != NULL && is_accessobject(w)) {
-				err = setaccessvalue(w, f->f_locals, v);
-				DECREF(v);
-				break;
-			}
-#endif
 			SETLOCAL(oparg, v);
 			continue;
 
 		case DELETE_FAST:
-#ifdef SUPPORT_OBSOLETE_ACCESS
-			x = GETLOCAL(oparg);
-			if (x == NULL) {
-				err_setval(NameError,
-					   gettupleitem(co->co_varnames,
-							oparg));
-				break;
-			}
-			if (is_accessobject(x)) {
-				err = setaccessvalue(x, f->f_locals,
-						     (object *)NULL);
-				break;
-			}
-#endif
 			SETLOCAL(oparg, NULL);
 			continue;
 		
@@ -1447,18 +1296,6 @@ eval_code2(co, globals, locals,
 			if (err == 0) continue;
 			break;
 
-#ifdef SUPPORT_OBSOLETE_ACCESS
-		case ACCESS_MODE:
-			v = POP();
-			w = GETNAMEV(oparg);
-			if (getstringvalue(w)[0] == '*')
-				defmode = getintvalue(v);
-			else
-				err = access_statement(w, v, f);
-			DECREF(v);
-			break;
-#endif
-		
 		case JUMP_FORWARD:
 			JUMPBY(oparg);
 			continue;
@@ -1689,7 +1526,7 @@ eval_code2(co, globals, locals,
 				w = NULL;
 			v = POP();
 			u = POP();
-			x = build_slice(u,v,w);
+			x = PySlice_New(u, v, w);
 			DECREF(u);
 			DECREF(v);
 			XDECREF(w);
@@ -1867,7 +1704,7 @@ eval_code2(co, globals, locals,
 
 /* Logic for the raise statement (too complicated for inlining).
    This *consumes* a reference count to each of its arguments. */
-static int
+static enum why_code
 do_raise(type, value, tb)
 	object *type, *value, *tb;
 {
@@ -2730,13 +2567,6 @@ slice_index(v, isize, pi)
 }
 
 static object *
-build_slice(u, v, w) /* u:v:w */
-	object *u, *v, *w;
-{
-  return PySlice_New(u,v,w);
-}
-
-static object *
 apply_slice(u, v, w) /* return u[v:w] */
 	object *u, *v, *w;
 {
@@ -2952,17 +2782,7 @@ import_from(locals, v, name)
 			if (!is_stringobject(name) ||
 			    getstringvalue(name)[0] == '_')
 				continue;
-#ifdef SUPPORT_OBSOLETE_ACCESS
-			if (is_accessobject(value)) {
-				value = getaccessvalue(value, (object *)NULL);
-				if (value == NULL) {
-					err_clear();
-					continue;
-				}
-			}
-			else
-#endif
-				INCREF(value);
+			INCREF(value);
 			err = dict2insert(locals, name, value);
 			DECREF(value);
 			if (err != 0)
@@ -3027,38 +2847,6 @@ build_class(methods, bases, name)
 	}
 	return newclassobject(bases, methods, name);
 }
-
-#ifdef SUPPORT_OBSOLETE_ACCESS
-static int
-access_statement(name, vmode, f)
-	object *name;
-	object *vmode;
-	frameobject *f;
-{
-	int mode = getintvalue(vmode);
-	object *value, *ac;
-	typeobject *type;
-	int ret;
-	fast_2_locals(f);
-	value = dict2lookup(f->f_locals, name);
-	if (value && is_accessobject(value)) {
-		err_setstr(AccessError, "can't override access");
-		return -1;
-	}
-	err_clear();
-	if (value != NULL && value != None)
-		type = value->ob_type;
-	else
-		type = NULL;
-	ac = newaccessobject(value, f->f_locals, type, mode);
-	if (ac == NULL)
-		return -1;
-	ret = mappinginsert(f->f_locals, name, ac);
-	DECREF(ac);
-	locals_2_fast(f, 0);
-	return ret;
-}
-#endif
 
 static int
 exec_statement(prog, globals, locals)
@@ -3128,7 +2916,7 @@ exec_statement(prog, globals, locals)
 	return 0;
 }
 
-/* Hack for newimp.py */
+/* Hack for ni.py */
 static object *
 find_from_args(f, nexti)
 	frameobject *f;
