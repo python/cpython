@@ -67,9 +67,7 @@ modules described in the \emph{Python Library Reference}.
 \tableofcontents
 
 
-\chapter{Whetting Your Appetite}
-
-\label{intro}
+\chapter{Whetting Your Appetite \label{intro}}
 
 If you ever wrote a large shell script, you probably know this
 feeling: you'd love to add yet another feature, but it's already so
@@ -140,8 +138,7 @@ Flying Circus'' and has nothing to do with nasty reptiles.  Making
 references to Monty Python skits in documentation is not only allowed,
 it is encouraged!
 
-\section{Where From Here}
-\label{where}
+\section{Where From Here \label{where}}
 
 Now that you are all excited about Python, you'll want to examine it
 in some more detail.  Since the best way to learn a language is
@@ -157,11 +154,9 @@ expressions, statements and data types, through functions and modules,
 and finally touching upon advanced concepts like exceptions
 and user-defined classes.
 
-\chapter{Using the Python Interpreter}
-\label{using}
+\chapter{Using the Python Interpreter \label{using}}
 
-\section{Invoking the Interpreter}
-\label{invoking}
+\section{Invoking the Interpreter \label{invoking}}
 
 The Python interpreter is usually installed as \file{/usr/local/bin/python}
 on those machines where it is available; putting \file{/usr/local/bin} in
@@ -222,8 +217,7 @@ passing \code{-i} before the script.  (This does not work if the script
 is read from standard input, for the same reason as explained in the
 previous paragraph.)
 
-\subsection{Argument Passing}
-\label{argPassing}
+\subsection{Argument Passing \label{argPassing}}
 
 When known to the interpreter, the script name and additional
 arguments thereafter are passed to the script in the variable
@@ -236,8 +230,7 @@ found after \code{-c command} are not consumed by the Python
 interpreter's option processing but left in \code{sys.argv} for the
 command to handle.
 
-\subsection{Interactive Mode}
-\label{interactive}
+\subsection{Interactive Mode \label{interactive}}
 
 When commands are read from a tty, the interpreter is said to be in
 \emph{interactive mode}.  In this mode it prompts for the next command
@@ -256,11 +249,9 @@ Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam
 >>>
 \end{verbatim}
 
-\section{The Interpreter and Its Environment}
-\label{interp}
+\section{The Interpreter and Its Environment \label{interp}}
 
-\subsection{Error Handling}
-\label{error}
+\subsection{Error Handling \label{error}}
 
 When an error occurs, the interpreter prints an error
 message and a stack trace.  In interactive mode, it then returns to
@@ -284,8 +275,7 @@ Typing an interrupt while a command is executing raises the
 \code{KeyboardInterrupt} exception, which may be handled by a
 \code{try} statement.
 
-\subsection{Executable Python Scripts}
-\label{scripts}
+\subsection{Executable Python Scripts \label{scripts}}
 
 On BSD'ish \UNIX{} systems, Python scripts can be made directly
 executable, like shell scripts, by putting the line
@@ -298,8 +288,7 @@ executable, like shell scripts, by putting the line
 beginning of the script and giving the file an executable mode.  The
 \samp{\#!} must be the first two characters of the file.
 
-\subsection{The Interactive Startup File}
-\label{startup}
+\subsection{The Interactive Startup File \label{startup}}
 
 % XXX This should probably be dumped in an appendix, since most people
 % don't use Python interactively in non-trivial ways.
@@ -333,8 +322,7 @@ if os.path.isfile(os.environ['PYTHONSTARTUP']):
 \end{verbatim}
 
 
-\chapter{An Informal Introduction to Python}
-\label{informal}
+\chapter{An Informal Introduction to Python \label{informal}}
 
 In the following examples, input and output are distinguished by the
 presence or absence of prompts (\samp{>>> } and \samp{... }): to repeat
@@ -349,14 +337,12 @@ the interpreter.%
 Note that a secondary prompt on a line by itself in an example means
 you must type a blank line; this is used to end a multi-line command.
 
-\section{Using Python as a Calculator}
-\label{calculator}
+\section{Using Python as a Calculator \label{calculator}}
 
 Let's try some simple Python commands.  Start the interpreter and wait
 for the primary prompt, \samp{>>> }.  (It shouldn't take long.)
 
-\subsection{Numbers}
-\label{numbers}
+\subsection{Numbers \label{numbers}}
 
 The interpreter acts as a simple calculator: you can type an
 expression at it and it will write the value.  Expression syntax is
@@ -482,8 +468,7 @@ explicitly assign a value to it --- you would create an independent
 local variable with the same name masking the built-in variable with
 its magic behavior.
 
-\subsection{Strings}
-\label{strings}
+\subsection{Strings \label{strings}}
 
 Besides numbers, Python can also manipulate strings, which can be
 expressed in several ways.  They can be enclosed in single quotes or
@@ -679,8 +664,7 @@ The built-in function \function{len()} returns the length of a string:
 34
 \end{verbatim}
 
-\subsection{Lists}
-\label{lists}
+\subsection{Lists \label{lists}}
 
 Python knows a number of \emph{compound} data types, used to group
 together other values.  The most versatile is the \emph{list}, which
@@ -772,8 +756,7 @@ for example:
 Note that in the last example, \code{p[1]} and \code{q} really refer to
 the same object!  We'll come back to \emph{object semantics} later.
 
-\section{First Steps Towards Programming}
-\label{firstSteps}
+\section{First Steps Towards Programming \label{firstSteps}}
 
 Of course, we can use Python for more complicated tasks than adding
 two and two together.  For instance, we can write an initial
@@ -858,15 +841,13 @@ prompt if the last line was not completed.
 \end{itemize}
 
 
-\chapter{More Control Flow Tools}
-\label{moreControl}
+\chapter{More Control Flow Tools \label{moreControl}}
 
 Besides the \keyword{while} statement just introduced, Python knows
 the usual control flow statements known from other languages, with
 some twists.
 
-\section{\keyword{if} Statements}
-\label{if}
+\section{\keyword{if} Statements \label{if}}
 
 Perhaps the most well-known statement type is the \keyword{if}
 statement.  For example:
@@ -894,8 +875,8 @@ if', and is useful to avoid excessive indentation.  An
 %    gets changed in the wrong way.
 \emph{case} statements found in other languages.
 
-\section{\keyword{for} Statements}
-\label{for}
+
+\section{\keyword{for} Statements \label{for}}
 
 The \keyword{for} statement in Python differs a bit from what you may be
 used to in \C{} or Pascal.  Rather than always iterating over an
@@ -930,8 +911,8 @@ makes this particularly convenient:
 ['defenestrate', 'cat', 'window', 'defenestrate']
 \end{verbatim}
 
-\section{The \function{range()} Function}
-\label{range}
+
+\section{The \function{range()} Function \label{range}}
 
 If you do need to iterate over a sequence of numbers, the built-in
 function \function{range()} comes in handy.  It generates lists
@@ -973,8 +954,8 @@ and \function{len()} as follows:
 \end{verbatim}
 
 \section{\keyword{break} and \keyword{continue} Statements, and
-         \keyword{else} Clauses on Loops}
-\label{break}
+         \keyword{else} Clauses on Loops
+         \label{break}}
 
 The \keyword{break} statement, like in \C{}, breaks out of the smallest
 enclosing \keyword{for} or \keyword{while} loop.
@@ -1008,8 +989,7 @@ which searches for prime numbers:
 9 equals 3 * 3
 \end{verbatim}
 
-\section{\keyword{pass} Statements}
-\label{pass}
+\section{\keyword{pass} Statements \label{pass}}
 
 The \keyword{pass} statement does nothing.
 It can be used when a statement is required syntactically but the
@@ -1022,8 +1002,7 @@ For example:
 ... 
 \end{verbatim}
 
-\section{Defining Functions}
-\label{functions}
+\section{Defining Functions \label{functions}}
 
 We can create a function that writes the Fibonacci series to an
 arbitrary boundary:
@@ -1146,14 +1125,12 @@ efficient.
 
 \end{itemize}
 
-\section{More on Defining Functions}
-\label{defining}
+\section{More on Defining Functions \label{defining}}
 
 It is also possible to define functions with a variable number of
 arguments.  There are three forms, which can be combined.
 
-\subsection{Default Argument Values}
-\label{defaultArgs}
+\subsection{Default Argument Values \label{defaultArgs}}
 
 The most useful form is to specify a default value for one or more
 arguments.  This creates a function that can be called with fewer
@@ -1219,8 +1196,7 @@ def f(a, l = None):
     return a
 \end{verbatim}
 
-\subsection{Keyword Arguments}
-\label{keywordArgs}
+\subsection{Keyword Arguments \label{keywordArgs}}
 
 Functions can also be called using
 keyword arguments of the form \samp{\var{keyword} = \var{value}}.  For
@@ -1300,8 +1276,7 @@ shopkeeper : Michael Palin
 sketch : Cheese Shop Sketch
 \end{verbatim}
 
-\subsection{Arbitrary Argument Lists}
-\label{arbitraryArgs}
+\subsection{Arbitrary Argument Lists \label{arbitraryArgs}}
 
 Finally, the least frequently used option is to specify that a
 function can be called with an arbitrary number of arguments.  These
@@ -1314,8 +1289,7 @@ def fprintf(file, format, *args):
 \end{verbatim}
 
 
-\subsection{Lambda Forms}
-\label{lambda}
+\subsection{Lambda Forms \label{lambda}}
 
 By popular demand, a few features commonly found in functional
 programming languages and Lisp have been added to Python.  With the
@@ -1333,8 +1307,7 @@ def make_incrementor(n):
     return lambda x, incr=n: x+incr
 \end{verbatim}
 
-\subsection{Documentation Strings}
-\label{docstrings}
+\subsection{Documentation Strings \label{docstrings}}
 
 There are emerging conventions about the content and formatting of
 documentation strings.
@@ -1366,14 +1339,12 @@ tested after expansion of tabs (to 8 spaces, normally).
 
 
 
-\chapter{Data Structures}
-\label{structures}
+\chapter{Data Structures \label{structures}}
 
 This chapter describes some things you've learned about already in
 more detail, and adds some new things as well.
 
-\section{More on Lists}
-\label{moreLists}
+\section{More on Lists \label{moreLists}}
 
 The list data type has some more methods.  Here are all of the methods
 of list objects:
@@ -1431,8 +1402,7 @@ An example that uses all list methods:
 [-1, 1, 66.6, 333, 333, 1234.5]
 \end{verbatim}
 
-\subsection{Functional Programming Tools}
-\label{functional}
+\subsection{Functional Programming Tools \label{functional}}
 
 There are three built-in functions that are very useful when used with
 lists: \function{filter()}, \function{map()}, and \function{reduce()}.
@@ -1510,8 +1480,7 @@ item, then to the result and the next item, and so on.  For example,
 0
 \end{verbatim}
 
-\section{The \keyword{del} statement}
-\label{del}
+\section{The \keyword{del} statement \label{del}}
 
 There is a way to remove an item from a list given its index instead
 of its value: the \code{del} statement.  This can also be used to
@@ -1539,8 +1508,7 @@ Referencing the name \code{a} hereafter is an error (at least until
 another value is assigned to it).  We'll find other uses for
 \keyword{del} later.
 
-\section{Tuples and Sequences}
-\label{tuples}
+\section{Tuples and Sequences \label{tuples}}
 
 We saw that lists and strings have many common properties, e.g.,
 indexing and slicing operations.  They are two examples of
@@ -1620,8 +1588,7 @@ square brackets:
 % XXX Add a bit on the difference between tuples and lists.
 % XXX Also explain that a tuple can *contain* a mutable object!
 
-\section{Dictionaries}
-\label{dictionaries}
+\section{Dictionaries \label{dictionaries}}
 
 Another useful data type built into Python is the \emph{dictionary}.
 Dictionaries are sometimes found in other languages as ``associative
@@ -1673,8 +1640,7 @@ Here is a small example using a dictionary:
 1
 \end{verbatim}
 
-\section{More on Conditions}
-\label{conditions}
+\section{More on Conditions \label{conditions}}
 
 The conditions used in \code{while} and \code{if} statements above can
 contain other operators besides comparisons.
@@ -1717,8 +1683,7 @@ expression to a variable.  For example,
 
 Note that in Python, unlike \C{}, assignment cannot occur inside expressions.
 
-\section{Comparing Sequences and Other Types}
-\label{comparing}
+\section{Comparing Sequences and Other Types \label{comparing}}
 
 Sequence objects may be compared to other objects with the same
 sequence type.  The comparison uses \emph{lexicographical} ordering:
@@ -1755,8 +1720,7 @@ to their numeric value, so 0 equals 0.0, etc.%
 }
 
 
-\chapter{Modules}
-\label{modules}
+\chapter{Modules \label{modules}}
 
 If you quit from the Python interpreter and enter it again, the
 definitions you have made (functions and variables) are lost.
@@ -1833,8 +1797,7 @@ If you intend to use a function often you can assign it to a local name:
 \end{verbatim}
 
 
-\section{More on Modules}
-\label{moreModules}
+\section{More on Modules \label{moreModules}}
 
 A module can contain executable statements as well as function
 definitions.
@@ -1892,8 +1855,7 @@ There is even a variant to import all names that a module defines:
 This imports all names except those beginning with an underscore
 (\code{_}).
 
-\subsection{The Module Search Path}
-\label{searchPath}
+\subsection{The Module Search Path \label{searchPath}}
 
 % XXX Need to document that a lone .pyc/.pyo is acceptable too!
 
@@ -1974,8 +1936,7 @@ all modules in a directory.
 \end{itemize}
 
 
-\section{Standard Modules}
-\label{standardModules}
+\section{Standard Modules \label{standardModules}}
 
 Python comes with a library of standard modules, described in a separate
 document, the \emph{Python Library Reference} (``Library Reference''
@@ -2018,8 +1979,7 @@ is not set.  You can modify it using standard list operations, e.g.:
 >>> sys.path.append('/ufs/guido/lib/python')
 \end{verbatim}
 
-\section{The \function{dir()} Function}
-\label{dir}
+\section{The \function{dir()} Function \label{dir}}
 
 The built-in function \function{dir()} is used to find out which names
 a module defines.  It returns a sorted list of strings:
@@ -2065,15 +2025,16 @@ standard module \module{__builtin__}\refbimodindex{__builtin__}:
 'reduce', 'reload', 'repr', 'round', 'setattr', 'str', 'type', 'xrange']
 \end{verbatim}
 
-\section{Packages}
+\section{Packages \label{packages}}
 
 Packages are a way of structuring Python's module namespace
-by using ``dotted module names''.  For example, the module name \module{A.B}
-designates a submodule named \samp{B} in a package named \samp{A}.  Just like the
-use of modules saves the authors of different modules from having to
-worry about each other's global variable names, the use of dotted
-module names saves the authors of multi-module packages like NumPy or
-PIL from having to worry about each other's module names.
+by using ``dotted module names''.  For example, the module name
+\module{A.B} designates a submodule named \samp{B} in a package named
+\samp{A}.  Just like the use of modules saves the authors of different
+modules from having to worry about each other's global variable names,
+the use of dotted module names saves the authors of multi-module
+packages like NumPy or PIL from having to worry about each other's
+module names.
 
 Suppose you want to design a collection of modules (a ``package'') for
 the uniform handling of sound files and sound data.  There are many
@@ -2170,7 +2131,7 @@ Contrarily, when using syntax like \code{import
 a package; the last item can be a module or a package but can't be a
 class or function or variable defined in the previous item.
 
-\subsection{Importing * From a Package}
+\subsection{Importing * From a Package \label{pkg-import-star}}
 %The \code{__all__} Attribute
 
 Now what happens when the user writes \code{from Sound.Effects import
@@ -2268,14 +2229,15 @@ Sound.Effects import echo}.
 
 
 
-\chapter{Input and Output}
-\label{io}
+\chapter{Input and Output \label{io}}
 
 There are several ways to present the output of a program; data can be
 printed in a human-readable form, or written to a file for future use.
 This chapter will discuss some of the possibilities.
 
-\section{Fancier Output Formatting}
+
+\section{Fancier Output Formatting \label{formatting}}
+
 So far we've encountered two ways of writing values: \emph{expression
 statements} and the \keyword{print} statement.  (A third way is using
 the \method{write()} method of file objects; the standard output file
@@ -2426,8 +2388,7 @@ This is particularly useful in combination with the new built-in
 \function{vars()} function, which returns a dictionary containing all
 local variables.
 
-\section{Reading and Writing Files}
-\label{files}
+\section{Reading and Writing Files \label{files}}
 
 % Opening files 
 \function{open()}\bifuncindex{open} returns a file
@@ -2461,8 +2422,7 @@ written.  This behind-the-scenes modification to file data is fine for
 writing such files.  (Note that the precise semantics of text mode on
 the Macintosh depends on the underlying \C{} library being used.)
 
-\subsection{Methods of File Objects}
-\label{fileMethods}
+\subsection{Methods of File Objects \label{fileMethods}}
 
 The rest of the examples in this section will assume that a file
 object called \code{f} has already been created.
@@ -2552,8 +2512,7 @@ File objects have some additional methods, such as \method{isatty()}
 and \method{truncate()} which are less frequently used; consult the
 Library Reference for a complete guide to file objects.
 
-\subsection{The \module{pickle} Module}
-\label{pickle}
+\subsection{The \module{pickle} Module \label{pickle}}
 \refstmodindex{pickle}
 
 Strings can easily be written to and read from a file. Numbers take a
@@ -2602,16 +2561,14 @@ as matrices can be properly pickled and unpickled.
 
 
 
-\chapter{Errors and Exceptions}
-\label{errors}
+\chapter{Errors and Exceptions \label{errors}}
 
 Until now error messages haven't been more than mentioned, but if you
 have tried out the examples you have probably seen some.  There are
 (at least) two distinguishable kinds of errors: \emph{syntax errors}
 and \emph{exceptions}.
 
-\section{Syntax Errors}
-\label{syntaxErrors}
+\section{Syntax Errors \label{syntaxErrors}}
 
 Syntax errors, also known as parsing errors, are perhaps the most common
 kind of complaint you get while you are still learning Python:
@@ -2633,8 +2590,7 @@ the arrow: in the example, the error is detected at the keyword
 File name and line number are printed so you know where to look in case
 the input came from a script.
 
-\section{Exceptions}
-\label{exceptions}
+\section{Exceptions \label{exceptions}}
 
 Even if a statement or expression is syntactically correct, it may
 cause an error when an attempt is made to execute it.
@@ -2683,8 +2639,7 @@ it will not display lines read from standard input.
 The Library Reference lists the built-in exceptions and their
 meanings.
 
-\section{Handling Exceptions}
-\label{handling}
+\section{Handling Exceptions \label{handling}}
 
 It is possible to write programs that handle selected exceptions.
 Look at the following example, which prints a table of inverses of
@@ -2799,8 +2754,7 @@ Handling run-time error: integer division or modulo
 \end{verbatim}
 
 
-\section{Raising Exceptions}
-\label{raising}
+\section{Raising Exceptions \label{raising}}
 
 The \keyword{raise} statement allows the programmer to force a
 specified exception to occur.
@@ -2818,8 +2772,7 @@ raised.  The optional second argument specifies the exception's
 argument.
 
 
-\section{User-defined Exceptions}
-\label{userExceptions}
+\section{User-defined Exceptions \label{userExceptions}}
 
 Programs may name their own exceptions by assigning a string to a
 variable.
@@ -2843,8 +2796,7 @@ Many standard modules use this to report errors that may occur in
 functions they define.
 
 
-\section{Defining Clean-up Actions}
-\label{cleanup}
+\section{Defining Clean-up Actions \label{cleanup}}
 
 The \keyword{try} statement has another optional clause which is
 intended to define clean-up actions that must be executed under all
@@ -2871,8 +2823,7 @@ left via a \keyword{break} or \keyword{return} statement.
 A \keyword{try} statement must either have one or more except clauses
 or one finally clause, but not both.
 
-\chapter{Classes}
-\label{classes}
+\chapter{Classes \label{classes}}
 
 Python's class mechanism adds classes to the language with a minimum
 of new syntax and semantics.  It is a mixture of the class mechanisms
@@ -2899,8 +2850,7 @@ extension by the user.  Also, like in \Cpp{} but unlike in Modula-3, most
 built-in operators with special syntax (arithmetic operators,
 subscripting etc.) can be redefined for class instances.
 
-\section{A Word About Terminology}
-\label{terminology}
+\section{A Word About Terminology \label{terminology}}
 
 Lacking universally accepted terminology to talk about classes, I will
 make occasional use of Smalltalk and \Cpp{} terms.  (I would use Modula-3
@@ -2932,8 +2882,7 @@ obviates the need for two different argument passing mechanisms as in
 Pascal.
 
 
-\section{Python Scopes and Name Spaces}
-\label{scopes}
+\section{Python Scopes and Name Spaces \label{scopes}}
 
 Before introducing classes, I first have to tell you something about
 Python's scope rules.  Class definitions play some neat tricks with
@@ -3036,15 +2985,13 @@ scope.  (The \keyword{global} statement can be used to indicate that
 particular variables live in the global scope.)
 
 
-\section{A First Look at Classes}
-\label{firstClasses}
+\section{A First Look at Classes \label{firstClasses}}
 
 Classes introduce a little bit of new syntax, three new object types,
 and some new semantics.
 
 
-\subsection{Class Definition Syntax}
-\label{classDefinition}
+\subsection{Class Definition Syntax \label{classDefinition}}
 
 The simplest form of class definition looks like this:
 
@@ -3083,8 +3030,7 @@ reinstated, and the class object is bound here to the class name given
 in the class definition header (\class{ClassName} in the example).
 
 
-\subsection{Class Objects}
-\label{classObjects}
+\subsection{Class Objects \label{classObjects}}
 
 Class objects support two kinds of operations: attribute references
 and instantiation.
@@ -3122,8 +3068,7 @@ creates a new \emph{instance} of the class and assigns this object to
 the local variable \code{x}.
 
 
-\subsection{Instance Objects}
-\label{instanceObjects}
+\subsection{Instance Objects \label{instanceObjects}}
 
 Now what can we do with instance objects?  The only operations
 understood by instance objects are attribute references.  There are
@@ -3164,8 +3109,7 @@ object.%
 \obindex{method}
 
 
-\subsection{Method Objects}
-\label{methodObjects}
+\subsection{Method Objects \label{methodObjects}}
 
 Usually, a method is called immediately, e.g.:
 
@@ -3213,8 +3157,7 @@ list is constructed from the instance object and the original argument
 list, and the function object is called with this new argument list.
 
 
-\section{Random Remarks}
-\label{remarks}
+\section{Random Remarks \label{remarks}}
 
 [These should perhaps be placed more carefully...]
 
@@ -3347,8 +3290,7 @@ this global scope, and in the next section we'll find some good
 reasons why a method would want to reference its own class!
 
 
-\section{Inheritance}
-\label{inheritance}
+\section{Inheritance \label{inheritance}}
 
 Of course, a language feature would not be worthy of the name ``class''
 without supporting inheritance.  The syntax for a derived class
@@ -3400,8 +3342,7 @@ occasionally useful to clients as well.  (Note that this only works if
 the base class is defined or imported directly in the global scope.)
 
 
-\subsection{Multiple Inheritance}
-\label{multiple}
+\subsection{Multiple Inheritance \label{multiple}}
 
 Python supports a limited form of multiple inheritance as well.  A
 class definition with multiple base classes looks as follows:
@@ -3441,8 +3382,7 @@ variables'' or data attributes used by the common base class), it is
 not clear that these semantics are in any way useful.
 
 
-\section{Private Variables}
-\label{private}
+\section{Private Variables \label{private}}
 
 There is limited support for class-private
 identifiers.  Any identifier of the form \code{__spam} (at least two
@@ -3511,8 +3451,7 @@ class VirtualAttributes:
 %so that widespread experience with its use can be gained.  It will not
 %be removed without providing a better solution and a migration path.
 
-\section{Odds and Ends}
-\label{odds}
+\section{Odds and Ends \label{odds}}
 
 Sometimes it is useful to have a data type similar to the Pascal
 ``record'' or \C{} ``struct'', bundling together a couple of named data
@@ -3548,8 +3487,7 @@ Instance method objects have attributes, too: \code{m.im_self} is the
 object of which the method is an instance, and \code{m.im_func} is the
 function object corresponding to the method.
 
-\subsection{Exceptions Can Be Classes}
-\label{exceptionClasses}
+\subsection{Exceptions Can Be Classes \label{exceptionClasses}}
 
 User-defined exceptions are no longer limited to being string objects
 --- they can be identified by classes as well.  Using this mechanism it
@@ -3606,8 +3544,7 @@ finally the instance converted to a string using the built-in function
 \function{str()}.
 
 
-\chapter{What Now?}
-\label{whatNow}
+\chapter{What Now? \label{whatNow}}
 
 Hopefully reading this tutorial has reinforced your interest in using
 Python.  Now what should you do?
@@ -3655,8 +3592,8 @@ information on how to join.
 
 \appendix
 
-\chapter{Interactive Input Editing and History Substitution}
-\label{interacting}
+\chapter{Interactive Input Editing and History Substitution
+         \label{interacting}}
 
 Some versions of the Python interpreter support editing of the current
 input line and history substitution, similar to facilities found in
@@ -3665,8 +3602,7 @@ the Korn shell and the GNU Bash shell.  This is implemented using the
 editing.  This library has its own documentation which I won't
 duplicate here; however, the basics are easily explained.
 
-\section{Line Editing}
-\label{lineEditing}
+\section{Line Editing \label{lineEditing}}
 
 If supported, input line editing is active whenever the interpreter
 prints a primary or secondary prompt.  The current line can be edited
@@ -3679,8 +3615,7 @@ line to the right of the cursor, C-Y yanks back the last killed
 string.  C-underscore undoes the last change you made; it can be
 repeated for cumulative effect.
 
-\section{History Substitution}
-\label{history}
+\section{History Substitution \label{history}}
 
 History substitution works as follows.  All non-empty input lines
 issued are saved in a history buffer, and when a new prompt is given
@@ -3691,8 +3626,7 @@ front of the prompt to mark a line as modified.  Pressing the Return
 key passes the current line to the interpreter.  C-R starts an
 incremental reverse search; C-S starts a forward search.
 
-\section{Key Bindings}
-\label{keyBindings}
+\section{Key Bindings \label{keyBindings}}
 
 The key bindings and some other parameters of the Readline library can
 be customized by placing commands in an initialization file called
@@ -3760,8 +3694,7 @@ execute application-defined code if an object with a
 \method{__getattr__()} method is part of the expression.
 
 
-\section{Commentary}
-\label{commentary}
+\section{Commentary \label{commentary}}
 
 This facility is an enormous step forward compared to previous
 versions of the interpreter; however, some wishes are left: It would
