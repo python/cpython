@@ -2546,6 +2546,17 @@ Do you like this message?
         msg = self._msgobj('msg_32.txt')
         eq(msg.get_content_charset(), 'us-ascii')
 
+    def test_rfc2231_no_language_or_charset(self):
+        m = '''\
+Content-Transfer-Encoding: 8bit
+Content-Disposition: inline; filename="file____C__DOCUMENTS_20AND_20SETTINGS_FABIEN_LOCAL_20SETTINGS_TEMP_nsmail.htm"
+Content-Type: text/html; NAME*0=file____C__DOCUMENTS_20AND_20SETTINGS_FABIEN_LOCAL_20SETTINGS_TEM; NAME*1=P_nsmail.htm
+
+'''
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_param('NAME'),
+                         (None, None, 'file____C__DOCUMENTS_20AND_20SETTINGS_FABIEN_LOCAL_20SETTINGS_TEMP_nsmail.htm'))
+
 
 
 def _testclasses():
