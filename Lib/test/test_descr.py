@@ -3184,6 +3184,7 @@ def slices():
     vereq(a, [2,3,1])
 
 def subtype_resurrection():
+    import gc
     if verbose:
         print "Testing resurrection of new-style instance..."
 
@@ -3196,11 +3197,21 @@ def subtype_resurrection():
 
     c = C()
     c.attr = 42
-    # The only interesting thing here is whether this blows up, due to flawed
+    # The most interesting thing here is whether this blows up, due to flawed
     #  GC tracking logic in typeobject.c's call_finalizer() (a 2.2.1 bug).
     del c
-    del C.container[-1]  # resurrect it again for the heck of it
+
+    # If that didn't blow up, it's also interesting to see whether clearing
+    # the last container slot works:  that will attempt to delete c again,
+    # which will cause c to get appended back to the container again "during"
+    # the del.
+    del C.container[-1]
+    vereq(len(C.container), 1)
     vereq(C.container[-1].attr, 42)
+
+    # Make c mortal again, so that the test framework with -l doesn't report
+    # it as a leak.
+    del C.__del__
 
 def do_this_first():
     if verbose:
