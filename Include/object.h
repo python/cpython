@@ -97,12 +97,12 @@ whose size is determined when the object is allocated.
 	int ob_refcnt; \
 	struct _typeobject *ob_type;
 #define PyObject_HEAD_INIT(type) 0, 0, 1, type,
-#else
+#else /* !Py_TRACE_REFS */
 #define PyObject_HEAD \
 	int ob_refcnt; \
 	struct _typeobject *ob_type;
 #define PyObject_HEAD_INIT(type) 1, type,
-#endif
+#endif /* !Py_TRACE_REFS */
 
 #define PyObject_VAR_HEAD \
 	PyObject_HEAD \
@@ -254,6 +254,7 @@ extern int PyObject_SetAttr Py_PROTO((PyObject *, PyObject *, PyObject *));
 extern long PyObject_Hash Py_PROTO((PyObject *));
 extern int PyObject_IsTrue Py_PROTO((PyObject *));
 extern int PyCallable_Check Py_PROTO((PyObject *));
+extern int PyNumber_Coerce Py_PROTO((PyObject **, PyObject **));
 
 /* Flag bits for printing: */
 #define Py_PRINT_RAW	1	/* No string quotes etc. */
@@ -308,33 +309,38 @@ extern void inc_count Py_PROTO((PyTypeObject *));
 #endif
 
 #ifdef Py_REF_DEBUG
+
 extern long _Py_RefTotal;
+
 #ifndef Py_TRACE_REFS
 #ifdef COUNT_ALLOCS
 #define _Py_NewReference(op) (inc_count((op)->ob_type), _Py_RefTotal++, (op)->ob_refcnt = 1)
 #else
 #define _Py_NewReference(op) (_Py_RefTotal++, (op)->ob_refcnt = 1)
 #endif
-#endif
+#endif /* !Py_TRACE_REFS */
+
 #define Py_INCREF(op) (_Py_RefTotal++, (op)->ob_refcnt++)
 #define Py_DECREF(op) \
 	if (--_Py_RefTotal, --(op)->ob_refcnt != 0) \
 		; \
 	else \
 		_Py_Dealloc(op)
-#else
+#else /* !Py_REF_DEBUG */
+
 #ifdef COUNT_ALLOCS
 #define _Py_NewReference(op) (inc_count((op)->ob_type), (op)->ob_refcnt = 1)
 #else
 #define _Py_NewReference(op) ((op)->ob_refcnt = 1)
 #endif
+
 #define Py_INCREF(op) ((op)->ob_refcnt++)
 #define Py_DECREF(op) \
 	if (--(op)->ob_refcnt != 0) \
 		; \
 	else \
 		_Py_Dealloc(op)
-#endif
+#endif /* !Py_REF_DEBUG */
 
 /* Macros to use in case the object pointer may be NULL: */
 
