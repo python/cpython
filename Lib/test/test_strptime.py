@@ -379,6 +379,17 @@ class Strptime12AMPMTests(unittest.TestCase):
         eq(_strptime.strptime('12 AM', '%I %p')[3], 0)
 
 
+class JulianTests(unittest.TestCase):
+    """Test a _strptime regression that all julian (1-366) are accepted"""
+
+    def test_all_julian_days(self):
+        eq = self.assertEqual
+        # XXX: should 0 be accepted?
+        for i in range(1, 367):
+            # use 2004, since it is a leap year, we have 366 days
+            eq(_strptime.strptime('%d 2004' % i, '%j %Y')[7], i)
+
+
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(LocaleTime_Tests))
@@ -386,6 +397,7 @@ def test_main():
     suite.addTest(unittest.makeSuite(StrptimeTests))
     suite.addTest(unittest.makeSuite(FxnTests))
     suite.addTest(unittest.makeSuite(Strptime12AMPMTests))
+    suite.addTest(unittest.makeSuite(JulianTests))
     test_support.run_suite(suite)
 
 
