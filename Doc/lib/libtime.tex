@@ -26,9 +26,22 @@ determined by the C library; for \UNIX{}, it is typically in 2038.%
 \index{Year 2038}
 
 \item
-Year 2000 (Y2K) issues: Python depends on the platform's C library,
+\strong{Year 2000 (Y2K) issues}: Python depends on the platform's C library,
 which generally doesn't have year 2000 issues, since all dates and
-times are represented internally as seconds since the epoch.%
+times are represented internally as seconds since the epoch.
+Functions accepting a time tuple (see below) generally require a
+4-digit year.  For backward compatibility, 2-digit years are supported
+if the module variable \code{accept2dyear} is a non-zero integer; this
+variable is initialized to \code{1} unless the environment variable
+\code{PYTHONY2K} is set to a non-empty string, in which case it is
+initialized to \code{0}.  Thus, you can set \code{PYTHONY2K} in the
+environment to \code{x} to require 4-digit years for all year input.
+When 2-digit years are accepted, they are converted according to the
+POSIX or X/Open standard: values 69-99 are mapped to 1969-1999, and
+values 0--68 are mapped to 2000--2068.  Values 100--1899 are always
+illegal.  Note that this is new as of Python 1.5.2(a2); earlier
+versions, up to Python 1.5.1 and 1.5.2a1, would add 1900 to year
+values below 1900.%
 \index{Year 2000}%
 \index{Y2K}
 
