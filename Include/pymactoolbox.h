@@ -88,7 +88,11 @@ PyObject *PyMac_Buildwide(wide *);			/* Convert wide to PyObject */
 #endif /* USE_TOOLBOX_OBJECT_GLUE */
 
 /* macfs exports */
-extern int PyMac_GetFSSpec(PyObject *, FSSpec *);
+int PyMac_GetFSSpec(PyObject *, FSSpec *);	/* argument parser for FSSpec */
+PyObject *PyMac_BuildFSSpec(FSSpec *);		/* Convert FSSpec to PyObject */
+
+int PyMac_GetFSRef(PyObject *, FSRef *);	/* argument parser for FSRef */
+PyObject *PyMac_BuildFSRef(FSRef *);		/* Convert FSRef to PyObject */
 
 /* AE exports */
 extern PyObject *AEDesc_New(AppleEvent *); /* XXXX Why passed by address?? */
