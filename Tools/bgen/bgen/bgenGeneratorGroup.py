@@ -13,7 +13,6 @@ class GeneratorGroup:
 	def generate(self):
 		for g in self.generators:
 			g.generate()
-		Output()
 		Output("static PyMethodDef %s_methods[] = {", self.prefix)
 		IndentLevel()
 		for g in self.generators:
@@ -21,6 +20,7 @@ class GeneratorGroup:
 		Output("{NULL, NULL, 0}")
 		DedentLevel()
 		Output("};")
+		Output()
 
 
 def _test():

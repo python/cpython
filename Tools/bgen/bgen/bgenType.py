@@ -106,16 +106,53 @@ class Type:
 		"""
 		return name
 
+	def mkvalueCleanup(self, name):
+		"""Clean up if necessary after mkvalue().
+
+		This is normally empty; it may deallocate buffers etc.
+		"""
+		pass
+
+
+# Sometimes it's useful to define a type that's only usable as input or output parameter
+
+class InputOnlyMixIn:
+
+	"Mix-in class to boobytrap passOutput"
+
+	def passOutput(self):
+		raise RuntimeError, "this type can only be used for input parameters"
+
+class InputOnlyType(InputOnlyMixIn, Type):
+
+	"Same as Type, but only usable for input parameters -- passOutput is boobytrapped"
+
+class OutputOnlyMixIn:
+
+	"Mix-in class to boobytrap passInput"
+
+	def passInput(self):
+		raise RuntimeError, "this type can only be used for output parameters"
+
+class OutputOnlyType(OutputOnlyMixIn, Type):
+
+	"Same as Type, but only usable for output parameters -- passInput is boobytrapped"
+
 
 # A modest collection of standard C types.
 void = None
+char = Type("char", "c")
 short = Type("short", "h")
 int = Type("int", "i")
 long = Type("long", "l")
 float = Type("float", "f")
 double = Type("double", "d")
-stringptr = Type("char*", "s")
-char = Type("char", "c")
+
+
+# The most common use of character pointers is a null-terminated string.
+# For input, this is easy.  For output, and for other uses of char *,
+# see the various Buffer types below.
+stringptr = InputOnlyType("char*", "s")
 
 
 # Some Python related types.
@@ -124,19 +161,68 @@ stringobjectptr = Type("PyStringObject*", "S")
 # Etc.
 
 
-# Buffers are character arrays that may contain null bytes.
-# Their length is either Fixed or Sized (i.e. given by a separate argument).
+class FakeType(InputOnlyType):
 
-class SizedInputBuffer:
+	"""A type that is not represented in the Python version of the interface.
 
-	"Sized input buffer -- buffer size is an input parameter"
+	Instantiate with a value to pass in the call.
+	"""
 
-	def __init__(self, size = ''):
-		self.size = size
+	def __init__(self, substitute):
+		self.substitute = substitute
 
 	def declare(self, name):
-		Output("char *%s;", name)
+		pass
+
+	def getargsFormat(self):
+		return ""
+
+	def getargsArgs(self, name):
+		return None
+
+	def passInput(self, name):
+		return self.substitute
+
+
+class AbstractBufferType:
+	"""Buffers are character arrays that may contain null bytes.
+
+	There are a number of variants depending on:
+	- how the buffer is allocated (for output buffers), and
+	- whether and how the size is passed into and/or out of the called function.
+
+	The AbstractbufferType only serves as a placeholder for this doc string.
+	"""
+
+	def declare(self, name):
+		self.declareBuffer(name)
+		self.declareSize(name)
+
+
+class FixedBufferType(AbstractBufferType):
+
+	"""Fixed size buffer -- passed without size information.
+
+	Instantiate with the size as parameter.
+	THIS IS STILL AN ABSTRACT BASE CLASS -- DO NOT INSTANTIATE.
+	"""
+
+	def __init__(self, size):
+		self.size = str(size)
+
+	def declareSize(self, name):
 		Output("int %s__len__;", name)
+
+
+class FixedInputBufferType(InputOnlyMixIn, FixedBufferType):
+
+	"""Fixed size input buffer -- passed without size information.
+
+	Instantiate with the size as parameter.
+	"""
+
+	def declareBuffer(self, name):
+		Output("char *%s;", name)
 
 	def getargsFormat(self):
 		return "s#"
@@ -145,126 +231,221 @@ class SizedInputBuffer:
 		return "&%s, &%s__len__" % (name, name)
 
 	def getargsCheck(self, name):
-		pass
-
-	def passInput(self, name):
-		return "%s, %s__len__" % (name, name)
-
-
-class FixedInputBuffer(SizedInputBuffer):
-
-	"Fixed input buffer -- buffer size is a constant"
-
-	def getargsCheck(self, name):
-		Output("if (%s__len__ != %s)", name, str(self.size))
+		Output("if (%s__len__ != %s)", name, self.size)
 		OutLbrace()
-		Output('PyErr_SetString(PyExc_TypeError, "bad string length");')
-		Output('return NULL;')
+		Output('PyErr_SetString(PyExc_TypeError, "buffer length should be %s");',
+		       self.size)
+		Output('return NULL;') # XXX should do a goto
 		OutRbrace()
 
 	def passInput(self, name):
 		return name
 
 
-class RecordBuffer(FixedInputBuffer):
+class FixedOutputBufferType(OutputOnlyMixIn, FixedBufferType):
 
-	"Like fixed input buffer -- but declared as a record type pointer"
+	"""Fixed size output buffer -- passed without size information.
 
-	def __init__(self, type):
-		self.type = type
-		self.size = "sizeof(%s)" % type
+	Instantiate with the size as parameter.
+	"""
 
-	def declare(self, name):
-		Output("%s *%s;", self.type, name)
-		Output("int %s__len__;", name)
-	
-
-class SizedOutputBuffer:
-
-	"Sized output buffer -- buffer size is an input-output parameter"
-
-	def __init__(self, maxsize):
-		self.maxsize = maxsize
-
-	def declare(self, name):
-		Output("char %s[%s];", name, str(self.maxsize))
-		Output("int %s__len__ = %s;", name, str(self.maxsize))
+	def declareBuffer(self, name):
+		Output("char %s[%s];", name, self.size)
 
 	def passOutput(self, name):
-		return "%s, &%s__len__" % (name, name)
-
-	def errorCheck(self, name):
-		pass
+		return name
 
 	def mkvalueFormat(self):
 		return "s#"
+
+	def mkvalueArgs(self):
+		return "%s, %s" % (name, self.size)
+
+
+class StructBufferType(FixedBufferType):
+
+	"""Structure buffer -- passed as a structure pointer.
+
+	Instantiate with the struct type as parameter.
+	"""
+
+	def __init__(self, type):
+		FixedBufferType.__init__(self, "sizeof(%s)" % type)
+		self.type = type
+
+
+class StructInputBufferType(StructBufferType, FixedInputBufferType):
+
+	"""Fixed size input buffer -- passed as a pointer to a structure.
+
+	Instantiate with the struct type as parameter.
+	"""
+
+	def declareBuffer(self, name):
+		Output("%s *%s;", self.type, name)
+
+
+class StructByValueBufferType(StructInputBufferType):
+
+	"""Fixed size input buffer -- passed as a structure BY VALUE.
+
+	Instantiate with the struct type as parameter.
+	"""
+
+	def passInput(self, name):
+		return "*%s" % name
+
+
+class StructOutputBufferType(StructBufferType, FixedOutputBufferType):
+
+	"""Fixed size output buffer -- passed as a pointer to a structure.
+
+	Instantiate with the struct type as parameter.
+	"""
+
+	def declareBuffer(self, name):
+		Output("%s %s;", self.type, name)
+
+	def passOutput(self, name):
+		return "&%s" % name
+
+	def mkvalueArgs(self, name):
+		return "(char *)&%s" % name
+
+
+class VarInputBufferType(InputOnlyMixIn, FixedInputBufferType):
+
+	"""Input buffer -- passed as (buffer, size).
+
+	Instantiate without parameters.
+	"""
+
+	def __init__(self):
+		pass
+
+	def getargsCheck(self, name):
+		pass
+
+	def passInput(self, name):
+		return "%s, %s__len__" % (name, name)
+
+
+class StackOutputBufferType(OutputOnlyMixIn, FixedOutputBufferType):
+
+	"""Output buffer -- passed as (buffer, size).
+
+	Instantiate with the buffer size as parameter.
+	"""
+
+	def passOutput(self, name):
+		return "%s, %s" % (name, self.size)
+
+
+class VarStackOutputBufferType(StackOutputBufferType):
+
+	"""Output buffer allocated on the stack -- passed as (buffer, &size).
+
+	Instantiate with the buffer size as parameter.
+	"""
+
+	def declareSize(self, name):
+		Output("int %s__len__ = %s;", name, self.size)
+
+	def passOutput(self, name):
+		return "%s, &%s__len__" % (name, name)
 
 	def mkvalueArgs(self, name):
 		return "%s, %s__len__" % (name, name)
 
 
-class VarSizedOutputBuffer(SizedOutputBuffer):
+class VarVarStackOutputBufferType(VarStackOutputBufferType):
 
-	"Variable Sized output buffer -- buffer size is an input and an output parameter"
+	"""Output buffer allocated on the stack -- passed as (buffer, size, &size).
 
-	def getargsFormat(self):
-		return "i"
-		
-	def getargsArgs(self, name):
-		return "&%s__len__" % name
-		
-	def getargsCheck(self, name):
-		pass
+	Instantiate with the buffer size as parameter.
+	"""
 
 	def passOutput(self, name):
 		return "%s, %s__len__, &%s__len__" % (name, name, name)
 
 
-class FixedOutputBuffer:
+class HeapOutputBufferType(FixedOutputBufferType):
 
-	"Fixed output buffer -- buffer size is a constant"
+	"""Output buffer allocated on the heap -- passed as (buffer, size).
 
-	def __init__(self, size):
-		self.size = size
+	Instantiate without parameters.
+	Call from Python with buffer size.
+	"""
 
-	def declare(self, name):
-		Output("char %s[%s];", name, str(self.size))
-
-	def passOutput(self, name):
-		return name
-
-	def errorCheck(self, name):
+	def __init__(self):
 		pass
 
-	def mkvalueFormat(self):
-		return "s#"
+	def declareBuffer(self, name):
+		Output("char *%s;", name)
+
+	def getargsFormat(self):
+		return "i"
+
+	def getargsArgs(self, name):
+		return "&%s__len__" % name
+
+	def getargsCheck(self, name):
+		Output("if ((%s = malloc(%s__len__)) == NULL) goto %s__error__;",
+		             name,       name,                     name)
+
+	def passOutput(self, name):
+		return "%s, %s__len__" % (name, name)
 
 	def mkvalueArgs(self, name):
-		return "%s, %s" % (name, str(self.size))
+		return "%s, %s__len__" % (name, name)
+
+	def mkvalueCleanup(self, name):
+		Output("free(%s);", name)
+		DedentLevel()
+		Output(" %s__error__: ;", name);
+		IndentLevel()
 
 
-# Strings are character arrays terminated by a null byte.
-# For input, this is covered by stringptr.
-# For output, there are again two variants: Fixed (size is a constant
-# given in the documentation) or Sized (size is given by a variable).
-# (Note that this doesn't cover output parameters in which a string
-# pointer is returned.)
+class VarHeapOutputBufferType(HeapOutputBufferType):
 
-class SizedOutputString:
+	"""Output buffer allocated on the heap -- passed as (buffer, &size).
 
-	"Null-terminated output string -- buffer size is an input parameter"
-
-	def __init__(self, bufsize):
-		self.bufsize = bufsize
-
-	def declare(self, name):
-		Output("char %s[%s];", name, str(self.bufsize))
+	Instantiate without parameters.
+	Call from Python with buffer size.
+	"""
 
 	def passOutput(self, name):
-		return "%s, %s" % (name, str(self.bufsize))
+		return "%s, &%s__len__" % (name, name)
 
-	def errorCheck(self, name):
-		pass
+
+class VarVarHeapOutputBufferType(VarHeapOutputBufferType):
+
+	"""Output buffer allocated on the heap -- passed as (buffer, size, &size).
+
+	Instantiate without parameters.
+	Call from Python with buffer size.
+	"""
+
+	def passOutput(self, name):
+		return "%s, %s__len__, &%s__len__" % (name, name, name)
+
+
+class StringBufferType:
+
+	"""Mix-in class to create various string buffer types.
+
+	Strings are character arrays terminated by a null byte.
+	For input, this is already covered by stringptr.
+	For output, there are again three variants:
+	- Fixed (size is a constant given in the documentation),
+	- Stack (size is passed to the C function but we decide on a size at
+	  code generation time so we can still allocate on the heap), or
+	- Heap (size is passed to the C function and we let the Python caller
+	  pass a size.
+	(Note that this doesn't cover output parameters in which a string
+	pointer is returned.  These are actually easier (no allocation) but far
+	less common.  I'll write the classes when there is demand.)
+	"""
 
 	def mkvalueFormat(self):
 		return "s"
@@ -273,61 +454,86 @@ class SizedOutputString:
 		return name
 
 
-class FixedOutputString(SizedOutputString):
+class FixedOutputStringType(StringBufferType, FixedOutputBufferType):
 
-	"Null-terminated output string -- buffer size is a constant"
+	"""Null-terminated output string -- passed without size.
+
+	Instantiate with buffer size as parameter.
+	"""
+
+
+class StackOutputStringType(StringBufferType, StackOutputBufferType):
+
+	"""Null-terminated output string -- passed as (buffer, size).
+
+	Instantiate with buffer size as parameter.
+	"""
+
+class HeapOutputStringType(StringBufferType, HeapOutputBufferType):
+
+	"""Null-terminated output string -- passed as (buffer, size).
+
+	Instantiate without parameters.
+	Call from Python with buffer size.
+	"""
+
+
+class OpaqueType(Type):
+
+	"""A type represented by an opaque object type, always passed by address.
+
+	Instantiate with the type name, and optional an object type name whose
+	New/Convert functions will be used.
+	"""
+
+	def __init__(self, name, sameAs = None):
+		self.typeName = name
+		self.sameAs = sameAs or name
+
+	def getargsFormat(self):
+		return 'O&'
+
+	def getargsArgs(self, name):
+		return "%s_Convert, &%s" % (self.sameAs, name)
+
+	def passInput(self, name):
+		return "&%s" % name
+
+	def mkvalueFormat(self):
+		return 'O&'
+
+	def mkvalueArgs(self, name):
+		return "%s_New, &%s" % (self.sameAs, name)
+
+
+class OpaqueByValueType(OpaqueType):
+
+	"""A type represented by an opaque object type, on input passed BY VALUE.
+
+	Instantiate with the type name, and optional an object type name whose
+	New/Convert functions will be used.
+	"""
+
+	def passInput(self, name):
+		return name
+
+	def mkvalueArgs(self, name):
+		return "%s_New, %s" % (self.sameAs, name)
+
+
+class OpaqueArrayType(OpaqueByValueType):
+
+	"""A type represented by an opaque object type, with ARRAY passing semantics.
+
+	Instantiate with the type name, and optional an object type name whose
+	New/Convert functions will be used.
+	"""
+
+	def getargsArgs(self, name):
+		return "%s_Convert, &%s" % (self.sameAs, name)
 
 	def passOutput(self, name):
 		return name
-
-
-class StructureByValue:
-
-	"Structure passed by value -- mapped to a Python string (for now)"
-
-	def __init__(self, typeName):
-		self.typeName = typeName
-
-	def declare(self, name):
-		n = len(self.typeName)
-		Output("%-*s %s;",        n, self.typeName, name)
-		Output("%-*s*%s__str__;", n, "char",        name)
-		Output("%-*s %s__len__;", n, "int",         name)
-
-	def getargsFormat(self):
-		return "s#"
-
-	def getargsArgs(self, name):
-		return "&%s__str__, &%s__len__" % (name, name)
-
-	def getargsCheck(self, name):
-		Output("if (%s__len__ != sizeof %s)", name, name)
-		IndentLevel()
-		Output('PyErr_SetString(PyExc_TypeError, "bad structure length");')
-		DedentLevel()
-		Output("memcpy(&%s, %s__str__, %s__len__);",
-		       name, name, name)
-
-	def passInput(self, name):
-		return "%s" % name
-
-	def passOutput(self, name):
-		return "&%s" % name
-
-	def errorCheck(self, name):
-		pass
-
-	def mkvalueFormat(self):
-		return "s#"
-
-	def mkvalueArgs(self, name):
-		return "(char *)&%s, (int)sizeof %s" % (name, name)
-
-
-class StructureByAddress(StructureByValue):
-
-	def passInput(self, name):
-		return "&%s" % name
 
 
 class Variable:
@@ -397,3 +603,7 @@ class Variable:
 	def mkvalueArgs(self):
 		"""Call the type's mkvalueArgs method."""
 		return self.type.mkvalueArgs(self.name)
+
+	def mkvalueCleanup(self):
+		"""Call the type's mkvalueCleanup method."""
+		return self.type.mkvalueCleanup(self.name)
