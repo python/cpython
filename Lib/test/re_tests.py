@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- mode: python -*-
-# $Id$
 
 # Re test suite and benchmark suite v1.5
 
