@@ -15,6 +15,11 @@ Core and builtins
 - The softspace attribute of file objects became read-only by oversight.
   It's writable again.
 
+- Reverted a 2.3 beta 1 change to iterators for subclasses of list and
+  tuple.  By default, the iterators now access data elements directly
+  instead of going through __getitem__.  If __getitem__ access is
+  preferred, then __iter__ can be overriden.
+
 Extension modules
 -----------------
 
