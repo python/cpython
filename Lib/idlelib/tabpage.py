@@ -11,7 +11,7 @@ class PageTab(Frame):
     def __init__(self,parent):
         Frame.__init__(self, parent,borderwidth=2,relief=RIDGE)
         self.button=Radiobutton(self,padx=5,pady=5,takefocus=FALSE,
-                underline=0,indicatoron=FALSE,highlightthickness=0,
+                indicatoron=FALSE,highlightthickness=0,
                 borderwidth=0,selectcolor=self.cget('bg'))
         self.button.pack()
       
@@ -19,7 +19,7 @@ class TabPageSet(Frame):
     """
     a set of 'pages' with TabButtons for controlling their display
     """ 
-    def __init__(self,parent,pageNames,**kw):
+    def __init__(self,parent,pageNames=[],**kw):
         """
         pageNames - a list of strings, each string will be the dictionary key
         to a page's data, and the name displayed on the page's tab. Should be 
@@ -106,5 +106,6 @@ if __name__ == '__main__':
     buttonRemove.pack(padx=5,pady=5)
     labelPgName.pack(padx=5)
     entryPgName.pack(padx=5)
+    tabPage.ChangePage()
     root.mainloop()
         
