@@ -60,7 +60,7 @@ int Py_OptimizeFlag = 0;
 #define GLOBAL_AFTER_USE \
 "name '%.400s' is used prior to global declaration"
 
-#define LOCAL_GLOBAL \
+#define PARAM_GLOBAL \
 "name '%.400s' is a function parameter and declared global"
 
 #define LATE_FUTURE \
@@ -4843,7 +4843,7 @@ symtable_load_symbols(struct compiling *c)
 			c->c_argcount--;
 		else if (flags & DEF_GLOBAL) {
 			if (flags & DEF_PARAM) {
-				PyErr_Format(PyExc_SyntaxError, LOCAL_GLOBAL,
+				PyErr_Format(PyExc_SyntaxError, PARAM_GLOBAL,
 					     PyString_AS_STRING(name));
 				symtable_error(st, 0);
 				goto fail;
@@ -5592,8 +5592,7 @@ symtable_global(struct symtable *st, node *n)
 		if (flags && flags != DEF_GLOBAL) {
 			char buf[500];
 			if (flags & DEF_PARAM) {
-				PyErr_Format(PyExc_SyntaxError,
-				     "name '%.400s' is local and global",
+				PyErr_Format(PyExc_SyntaxError, PARAM_GLOBAL,
 					     name);
 				symtable_error(st, 0);
 				return;
