@@ -79,6 +79,7 @@
   \endgroup
   \@doHorizontalRule
   \vspace{12pt}
+  \@doing@page@targetstrue
 }  
 
 \@ifundefined{fancyhf}{
