@@ -266,4 +266,5 @@ class ClassWithFailingRepr:
 
 
 run_unittest(ReprTests)
-run_unittest(LongReprTest)
+if os.name != 'mac':
+    run_unittest(LongReprTest)
