@@ -48,7 +48,9 @@ else
 	mkdir -p $BUILDROOT
 fi
 rm -rf $DMGDIR
-mkdir $TMPDIR
+if [ ! -e $TMPDIR ]; then
+	mkdir $TMPDIR
+fi
 chgrp admin $TMPDIR
 mkdir -p $DMGDIR/root
 
@@ -118,6 +120,7 @@ python $PYTHONSRC/Mac/scripts/buildpkg.py \
     --NeedsAuthorization="YES" \
     --Relocatable="NO" \
     --InstallOnly="YES" \
+    --UseUserMask="NO" \
     $INSTALLROOT \
     $RESOURCEDIR
 
