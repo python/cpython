@@ -694,21 +694,11 @@ The original string is returned if
 \versionchanged[Support for the \var{fillchar} argument]{2.4}
 \end{methoddesc}
 
-\begin{methoddesc}[string]{rsplit}{\optional{, sep\optional{, maxsplit}}}
-Return a list of the words of the string, scanning the string from
-the end working forward.  The resulting list of words is in the
-same order as \function{split()}.  If the optional second argument
-\var{sep} is absent or \code{None}, the words are separated by
-arbitrary strings of whitespace characters (space, tab, newline,
-return, formfeed).  If the second argument \var{sep} is present and
-not \code{None}, it specifies a string to be used as the word
-separator.  The returned list will then have one more item than the
-number of non-overlapping occurrences of the separator in the string.
-The optional third argument \var{maxsplit} defaults to 0.  If it
-is nonzero, at most \var{maxsplit} number of splits occur, and the
-remainder of the string is returned as the first element of the
-list (thus, the list will have at most \code{\var{maxsplit}+1}
-elements).
+\begin{methoddesc}[string]{rsplit}{\optional{sep \optional{,maxsplit}}}
+Return a list of the words in the string, using \var{sep} as the
+delimiter string.  If \var{maxsplit} is given, at most \var{maxsplit}
+splits are done, the \em{rightmost} ones.  If \var{sep} is not specified
+or \code{None}, any whitespace string is a separator.
 \versionadded{2.4}
 \end{methoddesc}
 
