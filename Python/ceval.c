@@ -29,6 +29,7 @@
 #define CHECKEXC 1	/* Double-check exception checking */
 #endif
 
+typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
 
@@ -36,16 +37,29 @@ static PyObject *eval_code2(PyCodeObject *,
 			    PyObject *, PyObject *,
 			    PyObject **, int,
 			    PyObject **, int,
-			    PyObject **, int,
-			    PyObject *);
+			    PyObject **, int);
+
+static PyObject *call_object(PyObject *, PyObject *, PyObject *);
+static PyObject *call_cfunction(PyObject *, PyObject *, PyObject *);
+static PyObject *call_instance(PyObject *, PyObject *, PyObject *);
+static PyObject *call_method(PyObject *, PyObject *, PyObject *);
+static PyObject *call_eval_code2(PyObject *, PyObject *, PyObject *);
+static PyObject *fast_function(PyObject *, PyObject ***, int, int, int);
+static PyObject *fast_cfunction(PyObject *, PyObject ***, int);
+static PyObject *do_call(PyObject *, PyObject ***, int, int);
+static PyObject *ext_do_call(PyObject *, PyObject ***, int, int, int);
+static PyObject *update_keyword_args(PyObject *, int, PyObject ***);
+static PyObject *update_star_args(int, int, PyObject *,	PyObject ***);
+static PyObject *load_args(PyObject ***, int);
+#define CALL_FLAG_VAR 1
+#define CALL_FLAG_KW 2
+
 #ifdef LLTRACE
 static int prtrace(PyObject *, char *);
 #endif
 static void call_exc_trace(PyObject **, PyObject**, PyFrameObject *);
 static int call_trace(PyObject **, PyObject **,
 		      PyFrameObject *, char *, PyObject *);
-static PyObject *call_builtin(PyObject *, PyObject *, PyObject *);
-static PyObject *call_function(PyObject *, PyObject *, PyObject *);
 static PyObject *loop_subscript(PyObject *, PyObject *);
 static PyObject *apply_slice(PyObject *, PyObject *, PyObject *);
 static int assign_slice(PyObject *, PyObject *,
@@ -74,7 +88,6 @@ static long dxpairs[257][256];
 static long dxp[256];
 #endif
 #endif
-
 
 #ifdef WITH_THREAD
 
@@ -320,8 +333,7 @@ PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
 			  globals, locals,
 			  (PyObject **)NULL, 0,
 			  (PyObject **)NULL, 0,
-			  (PyObject **)NULL, 0,
-			  (PyObject *)NULL);
+			  (PyObject **)NULL, 0);
 }
 
 
@@ -330,15 +342,15 @@ PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
 static PyObject *
 eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	   PyObject **args, int argcount, PyObject **kws, int kwcount,
-	   PyObject **defs, int defcount, PyObject *owner)
+	   PyObject **defs, int defcount)
 {
 #ifdef DXPAIRS
 	int lastopcode = 0;
 #endif
+	PyObject **stack_pointer;
 	register unsigned char *next_instr;
 	register int opcode=0;	/* Current opcode */
 	register int oparg=0;	/* Current opcode argument, if any */
-	register PyObject **stack_pointer;
 	register enum why_code why; /* Reason for block stack unwind */
 	register int err;	/* Error status -- nonzero if error */
 	register PyObject *x;	/* Result object -- NULL if error */
@@ -668,7 +680,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		}
 #endif
 		/* Main switch on opcode */
-		
+
 		switch (opcode) {
 		
 		/* BEWARE!
@@ -1797,6 +1809,60 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			break;
 
 		case CALL_FUNCTION:
+		{
+		    int na = oparg & 0xff;
+		    int nk = (oparg>>8) & 0xff;
+		    int n = na + 2 * nk;
+		    PyObject **pfunc = stack_pointer - n - 1;
+		    PyObject *func = *pfunc;
+		    f->f_lasti = INSTR_OFFSET() - 3; /* For tracing */
+
+		    /* Always dispatch PyCFunction first, because
+		       these are presumed to be the most frequent
+		       callable object.
+		    */
+		    if (PyCFunction_Check(func)) {
+			    if (PyCFunction_GET_FLAGS(func) == 0) {
+				    x = fast_cfunction(func,
+						       &stack_pointer, na);  
+			    } else {
+				    x = do_call(func, &stack_pointer,
+						na, nk);
+			    }
+		    } else {
+			    if (PyMethod_Check(func) 
+				&& PyMethod_GET_SELF(func) != NULL) {
+				    /* optimize access to bound methods */
+				    PyObject *self = PyMethod_GET_SELF(func);
+				    Py_INCREF(self);
+				    func = PyMethod_GET_FUNCTION(func);
+				    Py_INCREF(func);
+				    Py_DECREF(*pfunc);
+				    *pfunc = self;
+				    na++;
+				    n++;
+			    } else 
+				    Py_INCREF(func);
+			    if (PyFunction_Check(func)) {
+				    x = fast_function(func, &stack_pointer,
+						      n, na, nk); 
+			    } else {
+				    x = do_call(func, &stack_pointer,
+						na, nk);
+			    }
+			    Py_DECREF(func);
+		    }
+
+		    while (stack_pointer > pfunc) {
+			    w = POP();
+			    Py_DECREF(w);
+		    }
+		    PUSH(x);
+		    if (x != NULL) 
+			    continue;
+		    break;
+		}
+		
 		case CALL_FUNCTION_VAR:
 		case CALL_FUNCTION_KW:
 		case CALL_FUNCTION_VAR_KW:
@@ -1804,187 +1870,38 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		    int na = oparg & 0xff;
 		    int nk = (oparg>>8) & 0xff;
 		    int flags = (opcode - CALL_FUNCTION) & 3;
-		    int n = na + 2*nk + (flags & 1) + ((flags >> 1) & 1);
-		    PyObject **pfunc = stack_pointer - n - 1;
-		    PyObject *func = *pfunc;
-		    PyObject *self = NULL;
-		    PyObject *class = NULL;
+		    int n = na + 2 * nk;
+		    PyObject **pfunc, *func;
+		    if (flags & CALL_FLAG_VAR)
+			    n++;
+		    if (flags & CALL_FLAG_KW)
+			    n++;
+		    pfunc = stack_pointer - n - 1;
+		    func = *pfunc;
 		    f->f_lasti = INSTR_OFFSET() - 3; /* For tracing */
-		    if (PyMethod_Check(func)) {
-			self = PyMethod_Self(func);
-			class = PyMethod_Class(func);
-			func = PyMethod_Function(func);
-			Py_INCREF(func);
-			if (self != NULL) {
+
+		    if (PyMethod_Check(func) 
+			&& PyMethod_GET_SELF(func) != NULL) {
+			    PyObject *self = PyMethod_GET_SELF(func);
 			    Py_INCREF(self);
+			    func = PyMethod_GET_FUNCTION(func);
+			    Py_INCREF(func);
 			    Py_DECREF(*pfunc);
 			    *pfunc = self;
 			    na++;
 			    n++;
-			}
-			else if (!((flags & 1) && na == 0)) {
-			    /* Unbound methods must be called with an
-			       instance of the class (or a derived
-			       class) as first argument */ 
-			    if (na > 0 && (self = stack_pointer[-n]) != NULL 
-				&& PyInstance_Check(self) 
-				&& PyClass_IsSubclass((PyObject *)
-				    (((PyInstanceObject *)self)->in_class),
-						      class))
-                                  /* Handy-dandy */ ;
-			    else {
-				PyErr_SetString(PyExc_TypeError,
-	    "unbound method must be called with instance as first argument");
-				x = NULL;
-				break;
-			    }
-			}
-		    }
-		    else
-			Py_INCREF(func);
-		    if (PyFunction_Check(func) && flags == 0) {
-			PyObject *co = PyFunction_GetCode(func);
-			PyObject *globals = PyFunction_GetGlobals(func);
-			PyObject *argdefs = PyFunction_GetDefaults(func);
-			PyObject **d;
-			int nd;
-			if (argdefs != NULL) {
-			    d = &PyTuple_GET_ITEM(argdefs, 0);
-			    nd = ((PyTupleObject *)argdefs)->ob_size;
-			}
-			else {
-			    d = NULL;
-			    nd = 0;
-			}
-			x = eval_code2((PyCodeObject *)co, globals, 
-				       (PyObject *)NULL, stack_pointer-n, na,
-				       stack_pointer-2*nk, nk, d, nd,
-				       class);
-		    }
-		    else {
-			int nstar = 0;
-			PyObject *callargs;
-			PyObject *stararg = 0;
-			PyObject *kwdict = NULL;
-			if (flags & 2) {
-			    kwdict = POP();
-			    if (!PyDict_Check(kwdict)) {
-				PyErr_SetString(PyExc_TypeError,
-					"** argument must be a dictionary");
-				goto extcall_fail;
-			    }
-			}
-			if (flags & 1) {
-			    stararg = POP();
-			    if (!PySequence_Check(stararg)) {
-				PyErr_SetString(PyExc_TypeError,
-					"* argument must be a sequence");
-				goto extcall_fail;
-			    }
-			    /* Convert abstract sequence to concrete tuple */
-			    if (!PyTuple_Check(stararg)) {
-				PyObject *t = NULL;
-				t = PySequence_Tuple(stararg);
-				if (t == NULL) {
-				    goto extcall_fail;
-				}
-				Py_DECREF(stararg);
-				stararg = t;
-			    }
-			    nstar = PyTuple_GET_SIZE(stararg);
-			    if (nstar < 0) {
-				goto extcall_fail;
-			    }
-			    if (class && self == NULL && na == 0) {
-				/* * arg is first argument of method,
-				   so check it is isinstance of class */
-				self = PyTuple_GET_ITEM(stararg, 0);
-				if (!(PyInstance_Check(self) &&
-				      PyClass_IsSubclass((PyObject *)
-				   (((PyInstanceObject *)self)->in_class),
-							 class))) {
-				    PyErr_SetString(PyExc_TypeError,
-	    "unbound method must be called with instance as first argument");
-				    x = NULL;
-				    break;
-				}
-			    }
-			}
-			if (nk > 0) {
-			    if (kwdict == NULL) {
-				kwdict = PyDict_New();
-				if (kwdict == NULL) {
-    				    goto extcall_fail;
-				}
-			    }
-			    else {
-				    PyObject *d = PyDict_Copy(kwdict);
-				    if (d == NULL) {
-					    goto extcall_fail;
-				    }
-				    Py_DECREF(kwdict);
-				    kwdict = d;
-			    }
-			    err = 0;
-			    while (--nk >= 0) {
-				PyObject *value = POP();
-				PyObject *key = POP();
-				if (PyDict_GetItem(kwdict, key) != NULL) {
-				    err = 1;
-				    PyErr_Format(PyExc_TypeError, 
-					 "keyword parameter '%.400s' "
-					 "redefined in function call",
-					 PyString_AsString(key));
-				    Py_DECREF(key);
-				    Py_DECREF(value);
-				    goto extcall_fail;
-				}
-				err = PyDict_SetItem(kwdict, key, value);
-				Py_DECREF(key);
-				Py_DECREF(value);
-				if (err)
-				    break;
-			    }
-			    if (err) {
-			      extcall_fail:
-				Py_XDECREF(kwdict);
-				Py_XDECREF(stararg);
-				Py_DECREF(func);
-				x=NULL;
-				break;
-			    }
-			}
-			callargs = PyTuple_New(na + nstar);
-			if (callargs == NULL) {
-			    x = NULL;
-			    break;
-			}
-			if (stararg) {
-			    int i;
-			    for (i = 0; i < nstar; i++) {
-				PyObject *a = PyTuple_GET_ITEM(stararg, i);
-				Py_INCREF(a);
-				PyTuple_SET_ITEM(callargs, na + i, a);
-			    }
-			    Py_DECREF(stararg);
-			}
-			while (--na >= 0) {
-			    w = POP();
-			    PyTuple_SET_ITEM(callargs, na, w);
-			}
-			x = PyEval_CallObjectWithKeywords(func,
-							  callargs,
-							  kwdict);  
-			Py_DECREF(callargs);
-			Py_XDECREF(kwdict);
-		    }
+		    } else 
+			    Py_INCREF(func);
+		    x = ext_do_call(func, &stack_pointer, flags, na, nk);
 		    Py_DECREF(func);
+
 		    while (stack_pointer > pfunc) {
-			w = POP();
-			Py_DECREF(w);
+			    w = POP();
+			    Py_DECREF(w);
 		    }
 		    PUSH(x);
-		    if (x != NULL) continue;
+		    if (x != NULL) 
+			    continue;
 		    break;
 		}
 		
@@ -2614,8 +2531,7 @@ PyEval_CallObject(PyObject *func, PyObject *arg)
 PyObject *
 PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
 {
-        ternaryfunc call;
-        PyObject *result;
+	PyObject *result;
 
 	if (arg == NULL)
 		arg = PyTuple_New(0);
@@ -2634,15 +2550,48 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
 		return NULL;
 	}
 
-        if ((call = func->ob_type->tp_call) != NULL)
-                result = (*call)(func, arg, kw);
-        else if (PyMethod_Check(func) || PyFunction_Check(func))
-		result = call_function(func, arg, kw);
-	else
-		result = call_builtin(func, arg, kw);
-
+	result = call_object(func, arg, kw);
 	Py_DECREF(arg);
-	
+	return result;
+}
+
+/* How often is each kind of object called?  The answer depends on the
+   program.  An instrumented call_object() was used to run the Python
+   regression test suite.  The results were:
+   4200000 PyCFunctions
+    390000 fast_function() calls
+     94000 other functions
+    480000 all functions (sum of prev two)
+    150000 methods
+    100000 classes
+
+    Tests on other bodies of code show that PyCFunctions are still
+    most common, but not by such a large margin.
+*/
+
+static PyObject *
+call_object(PyObject *func, PyObject *arg, PyObject *kw)
+{
+        ternaryfunc call;
+        PyObject *result;
+
+	if (PyMethod_Check(func))
+		result = call_method(func, arg, kw);
+	else if (PyFunction_Check(func))
+		result = call_eval_code2(func, arg, kw);
+	else if (PyCFunction_Check(func))
+		result = call_cfunction(func, arg, kw);
+	else if (PyClass_Check(func))
+		result = PyInstance_New(func, arg, kw);
+	else if (PyInstance_Check(func))
+		result = call_instance(func, arg, kw);
+	else if ((call = func->ob_type->tp_call) != NULL)
+		result = (*call)(func, arg, kw);
+	else {
+		PyErr_Format(PyExc_TypeError, "object is not callable: %s",
+			     PyString_AS_STRING(PyObject_Repr(func)));
+		return NULL;
+	}
         if (result == NULL && !PyErr_Occurred())
 		PyErr_SetString(PyExc_SystemError,
 			   "NULL result without error in call_object");
@@ -2651,123 +2600,116 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
 }
 
 static PyObject *
-call_builtin(PyObject *func, PyObject *arg, PyObject *kw)
+call_cfunction(PyObject *func, PyObject *arg, PyObject *kw)
 {
-	if (PyCFunction_Check(func)) {
-		PyCFunctionObject* f = (PyCFunctionObject*) func;
-		PyCFunction meth = PyCFunction_GetFunction(func);
-		PyObject *self = PyCFunction_GetSelf(func);
-		int flags = PyCFunction_GetFlags(func);
-		if (!(flags & METH_VARARGS)) {
-			int size = PyTuple_Size(arg);
-			if (size == 1)
-				arg = PyTuple_GET_ITEM(arg, 0);
-			else if (size == 0)
-				arg = NULL;
+	PyCFunctionObject* f = (PyCFunctionObject*)func;
+	PyCFunction meth = PyCFunction_GET_FUNCTION(func);
+	PyObject *self = PyCFunction_GET_SELF(func);
+	int flags = PyCFunction_GET_FLAGS(func);
+
+	if (flags & METH_KEYWORDS && kw == NULL) {
+		static PyObject *dict = NULL;
+		if (dict == NULL) {
+			dict = PyDict_New();
+			if (dict == NULL)
+				return NULL;
 		}
-		if (flags & METH_KEYWORDS)
-			return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
-		if (kw != NULL && PyDict_Size(kw) != 0) {
-			PyErr_Format(PyExc_TypeError,
-				"%.200s() takes no keyword arguments",
-				f->m_ml->ml_name);
-			return NULL;
-		}
+		kw = dict;
+		Py_INCREF(dict);
+	}
+	if (flags & METH_VARARGS && kw == NULL) {
 		return (*meth)(self, arg);
 	}
-	if (PyClass_Check(func)) {
-		return PyInstance_New(func, arg, kw);
+	if (flags & METH_KEYWORDS) {
+		return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
 	}
-	if (PyInstance_Check(func)) {
-	        PyObject *res, *call = PyObject_GetAttrString(func, "__call__");
-		if (call == NULL) {
-			PyInstanceObject *inst = (PyInstanceObject*) func;
-			PyErr_Clear();
-			PyErr_Format(PyExc_AttributeError,
-				"%.200s instance has no __call__ method",
-				PyString_AsString(inst->in_class->cl_name));
-			return NULL;
-		}
-		res = PyEval_CallObjectWithKeywords(call, arg, kw);
-		Py_DECREF(call);
-		return res;
+	if (!(flags & METH_VARARGS)) {
+		int size = PyTuple_GET_SIZE(arg);
+		if (size == 1)
+			arg = PyTuple_GET_ITEM(arg, 0);
+		else if (size == 0)
+			arg = NULL;
+		return (*meth)(self, arg);
 	}
-	PyErr_Format(PyExc_TypeError, "call of non-function (type %.400s)",
-		     func->ob_type->tp_name);
+	if (kw != NULL && PyDict_Size(kw) != 0) {
+		PyErr_Format(PyExc_TypeError,
+			     "%.200s() takes no keyword arguments",
+			     f->m_ml->ml_name);
+		return NULL;
+	}
+	/* should never get here ??? */
+	PyErr_BadInternalCall();
 	return NULL;
 }
 
 static PyObject *
-call_function(PyObject *func, PyObject *arg, PyObject *kw)
+call_instance(PyObject *func, PyObject *arg, PyObject *kw)
 {
-	PyObject *class = NULL; /* == owner */
-	PyObject *argdefs;
-	PyObject **d, **k;
-	int nk, nd;
-	PyObject *result;
-	
-	if (kw != NULL && !PyDict_Check(kw)) {
-		PyErr_BadInternalCall();
+	PyObject *res, *call = PyObject_GetAttrString(func, "__call__");
+	if (call == NULL) {
+		PyInstanceObject *inst = (PyInstanceObject*) func;
+		PyErr_Clear();
+		PyErr_Format(PyExc_AttributeError,
+			     "%.200s instance has no __call__ method",
+			     PyString_AsString(inst->in_class->cl_name));
 		return NULL;
 	}
-	
-	if (PyMethod_Check(func)) {
-		PyObject *self = PyMethod_Self(func);
-		class = PyMethod_Class(func);
-		func = PyMethod_Function(func);
-		if (self == NULL) {
-			/* Unbound methods must be called with an instance of
-			   the class (or a derived class) as first argument */
-			if (PyTuple_Size(arg) >= 1) {
-				self = PyTuple_GET_ITEM(arg, 0);
-				if (self != NULL &&
-				    PyInstance_Check(self) &&
-				    PyClass_IsSubclass((PyObject *)
-				      (((PyInstanceObject *)self)->in_class),
-					       class))
-					/* Handy-dandy */ ;
-				else
-					self = NULL;
-			}
-			if (self == NULL) {
-				PyErr_SetString(PyExc_TypeError,
-	   "unbound method must be called with instance as first argument");
-				return NULL;
-			}
-			Py_INCREF(arg);
-		}
-		else {
-			int argcount = PyTuple_Size(arg);
-			PyObject *newarg = PyTuple_New(argcount + 1);
-			int i;
-			if (newarg == NULL)
-				return NULL;
-			Py_INCREF(self);
-			PyTuple_SET_ITEM(newarg, 0, self);
-			for (i = 0; i < argcount; i++) {
-				PyObject *v = PyTuple_GET_ITEM(arg, i);
-				Py_XINCREF(v);
-				PyTuple_SET_ITEM(newarg, i+1, v);
-			}
-			arg = newarg;
-		}
-		if (!PyFunction_Check(func)) {
-			result = PyEval_CallObjectWithKeywords(func, arg, kw);
-			Py_DECREF(arg);
-			return result;
-		}
-	}
-	else {
-		if (!PyFunction_Check(func)) {
-			PyErr_Format(PyExc_TypeError,
-				     "call of non-function (type %.200s)",
-				     func->ob_type->tp_name);
+	res = call_object(call, arg, kw);
+	Py_DECREF(call);
+	return res;
+}
+
+static PyObject *
+call_method(PyObject *func, PyObject *arg, PyObject *kw)
+{
+	PyObject *self = PyMethod_GET_SELF(func);
+	PyObject *class = PyMethod_GET_CLASS(func);
+	PyObject *result;
+
+	func = PyMethod_GET_FUNCTION(func);
+	if (self == NULL) {
+		/* Unbound methods must be called with an instance of
+		   the class (or a derived class) as first argument */
+		if (PyTuple_Size(arg) >= 1)
+			self = PyTuple_GET_ITEM(arg, 0);
+		if (!(self != NULL && PyInstance_Check(self)
+		    && PyClass_IsSubclass((PyObject *)
+				  (((PyInstanceObject *)self)->in_class),
+					  class))) {
+		PyErr_SetString(PyExc_TypeError,
+	"unbound method must be called with instance as first argument");
 			return NULL;
 		}
 		Py_INCREF(arg);
+	} else {
+		int argcount = PyTuple_Size(arg);
+		PyObject *newarg = PyTuple_New(argcount + 1);
+		int i;
+		if (newarg == NULL)
+			return NULL;
+		Py_INCREF(self);
+		PyTuple_SET_ITEM(newarg, 0, self);
+		for (i = 0; i < argcount; i++) {
+			PyObject *v = PyTuple_GET_ITEM(arg, i);
+			Py_XINCREF(v);
+			PyTuple_SET_ITEM(newarg, i+1, v);
+		}
+		arg = newarg;
 	}
-	
-	argdefs = PyFunction_GetDefaults(func);
+	result = call_object(func, arg, kw);
+	Py_DECREF(arg);
+	return result;
+}
+
+static PyObject *
+call_eval_code2(PyObject *func, PyObject *arg, PyObject *kw)
+{
+	PyObject *result;
+	PyObject *argdefs;
+	PyObject **d, **k;
+	int nk, nd;
+
+	argdefs = PyFunction_GET_DEFAULTS(func);
 	if (argdefs != NULL && PyTuple_Check(argdefs)) {
 		d = &PyTuple_GET_ITEM((PyTupleObject *)argdefs, 0);
 		nd = PyTuple_Size(argdefs);
@@ -2798,17 +2740,208 @@ call_function(PyObject *func, PyObject *arg, PyObject *kw)
 	}
 	
 	result = eval_code2(
-		(PyCodeObject *)PyFunction_GetCode(func),
-		PyFunction_GetGlobals(func), (PyObject *)NULL,
+		(PyCodeObject *)PyFunction_GET_CODE(func),
+		PyFunction_GET_GLOBALS(func), (PyObject *)NULL,
 		&PyTuple_GET_ITEM(arg, 0), PyTuple_Size(arg),
 		k, nk,
-		d, nd,
-		class);
+		d, nd);
 	
-	Py_DECREF(arg);
 	if (k != NULL)
 		PyMem_DEL(k);
 	
+	return result;
+}
+
+#define EXT_POP(STACK_POINTER) (*--(STACK_POINTER))
+
+/* The two fast_xxx() functions optimize calls for which no argument
+   tuple is necessary; the objects are passed directly from the stack.
+   fast_cfunction() is called for METH_OLDARGS functions.
+   fast_function() is for functions with no special argument handling.
+*/
+
+static PyObject *
+fast_cfunction(PyObject *func, PyObject ***pp_stack, int na)
+{
+	PyCFunction meth = PyCFunction_GET_FUNCTION(func);
+	PyObject *self = PyCFunction_GET_SELF(func);
+
+	if (na == 0)
+		return (*meth)(self, NULL);
+	else if (na == 1)
+		return (*meth)(self, EXT_POP(*pp_stack));
+	else {
+		PyObject *args = load_args(pp_stack, na);
+		PyObject *result = (*meth)(self, args);
+		Py_DECREF(args);
+		return result;
+	}
+}
+
+static PyObject *
+fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)  
+{
+	PyObject *co = PyFunction_GET_CODE(func);
+	PyObject *globals = PyFunction_GET_GLOBALS(func);
+	PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
+	PyObject **d = NULL;
+	int nd = 0;
+
+	if (argdefs != NULL) {
+		d = &PyTuple_GET_ITEM(argdefs, 0);
+		nd = ((PyTupleObject *)argdefs)->ob_size;
+	}
+	return eval_code2((PyCodeObject *)co, globals, 
+			  (PyObject *)NULL, (*pp_stack)-n, na,
+			  (*pp_stack)-2*nk, nk, d, nd);
+}
+
+static PyObject *
+update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack)
+{
+	PyObject *kwdict = NULL;
+	if (orig_kwdict == NULL)
+		kwdict = PyDict_New();
+	else {
+		kwdict = PyDict_Copy(orig_kwdict);
+		Py_DECREF(orig_kwdict);
+	}
+	if (kwdict == NULL)
+		return NULL;
+	while (--nk >= 0) {
+		int err;
+		PyObject *value = EXT_POP(*pp_stack);
+		PyObject *key = EXT_POP(*pp_stack);
+		if (PyDict_GetItem(kwdict, key) != NULL) {
+			PyErr_Format(PyExc_TypeError, 
+				     "keyword parameter '%.400s' "
+				     "redefined in function call",
+				     PyString_AsString(key));
+			Py_DECREF(key);
+			Py_DECREF(value);
+			Py_DECREF(kwdict);
+			return NULL;
+		}
+		err = PyDict_SetItem(kwdict, key, value);
+		Py_DECREF(key);
+		Py_DECREF(value);
+		if (err) {
+			Py_DECREF(kwdict);
+			return NULL;
+		}
+	}
+	return kwdict;
+}
+
+static PyObject *
+update_star_args(int nstack, int nstar, PyObject *stararg,
+		 PyObject ***pp_stack)
+{
+	PyObject *callargs, *w;
+
+	callargs = PyTuple_New(nstack + nstar);
+	if (callargs == NULL) {
+		return NULL;
+	}
+	if (nstar) {
+		int i;
+		for (i = 0; i < nstar; i++) {
+			PyObject *a = PyTuple_GET_ITEM(stararg, i);
+			Py_INCREF(a);
+			PyTuple_SET_ITEM(callargs, nstack + i, a);
+		}
+	}
+	while (--nstack >= 0) {
+		w = EXT_POP(*pp_stack);
+		PyTuple_SET_ITEM(callargs, nstack, w);
+	}
+	return callargs;
+}
+
+static PyObject *
+load_args(PyObject ***pp_stack, int na)
+{
+	PyObject *args = PyTuple_New(na);
+	PyObject *w;
+
+	if (args == NULL)
+		return NULL;
+	while (--na >= 0) {
+		w = EXT_POP(*pp_stack);
+		PyTuple_SET_ITEM(args, na, w);
+	}
+	return args;
+}
+
+static PyObject *
+do_call(PyObject *func, PyObject ***pp_stack, int na, int nk)
+{
+	PyObject *callargs = NULL;
+	PyObject *kwdict = NULL;
+	PyObject *result = NULL;
+
+	if (nk > 0) {
+		kwdict = update_keyword_args(NULL, nk, pp_stack);
+		if (kwdict == NULL)
+			goto call_fail;
+	}
+	callargs = load_args(pp_stack, na);
+	if (callargs == NULL)
+		goto call_fail;
+	result = call_object(func, callargs, kwdict);
+ call_fail:
+	Py_XDECREF(callargs);
+	Py_XDECREF(kwdict);
+	return result;
+}
+
+static PyObject *
+ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
+{
+	int nstar = 0;
+	PyObject *callargs = NULL;
+	PyObject *stararg = NULL;
+	PyObject *kwdict = NULL;
+	PyObject *result = NULL;
+
+	if (flags & CALL_FLAG_KW) {
+		kwdict = EXT_POP(*pp_stack);
+		if (!(kwdict && PyDict_Check(kwdict))) {
+			PyErr_SetString(PyExc_TypeError,
+					"** argument must be a dictionary");
+			goto ext_call_fail;
+		}
+	}
+	if (flags & CALL_FLAG_VAR) {
+		stararg = EXT_POP(*pp_stack);
+		if (!PyTuple_Check(stararg)) {
+			PyObject *t = NULL;
+			t = PySequence_Tuple(stararg);
+			if (t == NULL) {
+			    if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+				PyErr_SetString(PyExc_TypeError,
+					"* argument must be a sequence");
+			    }
+				goto ext_call_fail;
+			}
+			Py_DECREF(stararg);
+			stararg = t;
+		}
+		nstar = PyTuple_GET_SIZE(stararg);
+	}
+	if (nk > 0) {
+		kwdict = update_keyword_args(kwdict, nk, pp_stack);
+		if (kwdict == NULL)
+			goto ext_call_fail;
+	}
+	callargs = update_star_args(na, nstar, stararg, pp_stack);
+	if (callargs == NULL)
+		goto ext_call_fail;
+	result = call_object(func, callargs, kwdict);
+      ext_call_fail:
+	Py_XDECREF(callargs);
+	Py_XDECREF(kwdict);
+	Py_XDECREF(stararg);
 	return result;
 }
 
