@@ -109,13 +109,14 @@ $icons{'blank'} = 'blank.' . $IMAGE_TYPE;
 
 $CUSTOM_BUTTONS = '';
 $BLANK_ICON = "\n<td>" . img_tag('blank.' . $IMAGE_TYPE) . "</td>";
+$NAV_BGCOLOR = " bgcolor=\"#99CCFF\"";
 
 sub make_nav_panel{
     ("<table width=\"100%\" cellpadding=0 cellspacing=0>\n<tr>"
      . "\n<td>$NEXT</td>"
      . "\n<td>$UP</td>"
      . "\n<td>$PREVIOUS</td>"
-     . "\n<td align=center bgcolor=\"#99CCFF\" width=\"100%\">"
+     . "\n<td align=center$NAV_BGCOLOR width=\"100%\">"
      . "\n <b>$t_title</b></td>"
      . ($CONTENTS ? "\n<td>$CONTENTS</td>" : $BLANK_ICON)
      . "\n<td>$CUSTOM_BUTTONS</td>" # module index
