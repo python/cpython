@@ -20,18 +20,19 @@ def init():
 		# we're not an applet
 		Res.OpenResFile(os.path.join(sys.exec_prefix, ":Mac:Tools:IDE:PythonIDE.rsrc"))
 		Res.OpenResFile(os.path.join(sys.exec_prefix, ":Mac:Tools:IDE:Widgets.rsrc"))
-		sys.path.append(os.path.join(sys.exec_prefix, ":Mac:Tools:IDE"))
+		ide_path = os.path.join(sys.exec_prefix, ":Mac:Tools:IDE")
 	else:
 		# we're an applet
 		try:
 			Res.GetResource('CURS', 468)
 		except Res.Error:
 			Res.OpenResFile(os.path.join(sys.exec_prefix, ":Mac:Tools:IDE:Widgets.rsrc"))
-			sys.path.append(os.path.join(sys.exec_prefix, ":Mac:Tools:IDE"))
+			ide_path = os.path.join(sys.exec_prefix, ":Mac:Tools:IDE")
 		else:
 			# we're a full blown applet
-			if sys.argv[0] not in sys.path:
-				sys.path[2:2] = [sys.argv[0]]
+			ide_path = sys.argv[0]
+	if ide_path not in sys.path:
+		sys.path.insert(0, ide_path)
 
 
 init()
