@@ -1368,21 +1368,21 @@ handle_range_longs(PyObject *self, PyObject *args)
 
 	if (!PyInt_Check(ilow) && !PyLong_Check(ilow)) {
 		PyErr_Format(PyExc_TypeError,
-			     "integer start argument expected, got %s.",
+			     "range() integer start argument expected, got %s.",
 			     ilow->ob_type->tp_name);
 		goto Fail;
 	}
 
 	if (!PyInt_Check(ihigh) && !PyLong_Check(ihigh)) {
 		PyErr_Format(PyExc_TypeError,
-			     "integer end argument expected, got %s.",
+			     "range() integer end argument expected, got %s.",
 			     ihigh->ob_type->tp_name);
 		goto Fail;
 	}
 
 	if (!PyInt_Check(istep) && !PyLong_Check(istep)) {
 		PyErr_Format(PyExc_TypeError,
-			     "integer step argument expected, got %s.",
+			     "range() integer step argument expected, got %s.",
 			     istep->ob_type->tp_name);
 		goto Fail;
 	}
@@ -1391,7 +1391,7 @@ handle_range_longs(PyObject *self, PyObject *args)
 		goto Fail;
 	if (cmp_result == 0) {
 		PyErr_SetString(PyExc_ValueError,
-				"range() arg 3 must not be zero");
+				"range() step argument must not be zero");
 		goto Fail;
 	}
 
@@ -1507,7 +1507,7 @@ builtin_range(PyObject *self, PyObject *args)
 	}
 	if (istep == 0) {
 		PyErr_SetString(PyExc_ValueError,
-				"range() arg 3 must not be zero");
+				"range() step argument must not be zero");
 		return NULL;
 	}
 	if (istep > 0)
