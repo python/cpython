@@ -309,7 +309,7 @@ class CoverageResults:
                 n_hits += 1
                 n_lines += 1
             elif rx_blank.match(line):
-                outfile.write("      ")
+                outfile.write("       ")
             else:
                 # lines preceded by no marks weren't hit
                 # Highlight them if so indicated, unless the line contains
