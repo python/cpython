@@ -1,26 +1,37 @@
 # test_pickle and test_cpickle both use this.
 
 # break into multiple strings to please font-lock-mode
-DATA = """(lp0
+DATA = """(lp1
 I0
 aL1L
-aF2.0
+aF2
 ac__builtin__
 complex
-p1
-""" \
-"""(F3.0
-F0.0
-tp2
-Rp3
-a(S'abc'
+p2
+""" + \
+"""(F3
+F0
+tRp3
+aI1
+aI-1
+aI255
+aI-255
+aI-256
+aI65535
+aI-65535
+aI-65536
+aI2147483647
+aI-2147483647
+aI-2147483648
+a""" + \
+"""(S'abc'
 p4
 g4
-""" \
-"""(i__main__
+""" + \
+"""(ipickletester
 C
 p5
-""" \
+""" + \
 """(dp6
 S'foo'
 p7
@@ -35,7 +46,14 @@ aI5
 a.
 """
 
-BINDATA = ']q\000(K\000L1L\012G@\000\000\000\000\000\000\000c__builtin__\012complex\012q\001(G@\010\000\000\000\000\000\000G\000\000\000\000\000\000\000\000tq\002Rq\003(U\003abcq\004h\004(c__main__\012C\012q\005oq\006}q\007(U\003fooq\010K\001U\003barq\011K\002ubh\006tq\012h\012K\005e.'
+BINDATA = ']q\x01(K\x00L1L\nG@\x00\x00\x00\x00\x00\x00\x00' + \
+          'c__builtin__\ncomplex\nq\x02(G@\x08\x00\x00\x00\x00\x00' + \
+          '\x00G\x00\x00\x00\x00\x00\x00\x00\x00tRq\x03K\x01J\xff\xff' + \
+          '\xff\xffK\xffJ\x01\xff\xff\xffJ\x00\xff\xff\xffM\xff\xff' + \
+          'J\x01\x00\xff\xffJ\x00\x00\xff\xffJ\xff\xff\xff\x7fJ\x01\x00' + \
+          '\x00\x80J\x00\x00\x00\x80(U\x03abcq\x04h\x04(cpickletester\n' + \
+          'C\nq\x05oq\x06}q\x07(U\x03fooq\x08K\x01U\x03barq\tK\x02ubh' + \
+          '\x06tq\nh\nK\x05e.'
 
 class C:
     def __cmp__(self, other):
@@ -51,6 +69,15 @@ def dotest(pickle):
     c.foo = 1
     c.bar = 2
     x = [0, 1L, 2.0, 3.0+0j]
+    # Append some integer test cases at cPickle.c's internal size
+    # cutoffs.
+    uint1max = 0xff
+    uint2max = 0xffff
+    int4max = 0x7fffffff
+    x.extend([1, -1,
+              uint1max, -uint1max, -uint1max-1,
+              uint2max, -uint2max, -uint2max-1,
+               int4max,  -int4max,  -int4max-1])
     y = ('abc', 'abc', c, c)
     x.append(y)
     x.append(y)
