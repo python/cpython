@@ -150,4 +150,22 @@ sub do_cmd_bifuncindex{ &my_parword_index_helper('built-in function', @_); }
 sub do_cmd_bimodindex{ &my_parword_index_helper('built-in module', @_); }
 sub do_cmd_bifuncindex{ &my_parword_index_helper('standard module', @_); }
 
+sub do_env_cfuncdesc{
+  local($_) = @_;
+  local($return_type,$function_name,$arg_list) = ('', '', '');
+  local($any_next_pair_rx3) = "$O(\\d+)$C([\\s\\S]*)$O\\3$C";
+  local($cfuncdesc_rx) =
+    "$any_next_pair_rx$any_next_pair_rx3$any_next_pair_rx5";
+  $* = 1;
+  if (/$cfuncdesc_rx/o) {
+    $return_type = "$2";
+    $function_name = "$4";
+    $arg_list = "$6";
+    &make_index_entry($3,$function_name)
+  }
+  $* = 0;
+  "<DL><DT>$return_type <STRONG><A NAME=\"$3\">$function_name</A></STRONG>" .
+    "(<VAR>$arg_list</VAR>)\n<DD>$'\n</DL>"
+}
+
 1;				# This must be the last line
