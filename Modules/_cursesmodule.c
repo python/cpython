@@ -130,7 +130,7 @@ None              idlok(int)        int=0 or int=1
 None              leaveok(int)      int=0 or int=1
 None              scrollok(int)     int=0 or int=1
 None              setscrreg(top,bottom)
-None		  keypad(int)	    int=0 or int=1
+None              keypad(int)       int=0 or int=1
 None              nodelay(int)      int=0 or int=1
 None              notimeout(int)    int=0 or int=1
 ******************************************************************/
@@ -201,7 +201,7 @@ Version 1.0: 94/08/30:
 
 ******************************************************************/
 
-char *PyCursesVersion = "1.1";
+char *PyCursesVersion = "1.2";
 
 /*
  * Check the return code from a curses function and return None 
@@ -1419,7 +1419,7 @@ static PyMethodDef PyCurses_methods[] = {
 void
 initcurses()
 {
-	PyObject *m, *d;
+	PyObject *m, *d, *v;
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("curses", PyCurses_methods);
@@ -1433,7 +1433,10 @@ initcurses()
 	PyDict_SetItemString(d, "error", PyCursesError);
 
 	/* Make the version available */
-	PyDict_SetItemString(d,"version", PyString_FromString(PyCursesVersion));
+	v = PyString_FromString(PyCursesVersion);
+	PyDict_SetItemString(d, "version", v);
+	PyDict_SetItemString(d, "__version__", v);
+	Py_DECREF(v);
 
 	/* Here are some attributes you can add to chars to print */
 	SetDictInt("A_NORMAL",		A_NORMAL);
