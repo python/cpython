@@ -81,6 +81,8 @@ tester("ntpath.join('', 'a')", 'a')
 tester("ntpath.join('', '', '', '', 'a')", 'a')
 tester("ntpath.join('a', '')", 'a\\')
 tester("ntpath.join('a', '', '', '', '')", 'a\\')
+tester("ntpath.join('a\\', '')", 'a\\')
+tester("ntpath.join('a\\', '', '', '', '')", 'a\\')
 
 tester("ntpath.normpath('A//////././//.//B')", r'A\B')
 tester("ntpath.normpath('A/./B')", r'A\B')
