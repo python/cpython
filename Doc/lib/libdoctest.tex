@@ -173,8 +173,8 @@ Run it with the \programopt{-v} switch instead:
 python M.py -v
 \end{verbatim}
 
-and a detailed report of all examples tried is printed to \code{stdout},
-along with assorted summaries at the end.
+and a detailed report of all examples tried is printed to standard
+output, along with assorted summaries at the end.
 
 You can force verbose mode by passing \code{verbose=1} to
 \function{testmod()}, or
@@ -188,14 +188,11 @@ attempted.
 
 \subsection{Which Docstrings Are Examined?}
 
-See \file{docstring.py} for all the details.  They're unsurprising:  the
-module docstring, and all function, class and method docstrings are
-searched.  Optionally, the tester can be directed to exclude
-docstrings attached to objects with private names.
-Objects imported into the module are not searched.
-\versionchanged[Previously, the tester defaulted to skipping objects
-with private names (to obtain version independence, explicitly specify
-\var{isprivate} when launching doctests)]{2.3}
+See the docstrings in \file{doctest.py} for all the details.  They're
+unsurprising: the module docstring, and all function, class and method
+docstrings are searched.  Optionally, the tester can be directed to
+exclude docstrings attached to objects with private names.  Objects
+imported into the module are not searched.
 
 In addition, if \code{M.__test__} exists and "is true", it must be a
 dict, and each entry maps a (string) name to a function object, class
@@ -205,7 +202,7 @@ directed to skip over private names in the rest of the module.
 In output, a key \code{K} in \code{M.__test__} appears with name
 
 \begin{verbatim}
-      <name of M>.__test__.K
+<name of M>.__test__.K
 \end{verbatim}
 
 Any classes found are recursively searched similarly, to test docstrings in
@@ -259,7 +256,7 @@ are run.
 
   The doctest examples are extracted (see function \function{testsource()}),
   and written to a temporary file.  The Python debugger, \refmodule{pdb},
-  is then invoked on that file.    
+  is then invoked on that file.
   \versionadded{2.3}
 \end{funcdesc}
 
@@ -270,7 +267,7 @@ are run.
   instance, \code{master}.
 
   To get finer control than \function{testmod()} offers, create an instance
-  of \class{Tester} with custom policies and run the methods of \code{master}
+  of \class{Tester} with custom policies, or run methods of \code{master}
   directly.  See \code{Tester.__doc__} for details.
 \end{funcdesc}
 
@@ -299,7 +296,7 @@ are run.
 
   The optional \var{module} argument provides the module to be tested.  It
   can be a module object or a (possibly dotted) module name.  If not
-  specified, the module calling \function{DocTestSuite()} is used.
+  specified, the module calling this function is used.
 
   Example using one of the many ways that the \refmodule{unittest} module
   can use a \class{TestSuite}:
@@ -315,7 +312,7 @@ are run.
   \end{verbatim}
 
   \versionadded{2.3}
-  \warning{\function{DocTestSuite()} does not current search \code{M.__test__}
+  \warning{This function does not currently search \code{M.__test__}
   and its search technique does not exactly match \function{testmod()} in
   every detail.  Future versions will bring the two into convergence.}
 \end{funcdesc}
