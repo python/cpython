@@ -86,7 +86,7 @@ int console_output_state = STATE_UNKNOWN;
 
 PyMac_PrefRecord PyMac_options;
 
-static void Py_Main(int, char **, char *); /* Forward */
+static void PyMac_Main(int, char **, char *); /* Forward */
 void PyMac_Exit(int); /* Forward */
 
 /* Initialize the Mac toolbox world */
@@ -537,7 +537,7 @@ main(int argc, char **argv)
 
 	}
 
-	Py_Main(argc, argv, script);
+	PyMac_Main(argc, argv, script);
     return 0;
 }
 
@@ -580,14 +580,14 @@ PyMac_InitApplication(void)
 			exit(0);
 		}
 	}
-	Py_Main(argc, argv, script);
+	PyMac_Main(argc, argv, script);
 }
 #endif /* TARGET_API_MAC_OSX */
 
 /* Main program */
 
 static void
-Py_Main(int argc, char **argv, char *filename)
+PyMac_Main(int argc, char **argv, char *filename)
 {
 	int sts;
 	char *command = NULL;
