@@ -194,10 +194,16 @@ int
 Tcl_AppInit (interp)
      Tcl_Interp *interp;
 {
-  if (Tcl_Init (interp) == TCL_ERROR)
+    Tk_Window main;
+    main = Tk_MainWindow(interp);
+  if (Tcl_Init (interp) == TCL_ERROR) {
+    fprintf(stderr, "Tcl_Init error: %s\n", interp->result);
     return TCL_ERROR;
-  if (Tk_Init (interp) == TCL_ERROR)
+  }
+  if (Tk_Init (interp) == TCL_ERROR) {
+    fprintf(stderr, "Tk_Init error: %s\n", interp->result);
     return TCL_ERROR;
+  }
   return TCL_OK;
 }
 #endif /* !WITH_APPINIT */
@@ -699,8 +705,7 @@ Tkapp_CreateCommand (self, args)
   if (!PyTuple_Check (args) 
       || !(PyTuple_Size (args) == 2)
       || !PyString_Check (PyTuple_GetItem (args, 0))
-      || !(PyMethod_Check (PyTuple_GetItem (args, 1)) 
-	   || PyFunction_Check (PyTuple_GetItem (args, 1))))
+      || !PyCallable_Check (PyTuple_GetItem (args, 1)))
     {
       PyErr_SetString (PyExc_TypeError, "bad argument list");
       return NULL;
@@ -813,7 +818,7 @@ Tkapp_CreateFileHandler (self, args)
   id = GetFileNo (file);
   if (id < 0)
     return NULL;
-  if (!(PyMethod_Check(func) || PyFunction_Check(func)))
+  if (!PyCallable_Check(func))
     {
       PyErr_SetString (PyExc_TypeError, "bad argument list");
       return NULL;
@@ -982,8 +987,7 @@ Tkapp_CreateTimerHandler (self, args)
 
   if (!PyArg_Parse (args, "(iO)", &milliseconds, &func))
     return NULL;
-  if (!(PyMethod_Check(func) || PyFunction_Check(func) ||
-        PyCFunction_Check(func)))
+  if (!PyCallable_Check(func))
     {
       PyErr_SetString (PyExc_TypeError, "bad argument list");
       return NULL;
@@ -1191,6 +1195,7 @@ static PyMethodDef moduleMethods[] =
   {NULL, NULL}
 };
 
+#undef WITH_READLINE /* XXX */
 #ifdef WITH_READLINE
 static int
 EventHook ()
@@ -1211,9 +1216,12 @@ EventHook ()
 static void
 Tkinter_Cleanup ()
 {
+/* This segfault with Tk 4.0 beta and seems unnecessary there as well */
+#if TK_MAJOR_VERSION < 4
   /* XXX rl_deprep_terminal is static, damned! */
   while (tkMainWindowList != 0)
     Tk_DestroyWindow (tkMainWindowList->win);
+#endif
 }
 
 void
@@ -1250,6 +1258,10 @@ PyInit_tkinter ()
   PyDict_SetItemString (d, "ALL_EVENTS", v);
   v = Py_BuildValue ("i", TK_DONT_WAIT);
   PyDict_SetItemString (d, "DONT_WAIT", v);
+  v = Py_BuildValue ("s", TK_VERSION);
+  PyDict_SetItemString (d, "TK_VERSION", v);
+  v = Py_BuildValue ("s", TCL_VERSION);
+  PyDict_SetItemString (d, "TCL_VERSION", v);
 
 #ifdef WITH_READLINE
   rl_event_hook = EventHook;
