@@ -770,43 +770,60 @@ sharedinstall:
 		--install-scripts=$(BINDIR) \
 		--install-platlib=$(DESTSHARED)
 
+# Here are a couple of targets for MacOSX again, to install a full
+# framework-based Python. frameworkinstall installs everything, the
+# subtargets install specific parts. Much of the actual work is offloaded to
+# the Makefile in Mac/OSX
+#
+frameworkinstall: frameworkinstallframework \
+	frameworkinstallapps frameworkinstallunixtools
+	
 # On install, we re-make the framework
 # structure in the install location, /Library/Frameworks/ or the argument to
 # --enable-framework. If --enable-framework has been specified then we have
 # automatically set prefix to the location deep down in the framework, so we
 # only have to cater for the structural bits of the framework.
 
-frameworkinstall: frameworkinfrastructureinstall install
-FRAMEWORKFINALDEST=$(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)
-frameworkinfrastructureinstall:	$(LDLIBRARY)
+frameworkinstallframework: frameworkinstallstructure install frameworkinstallmaclib
+
+frameworkinstallstructure:	$(LDLIBRARY)
 	@if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
 		echo Not configured with --enable-framework; \
 		exit 1; \
 	else true; \
 	fi
-	@for i in $(FRAMEWORKFINALDEST)/Resources/English.lproj $(FRAMEWORKFINALDEST)/lib; do\
+	@for i in $(prefix)/Resources/English.lproj $(prefix)/lib; do\
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
 			$(INSTALL) -d -m $(DIRMODE) $$i; \
 		else	true; \
 		fi; \
 	done
-	$(LN) -fsn include/python$(VERSION) $(FRAMEWORKFINALDEST)/Headers
-	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist $(FRAMEWORKFINALDEST)/Resources/Info.plist
-	$(INSTALL_DATA) $(RESSRCDIR)/version.plist $(FRAMEWORKFINALDEST)/Resources/version.plist
+	$(LN) -fsn include/python$(VERSION) $(prefix)/Headers
+	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist $(prefix)/Resources/Info.plist
+	$(INSTALL_DATA) $(RESSRCDIR)/version.plist $(prefix)/Resources/version.plist
 	$(INSTALL_DATA) $(RESSRCDIR)/English.lproj/InfoPlist.strings \
-		$(FRAMEWORKFINALDEST)/Resources/English.lproj/InfoPlist.strings
+		$(prefix)/Resources/English.lproj/InfoPlist.strings
 	$(LN) -fsn $(VERSION) $(PYTHONFRAMEWORKINSTALLDIR)/Versions/Current
 	$(LN) -fsn Versions/Current/Python $(PYTHONFRAMEWORKINSTALLDIR)/Python
 	$(LN) -fsn Versions/Current/Headers $(PYTHONFRAMEWORKINSTALLDIR)/Headers
 	$(LN) -fsn Versions/Current/Resources $(PYTHONFRAMEWORKINSTALLDIR)/Resources
 	$(INSTALL_DATA) $(LDLIBRARY) $(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
 
-# Build Python executable that can run GUI code. Another MacOSX pseudo
-# target.
-osxapps:
-	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installmacsubtree install_all \
-		srcdir=$(srcdir) builddir=.
+# This installs Mac/Lib into the framework
+frameworkinstallmaclib:
+	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installmacsubtree \
+		srcdir=$(srcdir) builddir=. prefix=$(prefix) LIBDEST=$(LIBDEST)
+
+# This installs the IDE, the Launcher and other apps into /Applications
+frameworkinstallapps:
+	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installapps \
+		srcdir=$(srcdir) builddir=. dstroot=$(PYTHONFRAMEWORKPREFIX)/../..
+
+# This install the unix python and pythonw tools in /usr/local/bin
+frameworkinstallunixtools:
+	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installunixtools \
+		srcdir=$(srcdir) builddir=. dstroot=$(PYTHONFRAMEWORKPREFIX)/../..
 
 # Build the toplevel Makefile
 Makefile.pre: Makefile.pre.in config.status
