@@ -100,13 +100,6 @@ class AboutDialog(Toplevel):
         labelTkVer = Label(frameBg,text='Tk version:  '+tkVer,fg=self.fg,bg=self.bg,
                 font=self.textFont)
         labelTkVer.grid(row=9,column=1,sticky=W,padx=2,pady=0)
-        #labelOs = Label(frameBg,text='python os name: '+pyching.os,
-        #       font=self.fontText,fg=self.fg,bg=self.bg)
-        #labelOs.grid(row=6,column=0,sticky=W,padx=10,pady=0)
-        #labelOsType = Label(frameBg,text='python os type: '+pyching.osType,
-        #       font=self.fontText,fg=self.fg,bg=self.bg)
-        #labelOsType.grid(row=6,column=1,sticky=W,padx=5,pady=0)
-        #framePad = Frame(frameBg,bg=self.bg,height=5).grid(row=7,column=0)
 
         self.buttonLicense = Button(frameBg,text='View License',underline=5,
                 width=14,highlightbackground=self.bg,command=self.ShowLicense)#takefocus=FALSE
