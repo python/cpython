@@ -68,17 +68,17 @@ An example usage:
 >>> import rotor
 >>> rt = rotor.newrotor('key', 12)
 >>> rt.encrypt('bar')
-'\2534\363'
+'\xab4\xf3'
 >>> rt.encryptmore('bar')
-'\357\375$'
+'\xef\xfd$'
 >>> rt.encrypt('bar')
-'\2534\363'
->>> rt.decrypt('\2534\363')
+'\xab4\xf3'
+>>> rt.decrypt('\xab4\xf3')
 'bar'
->>> rt.decryptmore('\357\375$')
+>>> rt.decryptmore('\xef\xfd$')
 'bar'
->>> rt.decrypt('\357\375$')
-'l(\315'
+>>> rt.decrypt('\xef\xfd$')
+'l(\xcd'
 >>> del rt
 \end{verbatim}
 
