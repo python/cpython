@@ -4,5 +4,9 @@
 @set _exe=python
 @if "%1" =="-d" set _exe=python_d
 @if "%1" =="-d" shift
+@del ..\Lib\*.pyc
+@del ..\Lib\*.pyo
+@del ..\Lib\test\*.pyc
+@del ..\Lib\test\*.pyo
 %_exe% ../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
 @set _exe=
