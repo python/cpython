@@ -396,8 +396,7 @@ class Profile:
 	def run(self, cmd):
 		import __main__
 		dict = __main__.__dict__
-		self.runctx(cmd, dict, dict)
-		return self
+		return self.runctx(cmd, dict, dict)
 	
 	def runctx(self, cmd, globals, locals):
 		self.set_cmd(cmd)
@@ -406,16 +405,16 @@ class Profile:
 			exec cmd in globals, locals
 		finally:
 			sys.setprofile(None)
+		return self
 
 	# This method is more useful to profile a single function call.
 	def runcall(self, func, *args):
 		self.set_cmd(`func`)
 		sys.setprofile(self.dispatcher)
 		try:
-			apply(func, args)
+			return apply(func, args)
 		finally:
 			sys.setprofile(None)
-		return self
 
 
         #******************************************************************
