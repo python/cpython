@@ -1,5 +1,5 @@
 # Microsoft Developer Studio Project File - Name="python15" - Package Owner=<4>
-# Microsoft Developer Studio Generated Build File, Format Version 6.00
+# Microsoft Developer Studio Generated Build File, Format Version 5.00
 # ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
@@ -18,14 +18,16 @@ CFG=python15 - Win32 Alpha Debug
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "python15 - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "python15 - Win32 Release" (based on\
+ "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "python15 - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "python15 - Win32 Alpha Debug" (based on "Win32 (ALPHA) Dynamic-Link Library")
-!MESSAGE "python15 - Win32 Alpha Release" (based on "Win32 (ALPHA) Dynamic-Link Library")
+!MESSAGE "python15 - Win32 Alpha Debug" (based on\
+ "Win32 (ALPHA) Dynamic-Link Library")
+!MESSAGE "python15 - Win32 Alpha Release" (based on\
+ "Win32 (ALPHA) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
-# PROP AllowPerConfigDependencies 0
 # PROP Scc_ProjName "python15"
 # PROP Scc_LocalPath ".."
 
@@ -45,10 +47,10 @@ CFG=python15 - Win32 Alpha Debug
 F90=df.exe
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\Include" /I "..\PC" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "USE_DL_EXPORT" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\Include" /I "..\PC" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "USE_DL_EXPORT" /YX /FD /Zm200 /c
 MTL=midl.exe
-# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
-# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o /win32 "NUL"
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o /win32 "NUL"
 RSC=rc.exe
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /i "..\Include" /d "NDEBUG"
@@ -76,10 +78,10 @@ LINK32=link.exe
 F90=df.exe
 CPP=cl.exe
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\Include" /I "..\PC" /D "_DEBUG" /D "USE_DL_EXPORT" /D "WIN32" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\Include" /I "..\PC" /D "_DEBUG" /D "USE_DL_EXPORT" /D "WIN32" /D "_WINDOWS" /YX /FD /Zm200 /c
 MTL=midl.exe
-# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
-# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
+# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o /win32 "NUL"
+# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o /win32 "NUL"
 RSC=rc.exe
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /i "..\Include" /d "_DEBUG"
@@ -106,11 +108,11 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 MTL=midl.exe
-# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
-# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
+# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o /win32 "NUL"
+# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o /win32 "NUL"
 CPP=cl.exe
-# ADD BASE CPP /nologo /MTd /Gt0 /W3 /GX /Zi /Od /I "..\Include" /I "..\PC" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "USE_DL_EXPORT" /YX /FD /c
-# ADD CPP /nologo /MDd /Gt0 /W3 /GX /Zi /Od /I "..\Include" /I "..\PC" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "USE_DL_EXPORT" /YX /FD /c
+# ADD BASE CPP /nologo /Gt0 /W3 /GX /Zi /Od /I "..\Include" /I "..\PC" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "USE_DL_EXPORT" /YX /FD /MTd /c
+# ADD CPP /nologo /Gt0 /W3 /GX /Zi /Od /I "..\Include" /I "..\PC" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "USE_DL_EXPORT" /YX /FD /MDd /c
 RSC=rc.exe
 # ADD BASE RSC /l 0x409 /i "..\Include" /d "_DEBUG"
 # ADD RSC /l 0x409 /i "..\Include" /d "_DEBUG"
@@ -138,8 +140,8 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 MTL=midl.exe
-# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
-# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o /win32 "NUL"
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o /win32 "NUL"
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /Gt0 /W3 /GX /Zi /O2 /I "..\Include" /I "..\PC" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "USE_DL_EXPORT" /YX /FD /c
 # ADD CPP /nologo /MD /Gt0 /W3 /GX /O2 /I "..\Include" /I "..\PC" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "USE_DL_EXPORT" /YX /FD /c
@@ -163,6 +165,21 @@ LINK32=link.exe
 # Name "python15 - Win32 Debug"
 # Name "python15 - Win32 Alpha Debug"
 # Name "python15 - Win32 Alpha Release"
+# Begin Source File
+
+SOURCE=..\Modules\_codecsmodule.c
+
+!IF  "$(CFG)" == "python15 - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Release"
+
+!ENDIF 
+
+# End Source File
 # Begin Source File
 
 SOURCE=..\Modules\_localemodule.c
@@ -346,6 +363,21 @@ SOURCE=..\Modules\cmathmodule.c
 # Begin Source File
 
 SOURCE=..\Objects\cobject.c
+
+!IF  "$(CFG)" == "python15 - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\Python\codecs.c
 
 !IF  "$(CFG)" == "python15 - Win32 Release"
 
@@ -1256,6 +1288,17 @@ SOURCE=..\Python\pystate.c
 # Begin Source File
 
 SOURCE=..\PC\python_nt.rc
+
+!IF  "$(CFG)" == "python15 - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Release"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -1605,6 +1648,66 @@ SOURCE=..\Objects\tupleobject.c
 # Begin Source File
 
 SOURCE=..\Objects\typeobject.c
+
+!IF  "$(CFG)" == "python15 - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\Objects\unicodectype.c
+
+!IF  "$(CFG)" == "python15 - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\Modules\unicodedata.c
+
+!IF  "$(CFG)" == "python15 - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\Modules\unicodedatabase.c
+
+!IF  "$(CFG)" == "python15 - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
+
+!ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\Objects\unicodeobject.c
 
 !IF  "$(CFG)" == "python15 - Win32 Release"
 
