@@ -123,10 +123,7 @@ simply open the pcbuild.dsw workspace file with Developer Studio.
 Select the Debug configuration (use Set Active Configuration... in the
 Build menu) and build the python15 and python projects (in that
 order).  If you have Tcl/Tk 8.0 installed you can also try building
-the _tkinter project.  After testing you can try building the Release
-configuration -- you must build the Debug configuration first because
-the python15.lib file created by that phase is included in the python
-project.
+the _tkinter project.
 
 The distributed files are text files with CRLF line terminators.  You
 can rename the workspace file (pcbuild.dsw), but since it refers to
