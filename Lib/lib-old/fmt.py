@@ -222,9 +222,9 @@ class BaseFormatter:
 			self.para.just = self.just
 			self.nextfont = self.font
 		space = int(space * self.space)
-		self.para.words.append(self.nextfont, text, \
-			self.d.textwidth(text), space, space, \
-			self.ascent, self.descent)
+		self.para.words.append((self.nextfont, text,
+			self.d.textwidth(text), space, space,
+			self.ascent, self.descent))
 		self.nextfont = None
 	#
 	def bgn_anchor(self, id):
@@ -499,7 +499,7 @@ class StdwinBackEnd(SavingBackEnd):
 				long2 = i, len(p.extract())
 				hit = long1, long2
 				self.setselection(hit)
-				self.window.show( \
+				self.window.show(
 					(p.left, p.top), (p.right, p.bottom))
 				break
 
