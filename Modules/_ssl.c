@@ -110,7 +110,7 @@ PySSL_SetError(PySSLObject *obj, int ret)
 	{
 		unsigned long e = ERR_get_error();
 		if (e == 0) {
-			if (ret == 0) {
+			if (ret == 0 || !obj->Socket) {
 				p = PY_SSL_ERROR_EOF;
 				errstr = "EOF occurred in violation of protocol";
 			} else if (ret == -1) {
@@ -432,6 +432,7 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	timedout = wait_for_timeout(self->Socket, 0);
 	if (timedout) {
 		PyErr_SetString(PySSLErrorObject, "The read operation timed out");
+		Py_DECREF(buf);
 		return NULL;
 	}
 	do {
