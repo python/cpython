@@ -96,6 +96,14 @@ Return \code{''} if no cooked data available otherwise.  This method
 never blocks.
 \end{methoddesc}
 
+\begin{methoddesc}{read_sb_data}{}
+Return the data collected between a SB/SE pair (suboption begin/end).
+The callback should access these data when it was invoked with a
+\code{SE} command. This method never blocks.
+
+\versionadded{2.3}
+\end{methoddesc}
+
 \begin{methoddesc}{open}{host\optional{, port}}
 Connect to a host.
 The optional second argument is the port number, which
