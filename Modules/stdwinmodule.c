@@ -1507,6 +1507,18 @@ window_scroll(wp, args)
 }
 
 static object *
+window_setactive(wp, args)
+	windowobject *wp;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	wsetactive(wp->w_win);
+	INCREF(None);
+	return None;
+}
+
+static object *
 window_setdocsize(wp, args)
 	windowobject *wp;
 	object *args;
@@ -1660,6 +1672,7 @@ static struct methodlist window_methods[] = {
 	{"getwinsize",	window_getwinsize},
 	{"menucreate",	window_menucreate},
 	{"scroll",	window_scroll},
+	{"setactive",	window_setactive},
 	{"setdocsize",	window_setdocsize},
 	{"setorigin",	window_setorigin},
 	{"setselection",window_setselection},
