@@ -179,6 +179,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			objs="$objs $obj"
 			case $src in
 			glmodule.c) ;;
+			/*) ;;
 			*) src='$(srcdir)/'$src;;
 			esac
 			case $doconfig in
