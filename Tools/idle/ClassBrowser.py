@@ -14,14 +14,6 @@ import os
 import sys
 import pyclbr
 
-# XXX Patch pyclbr with dummies if it's vintage Python 1.5.2:
-if not hasattr(pyclbr, "readmodule_ex"):
-    pyclbr.readmodule_ex = pyclbr.readmodule
-if not hasattr(pyclbr, "Function"):
-    class Function(pyclbr.Class):
-        pass
-    pyclbr.Function = Function
-
 import PyShell
 from WindowList import ListedToplevel
 from TreeWidget import TreeNode, TreeItem, ScrolledCanvas
