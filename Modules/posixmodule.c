@@ -696,42 +696,43 @@ posix_popen(self, args)
 }
 
 static object *
-posix_wait(self, args) /* Also waitpid() */
+posix_waitpid(self, args)
 	object *self;
 	object *args;
 {
-	object *v;
-	int pid, sts;
-	if (args == NULL) {
-		BGN_SAVE
-		pid = wait(&sts);
-		END_SAVE
-	}
-	else {
 #ifdef NO_WAITPID
-		err_setstr(PosixError,
-		"posix.wait(pid, options) not supported on this system");
+	err_setstr(PosixError,
+		   "posix.waitpid() not supported on this system");
+	return NULL;
 #else
-		int options;
-		if (!getintintarg(args, &pid, &options))
-			return NULL;
-		BGN_SAVE
-		pid = waitpid(pid, &sts, options);
-		END_SAVE
-#endif
-	}
+	int pid, options, sts;
+	if (!getargs(args, "(ii)", &pid, &options))
+		return NULL;
+	BGN_SAVE
+	pid = waitpid(pid, &sts, options);
+	END_SAVE
 	if (pid == -1)
 		return posix_error();
-	v = newtupleobject(2);
-	if (v != NULL) {
-		settupleitem(v, 0, newintobject((long)pid));
-		settupleitem(v, 1, newintobject((long)sts));
-		if (err_occurred()) {
-			DECREF(v);
-			v = NULL;
-		}
-	}
-	return v;
+	else
+		return mkvalue("ii", pid, sts);
+#endif
+}
+
+static object *
+posix_wait(self, args)
+	object *self;
+	object *args;
+{
+	int pid, sts;
+	if (args != NULL)
+		return posix_waitpid(self, args); /* BW compat */
+	BGN_SAVE
+	pid = wait(&sts);
+	END_SAVE
+	if (pid == -1)
+		return posix_error();
+	else
+		return mkvalue("ii", pid, sts);
 }
 
 #endif /* MSDOS */
@@ -863,6 +864,7 @@ static struct methodlist posix_methods[] = {
 	{"kill",	posix_kill},
 	{"popen",	posix_popen},
 	{"wait",	posix_wait},
+	{"waitpid",	posix_waitpid},
 #endif
 
 	{NULL,		NULL}		 /* Sentinel */
