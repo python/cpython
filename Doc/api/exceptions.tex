@@ -102,7 +102,7 @@ for each thread.
   indicator is already set, it is cleared first.  If the objects are
   \NULL, the error indicator is cleared.  Do not pass a \NULL{} type
   and non-\NULL{} value or traceback.  The exception type should be a
-  string or class.  Do not pass an invalid exception type or value.
+  class.  Do not pass an invalid exception type or value.
   (Violating these rules will cause subtle problems later.)  This call
   takes away a reference to each object: you must own a reference to
   each object before the call and after the call you no longer own
@@ -130,7 +130,7 @@ for each thread.
 \begin{cfuncdesc}{PyObject*}{PyErr_Format}{PyObject *exception,
                                            const char *format, \moreargs}
   This function sets the error indicator and returns \NULL.
-  \var{exception} should be a Python exception (string or class, not
+  \var{exception} should be a Python exception (class, not
   an instance).  \var{format} should be a string, containing format
   codes, similar to \cfunction{printf()}. The \code{width.precision}
   before a format code is parsed, but the width part is ignored.

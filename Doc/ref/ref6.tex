@@ -521,9 +521,8 @@ from __future__ import generators
 \end{productionlist}
 
 If no expressions are present, \keyword{raise} re-raises the last
-expression that was active in the current scope.  If no exception has
-been active in the current scope, an exception is raised that
-indicates indicates that this is the error.
+expression that was active in the current scope.  If no exception is
+active in the current scope, an exception is raised indicating this error.
 \index{exception}
 \indexii{raising}{exception}
 
@@ -544,9 +543,6 @@ the class constructor; if it is \code{None}, an empty argument list is
 used, and any other object is treated as a single argument to the
 constructor.  The instance so created by calling the constructor is
 used as the exception value.
-
-If the first object is a string, the string object is the exception
-type, and the second object becomes the exception value.
 
 If a third object is present and not \code{None}, it must be a
 traceback\obindex{traceback} object (see section~\ref{traceback}), and
