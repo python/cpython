@@ -113,18 +113,15 @@ class AbstractFormatter:
     def format_counter(self, format, counter):
         label = ''
         for c in format:
-            try:
-                if c == '1':
-                    label = label + ('%d' % counter)
-                elif c in 'aA':
-                    if counter > 0:
-                        label = label + self.format_letter(c, counter)
-                elif c in 'iI':
-                    if counter > 0:
-                        label = label + self.format_roman(c, counter)
-                else:
-                    label = label + c
-            except:
+            if c == '1':
+                label = label + ('%d' % counter)
+            elif c in 'aA':
+                if counter > 0:
+                    label = label + self.format_letter(c, counter)
+            elif c in 'iI':
+                if counter > 0:
+                    label = label + self.format_roman(c, counter)
+            else:
                 label = label + c
         return label
 
@@ -132,6 +129,9 @@ class AbstractFormatter:
         label = ''
         while counter > 0:
             counter, x = divmod(counter-1, 26)
+            # This makes a strong assumption that lowercase letters
+            # and uppercase letters form two contiguous blocks, with
+            # letters in order!
             s = chr(ord(case) + x)
             label = s + label
         return label
