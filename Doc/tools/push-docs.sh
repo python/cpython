@@ -3,21 +3,43 @@
 #  Script to push docs from my development area to SourceForge, where the
 #  update-docs.sh script unpacks them into their final destination.
 
-TARGET=python.sourceforge.net:/home/users/fdrake
+TARGET=python.sourceforge.net:/home/users/fdrake/tmp
 
-if [ "$1" ] ; then
-    scp "$1" $TARGET/python-docs-update.txt || exit $?
+ADDRESSES='python-dev@python.org doc-sig@python.org python-list@python.org'
+
+
+set -x
+
+EXPLANATION=''
+
+if [ "$1" = '-m' ] ; then
+    EXPLANATION="$2"
+    shift 2
+elif [ "$1" ] ; then
+    EXPLANATION="`cat $1`"
+    shift 1
 fi
 
 START="`pwd`"
 MYDIR="`dirname $0`"
 cd "$MYDIR"
 MYDIR="`pwd`"
-HTMLDIR="${HTMLDIR:-html}"
 
-cd "../$HTMLDIR"
-make --no-print-directory || exit $?
 cd ..
+
+# now in .../Doc/
+make --no-print-directory || exit $?
+make --no-print-directory bziphtml || exit $?
 RELEASE=`grep '^RELEASE=' Makefile | sed 's|RELEASE=||'`
-make --no-print-directory HTMLDIR="$HTMLDIR" bziphtml
-scp "html-$RELEASE.tar.bz2" $TARGET/python-docs-update.tar.bz2
+scp "html-$RELEASE.tar.bz2" $TARGET/python-docs-update.tar.bz2 || exit $?
+scp tools/update-docs.sh $TARGET/update-docs.sh || exit $?
+ssh python.sourceforge.net 'tmp/update-docs.sh && rm tmp/update-docs.sh' || exit $?
+
+Mail -s '[development doc updates]' $ADDRESSES <<EOF
+The development version of the documentation has been updated:
+
+	http://python.sourceforge.net/devel-docs/
+
+$EXPLANATION
+EOF
+exit $?
