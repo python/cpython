@@ -186,7 +186,7 @@ class Message:
         if i is None:
             payload = self._payload
         elif not isinstance(self._payload, ListType):
-            raise TypeError, i
+            raise TypeError, 'Expected list, got %s' % type(self._payload)
         else:
             payload = self._payload[i]
         if decode:
