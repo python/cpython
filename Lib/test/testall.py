@@ -20,6 +20,7 @@ tests = ['test_grammar',
 	 'test_pwd',
 	 'test_rgbimg',
 	 'test_select',
+	 'test_strftime',
 	 ]
 
 if __name__ == '__main__':

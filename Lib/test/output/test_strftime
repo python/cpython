@@ -1,0 +1,5 @@
+test_strftime
+Strftime test, platform: irix5, Python version: 1.4
+Does not appear to support '%k' format
+Does not appear to support '%s' format
+Does not appear to support '%3y' format
