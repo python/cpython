@@ -1565,7 +1565,9 @@ format.
 \begin{cfuncdesc}{PyObject*}{PyBuffer_New}{int size}
   Returns a new writable buffer object that maintains its own memory
   buffer of \var{size} bytes.  \exception{ValueError} is returned if
-  \var{size} is not zero or positive.
+  \var{size} is not zero or positive.  Note that the memory buffer (as
+  returned by \cfunction{PyObject_AsWriteBuffer()}) is not specifically
+  aligned.
 \end{cfuncdesc}
 
 
