@@ -520,7 +520,7 @@ test_coercion
 [1] - <MethodNumber 1> ... exceptions.TypeError
 [1] -= <MethodNumber 1> ... exceptions.TypeError
 [1] * <MethodNumber 1> = [1]
-[1] *= <MethodNumber 1> ... exceptions.TypeError
+[1] *= <MethodNumber 1> => [1]
 [1] / <MethodNumber 1> ... exceptions.TypeError
 [1] /= <MethodNumber 1> ... exceptions.TypeError
 [1] ** <MethodNumber 1> ... exceptions.TypeError
@@ -532,7 +532,7 @@ test_coercion
 [1] - <CoerceNumber 2> ... exceptions.TypeError
 [1] -= <CoerceNumber 2> ... exceptions.TypeError
 [1] * <CoerceNumber 2> = [1, 1]
-[1] *= <CoerceNumber 2> ... exceptions.TypeError
+[1] *= <CoerceNumber 2> => [1, 1]
 [1] / <CoerceNumber 2> ... exceptions.TypeError
 [1] /= <CoerceNumber 2> ... exceptions.TypeError
 [1] ** <CoerceNumber 2> ... exceptions.TypeError
