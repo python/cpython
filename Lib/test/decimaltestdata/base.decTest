@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.38
+version: 2.39
 
 -- This file tests base conversions from string to a decimal number
 -- and back to a string (in either Scientific or Engineering form)
@@ -73,21 +73,22 @@ basx038 toSci '0.123456789012345'   -> '0.123456789012345'
 
 -- String [many more examples are implicitly tested elsewhere]
 -- strings without E cannot generate E in result
-basx101 toSci "12"        -> '12'
-basx102 toSci "-76"       -> '-76'
-basx103 toSci "12.76"     -> '12.76'
-basx104 toSci "+12.76"    -> '12.76'
-basx105 toSci "012.76"    -> '12.76'
-basx106 toSci "+0.003"    -> '0.003'
-basx107 toSci "17."       -> '17'
-basx108 toSci ".5"        -> '0.5'
-basx109 toSci "044"       -> '44'
-basx110 toSci "0044"      -> '44'
-basx111 toSci "0.0005"    -> '0.0005'
-basx112 toSci "00.00005"  -> '0.00005'
-basx113 toSci "0.000005"  -> '0.000005'
-basx114 toSci "0.0000005" -> '5E-7'
-basx115 toSci "0.00000005" -> '5E-8'
+basx100 toSci "12"        -> '12'
+basx101 toSci "-76"       -> '-76'
+basx102 toSci "12.76"     -> '12.76'
+basx103 toSci "+12.76"    -> '12.76'
+basx104 toSci "012.76"    -> '12.76'
+basx105 toSci "+0.003"    -> '0.003'
+basx106 toSci "17."       -> '17'
+basx107 toSci ".5"        -> '0.5'
+basx108 toSci "044"       -> '44'
+basx109 toSci "0044"      -> '44'
+basx110 toSci "0.0005"      -> '0.0005'
+basx111 toSci "00.00005"    -> '0.00005'
+basx112 toSci "0.000005"    -> '0.000005'
+basx113 toSci "0.0000050"   -> '0.0000050'
+basx114 toSci "0.0000005"   -> '5E-7'
+basx115 toSci "0.00000005"  -> '5E-8'
 basx116 toSci "12345678.543210" -> '12345678.543210'
 basx117 toSci "2345678.543210" -> '2345678.543210'
 basx118 toSci "345678.543210" -> '345678.543210'
@@ -99,6 +100,11 @@ basx123 toSci "+00345678.5432" -> '345678.5432'
 basx124 toSci "-345678.5432"  -> '-345678.5432'
 basx125 toSci "-0345678.5432"  -> '-345678.5432'
 basx126 toSci "-00345678.5432"  -> '-345678.5432'
+-- examples
+basx127 toSci "5E-6"        -> '0.000005'
+basx128 toSci "50E-7"       -> '0.0000050'
+basx129 toSci "5E-7"        -> '5E-7'
+
 
 -- [No exotics as no Unicode]
 

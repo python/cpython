@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------
 -- rescale.decTest -- decimal rescale operation                       --
--- Copyright (c) IBM Corporation, 1981, 2003.  All rights reserved.   --
+-- Copyright (c) IBM Corporation, 1981, 2004.  All rights reserved.   --
 ------------------------------------------------------------------------
 -- Please see the document "General Decimal Arithmetic Testcases"     --
 -- at http://www2.hursley.ibm.com/decimal for the description of      --
@@ -17,9 +17,11 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.35
+version: 2.39
 
 -- [obsolete]   Quantize.decTest has the improved version
+
+-- 2004.03.15 Underflow for quantize is suppressed
 
 extended:    1
 precision:   9
@@ -498,12 +500,12 @@ resx553 rescale   1E-999  -1006 -> NaN Invalid_operation
 resx554 rescale   1E-999  -1007 -> NaN Invalid_operation
 -- related subnormal rounding
 resx555 rescale   1.666666E-999  -1005 -> 1.666666E-999
-resx556 rescale   1.666666E-1000 -1005 -> 1.66667E-1000 Underflow Subnormal Inexact Rounded
-resx557 rescale   1.666666E-1001 -1005 -> 1.6667E-1001 Underflow Subnormal Inexact Rounded
-resx558 rescale   1.666666E-1002 -1005 -> 1.667E-1002 Underflow Subnormal Inexact Rounded
-resx559 rescale   1.666666E-1003 -1005 -> 1.67E-1003 Underflow Subnormal Inexact Rounded
-resx560 rescale   1.666666E-1004 -1005 -> 1.7E-1004 Underflow Subnormal Inexact Rounded
-resx561 rescale   1.666666E-1005 -1005 -> 2E-1005 Underflow Subnormal Inexact Rounded
+resx556 rescale   1.666666E-1000 -1005 -> 1.66667E-1000  Subnormal Inexact Rounded
+resx557 rescale   1.666666E-1001 -1005 -> 1.6667E-1001  Subnormal Inexact Rounded
+resx558 rescale   1.666666E-1002 -1005 -> 1.667E-1002  Subnormal Inexact Rounded
+resx559 rescale   1.666666E-1003 -1005 -> 1.67E-1003  Subnormal Inexact Rounded
+resx560 rescale   1.666666E-1004 -1005 -> 1.7E-1004  Subnormal Inexact Rounded
+resx561 rescale   1.666666E-1005 -1005 -> 2E-1005  Subnormal Inexact Rounded
 resx562 rescale   1.666666E-1006 -1005 -> 0E-1005   Inexact Rounded
 resx563 rescale   1.666666E-1007 -1005 -> 0E-1005   Inexact Rounded
 
@@ -626,9 +628,9 @@ resx713 rescale  0.100E-999  -1000  ->   1E-1000   Subnormal Rounded
 resx714 rescale  0.01E-999   -1001  ->   1E-1001   Subnormal
 -- next is rounded to Emin
 resx715 rescale  0.999E-999   -999  ->   1E-999    Inexact Rounded
-resx716 rescale  0.099E-999  -1000  ->   1E-1000   Inexact Rounded Subnormal Underflow
+resx716 rescale  0.099E-999  -1000  ->   1E-1000   Inexact Rounded Subnormal
 
-resx717 rescale  0.009E-999  -1001  ->   1E-1001   Inexact Rounded Subnormal Underflow
+resx717 rescale  0.009E-999  -1001  ->   1E-1001   Inexact Rounded Subnormal
 resx718 rescale  0.001E-999  -1001  ->   0E-1001   Inexact Rounded
 resx719 rescale  0.0009E-999 -1001  ->   0E-1001   Inexact Rounded
 resx720 rescale  0.0001E-999 -1001  ->   0E-1001   Inexact Rounded
@@ -652,7 +654,7 @@ resx743 rescale -0.100E-999  -1000 ->  -1E-1000    Subnormal Rounded
 resx744 rescale -0.01E-999   -1000 ->  -0E-1000    Inexact Rounded
 -- next is rounded to Emin
 resx745 rescale -0.999E-999  -1000 ->  -1.0E-999   Inexact Rounded
-resx746 rescale -0.099E-999  -1000 ->  -1E-1000    Inexact Rounded Subnormal Underflow
+resx746 rescale -0.099E-999  -1000 ->  -1E-1000    Inexact Rounded Subnormal
 resx747 rescale -0.009E-999  -1000 ->  -0E-1000    Inexact Rounded
 resx748 rescale -0.001E-999  -1000 ->  -0E-1000    Inexact Rounded
 resx749 rescale -0.0001E-999 -1000 ->  -0E-1000    Inexact Rounded
@@ -664,8 +666,8 @@ resx753 rescale -0.100E-999  -1001 ->  -1.0E-1000  Subnormal Rounded
 resx754 rescale -0.01E-999   -1001 ->  -1E-1001    Subnormal
 -- next is rounded to Emin
 resx755 rescale -0.999E-999  -1001 ->  -1.00E-999  Inexact Rounded
-resx756 rescale -0.099E-999  -1001 ->  -1.0E-1000  Inexact Rounded Subnormal Underflow
-resx757 rescale -0.009E-999  -1001 ->  -1E-1001    Inexact Rounded Subnormal Underflow
+resx756 rescale -0.099E-999  -1001 ->  -1.0E-1000  Inexact Rounded Subnormal
+resx757 rescale -0.009E-999  -1001 ->  -1E-1001    Inexact Rounded Subnormal
 resx758 rescale -0.001E-999  -1001 ->  -0E-1001    Inexact Rounded
 resx759 rescale -0.0001E-999 -1001 ->  -0E-1001    Inexact Rounded
 

@@ -17,7 +17,7 @@
 --   IBM UK, PO Box 31, Birmingham Road, Warwick CV34 5JL, UK         --
 --   mfc@uk.ibm.com                                                   --
 ------------------------------------------------------------------------
-version: 2.38
+version: 2.39
 
 -- we assume that base comparison is tested in compare.decTest, so
 -- these mainly cover special cases and rounding
@@ -60,24 +60,36 @@ maxx030 max   0     0   ->  0
 maxx031 max   0    -0   ->  0
 maxx032 max   0    -0.0 ->  0
 maxx033 max   0     0.0 ->  0
-maxx034 max  -0     0   -> -0    -- note: -0 = 0
+maxx034 max  -0     0   ->  0    -- note: -0 = 0, but 0 chosen
 maxx035 max  -0    -0   -> -0
-maxx036 max  -0    -0.0 -> -0
-maxx037 max  -0     0.0 -> -0
-maxx038 max   0.0   0   ->  0.0
+maxx036 max  -0    -0.0 -> -0.0
+maxx037 max  -0     0.0 ->  0.0
+maxx038 max   0.0   0   ->  0
 maxx039 max   0.0  -0   ->  0.0
 maxx040 max   0.0  -0.0 ->  0.0
 maxx041 max   0.0   0.0 ->  0.0
-maxx042 max  -0.0   0   -> -0.0
+maxx042 max  -0.0   0   ->  0
 maxx043 max  -0.0  -0   -> -0.0
 maxx044 max  -0.0  -0.0 -> -0.0
-maxx045 max  -0.0   0.0 -> -0.0
+maxx045 max  -0.0   0.0 ->  0.0
 
-maxx046 max  -0E1   0E2 -> -0E+1
-maxx047 max   0E2   0E1 ->  0E+2
-maxx048 max   0E1   0E2 ->  0E+1
-maxx049 max  -0E3  -0E2 -> -0E+3
+maxx050 max  -0E1   0E1 ->  0E+1
+maxx051 max  -0E2   0E2 ->  0E+2
+maxx052 max  -0E2   0E1 ->  0E+1
+maxx053 max  -0E1   0E2 ->  0E+2
+maxx054 max   0E1  -0E1 ->  0E+1
+maxx055 max   0E2  -0E2 ->  0E+2
+maxx056 max   0E2  -0E1 ->  0E+2
+maxx057 max   0E1  -0E2 ->  0E+1
 
+maxx058 max   0E1   0E1 ->  0E+1
+maxx059 max   0E2   0E2 ->  0E+2
+maxx060 max   0E2   0E1 ->  0E+2
+maxx061 max   0E1   0E2 ->  0E+2
+maxx062 max  -0E1  -0E1 -> -0E+1
+maxx063 max  -0E2  -0E2 -> -0E+2
+maxx064 max  -0E2  -0E1 -> -0E+1
+maxx065 max  -0E1  -0E2 -> -0E+1
 
 -- Specials
 precision: 9
@@ -115,23 +127,24 @@ maxx133 max  1    -Inf   ->  1
 maxx134 max  1000 -Inf   ->  1000
 maxx135 max  Inf  -Inf   ->  Infinity
 
-maxx141 max  NaN -Inf    ->  NaN
-maxx142 max  NaN -1000   ->  NaN
-maxx143 max  NaN -1      ->  NaN
-maxx144 max  NaN -0      ->  NaN
-maxx145 max  NaN  0      ->  NaN
-maxx146 max  NaN  1      ->  NaN
-maxx147 max  NaN  1000   ->  NaN
-maxx148 max  NaN  Inf    ->  NaN
+-- 2004.08.02 754r chooses number over NaN in mixed cases
+maxx141 max  NaN -Inf    -> -Infinity
+maxx142 max  NaN -1000   -> -1000
+maxx143 max  NaN -1      -> -1
+maxx144 max  NaN -0      -> -0
+maxx145 max  NaN  0      ->  0
+maxx146 max  NaN  1      ->  1
+maxx147 max  NaN  1000   ->  1000
+maxx148 max  NaN  Inf    ->  Infinity
 maxx149 max  NaN  NaN    ->  NaN
-maxx150 max -Inf  NaN    ->  NaN
-maxx151 max -1000 NaN    ->  NaN
-maxx152 max -1    NaN    ->  NaN
-maxx153 max -0    NaN    ->  NaN
-maxx154 max  0    NaN    ->  NaN
-maxx155 max  1    NaN    ->  NaN
-maxx156 max  1000 NaN    ->  NaN
-maxx157 max  Inf  NaN    ->  NaN
+maxx150 max -Inf  NaN    -> -Infinity
+maxx151 max -1000 NaN    -> -1000
+maxx152 max -1    NaN    -> -1
+maxx153 max -0    NaN    -> -0
+maxx154 max  0    NaN    ->  0
+maxx155 max  1    NaN    ->  1
+maxx156 max  1000 NaN    ->  1000
+maxx157 max  Inf  NaN    ->  Infinity
 
 maxx161 max  sNaN -Inf   ->  NaN  Invalid_operation
 maxx162 max  sNaN -1000  ->  NaN  Invalid_operation
@@ -154,13 +167,18 @@ maxx178 max  Inf  sNaN   ->  NaN  Invalid_operation
 maxx179 max  NaN  sNaN   ->  NaN  Invalid_operation
 
 -- propagating NaNs
-maxx181 max  NaN9 -Inf   ->  NaN9
-maxx182 max  NaN8    9   ->  NaN8
-maxx183 max -NaN7  Inf   -> -NaN7
-maxx184 max  NaN6  NaN5  ->  NaN6
-maxx185 max -Inf   NaN4  ->  NaN4
-maxx186 max -9    -NaN3  -> -NaN3
-maxx187 max  Inf   NaN2  ->  NaN2
+maxx181 max  NaN9  -Inf   -> -Infinity
+maxx182 max  NaN8     9   ->  9
+maxx183 max -NaN7   Inf   ->  Infinity
+
+maxx184 max -NaN1   NaN11 -> -NaN1
+maxx185 max  NaN2   NaN12 ->  NaN2
+maxx186 max -NaN13 -NaN7  -> -NaN13
+maxx187 max  NaN14 -NaN5  ->  NaN14
+
+maxx188 max -Inf    NaN4  -> -Infinity
+maxx189 max -9     -NaN3  -> -9
+maxx190 max  Inf    NaN2  ->  Infinity
 
 maxx191 max  sNaN99 -Inf    ->  NaN99 Invalid_operation
 maxx192 max  sNaN98 -1      ->  NaN98 Invalid_operation
@@ -218,8 +236,9 @@ maxx238 max 1 -1234567896  -> 1
 -- from examples
 maxx280 max '3'   '2'  ->  '3'
 maxx281 max '-10' '3'  ->  '3'
-maxx282 max '1.0' '1'  ->  '1.0'
+maxx282 max '1.0' '1'  ->  '1'
 maxx283 max '1' '1.0'  ->  '1'
+maxx284 max '7' 'NaN'  ->  '7'
 
 -- overflow and underflow tests ...
 maxExponent: 999999999
@@ -255,42 +274,99 @@ maxx356 max  1e-777777777 -1e-411111111 ->  1E-777777777
 maxx357 max -1e-777777777  1e-411111111 ->  1E-411111111
 maxx358 max -1e-777777777 -1e-411111111 -> -1E-777777777
 
+-- expanded list from min/max 754r purple prose
+-- [explicit tests for exponent ordering]
+maxx401 max  Inf    1.1     ->  Infinity
+maxx402 max  1.1    1       ->  1.1
+maxx403 max  1      1.0     ->  1
+maxx404 max  1.0    0.1     ->  1.0
+maxx405 max  0.1    0.10    ->  0.1
+maxx406 max  0.10   0.100   ->  0.10
+maxx407 max  0.10   0       ->  0.10
+maxx408 max  0      0.0     ->  0
+maxx409 max  0.0   -0       ->  0.0
+maxx410 max  0.0   -0.0     ->  0.0
+maxx411 max  0.00  -0.0     ->  0.00
+maxx412 max  0.0   -0.00    ->  0.0
+maxx413 max  0     -0.0     ->  0
+maxx414 max  0     -0       ->  0
+maxx415 max -0.0   -0       -> -0.0
+maxx416 max -0     -0.100   -> -0
+maxx417 max -0.100 -0.10    -> -0.100
+maxx418 max -0.10  -0.1     -> -0.10
+maxx419 max -0.1   -1.0     -> -0.1
+maxx420 max -1.0   -1       -> -1.0
+maxx421 max -1     -1.1     -> -1
+maxx423 max -1.1   -Inf     -> -1.1
+-- same with operands reversed
+maxx431 max  1.1    Inf     ->  Infinity
+maxx432 max  1      1.1     ->  1.1
+maxx433 max  1.0    1       ->  1
+maxx434 max  0.1    1.0     ->  1.0
+maxx435 max  0.10   0.1     ->  0.1
+maxx436 max  0.100  0.10    ->  0.10
+maxx437 max  0      0.10    ->  0.10
+maxx438 max  0.0    0       ->  0
+maxx439 max -0      0.0     ->  0.0
+maxx440 max -0.0    0.0     ->  0.0
+maxx441 max -0.0    0.00    ->  0.00
+maxx442 max -0.00   0.0     ->  0.0
+maxx443 max -0.0    0       ->  0
+maxx444 max -0      0       ->  0
+maxx445 max -0     -0.0     -> -0.0
+maxx446 max -0.100 -0       -> -0
+maxx447 max -0.10  -0.100   -> -0.100
+maxx448 max -0.1   -0.10    -> -0.10
+maxx449 max -1.0   -0.1     -> -0.1
+maxx450 max -1     -1.0     -> -1.0
+maxx451 max -1.1   -1       -> -1
+maxx453 max -Inf   -1.1     -> -1.1
+-- largies
+maxx460 max  1000   1E+3    ->  1E+3
+maxx461 max  1E+3   1000    ->  1E+3
+maxx462 max  1000  -1E+3    ->  1000
+maxx463 max  1E+3  -1000    ->  1E+3
+maxx464 max -1000   1E+3    ->  1E+3
+maxx465 max -1E+3   1000    ->  1000
+maxx466 max -1000  -1E+3    -> -1000
+maxx467 max -1E+3  -1000    -> -1000
+
 
 -- overflow tests
 maxexponent: 999999999
 minexponent: -999999999
 precision: 3
-maxx400 max 9.999E+999999999  0 ->  Infinity Inexact Overflow Rounded
-maxx401 max -9.999E+999999999 0 ->  0
+maxx500 max 9.999E+999999999  0 ->  Infinity Inexact Overflow Rounded
+maxx501 max -9.999E+999999999 0 ->  0
 
 -- subnormals and underflow
 precision: 3
 maxexponent: 999
 minexponent: -999
-maxx410 max  1.00E-999       0  ->   1.00E-999
-maxx411 max  0.1E-999        0  ->   1E-1000   Subnormal
-maxx412 max  0.10E-999       0  ->   1.0E-1000 Subnormal
-maxx413 max  0.100E-999      0  ->   1.0E-1000 Subnormal Rounded
-maxx414 max  0.01E-999       0  ->   1E-1001   Subnormal
+maxx510 max  1.00E-999       0  ->   1.00E-999
+maxx511 max  0.1E-999        0  ->   1E-1000   Subnormal
+maxx512 max  0.10E-999       0  ->   1.0E-1000 Subnormal
+maxx513 max  0.100E-999      0  ->   1.0E-1000 Subnormal Rounded
+maxx514 max  0.01E-999       0  ->   1E-1001   Subnormal
 -- next is rounded to Emin
-maxx415 max  0.999E-999      0  ->   1.00E-999 Inexact Rounded Subnormal Underflow
-maxx416 max  0.099E-999      0  ->   1.0E-1000 Inexact Rounded Subnormal Underflow
-maxx417 max  0.009E-999      0  ->   1E-1001   Inexact Rounded Subnormal Underflow
-maxx418 max  0.001E-999      0  ->   0E-1001   Inexact Rounded Subnormal Underflow
-maxx419 max  0.0009E-999     0  ->   0E-1001   Inexact Rounded Subnormal Underflow
-maxx420 max  0.0001E-999     0  ->   0E-1001   Inexact Rounded Subnormal Underflow
+maxx515 max  0.999E-999      0  ->   1.00E-999 Inexact Rounded Subnormal Underflow
+maxx516 max  0.099E-999      0  ->   1.0E-1000 Inexact Rounded Subnormal Underflow
+maxx517 max  0.009E-999      0  ->   1E-1001   Inexact Rounded Subnormal Underflow
+maxx518 max  0.001E-999      0  ->   0E-1001   Inexact Rounded Subnormal Underflow
+maxx519 max  0.0009E-999     0  ->   0E-1001   Inexact Rounded Subnormal Underflow
+maxx520 max  0.0001E-999     0  ->   0E-1001   Inexact Rounded Subnormal Underflow
 
-maxx430 max -1.00E-999       0  ->   0
-maxx431 max -0.1E-999        0  ->   0
-maxx432 max -0.10E-999       0  ->   0
-maxx433 max -0.100E-999      0  ->   0
-maxx434 max -0.01E-999       0  ->   0
-maxx435 max -0.999E-999      0  ->   0
-maxx436 max -0.099E-999      0  ->   0
-maxx437 max -0.009E-999      0  ->   0
-maxx438 max -0.001E-999      0  ->   0
-maxx439 max -0.0009E-999     0  ->   0
-maxx440 max -0.0001E-999     0  ->   0
+maxx530 max -1.00E-999       0  ->   0
+maxx531 max -0.1E-999        0  ->   0
+maxx532 max -0.10E-999       0  ->   0
+maxx533 max -0.100E-999      0  ->   0
+maxx534 max -0.01E-999       0  ->   0
+maxx535 max -0.999E-999      0  ->   0
+maxx536 max -0.099E-999      0  ->   0
+maxx537 max -0.009E-999      0  ->   0
+maxx538 max -0.001E-999      0  ->   0
+maxx539 max -0.0009E-999     0  ->   0
+maxx540 max -0.0001E-999     0  ->   0
 
 -- Null tests
 maxx900 max 10  #  -> NaN Invalid_operation
