@@ -254,23 +254,37 @@ def expandtabs(s, tabsize=8):
 	return res + line
 
 # Character translation through look-up table.
-def translate(s, table):
-    if type(table) != type('') or len(table) != 256:
-	raise TypeError, "translation table must be 256-char string"
-    res = ""
-    for c in s:
-	res = res + table[ord(c)]
-    return res
+def translate(s, table, deletions=""):
+	if type(table) != type('') or len(table) != 256:
+	    raise TypeError, "translation table must be 256 characters long"
+	res = ""
+	for c in s:
+		if c not in deletions:
+			res = res + table[ord(c)]
+	return res
 
 # Capitalize a string, e.g. "aBc  dEf" -> "Abc  def".
 def capitalize(s):
-    return upper(s[:1]) + lower(s[1:])
+	return upper(s[:1]) + lower(s[1:])
 
 # Capitalize the words in a string, e.g. " aBc  dEf " -> "Abc Def".
 # See also regsub.capwords().
 def capwords(s):
-    return join(map(capitalize, split(s)))
+	return join(map(capitalize, split(s)))
 
+# Construct a translation string
+_idmapL = None
+def maketrans(fromstr, tostr):
+	if len(fromstr) != len(tostr):
+		raise ValueError, "maketrans arguments must have same length"
+	global _idmapL
+	if not _idmapL:
+		_idmapL = map(None, _idmap)
+	L = _idmapL[:]
+	fromstr = map(ord, fromstr)
+	for i in range(len(fromstr)):
+		L[fromstr[i]] = tostr[i]
+	return joinfields(L, "")
 
 # Try importing optional built-in module "strop" -- if it exists,
 # it redefines some string operations that are 100-1000 times faster.
