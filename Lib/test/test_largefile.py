@@ -14,12 +14,15 @@ import os, struct, stat, sys
 # only run if the current system support large files
 f = open(test_support.TESTFN, 'w')
 try:
-	# 2**31 == 2147483648
-	f.seek(2147483649L)
+    # 2**31 == 2147483648
+    f.seek(2147483649L)
 except OverflowError:
-	raise test_support.TestSkipped, "platform does not have largefile support"
+    f.close()
+    os.unlink(test_support.TESTFN)
+    raise test_support.TestSkipped, \
+          "platform does not have largefile support"
 else:
-	f.close()
+    f.close()
 
 
 # create >2GB file (2GB = 2147483648 bytes)
@@ -31,22 +34,22 @@ name = test_support.TESTFN
 #  it takes a long time to build the >2GB file and takes >2GB of disk space
 # therefore test_support.use_large_resources must be defined to run this test
 if sys.platform[:3] == 'win' and not test_support.use_large_resources:
-	raise test_support.TestSkipped, \
-		"test requires %s bytes and a long time to run" % str(size)
+    raise test_support.TestSkipped, \
+          "test requires %s bytes and a long time to run" % str(size)
 
 
 
 def expect(got_this, expect_this):
-	if test_support.verbose:
-		print '%s =?= %s ...' % (`got_this`, `expect_this`),
-	if got_this != expect_this:
-		if test_support.verbose:
-			print 'no'
-		raise test_support.TestFailed, 'got %s, but expected %s' %\
-			(str(got_this), str(expect_this))
-	else:
-		if test_support.verbose:
-			print 'yes'
+    if test_support.verbose:
+        print '%s =?= %s ...' % (`got_this`, `expect_this`),
+    if got_this != expect_this:
+        if test_support.verbose:
+            print 'no'
+        raise test_support.TestFailed, 'got %s, but expected %s' %\
+              (str(got_this), str(expect_this))
+    else:
+        if test_support.verbose:
+            print 'yes'
 
 
 # test that each file function works as expected for a large (i.e. >2GB, do
@@ -60,14 +63,14 @@ f.write('a')
 f.flush()
 expect(os.fstat(f.fileno())[stat.ST_SIZE], size+1)
 if test_support.verbose:
-	print 'check file size with os.fstat'
+    print 'check file size with os.fstat'
 f.close()
 if test_support.verbose:
-	print 'check file size with os.stat'
+    print 'check file size with os.stat'
 expect(os.stat(name)[stat.ST_SIZE], size+1)
 
 if test_support.verbose:
-	print 'play around with seek() and read() with the built largefile'
+    print 'play around with seek() and read() with the built largefile'
 f = open(name, 'r')
 expect(f.tell(), 0)
 expect(f.read(1), '\000')
@@ -96,7 +99,7 @@ expect(f.read(1), 'a') # the 'a' that was written at the end of the file above
 f.close()
 
 if test_support.verbose:
-	print 'play around with os.lseek() with the built largefile'
+    print 'play around with os.lseek() with the built largefile'
 f = open(name, 'r')
 expect(os.lseek(f.fileno(), 0, 0), 0)
 expect(os.lseek(f.fileno(), 42, 0), 42)
@@ -126,4 +129,4 @@ f.close()
 ##	pass
 
 os.unlink(name)
-
+print >>sys.stderr, name, "exists:", os.path.exists(name)
