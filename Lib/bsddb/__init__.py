@@ -43,7 +43,14 @@ People interested in the more advanced capabilites of Berkeley DB 3.x
 should use the bsddb3.db module directly.
 """
 
-import _bsddb
+try:
+    import _bsddb
+except ImportError:
+    # Remove ourselves from sys.modules
+    import sys
+    del sys.modules[__name__]
+    raise
+    
 # bsddb3 calls it _db
 _db = _bsddb
 __version__ = _db.__version__
