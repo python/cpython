@@ -1,19 +1,23 @@
 #! /usr/local/bin/python
 
+"Remote RCS -- command line interface"
+
 import sys
 import os
 import getopt
 import string
 import md5
 import tempfile
+from rcsclient import openrcsclient
 
 def main():
 	sys.stdout = sys.stderr
 	try:
-		opts, rest = getopt.getopt(sys.argv[1:], 'h:p:qv')
+		opts, rest = getopt.getopt(sys.argv[1:], 'h:p:d:qv')
 		if not rest:
-			raise getopt.error, "missing command"
-		cmd, rest = rest[0], rest[1:]
+			cmd = 'head'
+		else:
+			cmd, rest = rest[0], rest[1:]
 		if not commands.has_key(cmd):
 			raise getopt.error, "unknown command"
 		coptset, func = commands[cmd]
@@ -31,7 +35,7 @@ def main():
 		print "      diff        # diff rcs file and work file"
 		print "if no files are given, all remote rcs files are assumed"
 		sys.exit(2)
-	x = openclient(opts)
+	x = openrcsclient(opts)
 	if not files:
 		files = x.listfiles()
 	for fn in files:
@@ -39,30 +43,6 @@ def main():
 			func(x, copts, fn)
 		except (IOError, os.error), msg:
 			print "%s: %s" % (fn, msg)
-
-def openclient(opts):
-	import client
-	import RCSProxy
-	host = 'spam'
-	port = 4127
-	verbose = client.VERBOSE
-	for o, a in opts:
-		if o == '-h':
-			host = a
-			if ':' in host:
-				i = string.find(host, ':')
-				host, p = host[:i], host[i+1:]
-				if p:
-					port = string.atoi(p)
-		if o == '-p':
-			port = string.atoi(a)
-		if o == '-v':
-			verbose = verbose + 1
-		if o == '-q':
-			verbose = 0
-	address = (host, port)
-	x = RCSProxy.RCSProxyClient(address, verbose)
-	return x
 
 def checkin(x, copts, fn):
 	f = open(fn)
