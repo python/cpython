@@ -28,13 +28,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Type object implementation */
 
-static void
+static int
 type_print(v, fp, flags)
 	typeobject *v;
 	FILE *fp;
 	int flags;
 {
 	fprintf(fp, "<type '%s'>", v->tp_name);
+	return 0;
 }
 
 static object *
