@@ -27,6 +27,24 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "allobjects.h"
 #include "modsupport.h"
 
+#ifdef __STDC__
+#include <limits.h>
+#endif
+
+#ifndef LONG_MAX
+#define LONG_MAX 0X7FFFFFFFL
+#endif
+
+#ifndef LONG_MIN
+#define LONG_MIN (-LONG_MAX-1)
+#endif
+
+#ifndef CHAR_BIT
+#define CHAR_BIT 8
+#endif
+
+#define LONG_BIT (CHAR_BIT * sizeof(long))
+
 /* Standard Booleans */
 
 intobject FalseObject = {
@@ -229,7 +247,7 @@ int_mul(v, w)
 	a = v->ob_ival;
 	b = w->ob_ival;
 	x = (double)a * (double)b;
-	if (x > 0x7fffffff || x < (double) (long) 0x80000000)
+	if (x > LONG_MAX || x < (double) (long) (LONG_MIN))
 		return err_ovf("integer multiplication");
 	return newintobject(a * b);
 }
@@ -387,7 +405,7 @@ int_lshift(v, w)
 		INCREF(v);
 		return (object *) v;
 	}
-	if (b >= 32) {
+	if (b >= LONG_BIT) {
 		return newintobject(0L);
 	}
 	a = (unsigned long)a << b;
@@ -410,7 +428,7 @@ int_rshift(v, w)
 		INCREF(v);
 		return (object *) v;
 	}
-	if (b >= 32) {
+	if (b >= LONG_BIT) {
 		if (a < 0)
 			a = -1;
 		else
