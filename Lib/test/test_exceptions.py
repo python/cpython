@@ -94,4 +94,8 @@ r(ZeroDivisionError)
 try: x = 1/0
 except ZeroDivisionError: pass
 
+r(Exception)
+try: x = 1/0
+except Exception, e: pass
+
 unlink(TESTFN)
