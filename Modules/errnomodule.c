@@ -8,7 +8,7 @@
 #include <sys/errno.h>
 #endif
 
-/* Windows socket errors (WSA*): XXX is this the correct path ???  */
+/* Windows socket errors (WSA*)  */
 #ifdef MS_WINDOWS
 #include <winsock.h>
 #endif
