@@ -2,17 +2,6 @@
 # XML-RPC CLIENT LIBRARY
 # $Id$
 #
-# an XML-RPC client interface for Python.
-#
-# the marshalling and response parser code can also be used to
-# implement XML-RPC servers.
-#
-# Notes:
-# this version is designed to work with Python 1.5.2 or newer.
-# unicode encoding support requires at least Python 1.6.
-# experimental HTTPS requires Python 2.0 built with SSL sockets.
-# expat parser support requires Python 2.0 with pyexpat support.
-#
 # History:
 # 1999-01-14 fl  Created
 # 1999-01-15 fl  Changed dateTime to use localtime
@@ -87,6 +76,61 @@
 # TODO: authentication plugins
 # TODO: memo problem (see HP's mail)
 
+"""
+An XML-RPC client interface for Python.
+
+The marshalling and response parser code can also be used to
+implement XML-RPC servers.
+
+Notes:
+This version is designed to work with Python 1.5.2 or newer.
+Unicode encoding support requires at least Python 1.6.
+Experimental HTTPS requires Python 2.0 built with SSL sockets.
+Expat parser support requires Python 2.0 with pyexpat support.
+
+Exported exceptions:
+
+    Error          Base class for client errors
+    ProtocolError  Indicates an HTTP protocol error
+    ResponseError  Indicates a broken response package
+    Fault          Indicates a XML-RPC fault package
+
+Exported classes:
+
+    Boolean        boolean wrapper to generate a "boolean" XML-RPC value
+    DateTime       dateTime wrapper for an ISO 8601 string or time tuple or
+                   localtime integer value to generate a "dateTime.iso8601"
+                   XML-RPC value
+    Binary         binary data wrapper
+
+    SlowParser     Slow but safe standard parser
+    Marshaller     Generate an XML-RPC params chunk from a Python data structure
+    Unmarshaller   Unmarshal an XML-RPC response from incoming XML event message
+
+    Transport      Handles an HTTP transaction to an XML-RPC server
+    SafeTransport  Handles an HTTPS transaction to an XML-RPC server
+    ServerProxy    Connect to a server through a proxy
+    Server         Same as ServerProxy
+
+Exported constants:
+
+    True
+    False
+
+Exported functions:
+
+    boolean        Convert any Python value to an XML-RPC boolean
+    datetime       Convert value to an XML-RPC datetime
+    binary         Convert value to an XML-RPC binary value
+    getparser      Create instance of the fastest available parser & attach
+                   to an unmarshalling object
+    dumps          Convert an argument tuple or a Fault instance to an XML-RPC
+                   request (or response, if the methodresponse option is used).
+    loads          Convert an XML-RPC packet to unmarshalled data plus a method
+                   name (None if not present).
+
+"""
+
 import re, string, time, operator
 import urllib, xmllib
 from types import *
@@ -120,11 +164,11 @@ __version__ = "1.0b3"
 # Exceptions
 
 class Error(Exception):
-    # base class for client errors
+    """Base class for client errors."""
     pass
 
 class ProtocolError(Error):
-    # indicates an HTTP protocol error
+    """Indicates an HTTP protocol error."""
     def __init__(self, url, errcode, errmsg, headers):
         self.url = url
         self.errcode = errcode
@@ -137,11 +181,11 @@ class ProtocolError(Error):
             )
 
 class ResponseError(Error):
-    # indicates a broken response package
+    """Indicates a broken response package"""
     pass
 
 class Fault(Error):
-    # indicates a XML-RPC fault package
+    """indicates a XML-RPC fault package"""
     def __init__(self, faultCode, faultString, **extra):
         self.faultCode = faultCode
         self.faultString = faultString
@@ -154,10 +198,12 @@ class Fault(Error):
 # --------------------------------------------------------------------
 # Special values
 
-# boolean wrapper
-# use True or False to generate a "boolean" XML-RPC value
 
 class Boolean:
+    """Boolean-value wrapper.
+
+    Use True or False to generate a "boolean" XML-RPC value.
+    """
 
     def __init__(self, value = 0):
         self.value = operator.truth(value)
@@ -185,7 +231,7 @@ class Boolean:
 True, False = Boolean(1), Boolean(0)
 
 def boolean(value, truefalse=(False, True)):
-    # convert any Python value to XML-RPC boolean
+    """Convert any Python value to XML-RPC boolean."""
     return truefalse[operator.truth(value)]
 
 #
@@ -194,6 +240,9 @@ def boolean(value, truefalse=(False, True)):
 # in this class to generate a "dateTime.iso8601" XML-RPC value
 
 class DateTime:
+    """DataTime wrapper for an ISO 8601 string or time tuple or
+    localtime integer value to generate a 'dateTime.iso8601' XML-RPC
+    value."""
 
     def __init__(self, value=0):
         if not isinstance(value, StringType):
@@ -225,10 +274,9 @@ def datetime(data):
     value.decode(data)
     return value
 
-#
-# binary data wrapper
 
 class Binary:
+    """Wrapper for binary data."""
 
     def __init__(self, data=None):
         self.data = data
@@ -344,9 +392,11 @@ else:
             del self._target, self._parser # get rid of circular references
 
 class SlowParser(xmllib.XMLParser):
-    # slow but safe standard parser, based on the XML parser in
-    # Python's standard library.  this is about 10 times slower
-    # than sgmlop, on roundtrip testing.
+    """XML parser using xmllib.XMLParser.
+
+    This is about 10 times slower than sgmlop on roundtrip testing.
+    """
+
     def __init__(self, target):
         self.handle_xml = target.xml
         self.unknown_starttag = target.start
@@ -359,13 +409,14 @@ class SlowParser(xmllib.XMLParser):
 # XML-RPC marshalling and unmarshalling code
 
 class Marshaller:
-    """Generate an XML-RPC params chunk from a Python data structure"""
+    """Generate an XML-RPC params chunk from a Python data structure.
 
-    # USAGE: create a marshaller instance for each set of parameters,
-    # and use "dumps" to convert your data (represented as a tuple) to
-    # a XML-RPC params chunk.  to write a fault response, pass a Fault
-    # instance instead.  you may prefer to use the "dumps" convenience
-    # function for this purpose (see below).
+    Create a marshaller instance for each set of parameters, and use
+    "dumps" method to convert your data (represented as a tuple) to a
+    XML-RPC params chunk.  to write a fault response, pass a Fault
+    instance instead.  You may prefer to use the "dumps" convenience
+    function for this purpose (see below).
+    """
 
     # by the way, if you don't understand what's going on in here,
     # that's perfectly ok.
@@ -469,13 +520,13 @@ class Marshaller:
     dispatch[InstanceType] = dump_instance
 
 class Unmarshaller:
+    """Unmarshal an XML-RPC response, based on incoming XML event
+    messages (start, data, end).  Call close() to get the resulting
+    data structure.
 
-    # unmarshal an XML-RPC response, based on incoming XML event
-    # messages (start, data, end).  call close to get the resulting
-    # data structure
-
-    # note that this reader is fairly tolerant, and gladly accepts
-    # bogus XML-RPC data without complaining (but not bogus XML).
+    Note that this reader is fairly tolerant, and gladly accepts
+    bogus XML-RPC data without complaining (but not bogus XML).
+    """
 
     # and again, if you don't understand what's going on in here,
     # that's perfectly ok.
