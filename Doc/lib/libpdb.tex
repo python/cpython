@@ -19,10 +19,6 @@ source.  The extension interface uses the modules
 \module{bdb}\refstmodindex{bdb} (undocumented) and
 \refmodule{cmd}\refstmodindex{cmd}.
 
-A primitive windowing version of the debugger also exists --- this is
-module \module{wdb}\refstmodindex{wdb}, which requires
-\module{stdwin}\refbimodindex{stdwin}.
-
 The debugger's prompt is \samp{(Pdb) }.
 Typical usage to run a program under control of the debugger is:
 
@@ -75,8 +71,8 @@ can set breakpoints and type \samp{continue}, or you can step through
 the statement using \samp{step} or \samp{next} (all these commands are
 explained below).  The optional \var{globals} and \var{locals}
 arguments specify the environment in which the code is executed; by
-default the dictionary of the module \module{__main__} is used.  (See
-the explanation of the \keyword{exec} statement or the
+default the dictionary of the module \refmodule[main]{__main__} is
+used.  (See the explanation of the \keyword{exec} statement or the
 \function{eval()} built-in function.)
 \end{funcdesc}
 
