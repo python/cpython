@@ -606,31 +606,26 @@ try_3way_compare(PyObject *v, PyObject *w)
 	    w->ob_type->tp_compare == _PyObject_SlotCompare)
 		return _PyObject_SlotCompare(v, w);
 
-	/* Try coercion; if it fails, give up */
+	/* If we're here, v and w,
+	    a) are not instances;
+	    b) have different types or a type without tp_compare; and
+	    c) don't have a user-defined tp_compare.
+	   tp_compare implementations in C assume that both arguments
+	   have their type, so we give up if the coercion fails or if
+	   it yields types which are still incompatible (which can
+	   happen with a user-defined nb_coerce).
+	*/
 	c = PyNumber_CoerceEx(&v, &w);
 	if (c < 0)
 		return -2;
 	if (c > 0)
 		return 2;
-
-	/* Try v's comparison, if defined */
-	if ((f = v->ob_type->tp_compare) != NULL) {
+	f = v->ob_type->tp_compare;
+	if (f != NULL && f == w->ob_type->tp_compare) {
 		c = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
 		return adjust_tp_compare(c);
-	}
-
-	/* Try w's comparison, if defined */
-	if ((f = w->ob_type->tp_compare) != NULL) {
-		c = (*f)(w, v); /* swapped! */
-		Py_DECREF(v);
-		Py_DECREF(w);
-		c = adjust_tp_compare(c);
-		if (c >= -1)
-			return -c; /* Swapped! */
-		else
-			return c;
 	}
 
 	/* No comparison defined */
