@@ -1034,6 +1034,37 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
         switch (n) {
 
         case 0:
+	    /* Work-around for bug in Python 2.2.0 and 2.2.1: the
+	       UTF-8 encoder "forgot" to add the correct \xed prefix
+	       for the lone surrogates 0xd800 - 0xdcff. */
+	    if (((unsigned char)s[0] >= 0xa0) && 
+		((unsigned char)s[0] <= 0xaf)) {
+		n = 2;
+		if (s + n > e) {
+		    errmsg = "unexpected end of data";
+		    goto utf8Error;
+		}
+		if ((s[0] & 0xc0) != 0x80 || 
+		    (s[1] & 0xc0) != 0x80) {
+		    errmsg = "invalid data";
+		    goto utf8Error;
+		}
+		ch = 0xd000 + ((s[0] & 0x3f) << 6) + (s[1] & 0x3f);
+		if (ch < 0x0800) {
+		    /* Note: UTF-8 encodings of surrogates are considered
+		       legal UTF-8 sequences; 
+
+		       XXX For wide builds (UCS-4) we should probably try
+			   to recombine the surrogates into a single code
+			   unit.
+		    */
+		    errmsg = "illegal encoding";
+		    goto utf8Error;
+		}
+		else
+		    *p++ = (Py_UNICODE)ch;
+		break;
+	    }
             errmsg = "unexpected code byte";
 	    goto utf8Error;
 
@@ -1062,12 +1093,19 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
 		goto utf8Error;
 	    }
             ch = ((s[0] & 0x0f) << 12) + ((s[1] & 0x3f) << 6) + (s[2] & 0x3f);
-            if (ch < 0x800 || (ch >= 0xd800 && ch < 0xe000)) {
+            if (ch < 0x0800) {
+		/* Note: UTF-8 encodings of surrogates are considered
+		   legal UTF-8 sequences; 
+
+		   XXX For wide builds (UCS-4) we should probably try
+		       to recombine the surrogates into a single code
+		       unit.
+		*/
                 errmsg = "illegal encoding";
 		goto utf8Error;
 	    }
 	    else
-				*p++ = (Py_UNICODE)ch;
+		*p++ = (Py_UNICODE)ch;
             break;
 
         case 4:
@@ -1081,9 +1119,9 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
                  ((s[2] & 0x3f) << 6) + (s[3] & 0x3f);
             /* validate and convert to UTF-16 */
             if ((ch < 0x10000)        /* minimum value allowed for 4
-                                       byte encoding */
+					 byte encoding */
                 || (ch > 0x10ffff))   /* maximum value allowed for
-                                       UTF-16 */
+					 UTF-16 */
 	    {
                 errmsg = "illegal encoding";
 		goto utf8Error;
@@ -1128,125 +1166,104 @@ onError:
     return NULL;
 }
 
-/* Not used anymore, now that the encoder supports UTF-16
-   surrogates. */
-#if 0
-static
-int utf8_encoding_error(const Py_UNICODE **source,
-			char **dest,
-			const char *errors,
-			const char *details) 
+/* Allocation strategy:  if the string is short, convert into a stack buffer
+   and allocate exactly as much space needed at the end.  Else allocate the
+   maximum possible needed (4 result bytes per Unicode character), and return
+   the excess memory at the end.
+*/
+PyObject *
+PyUnicode_EncodeUTF8(const Py_UNICODE *s,
+		     int size,
+		     const char *errors)
 {
-    if ((errors == NULL) ||
-	(strcmp(errors,"strict") == 0)) {
-	PyErr_Format(PyExc_UnicodeError,
-		     "UTF-8 encoding error: %.400s",
-		     details);
-	return -1;
-    }
-    else if (strcmp(errors,"ignore") == 0) {
-	return 0;
-    }
-    else if (strcmp(errors,"replace") == 0) {
-	**dest = '?';
-	(*dest)++;
-	return 0;
+#define MAX_SHORT_UNICHARS 300  /* largest size we'll do on the stack */
+
+    int i;              /* index into s of next input byte */
+    PyObject *v;        /* result string object */
+    char *p;            /* next free byte in output buffer */
+    int nallocated;     /* number of result bytes allocated */
+    int nneeded;        /* number of result bytes needed */
+    char stackbuf[MAX_SHORT_UNICHARS * 4];
+
+    assert(s != NULL);
+    assert(size >= 0);
+
+    if (size <= MAX_SHORT_UNICHARS) {
+        /* Write into the stack buffer; nallocated can't overflow.
+         * At the end, we'll allocate exactly as much heap space as it
+         * turns out we need.
+         */
+        nallocated = Py_SAFE_DOWNCAST(sizeof(stackbuf), size_t, int);
+        v = NULL;   /* will allocate after we're done */
+        p = stackbuf;
     }
     else {
-	PyErr_Format(PyExc_ValueError,
-		     "UTF-8 encoding error; "
-		     "unknown error handling code: %.400s",
-		     errors);
-	return -1;
+        /* Overallocate on the heap, and give the excess back at the end. */
+        nallocated = size * 4;
+        if (nallocated / 4 != size)  /* overflow! */
+            return PyErr_NoMemory();
+        v = PyString_FromStringAndSize(NULL, nallocated);
+        if (v == NULL)
+            return NULL;
+        p = PyString_AS_STRING(v);
     }
-}
-#endif
 
-PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
-                               int size,
-                               const char *errors)
-{
-    PyObject *v;
-    char *p;
-    char *q;
-    Py_UCS4 ch2;
-    unsigned int cbAllocated = 3 * size;
-    int i = 0;
-
-    v = PyString_FromStringAndSize(NULL, cbAllocated);
-    if (v == NULL)
-        return NULL;
-    if (size == 0)
-        return v;
-
-    p = q = PyString_AS_STRING(v);
-    while (i < size) {
+    for (i = 0; i < size;) {
         Py_UCS4 ch = s[i++];
+
         if (ch < 0x80)
+            /* Encode ASCII */
             *p++ = (char) ch;
 
         else if (ch < 0x0800) {
-            *p++ = 0xc0 | (ch >> 6);
-            *p++ = 0x80 | (ch & 0x3f);
+            /* Encode Latin-1 */
+            *p++ = (char)(0xc0 | (ch >> 6));
+            *p++ = (char)(0x80 | (ch & 0x3f));
         }
-
-        else if (ch < 0x10000) {
-            /* Check for high surrogate */
-            if (0xD800 <= ch && ch <= 0xDBFF) {
-                if (i != size) {
-                    ch2 = s[i];
+        else {
+            /* Encode UCS2 Unicode ordinals */
+            if (ch < 0x10000) {
+                /* Special case: check for high surrogate */
+                if (0xD800 <= ch && ch <= 0xDBFF && i != size) {
+                    Py_UCS4 ch2 = s[i];
+                    /* Check for low surrogate and combine the two to
+                       form a UCS4 value */
                     if (0xDC00 <= ch2 && ch2 <= 0xDFFF) {
-                        
-                        if ((Py_uintptr_t)(p - q) >= (cbAllocated - 4)) {
-                            /* Provide enough room for some more
-                               surrogates */
-                            cbAllocated += 4*10;
-                            if (_PyString_Resize(&v, cbAllocated))
-                                goto onError;
-                            p = PyString_AS_STRING(v) + (p - q);
-                            q = PyString_AS_STRING(v);
-                        }
-                        
-                        /* combine the two values */
-                        ch = ((ch - 0xD800)<<10 | (ch2-0xDC00))+0x10000;
-                        
-                        *p++ = (char)((ch >> 18) | 0xf0);
-                        *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));
+                        ch = ((ch - 0xD800) << 10 | (ch2 - 0xDC00)) + 0x10000;
                         i++;
+                        goto encodeUCS4;
                     }
+                    /* Fall through: handles isolated high surrogates */
                 }
-            }
-            else
                 *p++ = (char)(0xe0 | (ch >> 12));
-
+                *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+                *p++ = (char)(0x80 | (ch & 0x3f));
+                continue;
+    	    }
+encodeUCS4:
+            /* Encode UCS4 Unicode ordinals */
+            *p++ = (char)(0xf0 | (ch >> 18));
+            *p++ = (char)(0x80 | ((ch >> 12) & 0x3f));
             *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
             *p++ = (char)(0x80 | (ch & 0x3f));
-
-        } else {
-            if ((Py_uintptr_t)(p - q) >= (cbAllocated - 4)) {
-                /* Provide enough room for some more
-                   surrogates */
-                cbAllocated += 4*10;
-                if (_PyString_Resize(&v, cbAllocated))
-                    goto onError;
-                p = PyString_AS_STRING(v) + (p - q);
-                q = PyString_AS_STRING(v);
-            }
-
-            *p++ = 0xf0 | (ch>>18);
-            *p++ = 0x80 | ((ch>>12) & 0x3f);
-            *p++ = 0x80 | ((ch>>6) & 0x3f);
-            *p++ = 0x80 | (ch & 0x3f);
         }
     }
-    *p = '\0';
-    if (_PyString_Resize(&v, p - q))
-        goto onError;
+
+    if (v == NULL) {
+        /* This was stack allocated. */
+        nneeded = Py_SAFE_DOWNCAST(p - stackbuf, long, int);
+        assert(nneeded <= nallocated);
+        v = PyString_FromStringAndSize(stackbuf, nneeded);
+    }
+    else {
+    	/* Cut back to size actually needed. */
+        nneeded = Py_SAFE_DOWNCAST(p - PyString_AS_STRING(v), long, int);
+        assert(nneeded <= nallocated);
+        _PyString_Resize(&v, nneeded);
+    }
     return v;
 
- onError:
-    Py_XDECREF(v);
-    return NULL;
+#undef MAX_SHORT_UNICHARS
 }
 
 PyObject *PyUnicode_AsUTF8String(PyObject *unicode)
