@@ -266,10 +266,13 @@ extern DL_IMPORT(void) _PyObject_GC_UnTrack(PyObject *);
 #ifdef WITH_CYCLE_GC
 
 /* GC information is stored BEFORE the object structure */
-typedef struct _gc_head {
-	struct _gc_head *gc_next; /* not NULL if object is tracked */
-	struct _gc_head *gc_prev;
-	int gc_refs;
+typedef union _gc_head {
+	struct {
+		union _gc_head *gc_next; /* not NULL if object is tracked */
+		union _gc_head *gc_prev;
+		int gc_refs;
+	} gc;
+	double dummy;  /* force worst-case alignment */
 } PyGC_Head;
 
 extern PyGC_Head _PyGC_generation0;
@@ -278,20 +281,20 @@ extern PyGC_Head _PyGC_generation0;
  * collector it must be safe to call the ob_traverse method. */
 #define _PyObject_GC_TRACK(o) do { \
 	PyGC_Head *g = (PyGC_Head *)(o)-1; \
-	if (g->gc_next != NULL) \
+	if (g->gc.gc_next != NULL) \
 		Py_FatalError("GC object already in linked list"); \
-	g->gc_next = &_PyGC_generation0; \
-	g->gc_prev = _PyGC_generation0.gc_prev; \
-	g->gc_prev->gc_next = g; \
-	_PyGC_generation0.gc_prev = g; \
+	g->gc.gc_next = &_PyGC_generation0; \
+	g->gc.gc_prev = _PyGC_generation0.gc.gc_prev; \
+	g->gc.gc_prev->gc.gc_next = g; \
+	_PyGC_generation0.gc.gc_prev = g; \
     } while (0);
 
 /* Tell the GC to stop tracking this object. */
 #define _PyObject_GC_UNTRACK(o) do { \
 	PyGC_Head *g = (PyGC_Head *)(o)-1; \
-	g->gc_prev->gc_next = g->gc_next; \
-	g->gc_next->gc_prev = g->gc_prev; \
-	g->gc_next = NULL; \
+	g->gc.gc_prev->gc.gc_next = g->gc.gc_next; \
+	g->gc.gc_next->gc.gc_prev = g->gc.gc_prev; \
+	g->gc.gc_next = NULL; \
     } while (0);
 
 #define PyObject_GC_Track(op) _PyObject_GC_Track((PyObject *)op)
