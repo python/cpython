@@ -93,7 +93,8 @@ PyTuple_New(size)
 		int nbytes = size * sizeof(PyObject *);
 		/* Check for overflow */
 		if (nbytes / sizeof(PyObject *) != (size_t)size ||
-		    (nbytes += sizeof(PyTupleObject) - sizeof(PyObject *))
+		    (nbytes += sizeof(PyTupleObject) - sizeof(PyObject *)
+		     		+ PyGC_INFO_SIZE)
 		    <= 0)
 		{
 			return PyErr_NoMemory();
@@ -452,7 +453,7 @@ PyTypeObject PyTuple_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"tuple",
-	sizeof(PyTupleObject) - sizeof(PyObject *),
+	sizeof(PyTupleObject) - sizeof(PyObject *) + PyGC_INFO_SIZE,
 	sizeof(PyObject *),
 	(destructor)tupledealloc, /*tp_dealloc*/
 	(printfunc)tupleprint, /*tp_print*/
@@ -469,7 +470,7 @@ PyTypeObject PyTuple_Type = {
 	0,		/*tp_getattro*/
 	0,		/*tp_setattro*/
 	0,		/*tp_as_buffer*/
-	Py_TPFLAGS_DEFAULT, /*tp_flags*/
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/
 	0,              /*tp_doc*/
  	(traverseproc)tupletraverse,	/* tp_traverse */
 };
@@ -557,8 +558,9 @@ _PyTuple_Resize(pv, newsize, last_is_sticky)
 #endif		
 	{
 		sv = (PyTupleObject *)
-			PyObject_REALLOC((char *)v,
-				sizeof(PyTupleObject) + newsize * sizeof(PyObject *));
+			PyObject_REALLOC((char *)v, sizeof(PyTupleObject) 
+					+ PyGC_INFO_SIZE
+					+ newsize * sizeof(PyObject *));
 		*pv = (PyObject *) sv;
 		if (sv == NULL) {
 			PyObject_DEL(v);

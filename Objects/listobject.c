@@ -71,7 +71,8 @@ PyList_New(size)
 		return PyErr_NoMemory();
 	}
 	/* PyObject_NewVar is inlined */
-	op = (PyListObject *) PyObject_MALLOC(sizeof(PyListObject));
+	op = (PyListObject *) PyObject_MALLOC(sizeof(PyListObject)
+						+ PyGC_INFO_SIZE);
 	if (op == NULL) {
 		return PyErr_NoMemory();
 	}
@@ -1497,7 +1498,7 @@ PyTypeObject PyList_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"list",
-	sizeof(PyListObject),
+	sizeof(PyListObject) + PyGC_INFO_SIZE,
 	0,
 	(destructor)list_dealloc, /*tp_dealloc*/
 	(printfunc)list_print, /*tp_print*/
@@ -1514,7 +1515,7 @@ PyTypeObject PyList_Type = {
 	0,		/*tp_getattro*/
 	0,		/*tp_setattro*/
 	0,		/*tp_as_buffer*/
-	Py_TPFLAGS_DEFAULT,	/*tp_flags*/
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/*tp_flags*/
  	0,		/* tp_doc */
  	(traverseproc)list_traverse,	/* tp_traverse */
  	(inquiry)list_clear,	/* tp_clear */
@@ -1576,7 +1577,7 @@ static PyTypeObject immutable_list_type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"list (immutable, during sort)",
-	sizeof(PyListObject),
+	sizeof(PyListObject) + PyGC_INFO_SIZE,
 	0,
 	0,		/*tp_dealloc*/ /* Cannot happen */
 	(printfunc)list_print, /*tp_print*/
@@ -1593,7 +1594,7 @@ static PyTypeObject immutable_list_type = {
 	0,		/*tp_getattro*/
 	0,		/*tp_setattro*/
 	0,		/*tp_as_buffer*/
-	Py_TPFLAGS_DEFAULT,	/*tp_flags*/
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/*tp_flags*/
  	0,		/* tp_doc */
  	(traverseproc)list_traverse,	/* tp_traverse */
 };

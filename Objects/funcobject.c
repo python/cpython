@@ -275,7 +275,7 @@ PyTypeObject PyFunction_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"function",
-	sizeof(PyFunctionObject),
+	sizeof(PyFunctionObject) + PyGC_INFO_SIZE,
 	0,
 	(destructor)func_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
@@ -292,7 +292,7 @@ PyTypeObject PyFunction_Type = {
 	0,		/*tp_getattro*/
 	0,		/*tp_setattro*/
 	0,		/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT, /*tp_flags*/
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/
 	0,		/* tp_doc */
 	(traverseproc)func_traverse,	/* tp_traverse */
 };

@@ -234,6 +234,12 @@ extern DL_IMPORT(void) _PyObject_Del Py_PROTO((PyObject *));
    the 1st step is performed automatically for you, so in a C++ class
    constructor you would start directly with PyObject_Init/InitVar. */
 
+
+
+#ifndef WITH_CYCLE_GC
+#define PyGC_INFO_SIZE 0
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -1087,7 +1087,7 @@ PyTypeObject PyDict_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"dictionary",
-	sizeof(dictobject),
+	sizeof(dictobject) + PyGC_INFO_SIZE,
 	0,
 	(destructor)dict_dealloc, /*tp_dealloc*/
 	(printfunc)dict_print, /*tp_print*/
@@ -1104,7 +1104,7 @@ PyTypeObject PyDict_Type = {
 	0,		/* tp_getattro */
 	0,		/* tp_setattro */
 	0,		/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT, /*tp_flags*/
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/
 	0,		/* tp_doc */
 	(traverseproc)dict_traverse,	/* tp_traverse */
 	(inquiry)dict_tp_clear,		/* tp_clear */
