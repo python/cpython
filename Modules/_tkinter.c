@@ -2604,9 +2604,11 @@ static PyObject *
 Tkapp_WantObjects(PyObject *self, PyObject *args)
 {
 
-	int wantobjects;
-	if (!PyArg_ParseTuple(args, "i:wantobjects", &wantobjects))
+	int wantobjects = -1;
+	if (!PyArg_ParseTuple(args, "|i:wantobjects", &wantobjects))
 		return NULL;
+	if (wantobjects == -1)
+		return PyBool_FromLong(((TkappObject*)self)->wantobjects);
 	((TkappObject*)self)->wantobjects = wantobjects;
 
 	Py_INCREF(Py_None);

@@ -76,6 +76,21 @@ class Open(_Dialog):
 
     command = "tk_getOpenFile"
 
+    def _fixresult(self, widget, result):
+        if isinstance(result, tuple):
+            # multiple results:
+            result = tuple([getattr(r, "string", r) for r in result])
+            if result:
+                import os
+                path, file = os.path.split(result[0])
+                self.options["initialdir"] = path
+                # don't set initialfile or filename, as we have multiple of these
+            return result
+        if not widget.tk.wantobjects() and "multiple" in self.options:
+            # Need to split result explicitly
+            return self._fixresult(widget, widget.tk.splitlist(result))
+        return _Dialog._fixresult(widget, result)
+
 class SaveAs(_Dialog):
     "Ask for a filename to save as"
 
@@ -115,9 +130,7 @@ def askopenfilenames(**options):
     cancel button selected
     """
     options["multiple"]=1
-    files=Open(**options).show()
-    return files.split()
-
+    return Open(**options).show()
 
 # FIXME: are the following  perhaps a bit too convenient?
 
