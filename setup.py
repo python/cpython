@@ -999,6 +999,10 @@ class PyBuildExt(build_ext):
                         )
         self.extensions.append(ext)
 
+##         # Uncomment these lines if you want to play with xxmodule.c
+##         ext = Extension('xx', ['xxmodule.c'])
+##         self.extensions.append(ext)
+
         # XXX handle these, but how to detect?
         # *** Uncomment and edit for PIL (TkImaging) extension only:
         #       -DWITH_PIL -I../Extensions/Imaging/libImaging  tkImaging.c \
