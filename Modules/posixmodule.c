@@ -551,6 +551,36 @@ posix_fork(self, args)
 }
 
 static object *
+posix_getegid(self, args)
+	object *self;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	return newintobject((long)getegid());
+}
+
+static object *
+posix_geteuid(self, args)
+	object *self;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	return newintobject((long)geteuid());
+}
+
+static object *
+posix_getgid(self, args)
+	object *self;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	return newintobject((long)getgid());
+}
+
+static object *
 posix_getpid(self, args)
 	object *self;
 	object *args;
@@ -582,6 +612,16 @@ posix_getppid(self, args)
 	if (!getnoarg(args))
 		return NULL;
 	return newintobject((long)getppid());
+}
+
+static object *
+posix_getuid(self, args)
+	object *self;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	return newintobject((long)getuid());
 }
 
 static object *
@@ -768,9 +808,13 @@ static struct methodlist posix_methods[] = {
 	{"_exit",	posix__exit},
 	{"exec",	posix_exec},
 	{"fork",	posix_fork},
+	{"getegid",	posix_getegid},
+	{"geteuid",	posix_geteuid},
+	{"getgid",	posix_getgid},
 	{"getpid",	posix_getpid},
 	{"getpgrp",	posix_getpgrp},
 	{"getppid",	posix_getppid},
+	{"getuid",	posix_getuid},
 	{"kill",	posix_kill},
 	{"popen",	posix_popen},
 	{"wait",	posix_wait},
