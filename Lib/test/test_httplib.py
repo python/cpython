@@ -118,7 +118,7 @@ def _test():
         else:
             print "Expect InvalidURL"
 
-    for hp,h,p in (("[fe80::207:e9ff:fe9b]:8000", "fe80::207:e9ff:fe9b", 8000), 
+    for hp,h,p in (("[fe80::207:e9ff:fe9b]:8000", "fe80::207:e9ff:fe9b", 8000),
                    ("www.python.org:80", "www.python.org", 80),
                    ("www.python.org", "www.python.org", 80),
                    ("[fe80::207:e9ff:fe9b]", "fe80::207:e9ff:fe9b", 80)):

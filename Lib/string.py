@@ -178,7 +178,7 @@ class Template:
             mapping = _multimap(kws, args[0])
         else:
             mapping = args[0]
-        delimiter = self.delimiter[-1]            
+        delimiter = self.delimiter[-1]
         # Helper function for .sub()
         def convert(mo):
             named = mo.group('named')
