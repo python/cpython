@@ -39,7 +39,7 @@
 #
 ####
 
-"""
+r"""
 Here's a sample session to show how to use this module.
 At the moment, this is the only documentation.
 
@@ -113,7 +113,7 @@ attribute.
    >>> C["oreo"] = "doublestuff"
    >>> C["oreo"]["path"] = "/"
    >>> print C
-   Set-Cookie: oreo="doublestuff"; Path=/;
+   Set-Cookie: oreo=doublestuff; Path=/;
 
 Each dictionary element has a 'value' attribute, which gives you
 back the value associated with the key.
@@ -203,8 +203,8 @@ it is still possible to use Cookie.Cookie() to create a Cookie.  In
 fact, this simply returns a SmartCookie.
 
    >>> C = Cookie.Cookie()
-   >>> C.__class__
-   <class Cookie.SmartCookie at 99f88>
+   >>> print C.__class__.__name__
+   SmartCookie
 
 
 Finis.
@@ -721,6 +721,12 @@ Cookie = SmartCookie
 #
 ###########################################################
 
+def _test():
+    import doctest, Cookie
+    return doctest.testmod(Cookie)
+
+if __name__ == "__main__":
+    _test()
 
 
 #Local Variables:
