@@ -41,6 +41,10 @@ Extension modules
 Library
 -------
 
+- bug #989672: pdb.doc and the help messages for the help_d and help_u methods
+of the pdb.Pdb class gives have been corrected. d(own) goes to a newer frame,
+u(p) to an older frame, not the other way around.
+
 - bug #990669: os.path.realpath() will resolve symlinks before normalizing the
   path, as normalizing the path may alter the meaning of the path if it
   contains symlinks.

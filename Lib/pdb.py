@@ -755,7 +755,7 @@ context of most commands.  'bt' is an alias for this command."""
     def help_d(self):
         print """d(own)
 Move the current frame one level down in the stack trace
-(to an older frame)."""
+(to a newer frame)."""
 
     def help_up(self):
         self.help_u()
@@ -763,7 +763,7 @@ Move the current frame one level down in the stack trace
     def help_u(self):
         print """u(p)
 Move the current frame one level up in the stack trace
-(to a newer frame)."""
+(to an older frame)."""
 
     def help_break(self):
         self.help_b()
