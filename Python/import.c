@@ -141,6 +141,9 @@ clear_carefully(d)
 	int pos;
 	PyObject *key, *value;
 
+	Py_INCREF(d); /* Prevent it from being deleted recursively */
+
+	/* First, clear only names starting with a single underscore */
 	pos = 0;
 	while (PyDict_Next(d, &pos, &key, &value)) {
 		if (value != Py_None && PyString_Check(key)) {
@@ -149,31 +152,114 @@ clear_carefully(d)
 				PyDict_SetItem(d, key, Py_None);
 		}
 	}
-	
-	PyDict_Clear(d);
+
+	/* Next, clear all names except those starting with two underscores */
+	pos = 0;
+	while (PyDict_Next(d, &pos, &key, &value)) {
+		if (value != Py_None && PyString_Check(key)) {
+			char *s = PyString_AsString(key);
+			if (s[0] != '_' || s[1] != '_')
+				PyDict_SetItem(d, key, Py_None);
+		}
+	}
+
+	PyDict_Clear(d); /* Finally, clear all names */
+
+	Py_DECREF(d); /* Match INCREF at top */
 }
+
 
 /* Un-initialize things, as good as we can */
 
 void
 PyImport_Cleanup()
 {
+	int pos, ndone;
+	char *name;
+	PyObject *key, *value, *dict;
 	PyInterpreterState *interp = PyThreadState_Get()->interp;
-	PyObject *tmp = interp->modules;
-	if (tmp != NULL) {
-		int pos;
-		PyObject *key, *value;
-		interp->modules = NULL;
+	PyObject *modules = interp->modules;
+
+	if (modules == NULL)
+		return; /* Already done */
+
+	/* The special treatment of __builtin__ here is because even
+	   when it's not referenced as a module, its dictionary is
+	   referenced by almost every module's __builtins__.  Since
+	   deleting a module clears its dictionary (even if there are
+	   references left to it), we need to delete the __builtin__
+	   module last.  Likewise, we don't delete sys until the very
+	   end because it is implicitly referenced (e.g. by print).
+
+	   Also note that we 'delete' modules by replacing their entry
+	   in the modules dict with None, rather than really deleting
+	   them; this avoids a rehash of the modules dictionary and
+	   also marks them as "non existent" so they won't be
+	   re-imported. */
+
+	/* First, repeatedly delete modules with a reference count of
+	   one (skipping __builtin__ and sys) and delete them */
+	do {
+		ndone = 0;
 		pos = 0;
-		while (PyDict_Next(tmp, &pos, &key, &value)) {
+		while (PyDict_Next(modules, &pos, &key, &value)) {
+			if (value->ob_refcnt != 1)
+				continue;
 			if (PyModule_Check(value)) {
-				PyObject *d = PyModule_GetDict(value);
-				clear_carefully(d);
+				name = PyString_AsString(key);
+				dict = PyModule_GetDict(value);
+				if (strcmp(name, "__builtin__") == 0)
+					continue;
+				if (strcmp(name, "sys") == 0)
+					continue;
+				clear_carefully(dict);
+				PyDict_SetItem(modules, key, Py_None);
+				ndone++;
 			}
 		}
-		PyDict_Clear(tmp);
-		Py_DECREF(tmp);
+	} while (ndone > 0);
+
+	/* Next, delete __main__ if it's still there */
+	value = PyDict_GetItemString(modules, "__main__");
+	if (value != NULL && PyModule_Check(value)) {
+		dict = PyModule_GetDict(value);
+		clear_carefully(dict);
+		PyDict_SetItemString(modules, "__main__", Py_None);
 	}
+
+	/* Next, delete all modules (still skipping __builtin__ and sys) */
+	pos = 0;
+	while (PyDict_Next(modules, &pos, &key, &value)) {
+		if (PyModule_Check(value)) {
+			name = PyString_AsString(key);
+			dict = PyModule_GetDict(value);
+			if (strcmp(name, "__builtin__") == 0)
+				continue;
+			if (strcmp(name, "sys") == 0)
+				continue;
+			clear_carefully(dict);
+			PyDict_SetItem(modules, key, Py_None);
+		}
+	}
+
+	/* Next, delete sys and __builtin__ (in that order) */
+	value = PyDict_GetItemString(modules, "sys");
+	if (value != NULL && PyModule_Check(value)) {
+		dict = PyModule_GetDict(value);
+		clear_carefully(dict);
+		PyDict_SetItemString(modules, "sys", Py_None);
+	}
+	value = PyDict_GetItemString(modules, "__builtin__");
+	if (value != NULL && PyModule_Check(value)) {
+		dict = PyModule_GetDict(value);
+		clear_carefully(dict);
+		PyDict_SetItemString(modules, "__builtin__", Py_None);
+	}
+
+	/* Finally, clear and delete the modules directory */
+	PyDict_Clear(modules);
+	interp->modules = NULL;
+	Py_DECREF(modules);
 }
 
 
