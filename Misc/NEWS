@@ -12,6 +12,15 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- When method objects have an attribute that can be satisfied either
+  by the function object or by the method object, the function
+  object's attribute usually wins.  Christian Tismer pointed out that
+  that this is really a mistake, because this only happens for special
+  methods (like __reduce__) where the method object's version is
+  really more appropriate than the function's attribute.  So from now
+  on, all method attributes will have precedence over function
+  attributes with the same name.
+
 - Critical bugfix, for SF bug 839548:  if a weakref with a callback,
   its callback, and its weakly referenced object, all became part of
   cyclic garbage during a single run of garbage collection, the order
