@@ -36,7 +36,7 @@ static char __author__[] =
 	(((long)bzs->total_out_hi32 << 32) + bzs->total_out_lo32)
 #elif SIZEOF_LONG_LONG >= 8
 #define BZS_TOTAL_OUT(bzs) \
-	(((long long)bzs->total_out_hi32 << 32) + bzs->total_out_lo32)
+	(((LONG_LONG)bzs->total_out_hi32 << 32) + bzs->total_out_lo32)
 #else
 #define BZS_TOTAL_OUT(bzs) \
 	bzs->total_out_lo32;
@@ -109,14 +109,14 @@ Util_CatchBZ2Error(int bzerror)
 					"correctly");
 			ret = 1;
 			break;
-			
+
 		case BZ_PARAM_ERROR:
 			PyErr_SetString(PyExc_ValueError,
 					"the bz2 library has received wrong "
 					"parameters");
 			ret = 1;
 			break;
-			
+
 		case BZ_MEM_ERROR:
 			PyErr_NoMemory();
 			ret = 1;
@@ -214,8 +214,8 @@ Util_GetLine(BZ2FileObject *self, int n)
 				if (skipnextlf) {
 					skipnextlf = 0;
 					if (c == '\n') {
-						/* Seeing a \n here with 
-						 * skipnextlf true means we 
+						/* Seeing a \n here with
+						 * skipnextlf true means we
 						 * saw a \r before.
 						 */
 						newlinetypes |= NEWLINE_CRLF;
@@ -377,7 +377,7 @@ Util_ReadAhead(BZ2FileObject *self, int bufsize)
 	PyFileObject *f = (PyFileObject*)self;
 
 	if (f->f_buf != NULL) {
-		if((f->f_bufend - f->f_bufptr) >= 1) 
+		if((f->f_bufend - f->f_bufptr) >= 1)
 			return 0;
 		else
 			Util_DropReadAhead(self);
@@ -418,11 +418,11 @@ Util_ReadAheadGetLineSkip(BZ2FileObject *bf, int skip, int bufsize)
 	int len;
 
 	if (f->f_buf == NULL)
-		if (Util_ReadAhead(bf, bufsize) < 0) 
+		if (Util_ReadAhead(bf, bufsize) < 0)
 			return NULL;
 
 	len = f->f_bufend - f->f_bufptr;
-	if (len == 0) 
+	if (len == 0)
 		return (PyStringObject *)
 			PyString_FromStringAndSize(NULL, skip);
 	bufptr = memchr(f->f_bufptr, '\n', len);
@@ -431,7 +431,7 @@ Util_ReadAheadGetLineSkip(BZ2FileObject *bf, int skip, int bufsize)
 		len = bufptr - f->f_bufptr;
 		s = (PyStringObject *)
 			PyString_FromStringAndSize(NULL, skip+len);
-		if (s == NULL) 
+		if (s == NULL)
 			return NULL;
 		memcpy(PyString_AS_STRING(s)+skip, f->f_bufptr, len);
 		f->f_bufptr = bufptr;
@@ -471,10 +471,10 @@ BZ2File_read(BZ2FileObject *self, PyObject *args)
 	size_t bytesread, buffersize, chunksize;
 	int bzerror;
 	PyObject *ret = NULL;
-	
+
 	if (!PyArg_ParseTuple(args, "|l:read", &bytesrequested))
 		return NULL;
-	
+
 	ACQUIRE_LOCK(self);
 	switch (self->mode) {
 		case MODE_READ:
@@ -761,17 +761,17 @@ BZ2File_write(BZ2FileObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "s#", &buf, &len))
 		return NULL;
-	
+
 	ACQUIRE_LOCK(self);
 	switch (self->mode) {
 		case MODE_WRITE:
 			break;
-	
+
 		case MODE_CLOSED:
 			PyErr_SetString(PyExc_ValueError,
 					"I/O operation on closed file");
 			goto cleanup;;
-		
+
 		default:
 			PyErr_SetString(PyExc_IOError,
 					"file is not ready for writing");
@@ -784,12 +784,12 @@ BZ2File_write(BZ2FileObject *self, PyObject *args)
 	BZ2_bzWrite (&bzerror, self->fp, buf, len);
 	self->pos += len;
 	Py_END_ALLOW_THREADS
-	
+
 	if (bzerror != BZ_OK) {
 		Util_CatchBZ2Error(bzerror);
 		goto cleanup;
 	}
-	
+
 	Py_INCREF(Py_None);
 	ret = Py_None;
 
@@ -945,7 +945,7 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 	int rewind = 0;
 	PyObject *func;
 	PyObject *ret = NULL;
-	
+
 	if (!PyArg_ParseTuple(args, "l|i:seek", &offset, &where))
 		return NULL;
 
@@ -955,12 +955,12 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 		case MODE_READ:
 		case MODE_READ_EOF:
 			break;
-	
+
 		case MODE_CLOSED:
 			PyErr_SetString(PyExc_ValueError,
 					"I/O operation on closed file");
 			goto cleanup;;
-		
+
 		default:
 			PyErr_SetString(PyExc_IOError,
 					"seek works only while reading");
@@ -1192,7 +1192,7 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 	int univ_newline = 0;
 
 	self->size = -1;
-	
+
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "et|sii:BZ2File",
 					 kwlist, Py_FileSystemDefaultEncoding,
 					 &name, &mode, &buffering,
@@ -1240,7 +1240,7 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 		mode = univ_newline ? "rbU" : "rb";
 	else
 		mode = univ_newline ? "wbU" : "wb";
-	
+
 	file_args = Py_BuildValue("(ssi)", name, mode, buffering);
 	if (!file_args)
 		return -1;
@@ -1952,7 +1952,7 @@ bz2_compress(PyObject *self, PyObject *args, PyObject *kwargs)
 		Py_DECREF(ret);
 		return NULL;
 	}
-	
+
 	for (;;) {
 		Py_BEGIN_ALLOW_THREADS
 		bzerror = BZ2_bzCompress(bzs, BZ_FINISH);
@@ -2025,7 +2025,7 @@ bz2_decompress(PyObject *self, PyObject *args)
 		Py_DECREF(ret);
 		return NULL;
 	}
-	
+
 	for (;;) {
 		Py_BEGIN_ALLOW_THREADS
 		bzerror = BZ2_bzDecompress(bzs);
