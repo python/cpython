@@ -230,9 +230,11 @@ The functions defined in this module are:
 \end{funcdesc}
 
 \begin{funcdesc}{joinfields}{words\optional{, sep}}
-  This function behaves identical to \function{join()}.  (In the past, 
+  This function behaves identically to \function{join()}.  (In the past, 
   \function{join()} was only used with one argument, while
   \function{joinfields()} was only used with two arguments.)
+  Note that there is no \method{joinfields()} method on string
+  objects; use the \method{join()} method instead.
 \end{funcdesc}
 
 \begin{funcdesc}{lstrip}{s\optional{, chars}}
