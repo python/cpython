@@ -949,7 +949,7 @@ long_format(PyObject *aa, int base, int addL)
 			++basebits;
 
 		for (i = 0; i < size_a; ++i) {
-			accum |= a->ob_digit[i] << accumbits;
+			accum |= (twodigits)a->ob_digit[i] << accumbits;
 			accumbits += SHIFT;
 			assert(accumbits >= basebits);
 			do {
@@ -2345,7 +2345,7 @@ long_lshift(PyObject *v, PyObject *w)
 		z->ob_digit[i] = 0;
 	accum = 0;
 	for (i = wordshift, j = 0; j < oldsize; i++, j++) {
-		accum |= a->ob_digit[j] << remshift;
+		accum |= (twodigits)a->ob_digit[j] << remshift;
 		z->ob_digit[i] = (digit)(accum & MASK);
 		accum >>= SHIFT;
 	}
