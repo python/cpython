@@ -72,3 +72,18 @@ def savecounter():
 import atexit
 atexit.register(savecounter)
 \end{verbatim}
+
+Positional and keyword arguments may also be passed to
+\function{register()} to be passed along to the registered function
+when it is called:
+
+\begin{verbatim}
+def goodbye(name, adjective):
+    print 'Goodbye, %s, it was %s to meet you.' % (name, adjective)
+
+import atexit
+atexit.register(goodbye, 'Donny', 'nice')
+
+# or:
+atexit.register(goodbye, adjective='nice', name='Donny')
+\end{verbatim}
