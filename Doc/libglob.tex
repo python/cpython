@@ -1,4 +1,5 @@
 \section{Standard Module \sectcode{glob}}
+\label{module-glob}
 \stmodindex{glob}
 \renewcommand{\indexsubitem}{(in module glob)}
 
@@ -24,7 +25,7 @@ For example, consider a directory containing only the following files:
 will produce the following results.  Notice how any leading components
 of the path are preserved.
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 >>> import glob
 >>> glob.glob('./[0-9].*')
 ['./1.gif', './2.txt']
@@ -32,4 +33,4 @@ of the path are preserved.
 ['1.gif', 'card.gif']
 >>> glob.glob('?.gif')
 ['1.gif']
-\end{verbatim}
+\end{verbatim}\ecode

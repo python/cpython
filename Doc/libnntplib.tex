@@ -1,4 +1,5 @@
 \section{Standard Module \sectcode{nntplib}}
+\label{module-nntplib}
 \stmodindex{nntplib}
 
 \renewcommand{\indexsubitem}{(in module nntplib)}
@@ -13,7 +14,7 @@ statistics about a newsgroup and print the subjects of the last 10
 articles:
 
 \small{
-\begin{verbatim}
+\bcode\begin{verbatim}
 >>> s = NNTP('news.cwi.nl')
 >>> resp, count, first, last, name = s.group('comp.lang.python')
 >>> print 'Group', name, 'has', count, 'articles, range', first, 'to', last
@@ -34,13 +35,13 @@ Group comp.lang.python has 59 articles, range 3742 to 3803
 >>> s.quit()
 '205 news.cwi.nl closing connection.  Goodbye.'
 >>> 
-\end{verbatim}
+\end{verbatim}\ecode
 }
 
 To post an article from a file (this assumes that the article has
 valid headers):
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 >>> s = NNTP('news.cwi.nl')
 >>> f = open('/tmp/article')
 >>> s.post(f)
@@ -48,8 +49,8 @@ valid headers):
 >>> s.quit()
 '205 news.cwi.nl closing connection.  Goodbye.'
 >>> 
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 The module itself defines the following items:
 
 \begin{funcdesc}{NNTP}{host\optional{\, port}}

@@ -1,4 +1,5 @@
 \section{Built-in Module \sectcode{gl}}
+\label{module-gl}
 \bimodindex{gl}
 
 This module provides access to the Silicon Graphics
@@ -43,13 +44,13 @@ For example, the C call
 \bcode\begin{verbatim}
 lmdef(deftype, index, np, props)
 \end{verbatim}\ecode
-
+%
 is translated to Python as
 
 \bcode\begin{verbatim}
 lmdef(deftype, index, props)
 \end{verbatim}\ecode
-
+%
 \item
 Output arguments are omitted from the argument list; they are
 transmitted as function return values instead.
@@ -62,13 +63,13 @@ Examples: the C call
 \bcode\begin{verbatim}
 getmcolor(i, &red, &green, &blue)
 \end{verbatim}\ecode
-
+%
 is translated to Python as
 
 \bcode\begin{verbatim}
 red, green, blue = getmcolor(i)
 \end{verbatim}\ecode
-
+%
 \end{itemize}
 
 The following functions are non-standard or have special argument
@@ -183,7 +184,7 @@ def main():
 
 main()
 \end{verbatim}\ecode
-
+%
 \section{Standard Modules \sectcode{GL} and \sectcode{DEVICE}}
 \nodename{GL and DEVICE}
 \stmodindex{GL}

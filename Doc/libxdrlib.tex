@@ -1,4 +1,5 @@
 \section{Standard module \sectcode{xdrlib}}
+\label{module-xdrlib}
 \stmodindex{xdrlib}
 \index{XDR}
 
@@ -221,15 +222,15 @@ variables.
 
 Here is an example of how you would catch one of these exceptions:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 import xdrlib
 p = xdrlib.Packer()
 try:
     p.pack_double(8.01)
 except xdrlib.ConversionError, instance:
     print 'packing the double failed:', instance.msg
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 \subsection{Supporting Floating Point Data}
 
 Packing and unpacking floating point data,

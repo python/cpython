@@ -1,4 +1,5 @@
 \section{Standard Module \sectcode{mailcap}}
+\label{module-mailcap}
 \stmodindex{mailcap}
 \renewcommand{\indexsubitem}{(in module mailcap)}
 
@@ -67,9 +68,9 @@ will override settings in the system mailcap files
 \end{funcdesc}
 
 An example usage:
-\begin{verbatim}
+\bcode\begin{verbatim}
 >>> import mailcap
 >>> d=mailcap.getcaps()
 >>> mailcap.findmatch(d, 'video/mpeg', filename='/tmp/tmp1223')
 ('xmpeg /tmp/tmp1223', {'view': 'xmpeg %s'})
-\end{verbatim}
+\end{verbatim}\ecode

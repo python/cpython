@@ -1,4 +1,5 @@
 \section{Standard Module \sectcode{htmllib}}
+\label{module-htmllib}
 \stmodindex{htmllib}
 \index{HTML}
 \index{hypertext}
@@ -38,11 +39,11 @@ incomplete elements are saved in a buffer.  To force processing of all
 unprocessed data, call the \code{close()} method.
 
 For example, to parse the entire contents of a file, use:
-\begin{verbatim}
+\bcode\begin{verbatim}
 parser.feed(open('myfile.html').read())
 parser.close()
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 \item
 The interface to define semantics for HTML tags is very simple: derive
 a class and define methods called \code{start_\var{tag}()},

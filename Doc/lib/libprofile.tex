@@ -103,11 +103,11 @@ rapidly perform profiling on an existing application.
 To profile an application with a main entry point of \samp{foo()}, you
 would add the following to your module:
 
-\begin{verbatim}
-    import profile
-    profile.run("foo()")
-\end{verbatim}
-
+\bcode\begin{verbatim}
+import profile
+profile.run("foo()")
+\end{verbatim}\ecode
+%
 The above action would cause \samp{foo()} to be run, and a series of
 informative lines (the profile) to be printed.  The above approach is
 most useful when working with the interpreter.  If you would like to
@@ -115,11 +115,11 @@ save the results of a profile into a file for later examination, you
 can supply a file name as the second argument to the \code{run()}
 function:
 
-\begin{verbatim}
-    import profile
-    profile.run("foo()", 'fooprof')
-\end{verbatim}
-
+\bcode\begin{verbatim}
+import profile
+profile.run("foo()", 'fooprof')
+\end{verbatim}\ecode
+%
 \code{profile.py} can also be invoked as
 a script to profile another script.  For example:
 \code{python /usr/local/lib/python1.4/profile.py myscript.py}
@@ -128,40 +128,40 @@ When you wish to review the profile, you should use the methods in the
 \code{pstats} module.  Typically you would load the statistics data as
 follows:
 
-\begin{verbatim}
-    import pstats
-    p = pstats.Stats('fooprof')
-\end{verbatim}
-
+\bcode\begin{verbatim}
+import pstats
+p = pstats.Stats('fooprof')
+\end{verbatim}\ecode
+%
 The class \code{Stats} (the above code just created an instance of
 this class) has a variety of methods for manipulating and printing the
 data that was just read into \samp{p}.  When you ran
 \code{profile.run()} above, what was printed was the result of three
 method calls:
 
-\begin{verbatim}
-    p.strip_dirs().sort_stats(-1).print_stats()
-\end{verbatim}
-
+\bcode\begin{verbatim}
+p.strip_dirs().sort_stats(-1).print_stats()
+\end{verbatim}\ecode
+%
 The first method removed the extraneous path from all the module
 names. The second method sorted all the entries according to the
 standard module/line/name string that is printed (this is to comply
 with the semantics of the old profiler).  The third method printed out
 all the statistics.  You might try the following sort calls:
 
-\begin{verbatim}
-    p.sort_stats('name')
-    p.print_stats()
-\end{verbatim}
-
+\bcode\begin{verbatim}
+p.sort_stats('name')
+p.print_stats()
+\end{verbatim}\ecode
+%
 The first call will actually sort the list by function name, and the
 second call will print out the statistics.  The following are some
 interesting calls to experiment with:
 
-\begin{verbatim}
-    p.sort_stats('cumulative').print_stats(10)
-\end{verbatim}
-
+\bcode\begin{verbatim}
+p.sort_stats('cumulative').print_stats(10)
+\end{verbatim}\ecode
+%
 This sorts the profile by cumulative time in a function, and then only
 prints the ten most significant lines.  If you want to understand what
 algorithms are taking time, the above line is what you would use.
@@ -169,27 +169,27 @@ algorithms are taking time, the above line is what you would use.
 If you were looking to see what functions were looping a lot, and
 taking a lot of time, you would do:
 
-\begin{verbatim}
-    p.sort_stats('time').print_stats(10)
-\end{verbatim}
-
+\bcode\begin{verbatim}
+p.sort_stats('time').print_stats(10)
+\end{verbatim}\ecode
+%
 to sort according to time spent within each function, and then print
 the statistics for the top ten functions.
 
 You might also try:
 
-\begin{verbatim}
-    p.sort_stats('file').print_stats('__init__')
-\end{verbatim}
-
+\bcode\begin{verbatim}
+p.sort_stats('file').print_stats('__init__')
+\end{verbatim}\ecode
+%
 This will sort all the statistics by file name, and then print out
 statistics for only the class init methods ('cause they are spelled
 with \code{__init__} in them).  As one final example, you could try:
 
-\begin{verbatim}
-    p.sort_stats('time', 'cum').print_stats(.5, 'init')
-\end{verbatim}
-
+\bcode\begin{verbatim}
+p.sort_stats('time', 'cum').print_stats(.5, 'init')
+\end{verbatim}\ecode
+%
 This line sorts statistics with a primary key of time, and a secondary
 key of cumulative time, and then prints out some of the statistics.
 To be specific, the list is first culled down to 50\% (re: \samp{.5})
@@ -199,21 +199,20 @@ maintained, and that sub-sub-list is printed.
 If you wondered what functions called the above functions, you could
 now (\samp{p} is still sorted according to the last criteria) do:
 
-\begin{verbatim}
-    p.print_callers(.5, 'init')
-\end{verbatim}
-
+\bcode\begin{verbatim}
+p.print_callers(.5, 'init')
+\end{verbatim}\ecode
+%
 and you would get a list of callers for each of the listed functions. 
 
 If you want more functionality, you're going to have to read the
 manual, or guess what the following functions do:
 
-\begin{verbatim}
-    p.print_callees()
-    p.add('fooprof')
-\end{verbatim}
-
-
+\bcode\begin{verbatim}
+p.print_callees()
+p.add('fooprof')
+\end{verbatim}\ecode
+%
 \section{What Is Deterministic Profiling?}
 \nodename{Deterministic Profiling}
 
@@ -272,7 +271,7 @@ standard name string (file/line/function-name) that is presented in
 each line.  The following is a typical output from such a call:
 
 \small{
-\begin{verbatim}
+\bcode\begin{verbatim}
       main()
       2706 function calls (2004 primitive calls) in 4.504 CPU seconds
 
@@ -282,7 +281,7 @@ ncalls  tottime  percall  cumtime  percall filename:lineno(function)
      2    0.006    0.003    0.953    0.477 pobject.py:75(save_objects)
   43/3    0.533    0.012    0.749    0.250 pobject.py:99(evaluate)
  ...
-\end{verbatim}
+\end{verbatim}\ecode
 }
 
 The first line indicates that this profile was generated by the call:\\
@@ -446,18 +445,18 @@ expression (to pattern match the standard name that is printed).  If
 several restrictions are provided, then they are applied sequentially.
 For example:
 
-\begin{verbatim}
-    print_stats(.1, "foo:")
-\end{verbatim}
-
+\bcode\begin{verbatim}
+print_stats(.1, "foo:")
+\end{verbatim}\ecode
+%
 would first limit the printing to first 10\% of list, and then only
 print functions that were part of filename \samp{.*foo:}.  In
 contrast, the command:
 
-\begin{verbatim}
-    print_stats("foo:", .1)
-\end{verbatim}
-
+\bcode\begin{verbatim}
+print_stats("foo:", .1)
+\end{verbatim}\ecode
+%
 would limit the list to all functions having file names \samp{.*foo:},
 and then proceed to only print the first 10\% of them.
 \end{funcdesc}
@@ -486,11 +485,11 @@ returned by earlier methods.  All standard methods in this class
 return the instance that is being processed, so that the commands can
 be strung together.  For example:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 pstats.Stats('foofile').strip_dirs().sort_stats('cum') \
                        .print_stats().ignore()
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 would perform all the indicated functions, but it would not return
 the final reference to the \code{Stats} instance.%
 \footnote{
@@ -550,28 +549,28 @@ function, and socking away the results.  The following procedure can
 be used to obtain this constant for a given platform (see discussion
 in section Limitations above).
 
-\begin{verbatim}
-    import profile
-    pr = profile.Profile()
-    pr.calibrate(100)
-    pr.calibrate(100)
-    pr.calibrate(100)
-\end{verbatim}
-
+\bcode\begin{verbatim}
+import profile
+pr = profile.Profile()
+pr.calibrate(100)
+pr.calibrate(100)
+pr.calibrate(100)
+\end{verbatim}\ecode
+%
 The argument to calibrate() is the number of times to try to do the
 sample calls to get the CPU times.  If your computer is \emph{very}
 fast, you might have to do:
 
-\begin{verbatim}
-    pr.calibrate(1000)
-\end{verbatim}
-
+\bcode\begin{verbatim}
+pr.calibrate(1000)
+\end{verbatim}\ecode
+%
 or even:
 
-\begin{verbatim}
-    pr.calibrate(10000)
-\end{verbatim}
-
+\bcode\begin{verbatim}
+pr.calibrate(10000)
+\end{verbatim}\ecode
+%
 The object of this exercise is to get a fairly consistent result.
 When you have a consistent answer, you are ready to use that number in
 the source code.  For a Sun Sparcstation 1000 running Solaris 2.3, the
@@ -583,27 +582,27 @@ The following shows how the trace_dispatch() method in the Profile
 class should be modified to install the calibration constant on a Sun
 Sparcstation 1000:
 
-\begin{verbatim}
-    def trace_dispatch(self, frame, event, arg):
+\bcode\begin{verbatim}
+def trace_dispatch(self, frame, event, arg):
+    t = self.timer()
+    t = t[0] + t[1] - self.t - .00053 # Calibration constant
+
+    if self.dispatch[event](frame,t):
         t = self.timer()
-        t = t[0] + t[1] - self.t - .00053 # Calibration constant
-
-        if self.dispatch[event](frame,t):
-            t = self.timer()
-            self.t = t[0] + t[1]
-        else:
-            r = self.timer()
-            self.t = r[0] + r[1] - t # put back unrecorded delta
-        return
-\end{verbatim}
-
+        self.t = t[0] + t[1]
+    else:
+        r = self.timer()
+        self.t = r[0] + r[1] - t # put back unrecorded delta
+    return
+\end{verbatim}\ecode
+%
 Note that if there is no calibration constant, then the line
 containing the callibration constant should simply say:
 
-\begin{verbatim}
-        t = t[0] + t[1] - self.t  # no calibration constant
-\end{verbatim}
-
+\bcode\begin{verbatim}
+t = t[0] + t[1] - self.t  # no calibration constant
+\end{verbatim}\ecode
+%
 You can also achieve the same results using a derived class (and the
 profiler will actually run equally fast!!), but the above method is
 the simplest to use.  I could have made the profiler ``self
@@ -631,10 +630,10 @@ timer function is used, then the basic class has an option for that in
 the constructor for the class.  Consider passing the name of a
 function to call into the constructor:
 
-\begin{verbatim}
-    pr = profile.Profile(your_time_func)
-\end{verbatim}
-
+\bcode\begin{verbatim}
+pr = profile.Profile(your_time_func)
+\end{verbatim}\ecode
+%
 The resulting profiler will call \code{your_time_func()} instead of
 \code{os.times()}.  The function should return either a single number
 or a list of numbers (like what \code{os.times()} returns).  If the
@@ -663,7 +662,7 @@ stats, and is quite useful when there is \emph{no} recursion in the
 user's code.  It is also a lot more accurate than the old profiler, as
 it does not charge all its overhead time to the user's code.
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 class OldProfile(Profile):
 
     def trace_dispatch_exception(self, frame, t):
@@ -713,9 +712,8 @@ class OldProfile(Profile):
                       callers[func_caller]
                 nc = nc + callers[func_caller]
             self.stats[nor_func] = nc, nc, tt, ct, nor_callers
-\end{verbatim}
-        
-
+\end{verbatim}\ecode
+%
 \subsection{HotProfile Class}
 
 This profiler is the fastest derived profile example.  It does not
@@ -725,7 +723,7 @@ function, so it runs very quickly (re: very low overhead).  In truth,
 the basic profiler is so fast, that is probably not worth the savings
 to give up the data, but this class still provides a nice example.
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 class HotProfile(Profile):
 
     def trace_dispatch_exception(self, frame, t):
@@ -761,4 +759,4 @@ class HotProfile(Profile):
             nc, tt = self.timings[func]
             nor_func = self.func_normalize(func)
             self.stats[nor_func] = nc, nc, tt, 0, {}
-\end{verbatim}
+\end{verbatim}\ecode

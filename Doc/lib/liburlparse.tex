@@ -1,4 +1,5 @@
 \section{Standard Module \sectcode{urlparse}}
+\label{module-urlparse}
 \stmodindex{urlparse}
 \index{WWW}
 \index{World-Wide Web}
@@ -34,16 +35,16 @@ retained if present.
 
 Example:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 urlparse('http://www.cwi.nl:80/%7Eguido/Python.html')
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 yields the tuple
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 ('http', 'www.cwi.nl:80', '/%7Eguido/Python.html', '', '', '')
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 If the \var{default_scheme} argument is specified, it gives the
 default addressing scheme, to be used only if the URL string does not
 specify one.  The default value for this argument is the empty string.
@@ -69,16 +70,16 @@ components in the relative URL.
 
 Example:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 urljoin('http://www.cwi.nl/%7Eguido/Python.html', 'FAQ.html')
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 yields the string
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 'http://www.cwi.nl/%7Eguido/FAQ.html'
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 The \var{allow_fragments} argument has the same meaning as for
 \code{urlparse}.
 \end{funcdesc}

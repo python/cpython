@@ -1,4 +1,5 @@
 \section{Standard Module \sectcode{rexec}}
+\label{module-rexec}
 \stmodindex{rexec}
 \renewcommand{\indexsubitem}{(in module rexec)}
 
@@ -206,7 +207,7 @@ class TmpWriterRExec(rexec.RExec):
         else: raise IOError, "Illegal open() mode"
         return open(file, mode, buf)
 \end{verbatim}\ecode
-
+%
 Notice that the above code will occasionally forbid a perfectly valid
 filename; for example, code in the restricted environment won't be
 able to open a file called \file{/tmp/foo/../bar}.  To fix this, the

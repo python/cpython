@@ -1,4 +1,5 @@
 \section{Standard Module \sectcode{copy}}
+\label{module-copy}
 \stmodindex{copy}
 \renewcommand{\indexsubitem}{(copy function)}
 \ttindex{copy}
@@ -8,13 +9,13 @@ This module provides generic (shallow and deep) copying operations.
 
 Interface summary:
 
-\begin{verbatim}
+\bcode\begin{verbatim}
 import copy
 
 x = copy.copy(y)        # make a shallow copy of y
 x = copy.deepcopy(y)    # make a deep copy of y
-\end{verbatim}
-
+\end{verbatim}\ecode
+%
 For module specific errors, \code{copy.error} is raised.
 
 The difference between shallow and deep copying is only relevant for
