@@ -380,6 +380,11 @@ Availability: \UNIX, Windows.
 \begin{funcdesc}{popen4}{cmd\optional{, mode\optional{, bufsize}}}
 Executes \var{cmd} as a sub-process.  Returns the file objects
 \code{(\var{child_stdin}, \var{child_stdout_and_stderr})}.
+
+(Note that \code{\var{child_stdin}, \var{child_stdout}, and
+\var{child_stderr}} are named from the point of view of the child
+process, i.e. \var{child_stdin} is the child's standard input.)
+
 Availability: \UNIX, Windows.
 \versionadded{2.0}
 \end{funcdesc}
