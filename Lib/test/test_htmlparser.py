@@ -243,6 +243,19 @@ DOCTYPE html [
         self._run_check(["<a b='>", "'>"], output)
         self._run_check(["<a b='>'", ">"], output)
 
+        output = [("comment", "abc")]
+        self._run_check(["", "<!--abc-->"], output)
+        self._run_check(["<", "!--abc-->"], output)
+        self._run_check(["<!", "--abc-->"], output)
+        self._run_check(["<!-", "-abc-->"], output)
+        self._run_check(["<!--", "abc-->"], output)
+        self._run_check(["<!--a", "bc-->"], output)
+        self._run_check(["<!--ab", "c-->"], output)
+        self._run_check(["<!--abc", "-->"], output)
+        self._run_check(["<!--abc-", "->"], output)
+        self._run_check(["<!--abc--", ">"], output)
+        self._run_check(["<!--abc-->", ""], output)
+
     def test_starttag_junk_chars(self):
         self._parse_error("</>")
         self._parse_error("</$>")
