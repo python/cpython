@@ -37,7 +37,8 @@ tests.append(test_gif)
 
 def test_pnm(h, f):
 	# PBM, PGM, PPM (portable {bit,gray,pix}map; together portable anymap)
-	if h[0] == 'P' and h[1] in '123456' and h[2] in ' \t\n\r':
+	if len(h) >= 3 and \
+		h[0] == 'P' and h[1] in '123456' and h[2] in ' \t\n\r':
 		return 'pnm'
 
 tests.append(test_pnm)
@@ -55,6 +56,14 @@ def test_rast(h, f):
 		return 'rast'
 
 tests.append(test_rast)
+
+def test_xbm(h, f):
+	# X bitmap (X10 or X11)
+	s = '#define '
+	if h[:len(s)] == s:
+		return 'xbm'
+
+tests.append(test_xbm)
 
 
 #--------------------#
