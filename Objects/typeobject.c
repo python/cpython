@@ -2440,27 +2440,249 @@ static PyGetSetDef object_getsets[] = {
 	{0}
 };
 
-static PyObject *
-object_reduce_ex(PyObject *self, PyObject *args)
-{
-	/* Call copy_reg._reduce_ex(self, proto) */
-	static PyObject *copy_reg_str;
-	PyObject *copy_reg, *res;
-	int proto = 0;
 
-	if (!PyArg_ParseTuple(args, "|i:__reduce_ex__", &proto))
-		return NULL;
+/* Stuff to implement __reduce_ex__ for pickle protocols >= 2.
+   We fall back to helpers in copy_reg for:
+   - pickle protocols < 2
+   - calculating the list of slot names (done only once per class)
+   - the __newobj__ function (which is used as a token but never called)
+*/
+
+static PyObject *
+import_copy_reg(void)
+{
+	static PyObject *copy_reg_str;
 
 	if (!copy_reg_str) {
 		copy_reg_str = PyString_InternFromString("copy_reg");
 		if (copy_reg_str == NULL)
 			return NULL;
 	}
-	copy_reg = PyImport_Import(copy_reg_str);
+
+	return PyImport_Import(copy_reg_str);
+}
+
+static PyObject *
+slotnames(PyObject *cls)
+{
+	PyObject *clsdict;
+	PyObject *copy_reg;
+	PyObject *slotnames;
+
+	if (!PyType_Check(cls)) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+
+	clsdict = ((PyTypeObject *)cls)->tp_dict;
+	slotnames = PyDict_GetItemString(clsdict, "__slotnames__");
+	if (slotnames != NULL) {
+		Py_INCREF(slotnames);
+		return slotnames;
+	}
+
+	copy_reg = import_copy_reg();
+	if (copy_reg == NULL)
+		return NULL;
+
+	slotnames = PyObject_CallMethod(copy_reg, "_slotnames", "O", cls);
+	Py_DECREF(copy_reg);
+	if (slotnames != NULL &&
+	    slotnames != Py_None &&
+	    !PyList_Check(slotnames))
+	{
+		PyErr_SetString(PyExc_TypeError,
+			"copy_reg._slotnames didn't return a list or None");
+		Py_DECREF(slotnames);
+		slotnames = NULL;
+	}
+
+	return slotnames;
+}
+
+static PyObject *
+reduce_2(PyObject *obj)
+{
+	PyObject *cls, *getnewargs;
+	PyObject *args = NULL, *args2 = NULL;
+	PyObject *getstate = NULL, *state = NULL, *names = NULL;
+	PyObject *slots = NULL, *listitems = NULL, *dictitems = NULL;
+	PyObject *copy_reg = NULL, *newobj = NULL, *res = NULL;
+	int i, n;
+
+	cls = PyObject_GetAttrString(obj, "__class__");
+	if (cls == NULL)
+		return NULL;
+
+	getnewargs = PyObject_GetAttrString(obj, "__getnewargs__");
+	if (getnewargs != NULL) {
+		args = PyObject_CallObject(getnewargs, NULL);
+		Py_DECREF(getnewargs);
+		if (args != NULL && !PyTuple_Check(args)) {
+			PyErr_SetString(PyExc_TypeError,
+				"__getnewargs__ should return a tuple");
+			goto end;
+		}
+	}
+	else {
+		PyErr_Clear();
+		args = PyTuple_New(0);
+	}
+	if (args == NULL)
+		goto end;
+
+	getstate = PyObject_GetAttrString(obj, "__getstate__");
+	if (getstate != NULL) {
+		state = PyObject_CallObject(getstate, NULL);
+		Py_DECREF(getstate);
+	}
+	else {
+		state = PyObject_GetAttrString(obj, "__dict__");
+		if (state == NULL) {
+			PyErr_Clear();
+			state = Py_None;
+			Py_INCREF(state);
+		}
+		names = slotnames(cls);
+		if (names == NULL)
+			goto end;
+		if (names != Py_None) {
+			assert(PyList_Check(names));
+			slots = PyDict_New();
+			if (slots == NULL)
+				goto end;
+			n = 0;
+			/* Can't pre-compute the list size; the list
+			   is stored on the class so accessible to other
+			   threads, which may be run by DECREF */
+			for (i = 0; i < PyList_GET_SIZE(names); i++) {
+				PyObject *name, *value;
+				name = PyList_GET_ITEM(names, i);
+				value = PyObject_GetAttr(obj, name);
+				if (value == NULL)
+					PyErr_Clear();
+				else {
+					int err = PyDict_SetItem(slots, name,
+								 value);
+					Py_DECREF(value);
+					if (err)
+						goto end;
+					n++;
+				}
+			}
+			if (n) {
+				state = Py_BuildValue("(NO)", state, slots);
+				if (state == NULL)
+					goto end;
+			}
+		}
+	}
+
+	if (!PyList_Check(obj)) {
+		listitems = Py_None;
+		Py_INCREF(listitems);
+	}
+	else {
+		listitems = PyObject_GetIter(obj);
+		if (listitems == NULL)
+			goto end;
+	}
+
+	if (!PyDict_Check(obj)) {
+		dictitems = Py_None;
+		Py_INCREF(dictitems);
+	}
+	else {
+		dictitems = PyObject_CallMethod(obj, "iteritems", "");
+		if (dictitems == NULL)
+			goto end;
+	}
+
+	copy_reg = import_copy_reg();
+	if (copy_reg == NULL)
+		goto end;
+	newobj = PyObject_GetAttrString(copy_reg, "__newobj__");
+	if (newobj == NULL)
+		goto end;
+
+	n = PyTuple_GET_SIZE(args);
+	args2 = PyTuple_New(n+1);
+	if (args2 == NULL)
+		goto end;
+	PyTuple_SET_ITEM(args2, 0, cls);
+	cls = NULL;
+	for (i = 0; i < n; i++) {
+		PyObject *v = PyTuple_GET_ITEM(args, i);
+		Py_INCREF(v);
+		PyTuple_SET_ITEM(args2, i+1, v);
+	}
+
+	res = Py_BuildValue("(OOOOO)",
+			    newobj, args2, state, listitems, dictitems);
+
+  end:
+	Py_XDECREF(cls);
+	Py_XDECREF(args);
+	Py_XDECREF(args2);
+	Py_XDECREF(state);
+	Py_XDECREF(names);
+	Py_XDECREF(listitems);
+	Py_XDECREF(dictitems);
+	Py_XDECREF(copy_reg);
+	Py_XDECREF(newobj);
+	return res;
+}
+
+static PyObject *
+object_reduce_ex(PyObject *self, PyObject *args)
+{
+	/* Call copy_reg._reduce_ex(self, proto) */
+	PyObject *reduce, *copy_reg, *res;
+	int proto = 0;
+
+	if (!PyArg_ParseTuple(args, "|i:__reduce_ex__", &proto))
+		return NULL;
+
+	reduce = PyObject_GetAttrString(self, "__reduce__");
+	if (reduce == NULL)
+		PyErr_Clear();
+	else {
+		PyObject *cls, *clsreduce, *objreduce;
+		int override;
+		cls = PyObject_GetAttrString(self, "__class__");
+		if (cls == NULL) {
+			Py_DECREF(reduce);
+			return NULL;
+		}
+		clsreduce = PyObject_GetAttrString(cls, "__reduce__");
+		Py_DECREF(cls);
+		if (clsreduce == NULL) {
+			Py_DECREF(reduce);
+			return NULL;
+		}
+		objreduce = PyDict_GetItemString(PyBaseObject_Type.tp_dict,
+						 "__reduce__");
+		override = (clsreduce != objreduce);
+		Py_DECREF(clsreduce);
+		if (override) {
+			res = PyObject_CallObject(reduce, NULL);
+			Py_DECREF(reduce);
+			return res;
+		}
+		else
+			Py_DECREF(reduce);
+	}
+
+	if (proto >= 2)
+		return reduce_2(self);
+
+	copy_reg = import_copy_reg();
 	if (!copy_reg)
 		return NULL;
+
 	res = PyEval_CallMethod(copy_reg, "_reduce_ex", "(Oi)", self, proto);
 	Py_DECREF(copy_reg);
+
 	return res;
 }
 
@@ -2471,6 +2693,7 @@ static PyMethodDef object_methods[] = {
 	 PyDoc_STR("helper for pickle")},
 	{0}
 };
+
 
 PyTypeObject PyBaseObject_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
