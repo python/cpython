@@ -15,7 +15,8 @@ Command line options:
 -s: single    -- run only a single test (see below)
 -r: random    -- randomize test execution order
 -l: findleaks -- if GC is available detect tests that leak memory
---have-resources   -- run tests that require large resources (time/space)
+-u: use       -- specify which special resource intensive tests to run
+-h: help      -- print this text and exit
 
 If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
@@ -30,6 +31,17 @@ find the next test to run.  If this file is missing, the first test_*.py file
 in testdir or on the command line is used.  (actually tempfile.gettempdir() is
 used instead of /tmp).
 
+-u is used to specify which special resource intensive tests to run, such as
+those requiring large file support or network connectivity.  The argument is a
+comma-separated list of words indicating the resources to test.  Currently
+only the following are defined:
+
+    largefile - It is okay to run some test that may create huge files.  These
+                tests can take a long time and may consume >2GB of disk space
+                temporarily.
+
+    network -   It is okay to run tests that use external network resource,
+                e.g. testing SSL support for sockets.
 """
 
 import sys
@@ -41,9 +53,15 @@ import StringIO
 
 import test_support
 
+def usage(code, msg=''):
+    print __doc__
+    if msg: print msg
+    sys.exit(code)
+
+
 def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
          exclude=0, single=0, randomize=0, findleaks=0,
-         use_large_resources=0):
+         use_resources=None):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -60,31 +78,50 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
     command-line will be used.  If that's empty, too, then all *.py
     files beginning with test_ will be used.
 
-    The other seven default arguments (verbose, quiet, generate, exclude,
-    single, randomize, and findleaks) allow programmers calling main()
+    The other default arguments (verbose, quiet, generate, exclude, single,
+    randomize, findleaks, and use_resources) allow programmers calling main()
     directly to set the values that would normally be set by flags on the
     command line.
 
     """
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'vgqxsrl', ['have-resources'])
+        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrlu:',
+                                   ['help', 'verbose', 'quiet', 'generate',
+                                    'exclude', 'single', 'random',
+                                    'findleaks', 'use='])
     except getopt.error, msg:
-        print msg
-        print __doc__
-        return 2
+        usage(2, msg)
+
+    # Defaults
+    if use_resources is None:
+        use_resources = []
     for o, a in opts:
-        if o == '-v': verbose = verbose+1
-        if o == '-q': quiet = 1; verbose = 0
-        if o == '-g': generate = 1
-        if o == '-x': exclude = 1
-        if o == '-s': single = 1
-        if o == '-r': randomize = 1
-        if o == '-l': findleaks = 1
-        if o == '--have-resources': use_large_resources = 1
+        if o in ('-h', '--help'):
+            usage(0)
+        elif o in ('-v', '--verbose'):
+            verbose += 1
+        elif o in ('-q', '--quiet'):
+            quiet = 1;
+            verbose = 0
+        elif o in ('-g', '--generate'):
+            generate = 1
+        elif o in ('-x', '--exclude'):
+            exclude = 1
+        elif o in ('-s', '--single'):
+            single = 1
+        elif o in ('-r', '--randomize'):
+            randomize = 1
+        elif o in ('-l', '--findleaks'):
+            findleaks = 1
+        elif o in ('-u', '--use'):
+            use_resources = [x.lower() for x in a.split(',')]
+            for r in use_resources:
+                if r not in ('largefile', 'network'):
+                    usage(1, 'Invalid -u/--use option: %s' % a)
     if generate and verbose:
-        print "-g and -v don't go together!"
-        return 2
+        usage(2, "-g and -v don't go together!")
+
     good = []
     bad = []
     skipped = []
@@ -130,7 +167,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
     if randomize:
         random.shuffle(tests)
     test_support.verbose = verbose      # Tell tests to be moderately quiet
-    test_support.use_large_resources = use_large_resources
+    test_support.use_resources = use_resources
     save_modules = sys.modules.keys()
     for test in tests:
         if not quiet:
@@ -197,7 +234,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         else:
             os.unlink(filename)
 
-    return len(bad) > 0
+    sys.exit(len(bad) > 0)
+
 
 STDTESTS = [
     'test_grammar',
@@ -347,7 +385,6 @@ def printlist(x, width=70, indent=4):
         print line
 
 class Compare:
-
     def __init__(self, filename):
         if os.path.exists(filename):
             self.fp = open(filename, 'r')
@@ -452,6 +489,7 @@ _expectations = {
         test_pty
         test_pwd
         test_signal
+        test_socket_ssl
         test_socketserver
         test_sunaudiodev
         test_timing
@@ -467,6 +505,7 @@ _expectations = {
         test_largefile
         test_nis
         test_ntpath
+        test_socket_ssl
         test_socketserver
         test_sunaudiodev
         test_unicode_file
@@ -497,4 +536,4 @@ class _ExpectedSkips:
         return self.expected
 
 if __name__ == '__main__':
-    sys.exit(main())
+    main()
