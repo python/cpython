@@ -613,7 +613,7 @@ if __name__ == '__main__':
                     print args[1]
                     return
                 self.prompt = line + "% "
-            elif len(self.prompt > 2):
+            elif len(self.prompt) > 2:
                 line = self.prompt[-2:]
             else:
                 print "No statistics object is current -- cannot reload."
