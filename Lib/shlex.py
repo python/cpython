@@ -3,7 +3,9 @@
 # Module and documentation by Eric S. Raymond, 21 Dec 1998 
 # Input stacking and error message cleanup added by ESR, March 2000
 
+import os.path
 import sys
+
 
 class shlex:
     "A lexical analyzer class for simple shell-like syntaxes." 
@@ -26,7 +28,8 @@ class shlex:
 	self.filestack = []
         self.source = None
         if self.debug:
-            print 'shlex: reading from %s, line %d' % (self.instream,self.lineno)
+            print 'shlex: reading from %s, line %d' \
+                  % (self.instream, self.lineno)
 
     def push_token(self, tok):
         "Push a token onto the stack popped by the get_token method"
@@ -47,7 +50,7 @@ class shlex:
         # Handle inclusions
         while raw == self.source:
             (newfile, newstream) = self.sourcehook(self.read_token())
-            self.filestack = [(self.infile,self.instream,self.lineno)] + self.filestack
+            self.filestack.insert(0, (self.infile, self.instream, self.lineno))
             self.infile = newfile
             self.instream = newstream
             self.lineno = 1
@@ -63,7 +66,8 @@ class shlex:
                 (self.infile, self.instream, self.lineno) = self.filestack[0]
                 self.filestack = self.filestack[1:]
                 if self.debug:
-                    print 'shlex: popping to %s, line %d' % (self.instream, self.lineno)
+                    print 'shlex: popping to %s, line %d' \
+                          % (self.instream, self.lineno)
                 self.state = ' '
                 raw = self.get_token()
          # Neither inclusion nor EOF
@@ -82,7 +86,8 @@ class shlex:
             if nextchar == '\n':
                 self.lineno = self.lineno + 1
             if self.debug >= 3:
-                print "shlex: in state " + repr(self.state) + " I see character: " + repr(nextchar) 
+                print "shlex: in state", repr(self.state), \
+                      "I see character:", repr(nextchar) 
             if self.state == None:
                 self.token = '';	# past end of file
                 break
@@ -156,6 +161,9 @@ class shlex:
         "Hook called on a filename to be sourced."
         if newfile[0] == '"':
             newfile = newfile[1:-1]
+        # This implements cpp-like semantics for relative-path inclusion.
+        if type(self.infile) == type("") and not os.path.isabs(newfile):
+            newfile = os.path.join(os.path.dirname(self.infile), newfile)
         return (newfile, open(newfile, "r"))
 
     def error_leader(self, infile=None, lineno=None):
@@ -166,12 +174,16 @@ class shlex:
             lineno = self.lineno
         return "\"%s\", line %d: " % (infile, lineno)
 
-if __name__ == '__main__': 
 
-    lexer = shlex()
+if __name__ == '__main__': 
+    if len(sys.argv) == 1:
+        lexer = shlex()
+    else:
+        file = sys.argv[1]
+        lexer = shlex(open(file), file)
     while 1:
         tt = lexer.get_token()
-        print "Token: " + repr(tt)
-        if not tt:
+        if tt:
+            print "Token: " + repr(tt)
+        else:
             break
-
