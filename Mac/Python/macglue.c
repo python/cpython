@@ -777,6 +777,7 @@ PyMac_GetFixed(PyObject *v, Fixed *f)
 	if( !PyArg_Parse(v, "d", &d))
 		return 0;
 	*f = (Fixed)(d * 0x10000);
+	return 1;
 }
 
 /* Convert a Point to a Python object */
