@@ -1005,46 +1005,49 @@ void *
 _PyObject_DebugRealloc(void *p, size_t nbytes)
 {
 	uchar *q = (uchar *)p;
+	uchar *tail;
+	size_t total;	/* nbytes + 16 */
 	size_t original_nbytes;
-	void *fresh;	/* new memory block, if needed */
 
 	if (p == NULL)
 		return _PyObject_DebugMalloc(nbytes);
 
 	_PyObject_DebugCheckAddress(p);
+	bumpserialno();
 	original_nbytes = read4(q-8);
-	if (nbytes == original_nbytes) {
-		/* note that this case is likely to be common due to the
-		   way Python appends to lists */
-		bumpserialno();
-		write4(q + nbytes + 4, serialno);
-		return p;
+	total = nbytes + 16;
+	if (total < nbytes || (total >> 31) > 1) {
+		/* overflow, or we can't represent it in 4 bytes */
+		return NULL;
 	}
 
 	if (nbytes < original_nbytes) {
-		/* shrinking -- leave the guts alone, except to
-		   fill the excess with DEADBYTE */
-		const size_t excess = original_nbytes - nbytes;
-		bumpserialno();
-		write4(q-8, nbytes);
-		/* kill the excess bytes plus the trailing 8 pad bytes */
-		q += nbytes;
-		q[0] = q[1] = q[2] = q[3] = FORBIDDENBYTE;
-		write4(q+4, serialno);
-		memset(q+8, DEADBYTE, excess);
-		return p;
+		/* shrinking:  mark old extra memory dead */
+		memset(q + nbytes, DEADBYTE, original_nbytes - nbytes);
 	}
 
-	assert(nbytes != 0);
-	/* More memory is needed:  get it, copy over the first original_nbytes
-	   of the original data, and free the original memory. */
-	fresh = _PyObject_DebugMalloc(nbytes);
-	if (fresh != NULL) {
-		if (original_nbytes > 0)
-			memcpy(fresh, p, original_nbytes);
-		_PyObject_DebugFree(p);
+	/* Resize and add decorations. */
+	q = (uchar *)PyObject_Realloc(q-8, total);
+	if (q == NULL)
+		return NULL;
+
+	write4(q, nbytes);
+	assert(q[4] == FORBIDDENBYTE &&
+	       q[5] == FORBIDDENBYTE &&
+	       q[6] == FORBIDDENBYTE &&
+	       q[7] == FORBIDDENBYTE);
+	q += 8;
+	tail = q + nbytes;
+	tail[0] = tail[1] = tail[2] = tail[3] = FORBIDDENBYTE;
+	write4(tail + 4, serialno);
+
+	if (nbytes > original_nbytes) {
+		/* growing:  mark new extra memory clean */
+		memset(q + original_nbytes, CLEANBYTE,
+			nbytes - original_nbytes);
 	}
-	return fresh;
+
+	return q;
 }
 
 /* Check the forbidden bytes on both ends of the memory allocated for p.
