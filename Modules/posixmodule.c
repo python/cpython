@@ -1215,7 +1215,7 @@ posix_umask(PyObject *self, PyObject *args)
 	int i;
 	if (!PyArg_ParseTuple(args, "i:umask", &i))
 		return NULL;
-	i = umask(i);
+	i = (int)umask(i);
 	if (i < 0)
 		return posix_error();
 	return PyInt_FromLong((long)i);

@@ -114,9 +114,8 @@ char *PyCursesVersion = "2.1";
     curses module in other ways.  So the code will just specify 
     explicit prototypes here. */
 extern int setupterm(char *,int,int *);
-#ifdef sgi
-extern char *tigetstr(char *);
-extern char *tparm(char *instring, ...);
+#ifdef __sgi
+#include <term.h>
 #endif
 
 #if defined(sgi) || defined(__sun__)
@@ -721,7 +720,7 @@ PyCursesWindow_GetCh(PyCursesWindowObject *self, PyObject *args)
     PyErr_SetString(PyExc_TypeError, "getch requires 0 or 2 arguments");
     return NULL;
   }
-  return PyInt_FromLong(rtn);
+  return PyInt_FromLong((long)rtn);
 }
 
 static PyObject *
@@ -1305,7 +1304,6 @@ PyCursesWindow_Scroll(PyCursesWindowObject *self, PyObject *args)
   switch(ARG_COUNT(args)) {
   case 0:
     return PyCursesCheckERR(scroll(self->win), "scroll");
-    break;
   case 1:
     if (!PyArg_Parse(args, "i;nlines", &nlines))
       return NULL;
@@ -1325,7 +1323,6 @@ PyCursesWindow_TouchLine(PyCursesWindowObject *self, PyObject *args)
     if (!PyArg_Parse(args,"(ii);start,count",&st,&cnt))
       return NULL;
     return PyCursesCheckERR(touchline(self->win,st,cnt), "touchline");
-    break;
   case 3:
     if (!PyArg_Parse(args, "(iii);start,count,val", &st, &cnt, &val))
       return NULL;
