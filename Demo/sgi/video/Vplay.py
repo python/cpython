@@ -170,6 +170,8 @@ def process(filename):
 		if not looping:
 			while not stop:
 				dev, val = gl.qread()
+				if dev == REDRAW:
+					vin.clear()
 				if dev == LEFTMOUSE and val == 1:
 					break # Continue outer loop
 				if dev == ESCKEY and val == 1 or \
