@@ -1,0 +1,71 @@
+#! /bin/sh
+
+# This script converts Makefile.in.in and config.c.in into Makefile.in
+# and config.c, based on the module definitions found in the file
+# Setup.
+
+NL="\\
+"
+
+sed -e 's/#.*//' -e '/^[ 	]*$/d' ${1-Setup} |
+(
+	DEFS=
+	MODS=
+	OBJS=
+	LIBS=
+	RULES=
+
+	while read line
+	do
+		case $line in
+		*=*)	DEFS="$DEFS$line$NL"; continue;;
+		esac
+		objs=
+		cpps=
+		set $line
+		for arg
+		do
+			case $arg in
+			-[IDUC]*)	cpps="$cpps $arg";;
+			-[Ll]*)		LIBS="$LIBS $arg";;
+			*.a)		LIBS="$LIBS $arg";;
+			*.o)		objs="$objs $arg";;
+			*.*)		echo 1>&2 "bad word $arg in $line"
+					exit 1;;
+			[a-zA-Z_]*)	MODS="$MODS $arg";;
+			*)		echo 1>&2 "bad word $arg in $line"
+					exit 1;;
+			esac
+		done
+		for obj in $objs
+		do
+		  src=`basename $obj .o`.c
+		  RULES="$RULES$obj: $src; \$(CC) \$(CFLAGS) $cpps -c $src$NL"
+		done
+		OBJS="$OBJS $objs"
+	done
+
+	EXTDECLS=
+	INITBITS=
+	for mod in $MODS
+	do
+		EXTDECLS="${EXTDECLS}extern void init$mod();$NL"
+		INITBITS="${INITBITS}	{\"$mod\", init$mod},$NL"
+	done
+	sed -e "
+		/MARKER 1/i$NL$EXTDECLS
+
+		/MARKER 2/i$NL$INITBITS
+
+		" config.c.in >config.c
+
+	sed -e "
+		s%@MODOBJS@%$OBJS%
+		s%@MODLIBS@%$LIBS%
+		/Rules added by ..makesetup/a$NL$NL$RULES
+		
+		/Definitions added by ..makesetup/a$NL$NL$DEFS
+		
+		" Makefile.in.in >Makefile.in
+
+)
