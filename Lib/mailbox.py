@@ -155,8 +155,36 @@ class MHMailbox:
 		del self.boxes[0]
 		fp = open(os.path.join(self.dirname, fn))
 		return rfc822.Message(fp)
-	    
-    
+
+class Maildir:
+
+	# Qmail directory mailbox
+
+	def __init__(self, dirname):
+		import string
+		self.dirname = dirname
+		self.boxes = []
+
+		# check for new mail
+		newdir = os.path.join(self.dirname, 'new')
+		for file in os.listdir(newdir):
+			if len(string.split(file, '.')) > 2:
+				self.boxes.append(os.path.join(newdir, file))
+
+		# Now check for current mail in this maildir
+		curdir = os.path.join(self.dirname, 'cur')
+		for file in os.listdir(curdir):
+			if len(string.split(file, '.')) > 2:
+				self.boxes.append(os.path.join(curdir, file))
+
+	def next(self):
+		if not self.boxes:
+			return None
+		fn = self.boxes[0]
+		del self.boxes[0]
+		fp = open(os.path.join(self.dirname, fn))
+		return rfc822.Message(fp)
+
 class BabylMailbox(_Mailbox):
 
 	def _search_start(self):
@@ -186,7 +214,7 @@ def _test():
 
 	args = sys.argv[1:]
 	if not args:
-		for key in 'MAIL', 'LOGNAME', 'USER':
+		for key in 'MAILDIR', 'MAIL', 'LOGNAME', 'USER':
 			if os.environ.has_key(key):
 				mbox = os.environ[key]
 				break
@@ -200,7 +228,10 @@ def _test():
 	elif not '/' in mbox:
 		mbox = '/usr/mail/' + mbox
 	if os.path.isdir(mbox):
-		mb = MHMailbox(mbox)
+		if os.path.isdir(os.path.join(mbox, 'cur')):
+			mb = Maildir(mbox)
+		else:
+			mb = MHMailbox(mbox)
 	else:
 		fp = open(mbox, 'r')
 		mb = UnixMailbox(fp)
