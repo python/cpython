@@ -47,6 +47,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define CHECK(x) /* Don't know how to check */
 #endif
 
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
+
+#ifndef LONG_MAX
+#define LONG_MAX 0X7FFFFFFFL
+#endif
+
+#ifndef LONG_MIN
+#define LONG_MIN (-LONG_MAX-1)
+#endif
+
 #ifndef macintosh
 extern double fmod PROTO((double, double));
 extern double pow PROTO((double, double));
@@ -397,8 +409,11 @@ float_int(v)
 	object *v;
 {
 	double x = getfloatvalue(v);
-	/* XXX should check for overflow */
-	/* XXX should define how we round */
+	if (x < 0 ? (x = ceil(x)) < (double)LONG_MIN
+	          : (x = floor(x)) > (double)LONG_MAX) {
+		err_setstr(OverflowError, "float to large to convert");
+		return NULL;
+	}
 	return newintobject((long)x);
 }
 

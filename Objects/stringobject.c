@@ -32,7 +32,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 int null_strings, one_strings;
 #endif
 
-#ifdef __STDC__
+#ifdef HAVE_LIMITS_H
 #include <limits.h>
 #else
 #ifndef UCHAR_MAX

@@ -159,7 +159,7 @@ getlongvalue(vv)
 		prev = x;
 		x = (x << SHIFT) + v->ob_digit[i];
 		if ((x >> SHIFT) != prev) {
-			err_setstr(ValueError,
+			err_setstr(OverflowError,
 				"long int too long to convert");
 			return -1;
 		}

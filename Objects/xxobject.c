@@ -34,24 +34,23 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Xx objects */
 
-#include "allobjects.h"
-#include "modsupport.h"		/* For getargs() etc. */
+#include "Python.h"
 
 typedef struct {
-	OB_HEAD
-	object	*x_attr;	/* Attributes dictionary */
+	PyObject_HEAD
+	PyObject	*x_attr;	/* Attributes dictionary */
 } xxobject;
 
-staticforward typeobject Xxtype;
+staticforward PyTypeObject Xxtype;
 
 #define is_xxobject(v)		((v)->ob_type == &Xxtype)
 
 static xxobject *
 newxxobject(arg)
-	object *arg;
+	PyObject *arg;
 {
 	xxobject *xp;
-	xp = NEWOBJ(xxobject, &Xxtype);
+	xp = PyObject_NEW(xxobject, &Xxtype);
 	if (xp == NULL)
 		return NULL;
 	xp->x_attr = NULL;
@@ -64,65 +63,65 @@ static void
 xx_dealloc(xp)
 	xxobject *xp;
 {
-	XDECREF(xp->x_attr);
-	DEL(xp);
+	Py_XDECREF(xp->x_attr);
+	PyMem_DEL(xp);
 }
 
-static object *
+static PyObject *
 xx_demo(self, args)
 	xxobject *self;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static struct methodlist xx_methods[] = {
-	{"demo",	(method)xx_demo},
+static Py_MethodDef xx_methods[] = {
+	{"demo",	(PyCFunction)xx_demo},
 	{NULL,		NULL}		/* sentinel */
 };
 
-static object *
+static PyObject *
 xx_getattr(xp, name)
 	xxobject *xp;
 	char *name;
 {
 	if (xp->x_attr != NULL) {
-		object *v = dictlookup(xp->x_attr, name);
+		PyObject *v = PyDict_GetItemString(xp->x_attr, name);
 		if (v != NULL) {
-			INCREF(v);
+			Py_INCREF(v);
 			return v;
 		}
 	}
-	return findmethod(xx_methods, (object *)xp, name);
+	return Py_FindMethod(xx_methods, (PyObject *)xp, name);
 }
 
 static int
 xx_setattr(xp, name, v)
 	xxobject *xp;
 	char *name;
-	object *v;
+	PyObject *v;
 {
 	if (xp->x_attr == NULL) {
-		xp->x_attr = newdictobject();
+		xp->x_attr = PyDict_New();
 		if (xp->x_attr == NULL)
 			return -1;
 	}
 	if (v == NULL) {
-		int rv = dictremove(xp->x_attr, name);
+		int rv = PyDict_DelItemString(xp->x_attr, name);
 		if (rv < 0)
-			err_setstr(AttributeError,
+			PyErr_SetString(PyExc_AttributeError,
 			        "delete non-existing xx attribute");
 		return rv;
 	}
 	else
-		return dictinsert(xp->x_attr, name, v);
+		return PyDict_SetItemString(xp->x_attr, name, v);
 }
 
-static typeobject Xxtype = {
-	OB_HEAD_INIT(&Typetype)
+static PyTypeObject Xxtype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
 	"xx",			/*tp_name*/
 	sizeof(xxobject),	/*tp_basicsize*/
