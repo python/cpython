@@ -11,12 +11,12 @@ http://www.python.org/.
 To install
 ----------
 
-Unzip the archive in the root of a file system with enough space.  It
-will create a directory \Python1.4b3 containing subdirectories Bin and
-Lib and some files, including setup.bat, setup.py, uninstall.bat, and
-uninstall.py.  (If you don't have a zip program that supports long
-filenames, get the file winzip95.exe and install it -- this is WinZip
-6.1 for 32-bit Windows systems.)
+Unzip the archive on a file system with enough space.  It will create
+a directory Python1.4b3 containing subdirectories Bin and Lib and some
+files, including setup.bat, setup.py, uninstall.bat, and uninstall.py.
+(If you don't have a zip program that supports long filenames, get the
+file winzip95.exe and install it -- this is WinZip 6.1 for 32-bit
+Windows systems.)
 
 Run the SETUP.BAT file found in directory just created.  When it is
 done, press Enter.
@@ -44,21 +44,15 @@ NT.  Don't use an older version.
 Using the control panel, set the TCL_LIBRARY and TK_LIBRARY
 environment variables.  E.g. if you installed Tcl/Tk in C:\TCL (the
 default suggested by the installer), set TCL_LIBRARY to
-"C:\TCL\lib\tcl7.5" and set TK_LIBRARY to "C:\TCL\lib\tk4.1".
+"C:\TCL\lib\tcl7.5" and set TK_LIBRARY to "C:\TCL\lib\tk4.1".  Also
+add the directory "C:\TCL\bin" (or whereever the Tcl bin directory
+ended up) to the PATH environment variable.
 
 On Windows '95, you need to edit AUTOEXEC.BAT for this, e.g. by adding
 the lines
 
 	SET TCL_LIBRARY=C:\Program Files\TCL\lib\tcl7.5
 	SET TK_LIBRARY=C:\Program Files\TCL\lib\tk4.1
-
-(substituting the actual location of the TCL installation directory).
-
-On Windows '95, you also need to add the directory "C:\TCL\bin" (or
-whereever the Tcl bin directory ended up) to the PATH environment
-variable in the AUTOEXEC.BAT file.  Do this by editing the
-AUTOEXEC.BAT file, e.g. by adding this line to the end:
-
 	SET PATH="%PATH%";"C:\Program Files\TCL\bin"
 
 (substituting the actual location of the TCL installation directory).
