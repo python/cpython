@@ -8,18 +8,17 @@ module searching and loading algorithm, and it is possible to replace
 the built-in function __import__ in order to change the semantics of
 the import statement, until now it has been difficult to combine the
 effect of different __import__ hacks, like loading modules from URLs
-(rimport.py), implementing a hierarchical module namespace (newimp.py)
-or restricted execution (rexec.py).
+by rimport.py, or restricted execution by rexec.py.
 
 This module defines three new concepts:
 
-(1) A "file system hooks" class provides an interface to a filesystem.
+1) A "file system hooks" class provides an interface to a filesystem.
 
 One hooks class is defined (Hooks), which uses the interface provided
 by standard modules os and os.path.  It should be used as the base
 class for other hooks classes.
 
-(2) A "module loader" class provides an interface to to search for a
+2) A "module loader" class provides an interface to to search for a
 module in a search path and to load it.  It defines a method which
 searches for a module in a single directory; by overriding this method
 one can redefine the details of the search.  If the directory is None,
@@ -31,7 +30,7 @@ the imp module's find_module interface, while HookableModuleLoader
 uses a file system hooks class to interact with the file system.  Both
 use the imp module's load_* interfaces to actually load the module.
 
-(3) A "module importer" class provides an interface to import a
+3) A "module importer" class provides an interface to import a
 module, as well as interfaces to reload and unload a module.  It also
 provides interfaces to install and uninstall itself instead of the
 default __import__ and reload (and unload) functions.
@@ -49,9 +48,6 @@ behalf of a "from ... import ..." statement or not.  (This is caused
 by the way the __import__ hook is used by the Python interpreter.)  It
 would also do wise to install a different version of reload().
 
-XXX Should the imp.load_* functions also be called via the hooks
-instance?
-
 """
 
 
@@ -59,16 +55,21 @@ import __builtin__
 import imp
 import os
 import sys
+import string
+
+
+VERBOSE = 0
 
 
 from imp import C_EXTENSION, PY_SOURCE, PY_COMPILED
-BUILTIN_MODULE = 32
-FROZEN_MODULE = 33
+from imp import C_BUILTIN, PY_FROZEN, PKG_DIRECTORY
+BUILTIN_MODULE = C_BUILTIN
+FROZEN_MODULE = PY_FROZEN
 
 
 class _Verbose:
 
-    def __init__(self, verbose = 0):
+    def __init__(self, verbose = VERBOSE):
         self.verbose = verbose
 
     def get_verbose(self):
@@ -84,7 +85,10 @@ class _Verbose:
             apply(self.message, args)
 
     def message(self, format, *args):
-        print format%args
+        if args:
+            print format%args
+        else:
+            print format
 
 
 class BasicModuleLoader(_Verbose):
@@ -125,6 +129,7 @@ class BasicModuleLoader(_Verbose):
                 return None
 
     def find_builtin_module(self, name):
+        # XXX frozen packages?
         if imp.is_builtin(name):
             return None, '', ('', '', BUILTIN_MODULE)
         if imp.is_frozen(name):
@@ -132,22 +137,11 @@ class BasicModuleLoader(_Verbose):
         return None
 
     def load_module(self, name, stuff):
-        file, filename, (suff, mode, type) = stuff
+        file, filename, info = stuff
         try:
-            if type == BUILTIN_MODULE:
-                return imp.init_builtin(name)
-            if type == FROZEN_MODULE:
-                return imp.init_frozen(name)
-            if type == C_EXTENSION:
-                return imp.load_dynamic(name, filename, file)
-            if type == PY_SOURCE:
-                return imp.load_source(name, filename, file)
-            if type == PY_COMPILED:
-                return imp.load_compiled(name, filename, file)
+            return imp.load_module(name, file, filename, info)
         finally:
             if file: file.close()
-        raise ImportError, "Unrecognized module type (%s) for %s" % \
-                           (`type`, name)
 
 
 class Hooks(_Verbose):
@@ -175,6 +169,8 @@ class Hooks(_Verbose):
         return imp.load_compiled(name, filename, file)
     def load_dynamic(self, name, filename, file=None):
         return imp.load_dynamic(name, filename, file)
+    def load_package(self, name, filename, file=None):
+        return imp.load_module(name, file, filename, ("", "", PKG_DIRECTORY))
 
     def add_module(self, name):
         d = self.modules_dict()
@@ -214,7 +210,7 @@ class ModuleLoader(BasicModuleLoader):
 
     """
 
-    def __init__(self, hooks = None, verbose = 0):
+    def __init__(self, hooks = None, verbose = VERBOSE):
         BasicModuleLoader.__init__(self, verbose)
         self.hooks = hooks or Hooks(verbose)
 
@@ -231,15 +227,24 @@ class ModuleLoader(BasicModuleLoader):
         self.hooks = hooks
 
     def find_builtin_module(self, name):
+        # XXX frozen packages?
         if self.hooks.is_builtin(name):
             return None, '', ('', '', BUILTIN_MODULE)
         if self.hooks.is_frozen(name):
             return None, '', ('', '', FROZEN_MODULE)
         return None
 
-    def find_module_in_dir(self, name, dir):
+    def find_module_in_dir(self, name, dir, allow_packages=1):
         if dir is None:
             return self.find_builtin_module(name)
+        if allow_packages:
+            fullname = self.hooks.path_join(dir, name)
+            if self.hooks.path_isdir(fullname):
+                stuff = self.find_module_in_dir("__init__", fullname, 0)
+                if stuff:
+                    file = stuff[0]
+                    if file: file.close()
+                    return None, fullname, ('', '', PKG_DIRECTORY)
         for info in self.hooks.get_suffixes():
             suff, mode, type = info
             fullname = self.hooks.path_join(dir, name+suff)
@@ -251,7 +256,8 @@ class ModuleLoader(BasicModuleLoader):
         return None
 
     def load_module(self, name, stuff):
-        file, filename, (suff, mode, type) = stuff
+        file, filename, info = stuff
+        (suff, mode, type) = info
         try:
             if type == BUILTIN_MODULE:
                 return self.hooks.init_builtin(name)
@@ -263,6 +269,8 @@ class ModuleLoader(BasicModuleLoader):
                 m = self.hooks.load_source(name, filename, file)
             elif type == PY_COMPILED:
                 m = self.hooks.load_compiled(name, filename, file)
+            elif type == PKG_DIRECTORY:
+                m = self.hooks.load_package(name, filename, file)
             else:
                 raise ImportError, "Unrecognized module type (%s) for %s" % \
                       (`type`, name)
@@ -278,6 +286,25 @@ class FancyModuleLoader(ModuleLoader):
 
     def load_module(self, name, stuff):
         file, filename, (suff, mode, type) = stuff
+        realfilename = filename
+        path = None
+
+        if type == PKG_DIRECTORY:
+            initstuff = self.find_module_in_dir("__init__", filename, 0)
+            if not initstuff:
+                raise ImportError, "No __init__ module in package %s" % name
+            initfile, initfilename, initinfo = initstuff
+            initsuff, initmode, inittype = initinfo
+            if inittype not in (PY_COMPILED, PY_SOURCE):
+                if initfile: initfile.close()
+                raise ImportError, \
+                    "Bad type (%s) for __init__ module in package %s" % (
+                    `inittype`, name)
+            path = [filename]
+            file = initfile
+            realfilename = initfilename
+            type = inittype
+
         if type == FROZEN_MODULE:
             code = self.hooks.get_frozen_object(name)
         elif type == PY_COMPILED:
@@ -286,25 +313,27 @@ class FancyModuleLoader(ModuleLoader):
             code = marshal.load(file)
         elif type == PY_SOURCE:
             data = file.read()
-            code = compile(data, filename, 'exec')
+            code = compile(data, realfilename, 'exec')
         else:
             return ModuleLoader.load_module(self, name, stuff)
+
         m = self.hooks.add_module(name)
+        if path:
+            m.__path__ = path
         m.__file__ = filename
         exec code in m.__dict__
         return m
 
 
-class ModuleImporter(_Verbose):
+class BasicModuleImporter(_Verbose):
 
-    """Default module importer; uses module loader.
+    """Basic module importer; uses module loader.
 
-    This provides the same functionality as built-in import, when
-    combined with ModuleLoader.
+    This provides basic import facilities but no package imports.
 
     """
 
-    def __init__(self, loader = None, verbose = 0):
+    def __init__(self, loader = None, verbose = VERBOSE):
         _Verbose.__init__(self, verbose)
         self.loader = loader or ModuleLoader(None, verbose)
         self.modules = self.loader.modules_dict()
@@ -356,6 +385,115 @@ class ModuleImporter(_Verbose):
         __builtin__.unload = self.save_unload
         if not __builtin__.unload:
             del __builtin__.unload
+
+
+class ModuleImporter(BasicModuleImporter):
+
+    """A module importer that supports packages."""
+    
+    def import_module(self, name, globals=None, locals=None, fromlist=None):
+        parent = self.determine_parent(globals)
+        q, tail = self.find_head_package(parent, name)
+        m = self.load_tail(q, tail)
+        if not fromlist:
+            return q
+        if hasattr(m, "__path__"):
+            self.ensure_fromlist(m, fromlist)
+        return m
+
+    def determine_parent(self, globals):
+        if not globals or not globals.has_key("__name__"):
+            return None
+        pname = globals['__name__']
+        if globals.has_key("__path__"):
+            parent = self.modules[pname]
+            assert globals is parent.__dict__
+            return parent
+        if '.' in pname:
+            i = string.rfind(pname, '.')
+            pname = pname[:i]
+            parent = self.modules[pname]
+            assert parent.__name__ == pname
+            return parent
+        return None
+
+    def find_head_package(self, parent, name):
+        if '.' in name:
+            i = string.find(name, '.')
+            head = name[:i]
+            tail = name[i+1:]
+        else:
+            head = name
+            tail = ""
+        if parent:
+            qname = "%s.%s" % (parent.__name__, head)
+        else:
+            qname = head
+        q = self.import_it(head, qname, parent)
+        if q: return q, tail
+        if parent:
+            qname = head
+            parent = None
+            q = self.import_it(head, qname, parent)
+            if q: return q, tail
+        raise ImportError, "No module named " + qname
+
+    def load_tail(self, q, tail):
+        m = q
+        while tail:
+            i = string.find(tail, '.')
+            if i < 0: i = len(tail)
+            head, tail = tail[:i], tail[i+1:]
+            mname = "%s.%s" % (m.__name__, head)
+            m = self.import_it(head, mname, m)
+            if not m:
+                raise ImportError, "No module named " + mname
+        return m
+
+    def ensure_fromlist(self, m, fromlist, recursive=0):
+        for sub in fromlist:
+            if sub == "*":
+                if not recursive:
+                    try:
+                        all = m.__all__
+                    except AttributeError:
+                        pass
+                    else:
+                        self.ensure_fromlist(m, all, 1)
+                continue
+            if sub != "*" and not hasattr(m, sub):
+                subname = "%s.%s" % (m.__name__, sub)
+                submod = self.import_it(sub, subname, m)
+                if not submod:
+                    raise ImportError, "No module named " + subname
+
+    def import_it(self, partname, fqname, parent):
+        if not partname:
+            raise ValueError, "Empty module name"
+        try:
+            return self.modules[fqname]
+        except KeyError:
+            pass
+        try:
+            path = parent and parent.__path__
+        except AttributeError:
+            return None
+        stuff = self.loader.find_module(partname, path)
+        if not stuff:
+            return None
+        m = self.loader.load_module(fqname, stuff)
+        if parent:
+            setattr(parent, partname, m)
+        return m
+
+    def reload(self, module):
+        name = module.__name__
+        if '.' not in name:
+            return self.import_it(name, name, None)
+        i = string.rfind(name, '.')
+        pname = name[:i]
+        parent = self.modules[pname]
+        return self.import_it(name[i+1:], name, parent)
 
 
 default_importer = None
