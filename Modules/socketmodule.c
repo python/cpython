@@ -2817,7 +2817,7 @@ PySSL_RAND_egd(PyObject *self, PyObject *arg)
 }
 
 static char PySSL_RAND_egd_doc[] = 
-"RAND_egd(path) -> bytes
+"RAND_egd(path) -> bytes\n\
 \n\
 Queries the entropy gather daemon (EGD) on socket path.  Returns number\n\
 of bytes read.  Raises socket.sslerror if connection to EGD fails or\n\
