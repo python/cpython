@@ -1236,6 +1236,82 @@ class ListCompFor(Node):
     def __repr__(self):
         return "ListCompFor(%s, %s, %s)" % (repr(self.assign), repr(self.list), repr(self.ifs))
 
+class GenExpr(Node):
+    nodes["genexpr"] = "GenExpr"
+    def __init__(self, code):
+        self.code = code
+        self.argnames = ['[outmost-iterable]']
+        self.varargs = self.kwargs = None
+
+    def getChildren(self):
+        return self.code,
+
+    def getChildNodes(self):
+        return self.code,
+
+    def __repr__(self):
+        return "GenExpr(%s)" % (repr(self.code),)
+
+class GenExprInner(Node):
+    nodes["genexprinner"] = "GenExprInner"
+    def __init__(self, expr, quals):
+        self.expr = expr
+        self.quals = quals
+
+    def getChildren(self):
+        children = []
+        children.append(self.expr)
+        children.extend(flatten(self.quals))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodelist = []
+        nodelist.append(self.expr)
+        nodelist.extend(flatten_nodes(self.quals))
+        return tuple(nodelist)
+
+    def __repr__(self):
+        return "GenExprInner(%s, %s)" % (repr(self.expr), repr(self.quals))
+
+class GenExprFor(Node):
+    nodes["genexprfor"] = "GenExprFor"
+    def __init__(self, assign, iter, ifs):
+        self.assign = assign
+        self.iter = iter
+        self.ifs = ifs
+        self.is_outmost = False
+
+    def getChildren(self):
+        children = []
+        children.append(self.assign)
+        children.append(self.iter)
+        children.extend(flatten(self.ifs))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodelist = []
+        nodelist.append(self.assign)
+        nodelist.append(self.iter)
+        nodelist.extend(flatten_nodes(self.ifs))
+        return tuple(nodelist)
+
+    def __repr__(self):
+        return "GenExprFor(%s, %s, %s)" % (repr(self.assign), repr(self.iter), repr(self.ifs))
+
+class GenExprIf(Node):
+    nodes["genexprif"] = "GenExprIf"
+    def __init__(self, test):
+        self.test = test
+
+    def getChildren(self):
+        return self.test,
+
+    def getChildNodes(self):
+        return self.test,
+
+    def __repr__(self):
+        return "GenExprIf(%s)" % (repr(self.test),)
+
 klasses = globals()
 for k in nodes.keys():
     nodes[k] = klasses[nodes[k]]

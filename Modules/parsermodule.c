@@ -855,7 +855,9 @@ VALIDATER(subscriptlist);       VALIDATER(sliceop);
 VALIDATER(exprlist);            VALIDATER(dictmaker);
 VALIDATER(arglist);             VALIDATER(argument);
 VALIDATER(listmaker);           VALIDATER(yield_stmt);
-VALIDATER(testlist1);
+VALIDATER(testlist1);           VALIDATER(gen_for);
+VALIDATER(gen_iter);            VALIDATER(gen_if);
+VALIDATER(testlist_gexp);
 
 #undef VALIDATER
 
@@ -1246,6 +1248,21 @@ validate_list_iter(node *tree)
     return res;
 }
 
+/*  gen_iter:  gen_for | gen_if
+ */
+static int
+validate_gen_iter(node *tree)
+{
+    int res = (validate_ntype(tree, gen_iter)
+               && validate_numnodes(tree, 1, "gen_iter"));
+    if (res && TYPE(CHILD(tree, 0)) == gen_for)
+        res = validate_gen_for(CHILD(tree, 0));
+    else
+        res = validate_gen_if(CHILD(tree, 0));
+
+    return res;
+}
+
 /*  list_for:  'for' exprlist 'in' testlist [list_iter]
  */
 static int
@@ -1264,6 +1281,28 @@ validate_list_for(node *tree)
                && validate_exprlist(CHILD(tree, 1))
                && validate_name(CHILD(tree, 2), "in")
                && validate_testlist_safe(CHILD(tree, 3)));
+
+    return res;
+}
+
+/*  gen_for:  'for' exprlist 'in' test [gen_iter]
+ */
+static int
+validate_gen_for(node *tree)
+{
+    int nch = NCH(tree);
+    int res;
+
+    if (nch == 5)
+        res = validate_gen_iter(CHILD(tree, 4));
+    else
+        res = validate_numnodes(tree, 4, "gen_for");
+
+    if (res)
+        res = (validate_name(CHILD(tree, 0), "for")
+               && validate_exprlist(CHILD(tree, 1))
+               && validate_name(CHILD(tree, 2), "in")
+               && validate_test(CHILD(tree, 3)));
 
     return res;
 }
@@ -1288,6 +1327,25 @@ validate_list_if(node *tree)
     return res;
 }
 
+/*  gen_if:  'if' test [gen_iter]
+ */
+static int
+validate_gen_if(node *tree)
+{
+    int nch = NCH(tree);
+    int res;
+
+    if (nch == 3)
+        res = validate_gen_iter(CHILD(tree, 2));
+    else
+        res = validate_numnodes(tree, 2, "gen_if");
+    
+    if (res)
+        res = (validate_name(CHILD(tree, 0), "if")
+               && validate_test(CHILD(tree, 1)));
+
+    return res;
+}
 
 /*  validate_fpdef()
  *
@@ -2187,7 +2245,7 @@ validate_atom(node *tree)
                    && (validate_rparen(CHILD(tree, nch - 1))));
 
             if (res && (nch == 3))
-                res = validate_testlist(CHILD(tree, 1));
+                res = validate_testlist_gexp(CHILD(tree, 1));
             break;
           case LSQB:
             if (nch == 2)
@@ -2244,7 +2302,7 @@ validate_listmaker(node *tree)
         ok = validate_test(CHILD(tree, 0));
 
     /*
-     *  list_iter | (',' test)* [',']
+     *  list_for | (',' test)* [',']
      */
     if (nch == 2 && TYPE(CHILD(tree, 1)) == list_for)
         ok = validate_list_for(CHILD(tree, 1));
@@ -2266,6 +2324,43 @@ validate_listmaker(node *tree)
     return ok;
 }
 
+/*  testlist_gexp:
+ *    test ( gen_for | (',' test)* [','] )
+ */
+static int
+validate_testlist_gexp(node *tree)
+{
+    int nch = NCH(tree);
+    int ok = nch;
+
+    if (nch == 0)
+        err_string("missing child nodes of testlist_gexp");
+    else {
+        ok = validate_test(CHILD(tree, 0));
+    }
+
+    /*
+     *  gen_for | (',' test)* [',']
+     */
+    if (nch == 2 && TYPE(CHILD(tree, 1)) == gen_for)
+        ok = validate_gen_for(CHILD(tree, 1));
+    else {
+        /*  (',' test)* [',']  */
+        int i = 1;
+        while (ok && nch - i >= 2) {
+            ok = (validate_comma(CHILD(tree, i))
+                  && validate_test(CHILD(tree, i+1)));
+            i += 2;
+        }
+        if (ok && i == nch-1)
+            ok = validate_comma(CHILD(tree, i));
+        else if (i != nch) {
+            ok = 0;
+            err_string("illegal trailing nodes for testlist_gexp");
+        }
+    }
+    return ok;
+}
 
 /*  funcdef:
  *      'def' NAME parameters ':' suite
@@ -2317,6 +2412,18 @@ validate_arglist(node *tree)
     if (nch <= 0)
         /* raise the right error from having an invalid number of children */
         return validate_numnodes(tree, nch + 1, "arglist");
+
+    if (nch > 1) {
+        for (i=0; i<nch; i++) {
+            if (TYPE(CHILD(tree, i)) == argument) {
+                node *ch = CHILD(tree, i);
+                if (NCH(ch) == 2 && TYPE(CHILD(ch, 1)) == gen_for) {
+                    err_string("need '(', ')' for generator expression");
+                    return 0;
+                }
+            }
+        }
+    }
 
     while (ok && nch-i >= 2) {
         /* skip leading (argument ',') */
@@ -2377,17 +2484,19 @@ validate_arglist(node *tree)
 
 /*  argument:
  *
- *  [test '='] test
+ *  [test '='] test [gen_for]
  */
 static int
 validate_argument(node *tree)
 {
     int nch = NCH(tree);
     int res = (validate_ntype(tree, argument)
-               && ((nch == 1) || (nch == 3))
+               && ((nch == 1) || (nch == 2) || (nch == 3))
                && validate_test(CHILD(tree, 0)));
 
-    if (res && (nch == 3))
+    if (res && (nch == 2))
+        res = validate_gen_for(CHILD(tree, 1));
+    else if (res && (nch == 3))
         res = (validate_equal(CHILD(tree, 1))
                && validate_test(CHILD(tree, 2)));
 

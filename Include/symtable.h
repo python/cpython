@@ -46,7 +46,7 @@ typedef struct _symtable_entry {
 				    including free refs to globals */
 	int ste_generator;       /* true if namespace is a generator */
 	int ste_opt_lineno;      /* lineno of last exec or import * */
-	int ste_tmpname;          /* temporary name counter */
+	int ste_tmpname;         /* temporary name counter */
 	struct symtable *ste_table;
 } PySymtableEntryObject;
 
@@ -92,6 +92,9 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 #define OPT_IMPORT_STAR 1
 #define OPT_EXEC 2
 #define OPT_BARE_EXEC 4
+
+#define GENERATOR 1
+#define GENERATOR_EXPRESSION 2
 
 #ifdef __cplusplus
 }

@@ -619,6 +619,79 @@ class CodeGenerator:
         self.newBlock()
         self.emit('POP_TOP')
 
+    def visitGenExpr(self, node):
+        gen = GenExprCodeGenerator(node, self.scopes, self.class_name,
+                                   self.get_module())
+        walk(node.code, gen)
+        gen.finish()
+        self.set_lineno(node)
+        frees = gen.scope.get_free_vars()
+        if frees:
+            for name in frees:
+                self.emit('LOAD_CLOSURE', name)
+            self.emit('LOAD_CONST', gen)
+            self.emit('MAKE_CLOSURE', 0)
+        else:
+            self.emit('LOAD_CONST', gen)
+            self.emit('MAKE_FUNCTION', 0)
+
+        # precomputation of outmost iterable
+        self.visit(node.code.quals[0].iter)
+        self.emit('GET_ITER')
+        self.emit('CALL_FUNCTION', 1)
+
+    def visitGenExprInner(self, node):
+        self.set_lineno(node)
+        # setup list
+
+        stack = []
+        for i, for_ in zip(range(len(node.quals)), node.quals):
+            start, anchor = self.visit(for_)
+            cont = None
+            for if_ in for_.ifs:
+                if cont is None:
+                    cont = self.newBlock()
+                self.visit(if_, cont)
+            stack.insert(0, (start, cont, anchor))
+
+        self.visit(node.expr)
+        self.emit('YIELD_VALUE')
+
+        for start, cont, anchor in stack:
+            if cont:
+                skip_one = self.newBlock()
+                self.emit('JUMP_FORWARD', skip_one)
+                self.startBlock(cont)
+                self.emit('POP_TOP')
+                self.nextBlock(skip_one)
+            self.emit('JUMP_ABSOLUTE', start)
+            self.startBlock(anchor)
+        self.emit('LOAD_CONST', None)
+
+    def visitGenExprFor(self, node):
+        start = self.newBlock()
+        anchor = self.newBlock()
+        
+        if node.is_outmost:
+            self.loadName('[outmost-iterable]')
+        else:
+            self.visit(node.iter)
+            self.emit('GET_ITER')
+
+        self.nextBlock(start)
+        self.set_lineno(node, force=True)
+        self.emit('FOR_ITER', anchor)
+        self.nextBlock()
+        self.visit(node.assign)
+        return start, anchor
+
+    def visitGenExprIf(self, node, branch):
+        self.set_lineno(node, force=True)
+        self.visit(node.test)
+        self.emit('JUMP_IF_FALSE', branch)
+        self.newBlock()
+        self.emit('POP_TOP')
+
     # exception related
 
     def visitAssert(self, node):
@@ -1199,6 +1272,7 @@ class AbstractFunctionCode:
             klass.lambdaCount = klass.lambdaCount + 1
         else:
             name = func.name
+
         args, hasTupleArg = generateArgList(func.argnames)
         self.graph = pyassem.PyFlowGraph(name, func.filename, args,
                                          optimized=1)
@@ -1262,6 +1336,21 @@ class FunctionCodeGenerator(NestedScopeMixin, AbstractFunctionCode,
         self.graph.setCellVars(self.scope.get_cell_vars())
         if self.scope.generator is not None:
             self.graph.setFlag(CO_GENERATOR)
+
+class GenExprCodeGenerator(NestedScopeMixin, AbstractFunctionCode,
+                           CodeGenerator):
+    super_init = CodeGenerator.__init__ # call be other init
+    scopes = None
+
+    __super_init = AbstractFunctionCode.__init__
+
+    def __init__(self, gexp, scopes, class_name, mod):
+        self.scopes = scopes
+        self.scope = scopes[gexp]
+        self.__super_init(gexp, scopes, 1, class_name, mod)
+        self.graph.setFreeVars(self.scope.get_free_vars())
+        self.graph.setCellVars(self.scope.get_cell_vars())
+        self.graph.setFlag(CO_GENERATOR)
 
 class AbstractClassCode:
 

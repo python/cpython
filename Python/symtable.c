@@ -66,6 +66,8 @@ PySymtableEntry_New(struct symtable *st, char *name, int type, int lineno)
 	switch (type) {
 	case funcdef:
 	case lambdef:
+	case testlist_gexp: /* generator expression */
+	case argument:      /* generator expression */
 		ste->ste_type = TYPE_FUNCTION;
 		break;
 	case classdef:

@@ -67,6 +67,8 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_expr("lambda foo=bar, blaz=blat+2, **z: 0")
         self.check_expr("lambda foo=bar, blaz=blat+2, *y, **z: 0")
         self.check_expr("lambda x, *y, **z: 0")
+        self.check_expr("(x for x in range(10))")
+        self.check_expr("foo(x for x in range(10))")
 
     def test_print(self):
         self.check_suite("print")

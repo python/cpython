@@ -80,8 +80,9 @@ arith_expr: term (('+'|'-') term)*
 term: factor (('*'|'/'|'%'|'//') factor)*
 factor: ('+'|'-'|'~') factor | power
 power: atom trailer* ['**' factor]
-atom: '(' [testlist] ')' | '[' [listmaker] ']' | '{' [dictmaker] '}' | '`' testlist1 '`' | NAME | NUMBER | STRING+
+atom: '(' [testlist_gexp] ')' | '[' [listmaker] ']' | '{' [dictmaker] '}' | '`' testlist1 '`' | NAME | NUMBER | STRING+
 listmaker: test ( list_for | (',' test)* [','] )
+testlist_gexp: test ( gen_for | (',' test)* [','] )
 lambdef: 'lambda' [varargslist] ':' test
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 subscriptlist: subscript (',' subscript)* [',']
@@ -95,11 +96,15 @@ dictmaker: test ':' test (',' test ':' test)* [',']
 classdef: 'class' NAME ['(' testlist ')'] ':' suite
 
 arglist: (argument ',')* (argument [',']| '*' test [',' '**' test] | '**' test)
-argument: [test '='] test	# Really [keyword '='] test
+argument: [test '='] test [gen_for] # Really [keyword '='] test
 
 list_iter: list_for | list_if
 list_for: 'for' exprlist 'in' testlist_safe [list_iter]
 list_if: 'if' test [list_iter]
+
+gen_iter: gen_for | gen_if
+gen_for: 'for' exprlist 'in' test [gen_iter]
+gen_if: 'if' test [gen_iter]
 
 testlist1: test (',' test)*
 

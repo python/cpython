@@ -12,6 +12,8 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Implemented generator expressions (PEP 289).  Coded by Jiwon Seo.
+
 - Enabled the profiling of C extension functions (and builtins) - check
   new documentation and modified profiler and bdb modules for more details
 
