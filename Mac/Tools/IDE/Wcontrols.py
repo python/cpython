@@ -380,8 +380,6 @@ class Scrollbar(ControlWidget):
 			if part:
 				self._hit(part)
 		part = self._control.TrackControl(point, hitter)
-		if part:
-			self._hit(part)
 	
 	def _hit(self, part):
 		value = None
