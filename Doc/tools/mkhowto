@@ -25,6 +25,7 @@ HTML options:
                         not a URL).
     --up-link           URL to a parent document.
     --up-title          Title of a parent document.
+    --favicon           Icon to display in the browsers location bar.
 
 Other options:
     --a4		Format for A4 paper.
@@ -108,6 +109,7 @@ class Options:
     about_file = os.path.join(TOPDIR, "html", "about.dat")
     up_link = None
     up_title = None
+    favicon = None
     #
     # 'dvips_safe' is a weird option.  It is used mostly to make
     # LaTeX2HTML not try to be too smart about protecting the user
@@ -153,7 +155,8 @@ class Options:
                                     "keep", "quiet", "runs=", "image-type=",
                                     "about=", "numeric", "style=", "paper=",
                                     "up-link=", "up-title=", "dir=",
-                                    "global-module-index=", "dvips-safe"]
+                                    "global-module-index=", "dvips-safe",
+                                    "favicon="]
                                    + list(self.ALL_FORMATS))
         for opt, arg in opts:
             if opt == "--all":
@@ -196,6 +199,8 @@ class Options:
                 self.style_file = os.path.abspath(arg)
             elif opt == "--l2h-init":
                 self.l2h_init_files.append(os.path.abspath(arg))
+            elif opt == "--favicon":
+                self.favicon = arg
             elif opt == "--up-link":
                 self.up_link = arg
             elif opt == "--up-title":
@@ -477,6 +482,7 @@ class Job:
         l2hoption(fp, "MAX_SPLIT_DEPTH", options.max_split_depth)
         l2hoption(fp, "EXTERNAL_UP_LINK", options.up_link)
         l2hoption(fp, "EXTERNAL_UP_TITLE", options.up_title)
+        l2hoption(fp, "FAVORITES_ICON", options.favicon)
         l2hoption(fp, "GLOBAL_MODULE_INDEX", options.global_module_index)
         l2hoption(fp, "DVIPS_SAFE", options.dvips_safe)
         fp.write("1;\n")
