@@ -757,14 +757,6 @@ set_clear(PySetObject *so)
 
 PyDoc_STRVAR(clear_doc, "Remove all elements from this set.");
 
-static int
-set_tp_clear(PySetObject *so)
-{
-	PyDict_Clear(so->data);
-	so->hash = -1;
-	return 0;
-}
-
 static PyObject *
 set_add(PySetObject *so, PyObject *item)
 {
