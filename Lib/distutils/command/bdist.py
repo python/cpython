@@ -34,6 +34,9 @@ class bdist (Command):
                      "temporary directory for creating built distributions"),
                     ('formats=', None,
                      "formats for distribution (comma-separated list)"),
+                    ('dist-dir=', 'd',
+                     "directory to put final built distributions in "
+                     "[default: dist]"),
                    ]
 
     help_options = [
@@ -65,6 +68,7 @@ class bdist (Command):
     def initialize_options (self):
         self.bdist_base = None
         self.formats = None
+        self.dist_dir = None
 
     # initialize_options()
 
@@ -86,6 +90,9 @@ class bdist (Command):
                 raise DistutilsPlatformError, \
                       "don't know how to create built distributions " + \
                       "on platform %s" % os.name
+
+        if self.dist_dir is None:
+            self.dist_dir = "dist"
             
     # finalize_options()
 
