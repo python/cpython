@@ -5,40 +5,22 @@ Python News
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
 
-What's New in Python 2.3.2?
-===========================
+What's New in Python 2.3.2c1?
+=============================
 
-*Release date: XX-XXX-XXXX*
-
-Core and builtins
------------------
-
-Extension modules
------------------
-
-Library
--------
-
-IDLE
-----
-
-Tools/Demos
------------
+*Release date: 30-Sep-2003*
 
 Build
 -----
 
 - A bug in the autoconf machinery meant that os.fsync was never available.
 
-C API
------
-
-Windows
--------
+- A bug in autoconf meant a bunch of symbols were undefined on HP/UX.
 
 Mac
 ---
 
+- The Framework build now identifies itself as 2.3.2.
 
 What's New in Python 2.3.1?
 ===========================
