@@ -107,9 +107,9 @@ def cram(text, maxlen):
 def stripid(text):
     """Remove the hexadecimal id from a Python object representation."""
     # The behaviour of %p is implementation-dependent; we check two cases.
-    for pattern in [' at 0x[0-9a-f]{6,}>$', ' at [0-9A-F]{8,}>$']:
+    for pattern in [' at 0x[0-9a-f]{6,}(>+)$', ' at [0-9A-F]{8,}(>+)$']:
         if re.search(pattern, repr(Exception)):
-            return re.sub(pattern, '>', text)
+            return re.sub(pattern, '\\1', text)
     return text
 
 def _is_some_method(object):
@@ -1325,45 +1325,41 @@ def locate(path, forceload=0):
 text = TextDoc()
 html = HTMLDoc()
 
+def resolve(thing, forceload=0):
+    """Given an object or a path to an object, get the object and its name."""
+    if isinstance(thing, str):
+        object = locate(thing, forceload)
+        if not object:
+            raise ImportError, 'no Python documentation found for %r' % thing
+        return object, thing
+    else:
+        return thing, getattr(thing, '__name__', None)
+
 def doc(thing, title='Python Library Documentation: %s', forceload=0):
     """Display text documentation, given an object or a path to an object."""
-    suffix, name = '', None
-    if type(thing) is type(''):
-        try:
-            object = locate(thing, forceload)
-        except ErrorDuringImport, value:
-            print value
-            return
-        if not object:
-            print 'no Python documentation found for %s' % repr(thing)
-            return
-        parts = split(thing, '.')
-        if len(parts) > 1: suffix = ' in ' + join(parts[:-1], '.')
-        name = parts[-1]
-        thing = object
+    try:
+        object, name = resolve(thing, forceload)
+        desc = describe(object)
+        module = inspect.getmodule(object)
+        if name and '.' in name:
+            desc += ' in ' + name[:name.rfind('.')]
+        elif module and module is not object:
+            desc += ' in module ' + module.__name__
+        pager(title % desc + '\n\n' + text.document(object, name))
+    except (ImportError, ErrorDuringImport), value:
+        print value
 
-    desc = describe(thing)
-    module = inspect.getmodule(thing)
-    if not suffix and module and module is not thing:
-        suffix = ' in module ' + module.__name__
-    pager(title % (desc + suffix) + '\n\n' + text.document(thing, name))
-
-def writedoc(key, forceload=0):
+def writedoc(thing, forceload=0):
     """Write HTML documentation to a file in the current directory."""
     try:
-        object = locate(key, forceload)
-    except ErrorDuringImport, value:
+        object, name = resolve(thing, forceload)
+        page = html.page(describe(object), html.document(object, name))
+        file = open(name + '.html', 'w')
+        file.write(page)
+        file.close()
+        print 'wrote', name + '.html'
+    except (ImportError, ErrorDuringImport), value:
         print value
-    else:
-        if object:
-            page = html.page(describe(object),
-                             html.document(object, object.__name__))
-            file = open(key + '.html', 'w')
-            file.write(page)
-            file.close()
-            print 'wrote', key + '.html'
-        else:
-            print 'no Python documentation found for %s' % repr(key)
 
 def writedocs(dir, pkgpath='', done=None):
     """Write out HTML documentation for all modules in a directory tree."""
@@ -2034,7 +2030,7 @@ def gui():
 # -------------------------------------------------- command-line interface
 
 def ispath(x):
-    return type(x) is types.StringType and find(x, os.sep) >= 0
+    return isinstance(x, str) and find(x, os.sep) >= 0
 
 def cli():
     """Command-line interface (looks at sys.argv to decide what to do)."""
@@ -2074,6 +2070,9 @@ def cli():
 
         if not args: raise BadUsage
         for arg in args:
+            if ispath(arg) and not os.path.exists(arg):
+                print 'file %r does not exist' % arg
+                break
             try:
                 if ispath(arg) and os.path.isfile(arg):
                     arg = importfile(arg)
