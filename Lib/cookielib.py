@@ -783,12 +783,12 @@ class Cookie:
 
     def __repr__(self):
         args = []
-        for name in ["version", "name", "value",
+        for name in ("version", "name", "value",
                      "port", "port_specified",
                      "domain", "domain_specified", "domain_initial_dot",
                      "path", "path_specified",
                      "secure", "expires", "discard", "comment", "comment_url",
-                     ]:
+                     ):
             attr = getattr(self, name)
             args.append("%s=%s" % (name, repr(attr)))
         args.append("rest=%s" % repr(self._rest))
@@ -981,9 +981,9 @@ class DefaultCookiePolicy(CookiePolicy):
                 if j == 0:  # domain like .foo.bar
                     tld = domain[i+1:]
                     sld = domain[j+1:i]
-                    if (sld.lower() in [
+                    if (sld.lower() in (
                         "co", "ac",
-                        "com", "edu", "org", "net", "gov", "mil", "int"] and
+                        "com", "edu", "org", "net", "gov", "mil", "int") and
                         len(tld) == 2):
                         # domain like .co.uk
                         debug("   country-code second level domain %s", domain)
@@ -1415,7 +1415,7 @@ class CookieJar:
                     v = self._now + v
                 if (k in value_attrs) or (k in boolean_attrs):
                     if (v is None and
-                        k not in ["port", "comment", "commenturl"]):
+                        k not in ("port", "comment", "commenturl")):
                         debug("   missing value for %s attribute" % k)
                         bad_cookie = True
                         break

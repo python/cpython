@@ -62,7 +62,7 @@ def whichdb(filename):
             return "dumbdbm"
         f = open(filename + os.extsep + "dir", "rb")
         try:
-            if f.read(1) in ["'", '"']:
+            if f.read(1) in ("'", '"'):
                 return "dumbdbm"
         finally:
             f.close()

@@ -153,8 +153,8 @@ def _split_list(s, predicate):
 def visiblename(name, all=None):
     """Decide whether to show documentation on a variable."""
     # Certain special names are redundant.
-    if name in ['__builtins__', '__doc__', '__file__', '__path__',
-                '__module__', '__name__', '__slots__']: return 0
+    if name in ('__builtins__', '__doc__', '__file__', '__path__',
+                '__module__', '__name__', '__slots__'): return 0
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1
     if all is not None:
@@ -176,7 +176,7 @@ def classify_class_attrs(object):
 def ispackage(path):
     """Guess whether a path refers to a package directory."""
     if os.path.isdir(path):
-        for ext in ['.py', '.pyc', '.pyo']:
+        for ext in ('.py', '.pyc', '.pyo'):
             if os.path.isfile(os.path.join(path, '__init__' + ext)):
                 return True
     return False
@@ -1298,12 +1298,12 @@ def getpager():
         return plainpager
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         return plainpager
-    if os.environ.get('TERM') in ['dumb', 'emacs']:
+    if os.environ.get('TERM') in ('dumb', 'emacs'):
         return plainpager
     if 'PAGER' in os.environ:
         if sys.platform == 'win32': # pipes completely broken in Windows
             return lambda text: tempfilepager(plain(text), os.environ['PAGER'])
-        elif os.environ.get('TERM') in ['dumb', 'emacs']:
+        elif os.environ.get('TERM') in ('dumb', 'emacs'):
             return lambda text: pipepager(plain(text), os.environ['PAGER'])
         else:
             return lambda text: pipepager(text, os.environ['PAGER'])
@@ -1369,14 +1369,14 @@ def ttypager(text):
             sys.stdout.flush()
             c = getchar()
 
-            if c in ['q', 'Q']:
+            if c in ('q', 'Q'):
                 sys.stdout.write('\r          \r')
                 break
-            elif c in ['\r', '\n']:
+            elif c in ('\r', '\n'):
                 sys.stdout.write('\r          \r' + lines[r] + '\n')
                 r = r + 1
                 continue
-            if c in ['b', 'B', '\x1b']:
+            if c in ('b', 'B', '\x1b'):
                 r = r - inc - inc
                 if r < 0: r = 0
             sys.stdout.write('\n' + join(lines[r:r+inc], '\n') + '\n')
@@ -1646,7 +1646,7 @@ has the same effect as typing a particular string at the help> prompt.
             except (KeyboardInterrupt, EOFError):
                 break
             request = strip(replace(request, '"', '', "'", ''))
-            if lower(request) in ['q', 'quit']: break
+            if lower(request) in ('q', 'quit'): break
             self.help(request)
 
     def getline(self, prompt):

@@ -578,7 +578,7 @@ class SMTP:
             (code, resp) = self.docmd(encode_base64(password, eol=""))
         elif authmethod is None:
             raise SMTPException("No suitable authentication method found.")
-        if code not in [235, 503]:
+        if code not in (235, 503):
             # 235 == 'Authentication successful'
             # 503 == 'Error: already authenticated'
             raise SMTPAuthenticationError(code, resp)

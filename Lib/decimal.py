@@ -515,7 +515,7 @@ class Decimal(object):
         if isinstance(value, (list,tuple)):
             if len(value) != 3:
                 raise ValueError, 'Invalid arguments'
-            if value[0] not in [0,1]:
+            if value[0] not in (0,1):
                 raise ValueError, 'Invalid sign'
             for digit in value[1]:
                 if not isinstance(digit, (int,long)) or digit < 0:
