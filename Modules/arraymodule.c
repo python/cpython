@@ -1448,7 +1448,7 @@ itemsize -- the length in bytes of one array item\n\
 ";
 
 statichere PyTypeObject Arraytype = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0,
 	"array",
 	sizeof(arrayobject),
@@ -1476,6 +1476,8 @@ DL_EXPORT(void)
 initarray()
 {
 	PyObject *m, *d;
+
+        Arraytype.ob_type = &PyType_Type;
 	m = Py_InitModule3("array", a_methods, module_doc);
 	d = PyModule_GetDict(m);
 	PyDict_SetItemString(d, "ArrayType", (PyObject *)&Arraytype);
