@@ -3,6 +3,7 @@
 import sv, SV
 import VFile
 import gl, GL, DEVICE
+import al, AL
 
 import time
 import sys
@@ -13,20 +14,27 @@ import string
 def main():
 	QSIZE = 16
 	TIME = 5
+	audio = 0
 
-	opts, args = getopt.getopt(sys.argv[1:], 'q:t:')
+	opts, args = getopt.getopt(sys.argv[1:], 'aq:t:')
 	for opt, arg in opts:
-		if opt == '-q':
+		if opt == '-a':
+			audio = 1
+		elif opt == '-q':
 			QSIZE = string.atoi(arg)
 		elif opt == '-t':
 			TIME = string.atoi(arg)
 
 	if args:
 		filename = args[0]
-		if args[1:]:
-			print 'Warning: only first filename arg is used'
 	else:
 		filename = 'film.video'
+
+	if audio:
+		if args[1:]:
+			audiofilename = args[1]
+		else:
+			audiofilename = 'film.aiff'
 
 	gl.foreground()
 
@@ -61,6 +69,7 @@ def main():
 
 	print 'Click left mouse to start recording', TIME, 'seconds'
 	ofile = None
+	afile = None
 	# Mouse down opens the file & freezes window
 	# Mouse up starts recording frames
 
@@ -81,9 +90,14 @@ def main():
 				gl.prefsize(x, y)
 				gl.winconstraints()
 				gl.wintitle('* ' + filename)
+				if audio:
+					afile = initaudio(audiofilename)
 				continue
-
-			# Mouse up -- actual recording
+			# Mouse up -- start actual recording
+			global recording, stop_recording
+			if audio:
+				stop_recording = 0
+				recording.release()
 			t0 = time.millitimer()
 			v.StartCapture()
 			while 1:
@@ -91,11 +105,10 @@ def main():
 				if t >= TIME*1000:
 					break
 				if v.GetCaptured() > 2:
-					print '(1)',
 					doframe(v, ofile, x, y, t)
 			v.StopCapture()
+			stop_recording = 1
 			while v.GetCaptured() > 0:
-				print '(2)',
 				doframe(v, ofile, x, y, t)
 				t = time.millitimer() - t0
 			gl.wintitle(filename)
@@ -109,6 +122,8 @@ def main():
 			# Quit
 			if ofile:
 				ofile.close()
+			if afile:
+				afile.destroy()
 			posix._exit(0)
 			# EndCapture dumps core...
 			v.EndCapture()
@@ -120,5 +135,37 @@ def doframe(v, ofile, x, y, t):
 	data = cd.interleave(x, y)
 	cd.UnlockCaptureData()
 	ofile.writeframe(t, data, None)
+
+AQSIZE = 16000
+
+def initaudio(filename):
+	import thread, aiff
+	global recording, stop_recording
+	afile = aiff.Aiff().init(filename, 'w')
+	afile.nchannels = AL.MONO
+	afile.sampwidth = AL.SAMPLE_8
+	params = [AL.INPUT_RATE, 0]
+	al.getparams(AL.DEFAULT_DEVICE, params)
+	print 'rate =', params[1]
+	afile.samprate = params[1]
+	c = al.newconfig()
+	c.setchannels(AL.MONO)
+	c.setqueuesize(AQSIZE)
+	c.setwidth(AL.SAMPLE_8)
+	aport = al.openport(filename, 'r', c)
+	recording = thread.allocate_lock()
+	recording.acquire()
+	stop_recording = 0
+	thread.start_new_thread(recorder, (afile, aport))
+	return afile
+
+def recorder(afile, aport):
+	# XXX recording more than one fragment doesn't work
+	# XXX (the thread never dies)
+	recording.acquire()
+	while not stop_recording:
+		data = aport.readsamps(AQSIZE/2)
+		afile.writesampsraw(data)
+		del data
 
 main()
