@@ -17,7 +17,15 @@ compares the identity of two objects; the
 \function{id()}\bifuncindex{id} function returns an integer
 representing its identity (currently implemented as its address).
 An object's \dfn{type} is
-also unchangeable.  It determines the operations that an object
+also unchangeable.\footnote{Since Python 2.2, a gradual merging of
+types and classes has been started that makes this and a few other
+assertions made in this manual not 100\% accurate and complete:
+for example, it \emph{is} now possible in some cases to change an
+object's type, under certain controlled conditions.  Until this manual
+undergoes extensive revision, it must now be taken as authoritative
+only regarding ``classic classes'', that are still the default, for
+compatibility purposes, in Python 2.2 and 2.3.}
+An object's type determines the operations that the object
 supports (e.g., ``does it have a length?'') and also defines the
 possible values for objects of that type.  The
 \function{type()}\bifuncindex{type} function returns an object's type
@@ -47,7 +55,7 @@ a matter of implementation quality how garbage collection is
 implemented, as long as no objects are collected that are still
 reachable.  (Implementation note: the current implementation uses a
 reference-counting scheme with (optional) delayed detection of
-cyclicly linked garbage, which collects most objects as soon as they
+cyclically linked garbage, which collects most objects as soon as they
 become unreachable, but is not guaranteed to collect garbage
 containing circular references.  See the
 \citetitle[../lib/module-gc.html]{Python Library Reference} for
@@ -100,7 +108,8 @@ lists.
 \section{The standard type hierarchy\label{types}}
 
 Below is a list of the types that are built into Python.  Extension
-modules written in \C{} can define additional types.  Future versions of
+modules (written in C, Java, or other languages, depending on
+the implementation) can define additional types.  Future versions of
 Python may add types to the type hierarchy (e.g., rational
 numbers, efficiently stored arrays of integers, etc.).
 \index{type}
@@ -170,7 +179,8 @@ These represent numbers in the range -2147483648 through 2147483647.
 (The range may be larger on machines with a larger natural word
 size, but not smaller.)
 When the result of an operation would fall outside this range, the
-exception \exception{OverflowError} is raised.
+result is normally returned as a long integer (in some cases, the
+exception \exception{OverflowError} is raised instead).
 For the purpose of shift and mask operations, integers are assumed to
 have a binary, 2's complement notation using 32 or more bits, and
 hiding no bits from the user (i.e., all 4294967296 different bit
@@ -202,16 +212,16 @@ the exception being that when converted to a string, the strings
 The rules for integer representation are intended to give the most
 meaningful interpretation of shift and mask operations involving
 negative integers and the least surprises when switching between the
-plain and long integer domains.  For any operation except left shift,
+plain and long integer domains.  Any operation except left shift,
 if it yields a result in the plain integer domain without causing
-overflow, it will yield the same result in the long integer domain or
+overflow, will yield the same result in the long integer domain or
 when using mixed operands.
 \indexii{integer}{representation}
 
 \item[Floating point numbers]
 These represent machine-level double precision floating point numbers.  
-You are at the mercy of the underlying machine architecture and
-\C{} implementation for the accepted range and handling of overflow.
+You are at the mercy of the underlying machine architecture (and
+C or Java implementation) for the accepted range and handling of overflow.
 Python does not support single-precision floating point numbers; the
 savings in processor and memory usage that are usually the reason for using
 these is dwarfed by the overhead of using objects in Python, so there
@@ -220,13 +230,14 @@ point numbers.
 \obindex{floating point}
 \indexii{floating point}{number}
 \indexii{C}{language}
+\indexii{Java}{language}
 
 \item[Complex numbers]
 These represent complex numbers as a pair of machine-level double
 precision floating point numbers.  The same caveats apply as for
-floating point numbers.  The real and imaginary value of a complex
-number \code{z} can be retrieved through the attributes \code{z.real}
-and \code{z.imag}.
+floating point numbers.  The real and imaginary parts of a complex
+number \code{z} can be retrieved through the read-only attributes
+\code{z.real} and \code{z.imag}.
 \obindex{complex}
 \indexii{complex}{number}
 
@@ -349,7 +360,7 @@ assignment and \keyword{del} (delete) statements.
 \index{subscription}
 \index{slicing}
 
-There is currently a single mutable sequence type:
+There is currently a single intrinsic mutable sequence type:
 
 \begin{description}
 
@@ -395,7 +406,7 @@ comparison: if two numbers compare equal (e.g., \code{1} and
 \code{1.0}) then they can be used interchangeably to index the same
 dictionary entry.
 
-Dictionaries are mutable; they are created by the
+Dictionaries are mutable; they can be created by the
 \code{\{...\}} notation (see section \ref{dict}, ``Dictionary
 Displays'').
 
@@ -551,10 +562,10 @@ the next item).
 
 \item[Built-in methods]
 This is really a different disguise of a built-in function, this time
-containing an object passed to the \C{} function as an implicit extra
+containing an object passed to the C function as an implicit extra
 argument.  An example of a built-in method is
-\code{\var{list}.append()}, assuming
-\var{list} is a list object.
+\code{\var{alist}.append()}, assuming
+\var{alist} is a list object.
 In this case, the special read-only attribute \member{__self__} is set
 to the object denoted by \var{list}.
 \obindex{built-in method}
@@ -940,8 +951,8 @@ extracting a slice may not make sense.  (One example of this is the
 \begin{methoddesc}[object]{__init__}{self\optional{, \moreargs}}
 Called\indexii{class}{constructor} when the instance is created.  The
 arguments are those passed to the class constructor expression.  If a
-base class has an \method{__init__()} method the derived class's
-\method{__init__()} method must explicitly call it to ensure proper
+base class has an \method{__init__()} method, the derived class's
+\method{__init__()} method, if any, must explicitly call it to ensure proper
 initialization of the base class part of the instance; for example:
 \samp{BaseClass.__init__(\var{self}, [\var{args}...])}.  As a special
 contraint on constructors, no value may be returned; doing so will
@@ -952,7 +963,8 @@ cause a \exception{TypeError} to be raised at runtime.
 \begin{methoddesc}[object]{__del__}{self}
 Called when the instance is about to be destroyed.  This is also
 called a destructor\index{destructor}.  If a base class
-has a \method{__del__()} method, the derived class's \method{__del__()} method
+has a \method{__del__()} method, the derived class's \method{__del__()}
+method, if any,
 must explicitly call it to ensure proper deletion of the base class
 part of the instance.  Note that it is possible (though not recommended!)
 for the \method{__del__()}
@@ -966,9 +978,9 @@ the interpreter exits.
 \begin{notice}
 \samp{del x} doesn't directly call
 \code{x.__del__()} --- the former decrements the reference count for
-\code{x} by one, and the latter is only called when its reference
+\code{x} by one, and the latter is only called when \code{x}'s reference
 count reaches zero.  Some common situations that may prevent the
-reference count of an object to go to zero include: circular
+reference count of an object from going to zero include: circular
 references between objects (e.g., a doubly-linked list or a tree data
 structure with parent and child pointers); a reference to the object
 on the stack frame of a function that caught an exception (the
@@ -1014,6 +1026,9 @@ object with the same value (given an appropriate environment).  If
 this is not possible, a string of the form \samp{<\var{...some useful
 description...}>} should be returned.  The return value must be a
 string object.
+If a class defines \method{__repr__()} but not \method{__str__()},
+then \method{__repr__()} is also used when an ``informal'' string
+representation of instances of that class is required.		     
 
 This is typically used for debugging, so it is important that the
 representation is information-rich and unambiguous.
@@ -1053,7 +1068,7 @@ follows:
 These methods can return any value, but if the comparison operator is
 used in a Boolean context, the return value should be interpretable as
 a Boolean value, else a \exception{TypeError} will be raised.
-By convention, \code{0} is used for false and \code{1} for true.
+By convention, \code{False} is used for false and \code{True} for true.
 
 There are no reflected (swapped-argument) versions of these methods
 (to be used when the left argument does not support the operation but
@@ -1078,7 +1093,7 @@ by object identity (``address'').  See also the description of
 support custom comparison operations and are usable as dictionary
 keys.
 (Note: the restriction that exceptions are not propagated by
-\method{__cmp__()} has been removed in Python 1.5.)
+\method{__cmp__()} has been removed since Python 1.5.)
 \bifuncindex{cmp}
 \index{comparisons}
 \end{methoddesc}
@@ -1200,9 +1215,16 @@ compatibility, the method \method{__getslice__()} (see below) can also be
 defined to handle simple, but not extended slices.) It is also recommended
 that mappings provide the methods \method{keys()}, \method{values()},
 \method{items()}, \method{has_key()}, \method{get()}, \method{clear()},
+\method{setdefault()}, \method{iterkeys()}, \method{itervalues()},
+\method{iteritems()}, \method{pop()},, \method{popitem()},		     
 \method{copy()}, and \method{update()} behaving similar to those for
-Python's standard dictionary objects; mutable sequences should provide
+Python's standard dictionary objects.  The \module{UserDict} module
+provides a \class{DictMixin} class to help create those methods
+from a base set of \method{__getitem__()}, \method{__setitem__()},
+\method{__delitem__()}, and \method{keys()}.		     
+Mutable sequences should provide
 methods \method{append()}, \method{count()}, \method{index()},
+\method{extend()},		     
 \method{insert()}, \method{pop()}, \method{remove()}, \method{reverse()}
 and \method{sort()}, like Python standard list objects.  Finally,
 sequence types should implement addition (meaning concatenation) and
@@ -1214,13 +1236,23 @@ operators.  It is recommended that both mappings and sequences
 implement the \method{__contains__()} method to allow efficient use of
 the \code{in} operator; for mappings, \code{in} should be equivalent
 of \method{has_key()}; for sequences, it should search through the
-values.
+values.  It is further recommended that both mappings and sequences
+implement the \method{__iter__()} method to allow efficient iteration
+through the container; for mappings, \method{__iter__()} should be
+the same as \method{iterkeys()}; for sequences, it should iterate
+through the values.
 \withsubitem{(mapping object method)}{
   \ttindex{keys()}
   \ttindex{values()}
   \ttindex{items()}
+  \ttindex{iterkeys()}
+  \ttindex{itervalues()}
+  \ttindex{iteritems()}    
   \ttindex{has_key()}
   \ttindex{get()}
+  \ttindex{setdefault()}
+  \ttindex{pop()}      
+  \ttindex{popitem()}    
   \ttindex{clear()}
   \ttindex{copy()}
   \ttindex{update()}
@@ -1228,6 +1260,7 @@ values.
 \withsubitem{(sequence object method)}{
   \ttindex{append()}
   \ttindex{count()}
+  \ttindex{extend()}    
   \ttindex{index()}
   \ttindex{insert()}
   \ttindex{pop()}
@@ -1240,7 +1273,8 @@ values.
   \ttindex{__mul__()}
   \ttindex{__rmul__()}
   \ttindex{__imul__()}
-  \ttindex{__contains__()}}
+  \ttindex{__contains__()}
+  \ttindex{__iter__()}}		     
 \withsubitem{(numeric object method)}{\ttindex{__coerce__()}}
 
 \begin{methoddesc}[container object]{__len__}{self}
@@ -1315,9 +1349,9 @@ the key-item pairs.
 \subsection{Additional methods for emulation of sequence types
   \label{sequence-methods}}
 
-The following methods can be defined to further emulate sequence
-objects.  Immutable sequences methods should only define
-\method{__getslice__()}; mutable sequences, should define all three
+The following optional methods can be defined to further emulate sequence
+objects.  Immutable sequences methods should at most only define
+\method{__getslice__()}; mutable sequences might define all three
 three methods.
 
 \begin{methoddesc}[sequence object]{__getslice__}{self, i, j}
@@ -1341,17 +1375,21 @@ object is created instead, and passed to \method{__getitem__()} instead.
 Called to implement assignment to \code{\var{self}[\var{i}:\var{j}]}.
 Same notes for \var{i} and \var{j} as for \method{__getslice__()}.
 
-This method is deprecated. If no \method{__setslice__()} is found, a
-slice object is created instead, and passed to \method{__setitem__()}
-instead.
+This method is deprecated. If no \method{__setslice__()} is found,
+or for extended slicing of the form
+\code{\var{self}[\var{i}:\var{j}:\var{k}]}, a
+slice object is created, and passed to \method{__setitem__()},
+instead of \method{__setslice__()} being called.
 \end{methoddesc}
 
 \begin{methoddesc}[sequence object]{__delslice__}{self, i, j}
 Called to implement deletion of \code{\var{self}[\var{i}:\var{j}]}.
 Same notes for \var{i} and \var{j} as for \method{__getslice__()}.
-This method is deprecated. If no \method{__delslice__()} is found, a
-slice object is created instead, and passed to \method{__delitem__()}
-instead.
+This method is deprecated. If no \method{__delslice__()} is found,
+or for extended slicing of the form
+\code{\var{self}[\var{i}:\var{j}:\var{k}]}, a
+slice object is created, and passed to \method{__delitem__()},
+instead of \method{__delslice__()} being called.
 \end{methoddesc}
 
 Notice that these methods are only invoked when a single slice with a
@@ -1387,8 +1425,8 @@ class MyClass:
     ...
 \end{verbatim}
 
-Note the calls to \function{max()}; these are actually necessary due
-to the handling of negative indices before the
+Note the calls to \function{max()}; these are necessary because of
+the handling of negative indices before the
 \method{__*slice__()} methods are called.  When negative indexes are
 used, the \method{__*item__()} methods receive them as provided, but
 the \method{__*slice__()} methods get a ``cooked'' form of the index
