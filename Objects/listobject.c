@@ -755,15 +755,16 @@ reverse_slice(PyObject **lo, PyObject **hi)
 	}
 }
 
-/* New quicksort implementation for arrays of object pointers.
-   Thanks to discussions with Tim Peters. */
+/* Lots of code for an adaptive, stable, natural mergesort.  There are many
+ * pieces to this algorithm; read listsort.txt for overviews and details.
+ */
 
 /* Comparison function.  Takes care of calling a user-supplied
-   comparison function (any callable Python object).  Calls the
-   standard comparison function, PyObject_RichCompareBool(), if the user-
-   supplied function is NULL.
-   Returns <0 on error, >0 if x < y, 0 if x >= y. */
-
+ * comparison function (any callable Python object).  Calls the
+ * standard comparison function, PyObject_RichCompareBool(), if the user-
+ * supplied function is NULL.
+ * Returns -1 on error, 1 if x < y, 0 if x >= y.
+ */
 static int
 islt(PyObject *x, PyObject *y, PyObject *compare)
 {
@@ -799,42 +800,6 @@ islt(PyObject *x, PyObject *y, PyObject *compare)
 	return i < 0;
 }
 
-/* MINSIZE is the smallest array that will get a full-blown samplesort
-   treatment; smaller arrays are sorted using binary insertion.  It must
-   be at least 7 for the samplesort implementation to work.  Binary
-   insertion does fewer compares, but can suffer O(N**2) data movement.
-   The more expensive compares, the larger MINSIZE should be. */
-#define MINSIZE 100
-
-/* MINPARTITIONSIZE is the smallest array slice samplesort will bother to
-   partition; smaller slices are passed to binarysort.  It must be at
-   least 2, and no larger than MINSIZE.  Setting it higher reduces the #
-   of compares slowly, but increases the amount of data movement quickly.
-   The value here was chosen assuming a compare costs ~25x more than
-   swapping a pair of memory-resident pointers -- but under that assumption,
-   changing the value by a few dozen more or less has aggregate effect
-   under 1%.  So the value is crucial, but not touchy <wink>. */
-#define MINPARTITIONSIZE 40
-
-/* MAXMERGE is the largest number of elements we'll always merge into
-   a known-to-be sorted chunk via binary insertion, regardless of the
-   size of that chunk.  Given a chunk of N sorted elements, and a group
-   of K unknowns, the largest K for which it's better to do insertion
-   (than a full-blown sort) is a complicated function of N and K mostly
-   involving the expected number of compares and data moves under each
-   approach, and the relative cost of those operations on a specific
-   architecure.  The fixed value here is conservative, and should be a
-   clear win regardless of architecture or N. */
-#define MAXMERGE 15
-
-/* STACKSIZE is the size of our work stack.  A rough estimate is that
-   this allows us to sort arrays of size N where
-   N / ln(N) = MINPARTITIONSIZE * 2**STACKSIZE, so 60 is more than enough
-   for arrays of size 2**64.  Because we push the biggest partition
-   first, the worst case occurs when all subarrays are always partitioned
-   exactly in two. */
-#define STACKSIZE 60
-
 /* Compare X to Y via islt().  Goto "fail" if the comparison raises an
    error.  Else "k" is set to true iff X<Y, and an "if (k)" block is
    started.  It makes more sense in context <wink>.  X and Y are PyObject*s.
@@ -853,7 +818,6 @@ islt(PyObject *x, PyObject *y, PyObject *compare)
    Even in case of error, the output slice will be some permutation of
    the input (nothing is lost or duplicated).
 */
-
 static int
 binarysort(PyObject **lo, PyObject **hi, PyObject **start, PyObject *compare)
      /* compare -- comparison function object, or NULL for default */
@@ -902,420 +866,822 @@ binarysort(PyObject **lo, PyObject **hi, PyObject **start, PyObject *compare)
 	return -1;
 }
 
-/* samplesortslice is the sorting workhorse.
-   [lo, hi) is a contiguous slice of a list, to be sorted in place.
-   On entry, must have lo <= hi,
-   If islt() complains return -1, else 0.
-   Even in case of error, the output slice will be some permutation of
-   the input (nothing is lost or duplicated).
+/*
+Return the length of the run beginning at lo, in the slice [lo, hi).  lo < hi
+is required on entry.  "A run" is the longest ascending sequence, with
 
-   samplesort is basically quicksort on steroids:  a power of 2 close
-   to n/ln(n) is computed, and that many elements (less 1) are picked at
-   random from the array and sorted.  These 2**k - 1 elements are then
-   used as preselected pivots for an equal number of quicksort
-   partitioning steps, partitioning the slice into 2**k chunks each of
-   size about ln(n).  These small final chunks are then usually handled
-   by binarysort.  Note that when k=1, this is roughly the same as an
-   ordinary quicksort using a random pivot, and when k=2 this is roughly
-   a median-of-3 quicksort.  From that view, using k ~= lg(n/ln(n)) makes
-   this a "median of n/ln(n)" quicksort.  You can also view it as a kind
-   of bucket sort, where 2**k-1 bucket boundaries are picked dynamically.
+    lo[0] <= lo[1] <= lo[2] <= ...
 
-   The large number of samples makes a quadratic-time case almost
-   impossible, and asymptotically drives the average-case number of
-   compares from quicksort's 2 N ln N (or 12/7 N ln N for the median-of-
-   3 variant) down to N lg N.
+or the longest descending sequence, with
 
-   We also play lots of low-level tricks to cut the number of compares.
+    lo[0] > lo[1] > lo[2] > ...
 
-   Very obscure:  To avoid using extra memory, the PPs are stored in the
-   array and shuffled around as partitioning proceeds.  At the start of a
-   partitioning step, we'll have 2**m-1 (for some m) PPs in sorted order,
-   adjacent (either on the left or the right!) to a chunk of X elements
-   that are to be partitioned: P X or X P.  In either case we need to
-   shuffle things *in place* so that the 2**(m-1) smaller PPs are on the
-   left, followed by the PP to be used for this step (that's the middle
-   of the PPs), followed by X, followed by the 2**(m-1) larger PPs:
-       P X or X P -> Psmall pivot X Plarge
-   and the order of the PPs must not be altered.  It can take a while
-   to realize this isn't trivial!  It can take even longer <wink> to
-   understand why the simple code below works, using only 2**(m-1) swaps.
-   The key is that the order of the X elements isn't necessarily
-   preserved:  X can end up as some cyclic permutation of its original
-   order.  That's OK, because X is unsorted anyway.  If the order of X
-   had to be preserved too, the simplest method I know of using O(1)
-   scratch storage requires len(X) + 2**(m-1) swaps, spread over 2 passes.
-   Since len(X) is typically several times larger than 2**(m-1), that
-   would slow things down.
+Boolean *descending is set to 0 in the former case, or to 1 in the latter.
+For its intended use in a stable mergesort, the strictness of the defn of
+"descending" is needed so that the caller can safely reverse a descending
+sequence without violating stability (strict > ensures there are no equal
+elements to get out of order).
+
+Returns -1 in case of error.
 */
-
-struct SamplesortStackNode {
-	/* Represents a slice of the array, from (& including) lo up
-	   to (but excluding) hi.  "extra" additional & adjacent elements
-	   are pre-selected pivots (PPs), spanning [lo-extra, lo) if
-	   extra > 0, or [hi, hi-extra) if extra < 0.  The PPs are
-	   already sorted, but nothing is known about the other elements
-	   in [lo, hi). |extra| is always one less than a power of 2.
-	   When extra is 0, we're out of PPs, and the slice must be
-	   sorted by some other means. */
-	PyObject **lo;
-	PyObject **hi;
-	int extra;
-};
-
-/* The number of PPs we want is 2**k - 1, where 2**k is as close to
-   N / ln(N) as possible.  So k ~= lg(N / ln(N)).  Calling libm routines
-   is undesirable, so cutoff values are canned in the "cutoff" table
-   below:  cutoff[i] is the smallest N such that k == CUTOFFBASE + i. */
-#define CUTOFFBASE 4
-static long cutoff[] = {
-	43,        /* smallest N such that k == 4 */
-	106,       /* etc */
-	250,
-	576,
-	1298,
-	2885,
-	6339,
-	13805,
-	29843,
-	64116,
-	137030,
-	291554,
-	617916,
-	1305130,
-	2748295,
-	5771662,
-	12091672,
-	25276798,
-	52734615,
-	109820537,
-	228324027,
-	473977813,
-	982548444,   /* smallest N such that k == 26 */
-	2034159050   /* largest N that fits in signed 32-bit; k == 27 */
-};
-
 static int
-samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
-     /* compare -- comparison function object, or NULL for default */
+count_run(PyObject **lo, PyObject **hi, PyObject *compare, int *descending)
 {
-	register PyObject **l, **r;
-	register PyObject *tmp, *pivot;
-	register int k;
-	int n, extra, top, extraOnRight;
-	struct SamplesortStackNode stack[STACKSIZE];
+	int k;
+	int n;
 
-	assert(lo <= hi);
-	n = hi - lo;
-	if (n < MINSIZE)
-		return binarysort(lo, hi, lo, compare);
+	assert(lo < hi);
+	*descending = 0;
+	++lo;
+	if (lo == hi)
+		return 1;
 
-	/* ----------------------------------------------------------
-	 * Normal case setup: a large array without obvious pattern.
-	 * --------------------------------------------------------*/
-
-	/* extra := a power of 2 ~= n/ln(n), less 1.
-	   First find the smallest extra s.t. n < cutoff[extra] */
-	for (extra = 0;
-	     extra < sizeof(cutoff) / sizeof(cutoff[0]);
-	     ++extra) {
-		if (n < cutoff[extra])
-			break;
-		/* note that if we fall out of the loop, the value of
-		   extra still makes *sense*, but may be smaller than
-		   we would like (but the array has more than ~= 2**31
-		   elements in this case!) */
+	n = 2;
+	IFLT(*lo, *(lo-1)) {
+		*descending = 1;
+		for (lo = lo+1; lo < hi; ++lo, ++n) {
+			IFLT(*lo, *(lo-1))
+				;
+			else
+				break;
+		}
 	}
-	/* Now k == extra - 1 + CUTOFFBASE.  The smallest value k can
-	   have is CUTOFFBASE-1, so
-	   assert MINSIZE >= 2**(CUTOFFBASE-1) - 1 */
-	extra = (1 << (extra - 1 + CUTOFFBASE)) - 1;
-	/* assert extra > 0 and n >= extra */
-
-	/* Swap that many values to the start of the array.  The
-	   selection of elements is pseudo-random, but the same on
-	   every run (this is intentional! timing algorithm changes is
-	   a pain if timing varies across runs).  */
-	{
-		unsigned int seed = n / extra;  /* arbitrary */
-		unsigned int i;
-		for (i = 0; i < (unsigned)extra; ++i) {
-			/* j := random int in [i, n) */
-			unsigned int j;
-			seed = seed * 69069 + 7;
-			j = i + seed % (n - i);
-			tmp = lo[i]; lo[i] = lo[j]; lo[j] = tmp;
+	else {
+		for (lo = lo+1; lo < hi; ++lo, ++n) {
+			IFLT(*lo, *(lo-1))
+				break;
 		}
 	}
 
-	/* Recursively sort the preselected pivots. */
-	if (samplesortslice(lo, lo + extra, compare) < 0)
-		goto fail;
+	return n;
+fail:
+	return -1;
+}
 
-	top = 0;          /* index of available stack slot */
-	lo += extra;      /* point to first unknown */
-	extraOnRight = 0; /* the PPs are at the left end */
+/*
+Locate the proper position of key in a sorted vector; if the vector contains
+an element equal to key, return the position immediately to the left of
+the leftmost equal element.  [gallop_right() does the same except returns
+the position to the right of the rightmost equal element (if any).]
 
-	/* ----------------------------------------------------------
-	 * Partition [lo, hi), and repeat until out of work.
-	 * --------------------------------------------------------*/
-	for (;;) {
-		assert(lo <= hi);
-		n = hi - lo;
+"a" is a sorted vector with n elements, starting at a[0].  n must be > 0.
 
-		/* We may not want, or may not be able, to partition:
-		   If n is small, it's quicker to insert.
-		   If extra is 0, we're out of pivots, and *must* use
-		   another method.
+"hint" is an index at which to begin the search, 0 <= hint < n.  The closer
+hint is to the final result, the faster this runs.
+
+The return value is the int k in 0..n such that
+
+    a[k-1] < key <= a[k]
+
+pretending that *(a-1) is minus infinity and a[n] is plus infinity.  IOW,
+key belongs at index k; or, IOW, the first k elements of a should precede
+key, and the last n-k should follow key.
+
+Returns -1 on error.  See listsort.txt for info on the method.
+*/
+static int
+gallop_left(PyObject *key, PyObject **a, int n, int hint, PyObject *compare)
+{
+	int ofs;
+	int lastofs;
+	int k;
+
+	assert(key && a && n > 0 && hint >= 0 && hint < n);
+
+	a += hint;
+	lastofs = 0;
+	ofs = 1;
+	IFLT(*a, key) {
+		/* a[hint] < key -- gallop right, until
+		 * a[hint + lastofs] < key <= a[hint + ofs]
+		 */
+		const int maxofs = n - hint;	/* &a[n-1] is highest */
+		while (ofs < maxofs) {
+			IFLT(a[ofs], key) {
+				lastofs = ofs;
+				ofs = (ofs << 1) + 1;
+				if (ofs <= 0)	/* int overflow */
+					ofs = maxofs;
+			}
+ 			else	/* key <= a[hint + ofs] */
+				break;
+		}
+		if (ofs > maxofs)
+			ofs = maxofs;
+		/* Translate back to offsets relative to &a[0]. */
+		lastofs += hint;
+		ofs += hint;
+	}
+	else {
+		/* key <= a[hint] -- gallop left, until
+		 * a[hint - ofs] < key <= a[hint - lastofs]
+		 */
+		const int maxofs = hint + 1;	/* &a[0] is lowest */
+		while (ofs < maxofs) {
+			IFLT(*(a-ofs), key)
+				break;
+			/* key <= a[hint - ofs] */
+			lastofs = ofs;
+			ofs = (ofs << 1) + 1;
+			if (ofs <= 0)	/* int overflow */
+				ofs = maxofs;
+		}
+		if (ofs > maxofs)
+			ofs = maxofs;
+		/* Translate back to positive offsets relative to &a[0]. */
+		k = lastofs;
+		lastofs = hint - ofs;
+		ofs = hint - k;
+	}
+	a -= hint;
+
+	assert(-1 <= lastofs && lastofs < ofs && ofs <= n);
+	/* Now a[lastofs] < key <= a[ofs], so key belongs somewhere to the
+	 * right of lastofs but no farther right than ofs.  Do a binary
+	 * search, with invariant a[lastofs-1] < key <= a[ofs].
+	 */
+	++lastofs;
+	while (lastofs < ofs) {
+		int m = lastofs + ((ofs - lastofs) >> 1);
+
+		IFLT(a[m], key)
+			lastofs = m+1;	/* a[m] < key */
+		else
+			ofs = m;	/* key <= a[m] */
+	}
+	assert(lastofs == ofs);		/* so a[ofs-1] < key <= a[ofs] */
+	return ofs;
+
+fail:
+	return -1;
+}
+
+/*
+Exactly like gallop_left(), except that if key already exists in a[0:n],
+finds the position immediately to the right of the rightmost equal value.
+
+The return value is the int k in 0..n such that
+
+    a[k-1] <= key < a[k]
+
+or -1 if error.
+
+The code duplication is massive, but this is enough different given that
+we're sticking to "<" comparisons that it's much harder to follow if
+written as one routine with yet another "left or right?" flag.
+*/
+static int
+gallop_right(PyObject *key, PyObject **a, int n, int hint, PyObject *compare)
+{
+	int ofs;
+	int lastofs;
+	int k;
+
+	assert(key && a && n > 0 && hint >= 0 && hint < n);
+
+	a += hint;
+	lastofs = 0;
+	ofs = 1;
+	IFLT(key, *a) {
+		/* key < a[hint] -- gallop left, until
+		 * a[hint - ofs] <= key < a[hint - lastofs]
+		 */
+		const int maxofs = hint + 1;	/* &a[0] is lowest */
+		while (ofs < maxofs) {
+			IFLT(key, *(a-ofs)) {
+				lastofs = ofs;
+				ofs = (ofs << 1) + 1;
+				if (ofs <= 0)	/* int overflow */
+					ofs = maxofs;
+			}
+			else	/* a[hint - ofs] <= key */
+				break;
+		}
+		if (ofs > maxofs)
+			ofs = maxofs;
+		/* Translate back to positive offsets relative to &a[0]. */
+		k = lastofs;
+		lastofs = hint - ofs;
+		ofs = hint - k;
+	}
+	else {
+		/* a[hint] <= key -- gallop right, until
+		 * a[hint + lastofs] <= key < a[hint + ofs]
 		*/
-		if (n < MINPARTITIONSIZE || extra == 0) {
-			if (n >= MINSIZE) {
-				assert(extra == 0);
-				/* This is rare, since the average size
-				   of a final block is only about
-				   ln(original n). */
-				if (samplesortslice(lo, hi, compare) < 0)
-					goto fail;
+		const int maxofs = n - hint;	/* &a[n-1] is highest */
+		while (ofs < maxofs) {
+			IFLT(key, a[ofs])
+				break;
+			/* a[hint + ofs] <= key */
+			lastofs = ofs;
+			ofs = (ofs << 1) + 1;
+			if (ofs <= 0)	/* int overflow */
+				ofs = maxofs;
+		}
+		if (ofs > maxofs)
+			ofs = maxofs;
+		/* Translate back to offsets relative to &a[0]. */
+		lastofs += hint;
+		ofs += hint;
+	}
+	a -= hint;
+
+	assert(-1 <= lastofs && lastofs < ofs && ofs <= n);
+	/* Now a[lastofs] <= key < a[ofs], so key belongs somewhere to the
+	 * right of lastofs but no farther right than ofs.  Do a binary
+	 * search, with invariant a[lastofs-1] <= key < a[ofs].
+	 */
+	++lastofs;
+	while (lastofs < ofs) {
+		int m = lastofs + ((ofs - lastofs) >> 1);
+
+		IFLT(key, a[m])
+			ofs = m;	/* key < a[m] */
+		else
+			lastofs = m+1;	/* a[m] <= key */
+	}
+	assert(lastofs == ofs);		/* so a[ofs-1] <= key < a[ofs] */
+	return ofs;
+
+fail:
+	return -1;
+}
+
+/* The maximum number of entries in a MergeState's pending-runs stack.
+ * This is enough to sort arrays of size up to about
+ *     32 * phi ** MAX_MERGE_PENDING
+ * where phi ~= 1.618.  85 is ridiculouslylarge enough, good for an array
+ * with 2**64 elements.
+ */
+#define MAX_MERGE_PENDING 85
+
+/* If a run wins MIN_GALLOP times in a row, we switch to galloping mode,
+ * and stay there until both runs win less often than MIN_GALLOP
+ * consecutive times.  See listsort.txt for more info.
+ */
+#define MIN_GALLOP 8
+
+/* Avoid malloc for small temp arrays. */
+#define MERGESTATE_TEMP_SIZE 256
+
+/* One MergeState exists on the stack per invocation of mergesort.  It's just
+ * a convenient way to pass state around among the helper functions.
+ */
+typedef struct s_MergeState {
+	/* The user-supplied comparison function. or NULL if none given. */
+	PyObject *compare;
+
+	/* 'a' is temp storage to help with merges.  It contains room for
+	 * alloced entries.
+	 */
+	PyObject **a;	/* may point to temparray below */
+	int alloced;
+
+	/* A stack of n pending runs yet to be merged.  Run #i starts at
+	 * address base[i] and extends for len[i] elements.  It's always
+	 * true (so long as the indices are in bounds) that
+	 *
+	 *     base[i] + len[i] == base[i+1]
+	 *
+	 * so we could cut the storage for this, but it's a minor amount,
+	 * and keeping all the info explicit simplifies the code.
+	 */
+	int n;
+	PyObject **base[MAX_MERGE_PENDING];
+	int len[MAX_MERGE_PENDING];
+
+	/* 'a' points to this when possible, rather than muck with malloc. */
+	PyObject *temparray[MERGESTATE_TEMP_SIZE];
+} MergeState;
+
+/* Conceptually a MergeState's constructor. */
+static void
+merge_init(MergeState *ms, PyObject *compare)
+{
+	assert(ms != NULL);
+	ms->compare = compare;
+	ms->a = ms->temparray;
+	ms->alloced = MERGESTATE_TEMP_SIZE;
+	ms->n = 0;
+}
+
+/* Free all the temp memory owned by the MergeState.  This must be called
+ * when you're done with a MergeState, and may be called before then if
+ * you want to free the temp memory early.
+ */
+static void
+merge_freemem(MergeState *ms)
+{
+	assert(ms != NULL);
+	if (ms->a != ms->temparray)
+		PyMem_Free(ms->a);
+	ms->a = ms->temparray;
+	ms->alloced = MERGESTATE_TEMP_SIZE;
+}
+
+/* Ensure enough temp memory for 'need' array slots is available.
+ * Returns 0 on success and -1 if the memory can't be gotten.
+ */
+static int
+merge_getmem(MergeState *ms, int need)
+{
+	assert(ms != NULL);
+	if (need <= ms->alloced)
+		return 0;
+	/* Don't realloc!  That can cost cycles to copy the old data, but
+	 * we don't care what's in the block.
+	 */
+	merge_freemem(ms);
+	ms->a = (PyObject **)PyMem_Malloc(need * sizeof(PyObject*));
+	if (ms->a) {
+		ms->alloced = need;
+		return 0;
+	}
+	PyErr_NoMemory();
+	merge_freemem(ms);	/* reset to sane state */
+	return -1;
+}
+#define MERGE_GETMEM(MS, NEED) ((NEED) <= (MS)->alloced ? 0 :	\
+				merge_getmem(MS, NEED))
+
+/* Merge the na elements starting at pa with the nb elements starting at pb
+ * in a stable way, in-place.  na and nb must be > 0, and pa + na == pb.
+ * Must also have that *pb < *pa, that pa[na-1] belongs at the end of the
+ * merge, and should have na <= nb.  See listsort.txt for more info.
+ * Return 0 if successful, -1 if error.
+ */
+static int
+merge_lo(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
+{
+	int k;
+	PyObject *compare;
+	PyObject **dest;
+	int result = -1;	/* guilty until proved innocent */
+
+	assert(ms && pa && pb && na > 0 && nb > 0 && pa + na == pb);
+	if (MERGE_GETMEM(ms, na) < 0)
+		return -1;
+	memcpy(ms->a, pa, na * sizeof(PyObject*));
+	dest = pa;
+	pa = ms->a;
+
+	*dest++ = *pb++;
+	--nb;
+	if (nb == 0)
+		goto Succeed;
+	if (na == 1)
+		goto CopyB;
+
+	compare = ms->compare;
+	for (;;) {
+		int acount = 0;	/* # of times A won in a row */
+		int bcount = 0;	/* # of times B won in a row */
+
+		/* Do the straightforward thing until (if ever) one run
+		 * appears to win consistently.
+		 */
+ 		for (;;) {
+	 		k = islt(*pb, *pa, compare);
+			if (k) {
+				if (k < 0)
+					goto Fail;
+				*dest++ = *pb++;
+				++bcount;
+				acount = 0;
+				--nb;
+				if (nb == 0)
+					goto Succeed;
+				if (bcount >= MIN_GALLOP)
+					break;
 			}
 			else {
-				/* Binary insertion should be quicker,
-				   and we can take advantage of the PPs
-				   already being sorted. */
-				if (extraOnRight && extra) {
-					/* swap the PPs to the left end */
-					k = extra;
-					do {
-						tmp = *lo;
-						*lo = *hi;
-						*hi = tmp;
-						++lo; ++hi;
-					} while (--k);
-				}
-				if (binarysort(lo - extra, hi, lo,
-					       compare) < 0)
-					goto fail;
+				*dest++ = *pa++;
+				++acount;
+				bcount = 0;
+				--na;
+				if (na == 1)
+					goto CopyB;
+				if (acount >= MIN_GALLOP)
+					break;
 			}
+ 		}
 
-			/* Find another slice to work on. */
-			if (--top < 0)
-				break;   /* no more -- done! */
-			lo = stack[top].lo;
-			hi = stack[top].hi;
-			extra = stack[top].extra;
-			extraOnRight = 0;
-			if (extra < 0) {
-				extraOnRight = 1;
-				extra = -extra;
-			}
-			continue;
-		}
-
-		/* Pretend the PPs are indexed 0, 1, ..., extra-1.
-		   Then our preselected pivot is at (extra-1)/2, and we
-		   want to move the PPs before that to the left end of
-		   the slice, and the PPs after that to the right end.
-		   The following section changes extra, lo, hi, and the
-		   slice such that:
-		   [lo-extra, lo) contains the smaller PPs.
-		   *lo == our PP.
-		   (lo, hi) contains the unknown elements.
-		   [hi, hi+extra) contains the larger PPs.
-		*/
-		k = extra >>= 1;  /* num PPs to move */
-		if (extraOnRight) {
-			/* Swap the smaller PPs to the left end.
-			   Note that this loop actually moves k+1 items:
-			   the last is our PP */
-			do {
-				tmp = *lo; *lo = *hi; *hi = tmp;
-				++lo; ++hi;
-			} while (k--);
-		}
-		else {
-			/* Swap the larger PPs to the right end. */
-			while (k--) {
-				--lo; --hi;
-				tmp = *lo; *lo = *hi; *hi = tmp;
-			}
-		}
-		--lo;   /* *lo is now our PP */
-		pivot = *lo;
-
-		/* Now an almost-ordinary quicksort partition step.
-		   Note that most of the time is spent here!
-		   Only odd thing is that we partition into < and >=,
-		   instead of the usual <= and >=.  This helps when
-		   there are lots of duplicates of different values,
-		   because it eventually tends to make subfiles
-		   "pure" (all duplicates), and we special-case for
-		   duplicates later. */
-		l = lo + 1;
-		r = hi - 1;
-		assert(lo < l && l < r && r < hi);
-
+		/* One run is winning so consistently that galloping may
+		 * be a huge win.  So try that, and continue galloping until
+		 * (if ever) neither run appears to be winning consistently
+		 * anymore.
+		 */
 		do {
-			/* slide l right, looking for key >= pivot */
-			do {
-				IFLT(*l, pivot)
-					++l;
-				else
-					break;
-			} while (l < r);
-
-			/* slide r left, looking for key < pivot */
-			while (l < r) {
-				register PyObject *rval = *r--;
-				IFLT(rval, pivot) {
-					/* swap and advance */
-					r[1] = *l;
-					*l++ = rval;
-					break;
-				}
+			k = gallop_right(*pb, pa, na, 0, compare);
+			acount = k;
+			if (k) {
+				if (k < 0)
+					goto Fail;
+				memcpy(dest, pa, k * sizeof(PyObject *));
+				dest += k;
+				pa += k;
+				na -= k;
+				if (na == 1)
+					goto CopyB;
+				/* na==0 is impossible now if the comparison
+				 * function is consistent, but we can't assume
+				 * that it is.
+				 */
+				if (na == 0)
+					goto Succeed;
 			}
+			*dest++ = *pb++;
+			--nb;
+			if (nb == 0)
+				goto Succeed;
 
-		} while (l < r);
-
-		assert(lo < r && r <= l && l < hi);
-		/* everything to the left of l is < pivot, and
-		   everything to the right of r is >= pivot */
-
-		if (l == r) {
-			IFLT(*r, pivot)
-				++l;
-			else
-				--r;
-		}
-		assert(lo <= r && r+1 == l && l <= hi);
-		/* assert r == lo or a[r] < pivot */
-		assert(*lo == pivot);
-		/* assert l == hi or a[l] >= pivot */
-		/* Swap the pivot into "the middle", so we can henceforth
-		   ignore it. */
-		*lo = *r;
-		*r = pivot;
-
-		/* The following is true now, & will be preserved:
-		   All in [lo,r) are < pivot
-		   All in [r,l) == pivot (& so can be ignored)
-		   All in [l,hi) are >= pivot */
-
-		/* Check for duplicates of the pivot.  One compare is
-		   wasted if there are no duplicates, but can win big
-		   when there are.
-		   Tricky: we're sticking to "<" compares, so deduce
-		   equality indirectly.  We know pivot <= *l, so they're
-		   equal iff not pivot < *l.
-		*/
-		while (l < hi) {
-			/* pivot <= *l known */
-			IFLT(pivot, *l)
-				break;
-			else
-				/* <= and not < implies == */
-				++l;
-		}
-
-		assert(lo <= r && r < l && l <= hi);
-		/* Partitions are [lo, r) and [l, hi)
-		   :ush fattest first; remember we still have extra PPs
-		   to the left of the left chunk and to the right of
-		   the right chunk! */
-		assert(top < STACKSIZE);
-		if (r - lo <= hi - l) {
-			/* second is bigger */
-			stack[top].lo = l;
-			stack[top].hi = hi;
-			stack[top].extra = -extra;
-			hi = r;
-			extraOnRight = 0;
-		}
-		else {
-			/* first is bigger */
-			stack[top].lo = lo;
-			stack[top].hi = r;
-			stack[top].extra = extra;
-			lo = l;
-			extraOnRight = 1;
-		}
-		++top;
-
-	}   /* end of partitioning loop */
-
+ 			k = gallop_left(*pa, pb, nb, 0, compare);
+ 			bcount = k;
+			if (k) {
+				if (k < 0)
+					goto Fail;
+				memmove(dest, pb, k * sizeof(PyObject *));
+				dest += k;
+				pb += k;
+				nb -= k;
+				if (nb == 0)
+					goto Succeed;
+			}
+			*dest++ = *pa++;
+			--na;
+			if (na == 1)
+				goto CopyB;
+ 		} while (acount >= MIN_GALLOP || bcount >= MIN_GALLOP);
+ 	}
+Succeed:
+	result = 0;
+Fail:
+	if (na)
+		memcpy(dest, pa, na * sizeof(PyObject*));
+	return result;
+CopyB:
+	assert(na == 1 && nb > 0);
+	/* The last element of pa belongs at the end of the merge. */
+	memmove(dest, pb, nb * sizeof(PyObject *));
+	dest[nb] = *pa;
 	return 0;
+}
 
- fail:
-	return -1;
+/* Merge the na elements starting at pa with the nb elements starting at pb
+ * in a stable way, in-place.  na and nb must be > 0, and pa + na == pb.
+ * Must also have that *pb < *pa, that pa[na-1] belongs at the end of the
+ * merge, and should have na >= nb.  See listsort.txt for more info.
+ * Return 0 if successful, -1 if error.
+ */
+static int
+merge_hi(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
+{
+	int k;
+	PyObject *compare;
+	PyObject **dest;
+	int result = -1;	/* guilty until proved innocent */
+	PyObject **basea;
+	PyObject **baseb;
+
+	assert(ms && pa && pb && na > 0 && nb > 0 && pa + na == pb);
+	if (MERGE_GETMEM(ms, nb) < 0)
+		return -1;
+	dest = pb + nb - 1;
+	memcpy(ms->a, pb, nb * sizeof(PyObject*));
+	basea = pa;
+	baseb = ms->a;
+	pb = ms->a + nb - 1;
+	pa += na - 1;
+
+	*dest-- = *pa--;
+	--na;
+	if (na == 0)
+		goto Succeed;
+	if (nb == 1)
+		goto CopyA;
+
+	compare = ms->compare;
+	for (;;) {
+		int acount = 0;	/* # of times A won in a row */
+		int bcount = 0;	/* # of times B won in a row */
+
+		/* Do the straightforward thing until (if ever) one run
+		 * appears to win consistently.
+		 */
+ 		for (;;) {
+	 		k = islt(*pb, *pa, compare);
+			if (k) {
+				if (k < 0)
+					goto Fail;
+				*dest-- = *pa--;
+				++acount;
+				bcount = 0;
+				--na;
+				if (na == 0)
+					goto Succeed;
+				if (acount >= MIN_GALLOP)
+					break;
+			}
+			else {
+				*dest-- = *pb--;
+				++bcount;
+				acount = 0;
+				--nb;
+				if (nb == 1)
+					goto CopyA;
+				if (bcount >= MIN_GALLOP)
+					break;
+			}
+ 		}
+
+		/* One run is winning so consistently that galloping may
+		 * be a huge win.  So try that, and continue galloping until
+		 * (if ever) neither run appears to be winning consistently
+		 * anymore.
+		 */
+		do {
+			k = gallop_right(*pb, basea, na, na-1, compare);
+			if (k < 0)
+				goto Fail;
+			k = na - k;
+			acount = k;
+			if (k) {
+				dest -= k;
+				pa -= k;
+				memmove(dest+1, pa+1, k * sizeof(PyObject *));
+				na -= k;
+				if (na == 0)
+					goto Succeed;
+			}
+			*dest-- = *pb--;
+			--nb;
+			if (nb == 1)
+				goto CopyA;
+
+ 			k = gallop_left(*pa, baseb, nb, nb-1, compare);
+			if (k < 0)
+				goto Fail;
+			k = nb - k;
+			bcount = k;
+			if (k) {
+				dest -= k;
+				pb -= k;
+				memcpy(dest+1, pb+1, k * sizeof(PyObject *));
+				nb -= k;
+				if (nb == 1)
+					goto CopyA;
+				/* nb==0 is impossible now if the comparison
+				 * function is consistent, but we can't assume
+				 * that it is.
+				 */
+				if (nb == 0)
+					goto Succeed;
+			}
+			*dest-- = *pa--;
+			--na;
+			if (na == 0)
+				goto Succeed;
+ 		} while (acount >= MIN_GALLOP || bcount >= MIN_GALLOP);
+ 	}
+Succeed:
+	result = 0;
+Fail:
+	if (nb)
+		memcpy(dest-(nb-1), baseb, nb * sizeof(PyObject*));
+	return result;
+CopyA:
+	assert(nb == 1 && na > 0);
+	/* The first element of pb belongs at the front of the merge. */
+	dest -= na;
+	pa -= na;
+	memmove(dest+1, pa+1, na * sizeof(PyObject *));
+	*dest = *pb;
+	return 0;
+}
+
+/* Merge the two runs at stack indices i and i+1.
+ * Returns 0 on success, -1 on error.
+ */
+static int
+merge_at(MergeState *ms, int i)
+{
+	PyObject **pa, **pb;
+	int na, nb;
+	int k;
+	PyObject *compare;
+
+	assert(ms != NULL);
+	assert(ms->n >= 2);
+	assert(i >= 0);
+	assert(i == ms->n - 2 || i == ms->n - 3);
+
+	pa = ms->base[i];
+	pb = ms->base[i+1];
+	na = ms->len[i];
+	nb = ms->len[i+1];
+	assert(na > 0 && nb > 0);
+	assert(pa + na == pb);
+
+	/* Record the length of the combined runs; if i is the 3rd-last
+	 * run now, also slide over the last run (which isn't involved
+	 * in this merge).  The current run i+1 goes away in any case.
+	 */
+	if (i == ms->n - 3) {
+		ms->len[i+1] = ms->len[i+2];
+		ms->base[i+1] = ms->base[i+2];
+	}
+	ms->len[i] = na + nb;
+	--ms->n;
+
+	/* Where does b start in a?  Elements in a before that can be
+	 * ignored (already in place).
+	 */
+	compare = ms->compare;
+	k = gallop_right(*pb, pa, na, 0, compare);
+	if (k < 0)
+		return -1;
+	pa += k;
+	na -= k;
+	if (na == 0)
+		return 0;
+
+	/* Where does a end in b?  Elements in b after that can be
+	 * ignored (already in place).
+	 */
+	nb = gallop_left(pa[na-1], pb, nb, nb-1, compare);
+	if (nb <= 0)
+		return nb;
+
+	/* Merge what remains of the runs, using a temp array with
+	 * min(na, nb) elements.
+	 */
+	if (na <= nb)
+		return merge_lo(ms, pa, na, pb, nb);
+	else
+		return merge_hi(ms, pa, na, pb, nb);
+}
+
+/* Examine the stack of runs waiting to be merged, merging adjacent runs
+ * until the stack invariants are re-established:
+ *
+ * 1. len[-3] > len[-2] + len[-1]
+ * 2. len[-2] > len[-1]
+ *
+ * See listsort.txt for more info.
+ *
+ * Returns 0 on success, -1 on error.
+ */
+static int
+merge_collapse(MergeState *ms)
+{
+	int *len = ms->len;
+
+	assert(ms);
+	while (ms->n > 1) {
+		int n = ms->n - 2;
+		if (n > 0 && len[n-1] <= len[n] + len[n+1]) {
+		    	if (len[n-1] < len[n+1])
+		    		--n;
+			if (merge_at(ms, n) < 0)
+				return -1;
+		}
+		else if (len[n] <= len[n+1]) {
+			 if (merge_at(ms, n) < 0)
+			 	return -1;
+		}
+		else
+			break;
+	}
+	return 0;
+}
+
+/* Regardless of invariants, merge all runs on the stack until only one
+ * remains.  This is used at the end of the mergesort.
+ *
+ * Returns 0 on success, -1 on error.
+ */
+static int
+merge_force_collapse(MergeState *ms)
+{
+	int *len = ms->len;
+
+	assert(ms);
+	while (ms->n > 1) {
+		int n = ms->n - 2;
+		if (n > 0 && len[n-1] < len[n+1])
+			--n;
+		if (merge_at(ms, n) < 0)
+			return -1;
+	}
+	return 0;
+}
+
+/* Compute a good value for the minimum run length; natural runs shorter
+ * than this are boosted artificially via binary insertion.
+ *
+ * If n < 64, return n (it's too small to bother with fancy stuff).
+ * Else if n is an exact power of 2, return 32.
+ * Else return an int k, 32 <= k <= 64, such that n/k is close to, but
+ * strictly less than, an exact power of 2.
+ *
+ * See listsort.txt for more info.
+ */
+static int
+merge_compute_minrun(int n)
+{
+	int r = 0;	/* becomes 1 if any 1 bits are shifted off */
+
+	assert(n >= 0);
+	while (n >= 64) {
+		r |= n & 1;
+		n >>= 1;
+	}
+	return n + r;
 }
 
 static PyTypeObject immutable_list_type;
 
+/* An adaptive, stable, natural mergesort.  See listsort.txt.
+ * Returns Py_None on success, NULL on error.  Even in case of error, the
+ * list will be some permutation of its input state (nothing is lost or
+ * duplicated).
+ */
 static PyObject *
 listsort(PyListObject *self, PyObject *args)
 {
-	int k;
-	PyObject *compare = NULL;
-	PyObject **hi, **p;
+	MergeState ms;
+	PyObject **lo, **hi;
+	int nremaining;
+	int minrun;
 	PyTypeObject *savetype;
+	PyObject *compare = NULL;
+	PyObject *result = NULL;	/* guilty until proved innocent */
 
+	assert(self != NULL);
 	if (args != NULL) {
-		if (!PyArg_ParseTuple(args, "|O:sort", &compare))
+		if (!PyArg_ParseTuple(args, "|O:msort", &compare))
 			return NULL;
 	}
+	merge_init(&ms, compare);
 
 	savetype = self->ob_type;
-	if (self->ob_size < 2) {
-		k = 0;
-		goto done;
-	}
-
 	self->ob_type = &immutable_list_type;
-	hi = self->ob_item + self->ob_size;
 
-	/* Set p to the largest value such that [lo, p) is sorted.
-	   This catches the already-sorted case, the all-the-same
-	   case, and the appended-a-few-elements-to-a-sorted-list case.
-	   If the array is unsorted, we're very likely to get out of
-	   the loop fast, so the test is cheap if it doesn't pay off.
-	*/
-	for (p = self->ob_item + 1; p < hi; ++p) {
-		IFLT(*p, *(p-1))
-			break;
-	}
-	/* [lo, p) is sorted, [p, hi) unknown.  Get out cheap if there are
-	   few unknowns, or few elements in total. */
-	if (hi - p <= MAXMERGE || self->ob_size < MINSIZE) {
-		k = binarysort(self->ob_item, hi, p, compare);
-		goto done;
-	}
+	nremaining = self->ob_size;
+	if (nremaining < 2)
+		goto succeed;
 
-	/* Check for the array already being reverse-sorted, or that with
-	   a few elements tacked on to the end. */
-	for (p = self->ob_item + 1; p < hi; ++p) {
-		IFLT(*(p-1), *p)
-			break;
-	}
-	/* [lo, p) is reverse-sorted, [p, hi) unknown. */
-	if (hi - p <= MAXMERGE) {
-		/* Reverse the reversed prefix, then insert the tail */
-		reverse_slice(self->ob_item, p);
-		k = binarysort(self->ob_item, hi, p, compare);
-		goto done;
-	}
+	/* March over the array once, left to right, finding natural runs,
+	 * and extending short natural runs to minrun elements.
+	 */
+	lo = self->ob_item;
+	hi = lo + nremaining;
+	minrun = merge_compute_minrun(nremaining);
+	do {
+		int descending;
+		int n;
 
-	/* A large array without obvious pattern. */
-	k = samplesortslice(self->ob_item, hi, compare);
+		/* Identify next run. */
+		n = count_run(lo, hi, compare, &descending);
+		if (n < 0)
+			goto fail;
+		if (descending)
+			reverse_slice(lo, lo + n);
+		/* If short, extend to min(minrun, nremaining). */
+		if (n < minrun) {
+			const int force = nremaining <= minrun ?
+	 			  	  nremaining : minrun;
+			if (binarysort(lo, lo + force, lo + n, compare) < 0)
+				goto fail;
+			n = force;
+		}
+		/* Push run onto pending-runs stack, and maybe merge. */
+		assert(ms.n < MAX_MERGE_PENDING);
+		ms.base[ms.n] = lo;
+		ms.len[ms.n] = n;
+		++ms.n;
+		if (merge_collapse(&ms) < 0)
+			goto fail;
+		/* Advance to find next run. */
+		lo += n;
+		nremaining -= n;
+	} while (nremaining);
+	assert(lo == hi);
 
-done: /* The IFLT macro requires a label named "fail". */;
+	if (merge_force_collapse(&ms) < 0)
+		goto fail;
+	assert(ms.n == 1);
+	assert(ms.base[0] == self->ob_item);
+	assert(ms.len[0] == self->ob_size);
+
+succeed:
+	result = Py_None;
 fail:
  	self->ob_type = savetype;
-	if (k >= 0) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
-	else
-		return NULL;
+	merge_freemem(&ms);
+	Py_XINCREF(result);
+	return result;
 }
-
 #undef IFLT
 
 int
@@ -1645,7 +2011,7 @@ PyDoc_STRVAR(count_doc,
 PyDoc_STRVAR(reverse_doc,
 "L.reverse() -- reverse *IN PLACE*");
 PyDoc_STRVAR(sort_doc,
-"L.sort([cmpfunc]) -- sort *IN PLACE*; if given, cmpfunc(x, y) -> -1, 0, 1");
+"L.sort([cmpfunc]) -- stable sort *IN PLACE*; cmpfunc(x, y) -> -1, 0, 1");
 
 static PyMethodDef list_methods[] = {
 	{"append",	(PyCFunction)listappend,  METH_O, append_doc},
@@ -1657,7 +2023,7 @@ static PyMethodDef list_methods[] = {
 	{"count",	(PyCFunction)listcount,   METH_O, count_doc},
 	{"reverse",	(PyCFunction)listreverse, METH_NOARGS, reverse_doc},
 	{"sort",	(PyCFunction)listsort, 	  METH_VARARGS, sort_doc},
-	{NULL,		NULL}		/* sentinel */
+ 	{NULL,		NULL}		/* sentinel */
 };
 
 static PySequenceMethods list_as_sequence = {
