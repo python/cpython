@@ -7,6 +7,323 @@
    All rights reserved.
 */
 
+
+/* groupby object ***********************************************************/
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *it;
+	PyObject *keyfunc;
+	PyObject *tgtkey;
+	PyObject *currkey;
+	PyObject *currvalue;
+} groupbyobject;
+
+static PyTypeObject groupby_type;
+static PyObject *_grouper_create(groupbyobject *, PyObject *);
+
+static PyObject *
+groupby_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	static char *kwargs[] = {"iterable", "key", NULL};
+	groupbyobject *gbo;
+ 	PyObject *it, *keyfunc = Py_None;
+ 
+ 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:groupby", kwargs,
+					 &it, &keyfunc))
+		return NULL;
+
+	gbo = (groupbyobject *)type->tp_alloc(type, 0);
+	if (gbo == NULL)
+		return NULL;
+	gbo->tgtkey = NULL;
+	gbo->currkey = NULL;
+	gbo->currvalue = NULL;
+	gbo->keyfunc = keyfunc;
+	Py_INCREF(keyfunc);
+	gbo->it = PyObject_GetIter(it);
+	if (gbo->it == NULL) {
+		Py_DECREF(gbo);
+		return NULL;
+	}
+	return (PyObject *)gbo;
+}
+
+static void
+groupby_dealloc(groupbyobject *gbo)
+{
+	PyObject_GC_UnTrack(gbo);
+	Py_XDECREF(gbo->it);
+	Py_XDECREF(gbo->keyfunc);
+	Py_XDECREF(gbo->tgtkey);
+	Py_XDECREF(gbo->currkey);
+	Py_XDECREF(gbo->currvalue);
+	gbo->ob_type->tp_free(gbo);
+}
+
+static int
+groupby_traverse(groupbyobject *gbo, visitproc visit, void *arg)
+{
+	int err;
+
+	if (gbo->it) {
+		err = visit(gbo->it, arg);
+		if (err)
+			return err;
+	}
+	if (gbo->keyfunc) {
+		err = visit(gbo->keyfunc, arg);
+		if (err)
+			return err;
+	}
+	if (gbo->tgtkey) {
+		err = visit(gbo->tgtkey, arg);
+		if (err)
+			return err;
+	}
+	if (gbo->currkey) {
+		err = visit(gbo->currkey, arg);
+		if (err)
+			return err;
+	}
+	if (gbo->currvalue) {
+		err = visit(gbo->currvalue, arg);
+		if (err)
+			return err;
+	}
+	return 0;
+}
+
+static PyObject *
+groupby_next(groupbyobject *gbo)
+{
+	PyObject *newvalue, *newkey, *r, *grouper;
+
+	/* skip to next iteration group */
+	for (;;) {
+		if (gbo->currkey == NULL)
+			/* pass */;
+		else if (gbo->tgtkey == NULL)
+			break;
+		else {
+			int rcmp;
+
+			rcmp = PyObject_RichCompareBool(gbo->tgtkey,
+							gbo->currkey, Py_EQ);
+			if (rcmp == -1)
+				return NULL;
+			else if (rcmp == 0)
+				break;
+		}
+
+		newvalue = PyIter_Next(gbo->it);
+		if (newvalue == NULL)
+			return NULL;
+
+		if (gbo->keyfunc == Py_None) {
+			newkey = newvalue;
+			Py_INCREF(newvalue);
+		} else {
+			newkey = PyObject_CallFunctionObjArgs(gbo->keyfunc,
+							      newvalue, NULL);
+			if (newkey == NULL) {
+				Py_DECREF(newvalue);
+				return NULL;
+			}
+		}
+
+		Py_XDECREF(gbo->currkey);
+		gbo->currkey = newkey;
+		Py_XDECREF(gbo->currvalue);
+		gbo->currvalue = newvalue;
+	}
+
+	Py_XDECREF(gbo->tgtkey);
+	gbo->tgtkey = gbo->currkey;
+	Py_INCREF(gbo->currkey);
+
+	grouper = _grouper_create(gbo, gbo->tgtkey);
+	if (grouper == NULL)
+		return NULL;
+
+	r = PyTuple_Pack(2, gbo->currkey, grouper);
+	Py_DECREF(grouper);
+	return r;
+}
+
+PyDoc_STRVAR(groupby_doc,
+"groupby(iterable[, keyfunc]) -> create an iterator which returns\n\
+(key, sub-iterator) grouped by each value of key(value).\n");
+
+static PyTypeObject groupby_type = {
+	PyObject_HEAD_INIT(NULL)
+	0,				/* ob_size */
+	"itertools.groupby",		/* tp_name */
+	sizeof(groupbyobject),		/* tp_basicsize */
+	0,				/* tp_itemsize */
+	/* methods */
+	(destructor)groupby_dealloc,	/* tp_dealloc */
+	0,				/* tp_print */
+	0,				/* tp_getattr */
+	0,				/* tp_setattr */
+	0,				/* tp_compare */
+	0,				/* tp_repr */
+	0,				/* tp_as_number */
+	0,				/* tp_as_sequence */
+	0,				/* tp_as_mapping */
+	0,				/* tp_hash */
+	0,				/* tp_call */
+	0,				/* tp_str */
+	PyObject_GenericGetAttr,	/* tp_getattro */
+	0,				/* tp_setattro */
+	0,				/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_BASETYPE,	/* tp_flags */
+	groupby_doc,			/* tp_doc */
+	(traverseproc)groupby_traverse,	/* tp_traverse */
+	0,				/* tp_clear */
+	0,				/* tp_richcompare */
+	0,				/* tp_weaklistoffset */
+	PyObject_SelfIter,		/* tp_iter */
+	(iternextfunc)groupby_next,	/* tp_iternext */
+	0,				/* tp_methods */
+	0,				/* tp_members */
+	0,				/* tp_getset */
+	0,				/* tp_base */
+	0,				/* tp_dict */
+	0,				/* tp_descr_get */
+	0,				/* tp_descr_set */
+	0,				/* tp_dictoffset */
+	0,				/* tp_init */
+	0,				/* tp_alloc */
+	groupby_new,			/* tp_new */
+	PyObject_GC_Del,		/* tp_free */
+};
+
+
+/* _grouper object (internal) ************************************************/
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *parent;
+	PyObject *tgtkey;
+} _grouperobject;
+
+static PyTypeObject _grouper_type;
+
+static PyObject *
+_grouper_create(groupbyobject *parent, PyObject *tgtkey)
+{
+	_grouperobject *igo;
+
+	igo = PyObject_New(_grouperobject, &_grouper_type);
+	if (igo == NULL)
+		return NULL;
+	igo->parent = (PyObject *)parent;
+	Py_INCREF(parent);
+	igo->tgtkey = tgtkey;
+	Py_INCREF(tgtkey);
+
+	return (PyObject *)igo;
+}
+
+static void
+_grouper_dealloc(_grouperobject *igo)
+{
+	Py_DECREF(igo->parent);
+	Py_DECREF(igo->tgtkey);
+	PyObject_Del(igo);
+}
+
+static PyObject *
+_grouper_next(_grouperobject *igo)
+{
+	groupbyobject *gbo = (groupbyobject *)igo->parent;
+	PyObject *newvalue, *newkey, *r;
+	int rcmp;
+
+	if (gbo->currvalue == NULL) {
+		newvalue = PyIter_Next(gbo->it);
+		if (newvalue == NULL)
+			return NULL;
+
+		if (gbo->keyfunc == Py_None) {
+			newkey = newvalue;
+			Py_INCREF(newvalue);
+		} else {
+			newkey = PyObject_CallFunctionObjArgs(gbo->keyfunc,
+							      newvalue, NULL);
+			if (newkey == NULL) {
+				Py_DECREF(newvalue);
+				return NULL;
+			}
+		}
+
+		assert(gbo->currkey == NULL);
+		gbo->currkey = newkey;
+		gbo->currvalue = newvalue;
+	}
+
+	assert(gbo->currkey != NULL);
+	rcmp = PyObject_RichCompareBool(igo->tgtkey, gbo->currkey, Py_EQ);
+	if (rcmp <= 0)
+		/* got any error or current group is end */
+		return NULL;
+
+	r = gbo->currvalue;
+	gbo->currvalue = NULL;
+	Py_DECREF(gbo->currkey);
+	gbo->currkey = NULL;
+
+	return r;
+}
+
+static PyTypeObject _grouper_type = {
+	PyObject_HEAD_INIT(NULL)
+	0,				/* ob_size */
+	"itertools._grouper",		/* tp_name */
+	sizeof(_grouperobject),		/* tp_basicsize */
+	0,				/* tp_itemsize */
+	/* methods */
+	(destructor)_grouper_dealloc,	/* tp_dealloc */
+	0,				/* tp_print */
+	0,				/* tp_getattr */
+	0,				/* tp_setattr */
+	0,				/* tp_compare */
+	0,				/* tp_repr */
+	0,				/* tp_as_number */
+	0,				/* tp_as_sequence */
+	0,				/* tp_as_mapping */
+	0,				/* tp_hash */
+	0,				/* tp_call */
+	0,				/* tp_str */
+	PyObject_GenericGetAttr,	/* tp_getattro */
+	0,				/* tp_setattro */
+	0,				/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,		/* tp_flags */
+	0,				/* tp_doc */
+	0, 				/* tp_traverse */
+	0,				/* tp_clear */
+	0,				/* tp_richcompare */
+	0,				/* tp_weaklistoffset */
+	PyObject_SelfIter,		/* tp_iter */
+	(iternextfunc)_grouper_next,	/* tp_iternext */
+	0,				/* tp_methods */
+	0,				/* tp_members */
+	0,				/* tp_getset */
+	0,				/* tp_base */
+	0,				/* tp_dict */
+	0,				/* tp_descr_get */
+	0,				/* tp_descr_set */
+	0,				/* tp_dictoffset */
+	0,				/* tp_init */
+	0,				/* tp_alloc */
+	0,				/* tp_new */
+	PyObject_Del,			/* tp_free */
+};
+
+ 
+
 /* tee object and with supporting function and objects ***************/
 
 /* The teedataobject pre-allocates space for LINKCELLS number of objects.
@@ -2103,6 +2420,7 @@ tee(it, n=2) --> (it1, it2 , ... itn) splits one iterator into n\n\
 chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ... \n\
 takewhile(pred, seq) --> seq[0], seq[1], until pred fails\n\
 dropwhile(pred, seq) --> seq[n], seq[n+1], starting when pred fails\n\
+groupby(iterable[, keyfunc]) --> sub-iterators grouped by value of keyfunc(v)\n\
 ");
 
 
@@ -2130,6 +2448,7 @@ inititertools(void)
 		&count_type,
 		&izip_type,
 		&repeat_type,
+		&groupby_type,
 		NULL
 	};
 
@@ -2148,5 +2467,6 @@ inititertools(void)
 		return;
 	if (PyType_Ready(&tee_type) < 0)
 		return;
-
+	if (PyType_Ready(&_grouper_type) < 0)
+		return;
 }
