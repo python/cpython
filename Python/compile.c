@@ -778,13 +778,14 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 			h = i - 3 * j;
 			if (h >= 0  &&
 			    j <= lastlc  &&
-			    (opcode == BUILD_TUPLE && 
-			     ISBASICBLOCK(blocks, h, 3*(j+1)) ||
-			     opcode == BUILD_LIST && 
+			    ((opcode == BUILD_TUPLE && 
+			     ISBASICBLOCK(blocks, h, 3*(j+1))) ||
+			     (opcode == BUILD_LIST && 
 			     codestr[i+3]==COMPARE_OP && 
 			     ISBASICBLOCK(blocks, h, 3*(j+2)) &&
-			     (GETARG(codestr,i+3)==6 || GETARG(codestr,i+3)==7)) &&
-			    tuple_of_constants(&codestr[h], j, consts)) {
+			     (GETARG(codestr,i+3)==6 ||
+				      GETARG(codestr,i+3)==7))) &&
+			     tuple_of_constants(&codestr[h], j, consts)) {
 				assert(codestr[i] == LOAD_CONST);
 				cumlc = 1;
 				break;
