@@ -580,6 +580,13 @@ BUILD_FUNC_DEF_2(PySocketSock_accept,PySocketSockObject *,s, PyObject *,args)
 	return res;
 }
 
+static char accept_doc[] =
+"accept() -> (socket object, address info)\n\
+\n\
+Wait for an incoming connection.  Return a new socket representing the\n\
+connection, and the address of the client.  For IP sockets, the address\n\
+info is a pair (hostaddr, port).";
+
 
 /* s.setblocking(1 | 0) method */
 
@@ -615,6 +622,12 @@ BUILD_FUNC_DEF_2(PySocketSock_setblocking,PySocketSockObject*,s,PyObject*,args)
 	return Py_None;
 }
 
+static char setblocking_doc[] =
+"setblocking(flag)\n\
+\n\
+Set the socket to blocking (flag is true) or non-blocking (false).\n\
+This uses the FIONBIO ioctl with the O_NDELAY flag.";
+
 
 /* s.setsockopt() method.
    With an integer third argument, sets an integer option.
@@ -647,6 +660,12 @@ BUILD_FUNC_DEF_2(PySocketSock_setsockopt,PySocketSockObject *,s, PyObject *,args
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
+static char setsockopt_doc[] =
+"setsockopt(level, option, value)\n\
+\n\
+Set a socket option.  See the Unix manual for level and option.\n\
+The value argument can either be an integer or a string.";
 
 
 /* s.getsockopt() method.
@@ -693,6 +712,13 @@ BUILD_FUNC_DEF_2(PySocketSock_getsockopt,PySocketSockObject *,s, PyObject *,args
 	return buf;
 }
 
+static char getsockopt_doc[] =
+"getsockopt(level, option[, buffersize]) -> value\n\
+\n\
+Get a socket option.  See the Unix manual for level and option.\n\
+If a nonzero buffersize argument is given, the return value is a\n\
+string of that length; otherwise it is an integer.";
+
 
 /* s.bind(sockaddr) method */
 
@@ -712,6 +738,12 @@ BUILD_FUNC_DEF_2(PySocketSock_bind,PySocketSockObject *,s, PyObject *,args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
+static char bind_doc[] =
+"bind(address)\n\
+\n\
+Bind the socket to a local address.  For IP sockets, the address is a\n\
+pair (host, port); the host must refer to the local host.";
 
 
 /* s.close() method.
@@ -733,6 +765,11 @@ BUILD_FUNC_DEF_2(PySocketSock_close,PySocketSockObject *,s, PyObject *,args)
 	return Py_None;
 }
 
+static char close_doc[] =
+"close()\n\
+\n\
+Close the socket.  It cannot be used after this call.";
+
 
 /* s.connect(sockaddr) method */
 
@@ -753,6 +790,12 @@ BUILD_FUNC_DEF_2(PySocketSock_connect,PySocketSockObject *,s, PyObject *,args)
 	return Py_None;
 }
 
+static char connect_doc[] =
+"connect(address)\n\
+\n\
+Connect the socket to a remote address.  For IP sockets, the address\n\
+is a pair (host, port).";
+
 
 /* s.connect_ex(sockaddr) method */
 
@@ -772,6 +815,12 @@ BUILD_FUNC_DEF_2(PySocketSock_connect_ex,PySocketSockObject *,s, PyObject *,args
 	return PyInt_FromLong((long) res);
 }
 
+static char connect_ex_doc[] =
+"connect_ex(address)\n\
+\n\
+This is like connect(address), but returns an error code (the errno value)\n\
+instead of raising an exception when an error occurs.";
+
 
 /* s.fileno() method */
 
@@ -782,6 +831,11 @@ BUILD_FUNC_DEF_2(PySocketSock_fileno,PySocketSockObject *,s, PyObject *,args)
 		return NULL;
 	return PyInt_FromLong((long) s->sock_fd);
 }
+
+static char fileno_doc[] =
+"fileno() -> integer\n\
+\n\
+Return the integer file descriptor of the socket.";
 
 
 #ifndef NO_DUP
@@ -805,6 +859,12 @@ BUILD_FUNC_DEF_2(PySocketSock_dup,PySocketSockObject *,s, PyObject *,args)
 		close(newfd);
 	return sock;
 }
+
+static char dup_doc[] =
+"dup() -> socket object\n\
+\n\
+Return a new socket object connected to the same system resource.";
+
 #endif
 
 
@@ -828,6 +888,12 @@ BUILD_FUNC_DEF_2(PySocketSock_getsockname,PySocketSockObject *,s, PyObject *,arg
 	return makesockaddr((struct sockaddr *) addrbuf, addrlen);
 }
 
+static char getsockname_doc[] =
+"getsockname() -> address info\n\
+\n\
+Return the address of the local endpoint.  For IP sockets, the address\n\
+info is a pair (hostaddr, port).";
+
 
 #ifdef HAVE_GETPEERNAME		/* Cray APP doesn't have this :-( */
 /* s.getpeername() method */
@@ -848,6 +914,13 @@ BUILD_FUNC_DEF_2(PySocketSock_getpeername,PySocketSockObject *,s, PyObject *,arg
 		return PySocket_Err();
 	return makesockaddr((struct sockaddr *) addrbuf, addrlen);
 }
+
+static char getpeername_doc[] =
+"getpeername() -> address info\n\
+\n\
+Return the address of the remote endpoint.  For IP sockets, the address\n\
+info is a pair (hostaddr, port).";
+
 #endif /* HAVE_GETPEERNAME */
 
 
@@ -871,6 +944,14 @@ BUILD_FUNC_DEF_2(PySocketSock_listen,PySocketSockObject *,s, PyObject *,args)
 	return Py_None;
 }
 
+static char listen_doc[] =
+"listen(backlog)\n\
+\n\
+Enable a server to accept connections.  The backlog argument must be at\n\
+least 1; it specifies the number of unaccepted connection that the system\n\
+will allow before refusing new connections.";
+
+
 #ifndef NO_DUP
 /* s.makefile(mode) method.
    Create a new open file object referring to a dupped version of
@@ -892,12 +973,12 @@ BUILD_FUNC_DEF_2(PySocketSock_makefile,PySocketSockObject *,s, PyObject *,args)
 	if (!PyArg_ParseTuple(args, "|si", &mode, &bufsize))
 		return NULL;
 #ifdef MS_WIN32
-   if ( ((fd =  _open_osfhandle( s->sock_fd, _O_BINARY )) < 0) ||
-        ((fd = dup(fd)) < 0) || ((fp = fdopen(fd, mode)) == NULL)) {
+	if (((fd = _open_osfhandle(s->sock_fd, _O_BINARY)) < 0) ||
+	    ((fd = dup(fd)) < 0) || ((fp = fdopen(fd, mode)) == NULL))
 #else
-	if ((fd = dup(s->sock_fd)) < 0 ||
-	    (fp = fdopen(fd, mode)) == NULL) {
+	if ((fd = dup(s->sock_fd)) < 0 || (fp = fdopen(fd, mode)) == NULL)
 #endif
+	{
 		if (fd >= 0)
 			close(fd);
 		return PySocket_Err();
@@ -907,8 +988,16 @@ BUILD_FUNC_DEF_2(PySocketSock_makefile,PySocketSockObject *,s, PyObject *,args)
 		PyFile_SetBufSize(f, bufsize);
 	return f;
 }
+
+static char makefile_doc[] =
+"makefile([mode[, buffersize]]) -> file object\n\
+\n\
+Return a regular file object corresponding to the socket.\n\
+The mode and buffersize arguments are as for the built-in open() function.";
+
 #endif /* NO_DUP */
 
+ 
 /* s.recv(nbytes [,flags]) method */
 
 static PyObject *
@@ -932,6 +1021,14 @@ BUILD_FUNC_DEF_2(PySocketSock_recv,PySocketSockObject *,s, PyObject *,args)
 		return NULL;
 	return buf;
 }
+
+static char recv_doc[] =
+"recv(buffersize[, flags]) -> data\n\
+\n\
+Receive up to buffersize bytes from the socket.  For the optional flags\n\
+argument, see the Unix manual.  When no data is available, block until\n\
+at least one byte is available or until the remote end is closed.  When\n\
+the remote end is closed and all data is read, return the empty string.";
 
 
 /* s.recvfrom(nbytes [,flags]) method */
@@ -982,6 +1079,11 @@ BUILD_FUNC_DEF_2(PySocketSock_recvfrom,PySocketSockObject *,s, PyObject *,args)
 	return ret;
 }
 
+static char recvfrom_doc[] =
+"recvfrom(buffersize[, flags]) -> (data, address info)\n\
+\n\
+Like recv(buffersize, flags) but also return the sender's address info.";
+
 
 /* s.send(data [,flags]) method */
 
@@ -999,6 +1101,12 @@ BUILD_FUNC_DEF_2(PySocketSock_send,PySocketSockObject *,s, PyObject *,args)
 		return PySocket_Err();
 	return PyInt_FromLong((long)n);
 }
+
+static char send_doc[] =
+"send(data[, flags])\n\
+\n\
+Send a data string to the socket.  For the optional flags\n\
+argument, see the Unix manual.";
 
 
 /* s.sendto(data, [flags,] sockaddr) method */
@@ -1026,6 +1134,12 @@ BUILD_FUNC_DEF_2(PySocketSock_sendto,PySocketSockObject *,s, PyObject *,args)
 	return PyInt_FromLong((long)n);
 }
 
+static char sendto_doc[] =
+"sendto(data[, flags], address)\n\
+\n\
+Like send(data, flags) but allows specifying the destination address.\n\
+For IP sockets, the address is a pair (hostaddr, port).";
+
 
 /* s.shutdown(how) method */
 
@@ -1045,35 +1159,60 @@ BUILD_FUNC_DEF_2(PySocketSock_shutdown,PySocketSockObject *,s, PyObject *,args)
 	return Py_None;
 }
 
+static char shutdown_doc[] =
+"shutdown(flag)\n\
+\n\
+Shut down the reading side of the socket (flag == 0), the writing side\n\
+of the socket (flag == 1), or both ends (flag == 2).";
+
 
 /* List of methods for socket objects */
 
 static PyMethodDef PySocketSock_methods[] = {
-	{"accept",		(PyCFunction)PySocketSock_accept},
-	{"setblocking",		(PyCFunction)PySocketSock_setblocking},
-	{"setsockopt",		(PyCFunction)PySocketSock_setsockopt},
-	{"getsockopt",		(PyCFunction)PySocketSock_getsockopt, 1},
-	{"bind",		(PyCFunction)PySocketSock_bind},
-	{"close",		(PyCFunction)PySocketSock_close},
-	{"connect",		(PyCFunction)PySocketSock_connect},
-	{"connect_ex",		(PyCFunction)PySocketSock_connect_ex},
-	{"fileno",		(PyCFunction)PySocketSock_fileno},
+	{"accept",		(PyCFunction)PySocketSock_accept, 0,
+				accept_doc},
+	{"bind",		(PyCFunction)PySocketSock_bind, 0,
+				bind_doc},
+	{"close",		(PyCFunction)PySocketSock_close, 0,
+				close_doc},
+	{"connect",		(PyCFunction)PySocketSock_connect, 0,
+				connect_doc},
+	{"connect_ex",		(PyCFunction)PySocketSock_connect_ex, 0,
+				connect_ex_doc},
 #ifndef NO_DUP
-	{"dup",			(PyCFunction)PySocketSock_dup},
+	{"dup",			(PyCFunction)PySocketSock_dup, 0,
+				dup_doc},
 #endif
-	{"getsockname",		(PyCFunction)PySocketSock_getsockname},
+	{"fileno",		(PyCFunction)PySocketSock_fileno, 0,
+				fileno_doc},
 #ifdef HAVE_GETPEERNAME
-	{"getpeername",		(PyCFunction)PySocketSock_getpeername},
+	{"getpeername",		(PyCFunction)PySocketSock_getpeername, 0,
+				getpeername_doc},
 #endif
-	{"listen",		(PyCFunction)PySocketSock_listen},
+	{"getsockname",		(PyCFunction)PySocketSock_getsockname, 0,
+				getsockname_doc},
+	{"getsockopt",		(PyCFunction)PySocketSock_getsockopt, 1,
+				getsockopt_doc},
+	{"listen",		(PyCFunction)PySocketSock_listen, 0,
+				listen_doc},
 #ifndef NO_DUP
-	{"makefile",		(PyCFunction)PySocketSock_makefile, 1},
+	{"makefile",		(PyCFunction)PySocketSock_makefile, 1,
+				makefile_doc},
 #endif
-	{"recv",		(PyCFunction)PySocketSock_recv, 1},
-	{"recvfrom",		(PyCFunction)PySocketSock_recvfrom, 1},
-	{"send",		(PyCFunction)PySocketSock_send, 1},
-	{"sendto",		(PyCFunction)PySocketSock_sendto},
-	{"shutdown",		(PyCFunction)PySocketSock_shutdown},
+	{"recv",		(PyCFunction)PySocketSock_recv, 1,
+				recv_doc},
+	{"recvfrom",		(PyCFunction)PySocketSock_recvfrom, 1,
+				recvfrom_doc},
+	{"send",		(PyCFunction)PySocketSock_send, 1,
+				send_doc},
+	{"sendto",		(PyCFunction)PySocketSock_sendto, 0,
+				sendto_doc},
+	{"setblocking",		(PyCFunction)PySocketSock_setblocking, 0,
+				setblocking_doc},
+	{"setsockopt",		(PyCFunction)PySocketSock_setsockopt, 0,
+				setsockopt_doc},
+	{"shutdown",		(PyCFunction)PySocketSock_shutdown, 0,
+				shutdown_doc},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1148,6 +1287,11 @@ BUILD_FUNC_DEF_2(PySocket_gethostname,PyObject *,self, PyObject *,args)
 	return PyString_FromString(buf);
 }
 
+static char gethostname_doc[] =
+"gethostname() -> string\n\
+\n\
+Return the current host name.";
+
 
 /* Python interface to gethostbyname(name). */
 
@@ -1163,6 +1307,12 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyname,PyObject *,self, PyObject *,args)
 		return NULL;
 	return makeipaddr(&addrbuf);
 }
+
+static char gethostbyname_doc[] =
+"gethostbyname(host) -> address\n\
+\n\
+Return the IP address (a string of the form '255.255.255.255') for a host.";
+
 
 /* Python interface to gethostbyaddr(IP). */
 
@@ -1249,6 +1399,12 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
 	return rtn_tuple;
 }
 
+static char gethostbyaddr_doc[] =
+"gethostbyaddr(host) -> (name, aliaslist, addresslist)\n\
+\n\
+Return the true host name, a list of aliases, and a list of IP addresses,\n\
+for a host.  The host argument is a string giving a host name or IP number.";
+
 
 /* Python interface to getservbyname(name).
    This only returns the port number, since the other info is already
@@ -1272,6 +1428,12 @@ BUILD_FUNC_DEF_2(PySocket_getservbyname,PyObject *,self, PyObject *,args)
 	return PyInt_FromLong((long) ntohs(sp->s_port));
 }
 
+static char getservbyname_doc[] =
+"getservbyname(servicename, protocolname) -> integer\n\
+\n\
+Return a port number from a service name and protocol name.\n\
+The protocol name should be 'tcp' or 'udp'.";
+
 
 /* Python interface to getprotobyname(name).
    This only returns the protocol number, since the other info is
@@ -1294,6 +1456,11 @@ BUILD_FUNC_DEF_2(PySocket_getprotobyname,PyObject *,self, PyObject *,args)
 	}
 	return PyInt_FromLong((long) sp->p_proto);
 }
+
+static char getprotobyname_doc[] =
+"getprotobyname(name) -> integer\n\
+\n\
+Return the protocol number for the named protocol.  (Rarely used.)";
 
 
 /* Python interface to socket(family, type, proto).
@@ -1335,6 +1502,16 @@ BUILD_FUNC_DEF_2(PySocket_socket,PyObject *,self, PyObject *,args)
 	return (PyObject *) s;
 }
 
+static char socket_doc[] =
+"socket(family, type[, proto]) -> socket object\n\
+\n\
+Open a socket of the given type.  The family argument specifies the\n\
+address family; it is normally AF_INET, sometimes AF_UNIX.\n\
+The type argument specifies whether this is a stream (SOCK_STREAM)\n\
+or datagram (SOCK_DGRAM) socket.  The protocol argument defaults to 0,\n\
+specifying the default protocol.";
+
+
 #ifndef NO_DUP
 /* Create a socket object from a numeric file description.
    Useful e.g. if stdin is a socket.
@@ -1360,7 +1537,15 @@ BUILD_FUNC_DEF_2(PySocket_fromfd,PyObject *,self, PyObject *,args)
 #endif   
 	return (PyObject *) s;
 }
+
+static char fromfd_doc[] =
+"fromfd(fd, family, type[, proto]) -> socket object\n\
+\n\
+Create a socket object from the given file descriptor.\n\
+The remaining arguments are the same as for socket().";
+
 #endif /* NO_DUP */
+
 
 static PyObject *
 BUILD_FUNC_DEF_2(PySocket_ntohs, PyObject *, self, PyObject *, args)
@@ -1374,6 +1559,12 @@ BUILD_FUNC_DEF_2(PySocket_ntohs, PyObject *, self, PyObject *, args)
 	return PyInt_FromLong(x2);
 }
 
+static char ntohs_doc[] =
+"ntohs(integer) -> integer\n\
+\n\
+Convert a 16-bit integer from network to host byte order.";
+
+
 static PyObject *
 BUILD_FUNC_DEF_2(PySocket_ntohl, PyObject *, self, PyObject *, args)
 {
@@ -1385,6 +1576,12 @@ BUILD_FUNC_DEF_2(PySocket_ntohl, PyObject *, self, PyObject *, args)
 	x2 = ntohl(x1);
 	return PyInt_FromLong(x2);
 }
+
+static char ntohl_doc[] =
+"ntohl(integer) -> integer\n\
+\n\
+Convert a 32-bit integer from network to host byte order.";
+
 
 static PyObject *
 BUILD_FUNC_DEF_2(PySocket_htons, PyObject *, self, PyObject *, args)
@@ -1398,6 +1595,12 @@ BUILD_FUNC_DEF_2(PySocket_htons, PyObject *, self, PyObject *, args)
 	return PyInt_FromLong(x2);
 }
 
+static char htons_doc[] =
+"htons(integer) -> integer\n\
+\n\
+Convert a 16-bit integer from host to network byte order.";
+
+
 static PyObject *
 BUILD_FUNC_DEF_2(PySocket_htonl, PyObject *, self, PyObject *, args)
 {
@@ -1410,22 +1613,28 @@ BUILD_FUNC_DEF_2(PySocket_htonl, PyObject *, self, PyObject *, args)
 	return PyInt_FromLong(x2);
 }
 
+static char htonl_doc[] =
+"htonl(integer) -> integer\n\
+\n\
+Convert a 32-bit integer from host to network byte order.";
+
+
 /* List of functions exported by this module. */
 
 static PyMethodDef PySocket_methods[] = {
-	{"gethostbyname",	PySocket_gethostbyname},
-	{"gethostbyaddr",	PySocket_gethostbyaddr},
-	{"gethostname",		PySocket_gethostname},
-	{"getservbyname",	PySocket_getservbyname},
-	{"getprotobyname",	PySocket_getprotobyname},
-	{"socket",		PySocket_socket, 1},
+	{"gethostbyname",	PySocket_gethostbyname, 0, gethostbyname_doc},
+	{"gethostbyaddr",	PySocket_gethostbyaddr, 0, gethostbyaddr_doc},
+	{"gethostname",		PySocket_gethostname, 0, gethostname_doc},
+	{"getservbyname",	PySocket_getservbyname, 0, getservbyname_doc},
+	{"getprotobyname",	PySocket_getprotobyname, 0,getprotobyname_doc},
+	{"socket",		PySocket_socket, 1, socket_doc},
 #ifndef NO_DUP
-	{"fromfd",		PySocket_fromfd, 1},
+	{"fromfd",		PySocket_fromfd, 1, fromfd_doc},
 #endif
-	{"ntohs",		PySocket_ntohs},
-	{"ntohl",		PySocket_ntohl},
-	{"htons",		PySocket_htons},
-	{"htonl",		PySocket_htonl},
+	{"ntohs",		PySocket_ntohs, 0, ntohs_doc},
+	{"ntohl",		PySocket_ntohl, 0, ntohl_doc},
+	{"htons",		PySocket_htons, 0, htons_doc},
+	{"htonl",		PySocket_htonl, 0, htonl_doc},
 	{NULL,			NULL}		 /* Sentinel */
 };
 
@@ -1534,6 +1743,66 @@ OS2init()
  *   operating system's filesystem layer.
  */
 
+static char module_doc[] =
+"This module provides socket operations and some related functions.\n\
+On Unix, it supports IP (Internet Protocol) and Unix domain sockets.\n\
+On other systems, it only supports IP.\n\
+\n\
+Functions:\n\
+\n\
+socket() -- create a new socket object\n\
+fromfd() -- create a socket object from an open file descriptor (*)\n\
+gethostname() -- return the current hostname\n\
+gethostbyname() -- map a hostname to its IP number\n\
+gethostbyaddr() -- map an IP number or hostname to DNS info\n\
+getservbyname() -- map a service name and a protocol name to a port number\n\
+getprotobyname() -- mape a protocol name (e.g. 'tcp') to a number\n\
+ntohs(), ntohl() -- convert 16, 32 bit int from network to host byte order\n\
+htons(), htonl() -- convert 16, 32 bit int from host to network byte order\n\
+\n\
+(*) not available on all platforms!)\n\
+\n\
+Special objects:\n\
+\n\
+SocketType -- type object for socket objects\n\
+error -- exception raised for I/O errors\n\
+\n\
+Integer constants:\n\
+\n\
+AF_INET, AF_UNIX -- socket domains (first argument to socket() call)\n\
+SOCK_STREAM, SOCK_DGRAM, SOCK_RAW -- socket types (second argument)\n\
+\n\
+Many other constants may be defined; these may be used in calls to\n\
+the setsockopt() and getsockopt() methods.\n\
+";
+
+static char sockettype_doc[] =
+"A socket represents one endpoint of a network connection.\n\
+\n\
+Methods:\n\
+\n\
+accept() -- accept a connection, returning new socket and client address\n\
+bind() -- bind the socket to a local address\n\
+close() -- close the socket\n\
+connect() -- connect the socket to a remote address\n\
+connect_ex() -- connect, return an error code instead of an exception \n\
+dup() -- return a new socket object identical to the current one (*)\n\
+fileno() -- return underlying file descriptor\n\
+getpeername() -- return remote address (*)\n\
+getsockname() -- return local address\n\
+getsockopt() -- get socket options\n\
+listen() -- start listening for incoming connections\n\
+makefile() -- return a file object corresponding tot the socket (*)\n\
+recv() -- receive data\n\
+recvfrom() -- receive data and sender's address\n\
+send() -- send data\n\
+sendto() -- send data to a given address\n\
+setblocking() -- set or clear the blocking I/O flag\n\
+setsockopt() -- set socket options\n\
+shutdown() -- shut down traffic in one or both directions\n\
+\n\
+(*) not available on all platforms!)";
+
 void
 #if defined(MS_WINDOWS) || defined(PYOS_OS2)
 init_socket()
@@ -1545,14 +1814,14 @@ initsocket()
 #ifdef MS_WINDOWS
 	if (!NTinit())
 		return;
-	m = Py_InitModule("_socket", PySocket_methods);
+	m = Py_InitModule3("_socket", PySocket_methods, module_doc);
 #else
 #if defined(__TOS_OS2__)
 	if (!OS2init())
 		return;
-	m = Py_InitModule("_socket", PySocket_methods);
+	m = Py_InitModule3("_socket", PySocket_methods, module_doc);
 #else
-	m = Py_InitModule("socket", PySocket_methods);
+	m = Py_InitModule3("socket", PySocket_methods, module_doc);
 #endif
 #endif
 	d = PyModule_GetDict(m);
@@ -1561,6 +1830,7 @@ initsocket()
 		return;
 	PyDict_SetItemString(d, "error", PySocket_Error);
 	PySocketSock_Type.ob_type = &PyType_Type;
+	PySocketSock_Type.tp_doc = sockettype_doc;
 	Py_INCREF(&PySocketSock_Type);
 	if (PyDict_SetItemString(d, "SocketType",
 				 (PyObject *)&PySocketSock_Type) != 0)
