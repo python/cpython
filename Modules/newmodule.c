@@ -79,11 +79,8 @@ new_instancemethod(unused, args)
 	return newinstancemethodobject(func, self, classObj);
 }
 
-/* XXX These internal interfaces have changed -- who'll fix this code? */
-#if 0
-
 static char new_function_doc[] =
-"Create a function object from (CODE, GLOBALS, [NAME, ARGCOUNT, ARGDEFS]).";
+"Create a function object from (CODE, GLOBALS, [NAME, ARGDEFS]).";
 
 static object *
 new_function(unused, args)
@@ -93,16 +90,14 @@ new_function(unused, args)
 	object* code;
 	object* globals;
 	object* name = None;
-	int argcount = -1;
-	object* argdefs = None;
+	object* defaults = None;
 	funcobject* newfunc;
 
-	if (!newgetargs(args, "O!O!|SiO!",
+	if (!newgetargs(args, "O!O!|SO!",
 			&Codetype, &code,
 			&Mappingtype, &globals,
 			&name,
-			&argcount,
-			&Tupletype, &argdefs))
+			&Tupletype, &defaults))
 		return NULL;
 
 	newfunc = (funcobject *)newfuncobject(code, globals);
@@ -114,16 +109,14 @@ new_function(unused, args)
 		XDECREF(newfunc->func_name);
 		newfunc->func_name = name;
 	}
-	newfunc->func_argcount = argcount;
-	if (argdefs != NULL) {
-		XINCREF(argdefs);
-		XDECREF(newfunc->func_argdefs);
-		newfunc->func_argdefs  = argdefs;
+	if (defaults != NULL) {
+		XINCREF(defaults);
+		XDECREF(newfunc->func_defaults);
+		newfunc->func_defaults  = defaults;
 	}
 
 	return (object *)newfunc;
 }
-#endif
 
 static char new_code_doc[] =
 "Create a code object from (ARGCOUNT, NLOCALS, FLAGS, CODESTRING, CONSTANTS, NAMES, VARNAMES, FILENAME, NAME).";
@@ -143,13 +136,6 @@ new_code(unused, args)
 	object* filename;
 	object* name;
   
-#if 0
-	if (!newgetargs(args, "SO!O!SS",
-			&code, &Tupletype, &consts, &Tupletype, &names,
-			&filename, &name))
-		return NULL;
-	return (object *)newcodeobject(code, consts, names, filename, name);
-#else
 	if (!newgetargs(args, "iiiSO!O!O!SS",
 			&argcount, &nlocals, &flags,	/* These are new */
 			&code, &Tupletype, &consts, &Tupletype, &names,
@@ -158,7 +144,6 @@ new_code(unused, args)
 		return NULL;
 	return (object *)newcodeobject(argcount, nlocals, flags,
 		code, consts, names, varnames, filename, name);
-#endif
 }
 
 static char new_module_doc[] =
@@ -197,9 +182,7 @@ new_class(unused, args)
 static struct methodlist new_methods[] = {
 	{"instance",		new_instance,		1, new_instance_doc},
 	{"instancemethod",	new_instancemethod,	1, new_im_doc},
-#if 0
 	{"function",		new_function,		1, new_function_doc},
-#endif
 	{"code",		new_code,		1, new_code_doc},
 	{"module",		new_module,		1, new_module_doc},
 	{"classobj",		new_class,		1, new_class_doc},
