@@ -53,10 +53,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <signal.h>
 #include <stdio.h>
 
+/* The alert for "No Python directory, where is it?" */
 #define NOPYTHON_ALERT 128
 #define YES_ITEM 1
 #define NO_ITEM 2
 #define CURWD_ITEM 3
+
+/* The alert for "this is an applet template" */
+#define NOPYC_ALERT 129
+
+/* The dialog for our GetDirectory call */
+#define GETDIR_ID 130		/* Resource ID for our "get directory" */
+#define SELECTCUR_ITEM 10	/* "Select current directory" button */
 
 #ifdef __MWERKS__
 /* 
@@ -390,7 +398,6 @@ PyMac_GetPythonDir()
     FSSpec dirspec;
     int ok = 0, exists = 0;
     Boolean modified = 0, cannotmodify = 0;
-    StandardFileReply sfreply;
     short oldrh, prefrh;
     short prefdirRefNum;
     long prefdirDirID;
@@ -433,21 +440,9 @@ PyMac_GetPythonDir()
 	    item = Alert(NOPYTHON_ALERT, NULL);
 	    if ( item == YES_ITEM ) {
 	    	/* The user wants to point us to a directory. Let her do so */
-	    	StandardGetFile(NULL, 0, NULL, &sfreply);
-	    	if ( sfreply.sfGood ) {
-	    		if ( sfreply.sfIsFolder ) {
-	    			dirspec = sfreply.sfFile;
-	    			ok = 1;
-	    			modified = 1;
-	    		} else {
-	    			/* User selected a file. Use folder containing it */
-	    			if (FSMakeFSSpec(sfreply.sfFile.vRefNum, 
-	    							sfreply.sfFile.parID, "\p", &dirspec) == 0) {
-	    				ok = 1;
-	    				modified = 1;
-	    			}
-	    		}
-	    	}
+	    	ok = PyMac_GetDirectory(&dirspec);
+	    	if ( ok )
+	    		modified = 1;
 	    } else if ( item == CURWD_ITEM ) {
 	    	/* The user told us the current directory is fine. Build an FSSpec for it */
 	    	if ( getwd(name) ) {
@@ -593,6 +588,49 @@ error:
 		return NULL;
 	}
 }
+/*
+** Helper routine for GetDirectory
+*/
+static int
+myhook_proc(item, theDialog, dataptr)
+	short item;
+	DialogPtr theDialog;
+	void *dataptr;
+{
+	if ( item == SELECTCUR_ITEM ) {
+		item = sfItemCancelButton;
+		* (int *)dataptr = 1;
+	}
+	return item;
+}	
+
+/*
+** Ask the user for a directory. I still can't understand
+** why Apple doesn't provide a standard solution for this...
+*/
+int
+PyMac_GetDirectory(dirfss)
+	FSSpec *dirfss;
+{
+	static SFTypeList list = {'fldr', 0, 0, 0};
+	static Point where = {-1, -1};
+	static DlgHookYDUPP myhook_upp;
+	static int upp_inited = 0;
+	StandardFileReply reply;
+	int select_clicked = 0;
+	
+	if ( !upp_inited ) {
+		myhook_upp = NewDlgHookYDProc(myhook_proc);
+		upp_inited = 1;
+	}
+	CustomGetFile((FileFilterUPP)0, 1, list, &reply, GETDIR_ID, where, myhook_upp,
+				NULL, NULL, NULL, (void *)&select_clicked);
+				
+	reply.sfFile.name[0] = 0;
+	if( FSMakeFSSpec(reply.sfFile.vRefNum, reply.sfFile.parID, reply.sfFile.name, dirfss) )
+		return 0;
+	return select_clicked;
+}
 
 /* Convert a 4-char string object argument to an OSType value */
 int
@@ -659,7 +697,7 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
 	/* first check whether it already is an FSSpec */
 	fs2 = mfs_GetFSSpecFSSpec(v);
 	if ( fs2 ) {
-		fs = fs2;
+		(void)FSMakeFSSpec(fs2->vRefNum, fs2->parID, fs2->name, fs);
 		return 1;
 	}
 	if ( PyString_Check(v) ) {
@@ -762,7 +800,7 @@ run_main_resource()
 	
 	h = GetNamedResource('PYC ', "\p__main__");
 	if (h == NULL) {
-		fprintf(stderr, "No 'PYC ' resource named __main__ found\n");
+		Alert(NOPYC_ALERT, NULL);
 		return 1;
 	}
 	size = GetResourceSizeOnDisk(h);
@@ -790,12 +828,33 @@ PyMac_InitApplet()
 {
 	int argc;
 	char **argv;
-	
+
+#ifdef __MWERKS__
+	/*
+	** Guido: you should fix this. You should arrange to have the
+	** __sinit routine from macshlglue.c called so you can stuff
+	** resources into the lib file.
+	*/
+	PyMac_AddLibResources();
+#else
+	KABOO! KABOO!
+#endif
+#ifdef __MWERKS__
+	SIOUXSettings.asktosaveonclose = 0;
+	SIOUXSettings.showstatusline = 0;
+	SIOUXSettings.tabspaces = 4;
+#endif
 	argc = PyMac_GetArgv(&argv);
 	Py_Initialize();
 	PySys_SetArgv(argc, argv);
-	run_main_resource();
+	err = run_main_resource();
 	fflush(stderr);
 	fflush(stdout);
+#ifdef __MWERKS__
+	if (!err)
+		SIOUXSettings.autocloseonquit = 1;
+	else
+		SIOUXSettings.showstatusline = 1;
+#endif
 	/* XXX Should we bother to Py_Exit(sts)? */
 }
