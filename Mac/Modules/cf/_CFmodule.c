@@ -158,6 +158,7 @@ static void CFTypeRefObj_dealloc(CFTypeRefObject *self)
 	if (self->ob_freeit && self->ob_itself)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
+		self->ob_itself = NULL;
 	}
 	self->ob_type->tp_free((PyObject *)self);
 }
@@ -519,6 +520,7 @@ static void CFArrayRefObj_dealloc(CFArrayRefObject *self)
 	if (self->ob_freeit && self->ob_itself)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
+		self->ob_itself = NULL;
 	}
 	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
 }
@@ -728,6 +730,7 @@ static void CFMutableArrayRefObj_dealloc(CFMutableArrayRefObject *self)
 	if (self->ob_freeit && self->ob_itself)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
+		self->ob_itself = NULL;
 	}
 	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
 }
@@ -966,6 +969,7 @@ static void CFDictionaryRefObj_dealloc(CFDictionaryRefObject *self)
 	if (self->ob_freeit && self->ob_itself)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
+		self->ob_itself = NULL;
 	}
 	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
 }
@@ -1157,6 +1161,7 @@ static void CFMutableDictionaryRefObj_dealloc(CFMutableDictionaryRefObject *self
 	if (self->ob_freeit && self->ob_itself)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
+		self->ob_itself = NULL;
 	}
 	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
 }
@@ -1338,6 +1343,7 @@ static void CFDataRefObj_dealloc(CFDataRefObject *self)
 	if (self->ob_freeit && self->ob_itself)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
+		self->ob_itself = NULL;
 	}
 	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
 }
@@ -1561,6 +1567,7 @@ static void CFMutableDataRefObj_dealloc(CFMutableDataRefObject *self)
 	if (self->ob_freeit && self->ob_itself)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
+		self->ob_itself = NULL;
 	}
 	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
 }
@@ -1839,6 +1846,7 @@ static void CFStringRefObj_dealloc(CFStringRefObject *self)
 	if (self->ob_freeit && self->ob_itself)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
+		self->ob_itself = NULL;
 	}
 	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
 }
@@ -2564,6 +2572,7 @@ static void CFMutableStringRefObj_dealloc(CFMutableStringRefObject *self)
 	if (self->ob_freeit && self->ob_itself)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
+		self->ob_itself = NULL;
 	}
 	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
 }
@@ -2950,6 +2959,7 @@ static void CFURLRefObj_dealloc(CFURLRefObject *self)
 	if (self->ob_freeit && self->ob_itself)
 	{
 		self->ob_freeit((CFTypeRef)self->ob_itself);
+		self->ob_itself = NULL;
 	}
 	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
 }
