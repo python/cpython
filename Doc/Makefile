@@ -126,6 +126,7 @@ tut-all:  tut.dvi tut.pdf tut.ps l2htut
 # This rule avoids creation of the intermediate PostScript files and uses
 # only free software.
 #
+$(PDFFILES): tools/toc2bkm.py
 .dvi.pdf: $*.bkm
 	$(PDFLATEX) $*
 	$(PYTHON) tools/toc2bkm.py $*
