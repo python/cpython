@@ -6,19 +6,12 @@ child after a fork().
 On some systems (e.g. Solaris without posix threads) we find that all
 active threads survive in the child after a fork(); this is an error.
 
-On BeOS, you CANNOT mix threads and fork(), the behaviour is undefined.
-That's OK, fork() is a grotesque hack anyway. ;-) [cjh]
-
+While BeOS doesn't officially support fork and native threading in
+the same application, the present example should work just fine.  DC
 """
 
 import os, sys, time, thread
 from test_support import verify, verbose, TestSkipped
-
-try:
-    if os.uname()[0] == "BeOS":
-        raise TestSkipped, "can't mix os.fork with threads on BeOS"
-except AttributeError:
-    pass
 
 try:
     os.fork

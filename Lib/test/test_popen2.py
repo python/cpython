@@ -4,6 +4,8 @@
 """
 
 import os
+import sys
+from test_support import TestSkipped
 
 # popen2 contains its own testing routine
 # which is especially useful to see if open files
@@ -12,6 +14,11 @@ import os
 
 def main():
     print "Test popen2 module:"
+    if sys.platform[:4] == 'beos' and __name__ != '__main__':
+        #  Locks get messed up or something.  Generally we're supposed
+        #  to avoid mixing "posix" fork & exec with native threads, and
+        #  they may be right about that after all.
+        raise TestSkipped, "popen2() doesn't work during import on BeOS"
     try:
         from os import popen
     except ImportError:
