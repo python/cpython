@@ -254,7 +254,7 @@ getattr(v, name)
 	char *name;
 {
 	if (v->ob_type->tp_getattr == NULL) {
-		err_setstr(TypeError, "attribute-less object");
+		err_setstr(AttributeError, "attribute-less object");
 		return NULL;
 	}
 	else {
