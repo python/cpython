@@ -8,4 +8,6 @@ InvalidURL raised as expected
 reply: 'HTTP/1.1 200 OK\r\n'
 header: Set-Cookie: Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"
 header: Set-Cookie: Part_Number="Rocket_Launcher_0001"; Version="1"; Path="/acme"
+reply: 'HTTP/1.1 200 OK\r\n'
+header: Content-Length: 14432
 

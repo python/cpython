@@ -1,21 +1,40 @@
-from test.test_support import verify,verbose
 import httplib
 import StringIO
+import sys
+
+from test.test_support import verify,verbose
 
 class FakeSocket:
-    def __init__(self, text):
+    def __init__(self, text, fileclass=StringIO.StringIO):
         self.text = text
+        self.fileclass = fileclass
 
     def makefile(self, mode, bufsize=None):
         if mode != 'r' and mode != 'rb':
             raise httplib.UnimplementedFileMode()
-        return StringIO.StringIO(self.text)
+        return self.fileclass(self.text)
+
+class NoEOFStringIO(StringIO.StringIO):
+    """Like StringIO, but raises AssertionError on EOF.
+
+    This is used below to test that httplib doesn't try to read
+    more from the underlying file than it should.
+    """
+    def read(self, n=-1):
+        data = StringIO.StringIO.read(self, n)
+        if data == '':
+            raise AssertionError('caller tried to read past EOF')
+        return data
+
+    def readline(self, length=None):
+        data = StringIO.StringIO.readline(self, length)
+        if data == '':
+            raise AssertionError('caller tried to read past EOF')
+        return data
 
 # Collect output to a buffer so that we don't have to cope with line-ending
 # issues across platforms.  Specifically, the headers will have \r\n pairs
 # and some platforms will strip them from the output file.
-
-import sys
 
 def test():
     buf = StringIO.StringIO()
@@ -78,17 +97,17 @@ def _test():
     if cookies != hdr:
         raise AssertionError, "multiple headers not combined properly"
 
-    # test that the library doesn't attempt to read any data
-    # from a head request
-    conn = httplib.HTTPConnection("www.python.org")
-    conn.connect()
-    conn.request("HEAD", "/", headers={"Connection" : "keep-alive"})
-    resp = conn.getresponse()
-    if resp.status != 200:
-        raise AssertionError, "Expected status 200, got %d" % resp.status
+    # Test that the library doesn't attempt to read any data
+    # from a HEAD request.  (Tickles SF bug #622042.)
+    sock = FakeSocket(
+        'HTTP/1.1 200 OK\r\n'
+        'Content-Length: 14432\r\n'
+        '\r\n',
+        NoEOFStringIO)
+    resp = httplib.HTTPResponse(sock, 1, method="HEAD")
+    resp.begin()
     if resp.read() != "":
         raise AssertionError, "Did not expect response from HEAD request"
     resp.close()
-    conn.close()
 
 test()
