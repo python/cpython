@@ -88,9 +88,9 @@ Options Menu:
                           Startup Preferences may be set, and Additional Help
                           Souces can be specified.
 	---
-	Revert to Default Settings -- Restore original settings.  Not
-	                              currently implemented - simply delete
-                                      your .idlerc file.
+	Code Context --	  Open a pane at the top of the edit window which
+			  shows the block context of the section of code
+			  which is scrolling off the top or the window.
 
 Windows Menu:
 

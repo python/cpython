@@ -13,48 +13,60 @@ the context hints pane.
 import Tkinter
 from configHandler import idleConf
 from PyShell import PyShell
-from string import whitespace
 import re
 
 BLOCKOPENERS = dict([(x, None) for x in ("class", "def", "elif", "else",
                                          "except", "finally", "for", "if",
                                          "try", "while")])
 INFINITY = 1 << 30
-UPDATEINTERVAL = 100 #ms
-FONTUPDATEINTERVAL = 1000 #ms
+UPDATEINTERVAL = 100 # millisec
+FONTUPDATEINTERVAL = 1000 # millisec
 
 getspacesfirstword = lambda s, c=re.compile(r"^(\s*)(\w*)"): c.match(s).groups()
 
 class CodeContext:
-    menudefs = []
+    menudefs = [('options', [('!Code Conte_xt', '<<toggle-code-context>>')])]
+
     numlines = idleConf.GetOption("extensions", "CodeContext",
                                   "numlines", type="int", default=3)
     bgcolor = idleConf.GetOption("extensions", "CodeContext",
                                  "bgcolor", type="str", default="LightGray")
     fgcolor = idleConf.GetOption("extensions", "CodeContext",
                                  "fgcolor", type="str", default="Black")
+    default_on = idleConf.GetOption("extensions", "CodeContext",
+                                    "default_on", type="int", default=0)
     def __init__(self, editwin):
         if isinstance(editwin, PyShell):
             return
         self.editwin = editwin
         self.text = editwin.text
         self.textfont = self.text["font"]
-        self.label = Tkinter.Label(self.editwin.top,
-                                   text="\n" * (self.numlines - 1),
-                                   anchor="w", justify="left",
-                                   font=self.textfont,
-                                   bg=self.bgcolor, fg=self.fgcolor,
-                                   relief="sunken",
-                                   width=1, # Don't request more than we get
-                                   )
-        self.label.pack(side="top", fill="x", expand=0,
-                        after=self.editwin.status_bar)
+        self.label = None
         # Dummy line, which starts the "block" of the whole document:
         self.info = list(self.interesting_lines(1))
         self.lastfirstline = 1
+        if self.default_on:
+            self.toggle_code_context_event()
+            self.editwin.setvar('<<toggle-code-context>>', True)
         # Start two update cycles, one for context lines, one for font changes.
         self.text.after(UPDATEINTERVAL, self.timer_event)
         self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
+
+    def toggle_code_context_event(self, event=None):
+        if not self.label:
+            self.label = Tkinter.Label(self.editwin.top,
+                                      text="\n" * (self.numlines - 1),
+                                      anchor="w", justify="left",
+                                      font=self.textfont,
+                                      bg=self.bgcolor, fg=self.fgcolor,
+                                      relief="sunken",
+                                      width=1, # Don't request more than we get
+                                      )
+            self.label.pack(side="top", fill="x", expand=0,
+                            after=self.editwin.status_bar)
+        else:
+            self.label.destroy()
+            self.label = None
 
     def get_line_info(self, linenum):
         """Get the line indent value, text, and any block start keyword
@@ -107,7 +119,6 @@ class CodeContext:
                 del self.info[-1]
             if self.info[-1][0] == line_index:
                 break
-            # Add the block starting line info to tmpstack
             tmpstack.append((line_index, text))
         while tmpstack:
             self.info.append(tmpstack.pop())
@@ -116,12 +127,13 @@ class CodeContext:
         self.label["text"] = '\n'.join(lines)
 
     def timer_event(self):
-        self.update_label()
+        if self.label:
+            self.update_label()
         self.text.after(UPDATEINTERVAL, self.timer_event)
 
     def font_timer_event(self):
         newtextfont = self.text["font"]
-        if newtextfont != self.textfont:
+        if self.label and newtextfont != self.textfont:
             self.textfont = newtextfont
             self.label["font"] = self.textfont
         self.text.after(FONTUPDATEINTERVAL, self.font_timer_event)
