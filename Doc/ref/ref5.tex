@@ -191,10 +191,10 @@ When a comma-separated list of expressions is supplied, its elements are
 evaluated from left to right and placed into the list object in that
 order.  When a list comprehension is supplied, it consists of a
 single expression followed by at least one \keyword{for} clause and zero or
-more \keyword{for} or \keyword{if} clauses.  In this 
+more \keyword{for} or \keyword{if} clauses.  In this
 case, the elements of the new list are those that would be produced
 by considering each of the \keyword{for} or \keyword{if} clauses a block,
-nesting from 
+nesting from
 left to right, and evaluating the expression to produce a list element
 each time the innermost block is reached.
 \obindex{list}
@@ -815,13 +815,16 @@ Tuples and lists are compared lexicographically using comparison of
 corresponding items.
 
 \item
-Mappings (dictionaries) are compared through lexicographic
-comparison of their sorted (key, value) lists.\footnote{
-This is expensive since it requires sorting the keys first,
-but it is about the only sensible definition.  An earlier version of
-Python compared dictionaries by identity only, but this caused
-surprises because people expected to be able to test a dictionary for
-emptiness by comparing it to \code{\{\}}.}
+Mappings (dictionaries) compare equal if and only if their sorted
+(key, value) lists compare equal.\footnote{The implementation computes
+   this efficiently, without constructing lists or sorting.}
+Outcomes other than equality are resolved consistently, but are not
+otherwise defined.\footnote{Earlier versions of Python used\
+  lexicographic comparison of the sorted (key, value) lists, but this
+  was very expensive for the common case of comparing for equality.  An
+  even earlier version of Python compared dictionaries by identity only,
+  but this caused surprises because people expected to be able to test
+  a dictionary for emptiness by comparing it to \code{\{\}}.}
 
 \item
 Most other types compare unequal unless they are the same object;
