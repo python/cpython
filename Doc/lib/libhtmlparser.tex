@@ -109,7 +109,7 @@ base class implementation does nothing.
 \begin{methoddesc}{handle_comment}{data}
 This method is called when a comment is encountered.  The
 \var{comment} argument is a string containing the text between the
-\samp{<!--} and \samp{-->} delimiters, but not the delimiters
+\samp{<!-\-} and \samp{-\->} delimiters, but not the delimiters
 themselves.  For example, the comment \samp{<!--text-->} will cause
 this method to be called with the argument \code{'text'}.  It is
 intended to be overridden by a derived class; the base class
