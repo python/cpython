@@ -6,6 +6,7 @@ test_grammar
 1.1.2.1 Plain integers
 1.1.2.2 Long integers
 1.1.2.3 Floating point
+1.1.3 String literals
 1.2 Grammar
 single_input
 file_input

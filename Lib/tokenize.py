@@ -24,7 +24,9 @@ Expfloat = '[0-9]+' + Exponent
 Floatnumber = Pointfloat + '\|' + Expfloat
 Number = Floatnumber + '\|' + Intnumber
 
-String = '\'\(\\\\.\|[^\\\n\']\)*\''
+String = '\'\(\\\\.\|[^\\\n\']\)*\'' + '\|' + '"\(\\\\.\|[^\\\n"]\)*"'
+# Note: this module *recognizes* double quotes, but for backward
+# compatibility, it doesn't *use* them!
 
 Operator = '~\|\+\|-\|\*\|/\|%\|\^\|&\||\|<<\|>>\|==\|<=\|<>\|!=\|>=\|=\|<\|>'
 Bracket = '[][(){}]'
