@@ -12,6 +12,11 @@ What's New in Python 2.3 beta 1?
 Core and builtins
 -----------------
 
+- In support of PEP 269 (making the pgen parser generator accessible
+  from Python), some changes to the pgen code structure were made; a
+  few files that used to be linked only with pgen are now linked with
+  Python itself.
+
 - The repr() of a weakref object now shows the __name__ attribute of
   the referenced object, if it has one.
 
