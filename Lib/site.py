@@ -282,6 +282,22 @@ class _Helper:
 __builtin__.help = _Helper()
 
 
+# On Windows, some default encodings are not provided
+# by Python (e.g. "cp932" in Japanese locale), while they
+# are always available as "mbcs" in each locale.
+# Make them usable by aliasing to "mbcs" in such a case.
+
+if sys.platform == 'win32':
+    import locale, codecs
+    enc = locale.getdefaultlocale()[1]
+    if enc.startswith('cp'):            # "cp***" ?
+        try:
+            codecs.lookup(enc)
+        except LookupError:
+            import encodings
+            encodings._cache[enc] = encodings._unknown
+            encodings.aliases.aliases[enc] = 'mbcs'
+
 # Set the string encoding used by the Unicode implementation.  The
 # default is 'ascii', but if you're willing to experiment, you can
 # change this.
