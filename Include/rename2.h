@@ -253,6 +253,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define newdictobject PyDict_New
 #define gettupleitem PyTuple_GetItem
 #define GETTUPLEITEM PyTuple_GET_ITEM
+#define SETTUPLEITEM PyTuple_SET_ITEM
 #define gettuplesize PyTuple_Size
 #define gettupleslice PyTuple_GetSlice
 #define newtupleobject PyTuple_New
