@@ -188,6 +188,8 @@ def read_setup_file (filename):
                 append_next_word = ext.runtime_library_dirs
             elif word == "-Xlinker":
                 append_next_word = ext.extra_link_args
+            elif word == "-Xcompiler":
+                append_next_word = ext.extra_compile_args
             elif switch == "-u":
                 ext.extra_link_args.append(word)
                 if not value:

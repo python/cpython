@@ -159,6 +159,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 				        # OSX/OSXS/Darwin framework link cmd
 					;;
 			-[IDUCfF]*)	cpps="$cpps $arg";;
+			-Xcompiler)	skip=cpps;;
 			-Xlinker)	libs="$libs $arg"; skip=libs;;
 			-rpath)		libs="$libs $arg"; skip=libs;;
 			--rpath)	libs="$libs $arg"; skip=libs;;
