@@ -55,16 +55,24 @@ __all__ = ["run","help","Profile"]
 # Note that an instance of Profile() is *not* needed to call them.
 #**************************************************************************
 
+def run(statement, filename=None):
+    """Run statement under profiler optionally saving results in filename
 
-# simplified user interface
-def run(statement, *args):
+    This function takes a single argument that can be passed to the
+    "exec" statement, and an optional file name.  In all cases this
+    routine attempts to "exec" its first argument and gather profiling
+    statistics from the execution. If no file name is present, then this
+    function automatically prints a simple profiling report, sorted by the
+    standard name string (file/line/function-name) that is presented in
+    each line.
+    """
     prof = Profile()
     try:
         prof = prof.run(statement)
     except SystemExit:
         pass
-    if args:
-        prof.dump_stats(args[0])
+    if filename is not None:
+        prof.dump_stats(filename)
     else:
         return prof.print_stats()
 
