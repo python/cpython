@@ -1,0 +1,9 @@
+# code flags
+CO_VARARGS = 1
+CO_VARKEYWORDS = 2
+
+# operation flags
+OP_ASSIGN = 'OP_ASSIGN'
+OP_DELETE = 'OP_DELETE'
+OP_APPLY = 'OP_APPLY'
+
