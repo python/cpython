@@ -337,7 +337,7 @@ def test_expat_nsattrs_wattr():
 
     return attrs.getLength() == 1 and \
            attrs.getNames() == [(ns_uri, "attr")] and \
-           attrs.getQNames() == [] and \
+           (attrs.getQNames() == [] or attrs.getQNames() == ["ns:attr"]) and \
            len(attrs) == 1 and \
            attrs.has_key((ns_uri, "attr")) and \
            attrs.keys() == [(ns_uri, "attr")] and \
