@@ -27,17 +27,26 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef macintosh
 #define SEP ':'
 #define MAXPATHLEN 256
+#define DELIM ' '
 #endif
 
 #ifdef MSDOS
 #define SEP '\\'
 #define MAXPATHLEN 256
+#define DELIM ';'
 #endif
 
+/* Filename separator */
 #ifndef SEP
 #define SEP '/'
 #endif
 
+/* Max pathname length */
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
+#endif
+
+/* Search path entry delimiter */
+#ifndef DELIM
+#define DELIM ':'
 #endif
