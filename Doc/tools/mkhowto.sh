@@ -81,33 +81,56 @@ build_html() {
     fi
 }
 
-build_dvi() {
-    latex $1 || exit $?
-    latex $1 || exit $?
-    if [ -f $1.idx ] ; then
-	`dirname $0`/fix_hack $1.idx || exit $?
-	makeindex -s $TOPDIR/texinputs/myindex.ist $1.idx || exit $?
+use_latex() {
+    # two args:  <file> <latextype>
+    MYFILE=$1
+    MYLATEX=$2
+    #
+    # We really have to do it three times to get all the page numbers right,
+    # since the length of the ToC makes a real difference.
+    #
+    $MYDIR/newind.py >$MYFILE.ind
+    $MYDIR/newind.py modindex >mod$MYFILE.ind
+    $MYLATEX $MYFILE || exit $?
+    if [ -f mod$MYFILE.idx ] ; then
+	makeindex mod$MYFILE.idx
     fi
-    latex $1 || exit $?
+    if [ -f $MYFILE.idx ] ; then
+	$MYDIR/fix_hack $MYFILE.idx
+	makeindex $MYFILE.idx
+	$MYDIR/indfix.py $MYFILE.ind
+    fi
+    $MYLATEX $MYFILE || exit $?
+    if [ -f mod$MYFILE.idx ] ; then
+	makeindex mod$MYFILE.idx
+    fi
+    if [ -f $MYFILE.idx ] ; then
+	$MYDIR/fix_hack $MYFILE.idx || exit $?
+	makeindex -s $TOPDIR/texinputs/myindex.ist $MYFILE.idx || exit $?
+    fi
+    if [ -f $MYFILE.toc ] ; then
+	$MYDIR/toc2bkm.py -c section $MYFILE
+    fi
+    $MYLATEX $MYFILE || exit $?
 }
 
-build_ps() {
-    # note weird sequence of redirects is used to get stderr to the old stdout
-    # and the new stdout goes to a file
-    dvips -N0 -f $1 >$1.ps || exit $?
+build_dvi() {
+    use_latex $1 latex
 }
 
 build_pdf() {
-    # We really have to do it three times to get all the page numbers right,
-    # since the length of the ToC makes a real difference.
-    pdflatex $1 || exit $?
-    pdflatex $1 || exit $?
-    `dirname $0`/toc2bkm.py -c section $FILE || exit $?
-    if [ -f $1.idx ] ; then
-	`dirname $0`/fix_hack $1.idx || exit $?
-	makeindex -s $TOPDIR/texinputs/myindex.ist $1.idx || exit $?
+    use_latex $1 pdflatex
+}
+
+build_ps() {
+    dvips -N0 -o $1.ps -f $1 || exit $?
+}
+
+cleanup() {
+    rm -f $1.aux $1.log $1.out $1.toc $1.bkm $1.idx $1.ind
+    if [ ! "$BUILD_DVI" ] ; then
+	rm -f $FILE.dvi
     fi
-    pdflatex $1 || exit $?
 }
 
 # figure out what our targets are:
@@ -203,13 +226,9 @@ for FILE in $@ ; do
 	build_html $FILE 2>&1 | tee -a $LOGFILE
     fi
     if [ "$DISCARD_TEMPS" ] ; then
-	rm -f $FILE.aux $FILE.log $FILE.out $FILE.toc $FILE.bkm 2>&1 \
-	 | tee -a $LOGFILE
-	if [ ! "$BUILD_DVI" ] ; then
-	    rm -f $FILE.dvi 2>&1 | tee -a $LOGFILE
-	fi
+	cleanup $FILE 2>&1 | tee -a $LOGFILE
     fi
-    # the the logfile around
+    # keep the logfile around
     if [ "$LOGGING" ] ; then
 	cp $LOGFILE $FILE.how
     fi
