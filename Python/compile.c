@@ -4241,7 +4241,7 @@ symtable_check_unoptimized(struct compiling *c,
 	if (c->c_symtable->st_nested_scopes) {
 		PyErr_SetString(PyExc_SyntaxError, buf);
 		PyErr_SyntaxLocation(c->c_symtable->st_filename,
-				     ste->ste_lineno);
+				     ste->ste_opt_lineno);
 		return -1;
 	}
 	else {
@@ -4820,8 +4820,10 @@ symtable_node(struct symtable *st, node *n)
 		symtable_node(st, CHILD(n, 1));
 		if (NCH(n) > 2)
 			symtable_node(st, CHILD(n, 3));
-		else
+		else {
 			st->st_cur->ste_optimized |= OPT_BARE_EXEC;
+			st->st_cur->ste_opt_lineno = n->n_lineno;
+		}
 		if (NCH(n) > 4)
 			symtable_node(st, CHILD(n, 5));
 		break;
@@ -5106,6 +5108,7 @@ symtable_import(struct symtable *st, node *n)
 		}
 		if (TYPE(CHILD(n, 3)) == STAR) {
 			st->st_cur->ste_optimized |= OPT_IMPORT_STAR;
+			st->st_cur->ste_opt_lineno = n->n_lineno;
 		} else {
 			for (i = 3; i < NCH(n); i += 2) {
 				node *c = CHILD(n, i);
