@@ -1,89 +1,195 @@
-/* The readline module makes GNU readline available to Python.  It
- * has ideas contributed by Lee Busby, LLNL, and William Magro,
- * Cornell Theory Center.
+/* This module makes GNU readline available to Python.  It has ideas
+ * contributed by Lee Busby, LLNL, and William Magro, Cornell Theory
+ * Center.  The completer interface was inspired by Lele Gaifax.
+ *
+ * More recently, it was largely rewritten by Guido van Rossum who is
+ * now maintaining it.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+/* Standard definitions */
 #include "Python.h"
 #include <setjmp.h>
 #include <signal.h>
+#include <errno.h>
 
-/* Routines needed from outside (but not declared in a header file). */
+/* GNU readline definitions */
+#include <readline/readline.h> /* You may need to add an -I option to Setup */
+
+/* Pointers needed from outside (but not declared in a header file). */
 extern int (*PyOS_InputHook)();
-extern char *readline();
-extern int rl_initialize();
-extern int rl_insert();
-extern int rl_bind_key();
-extern void add_history();
-extern char *rl_readline_name;
-extern int (*rl_event_hook)();
 extern char *(*PyOS_ReadlineFunctionPointer) Py_PROTO((char *));
 
-/* This module's initialization routine */
-void initreadline (void);
 
-static void PyOS_ReadlineInit();
-static RETSIGTYPE onintr();
-static char *PyOS_GnuReadline();
-static jmp_buf jbuf;
-static PyObject *ReadlineError;
-static int already_initialized = 0;
-static char readline_module_documentation[] =
-"Readline Module, version0.0"
-;
+/* Exported function to send one line to readline's init file parser */
+
+static PyObject *
+parse_and_bind(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	char *s;
+	if (!PyArg_ParseTuple(args, "s", &s))
+		return NULL;
+	rl_parse_and_bind(s);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char doc_parse_and_bind[] = "\
+parse_and_bind(string) -> None\n\
+Parse and execute single line of a readline init file.\
+";
+
+
+/* Exported function to parse a readline init file */
+
+static PyObject *
+read_init_file(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	char *s = NULL;
+	if (!PyArg_ParseTuple(args, "|z", &s))
+		return NULL;
+	errno = rl_read_init_file(s);
+	if (errno)
+		return PyErr_SetFromErrno(PyExc_IOError);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char doc_read_init_file[] = "\
+read_init_file([filename]) -> None\n\
+Parse a readline initialization file.\n\
+The default filename is the last filename used.\
+";
+
+
+/* Exported function to specify a word completer in Python */
+
+static PyObject *completer = NULL;
+static PyThreadState *tstate = NULL;
+
+static PyObject *
+set_completer(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	PyObject *function = Py_None;
+	if (!PyArg_ParseTuple(args, "|O", &function))
+		return NULL;
+	if (function == Py_None) {
+		Py_XDECREF(completer);
+		completer = NULL;
+		tstate = NULL;
+	}
+	else if (PyCallable_Check(function)) {
+		PyObject *tmp = completer;
+		Py_INCREF(function);
+		completer = function;
+		Py_XDECREF(tmp);
+		tstate = PyThreadState_Get();
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError,
+				"set_completer(func): argument not callable");
+		return NULL;
+	}
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char doc_set_completer[] = "\
+set_completer([function]) -> None\n\
+Set or remove the completer function.\n\
+The function is called as function(text, state),\n\
+for i in [0, 1, 2, ...] until it returns a non-string.\n\
+It should return the next possible completion starting with 'text'.\
+";
+
+
+/* Table of functions exported by the module */
 
 static struct PyMethodDef readline_methods[] =
-{ 
-  { 0, 0 }
+{
+	{"parse_and_bind", parse_and_bind, 1, doc_parse_and_bind},
+	{"read_init_file", read_init_file, 1, doc_read_init_file},
+	{"set_completer", set_completer, 1, doc_set_completer},
+	{0, 0}
 };
 
-/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
+/* C function to call the Python completer. */
 
-/* Initialize the module.  Actually, that's all you can or need to do. */
-void initreadline (void)
+static char *
+on_completion(text, state)
+	char *text;
+	int state;
 {
-  PyObject *m, *d;
-
-  if (already_initialized)
-    return;
-  m = Py_InitModule4 ("readline", readline_methods,
-		      readline_module_documentation,
-		      (PyObject *) 0, PYTHON_API_VERSION);
-  d = PyModule_GetDict (m);
-  ReadlineError = PyString_FromString ("Readline.error");
-  PyDict_SetItemString (d, "error", ReadlineError);
-  if (PyErr_Occurred ()) {
-    Py_FatalError ("Cannot initialize module readline");
-  }
-  if (isatty(fileno(stdin))){
-    PyOS_ReadlineFunctionPointer = PyOS_GnuReadline;
-    PyOS_ReadlineInit();
-  }
-  already_initialized = 1;
+	char *result = NULL;
+	if (completer != NULL) {
+		PyObject *r;
+		/* Note that readline is called with the interpreter
+		   lock released! */
+		PyEval_RestoreThread(tstate);
+		r = PyObject_CallFunction(completer, "si", text, state);
+		if (r == NULL)
+			goto error;
+		if (r == Py_None) {
+			result = NULL;
+		}
+		else {
+			char *s = PyString_AsString(r);
+			if (s == NULL)
+				goto error;
+			result = strdup(s);
+		}
+		Py_DECREF(r);
+		goto done;
+	  error:
+		PyErr_Clear();
+		Py_XDECREF(r);
+	  done:
+		PyEval_SaveThread();
+	}
+	return result;
 }
+
+
+/* Helper to initialize GNU readline properly. */
+
+static void
+setup_readline()
+{
+	rl_readline_name = "python";
+	/* Force rebind of TAB to insert-tab */
+	rl_bind_key('\t', rl_insert);
+	/* Bind both ESC-TAB and ESC-ESC to the completion function */
+	rl_bind_key_in_map ('\t', rl_complete, emacs_meta_keymap);
+	rl_bind_key_in_map ('\033', rl_complete, emacs_meta_keymap);
+	/* Set our completion function */
+	rl_completion_entry_function = (Function *) on_completion;
+	/* Initialize (allows .inputrc to override) */
+	rl_initialize();
+}
+
+
+/* Interrupt handler */
+
+static jmp_buf jbuf;
 
 /* ARGSUSED */
 static RETSIGTYPE
 onintr(sig)
-  int sig;
+	int sig;
 {
-  longjmp(jbuf, 1);
+	longjmp(jbuf, 1);
 }
 
-static void
-PyOS_ReadlineInit()
-{
-    /* Force rebind of TAB to insert-tab */
-    rl_readline_name = "python";
-    rl_initialize();
-    rl_bind_key('\t', rl_insert);
-}
+
+/* Wrapper around GNU readline that handles signals differently. */
 
 static char *
-PyOS_GnuReadline(prompt)
+call_readline(prompt)
 	char *prompt;
 {
 	int n;
@@ -117,6 +223,21 @@ PyOS_GnuReadline(prompt)
 	return p;
 }
 
-#ifdef __cplusplus
+
+/* Initialize the module */
+
+static char doc_module[] =
+"Importing this module enables command line editing using GNU readline.";
+
+void
+initreadline()
+{
+	PyObject *m;
+
+	m = Py_InitModule4("readline", readline_methods, doc_module,
+			   (PyObject *)NULL, PYTHON_API_VERSION);
+	if (isatty(fileno(stdin))) {
+		PyOS_ReadlineFunctionPointer = call_readline;
+		setup_readline();
+	}
 }
-#endif
