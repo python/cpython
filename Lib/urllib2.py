@@ -57,8 +57,10 @@ import urllib2
 authinfo = urllib2.HTTPBasicAuthHandler()
 authinfo.add_password('realm', 'host', 'username', 'password')
 
+proxy_support = urllib2.ProxyHandler({"http" : "http://ahad-haam:3128"})
+
 # build a new opener that adds authentication and caching FTP handlers
-opener = urllib2.build_opener(authinfo, urllib2.CacheFTPHandler)
+opener = urllib2.build_opener(proxy_support, authinfo, urllib2.CacheFTPHandler)
 
 # install it
 urllib2.install_opener(opener)
@@ -92,7 +94,6 @@ import re
 import base64
 import types
 import urlparse
-import os
 import md5
 import mimetypes
 import mimetools
@@ -100,6 +101,7 @@ import ftplib
 import sys
 import time
 import gopherlib
+import posixpath
 
 try:
     from cStringIO import StringIO
@@ -121,10 +123,7 @@ from urllib import unwrap, unquote, splittype, splithost, \
 from urllib import getproxies
 
 # support for FileHandler
-from urllib import localhost, thishost, url2pathname, pathname2url
-
-# support for GopherHandler
-from urllib import splitgophertype, splitquery
+from urllib import localhost, url2pathname
 
 __version__ = "2.0a1"
 
@@ -177,7 +176,9 @@ class HTTPError(URLError, addinfourl):
 class GopherError(URLError):
     pass
 
+
 class Request:
+
     def __init__(self, url, data=None, headers={}):
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
         self.__original = unwrap(url)
@@ -229,15 +230,8 @@ class Request:
     def get_selector(self):
         return self.__r_host
 
-    def set_proxy(self, proxy):
-        self.__proxy = proxy
-        # XXX this code is based on urllib, but it doesn't seem
-        # correct.  specifically, if the proxy has a port number then
-        # splittype will return the hostname as the type and the port
-        # will be include with everything else
-        self.type, self.__r_type = splittype(self.__proxy)
-        self.host, XXX = splithost(self.__r_type)
-        self.host = unquote(self.host)
+    def set_proxy(self, host, type):
+        self.host, self.type = host, type
         self.__r_host = self.__original
 
     def add_header(self, key, val):
@@ -329,9 +323,9 @@ class OpenerDirector:
                                 'unknown_open', req)
 
     def error(self, proto, *args):
-        if proto == 'http':
-            # XXX http protocol is special cased
-            dict = self.handle_error[proto]
+        if proto in ['http', 'https']:
+            # XXX http[s] protocols are special cased
+            dict = self.handle_error['http'] # https is not different then http
             proto = args[2]  # YUCK!
             meth_name = 'http_error_%d' % proto
             http_err = 1
@@ -397,6 +391,8 @@ def build_opener(*handlers):
     default_classes = [ProxyHandler, UnknownHandler, HTTPHandler,
                        HTTPDefaultErrorHandler, HTTPRedirectHandler,
                        FTPHandler, FileHandler]
+    if hasattr(httplib, 'HTTPS'):
+        default_classes.append(HTTPSHandler)
     skip = []
     for klass in default_classes:
         for check in handlers:
@@ -451,7 +447,7 @@ class HTTPRedirectHandler(BaseHandler):
         new = Request(newurl, req.get_data())
         new.error_302_dict = {}
         if hasattr(req, 'error_302_dict'):
-            if req.error_302_dict.has_key(newurl):
+            if len(error_302_dict)>10 or req.error_302_dict.has_key(newurl):
                 raise HTTPError(req.get_full_url(), code,
                                 self.inf_msg + msg, headers)
             new.error_302_dict.update(req.error_302_dict)
@@ -477,7 +473,14 @@ class ProxyHandler(BaseHandler):
 
     def proxy_open(self, req, proxy, type):
         orig_type = req.get_type()
-        req.set_proxy(proxy)
+        type, r_type = splittype(proxy)
+        host, XXX = splithost(r_type)
+        if '@' in host:
+            user_pass, host = host.split('@', 1)
+            user_pass = base64.encode_string(unquote(user_passw)).strip()
+            req.addheader('Proxy-Authorization', user_pass)
+        host = unquote(host)
+        req.set_proxy(host, type)
         if orig_type == type:
             # let other handlers take care of it
             # XXX this only makes sense if the proxy is before the
@@ -569,21 +572,33 @@ class HTTPPasswordMgr:
             return 1
         if base[0] != test[0]:
             return 0
-        common = os.path.commonprefix((base[1], test[1]))
+        common = posixpath.commonprefix((base[1], test[1]))
         if len(common) == len(base[1]):
             return 1
         return 0
 
 
-class HTTPBasicAuthHandler(BaseHandler):
+class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):
+
+    def find_user_password(self, realm, authuri):
+        user, password = HTTPPasswordMgr.find_user_password(self,realm,authuri)
+        if user is not None:
+            return user, password
+        return HTTPPasswordMgr.find_user_password(self, None, authuri)
+
+
+class AbstractBasicAuthHandler:
+
     rx = re.compile('[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"')
 
     # XXX there can actually be multiple auth-schemes in a
     # www-authenticate header.  should probably be a lot more careful
     # in parsing them to extract multiple alternatives
 
-    def __init__(self):
-        self.passwd = HTTPPasswordMgr()
+    def __init__(self, password_mgr=None):
+        if password_mgr is None:
+            password_mgr = HTTPPasswordMgr()
+        self.passwd = password_mgr
         self.add_password = self.passwd.add_password
         self.__current_realm = None
         # if __current_realm is not None, then the server must have
@@ -591,29 +606,27 @@ class HTTPBasicAuthHandler(BaseHandler):
         # again.  must be careful to set it to None on successful
         # return.
 
-    def http_error_401(self, req, fp, code, msg, headers):
-        # XXX could be mult. headers
-        authreq = headers.get('www-authenticate', None)
+    def http_error_auth_reqed(self, authreq, host, req, headers):
+        # XXX could be multiple headers
+        authreq = headers.get(authreq, None)
         if authreq:
-            mo = HTTPBasicAuthHandler.rx.match(authreq)
+            mo = AbstractBasicAuthHandler.rx.match(authreq)
             if mo:
                 scheme, realm = mo.groups()
                 if scheme.lower() == 'basic':
-                    return self.retry_http_basic_auth(req, realm)
+                    return self.retry_http_basic_auth(host, req, realm)
 
-    def retry_http_basic_auth(self, req, realm):
+    def retry_http_basic_auth(self, host, req, realm):
         if self.__current_realm is None:
             self.__current_realm = realm
         else:
             self.__current_realm = realm
             return None
-        # XXX host isn't really the correct URI?
-        host = req.get_host()
         user,pw = self.passwd.find_user_password(realm, host)
         if pw:
             raw = "%s:%s" % (user, pw)
             auth = base64.encodestring(raw).strip()
-            req.add_header('Authorization', 'Basic %s' % auth)
+            req.add_header(self.header, 'Basic %s' % auth)
             resp = self.parent.open(req)
             self.__current_realm = None
             return resp
@@ -621,21 +634,37 @@ class HTTPBasicAuthHandler(BaseHandler):
             self.__current_realm = None
             return None
 
-class HTTPDigestAuthHandler(BaseHandler):
-    """An authentication protocol defined by RFC 2069
+class HTTPBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
-    Digest authentication improves on basic authentication because it
-    does not transmit passwords in the clear.
-    """
+    header = 'Authorization'
 
-    def __init__(self):
-        self.passwd = HTTPPasswordMgr()
+    def http_error_401(self, req, fp, code, msg, headers):
+        host = urlparse.urlparse(req.get_full_url())[1]
+        return self.http_error_auth_reqed('www-authenticate', 
+                                          host, req, headers)
+
+
+class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
+
+    header = 'Proxy-Authorization'
+
+    def http_error_407(self, req, fp, code, msg, headers):
+        host = req.get_host()
+        return self.http_error_auth_reqed('proxy-authenticate', 
+                                          host, req, headers)
+
+
+class AbstractDigestAuthHandler:
+
+    def __init__(self, passwd=None):
+        if passwd is None:
+            passwd = HTTPPassowrdMgr()
+        self.passwd = passwd
         self.add_password = self.passwd.add_password
         self.__current_realm = None
 
-    def http_error_401(self, req, fp, code, msg, headers):
-        # XXX could be mult. headers
-        authreq = headers.get('www-authenticate', None)
+    def http_error_auth_reqed(self, authreq, host, req, headers):
+        authreq = headers.get(self.header, None)
         if authreq:
             kind = authreq.split()[0]
             if kind == 'Digest':
@@ -646,7 +675,7 @@ class HTTPDigestAuthHandler(BaseHandler):
         chal = parse_keqv_list(parse_http_list(challenge))
         auth = self.get_authorization(req, chal)
         if auth:
-            req.add_header('Authorization', 'Digest %s' % auth)
+            req.add_header(self.header, 'Digest %s' % auth)
             resp = self.parent.open(req)
             self.__current_realm = None
             return resp
@@ -715,6 +744,30 @@ class HTTPDigestAuthHandler(BaseHandler):
         # XXX not implemented yet
         return None
 
+
+class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
+    """An authentication protocol defined by RFC 2069
+
+    Digest authentication improves on basic authentication because it
+    does not transmit passwords in the clear.
+    """
+
+    header = 'Authorization'
+
+    def http_error_401(self, req, fp, code, msg, headers):
+        host = urlparse.urlparse(req.get_full_url())[1]
+        self.http_error_auth_reqed('www-authenticate', host, req, headers)
+
+
+class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
+
+    header = 'Proxy-Authorization'
+
+    def http_error_407(self, req, fp, code, msg, headers):
+        host = req.get_host()
+        self.http_error_auth_reqed('proxy-authenticate', host, req, headers)
+
+
 def encode_digest(digest):
     hexrep = []
     for c in digest:
@@ -725,15 +778,15 @@ def encode_digest(digest):
     return ''.join(hexrep)
 
 
-class HTTPHandler(BaseHandler):
-    def http_open(self, req):
-        # XXX devise a new mechanism to specify user/password
+class AbstractHTTPHandler(BaseHandler):
+
+    def do_open(self, http_class, req):
         host = req.get_host()
         if not host:
             raise URLError('no host given')
 
         try:
-            h = httplib.HTTP(host) # will parse host:port
+            h = http_class(host) # will parse host:port
             if req.has_data():
                 data = req.get_data()
                 h.putrequest('POST', req.get_selector())
@@ -761,6 +814,20 @@ class HTTPHandler(BaseHandler):
             return addinfourl(fp, hdrs, req.get_full_url())
         else:
             return self.parent.error('http', req, fp, code, msg, hdrs)
+
+
+class HTTPHandler(AbstractHTTPHandler):
+
+    def http_open(self, req):
+        return self.do_open(httplib.HTTP, req)
+
+
+if hasattr(httplib, 'HTTPS'):
+    class HTTPSHandler(AbstractHTTPHandler):
+
+        def https_open(self, req):
+            return self.do_open(httplib.HTTPS, req)
+
 
 class UnknownHandler(BaseHandler):
     def unknown_open(self, req):
