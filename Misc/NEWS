@@ -7,8 +7,13 @@ Python News
 What's New in Python 2.5 alpha 1?
 =================================
 
+*Release date: XX-XXX-2006*
+
 Core and builtins
 -----------------
+
+- Move exception finalisation later in the shutdown process - this 
+  fixes the crash seen in bug #1165761
 
 - Added two new builtins, any() and all().
 

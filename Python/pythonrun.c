@@ -392,13 +392,6 @@ Py_Finalize(void)
 		_Py_PrintReferences(stderr);
 #endif /* Py_TRACE_REFS */
 
-	/* Now we decref the exception classes.  After this point nothing
-	   can raise an exception.  That's okay, because each Fini() method
-	   below has been checked to make sure no exceptions are ever
-	   raised.
-	*/
-	_PyExc_Fini();
-
 	/* Cleanup auto-thread-state */
 #ifdef WITH_THREAD
 	_PyGILState_Fini();
@@ -406,6 +399,14 @@ Py_Finalize(void)
 
 	/* Clear interpreter state */
 	PyInterpreterState_Clear(interp);
+
+	/* Now we decref the exception classes.  After this point nothing
+	   can raise an exception.  That's okay, because each Fini() method
+	   below has been checked to make sure no exceptions are ever
+	   raised.
+	*/
+
+	_PyExc_Fini();
 
 	/* Delete current thread */
 	PyThreadState_Swap(NULL);
