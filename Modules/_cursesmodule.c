@@ -78,7 +78,15 @@ char *PyCursesVersion = "1.6";
 #include <curses.h>
 #endif
 
-#if defined(__sgi__) || defined(__sun__)
+#ifdef sgi
+/*  This prototype is in <term.h>, but including this header #defines
+    many common symbols (such as "lines") which breaks the curses
+    module in other ways.  So the code will just specify an explicit
+    prototype here. */
+extern char *tigetstr(char *);
+#endif
+
+#if defined(sgi) || defined(__sun__)
 #define STRICT_SYSV_CURSES       /* Don't use ncurses extensions */
 typedef chtype attr_t;           /* No attr_t type is available */
 #endif
@@ -1739,13 +1747,27 @@ PyCurses_InitScr(PyObject *self, PyObject *args)
 	SetDictInt("ACS_BSBS",          (ACS_HLINE));
 	SetDictInt("ACS_SBSB",          (ACS_VLINE));
 	SetDictInt("ACS_SSSS",          (ACS_PLUS));
-#ifndef STRICT_SYSV_CURSES
-  /* The following are never available with strict SYSV curses */
+
+	/* The following are never available with strict SYSV curses */
+#ifdef ACS_S3
 	SetDictInt("ACS_S3",            (ACS_S3));
+#endif
+#ifdef ACS_S7
+	SetDictInt("ACS_S7",            (ACS_S7));
+#endif
+#ifdef ACS_LEQUAL
 	SetDictInt("ACS_LEQUAL",        (ACS_LEQUAL));
+#endif
+#ifdef ACS_GEQUAL
 	SetDictInt("ACS_GEQUAL",        (ACS_GEQUAL));
+#endif
+#ifdef ACS_PI
 	SetDictInt("ACS_PI",            (ACS_PI));
+#endif
+#ifdef ACS_NEQUAL
 	SetDictInt("ACS_NEQUAL",        (ACS_NEQUAL));
+#endif
+#ifdef ACS_STERLING
 	SetDictInt("ACS_STERLING",      (ACS_STERLING));
 #endif
 
@@ -2270,12 +2292,24 @@ init_curses(void)
 	SetDictInt("A_PROTECT",         A_PROTECT);
 	SetDictInt("A_CHARTEXT",        A_CHARTEXT);
 	SetDictInt("A_COLOR",           A_COLOR);
-#ifndef STRICT_SYSV_CURSES
+
+	/* The following are never available with strict SYSV curses */
+#ifdef A_HORIZONTAL
 	SetDictInt("A_HORIZONTAL",      A_HORIZONTAL);
+#endif
+#ifdef A_LEFT
 	SetDictInt("A_LEFT",            A_LEFT);
+#endif
+#ifdef A_LOW
 	SetDictInt("A_LOW",             A_LOW);
+#endif
+#ifdef A_RIGHT
 	SetDictInt("A_RIGHT",           A_RIGHT);
+#endif
+#ifdef A_TOP
 	SetDictInt("A_TOP",             A_TOP);
+#endif
+#ifdef A_VERTICAL
 	SetDictInt("A_VERTICAL",        A_VERTICAL);
 #endif
 
