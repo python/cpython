@@ -1,1 +1,7 @@
 test_linuxaudiodev
+expected rate >= 0, not -1
+expected sample size >= 0, not -2
+nchannels must be 1 or 2, not 3
+unknown audio encoding: 177
+sample size 16 expected for Little-endian 16-bit unsigned format: 8 received
+sample size 8 expected for Logarithmic mu-law audio: 16 received
