@@ -19,7 +19,7 @@ written in Python.
 # responsible for its maintenance.
 # 
 
-__version__ = "2.3"
+__version__ = "2.4"
 
 
 # Imports
@@ -718,7 +718,7 @@ class FieldStorage:
 # ===============================
 
 class FormContentDict(UserDict.UserDict):
-    """Basic (multiple values per field) form content as dictionary.
+    """Form content as dictionary with a list of values per field.
 
     form = FormContentDict()
 
@@ -736,11 +736,11 @@ class FormContentDict(UserDict.UserDict):
 
 
 class SvFormContentDict(FormContentDict):
-    """Strict single-value expecting form content as dictionary.
+    """Form content as dictionary expecting a single value per field.
 
-    IF you only expect a single value for each field, then form[key]
+    If you only expect a single value for each field, then form[key]
     will return that single value.  It will raise an IndexError if
-    that expectation is not true.  IF you expect a field to have
+    that expectation is not true.  If you expect a field to have
     possible multiple values, than you can use form.getlist(key) to
     get all of the values.  values() and items() are a compromise:
     they return single strings where there is a single value, and
@@ -754,47 +754,47 @@ class SvFormContentDict(FormContentDict):
     def getlist(self, key):
         return self.dict[key]
     def values(self):
-        lis = []
-        for each in self.dict.values(): 
-            if len( each ) == 1 : 
-                lis.append(each[0])
-            else: lis.append(each)
-        return lis
+        result = []
+        for value in self.dict.values():
+            if len(value) == 1:
+                result.append(value[0])
+            else: result.append(value)
+        return result
     def items(self):
-        lis = []
-        for key,value in self.dict.items():
-            if len(value) == 1 :
-                lis.append((key, value[0]))
-            else:       lis.append((key, value))
-        return lis
+        result = []
+        for key, value in self.dict.items():
+            if len(value) == 1:
+                result.append((key, value[0]))
+            else: result.append((key, value))
+        return result
 
 
 class InterpFormContentDict(SvFormContentDict):
     """This class is present for backwards compatibility only.""" 
-    def __getitem__( self, key ):
-        v = SvFormContentDict.__getitem__( self, key )
-        if v[0] in string.digits+'+-.' : 
-            try:  return  string.atoi( v ) 
+    def __getitem__(self, key):
+        v = SvFormContentDict.__getitem__(self, key)
+        if v[0] in string.digits + '+-.':
+            try: return string.atoi(v)
             except ValueError:
-                try:    return string.atof( v )
+                try: return string.atof(v)
                 except ValueError: pass
         return string.strip(v)
-    def values( self ):
-        lis = [] 
+    def values(self):
+        result = []
         for key in self.keys():
             try:
-                lis.append( self[key] )
+                result.append(self[key])
             except IndexError:
-                lis.append( self.dict[key] )
-        return lis
-    def items( self ):
-        lis = [] 
+                result.append(self.dict[key])
+        return result
+    def items(self):
+        result = []
         for key in self.keys():
             try:
-                lis.append( (key, self[key]) )
+                result.append((key, self[key]))
             except IndexError:
-                lis.append( (key, self.dict[key]) )
-        return lis
+                result.append((key, self.dict[key]))
+        return result
 
 
 class FormContent(FormContentDict):
@@ -804,7 +804,7 @@ class FormContent(FormContentDict):
         else: return None
     def indexed_value(self, key, location):
         if self.dict.has_key(key):
-            if len (self.dict[key]) > location:
+            if len(self.dict[key]) > location:
                 return self.dict[key][location]
             else: return None
         else: return None
@@ -836,10 +836,10 @@ def test(environ=os.environ):
     sys.stderr = sys.stdout
     try:
         form = FieldStorage()   # Replace with other classes to test those
-        print_form(form)
-        print_environ(environ)
         print_directory()
         print_arguments()
+        print_form(form)
+        print_environ(environ)
         print_environ_usage()
         def f():
             exec "testing print_exception() -- <I>italics?</I>"
@@ -856,10 +856,10 @@ def test(environ=os.environ):
     maxlen = 50
     try:
         form = FieldStorage()   # Replace with other classes to test those
-        print_form(form)
-        print_environ(environ)
         print_directory()
         print_arguments()
+        print_form(form)
+        print_environ(environ)
     except:
         print_exception()
 
