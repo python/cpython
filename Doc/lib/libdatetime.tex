@@ -755,9 +755,14 @@ The latter objects view their fields as being in local time, and the
 from UTC, the name of the time zone, and DST offset, all relative to a
 date or time object passed to them.
 
+Special requirement for pickling:  A tzinfo subclass must have an
+\method{__init__} method that can be called with no arguments, else it
+can be pickled but possibly not unpickled again.  This is a technical
+requirement that may be relaxed in the future.
+
 A concrete subclass of \class{tzinfo} may need to implement the
 following methods.  Exactly which methods are needed depends on the
-uses made of aware \class{datetime} objects; if in doubt, simply
+uses made of aware \module{datetime} objects; if in doubt, simply
 implement all of them.  The methods are called by a \class{datetimetz}
 or \class{timetz} object, passing itself as the argument.  A
 \class{tzinfo} subclass's methods should be prepared to accept a dt
