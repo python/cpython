@@ -216,7 +216,7 @@ servers.
 
 \begin{funcdesc}{xgtitle}{name}
 Process an XGTITLE command, returning a pair \code{(\var{response},
-\var{list}}, where \var{list} is a list of tuples containing
+\var{list})}, where \var{list} is a list of tuples containing
 \code{(\var{name}, \var{title})}.
 % XXX huh?  Should that be name, description?
 This is an optional NNTP extension, and may not be supported by all
@@ -227,7 +227,9 @@ servers.
 Return a pair \code{(\var{resp}, \var{list})}.  \var{list} is a list
 of tuples, one for each article in the range delimited by the \var{start}
 and \var{end} article numbers.  Each tuple is of the form
-\code{(}\var{article number}, \var{subject}, \var{poster}, \var{date}, \var{id}, \var{references}, \var{size}, \var{lines}\code{)}.
+\code{(}\var{article number}\code{,} \var{subject}\code{,}
+\var{poster}\code{,} \var{date}\code{,} \var{id}\code{,}
+\var{references}\code{,} \var{size}\code{,} \var{lines}\code{)}.
 This is an optional NNTP extension, and may not be supported by all
 servers.
 \end{funcdesc}
