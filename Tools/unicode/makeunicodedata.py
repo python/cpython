@@ -8,7 +8,7 @@
 # 2000-09-24 fl   created (based on bits and pieces from unidb)
 # 2000-09-25 fl   merged tim's splitbin fixes, separate decomposition table
 # 2000-09-25 fl   added character type table
-# 2000-09-26 fl   added LINEBREAK flags
+# 2000-09-26 fl   added LINEBREAK, DECIMAL, and DIGIT flags/fields
 #
 # written by Fredrik Lundh (fredrik@pythonware.com), September 2000
 #
@@ -166,7 +166,7 @@ def maketables():
                 flags |= LINEBREAK_MASK
             if category == "Zs" or bidirectional in ("WS", "B", "S"):
                 flags |= SPACE_MASK
-            if category in ["Lt", "Lu"]:
+            if category == "Lt":
                 flags |= TITLE_MASK
             if category == "Lu":
                 flags |= UPPER_MASK
