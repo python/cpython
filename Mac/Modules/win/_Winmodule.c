@@ -14,9 +14,9 @@
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
-    	PyErr_SetString(PyExc_NotImplementedError, \
-    	"Not available in this shared library/OS version"); \
-    	return NULL; \
+        PyErr_SetString(PyExc_NotImplementedError, \
+        "Not available in this shared library/OS version"); \
+        return NULL; \
     }} while(0)
 
 
@@ -2300,6 +2300,24 @@ static PyObject *WinObj_ShowWindow(WindowObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *WinObj_AutoDispose(WindowObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+
+	int onoff, old = 0;
+	if (!PyArg_ParseTuple(_args, "i", &onoff))
+		return NULL;
+	if ( _self->ob_freeit )
+		old = 1;
+	if ( onoff )
+		_self->ob_freeit = PyMac_AutoDisposeWindow;
+	else
+		_self->ob_freeit = NULL;
+	_res = Py_BuildValue("i", old);
+	return _res;
+
+}
+
 static PyMethodDef WinObj_methods[] = {
 	{"GetWindowOwnerCount", (PyCFunction)WinObj_GetWindowOwnerCount, 1,
 	 PyDoc_STR("() -> (UInt32 outCount)")},
@@ -2540,6 +2558,8 @@ static PyMethodDef WinObj_methods[] = {
 	 PyDoc_STR("(short hGlobal, short vGlobal, Boolean front) -> None")},
 	{"ShowWindow", (PyCFunction)WinObj_ShowWindow, 1,
 	 PyDoc_STR("() -> None")},
+	{"AutoDispose", (PyCFunction)WinObj_AutoDispose, 1,
+	 PyDoc_STR("(int)->int. Automatically DisposeHandle the object on Python object cleanup")},
 	{NULL, NULL, 0}
 };
 
