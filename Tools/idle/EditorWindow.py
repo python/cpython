@@ -95,6 +95,7 @@ class EditorWindow:
     about_text = about_text
 
     vars = {}
+    runnable = False    # Shell window cannot Import Module or Run Script
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
         edconf = idleconf.getsection('EditorWindow')
