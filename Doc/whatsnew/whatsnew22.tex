@@ -23,8 +23,13 @@ language's darkest corners, and some exciting new features.
 This article doesn't attempt to provide a complete specification for
 the new features, but instead provides a convenient overview of the
 new features.  For full details, you should refer to 2.2 documentation
-such as the Library Reference and the Reference Guide, or to the PEP
-for a particular new feature.
+such as the
+\citetitle[http://python.sourceforge.net/devel-docs/lib/lib.html]{Python
+Library Reference} and the
+\citetitle[http://python.sourceforge.net/devel-docs/ref/ref.html]{Python
+Reference Manual}, or to the PEP for a particular new feature.
+% These \citetitle marks should get the python.org URLs for the final
+% release, just as soon as the docs are published there.
 
 The final release of Python 2.2 is planned for October 2001.
 
@@ -74,8 +79,9 @@ In Python 2.2, iteration can be implemented separately, and
 do support random access.  The basic idea of iterators is quite
 simple.  A new built-in function, \function{iter(obj)}, returns an
 iterator for the object \var{obj}.  (It can also take two arguments:
-\code{iter(\var{C}, \var{sentinel})} will call the callable \var{C}, until it
-returns \var{sentinel}, which will signal that the iterator is done.  This form probably won't be used very often.)
+\code{iter(\var{C}, \var{sentinel})} will call the callable \var{C},
+until it returns \var{sentinel}, which will signal that the iterator
+is done.  This form probably won't be used very often.)
 
 Python classes can define an \method{__iter__()} method, which should
 create and return a new iterator for the object; if the object is its
@@ -128,7 +134,8 @@ means you can do things like this:
 Iterator support has been added to some of Python's basic types.  The
 \keyword{in} operator now works on dictionaries, so \code{\var{key} in
 dict} is now equivalent to \code{dict.has_key(\var{key})}.
-Calling \function{iter()} on a dictionary will return an iterator which loops over their keys:
+Calling \function{iter()} on a dictionary will return an iterator
+which loops over their keys:
 
 \begin{verbatim}
 >>> m = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
@@ -166,7 +173,8 @@ for line in file:
 
 Note that you can only go forward in an iterator; there's no way to
 get the previous element, reset the iterator, or make a copy of it.
-An iterator object could provide such additional capabilities, but the iterator protocol only requires a \method{next()} method.
+An iterator object could provide such additional capabilities, but the
+iterator protocol only requires a \method{next()} method.
 
 \begin{seealso}
 
@@ -460,7 +468,6 @@ whose value should be accessed by \function{g()}.
 This shouldn't be much of a limitation, since \keyword{exec} is rarely
 used in most Python code (and when it is used, it's often a sign of a
 poor design anyway).
-%\end{seealso}
 
 \begin{seealso}
 
@@ -501,7 +508,7 @@ items = s.meerkat.getItems( {'channel': 4} )
 #   'title': 'html2fo 0.3 (Default)'}, ... ]
 \end{verbatim}
 
-See \url{http://www.xmlrpc.com} for more information about XML-RPC.
+See \url{http://www.xmlrpc.com/} for more information about XML-RPC.
 
   \item The \module{socket} module can be compiled to support IPv6;
   specify the \longprogramopt{enable-ipv6} option to Python's configure
@@ -535,7 +542,7 @@ See \url{http://www.xmlrpc.com} for more information about XML-RPC.
   NAMESPACE extension defined in \rfc{2342}.  (Contributed by Michel
   Pelletier.)
 
-  \item The \module{rfc822} module's parsing of e-mail addresses is
+  \item The \module{rfc822} module's parsing of email addresses is
   now compliant with \rfc{2822}, an update to \rfc{822}.  The module's
   name is \emph{not} going to be changed to \samp{rfc2822}.
   (Contributed by Barry Warsaw.)
@@ -558,7 +565,7 @@ changes are:
   now cause a \exception{TypeError} exception to be raised, with the
   message "\var{function} takes no keyword arguments".
   
-  \item The code for the MacOS port for Python, maintained by Jack
+  \item The code for the Mac OS port for Python, maintained by Jack
   Jansen, is now kept in the main Python CVS tree.
 
   \item The new license introduced with Python 1.6 wasn't
@@ -575,7 +582,8 @@ changes are:
   \cfunction{PyEval_SetProfile()} and \cfunction{PyEval_SetTrace()}.
   The existing \function{sys.setprofile()} and
   \function{sys.settrace()} functions still exist, and have simply
-  been changed to use the new C-level interface.
+  been changed to use the new C-level interface.  (Contributed by Fred
+  L. Drake, Jr.)
 
   \item The \file{Tools/scripts/ftpmirror.py} script
   now parses a \file{.netrc} file, if you have one.
@@ -598,10 +606,10 @@ changes are:
 
   \item XXX C API: Reorganization of object calling 
 
-The call_object()
-function, originally in ceval.c, begins a new life as the official
-API PyObject_Call().  It is also much simplified: all it does is call
-the tp_call slot, or raise an exception if that's NULL.
+The \cfunction{call_object()} function, originally in \file{ceval.c},
+begins a new life as the official API \cfunction{PyObject_Call()}.  It
+is also much simplified: all it does is call the \member{tp_call}
+slot, or raise an exception if that's \NULL.
 
 %The subsidiary functions (call_eval_code2(), call_cfunction(),
 %call_instance(), and call_method()) have all been moved to the file
@@ -620,7 +628,8 @@ the tp_call slot, or raise an exception if that's NULL.
   Unicode encoding when dealing with the file system.  As discussed on
   python-dev and in patch 410465.
 
-  \item XXX Lots of patches to dictionaries; measure performance improvement, if any.
+  \item XXX Lots of patches to dictionaries; measure performance
+  improvement, if any.
 
 \end{itemize}
 
