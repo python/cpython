@@ -48,7 +48,7 @@ static void call_trace_protected(Py_tracefunc, PyObject *,
 				 PyFrameObject *, int);
 static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
 static int maybe_call_line_trace(Py_tracefunc, PyObject *, 
-				  PyFrameObject *, int *, int *);
+				  PyFrameObject *, int *, int *, int *);
 
 static PyObject *apply_slice(PyObject *, PyObject *, PyObject *);
 static int assign_slice(PyObject *, PyObject *,
@@ -602,7 +602,7 @@ eval_frame(PyFrameObject *f)
 	   is true when the line being executed has changed.  The 
            initial values are such as to make this false the first
            time it is tested. */
-	int instr_ub = -1, instr_lb = 0;
+	int instr_ub = -1, instr_lb = 0, instr_prev = -1;
 
 	unsigned char *first_instr;
 	PyObject *names;
@@ -846,7 +846,8 @@ eval_frame(PyFrameObject *f)
 			
 			err = maybe_call_line_trace(tstate->c_tracefunc,
 						    tstate->c_traceobj,
-						    f, &instr_lb, &instr_ub);
+						    f, &instr_lb, &instr_ub,
+						    &instr_prev);
 			/* Reload possibly changed frame fields */
 			JUMPTO(f->f_lasti);
 			if (f->f_stacktop != NULL) {
@@ -3085,7 +3086,8 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
 
 static int
 maybe_call_line_trace(Py_tracefunc func, PyObject *obj, 
-		      PyFrameObject *frame, int *instr_lb, int *instr_ub)
+		      PyFrameObject *frame, int *instr_lb, int *instr_ub,
+		      int *instr_prev)
 {
 	/* The theory of SET_LINENO-less tracing.
 	   
@@ -3209,7 +3211,12 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
 			*instr_ub = INT_MAX;
 		}
 	}
-
+	else if (frame->f_lasti <= *instr_prev) {
+		/* jumping back in the same line forces a trace event */
+		result = call_trace(func, obj, frame, 
+				    PyTrace_LINE, Py_None);
+	}
+	*instr_prev = frame->f_lasti;
 	return result;
 }
 
