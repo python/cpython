@@ -1,3 +1,12 @@
+===================================
+==> Release 1.1.1 (10 Nov 1994) <==
+===================================
+
+This is a pure bugfix release again.  See the ChangeLog file for details.
+
+One exception: a few new features were added to tkinter.
+
+
 =================================
 ==> Release 1.1 (11 Oct 1994) <==
 =================================
