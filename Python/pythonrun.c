@@ -997,6 +997,9 @@ err_input(err)
 	case E_EOF:
 		msg = "unexpected EOF while parsing";
 		break;
+	case E_INDENT:
+		msg = "inconsistent use of tabs and spaces in indentation";
+		break;
 	default:
 		fprintf(stderr, "error=%d\n", err->error);
 		msg = "unknown parsing error";
