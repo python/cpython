@@ -209,7 +209,9 @@ class ConfigParser:
             return rawval
 
         value = rawval                  # Make it a pretty variable name
-        while 1:                        # Loop through this until it's done
+        depth = 0                       
+        while depth < 10:               # Loop through this until it's done
+            depth = depth + 1
             if not string.find(value, "%("):
                 try:
                     value = value % d
