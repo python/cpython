@@ -7,7 +7,7 @@
 # Author: Steen Lumholt -- with additions by Guido.
 
 from select import select
-import os, sys, FCNTL
+import os, FCNTL
 import tty
 
 STDIN_FILENO = 0
