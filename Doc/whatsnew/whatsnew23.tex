@@ -532,11 +532,11 @@ contents, and the \code{*=} assignment operator to repeat an array.
 functions: \function{get_history_item()},
 \function{get_current_history_length()}, and \function{redisplay()}.
 
-\item Support for more advanced POSIX signal handling -- specifically
-the functions \function{sigpending}, \function{sigprocmask} and
-\function{sigsupend}, and depending on platform support -- was added
-to the \module{signal} module.  These functions make some previously
-unavoidable race conditions avoidable.
+\item Support for more advanced POSIX signal handling was added
+to the \module{signal} module by adding the \function{sigpending},
+\function{sigprocmask} and \function{sigsuspend} functions, where supported
+by the platform.  These functions make it possible to avoid some previously
+unavoidable race conditions.
 
 \end{itemize}
 
