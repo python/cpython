@@ -400,6 +400,7 @@ _PySys_Init()
 	Py_XDECREF(syserr);
 	PyDict_SetItemString(sysdict, "version",
 			     v = PyString_FromString(Py_GetVersion()));
+	Py_XDECREF(v);
 	PyDict_SetItemString(sysdict, "hexversion",
 			     v = PyInt_FromLong(PY_VERSION_HEX));
 	Py_XDECREF(v);
