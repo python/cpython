@@ -1,5 +1,5 @@
 =============================================================================
- Python Unicode Integration                            Proposal Version: 1.2
+ Python Unicode Integration                            Proposal Version: 1.3
 -----------------------------------------------------------------------------
 
 
@@ -203,8 +203,9 @@ implemented by a module "codecs":
   codecs.register(search_function)
 
 Search functions are expected to take one argument, the encoding name
-in all lower case letters, and return a tuple of functions (encoder,
-decoder, stream_reader, stream_writer) taking the following arguments:
+in all lower case letters and with hyphens and spaces converted to
+underscores, and return a tuple of functions (encoder, decoder,
+stream_reader, stream_writer) taking the following arguments:
 
   encoder and decoder:
 	These must be functions or methods which have the same
