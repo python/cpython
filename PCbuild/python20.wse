@@ -70,9 +70,12 @@ item: Set Variable
   Variable=GROUP
   Value=Python 2.1
 end
+item: Remark
+  Text=PY_VERSION should be major.minor only; used to create the registry key; must match MS_DLL_ID in python_nt.rc
+end
 item: Set Variable
   Variable=PY_VERSION
-  Value=2.1b1
+  Value=2.1
 end
 item: Set Variable
   Variable=MAINDIR
