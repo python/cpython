@@ -310,7 +310,7 @@ class StrptimeTests(unittest.TestCase):
         else:
             self.failUnless(strp_output[8] == -1,
                             "LocaleTime().timezone has duplicate values but "
-                             "timzone value not set to -1")
+                             "timezone value not set to -1")
 
     def test_date_time(self):
         # Test %c directive
