@@ -194,6 +194,15 @@ def module_funcs(stdscr):
         curses.mousemask(curses.BUTTON1_PRESSED)
         curses.mouseinterval(10)
 
+def unit_tests():
+    from curses import ascii
+    for ch, expected in [('a', 'a'), ('A', 'A'),
+                         (';', ';'), (' ', ' '),
+                         ('\x7f', '^?'), ('\n', '^J'), ('\0', '^@')]:
+        if ascii.unctrl(ch) != expected:
+            print 'curses.unctrl fails on character', repr(ch)
+            
+
 
 def main(stdscr):
     curses.savetty()
@@ -203,11 +212,15 @@ def main(stdscr):
     finally:
         curses.resetty()
 
+    
 if __name__ == '__main__':
     curses.wrapper(main)
+    unit_tests()
 else:
     try:
         stdscr = curses.initscr()
         main(stdscr)
     finally:
         curses.endwin()
+
+    unit_tests()
