@@ -5,11 +5,11 @@
 \setindexsubitem{(in module types)}
 
 This module defines names for all object types that are used by the
-standard Python interpreter (but not for the types defined by various
-extension modules).  It is safe to use ``\code{from types import *}'' ---
-the module does not export any other names besides the ones listed
-here.  New names exported by future versions of this module will
-all end in \code{Type}.
+standard Python interpreter, but not for the types defined by various
+extension modules.  It is safe to use \samp{from types import *} ---
+the module does not export any names besides the ones listed here.
+New names exported by future versions of this module will all end in
+\samp{Type}.
 
 Typical use is for functions that do different things depending on
 their argument types, like the following:
@@ -22,7 +22,7 @@ def delete(list, item):
     else:
        list.remove(item)
 \end{verbatim}
-%
+
 The module defines the following names:
 
 \begin{datadesc}{NoneType}
@@ -30,7 +30,8 @@ The type of \code{None}.
 \end{datadesc}
 
 \begin{datadesc}{TypeType}
-The type of type objects (such as returned by \code{type()}).
+The type of type objects (such as returned by
+\function{type()}\bifuncindex{type}).
 \end{datadesc}
 
 \begin{datadesc}{IntType}
@@ -70,11 +71,12 @@ The type of user-defined functions and lambdas.
 \end{datadesc}
 
 \begin{datadesc}{LambdaType}
-	An alternative name for \code{FunctionType}.
+An alternative name for \code{FunctionType}.
 \end{datadesc}
 
 \begin{datadesc}{CodeType}
-The type for code objects such as returned by \code{compile()}.
+The type for code objects such as returned by
+\function{compile()}\bifuncindex{compile}.
 \end{datadesc}
 
 \begin{datadesc}{ClassType}
@@ -94,7 +96,8 @@ An alternative name for \code{MethodType}.
 \end{datadesc}
 
 \begin{datadesc}{BuiltinFunctionType}
-The type of built-in functions like \code{len} or \code{sys.exit}.
+The type of built-in functions like \function{len()} or
+\function{sys.exit()}.
 \end{datadesc}
 
 \begin{datadesc}{BuiltinMethodType}
@@ -110,11 +113,13 @@ The type of open file objects such as \code{sys.stdout}.
 \end{datadesc}
 
 \begin{datadesc}{XRangeType}
-The type of range objects returned by \code{xrange()}.
+The type of range objects returned by
+\function{xrange()}\bifuncindex{xrange}.
 \end{datadesc}
 
 \begin{datadesc}{TracebackType}
-The type of traceback objects such as found in \code{sys.exc_traceback}.
+The type of traceback objects such as found in
+\code{sys.exc_traceback}.
 \end{datadesc}
 
 \begin{datadesc}{FrameType}
