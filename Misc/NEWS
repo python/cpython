@@ -21,6 +21,10 @@ Core and builtins
 Extension modules
 -----------------
 
+- Fixed broken threadstate swap in readline that could cause fatal
+  errors when a readline hook was being invoked while a background
+  thread was active.  (SF bugs #660476 and #513033.)
+
 - fcntl now exposes the strops.h I_* constants.
 
 - datetime changes:
