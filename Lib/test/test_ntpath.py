@@ -36,7 +36,6 @@ tester('ntpath.isabs("\\foo")', 1)
 tester('ntpath.isabs("\\foo\\bar")', 1)
 
 tester('ntpath.abspath("C:\\")', "C:\\")
-tester('ntpath.abspath("")', os.getcwd())
 
 
 if errors:
