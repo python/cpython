@@ -1,5 +1,5 @@
-LIBRARY        PYTHON15 INITINSTANCE TERMINSTANCE
-DESCRIPTION    'Python 1.5 Core DLL'
+LIBRARY        PYTHON22 INITINSTANCE TERMINSTANCE
+DESCRIPTION    'Python 2.2 Core DLL'
 PROTMODE
 DATA           MULTIPLE NONSHARED
 
@@ -472,4 +472,9 @@ EXPORTS
                _Py_re_search
                _Py_re_set_syntax
 ;               _Py_samebitset
+               PyBuffer_Type
+               PyBuffer_FromObject
+               PyBuffer_FromMemory
+               PyBuffer_FromReadWriteMemory
+               PyBuffer_New
 

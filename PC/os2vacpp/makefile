@@ -65,8 +65,7 @@ MKMF_SRCS	= $(PY_MODULES)\*.c $(PY_OBJECTS)\*.c $(PY_PARSER)\*.c $(PY_PYTHON)\*.
 
 #.HDRPATH.c	:= $(PROJINCLUDE,;= ) $(.HDRPATH.c)
 #.PATH.c         = .;$(PY_MODULES);$(PY_OBJECTS);$(PY_PARSER);$(PY_PYTHON)
-OTHERLIBS	= $(OS2TCPIP)\lib\so32dll.lib $(OS2TCPIP)\lib\tcp32dll.lib \
-                  $(TCLTK)\Lib\Tcl76.lib $(TCLTK)\Lib\Tk42.lib
+OTHERLIBS	= so32dll.lib tcp32dll.lib # Tcl76.lib Tk42.lib
 
 #################
 # Inference Rules
@@ -121,7 +120,14 @@ PYTHON		=                               \
                   $(PATHOBJ)\SysModule.obj      \
                   $(PATHOBJ)\Thread.obj         \
                   $(PATHOBJ)\TraceBack.obj      \
-                  $(PATHOBJ)\FrozenMain.obj
+                  $(PATHOBJ)\FrozenMain.obj     \
+                  $(PATHOBJ)\exceptions.obj     \
+                  $(PATHOBJ)\symtable.obj       \
+                  $(PATHOBJ)\codecs.obj         \
+                  $(PATHOBJ)\future.obj         \
+                  $(PATHOBJ)\dynload_os2.obj    \
+                  $(PATHOBJ)\mysnprintf.obj     \
+                  $(PATHOBJ)\iterobject.obj
 
 # Python's Internal Parser
 PARSER		=                              \
@@ -154,7 +160,13 @@ OBJECTS		=                              \
                   $(PATHOBJ)\SliceObject.obj   \
                   $(PATHOBJ)\StringObject.obj  \
                   $(PATHOBJ)\TupleObject.obj   \
-                  $(PATHOBJ)\TypeObject.obj
+                  $(PATHOBJ)\TypeObject.obj    \
+                  $(PATHOBJ)\unicodeobject.obj \
+                  $(PATHOBJ)\unicodectype.obj  \
+                  $(PATHOBJ)\cellobject.obj    \
+                  $(PATHOBJ)\descrobject.obj   \
+                  $(PATHOBJ)\weakrefobject.obj \
+                  $(PATHOBJ)\structseq.obj
 
 # Extension Modules (Built-In or as Separate DLLs)
 MODULES		=                              \
@@ -181,12 +193,13 @@ MODULES		=                              \
                   $(PATHOBJ)\SelectModule.obj  \
                   $(PATHOBJ)\SignalModule.obj  \
                   $(PATHOBJ)\SocketModule.obj  \
-                  $(PATHOBJ)\SoundEx.obj       \
                   $(PATHOBJ)\StropModule.obj   \
                   $(PATHOBJ)\StructModule.obj  \
                   $(PATHOBJ)\TimeModule.obj    \
                   $(PATHOBJ)\ThreadModule.obj  \
-                  $(PATHOBJ)\YUVConvert.obj
+                  $(PATHOBJ)\YUVConvert.obj    \
+                  $(PATHOBJ)\bufferobject.obj  \
+                  $(PATHOBJ)\gcmodule.obj
 
 # Standalone Parser Generator Program (Shares Some of Python's Modules)
 PGEN            =                              \
@@ -211,7 +224,7 @@ _GEN		= /G4 /Gm /Gd-
 		# /Gm  = Use Multithread Runtime
 		# /Gd  = Dynamically Load Runtime
 		# /Ms  = Use _System Calling Convention (vs _Optlink)
-		#        (to allow non-VAC++ code to call into Python15.dll)
+		#        (to allow non-VAC++ code to call into Python22.dll)
 
 _OPT		= /O /Gl
 		# /O   = Enable Speed-Optimizations
@@ -246,8 +259,8 @@ CFLAGS		= $(_BASE) $(_GEN) $(_OPT) $(_DBG) $(_OUT) $(_EXE) /Ss
 ###################
 # Primary Target(s)
 ###################
-All:  obj noise PyCore.lib Python15.lib PGen.exe \
-      Python.exe PythonPM.exe Python15.dll _tkinter.dll
+All:  obj noise PyCore.lib Python22.lib PGen.exe \
+      Python.exe PythonPM.exe Python22.dll # _tkinter.dll
 
 Modules: $(MODULES)
 Objects: $(OBJECTS)
@@ -267,43 +280,43 @@ noise:
 ##############
 
 # Python Extension DLL: Tcl/Tk Interface
-_tkinter.dll: $(PATHOBJ)\_tkinter.obj Python15.lib _tkinter.def
-	@ Echo Linking $@ As DLL
-	@ $(CC) $(CFLAGS) /B"/NOE" $(_DLL) /Fe$@ $(_MAP) $** $(OTHERLIBS) >>$(ERRS)
+#_tkinter.dll: $(PATHOBJ)\_tkinter.obj Python22.lib _tkinter.def
+#	@ Echo Linking $@ As DLL
+#	@ $(CC) $(CFLAGS) /B"/NOE" $(_DLL) /Fe$@ $(_MAP) $** $(OTHERLIBS) >>$(ERRS)
 
-$(PATHOBJ)\_tkinter.obj: $(PY_MODULES)\_tkinter.c
-	@ Echo Compiling $**
-	@ $(CC) -c $(CFLAGS) $(_DLL) -Fo$@ $** >>$(ERRS)
+#$(PATHOBJ)\_tkinter.obj: $(PY_MODULES)\_tkinter.c
+#	@ Echo Compiling $**
+#	@ $(CC) -c $(CFLAGS) $(_DLL) -Fo$@ $** >>$(ERRS)
 
 # Object Library of All Essential Python Routines
 PyCore.lib: $(MODULES) $(OBJECTS) $(PARSER) $(PYTHON) $(PATHOBJ)\Config.obj
 	@ Echo Adding Updated Object Files to Link Library $@
 	@ ! ILIB $@ /NOLOGO /NOBACKUP -+$? ; >>$(ERRS)
 
-Python15.dll: $(PATHOBJ)\Compile.obj PyCore.lib Python.def
+Python22.dll: $(PATHOBJ)\Compile.obj PyCore.lib Python.def
 	@ Echo Linking $@ As DLL
 	@ $(CC) $(CFLAGS) /B"/NOE" $(_DLL) /Fe$@ $(_MAP) $** $(OTHERLIBS) >>$(ERRS)
-	@ Echo Compressing $@ with LxLite
-	@ lxlite $@
+#	@ Echo Compressing $@ with LxLite
+#	@ lxlite $@
 
 # IBM Linker Requires One Explicit .OBJ To Build a .DLL from a .LIB
 $(PATHOBJ)\Compile.obj: $(PY_PYTHON)\Compile.c
 	@ Echo Compiling $**
 	@ $(CC) -c $(CFLAGS) $(_DLL) -Fo$@ $** >>$(ERRS)
 
-# Import Library for Using the Python15.dll
-Python15.lib: Python.def
+# Import Library for Using the Python22.dll
+Python22.lib: Python.def
 	@ Echo Making $@
 	@ IMPLIB /NOLOGO /NOIGNORE $@ $** >>$(ERRS)
 	@ ILIB /NOLOGO /CONVFORMAT /NOEXTDICTIONARY /NOBROWSE /NOBACKUP $@; >>$(ERRS)
 
-# Small Command-Line Program to Start Interpreter in Python15.dll
-Python.exe: $(PATHOBJ)\Python.obj Python15.lib
+# Small Command-Line Program to Start Interpreter in Python22.dll
+Python.exe: $(PATHOBJ)\Python.obj Python22.lib
 	@ Echo Linking $@ As EXE
 	@ $(CC) $(CFLAGS) $(_EXE) /B"/PM:VIO /STACK:360000" /Fe$@ $(_MAP) $** $(OTHERLIBS) >>$(ERRS)
 
-# Small PM-GUI Program to Start Interpreter in Python15.dll
-PythonPM.exe: $(PATHOBJ)\Python.obj Python15.lib
+# Small PM-GUI Program to Start Interpreter in Python22.dll
+PythonPM.exe: $(PATHOBJ)\Python.obj Python22.lib
 	@ Echo Linking $@ As EXE
 	@ $(CC) $(CFLAGS) $(_EXE) /B"/PM:PM /STACK:360000" /Fe$@ $(_MAP) $** $(OTHERLIBS) >>$(ERRS)
 
@@ -323,13 +336,13 @@ clean:
 
 # Remove All Targets, Including Final Binaries
 distclean: clean
-        -- Del /Q PyCore.lib Python15.lib       >NUL 2>&1
-        -- Del /Q Python15.dll Python.exe PGen.exe >NUL 2>&1
+        -- Del /Q PyCore.lib Python22.lib       >NUL 2>&1
+        -- Del /Q Python22.dll Python.exe PGen.exe >NUL 2>&1
 
-release: Python.exe Python15.dll Python15.lib
+release: Python.exe Python22.dll Python22.lib
 	-- @Echo Y | copy /U Python.exe   D:\EXEs
-	-- @Echo Y | copy /U Python15.dll D:\DLLs
-	-- @Echo Y | copy /U Python15.lib E:\Tau\Lib
+	-- @Echo Y | copy /U Python22.dll D:\DLLs
+	-- @Echo Y | copy /U Python22.lib E:\Tau\Lib
 	-- @Echo Y | copy /U _tkinter.dll D:\Python
 
 test:

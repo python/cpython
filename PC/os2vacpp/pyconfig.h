@@ -54,7 +54,7 @@
 /* Provide a default library so writers of extension modules
  * won't have to explicitly specify it anymore
  */
-#pragma library("Python15.lib")
+#pragma library("Python22.lib")
 
 /***************************************************/
 /*    32-Bit IBM VisualAge C/C++ v3.0 for OS/2     */
@@ -78,6 +78,14 @@
 #define SIZEOF_VOID_P            4 /* Count of Bytes in a (void *)          */
 /* #define HAVE_LONG_LONG     1 */ /* VAC++ does not support (long long)    */
 /* #define SIZEOF_LONG_LONG   8 */ /* Count of Bytes in a (long long)       */
+
+/* unicode definines */
+#define Py_USING_UNICODE
+#define PY_UNICODE_TYPE    wchar_t
+#define Py_UNICODE_SIZE SIZEOF_SHORT
+
+/* dynamic loading */
+#define HAVE_DYNAMIC_LOADING 1
 
 /* Define if type char is unsigned and you are not using gcc.  */
 #ifndef __CHAR_UNSIGNED__
@@ -188,7 +196,7 @@ typedef int pid_t;
 /* #define HAVE_GETUID        1 */
 
   /* Unix-Specific */
-#define HAVE_SYS_UN_H            1 /* #include <sys/un.h>                   */
+/* #define HAVE_SYS_UN_H            1 /* #include <sys/un.h>                   */
 /* #define HAVE_SYS_UTSNAME_H 1 */ /* #include <sys/utsname.h>              */
 /* #define HAVE_SYS_WAIT_H    1 */ /* #include <sys/wait.h>                 */
 /* #define HAVE_UNISTD_H      1 */ /* #include <unistd.h>                   */

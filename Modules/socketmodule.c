@@ -142,13 +142,16 @@ Socket methods:
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#if !(defined(__BEOS__) || defined(__CYGWIN__))
+#if !(defined(__BEOS__) || defined(__CYGWIN__) || (defined(PYOS_OS2) && defined(PYCC_VACPP)))
 #include <netinet/tcp.h>
 #endif
 
 /* Headers needed for inet_ntoa() and inet_addr() */
 #ifdef __BEOS__
 #include <net/netdb.h>
+#elif defined(PYOS_OS2) && defined(PYCC_VACPP)
+#include <netdb.h>
+typedef size_t socklen_t;
 #else
 #ifndef USE_GUSI1
 #include <arpa/inet.h>
