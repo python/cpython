@@ -635,25 +635,6 @@ static char module_doc[] =
 *** IMPORTANT NOTICE ***\n\
 On Windows, only sockets are supported; on Unix, all file descriptors.";
 
-/*
- * Convenience routine to export an integer value.
- * For simplicity, errors (which are unlikely anyway) are ignored.
- */
-
-static void
-insint(PyObject *d, char *name, int value)
-{
-	PyObject *v = PyInt_FromLong((long) value);
-	if (v == NULL) {
-		/* Don't bother reporting this error */
-		PyErr_Clear();
-	}
-	else {
-		PyDict_SetItemString(d, name, v);
-		Py_DECREF(v);
-	}
-}
-
 DL_EXPORT(void)
 initselect(void)
 {
