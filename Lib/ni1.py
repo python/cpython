@@ -1,5 +1,48 @@
 """New import scheme with package support.
 
+Quick Reference
+---------------
+
+- To enable package support, execute "import ni" before importing any
+  packages.  Importing this module automatically installs the relevant
+  import hooks.
+
+- To create a package named spam containing sub-modules ham, bacon and
+  eggs, create a directory spam somewhere on Python's module search
+  path (i.e. spam's parent directory must be one of the directories in
+  sys.path or $PYTHONPATH); then create files ham.py, bacon.py and
+  eggs.py inside spam.
+
+- To import module ham from package spam and use function hamneggs()
+  from that module, you can either do
+
+    import spam.ham		# *not* "import spam" !!!
+    spam.ham.hamneggs()
+
+  or
+
+    from spam import ham
+    ham.hamneggs()
+
+  or
+
+    from spam.ham import hamneggs
+    hamneggs()
+
+- Importing just "spam" does not do what you expect: it creates an
+  empty package named spam if one does not already exist, but it does
+  not import spam's submodules.  The only submodule that is guaranteed
+  to be imported is spam.__init__, if it exists.  Note that
+  spam.__init__ is a submodule of package spam.  It can reference to
+  spam's namespace via the '__.' prefix, for instance
+
+    __.spam_inited = 1		# Set a package-level variable
+
+
+
+Theory of Operation
+-------------------
+
 A Package is a module that can contain other modules.  Packages can be
 nested.  Package introduce dotted names for modules, like P.Q.M, which
 could correspond to a file P/Q/M.py found somewhere on sys.path.  It
@@ -388,3 +431,5 @@ def testproper():
 
 if __name__ == '__main__':
     test()
+else:
+    install()
