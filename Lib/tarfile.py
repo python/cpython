@@ -616,6 +616,22 @@ class ExFileObject(object):
         """Close the file object.
         """
         self.closed = True
+
+    def __iter__(self):
+        """Get an iterator over the file object.
+        """
+        if self.closed:
+            raise ValueError("I/O operation on closed file")
+        return self
+
+    def next(self):
+        """Get the next item from the file iterator.
+        """
+        result = self.readline()
+        if not result:
+            raise StopIteration
+        return result
+        
 #class ExFileObject
 
 #------------------

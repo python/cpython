@@ -59,6 +59,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1107973: Allow to iterate over the lines of a tarfile.ExFileObject.
+
 - Patch #1104111: Alter setup.py --help and --help-commands.
 
 - Patch #1121234: Properly cleanup _exit and tkerror commands.

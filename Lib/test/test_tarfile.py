@@ -91,6 +91,16 @@ class ReadTest(BaseTest):
             self.assert_(lines1 == lines2,
                          "_FileObject.readline() does not work correctly")
 
+    def test_iter(self):
+        # Test iteration over ExFileObject.
+        if self.sep != "|":
+            filename = "0-REGTYPE-TEXT"
+            self.tar.extract(filename, dirname())
+            lines1 = file(os.path.join(dirname(), filename), "rU").readlines()
+            lines2 = [line for line in self.tar.extractfile(filename)]
+            self.assert_(lines1 == lines2,
+                         "ExFileObject iteration does not work correctly")
+
     def test_seek(self):
         """Test seek() method of _FileObject, incl. random reading.
         """
