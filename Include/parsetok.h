@@ -22,6 +22,8 @@ typedef struct {
     int lineno;
     int offset;
     char *text;
+    int token;
+    int expected;
 } perrdetail;
 
 extern DL_IMPORT(node *) PyParser_ParseString(char *, grammar *, int,

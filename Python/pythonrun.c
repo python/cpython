@@ -14,6 +14,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include "grammar.h"
 #include "node.h"
+#include "token.h"
 #include "parsetok.h"
 #include "errcode.h"
 #include "compile.h"
@@ -983,8 +984,9 @@ static void
 err_input(err)
 	perrdetail *err;
 {
-	PyObject *v, *w;
+	PyObject *v, *w, *errtype;
 	char *msg = NULL;
+	errtype = PyExc_SyntaxError;
 	v = Py_BuildValue("(ziiz)", err->filename,
 			    err->lineno, err->offset, err->text);
 	if (err->text != NULL) {
@@ -993,7 +995,17 @@ err_input(err)
 	}
 	switch (err->error) {
 	case E_SYNTAX:
-		msg = "invalid syntax";
+		errtype = PyExc_IndentationError;
+		if (err->expected == INDENT)
+			msg = "expected an indented block";
+		else if (err->token == INDENT)
+			msg = "unexpected indent";
+		else if (err->token == DEDENT)
+			msg = "unexpected unindent";
+		else {
+			errtype = PyExc_SyntaxError;
+			msg = "invalid syntax";
+		}
 		break;
 	case E_TOKEN:
 		msg = "invalid token";
@@ -1009,11 +1021,20 @@ err_input(err)
 	case E_EOF:
 		msg = "unexpected EOF while parsing";
 		break;
-	case E_INDENT:
+	case E_TABSPACE:
+		errtype = PyExc_TabError;
 		msg = "inconsistent use of tabs and spaces in indentation";
 		break;
 	case E_OVERFLOW:
 		msg = "expression too long";
+		break;
+	case E_DEDENT:
+		errtype = PyExc_IndentationError;
+		msg = "unindent does not match any outer indentation level";
+		break;
+	case E_TOODEEP:
+		errtype = PyExc_IndentationError;
+		msg = "too many levels of indentation";
 		break;
 	default:
 		fprintf(stderr, "error=%d\n", err->error);
@@ -1022,7 +1043,7 @@ err_input(err)
 	}
 	w = Py_BuildValue("(sO)", msg, v);
 	Py_XDECREF(v);
-	PyErr_SetObject(PyExc_SyntaxError, w);
+	PyErr_SetObject(errtype, w);
 	Py_XDECREF(w);
 }
 

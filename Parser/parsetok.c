@@ -139,8 +139,8 @@ parsetok(tok, g, start, err_ret)
 			strncpy(str, a, len);
 		str[len] = '\0';
 		if ((err_ret->error =
-		     PyParser_AddToken(ps, (int)type, str,
-				       tok->lineno)) != E_OK) {
+		     PyParser_AddToken(ps, (int)type, str, tok->lineno,
+				       &(err_ret->expected))) != E_OK) {
 			if (err_ret->error != E_DONE)
 				PyMem_DEL(str);
 			break;

@@ -205,11 +205,12 @@ classify(g, type, str)
 }
 
 int
-PyParser_AddToken(ps, type, str, lineno)
+PyParser_AddToken(ps, type, str, lineno, expected_ret)
 	register parser_state *ps;
 	register int type;
 	char *str;
 	int lineno;
+	int *expected_ret;
 {
 	register int ilabel;
 	int err;
@@ -285,6 +286,15 @@ PyParser_AddToken(ps, type, str, lineno)
 		
 		/* Stuck, report syntax error */
 		D(printf(" Error.\n"));
+		if (expected_ret) {
+			if (s->s_lower == s->s_upper - 1) {
+				/* Only one possible expected token */
+				*expected_ret = ps->p_grammar->
+				    g_ll.ll_label[s->s_lower].lb_type;
+			}
+			else 
+		        	*expected_ret = -1;
+		}
 		return E_SYNTAX;
 	}
 }
