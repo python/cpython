@@ -89,7 +89,7 @@ node2tuple(node *n,                     /* node to convert               */
         PyObject *v;
         PyObject *w;
 
-        v = mkseq(1 + NCH(n));
+        v = mkseq(1 + NCH(n) + (TYPE(n) == encoding_decl));
         if (v == NULL)
             return (v);
         w = PyInt_FromLong(TYPE(n));
@@ -106,6 +106,9 @@ node2tuple(node *n,                     /* node to convert               */
             }
             (void) addelem(v, i+1, w);
         }
+	
+        if (TYPE(n) == encoding_decl)
+            (void) addelem(v, i+1, PyString_FromString(STR(n)));
         return (v);
     }
     else if (ISTERMINAL(TYPE(n))) {
@@ -478,7 +481,7 @@ err_string(char *message)
 /*  PyObject* parser_do_parse(PyObject* args, int type)
  *
  *  Internal function to actually execute the parse and return the result if
- *  successful, or set an exception if not.
+ *  successful or set an exception if not.
  *
  */
 static PyObject*
@@ -494,10 +497,8 @@ parser_do_parse(PyObject *args, PyObject *kw, char *argspec, int type)
                                              (type == PyST_EXPR)
                                              ? eval_input : file_input);
 
-        if (n != 0)
-            res = parser_newstobject(n, type);
-        else
-            err_string("could not parse string");
+	if (n)
+	    res = parser_newstobject(n, type);
     }
     return (res);
 }

@@ -13,6 +13,7 @@ from compiler.consts import CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS,\
      CO_NESTED, CO_GENERATOR, CO_GENERATOR_ALLOWED, CO_FUTURE_DIVISION
 from compiler.pyassem import TupleArg
 
+# XXX The version-specific code can go, since this code only works with 2.x.
 # Do we have Python 1.x or Python 2.x?
 try:
     VERSION = sys.version_info[0]
@@ -32,22 +33,14 @@ EXCEPT = 2
 TRY_FINALLY = 3
 END_FINALLY = 4
 
-# XXX this doesn't seem to be used
-class BlockStack(misc.Stack):
-    __super_init = misc.Stack.__init__
-
-    def __init__(self):
-        self.__super_init(self)
-        self.loop = None
-
 def compileFile(filename, display=0):
-    f = open(filename)
+    f = open(filename, 'U')
     buf = f.read()
     f.close()
     mod = Module(buf, filename)
     try:
         mod.compile(display)
-    except SyntaxError, err:
+    except SyntaxError:
         raise
     else:
         f = open(filename + "c", "wb")
@@ -134,7 +127,7 @@ class Module(AbstractCompileMode):
         # to indicate the type of the value.  simplest way to get the
         # same effect is to call marshal and then skip the code.
         mtime = os.path.getmtime(self.filename)
-        mtime = struct.pack('i', mtime)
+        mtime = struct.pack('<i', mtime)
         return self.MAGIC + mtime
 
 class LocalNameFinder:
@@ -310,9 +303,17 @@ class CodeGenerator:
         else:
             self.emit(prefix + '_NAME', name)
 
-    def set_lineno(self, node, force=0):
-        """Emit SET_LINENO if node has lineno attribute and it is
-        different than the last lineno emitted.
+    # The set_lineno() function and the explicit emit() calls for
+    # SET_LINENO below are only used to generate the line number table.
+    # As of Python 2.3, the interpreter does not have a SET_LINENO
+    # instruction.  pyassem treats SET_LINENO opcodes as a special case.
+
+    def set_lineno(self, node, force=False):
+        """Emit SET_LINENO if necessary.
+
+        The instruction is considered necessary if the node has a
+        lineno attribute and it is different than the last lineno
+        emitted.
 
         Returns true if SET_LINENO was emitted.
 
@@ -326,8 +327,8 @@ class CodeGenerator:
                                    or force):
             self.emit('SET_LINENO', lineno)
             self.last_lineno = lineno
-            return 1
-        return 0
+            return True
+        return False
 
     # The first few visitor methods handle nodes that generator new
     # code objects.  They use class attributes to determine what
@@ -387,9 +388,6 @@ class CodeGenerator:
     def visitClass(self, node):
         gen = self.ClassGen(node, self.scopes,
                             self.get_module())
-        if node.doc:
-            self.emit('LOAD_CONST', node.doc)
-            self.storeName('__doc__')
         walk(node.code, gen)
         gen.finish()
         self.set_lineno(node)
@@ -447,7 +445,7 @@ class CodeGenerator:
         self.nextBlock(loop)
         self.setups.push((LOOP, loop))
 
-        self.set_lineno(node, force=1)
+        self.set_lineno(node, force=True)
         self.visit(node.test)
         self.emit('JUMP_IF_FALSE', else_ or after)
 
@@ -617,7 +615,7 @@ class CodeGenerator:
         return start, anchor
 
     def visitListCompIf(self, node, branch):
-        self.set_lineno(node, force=1)
+        self.set_lineno(node, force=True)
         self.visit(node.test)
         self.emit('JUMP_IF_FALSE', branch)
         self.newBlock()
@@ -975,7 +973,7 @@ class CodeGenerator:
     def visitYield(self, node):
         self.set_lineno(node)
         self.visit(node.value)
-        self.emit('YIELD_STMT')
+        self.emit('YIELD_VALUE')
 
     # slice and subscript stuff
 
@@ -1266,9 +1264,8 @@ class FunctionCodeGenerator(NestedScopeMixin, AbstractFunctionCode,
         self.__super_init(func, scopes, isLambda, class_name, mod)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
-        if self.graph.checkFlag(CO_GENERATOR_ALLOWED):
-            if self.scope.generator is not None:
-                self.graph.setFlag(CO_GENERATOR)
+        if self.scope.generator is not None:
+            self.graph.setFlag(CO_GENERATOR)
 
 class AbstractClassCode:
 
@@ -1304,6 +1301,12 @@ class ClassCodeGenerator(NestedScopeMixin, AbstractClassCode, CodeGenerator):
         self.__super_init(klass, scopes, module)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
+        self.set_lineno(klass)
+        self.emit("LOAD_GLOBAL", "__name__")
+        self.storeName("__module__")
+        if klass.doc:
+            self.emit("LOAD_CONST", klass.doc)
+            self.storeName('__doc__')
 
 def generateArgList(arglist):
     """Generate an arg list marking TupleArgs"""
@@ -1379,7 +1382,5 @@ def wrap_aug(node):
     return wrapper[node.__class__](node)
 
 if __name__ == "__main__":
-    import sys
-
     for file in sys.argv[1:]:
         compileFile(file)
