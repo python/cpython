@@ -161,3 +161,4 @@
 (':mac2unix.shar', None)
 (':pystone.py', None)
 (':site-packages', None)
+(':Mac:Contrib:AECaptureParser', '')
