@@ -2,6 +2,10 @@
 	  id	ID	#IMPLIED
 	  role	NMTOKEN	#IMPLIED">
 
+<!ENTITY % descriptor.class "cfuncdesc | cvardesc | ctypedesc |
+                             classdesc | excdesc | funcdesc | datadesc |
+                             memberdesc | methoddesc | opcodedesc">
+
 <!-- include the OASIS Exchange Table Model -->
 <!ENTITY oasis-tables.mod
 	  PUBLIC "-//OASIS//DTD Exchange Table Model 19960430//EN">
