@@ -31,7 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Return a string representing the compiler name */
 
-#include "config.h"
+#include "pyconfig.h"
 #include "Python.h"
 
 #ifdef __MWERKS__
