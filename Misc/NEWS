@@ -147,6 +147,9 @@ Library
 - Tkinter.Canvas.scan_dragto() provides an optional parameter to support
   the gain value which is passed to Tk.  SF bug# 602259.
 
+- Fix logging.handlers.SysLogHandler protocol when using UNIX domain sockets.
+  See SF patch #642974. 
+
 Tools/Demos
 -----------
 
