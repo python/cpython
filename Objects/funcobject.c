@@ -94,14 +94,16 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
 #define OFF(x) offsetof(PyFunctionObject, x)
 
 static struct memberlist func_memberlist[] = {
-	{"func_code",	T_OBJECT,	OFF(func_code)},
-	{"func_globals",T_OBJECT,	OFF(func_globals),	READONLY},
-	{"func_name",	T_OBJECT,	OFF(func_name),		READONLY},
-	{"__name__",	T_OBJECT,	OFF(func_name),		READONLY},
-	{"func_defaults",T_OBJECT,	OFF(func_defaults)},
-	{"func_doc",	T_OBJECT,	OFF(func_doc)},
-	{"__doc__",	T_OBJECT,	OFF(func_doc)},
-	{NULL}	/* Sentinel */
+        {"func_code",     T_OBJECT,     OFF(func_code)},
+        {"func_globals",  T_OBJECT,     OFF(func_globals),      READONLY},
+        {"func_name",     T_OBJECT,     OFF(func_name),         READONLY},
+        {"__name__",      T_OBJECT,     OFF(func_name),         READONLY},
+        {"func_defaults", T_OBJECT,     OFF(func_defaults)},
+        {"func_doc",      T_OBJECT,     OFF(func_doc)},
+        {"__doc__",       T_OBJECT,     OFF(func_doc)},
+        {"func_dict",     T_OBJECT,     OFF(func_dict)},
+        {"__dict__",      T_OBJECT,     OFF(func_dict)},
+        {NULL}  /* Sentinel */
 };
 
 static PyObject *
@@ -114,16 +116,6 @@ func_getattro(PyFunctionObject *op, PyObject *name)
 		PyErr_SetString(PyExc_RuntimeError,
 		  "function attributes not accessible in restricted mode");
 		return NULL;
-	}
-
-	if (!strcmp(sname, "__dict__") || !strcmp(sname, "func_dict")) {
-		if (op->func_dict == NULL)
-			rtn = Py_None;
-		else
-			rtn = op->func_dict;
-
-		Py_INCREF(rtn);
-		return rtn;
 	}
 
 	/* no API for PyMember_HasAttr() */
@@ -153,6 +145,9 @@ func_setattro(PyFunctionObject *op, PyObject *name, PyObject *value)
 		return -1;
 	}
 	if (strcmp(sname, "func_code") == 0) {
+		/* not legal to del f.func_code or to set it to anything
+		 * other than a code object.
+		 */
 		if (value == NULL || !PyCode_Check(value)) {
 			PyErr_SetString(
 				PyExc_TypeError,
@@ -161,40 +156,55 @@ func_setattro(PyFunctionObject *op, PyObject *name, PyObject *value)
 		}
 	}
 	else if (strcmp(sname, "func_defaults") == 0) {
-		if (value != Py_None && !PyTuple_Check(value)) {
+		/* legal to del f.func_defaults.  Can only set
+		 * func_defaults to NULL or a tuple.
+		 */
+		if (value == Py_None)
+			value = NULL;
+		if (value != NULL && !PyTuple_Check(value)) {
 			PyErr_SetString(
 				PyExc_TypeError,
 				"func_defaults must be set to a tuple object");
 			return -1;
 		}
-		if (value == Py_None)
-			value = NULL;
 	}
 	else if (!strcmp(sname, "func_dict") || !strcmp(sname, "__dict__")) {
-		if (value != Py_None && !PyDict_Check(value)) {
+		/* legal to del f.func_dict.  Can only set func_dict to
+		 * NULL or a dictionary.
+		 */
+		if (value == Py_None)
+			value = NULL;
+		if (value != NULL && !PyDict_Check(value)) {
 			PyErr_SetString(
 				PyExc_TypeError,
 				"func_dict must be set to a dict object");
 			return -1;
 		}
-		if (value == Py_None)
-			value = NULL;
-
-		Py_XDECREF(op->func_dict);
-		Py_XINCREF(value);
-		op->func_dict = value;
-		return 0;
 	}
 
 	rtn = PyMember_Set((char *)op, func_memberlist, sname, value);
 	if (rtn < 0 && PyErr_ExceptionMatches(PyExc_AttributeError)) {
 		PyErr_Clear();
 		if (op->func_dict == NULL) {
+			/* don't create the dict if we're deleting an
+			 * attribute.  In that case, we know we'll get an
+			 * AttributeError.
+			 */
+			if (value == NULL) {
+				PyErr_SetString(PyExc_AttributeError, sname);
+				return -1;
+			}
 			op->func_dict = PyDict_New();
 			if (op->func_dict == NULL)
 				return -1;
 		}
-		rtn = PyDict_SetItem(op->func_dict, name, value);
+                if (value == NULL)
+			rtn = PyDict_DelItem(op->func_dict, name);
+                else
+			rtn = PyDict_SetItem(op->func_dict, name, value);
+		/* transform KeyError into AttributeError */
+		if (rtn < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
+			PyErr_SetString(PyExc_AttributeError, sname);
 	}
 	return rtn;
 }
