@@ -1021,6 +1021,12 @@ static PyObject *MovieCtlObj_getattr(self, name)
 
 #define MovieCtlObj_setattr NULL
 
+#define MovieCtlObj_compare NULL
+
+#define MovieCtlObj_repr NULL
+
+#define MovieCtlObj_hash NULL
+
 PyTypeObject MovieController_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -1032,6 +1038,12 @@ PyTypeObject MovieController_Type = {
 	0, /*tp_print*/
 	(getattrfunc) MovieCtlObj_getattr, /*tp_getattr*/
 	(setattrfunc) MovieCtlObj_setattr, /*tp_setattr*/
+	(cmpfunc) MovieCtlObj_compare, /*tp_compare*/
+	(reprfunc) MovieCtlObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) MovieCtlObj_hash, /*tp_hash*/
 };
 
 /* ---------------- End object type MovieController ----------------- */
@@ -1446,6 +1458,12 @@ static PyObject *TimeBaseObj_getattr(self, name)
 
 #define TimeBaseObj_setattr NULL
 
+#define TimeBaseObj_compare NULL
+
+#define TimeBaseObj_repr NULL
+
+#define TimeBaseObj_hash NULL
+
 PyTypeObject TimeBase_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -1457,6 +1475,12 @@ PyTypeObject TimeBase_Type = {
 	0, /*tp_print*/
 	(getattrfunc) TimeBaseObj_getattr, /*tp_getattr*/
 	(setattrfunc) TimeBaseObj_setattr, /*tp_setattr*/
+	(cmpfunc) TimeBaseObj_compare, /*tp_compare*/
+	(reprfunc) TimeBaseObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) TimeBaseObj_hash, /*tp_hash*/
 };
 
 /* -------------------- End object type TimeBase -------------------- */
@@ -1735,6 +1759,12 @@ static PyObject *UserDataObj_getattr(self, name)
 
 #define UserDataObj_setattr NULL
 
+#define UserDataObj_compare NULL
+
+#define UserDataObj_repr NULL
+
+#define UserDataObj_hash NULL
+
 PyTypeObject UserData_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -1746,6 +1776,12 @@ PyTypeObject UserData_Type = {
 	0, /*tp_print*/
 	(getattrfunc) UserDataObj_getattr, /*tp_getattr*/
 	(setattrfunc) UserDataObj_setattr, /*tp_setattr*/
+	(cmpfunc) UserDataObj_compare, /*tp_compare*/
+	(reprfunc) UserDataObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) UserDataObj_hash, /*tp_hash*/
 };
 
 /* -------------------- End object type UserData -------------------- */
@@ -2806,6 +2842,12 @@ static PyObject *MediaObj_getattr(self, name)
 
 #define MediaObj_setattr NULL
 
+#define MediaObj_compare NULL
+
+#define MediaObj_repr NULL
+
+#define MediaObj_hash NULL
+
 PyTypeObject Media_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -2817,6 +2859,12 @@ PyTypeObject Media_Type = {
 	0, /*tp_print*/
 	(getattrfunc) MediaObj_getattr, /*tp_getattr*/
 	(setattrfunc) MediaObj_setattr, /*tp_setattr*/
+	(cmpfunc) MediaObj_compare, /*tp_compare*/
+	(reprfunc) MediaObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) MediaObj_hash, /*tp_hash*/
 };
 
 /* --------------------- End object type Media ---------------------- */
@@ -3974,6 +4022,12 @@ static PyObject *TrackObj_getattr(self, name)
 
 #define TrackObj_setattr NULL
 
+#define TrackObj_compare NULL
+
+#define TrackObj_repr NULL
+
+#define TrackObj_hash NULL
+
 PyTypeObject Track_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -3985,6 +4039,12 @@ PyTypeObject Track_Type = {
 	0, /*tp_print*/
 	(getattrfunc) TrackObj_getattr, /*tp_getattr*/
 	(setattrfunc) TrackObj_setattr, /*tp_setattr*/
+	(cmpfunc) TrackObj_compare, /*tp_compare*/
+	(reprfunc) TrackObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) TrackObj_hash, /*tp_hash*/
 };
 
 /* --------------------- End object type Track ---------------------- */
@@ -6109,6 +6169,12 @@ static PyObject *MovieObj_getattr(self, name)
 
 #define MovieObj_setattr NULL
 
+#define MovieObj_compare NULL
+
+#define MovieObj_repr NULL
+
+#define MovieObj_hash NULL
+
 PyTypeObject Movie_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -6120,6 +6186,12 @@ PyTypeObject Movie_Type = {
 	0, /*tp_print*/
 	(getattrfunc) MovieObj_getattr, /*tp_getattr*/
 	(setattrfunc) MovieObj_setattr, /*tp_setattr*/
+	(cmpfunc) MovieObj_compare, /*tp_compare*/
+	(reprfunc) MovieObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) MovieObj_hash, /*tp_hash*/
 };
 
 /* --------------------- End object type Movie ---------------------- */
@@ -7666,6 +7738,21 @@ static PyObject *Qt_MoviesTask(_self, _args)
 	return _res;
 }
 
+static PyObject *Qt_available(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	void *ptr;
+
+	if ( !PyArg_ParseTuple(_args, "") )
+		return NULL;
+	ptr = (void *)&EnterMovies;
+	return Py_BuildValue("i", ((long)ptr != 0));
+
+}
+
 static PyMethodDef Qt_methods[] = {
 	{"EnterMovies", (PyCFunction)Qt_EnterMovies, 1,
 	 "() -> None"},
@@ -7805,6 +7892,8 @@ static PyMethodDef Qt_methods[] = {
 	 "(WindowPtr wp, Point startPt, Rect boundsRect) -> None"},
 	{"MoviesTask", (PyCFunction)Qt_MoviesTask, 1,
 	 "(long maxMilliSecToUse) -> None"},
+	{"available", (PyCFunction)Qt_available, 1,
+	 "Return true if Quicktime is available"},
 	{NULL, NULL, 0}
 };
 
