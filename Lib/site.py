@@ -119,10 +119,45 @@ import __builtin__
 __builtin__.quit = __builtin__.exit = exit
 del exit
 
+#
+# Set the string encoding used by the Unicode implementation to the
+# encoding used by the default locale of this system. If the default
+# encoding cannot be determined or is unkown, it defaults to 'ascii'.
+#
+def locale_aware_defaultencoding():
+    import locale
+    code, encoding = locale.get_default()
+    if encoding is None:
+        encoding = 'ascii'
+    try:
+        sys.setdefaultencoding(encoding)
+    except LookupError:
+        sys.setdefaultencoding('ascii')
+
+if 1:
+    # Enable to support locale aware default string encodings.
+    locale_aware_defaultencoding()
+elif 0:
+    # Enable to switch off string to Unicode coercion and implicit
+    # Unicode to string conversion.
+    sys.setdefaultencoding('undefined')
+elif 0:
+    # Enable to hard-code a site specific default string encoding.
+    sys.setdefaultencoding('ascii')
+
+#
+# Run custom site specific code, if available.
+#
 try:
-    import sitecustomize                # Run arbitrary site specific code
+    import sitecustomize
 except ImportError:
-    pass                                # No site customization module
+    pass
+
+#
+# Remove sys.setdefaultencoding() so that users cannot change the
+# encoding after initialization.
+#
+del sys.setdefaultencoding
 
 def _test():
     print "sys.path = ["
