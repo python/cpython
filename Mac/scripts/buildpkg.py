@@ -53,6 +53,7 @@ __license__ = "FreeBSD"
 import os, sys, glob, fnmatch, shutil, string, copy, getopt
 from os.path import basename, dirname, join, islink, isdir, isfile
 
+Error = "buildpkg.Error"
 
 PKG_INFO_FIELDS = """\
 Title
@@ -159,6 +160,7 @@ class PackageMaker:
         # variables set later
         self.packageRootFolder = None
         self.packageResourceFolder = None
+        self.sourceFolder = None
         self.resourceFolder = None
 
 
@@ -171,16 +173,25 @@ class PackageMaker:
         """
 
         # set folder attributes
-        self.packageRootFolder = root
+        self.sourceFolder = root
         if resources == None:
-            self.packageResourceFolder = root
+            self.resourceFolder = root
+        else:
+            self.resourceFolder = resources
 
         # replace default option settings with user ones if provided
         fields = self. packageInfoDefaults.keys()
         for k, v in options.items():
             if k in fields:
                 self.packageInfo[k] = v
-
+            elif not k in ["OutputDir"]:
+                raise Error, "Unknown package option: %s" % k
+        
+        # Check where we should leave the output. Default is current directory
+        outputdir = options.get("OutputDir", os.getcwd())
+        packageName = self.packageInfo["Title"]
+        self.PackageRootFolder = os.path.join(outputdir, packageName + ".pkg")
+ 
         # do what needs to be done
         self._makeFolders()
         self._addInfo()
@@ -197,16 +208,11 @@ class PackageMaker:
         # packageName = "%s-%s" % (self.packageInfo["Title"], 
         #                          self.packageInfo["Version"]) # ??
 
-        packageName = self.packageInfo["Title"]
-        rootFolder = packageName + ".pkg"
-        contFolder = join(rootFolder, "Contents")
-        resourceFolder = join(contFolder, "Resources")
-        os.mkdir(rootFolder)
+        contFolder = join(self.PackageRootFolder, "Contents")
+        self.packageResourceFolder = join(contFolder, "Resources")
+        os.mkdir(self.PackageRootFolder)
         os.mkdir(contFolder)
-        os.mkdir(resourceFolder)
-
-        self.resourceFolder = resourceFolder
-
+        os.mkdir(self.packageResourceFolder)
 
     def _addInfo(self):
         "Write .info file containing installing options."
@@ -217,8 +223,8 @@ class PackageMaker:
         for f in string.split(PKG_INFO_FIELDS, "\n"):
             info = info + "%s %%(%s)s\n" % (f, f)
         info = info % self.packageInfo
-        base = basename(self.packageRootFolder) + ".info"
-        path = join(self.resourceFolder, base)
+        base = self.packageInfo["Title"] + ".info"
+        path = join(self.packageResourceFolder, base)
         f = open(path, "w")
         f.write(info)
 
@@ -229,9 +235,9 @@ class PackageMaker:
         # Currently ignores if the 'mkbom' tool is not available.
 
         try:
-            base = basename(self.packageRootFolder) + ".bom"
-            bomPath = join(self.resourceFolder, base)
-            cmd = "mkbom %s %s" % (self.packageRootFolder, bomPath)
+            base = self.packageInfo["Title"] + ".bom"
+            bomPath = join(self.packageResourceFolder, base)
+            cmd = "mkbom %s %s" % (self.sourceFolder, bomPath)
             res = os.system(cmd)
         except:
             pass
@@ -244,23 +250,16 @@ class PackageMaker:
 
         cwd = os.getcwd()
 
-        packageRootFolder = self.packageRootFolder
-
-        try:
-            # create archive
-            d = dirname(packageRootFolder)
-            os.chdir(packageRootFolder)
-            base = basename(packageRootFolder) + ".pax"
-            archPath = join(d, self.resourceFolder, base)
-            cmd = "pax -w -f %s %s" % (archPath, ".")
-            res = os.system(cmd)
-
-            # compress archive
-            cmd = "gzip %s" % archPath
-            res = os.system(cmd)
-        except:
-            pass
-
+        # create archive
+        os.chdir(self.sourceFolder)
+        base = basename(self.packageInfo["Title"]) + ".pax"
+        self.archPath = join(self.packageResourceFolder, base)
+        cmd = "pax -w -f %s %s" % (self.archPath, ".")
+        res = os.system(cmd)
+        
+        # compress archive
+        cmd = "gzip %s" % self.archPath
+        res = os.system(cmd)
         os.chdir(cwd)
 
 
@@ -271,20 +270,22 @@ class PackageMaker:
         # filenames. So, it's left to Installer.app to deal with the 
         # same file available in multiple formats...
 
-        if not self.packageResourceFolder:
+        if not self.resourceFolder:
             return
 
         # find candidate resource files (txt html rtf rtfd/ or lproj/)
         allFiles = []
         for pat in string.split("*.txt *.html *.rtf *.rtfd *.lproj", " "):
-            pattern = join(self.packageResourceFolder, pat)
+            pattern = join(self.resourceFolder, pat)
             allFiles = allFiles + glob.glob(pattern)
 
         # find pre-process and post-process scripts
         # naming convention: packageName.{pre,post}-{upgrade,install}
+        # Alternatively the filenames can be {pre,post}-{upgrade,install}
+        # in which case we prepend the package name
         packageName = self.packageInfo["Title"]
         for pat in ("*upgrade", "*install"):
-            pattern = join(self.packageResourceFolder, packageName + pat)
+            pattern = join(self.resourceFolder, packageName + pat)
             allFiles = allFiles + glob.glob(pattern)
 
         # check name patterns
@@ -292,22 +293,24 @@ class PackageMaker:
         for f in allFiles:
             for s in ("Welcome", "License", "ReadMe"):
                 if string.find(basename(f), s) == 0:
-                    files.append(f)
+                    files.append((f, f))
             if f[-6:] == ".lproj":
-                files.append(f)
+                files.append((f, f))
+            elif f in ["pre-upgrade", "pre-install", "post-upgrade", "post-install"]:
+                files.append((f, self.packageInfo["Title"]+"."+f))
             elif f[-8:] == "-upgrade":
-                files.append(f)
+                files.append((f,f))
             elif f[-8:] == "-install":
-                files.append(f)
+                files.append((f,f))
 
         # copy files
-        for g in files:
-            f = join(self.packageResourceFolder, g)
+        for src, dst in files:
+            f = join(self.resourceFolder, src)
             if isfile(f):
-                shutil.copy(f, self.resourceFolder)
+                shutil.copy(f, os.path.join(self.packageResourceFolder, dst))
             elif isdir(f):
                 # special case for .rtfd and .lproj folders...
-                d = join(self.resourceFolder, basename(f))
+                d = join(self.packageResourceFolder, dst)
                 os.mkdir(d)
                 files = GlobDirectoryWalker(f)
                 for file in files:
@@ -326,23 +329,18 @@ class PackageMaker:
         installedSize = 0
         zippedSize = 0
 
-        packageRootFolder = self.packageRootFolder
-
-        files = GlobDirectoryWalker(packageRootFolder)
+        files = GlobDirectoryWalker(self.sourceFolder)
         for f in files:
             numFiles = numFiles + 1
-            installedSize = installedSize + os.stat(f)[6]
+            installedSize = installedSize + os.lstat(f)[6]
 
-        d = dirname(packageRootFolder)
-        base = basename(packageRootFolder) + ".pax.gz"
-        archPath = join(d, self.resourceFolder, base)
         try:
-            zippedSize = os.stat(archPath)[6]
+            zippedSize = os.stat(self.archPath+ ".gz")[6]
         except OSError: # ignore error 
             pass
-        base = basename(packageRootFolder) + ".sizes"
-        f = open(join(self.resourceFolder, base), "w")
-        format = "NumFiles %d\nInstalledSize %d\nCompressedSize %d"
+        base = self.packageInfo["Title"] + ".sizes"
+        f = open(join(self.packageResourceFolder, base), "w")
+        format = "NumFiles %d\nInstalledSize %d\nCompressedSize %d\n"
         f.write(format % (numFiles, installedSize, zippedSize))
 
 
