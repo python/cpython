@@ -86,7 +86,7 @@ class BundleBuilder(Defaults):
 	# The type of the bundle.
 	type = "APPL"
 	# The creator code of the bundle.
-	creator = "????"
+	creator = None
 
 	# List of files that have to be copied to <bundle>/Contents/Resources.
 	resources = []
@@ -121,6 +121,11 @@ class BundleBuilder(Defaults):
 		plist = self.plist
 		plist.CFBundleName = self.name
 		plist.CFBundlePackageType = self.type
+		if self.creator is None:
+			if hasattr(plist, "CFBundleSignature"):
+				self.creator = plist.CFBundleSignature
+			else:
+				self.creator = "????"
 		plist.CFBundleSignature = self.creator
 
 	def build(self):
