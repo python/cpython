@@ -163,7 +163,9 @@ def has_key(ch):
     if type(ch) == type( '' ): ch = ord(ch)
 
     # Figure out the correct capability name for the keycode.
-    capability_name = _capability_names[ch]
+    capability_name = _capability_names.get(ch)
+    if capability_name is None:
+        return 0
 
     #Check the current terminal description for that capability;
     #if present, return true, else return false.
