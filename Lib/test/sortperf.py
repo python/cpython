@@ -7,7 +7,7 @@ See tabulate() for output format.
 
 import sys
 import time
-import random
+import whrandom
 import marshal
 import tempfile
 import operator
@@ -23,7 +23,7 @@ def randrange(n):
     except IOError:
         result = []
         for i in range(n):
-            result.append(random.random())
+            result.append(whrandom.random())
         try:
             try:
                 fp = open(fn, "wb")
@@ -44,7 +44,7 @@ def randrange(n):
         ##assert len(result) == n
         # Shuffle it a bit...
         for i in range(10):
-            i = random.randint(0, n-1)
+            i = whrandom.randint(0, n-1)
             temp = result[:i]
             del result[:i]
             temp.reverse()
@@ -75,10 +75,12 @@ def tabulate(r):
     /sort: ascending data
     ~sort: many duplicates
     -sort: all equal
+    !sort: worst case scenario
 
     """
-    fmt = ("%2s %6s" + " %6s"*5)
-    print fmt % ("i", "2**i", "*sort", "\\sort", "/sort", "~sort", "-sort")
+    cases = ("*sort", "\\sort", "/sort", "~sort", "-sort", "!sort")
+    fmt = ("%2s %6s" + " %6s"*len(cases))
+    print fmt % (("i", "2**i") + cases)
     for i in r:
         n = 1<<i
         L = randrange(n)
@@ -97,6 +99,9 @@ def tabulate(r):
         del L
         L = map(abs, [-0.5]*n)
         doit(L) # -sort
+        L = range(n/2-1, -1, -1)
+        L[len(L):] = range(n/2)
+        doit(L) # !sort
         print
 
 def main():
@@ -129,7 +134,7 @@ def main():
                     y = (y^h^d) & 255
                     h = h>>8
                     z = (z^h^d) & 255
-                random.seed(x, y, z)
+                whrandom.seed(x, y, z)
     r = range(k1, k2+1)                 # include the end point
     tabulate(r)
 
