@@ -5,9 +5,9 @@
 # TODO:  Parameterize the versions, builddirs, etc...
 
 # Script configs
-PYVERSION=2.3a2
+PYVERSION=2.3b1
 PYVER=2.3
-BUILDNUM=3
+BUILDNUM=1
 DOCLEANUP=no
 
 PROGDIR="`dirname \"$0\"`"
@@ -39,6 +39,14 @@ mkdir -p $DMGDIR/root
 
 # Configure and build Python
 pushd $BUILDROOT
+
+# Ask the user whether s/he has edited Welcome.txt
+read -p "Have you updated $RESOURCEDIR/Welcome.txt (Y/n)? " welcome
+
+if [ "$welcome" = "n" -o "$welcome" = "N" ]; then
+	echo "Please do so and retry"
+	exit
+fi
 
 # Check if we should build and install the docs, but only if it
 # doesn't appear to be done already.  TODO: fix this path to be version independent
@@ -85,16 +93,6 @@ rm -rf $INSTALLROOT/usr
 python $PYTHONSRC/Mac/scripts/zappycfiles.py $INSTALLROOT/Library/Frameworks/Python.framework/Versions/$PYVER/lib/python$PYVER
 python $PYTHONSRC/Mac/scripts/zappycfiles.py $INSTALLROOT/Library/Frameworks/Python.framework/Versions/$PYVER/Mac/Tools
 
-# Make the welcome message
-cat > $RESOURCEDIR/Welcome.txt <<EOF
-Welcome!
-
-This program will install Python $PYVERSION for Mac OS X as a Framework.
-
-Build number: $BUILDNUM
-Build date:   `date`
-EOF
-
 # Finally, build the package...
 rm -rf MacPython-OSX.pkg
 python $PYTHONSRC/Mac/scripts/buildpkg.py \
@@ -111,9 +109,13 @@ python $PYTHONSRC/Mac/scripts/buildpkg.py \
 
 # ...and then make a disk image containing the package.
 mv MacPython-OSX.pkg $DMGDIR/root
+cp $RESOURCEDIR/Welcome.txt $DMGDIR/root/README.txt
 $PROGDIR/makedmg $DMGDIR/root $DMGDIR MacPython-OSX-$PYVERSION-$BUILDNUM
 
 echo Moving $DMGDIR/MacPython-OSX-$PYVERSION-$BUILDNUM to $DESTDIR
+if [ ! -e $DESTDIR ]; then
+    mkdir $DESTDIR
+fi
 mv $DMGDIR/MacPython-OSX-$PYVERSION-$BUILDNUM.dmg $DESTDIR
 
 
