@@ -375,7 +375,19 @@ int_lshift(v, w)
 	}
 	a = v->ob_ival;
 	b = ((intobject *)w) -> ob_ival;
-	return newintobject((unsigned long)a << b);
+	if (b < 0) {
+		err_setstr(ValueError, "negative shift count");
+		return NULL;
+	}
+	if (a == 0 || b == 0) {
+		INCREF(v);
+		return (object *) v;
+	}
+	if (b >= 32) {
+		return newintobject(0L);
+	}
+	a = (unsigned long)a << b;
+	return newintobject(a);
 }
 
 static object *
@@ -390,7 +402,27 @@ int_rshift(v, w)
 	}
 	a = v->ob_ival;
 	b = ((intobject *)w) -> ob_ival;
-	return newintobject((unsigned long)a >> b);
+	if (b < 0) {
+		err_setstr(ValueError, "negative shift count");
+		return NULL;
+	}
+	if (a == 0 || b == 0) {
+		INCREF(v);
+		return (object *) v;
+	}
+	if (b >= 32) {
+		if (a < 0)
+			a = -1;
+		else
+			a = 0;
+	}
+	else {
+		if (a < 0)
+			a = ~( ~(unsigned long)a >> b );
+		else
+			a = (unsigned long)a >> b;
+	}
+	return newintobject(a);
 }
 
 static object *
