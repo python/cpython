@@ -27,6 +27,7 @@ _PyEval_SliceIndex
 PyEval_CallObjectWithKeywords
 PyEval_CallObject
 Py_FlushLine
+PyEval_GetNestedScopes
 PyEval_GetRestricted
 PyEval_GetFrame
 PyEval_GetGlobals
@@ -57,6 +58,9 @@ PyArg_GetFloat
 PyArg_GetShort
 PyArg_GetLong
 PyArg_GetObject
+PyErr_ProgramText
+PyErr_SyntaxLocation
+PyErr_WarnExplicit
 PyErr_Warn
 PyErr_WriteUnraisable
 PyErr_NewException
@@ -147,18 +151,28 @@ Py_FatalError
 PyParser_SimpleParseString
 PyParser_SimpleParseFile
 Py_SymtableString
+Py_CompileStringFlags
 Py_CompileString
+PyRun_FileExFlags
+PyRun_FileFlags
+PyRun_StringFlags
 PyRun_FileEx
 PyRun_File
 PyRun_String
+PyErr_Display
 PyErr_PrintEx
 PyErr_Print
 PyRun_SimpleString
+PyRun_SimpleFileExFlags
 PyRun_SimpleFileEx
 PyRun_SimpleFile
+PyRun_InteractiveOneFlags
 PyRun_InteractiveOne
+PyRun_InteractiveLoopFlags
 PyRun_InteractiveLoop
+PyRun_AnyFileExFlags
 PyRun_AnyFileEx
+PyRun_AnyFileFlags
 PyRun_AnyFile
 Py_GetPythonHome
 Py_SetPythonHome
@@ -200,9 +214,11 @@ Py_OptimizeFlag
 PySymtable_Free
 PyCode_Addr2Line
 PyNode_CompileSymtable
+PyNode_CompileFlags
 PyNode_Compile
-is_free
 PyCode_New
+PyObject_IsSubclass
+PyObject_IsInstance
 PyObject_CallMethod
 PyObject_CallFunction
 PyObject_CallObject
@@ -325,8 +341,6 @@ PyFile_WriteString
 PyFile_WriteObject
 PyFile_SoftSpace
 PyFile_GetLine
-_portable_ftell
-_portable_fseek
 PyFile_SetBufSize
 PyFile_FromString
 PyFile_FromFile
@@ -454,6 +468,7 @@ PySlice_Type
 PySlice_GetIndices
 PySlice_New
 PyString_Type
+_Py_ReleaseInternedStrings
 PyString_Fini
 PyString_InternFromString
 PyString_InternInPlace
@@ -609,6 +624,7 @@ Py_GetPrefix
 Py_GetArgcArgv
 Py_GetProgramFullPath
 PyMac_Exit
+abort
 PyMac_OutputNotSeen
 PyMac_OutputSeen
 PyMac_InitApplication
@@ -781,6 +797,8 @@ PyUnicode_Encode
 PyUnicode_Decode
 PyUnicode_FromEncodedObject
 PyUnicode_FromObject
+PyUnicode_AsWideChar
+PyUnicode_FromWideChar
 PyUnicode_FromUnicode
 PyUnicode_Resize
 initthread
@@ -797,8 +815,6 @@ PyThread_exit_thread
 PyThread_get_thread_ident
 PyThread_start_new_thread
 PyThread_init_thread
-SystemExit_methods
-SyntaxError_methods
 PyExc_Exception
 PyExc_StandardError
 PyExc_ArithmeticError
@@ -847,7 +863,6 @@ AEDesc_Convert
 AEDesc_New
 init_locale
 initEvt
-copyright
 init_sre
 initsha
 DragObj_chain
@@ -865,6 +880,7 @@ PyCell_Get
 PyCell_New
 PySymtableEntry_Type
 PySymtableEntry_New
+PyNode_Future
 GUSISetupConsoleStdio
 GUSIStdioFlush
 GUSIStdioClose
@@ -931,6 +947,7 @@ DoAutoSpin__17GUSIConfigurationCFv		# GUSIConfiguration::DoAutoSpin() const
 SetDefaultFType__17GUSIConfigurationCFRC12GUSIFileSpec		# GUSIConfiguration::SetDefaultFType(const GUSIFileSpec&) const
 ConfigureSuffices__17GUSIConfigurationFsPQ217GUSIConfiguration10FileSuffix		# GUSIConfiguration::ConfigureSuffices(short,GUSIConfiguration::FileSuffix*)
 __ct__17GUSIConfigurationFs		# GUSIConfiguration::GUSIConfiguration(short)
+CreateInstance__17GUSIConfigurationFs		# GUSIConfiguration::CreateInstance(short)
 __vt__22GUSIThreadManagerProxy		# GUSIThreadManagerProxy::__vt
 __vt__18GUSIContextFactory		# GUSIContextFactory::__vt
 __vt__11GUSIContext		# GUSIContext::__vt
@@ -1488,6 +1505,7 @@ __dt__53GUSISpecificData<Q29GUSITimer5Queue,&.GUSIKillTimers>Fv		# GUSISpecificD
 get__53GUSISpecificData<Q29GUSITimer5Queue,&.GUSIKillTimers>FP17GUSISpecificTable		# GUSISpecificData<GUSITimer::Queue, &.GUSIKillTimers>::get(GUSISpecificTable*)
 __dt__9GUSITimerFv		# GUSITimer::~GUSITimer()
 Kill__9GUSITimerFv		# GUSITimer::Kill()
+Reset__9GUSITimerFv		# GUSITimer::Reset()
 Sleep__9GUSITimerFlb		# GUSITimer::Sleep(long,bool)
 __ct__9GUSITimerFbP11GUSIContext		# GUSITimer::GUSITimer(bool,GUSIContext*)
 GUSIKillTimers
@@ -1732,7 +1750,6 @@ __throw_bad_alloc__3stdFv		# std::__throw_bad_alloc()
 __dt__Q23std9bad_allocFv		# std::bad_alloc::~bad_alloc()
 qd
 exit
-abort
 clrscr
 getch
 kbhit
@@ -1782,7 +1799,6 @@ __exit
 exit
 __atexit
 atexit
-abort
 fix_start
 vec_free
 vec_realloc

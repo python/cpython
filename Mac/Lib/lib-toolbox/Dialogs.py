@@ -1,4 +1,4 @@
-# Generated from 'Dialogs.h'
+# Generated from 'Moes:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Dialogs.h'
 
 def FOUR_CHAR_CODE(x): return x
 kControlDialogItem = 4

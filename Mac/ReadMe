@@ -1,7 +1,7 @@
-How to install Python 2.1b2 on your Macintosh
----------------------------------------------
+How to install Python 2.1 on your Macintosh
+-------------------------------------------
 
-This is a beta MacPython that can run on classic MacOS (from 8.1
+This is a MacPython that can run on classic MacOS (from 8.1
 onwards) and natively on MacOSX. The installer tries to work out whether you can
 use the Carbon version or not. This is also the first MacPython distribution
 to be packaged as an active installer, which only downloads the parts you actually
@@ -9,9 +9,11 @@ need. Let me hear about problems in these areas.
 
 You should definitely read the Relnotes file too.
 
-A special note about the active installer: do not background it, it will hang
+A special note about the active installer: do not background it, it may hang
 your machine. This is a general problem with Vise active installers, MindVision
 are working on it.
+
+If you installed a 2.1 beta on MacOSX you MUST read the uninstall section below.
 
 ------
 
@@ -106,9 +108,17 @@ Uninstalling
 
 Two items are installed in the system folder: the interpreter shared
 libraries PythonCore and PythonCoreCarbon lives in the Extensions folder and the
-"Python 2.1b1 Preferences" file in the Python subfolder in the
+"Python 2.1 Preferences" file in the Python subfolder in the
 Preferences folder. All the rest of Python lives in the folder you
 installed in.
+
+On OSX the libraries are installed in /Library/CFMSupport. There is a nasty bug
+in OSX that is triggered by Python: if any orphaned aliases are left in
+/Library/CFMSupport your machine will start to behave very badly. 2.1
+beta installers triggered this problem if you simply threw away your Python folder,
+so if you installed a 2.1beta you should clean out the aliases in /Library/CFMSupport
+too. This final 2.1 installer always copies the shared libraries on OSX, so it does
+not have the problem anymore.
 
 Things to see
 -------------
