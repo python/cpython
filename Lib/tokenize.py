@@ -46,18 +46,25 @@ Floatnumber = group(Pointfloat, Expfloat)
 Imagnumber = group(r'0[jJ]', r'[1-9]\d*[jJ]', Floatnumber + r'[jJ]')
 Number = group(Imagnumber, Floatnumber, Intnumber)
 
-Single = any(r"[^'\\]", r'\\.') + "'"
-Double = any(r'[^"\\]', r'\\.') + '"'
-Single3 = any(r"[^'\\]",r'\\.',r"'[^'\\]",r"'\\.",r"''[^'\\]",r"''\\.") + "'''"
-Double3 = any(r'[^"\\]',r'\\.',r'"[^"\\]',r'"\\.',r'""[^"\\]',r'""\\.') + '"""'
+# Tail end of ' string.
+Single = r"[^'\\]*(?:\\.[^'\\]*)*'"
+# Tail end of " string.
+Double = r'[^"\\]*(?:\\.[^"\\]*)*"'
+# Tail end of ''' string.
+Single3 = r"[^'\\]*(?:(?:\\.|'(?!''))[^'\\]*)*'''"
+# Tail end of """ string.
+Double3 = r'[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*"""'
 Triple = group("[rR]?'''", '[rR]?"""')
-String = group("[rR]?'" + any(r"[^\n'\\]", r'\\.') + "'",
-               '[rR]?"' + any(r'[^\n"\\]', r'\\.') + '"')
+# Single-line ' or " string.
+String = group(r"[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
+               r'[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*"')
 
-Operator = group('\+=', '\-=', '\*=', '%=', '/=', '\*\*=', '&=', '\|=',
-                 '\^=', '>>=', '<<=', '\+', '\-', '\*\*', '\*', '\^', '~',
-                 '/', '%', '&', '\|', '<<', '>>', '==', '<=', '<>', '!=',
-                 '>=', '=', '<', '>')
+# Because of leftmost-then-longest match semantics, be sure to put the
+# longest operators first (e.g., if = came before ==, == would get
+# recognized as two instances of =).
+Operator = group(r"\*\*=?", r">>=?", r"<<=?", r"<>", r"!=",
+                 r"[+\-*/%&|^=<>]=?",
+                 r"~")
 
 Bracket = '[][(){}]'
 Special = group(r'\r?\n', r'[:;.,`]')
@@ -66,8 +73,9 @@ Funny = group(Operator, Bracket, Special)
 PlainToken = group(Number, Funny, String, Name)
 Token = Ignore + PlainToken
 
-ContStr = group("[rR]?'" + any(r'\\.', r"[^\n'\\]") + group("'", r'\\\r?\n'),
-                '[rR]?"' + any(r'\\.', r'[^\n"\\]') + group('"', r'\\\r?\n'))
+# First (or only) line of ' or " string.
+ContStr = group(r"[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*" + group("'", r'\\\r?\n'),
+                r'[rR]?"[^\n"\\]*(?:\\.[^\n"\\]*)*' + group('"', r'\\\r?\n'))
 PseudoExtras = group(r'\\\r?\n', Comment, Triple)
 PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
 
