@@ -1902,7 +1902,9 @@ EventHook()
 #ifndef MS_WINDOWS
 	FHANDLE tfile;
 #endif
+#ifdef WITH_THREAD
 	PyEval_RestoreThread(event_tstate);
+#endif
 	stdin_ready = 0;
 	errorInCmd = 0;
 #ifndef MS_WINDOWS
@@ -1945,7 +1947,9 @@ EventHook()
 		excInCmd = valInCmd = trbInCmd = NULL;
 		PyErr_Print();
 	}
+#ifdef WITH_THREAD
 	PyEval_SaveThread();
+#endif
 	return 0;
 }
 
@@ -1956,7 +1960,9 @@ EnableEventHook()
 {
 #ifdef WAIT_FOR_STDIN
 	if (PyOS_InputHook == NULL) {
+#ifdef WITH_THREAD
 		event_tstate = PyThreadState_Get();
+#endif
 		PyOS_InputHook = EventHook;
 	}
 #endif
