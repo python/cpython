@@ -410,9 +410,9 @@ def NamedTemporaryFile(mode='w+b', bufsize=-1, suffix="",
     file = _os.fdopen(fd, mode, bufsize)
     return _TemporaryFileWrapper(file, name)
 
-if _os.name != 'posix':
-    # On non-POSIX systems, assume that we cannot unlink a file while
-    # it is open.
+if _os.name != 'posix' or _os.sys.platform == 'cygwin':
+    # On non-POSIX and Cygwin systems, assume that we cannot unlink a file
+    # while it is open.
     TemporaryFile = NamedTemporaryFile
 
 else:
