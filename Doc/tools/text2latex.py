@@ -1,6 +1,7 @@
 import os
 import sys
 import regex
+import regsub
 import string
 import getopt
 
@@ -31,6 +32,9 @@ def process(fi, fo):
 		if fmt:
 			nextline = '\n'
 			line =  fmt % string.strip(line)
+			if '(' in line:
+				line = regsub.gsub('[a-zA-Z0-9_]+()',
+					  '{\\\\tt \\0}', line)
 		elif inverbatim:
 			if blank.match(line) >= 0 and \
 				  indented.match(nextline) < 0:
@@ -43,6 +47,9 @@ def process(fi, fo):
 				fo.write('\\begin{verbatim}\n')
 		if inverbatim:
 			line = string.expandtabs(line, 4)
+		elif not fmt and '(' in line:
+			line = regsub.gsub('[a-zA-Z0-9_]+()',
+				  '\\\\code{\\0}', line)
 		fo.write(line)
 
 #main()
