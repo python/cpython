@@ -175,7 +175,7 @@ audioop_getsample(self, args)
     object *args;
 {
     signed char *cp;
-    int len, size, val;
+    int len, size, val = 0;
     int i;
 
     if ( !getargs(args, "(s#ii)", &cp, &len, &size, &i) )
@@ -200,7 +200,7 @@ audioop_max(self, args)
     object *args;
 {
     signed char *cp;
-    int len, size, val;
+    int len, size, val = 0;
     int i;
     int max = 0;
 
@@ -226,7 +226,7 @@ audioop_minmax(self, args)
 	object *args;
 {
 	signed char *cp;
-	int len, size, val;
+	int len, size, val = 0;
 	int i;
 	int min = 0x7fffffff, max = -0x7fffffff;
 
@@ -252,7 +252,7 @@ audioop_avg(self, args)
     object *args;
 {
     signed char *cp;
-    int len, size, val;
+    int len, size, val = 0;
     int i;
     float avg = 0.0;
 
@@ -281,7 +281,7 @@ audioop_rms(self, args)
     object *args;
 {
     signed char *cp;
-    int len, size, val;
+    int len, size, val = 0;
     int i;
     float sum_squares = 0.0;
 
@@ -493,7 +493,7 @@ audioop_avgpp(self, args)
     object *args;
 {
     signed char *cp;
-    int len, size, val, prevval, prevextremevalid = 0, prevextreme;
+    int len, size, val = 0, prevval = 0, prevextremevalid = 0, prevextreme = 0;
     int i;
     float avg = 0.0;
     int diff, prevdiff, extremediff, nextreme = 0;
@@ -551,7 +551,7 @@ audioop_maxpp(self, args)
     object *args;
 {
     signed char *cp;
-    int len, size, val, prevval, prevextremevalid = 0, prevextreme;
+    int len, size, val = 0, prevval = 0, prevextremevalid = 0, prevextreme = 0;
     int i;
     int max = 0;
     int diff, prevdiff, extremediff;
@@ -605,7 +605,7 @@ audioop_cross(self, args)
     object *args;
 {
     signed char *cp;
-    int len, size, val;
+    int len, size, val = 0;
     int i;
     int prevval, ncross;
 
@@ -634,7 +634,7 @@ audioop_mul(self, args)
     object *args;
 {
     signed char *cp, *ncp;
-    int len, size, val;
+    int len, size, val = 0;
     double factor, fval, maxval;
     object *rv;
     int i;
@@ -677,7 +677,7 @@ audioop_tomono(self, args)
     object *args;
 {
     signed char *cp, *ncp;
-    int len, size, val1, val2;
+    int len, size, val1 = 0, val2 = 0;
     double fac1, fac2, fval, maxval;
     object *rv;
     int i;
@@ -723,7 +723,7 @@ audioop_tostereo(self, args)
     object *args;
 {
     signed char *cp, *ncp;
-    int len, size, val1, val2, val;
+    int len, size, val1, val2, val = 0;
     double fac1, fac2, fval, maxval;
     object *rv;
     int i;
@@ -777,7 +777,7 @@ audioop_add(self, args)
     object *args;
 {
     signed char *cp1, *cp2, *ncp;
-    int len1, len2, size, val1, val2;
+    int len1, len2, size, val1 = 0, val2 = 0;
     object *rv;
     int i;
 
@@ -823,7 +823,7 @@ audioop_bias(self, args)
     object *args;
 {
     signed char *cp, *ncp;
-    int len, size, val;
+    int len, size, val = 0;
     object *rv;
     int i;
     int bias;
@@ -862,7 +862,7 @@ audioop_reverse(self, args)
 {
     signed char *cp;
     unsigned char *ncp;
-    int len, size, val;
+    int len, size, val = 0;
     object *rv;
     int i, j;
 
@@ -901,7 +901,7 @@ audioop_lin2lin(self, args)
 {
     signed char *cp;
     unsigned char *ncp;
-    int len, size, size2, val;
+    int len, size, size2, val = 0;
     object *rv;
     int i, j;
 
@@ -939,7 +939,7 @@ audioop_lin2ulaw(self, args)
 {
     signed char *cp;
     unsigned char *ncp;
-    int len, size, val;
+    int len, size, val = 0;
     object *rv;
     int i;
 
@@ -1011,9 +1011,9 @@ audioop_lin2adpcm(self, args)
 {
     signed char *cp;
     signed char *ncp;
-    int len, size, val, step, valpred, delta, index, sign, vpdiff, diff;
+    int len, size, val = 0, step, valpred, delta, index, sign, vpdiff, diff;
     object *rv, *state, *str;
-    int i, outputbuffer, bufferstep;
+    int i, outputbuffer = 0, bufferstep;
 
     if ( !getargs(args, "(s#iO)",
 		  &cp, &len, &size, &state) )
@@ -1123,7 +1123,7 @@ audioop_adpcm2lin(self, args)
     signed char *ncp;
     int len, size, valpred, step, delta, index, sign, vpdiff;
     object *rv, *str, *state;
-    int i, inputbuffer, bufferstep;
+    int i, inputbuffer = 0, bufferstep;
 
     if ( !getargs(args, "(s#iO)",
 		  &cp, &len, &size, &state) )

@@ -90,7 +90,6 @@ static int
 param_type_is_float(clobject *self, int param)
 {
 	int bufferlength;
-	int ret;
 
 	if (self->ob_paramtypes == NULL) {
 		error_handler_called = 0;

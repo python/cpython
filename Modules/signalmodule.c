@@ -34,6 +34,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "intrcheck.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include <signal.h>
 
 #ifndef SIG_ERR

@@ -538,7 +538,7 @@ strop_atoi(self, args)
 	if (args != NULL && is_tupleobject(args)) {
 		if (!getargs(args, "(si)", &s, &base))
 			return NULL;
-		if (base != 0 && base < 2 || base > 36) {
+		if ((base != 0 && base < 2) || base > 36) {
 			err_setstr(ValueError, "invalid base for atoi()");
 			return NULL;
 		}
@@ -585,7 +585,7 @@ strop_atol(self, args)
 	if (args != NULL && is_tupleobject(args)) {
 		if (!getargs(args, "(si)", &s, &base))
 			return NULL;
-		if (base != 0 && base < 2 || base > 36) {
+		if ((base != 0 && base < 2) || base > 36) {
 			err_setstr(ValueError, "invalid base for atol()");
 			return NULL;
 		}
@@ -701,7 +701,7 @@ strop_translate(self, args)
 		trans_table[i]=Py_CHARMASK(table[i]);
 	if (delete!=NULL) {
 		for(i=0; i<dellen; i++) 
-			trans_table[delete[i]]=-1;
+			trans_table[(int)delete[i]]=-1;
 	}
 
 	result = PyString_FromStringAndSize((char *)NULL, inlen);

@@ -1051,7 +1051,7 @@ Tktt_Print (self, fp, flags)
 {
   TkttObject *v = (TkttObject *) self;
 
-  fprintf(fp, "<tktimertoken at 0x%x%s>", v,
+  fprintf(fp, "<tktimertoken at 0x%lx%s>", (long)v,
     v->func == NULL ? ", handler deleted" : "");
   return 0;
 }
@@ -1139,6 +1139,7 @@ Tkapp_MainLoop (self, args)
   quitMainLoop = 0;
   while (Tk_GetNumMainWindows() > threshold && !quitMainLoop && !errorInCmd)
     {
+	    /* XXX Ought to check for other signals! */
       if (PyOS_InterruptOccurred ())
 	{
 	  PyErr_SetNone (PyExc_KeyboardInterrupt);

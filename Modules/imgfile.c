@@ -61,7 +61,8 @@ static int error_called;
 
 /* The error handler */
 
-static imgfile_error(str)
+static void
+imgfile_error(str)
     char *str;
 {
     err_setstr(ImgfileError, str);
@@ -199,7 +200,7 @@ static IMAGE *glob_image;
 static long *glob_datap;
 static int glob_width, glob_z, glob_ysize;
 
-static
+static void
 xs_get(buf, y)
     short *buf;
     int y;
@@ -210,7 +211,7 @@ xs_get(buf, y)
       getrow(glob_image, buf, y, glob_z);
 }
 
-static
+static void
 xs_put_c(buf, y)
     short *buf;
     int y;
@@ -222,7 +223,7 @@ xs_put_c(buf, y)
       *datap++ = (*buf++) & 0xff;
 }
 
-static
+static void
 xs_put_0(buf, y)
     short *buf;
     int y;
@@ -233,7 +234,7 @@ xs_put_0(buf, y)
     while ( width-- )
       *datap++ = (*buf++) & 0xff;
 }
-static
+static void
 xs_put_12(buf, y)
     short *buf;
     int y;
@@ -291,7 +292,7 @@ imgfile_readscaled(self, args)
     char *filter;
     double blur;
     int extended;
-    int fmode;
+    int fmode = 0;
     int yfirst, ylast, ystep;
 
     /*

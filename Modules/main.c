@@ -174,7 +174,7 @@ main(argc, argv)
 		filename = argv[optind];
 
 	if (Py_VerboseFlag ||
-	    command == NULL && filename == NULL && isatty((int)fileno(fp)))
+	    (command == NULL && filename == NULL && isatty((int)fileno(fp))))
 		fprintf(stderr, "Python %s\n%s\n",
 			Py_GetVersion(), Py_GetCopyright());
 	
@@ -222,7 +222,7 @@ main(argc, argv)
 		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
 
 	Py_Exit(sts);
-	/*NOTREACHED*/
+	return 0; /* Make gcc -Wall happy */
 }
 
 

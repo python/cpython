@@ -39,6 +39,10 @@ have any value except INVALID_SOCKET.
 #include "modsupport.h"
 #include "ceval.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include <sys/types.h>
 
 #ifdef MS_WINDOWS

@@ -204,7 +204,7 @@ FILE *outf;
 /*unsigned*/ long *tab;
 int len;
 {
-    int r;
+    int r = 0;
 
     while(len) {
 	r = putlong(outf,*tab++);

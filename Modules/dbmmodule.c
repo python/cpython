@@ -105,7 +105,6 @@ dbm_subscript(dp, key)
 	dbmobject *dp;
 	register object *key;
 {
-	object *v;
 	datum drec, krec;
 	
 	if (!getargs(key, "s#", &krec.dptr, &krec.dsize) )

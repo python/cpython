@@ -458,7 +458,7 @@ imageop_grey22grey(self, args)
     int x, y, len, nlen;
     unsigned char *cp, *ncp;
     object *rv;
-    int i, pos, value, nvalue;
+    int i, pos, value = 0, nvalue;
     
     if ( !getargs(args, "(s#ii)", &cp, &len, &x, &y) )
       return 0;
@@ -495,7 +495,7 @@ imageop_grey42grey(self, args)
     int x, y, len, nlen;
     unsigned char *cp, *ncp;
     object *rv;
-    int i, pos, value, nvalue;
+    int i, pos, value = 0, nvalue;
     
     if ( !getargs(args, "(s#ii)", &cp, &len, &x, &y) )
       return 0;

@@ -52,6 +52,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/wait.h>		/* For WNOHANG */
 #endif
 
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+
 #include "mytime.h"		/* For clock_t on some systems */
 
 #ifdef HAVE_FCNTL_H
@@ -574,7 +578,7 @@ posix_listdir(self, args)
 	while ((ep = readdir(dirp)) != NULL) {
 		if (ep->d_name[0] == '.' &&
 		    (NAMLEN(ep) == 1 ||
-		     ep->d_name[1] == '.' && NAMLEN(ep) == 2))
+		     (ep->d_name[1] == '.' && NAMLEN(ep) == 2)))
 			continue;
 		v = newsizedstringobject(ep->d_name, NAMLEN(ep));
 		if (v == NULL) {
@@ -709,7 +713,6 @@ posix_uname(self, args)
 	object *args;
 {
 	struct utsname u;
-	object *v;
 	int res;
 	if (!getnoarg(args))
 		return NULL;
@@ -776,7 +779,7 @@ posix__exit(self, args)
 	if (!getintarg(args, &sts))
 		return NULL;
 	_exit(sts);
-	/* NOTREACHED */
+	return NULL; /* Make gcc -Wall happy */
 }
 
 #ifdef HAVE_EXECV

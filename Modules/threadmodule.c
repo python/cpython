@@ -313,7 +313,7 @@ static struct methodlist thread_methods[] = {
 void
 initthread()
 {
-	object *m, *d, *x;
+	object *m, *d;
 
 	/* Create the module and add the functions */
 	m = initmodule("thread", thread_methods);

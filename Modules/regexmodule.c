@@ -40,6 +40,8 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+#include <ctype.h>
+
 #include "regexpr.h"
 
 static PyObject *RegexError;	/* Exception */	

@@ -71,7 +71,7 @@ syslog_syslog(self, args)
      PyObject * self;
      PyObject * args;
 {
-  char *message, *s;
+  char *message;
   int   priority = LOG_INFO | LOG_USER;
 
   if (!PyArg_ParseTuple(args, "is;[priority,] message string",
