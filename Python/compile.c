@@ -2639,20 +2639,14 @@ com_return_stmt(struct compiling *c, node *n)
 			com_error(c, PyExc_SyntaxError,
 				  "'return' with argument inside generator");
 		}
-		com_addoparg(c, LOAD_CONST,
-				com_addconst(c, PyExc_StopIteration));
+	}
+	if (NCH(n) < 2) {
+		com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
 		com_push(c, 1);
-		com_addoparg(c, RAISE_VARARGS, 1);
 	}
-	else {
-		if (NCH(n) < 2) {
-			com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
-			com_push(c, 1);
-		}
-		else
-			com_node(c, CHILD(n, 1));
-		com_addbyte(c, RETURN_VALUE);
-	}
+	else
+		com_node(c, CHILD(n, 1));
+	com_addbyte(c, RETURN_VALUE);
 	com_pop(c, 1);
 }
 
@@ -3711,19 +3705,10 @@ compile_funcdef(struct compiling *c, node *n)
 	c->c_infunction = 1;
 	com_node(c, CHILD(n, 4));
 	c->c_infunction = 0;
-	if (c->c_flags & CO_GENERATOR) {
-		com_addoparg(c, LOAD_CONST,
-				com_addconst(c, PyExc_StopIteration));
-		com_push(c, 1);
-		com_addoparg(c, RAISE_VARARGS, 1);
-		com_pop(c, 1);
-	}
-	else {
-		com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
-		com_push(c, 1);
-		com_addbyte(c, RETURN_VALUE);
-		com_pop(c, 1);
-	}
+	com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
+	com_push(c, 1);
+	com_addbyte(c, RETURN_VALUE);
+	com_pop(c, 1);
 }
 
 static void
