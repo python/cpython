@@ -201,6 +201,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 	
 #ifdef USE_MAC_SHARED_LIBRARY
 	/* Add the shared library to the stack of resource files */
+	(void)PyMac_init_process_location();
 	PyMac_AddLibResources();
 #endif
 
