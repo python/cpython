@@ -303,6 +303,9 @@ Extension modules
 Library
 -------
 
+- Added countcallers arg to trace.Trace class (--trackcalls command line arg
+  when run from the command prompt).
+
 - Fixed a caching bug in platform.platform() where the argument of 'terse' was
   not taken into consideration when caching value.
 
