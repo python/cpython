@@ -1,4 +1,4 @@
-"""Minimal "re" compatibility wrapper"""
+"""Minimal "re" compatibility wrapper.  See "sre" for documentation."""
 
 engine = "sre" # Some apps might use this undocumented variable
 
