@@ -51,8 +51,8 @@ Copyright (C) 1994 Steen Lumholt.
 
 #define TKMAJORMINOR (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION)
 
-#if TKMAJORMINOR < 8000
-#error "Tk older than 8.0 not supported"
+#if TKMAJORMINOR < 8002
+#error "Tk older than 8.2 not supported"
 #endif
 
 #if defined(macintosh)
@@ -498,12 +498,6 @@ Tkapp_New(char *screenName, char *baseName, char *className, int interactive)
 
 /** Tcl Eval **/
 
-#if TKMAJORMINOR >= 8001
-#define USING_OBJECTS
-#endif
-
-#ifdef USING_OBJECTS
-
 static Tcl_Obj*
 AsObj(PyObject *value)
 {
@@ -530,16 +524,6 @@ AsObj(PyObject *value)
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(value)) {
-#if TKMAJORMINOR <= 8001
-		/* In Tcl 8.1 we must use UTF-8 */
-		PyObject* utf8 = PyUnicode_AsUTF8String(value);
-		if (!utf8)
-			return 0;
-		result = Tcl_NewStringObj(PyString_AS_STRING(utf8),
-					  PyString_GET_SIZE(utf8));
-		Py_DECREF(utf8);
-		return result;
-#else /* TKMAJORMINOR > 8001 */
 		/* In Tcl 8.2 and later, use Tcl_NewUnicodeObj() */
 		if (sizeof(Py_UNICODE) != sizeof(Tcl_UniChar)) {
 			/* XXX Should really test this at compile time */
@@ -549,7 +533,6 @@ AsObj(PyObject *value)
 		}
 		return Tcl_NewUnicodeObj(PyUnicode_AS_UNICODE(value),
 					 PyUnicode_GET_SIZE(value));
-#endif /* TKMAJORMINOR > 8001 */
 	}
 #endif
 	else {
@@ -663,124 +646,6 @@ Tkapp_Call(PyObject *self, PyObject *args)
 	return res;
 }
 
-#else /* !USING_OBJECTS */
-
-static PyObject *
-Tkapp_Call(PyObject *self, PyObject *args)
-{
-	/* This is copied from Merge() */
-	PyObject *tmp = NULL;
-	char *argvStore[ARGSZ];
-	char **argv = NULL;
-	int fvStore[ARGSZ];
-	int *fv = NULL;
-	int argc = 0, fvc = 0, i;
-	PyObject *res = NULL; /* except this has a different type */
-	Tcl_CmdInfo info; /* and this is added */
-	Tcl_Interp *interp = Tkapp_Interp(self); /* and this too */
-
-	if (!(tmp = PyList_New(0)))
-	    return NULL;
-
-	argv = argvStore;
-	fv = fvStore;
-
-	if (args == NULL)
-		argc = 0;
-
-	else if (!PyTuple_Check(args)) {
-		argc = 1;
-		fv[0] = 0;
-		if (!(argv[0] = AsString(args, tmp)))
-			goto finally;
-	}
-	else {
-		argc = PyTuple_Size(args);
-
-		if (argc > ARGSZ) {
-			argv = (char **)ckalloc(argc * sizeof(char *));
-			fv = (int *)ckalloc(argc * sizeof(int));
-			if (argv == NULL || fv == NULL) {
-				PyErr_NoMemory();
-				goto finally;
-			}
-		}
-
-		for (i = 0; i < argc; i++) {
-			PyObject *v = PyTuple_GetItem(args, i);
-			if (PyTuple_Check(v)) {
-				fv[i] = 1;
-				if (!(argv[i] = Merge(v)))
-					goto finally;
-				fvc++;
-			}
-			else if (v == Py_None) {
-				argc = i;
-				break;
-			}
-			else {
-				fv[i] = 0;
-				if (!(argv[i] = AsString(v, tmp)))
-					goto finally;
-				fvc++;
-			}
-		}
-	}
-	/* End code copied from Merge() */
-
-	/* All this to avoid a call to Tcl_Merge() and the corresponding call
-	   to Tcl_SplitList() inside Tcl_Eval()...  It can save a bundle! */
-	if (Py_VerboseFlag >= 2) {
-		for (i = 0; i < argc; i++)
-			PySys_WriteStderr("%s ", argv[i]);
-	}
-	ENTER_TCL
-	info.proc = NULL;
-	if (argc < 1 ||
-	    !Tcl_GetCommandInfo(interp, argv[0], &info) ||
-	    info.proc == NULL)
-	{
-		char *cmd;
-		cmd = Tcl_Merge(argc, argv);
-		i = Tcl_Eval(interp, cmd);
-		ckfree(cmd);
-	}
-	else {
-		Tcl_ResetResult(interp);
-		i = (*info.proc)(info.clientData, interp, argc, argv);
-	}
-	ENTER_OVERLAP
-	if (info.proc == NULL && Py_VerboseFlag >= 2)
-		PySys_WriteStderr("... use TclEval ");
-	if (i == TCL_ERROR) {
-		if (Py_VerboseFlag >= 2)
-			PySys_WriteStderr("... error: '%s'\n",
-				Tcl_GetStringResult(interp));
-		Tkinter_Error(self);
-	}
-	else {
-		if (Py_VerboseFlag >= 2)
-			PySys_WriteStderr("-> '%s'\n", Tcl_GetStringResult(interp));
-		res = PyString_FromString(Tcl_GetStringResult(interp));
-	}
-	LEAVE_OVERLAP_TCL
-
-	/* Copied from Merge() again */
-  finally:
-	for (i = 0; i < fvc; i++)
-		if (fv[i]) {
-			ckfree(argv[i]);
-		}
-	if (argv != argvStore)
-		ckfree(FREECAST argv);
-	if (fv != fvStore)
-		ckfree(FREECAST fv);
-
-	Py_DECREF(tmp);
-	return res;
-}
-
-#endif /* !USING_OBJECTS */
 
 static PyObject *
 Tkapp_GlobalCall(PyObject *self, PyObject *args)
