@@ -74,6 +74,7 @@ class TypeinViewer:
     def __normalize(self, event=None):
         ew = event.widget
         contents = ew.get()
+        icursor = ew.index(INSERT)
         if contents == '':
             contents = '0'
         # figure out what the contents value is in the current base
@@ -90,12 +91,14 @@ class TypeinViewer:
             i = ew.index(INSERT)
             contents = contents[:i-1] + contents[i:]
             ew.bell()
+            icursor = icursor-1
         elif self.__hexp.get():
             contents = hex(v)
         else:
             contents = int(v)
         ew.delete(0, END)
         ew.insert(0, contents)
+        ew.icursor(icursor)
 
     def __maybeupdate(self, event=None):
         if self.__uwtyping.get() or event.keysym in ('Return', 'Tab'):
