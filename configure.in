@@ -6,7 +6,7 @@ AC_CONFIG_HEADER(config.h)
 
 # Set VERSION so we only need to edit in one place (i.e., here)
 AC_SUBST(VERSION)
-VERSION=2.1
+VERSION=2.2
 
 # Arguments passed to configure.
 AC_SUBST(CONFIG_ARGS)
