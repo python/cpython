@@ -80,6 +80,10 @@ extern long PyOS_GetLastModificationTime(); /* In getmtime.c */
 /* See _PyImport_FixupExtension() below */
 static PyObject *extensions = NULL;
 
+/* This table is defined in config.c: */
+extern struct _inittab _PyImport_Inittab[];
+
+struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 
 /* Initialize things */
 
@@ -612,9 +616,9 @@ is_builtin(name)
 	char *name;
 {
 	int i;
-	for (i = 0; _PyImport_Inittab[i].name != NULL; i++) {
-		if (strcmp(name, _PyImport_Inittab[i].name) == 0) {
-			if (_PyImport_Inittab[i].initfunc == NULL)
+	for (i = 0; PyImport_Inittab[i].name != NULL; i++) {
+		if (strcmp(name, PyImport_Inittab[i].name) == 0) {
+			if (PyImport_Inittab[i].initfunc == NULL)
 				return -1;
 			else
 				return 1;
@@ -871,7 +875,7 @@ init_builtin(name)
 	if ((mod = _PyImport_FindExtension(name, name)) != NULL)
 		return 1;
 
-	for (p = _PyImport_Inittab; p->name != NULL; p++) {
+	for (p = PyImport_Inittab; p->name != NULL; p++) {
 		if (strcmp(name, p->name) == 0) {
 			if (p->initfunc == NULL) {
 				PyErr_Format(PyExc_ImportError,
