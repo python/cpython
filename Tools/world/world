@@ -19,6 +19,8 @@ The latest known change to this information was:
 
     Thu Feb 10 10:20:28 MET 1994
 
+This script also knows about non-geographic top-level domains.
+
 Usage: %s [-d] [-h] addr [addr ...]
 
     -d (--dump)  -- print mapping of all known top-level domains
@@ -47,7 +49,7 @@ def resolve(rawaddr):
 	return
     addr = parts[-1]
     if nameorg.has_key(addr):
-	print rawaddr, 'is from a USA', nameorg[addr], 'organization'
+	print rawaddr, 'is from a', nameorg[addr], 'organization'
     elif country.has_key(addr):
 	print rawaddr, 'originated from', country[addr]
     else:
@@ -71,7 +73,7 @@ def main():
 	usage(status)
 
     if dump:
-	print 'USA-centric domains:'
+	print 'Non-geographic domains:'
 	codes = nameorg.keys()
 	codes.sort()
 	for code in codes:
