@@ -9,7 +9,7 @@
 copy=<Control-c> <Control-C>
 cut=<Control-x> <Control-X>
 paste=<Control-v> <Control-V>
-beginning-of-line=<Control-a> <Home>
+beginning-of-line= <Home>
 center-insert=<Control-l>
 close-all-windows=<Control-q>
 close-window=<Alt-F4>
@@ -60,6 +60,7 @@ plain-newline-and-indent=<Control-j>
 python-docs=<Control-h> 
 python-context-help=<Control-Shift-h> 
 redo=<Alt-z> <Meta-z>
+remove-selection=<Escape>
 save-copy-of-window-as-file=<Control-x><w>
 save-window-as-file=<Control-x><Control-w>
 save-window=<Control-x><Control-s>

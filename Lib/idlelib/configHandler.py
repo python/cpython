@@ -206,7 +206,7 @@ class IdleConf:
             return self.userCfg[configType].Get(section, option, type=type)
         elif self.defaultCfg[configType].has_option(section,option):
             return self.defaultCfg[configType].Get(section, option, type=type)
-        else:
+        else: #returning default, print warning
             warning=('\n Warning: configHandler.py - IdleConf.GetOption -\n'+
                        ' problem retrieving configration option '+`option`+'\n'+
                        ' from section '+`section`+'.\n'+
@@ -311,7 +311,16 @@ class IdleConf:
                 'console-foreground':'#000000',
                 'console-background':'#ffffff' }
         for element in theme.keys():
-            colour=cfgParser.Get(type,themeName,element,default=theme[element])        
+            print 'themeName:',themeName,'theme exists:',cfgParser.has_section(
+                    themeName)
+            if not cfgParser.has_option(themeName,element):
+                #we are going to return a default, print warning
+                warning=('\n Warning: configHandler.py - IdleConf.GetThemeDict'+
+                           ' -\n problem retrieving theme element '+`element`+
+                           '\n from theme '+`themeName`+'.\n'+
+                           ' returning default value: '+`theme[element]`+'\n')
+                sys.stderr.write(warning)
+            colour=cfgParser.Get(themeName,element,default=theme[element])        
             theme[element]=colour
         return theme
         
@@ -323,7 +332,7 @@ class IdleConf:
         
     def CurrentKeys(self):
         """
-        Returns the name of the currently active theme        
+        Returns the name of the currently active key set       
         """
         return self.GetOption('main','Keys','name',default='')
     

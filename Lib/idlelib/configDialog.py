@@ -3,7 +3,7 @@ configuration dialog
 """
 from Tkinter import *
 import tkMessageBox, tkColorChooser, tkFont
-import string
+import string, copy
 
 from configHandler import idleConf
 from dynOptionMenuWidget import DynOptionMenu
@@ -185,7 +185,7 @@ class ConfigDialog(Toplevel):
         text=self.textHighlightSample
         text.bind('<Double-Button-1>',lambda e: 'break')
         text.bind('<B1-Motion>',lambda e: 'break')
-        textAndTags=(('#you can click in here','comment'),('\n','normal'),
+        textAndTags=(('#you can click here','comment'),('\n','normal'),
             ('#to choose items','comment'),('\n','normal'),('def','keyword'),
             (' ','normal'),('func','definition'),('(param):','normal'),
             ('\n  ','normal'),('"""string"""','string'),('\n  var0 = ','normal'),
@@ -257,7 +257,7 @@ class ConfigDialog(Toplevel):
         self.bindingTarget=StringVar(self)
         self.builtinKeys=StringVar(self)
         self.customKeys=StringVar(self)
-        self.keysAreDefault=BooleanVar(self) 
+        self.keysAreBuiltin=BooleanVar(self) 
         self.keyBinding=StringVar(self)
         ##widget creation
         #body frame
@@ -285,9 +285,9 @@ class ConfigDialog(Toplevel):
         #frameKeySets
         labelKeysTitle=Label(frameKeySets,text='Select a Key Set')
         labelTypeTitle=Label(frameKeySets,text='Select : ')
-        self.radioKeysBuiltin=Radiobutton(frameKeySets,variable=self.keysAreDefault,
+        self.radioKeysBuiltin=Radiobutton(frameKeySets,variable=self.keysAreBuiltin,
             value=1,command=self.SetKeysType,text='a Built-in Key Set')
-        self.radioKeysCustom=Radiobutton(frameKeySets,variable=self.keysAreDefault,
+        self.radioKeysCustom=Radiobutton(frameKeySets,variable=self.keysAreBuiltin,
             value=0,command=self.SetKeysType,text='a Custom Key Set')
         self.optMenuKeysBuiltin=DynOptionMenu(frameKeySets,
             self.builtinKeys,None,command=None)
@@ -410,11 +410,18 @@ class ConfigDialog(Toplevel):
         self.tabCols.trace_variable('w',self.VarChanged_tabCols)
         self.indentBySpaces.trace_variable('w',self.VarChanged_indentBySpaces)
         self.colour.trace_variable('w',self.VarChanged_colour)
+        self.builtinTheme.trace_variable('w',self.VarChanged_builtinTheme)
+        self.customTheme.trace_variable('w',self.VarChanged_customTheme)
+        self.themeIsBuiltin.trace_variable('w',self.VarChanged_themeIsBuiltin) 
+        self.highlightTarget.trace_variable('w',self.VarChanged_highlightTarget)
         self.keyBinding.trace_variable('w',self.VarChanged_keyBinding)
+        self.builtinKeys.trace_variable('w',self.VarChanged_builtinKeys)
+        self.customKeys.trace_variable('w',self.VarChanged_customKeys)
+        self.keysAreBuiltin.trace_variable('w',self.VarChanged_keysAreBuiltin) 
         self.winWidth.trace_variable('w',self.VarChanged_winWidth)
         self.winHeight.trace_variable('w',self.VarChanged_winHeight)
         self.startupEdit.trace_variable('w',self.VarChanged_startupEdit)
-    
+
     def VarChanged_fontSize(self,*params):
         value=self.fontSize.get()
         self.AddChangedItem('main','EditorWindow','font-size',value)
@@ -440,10 +447,25 @@ class ConfigDialog(Toplevel):
         self.AddChangedItem('main','Indent','tab-cols',value)
 
     def VarChanged_colour(self,*params):
-        value=self.colour.get()
-        theme=self.customTheme.get()
-        element=self.themeElements[self.highlightTarget.get()][0]
-        self.AddChangedItem('highlight',theme,element,value)
+        self.OnNewColourSet()
+
+    def VarChanged_builtinTheme(self,*params):
+        value=self.builtinTheme.get()
+        self.AddChangedItem('main','Theme','name',value)
+        self.PaintThemeSample()
+
+    def VarChanged_customTheme(self,*params):
+        value=self.customTheme.get()
+        self.AddChangedItem('main','Theme','name',value)
+        self.PaintThemeSample()
+
+    def VarChanged_themeIsBuiltin(self,*params):
+        value=self.themeIsBuiltin.get()
+        self.AddChangedItem('main','Theme','default',value)
+        self.PaintThemeSample()
+
+    def VarChanged_highlightTarget(self,*params):
+        self.SetHighlightTarget()
         
     def VarChanged_keyBinding(self,*params):
         value=self.keyBinding.get()
@@ -457,6 +479,24 @@ class ConfigDialog(Toplevel):
             extKeybindSection=extName+'_cfgBindings'
             self.AddChangedItem('extensions',extKeybindSection,event,value)
         
+    def VarChanged_builtinKeys(self,*params):
+        value=self.builtinKeys.get()
+        self.AddChangedItem('main','Keys','name',value)
+        self.LoadKeysList(value)
+
+    def VarChanged_customKeys(self,*params):
+        value=self.customKeys.get()
+        self.AddChangedItem('main','Keys','name',value)
+        self.LoadKeysList(value)
+
+    def VarChanged_keysAreBuiltin(self,*params):
+        value=self.keysAreBuiltin.get() 
+        self.AddChangedItem('main','Keys','default',value)
+        if value: 
+            self.LoadKeysList(self.builtinKeys.get())
+        else:
+            self.LoadKeysList(self.customKeys.get())
+
     def VarChanged_winWidth(self,*params):
         value=self.winWidth.get()
         self.AddChangedItem('main','EditorWindow','width',value)
@@ -468,12 +508,6 @@ class ConfigDialog(Toplevel):
     def VarChanged_startupEdit(self,*params):
         value=self.startupEdit.get()
         self.AddChangedItem('main','General','editor-on-startup',value)
-
-    def ExtensionStateToggled(self):
-        #callback for the extension enable/disable radio buttons
-        value=self.extEnabled.get()
-        extension=self.listExt.get(ANCHOR)
-        self.AddChangedItem('extensions',extension,'enabled',value)
 
     def ResetChangedItems(self):
         #changedItems. When any config item is changed in this dialog, an entry
@@ -514,7 +548,7 @@ class ConfigDialog(Toplevel):
             self.buttonDeleteCustomTheme.config(state=NORMAL)
 
     def SetKeysType(self):
-        if self.keysAreDefault.get():
+        if self.keysAreBuiltin.get():
             self.optMenuKeysBuiltin.config(state=NORMAL)
             self.optMenuKeysCustom.config(state=DISABLED)
             self.buttonDeleteCustomKeys.config(state=DISABLED)
@@ -532,7 +566,7 @@ class ConfigDialog(Toplevel):
         newKeys=GetKeysDialog(self,'Get New Keys',bindName,
                 currentKeySequences).result
         if newKeys: #new keys were specified
-            if self.keysAreDefault.get(): #current key set is a built-in
+            if self.keysAreBuiltin.get(): #current key set is a built-in
                 message=('Your changes will be saved as a new Custom Key Set. '+
                         'Enter a name for your new Custom Key Set below.')
                 newKeySet=self.GetNewKeysName(message)
@@ -546,15 +580,15 @@ class ConfigDialog(Toplevel):
             self.listBindings.insert(listIndex,bindName+' - '+newKeys)
             self.listBindings.select_set(listIndex)
             self.listBindings.select_anchor(listIndex)
-            self.keyBinding.set(newKeys.result)
+            self.keyBinding.set(newKeys)
         else:
             self.listBindings.select_set(listIndex)
             self.listBindings.select_anchor(listIndex)
 
     def GetNewKeysName(self,message):
         usedNames=idleConf.GetSectionList('user','keys')
-        for newName in self.changedItems['keys'].keys():
-            if newName not in usedNames: usedNames.append(newName)
+#         for newName in self.changedItems['keys'].keys():
+#             if newName not in usedNames: usedNames.append(newName)
         newKeySet=GetCfgSectionNameDialog(self,'New Custom Key Set',
                 message,usedNames).result
         return newKeySet
@@ -570,31 +604,93 @@ class ConfigDialog(Toplevel):
     def CreateNewKeySet(self,newKeySetName):
         #creates new custom key set based on the previously active key set,
         #and makes the new key set active
-        if self.keysAreDefault.get(): 
-            keySetName=self.builtinKeys.get()
+        if self.keysAreBuiltin.get(): 
+            prevKeySetName=self.builtinKeys.get()
         else:  
-            keySetName=self.customKeys.get()
-        #add the new key set to changedItems
-        prevCoreKeys=idleConf.GetCoreKeys(keySetName)
-        for event in prevCoreKeys.keys(): #add core key set to changed items
+            prevKeySetName=self.customKeys.get()
+#         #add the new core key set to changedItems
+#         if prevKeySetName in self.changedItems['keys'].keys():
+#             #existing core key set hasn't been saved yet, copy from changedItems
+#             self.changedItems['keys'][newKeySetName]=copy.deepcopy(
+#                     self.changedItems['keys'][prevKeySetName]) #copy core bindings
+#         else: #get core key set from config
+        prevKeys=idleConf.GetCoreKeys(prevKeySetName)
+
+        newKeys={}
+        for event in prevKeys.keys(): #add key set to changed items
             eventName=event[2:-2] #trim off the angle brackets
-            self.AddChangedItem('keys',newKeySetName,eventName,
-                    string.join(prevCoreKeys[event]))
+            binding=string.join(prevKeys[event])
+            newKeys[eventName]=binding
+#             self.AddChangedItem('keys',newKeySetName,eventName,binding)
+
+        #handle any unsaved changes to prev key set
+        if prevKeySetName in self.changedItems['keys'].keys():
+            keySetChanges=self.changedItems['keys'][prevKeySetName]
+            for event in keySetChanges.keys():
+                newKeys[event]=keySetChanges[event]
+        
+        #save the new theme
+        self.SaveNewKeySet(newKeySetName,newKeys)
+
+        
         #change gui over to the new key set
         customKeyList=idleConf.GetSectionList('user','keys')
-        for newName in self.changedItems['keys'].keys():
-            if newName not in customKeyList: customKeyList.append(newName)
+#         for newName in self.changedItems['keys'].keys():
+#             if newName not in customKeyList: customKeyList.append(newName)
         customKeyList.sort()
         self.optMenuKeysCustom.SetMenu(customKeyList,newKeySetName)
-        self.keysAreDefault.set(0)
+        self.keysAreBuiltin.set(0)
         self.SetKeysType()
     
+    def LoadKeysList(self,keySetName):
+        reselect=0
+        newKeySet=0
+        if self.listBindings.curselection():
+            reselect=1
+            listIndex=self.listBindings.index(ANCHOR)
+#         if keySetName in self.changedItems['keys'].keys():
+#             #new key set, not yet in saved configuration
+#             newKeySet=1
+#             keySet=self.changedItems['keys'][keySetName] #core keys
+#             for section in self.changedItems['extensions'].keys():
+#                 #add active extension bindings
+#                 keySet
+#         else: #key set in existing configuration
+
+        keySet=idleConf.GetKeySet(keySetName)
+#         print 'copy from new key set:',newKeySet
+        bindNames=keySet.keys()
+        bindNames.sort()
+        self.listBindings.delete(0,END)
+        for bindName in bindNames: 
+#             if newKeySet:
+#                 key=keySet[bindName]
+        
+            key=string.join(keySet[bindName]) #make key(s) into a string
+            bindName=bindName[2:-2] #trim off the angle brackets
+            
+            if keySetName in self.changedItems['keys'].keys():
+                #handle any unsaved changes to this key set
+                if bindName in self.changedItems['keys'][keySetName].keys():
+                    key=self.changedItems['keys'][keySetName][bindName]
+            
+#             else: #convert existing config keys to list display string
+#                 key=string.join(keySet[bindName]) #make key(s) into a string
+            
+            self.listBindings.insert(END, bindName+' - '+key)
+
+        if reselect:
+            self.listBindings.see(listIndex)
+            self.listBindings.select_set(listIndex)
+            self.listBindings.select_anchor(listIndex)
+
     def GetColour(self):
         target=self.highlightTarget.get()
+        prevColour=self.frameColourSet.cget('bg')
         rgbTuplet, colourString = tkColorChooser.askcolor(parent=self,
-            title='Pick new colour for : '+target,
-            initialcolor=self.frameColourSet.cget('bg'))
-        if colourString: #user didn't cancel
+            title='Pick new colour for : '+target,initialcolor=prevColour)
+        if colourString and (colourString!=prevColour): 
+            #user didn't cancel, and they chose a new colour
             if self.themeIsBuiltin.get(): #current theme is a built-in
                 message=('Your changes will be saved as a new Custom Theme. '+
                         'Enter a name for your new Custom Theme below.')
@@ -603,17 +699,25 @@ class ConfigDialog(Toplevel):
                     return
                 else: #create new custom theme based on previously active theme 
                     self.CreateNewTheme(newTheme)    
-            self.colour.set(colourString)
-            self.frameColourSet.config(bg=colourString)#set sample
-            if self.fgHilite.get(): plane='foreground'
-            else: plane='background'
-            apply(self.textHighlightSample.tag_config,
-                (self.themeElements[target][0],),{plane:colourString})
+                    self.colour.set(colourString)
+            else: #current theme is user defined
+                self.colour.set(colourString)
     
+    def OnNewColourSet(self):
+        newColour=self.colour.get()
+        self.frameColourSet.config(bg=newColour)#set sample
+        if self.fgHilite.get(): plane='foreground'
+        else: plane='background'
+        sampleElement=self.themeElements[self.highlightTarget.get()][0]
+        apply(self.textHighlightSample.tag_config,
+                (sampleElement,),{plane:newColour})
+        theme=self.customTheme.get()
+        themeElement=sampleElement+'-'+plane
+        self.AddChangedItem('highlight',theme,themeElement,newColour)
+        print self.changedItems['highlight'][theme]
+
     def GetNewThemeName(self,message):
         usedNames=idleConf.GetSectionList('user','highlight')
-        for newName in self.changedItems['highlight'].keys():
-            if newName not in usedNames: usedNames.append(newName)
         newTheme=GetCfgSectionNameDialog(self,'New Custom Theme',
                 message,usedNames).result
         return newTheme
@@ -633,12 +737,15 @@ class ConfigDialog(Toplevel):
             themeType='user'
             themeName=self.customTheme.get()
         newTheme=idleConf.GetThemeDict(themeType,themeName)
-        #add the new theme to changedItems
-        self.changedItems['highlight'][newThemeName]=newTheme    
+        #apply any of the old theme's unsaved changes to the new theme
+        if themeName in self.changedItems['highlight'].keys():
+            themeChanges=self.changedItems['highlight'][themeName]
+            for element in themeChanges.keys():
+                newTheme[element]=themeChanges[element]
+        #save the new theme
+        self.SaveNewTheme(newThemeName,newTheme)
         #change gui over to the new theme
         customThemeList=idleConf.GetSectionList('user','highlight')
-        for newName in self.changedItems['highlight'].keys():
-            if newName not in customThemeList: customThemeList.append(newName)
         customThemeList.sort()
         self.optMenuThemeCustom.SetMenu(customThemeList,newThemeName)
         self.themeIsBuiltin.set(0)
@@ -657,9 +764,6 @@ class ConfigDialog(Toplevel):
         self.editFont.config(size=self.fontSize.get(),
                 weight=fontWeight,family=fontName)
 
-    def SetHighlightTargetBinding(self,*args):
-        self.SetHighlightTarget()
-        
     def SetHighlightTarget(self):
         if self.highlightTarget.get()=='Cursor': #bg not possible
             self.radioFg.config(state=DISABLED)
@@ -687,13 +791,21 @@ class ConfigDialog(Toplevel):
             theme=self.builtinTheme.get()
         else: #a user theme
             theme=self.customTheme.get()
-        for element in self.themeElements.keys():
-            colours=idleConf.GetHighlight(theme, self.themeElements[element][0])
-            if element=='Cursor': #cursor sample needs special painting
+        for elementTitle in self.themeElements.keys():
+            element=self.themeElements[elementTitle][0]
+            colours=idleConf.GetHighlight(theme,element)
+            if element=='cursor': #cursor sample needs special painting
                 colours['background']=idleConf.GetHighlight(theme, 
                         'normal', fgBg='bg')
-            apply(self.textHighlightSample.tag_config,
-                (self.themeElements[element][0],),colours)
+            #handle any unsaved changes to this theme
+            if theme in self.changedItems['highlight'].keys():
+                themeDict=self.changedItems['highlight'][theme]
+                if themeDict.has_key(element+'-foreground'):
+                    colours['foreground']=themeDict[element+'-foreground']
+                if themeDict.has_key(element+'-background'):
+                    colours['background']=themeDict[element+'-background']
+            apply(self.textHighlightSample.tag_config,(element,),colours)
+        self.SetColourSample()
     
     def OnCheckUserHelpBrowser(self):
         if self.userHelpBrowser.get():
@@ -830,12 +942,12 @@ class ConfigDialog(Toplevel):
     
     def LoadKeyCfg(self):
         ##current keys type radiobutton
-        self.keysAreDefault.set(idleConf.GetOption('main','Keys','default',
+        self.keysAreBuiltin.set(idleConf.GetOption('main','Keys','default',
             type='bool',default=1))
         ##currently set keys
         currentOption=idleConf.CurrentKeys()
         ##load available keyset option menus
-        if self.keysAreDefault.get(): #default theme selected
+        if self.keysAreBuiltin.get(): #default theme selected
             itemList=idleConf.GetSectionList('default','keys')
             itemList.sort()
             self.optMenuKeysBuiltin.SetMenu(itemList,currentOption)
@@ -855,14 +967,9 @@ class ConfigDialog(Toplevel):
             self.optMenuKeysBuiltin.SetMenu(itemList,itemList[0])
         self.SetKeysType()   
         ##load keyset element list
-        keySet=idleConf.GetCurrentKeySet()
-        bindNames=keySet.keys()
-        bindNames.sort()
-        for bindName in bindNames: 
-            key=string.join(keySet[bindName]) #make key(s) into a string
-            bindName=bindName[2:-2] #trim off the angle brackets
-            self.listBindings.insert(END, bindName+' - '+key)
-   
+        keySetName=idleConf.CurrentKeys()
+        self.LoadKeysList(keySetName)
+    
     def LoadGeneralCfg(self):
         #startup state
         self.startupEdit.set(idleConf.GetOption('main','General',
@@ -896,6 +1003,30 @@ class ConfigDialog(Toplevel):
         ### general page
         self.LoadGeneralCfg()
         
+    def SaveNewKeySet(self,keySetName,keySet):
+        """
+        save a newly created core key set.
+        keySetName - string, the name of the new key set
+        keySet - dictionary containing the new key set
+        """
+        if not idleConf.userCfg['keys'].has_section(keySetName):
+            idleConf.userCfg['keys'].add_section(keySetName)
+        for event in keySet.keys():
+            value=keySet[event]
+            idleConf.userCfg['keys'].SetOption(keySetName,event,value)
+    
+    def SaveNewTheme(self,themeName,theme):
+        """
+        save a newly created theme.
+        themeName - string, the name of the new theme
+        theme - dictionary containing the new theme
+        """
+        if not idleConf.userCfg['highlight'].has_section(themeName):
+            idleConf.userCfg['highlight'].add_section(themeName)
+        for element in theme.keys():
+            value=theme[element]
+            idleConf.userCfg['highlight'].SetOption(themeName,element,value)
+    
     def SetUserValue(self,configType,section,item,value):
         if idleConf.defaultCfg[configType].has_option(section,item):
             if idleConf.defaultCfg[configType].Get(section,item)==value:
@@ -904,9 +1035,9 @@ class ConfigDialog(Toplevel):
         #if we got here set the option
         return idleConf.userCfg[configType].SetOption(section,item,value)
             
-    def SaveConfigs(self):
+    def SaveAllChangedConfigs(self):
         """
-        save configuration changes to user config files.
+        save all configuration changes to user config files.
         """
         if self.changedItems['main'].has_key('HelpFiles'):
             #this section gets completely replaced
@@ -930,7 +1061,7 @@ class ConfigDialog(Toplevel):
         self.destroy()
 
     def Apply(self):
-        self.SaveConfigs()
+        self.SaveAllChangedConfigs()
 
     def Help(self):
         pass
