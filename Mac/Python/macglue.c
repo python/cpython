@@ -45,6 +45,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef THINK_C
 #include <OSEvents.h> /* For EvQElPtr */
 #endif
+#ifdef __MWERKS__
+#include <SIOUX.h>
+#endif
 
 #ifndef HAVE_UNIVERSAL_HEADERS
 #define GetResourceSizeOnDisk(x) SizeResource(x)
@@ -69,21 +72,13 @@ typedef FileFilterYDProcPtr FileFilterYDUPP;
 #define GETDIR_ID 130		/* Resource ID for our "get directory" */
 #define SELECTCUR_ITEM 10	/* "Select current directory" button */
 
-#ifdef __MWERKS__
-/* 
-** With MW we can pass the event off to the console window, so
-** we might as well handle all events.
-*/
-#include <SIOUX.h>
-#define MAINLOOP_EVENTMASK everyEvent
-#else
 /*
-** For other compilers we're more careful, since we can't handle
+** We have to be careful, since we can't handle
 ** things like updates (and they'll keep coming back if we don't
-** handle them)
+** handle them). Note that we don't know who has windows open, so
+** even handing updates off to SIOUX under MW isn't going to work.
 */
 #define MAINLOOP_EVENTMASK (mDownMask|keyDownMask|osMask)
-#endif /* __MWERKS__ */
 
 #include <signal.h>
 
