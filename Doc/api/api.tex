@@ -42,123 +42,123 @@ API functions in detail.
 
 The Application Programmer's Interface to Python gives C and C++
 programmers access to the Python interpreter at a variety of levels.
-There are two fundamentally different reasons for using the Python/C
-API.  (The API is equally usable from C++, but for brevity it is
-generally referred to as the Python/C API.)  The first reason is to
-write ``extension modules'' for specific purposes; these are C modules
-that extend the Python interpreter.  This is probably the most common
-use.  The second reason is to use Python as a component in a larger
-application; this technique is generally referred to as ``embedding''
+There are two fundamentally different reasons for using the Python/C 
+API.  (The API is equally usable from C++, but for brevity it is 
+generally referred to as the Python/C API.)  The first reason is to 
+write ``extension modules'' for specific purposes; these are C modules 
+that extend the Python interpreter.  This is probably the most common 
+use.  The second reason is to use Python as a component in a larger 
+application; this technique is generally referred to as ``embedding'' 
 Python in an application.
 
-Writing an extension module is a relatively well-understood process,
-where a ``cookbook'' approach works well.  There are several tools
-that automate the process to some extent.  While people have embedded
-Python in other applications since its early existence, the process of
-embedding Python is less straightforward that writing an extension.
-Python 1.5 introduces a number of new API functions as well as some
-changes to the build process that make embedding much simpler.
+Writing an extension module is a relatively well-understood process, 
+where a ``cookbook'' approach works well.  There are several tools 
+that automate the process to some extent.  While people have embedded 
+Python in other applications since its early existence, the process of 
+embedding Python is less straightforward that writing an extension.  
+Python 1.5 introduces a number of new API functions as well as some 
+changes to the build process that make embedding much simpler.  
 This manual describes the 1.5 state of affair (as of Python 1.5a3).
 % XXX Eventually, take the historical notes out
 
-Many API functions are useful independent of whether you're embedding
-or extending Python; moreover, most applications that embed Python
-will need to provide a custom extension as well, so it's probably a
-good idea to become familiar with writing an extension before
+Many API functions are useful independent of whether you're embedding 
+or extending Python; moreover, most applications that embed Python 
+will need to provide a custom extension as well, so it's probably a 
+good idea to become familiar with writing an extension before 
 attempting to embed Python in a real application.
 
 \section{Objects, Types and Reference Counts}
 
-Most Python/C API functions have one or more arguments as well as a
-return value of type \code{PyObject *}.  This type is a pointer
-(obviously!)  to an opaque data type representing an arbitrary Python
-object.  Since all Python object types are treated the same way by the
-Python language in most situations (e.g., assignments, scope rules,
-and argument passing), it is only fitting that they should be
+Most Python/C API functions have one or more arguments as well as a 
+return value of type \code{PyObject *}.  This type is a pointer 
+(obviously!)  to an opaque data type representing an arbitrary Python 
+object.  Since all Python object types are treated the same way by the 
+Python language in most situations (e.g., assignments, scope rules, 
+and argument passing), it is only fitting that they should be 
 represented by a single C type.  All Python objects live on the heap:
-you never declare an automatic or static variable of type
-\code{PyObject}, only pointer variables of type \code{PyObject *} can
+you never declare an automatic or static variable of type 
+\code{PyObject}, only pointer variables of type \code{PyObject *} can 
 be declared.
 
-All Python objects (even Python integers) have a ``type'' and a
-``reference count''.  An object's type determines what kind of object
-it is (e.g., an integer, a list, or a user-defined function; there are
-many more as explained in the Python Language Reference Manual).  For
-each of the well-known types there is a macro to check whether an
-object is of that type; for instance, \code{PyList_Check(a)} is true
+All Python objects (even Python integers) have a ``type'' and a 
+``reference count''.  An object's type determines what kind of object 
+it is (e.g., an integer, a list, or a user-defined function; there are 
+many more as explained in the Python Language Reference Manual).  For 
+each of the well-known types there is a macro to check whether an 
+object is of that type; for instance, \code{PyList_Check(a)} is true 
 iff the object pointed to by \code{a} is a Python list.
 
-The reference count is important only because today's computers have a
-finite (and often severly limited) memory size; it counts how many
-different places there are that have a reference to an object.  Such a
-place could be another object, or a global (or static) C variable, or
-a local variable in some C function.  When an object's reference count
-becomes zero, the object is deallocated.  If it contains references to
-other objects, their reference count is decremented.  Those other
-objects may be deallocated in turn, if this decrement makes their
-reference count become zero, and so on.  (There's an obvious problem
-with objects that reference each other here; for now, the solution is
+The reference count is important only because today's computers have a 
+finite (and often severly limited) memory size; it counts how many 
+different places there are that have a reference to an object.  Such a 
+place could be another object, or a global (or static) C variable, or 
+a local variable in some C function.  When an object's reference count 
+becomes zero, the object is deallocated.  If it contains references to 
+other objects, their reference count is decremented.  Those other 
+objects may be deallocated in turn, if this decrement makes their 
+reference count become zero, and so on.  (There's an obvious problem 
+with objects that reference each other here; for now, the solution is 
 ``don't do that''.)
 
-Reference counts are always manipulated explicitly.  The normal way is
-to use the macro \code{Py_INCREF(a)} to increment an object's
-reference count by one, and \code{Py_DECREF(a)} to decrement it by
-one.  The latter macro is considerably more complex than the former,
-since it must check whether the reference count becomes zero and then
-cause the object's deallocator, which is a function pointer contained
-in the object's type structure.  The type-specific deallocator takes
-care of decrementing the reference counts for other objects contained
-in the object, and so on, if this is a compound object type such as a
-list.  There's no chance that the reference count can overflow; at
-least as many bits are used to hold the reference count as there are
-distinct memory locations in virtual memory (assuming
-\code{sizeof(long) >= sizeof(char *)}).  Thus, the reference count
+Reference counts are always manipulated explicitly.  The normal way is 
+to use the macro \code{Py_INCREF(a)} to increment an object's 
+reference count by one, and \code{Py_DECREF(a)} to decrement it by 
+one.  The latter macro is considerably more complex than the former, 
+since it must check whether the reference count becomes zero and then 
+cause the object's deallocator, which is a function pointer contained 
+in the object's type structure.  The type-specific deallocator takes 
+care of decrementing the reference counts for other objects contained 
+in the object, and so on, if this is a compound object type such as a 
+list.  There's no chance that the reference count can overflow; at 
+least as many bits are used to hold the reference count as there are 
+distinct memory locations in virtual memory (assuming 
+\code{sizeof(long) >= sizeof(char *)}).  Thus, the reference count 
 increment is a simple operation.
 
-It is not necessary to increment an object's reference count for every
-local variable that contains a pointer to an object.  In theory, the
-oject's reference count goes up by one when the variable is made to
-point to it and it goes down by one when the variable goes out of
-scope.  However, these two cancel each other out, so at the end the
-reference count hasn't changed.  The only real reason to use the
-reference count is to prevent the object from being deallocated as
-long as our variable is pointing to it.  If we know that there is at
-least one other reference to the object that lives at least as long as
-our variable, there is no need to increment the reference count
-temporarily.  An important situation where this arises is in objects
-that are passed as arguments to C functions in an extension module
-that are called from Python; the call mechanism guarantees to hold a
+It is not necessary to increment an object's reference count for every 
+local variable that contains a pointer to an object.  In theory, the 
+oject's reference count goes up by one when the variable is made to 
+point to it and it goes down by one when the variable goes out of 
+scope.  However, these two cancel each other out, so at the end the 
+reference count hasn't changed.  The only real reason to use the 
+reference count is to prevent the object from being deallocated as 
+long as our variable is pointing to it.  If we know that there is at 
+least one other reference to the object that lives at least as long as 
+our variable, there is no need to increment the reference count 
+temporarily.  An important situation where this arises is in objects 
+that are passed as arguments to C functions in an extension module 
+that are called from Python; the call mechanism guarantees to hold a 
 reference to every argument for the duration of the call.
 
-However, a common pitfall is to extract an object from a list and
-holding on to it for a while without incrementing its reference count.
-Some other operation might conceivably remove the object from the
-list, decrementing its reference count and possible deallocating it.
-The real danger is that innocent-looking operations may invoke
-arbitrary Python code which could do this; there is a code path which
-allows control to flow back to the user from a \code{Py_DECREF()}, so
+However, a common pitfall is to extract an object from a list and 
+holding on to it for a while without incrementing its reference count.  
+Some other operation might conceivably remove the object from the 
+list, decrementing its reference count and possible deallocating it.  
+The real danger is that innocent-looking operations may invoke 
+arbitrary Python code which could do this; there is a code path which 
+allows control to flow back to the user from a \code{Py_DECREF()}, so 
 almost any operation is potentially dangerous.
 
-A safe approach is to always use the generic operations (functions
-whose name begins with \code{PyObject_}, \code{PyNumber_},
-\code{PySequence_} or \code{PyMapping_}).  These operations always
-increment the reference count of the object they return.  This leaves
-the caller with the responsibility to call \code{Py_DECREF()} when
+A safe approach is to always use the generic operations (functions 
+whose name begins with \code{PyObject_}, \code{PyNumber_}, 
+\code{PySequence_} or \code{PyMapping_}).  These operations always 
+increment the reference count of the object they return.  This leaves 
+the caller with the responsibility to call \code{Py_DECREF()} when 
 they are done with the result; this soon becomes second nature.
 
-There are very few other data types that play a significant role in
-the Python/C API; most are all simple C types such as \code{int},
-\code{long}, \code{double} and \code{char *}.  A few structure types
-are used to describe static tables used to list the functions exported
-by a module or the data attributes of a new object type.  These will
+There are very few other data types that play a significant role in 
+the Python/C API; most are all simple C types such as \code{int}, 
+\code{long}, \code{double} and \code{char *}.  A few structure types 
+are used to describe static tables used to list the functions exported 
+by a module or the data attributes of a new object type.  These will 
 be discussed together with the functions that use them.
 
 \section{Exceptions}
 
-The Python programmer only needs to deal with exceptions if specific
-error handling is required; unhandled exceptions are automatically
-propagated to the caller, then to the caller's caller, and so on, till
-they reach the top-level interpreter, where they are reported to the
+The Python programmer only needs to deal with exceptions if specific 
+error handling is required; unhandled exceptions are automatically 
+propagated to the caller, then to the caller's caller, and so on, till 
+they reach the top-level interpreter, where they are reported to the 
 user accompanied by a stack trace.
 
 For C programmers, however, error checking always has to be explicit.
@@ -166,57 +166,63 @@ For C programmers, however, error checking always has to be explicit.
 
 \section{Embedding Python}
 
-The one important task that only embedders of the Python interpreter
-have to worry about is the initialization (and possibly the
-finalization) of the Python interpreter.  Most functionality of the
-interpreter can only be used after the interpreter has been
+The one important task that only embedders of the Python interpreter 
+have to worry about is the initialization (and possibly the 
+finalization) of the Python interpreter.  Most functionality of the 
+interpreter can only be used after the interpreter has been 
 initialized.
 
-
-The basic initialization function is \code{Py_Initialize()}.  This
-initializes the table of loaded modules, and creates the fundamental
-modules \code{__builtin__}, \code{__main__} and \code{sys}.  It also
+The basic initialization function is \code{Py_Initialize()}.  This 
+initializes the table of loaded modules, and creates the fundamental 
+modules \code{__builtin__}, \code{__main__} and \code{sys}.  It also 
 initializes the module search path (\code{sys.path}).
 
-\code{Py_Initialize()} does not set the ``script argument list''
-(\code{sys.argv}).  If this variable is needed by Python code that
-will be executed later, it must be set explicitly with a call to
-\code{PySys_SetArgv(\var{argc}, \var{argv})} subsequent to the call
+\code{Py_Initialize()} does not set the ``script argument list'' 
+(\code{sys.argv}).  If this variable is needed by Python code that 
+will be executed later, it must be set explicitly with a call to 
+\code{PySys_SetArgv(\var{argc}, \var{argv})} subsequent to the call 
 to \code{Py_Initialize()}.
 
-On Unix, \code{Py_Initialize()} calculates the module search path
-based upon its best guess for the location of the standard Python
-interpreter executable, assuming that the Python library is found in a
-fixed location relative to the Python interpreter executable.  In
-particular, it looks for a directory named \code{lib/python1.5}
-(replacing \code{1.5} with the current interpreter version) relative
-to the parent directory where the executable named \code{python} is
-found on the shell command search path (the environment variable
-\code{$PATH}).  For instance, if the Python executable is found in
-\code{/usr/local/bin/python}, it will assume that the libraries are in
-\code{/usr/local/lib/python1.5}.  In fact, this also the ``fallback''
-location, used when no executable file named \code{python} is found
-along \code{\$PATH}.  The user can change this behavior by setting the
-environment variable \code{\$PYTHONHOME}, and can insert additional
-directories in front of the standard path by setting
+On Unix, \code{Py_Initialize()} calculates the module search path 
+based upon its best guess for the location of the standard Python 
+interpreter executable, assuming that the Python library is found in a 
+fixed location relative to the Python interpreter executable.  In 
+particular, it looks for a directory named \code{lib/python1.5} 
+(replacing \code{1.5} with the current interpreter version) relative 
+to the parent directory where the executable named \code{python} is 
+found on the shell command search path (the environment variable 
+\code{$PATH}).  For instance, if the Python executable is found in 
+\code{/usr/local/bin/python}, it will assume that the libraries are in 
+\code{/usr/local/lib/python1.5}.  In fact, this also the ``fallback'' 
+location, used when no executable file named \code{python} is found 
+along \code{\$PATH}.  The user can change this behavior by setting the 
+environment variable \code{\$PYTHONHOME}, and can insert additional 
+directories in front of the standard path by setting 
 \code{\$PYTHONPATH}.
 
-The embedding application can steer the search by calling
-\code{Py_SetProgramName(\var{file})} \emph{before} calling
-\code{Py_Initialize()}.  Note that \code[$PYTHONHOME} still overrides
-this and \code{\$PYTHONPATH} is still inserted in front of the
+The embedding application can steer the search by calling 
+\code{Py_SetProgramName(\var{file})} \emph{before} calling 
+\code{Py_Initialize()}.  Note that \code[$PYTHONHOME} still overrides 
+this and \code{\$PYTHONPATH} is still inserted in front of the 
 standard path.
 
-Sometimes, it is desirable to ``uninitialize'' Python.  For instance,
-the application may want to start over (make another call to
-\code{Py_Initialize()}) or the application is simply done with its
-use of Python and wants to free all memory allocated by Python.  This
+Sometimes, it is desirable to ``uninitialize'' Python.  For instance, 
+the application may want to start over (make another call to 
+\code{Py_Initialize()}) or the application is simply done with its 
+use of Python and wants to free all memory allocated by Python.  This 
 can be accomplished by calling \code{Py_Finalize()}.
 % XXX More...
 
 \section{Embedding Python in Threaded Applications}
 
-%XXX more here
+
+
+
+
+
+
+
+
 
 \chapter{Old Introduction}
 
@@ -1257,6 +1263,308 @@ e.g. to check that an object is a dictionary, use
 
 \begin{cfuncdesc}{TYPE}{_PyObject_NEW_VAR}{TYPE, PyTypeObject *, int size}
 \end{cfuncdesc}
+
+\chapter{Initialization, Finalization, and Threads}
+
+% XXX Check argument/return type of all these
+
+\begin{cfuncdesc}{void}{Py_Initialize}{}
+Initialize the Python interpreter.  In an application embedding 
+Python, this should be called before using any other Python/C API 
+functions; with the exception of \code{Py_SetProgramName()}, 
+\code{PyEval_InitThreads()}, \code{PyEval_ReleaseLock()}, and 
+\code{PyEval_AcquireLock()}.  This initializes the table of loaded 
+modules (\code{sys.modules}), and creates the fundamental modules 
+\code{__builtin__}, \code{__main__} and \code{sys}.  It also 
+initializes the module search path (\code{sys.path}).  It does not set 
+\code{sys.argv}; use \code{PySys_SetArgv()} for that.  It is a fatal 
+error to call it for a second time without calling 
+\code{Py_Finalize()} first.  There is no return value; it is a fatal 
+error if the initialization fails.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{Py_Finalize}{}
+Undo all initializations made by \code{Py_Initialize()} and subsequent 
+use of Python/C API functions, and destroy all sub-interpreters (see 
+\code{Py_NewInterpreter()} below) that were created and not yet 
+destroyed since the last call to \code{Py_Initialize()}.  Ideally, 
+this frees all memory allocated by the Python interpreter.  It is a 
+fatal error to call it for a second time without calling 
+\code{Py_Initialize()} again first.  There is no return value; errors 
+during finalization are ignored.
+
+This function is provided for a number of reasons.  An embedding 
+application might want to restart Python without having to restart the 
+application itself.  An application that has loaded the Python 
+interpreter from a dynamically loadable library (or DLL) might want to 
+free all memory allocated by Python before unloading the DLL. During a 
+hunt for memory leaks in an application a developer might want to free 
+all memory allocated by Python before exiting from the application.
+
+\emph{Bugs and caveats:} The destruction of modules and objects in 
+modules is done in random order; this may cause destructors 
+(\code{__del__} methods) to fail when they depend on other objects 
+(even functions) or modules.  Dynamically loaded extension modules 
+loaded by Python are not unloaded.  Small amounts of memory allocated 
+by the Python interpreter may not be freed (if you find a leak, please 
+report it).  Memory tied up in circular references between objects is 
+not freed.  Some memory allocated by extension modules may not be 
+freed.  Some extension may not work properly if their initialization 
+routine is called more than once; this can happen if an applcation 
+calls \code{Py_Initialize()} and \code{Py_Finalize()} more than once.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyThreadState *}{Py_NewInterpreter}{}
+Create a new sub-interpreter.  This is an (almost) totally separate 
+environment for the execution of Python code.  In particular, the new 
+interpreter has separate, independent versions of all imported 
+modules, including the fundamental modules \code{__builtin__}, 
+\code{__main__} and \code{sys}.  The table of loaded modules 
+(\code{sys.modules}) and the module search path (\code{sys.path}) are 
+also separate.  The new environment has no \code{sys.argv} variable.  
+It has new standard I/O stream file objects \code{sys.stdin}, 
+\code{sys.stdout} and \code{sys.stderr} (however these refer to the 
+same underlying \code{FILE} structures in the C library).
+
+The return value points to the first thread state created in the new 
+sub-interpreter.  This thread state is made the current thread state.  
+Note that no actual thread is created; see the discussion of thread 
+states below.  If creation of the new interpreter is unsuccessful, 
+\code{NULL} is returned; no exception is set since the exception state 
+is stored in the current thread state and there may not be a current 
+thread state.  (Like all other Python/C API functions, the global 
+interpreter lock must be held before calling this function and is 
+still held when it returns; however, unlike most other Python/C API 
+functions, there needn't be a current thread state on entry.)
+
+Extension modules are shared between (sub-)interpreters as follows: 
+the first time a particular extension is imported, it is initialized 
+normally, and a (shallow) copy of its module's dictionary is 
+squirreled away.  When the same extension is imported by another 
+(sub-)interpreter, a new module is initialized and filled with the 
+contents of this copy; the extension's \code{init} function is not 
+called.  Note that this is different from what happens when as 
+extension is imported after the interpreter has been completely 
+re-initialized by calling \code{Py_Finalize()} and 
+\code{Py_Initialize()}; in that case, the extension's \code{init} 
+function \emph{is} called again.
+
+\emph{Bugs and caveats:} Because sub-interpreters (and the main 
+interpreter) are part of the same process, the insulation between them 
+isn't perfect -- for example, using low-level file operations like 
+\code{os.close()} they can (accidentally or maliciously) affect each 
+other's open files.  Because of the way extensions are shared between 
+(sub-)interpreters, some extensions may not work properly; this is 
+especially likely when the extension makes use of (static) global 
+variables, or when the extension manipulates its module's dictionary 
+after its initialization.  It is possible to insert objects created in 
+one sub-interpreter into a namespace of another sub-interpreter; this 
+should be done with great care to avoid sharing user-defined 
+functions, methods, instances or classes between sub-interpreters, 
+since import operations executed by such objects may affect the 
+wrong (sub-)interpreter's dictionary of loaded modules.  (XXX This is 
+a hard-to-fix bug that will be addressed in a future release.)
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{Py_EndInterpreter}{PyThreadState *tstate}
+Destroy the (sub-)interpreter represented by the given thread state.  
+The given thread state must be the current thread state.  See the 
+discussion of thread states below.  When the call returns, the current 
+thread state is \code{NULL}.  All thread states associated with this 
+interpreted are destroyed.  (The global interpreter lock must be held 
+before calling this function and is still held when it returns.)  
+\code{Py_Finalize()} will destroy all sub-interpreters that haven't 
+been explicitly destroyed at that point.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{Py_SetProgramName}{char *name}
+This function should be called before \code{Py_Initialize()} is called 
+for the first time, if it is called at all.  It tells the interpreter 
+the value of the \code{argv[0]} argument to the \code{main()} function 
+of the program.  This is used by \code{Py_GetPath()} and some other 
+functions below to find the Python run-time libraries relative to the 
+interpreter executable.  The default value is \code{"python"}.  The 
+argument should point to a zero-terminated character string in static 
+storage whose contents will not change for the duration of the 
+program's execution.  No code in the Python interpreter will change 
+the contents of this storage.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{char *}{Py_GetProgramName}{}
+Return the program name set with \code{Py_SetProgramName()}, or the 
+default.  The returned string points into static storage; the caller 
+should not modify its value.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{char *}{Py_GetPrefix}{}
+Return the ``prefix'' for installed platform-independent files.  This 
+is derived through a number of complicated rules from the program name 
+set with \code{Py_SetProgramName()} and some environment variables; 
+for example, if the program name is \code{"/usr/local/bin/python"}, 
+the prefix is \code{"/usr/local"}.  The returned string points into 
+static storage; the caller should not modify its value.  This 
+corresponds to the \code{prefix} variable in the top-level 
+\code{Makefile} and the \code{--prefix} argument to the 
+\code{configure} script at build time.  The value is available to 
+Python code as \code{sys.prefix}.  It is only useful on Unix.  See 
+also the next function.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{char *}{Py_GetExecPrefix}{}
+Return the ``exec-prefix'' for installed platform-\emph{de}pendent 
+files.  This is derived through a number of complicated rules from the 
+program name set with \code{Py_SetProgramName()} and some environment 
+variables; for example, if the program name is 
+\code{"/usr/local/bin/python"}, the exec-prefix is 
+\code{"/usr/local"}.  The returned string points into static storage; 
+the caller should not modify its value.  This corresponds to the 
+\code{exec_prefix} variable in the top-level \code{Makefile} and the 
+\code{--exec_prefix} argument to the \code{configure} script at build 
+time.  The value is available to Python code as 
+\code{sys.exec_prefix}.  It is only useful on Unix.
+
+Background: The exec-prefix differs from the prefix when platform 
+dependent files (such as executables and shared libraries) are 
+installed in a different directory tree.  In a typical installation, 
+platform dependent files may be installed in the 
+\code{"/usr/local/plat"} subtree while platform independent may be 
+installed in \code{"/usr/local"}.
+
+Generally speaking, a platform is a combination of hardware and 
+software families, e.g.  Sparc machines running the Solaris 2.x 
+operating system are considered the same platform, but Intel machines 
+running Solaris 2.x are another platform, and Intel machines running 
+Linux are yet another platform.  Different major revisions of the same 
+operating system generally also form different platforms.  Non-Unix 
+operating systems are a different story; the installation strategies 
+on those systems are so different that the prefix and exec-prefix are 
+meaningless, and set to the empty string.  Note that compiled Python 
+bytecode files are platform independent (but not independent from the 
+Python version by which they were compiled!).
+
+System administrators will know how to configure the \code{mount} or 
+\code{automount} programs to share \code{"/usr/local"} between platforms 
+while having \code{"/usr/local/plat"} be a different filesystem for each 
+platform.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{char *}{Py_GetProgramFullPath}{}
+Return the full program name of the Python executable; this is 
+computed as a side-effect of deriving the default module search path 
+from the program name (set by \code{Py_SetProgramName() above).  The 
+returned string points into static storage; the caller should not 
+modify its value.  The value is available to Python code as 
+\code{sys.executable}.  % XXX is that the right sys.name?
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{char *}{Py_GetPath}{}
+Return the default module search path; this is computed from the 
+program name (set by \code{Py_SetProgramName() above) and some 
+environment variables.  The returned string consists of a series of 
+directory names separated by a platform dependent delimiter character.  
+The delimiter character is \code{':'} on Unix, \code{';'} on 
+DOS/Windows, and \code{'\n'} (the ASCII newline character) on 
+Macintosh.  The returned string points into static storage; the caller 
+should not modify its value.  The value is available to Python code 
+as the list \code{sys.path}, which may be modified to change the 
+future search path for loaded modules.
+
+% XXX should give the exact rules
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{const char *}{Py_GetVersion}{}
+Return the version of this Python interpreter.  This is a string that 
+looks something like
+
+\code{"1.5a3 (#67, Aug 1 1997, 22:34:28) [GCC 2.7.2.2]"}.
+
+The first word (up to the first space character) is the current Python 
+version; the first three characters are the major and minor version 
+separated by a period.  The returned string points into static storage; 
+the caller should not modify its value.  The value is available to 
+Python code as the list \code{sys.version}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{const char *}{Py_GetPlatform}{}
+Return the platform identifier for the current platform.  On Unix, 
+this is formed from the ``official'' name of the operating system, 
+converted to lower case, followed by the major revision number; e.g., 
+for Solaris 2.x, which is also known as SunOS 5.x, the value is 
+\code{"sunos5"}.  On Macintosh, it is \code{"mac"}.  On Windows, it 
+is \code{"win"}.  The returned string points into static storage; 
+the caller should not modify its value.  The value is available to 
+Python code as \code{sys.platform}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{const char *}{Py_GetCopyright}{}
+Return the official copyright string for the current Python version, 
+for example
+
+\code{"Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam"}
+
+The returned string points into static storage; the caller should not 
+modify its value.  The value is available to Python code as the list 
+\code{sys.copyright}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{const char *}{Py_GetCompiler}{}
+Return an indication of the compiler used to build the current Python 
+version, in square brackets, for example
+
+\code{"[GCC 2.7.2.2]"}
+
+The returned string points into static storage; the caller should not 
+modify its value.  The value is available to Python code as part of 
+the variable \code{sys.version}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{const char *}{Py_GetBuildInfo}{}
+Return information about the sequence number and build date and time 
+of the current Python interpreter instance, for example
+
+\code{"#67, Aug  1 1997, 22:34:28"}
+
+The returned string points into static storage; the caller should not 
+modify its value.  The value is available to Python code as part of 
+the variable \code{sys.version}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PySys_SetArgv}{int argc, char **argv}
+% XXX
+\end{cfuncdesc}
+
+% XXX Other PySys thingies (doesn't really belong in this chapter)
+
+\section{Thread State and the Global Interpreter Lock}
+
+\begin{cfuncdesc}{void}{PyEval_AcquireLock}{}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyEval_ReleaseLock}{}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyEval_AcquireThread}{PyThreadState *tstate}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyEval_ReleaseThread}{PyThreadState *tstate}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyEval_RestoreThread}{PyThreadState *tstate}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyThreadState *}{PyEval_SaveThread}{}
+\end{cfuncdesc}
+
+% XXX These aren't really C functions!
+\begin{cfuncdesc}{Py_BEGIN_ALLOW_THREADS}{}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_BEGIN_END_THREADS}{}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_BEGIN_XXX_THREADS}{}
+\end{cfuncdesc}
+
 
 XXX To be done:
 
