@@ -28,6 +28,7 @@ class Bdb:
         canonic = self.fncache.get(filename)
         if not canonic:
             canonic = os.path.abspath(filename)
+            canonic = os.path.normcase(canonic)
             self.fncache[filename] = canonic
         return canonic
 
