@@ -1205,38 +1205,32 @@ def context_diff(a, b, fromfile='', tofile='',
     """
 
     started = False
-    prefixmap = dict(insert='+ ', delete='- ', replace='! ', equal='  ')
+    prefixmap = {'insert':'+ ', 'delete':'- ', 'replace':'! ', 'equal':'  '}
     for group in SequenceMatcher(None,a,b).get_grouped_opcodes(n):
         if not started:
             yield '*** %s %s%s' % (fromfile, fromfiledate, lineterm)
             yield '--- %s %s%s' % (tofile, tofiledate, lineterm)
             started = True
+
         yield '***************%s' % (lineterm,)
         if group[-1][2] - group[0][1] >= 2:
             yield '*** %d,%d ****%s' % (group[0][1]+1, group[-1][2], lineterm)
         else:
             yield '*** %d ****%s' % (group[-1][2], lineterm)
-        empty = True
-        for tag, i1, i2, j1, j2 in group:
-            if tag == 'replace' or tag == 'delete':
-                empty = False
-                break
-        if not empty:
-            for tag, i1, i2, j1, j2 in group:
+        visiblechanges = [e for e in group if e[0] in ('replace', 'delete')]
+        if visiblechanges:
+            for tag, i1, i2, _, _ in group:
                 if tag != 'insert':
                     for line in a[i1:i2]:
                         yield prefixmap[tag] + line
+
         if group[-1][4] - group[0][3] >= 2:
             yield '--- %d,%d ----%s' % (group[0][3]+1, group[-1][4], lineterm)
         else:
             yield '--- %d ----%s' % (group[-1][4], lineterm)
-        empty = True
-        for tag, i1, i2, j1, j2 in group:
-            if tag == 'replace' or tag == 'insert':
-                empty = False
-                break
-        if not empty:
-            for tag, i1, i2, j1, j2 in group:
+        visiblechanges = [e for e in group if e[0] in ('replace', 'insert')]
+        if visiblechanges:
+            for tag, _, _, j1, j2 in group:
                 if tag != 'delete':
                     for line in b[j1:j2]:
                         yield prefixmap[tag] + line
