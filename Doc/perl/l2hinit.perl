@@ -221,6 +221,13 @@ sub img_tag {
 }
 
 
+sub do_cmd_arabic {
+    # get rid of that nasty <SPAN CLASS="arabic">...</SPAN>
+    local($ctr, $val, $id, $_) = &read_counter_value(@_[0]);
+    return ($val ? &farabic($val) : "0") . $_;
+}
+
+
 sub gen_index_id {
     # this is used to ensure common index key generation and a stable sort
     my($str,$extra) = @_;
