@@ -55,10 +55,12 @@ extern "C" {
 #define LEFTSHIFTEQUAL	45
 #define RIGHTSHIFTEQUAL	46
 #define DOUBLESTAREQUAL	47
+#define DOUBLESLASH	48
+#define DOUBLESLASHEQUAL 49
 /* Don't forget to update the table _PyParser_TokenNames in tokenizer.c! */
-#define OP		48
-#define ERRORTOKEN	49
-#define N_TOKENS	50
+#define OP		50
+#define ERRORTOKEN	51
+#define N_TOKENS	52
 
 /* Special definitions for cooperation with parser */
 

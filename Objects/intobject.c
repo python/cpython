@@ -703,6 +703,12 @@ int_or(PyIntObject *v, PyIntObject *w)
 }
 
 static PyObject *
+int_true_divide(PyObject *v, PyObject *w)
+{
+	return PyFloat_Type.tp_as_number->nb_divide(v, w);
+}
+
+static PyObject *
 int_int(PyIntObject *v)
 {
 	Py_INCREF(v);
@@ -812,6 +818,10 @@ static PyNumberMethods int_as_number = {
 	0,			/*nb_inplace_and*/
 	0,			/*nb_inplace_xor*/
 	0,			/*nb_inplace_or*/
+	(binaryfunc)int_div,	/* nb_floor_divide */
+	int_true_divide,	/* nb_true_divide */
+	0,			/* nb_inplace_floor_divide */
+	0,			/* nb_inplace_true_divide */
 };
 
 PyTypeObject PyInt_Type = {

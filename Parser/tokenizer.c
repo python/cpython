@@ -80,6 +80,8 @@ char *_PyParser_TokenNames[] = {
 	"LEFTSHIFTEQUAL",
 	"RIGHTSHIFTEQUAL",
 	"DOUBLESTAREQUAL",
+	"DOUBLESLASH",
+	"DOUBLESLASHEQUAL",
 	/* This table must match the #defines in token.h! */
 	"OP",
 	"<ERRORTOKEN>",
@@ -408,6 +410,7 @@ PyToken_TwoChars(int c1, int c2)
 		break;
 	case '/':
 		switch (c2) {
+		case '/':	return DOUBLESLASH;
 		case '=':	return SLASHEQUAL;
 		}
 		break;
@@ -465,6 +468,16 @@ PyToken_ThreeChars(int c1, int c2, int c3)
 			switch (c3) {
 			case '=':
 				return DOUBLESTAREQUAL;
+			}
+			break;
+		}
+		break;
+	case '/':
+		switch (c2) {
+		case '/':
+			switch (c3) {
+			case '=':
+				return DOUBLESLASHEQUAL;
 			}
 			break;
 		}

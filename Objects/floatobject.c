@@ -558,6 +558,21 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 }
 
 static PyObject *
+float_int_div(PyObject *v, PyObject *w)
+{
+	PyObject *t, *r;
+	
+	t = float_divmod(v, w);
+	if (t != NULL) {
+		r = PyTuple_GET_ITEM(t, 0);
+		Py_INCREF(r);
+		Py_DECREF(t);
+		return r;
+	}
+	return NULL;
+}
+
+static PyObject *
 float_neg(PyFloatObject *v)
 {
 	return PyFloat_FromDouble(-v->ob_fval);
@@ -678,19 +693,23 @@ static PyNumberMethods float_as_number = {
 	(unaryfunc)float_int, /*nb_int*/
 	(unaryfunc)float_long, /*nb_long*/
 	(unaryfunc)float_float, /*nb_float*/
-	0,		/*nb_oct*/
-	0,		/*nb_hex*/
-	0,		/*nb_inplace_add*/
-	0,		/*nb_inplace_subtract*/
-	0,		/*nb_inplace_multiply*/
-	0,		/*nb_inplace_divide*/
-	0,		/*nb_inplace_remainder*/
-	0, 		/*nb_inplace_power*/
-	0,		/*nb_inplace_lshift*/
-	0,		/*nb_inplace_rshift*/
-	0,		/*nb_inplace_and*/
-	0,		/*nb_inplace_xor*/
-	0,		/*nb_inplace_or*/
+	0,		/* nb_oct */
+	0,		/* nb_hex */
+	0,		/* nb_inplace_add */
+	0,		/* nb_inplace_subtract */
+	0,		/* nb_inplace_multiply */
+	0,		/* nb_inplace_divide */
+	0,		/* nb_inplace_remainder */
+	0, 		/* nb_inplace_power */
+	0,		/* nb_inplace_lshift */
+	0,		/* nb_inplace_rshift */
+	0,		/* nb_inplace_and */
+	0,		/* nb_inplace_xor */
+	0,		/* nb_inplace_or */
+	float_int_div,	/* nb_floor_divide */
+	float_div,	/* nb_true_divide */
+	0,		/* nb_inplace_floor_divide */
+	0,		/* nb_inplace_true_divide */
 };
 
 PyTypeObject PyFloat_Type = {

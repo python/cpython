@@ -1981,6 +1981,12 @@ long_or(PyObject *v, PyObject *w)
 	return c;
 }
 
+static PyObject *
+long_true_divide(PyObject *v, PyObject *w)
+{
+	return PyFloat_Type.tp_as_number->nb_divide(v, w);
+}
+
 static int
 long_coerce(PyObject **pv, PyObject **pw)
 {
@@ -2092,17 +2098,21 @@ static PyNumberMethods long_as_number = {
 	(unaryfunc)	long_float,	/*nb_float*/
 	(unaryfunc)	long_oct,	/*nb_oct*/
 	(unaryfunc)	long_hex,	/*nb_hex*/
-	0,				/*nb_inplace_add*/
-	0,				/*nb_inplace_subtract*/
-	0,				/*nb_inplace_multiply*/
-	0,				/*nb_inplace_divide*/
-	0,				/*nb_inplace_remainder*/
-	0,				/*nb_inplace_power*/
-	0,				/*nb_inplace_lshift*/
-	0,				/*nb_inplace_rshift*/
-	0,				/*nb_inplace_and*/
-	0,				/*nb_inplace_xor*/
-	0,				/*nb_inplace_or*/
+	0,				/* nb_inplace_add */
+	0,				/* nb_inplace_subtract */
+	0,				/* nb_inplace_multiply */
+	0,				/* nb_inplace_divide */
+	0,				/* nb_inplace_remainder */
+	0,				/* nb_inplace_power */
+	0,				/* nb_inplace_lshift */
+	0,				/* nb_inplace_rshift */
+	0,				/* nb_inplace_and */
+	0,				/* nb_inplace_xor */
+	0,				/* nb_inplace_or */
+	(binaryfunc)long_div,		/* nb_floor_divide */
+	long_true_divide,		/* nb_true_divide */
+	0,				/* nb_inplace_floor_divide */
+	0,				/* nb_inplace_true_divide */
 };
 
 PyTypeObject PyLong_Type = {

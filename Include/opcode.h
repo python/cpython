@@ -29,6 +29,10 @@ extern "C" {
 #define BINARY_ADD	23
 #define BINARY_SUBTRACT	24
 #define BINARY_SUBSCR	25
+#define BINARY_FLOOR_DIVIDE 26
+#define BINARY_TRUE_DIVIDE 27
+#define INPLACE_FLOOR_DIVIDE 28
+#define INPLACE_TRUE_DIVIDE 29
 
 #define SLICE		30
 /* Also uses 31-33 */

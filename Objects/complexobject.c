@@ -442,6 +442,21 @@ complex_pow(PyComplexObject *v, PyObject *w, PyComplexObject *z)
 }
 
 static PyObject *
+complex_int_div(PyComplexObject *v, PyComplexObject *w)
+{
+	PyObject *t, *r;
+	
+	t = complex_divmod(v, w);
+	if (t != NULL) {
+		r = PyTuple_GET_ITEM(t, 0);
+		Py_INCREF(r);
+		Py_DECREF(t);
+		return r;
+	}
+	return NULL;
+}
+
+static PyObject *
 complex_neg(PyComplexObject *v)
 {
 	Py_complex neg;
@@ -859,6 +874,21 @@ static PyNumberMethods complex_as_number = {
 	(unaryfunc)complex_float,		/* nb_float */
 	0,					/* nb_oct */
 	0,					/* nb_hex */
+	0,					/* nb_inplace_add */
+	0,					/* nb_inplace_subtract */
+	0,					/* nb_inplace_multiply*/
+	0,					/* nb_inplace_divide */
+	0,					/* nb_inplace_remainder */
+	0, 					/* nb_inplace_power */
+	0,					/* nb_inplace_lshift */
+	0,					/* nb_inplace_rshift */
+	0,					/* nb_inplace_and */
+	0,					/* nb_inplace_xor */
+	0,					/* nb_inplace_or */
+	(binaryfunc)complex_int_div,		/* nb_floor_divide */
+	(binaryfunc)complex_div,		/* nb_true_divide */
+	0,					/* nb_inplace_floor_divide */
+	0,					/* nb_inplace_true_divide */
 };
 
 PyTypeObject PyComplex_Type = {

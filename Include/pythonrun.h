@@ -12,6 +12,7 @@ extern "C" {
    accordingly then. */
 #define PyCF_NESTED_SCOPES	(0x00000001UL)
 #define PyCF_GENERATORS		(0x00000002UL)
+#define PyCF_DIVISION		(0x00000004UL)
 typedef struct {
 	unsigned long cf_flags;  /* bitmask of PyCF_xxx flags */
 } PyCompilerFlags;
