@@ -31,7 +31,7 @@
 #      Colin Kong, Trent Mick
 #
 #    History:
-#    1.0.2 - fix a bug with caching of value for platform()
+#    1.0.2 - added more Windows support
 #    1.0.1 - reformatted to make doc.py happy
 #    1.0.0 - reformatted a bit and checked into Python CVS
 #    0.8.0 - added sys.version parser and various new access
@@ -457,7 +457,11 @@ def win32_ver(release='',version='',csd='',ptype=''):
     """
     # XXX Is there any way to find out the processor type on WinXX ?
     # XXX Is win32 available on Windows CE ?
+    #
     # Adapted from code posted by Karl Putland to comp.lang.python.
+    #
+    # The mappings between reg. values and release names can be found
+    # here: http://msdn.microsoft.com/library/en-us/sysinfo/base/osversioninfo_str.asp
 
     # Import the needed APIs
     try:
@@ -479,8 +483,12 @@ def win32_ver(release='',version='',csd='',ptype=''):
         if maj == 4:
             if min == 0:
                 release = '95'
-            else:
+            elif min == 10:
                 release = '98'
+            elif min == 90:
+                release = 'Me'
+            else:
+                release = 'postMe'
         elif maj == 5:
             release = '2000'
     elif plat == VER_PLATFORM_WIN32_NT:
@@ -488,7 +496,14 @@ def win32_ver(release='',version='',csd='',ptype=''):
         if maj <= 4:
             release = 'NT'
         elif maj == 5:
-            release = '2000'
+            if min == 0:
+                release = '2000'
+            elif min == 1:
+                release = 'XP'
+            elif min == 2:
+                release = '2003Server'
+            else:
+                release = 'post2003'
     else:
         if not release:
             # E.g. Win3.1 with win32s
@@ -1136,10 +1151,7 @@ def python_compiler():
 
 ### The Opus Magnum of platform strings :-)
 
-_platform_cache_terse = None
-_platform_cache_not_terse = None
-_platform_aliased_cache_terse = None
-_platform_aliased_cache_not_terse = None
+_platform_cache = {}
 
 def platform(aliased=0, terse=0):
 
@@ -1160,17 +1172,9 @@ def platform(aliased=0, terse=0):
         absolute minimum information needed to identify the platform.
 
     """
-    global _platform_cache_terse, _platform_cache_not_terse
-    global _platform_aliased_cache_terse, _platform_aliased_cache_not_terse
-
-    if not aliased and terse and (_platform_cache_terse is not None):
-        return _platform_cache_terse
-    elif not aliased and not terse and (_platform_cache_not_terse is not None):
-        return _platform_cache_not_terse
-    elif terse and _platform_aliased_cache_terse is not None:
-        return _platform_aliased_cache_terse
-    elif not terse and _platform_aliased_cache_not_terse is not None:
-        return _platform_aliased_cache_not_terse
+    result = _platform_cache.get((aliased, terse), None)
+    if result is not None:
+        return result
 
     # Get uname information and then apply platform specific cosmetics
     # to it...
@@ -1226,17 +1230,7 @@ def platform(aliased=0, terse=0):
             bits,linkage = architecture(sys.executable)
             platform = _platform(system,release,machine,processor,bits,linkage)
 
-    if aliased and terse:
-        _platform_aliased_cache_terse = platform
-    elif aliased and not terse:
-        _platform_aliased_cache_not_terse = platform
-    elif terse:
-        pass
-    else:
-        if terse:
-            _platform_cache_terse = platform
-        else:
-            _platform_cache_not_terse = platform
+    _platform_cache[(aliased, terse)] = platform
     return platform
 
 ### Command line interface
