@@ -198,12 +198,14 @@ PyInt_FromString(char *s, char **pend, int base)
 		end++;
 	if (*end != '\0') {
   bad:
-		sprintf(buffer, "invalid literal for int(): %.200s", s);
+		PyOS_snprintf(buffer, sizeof(buffer),
+			      "invalid literal for int(): %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
 	}
 	else if (errno != 0) {
-		sprintf(buffer, "int() literal too large: %.200s", s);
+		PyOS_snprintf(buffer, sizeof(buffer),
+			      "int() literal too large: %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
 	}
@@ -257,7 +259,7 @@ static PyObject *
 int_repr(PyIntObject *v)
 {
 	char buf[20];
-	sprintf(buf, "%ld", v->ob_ival);
+	PyOS_snprintf(buf, sizeof(buf), "%ld", v->ob_ival);
 	return PyString_FromString(buf);
 }
 
@@ -820,7 +822,7 @@ int_oct(PyIntObject *v)
 	if (x == 0)
 		strcpy(buf, "0");
 	else
-		sprintf(buf, "0%lo", x);
+		PyOS_snprintf(buf, sizeof(buf), "0%lo", x);
 	return PyString_FromString(buf);
 }
 
@@ -829,7 +831,7 @@ int_hex(PyIntObject *v)
 {
 	char buf[100];
 	long x = v -> ob_ival;
-	sprintf(buf, "0x%lx", x);
+	PyOS_snprintf(buf, sizeof(buf), "0x%lx", x);
 	return PyString_FromString(buf);
 }
 
