@@ -44,7 +44,7 @@ Restrictions:
 
 \item
 The choice of which database package will be used
-(e.g. \refmodule{dbm} or \refmodule{gdbm}) depends on which interface
+(such as \refmodule{dbm} or \refmodule{gdbm}) depends on which interface
 is available.  Therefore it is not safe to open the database directly
 using \refmodule{dbm}.  The database is also (unfortunately) subject
 to the limitations of \refmodule{dbm}, if it is used --- this means
@@ -72,14 +72,14 @@ requires knowledge about the database implementation used.
 
 \begin{classdesc}{Shelf}{dict\optional{, binary=False}}
 A subclass of \class{UserDict.DictMixin} which stores pickled values in the
-\var{dict} object.  If the \var{binary} parameter is \constant{True}, binary
+\var{dict} object.  If the \var{binary} parameter is \code{True}, binary
 pickles will be used.  This can provide much more compact storage than plain
-text pickles, depending on the nature of the objects stored in the databse.
+text pickles, depending on the nature of the objects stored in the database.
 \end{classdesc}
 
 \begin{classdesc}{BsdDbShelf}{dict\optional{, binary=False}}
 A subclass of \class{Shelf} which exposes \method{first}, \method{next},
-{}\method{previous}, \method{last} and \method{set_location} which are
+\method{previous}, \method{last} and \method{set_location} which are
 available in the \module{bsddb} module but not in other database modules.
 The \var{dict} object passed to the constructor must support those methods.
 This is generally accomplished by calling one of \function{bsddb.hashopen},
@@ -88,8 +88,8 @@ This is generally accomplished by calling one of \function{bsddb.hashopen},
 class. 
 \end{classdesc}
 
-\begin{classdesc}{DbfilenameShelf}{dict\optional{, flag='c'}\optional{, binary=False}}
-A subclass of \class{Shelf} which accepts a filename instead of a dict-like
+\begin{classdesc}{DbfilenameShelf}{filename\optional{, flag='c'\optional{, binary=False}}}
+A subclass of \class{Shelf} which accepts a \var{filename} instead of a dict-like
 object.  The underlying file will be opened using \function{anydbm.open}.
 By default, the file will be created and opened for both read and write.
 The optional \var{binary} parameter has the same interpretation as for the
