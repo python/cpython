@@ -52,7 +52,7 @@ DL_IMPORT(int) Py_GetRecursionLimit(void);
    The Py_BEGIN_ALLOW_THREADS/Py_END_ALLOW_THREADS pair expands to a
    {}-surrounded block.
    To leave the block in the middle (e.g., with return), you must insert
-   a line containing RET_SAVE before the return, e.g.
+   a line containing Py_BLOCK_THREADS before the return, e.g.
 
 	if (...premature_exit...) {
 		Py_BLOCK_THREADS
@@ -70,7 +70,7 @@ DL_IMPORT(int) Py_GetRecursionLimit(void);
 	Py_UNBLOCK_THREADS
 
    For convenience, that the value of 'errno' is restored across
-   Py_END_ALLOW_THREADS and RET_SAVE.
+   Py_END_ALLOW_THREADS and Py_BLOCK_THREADS.
 
    WARNING: NEVER NEST CALLS TO Py_BEGIN_ALLOW_THREADS AND
    Py_END_ALLOW_THREADS!!!
