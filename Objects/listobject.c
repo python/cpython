@@ -665,7 +665,7 @@ docompare(x, y, compare)
 /* binarysort is the best method for sorting small arrays: it does
    few compares, but can do data movement quadratic in the number of
    elements.
-   [lo, hi) is a contiguous slice of the list, and is sorted via
+   [lo, hi) is a contiguous slice of a list, and is sorted via
    binary insertion.
    On entry, must have lo <= start <= hi, and that [lo, start) is already
    sorted (pass start == lo if you don't know!).
@@ -675,11 +675,10 @@ docompare(x, y, compare)
 */
 
 static int
-binarysort(lo, hi, start, list, compare)
+binarysort(lo, hi, start, compare)
 	PyObject **lo;
 	PyObject **hi;
 	PyObject **start;
-	PyListObject *list; /* Needed by docompare for paranoia checks */
 	PyObject *compare;/* Comparison function object, or NULL for default */
 {
 	/* assert lo <= start <= hi
@@ -717,7 +716,7 @@ binarysort(lo, hi, start, list, compare)
 }
 
 /* samplesortslice is the sorting workhorse.
-   [lo, hi) is a contiguous slice of the list, to be sorted in place.
+   [lo, hi) is a contiguous slice of a list, to be sorted in place.
    On entry, must have lo <= hi,
    If docompare complains (returns CMPERROR) return -1, else 0.
    Even in case of error, the output slice will be some permutation of
@@ -778,7 +777,7 @@ struct SamplesortStackNode {
 };
 
 /* The number of PPs we want is 2**k - 1, where 2**k is as close to
-   N / ln(N) as possible.  So k ~= lg(N / ln(N).  Calling libm routines
+   N / ln(N) as possible.  So k ~= lg(N / ln(N)).  Calling libm routines
    is undesirable, so cutoff values are canned in the "cutoff" table
    below:  cutoff[i] is the smallest N such that k == CUTOFFBASE + i. */
 #define CUTOFFBASE 4
@@ -810,10 +809,9 @@ static int cutoff[] = {
 };
 
 static int
-samplesortslice(lo, hi, list, compare)
+samplesortslice(lo, hi, compare)
 	PyObject **lo;
 	PyObject **hi;
-	PyListObject *list;  /* Needed by docompare for paranoia checks */
 	PyObject *compare;/* Comparison function object, or NULL for default */
 {
 	register PyObject **l, **r;
@@ -846,7 +844,7 @@ samplesortslice(lo, hi, list, compare)
 	/* [lo,r) is sorted, [r,hi) unknown.  Get out cheap if there are
 	   few unknowns, or few elements in total. */
 	if (hi - r <= MAXMERGE || n < MINSIZE)
-		return binarysort(lo, hi, r, list, compare);
+		return binarysort(lo, hi, r, compare);
 
 	/* Check for the array already being reverse-sorted.  Typical
 	   benchmark-driven silliness <wink>. */
@@ -865,7 +863,7 @@ samplesortslice(lo, hi, list, compare)
 			tmp = *l; *l = *r; *r = tmp;
 			++l;
 		} while (l < r);
-		return binarysort(lo, hi, originalr, list, compare);
+		return binarysort(lo, hi, originalr, compare);
 	}
 
 	/* ----------------------------------------------------------
@@ -907,7 +905,7 @@ samplesortslice(lo, hi, list, compare)
 	}
 
 	/* Recursively sort the preselected pivots. */
-	if (samplesortslice(lo, lo + extra, list, compare) < 0)
+	if (samplesortslice(lo, lo + extra, compare) < 0)
 		goto fail;
 
 	top = 0;          /* index of available stack slot */
@@ -932,8 +930,7 @@ samplesortslice(lo, hi, list, compare)
 				   This is rare, since the average size
 				   of a final block is only about
 				   ln(original n). */
-				if (samplesortslice(lo, hi, list,
-						    compare) < 0)
+				if (samplesortslice(lo, hi, compare) < 0)
 					goto fail;
 			}
 			else {
@@ -951,7 +948,7 @@ samplesortslice(lo, hi, list, compare)
 					} while (--k);
 				}
 				if (binarysort(lo - extra, hi, lo,
-					       list, compare) < 0)
+					       compare) < 0)
 					goto fail;
 			}
 
@@ -1024,18 +1021,14 @@ samplesortslice(lo, hi, list, compare)
 
 			/* slide r left, looking for key < pivot */
 			while (l < r) {
-				SETK(*r, pivot);
-				if (k < 0)
+				register PyObject *rval = *r--;
+				SETK(rval, pivot);
+				if (k < 0) {
+					/* swap and advance */
+					r[1] = *l;
+					*l++ = rval;
 					break;
-				else
-					--r;
-			}
-
-			/* swap and advance both pointers */
-			if (l < r) {
-				tmp = *l; *l = *r; *r = tmp;
-				++l;
-				--r;
+				}
 			}
 
 		} while (l < r);
@@ -1131,7 +1124,7 @@ listsort(self, compare)
 	self->ob_type = &immutable_list_type;
 	err = samplesortslice(self->ob_item,
 			      self->ob_item + self->ob_size,
-			      self, compare);
+			      compare);
 	self->ob_type = &PyList_Type;
 	if (err < 0)
 		return NULL;
@@ -1402,3 +1395,4 @@ static PyTypeObject immutable_list_type = {
 	&immutable_list_as_sequence,	/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
 };
+
