@@ -53,10 +53,9 @@ Think/Symantec C but you are basically on your own.
 Neeracher. The original CWGUSI is
 obtainable from <A
 HREF="ftp://sunsite.cnlab-switch.ch/software/platform/macos/src">
-ftp://sunsite.cnlab-switch.ch/software/platform/macos/src</A>,
-but at the moment Python is built with a rather hacked-up version of GUSI,
-available from Jack's Python webpage and ftp-directory referenced above.
-It is also possible to build a non-GUSI Python, see below.
+ftp://sunsite.cnlab-switch.ch/software/platform/macos/src</A>.
+At the moment Python is built with a rather hacked-up version of GUSI,
+these modifications are available in folder <code>Python:Mac:GUSI-mods</code>.
 
 </UL>
 
@@ -131,23 +130,12 @@ Top-level-folder:
 
 First build GUSI. If you didn't get the python-specific GUSI you have to 
 move the files from the "CWGUSI-mods" to the right
-place in the CWGUSI distribution folder, and build the
-projects <code>GUSI.68K.µ</code>, <code>GUSI.CFM68K.µ</code> and
-<code>GUSI.PPC.µ</code>.
-Two notes:
-<ul>
-<li> The projects as distributed have a slightly incorrect access path, due
-to which they cannot find their <code>GUSICWFile.???</code> files. Change
-the access path to <code>{project folder}::</code> to fix this.
-<li> The Gusi CFM68K project is
-distributed without "far data": you should set this option before building.
-</ul> 
-If you have a CWGUSI version more recent than
-1.8 it could be that the fixes are already included, check it. Alternatively,
-you can forget about the fixes and remove the one reference to GUSILoadPreferences
-in the Python sources. This will disable the "default file creator/type" and
-"Delay Sioux window" preferences in Python.
+place in the CWGUSI distribution folder. Build the
+projects <code>MSLGUSI.68K.µ</code>, <code>MSLGUSI.CFM68K.µ</code> and
+<code>MSLGUSI.PPC.µ</code>. <p>
 
+If you have a CWGUSI version more recent than
+1.8 it could be that the fixes are already included, check it. 
 Next, in
 <code>MoreFiles</code>, <code>libjpeg</code>, <code>pbmplus</code>,
 <code>zlib</code>, <code>libpng</code>, <code>gdbm</code>,
@@ -158,11 +146,14 @@ static 68K, CFM68K or PPC you can skip building the other libraries.
 
 <H2><A NAME="tcltk">Building Tcl/Tk</H2>
 
-You need to make a minor organizational change to the Tcl/Tk
+You need to make some minor changes to the Tcl/Tk
 distribution. The current instructions are for the
 <code>tcl7.6</code> and <code>tk4.2</code> distribution:
 
 <UL>
+
+<LI> You have to change the access path setting and such to use the MSL
+libraries (this tcl/tk ditribution predates MSL).
 
 <LI> Rename the <code>compat</code> folders to <code>(compat)</code>
 in both the Tcl and Tk folders.
@@ -196,8 +187,6 @@ This is easiest done by building <code>SimpleTk</code> and copying the TEXT, ICO
 and CRSR resources from it to <code>tkresources.rsrc</code>. This allows
 the <code>_tkinter</code> module to work without an installed Tk/Tcl on your
 machine.
-
-<LI> You have to adapt the projects to use the MSL libraries. This is important.
 
 </UL>
 
@@ -430,7 +419,11 @@ use it (and one that isn't rebuilt in the process: you cannot rebuild
 a running program). You could copy the 68K interpreter to a different
 place and use that to run fullbuild, or use the standalone PPC python
 for this. I tend to keep a standalone interpreter in a safe place for
-this use only.
+this use only. <p>
+
+Using fullbuild is also the only easy way to buid the fat application and applet.
+See the fullbuild source for details on how to build the fat binaries "by hand".
+
 </BLOCKQUOTE>
 
 You are all set now, and should read the release notes and
