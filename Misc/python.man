@@ -27,6 +27,12 @@ python \- an interpreted, interactive, object-oriented programming language
 [
 .B \-x
 ]
+[
+.B \-h
+]
+[
+.B \-V
+]
 .br
        [
 .B \-c
@@ -103,6 +109,12 @@ at exit.
 Skip the first line of the source.  This is intended for a DOS
 specific hack only.  Warning: the line numbers in error messages will
 be off by one!
+.TP
+.B \-h
+Prints the usage for the interpreter executable and exits.
+.TP
+.B \-V
+Prints the Python version number of the executable and exits.
 .TP
 .BI "\-c " command
 Specify the command to execute (see next section).
