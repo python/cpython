@@ -194,7 +194,12 @@ Monterey*)
     case $CC in
     cc) CC="$CC -Wl,-Bexport";;
     esac;;
+SunOS*)
+    # Some functions have a prototype only with that define, e.g. confstr
+    AC_DEFINE(__EXTENSIONS__)
+    ;;
 esac
+
 
 AC_SUBST(LIBRARY)
 AC_MSG_CHECKING(LIBRARY)

@@ -90,6 +90,9 @@
 /* Define to `long' if <time.h> doesn't define.  */
 #undef clock_t
 
+/* Defined on Solaris to see additional function prototypes. */
+#undef __EXTENSIONS__
+
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
