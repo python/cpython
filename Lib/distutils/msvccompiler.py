@@ -321,10 +321,6 @@ class MSVCCompiler (CCompiler) :
 
             if debug:
                 ldflags = self.ldflags_shared_debug
-                # XXX not sure this belongs here
-                # extensions in debug_mode are named 'module_d.pyd'
-                basename, ext = os.path.splitext (output_filename)
-                output_filename = basename + '_d' + ext
             else:
                 ldflags = self.ldflags_shared
 
