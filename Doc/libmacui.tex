@@ -66,10 +66,10 @@ handling.
 
 The \code{FrameWork} is still very much work-in-progress, and the
 documentation describes only the most important functionality, and not
-in the most logical manner at that. Examine the source for more
-esoteric needs. 
+in the most logical manner at that. Examine the source or the examples
+for more details.
 
-The \code{EasyDialogs} module defines the following functions:
+The \code{FrameWork} module defines the following functions:
 
 \renewcommand{\indexsubitem}{(in module FrameWork)}
 
@@ -117,6 +117,14 @@ which the window belongs. The window is not displayed until later.
 Creates a modeless dialog window.
 \end{funcdesc}
 
+\begin{funcdesc}{windowbounds}{width\, height}
+Return a \code{(left, top, right, bottom)} tuple suitable for creation
+of a window of given width and height. The window will be staggered
+with respect to previous windows, and an attempt is made to keep the
+whole window on-screen. The window will however always be exact the
+size given, so parts may be offscreen.
+\end{funcdesc}
+
 
 \subsection{Application objects}
 Application objects have the following methods, among others:
@@ -161,8 +169,9 @@ through the the \code{DialogWindow} object involved). Override if you
 need special handling of dialog events (keyboard shortcuts, etc).
 \end{funcdesc}
 
-\begin{funcdesc}{idle}{}
-Called by the main event loop when no events are available.
+\begin{funcdesc}{idle}{event}
+Called by the main event loop when no events are available. The
+null-event is passed (so you can look at mouse position, etc).
 \end{funcdesc}
 
 \subsection{Window Objects}
@@ -200,6 +209,74 @@ An update event for the window was received. Redraw the window.
 \begin{funcdesc}{do_activate}{activate\, event}
 The window was activated (\code{activate==1}) or deactivated
 (\code{activate==0}). Handle things like focus highlighting, etc.
+\end{funcdesc}
+
+\subsection{ControlsWindow Object}
+
+ControlsWindow objects have the following methods besides those of
+\code{Window} objects:
+
+\renewcommand{\indexsubitem}{(ControlsWindow method)}
+
+\begin{funcdesc}{do_controlhit}{window\, control\, pcode\, event}
+Part \code{pcode} of control \code{control} was hit by the
+user. Tracking and such has already been taken care of.
+\end{funcdesc}
+
+\subsection{ScrolledWindow Object}
+
+ScrolledWindow objects are ControlsWindow objects with the following
+extra mathods:
+
+\renewcommand{\indexsubitem}{(ScrolledWindow method)}
+
+\begin{funcdesc}{scrollbars}{\optional{wantx\, wanty}}
+Create (or destroy) horizontal and vertical scrollbars. The arguments
+specify which you want (default: both). The scrollbars always have
+minimum \code{0} and maximum \code{32767}.
+\end{funcdesc}
+
+\begin{funcdesc}{getscrollbarvalues}{}
+You must supply this method. It should return a tuple \code{x, y}
+giving the current position of the scrollbars (between \code{0} and
+\code{32767}). You can return \code{None} for either to indicate the
+whole document is visible in that direction.
+\end{funcdesc}
+
+\begin{funcdesc}{updatescrollbars}{}
+Call this method when the document has changed. It will call
+\code{getscrollbarvalues} and update the scrollbars.
+\end{funcdesc}
+
+\begin{funcdesc}{scrollbar_callback}{which\, what\, value}
+Supplied by you and called after user interaction. \code{Which} will
+be \code{'x'} or \code{'y'}, \code{what} will be \code{'-'},
+\code{'--'}, \code{'set'}, \code{'++'} or \code{'+'}. For
+\code{'set'}, \code{value} will contain the new scrollbar position.
+\end{funcdesc}
+
+\begin{funcdesc}{scalebarvalues}{absmin\, absmax\, curmin\, curmax}
+Auxiliary method to help you calculate values to return from
+\code{getscrollbarvalues}. You pass document minimum and maximum value
+and topmost (leftmost) and bottommost (rightmost) visible values and
+it returns the correct number or \code{None}.
+\end{funcdesc}
+
+\begin{funcdesc}{do_activate}{onoff\, event}
+Takes care of dimming/highlighting scrollbars when a window becomes
+frontmost vv. If you override this method call this one at the end of
+your method.
+\end{funcdesc}
+
+\begin{funcdesc}{do_postresize}{width\, height\, window}
+Moves scrollbars to the correct position. Call this method initially
+if you override it.
+\end{funcdesc}
+
+\begin{funcdesc}{do_controlhit}{window\, control\, pcode\, event}
+Handles scrollbar interaction. If you override it call this method
+first, a nonzero return value indicates the hit was in the scrollbars
+and has been handled.
 \end{funcdesc}
 
 \subsection{DialogWindow Objects}

@@ -6,10 +6,10 @@
 This module provides an interface to the Macintosh TCP/IP driver
 MacTCP\@. There is an accompanying module \code{macdnr} which provides an
 interface to the name-server (allowing you to translate hostnames to
-ip-addresses), a module \code{MACTCP} which has symbolic names for
-constants constants used by MacTCP and a wrapper module \code{socket}
-which mimics the \UNIX{} socket interface (as far as possible).  It may
-not be available in all Mac Python versions.
+ip-addresses), a module \code{MACTCPconst} which has symbolic names for
+constants constants used by MacTCP. Since the builtin module
+\code{socket} is also available on the mac it is usually easier to use
+sockets in stead of the mac-specific MacTCP API.
 
 A complete description of the MacTCP interface can be found in the
 Apple MacTCP API documentation.

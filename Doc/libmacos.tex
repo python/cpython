@@ -72,3 +72,19 @@ window-switching capability.
 \begin{funcdesc}{GetErrorString}{errno}
 Return the textual description of MacOS error code \var{errno}.
 \end{funcdesc}
+
+\begin{funcdesc}{splash}{resid}
+This function will put a splash window
+on-screen, with the contents of the DLOG resource specified by
+\code{resid}. Calling with a zero argument will remove the splash
+screen. This function is useful if you want to post a splash screen
+early in initialization without first having to load numerous
+extension modules.
+\end{funcdesc}
+
+\begin{funcdesc}{openrf}{name \optional{\, mode}}
+Open the resource fork of a file. Arguments are the same as for the
+builtin function \code{open}. The object returned has file-like
+semantics, but it is not a python file object, so there may be subtle
+differences.
+\end{funcdesc}
