@@ -1,4 +1,5 @@
 # Module 'shutil' -- utility functions usable in a shell-like program
+# XXX The copy*() functions here don't copy the data fork on Mac
 
 import os
 
@@ -8,12 +9,21 @@ MODEBITS = 010000	# Lower 12 mode bits
 # Copy data from src to dst
 #
 def copyfile(src, dst):
-	fsrc = open(src, 'r')
-	fdst = open(dst, 'w')
-	while 1:
-		buf = fsrc.read(16*1024)
-		if not buf: break
-		fdst.write(buf)
+	fsrc = None
+	fdst = None
+	try:
+		fsrc = open(src, 'rb')
+		fdst = open(dst, 'wb')
+		while 1:
+			buf = fsrc.read(16*1024)
+			if not buf:
+				break
+			fdst.write(buf)
+	finally:
+		if fdst:
+			fdst.close()
+		if fsrc:
+			fsrc.close()
 
 # Copy mode bits from src to dst
 #
