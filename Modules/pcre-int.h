@@ -3,7 +3,7 @@
 *************************************************/
 
 
-#define PCRE_VERSION       "1.01 19-Nov-1997"
+#define PCRE_VERSION       "1.02 12-Dec-1997"
 
 
 /* This is a library of functions to support regular expressions whose syntax
@@ -114,7 +114,7 @@ enum { ESC_A = 1, ESC_B, ESC_b, ESC_D, ESC_d, ESC_S, ESC_s, ESC_W, ESC_w,
 
 /* Opcode table: OP_BRA must be last, as all values >= it are used for brackets
 that extract substrings. Starting from 1 (i.e. after OP_END), the values up to
-OP_EOL must correspond in order to the list of escapes immediately above. */
+OP_EOD must correspond in order to the list of escapes immediately above. */
 
 enum {
   OP_END,            /* End of pattern */
@@ -131,8 +131,7 @@ enum {
   OP_NOT_WORDCHAR,       /* \W */
   OP_WORDCHAR,           /* \w */
   OP_CUT,            /* The analogue of Prolog's "cut" operation (extension) */
-  OP_EOD,            /* End of data: or \Z. This must always be the last
-                        of the backslashed meta values. */
+  OP_EOD,            /* End of data: \Z. */
 
   OP_NOT_WORD_BOUNDARY_L,  /* localized \B */
   OP_WORD_BOUNDARY_L,      /* localized \b */
