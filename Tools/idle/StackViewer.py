@@ -199,7 +199,6 @@ class NamespaceViewer:
             height = 20*len(dict) # XXX 20 == observed height of Entry widget
         self.master = master
         self.title = title
-        self.dict = dict
         self.repr = Repr()
         self.repr.maxstring = 60
         self.repr.maxother = 60
@@ -219,11 +218,16 @@ class NamespaceViewer:
         self.sfid = canvas.create_window(0, 0, window=subframe, anchor="nw")
         self.load_dict(dict)
     
+    dict = -1
+    
     def load_dict(self, dict):
+        if dict is self.dict:
+            return
         subframe = self.subframe
         frame = self.frame
         for c in subframe.children.values():
             c.destroy()
+        self.dict = None
         if not dict:
             l = Label(subframe, text="None")
             l.grid(row=0, column=0)
@@ -242,6 +246,7 @@ class NamespaceViewer:
     ##            l["state"] = "disabled"
                 l.grid(row=row, column=1, sticky="nw")
                 row = row+1
+        self.dict = dict
         # XXX Could we use a <Configure> callback for the following?
         subframe.update_idletasks() # Alas!
         width = subframe.winfo_reqwidth()
