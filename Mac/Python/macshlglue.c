@@ -1,21 +1,23 @@
 /*
-** mac shared lib glue.
-**
-** Partially stolen from MW Startup.c, which is
-**	Copyright © 1993 metrowerks inc. All Rights Reserved.
+** Mac shared lib glue.
 */
 
+#ifdef __powerc
 #include <CPlusLibPPC.h>
+#endif
 #include <Quickdraw.h>
 #include <SegLoad.h>
-#include <setjmp.h>
 #include <FragLoad.h>
 #include <Files.h>
 #include <Resources.h>
 
+#ifdef __MWERKS__
+/*
+** This part is copied from MW Startup.c, which is
+**	Copyright © 1993 metrowerks inc. All Rights Reserved.
+*/
+#include <setjmp.h>
 #include <stdio.h>
-
-char *macstrerror();
 
 DestructorChain	*__local_destructor_chain;	/*	chain of local objects that need destruction	*/
 
@@ -26,17 +28,22 @@ jmp_buf __program_exit;				/*	exit() does a longjmp() to here		*/
 void (*__atexit_hook)(void);		/*	atexit()  sets this up if it is ever called	*/
 void (*___atexit_hook)(void);		/*	_atexit() sets this up if it is ever called	*/
 int __aborting;						/*	abort() sets this and longjmps to __program_exit	*/
+#endif
 
-int library_fss_valid;
-FSSpec library_fss;
+/*
+** Variables passed from shared lib initialization to PyMac_AddLibResources.
+*/
+static int library_fss_valid;
+static FSSpec library_fss;
+
 /*
 ** Routine called upon fragment load. We attempt to save the FSSpec from which we're
 ** loaded. We always return noErr (we just continue without the resources).
 */
-OSErr
+OSErr pascal
 __sinit(InitBlockPtr data)
 {
-	if ( data == NULL ) return noErr;
+	if ( data == nil ) return noErr;
 	if ( data->fragLocator.where == kOnDiskFlat ) {
 		library_fss = *data->fragLocator.u.onDisk.fileSpec;
 		library_fss_valid = 1;
@@ -62,4 +69,4 @@ PyMac_AddLibResources()
 		return;
 	fd = FSpOpenResFile(&library_fss, fsRdPerm);
 }
-   	
+
