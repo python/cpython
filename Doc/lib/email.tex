@@ -318,4 +318,300 @@ function in the \refmodule{email.Iterators} module.
 
 \subsection{Examples}
 
-Coming soon...
+Here are a few examples of how to use the \module{email} package to
+read, write, and send simple email messages, as well as more complex
+MIME messages.
+
+First, let's see how to create and send a simple text message:
+
+\begin{verbatim}
+# Import smtplib for the actual sending function
+import smtplib
+
+# Here are the email pacakge modules we'll need
+from email import Encoders
+from email.MIMEText import MIMEText
+
+# Open a plain text file for reading
+fp = open(textfile)
+# Create a text/plain message, using Quoted-Printable encoding for non-ASCII
+# characters.
+msg = MIMEText(fp.read(), _encoder=Encoders.encode_quopri)
+fp.close()
+
+# me == the sender's email address
+# you == the recipient's email address
+msg['Subject'] = 'The contents of \%s' \% textfile
+msg['From'] = me
+msg['To'] = you
+
+# Send the message via our own SMTP server.  Use msg.as_string() with
+# unixfrom=0 so as not to confuse SMTP.
+s = smtplib.SMTP()
+s.connect()
+s.sendmail(me, [you], msg.as_string(0))
+s.close()
+\end{verbatim}
+
+Here's an example of how to send a MIME message containing a bunch of
+family pictures:
+
+\begin{verbatim}
+# Import smtplib for the actual sending function
+import smtplib
+
+# Here are the email pacakge modules we'll need
+from email.MIMEImage import MIMEImage
+from email.MIMEBase import MIMEBase
+
+COMMASPACE = ', '
+
+# Create the container (outer) email message.
+# me == the sender's email address
+# family = the list of all recipients' email addresses
+msg = MIMEBase('multipart', 'mixed')
+msg['Subject'] = 'Our family reunion'
+msg['From'] = me
+msg['To'] = COMMASPACE.join(family)
+msg.preamble = 'Our family reunion'
+# Guarantees the message ends in a newline
+msg.epilogue = ''
+
+# Assume we know that the image files are all in PNG format
+for file in pngfiles:
+    # Open the files in binary mode.  Let the MIMEIMage class automatically
+    # guess the specific image type.
+    fp = open(file, 'rb')
+    img = MIMEImage(fp.read())
+    fp.close()
+    msg.attach(img)
+
+# Send the email via our own SMTP server.
+s = smtplib.SMTP()
+s.connect()
+s.sendmail(me, family, msg.as_string(unixfrom=0))
+s.close()
+\end{verbatim}
+
+Here's an example\footnote{Thanks to Matthew Dixon Cowles for the
+original inspiration and examples.} of how to send the entire contents
+of a directory as an email message:
+
+\begin{verbatim}
+#!/usr/bin/env python
+
+"""Send the contents of a directory as a MIME message.
+
+Usage: dirmail [options] from to [to ...]*
+
+Options:
+    -h / --help
+        Print this message and exit.
+
+    -d directory
+    --directory=directory
+        Mail the contents of the specified directory, otherwise use the
+        current directory.  Only the regular files in the directory are sent,
+        and we don't recurse to subdirectories.
+
+`from' is the email address of the sender of the message.
+
+`to' is the email address of the recipient of the message, and multiple
+recipients may be given.
+
+The email is sent by forwarding to your local SMTP server, which then does the
+normal delivery process.  Your local machine must be running an SMTP server.
+"""
+
+import sys
+import os
+import getopt
+import smtplib
+# For guessing MIME type based on file name extension
+import mimetypes
+
+from email import Encoders
+from email.Message import Message
+from email.MIMEAudio import MIMEAudio
+from email.MIMEBase import MIMEBase
+from email.MIMEImage import MIMEImage
+from email.MIMEText import MIMEText
+
+COMMASPACE = ', '
+
+
+def usage(code, msg=''):
+    print >> sys.stderr, __doc__
+    if msg:
+        print >> sys.stderr, msg
+    sys.exit(code)
+
+
+def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'hd:', ['help', 'directory='])
+    except getopt.error, msg:
+        usage(1, msg)
+
+    dir = os.curdir
+    for opt, arg in opts:
+        if opt in ('-h', '--help'):
+            usage(0)
+        elif opt in ('-d', '--directory'):
+            dir = arg
+
+    if len(args) < 2:
+        usage(1)
+
+    sender = args[0]
+    recips = args[1:]
+    
+    # Create the enclosing (outer) message
+    outer = MIMEBase('multipart', 'mixed')
+    outer['Subject'] = 'Contents of directory \%s' \% os.path.abspath(dir)
+    outer['To'] = sender
+    outer['From'] = COMMASPACE.join(recips)
+    outer.preamble = 'You will not see this in a MIME-aware mail reader.\n'
+    # To guarantee the message ends with a newline
+    outer.epilogue = ''
+
+    for filename in os.listdir(dir):
+        path = os.path.join(dir, filename)
+        if not os.path.isfile(path):
+            continue
+        # Guess the Content-Type: based on the file's extension.  Encoding
+        # will be ignored, although we should check for simple things like
+        # gzip'd or compressed files
+        ctype, encoding = mimetypes.guess_type(path)
+        if ctype is None or encoding is not None:
+            # No guess could be made, or the file is encoded (compressed), so
+            # use a generic bag-of-bits type.
+            ctype = 'application/octet-stream'
+        maintype, subtype = ctype.split('/', 1)
+        if maintype == 'text':
+            fp = open(path)
+            # Note: we should handle calculating the charset
+            msg = MIMEText(fp.read(), _subtype=subtype)
+            fp.close()
+        elif maintype == 'image':
+            fp = open(path, 'rb')
+            msg = MIMEImage(fp.read(), _subtype=subtype)
+            fp.close()
+        elif maintype == 'audio':
+            fp = open(path, 'rb')
+            msg = MIMEAudio(fp.read(), _subtype=subtype)
+            fp.close()
+        else:
+            fp = open(path, 'rb')
+            msg = MIMEBase(maintype, subtype)
+            msg.add_payload(fp.read())
+            fp.close()
+            # Encode the payload using Base64
+            Encoders.encode_base64(msg)
+        # Set the filename parameter
+        msg.add_header('Content-Disposition', 'attachment', filename=filename)
+        outer.attach(msg)
+
+    fp = open('/tmp/debug.pck', 'w')
+    import cPickle
+    cPickle.dump(outer, fp)
+    fp.close()
+    # Now send the message
+    s = smtplib.SMTP()
+    s.connect()
+    s.sendmail(sender, recips, outer.as_string(0))
+    s.close()
+
+
+if __name__ == '__main__':
+    main()
+\end{verbatim}
+
+And finally, here's an example of how to unpack a MIME message like
+the one above, into a directory of files:
+
+\begin{verbatim}
+#!/usr/bin/env python
+
+"""Unpack a MIME message into a directory of files.
+
+Usage: unpackmail [options] msgfile
+
+Options:
+    -h / --help
+        Print this message and exit.
+
+    -d directory
+    --directory=directory
+        Unpack the MIME message into the named directory, which will be
+        created if it doesn't already exist.
+
+msgfile is the path to the file containing the MIME message.
+"""
+
+import sys
+import os
+import getopt
+import errno
+import mimetypes
+import email
+
+
+def usage(code, msg=''):
+    print >> sys.stderr, __doc__
+    if msg:
+        print >> sys.stderr, msg
+    sys.exit(code)
+
+
+def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'hd:', ['help', 'directory='])
+    except getopt.error, msg:
+        usage(1, msg)
+
+    dir = os.curdir
+    for opt, arg in opts:
+        if opt in ('-h', '--help'):
+            usage(0)
+        elif opt in ('-d', '--directory'):
+            dir = arg
+
+    try:
+        msgfile = args[0]
+    except IndexError:
+        usage(1)
+
+    try:
+        os.mkdir(dir)
+    except OSError, e:
+        # Ignore directory exists error
+        if e.errno <> errno.EEXIST: raise
+
+    fp = open(msgfile)
+    msg = email.message_from_file(fp)
+    fp.close()
+
+    counter = 1
+    for part in msg.walk():
+        # multipart/* are just containers
+        if part.get_main_type() == 'multipart':
+            continue
+        # Applications should really sanitize the given filename so that an
+        # email message can't be used to overwrite important files
+        filename = part.get_filename()
+        if not filename:
+            ext = mimetypes.guess_extension(part.get_type())
+            if not ext:
+                # Use a generic bag-of-bits extension
+                ext = '.bin'
+            filename = 'part-\%03d\%s' \% (counter, ext)
+        counter += 1
+        fp = open(os.path.join(dir, filename), 'wb')
+        fp.write(part.get_payload(decode=1))
+        fp.close()
+
+
+if __name__ == '__main__':
+    main()
+\end{verbatim}
