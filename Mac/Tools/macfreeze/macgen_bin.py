@@ -190,8 +190,12 @@ def copyres(input, output, *args, **kwargs):
 def findpythoncore():
 	"""find the PythonCore shared library, possibly asking the user if we can't find it"""
 	
-	vRefNum, dirID = macfs.FindFolder(kOnSystemDisk, kSharedLibrariesFolderType, 0)
-	extpath = macfs.FSSpec((vRefNum, dirID, "")).as_pathname()
+	try:
+		vRefNum, dirID = macfs.FindFolder(kOnSystemDisk, kSharedLibrariesFolderType, 0)
+	except macfs.error:
+		extpath = ":"
+	else:
+		extpath = macfs.FSSpec((vRefNum, dirID, "")).as_pathname()
 	version = string.split(sys.version)[0]
 	if MacOS.runtimemodel == 'carbon':
 		corename = "PythonCoreCarbon " + version
