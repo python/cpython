@@ -84,7 +84,7 @@ class PyShellEditorWindow(EditorWindow):
 
         # whenever a file is changed, restore breakpoints
         if self.io.filename: self.restore_file_breaks()
-        def filename_changed_hook(self,old_hook=self.io.filename_change_hook):
+        def filename_changed_hook(old_hook=self.io.filename_change_hook,self=self):
             self.restore_file_breaks()
             old_hook()
         self.io.set_filename_change_hook(filename_changed_hook)
@@ -161,18 +161,19 @@ class PyShellEditorWindow(EditorWindow):
         for line in lines:
             if not line.startswith(filename+"="):
                 new_file.write(line)
-        new_file.write(filename+"="+`self.get_current_breaks()`)
+        new_file.write(filename+"="+`self.get_current_breaks()`+"\n")
         new_file.close()
 
     def restore_file_breaks(self):
         self.text.update()   # this enables setting "BREAK" tags to be visible
         filename=self.io.filename
-        lines=open(self.breakpointPath,"r").readlines()
-        for line in lines:
-            if line.startswith(filename+"="):
-                breakpoint_linenumbers=eval(line[len(filename)+1:]) 
-                for breakpoint_linenumber in breakpoint_linenumbers:
-                    self.set_breakpoint(breakpoint_linenumber)
+        if os.path.isfile(self.breakpointPath):
+            lines=open(self.breakpointPath,"r").readlines()
+            for line in lines:
+                if line.startswith(filename+"="):
+                    breakpoint_linenumbers=eval(line[len(filename)+1:]) 
+                    for breakpoint_linenumber in breakpoint_linenumbers:
+                        self.set_breakpoint(breakpoint_linenumber)
 
     def get_current_breaks(self):
         #
