@@ -539,11 +539,15 @@ builtin_execfile(PyObject *self, PyObject *args)
 	PyCompilerFlags cf;
 	int exists;
 
-	if (!PyArg_ParseTuple(args, "s|O!O!:execfile",
+	if (!PyArg_ParseTuple(args, "s|O!O:execfile",
 			&filename,
 			&PyDict_Type, &globals,
-			&PyDict_Type, &locals))
+			&locals))
 		return NULL;
+	if (locals != Py_None && !PyMapping_Check(locals)) {
+		PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
+		return NULL;
+	}
 	if (globals == Py_None) {
 		globals = PyEval_GetGlobals();
 		if (locals == Py_None)
