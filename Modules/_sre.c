@@ -17,6 +17,7 @@
  * 00-08-07 fl  use PyOS_CheckStack() if available
  * 00-08-08 fl  changed findall to return empty strings instead of None
  * 00-08-27 fl  properly propagate memory errors
+ * 00-09-02 fl  return -1 instead of None for start/end/span
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *
@@ -1983,11 +1984,7 @@ match_start(MatchObject* self, PyObject* args)
         return NULL;
     }
 
-    if (self->mark[index*2] < 0) {
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-
+    /* mark is -1 if group is undefined */
     return Py_BuildValue("i", self->mark[index*2]);
 }
 
@@ -2010,11 +2007,7 @@ match_end(MatchObject* self, PyObject* args)
         return NULL;
     }
 
-    if (self->mark[index*2] < 0) {
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-
+    /* mark is -1 if group is undefined */
     return Py_BuildValue("i", self->mark[index*2+1]);
 }
 
@@ -2064,12 +2057,7 @@ match_span(MatchObject* self, PyObject* args)
         return NULL;
     }
 
-    if (self->mark[index*2] < 0) {
-        Py_INCREF(Py_None);
-        Py_INCREF(Py_None);
-        return Py_BuildValue("OO", Py_None, Py_None);
-    }
-
+    /* marks are -1 if group is undefined */
     return _pair(self->mark[index*2], self->mark[index*2+1]);
 }
 

@@ -46,7 +46,7 @@ def test(expression, result, exception=None):
 if verbose:
     print 'Running tests on character literals'
 
-for i in range(0, 256):
+for i in [0, 8, 16, 32, 64, 127, 128, 255]:
     test(r"""sre.match("\%03o" % i, chr(i)) != None""", 1)
     test(r"""sre.match("\%03o0" % i, chr(i)+"0") != None""", 1)
     test(r"""sre.match("\%03o8" % i, chr(i)+"8") != None""", 1)
@@ -72,6 +72,11 @@ test(r"""sre.match('a*', 'xxx').span()""", (0, 0))
 test(r"""sre.match('x*', 'xxxa').span(0)""", (0, 3))
 test(r"""sre.match('x*', 'xxxa').span()""", (0, 3))
 test(r"""sre.match('a+', 'xxx')""", None)
+
+# bug 113254
+test(r"""sre.match('(a)|(b)', 'b').start(1)""", -1)
+test(r"""sre.match('(a)|(b)', 'b').end(1)""", -1)
+test(r"""sre.match('(a)|(b)', 'b').span(1)""", (-1, -1))
 
 if verbose:
     print 'Running tests on sre.sub'
