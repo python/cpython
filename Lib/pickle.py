@@ -475,7 +475,7 @@ class Pickler:
                     self.write(BININT1 + chr(obj))
                     return
                 if obj <= 0xffff:
-                    self.write(BININT2 + chr(obj&0xff) + chr(obj>>8))
+                    self.write("%c%c%c" % (BININT2, obj&0xff, obj>>8))
                     return
             # Next check for 4-byte signed ints:
             high_bits = obj >> 31  # note that Python shift sign-extends
@@ -747,7 +747,7 @@ class Pickler:
                 if code <= 0xff:
                     write(EXT1 + chr(code))
                 elif code <= 0xffff:
-                    write(EXT2 + chr(code&0xff) + chr(code>>8))
+                    write("%c%c%c" % (EXT2, code&0xff, code>>8))
                 else:
                     write(EXT4 + pack("<i", code))
                 return
