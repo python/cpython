@@ -19,9 +19,9 @@
 ;;; Commentary:
 
 ;; This is a major mode for editing Python programs.  It was developed
-;; by Tim Peters after an original idea by Michael A. Guravage.  In
-;; 1995, Barry Warsaw inherited the mode after Tim left the net, and
-;; is the current maintainer.
+;; by Tim Peters after an original idea by Michael A. Guravage.  Tim
+;; subsequently left the net; in 1995, Barry Warsaw inherited the
+;; mode and is the current maintainer.
 
 ;; At some point this mode will undergo a rewrite to bring it more in
 ;; line with GNU Emacs Lisp coding standards, and to wax all the Emacs
