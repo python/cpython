@@ -142,7 +142,7 @@ def check_environ ():
     _environ_checked = 1
 
 
-def subst_vars (str, local_vars):
+def subst_vars (s, local_vars):
     """Perform shell/Perl-style variable substitution on 'string'.  Every
     occurrence of '$' followed by a name is considered a variable, and
     variable is substituted by the value found in the 'local_vars'
@@ -160,7 +160,7 @@ def subst_vars (str, local_vars):
             return os.environ[var_name]
 
     try:
-        return re.sub(r'\$([a-zA-Z_][a-zA-Z_0-9]*)', _subst, str)
+        return re.sub(r'\$([a-zA-Z_][a-zA-Z_0-9]*)', _subst, s)
     except KeyError, var:
         raise ValueError, "invalid variable '$%s'" % var
 
