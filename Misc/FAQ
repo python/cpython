@@ -6,8 +6,8 @@ Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.12
-Last-modified: 25 July 1994
+Version: 1.14
+Last-modified: 23 September 1994
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -40,6 +40,9 @@ There's a mail server on that machine which will send you files from
 the archive by e-mail if you have no ftp access.  You send a e-mail
 message to mail-server@rtfm.mit.edu containing the single word help in
 the message body to receive instructions.
+
+Skip Montanaro <skip@automatrix.com> maintains an HTML version of this
+FAQ.  The URL is "http://www.automatrix.com/~skip/python-faq.html".
 
 This FAQ is divided in the following chapters:
 
@@ -75,8 +78,9 @@ Here's an overview of the questions per chapter:
   2.2. Q. Have any significant projects been done in Python?
   2.3. Q. Are there any commercial projects going on using Python?
   2.4. Q. How stable is Python?
-  2.5. Q. What new developments are expected for Python in the future?
-  2.6. Q. Is it reasonable to propose incompatible changes to Python?
+  2.5. Q. When will the next version be released?
+  2.6. Q. What new developments are expected for Python in the future?
+  2.7. Q. Is it reasonable to propose incompatible changes to Python?
 
  3. Building Python
   3.1. Q. Is there a test set?
@@ -90,7 +94,10 @@ Here's an overview of the questions per chapter:
   3.6. Q. When building on the SGI, make tries to run python to create
        glmodule.c, but python hasn't been built or installed yet.
   3.7. Q. Python built with gcc for the DEC Alpha doesn't work.
-  3.8. Q. Other trouble building Python on platform X.
+  3.8. Q. I use VPATH but some targets are built in the source directory.
+  3.9. Q. Trouble building or linking with the GNU readline library.
+  3.10. Q. Trouble building Python on Linux.
+  3.11. Q. Other trouble building Python on platform X.
 
  4. Programming in Python
   4.1. Q. Is there a source code level debugger with breakpoints, step,
@@ -109,14 +116,34 @@ Here's an overview of the questions per chapter:
   4.8. Q. When I have imported a module, then edit it, and import it
        again (into the same Python process), the changes don't seem to take
        place.  What is going on?
-  4.9. Q. I have a module in which I want to execute some extra code when it
-       is run as a script.  How do I find out whether I am running as a
-       script?
-  4.10. Q. I try to run a program from the Demo directory but it fails with
+  4.9. Q. How do I find the current module name?
+  4.10. Q. I have a module in which I want to execute some extra code when it
+        is run as a script.  How do I find out whether I am running as a
+        script?
+  4.11. Q. I try to run a program from the Demo directory but it fails with
         ImportError: No module named ...; what gives?
-  4.11. Q. What GUI toolkits exist for Python?
-  4.12. Q. Are there any interfaces to commercial database in Python?
-  4.13. Q. Is it possible to write obfuscated one-liners in Python?
+  4.12. Q. I have successfully built Python with STDWIN but it can't find some
+        modules (e.g. stdwinevents).
+  4.13. Q. What GUI toolkits exist for Python?
+  4.14. Q. Are there any interfaces to commercial database in Python?
+  4.15. Q. Is it possible to write obfuscated one-liners in Python?
+  4.16. Q. Is there an equivalent of C's "?:" ternary operator?
+  4.17. Q. My class defines __del__ but it is not called when I delete the
+        object.
+  4.18. Q. How do I change the shell environment for programs called using
+        os.popen() or os.system()?  Changing os.environ doesn't work.
+  4.19. Q. What is a class?
+  4.20. Q. What is a method?
+  4.21. Q. What is self?
+  4.22. Q. What is a unbound method?
+  4.23. Q. How do I call a method defined in a base class from a derived class
+        that overrides it?
+  4.24. Q. How do I call a method from a base class without using the name of
+        the base class?
+  4.25. Q. How can I organize my code to make it easier to change the base
+        class?
+  4.26. Q. How can I find the methods or attributes of an object?
+  4.27. an't seem to use os.read() on a pipe created with os.popen().
 
  5. Extending Python
   5.1. Q. Can I create my own functions in C?
@@ -125,6 +152,11 @@ Here's an overview of the questions per chapter:
   5.4. Q. How can I evaluate an arbitrary Python expression from C?
   5.5. Q. How do I extract C values from a Python object?
   5.6. Q. How do I use mkvalue() to create a tuple of arbitrary length?
+  5.7. Q. What happened to mktuple(), featuring in an example in the
+       Extensions manual?
+  5.8. Q. How do I call an object's method from C?
+  5.9. Q. How do I catch the output from print_error()?
+  5.10. Q. How do I access a module written in Python from C?
 
  6. Python's design
   6.1. Q. Why isn't there a generic copying operation for objects in
@@ -143,6 +175,8 @@ Here's an overview of the questions per chapter:
        files)?
   6.9. Q. Why must 'self' be declared and used explicitly in method
        definitions and calls?
+  6.10. 't you emulate threads in the interpreter instead of relying on
+        an OS-specific thread implementation?
 
  7. Using Python on non-UNIX platforms
   7.1. Q. Is there a Mac version of Python?
@@ -150,13 +184,18 @@ Here's an overview of the questions per chapter:
   7.3. Q. Is there a Windows version of Python?
   7.4. Q. Is there a Windows NT version of Python?
   7.5. Q. Is there an OS/2 version of Python?
-  7.6. Q. I have the PC version but it appears to be only a binary.
-       Where's the library?
-  7.7. Q. Where's the documentation for the Mac or PC version?
-  7.8. Q. The Mac (PC) version doesn't seem to have any facilities for
-       creating or editing programs apart from entering it interactively, and
-       there seems to be no way to save code that was entered interactively.
-       How do I create a Python program on the Mac (PC)?
+  7.6. Q. Is there a VMS version of Python?
+  7.7. Q. What about IBM mainframes, or other esoteric non-UNIX
+       platforms?
+  7.8. Q. Where are the source or Makefiles for the non-UNIX versions?
+  7.9. Q. What is the status and support for the non-UNIX versions?
+  7.10. Q. I have the PC version but it appears to be only a binary.
+        Where's the library?
+  7.11. Q. Where's the documentation for the Mac or PC version?
+  7.12. Q. The Mac (PC) version doesn't seem to have any facilities for
+        creating or editing programs apart from entering it interactively, and
+        there seems to be no way to save code that was entered interactively.
+        How do I create a Python program on the Mac (PC)?
 
 To find a particular question, search for the question number followed
 by a dot, a space, and a Q at the beginning of a line (e.g. to find
@@ -325,18 +364,23 @@ smaller programs.
 The University of Virginia uses Python to control a virtual reality
 engine.  Contact: Matt Conway <conway@virginia.edu>.
 
-See also the next question.
+If you have done a significant project in Python that you'd like to be
+included in the list above, send me email!
 
 2.3. Q. Are there any commercial projects going on using Python?
 
 A. Several companies have revealed to me that they are planning or
-considering to use Python in a future product.  The furthest is
-Sunrise Software, who already have a product out using Python -- they
-use Python for a GUI management application and an SNMP network
-manangement application.  Contact: <info@sunrise.com>.
+considering to use Python in a future product.
+
+The furthest is Sunrise Software, who already have a product out using
+Python -- they use Python for a GUI management application and an SNMP
+network manangement application.  Contact: <info@sunrise.com>.
 
 Infoseek is using python to implement their commercial WWW information
 retrieval service.  Contact: <info@infoseek.com>.
+
+Michael Powers of daVinci Time & Space is "writing tons-o-python for
+interactive television entertainment."  Contact: <powers@dvts.com>.
 
 Individuals at many other companies are using Python for
 internal development (witness their contributions to the Python
@@ -347,6 +391,8 @@ consortium supported by the European Committee's ESPRIT program and
 consisting of Bull, CWI and some other European companies.  Contact:
 Ivan Herman <ivan@cwi.nl>.
 
+If you'd like to be included in the list above, send me email!
+
 2.4. Q. How stable is Python?
 
 A. Very stable.  While the current version number would suggest it is
@@ -354,7 +400,15 @@ in the early stages of development, in fact new, stable releases
 (numbered 0.9.x and 1.0.x) have been coming out roughly every 3 to 6
 months for the past four years.
 
-2.5. Q. What new developments are expected for Python in the future?
+2.5. Q. When will the next version be released?
+
+A. I am planning to release 1.1 before October 15.  It will contain
+tons of changes, including (again) improved portability, especially
+better support for DOS, Windows, Windows NT an the Macintosh.  A few
+modules will have been converted to the new naming scheme.  A working
+signal module will be present.
+
+2.6. Q. What new developments are expected for Python in the future?
 
 A.  A proposal is being worked out to change the semantics of operator
 overloading (__add__, __mul__ etc.) to make them more useful for
@@ -368,15 +422,13 @@ possibly a switch statement.
 
 There will be better ports to the Mac, DOS, Windows, Windows NT, and
 OS/2.  The Windows ports will support dynamically loaded modules using
-DLLs.  There may be a Windows version of STDWIN (someone has actually
-written one and contributed it but it's not robust enough at the
-moment).
+DLLs.
 
 Also planned is improved support for embedding Python in other
 applications, e.g. by renaming most global symbols to have a "Py"
 prefix and providing more documentation and threading support.
 
-2.6. Q. Is it reasonable to propose incompatible changes to Python?
+2.7. Q. Is it reasonable to propose incompatible changes to Python?
 
 A. In general, no.  There are already millions of lines of Python code
 around the world, so any changes in the language that invalidates more
@@ -449,7 +501,62 @@ fault.  One person reported that the problem went away when using -g
 instead of -O so this may be an option if you insist on using gcc.  If
 someone tracks it down more completely I'd like to hear about it!
 
-3.8. Q. Other trouble building Python on platform X.
+3.8. Q. I use VPATH but some targets are built in the source directory.
+
+A. On some systems (e.g. Sun), if the target already exists in the
+source directory, it is created there instead of in the build
+directory.  This is usually because you have previously built without
+VPATH.  Try running "make clobber" in the source directory.
+
+3.9. Q. Trouble building or linking with the GNU readline library.
+
+A. Consider using readline 2.0.  From the Python 1.1 README:
+
+- You can use the GNU readline library to improve the interactive user
+interface: this gives you line editing and command history when
+calling python interactively. You need to configure build the GNU
+readline library before running the configure script. Its sources are
+no longer distributed with Python; you can ftp them from any GNU
+mirror site, or from its home site:
+ftp://slc2.ins.cwru.edu/pub/dist/readline-2.0.tar.gz (or a higher
+version number -- using version 1.x is not recommended). Pass the
+Python configure script the option --with-readline=DIRECTORY where
+DIRECTORY is the absolute pathname of the directory where you've built
+the readline library. Some hints on building and using the readline
+library:
+
+- On SGI IRIX 5, you may have to add the following
+to rldefs.h:
+
+#ifndef sigmask
+#define sigmask(sig) (1L << ((sig)-1))
+#endif
+
+- On most systems, you will have to add #include "rldefs.h" to the
+top of several source files, and if you use the VPATH feature, you
+will have to add dependencies of the form foo.o: foo.c to the
+Makefile for several values of foo.
+
+- The readline library requires use of the termcap library. A
+known problem with this is that it contains entry points which
+cause conflicts with the STDWIN and SGI GL libraries. The stdwin
+conflict can be solved (and will be, in the next release of
+stdwin) by adding a line saying '#define werase w_erase' to the
+stdwin.h file (in the stdwin distribution, subdirectory H). The
+GL conflict has been solved in the Python configure script by a
+hack that forces use of the static version of the termcap library.
+
+- Check the newsgroup gnu.bash.bugs for specific problems with the
+readline library (I don't get this group here but I've been told
+that it is the place for readline bugs.)
+
+3.10. Q. Trouble building Python on Linux.
+
+A. There shouldn't be any -- I've seen several complaints but more
+reports on successful "out-of-the-box" ports on Linux.  The standard
+configure script runs just fine on Linux.
+
+3.11. Q. Other trouble building Python on platform X.
 
 A. Please email the details to <guido@cwi.nl> and I'll look into it.
 
@@ -493,11 +600,15 @@ wrapper around a built-in object, e.g. (for dictionaries):
 
 4.3. Q. Is there a curses/termcap package for Python?
 
-A. No, but you can use the "alfa" (== character cell) version of
-STDWIN.  (STDWIN == Standard Windows, a portable windowing system
-interface by the same author, URL: ftp://ftp.cwi.nl/pub/stdwin.)
-This will also prepare your program for porting to windowing
-environments such as X11 or the Macintosh.
+A. Yes -- Lance Ellinghouse has written a module that interfaces to
+System V's "ncurses".  If you know a little curses and some Python,
+it's straightforward to use.
+
+You could also consider using the "alfa" (== character cell) version
+of STDWIN.  (STDWIN == Standard Windows, a portable windowing system
+interface by the same author, URL: "ftp://ftp.cwi.nl/pub/stdwin".)  This
+will also prepare your program for porting to windowing environments
+such as X11 or the Macintosh.
 
 4.4. Q. Is there an equivalent to C's onexit() in Python?
 
@@ -609,22 +720,25 @@ modules containing statements like
 
 	from modname import some_objects
 
-will continue to work with the old version of the objects imported
-thus.
+will continue to work with the old version of the imported objects.
 
-4.9. Q. I have a module in which I want to execute some extra code when it
-is run as a script.  How do I find out whether I am running as a
-script?
+4.9. Q. How do I find the current module name?
 
 A. A module can find out its own module name by alooking at the
 (predefined) global variable __name__.  If this has the value
-'__main__' you are running as a script.  E.g. if you put the following
-on the last line of your module, main() is called only when your
-module is running as a script:
+'__main__' you are running as a script.  
+
+4.10. Q. I have a module in which I want to execute some extra code when it
+is run as a script.  How do I find out whether I am running as a
+script?
+
+A. See the previous question.  E.g. if you put the following on the
+last line of your module, main() is called only when your module is
+running as a script:
 
 	if __name__ == '__main__': main()
 
-4.10. Q. I try to run a program from the Demo directory but it fails with
+4.11. Q. I try to run a program from the Demo directory but it fails with
 ImportError: No module named ...; what gives?
 
 A. This is probably an optional module which hasn't been configured on
@@ -641,17 +755,36 @@ to ftp the file "extensions.tar.gz" file from a Python ftp repository
 related modules are still somewhat flakey, so don't try this unless
 you know a bit or two about building X applications on your platform.
 
-4.11. Q. What GUI toolkits exist for Python?
+4.12. Q. I have successfully built Python with STDWIN but it can't find some
+modules (e.g. stdwinevents).
+
+A. There's a subdirectory of the library directory named 'stdwin'
+which should be in the default module search path.  There's a line in
+Modules/Setup(.in) that you have to enable for this purpose --
+unfortuunately in the latest release it's not near the other
+STDWIN-related lines so it's easy to miss it.
+
+4.13. Q. What GUI toolkits exist for Python?
 
 A. Depending on what platform(s) you are aiming at, there are several.
+
+- There's a neat object-oriented interface to the Tcl/Tk widget set,
+called Tkinter.  You can ftp it from ftp.cwi.nl as
+pub/python/tkinter.tar.gz.  This is probably the easiest to install
+and use, and the most complete widget set.
 
 - The standard Python distribution comes with an interface to STDWIN,
 a platform-independent low-level windowing interface (you have to ftp
 the source for stdwin separately, e.g. from ftp.cwi.nl in pub/stdwin
 or gatekeeper.dec.com in pub/misc/stdwin).  STDWIN runs under X11 or
-the Mac; a Windows port is about to be released.
+the Mac; a Windows port has been attempted but I can't seem to get it
+working.  Note that STDWIN is really not powerful enough to implement
+a modern GUI (no widgets, etc.) and that I don't have the time to
+maintain or extend it, so you may be better off using Tkinter or the
+Motif interface, unless you require portability to the Mac (which is
+also offered by SUIT, by the way -- see below).
 
-- For SGI only, there's an interface to the complete GL (Graphics
+- For SGI IRIX only, there's an interface to the complete GL (Graphics
 Library -- low level but very good 3D capabilities) as well as to
 FORMS (a buttons-and-sliders-etc package built on top of GL by Mark
 Overmars -- ftp'able from ftp.cs.ruu.nl in pub/SGI/FORMS).
@@ -668,15 +801,12 @@ compiled with DJGPP and with SUIT support built-in has been made
 available by Antonio Costa on ftp site asterix.inescn.pt, directory
 pub/PC/python, file pyt102su.exe (a self-extracting archive).
 
-- There's a neat interface to the Tcl/Tk widget set; ftp it from
-ftp.cwi.nl as pub/python/tkinter.tar.gz.
-
 - There's an interface to WAFE, a Tcl interface to the X11 Motif and
 Athena widget sets.  Last I heard about it it was included in the
 WAFE 1.0 prerelease, ftp'able from ftp.wu-wien.ac.at as
 pub/src/X11/wafe/wafe-1.0.tar.gz-prerelease.
 
-4.12. Q. Are there any interfaces to commercial database in Python?
+4.14. Q. Are there any interfaces to commercial database in Python?
 
 A. There's an interface to SYBASE by John Redford
 <jredford@lehman.com>.
@@ -684,7 +814,10 @@ A. There's an interface to SYBASE by John Redford
 There's also an interface to metalbase by Lance Ellinghouse
 <lance@markv.com>.
 
-4.13. Q. Is it possible to write obfuscated one-liners in Python?
+Anthony Baxter <anthony.baxter@aaii.oz.au> has written an interface to
+mSQL (mini-SQL).  Ftp it from ftp.cwi.nl:/pub/python/PymSQL.tar.gz.
+
+4.15. Q. Is it possible to write obfuscated one-liners in Python?
 
 A. Yes.  See the following three examples, due to Ulf Bartelt:
 
@@ -712,7 +845,167 @@ i=i,Sx=Sx,F=lambda xc,yc,x,y,k,f=lambda xc,yc,x,y,k,f:(k<=0)or (x*x+y*y\
 
 Don't try this at home, kids!
 
+4.16. Q. Is there an equivalent of C's "?:" ternary operator?
 
+A. Not directly.  In many cases you can mimic a?b:c with "a and b or
+c", but there's a flaw: if b is zero (or empty, or None -- anything
+that tests false) then c will be selected instead.  In many cases you
+can prove by looking at the code that this can't happen (e.g. because
+b is a constant or has a type that can never be false), but in general
+this can be a problem.
+
+Steve Majewski (or was it Tim Peters?) suggested the following
+solution: (a and [b] or [c])[0].  Because [b] is a singleton list it
+is never false, so the wrong path is never taken; then applying [0] to
+the whole thing gets the b or c that you really wanted.  Ugly, but it
+gets you there in the rare cases where it is really inconvenient to
+rewrite your code using 'if'.
+
+4.17. Q. My class defines __del__ but it is not called when I delete the
+object.
+
+A. There are several possible reasons for this.
+
+- The del statement does not necessarily call __del__ -- it simply
+decrements the object's reference count, and if this reaches zero
+__del__ is called.
+
+- If your data structures contain circular links (e.g. a tree where
+each child has a parent pointer and each parent has a list of
+children) the reference counts will never go back to zero.  You'll
+have to define an explicit close() method which remvoes those
+pointers.  Please don't ever call __del__ directly -- __del__ should
+call close() and close() should make sure that it can be called mor
+than once for the same object.
+
+- If the object has ever been a local variable (or argument, which is
+really the same thing) to a function that caught an expression in an
+except clause, chances are that a reference to the object still exists
+in that function's stack frame as contained in the stack trace.
+Normally, deleting (better: assigning None to) sys.exc_traceback will
+take care of this.  If you a stack was printed for an unhandled
+exception in an interactive interpreter, delete sys.last_traceback
+instead.
+
+- There is code that deletes all objects when the interpreter exits,
+but if your Python has been configured to support threads, it is not
+called (because other threads may still be active).  You can define
+your own cleanp function using sys.exitfunc (see question 4.4).
+
+4.18. Q. How do I change the shell environment for programs called using
+os.popen() or os.system()?  Changing os.environ doesn't work.
+
+A. Modifying the environment passed to subshells was left out of the
+interpreter because there seemed to be no well-established portable
+way to do it.
+
+However if all you want is to pass environment variables to the
+commands run by os.system() or os.popen(), there's a simple solution:
+prefix the command string with a couple of variable assignments and
+export statements. I guess the following would be universal for popen
+(untested):
+
+import os
+from commands import mkarg # nifty routine to add shell quoting
+def epopen(cmd, mode, env = {}):
+	# env is a dictionary of environment variables
+	prefix = ''
+	for key, value in env.values():
+		prefix = prefix + '%s=%s\n' % (key, mkarg(value))
+		prefix = prefix + 'export %s\n' % key
+	return os.popen(prefix + cmd, mode)
+
+4.19. Q. What is a class?
+
+A. A class is the particular object type that is created by executing
+a class statement.
+
+4.20. Q. What is a method?
+
+A. A method is a function that you normally call as
+x.name(arguments...) for some object x.  The word is used for methods
+of classes and class instances as well as for methods of built-in
+objects.  The latter have a completely different implementation and
+only share the way their calls look in Python code.
+
+4.21. Q. What is self?
+
+A. Self is merely a conventional name for the first argument of a
+method -- i.e. a function defined inside a class definition.  A method
+defined as meth(self, a, b, c) should be called as x.meth(a, b, c) for
+some instance x of the class in which the definition occurs;
+the called method will think it is called as meth(x, a, b, c).
+
+4.22. Q. What is a unbound method?
+
+A. An unbound method is a method defined in a class that is not yet
+bound to an instance.  You get an unbound method if you ask for a
+class attribute that happens to be a function. You get a bound method
+if you ask for an instance attribute.  A bound method knows which
+instance it belongs to and calling it supplies the instance automatic;
+an unbound method only knows which class it wants for its first
+argument (a derived class is also OK).  Calling an unbound method
+doesn't "magically" derive the first argument from the context -- you
+have to provide it explicitly.
+
+4.23. Q. How do I call a method defined in a base class from a derived class
+that overrides it?
+
+A. If your class definition starts with "class Derived(Base): ..."
+then you can call method meth defined in Base (or one of Base's base
+classes) as Base.meth(self, arguments...).  Here, Base.meth is an
+unbound method (see previous question).
+
+4.24. Q. How do I call a method from a base class without using the name of
+the base class?
+
+A. DON'T DO THIS.  REALLY.  I MEAN IT.  It appears that you could call
+self.__class__.__bases__[0].meth(self, arguments...) but this fails when
+a doubly-derived method is derived from your clas: for its instances,
+self.__class__.__bases__[0] is your class, not its base class -- so
+(assuming you are doing this from within Derived.meth) you would start
+a recursive call.
+
+4.25. Q. How can I organize my code to make it easier to change the base
+class?
+
+A. You could define an alias for the base class, assign the real base
+class to it before your class definition, and use the alias throughout
+your class.  Then all you have to change is the value assigned to the
+alias.  Incidentally, this trick is also handy if you want to decide
+dynamically (e.g. depending on availability of resources) which base
+class to use.  Example:
+
+BaseAlias = <real base class>
+class Derived(BaseAlias):
+	def meth(self):
+		BaseAlias.meth(self)
+		...
+
+4.26. Q. How can I find the methods or attributes of an object?
+
+A. This depends on the object type.
+
+For an instance x of a user-defined class, instance attributes are
+found in the dictionary x.__dict__, and methods and attributes defined
+by its class are found in x.__class__.__bases__[i].__dict__ (for i in
+range(len(x.__class__.__bases__))).  You'll have to walk the tree of
+base classes to find *all* class methods and attributes.
+
+Many, but not all built-in types define a list of their method names
+in x.__methods__, and if they have data attributes, their names may be
+found in x.__members__.  However this is only a convention.
+
+For more information, read the source of the standard (but
+undocumented) module newdir.
+
+4.27. Q. I can't seem to use os.read() on a pipe created with os.popen().
+
+A. os.read() is a low-level function which takes a file descriptor (a
+small integer).  os.popen() creates a high-level file object -- the
+same type used for sys.std{in,out,err} and returned by the builtin
+open() function.  Thus, to read n bytes from a pipe p created with
+os.popen(), you need to use p.read(n).
 
 5. Extending Python
 ===================
@@ -762,7 +1055,97 @@ is_stringobject(o), is_tupleobject(o), is_listobject(o) etc.
 A. You can't.  Use t = newtupleobject(n) instead, and fill it with
 objects using settupleitem(t, i, o) -- note that this "eats" a
 reference count of o.  Similar for lists with newlistobject(n) and
-setlistitem(l, i, o).
+setlistitem(l, i, o).  Note that you *must* set all the tuple items to
+some value before you pass the tuple to Python code --
+newtupleobject(n) initializes them to NULL, which isn't a valid Python
+value.
+
+5.7. Q. What happened to mktuple(), featuring in an example in the
+Extensions manual?
+
+A. It's a typo, I meant newtupleobject() (see previous question).
+
+5.8. Q. How do I call an object's method from C?
+
+A. Here's a function (untested) that might become part of the next
+release in some form.  It uses <stdarg.h> to allow passing the
+argument list on to vmkvalue():
+
+object *call_method(object *inst, char *methodname, char *format, ...)
+{
+	object *method;
+	object *args;
+	object *result;
+	va_list va;
+	method = getattr(inst, methodname);
+	if (method == NULL) return NULL;
+	va_start(va, format);
+	args = vmkvalue(format, va);
+	va_end(va);
+	if (args == NULL) {
+		DECREF(method);
+		return NULL;
+	}
+	result = call_object(method, args);
+	DECREF(method);
+	DECREF(args);
+	return result;
+}
+
+This works for any instance that has methods -- whether built-in or
+user-defined.  You are responsible for eventually DECREF'ing the
+return value.
+
+To call, e.g., a file object's "seek" method with arguments 10, 0
+(assuming the file object pointer is "f"):
+
+res = call_method(f, "seek", "(OO)", 10, 0);
+if (res == NULL) {
+	... an exception occurred ...
+}
+else {
+	DECREF(res);
+}
+
+Note that since call_object() *always* wants a tuple for the argument
+list, to call a function without arguments, pass "()" for the format,
+and to call a function with one argument, surround the argument in
+parentheses, e.g. "(i)".
+
+5.9. Q. How do I catch the output from print_error()?
+
+A. (Due to Mark Hammond):
+
+* in Python code, define an object that supports the "write()" method.
+FWIW, there seems to be a small problem that requires the 'softspace'
+attribute to be defined too (I cant remember exact details of the
+problem).
+
+* redirect sys.stdout and sys.stderr to this object.
+
+* call print_error, or just allow the standard traceback mechansim to
+work.
+
+Then, the output will go whereever your write() method sends it.
+
+5.10. Q. How do I access a module written in Python from C?
+
+A. You can get a pointer to the module object as follows:
+
+	module = import_module("<modulename>");
+
+If the module hasn't been imported yet (i.e. it is not yet present in
+sys.modules), this initializes the module; otherwise it simply returns
+the value of sys.modules["<modulename>"].  Note that it doesn't enter
+the module into any namespace -- it only ensures it has been
+initialized and is stored in sys.modules.
+
+You can then access the module's attributes (i.e. any name defined in
+the module) as follows:
+
+	attr = getattr(module, "<attrname>");
+
+Calling setattr(), to assign to variables in the module, also works.
 
 
 6. Python's design
@@ -786,6 +1169,21 @@ disk.)
 
 A. Hmm, hmm.  Basically for the same reasons as why there is no
 generic copying operation.
+
+However, since there is a real desire to have persistent operations,
+I'm thinking of extending the marshal module to support object sharing
+(and hence recursive objects) and to extend the list of supported
+types considerably.  For user-defined classes, hooks with __*__ names
+will allow the class to modify the way their instances are dumped and
+loaded.  Built-in types (including those defined by new extensions)
+may also define dump/load hooks.  There are several problems still to
+solve, e.g. how do you reliably find the class of which an object is
+an instance at load time -- assuming the class itself is loaded from
+some module, and not part of the dumped data.  It is also necessary to
+separate the functionality of converting a set of objects into a byte
+stream from which they can be reloaded, from the ability to save these
+byte streams as files and being able to reference an object by a
+persistent global name.
 
 6.3. Q. Why isn't there a switch or case statement in Python?
 
@@ -917,6 +1315,14 @@ variables, having to write "self.var" means that references to
 unqualified names inside a method don't have to search the instance's
 directories.
 
+6.10. Q. Can't you emulate threads in the interpreter instead of
+relying on an OS-specific thread implementation?
+
+A. Unfortunately, the interpreter pushes at least one C stack frame
+for each Python stack frame.  Also, extensions can call back into
+Python at almost random moments.  Therefore a complete threads
+implementation requires thread support for C.
+
 
 7. Using Python on non-UNIX platforms
 =====================================
@@ -938,6 +1344,10 @@ fairly large programs.  32python.exe is distributed as a tar file
 containing the required DOS extended and 387 emulator.  Both are on
 most ftp sites carrying Python.
 
+The file dosbuild.tar.gz on the standard ftp sites
+(e.g. ftp.cwi.nl:/pub/python/) contains rudimentary Makefiles and
+instructions.
+
 7.3. Q. Is there a Windows version of Python?
 
 A. Yes.  Use qwpython.exe.  The only problem with it: ^C
@@ -945,10 +1355,26 @@ unconditionally kills the entire program -- it does not raise
 KeyboardInterrupt.  You can also run 16python.exe or 32python.exe in a
 "DOS box", but qwpython.exe appears to be slightly faster.
 
+There aren't any Makefiles at this moment.  Sorry.
+
+Using Win32s (a free NT compatibility package by Microsoft) you can
+also use the NT version by Mark Hammond -- the Win32s package is also
+in that directory (you'll need several MB of disk space to install
+it).  See the next question.
+
 7.4. Q. Is there a Windows NT version of Python?
 
 A. Yes.  Use ntpython.exe.  This is for Intel CPUs.  If you want a
 Windows user interface, use qwpython.exe.
+
+Mark Hammond <MHammond@cmutual.com.au> is building a better NT port.
+This supports using DLLs for dynamic loading of Python modules, and
+includes an interface to the Microsoft Foundation Classes and a Python
+programming environment using it that's written mostly in Python.  A
+prerelease (source and binaries) can be ftp'ed from
+ftp.cwi.nl:/pub/python/nt/ -- most mirrors will also have this.  A
+thread module is also planned but currently low on Mark's list of
+priorities.
 
 7.5. Q. Is there an OS/2 version of Python?
 
@@ -956,7 +1382,50 @@ A. Yes.  You can ftp it (from ftp.cwi.nl in pub/python, or from the
 mirror sites) as pyth_os2.zip.  This contains both an executable and
 Makefiles for those fortunate enough to have a C compiler.
 
-7.6. Q. I have the PC version but it appears to be only a binary.
+7.6. Q. Is there a VMS version of Python?
+
+A. I think not (yet).  This question has been asked on the list
+several times and I've never seen an answer.  Maybe someone with a VMS
+C compiler could attempt a port?  Probably coming up with proper
+Makefiles, config.h and config.c should be sufficient.  If you succeed
+(or even if you get stuck halfway), please let me know!  (Info as of
+23 September 1994.)
+
+7.7. Q. What about IBM mainframes, or other esoteric non-UNIX
+platforms?
+
+A. Basically, the same story as for VMS...  (Info as of 23 September
+1994.)
+
+For ports of Windows NT to non-Intel platforms, the normal NT port
+should work except you may have to use a different Makefile.
+(Unconfirmed suggestions from the Python list.)
+
+7.8. Q. Where are the source or Makefiles for the non-UNIX versions?
+
+A. The standard sources can (almost) be used. See the previous
+questions for availability of Makefiles/projects or patches.  If you
+find things in the standard sources that don't work on your particular
+platform, please let me know and I'll integrate a solution into the
+next release of the standard sources.  If you submit a fix, please use
+some kind of #ifdef so as to keep the source working for other
+platforms.  In particular, if the patch works around the availability
+of a particular function of header file, you should mimic the
+HAVE_... style used by the configure script -- you can then submit a
+config.h file for a particular platform so there are no absolutely
+platform-specific #ifdefs in the rest of the sources.
+
+7.9. Q. What is the status and support for the non-UNIX versions?
+
+A. I don't have access to most of these platforms, so in general I am
+dependent on material submitted by volunteers(*).  However I strive to
+integrate all changes needed to get it to compile on a particular
+platform back into the standard sources, so porting of the next
+version to the various non-UNIX platforms should be easy.
+
+(*) For the Macintosh, that volunteer is me.
+
+7.10. Q. I have the PC version but it appears to be only a binary.
 Where's the library?
 
 A. You still need to copy the files from the distribution directory
@@ -979,23 +1448,22 @@ as follows (talking to a DOS prompt):
 
 	C> SET PYTHONPATH=C:\misc\python\lib
 
-7.7. Q. Where's the documentation for the Mac or PC version?
+7.11. Q. Where's the documentation for the Mac or PC version?
 
 A. There isn't any.  The documentation for the Unix version also
 applies to the Mac and PC versions.  Where applicable, differences
 are indicated in the text.
 
-7.8. Q. The Mac (PC) version doesn't seem to have any facilities for
+7.12. Q. The Mac (PC) version doesn't seem to have any facilities for
 creating or editing programs apart from entering it interactively, and
 there seems to be no way to save code that was entered interactively.
 How do I create a Python program on the Mac (PC)?
 
-A. Use an external editor.  On the Mac, I am quite happy with the Desk
-Accessory called Sigma Edit; this doesn't require Multifinder or
-System 7.  I work like this: start the interpreter; edit a module file
-using Sigma Edit; import and test it in the interpreter; edit again in
-Sigma Edit; then use the built-in function reload() to re-read the
-imported module; etc.
+A. Use an external editor.  On the Mac, BBEdit seems to be a popular
+no-frills text editor.  I work like this: start the interpreter; edit
+a module file using BBedit; import and test it in the interpreter;
+edit again in BBedit; then use the built-in function reload() to
+re-read the imported module; etc.
 
 Regarding the same question for the PC, Kurt Wm. Hemr writes: "While
 anyone with a pulse could certainly figure out how to do the same on
