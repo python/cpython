@@ -6,6 +6,16 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- The tempfile module has been overhauled for enhanced security.  The
+  mktemp() function is now deprecated; new, safe replacements are
+  mkstemp() (for files) and mkdtemp() (for directories), and the
+  higher-level functions NamedTemporaryFile() and TemporaryFile().
+  Use of some global variables in this module is also deprecated; the
+  new functions have keyword arguments to provide the same
+  functionality.  All Lib, Tools and Demo modules that used the unsafe
+  interfaces have been updated to use the safe replacements.  Thanks
+  to Zack Weinberg!
+
 - When x is an object whose class implements __mul__ and __rmul__,
   1.0*x would correctly invoke __rmul__, but 1*x would erroneously
   invoke __mul__.  This was due to the sequence-repeat code in the int
