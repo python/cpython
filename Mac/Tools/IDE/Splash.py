@@ -24,6 +24,9 @@ def uninstall_importhook():
 
 _progress = 0
 
+_about_width = 440
+_about_height = 340
+
 def importing(module):
 	global _progress
 	Qd.SetPort(splash)
@@ -32,17 +35,19 @@ def importing(module):
 		fontID = geneva
 	Qd.TextFont(fontID)
 	Qd.TextSize(9)
-	rect = (35, 265, 365, 281)
+	labelrect = (35, _about_height - 35, _about_width - 35, _about_height - 19)
+	framerect = (35, _about_height - 19, _about_width - 35, _about_height - 11)
+	l, t, r, b = progrect = Qd.InsetRect(framerect, 1, 1)
 	if module:
-		TE.TETextBox('Importing: ' + module, rect, 0)
+		TE.TETextBox('Importing: ' + module, labelrect, 0)
 		if not _progress:
-			Qd.FrameRect((35, 281, 365, 289))
-		pos = min(36 + 330 * _progress / 44, 364)
-		Qd.PaintRect((36, 282, pos, 288))
+			Qd.FrameRect(framerect)
+		pos = min(r, l + ((r - l) * _progress) / 44)
+		Qd.PaintRect((l, t, pos, b))
 		_progress = _progress + 1
 	else:
-		Qd.EraseRect(rect)
-		Qd.PaintRect((36, 282, pos, 288))
+		Qd.EraseRect(labelrect)
+		Qd.PaintRect((l, t, pos, b))
 	Qd.QDFlushPortBuffer(splash.GetDialogWindow().GetWindowPort(), None)
 
 def my__import__(name, globals=None, locals=None, fromlist=None):
@@ -71,20 +76,20 @@ import sys
 
 _keepsplashscreenopen = 0
 
-abouttext1 = """The Python Integrated Development Environment for the Macintoshé
+abouttext1 = """The Python Integrated Development Environment for the Macintosh\xaa
 Version: %s
-Copyright 1997-2000 Just van Rossum, Letterror. <just@letterror.com>
+Copyright 1997-2001 Just van Rossum, Letterror. <just@letterror.com>
 Python %s
 %s
 See: <http://www.python.org/> for information and documentation."""
 
-flauwekul = [	'Goodday, Bruce.', 
-			'What’s new?', 
-			'Nudge, nudge, say no more!', 
-			'No, no sir, it’s not dead. It’s resting.',
-			'Albatros!',
-			'It’s . . .',
-			'Is your name not Bruce, then?',
+flauwekul = [	"Goodday, Bruce.", 
+			"What's new?",
+			"Nudge, nudge, say no more!", 
+			"No, no sir, it's not dead. It's resting.",
+			"Albatros!",
+			"It's . . .",
+			"Is your name not Bruce, then?",
 			"""But Mr F.G. Superman has a secret identity . . . 
 when trouble strikes at any time . . . 
 at any place . . . he is ready to become . . . 
@@ -111,7 +116,7 @@ def drawtext(what = 0):
 		fontID = geneva
 	Qd.TextFont(fontID)
 	Qd.TextSize(9)
-	rect = (10, 115, 390, 290)
+	rect = (10, 115, _about_width - 10, _about_height - 30)
 	if not what:
 		import __main__
 		abouttxt = nl2return(abouttext1 % (
@@ -134,6 +139,7 @@ def wait():
 	Qd.InitCursor()
 	time = Evt.TickCount()
 	whattext = 0
+	drawtext(whattext)
 	while _keepsplashscreenopen:
 		ok, event = Evt.EventAvail(Events.highLevelEventMask)
 		if ok:
@@ -154,7 +160,7 @@ def wait():
 			drawtext(whattext)
 			time = Evt.TickCount()
 	del splash
-	#Res.CloseResFile(splashresfile)
+
 
 def about():
 	global splash, splashresfile, _keepsplashscreenopen

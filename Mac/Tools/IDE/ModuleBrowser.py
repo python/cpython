@@ -14,9 +14,9 @@ class _modulebrowser:
 		
 		#self.window.bevelbox = W.BevelBox((0, 0, 0, 56))
 		self.window.openbutton = W.Button((10, 8, 80, 16), "Open", self.openbuttonhit)
-		self.window.browsebutton = W.Button((100, 8, 80, 16), "BrowseÉ", self.browsebuttonhit)
+		self.window.browsebutton = W.Button((100, 8, 80, 16), "Browse\xc9", self.browsebuttonhit)
 		self.window.reloadbutton = W.Button((10, 32, 80, 16), "Reload", self.reloadbuttonhit)
-		self.window.openotherbutton = W.Button((100, 32, 80, 16), "Open otherÉ", self.openother)
+		self.window.openotherbutton = W.Button((100, 32, 80, 16), "Open other\xc9", self.openother)
 		
 		self.window.openbutton.enable(0)
 		self.window.reloadbutton.enable(0)
@@ -81,7 +81,7 @@ class _modulebrowser:
 					file, path, description = imp.find_module(modname)
 				except ImportError:
 					W.SetCursor("arrow")
-					W.Message("Can’t find file for module ñ%sî." 
+					W.Message("Can't find file for module '%s'." 
 							% modname)
 				else:
 					self.openscript(path, modname)					
@@ -93,7 +93,7 @@ class _modulebrowser:
 		elif path[-4:] in ['.pyc', '.pyo']:
 			W.getapplication().openscript(path[:-1], modname=modname)
 		else:
-			W.Message("Can’t edit ñ%sî; it might be a shared library or a .pyc file." 
+			W.Message("Can't edit '%s'; it might be a shared library or a .pyc file." 
 					% modname)
 	
 	def openother(self):
@@ -106,9 +106,9 @@ class _modulebrowser:
 				file, path, description = imp.find_module(modname)
 			except ImportError:
 				if modname in sys.builtin_module_names:
-					alerttext = "ñ%sî is a builtin module, which you can’t edit." % modname
+					alerttext = "'%s' is a builtin module, which you can't edit." % modname
 				else:
-					alerttext = "No module named ñ%sî." % modname
+					alerttext = "No module named '%s'." % modname
 				raise W.AlertError, alerttext
 			self.openscript(path, modname)
 	
