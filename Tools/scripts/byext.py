@@ -30,6 +30,10 @@ class Stats:
             return
         names.sort()
         for name in names:
+            if name.startswith(".#"):
+                continue # Skip CVS temp files
+            if name.endswith("~"):
+                continue# Skip Emacs backup files
             full = os.path.join(dir, name)
             if os.path.islink(full):
                 self.addstats("<lnk>", "links", 1)
@@ -42,7 +46,10 @@ class Stats:
         head, ext = os.path.splitext(file)
         head, base = os.path.split(file)
         if ext == base:
-            ext = "" # .cvsignore is deemed not to have an extension
+            ext = "" # E.g. .cvsignore is deemed not to have an extension
+        ext = os.path.normcase(ext)
+        if not ext:
+            ext = "<none>"
         self.addstats(ext, "files", 1)
         try:
             f = open(file, "rb")
@@ -70,7 +77,6 @@ class Stats:
         d[key] = d.get(key, 0) + n
 
     def report(self):
-        totals = {}
         exts = self.stats.keys()
         exts.sort()
         # Get the column keys
@@ -79,30 +85,39 @@ class Stats:
             columns.update(self.stats[ext])
         cols = columns.keys()
         cols.sort()
-        minwidth = 7
-        extwidth = max([len(ext) for ext in exts])
-        print "%*s" % (extwidth, "ext"),
+        colwidth = {}
+        colwidth["ext"] = max([len(ext) for ext in exts])
+        minwidth = 6
+        self.stats["TOTAL"] = {}
         for col in cols:
-            width = max(len(col), minwidth)
-            print "%*s" % (width, col),
-        print
-        for ext in exts:
-            print "%*s" % (extwidth, ext),
-            for col in cols:
-                width = max(len(col), minwidth)
+            total = 0
+            cw = max(minwidth, len(col))
+            for ext in exts:
                 value = self.stats[ext].get(col)
                 if value is None:
-                    s = ""
+                    w = 0
                 else:
-                    s = "%d" % value
-                    totals[col] = totals.get(col, 0) + value
-                print "%*s" % (width, s),
+                    w = len("%d" % value)
+                    total += value
+                cw = max(cw, w)
+            cw = max(cw, len(str(total)))
+            colwidth[col] = cw
+            self.stats["TOTAL"][col] = total
+        exts.append("TOTAL")
+        for ext in exts:
+            self.stats[ext]["ext"] = ext
+        cols.insert(0, "ext")
+        def printheader():
+            for col in cols:
+                print "%*s" % (colwidth[col], col),
             print
-        print "%*s" % (extwidth, "TOTAL"),
-        for col in cols:
-            width = max(len(col), minwidth)
-            print "%*s" % (width, totals[col]),
-        print
+        printheader()
+        for ext in exts:
+            for col in cols:
+                value = self.stats[ext].get(col, "")
+                print "%*s" % (colwidth[col], value),
+            print
+        printheader() # Another header at the bottom
 
 def main():
     args = sys.argv[1:]
