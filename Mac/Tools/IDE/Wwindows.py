@@ -33,6 +33,7 @@ class Window(FrameWork.Window, Wbase.SelectableWidget):
 		self._drawwidgetbounds = 0
 		self._show = show
 		self._lastrollover = None
+		self.hasclosebox = 1
 		# XXX the following is not really compatible with the
 		#  new (system >= 7.5) window procs. 
 		if minsize:
@@ -89,7 +90,7 @@ class Window(FrameWork.Window, Wbase.SelectableWidget):
 	
 	def open(self):
 		self.wid = Win.NewCWindow(self._globalbounds, self.title, self._show,
-			self.windowkind, -1, 1, 0)
+			self.windowkind, -1, self.hasclosebox, 0)
 		self.SetPort()
 		fnum = Fm.GetFNum("Python-Sans")
 		if fnum == 0:
