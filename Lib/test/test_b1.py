@@ -256,7 +256,7 @@ if float("  3.14  ") != 3.14:  raise TestFailed, 'float("  3.14  ")'
 if have_unicode:
     if float(unicode("  3.14  ")) != 3.14:
         raise TestFailed, 'float(u"  3.14  ")'
-    if float(unicode("  \u0663.\u0661\u0664  ")) != 3.14:
+    if float(unicode("  \u0663.\u0661\u0664  ",'raw-unicode-escape')) != 3.14:
         raise TestFailed, 'float(u"  \u0663.\u0661\u0664  ")'
 
 print 'getattr'
@@ -363,7 +363,7 @@ if have_unicode:
         (unicode('100'), 100),
         (unicode('314'), 314),
         (unicode(' 314'), 314),
-        (unicode('\u0663\u0661\u0664 '), 314),
+        (unicode('\u0663\u0661\u0664 ','raw-unicode-escape'), 314),
         (unicode('  \t\t  314  \t\t  '), 314),
         (unicode('  1x'), ValueError),
         (unicode('  1  '), 1),
