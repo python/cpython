@@ -9,6 +9,8 @@ PYVER=2.3
 PKG=$1
 DEST=$2
 
+# Make sure things are group-writeable
+umask 2
 
 # if destination is / then use usr/local/bin, otherwise just bin
 if [ "$DEST" = "/" ]; then

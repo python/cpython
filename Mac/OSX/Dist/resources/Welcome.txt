@@ -1,4 +1,4 @@
-This program will install MacPython 2.3b1 for Mac OS X.
+This program will install MacPython 2.3b1+ for Mac OS X.
 
 MacPython consists of the Python programming language interpreter, plus
 a set of programs to allow easy access to it for Mac users (an

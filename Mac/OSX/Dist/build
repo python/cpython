@@ -91,6 +91,10 @@ make
 make DIRMODE=775 EXEMODE=775 FILEMODE=664 DESTDIR=$INSTALLROOT frameworkinstall
 make DIRMODE=775 EXEMODE=775 FILEMODE=664 DESTDIR=$INSTALLROOT frameworkinstallextras
 
+# Unfortunately all the ...MODE arguments above still don't do the trick.
+# Cop out, and recursively set everything group-writeable.
+chmod -R ug+w $INSTALLROOT
+
 if [ "$builddocs" = "y" -o "$builddocs" = "Y" ]; then
     ./python.exe $PYTHONSRC/Mac/OSX/setupDocs.py build
     echo ""
