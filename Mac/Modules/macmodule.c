@@ -97,24 +97,24 @@ int sync(void);
 
 #ifndef USE_GUSI
 
-int chdir Py_PROTO((const char *path));
-int mkdir Py_PROTO((const char *path, int mode));
-DIR * opendir Py_PROTO((char *));
-void closedir Py_PROTO((DIR *));
-struct dirent * readdir Py_PROTO((DIR *));
-int rmdir Py_PROTO((const char *path));
-int sync Py_PROTO((void));
+int chdir(const char *path);
+int mkdir(const char *path, int mode);
+DIR * opendir(char *);
+void closedir(DIR *);
+struct dirent * readdir(DIR *);
+int rmdir(const char *path);
+int sync(void);
 
 #if defined(__SC__)
-int unlink Py_PROTO((char *));
+int unlink(char *);
 #else
-int unlink Py_PROTO((const char *));
+int unlink(const char *);
 #endif
 
 #endif /* USE_GUSI */
 
-char *getwd Py_PROTO((char *));
-char *getbootvol Py_PROTO((void));
+char *getwd(char *);
+char *getbootvol(void);
 
 
 static PyObject *MacError; /* Exception mac.error */
@@ -132,7 +132,7 @@ mac_error()
 static PyObject *
 mac_1str(args, func)
 	PyObject *args;
-	int (*func) Py_FPROTO((const char *));
+	int (*func)(const char *);
 {
 	char *path1;
 	int res;
@@ -150,7 +150,7 @@ mac_1str(args, func)
 static PyObject *
 mac_2str(args, func)
 	PyObject *args;
-	int (*func) Py_FPROTO((const char *, const char *));
+	int (*func)(const char *, const char *);
 {
 	char *path1, *path2;
 	int res;
@@ -168,7 +168,7 @@ mac_2str(args, func)
 static PyObject *
 mac_strint(args, func)
 	PyObject *args;
-	int (*func) Py_FPROTO((const char *, int));
+	int (*func)(const char *, int);
 {
 	char *path;
 	int i;
@@ -248,7 +248,7 @@ mac_fdopen(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	extern int fclose Py_PROTO((FILE *));
+	extern int fclose(FILE *);
 	int fd;
 	char *mode;
 	FILE *fp;

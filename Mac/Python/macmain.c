@@ -62,8 +62,8 @@ static int  orig_argc;
 
 PyMac_PrefRecord options;
 
-static void Py_Main Py_PROTO((int, char **)); /* Forward */
-void PyMac_Exit Py_PROTO((int)); /* Forward */
+static void Py_Main(int, char **); /* Forward */
+void PyMac_Exit(int); /* Forward */
 
 static void init_appearance()
 {
