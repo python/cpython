@@ -82,6 +82,17 @@ Extension modules
   creativity of political time zone fiddling appears unbounded -- fromutc()
   allows the highly motivated to emulate any scheme expressible in Python.
 
+  datetime.now():  The optional tzinfo argument was undocumented (that's
+  repaired), and its name was changed to tz ("tzinfo" is overloaded enough
+  already).  With a tz argument, now(tz) used to return the local date
+  and time, and attach tz to it, without any conversion of date and time
+  members.  This was less than useful.  Now now(tz) returns the current
+  date and time as local time in tz's time zone, akin to
+      tz.fromutc(datetime.utcnow().replace(tzinfo=utc))
+  where "utc" is an instance of a tzinfo subclass modeling UTC.  Without
+  a tz argument, now() continues to return the current local date and time,
+  as a naive datetime object.
+
   The constructors building a datetime from a timestamp could raise
   ValueError if the platform C localtime()/gmtime() inserted "leap
   seconds".  Leap seconds are ignored now.  On such platforms, it's
