@@ -146,7 +146,10 @@ tupledealloc(register PyTupleObject *op)
 		while (--i >= 0)
 			Py_XDECREF(op->ob_item[i]);
 #if MAXSAVESIZE > 0
-		if (len < MAXSAVESIZE && num_free_tuples[len] < MAXSAVEDTUPLES) {
+		if (len < MAXSAVESIZE &&
+		    num_free_tuples[len] < MAXSAVEDTUPLES &&
+		    op->ob_type == &PyTuple_Type)
+		{
 			op->ob_item[0] = (PyObject *) free_tuples[len];
 			num_free_tuples[len]++;
 			free_tuples[len] = op;
@@ -594,7 +597,7 @@ _PyTuple_Resize(PyObject **pv, int newsize)
 	int sizediff;
 
 	v = (PyTupleObject *) *pv;
-	if (v == NULL || !PyTuple_Check(v) ||
+	if (v == NULL || v->ob_type != &PyTuple_Type ||
 	    (v->ob_size != 0 && v->ob_refcnt != 1)) {
 		*pv = 0;
 		Py_XDECREF(v);
