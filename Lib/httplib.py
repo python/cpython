@@ -25,7 +25,7 @@ request. This diagram details these state transitions:
       v
     Unread-response   [Response-headers-read]
       |\____________________
-      |                     \
+      |                     \ 
       | response.read()      | putrequest()
       v                      v
     Idle                   Req-started-unread-response
@@ -332,7 +332,10 @@ class HTTPConnection:
         if port is None:
             i = host.find(':')
             if i >= 0:
-                port = int(host[i+1:])
+                try:
+                    port = int(host[i+1:])
+                except ValueError, msg:
+                    raise socket.error, str(msg)
                 host = host[:i]
             else:
                 port = self.default_port
