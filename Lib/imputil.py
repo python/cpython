@@ -18,7 +18,7 @@
 #
 
 # note: avoid importing non-builtin modules
-import imp
+import imp			### not available in JPython?
 import sys
 import strop
 import __builtin__
@@ -40,36 +40,42 @@ class ImportManager:
       namespace = vars(namespace)
 
     ### Note that we have no notion of "uninstall" or "chaining"
+
     namespace['__import__'] = self._import_hook
     ### fix this
     #namespace['reload'] = self._reload_hook
 
-  def add_suffix(self, suffix, importer):
-    assert isinstance(importer, SuffixImporter)
-    self.suffixes.append((suffix, importer))
+  def add_suffix(self, suffix, importFunc):
+    assert callable(importFunc)
+    self.fs_imp.add_suffix(suffix, importFunc)
 
   ######################################################################
   #
   # PRIVATE METHODS
   #
-  def __init__(self):
+  
+  clsFilesystemImporter = None
+
+  def __init__(self, fs_imp=None):
     # we're definitely going to be importing something in the future,
     # so let's just load the OS-related facilities.
     if not _os_stat:
       _os_bootstrap()
 
+    # This is the Importer that we use for grabbing stuff from the
+    # filesystem. It defines one more method (import_from_dir) for our use.
+    if not fs_imp:
+      cls = self.clsFilesystemImporter or _FilesystemImporter
+      fs_imp = cls()
+    self.fs_imp = fs_imp
+
     # Initialize the set of suffixes that we recognize and import.
     # The default will import dynamic-load modules first, followed by
     # .py files (or a .py file's cached bytecode)
-    self.suffixes = [ ]
     for desc in imp.get_suffixes():
       if desc[2] == imp.C_EXTENSION:
-        self.suffixes.append((desc[0], DynLoadSuffixImporter(desc)))
-    self.suffixes.append(('.py', PySuffixImporter()))
-
-    # This is the importer that we use for grabbing stuff from the
-    # filesystem. It defines one more method (import_from_dir) for our use.
-    self.fs_imp = _FilesystemImporter(self.suffixes)
+        self.add_suffix(desc[0], DynLoadSuffixImporter(desc).import_file)
+    self.add_suffix('.py', py_suffix_importer)
 
   def _import_hook(self, fqname, globals=None, locals=None, fromlist=None):
     """Python calls this hook to locate and import a module."""
@@ -197,9 +203,6 @@ class ImportManager:
 class Importer:
   "Base class for replacing standard import functions."
 
-  def install(self):
-    sys.path.insert(0, self)
-
   def import_top(self, name):
     "Import a top-level module."
     return self._import_one(None, name, name)
@@ -255,10 +258,6 @@ class Importer:
     result = self.get_code(parent, modname, fqname)
     if result is None:
       return None
-
-    ### backwards-compat
-    if len(result) == 2:
-      result = result + ({},)
 
     module = self._process_result(result, fqname)
 
@@ -510,9 +509,12 @@ class BuiltinImporter(Importer):
 # Internal importer used for importing from the filesystem
 #
 class _FilesystemImporter(Importer):
-  def __init__(self, suffixes):
-    # this list is shared with the ImportManager.
-    self.suffixes = suffixes
+  def __init__(self):
+    self.suffixes = [ ]
+
+  def add_suffix(self, suffix, importFunc):
+    assert callable(importFunc)
+    self.suffixes.append((suffix, importFunc))
 
   def import_from_dir(self, dir, fqname):
     result = self._import_pathname(_os_path_join(dir, fqname), fqname)
@@ -541,14 +543,14 @@ class _FilesystemImporter(Importer):
         return 1, result[1], values
       return None
 
-    for suffix, importer in self.suffixes:
+    for suffix, importFunc in self.suffixes:
       filename = pathname + suffix
       try:
         finfo = _os_stat(filename)
       except OSError:
         pass
       else:
-        return importer.import_file(filename, finfo, fqname)
+        return importFunc(filename, finfo, fqname)
     return None
 
 ######################################################################
@@ -556,31 +558,26 @@ class _FilesystemImporter(Importer):
 # SUFFIX-BASED IMPORTERS
 #
 
-class SuffixImporter:
-  def import_file(self, filename, finfo, fqname):
-    raise RuntimeError
+def py_suffix_importer(filename, finfo, fqname):
+  file = filename[:-3] + _suffix
+  t_py = long(finfo[8])
+  t_pyc = _timestamp(file)
 
-class PySuffixImporter(SuffixImporter):
-  def import_file(self, filename, finfo, fqname):
-    file = filename[:-3] + _suffix
-    t_py = long(finfo[8])
-    t_pyc = _timestamp(file)
+  code = None
+  if t_pyc is not None and t_pyc >= t_py:
+    f = open(file, 'rb')
+    if f.read(4) == imp.get_magic():
+      t = struct.unpack('<I', f.read(4))[0]
+      if t == t_py:
+        code = marshal.load(f)
+    f.close()
+  if code is None:
+    file = filename
+    code = _compile(file, t_py)
 
-    code = None
-    if t_pyc is not None and t_pyc >= t_py:
-      f = open(file, 'rb')
-      if f.read(4) == imp.get_magic():
-        t = struct.unpack('<I', f.read(4))[0]
-        if t == t_py:
-          code = marshal.load(f)
-      f.close()
-    if code is None:
-      file = filename
-      code = _compile(file, t_py)
+  return 0, code, { '__file__' : file }
 
-    return 0, code, { '__file__' : file }
-
-class DynLoadSuffixImporter(SuffixImporter):
+class DynLoadSuffixImporter:
   def __init__(self, desc):
     self.desc = desc
 
