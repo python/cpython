@@ -19,7 +19,14 @@ class UserDict:
         if self.__class__ is UserDict:
             return UserDict(self.data)
         import copy
-        return copy.copy(self)
+        data = self.data
+        try:
+            self.data = {}
+            c = copy.copy(self)
+        finally:
+            self.data = data
+        c.update(self)
+        return c
     def keys(self): return self.data.keys()
     def items(self): return self.data.items()
     def iteritems(self): return self.data.iteritems()
