@@ -9,13 +9,14 @@ import regex
 from Tkinter import *
 from ManPage import ManPage
 
-MANDIR = '/usr/local/man/mann'
+MANNDIR = '/usr/local/man/mann'
+MAN3DIR = '/usr/local/man/man3'
 
-def listmanpages(mandir = MANDIR):
+def listmanpages(mandir):
 	files = os.listdir(mandir)
 	names = []
 	for file in files:
-		if file[-2:] == '.n':
+		if file[-2:-1] == '.' and  (file[-1] in 'ln123456789'):
 			names.append(file[:-2])
 	names.sort()
 	return names
@@ -30,23 +31,39 @@ class SelectionBox:
 		self.master = self.frame.master
 		self.subframe = Frame(self.frame, {
 			Pack: {'expand': 0, 'fill': 'both'}})
-		self.listbox = Listbox(self.subframe,
-				       {'relief': 'sunken', 'bd': 2,
-					'geometry': '20x6',
-					Pack: {'side': 'right',
-					       'expand': 1, 'fill': 'both'}})
-		self.subsubframe = Frame(self.subframe, {
+		self.leftsubframe = Frame(self.subframe, {
 			Pack: {'side': 'left', 'expand': 1, 'fill': 'both'}})
-		self.l1 = Button(self.subsubframe,
+		self.rightsubframe = Frame(self.subframe, {
+			Pack: {'side': 'right', 'expand': 1, 'fill': 'both'}})
+		self.chaptervar = StringVar(master)
+		self.chapter = Menubutton(self.rightsubframe,
+					  {'text': 'Directory',
+					   'relief': 'raised', 'bd': 2,
+					   Pack: {'side': 'top'}})
+		self.chaptermenu = Menu(self.chapter)
+		self.chaptermenu.add_radiobutton({'label': 'C functions',
+						  'value': MAN3DIR,
+						  'variable': self.chaptervar,
+						  'command': self.newchapter})
+		self.chaptermenu.add_radiobutton({'label': 'Tcl/Tk functions',
+						  'value': MANNDIR,
+						  'variable': self.chaptervar,
+						  'command': self.newchapter})
+		self.chapter['menu'] = self.chaptermenu
+		self.listbox = Listbox(self.rightsubframe,
+				       {'relief': 'sunken', 'bd': 2,
+					'geometry': '20x5',
+					Pack: {'expand': 1, 'fill': 'both'}})
+		self.l1 = Button(self.leftsubframe,
 				{'text': 'Display manual page named:',
 				 'command': self.entry_cb,
 				 Pack: {'side': 'top'}})
-		self.entry = Entry(self.subsubframe,
+		self.entry = Entry(self.leftsubframe,
 				   {'relief': 'sunken', 'bd': 2,
 				    'width': 20,
 				    Pack: {'side': 'top',
 					   'expand': 0, 'fill': 'x'}})
-		self.l2frame = Frame(self.subsubframe, {
+		self.l2frame = Frame(self.leftsubframe, {
 			Pack: {'expand': 0, 'fill': 'none'}})
 		self.l2 = Button(self.l2frame,
 				{'text': 'Search regexp:',
@@ -57,12 +74,12 @@ class SelectionBox:
 					      'variable': 'casesense',
 					      'relief': 'flat',
 					      Pack: {'side': 'left'}})
-		self.search = Entry(self.subsubframe,
+		self.search = Entry(self.leftsubframe,
 				   {'relief': 'sunken', 'bd': 2,
 				    'width': 20,
 				    Pack: {'side': 'top',
 					   'expand': 0, 'fill': 'x'}})
-		self.title = Label(self.subsubframe,
+		self.title = Label(self.leftsubframe,
 				   {'text': '(none)',
 				    Pack: {'side': 'bottom'}})
 		self.text = ManPage(self.frame,
@@ -79,6 +96,14 @@ class SelectionBox:
 		self.text.bind('<Tab>', self.text_tab)
 
 		self.entry.focus_set()
+
+		self.chaptervar.set(MANNDIR)
+		self.newchapter()
+
+	def newchapter(self):
+		mandir = self.chaptervar.get()
+		self.choices = []
+		self.addlist(listmanpages(mandir))
 
 	def addchoice(self, choice):
 		if choice not in self.choices:
@@ -135,7 +160,7 @@ class SelectionBox:
 			self.updatelist()
 
 	def show_page(self, name):
-		file = '%s/%s.n' % (MANDIR, name)
+		file = '%s/%s.?' % (self.chaptervar.get(), name)
 		fp = os.popen('nroff -man %s | ul -i' % file, 'r')
 		self.text.kill()
 		self.title['text'] = name
@@ -192,7 +217,6 @@ class SelectionBox:
 def main():
 	root = Tk()
 	sb = SelectionBox(root)
-	sb.addlist(listmanpages())
 	if sys.argv[1:]:
 		sb.show_page(sys.argv[1])
 	root.minsize(1, 1)
