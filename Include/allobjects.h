@@ -70,6 +70,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "intobject.h"
 #include "longobject.h"
 #include "floatobject.h"
+#ifndef WITHOUT_COMPLEX
+#include "complexobject.h"
+#endif
 #include "rangeobject.h"
 #include "stringobject.h"
 #include "tupleobject.h"
@@ -80,6 +83,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "funcobject.h"
 #include "classobject.h"
 #include "fileobject.h"
+#include "cobject.h"
 
 #include "errors.h"
 #include "mymalloc.h"
@@ -88,8 +92,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "ceval.h"
 
 #include "abstract.h"
-
-extern void Py_FatalError Py_PROTO((char *));
 
 #define PyArg_GetInt(v, a)	PyArg_Parse((v), "i", (a))
 #define PyArg_NoArgs(v)		PyArg_Parse(v, "")
