@@ -564,6 +564,28 @@ class FieldStorage:
         else:
             return default
 
+    def getfirst(self, key, default=None):
+        """ Return the first value received."""
+        if self.has_key(key):
+            value = self[key]
+            if type(value) is type([]):
+                return value[0].value
+            else:
+                return value.value
+        else:
+            return default
+
+    def getlist(self, key):
+        """ Return list of received values."""
+        if self.has_key(key):
+            value = self[key]
+            if type(value) is type([]):
+                return map(lambda v: v.value, value)
+            else:
+                return [value.value]
+        else:
+            return []
+
     def keys(self):
         """Dictionary style keys() method."""
         if self.list is None:
