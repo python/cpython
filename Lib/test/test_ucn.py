@@ -56,6 +56,30 @@ for char in "SPAM":
     verify(unicodedata.name(code) == name)
 print "done."
 
+print "Testing hangul syllable names....",
+exec r"""
+verify(u"\N{HANGUL SYLLABLE GA}" == u"\uac00")
+verify(u"\N{HANGUL SYLLABLE GGWEOSS}" == u"\uafe8")
+verify(u"\N{HANGUL SYLLABLE DOLS}" == u"\ub3d0")
+verify(u"\N{HANGUL SYLLABLE RYAN}" == u"\ub7b8")
+verify(u"\N{HANGUL SYLLABLE MWIK}" == u"\ubba0")
+verify(u"\N{HANGUL SYLLABLE BBWAEM}" == u"\ubf88")
+verify(u"\N{HANGUL SYLLABLE SSEOL}" == u"\uc370")
+verify(u"\N{HANGUL SYLLABLE YI}" == u"\uc758")
+verify(u"\N{HANGUL SYLLABLE JJYOSS}" == u"\ucb40")
+verify(u"\N{HANGUL SYLLABLE KYEOLS}" == u"\ucf28")
+verify(u"\N{HANGUL SYLLABLE PAN}" == u"\ud310")
+verify(u"\N{HANGUL SYLLABLE HWEOK}" == u"\ud6f8")
+verify(u"\N{HANGUL SYLLABLE HIH}" == u"\ud7a3")
+"""
+try:
+    unicodedata.name(u"\ud7a4")
+except ValueError:
+    pass
+else:
+    raise AssertionError, "Found name for U+D7A4"
+print "done."
+
 print "Testing code to name mapping for all characters....",
 count = 0
 for code in range(65536):
