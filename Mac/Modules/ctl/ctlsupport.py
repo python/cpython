@@ -82,6 +82,7 @@ Method = OSErrMethodGenerator
 functions = []
 methods = []
 execfile(INPUTFILE)
+execfile('ctledit.py')
 
 # add the populated lists to the generator groups
 for f in functions: module.add(f)
