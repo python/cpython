@@ -87,13 +87,31 @@ class RPCServer(SocketServer.TCPServer):
         return self.socket, self.server_address
 
     def handle_error(self, request, client_address):
-        """Override TCPServer method, no error message if exiting"""
+        """Override TCPServer method
+
+        Error message goes to __stderr__.  No error message if exiting
+        normally or socket raised EOF.  Other exceptions not handled in
+        server code will cause os._exit.
+
+        """
         try:
             raise
         except SystemExit:
             raise
-        else:
-            TCPServer.handle_error(request, client_address)
+        except EOFError:
+            pass
+        except:
+            erf = 'sys.__stderr__'
+            print>>erf, '-'*40
+            print>>erf, 'Unhandled server exception!'
+            print>>erf, 'Thread: %s' % threading.currentThread().getName()
+            print>>erf, 'Client Address: ', address
+            print>>erf, 'Request: ', repr(request)
+            traceback.print_exc(file=erf)
+            print>>erf, '\n*** Unrecoverable, server exiting!'
+            print>>erf, '-'*40
+            import os
+            os._exit
 
 
 objecttable = {}
