@@ -106,6 +106,19 @@ del _verify
 # Adrian Baddeley.
 
 class Random:
+    """Random number generator base class used by bound module functions.
+
+    Used to instantiate instances of Random to get generators that don't
+    share state.  Especially useful for multi-threaded programs, creating
+    a different instance of Random for each thread, and using the jumpahead()
+    method to ensure that the generated sequences seen by each thread don't
+    overlap.
+
+    Class Random can also be subclassed if you want to use a different basic
+    generator of your own devising: in that case, override the following
+    methods:  random(), seed(), getstate(), setstate() and jumpahead().
+    
+    """
 
     VERSION = 1     # used by getstate/setstate
 
@@ -358,6 +371,11 @@ class Random:
 ## -------------------- normal distribution --------------------
 
     def normalvariate(self, mu, sigma):
+        """Normal distribution.
+
+        mu is the mean, and sigma is the standard deviation.
+        
+        """
         # mu = mean, sigma = standard deviation
 
         # Uses Kinderman and Monahan method. Reference: Kinderman,
@@ -378,19 +396,48 @@ class Random:
 ## -------------------- lognormal distribution --------------------
 
     def lognormvariate(self, mu, sigma):
+        """Log normal distribution.
+
+        If you take the natural logarithm of this distribution, you'll get a
+        normal distribution with mean mu and standard deviation sigma.
+        mu can have any value, and sigma must be greater than zero.
+        
+        """
         return _exp(self.normalvariate(mu, sigma))
 
 ## -------------------- circular uniform --------------------
 
     def cunifvariate(self, mean, arc):
+        """Circular uniform distribution.
+
+        mean is the mean angle, and arc is the range of the distribution,
+        centered around the mean angle.  Both values must be expressed in
+        radians.  Returned values range between mean - arc/2 and
+        mean + arc/2 and are normalized to between 0 and pi.
+
+        Deprecated in version 2.3.  Use:
+            (mean + arc * (Random.random() - 0.5)) % Math.pi
+        
+        """
         # mean: mean angle (in radians between 0 and pi)
         # arc:  range of distribution (in radians between 0 and pi)
+        import warnings
+        warnings.warn("The cunifvariate function is deprecated; Use (mean "
+                      "+ arc * (Random.random() - 0.5)) % Math.pi instead",
+                      DeprecationWarning)
 
         return (mean + arc * (self.random() - 0.5)) % _pi
 
 ## -------------------- exponential distribution --------------------
 
     def expovariate(self, lambd):
+        """Exponential distribution.
+
+        lambd is 1.0 divided by the desired mean.  (The parameter would be
+        called "lambda", but that is a reserved word in Python.)  Returned
+        values range from 0 to positive infinity.
+        
+        """
         # lambd: rate lambd = 1/mean
         # ('lambda' is a Python reserved word)
 
@@ -403,6 +450,14 @@ class Random:
 ## -------------------- von Mises distribution --------------------
 
     def vonmisesvariate(self, mu, kappa):
+        """Circular data distribution.
+        
+        mu is the mean angle, expressed in radians between 0 and 2*pi, and
+        kappa is the concentration parameter, which must be greater than or
+        equal to zero.  If kappa is equal to zero, this distribution reduces
+        to a uniform random angle over the range 0 to 2*pi.
+        
+        """
         # mu:    mean angle (in radians between 0 and 2*pi)
         # kappa: concentration parameter kappa (>= 0)
         # if kappa = 0 generate uniform random angle
@@ -445,6 +500,11 @@ class Random:
 ## -------------------- gamma distribution --------------------
 
     def gammavariate(self, alpha, beta):
+        """Gamma distribution.  Not the gamma function!
+
+        Conditions on the parameters are alpha > 0 and beta > 0.
+
+        """
 
         # alpha > 0, beta > 0, mean is alpha*beta, variance is alpha*beta**2
 
@@ -524,6 +584,14 @@ class Random:
 ## -------------------- Gauss (faster alternative) --------------------
 
     def gauss(self, mu, sigma):
+        """Gaussian distribution.
+
+        mu is the mean, and sigma is the standard deviation.  This is
+        slightly faster than the normalvariate() function.
+
+        Not thread-safe without a lock around calls.
+        
+        """
 
         # When x and y are two variables from [0, 1), uniformly
         # distributed, then
@@ -569,6 +637,13 @@ class Random:
 ## was dead wrong, and how it probably got that way.
 
     def betavariate(self, alpha, beta):
+        """Beta distribution.
+
+        Conditions on the parameters are alpha > -1 and beta} > -1.
+        Returned values range between 0 and 1.
+        
+        """
+        
         # This version due to Janne Sinkkonen, and matches all the std
         # texts (e.g., Knuth Vol 2 Ed 3 pg 134 "the beta distribution").
         y = self.gammavariate(alpha, 1.)
@@ -580,6 +655,7 @@ class Random:
 ## -------------------- Pareto --------------------
 
     def paretovariate(self, alpha):
+        """Pareto distribution.  alpha is the shape parameter."""
         # Jain, pg. 495
 
         u = self.random()
@@ -588,6 +664,11 @@ class Random:
 ## -------------------- Weibull --------------------
 
     def weibullvariate(self, alpha, beta):
+        """Weibull distribution.
+
+        alpha is the scale parameter and beta is the shape parameter.
+        
+        """
         # Jain, pg. 499; bug fix courtesy Bill Arms
 
         u = self.random()
