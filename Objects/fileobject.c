@@ -606,7 +606,8 @@ static PyObject *
 file_readinto(PyFileObject *f, PyObject *args)
 {
 	char *ptr;
-	size_t ntodo, ndone, nnow;
+	int ntodo;
+	size_t ndone, nnow;
 
 	if (f->f_fp == NULL)
 		return err_closed();
