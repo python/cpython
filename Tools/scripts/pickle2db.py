@@ -1,18 +1,27 @@
 #!/usr/bin/env python
 
 """
-Synopsis: %(prog)s [-h|-b|-g|-r|-a|-d] dbfile [ picklefile ]
+Synopsis: %(prog)s [-h|-b|-g|-r|-a|-d] [ picklefile ] dbfile
 
 Read the given picklefile as a series of key/value pairs and write to a new
 database.  If the database already exists, any contents are deleted.  The
-optional flags indicate the type of the database (bsddb hash, bsddb btree,
-bsddb recno, anydbm, dbm).  The default is hash.  If a pickle file is named
-it is opened for read access.  If no pickle file is named, the pickle input
-is read from standard input.
+optional flags indicate the type of the output database:
 
-Note that recno databases can only contain numeric keys, so you can't dump a
+    -a - open using anydbm
+    -b - open as bsddb btree file
+    -d - open as dbm file
+    -g - open as gdbm file
+    -h - open as bsddb hash file
+    -r - open as bsddb recno file
+
+The default is hash.  If a pickle file is named it is opened for read
+access.  If no pickle file is named, the pickle input is read from standard
+input.
+
+Note that recno databases can only contain integer keys, so you can't dump a
 hash or btree database using db2pickle.py and reconstitute it to a recno
-database with %(prog)s.
+database with %(prog)s unless your keys are integers.
+
 """
 
 import getopt
@@ -56,15 +65,15 @@ def main(args):
         usage()
         return 1
     elif len(args) == 1:
-        dbfile = args[0]
         pfile = sys.stdin
-    else:
         dbfile = args[0]
+    else:
         try:
-            pfile = open(args[1], 'rb')
+            pfile = open(args[0], 'rb')
         except IOError:
-            sys.stderr.write("Unable to open %s\n" % args[1])
+            sys.stderr.write("Unable to open %s\n" % args[0])
             return 1
+        dbfile = args[1]
 
     dbopen = None
     for opt, arg in opts:
