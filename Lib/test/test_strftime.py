@@ -3,11 +3,7 @@
 # Sanity checker for time.strftime
 
 import time, calendar, sys, string, os
-
-verbose = 0
-
-if __name__ == '__main__':
-    verbose = 1
+from test_support import verbose
 
 if verbose:
     now = time.time()
