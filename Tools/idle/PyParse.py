@@ -83,15 +83,13 @@ _closere = re.compile(r"""
     \b
 """, re.VERBOSE).match
 
-# Chew up non-special chars as quickly as possible, but retaining
-# enough info to determine the last non-ws char seen; if match is
-# successful, and m.group(1) isn't None, m.end(1) less 1 is the
-# index of the last non-ws char matched.
+# Chew up non-special chars as quickly as possible.  If match is
+# successful, m.end() less 1 is the index of the last boring char
+# matched.  If match is unsuccessful, the string starts with an
+# interesting char.
 
 _chew_ordinaryre = re.compile(r"""
-    (?: \s+
-    |   ( [^\s[\](){}#'"\\]+ )
-    )+
+    [^[\](){}#'"\\]+
 """, re.VERBOSE).match
 
 # Build translation table to map uninteresting chars to "x", open
@@ -386,10 +384,14 @@ class Parser:
             # suck up all except ()[]{}'"#\\
             m = _chew_ordinaryre(str, p, q)
             if m:
-                i = m.end(1) - 1    # last non-ws (if any)
+                # we skipped at least one boring char
+                p = m.end()
+                # back up over totally boring whitespace
+                i = p-1    # index of last boring char
+                while i >= 0 and str[i] in " \t\n":
+                    i = i-1
                 if i >= 0:
                     lastch = str[i]
-                p = m.end()
                 if p >= q:
                     break
 
