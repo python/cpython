@@ -355,6 +355,28 @@ msgnums = M.search(None, '(FROM "LDJ")')
   Subscribe to new mailbox.
 \end{methoddesc}
 
+\begin{methoddesc}{thread}{threading_algorithm, charset, search_criterion\optional{, ...}}
+  The \code{thread} command is a variant of \code{search} with threading semantics for
+  the results.  Returned data contains a space
+  separated list of thread members.
+
+  Thread members consist of zero or more messages numbers, delimited by spaces,
+  indicating successive parent and child.
+
+  Thread has two arguments before the \var{search_criterion}
+  argument(s); a \var{threading_algorithm}, and the searching \var{charset}.
+  Note that unlike \code{search}, the searching \var{charset} argument is mandatory.
+  There is also a \code{uid thread} command which corresponds to \code{thread} the way
+  that \code{uid search} corresponds to \code{search}.
+  The \code{thread} command first searches the mailbox for messages that
+  match the given searching criteria using the charset argument for
+  the interpretation of strings in the searching criteria. It thren
+  returns the matching messages threaded according to the specified
+  threading algorithm.
+
+  This is an \samp{IMAP4rev1} extension command. \versionadded{2.4}
+\end{methoddesc}
+
 \begin{methoddesc}{uid}{command, arg\optional{, ...}}
   Execute command args with messages identified by UID, rather than
   message number.  Returns response appropriate to command.  At least
