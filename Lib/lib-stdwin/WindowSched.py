@@ -11,6 +11,7 @@ import time
 # Return immediately when something is done, or when the delay is up.
 #
 def delayfunc(msecs):
+	msecs = int(msecs)
 	#
 	# Check for immediate stdwin event
 	#
@@ -36,7 +37,7 @@ def delayfunc(msecs):
 		mainloop.dispatch(event)
 
 def millitimer():
-	return int(1000 * time.time())
+	return time.time() * 1000
 
 q = sched.scheduler(millitimer, delayfunc)
 
