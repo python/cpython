@@ -152,8 +152,17 @@ AC_MSG_RESULT($with_cxx)
 
 dnl The following fragment works similar to AC_PROG_CXX.
 dnl It does not fail if CXX is not found, and it is not executed if 
-dnl --with-cxx was given.
+dnl --without-cxx was given.
 dnl Finally, it does not test whether CXX is g++.
+
+dnl Autoconf 2.5x does not have AC_PROG_CXX_WORKS anymore
+ifdef([AC_PROG_CXX_WORKS],[],
+      [AC_DEFUN([AC_PROG_CXX_WORKS],
+      [AC_LANG_PUSH(C++)dnl
+       _AC_COMPILER_EXEEXT
+       AC_LANG_POP()
+      ]
+)])
 
 if test "$check_cxx" = "yes" 
 then
@@ -405,6 +414,36 @@ else
   fi
 fi
 
+# On some compilers, pthreads are available without further options
+# (e.g. MacOS X). On some of these systems, the compiler will not
+# complain if unaccepted options are passed (e.g. gcc on Mac OS X).
+# So we have to see first whether pthreads are available without
+# options before we can check whether -Kpthread improves anything.
+AC_MSG_CHECKING(whether pthreads are available without options)
+AC_CACHE_VAL(ac_cv_pthread_is_default,
+[AC_TRY_RUN([
+#include <pthread.h>
+
+void* routine(void* p){return NULL;}
+
+int main(){
+  pthread_t p;
+  if(pthread_create(&p,NULL,routine,NULL)!=0)
+    return 1;
+  return 0;
+}
+],
+  ac_cv_pthread_is_default=yes,
+  ac_cv_pthread_is_default=no,
+  ac_cv_pthread_is_default=no)
+])
+AC_MSG_RESULT($ac_cv_pthread_is_default)
+
+
+if test $ac_cv_pthread_is_default = yes 
+then
+  ac_cv_kpthread=no
+else
 # -Kpthread, if available, provides the right #defines
 # and linker options to make pthread_create available
 # Some compilers won't report that they do not support -Kpthread,
@@ -431,6 +470,7 @@ int main(){
   ac_cv_kpthread=no)
 CC="$ac_save_cc"])
 AC_MSG_RESULT($ac_cv_kpthread)
+fi
 
 dnl # check for ANSI or K&R ("traditional") preprocessor
 dnl AC_MSG_CHECKING(for C preprocessor type)
@@ -925,6 +965,14 @@ AC_MSG_RESULT($with_threads)
 if test "$with_threads" = "no"
 then
     USE_THREAD_MODULE="#"
+elif test "$ac_cv_pthread_is_default" = yes
+then
+    AC_DEFINE(WITH_THREAD)
+    AC_DEFINE(_POSIX_THREADS)
+    # Defining _REENTRANT on system with POSIX threads should not hurt.
+    AC_DEFINE(_REENTRANT)
+    posix_threads=yes
+    LIBOBJS="$LIBOBJS thread.o"    
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
@@ -1120,7 +1168,7 @@ if test "$ipv6" = "yes"; then
 		case $i in
 		inria)
 			dnl http://www.kame.net/
-			AC_EGREP_CPP(yes, [dnl
+			AC_EGREP_CPP(yes, [
 #include <netinet/in.h>
 #ifdef IPV6_INRIA_VERSION
 yes
@@ -1130,7 +1178,7 @@ yes
 			;;
 		kame)
 			dnl http://www.kame.net/
-			AC_EGREP_CPP(yes, [dnl
+			AC_EGREP_CPP(yes, [
 #include <netinet/in.h>
 #ifdef __KAME__
 yes
@@ -1143,7 +1191,7 @@ yes
 			;;
 		linux-glibc)
 			dnl http://www.v6.linux.or.jp/
-			AC_EGREP_CPP(yes, [dnl
+			AC_EGREP_CPP(yes, [
 #include <features.h>
 #if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))
 yes
@@ -1171,7 +1219,7 @@ yes
                         fi
 			;;
 		toshiba)
-			AC_EGREP_CPP(yes, [dnl
+			AC_EGREP_CPP(yes, [
 #include <sys/param.h>
 #ifdef _TOSHIBA_INET6
 yes
@@ -1182,7 +1230,7 @@ yes
 				OPT="-DINET6 $OPT"])
 			;;
 		v6d)
-			AC_EGREP_CPP(yes, [dnl
+			AC_EGREP_CPP(yes, [
 #include </usr/local/v6/include/sys/v6config.h>
 #ifdef __V6D__
 yes
@@ -1193,7 +1241,7 @@ yes
 				OPT="-I/usr/local/v6/include $OPT"])
 			;;
 		zeta)
-			AC_EGREP_CPP(yes, [dnl
+			AC_EGREP_CPP(yes, [
 #include <sys/param.h>
 #ifdef _ZETA_MINAMI_INET6
 yes
