@@ -91,14 +91,14 @@ typedef struct _ts {
 } PyThreadState;
 
 
-PyInterpreterState *PyInterpreterState_New(void);
-void PyInterpreterState_Delete(PyInterpreterState *);
+PyInterpreterState *PyInterpreterState_New Py_PROTO((void));
+void PyInterpreterState_Delete Py_PROTO((PyInterpreterState *));
 
-PyThreadState *PyThreadState_New(PyInterpreterState *);
-void PyThreadState_Delete(PyThreadState *);
+PyThreadState *PyThreadState_New Py_PROTO((PyInterpreterState *));
+void PyThreadState_Delete Py_PROTO((PyThreadState *));
 
-PyThreadState *PyThreadState_Get(void);
-PyThreadState *PyThreadState_Swap(PyThreadState *);
+PyThreadState *PyThreadState_Get Py_PROTO((void));
+PyThreadState *PyThreadState_Swap Py_PROTO((PyThreadState *));
 
 /* Some background.
 
