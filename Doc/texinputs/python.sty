@@ -316,7 +316,7 @@
   \fi
   \@ifundefined{py@#2IndexModule}{%
     \typeout{*** MACRO declaremodule called with unknown module type: `#2'}
-    \py@ModuleIndex{#3}%
+    \py@IndexModule{#3}%
   }{%
     \csname py@#2IndexModule\endcsname{#3}%
   }
