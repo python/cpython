@@ -1834,8 +1834,18 @@ listindex(PyListObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "O|ii:index", &v, &start, &stop))
 		return NULL;
-	start = max(0, start);
-	stop = max(0, min(self->ob_size, stop));
+	if (start < 0) {
+		start += self->ob_size;
+		if (start < 0)
+			start = 0;
+	}
+	if (stop < 0) {
+		stop += self->ob_size;
+		if (stop < 0)
+			stop = 0;
+	}
+	else if (stop > self->ob_size)
+		stop = self->ob_size;
 	for (i = start; i < stop; i++) {
 		int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
 		if (cmp > 0)
