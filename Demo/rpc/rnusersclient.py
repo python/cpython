@@ -37,8 +37,8 @@ class RnusersUnpacker(Unpacker):
 class PartialRnusersClient:
 
 	def addpackers(self):
-		self.packer = RnusersPacker().init()
-		self.unpacker = RnusersUnpacker().init('')
+		self.packer = RnusersPacker()
+		self.unpacker = RnusersUnpacker('')
 
 	def Num(self):
 		return self.make_call(1, None, None, self.unpacker.unpack_int)
@@ -54,14 +54,14 @@ class PartialRnusersClient:
 
 class RnusersClient(PartialRnusersClient, UDPClient):
 
-	def init(self, host):
-		return UDPClient.init(self, host, 100002, 2)
+	def __init__(self, host):
+		UDPClient.__init__(self, host, 100002, 2)
 
 
 class BroadcastRnusersClient(PartialRnusersClient, BroadcastUDPClient):
 
-	def init(self, bcastaddr):
-		return BroadcastUDPClient.init(self, bcastaddr, 100002, 2)
+	def __init__(self, bcastaddr):
+		BroadcastUDPClient.__init__(self, bcastaddr, 100002, 2)
 
 
 def test():
@@ -71,7 +71,7 @@ def test():
 		return
 	else:
 		host = sys.argv[1]
-	c = RnusersClient().init(host)
+	c = RnusersClient(host)
 	list = c.Names()
 	for (line, name, host, time), idle in list:
 		line = strip0(line)
@@ -80,7 +80,7 @@ def test():
 		print `name`, `host`, `line`, time, idle
 
 def testbcast():
-	c = BroadcastRnusersClient().init('<broadcast>')
+	c = BroadcastRnusersClient('<broadcast>')
 	def listit(list, fromaddr):
 		host, port = fromaddr
 		print host + '\t:',

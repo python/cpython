@@ -121,12 +121,12 @@ class NFSUnpacker(MountUnpacker):
 
 class NFSClient(UDPClient):
 
-	def init(self, host):
-		return UDPClient.init(self, host, NFS_PROGRAM, NFS_VERSION)
+	def __init__(self, host):
+		UDPClient.__init__(self, host, NFS_PROGRAM, NFS_VERSION)
 
 	def addpackers(self):
-		self.packer = NFSPacker().init()
-		self.unpacker = NFSUnpacker().init('')
+		self.packer = NFSPacker()
+		self.unpacker = NFSUnpacker('')
 
 	def mkcred(self):
 		if self.cred == None:
@@ -183,7 +183,7 @@ def test():
 	if sys.argv[2:]: filesys = sys.argv[2]
 	else: filesys = None
 	from mountclient import UDPMountClient, TCPMountClient
-	mcl = TCPMountClient().init(host)
+	mcl = TCPMountClient(host)
 	if filesys == None:
 		list = mcl.Export()
 		for item in list:
@@ -193,7 +193,7 @@ def test():
 	print sf
 	fh = sf[1]
 	if fh:
-		ncl = NFSClient().init(host)
+		ncl = NFSClient(host)
 		as = ncl.Getattr(fh)
 		print as
 		list = ncl.Listdir(fh)

@@ -151,7 +151,7 @@ def make_auth_null():
 	return ''
 
 def make_auth_unix(seed, host, uid, gid, groups):
-	p = Packer().init()
+	p = Packer()
 	p.pack_auth_unix(seed, host, uid, gid, groups)
 	return p.get_buf()
 
@@ -163,14 +163,15 @@ def make_auth_unix_default():
 	except ImportError:
 		uid = gid = 0
 	import time
-	return make_auth_unix(time.time(), socket.gethostname(), uid, gid, [])
+	return make_auth_unix(int(time.time()), \
+		  socket.gethostname(), uid, gid, [])
 
 
 # Common base class for clients
 
 class Client:
 
-	def init(self, host, prog, vers, port):
+	def __init__(self, host, prog, vers, port):
 		self.host = host
 		self.prog = prog
 		self.vers = vers
@@ -182,7 +183,6 @@ class Client:
 		self.addpackers()
 		self.cred = None
 		self.verf = None
-		return self
 
 	def close(self):
 		self.sock.close()
@@ -201,8 +201,8 @@ class Client:
 
 	def addpackers(self):
 		# Override this to use derived classes from Packer/Unpacker
-		self.packer = Packer().init()
-		self.unpacker = Unpacker().init('')
+		self.packer = Packer()
+		self.unpacker = Unpacker('')
 
 	def make_call(self, proc, args, pack_func, unpack_func):
 		# Don't normally override this (but see Broadcast)
@@ -244,7 +244,7 @@ class Client:
 			self.verf = (AUTH_NULL, make_auth_null())
 		return self.verf
 
-	def Null(self):			# Procedure 0 is always like this
+	def call_0(self):		# Procedure 0 is always like this
 		return self.make_call(0, None, None, None)
 
 
@@ -369,11 +369,10 @@ class RawUDPClient(Client):
 
 class RawBroadcastUDPClient(RawUDPClient):
 
-	def init(self, bcastaddr, prog, vers, port):
-		self = RawUDPClient.init(self, bcastaddr, prog, vers, port)
+	def __init__(self, bcastaddr, prog, vers, port):
+		RawUDPClient.__init__(self, bcastaddr, prog, vers, port)
 		self.reply_handler = None
 		self.timeout = 30
-		return self
 
 	def connsocket(self):
 		# Don't connect -- use sendto
@@ -495,8 +494,8 @@ class PortMapperUnpacker(Unpacker):
 class PartialPortMapperClient:
 
 	def addpackers(self):
-		self.packer = PortMapperPacker().init()
-		self.unpacker = PortMapperUnpacker().init('')
+		self.packer = PortMapperPacker()
+		self.unpacker = PortMapperUnpacker('')
 
 	def Set(self, mapping):
 		return self.make_call(PMAPPROC_SET, mapping, \
@@ -526,23 +525,23 @@ class PartialPortMapperClient:
 
 class TCPPortMapperClient(PartialPortMapperClient, RawTCPClient):
 
-	def init(self, host):
-		return RawTCPClient.init(self, \
+	def __init__(self, host):
+		RawTCPClient.__init__(self, \
 			host, PMAP_PROG, PMAP_VERS, PMAP_PORT)
 
 
 class UDPPortMapperClient(PartialPortMapperClient, RawUDPClient):
 
-	def init(self, host):
-		return RawUDPClient.init(self, \
+	def __init__(self, host):
+		RawUDPClient.__init__(self, \
 			host, PMAP_PROG, PMAP_VERS, PMAP_PORT)
 
 
 class BroadcastUDPPortMapperClient(PartialPortMapperClient, \
 				   RawBroadcastUDPClient):
 
-	def init(self, bcastaddr):
-		return RawBroadcastUDPClient.init(self, \
+	def __init__(self, bcastaddr):
+		RawBroadcastUDPClient.__init__(self, \
 			bcastaddr, PMAP_PROG, PMAP_VERS, PMAP_PORT)
 
 
@@ -550,36 +549,35 @@ class BroadcastUDPPortMapperClient(PartialPortMapperClient, \
 
 class TCPClient(RawTCPClient):
 
-	def init(self, host, prog, vers):
-		pmap = TCPPortMapperClient().init(host)
+	def __init__(self, host, prog, vers):
+		pmap = TCPPortMapperClient(host)
 		port = pmap.Getport((prog, vers, IPPROTO_TCP, 0))
 		pmap.close()
 		if port == 0:
 			raise RuntimeError, 'program not registered'
-		return RawTCPClient.init(self, host, prog, vers, port)
+		RawTCPClient.__init__(self, host, prog, vers, port)
 
 
 class UDPClient(RawUDPClient):
 
-	def init(self, host, prog, vers):
-		pmap = UDPPortMapperClient().init(host)
+	def __init__(self, host, prog, vers):
+		pmap = UDPPortMapperClient(host)
 		port = pmap.Getport((prog, vers, IPPROTO_UDP, 0))
 		pmap.close()
 		if port == 0:
 			raise RuntimeError, 'program not registered'
-		return RawUDPClient.init(self, host, prog, vers, port)
+		RawUDPClient.__init__(self, host, prog, vers, port)
 
 
 class BroadcastUDPClient(Client):
 
-	def init(self, bcastaddr, prog, vers):
-		self.pmap = BroadcastUDPPortMapperClient().init(bcastaddr)
+	def __init__(self, bcastaddr, prog, vers):
+		self.pmap = BroadcastUDPPortMapperClient(bcastaddr)
 		self.pmap.set_reply_handler(self.my_reply_handler)
 		self.prog = prog
 		self.vers = vers
 		self.user_reply_handler = None
 		self.addpackers()
-		return self
 
 	def close(self):
 		self.pmap.close()
@@ -622,7 +620,7 @@ class BroadcastUDPClient(Client):
 
 class Server:
 
-	def init(self, host, prog, vers, port):
+	def __init__(self, host, prog, vers, port):
 		self.host = host # Should normally be '' for default interface
 		self.prog = prog
 		self.vers = vers
@@ -631,17 +629,16 @@ class Server:
 		self.bindsocket()
 		self.host, self.port = self.sock.getsockname()
 		self.addpackers()
-		return self
 
 	def register(self):
 		mapping = self.prog, self.vers, self.prot, self.port
-		p = TCPPortMapperClient().init(self.host)
+		p = TCPPortMapperClient(self.host)
 		if not p.Set(mapping):
 			raise RuntimeError, 'register failed'
 
 	def unregister(self):
 		mapping = self.prog, self.vers, self.prot, self.port
-		p = TCPPortMapperClient().init(self.host)
+		p = TCPPortMapperClient(self.host)
 		if not p.Unset(mapping):
 			raise RuntimeError, 'unregister failed'
 
@@ -716,8 +713,8 @@ class Server:
 
 	def addpackers(self):
 		# Override this to use derived classes from Packer/Unpacker
-		self.packer = Packer().init()
-		self.unpacker = Unpacker().init('')
+		self.packer = Packer()
+		self.unpacker = Unpacker('')
 
 
 class TCPServer(Server):
@@ -738,9 +735,40 @@ class TCPServer(Server):
 				call = recvrecord(sock)
 			except EOFError:
 				break
+			except socket.error, msg:
+				print 'socket error:', msg
+				break
 			reply = self.handle(call)
-			if reply <> None:
+			if reply is not None:
 				sendrecord(sock, reply)
+
+	def forkingloop(self):
+		# Like loop but uses forksession()
+		self.sock.listen(0)
+		while 1:
+			self.forksession(self.sock.accept())
+
+	def forksession(self, connection):
+		# Like session but forks off a subprocess
+		import os
+		# Wait for deceased children
+		try:
+			while 1:
+				pid, sts = os.waitpid(0, 1)
+		except os.error:
+			pass
+		pid = None
+		try:
+			pid = os.fork()
+			if pid: # Parent
+				connection[0].close()
+				return
+			# Child
+			self.session(connection)
+		finally:
+			# Make sure we don't fall through in the parent
+			if pid == 0:
+				os._exit(0)
 
 
 class UDPServer(Server):
@@ -763,8 +791,7 @@ class UDPServer(Server):
 # Simple test program -- dump local portmapper status
 
 def test():
-	pmap = UDPPortMapperClient().init('')
-	pmap.Null()
+	pmap = UDPPortMapperClient('')
 	list = pmap.Dump()
 	list.sort()
 	for prog, vers, prot, port in list:
@@ -786,7 +813,7 @@ def testbcast():
 	def rh(reply, fromaddr):
 		host, port = fromaddr
 		print host + '\t' + `reply`
-	pmap = BroadcastUDPPortMapperClient().init(bcastaddr)
+	pmap = BroadcastUDPPortMapperClient(bcastaddr)
 	pmap.set_reply_handler(rh)
 	pmap.set_timeout(5)
 	replies = pmap.Getport((100002, 1, IPPROTO_UDP, 0))
@@ -806,7 +833,7 @@ def testsvr():
 			print 'RPC function 1 called, arg', `arg`
 			self.packer.pack_string(arg + arg)
 	#
-	s = S().init('', 0x20000000, 1, 0)
+	s = S('', 0x20000000, 1, 0)
 	try:
 		s.unregister()
 	except RuntimeError, msg:
@@ -830,7 +857,7 @@ def testclt():
 			return self.make_call(1, arg, \
 				self.packer.pack_string, \
 				self.unpacker.unpack_string)
-	c = C().init(host, 0x20000000, 1)
+	c = C(host, 0x20000000, 1)
 	print 'making call...'
 	reply = c.call_1('hello, world, ')
 	print 'call returned', `reply`
