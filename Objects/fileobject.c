@@ -406,17 +406,14 @@ new_buffersize(f, currentsize)
 	size_t currentsize;
 {
 #ifdef HAVE_FSTAT
-#ifndef SEEK_CUR
-#define SEEK_CUR 1
-#endif
 	long pos, end;
 	struct stat st;
 	if (fstat(fileno(f->f_fp), &st) == 0) {
 		end = st.st_size;
-		pos = lseek(fileno(f->f_fp), 0L, SEEK_CUR);
+		pos = ftell(f->f_fp);
 		if (end > pos && pos >= 0)
-			return end - pos + BUFSIZ;
-		/* Add BUFSIZ to allow for stdio buffered data */
+			return end - pos + 1;
+		/* Add 1 so if the file were to grow we'd notice. */
 	}
 #endif
 	if (currentsize > SMALLCHUNK) {
