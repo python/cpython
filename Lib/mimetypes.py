@@ -268,7 +268,7 @@ def guess_extension(type, strict=True):
     init()
     return guess_extension(type, strict)
 
-def add_type(self, type, ext, strict=True):
+def add_type(type, ext, strict=True):
     """Add a mapping between a type and an extension.
 
     When the extension is already known, the new
