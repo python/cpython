@@ -20,30 +20,30 @@ from distutils.ccompiler import \
 _can_read_reg = 0
 try:
     import winreg
-    _HKEY_CLASSES_ROOT = winreg.HKEY_CLASSES_ROOT
-    _HKEY_LOCAL_MACHINE = winreg.HKEY_LOCAL_MACHINE
-    _HKEY_CURRENT_USER = winreg.HKEY_CURRENT_USER
-    _HKEY_USERS = winreg.HKEY_USERS
-    _RegOpenKeyEx = winreg.OpenKeyEx
-    _RegEnumKey = winreg.EnumKey
-    _RegEnumValue = winreg.EnumValue
-    _RegError = winreg.error
     _can_read_reg = 1
+    hkey_mod = winreg                   # module that provides HKEY_* stuff
+    reg_mod = winreg                    # provides other registry stuff
 except ImportError:
     try:
         import win32api
         import win32con
-        _HKEY_CLASSES_ROOT = win32con.HKEY_CLASSES_ROOT
-        _HKEY_LOCAL_MACHINE = win32con.HKEY_LOCAL_MACHINE
-        _HKEY_CURRENT_USER = win32con.HKEY_CURRENT_USER
-        _HKEY_USERS = win32con.HKEY_USERS
-        _RegOpenKeyEx = win32api.RegOpenKeyEx
-        _RegEnumKey = win32api.RegEnumKey
-        _RegEnumValue = win32api.RegEnumValue
-        _RegError = win32api.error
         _can_read_reg = 1
+        hkey_mod = win32con
+        reg_mod = win32api
     except ImportError:
         pass
+
+if _can_read_reg:
+    HKEY_CLASSES_ROOT = hkey_mod.HKEY_CLASSES_ROOT
+    HKEY_LOCAL_MACHINE = hkey_mod.HKEY_LOCAL_MACHINE
+    HKEY_CURRENT_USER = hkey_mod.HKEY_CURRENT_USER
+    HKEY_USERS = hkey_mod.HKEY_USERS
+    RegOpenKeyEx = reg_mod.RegOpenKeyEx
+    RegEnumKey = reg_mod.RegEnumKey
+    RegEnumValue = reg_mod.RegEnumValue
+    RegError = reg_mod.error
+    _can_read_reg = 1
+    
     
 
 def get_devstudio_versions ():
@@ -58,22 +58,22 @@ def get_devstudio_versions ():
 
     K = 'Software\\Microsoft\\Devstudio'
     L = []
-    for base in (_HKEY_CLASSES_ROOT,
-                 _HKEY_LOCAL_MACHINE,
-                 _HKEY_CURRENT_USER,
-                 _HKEY_USERS):
+    for base in (HKEY_CLASSES_ROOT,
+                 HKEY_LOCAL_MACHINE,
+                 HKEY_CURRENT_USER,
+                 HKEY_USERS):
         try:
-            k = _RegOpenKeyEx(base,K)
+            k = RegOpenKeyEx(base,K)
             i = 0
             while 1:
                 try:
-                    p = _RegEnumKey(k,i)
+                    p = RegEnumKey(k,i)
                     if p[0] in '123456789' and p not in L:
                         L.append(p)
-                except _RegError:
+                except RegError:
                     break
                 i = i + 1
-        except _RegError:
+        except RegError:
             pass
     L.sort()
     L.reverse()
@@ -97,16 +97,16 @@ def get_msvc_paths (path, version='6.0', platform='x86'):
     K = ('Software\\Microsoft\\Devstudio\\%s\\' +
          'Build System\\Components\\Platforms\\Win32 (%s)\\Directories') % \
         (version,platform)
-    for base in (_HKEY_CLASSES_ROOT,
-                 _HKEY_LOCAL_MACHINE,
-                 _HKEY_CURRENT_USER,
-                 _HKEY_USERS):
+    for base in (HKEY_CLASSES_ROOT,
+                 HKEY_LOCAL_MACHINE,
+                 HKEY_CURRENT_USER,
+                 HKEY_USERS):
         try:
-            k = _RegOpenKeyEx(base,K)
+            k = RegOpenKeyEx(base,K)
             i = 0
             while 1:
                 try:
-                    (p,v,t) = _RegEnumValue(k,i)
+                    (p,v,t) = RegEnumValue(k,i)
                     if string.upper(p) == path:
                         V = string.split(v,';')
                         for v in V:
@@ -114,9 +114,9 @@ def get_msvc_paths (path, version='6.0', platform='x86'):
                             L.append(v)
                         break
                     i = i + 1
-                except _RegError:
+                except RegError:
                     break
-        except _RegError:
+        except RegError:
             pass
     return L
 
