@@ -690,7 +690,7 @@ class PyShell(OutputWindow):
         text.bind("<<beginning-of-line>>", self.home_callback)
         text.bind("<<end-of-file>>", self.eof_callback)
         text.bind("<<open-stack-viewer>>", self.open_stack_viewer)
-        ##text.bind("<<toggle-debugger>>", self.toggle_debugger)
+        text.bind("<<toggle-debugger>>", self.toggle_debugger)
         text.bind("<<open-python-shell>>", self.flist.open_shell)
         text.bind("<<toggle-jit-stack-viewer>>", self.toggle_jit_stack_viewer)
         text.bind("<<view-restart>>", self.view_restart_mark)

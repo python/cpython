@@ -558,8 +558,6 @@ class RPCProxy:
         if not self.__attributes.has_key(name):
             raise AttributeError, name
 
-    __getattr__.DebuggerStepThrough = 1
-
     def __getattributes(self):
         self.__attributes = self.sockio.remotecall(self.oid,
                                                 "__attributes__", (), {})
