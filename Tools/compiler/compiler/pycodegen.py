@@ -155,13 +155,7 @@ class ExampleASTVisitor(ASTVisitor):
             print
 
 class CodeGenerator:
-    """TODO
-
-    EmptyNode
-    Sliceobj
-    Tryexcept
-    Tryfinally
-    """
+    """Generate bytecode for the Python VM"""
 
     OPTIMIZED = 1
 
@@ -425,6 +419,63 @@ class CodeGenerator:
         self.emit('SET_LINENO', node.lineno)
         self.emit('JUMP_ABSOLUTE', l.startAnchor)
 
+    def visitTryExcept(self, node):
+        # XXX need to figure out exactly what is on the stack when an
+        # exception is raised and the first handler is checked
+        handlers = StackRef()
+        end = StackRef()
+        if node.else_:
+            lElse = StackRef()
+        else:
+            lElse = end
+        self.emit('SET_LINENO', node.lineno)
+        self.emit('SETUP_EXCEPT', handlers)
+        self.visit(node.body)
+        self.emit('POP_BLOCK')
+        self.emit('JUMP_FORWARD', lElse)
+        handlers.bind(self.code.getCurInst())
+        
+        last = len(node.handlers) - 1
+        for i in range(len(node.handlers)):
+            expr, target, body = node.handlers[i]
+            if hasattr(expr, 'lineno'):
+                self.emit('SET_LINENO', expr.lineno)
+            if expr:
+                self.emit('DUP_TOP')
+                self.visit(expr)
+                self.emit('COMPARE_OP', "exception match")
+                next = StackRef()
+                self.emit('JUMP_IF_FALSE', next)
+                self.emit('POP_TOP')
+            self.emit('POP_TOP')
+            if target:
+                self.visit(target)
+            else:
+                self.emit('POP_TOP')
+            self.emit('POP_TOP')
+            self.visit(body)
+            self.emit('JUMP_FORWARD', end)
+            next.bind(self.code.getCurInst())
+            self.emit('POP_TOP')
+        self.emit('END_FINALLY')
+        if node.else_:
+            lElse.bind(self.code.getCurInst())
+            self.visit(node.else_)
+        end.bind(self.code.getCurInst())
+        return 1
+    
+    def visitTryFinally(self, node):
+        final = StackRef()
+        self.emit('SET_LINENO', node.lineno)
+        self.emit('SETUP_FINALLY', final)
+        self.visit(node.body)
+        self.emit('POP_BLOCK')
+        self.emit('LOAD_CONST', None)
+        final.bind(self.code.getCurInst())
+        self.visit(node.final)
+        self.emit('END_FINALLY')
+        return 1
+
     def visitCompare(self, node):
 	"""Comment from compile.c follows:
 
@@ -492,17 +543,17 @@ class CodeGenerator:
 
     def visitSubscript(self, node):
         self.visit(node.expr)
-        for sub in node.subs[:-1]:
+        for sub in node.subs:
             self.visit(sub)
-            self.emit('BINARY_SUBSCR')
-        self.visit(node.subs[-1])
+        if len(node.subs) > 1:
+            self.emit('BUILD_TUPLE', len(node.subs))
         if node.flags == 'OP_APPLY':
             self.emit('BINARY_SUBSCR')
         elif node.flags == 'OP_ASSIGN':
             self.emit('STORE_SUBSCR')
 	elif node.flags == 'OP_DELETE':
             self.emit('DELETE_SUBSCR')
-            
+        print
         return 1
 
     def visitSlice(self, node):
@@ -521,8 +572,15 @@ class CodeGenerator:
         elif node.flags == 'OP_DELETE':
             self.emit('DELETE_SLICE+%d' % slice)
         else:
-            print node.flags
+            print "weird slice", node.flags
             raise
+        return 1
+
+    def visitSliceobj(self, node):
+        for child in node.nodes:
+            print child
+            self.visit(child)
+        self.emit('BUILD_SLICE', len(node.nodes))
         return 1
 
     def visitAssign(self, node):
