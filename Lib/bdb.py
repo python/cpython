@@ -46,7 +46,7 @@ class Bdb: # Basic Debugger
 		return self.trace_dispatch
 	
 	def dispatch_call(self, frame, arg):
-		frame.f_locals['__args__'] = arg
+		# XXX 'arg' is no longer used
 		if self.botframe is None:
 			# First call of dispatch since reset()
 			self.botframe = frame
