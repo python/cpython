@@ -1,10 +1,11 @@
-How to install Python 2.1a2 on your Macintosh
+How to install Python 2.1a3 on your Macintosh
 ---------------------------------------------
 
 Note that this is really an alpha: it is only lightly tested and contains a lot
-of new code. Moreover, this release is Carbon only, so it will run on MacOS 8.6
+of new code. Moreover, this release is Carbon only, so it will run on MacOS 8.1
 or later and MacOS X. The next alpha will again run in "classic MacOS" (8.0 or
-later).
+later). For MacOS 8.1 through 8.6 you will have to install CarbonLib (version 1.0.4
+or later) yourself from the Apple website.
 
 I'm hoping for a fairly quick alpha cycle, with about 3 distributions in quick
 succession, so please give feedback (to pythonmac-sig@python.org) as soon as
@@ -111,7 +112,7 @@ Uninstalling
 
 Two items are installed in the system folder: the interpreter shared
 libraries PythonCore and PythonCoreCarbon lives in the Extensions folder and the
-"Python 2.1a2 Preferences" file in the Python subfolder in the
+"Python 2.1a3 Preferences" file in the Python subfolder in the
 Preferences folder. All the rest of Python lives in the folder you
 installed in.
 
