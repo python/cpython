@@ -403,6 +403,26 @@ static PyObject *ResObj_GetNextFOND(_self, _args)
 	return _res;
 }
 
+static PyObject *ResObj_as_Control(_self, _args)
+	ResourceObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	return CtlObj_New((ControlHandle)_self->ob_itself);
+
+}
+
+static PyObject *ResObj_as_Menu(_self, _args)
+	ResourceObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	return MenuObj_New((MenuHandle)_self->ob_itself);
+
+}
+
 static PyMethodDef ResObj_methods[] = {
 	{"HomeResFile", (PyCFunction)ResObj_HomeResFile, 1,
 	 "() -> (short _rv)"},
@@ -438,6 +458,10 @@ static PyMethodDef ResObj_methods[] = {
 	 "(long newSize) -> None"},
 	{"GetNextFOND", (PyCFunction)ResObj_GetNextFOND, 1,
 	 "() -> (Handle _rv)"},
+	{"as_Control", (PyCFunction)ResObj_as_Control, 1,
+	 "Return this resource/handle as a Control"},
+	{"as_Menu", (PyCFunction)ResObj_as_Menu, 1,
+	 "Return this resource/handle as a Menu"},
 	{NULL, NULL, 0}
 };
 
@@ -468,7 +492,32 @@ static PyObject *ResObj_getattr(self, name)
 	return Py_FindMethodInChain(&ResObj_chain, (PyObject *)self, name);
 }
 
-#define ResObj_setattr NULL
+static int
+ResObj_setattr(self, name, value)
+	ResourceObject *self;
+	char *name;
+	PyObject *value;
+{
+	char *data;
+	long size;
+	
+	if (strcmp(name, "data") != 0 || value == NULL )
+		return -1;
+	if ( !PyString_Check(value) )
+		return -1;
+	size = PyString_Size(value);
+	data = PyString_AsString(value);
+	/* XXXX Do I need the GetState/SetState calls? */
+	SetHandleSize(self->ob_itself, size);
+	if ( MemError())
+		return -1;
+	HLock(self->ob_itself);
+	memcpy((char *)*self->ob_itself, data, size);
+	HUnlock(self->ob_itself);
+	/* XXXX Should I do the Changed call immedeately? */
+	return 0;
+}
+
 
 PyTypeObject Resource_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
