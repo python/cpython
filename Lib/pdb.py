@@ -375,14 +375,34 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_enable(self, arg):
         args = arg.split()
         for i in args:
-            bp = bdb.Breakpoint.bpbynumber[int(i)]
+            try:
+                i = int(i)
+            except ValueError:
+                print 'Breakpoint index %r is not a number' % i
+                continue
+
+            if not (0 <= i < len(bdb.Breakpoint.bpbynumber)):
+                print 'No breakpoint numbered', i
+                continue
+
+            bp = bdb.Breakpoint.bpbynumber[i]
             if bp:
                 bp.enable()
 
     def do_disable(self, arg):
         args = arg.split()
         for i in args:
-            bp = bdb.Breakpoint.bpbynumber[int(i)]
+            try:
+                i = int(i)
+            except ValueError:
+                print 'Breakpoint index %r is not a number' % i
+                continue
+            
+            if not (0 <= i < len(bdb.Breakpoint.bpbynumber)):
+                print 'No breakpoint numbered', i
+                continue
+
+            bp = bdb.Breakpoint.bpbynumber[i]
             if bp:
                 bp.disable()
 
