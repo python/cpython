@@ -575,7 +575,6 @@ block_pop(struct compiling *c, int type)
 /* Prototype forward declarations */
 
 static int issue_warning(const char *, const char *, int);
-static int symtable_warn(struct symtable *, char *);
 static int com_init(struct compiling *, const char *);
 static void com_free(struct compiling *);
 static void com_push(struct compiling *, int);
@@ -1007,64 +1006,6 @@ none_assignment_check(struct compiling *c, char *name, int assigning)
 	return 0;
 }
 
-static int num_literals = 3;
-static char *literal_names[] = {"None", "True", "False"};
-static PyObject *literals;
-
-static int
-init_literals(void)
-{
-    int i;
-
-    literals = PyDict_New();
-    if (literals == NULL)
-	return -1;
-    for (i = 0; i < num_literals; i++)
-	if (PyDict_SetItemString(literals, literal_names[i], 
-				 Py_None) < 0) 
-	    return -1;
-    return 0;
-}
-
-static int
-check_literal(PyObject *name, struct compiling *c, struct symtable *st)
-{
-	/* check for literal names that will become keywords in the future */
-	if (literals == NULL && init_literals() < 0)
-		return -1;
-	if (!PyString_Check(name))
-		return -1;
-	if (PyDict_GetItem(literals, name)) {
-		char buf[1024];
-		PyOS_snprintf(buf, sizeof(buf), "'%s' may become a keyword", 
-			      PyString_AS_STRING(name));
-		if (c && (issue_warning(buf, c->c_filename, c->c_lineno) < 0))
-			return -1;
-		if (st && (symtable_warn(st, buf) < 0))
-			return -1;
-	}
-	return 0;
-}
-
-static int
-check_literal_str(const char *name, struct compiling *c, struct symtable *st)
-{
-	int i;
-
-	for (i = 0; i < num_literals; i++)
-		if (strcmp(literal_names[i], name) == 0) {
-			char buf[1024];
-			PyOS_snprintf(buf, sizeof(buf), 
-				      "'%s' may become a keyword", name);
-			if (c && 
-			    issue_warning(buf, c->c_filename, c->c_lineno) < 0)
-				return -1;
-			if (st && symtable_warn(st, buf) < 0)
-				return -1;
-		}
-	return 0;
-}
-
 static void
 com_addop_varname(struct compiling *c, int kind, char *name)
 {
@@ -1121,14 +1062,6 @@ com_addop_varname(struct compiling *c, int kind, char *name)
 		goto done;
 	}
 	Py_DECREF(v);
-
-	if (kind == VAR_STORE || kind == VAR_DELETE) {
-		if (check_literal(v, c, NULL) < 0) {
-			c->c_errors++;
-			i = 255;
-			goto done;
-		}
-	}
 
 	switch (kind) {
 	case VAR_LOAD:
@@ -1197,7 +1130,6 @@ com_addopname(struct compiling *c, int op, node *n)
 	/* XXX it is possible to write this code without the 1000
 	   chars on the total length of dotted names, I just can't be
 	   bothered right now */
-
 	if (TYPE(n) == STAR)
 		name = "*";
 	else if (TYPE(n) == dotted_name) {
@@ -1206,10 +1138,6 @@ com_addopname(struct compiling *c, int op, node *n)
 		name = buffer;
 		for (i = 0; i < NCH(n); i += 2) {
 			char *s = STR(CHILD(n, i));
-			if (check_literal_str(s, c, NULL) < 0) {
-			    name = NULL;
-			    break;
-			}
 			if (p + strlen(s) > buffer + (sizeof buffer) - 2) {
 				com_error(c, PyExc_MemoryError,
 					  "dotted_name too long");
@@ -1225,8 +1153,6 @@ com_addopname(struct compiling *c, int op, node *n)
 	else {
 		REQ(n, NAME);
 		name = STR(n);
-		if (check_literal_str(name, c, NULL) < 0)
-		    name = NULL;
 	}
 	com_addop_name(c, op, name);
 }
@@ -3046,13 +2972,9 @@ com_import_stmt(struct compiling *c, node *n)
 		} else {
 			tup = PyTuple_New((NCH(n) - 2)/2);
 			for (i = 3; i < NCH(n); i += 2) {
-				char *s = STR(CHILD(CHILD(n, i), 0));
-				if (check_literal_str(s, c, NULL) < 0) {
-					c->c_errors++;
-					return;
-				}
 				PyTuple_SET_ITEM(tup, (i-3)/2, 
-						 PyString_FromString(s));
+					PyString_FromString(STR(
+						CHILD(CHILD(n, i), 0))));
 			}
 		}
 		com_addoparg(c, LOAD_CONST, com_addconst(c, tup));
@@ -3992,23 +3914,40 @@ com_fplist(struct compiling *c, node *n)
 static void
 com_arglist(struct compiling *c, node *n)
 {
-	int i;
+	int nch, i, narg;
 	int complex = 0;
+	char nbuf[30];
 	REQ(n, varargslist);
 	/* varargslist:
 		(fpdef ['=' test] ',')* (fpdef ['=' test] | '*' .....) */
-	/* Check if the argument list includes nested tuples */
-	for (i = 0; i < NCH(n); i++)
-		if (TYPE(CHILD(n, i)) == LPAR) {
-			complex = 1;
+	nch = NCH(n);
+	/* Enter all arguments in table of locals */
+	for (i = 0, narg = 0; i < nch; i++) {
+		node *ch = CHILD(n, i);
+		node *fp;
+		if (TYPE(ch) == STAR || TYPE(ch) == DOUBLESTAR)
 			break;
+		REQ(ch, fpdef); /* fpdef: NAME | '(' fplist ')' */
+		fp = CHILD(ch, 0);
+		if (TYPE(fp) != NAME) {
+			PyOS_snprintf(nbuf, sizeof(nbuf), ".%d", i);
+			complex = 1;
 		}
-	/* If it does, generate code to unpack them. */
+		narg++;
+		/* all name updates handled by symtable */
+		if (++i >= nch)
+			break;
+		ch = CHILD(n, i);
+		if (TYPE(ch) == EQUAL)
+			i += 2;
+		else
+			REQ(ch, COMMA);
+	}
 	if (complex) {
 		/* Generate code for complex arguments only after
 		   having counted the simple arguments */
 		int ilocal = 0;
-		for (i = 0; i < NCH(n); i++) {
+		for (i = 0; i < nch; i++) {
 			node *ch = CHILD(n, i);
 			node *fp;
 			if (TYPE(ch) == STAR || TYPE(ch) == DOUBLESTAR)
@@ -4021,7 +3960,7 @@ com_arglist(struct compiling *c, node *n)
 				com_fpdef(c, ch);
 			}
 			ilocal++;
-			if (++i >= NCH(n))
+			if (++i >= nch)
 				break;
 			ch = CHILD(n, i);
 			if (TYPE(ch) == EQUAL)
@@ -5420,7 +5359,7 @@ static void
 symtable_params(struct symtable *st, node *n)
 {
 	int i, complex = -1, ext = 0;
-	node *c = NULL, *ch = NULL;
+	node *c = NULL;
 
 	if (TYPE(n) == parameters) {
 		n = CHILD(n, 1);
@@ -5437,14 +5376,9 @@ symtable_params(struct symtable *st, node *n)
 		if (TYPE(c) == test) {
 			continue;
 		}
-		ch = CHILD(c, 0);
-		if (TYPE(ch) == NAME) {
-			if (check_literal_str(STR(ch), NULL, st) < 0) {
-				st->st_errors++;
-				return;
-			}
+		if (TYPE(CHILD(c, 0)) == NAME)
 			symtable_add_def(st, STR(CHILD(c, 0)), DEF_PARAM);
-		} else {
+		else {
 			char nbuf[30];
 			PyOS_snprintf(nbuf, sizeof(nbuf), ".%d", i);
 			symtable_add_def(st, nbuf, DEF_PARAM);
