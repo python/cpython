@@ -168,6 +168,24 @@ class Tokenizer:
 	self.next = self.__next()
 	return this
 
+def isident(char):
+    return "a" <= char <= "z" or "A" <= char <= "Z" or char == "_"
+
+def isdigit(char):
+    return "0" <= char <= "9"
+
+def isname(name):
+    # check that group name is a valid string
+    # FIXME: <fl> this code is really lame.  should use a regular
+    # expression instead, but I seem to have certain bootstrapping
+    # problems here ;-)
+    if not isident(name[0]):
+	return 0
+    for char in name:
+	if not isident(char) and not isdigit(char):
+	    return 0
+    return 1
+
 def _group(escape, state):
     # check if the escape string represents a valid group
     try:
@@ -418,9 +436,10 @@ def _parse(source, state, flags=0):
 				raise error, "unterminated name"
 			    if char == ">":
 				break
-			    # FIXME: check for valid character
 			    name = name + char
 			group = 1
+			if not isname(name):
+			    raise error, "illegal character in group name"
 		    elif source.match("="):
 			# named backreference
 			raise error, "not yet implemented"
@@ -522,20 +541,21 @@ def parse_template(source, pattern):
 		    while 1:
 			char = s.get()
 			if char is None:
-			    raise error, "unterminated index"
+			    raise error, "unterminated group name"
 			if char == ">":
 			    break
-			# FIXME: check for valid character
 			name = name + char
 		if not name:
-		    raise error, "bad index"
+		    raise error, "bad group name"
 		try:
 		    index = int(name)
 		except ValueError:
+		    if not isname(name):
+			raise error, "illegal character in group name"
 		    try:
 			index = pattern.groupindex[name]
 		    except KeyError:
-			raise IndexError, "unknown index"
+			raise IndexError, "unknown group name"
 		a((MARK, index))
 	    elif len(this) > 1 and this[1] in DIGITS:
 		while s.next in DIGITS:
