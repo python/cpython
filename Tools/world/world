@@ -2,7 +2,7 @@
 #
 # Note: you may have to edit the top line in this file.
 #
-# Usage: world addr
+# Usage: world addr1 [addr2 ...]
 #
 # $Id$
 
