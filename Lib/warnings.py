@@ -11,6 +11,9 @@ onceregistry = {}
 
 def warn(message, category=None, stacklevel=1):
     """Issue a warning, or maybe ignore it or raise an exception."""
+    # Check if message is already a Warning object
+    if isinstance(message, Warning):
+       category = message.__class__
     # Check category argument
     if category is None:
         category = UserWarning
@@ -49,14 +52,20 @@ def warn_explicit(message, category, filename, lineno,
             module = module[:-3] # XXX What about leading pathname?
     if registry is None:
         registry = {}
-    key = (message, category, lineno)
+    if isinstance(message, Warning):
+       text = str(message)
+       category = message.__class__
+    else:
+       text = message
+       message = category(message)
+    key = (text, category, lineno)
     # Quick test for common case
     if registry.get(key):
         return
     # Search the filters
     for item in filters:
         action, msg, cat, mod, ln = item
-        if (msg.match(message) and
+        if (msg.match(text) and
             issubclass(category, cat) and
             mod.match(module) and
             (ln == 0 or lineno == ln)):
@@ -68,11 +77,11 @@ def warn_explicit(message, category, filename, lineno,
         registry[key] = 1
         return
     if action == "error":
-        raise category(message)
+        raise message
     # Other actions
     if action == "once":
         registry[key] = 1
-        oncekey = (message, category)
+        oncekey = (text, category)
         if onceregistry.get(oncekey):
             return
         onceregistry[oncekey] = 1
@@ -80,7 +89,7 @@ def warn_explicit(message, category, filename, lineno,
         pass
     elif action == "module":
         registry[key] = 1
-        altkey = (message, category, 0)
+        altkey = (text, category, 0)
         if registry.get(altkey):
             return
         registry[altkey] = 1
