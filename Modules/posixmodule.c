@@ -1250,6 +1250,7 @@ posix_getcwd(PyObject *self, PyObject *args)
 	return PyString_FromString(buf);
 }
 
+#ifdef Py_USING_UNICODE
 PyDoc_STRVAR(posix_getcwdu__doc__,
 "getcwdu() -> path\n\n\
 Return a unicode string representing the current working directory.");
@@ -1286,6 +1287,7 @@ posix_getcwdu(PyObject *self, PyObject *args)
 		return posix_error();
 	return PyUnicode_Decode(buf, strlen(buf), Py_FileSystemDefaultEncoding,"strict");
 }
+#endif
 #endif
 
 
@@ -6855,7 +6857,9 @@ static PyMethodDef posix_methods[] = {
 #endif
 #ifdef HAVE_GETCWD
 	{"getcwd",	posix_getcwd, METH_VARARGS, posix_getcwd__doc__},
+#ifdef Py_USING_UNICODE
 	{"getcwdu",	posix_getcwdu, METH_VARARGS, posix_getcwdu__doc__},
+#endif
 #endif
 #ifdef HAVE_LINK
 	{"link",	posix_link, METH_VARARGS, posix_link__doc__},
