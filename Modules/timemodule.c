@@ -336,8 +336,12 @@ floattime()
    set an exception; else return 0. */
 
 static int
+#ifdef MPW
+floatsleep(double secs)
+#else
 floatsleep(secs)
 	double secs;
+#endif /* MPW */
 {
 #ifdef HAVE_SELECT
 	struct timeval t;

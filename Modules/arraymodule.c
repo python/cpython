@@ -1072,7 +1072,7 @@ static sequence_methods array_as_sequence = {
 	(intintobjargproc)array_ass_slice,	/*sq_ass_slice*/
 };
 
-static typeobject Arraytype = {
+statichere typeobject Arraytype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
 	"array",

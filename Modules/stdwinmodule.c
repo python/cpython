@@ -1141,7 +1141,7 @@ text_setattr(tp, name, v)
 		return dictinsert(tp->t_attr, name, v);
 }
 
-static typeobject Texttype = {
+statichere typeobject Texttype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"textedit",		/*tp_name*/
@@ -1348,7 +1348,7 @@ menu_setattr(mp, name, v)
 		return dictinsert(mp->m_attr, name, v);
 }
 
-static typeobject Menutype = {
+statichere typeobject Menutype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"menu",			/*tp_name*/
@@ -1505,7 +1505,7 @@ bitmap_setattr(bp, name, v)
 		return dictinsert(bp->b_attr, name, v);
 }
 
-static typeobject Bitmaptype = {
+statichere typeobject Bitmaptype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"bitmap",			/*tp_name*/
@@ -1929,7 +1929,7 @@ window_setattr(wp, name, v)
 		return dictinsert(wp->w_attr, name, v);
 }
 
-static typeobject Windowtype = {
+statichere typeobject Windowtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"window",		/*tp_name*/

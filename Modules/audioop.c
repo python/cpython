@@ -35,7 +35,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 #endif
 
-#include <math.h>
+#include "mymath.h"
 
 /* Code shamelessly stolen from sox,
 ** (c) Craig Reese, Joe Campbell and Jeff Poskanzer 1989 */
