@@ -158,8 +158,6 @@ bz2
     If FC finds differences, see the warning abou WinZip above (when I
     first tried it, sample3.ref failed due to CRLF conversion).
 
-    # XXX: it fails with vc 7.1, so the tests are skipped for now.
-
     All of this managed to build bzip2-1.0.2\libbz2.lib, which the Python
     project links in.
 

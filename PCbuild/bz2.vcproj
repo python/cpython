@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="bz2"
+	RootNamespace="bz2"
 	SccProjectName="bz2"
 	SccLocalPath="..">
 	<Platforms>
@@ -62,7 +63,7 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				CommandLine="cd ..\..\bzip2-1.0.2
-nmake /nologo /f makefile.msc lib
+nmake /nologo /f makefile.msc
 "/>
 			<Tool
 				Name="VCResourceCompilerTool"
