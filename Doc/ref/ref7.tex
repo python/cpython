@@ -6,8 +6,8 @@ or control the execution of those other statements in some way.  In
 general, compound statements span multiple lines, although in simple
 incarnations a whole compound statement may be contained in one line.
 
-The \verb\if\, \verb\while\ and \verb\for\ statements implement
-traditional control flow constructs.  \verb\try\ specifies exception
+The \verb@if@, \verb@while@ and \verb@for@ statements implement
+traditional control flow constructs.  \verb@try@ specifies exception
 handlers and/or cleanup code for a group of statements.  Function and
 class definitions are also syntactically compound statements.
 
@@ -21,7 +21,7 @@ statements on the same line as the header, following the header's
 colon, or it can be one or more indented statements on subsequent
 lines.  Only the latter form of suite can contain nested compound
 statements; the following is illegal, mostly because it wouldn't be
-clear to which \verb\if\ clause a following \verb\else\ clause would
+clear to which \verb@if@ clause a following \verb@else@ clause would
 belong:
 \index{clause}
 \index{suite}
@@ -32,7 +32,7 @@ if test1: if test2: print x
 
 Also note that the semicolon binds tighter than the colon in this
 context, so that in the following example, either all or none of the
-\verb\print\ statements are executed:
+\verb@print@ statements are executed:
 
 \begin{verbatim}
 if x < y < z: print x; print y; print z
@@ -48,15 +48,15 @@ statement:      stmt_list NEWLINE | compound_stmt
 stmt_list:      simple_stmt (";" simple_stmt)* [";"]
 \end{verbatim}
 
-Note that statements always end in a \verb\NEWLINE\ possibly followed
-by a \verb\DEDENT\.
+Note that statements always end in a \verb@NEWLINE@ possibly followed
+by a \verb@DEDENT@.
 \index{NEWLINE token}
 \index{DEDENT token}
 
 Also note that optional continuation clauses always begin with a
 keyword that cannot start a statement, thus there are no ambiguities
-(the `dangling \verb\else\' problem is solved in Python by requiring
-nested \verb\if\ statements to be indented).
+(the `dangling \verb@else@' problem is solved in Python by requiring
+nested \verb@if@ statements to be indented).
 \indexii{dangling}{else}
 
 The formatting of the grammar rules in the following sections places
@@ -65,7 +65,7 @@ each clause on a separate line for clarity.
 \section{The {\tt if} statement}
 \stindex{if}
 
-The \verb\if\ statement is used for conditional execution:
+The \verb@if@ statement is used for conditional execution:
 
 \begin{verbatim}
 if_stmt:        "if" condition ":" suite
@@ -76,8 +76,8 @@ if_stmt:        "if" condition ":" suite
 It selects exactly one of the suites by evaluating the conditions one
 by one until one is found to be true (see section \ref{Booleans} for
 the definition of true and false); then that suite is executed (and no
-other part of the \verb\if\ statement is executed or evaluated).  If
-all conditions are false, the suite of the \verb\else\ clause, if
+other part of the \verb@if@ statement is executed or evaluated).  If
+all conditions are false, the suite of the \verb@else@ clause, if
 present, is executed.
 \kwindex{elif}
 \kwindex{else}
@@ -86,7 +86,7 @@ present, is executed.
 \stindex{while}
 \indexii{loop}{statement}
 
-The \verb\while\ statement is used for repeated execution as long as a
+The \verb@while@ statement is used for repeated execution as long as a
 condition is true:
 
 \begin{verbatim}
@@ -96,13 +96,13 @@ while_stmt:     "while" condition ":" suite
 
 This repeatedly tests the condition and, if it is true, executes the
 first suite; if the condition is false (which may be the first time it
-is tested) the suite of the \verb\else\ clause, if present, is
+is tested) the suite of the \verb@else@ clause, if present, is
 executed and the loop terminates.
 \kwindex{else}
 
-A \verb\break\ statement executed in the first suite terminates the
-loop without executing the \verb\else\ clause's suite.  A
-\verb\continue\ statement executed in the first suite skips the rest
+A \verb@break@ statement executed in the first suite terminates the
+loop without executing the \verb@else@ clause's suite.  A
+\verb@continue@ statement executed in the first suite skips the rest
 of the suite and goes back to testing the condition.
 \stindex{break}
 \stindex{continue}
@@ -111,7 +111,7 @@ of the suite and goes back to testing the condition.
 \stindex{for}
 \indexii{loop}{statement}
 
-The \verb\for\ statement is used to iterate over the elements of a
+The \verb@for@ statement is used to iterate over the elements of a
 sequence (string, tuple or list):
 \obindex{sequence}
 
@@ -125,16 +125,16 @@ suite is then executed once for each item in the sequence, in the
 order of ascending indices.  Each item in turn is assigned to the
 target list using the standard rules for assignments, and then the
 suite is executed.  When the items are exhausted (which is immediately
-when the sequence is empty), the suite in the \verb\else\ clause, if
+when the sequence is empty), the suite in the \verb@else@ clause, if
 present, is executed, and the loop terminates.
 \kwindex{in}
 \kwindex{else}
 \indexii{target}{list}
 
-A \verb\break\ statement executed in the first suite terminates the
-loop without executing the \verb\else\ clause's suite.  A
-\verb\continue\ statement executed in the first suite skips the rest
-of the suite and continues with the next item, or with the \verb\else\
+A \verb@break@ statement executed in the first suite terminates the
+loop without executing the \verb@else@ clause's suite.  A
+\verb@continue@ statement executed in the first suite skips the rest
+of the suite and continues with the next item, or with the \verb@else@
 clause if there was no next item.
 \stindex{break}
 \stindex{continue}
@@ -146,9 +146,10 @@ The target list is not deleted when the loop is finished, but if the
 sequence is empty, it will not have been assigned to at all by the
 loop.
 
-Hint: the built-in function \verb\range()\ returns a sequence of
-integers suitable to emulate the effect of Pascal's \verb\for i := a
-to b do\; e.g. \verb\range(3)\ returns the list \verb\[0, 1, 2]\.
+Hint: the built-in function \verb@range()@ returns a sequence of
+integers suitable to emulate the effect of Pascal's
+\verb@for i := a to b do@;
+e.g. \verb@range(3)@ returns the list \verb@[0, 1, 2]@.
 \bifuncindex{range}
 \index{Pascal}
 
@@ -175,24 +176,25 @@ for x in a[:]:
 \section{The {\tt try} statement} \label{try}
 \stindex{try}
 
-The \verb\try\ statement specifies exception handlers and/or cleanup
+The \verb@try@ statement specifies exception handlers and/or cleanup
 code for a group of statements:
 
 \begin{verbatim}
 try_stmt:       try_exc_stmt | try_fin_stmt
 try_exc_stmt:   "try" ":" suite
                ("except" [condition ["," target]] ":" suite)+
+               ["else" ":" suite]
 try_fin_stmt:   "try" ":" suite
                "finally" ":" suite
 \end{verbatim}
 
-There are two forms of \verb\try\ statement: \verb\try...except\ and
-\verb\try...finally\.  These forms cannot be mixed.
+There are two forms of \verb@try@ statement: \verb@try...except@ and
+\verb@try...finally@.  These forms cannot be mixed.
 
-The \verb\try...except\ form specifies one or more exception handlers
-(the \verb\except\ clauses).  When no exception occurs in the
-\verb\try\ clause, no exception handler is executed.  When an
-exception occurs in the \verb\try\ suite, a search for an exception
+The \verb@try...except@ form specifies one or more exception handlers
+(the \verb@except@ clauses).  When no exception occurs in the
+\verb@try@ clause, no exception handler is executed.  When an
+exception occurs in the \verb@try@ suite, a search for an exception
 handler is started.  This inspects the except clauses in turn until
 one is found that matches the exception.  A condition-less except
 clause, if present, must be last; it matches any exception.  For an
@@ -211,7 +213,7 @@ handler continues in the surrounding code and on the invocation stack.
 If the evaluation of a condition in the header of an except clause
 raises an exception, the original search for a handler is cancelled
 and a search starts for the new exception in the surrounding code and
-on the call stack (it is treated as if the entire \verb\try\ statement
+on the call stack (it is treated as if the entire \verb@try@ statement
 raised the exception).
 
 When a matching except clause is found, the exception's parameter is
@@ -223,10 +225,10 @@ exception, and the exception occurs in the try clause of the inner
 handler, the outer handler will not handle the exception.)
 
 Before an except clause's suite is executed, details about the
-exception are assigned to three variables in the \verb\sys\ module:
-\verb\sys.exc_type\ receives the object identifying the exception;
-\verb\sys.exc_value\ receives the exception's parameter;
-\verb\sys.exc_traceback\ receives a traceback object (see section
+exception are assigned to three variables in the \verb@sys@ module:
+\verb@sys.exc_type@ receives the object identifying the exception;
+\verb@sys.exc_value@ receives the exception's parameter;
+\verb@sys.exc_traceback@ receives a traceback object (see section
 \ref{traceback}) identifying the point in the program where the
 exception occurred.
 \bimodindex{sys}
@@ -235,20 +237,25 @@ exception occurred.
 \ttindex{exc_traceback}
 \obindex{traceback}
 
-The \verb\try...finally\ form specifies a `cleanup' handler.  The
-\verb\try\ clause is executed.  When no exception occurs, the
-\verb\finally\ clause is executed.  When an exception occurs in the
-\verb\try\ clause, the exception is temporarily saved, the
-\verb\finally\ clause is executed, and then the saved exception is
-re-raised.  If the \verb\finally\ clause raises another exception or
-executes a \verb\return\, \verb\break\ or \verb\continue\ statement,
+The optional \verb@else@ clause is executed when no exception occurs
+in the \verb@try@ clause.  Exceptions in the \verb@else@ clause are
+not handled by the preceding \verb@except@ clauses.
+\kwindex{else}
+
+The \verb@try...finally@ form specifies a `cleanup' handler.  The
+\verb@try@ clause is executed.  When no exception occurs, the
+\verb@finally@ clause is executed.  When an exception occurs in the
+\verb@try@ clause, the exception is temporarily saved, the
+\verb@finally@ clause is executed, and then the saved exception is
+re-raised.  If the \verb@finally@ clause raises another exception or
+executes a \verb@return@, \verb@break@ or \verb@continue@ statement,
 the saved exception is lost.
 \kwindex{finally}
 
-When a \verb\return\ or \verb\break\ statement is executed in the
-\verb\try\ suite of a \verb\try...finally\ statement, the
-\verb\finally\ clause is also executed `on the way out'.  A
-\verb\continue\ statement is illegal in the \verb\try\ clause.  (The
+When a \verb@return@ or \verb@break@ statement is executed in the
+\verb@try@ suite of a \verb@try...finally@ statement, the
+\verb@finally@ clause is also executed `on the way out'.  A
+\verb@continue@ statement is illegal in the \verb@try@ clause.  (The
 reason is a problem with the current implementation --- this
 restriction may be lifted in the future).
 \stindex{return}
@@ -265,7 +272,8 @@ section \ref{types}):
 
 \begin{verbatim}
 funcdef:        "def" funcname "(" [parameter_list] ")" ":" suite
-parameter_list: (parameter ",")* ("*" identifier | parameter [","])
+parameter_list: (defparameter ",")* ("*" identifier | defparameter [","])
+defparameter:   parameter ["=" condition]
 sublist:        parameter ("," parameter)* [","]
 parameter:      identifier | "(" sublist ")"
 funcname:       identifier
@@ -282,8 +290,21 @@ as the global name space to be used when the function is called.
 The function definition does not execute the function body; this gets
 executed only when the function is called.
 
+When one or more top-level parameters have the form {\em parameter =
+condition}, the function is said to have ``default parameter values''.
+Default parameter values are evaluated when the function definition is
+executed.  For a parameter with a default value, the correponding
+argument may be omitted from a call, in which case the parameter's
+default value is substituted.  If a parameter has a default value, all
+following parameters must also have a default value --- this is a
+syntactic restriction that is not expressed by the grammar.%
+\footnote{Currently this is not checked; instead,
+\verb@def f(a=1,b)@ is interpreted as \verb@def f(a=1,b=None)@.}
+\indexiii{default}{parameter}{value}
+
 Function call semantics are described in section \ref{calls}.  When a
-user-defined function is called, the arguments (a.k.a. actual
+user-defined function is called, first missing arguments for which a
+default value exists are supplied; then the arguments (a.k.a. actual
 parameters) are bound to the (formal) parameters, as follows:
 \indexii{function}{call}
 \indexiii{user-defined}{function}{call}
@@ -291,10 +312,6 @@ parameters) are bound to the (formal) parameters, as follows:
 \index{argument}
 \indexii{parameter}{formal}
 \indexii{parameter}{actual}
-
-It is also possible to create anonymous functions (functions not bound
-to a name), for immediate use in expressions.  This uses lambda forms,
-described in section \ref{lambda}.
 
 \begin{itemize}
 
@@ -320,7 +337,7 @@ Call this number {\em N}.  The first {\em N} arguments are assigned to
 the corresponding formal parameters in the way descibed above.  A
 tuple containing the remaining arguments, if any, is then assigned to
 the identifier following the star.  This variable will always be a
-tuple: if there are no extra arguments, its value is \verb\()\, if
+tuple: if there are no extra arguments, its value is \verb@()@, if
 there is just one extra argument, it is a singleton tuple.
 \indexii{variable length}{parameter list}
 
@@ -334,6 +351,11 @@ safety it offers (wrong-sized tuples aren't silently mistreated),
 variable length parameter lists are a sufficiently accepted practice
 in most programming languages that a compromise has been worked out.
 (And anyway, assignment has no equivalent for empty argument lists.)
+
+It is also possible to create anonymous functions (functions not bound
+to a name), for immediate use in expressions.  This uses lambda forms,
+described in section \ref{lambda}.
+\indexii{lambda}{form}
 
 \section{Class definitions} \label{class}
 \indexii{class}{definition}
