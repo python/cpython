@@ -105,8 +105,6 @@ compileall.py -- force "compilation" of all .py files in a directory
 
 py_compile.py -- "compile" a .py file to a .pyc file
 
-codehack.py -- extract a function name from a code object
-
 dis.py -- Disassembler for Python bytecode objects
 
 repr.py -- Redo the `...` (representation) but with limits on most
@@ -182,6 +180,10 @@ fcntl.lockf/flock intead)
 
 tb.py -- Print tracebacks, with a dump of local variables (use
 pdb.pm() or traceback.py instead)
+
+codehack.py -- extract function name or line number from a function
+code object (these are now accessible as attributes: co.co_name,
+func.func_name, co.co_firstlineno)
 
 
 \section{Extension modules}
