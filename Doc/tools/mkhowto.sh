@@ -43,6 +43,7 @@ HTML options:
 
 Other options:
     --a4		Format for A4 paper.
+    --letter		Format for US letter paper (the default).
     --help, -H		Show this text.
     --logging, -l	Log stdout and stderr to a file (*.how).
     --debugging, -D	Echo commands as they are executed.
@@ -164,6 +165,9 @@ while [ "$1" ] ; do
 	    ;;
 	--a4)
 	    TEXINPUTS=$TOPDIR/paper-a4:$TEXINPUTS
+	    shift 1
+	    ;;
+	--letter|--lette|--lett|--let|--le)
 	    shift 1
 	    ;;
 	--link|--lin|--li)
