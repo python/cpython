@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -105,7 +105,7 @@ range_repr(r)
 	rangeobject *r;
 {
 	char buf[80];
-	sprintf(buf, "(range(%ld, %ld, %ld) * %d)",
+	sprintf(buf, "(xrange(%ld, %ld, %ld) * %d)",
 			r->start,
 			r->start + r->len * r->step,
 			r->step,
@@ -222,7 +222,7 @@ range_getattr(r, name)
 	char *name;
 {
 	static struct methodlist range_methods[] = {
-		{"tolist",	range_tolist},
+		{"tolist",	(method)range_tolist},
 		{NULL,		NULL}
 	};
 
@@ -230,11 +230,11 @@ range_getattr(r, name)
 }
 
 static sequence_methods range_as_sequence = {
-	range_length,	/*sq_length*/
-	range_concat,	/*sq_concat*/
-	range_repeat,	/*sq_repeat*/
-	range_item,	/*sq_item*/
-	range_slice,	/*sq_slice*/
+	(inquiry)range_length, /*sq_length*/
+	(binaryfunc)range_concat, /*sq_concat*/
+	(intargfunc)range_repeat, /*sq_repeat*/
+	(intargfunc)range_item, /*sq_item*/
+	(intintargfunc)range_slice, /*sq_slice*/
 	0,		/*sq_ass_item*/
 	0,		/*sq_ass_slice*/
 };
@@ -245,12 +245,12 @@ typeobject Rangetype = {
 	"xrange",		/* Name of this type */
 	sizeof(rangeobject),	/* Basic object size */
 	0,			/* Item size for varobject */
-	range_dealloc,		/*tp_dealloc*/
-	range_print,		/*tp_print*/
-	range_getattr,		/*tp_getattr*/
+	(destructor)range_dealloc, /*tp_dealloc*/
+	(printfunc)range_print, /*tp_print*/
+	(getattrfunc)range_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
-	range_compare,		/*tp_compare*/
-	range_repr,		/*tp_repr*/
+	(cmpfunc)range_compare, /*tp_compare*/
+	(reprfunc)range_repr, /*tp_repr*/
 	0,			/*tp_as_number*/
 	&range_as_sequence,	/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/

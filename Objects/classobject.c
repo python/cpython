@@ -25,9 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Class object implementation */
 
 #include "allobjects.h"
-#include "modsupport.h"
 #include "structmember.h"
-#include "ceval.h"
 
 /* Forward */
 static object *class_lookup PROTO((classobject *, char *, classobject **));
@@ -520,33 +518,22 @@ instance_repr(inst)
 
 static int
 instance_compare(inst, other)
-	instanceobject *inst, *other;
+	object *inst, *other;
 {
-	object *func;
-	object *res;
+	object *result;
 	int outcome;
-
-	func = instance_getattr(inst, "__cmp__");
-	if (func == NULL) {
-		err_clear();
-		if (inst < other)
-			return -1;
-		if (inst > other)
-			return 1;
-		return 0;
-	}
-	res = call_object(func, (object *)other);
-	DECREF(func);
-	if (res == NULL) {
-		err_clear(); /* XXX Should report the error, bot how...??? */
-		return 0;
-	}
-	if (is_intobject(res))
-		outcome = getintvalue(res);
-	else
-		outcome = 0; /* XXX Should report the error, bot how...??? */
-	DECREF(res);
-	return outcome;
+	result  = instancebinop(inst, other, "__cmp__", "__rcmp__");
+	if (result == NULL)
+		return -2;
+	outcome = getintvalue(result);
+	DECREF(result);
+	if (outcome == -1 && err_occurred())
+		return -2;
+	if (outcome < 0)
+		return -1;
+	else if (outcome > 0)
+		return 1;
+	return 0;
 }
 
 static long
@@ -681,47 +668,6 @@ static mapping_methods instance_as_mapping = {
 };
 
 static object *
-instance_concat(inst, other)
-	instanceobject *inst, *other;
-{
-	object *func, *arg, *res;
-
-	func = instance_getattr(inst, "__add__");
-	if (func == NULL)
-		return NULL;
-	arg = mkvalue("(O)", other);
-	if (arg == NULL) {
-		DECREF(func);
-		return NULL;
-	}
-	res = call_object(func, arg);
-	DECREF(func);
-	DECREF(arg);
-	return res;
-}
-
-static object *
-instance_repeat(inst, count)
-	instanceobject *inst;
-	int count;
-{
-	object *func, *arg, *res;
-
-	func = instance_getattr(inst, "__mul__");
-	if (func == NULL)
-		return NULL;
-	arg = newintobject((long)count);
-	if (arg == NULL) {
-		DECREF(func);
-		return NULL;
-	}
-	res = call_object(func, arg);
-	DECREF(func);
-	DECREF(arg);
-	return res;
-}
-
-static object *
 instance_item(inst, i)
 	instanceobject *inst;
 	int i;
@@ -827,34 +773,13 @@ instance_ass_slice(inst, i, j, value)
 
 static sequence_methods instance_as_sequence = {
 	(inquiry)instance_length, /*sq_length*/
-	(binaryfunc)instance_concat, /*sq_concat*/
-	(intargfunc)instance_repeat, /*sq_repeat*/
+	0, /*sq_concat*/
+	0, /*sq_repeat*/
 	(intargfunc)instance_item, /*sq_item*/
 	(intintargfunc)instance_slice, /*sq_slice*/
 	(intobjargproc)instance_ass_item, /*sq_ass_item*/
 	(intintobjargproc)instance_ass_slice, /*sq_ass_slice*/
 };
-
-static object *
-generic_binary_op(self, other, methodname)
-	instanceobject *self;
-	object *other;
-	char *methodname;
-{
-	object *func, *arg, *res;
-
-	if ((func = instance_getattr(self, methodname)) == NULL)
-		return NULL;
-	arg = mkvalue("O", other);
-	if (arg == NULL) {
-		DECREF(func);
-		return NULL;
-	}
-	res = call_object(func, arg);
-	DECREF(func);
-	DECREF(arg);
-	return res;
-}
 
 static object *
 generic_unary_op(self, methodname)
@@ -870,23 +795,120 @@ generic_unary_op(self, methodname)
 	return res;
 }
 
-#define BINARY(funcname, methodname) \
-static object * funcname(self, other) instanceobject *self; object *other; { \
-	return generic_binary_op(self, other, methodname); \
+
+/* Forward */
+static int halfbinop PROTO((object *, object *, char *, object **));
+
+
+/* Implement a binary operator involving at least one class instance. */
+
+object *
+instancebinop(v, w, opname, ropname)
+	object *v;
+	object *w;
+	char *opname;
+	char *ropname;
+{
+	char buf[256];
+	object *result = NULL;
+	if (halfbinop(v, w, opname, &result) <= 0)
+		return result;
+	if (halfbinop(w, v, ropname, &result) <= 0)
+		return result;
+	sprintf(buf, "%s nor %s defined for these operands", opname, ropname);
+	err_setstr(TypeError, buf);
+	return NULL;
 }
+
+
+/* Try one half of a binary operator involving a class instance.
+   Return value:
+   -1 if an exception is to be reported right away
+   0  if we have a valid result
+   1  if we could try another operation
+*/
+
+static int
+halfbinop(v, w, opname, r_result)
+	object *v;
+	object *w;
+	char *opname;
+	object **r_result;
+{
+	object *func;
+	object *args;
+	object *coerce;
+	object *coerced = NULL;
+	object *v1;
+	
+	if (!is_instanceobject(v))
+		return 1;
+	func = getattr(v, opname);
+	if (func == NULL) {
+		if (err_occurred() != AttributeError)
+			return -1;
+		err_clear();
+		return 1;
+	}
+	coerce = getattr(v, "__coerce__");
+	if (coerce == NULL) {
+		err_clear();
+	}
+	else {
+		args = mkvalue("(O)", w);
+		if (args == NULL) {
+			DECREF(func);
+			return -1;
+		}
+		coerced = call_object(coerce, args);
+		DECREF(args);
+		DECREF(coerce);
+		if (coerced == NULL) {
+			DECREF(func);
+			return -1;
+		}
+		if (coerced == None) {
+			DECREF(coerced);
+			DECREF(func);
+			return 1;
+		}
+		if (!is_tupleobject(coerced) || gettuplesize(coerced) != 2) {
+			DECREF(coerced);
+			DECREF(func);
+			err_setstr(TypeError, "coercion should return None or 2-tuple");
+			return -1;
+		}
+		v1 = gettupleitem(coerced, 0);
+		if (v1 != v) {
+			v = v1;
+			DECREF(func);
+			func = getattr(v, opname);
+			if (func == NULL) {
+				XDECREF(coerced);
+				return -1;
+			}
+		}
+		w = gettupleitem(coerced, 1);
+	}
+	args = mkvalue("(O)", w);
+	if (args == NULL) {
+		DECREF(func);
+		XDECREF(coerced);
+		return -1;
+	}
+	*r_result = call_object(func, args);
+	DECREF(args);
+	DECREF(func);
+	XDECREF(coerced);
+	return *r_result == NULL ? -1 : 0;
+}
+
 
 #define UNARY(funcname, methodname) \
 static object *funcname(self) instanceobject *self; { \
 	return generic_unary_op(self, methodname); \
 }
 
-BINARY(instance_add, "__add__")
-BINARY(instance_sub, "__sub__")
-BINARY(instance_mul, "__mul__")
-BINARY(instance_div, "__div__")
-BINARY(instance_mod, "__mod__")
-BINARY(instance_divmod, "__divmod__")
-BINARY(instance_pow, "__pow__")
 UNARY(instance_neg, "__neg__")
 UNARY(instance_pos, "__pos__")
 UNARY(instance_abs, "__abs__")
@@ -926,76 +948,56 @@ instance_nonzero(self)
 }
 
 UNARY(instance_invert, "__invert__")
-BINARY(instance_lshift, "__lshift__")
-BINARY(instance_rshift, "__rshift__")
-BINARY(instance_and, "__and__")
-BINARY(instance_xor, "__xor__")
-BINARY(instance_or, "__or__")
-
-static int
-instance_coerce(pv, pw)
-	object **pv, **pw;
-{
-	object *v =  *pv;
-	object *w = *pw;
-	object *func;
-	object *res;
-	int outcome;
-
-	if (!is_instanceobject(v))
-		return 1; /* XXX shouldn't be possible */
-	func = instance_getattr((instanceobject *)v, "__coerce__");
-	if (func == NULL) {
-		err_clear();
-		return 1;
-	}
-	res = call_object(func, w);
-	if (res == NULL)
-		return -1;
-	if (res == None) {
-		DECREF(res);
-		return 1;
-	}
-	outcome = getargs(res, "(OO)", &v, &w);
-	if (!outcome || v->ob_type != w->ob_type ||
-			v->ob_type->tp_as_number == NULL) {
-		DECREF(res);
-		err_setstr(TypeError, "bad __coerce__ result");
-		return -1;
-	}
-	INCREF(v);
-	INCREF(w);
-	DECREF(res);
-	*pv = v;
-	*pw = w;
-	return 0;
-}
-
 UNARY(instance_int, "__int__")
 UNARY(instance_long, "__long__")
 UNARY(instance_float, "__float__")
 UNARY(instance_oct, "__oct__")
 UNARY(instance_hex, "__hex__")
 
+/* This version is for ternary calls only (z != None) */
+static object *
+instance_pow(v, w, z)
+	object *v;
+	object *w;
+	object *z;
+{
+	/* XXX Doesn't do coercions... */
+	object *func;
+	object *args;
+	object *result;
+	func = getattr(v, "__pow__");
+	if (func == NULL)
+		return NULL;
+	args = mkvalue("(OO)", w, z);
+	if (args == NULL) {
+		DECREF(func);
+		return NULL;
+	}
+	result = call_object(func, args);
+	DECREF(func);
+	DECREF(args);
+	return result;
+}
+
 static number_methods instance_as_number = {
-	(binaryfunc)instance_add, /*nb_add*/
-	(binaryfunc)instance_sub, /*nb_subtract*/
-	(binaryfunc)instance_mul, /*nb_multiply*/
-	(binaryfunc)instance_div, /*nb_divide*/
-	(binaryfunc)instance_mod, /*nb_remainder*/
-	(binaryfunc)instance_divmod, /*nb_divmod*/
+	0, /*nb_add*/
+	0, /*nb_subtract*/
+	0, /*nb_multiply*/
+	0, /*nb_divide*/
+	0, /*nb_remainder*/
+	0, /*nb_divmod*/
 	(ternaryfunc)instance_pow, /*nb_power*/
 	(unaryfunc)instance_neg, /*nb_negative*/
 	(unaryfunc)instance_pos, /*nb_positive*/
 	(unaryfunc)instance_abs, /*nb_absolute*/
 	(inquiry)instance_nonzero, /*nb_nonzero*/
 	(unaryfunc)instance_invert, /*nb_invert*/
-	(binaryfunc)instance_lshift, /*nb_lshift*/
-	(binaryfunc)instance_rshift, /*nb_rshift*/
-	(binaryfunc)instance_and, /*nb_and*/
-	(binaryfunc)instance_xor, /*nb_xor*/
-	(binaryfunc)instance_or, /*nb_or*/
-	(coercion)instance_coerce, /*nb_coerce*/
+	0, /*nb_lshift*/
+	0, /*nb_rshift*/
+	0, /*nb_and*/
+	0, /*nb_xor*/
+	0, /*nb_or*/
+	0, /*nb_coerce*/
 	(unaryfunc)instance_int, /*nb_int*/
 	(unaryfunc)instance_long, /*nb_long*/
 	(unaryfunc)instance_float, /*nb_float*/
@@ -1011,10 +1013,9 @@ typeobject Instancetype = {
 	0,
 	(destructor)instance_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	(object * (*) FPROTO((object *, char *)))
 	(getattrfunc)instance_getattr, /*tp_getattr*/
 	(setattrfunc)instance_setattr, /*tp_setattr*/
-	(cmpfunc)instance_compare, /*tp_compare*/
+	instance_compare, /*tp_compare*/
 	(reprfunc)instance_repr, /*tp_repr*/
 	&instance_as_number,	/*tp_as_number*/
 	&instance_as_sequence,	/*tp_as_sequence*/
