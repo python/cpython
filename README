@@ -66,7 +66,7 @@ Here are the most importand changes since 1.5a2:
 
   - New tools faqwiz and webchecker included.
 
-Other important changes, if thgis is the first release you see since
+Other important changes, if this is the first release you see since
 1.4:
 
   - It's much faster (almost twice for pystone.py -- see
