@@ -390,6 +390,45 @@ int PyUnicode_AsWideChar(PyUnicodeObject *unicode,
 
 #endif
 
+PyObject *PyUnicode_FromOrdinal(int ordinal)
+{
+    Py_UNICODE s[2];
+
+#ifdef Py_UNICODE_WIDE
+    if (ordinal < 0 || ordinal > 0x10ffff) {
+	PyErr_SetString(PyExc_ValueError,
+			"unichr() arg not in range(0x110000) "
+			"(wide Python build)");
+	return NULL;
+    }
+#else
+    if (ordinal < 0 || ordinal > 0xffff) {
+	PyErr_SetString(PyExc_ValueError,
+			"unichr() arg not in range(0x10000) "
+			"(narrow Python build)");
+	return NULL;
+    }
+#endif
+
+    if (ordinal <= 0xffff) {
+	/* UCS-2 character */
+	s[0] = (Py_UNICODE) ordinal;
+	return PyUnicode_FromUnicode(s, 1);
+    }
+    else {
+#ifndef Py_UNICODE_WIDE
+	/* UCS-4 character.  store as two surrogate characters */
+	ordinal -= 0x10000L;
+	s[0] = 0xD800 + (Py_UNICODE) (ordinal >> 10);
+	s[1] = 0xDC00 + (Py_UNICODE) (ordinal & 0x03FF);
+	return PyUnicode_FromUnicode(s, 2);
+#else
+	s[0] = (Py_UNICODE)ordinal;
+	return PyUnicode_FromUnicode(s, 1);
+#endif
+    }
+}
+
 PyObject *PyUnicode_FromObject(register PyObject *obj)
 {
     /* XXX Perhaps we should make this API an alias of
@@ -5373,7 +5412,22 @@ formatchar(Py_UNICODE *buf,
 	x = PyInt_AsLong(v);
 	if (x == -1 && PyErr_Occurred())
 	    goto onError;
-	buf[0] = (char) x;
+#ifdef Py_UNICODE_WIDE
+	if (x < 0 || x > 0x10ffff) {
+	    PyErr_SetString(PyExc_ValueError,
+			    "%c arg not in range(0x110000) "
+			    "(wide Python build)");
+	    return -1;
+	}
+#else
+	if (x < 0 || x > 0xffff) {
+	    PyErr_SetString(PyExc_ValueError,
+			    "%c arg not in range(0x10000) "
+			    "(narrow Python build)");
+	    return -1;
+	}
+#endif
+	buf[0] = (Py_UNICODE) x;
     }
     buf[1] = '\0';
     return 1;

@@ -6,6 +6,9 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- u'%c' will now raise a ValueError in case the argument is an
+  integer outside the valid range of Unicode code point ordinals.
+
 - The tempfile module has been overhauled for enhanced security.  The
   mktemp() function is now deprecated; new, safe replacements are
   mkstemp() (for files) and mkdtemp() (for directories), and the
@@ -436,6 +439,9 @@ Build
   modules in the README file for details.
 
 C API
+
+- New C API PyUnicode_FromOrdinal() which exposes unichr() at C
+  level.
 
 - New functions PyErr_SetExcFromWindowsErr() and
   PyErr_SetExcFromWindowsErrWithFilename(). Similar to
