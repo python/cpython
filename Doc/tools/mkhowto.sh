@@ -4,12 +4,17 @@ MYDIR=`dirname $0`
 WORKDIR=`pwd`
 cd $MYDIR
 MYDIR=`pwd`
+cd ..
+TOPDIR=`pwd`
 cd $WORKDIR
 
 # DEFAULT_FORMAT must be upper case...
 DEFAULT_FORMAT=PDF
 USE_DEFAULT_FORMAT=true
 DISCARD_TEMPS=true
+
+HTML_SPLIT_LEVEL=''
+L2H_INIT_FILE=$TOPDIR/perl/l2hinit.perl
 
 # This is needed to support kpathsea based TeX installations.  Others are
 # not supported.  ;-)
@@ -20,20 +25,60 @@ LOGFILE=/usr/tmp/mkhowto-$LOGNAME-$$.how
 LOGGING=''
 
 usage() {
-    echo "usage: $0 [options...] file ..."
-    exit 2
+    MYNAME=`basename $0`
+    echo "usage: $MYNAME [options...] file ..."
+    cat <<EOF
+
+Options specifying formats to build:
+    --html		HyperText Markup Language
+    --pdf		Portable Document Format (default)
+    --ps		PostScript
+    --dvi		"DeVice Indepentent" format from TeX
+
+    More than one output format may be specified.
+
+HTML options:
+    --address, -a	Specify an address for page footers.
+    --split, -s		Specify a section level for page splitting.
+
+Other options:
+    --help, -H		Show this text.
+    --logging, -l	Log stdout and stderr to a file (*.how).
+    --debugging, -D	Echo commands as they are executed.
+    --keep, -k		Keep temporary files around.
+    --quiet, -q		Do not print command output to stdout.
+			(stderr is also lost,  sorry; see *.how for errors)
+
+EOF
+    
+    exit $1
 }
 
 build_html() {
-    # This doesn't work; l2hinit.perl uses the current directory, not it's own
-    # location.  Need a workaround for this.
-    if [ "$ADDRESS" ] ; then
-	latex2html -init_file $MYDIR/../perl/l2hinit.perl -address "$ADDRESS" \
-	 $1 || exit $?
+    if [ "$HTML_SPLIT_LEVEL" ] ; then
+	if [ "$ADDRESS" ] ; then
+	    latex2html -init_file $L2H_INIT_FILE \
+	     -address "$ADDRESS" \
+	     -split $HTML_SPLIT_LEVEL \
+	     $1 || exit $?
+	else
+	    latex2html -init_file $L2H_INIT_FILE \
+	     -split $HTML_SPLIT_LEVEL \
+	     $1 || exit $?
+	fi
     else
-	latex2html -init_file $MYDIR/../perl/l2hinit.perl $1 || exit $?
+	if [ "$ADDRESS" ] ; then
+	    latex2html -init_file $L2H_INIT_FILE \
+	     -address "$ADDRESS" \
+	     $1 || exit $?
+	else
+	    latex2html -init_file $L2H_INIT_FILE \
+	     $1 || exit $?
+	fi
     fi
-    (cd $FILE; $MYDIR/node2label.pl *.html) || exit $?
+    if [ "$HTML_SPLIT_LEVEL" != 1 ] ; then
+	(cd $FILE; $MYDIR/node2label.pl *.html) || exit $?
+    fi
 }
 
 build_dvi() {
@@ -83,13 +128,20 @@ while [ "$1" ] ; do
 	    USE_DEFAULT_FORMAT=false
 	    shift 1
 	    ;;
-	--html|--htm|--ht|--h)
+	--html|--htm|--ht)
 	    BUILD_HTML=true
 	    USE_DEFAULT_FORMAT=false
 	    shift 1
 	    ;;
+	-H|--help|--hel|--he)
+	    usage 0
+	    ;;
 	-a|--address|--addres|--addre|-addr|--add|--ad|--a)
 	    ADDRESS="$2"
+	    shift 2
+	    ;;
+	-s|--split|--spli|--spl|--sp|--s)
+	    HTML_SPLIT_LEVEL="$2"
 	    shift 2
 	    ;;
 	-l|--logging|--loggin|--loggi|--logg|--log|--lo|--l)
@@ -104,12 +156,12 @@ while [ "$1" ] ; do
 	    DISCARD_TEMPS=''
 	    shift 1
 	    ;;
-	-q|--quiet|__quie|--qui|--qu|--q)
+	-q|--quiet|--quie|--qui|--qu|--q)
 	    QUIET=true
 	    shift 1
 	    ;;
 	-*)
-	    usage
+	    usage 2
 	    ;;
 	*)
 	    break;;
@@ -117,7 +169,7 @@ while [ "$1" ] ; do
 done
 
 if [ $# = 0 ] ; then
-    usage
+    usage 2
 fi
 
 if [ $USE_DEFAULT_FORMAT = true ] ; then
