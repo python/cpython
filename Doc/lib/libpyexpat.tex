@@ -59,7 +59,8 @@ For example, if \var{namespace_separator} is set to
 </root>
 \end{verbatim}
 
-\function{StartElementHandler()} will receive the following strings for each element: 
+\function{StartElementHandler()} will receive the following strings
+for each element:
 
 \begin{verbatim}
 http://default-namespace.org/ root
@@ -98,7 +99,7 @@ Returns a string containing the base set by a previous call to
 \method{SetBase()} hasn't been called.
 \end{methoddesc}
 
-\class{xmlparser} objects have the following attributes.  
+\class{xmlparser} objects have the following attributes:
 
 \begin{datadesc}{returns_unicode} 
 If this attribute is set to 1, the handler functions will be passed
@@ -154,11 +155,14 @@ Called for every processing instruction.
 Called for character data.  
 \end{methoddesc}
 
-\begin{methoddesc}{UnparsedEntityDeclHandler}{entityName, base, systemId, publicId, notationName}
+\begin{methoddesc}{UnparsedEntityDeclHandler}{entityName, base,
+                                              systemId, publicId,
+                                              notationName}
 Called for unparsed (NDATA) entity declarations.
 \end{methoddesc}
 
-\begin{methoddesc}{NotationDeclHandler}{notationName, base, systemId, publicId}
+\begin{methoddesc}{NotationDeclHandler}{notationName, base, systemId,
+                                        publicId}
 Called for notation declarations.
 \end{methoddesc}
 
@@ -197,10 +201,12 @@ The entity reference will not be passed to the default handler.
 \end{methoddesc}
 
 \begin{methoddesc}{NotStandaloneHandler}{}
-Called if the XML document hasn't been declared as being a standalone document.
+Called if the XML document hasn't been declared as being a standalone
+document.
 \end{methoddesc}
 
-\begin{methoddesc}{ExternalEntityRefHandler}{context, base, systemId, publicId}
+\begin{methoddesc}{ExternalEntityRefHandler}{context, base, systemId,
+                                             publicId}
 Called for references to external entities.  
 \end{methoddesc}
 
