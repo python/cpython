@@ -27,8 +27,8 @@ if [ -f $part.idx ] ; then
     # using the index
     echo $srcdir'/tools/fix_hack '$part'.idx'
     $srcdir/tools/fix_hack $part.idx || exit $?
-    echo 'makeindex -s '$srcdir'/texinputs/myindex.ist '$part'.idx'
-    makeindex -s $srcdir/texinputs/myindex.ist $part.idx || exit $?
+    echo 'makeindex -s '$srcdir'/texinputs/python.ist '$part'.idx'
+    makeindex -s $srcdir/texinputs/python.ist $part.idx || exit $?
 else
     # skipping the index; clean up the unused file
     rm -f $part.ind

@@ -5,7 +5,7 @@ PAPER=letter
 LATEX=		latex
 PDFLATEX=	pdflatex
 DVIPS=		dvips -N0 -t $(PAPER)
-MAKEINDEX=	makeindex -s ../texinputs/myindex.ist
+MAKEINDEX=	makeindex -s ../texinputs/python.ist
 PYTHON=		python
 
 TOOLSDIR=	../tools
@@ -35,7 +35,7 @@ include ../Makefile.deps
 
 COMMONSTYLES= ../texinputs/python.sty \
 	../texinputs/pypaper.sty \
-	../texinputs/myindex.ist
+	../texinputs/python.ist
 
 COMMONTEX= ../texinputs/copyright.tex \
 	../texinputs/boilerplate.tex

@@ -119,7 +119,7 @@ use_latex() {
     fi
     if [ -f $MYFILE.idx ] ; then
 	$MYDIR/fix_hack $MYFILE.idx || exit $?
-	makeindex -s $TOPDIR/texinputs/myindex.ist $MYFILE.idx || exit $?
+	makeindex -s $TOPDIR/texinputs/python.ist $MYFILE.idx || exit $?
     fi
     if [ -f $MYFILE.toc -a $MYLATEX = pdflatex ] ; then
 	$MYDIR/toc2bkm.py -c section $MYFILE
