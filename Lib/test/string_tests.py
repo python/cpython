@@ -282,6 +282,9 @@ def run_method_tests(test):
     test('zfill', '34', '34', 1)
     test('zfill', '34', '0034', 4)
 
+    test('__mod__', '+%s+', '+hello+', 'hello')
+    test('__mod__', '+%d+', '+10+', 10)
+
     # Encoding/decoding
     codecs = [('rot13', 'uryyb jbeyq'),
               ('base64', 'aGVsbG8gd29ybGQ=\n'),
