@@ -137,10 +137,11 @@ is an 8-bit string containing a portion (perhaps all) of the Unicode
 string converted into the given encoding, and \var{length} tells you
 how much of the Unicode string was converted.
 
-\item \var{decode_func} is the mirror of \var{encode_func}, 
-taking a Unicode string and
-returns a 2-tuple \code{(\var{ustring}, \var{length})} containing a Unicode string
-and \var{length} telling you how much of the string was consumed.
+\item \var{decode_func} is the opposite of \var{encode_func}, taking
+an 8-bit string and returning a 2-tuple \code{(\var{ustring},
+\var{length})}, consisting of the resulting Unicode string
+\var{ustring} and the integer \var{length} telling how much of the
+string was consumed.
 
 \item \var{stream_reader} is a class that supports decoding input from
 a stream.  \var{stream_reader(\var{file_obj})} returns an object that
@@ -1042,8 +1043,8 @@ these modules.
 \section{Acknowledgements}
 
 The authors would like to thank the following people for offering
-suggestions on drafts of this article: Mark Hammond, Fredrik Lundh, 
-Detlef Lannert, Skip Montanaro, Vladimir Marangozov, Guido van Rossum, 
-and Neil Schemenauer.
+suggestions on drafts of this article: Mark Hammond, Gregg Hauser,
+Fredrik Lundh, Detlef Lannert, Skip Montanaro, Vladimir Marangozov,
+Guido van Rossum, and Neil Schemenauer.
 
 \end{document}
