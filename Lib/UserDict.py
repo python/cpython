@@ -50,6 +50,8 @@ class UserDict:
         if not self.has_key(key):
             self[key] = failobj
         return self[key]
+    def pop(self, key):
+        return self.data.pop(key)
     def popitem(self):
         return self.data.popitem()
     def __contains__(self, key):
