@@ -20,7 +20,11 @@ def gettempdir():
     global tempdir
     if tempdir is not None:
         return tempdir
-    attempdirs = ['/usr/tmp', '/tmp', os.getcwd(), os.curdir]
+    try:
+        pwd = os.getcwd()
+    except (AttributeError, os.error):
+        pwd = os.curdir
+    attempdirs = ['/usr/tmp', '/tmp', pwd]
     if os.name == 'nt':
         attempdirs.insert(0, 'C:\\TEMP')
         attempdirs.insert(0, '\\TEMP')
