@@ -151,6 +151,29 @@ when you're editing someone else's Python code."
   :type 'integer
   :group 'python)
 
+(defcustom py-smart-indentation t
+  "*Should `python-mode' try to automagically set some indentation variables?
+When this variable is non-nil, two things happen when a buffer is set
+to `python-mode':
+
+    1. `py-indent-offset' is guess from existing code in the buffer.
+       Only guessed values between 2 and 8 are considered.  If a valid 
+       guess can't be made (perhaps because you are visiting a new
+       file), then the value in py-indent-offset is used.
+
+    2. `indent-tabs-mode' is set as follows: if `py-indent-offset'
+       equals `tab-width' then `indent-tabs-mode' is set to t,
+       otherwise it is set to nil.  This means that for newly written
+       code, tabs are only inserted in indentation if a one tab is one
+       indentation level, otherwise only spaces are used.
+
+Note that both these settings occur *after* `python-mode-hook' is run, 
+so if you set either of these values explicitly, and you want to
+defeat the automagic configuration, you must also set
+`py-smart-indentation' to nil in your `python-mode-hook'."
+  :type 'boolean
+  :group 'python)
+
 (defcustom py-align-multiline-strings-p t
   "*Flag describing how multi-line triple quoted strings are aligned.
 When this flag is non-nil, continuation lines are lined up under the
@@ -940,23 +963,31 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
 	    (message "Caution: tab-width changed to %d" new-tab-width)
 	    (if py-beep-if-tab-change (beep)))))
     (goto-char start))
-
-  ;; install imenu
-  (if (py-safe (require 'imenu))
-      (progn
-	(make-variable-buffer-local 'imenu-create-index-function)
-	(setq imenu-create-index-function
-	      (function imenu-example--create-python-index))
-	(setq imenu-generic-expression
-	      imenu-example--generic-python-expression)
-	(if (fboundp 'imenu-add-to-menubar)
-	    (imenu-add-to-menubar (format "%s-%s" "IM" mode-name)))
-	))
-
-  ;; run the mode hook. py-mode-hook use is deprecated
+  ;; Install Imenu, only works for Emacs.
+  (when (py-safe (require 'imenu))
+    (make-variable-buffer-local 'imenu-create-index-function)
+    (setq imenu-create-index-function
+	  (function imenu-example--create-python-index))
+    (setq imenu-generic-expression
+	  imenu-example--generic-python-expression)
+    (if (fboundp 'imenu-add-to-menubar)
+	(imenu-add-to-menubar (format "%s-%s" "IM" mode-name)))
+    )
+  ;; Run the mode hook.  Note that py-mode-hook is deprecated.
   (if python-mode-hook
       (run-hooks 'python-mode-hook)
-    (run-hooks 'py-mode-hook)))
+    (run-hooks 'py-mode-hook))
+  ;; Now do the automagical guessing
+  (if py-smart-indentation
+    (let ((offset py-indent-offset))
+      ;; Its okay if this fails to guess a good value
+      (if (and (py-safe (py-guess-indent-offset))
+	       (<= py-indent-offset 8)
+	       (>= py-indent-offset 2))
+	  (setq offset py-indent-offset))
+      (setq py-indent-offset offset)
+      (setq indent-tabs-mode (= tab-width py-indent-offset))
+      )))
 
 
 ;; electric characters
@@ -2491,7 +2522,7 @@ local bindings to py-newline-and-indent."))
 (defun py-parse-state ()
   (save-excursion
     (let ((here (point))
-	  pps done ci)
+	  pps done)
       (while (not done)
 	;; back up to the first preceding line (if any; else start of
 	;; buffer) that begins with a popular Python keyword, or a
@@ -2500,7 +2531,6 @@ local bindings to py-newline-and-indent."))
 	;; at a non-zero nesting level.  It may be slow for people who
 	;; write huge code blocks or huge lists ... tough beans.
 	(re-search-backward py-parse-state-re nil 'move)
-	(setq ci (current-indentation))
 	(beginning-of-line)
 	;; In XEmacs, we have a much better way to test for whether
 	;; we're in a triple-quoted string or not.  Emacs does not
@@ -2512,9 +2542,8 @@ local bindings to py-newline-and-indent."))
 	    (save-excursion
 	      (setq pps (parse-partial-sexp (point) here))
 	      ;; make sure we don't land inside a triple-quoted string
-	      (setq done (or ;(zerop ci)
-			  (not (nth 3 pps))
-			  (bobp))))
+	      (setq done (or (not (nth 3 pps))
+			     (bobp))))
 	  ;; XEmacs
 	  (setq done (or (not (buffer-syntactic-context))
 			 (bobp)))
