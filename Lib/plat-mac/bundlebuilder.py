@@ -405,7 +405,10 @@ class AppBuilder(BundleBuilder):
         if self.executable is None:
             if not self.standalone and not isFramework():
                 self.symlink_exec = 1
-            self.executable = sys.executable
+            if self.python:
+                self.executable = self.python
+            else:
+                self.executable = sys.executable
 
         if self.nibname:
             self.plist.NSMainNibFile = self.nibname
