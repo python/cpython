@@ -112,13 +112,11 @@ newtracebackobject(next, frame, lasti, lineno)
 static tracebackobject *tb_current = NULL;
 
 int
-tb_here(frame, lasti, lineno)
+tb_here(frame)
 	frameobject *frame;
-	int lasti;
-	int lineno;
 {
 	tracebackobject *tb;
-	tb = newtracebackobject(tb_current, frame, lasti, lineno);
+	tb = newtracebackobject(tb_current, frame, frame->f_lasti, frame->f_lineno);
 	if (tb == NULL)
 		return -1;
 	XDECREF(tb_current);
