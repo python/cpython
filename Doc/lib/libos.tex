@@ -272,7 +272,7 @@ Set the current process' user id.
 Availability: \UNIX.
 \end{funcdesc}
 
-% placed in this section since it relates to errno.... a little weak ;-(
+% placed in this section since it relates to errno.... a little weak
 \begin{funcdesc}{strerror}{code}
 Return the error message corresponding to the error code in
 \var{code}.
@@ -616,7 +616,8 @@ be used in a suid/sgid environment to test if the invoking user has the
 specified access to \var{path}.  \var{mode} should be \constant{F_OK}
 to test the existence of \var{path}, or it can be the inclusive OR of
 one or more of \constant{R_OK}, \constant{W_OK}, and \constant{X_OK} to
-test permissions.  Return \code{1} if access is allowed, \code{0} if not.
+test permissions.  Return \constant{True} if access is allowed,
+\constant{False} if not.
 See the \UNIX{} man page \manpage{access}{2} for more information.
 Availability: \UNIX, Windows.
 \end{funcdesc}

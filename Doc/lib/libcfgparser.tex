@@ -165,8 +165,8 @@ Returns a list of options available in the specified \var{section}.
 \end{methoddesc}
 
 \begin{methoddesc}{has_option}{section, option}
-If the given section exists, and contains the given option. return 1;
-otherwise return 0.
+If the given section exists, and contains the given option,
+return \constant{True}; otherwise return \constant{False}.
 \versionadded{1.6}
 \end{methoddesc}
 
@@ -245,7 +245,8 @@ call.
 \begin{methoddesc}{remove_option}{section, option}
 Remove the specified \var{option} from the specified \var{section}.
 If the section does not exist, raise \exception{NoSectionError}. 
-If the option existed to be removed, return 1; otherwise return 0.
+If the option existed to be removed, return \constant{True};
+otherwise return \constant{False}.
 \versionadded{1.6}
 \end{methoddesc}
 

@@ -561,7 +561,7 @@ to calling this method, the object's payload was \code{None}
 will be the argument \var{payload}.
 
 If the object's payload was already a list
-(i.e. \method{is_multipart()} returns 1), then \var{payload} is
+(i.e. \method{is_multipart()} returns \code{True}), then \var{payload} is
 appended to the end of the existing payload list.
 
 For any other type of existing payload, \method{add_payload()} will
