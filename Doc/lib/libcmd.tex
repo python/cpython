@@ -11,12 +11,18 @@ line-oriented command interpreters.  These are often useful for
 test harnesses, administrative tools, and prototypes that will
 later be wrapped in a more sophisticated interface.
 
-\begin{classdesc}{Cmd}{}
+\begin{classdesc}{Cmd}{\optional{completekey}}
 A \class{Cmd} instance or subclass instance is a line-oriented
 interpreter framework.  There is no good reason to instantiate
 \class{Cmd} itself; rather, it's useful as a superclass of an
 interpreter class you define yourself in order to inherit
 \class{Cmd}'s methods and encapsulate action methods.
+
+The optional argument is the \refmodule{readline} name of a completion
+key; it defaults to \code{``tab''}. If \var{completekey} is not
+\code{None} and \module{readline} is available, command completion is
+done automatically.
+
 \end{classdesc}
 
 \subsection{Cmd Objects}
@@ -47,6 +53,16 @@ the method \method{do_help()}.  As another special case, a line
 beginning with the character \character{!} is dispatched to the
 method \method{do_shell} (if such a method is defined).
 
+If completion is enabled, completing commands will be done
+automatically, and completing of commands args is done by calling
+\method{complete_foo()} with arguments \samp{text}, \samp{line},
+\samp{begidx}, \samp{endidx}.  \samp{text} is string we are matching
+against, all returned matches must begin with it.  \samp{line} is the
+current input line (lstripped), \samp{begidx} and \samp{endidx} are
+the beginning and end indexes of the text being matched, which could
+be used to provide different completion depending upon which position
+the argument is in.
+
 All subclasses of \class{Cmd} inherit a predefined \method{do_help}.
 This method, called with an argument \code{bar}, invokes the
 corresponding method \method{help_bar()}.  With no argument,
@@ -70,6 +86,12 @@ entered.
 Method called on an input line when the command prefix is not
 recognized. If this method is not overridden, it prints an
 error message and returns.
+\end{methoddesc}
+
+\begin{methoddesc}{completedefault}{text, line, begidx, endidx}
+Method called to complete an input line when no command-specific
+\code{complete_} method is available. By default, it returns an
+empty list.
 \end{methoddesc}
 
 \begin{methoddesc}{precmd}{}
