@@ -2369,7 +2369,7 @@ Pickler_dealloc(Picklerobject *self) {
         free(self->write_buf);
     }
 
-    PyObject_GC_Del(self);
+    self->ob_type->tp_free((PyObject *)self);
 }
 
 static int
@@ -4318,7 +4318,7 @@ Unpickler_dealloc(Unpicklerobject *self) {
         free(self->buf);
     }
 
-    PyObject_GC_Del(self);
+    self->ob_type->tp_free((PyObject *)self);
 }
 
 static int
@@ -4606,6 +4606,11 @@ init_stuff(PyObject *module_dict) {
 
 #define INIT_STR(S) UNLESS(S ## _str=PyString_InternFromString(#S)) return -1;
 
+    if (PyType_Ready(&Unpicklertype) < 0)
+    	return -1;
+    if (PyType_Ready(&Picklertype) < 0)
+    	return -1;
+  
     INIT_STR(__class__);
     INIT_STR(__getinitargs__);
     INIT_STR(__dict__);
