@@ -282,15 +282,20 @@ PyErr_SetFromErrnoWithFilename(exc, filename)
 	char *filename;
 {
 	PyObject *v;
+	char *s;
 	int i = errno;
 #ifdef EINTR
 	if (i == EINTR && PyErr_CheckSignals())
 		return NULL;
 #endif
-	if (filename != NULL && Py_UseClassExceptionsFlag)
-		v = Py_BuildValue("(iss)", i, strerror(i), filename);
+	if (i == 0)
+		s = "Error"; /* Sometimes errno didn't get set */
 	else
-		v = Py_BuildValue("(is)", i, strerror(i));
+		s = strerror(i);
+	if (filename != NULL && Py_UseClassExceptionsFlag)
+		v = Py_BuildValue("(iss)", i, s, filename);
+	else
+		v = Py_BuildValue("(is)", i, s);
 	if (v != NULL) {
 		PyErr_SetObject(exc, v);
 		Py_DECREF(v);
