@@ -88,6 +88,9 @@ Extension Modules
 Library
 -------
 
+- distutils.commands.upload was added to support uploading distribution
+  files to PyPI.
+
 - Bug #1163325:  Decimal infinities failed to hash.  Attempting to
   hash a NaN raised an InvalidOperation instead of a TypeError.
 

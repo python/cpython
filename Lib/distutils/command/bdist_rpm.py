@@ -297,12 +297,14 @@ class bdist_rpm (Command):
 
         # Make a source distribution and copy to SOURCES directory with
         # optional icon.
+        saved_dist_files = self.distributuion.dist_files[:]
         sdist = self.reinitialize_command('sdist')
         if self.use_bzip2:
             sdist.formats = ['bztar']
         else:
             sdist.formats = ['gztar']
         self.run_command('sdist')
+        self.distribution.dist_files = saved_dist_files
 
         source = sdist.get_archive_files()[0]
         source_dir = rpm_dir['SOURCES']
@@ -355,6 +357,7 @@ class bdist_rpm (Command):
                 assert len(rpms) == 1, \
                        "unexpected number of RPM files found: %s" % rpms
                 self.move_file(rpms[0], self.dist_dir)
+                self.distribution.dist_files.append(('bdist_rpm', rpms[0]))
                 if debuginfo:
                     self.move_file(debuginfo[0], self.dist_dir)
     # run()
