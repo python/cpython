@@ -243,7 +243,9 @@
 \newcommand{\ttindex}[1]{\index{#1@{\idxcode{#1}} \index@subitem}}
 
 
-% from user-level, fulllineitems should be called as an environment
+% {fulllineitems} is used in one place in libregex.tex, but is really for
+% internal use in this file.
+%
 \newenvironment{fulllineitems}{
   \begin{list}{}{\labelwidth \leftmargin \labelsep 0pt
                  \rightmargin 0pt \topsep -\parskip \partopsep \parskip
