@@ -14,8 +14,8 @@
  *	Changed to incorporate into Python.
  *				Sjoerd Mullender - 1993
  */
-#include "allobjects.h"
-#include "modsupport.h"
+#include "Python.h"
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -83,12 +83,12 @@ typedef struct {
 
 #define CHANOFFSET(z)	(3-(z))	/* this is byte order dependent */
 
-static void expandrow PROTO((unsigned char *, unsigned char *, int));
-static void setalpha PROTO((unsigned char *, int));
-static void copybw PROTO((long *, int));
-static void interleaverow PROTO((unsigned char *, unsigned char *, int, int));
-static int compressrow PROTO((unsigned char *, unsigned char *, int, int));
-static void lumrow PROTO((unsigned char *, unsigned char *, int));
+static void expandrow Py_PROTO((unsigned char *, unsigned char *, int));
+static void setalpha Py_PROTO((unsigned char *, int));
+static void copybw Py_PROTO((long *, int));
+static void interleaverow Py_PROTO((unsigned char*, unsigned char*, int, int));
+static int compressrow Py_PROTO((unsigned char *, unsigned char *, int, int));
+static void lumrow Py_PROTO((unsigned char *, unsigned char *, int));
 
 #ifdef ADD_TAGS
 #define TAGLEN	(5)
@@ -96,7 +96,7 @@ static void lumrow PROTO((unsigned char *, unsigned char *, int));
 #define TAGLEN	(0)
 #endif
 
-static object *ImgfileError;
+static PyObject *ImgfileError;
 
 static int reverse_order;
 
@@ -229,29 +229,29 @@ int len;
  *		return the xsize and ysize of an iris image file.
  *
  */
-static object *
+static PyObject *
 sizeofimage(self, args)
-    object *self, *args;
+    PyObject *self, *args;
 {
     char *name;
     IMAGE image;
     FILE *inf;
 
-    if (!getargs(args, "s", &name))
+    if (!PyArg_Parse(args, "s", &name))
 	return NULL;
 
     inf = fopen(name,"r");
     if(!inf) {
-	err_setstr(ImgfileError, "can't open image file");
+	PyErr_SetString(ImgfileError, "can't open image file");
 	return NULL;
     }
     readheader(inf,&image);
     fclose(inf);
     if(image.imagic != IMAGIC) {
-	err_setstr(ImgfileError, "bad magic number in image file");
+	PyErr_SetString(ImgfileError, "bad magic number in image file");
 	return NULL;
     }
-    return mkvalue("(ii)", image.xsize, image.ysize);
+    return Py_BuildValue("(ii)", image.xsize, image.ysize);
 }
 
 /*
@@ -260,9 +260,9 @@ sizeofimage(self, args)
  *	pointer to an array of longs.
  *
  */
-static object *
+static PyObject *
 longimagedata(self, args)
-    object *self, *args;
+    PyObject *self, *args;
 {
     char *name;
     unsigned char *base, *lptr;
@@ -274,26 +274,26 @@ longimagedata(self, args)
     int xsize, ysize, zsize;
     int bpp, rle, cur, badorder;
     int rlebuflen;
-    object *rv;
+    PyObject *rv;
 
-    if (!getargs(args, "s", &name))
+    if (!PyArg_Parse(args, "s", &name))
 	return NULL;
 
     inf = fopen(name,"r");
     if(!inf) {
-	err_setstr(ImgfileError,"can't open image file");
+	PyErr_SetString(ImgfileError,"can't open image file");
 	return NULL;
     }
     readheader(inf,&image);
     if(image.imagic != IMAGIC) {
-	err_setstr(ImgfileError,"bad magic number in image file");
+	PyErr_SetString(ImgfileError,"bad magic number in image file");
 	fclose(inf);
 	return NULL;
     }
     rle = ISRLE(image.type);
     bpp = BPP(image.type);
     if(bpp != 1 ) {
-	err_setstr(ImgfileError,"image must have 1 byte per pix chan");
+	PyErr_SetString(ImgfileError,"image must have 1 byte per pix chan");
 	fclose(inf);
 	return NULL;
     }
@@ -327,8 +327,8 @@ longimagedata(self, args)
 
 	fseek(inf,512+2*tablen,SEEK_SET);
 	cur = 512+2*tablen;
-	rv = newsizedstringobject((char *) 0,
-				  (xsize*ysize+TAGLEN)*sizeof(long));
+	rv = PyString_FromStringAndSize((char *) 0,
+					(xsize*ysize+TAGLEN)*sizeof(long));
 	if (rv == NULL) {
 	    fclose(inf);
 	    free(lengthtab);
@@ -336,7 +336,7 @@ longimagedata(self, args)
 	    free(rledat);
 	    return NULL;
 	}
-	base = (unsigned char *) getstringvalue(rv);
+	base = (unsigned char *) PyString_AsString(rv);
 #ifdef ADD_TAGS
 	addlongimgtag(base,xsize,ysize);
 #endif
@@ -351,9 +351,10 @@ longimagedata(self, args)
 			cur = starttab[y+z*ysize];
 		    }
 		    if(lengthtab[y+z*ysize]>rlebuflen) {
-			err_setstr(ImgfileError,"rlebuf is too small - bad poop");
+			PyErr_SetString(ImgfileError,
+					"rlebuf is too small - bad poop");
 			fclose(inf);
-			DECREF(rv);
+			Py_DECREF(rv);
 			free(rledat);
 			free(starttab);
 			free(lengthtab);
@@ -398,13 +399,13 @@ longimagedata(self, args)
 	free(rledat);
 	return rv;
     } else {
-	rv = newsizedstringobject((char *) 0,
-				  (xsize*ysize+TAGLEN)*sizeof(long));
+	rv = PyString_FromStringAndSize((char *) 0,
+					(xsize*ysize+TAGLEN)*sizeof(long));
 	if (rv == NULL) {
 	    fclose(inf);
 	    return NULL;
 	}
-	base = (unsigned char *) getstringvalue(rv);
+	base = (unsigned char *) PyString_AsString(rv);
 #ifdef ADD_TAGS
 	addlongimgtag(base,xsize,ysize);
 #endif
@@ -551,9 +552,9 @@ int z;
  *	RGBA image file is saved.
  *
  */
-static object *
+static PyObject *
 longstoimage(self, args)
-    object *self, *args;
+    PyObject *self, *args;
 {
     unsigned char *lptr;
     char *name;
@@ -566,13 +567,14 @@ longstoimage(self, args)
     unsigned char *lumbuf;
     int rlebuflen, goodwrite;
 
-    if (!getargs(args, "(s#iiis)", &lptr, &len, &xsize, &ysize, &zsize, &name))
+    if (!PyArg_Parse(args, "(s#iiis)", &lptr, &len, &xsize, &ysize, &zsize,
+		     &name))
 	return NULL;
 
     goodwrite = 1;
     outf = fopen(name,"w");
     if(!outf) {
-	err_setstr(ImgfileError,"can't open output file");
+	PyErr_SetString(ImgfileError,"can't open output file");
 	return NULL;
     }
     tablen = ysize*zsize*sizeof(long);
@@ -609,7 +611,7 @@ longstoimage(self, args)
 		len = compressrow(lptr,rlebuf,CHANOFFSET(z),xsize);
 	    }
 	    if(len>rlebuflen) {
-		err_setstr(ImgfileError,"rlebuf is too small - bad poop");
+		PyErr_SetString(ImgfileError,"rlebuf is too small - bad poop");
 		free(starttab);
 		free(lengthtab);
 		free(rlebuf);
@@ -637,10 +639,10 @@ longstoimage(self, args)
     free(lumbuf);
     fclose(outf);
     if(goodwrite) {
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
     } else {
-	err_setstr(ImgfileError,"not enough space for image!!");
+	PyErr_SetString(ImgfileError,"not enough space for image!!");
 	return NULL;
     }
 }
@@ -718,21 +720,21 @@ int z, cnt;
     return optr - (unsigned char *)rlebuf;
 }
 
-static object *
+static PyObject *
 ttob(self, args)
-    object *self;
-    object *args;
+    PyObject *self;
+    PyObject *args;
 {
     int order, oldorder;
 
-    if (!getargs(args, "i", &order))
+    if (!PyArg_Parse(args, "i", &order))
 	return NULL;
     oldorder = reverse_order;
     reverse_order = order;
-    return newintobject(oldorder);
+    return PyInt_FromLong(oldorder);
 }
 
-static struct methodlist rgbimg_methods[] = {
+static PyMethodDef rgbimg_methods[] = {
     {"sizeofimage",	sizeofimage},
     {"longimagedata",	longimagedata},
     {"longstoimage",	longstoimage},
@@ -743,10 +745,10 @@ static struct methodlist rgbimg_methods[] = {
 void
 initrgbimg()
 {
-    object *m, *d;
-    m = initmodule("rgbimg", rgbimg_methods);
-    d = getmoduledict(m);
-    ImgfileError = newstringobject("rgbimg.error");
-    if (ImgfileError == NULL || dictinsert(d, "error", ImgfileError))
-	fatal("can't define rgbimg.error");
+    PyObject *m, *d;
+    m = Py_InitModule("rgbimg", rgbimg_methods);
+    d = PyModule_GetDict(m);
+    ImgfileError = PyString_FromString("rgbimg.error");
+    if (ImgfileError == NULL || PyDict_SetItemString(d, "error", ImgfileError))
+	Py_FatalError("can't define rgbimg.error");
 }
