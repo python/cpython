@@ -65,15 +65,13 @@ options:
 That's just a taste of the flexibility \module{optparse} gives you in
 parsing your command-line.
 
-\subsection{The Tao of Option Parsing\label{optparse-tao}}
+\subsection{Philosophy\label{optparse-philosophy}}
 
-\module{optparse} is an implementation of what I have always
-considered the most obvious, straightforward, and user-friendly way to
-design a user interface for command-line programs.  In short, I have
-fairly firm ideas of the Right Way (and the many Wrong Ways) to do
-argument parsing, and \module{optparse} reflects many of those ideas.
-This section is meant to explain this philosophy, which in turn is
-heavily influenced by the \UNIX{} and GNU toolkits.
+The purpose of \module{optparse} is to make it very easy to provide the
+most standard, obvious, straightforward, and user-friendly user
+interface for \UNIX{} command-line programs.  The \module{optparse}
+philosophy is heavily influenced by the \UNIX{} and GNU toolkits, and
+this section is meant to explain that philosophy.
 
 \subsubsection{Terminology\label{optparse-terminology}}
 
@@ -88,8 +86,8 @@ Python, arguments are elements of
 being executed; in the context of parsing arguments, it's not very
 important.)  \UNIX{} shells also use the term ``word''.
 
-It's occasionally desirable to substitute an argument list other
-than \var{sys.argv[1:]}, so you should read ``argument'' as ``an element of
+It is occasionally desirable to use an argument list other than
+\var{sys.argv[1:]}, so you should read ``argument'' as ``an element of
 \var{sys.argv[1:]}, or of some other list provided as a substitute for
 \var{sys.argv[1:]}''.
 
@@ -120,13 +118,13 @@ than \var{sys.argv[1:]}, so you should read ``argument'' as ``an element of
       \programopt{/f}, \programopt{/file}.
 \end{itemize}
 
-These option syntaxes are not supported by \module{optparse}, and they
-never will be.  (If you really want to use one of those option
-syntaxes, you'll have to subclass OptionParser and override all the
-difficult bits.  But please don't!  \module{optparse} does things the
-traditional \UNIX/GNU way deliberately; the first three are
-non-standard anywhere, and the last one makes sense only if you're
-exclusively targeting MS-DOS/Windows and/or VMS.)
+\module{optparse} does not support these option syntaxes, and it never
+will.  (If you really want to use one of those option syntaxes, you'll
+have to subclass \class{OptionParser} and override all the difficult
+bits.  But please don't!  \module{optparse} does things the traditional
+\UNIX/GNU way deliberately; the first three are non-standard anywhere,
+and the last one makes sense only if you're exclusively targeting
+MS-DOS/Windows and/or VMS.)
 
 \term{option argument}
 an argument that follows an option, is closely associated with that
@@ -150,22 +148,24 @@ Some options never take an argument.  Some options always take an
 argument.  Lots of people want an ``optional option arguments'' feature,
 meaning that some options will take an argument if they see it, and
 won't if they don't.  This is somewhat controversial, because it makes
-parsing ambiguous: if \programopt{-a} takes an optional argument and
-\programopt{-b} is another option entirely, how do we interpret
-\programopt{-ab}?  \module{optparse} does not currently support this.
+parsing ambiguous: if \programopt{-a} and \programopt{-b} are both
+options, and \programopt{-a} takes an optional argument, how do we
+interpret \programopt{-ab}?  \module{optparse} does not support optional
+option arguments.
 
 \term{positional argument}
 something leftover in the argument list after options have been
-parsed, ie. after options and their arguments have been parsed and
+parsed, i.e., after options and their arguments have been parsed and
 removed from the argument list.
 
 \term{required option}
-an option that must be supplied on the command-line; the phrase
-``required option'' is an oxymoron and is usually considered poor UI
-design.  \module{optparse} doesn't prevent you from implementing
-required options, but doesn't give you much help with it either.  See
-``Extending Examples'' (section~\ref{optparse-extending-examples}) for
-two ways to implement required options with \module{optparse}.
+an option that must be supplied on the command-line.  The phrase
+``required option'' is an oxymoron; the presence of ``required options''
+in a program is usually a sign of careless user interface design.
+\module{optparse} doesn't prevent you from implementing required
+options, but doesn't give you much help with it either.  See ``Extending
+Examples'' (section~\ref{optparse-extending-examples}) for two ways to
+implement required options with \module{optparse}.
 
 \end{definitions}
 
@@ -177,13 +177,13 @@ For example, consider this hypothetical command-line:
 
 \programopt{-v} and \longprogramopt{report} are both options.  Assuming
 the \longprogramopt{report} option takes one argument,
-``/tmp/report.txt'' is an option argument.  ``foo'' and ``bar'' are
-positional arguments.
+\code{/tmp/report.txt} is an option argument.  \code{foo} and \code{bar}
+are positional arguments.
 
 \subsubsection{What are options for?\label{optparse-options}}
 
 Options are used to provide extra information to tune or customize the
-execution of a program.  In case it wasn't clear, options are usually
+execution of a program.  In case it wasn't clear, options should be
 \emph{optional}.  A program should be able to run just fine with no
 options whatsoever.  (Pick a random program from the \UNIX{} or GNU
 toolsets.  Can it run without any options at all and still make sense?
