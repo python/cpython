@@ -1,3 +1,37 @@
+IDLEfork README
+===============
+
+IDLEfork is an official experimental fork of Python's Integrated 
+DeveLopment Environment IDLE. Worthwhile and successful changes and 
+additions will go back into the Python distribution's IDLE at some 
+later stage. There is no spanish inquisition.
+
+As David Scherer aptly put it in the original IDLE fork README (below), 
+"It is alpha software and might be unstable. If it breaks, you get to 
+keep both pieces." One of the aims of IDLEfork now is for it to be able 
+to be uncompressed into its own directory and run from there, that way  
+you can play with (or hack on) IDLEfork without any further installation, 
+and entirely separately from your stable python IDLE distribution.
+
+If you find bugs or undesired behaviour please code nifty patches and 
+submit them to the IDLEfork SourceForge patch manager, 8^) or let us 
+know about it in one of the appropriate fora. See the IDLEfork home 
+page at
+
+http://idlefork.sourceforge.net
+
+for details on the various ways to give input to or contact the project.
+
+Please see the files NEWS.txt and ChangeLog for more up to date
+information on changes in this release of IDLEfork.
+
+
+Thanks for trying IDLEfork,
+Stephen M. Gava.
+<elguavas@users.sourceforge.net>
+
+
+
 README from IDLE fork 0.7.1 :
 =============================
 
