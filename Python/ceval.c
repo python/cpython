@@ -1250,6 +1250,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				PyErr_SetString(PyExc_RuntimeError,
 						"lost sys.displayhook");
 				err = -1;
+				x = NULL;
 			}
 			if (err == 0) {
 				x = Py_BuildValue("(O)", v);
@@ -1258,6 +1259,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			}
 			if (err == 0) {
 				w = PyEval_CallObject(w, x);
+				Py_XDECREF(w);
 				if (w == NULL)
 					err = -1;
 			}
