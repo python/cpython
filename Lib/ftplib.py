@@ -336,7 +336,11 @@ class FTP:
 
 	# Change to a directory
 	def cwd(self, dirname):
-		self.voidcmd('CWD ' + dirname)
+		if dirname == '..':
+			cmd = 'CDUP'
+		else:
+			cmd = 'CWD ' + dirname
+		self.voidcmd(cmd)
 
 	# Retrieve the size of a file
 	def size(self, filename):

@@ -270,10 +270,12 @@ def expandvars(path):
 
 def normpath(path):
 	import string
+	# Treat initial slashes specially
+	slashes = ''
+	while path[:1] == '/':
+		slashes = slashes + '/'
+		path = path[1:]
 	comps = string.splitfields(path, '/')
-	# If the path begins with '/', comps[0] is '', which we leave alone;
-	# we also leave leading multiple slashes alone for compatibility
-	# with certain networking naming schemes using //host/path
 	i = 0
 	while i < len(comps):
 		if comps[i] == '.':
@@ -287,6 +289,6 @@ def normpath(path):
 		else:
 			i = i+1
 	# If the path is now empty, substitute '.'
-	if not comps:
+	if not comps and not slashes:
 		comps.append('.')
-	return string.joinfields(comps, '/')
+	return slashes + string.joinfields(comps, '/')
