@@ -20,6 +20,9 @@ KPSEWHICH=	TEXINPUTS=$(TEXINPUTS) kpsewhich tex
 
 BUILDINDEX=	$(TOOLSDIR)/buildindex.py
 
+# make it clear to l2h, since our support only generates HTML 4.0
+L2HARGS=	-html_version 4.0
+
 INDEXFILES=api/api.html \
 	ext/ext.html \
 	lib/lib.html \
