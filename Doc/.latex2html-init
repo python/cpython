@@ -20,8 +20,8 @@ sub img_tag {
     ( ($icon =~ /(gif)/) ?
      do {
          $icon =~ /(up|next|previous|next_page|previous_page|change_begin|change_end|change_delete|contents|index)/;
-         join('','<IMG ',$iconsizes{$1},' ALIGN=BOTTOM ALT="',$1,
-	      '" SRC="',$ICONSERVER,"/$icon",'" BORDER=0>')
+         join('','<img ',$iconsizes{$1},' align=bottom alt="',$1,
+	      '" src="',$ICONSERVER,"/$icon",'" border=0>')
          } :
      $icon);
 }
@@ -98,22 +98,22 @@ sub process_command {
 sub top_navigation_panel {
 
     # Now add a few buttons with a space between them
-    "<DIV CLASS=navigation>\n" .
+    "<div class=navigation>\n" .
     "$NEXT $UP $PREVIOUS $CONTENTS $INDEX $CUSTOM_BUTTONS" .
 
     "<BR>\n" .		# Line break
 
     # If ``next'' section exists, add its title to the navigation panel
-    ($NEXT_TITLE ? "<B> Next:</B> $NEXT_TITLE\n" : undef) .
+    ($NEXT_TITLE ? "<b> Next:</b> $NEXT_TITLE\n" : undef) .
 
     # Similarly with the ``up'' title ...
-    ($UP_TITLE ? "<B>Up:</B> $UP_TITLE\n" : undef) .
+    ($UP_TITLE ? "<b>Up:</b> $UP_TITLE\n" : undef) .
 
     # ... and the ``previous'' title
-    ($PREVIOUS_TITLE ? "<B> Previous:</B> $PREVIOUS_TITLE\n" : undef) .
+    ($PREVIOUS_TITLE ? "<b> Previous:</b> $PREVIOUS_TITLE\n" : undef) .
 
     #  Line Break, horizontal rule (3-d dividing line) and new paragraph
-    "<BR><HR><P></DIV>\n"
+    "<br><hr><p></div>\n"
 }
 
 sub bot_navigation_panel {
