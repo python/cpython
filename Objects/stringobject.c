@@ -1620,7 +1620,7 @@ string_index(PyStringObject *self, PyObject *args)
 		return NULL;
 	if (result == -1) {
 		PyErr_SetString(PyExc_ValueError,
-				"substring not found in string.index");
+				"substring not found");
 		return NULL;
 	}
 	return PyInt_FromLong(result);
@@ -1659,7 +1659,7 @@ string_rindex(PyStringObject *self, PyObject *args)
 		return NULL;
 	if (result == -1) {
 		PyErr_SetString(PyExc_ValueError,
-				"substring not found in string.rindex");
+				"substring not found");
 		return NULL;
 	}
 	return PyInt_FromLong(result);
