@@ -424,8 +424,10 @@ re.compile("^a", re.M).search("ba", 1)   # fails; no preceding \n
 \subsection{Module Contents}
 \nodename{Contents of Module re}
 
-The module defines the following functions and constants, and an exception:
-
+The module defines several functions, constants, and an exception. Some of the
+functions are simplified versions of the full featured methods for compiled
+regular expressions.  Most non-trivial applications always use the compiled
+form.
 
 \begin{funcdesc}{compile}{pattern\optional{, flags}}
   Compile a regular expression pattern into a regular expression
@@ -552,21 +554,23 @@ ignored.
   the old \function{regsub.split()} and \function{regsub.splitx()}.
 \end{funcdesc}
 
-\begin{funcdesc}{findall}{pattern, string}
+\begin{funcdesc}{findall}{pattern, string\optional{, flags}}
   Return a list of all non-overlapping matches of \var{pattern} in
   \var{string}.  If one or more groups are present in the pattern,
   return a list of groups; this will be a list of tuples if the
   pattern has more than one group.  Empty matches are included in the
   result unless they touch the beginning of another match.
   \versionadded{1.5.2}
+  \versionchanged[Added the optional flags argument]{2.4}
 \end{funcdesc}
 
-\begin{funcdesc}{finditer}{pattern, string}
+\begin{funcdesc}{finditer}{pattern, string\optional{, flags}}
   Return an iterator over all non-overlapping matches for the RE
   \var{pattern} in \var{string}.  For each match, the iterator returns
   a match object.  Empty matches are included in the result unless they
   touch the beginning of another match.
   \versionadded{2.2}
+  \versionchanged[Added the optional flags argument]{2.4}
 \end{funcdesc}
 
 \begin{funcdesc}{sub}{pattern, repl, string\optional{, count}}
@@ -695,11 +699,13 @@ attributes:
 Identical to the \function{split()} function, using the compiled pattern.
 \end{methoddesc}
 
-\begin{methoddesc}[RegexObject]{findall}{string}
+\begin{methoddesc}[RegexObject]{findall}{string\optional{, pos\optional{,
+                                        endpos}}}
 Identical to the \function{findall()} function, using the compiled pattern.
 \end{methoddesc}
 
-\begin{methoddesc}[RegexObject]{finditer}{string}
+\begin{methoddesc}[RegexObject]{finditer}{string\optional{, pos\optional{,
+                                        endpos}}}
 Identical to the \function{finditer()} function, using the compiled pattern.
 \end{methoddesc}
 

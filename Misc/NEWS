@@ -32,6 +32,11 @@ Extension modules
 Library
 -------
 
+- re's findall() and finditer() functions now take an optional flags argument
+  just like the compile(), search(), and match() functions.  Also, documented
+  the previously existing start and stop parameters for the findall() and
+  finditer() methods of regular expression objects.
+
 - rfc822 Messages now support iterating over the headers.
 
 - The (undocumented) tarfile.Tarfile.membernames has been removed;

@@ -156,7 +156,7 @@ def split(pattern, string, maxsplit=0):
     returning a list containing the resulting substrings."""
     return _compile(pattern, 0).split(string, maxsplit)
 
-def findall(pattern, string):
+def findall(pattern, string, flags=0):
     """Return a list of all non-overlapping matches in the string.
 
     If one or more groups are present in the pattern, return a
@@ -164,16 +164,16 @@ def findall(pattern, string):
     has more than one group.
 
     Empty matches are included in the result."""
-    return _compile(pattern, 0).findall(string)
+    return _compile(pattern, flags).findall(string)
 
 if sys.hexversion >= 0x02020000:
     __all__.append("finditer")
-    def finditer(pattern, string):
+    def finditer(pattern, string, flags=0):
         """Return an iterator over all non-overlapping matches in the
         string.  For each match, the iterator returns a match object.
 
         Empty matches are included in the result."""
-        return _compile(pattern, 0).finditer(string)
+        return _compile(pattern, flags).finditer(string)
 
 def compile(pattern, flags=0):
     "Compile a regular expression pattern, returning a pattern object."
