@@ -71,12 +71,11 @@ class bdist_dumb (Command):
 
         self.run_command ('build')
 
-        install = self.reinitialize_command('install')
+        install = self.reinitialize_command('install', reinit_subcommands=1)
         install.root = self.bdist_dir
 
         self.announce ("installing to %s" % self.bdist_dir)
-        install.ensure_finalized()
-        install.run()
+        self.run_command('install')
 
         # And make an archive relative to the root of the
         # pseudo-installation tree.
