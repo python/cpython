@@ -41,12 +41,19 @@ found, thus allowing multiple occurrences.  Long and short options may
 be mixed.
 \end{funcdesc}
 
-\begin{excdesc}{error}
+\begin{excdesc}{GetoptError}
 This is raised when an unrecognized option is found in the argument
 list or when an option requiring an argument is given none.
 The argument to the exception is a string indicating the cause of the
 error.  For long options, an argument given to an option which does
-not require one will also cause this exception to be raised.
+not require one will also cause this exception to be raised.  The
+attributes \member{msg} and \member{opt} give the error message and
+related option; if there is no specific option to which the exception
+relates, \member{opt} is an empty string.
+\end{excdesc}
+
+\begin{excdesc}{error}
+Alias for \exception{GetoptError}; for backward compatibility.
 \end{excdesc}
 
 
