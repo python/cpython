@@ -381,6 +381,15 @@ Extension modules
 Library
 -------
 
+- UserDict.py now defines a DictMixin class which defines all dictionary
+  methods for classes that already have a minimum mapping interface.
+  This greatly simplifies writing classes that need to be substitutable
+  for dictionaries (such as the shelve module).
+
+- shelve.py now subclasses from UserDict.DictMixin.  Now shelve supports
+  all dictionary methods.  This eases the transition to persistent
+  storage for scripts originally written with dictionaries in mind.								
+
 - A new package, logging, implements the logging API defined by PEP
   282.  The code is written by Vinay Sajip.
 

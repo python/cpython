@@ -60,3 +60,67 @@ class UserDict:
 class IterableUserDict(UserDict):
     def __iter__(self):
         return iter(self.data)
+
+class DictMixin:
+    '''Mixin defining all dictionary methods for classes that already have
+       a minimum dictionary interface including getitem, setitem, delitem,
+       and keys '''
+
+    # first level provided by subclass: getitem, setitem, delitem, and keys
+
+    # second level definitions which assume only getitem and keys
+    def has_key(self, key):
+        try:
+            value = self[key]
+        except KeyError:
+            return False
+        return True
+    __contains__ = has_key
+    def __iter__(self):
+        for k in self.keys():
+            yield k
+    def __len__(self):
+        return len(self.keys())
+
+    # third level uses second level instead of first
+    def iteritems(self):
+        for k in self:
+            yield (k, self[k])
+    iterkeys = __iter__
+
+    # fourth level uses second and third levels instead of first
+    def itervalues(self):
+        for _, v in self.iteritems():
+            yield v
+    def values(self):
+        return [self[key] for key in self.keys()]
+    def items(self):
+        return list(self.iteritems())
+    def clear(self):
+        for key in self.keys():
+            del self[key]
+    def setdefault(self, key, default):
+        if key not in self:
+            self[key] = default
+            return default
+        return self[key]
+    def pop(self, key):
+        value = self[key]
+        del self[key]
+        return value
+    def popitem(self):
+        try:
+            k, v = self.iteritems().next()
+        except StopIteration:
+            raise KeyError, 'dictionary is empty'
+        del self[k]
+        return (k, v)
+    def update(self, other):
+        for key in other.keys():
+            self[key] = other[key]
+    def get(self, key, default=None):
+        if key in self:
+            return self[key]
+        return default
+    def __repr__(self):
+        return repr(dict(self.items()))

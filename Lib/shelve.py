@@ -40,9 +40,11 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+import UserDict
+
 __all__ = ["Shelf","BsdDbShelf","DbfilenameShelf","open"]
 
-class Shelf:
+class Shelf(UserDict.DictMixin):
     """Base class for shelf implementations.
 
     This is initialized with a dictionary-like object.

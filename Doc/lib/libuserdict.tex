@@ -15,7 +15,13 @@ your own dictionary-like classes, which can inherit from
 them and override existing methods or add new ones.  In this way one
 can add new behaviors to dictionaries.
 
-The \module{UserDict} module defines the \class{UserDict} class:
+The module also defines a mixin defining all dictionary methods for
+classes that already have a minimum mapping interface.  This greatly
+simplifies writing classes that need to be substitutable for
+dictionaries (such as the shelve module).
+
+The \module{UserDict} module defines the \class{UserDict} class
+and \class{DictMixin}:
 
 \begin{classdesc}{UserDict}{\optional{initialdata}}
 Class that simulates a dictionary.  The instance's
@@ -34,6 +40,23 @@ following attribute:
 A real dictionary used to store the contents of the \class{UserDict}
 class.
 \end{memberdesc}
+
+\begin{classdesc}{DictMixin}{}
+Mixin defining all dictionary methods for classes that already have
+a minimum dictionary interface including\method{__getitem__},
+\method{__setitem__}, \method{__delitem__}, and \method{keys}.
+
+This mixin should be used as a superclass.  Adding each of the
+above methods adds progressively more functionality.  For instance,
+the absence of \method{__delitem__} precludes only \method{pop}
+and \method{popitem}.
+
+While the four methods listed above are sufficient to support the
+entire dictionary interface, progessively more efficiency comes
+with defining \method{__contains__}, \method{__iter__}, and
+\method{iteritems}.
+
+\end{classdesc}
 
 
 \section{\module{UserList} ---
