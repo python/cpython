@@ -484,8 +484,6 @@ merged F into A
 A->A B->G C->A D->G E->G F->A G->G H->G I->A J->G K->A L->A M->G
 merged A into G
 A->G B->G C->G D->G E->G F->G G->G H->G I->G J->G K->G L->G M->G
->>> for s in sets:  # XXX memory leak without this
-...    s.clear()
 """
 
 # Fun tests (for sufficiently warped notions of "fun").
@@ -614,7 +612,7 @@ arguments are iterable -- a LazyList is the same as a generator to times().
 ...         yield i
 
 Print as many of these as you like -- *this* implementation is memory-
-efficient.  XXX Except that it leaks unless you clear the dict!
+efficient.
 
 >>> m235 = LazyList(m235())
 >>> for i in range(5):
@@ -624,8 +622,6 @@ efficient.  XXX Except that it leaks unless you clear the dict!
 [81, 90, 96, 100, 108, 120, 125, 128, 135, 144, 150, 160, 162, 180, 192]
 [200, 216, 225, 240, 243, 250, 256, 270, 288, 300, 320, 324, 360, 375, 384]
 [400, 405, 432, 450, 480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675]
-
->>> m235.clear()  # XXX memory leak without this
 
 
 Ye olde Fibonacci generator, LazyList style.
@@ -650,8 +646,6 @@ Ye olde Fibonacci generator, LazyList style.
 >>> fib = LazyList(fibgen(1, 2))
 >>> firstn(iter(fib), 17)
 [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584]
-
->>> fib.clear()  # XXX memory leak without this
 """
 
 # syntax_tests mostly provokes SyntaxErrors.  Also fiddling with #if 0
