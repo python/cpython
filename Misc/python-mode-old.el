@@ -6,8 +6,8 @@
 ;;         1992-1994 Tim Peters <tim@ksr.com>
 ;; Maintainer:    bwarsaw@cnri.reston.va.us
 ;; Created:       Feb 1992
-;; Version:       2.16
-;; Last Modified: 1995/03/15 16:23:59
+;; Version:       2.18
+;; Last Modified: 1995/03/15 18:23:16
 ;; Keywords: python editing language major-mode
 
 ;; This software is provided as-is, without express or implied
@@ -69,7 +69,7 @@
 ;; LCD Archive Entry:
 ;; python-mode|Barry A. Warsaw|bwarsaw@cnri.reston.va.us
 ;; |Major mode for editing Python programs
-;; |1995/03/15 16:23:59|2.16|
+;; |1995/03/15 18:23:16|2.18|
 
 ;;; Code:
 
@@ -436,10 +436,12 @@ argument is provided, that many colons are inserted non-electrically."
 			   (py-compute-indentation)))
 	       )
 	  (setq outdent py-indent-offset))
-      ;; electric colon won't re-indent lines that start in column
-      ;; zero.  you'd have to use TAB for that.  TBD: Is there a
-      ;; better way to determine this???
-      (if (zerop (current-indentation)) nil
+      ;; Don't indent, only outdent.  This assumes that any lines that
+      ;; are already outdented relative to py-compute-indentation were
+      ;; put there on purpose.  Its highly annoying to have `:' indent
+      ;; for you.  Use TAB, C-c C-l or C-c C-r to adjust.  TBD: Is
+      ;; there a better way to determine this???
+      (if (< (current-indentation) indent) nil
 	(goto-char here)
 	(beginning-of-line)
 	(delete-horizontal-space)
@@ -1908,7 +1910,7 @@ local bindings to py-newline-and-indent."))
        (setq zmacs-region-stays t)))
 
 
-(defconst py-version "2.16"
+(defconst py-version "2.18"
   "`python-mode' version number.")
 (defconst py-help-address "bwarsaw@cnri.reston.va.us"
   "Address accepting submission of bug reports.")
