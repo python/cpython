@@ -146,7 +146,7 @@ def monthcalendar(year, month):
 	key = `year` + month_abbr[month]
 	try:
 		return mc_cache[key]
-	except RuntimeError:
+	except IOError:
 		mc_cache[key] = ret = _monthcalendar(year, month)
 		return ret
 
