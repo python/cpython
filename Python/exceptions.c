@@ -1560,7 +1560,7 @@ PyDoc_STRVAR(SyntaxWarning__doc__,
 "Base class for warnings about dubious syntax.");
 
 PyDoc_STRVAR(OverflowWarning__doc__,
-"Base class for warnings about numeric overflow.");
+"Base class for warnings about numeric overflow.  Won't exist in Python 2.5.");
 
 PyDoc_STRVAR(RuntimeWarning__doc__,
 "Base class for warnings about dubious runtime behavior.");
@@ -1635,6 +1635,7 @@ PyObject *PyExc_UserWarning;
 PyObject *PyExc_DeprecationWarning;
 PyObject *PyExc_PendingDeprecationWarning;
 PyObject *PyExc_SyntaxWarning;
+/* PyExc_OverflowWarning should be removed for Python 2.5 */
 PyObject *PyExc_OverflowWarning;
 PyObject *PyExc_RuntimeWarning;
 PyObject *PyExc_FutureWarning;
@@ -1726,6 +1727,7 @@ static struct {
  {"PendingDeprecationWarning", &PyExc_PendingDeprecationWarning, &PyExc_Warning,
   PendingDeprecationWarning__doc__},
  {"SyntaxWarning", &PyExc_SyntaxWarning, &PyExc_Warning, SyntaxWarning__doc__},
+ /* OverflowWarning should be removed for Python 2.5 */
  {"OverflowWarning", &PyExc_OverflowWarning, &PyExc_Warning,
   OverflowWarning__doc__},
  {"RuntimeWarning", &PyExc_RuntimeWarning, &PyExc_Warning,
