@@ -1,0 +1,55 @@
+<HTML><HEAD><TITLE>Creating true standalone applications in Python</TITLE></HEAD>
+<BODY>
+<H1>Creating true standalone applications in Python</H1>
+<HR>
+You can use Python to create true standalone macintosh applications: applications
+that you can distribute to other people as a single file, without dependencies
+on Python being installed, etc. The process is not easy, however, and at the
+moment you need a source distribution (and a C development environment, CodeWarrior
+most preferred). You should first familiarize yourself with the sections
+<a href="building.html">building Python from source</a> and
+<a href="example2.html">building applets</a>. <p>
+
+The application we are going to build will contain a complete interpreter,
+plus <code>'PYC '</code> resources for all the Python modules the program uses.
+We start by creating a resource file that contains all the modules we need,
+in PYC-resource form. There are two ways to do this:
+<UL>
+<LI> Modify the standard <code>freeze.py</code> module to print the names of
+all modules used. Copy these to a single folder, run <code>compileall.py</code>
+on that folder and then run <code>PackLibDir.py</code> from the scripts folder
+to create the resourcefile. This has one disadvantage: freeze finds the modules
+used by parsing your Python code, so modules you don't use (for instance because
+they are system-dependent and not used on the mac) are also included. You
+may also have problems with dynamically loaded modules. You will also have to rename
+your main module to __main__.py.
+
+<LI> Another way to find the modules used is by option-starting your script
+and setting the "interactive mode after script" flag. Exercise every corner of
+your program so all your modules have been imported, and when you exit your
+program and get back to the interpreter use <code>findmodulefiles.findmodulefiles</code>
+to get a list of all modules used. You can now use
+<code>findmodulefiles.mkpycresourcefile</code> to create your resourcefile.
+</UL>
+
+Next we create the application project. Copy the <code>PythonStandalone.prj</code>
+project, replace <code>macapplication.c</code> by <code>macapplet.c</code> and
+replace <code>bundle.rsrc</code> by <code>appletbundle.rsrc</code>. Also
+add the PYC resource file you made in the previous step and any other resource
+files you need. Set the target output file names (for all three of ppc/68k/fat).
+Build your application. <p>
+
+Finally we have to give the application the right <code>sys.path</code> initialisation.
+We do this by dropping the application on <code>EditPythonPrefs</code> and removing
+all path components replacing them with a single <code>$(APPLICATION)</code>. You
+may have to use ResEdit after this step to remove an "alis" resource from your application,
+I am not sure why this is sometimes created. <p>
+
+If you want to get fancy you may be able to make your application smaller by removing
+all unused builtin modules. If you used the findmodulefiles method above to find
+your modules you can start a standalone interpreter and use
+<code>findmodulefiles.findunusedbuiltins</code> to get the names of all builtin
+modules your program doesn't use. You can then create a private copy of
+<code>config.c</code> from which you remove all unused modules.
+
+</BODY></HTML>

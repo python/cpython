@@ -23,8 +23,8 @@ Python program to control and monitor the behaviour of the low-level
 driver, and we will create the user interface around that. If you want
 to actually run the code, you will obvously need InterSLIP and the
 interslip module. The latter is available as a dynamically loadable
-extension for PowerPC macs, and may be compiled in your Python
-interpreter for 68K macs. As of this writing there is still a slight
+extension for PowerPC/cfm68k Pythons, and may be compiled in your static 68K
+Python. As of this writing there is still a slight
 problem with the Python interslip module causing it to say "file not
 found" if the driver is not loaded yet. The workaround is to load the
 driver by starting InterSLIP Control and quitting it. <p>
@@ -50,7 +50,8 @@ NAME="resource-numbering">resource numbering</A>.  Because often your
 resources will be combined with those that the Python interpreter and
 various standard modules need you should give your DLOG and DITL
 resources numbers above 512. 128 and below are reserved for Apple,
-128-255 for the Python interpreter and 256-511 for standard
+128-228 are for extensions like Tk,
+228-255 for the Python interpreter and 256-511 for standard
 modules. If you are writing a module that you will be distributing for
 inclusion in other people's programs you may want to register a number
 in the 256-511 range, contact Guido or myself or whoever you think is
