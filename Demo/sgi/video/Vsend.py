@@ -7,16 +7,18 @@ import sys
 import time
 import struct
 from socket import *
+from SOCKET import *
 import gl, GL, DEVICE
 sys.path.append('/ufs/guido/src/video')
 import LiveVideoIn
 import LiveVideoOut
+import SV
 
 PKTMAX_UCAST = 16*1024 - 6
 PKTMAX_BCAST = 1450
 WIDTH = 400
 HEIGHT = 300
-HOST = '<broadcast>'
+HOST = '225.0.0.250' # Multicast address!
 PORT = 5555
 
 def main():
@@ -28,6 +30,8 @@ def main():
 	port = PORT
 	if sys.argv[1:]:
 		host = sys.argv[1]
+		if host == '-b':
+			host = '<broadcast>'
 		if sys.argv[2:]:
 			port = eval(sys.argv[2])
 
@@ -41,10 +45,13 @@ def main():
 	wid = gl.winopen('Vsend')
 	gl.keepaspect(WIDTH, HEIGHT)
 	gl.stepunit(8, 6)
+	gl.maxsize(SV.PAL_XMAX, SV.PAL_YMAX)
 	gl.winconstraints()
 	gl.qdevice(DEVICE.ESCKEY)
 	gl.qdevice(DEVICE.WINSHUT)
 	gl.qdevice(DEVICE.WINQUIT)
+	gl.qdevice(DEVICE.WINFREEZE)
+	gl.qdevice(DEVICE.WINTHAW)
 	width, height = gl.getsize()
 
 	x, y = gl.getorigin()
@@ -54,7 +61,9 @@ def main():
 	lvi = LiveVideoIn.LiveVideoIn().init(pktmax, width, height)
 
 	s = socket(AF_INET, SOCK_DGRAM)
-	s.allowbroadcast(1)
+	s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+
+	frozen = 0
 
 	while 1:
 
@@ -63,6 +72,10 @@ def main():
 			if dev in (DEVICE.ESCKEY, \
 				DEVICE.WINSHUT, DEVICE.WINQUIT):
 				break
+			if dev == DEVICE.WINFREEZE:
+				frozen = 1
+			if dev == DEVICE.WINTHAW:
+				frozen = 0
 			if dev == DEVICE.REDRAW:
 				w, h = gl.getsize()
 				x, y = gl.getorigin()
@@ -83,7 +96,9 @@ def main():
 			continue
 
 		pos, data = rv
-		lvo.putnextpacket(pos, data)
+
+		if not frozen:
+			lvo.putnextpacket(pos, data)
 
 		hdr = struct.pack('hhh', pos, width, height)
 		s.sendto(hdr + data, (host, port))
