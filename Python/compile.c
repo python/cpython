@@ -4234,6 +4234,7 @@ symtable_free(struct symtable *st)
 	Py_XDECREF(st->st_children);
 	Py_XDECREF(st->st_stack);
 	Py_XDECREF(st->st_cur_id);
+	Py_XDECREF(st->st_cur_name);
 	PyMem_Free((void *)st);
 }
 
