@@ -15,6 +15,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- Patch #781722: Gracefully reject AF_INET6 in socket.inet_pton
+  if IPv6 is disabled.
+
 Library
 -------
 
