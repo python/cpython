@@ -90,6 +90,7 @@ pwd_getpwnam(self, args)
 	return mkpwent(p);
 }
 
+#ifdef HAVE_GETPWENT
 static PyObject *
 pwd_getpwall(self, args)
 	PyObject *self;
@@ -113,11 +114,14 @@ pwd_getpwall(self, args)
 	}
 	return d;
 }
+#endif
 
 static PyMethodDef pwd_methods[] = {
 	{"getpwuid",	pwd_getpwuid},
 	{"getpwnam",	pwd_getpwnam},
+#ifdef HAVE_GETPWENT
 	{"getpwall",	pwd_getpwall},
+#endif
 	{NULL,		NULL}		/* sentinel */
 };
 

@@ -147,7 +147,7 @@ signal_handler(sig_num)
 
 
 
-#ifndef DONT_HAVE_SIG_ALARM
+#ifdef HAVE_ALARM
 static PyObject *
 signal_alarm(self, args)
 	PyObject *self; /* Not used */
@@ -161,7 +161,7 @@ signal_alarm(self, args)
 }
 #endif
 
-#ifndef DONT_HAVE_SIG_PAUSE
+#ifdef HAVE_PAUSE
 static PyObject *
 signal_pause(self, args)
 	PyObject *self; /* Not used */
@@ -254,12 +254,12 @@ signal_get_signal(self, args)
 
 /* List of functions defined in the module */
 static PyMethodDef signal_methods[] = {
-#ifndef DONT_HAVE_SIG_ALARM
+#ifdef HAVE_ALARM
 	{"alarm",	        signal_alarm},
 #endif
 	{"signal",	        signal_signal},
 	{"getsignal",	        signal_get_signal},
-#ifndef DONT_HAVE_SIG_PAUSE
+#ifdef HAVE_PAUSE
 	{"pause",	        signal_pause},
 #endif
 	{"default_int_handler", signal_default_int_handler},

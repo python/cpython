@@ -151,6 +151,9 @@
 /* The number of bytes in a long.  */
 #undef SIZEOF_LONG
 
+/* Define if you have the alarm function.  */
+#undef HAVE_ALARM
+
 /* Define if you have the chown function.  */
 #undef HAVE_CHOWN
 
@@ -193,6 +196,9 @@
 /* Define if you have the getpid function.  */
 #undef HAVE_GETPID
 
+/* Define if you have the getpwent function.  */
+#undef HAVE_GETPWENT
+
 /* Define if you have the gettimeofday function.  */
 #undef HAVE_GETTIMEOFDAY
 
@@ -219,6 +225,9 @@
 
 /* Define if you have the nice function.  */
 #undef HAVE_NICE
+
+/* Define if you have the pause function.  */
+#undef HAVE_PAUSE
 
 /* Define if you have the plock function.  */
 #undef HAVE_PLOCK
