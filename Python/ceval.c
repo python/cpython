@@ -2445,6 +2445,10 @@ fast_yield:
 	return retval;
 }
 
+/* this is gonna seem *real weird*, but if you put some other code between
+   eval_frame() and PyEval_EvalCodeEx() you will need to adjust the test in
+   the if statement in Misc/gdbinit:ppystack */
+
 PyObject *
 PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	   PyObject **args, int argcount, PyObject **kws, int kwcount,

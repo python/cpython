@@ -452,6 +452,9 @@ Py_Main(int argc, char **argv)
 	return sts;
 }
 
+/* this is gonna seem *real weird*, but if you put some other code between
+   Py_Main() and Py_GetArgcArgv() you will need to adjust the test in the
+   while statement in Misc/gdbinit:ppystack */
 
 /* Make the *original* argc/argv available to other modules.
    This is rare, but it is needed by the secureware extension. */
