@@ -12,7 +12,7 @@ class QueryTestCase(unittest.TestCase):
         self.a[-12] = self.b
 
     def test_basic(self):
-        # Verify that .isrecursive() and .isreadable() work w/o recursion.
+        """Verify .isrecursive() and .isreadable() w/o recursion."""
         verify = self.assert_
         for safe in (2, 2.0, 2j, "abc", [3], (2,2), {3: 3}, u"yaddayadda",
                      self.a, self.b):
@@ -22,7 +22,7 @@ class QueryTestCase(unittest.TestCase):
                    "expected isreadable for " + `safe`)
 
     def test_knotted(self):
-        # Verify that .isrecursive() and .isreadable() work w/ recursion.
+        """Verify .isrecursive() and .isreadable() w/ recursion."""
         # Tie a knot.
         self.b[67] = self.a
         # Messy dict.
