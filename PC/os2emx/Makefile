@@ -83,6 +83,7 @@ ARFLAGS=	crs
 IMPLIB=		emximp
 EXPLIB=		emxexp
 EXEOPT=		emxbind
+PY_DEF=		-DPy_BUILD_CORE
 
 
 # adjust C compiler settings based on build options
@@ -90,9 +91,10 @@ ifeq ($(MODE),debug)
   CFLAGS+=	-g -O
   LDFLAGS+=	-g
 else
-  CFLAGS+=	-s -O2
+  CFLAGS+=	-s -O2 -fomit-frame-pointer
   LDFLAGS+=	-s
 endif
+CFLAGS+=	$(PY_DEF)
 ifeq ($(ASSERTIONS),no)
   CFLAGS+=	-DNDEBUG
 endif
@@ -474,12 +476,16 @@ EXTERNDLLS+=	$(addsuffix $(MODULE.EXT),$(patsubst %module,%,$(HARDEXTMODULES)))
 
 # Targets
 all:  $(OUT) $(PYTHON.LIB) $(PYTHON.DEF) $(PYTHON.IMPLIB) $(PYTHON.DLL) \
-  $(PYTHON.EXE) $(PYTHONPM.EXE) $(PGEN.EXE) $(EXTERNDLLS)
+	python_noncore
+
+python_noncore:
+	make PY_DEF= $(PYTHON.EXE) $(PYTHONPM.EXE) $(PGEN.EXE) $(EXTERNDLLS)
 
 clean:
 	rm -f $(OUT)*
 	rm -f $(PYTHON.LIB) $(PYTHON.IMPLIB) $(PYTHON.EXEIMP) $(PYTHON.DLL) \
 	  $(PYTHON.EXE) $(PYTHONPM.EXE) $(PGEN.EXE) *$(MODULE.EXT)
+	find ../../Lib -name "*.py[co]" -exec rm {} ";"
 
 lx:
 	@echo Packing everything with lxLite...
@@ -498,6 +504,9 @@ $(PYTHON.LIB): $(OBJ.LIB)
 	rm.exe -f $@
 	$(AR) $(ARFLAGS) $@ $^
 
+# the Python core DLL .def file needs to have a number of non-static
+# symbols that aren't part of the Python C API removed (commented out)
+# from the DLL export list.
 $(PYTHON.DEF): $(PYTHON.LIB)
 	@echo Creating .DEF file: $@
 	@echo LIBRARY $(PYTHON_LIB) INITINSTANCE TERMINSTANCE >$@
@@ -505,7 +514,29 @@ $(PYTHON.DEF): $(PYTHON.LIB)
 	@echo PROTMODE >>$@
 	@echo DATA MULTIPLE NONSHARED >>$@
 	@echo EXPORTS >>$@
-	$(EXPLIB) -u $(PYTHON.LIB) >>$@
+	$(EXPLIB) -u $(PYTHON.LIB) |\
+	 sed -e "/ .init.*/s/^ /; /" \
+		-e "/ .pcre_.*/s/^ /; /" \
+		-e "/ .array_methods/s/^ /; /" \
+		-e "/ .fast_save_leave/s/^ /; /" \
+		-e "/ .dlopen/s/^ /; /" \
+		-e "/ .dlsym/s/^ /; /" \
+		-e "/ .dlclose/s/^ /; /" \
+		-e "/ .dlerror/s/^ /; /" \
+		-e "/ .cycle_type/s/^ /; /" \
+		-e "/ .dropwhile_type/s/^ /; /" \
+		-e "/ .takewhile_type/s/^ /; /" \
+		-e "/ .islice_type/s/^ /; /" \
+		-e "/ .starmap_type/s/^ /; /" \
+		-e "/ .imap_type/s/^ /; /" \
+		-e "/ .chain_type/s/^ /; /" \
+		-e "/ .ifilter_type/s/^ /; /" \
+		-e "/ .ifilterfalse_type/s/^ /; /" \
+		-e "/ .count_type/s/^ /; /" \
+		-e "/ .izip_type/s/^ /; /" \
+		-e "/ .repeat_type/s/^ /; /" \
+		-e "/ ._Py_re_.*/s/^ /; /" \
+		-e "/ ._Py_MD5.*/s/^ /; /" >>$@
 
 $(PYTHON.IMPLIB): $(PYTHON.DEF)
 	$(IMPLIB) -o $@ $^
@@ -627,7 +658,7 @@ readline$(MODULE.EXT): $(OUT)readline$O $(OUT)readline_m.def $(PYTHON.IMPLIB)
 
 #_tkinter$(MODULE.EXT): $(OUT)_tkinter$O $(OUT)tclNotify$O $(OUT)tkappinit$O
 _tkinter$(MODULE.EXT): $(OUT)_tkinter$O $(OUT)tclNotify$O \
-    $(OUT)_tkinter_m.def $(PYTHON.IMPLIB)
+		$(OUT)_tkinter_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS) $(TK_LIBS)
 
 zlib$(MODULE.EXT): $(OUT)zlibmodule$O $(OUT)zlib_m.def $(PYTHON.IMPLIB)
