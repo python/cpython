@@ -603,9 +603,6 @@
    <sysmacros.h>. */
 #undef MAJOR_IN_SYSMACROS
 
-/* Define if malloc(0) returns a NULL pointer. */
-#undef MALLOC_ZERO_RETURNS_NULL
-
 /* Define if mvwdelch in curses.h is an expression. */
 #undef MVWDELCH_IS_EXPRESSION
 
