@@ -1,13 +1,15 @@
 \section{Built-in Module \sectcode{al}}
 \bimodindex{al}
 
-This module provides access to the audio facilities of the Indigo and
-4D/35 workstations, described in section 3A of the IRIX 4.0 man pages
-(and also available as an option in IRIX 3.3).  You'll need to read
-those man pages to understand what these functions do!
-Some of the functions are not available in releases below 4.0.5.
-Again, see the manual to check whether a specific function is
-available on your platform.
+This module provides access to the audio facilities of the SGI Indy
+and Indigo workstations.  See section 3A of the IRIX man pages for
+details.  You'll need to read those man pages to understand what these
+functions do!  Some of the functions are not available in IRIX
+releases before 4.0.5.  Again, see the manual to check whether a
+specific function is available on your platform.
+
+All functions and methods defined in this module are equivalent to
+the C functions with \samp{AL} prefixed to their name.
 
 Symbolic constants from the C header file \file{<audio.h>} are defined
 in the standard module \code{AL}, see below.
@@ -20,145 +22,138 @@ interface can provide no protection against this kind of problems.
 (One example is specifying an excessive queue size --- there is no
 documented upper limit.)
 
-Module \code{al} defines the following functions:
+The module defines the following functions:
 
 \renewcommand{\indexsubitem}{(in module al)}
+
 \begin{funcdesc}{openport}{name\, direction\optional{\, config}}
-Equivalent to the C function ALopenport().  The name and direction
-arguments are strings.  The optional config argument is an opaque
-configuration object as returned by \code{al.newconfig()}.  The return
-value is an opaque port object; methods of port objects are described
-below.
+The name and direction arguments are strings.  The optional config
+argument is a configuration object as returned by
+\code{al.newconfig()}.  The return value is an \dfn{port object};
+methods of port objects are described below.
 \end{funcdesc}
 
 \begin{funcdesc}{newconfig}{}
-Equivalent to the C function ALnewconfig().  The return value is a new
-opaque configuration object; methods of configuration objects are
-described below.
+The return value is a new \dfn{configuration object}; methods of
+configuration objects are described below.
 \end{funcdesc}
 
 \begin{funcdesc}{queryparams}{device}
-Equivalent to the C function ALqueryparams().  The device argument is
-an integer.  The return value is a list of integers containing the
-data returned by ALqueryparams().
+The device argument is an integer.  The return value is a list of
+integers containing the data returned by ALqueryparams().
 \end{funcdesc}
 
 \begin{funcdesc}{getparams}{device\, list}
-Equivalent to the C function ALgetparams().  The device argument is an
-integer.  The list argument is a list such as returned by
-\code{queryparams}; it is modified in place (!).
+The device argument is an integer.  The list argument is a list such
+as returned by \code{queryparams}; it is modified in place (!).
 \end{funcdesc}
 
 \begin{funcdesc}{setparams}{device\, list}
-Equivalent to the C function ALsetparams().  The device argument is an
-integer.The list argument is a list such as returned by
-\code{al.queryparams}.
+The device argument is an integer.  The list argument is a list such
+as returned by \code{al.queryparams}.
 \end{funcdesc}
+
+\subsection{Configuration Objects}
 
 Configuration objects (returned by \code{al.newconfig()} have the
 following methods:
 
 \renewcommand{\indexsubitem}{(audio configuration object method)}
+
 \begin{funcdesc}{getqueuesize}{}
-Return the queue size; equivalent to the C function ALgetqueuesize().
+Return the queue size.
 \end{funcdesc}
 
 \begin{funcdesc}{setqueuesize}{size}
-Set the queue size; equivalent to the C function ALsetqueuesize().
+Set the queue size.
 \end{funcdesc}
 
 \begin{funcdesc}{getwidth}{}
-Get the sample width; equivalent to the C function ALgetwidth().
+Get the sample width.
 \end{funcdesc}
 
-\begin{funcdesc}{getwidth}{width}
-Set the sample width; equivalent to the C function ALsetwidth().
+\begin{funcdesc}{setwidth}{width}
+Set the sample width.
 \end{funcdesc}
 
 \begin{funcdesc}{getchannels}{}
-Get the channel count; equivalent to the C function ALgetchannels().
+Get the channel count.
 \end{funcdesc}
 
 \begin{funcdesc}{setchannels}{nchannels}
-Set the channel count; equivalent to the C function ALsetchannels().
+Set the channel count.
 \end{funcdesc}
 
 \begin{funcdesc}{getsampfmt}{}
-Get the sample format; equivalent to the C function ALgetsampfmt().
+Get the sample format.
 \end{funcdesc}
 
 \begin{funcdesc}{setsampfmt}{sampfmt}
-Set the sample format; equivalent to the C function ALsetsampfmt().
+Set the sample format.
 \end{funcdesc}
 
 \begin{funcdesc}{getfloatmax}{}
-Get the maximum value for floating sample formats;
-equivalent to the C function ALgetfloatmax().
+Get the maximum value for floating sample formats.
 \end{funcdesc}
 
 \begin{funcdesc}{setfloatmax}{floatmax}
-Set the maximum value for floating sample formats;
-equivalent to the C function ALsetfloatmax().
+Set the maximum value for floating sample formats.
 \end{funcdesc}
+
+\subsection{Port Objects}
 
 Port objects (returned by \code{al.openport()} have the following
 methods:
 
 \renewcommand{\indexsubitem}{(audio port object method)}
+
 \begin{funcdesc}{closeport}{}
-Close the port; equivalent to the C function ALcloseport().
+Close the port.
 \end{funcdesc}
 
 \begin{funcdesc}{getfd}{}
-Return the file descriptor as an int; equivalent to the C function
-ALgetfd().
+Return the file descriptor as an int.
 \end{funcdesc}
 
 \begin{funcdesc}{getfilled}{}
-Return the number of filled samples; equivalent to the C function
-ALgetfilled().
+Return the number of filled samples.
 \end{funcdesc}
 
 \begin{funcdesc}{getfillable}{}
-Return the number of fillable samples; equivalent to the C function
-ALgetfillable().
+Return the number of fillable samples.
 \end{funcdesc}
 
 \begin{funcdesc}{readsamps}{nsamples}
-Read a number of samples from the queue, blocking if necessary;
-equivalent to the C function ALreadsamples.  The data is returned as a
-string containing the raw data (e.g. 2 bytes per sample in big-endian
-byte order (high byte, low byte) if you have set the sample width to 2
-bytes.
+Read a number of samples from the queue, blocking if necessary.
+Return the data as a string containing the raw data, (e.g., 2 bytes per
+sample in big-endian byte order (high byte, low byte) if you have set
+the sample width to 2 bytes).
 \end{funcdesc}
 
 \begin{funcdesc}{writesamps}{samples}
-Write samples into the queue, blocking if necessary; equivalent to the
-C function ALwritesamples.  The samples are encoded as described for
-the \code{readsamps} return value.
+Write samples into the queue, blocking if necessary.  The samples are
+encoded as described for the \code{readsamps} return value.
 \end{funcdesc}
 
 \begin{funcdesc}{getfillpoint}{}
-Return the `fill point'; equivalent to the C function ALgetfillpoint().
+Return the `fill point'.
 \end{funcdesc}
 
 \begin{funcdesc}{setfillpoint}{fillpoint}
-Set the `fill point'; equivalent to the C function ALsetfillpoint().
+Set the `fill point'.
 \end{funcdesc}
 
 \begin{funcdesc}{getconfig}{}
 Return a configuration object containing the current configuration of
-the port; equivalent to the C function ALgetconfig().
+the port.
 \end{funcdesc}
 
 \begin{funcdesc}{setconfig}{config}
-Set the configuration from the argument, a configuration object;
-equivalent to the C function ALsetconfig().
+Set the configuration from the argument, a configuration object.
 \end{funcdesc}
 
 \begin{funcdesc}{getstatus}{list}
-Get status information on last error
-equivalent to C function ALgetstatus().
+Get status information on last error.
 \end{funcdesc}
 
 \section{Standard Module \sectcode{AL}}

@@ -1,61 +1,64 @@
-\section{Built-in module \sectcode{md5}}
+\section{Built-in Module \sectcode{md5}}
 \bimodindex{md5}
 
 This module implements the interface to RSA's MD5 message digest
-algorithm (see also the file \file{md5.doc}). Its use is quite
-straightforward:\ use the function \code{new} to create an
-\dfn{md5}-object. You can now ``feed'' this object with arbitrary
-strings.
+algorithm (see also Internet RFC 1321).  Its use is quite
+straightforward:\ use the \code{md5.new()} to create an md5 object.
+You can now feed this object with arbitrary strings using the
+\code{update()} method, and at any point you can ask it for the
+\dfn{digest} (a strong kind of 128-bit checksum,
+a.k.a. ``fingerprint'') of the contatenation of the strings fed to it
+so far using the \code{digest()} method.
 
-At any time you can ask for the ``final'' digest of the object. Internally,
-a temporary copy of the object is made and the digest is computed and
-returned. Because of the copy, the digest operation is not destructive
-for the object. Before a more exact description of the module's use, a small
-example will be helpful: 
-to obtain the digest of the string \code{'abc'}, use \ldots
+For example, to obtain the digest of the string {\tt"Nobody inspects
+the spammish repetition"}:
 
 \bcode\begin{verbatim}
 >>> import md5
 >>> m = md5.new()
->>> m.update('abc')
+>>> m.update("Nobody inspects")
+>>> m.update(" the spammish repetition")
 >>> m.digest()
-'\220\001P\230<\322O\260\326\226?}(\341\177r'
+'\273d\234\203\335\036\245\311\331\336\311\241\215\360\377\351'
 \end{verbatim}\ecode
 
 More condensed:
 
 \bcode\begin{verbatim}
->>> md5.new('abc').digest()
-'\220\001P\230<\322O\260\326\226?}(\341\177r'
+>>> md5.new("Nobody inspects the spammish repetition").digest()
+'\273d\234\203\335\036\245\311\331\336\311\241\215\360\377\351'
 \end{verbatim}\ecode
 
 \renewcommand{\indexsubitem}{(in module md5)}
 
 \begin{funcdesc}{new}{\optional{arg}}
-  Create a new md5-object. If \var{arg} is present, an initial
-  \code{update} method is called with \var{arg} as argument.
+Return a new md5 object.  If \var{arg} is present, the method call
+\code{update(\var{arg})} is made.
 \end{funcdesc}
 
 \begin{funcdesc}{md5}{\optional{arg}}
 For backward compatibility reasons, this is an alternative name for the
-\code{new} function.
+\code{new()} function.
 \end{funcdesc}
 
-An md5-object has the following methods:
+An md5 object has the following methods:
 
 \renewcommand{\indexsubitem}{(md5 method)}
 \begin{funcdesc}{update}{arg}
-  Update this md5-object with the string \var{arg}.
+Update the md5 object with the string \var{arg}.  Repeated calls are
+equivalent to a single call with the concatenation of all the
+arguments, i.e.\ \code{m.update(a); m.update(b)} is equivalent to
+\code{m.update(a+b)}.
 \end{funcdesc}
 
 \begin{funcdesc}{digest}{}
-% XXX The following is not quite clear; what does MD5Final do?
-  Return the \dfn{digest} of this md5-object. Internally, a copy is made
-  and the \C-function \code{MD5Final} is called. Finally the digest is
-  returned.
+Return the digest of the strings passed to the \code{update()}
+method so far.  This is an 8-byte string which may contain
+non-\ASCII{} characters, including null bytes.
 \end{funcdesc}
 
 \begin{funcdesc}{copy}{}
-  Return a separate copy of this md5-object.  An \code{update} to this
-  copy won't affect the original object.
+Return a copy (``clone'') of the md5 object.  This can be used to
+efficiently compute the digests of strings that share a common initial
+substring.
 \end{funcdesc}

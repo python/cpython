@@ -6,11 +6,16 @@ interpreter and to functions that interact strongly with the interpreter.
 It is always available.
 
 \renewcommand{\indexsubitem}{(in module sys)}
+
 \begin{datadesc}{argv}
   The list of command line arguments passed to a Python script.
-  \code{sys.argv[0]} is the script name.
+  \code{sys.argv[0]} is the script name (it is operating system
+  dependent whether this is a full pathname or not).
+  If the command was executed using the \samp{-c} command line option
+  to the interpreter, \code{sys.argv[0]} is set to the string
+  \code{"-c"}.
   If no script name was passed to the Python interpreter,
-  \code{sys.argv} is empty.
+  \code{sys.argv} has zero length.
 \end{datadesc}
 
 \begin{datadesc}{builtin_module_names}
@@ -28,9 +33,11 @@ It is always available.
   invoked.  Their meaning is: \code{exc_type} gets the exception type of
   the exception being handled; \code{exc_value} gets the exception
   parameter (its \dfn{associated value} or the second argument to
-  \code{raise}); \code{exc_traceback} gets a traceback object which
+  \code{raise}); \code{exc_traceback} gets a traceback object (see the
+  Reference Manual) which
   encapsulates the call stack at the point where the exception
   originally occurred.
+\obindex{traceback}
 \end{datadesc}
 
 \begin{funcdesc}{exit}{n}
@@ -45,7 +52,7 @@ It is always available.
   This value is not actually defined by the module, but can be set by
   the user (or by a program) to specify a clean-up action at program
   exit.  When set, it should be a parameterless function.  This function
-  will be called when the interpreter exits in any way (but not when a
+  will be called when the interpreter exits in any way (except not when a
   fatal error occurs: in that case the interpreter's internal state
   cannot be trusted).
 \end{datadesc}
@@ -94,26 +101,23 @@ maximizing responsiveness as well as overhead.
 
 \begin{funcdesc}{settrace}{tracefunc}
   Set the system's trace function, which allows you to implement a
-  Python source code debugger in Python.  The standard modules
-  \code{pdb} and \code{wdb} are such debuggers; the difference is that
-  \code{wdb} uses windows and needs STDWIN, while \code{pdb} has a
-  line-oriented interface not unlike dbx.  See the file \file{pdb.doc}
-  in the Python library source directory for more documentation (both
-  about \code{pdb} and \code{sys.trace}).
+  Python source code debugger in Python.  See section ``How It Works''
+  in the chapter on the Python Debugger.
 \end{funcdesc}
-\ttindex{pdb}
-\ttindex{wdb}
 \index{trace function}
+\index{debugger}
 
 \begin{funcdesc}{setprofile}{profilefunc}
   Set the system's profile function, which allows you to implement a
-  Python source code profiler in Python.  The system's profile function
+  Python source code profiler in Python.  See the chapter on the
+  Python Profiler.  The system's profile function
   is called similarly to the system's trace function (see
   \code{sys.settrace}), but it isn't called for each executed line of
   code (only on call and return and when an exception occurs).  Also,
   its return value is not used, so it can just return \code{None}.
 \end{funcdesc}
 \index{profile function}
+\index{profiler}
 
 \begin{datadesc}{stdin}
 \dataline{stdout}
@@ -127,7 +131,11 @@ maximizing responsiveness as well as overhead.
   own prompts and (almost all of) its error messages go to
   \code{sys.stderr}.  \code{sys.stdout} and \code{sys.stderr} needn't
   be built-in file objects: any object is acceptable as long as it has
-  a \code{write} method that takes a string argument.
+  a \code{write} method that takes a string argument.  (Changing these
+  objects doesn't affect the standard I/O streams of processes
+  executed by \code{popen()}, \code{system()} or the \code{exec*()}
+  family of functions in the \code{os} module.)
+\stmodindex{os}
 \end{datadesc}
 
 \begin{datadesc}{tracebacklimit}

@@ -26,17 +26,21 @@ terminates with an unhandled exception, a stack trace is printed and
 then the thread exits (but other threads continue to run).
 \end{funcdesc}
 
-\begin{funcdesc}{exit_thread}{}
-Exit the current thread silently.  Other threads continue to run.
-\strong{Caveat:} code in pending \code{finally} clauses is not executed.
+\begin{funcdesc}{exit}{}
+This is a shorthand for \code{thread.exit_thread()}.
 \end{funcdesc}
 
-\begin{funcdesc}{exit_prog}{status}
-Exit all threads and report the value of the integer argument
-\var{status} as the exit status of the entire program.
-\strong{Caveat:} code in pending \code{finally} clauses, in this thread
-or in other threads, is not executed.
+\begin{funcdesc}{exit_thread}{}
+Raise the \code{SystemExit} exception.  When not caught, this will
+cause the thread to exit silently.
 \end{funcdesc}
+
+%\begin{funcdesc}{exit_prog}{status}
+%Exit all threads and report the value of the integer argument
+%\var{status} as the exit status of the entire program.
+%\strong{Caveat:} code in pending \code{finally} clauses, in this thread
+%or in other threads, is not executed.
+%\end{funcdesc}
 
 \begin{funcdesc}{allocate_lock}{}
 Return a new lock object.  Methods of locks are described below.  The
@@ -82,18 +86,16 @@ thread, 0 if not.
 \item
 Threads interact strangely with interrupts: the
 \code{KeyboardInterrupt} exception will be received by an arbitrary
-thread.
+thread.  (When the \code{signal} module is available, interrupts
+always go to the main thread.)
 
 \item
-Calling \code{sys.exit(\var{status})} or executing
-\code{raise SystemExit, \var{status}} is almost equivalent to calling
-\code{thread.exit_prog(\var{status})}, except that the former ways of
-exiting the entire program do honor \code{finally} clauses in the
-current thread (but not in other threads).
+Calling \code{sys.exit()} or raising the \code{SystemExit} is
+equivalent to calling \code{thread.exit_thread()}.
 
 \item
 Not all built-in functions that may block waiting for I/O allow other
-threads to run, although the most popular ones (\code{sleep},
-\code{read}, \code{select}) work as expected.
+threads to run.  (The most popular ones (\code{sleep}, \code{read},
+\code{select}) work as expected.)
 
 \end{itemize}

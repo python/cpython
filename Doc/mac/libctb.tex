@@ -1,4 +1,4 @@
-\section{Built-in module \sectcode{ctb}}
+\section{Built-in Module \sectcode{ctb}}
 \bimodindex{ctb}
 \renewcommand{\indexsubitem}{(in module ctb)}
 
@@ -44,7 +44,7 @@ Alternatively, passing \code{None} will result in default buffer sizes.
 For all connection methods that take a \var{timeout} argument, a value
 of \code{-1} is indefinite, meaning that the command runs to completion.
 
-\renewcommand{\indexsubitem}{(connection object method)}
+\renewcommand{\indexsubitem}{(connection object attribute)}
 
 \begin{datadesc}{callback}
 If this member is set to a value other than \code{None} it should point
@@ -58,6 +58,8 @@ is currently never called. You are advised against using asynchronous
 calls for the time being.
 \end{datadesc}
 
+
+\renewcommand{\indexsubitem}{(connection object method)}
 
 \begin{funcdesc}{Open}{timeout}
 Open an outgoing connection, waiting at most \var{timeout} seconds for

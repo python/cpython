@@ -37,8 +37,8 @@ All errors raise exceptions.  The normal exceptions for invalid
 argument types and out-of-memory conditions can be raised; errors
 related to socket or address semantics raise the error \code{socket.error}.
 
-Non-blocking and asynchronous mode are not supported; see module
-\code{select} for a way to do non-blocking socket I/O.
+Non-blocking mode is supported through the \code{setblocking()}
+method.
 
 The module \code{socket} exports the following constants and functions:
 
@@ -95,7 +95,7 @@ is an IP address itself it is returned unchanged.
 Return a string containing the hostname of the machine where 
 the Python interpreter is currently executing.  If you want to know the
 current machine's IP address, use
-\code{socket.gethostbyname(socket.gethostname())} instead.
+\code{socket.gethostbyname(socket.gethostname())}.
 \end{funcdesc}
 
 \begin{funcdesc}{gethostbyaddr}{ip_address}
@@ -133,7 +133,7 @@ standard input or output (e.g.\ a server started by the \UNIX{} inet
 daemon).
 \end{funcdesc}
 
-\subsection{Socket Object Methods}
+\subsection{Socket Objects}
 
 \noindent
 Socket objects have the following methods.  Except for
@@ -187,28 +187,30 @@ see above.)
 
 \begin{funcdesc}{getsockopt}{level\, optname\optional{\, buflen}}
 Return the value of the given socket option (see the \UNIX{} man page
-{\it getsockopt}(2)).  The needed symbolic constants are defined in
-the \code{socket} module (\code{SO_*} etc.).  If the optional third
-argument is absent, an integer option is assumed and its integer value
+{\it getsockopt}(2)).  The needed symbolic constants (\code{SO_*} etc.)
+are defined in this module.  If \var{buflen}
+is absent, an integer option is assumed and its integer value
 is returned by the function.  If \var{buflen} is present, it specifies
 the maximum length of the buffer used to receive the option in, and
-this buffer is returned as a string.  It's up to the caller to decode
+this buffer is returned as a string.  It is up to the caller to decode
 the contents of the buffer (see the optional built-in module
 \code{struct} for a way to decode C structures encoded as strings).
 \end{funcdesc}
 
 \begin{funcdesc}{listen}{backlog}
-Listen for connections made to the socket.
-The argument specifies the maximum number of queued connections and
-should be at least 1; the maximum value is system-dependent.
+Listen for connections made to the socket.  The \var{backlog} argument
+specifies the maximum number of queued connections and should be at
+least 1; the maximum value is system-dependent (usually 5).
 \end{funcdesc}
 
-\begin{funcdesc}{makefile}{mode}
-Return a \dfn{file object} associated with the socket.
-(File objects were described earlier under Built-in Types.)
-The file object references a \code{dup}ped version of the socket file
-descriptor, so the file object and socket object may be closed or
-garbage-collected independently.
+\begin{funcdesc}{makefile}{\optional{mode\optional{\, bufsize}}}
+Return a \dfn{file object} associated with the socket.  (File objects
+were described earlier under Built-in Types.)  The file object
+references a \code{dup()}ped version of the socket file descriptor, so
+the file object and socket object may be closed or garbage-collected
+independently.  The optional \var{mode} and \var{bufsize} arguments
+are interpreted the same way as by the built-in
+\code{open()} function.
 \end{funcdesc}
 
 \begin{funcdesc}{recv}{bufsize\optional{\, flags}}
@@ -219,23 +221,26 @@ for the meaning of the optional argument \var{flags}; it defaults to
 zero.
 \end{funcdesc}
 
-\begin{funcdesc}{recvfrom}{bufsize}
+\begin{funcdesc}{recvfrom}{bufsize\optional{\, flags}}
 Receive data from the socket.  The return value is a pair
 \code{(\var{string}, \var{address})} where \var{string} is a string
 representing the data received and \var{address} is the address of the
-socket sending the data.
+socket sending the data.  The optional \var{flags} argument has the
+same meaning as for \code{recv()} above.
 (The format of \var{address} depends on the address family --- see above.)
 \end{funcdesc}
 
-\begin{funcdesc}{send}{string}
+\begin{funcdesc}{send}{string\optional{\, flags}}
 Send data to the socket.  The socket must be connected to a remote
-socket.  Return the number of bytes sent.
+socket.  The optional \var{flags} argument has the same meaning as for
+\code{recv()} above.  Return the number of bytes sent.
 \end{funcdesc}
 
-\begin{funcdesc}{sendto}{string\, address}
+\begin{funcdesc}{sendto}{string\optional{\, flags}\, address}
 Send data to the socket.  The socket should not be connected to a
 remote socket, since the destination socket is specified by
-\code{address}.  Return the number of bytes sent.
+\code{address}.  The optional \var{flags} argument has the same
+meaning as for \code{recv()} above.  Return the number of bytes sent.
 (The format of \var{address} depends on the address family --- see above.)
 \end{funcdesc}
 

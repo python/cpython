@@ -1,4 +1,4 @@
-\section{Built-in module \sectcode{macfs}}
+\section{Built-in Module \sectcode{macfs}}
 \bimodindex{macfs}
 
 \renewcommand{\indexsubitem}{(in module macfs)}
@@ -18,11 +18,14 @@ Create an FSSpec object for the specified file.
 
 \begin{funcdesc}{RawFSSpec}{data}
 Create an FSSpec object given the raw data for the C structure for the
-FSSpec.
+FSSpec as a string.  This is mainly useful if you have obtained an
+FSSpec structure over a network.
 \end{funcdesc}
 
 \begin{funcdesc}{RawAlias}{data}
-Create an Alias object given the raw data for the alias.
+Create an Alias object given the raw data for the C structure for the
+alias as a string.  This is mainly useful if you have obtained an
+FSSpec structure over a network.
 \end{funcdesc}
 
 \begin{funcdesc}{ResolveAliasFile}{file}
@@ -56,12 +59,13 @@ dialog. Return an FSSpec object and a success-indicator.
 
 \subsection{FSSpec objects}
 
-\renewcommand{\indexsubitem}{(FSSpec object method)}
+\renewcommand{\indexsubitem}{(FSSpec object attribute)}
 \begin{datadesc}{data}
 The raw data from the FSSpec object, suitable for passing
 to other applications, for instance.
 \end{datadesc}
 
+\renewcommand{\indexsubitem}{(FSSpec object method)}
 \begin{funcdesc}{as_pathname}{}
 Return the full pathname of the file described by the FSSpec object.
 \end{funcdesc}
@@ -91,12 +95,13 @@ Set the 4-char creator and type of the file.
 
 \subsection{alias objects}
 
-\renewcommand{\indexsubitem}{(alias object method)}
+\renewcommand{\indexsubitem}{(alias object attribute)}
 \begin{datadesc}{data}
 The raw data for the Alias record, suitable for storing in a resource
 or transmitting to other programs.
 \end{datadesc}
 
+\renewcommand{\indexsubitem}{(alias object method)}
 \begin{funcdesc}{Resolve}{\optional{file}}
 Resolve the alias. If the alias was created as a relative alias you
 should pass the file relative to which it is. Return the FSSpec for

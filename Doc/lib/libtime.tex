@@ -11,8 +11,7 @@ An explanation of some terminology and conventions is in order.
 \item
 The ``epoch'' is the point where the time starts.  On January 1st of that
 year, at 0 hours, the ``time since the epoch'' is zero.  For UNIX, the
-epoch is 1970.  To find out what the epoch is, look at the first
-element of \code{gmtime(0)}.
+epoch is 1970.  To find out what the epoch is, look at \code{gmtime(0)}.
 
 \item
 UTC is Coordinated Universal Time (formerly known as Greenwich Mean
@@ -30,19 +29,20 @@ in this respect.
 \item
 The precision of the various real-time functions may be less than
 suggested by the units in which their value or argument is expressed.
-E.g.\ on most UNIX systems, the clock ``ticks'' only every 1/50th or
-1/100th of a second, and on the Mac, it ticks 60 times a second.
+E.g.\ on most UNIX systems, the clock ``ticks'' only 50 or 100 times a
+second, and on the Mac, times are only accurate to whole seconds.
 
 \end{itemize}
 
-Functions and data items are:
+The module defines the following functions and data items:
 
 \renewcommand{\indexsubitem}{(in module time)}
 
 \begin{datadesc}{altzone}
 The offset of the local DST timezone, in seconds west of the 0th
-meridian, if one is defined.  Only use this if \code{daylight} is
-nonzero.
+meridian, if one is defined.  Negative if the local DST timezone is
+east of the 0th meridian (as in Western Europe, including the UK).
+Only use this if \code{daylight} is nonzero.
 \end{datadesc}
 
 
@@ -56,8 +56,8 @@ the same name, there is no trailing newline.
 
 \begin{funcdesc}{clock}{}
 Return the current CPU time as a floating point number expressed in
-seconds.  The precision depends on that of the C function by the same
-name.
+seconds.  The precision, and in fact the very definiton of the meaning
+of ``CPU time'', depends on that of the C function of the same name.
 \end{funcdesc}
 
 

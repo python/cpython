@@ -189,7 +189,7 @@ Conversion from floating point to (long or plain) integer may round or
 truncate as in \C{}; see functions \code{floor} and \code{ceil} in module
 \code{math} for well-defined conversions.
 \indexii{numeric}{conversions}
-\ttindex{math}
+\stmodindex{math}
 \indexii{\C{}}{language}
 
 \item[(2)]
@@ -205,7 +205,7 @@ See the section on built-in functions for an exact definition.
 \end{description}
 % XXXJH exceptions: overflow (when? what operations?) zerodivision
 
-\subsubsection{Bit-string Operations on Integer Types.}
+\subsubsection{Bit-string Operations on Integer Types}
 
 Plain and long integer types support additional operations that make
 sense only for bit-strings.  Negative numbers are treated as their 2's
@@ -287,7 +287,7 @@ Notes:
 
 \end{description}
 
-\subsubsection{More String Operations.}
+\subsubsection{More String Operations}
 
 String objects have one unique built-in operation: the \code{\%}
 operator (modulo) with a string left argument interprets this string
@@ -307,7 +307,7 @@ present but are ignored.  The \code{\%s} conversion takes any Python
 object and converts it to a string using \code{str()} before
 formatting it.  The ANSI features \code{\%p} and \code{\%n}
 are not supported.  Since Python strings have an explicit length,
-\code{\%s} conversions don't assume that \code{'\\0'} is the end of
+\code{\%s} conversions don't assume that \code{'\e0'} is the end of
 the string.
 
 For safety reasons, floating point precisions are clipped to 50;
@@ -330,14 +330,15 @@ each format formats the corresponding entry from the mapping.  E.g.
     Python has 002 quote types.
     >>> 
 \end{verbatim}
-In this case no * specifiers may occur in a format.
+In this case no * specifiers may occur in a format (since they a
+require sequential parameter list).
 
 Additional string operations are defined in standard module
 \code{string} and in built-in module \code{regex}.
 \index{string}
 \index{regex}
 
-\subsubsection{Mutable Sequence Types.}
+\subsubsection{Mutable Sequence Types}
 
 List objects support additional operations that allow in-place
 modification of the object.
@@ -399,7 +400,7 @@ Notes:
   should return \code{-1}, \code{0} or \code{1} depending on whether the
   first argument is considered smaller than, equal to, or larger than the
   second argument.  Note that this slows the sorting process down
-  considerably; e.g. to sort an array in reverse order it is much faster
+  considerably; e.g. to sort a list in reverse order it is much faster
   to use calls to \code{sort()} and \code{reverse()} than to use
   \code{sort()} with a comparison function that reverses the ordering of
   the elements.
@@ -409,7 +410,7 @@ Notes:
 
 A \dfn{mapping} object maps values of one type (the key type) to
 arbitrary objects.  Mappings are mutable objects.  There is currently
-only one mapping type, the \dfn{dictionary}.  A dictionary's keys are
+only one standard mapping type, the \dfn{dictionary}.  A dictionary's keys are
 almost arbitrary values.  The only types of values not acceptable as
 keys are values containing lists or dictionaries or other mutable
 types that are compared by value rather than by object identity.
@@ -421,9 +422,9 @@ can be used interchangeably to index the same dictionary entry.
 \indexii{dictionary}{type}
 
 Dictionaries are created by placing a comma-separated list of
-\code{\var{key}: \var{value}} pairs within braces, for example:
-\code{\{'jack': 4098, 'sjoerd: 4127\}} or
-\code{\{4098: 'jack', 4127: 'sjoerd\}}.
+\code{\var{key}:\ \var{value}} pairs within braces, for example:
+\code{\{'jack':\ 4098, 'sjoerd':\ 4127\}} or
+\code{\{4098:\ 'jack', 4127:\ 'sjoerd'\}}.
 
 The following operations are defined on mappings (where \var{a} is a
 mapping, \var{k} is a key and \var{x} is an arbitrary object):
@@ -453,9 +454,7 @@ Notes:
 \begin{description}
 \item[(1)] Raises an exception if \var{k} is not in the map.
 
-\item[(2)] Keys and values are listed in random order, but at any
-moment the ordering of the \code{keys()}, \code{values()} and
-\code{items()} lists is the consistent with each other.
+\item[(2)] Keys and values are listed in random order.
 \end{description}
 
 \subsection{Other Built-in Types}
@@ -463,7 +462,7 @@ moment the ordering of the \code{keys()}, \code{values()} and
 The interpreter supports several other kinds of objects.
 Most of these support only one or two operations.
 
-\subsubsection{Modules.}
+\subsubsection{Modules}
 
 The only special operation on a module is attribute access:
 \code{\var{m}.\var{name}}, where \var{m} is a module and \var{name} accesses
@@ -483,11 +482,11 @@ defines \code{\var{m}.a} to be \code{1}, but you can't write \code{\var{m}.__dic
 
 Modules are written like this: \code{<module 'sys'>}.
 
-\subsubsection{Classes and Class Instances.}
+\subsubsection{Classes and Class Instances}
 % XXXJH cross ref here
 (See the Python Reference Manual for these.)
 
-\subsubsection{Functions.}
+\subsubsection{Functions}
 
 Function objects are created by function definitions.  The only
 operation on a function object is to call it:
@@ -504,7 +503,7 @@ The implementation adds two special read-only attributes:
 global name space (this is the same as \code{\var{m}.__dict__} where
 \var{m} is the module in which the function \var{f} was defined).
 
-\subsubsection{Methods.}
+\subsubsection{Methods}
 \obindex{method}
 
 Methods are functions that are called using the attribute notation.
@@ -522,7 +521,7 @@ Calling \code{\var{m}(\var{arg-1}, \var{arg-2}, {\rm \ldots},
 
 (See the Python Reference Manual for more info.)
 
-\subsubsection{Code Objects.}
+\subsubsection{Code Objects}
 \obindex{code}
 
 Code objects are used by the implementation to represent
@@ -543,7 +542,7 @@ source string) to the \code{exec} statement or the built-in
 
 (See the Python Reference Manual for more info.)
 
-\subsubsection{Type Objects.}
+\subsubsection{Type Objects}
 
 Type objects represent the various object types.  An object's type is
 % XXXJH xref here
@@ -552,7 +551,7 @@ operations on types.
 
 Types are written like this: \code{<type 'int'>}.
 
-\subsubsection{The Null Object.}
+\subsubsection{The Null Object}
 
 This object is returned by functions that don't explicitly return a
 value.  It supports no special operations.  There is exactly one null
@@ -560,7 +559,7 @@ object, named \code{None} (a built-in name).
 
 It is written as \code{None}.
 
-\subsubsection{File Objects.}
+\subsubsection{File Objects}
 
 File objects are implemented using \C{}'s \code{stdio} package and can be
 % XXXJH xref here
@@ -643,7 +642,7 @@ Write a list of strings to the file.  There is no return value.
 does not add line separators.)
 \end{funcdesc}
 
-\subsubsection{Internal Objects.}
+\subsubsection{Internal Objects}
 
 (See the Python Reference Manual for these.)
 

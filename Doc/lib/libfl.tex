@@ -2,17 +2,18 @@
 \bimodindex{fl}
 
 This module provides an interface to the FORMS Library by Mark
-Overmars, version 2.0b.  For more info about FORMS, write to
-{\tt markov@cs.ruu.nl}.
+Overmars.  The source for the library can be retrieved by anonymous
+ftp from host \samp{ftp.cs.ruu.nl}, directory \file{SGI/FORMS}.  It
+was last tested with version 2.0b.
 
 Most functions are literal translations of their C equivalents,
-dropping the initial \samp{fl_} from their name.  Constants used by the
-library are defined in module \code{FL} described below.
+dropping the initial \samp{fl_} from their name.  Constants used by
+the library are defined in module \code{FL} described below.
 
 The creation of objects is a little different in Python than in C:
 instead of the `current form' maintained by the library to which new
 FORMS objects are added, all functions that add a FORMS object to a
-button are methods of the Python object representing the form.
+form are methods of the Python object representing the form.
 Consequently, there are no Python equivalents for the C functions
 \code{fl_addto_form} and \code{fl_end_form}, and the equivalent of
 \code{fl_bgn_form} is called \code{fl.make_form}.
@@ -26,13 +27,13 @@ Hopefully this isn't too confusing...
 
 There are no `free objects' in the Python interface to FORMS, nor is
 there an easy way to add object classes written in Python.  The FORMS
-interface to GL event handling is avaiable, though, so you can mix
+interface to GL event handling is available, though, so you can mix
 FORMS with pure GL windows.
 
 \strong{Please note:} importing \code{fl} implies a call to the GL function
 \code{foreground()} and to the FORMS routine \code{fl_init()}.
 
-\subsection{Functions defined in module \sectcode{fl}}
+\subsection{Functions Defined in Module \sectcode{fl}}
 
 Module \code{fl} defines the following functions.  For more information
 about what they do, see the description of the equivalent C function
@@ -92,7 +93,7 @@ input string.  It returns the string value as edited by the user.
 \end{funcdesc}
 
 \begin{funcdesc}{show_file_selector}{message\, directory\, pattern\, default}
-Show a dialog box inm which the user can select a file.  It returns
+Show a dialog box in which the user can select a file.  It returns
 the absolute filename selected by the user, or \code{None} if the user
 presses Cancel.
 \end{funcdesc}
@@ -130,7 +131,7 @@ See the description in the FORMS documentation of \code{fl_color},
 \code{fl_mapcolor} and \code{fl_getmcolor}.
 \end{funcdesc}
 
-\subsection{Form object methods and data attributes}
+\subsection{Form Objects}
 
 Form objects (returned by \code{fl.make_form()} above) have the
 following methods.  Each method corresponds to a C function whose name
@@ -382,7 +383,7 @@ documentation:
   \lineiii{doublebuf}{int}{nonzero if double buffering on}
 \end{tableiii}
 
-\subsection{FORMS object methods and data attributes}
+\subsection{FORMS Objects}
 
 Besides methods specific to particular kinds of FORMS objects, all
 FORMS objects also have the following methods:

@@ -61,14 +61,25 @@ the standard syntax for a floating point literal in Python, optionally
 preceded by a sign (\samp{+} or \samp{-}).
 \end{funcdesc}
 
-\begin{funcdesc}{atoi}{s}
-Convert a string to an integer.  The string must consist of one or more
-digits, optionally preceded by a sign (\samp{+} or \samp{-}).
+\begin{funcdesc}{atoi}{s\optional{\, base}}
+Convert string \var{s} to an integer in the given \var{base}.  The
+string must consist of one or more digits, optionally preceded by a
+sign (\samp{+} or \samp{-}).  The \var{base} defaults to 10.  If it is
+0, a default base is chosen depending on the leading characters of the
+string (after stripping the sign): \samp{0x} or \samp{0X} means 16,
+\samp{0} means 8, anything else means 10.  If \var{base} is 16, a
+leading \samp{0x} or \samp{0X} is always accepted.  (Note: for a more
+flexible interpretation of numeric literals, use the built-in function
+\code{eval()}.
+\bifuncindex{eval}
 \end{funcdesc}
 
-\begin{funcdesc}{atol}{s}
-Convert a string to a long integer.  The string must consist of one
-or more digits, optionally preceded by a sign (\samp{+} or \samp{-}).
+\begin{funcdesc}{atol}{s\optional{\, base}}
+Convert string \var{s} to a long integer in the given \var{base}.  The
+string must consist of one or more digits, optionally preceded by a
+sign (\samp{+} or \samp{-}).  The \var{base} argument has the same
+meaning as for \code{atoi()}.  A trailing \samp{l} or \samp{L} is not
+allowed.
 \end{funcdesc}
 
 \begin{funcdesc}{expandtabs}{s\, tabsize}
@@ -101,10 +112,11 @@ Like \code{rfind} but raise \code{ValueError} when the substring is
 not found.
 \end{funcdesc}
 
-\begin{funcdesc}{count}{s\, sub\optional{\, i}}
+\begin{funcdesc}{count}{s\, sub\optional{\, start}}
 Return the number of (non-overlapping) occurrences of substring
-\var{sub} in string \var{s} with index at least \var{i}.
-If \var{i} is omitted, it defaults to \code{0}.
+\var{sub} in string \var{s} with index at least \var{start}.
+If \var{start} is omitted, it defaults to \code{0}.  If \var{start} is
+negative, \code{len(\var{s})} is added.
 \end{funcdesc}
 
 \begin{funcdesc}{lower}{s}

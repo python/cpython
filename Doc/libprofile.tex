@@ -2,7 +2,7 @@
 \stmodindex{profile}
 \stmodindex{pstats}
 
-Copyright 1994, by InfoSeek Corporation, all rights reserved.
+Copyright \copyright\ 1994, by InfoSeek Corporation, all rights reserved.
 
 Written by James Roskind%
 \footnote{
@@ -42,7 +42,7 @@ ways at times.  Please send suggestions for improvements to:
 I'd appreciate the feedback.
 
 
-\section{Introduction}
+\section{Introduction to the profiler}
 
 A \dfn{profiler} is a program that describes the run time performance
 of a program, providing a variety of statistics.  This documentation
@@ -242,7 +242,7 @@ of algorithms to be directly compared to iterative implementations.
 
 \section{Reference Manual}
 
-\renewcommand{\indexsubitem}{}
+\renewcommand{\indexsubitem}{(profiler function)}
 
 The primary entry point for the profiler is the global function
 \code{profile.run()}.  It is typically used to create any profile
@@ -254,7 +254,7 @@ Profiler Extensions, which includes discussion of how to derive
 ``better'' profilers from the classes presented, or reading the source
 code for these modules.
 
-\begin{funcdesc}{profile.run}{string\optional{\, filename}}
+\begin{funcdesc}{profile.run}{string\optional{\, filename\optional{\, ...}}}
 
 This function takes a single argument that has can be passed to the
 \code{exec} statement, and an optional file name.  In all cases this
@@ -336,12 +336,12 @@ need to be combined with data in an existing \code{Stats} object, the
 \end{funcdesc}
 
 
-\subsection{Methods Of The \sectcode{Stats} Class}
+\subsection{The \sectcode{Stats} Class}
 
 \renewcommand{\indexsubitem}{(Stats method)}
 
 \begin{funcdesc}{strip_dirs}{}
-This method for the code{Stats} class removes all leading path information
+This method for the \code{Stats} class removes all leading path information
 from file names.  It is very useful in reducing the size of the
 printout to fit within (close to) 80 columns.  This method modifies
 the object, and the stripped information is lost.  After performing a
@@ -355,7 +355,7 @@ these two entries are accumulated into a single entry.
 
 
 \begin{funcdesc}{add}{filename\optional{\, ...}}
-This method of the code{Stats} class accumulates additional profiling
+This method of the \code{Stats} class accumulates additional profiling
 information into the current profiling object.  Its arguments should
 refer to filenames created by the corresponding version of
 \code{profile.run()}.  Statistics for identically named (re: file,
@@ -364,7 +364,7 @@ function statistics.
 \end{funcdesc}
 
 \begin{funcdesc}{sort_stats}{key\optional{\, ...}}
-This method modifies the code{Stats} object by sorting it according to the
+This method modifies the \code{Stats} object by sorting it according to the
 supplied criteria.  The argument is typically a string identifying the
 basis of a sort (example: \code{"time"} or \code{"name"}).
 
@@ -412,7 +412,7 @@ additional arguments will be silently ignored.
 
 
 \begin{funcdesc}{reverse_order}{}
-This method for the code{Stats} class reverses the ordering of the basic
+This method for the \code{Stats} class reverses the ordering of the basic
 list within the object.  This method is provided primarily for
 compatibility with the old profiler.  Its utility is questionable
 now that ascending vs descending order is properly selected based on
@@ -420,7 +420,7 @@ the sort key of choice.
 \end{funcdesc}
 
 \begin{funcdesc}{print_stats}{restriction\optional{\, ...}}
-This method for the code{Stats} class prints out a report as described
+This method for the \code{Stats} class prints out a report as described
 in the \code{profile.run()} definition.
 
 The order of the printing is based on the last \code{sort_stats()}
@@ -454,7 +454,7 @@ and then proceed to only print the first 10\% of them.
 
 
 \begin{funcdesc}{print_callers}{restrictions\optional{\, ...}}
-This method for the code{Stats} class prints a list of all functions
+This method for the \code{Stats} class prints a list of all functions
 that called each function in the profiled database.  The ordering is
 identical to that provided by \code{print_stats()}, and the definition
 of the restricting argument is also identical.  For convenience, a
@@ -464,14 +464,14 @@ is the cumulative time spent in the function at the right.
 \end{funcdesc}
 
 \begin{funcdesc}{print_callees}{restrictions\optional{\, ...}}
-This method for the code{Stats} class prints a list of all function
+This method for the \code{Stats} class prints a list of all function
 that were called by the indicated function.  Aside from this reversal
 of direction of calls (re: called vs was called by), the arguments and
 ordering are identical to the \code{print_callers()} method.
 \end{funcdesc}
 
 \begin{funcdesc}{ignore}{}
-This method of the code{Stats} class is used to dispose of the value
+This method of the \code{Stats} class is used to dispose of the value
 returned by earlier methods.  All standard methods in this class
 return the instance that is being processed, so that the commands can
 be strung together.  For example:
@@ -481,7 +481,7 @@ pstats.Stats('foofile').strip_dirs().sort_stats('cum').print_stats().ignore()
 \end{verbatim}
 
 would perform all the indicated functions, but it would not return
-the final reference to the code{Stats} instance.%
+the final reference to the \code{Stats} instance.%
 \footnote{
 This was once necessary, when Python would print any unused expression
 result that was not \code{None}.  The method is still defined for
@@ -604,7 +604,7 @@ performance section, and there is no reason to use a variable lookup
 at this point, when a constant can be used.
 
 
-\section{Extensions: Deriving Better Profilers}
+\section{Extensions - Deriving Better Profilers}
 
 The \code{Profile} class of module \code{profile} was written so that
 derived classes could be developed to extend the profiler.  Rather

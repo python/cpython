@@ -1,4 +1,4 @@
-\section{Built-in module \sectcode{array}}
+\section{Built-in Module \sectcode{array}}
 \bimodindex{array}
 \index{arrays}
 
@@ -21,7 +21,7 @@ which is a single character.  The following type codes are defined:
 
 The actual representation of values is determined by the machine
 architecture (strictly speaking, by the C implementation).  The actual
-size can be accessed through the \var{typecode} attribute.
+size can be accessed through the \var{itemsize} attribute.
 
 The module defines the following function:
 
@@ -59,7 +59,9 @@ on a machine with a different byte order.
 Read \var{n} items (as machine values) from the file object \var{f}
 and append them to the end of the array.  If less than \var{n} items
 are available, \code{EOFError} is raised, but the items that were
-available are still inserted into the array.
+available are still inserted into the array.  \var{f} must be a real
+built-in file object; something else with a \code{read()} method won't
+do.
 \end{funcdesc}
 
 \begin{funcdesc}{fromlist}{list}

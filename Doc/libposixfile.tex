@@ -7,12 +7,13 @@ This module implements some additional functionality over the built-in
 file objects.  In particular, it implements file locking, control over
 the file flags, and an easy interface to duplicate the file object.
 The module defines a new file object, the posixfile object.  It
-inherits all the standard file object methods and adds the methods
-described below.
+has all the standard file object methods and adds the methods
+described below.  This module only works for certain flavors of
+\UNIX{}, since it uses \code{fcntl()} for file locking.
 
 To instantiate a posixfile object, use the \code{open()} function in
-the posixfile module.  The resulting object looks and feels the same as
-a standard file object.
+the posixfile module.  The resulting object looks and feels roughly
+the same as a standard file object.
 
 The posixfile module defines the following constants:
 
@@ -32,10 +33,11 @@ offset is calculated from the end of the file
 The posixfile module defines the following functions:
 
 \renewcommand{\indexsubitem}{(in module posixfile)}
-\begin{funcdesc}{open}{filename\, mode}
+
+\begin{funcdesc}{open}{filename\optional{\, mode\optional{\, bufsize}}}
  Create a new posixfile object with the given filename and mode.  The
- filename and mode are interpreted the same way as the \code{open()}
- builtin function.
+ \var{filename}, \var{mode} and \var{bufsize} arguments are
+ interpreted the same way as by the \code{open()} builtin function.
 \end{funcdesc}
 
 \begin{funcdesc}{fileopen}{fileobject}
@@ -102,8 +104,8 @@ In addition the following modifiers can be added to the format:
 
 \begin{tableiii}{|c|l|c|}{samp}{Modifier}{Meaning}{Notes}
   \lineiii{|}{wait until the lock has been granted}{}
-  \lineiii{?}{return the first lock conflicting with the requested lock,}{(1)}
-  {}&{\hskip0.5cm or \code{None} if there is no conflict.}&{}\\
+  \lineiii{?}{return the first lock conflicting with the requested lock, or
+              \code{None} if there is no conflict.}{(1)} 
 \end{tableiii}
 
 Note:
