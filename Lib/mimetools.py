@@ -138,7 +138,7 @@ def decode(input, output, encoding):
 	if encoding == 'quoted-printable':
 		import quopri
 		return quopri.decode(input, output)
-	if encoding in ('uuencode', 'x-uuencode'):
+	if encoding in ('uuencode', 'x-uuencode', 'uue', 'x-uue'):
 		import uu
 		return uu.decode(input, output)
 	if decodetab.has_key(encoding):
@@ -154,7 +154,7 @@ def encode(input, output, encoding):
 	if encoding == 'quoted-printable':
 		import quopri
 		return quopri.encode(input, output, 0)
-	if encoding in ('uuencode', 'x-uuencode'):
+	if encoding in ('uuencode', 'x-uuencode', 'uue', 'x-uue'):
 		import uu
 		return uu.encode(input, output)
 	if encodetab.has_key(encoding):
@@ -177,6 +177,8 @@ rm $TEMP
 decodetab = {
 	'uuencode':		uudecode_pipe,
 	'x-uuencode':		uudecode_pipe,
+	'uue':			uudecode_pipe,
+	'x-uue':		uudecode_pipe,
 	'quoted-printable':	'mmencode -u -q',
 	'base64':		'mmencode -u -b',
 }
@@ -184,6 +186,8 @@ decodetab = {
 encodetab = {
 	'x-uuencode':		'uuencode tempfile',
 	'uuencode':		'uuencode tempfile',
+	'x-uue':		'uuencode tempfile',
+	'uue':			'uuencode tempfile',
 	'quoted-printable':	'mmencode -q',
 	'base64':		'mmencode -b',
 }
