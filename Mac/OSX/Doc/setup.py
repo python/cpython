@@ -34,7 +34,7 @@ class DocBuild(build):
 		self.build_html = None
 		self.build_dest = None
 		self.download = 0
-		self.doc_version = '2.3b1' # Only needed if download is true
+		self.doc_version = '2.3' # Only needed if download is true
 		
 	def finalize_options(self):
 		build.finalize_options(self)
