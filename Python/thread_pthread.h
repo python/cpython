@@ -3,7 +3,13 @@
 
 #include <stdlib.h>
 #include <string.h>
+#ifdef __APPLE__
+#define destructor xxdestructor
+#endif
 #include <pthread.h>
+#ifdef __APPLE__
+#undef destructor
+#endif
 #include <signal.h>
 
 
