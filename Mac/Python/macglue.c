@@ -720,6 +720,8 @@ void
 PyMac_InitMenuBar()
 {
 	MenuHandle applemenu;
+	Str255 about_text;
+	static unsigned char about_sioux[] = "\pAbout SIOUX";
 	
 	if ( sioux_mbar ) return;
 #if 0
@@ -737,7 +739,10 @@ PyMac_InitMenuBar()
 			return;
 	}
 	if ( (applemenu=GetMenuHandle(SIOUX_APPLEID)) == NULL ) return;
-	SetMenuItemText(applemenu, 1, "\pAbout Python...");
+	GetMenuItemText(applemenu, 1, about_text);
+	if ( about_text[0] == about_sioux[0] && 
+		strncmp((char *)(about_text+1), (char *)(about_sioux+1), about_text[0]) == 0 )
+		SetMenuItemText(applemenu, 1, "\pAbout Python...");
 }
 
 /*
