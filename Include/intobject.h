@@ -85,6 +85,15 @@ extern DL_IMPORT(PyIntObject) _Py_ZeroStruct, _Py_TrueStruct; /* Don't use these
 /* Macro, trading safety for speed */
 #define PyInt_AS_LONG(op) (((PyIntObject *)(op))->ob_ival)
 
+/* These aren't really part of the Int object, but they're handy; the protos
+ * are necessary for systems that need the magic of DL_IMPORT and that want
+ * to have stropmodule as a dynamically loaded module instead of building it
+ * into the main Python shared library/DLL.  Guido thinks I'm weird for
+ * building it this way.  :-)  [cjh]
+ */
+extern DL_IMPORT(unsigned long) PyOS_strtoul Py_PROTO((char *, char **, int));
+extern DL_IMPORT(long) PyOS_strtol Py_PROTO((char *, char **, int));
+
 #ifdef __cplusplus
 }
 #endif
