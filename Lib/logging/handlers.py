@@ -58,9 +58,12 @@ class BaseRotatingHandler(logging.FileHandler):
         Output the record to the file, catering for rollover as described
         in doRollover().
         """
-        if self.shouldRollover(record):
-            self.doRollover()
-        logging.FileHandler.emit(self, record)
+        try:
+            if self.shouldRollover(record):
+                self.doRollover()
+            logging.FileHandler.emit(self, record)
+        except:
+            self.handleError(record)
 
 class RotatingFileHandler(BaseRotatingHandler):
     """
