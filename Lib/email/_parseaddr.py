@@ -1,4 +1,4 @@
-# Copyright (C) 2002 Python Software Foundation
+# Copyright (C) 2002-2004 Python Software Foundation
 
 """Email address parsing code.
 
@@ -6,13 +6,6 @@ Lifted directly from rfc822.py.  This should eventually be rewritten.
 """
 
 import time
-from types import TupleType
-
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 SPACE = ' '
 EMPTYSTRING = ''
@@ -130,7 +123,7 @@ def parsedate_tz(data):
 def parsedate(data):
     """Convert a time string to a time tuple."""
     t = parsedate_tz(data)
-    if isinstance(t, TupleType):
+    if isinstance(t, tuple):
         return t[:9]
     else:
         return t
