@@ -5,7 +5,26 @@ IDLEfork NEWS
 What's New in IDLEfork 0.9 Alpha 2?
 ===================================
 
-*Release date: XX-XXX-2003*
+*Release date: 27-Jan-2003*
+
+- Updated INSTALL.txt to claify use of the python2 rpm.
+
+- Improved formatting in IDLE Help.
+
+- Run menu: Replace "Run Script" with "Run Module".
+
+- Code encountering an unhandled exception under the debugger now shows
+  the correct traceback, with IDLE internal levels pruned out.
+
+- If an exception occurs entirely in IDLE, don't prune the IDLE internal
+  modules from the traceback displayed.
+
+- Class Browser and Path Browser now use Alt-Key-2 for vertical zoom.
+
+- IDLE icons will now install correctly even when setup.py is run from the
+  build directory
+
+- Class Browser now compatible with Python2.3 version of pyclbr.py
 
 - Left cursor move in presence of selected text now moves from left end
   of the selection.
@@ -68,14 +87,14 @@ What's New in IDLEfork 0.9 Alpha 2?
 - Rearrange the Shell menu to put Stack Viewer entries adjacent.
 
 - Add the ability to restart the subprocess interpreter from the shell window;
-  add an associated menu entry "Shell/Restart".  Update help.
+  add an associated menu entry "Shell/Restart" with binding Control-F6.  Update
+  IDLE help.
 
 - Upon a restart, annotate the shell window with a "restart boundary".  Add a
-  shell window menu "Shell/View Restart" and hotkey to jump to the most recent
-  restart boundary.
+  shell window menu "Shell/View Restart" with binding F6 to jump to the most
+  recent restart boundary.
 
-- Change the shell window menu "Debug" to "Shell"; change "Settings" to
-  "Options".
+- Add Shell menu to Python Shell; change "Settings" to "Options".
 
 - Remove incorrect comment in setup.py: IDLEfork is now installed as a package.
 
@@ -90,9 +109,10 @@ What's New in IDLEfork 0.9 Alpha 2?
 
   + Can't kill a tight loop in the Windows version: Insert a
     ``print "*",`` in an outer loop or use the Task Manager to kill.
-  + Printing under Linux may be problematic.
-  + The debugger is pretty slow.
-  + RPC stack levels are not being pruned from debugger tracebacks.
+  + Typing two Control-C in close succession when the subprocess is busy can
+    cause IDLE to lose communication with the subprocess.  Please type one
+    only and wait for the exception to complete.
+  + Printing under some versions of Linux may be problematic.
 
 
 What's New in IDLEfork 0.9 Alpha 1?
