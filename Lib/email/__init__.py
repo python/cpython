@@ -4,7 +4,7 @@
 """A package for parsing, handling, and generating email messages.
 """
 
-__version__ = '2.2'
+__version__ = '2.3'
 
 __all__ = ['Charset',
            'Encoders',
