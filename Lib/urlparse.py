@@ -19,9 +19,11 @@ uses_fragment = ['ftp', 'hdl', 'http', 'gopher', 'news', 'nntp', 'wais',
 # Characters valid in scheme names
 scheme_chars = string.letters + string.digits + '+-.'
 
+MAX_CACHE_SIZE = 2000
 _parse_cache = {}
 
 def clear_cache():
+    """Clear the parse cache."""
     global _parse_cache
     _parse_cache = {}
 
@@ -35,6 +37,8 @@ def urlparse(url, scheme = '', allow_framents = 1):
 	key = url, scheme, allow_framents
 	if _parse_cache.has_key(key):
 	    return _parse_cache[key]
+	if len(_parse_cache) >= MAX_CACHE_SIZE:	# avoid runaway growth
+	    clear_cache()
 	netloc = path = params = query = fragment = ''
 	i = string.find(url, ':')
 	if i > 0:
