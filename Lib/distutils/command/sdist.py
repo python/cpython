@@ -11,10 +11,10 @@ import fnmatch
 from types import *
 from glob import glob
 from distutils.core import Command
-from distutils.util import \
-     newer, create_tree, remove_tree, make_tarball, make_zipfile, native_path
+from distutils.util import newer, create_tree, remove_tree, native_path
+from distutils.archive_util import check_archive_formats
 from distutils.text_file import TextFile
-from distutils.errors import DistutilsExecError
+from distutils.errors import DistutilsExecError, DistutilsOptionError
 
 
 class sdist (Command):
@@ -80,6 +80,11 @@ class sdist (Command):
                       "on platform %s" % os.name
         elif type (self.formats) is StringType:
             self.formats = string.split (self.formats, ',')
+
+        bad_format = check_archive_formats (self.formats)
+        if bad_format:
+            raise DistutilsOptionError, \
+                  "unknown archive format '%s'" % bad_format
 
 
     def run (self):
