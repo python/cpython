@@ -170,7 +170,7 @@ class Button(ControlWidget):
 		# emulate the pushing of the button
 		import time
 		self._control.HiliteControl(Controls.kControlButtonPart)
-		Qd.QDFlushPortBuffer(self._parentwindow.wid, None)  # needed under OSX
+		self._parentwindow.wid.GetWindowPort().QDFlushPortBuffer(None)  # needed under OSX
 		time.sleep(0.1)
 		self._control.HiliteControl(0)
 		if self._callback:

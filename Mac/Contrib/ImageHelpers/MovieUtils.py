@@ -124,7 +124,7 @@ class ExtMovie:
 		
 		#Qd.MoveTo(10,10)
 		#Qd.LineTo(200,150)
-		Qd.CopyBits(self.gw.portBits,Qd.GetPort().portBits,self.myRect,destRect,srcCopy,None)
+		Qd.CopyBits(self.gw.GetPortBitMapForCopyBits(),Qd.GetPort().GetPortBitMapForCopyBits(),self.myRect,destRect,srcCopy,None)
 
 class MovieWin(W.Window):
 	

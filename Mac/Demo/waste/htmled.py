@@ -95,7 +95,7 @@ class WasteWindow(ScrolledWindow):
 		self.ted.WEIdle()	
 		if self.ted.WEAdjustCursor(where, BIGREGION):
 			return
-		Qd.SetCursor(Qd.qd.arrow)
+		Qd.SetCursor(Qd.GetQDGlobalsArrow())
 		
 	def getscrollbarvalues(self):
 		dr = self.ted.WEGetDestRect()
@@ -780,7 +780,7 @@ class Wed(Application):
 		if self.active:
 			self.active.do_idle(event)
 		else:
-			Qd.SetCursor(Qd.qd.arrow)
+			Qd.SetCursor(Qd.GetQDGlobalsArrow())
 			
 	def newRuler(self, obj):
 		"""Insert a new ruler. Make it as wide as the window minus 2 pxls"""

@@ -93,7 +93,7 @@ class CIconwindow(FrameWork.Window):
 	def fitrect(self):
 		"""Return self.pictrect scaled to fit in window"""
 		graf = self.wid.GetWindowPort()
-		screenrect = graf.portRect
+		screenrect = graf.GetPortBounds()
 		picwidth = self.pictrect[2] - self.pictrect[0]
 		picheight = self.pictrect[3] - self.pictrect[1]
 		if picwidth > screenrect[2] - screenrect[0]:

@@ -5,7 +5,6 @@ import string
 import types
 import re
 from Carbon import Qd, Icn, Fm, QuickDraw
-from Carbon.List import GetListPort
 from Carbon.QuickDraw import hilitetransfermode
 
 
@@ -211,7 +210,7 @@ class BrowserWidget(W.CustomList):
 				Qd.PaintRect(rect)
 				lastpoint = (x, y)
 		Qd.PaintRect(rect)
-		Qd.PenPat(Qd.qd.black)
+		Qd.PenPat(Qd.GetQDGlobalsBlack())
 		Qd.PenNormal()
 		if newcol > 0 and newcol <> abscol:
 			self.setcolumn(newcol - l)
@@ -369,7 +368,7 @@ class BrowserWidget(W.CustomList):
 	def myDrawCell(self, onlyHilite, selected, cellRect, theCell, 
 			dataOffset, dataLen, theList):
 		savedPort = Qd.GetPort()
-		Qd.SetPort(GetListPort(theList))
+		Qd.SetPort(theList.GetListPort())
 		savedClip = Qd.NewRgn()
 		Qd.GetClip(savedClip)
 		Qd.ClipRect(cellRect)

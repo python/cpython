@@ -31,7 +31,7 @@ def main():
 	Qd.SetPort(theWindow)
 	# XXXX Needed? SetGWorld((CGrafPtr)theWindow, nil)
 	
-	playMovieInWindow(theWindow, fss, theWindow.GetWindowPort().portRect)
+	playMovieInWindow(theWindow, fss, theWindow.GetWindowPort().GetPortBounds())
 	
 def playMovieInWindow(theWindow, theFile, movieBox):
 	"""Play a movie in a window"""

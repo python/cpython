@@ -70,7 +70,7 @@ class PrefFile(PrefObject):
 			else:
 				prefdict[key] = value
 		marshal.dump(prefdict, open(self.__path, 'wb'))
-		fss = macfs.FSSpec(self.__path)
+		fss = macfs.FSSpec(macfs.FSRef(self.__path))
 		fss.SetCreatorType(self.__creator, 'pref')
 	
 	def __getattr__(self, attr):
@@ -97,7 +97,7 @@ def GetPrefs(prefname, creator = 'Pyth'):
 	# Find the preferences folder and our prefs file, create if needed.
 	vrefnum, dirid = macfs.FindFolder(kOnSystemDisk, 'pref', 0)
 	prefsfolder_fss = macfs.FSSpec((vrefnum, dirid, ''))
-	prefsfolder = prefsfolder_fss.as_pathname()
+	prefsfolder = macfs.FSRef(prefsfolder_fss).as_fsspec().as_pathname()
 	path = os.path.join(prefsfolder, prefname)
 	head, tail = os.path.split(path)
 	# make sure the folder(s) exist

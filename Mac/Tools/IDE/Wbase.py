@@ -376,7 +376,7 @@ class VerticalLine(_Line):
 
 class Frame(Widget):
 	
-	def __init__(self, possize, pattern = Qd.qd.black, color = (0, 0, 0)):
+	def __init__(self, possize, pattern = Qd.GetQDGlobalsBlack(), color = (0, 0, 0)):
 		Widget.__init__(self, possize)
 		self._framepattern = pattern
 		self._framecolor = color
@@ -570,7 +570,7 @@ class HorizontalPanes(Widget):
 		
 		# track mouse --- XXX  move to separate method?
 		Qd.PenMode(QuickDraw.srcXor)
-		Qd.PenPat(Qd.qd.gray)
+		Qd.PenPat(Qd.GetQDGlobalsGray())
 		Qd.PaintRect(rect)
 		lastpos = None
 		while Evt.Button():
@@ -579,16 +579,16 @@ class HorizontalPanes(Widget):
 			pos = min(pos, maxpos)
 			if pos == lastpos:
 				continue
-			Qd.PenPat(Qd.qd.gray)
+			Qd.PenPat(Qd.GetQDGlobalsGray())
 			Qd.PaintRect(rect)
 			if self._direction:
 				rect = l, pos - 1, r, pos
 			else:
 				rect = pos - 1, t, pos, b
-			Qd.PenPat(Qd.qd.gray)
+			Qd.PenPat(Qd.GetQDGlobalsGray())
 			Qd.PaintRect(rect)
 			lastpos = pos
-			Qd.QDFlushPortBuffer(self._parentwindow.wid, None)
+			self._parentwindow.wid.GetWindowPort().QDFlushPortBuffer(None)
 			Evt.WaitNextEvent(0, 3)
 		Qd.PaintRect(rect)
 		Qd.PenNormal()
@@ -643,7 +643,7 @@ class ColorPicker(ClickableWidget):
 		if self._visible:
 			if not visRgn:
 				visRgn = self._parentwindow.wid.GetWindowPort().visRgn
-			Qd.PenPat(Qd.qd.gray)
+			Qd.PenPat(Qd.GetQDGlobalsGray())
 			rect = self._bounds
 			Qd.FrameRect(rect)
 			rect = Qd.InsetRect(rect, 3, 3)
@@ -700,7 +700,7 @@ def HasBaseClass(obj, class_):
 # data below.
 #_cursors = {
 #	"watch"	: Qd.GetCursor(QuickDraw.watchCursor).data,
-#	"arrow"	: Qd.qd.arrow,
+#	"arrow"	: Qd.GetQDGlobalsArrow(),
 #	"iBeam"	: Qd.GetCursor(QuickDraw.iBeamCursor).data,
 #	"cross"	: Qd.GetCursor(QuickDraw.crossCursor).data,
 #	"plus"		: Qd.GetCursor(QuickDraw.plusCursor).data,
