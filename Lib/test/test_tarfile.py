@@ -293,6 +293,24 @@ class WriteGNULongTest(unittest.TestCase):
         self._test(("longnam/" * 127) + "longname_",
                    ("longlnk/" * 127) + "longlink_")
 
+class ExtractHardlinkTest(BaseTest):
+
+    def test_hardlink(self):
+        """Test hardlink extraction (bug #857297)
+        """
+        # Prevent errors from being caught
+        self.tar.errorlevel = 1
+
+        self.tar.extract("0-REGTYPE", dirname())
+        try:
+            # Extract 1-LNKTYPE which is a hardlink to 0-REGTYPE
+            self.tar.extract("1-LNKTYPE", dirname())
+        except EnvironmentError, e:
+            import errno
+            if e.errno == errno.ENOENT:
+                self.fail("hardlink not extracted properly")
+
+
 # Gzip TestCases
 class ReadTestGzip(ReadTest):
     comp = "gz"
@@ -336,6 +354,9 @@ def test_main():
         WriteStreamTest,
         WriteGNULongTest,
     ]
+
+    if hasattr(os, "link"):
+        tests.append(ExtractHardlinkTest)
 
     if gzip:
         tests.extend([

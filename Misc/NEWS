@@ -39,6 +39,9 @@ Extension modules
 Library
 -------
 
+- Bug #857297/Patch #916874.  Fix an error when extracting a hard link
+  from a tarfile.
+
 - Patch #846659.  Fix an error in tarfile.py when using
   GNU longname/longlink creation. 
 
