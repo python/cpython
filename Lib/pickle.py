@@ -157,7 +157,8 @@ class Pickler:
                     reduce = object.__reduce__
                 except AttributeError:
                     raise PicklingError, \
-                        "can't pickle %s objects" % `t.__name__`
+                        "can't pickle %s object: %s" % (`t.__name__`,
+                                                         `object`)
                 else:
                     tup = reduce()
             else:
