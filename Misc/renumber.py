@@ -43,10 +43,12 @@ def main():
 			if n < 0: n = newquestionprog.match(line) - 3
 			if n >= 0:
 				question = question + 1
-				line = '%d.%d. '%(chapter, question) + line[n:]
+				number = '%d.%d. '%(chapter, question)
+				line = number + line[n:]
 				lines[i] = line
 				questions.append('  ' + line)
 				# Add up to 4 continuations of the question
+				n = len(number)
 				for j in range(i+1, i+5):
 					if blankprog.match(lines[j]) >= 0:
 						break
