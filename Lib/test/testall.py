@@ -29,6 +29,7 @@ tests = ['test_grammar',
 	 'test_fcntl',
 	 'test_gdbm',
 	 'test_grp',
+	 'test_operator',
 	 ]
 
 if __name__ == '__main__':
