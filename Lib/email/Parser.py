@@ -1,5 +1,5 @@
-# Copyright (C) 2001,2002 Python Software Foundation
-# Author: barry@zope.com (Barry Warsaw)
+# Copyright (C) 2001-2004 Python Software Foundation
+# Author: barry@python.org (Barry Warsaw)
 
 """A parser of RFC 2822 and MIME email messages.
 """
@@ -145,11 +145,12 @@ class Parser:
         # boundary if present.
         boundary = container.get_boundary()
         isdigest = (container.get_content_type() == 'multipart/digest')
-        # If there's a boundary, split the payload text into its constituent
-        # parts and parse each separately.  Otherwise, just parse the rest of
-        # the body as a single message.  Note: any exceptions raised in the
-        # recursive parse need to have their line numbers coerced.
-        if boundary:
+        # If there's a boundary and the message has a main type of
+        # 'multipart', split the payload text into its constituent parts and
+        # parse each separately.  Otherwise, just parse the rest of the body
+        # as a single message.  Note: any exceptions raised in the recursive
+        # parse need to have their line numbers coerced.
+        if container.get_content_maintype() == 'multipart' and boundary:
             preamble = epilogue = None
             # Split into subparts.  The first boundary we're looking for won't
             # always have a leading newline since we're at the start of the
