@@ -284,6 +284,16 @@ sub do_cmd_index{
     "$aname$anchor_invisible_mark</a>" . $_;
 }
 
+sub do_cmd_kwindex{
+    local($_) = @_;
+    my($str,$br_id) = next_argument_id();
+    #
+    my($name,$aname,$ahref) = link_info($br_id);
+    add_index_entry("<tt>$str</tt>!keyword", $ahref);
+    add_index_entry("keyword!<tt>$str</tt>", $ahref);
+    "$aname$anchor_invisible_mark</a>" . $_;
+}
+
 sub do_cmd_indexii{
     local($_) = @_;
     my($str1,$br_id) = next_argument_id();
