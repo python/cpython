@@ -27,6 +27,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 object *eval_code PROTO((codeobject *, object *, object *, object *));
 
+object *call_object PROTO((object *, object *));
+
 object *getglobals PROTO((void));
 object *getlocals PROTO((void));
 
