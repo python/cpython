@@ -28,6 +28,8 @@ dr-xr-srwt 105 ftp-usr  pdmaint     1536 Mar 21 14:32 ..
  .
  .
  .
+>>> ftp.retrbinary('RETR README', open('README', 'wb').write)
+'226 Transfer complete.'
 >>> ftp.quit()
 \end{verbatim}
 
