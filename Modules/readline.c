@@ -303,6 +303,11 @@ py_remove_history(PyObject *self, PyObject *args)
 
         if (!PyArg_ParseTuple(args, "i:remove_history", &entry_number))
                 return NULL;
+        if (entry_number < 0) {
+                PyErr_SetString(PyExc_ValueError,
+                                "History index cannot be negative");
+                return NULL;
+        }
         entry = remove_history(entry_number);
         if (!entry) {
                 PyErr_Format(PyExc_ValueError,
@@ -333,6 +338,11 @@ py_replace_history(PyObject *self, PyObject *args)
         HIST_ENTRY *old_entry;
 
         if (!PyArg_ParseTuple(args, "is:replace_history", &entry_number, &line)) {
+                return NULL;
+        }
+        if (entry_number < 0) {
+                PyErr_SetString(PyExc_ValueError,
+                                "History index cannot be negative");
                 return NULL;
         }
         old_entry = replace_history_entry(entry_number, line, (void *)NULL);
