@@ -361,7 +361,7 @@ def test_main():
         WalkTests,
         MakedirTests,
         DevNullTests,
-        URandomTests	
+        URandomTests
     )
 
 if __name__ == "__main__":
