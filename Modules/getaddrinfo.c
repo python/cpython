@@ -421,6 +421,7 @@ getaddrinfo(const char*hostname, const char*servname,
 			switch (gai_afdl[i].a_af) {
 			case AF_INET:
 				v4a = ((struct in_addr *)pton)->s_addr;
+				v4a = ntohl(v4a);
 				if (IN_MULTICAST(v4a) || IN_EXPERIMENTAL(v4a))
 					pai->ai_flags &= ~AI_CANONNAME;
 				v4a >>= IN_CLASSA_NSHIFT;
