@@ -8,11 +8,11 @@
 
 \deprecated{2.3}{The macfs module should be considered obsolete. For
 \class{FSSpec}, \class{FSRef} and \class{Alias} handling use the
-Carbon.File or Carbon.Folder module. For file dialogs use the 
-\module{EasyDialogs} module.}
+\module{Carbon.File} or \refmodule{Carbon.Folder} module. For file
+dialogs use the \refmodule{EasyDialogs} module.}
 
-This module provides access to Macintosh FSSpec handling, the Alias
-Manager, \program{finder} aliases and the Standard File package.
+This module provides access to Macintosh \class{FSSpec} handling, the
+Alias Manager, \program{finder} aliases and the Standard File package.
 \index{Macintosh Alias Manager}
 \index{Alias Manager, Macintosh}
 \index{Standard File}
@@ -95,13 +95,13 @@ a file in the folder, not the folder itself (the file need not exist,
 though). If no argument is passed the folder will be set to the
 current directory, i.e. what \function{os.getcwd()} returns.
 
-Note that starting with system 7.5 the user can change Standard File
+Note that starting with System 7.5 the user can change Standard File
 behaviour with the ``general controls'' control panel, thereby making
 this call inoperative.
 \end{funcdesc}
 
 \begin{funcdesc}{FindFolder}{where, which, create}
-Locates one of the ``special'' folders that MacOS knows about, such as
+Locates one of the ``special'' folders that Mac OS knows about, such as
 the trash or the Preferences folder. \var{where} is the disk to
 search, \var{which} is the 4-character string specifying which folder to
 locate. Setting \var{create} causes the folder to be created if it
