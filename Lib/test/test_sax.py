@@ -30,7 +30,7 @@ def confirm(outcome, name):
         fails = fails + 1
 
 def test_make_parser2():
-    try:       
+    try:
         # Creating parsers several times in a row should succeed.
         # Testing this because there have been failures of this kind
         # before.
@@ -50,8 +50,8 @@ def test_make_parser2():
         return 0
     else:
         return p
-    
-        
+
+
 # ===========================================================================
 #
 #   saxutils tests
@@ -397,7 +397,7 @@ def test_expat_locator_noinfo():
 
     return parser.getSystemId() is None and \
            parser.getPublicId() is None and \
-           parser.getLineNumber() == 1 
+           parser.getLineNumber() == 1
 
 def test_expat_locator_withinfo():
     result = StringIO()

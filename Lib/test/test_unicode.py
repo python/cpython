@@ -195,7 +195,7 @@ if 0:
 
     # Non surrogate above surrogate value, fixup required
     def test_lecmp(s, s2):
-      verify(s <  s2 , "comparison failed on %s < %s" % (s, s2))
+        verify(s <  s2 , "comparison failed on %s < %s" % (s, s2))
 
     def test_fixup(s):
         s2 = u'\ud800\udc01'
@@ -372,11 +372,11 @@ verify(u'\ud800\udc02'.encode('utf-8') == \
 verify(u'\ud84d\udc56'.encode('utf-8') == \
        ''.join((chr(0xf0), chr(0xa3), chr(0x91), chr(0x96))) )
 # UTF-8 specific decoding tests
-verify(unicode(''.join((chr(0xf0), chr(0xa3), chr(0x91), chr(0x96))), 
+verify(unicode(''.join((chr(0xf0), chr(0xa3), chr(0x91), chr(0x96))),
                'utf-8') == u'\ud84d\udc56' )
-verify(unicode(''.join((chr(0xf0), chr(0x90), chr(0x80), chr(0x82))), 
+verify(unicode(''.join((chr(0xf0), chr(0x90), chr(0x80), chr(0x82))),
                'utf-8') == u'\ud800\udc02' )
-verify(unicode(''.join((chr(0xe2), chr(0x82), chr(0xac))), 
+verify(unicode(''.join((chr(0xe2), chr(0x82), chr(0xac))),
                'utf-8') == u'\u20ac' )
 
 # Other possible utf-8 test cases:
@@ -501,7 +501,7 @@ for encoding in (
     'cp852', 'cp855', 'cp860', 'cp861', 'cp862',
     'cp863', 'cp865', 'cp866',
     'iso8859_10', 'iso8859_13', 'iso8859_14', 'iso8859_15',
-    'iso8859_2', 'iso8859_4', 'iso8859_5', 
+    'iso8859_2', 'iso8859_4', 'iso8859_5',
     'iso8859_9', 'koi8_r', 'latin_1',
     'mac_cyrillic', 'mac_latin2',
 
@@ -509,7 +509,7 @@ for encoding in (
     #'cp1250', 'cp1251', 'cp1252', 'cp1253', 'cp1254', 'cp1255',
     #'cp1256', 'cp1257', 'cp1258',
     #'cp424', 'cp856', 'cp857', 'cp864', 'cp869', 'cp874',
-    #'iso8859_3', 'iso8859_6', 'iso8859_7', 
+    #'iso8859_3', 'iso8859_6', 'iso8859_7',
     #'mac_greek', 'mac_iceland','mac_roman', 'mac_turkish',
 
     ### These fail the round-trip:
