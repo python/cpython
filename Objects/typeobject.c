@@ -169,6 +169,10 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		    (kwds == NULL ||
 		     (PyDict_Check(kwds) && PyDict_Size(kwds) == 0)))
 			return obj;
+		/* If the returned object is not an instance of type,
+		   it won't be initialized. */
+		if (!PyType_IsSubtype(obj->ob_type, type))
+			return obj;
 		type = obj->ob_type;
 		if (type->tp_init != NULL &&
 		    type->tp_init(obj, args, kwds) < 0) {
