@@ -428,12 +428,12 @@ class TestMessageAPI(TestEmailBase):
     def test_get_content_maintype_error(self):
         msg = Message()
         msg['Content-Type'] = 'no-slash-in-this-string'
-        self.assertRaises(ValueError, msg.get_content_maintype)
+        self.assertEqual(msg.get_content_maintype(), 'text')
 
     def test_get_content_subtype_error(self):
         msg = Message()
         msg['Content-Type'] = 'no-slash-in-this-string'
-        self.assertRaises(ValueError, msg.get_content_subtype)
+        self.assertEqual(msg.get_content_subtype(), 'plain')
 
 
 
@@ -1006,6 +1006,27 @@ class TestNonConformant(TestEmailBase):
                               email.message_from_file, fp)
         finally:
             fp.close()
+
+    def test_invalid_content_type(self):
+        eq = self.assertEqual
+        neq = self.ndiffAssertEqual
+        msg = Message()
+        # RFC 2045, $5.2 says invalid yields text/plain
+        msg['Content-Type'] = 'text'
+        eq(msg.get_content_maintype(), 'text')
+        eq(msg.get_content_subtype(), 'plain')
+        eq(msg.get_content_type(), 'text/plain')
+        # Clear the old value and try something /really/ invalid
+        del msg['content-type']
+        msg['Content-Type'] = 'foo'
+        eq(msg.get_content_maintype(), 'text')
+        eq(msg.get_content_subtype(), 'plain')
+        eq(msg.get_content_type(), 'text/plain')
+        # Still, make sure that the message is idempotently generated
+        s = StringIO()
+        g = Generator(s)
+        g.flatten(msg)
+        neq(s.getvalue(), 'Content-Type: foo\n\n')
 
 
 
