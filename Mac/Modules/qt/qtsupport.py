@@ -76,6 +76,7 @@ QtTimeRecord_Convert(v, p_itself)
 
 # Our (opaque) objects
 Movie = OpaqueByValueType('Movie', 'MovieObj')
+NullMovie = FakeType("(Movie)0")
 Track = OpaqueByValueType('Track', 'TrackObj')
 Media = OpaqueByValueType('Media', 'MediaObj')
 UserData = OpaqueByValueType('UserData', 'UserDataObj')
@@ -99,7 +100,7 @@ SampleDescriptionHandle = OpaqueByValueType("SampleDescriptionHandle", "ResObj")
 ImageDescriptionHandle = OpaqueByValueType("ImageDescriptionHandle", "ResObj")
 TEHandle = OpaqueByValueType("TEHandle", "ResObj")
 CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
-GDHandle = OpaqueByValueType("GDHandle", "ResObj")
+GDHandle = OpaqueByValueType("GDHandle", "OptResObj")
 AliasHandle = OpaqueByValueType("AliasHandle", "ResObj")
 SoundDescriptionHandle = OpaqueByValueType("SoundDescriptionHandle", "ResObj")
 # Silly Apple, passing an OStype by reference...
@@ -242,6 +243,13 @@ f = Function(void, 'DragAlignedWindow',
 	(Rect_ptr, 'boundsRect', InMode),
 	(dummyRect, 'alignmentRect', InMode),
 	(ICMAlignmentProcRecordPtr, 'alignmentProc', InMode),
+)
+functions.append(f)
+
+# And we want the version of MoviesTask without a movie argument
+f = Function(void, 'MoviesTask',
+    (NullMovie, 'theMovie', InMode),
+    (long, 'maxMilliSecToUse', InMode),
 )
 functions.append(f)
 
