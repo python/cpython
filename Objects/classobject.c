@@ -313,19 +313,17 @@ static PyObject *
 class_repr(PyClassObject *op)
 {
 	PyObject *mod = PyDict_GetItemString(op->cl_dict, "__module__");
-	char buf[140];
 	char *name;
 	if (op->cl_name == NULL || !PyString_Check(op->cl_name))
 		name = "?";
 	else
 		name = PyString_AsString(op->cl_name);
 	if (mod == NULL || !PyString_Check(mod))
-		sprintf(buf, "<class ?.%.100s at %p>", name, op);
+		return PyString_FromFormat("<class ?.s at %p>", name, op);
 	else
-		sprintf(buf, "<class %.50s.%.50s at %p>",
-			PyString_AsString(mod),
-			name, op);
-	return PyString_FromString(buf);
+		return PyString_FromFormat("<class %s.%s at %p>",
+					   PyString_AsString(mod),
+					   name, op);
 }
 
 static PyObject *
@@ -776,7 +774,6 @@ instance_repr(PyInstanceObject *inst)
 		reprstr = PyString_InternFromString("__repr__");
 	func = instance_getattr(inst, reprstr);
 	if (func == NULL) {
-		char buf[140];
 		PyObject *classname = inst->in_class->cl_name;
 		PyObject *mod = PyDict_GetItemString(
 			inst->in_class->cl_dict, "__module__");
@@ -787,13 +784,12 @@ instance_repr(PyInstanceObject *inst)
 			cname = "?";
 		PyErr_Clear();
 		if (mod == NULL || !PyString_Check(mod))
-			sprintf(buf, "<?.%.100s instance at %p>",
-				cname, inst);
+			return PyString_FromFormat("<?.%s instance at %p>",
+						   cname, inst);
 		else
-			sprintf(buf, "<%.50s.%.50s instance at %p>",
-				PyString_AsString(mod),
-				cname, inst);
-		return PyString_FromString(buf);
+			return PyString_FromFormat("<%s.%s instance at %p>",
+						   PyString_AsString(mod),
+						   cname, inst);
 	}
 	res = PyEval_CallObject(func, (PyObject *)NULL);
 	Py_DECREF(func);
@@ -2042,7 +2038,6 @@ instancemethod_compare(PyMethodObject *a, PyMethodObject *b)
 static PyObject *
 instancemethod_repr(PyMethodObject *a)
 {
-	char buffer[240];
 	PyObject *self = a->im_self;
 	PyObject *func = a->im_func;
 	PyObject *klass = a->im_class;
@@ -2072,8 +2067,8 @@ instancemethod_repr(PyMethodObject *a)
 			sklassname = PyString_AS_STRING(klassname);
 	}
 	if (self == NULL)
-		sprintf(buffer, "<unbound method %.100s.%.100s>",
-			sklassname, sfuncname);
+		result = PyString_FromFormat("<unbound method %s.%s>",
+					     sklassname, sfuncname);
 	else {
 		/* XXX Shouldn't use repr() here! */
 		PyObject *selfrepr = PyObject_Repr(self);
@@ -2083,11 +2078,11 @@ instancemethod_repr(PyMethodObject *a)
 			Py_DECREF(selfrepr);
 			goto fail;
 		}
-		sprintf(buffer, "<bound method %.60s.%.60s of %.60s>",
-			sklassname, sfuncname, PyString_AS_STRING(selfrepr));
+		result = PyString_FromFormat("<bound method %s.%s of %s>",
+					     sklassname, sfuncname,
+					     PyString_AS_STRING(selfrepr));
 		Py_DECREF(selfrepr);
 	}
-	result = PyString_FromString(buffer);
   fail:
 	Py_XDECREF(funcname);
 	Py_XDECREF(klassname);

@@ -179,13 +179,11 @@ file_dealloc(PyFileObject *f)
 static PyObject *
 file_repr(PyFileObject *f)
 {
-	char buf[300];
-	sprintf(buf, "<%s file '%.256s', mode '%.10s' at %p>",
-		f->f_fp == NULL ? "closed" : "open",
-		PyString_AsString(f->f_name),
-		PyString_AsString(f->f_mode),
-		f);
-	return PyString_FromString(buf);
+	return PyString_FromFormat("<%s file '%s', mode '%s' at %p>",
+				   f->f_fp == NULL ? "closed" : "open",
+				   PyString_AsString(f->f_name),
+				   PyString_AsString(f->f_mode),
+				   f);
 }
 
 static PyObject *
