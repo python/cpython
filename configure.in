@@ -212,11 +212,11 @@ if test $ac_cv_opt_olimit_ok = yes; then
   OPT="$OPT -OPT:Olimit=0"
 fi
   REALLIBRARY='libpython$(VERSION).a'
-  DGUX_IS_BROKEN="# dgux rule not included"
+  DGUX_IS_BROKEN="true"
 else
   REALLIBRARY='libpython$(VERSION).so'
   OPT="$OPT -pic"
-  DGUX_IS_BROKEN="		make $REALLIBRARY"
+  DGUX_IS_BROKEN="make $REALLIBRARY"
 fi
 
 # check for ANSI or K&R ("traditional") preprocessor
