@@ -72,7 +72,6 @@ resource_getrlimit(self, args)
 {
 	struct rlimit rl;
 	int resource;
-	char *errstr;
 
 	if (!PyArg_ParseTuple(args, "i", &resource)) 
 		return NULL;
@@ -97,7 +96,6 @@ resource_setrlimit(self, args)
 {
 	struct rlimit rl;
 	int resource;
-	char *errstr;
 
 	if (!PyArg_ParseTuple(args, "i(ii)", &resource, &rl.rlim_cur, 
 			      &rl.rlim_max)) 
