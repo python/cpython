@@ -557,7 +557,7 @@ created.  The only file not installed with a version number in its
 name is the manual page, installed as "/usr/local/man/man1/python.1"
 by default.
 
-If you have a previous installation of a pre-2.0 Python that you don't
+If you have a previous installation of Python that you don't
 want to replace yet, use
 
 	make altinstall
@@ -565,6 +565,12 @@ want to replace yet, use
 This installs the same set of files as "make install" except it
 doesn't create the hard link to "python<version>" named "python" and
 it doesn't install the manual page at all.
+
+Alpha/beta revision levels are stripped from the executable and
+library filenames during installation. For example, Python2.1a2 will
+install as python2.1, overwriting the previous python2.1. To avoid
+this, you could set the Makefile VERSION variable manually
+(e.g. VERSION=2.1a2) before running "make install" or "make altinstall".
 
 The only thing you may have to install manually is the Python mode for
 Emacs found in Misc/python-mode.el.  (But then again, more recent
