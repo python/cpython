@@ -32,6 +32,8 @@ extern int CtlObj_Convert(PyObject *, ControlHandle *);
 
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
+#include <Devices.h> /* Defines OpenDeskAcc in universal headers */
+#include <Desk.h> /* Defines OpenDeskAcc in old headers */
 #include <Menus.h>
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
@@ -843,6 +845,21 @@ static PyObject *Menu_DelMCEntries(_self, _args)
 	return _res;
 }
 
+static PyObject *Menu_OpenDeskAcc(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Str255 name;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetStr255, name))
+		return NULL;
+	OpenDeskAcc(name);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef Menu_methods[] = {
 	{"InitMenus", (PyCFunction)Menu_InitMenus, 1,
 	 "() -> None"},
@@ -882,6 +899,8 @@ static PyMethodDef Menu_methods[] = {
 	 "() -> (long _rv)"},
 	{"DelMCEntries", (PyCFunction)Menu_DelMCEntries, 1,
 	 "(short menuID, short menuItem) -> None"},
+	{"OpenDeskAcc", (PyCFunction)Menu_OpenDeskAcc, 1,
+	 "(Str255 name) -> None"},
 	{NULL, NULL, 0}
 };
 
