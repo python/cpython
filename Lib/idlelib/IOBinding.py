@@ -73,7 +73,7 @@ class EncodingMessage(SimpleDialog):
     "Inform user that an encoding declaration is needed."
     def __init__(self, master, enc):
         self.should_edit = False
-        
+
         self.root = top = Toplevel(master)
         top.bind("<Return>", self.return_event)
         top.bind("<Escape>", self.do_ok)
@@ -106,7 +106,7 @@ class EncodingMessage(SimpleDialog):
         b2 = Button(buttons, text="Edit my file",
                     command=self.do_edit)
         b2.pack(side=LEFT, fill=BOTH, expand=1)
-        
+
         self._set_transient(master)
 
     def do_ok(self):
@@ -416,35 +416,35 @@ class IOBinding:
                 return BOM_UTF8 + chars.encode("utf-8")
         # Nothing was declared, and we had not determined an encoding
         # on loading. Recommend an encoding line.
-	config_encoding = idleConf.GetOption("main","EditorWindow",
-					     "encoding")
-	if config_encoding == 'utf-8':
-		# User has requested that we save files as UTF-8
-		return BOM_UTF8 + chars.encode("utf-8")
-	ask_user = True
-	try:
-	    chars = chars.encode(encoding)
-	    enc = encoding
-	    if config_encoding == 'locale':
+        config_encoding = idleConf.GetOption("main","EditorWindow",
+                                             "encoding")
+        if config_encoding == 'utf-8':
+            # User has requested that we save files as UTF-8
+            return BOM_UTF8 + chars.encode("utf-8")
+        ask_user = True
+        try:
+            chars = chars.encode(encoding)
+            enc = encoding
+            if config_encoding == 'locale':
                 ask_user = False
-	except UnicodeError:
-	    chars = BOM_UTF8 + chars.encode("utf-8")
-	    enc = "utf-8"
-	if not ask_user:
+        except UnicodeError:
+            chars = BOM_UTF8 + chars.encode("utf-8")
+            enc = "utf-8"
+        if not ask_user:
             return chars
-	dialog = EncodingMessage(self.editwin.top, enc)
-	dialog.go()
-	if dialog.num == 1:
-	    # User asked us to edit the file
-	    encline = "# -*- coding: %s -*-\n" % enc
-	    firstline = self.text.get("1.0", "2.0")
-	    if firstline.startswith("#!"):
-		# Insert encoding after #! line
-		self.text.insert("2.0", encline)
-	    else:
-		self.text.insert("1.0", encline)
-	    return self.encode(self.text.get("1.0", "end-1c"))
-	return chars
+        dialog = EncodingMessage(self.editwin.top, enc)
+        dialog.go()
+        if dialog.num == 1:
+            # User asked us to edit the file
+            encline = "# -*- coding: %s -*-\n" % enc
+            firstline = self.text.get("1.0", "2.0")
+            if firstline.startswith("#!"):
+                # Insert encoding after #! line
+                self.text.insert("2.0", encline)
+            else:
+                self.text.insert("1.0", encline)
+            return self.encode(self.text.get("1.0", "end-1c"))
+        return chars
 
     def fixlastline(self):
         c = self.text.get("end-2c")
