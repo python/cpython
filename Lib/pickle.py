@@ -17,7 +17,7 @@ Unlike the built-in marshal module, pickle handles the following correctly:
 
 - recursive objects
 - pointer sharing
-- class instances
+- classes and class instances
 
 Pickle is Python-specific.  This has the advantage that there are no
 restrictions imposed by external standards such as CORBA (which probably
@@ -62,7 +62,7 @@ define a method __getinitargs__ (XXX not a pretty name!), which should
 return a *tuple* containing the arguments to be passed to the class
 constructor.
 
-Classes can influence how they are pickled -- if the class defines
+Classes can influence how their instances are pickled -- if the class defines
 the method __getstate__, it is called and the return state is pickled
 as the contents for the instance, and if the class defines the
 method __setstate__, it is called with the unpickled state.  (Note
@@ -108,6 +108,7 @@ The following types can be pickled:
 - strings
 - tuples, lists and dictionaries containing only picklable objects
 - class instances whose __dict__ or __setstate__() is picklable
+- classes
 
 Attempts to pickle unpicklable objects will raise an exception
 after having written an unspecified number of bytes to the file argument.
@@ -125,11 +126,13 @@ the old value, not the modified one.  (XXX There are two problems here:
 I have no answers.  Garbage Collection may also become a problem here.)
 """
 
-__format_version__ = "1.0"		# File format version
-__version__ = "1.4"			# Code version
+__version__ = "1.5"			# Code version
 
 from types import *
 import string
+
+format_version = "1.1"			# File format version we write
+compatible_formats = ["1.0"]		# Old format versions we can read
 
 PicklingError = "pickle.PicklingError"
 
@@ -153,6 +156,7 @@ TUPLE = 't'
 LIST = 'l'
 DICT = 'd'
 INST = 'i'
+CLASS = 'c'
 GET = 'g'
 PUT = 'p'
 APPEND = 'a'
@@ -300,8 +304,8 @@ class Pickler:
 		self.write(MARK)
 		for arg in args:
 			self.save(arg)
-		self.write(INST + module + '\n' + name + '\n' + 
-			PUT + `d` + '\n')
+		self.write(INST + module + '\n' + name + '\n' +
+			   PUT + `d` + '\n')
 		self.memo[d] = object
 		try:
 			getstate = object.__getstate__
@@ -312,6 +316,14 @@ class Pickler:
 		self.save(stuff)
 		self.write(BUILD)
 	dispatch[InstanceType] = save_inst
+
+	def save_class(self, object):
+		d = id(object)
+		module = whichmodule(object)
+		name = object.__name__
+		self.write(CLASS + module + '\n' + name + '\n' + 
+			   PUT + `d` + '\n')
+	dispatch[ClassType] = save_class
 
 
 classmap = {}
@@ -410,6 +422,20 @@ class Unpickler:
 		del self.stack[k:]
 		module = self.readline()[:-1]
 		name = self.readline()[:-1]
+		klass = self.find_class(module, name)
+		value = apply(klass, args)
+		self.stack.append(value)
+	dispatch[INST] = load_inst
+
+	def load_class(self):
+		module = self.readline()[:-1]
+		name = self.readline()[:-1]
+		klass = self.find_class(module, name)
+		self.stack.append(klass)
+		return klass
+	dispatch[CLASS] = load_class
+
+	def find_class(self, module, name):
 		env = {}
 		try:
 			exec 'from %s import %s' % (module, name) in env
@@ -417,18 +443,15 @@ class Unpickler:
 			raise SystemError, \
 			      "Failed to import class %s from module %s" % \
 			      (name, module)
-		else:
-			klass = env[name]
-			if type(klass) != ClassType:
-				raise SystemError, \
-					"imported object %s from module %s is not a class" % \
-					(name, module)
-			value = apply(klass, args)
-		self.stack.append(value)
-	dispatch[INST] = load_inst
+		klass = env[name]
+		if type(klass) != ClassType:
+			raise SystemError, \
+			 "Imported object %s from module %s is not a class" % \
+			 (name, module)
+		return klass
 
 	def load_pop(self):
-				del self.stack[-1]
+		del self.stack[-1]
 	dispatch[POP] = load_pop
 
 	def load_dup(self):
@@ -481,6 +504,28 @@ class Unpickler:
 		raise STOP, value
 	dispatch[STOP] = load_stop
 
+
+# Shorthands
+
+def dump(object, file):
+	Pickler(file).dump(object)
+
+def dumps(object):
+	import StringIO
+	file = StringIO.StringIO()
+	Pickler(file).dump(object)
+	return file.getvalue()
+
+def load(file):
+	return Unpickler(file).load()
+
+def loads(str):
+	import StringIO
+	file = StringIO.StringIO(str)
+	return Unpickler(file).load()
+
+
+# The rest is used for testing only
 
 class C:
 	def __cmp__(self, other):
