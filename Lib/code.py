@@ -10,6 +10,9 @@ import string
 import traceback
 from codeop import compile_command
 
+__all__ = ["InteractiveInterpreter","InteractiveConsole","interact",
+           "compile_command"]
+
 def softspace(file, newvalue):
     oldvalue = 0
     try:

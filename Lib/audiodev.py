@@ -1,5 +1,7 @@
 """Classes for manipulating audio devices (currently only for Sun and SGI)"""
 
+__all__ = ["error","AudioDev"]
+
 class error(Exception):
     pass
 

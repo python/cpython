@@ -2,6 +2,8 @@
 
 import bsddb
 
+__all__ = ["error","open"]
+
 error = bsddb.error                     # Exported for anydbm
 
 def open(file, flag, mode=0666):

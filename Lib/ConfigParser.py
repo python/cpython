@@ -89,6 +89,11 @@ import sys
 import string
 import re
 
+__all__ = ["NoSectionError","DuplicateSectionError","NoOptionError",
+           "InterpolationError","InterpolationDepthError","ParsingError",
+           "MissingSectionHeaderError","ConfigParser",
+           "MAX_INTERPOLATION_DEPTH"]
+
 DEFAULTSECT = "DEFAULT"
 
 MAX_INTERPOLATION_DEPTH = 10

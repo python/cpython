@@ -19,6 +19,8 @@ Encapsulates the basic operation:
  [Note:  it would be nice to add functions to interpret the exit status.]
 """
 
+__all__ = ["getstatusoutput","getoutput","getstatus"]
+
 # Module 'commands'
 #
 # Various tools for executing commands and looking at their output and status.

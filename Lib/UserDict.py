@@ -1,5 +1,7 @@
 """A more or less complete user-defined wrapper around dictionary objects."""
 
+__all__ = ["UserDict"]
+
 class UserDict:
     def __init__(self, dict=None):
         self.data = {}

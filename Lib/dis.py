@@ -4,6 +4,10 @@ import sys
 import string
 import types
 
+__all__ = ["dis","disassemble","distb","disco","opname","cmp_op",
+           "hasconst","hasname","hasjrel","hasjabs","haslocal",
+           "hascompare"]
+
 def dis(x=None):
     """Disassemble classes, methods, functions, or code.
 

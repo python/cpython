@@ -8,6 +8,7 @@ and HEAD requests in a fairly straightforward manner.
 
 __version__ = "0.6"
 
+__all__ = ["SimpleHTTPRequestHandler"]
 
 import os
 import string

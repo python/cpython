@@ -4,6 +4,8 @@ import sys
 import os
 import types
 
+__all__ = ["BdbQuit","Bdb","Breakpoint"]
+
 BdbQuit = 'bdb.BdbQuit' # Exception to give up completely
 
 

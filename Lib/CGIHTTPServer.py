@@ -19,6 +19,7 @@ SECURITY WARNING: DON'T USE THIS CODE UNLESS YOU ARE INSIDE A FIREWALL
 
 __version__ = "0.4"
 
+__all__ = ["CGIHTTPRequestHandler"]
 
 import os
 import sys

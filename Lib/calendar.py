@@ -10,6 +10,10 @@ set the first day of the week (0=Monday, 6=Sunday)."""
 # Import functions and variables from time module
 from time import localtime, mktime
 
+__all__ = ["error","setfirstweekday","firstweekday","isleap",
+           "leapdays","weekday","monthrange","monthcalendar",
+           "prmonth","month","prcal","calendar","timegm"]
+
 # Exception raised for bad input (with string parameter for details)
 error = ValueError
 

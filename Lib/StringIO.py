@@ -34,6 +34,8 @@ try:
 except ImportError:
     EINVAL = 22
 
+__all__ = ["StringIO"]
+
 EMPTYSTRING = ''
 
 class StringIO:

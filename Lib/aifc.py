@@ -137,6 +137,8 @@ writeframesraw.
 import struct
 import __builtin__
 
+__all__ = ["Error","open","openfp"]
+
 class Error(Exception):
     pass
 

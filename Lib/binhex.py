@@ -27,6 +27,8 @@ import struct
 import string
 import binascii
 
+__all__ = ["binhex","hexbin","Error"]
+
 class Error(Exception):
     pass
 

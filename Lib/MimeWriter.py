@@ -10,6 +10,7 @@ MimeWriter - the only thing here.
 import string
 import mimetools
 
+__all__ = ["MimeWriter"]
 
 class MimeWriter:
 

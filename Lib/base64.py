@@ -6,6 +6,8 @@
 
 import binascii
 
+__all__ = ["encode","decode","encodestring","decodestring"]
+
 MAXLINESIZE = 76 # Excluding the CRLF
 MAXBINSIZE = (MAXLINESIZE/4)*3
 

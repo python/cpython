@@ -5,6 +5,8 @@ upon normal program termination.
 One public function, register, is defined.
 """
 
+__all__ = ["register"]
+
 _exithandlers = []
 def _run_exitfuncs():
     """run any registered exit functions
