@@ -15,6 +15,7 @@ from distutils.spawn import spawn
 from distutils.file_util import move_file
 from distutils.dir_util import mkpath
 from distutils.dep_util import newer_pairwise, newer_group
+from distutils.sysconfig import python_build
 from distutils.util import split_quoted, execute
 from distutils import log
 
@@ -366,7 +367,9 @@ class CCompiler:
             extra = []
 
         # Get the list of expected output (object) files
-        objects = self.object_filenames(sources, 0, outdir)
+        objects = self.object_filenames(sources,
+                                        strip_dir=python_build,
+                                        output_dir=outdir)
         assert len(objects) == len(sources)
 
         # XXX should redo this code to eliminate skip_source entirely.
@@ -472,7 +475,7 @@ class CCompiler:
         which source files can be skipped.
         """
         # Get the list of expected output (object) files
-        objects = self.object_filenames(sources, strip_dir=0,
+        objects = self.object_filenames(sources, strip_dir=python_build,
                                         output_dir=output_dir)
         assert len(objects) == len(sources)
 
