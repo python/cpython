@@ -1191,7 +1191,7 @@ UnicodeError__init__(PyObject *self, PyObject *args, PyTypeObject *objecttype)
 	&PyInt_Type, &start,
 	&PyInt_Type, &end,
 	&PyString_Type, &reason))
-	return NULL;
+	goto finally;
 
     if (PyObject_SetAttrString(self, "args", args))
 	goto finally;
