@@ -112,11 +112,15 @@ def test_xmlgen_ns():
     gen.startDocument()
     gen.startPrefixMapping("ns1", ns_uri)
     gen.startElementNS((ns_uri, "doc"), "ns1:doc", {})
+    # add an unqualified name
+    gen.startElementNS((None, "udoc"), None, {})
+    gen.endElementNS((None, "udoc"), None)
     gen.endElementNS((ns_uri, "doc"), "ns1:doc")
     gen.endPrefixMapping("ns1")
     gen.endDocument()
 
-    return result.getvalue() == start + ('<ns1:doc xmlns:ns1="%s"></ns1:doc>' %
+    return result.getvalue() == start + \
+           ('<ns1:doc xmlns:ns1="%s"><udoc></udoc></ns1:doc>' %
                                          ns_uri)
 
 # ===== XMLFilterBase

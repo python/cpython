@@ -62,7 +62,12 @@ class XMLGenerator(handler.ContentHandler):
         self._out.write('</%s>' % name)
 
     def startElementNS(self, name, qname, attrs):
-        name = self._current_context[name[0]] + ":" + name[1]
+        if name[0] is None:
+            # if the name was not namespace-scoped, use the unqualified part
+            name = name[1]
+        else:
+            # else try to restore the original prefix from the namespace
+            name = self._current_context[name[0]] + ":" + name[1]
         self._out.write('<' + name)
 
         for pair in self._undeclared_ns_maps:
@@ -75,7 +80,10 @@ class XMLGenerator(handler.ContentHandler):
         self._out.write('>')
 
     def endElementNS(self, name, qname):
-        name = self._current_context[name[0]] + ":" + name[1]
+        if name[0] is None:
+            name = name[1]
+        else:
+            name = self._current_context[name[0]] + ":" + name[1]
         self._out.write('</%s>' % name)
         
     def characters(self, content):
