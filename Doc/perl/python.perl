@@ -907,16 +907,29 @@ sub get_refcount{
 $TLSTART = '<span class="typelabel">';
 $TLEND   = '</span>';
 
-sub do_env_cfuncdesc{
-    local($_) = @_;
-    my $return_type = next_argument();
-    my $function_name = next_argument();
-    my $arg_list = next_argument();
+sub cfuncline_helper{
+    my ($type, $name, $args) = @_;
     my $idx = make_str_index_entry(
-        "<tt class=\"cfunction\">$function_name()</tt>" . get_indexsubitem());
+        "<tt class=\"cfunction\">$name()</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;		# ???? - why both of these?
-    my $result_rc = get_refcount($function_name, '');
+    return "$type <b>$idx</b>(<var>$args</var>)";
+}
+sub do_cmd_cfuncline{
+    local($_) = @_;
+    my $type = next_argument();
+    my $name = next_argument();
+    my $args = next_argument();
+    my $siginfo = cfuncline_helper($type, $name, $args);
+    return "<dt>$siginfo\n<dd>" . $_;
+}
+sub do_env_cfuncdesc{
+    local($_) = @_;
+    my $type = next_argument();
+    my $name = next_argument();
+    my $args = next_argument();
+    my $siginfo = cfuncline_helper($type, $name, $args);
+    my $result_rc = get_refcount($name, '');
     my $rcinfo = '';
     if ($result_rc eq '+1') {
         $rcinfo = 'New reference';
@@ -933,7 +946,7 @@ sub do_env_cfuncdesc{
                    . "\n  <span class=\"value\">$rcinfo.</span>"
                    . "\n</div>");
     }
-    return "<dl><dt>$return_type <b>$idx</b>(<var>$arg_list</var>)\n<dd>"
+    return "<dl><dt>$siginfo\n<dd>"
            . $rcinfo
            . $_
            . '</dl>';

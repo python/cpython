@@ -585,9 +585,12 @@
 % \begin{cfuncdesc}[refcount]{type}{name}{arglist}
 % Note that the [refcount] slot should only be filled in by
 % tools/anno-api.py; it pulls the value from the refcounts database.
+\newcommand{\cfuncline}[3]{
+  \item[\code{#1 \bfcode{#2}(\py@varvars{#3})}\index{#2@{\py@idxcode{#2()}}}]
+}
 \newenvironment{cfuncdesc}[4][\py@badkey]{
   \begin{fulllineitems}
-    \item[\code{#2 \bfcode{#3}(\py@varvars{#4})}\index{#3@{\py@idxcode{#3()}}}]
+    \cfuncline{#2}{#3}{#4}
     \ifx#1\@undefined\else%
       \emph{Return value: \textbf{#1}.}\\
     \fi
