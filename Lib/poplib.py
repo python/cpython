@@ -293,8 +293,9 @@ class POP3:
 	def uidl(self, which=None):
 		"""Return message digest (unique id) list.
 
-		If 'which', result contains unique id for that message,
-		otherwise result is list ['response', ['mesgnum uid', ...], octets]
+		If 'which', result contains unique id for that message
+		in the form 'response mesgnum uid', otherwise result is
+		the list ['response', ['mesgnum uid', ...], octets]
 		"""
 		if which:
 			return self._shortcmd('UIDL %s' % which)
