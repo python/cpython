@@ -357,27 +357,30 @@ converttuple(arg, p_format, p_va, levels, msgbuf, toplevel)
 			n++;
 	}
 	
-	if (!PyTuple_Check(arg)) {
+	if (!PySequence_Check(arg)) {
 		levels[0] = 0;
 		sprintf(msgbuf,
-			toplevel ? "%d arguments, %s" : "%d-tuple, %s",
+			toplevel ? "%d arguments, %s" : "%d-sequence, %s",
 			n, arg == Py_None ? "None" : arg->ob_type->tp_name);
 		return msgbuf;
 	}
 	
-	if ((i = PyTuple_Size(arg)) != n) {
+	if ((i = PySequence_Length(arg)) != n) {
 		levels[0] = 0;
 		sprintf(msgbuf,
-			toplevel ? "%d arguments, %d" : "%d-tuple, %d-tuple",
-			n, i);
+		    toplevel ? "%d arguments, %d" : "%d-sequence, %d-sequence",
+		    n, i);
 		return msgbuf;
 	}
 	
 	format = *p_format;
 	for (i = 0; i < n; i++) {
 		char *msg;
-		msg = convertitem(PyTuple_GetItem(arg, i), &format, p_va,
-				 levels+1, msgbuf);
+		PyObject *item;
+		item = PySequence_GetItem(arg, i);
+		msg = convertitem(item, &format, p_va, levels+1, msgbuf);
+		/* PySequence_GetItem calls tp->sq_item, which INCREFs */
+		Py_XDECREF(item);
 		if (msg != NULL) {
 			levels[0] = i+1;
 			return msg;
