@@ -129,7 +129,8 @@ func_setattr(PyFunctionObject *op, char *name, PyObject *value)
 		}
 	}
 	else if (strcmp(name, "func_defaults") == 0) {
-		if (value != Py_None && !PyTuple_Check(value)) {
+		if (value != Py_None && 
+		    (value == NULL || !PyTuple_Check(value))) {
 			PyErr_SetString(
 				PyExc_TypeError,
 				"func_defaults must be set to a tuple object");
