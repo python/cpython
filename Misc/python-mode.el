@@ -1495,14 +1495,6 @@ window) so you can see it, and a comment of the form
 is inserted at the end.  See also the command `py-clear-queue'."
   (interactive "r\nP")
   ;; Skip ahead to the first non-blank line
-  (goto-char start)
-  (beginning-of-line)
-  (while (and (looking-at "\\s *$")
-	      (< (point) end))
-    (forward-line 1))
-  (setq start (point))
-  (or (< start end)
-      (error "Region is empty"))
   (let* ((proc (get-process py-which-bufname))
 	 (temp (if (memq 'broken-temp-names py-emacs-features)
 		   (let
@@ -1520,6 +1512,13 @@ is inserted at the end.  See also the command `py-clear-queue'."
     ;; Write the contents of the buffer, watching out for indented regions.
     (save-excursion
       (goto-char start)
+      (beginning-of-line)
+      (while (and (looking-at "\\s *$")
+		  (< (point) end))
+	(forward-line 1))
+      (setq start (point))
+      (or (< start end)
+	  (error "Region is empty"))
       (let ((needs-if (/= (py-point 'bol) (py-point 'boi))))
 	(set-buffer buf)
 	(python-mode)
