@@ -52,6 +52,9 @@ int PyMac_Idle(void);				/* Idle routine */
 
 char *PyMac_GetPythonDir();					/* Return the name of the python dir */
 
+int PyMac_FindResourceModule(char *, char *); /* Test for 'PYC ' resource in a file */
+PyObject * PyMac_LoadResourceModule(char *, char *); /* Load 'PYC ' resource from file */
+
 int PyMac_GetOSType(PyObject *, OSType *);	/* argument parser for OSType */
 PyObject *PyMac_BuildOSType(OSType);		/* Convert OSType to PyObject */
 

@@ -25,6 +25,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 
 #include "macglue.h"
+#include "marshal.h"
+#include "import.h"
 
 #include <OSUtils.h> /* for Set(Current)A5 */
 #include <Files.h>
@@ -43,6 +45,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #include <signal.h>
+#include <stdio.h>
 
 #define NOPYTHON_ALERT 128
 #define YES_ITEM 1
@@ -478,6 +481,118 @@ PyMac_GetPythonDir()
 	return name;
 }
 
+/*
+** Returns true if the argument has a resource fork, and it contains
+** a 'PYC ' resource of the correct name
+*/
+int
+PyMac_FindResourceModule(module, filename)
+char *module;
+char *filename;
+{
+	FSSpec fss;
+	FInfo finfo;
+	short oldrh, filerh;
+	int ok;
+	Handle h;
+	
+	if ( FSMakeFSSpec(0, 0, Pstring(filename), &fss) != noErr )
+		return 0;			/* It doesn't exist */
+	if ( FSpGetFInfo(&fss, &finfo) != noErr )
+		return 0;			/* shouldn't happen, I guess */
+	if ( finfo.fdType != 'rsrc' || finfo.fdCreator != 'PYTH' )
+		return 0;			/* Not the right type */
+	oldrh = CurResFile();
+	filerh = FSpOpenResFile(&fss, fsRdPerm);
+	if ( filerh == -1 )
+		return 0;			/* Again, shouldn't happen */
+	UseResFile(filerh);
+	SetResLoad(0);
+	h = Get1NamedResource('PYC ', Pstring(module));
+	SetResLoad(1);
+	ok = (h != NULL);
+	CloseResFile(filerh);
+	UseResFile(oldrh);
+	return ok;
+}
+
+/*
+** Load the specified module from a resource
+*/
+PyObject *
+PyMac_LoadResourceModule(module, filename)
+char *module;
+char *filename;
+{
+	FSSpec fss;
+	FInfo finfo;
+	short oldrh, filerh;
+	int ok;
+	Handle h;
+	OSErr err;
+	PyObject *m, *co;
+	long num, size;
+	
+	if ( (err=FSMakeFSSpec(0, 0, Pstring(filename), &fss)) != noErr )
+		goto error;
+	if ( (err=FSpGetFInfo(&fss, &finfo)) != noErr )
+		goto error;
+	if ( finfo.fdType != 'rsrc' || finfo.fdCreator != 'PYTH' ) {
+		PyErr_SetString(PyExc_ImportError, "Incorrect typed file in sys.path");
+		return NULL;
+	}
+	oldrh = CurResFile();
+	filerh = FSpOpenResFile(&fss, fsRdPerm);
+	if ( filerh == -1 ) {
+		err = ResError();
+		goto error;
+	}
+	UseResFile(filerh);
+	h = Get1NamedResource('PYC ', Pstring(module));
+	if ( h == NULL ) {
+		err = ResError();
+		goto error;
+	}
+	HLock(h);
+	/*
+	** XXXX The next few lines are intimately tied to the format of pyc
+	** files. I'm not sure whether this code should be here or in import.c -- Jack
+	*/
+	size = GetHandleSize(h);
+	if ( size < 8 ) {
+		PyErr_SetString(PyExc_ImportError, "Resource too small");
+		m = NULL;
+	} else {
+		num = (*h)[0] & 0xff;
+		num = num | (((*h)[1] & 0xff) << 8);
+		num = num | (((*h)[2] & 0xff) << 16);
+		num = num | (((*h)[3] & 0xff) << 24);
+		if ( num != PyImport_GetMagicNumber() ) {
+			PyErr_SetString(PyExc_ImportError, "Bad MAGIC in resource");
+			co = NULL;
+		} else {
+			co = PyMarshal_ReadObjectFromString((*h)+8, size-8);
+		}
+	}
+	HUnlock(h);
+	CloseResFile(filerh);
+	UseResFile(oldrh);
+	if ( co ) {
+		m = PyImport_ExecCodeModule(module, co);
+		Py_DECREF(co);
+	} else {
+		m = NULL;
+	}
+	return m;
+error:
+	{
+		char buf[512];
+		
+		sprintf(buf, "%s: %s", filename, macstrerror(err));
+		PyErr_SetString(PyExc_ImportError, buf);
+		return NULL;
+	}
+}
 
 /* Convert a 4-char string object argument to an OSType value */
 int
