@@ -5870,6 +5870,23 @@ all_ins(PyObject *d)
 #ifdef O_TEXT
         if (ins(d, "O_TEXT", (long)O_TEXT)) return -1;
 #endif
+#ifdef O_LARGEFILE
+        if (ins(d, "O_LARGEFILE", (long)O_LARGEFILE)) return -1;
+#endif
+
+/* GNU extensions. */
+#ifdef O_DIRECT
+        /* Direct disk access. */
+        if (ins(d, "O_DIRECT", (long)O_DIRECT)) return -1;
+#endif
+#ifdef O_DIRECTORY
+        /* Must be a directory.	 */
+        if (ins(d, "O_DIRECTORY", (long)O_DIRECTORY)) return -1;
+#endif
+#ifdef O_NOFOLLOW
+        /* Do not follow links.	 */
+        if (ins(d, "O_NOFOLLOW", (long)O_NOFOLLOW)) return -1;
+#endif
 
 #ifdef HAVE_SPAWNV
         if (ins(d, "P_WAIT", (long)_P_WAIT)) return -1;
