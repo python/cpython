@@ -641,6 +641,14 @@ There are no guarantees to thread safety with this emulation - beware!
 The emulation was written to support a link() based file locking system 
 used in GNU Mailman.
 
+26.  AF_UNIX sockets, otherwise known as Unix domain sockets, are now
+supported.  Unfortunately, there are some traps arising from the
+implementation in IBM's TCP/IP stack:-
+- the path name must start with '\\socket\\' ('/socket/' won't work!),
+  with the length of the full path name less than 108 characters;
+- unlike Unix, the socket endpoints don't exist in the filesystem;
+- by default, sockets are in binary mode.
+
 ... probably other issues that I've not encountered, or don't remember :-(
 
 If you encounter other difficulties with this port, which can be 
@@ -680,4 +688,4 @@ Andrew MacIntyre
 E-mail: andymac@bullseye.apana.org.au, or andymac@pcug.org.au
 Web:    http://www.andymac.org/
 
-2 December, 2003.
+11 April, 2004.
