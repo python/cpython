@@ -2178,9 +2178,10 @@ ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, int buflen,
 			if (all == NULL)
 				PyErr_Clear();
 			else {
-				if (!ensure_fromlist(mod, all, buf, buflen, 1))
-					return 0;
+				int ret = ensure_fromlist(mod, all, buf, buflen, 1);
 				Py_DECREF(all);
+				if (!ret)
+					return 0;
 			}
 			continue;
 		}
