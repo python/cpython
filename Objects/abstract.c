@@ -16,7 +16,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 /* Shorthands to return certain errors */
 
 static PyObject *
-type_error(char *msg)
+type_error(const char *msg)
 {
 	PyErr_SetString(PyExc_TypeError, msg);
 	return NULL;
