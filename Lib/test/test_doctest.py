@@ -25,6 +25,17 @@ class SampleClass:
     """
     >>> print 1
     1
+
+    >>> # comments get ignored.  so are empty PS1 and PS2 prompts:
+    >>>
+    ...
+
+    Multiline example:
+    >>> sc = SampleClass(3)
+    >>> for i in range(10):
+    ...     sc = sc.double()
+    ...     print sc.get(),
+    6 12 24 48 96 192 384 768 1536 3072
     """
     def __init__(self, val):
         """
@@ -411,7 +422,7 @@ methods, classmethods, staticmethods, properties, and nested classes.
     >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
-     1  SampleClass
+     3  SampleClass
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
@@ -443,7 +454,7 @@ functions, classes, and the `__test__` dictionary, if it exists:
     >>> m = new.module('some_module')
     >>> def triple(val):
     ...     '''
-    ...     >>> print tripple(11)
+    ...     >>> print triple(11)
     ...     33
     ...     '''
     ...     return val*3
@@ -468,7 +479,7 @@ functions, classes, and the `__test__` dictionary, if it exists:
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
      1  some_module
-     1  some_module.SampleClass
+     3  some_module.SampleClass
      3  some_module.SampleClass.NestedClass
      1  some_module.SampleClass.NestedClass.__init__
      1  some_module.SampleClass.__init__
@@ -513,7 +524,7 @@ deprecated isprivate gimmick.
     >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
-     1  SampleClass
+     3  SampleClass
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
@@ -530,7 +541,7 @@ displays.
     >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
-     1  SampleClass
+     3  SampleClass
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      0  SampleClass.NestedClass.get
@@ -548,7 +559,7 @@ contains will be added either:
     >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
-     1  SampleClass
+     3  SampleClass
      1  SampleClass.__init__
      2  SampleClass.a_classmethod
      1  SampleClass.a_property
@@ -574,7 +585,7 @@ using the `recurse` flag:
     >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
-     1  SampleClass
+     3  SampleClass
 
 Line numbers
 ~~~~~~~~~~~~
