@@ -1,11 +1,5 @@
-\section{\module{email.Errors} ---
-         email package exception classes}
-
-\declaremodule{standard}{email.Exceptions}
+\declaremodule{standard}{email.Errors}
 \modulesynopsis{The exception classes used by the email package.}
-\sectionauthor{Barry A. Warsaw}{barry@zope.com}
-
-\versionadded{2.2}
 
 The following exception classes are defined in the
 \module{email.Errors} module:
@@ -41,13 +35,14 @@ It can be raised from the \method{Parser.parse()} or
 \method{Parser.parsestr()} methods.
 
 Situations where it can be raised include not being able to find the
-starting or terminating boundary in a \code{multipart/*} message.
+starting or terminating boundary in a \mimetype{multipart/*} message.
 \end{excclassdesc}
 
 \begin{excclassdesc}{MultipartConversionError}{}
 Raised when a payload is added to a \class{Message} object using
 \method{add_payload()}, but the payload is already a scalar and the
-message's \code{Content-Type:} main type is not either \code{multipart}
-or missing.  \exception{MultipartConversionError} multiply inherits
-from \exception{MessageError} and the built-in \exception{TypeError}.
+message's \mailheader{Content-Type} main type is not either
+\mimetype{multipart} or missing.  \exception{MultipartConversionError}
+multiply inherits from \exception{MessageError} and the built-in
+\exception{TypeError}.
 \end{excclassdesc}
