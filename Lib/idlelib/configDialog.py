@@ -794,8 +794,7 @@ class ConfigDialog(Toplevel):
         if self.fgHilite.get(): plane='foreground'
         else: plane='background'
         sampleElement=self.themeElements[self.highlightTarget.get()][0]
-        apply(self.textHighlightSample.tag_config,
-                (sampleElement,),{plane:newColour})
+        self.textHighlightSample.tag_config(sampleElement, **{plane:newColour})
         theme=self.customTheme.get()
         themeElement=sampleElement+'-'+plane
         self.AddChangedItem('highlight',theme,themeElement,newColour)
@@ -890,7 +889,7 @@ class ConfigDialog(Toplevel):
                     colours['foreground']=themeDict[element+'-foreground']
                 if themeDict.has_key(element+'-background'):
                     colours['background']=themeDict[element+'-background']
-            apply(self.textHighlightSample.tag_config,(element,),colours)
+            self.textHighlightSample.tag_config(element, **colours)
         self.SetColourSample()
 
 ##     def OnCheckUserHelpBrowser(self):
