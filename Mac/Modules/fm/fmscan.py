@@ -59,5 +59,9 @@ class MyScanner(Scanner):
 			([('FMetricRecPtr', 'theMetrics', 'InMode')], [('FMetricRecPtr', 'theMetrics', 'OutMode')]),
 			]
 			
+	def writeinitialdefs(self):
+		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+		self.defsfile.write("kNilOptions = 0\n")
+
 if __name__ == "__main__":
 	main()
