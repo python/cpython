@@ -99,7 +99,7 @@ class AutoIndent:
     # tab setting causes it to use an entirely different tabbing algorithm,
     # treating tab stops as fixed distances from the left margin.
     # Nobody expects this, so for now tabwidth should never be changed.
-    usetabs = 0
+    usetabs = 1
     indentwidth = 4
     tabwidth = TK_TABWIDTH_DEFAULT
 
@@ -349,8 +349,7 @@ class AutoIndent:
         head, tail, chars, lines = self.get_region()
         for pos in range(len(lines)):
             line = lines[pos]
-            if line:
-                lines[pos] = '##' + line
+            lines[pos] = '##' + line
         self.set_region(head, tail, chars, lines)
 
     def uncomment_region_event(self, event):
