@@ -191,7 +191,12 @@ class ModifiedInterpreter(InteractiveInterpreter):
         warnings.filterwarnings(action="error", category=SyntaxWarning)
         if isinstance(source, types.UnicodeType):
             import IOBinding
-            source = source.encode(IOBinding.encoding)
+            try:
+                source = source.encode(IOBinding.encoding)
+            except UnicodeError:
+                self.tkconsole.resetoutput()
+                self.write("Unsupported characters in input")
+                return
         try:
             return InteractiveInterpreter.runsource(self, source, filename)
         finally:
