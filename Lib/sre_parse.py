@@ -103,6 +103,7 @@ class SubPattern:
         self.width = None
     def dump(self, level=0):
         nl = 1
+        seqtypes = type(()), type([])
         for op, av in self.data:
             print level*"  " + op,; nl = 0
             if op == "in":
@@ -118,7 +119,7 @@ class SubPattern:
                         print level*"  " + "or"
                     a.dump(level+1); nl = 1
                     i = i + 1
-            elif type(av) in (type(()), type([])):
+            elif type(av) in seqtypes:
                 for a in av:
                     if isinstance(a, SubPattern):
                         if not nl: print
@@ -149,6 +150,8 @@ class SubPattern:
         if self.width:
             return self.width
         lo = hi = 0L
+        UNITCODES = (ANY, RANGE, IN, LITERAL, NOT_LITERAL, CATEGORY)
+        REPEATCODES = (MIN_REPEAT, MAX_REPEAT)
         for op, av in self.data:
             if op is BRANCH:
                 i = sys.maxint
@@ -167,11 +170,11 @@ class SubPattern:
                 i, j = av[1].getwidth()
                 lo = lo + i
                 hi = hi + j
-            elif op in (MIN_REPEAT, MAX_REPEAT):
+            elif op in REPEATCODES:
                 i, j = av[2].getwidth()
                 lo = lo + long(i) * av[0]
                 hi = hi + long(j) * av[1]
-            elif op in (ANY, RANGE, IN, LITERAL, NOT_LITERAL, CATEGORY):
+            elif op in UNITCODES:
                 lo = lo + 1
                 hi = hi + 1
             elif op == SUCCESS:
@@ -313,13 +316,15 @@ def _parse_sub(source, state, nested=1):
     # parse an alternation: a|b|c
 
     items = []
+    itemsappend = items.append
+    sourcematch = source.match
     while 1:
-        items.append(_parse(source, state))
-        if source.match("|"):
+        itemsappend(_parse(source, state))
+        if sourcematch("|"):
             continue
         if not nested:
             break
-        if not source.next or source.match(")", 0):
+        if not source.next or sourcematch(")", 0):
             break
         else:
             raise error, "pattern not properly closed"
@@ -328,6 +333,7 @@ def _parse_sub(source, state, nested=1):
         return items[0]
 
     subpattern = SubPattern(state)
+    subpatternappend = subpattern.append
 
     # check if all items share a common prefix
     while 1:
@@ -344,7 +350,7 @@ def _parse_sub(source, state, nested=1):
             # move it out of the branch
             for item in items:
                 del item[0]
-            subpattern.append(prefix)
+            subpatternappend(prefix)
             continue # check next one
         break
 
@@ -356,9 +362,10 @@ def _parse_sub(source, state, nested=1):
         # we can store this as a character set instead of a
         # branch (the compiler may optimize this even more)
         set = []
+        setappend = set.append
         for item in items:
-            set.append(item[0])
-        subpattern.append((IN, set))
+            setappend(item[0])
+        subpatternappend((IN, set))
         return subpattern
 
     subpattern.append((BRANCH, (None, items)))
@@ -380,14 +387,23 @@ def _parse_sub_cond(source, state, condgroup):
 
 def _parse(source, state):
     # parse a simple pattern
-
     subpattern = SubPattern(state)
+
+    # precompute constants into local variables
+    subpatternappend = subpattern.append
+    sourceget = source.get
+    sourcematch = source.match
+    _len = len
+    PATTERNENDERS = ("|", ")")
+    ASSERTCHARS = ("=", "!", "<")
+    LOOKBEHINDASSERTCHARS = ("=", "!")
+    REPEATCODES = (MIN_REPEAT, MAX_REPEAT)
 
     while 1:
 
-        if source.next in ("|", ")"):
+        if source.next in PATTERNENDERS:
             break # end of subpattern
-        this = source.get()
+        this = sourceget()
         if this is None:
             break # end of pattern
 
@@ -397,25 +413,26 @@ def _parse(source, state):
                 continue
             if this == "#":
                 while 1:
-                    this = source.get()
+                    this = sourceget()
                     if this in (None, "\n"):
                         break
                 continue
 
         if this and this[0] not in SPECIAL_CHARS:
-            subpattern.append((LITERAL, ord(this)))
+            subpatternappend((LITERAL, ord(this)))
 
         elif this == "[":
             # character set
             set = []
-##          if source.match(":"):
+            setappend = set.append
+##          if sourcematch(":"):
 ##              pass # handle character classes
-            if source.match("^"):
-                set.append((NEGATE, None))
+            if sourcematch("^"):
+                setappend((NEGATE, None))
             # check remaining characters
             start = set[:]
             while 1:
-                this = source.get()
+                this = sourceget()
                 if this == "]" and set != start:
                     break
                 elif this and this[0] == "\\":
@@ -424,14 +441,14 @@ def _parse(source, state):
                     code1 = LITERAL, ord(this)
                 else:
                     raise error, "unexpected end of regular expression"
-                if source.match("-"):
+                if sourcematch("-"):
                     # potential range
-                    this = source.get()
+                    this = sourceget()
                     if this == "]":
                         if code1[0] is IN:
                             code1 = code1[1][0]
-                        set.append(code1)
-                        set.append((LITERAL, ord("-")))
+                        setappend(code1)
+                        setappend((LITERAL, ord("-")))
                         break
                     elif this:
                         if this[0] == "\\":
@@ -444,22 +461,22 @@ def _parse(source, state):
                         hi = code2[1]
                         if hi < lo:
                             raise error, "bad character range"
-                        set.append((RANGE, (lo, hi)))
+                        setappend((RANGE, (lo, hi)))
                     else:
                         raise error, "unexpected end of regular expression"
                 else:
                     if code1[0] is IN:
                         code1 = code1[1][0]
-                    set.append(code1)
+                    setappend(code1)
 
             # XXX: <fl> should move set optimization to compiler!
-            if len(set)==1 and set[0][0] is LITERAL:
-                subpattern.append(set[0]) # optimization
-            elif len(set)==2 and set[0][0] is NEGATE and set[1][0] is LITERAL:
-                subpattern.append((NOT_LITERAL, set[1][1])) # optimization
+            if _len(set)==1 and set[0][0] is LITERAL:
+                subpatternappend(set[0]) # optimization
+            elif _len(set)==2 and set[0][0] is NEGATE and set[1][0] is LITERAL:
+                subpatternappend((NOT_LITERAL, set[1][1])) # optimization
             else:
                 # XXX: <fl> should add charmap optimization here
-                subpattern.append((IN, set))
+                subpatternappend((IN, set))
 
         elif this and this[0] in REPEAT_CHARS:
             # repeat previous item
@@ -476,13 +493,13 @@ def _parse(source, state):
                 lo = hi = ""
                 while source.next in DIGITS:
                     lo = lo + source.get()
-                if source.match(","):
+                if sourcematch(","):
                     while source.next in DIGITS:
-                        hi = hi + source.get()
+                        hi = hi + sourceget()
                 else:
                     hi = lo
-                if not source.match("}"):
-                    subpattern.append((LITERAL, ord(this)))
+                if not sourcematch("}"):
+                    subpatternappend((LITERAL, ord(this)))
                     source.seek(here)
                     continue
                 if lo:
@@ -498,32 +515,32 @@ def _parse(source, state):
                 item = subpattern[-1:]
             else:
                 item = None
-            if not item or (len(item) == 1 and item[0][0] == AT):
+            if not item or (_len(item) == 1 and item[0][0] == AT):
                 raise error, "nothing to repeat"
-            if item[0][0] in (MIN_REPEAT, MAX_REPEAT):
+            if item[0][0] in REPEATCODES:
                 raise error, "multiple repeat"
-            if source.match("?"):
+            if sourcematch("?"):
                 subpattern[-1] = (MIN_REPEAT, (min, max, item))
             else:
                 subpattern[-1] = (MAX_REPEAT, (min, max, item))
 
         elif this == ".":
-            subpattern.append((ANY, None))
+            subpatternappend((ANY, None))
 
         elif this == "(":
             group = 1
             name = None
             condgroup = None
-            if source.match("?"):
+            if sourcematch("?"):
                 group = 0
                 # options
-                if source.match("P"):
+                if sourcematch("P"):
                     # python extensions
-                    if source.match("<"):
+                    if sourcematch("<"):
                         # named group: skip forward to end of name
                         name = ""
                         while 1:
-                            char = source.get()
+                            char = sourceget()
                             if char is None:
                                 raise error, "unterminated name"
                             if char == ">":
@@ -532,11 +549,11 @@ def _parse(source, state):
                         group = 1
                         if not isname(name):
                             raise error, "bad character in group name"
-                    elif source.match("="):
+                    elif sourcematch("="):
                         # named backreference
                         name = ""
                         while 1:
-                            char = source.get()
+                            char = sourceget()
                             if char is None:
                                 raise error, "unterminated name"
                             if char == ")":
@@ -547,47 +564,47 @@ def _parse(source, state):
                         gid = state.groupdict.get(name)
                         if gid is None:
                             raise error, "unknown group name"
-                        subpattern.append((GROUPREF, gid))
+                        subpatternappend((GROUPREF, gid))
                         continue
                     else:
-                        char = source.get()
+                        char = sourceget()
                         if char is None:
                             raise error, "unexpected end of pattern"
                         raise error, "unknown specifier: ?P%s" % char
-                elif source.match(":"):
+                elif sourcematch(":"):
                     # non-capturing group
                     group = 2
-                elif source.match("#"):
+                elif sourcematch("#"):
                     # comment
                     while 1:
                         if source.next is None or source.next == ")":
                             break
-                        source.get()
-                    if not source.match(")"):
+                        sourceget()
+                    if not sourcematch(")"):
                         raise error, "unbalanced parenthesis"
                     continue
-                elif source.next in ("=", "!", "<"):
+                elif source.next in ASSERTCHARS:
                     # lookahead assertions
-                    char = source.get()
+                    char = sourceget()
                     dir = 1
                     if char == "<":
-                        if source.next not in ("=", "!"):
+                        if source.next not in LOOKBEHINDASSERTCHARS:
                             raise error, "syntax error"
                         dir = -1 # lookbehind
-                        char = source.get()
+                        char = sourceget()
                     p = _parse_sub(source, state)
-                    if not source.match(")"):
+                    if not sourcematch(")"):
                         raise error, "unbalanced parenthesis"
                     if char == "=":
-                        subpattern.append((ASSERT, (dir, p)))
+                        subpatternappend((ASSERT, (dir, p)))
                     else:
-                        subpattern.append((ASSERT_NOT, (dir, p)))
+                        subpatternappend((ASSERT_NOT, (dir, p)))
                     continue
-                elif source.match("("):
+                elif sourcematch("("):
                     # conditional backreference group
                     condname = ""
                     while 1:
-                        char = source.get()
+                        char = sourceget()
                         if char is None:
                             raise error, "unterminated name"
                         if char == ")":
@@ -608,7 +625,7 @@ def _parse(source, state):
                     if not source.next in FLAGS:
                         raise error, "unexpected end of pattern"
                     while source.next in FLAGS:
-                        state.flags = state.flags | FLAGS[source.get()]
+                        state.flags = state.flags | FLAGS[sourceget()]
             if group:
                 # parse group contents
                 if group == 2:
@@ -620,14 +637,14 @@ def _parse(source, state):
                     p = _parse_sub_cond(source, state, condgroup)
                 else:
                     p = _parse_sub(source, state)
-                if not source.match(")"):
+                if not sourcematch(")"):
                     raise error, "unbalanced parenthesis"
                 if group is not None:
                     state.closegroup(group)
-                subpattern.append((SUBPATTERN, (group, p)))
+                subpatternappend((SUBPATTERN, (group, p)))
             else:
                 while 1:
-                    char = source.get()
+                    char = sourceget()
                     if char is None:
                         raise error, "unexpected end of pattern"
                     if char == ")":
@@ -635,14 +652,14 @@ def _parse(source, state):
                     raise error, "unknown extension"
 
         elif this == "^":
-            subpattern.append((AT, AT_BEGINNING))
+            subpatternappend((AT, AT_BEGINNING))
 
         elif this == "$":
             subpattern.append((AT, AT_END))
 
         elif this and this[0] == "\\":
             code = _escape(source, this, state)
-            subpattern.append(code)
+            subpatternappend(code)
 
         else:
             raise error, "parser error"
@@ -681,20 +698,21 @@ def parse_template(source, pattern):
     # parse 're' replacement string into list of literals and
     # group references
     s = Tokenizer(source)
+    sget = s.get
     p = []
     a = p.append
-    def literal(literal, p=p):
+    def literal(literal, p=p, pappend=a):
         if p and p[-1][0] is LITERAL:
             p[-1] = LITERAL, p[-1][1] + literal
         else:
-            p.append((LITERAL, literal))
+            pappend((LITERAL, literal))
     sep = source[:0]
     if type(sep) is type(""):
         makechar = chr
     else:
         makechar = unichr
     while 1:
-        this = s.get()
+        this = sget()
         if this is None:
             break # end of replacement string
         if this and this[0] == "\\":
@@ -703,7 +721,7 @@ def parse_template(source, pattern):
                 name = ""
                 if s.match("<"):
                     while 1:
-                        char = s.get()
+                        char = sget()
                         if char is None:
                             raise error, "unterminated group name"
                         if char == ">":
@@ -731,7 +749,7 @@ def parse_template(source, pattern):
                             code = MARK, group
                             break
                     elif s.next in OCTDIGITS:
-                        this = this + s.get()
+                        this = this + sget()
                     else:
                         break
                 if not code:
@@ -752,13 +770,14 @@ def parse_template(source, pattern):
     # convert template to groups and literals lists
     i = 0
     groups = []
-    literals = []
+    groupsappend = groups.append
+    literals = [None] * len(p)
     for c, s in p:
         if c is MARK:
-            groups.append((i, s))
-            literals.append(None)
+            groupsappend((i, s))
+            # literal[i] is already None
         else:
-            literals.append(s)
+            literals[i] = s
         i = i + 1
     return groups, literals
 
