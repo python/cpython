@@ -2507,6 +2507,10 @@ newSSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 	}
 	memset(self->server, '\0', sizeof(char) * 256);
 	memset(self->issuer, '\0', sizeof(char) * 256);
+	self->server_cert = NULL;
+	self->ssl = NULL;
+	self->ctx = NULL;
+	self->Socket = NULL;
 
 	self->ctx = SSL_CTX_new(SSLv23_method()); /* Set up context */
 	if (self->ctx == NULL) {
@@ -2618,8 +2622,10 @@ static void SSL_dealloc(SSLObject *self)
 {
 	if (self->server_cert)	/* Possible not to have one? */
 		X509_free (self->server_cert);
-	SSL_free(self->ssl);
-	SSL_CTX_free(self->ctx);
+	if (self->ssl)
+	    SSL_free(self->ssl);
+	if (self->ctx)
+	    SSL_CTX_free(self->ctx);
 	Py_XDECREF(self->Socket);
 	PyObject_Del(self);
 }
