@@ -2071,24 +2071,24 @@ def set_unittest_reportflags(flags):
     The old flag is returned so that a runner could restore the old
     value if it wished to:
 
-      >>> old = _unittest_reportflags
-      >>> set_unittest_reportflags(REPORT_NDIFF |
+      >>> import doctest
+      >>> old = doctest._unittest_reportflags
+      >>> doctest.set_unittest_reportflags(REPORT_NDIFF |
       ...                          REPORT_ONLY_FIRST_FAILURE) == old
       True
 
-      >>> import doctest
       >>> doctest._unittest_reportflags == (REPORT_NDIFF |
       ...                                   REPORT_ONLY_FIRST_FAILURE)
       True
 
     Only reporting flags can be set:
 
-      >>> set_unittest_reportflags(ELLIPSIS)
+      >>> doctest.set_unittest_reportflags(ELLIPSIS)
       Traceback (most recent call last):
       ...
       ValueError: ('Only reporting flags allowed', 8)
 
-      >>> set_unittest_reportflags(old) == (REPORT_NDIFF |
+      >>> doctest.set_unittest_reportflags(old) == (REPORT_NDIFF |
       ...                                   REPORT_ONLY_FIRST_FAILURE)
       True
     """
