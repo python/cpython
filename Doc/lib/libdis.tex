@@ -122,6 +122,10 @@ instructions.
 Indicates end-of-code to the compiler, not used by the interpreter.
 \end{opcodedesc}
 
+\begin{opcodedesc}{NOP}{}
+Do nothing code.  Used as a placeholder by the bytecode optimizer.
+\end{opcodedesc}
+
 \begin{opcodedesc}{POP_TOP}{}
 Removes the top-of-stack (TOS) item.
 \end{opcodedesc}
@@ -390,6 +394,10 @@ Terminates a loop due to a \keyword{break} statement.
 Continues a loop due to a \keyword{continue} statement.  \var{target}
 is the address to jump to (which should be a \code{FOR_ITER}
 instruction).
+\end{opcodedesc}
+
+\begin{opcodedesc}{LIST_APPEND}{}
+Calls \code{list.append(TOS1, TOS)}.  Used to implement list comprehensions.
 \end{opcodedesc}
 
 \begin{opcodedesc}{LOAD_LOCALS}{}
