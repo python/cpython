@@ -1118,14 +1118,7 @@ case_ok(char *buf, int len, int namelen, char *name)
 	return fss.name[0] >= namelen &&
 	       strncmp(name, (char *)fss.name+1, namelen) == 0;
 
-/* new-fangled macintosh (macosx)
- *
- * XXX This seems prone to obscure errors, like suppose someone does
- * XXX "import xyz", and in some directory there's both "XYZ.py" and
- * XXX "xyz.txt".  fopen("xyz.py") will open XYZ.py, but when marching thru
- * XXX the directory we'll eventually "succeed" on "xyz.txt" because the
- * XXX extension is never checked.
- */
+/* new-fangled macintosh (macosx) */
 #elif defined(__MACH__) && defined(__APPLE__) && defined(HAVE_DIRENT_H)
 	DIR *dirp;
 	struct dirent *dp;
@@ -1148,6 +1141,7 @@ case_ok(char *buf, int len, int namelen, char *name)
 	/* Open the directory and search the entries for an exact match. */
 	dirp = opendir(dirname);
 	if (dirp) {
+		char *nameWithExt = buf + len - namelen;
 		while ((dp = readdir(dirp)) != NULL) {
 			const int thislen =
 #ifdef _DIRENT_HAVE_D_NAMELEN
@@ -1156,7 +1150,7 @@ case_ok(char *buf, int len, int namelen, char *name)
 						strlen(dp->d_name);
 #endif
 			if (thislen >= namelen &&
-			    strncmp(dp->d_name, name, namelen) == 0) {
+			    strcmp(dp->d_name, nameWithExt) == 0) {
 				(void)closedir(dirp);
 				return 1; /* Found */
 			}
