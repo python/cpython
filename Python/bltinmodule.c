@@ -1890,6 +1890,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("NotImplemented",	Py_NotImplemented);
 	SETBUILTIN("False",		Py_False);
 	SETBUILTIN("True",		Py_True);
+	SETBUILTIN("basestring",	&PyBaseString_Type);
 	SETBUILTIN("bool",		&PyBool_Type);
 	SETBUILTIN("classmethod",	&PyClassMethod_Type);
 #ifndef WITHOUT_COMPLEX
@@ -1905,7 +1906,6 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("object",		&PyBaseObject_Type);
 	SETBUILTIN("staticmethod",	&PyStaticMethod_Type);
 	SETBUILTIN("str",		&PyString_Type);
-	SETBUILTIN("string",		&PyBaseString_Type);
 	SETBUILTIN("super",		&PySuper_Type);
 	SETBUILTIN("tuple",		&PyTuple_Type);
 	SETBUILTIN("type",		&PyType_Type);

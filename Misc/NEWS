@@ -12,10 +12,10 @@ Core and builtins
   deprecations, use -Walways::PendingDeprecationWarning::
   as a command line option or warnings.filterwarnings() in code.
 
-- A new type object, 'string', is added.  This is a common base type
+- A new type object, 'basestring', is added.  This is a common base type
   for 'str' and 'unicode', and can be used instead of
   types.StringTypes, e.g. to test whether something is "a string":
-  isinstance(x, string) is True for Unicode and 8-bit strings.  This
+  isinstance(x, basestring) is True for Unicode and 8-bit strings.  This
   is an abstract base class and cannot be instantiated directly.
 
 - Deprecated features of xrange objects have been removed as
