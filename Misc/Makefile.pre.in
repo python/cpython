@@ -136,6 +136,10 @@ prefix=		/usr/local
 # Install prefix for architecture-dependent files
 exec_prefix=	$(prefix)
 
+# Uncomment the following two lines for AIX
+#LINKCC= 	$(LIBPL)/makexp_aix $(LIBPL)/python.exp "" $(LIBRARY); $(PURIFY) $(CC)
+#LDSHARED=	$(LIBPL)/ld_so_aix $(CC) -bI:$(LIBPL)/python.exp
+
 # === Fixed definitions ===
 
 # Shell used by make (some versions default to the login shell, which is bad)
