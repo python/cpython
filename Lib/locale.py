@@ -159,18 +159,16 @@ def str(val):
     """Convert float to integer, taking the locale into account."""
     return format("%.12g",val)
 
-def atof(str,func=float):
+def atof(string,func=float):
     "Parses a string as a float according to the locale settings."
     #First, get rid of the grouping
     ts = localeconv()['thousands_sep']
     if ts:
-        s=str.split(ts)
-        str="".join(s)
+        str = str.replace(ts, '')
     #next, replace the decimal point with a dot
     dd = localeconv()['decimal_point']
     if dd:
-        s=str.split(dd)
-        str='.'.join(s)
+        str = str.replace(dd, '.')
     #finally, parse the string
     return func(str)
 

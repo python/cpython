@@ -169,9 +169,7 @@ class URLopener:
             proxy = None
         name = 'open_' + urltype
         self.type = urltype
-        if '-' in name:
-            # replace - with _
-            name = '_'.join(name.split('-'))
+        name = name.replace('-', '_')
         if not hasattr(self, name):
             if proxy:
                 return self.open_unknown_proxy(proxy, fullurl, data)
@@ -1045,9 +1043,7 @@ def unquote(s):
 
 def unquote_plus(s):
     """unquote('%7e/abc+def') -> '~/abc def'"""
-    if '+' in s:
-        # replace '+' with ' '
-        s = ' '.join(s.split('+'))
+    s = s.replace('+', ' ')
     return unquote(s)
 
 always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
