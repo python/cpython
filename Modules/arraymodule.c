@@ -1543,7 +1543,7 @@ statichere PyTypeObject Arraytype = {
 	0,					/* tp_getattro */
 	0,					/* tp_setattro */
 	&array_as_buffer,			/* tp_as _buffer*/
-	0,					/* tp_flags */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
 	arraytype_doc,				/* tp_doc */
  	0,					/* tp_traverse */
 	0,					/* tp_clear */
