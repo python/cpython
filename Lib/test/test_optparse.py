@@ -612,6 +612,22 @@ class TestVersion(BaseTest):
         self.assertStdoutEquals(["--version"], "bar 0.1\n")
         sys.argv[0] = oldargv
 
+    def test_version_with_prog_keyword(self):
+        oldargv = sys.argv[0]
+        sys.argv[0] = "./foo/bar"
+        self.parser = OptionParser(usage=SUPPRESS_USAGE, version="%prog 0.1",
+                                   prog="splat")
+        self.assertStdoutEquals(["--version"], "splat 0.1\n")
+        sys.argv[0] = oldargv
+
+    def test_version_with_prog_attribute(self):
+        oldargv = sys.argv[0]
+        sys.argv[0] = "./foo/bar"
+        self.parser = OptionParser(usage=SUPPRESS_USAGE, version="%prog 0.1")
+        self.parser.prog = "splat"
+        self.assertStdoutEquals(["--version"], "splat 0.1\n")
+        sys.argv[0] = oldargv
+
     def test_no_version(self):
         self.parser = OptionParser(usage=SUPPRESS_USAGE)
         self.assertParseFail(["--version"],
