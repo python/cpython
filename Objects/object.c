@@ -353,6 +353,46 @@ PyObject_Unicode(PyObject *v)
 #endif
 
 
+/* Helper to warn about deprecated tp_compare return values.  Return:
+   -2 for an exception;
+   -1 if v <  w;
+    0 if v == w;
+    1 if v  > w.
+   (This function cannot return 2.)
+*/
+static int
+adjust_tp_compare(int c)
+{
+	if (PyErr_Occurred()) {
+		if (c != -1 && c != -2) {
+			PyObject *t, *v, *tb;
+			PyErr_Fetch(&t, &v, &tb);
+			if (PyErr_Warn(PyExc_RuntimeWarning,
+				       "tp_compare didn't return -1 or -2 "
+				       "for exception") < 0) {
+				Py_XDECREF(t);
+				Py_XDECREF(v);
+				Py_XDECREF(tb);
+			}
+			else
+				PyErr_Restore(t, v, tb);
+		}
+		return -2;
+	}
+	else if (c < -1 || c > 1) {
+		if (PyErr_Warn(PyExc_RuntimeWarning,
+			       "tp_compare didn't return -1, 0 or 1") < 0)
+			return -2;
+		else
+			return c < -1 ? -1 : 1;
+	}
+	else {
+		assert(c >= -1 && c <= 1);
+		return c;
+	}
+}
+
+
 /* Macro to get the tp_richcompare field of a type if defined */
 #define RICHCOMPARE(t) (PyType_HasFeature((t), Py_TPFLAGS_HAVE_RICHCOMPARE) \
                          ? (t)->tp_richcompare : NULL)
@@ -480,9 +520,7 @@ try_3way_compare(PyObject *v, PyObject *w)
 	/* If both have the same (non-NULL) tp_compare, use it. */
 	if (f != NULL && f == w->ob_type->tp_compare) {
 		c = (*f)(v, w);
-		if (c < 0 && PyErr_Occurred())
-			return -1;
-		return c < 0 ? -1 : c > 0 ? 1 : 0;
+		return adjust_tp_compare(c);
 	}
 
 	/* If either tp_compare is _PyObject_SlotCompare, that's safe. */
@@ -502,9 +540,7 @@ try_3way_compare(PyObject *v, PyObject *w)
 		c = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
-		if (c < 0 && PyErr_Occurred())
-			return -2;
-		return c < 0 ? -1 : c > 0 ? 1 : 0;
+		return adjust_tp_compare(c);
 	}
 
 	/* Try w's comparison, if defined */
@@ -512,9 +548,11 @@ try_3way_compare(PyObject *v, PyObject *w)
 		c = (*f)(w, v); /* swapped! */
 		Py_DECREF(v);
 		Py_DECREF(w);
-		if (c < 0 && PyErr_Occurred())
-			return -2;
-		return c < 0 ? 1 : c > 0 ? -1 : 0; /* negated! */
+		c = adjust_tp_compare(c);
+		if (c >= -1)
+			return -c; /* Swapped! */
+		else
+			return c;
 	}
 
 	/* No comparison defined */
@@ -591,11 +629,11 @@ default_3way_compare(PyObject *v, PyObject *w)
 #define CHECK_TYPES(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_CHECKTYPES)
 
 /* Do a 3-way comparison, by hook or by crook.  Return:
-   -2 for an exception;
+   -2 for an exception (but see below);
    -1 if v <  w;
     0 if v == w;
     1 if v >  w;
-   If the object implements a tp_compare function, it returns
+   BUT: if the object implements a tp_compare function, it returns
    whatever this function returns (whether with an exception or not).
 */
 static int
@@ -607,9 +645,22 @@ do_cmp(PyObject *v, PyObject *w)
 	if (v->ob_type == w->ob_type
 	    && (f = v->ob_type->tp_compare) != NULL) {
 		c = (*f)(v, w);
-		if (c != 2 || !PyInstance_Check(v))
-			return c;
+		if (PyInstance_Check(v)) {
+			/* Instance tp_compare has a different signature.
+			   But if it returns undefined we fall through. */
+			if (c != 2)
+				return c;
+			/* Else fall throug to try_rich_to_3way_compare() */
+		}
+		else
+			return adjust_tp_compare(c);
 	}
+	/* We only get here if one of the following is true:
+	   a) v and w have different types
+	   b) v and w have the same type, which doesn't have tp_compare
+	   c) v and w are instances, and either __cmp__ is not defined or
+	      __cmp__ returns NotImplemented
+	*/
 	c = try_rich_to_3way_compare(v, w);
 	if (c < 2)
 		return c;
@@ -902,7 +953,8 @@ PyObject_RichCompare(PyObject *v, PyObject *w, int op)
 		fcmp = v->ob_type->tp_compare;
 		if (fcmp != NULL) {
 			int c = (*fcmp)(v, w);
-			if (c < 0 && PyErr_Occurred()) {
+			c = adjust_tp_compare(c);
+			if (c == -2) {
 				res = NULL;
 				goto Done;
 			}
