@@ -3,15 +3,17 @@ framegrabber board on loan from SGI.
 
 	--Guido and Jack
 
+
 cam.py		network real-time tv broadcast; see tv.py
 		usage: cam [packfactor [host]]
 		specifying 'all' for host broadcasts
 
 camcorder.py	record video movies or make snapshots (in movie format)
-		usage: camcorder [-c] [-a audiohost [-s]] [moviefile]
-		-c		color (default b/w, packfactor = 2)
+		usage: camcorder [-c] [-a audiohost [-s]] [-p pf] [moviefile]
+		-c		color (equivalent to -p 0)
 		-a audiohost	syncaudio is running on audiohost
 		-s		start syncaudio (on audiohost)
+		-p packfactor	packfactor (default 2; 0 records color)
 		moviefile	(default film.video)
 		keyboard commands:
 		s	stop grabbing (single step if already stopped)
@@ -24,16 +26,22 @@ statit.py	various statistics operations on movie files
 
 syncaudio.py	record audio synchronized with camcorder -a
 		usage: syncaudio videohost soundfile
-		soundfile format: 16 bits, 16khz, mono
+		soundfile format: 16 bits/sample, 16000 samples/sec, 1 channel
+		(actually, you'd better set the sampling rate to 16000
+		with the audio panel)
 
 tv.py		receiver for transmissions from cam.py
 
 video.py	player for movies recorded by camcorder.py
-		usage: video [moviefile [soundfile]]
-		default moviefile is film.video
-		default sound is no sound
+		usage: video [moviefile [soundfile [skipbytes]]]
+		- default moviefile is film.video
+		- default soundfile is none (no sound)
+		- if skipbytes is given, that many bytes are skipped from
+		  soundfile before playing
 
 vinfo.py	print a summary of a movie file
+
+vpregs.py	definition of VP registers
 
 vtime.py	virtual time module imported by syncaudio.py and camcorder.py
 
