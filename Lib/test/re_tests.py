@@ -615,10 +615,13 @@ xyzabc
     # bug 112468: various expected syntax errors
     ('(', '', SYNTAX_ERROR),
     ('[\\41]', '!', SUCCEED, 'found', '!'),
+    # bug 114033: nothing to repeat
+    (r'(x?)?', 'x', SUCCEED, 'found', 'x'),
     # bug 115040: rescan if flags are modified inside pattern
     (r' (?x)foo ', 'foo', SUCCEED, 'found', 'foo'),
     # bug 115618: negative lookahead
     (r'(?<!abc)(d.f)', 'abcdefdof', SUCCEED, 'found', 'dof'),
     # bug 116251: character class bug
     (r'[\w-]+', 'laser_beam', SUCCEED, 'found', 'laser_beam'),
+
 ]
