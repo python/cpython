@@ -247,6 +247,17 @@ class GeneralModuleTests(unittest.TestCase):
         except socket.error:
             pass
 
+    def testNtoH(self):
+        def twice(f):
+            def g(x):
+                return f(f(x))
+            return g
+        for i in (0, 1, 0xffff0000, 2L, (2**32L) - 1):
+            self.assertEqual(i, twice(socket.htonl)(i))
+            self.assertEqual(i, twice(socket.ntohl)(i))
+        self.assertRaises(OverflowError, socket.htonl, 2L**34)
+        self.assertRaises(OverflowError, socket.ntohl, 2L**34)
+
     def testGetServByName(self):
         """Testing getservbyname()."""
         if hasattr(socket, 'getservbyname'):
