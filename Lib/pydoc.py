@@ -348,8 +348,8 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         return '''
 <table width="100%%" cellspacing=0 cellpadding=2 border=0>
 <tr bgcolor="%s">
-<td valign=bottom><small>&nbsp;<br></small
-><font color="%s" face="helvetica, arial">&nbsp;<br>%s</font></td
+<td valign=bottom>&nbsp;<br>
+<font color="%s" face="helvetica, arial">&nbsp;<br>%s</font></td
 ><td align=right valign=bottom
 ><font color="%s" face="helvetica, arial">%s</font></td></tr></table>
     ''' % (bgcol, fgcol, title, fgcol, extras or '&nbsp;')
@@ -362,8 +362,8 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         result = '''
 <p><table width="100%%" cellspacing=0 cellpadding=2 border=0>
 <tr bgcolor="%s">
-<td colspan=3 valign=bottom><small><small>&nbsp;<br></small></small
-><font color="%s" face="helvetica, arial">%s</font></td></tr>
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="%s" face="helvetica, arial">%s</font></td></tr>
     ''' % (bgcol, fgcol, title)
         if prelude:
             result = result + '''
@@ -399,7 +399,6 @@ TT { font-family: lucidatypewriter, lucida console, courier }
             result = result + '</td>'
         return '<table width="100%%"><tr>%s</tr></table>' % result
 
-    def small(self, text): return '<small>%s</small>' % text
     def grey(self, text): return '<font color="#909090">%s</font>' % text
 
     def namelink(self, name, *dicts):
@@ -478,14 +477,14 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         for entry in tree:
             if type(entry) is type(()):
                 c, bases = entry
-                result = result + '<dt><font face="helvetica, arial"><small>'
+                result = result + '<dt><font face="helvetica, arial">'
                 result = result + self.classlink(c, modname)
                 if bases and bases != (parent,):
                     parents = []
                     for base in bases:
                         parents.append(self.classlink(base, modname))
                     result = result + '(' + join(parents, ', ') + ')'
-                result = result + '\n</small></font></dt>'
+                result = result + '\n</font></dt>'
             elif type(entry) is type([]):
                 result = result + '<dd>\n%s</dd>\n' % self.formattree(
                     entry, modname, c)
@@ -552,7 +551,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
 
         doc = self.markup(getdoc(object), self.preformat, fdict, cdict)
         doc = doc and '<tt>%s</tt>' % doc
-        result = result + '<p>%s</p>\n' % self.small(doc)
+        result = result + '<p>%s</p>\n' % doc
 
         if hasattr(object, '__path__'):
             modpkgs = []
@@ -646,7 +645,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                     if value.__doc__ is not None:
                         doc = self.markup(value.__doc__, self.preformat,
                                           funcs, classes, mdict)
-                        push('<dd><small><tt>%s</tt></small></dd>\n' % doc)
+                        push('<dd><tt>%s</tt></dd>\n' % doc)
                     for attr, tag in [("fset", " setter"),
                                       ("fget", " getter"),
                                       ("fdel", " deleter")]:
@@ -671,7 +670,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                     else:
                         doc = self.markup(getdoc(value), self.preformat,
                                           funcs, classes, mdict)
-                        doc = '<dd>' + self.small('<tt>%s</tt>' % doc)
+                        doc = '<dd><tt>%s</tt>' % doc
                         push('<dl><dt>%s%s</dl>\n' % (base, doc))
                     push('\n')
             return attrs
@@ -737,15 +736,13 @@ TT { font-family: lucidatypewriter, lucida console, courier }
             for base in bases:
                 parents.append(self.classlink(base, object.__module__))
             title = title + '(%s)' % join(parents, ', ')
-        doc = self.markup(
-            getdoc(object), self.preformat, funcs, classes, mdict)
-        doc = self.small(doc and '<tt>%s<br>&nbsp;</tt>' % doc or
-                                 self.small('&nbsp;'))
+        doc = self.markup(getdoc(object), self.preformat, funcs, classes, mdict)
+        doc = doc and '<tt>%s<br>&nbsp;</tt>' % doc or '&nbsp;'
         return self.section(title, '#000000', '#ffc8d8', contents, 5, doc)
 
     def formatvalue(self, object):
         """Format an argument default value as text."""
-        return self.small(self.grey('=' + self.repr(object)))
+        return self.grey('=' + self.repr(object))
 
     def docroutine(self, object, name=None, mod=None,
                    funcs={}, classes={}, methods={}, cl=None):
@@ -791,16 +788,16 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         else:
             argspec = '(...)'
 
-        decl = title + argspec + (note and self.small(self.grey(
-            '<font face="helvetica, arial">%s</font>' % note)))
+        decl = title + argspec + (note and self.grey(
+               '<font face="helvetica, arial">%s</font>' % note))
 
         if skipdocs:
-            return '<dl><dt>%s</dl>\n' % decl
+            return '<dl><dt>%s</dt></dl>\n' % decl
         else:
             doc = self.markup(
                 getdoc(object), self.preformat, funcs, classes, methods)
-            doc = doc and '<dd>' + self.small('<tt>%s</tt>' % doc)
-            return '<dl><dt>%s%s</dl>\n' % (decl, doc)
+            doc = doc and '<dd><tt>%s</tt></dd>' % doc
+            return '<dl><dt>%s</dt>%s</dl>\n' % (decl, doc)
 
     def docother(self, object, name=None, mod=None):
         """Produce HTML documentation for a data object."""
@@ -1801,8 +1798,8 @@ def serve(port, callback=None, completer=None):
                 for dir in pathdirs():
                     indices.append(html.index(dir, seen))
                 contents = heading + join(indices) + '''<p align=right>
-<small><small><font color="#909090" face="helvetica, arial"><strong>
-pydoc</strong> by Ka-Ping Yee &lt;ping@lfw.org&gt;</font></small></small>'''
+<font color="#909090" face="helvetica, arial"><strong>
+pydoc</strong> by Ka-Ping Yee &lt;ping@lfw.org&gt;</font>'''
                 self.send_document('Index of Modules', contents)
 
         def log_message(self, *args): pass
