@@ -177,7 +177,7 @@ class BaseSet(object):
             little, big = self, other
         else:
             little, big = other, self
-        common = filter(big._data.has_key, little._data.iterkeys())
+        common = filter(big._data.has_key, little._data)
         return self.__class__(common)
 
     def intersection(self, other):
