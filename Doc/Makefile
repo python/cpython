@@ -48,6 +48,9 @@
 # the html/ directory.  If you want to fix the GNU info process, look
 # in the info/ directory; please send patches to python-docs@python.org.
 
+# This Makefile only includes information on how to perform builds; for
+# dependency information, see Makefile.deps.
+
 # Customizations -- you *may* have to edit these
 
 # you could set this to a4
