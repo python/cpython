@@ -368,6 +368,50 @@ strop_upper(self, args)
 
 
 static object *
+strop_capitalize(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	char *s, *s_new;
+	int i, n;
+	object *new;
+	int changed;
+
+	if (!getargs(args, "s#", &s, &n))
+		return NULL;
+	new = newsizedstringobject(NULL, n);
+	if (new == NULL)
+		return NULL;
+	s_new = getstringvalue(new);
+	changed = 0;
+	{
+		int c = Py_CHARMASK(*s++);
+		if (islower(c)) {
+			changed = 1;
+			*s_new = toupper(c);
+		} else
+			*s_new = c;
+		s_new++;
+	}
+	for (i = 1; i < n; i++) {
+		int c = Py_CHARMASK(*s++);
+		if (isupper(c)) {
+			changed = 1;
+			*s_new = tolower(c);
+		} else
+			*s_new = c;
+		s_new++;
+	}
+	if (!changed) {
+		DECREF(new);
+		INCREF(args);
+		return args;
+	}
+	return new;
+}
+
+
+static object *
 strop_swapcase(self, args)
 	object *self; /* Not used */
 	object *args;
@@ -538,6 +582,7 @@ static struct methodlist strop_methods[] = {
 	{"atof",	strop_atof},
 	{"atoi",	strop_atoi},
 	{"atol",	strop_atol},
+	{"capitalize",	strop_capitalize},
 	{"find",	strop_find},
 	{"join",	strop_joinfields, 1},
 	{"joinfields",	strop_joinfields, 1},
