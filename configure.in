@@ -790,7 +790,7 @@ LIBS="$LIBS -ldl -ldld"], AC_MSG_RESULT(no))
 
 # the dlopen() function means we might want to use dynload_shlib.o. some
 # platforms, such as AIX, have dlopen(), but don't want to use it.
-AC_CHECK_FUNC(dlopen)
+AC_CHECK_FUNCS(dlopen)
 
 # DYNLOADFILE specifies which dynload_*.o file we will use for dynamic
 # loading of modules.
@@ -820,14 +820,14 @@ then
 fi
 
 # checks for library functions
-AC_CHECK_FUNCS(alarm chown clock confstr ctermid ctermid_r dlopen execv \
+AC_CHECK_FUNCS(alarm chown clock confstr ctermid ctermid_r execv \
  flock fork fsync fdatasync fpathconf ftime ftruncate \
- getgroups getlogin getpeername getpgrp getpid getpwent gettimeofday getwd \
+ getgroups getlogin getpeername getpid getpwent getwd \
  kill link lstat mkfifo mktime mremap \
  nice pathconf pause plock pthread_init \
  putenv readlink \
  select setegid seteuid setgid \
- setlocale setregid setreuid setsid setpgid setpgrp setuid setvbuf \
+ setlocale setregid setreuid setsid setpgid setuid setvbuf \
  sigaction siginterrupt sigrelse strftime strptime symlink sysconf \
  tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname waitpid _getpty)
@@ -841,9 +841,9 @@ AC_CHECK_FUNCS(forkpty,, AC_CHECK_LIB(util,forkpty, [AC_DEFINE(HAVE_FORKPTY)] [L
 AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)
 
 AC_REPLACE_FUNCS(dup2 getcwd strdup strerror memmove)
-AC_CHECK_FUNC(getpgrp, AC_TRY_COMPILE([#include <unistd.h>], [getpgrp(0);], AC_DEFINE(GETPGRP_HAVE_ARG)))
-AC_CHECK_FUNC(setpgrp, AC_TRY_COMPILE([#include <unistd.h>], [setpgrp(0,0);], AC_DEFINE(SETPGRP_HAVE_ARG)))
-AC_CHECK_FUNC(gettimeofday, AC_TRY_COMPILE([#include <sys/time.h>], [gettimeofday((struct timeval*)0,(struct timezone*)0);], ,AC_DEFINE(GETTIMEOFDAY_NO_TZ)))
+AC_CHECK_FUNCS(getpgrp, AC_TRY_COMPILE([#include <unistd.h>], [getpgrp(0);], AC_DEFINE(GETPGRP_HAVE_ARG)))
+AC_CHECK_FUNCS(setpgrp, AC_TRY_COMPILE([#include <unistd.h>], [setpgrp(0,0);], AC_DEFINE(SETPGRP_HAVE_ARG)))
+AC_CHECK_FUNCS(gettimeofday, AC_TRY_COMPILE([#include <sys/time.h>], [gettimeofday((struct timeval*)0,(struct timezone*)0);], ,AC_DEFINE(GETTIMEOFDAY_NO_TZ)))
 
 # checks for structures
 AC_HEADER_TIME
@@ -1003,7 +1003,7 @@ AC_CHECK_FUNC(gethostbyname_r, [
   ])
   CFLAGS=$OLD_CFLAGS
 ], [
-  AC_CHECK_FUNC(gethostbyname, AC_DEFINE(HAVE_GETHOSTBYNAME))
+  AC_CHECK_FUNCS(gethostbyname)
 ])
 AC_SUBST(HAVE_GETHOSTBYNAME_R_6_ARG)
 AC_SUBST(HAVE_GETHOSTBYNAME_R_5_ARG)
@@ -1066,7 +1066,6 @@ fi],
 # check for hypot() in math library
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
-AC_CHECK_FUNCS(hypot)
 AC_REPLACE_FUNCS(hypot)
 LIBS=$LIBS_SAVE
 
