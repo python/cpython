@@ -127,7 +127,7 @@ LIBFILES = lib.tex \
     libmacfs.tex libmacos.tex libmacostools.tex libmactcp.tex \
     libmacspeech.tex libmacui.tex libstdwin.tex libsgi.tex libal.tex \
     libcd.tex libfl.tex libfm.tex libgl.tex libimgfile.tex libsun.tex \
-    libxdrlib.tex libimghdr.tex
+    libxdrlib.tex libimghdr.tex librexec.tex libbastion.tex
 
 # Library document
 lib.dvi: $(LIBFILES)
