@@ -4,6 +4,8 @@
 #
 # Copyright (c) 2003-2004 by Peter Astrand <astrand@lysator.liu.se>
 #
+# Licensed to PSF under a Contributor Agreement.
+#
 # By obtaining, using, and/or copying this software and/or its
 # associated documentation, you agree that you have read, understood,
 # and will comply with the following terms and conditions:
