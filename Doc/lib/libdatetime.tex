@@ -603,8 +603,8 @@ Instance methods:
 
   - astimezone(tz)
     Return a \class{datetimetz} with the same date and time fields, and
-    with \member{tzinfo} member \var{tz}.  \var{tz} must be an instance
-    of a \class{tzinfo} subclass.
+    with \member{tzinfo} member \var{tz}.  \var{tz} must be \code{None},
+    or an instance of a \class{tzinfo} subclass.
 
   - timetuple()
     Return a 9-element tuple of the form returned by
@@ -1096,8 +1096,9 @@ Instance methods:
 
   - astimezone(tz)
     Return a \class{datetimetz} with new tzinfo member \var{tz}.  \var{tz}
-    must be an instance of a \class{tzinfo} subclass.  If self is naive, or
-    if \code(tz.utcoffset(self)} returns \code{None},
+    must be \code{None}, or an instance of a \class{tzinfo} subclass.  If
+    \var{tz} is \code{None}, self is naive, or
+    \code(tz.utcoffset(self)} returns \code{None},
     \code{self.astimezone(tz)} is equivalent to
     \code{self.replace(tzinfo=tz)}:  a new timezone object is attached
     without any conversion of date or time fields.  If self is aware and
