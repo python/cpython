@@ -373,7 +373,7 @@ goaway(sts)
 	   cleanup actions usually done (these are mostly for
 	   debugging anyway). */
 	
-	(void *) save_thread();
+	(void) save_thread();
 	donecalls();
 	exit_prog(sts);
 	
