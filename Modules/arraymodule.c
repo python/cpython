@@ -31,8 +31,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 #include "ceval.h"
 
-#ifdef sun
+#ifdef i860
+/* Cray APP doesn't have memmove */
 #define NEED_MEMMOVE
+extern char *memcpy();
+#endif
+
+#ifdef sun
+/* SunOS doesn't have memmove */
+#define NEED_MEMMOVE
+extern char *memcpy();
 #endif
 
 #ifdef NEED_MEMMOVE

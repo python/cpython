@@ -38,6 +38,11 @@ extern int errno;
 #include <ctype.h>
 #include <math.h>
 
+#ifdef i860
+/* Cray APP has bogus definition of HUGE_VAL in <math.h> */
+#undef HUGE_VAL
+#endif
+
 #ifdef HUGE_VAL
 #define CHECK(x) if (errno != 0) ; \
 	else if (-HUGE_VAL <= (x) && (x) <= HUGE_VAL) ; \
@@ -170,6 +175,7 @@ float_hash(v)
 	}
 	else {
 		fractpart = frexp(fractpart, &expo);
+		fractpart = fractpart*4294967296.0; /* 2**32 */
 		x = (long) (intpart + fractpart) ^ expo; /* Rather arbitrary */
 	}
 	if (x == -1)

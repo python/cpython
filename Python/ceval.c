@@ -125,9 +125,8 @@ save_thread()
 		release_lock(interpreter_lock);
 		return res;
 	}
-	else
-		return NULL;
 #endif
+	return NULL;
 }
 
 void

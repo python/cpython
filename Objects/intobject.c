@@ -426,7 +426,7 @@ int_int(v)
 	intobject *v;
 {
 	INCREF(v);
-	return v;
+	return (object *)v;
 }
 
 static object *
@@ -512,5 +512,5 @@ typeobject Inttype = {
 	&int_as_number,	/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
-	&int_hash,	/*tp_hash*/
+	int_hash,	/*tp_hash*/
 };

@@ -35,6 +35,11 @@ extern int errno;
 
 #include <math.h>
 
+#ifdef i860
+/* Cray APP has bogus definition of HUGE_VAL in <math.h> */
+#undef HUGE_VAL
+#endif
+
 #ifndef __STDC__
 extern double fmod PROTO((double, double));
 #endif
