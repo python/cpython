@@ -54,7 +54,7 @@ class Metrowerks_Shell_Suite:
 		'Saving' : 'savo',
 	}
 
-	def Close_Window(self, object, *arguments):
+	def Close_Window(self, _object, _attributes={}, **_arguments):
 		"""Close Window: Close the windows showing the specified files
 		Required argument: The files to close
 		Keyword argument Saving: Whether to save changes to each file before closing its window
@@ -63,38 +63,24 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'ClsW'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_Close_Window)
+		aetools.enumsubst(_arguments, 'savo', _Enum_savo)
 
-		aetools.keysubst(arguments, self._argmap_Close_Window)
-		aetools.enumsubst(arguments, 'savo', _Enum_savo)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_Add_Files = {
 		'To_Segment' : 'Segm',
 	}
 
-	def Add_Files(self, object, *arguments):
+	def Add_Files(self, _object, _attributes={}, **_arguments):
 		"""Add Files: Add the specified file(s) to the current project
 		Required argument: List of files to add
 		Keyword argument To_Segment: Segment number into which to add the file(s)
@@ -104,33 +90,19 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'AddF'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_Add_Files)
 
-		aetools.keysubst(arguments, self._argmap_Add_Files)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def Remove_Files(self, object, *arguments):
+	def Remove_Files(self, _object, _attributes={}, **_arguments):
 		"""Remove Files: Remove the specified file(s) from the current project
 		Required argument: List of files to remove
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -139,32 +111,19 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'RemF'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def Touch(self, object, *arguments):
+	def Touch(self, _object, _attributes={}, **_arguments):
 		"""Touch: Touch the modification date of the specified file(s)
 		Required argument: List of files to compile
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -173,36 +132,23 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'Toch'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_Check_Syntax = {
 		'ExternalEditor' : 'Errs',
 	}
 
-	def Check_Syntax(self, object, *arguments):
+	def Check_Syntax(self, _object, _attributes={}, **_arguments):
 		"""Check Syntax: Check the syntax of the specified file(s)
 		Required argument: List of files to check the syntax of
 		Keyword argument ExternalEditor: Should the contents of the message window be returned to the caller?
@@ -212,37 +158,23 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'Chek'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_Check_Syntax)
 
-		aetools.keysubst(arguments, self._argmap_Check_Syntax)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_Compile = {
 		'ExternalEditor' : 'Errs',
 	}
 
-	def Compile(self, object, *arguments):
+	def Compile(self, _object, _attributes={}, **_arguments):
 		"""Compile: Compile the specified file(s)
 		Required argument: List of files to compile
 		Keyword argument ExternalEditor: Should the contents of the message window be returned to the caller?
@@ -252,38 +184,24 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'Comp'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_Compile)
 
-		aetools.keysubst(arguments, self._argmap_Compile)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_Precompile = {
 		'Saving_As' : 'Targ',
 		'ExternalEditor' : 'Errs',
 	}
 
-	def Precompile(self, object, *arguments):
+	def Precompile(self, _object, _attributes={}, **_arguments):
 		"""Precompile: Precompile the specified file to the specified destination file
 		Required argument: File to precompile
 		Keyword argument Saving_As: Destination file for precompiled header
@@ -294,37 +212,23 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'PreC'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_Precompile)
 
-		aetools.keysubst(arguments, self._argmap_Precompile)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_Create_Project = {
 		'from_stationery' : 'Tmpl',
 	}
 
-	def Create_Project(self, object, *arguments):
+	def Create_Project(self, _object, _attributes={}, **_arguments):
 		"""Create Project: Create a new project file
 		Required argument: New project file specifier
 		Keyword argument from_stationery: undocumented, typecode 'alis'
@@ -333,99 +237,61 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'NewP'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_Create_Project)
 
-		aetools.keysubst(arguments, self._argmap_Create_Project)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def Close_Project(self, *arguments):
+	def Close_Project(self, _no_object=None, _attributes={}, **_arguments):
 		"""Close Project: Close the current project
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'MMPR'
 		_subcode = 'ClsP'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def Remove_Binaries(self, *arguments):
+	def Remove_Binaries(self, _no_object=None, _attributes={}, **_arguments):
 		"""Remove Binaries: Remove the binary object code from the current project
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'MMPR'
 		_subcode = 'RemB'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_Update_Project = {
 		'ExternalEditor' : 'Errs',
 	}
 
-	def Update_Project(self, *arguments):
+	def Update_Project(self, _no_object=None, _attributes={}, **_arguments):
 		"""Update Project: Update the current project
 		Keyword argument ExternalEditor: Should the contents of the message window be returned to the caller?
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -434,36 +300,23 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'UpdP'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_Update_Project)
 
-		aetools.keysubst(arguments, self._argmap_Update_Project)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_Make_Project = {
 		'ExternalEditor' : 'Errs',
 	}
 
-	def Make_Project(self, *arguments):
+	def Make_Project(self, _no_object=None, _attributes={}, **_arguments):
 		"""Make Project: Make the current project
 		Keyword argument ExternalEditor: Should the contents of the message window be returned to the caller?
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -472,37 +325,24 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'Make'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_Make_Project)
 
-		aetools.keysubst(arguments, self._argmap_Make_Project)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_Run_Project = {
 		'ExternalEditor' : 'Errs',
 		'SourceDebugger' : 'DeBg',
 	}
 
-	def Run_Project(self, *arguments):
+	def Run_Project(self, _no_object=None, _attributes={}, **_arguments):
 		"""Run Project: Run the current project
 		Keyword argument ExternalEditor: Should the contents of the message window be returned to the caller?
 		Keyword argument SourceDebugger: Run the application under the control of the source-level debugger
@@ -512,36 +352,23 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'RunP'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_Run_Project)
 
-		aetools.keysubst(arguments, self._argmap_Run_Project)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_Set_Preferences = {
 		'To' : 'PRec',
 	}
 
-	def Set_Preferences(self, *arguments):
+	def Set_Preferences(self, _no_object=None, _attributes={}, **_arguments):
 		"""Set Preferences: Set the preferences for the current project
 		Keyword argument To: Preferences settings
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -549,36 +376,23 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'Pref'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_Set_Preferences)
 
-		aetools.keysubst(arguments, self._argmap_Set_Preferences)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_Get_Preferences = {
 		'Of' : 'PRec',
 	}
 
-	def Get_Preferences(self, *arguments):
+	def Get_Preferences(self, _no_object=None, _attributes={}, **_arguments):
 		"""Get Preferences: Get the preferences for the current project
 		Keyword argument Of: Preferences settings
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -587,32 +401,19 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'Gref'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_Get_Preferences)
 
-		aetools.keysubst(arguments, self._argmap_Get_Preferences)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def Is_In_Project(self, object, *arguments):
+	def Is_In_Project(self, _object, _attributes={}, **_arguments):
 		"""Is In Project: Whether or not the specified file(s) is in the current project
 		Required argument: List of files to check for project membership
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -621,32 +422,19 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'FInP'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def Get_Project_Specifier(self, *arguments):
+	def Get_Project_Specifier(self, _no_object=None, _attributes={}, **_arguments):
 		"""Get Project Specifier: Return the File Specifier for the current project
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: File Specifier for the current project
@@ -654,62 +442,38 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'GetP'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def Reset_File_Paths(self, *arguments):
+	def Reset_File_Paths(self, _no_object=None, _attributes={}, **_arguments):
 		"""Reset File Paths: Resets access paths for all files belonging to open project.
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'MMPR'
 		_subcode = 'ReFP'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def Goto_Line(self, object, *arguments):
+	def Goto_Line(self, _object, _attributes={}, **_arguments):
 		"""Goto Line: Goto Specified Line Number
 		Required argument: The requested source file line number
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -717,32 +481,19 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'GoLn'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def Goto_Function(self, object, *arguments):
+	def Goto_Function(self, _object, _attributes={}, **_arguments):
 		"""Goto Function: Goto Specified Function Name
 		Required argument: undocumented, typecode 'TEXT'
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -750,32 +501,19 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'GoFn'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def Save_Message_Window_As(self, object, *arguments):
+	def Save_Message_Window_As(self, _object, _attributes={}, **_arguments):
 		"""Save Message Window As: Saves the message window as a text file
 		Required argument: Destination file for Save Message Window As
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -783,32 +521,19 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'SvMs'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def Get_Open_Documents(self, *arguments):
+	def Get_Open_Documents(self, _no_object=None, _attributes={}, **_arguments):
 		"""Get Open Documents: Returns the list of open documents
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: The list of documents
@@ -816,31 +541,19 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'GDoc'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def Get_Segments(self, *arguments):
+	def Get_Segments(self, _no_object=None, _attributes={}, **_arguments):
 		"""Get Segments: Returns a description of each segment in the project.
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: undocumented, typecode 'Seg '
@@ -848,35 +561,23 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'GSeg'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_Set_Segment = {
 		'to' : 'Segm',
 	}
 
-	def Set_Segment(self, object, *arguments):
+	def Set_Segment(self, _object, _attributes={}, **_arguments):
 		"""Set Segment: Changes the name and attributes of a segment.
 		Required argument: The segment to change
 		Keyword argument to: The new name and attributes for the segment.
@@ -885,37 +586,23 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'SSeg'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_Set_Segment)
 
-		aetools.keysubst(arguments, self._argmap_Set_Segment)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_Get_Project_File = {
 		'Segment' : 'Segm',
 	}
 
-	def Get_Project_File(self, object, *arguments):
+	def Get_Project_File(self, _object, _attributes={}, **_arguments):
 		"""Get Project File: Returns a description of a file in the project window.
 		Required argument: The index of the file within its segment.
 		Keyword argument Segment: The segment containing the file.
@@ -925,37 +612,23 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'GFil'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_Get_Project_File)
 
-		aetools.keysubst(arguments, self._argmap_Get_Project_File)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_Set_Project_File = {
 		'to' : 'SrcS',
 	}
 
-	def Set_Project_File(self, object, *arguments):
+	def Set_Project_File(self, _object, _attributes={}, **_arguments):
 		"""Set Project File: Changes the settings for a given file in the project.
 		Required argument: The name of the file
 		Keyword argument to: The new settings for the file
@@ -964,33 +637,19 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'SFil'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_Set_Project_File)
 
-		aetools.keysubst(arguments, self._argmap_Set_Project_File)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def Get_Definition(self, object, *arguments):
+	def Get_Definition(self, _object, _attributes={}, **_arguments):
 		"""Get Definition: Returns the location(s) of a globally scoped function or data object.
 		Required argument: undocumented, typecode 'TEXT'
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -999,30 +658,17 @@ class Metrowerks_Shell_Suite:
 		_code = 'MMPR'
 		_subcode = 'GDef'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 
 #    Class 'C/C++ Language' ('FECP') -- 'C/C++ Language specifics'

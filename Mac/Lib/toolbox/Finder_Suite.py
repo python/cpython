@@ -39,7 +39,7 @@ class Finder_Suite:
 		'by' : 'by  ',
 	}
 
-	def clean_up(self, object, *arguments):
+	def clean_up(self, _object, _attributes={}, **_arguments):
 		"""clean up: Arrange items in window nicely
 		Required argument: the window to clean up
 		Keyword argument by: the order in which to clean up the objects
@@ -48,37 +48,23 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'fclu'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_clean_up)
 
-		aetools.keysubst(arguments, self._argmap_clean_up)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_computer = {
 		'has' : 'has ',
 	}
 
-	def computer(self, object, *arguments):
+	def computer(self, _object, _attributes={}, **_arguments):
 		"""computer: Test attributes of this computer
 		Required argument: the attribute to test
 		Keyword argument has: test specific bits of response
@@ -88,33 +74,19 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'gstl'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_computer)
 
-		aetools.keysubst(arguments, self._argmap_computer)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def eject(self, object, *arguments):
+	def eject(self, _object=None, _attributes={}, **_arguments):
 		"""eject: Eject the specified disk(s), or every ejectable disk if no parameter is specified
 		Required argument: the items to eject
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -122,37 +94,19 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'ejct'
 
-		if len(arguments):
-			object = arguments[0]
-			arguments = arguments[1:]
-		else:
-			object = None
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def empty(self, object, *arguments):
+	def empty(self, _object=None, _attributes={}, **_arguments):
 		"""empty: Empty the trash
 		Required argument: ÒemptyÓ and Òempty trashÓ both do the same thing
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -160,37 +114,19 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'empt'
 
-		if len(arguments):
-			object = arguments[0]
-			arguments = arguments[1:]
-		else:
-			object = None
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def erase(self, object, *arguments):
+	def erase(self, _object, _attributes={}, **_arguments):
 		"""erase: Erase the specified disk(s)
 		Required argument: the items to erase
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -198,36 +134,23 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'fera'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_put_away = {
 		'items' : 'fsel',
 	}
 
-	def put_away(self, object, *arguments):
+	def put_away(self, _object, _attributes={}, **_arguments):
 		"""put away: Put away the specified object(s)
 		Required argument: the items to put away
 		Keyword argument items: DO NOT USE: provided for backwards compatibility with old event suite.  Will be removed in future Finders
@@ -237,64 +160,38 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'ptwy'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_put_away)
 
-		aetools.keysubst(arguments, self._argmap_put_away)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def restart(self, *arguments):
+	def restart(self, _no_object=None, _attributes={}, **_arguments):
 		"""restart: Restart the Macintosh
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'fndr'
 		_subcode = 'rest'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def reveal(self, object, *arguments):
+	def reveal(self, _object, _attributes={}, **_arguments):
 		"""reveal: Bring the specified object(s) into view
 		Required argument: the object to be made visible
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -302,32 +199,19 @@ class Finder_Suite:
 		_code = 'misc'
 		_subcode = 'mvis'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def select(self, object, *arguments):
+	def select(self, _object, _attributes={}, **_arguments):
 		"""select: Select the specified object(s)
 		Required argument: the object to select
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -335,98 +219,61 @@ class Finder_Suite:
 		_code = 'misc'
 		_subcode = 'slct'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def shut_down(self, *arguments):
+	def shut_down(self, _no_object=None, _attributes={}, **_arguments):
 		"""shut down: Shut Down the Macintosh
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'fndr'
 		_subcode = 'shut'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def sleep(self, *arguments):
+	def sleep(self, _no_object=None, _attributes={}, **_arguments):
 		"""sleep: Sleep the Macintosh
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'fndr'
 		_subcode = 'snoz'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_sort = {
 		'by' : 'by  ',
 	}
 
-	def sort(self, object, *arguments):
+	def sort(self, _object, _attributes={}, **_arguments):
 		"""sort: Return the specified object(s) in a sorted list
 		Required argument: a list of finder objects to sort
 		Keyword argument by: the property to sort the items by
@@ -436,33 +283,19 @@ class Finder_Suite:
 		_code = 'DATA'
 		_subcode = 'SORT'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_sort)
 
-		aetools.keysubst(arguments, self._argmap_sort)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def update(self, object, *arguments):
+	def update(self, _object, _attributes={}, **_arguments):
 		"""update: Update the display of the specified object(s) to match their on-disk representation
 		Required argument: the item to update
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -470,30 +303,17 @@ class Finder_Suite:
 		_code = 'fndr'
 		_subcode = 'fupd'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 
 #    Class 'accessory process' ('pcda') -- 'A process launched from a desk accessory file'

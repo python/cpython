@@ -36,38 +36,26 @@ _Enum_misc = {
 
 class AppleScript_Suite:
 
-	def activate(self, *arguments):
+	def activate(self, _no_object=None, _attributes={}, **_arguments):
 		"""activate: Bring targeted application program to the front.
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'misc'
 		_subcode = 'actv'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def log(self, object, *arguments):
+	def log(self, _object, _attributes={}, **_arguments):
 		"""log: Cause a comment to be logged.
 		Required argument: anything
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -75,125 +63,76 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'cmnt'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def stop_log(self, *arguments):
+	def stop_log(self, _no_object=None, _attributes={}, **_arguments):
 		"""stop log: 
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'ToyS'
 		_subcode = 'log0'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def start_log(self, *arguments):
+	def start_log(self, _no_object=None, _attributes={}, **_arguments):
 		"""start log: 
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'ToyS'
 		_subcode = 'log1'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def copy(self, *arguments):
+	def copy(self, _no_object=None, _attributes={}, **_arguments):
 		"""copy: Copy an object to the clipboard
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'misc'
 		_subcode = 'copy'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def do_script(self, object, *arguments):
+	def do_script(self, _object, _attributes={}, **_arguments):
 		"""do script: Execute a script
 		Required argument: the script to execute
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -202,32 +141,19 @@ class AppleScript_Suite:
 		_code = 'misc'
 		_subcode = 'dosc'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def idle(self, *arguments):
+	def idle(self, _no_object=None, _attributes={}, **_arguments):
 		"""idle: Sent to a script application when it is idle
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: Number of seconds to wait for next idle event
@@ -235,31 +161,19 @@ class AppleScript_Suite:
 		_code = 'misc'
 		_subcode = 'idle'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def launch(self, *arguments):
+	def launch(self, _no_object=None, _attributes={}, **_arguments):
 		"""launch: Start an application for scripting
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: anything
@@ -267,31 +181,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'noop'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def tell(self, *arguments):
+	def tell(self, _no_object=None, _attributes={}, **_arguments):
 		"""tell: Magic tell event for event logging
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: anything
@@ -299,31 +201,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'tell'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def end_tell(self, *arguments):
+	def end_tell(self, _no_object=None, _attributes={}, **_arguments):
 		"""end tell: Start an application for scripting
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: anything
@@ -331,29 +221,17 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'tend'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_error = {
 		'number' : 'errn',
@@ -362,7 +240,7 @@ class AppleScript_Suite:
 		'to' : 'errt',
 	}
 
-	def error(self, object, *arguments):
+	def error(self, _object=None, _attributes={}, **_arguments):
 		"""error: Raise an error
 		Required argument: anything
 		Keyword argument number: an error number
@@ -375,36 +253,17 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'err '
 
-		if len(arguments):
-			object = arguments[0]
-			arguments = arguments[1:]
-		else:
-			object = None
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_error)
 
-		aetools.keysubst(arguments, self._argmap_error)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 	_argmap_Call_a5_subroutine = {
 		'at' : 'at  ',
@@ -439,7 +298,7 @@ class AppleScript_Suite:
 		'returning' : 'Krtn',
 	}
 
-	def Call_a5_subroutine(self, object, *arguments):
+	def Call_a5_subroutine(self, _object=None, _attributes={}, **_arguments):
 		"""Call¥subroutine: A subroutine call
 		Required argument: anything
 		Keyword argument at: a preposition
@@ -478,38 +337,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'psbr'
 
-		if len(arguments):
-			object = arguments[0]
-			arguments = arguments[1:]
-		else:
-			object = None
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		aetools.keysubst(_arguments, self._argmap_Call_a5_subroutine)
 
-		aetools.keysubst(arguments, self._argmap_Call_a5_subroutine)
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def _3d_(self, object, *arguments):
+	def _3d_(self, _object, _attributes={}, **_arguments):
 		"""=: Equality
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -518,32 +358,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '=   '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def _ad_(self, object, *arguments):
+	def _ad_(self, _object, _attributes={}, **_arguments):
 		"""­: Inequality
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -552,32 +379,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '\255   '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def _2b_(self, object, *arguments):
+	def _2b_(self, _object, _attributes={}, **_arguments):
 		"""+: Addition
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -586,32 +400,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '+   '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def _2d_(self, object, *arguments):
+	def _2d_(self, _object, _attributes={}, **_arguments):
 		"""-: Subtraction
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -620,32 +421,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '-   '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def _2a_(self, object, *arguments):
+	def _2a_(self, _object, _attributes={}, **_arguments):
 		"""*: Multiplication
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -654,32 +442,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '*   '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def _d6_(self, object, *arguments):
+	def _d6_(self, _object, _attributes={}, **_arguments):
 		"""Ö: Division
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -688,32 +463,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '/   '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def div(self, object, *arguments):
+	def div(self, _object, _attributes={}, **_arguments):
 		"""div: Quotient
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -722,32 +484,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'div '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def mod(self, object, *arguments):
+	def mod(self, _object, _attributes={}, **_arguments):
 		"""mod: Remainder
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -756,32 +505,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'mod '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def _5e_(self, object, *arguments):
+	def _5e_(self, _object, _attributes={}, **_arguments):
 		"""^: Exponentiation
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -790,32 +526,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '^   '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def _3e_(self, object, *arguments):
+	def _3e_(self, _object, _attributes={}, **_arguments):
 		""">: Greater than
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -824,32 +547,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '>   '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def _b3_(self, object, *arguments):
+	def _b3_(self, _object, _attributes={}, **_arguments):
 		"""³: Greater than or equal to
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -858,32 +568,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '>=  '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def _3c_(self, object, *arguments):
+	def _3c_(self, _object, _attributes={}, **_arguments):
 		"""<: Less than
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -892,32 +589,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '<   '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def _b2_(self, object, *arguments):
+	def _b2_(self, _object, _attributes={}, **_arguments):
 		"""²: Less than or equal to
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -926,32 +610,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = '<=  '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def _26_(self, object, *arguments):
+	def _26_(self, _object, _attributes={}, **_arguments):
 		"""&: Concatenation
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -960,32 +631,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'ccat'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def starts_with(self, object, *arguments):
+	def starts_with(self, _object, _attributes={}, **_arguments):
 		"""starts with: Starts with
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -994,32 +652,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'bgwt'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def ends_with(self, object, *arguments):
+	def ends_with(self, _object, _attributes={}, **_arguments):
 		"""ends with: Ends with
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -1028,32 +673,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'ends'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def contains(self, object, *arguments):
+	def contains(self, _object, _attributes={}, **_arguments):
 		"""contains: Containment
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -1062,32 +694,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'cont'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def _and(self, object, *arguments):
+	def _and(self, _object, _attributes={}, **_arguments):
 		"""and: Logical conjunction
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -1096,32 +715,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'AND '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def _or(self, object, *arguments):
+	def _or(self, _object, _attributes={}, **_arguments):
 		"""or: Logical disjunction
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -1130,32 +736,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'OR  '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def as(self, object, *arguments):
+	def as(self, _object, _attributes={}, **_arguments):
 		"""as: Coercion
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -1164,32 +757,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'coer'
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def _not(self, object, *arguments):
+	def _not(self, _object, _attributes={}, **_arguments):
 		"""not: Logical negation
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -1198,32 +778,19 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'NOT '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-	def negate(self, object, *arguments):
+	def negate(self, _object, _attributes={}, **_arguments):
 		"""negate: Numeric negation
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -1232,30 +799,17 @@ class AppleScript_Suite:
 		_code = 'ascr'
 		_subcode = 'neg '
 
-		if len(arguments) > 1:
-			raise TypeError, 'Too many arguments'
-		if arguments:
-			arguments = arguments[0]
-			if type(arguments) <> type({}):
-				raise TypeError, 'Must be a mapping'
-		else:
-			arguments = {}
-		arguments['----'] = object
+		_arguments['----'] = _object
 
-		if arguments.has_key('_attributes'):
-			attributes = arguments['_attributes']
-			del arguments['_attributes']
-		else:
-			attributes = {}
+		if _arguments: raise TypeError, 'No optional args expected'
 
-
-		reply, arguments, attributes = self.send(_code, _subcode,
-				arguments, attributes)
-		if arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(arguments)
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.has_key('errn'):
+			raise MacOS.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
-		if arguments.has_key('----'):
-			return arguments['----']
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
 
 #    Class '' ('undf') -- 'the undefined value'
