@@ -200,7 +200,9 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
 \N regular expression notation in strings of BEGIN.")
 
 (defconst py2texi-commands
-  '(("ABC" 0 "ABC")
+  '(("AA" 0 "@AA{}")
+    ("aa" 0 "@aa{}")
+    ("ABC" 0 "ABC")
     ("appendix" 0 (progn (setq appendix t) ""))
     ("ASCII" 0 "ASCII")
     ("author" 1 (progn (setq author (match-string 1 string)) ""))
