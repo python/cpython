@@ -1483,7 +1483,6 @@ validate_expr_stmt(node *tree)
 static int
 validate_print_stmt(node *tree)
 {
-    int j;
     int nch = NCH(tree);
     int res = (validate_ntype(tree, print_stmt)
                && (nch > 0)
