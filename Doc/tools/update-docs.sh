@@ -7,7 +7,7 @@
 # and removes it when done.
 
 if [ -z "$HOME" ] ; then
-    HOME=`grep fdrake /etc/passwd | sed 's|^.*:\([^:]*\):[^:]*$|\1|'`
+    HOME=`grep "$LOGNAME" /etc/passwd | sed 's|^.*:\([^:]*\):[^:]*$|\1|'`
     export HOME
 fi
 
