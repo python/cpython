@@ -13,7 +13,8 @@ exceptions is present in the standard library module
 
 For backward compatibility, when Python is invoked with the \code{-X}
 option, most of the standard exceptions are strings\footnote{For
-forward-compatibility the new exceptions \exception{LookupError},
+forward-compatibility the new exceptions \exception{Exception},
+\exception{LookupError},
 \exception{ArithmeticError}, \exception{EnvironmentError}, and
 \exception{StandardError} are tuples.}.  This option may be used to
 run code that breaks because of the different semantics of class based
@@ -76,8 +77,9 @@ also available on the instance's \member{args} attribute, as a tuple.
 \end{excdesc}
 
 \begin{excdesc}{StandardError}
-The base class for built-in exceptions.  All built-in exceptions are
-derived from this class, which is itself derived from the root class
+The base class for all built-in exceptions except
+\exception{SystemExit}.  \exception{StandardError} itself is derived
+from the root class
 \exception{Exception}.
 \end{excdesc}
 
@@ -288,7 +290,9 @@ For class exceptions, \function{str()} returns only the message.
 
 When class exceptions are used, the instance has an attribute
 \member{code} which is set to the proposed exit status or error message
-(defaulting to \code{None}).
+(defaulting to \code{None}).  Also, this exception derives directly
+from \exception{Exception} and not \exception{StandardError}, since it 
+is not technically an error.
   
   A call to \function{sys.exit()} is translated into an exception so that
   clean-up handlers (\keyword{finally} clauses of \keyword{try} statements)
