@@ -24,27 +24,6 @@ character string containing a backslash and the letter 'n', while
 \code{"\e n"} is a one-character string containing a newline.  Usually
 patterns will be expressed in Python code using this raw string notation.
 
-% XXX Can the following section be dropped, or should it be boiled down?
-
-%\strong{Please note:} There is a little-known fact about Python string
-%literals which means that you don't usually have to worry about
-%doubling backslashes, even though they are used to escape special
-%characters in string literals as well as in regular expressions.  This
-%is because Python doesn't remove backslashes from string literals if
-%they are followed by an unrecognized escape character.
-%\emph{However}, if you want to include a literal \dfn{backslash} in a
-%regular expression represented as a string literal, you have to
-%\emph{quadruple} it or enclose it in a singleton character class.
-%E.g.\  to extract \LaTeX\ \code{\e section\{{\rm
-%\ldots}\}} headers from a document, you can use this pattern:
-%\code{'[\e ] section\{\e (.*\e )\}'}.  \emph{Another exception:}
-%the escape sequence \code{\e b} is significant in string literals
-%(where it means the ASCII bell character) as well as in Emacs regular
-%expressions (where it stands for a word boundary), so in order to
-%search for a word boundary, you should use the pattern \code{'\e \e b'}.
-%Similarly, a backslash followed by a digit 0-7 should be doubled to
-%avoid interpretation as an octal escape.
-
 \subsection{Regular Expression Syntax}
 
 A regular expression (or RE) specifies a set of strings that matches
