@@ -424,18 +424,27 @@ _PyLong_AsByteArray(PyLongObject* v,
 		*p = (unsigned char)(accum & 0xff);
 		p += pincr;
 	}
-
-	/* Fill remaining bytes with copies of the sign bit. */
-	for ( ; j < n; ++j, p += pincr)
-		*p = (unsigned char)(do_twos_comp ? 0xff : 0);
-
-	/* Check for delicate overflow (not enough room for the sign bit). */
-	if (j > 0 && is_signed) {
+	else if (j == n && n > 0 && is_signed) {
+		/* The main loop filled the byte array exactly, so the code
+		   just above didn't get to ensure there's a sign bit, and the
+		   loop below wouldn't add one either.  Make sure a sign bit
+		   exists. */
 		unsigned char msb = *(p - pincr);
-		int sign_bit_set = (msb & 0x80) != 0;
-		if (sign_bit_set != do_twos_comp)
+		int sign_bit_set = msb >= 0x80;
+		assert(accumbits == 0);
+		if (sign_bit_set == do_twos_comp)
+			return 0;
+		else
 			goto Overflow;
 	}
+
+	/* Fill remaining bytes with copies of the sign bit. */
+	{
+		unsigned char signbyte = do_twos_comp ? 0xffU : 0U;
+		for ( ; j < n; ++j, p += pincr)
+			*p = signbyte;
+	}
+
 	return 0;
 
 Overflow:
