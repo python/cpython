@@ -17,8 +17,6 @@
 import sre_compile
 import sre_parse
 
-import string
-
 # flags
 I = IGNORECASE = sre_compile.SRE_FLAG_IGNORECASE # ignore case
 L = LOCALE = sre_compile.SRE_FLAG_LOCALE # assume current 8-bit locale
@@ -109,7 +107,7 @@ _MAXCACHE = 100
 
 def _join(seq, sep):
     # internal: join into string having the same type as sep
-    return string.join(seq, sep[:0])
+    return sep[:0].join(seq)
 
 def _compile(*key):
     # internal: compile pattern

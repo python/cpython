@@ -157,7 +157,7 @@ class AbstractFormatter:
                 label = s + label
             index = index + 1
         if case == 'I':
-            return string.upper(label)
+            return label.upper()
         return label
 
     def add_flowing_data(self, data,
@@ -369,11 +369,11 @@ class DumbWriter(NullWriter):
 
     def send_literal_data(self, data):
         self.file.write(data)
-        i = string.rfind(data, '\n')
+        i = data.rfind('\n')
         if i >= 0:
             self.col = 0
             data = data[i+1:]
-        data = string.expandtabs(data)
+        data = data.expandtabs()
         self.col = self.col + len(data)
         self.atbreak = 0
 
@@ -383,7 +383,7 @@ class DumbWriter(NullWriter):
         col = self.col
         maxcol = self.maxcol
         write = self.file.write
-        for word in string.split(data):
+        for word in data.split():
             if atbreak:
                 if col + len(word) >= maxcol:
                     write('\n')

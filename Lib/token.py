@@ -94,7 +94,7 @@ def main():
     except IOError, err:
         sys.stdout.write("I/O error: %s\n" % str(err))
         sys.exit(1)
-    lines = string.splitfields(fp.read(), "\n")
+    lines = fp.read().split("\n")
     fp.close()
     prog = re.compile(
         "#define[ \t][ \t]*([A-Z][A-Z_]*)[ \t][ \t]*([0-9][0-9]*)",
@@ -114,7 +114,7 @@ def main():
     except IOError, err:
         sys.stderr.write("I/O error: %s\n" % str(err))
         sys.exit(2)
-    format = string.splitfields(fp.read(), "\n")
+    format = fp.read().split("\n")
     fp.close()
     try:
         start = format.index("#--start constants--") + 1
@@ -131,7 +131,7 @@ def main():
     except IOError, err:
         sys.stderr.write("I/O error: %s\n" % str(err))
         sys.exit(4)
-    fp.write(string.joinfields(format, "\n"))
+    fp.write("\n".join(format))
     fp.close()
 
 

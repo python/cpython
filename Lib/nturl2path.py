@@ -19,15 +19,15 @@ def url2pathname(url):
             # convert this to \\host\path\on\remote\host
             # (notice halving of slashes at the start of the path)
             url = url[2:]
-        components = string.split(url, '/')
+        components = url.split('/')
         # make sure not to convert quoted slashes :-)
-        return urllib.unquote(string.join(components, '\\'))
-    comp = string.split(url, '|')
+        return urllib.unquote('\\'.join(components))
+    comp = url.split('|')
     if len(comp) != 2 or comp[0][-1] not in string.letters:
         error = 'Bad URL: ' + url
         raise IOError, error
-    drive = string.upper(comp[0][-1])
-    components = string.split(comp[1], '/')
+    drive = comp[0][-1].upper()
+    components = comp[1].split('/')
     path = drive + ':'
     for  comp in components:
         if comp:
@@ -52,15 +52,15 @@ def pathname2url(p):
         # convert this to ////host/path/on/remote/host
         # (notice doubling of slashes at the start of the path)
             p = '\\\\' + p
-        components = string.split(p, '\\')
-        return urllib.quote(string.join(components, '/'))
-    comp = string.split(p, ':')
+        components = p.split('\\')
+        return urllib.quote('/'.join(components))
+    comp = p.split(':')
     if len(comp) != 2 or len(comp[0]) > 1:
         error = 'Bad path: ' + p
         raise IOError, error
 
-    drive = urllib.quote(string.upper(comp[0]))
-    components = string.split(comp[1], '\\')
+    drive = urllib.quote(comp[0].upper())
+    components = comp[1].split('\\')
     path = '///' + drive + '|'
     for comp in components:
         if comp:

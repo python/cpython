@@ -85,7 +85,6 @@ f = urllib2.urlopen('http://www.python.org/')
 # gopher can return a socket.error
 # check digest against correct (i.e. non-apache) implementation
 
-import string
 import socket
 import UserDict
 import httplib
@@ -265,13 +264,13 @@ class OpenerDirector:
                     self.handle_open[protocol] = [handler]
                 added = 1
                 continue
-            i = string.find(meth, '_')
-            j = string.find(meth[i+1:], '_') + i + 1
+            i = meth.find('_')
+            j = meth[i+1:].find('_') + i + 1
             if j != -1 and meth[i+1:j] == 'error':
                 proto = meth[:i]
                 kind = meth[j+1:]
                 try:
-                    kind = string.atoi(kind)
+                    kind = int(kind)
                 except ValueError:
                     pass
                 dict = self.handle_error.get(proto, {})
@@ -599,7 +598,7 @@ class HTTPBasicAuthHandler(BaseHandler):
             mo = HTTPBasicAuthHandler.rx.match(authreq)
             if mo:
                 scheme, realm = mo.groups()
-                if string.lower(scheme) == 'basic':
+                if scheme.lower() == 'basic':
                     return self.retry_http_basic_auth(req, realm)
 
     def retry_http_basic_auth(self, req, realm):
@@ -613,7 +612,7 @@ class HTTPBasicAuthHandler(BaseHandler):
         user,pw = self.passwd.find_user_password(realm, host)
         if pw:
             raw = "%s:%s" % (user, pw)
-            auth = string.strip(base64.encodestring(raw))
+            auth = base64.encodestring(raw).strip()
             req.add_header('Authorization', 'Basic %s' % auth)
             resp = self.parent.open(req)
             self.__current_realm = None
@@ -638,12 +637,12 @@ class HTTPDigestAuthHandler(BaseHandler):
         # XXX could be mult. headers
         authreq = headers.get('www-authenticate', None)
         if authreq:
-            kind = string.split(authreq)[0]
+            kind = authreq.split()[0]
             if kind == 'Digest':
                 return self.retry_http_digest_auth(req, authreq)
 
     def retry_http_digest_auth(self, req, auth):
-        token, challenge = string.split(auth, ' ', 1)
+        token, challenge = auth.split(' ', 1)
         chal = parse_keqv_list(parse_http_list(challenge))
         auth = self.get_authorization(req, chal)
         if auth:
@@ -723,7 +722,7 @@ def encode_digest(digest):
         hexrep.append(hex(n)[-1])
         n = ord(c) & 0xf
         hexrep.append(hex(n)[-1])
-    return string.join(hexrep, '')
+    return ''.join(hexrep)
 
 
 class HTTPHandler(BaseHandler):
@@ -772,7 +771,7 @@ def parse_keqv_list(l):
     """Parse list of key=value strings where keys are not duplicated."""
     parsed = {}
     for elt in l:
-        k, v = string.split(elt, '=', 1)
+        k, v = elt.split('=', 1)
         if v[0] == '"' and v[-1] == '"':
             v = v[1:-1]
         parsed[k] = v
@@ -794,8 +793,8 @@ def parse_http_list(s):
     start = 0
     while i < end:
         cur = s[i:]
-        c = string.find(cur, ',')
-        q = string.find(cur, '"')
+        c = cur.find(',')
+        q = cur.find('"')
         if c == -1:
             list.append(s[start:])
             break
@@ -822,7 +821,7 @@ def parse_http_list(s):
             else:
                 inquote = 1
                 i = i + q + 1
-    return map(string.strip, list)
+    return map(lambda x: x.strip(), list)
 
 class FileHandler(BaseHandler):
     # Use local file or FTP depending on form of URL
@@ -872,7 +871,7 @@ class FTPHandler(BaseHandler):
             port = ftplib.FTP_PORT
         path, attrs = splitattr(req.get_selector())
         path = unquote(path)
-        dirs = string.splitfields(path, '/')
+        dirs = path.split('/')
         dirs, file = dirs[:-1], dirs[-1]
         if dirs and not dirs[0]:
             dirs = dirs[1:]
@@ -882,9 +881,9 @@ class FTPHandler(BaseHandler):
             type = file and 'I' or 'D'
             for attr in attrs:
                 attr, value = splitattr(attr)
-                if string.lower(attr) == 'type' and \
+                if attr.lower() == 'type' and \
                    value in ('a', 'A', 'i', 'I', 'd', 'D'):
-                    type = string.upper(value)
+                    type = value.upper()
             fp, retrlen = fw.retrfile(file, type)
             if retrlen is not None and retrlen >= 0:
                 sf = StringIO('Content-Length: %d\n' % retrlen)
@@ -1048,7 +1047,7 @@ if __name__ == "__main__":
     p = CustomProxy('http', at_cnri, 'proxy.cnri.reston.va.us')
     ph = CustomProxyHandler(p)
 
-    install_opener(build_opener(dauth, bauth, cfh, GopherHandler, ph))
+    #install_opener(build_opener(dauth, bauth, cfh, GopherHandler, ph))
 
     for url in urls:
         if type(url) == types.TupleType:
