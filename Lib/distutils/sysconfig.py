@@ -77,7 +77,7 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
             return prefix
 
     elif os.name == "mac":
-        if platform_specific:
+        if plat_specific:
             if standard_lib:
                 return os.path.join(EXEC_PREFIX, "Mac", "Plugins")
             else:
