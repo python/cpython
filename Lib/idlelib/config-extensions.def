@@ -2,14 +2,15 @@
 # file is the default config file for idle extensions settings.  
 #
 # Each extension must have at least one section, named after the extension
-# module. This section must contain an 'enable' item (=1 to enable the 
-# extension, =0 to disable it) and also contains any other general configuration
-# items for the extension. Each extension may also define up to two optional
-# sections named ExtensionName_bindings and ExtensionName_cfgBindings. If
-# present, ExtensionName_bindings defines virtual event bindings for the 
-# extension that are not sensibly re-configurable. If present, 
-# ExtensionName_cfgBindings defines virtual event bindings for the extension 
-# that may be sensibly re-configured.
+# module. This section must contain an 'enable' item (=1 to enable the
+# extension, =0 to disable it) and also contains any other general
+# configuration items for the extension. Each extension may also define up to
+# two optional sections named ExtensionName_bindings and
+# ExtensionName_cfgBindings. If present, ExtensionName_bindings defines virtual
+# event bindings for the extension that are not sensibly re-configurable. If
+# present, ExtensionName_cfgBindings defines virtual event bindings for the
+# extension that may be sensibly re-configured.
+
 # See config-keys.def for notes on specifying keys.
 
 [FormatParagraph]
@@ -25,20 +26,13 @@ expand-word=<Alt-Key-slash>
 [ZoomHeight]
 enable=1
 [ZoomHeight_cfgBindings]
-zoom-height=<Alt-Key-F2>
-
-#[ExecBinding]  # Revert to ScriptBinding
-#enable=1
-#[ExecBinding_cfgBindings]
-#run-complete-script=<Key-F5>
-#stop-execution=<Key-Cancel>
+zoom-height=<Alt-Key-h>
 
 [ScriptBinding]
 enable=1
 [ScriptBinding_cfgBindings]
 run-script=<Key-F5>
-#check-module=<Alt-Key-F5>
-#import-module=<Control-Key-F5>
+check-module=<Alt-Key-x>
 
 [CallTips]
 enable=1
