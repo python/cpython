@@ -48,9 +48,23 @@ by the \module{weakref} module for the benefit of advanced uses.
 
 Not all objects can be weakly referenced; those objects which can
 include class instances, functions written in Python (but not in C),
-and methods (both bound and unbound).  Extension types can easily
-be made to support weak references; see section \ref{weakref-extension},
-``Weak References in Extension Types,'' for more information.
+methods (both bound and unbound), sets, frozensets, file objects,
+sockets, arrays, deques, and regular expression pattern objects.
+\versionchanged[Added support for files, sockets, arrays, and patterns]{2.4}
+
+Several builtin types such as \class{list} and \class{dict} do not
+directly support weak references but can add support through subclassing:
+
+\begin{verbatim}
+class Dict(dict):
+    pass
+
+obj = Dict(red=1, green=2, blue=3)   # this object is weak referencable
+\end{verbatim}
+
+Extension types can easily be made to support weak references; see section
+\ref{weakref-extension}, ``Weak References in Extension Types,'' for more
+information.
 
 
 \begin{funcdesc}{ref}{object\optional{, callback}}

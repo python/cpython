@@ -29,6 +29,7 @@ typedef struct {
     /* compatibility */
     PyObject* pattern; /* pattern source (or None) */
     int flags; /* flags used when compiling pattern source */
+    PyObject *weakreflist; /* List of weak references */
     /* pattern code */
     int codesize;
     SRE_CODE code[1];

@@ -1673,6 +1673,8 @@ _compile(PyObject* self_, PyObject* args)
     Py_XINCREF(indexgroup);
     self->indexgroup = indexgroup;
 
+    self->weakreflist = NULL;
+
     return (PyObject*) self;
 }
 
@@ -1985,6 +1987,8 @@ pattern_scanner(PatternObject* pattern, PyObject* args)
 static void
 pattern_dealloc(PatternObject* self)
 {
+    if (self->weakreflist != NULL)
+        PyObject_ClearWeakRefs((PyObject *) self);
     Py_XDECREF(self->pattern);
     Py_XDECREF(self->groupindex);
     Py_XDECREF(self->indexgroup);
@@ -2632,6 +2636,7 @@ pattern_copy(PatternObject* self, PyObject* args)
 
     memcpy((char*) copy + offset, (char*) self + offset,
            sizeof(PatternObject) + self->codesize * sizeof(SRE_CODE) - offset);
+    copy->weakreflist = NULL;
 
     return (PyObject*) copy;
 #else
@@ -2722,7 +2727,25 @@ statichere PyTypeObject Pattern_Type = {
     sizeof(PatternObject), sizeof(SRE_CODE),
     (destructor)pattern_dealloc, /*tp_dealloc*/
     0, /*tp_print*/
-    (getattrfunc)pattern_getattr /*tp_getattr*/
+    (getattrfunc)pattern_getattr, /*tp_getattr*/
+    0,					/* tp_setattr */
+    0,					/* tp_compare */
+    0,					/* tp_repr */
+    0,					/* tp_as_number */
+    0,					/* tp_as_sequence */
+    0,					/* tp_as_mapping */
+    0,					/* tp_hash */
+    0,					/* tp_call */
+    0,					/* tp_str */
+    0,					/* tp_getattro */
+    0,					/* tp_setattro */
+    0,					/* tp_as_buffer */
+    Py_TPFLAGS_HAVE_WEAKREFS,		/* tp_flags */
+    0,					/* tp_doc */
+    0,					/* tp_traverse */
+    0,					/* tp_clear */
+    0,					/* tp_richcompare */
+    offsetof(PatternObject, weakreflist),	/* tp_weaklistoffset */
 };
 
 /* -------------------------------------------------------------------- */

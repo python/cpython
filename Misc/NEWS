@@ -207,6 +207,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- the weakref module now supports additional objects:  array.array,
+  sre.pattern_objects, file objects, and sockets.
+
 - operator.isMappingType() and operator.isSequenceType() now give
   fewer false positives.
 
