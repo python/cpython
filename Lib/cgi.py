@@ -242,23 +242,30 @@ set:</H3> <UL>
 def print_environ():
 	skeys = environ.keys()
 	skeys.sort()
-	print '<h3> The following environment variables were set by the CGI script: </H3>'
+	print '<h3> The following environment variables ' \
+	      'were set by the CGI script: </h3>'
 	print '<dl>'
 	for key in skeys:
-		print '<dt>',key, '<dd>', environ[key]
+		print '<dt>', escape(key), '<dd>', escape(environ[key])
 	print '</dl>' 
 
 def print_form( form ):
-	print '<h3> The following name/value pairs were entered in the form:</h3>'
-	print '<dl>'
 	skeys = form.keys()
 	skeys.sort()
+	print '<h3> The following name/value pairs ' \
+	      'were entered in the form: </h3>'
+	print '<dl>'
 	for key in skeys:
-		print '<dt>',key, ' : <i> ',escape(`type(form[key])`),' </i>','<dd>', form[key]
+		print '<dt>', escape(key), ':',
+		print '<i>', escape(`type(form[key])`), '</i>',
+		print '<dd>', escape(form[key])
 	print '</dl>'
 
 def escape( s ):
-	return regsub.gsub( '<', '&lt;', regsub.gsub( '>' , '&gt;', s ))
+	s = regsub.gsub('&', '&amp;') # Must be done first
+	s = regsub.gsub('<', '&lt;')
+	s = regsub.gsub('>', '&gt;')
+	return s
 
 def test( what ):
 	label = escape(str(what))
