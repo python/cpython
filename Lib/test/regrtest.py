@@ -25,7 +25,7 @@ If no test names are given, all tests are run.
 -v is incompatible with -g and does not compare test output files.
 
 -s means to run only a single test and exit.  This is useful when doing memory
-analysis on the Python interpreter (which tend to consume to many resources to
+analysis on the Python interpreter (which tend to consume too many resources to
 run the full regression test non-stop).  The file /tmp/pynexttest is read to
 find the next test to run.  If this file is missing, the first test_*.py file
 in testdir or on the command line is used.  (actually tempfile.gettempdir() is
