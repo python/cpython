@@ -794,7 +794,7 @@ class MyHTMLParser(sgmllib.SGMLParser):
         self.link_attr(attributes, 'href')
 
     def do_body(self, attributes):
-        self.link_attr(attributes, 'background')
+        self.link_attr(attributes, 'background', 'bgsound')
 
     def do_img(self, attributes):
         self.link_attr(attributes, 'src', 'lowsrc')
@@ -819,6 +819,18 @@ class MyHTMLParser(sgmllib.SGMLParser):
 
     def do_script(self, attributes):
         self.link_attr(attributes, 'src')
+
+    def do_table(self, attributes):
+        self.link_attr(attributes, 'background')
+
+    def do_td(self, attributes):
+        self.link_attr(attributes, 'background')
+
+    def do_th(self, attributes):
+        self.link_attr(attributes, 'background')
+
+    def do_tr(self, attributes):
+        self.link_attr(attributes, 'background')
 
     def link_attr(self, attributes, *args):
         for name, value in attributes:
