@@ -146,7 +146,6 @@ def main():
 	print x, 'x', y
 
 	v.SetSize(x, y)
-<<<<<<< Vrec.py
 
 	if drop:
 		param = [SV.FIELDDROP, 1, SV.GENLOCK, SV.GENLOCK_OFF]
@@ -157,14 +156,7 @@ def main():
 	else:
 		param = param+[SV.COLOR, SV.DEFAULT_COLOR, SV.INPUT_BYPASS, 0]
 	v.SetParam(param)
-	
-=======
 
-	# VERY IMPORTANT (for PAL at least): don't drop fields!
-	param = [SV.FIELDDROP, 0]
-	v.SetParam(param)
-
->>>>>>> 1.7
 	v.BindGLWindow(win, SV.IN_REPLACE)
 
 	gl.qdevice(DEVICE.LEFTMOUSE)
@@ -250,14 +242,17 @@ def record(v, info, filename, audiofilename, mono, grey, monotreshold):
 		cd.UnlockCaptureData()
 		count = count+1
 		if filename:
-			queue.put(data, int(id*tpf))
+			queue.put((data, int(id*tpf)))
 	t1 = time.millitimer()
 	gl.wintitle('(busy) ' + filename)
 	print lastid, 'fields in', t1-t0, 'msec',
 	print '--', 0.1 * int(lastid * 10000.0 / (t1-t0)), 'fields/sec'
-	print 'Captured',count*2, 'fields,', 0.1*int(count*20000.0/(t1-t0)), 'f/s',
-	print count*200.0/lastid, '%,',
-	print count*rate*200.0/lastid, '% of wanted rate'
+	print 'Captured',count*2, 'fields,',
+	print 0.1*int(count*20000.0/(t1-t0)), 'f/s',
+	if lastid:
+		print count*200.0/lastid, '%,',
+		print count*rate*200.0/lastid, '% of wanted rate',
+	print
 	t0 = timestamps[0]
 	del timestamps[0]
 	print 'Times:',
