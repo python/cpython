@@ -342,14 +342,14 @@ else
   fi
 fi
 
-# check for ANSI or K&R ("traditional") preprocessor
-AC_MSG_CHECKING(for C preprocessor type)
-AC_TRY_COMPILE([
-#define spam(name, doc) {#name, &name, #name "() -- " doc}
-int foo;
-struct {char *name; int *addr; char *doc;} desc = spam(foo, "something");
-], [;], cpp_type=ansi, AC_DEFINE(HAVE_OLD_CPP) cpp_type=traditional)
-AC_MSG_RESULT($cpp_type)
+dnl # check for ANSI or K&R ("traditional") preprocessor
+dnl AC_MSG_CHECKING(for C preprocessor type)
+dnl AC_TRY_COMPILE([
+dnl #define spam(name, doc) {#name, &name, #name "() -- " doc}
+dnl int foo;
+dnl struct {char *name; int *addr; char *doc;} desc = spam(foo, "something");
+dnl ], [;], cpp_type=ansi, AC_DEFINE(HAVE_OLD_CPP) cpp_type=traditional)
+dnl AC_MSG_RESULT($cpp_type)
 
 # checks for header files
 AC_HEADER_STDC

@@ -59,9 +59,6 @@
 /* Define this if you have the type long long */
 #undef HAVE_LONG_LONG
 
-/* Define this if you have a K&R style C preprocessor */
-#undef HAVE_OLD_CPP
-
 /* Define if your compiler supports function prototypes */
 #undef HAVE_PROTOTYPES
 
