@@ -9,24 +9,30 @@ from bgenlocations import TOOLBOXDIR
 
 LONG = "CoreFoundation"
 SHORT = "cf"
-OBJECTS = ("CFTypeRef", "CFStringRef")
+OBJECTS = ("CFTypeRef", 
+		"CFArrayRef", "CFMutableArrayRef",
+		"CFDataRef", "CFMutableDataRef",
+		"CFDictionaryRef", "CFMutableDictionaryRef",
+		"CFStringRef", "CFMutableStringRef", 
+		)
+# ADD object typenames here
 
 def main():
 	input = [
 		"CFBase.h",
-###		"CFArray.h",
+		"CFArray.h",
 ##		"CFBag.h",
 ##		"CFBundle.h",
 ##		"CFCharacterSet.h",
-###		"CFData.h",
+		"CFData.h",
 ##		"CFDate.h",
-###		"CFDictionary.h",
+		"CFDictionary.h",
 ##		"CFNumber.h",
 ##		"CFPlugIn.h",
 ##		"CFPreferences.h",
 ##		"CFPropertyList.h",
 ##		"CFSet.h",
-###		"CFString.h",
+		"CFString.h",
 ##		"CFStringEncodingExt.h",
 ##		"CFTimeZone.h",
 ##		"CFURL.h",
@@ -65,6 +71,17 @@ class MyScanner(Scanner_OSX):
 			"CFAllocatorReallocate",
 			"CFAllocatorDeallocate",
 			"CFGetAllocator",
+			# Array functions we skip for now.
+			"CFArrayGetValueAtIndex",
+			# Data pointer functions. Skip for now.
+			"CFDataGetBytePtr",
+			"CFDataGetMutableBytePtr",
+			"CFDataGetBytes",   # XXXX Should support this one
+			# String functions
+			"CFStringGetPascalString", # Use the C-string methods.
+			"CFStringGetPascalStringPtr", # TBD automatically
+			"CFStringGetCStringPtr", 
+			"CFStringGetCharactersPtr", 
 			]
 
 	def makegreylist(self):
@@ -72,11 +89,25 @@ class MyScanner(Scanner_OSX):
 
 	def makeblacklisttypes(self):
 		return [
-			"CFAllocatorContext",
+			"CFComparatorFunction", # Callback function pointer
+			"CFAllocatorContext", # Not interested in providing our own allocator
+			"void_ptr_ptr",  # Tricky. This is the initializer for arrays...
+			"void_ptr", # Ditto for various array lookup methods
+			"CFArrayApplierFunction", # Callback function pointer
+			"CFDictionaryApplierFunction", # Callback function pointer
+			"UniChar_ptr", # XXXX To be done
+			"const_UniChar_ptr", # XXXX To be done
+			"UniChar", # XXXX To be done
+			"va_list", # For printf-to-a-cfstring. Use Python.
+			"const_CFStringEncoding_ptr", # To be done, I guess
 			]
 
 	def makerepairinstructions(self):
 		return [
+			([("UInt8_ptr", "*", "InMode"), ("CFIndex", "*", "InMode")],
+			 [("UcharInBuffer", "*", "*")]),
+			([("const_char_ptr", "*", "ReturnMode")],
+			 [("return_stringptr", "*", "*")]),
 			]
 			
 if __name__ == "__main__":
