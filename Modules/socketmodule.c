@@ -19,12 +19,14 @@ Module interface:
 	a subclass of socket.error
 - socket.herror: exception raised for gethostby* errors,
 	a subclass of socket.error
+- socket.fromfd(fd, family, type[, proto]) --> new socket object (created
+        from an existing file descriptor)
 - socket.gethostbyname(hostname) --> host IP address (string: 'dd.dd.dd.dd')
 - socket.gethostbyaddr(IP address) --> (hostname, [alias, ...], [IP addr, ...])
 - socket.gethostname() --> host name (string: 'spam' or 'spam.domain.com')
 - socket.getprotobyname(protocolname) --> protocol number
 - socket.getservbyname(servicename, protocolname) --> port number
-- socket.socket(family, type [, proto]) --> new socket object
+- socket.socket([family[, type [, proto]]]) --> new socket object
 - socket.ntohs(16 bit value) --> new int object
 - socket.ntohl(32 bit value) --> new int object
 - socket.htons(16 bit value) --> new int object
