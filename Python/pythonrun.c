@@ -284,9 +284,8 @@ Py_Finalize(void)
 	 * Alas, a lot of stuff may still be alive now that will be cleaned
 	 * up later.
 	 */
-	if (Py_GETENV("PYTHONDUMPREFS")) {
+	if (Py_GETENV("PYTHONDUMPREFS"))
 		_Py_PrintReferences(stderr);
-	}
 #endif /* Py_TRACE_REFS */
 
 	/* Now we decref the exception classes.  After this point nothing
@@ -325,6 +324,14 @@ Py_Finalize(void)
 
 	PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
 
+#ifdef Py_TRACE_REFS
+	/* Display addresses (& refcnts) of all objects still alive.
+	 * An address can be used to find the repr of the object, printed
+	 * above by _Py_PrintReferences.
+	 */
+	if (Py_GETENV("PYTHONDUMPREFS"))
+		_Py_PrintReferenceAddresses(stderr);
+#endif /* Py_TRACE_REFS */
 #ifdef PYMALLOC_DEBUG
 	if (Py_GETENV("PYTHONMALLOCSTATS"))
 		_PyObject_DebugMallocStats();
