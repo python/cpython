@@ -915,7 +915,7 @@ RuntimeError: maximum recursion limit exceeded
 
 You can often restructure your regular expression to avoid recursion.
 
-\versionadded[Simple uses of the \regexp{*?} pattern are now
+\versionchanged[Simple uses of the \regexp{*?} pattern are now
 special-cased to avoid recursion.  Thus, the above regular expression
 can avoid recursion by being recast as \regexp{Begin [a-zA-Z0-9_ ]*?end}.
 As a further benefit, such regular expressions will run faster than
