@@ -146,6 +146,9 @@ Extension modules
 Library
 -------
 
+- Bug #848614: distutils' msvccompiler fails to find the MSVC6
+  compiler because of incomplete registry entries.
+
 - httplib.HTTP.putrequest now offers to omit the implicit Accept-Encoding.
 
 - Patch #841977: modulefinder didn't find extension modules in packages
