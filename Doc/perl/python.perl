@@ -63,11 +63,22 @@ sub ArabictoRoman {
 sub do_cmd_let{
     local($_) = @_;
     my $matched = 0;
-    s/\s*[\\]([a-zA-Z]+)\s*(=\s*)?[\\]([a-zA-Z]*)/$matched=1; ''/e;
+    s/[\\]([a-zA-Z]+)\s*(=\s*)?[\\]([a-zA-Z]*)/$matched=1; ''/e;
     if ($matched) {
 	my($new, $old) = ($1, $3);
 	eval "sub do_cmd_$new { do_cmd_$old" . '(@_); }';
 	print "\ndefining handler for \\$new using \\$old\n";
+    }
+    else {
+	s/[\\]([a-zA-Z]+)\s*(=\s*)?([^\\])/$matched=1; ''/es;
+	if ($matched) {
+	    my($new, $char) = ($1, $3);
+	    eval "sub do_cmd_$new { \"\\$char\" . \@_[0]; }";
+	    print "\ndefining handler for \\$new to insert '$char'\n";
+	}
+	else {
+	    write_warnings("Could not interpret \\let construct...");
+	}
     }
     $_;
 }
