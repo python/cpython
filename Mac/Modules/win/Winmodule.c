@@ -1872,6 +1872,8 @@ static PyObject *WinObj_IsWindowVisible(_self, _args)
 	return _res;
 }
 
+#if !TARGET_API_MAC_CARBON
+
 static PyObject *WinObj_GetWindowZoomFlag(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -1885,6 +1887,7 @@ static PyObject *WinObj_GetWindowZoomFlag(_self, _args)
 	                     _rv);
 	return _res;
 }
+#endif
 
 static PyObject *WinObj_GetWindowStructureRgn(_self, _args)
 	WindowObject *_self;
@@ -1934,6 +1937,8 @@ static PyObject *WinObj_GetWindowUpdateRgn(_self, _args)
 	return _res;
 }
 
+#if !TARGET_API_MAC_CARBON
+
 static PyObject *WinObj_GetWindowTitleWidth(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -1947,6 +1952,7 @@ static PyObject *WinObj_GetWindowTitleWidth(_self, _args)
 	                     _rv);
 	return _res;
 }
+#endif
 
 static PyObject *WinObj_GetNextWindow(_self, _args)
 	WindowObject *_self;
@@ -2255,16 +2261,22 @@ static PyMethodDef WinObj_methods[] = {
 	 "() -> (Rect bounds)"},
 	{"IsWindowVisible", (PyCFunction)WinObj_IsWindowVisible, 1,
 	 "() -> (Boolean _rv)"},
+
+#if !TARGET_API_MAC_CARBON
 	{"GetWindowZoomFlag", (PyCFunction)WinObj_GetWindowZoomFlag, 1,
 	 "() -> (Boolean _rv)"},
+#endif
 	{"GetWindowStructureRgn", (PyCFunction)WinObj_GetWindowStructureRgn, 1,
 	 "(RgnHandle r) -> None"},
 	{"GetWindowContentRgn", (PyCFunction)WinObj_GetWindowContentRgn, 1,
 	 "(RgnHandle r) -> None"},
 	{"GetWindowUpdateRgn", (PyCFunction)WinObj_GetWindowUpdateRgn, 1,
 	 "(RgnHandle r) -> None"},
+
+#if !TARGET_API_MAC_CARBON
 	{"GetWindowTitleWidth", (PyCFunction)WinObj_GetWindowTitleWidth, 1,
 	 "() -> (short _rv)"},
+#endif
 	{"GetNextWindow", (PyCFunction)WinObj_GetNextWindow, 1,
 	 "() -> (WindowPtr _rv)"},
 

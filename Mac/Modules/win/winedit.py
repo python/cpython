@@ -8,6 +8,7 @@ methods.append(f)
 
 f = Method(Boolean, 'GetWindowZoomFlag',
     (WindowRef, 'theWindow', InMode),
+    condition='#if !TARGET_API_MAC_CARBON'
 )
 methods.append(f)
 
@@ -31,6 +32,7 @@ methods.append(f)
 
 f = Method(short, 'GetWindowTitleWidth',
     (WindowRef, 'theWindow', InMode),
+    condition='#if !TARGET_API_MAC_CARBON'
 )
 methods.append(f)
 
