@@ -156,6 +156,9 @@ _socket socketmodule.c	# socket(2)
 # Memory-mapped files (also works on Win32).
 mmap mmapmodule.c
 
+# Dynamic readlines
+xreadlines xreadlinesmodule.c
+
 # Socket module compiled with SSL support; you must edit the SSL variable:
 #SSL=/usr/local/ssl
 #_socket socketmodule.c \
