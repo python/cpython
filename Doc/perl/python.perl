@@ -32,29 +32,6 @@ sub swallow_newline{
     s/[\n]?//o;
 }
 
-sub ArabictoRoman {
-    # Written by Robert Donohue <donahue@cfassp48.harvard.edu>,
-    # fixed by Fred Drake <fdrake@acm.org>,
-    # kept around in case it becomes useful.
-    my $a = @_;
-    my($b,@c,$i);
-    my(@D0,@D1,@D2);
-
-    @D0 = ("", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX");
-    @D1 = ("", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC");
-    @D2 = ("", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM");
-
-    $b = $a;
-    $i = 0;
-    while($b > 0) {
-	$c[$i] = ($b % 10);
-	$b -= ($b % 10);
-	$b /= 10;
-	$i++;
-    }
-    return $D2[$c[2]] . $D1[$c[1]] . $D0[$c[0]];
-}
-
 
 # This is a fairly simple hack; it supports \let when it is used to create
 # (or redefine) a macro to exactly be some other macro: \let\newname=\oldname.
