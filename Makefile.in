@@ -81,6 +81,7 @@ VERSION=	@VERSION@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 CC=		@CC@
+AR=		@AR@
 RANLIB=		@RANLIB@
 DEFS=		@DEFS@
 
