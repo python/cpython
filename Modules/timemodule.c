@@ -594,7 +594,7 @@ inittime(void)
 	m = Py_InitModule3("time", time_methods, module_doc);
 	d = PyModule_GetDict(m);
 	/* Accept 2-digit dates unless PYTHONY2K is set and non-empty */
-	p = getenv("PYTHONY2K");
+	p = Py_GETENV("PYTHONY2K");
 	ins(d, "accept2dyear", PyInt_FromLong((long) (!p || !*p)));
 	/* Squirrel away the module's dictionary for the y2k check */
 	Py_INCREF(d);
