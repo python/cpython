@@ -398,7 +398,7 @@ calculate_path(void)
       */
      else if(0 == _NSGetExecutablePath(progpath, &nsexeclength) && progpath[0] == SEP)
        ;
-#endif // __APPLE__
+#endif /* __APPLE__ */
 	else if (path) {
 		while (1) {
 			char *delim = strchr(path, DELIM);
