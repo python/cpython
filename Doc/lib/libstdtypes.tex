@@ -1556,8 +1556,9 @@ attribute and may not be present on all file-like objects.
 \end{memberdesc}
 
 \begin{memberdesc}[file]{newlines}
-If Python was built with the \code{--with-universal-newlines} option
-(the default) this read-only attribute exists, and for files opened in
+If Python was built with the \longprogramopt{with-universal-newlines}
+option to \program{configure} (the default) this read-only attribute
+exists, and for files opened in
 universal newline read mode it keeps track of the types of newlines
 encountered while reading the file. The values it can take are
 \code{'\e r'}, \code{'\e n'}, \code{'\e r\e n'}, \code{None} (unknown,
