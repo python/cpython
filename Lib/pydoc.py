@@ -484,7 +484,11 @@ TT { font-family: lucida typewriter, lucida console, courier }
         head = '<big><big><strong>%s</strong></big></big>' % linkedname
         try:
             path = inspect.getabsfile(object)
-            filelink = '<a href="file:%s">%s</a>' % (path, path)
+            url = path
+            if sys.platform == 'win32':
+                import nturl2path
+                url = nturl2path.pathname2url(path)
+            filelink = '<a href="file:%s">%s</a>' % (url, path)
         except TypeError:
             filelink = '(built-in)'
         info = []
@@ -1473,9 +1477,9 @@ class ModuleScanner(Scanner):
         return children
 
     def isnewpackage(self, (dir, package)):
-        inode = os.stat(dir)[1] # detect circular symbolic links
+        inode = os.path.exists(dir) and os.stat(dir)[1]
         if not (os.path.islink(dir) and inode in self.inodes):
-            self.inodes.append(inode)
+            self.inodes.append(inode) # detect circular symbolic links
             return ispackage(dir)
 
     def run(self, callback, key=None, completer=None):
