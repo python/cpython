@@ -294,3 +294,9 @@ subclassed.  This should not be an issue in most cases.
 The format of the pickle data is identical to that produced using the
 \module{pickle} module, so it is possible to use \module{pickle} and
 \module{cPickle} interchangably with existing pickles.
+
+(Since the pickle data format is actually a tiny stack-oriented
+programming language, and there are some freedoms in the encodings of
+certain objects, it's possible that the two modules produce different
+pickled data for the same input objects; however they will always be
+able to read each others pickles back in.)
