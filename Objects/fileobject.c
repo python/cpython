@@ -24,12 +24,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* File object implementation */
 
-/* XXX This should become a built-in module 'io'.  It should support more
-   functionality, better exception handling for invalid calls, etc.
-   (Especially reading on a write-only file or vice versa!)
-   It should also cooperate with posix to support popen(), which should
-   share most code but have a special close function. */
-
 #include "allobjects.h"
 
 #define BUF(v) GETSTRINGVALUE((stringobject *)v)
@@ -44,6 +38,7 @@ typedef struct {
 	FILE *f_fp;
 	object *f_name;
 	object *f_mode;
+	int (*f_close) PROTO((FILE *));
 	int f_softspace; /* Flag used by 'print' command */
 } fileobject;
 
@@ -59,10 +54,11 @@ getfilefile(f)
 }
 
 object *
-newopenfileobject(fp, name, mode)
+newopenfileobject(fp, name, mode, close)
 	FILE *fp;
 	char *name;
 	char *mode;
+	int (*close) FPROTO((FILE *));
 {
 	fileobject *f = NEWOBJ(fileobject, &Filetype);
 	if (f == NULL)
@@ -70,6 +66,7 @@ newopenfileobject(fp, name, mode)
 	f->f_fp = NULL;
 	f->f_name = newstringobject(name);
 	f->f_mode = newstringobject(mode);
+	f->f_close = close;
 	f->f_softspace = 0;
 	if (f->f_name == NULL || f->f_mode == NULL) {
 		DECREF(f);
@@ -83,9 +80,10 @@ object *
 newfileobject(name, mode)
 	char *name, *mode;
 {
+	extern int fclose PROTO((FILE *));
 	fileobject *f;
 	FILE *fp;
-	f = (fileobject *) newopenfileobject((FILE *)NULL, name, mode);
+	f = (fileobject *) newopenfileobject((FILE *)NULL, name, mode, fclose);
 	if (f == NULL)
 		return NULL;
 #ifdef THINK_C
@@ -110,8 +108,8 @@ static void
 file_dealloc(f)
 	fileobject *f;
 {
-	if (f->f_fp != NULL)
-		fclose(f->f_fp);
+	if (f->f_fp != NULL && f->f_close != NULL)
+		(*f->f_close)(f->f_fp);
 	if (f->f_name != NULL)
 		DECREF(f->f_name);
 	if (f->f_mode != NULL)
@@ -151,14 +149,24 @@ file_close(f, args)
 	fileobject *f;
 	object *args;
 {
+	int sts = 0;
 	if (args != NULL) {
 		err_badarg();
 		return NULL;
 	}
+	errno = 0;
 	if (f->f_fp != NULL) {
-		fclose(f->f_fp);
+		if (f->f_close != NULL)
+			sts = (*f->f_close)(f->f_fp);
 		f->f_fp = NULL;
 	}
+	if (sts == EOF) {
+		if (errno == 0)
+			errno = EIO;
+		return err_errno(RuntimeError);
+	}
+	if (sts != 0)
+		return newintobject((long)sts);
 	INCREF(None);
 	return None;
 }
@@ -230,6 +238,18 @@ file_flush(f, args)
 	}
 	INCREF(None);
 	return None;
+}
+
+static object *
+file_isatty(f, args)
+	fileobject *f;
+	object *args;
+{
+	if (args != NULL || f->f_fp == NULL) {
+		err_badarg();
+		return NULL;
+	}
+	return newintobject((long)isatty(fileno(f->f_fp)));
 }
 
 static object *
@@ -442,6 +462,7 @@ file_write(f, args)
 static struct methodlist file_methods[] = {
 	{"close",	file_close},
 	{"flush",	file_flush},
+	{"isatty",	file_isatty},
 	{"read",	file_read},
 	{"readline",	file_readline},
 	{"readlines",	file_readlines},
