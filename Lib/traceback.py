@@ -188,10 +188,14 @@ def extract_stack(f=None, limit = None):
 # in compile.c.
 
 def tb_lineno(tb):
-	c = tb.tb_frame.f_code
-	tab = c.co_lnotab
-	line = c.co_firstlineno
-	stopat = tb.tb_lasti
+	f = tb.tb_frame
+	try:
+		c = f.f_code
+		tab = c.co_lnotab
+		line = c.co_firstlineno
+		stopat = tb.tb_lasti
+	except AttributeError:
+		return f.f_lineno
 	addr = 0
 	for i in range(0, len(tab), 2):
 		addr = addr + ord(tab[i])
