@@ -179,6 +179,9 @@ def unmimify_part(ifile, ofile, decode_base64 = 0):
 				nifile = File(ifile, multipart)
 				unmimify_part(nifile, ofile, decode_base64)
 				line = nifile.peek
+				if not line:
+					# premature end of file
+					break
 				continue
 			# not a boundary between parts
 			break
@@ -390,6 +393,9 @@ def mimify_part(ifile, ofile, is_mime):
 			nifile = File(ifile, multipart)
 			mimify_part(nifile, ofile, 1)
 			line = nifile.peek
+			if not line:
+				# premature end of file
+				break
 			ofile.write(line)
 			continue
 
