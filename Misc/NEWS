@@ -94,6 +94,10 @@ Library
 - The threading module has a new class, local, for creating objects
   that provide thread-local data.
 
+- Bug #990307: when keep_empty_values is True, cgi.parse_qsl()
+  no longer returns spurious empty fields.
+
+
 Tools/Demos
 -----------
 
