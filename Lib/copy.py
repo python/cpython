@@ -85,7 +85,10 @@ d[types.IntType] = _copy_atomic
 d[types.LongType] = _copy_atomic
 d[types.FloatType] = _copy_atomic
 d[types.StringType] = _copy_atomic
-d[types.CodeType] = _copy_atomic
+try:
+	d[types.CodeType] = _copy_atomic
+except AttributeError:
+	pass
 d[types.TypeType] = _copy_atomic
 d[types.XRangeType] = _copy_atomic
 d[types.ClassType] = _copy_atomic
