@@ -13,7 +13,7 @@ from distutils.errors import DistutilsFileError, DistutilsInternalError
 
 # cache for by mkpath() -- in addition to cheapening redundant calls,
 # eliminates redundant "creating /foo/bar/baz" messages in dry-run mode
-PATH_CREATED = {}
+_path_created = {}
 
 # I don't use os.makedirs because a) it's new to Python 1.5.2, and
 # b) it blows up if the directory already exists (I want to silently
@@ -28,7 +28,7 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
        summary of each mkdir to stdout.  Return the list of directories
        actually created."""
 
-    global PATH_CREATED
+    global _path_created
 
     # Detect a common bug -- name is None
     if type(name) is not StringType:
@@ -44,7 +44,7 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
     created_dirs = []
     if os.path.isdir (name) or name == '':
         return created_dirs
-    if PATH_CREATED.get (name):
+    if _path_created.get (name):
         return created_dirs
 
     (head, tail) = os.path.split (name)
@@ -64,7 +64,7 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
     for d in tails:
         #print "head = %s, d = %s: " % (head, d),
         head = os.path.join (head, d)
-        if PATH_CREATED.get (head):
+        if _path_created.get (head):
             continue
 
         if verbose:
@@ -78,7 +78,7 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
                 raise DistutilsFileError, \
                       "could not create '%s': %s" % (head, exc[-1])
 
-        PATH_CREATED[head] = 1
+        _path_created[head] = 1
     return created_dirs
 
 # mkpath ()
@@ -196,7 +196,7 @@ def remove_tree (directory, verbose=0, dry_run=0):
     (apart from being reported to stdout if 'verbose' is true).
     """
     from distutils.util import grok_environment_error
-    global PATH_CREATED
+    global _path_created
 
     if verbose:
         print "removing '%s' (and everything under it)" % directory
@@ -208,8 +208,8 @@ def remove_tree (directory, verbose=0, dry_run=0):
         try:
             apply(cmd[0], (cmd[1],))
             # remove dir from cache if it's already there
-            if PATH_CREATED.has_key(cmd[1]):
-                del PATH_CREATED[cmd[1]]
+            if _path_created.has_key(cmd[1]):
+                del _path_created[cmd[1]]
         except (IOError, OSError), exc:
             if verbose:
                 print grok_environment_error(
