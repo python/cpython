@@ -451,9 +451,9 @@ This table lists the sequence operations sorted in ascending priority
 and \var{j} are integers:
 
 \begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
-  \lineiii{\var{x} in \var{s}}{\code{1} if an item of \var{s} is equal to \var{x}, else \code{0}}{(1)}
-  \lineiii{\var{x} not in \var{s}}{\code{0} if an item of \var{s} is
-equal to \var{x}, else \code{1}}{(1)}
+  \lineiii{\var{x} in \var{s}}{\code{True} if an item of \var{s} is equal to \var{x}, else \code{False}}{(1)}
+  \lineiii{\var{x} not in \var{s}}{\code{False} if an item of \var{s} is
+equal to \var{x}, else \code{True}}{(1)}
   \hline
   \lineiii{\var{s} + \var{t}}{the concatenation of \var{s} and \var{t}}{(6)}
   \lineiii{\var{s} * \var{n}\textrm{,} \var{n} * \var{s}}{\var{n} shallow copies of \var{s} concatenated}{(2)}
