@@ -20,6 +20,12 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PySet_Type;
 PyAPI_DATA(PyTypeObject) PyFrozenSet_Type;
 
+
+#define PyAnySet_Check(ob) \
+	((ob)->ob_type == &PySet_Type || (ob)->ob_type == &PyFrozenSet_Type || \
+	  PyType_IsSubtype((ob)->ob_type, &PySet_Type) || \
+	  PyType_IsSubtype((ob)->ob_type, &PyFrozenSet_Type))
+
 #ifdef __cplusplus
 }
 #endif
