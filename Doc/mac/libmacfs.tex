@@ -15,10 +15,13 @@ Manager, \program{finder} aliases and the Standard File package.
 
 Whenever a function or method expects a \var{file} argument, this
 argument can be one of three things:\ (1) a full or partial Macintosh
-pathname, (2) an \pytype{FSSpec} object or (3) a 3-tuple \code{(\var{wdRefNum},
-\var{parID}, \var{name})} as described in \citetitle{Inside
-Macintosh:\ Files}. A description of aliases and the Standard File
-package can also be found there.
+pathname, (2) an \pytype{FSSpec} object or (3) a 3-tuple
+\code{(\var{wdRefNum}, \var{parID}, \var{name})} as described in
+\citetitle{Inside Macintosh:\ Files}. A description of aliases and the
+Standard File package can also be found there.
+
+\strong{Note:} A module, \refmodule{macfsn}, is auto-imported to replace
+StandardFile calls in macfs with NavServices calls.
 
 \begin{funcdesc}{FSSpec}{file}
 Create an \pytype{FSSpec} object for the specified file.
@@ -59,7 +62,7 @@ without cancelling.
 
 \begin{funcdesc}{PromptGetFile}{prompt\optional{, type, \moreargs}}
 Similar to \function{StandardGetFile()} but allows you to specify a
-prompt.
+prompt which will be displayed at the top of the dialog.
 \end{funcdesc}
 
 \begin{funcdesc}{StandardPutFile}{prompt\optional{, default}}
@@ -71,9 +74,11 @@ completed the dialog without cancelling.
 \end{funcdesc}
 
 \begin{funcdesc}{GetDirectory}{\optional{prompt}}
-Present the user with a non-standard ``select a directory''
-dialog. \var{prompt} is the prompt string, and the optional.
-Return an \pytype{FSSpec} object and a success-indicator.
+Present the user with a non-standard ``select a directory'' dialog.  You
+have to first open the directory before clicking on the ``select current
+directory'' button. \var{prompt} is the prompt string which will be
+displayed at the top of the dialog. Return an \pytype{FSSpec} object and
+a success-indicator.
 \end{funcdesc}
 
 \begin{funcdesc}{SetFolder}{\optional{fsspec}}
@@ -84,7 +89,7 @@ though). If no argument is passed the folder will be set to the
 current directory, i.e. what \function{os.getcwd()} returns.
 
 Note that starting with system 7.5 the user can change Standard File
-behaviour with the ``general controls'' controlpanel, thereby making
+behaviour with the ``general controls'' control panel, thereby making
 this call inoperative.
 \end{funcdesc}
 
@@ -106,7 +111,7 @@ standard module \var{MACFS}.
 \end{funcdesc}
 
 \begin{funcdesc}{FindApplication}{creator}
-Locate the application with 4-char creator code \var{creator}. The
+Locate the application with 4-character creator code \var{creator}. The
 function returns an \pytype{FSSpec} object pointing to the application.
 \end{funcdesc}
 

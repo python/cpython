@@ -12,7 +12,7 @@ which stores preferences for Internet programs such as mail address,
 default homepage, etc. Also, Internet Config contains an elaborate set
 of mappings from Macintosh creator/type codes to foreign filename
 extensions plus information on how to transfer files (binary, ascii,
-etc).
+etc.). Since MacOS 9, this module is a control panel named Internet.
 
 There is a low-level companion module
 \module{icglue}\refbimodindex{icglue} which provides the basic
@@ -61,7 +61,7 @@ works, and changes the option in the configuration file.
 The module knows about various datatypes, and converts the internal IC
 representation to a ``logical'' Python data structure. Running the
 \module{ic} module standalone will run a test program that lists all
-keys and values in your IC database, this will have to server as
+keys and values in your IC database, this will have to serve as
 documentation.
 
 If the module does not know how to represent the data it returns an
@@ -84,7 +84,7 @@ scheme.  If \var{hint} is not provided, incomplete URLs are invalid.
 Find an URL somewhere in \var{data} and return start position, end
 position and the URL. The optional \var{start} and \var{end} can be
 used to limit the search, so for instance if a user clicks in a long
-textfield you can pass the whole textfield and the click-position in
+text field you can pass the whole text field and the click-position in
 \var{start} and this routine will return the whole URL in which the
 user clicked.  As above, \var{hint} is an optional scheme used to
 complete incomplete URLs.
