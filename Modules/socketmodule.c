@@ -1369,6 +1369,43 @@ initsocket()
 	insint(d, "IPPORT_USERRESERVED", 5000);
 #endif
 
+	/* Some reserved IP v.4 addresses */
+#ifdef	INADDR_ANY
+	insint(d, "INADDR_ANY", INADDR_ANY);
+#else
+	insint(d, "INADDR_ANY", 0x00000000);
+#endif
+#ifdef	INADDR_BROADCAST
+	insint(d, "INADDR_BROADCAST", INADDR_BROADCAST);
+#else
+	insint(d, "INADDR_BROADCAST", 0xffffffff);
+#endif
+#ifdef	INADDR_LOOPBACK
+	insint(d, "INADDR_LOOPBACK", INADDR_LOOPBACK);
+#else
+	insint(d, "INADDR_LOOPBACK", 0x7F000001);
+#endif
+#ifdef	INADDR_UNSPEC_GROUP
+	insint(d, "INADDR_UNSPEC_GROUP", INADDR_UNSPEC_GROUP);
+#else
+	insint(d, "INADDR_UNSPEC_GROUP", 0xe0000000);
+#endif
+#ifdef	INADDR_ALLHOSTS_GROUP
+	insint(d, "INADDR_ALLHOSTS_GROUP", INADDR_ALLHOSTS_GROUP);
+#else
+	insint(d, "INADDR_ALLHOSTS_GROUP", 0xe0000001);
+#endif
+#ifdef	INADDR_MAX_LOCAL_GROUP
+	insint(d, "INADDR_MAX_LOCAL_GROUP", INADDR_MAX_LOCAL_GROUP);
+#else
+	insint(d, "INADDR_MAX_LOCAL_GROUP", 0xe00000ff);
+#endif
+#ifdef	INADDR_NONE
+	insint(d, "INADDR_NONE", INADDR_NONE);
+#else
+	insint(d, "INADDR_NONE", 0xffffffff);
+#endif
+
 	/* IP [gs]etsockopt options */
 #ifdef	IP_OPTIONS
 	insint(d, "IP_OPTIONS", IP_OPTIONS);
