@@ -523,8 +523,11 @@ instance_compare(inst, other)
 	object *result;
 	int outcome;
 	result  = instancebinop(inst, other, "__cmp__", "__rcmp__");
-	if (result == NULL)
-		return -2;
+	if (result == NULL) {
+		/* no __cmp__ or __rcmp__ methods, so use addresses */
+		err_clear();
+		return inst < other ? -1 : (inst > other ? 1 : 0);
+	}
 	outcome = getintvalue(result);
 	DECREF(result);
 	if (outcome == -1 && err_occurred())
