@@ -74,6 +74,8 @@ typedef struct {
     SRE_REPEAT *repeat; /* current repeat context */
     /* hooks */
     SRE_TOLOWER_HOOK lower;
+    /* debugging */
+    int maxlevel;
 } SRE_STATE;
 
 typedef struct {
