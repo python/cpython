@@ -1050,7 +1050,6 @@ com_factor(c, n)
 	struct compiling *c;
 	node *n;
 {
-	int i;
 	REQ(n, factor);
 	if (TYPE(CHILD(n, 0)) == PLUS) {
 		com_factor(c, CHILD(n, 1));
@@ -1605,6 +1604,11 @@ com_assign(c, n, assigning)
 				return;
 			}
 			break;
+
+		case lambdef:
+			err_setstr(SyntaxError, "can't assign to lambda");
+			c->c_errors++;
+			return;
 		
 		default:
 			fprintf(stderr, "node type %d\n", TYPE(n));
