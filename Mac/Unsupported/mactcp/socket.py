@@ -27,7 +27,7 @@ AF_INET = 1
 
 # Internal constants
 
-_BUFSIZE = 4096			# Size of TCP/UDP input buffer
+_BUFSIZE = 15*1024			# Size of TCP/UDP input buffer
 
 _myaddress = None
 _myname = None
@@ -74,21 +74,21 @@ def _gethostaddress():
 
 def socket(family, type, *which):
 	if family <> AF_INET:
-		raise my_error, 'Protocol family %d not supported' % type
+		raise _myerror, 'Protocol family %d not supported' % type
 	if type == SOCK_DGRAM:
 		return _udpsocket()
 	elif type == SOCK_STREAM:
 		return _tcpsocket()
-	raise my_error, 'Protocol type %d not supported' % type
+	raise _myerror, 'Protocol type %d not supported' % type
 
 
 def fromfd(*args):
-	raise my_error, 'Operation not supported on a mac'
+	raise _myerror, 'Operation not supported on a mac'
 
 
 class _socket:
 	def unsupported(self, *args):
-		raise my_error, 'Operation not supported on this socket'
+		raise _myerror, 'Operation not supported on this socket'
 	
 	accept = unsupported
 	bind = unsupported
@@ -121,7 +121,7 @@ class _tcpsocket(_socket):
 
 	def accept(self):
 		if not self.listening:
-			raise my_error, 'Not listening'
+			raise _myerror, 'Not listening'
 		self.listening = 0
 		self.stream.wait()
 		self.accepted = 1
@@ -169,7 +169,7 @@ class _tcpsocket(_socket):
 		
 	def recv(self, bufsize, flags=0):
 		if flags:
-			raise my_error, 'recv flags not yet supported on mac'
+			raise _myerror, 'recv flags not yet supported on mac'
 		if not self.databuf:
 			try:
 				self.databuf, urg, mark = self.stream.Rcv(0)
@@ -207,7 +207,7 @@ class _udpsocket(_socket):
 class _socketfile:
 	
 	def __init__(self, sock, rw):
-		if rw not in ('r', 'w'): raise ValueError, "mode must be 'r' or 'w'"
+		if rw not in ('r', 'w'): raise _myerror, "mode must be 'r' or 'w'"
 		self.sock = sock
 		self.rw = rw
 		self.buf = ''
