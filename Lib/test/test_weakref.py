@@ -292,19 +292,25 @@ class MappingTestCase(TestBase):
         items = dict.items()
         for item in dict.iteritems():
             items.remove(item)
-        self.assert_(len(items) == 0, "iterator did not touch all items")
+        self.assert_(len(items) == 0, "iteritems() did not touch all items")
 
-        # key iterator:
+        # key iterator, via __iter__():
         keys = dict.keys()
         for k in dict:
             keys.remove(k)
-        self.assert_(len(keys) == 0, "iterator did not touch all keys")
+        self.assert_(len(keys) == 0, "__iter__() did not touch all keys")
+
+        # key iterator, via iterkeys():
+        keys = dict.keys()
+        for k in dict.iterkeys():
+            keys.remove(k)
+        self.assert_(len(keys) == 0, "iterkeys() did not touch all keys")
 
         # value iterator:
         values = dict.values()
         for v in dict.itervalues():
             values.remove(v)
-        self.assert_(len(values) == 0, "iterator did not touch all values")
+        self.assert_(len(values) == 0, "itervalues() did not touch all values")
 
     def make_weak_keyed_dict(self):
         dict = weakref.WeakKeyDictionary()
@@ -319,6 +325,57 @@ class MappingTestCase(TestBase):
         for o in objects:
             dict[o.arg] = o
         return dict, objects
+
+    def check_popitem(self, klass, key1, value1, key2, value2):
+        weakdict = klass()
+        weakdict[key1] = value1
+        weakdict[key2] = value2
+        self.assert_(len(weakdict) == 2)
+        k, v = weakdict.popitem()
+        self.assert_(len(weakdict) == 1)
+        if k is key1:
+            self.assert_(v is value1)
+        else:
+            self.assert_(v is value2)
+        k, v = weakdict.popitem()
+        self.assert_(len(weakdict) == 0)
+        if k is key1:
+            self.assert_(v is value1)
+        else:
+            self.assert_(v is value2)
+
+    def test_weak_valued_dict_popitem(self):
+        self.check_popitem(weakref.WeakValueDictionary,
+                           "key1", C(), "key2", C())
+
+    def test_weak_keyed_dict_popitem(self):
+        self.check_popitem(weakref.WeakKeyDictionary,
+                           C(), "value 1", C(), "value 2")
+
+    def check_setdefault(self, klass, key, value1, value2):
+        self.assert_(value1 is not value2,
+                     "invalid test"
+                     " -- value parameters must be distinct objects")
+        weakdict = klass()
+        o = weakdict.setdefault(key, value1)
+        self.assert_(o is value1)
+        self.assert_(weakdict.has_key(key))
+        self.assert_(weakdict.get(key) is value1)
+        self.assert_(weakdict[key] is value1)
+
+        o = weakdict.setdefault(key, value2)
+        self.assert_(o is value1)
+        self.assert_(weakdict.has_key(key))
+        self.assert_(weakdict.get(key) is value1)
+        self.assert_(weakdict[key] is value1)
+
+    def test_weak_valued_dict_setdefault(self):
+        self.check_setdefault(weakref.WeakValueDictionary,
+                              "key", C(), C())
+
+    def test_weak_keyed_dict_setdefault(self):
+        self.check_setdefault(weakref.WeakKeyDictionary,
+                              C(), "value 1", "value 2")
 
     def check_update(self, klass, dict):
         #
