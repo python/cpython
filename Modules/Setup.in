@@ -314,12 +314,12 @@ rotor rotormodule.c		# enigma-inspired encryption
 #syslog syslogmodule.c		# syslog daemon interface
 
 
-# Lance's curses module.  This requires the System V version of
-# curses, sometimes known as ncurses (e.g. on Linux, link with
-# -lncurses instead of -lcurses; on SunOS 4.1.3, insert -I/usr/5include
+# Curses support, requring the System V version of curses, often
+# provided by the ncurses library.  e.g. on Linux, link with -lncurses
+# instead of -lcurses; on SunOS 4.1.3, insert -I/usr/5include
 # -L/usr/5lib before -lcurses).
 
-#curses cursesmodule.c -lcurses -ltermcap
+#_curses _cursesmodule.c -lcurses -ltermcap
 
 
 
