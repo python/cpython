@@ -703,7 +703,7 @@ drawing_getattr(wp, name)
 	return findmethod(drawing_methods, (object *)wp, name);
 }
 
-static typeobject Drawingtype = {
+typeobject Drawingtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"drawing",		/*tp_name*/
@@ -918,6 +918,27 @@ text_setfocus(self, args)
 }
 
 static object *
+text_settext(self, args)
+	textobject *self;
+	object *args;
+{
+	object *text;
+	char *buf;
+	int size;
+	if (!getstrarg(args, &text))
+		return NULL;
+	size = getstringsize(text);
+	if ((buf = NEW(char, size)) == NULL) {
+		err_set(MemoryError);
+		return NULL;
+	}
+	memcpy(buf, getstringvalue(text), size);
+	tesetbuf(self->t_text, buf, size); /* Becomes owner of buffer */
+	INCREF(None);
+	return None;
+}
+
+static object *
 text_replace(self, args)
 	textobject *self;
 	object *args;
@@ -941,6 +962,7 @@ static struct methodlist text_methods[] = {
 	"move",		text_move,
 	"replace",	text_replace,
 	"setfocus",	text_setfocus,
+	"settext",	text_settext,
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -976,7 +998,7 @@ text_setattr(tp, name, v)
 		return dictinsert(tp->t_attr, name, v);
 }
 
-static typeobject Texttype = {
+typeobject Texttype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"textedit",		/*tp_name*/
@@ -1154,7 +1176,7 @@ menu_setattr(mp, name, v)
 		return dictinsert(mp->m_attr, name, v);
 }
 
-static typeobject Menutype = {
+typeobject Menutype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"menu",			/*tp_name*/
@@ -1249,6 +1271,18 @@ window_gettitle(wp, args)
 		return NULL;
 	INCREF(wp->w_title);
 	return wp->w_title;
+}
+
+static object *
+window_getwinpos(wp, args)
+	windowobject *wp;
+	object *args;
+{
+	int h, v;
+	if (!getnoarg(args))
+		return NULL;
+	wgetwinpos(wp->w_win, &h, &v);
+	return makepoint(h, v);
 }
 
 static object *
@@ -1438,6 +1472,7 @@ static struct methodlist window_methods[] = {
 	{"getdocsize",	window_getdocsize},
 	{"getorigin",	window_getorigin},
 	{"gettitle",	window_gettitle},
+	{"getwinpos",	window_getwinpos},
 	{"getwinsize",	window_getwinsize},
 	{"menucreate",	window_menucreate},
 	{"scroll",	window_scroll},
@@ -1484,7 +1519,7 @@ window_setattr(wp, name, v)
 		return dictinsert(wp->w_attr, name, v);
 }
 
-static typeobject Windowtype = {
+typeobject Windowtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"window",		/*tp_name*/
@@ -1700,8 +1735,8 @@ stdwin_setdefscrollbars(sw, args)
 }
 
 static object *
-stdwin_getdefwinpos(wp, args)
-	windowobject *wp;
+stdwin_getdefwinpos(self, args)
+	object *self;
 	object *args;
 {
 	int h, v;
@@ -1712,8 +1747,8 @@ stdwin_getdefwinpos(wp, args)
 }
 
 static object *
-stdwin_getdefwinsize(wp, args)
-	windowobject *wp;
+stdwin_getdefwinsize(self, args)
+	object *self;
 	object *args;
 {
 	int width, height;
@@ -1724,8 +1759,8 @@ stdwin_getdefwinsize(wp, args)
 }
 
 static object *
-stdwin_getdefscrollbars(wp, args)
-	windowobject *wp;
+stdwin_getdefscrollbars(self, args)
+	object *self;
 	object *args;
 {
 	int h, v;
@@ -1916,6 +1951,30 @@ stdwin_fetchcolor(self, args)
 	return newintobject((long)wfetchcolor(getstringvalue(colorname)));
 }
 
+static object *
+stdwin_getscrsize(self, args)
+	object *self;
+	object *args;
+{
+	int width, height;
+	if (!getnoarg(args))
+		return NULL;
+	wgetscrsize(&width, &height);
+	return makepoint(width, height);
+}
+
+static object *
+stdwin_getscrmm(self, args)
+	object *self;
+	object *args;
+{
+	int width, height;
+	if (!getnoarg(args))
+		return NULL;
+	wgetscrmm(&width, &height);
+	return makepoint(width, height);
+}
+
 static struct methodlist stdwin_methods[] = {
 	{"askfile",		stdwin_askfile},
 	{"askstr",		stdwin_askstr},
@@ -1927,6 +1986,8 @@ static struct methodlist stdwin_methods[] = {
 	{"getdefwinpos",	stdwin_getdefwinpos},
 	{"getdefwinsize",	stdwin_getdefwinsize},
 	{"getevent",		stdwin_getevent},
+	{"getscrmm",		stdwin_getscrmm},
+	{"getscrsize",		stdwin_getscrsize},
 	{"getselection",	stdwin_getselection},
 	{"menucreate",		stdwin_menucreate},
 	{"message",		stdwin_message},
