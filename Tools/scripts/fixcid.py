@@ -292,7 +292,7 @@ def addsubst(substfile):
 		words = string.split(line[:i])
 		if not words: continue
 		if len(words) == 3 and words[0] == 'struct':
-			words[:2] == [words[0] + ' ' + words[1]]
+			words[:2] = [words[0] + ' ' + words[1]]
 		elif len(words) <> 2:
 			err(substfile + ':' + `lineno` +
 				  ': warning: bad line: ' + line)
