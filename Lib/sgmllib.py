@@ -61,6 +61,7 @@ class SGMLParser(markupbase.ParserBase):
 
     def reset(self):
         """Reset this instance. Loses all unprocessed data."""
+        self.__starttag_text = None
         self.rawdata = ''
         self.stack = []
         self.lasttag = '???'
@@ -221,7 +222,6 @@ class SGMLParser(markupbase.ParserBase):
         j = match.end(0)
         return j-i
 
-    __starttag_text = None
     def get_starttag_text(self):
         return self.__starttag_text
 
