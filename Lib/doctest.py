@@ -176,6 +176,7 @@ __all__ = [
     'DONT_ACCEPT_BLANKLINE',
     'NORMALIZE_WHITESPACE',
     'ELLIPSIS',
+    'IGNORE_EXCEPTION_DETAIL',
     'COMPARISON_FLAGS',
     'REPORT_UDIFF',
     'REPORT_CDIFF',
@@ -261,11 +262,13 @@ DONT_ACCEPT_TRUE_FOR_1 = register_optionflag('DONT_ACCEPT_TRUE_FOR_1')
 DONT_ACCEPT_BLANKLINE = register_optionflag('DONT_ACCEPT_BLANKLINE')
 NORMALIZE_WHITESPACE = register_optionflag('NORMALIZE_WHITESPACE')
 ELLIPSIS = register_optionflag('ELLIPSIS')
+IGNORE_EXCEPTION_DETAIL = register_optionflag('IGNORE_EXCEPTION_DETAIL')
 
 COMPARISON_FLAGS = (DONT_ACCEPT_TRUE_FOR_1 |
                     DONT_ACCEPT_BLANKLINE |
                     NORMALIZE_WHITESPACE |
-                    ELLIPSIS)
+                    ELLIPSIS |
+                    IGNORE_EXCEPTION_DETAIL)
 
 REPORT_UDIFF = register_optionflag('REPORT_UDIFF')
 REPORT_CDIFF = register_optionflag('REPORT_CDIFF')
@@ -1293,6 +1296,10 @@ class DocTestRunner:
         # to modify them).
         original_optionflags = self.optionflags
 
+        SUCCESS, FAILURE, BOOM = range(3) # `outcome` state
+
+        check = self._checker.check_output
+
         # Process each example.
         for examplenum, example in enumerate(test.examples):
 
@@ -1337,45 +1344,53 @@ class DocTestRunner:
 
             got = self._fakeout.getvalue()  # the actual output
             self._fakeout.truncate(0)
+            outcome = FAILURE   # guilty until proved innocent or insane
 
             # If the example executed without raising any exceptions,
-            # then verify its output and report its outcome.
+            # verify its output.
             if exception is None:
-                if self._checker.check_output(example.want, got,
-                                              self.optionflags):
-                    if not quiet:
-                        self.report_success(out, test, example, got)
-                else:
-                    if not quiet:
-                        self.report_failure(out, test, example, got)
-                    failures += 1
+                if check(example.want, got, self.optionflags):
+                    outcome = SUCCESS
 
-            # If the example raised an exception, then check if it was
-            # expected.
+            # The example raised an exception:  check if it was expected.
             else:
                 exc_info = sys.exc_info()
                 exc_msg = traceback.format_exception_only(*exc_info[:2])[-1]
+                if not quiet:
+                    got += _exception_traceback(exc_info)
 
-                # If `example.exc_msg` is None, then we weren't
-                # expecting an exception.
+                # If `example.exc_msg` is None, then we weren't expecting
+                # an exception.
                 if example.exc_msg is None:
-                    if not quiet:
-                        self.report_unexpected_exception(out, test, example,
-                                                         exc_info)
-                    failures += 1
-                # If `example.exc_msg` matches the actual exception
-                # message (`exc_msg`), then the example succeeds.
-                elif (self._checker.check_output(example.exc_msg, exc_msg,
-                                                 self.optionflags)):
-                    if not quiet:
-                        got += _exception_traceback(exc_info)
-                        self.report_success(out, test, example, got)
-                # Otherwise, the example fails.
-                else:
-                    if not quiet:
-                        got += _exception_traceback(exc_info)
-                        self.report_failure(out, test, example, got)
-                    failures += 1
+                    outcome = BOOM
+
+                # We expected an exception:  see whether it matches.
+                elif check(example.exc_msg, exc_msg, self.optionflags):
+                    outcome = SUCCESS
+
+                # Another chance if they didn't care about the detail.
+                elif self.optionflags & IGNORE_EXCEPTION_DETAIL:
+                    m1 = re.match(r'[^:]*:', example.exc_msg)
+                    m2 = re.match(r'[^:]*:', exc_msg)
+                    if m1 and m2 and check(m1.group(0), m2.group(0),
+                                           self.optionflags):
+                        outcome = SUCCESS
+
+            # Report the outcome.
+            if outcome is SUCCESS:
+                if not quiet:
+                    self.report_success(out, test, example, got)
+            elif outcome is FAILURE:
+                if not quiet:
+                    self.report_failure(out, test, example, got)
+                failures += 1
+            elif outcome is BOOM:
+                if not quiet:
+                    self.report_unexpected_exception(out, test, example,
+                                                     exc_info)
+                failures += 1
+            else:
+                assert False, ("unknown outcome", outcome)
 
         # Restore the option flags (in case they were modified)
         self.optionflags = original_optionflags

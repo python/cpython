@@ -307,6 +307,9 @@ Some details you should read once, but won't need to remember:
   to be the start of the exception detail.  Of course this does the
   right thing for genuine tracebacks.
 
+\item When the \constant{IGNORE_EXCEPTION_DETAIL} doctest option is
+  is specified, everything following the leftmost colon is ignored.
+
 \end{itemize}
 
 \versionchanged[The ability to handle a multi-line exception detail
@@ -363,6 +366,34 @@ example's expected output:
     best to keep usage of this simple.  Complicated uses can lead to the
     same kinds of "oops, it matched too much!" surprises that \regexp{.*}
     is prone to in regular expressions.
+\end{datadesc}
+
+\begin{datadesc}{IGNORE_EXCEPTION_DETAIL}
+    When specified, an example that expects an exception passes if
+    an exception of the expected type is raised, even if the exception
+    detail does not match.  For example, an example expecting
+    \samp{ValueError: 42} will pass if the actual exception raised is
+    \samp{ValueError: 3*14}, but will fail, e.g., if
+    \exception{TypeError} is raised.
+
+    Note that a similar effect can be obtained using \constant{ELLIPSIS},
+    and \constant{IGNORE_EXCEPTION_DETAIL} may go away when Python releases
+    prior to 2.4 become uninteresting.  Until then,
+    \constant{IGNORE_EXCEPTION_DETAIL} is the only clear way to write a
+    doctest that doesn't care about the exception detail yet continues
+    to pass under Python releases prior to 2.4 (doctest directives
+    appear to be comments to them).  For example,
+
+\begin{verbatim}
+>>> (1, 2)[3] = 'moo' #doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+TypeError: object doesn't support item assignment
+\end{verbatim}
+
+    passes under Python 2.4 and Python 2.3.  The detail changed in 2.4,
+    to say "does not" instead of "doesn't".
+
 \end{datadesc}
 
 \begin{datadesc}{COMPARISON_FLAGS}
@@ -463,6 +494,7 @@ can be useful.
 
 \versionchanged[Constants \constant{DONT_ACCEPT_BLANKLINE},
     \constant{NORMALIZE_WHITESPACE}, \constant{ELLIPSIS},
+    \constant{IGNORE_EXCEPTION_DETAIL},
     \constant{REPORT_UDIFF}, \constant{REPORT_CDIFF},
     \constant{REPORT_NDIFF}, \constant{REPORT_ONLY_FIRST_FAILURE},
     \constant{COMPARISON_FLAGS} and \constant{REPORTING_FLAGS}
