@@ -109,40 +109,63 @@ math_2(args, func)
 		return PyFloat_FromDouble(x);
 }
 
-#define FUNC1(stubname, func) \
+#define FUNC1(stubname, func, docstring_name, docstring) \
 	static PyObject * stubname(self, args) PyObject *self, *args; { \
 		return math_1(args, func); \
-	}
+	}\
+        static char docstring_name [] = docstring;
 
-#define FUNC2(stubname, func) \
+#define FUNC2(stubname, func, docstring_name, docstring) \
 	static PyObject * stubname(self, args) PyObject *self, *args; { \
 		return math_2(args, func); \
-	}
+	}\
+        static char docstring_name [] = docstring;
 
-FUNC1(math_acos, acos)
-FUNC1(math_asin, asin)
-FUNC1(math_atan, atan)
-FUNC2(math_atan2, atan2)
-FUNC1(math_ceil, ceil)
-FUNC1(math_cos, cos)
-FUNC1(math_cosh, cosh)
-FUNC1(math_exp, exp)
-FUNC1(math_fabs, fabs)
-FUNC1(math_floor, floor)
-FUNC2(math_fmod, fmod)
-FUNC2(math_hypot, hypot)
-FUNC1(math_log, log)
-FUNC1(math_log10, log10)
+FUNC1(math_acos, acos, math_acos_doc,
+      "acos(x)\n\nReturn the arc cosine of x.")
+FUNC1(math_asin, asin, math_asin_doc,
+      "asin(x)\n\nReturn the arc sine of x.")
+FUNC1(math_atan, atan, math_atan_doc,
+      "atan(x)\n\nReturn the arc tangent of x.")
+FUNC2(math_atan2, atan2, math_atan2_doc,
+      "atan2(x)\n\nReturn atan(x /y).")
+FUNC1(math_ceil, ceil, math_ceil_doc,
+      "ceil(x)\n\nReturn the ceiling of x as a real.")
+FUNC1(math_cos, cos, math_cos_doc,
+      "cos(x)\n\nReturn the cosine of x.")
+FUNC1(math_cosh, cosh, math_cosh_doc,
+      "cosh(x)\n\nReturn the hyperbolic cosine of x.")
+FUNC1(math_exp, exp, math_exp_doc,
+      "exp(x)\n\nReturn e raised to the power of x.")
+FUNC1(math_fabs, fabs, math_fabs_doc,
+      "fabs(x)\n\nReturn the absolute value of the real x.")
+FUNC1(math_floor, floor, math_floor_doc,
+      "floor(x)\n\nReturn the floor of x as a real.")
+FUNC2(math_fmod, fmod, math_fmod_doc,
+      "fmod(x,y)\n\nReturn x % y.")
+FUNC2(math_hypot, hypot, math_hypot_doc,
+      "hypot(x,y)\n\nReturn the Euclidean distance, sqrt(x*x + y*y).")
+FUNC1(math_log, log, math_log_doc,
+      "log(x)\n\nReturn the natural logarithm of x.")
+FUNC1(math_log10, log10, math_log10_doc,
+      "log10(x)\n\nReturn the base-10 logarithm of x.")
 #ifdef MPW_3_1 /* This hack is needed for MPW 3.1 but not for 3.2 ... */
-FUNC2(math_pow, power)
+FUNC2(math_pow, power, math_pow_doc,
+      "power(x,y)\n\nReturn x**y.")
 #else
-FUNC2(math_pow, pow)
+FUNC2(math_pow, pow, math_pow_doc,
+      "pow(x,y)\n\nReturn x**y.")
 #endif
-FUNC1(math_sin, sin)
-FUNC1(math_sinh, sinh)
-FUNC1(math_sqrt, sqrt)
-FUNC1(math_tan, tan)
-FUNC1(math_tanh, tanh)
+FUNC1(math_sin, sin, math_sin_doc,
+      "sin(x)\n\nReturn the sine of x.")
+FUNC1(math_sinh, sinh, math_sinh_doc,
+      "sinh(x)\n\nReturn the hyperbolic sine of x.")
+FUNC1(math_sqrt, sqrt, math_sqrt_doc,
+      "sqrt(x)\n\nReturn the square root of x.")
+FUNC1(math_tan, tan, math_tan_doc,
+      "tan(x)\n\nReturn the tangent of x.")
+FUNC1(math_tanh, tanh, math_tanh_doc,
+      "tanh(x)\n\nReturn the hyperbolic tangent of x.")
 
 
 static PyObject *
@@ -161,6 +184,12 @@ math_frexp(self, args)
 		return math_error();
 	return Py_BuildValue("(di)", x, i);
 }
+
+static char math_frexp_doc [] =
+"frexp(x)\n\
+\n\
+Return the matissa and exponent for x. The mantissa is positive.";
+
 
 static PyObject *
 math_ldexp(self, args)
@@ -181,6 +210,12 @@ math_ldexp(self, args)
 	else
 		return PyFloat_FromDouble(x);
 }
+
+static char math_ldexp_doc [] = 
+"ldexp_doc(x, i)\n\
+\n\
+Return x * (2**i).";
+
 
 static PyObject *
 math_modf(self, args)
@@ -206,39 +241,51 @@ math_modf(self, args)
 	return Py_BuildValue("(dd)", x, y);
 }
 
+static char math_modf_doc [] =
+"modf(x)\n\
+\n\
+Return the fractional and integer parts of x. Both results carry the sign\n\
+of x.  The integer part is returned as a real.";
+
+
 static PyMethodDef math_methods[] = {
-	{"acos", math_acos},
-	{"asin", math_asin},
-	{"atan", math_atan},
-	{"atan2", math_atan2},
-	{"ceil", math_ceil},
-	{"cos", math_cos},
-	{"cosh", math_cosh},
-	{"exp", math_exp},
-	{"fabs", math_fabs},
-	{"floor", math_floor},
-	{"fmod", math_fmod},
-	{"frexp", math_frexp},
-	{"hypot", math_hypot},
-	{"ldexp", math_ldexp},
-	{"log", math_log},
-	{"log10", math_log10},
-	{"modf", math_modf},
-	{"pow", math_pow},
-	{"sin", math_sin},
-	{"sinh", math_sinh},
-	{"sqrt", math_sqrt},
-	{"tan", math_tan},
-	{"tanh", math_tanh},
+	{"acos",	math_acos,	0,	math_acos_doc},
+	{"asin",	math_asin,	0,	math_asin_doc},
+	{"atan",	math_atan,	0,	math_atan_doc},
+	{"atan2",	math_atan2,	0,	math_atan2_doc},
+	{"ceil",	math_ceil,	0,	math_ceil_doc},
+	{"cos",		math_cos,	0,	math_cos_doc},
+	{"cosh",	math_cosh,	0,	math_cosh_doc},
+	{"exp",		math_exp,	0,	math_exp_doc},
+	{"fabs",	math_fabs,	0,	math_fabs_doc},
+	{"floor",	math_floor,	0,	math_floor_doc},
+	{"fmod",	math_fmod,	0,	math_fmod_doc},
+	{"frexp",	math_frexp,	0,	math_frexp_doc},
+	{"hypot",	math_hypot,	0,	math_hypot_doc},
+	{"ldexp",	math_ldexp,	0,	math_ldexp_doc},
+	{"log",		math_log,	0,	math_log_doc},
+	{"log10",	math_log10,	0,	math_log10_doc},
+	{"modf",	math_modf,	0,	math_modf_doc},
+	{"pow",		math_pow,	0,	math_pow_doc},
+	{"sin",		math_sin,	0,	math_sin_doc},
+	{"sinh",	math_sinh,	0,	math_sinh_doc},
+	{"sqrt",	math_sqrt,	0,	math_sqrt_doc},
+	{"tan",		math_tan,	0,	math_tan_doc},
+	{"tanh",	math_tanh,	0,	math_tanh_doc},
 	{NULL,		NULL}		/* sentinel */
 };
+
+
+static char module_doc [] =
+"This module is always available.  It provides access to the\n\
+mathematical functions defined by the C standard.";
 
 DL_EXPORT(void)
 initmath()
 {
 	PyObject *m, *d, *v;
 	
-	m = Py_InitModule("math", math_methods);
+	m = Py_InitModule3("math", math_methods, module_doc);
 	d = PyModule_GetDict(m);
 
         if (!(v = PyFloat_FromDouble(atan(1.0) * 4.0)))
