@@ -129,6 +129,7 @@ Functions for sequences:
 
 \begin{funcdesc}{choice}{seq}
   Return a random element from the non-empty sequence \var{seq}.
+  If \var{seq} is empty, raises \exception{IndexError}.
 \end{funcdesc}
 
 \begin{funcdesc}{shuffle}{x\optional{, random}}
