@@ -33,15 +33,15 @@ class DocBuild(build):
 		build.initialize_options(self)
 		self.build_html = None
 		self.build_dest = None
-		self.download = 1
-		self.doc_version = '2.2.2'
+		self.download = 0
+		self.doc_version = '2.3b1' # Only needed if download is true
 		
 	def finalize_options(self):
 		build.finalize_options(self)
 		if self.build_html is None:
 			self.build_html = os.path.join(self.build_base, 'html')
 		if self.build_dest is None:
-			self.build_dest = os.path.join(self.build_base, 'processed-html')
+			self.build_dest = os.path.join(self.build_base, 'PythonDocumentation')
 	
 	def spawn(self, *args):
 		spawn(args, 1,  self.verbose, self.dry_run)
