@@ -863,10 +863,11 @@ sub do_cmd_maketitle {
     if ($t_author) {
 	if ($t_authorURL) {
 	    my $href = translate_commands($t_authorURL);
-	    $href = make_named_href('author', $href, "<strong>${t_author}</strong>");
+	    $href = make_named_href('author', $href,
+				    "<b><font size='+2'>$t_author</font></b>");
 	    $the_title .= "\n<p>$href</p>";
 	} else {
-	    $the_title .= "\n<p><strong>$t_author</strong></p>";
+	    $the_title .= ("\n<p><b><font size='+2'>$t_author</font></b></p>");
 	}
     } else { write_warnings("\nThere is no author for this document."); }
     if ($t_institute) {
