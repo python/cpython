@@ -190,7 +190,7 @@ def rfind(s, *args):
 _float = float
 _int = int
 _long = long
-_StringType = type('')
+_StringTypes = (str, unicode)
 
 # Convert string to float
 def atof(s):
@@ -276,14 +276,14 @@ def zfill(x, width):
     of the specified width.  The string x is never truncated.
 
     """
-    if type(x) == type(''): s = x
-    else: s = `x`
-    n = len(s)
-    if n >= width: return s
+    if not isinstance(x, _StringTypes):
+        x = str(x)
+    n = len(x)
+    if n >= width: return x
     sign = ''
-    if s[0] in ('-', '+'):
-        sign, s = s[0], s[1:]
-    return sign + '0'*(width-n) + s
+    if x[0] in '-+':
+        sign, x = x[0], x[1:]
+    return sign + '0'*(width-n) + x
 
 # Expand tabs in a string.
 # Doesn't take non-printing chars into account, but does understand \n.
