@@ -77,6 +77,13 @@ ControlFontStyle_Convert(v, itself)
 		&itself->just, QdRGB_Convert, &itself->foreColor, 
 		QdRGB_Convert, &itself->backColor);
 }
+
+/* TrackControl callback support */
+static PyObject *tracker;
+static ControlActionUPP mytracker_upp;
+
+extern int settrackfunc(PyObject *); 	/* forward */
+extern void clrtrackfunc(void);	/* forward */
 """
 
 finalstuff = finalstuff + """
@@ -95,6 +102,47 @@ CtlObj_WhichControl(ControlHandle c)
 	Py_INCREF(it);
 	return it;
 }
+
+static int
+settrackfunc(obj)
+	PyObject *obj;
+{
+	if (tracker) {
+		PyErr_SetString(Ctl_Error, "Tracker function in use");
+		return 0;
+	}
+	tracker = obj;
+	Py_INCREF(tracker);
+}
+
+static void
+clrtrackfunc()
+{
+	Py_XDECREF(tracker);
+	tracker = 0;
+}
+
+static pascal void
+mytracker(ctl, part)
+	ControlHandle ctl;
+	short part;
+{
+	PyObject *args, *rv=0;
+	
+	args = Py_BuildValue("(O&i)", CtlObj_WhichControl, ctl, (int)part);
+	if (args && tracker) {
+		rv = PyEval_CallObject(tracker, args);
+		Py_DECREF(args);
+	}
+	if (rv)
+		Py_DECREF(rv);
+	else
+		fprintf(stderr, "TrackControl: exception in tracker function\\n");
+}
+"""
+
+initstuff = initstuff + """
+mytracker_upp = NewControlActionProc(mytracker);
 """
 
 class MyObjectDefinition(GlobalObjectDefinition):
@@ -124,6 +172,38 @@ execfile('ctledit.py')
 # add the populated lists to the generator groups
 for f in functions: module.add(f)
 for f in methods: object.add(f)
+
+# Manual generator for TrackControl, due to callback ideosyncracies
+trackcontrol_body = """
+ControlPartCode _rv;
+Point startPoint;
+ControlActionUPP upp = 0;
+PyObject *callback = 0;
+
+if (!PyArg_ParseTuple(_args, "O&|O",
+                      PyMac_GetPoint, &startPoint, &callback))
+	return NULL;
+if (callback && callback != Py_None) {
+	if (PyInt_Check(callback) && PyInt_AS_LONG(callback) == -1)
+		upp = (ControlActionUPP)-1;
+	else {
+		settrackfunc(callback);
+		upp = mytracker_upp;
+	}
+}
+_rv = TrackControl(_self->ob_itself,
+                   startPoint,
+                   upp);
+clrtrackfunc();
+_res = Py_BuildValue("h",
+                     _rv);
+return _res;
+"""
+
+f = ManualGenerator("TrackControl", trackcontrol_body);
+#f.docstring = "(Point startPoint [,trackercallback]) -> (ControlPartCode _rv)"
+object.add(f)
+
 
 # generate output (open the output file as late as possible)
 SetOutputFileName(OUTPUTFILE)
