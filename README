@@ -289,6 +289,12 @@ Cray T3E: Konrad Hinsen writes:
 	If you run the test suite, two tests will fail (rotate and binascii),
 	but these are not the modules you'd expect to need on a Cray.
 
+SGI:	SGI's standard "make" utility (/bin/make or /usr/bin/make)
+	does not check whether a command actually changed the file it
+	is supposed to build.  This means that whenever you say "make"
+	it will redo the link step.  The remedy is to use SGI's much
+	smarter "smake " utility (/usr/bin/smake), or GNU make.
+
 
 Configuring additional built-in modules
 ---------------------------------------
