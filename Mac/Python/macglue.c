@@ -734,3 +734,26 @@ PyMac_BuildEventRecord(EventRecord *e)
 	                     e->where.v,
 	                     e->modifiers);
 }
+
+/* Convert Python object to Fixed */
+int
+PyMac_GetFixed(PyObject *v, Fixed *f)
+{
+	double d;
+	
+	if( !PyArg_Parse(v, "d", &d))
+		return 0;
+	*f = (Fixed)(d * 0x10000);
+}
+
+/* Convert a Point to a Python object */
+PyObject *
+PyMac_BuildFixed(Fixed f)
+{
+	double d;
+	
+	d = f;
+	d = d / 0x10000;
+	return Py_BuildValue("d", d);
+}
+

@@ -80,4 +80,6 @@ PyObject *PyMac_BuildPoint(Point);		/* Convert Point to PyObject */
 int PyMac_GetEventRecord(PyObject *, EventRecord *); /* argument parser for EventRecord */
 PyObject *PyMac_BuildEventRecord(EventRecord *); /* Convert EventRecord to PyObject */
 
+int PyMac_GetFixed(PyObject *, Fixed *);	/* argument parser for Fixed */
+PyObject *PyMac_BuildFixed(Fixed);			/* Convert Fixed to PyObject */
 void PyMac_InitApplet(void);			/* Initialize and run an Applet */
