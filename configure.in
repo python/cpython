@@ -98,7 +98,13 @@ fi
 AC_SUBST(OPT)
 if test -z "$OPT"
 then
-	case $ac_sys_system in
+	case $GCC in
+	yes)
+		case $ac_cv_prog_cc_g in
+		yes)	OPT="-g -O2";;
+		*)	OPT="-O2";;
+		esac
+		;;
 	*)	OPT="-O";;
 	esac
 fi
