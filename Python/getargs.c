@@ -359,11 +359,6 @@ convertitem(PyObject *arg, char **p_format, va_list *p_va, int *levels,
 
 
 
-/* Internal API needed by convertsimple() and a helper macro. */
-extern 
-PyObject *_PyUnicode_AsDefaultEncodedString(PyObject *unicode,
-				  const char *errors);
-
 #define UNICODE_DEFAULT_ENCODING(arg) \
         _PyUnicode_AsDefaultEncodedString(arg, NULL)
 
