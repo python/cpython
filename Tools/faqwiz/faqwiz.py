@@ -489,7 +489,7 @@ class FaqWizard:
 		mtime = mtime = entry.getmtime()
 		if mtime > latest:
 		    latest = mtime
-	print time.strftime(LAST_CHANGED, time.localtime(now))
+	print time.strftime(LAST_CHANGED, time.localtime(latest))
 	emit(EXPLAIN_MARKS)
 
     def format_all(self, files, edit=1, headers=1):
