@@ -55,15 +55,6 @@
 #include <errno.h>
 #endif
 
-/* define the appropriate 64-bit capable tell() function */
-#if defined(MS_WIN64)
-#define TELL64 _telli64
-#elif defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(_HAVE_BSDI) || defined(__APPLE__)
-/* NOTE: this is only used on older
-   NetBSD prior to f*o() funcions */
-#define TELL64(fd) lseek((fd),0,SEEK_CUR)
-#endif
-
 
 typedef struct {
 	PyObject_HEAD
@@ -257,25 +248,20 @@ _portable_fseek(FILE *fp, off_t offset, int whence)
 #elif defined(__BEOS__)
 	return _fseek(fp, offset, whence);
 #elif defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_FPOS_T >= 8
-	/* lacking a 64-bit capable fseek() (as Win64 does) use a 64-bit capable
-		fsetpos() and tell() to implement fseek()*/
+	/* lacking a 64-bit capable fseek(), use a 64-bit capable fsetpos()
+	   and fgetpos() to implement fseek()*/
 	fpos_t pos;
 	switch (whence) {
-		case SEEK_CUR:
-			if (fgetpos(fp, &pos) != 0)
-				return -1;
-			offset += pos;
-			break;
-		case SEEK_END:
-			/* do a "no-op" seek first to sync the buffering so that
-			   the low-level tell() can be used correctly */
-			if (fseek(fp, 0, SEEK_END) != 0)
-				return -1;
-			if ((pos = TELL64(fileno(fp))) == -1L)
-				return -1;
-			offset += pos;
-			break;
-		/* case SEEK_SET: break; */
+	case SEEK_END:
+		if (fseek(fp, 0, SEEK_END) != 0)
+			return -1;
+		/* fall through */
+	case SEEK_CUR:
+		if (fgetpos(fp, &pos) != 0)
+			return -1;
+		offset += pos;
+		break;
+	/* case SEEK_SET: break; */
 	}
 	return fsetpos(fp, &offset);
 #else
