@@ -32,8 +32,8 @@ by a blank line.  The first section contains a number of headers,
 telling the client what kind of data is following.  Python code to
 generate a minimal header section looks like this:
 
-	print "Content-type: text/html"		# HTML is following
-	print					# blank line, end of headers
+	print "Content-type: text/html"	# HTML is following
+	print				# blank line, end of headers
 
 The second section is usually HTML, which allows the client software
 to display nicely formatted text with header, in-line images, etc.
@@ -503,6 +503,272 @@ def parse_header(line):
 	return key, pdict
 
 
+# Classes for field storage
+# =========================
+
+class MiniFieldStorage:
+
+	"""Internal: dummy FieldStorage, used with query string format."""
+
+	def __init__(self, name, value):
+		"""Constructor from field name and value."""
+		self.name = name
+		self.value = value
+		from StringIO import StringIO
+		self.filename = None
+		self.list = None
+		self.file = StringIO(value)
+
+	def __repr__(self):
+		"""Return printable representation."""
+		return "MiniFieldStorage(%s, %s)" % (`self.name`,
+						     `self.value`)
+
+
+class FieldStorage:
+
+	"""Store a sequence of fields, reading multipart/form-data."""
+
+	def __init__(self, fp=None, headers=None, outerboundary=""):
+		"""Constructor.  Read multipart/* until last part."""
+		method = None
+		if environ.has_key('REQUEST_METHOD'):
+			method = string.upper(environ['REQUEST_METHOD'])
+		if not fp and method == 'GET':
+			qs = None
+			if environ.has_key('QUERY_STRING'):
+				qs = environ['QUERY_STRING']
+			from StringIO import StringIO
+			fp = StringIO(qs or "")
+			if headers is None:
+				headers = {'content-type':
+					   "application/x-www-form-urlencoded"}
+		if headers is None:
+			headers = {}
+			if environ.has_key('CONTENT_TYPE'):
+				headers['content-type'] = environ['CONTENT_TYPE']
+			if environ.has_key('CONTENT_LENGTH'):
+				headers['content-length'] = environ['CONTENT_LENGTH']
+		self.fp = fp or sys.stdin
+		self.headers = headers
+		self.outerboundary = outerboundary
+		
+		# Process content-disposition header
+		cdisp, pdict = "", {}
+		if self.headers.has_key('content-disposition'):
+			cdisp, pdict = parse_header(self.headers['content-disposition'])
+		self.disposition = cdisp
+		self.disposition_options = pdict
+		self.name = None
+		if pdict.has_key('name'):
+			self.name = pdict['name']
+		self.filename = None
+		if pdict.has_key('filename'):
+			self.filename = pdict['filename']
+		
+		# Process content-type header
+		ctype, pdict = "text/plain", {}
+		if self.headers.has_key('content-type'):
+			ctype, pdict = parse_header(self.headers['content-type'])
+		self.type = ctype
+		self.type_options = pdict
+		self.innerboundary = ""
+		if pdict.has_key('boundary'):
+			self.innerboundary = pdict['boundary']
+		clen = -1
+		if self.headers.has_key('content-length'):
+			try:
+				clen = string.atoi(self.headers['content-length'])
+			except:
+				pass
+		self.length = clen
+
+		self.list = self.file = None
+		self.done = 0
+		self.lines = []
+		if ctype == 'application/x-www-form-urlencoded':
+			self.read_urlencoded()
+		elif ctype[:10] == 'multipart/':
+			self.read_multi()
+		else:
+			self.read_single()
+	
+	def __repr__(self):
+		"""Return a printable representation."""
+		return "FieldStorage(%s, %s, %s)" % (
+			`self.name`, `self.filename`, `self.value`)
+
+	def __getattr__(self, name):
+		if name != 'value':
+			raise AttributeError, name
+		if self.file:
+			self.file.seek(0)
+			value = self.file.read()
+			self.file.seek(0)
+		elif self.list is not None:
+			value = self.list
+		else:
+			value = None
+		return value
+	
+	def __getitem__(self, key):
+		"""Dictionary style indexing."""
+		if self.list is None:
+			raise TypeError, "not indexable"
+		found = []
+		for item in self.list:
+			if item.name == key: found.append(item)
+		if not found:
+			raise KeyError, key
+		return found
+	
+	def keys(self):
+		"""Dictionary style keys() method."""
+		if self.list is None:
+			raise TypeError, "not indexable"
+		keys = []
+		for item in self.list:
+			if item.name not in keys: keys.append(item.name)
+		return keys
+
+	def read_urlencoded(self):
+		"""Internal: read data in query string format."""
+		qs = self.fp.read(self.length)
+		dict = parse_qs(qs)
+		self.list = []
+		for key, valuelist in dict.items():
+			for value in valuelist:
+				self.list.append(MiniFieldStorage(key, value))
+		self.skip_lines()
+	
+	def read_multi(self):
+		"""Internal: read a part that is itself multipart."""
+		import rfc822
+		self.list = []
+		part = self.__class__(self.fp, {}, self.innerboundary)
+		# Throw first part away
+		while not part.done:
+			headers = rfc822.Message(self.fp)
+			part = self.__class__(self.fp, headers, self.innerboundary)
+			self.list.append(part)
+		self.skip_lines()
+	
+	def read_single(self):
+		"""Internal: read an atomic part."""
+		if self.length >= 0:
+			self.read_binary()
+			self.skip_lines()
+		else:
+			self.read_lines()
+		self.file.seek(0)
+	
+	bufsize = 8*1024		# I/O buffering size for copy to file
+	
+	def read_binary(self):
+		"""Internal: read binary data."""
+		self.file = self.make_file('b')
+		todo = self.length
+		if todo >= 0:
+			while todo > 0:
+				data = self.fp.read(min(todo, self.bufsize))
+				if not data:
+					self.done = -1
+					break
+				self.file.write(data)
+				todo = todo - len(data)
+	
+	def read_lines(self):
+		"""Internal: read lines until EOF or outerboundary."""
+		self.file = self.make_file('')
+		if self.outerboundary:
+			self.read_lines_to_outerboundary()
+		else:
+			self.read_lines_to_eof()
+	
+	def read_lines_to_eof(self):
+		"""Internal: read lines until EOF."""
+		while 1:
+			line = self.fp.readline()
+			if not line:
+				self.done = -1
+				break
+			self.lines.append(line)
+			if line[-2:] == '\r\n':
+				line = line[:-2] + '\n'
+			self.file.write(line)
+	
+	def read_lines_to_outerboundary(self):
+		"""Internal: read lines until outerboundary."""
+		next = "--" + self.outerboundary
+		last = next + "--"
+		delim = ""
+		while 1:
+			line = self.fp.readline()
+			if not line:
+				self.done = -1
+				break
+			self.lines.append(line)
+			if line[:2] == "--":
+				strippedline = string.strip(line)
+				if strippedline == next:
+					break
+				if strippedline == last:
+					self.done = 1
+					break
+			if line[-2:] == "\r\n":
+				line = line[:-2]
+			elif line[-1] == "\n":
+				line = line[:-1]
+			self.file.write(delim + line)
+			delim = "\n"
+	
+	def skip_lines(self):
+		"""Internal: skip lines until outer boundary if defined."""
+		if not self.outerboundary or self.done:
+			return
+		next = "--" + self.outerboundary
+		last = next + "--"
+		while 1:
+			line = self.fp.readline()
+			if not line:
+				self.done = -1
+				break
+			self.lines.append(line)
+			if line[:2] == "--":
+				strippedline = string.strip(line)
+				if strippedline == next:
+					break
+				if strippedline == last:
+					self.done = 1
+					break
+	
+	def make_file(self, binary):
+		"""Overridable: return a readable & writable file.
+		
+		The file will be used as follows:
+		- data is written to it
+		- seek(0)
+		- data is read from it
+		
+		The 'binary' argument is 'b' if the file should be created in
+		binary mode (on non-Unix systems), '' otherwise.
+		
+		The intention is that you can override this method to selectively
+		create a real (temporary) file or use a memory file dependent on
+		the perceived size of the file or the presence of a filename, etc.
+		
+		"""
+		
+		# Prefer ArrayIO over StringIO, if it's available
+		try:
+			from ArrayIO import ArrayIO
+			ioclass = ArrayIO
+		except ImportError:
+			from StringIO import StringIO
+			ioclass = StringIO
+		return ioclass()
+
+
 # Main classes
 # ============
 
@@ -636,7 +902,7 @@ def test():
 	sys.stderr = sys.stdout
 	try:
 		print_environ()
-		print_form(FormContentDict())
+		print_form(FieldStorage())
 		print
 		print "<H3>Current Working Directory:</H3>"
 		try:
@@ -671,8 +937,9 @@ def print_form(form):
 	print "<DL>"
 	for key in keys:
 		print "<DT>" + escape(key) + ":",
-		print "<i>" + escape(`type(form[key])`) + "</i>"
-		print "<DD>" + escape(`form[key]`)
+		value = form[key]
+		print "<i>" + escape(`type(value)`) + "</i>"
+		print "<DD>" + escape(`value`)
 	print "</DL>"
 	print
 
