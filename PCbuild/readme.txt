@@ -100,9 +100,14 @@ bsddb
     step in an enviroment that already has the correct envars set up).
 
 pyexpat
-    Python wrapper for accelerated XML parsing.  Requires
-        ftp://ftp.jclark.com/pub/xml/expat.zip
-    Unpack into dist\expat.
+    Python wrapper for accelerated XML parsing.  Requires the Windows
+    expat_win32bin installer from
+        http://sourceforge.net/projects/expat/
+    Currently using version 1.95.2.
+    Install into dist\expat.
+    You should also copy expat\Libs\expat.dll into your PCbuild directory,
+    else at least two tests will fail (test_pyexpat and test_sax), and
+    others will erroneously get skipped (at least test_minidom).
 
 
 NOTE ON CONFIGURATIONS
