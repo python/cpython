@@ -1,5 +1,0 @@
-test_xdr
-_xdr.pack_float()
-_xdr.unpack_float()
-_xdr.pack_double()
-_xdr.unpack_double()
