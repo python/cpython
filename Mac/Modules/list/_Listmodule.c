@@ -378,8 +378,8 @@ static PyObject *ListObj_LClick(ListObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	Point pt;
-	short modifiers;
-	if (!PyArg_ParseTuple(_args, "O&h",
+	EventModifiers modifiers;
+	if (!PyArg_ParseTuple(_args, "O&H",
 	                      PyMac_GetPoint, &pt,
 	                      &modifiers))
 		return NULL;
@@ -580,7 +580,7 @@ static PyMethodDef ListObj_methods[] = {
 	{"LCellSize", (PyCFunction)ListObj_LCellSize, 1,
 	 "(Point cSize) -> None"},
 	{"LClick", (PyCFunction)ListObj_LClick, 1,
-	 "(Point pt, short modifiers) -> (Boolean _rv)"},
+	 "(Point pt, EventModifiers modifiers) -> (Boolean _rv)"},
 	{"LAddToCell", (PyCFunction)ListObj_LAddToCell, 1,
 	 "(Buffer dataPtr, Point theCell) -> None"},
 	{"LClrCell", (PyCFunction)ListObj_LClrCell, 1,

@@ -604,6 +604,26 @@ static PyObject *CFMutableArrayRefObj_CFArrayExchangeValuesAtIndices(CFMutableAr
 	return _res;
 }
 
+static PyObject *CFMutableArrayRefObj_CFArrayAppendArray(CFMutableArrayRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFArrayRef otherArray;
+	CFRange otherRange;
+#ifndef CFArrayAppendArray
+	PyMac_PRECHECK(CFArrayAppendArray);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CFArrayRefObj_Convert, &otherArray,
+	                      CFRange_Convert, &otherRange))
+		return NULL;
+	CFArrayAppendArray(_self->ob_itself,
+	                   otherArray,
+	                   otherRange);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef CFMutableArrayRefObj_methods[] = {
 	{"CFArrayRemoveValueAtIndex", (PyCFunction)CFMutableArrayRefObj_CFArrayRemoveValueAtIndex, 1,
 	 "(CFIndex idx) -> None"},
@@ -611,6 +631,8 @@ static PyMethodDef CFMutableArrayRefObj_methods[] = {
 	 "() -> None"},
 	{"CFArrayExchangeValuesAtIndices", (PyCFunction)CFMutableArrayRefObj_CFArrayExchangeValuesAtIndices, 1,
 	 "(CFIndex idx1, CFIndex idx2) -> None"},
+	{"CFArrayAppendArray", (PyCFunction)CFMutableArrayRefObj_CFArrayAppendArray, 1,
+	 "(CFArrayRef otherArray, CFRange otherRange) -> None"},
 	{NULL, NULL, 0}
 };
 
@@ -1468,19 +1490,19 @@ static PyObject *CFStringRefObj_CFStringCompareWithOptions(CFStringRefObject *_s
 {
 	PyObject *_res = NULL;
 	CFComparisonResult _rv;
-	CFStringRef string2;
+	CFStringRef theString2;
 	CFRange rangeToCompare;
 	CFOptionFlags compareOptions;
 #ifndef CFStringCompareWithOptions
 	PyMac_PRECHECK(CFStringCompareWithOptions);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&O&l",
-	                      CFStringRefObj_Convert, &string2,
+	                      CFStringRefObj_Convert, &theString2,
 	                      CFRange_Convert, &rangeToCompare,
 	                      &compareOptions))
 		return NULL;
 	_rv = CFStringCompareWithOptions(_self->ob_itself,
-	                                 string2,
+	                                 theString2,
 	                                 rangeToCompare,
 	                                 compareOptions);
 	_res = Py_BuildValue("l",
@@ -1492,17 +1514,17 @@ static PyObject *CFStringRefObj_CFStringCompare(CFStringRefObject *_self, PyObje
 {
 	PyObject *_res = NULL;
 	CFComparisonResult _rv;
-	CFStringRef string2;
+	CFStringRef theString2;
 	CFOptionFlags compareOptions;
 #ifndef CFStringCompare
 	PyMac_PRECHECK(CFStringCompare);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CFStringRefObj_Convert, &string2,
+	                      CFStringRefObj_Convert, &theString2,
 	                      &compareOptions))
 		return NULL;
 	_rv = CFStringCompare(_self->ob_itself,
-	                      string2,
+	                      theString2,
 	                      compareOptions);
 	_res = Py_BuildValue("l",
 	                     _rv);
@@ -1750,6 +1772,28 @@ static PyObject *CFStringRefObj_CFURLCreateWithFileSystemPath(CFStringRefObject 
 	return _res;
 }
 
+static PyObject *CFStringRefObj_CFURLCreateWithFileSystemPathRelativeToBase(CFStringRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFURLRef _rv;
+	CFURLPathStyle pathStyle;
+	Boolean isDirectory;
+	CFURLRef baseURL;
+	if (!PyArg_ParseTuple(_args, "llO&",
+	                      &pathStyle,
+	                      &isDirectory,
+	                      OptionalCFURLRefObj_Convert, &baseURL))
+		return NULL;
+	_rv = CFURLCreateWithFileSystemPathRelativeToBase((CFAllocatorRef)NULL,
+	                                                  _self->ob_itself,
+	                                                  pathStyle,
+	                                                  isDirectory,
+	                                                  baseURL);
+	_res = Py_BuildValue("O&",
+	                     CFURLRefObj_New, _rv);
+	return _res;
+}
+
 static PyObject *CFStringRefObj_CFURLCreateStringByReplacingPercentEscapes(CFStringRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1761,6 +1805,28 @@ static PyObject *CFStringRefObj_CFURLCreateStringByReplacingPercentEscapes(CFStr
 	_rv = CFURLCreateStringByReplacingPercentEscapes((CFAllocatorRef)NULL,
 	                                                 _self->ob_itself,
 	                                                 charactersToLeaveEscaped);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFStringRefObj_CFURLCreateStringByAddingPercentEscapes(CFStringRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	CFStringRef charactersToLeaveUnescaped;
+	CFStringRef legalURLCharactersToBeEscaped;
+	CFStringEncoding encoding;
+	if (!PyArg_ParseTuple(_args, "O&O&l",
+	                      CFStringRefObj_Convert, &charactersToLeaveUnescaped,
+	                      CFStringRefObj_Convert, &legalURLCharactersToBeEscaped,
+	                      &encoding))
+		return NULL;
+	_rv = CFURLCreateStringByAddingPercentEscapes((CFAllocatorRef)NULL,
+	                                              _self->ob_itself,
+	                                              charactersToLeaveUnescaped,
+	                                              legalURLCharactersToBeEscaped,
+	                                              encoding);
 	_res = Py_BuildValue("O&",
 	                     CFStringRefObj_New, _rv);
 	return _res;
@@ -1819,9 +1885,9 @@ static PyMethodDef CFStringRefObj_methods[] = {
 	{"CFStringGetFastestEncoding", (PyCFunction)CFStringRefObj_CFStringGetFastestEncoding, 1,
 	 "() -> (CFStringEncoding _rv)"},
 	{"CFStringCompareWithOptions", (PyCFunction)CFStringRefObj_CFStringCompareWithOptions, 1,
-	 "(CFStringRef string2, CFRange rangeToCompare, CFOptionFlags compareOptions) -> (CFComparisonResult _rv)"},
+	 "(CFStringRef theString2, CFRange rangeToCompare, CFOptionFlags compareOptions) -> (CFComparisonResult _rv)"},
 	{"CFStringCompare", (PyCFunction)CFStringRefObj_CFStringCompare, 1,
-	 "(CFStringRef string2, CFOptionFlags compareOptions) -> (CFComparisonResult _rv)"},
+	 "(CFStringRef theString2, CFOptionFlags compareOptions) -> (CFComparisonResult _rv)"},
 	{"CFStringFindWithOptions", (PyCFunction)CFStringRefObj_CFStringFindWithOptions, 1,
 	 "(CFStringRef stringToFind, CFRange rangeToSearch, CFOptionFlags searchOptions) -> (Boolean _rv, CFRange result)"},
 	{"CFStringCreateArrayWithFindResults", (PyCFunction)CFStringRefObj_CFStringCreateArrayWithFindResults, 1,
@@ -1848,8 +1914,12 @@ static PyMethodDef CFStringRefObj_methods[] = {
 	 "(CFURLRef baseURL) -> (CFURLRef _rv)"},
 	{"CFURLCreateWithFileSystemPath", (PyCFunction)CFStringRefObj_CFURLCreateWithFileSystemPath, 1,
 	 "(CFURLPathStyle pathStyle, Boolean isDirectory) -> (CFURLRef _rv)"},
+	{"CFURLCreateWithFileSystemPathRelativeToBase", (PyCFunction)CFStringRefObj_CFURLCreateWithFileSystemPathRelativeToBase, 1,
+	 "(CFURLPathStyle pathStyle, Boolean isDirectory, CFURLRef baseURL) -> (CFURLRef _rv)"},
 	{"CFURLCreateStringByReplacingPercentEscapes", (PyCFunction)CFStringRefObj_CFURLCreateStringByReplacingPercentEscapes, 1,
 	 "(CFStringRef charactersToLeaveEscaped) -> (CFStringRef _rv)"},
+	{"CFURLCreateStringByAddingPercentEscapes", (PyCFunction)CFStringRefObj_CFURLCreateStringByAddingPercentEscapes, 1,
+	 "(CFStringRef charactersToLeaveUnescaped, CFStringRef legalURLCharactersToBeEscaped, CFStringEncoding encoding) -> (CFStringRef _rv)"},
 	{"CFStringGetString", (PyCFunction)CFStringRefObj_CFStringGetString, 1,
 	 "() -> (string _rv)"},
 	{"CFStringGetUnicode", (PyCFunction)CFStringRefObj_CFStringGetUnicode, 1,
@@ -1975,13 +2045,13 @@ static PyObject *CFMutableStringRefObj_CFStringAppend(CFMutableStringRefObject *
 static PyObject *CFMutableStringRefObj_CFStringAppendPascalString(CFMutableStringRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	StringPtr pStr;
+	Str255 pStr;
 	CFStringEncoding encoding;
 #ifndef CFStringAppendPascalString
 	PyMac_PRECHECK(CFStringAppendPascalString);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      PyMac_GetStr255, &pStr,
+	                      PyMac_GetStr255, pStr,
 	                      &encoding))
 		return NULL;
 	CFStringAppendPascalString(_self->ob_itself,
@@ -2144,7 +2214,7 @@ static PyMethodDef CFMutableStringRefObj_methods[] = {
 	{"CFStringAppend", (PyCFunction)CFMutableStringRefObj_CFStringAppend, 1,
 	 "(CFStringRef appendedString) -> None"},
 	{"CFStringAppendPascalString", (PyCFunction)CFMutableStringRefObj_CFStringAppendPascalString, 1,
-	 "(StringPtr pStr, CFStringEncoding encoding) -> None"},
+	 "(Str255 pStr, CFStringEncoding encoding) -> None"},
 	{"CFStringAppendCString", (PyCFunction)CFMutableStringRefObj_CFStringAppendCString, 1,
 	 "(char* cStr, CFStringEncoding encoding) -> None"},
 	{"CFStringInsert", (PyCFunction)CFMutableStringRefObj_CFStringInsert, 1,
@@ -2281,6 +2351,30 @@ static PyObject *CFURLRefObj_CFURLCreateData(CFURLRefObject *_self, PyObject *_a
 	return _res;
 }
 
+static PyObject *CFURLRefObj_CFURLGetFileSystemRepresentation(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	Boolean resolveAgainstBase;
+	UInt8 buffer;
+	CFIndex maxBufLen;
+#ifndef CFURLGetFileSystemRepresentation
+	PyMac_PRECHECK(CFURLGetFileSystemRepresentation);
+#endif
+	if (!PyArg_ParseTuple(_args, "ll",
+	                      &resolveAgainstBase,
+	                      &maxBufLen))
+		return NULL;
+	_rv = CFURLGetFileSystemRepresentation(_self->ob_itself,
+	                                       resolveAgainstBase,
+	                                       &buffer,
+	                                       maxBufLen);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     buffer);
+	return _res;
+}
+
 static PyObject *CFURLRefObj_CFURLCopyAbsoluteURL(CFURLRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -2381,6 +2475,42 @@ static PyObject *CFURLRefObj_CFURLCopyPath(CFURLRefObject *_self, PyObject *_arg
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFURLCopyPath(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCopyStrictPath(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	Boolean isAbsolute;
+#ifndef CFURLCopyStrictPath
+	PyMac_PRECHECK(CFURLCopyStrictPath);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLCopyStrictPath(_self->ob_itself,
+	                          &isAbsolute);
+	_res = Py_BuildValue("O&l",
+	                     CFStringRefObj_New, _rv,
+	                     isAbsolute);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCopyFileSystemPath(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	CFURLPathStyle pathStyle;
+#ifndef CFURLCopyFileSystemPath
+	PyMac_PRECHECK(CFURLCopyFileSystemPath);
+#endif
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &pathStyle))
+		return NULL;
+	_rv = CFURLCopyFileSystemPath(_self->ob_itself,
+	                              pathStyle);
 	_res = Py_BuildValue("O&",
 	                     CFStringRefObj_New, _rv);
 	return _res;
@@ -2530,9 +2660,120 @@ static PyObject *CFURLRefObj_CFURLCopyFragment(CFURLRefObject *_self, PyObject *
 	return _res;
 }
 
+static PyObject *CFURLRefObj_CFURLCopyLastPathComponent(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+#ifndef CFURLCopyLastPathComponent
+	PyMac_PRECHECK(CFURLCopyLastPathComponent);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLCopyLastPathComponent(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCopyPathExtension(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+#ifndef CFURLCopyPathExtension
+	PyMac_PRECHECK(CFURLCopyPathExtension);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLCopyPathExtension(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCreateCopyAppendingPathComponent(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFURLRef _rv;
+	CFStringRef pathComponent;
+	Boolean isDirectory;
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CFStringRefObj_Convert, &pathComponent,
+	                      &isDirectory))
+		return NULL;
+	_rv = CFURLCreateCopyAppendingPathComponent((CFAllocatorRef)NULL,
+	                                            _self->ob_itself,
+	                                            pathComponent,
+	                                            isDirectory);
+	_res = Py_BuildValue("O&",
+	                     CFURLRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCreateCopyDeletingLastPathComponent(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFURLRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLCreateCopyDeletingLastPathComponent((CFAllocatorRef)NULL,
+	                                               _self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFURLRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCreateCopyAppendingPathExtension(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFURLRef _rv;
+	CFStringRef extension;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CFStringRefObj_Convert, &extension))
+		return NULL;
+	_rv = CFURLCreateCopyAppendingPathExtension((CFAllocatorRef)NULL,
+	                                            _self->ob_itself,
+	                                            extension);
+	_res = Py_BuildValue("O&",
+	                     CFURLRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCreateCopyDeletingPathExtension(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFURLRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLCreateCopyDeletingPathExtension((CFAllocatorRef)NULL,
+	                                           _self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFURLRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLGetFSRef(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	FSRef fsRef;
+#ifndef CFURLGetFSRef
+	PyMac_PRECHECK(CFURLGetFSRef);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLGetFSRef(_self->ob_itself,
+	                    &fsRef);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     PyMac_BuildFSRef, fsRef);
+	return _res;
+}
+
 static PyMethodDef CFURLRefObj_methods[] = {
 	{"CFURLCreateData", (PyCFunction)CFURLRefObj_CFURLCreateData, 1,
 	 "(CFStringEncoding encoding, Boolean escapeWhitespace) -> (CFDataRef _rv)"},
+	{"CFURLGetFileSystemRepresentation", (PyCFunction)CFURLRefObj_CFURLGetFileSystemRepresentation, 1,
+	 "(Boolean resolveAgainstBase, CFIndex maxBufLen) -> (Boolean _rv, UInt8 buffer)"},
 	{"CFURLCopyAbsoluteURL", (PyCFunction)CFURLRefObj_CFURLCopyAbsoluteURL, 1,
 	 "() -> (CFURLRef _rv)"},
 	{"CFURLGetString", (PyCFunction)CFURLRefObj_CFURLGetString, 1,
@@ -2547,6 +2788,10 @@ static PyMethodDef CFURLRefObj_methods[] = {
 	 "() -> (CFStringRef _rv)"},
 	{"CFURLCopyPath", (PyCFunction)CFURLRefObj_CFURLCopyPath, 1,
 	 "() -> (CFStringRef _rv)"},
+	{"CFURLCopyStrictPath", (PyCFunction)CFURLRefObj_CFURLCopyStrictPath, 1,
+	 "() -> (CFStringRef _rv, Boolean isAbsolute)"},
+	{"CFURLCopyFileSystemPath", (PyCFunction)CFURLRefObj_CFURLCopyFileSystemPath, 1,
+	 "(CFURLPathStyle pathStyle) -> (CFStringRef _rv)"},
 	{"CFURLHasDirectoryPath", (PyCFunction)CFURLRefObj_CFURLHasDirectoryPath, 1,
 	 "() -> (Boolean _rv)"},
 	{"CFURLCopyResourceSpecifier", (PyCFunction)CFURLRefObj_CFURLCopyResourceSpecifier, 1,
@@ -2565,6 +2810,20 @@ static PyMethodDef CFURLRefObj_methods[] = {
 	 "(CFStringRef charactersToLeaveEscaped) -> (CFStringRef _rv)"},
 	{"CFURLCopyFragment", (PyCFunction)CFURLRefObj_CFURLCopyFragment, 1,
 	 "(CFStringRef charactersToLeaveEscaped) -> (CFStringRef _rv)"},
+	{"CFURLCopyLastPathComponent", (PyCFunction)CFURLRefObj_CFURLCopyLastPathComponent, 1,
+	 "() -> (CFStringRef _rv)"},
+	{"CFURLCopyPathExtension", (PyCFunction)CFURLRefObj_CFURLCopyPathExtension, 1,
+	 "() -> (CFStringRef _rv)"},
+	{"CFURLCreateCopyAppendingPathComponent", (PyCFunction)CFURLRefObj_CFURLCreateCopyAppendingPathComponent, 1,
+	 "(CFStringRef pathComponent, Boolean isDirectory) -> (CFURLRef _rv)"},
+	{"CFURLCreateCopyDeletingLastPathComponent", (PyCFunction)CFURLRefObj_CFURLCreateCopyDeletingLastPathComponent, 1,
+	 "() -> (CFURLRef _rv)"},
+	{"CFURLCreateCopyAppendingPathExtension", (PyCFunction)CFURLRefObj_CFURLCreateCopyAppendingPathExtension, 1,
+	 "(CFStringRef extension) -> (CFURLRef _rv)"},
+	{"CFURLCreateCopyDeletingPathExtension", (PyCFunction)CFURLRefObj_CFURLCreateCopyDeletingPathExtension, 1,
+	 "() -> (CFURLRef _rv)"},
+	{"CFURLGetFSRef", (PyCFunction)CFURLRefObj_CFURLGetFSRef, 1,
+	 "() -> (Boolean _rv, FSRef fsRef)"},
 	{NULL, NULL, 0}
 };
 
@@ -2620,6 +2879,26 @@ PyTypeObject CFURLRef_Type = {
 /* -------------------- End object type CFURLRef -------------------- */
 
 
+static PyObject *CF___CFRangeMake(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFRange _rv;
+	CFIndex loc;
+	CFIndex len;
+#ifndef __CFRangeMake
+	PyMac_PRECHECK(__CFRangeMake);
+#endif
+	if (!PyArg_ParseTuple(_args, "ll",
+	                      &loc,
+	                      &len))
+		return NULL;
+	_rv = __CFRangeMake(loc,
+	                    len);
+	_res = Py_BuildValue("O&",
+	                     CFRange_New, _rv);
+	return _res;
+}
+
 static PyObject *CF_CFAllocatorGetTypeID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -2660,14 +2939,14 @@ static PyObject *CF_CFCopyTypeIDDescription(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CFStringRef _rv;
-	CFTypeID theType;
+	CFTypeID type_id;
 #ifndef CFCopyTypeIDDescription
 	PyMac_PRECHECK(CFCopyTypeIDDescription);
 #endif
 	if (!PyArg_ParseTuple(_args, "l",
-	                      &theType))
+	                      &type_id))
 		return NULL;
-	_rv = CFCopyTypeIDDescription(theType);
+	_rv = CFCopyTypeIDDescription(type_id);
 	_res = Py_BuildValue("O&",
 	                     CFStringRefObj_New, _rv);
 	return _res;
@@ -2712,17 +2991,17 @@ static PyObject *CF_CFArrayCreateMutableCopy(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	CFMutableArrayRef _rv;
 	CFIndex capacity;
-	CFArrayRef srcArray;
+	CFArrayRef theArray;
 #ifndef CFArrayCreateMutableCopy
 	PyMac_PRECHECK(CFArrayCreateMutableCopy);
 #endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &capacity,
-	                      CFArrayRefObj_Convert, &srcArray))
+	                      CFArrayRefObj_Convert, &theArray))
 		return NULL;
 	_rv = CFArrayCreateMutableCopy((CFAllocatorRef)NULL,
 	                               capacity,
-	                               srcArray);
+	                               theArray);
 	_res = Py_BuildValue("O&",
 	                     CFMutableArrayRefObj_New, _rv);
 	return _res;
@@ -2809,17 +3088,17 @@ static PyObject *CF_CFDataCreateMutableCopy(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	CFMutableDataRef _rv;
 	CFIndex capacity;
-	CFDataRef data;
+	CFDataRef theData;
 #ifndef CFDataCreateMutableCopy
 	PyMac_PRECHECK(CFDataCreateMutableCopy);
 #endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &capacity,
-	                      CFDataRefObj_Convert, &data))
+	                      CFDataRefObj_Convert, &theData))
 		return NULL;
 	_rv = CFDataCreateMutableCopy((CFAllocatorRef)NULL,
 	                              capacity,
-	                              data);
+	                              theData);
 	_res = Py_BuildValue("O&",
 	                     CFMutableDataRefObj_New, _rv);
 	return _res;
@@ -2865,17 +3144,17 @@ static PyObject *CF_CFDictionaryCreateMutableCopy(PyObject *_self, PyObject *_ar
 	PyObject *_res = NULL;
 	CFMutableDictionaryRef _rv;
 	CFIndex capacity;
-	CFDictionaryRef dict;
+	CFDictionaryRef theDict;
 #ifndef CFDictionaryCreateMutableCopy
 	PyMac_PRECHECK(CFDictionaryCreateMutableCopy);
 #endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &capacity,
-	                      CFDictionaryRefObj_Convert, &dict))
+	                      CFDictionaryRefObj_Convert, &theDict))
 		return NULL;
 	_rv = CFDictionaryCreateMutableCopy((CFAllocatorRef)NULL,
 	                                    capacity,
-	                                    dict);
+	                                    theDict);
 	_res = Py_BuildValue("O&",
 	                     CFMutableDictionaryRefObj_New, _rv);
 	return _res;
@@ -2900,13 +3179,13 @@ static PyObject *CF_CFStringCreateWithPascalString(PyObject *_self, PyObject *_a
 {
 	PyObject *_res = NULL;
 	CFStringRef _rv;
-	StringPtr pStr;
+	Str255 pStr;
 	CFStringEncoding encoding;
 #ifndef CFStringCreateWithPascalString
 	PyMac_PRECHECK(CFStringCreateWithPascalString);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      PyMac_GetStr255, &pStr,
+	                      PyMac_GetStr255, pStr,
 	                      &encoding))
 		return NULL;
 	_rv = CFStringCreateWithPascalString((CFAllocatorRef)NULL,
@@ -2942,13 +3221,13 @@ static PyObject *CF_CFStringCreateWithPascalStringNoCopy(PyObject *_self, PyObje
 {
 	PyObject *_res = NULL;
 	CFStringRef _rv;
-	StringPtr pStr;
+	Str255 pStr;
 	CFStringEncoding encoding;
 #ifndef CFStringCreateWithPascalStringNoCopy
 	PyMac_PRECHECK(CFStringCreateWithPascalStringNoCopy);
 #endif
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      PyMac_GetStr255, &pStr,
+	                      PyMac_GetStr255, pStr,
 	                      &encoding))
 		return NULL;
 	_rv = CFStringCreateWithPascalStringNoCopy((CFAllocatorRef)NULL,
@@ -3202,6 +3481,23 @@ static PyObject *CF_CFStringConvertEncodingToIANACharSetName(PyObject *_self, Py
 	return _res;
 }
 
+static PyObject *CF_CFStringGetMostCompatibleMacStringEncoding(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringEncoding _rv;
+	CFStringEncoding encoding;
+#ifndef CFStringGetMostCompatibleMacStringEncoding
+	PyMac_PRECHECK(CFStringGetMostCompatibleMacStringEncoding);
+#endif
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &encoding))
+		return NULL;
+	_rv = CFStringGetMostCompatibleMacStringEncoding(encoding);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
 static PyObject *CF___CFStringMakeConstantString(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -3261,19 +3557,90 @@ static PyObject *CF_CFURLCreateWithBytes(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *CF_CFURLCreateFromFileSystemRepresentation(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFURLRef _rv;
+	unsigned char *buffer__in__;
+	long buffer__len__;
+	int buffer__in_len__;
+	Boolean isDirectory;
+#ifndef CFURLCreateFromFileSystemRepresentation
+	PyMac_PRECHECK(CFURLCreateFromFileSystemRepresentation);
+#endif
+	if (!PyArg_ParseTuple(_args, "s#l",
+	                      &buffer__in__, &buffer__in_len__,
+	                      &isDirectory))
+		return NULL;
+	buffer__len__ = buffer__in_len__;
+	_rv = CFURLCreateFromFileSystemRepresentation((CFAllocatorRef)NULL,
+	                                              buffer__in__, buffer__len__,
+	                                              isDirectory);
+	_res = Py_BuildValue("O&",
+	                     CFURLRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CF_CFURLCreateFromFileSystemRepresentationRelativeToBase(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFURLRef _rv;
+	unsigned char *buffer__in__;
+	long buffer__len__;
+	int buffer__in_len__;
+	Boolean isDirectory;
+	CFURLRef baseURL;
+#ifndef CFURLCreateFromFileSystemRepresentationRelativeToBase
+	PyMac_PRECHECK(CFURLCreateFromFileSystemRepresentationRelativeToBase);
+#endif
+	if (!PyArg_ParseTuple(_args, "s#lO&",
+	                      &buffer__in__, &buffer__in_len__,
+	                      &isDirectory,
+	                      OptionalCFURLRefObj_Convert, &baseURL))
+		return NULL;
+	buffer__len__ = buffer__in_len__;
+	_rv = CFURLCreateFromFileSystemRepresentationRelativeToBase((CFAllocatorRef)NULL,
+	                                                            buffer__in__, buffer__len__,
+	                                                            isDirectory,
+	                                                            baseURL);
+	_res = Py_BuildValue("O&",
+	                     CFURLRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CF_CFURLCreateFromFSRef(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFURLRef _rv;
+	FSRef fsRef;
+#ifndef CFURLCreateFromFSRef
+	PyMac_PRECHECK(CFURLCreateFromFSRef);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetFSRef, &fsRef))
+		return NULL;
+	_rv = CFURLCreateFromFSRef((CFAllocatorRef)NULL,
+	                           &fsRef);
+	_res = Py_BuildValue("O&",
+	                     CFURLRefObj_New, _rv);
+	return _res;
+}
+
 static PyMethodDef CF_methods[] = {
+	{"__CFRangeMake", (PyCFunction)CF___CFRangeMake, 1,
+	 "(CFIndex loc, CFIndex len) -> (CFRange _rv)"},
 	{"CFAllocatorGetTypeID", (PyCFunction)CF_CFAllocatorGetTypeID, 1,
 	 "() -> (CFTypeID _rv)"},
 	{"CFAllocatorGetPreferredSizeForSize", (PyCFunction)CF_CFAllocatorGetPreferredSizeForSize, 1,
 	 "(CFIndex size, CFOptionFlags hint) -> (CFIndex _rv)"},
 	{"CFCopyTypeIDDescription", (PyCFunction)CF_CFCopyTypeIDDescription, 1,
-	 "(CFTypeID theType) -> (CFStringRef _rv)"},
+	 "(CFTypeID type_id) -> (CFStringRef _rv)"},
 	{"CFArrayGetTypeID", (PyCFunction)CF_CFArrayGetTypeID, 1,
 	 "() -> (CFTypeID _rv)"},
 	{"CFArrayCreateMutable", (PyCFunction)CF_CFArrayCreateMutable, 1,
 	 "(CFIndex capacity) -> (CFMutableArrayRef _rv)"},
 	{"CFArrayCreateMutableCopy", (PyCFunction)CF_CFArrayCreateMutableCopy, 1,
-	 "(CFIndex capacity, CFArrayRef srcArray) -> (CFMutableArrayRef _rv)"},
+	 "(CFIndex capacity, CFArrayRef theArray) -> (CFMutableArrayRef _rv)"},
 	{"CFDataGetTypeID", (PyCFunction)CF_CFDataGetTypeID, 1,
 	 "() -> (CFTypeID _rv)"},
 	{"CFDataCreate", (PyCFunction)CF_CFDataCreate, 1,
@@ -3283,21 +3650,21 @@ static PyMethodDef CF_methods[] = {
 	{"CFDataCreateMutable", (PyCFunction)CF_CFDataCreateMutable, 1,
 	 "(CFIndex capacity) -> (CFMutableDataRef _rv)"},
 	{"CFDataCreateMutableCopy", (PyCFunction)CF_CFDataCreateMutableCopy, 1,
-	 "(CFIndex capacity, CFDataRef data) -> (CFMutableDataRef _rv)"},
+	 "(CFIndex capacity, CFDataRef theData) -> (CFMutableDataRef _rv)"},
 	{"CFDictionaryGetTypeID", (PyCFunction)CF_CFDictionaryGetTypeID, 1,
 	 "() -> (CFTypeID _rv)"},
 	{"CFDictionaryCreateMutable", (PyCFunction)CF_CFDictionaryCreateMutable, 1,
 	 "(CFIndex capacity) -> (CFMutableDictionaryRef _rv)"},
 	{"CFDictionaryCreateMutableCopy", (PyCFunction)CF_CFDictionaryCreateMutableCopy, 1,
-	 "(CFIndex capacity, CFDictionaryRef dict) -> (CFMutableDictionaryRef _rv)"},
+	 "(CFIndex capacity, CFDictionaryRef theDict) -> (CFMutableDictionaryRef _rv)"},
 	{"CFStringGetTypeID", (PyCFunction)CF_CFStringGetTypeID, 1,
 	 "() -> (CFTypeID _rv)"},
 	{"CFStringCreateWithPascalString", (PyCFunction)CF_CFStringCreateWithPascalString, 1,
-	 "(StringPtr pStr, CFStringEncoding encoding) -> (CFStringRef _rv)"},
+	 "(Str255 pStr, CFStringEncoding encoding) -> (CFStringRef _rv)"},
 	{"CFStringCreateWithCString", (PyCFunction)CF_CFStringCreateWithCString, 1,
 	 "(char* cStr, CFStringEncoding encoding) -> (CFStringRef _rv)"},
 	{"CFStringCreateWithPascalStringNoCopy", (PyCFunction)CF_CFStringCreateWithPascalStringNoCopy, 1,
-	 "(StringPtr pStr, CFStringEncoding encoding) -> (CFStringRef _rv)"},
+	 "(Str255 pStr, CFStringEncoding encoding) -> (CFStringRef _rv)"},
 	{"CFStringCreateWithCStringNoCopy", (PyCFunction)CF_CFStringCreateWithCStringNoCopy, 1,
 	 "(char* cStr, CFStringEncoding encoding) -> (CFStringRef _rv)"},
 	{"CFStringCreateMutable", (PyCFunction)CF_CFStringCreateMutable, 1,
@@ -3324,12 +3691,20 @@ static PyMethodDef CF_methods[] = {
 	 "(UInt32 codepage) -> (CFStringEncoding _rv)"},
 	{"CFStringConvertEncodingToIANACharSetName", (PyCFunction)CF_CFStringConvertEncodingToIANACharSetName, 1,
 	 "(CFStringEncoding encoding) -> (CFStringRef _rv)"},
+	{"CFStringGetMostCompatibleMacStringEncoding", (PyCFunction)CF_CFStringGetMostCompatibleMacStringEncoding, 1,
+	 "(CFStringEncoding encoding) -> (CFStringEncoding _rv)"},
 	{"__CFStringMakeConstantString", (PyCFunction)CF___CFStringMakeConstantString, 1,
 	 "(char* cStr) -> (CFStringRef _rv)"},
 	{"CFURLGetTypeID", (PyCFunction)CF_CFURLGetTypeID, 1,
 	 "() -> (CFTypeID _rv)"},
 	{"CFURLCreateWithBytes", (PyCFunction)CF_CFURLCreateWithBytes, 1,
 	 "(Buffer URLBytes, CFStringEncoding encoding, CFURLRef baseURL) -> (CFURLRef _rv)"},
+	{"CFURLCreateFromFileSystemRepresentation", (PyCFunction)CF_CFURLCreateFromFileSystemRepresentation, 1,
+	 "(Buffer buffer, Boolean isDirectory) -> (CFURLRef _rv)"},
+	{"CFURLCreateFromFileSystemRepresentationRelativeToBase", (PyCFunction)CF_CFURLCreateFromFileSystemRepresentationRelativeToBase, 1,
+	 "(Buffer buffer, Boolean isDirectory, CFURLRef baseURL) -> (CFURLRef _rv)"},
+	{"CFURLCreateFromFSRef", (PyCFunction)CF_CFURLCreateFromFSRef, 1,
+	 "(FSRef fsRef) -> (CFURLRef _rv)"},
 	{NULL, NULL, 0}
 };
 

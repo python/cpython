@@ -654,6 +654,93 @@ static PyObject *App_UseThemeFont(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *App_TruncateThemeText(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	CFMutableStringRef inString;
+	ThemeFontID inFontID;
+	ThemeDrawState inState;
+	SInt16 inPixelWidthLimit;
+	TruncCode inTruncWhere;
+	Boolean outTruncated;
+	if (!PyArg_ParseTuple(_args, "O&Hlhh",
+	                      CFMutableStringRefObj_Convert, &inString,
+	                      &inFontID,
+	                      &inState,
+	                      &inPixelWidthLimit,
+	                      &inTruncWhere))
+		return NULL;
+	_err = TruncateThemeText(inString,
+	                         inFontID,
+	                         inState,
+	                         inPixelWidthLimit,
+	                         inTruncWhere,
+	                         &outTruncated);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("b",
+	                     outTruncated);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *App_GetThemeTextDimensions(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	CFStringRef inString;
+	ThemeFontID inFontID;
+	ThemeDrawState inState;
+	Boolean inWrapToWidth;
+	Point ioBounds;
+	SInt16 outBaseline;
+	if (!PyArg_ParseTuple(_args, "O&Hlb",
+	                      CFStringRefObj_Convert, &inString,
+	                      &inFontID,
+	                      &inState,
+	                      &inWrapToWidth))
+		return NULL;
+	_err = GetThemeTextDimensions(inString,
+	                              inFontID,
+	                              inState,
+	                              inWrapToWidth,
+	                              &ioBounds,
+	                              &outBaseline);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&h",
+	                     PyMac_BuildPoint, ioBounds,
+	                     outBaseline);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *App_GetThemeTextShadowOutset(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ThemeFontID inFontID;
+	ThemeDrawState inState;
+	Rect outOutset;
+	if (!PyArg_ParseTuple(_args, "Hl",
+	                      &inFontID,
+	                      &inState))
+		return NULL;
+	_err = GetThemeTextShadowOutset(inFontID,
+	                                inState,
+	                                &outOutset);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &outOutset);
+	return _res;
+}
+#endif
+
 static PyObject *App_DrawThemeScrollBarArrows(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1111,6 +1198,21 @@ static PyMethodDef App_methods[] = {
 	 "() -> (ThemeCheckBoxStyle outStyle)"},
 	{"UseThemeFont", (PyCFunction)App_UseThemeFont, 1,
 	 "(ThemeFontID inFontID, ScriptCode inScript) -> None"},
+
+#if TARGET_API_MAC_CARBON
+	{"TruncateThemeText", (PyCFunction)App_TruncateThemeText, 1,
+	 "(CFMutableStringRef inString, ThemeFontID inFontID, ThemeDrawState inState, SInt16 inPixelWidthLimit, TruncCode inTruncWhere) -> (Boolean outTruncated)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"GetThemeTextDimensions", (PyCFunction)App_GetThemeTextDimensions, 1,
+	 "(CFStringRef inString, ThemeFontID inFontID, ThemeDrawState inState, Boolean inWrapToWidth) -> (Point ioBounds, SInt16 outBaseline)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"GetThemeTextShadowOutset", (PyCFunction)App_GetThemeTextShadowOutset, 1,
+	 "(ThemeFontID inFontID, ThemeDrawState inState) -> (Rect outOutset)"},
+#endif
 	{"DrawThemeScrollBarArrows", (PyCFunction)App_DrawThemeScrollBarArrows, 1,
 	 "(Rect bounds, ThemeTrackEnableState enableState, ThemeTrackPressState pressState, Boolean isHoriz) -> (Rect trackBounds)"},
 	{"GetThemeScrollBarTrackRect", (PyCFunction)App_GetThemeScrollBarTrackRect, 1,

@@ -48,12 +48,16 @@ class MyScanner(Scanner):
 			"appearanceBadTextColorIndexErr",
 			"appearanceThemeHasNoAccents",
 			"appearanceBadCursorIndexErr",
+			"DrawThemeTextBox",    # Funny void* out param
 			]
 
 	def makegreylist(self):
 		return [
 			('#if TARGET_API_MAC_CARBON', [
 				'GetThemeMetric',
+				'GetThemeTextShadowOutset',
+				'GetThemeTextDimensions',
+				'TruncateThemeText',
 			])]
 			
 	def makeblacklisttypes(self):
@@ -71,6 +75,7 @@ class MyScanner(Scanner):
 			"ThemeWindowMetrics_ptr",	# ditto
 			"ThemeDrawingState",	# This is an opaque pointer, so it should be simple. Later.
 			"Collection",		# No interface to collection mgr yet.
+			"BytePtr",		# Not yet.
 			]
 
 	def makerepairinstructions(self):

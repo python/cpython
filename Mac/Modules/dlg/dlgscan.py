@@ -54,17 +54,19 @@ class MyScanner(Scanner):
 			'SetDialogMovableModal',
 			'GetDialogControlNotificationProc',
 			'SetGrafPortOfDialog', # Funny, and probably not useful
+			# Can't find these:
+			'CloseStandardSheet',
+			'RunStandardAlert',
 			]
 
 	def makegreylist(self):
 		return [
-			('#if !TARGET_API_MAC_CARBON', [
-				'SetGrafPortOfDialog',
-			]),
 			('#if TARGET_API_MAC_CARBON', [
 				'InsertDialogItem',
 				'RemoveDialogItems',
 				'GetParamText',
+				'CloseStandardSheet',
+				'RunStandardAlert',
 			])]
 			
 	def makeblacklisttypes(self):
@@ -72,6 +74,9 @@ class MyScanner(Scanner):
 			"AlertStdAlertParamPtr",	# Too much work, for now
 			"AlertStdAlertParamRec",	# ditto
 			"AlertStdAlertParamRec_ptr",	# ditto
+			"AlertStdCFStringAlertParamPtr",	# ditto
+			"AlertStdCFStringAlertParamRec",
+			"AlertStdCFStringAlertParamRec_ptr",
 			"QTModelessCallbackProcPtr",
 			]
 
