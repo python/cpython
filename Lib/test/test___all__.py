@@ -54,6 +54,7 @@ class AllTest(unittest.TestCase):
             import _socket
 
         self.check_all("BaseHTTPServer")
+        self.check_all("Bastion")
         self.check_all("CGIHTTPServer")
         self.check_all("ConfigParser")
         self.check_all("Cookie")
@@ -143,6 +144,7 @@ class AllTest(unittest.TestCase):
         self.check_all("repr")
         self.check_all("rexec")
         self.check_all("rfc822")
+        self.check_all("rlcompleter")
         self.check_all("robotparser")
         self.check_all("sched")
         self.check_all("sets")
@@ -155,6 +157,7 @@ class AllTest(unittest.TestCase):
         self.check_all("sndhdr")
         self.check_all("socket")
         self.check_all("sre")
+        self.check_all("_strptime")
         self.check_all("statcache")
         self.check_all("symtable")
         self.check_all("tabnanny")
@@ -163,6 +166,7 @@ class AllTest(unittest.TestCase):
         self.check_all("tempfile")
         self.check_all("textwrap")
         self.check_all("threading")
+        self.check_all("timeit")
         self.check_all("toaiff")
         self.check_all("tokenize")
         self.check_all("traceback")
