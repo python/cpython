@@ -529,13 +529,12 @@ static struct PyMethodDef SHA_functions[] = {
 DL_EXPORT(void)
 initsha(void)
 {
-    PyObject *d, *m;
+    PyObject *m;
 
     SHAtype.ob_type = &PyType_Type;
     m = Py_InitModule("sha", SHA_functions);
 
     /* Add some symbolic constants to the module */
-    d = PyModule_GetDict(m);
     insint("blocksize", 1);  /* For future use, in case some hash
                                 functions require an integral number of
                                 blocks */ 
