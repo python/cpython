@@ -115,7 +115,8 @@ to the socket on the other end of the connection.
 \end{funcdesc}
 
 \begin{funcdesc}{bind}{address}
-Bind the socket to an address.  The socket must not already be bound.
+Bind the socket to \var{address}.  The socket must not already be bound.
+(The format of \var{address} depends on the address family -- see above.)
 \end{funcdesc}
 
 \begin{funcdesc}{close}{}
@@ -125,7 +126,8 @@ Sockets are automatically closed when they are garbage-collected.
 \end{funcdesc}
 
 \begin{funcdesc}{connect}{address}
-Connect to a remote socket.
+Connect to a remote socket at \var{address}.
+(The format of \var{address} depends on the address family -- see above.)
 \end{funcdesc}
 
 \begin{funcdesc}{fileno}{}
@@ -136,11 +138,15 @@ with \code{select}.
 \begin{funcdesc}{getpeername}{}
 Return the remote address to which the socket is connected.  This is
 useful to find out the port number of a remote IP socket, for instance.
+(The format of the address returned depends on the address family --
+see above.)
 \end{funcdesc}
 
 \begin{funcdesc}{getsockname}{}
 Return the socket's own address.  This is useful to find out the port
 number of an IP socket, for instance.
+(The format of the address returned depends on the address family --
+see above.)
 \end{funcdesc}
 
 \begin{funcdesc}{getsockopt}{level\, optname\, buflen}
@@ -182,6 +188,7 @@ Receive data from the socket.  The return value is a pair
 \code{(\var{string}, \var{address})} where \var{string} is a string
 representing the data received and \var{address} is the address of the
 socket sending the data.
+(The format of \var{address} depends on the address family -- see above.)
 \end{funcdesc}
 
 \begin{funcdesc}{send}{string}
@@ -193,6 +200,7 @@ socket.
 Send data to the socket.  The socket should not be connected to a
 remote socket, since the destination socket is specified by
 \code{address}.
+(The format of \var{address} depends on the address family -- see above.)
 \end{funcdesc}
 
 \begin{funcdesc}{setsockopt}{level\, optname\, value}
