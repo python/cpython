@@ -22,7 +22,7 @@ from email.Iterators import _structure
 def openfile(filename):
     from os.path import join, dirname, abspath
     path = abspath(join(dirname(testfile), os.pardir, 'moredata', filename))
-    return open(path)
+    return open(path, 'rb')
 
 # Prevent this test from running in the Python distro
 try:
