@@ -72,6 +72,8 @@ corresponding Unix manual entries for more information on calls.";
 #else
 #ifdef _MSC_VER		/* Microsoft compiler */
 #define HAVE_GETCWD     1
+#define HAVE_FSYNC	1
+#define fsync _commit
 #ifdef MS_WIN32
 #define HAVE_SPAWNV	1
 #define HAVE_EXECV      1

@@ -2,6 +2,10 @@ What's New in Python 2.2.3 ?
 Release date: XX-XXX-2003
 ============================
 
+- Implemented os.fsync() for Windows, where it calls the MS _commit()
+  function.  Before, there was no way in core Python to ensure file
+  writes actually showed up on disk when necessary.
+
 - Make all the strip, lstrip, rstrip functions/methods on
   string/unicode/UserString consistent by adding and/or
   documenting the chars parameter.  The chars parameter
