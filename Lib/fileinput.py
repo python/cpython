@@ -77,7 +77,7 @@ import sys, os, stat
 
 _state = None
 
-def input(files=(), inplace=0, backup=""):
+def input(files=None, inplace=0, backup=""):
     global _state
     if _state and _state._file:
         raise RuntimeError, "input() already active"
@@ -123,15 +123,16 @@ def isstdin():
 
 class FileInput:
 
-    def __init__(self, files=(), inplace=0, backup=""):
+    def __init__(self, files=None, inplace=0, backup=""):
         if type(files) == type(''):
             files = (files,)
         else:
-            files = tuple(files)
+            if files is None:
+                files = sys.argv[1:]
             if not files:
-                files = tuple(sys.argv[1:])
-                if not files:
-                    files = ('-',)
+                files = ('-',)
+            else:
+                files = tuple(files)
         self._files = files
         self._inplace = inplace
         self._backup = backup
