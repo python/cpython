@@ -19,11 +19,11 @@ due to the many different aspects of the Unicode-Python integration.
 
 The latest version of this document is always available at:
 
-        http://starship.skyport.net/~lemburg/unicode-proposal.txt
+        http://starship.python.net/~lemburg/unicode-proposal.txt
 
 Older versions are available as:
 
-        http://starship.skyport.net/~lemburg/unicode-proposal-X.X.txt
+        http://starship.python.net/~lemburg/unicode-proposal-X.X.txt
 
 
 Conventions:
@@ -101,7 +101,7 @@ of the source file (e.g. '# source file encoding: latin-1'). If you
 only use 7-bit ASCII then everything is fine and no such notice is
 needed, but if you include Latin-1 characters not defined in ASCII, it
 may well be worthwhile including a hint since people in other
-countries will want to be able to read you source strings too.
+countries will want to be able to read your source strings too.
 
 
 Unicode Type Object:
@@ -169,7 +169,7 @@ during coercion of strings to Unicode should not be masked and passed
 through to the user.
 
 In containment tests ('a' in u'abc' and u'a' in 'abc') both sides
-should be coerced to Unicode before applying the test. Errors occuring
+should be coerced to Unicode before applying the test. Errors occurring
 during coercion (e.g. None in u'abc') should not be masked.
 
 
@@ -184,7 +184,7 @@ always coerce to the more precise format, i.e. Unicode objects.
   s + u := unicode(s) + u
 
 All string methods should delegate the call to an equivalent Unicode
-object method call by converting all envolved strings to Unicode and
+object method call by converting all involved strings to Unicode and
 then applying the arguments to the Unicode method of the same name,
 e.g.
 
@@ -199,7 +199,7 @@ Formatting Markers.
 Exceptions:
 -----------
 
-UnicodeError is defined in the exceptions module as subclass of
+UnicodeError is defined in the exceptions module as a subclass of
 ValueError. It is available at the C level via PyExc_UnicodeError.
 All exceptions related to Unicode encoding/decoding should be
 subclasses of UnicodeError.
@@ -268,7 +268,7 @@ Python should provide a few standard codecs for the most relevant
 encodings, e.g. 
 
   'utf-8':              8-bit variable length encoding
-  'utf-16':             16-bit variable length encoding (litte/big endian)
+  'utf-16':             16-bit variable length encoding (little/big endian)
   'utf-16-le':          utf-16 but explicitly little endian
   'utf-16-be':          utf-16 but explicitly big endian
   'ascii':              7-bit ASCII codepage
@@ -284,7 +284,7 @@ Note: 'utf-16' should be implemented by using and requiring byte order
 marks (BOM) for file input/output.
 
 All other encodings such as the CJK ones to support Asian scripts
-should be implemented in seperate packages which do not get included
+should be implemented in separate packages which do not get included
 in the core Python distribution and are not a part of this proposal.
 
 
@@ -324,14 +324,14 @@ class Codec:
     """
     def encode(self,input,errors='strict'):
         
-        """ Encodes the object intput and returns a tuple (output
+        """ Encodes the object input and returns a tuple (output
             object, length consumed).
 
             errors defines the error handling to apply. It defaults to
             'strict' handling.
 
             The method may not store state in the Codec instance. Use
-            SteamCodec for codecs which have to keep state in order to
+            StreamCodec for codecs which have to keep state in order to
             make encoding/decoding efficient.
 
         """
@@ -350,7 +350,7 @@ class Codec:
             'strict' handling.
 
             The method may not store state in the Codec instance. Use
-            SteamCodec for codecs which have to keep state in order to
+            StreamCodec for codecs which have to keep state in order to
             make encoding/decoding efficient.
 
         """ 
@@ -490,7 +490,7 @@ class StreamReader(Codec):
             the line breaking knowledge from the underlying stream's
             .readline() method -- there is currently no support for
             line breaking using the codec decoder due to lack of line
-            buffering. Sublcasses should however, if possible, try to
+            buffering. Subclasses should however, if possible, try to
             implement this method using their own knowledge of line
             breaking.
 
@@ -527,7 +527,7 @@ class StreamReader(Codec):
         """ Resets the codec buffers used for keeping state.
 
             Note that no stream repositioning should take place.
-            This method is primarely intended to be able to recover
+            This method is primarily intended to be able to recover
             from decoding errors.
 
         """
@@ -553,7 +553,7 @@ interfaces, though.
 
 It is not required by the Unicode implementation to use these base
 classes, only the interfaces must match; this allows writing Codecs as
-extensions types.
+extension types.
 
 As guideline, large mapping tables should be implemented using static
 C data in separate (shared) extension modules. That way multiple
@@ -628,8 +628,8 @@ Private Code Point Areas:
 -------------------------
 
 Support for these is left to user land Codecs and not explicitly
-intergrated into the core. Note that due to the Internal Format being
-implemented, only the area between \uE000 and \uF8FF is useable for
+integrated into the core. Note that due to the Internal Format being
+implemented, only the area between \uE000 and \uF8FF is usable for
 private encodings.
 
 
@@ -649,14 +649,14 @@ provides access to about 64k characters and covers all characters in
 the Basic Multilingual Plane (BMP) of Unicode.
 
 It is the Codec's responsibility to ensure that the data they pass to
-the Unicode object constructor repects this assumption. The
+the Unicode object constructor respects this assumption. The
 constructor does not check the data for Unicode compliance or use of
 surrogates.
 
 Future implementations can extend the 32 bit restriction to the full
 set of all UTF-16 addressable characters (around 1M characters).
 
-The Unicode API should provide inteface routines from <PythonUnicode>
+The Unicode API should provide interface routines from <PythonUnicode>
 to the compiler's wchar_t which can be 16 or 32 bit depending on the
 compiler/libc/platform being used.
 
