@@ -75,6 +75,17 @@ Build
 C API
 -----
 
+- PyType_Ready():  If a type declares that it participates in gc
+  (Py_TPFLAGS_HAVE_GC), and its base class does not, and its base class's
+  tp_free slot is the default _PyObject_Del, and type does not define
+  a tp_free slot itself, _PyObject_GC_Del is assigned to type->tp_free.
+  Previously _PyObject_Del was inherited, which could at best lead to a
+  segfault.  In addition, if even after this magic the type's tp_free
+  slot is _PyObject_Del or NULL, and the type is a base type
+  (Py_TPFLAGS_BASETYPE), TypeError is raised:  since the type is a base
+  type, its dealloc function must call type->tp_free, and since the type
+  is gc'able, tp_free must not be NULL or _PyObject_Del.
+
 New platforms
 -------------
 

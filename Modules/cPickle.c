@@ -2853,7 +2853,7 @@ Pickler_dealloc(Picklerobject *self)
 	Py_XDECREF(self->inst_pers_func);
 	Py_XDECREF(self->dispatch_table);
 	PyMem_Free(self->write_buf);
-	PyObject_GC_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static int
@@ -5212,7 +5212,7 @@ Unpickler_dealloc(Unpicklerobject *self)
 		free(self->buf);
 	}
 
-	PyObject_GC_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static int
@@ -5533,6 +5533,11 @@ init_stuff(PyObject *module_dict)
 	PyObject *copy_reg, *t, *r;
 
 #define INIT_STR(S) if (!( S ## _str=PyString_InternFromString(#S)))  return -1;
+
+	if (PyType_Ready(&Unpicklertype) < 0)
+		return -1;
+	if (PyType_Ready(&Picklertype) < 0)
+		return -1;
 
 	INIT_STR(__class__);
 	INIT_STR(__getinitargs__);
