@@ -71,12 +71,13 @@ extern int PyMac_GetArgv Py_PROTO((char ***, int));	/* Get argc, argv (from maca
 extern PyObject *PyMac_OSErrException;		/* Exception for OSErr */
 PyObject *PyMac_GetOSErrException(void);	/* Initialize & return it */
 
-void PyMac_Yield Py_PROTO((void));		/* optional idle routine for mainloop */
 void PyMac_GetSchedParams Py_PROTO((PyMacSchedParams *));	/* Get schedulers params */
 void PyMac_SetSchedParams Py_PROTO((PyMacSchedParams *));	/* Set schedulers params */
 PyObject *PyErr_Mac(PyObject *, int);		/* Exception with a mac error */
 PyObject *PyMac_Error(OSErr);			/* Uses PyMac_GetOSErrException */
-void PyMac_HandleEvent Py_PROTO((EventRecord *, int)); /* Handle one event, if possible */
+int PyMac_HandleEvent Py_PROTO((EventRecord *));	/* Handle one event, possibly in Python */
+void PyMac_HandleEventIntern Py_PROTO((EventRecord *)); /* Handle one event internal only */
+int PyMac_SetEventHandler Py_PROTO((PyObject *));	/* set python-coded event handler */
 
 void PyMac_InitMenuBar(void);			/* Setup menu bar as we want it */
 void PyMac_RestoreMenuBar(void);		/* Restore menu bar for ease of exiting */
