@@ -779,10 +779,8 @@ listpop(PyListObject *self, PyObject *args)
 	if (arg != NULL) {
 		if (PyInt_Check(arg))
 			i = (int)(PyInt_AS_LONG((PyIntObject*) arg));
-		else {
-			PyErr_SetString(PyExc_TypeError, "an integer is required");
-			return NULL;
-		}
+		else if (!PyArg_ParseTuple(args, "|i:pop", &i))
+   			return NULL;
 	}
 	if (self->ob_size == 0) {
 		/* Special-case most common failure cause */
