@@ -10,6 +10,7 @@ import MacOS
 from Carbon import Win
 from Carbon import Res
 from Carbon import Evt
+from Carbon import Qd
 import os
 import imp
 import sys
@@ -365,7 +366,6 @@ class Editor(W.Window):
 	def close(self):
 		if self.editgroup.editor.changed:
 			import EasyDialogs
-			from Carbon import Qd
 			Qd.InitCursor()
 			save = EasyDialogs.AskYesNoCancel('Save window "%s" before closing?' % self.title,
 					default=1, no="Don\xd5t save")
@@ -509,7 +509,7 @@ class Editor(W.Window):
 		if self.run_with_interpreter:
 			if self.editgroup.editor.changed:
 				import EasyDialogs
-				import Qd; Qd.InitCursor()
+				Qd.InitCursor()
 				save = EasyDialogs.AskYesNoCancel('Save "%s" before running?' % self.title, 1)
 				if save > 0:
 					if self.domenu_save():
@@ -520,16 +520,9 @@ class Editor(W.Window):
 				raise W.AlertError, "Can't run unsaved file"
 			self._run_with_interpreter()
 		elif self.run_with_cl_interpreter:
-			# Until universal newline support
-			if self._eoln != '\n':
-				import EasyDialogs
-				ok = EasyDialogs.AskYesNoCancel('Warning: "%s" does not have Unix line-endings'
-					% self.title, 1, yes='OK', no='')
-				if not ok:
-					return
 			if self.editgroup.editor.changed:
 				import EasyDialogs
-				import Qd; Qd.InitCursor()
+				Qd.InitCursor()
 				save = EasyDialogs.AskYesNoCancel('Save "%s" before running?' % self.title, 1)
 				if save > 0:
 					if self.domenu_save():
