@@ -158,9 +158,9 @@ See the Python Mode home page for details:
   :group 'python)
 
 (defcustom py-indent-offset 4
-  "*Amount of offset per level of indentation
-Note that `\\[py-guess-indent-offset]' can usually guess a good value
-when you're editing someone else's Python code."
+  "*Amount of offset per level of indentation.
+`\\[py-guess-indent-offset]' can usually guess a good value when
+you're editing someone else's Python code."
   :type 'integer
   :group 'python)
 
@@ -240,7 +240,7 @@ slightly inaccurate in the interest of brevity):
   - If the buffer is in a window, and you left point at its end, the
     window will scroll as new output arrives, and point will move to the
     buffer's end, even if the window is not the selected window (that
-    being the one the cursor is in).  The usual behavior for shell-mode
+    being the one the cursor is in).  The usual behavior for `shell-mode'
     windows is not to scroll, and to leave point where it was, if the
     buffer is in a window other than the selected window.
 
@@ -248,7 +248,7 @@ slightly inaccurate in the interest of brevity):
     its end, the buffer will be popped into a window as soon as more
     output arrives.  This is handy if you have a long-running
     computation and don't want to tie up screen area waiting for the
-    output.  The usual behavior for a shell-mode buffer is to stay
+    output.  The usual behavior for a `shell-mode' buffer is to stay
     invisible until you explicitly visit it.
 
 Note the `and if you left point at its end' clauses in both of the
@@ -290,7 +290,7 @@ can write into:  the value (if any) of the environment variable TMPDIR,
   :group 'python)
 
 (defcustom py-beep-if-tab-change t
-  "*Ring the bell if tab-width is changed.
+  "*Ring the bell if `tab-width' is changed.
 If a comment of the form
 
   \t# vi:set tabsize=<number>:
@@ -337,10 +337,10 @@ variable section, e.g.:
     # py-master-file: \"master.py\"
     # End:
 
-so that typing \\[py-execute-buffer] in that buffer executes the
-named master file instead of the buffer's file.  Note that if the file
-name has a relative path, the `default-directory' for the buffer is
-prepended to come up with a file name.")
+so that typing \\[py-execute-buffer] in that buffer executes the named
+master file instead of the buffer's file.  Note that if the file name
+has a relative path, the value of `default-directory' for the buffer
+is prepended to come up with a file name.")
 (make-variable-buffer-local 'py-master-file)
 
 
@@ -408,7 +408,6 @@ Currently-active file is at the head of the list.")
 
 ;; Constants
 
-;; Regexp matching a Python string literal
 (defconst py-stringlit-re
   (concat
    ;; These fail if backslash-quote ends the string (not worth
@@ -426,21 +425,20 @@ Currently-active file is at the head of the list.")
    "[rR]?'\\([^'\n\\]\\|\\\\.\\)*'"	; single-quoted
    "\\|"				; or
    "[rR]?\"\\([^\"\n\\]\\|\\\\.\\)*\""	; double-quoted
-   ))
+   )
+  "Regular expression matching a Python string literal.")
 
-
-;; Regexp matching Python lines that are continued via backslash.
-;; This is tricky because a trailing backslash does not mean
-;; continuation if it's in a comment
 (defconst py-continued-re
+  ;; This is tricky because a trailing backslash does not mean
+  ;; continuation if it's in a comment
   (concat
    "\\(" "[^#'\"\n\\]" "\\|" py-stringlit-re "\\)*"
-   "\\\\$"))
+   "\\\\$")
+  "Regular expression matching Python backslash continuation lines.")
   
-;; Regexp matching blank or comment lines.
-(defconst py-blank-or-comment-re "[ \t]*\\($\\|#\\)")
+(defconst py-blank-or-comment-re "[ \t]*\\($\\|#\\)"
+  "Regular expression matching a blank or comment line."
 
-;; Regexp matching clauses to be outdented one level.
 (defconst py-outdent-re
   (concat "\\(" (mapconcat 'identity
 			   '("else:"
@@ -448,14 +446,13 @@ Currently-active file is at the head of the list.")
 			     "finally:"
 			     "elif\\s +.*:")
 			   "\\|")
-	  "\\)"))
+	  "\\)")
+  "Regular expression matching statements to be dedented one level.")
   
-
-;; Regexp matching keywords which typically close a block
 (defconst py-block-closing-keywords-re
-  "\\(return\\|raise\\|break\\|continue\\|pass\\)")
+  "\\(return\\|raise\\|break\\|continue\\|pass\\)"
+  "Regular expression matching keywords which typically close a block.")
 
-;; Regexp matching lines to not outdent after.
 (defconst py-no-outdent-re
   (concat
    "\\("
@@ -469,36 +466,38 @@ Currently-active file is at the head of the list.")
 		    (concat py-block-closing-keywords-re "[ \t\n]")
 		    )
 	      "\\|")
-	  "\\)"))
+	  "\\)")
+  "Regular expression matching lines not to dedent after.")
 
-;; Regexp matching a function, method or variable assignment.  If you
-;; change this, you probably have to change `py-current-defun' as
-;; well.  This is only used by `py-current-defun' to find the name for
-;; add-log.el.
 (defconst py-defun-start-re
-  "^\\([ \t]*\\)def[ \t]+\\([a-zA-Z_0-9]+\\)\\|\\(^[a-zA-Z_0-9]+\\)[ \t]*=")
+  "^\\([ \t]*\\)def[ \t]+\\([a-zA-Z_0-9]+\\)\\|\\(^[a-zA-Z_0-9]+\\)[ \t]*="
+  ;; If you change this, you probably have to change py-current-defun
+  ;; as well.  This is only used by py-current-defun to find the name
+  ;; for add-log.el.
+  "Regular expression matching a function, method, or variable assignment."
 
-;; Regexp for finding a class name.  If you change this, you probably
-;; have to change `py-current-defun' as well.  This is only used by
-;; `py-current-defun' to find the name for add-log.el.
-(defconst py-class-start-re "^class[ \t]*\\([a-zA-Z_0-9]+\\)")
+(defconst py-class-start-re "^class[ \t]*\\([a-zA-Z_0-9]+\\)"
+  ;; If you change this, you probably have to change py-current-defun
+  ;; as well.  This is only used by py-current-defun to find the name
+  ;; for add-log.el.
+  "Regular expression for finding a class name.")
 
-;; Regexp that describes tracebacks
 (defconst py-traceback-line-re
-  "[ \t]+File \"\\([^\"]+\\)\", line \\([0-9]+\\)")
+  "[ \t]+File \"\\([^\"]+\\)\", line \\([0-9]+\\)"
+  "Regular expression that describes tracebacks.")
 
 
 
 ;; Utilities
 
 (defmacro py-safe (&rest body)
-  ;; safely execute BODY, return nil if an error occurred
+  "Safely execute BODY, return nil if an error occurred."
   (` (condition-case nil
 	 (progn (,@ body))
        (error nil))))
 
 (defsubst py-keep-region-active ()
-  ;; Do whatever is necessary to keep the region active in XEmacs.
+  "Keep the region active in XEmacs."
   ;; Ignore byte-compiler warnings you might see.  Also note that
   ;; FSF's Emacs 19 does it differently; its policy doesn't require us
   ;; to take explicit action.
@@ -506,29 +505,31 @@ Currently-active file is at the head of the list.")
        (setq zmacs-region-stays t)))
 
 (defsubst py-point (position)
-  ;; Returns the value of point at certain commonly referenced POSITIONs.
-  ;; POSITION can be one of the following symbols:
-  ;; 
-  ;; bol  -- beginning of line
-  ;; eol  -- end of line
-  ;; bod  -- beginning of defun
-  ;; bob  -- beginning of buffer
-  ;; eob  -- end of buffer
-  ;; boi  -- back to indentation
-  ;; bos  -- beginning of statement
-  ;; 
-  ;; This function does not modify point or mark.
+  "Returns the value of point at certain commonly referenced POSITIONs.
+POSITION can be one of the following symbols:
+
+  bol  -- beginning of line
+  eol  -- end of line
+  bod  -- beginning of def or class
+  eod  -- end of def or class
+  bob  -- beginning of buffer
+  eob  -- end of buffer
+  boi  -- back to indentation
+  bos  -- beginning of statement
+
+This function does not modify point or mark."
   (let ((here (point)))
     (cond
      ((eq position 'bol) (beginning-of-line))
      ((eq position 'eol) (end-of-line))
      ((eq position 'bod) (py-beginning-of-def-or-class))
+     ((eq position 'eod) (py-end-of-def-or-class))
      ;; Kind of funny, I know, but useful for py-up-exception.
      ((eq position 'bob) (beginning-of-buffer))
      ((eq position 'eob) (end-of-buffer))
      ((eq position 'boi) (back-to-indentation))
      ((eq position 'bos) (py-goto-initial-line))
-     (t (error "unknown buffer position requested: %s" position))
+     (t (error "Unknown buffer position requested: %s" position))
      )
     (prog1
 	(point)
@@ -548,9 +549,11 @@ Currently-active file is at the head of the list.")
    ))
 
 (defun py-in-literal (&optional lim)
-  ;; Determine if point is in a Python literal, defined as a comment
-  ;; or string.  This is the version used for non-XEmacs, which has a
-  ;; nicer interface.
+  "Return non-nil if point is in a Python literal (a comment or string).
+Optional argument LIM indicates the beginning of the containing form,
+i.e. the limit on how far back to scan."
+  ;; This is the version used for non-XEmacs, which has a nicer
+  ;; interface.
   ;;
   ;; WARNING: Watch out for infinite recursion.
   (let* ((lim (or lim (c-point 'bod)))
@@ -563,11 +566,13 @@ Currently-active file is at the head of the list.")
 ;; XEmacs has a built-in function that should make this much quicker.
 ;; In this case, lim is ignored
 (defun py-fast-in-literal (&optional lim)
+  "Fast version of `py-in-literal', used only by XEmacs.
+Optional LIM is ignored."
   ;; don't have to worry about context == 'block-comment
   (buffer-syntactic-context))
 
 (if (fboundp 'buffer-syntactic-context)
-    (defalias 'c-in-literal 'c-fast-in-literal))
+    (defalias 'py-in-literal 'py-fast-in-literal))
 
 
 
@@ -655,7 +660,7 @@ Currently-active file is at the head of the list.")
   )
 
 (defvar py-mode-output-map nil
-  "Keymap used in *Python Output* buffers*")
+  "Keymap used in *Python Output* buffers.")
 (if py-mode-output-map
     nil
   (setq py-mode-output-map (make-sparse-keymap))
@@ -963,11 +968,11 @@ COMMANDS
 VARIABLES
 
 py-indent-offset\t\tindentation increment
-py-block-comment-prefix\t\tcomment string used by comment-region
+py-block-comment-prefix\t\tcomment string used by `comment-region'
 py-python-command\t\tshell command to invoke Python interpreter
 py-scroll-process-buffer\t\talways scroll Python process buffer
 py-temp-directory\t\tdirectory used for temp files (if needed)
-py-beep-if-tab-change\t\tring the bell if tab-width is changed"
+py-beep-if-tab-change\t\tring the bell if `tab-width' is changed"
   (interactive)
   ;; set up local variables
   (kill-all-local-variables)
@@ -1042,7 +1047,7 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
 
 ;; electric characters
 (defun py-outdent-p ()
-  ;; returns non-nil if the current line should outdent one level
+  "Returns non-nil if the current line should dedent one level."
   (save-excursion
     (and (progn (back-to-indentation)
 		(looking-at py-outdent-re))
@@ -1057,9 +1062,10 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
       
 (defun py-electric-colon (arg)
   "Insert a colon.
-In certain cases the line is outdented appropriately.  If a numeric
-argument is provided, that many colons are inserted non-electrically.
-Electric behavior is inhibited inside a string or comment."
+In certain cases the line is dedented appropriately.  If a numeric
+argument ARG is provided, that many colons are inserted
+non-electrically.  Electric behavior is inhibited inside a string or
+comment."
   (interactive "P")
   (self-insert-command (prefix-numeric-value arg))
   ;; are we in a string or comment?
@@ -1080,11 +1086,12 @@ Electric behavior is inhibited inside a string or comment."
 			       (py-compute-indentation t)))
 		   )
 	      (setq outdent py-indent-offset))
-	  ;; Don't indent, only outdent.  This assumes that any lines that
-	  ;; are already outdented relative to py-compute-indentation were
-	  ;; put there on purpose.  It's highly annoying to have `:' indent
-	  ;; for you.  Use TAB, C-c C-l or C-c C-r to adjust.  TBD: Is
-	  ;; there a better way to determine this???
+	  ;; Don't indent, only dedent.  This assumes that any lines
+	  ;; that are already dedented relative to
+	  ;; py-compute-indentation were put there on purpose.  It's
+	  ;; highly annoying to have `:' indent for you.  Use TAB, C-c
+	  ;; C-l or C-c C-r to adjust.  TBD: Is there a better way to
+	  ;; determine this???
 	  (if (< (current-indentation) indent) nil
 	    (goto-char here)
 	    (beginning-of-line)
@@ -1095,11 +1102,10 @@ Electric behavior is inhibited inside a string or comment."
 
 ;; Python subprocess utilities and filters
 (defun py-execute-file (proc filename)
-  ;; Send a properly formatted execfile('FILENAME') to the underlying
-  ;; Python interpreter process FILENAME.  Make that process's buffer
-  ;; visible and force display.  Also make comint believe the user
-  ;; typed this string so that kill-output-from-shell does The Right
-  ;; Thing.
+  "Send to Python interpreter process PROC \"execfile('FILENAME')\".
+Make that process's buffer visible and force display.  Also make
+comint believe the user typed this string so that
+`kill-output-from-shell' does The Right Thing."
   (let ((curbuf (current-buffer))
 	(procbuf (process-buffer proc))
 	(comint-scroll-to-bottom-on-output t)
@@ -1179,8 +1185,8 @@ Electric behavior is inhibited inside a string or comment."
       (set-buffer curbuf))))
 
 (defun py-postprocess-output-buffer (buf)
-  ;; Highlight exceptions found in BUF.  If an exception occurred
-  ;; return t, otherwise return nil.  BUF must exist.
+  "Highlight exceptions found in BUF.
+If an exception occurred return t, otherwise return nil.  BUF must exist."
   (let (line file bol err-p)
     (save-excursion
       (set-buffer buf)
@@ -1216,9 +1222,9 @@ Electric behavior is inhibited inside a string or comment."
 
 (defun py-toggle-shells (arg)
   "Toggles between the CPython and JPython shells.
-With positive \\[universal-argument], uses the CPython shell, with
-negative \\[universal-argument] uses the JPython shell, and with a
-zero argument, toggles the shell."
+With positive argument ARG (interactively \\[universal-argument]),
+uses the CPython shell, with negative ARG uses the JPython shell, and
+with a zero argument, toggles the shell."
   (interactive "P")
   ;; default is to toggle
   (if (null arg)
@@ -1306,13 +1312,19 @@ filter."
 
 
 (defun py-execute-region (start end &optional async)
-  "Execute the the region in a Python interpreter.
+  "Execute the region in a Python interpreter.
+
 The region is first copied into a temporary file (in the directory
 `py-temp-directory').  If there is no Python interpreter shell
 running, this file is executed synchronously using
-`shell-command-on-region'.  If the program is long running, use an
-optional \\[universal-argument] to run the command asynchronously in
-its own buffer.
+`shell-command-on-region'.  If the program is long running, use
+\\[universal-argument] to run the command asynchronously in its own
+buffer.
+
+When this function is used programmatically, arguments START and END
+specify the region to execute, and optional third argument ASYNC, if
+non-nil, specifies to run the command asynchronously in its own
+buffer.
 
 If the Python interpreter shell is running, the region is execfile()'d
 in that shell.  If you try to execute regions too quickly,
@@ -1382,7 +1394,8 @@ If there is a *Python* process buffer it is used.  If a clipping
 restriction is in effect, only the accessible portion of the buffer is
 sent.  A trailing newline will be supplied if needed.
 
-See the `\\[py-execute-region]' docs for an account of some subtleties."
+See the `\\[py-execute-region]' docs for an account of some
+subtleties, including the use of the optional ASYNC argument."
   (interactive "P")
   (if py-master-file
       (let* ((filename (expand-file-name py-master-file))
@@ -1406,7 +1419,8 @@ If the file local variable `py-master-file' is non-nil, import or
 reload the named file instead of the buffer's file.  The file may be
 saved based on the value of `py-execute-import-or-reload-save-p'.
 
-See the `\\[py-execute-region]' docs for an account of some subtleties.
+See the `\\[py-execute-region]' docs for an account of some
+subtleties, including the use of the optional ASYNC argument.
 
 This may be preferable to `\\[py-execute-buffer]' because:
 
@@ -1444,7 +1458,8 @@ This may be preferable to `\\[py-execute-buffer]' because:
 
 If there is a *Python* process buffer it is used.
 
-See the `\\[py-execute-region]' docs for an account of some subtleties."
+See the `\\[py-execute-region]' docs for an account of some
+subtleties, including the use of the optional ASYNC argument."
   (interactive "P")
   (save-excursion
     (py-mark-def-or-class)
@@ -1453,11 +1468,12 @@ See the `\\[py-execute-region]' docs for an account of some subtleties."
 
 
 (defun py-execute-string (string &optional async)
-  "Send the argument string to a Python interpreter.
+  "Send the argument STRING to a Python interpreter.
 
 If there is a *Python* process buffer it is used.
 
-See the `\\[py-execute-region]' docs for an account of some subtleties."
+See the `\\[py-execute-region]' docs for an account of some
+subtleties, including the use of the optional ASYNC argument."
   (interactive "sExecute Python command: ")
   (save-excursion
     (set-buffer (get-buffer-create
@@ -1468,6 +1484,7 @@ See the `\\[py-execute-region]' docs for an account of some subtleties."
 
 
 (defun py-jump-to-exception (file line)
+  "Jump to the Python code in FILE at LINE."
   (let ((buffer (cond ((string-equal file "<stdin>")
 		       (if (consp py-exception-buffer)
 			   (cdr py-exception-buffer)
@@ -1489,6 +1506,8 @@ See the `\\[py-execute-region]' docs for an account of some subtleties."
     (message "Jumping to exception in file %s on line %d" file line)))
 
 (defun py-mouseto-exception (event)
+  "Jump to the code which cased the Python exception at EVENT.
+EVENT is usually a mouse click."
   (interactive "e")
   (cond
    ((fboundp 'event-point)
@@ -1514,13 +1533,16 @@ See the `\\[py-execute-region]' docs for an account of some subtleties."
 	  (setq file (match-string 1)
 		line (string-to-int (match-string 2)))))
     (if (not file)
-	(error "Not on a traceback line."))
+	(error "Not on a traceback line"))
     (py-jump-to-exception file line)))
 
 (defun py-find-next-exception (start buffer searchdir errwhere)
-  ;; Go to start position in buffer, search in the specified
-  ;; direction, and jump to the exception found.  If at the end of the
-  ;; exception, print error message
+  "Find the next Python exception and jump to the code that caused it.
+START is the buffer position in BUFFER from which to begin searching
+for an exception.  SEARCHDIR is a function, either
+`re-search-backward' or `re-search-forward' indicating the direction
+to search.  ERRWHERE is used in an error message if the limit (top or
+bottom) of the trackback stack is encountered."
   (let (file line)
     (save-excursion
       (set-buffer buffer)
@@ -1534,8 +1556,9 @@ See the `\\[py-execute-region]' docs for an account of some subtleties."
 
 (defun py-down-exception (&optional bottom)
   "Go to the next line down in the traceback.
-With optional \\[universal-argument], jump to the bottom (innermost)
-exception in the exception stack."
+With \\[univeral-argument] (programmatically, optional argument
+BOTTOM), jump to the bottom (innermost) exception in the exception
+stack."
   (interactive "P")
   (let* ((proc (get-process "Python"))
 	 (buffer (if proc "*Python*" py-output-buffer)))
@@ -1545,8 +1568,8 @@ exception in the exception stack."
 
 (defun py-up-exception (&optional top)
   "Go to the previous line up in the traceback.
-With optional \\[universal-argument], jump to the top (outermost)
-exception in the exception stack."
+With \\[universal-argument] (programmatically, optional argument TOP)
+jump to the top (outermost) exception in the exception stack."
   (interactive "P")
   (let* ((proc (get-process "Python"))
 	 (buffer (if proc "*Python*" py-output-buffer)))
@@ -1557,23 +1580,29 @@ exception in the exception stack."
 
 ;; Electric deletion
 (defun py-electric-backspace (arg)
-  "Deletes preceding character or levels of indentation.
+  "Delete preceding character or levels of indentation.
 Deletion is performed by calling the function in `py-backspace-function'
 with a single argument (the number of characters to delete).
 
-If point is at the leftmost column, deletes the preceding newline.
+If point is at the leftmost column, delete the preceding newline.
 
 Otherwise, if point is at the leftmost non-whitespace character of a
 line that is neither a continuation line nor a non-indenting comment
 line, or if point is at the end of a blank line, this command reduces
 the indentation to match that of the line that opened the current
 block of code.  The line that opened the block is displayed in the
-echo area to help you keep track of where you are.  With numeric arg,
-outdents that many blocks (but not past column zero).
+echo area to help you keep track of where you are.  With
+\\[universal-argument] dedents that many blocks (but not past column
+zero).
 
 Otherwise the preceding character is deleted, converting a tab to
 spaces if needed so that only a single column position is deleted.
-Numeric argument deletes that many preceding characters."
+\\[universal-argument] specifies how many characters to delete
+(default is 1).
+
+When used programmatically, argument ARG specifies the number of
+blocks to dedent, or the number of characters to delete, as indicated
+above."
   (interactive "*p")
   (if (or (/= (current-indentation) (current-column))
 	  (bolp)
@@ -1606,16 +1635,19 @@ Numeric argument deletes that many preceding characters."
 
 
 (defun py-electric-delete (arg)
-  "Deletes preceding or following character or levels of whitespace.
+  "Delete preceding or following character or levels of whitespace.
 
 The behavior of this function depends on the variable
 `delete-key-deletes-forward'.  If this variable is nil (or does not
-exist, as in older Emacsen), then this function behaves identical to
-\\[c-electric-backspace].
+exist, as in older Emacsen and non-XEmacs versions), then this
+function behaves identically to \\[c-electric-backspace].
 
 If `delete-key-deletes-forward' is non-nil and is supported in your
 Emacs, then deletion occurs in the forward direction, by calling the
-function in `py-delete-function'."
+function in `py-delete-function'.
+
+\\[universal-argument] (programmatically, argument ARG) specifies the
+number of characters to delete (default is 1)."
   (interactive "*p")
   (if (and (boundp 'delete-key-deletes-forward)
 	   delete-key-deletes-forward)
@@ -1633,8 +1665,9 @@ function in `py-delete-function'."
 
 (defun py-indent-line (&optional arg)
   "Fix the indentation of the current line according to Python rules.
-With \\[universal-argument], ignore outdenting rules for block
-closing statements (e.g. return, raise, break, continue, pass)
+With \\[universal-argument] (programmatically, the optional argument
+ARG non-nil), ignore dedenting rules for block closing statements
+(e.g. return, raise, break, continue, pass)
 
 This function is normally bound to `indent-line-function' so
 \\[indent-for-tab-command] will call it."
@@ -1642,7 +1675,7 @@ This function is normally bound to `indent-line-function' so
   (let* ((ci (current-indentation))
 	 (move-to-indentation-p (<= (current-column) ci))
 	 (need (py-compute-indentation (not arg))))
-    ;; see if we need to outdent
+    ;; see if we need to dedent
     (if (py-outdent-p)
 	(setq need (- need py-indent-offset)))
     (if (/= ci need)
@@ -1668,9 +1701,10 @@ the new line indented."
       (move-to-column ci))))
 
 (defun py-compute-indentation (honor-block-close-p)
-  ;; implements all the rules for indentation computation.  when
-  ;; honor-block-close-p is non-nil, statements such as return, raise,
-  ;; break, continue, and pass force one level of outdenting.
+  "Compute Python indentation.
+When HONOR-BLOCK-CLOSE-P is non-nil, statements such as `return',
+`raise', `break', `continue', and `pass' force one level of
+dedenting."
   (save-excursion
     (beginning-of-line)
     (let* ((bod (py-point 'bod))
@@ -1769,7 +1803,7 @@ the new line indented."
        ;; The rules for indenting comment lines are a line where:
        ;;   - the first non-whitespace character is `#', and
        ;;   - the character following the `#' is whitespace, and
-       ;;   - the line is outdented with respect to (i.e. to the left
+       ;;   - the line is dedented with respect to (i.e. to the left
        ;;     of) the indentation of the preceding non-blank line.
 
        ;; The first non-blank line following an indenting comment
@@ -1839,12 +1873,13 @@ the new line indented."
 
 (defun py-guess-indent-offset (&optional global)
   "Guess a good value for, and change, `py-indent-offset'.
-By default (without a prefix arg), makes a buffer-local copy of
-`py-indent-offset' with the new value.  This will not affect any other
-Python buffers.  With a prefix arg, changes the global value of
-`py-indent-offset'.  This affects all Python buffers (that don't have
-their own buffer-local copy), both those currently existing and those
-created later in the Emacs session.
+
+By default, make a buffer-local copy of `py-indent-offset' with the
+new value, so that other Python buffers are not affected.  With
+\\[universal-argument] (programmatically, optional argument GLOBAL),
+change the global value of `py-indent-offset'.  This affects all
+Python buffers (that don't have their own buffer-local copy), both
+those currently existing and those created later in the Emacs session.
 
 Some people use a different value for `py-indent-offset' than you use.
 There's no excuse for such foolishness, but sometimes you have to deal
@@ -1895,10 +1930,10 @@ it's tried again going backward."
     ))
 
 (defun py-comment-indent-function ()
-  ;; A better value for comment-indent-function in Python source, this
-  ;; actually works when filladapt is turned off.  Without this, in
-  ;; that case, comments which start in column zero cascade one
-  ;; character to the right
+  "Python version of `comment-indent-function'."
+  ;; This is required when filladapt is turned off.  Without it, when
+  ;; filladapt is not used, comments which start in column zero
+  ;; cascade one character to the right
   (save-excursion
     (beginning-of-line)
     (let ((eol (py-point 'eol)))
@@ -1912,9 +1947,14 @@ it's tried again going backward."
 
 
 (defun py-shift-region (start end count)
+  "Indent lines from START to END by COUNT spaces."
   (save-excursion
-    (goto-char end)   (beginning-of-line) (setq end (point))
-    (goto-char start) (beginning-of-line) (setq start (point))
+    (goto-char end)
+    (beginning-of-line)
+    (setq end (point))
+    (goto-char start)
+    (beginning-of-line)
+    (setq start (point))
     (indent-rigidly start end count)))
 
 (defun py-shift-region-left (start end &optional count)
@@ -1924,8 +1964,8 @@ to (but not including) the line containing the end of the region are
 shifted to the left, by `py-indent-offset' columns.
 
 If a prefix argument is given, the region is instead shifted by that
-many columns.  With no active region, outdent only the current line.
-You cannot outdent the region if any line is already at column zero."
+many columns.  With no active region, dedent only the current line.
+You cannot dedent the region if any line is already at column zero."
   (interactive
    (let ((p (point))
 	 (m (mark))
@@ -1940,7 +1980,7 @@ You cannot outdent the region if any line is already at column zero."
       (back-to-indentation)
       (if (and (zerop (current-column))
 	       (not (looking-at "\\s *$")))
-	  (error "Region is at left edge."))
+	  (error "Region is at left edge"))
       (forward-line 1)))
   (py-shift-region start end (- (prefix-numeric-value
 				 (or count py-indent-offset))))
@@ -2050,11 +2090,11 @@ initial line; and comment lines beginning in column 1 are ignored."
 
 ;; Functions for moving point
 (defun py-previous-statement (count)
-  "Go to the start of previous Python statement.
-If the statement at point is the i'th Python statement, goes to the
-start of statement i-COUNT.  If there is no such statement, goes to the
-first statement.  Returns count of statements left to move.
-`Statements' do not include blank, comment, or continuation lines."
+  "Go to the start of the COUNTth preceding Python statement.
+By default, goes to the previous statement.  If there is no such
+statement, goes to the first statement.  Return count of statements
+left to move.  `Statements' do not include blank, comment, or
+continuation lines."
   (interactive "p")			; numeric prefix arg
   (if (< count 0) (py-next-statement (- count))
     (py-goto-initial-line)
@@ -2233,7 +2273,7 @@ To mark the current `def', see `\\[py-mark-def-or-class]'."
      ((eq state 'at-beginning) (py-goto-beyond-block) t)
      ((eq state 'at-end) t)
      ((eq state 'not-found) nil)
-     (t (error "internal error in py-end-of-def-or-class")))))
+     (t (error "Internal error in `py-end-of-def-or-class'")))))
 
 ;; Backwards compabitility
 (defalias 'end-of-python-def-or-class 'py-end-of-def-or-class)
@@ -2435,7 +2475,8 @@ pleasant."
 ;; ripped from cc-mode
 (defun py-forward-into-nomenclature (&optional arg)
   "Move forward to end of a nomenclature section or word.
-With arg, to it arg times.
+With \\[universal-argument] (programmatically, optional argument ARG), 
+do it that many times.
 
 A `nomenclature' is a fancy way of saying AWordWithMixedCaseNotUnderscores."
   (interactive "p")
@@ -2772,8 +2813,8 @@ local bindings to py-newline-and-indent."))
    "\\|"
    "^[^ #\t\n]"))
 
-;; returns the parse state at point (see parse-partial-sexp docs)
 (defun py-parse-state ()
+  "Return the parse state at point (see `parse-partial-sexp' docs)."
   (save-excursion
     (let ((here (point))
 	  pps done)
@@ -2806,17 +2847,16 @@ local bindings to py-newline-and-indent."))
 	  ))
       pps)))
 
-;; if point is at a non-zero nesting level, returns the number of the
-;; character that opens the smallest enclosing unclosed list; else
-;; returns nil.
 (defun py-nesting-level ()
+  "Return the buffer position of the last unclosed enclosing list.
+If nesting level is zero, return nil."
   (let ((status (py-parse-state)))
     (if (zerop (car status))
 	nil				; not in a nest
       (car (cdr status)))))		; char# of open bracket
 
-;; t iff preceding line ends with backslash that's not in a comment
 (defun py-backslash-continuation-line-p ()
+  "Return t iff preceding line ends with backslash that is not in a comment."
   (save-excursion
     (beginning-of-line)
     (and
@@ -2827,26 +2867,25 @@ local bindings to py-newline-and-indent."))
      (forward-line -1)			; always true -- side effect
      (looking-at py-continued-re))))
 
-;; t iff current line is a continuation line
 (defun py-continuation-line-p ()
+  "Return t iff current line is a continuation line."
   (save-excursion
     (beginning-of-line)
     (or (py-backslash-continuation-line-p)
 	(py-nesting-level))))
 
-;; go to initial line of current statement; usually this is the line
-;; we're on, but if we're on the 2nd or following lines of a
-;; continuation block, we need to go up to the first line of the
-;; block.
-;;
-;; Tricky: We want to avoid quadratic-time behavior for long continued
-;; blocks, whether of the backslash or open-bracket varieties, or a
-;; mix of the two.  The following manages to do that in the usual
-;; cases.
-;;
-;; Also, if we're sitting inside a triple quoted string, this will
-;; drop us at the line that begins the string.
 (defun py-goto-initial-line ()
+  "Go to the initial line of the current statement.
+Usually this is the line we're on, but if we're on the 2nd or
+following lines of a continuation block, we need to go up to the first
+line of the block."
+  ;; Tricky: We want to avoid quadratic-time behavior for long
+  ;; continued blocks, whether of the backslash or open-bracket
+  ;; varieties, or a mix of the two.  The following manages to do that
+  ;; in the usual cases.
+  ;;
+  ;; Also, if we're sitting inside a triple quoted string, this will
+  ;; drop us at the line that begins the string.
   (let (open-bracket-pos)
     (while (py-continuation-line-p)
       (beginning-of-line)
@@ -2858,12 +2897,15 @@ local bindings to py-newline-and-indent."))
 	  (goto-char open-bracket-pos)))))
   (beginning-of-line))
 
-;; go to point right beyond final line of current statement; usually
-;; this is the start of the next line, but if this is a multi-line
-;; statement we need to skip over the continuation lines.  Tricky:
-;; Again we need to be clever to avoid quadratic time behavior.
 (defun py-goto-beyond-final-line ()
-  ;; Not quite the right solution, but deals with multiline doc strings
+  "Go to the point just beyond the fine line of the current statement.
+Usually this is the start of the next line, but if this is a
+multi-line statement we need to skip over the continuation lines."
+  ;; Tricky: Again we need to be clever to avoid quadratic time
+  ;; behavior.
+  ;;
+  ;; XXX: Not quite the right solution, but deals with multi-line doc
+  ;; strings
   (if (looking-at (concat "[ \t]*\\(" py-stringlit-re "\\)"))
       (goto-char (match-end 0)))
   ;;
@@ -2883,9 +2925,10 @@ local bindings to py-newline-and-indent."))
 	    (parse-partial-sexp (point) (point-max) 0 nil state)
 	    (forward-line 1))))))
 
-;; t iff statement opens a block == iff it ends with a colon that's
-;; not in a comment.  point should be at the start of a statement
 (defun py-statement-opens-block-p ()
+  "Return t iff the current statement opens a block.
+I.e., iff it ends with a colon that is not in a comment.  Point should 
+be at the start of a statement."
   (save-excursion
     (let ((start (point))
 	  (finish (progn (py-goto-beyond-final-line) (1- (point))))
@@ -2913,28 +2956,28 @@ local bindings to py-newline-and-indent."))
       answer)))
 
 (defun py-statement-closes-block-p ()
-  ;; true iff the current statement `closes' a block == the line
-  ;; starts with `return', `raise', `break', `continue', and `pass'.
-  ;; doesn't catch embedded statements
+  "Return t iff the current statement closes a block.
+I.e., if the line starts with `return', `raise', `break', `continue',
+and `pass'.  This doesn't catch embedded statements."
   (let ((here (point)))
     (back-to-indentation)
     (prog1
 	(looking-at (concat py-block-closing-keywords-re "\\>"))
       (goto-char here))))
 
-;; go to point right beyond final line of block begun by the current
-;; line.  This is the same as where py-goto-beyond-final-line goes
-;; unless we're on colon line, in which case we go to the end of the
-;; block.  assumes point is at bolp
 (defun py-goto-beyond-block ()
+  "Go to point just beyond the final line of block begun by the current line.
+This is the same as where `py-goto-beyond-final-line' goes unless
+we're on colon line, in which case we go to the end of the block.
+Assumes point is at the beginning of the line."
   (if (py-statement-opens-block-p)
       (py-mark-block nil 'just-move)
     (py-goto-beyond-final-line)))
 
-;; Go to start of first statement (not blank or comment or
-;; continuation line) at or preceding point.  Returns t if there is
-;; one, else nil.
 (defun py-goto-statement-at-or-above ()
+  "Go to the start of the first statement at or preceding point.
+Return t if there is such a statement, otherwise nil.  `Statement'
+does not include blank lines, comments, or continuation lines."
   (py-goto-initial-line)
   (if (looking-at py-blank-or-comment-re)
       ;; skip back over blank & comment lines
@@ -2945,10 +2988,10 @@ local bindings to py-newline-and-indent."))
 	nil)
     t))
 
-;; Go to start of first statement (not blank or comment or
-;; continuation line) following the statement containing point.
-;; Returns t if there is one, else nil.
 (defun py-goto-statement-below ()
+  "Go to start of the first statement following the statement containing point.
+Return t if there is such a statement, otherwise nil.  `Statement'
+does not include blank lines, comments, or continuation lines."
   (beginning-of-line)
   (let ((start (point)))
     (py-goto-beyond-final-line)
@@ -2960,14 +3003,14 @@ local bindings to py-newline-and-indent."))
 	(progn (goto-char start) nil)
       t)))
 
-;; Go to start of statement, at or preceding point, starting with
-;; keyword (regular expression) KEY.  Skips blank lines and
-;; non-indenting comments upward first.  If that statement starts with
-;; KEY, then stop.  Otherwise go back to first enclosing block
-;; starting with KEY.  If successful, leaves point at the start of the
-;; KEY line & returns t.  Else leaves point at an undefined place &
-;; returns nil.
 (defun py-go-up-tree-to-keyword (key)
+  "Go to begining of statement starting with KEY, at or preceding point.
+
+KEY is a regular expression describing a Python keyword.  Skip blank
+lines and non-indenting comments.  If the statement found starts with
+KEY, then stop, otherwise go back to first enclosing block starting
+with KEY.  If successful, leave point at the start of the KEY line and 
+return t.  Otherwise, leav point at an undefined place and return nil."
   ;; skip blanks and non-indenting #
   (py-goto-initial-line)
   (while (and
@@ -2987,25 +3030,27 @@ local bindings to py-newline-and-indent."))
     (beginning-of-line)
     found))
 
-;; return string in buffer from start of indentation to end of line;
-;; prefix "..." if leading whitespace was skipped
 (defun py-suck-up-leading-text ()
+  "Return string in buffer from start of indentation to end of line.
+Prefix with \"...\" if leading whitespace was skipped."
   (save-excursion
     (back-to-indentation)
     (concat
      (if (bolp) "" "...")
      (buffer-substring (point) (progn (end-of-line) (point))))))
 
-;; assuming point at bolp, return first keyword ([a-z]+) on the line,
-;; as a Lisp symbol; return nil if none
 (defun py-suck-up-first-keyword ()
+  "Return first keyword on the line as a Lisp symbol.
+`Keyword' is defined (essentially) as the regular expression
+([a-z]+).  Returns nil if none was found."
   (let ((case-fold-search nil))
     (if (looking-at "[ \t]*\\([a-z]+\\)\\b")
 	(intern (buffer-substring (match-beginning 1) (match-end 1)))
       nil)))
 
 (defun py-current-defun ()
-  ;; tell add-log.el how to find the current function/method/variable
+  "Python value for `add-log-current-defun-function'.
+This tells add-log.el how to find the current function/method/variable."
   (save-excursion
     (if (re-search-backward py-defun-start-re nil t)
 	(or (match-string 3)
@@ -3032,10 +3077,11 @@ local bindings to py-newline-and-indent."))
 
 (defun py-submit-bug-report (enhancement-p)
   "Submit via mail a bug report on `python-mode'.
-With \\[universal-argument] just submit an enhancement request."
+With \\[universal-argument] (programmatically, argument ENHANCEMENT-P
+non-nil) just submit an enhancement request."
   (interactive
    (list (not (y-or-n-p
-	       "Is this a bug report? (hit `n' to send other comments) "))))
+	       "Is this a bug report (hit `n' to send other comments)? "))))
   (let ((reporter-prompt-for-summary-p (if enhancement-p
 					   "(Very) brief summary: "
 					 t)))
@@ -3065,6 +3111,8 @@ to do so may mean a greater delay in fixing your bug.\n\n")
 
 
 (defun py-kill-emacs-hook ()
+  "Delete files in `py-file-queue'.
+These are Python temporary files awaiting execution."
   (mapcar #'(lambda (filename)
 	      (py-safe (delete-file filename)))
 	  py-file-queue))
