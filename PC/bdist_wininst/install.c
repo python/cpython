@@ -611,12 +611,15 @@ PyMethodDef meth[] = {
 static HINSTANCE LoadPythonDll(char *fname)
 {
 	char fullpath[_MAX_PATH];
+	char subkey_name[80];
 	LONG size = sizeof(fullpath);
 	HINSTANCE h = LoadLibrary(fname);
 	if (h)
 		return h;
-	if (ERROR_SUCCESS != RegQueryValue(HKEY_CURRENT_USER,
-					   "SOFTWARE\\Python\\PythonCore\\2.3\\InstallPath",
+	wsprintf(subkey_name,
+		 "SOFTWARE\\Python\\PythonCore\\%s.%s\\InstallPath",
+		 py_major, py_minor);
+	if (ERROR_SUCCESS != RegQueryValue(HKEY_CURRENT_USER, subkey_name,
 					   fullpath, &size))
 		return NULL;
 	strcat(fullpath, "\\");
@@ -1793,7 +1796,7 @@ InstallFilesDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			/* Strip the trailing backslash again */
 			python_dir[strlen(python_dir)-1] = '\0';
             
-            CheckRootKey(hwnd);
+			CheckRootKey(hwnd);
 	    
 			if (!OpenLogfile(python_dir))
 				break;
