@@ -126,7 +126,7 @@ del exit
 #
 def locale_aware_defaultencoding():
     import locale
-    code, encoding = locale.get_default()
+    code, encoding = locale.getdefaultlocale()
     if encoding is None:
         encoding = 'ascii'
     try:
