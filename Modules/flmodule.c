@@ -1831,6 +1831,7 @@ form_dealloc(f)
 	formobject *f;
 {
 	releaseobjects(f->ob_form);
+	fl_hide_form(f->ob_form);
 	fl_free_form(f->ob_form);
 	DEL(f);
 }
