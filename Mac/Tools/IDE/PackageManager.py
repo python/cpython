@@ -47,6 +47,12 @@ import pimp
 
 ELIPSES = '...'
 		
+USER_INSTALL_DIR = os.path.join(os.environ.get('HOME', ''),
+        						'Library',
+        						'Python',
+        						sys.version[:3],
+        						'site-packages')
+        						
 class PackageManagerMain(Wapplication.Application):
 	
 	def __init__(self):
@@ -225,6 +231,13 @@ class PimpInterface:
 			self.pimpdb.appendURL(url)
 		except IOError, arg:
 			return "Cannot open %s: %s" % (url, arg)
+		# Check whether we can write the installation directory.
+		# If not, set to the per-user directory, possibly
+		# creating it, if needed.
+		installDir = self.pimpprefs.installDir
+		if not os.access(installDir, os.R_OK|os.W_OK|os.X_OK):
+			rv = self.setuserinstall(1)
+			if rv: return rv
 		return self.pimpprefs.check()
 		
 	def closepimp(self):
@@ -234,11 +247,33 @@ class PimpInterface:
 		self.pimpinstaller = None
 		self.packages = []
 
-	def getbrowserdata(self):
+	def setuserinstall(self, onoff):
+		rv = ""
+		if onoff:
+			if not os.path.exists(USER_INSTALL_DIR):
+				try:
+					os.makedirs(USER_INSTALL_DIR)
+				except OSError, arg:
+					rv = rv + arg + "\n"
+			if not USER_INSTALL_DIR in sys.path:
+				import site
+				reload(site)
+			self.pimpprefs.setInstallDir(USER_INSTALL_DIR)
+		else:
+			self.pimpprefs.setInstallDir(None)
+		rv = rv + self.pimpprefs.check()
+		return rv
+		
+	def getuserinstall(self):
+		return self.pimpprefs.installDir == USER_INSTALL_DIR
+			
+	def getbrowserdata(self, show_hidden=1):
 		self.packages = self.pimpdb.list()
 		rv = []
 		for pkg in self.packages:
 			name = pkg.fullname()
+			if name[0] == '(' and name[-1] == ')' and not show_hidden:
+				continue
 			status, _ = pkg.installed()
 			description = pkg.description()
 			rv.append((status, name, description))
@@ -248,7 +283,7 @@ class PimpInterface:
 		pkg = self.packages[number]
 		return pkg.installed()
 		
-	def installpackage(self, sel, output, recursive, force, user):
+	def installpackage(self, sel, output, recursive, force):
 		pkg = self.packages[sel]
 		list, messages = self.pimpinstaller.prepareInstall(pkg, force, recursive)
 		if messages:
@@ -260,22 +295,22 @@ class PackageBrowser(PimpInterface):
 	
 	def __init__(self, url = None):
 		self.ic = None
-		msg = self.setuppimp(url)
-		if msg:
-			EasyDialogs.Message(msg)
+		messages = self.setuppimp(url)
 		self.setupwidgets()
 		self.updatestatus()
+		self.showmessages(messages)
 		
 	def close(self):
 		self.closepimp()
 	
 	def setupwidgets(self):
 		INSTALL_POS = -30
-		STATUS_POS = INSTALL_POS - 62
+		STATUS_POS = INSTALL_POS - 70
 		self.w = W.Window((580, 400), "Python Install Manager", minsize = (400, 200), tabbable = 0)
-		self.w.titlebar = W.TextBox((4, 4, 40, 12), 'Packages:')
+		self.w.titlebar = W.TextBox((4, 8, 60, 18), 'Packages:')
+		self.w.hidden_button = W.CheckBox((-100, 4, 0, 18), 'Show Hidden', self.updatestatus)
 		data = self.getbrowserdata()
-		self.w.packagebrowser = W.MultiList((4, 20, 0, STATUS_POS-2), data, self.listhit, cols=3)
+		self.w.packagebrowser = W.MultiList((4, 24, 0, STATUS_POS-2), data, self.listhit, cols=3)
 		
 		self.w.installed_l = W.TextBox((4, STATUS_POS, 60, 12), 'Installed:')
 		self.w.installed = W.TextBox((64, STATUS_POS, 0, 12), '')
@@ -283,19 +318,20 @@ class PackageBrowser(PimpInterface):
 		self.w.message = W.TextBox((64, STATUS_POS+20, 0, 12), '')
 		self.w.homepage_button = W.Button((4, STATUS_POS+40, 96, 18), 'View homepage', self.do_homepage)
 		
-		self.w.divline = W.HorizontalLine((0, INSTALL_POS, 0, 0))
-		self.w.verbose_button = W.CheckBox((-358, INSTALL_POS+4, 60, 18), 'Verbose')
-		self.w.recursive_button = W.CheckBox((-284, INSTALL_POS+4, 140, 18), 'Install dependencies', self.updatestatus)
+		self.w.divline = W.HorizontalLine((0, INSTALL_POS-4, 0, 0))
+		self.w.verbose_button = W.CheckBox((84, INSTALL_POS+4, 60, 18), 'Verbose')
+		self.w.recursive_button = W.CheckBox((146, INSTALL_POS+4, 120, 18), 'Install dependencies', self.updatestatus)
 		self.w.recursive_button.set(1)
-		self.w.force_button = W.CheckBox((-160, INSTALL_POS+4, 70, 18), 'Overwrite', self.updatestatus)
-		self.w.user_button = W.CheckBox((-90, INSTALL_POS+4, 100, 18), 'User Only')
-		self.w.install_button = W.Button((4, INSTALL_POS+4, 56, 18), 'Install', self.do_install)
+		self.w.force_button = W.CheckBox((268, INSTALL_POS+4, 70, 18), 'Overwrite', self.updatestatus)
+		self.w.user_button = W.CheckBox((340, INSTALL_POS+4, 140, 18), 'For Current User Only', self.do_user)
+		self.w.install_button = W.Button((4, INSTALL_POS+4, 56, 18), 'Install:', self.do_install)
 		self.w.open()
 		
 	def updatestatus(self):
 		sel = self.w.packagebrowser.getselection()
-		data = self.getbrowserdata()
+		data = self.getbrowserdata(self.w.hidden_button.get())
 		self.w.packagebrowser.setitems(data)
+		self.w.user_button.set(self.getuserinstall())
 		if len(sel) != 1:
 			self.w.installed.set('')
 			self.w.message.set('')
@@ -316,7 +352,7 @@ class PackageBrowser(PimpInterface):
 			self.w.verbose_button.enable(1)
 			self.w.recursive_button.enable(1)
 			self.w.force_button.enable(1)
-			self.w.user_button.enable(0) # XXXX
+			self.w.user_button.enable(1)
 		
 	def listhit(self, *args, **kwargs):
 		self.updatestatus()
@@ -329,11 +365,22 @@ class PackageBrowser(PimpInterface):
 			output = None
 		recursive = self.w.recursive_button.get()
 		force = self.w.force_button.get()
-		user = self.w.user_button.get()
-		messages = self.installpackage(sel, output, recursive, force, user)
+		messages = self.installpackage(sel, output, recursive, force)
+		
+		# Re-read .pth files
+		import site
+		reload(site)
+		
 		self.updatestatus()
+		self.showmessages(messages)
+		
+	def showmessages(self, messages):
 		if messages:
-			EasyDialogs.Message('\n'.join(messages))
+			if type(messages) == list:
+				messages = '\n'.join(messages)
+			if self.w.verbose_button.get():
+				sys.stdout.write(messages + '\n')
+			EasyDialogs.Message(messages)
 		
 	def do_homepage(self):
 		sel = self.w.packagebrowser.getselection()[0]
@@ -342,6 +389,11 @@ class PackageBrowser(PimpInterface):
 			
 			self.ic = ic.IC()
 		self.ic.launchurl(self.packages[sel].homepage())
+		
+	def do_user(self):
+		messages = self.setuserinstall(self.w.user_button.get())
+		self.updatestatus()
+		self.showmessages(messages)
 		
 if __name__ == '__main__':
 	PackageManagerMain()
