@@ -49,6 +49,9 @@ PyInterpreterState_New(void)
 		interp->sysdict = NULL;
 		interp->builtins = NULL;
 		interp->tstate_head = NULL;
+		interp->codec_search_path = NULL;
+		interp->codec_search_cache = NULL;
+		interp->codec_error_registry = NULL;
 #ifdef HAVE_DLOPEN
 #ifdef RTLD_NOW
                 interp->dlopenflags = RTLD_NOW;
@@ -75,6 +78,9 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
 	for (p = interp->tstate_head; p != NULL; p = p->next)
 		PyThreadState_Clear(p);
 	HEAD_UNLOCK();
+	ZAP(interp->codec_search_path);
+	ZAP(interp->codec_search_cache);
+	ZAP(interp->codec_error_registry);
 	ZAP(interp->modules);
 	ZAP(interp->sysdict);
 	ZAP(interp->builtins);

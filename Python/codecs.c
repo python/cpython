@@ -11,14 +11,6 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "Python.h"
 #include <ctype.h>
 
-/* --- Globals ------------------------------------------------------------ */
-
-static PyObject *_PyCodec_SearchPath;
-static PyObject *_PyCodec_SearchCache;
-
-/* Flag used for lazy import of the standard encodings package */
-static int import_encodings_called = 0;
-
 /* --- Codec Registry ----------------------------------------------------- */
 
 /* Import the standard encodings package which will register the first
@@ -32,35 +24,13 @@ static int import_encodings_called = 0;
 
 */
 
-static
-int import_encodings(void)
-{
-    PyObject *mod;
-    
-    import_encodings_called = 1;
-    mod = PyImport_ImportModuleEx("encodings", NULL, NULL, NULL);
-    if (mod == NULL) {
-	if (PyErr_ExceptionMatches(PyExc_ImportError)) {
-	    /* Ignore ImportErrors... this is done so that
-	       distributions can disable the encodings package. Note
-	       that other errors are not masked, e.g. SystemErrors
-	       raised to inform the user of an error in the Python
-	       configuration are still reported back to the user. */
-	    PyErr_Clear();
-	    return 0;
-	}
-	return -1;
-    }
-    Py_DECREF(mod);
-    return 0;
-}
+static int _PyCodecRegistry_Init(void); /* Forward */
 
 int PyCodec_Register(PyObject *search_function)
 {
-    if (!import_encodings_called) {
-	if (import_encodings())
-	    goto onError;
-    }
+    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
+	goto onError;
     if (search_function == NULL) {
 	PyErr_BadArgument();
 	goto onError;
@@ -70,7 +40,7 @@ int PyCodec_Register(PyObject *search_function)
 			"argument must be callable");
 	goto onError;
     }
-    return PyList_Append(_PyCodec_SearchPath, search_function);
+    return PyList_Append(interp->codec_search_path, search_function);
 
  onError:
     return -1;
@@ -124,6 +94,7 @@ PyObject *normalizestring(const char *string)
 
 PyObject *_PyCodec_Lookup(const char *encoding)
 {
+    PyInterpreterState *interp;
     PyObject *result, *args = NULL, *v;
     int i, len;
 
@@ -131,16 +102,10 @@ PyObject *_PyCodec_Lookup(const char *encoding)
 	PyErr_BadArgument();
 	goto onError;
     }
-    if (_PyCodec_SearchCache == NULL || 
-	_PyCodec_SearchPath == NULL) {
-	PyErr_SetString(PyExc_SystemError,
-			"codec module not properly initialized");
+
+    interp = PyThreadState_Get()->interp;
+    if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
 	goto onError;
-    }
-    if (!import_encodings_called) {
-	if (import_encodings())
-	    goto onError;
-    }
 
     /* Convert the encoding to a normalized Python string: all
        characters are converted to lower case, spaces and hyphens are
@@ -151,7 +116,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     PyString_InternInPlace(&v);
 
     /* First, try to lookup the name in the registry dictionary */
-    result = PyDict_GetItem(_PyCodec_SearchCache, v);
+    result = PyDict_GetItem(interp->codec_search_cache, v);
     if (result != NULL) {
 	Py_INCREF(result);
 	Py_DECREF(v);
@@ -164,7 +129,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
 	goto onError;
     PyTuple_SET_ITEM(args,0,v);
 
-    len = PyList_Size(_PyCodec_SearchPath);
+    len = PyList_Size(interp->codec_search_path);
     if (len < 0)
 	goto onError;
     if (len == 0) {
@@ -177,7 +142,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     for (i = 0; i < len; i++) {
 	PyObject *func;
 	
-	func = PyList_GetItem(_PyCodec_SearchPath, i);
+	func = PyList_GetItem(interp->codec_search_path, i);
 	if (func == NULL)
 	    goto onError;
 	result = PyEval_CallObject(func, args);
@@ -203,7 +168,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     }
 
     /* Cache and return the result */
-    PyDict_SetItem(_PyCodec_SearchCache, v, result);
+    PyDict_SetItem(interp->codec_search_cache, v, result);
     Py_DECREF(args);
     return result;
 
@@ -422,8 +387,6 @@ PyObject *PyCodec_Decode(PyObject *object,
     return NULL;
 }
 
-static PyObject *_PyCodec_ErrorRegistry;
-
 /* Register the error handling callback function error under the name
    name. This function will be called by the codec when it encounters
    an unencodable characters/undecodable bytes and doesn't know the
@@ -432,11 +395,15 @@ static PyObject *_PyCodec_ErrorRegistry;
    Return 0 on success, -1 on error */
 int PyCodec_RegisterError(const char *name, PyObject *error)
 {
+    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
+	return -1;
     if (!PyCallable_Check(error)) {
 	PyErr_SetString(PyExc_TypeError, "handler must be callable");
 	return -1;
     }
-    return PyDict_SetItemString( _PyCodec_ErrorRegistry, (char *)name, error);
+    return PyDict_SetItemString(interp->codec_error_registry,
+	    			(char *)name, error);
 }
 
 /* Lookup the error handling callback function registered under the
@@ -446,9 +413,13 @@ PyObject *PyCodec_LookupError(const char *name)
 {
     PyObject *handler = NULL;
 
+    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
+	return NULL;
+
     if (name==NULL)
 	name = "strict";
-    handler = PyDict_GetItemString(_PyCodec_ErrorRegistry, (char *)name);
+    handler = PyDict_GetItemString(interp->codec_error_registry, (char *)name);
     if (!handler)
 	PyErr_Format(PyExc_LookupError, "unknown error handler name '%.400s'", name);
     else
@@ -762,8 +733,7 @@ static PyObject *backslashreplace_errors(PyObject *self, PyObject *exc)
 }
 #endif
 
-
-void _PyCodecRegistry_Init(void)
+static int _PyCodecRegistry_Init(void)
 {
     static struct {
 	char *name;
@@ -813,38 +783,49 @@ void _PyCodecRegistry_Init(void)
 	}
 #endif
     };
-    if (_PyCodec_SearchPath == NULL)
-	_PyCodec_SearchPath = PyList_New(0);
-    if (_PyCodec_SearchCache == NULL)
-	_PyCodec_SearchCache = PyDict_New();
-    if (_PyCodec_ErrorRegistry == NULL) {
-	int i;
-	_PyCodec_ErrorRegistry = PyDict_New();
 
-	if (_PyCodec_ErrorRegistry) {
-	    for (i = 0; i < sizeof(methods)/sizeof(methods[0]); ++i) {
-		PyObject *func = PyCFunction_New(&methods[i].def, NULL);
-		int res;
-		if (!func)
-		    Py_FatalError("can't initialize codec error registry");
-		res = PyCodec_RegisterError(methods[i].name, func);
-		Py_DECREF(func);
-		if (res)
-		    Py_FatalError("can't initialize codec error registry");
-	    }
+    PyInterpreterState *interp = PyThreadState_Get()->interp;
+    PyObject *mod;
+    int i;
+
+    if (interp->codec_search_path != NULL)
+	return 0;
+
+    interp->codec_search_path = PyList_New(0);
+    interp->codec_search_cache = PyDict_New();
+    interp->codec_error_registry = PyDict_New();
+
+    if (interp->codec_error_registry) {
+	for (i = 0; i < sizeof(methods)/sizeof(methods[0]); ++i) {
+	    PyObject *func = PyCFunction_New(&methods[i].def, NULL);
+	    int res;
+	    if (!func)
+		Py_FatalError("can't initialize codec error registry");
+	    res = PyCodec_RegisterError(methods[i].name, func);
+	    Py_DECREF(func);
+	    if (res)
+		Py_FatalError("can't initialize codec error registry");
 	}
     }
-    if (_PyCodec_SearchPath == NULL || 
-	_PyCodec_SearchCache == NULL)
-	Py_FatalError("can't initialize codec registry");
-}
 
-void _PyCodecRegistry_Fini(void)
-{
-    Py_XDECREF(_PyCodec_SearchPath);
-    _PyCodec_SearchPath = NULL;
-    Py_XDECREF(_PyCodec_SearchCache);
-    _PyCodec_SearchCache = NULL;
-    Py_XDECREF(_PyCodec_ErrorRegistry);
-    _PyCodec_ErrorRegistry = NULL;
+    if (interp->codec_search_path == NULL ||
+	interp->codec_search_cache == NULL ||
+	interp->codec_error_registry == NULL)
+	Py_FatalError("can't initialize codec registry");
+
+    mod = PyImport_ImportModuleEx("encodings", NULL, NULL, NULL);
+    if (mod == NULL) {
+	if (PyErr_ExceptionMatches(PyExc_ImportError)) {
+	    /* Ignore ImportErrors... this is done so that
+	       distributions can disable the encodings package. Note
+	       that other errors are not masked, e.g. SystemErrors
+	       raised to inform the user of an error in the Python
+	       configuration are still reported back to the user. */
+	    PyErr_Clear();
+	    return 0;
+	}
+	return -1;
+    }
+    Py_DECREF(mod);
+    return 0;
 }
