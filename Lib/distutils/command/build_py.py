@@ -32,11 +32,9 @@ class build_py (Command):
         self.force = None
 
     def finalize_options (self):
-        print "build_py.finalize: force=%s" % self.force
         self.set_undefined_options ('build',
                                     ('build_lib', 'build_lib'),
                                     ('force', 'force'))
-        print "build_py.finalize: force=%s" % self.force
 
         # Get the distribution options that are aliases for build_py
         # options -- list of packages and list of modules.
