@@ -241,6 +241,29 @@ def test_dir():
     a.amethod = lambda self: 3
     verify(interesting(dir(a)) == astuff + ['adata', 'amethod'])
 
+    # Try a module subclass.
+    import sys
+    class M(type(sys)):
+        pass
+    minstance = M()
+    minstance.b = 2
+    minstance.a = 1
+    verify(dir(minstance) == ['a', 'b'])
+
+    class M2(M):
+        def getdict(self):
+            return "Not a dict!"
+        __dict__ = property(getdict)
+
+    m2instance = M2()
+    m2instance.b = 2
+    m2instance.a = 1
+    verify(m2instance.__dict__ == "Not a dict!")
+    try:
+        dir(m2instance)
+    except TypeError:
+        pass
+
 binops = {
     'add': '+',
     'sub': '-',
