@@ -79,6 +79,7 @@ static void initsigs PROTO((void));
 int debugging; /* Needed by parser.c */
 int verbose; /* Needed by import.c */
 int suppress_print; /* Needed by ceval.c */
+int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
 
 /* Initialize all */
 
@@ -133,7 +134,7 @@ run(fp, filename)
 {
 	if (filename == NULL)
 		filename = "???";
-	if (isatty((int)fileno(fp)))
+	if (Py_FdIsInteractive(fp, filename))
 		return run_tty_loop(fp, filename);
 	else
 		return run_script(fp, filename);
@@ -753,3 +754,23 @@ isatty(fd)
 }
 
 #endif
+
+/*
+ * The file descriptor fd is considered ``interactive'' if either
+ *   a) isatty(fd) is TRUE, or
+ *   b) the -i flag was given, and the filename associated with
+ *      the descriptor is NULL or "<stdin>" or "???".
+ */
+int
+Py_FdIsInteractive(fp, filename)
+	FILE *fp;
+	char *filename;
+{
+	if (isatty((int)fileno(fp)))
+		return 1;
+	if (!Py_InteractiveFlag)
+		return 0;
+	return (filename == NULL) ||
+	       (strcmp(filename, "<stdin>") == 0) ||
+	       (strcmp(filename, "???") == 0);
+}
