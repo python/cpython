@@ -195,8 +195,8 @@ static void
 list_dealloc(PyListObject *op)
 {
 	int i;
+	PyObject_GC_UnTrack(op);
 	Py_TRASHCAN_SAFE_BEGIN(op)
-	_PyObject_GC_UNTRACK(op);
 	if (op->ob_item != NULL) {
 		/* Do it backwards, for Christian Tismer.
 		   There's a simple test case where somehow this reduces

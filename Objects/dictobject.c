@@ -694,8 +694,8 @@ dict_dealloc(register dictobject *mp)
 {
 	register dictentry *ep;
 	int fill = mp->ma_fill;
+ 	PyObject_GC_UnTrack(mp);
 	Py_TRASHCAN_SAFE_BEGIN(mp)
- 	_PyObject_GC_UNTRACK(mp);
 	for (ep = mp->ma_table; fill > 0; ep++) {
 		if (ep->me_key) {
 			--fill;
