@@ -21,7 +21,7 @@ if (sys.platform.startswith("win") or sys.platform=="riscos" or
     # link counts, and that causes test_listfolders() here to get back
     # an empty list from its call of listallfolders().
     # The other tests here pass on Windows.
-    raise TestSkipped("test_mhlib skipped on %s -- " % sys.platform +
+    raise TestSkipped("skipped on %s -- " % sys.platform +
                       "too many Unix assumptions")
 
 _mhroot = TESTFN+"_MH"
