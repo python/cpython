@@ -19,9 +19,6 @@ from code import InteractiveInterpreter
 from Tkinter import *
 import tkMessageBox
 
-# Preserve 2.2 compatibility for Mac OS X:
-import boolcheck
-
 from EditorWindow import EditorWindow, fixwordbreaks
 from FileList import FileList
 from ColorDelegator import ColorDelegator
