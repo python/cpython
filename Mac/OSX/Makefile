@@ -10,6 +10,11 @@ LIBDEST=$(prefix)/lib/python$(VERSION)
 BUILDPYTHON=$(builddir)/python.exe
 DESTDIR=
 
+# For 10.2:
+#PBXBUILD=pbxbuild
+# For 10.3:
+PBXBUILD=xcodebuild
+
 # These are normally glimpsed from the previous set
 bindir=/usr/local/bin
 PYTHONAPPSPATH=/Applications/MacPython-$(VERSION)
@@ -58,7 +63,7 @@ installapps: install_PythonLauncher install_Python install_BuildApplet install_I
 
 install_PythonLauncher:
 	cd $(srcdir)/Mac/OSX/PythonLauncher/PythonLauncher.pbproj ; \
-	pbxbuild -target PythonLauncher -buildstyle Deployment install \
+	$(PBXBUILD) -target PythonLauncher -buildstyle Deployment install \
 		DSTROOT=$(DESTDIR)/ INSTALL_PATH=$(PYTHONAPPSPATH)
 
 install_Python:
