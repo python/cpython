@@ -255,9 +255,9 @@ Note:
   \var{args} is a list of the argument names (it may contain nested lists).
   \var{varargs} and \var{varkw} are the names of the \code{*} and
   \code{**} arguments or \code{None}.
-  \var{defaults} is a tuple of default argument values; if this tuple
-  has \var{n} elements, they correspond to the last \var{n} elements
-  listed in \var{args}.
+  \var{defaults} is a tuple of default argument values or None if there are not
+  any; if the tuple has \var{n} elements, they correspond to the last \var{n}
+  elements listed in \var{args}.
 \end{funcdesc}
 
 \begin{funcdesc}{getargvalues}{frame}
