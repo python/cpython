@@ -106,6 +106,36 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
 	return (PyObject *) op;
 }
 
+PyObject *
+PyMethod_Function(PyObject *im)
+{
+	if (!PyMethod_Check(im)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	return ((PyMethodObject *)im)->im_func;
+}
+
+PyObject *
+PyMethod_Self(PyObject *im)
+{
+	if (!PyMethod_Check(im)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	return ((PyMethodObject *)im)->im_self;
+}
+
+PyObject *
+PyMethod_Class(PyObject *im)
+{
+	if (!PyMethod_Check(im)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	return ((PyMethodObject *)im)->im_class;
+}
+
 static PyObject *
 class_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
