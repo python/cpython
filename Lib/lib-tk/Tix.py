@@ -489,7 +489,9 @@ class Balloon(TixWidget):
     message       Message"""
 
     def __init__(self, master=None, cnf={}, **kw):
-       TixWidget.__init__(self, master, 'tixBalloon', ['options'], cnf, kw)
+        # static seem to be -installcolormap -initwait -statusbar -cursor
+       static = ['options', 'installcolormap', 'initwait', 'statusbar', 'cursor']
+       TixWidget.__init__(self, master, 'tixBalloon', static, cnf, kw)
        self.subwidget_list['label'] = _dummyLabel(self, 'label',
                                              destroy_physically=0)
        self.subwidget_list['message'] = _dummyLabel(self, 'message',
@@ -1194,11 +1196,26 @@ class ResizeHandle(TixWidget):
     """Internal widget to draw resize handles on Scrolled widgets."""
 
     def __init__(self, master, cnf={}, **kw):
+       # There seems to be a Tix bug rejecting the configure method
+       # Let's try making the flags -static
+       flags = ['options', 'command', 'cursorfg', 'cursorbg',
+                'handlesize', 'hintcolor', 'hintwidth',
+                'x', 'y']
+       # In fact, x y height width are configurable
        TixWidget.__init__(self, master, 'tixResizeHandle',
-                        ['options'], cnf, kw)
+                           flags, cnf, kw)
 
     def attach_widget(self, widget):
        self.tk.call(self._w, 'attachwidget', widget._w)
+
+    def detach_widget(self, widget):
+       self.tk.call(self._w, 'detachwidget', widget._w)
+
+    def hide(self, widget):
+       self.tk.call(self._w, 'hide', widget._w)
+
+    def show(self, widget):
+       self.tk.call(self._w, 'show', widget._w)
 
 class ScrolledHList(TixWidget):
     """ScrolledHList - HList with automatic scrollbars."""
