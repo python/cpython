@@ -57,7 +57,7 @@ class FSSpec(Carbon.File.FSSpec):
 		return statb.st_ctime, statb.st_mtime, 0
 	
 	def SetDates(self, *dates):
-		print "FSSpec.SetDates no longer implemented"
+		pass # print "FSSpec.SetDates not yet implemented"
 	
 class FSRef(Carbon.File.FSRef):
 	def as_fsspec(self):
@@ -69,7 +69,7 @@ class Alias(Carbon.File.Alias):
 		return self.GetAliasInfo(index)
 		
 	def Update(self, *args):
-		print "Alias.Update not yet implemented"
+		pass # print "Alias.Update not yet implemented"
 		
 	def Resolve(self, src=None):
 		fss, changed = self.ResolveAlias(src)
