@@ -269,10 +269,33 @@ def f2():
 f2()
 
 print 'xrange'
+import warnings
+warnings.filterwarnings('ignore', r".*xrange", DeprecationWarning)
 if tuple(xrange(10)) != tuple(range(10)): raise TestFailed, 'xrange(10)'
 if tuple(xrange(5,10)) != tuple(range(5,10)): raise TestFailed, 'xrange(5,10)'
 if tuple(xrange(0,10,2)) != tuple(range(0,10,2)):
     raise TestFailed, 'xrange(0,10,2)'
+r = xrange(10)
+if r.tolist() != range(10): raise TestFailed, 'xrange(10).tolist()'
+if r.start != 0: raise TestFailed, 'xrange(10).start'
+if r.stop != 10: raise TestFailed, 'xrange(10).stop'
+if r.step != 1: raise TestFailed, 'xrange(10).step'
+r = xrange(3, 10)
+if r.tolist() != range(3, 10): raise TestFailed, 'xrange(3, 10).tolist()'
+if r.start != 3: raise TestFailed, 'xrange(3, 10).start'
+if r.stop != 10: raise TestFailed, 'xrange(3, 10).stop'
+if r.step != 1: raise TestFailed, 'xrange(3, 10).step'
+r = xrange(3, 10, 2)
+if r.tolist() != range(3, 10, 2): raise TestFailed, 'xrange(3, 10, 2).tolist()'
+if r.start != 3: raise TestFailed, 'xrange(3, 10, 2).start'
+if r.stop != 11: raise TestFailed, 'xrange(3, 10, 2).stop'
+if r.step != 2: raise TestFailed, 'xrange(3, 10, 2).step'
+r = xrange(10, 3, -1)
+if r.tolist() != range(10, 3, -1):
+    raise TestFailed, 'xrange(10, 3, -1).tolist()'
+if r.start != 10: raise TestFailed, 'xrange(10, 3, -1).start'
+if r.stop != 3: raise TestFailed, 'xrange(10, 3, -1).stop'
+if r.step != -1: raise TestFailed, 'xrange(10, 3, -1).step'
 
 print 'zip'
 a = (1, 2, 3)
