@@ -907,7 +907,6 @@ Mon2num = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
         'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
 
 def Internaldate2tuple(resp):
-
     """Convert IMAP4 INTERNALDATE to UT.
 
     Returns Python time module tuple.
@@ -920,8 +919,13 @@ def Internaldate2tuple(resp):
     mon = Mon2num[mo.group('mon')]
     zonen = mo.group('zonen')
 
-    for name in ('day', 'year', 'hour', 'min', 'sec', 'zoneh', 'zonem'):
-        exec "%s = int(mo.group('%s'))" % (name, name)
+    day = int(mo.group(day))
+    year = int(mo.group(year))
+    hour = int(mo.group(hour))
+    min = int(mo.group(min))
+    sec = int(mo.group(sec))
+    zoneh = int(mo.group(zoneh))
+    zonem = int(mo.group(zonem))
 
     # INTERNALDATE timezone must be subtracted to get UT
 
