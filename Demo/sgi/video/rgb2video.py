@@ -3,6 +3,7 @@ import VFile
 import getopt
 import imgfile
 import string
+import imgconv
 
 def main():
 	format = None
@@ -31,18 +32,21 @@ def main():
 	xsize, ysize, zsize = imgfile.getsizes(args[0])
 	nxsize = xsize
 	
-	if not format:
-		if zsize == 3:
-			format = 'rgb'
-		elif zsize == 1:
-			format = 'grey'
-			if xsize % 4:
-				addbytes = 4-(xsize%4)
-				nxsize = xsize + addbytes
-				print 'rgb2video: add',addbytes,'pixels per line'
-		else:
-			print 'rgb2video: incorrect number of planes:',zsize
-			sys.exit(1)
+	if zsize == 3:
+		oformat = 'rgb'
+	elif zsize == 1:
+		oformat = 'grey'
+		if xsize % 4:
+			addbytes = 4-(xsize%4)
+			nxsize = xsize + addbytes
+			print 'rgb2video: add',addbytes,'pixels per line'
+	else:
+		print 'rgb2video: incorrect number of planes:',zsize
+		sys.exit(1)
+
+	if format == None:
+		format = oformat
+	cfunc = imgconv.getconverter(oformat, format)
 
 	vout = VFile.VoutFile().init(outfile)
 	vout.format = format
@@ -63,7 +67,7 @@ def main():
 				curline = data[i:i+xsize]
 				ndata = ndata + curline + ('\0'*(nxsize-xsize))
 			data = ndata
-		vout.writeframe(t, data, None)
+		vout.writeframe(t, cfunc(data, nxsize, ysize), None)
 		t = t + interval
 	sys.stderr.write('\n')
 	vout.close()
