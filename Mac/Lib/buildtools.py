@@ -74,7 +74,10 @@ def process(template, filename, destname, copy_codefragment,
 		progress = EasyDialogs.ProgressBar("Processing %s..."%os.path.split(filename)[1], 120)
 		progress.label("Compiling...")
 		progress.inc(0)
-	
+	# check for the script name being longer than 32 chars. This may trigger a bug
+	# on OSX that can destroy your sourcefile.
+	if '#' in os.path.split(filename)[1]:
+		raise BuildError, "BuildApplet could destroy your sourcefile on OSX, please rename: %s" % filename
 	# Read the source and compile it
 	# (there's no point overwriting the destination if it has a syntax error)
 	
