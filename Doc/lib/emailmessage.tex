@@ -87,9 +87,10 @@ When \code{True} and the message is not a multipart, the payload will be
 decoded if this header's value is \samp{quoted-printable} or
 \samp{base64}.  If some other encoding is used, or
 \mailheader{Content-Transfer-Encoding} header is
-missing, the payload is returned as-is (undecoded).  If the message is
-a multipart and the \var{decode} flag is \code{True}, then \code{None} is
-returned.  The default for \var{decode} is \code{False}.
+missing, or if the payload has bogus base64 data, the payload is
+returned as-is (undecoded).  If the message is a multipart and the
+\var{decode} flag is \code{True}, then \code{None} is returned.  The
+default for \var{decode} is \code{False}.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{set_payload}{payload\optional{, charset}}
