@@ -178,6 +178,8 @@ vgetargs1(args, format, p_va, compat)
 		}
 		else if (level != 0)
 			; /* Pass */
+		else if (c == 'e')
+			; /* Pass */
 		else if (isalpha(c))
 			max++;
 		else if (c == '|')
@@ -654,6 +656,122 @@ convertsimple1(arg, p_format, p_va)
 			break;
 		}
 	
+	case 'e': /* encoded string */
+		{
+			char **buffer;
+			const char *encoding;
+			PyObject *u, *s;
+			int size;
+
+			/* Get 'e' parameter: the encoding name */
+			encoding = (const char *)va_arg(*p_va, const char *);
+			if (encoding == NULL)
+				return "(encoding is NULL)";
+			
+			/* Get 's' parameter: the output buffer to use */
+			if (*format != 's')
+				return "(unkown parser marker combination)";
+			buffer = (char **)va_arg(*p_va, char **);
+			format++;
+			if (buffer == NULL)
+				return "(buffer is NULL)";
+			
+			/* Convert object to Unicode */
+			u = PyUnicode_FromObject(arg);
+			if (u == NULL)
+				return "string, unicode or text buffer";
+			
+			/* Encode object; use default error handling */
+			s = PyUnicode_AsEncodedString(u,
+						      encoding,
+						      NULL);
+			Py_DECREF(u);
+			if (s == NULL)
+				return "(encoding failed)";
+			if (!PyString_Check(s)) {
+				Py_DECREF(s);
+				return "(encoder failed to return a string)";
+			}
+			size = PyString_GET_SIZE(s);
+
+			/* Write output; output is guaranteed to be
+			   0-terminated */
+			if (*format == '#') { 
+				/* Using buffer length parameter '#':
+
+				   - if *buffer is NULL, a new buffer
+				   of the needed size is allocated and
+				   the data copied into it; *buffer is
+				   updated to point to the new buffer;
+				   the caller is responsible for
+				   free()ing it after usage
+
+				   - if *buffer is not NULL, the data
+				   is copied to *buffer; *buffer_len
+				   has to be set to the size of the
+				   buffer on input; buffer overflow is
+				   signalled with an error; buffer has
+				   to provide enough room for the
+				   encoded string plus the trailing
+				   0-byte
+
+				   - in both cases, *buffer_len is
+				   updated to the size of the buffer
+				   /excluding/ the trailing 0-byte
+
+				*/
+				int *buffer_len = va_arg(*p_va, int *);
+
+				format++;
+				if (buffer_len == NULL)
+					return "(buffer_len is NULL)";
+				if (*buffer == NULL) {
+					*buffer = PyMem_NEW(char, size + 1);
+					if (*buffer == NULL) {
+						Py_DECREF(s);
+						return "(memory error)";
+					}
+				} else {
+					if (size + 1 > *buffer_len) {
+						Py_DECREF(s);
+						return "(buffer overflow)";
+					}
+				}
+				memcpy(*buffer,
+				       PyString_AS_STRING(s),
+				       size + 1);
+				*buffer_len = size;
+			} else {
+				/* Using a 0-terminated buffer:
+
+				   - the encoded string has to be
+				   0-terminated for this variant to
+				   work; if it is not, an error raised
+
+				   - a new buffer of the needed size
+				   is allocated and the data copied
+				   into it; *buffer is updated to
+				   point to the new buffer; the caller
+				   is responsible for free()ing it
+				   after usage
+
+				 */
+				if (strlen(PyString_AS_STRING(s)) != size)
+					return "(encoded string without "\
+					       "NULL bytes)";
+				*buffer = PyMem_NEW(char, size + 1);
+				if (*buffer == NULL) {
+					Py_DECREF(s);
+					return "(memory error)";
+				}
+				memcpy(*buffer,
+				       PyString_AS_STRING(s),
+				       size + 1);
+			}
+			Py_DECREF(s);
+			break;
+		}
+
 	case 'S': /* string object */
 		{
 			PyObject **p = va_arg(*p_va, PyObject **);

@@ -293,3 +293,33 @@ else:
     assert unicodedata.combining(u'\u20e1') == 230
     
     print 'done.'
+
+# Test builtin codecs
+print 'Testing builtin codecs...',
+
+assert unicode('hello','ascii') == u'hello'
+assert unicode('hello','utf-8') == u'hello'
+assert unicode('hello','utf8') == u'hello'
+assert unicode('hello','latin-1') == u'hello'
+
+assert u'hello'.encode('ascii') == 'hello'
+assert u'hello'.encode('utf-8') == 'hello'
+assert u'hello'.encode('utf8') == 'hello'
+assert u'hello'.encode('utf-16-le') == 'h\000e\000l\000l\000o\000'
+assert u'hello'.encode('utf-16-be') == '\000h\000e\000l\000l\000o'
+assert u'hello'.encode('latin-1') == 'hello'
+
+u = u''.join(map(unichr, range(1024)))
+for encoding in ('utf-8', 'utf-16', 'utf-16-le', 'utf-16-be',
+                 'raw_unicode_escape', 'unicode_escape', 'unicode_internal'):
+    assert unicode(u.encode(encoding),encoding) == u
+
+u = u''.join(map(unichr, range(256)))
+for encoding in ('latin-1',):
+    assert unicode(u.encode(encoding),encoding) == u
+
+u = u''.join(map(unichr, range(128)))
+for encoding in ('ascii',):
+    assert unicode(u.encode(encoding),encoding) == u
+
+print 'done.'
