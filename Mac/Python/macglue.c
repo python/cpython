@@ -345,6 +345,17 @@ Pstring(char *str)
 	return buf;
 }
 
+void
+c2pstrcpy(unsigned char *dst, const char *src)
+{
+	int len;
+	
+	len = strlen(src);
+	if ( len > 255 ) len = 255;
+	strncpy((char *)dst+1, src, len);
+	dst[0] = len;
+}
+
 /* Like strerror() but for Mac OS error numbers */
 char *PyMac_StrError(int err)
 {
