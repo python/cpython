@@ -1,7 +1,7 @@
 \section{\module{gdbm} ---
-         GNU's reinterpretation of dbm.}
-\declaremodule{builtin}{gdbm}
+         GNU's reinterpretation of dbm}
 
+\declaremodule{builtin}{gdbm}
 \modulesynopsis{GNU's reinterpretation of dbm.}
 
 
@@ -19,22 +19,23 @@
 % this; it's just a little annoying.  The warning can be ignored, but
 % the index produced uses the non-bold version.
 
-This module is quite similar to the \code{dbm} module, but uses \code{gdbm}
-instead to provide some additional functionality.  Please note that
-the file formats created by \code{gdbm} and \code{dbm} are incompatible.
-\refbimodindex{dbm}
+This module is quite similar to the \module{dbm}\refbimodindex{dbm}
+module, but uses \code{gdbm} instead to provide some additional
+functionality.  Please note that the file formats created by
+\code{gdbm} and \code{dbm} are incompatible.
 
-The \code{gdbm} module provides an interface to the GNU DBM
+The \module{gdbm} module provides an interface to the GNU DBM
 library.  \code{gdbm} objects behave like mappings
 (dictionaries), except that keys and values are always strings.
-Printing a \code{gdbm} object doesn't print the keys and values, and the
-\code{items()} and \code{values()} methods are not supported.
+Printing a \code{gdbm} object doesn't print the keys and values, and
+the \method{items()} and \method{values()} methods are not supported.
 
 The module defines the following constant and functions:
 
 \begin{excdesc}{error}
-Raised on \code{gdbm}-specific errors, such as I/O errors. \code{KeyError} is
-raised for general mapping errors like specifying an incorrect key.
+Raised on \code{gdbm}-specific errors, such as I/O errors.
+\exception{KeyError} is raised for general mapping errors like
+specifying an incorrect key.
 \end{excdesc}
 
 \begin{funcdesc}{open}{filename, \optional{flag, \optional{mode}}}
@@ -47,11 +48,11 @@ The optional \var{flag} argument can be
 \code{'c'} (which creates the database if it doesn't exist), or
 \code{'n'} (which always creates a new empty database).
 
-Appending \code{f} to the flag opens the database in fast mode;
+Appending \character{f} to the flag opens the database in fast mode;
 altered data will not automatically be written to the disk after every
 change.  This results in faster writes to the database, but may result
 in an inconsistent database if the program crashes while the database
-is still open.  Use the \code{sync()} method to force any unwritten
+is still open.  Use the \method{sync()} method to force any unwritten
 data to be written to the disk.
 
 The optional \var{mode} argument is the \UNIX{} mode of the file, used
@@ -63,34 +64,35 @@ In addition to the dictionary-like methods, \code{gdbm} objects have the
 following methods:
 
 \begin{funcdesc}{firstkey}{}
-It's possible to loop over every key in the database using this method
-and the \code{nextkey()} method.  The traversal is ordered by \code{gdbm}'s
-internal hash values, and won't be sorted by the key values.  This
-method returns the starting key.
+It's possible to loop over every key in the database using this method 
+and the \method{nextkey()} method.  The traversal is ordered by
+\code{gdbm}'s internal hash values, and won't be sorted by the key
+values.  This method returns the starting key.
 \end{funcdesc}
 
 \begin{funcdesc}{nextkey}{key}
 Returns the key that follows \var{key} in the traversal.  The
-following code prints every key in the database \code{db}, without having to
-create a list in memory that contains them all:
+following code prints every key in the database \code{db}, without
+having to create a list in memory that contains them all:
+
 \begin{verbatim}
-k=db.firstkey()
-while k!=None:
+k = db.firstkey()
+while k != None:
     print k
-    k=db.nextkey(k)
+    k = db.nextkey(k)
 \end{verbatim}
 \end{funcdesc}
 
 \begin{funcdesc}{reorganize}{}
 If you have carried out a lot of deletions and would like to shrink
-the space used by the \code{gdbm} file, this routine will reorganize the
-database.  \code{gdbm} will not shorten the length of a database file except
-by using this reorganization; otherwise, deleted file space will be
-kept and reused as new (key,value) pairs are added.
+the space used by the \code{gdbm} file, this routine will reorganize
+the database.  \code{gdbm} will not shorten the length of a database
+file except by using this reorganization; otherwise, deleted file
+space will be kept and reused as new (key, value) pairs are added.
 \end{funcdesc}
 
 \begin{funcdesc}{sync}{}
-When the database has been opened in fast mode, this method forces any
+When the database has been opened in fast mode, this method forces any 
 unwritten data to be written to the disk.
 \end{funcdesc}
 
