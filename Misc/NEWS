@@ -136,6 +136,16 @@ Build
 C API
 -----
 
+- The C API calls ``PyInterpreterState_New()`` and ``PyThreadState_New()``
+  are two of the very few advertised as being safe to call without holding
+  the GIL.  However, this wasn't true in a debug build, as bug 1041645
+  demonstrated.  In a debug build, Python redirects the ``PyMem`` family
+  of calls to Python's small-object allocator, to get the benefit of
+  its extra debugging capabilities.  But Python's small-object allocator
+  isn't threadsafe, relying on the GIL to avoid the expense of doing its
+  own locking.  ``PyInterpreterState_New()`` and ``PyThreadState_New()``
+  call the platform ``malloc()`` directly now, regardless of build type.
+
 - PyLong_AsUnsignedLong[Mask] now support int objects as well.
 
 - SF patch #998993: ``PyUnicode_DecodeUTF8Stateful`` and
