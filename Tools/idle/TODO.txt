@@ -35,7 +35,11 @@ TO DO:
 - use a tree widget instead of a smalltalk/NeXT style multicolumn browser
  Need to define a standard way whereby one can determine one is running
   inside IDLE (needed for Tk mainloop, also handy for $PYTHONSTARTUP)
-- Add utility methods for use by extensions (e.g. to get selection)
+- Add more utility methods for use by extensions (a la get_selection)
+- Way to run command in totally separate interpreter (fork+os.system?)
+- Way to find definition of fully-qualified name:
+  In other words, select "UserDict.UserDict", hit some magic key and
+  it loads up UserDict.py and finds the first def or class for UserDict.
 
 Details:
 
