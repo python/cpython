@@ -1,5 +1,9 @@
-# Test the exit module
-from test_support import verbose
+# Test the atexit module.
+from test_support import TESTFN, vereq
+import atexit
+import os
+
+input = """\
 import atexit
 
 def handler1():
@@ -8,17 +12,50 @@ def handler1():
 def handler2(*args, **kargs):
     print "handler2", args, kargs
 
-# save any exit functions that may have been registered as part of the
-# test framework
-_exithandlers = atexit._exithandlers
-atexit._exithandlers = []
-
 atexit.register(handler1)
 atexit.register(handler2)
 atexit.register(handler2, 7, kw="abc")
+"""
 
-# simulate exit behavior by calling atexit._run_exitfuncs directly...
-atexit._run_exitfuncs()
+fname = TESTFN + ".py"
+f = file(fname, "w")
+f.write(input)
+f.close()
 
-# restore exit handlers
-atexit._exithandlers = _exithandlers
+p = os.popen("python " + fname)
+output = p.read()
+p.close()
+vereq(output, """\
+handler2 (7,) {'kw': 'abc'}
+handler2 () {}
+handler1
+""")
+
+input = """\
+def direct():
+    print "direct exit"
+
+import sys
+sys.exitfunc = direct
+
+# Make sure atexit doesn't drop 
+def indirect():
+    print "indirect exit"
+
+import atexit
+atexit.register(indirect)
+"""
+
+f = file(fname, "w")
+f.write(input)
+f.close()
+
+p = os.popen("python " + fname)
+output = p.read()
+p.close()
+vereq(output, """\
+indirect exit
+direct exit
+""")
+
+os.unlink(fname)
