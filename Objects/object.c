@@ -177,7 +177,7 @@ strobject(v)
 {
 	if (v == NULL)
 		return newstringobject("<NULL>");
-	if (is_stringobject(v)) {
+	else if (is_stringobject(v)) {
 		INCREF(v);
 		return v;
 	}
@@ -185,19 +185,13 @@ strobject(v)
 		return (*v->ob_type->tp_str)(v);
 	else {
 		object *func;
-		object *args;
 		object *res;
-		if (!is_instanceobject(v) || (func = getattr(v, "__str__")) == NULL) {
+		if (!is_instanceobject(v) ||
+		    (func = getattr(v, "__str__")) == NULL) {
 			err_clear();
 			return reprobject(v);
 		}
-		args = newtupleobject(0);
-		if (args == NULL)
-			res = NULL;
-		else {
-			res = call_object(func, args);
-			DECREF(args);
-		}
+		res = call_object(func, (object *)NULL);
 		DECREF(func);
 		return res;
 	}

@@ -344,11 +344,7 @@ instance_dealloc(inst)
 	INCREF(inst);
 	err_fetch(&error_type, &error_value, &error_traceback);
 	if ((del = instance_getattr1(inst, "__del__")) != NULL) {
-		object *args = newtupleobject(0);
-		object *res = args;
-		if (res != NULL)
-			res = call_object(del, args);
-		XDECREF(args);
+		object *res = call_object(del, (object *)NULL);
 		DECREF(del);
 		XDECREF(res);
 		/* XXX If __del__ raised an exception, it is ignored! */
@@ -692,7 +688,7 @@ instance_item(inst, i)
 	func = instance_getattr(inst, "__getitem__");
 	if (func == NULL)
 		return NULL;
-	arg = newintobject((long)i);
+	arg = mkvalue("(i)", i);
 	if (arg == NULL) {
 		DECREF(func);
 		return NULL;
