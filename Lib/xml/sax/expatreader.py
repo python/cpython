@@ -22,7 +22,7 @@ import xml.sax
 
 # --- ExpatParser
 
-class ExpatParser( xmlreader.IncrementalParser, xmlreader.Locator ):
+class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
     "SAX driver for the Pyexpat C module."
 
     def __init__(self, namespaceHandling=0, bufsize=2**16-20):
@@ -34,12 +34,12 @@ class ExpatParser( xmlreader.IncrementalParser, xmlreader.Locator ):
 
     # XMLReader methods
 
-    def parse(self, stream_or_string ):
+    def parse(self, stream_or_string):
         "Parse an XML document from a URL."
-        if type( stream_or_string ) == type( "" ):
-            stream=open( stream_or_string )
+        if type(stream_or_string) is type(""):
+            stream = open(stream_or_string)
         else:
-            stream=stream_or_string
+            stream = stream_or_string
  
         self.reset()
         self._cont_handler.setDocumentLocator(self)
@@ -78,7 +78,7 @@ class ExpatParser( xmlreader.IncrementalParser, xmlreader.Locator ):
 
     def feed(self, data):
         if not self._parsing:
-            self._parsing=1
+            self._parsing = 1
             self.reset()
             self._cont_handler.startDocument()
         # FIXME: error checking and endDocument()
@@ -87,7 +87,7 @@ class ExpatParser( xmlreader.IncrementalParser, xmlreader.Locator ):
     def close(self):
         if self._parsing:
             self._cont_handler.endDocument()
-            self._parsing=0
+            self._parsing = 0
         self._parser.Parse("", 1)
         
     def reset(self):
@@ -135,12 +135,12 @@ class ExpatParser( xmlreader.IncrementalParser, xmlreader.Locator ):
                                  xmlreader.AttributesImpl(attrs, attrs))
 
     def end_element(self, name):
-        self._cont_handler.endElement( name, name )
+        self._cont_handler.endElement(name, name)
 
     def start_element_ns(self, name, attrs):
         pair = name.split()
         if len(pair) == 1:
-            tup = (None, name )
+            tup = (None, name)
         else:
             tup = pair
 
@@ -152,7 +152,7 @@ class ExpatParser( xmlreader.IncrementalParser, xmlreader.Locator ):
         if len(pair) == 1:
             name = (None, name, None)
         else:
-            name = pair+[None] # prefix is not implemented yet!
+            name = pair + [None] # prefix is not implemented yet!
             
         self._cont_handler.endElement(name, None)
 
@@ -187,7 +187,7 @@ class ExpatParser( xmlreader.IncrementalParser, xmlreader.Locator ):
 # ---
         
 def create_parser(*args, **kwargs):
-    return apply( ExpatParser, args, kwargs )
+    return apply(ExpatParser, args, kwargs)
         
 # ---
 
