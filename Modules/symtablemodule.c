@@ -65,6 +65,10 @@ init_symtable(void)
 	PyModule_AddIntConstant(m, "TYPE_CLASS", TYPE_CLASS);
 	PyModule_AddIntConstant(m, "TYPE_MODULE", TYPE_MODULE);
 
+	PyModule_AddIntConstant(m, "OPT_IMPORT_STAR", OPT_IMPORT_STAR);
+	PyModule_AddIntConstant(m, "OPT_EXEC", OPT_EXEC);
+	PyModule_AddIntConstant(m, "OPT_BARE_EXEC", OPT_BARE_EXEC);
+
 	PyModule_AddIntConstant(m, "LOCAL", LOCAL);
 	PyModule_AddIntConstant(m, "GLOBAL_EXPLICIT", GLOBAL_EXPLICIT);
 	PyModule_AddIntConstant(m, "GLOBAL_IMPLICIT", GLOBAL_IMPLICIT);
