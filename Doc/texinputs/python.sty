@@ -750,13 +750,10 @@
 \newcommand{\email}[1]{{\small\textsf{#1}}}
 \newcommand{\newsgroup}[1]{{\small\textsf{#1}}}
 
-%\newcommand{\py@varvars}[1]{{\def\,{\/{\char`\,}}\var{#1}}}
-\newcommand{\py@varvars}[1]{%
+\newcommand{\py@varvars}[1]{{%
   {\let\unspecified=\py@unspecified%
    \let\moreargs=\py@moreargs%
-   \def\,{\/{\char`\,}}\var{#1}}}
-% let's see if this breaks anything now; we may be able to simplify...
-\renewcommand{\py@varvars}[1]{\var{#1}}
+   \var{#1}}}}
 
 % I'd really like to get rid of this!
 \newif\iftexi\texifalse
