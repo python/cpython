@@ -333,6 +333,9 @@
 /* Define to 1 if you have the `readlink' function. */
 #undef HAVE_READLINK
 
+/* Define if you have readline 2.2 */
+#undef HAVE_RL_COMPLETION_APPEND_CHARACTER
+
 /* Define if you have readline 4.2 */
 #undef HAVE_RL_COMPLETION_MATCHES
 
