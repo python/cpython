@@ -7,18 +7,7 @@
 static int
 bool_print(PyBoolObject *self, FILE *fp, int flags)
 {
-	if (flags & Py_PRINT_RAW) {
-		if (self->ob_ival == 0)
-			fputs("False", fp);
-		else
-			fputs("True", fp);
-	}
-	else {
-		if (self->ob_ival == 0)
-			fputs("False", fp);
-		else
-			fputs("True", fp);
-	}
+	fputs(self->ob_ival == 0 ? "False" : "True", fp);
 	return 0;
 }
 
