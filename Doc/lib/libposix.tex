@@ -254,7 +254,10 @@ Open a pipe to or from \var{command}.  The return value is an open
 file object connected to the pipe, which can be read or written
 depending on whether \var{mode} is \code{'r'} (default) or \code{'w'}.
 The \var{bufsize} argument has the same meaning as the corresponding
-argument to the built-in \code{open()} function.
+argument to the built-in \code{open()} function.  The exit status of
+the command (encoded in the format specified for \code{wait()}) is
+available as the return value of the \code{close()} method of the file
+object.
 (Not on MS-DOS.)
 \end{funcdesc}
 
@@ -349,8 +352,8 @@ Execute the command (a string) in a subshell.  This is implemented by
 calling the Standard C function \code{system()}, and has the same
 limitations.  Changes to \code{posix.environ}, \code{sys.stdin} etc.\ are
 not reflected in the environment of the executed command.  The return
-value is the exit status of the process as returned by Standard C
-\code{system()}.
+value is the exit status of the process encoded in the format
+specified for \code{wait()}.
 \end{funcdesc}
 
 \begin{funcdesc}{tcgetpgrp}{fd}
@@ -402,14 +405,16 @@ Set the access and modified time of the file to the given values.
 
 \begin{funcdesc}{wait}{}
 Wait for completion of a child process, and return a tuple containing
-its pid and exit status indication (encoded as by \UNIX{}).
-(Not on MS-DOS.)
+its pid and exit status indication: a 16-bit number, whose low byte is
+the signal number that killed the process, and whose high byte is the
+exit status (if the signal number is zero); the high bit of the low
+byte is set if a core file was produced.  (Not on MS-DOS.)
 \end{funcdesc}
 
 \begin{funcdesc}{waitpid}{pid\, options}
 Wait for completion of a child process given by proces id, and return
-a tuple containing its pid and exit status indication (encoded as by
-\UNIX{}).  The semantics of the call are affected by the value of
+a tuple containing its pid and exit status indication (encoded as for
+\code{wait()}).  The semantics of the call are affected by the value of
 the integer options, which should be 0 for normal operation.  (If the
 system does not support \code{waitpid()}, this always raises
 \code{posix.error}.  Not on MS-DOS.)
