@@ -108,7 +108,7 @@ Running as a Modal Dialog
             it's own Tkinter.Tk instance as the master.  This may not
             be what you want.
 
-        databasefile[*]
+        databasefile
             similar to the --database option, the value must be a
             file name
 
@@ -119,7 +119,7 @@ Running as a Modal Dialog
         ignore[*]
             similar to the --ignore flag, the value is a boolean
 
-        wantspec[*]
+        wantspec
             When this is true, the "name" field in the return tuple
             will always be a color spec of the form "#rrggbb".  It
             will not return a color name even if there is a match;
