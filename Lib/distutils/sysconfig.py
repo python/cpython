@@ -97,6 +97,23 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
 # get_python_lib()
         
 
+def customize_compiler (compiler):
+    """Do any platform-specific customization of the CCompiler instance
+    'compiler'.  Mainly needed on Unix, so we can plug in the information
+    that varies across Unices and is stored in Python's Makefile.
+    """
+    if compiler.compiler_type == "unix":
+        cc_cmd = CC + ' ' + OPT
+        compiler.set_executables(
+            preprocessor=CC + " -E",    # not always!
+            compiler=cc_cmd,
+            compiler_so=cc_cmd + ' ' + CCSHARED,
+            linker_so=LDSHARED,
+            linker_exe=CC)
+
+        compiler.shared_lib_extension = SO
+
+
 def get_config_h_filename():
     """Return full pathname of installed config.h file."""
     inc_dir = get_python_inc(plat_specific=1)
@@ -260,6 +277,9 @@ def _init_nt():
     # Windows.  UnixCCompiler expects to find these values in sysconfig, so
     # here they are.  The fact that other Windows compilers don't need
     # these values is pure luck (hmmm).
+
+    # XXX I think these are now unnecessary...
+
     g['CC'] = "cc"                      # not gcc?
     g['RANLIB'] = "ranlib"
     g['AR'] = "ar"
