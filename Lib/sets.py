@@ -320,6 +320,8 @@ class BaseSet(object):
             return
 
         value = True
+        if type(iterable) not in (list, tuple, dict, file, xrange, str):
+            iterable = list(iterable)
         it = iter(iterable)
         while True:
             try:
