@@ -80,7 +80,7 @@ def _reduce(self):
 def __newobj__(cls, *args):
     return cls.__new__(cls, *args)
 
-def _better_reduce(obj):
+def _reduce_2(obj):
     cls = obj.__class__
     getnewargs = getattr(obj, "__getnewargs__", None)
     if getnewargs:
@@ -113,17 +113,12 @@ def _better_reduce(obj):
 
 def _reduce_ex(obj, proto=0):
     obj_reduce = getattr(obj, "__reduce__", None)
-    # XXX This fails in test_copy.py line 61
-    if obj_reduce:
-        try:
-            if obj.__class__.__reduce__ is not object.__reduce__:
-                return obj_reduce()
-        except AttributeError:
-            pass
-    if proto < 2:
+    if obj_reduce and obj.__class__.__reduce__ is not object.__reduce__:
+        return obj_reduce()
+    elif proto < 2:
         return _reduce(obj)
     else:
-        return _better_reduce(obj)
+        return _reduce_2(obj)
 
 def _slotnames(cls):
     """Return a list of slot names for a given class.
