@@ -12,9 +12,7 @@ static struct memberlist $abbrev$_memberlist[] = {
 };
 
 static PyObject *
-$abbrev$_getattr(self, name)
-	$abbrev$object *self;
-	char *name;
+$abbrev$_getattr($abbrev$object *self, char *name)
 {
 	PyObject *rv;
 	
@@ -28,10 +26,7 @@ $abbrev$_getattr(self, name)
 
 
 static int
-$abbrev$_setattr(self, name, v)
-	$abbrev$object *self;
-	char *name;
-	PyObject *v;
+$abbrev$_setattr($abbrev$object *self, char *name, PyObject *v)
 {
 	/* XXXX Add your own setattr code here */
 	if ( v == NULL ) {

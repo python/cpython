@@ -2,177 +2,140 @@
 /* Code to access $name$ objects as numbers */
 
 static PyObject *
-$abbrev$_add(v, w)
-	$abbrev$object *v;
-	$abbrev$object *w;
+$abbrev$_add($abbrev$object *v, $abbrev$object *w)
 {
 	/* XXXX Add them */
 }
 
 static PyObject *
-$abbrev$_sub(v, w)
-	$abbrev$object *v;
-	$abbrev$object *w;
+$abbrev$_sub($abbrev$object *v, $abbrev$object *w)
 {
 	/* XXXX Subtract them */
 }
 
 static PyObject *
-$abbrev$_mul(v, w)
-	$abbrev$object *v;
-	$abbrev$object *w;
+$abbrev$_mul($abbrev$object *v, $abbrev$object *w)
 {
 	/* XXXX Multiply them */
 }
 
 static PyObject *
-$abbrev$_div(x, y)
-	$abbrev$object *x;
-	$abbrev$object *y;
+$abbrev$_div($abbrev$object *x, $abbrev$object *y)
 {
 	/* XXXX Divide them */
 }
 
 static PyObject *
-$abbrev$_mod(x, y)
-	$abbrev$object *x;
-	$abbrev$object *y;
+$abbrev$_mod($abbrev$object *x, $abbrev$object *y)
 {
 	/* XXXX Modulo them */
 }
 
 static PyObject *
-$abbrev$_divmod(x, y)
-	$abbrev$object *x;
-	$abbrev$object *y;
+$abbrev$_divmod($abbrev$object *x, $abbrev$object *y)
 {
 	/* XXXX Return 2-tuple with div and mod */
 }
 
 static PyObject *
-$abbrev$_pow(v, w, z)
-	$abbrev$object *v;
-	$abbrev$object *w;
-	$abbrev$object *z;
+$abbrev$_pow($abbrev$object *v, $abbrev$object *w, $abbrev$object *z)
 {
 	/* XXXX */
 }				
 
 static PyObject *
-$abbrev$_neg(v)
-	$abbrev$object *v;
+$abbrev$_neg($abbrev$object *v)
 {
 	/* XXXX */
 }
 
 static PyObject *
-$abbrev$_pos(v)
-	$abbrev$object *v;
+$abbrev$_pos($abbrev$object *v)
 {
 	/* XXXX */
 }
 
 static PyObject *
-$abbrev$_abs(v)
-	$abbrev$object *v;
+$abbrev$_abs($abbrev$object *v)
 {
 	/* XXXX */
 }
 
 static int
-$abbrev$_nonzero(v)
-	$abbrev$object *v;
+$abbrev$_nonzero($abbrev$object *v)
 {
 	/* XXXX Return 1 if non-zero */
 }
 
 static PyObject *
-$abbrev$_invert(v)
-	$abbrev$object *v;
+$abbrev$_invert($abbrev$object *v)
 {
 	/* XXXX */
 }
 
 static PyObject *
-$abbrev$_lshift(v, w)
-	$abbrev$object *v;
-	$abbrev$object *w;
+$abbrev$_lshift($abbrev$object *v, $abbrev$object *w)
 {
 	/* XXXX */
 }
 
 static PyObject *
-$abbrev$_rshift(v, w)
-	$abbrev$object *v;
-	$abbrev$object *w;
+$abbrev$_rshift($abbrev$object *v, $abbrev$object *w)
 {
 	/* XXXX */
 }
 
 static PyObject *
-$abbrev$_and(v, w)
-	$abbrev$object *v;
-	$abbrev$object *w;
+$abbrev$_and($abbrev$object *v, $abbrev$object *w)
 {
 	/* XXXX */
 }
 
 static PyObject *
-$abbrev$_xor(v, w)
-	$abbrev$object *v;
-	$abbrev$object *w;
+$abbrev$_xor($abbrev$object *v, $abbrev$object *w)
 {
 	/* XXXX */
 }
 
 static PyObject *
-$abbrev$_or(v, w)
-	$abbrev$object *v;
-	$abbrev$object *w;
+$abbrev$_or($abbrev$object *v, $abbrev$object *w)
 {
 	/* XXXX */
 }
 
 static int
-$abbrev$_coerce(pv, pw)
-	PyObject **pv;
-	PyObject **pw;
+$abbrev$_coerce(PyObject **pv, PyObject **pw)
 {
 	/* XXXX I haven't a clue... */
 	return 1;
 }
 
 static PyObject *
-$abbrev$_int(v)
-	$abbrev$object *v;
+$abbrev$_int($abbrev$object *v)
 {
 	/* XXXX */
 }
 
 static PyObject *
-$abbrev$_long(v)
-	$abbrev$object *v;
+$abbrev$_long($abbrev$object *v)
 {
 	/* XXXX */
 }
 
 static PyObject *
-$abbrev$_float(v)
-	$abbrev$object *v;
+$abbrev$_float($abbrev$object *v)
 {
 	/* XXXX */
 }
 
 static PyObject *
-$abbrev$_oct(v)
-	$abbrev$object *v;
+$abbrev$_oct($abbrev$object *v)
 {
 	/* XXXX Return object as octal stringobject */
 }
 
 static PyObject *
-$abbrev$_hex(v)
-	$abbrev$object *v;
+$abbrev$_hex($abbrev$object *v)
 {
 	/* XXXX Return object as hex stringobject */
 }
