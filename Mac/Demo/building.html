@@ -417,7 +417,7 @@ Rebuilding the .exp file is done by first removing the file and removing the
 reference to it in the project (in the "config" section). Next, build PythonCore.
 This will create a new .exp file. Edit this file to remove the references to
 the symbols <code>__initialize</code>, <code>__terminate</code>, <code>setjmp</code>,
-<code>longjmp</code>, <code>main</code> and (for PPC) <code>__ptmf_null</code> or (for
+<code>longjmp</code>, <code>vec_longjmp</code>, <code>main</code> and (for PPC) <code>__ptmf_null</code> or (for
 CFM68K) <code>__start</code> and <code>dummy_init_routine</code>.
 Next, add the .exp file to the project
 again and rebuild PythonCore. <p>
