@@ -2,8 +2,25 @@
 """ Simple test script for cmathmodule.c
     Roger E. Masse
 """
-import cmath
-from test.test_support import verbose
+import cmath, math
+from test.test_support import verbose, verify, TestFailed
+
+verify(abs(cmath.log(10) - math.log(10)) < 1e-9)
+verify(abs(cmath.log(10,2) - math.log(10,2)) < 1e-9)
+try:
+    cmath.log('a')
+except TypeError:
+    pass
+else:
+    raise TestFailed
+
+try:
+    cmath.log(10, 'a')
+except TypeError:
+    pass
+else:
+    raise TestFailed
+
 
 testdict = {'acos' : 1.0,
             'acosh' : 1.0,

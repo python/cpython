@@ -336,6 +336,9 @@ Extension modules
 Library
 -------
 
+- Bug #823209:  cmath.log() now takes an optional base argument so that its
+  API matches math.log().                                                                  
+
 - Bug #957381: distutils bdist_rpm no longer fails on recent RPM versions
   that generate a *-debuginfo.rpm.
 
