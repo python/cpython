@@ -16,9 +16,8 @@ effort spent.
 \item[Tkinter.py]
 --- Interface to Tcl/Tk for graphical user interfaces;
 Fredrik Lundh is working on this one!  See \emph{An Introduction to
-Tkinter} at
-\url{http://www.pythonware.com/library/tkinter/introduction} for
-on-line reference material.
+Tkinter} at \url{http://www.pythonware.com/library/} for on-line
+reference material.
 
 \item[Tkdnd.py]
 --- Drag-and-drop support for \module{Tkinter}.
@@ -39,7 +38,8 @@ Some of these are very old and/or not very robust; marked with ``hmm''.
 --- class to build directory diff tools on
 
 \item[pipes.py]
---- Conversion pipeline templates (hmm)
+--- Conversion pipeline templates (hmm, used by \module{toaiff} and
+\module{torgb})
 
 \item[pty.py]
 --- Pseudo terminal utilities
@@ -50,9 +50,6 @@ Some of these are very old and/or not very robust; marked with ``hmm''.
 \item[bdb.py]
 --- A generic Python debugger base class (used by pdb)
 
-\item[wdb.py]
---- A primitive windowing debugger based on STDWIN.
-
 \item[ihooks.py]
 --- Import hook support (for rexec)
 \end{description}
@@ -60,9 +57,9 @@ Some of these are very old and/or not very robust; marked with ``hmm''.
 
 \section{Platform specific modules}
 
-
-These modules are used to implement the \refmodule{os.path} module, and
-are not documented beyond this mention.
+These modules are used to implement the \refmodule{os.path} module,
+and are not documented beyond this mention.  There's little need to
+document these.
 
 \begin{description}
 \item[dospath.py]
@@ -89,13 +86,15 @@ are not documented beyond this mention.
 --- interpret sun audio headers
 
 \item[toaiff.py]
---- Convert "arbitrary" sound files to AIFF files
+--- Convert "arbitrary" sound files to AIFF files; should probably
+become a tool or demo
 \end{description}
 
 
 \section{Oddities}
 
 These modules are probably also obsolete, or just not very useful.
+Some of these may be made into tools or demos in future releases.
 
 \begin{description}
 \item[find.py]
@@ -165,6 +164,9 @@ func.func_name, co.co_firstlineno).
 
 \item[util.py]
 --- Useful functions that don't fit elsewhere.
+
+\item[wdb.py]
+--- A primitive windowing debugger based on STDWIN.
 
 \item[whatsound.py]
 --- Recognize sound files; use \refmodule{sndhdr} instead.
