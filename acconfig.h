@@ -104,6 +104,15 @@
 /* Define if the compiler provides a wchar.h header file. */
 #undef HAVE_WCHAR_H
 
+/* Define if you want to have a Unicode type. */
+#undef Py_USING_UNICODE
+
+/* Define as the integral type used for Unicode representation. */
+#undef PY_UNICODE_TYPE
+
+/* Define as the size of the unicode type. */
+#undef Py_UNICODE_SIZE
+
 /* Define if malloc(0) returns a NULL pointer */
 #undef MALLOC_ZERO_RETURNS_NULL
 

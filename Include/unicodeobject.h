@@ -60,16 +60,9 @@ Copyright (c) Corporation for National Research Initiatives.
 
 /* experimental UCS-4 support.  enable at your own risk! */
 #undef USE_UCS4_STORAGE
-
-/*
- * Use this typedef when you need to represent a UTF-16 surrogate pair
- * as single unsigned integer.
- */
-#if SIZEOF_INT >= 4 
-typedef unsigned int Py_UCS4; 
-#elif SIZEOF_LONG >= 4
-typedef unsigned long Py_UCS4; 
-#endif 
+#if Py_UNICODE_SIZE == 4
+#define USE_UCS4_STORAGE
+#endif
 
 /* Set these flags if the platform has "wchar.h", "wctype.h" and the
    wchar_t type is a 16-bit unsigned type */
@@ -77,11 +70,16 @@ typedef unsigned long Py_UCS4;
 /* #define HAVE_USABLE_WCHAR_T */
 
 /* Defaults for various platforms */
-#ifndef HAVE_USABLE_WCHAR_T
+#ifndef PY_UNICODE_TYPE
 
 /* Windows has a usable wchar_t type (unless we're using UCS-4) */
 # if defined(MS_WIN32) && !defined(USE_UCS4_STORAGE)
 #  define HAVE_USABLE_WCHAR_T
+#  define PY_UNICODE_TYPE wchar_t
+# endif
+
+# if defined(USE_UCS4_STORAGE)
+#  define PY_UNICODE_TYPE Py_UCS4
 # endif
 
 #endif
@@ -104,28 +102,23 @@ typedef unsigned long Py_UCS4;
 # include "wchar.h"
 #endif
 
-#ifdef HAVE_USABLE_WCHAR_T
-
-/* If the compiler defines whcar_t as a 16-bit unsigned type we can
-   use the compiler type directly.  Works fine with all modern Windows
-   platforms. */
-
-typedef wchar_t Py_UNICODE;
-
-#else
-
-/* Use if you have a standard ANSI compiler, without wchar_t support.
-   If a short is not 16 bits on your platform, you have to fix the
-   typedef below, or the module initialization code will complain. */
-
-#ifdef USE_UCS4_STORAGE
-typedef Py_UCS4 Py_UNICODE;
-#else
-typedef unsigned short Py_UNICODE;
+/*
+ * Use this typedef when you need to represent a UTF-16 surrogate pair
+ * as single unsigned integer.
+ */
+#if SIZEOF_INT >= 4 
+typedef unsigned int Py_UCS4; 
+#elif SIZEOF_LONG >= 4
+typedef unsigned long Py_UCS4; 
 #endif
 
-#endif
+#if SIZEOF_SHORT == 2
+typedef unsigned short Py_UCS2;
+#else
+#error Cannot find a two-byte type
+#endif 
 
+typedef PY_UNICODE_TYPE Py_UNICODE;
 
 /* --- Internal Unicode Operations ---------------------------------------- */
 

@@ -372,8 +372,8 @@ fi
 OPT="$OPT -Dss_family=__ss_family -Dss_len=__ss_len"
 AC_MSG_CHECKING([whether to enable ipv6])
 AC_ARG_ENABLE(ipv6,
-[  --enable-ipv6		Enable ipv6 (with ipv4) support
-  --disable-ipv6		Disable ipv6 support],
+[  --enable-ipv6                   Enable ipv6 (with ipv4) support
+  --disable-ipv6                  Disable ipv6 support],
 [ case "$enableval" in
   no)
        AC_MSG_RESULT(no)
@@ -1578,23 +1578,58 @@ AC_DEFINE(HAVE_WCHAR_H) wchar_h="yes",
 wchar_h="no"
 )
 
-# check for usable wchar_t
-usable_wchar_t="unkown"
-AC_MSG_CHECKING(for usable wchar_t)
-AC_TRY_RUN([
-#include "wchar.h"
-#include "wctype.h"
-main() {
- wchar_t s;
- if (sizeof(s) == 2)
-  exit(0);
- else
-  exit(1);
-}
-], 
-AC_DEFINE(HAVE_USABLE_WCHAR_T) usable_wchar_t="yes",
-usable_wchar_t="no")
-AC_MSG_RESULT($usable_wchar_t)
+# determine wchar_t size
+if test "$wchar_h" = yes
+then
+  AC_CHECK_SIZEOF(wchar_t)
+fi
+
+AC_MSG_CHECKING(what type to use for unicode)
+AC_ARG_ENABLE(unicode, 
+[  --enable-unicode[=ucs2,ucs4]    Enable Unicode strings (default is yes)],,enable_unicode=yes)
+
+if test $enable_unicode = yes
+then
+  # Let Py_UNICODE size depend on wchar_t size
+  case  "$ac_cv_sizeof_wchar_t" in
+  2) enable_unicode="ucs2";;
+  4) enable_unicode="ucs4";;
+  *) enable_unicode="ucs4";; # default to UCS-4
+  esac
+fi
+
+case "$enable_unicode" in
+ucs2) unicode_size="2"
+      AC_DEFINE(Py_UNICODE_SIZE,2)
+      ;;
+ucs4) unicode_size="4"
+      AC_DEFINE(Py_UNICODE_SIZE,4)
+      ;;
+esac
+
+if test "$enable_unicode" = "no"
+then
+  AC_MSG_RESULT(not used)
+else
+  AC_DEFINE(Py_USING_UNICODE)
+  if test "$unicode_size" = "$ac_cv_sizeof_wchar_t"
+  then
+    PY_UNICODE_TYPE="wchar_t"
+    AC_DEFINE(HAVE_USABLE_WCHAR_T)
+    AC_DEFINE(PY_UNICODE_TYPE,wchar_t)
+  elif test "$ac_cv_sizeof_short" = "$unicode_size"
+  then
+       PY_UNICODE_TYPE="unsigned short"
+       AC_DEFINE(PY_UNICODE_TYPE,unsigned short)
+  elif test "$ac_cv_sizeof_long" = "$unicode_size"
+  then
+       PY_UNICODE_TYPE="unsigned long"
+       AC_DEFINE(PY_UNICODE_TYPE,unsigned long)
+  else
+       PY_UNICODE_TYPE="no type found"
+  fi
+  AC_MSG_RESULT($PY_UNICODE_TYPE)
+fi
 
 # check for endianness
 AC_C_BIGENDIAN
