@@ -41,6 +41,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Dialogs.h>
 #include <Windows.h>
 
+#if UNIVERSAL_INTERFACES_VERSION >= 0x0340
+typedef long refcontype;
+#else
+typedef unsigned long refcontype;
+#endif
+
 #include "Python.h"
 #include "macglue.h"
 
@@ -109,7 +115,7 @@ static int got_one; /* Flag that we can stop getting events */
 /* Handle the Print or Quit events (by failing) */
 
 static pascal OSErr
-handle_not(const AppleEvent *theAppleEvent, AppleEvent *reply, unsigned long refCon)
+handle_not(const AppleEvent *theAppleEvent, AppleEvent *reply, refcontype refCon)
 {
 	#pragma unused (reply, refCon)
 	got_one = 1;
@@ -119,7 +125,7 @@ handle_not(const AppleEvent *theAppleEvent, AppleEvent *reply, unsigned long ref
 /* Handle the Open Application event (by ignoring it) */
 
 static pascal OSErr
-handle_open_app(const AppleEvent *theAppleEvent, AppleEvent *reply, unsigned long refCon)
+handle_open_app(const AppleEvent *theAppleEvent, AppleEvent *reply, refcontype refCon)
 {
 	#pragma unused (reply, refCon)
 #if 0
@@ -132,7 +138,7 @@ handle_open_app(const AppleEvent *theAppleEvent, AppleEvent *reply, unsigned lon
 /* Handle the Open Document event, by adding an argument */
 
 static pascal OSErr
-handle_open_doc(const AppleEvent *theAppleEvent, AppleEvent *reply, unsigned long refCon)
+handle_open_doc(const AppleEvent *theAppleEvent, AppleEvent *reply, refcontype refCon)
 {
 	#pragma unused (reply, refCon)
 	OSErr err;
@@ -170,9 +176,9 @@ AEEventHandlerUPP not_upp;
 static void
 set_ae_handlers()
 {
-	open_doc_upp = NewAEEventHandlerProc(handle_open_doc);
-	open_app_upp = NewAEEventHandlerProc(handle_open_app);
-	not_upp = NewAEEventHandlerProc(handle_not);
+	open_doc_upp = NewAEEventHandlerUPP(&handle_open_doc);
+	open_app_upp = NewAEEventHandlerUPP(&handle_open_app);
+	not_upp = NewAEEventHandlerUPP(&handle_not);
 	
 	AEInstallEventHandler(kCoreEventClass, kAEOpenApplication,
 			      open_app_upp, 0L, false);
