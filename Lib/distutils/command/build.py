@@ -20,6 +20,8 @@ class Build (Command):
                 "directory for platform-shared files"),
                ('build-platlib=', 'p',
                 "directory for platform-specific files"),
+               ('debug', 'g',
+                "compile extensions and libraries with debugging information"),
               ]
 
     def set_default_options (self):
@@ -28,6 +30,7 @@ class Build (Command):
         # (unless overridden by the user or client)
         self.build_lib = None
         self.build_platlib = None
+        self.debug = None
 
     def set_final_options (self):
         # 'build_lib' and 'build_platlib' just default to 'lib' and
