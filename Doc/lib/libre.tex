@@ -860,11 +860,11 @@ offers some more-or-less equivalent mappings between
   \lineii{\code{\%5c}}
          {\regexp{.\{5\}}}
   \lineii{\code{\%d}}
-         {\regexp{[-+]\e d+}}
+         {\regexp{[-+]?\e d+}}
   \lineii{\code{\%e}, \code{\%E}, \code{\%f}, \code{\%g}}
-         {\regexp{[-+](\e d+(\e.\e d*)?|\e d*\e.\e d+)([eE]\e d+)?}}
+         {\regexp{[-+]?(\e d+(\e.\e d*)?|\e d*\e.\e d+)([eE]\e d+)?}}
   \lineii{\code{\%i}}
-         {\regexp{[-+](0[xX][\e dA-Fa-f]+|0[0-7]*|\e d+)}}
+         {\regexp{[-+]?(0[xX][\e dA-Fa-f]+|0[0-7]*|\e d+)}}
   \lineii{\code{\%o}}
          {\regexp{0[0-7]*}}
   \lineii{\code{\%s}}
