@@ -129,10 +129,6 @@ import threading
 import copy
 import operator
 
-#Exponent Range
-DEFAULT_MAX_EXPONENT = 999999999
-DEFAULT_MIN_EXPONENT = -999999999
-
 #Rounding
 ROUND_DOWN = 'ROUND_DOWN'
 ROUND_HALF_UP = 'ROUND_HALF_UP'
@@ -1699,7 +1695,7 @@ class Decimal(object):
         elength = len(str(abs(n)))
         firstprec = context.prec
 
-        if not modulo and firstprec + elength + 1 > DEFAULT_MAX_EXPONENT:
+        if not modulo and firstprec + elength + 1 > DefaultContext.Emax:
             return context._raise_error(Overflow, 'Too much precision.', sign)
 
         mul = Decimal(self)
@@ -1922,8 +1918,7 @@ class Decimal(object):
         #ans is now a linear approximation.
 
         Emax, Emin = context.Emax, context.Emin
-        context.Emax, context.Emin = DEFAULT_MAX_EXPONENT, DEFAULT_MIN_EXPONENT
-
+        context.Emax, context.Emin = DefaultContext.Emax, DefaultContext.Emin
 
         half = Decimal('0.5')
 
@@ -2947,8 +2942,8 @@ DefaultContext = Context(
         traps=[DivisionByZero, Overflow, InvalidOperation],
         flags=[],
         _rounding_decision=ALWAYS_ROUND,
-        Emax=DEFAULT_MAX_EXPONENT,
-        Emin=DEFAULT_MIN_EXPONENT,
+        Emax=999999999,
+        Emin=-999999999,
         capitals=1
 )
 
@@ -2961,14 +2956,12 @@ BasicContext = Context(
         prec=9, rounding=ROUND_HALF_UP,
         traps=[DivisionByZero, Overflow, InvalidOperation, Clamped, Underflow],
         flags=[],
-        _rounding_decision=ALWAYS_ROUND,
 )
 
 ExtendedContext = Context(
         prec=9, rounding=ROUND_HALF_EVEN,
         traps=[],
         flags=[],
-        _rounding_decision=ALWAYS_ROUND,
 )
 
 
