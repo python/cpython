@@ -1027,6 +1027,7 @@ eval_code2(co, globals, locals,
 				u = POP();
 				err_restore(v, w, u);
 				why = WHY_RERAISE;
+				break;
 			}
 			else if (v != None) {
 				err_setstr(SystemError,
