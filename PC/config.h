@@ -93,10 +93,8 @@ typedef int pid_t;
 #if defined(_MSC_VER) && _MSC_VER <= 850
 /* Start of defines for 16-bit Windows using VC++ 1.5 */
 #define COMPILER "[MSC 16-bit]"
-#ifdef _WINDOWS
 #define MS_WIN16
 #define MS_WINDOWS
-#endif
 #define PYTHONPATH ".;.\\lib;.\\lib\\win;.\\lib\\dos_8x3"
 #define IMPORT_8x3_NAMES
 typedef int pid_t;
