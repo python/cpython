@@ -84,6 +84,7 @@ build_html() {
      -init_file $L2H_INIT_FILE \
      -init_file $L2H_AUX_INIT_FILE \
      -dir $BUILDDIR $TEXFILE || exit $?
+    cp $TOPDIR/html/style.css $BUILDDIR/$1.css
     if [ "$MAX_SPLIT_DEPTH" -ne 1 ] ; then
 	(cd $BUILDDIR; $MYDIR/node2label.pl *.html) || exit $?
     fi
