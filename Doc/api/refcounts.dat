@@ -93,29 +93,29 @@ PyDict_Check:int:::
 PyDict_Check:PyObject*:p:0:
 
 PyDict_Clear:void:::
-PyDict_Clear:PyDictObject*:p:0:
+PyDict_Clear:PyObject*:p:0:
 
 PyDict_DelItem:int:::
-PyDict_DelItem:PyDictObject*:p:0:
+PyDict_DelItem:PyObject*:p:0:
 PyDict_DelItem:PyObject*:key:0:
 
 PyDict_DelItemString:int:::
-PyDict_DelItemString:PyDictObject*:p:0:
+PyDict_DelItemString:PyObject*:p:0:
 PyDict_DelItemString:char*:key::
 
 PyDict_GetItem:PyObject*::0:0
-PyDict_GetItem:PyDictObject*:p:0:
+PyDict_GetItem:PyObject*:p:0:
 PyDict_GetItem:PyObject*:key:0:
 
 PyDict_GetItemString:PyObject*::0:
-PyDict_GetItemString:PyDictObject*:p:0:
+PyDict_GetItemString:PyObject*:p:0:
 PyDict_GetItemString:char*:key::
 
 PyDict_Items:PyObject*::+1:
-PyDict_Items:PyDictObject*:p:0:
+PyDict_Items:PyObject*:p:0:
 
 PyDict_Keys:PyObject*::+1:
-PyDict_Keys:PyDictObject*:p:0:
+PyDict_Keys:PyObject*:p:0:
 
 PyDict_New:PyObject*::+1:
 
@@ -123,26 +123,26 @@ PyDict_Copy:PyObject*::+1:
 PyDict_Copy:PyObject*:p:0:
 
 PyDict_Next:int:::
-PyDict_Next:PyDictObject*:p:0:
+PyDict_Next:PyObject*:p:0:
 PyDict_Next:int:ppos::
 PyDict_Next:PyObject**:pkey:0:
 PyDict_Next:PyObject**:pvalue:0:
 
 PyDict_SetItem:int:::
-PyDict_SetItem:PyDictObject*:p:0:
+PyDict_SetItem:PyObject*:p:0:
 PyDict_SetItem:PyObject*:key:+1:
 PyDict_SetItem:PyObject*:val:+1:
 
 PyDict_SetItemString:int:::
-PyDict_SetItemString:PyDictObject*:p:0:
+PyDict_SetItemString:PyObject*:p:0:
 PyDict_SetItemString:char*:key::
 PyDict_SetItemString:PyObject*:val:+1:
 
 PyDict_Size:int:::
-PyDict_Size:PyDictObject*:p::
+PyDict_Size:PyObject*:p::
 
 PyDict_Values:PyObject*::+1:
-PyDict_Values:PyDictObject*:p:0:
+PyDict_Values:PyObject*:p:0:
 
 PyErr_BadArgument:int:::
 
