@@ -156,6 +156,27 @@ The child parser is created with the \member{ordered_attributes},
 values of this parser.
 \end{methoddesc}
 
+\begin{methoddesc}[xmlparser]{UseForeignDTD}{\optional{flag}}
+Calling this with a true value for \var{flag} (the default) will cause
+Expat to call the \member{ExternalEntityRefHandler} with
+\constant{None} for all arguments to allow an alternate DTD to be
+loaded.  If the document does not contain a document type declaration,
+the \member{ExternalEntityRefHandler} will still be called, but the
+\member{StartDoctypeDeclHandler} and \member{EndDoctypeDeclHandler}
+will not be called.
+
+Passing a false value for \var{flag} will cancel a previous call that
+passed a true value, but otherwise has no effect.
+
+This method can only be called before the \method{Parse()} or
+\method{ParseFile()} methods are called; calling it after either of
+those have been called causes \exception{ExpatError} to be raised with
+the \member{code} attribute set to
+\constant{errors.XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING}.
+
+\versionadded{2.3}
+\end{methoddesc}
+
 
 \class{xmlparser} objects have the following attributes:
 
