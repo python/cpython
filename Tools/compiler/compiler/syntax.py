@@ -39,7 +39,8 @@ class SyntaxErrorChecker:
     def visitAssign(self, node):
         # the transformer module handles many of these
         for target in node.nodes:
-            if isinstance(target, ast.AssList):
-                if target.lineno is None:
-                    target.lineno = node.lineno
-                self.error(target, "can't assign to list comprehension")
+            pass
+##            if isinstance(target, ast.AssList):
+##                if target.lineno is None:
+##                    target.lineno = node.lineno
+##                self.error(target, "can't assign to list comprehension")
