@@ -37,7 +37,7 @@ def main():
 	mustwait = process(gentype, program, output, debug=debug)
 	if mustwait:
 		sys.exit(1)
-		
+
 def process(gentype, program, output, modules=[], module_files=[], debug=0):
 	try:
 		module_dict = macmodulefinder.process(program, modules, module_files, debug)
@@ -63,10 +63,10 @@ def process(gentype, program, output, modules=[], module_files=[], debug=0):
 		return warnings
 	elif gentype == 'applet':
 		import macgen_bin
-		macgen_bin.generate(output, module_dict, debug)
+		architecture = 'fat' # user should choose
+		macgen_bin.generate(program, output, module_dict, architecture, debug)
 	else:
 		raise 'unknown gentype', gentype
-			
+
 if __name__ == '__main__':
 	main()
-		
