@@ -68,6 +68,10 @@ typedef struct PyMemberDef {
 #define T_PSTRING_INPLACE	15
 #endif /* macintosh */
 
+#define T_OBJECT_EX	16	/* Like T_OBJECT, but raises AttributeError
+				   when the value is NULL, instead of
+				   converting to None. */
+
 /* Flags */
 #define READONLY	1
 #define RO		READONLY		/* Shorthand */

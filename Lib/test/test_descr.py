@@ -978,19 +978,21 @@ def slots():
         __slots__ = ['a']
     x = C1()
     verify(not hasattr(x, "__dict__"))
-    vereq(x.a, None)
+    verify(not hasattr(x, "a"))
     x.a = 1
     vereq(x.a, 1)
+    x.a = None
+    veris(x.a, None)
     del x.a
-    vereq(x.a, None)
+    verify(not hasattr(x, "a"))
 
     class C3(object):
         __slots__ = ['a', 'b', 'c']
     x = C3()
     verify(not hasattr(x, "__dict__"))
-    verify(x.a is None)
-    verify(x.b is None)
-    verify(x.c is None)
+    verify(not hasattr(x, 'a'))
+    verify(not hasattr(x, 'b'))
+    verify(not hasattr(x, 'c'))
     x.a = 1
     x.b = 2
     x.c = 3
