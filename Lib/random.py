@@ -214,15 +214,11 @@ def betavariate(alpha, beta):
 
 # -------------------- test program --------------------
 
-def test(*args):
+def test(N = 200):
 	print 'TWOPI         =', TWOPI
 	print 'LOG4          =', LOG4
 	print 'NV_MAGICCONST =', NV_MAGICCONST
 	print 'SG_MAGICCONST =', SG_MAGICCONST
-	N = 200
-	if args:
-		if args[1:]: print 'Excess test() arguments ignored'
-		N = args[0]
 	test_generator(N, 'random()')
 	test_generator(N, 'normalvariate(0.0, 1.0)')
 	test_generator(N, 'lognormvariate(0.0, 1.0)')
