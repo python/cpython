@@ -11,20 +11,19 @@ ACKS		Acknowledgements
 AIX-NOTES	Notes for building Python on AIX
 BeOS-NOTES	Notes for building on BeOS
 BeOS-setup.py	setup.py replacement for BeOS, see BeOS-NOTES
-HISTORY		News from previous releases -- oldest last
-HPUX-NOTES	Notes about dynamic loading under HP-UX
-NEWS		News for this release
-PURIFY.README	Information for Purify users
-Porting		Mini-FAQ on porting to new platforms
-README		The file you're reading now
-RFD		Request For Discussion about a Python newsgroup
-RPM		(Old) tools to build RPMs
 cheatsheet	Quick summary of Python by Ken Manheimer
 find_recursionlimit.py  Script to find a value for sys.maxrecursionlimit
 gdbinit		Handy stuff to put in your .gdbinit file, if you use gdb
+HISTORY		News from previous releases -- oldest last
+HPUX-NOTES	Notes about dynamic loading under HP-UX
 indent.pro	GNU indent profile approximating my C style
-python-mode.el	Emacs mode for editing Python programs
+NEWS		News for this release (for some meaning of "this")
+Porting		Mini-FAQ on porting to new platforms
+PURIFY.README	Information for Purify users
 python.man	UNIX man page for the python interpreter
+python-mode.el	Emacs mode for editing Python programs
+README		The file you're reading now
+RFD		Request For Discussion about a Python newsgroup
+RPM		(Old) tools to build RPMs
 setuid-prog.c	C helper program for set-uid Python scripts
-unicode.txt	Marc-Andre Lemburg's specification of the Unicode API
 vgrindefs	Python configuration for vgrind (a generic pretty printer)
