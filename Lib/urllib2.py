@@ -478,7 +478,7 @@ class ProxyHandler(BaseHandler):
             proxies = getproxies()
         assert hasattr(proxies, 'has_key'), "proxies must be a mapping"
         self.proxies = proxies
-        for type, url in proxies.iteritems():
+        for type, url in proxies.items():
             setattr(self, '%s_open' % type,
                     lambda r, proxy=url, type=type, meth=self.proxy_open: \
                     meth(r, proxy, type))
@@ -805,7 +805,7 @@ class AbstractHTTPHandler(BaseHandler):
             name, value = args
             if name not in req.headers:
                 h.putheader(*args)
-        for k, v in req.headers.iteritems():
+        for k, v in req.headers.items():
             h.putheader(k, v)
         # httplib will attempt to connect() here.  be prepared
         # to convert a socket error to a URLError.
