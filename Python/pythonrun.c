@@ -556,7 +556,7 @@ PyRun_InteractiveOneFlags(FILE *fp, char *filename, PyCompilerFlags *flags)
 	n = PyParser_ParseFileFlags(fp, filename, &_PyParser_Grammar,
 			    	    Py_single_input, ps1, ps2, &err,
 			    	    (flags &&
-			    	     flags->cf_flags & PyCF_GENERATORS) ?
+			    	     flags->cf_flags & CO_GENERATOR_ALLOWED) ?
 			    	    	PyPARSE_YIELD_IS_KEYWORD : 0);
 	Py_XDECREF(v);
 	Py_XDECREF(w);
@@ -1009,8 +1009,8 @@ PyRun_StringFlags(char *str, int start, PyObject *globals, PyObject *locals,
 		  PyCompilerFlags *flags)
 {
 	return run_err_node(PyParser_SimpleParseStringFlags(
-				str, start,
-				(flags && flags->cf_flags & PyCF_GENERATORS) ?
+			str, start,
+			(flags && flags->cf_flags & CO_GENERATOR_ALLOWED) ?
 				PyPARSE_YIELD_IS_KEYWORD : 0),
 			    "<string>", globals, locals, flags);
 }
@@ -1028,7 +1028,7 @@ PyRun_FileExFlags(FILE *fp, char *filename, int start, PyObject *globals,
 		  PyObject *locals, int closeit, PyCompilerFlags *flags)
 {
 	node *n = PyParser_SimpleParseFileFlags(fp, filename, start,
-			(flags && flags->cf_flags & PyCF_GENERATORS) ?
+			(flags && flags->cf_flags & CO_GENERATOR_ALLOWED) ?
 				PyPARSE_YIELD_IS_KEYWORD : 0);
 	if (closeit)
 		fclose(fp);
@@ -1085,18 +1085,8 @@ run_pyc_file(FILE *fp, char *filename, PyObject *globals, PyObject *locals,
 	}
 	co = (PyCodeObject *)v;
 	v = PyEval_EvalCode(co, globals, locals);
-	if (v && flags) {
-		if (co->co_flags & CO_NESTED)
-			flags->cf_flags |= PyCF_NESTED_SCOPES;
-		if (co->co_flags & CO_GENERATOR_ALLOWED)
-			flags->cf_flags |= PyCF_GENERATORS;
-#if 0
-		fprintf(stderr, "run_pyc_file: nested_scopes: %d\n",
-			flags->cf_flags & PyCF_NESTED_SCOPES);
-		fprintf(stderr, "run_pyc_file: generators: %d\n",
-			flags->cf_flags & PyCF_GENERATORS);
-#endif
-	}
+	if (v && flags)
+		flags->cf_flags |= (co->co_flags & PyCF_MASK);
 	Py_DECREF(co);
 	return v;
 }
@@ -1114,7 +1104,7 @@ Py_CompileStringFlags(char *str, char *filename, int start,
 	node *n;
 	PyCodeObject *co;
 	n = PyParser_SimpleParseStringFlags(str, start,
-		(flags && flags->cf_flags & PyCF_GENERATORS) ?
+		(flags && flags->cf_flags & CO_GENERATOR_ALLOWED) ?
 			PyPARSE_YIELD_IS_KEYWORD : 0);
 	if (n == NULL)
 		return NULL;
