@@ -40,9 +40,6 @@ extern int GrafObj_Convert(PyObject *, GrafPtr *);
 extern PyObject *BMObj_New(BitMapPtr);
 extern int BMObj_Convert(PyObject *, BitMapPtr *);
 
-extern PyObject *PMObj_New(PixMapHandle);
-extern int PMObj_Convert(PyObject *, PixMapHandle *);
-
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <Lists.h>
@@ -563,10 +560,39 @@ static PyObject *ListObj_getattr(self, name)
 	ListObject *self;
 	char *name;
 {
+	{
+		/* XXXX Should we HLock() here?? */
+		if ( strcmp(name, "listFlags") == 0 )
+			return Py_BuildValue("l", (long)(*self->ob_itself)->listFlags & 0xff);
+		if ( strcmp(name, "selFlags") == 0 )
+			return Py_BuildValue("l", (long)(*self->ob_itself)->selFlags & 0xff);
+	}
 	return Py_FindMethodInChain(&ListObj_chain, (PyObject *)self, name);
 }
 
-#define ListObj_setattr NULL
+static int
+ListObj_setattr(self, name, value)
+	ListObject *self;
+	char *name;
+	PyObject *value;
+{
+	long intval;
+		
+	if ( value == NULL || !PyInt_Check(value) )
+		return -1;
+	intval = PyInt_AsLong(value);
+	if (strcmp(name, "listFlags") == 0 ) {
+		/* XXXX Should we HLock the handle here?? */
+		(*self->ob_itself)->listFlags = intval;
+		return 0;
+	}
+	if (strcmp(name, "selFlags") == 0 ) {
+		(*self->ob_itself)->selFlags = intval;
+		return 0;
+	}
+	return -1;
+}
+
 
 PyTypeObject List_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
