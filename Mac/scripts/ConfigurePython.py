@@ -224,12 +224,6 @@ def main():
 	n = n + mkcorealias('PythonCorePPC', ':build.macppc.shared:PythonCorePPC')
 	n = n + mkcorealias('PythonCoreCFM68K', ':build.mac68k.shared:PythonCoreCFM68K')
 	
-	# Install NumPy
-	if os.path.exists(':Extensions:NumPy:macmkaliases.py'):
-		MacOS.splash(SPLASH_NUMPY)
-		os.chdir(':Extensions:NumPy')
-		import macmkaliases
-		err = macmkaliases.main()
 	if verbose and n == 0:
 		sys.exit(1)
 			
