@@ -25,7 +25,6 @@ __version__ = "2.5"
 # Imports
 # =======
 
-import string
 import sys
 import os
 import urllib
@@ -125,7 +124,7 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
         if ctype == 'multipart/form-data':
             return parse_multipart(fp, pdict)
         elif ctype == 'application/x-www-form-urlencoded':
-            clength = string.atoi(environ['CONTENT_LENGTH'])
+            clength = int(environ['CONTENT_LENGTH'])
             if maxlen and clength > maxlen:
                 raise ValueError, 'Maximum content length exceeded'
             qs = fp.read(clength)
@@ -203,8 +202,8 @@ def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
                 raise ValueError, "bad query field: %s" % `name_value`
             continue
         if len(nv[1]) or keep_blank_values:
-            name = urllib.unquote(string.replace(nv[0], '+', ' '))
-            value = urllib.unquote(string.replace(nv[1], '+', ' '))
+            name = urllib.unquote(nv[0].replace('+', ' '))
+            value = urllib.unquote(nv[1].replace('+', ' '))
             r.append((name, value))
 
     return r
@@ -249,8 +248,8 @@ def parse_multipart(fp, pdict):
             clength = headers.getheader('content-length')
             if clength:
                 try:
-                    bytes = string.atoi(clength)
-                except string.atoi_error:
+                    bytes = int(clength)
+                except ValueError:
                     pass
             if bytes > 0:
                 if maxlen and bytes > maxlen:
@@ -266,7 +265,7 @@ def parse_multipart(fp, pdict):
                 terminator = lastpart # End outer loop
                 break
             if line[:2] == "--":
-                terminator = string.strip(line)
+                terminator = line.strip()
                 if terminator in (nextpart, lastpart):
                     break
             lines.append(line)
@@ -282,7 +281,7 @@ def parse_multipart(fp, pdict):
                 elif line[-1:] == "\n":
                     line = line[:-1]
                 lines[-1] = line
-                data = string.joinfields(lines, "")
+                data = "".join(lines)
         line = headers['content-disposition']
         if not line:
             continue
@@ -307,15 +306,15 @@ def parse_header(line):
     Return the main content-type and a dictionary of options.
 
     """
-    plist = map(string.strip, string.splitfields(line, ';'))
-    key = string.lower(plist[0])
+    plist = map(lambda x: x.strip(), line.split(';'))
+    key = plist[0].lower()
     del plist[0]
     pdict = {}
     for p in plist:
-        i = string.find(p, '=')
+        i = p.find('=')
         if i >= 0:
-            name = string.lower(string.strip(p[:i]))
-            value = string.strip(p[i+1:])
+            name = p[:i].strip().lower()
+            value = p[i+1:].strip()
             if len(value) >= 2 and value[0] == value[-1] == '"':
                 value = value[1:-1]
             pdict[name] = value
@@ -426,7 +425,7 @@ class FieldStorage:
         self.keep_blank_values = keep_blank_values
         self.strict_parsing = strict_parsing
         if environ.has_key('REQUEST_METHOD'):
-            method = string.upper(environ['REQUEST_METHOD'])
+            method = environ['REQUEST_METHOD'].upper()
         if method == 'GET' or method == 'HEAD':
             if environ.has_key('QUERY_STRING'):
                 qs = environ['QUERY_STRING']
@@ -490,7 +489,7 @@ class FieldStorage:
         clen = -1
         if self.headers.has_key('content-length'):
             try:
-                clen = string.atoi(self.headers['content-length'])
+                clen = int(self.headers['content-length'])
             except:
                 pass
             if maxlen and clen > maxlen:
@@ -647,7 +646,7 @@ class FieldStorage:
                 self.done = -1
                 break
             if line[:2] == "--":
-                strippedline = string.strip(line)
+                strippedline = line.strip()
                 if strippedline == next:
                     break
                 if strippedline == last:
@@ -676,7 +675,7 @@ class FieldStorage:
                 self.done = -1
                 break
             if line[:2] == "--":
-                strippedline = string.strip(line)
+                strippedline = line.strip()
                 if strippedline == next:
                     break
                 if strippedline == last:
@@ -771,12 +770,12 @@ class InterpFormContentDict(SvFormContentDict):
     """This class is present for backwards compatibility only."""
     def __getitem__(self, key):
         v = SvFormContentDict.__getitem__(self, key)
-        if v[0] in string.digits + '+-.':
-            try: return string.atoi(v)
+        if v[0] in '0123456789+-.':
+            try: return int(v)
             except ValueError:
-                try: return string.atof(v)
+                try: return float(v)
                 except ValueError: pass
-        return string.strip(v)
+        return v.strip()
     def values(self):
         result = []
         for key in self.keys():
@@ -812,7 +811,7 @@ class FormContent(FormContentDict):
     def length(self, key):
         return len(self.dict[key])
     def stripped(self, key):
-        if self.dict.has_key(key): return string.strip(self.dict[key][0])
+        if self.dict.has_key(key): return self.dict[key][0].strip()
         else: return None
     def pars(self):
         return self.dict
@@ -870,7 +869,7 @@ def print_exception(type=None, value=None, tb=None, limit=None):
     list = traceback.format_tb(tb, limit) + \
            traceback.format_exception_only(type, value)
     print "<PRE>%s<B>%s</B></PRE>" % (
-        escape(string.join(list[:-1], "")),
+        escape("".join(list[:-1])),
         escape(list[-1]),
         )
     del tb
@@ -972,11 +971,11 @@ environment as well.  Here are some common variable names:
 
 def escape(s, quote=None):
     """Replace special characters '&', '<' and '>' by SGML entities."""
-    s = string.replace(s, "&", "&amp;") # Must be done first!
-    s = string.replace(s, "<", "&lt;")
-    s = string.replace(s, ">", "&gt;",)
+    s = s.replace("&", "&amp;") # Must be done first!
+    s = s.replace("<", "&lt;")
+    s = s.replace(">", "&gt;")
     if quote:
-        s = string.replace(s, '"', "&quot;")
+        s = s.replace('"', "&quot;")
     return s
 
 
