@@ -304,7 +304,7 @@ PyCursesPanel_set_panel_userptr(PyCursesPanelObject *self, PyObject *args)
     }
     obj = PyTuple_GetItem(args, 0);
     Py_INCREF(obj);
-    return PyCursesCheckERR(set_panel_userptr(self->pan, obj),
+    return PyCursesCheckERR(set_panel_userptr(self->pan, (void*)obj),
                             "set_panel_userptr");
 }
 
