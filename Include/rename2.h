@@ -388,24 +388,12 @@ PERFORMANCE OF THIS SOFTWARE.
 #define mkvalue Py_BuildValue
 #define vmkvalue Py_VaBuildValue
 #define getargs PyArg_Parse
-#define vgetargs PyArgs_VaParse
+#define vgetargs PyArg_VaParse
 #define newgetargs PyArg_ParseTuple
-#define getichararg PyArg_GetChar
-#define getidoublearray PyArg_GetDoubleArray
-#define getifloatarg PyArg_GetFloat
-#define getifloatarray PyArg_GetFloatArray
-#define getnoarg(v) PyArg_NoArgs(v)
+#define getnoarg(v) PyArg_Parse((v), "")
 #define getintarg(v,a) getargs((v),"i",(a))
 #define getlongarg(v,a) getargs((v),"l",(a))
 #define getstrarg(v,a) getargs((v),"s",(a))
-#define getilongarg PyArg_GetLong
-#define getilongarray PyArg_GetLongArray
-#define getilongarraysize PyArg_GetLongArraySize
-#define getiobjectarg PyArg_GetObject
-#define getishortarg PyArg_GetShort
-#define getishortarray PyArg_GetShortArray
-#define getishortarraysize PyArg_GetShortArraySize
-#define getistringarg PyArg_GetString
 #define err_badarg PyErr_BadArgument
 #define err_badcall PyErr_BadInternalCall
 #define err_nomem PyErr_NoMemory
