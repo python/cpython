@@ -55,6 +55,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- thread.interrupt_main() raises KeyboardInterrupt in the main thread.
+  dummy_thread has also been modified to try to simulate the behavior.
+
 - array.array.insert() now treats negative indices as being relative
   to the end of the array, just like list.insert() does. (SF bug #739313)
 
