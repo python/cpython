@@ -17,7 +17,7 @@ class seq(base_set):
 
 def check(ok, *args):
     if not ok:
-        raise TestFailed, join(map(str, args), " ")
+        raise TestFailed, " ".join(map(str, args))
 
 a = base_set(1)
 b = set(1)
@@ -60,5 +60,62 @@ except TypeError:
 try:
 	None in 'abc'
 	check(0, "None in 'abc' did not raise error")
+except TypeError:
+	pass
+
+# Test char in Unicode
+
+check('c' in u'abc', "'c' not in u'abc'")
+check('d' not in u'abc', "'d' in u'abc'")
+
+try:
+	'' in u'abc'
+	check(0, "'' in u'abc' did not raise error")
+except TypeError:
+	pass
+
+try:
+	'ab' in u'abc'
+	check(0, "'ab' in u'abc' did not raise error")
+except TypeError:
+	pass
+
+try:
+	None in u'abc'
+	check(0, "None in u'abc' did not raise error")
+except TypeError:
+	pass
+
+# Test Unicode char in Unicode
+
+check(u'c' in u'abc', "u'c' not in u'abc'")
+check(u'd' not in u'abc', "u'd' in u'abc'")
+
+try:
+	u'' in u'abc'
+	check(0, "u'' in u'abc' did not raise error")
+except TypeError:
+	pass
+
+try:
+	u'ab' in u'abc'
+	check(0, "u'ab' in u'abc' did not raise error")
+except TypeError:
+	pass
+
+# Test Unicode char in string
+
+check(u'c' in 'abc', "u'c' not in 'abc'")
+check(u'd' not in 'abc', "u'd' in 'abc'")
+
+try:
+	u'' in 'abc'
+	check(0, "u'' in 'abc' did not raise error")
+except TypeError:
+	pass
+
+try:
+	u'ab' in 'abc'
+	check(0, "u'ab' in 'abc' did not raise error")
 except TypeError:
 	pass
