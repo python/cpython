@@ -1,0 +1,7 @@
+/* Localized versions of Info.plist keys */
+
+CFBundleName = "%(appletname)s";
+CFBundleShortVersionString = "%(appletname)s";
+CFBundleGetInfoString = "%(appletname)s, a Python application";
+CFBundleLongVersionString = "";
+NSHumanReadableCopyright = "";

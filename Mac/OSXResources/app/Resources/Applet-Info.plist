@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist SYSTEM "file://localhost/System/Library/DTDs/PropertyList.dtd">
+<plist version="0.9">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeOSTypes</key>
+			<array>
+				<string>****</string>
+				<string>fold</string>
+				<string>disk</string>
+			</array>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+		</dict>
+	</array>
+	<key>CFBundleExecutable</key>
+	<string>python</string>
+
+	<key>CFBundleGetInfoString</key>
+	<string>%(appletname)s, a Python applet</string>
+
+	<key>CFBundleIconFile</key>
+	<string>PythonApplet.icns</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.python.defaultapplet</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>%(appletname)s</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSignature</key>
+	<string>PytA</string>
+	<key>CFBundleVersion</key>
+	<string>2.2</string>
+	<key>LSRequiresCarbon</key>
+    <true/>
+	<key>CSResourcesFileMapped</key>
+	<true/>
+</dict>
+</plist>
