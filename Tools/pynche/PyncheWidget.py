@@ -23,6 +23,7 @@ class PyncheWidget:
         self.__listwin = None
         self.__detailswin = None
         self.__helpwin = None
+        self.__dialogstate = {}
         modal = self.__modal = not not master
         # If a master was given, we are running as a modal dialog servant to
         # some other application.  We rearrange our UI in this case (there's
@@ -51,8 +52,11 @@ class PyncheWidget:
         #
         # File menu
         #
+        filemenu = self.__filemenu = Menu(menubar, tearoff=0)
+        filemenu.add_command(label='Load palette...',
+                             command=self.__load,
+                             underline=0)
         if not modal:
-            filemenu = self.__filemenu = Menu(menubar, tearoff=0)
             filemenu.add_command(label='Quit',
                                  command=self.__quit,
                                  accelerator='Alt-Q',
@@ -66,7 +70,7 @@ class PyncheWidget:
                              underline=0)
         viewmenu.add_command(label='Color List Window...',
                              command=self.__popup_listwin,
-                             underline=0)
+                             underline=6)
         viewmenu.add_command(label='Details Window...',
                              command=self.__popup_details,
                              underline=0)
@@ -185,6 +189,33 @@ email:   bwarsaw@python.org''' % __version__)
             self.__detailswin = DetailsViewer(self.__sb, self.__root)
             self.__sb.add_view(self.__detailswin)
         self.__detailswin.deiconify()
+
+    def __load(self, event=None):
+        import FileDialog
+        import ColorDB
+        while 1:
+            d = FileDialog.FileDialog(self.__root)
+            file = d.go(pattern='*.txt', key=self.__dialogstate)
+            if file is None:
+                # cancel button
+                return
+            try:
+                colordb = ColorDB.get_colordb(file)
+            except IOError:
+                tkMessageBox.showerror('Read error', '''\
+Could not open file for reading:
+%s''' % file)
+                continue
+            if colordb is None:
+                tkMessageBox.showerror('Unrecognized color file type', '''\
+Unrecognized color file type in file:
+%s''' % file)
+                continue
+            break
+        self.__sb.set_colordb(colordb)
+        if self.__listwin:
+            self.__listwin.flush()
+        self.__sb.update_views_current()
 
     def withdraw(self):
         self.__root.withdraw()

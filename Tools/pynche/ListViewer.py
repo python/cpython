@@ -45,35 +45,7 @@ class ListViewer:
         canvas.pack(fill=BOTH, expand=1)
         canvas.configure(yscrollcommand=(self.__scrollbar, 'set'))
         self.__scrollbar.configure(command=(canvas, 'yview'))
-        #
-        # create all the buttons
-        colordb = switchboard.colordb()
-        row = 0
-        widest = 0
-        bboxes = self.__bboxes = []
-        for name in colordb.unique_names():
-            exactcolor = ColorDB.triplet_to_rrggbb(colordb.find_byname(name))
-            canvas.create_rectangle(5, row*20 + 5,
-                                    20, row*20 + 20,
-                                    fill=exactcolor)
-            textid = canvas.create_text(25, row*20 + 13,
-                                        text=name,
-                                        anchor=W)
-            x1, y1, textend, y2 = canvas.bbox(textid)
-            boxid = canvas.create_rectangle(3, row*20+3,
-                                            textend+3, row*20 + 23,
-                                            outline='',
-                                            tags=(exactcolor,))
-            canvas.bind('<ButtonRelease>', self.__onrelease)
-            bboxes.append(boxid)
-            if textend+3 > widest:
-                widest = textend+3
-            row = row + 1
-        canvheight = (row-1)*20 + 25
-        canvas.config(scrollregion=(0, 0, 150, canvheight))
-        for box in bboxes:
-            x1, y1, x2, y2 = canvas.coords(box)
-            canvas.coords(box, x1, y1, widest, y2)
+        self.__populate()
         #
         # Update on click
         self.__uoc = BooleanVar()
@@ -90,6 +62,38 @@ class ListViewer:
         self.__aliases = Listbox(root, height=5,
                                  selectmode=BROWSE)
         self.__aliases.pack(expand=1, fill=BOTH)
+
+    def __populate(self):
+        #
+        # create all the buttons
+        colordb = self.__sb.colordb()
+        canvas = self.__canvas
+        row = 0
+        widest = 0
+        bboxes = self.__bboxes = []
+        for name in colordb.unique_names():
+            exactcolor = ColorDB.triplet_to_rrggbb(colordb.find_byname(name))
+            canvas.create_rectangle(5, row*20 + 5,
+                                    20, row*20 + 20,
+                                    fill=exactcolor)
+            textid = canvas.create_text(25, row*20 + 13,
+                                        text=name,
+                                        anchor=W)
+            x1, y1, textend, y2 = canvas.bbox(textid)
+            boxid = canvas.create_rectangle(3, row*20+3,
+                                            textend+3, row*20 + 23,
+                                            outline='',
+                                            tags=(exactcolor, 'all'))
+            canvas.bind('<ButtonRelease>', self.__onrelease)
+            bboxes.append(boxid)
+            if textend+3 > widest:
+                widest = textend+3
+            row = row + 1
+        canvheight = (row-1)*20 + 25
+        canvas.config(scrollregion=(0, 0, 150, canvheight))
+        for box in bboxes:
+            x1, y1, x2, y2 = canvas.coords(box)
+            canvas.coords(box, x1, y1, widest, y2)
 
     def __onrelease(self, event=None):
         canvas = self.__canvas
@@ -164,3 +168,7 @@ class ListViewer:
 
     def save_options(self, optiondb):
         optiondb['UPONCLICK'] = self.__uoc.get()
+
+    def flush(self):
+        self.__canvas.delete('all')
+        self.__populate()

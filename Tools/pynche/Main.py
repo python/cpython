@@ -49,7 +49,7 @@ Where:
 
 """
 
-__version__ = '0.1'
+__version__ = '0.2'
 
 import sys
 import os
@@ -120,19 +120,27 @@ def initial_color(s, colordb):
 
 
 def build(master=None, initialcolor=None, initfile=None, ignore=None):
-    # create the windows and go
-    for f in RGB_TXT:
-	try:
-	    colordb = ColorDB.get_colordb(f)
-            if colordb:
-                break
-	except IOError:
-	    pass
-    else:
-        usage(1, 'No color database file found, see the -d option.')
-
     # create all output widgets
-    s = Switchboard(colordb, not ignore and initfile)
+    s = Switchboard(not ignore and initfile)
+
+    # load the color database
+    colordb = None
+    try:
+        dbfile = s.optiondb()['DBFILE']
+        colordb = ColorDB.get_colordb(dbfile)
+    except (KeyError, IOError):
+        # scoot through the files listed above to try to find a usable color
+        # database file
+        for f in RGB_TXT:
+            try:
+                colordb = ColorDB.get_colordb(f)
+                if colordb:
+                    break
+            except IOError:
+                pass
+    if not colordb:
+        usage(1, 'No color database file found, see the -d option.')
+    s.set_colordb(colordb)
 
     # create the application window decorations
     app = PyncheWidget(__version__, s, master=master)
