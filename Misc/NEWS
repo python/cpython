@@ -199,7 +199,11 @@ Windows
   Win64.  This means that, for example, you can use f.tell() and f.seek()
   to manipulate files larger than 2 gigabytes (provided you have enough
   disk space, and are using a Windows filesystem that supports large
-  partitions).
+  partitions).  Windows filesystem limits:  FAT has a 2GB (gigabyte)
+  filesize limit, and large file support makes no difference there.
+  FAT32's limit is 4GB, and files >= 2GB are easier to use from Python now.
+  NTFS has no practical limit on file size, and files of any size can be
+  used from Python now.
 
 - The w9xpopen hack is now used on Windows NT and 2000 too when COMPSPEC
   points to command.com (patch from Brian Quinlan).
