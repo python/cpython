@@ -1,6 +1,8 @@
 # Module 'commands'
 #
 # Various tools for executing commands and looking at their output and status.
+#
+# NB This only works (and is only relevant) for UNIX.
 
 
 # Get 'ls -l' status for an object into a string
@@ -33,8 +35,8 @@ def getstatusoutput(cmd):
 # Make command argument from directory and pathname (prefix space, add quotes).
 #
 def mk2arg(head, x):
-	import path
-	return mkarg(path.join(head, x))
+	import posixpath
+	return mkarg(posixpath.join(head, x))
 
 
 # Make a shell command argument from a string.
