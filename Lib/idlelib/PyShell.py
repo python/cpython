@@ -318,7 +318,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def spawn_subprocess(self):
         args = self.subprocess_arglist
-        self.rpcpid = os.spawnv(os.P_NOWAIT, args[0], args)
+        self.rpcpid = os.spawnv(os.P_NOWAIT, sys.executable, args)
 
     def build_subprocess_arglist(self):
         w = ['-W' + s for s in sys.warnoptions]
@@ -331,7 +331,12 @@ class ModifiedInterpreter(InteractiveInterpreter):
             command = "__import__('idlelib.run').run.main(" + `del_exitf` +")"
         else:
             command = "__import__('run').main(" + `del_exitf` + ")"
-        return [sys.executable] + w + ["-c", command, str(self.port)]
+        if sys.platform[:3] == 'win' and ' ' in sys.executable:
+            # handle embedded space in path by quoting the argument
+            decorated_exec = '"%s"' % sys.executable
+        else:
+            decorated_exec = sys.executable
+        return [decorated_exec] + w + ["-c", command, str(self.port)]
 
     def start_subprocess(self):
         addr = (LOCALHOST, self.port)
