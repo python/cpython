@@ -730,6 +730,8 @@ sub do_cmd_memberlineni{
 
 @col_aligns = ("<td>", "<td>", "<td>", "<td>");
 
+$TABLE_HEADER_BGCOLOR = $NAV_BGCOLOR;
+
 sub setup_column_alignments{
     local($_) = @_;
     my($a1,$a2,$a3,$a4) = split(/[|]/,$_);
@@ -760,8 +762,9 @@ sub do_env_tableii{
         if ($font eq 'textrm');
     $globals{'lineifont'} = $font;
     return '<table border align=center>'
-           . "\n  <tr>$th1<b>$h1</b></th>"
-	   . "\n      $th2<b>$h2</b></th>"
+           . "\n  <tr$TABLE_HEADER_BGCOLOR>"
+	   . "\n    $th1<b>$h1</b></th>"
+	   . "\n    $th2<b>$h2</b></th>"
 	   . $_
 	   . "\n</table>";
 }
@@ -777,7 +780,7 @@ sub do_cmd_lineii{
     }
     my($c1align,$c2align) = @col_aligns[0,1];
     return "<tr>$c1align$sfont$c1$efont</td>\n"
-           . "      $c2align$c2</td>"
+           . "      $c2align$c2\&nbsp;</td>"
 	   . $_;
 }
 
@@ -792,9 +795,10 @@ sub do_env_tableiii{
         if ($font eq 'textrm');
     $globals{'lineifont'} = $font;
     return '<table border align=center>'
-           . "\n  <tr>$th1<b>$h1</b></th>"
-	   . "\n      $th2<b>$h2</b></th>"
-	   . "\n      $th3<b>$h3</b></th>"
+           . "\n  <tr$TABLE_HEADER_BGCOLOR>"
+	   . "\n    $th1<b>$h1</b></th>"
+	   . "\n    $th2<b>$h2</b></th>"
+	   . "\n    $th3<b>$h3</b></th>"
 	   . $_
 	   . "\n</table>";
 }
@@ -812,7 +816,7 @@ sub do_cmd_lineiii{
     my($c1align,$c2align,$c3align) = @col_aligns[0,1,2];
     return "<tr>$c1align$sfont$c1$efont</td>\n"
            . "      $c2align$c2</td>\n"
-	   . "      $c3align$c3</td>"
+	   . "      $c3align$c3\&nbsp;</td>"
 	   . $_;
 }
 
@@ -828,10 +832,11 @@ sub do_env_tableiv{
         if ($font eq 'textrm');
     $globals{'lineifont'} = $font;
     return '<table border align=center>'
-           . "\n  <tr>$th1<b>$h1</b></th>"
-	   . "\n      $th2<b>$h2</b></th>"
-	   . "\n      $th3<b>$h3</b></th>"
-	   . "\n      $th4<b>$h4</b></th>"
+           . "\n  <tr$TABLE_HEADER_BGCOLOR>"
+	   . "\n    $th1<b>$h1</b></th>"
+	   . "\n    $th2<b>$h2</b></th>"
+	   . "\n    $th3<b>$h3</b></th>"
+	   . "\n    $th4<b>$h4</b></th>"
 	   . $_
 	   . "\n</table>";
 }
@@ -851,7 +856,7 @@ sub do_cmd_lineiv{
     return "<tr>$c1align$sfont$c1$efont</td>\n"
            . "      $c2align$c2</td>\n"
 	   . "      $c3align$c3</td>\n"
-	   . "      $c4align$c4</td>"
+	   . "      $c4align$c4\&nbsp;</td>"
 	   . $_;
 }
 
