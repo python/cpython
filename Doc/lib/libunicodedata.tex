@@ -21,6 +21,19 @@ UnicodeData File Format 3.0.0 (see
 \url{http://www.unicode.org/Public/UNIDATA/UnicodeData.html}).  It
 defines the following functions:
 
+\begin{funcdesc}{lookup}{name}
+  Look up character by name.  If a character with the
+  given name is found, return the corresponding Unicode
+  character.  If not found, \exception{KeyError} is raised.
+\end{funcdesc}
+
+\begin{funcdesc}{name}{unichr\optional{, default}}
+  Returns the name assigned to the Unicode character
+  \var{unichr} as a string. If no name is defined,
+  \var{default} is returned, or, if not given,
+  \exception{ValueError} is raised.
+\end{funcdesc}
+
 \begin{funcdesc}{decimal}{unichr\optional{, default}}
   Returns the decimal value assigned to the Unicode character
   \var{unichr} as integer. If no such value is defined,
