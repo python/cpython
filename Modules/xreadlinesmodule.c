@@ -82,13 +82,6 @@ xreadlines_item(PyXReadlinesObject *a, int i)
 }
 
 static PyObject *
-xreadlines_getiter(PyXReadlinesObject *a)
-{
-	Py_INCREF(a);
-	return (PyObject *)a;
-}
-
-static PyObject *
 xreadlines_iternext(PyXReadlinesObject *a)
 {
 	PyObject *res;
@@ -159,7 +152,7 @@ static PyTypeObject XReadlinesObject_Type = {
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
-	(getiterfunc)xreadlines_getiter,	/* tp_iter */
+	PyObject_GenericGetIter,		/* tp_iter */
 	(iternextfunc)xreadlines_iternext,	/* tp_iternext */
 };
 

@@ -141,13 +141,6 @@ logreader_fileno(LogReaderObject *self)
     return PyInt_FromLong(fileno(self->logfp));
 }
 
-static PyObject *
-logreader_tp_iter(LogReaderObject *self)
-{
-    Py_INCREF(self);
-    return (PyObject *) self;
-}
-
 
 /* Log File Format
  * ---------------
@@ -1352,7 +1345,7 @@ static PyTypeObject LogReaderType = {
     0,					/* tp_clear		*/
     0,					/* tp_richcompare	*/
     0,					/* tp_weaklistoffset	*/
-    (getiterfunc)logreader_tp_iter,	/* tp_iter		*/
+    PyObject_GenericGetIter,		/* tp_iter		*/
     (iternextfunc)logreader_tp_iternext,/* tp_iternext		*/
     logreader_methods,			/* tp_methods		*/
     logreader_members,			/* tp_members		*/
