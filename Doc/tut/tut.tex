@@ -1497,8 +1497,15 @@ cannot reference variables from the containing scope, but this can be
 overcome through the judicious use of default argument values, e.g.
 
 \begin{verbatim}
-def make_incrementor(n):
-    return lambda x, incr=n: x+incr
+>>> def make_incrementor(n):
+...     return lambda x, incr=n: x+incr
+...
+>>> f = make_incrementor(42)
+>>> f(0)
+42
+>>> f(1)
+43
+>>>
 \end{verbatim}
 
 
