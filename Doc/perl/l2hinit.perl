@@ -28,40 +28,6 @@ $ICONSERVER = '../icons';
 
 $CHILDLINE = "\n<p><hr>\n";
 $VERBOSITY = 0;
-$TEXINPUTS = '';		# avoid bogus l2h setting it to ':' !!!
-
-
-sub absolutize_path{
-    my $path = @_[0];
-    my $npath = '';
-    foreach $dir (split $envkey, $path) {
-	$npath .= make_directory_absolute($dir) . $envkey;
-    }
-    $npath =~ s/$envkey$//;
-    $npath;
-}
-# This is done because latex2html doesn't do this for us, but does change the
-# directory out from under us.
-if (defined $ENV{'TEXINPUTS'}) {
-    $ENV{'TEXINPUTS'} = absolutize_path($ENV{'TEXINPUTS'});
-}
-
-# Locate a file that's been "require"d.  Assumes that the file name of interest
-# is unique within the set of loaded files, after directory names have been
-# stripped.  Only the directory is returned.
-#
-sub find_my_file{
-    my($myfile,$key,$tmp,$mydir) = (@_[0], '', '', '');
-    foreach $key (keys %INC) {
-	$tmp = "$key";
-	$tmp =~ s|^.*/||o;
-	if ($tmp eq $myfile) {
-	    $mydir = $INC{$key};
-	}
-    }
-    $mydir =~ s|/[^/]*$||;
-    $mydir;
-}
 
 
 # A little painful, but lets us clean up the top level directory a little,
@@ -77,6 +43,35 @@ $LATEX2HTMLSTYLES = "$mydir$envkey$LATEX2HTMLSTYLES";
 
 ($myrootname, $myrootdir, $myext) = fileparse($mydir, '\..*');
 chop $myrootdir;
+
+
+# Hackish way to get the appropriate paper-*/ directory into $TEXINPUTS;
+# pass in the paper size (a4 or letter) as the environment variable PAPER
+# to add the right directory.  If not given, the current directory is
+# added instead for use with HOWTO processing.
+#
+if (defined $ENV{'PAPER'}) {
+    $mytexinputs = "$myrootdir${dd}paper-$ENV{'PAPER'}$envkey";
+}
+else {
+    $mytexinputs = getcwd() . $envkey;
+}
+$mytexinputs .= "$myrootdir${dd}texinputs";
+
+
+sub custom_driver_hook{
+    #
+    # This adds the directory of the main input file to $TEXINPUTS; it
+    # seems to be sufficiently general that it should be fine for HOWTO
+    # processing.
+    #
+    my $file = @_[0];
+    my($jobname,$dir,$ext) = fileparse($file, '\..*');
+    $dir = make_directory_absolute($dir);
+    $dir =~ s/$dd$//;
+    $TEXINPUTS = "$dir$envkey$mytexinputs";
+    print "\nadding $dir to \$TEXINPUTS\n";
+}
 
 
 sub make_nav_panel{

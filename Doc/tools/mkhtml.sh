@@ -19,10 +19,11 @@ if [ -d $part ] ; then
     rm -f $part/*.html
 fi
 
-echo "latex2html -init_file $srcdir/perl/l2hinit.perl ${1:+$@} " \
- "$srcdir/$part/$part.tex"
+echo "latex2html -init_file $srcdir/perl/l2hinit.perl -dir $part " \
+ "${1:+$@} $srcdir/$part/$part.tex"
 latex2html \
  -init_file $srcdir/perl/l2hinit.perl \
+ -dir $part \
  ${1:+$@} \
  $srcdir/$part/$part.tex
 
