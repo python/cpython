@@ -159,7 +159,9 @@ sub do_cmd_dfn{
 sub do_cmd_emph{
     return use_italics(@_); }
 sub do_cmd_file{
-    return use_wrappers(@_[0], '"<tt class=file>', '</tt>"'); }
+    return use_wrappers(@_[0], '<tt class=file>', '</tt>'); }
+sub do_cmd_filenq{
+    return use_wrappers(@_[0], '<tt class=file>', '</tt>'); }
 sub do_cmd_samp{
     return use_wrappers(@_[0], '"<tt class=samp>', '</tt>"'); }
 sub do_cmd_kbd{
@@ -789,6 +791,19 @@ sub get_th{
     return $r;
 }
 
+sub fix_font{
+    # do a little magic on a font name to get the right behavior in the first
+    # column of the output table
+    my $font = @_[0];
+    if ($font eq 'textrm') {
+	$font = '';
+    }
+    elsif ($font eq 'file' || $font eq 'filenq') {
+	$font = 'tt class=file';
+    }
+    return $font;
+}
+
 sub setup_column_alignments{
     local($_) = @_;
     my($a1,$a2,$a3,$a4) = split(/[|]/,$_);
@@ -804,56 +819,60 @@ sub setup_column_alignments{
 sub do_env_tableii{
     local($_) = @_;
     my($th1,$th2,$th3,$th4) = setup_column_alignments(next_argument());
-    my $font = next_argument();
+    my $font = fix_font(next_argument());
     my $h1 = next_argument();
     my $h2 = next_argument();
-    $font = ''
-        if ($font eq 'textrm');
+    s/[\s\n]+//;
     $globals{'lineifont'} = $font;
-    return '<table border align=center><thead>'
-           . "\n  <tr$TABLE_HEADER_BGCOLOR>"
-	   . "\n    $th1<b>$h1</b></th>"
-	   . "\n    $th2<b>$h2</b></th>"
-	   . "\n</thead>"
-	   . "\n<tbody valign=baseline>"
+    return '<table border align=center>'
+           . "\n  <thead>"
+           . "\n    <tr$TABLE_HEADER_BGCOLOR>"
+	   . "\n      $th1<b>$h1</b></th>"
+	   . "\n      $th2<b>$h2</b></th>"
+	   . "\n    </thead>"
+	   . "\n  <tbody valign=baseline>"
 	   . $_
-	   . "\n</tbody></table>";
+	   . "\n    </tbody>"
+	   . "\n</table>";
 }
 
 sub do_cmd_lineii{
     local($_) = @_;
     my $c1 = next_argument();
     my $c2 = next_argument();
+    s/[\s\n]+//;
     my($font,$sfont,$efont) = ($globals{'lineifont'}, '', '');
     if ($font) {
 	$sfont = "<$font>";
 	$efont = "</$font>";
+	$efont =~ s/ .*>/>/;
     }
     my($c1align,$c2align) = @col_aligns[0,1];
-    return "<tr>$c1align$sfont$c1$efont</td>\n"
-           . "      $c2align$c2\&nbsp;</td>"
+    return "\n    <tr>$c1align$sfont$c1$efont</td>\n"
+           . "        $c2align$c2\&nbsp;</td>"
 	   . $_;
 }
 
 sub do_env_tableiii{
     local($_) = @_;
     my($th1,$th2,$th3,$th4) = setup_column_alignments(next_argument());
-    my $font = next_argument();
+    my $font = fix_font(next_argument());
     my $h1 = next_argument();
     my $h2 = next_argument();
     my $h3 = next_argument();
-    $font = ''
-        if ($font eq 'textrm');
+    s/[\s\n]+//;
     $globals{'lineifont'} = $font;
-    return '<table border align=center><thead>'
-           . "\n  <tr$TABLE_HEADER_BGCOLOR>"
-	   . "\n    $th1<b>$h1</b></th>"
-	   . "\n    $th2<b>$h2</b></th>"
-	   . "\n    $th3<b>$h3</b></th>"
-	   . "\n</thead>"
-	   . "\n<tbody valign=baseline>"
+    return '<table border align=center>'
+           . "\n  <thead>"
+           . "\n    <tr$TABLE_HEADER_BGCOLOR>"
+	   . "\n      $th1<b>$h1</b></th>"
+	   . "\n      $th2<b>$h2</b></th>"
+	   . "\n      $th3<b>$h3</b></th>"
+	   . "\n    </thead>"
+	   . "\n  <tbody valign=baseline>"
 	   . $_
-	   . "\n</tbody></table>";
+	   . "\n    </tbody>"
+	   . "\n</table>";
 }
 
 sub do_cmd_lineiii{
@@ -861,39 +880,42 @@ sub do_cmd_lineiii{
     my $c1 = next_argument();
     my $c2 = next_argument(); 
     my $c3 = next_argument();
+    s/[\s\n]+//;
     my($font,$sfont,$efont) = ($globals{'lineifont'}, '', '');
     if ($font) {
 	$sfont = "<$font>";
 	$efont = "</$font>";
+	$efont =~ s/ .*>/>/;
     }
     my($c1align,$c2align,$c3align) = @col_aligns[0,1,2];
-    return "<tr>$c1align$sfont$c1$efont</td>\n"
-           . "      $c2align$c2</td>\n"
-	   . "      $c3align$c3\&nbsp;</td>"
+    return "\n    <tr>$c1align$sfont$c1$efont</td>\n"
+           . "        $c2align$c2</td>\n"
+	   . "        $c3align$c3\&nbsp;</td>"
 	   . $_;
 }
 
 sub do_env_tableiv{
     local($_) = @_;
     my($th1,$th2,$th3,$th4) = setup_column_alignments(next_argument());
-    my $font = next_argument();
+    my $font = fix_font(next_argument());
     my $h1 = next_argument();
     my $h2 = next_argument();
     my $h3 = next_argument();
     my $h4 = next_argument();
-    $font = ''
-        if ($font eq 'textrm');
+    s/[\s\n]+//;
     $globals{'lineifont'} = $font;
-    return '<table border align=center><thead>'
-           . "\n  <tr$TABLE_HEADER_BGCOLOR>"
-	   . "\n    $th1<b>$h1</b></th>"
-	   . "\n    $th2<b>$h2</b></th>"
-	   . "\n    $th3<b>$h3</b></th>"
-	   . "\n    $th4<b>$h4</b></th>"
-	   . "\n</thead>"
-	   . "\n<tbody valign=baseline>"
+    return '<table border align=center>'
+           . "\n  <thead>"
+           . "\n    <tr$TABLE_HEADER_BGCOLOR>"
+	   . "\n      $th1<b>$h1</b></th>"
+	   . "\n      $th2<b>$h2</b></th>"
+	   . "\n      $th3<b>$h3</b></th>"
+	   . "\n      $th4<b>$h4</b></th>"
+	   . "\n    </thead>"
+	   . "\n  <tbody valign=baseline>"
 	   . $_
-	   . "\n</tbody></table>";
+	   . "\n    </tbody>"
+	   . "\n</table>";
 }
 
 sub do_cmd_lineiv{
@@ -902,16 +924,18 @@ sub do_cmd_lineiv{
     my $c2 = next_argument(); 
     my $c3 = next_argument();
     my $c4 = next_argument();
+    s/[\s\n]+//;
     my($font,$sfont,$efont) = ($globals{'lineifont'}, '', '');
     if ($font) {
 	$sfont = "<$font>";
 	$efont = "</$font>";
+	$efont =~ s/ .*>/>/;
     }
     my($c1align,$c2align,$c3align,$c4align) = @col_aligns;
-    return "<tr>$c1align$sfont$c1$efont</td>\n"
-           . "      $c2align$c2</td>\n"
-	   . "      $c3align$c3</td>\n"
-	   . "      $c4align$c4\&nbsp;</td>"
+    return "\n    <tr>$c1align$sfont$c1$efont</td>\n"
+           . "        $c2align$c2</td>\n"
+	   . "        $c3align$c3</td>\n"
+	   . "        $c4align$c4\&nbsp;</td>"
 	   . $_;
 }
 
