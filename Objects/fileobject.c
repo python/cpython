@@ -431,18 +431,14 @@ file_read(f, args)
 	PyFileObject *f;
 	PyObject *args;
 {
-	long bytesrequested;
+	long bytesrequested = -1;
 	size_t bytesread, buffersize, chunksize;
 	PyObject *v;
 	
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (args == NULL)
-		bytesrequested = -1;
-	else {
-		if (!PyArg_Parse(args, "l", &bytesrequested))
-			return NULL;
-	}
+	if (!PyArg_ParseTuple(args, "|l", &bytesrequested))
+		return NULL;
 	if (bytesrequested < 0)
 		buffersize = new_buffersize(f, 0);
 	else
@@ -651,21 +647,16 @@ file_readline(f, args)
 	PyFileObject *f;
 	PyObject *args;
 {
-	int n;
+	int n = -1;
 
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (args == NULL)
-		n = 0; /* Unlimited */
-	else {
-		if (!PyArg_Parse(args, "i", &n))
-			return NULL;
-		if (n == 0)
-			return PyString_FromString("");
-		if (n < 0)
-			n = 0;
-	}
-
+	if (!PyArg_ParseTuple(args, "|i", &n))
+		return NULL;
+	if (n == 0)
+		return PyString_FromString("");
+	if (n < 0)
+		n = 0;
 	return getline(f, n);
 }
 
@@ -674,6 +665,7 @@ file_readlines(f, args)
 	PyFileObject *f;
 	PyObject *args;
 {
+	long sizehint = 0;
 	PyObject *list;
 	PyObject *line;
 	char small_buffer[SMALLCHUNK];
@@ -682,12 +674,13 @@ file_readlines(f, args)
 	PyObject *big_buffer = NULL;
 	size_t nfilled = 0;
 	size_t nread;
+	size_t totalread = 0;
 	char *p, *q, *end;
 	int err;
 
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, "|l", &sizehint))
 		return NULL;
 	if ((list = PyList_New(0)) == NULL)
 		return NULL;
@@ -697,6 +690,7 @@ file_readlines(f, args)
 		nread = fread(buffer+nfilled, 1, buffersize-nfilled, f->f_fp);
 		Py_END_ALLOW_THREADS
 		if (nread == 0) {
+			sizehint = 0;
 			if (nread == 0)
 				break;
 			PyErr_SetFromErrno(PyExc_IOError);
@@ -706,6 +700,7 @@ file_readlines(f, args)
 			list = NULL;
 			goto cleanup;
 		}
+		totalread += nread;
 		p = memchr(buffer+nfilled, '\n', nread);
 		if (p == NULL) {
 			/* Need a larger buffer to fit this line */
@@ -745,12 +740,27 @@ file_readlines(f, args)
 		/* Move the remaining incomplete line to the start */
 		nfilled = end-q;
 		memmove(buffer, q, nfilled);
+		if (sizehint > 0)
+			if (totalread >= (size_t)sizehint)
+				break;
 	}
 	if (nfilled != 0) {
 		/* Partial last line */
 		line = PyString_FromStringAndSize(buffer, nfilled);
 		if (line == NULL)
 			goto error;
+		if (sizehint > 0) {
+			/* Need to complete the last line */
+			PyObject *rest = getline(f, 0);
+			if (rest == NULL) {
+				Py_DECREF(line);
+				goto error;
+			}
+			PyString_Concat(&line, rest);
+			Py_DECREF(rest);
+			if (line == NULL)
+				goto error;
+		}
 		err = PyList_Append(list, line);
 		Py_DECREF(line);
 		if (err != 0)
@@ -833,9 +843,9 @@ static PyMethodDef file_methods[] = {
 	{"flush",	(PyCFunction)file_flush, 0},
 	{"fileno",	(PyCFunction)file_fileno, 0},
 	{"isatty",	(PyCFunction)file_isatty, 0},
-	{"read",	(PyCFunction)file_read, 0},
-	{"readline",	(PyCFunction)file_readline, 0},
-	{"readlines",	(PyCFunction)file_readlines, 0},
+	{"read",	(PyCFunction)file_read, 1},
+	{"readline",	(PyCFunction)file_readline, 1},
+	{"readlines",	(PyCFunction)file_readlines, 1},
 	{"seek",	(PyCFunction)file_seek, 0},
 #ifdef HAVE_FTRUNCATE
 	{"truncate",	(PyCFunction)file_truncate, 0},
