@@ -23,11 +23,6 @@
    time-consuming functions where we need to worry about holding up
    other Python threads.
 
-   We don't need to worry about the string inputs being modified out
-   from underneath us, because string objects are immutable.  However,
-   we do need to make sure we take on ownership, so that the strings
-   are not deleted out from under us during a thread swap.
-
    N.B.
 
    Since ENTER_ZLIB and LEAVE_ZLIB only need to be called on functions
@@ -36,17 +31,17 @@
    there was an de/compress object-specific lock.  However, for the
    moment the ENTER_ZLIB and LEAVE_ZLIB calls are global for ALL
    de/compress objects.
-
  */
 
 static PyThread_type_lock zlib_lock = NULL; /* initialized on module load */
 
 #define ENTER_ZLIB \
-       { Py_BEGIN_ALLOW_THREADS PyThread_acquire_lock(zlib_lock, 1); \
-         Py_END_ALLOW_THREADS
+	Py_BEGIN_ALLOW_THREADS \
+	PyThread_acquire_lock(zlib_lock, 1); \
+	Py_END_ALLOW_THREADS
 
 #define LEAVE_ZLIB \
-       PyThread_release_lock(zlib_lock); }
+	PyThread_release_lock(zlib_lock);
 
 #else
 
