@@ -7,7 +7,7 @@ See tabulate() for output format.
 
 import sys
 import time
-import whrandom
+import random
 import marshal
 import tempfile
 import operator
@@ -23,7 +23,7 @@ def randrange(n):
     except IOError:
         result = []
         for i in range(n):
-            result.append(whrandom.random())
+            result.append(random.random())
         try:
             try:
                 fp = open(fn, "wb")
@@ -44,7 +44,7 @@ def randrange(n):
         ##assert len(result) == n
         # Shuffle it a bit...
         for i in range(10):
-            i = whrandom.randint(0, n-1)
+            i = random.randrange(0, n)
             temp = result[:i]
             del result[:i]
             temp.reverse()
