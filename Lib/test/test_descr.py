@@ -2064,6 +2064,20 @@ def supers():
     vereq(dd.x, "hello")
     vereq(super(DDsub, dd).x, 42)
 
+    # Ensure that super() lookup of descriptor from classmethod
+    # works (SF ID# 743627)
+
+    class Base(object):
+        aProp = property(lambda self: "foo")
+
+    class Sub(Base):
+        def test(klass):
+            return super(Sub,klass).aProp
+        test = classmethod(test)
+
+    veris(Sub.test(), Base.aProp)
+
+
 def inherits():
     if verbose: print "Testing inheritance from basic types..."
 
