@@ -1,5 +1,3 @@
-del classobj, code, function, instance, instancemethod, module
-
 # operation flags
 OP_ASSIGN = 'OP_ASSIGN'
 OP_DELETE = 'OP_DELETE'
