@@ -146,20 +146,21 @@ static char sre_char_lower[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
 
 static unsigned int sre_lower(unsigned int ch)
 {
-    return ((ch) < 128 ? sre_char_lower[ch] : ch);
+    return ((ch) < 128 ? (unsigned int)sre_char_lower[ch] : ch);
 }
 
 /* locale-specific character predicates */
-
-#define SRE_LOC_IS_DIGIT(ch) ((ch) < 256 ? isdigit((ch)) : 0)
-#define SRE_LOC_IS_SPACE(ch) ((ch) < 256 ? isspace((ch)) : 0)
+/* !(c & ~N) == (c < N+1) for any unsigned c, this avoids
+ * warnings when c's type supports only numbers < N+1 */
+#define SRE_LOC_IS_DIGIT(ch) (!((ch) & ~255) ? isdigit((ch)) : 0)
+#define SRE_LOC_IS_SPACE(ch) (!((ch) & ~255) ? isspace((ch)) : 0)
 #define SRE_LOC_IS_LINEBREAK(ch) ((ch) == '\n')
-#define SRE_LOC_IS_ALNUM(ch) ((ch) < 256 ? isalnum((ch)) : 0)
+#define SRE_LOC_IS_ALNUM(ch) (!((ch) & ~255) ? isalnum((ch)) : 0)
 #define SRE_LOC_IS_WORD(ch) (SRE_LOC_IS_ALNUM((ch)) || (ch) == '_')
 
 static unsigned int sre_lower_locale(unsigned int ch)
 {
-    return ((ch) < 256 ? tolower((ch)) : ch);
+    return ((ch) < 256 ? (unsigned int)tolower((ch)) : ch);
 }
 
 /* unicode-specific character predicates */
@@ -484,7 +485,9 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
                 set += count*16;
             }
             else {
-                if (ch < 65536)
+                /* !(c & ~N) == (c < N+1) for any unsigned c, this avoids
+                 * warnings when c's type supports only numbers < N+1 */
+                if (!(ch & ~65535))
                     block = ((unsigned char*)set)[ch >> 8];
                 else
                     block = -1;
