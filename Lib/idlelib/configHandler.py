@@ -521,7 +521,19 @@ class IdleConf:
             '<<find-selection>>': ['<Control-F3>'],
             '<<find>>': ['<Control-f>'],
             '<<replace>>': ['<Control-h>'],
-            '<<goto-line>>': ['<Alt-g>'] }
+            '<<goto-line>>': ['<Alt-g>'], 
+            '<<smart-backspace>>': ['<Key-BackSpace>'],
+            '<<newline-and-indent>>': ['<Key-Return> <Key-KP_Enter>'],
+            '<<smart-indent>>': ['<Key-Tab>'],
+            '<<indent-region>>': ['<Control-Key-bracketright>'],
+            '<<dedent-region>>': ['<Control-Key-bracketleft>'],
+            '<<comment-region>>': ['<Alt-Key-3>'],
+            '<<uncomment-region>>': ['<Alt-Key-4>'],
+            '<<tabify-region>>': ['<Alt-Key-5>'],
+            '<<untabify-region>>': ['<Alt-Key-6>'],
+            '<<toggle-tabs>>': ['<Alt-Key-t>'],
+            '<<change-indentwidth>>': ['<Alt-Key-u>']
+            }
         if keySetName:
             for event in keyBindings.keys():
                 binding=self.GetKeyBinding(keySetName,event)
