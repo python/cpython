@@ -129,12 +129,13 @@ lookmapping(mp, key, hash)
 	register int i, incr;
 	register unsigned long sum = (unsigned long) hash;
 	register mappingentry *freeslot = NULL;
+	register int size = mp->ma_size;
 	/* We must come up with (i, incr) such that 0 <= i < ma_size
 	   and 0 < incr < ma_size and both are a function of hash */
-	i = sum % mp->ma_size;
+	i = sum % size;
 	do {
 		sum = 3*sum + 1;
-		incr = sum % mp->ma_size;
+		incr = sum % size;
 	} while (incr == 0);
 	for (;;) {
 		register mappingentry *ep = &mp->ma_table[i];
@@ -152,7 +153,7 @@ lookmapping(mp, key, hash)
 			 cmpobject(ep->me_key, key) == 0) {
 			return ep;
 		}
-		i = (i + incr) % mp->ma_size;
+		i = (i + incr) % size;
 	}
 }
 
