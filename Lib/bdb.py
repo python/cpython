@@ -168,7 +168,7 @@ class Bdb:
     def set_trace(self):
         """Start debugging from here."""
         try:
-            1 + ''
+            raise Exception
         except:
             frame = sys.exc_info()[2].tb_frame.f_back
         self.reset()
@@ -188,7 +188,7 @@ class Bdb:
             # no breakpoints; run without debugger overhead
             sys.settrace(None)
             try:
-                1 + ''  # raise an exception
+                raise Exception
             except:
                 frame = sys.exc_info()[2].tb_frame.f_back
             while frame and frame is not self.botframe:
