@@ -102,7 +102,8 @@ class RModuleImporter(ihooks.ModuleImporter):
 
     def reload(self, module, path=None):
         if path is None and hasattr(module, '__filename__'):
-            path = [module.__filename__]
+	    head, tail = os.path.split(module.__filename__)
+	    path = [head]
         return ihooks.ModuleImporter.reload(self, module, path)
 
 
