@@ -1655,7 +1655,7 @@ instance_ipow(PyObject *v, PyObject *w, PyObject *z)
 static PyObject **name_op = NULL;
 
 static int 
-init_name_op()
+init_name_op(void)
 {
 	int i;
 	char *_name_op[] = {
