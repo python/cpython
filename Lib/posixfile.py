@@ -177,7 +177,7 @@ class _posixfile_:
 	# Hack by davem@magnet.com to get locking to go on freebsd;
 	# additions for AIX by Vladimir.Marangozov@imag.fr
         import sys, os
-        if sys.platform == 'freebsd2':
+        if sys.platform in ('netbsd1', 'freebsd2', 'freebsd3'):
 	    flock = struct.pack('lxxxxlxxxxlhh', \
 		  l_start, l_len, os.getpid(), l_type, l_whence) 
         elif sys.platform in ['aix3', 'aix4']:
@@ -190,7 +190,7 @@ class _posixfile_:
 	flock = fcntl.fcntl(self._file_.fileno(), cmd, flock)
 
 	if '?' in how:
-	    if sys.platform == 'freebsd2':
+	    if sys.platform in ('netbsd1', 'freebsd2', 'freebsd3'):
 		l_start, l_len, l_pid, l_type, l_whence = \
 		    struct.unpack('lxxxxlxxxxlhh', flock)
             elif sys.platform in ['aix3', 'aix4']:

@@ -5,7 +5,7 @@
 import struct
 import fcntl
 import FCNTL
-import os
+import os, sys
 from test_support import verbose
 
 filename = '/tmp/delete-me'
@@ -16,7 +16,12 @@ rv = fcntl.fcntl(f.fileno(), FCNTL.F_SETFL, os.O_NONBLOCK)
 if verbose:
     print 'Status from fnctl with O_NONBLOCK: ', rv
     
-lockdata = struct.pack('hhllhh', FCNTL.F_WRLCK, 0, 0, 0, 0, 0)
+if sys.platform in ('netbsd1', 'freebsd2', 'freebsd3'):
+    lockdata = struct.pack('lxxxxlxxxxlhh', 0, 0, 0, FCNTL.F_WRLCK, 0)
+elif sys.platform in ['aix3', 'aix4']:
+    lockdata = struct.pack('hhlllii', FCNTL.F_WRLCK, 0, 0, 0, 0, 0, 0)
+else:
+    lockdata = struct.pack('hhllhh', FCNTL.F_WRLCK, 0, 0, 0, 0, 0)
 if verbose:
     print 'struct.pack: ', `lockdata`
     
