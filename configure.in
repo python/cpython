@@ -303,6 +303,16 @@ if test -z "$LN" ; then
 	esac
 fi
 
+# Check for --with-pydebug
+AC_MSG_CHECKING(for --with-pydebug)
+AC_ARG_WITH(pydebug, 
+[  --with-pydebug                  build with Py_DEBUG defined], [
+if test "$withval" != no
+then AC_DEFINE(Py_DEBUG) AC_MSG_RESULT(yes); Py_DEBUG='true'
+else AC_MSG_RESULT(no); Py_DEBUG='false'
+fi],
+[AC_MSG_RESULT(no)])
+
 # Optimizer/debugger flags
 AC_SUBST(OPT)
 if test -z "$OPT"
@@ -311,11 +321,17 @@ then
 	yes)
 		case $ac_cv_prog_cc_g in
 	yes)
-	    OPT="-g -O2 -Wall -Wstrict-prototypes";;
+	    if test "$Py_DEBUG" = 'true' ; then
+		# Optimization messes up debuggers, so turn it off for
+		# debug builds.
+		OPT="-g -Wall -Wstrict-prototypes"
+	    else
+		OPT="-g -O3 -Wall -Wstrict-prototypes"
+	    fi;;
 	*)
-	    OPT="-O2 -Wall -Wstrict-prototypes";;
-		esac
-		;;
+	    OPT="-O3 -Wall -Wstrict-prototypes";;
+	esac
+	;;
     *)
 	case $ac_sys_system in
 	UnixWare*)
@@ -385,7 +401,7 @@ AC_ARG_ENABLE(ipv6,
        ;;
   esac ],
 
-  AC_TRY_RUN([ /* AF_INET6 avalable check */
+  AC_TRY_RUN([ /* AF_INET6 available check */
 #include <sys/types.h>
 #include <sys/socket.h>
 main()
@@ -860,16 +876,6 @@ AC_MSG_RESULT($CFLAGSFORSHARED)
 # checks for libraries
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
-
-# Check for --with-pydebug
-AC_MSG_CHECKING(for --with-pydebug)
-AC_ARG_WITH(pydebug, 
-[  --with-pydebug                  build with Py_DEBUG defined], [
-if test "$withval" != no
-then AC_DEFINE(Py_DEBUG) AC_MSG_RESULT(yes)
-else AC_MSG_RESULT(no)
-fi],
-[AC_MSG_RESULT(no)])
 
 # checks for system dependent C++ extensions support
 case "$ac_sys_system" in
