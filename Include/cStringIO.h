@@ -1,5 +1,5 @@
-#ifndef CSTRINGIO_INCLUDED
-#define CSTRINGIO_INCLUDED
+#ifndef Py_CSTRINGIO_H
+#define Py_CSTRINGIO_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -134,4 +134,4 @@ xxxPyCObject_Import(char *module_name, char *name)
 #ifdef __cplusplus
 }
 #endif
-#endif /* CSTRINGIO_INCLUDED */
+#endif /* !Py_CSTRINGIO_H */
