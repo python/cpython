@@ -479,15 +479,15 @@ Changes to Python's build process and to the C API include:
   values from extension functions: \csimplemacro{Py_RETURN_NONE},
   \csimplemacro{Py_RETURN_TRUE}, and \csimplemacro{Py_RETURN_FALSE}.
 
-  \item A new function, \cfunction{PyTuple_Pack(N, obj1, obj2, ...,
-  objN)}, constructs tuples from a variable length argument list of
-  Python objects.
+  \item A new function, \cfunction{PyTuple_Pack(\var{N}, \var{obj1},
+  \var{obj2}, ..., \var{objN})}, constructs tuples from a variable
+  length argument list of Python objects.
 
-  \item A new function, \cfunction{PyDict_Contains(d, k)}, implements
-  fast dictionary lookups without masking exceptions raised during the
-  look-up process.
+  \item A new function, \cfunction{PyDict_Contains(\var{d}, \var{k})},
+  implements fast dictionary lookups without masking exceptions raised
+  during the look-up process.
 
-  \item A new method flag, \code{METH_COEXISTS}, allows a function
+  \item A new method flag, \constant{METH_COEXISTS}, allows a function
   defined in slots to co-exist with a PyCFunction having the same name.
   This can halve the access to time to a method such as
   \method{set.__contains__()}
