@@ -24,16 +24,22 @@ def copyfileobj(fsrc, fdst, length=16*1024):
             break
         fdst.write(buf)
 
+def _samefile(src, dst):
+    # Macintosh, Unix.
+    if hasattr(os.path,'samefile'):
+        return os.path.samefile(src, dst)
+
+    # All other platforms: check for same pathname.
+    return (os.path.normcase(os.path.abspath(src)) ==
+            os.path.normcase(os.path.abspath(dst)))
 
 def copyfile(src, dst):
     """Copy data from src to dst"""
+    if _samefile(src, dst):
+        raise Error, "`%s` and `%s` are the same file" % (src, dst)
+
     fsrc = None
     fdst = None
-    # check for same pathname; all platforms
-    _src = os.path.normcase(os.path.abspath(src))
-    _dst = os.path.normcase(os.path.abspath(dst))
-    if _src == _dst:
-        return
     try:
         fsrc = open(src, 'rb')
         fdst = open(dst, 'wb')
