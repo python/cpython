@@ -1051,7 +1051,7 @@ min_max(PyObject *args, int op)
 
 	if (PyTuple_Size(args) > 1)
 		v = args;
-	else if (!PyArg_UnpackTuple(args, "min/max", 1, 1, &v))
+	else if (!PyArg_UnpackTuple(args, (op==Py_LT) ? "min" : "max", 1, 1, &v))
 		return NULL;
 
 	it = PyObject_GetIter(v);
