@@ -41,7 +41,7 @@ class Node:
     def asList(self):
         return tuple(asList(self.getChildren()))
     def getChildNodes(self):
-        return [n for n in self.getChildnre() if isinstance(n, Node)]
+        return [n for n in self.getChildren() if isinstance(n, Node)]
 
 class EmptyNode(Node):
     def __init__(self):
