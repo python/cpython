@@ -150,7 +150,7 @@ Cause requests to go through a proxy.
 If \var{proxies} is given, it must be a dictionary mapping
 protocol names to URLs of proxies.
 The default is to read the list of proxies from the environment
-variables \var{protocol}_proxy.
+variables \envvar{<protocol>_proxy}.
 \end{classdesc}
 
 \begin{classdesc}{HTTPPasswordMgr}{}
@@ -790,3 +790,64 @@ import sys
 data = sys.stdin.read()
 print 'Content-type: text-plain\n\nGot Data: "%s"' % data
 \end{verbatim}
+
+
+Use of Basic HTTP Authentication:
+
+\begin{verbatim}
+import urllib2
+# Create an OpenerDirector with support for Basic HTTP Authentication...
+auth_handler = urllib2.HTTPBasicAuthHandler()
+auth_handler.add_password('realm', 'host', 'username', 'password')
+opener = urllib2.build_opener(auth_handler)
+# ...and install it globally so it can be used with urlopen.
+urllib2.install_opener(opener)
+urllib2.urlopen('http://www.example.com/login.html')
+\end{verbatim}
+
+\function{build_opener()} provides many handlers by default, including a
+\class{ProxyHandler}.  By default, \class{ProxyHandler} uses the
+environment variables named \code{<scheme>_proxy}, where \code{<scheme>}
+is the URL scheme involved.  For example, the \envvar{http_proxy}
+environment variable is read to obtain the HTTP proxy's URL.
+
+This example replaces the default \class{ProxyHandler} with one that uses
+programatically-supplied proxy URLs, and adds proxy authorization support
+with \class{ProxyBasicAuthHandler}.
+
+\begin{verbatim}
+proxy_handler = urllib2.ProxyHandler({'http': 'http://www.example.com:3128/'})
+proxy_auth_handler = urllib2.HTTPBasicAuthHandler()
+proxy_auth_handler.add_password('realm', 'host', 'username', 'password')
+
+opener = build_opener(proxy_handler, proxy_auth_handler)
+# This time, rather than install the OpenerDirector, we use it directly:
+opener.open('http://www.example.com/login.html')
+\end{verbatim}
+
+
+Adding HTTP headers:
+
+Use the \var{headers} argument to the \class{Request} constructor, or:
+
+\begin{verbatim}
+import urllib2
+req = urllib2.Request('http://www.example.com/')
+req.add_header('Referer', 'http://www.python.org/')
+r = urllib2.urlopen(req)
+\end{verbatim}
+
+\class{OpenerDirector} automatically adds a \mailheader{User-Agent}
+header to every \class{Request}.  To change this:
+
+\begin{verbatim}
+import urllib2
+opener = urllib2.build_opener()
+opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+opener.open('http://www.example.com/')
+\end{verbatim}
+
+Also, remember that a few standard headers
+(\mailheader{Content-Length}, \mailheader{Content-Type} and
+\mailheader{Host}) are added when the \class{Request} is passed to
+\function{urlopen()} (or \method{OpenerDirector.open()}).
