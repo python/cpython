@@ -7,7 +7,11 @@ import os, urlparse, urllib, types
 import handler
 import xmlreader
 
-_StringTypes = [types.StringType, types.UnicodeType]
+try:
+    _StringTypes = [types.StringType, types.UnicodeType]
+except AttributeError:
+    _StringTypes = [types.StringType]
+
 
 def escape(data, entities={}):
     """Escape &, <, and > in a string of data.
