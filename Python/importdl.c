@@ -55,7 +55,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Configure dynamic linking */
 
 #ifdef __hpux
+#ifndef hpux
 #define hpux
+#endif
 #endif
 
 #ifdef hpux
@@ -106,6 +108,10 @@ typedef FARPROC dl_funcptr;
 #define USE_DL
 #endif
 
+#ifdef __powerc
+#define USE_MAC_DYNAMIC_LOADING
+#endif
+
 #ifdef __CFM68K__
 #define USE_MAC_DYNAMIC_LOADING
 #endif
@@ -113,13 +119,17 @@ typedef FARPROC dl_funcptr;
 #ifdef USE_MAC_DYNAMIC_LOADING
 #define DYNAMIC_LINK
 #define SHORT_EXT ".slb"
-#define LONG_EXT "module.slb"
+#ifdef __CFM68K__
+#define LONG_EXT ".CFM68K.slb"
+#else
+#define LONG_EXT ".ppc.slb"
+#endif
 #ifndef _DL_FUNCPTR_DEFINED
 typedef void (*dl_funcptr)();
 #endif
 #endif
 
-#if !defined(DYNAMIC_LINK) && defined(HAVE_DLFCN_H) && defined(HAVE_DLOPEN)
+#if !defined(DYNAMIC_LINK) && defined(HAVE_DLFCN_H) && (defined(HAVE_DLOPEN) || defined(M_UNIX))
 #define DYNAMIC_LINK
 #define USE_SHLIB
 #endif
@@ -232,7 +242,7 @@ load_dynamic_module(name, pathname, fp)
 	err_setstr(ImportError, "dynamically linked modules not supported");
 	return NULL;
 #else
-	object *m;
+	object *m, *d, *s;
 	char funcname[258];
 	dl_funcptr p = NULL;
 #ifdef USE_SHLIB
@@ -507,6 +517,12 @@ load_dynamic_module(name, pathname, fp)
 				   "dynamic module not initialized properly");
 		return NULL;
 	}
+	/* Remember the filename as the __file__ attribute */
+	d = getmoduledict(m);
+	s = newstringobject(pathname);
+	if (s == NULL || dictinsert(d, "__file__", s) != 0)
+		err_clear(); /* Not important enough to report */
+	XDECREF(s);
 	if (verbose)
 		fprintf(stderr,
 			"import %s # dynamically loaded from %s\n",
