@@ -921,7 +921,7 @@ formatstring(format, args)
 			XDECREF(temp);
 		} /* '%' */
 	} /* until end */
-	if (argidx < arglen) {
+	if (argidx < arglen && !dict) {
 		err_setstr(TypeError, "not all arguments converted");
 		goto error;
 	}
