@@ -493,6 +493,7 @@ then
 		 else CCSHARED="+z";
 		 fi;;
 	Linux*) CCSHARED="-fpic";;
+	BSD/OS*/4*) CCSHARED="-fpic";;
 	FreeBSD*|OpenBSD*) CCSHARED="-fpic";;
 	NetBSD*) CCSHARED="-fPIC";;
 	SCO_SV*) CCSHARED="-KPIC -dy -Bdynamic";;
@@ -512,6 +513,7 @@ then
 	AIX*)	LINKFORSHARED='-Wl,-bE:python.exp -lld';;
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
+	BSD/OS/4*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	FreeBSD/[[34]]*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	Linux*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
