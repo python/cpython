@@ -180,6 +180,9 @@ class RExec(ihooks._Verbose):
         sent to standard output.
 
         """
+
+        raise RuntimeError, "This code is not secure in Python 2.2 and 2.3"
+
         ihooks._Verbose.__init__(self, verbose)
         # XXX There's a circular reference here:
         self.hooks = hooks or RHooks(verbose)
