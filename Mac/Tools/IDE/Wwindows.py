@@ -270,7 +270,7 @@ class Window(FrameWork.Window, Wbase.SelectableWidget):
 			self._collectselectablewidgets(w._widgets)
 	
 	def _calcbounds(self):
-		self._possize = self.wid.GetWindowPort().portRect[2:]
+		self._possize = self.wid.GetWindowPort().GetPortBounds()[2:]
 		w, h = self._possize
 		self._bounds = (0, 0, w, h)
 		self.wid.GetWindowContentRgn(scratchRegion)
@@ -387,7 +387,7 @@ class Window(FrameWork.Window, Wbase.SelectableWidget):
 		del self.saveclip[-1]
 	
 	def getgrowrect(self):
-		l, t, r, b = self.wid.GetWindowPort().portRect
+		l, t, r, b = self.wid.GetWindowPort().GetPortBounds()
 		return (r - 15, b - 15, r, b)
 	
 	def has_key(self, key):
@@ -423,7 +423,7 @@ class Dialog(Window):
 		return 0
 	
 	def getwindowbounds(self, size, minsize = None):
-		screenbounds = sl, st, sr, sb = Qd.qd.screenBits.bounds
+		screenbounds = sl, st, sr, sb = Qd.GetQDGlobalsScreenBits().bounds
 		w, h = size
 		l = sl + (sr - sl - w) / 2
 		t = st + (sb - st - h) / 3
@@ -615,7 +615,7 @@ def windowbounds(preferredsize, minsize=None):
 	minwidth, minheight = minsize
 	width, height = preferredsize
 	
-	sl, st, sr, sb = screenbounds = Qd.InsetRect(Qd.qd.screenBits.bounds, 4, 4)
+	sl, st, sr, sb = screenbounds = Qd.InsetRect(Qd.GetQDGlobalsScreenBits().bounds, 4, 4)
 	l, t = getnextwindowpos()
 	if (l + width) > sr:
 		_windowcounter = 0

@@ -48,8 +48,8 @@ def UpdateSplash(drawdialog = 0, what = 0):
 	if drawdialog:
 		splash.DrawDialog()
 	drawtext(what)
-	splash.GetDialogWindow().ValidWindowRect(splash.GetDialogPort().portRect)
-	Qd.QDFlushPortBuffer(splash.GetDialogWindow().GetWindowPort(), None)
+	splash.GetDialogWindow().ValidWindowRect(splash.GetDialogPort().GetPortBounds())
+	splash.GetDialogWindow().GetWindowPort().QDFlushPortBuffer(None)
 
 def drawtext(what = 0):
 	Qd.SetPort(splash)

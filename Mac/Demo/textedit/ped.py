@@ -21,7 +21,7 @@ class TEWindow(ScrolledWindow):
 		r = windowbounds(400, 400)
 		w = Win.NewWindow(r, name, 1, 0, -1, 1, 0)
 		self.wid = w
-		x0, y0, x1, y1 = self.wid.GetWindowPort().portRect
+		x0, y0, x1, y1 = self.wid.GetWindowPort().GetPortBounds()
 		x0 = x0 + 4
 		y0 = y0 + 4
 		x1 = x1 - 20
@@ -87,8 +87,8 @@ class TEWindow(ScrolledWindow):
 			self.ted.TEDeactivate()
 
 	def do_update(self, wid, event):
-		Qd.EraseRect(wid.GetWindowPort().portRect)
-		self.ted.TEUpdate(wid.GetWindowPort().portRect)
+		Qd.EraseRect(wid.GetWindowPort().GetPortBounds())
+		self.ted.TEUpdate(wid.GetWindowPort().GetPortBounds())
 		self.updatescrollbars()
 		
 	def do_contentclick(self, local, modifiers, evt):
@@ -350,7 +350,7 @@ class Ped(Application):
 		if self.active:
 			self.active.do_idle()
 		else:
-			Qd.SetCursor(Qd.qd.arrow)
+			Qd.SetCursor(Qd.GetQDGlobalsArrow())
 
 def main():
 	App = Ped()

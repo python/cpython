@@ -68,7 +68,7 @@ partname[8] = 'inZoomOut'
 #
 # The useable portion of the screen
 #	## but what happens with multiple screens? jvr
-screenbounds = qd.screenBits.bounds
+screenbounds = GetQDGlobalsScreenBits().bounds
 screenbounds = screenbounds[0]+4, screenbounds[1]+4, \
 	screenbounds[2]-4, screenbounds[3]-4
 	
@@ -97,7 +97,7 @@ def setwatchcursor():
 	SetCursor(_watch)
 	
 def setarrowcursor():
-	SetCursor(qd.arrow)
+	SetCursor(GetQDGlobalsArrow())
 
 class Application:
 	
@@ -808,7 +808,7 @@ class Window:
 	growlimit = (50, 50, screenbounds[2] - screenbounds[0], screenbounds[3] - screenbounds[1])	# jvr
 	
 	def do_resize(self, width, height, window):
-		l, t, r, b = self.wid.GetWindowPort().portRect			# jvr, forGrowIcon
+		l, t, r, b = self.wid.GetWindowPort().GetPortBounds()			# jvr, forGrowIcon
 		self.SetPort()							# jvr
 		self.wid.InvalWindowRect((r - SCROLLBARWIDTH + 1, b - SCROLLBARWIDTH + 1, r, b))	# jvr
 		window.SizeWindow(width, height, 1)		# changed updateFlag to true jvr
@@ -816,7 +816,7 @@ class Window:
 	
 	def do_postresize(self, width, height, window):
 		SetPort(window)
-		self.wid.InvalWindowRect(window.GetWindowPort().portRect)
+		self.wid.InvalWindowRect(window.GetWindowPort().GetPortBounds())
 	
 	def do_inContent(self, partcode, window, event):
 		#
@@ -849,7 +849,7 @@ class Window:
 			for i in range(8):
 				time.sleep(0.1)
 				InvertRgn(window.GetWindowPort().visRgn)
-			FillRgn(window.GetWindowPort().visRgn, qd.gray)
+			FillRgn(window.GetWindowPort().visRgn, GetQDGlobalsGray())
 		else:
 			EraseRgn(window.GetWindowPort().visRgn)
 		
@@ -902,7 +902,7 @@ class ScrolledWindow(ControlsWindow):
 		SetPort(self.wid)
 		self.barx = self.bary = None
 		self.barx_enabled = self.bary_enabled = 1
-		x0, y0, x1, y1 = self.wid.GetWindowPort().portRect
+		x0, y0, x1, y1 = self.wid.GetWindowPort().GetPortBounds()
 		vx, vy = self.getscrollbarvalues()
 		if vx == None: self.barx_enabled, vx = 0, 0
 		if vy == None: self.bary_enabled, vy = 0, 0
@@ -938,7 +938,7 @@ class ScrolledWindow(ControlsWindow):
 		self.wid.DrawGrowIcon()			# jvr
 			
 	def do_postresize(self, width, height, window):
-		l, t, r, b = self.wid.GetWindowPort().portRect
+		l, t, r, b = self.wid.GetWindowPort().GetPortBounds()
 		self.SetPort()
 		if self.barx:
 			self.barx.HideControl()		# jvr

@@ -78,7 +78,7 @@ def main():
 			else:
 				Qd.SetPort(whichWindow)
 				whichWindow.BeginUpdate()
-				Qd.EraseRect(whichWindow.GetWindowPort().portRect)
+				Qd.EraseRect(whichWindow.GetWindowPort().GetPortBounds())
 				whichWindow.EndUpdate()
 			
 def loadMovie(theFile):

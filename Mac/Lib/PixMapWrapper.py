@@ -151,7 +151,7 @@ class PixMapWrapper:
 		if y2 == None:
 			dest[3] = y1 + src[3]-src[1]
 		if not port: port = Qd.GetPort()
-		Qd.CopyBits(self.PixMap(), port.portBits, src, tuple(dest),
+		Qd.CopyBits(self.PixMap(), port.GetPortBitMapForCopyBits(), src, tuple(dest),
 				QuickDraw.srcCopy, None)
 	
 	def fromstring(self,s,width,height,format=imgformat.macrgb):

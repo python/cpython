@@ -2,7 +2,7 @@ import Wbase
 import Wkeys
 import string
 from Carbon import Evt, Events, Fm, Lists, Qd, Scrap, Win
-from Carbon.List import LNew, CreateCustomList, GetListPort
+from Carbon.List import LNew, CreateCustomList
 from Carbon.Lists import kListDefUserProcType, lInitMsg, lDrawMsg, lHiliteMsg, lCloseMsg
 from Carbon.QuickDraw import hilitetransfermode
 from Carbon import App
@@ -435,7 +435,7 @@ class TwoLineList(CustomList):
 	def listDefDraw(self, selected, cellRect, theCell,
 			dataOffset, dataLen, theList):
 		savedPort = Qd.GetPort()
-		Qd.SetPort(GetListPort(theList))
+		Qd.SetPort(theList.GetListPort())
 		savedClip = Qd.NewRgn()
 		Qd.GetClip(savedClip)
 		Qd.ClipRect(cellRect)
@@ -477,7 +477,7 @@ class TwoLineList(CustomList):
 	def listDefHighlight(self, selected, cellRect, theCell,
 			dataOffset, dataLen, theList):
 		savedPort = Qd.GetPort()
-		Qd.SetPort(GetListPort(theList))
+		Qd.SetPort(theList.GetListPort())
 		savedClip = Qd.NewRgn()
 		Qd.GetClip(savedClip)
 		Qd.ClipRect(cellRect)

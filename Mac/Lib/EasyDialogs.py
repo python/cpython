@@ -222,7 +222,7 @@ def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=262
 
 		
 
-screenbounds = Qd.qd.screenBits.bounds
+screenbounds = Qd.GetQDGlobalsScreenBits().bounds
 screenbounds = screenbounds[0]+4, screenbounds[1]+4, \
 	screenbounds[2]-4, screenbounds[3]-4
 
