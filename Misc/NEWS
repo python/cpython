@@ -463,6 +463,11 @@ Extension modules
 Library
 -------
 
+- Freeze's modulefinder.py has been moved to the standard library;
+  slightly improved so it will issue less false missing submodule
+  reports (see sf path #643711 for details).  Documentation will follow
+  with Python 2.3a2.
+
 - os.path exposes getctime.
 
 - unittest.py now has two additional methods called assertAlmostEqual()
