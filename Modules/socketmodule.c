@@ -82,6 +82,11 @@ Socket methods:
 #include <sys/un.h>
 #include <netdb.h>
 
+#ifdef i860
+/* Cray APP doesn't have getpeername() */
+#define NO_GETPEERNAME
+#endif
+
 
 /* Global variable holding the exception type for errors detected
    by this module (but not argument type or memory errors, etc.). */
@@ -594,6 +599,7 @@ sock_getsockname(s, args)
 }
 
 
+#ifndef NO_GETPEERNAME
 /* s.getpeername() method */
 
 static object *
@@ -614,6 +620,7 @@ sock_getpeername(s, args)
 		return socket_error();
 	return makesockaddr((struct sockaddr *) addrbuf, addrlen);
 }
+#endif
 
 
 /* s.listen(n) method */
@@ -809,7 +816,9 @@ static struct methodlist sock_methods[] = {
 	{"connect",	sock_connect},
 	{"fileno",	sock_fileno},
 	{"getsockname",	sock_getsockname},
+#ifndef NO_GETPEERNAME
 	{"getpeername",	sock_getpeername},
+#endif
 	{"listen",	sock_listen},
 	{"makefile",	sock_makefile},
 	{"recv",	sock_recv},
