@@ -81,6 +81,13 @@ typedef struct {
   unsigned char buffer[64];                         /* input buffer */
 } MD5_CTX;
 
+/* Rename all exported symbols to avoid conflicts with similarly named
+   symbols in some systems' standard C libraries... */
+
+#define MD5Init _Py_MD5Init
+#define MD5Update _Py_MD5Update
+#define MD5Final _Py_MD5Final
+
 void MD5Init PROTO_LIST ((MD5_CTX *));
 void MD5Update PROTO_LIST
   ((MD5_CTX *, unsigned char *, unsigned int));
