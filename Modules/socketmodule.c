@@ -156,12 +156,12 @@ Socket methods:
 #endif
 
 #ifdef USE_SSL
-#include "rsa.h"
-#include "crypto.h"
-#include "x509.h"
-#include "pem.h"
-#include "ssl.h"
-#include "err.h"
+#include "openssl/rsa.h"
+#include "openssl/crypto.h"
+#include "openssl/x509.h"
+#include "openssl/pem.h"
+#include "openssl/ssl.h"
+#include "openssl/err.h"
 #endif /* USE_SSL */
 
 #if defined(MS_WINDOWS) || defined(__BEOS__)
