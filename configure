@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.162 
+# From configure.in Revision: 1.163 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -2522,7 +2522,7 @@ cat > conftest.$ac_ext <<EOF
 #include "confdefs.h"
 #include <pthread.h>
 int main() {
-pthread_t x; x = *(pthread_t)*0;
+pthread_t x; x = *(pthread_t*)0;
 ; return 0; }
 EOF
 if { (eval echo configure:2529: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
