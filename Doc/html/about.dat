@@ -20,7 +20,7 @@
 	href="http://www-dsed.llnl.gov/files/programs/unix/latex2html/manual/">
 	<strong>LaTeX</strong>2<tt>HTML</tt></a> to the Python
       documentation has been heavily tailored by Fred L. Drake,
-      Jr. (fdrake@acm.org).  Original navigation icons were
-      contributed by Christopher Petrilli
-      (petrilli@amber.org).
+      Jr. (<font face="sans-serif">fdrake@acm.org</font>).  Original
+      navigation icons were contributed by Christopher Petrilli
+      (<font face="sans-serif">petrilli@amber.org</font>).
     </p>
