@@ -230,26 +230,26 @@ class RCSProxyLocal:
 		os.rmdir(name)
 
 
-class RCSProxyServer(RCSProxyLocal, server.Server):
+class RCSProxyServer(RCSProxyLocal, server.SecureServer):
 	
 	def __init__(self, address, verbose = server.VERBOSE):
 		RCSProxyLocal.__init__(self)
-		server.Server.__init__(self, address, verbose)
+		server.SecureServer.__init__(self, address, verbose)
 	
 	def _close(self):
-		server.Server._close(self)
+		server.SecureServer._close(self)
 		RCSProxyLocal._close(self)
 	
 	def _serve(self):
-		server.Server._serve(self)
+		server.SecureServer._serve(self)
 		# Retreat into start directory
 		while self._dirstack: self.back()
 
 
-class RCSProxyClient(client.Client):
+class RCSProxyClient(client.SecureClient):
 	
 	def __init__(self, address, verbose = client.VERBOSE):
-		client.Client.__init__(self, address, verbose)
+		client.SecureClient.__init__(self, address, verbose)
 
 
 def test_server():
