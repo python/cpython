@@ -465,3 +465,16 @@ class TestClass:
 sys.settrace(tracer)
 adaptgetter("foo", TestClass, (1, ""))
 sys.settrace(None)
+
+print "20. eval with free variables"
+
+def f(x):
+    return lambda: x + 1
+
+g = f(3)
+try:
+    eval(g.func_code)
+except TypeError:
+    pass
+else:
+    print "eval() should have failed, because code contained free vars"
