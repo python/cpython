@@ -1,8 +1,9 @@
-This directory contains the CodeWarrior 6 projects. Here is what they
+This directory contains the CodeWarrior 7 projects. Here is what they
 are for and where to put them (well, where *I* put them, at least):
 
 Python68K.µ
-	Non-shared 68K python, full complement of modules. Put in build.mac68k.stand.
+	Non-shared 68K python, full complement of modules. Put in
+	build.mac68k.stand.
 
 PythonCore.µ
 	PPC shared library with core functionality. Put in build.macppc.shared.
