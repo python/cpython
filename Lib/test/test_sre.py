@@ -177,6 +177,7 @@ try:
     assert sre.findall("(:)(:*)", "a:b::c:::d") == [(":", ""),
                                                    (":", ":"),
                                                    (":", "::")]
+    assert sre.findall("(a)|(b)", "abc") == [("a", ""), ("", "b")]
 except AssertionError:
     raise TestFailed, "sre.findall"
 

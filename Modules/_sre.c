@@ -15,6 +15,7 @@
  * 00-08-01 fl  fixes for 1.6b1 (0.9.8)
  * 00-08-03 fl  added recursion limit
  * 00-08-07 fl  use PyOS_CheckStack() if available
+ * 00-08-08 fl  changed findall to return empty strings instead of None
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *
@@ -568,9 +569,8 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
     TRACE(("|%p|%p|ENTER %d\n", pattern, ptr, level));
 
 #if defined(USE_STACKCHECK)
-    if (level % 10 == 0 && PyOS_CheckStack()) {
+    if (level % 10 == 0 && PyOS_CheckStack())
         return SRE_ERROR_RECURSION_LIMIT;
-    }
 #endif
 
 #if defined(USE_RECURSION_LIMIT)
@@ -1352,20 +1352,20 @@ state_fini(SRE_STATE* state)
 LOCAL(PyObject*)
 state_getslice(SRE_STATE* state, int index, PyObject* string)
 {
+    int i, j;
+
     index = (index - 1) * 2;
 
     if (string == Py_None || !state->mark[index] || !state->mark[index+1]) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        i = j = 0;
+    } else {
+        i = ((char*)state->mark[index] - (char*)state->beginning) /
+            state->charsize;
+        j = ((char*)state->mark[index+1] - (char*)state->beginning) /
+            state->charsize;
     }
 
-    return PySequence_GetSlice(
-        string,
-        ((char*)state->mark[index] - (char*)state->beginning) /
-        state->charsize,
-        ((char*)state->mark[index+1] - (char*)state->beginning) /
-        state->charsize
-        );
+    return PySequence_GetSlice(string, i, j);
 }
 
 static void
