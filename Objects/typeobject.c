@@ -1169,8 +1169,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
 #ifdef Py_USING_UNICODE
 		tmp = _unicode_to_string(slots, nslots);
-		Py_DECREF(slots);
-		slots = tmp;
+		if (tmp != slots) {
+			Py_DECREF(slots);
+			slots = tmp;
+		}
 		if (!tmp)
 			return NULL;
 #endif
