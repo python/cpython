@@ -33,6 +33,17 @@ error = IOError                         # For anydbm
 
 class _Database(UserDict.DictMixin):
 
+    # The on-disk directory and data files can remain in mutually
+    # inconsistent states for an arbitrarily long time (see comments
+    # at the end of __setitem__).  This is only repaired when _commit()
+    # gets called.  One place _commit() gets called is from __del__(),
+    # and if that occurs at program shutdown time, module globals may
+    # already have gotten rebound to None.  Since it's crucial that
+    # _commit() finish sucessfully, we can't ignore shutdown races
+    # here, and _commit() must not reference any globals.
+    _os = _os       # for _commit()
+    _open = _open   # for _commit()
+
     def __init__(self, filebasename, mode):
         self._mode = mode
 
@@ -78,17 +89,20 @@ class _Database(UserDict.DictMixin):
     # file (if any) is renamed with a .bak extension first.  If a .bak
     # file currently exists, it's deleted.
     def _commit(self):
+        # CAUTION:  It's vital that _commit() succeed, and _commit() can
+        # be called from __del__().  Therefore we must never reference a
+        # global in this routine.
         try:
-            _os.unlink(self._bakfile)
-        except _os.error:
+            self._os.unlink(self._bakfile)
+        except self._os.error:
             pass
 
         try:
-            _os.rename(self._dirfile, self._bakfile)
-        except _os.error:
+            self._os.rename(self._dirfile, self._bakfile)
+        except self._os.error:
             pass
 
-        f = _open(self._dirfile, 'w', self._mode)
+        f = self._open(self._dirfile, 'w', self._mode)
         for key, pos_and_siz_pair in self._index.iteritems():
             f.write("%r, %r\n" % (key, pos_and_siz_pair))
         f.close()
