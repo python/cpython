@@ -82,6 +82,14 @@ extern void Py_FatalError Py_PROTO((char *));
 #define PyArg_GetInt(v, a)	PyArg_Parse((v), "i", (a))
 #define PyArg_NoArgs(v)		PyArg_Parse(v, "")
 
+/* Convert a possibly signed character to a nonnegative int */
+/* XXX This assumes characters are 8 bits wide */
+#ifdef __CHAR_UNSIGNED__
+#define Py_CHARMASK(c)		(c)
+#else
+#define Py_CHARMASK(c)		((c) & 0xff)
+#endif
+
 #ifdef __cplusplus
 }
 #endif
