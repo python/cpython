@@ -954,6 +954,8 @@ def getpager():
         return plainpager
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         return plainpager
+    if os.environ.get('TERM') in ['dumb', 'emacs']:
+        return lambda text: sys.stdout.write(text)
     if os.environ.has_key('PAGER'):
         if sys.platform == 'win32': # pipes completely broken in Windows
             return lambda text: tempfilepager(plain(text), os.environ['PAGER'])
