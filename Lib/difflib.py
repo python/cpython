@@ -1107,7 +1107,7 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
     lines of context.  The number of context lines is set by 'n' which
     defaults to three.
 
-    By default, the diff control lines (those with *** or ---) are
+    By default, the diff control lines (those with ---, +++, or @@) are
     created with a trailing newline.  This is helpful so that inputs
     created from file.readlines() result in diffs that are suitable for
     file.writelines() since both the inputs and outputs have trailing
