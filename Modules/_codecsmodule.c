@@ -39,6 +39,13 @@ Copyright (c) Corporation for National Research Initiatives.
 
 /* --- Registry ----------------------------------------------------------- */
 
+PyDoc_STRVAR(register__doc__,
+"register(search_function)\n\
+\n\
+Register a codec search function. Search functions are expected to take\n\
+one argument, the encoding name in all lower case letters, and return\n\
+a tuple of functions (encoder, decoder, stream_reader, stream_writer).");
+
 static
 PyObject *codecregister(PyObject *self, PyObject *args)
 {
@@ -56,6 +63,12 @@ PyObject *codecregister(PyObject *self, PyObject *args)
  onError:
     return NULL;
 }
+
+PyDoc_STRVAR(lookup__doc__,
+"lookup(encoding) -> (encoder, decoder, stream_reader, stream_writer)\n\
+\n\
+Looks up a codec tuple in the Python codec registry and returns\n\
+a tuple of functions.");
 
 static
 PyObject *codeclookup(PyObject *self, PyObject *args)
@@ -708,6 +721,15 @@ mbcs_encode(PyObject *self,
 
 /* --- Error handler registry --------------------------------------------- */
 
+PyDoc_STRVAR(register_error__doc__,
+"register_error(errors, handler)\n\
+\n\
+Register the specified error handler under the name\n\
+errors. handler must be a callable object, that\n\
+will be called with an exception instance containing\n\
+information about the location of the encoding/decoding\n\
+error and must return a (replacement, new position) tuple.");
+
 static PyObject *register_error(PyObject *self, PyObject *args)
 {
     const char *name;
@@ -722,6 +744,12 @@ static PyObject *register_error(PyObject *self, PyObject *args)
     return Py_None;
 }
 
+PyDoc_STRVAR(lookup_error__doc__,
+"lookup_error(errors) -> handler\n\
+\n\
+Return the error handler for the specified error handling name\n\
+or raise a LookupError, if no handler exists under this name.");
+
 static PyObject *lookup_error(PyObject *self, PyObject *args)
 {
     const char *name;
@@ -735,8 +763,10 @@ static PyObject *lookup_error(PyObject *self, PyObject *args)
 /* --- Module API --------------------------------------------------------- */
 
 static PyMethodDef _codecs_functions[] = {
-    {"register",		codecregister,			METH_VARARGS},
-    {"lookup",			codeclookup, 			METH_VARARGS},
+    {"register",		codecregister,			METH_VARARGS,
+        register__doc__},
+    {"lookup",			codeclookup, 			METH_VARARGS,
+        lookup__doc__},
     {"escape_encode",		escape_encode,			METH_VARARGS},
     {"escape_decode",		escape_decode,			METH_VARARGS},
 #ifdef Py_USING_UNICODE
@@ -770,8 +800,10 @@ static PyMethodDef _codecs_functions[] = {
     {"mbcs_decode", 		mbcs_decode,			METH_VARARGS},
 #endif
 #endif /* Py_USING_UNICODE */
-    {"register_error", 		register_error,			METH_VARARGS},
-    {"lookup_error", 		lookup_error,			METH_VARARGS},
+    {"register_error", 		register_error,			METH_VARARGS,
+        register_error__doc__},
+    {"lookup_error", 		lookup_error,			METH_VARARGS,
+        lookup_error__doc__},
     {NULL, NULL}		/* sentinel */
 };
 
