@@ -62,7 +62,11 @@ def process(program, modules=[], module_files = [], debug=0):
 			module_files.append(m)
 		else:
 			modules.append(m)
-	path = extra_path + sys.path[:]
+    # collect all modules of the program
+	path = sys.path[:]
+	dir = os.path.dirname(program)
+	path[0] = dir	# "current dir"
+	path = extra_path + path
 	#
 	# Create the module finder and let it do its work
 	#
