@@ -773,7 +773,7 @@ else
     AC_DEFINE(_REENTRANT)
     AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(C_THREADS)
-    LIBOBJS="$LIBOBJS Python/thread.o"],[
+    LIBOBJS="$LIBOBJS thread.o"],[
     AC_MSG_CHECKING(for --with-pth)
     AC_ARG_WITH(pth,
     [  --with-pth                      use GNU pth threading libraries], [
@@ -781,51 +781,51 @@ else
     AC_DEFINE(WITH_THREAD)
     AC_DEFINE(HAVE_PTH)
     LIBS="-lpth $LIBS"
-    LIBOBJS="$LIBOBJS Python/thread.o"],[
+    LIBOBJS="$LIBOBJS thread.o"],[
     AC_MSG_RESULT(no)
     AC_CHECK_LIB(pthread, pthread_create, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="-lpthread $LIBS"
-    LIBOBJS="$LIBOBJS Python/thread.o"],[
+    LIBOBJS="$LIBOBJS thread.o"],[
     AC_CHECK_FUNC(pthread_detach, [AC_DEFINE(WITH_THREAD)
     case $ac_sys_system in
       Darwin*) ;;
       *) AC_DEFINE(_POSIX_THREADS);;
     esac
-    LIBOBJS="$LIBOBJS Python/thread.o"],[
+    LIBOBJS="$LIBOBJS thread.o"],[
     AC_CHECK_HEADER(kernel/OS.h, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(BEOS_THREADS)
-    LIBOBJS="$LIBOBJS Python/thread.o"],[
+    LIBOBJS="$LIBOBJS thread.o"],[
     AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="$LIBS -lpthreads"
-    LIBOBJS="$LIBOBJS Python/thread.o"], [
+    LIBOBJS="$LIBOBJS thread.o"], [
     AC_CHECK_LIB(c_r, pthread_create, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="$LIBS -lc_r"
-    LIBOBJS="$LIBOBJS Python/thread.o"], [
+    LIBOBJS="$LIBOBJS thread.o"], [
     AC_CHECK_LIB(thread, __d6_pthread_create, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="$LIBS -lthread"
-    LIBOBJS="$LIBOBJS Python/thread.o"], [
+    LIBOBJS="$LIBOBJS thread.o"], [
     AC_CHECK_LIB(pthread, __pthread_create_system, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="$LIBS -lpthread"
-    LIBOBJS="$LIBOBJS Python/thread.o"], [
+    LIBOBJS="$LIBOBJS thread.o"], [
     AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="$LIBS -lcma"
-    LIBOBJS="$LIBOBJS Python/thread.o"],[
+    LIBOBJS="$LIBOBJS thread.o"],[
     USE_THREAD_MODULE="#"])
     ])])])])])])])])])
 
     AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
     LIBS="$LIBS -lmpc"
-    LIBOBJS="$LIBOBJS Python/thread.o"
+    LIBOBJS="$LIBOBJS thread.o"
     USE_THREAD_MODULE=""])
     AC_CHECK_LIB(thread, thr_create, [AC_DEFINE(WITH_THREAD)
     LIBS="$LIBS -lthread"
-    LIBOBJS="$LIBOBJS Python/thread.o"
+    LIBOBJS="$LIBOBJS thread.o"
     USE_THREAD_MODULE=""])
 
     if test "$USE_THREAD_MODULE" != "#"
@@ -1292,6 +1292,13 @@ cat >> confdefs.h <<\EOF
 #endif
 EOF
 AC_CHECK_TYPE(socklen_t, int)
+
+# Add Python/ prefix to LIBOBJS
+libobjs=$LIBOBJS
+LIBOBJS=
+for obj in $libobjs; do
+    LIBOBJS="$LIBOBJS Python/$obj"
+done
 
 #AC_MSG_CHECKING(for Modules/Setup)
 #if test ! -f Modules/Setup ; then

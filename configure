@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.206 
+# From configure.in Revision: 1.207 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -3419,7 +3419,7 @@ EOF
 #define C_THREADS 1
 EOF
 
-    LIBOBJS="$LIBOBJS Python/thread.o"
+    LIBOBJS="$LIBOBJS thread.o"
 else
   echo "$ac_t""no" 1>&6
 
@@ -3439,7 +3439,7 @@ EOF
 EOF
 
     LIBS="-lpth $LIBS"
-    LIBOBJS="$LIBOBJS Python/thread.o"
+    LIBOBJS="$LIBOBJS thread.o"
 else
   
     echo "$ac_t""no" 1>&6
@@ -3487,7 +3487,7 @@ EOF
 EOF
 
     LIBS="-lpthread $LIBS"
-    LIBOBJS="$LIBOBJS Python/thread.o"
+    LIBOBJS="$LIBOBJS thread.o"
 else
   echo "$ac_t""no" 1>&6
 
@@ -3545,7 +3545,7 @@ EOF
 EOF
 ;;
     esac
-    LIBOBJS="$LIBOBJS Python/thread.o"
+    LIBOBJS="$LIBOBJS thread.o"
 else
   echo "$ac_t""no" 1>&6
 
@@ -3585,7 +3585,7 @@ EOF
 #define BEOS_THREADS 1
 EOF
 
-    LIBOBJS="$LIBOBJS Python/thread.o"
+    LIBOBJS="$LIBOBJS thread.o"
 else
   echo "$ac_t""no" 1>&6
 
@@ -3633,7 +3633,7 @@ EOF
 EOF
 
     LIBS="$LIBS -lpthreads"
-    LIBOBJS="$LIBOBJS Python/thread.o"
+    LIBOBJS="$LIBOBJS thread.o"
 else
   echo "$ac_t""no" 1>&6
 
@@ -3681,7 +3681,7 @@ EOF
 EOF
 
     LIBS="$LIBS -lc_r"
-    LIBOBJS="$LIBOBJS Python/thread.o"
+    LIBOBJS="$LIBOBJS thread.o"
 else
   echo "$ac_t""no" 1>&6
 
@@ -3729,7 +3729,7 @@ EOF
 EOF
 
     LIBS="$LIBS -lthread"
-    LIBOBJS="$LIBOBJS Python/thread.o"
+    LIBOBJS="$LIBOBJS thread.o"
 else
   echo "$ac_t""no" 1>&6
 
@@ -3777,7 +3777,7 @@ EOF
 EOF
 
     LIBS="$LIBS -lpthread"
-    LIBOBJS="$LIBOBJS Python/thread.o"
+    LIBOBJS="$LIBOBJS thread.o"
 else
   echo "$ac_t""no" 1>&6
 
@@ -3825,7 +3825,7 @@ EOF
 EOF
 
     LIBS="$LIBS -lcma"
-    LIBOBJS="$LIBOBJS Python/thread.o"
+    LIBOBJS="$LIBOBJS thread.o"
 else
   echo "$ac_t""no" 1>&6
 
@@ -3892,7 +3892,7 @@ if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
 EOF
 
     LIBS="$LIBS -lmpc"
-    LIBOBJS="$LIBOBJS Python/thread.o"
+    LIBOBJS="$LIBOBJS thread.o"
     USE_THREAD_MODULE=""
 else
   echo "$ac_t""no" 1>&6
@@ -3938,7 +3938,7 @@ if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
 EOF
 
     LIBS="$LIBS -lthread"
-    LIBOBJS="$LIBOBJS Python/thread.o"
+    LIBOBJS="$LIBOBJS thread.o"
     USE_THREAD_MODULE=""
 else
   echo "$ac_t""no" 1>&6
@@ -6156,6 +6156,13 @@ EOF
 fi
 
 
+# Add Python/ prefix to LIBOBJS
+libobjs=$LIBOBJS
+LIBOBJS=
+for obj in $libobjs; do
+    LIBOBJS="$LIBOBJS Python/$obj"
+done
+
 #AC_MSG_CHECKING(for Modules/Setup)
 #if test ! -f Modules/Setup ; then
 #    if test ! -d Modules ; then
@@ -6170,7 +6177,7 @@ fi
 
 SRCDIRS="Parser Grammar Objects Python Modules"
 echo $ac_n "checking for build directories""... $ac_c" 1>&6
-echo "configure:6174: checking for build directories" >&5
+echo "configure:6181: checking for build directories" >&5
 for dir in $SRCDIRS; do
     if test ! -d $dir; then
         mkdir $dir
