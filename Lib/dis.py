@@ -1,10 +1,15 @@
-# Disassembler
+"""Disassembler of Python byte code into mnemonics."""
 
 import sys
 import string
 import types
 
 def dis(x=None):
+	"""Disassemble classes, methods, functions, or code.
+
+	With no argument, disassemble the last traceback.
+
+	"""
 	if not x:
 		distb()
 		return
@@ -36,6 +41,7 @@ def dis(x=None):
 			      type(x).__name__
 
 def distb(tb=None):
+	"""Disassemble a traceback (default: last traceback)."""
 	if not tb:
 		try:
 			tb = sys.last_traceback
@@ -45,6 +51,7 @@ def distb(tb=None):
 	disassemble(tb.tb_frame.f_code, tb.tb_lasti)
 
 def disassemble(co, lasti=-1):
+	"""Disassemble a code object."""
 	code = co.co_code
 	labels = findlabels(code)
 	n = len(code)
@@ -79,6 +86,11 @@ def disassemble(co, lasti=-1):
 disco = disassemble
 
 def findlabels(code):
+	"""Detect all offsets in a byte code which are jump targets.
+
+	Return the list of offsets.
+
+	"""
 	labels = []
 	n = len(code)
 	i = 0
