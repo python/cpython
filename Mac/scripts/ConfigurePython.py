@@ -79,6 +79,7 @@ goals = [
 	("Ctl.slb", "toolboxmodules.slb"),
 	("Dlg.slb", "toolboxmodules.slb"),
 	("Evt.slb", "toolboxmodules.slb"),
+	("Fm.slb", "toolboxmodules.slb"),
 	("Menu.slb", "toolboxmodules.slb"),
 	("List.slb", "toolboxmodules.slb"),
 	("Qd.slb", "toolboxmodules.slb"),
