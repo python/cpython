@@ -1695,7 +1695,7 @@ static struct methodlist posix_methods[] = {
 };
 
 
-#ifdef NT
+#if defined(_MSC_VER) || defined(__WATCOMC__)
 void
 initnt()
 {
