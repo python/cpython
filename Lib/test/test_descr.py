@@ -1214,6 +1214,20 @@ def classmethods():
     vereq(ff.__get__(0, int)(42), (int, 42))
     vereq(ff.__get__(0)(42), (int, 42))
 
+def classmethods_in_c():
+    if verbose: print "Testing C-based class methods..."
+    import xxsubtype as spam
+    a = (1, 2, 3)
+    d = {'abc': 123}
+    x, a1, d1 = spam.spamlist.classmeth(*a, **d)
+    veris(x, None)
+    vereq((spam.spamlist,) + a, a1)
+    vereq(d, d1)
+    x, a1, d1 = spam.spamlist().classmeth(*a, **d)
+    veris(x, None)
+    vereq((spam.spamlist,) + a, a1)
+    vereq(d, d1)
+
 def staticmethods():
     if verbose: print "Testing static methods..."
     class C(object):
@@ -1230,6 +1244,20 @@ def staticmethods():
     vereq(d.goo(1), (1,))
     vereq(d.foo(1), (d, 1))
     vereq(D.foo(d, 1), (d, 1))
+
+def staticmethods_in_c():
+    if verbose: print "Testing C-based static methods..."
+    import xxsubtype as spam
+    a = (1, 2, 3)
+    d = {"abc": 123}
+    x, a1, d1 = spam.spamlist.staticmeth(*a, **d)
+    veris(x, None)
+    vereq(a, a1)
+    vereq(d, d1)
+    x, a1, d2 = spam.spamlist().staticmeth(*a, **d)
+    veris(x, None)
+    vereq(a, a1)
+    vereq(d, d1)
 
 def classic():
     if verbose: print "Testing classic classes..."
@@ -2884,7 +2912,9 @@ def test_main():
     dynamics()
     errors()
     classmethods()
+    classmethods_in_c()
     staticmethods()
+    staticmethods_in_c()
     classic()
     compattr()
     newslot()

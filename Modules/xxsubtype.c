@@ -43,11 +43,39 @@ spamlist_setstate(spamlistobject *self, PyObject *args)
 	return Py_None;
 }
 
+static PyObject *
+spamlist_specialmeth(PyObject *self, PyObject *args, PyObject *kw)
+{
+	PyObject *result = PyTuple_New(3);
+
+	if (result != NULL) {
+		if (self == NULL)
+			self = Py_None;
+		if (kw == NULL)
+			kw = Py_None;
+		Py_INCREF(self);
+		PyTuple_SET_ITEM(result, 0, self);
+		Py_INCREF(args);
+		PyTuple_SET_ITEM(result, 1, args);
+		Py_INCREF(kw);
+		PyTuple_SET_ITEM(result, 2, kw);
+	}
+	return result;
+}
+
 static PyMethodDef spamlist_methods[] = {
 	{"getstate", (PyCFunction)spamlist_getstate, METH_VARARGS,
 	 	"getstate() -> state"},
 	{"setstate", (PyCFunction)spamlist_setstate, METH_VARARGS,
 	 	"setstate(state)"},
+	/* These entries differ only in the flags; they are used by the tests
+	   in test.test_descr. */
+	{"classmeth", (PyCFunction)spamlist_specialmeth,
+		METH_VARARGS | METH_KEYWORDS | METH_CLASS,
+	 	"classmeth(*args, **kw)"},
+	{"staticmeth", (PyCFunction)spamlist_specialmeth,
+		METH_VARARGS | METH_KEYWORDS | METH_STATIC,
+	 	"staticmeth(*args, **kw)"},
 	{NULL,	NULL},
 };
 
