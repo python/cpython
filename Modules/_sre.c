@@ -353,6 +353,18 @@ mark_restore(SRE_STATE* state, int lo, int hi)
     return 0;
 }
 
+void lastmark_restore(SRE_STATE *state, int lastmark)
+{
+    if (state->lastmark > lastmark) {
+        memset(
+            state->mark + lastmark + 1, 0,
+            (state->lastmark - lastmark) * sizeof(void*)
+            );
+        state->lastmark = lastmark;
+        state->lastindex = (lastmark == 0) ? -1 : (lastmark-1)/2+1;
+    }
+}
+
 /* generate 8-bit version */
 
 #define SRE_CHAR unsigned char
@@ -860,10 +872,11 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             /* <MARK> <gid> */
             TRACE(("|%p|%p|MARK %d\n", pattern, ptr, pattern[0]));
             i = pattern[0];
-            if (i & 1)
-                state->lastindex = i/2 + 1;
-            if (i > state->lastmark)
+            if (i > state->lastmark) {
                 state->lastmark = i;
+                if (i & 1)
+                    state->lastindex = i/2 + 1;
+            }
             state->mark[i] = ptr;
             pattern++;
             break;
@@ -920,13 +933,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 i = SRE_MATCH(state, pattern + 1, level + 1);
                 if (i)
                     return i;
-                if (state->lastmark > lastmark) {
-                    memset(
-                        state->mark + lastmark + 1, 0,
-                        (state->lastmark - lastmark) * sizeof(void*)
-                        );
-                    state->lastmark = lastmark;
-                }
+                lastmark_restore(state, lastmark);
             }
             return 0;
 
@@ -997,13 +1004,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                         return i;
                     ptr--;
                     count--;
-                    if (state->lastmark > lastmark) {
-                        memset(
-                            state->mark + lastmark + 1, 0,
-                            (state->lastmark - lastmark) * sizeof(void*)
-                            );
-                        state->lastmark = lastmark;
-                    }
+                    lastmark_restore(state, lastmark);
                 }
             }
             return 0;
@@ -1071,9 +1072,9 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 if (i)
                     return i;
                 i = mark_restore(state, 0, lastmark);
-                state->lastmark = lastmark;
                 if (i < 0)
                     return i;
+                lastmark_restore(state, lastmark);
                 rp->count = count - 1;
                 state->ptr = ptr;
             }

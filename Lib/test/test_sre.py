@@ -78,6 +78,11 @@ test(r"""sre.match(r'(a)|(b)', 'b').start(1)""", -1)
 test(r"""sre.match(r'(a)|(b)', 'b').end(1)""", -1)
 test(r"""sre.match(r'(a)|(b)', 'b').span(1)""", (-1, -1))
 
+# bug described in patch 527371
+test(r"""sre.match(r'(a)?a','a').lastindex""", None)
+test(r"""sre.match(r'(a)(b)?b','ab').lastindex""", 1)
+test(r"""sre.match(r'(?P<a>a)(?P<b>b)?b','ab').lastgroup""", 'a')
+
 if verbose:
     print 'Running tests on sre.sub'
 
