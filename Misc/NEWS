@@ -4,6 +4,48 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.4 alpha 1?
+=================================
+
+*Release date: DD-MMM-YYYY*
+
+Core and builtins
+-----------------
+
+Extension modules
+-----------------
+
+Library
+-------
+
+Tools/Demos
+-----------
+
+- py-electric-colon now works when pending-delete/delete-selection mode is
+  in effect
+
+- py-help-at-point is no longer bound to the F1 key - it's still bound to
+  C-c C-h
+
+Build
+-----
+
+C API
+-----
+
+New platforms
+-------------
+
+Tests
+-----
+
+Windows
+-------
+
+Mac
+----
+
+
 What's New in Python 2.3 final?
 ===============================
 
