@@ -1577,6 +1577,24 @@ def fprintf(file, format, *args):
 \end{verbatim}
 
 
+\subsection{Unpacking Argument Lists \label{unpacking-arguments}}
+
+The reverse situation occurs when the arguments are already in a list
+or tuple but need to be unpacked for a function call requiring separate
+positional arguments.  For instance, the built-in \function{range()}
+function expects separate \var{start} and \var{stop} arguments.  If they
+are not available separately, write the function call with the 
+\code{*}-operator to unpack the arguments out of a list or tuple:
+
+\begin{verbatim}
+>>> range(3, 6)             # normal call with separate arguments
+[3, 4, 5]
+>>> args = [3, 6]
+>>> range(*args)            # call with arguments unpacked from a list
+[3, 4, 5]
+\end{verbatim}
+
+
 \subsection{Lambda Forms \label{lambda}}
 
 By popular demand, a few features commonly found in functional
