@@ -152,7 +152,7 @@ generally one higher than you might expect, because it includes the
 Return the current value of the recursion limit, the maximum depth of
 the Python interpreter stack.  This limit prevents infinite recursion
 from causing an overflow of the C stack and crashing Python.  It can
-be set by \function{setrecursionlimit}.
+be set by \function{setrecursionlimit()}.
 \end{funcdesc}
 
 \begin{datadesc}{hexversion}
@@ -291,7 +291,7 @@ The highest possible limit is platform-dependent.  A user may need to
 set the limit higher when she has a program that requires deep
 recursion and a platform that supports a higher limit.  This should be
 done with care, because a too-high limit can lead to a crash.
-\edn{funcdesc}
+\end{funcdesc}
 
 \begin{funcdesc}{settrace}{tracefunc}
   Set the system's trace function, which allows you to implement a
