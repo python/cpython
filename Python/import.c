@@ -161,6 +161,9 @@ exec_code_module(name, co)
 		if (dictinsert(d, "__builtins__", getbuiltins()) != 0)
 			return NULL;
 	}
+	/* Remember the filename as the __file__ attribute */
+	if (dictinsert(d, "__file__", ((codeobject *)co)->co_filename) != 0)
+		err_clear(); /* Not important enough to report */
 	v = eval_code((codeobject *)co, d, d); /* XXX owner? */
 	if (v == NULL)
 		return NULL;
