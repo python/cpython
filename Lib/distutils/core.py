@@ -145,9 +145,7 @@ def setup (**attrs):
             else:
                 raise SystemExit, error
 
-        except (DistutilsExecError,
-                DistutilsFileError,
-                DistutilsOptionError,
+        except (DistutilsError,
                 CCompilerError), msg:
             if DEBUG:
                 raise
