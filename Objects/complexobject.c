@@ -646,6 +646,9 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	int sw_error=0;
 	int sign;
 	char buffer[256]; /* For errors */
+#ifdef Py_USING_UNICODE
+	char s_buffer[256];
+#endif
 	int len;
 
 	if (PyString_Check(v)) {
@@ -654,7 +657,6 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(v)) {
-	    	char s_buffer[256];
 		if (PyUnicode_GET_SIZE(v) >= sizeof(s_buffer)) {
 			PyErr_SetString(PyExc_ValueError,
 				 "complex() literal too large to convert");
