@@ -35,7 +35,7 @@ Limitations:
 - no asynchronous I/O (but read polling: avail)
 - no read/write operations (use send/recv or makefile instead)
 - no flags on sendto/recvfrom operations
-- no general setsockopt() call (but see s.allowbroadcast())
+- setsockopt() and getsockopt() only support integer options
 
 Interface:
 
@@ -55,7 +55,8 @@ Socket methods:
 
 - s.accept() --> new socket object, sockaddr
 - s.avail() --> boolean
-- s.allowbroadcast(boolean) --> None
+- s.setsockopt(level, optname, flag) --> None
+- s.getsockopt(level, optname) --> flag
 - s.bind(sockaddr) --> None
 - s.connect(sockaddr) --> None
 - s.listen(n) --> None
@@ -346,6 +347,7 @@ sock_accept(s, args)
 
 
 /* s.allowbroadcast() method */
+/* XXX obsolete -- will disappear in next release */
 
 static object *
 sock_allowbroadcast(s, args)
@@ -362,6 +364,54 @@ sock_allowbroadcast(s, args)
 		return socket_error();
 	INCREF(None);
 	return None;
+}
+
+
+/* s.setsockopt() method */
+/* XXX this works for integer flags only */
+
+static object *
+sock_setsockopt(s, args)
+	sockobject *s;
+	object *args;
+{
+	int level;
+	int optname;
+	int flag;
+	int res;
+
+	if (!getargs(args, "(iii)", &level, &optname, &flag))
+		return NULL;
+	res = setsockopt(s->sock_fd, level, optname, &flag, sizeof flag);
+	if (res < 0)
+		return socket_error();
+	INCREF(None);
+	return None;
+}
+
+
+/* s.getsockopt() method */
+/* XXX this works for integer flags only */
+
+static object *
+sock_getsockopt(s, args)
+	sockobject *s;
+	object *args;
+{
+	int level;
+	int optname;
+	int flag;
+	int flagsize;
+	int res;
+
+	if (!getargs(args, "(ii)", &level, &optname))
+		return NULL;
+	flagsize = sizeof flag;
+	flag = 0;
+	res = getsockopt(s->sock_fd, level, optname, &flag, &flagsize);
+	if (res < 0)
+		return socket_error();
+	return newintobject(flag);
 }
 
 
@@ -610,6 +660,8 @@ static struct methodlist sock_methods[] = {
 	{"accept",	sock_accept},
 	{"avail",	sock_avail},
 	{"allowbroadcast",	sock_allowbroadcast},
+	{"setsockopt",	sock_setsockopt},
+	{"getsockopt",	sock_getsockopt},
 	{"bind",	sock_bind},
 	{"close",	sock_close},
 	{"connect",	sock_connect},
