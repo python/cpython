@@ -219,7 +219,10 @@ there is no matching header; and \code{len(\var{m})},
 \code{\var{m}.values()} and \code{\var{m}.items()} act as expected
 (and consistently).  \class{Message} instances also support the
 mapping writable interface \code{\var{m}[name] = value} and \code{del
-\var{m}[name]}.
+\var{m}[name]}.  \class{Message} objects do not support the
+\method{clear()}, \method{copy()}, \method{get()}, \method{popitem()},
+\method{setdefault()}, or \method{update()} methods of the mapping
+interface.
 
 Finally, \class{Message} instances have two public instance variables:
 
