@@ -132,125 +132,49 @@ from Carbon.Folder import FindFolder
 # Finally the old Standard File routine emulators.
 #
 
-_movablemodal = 0
 _curfolder = None
 
-def _mktypelist(typelist):
-	# Workaround for OSX typeless files:
-	if 'TEXT' in typelist and not '\0\0\0\0' in typelist:
-		typelist = typelist + ('\0\0\0\0',)
-	if not typelist:
-		return None
-	data = 'Pyth' + struct.pack("hh", 0, len(typelist))
-	for type in typelist:
-		data = data+type
-	return Carbon.Res.Handle(data)
-	
 def StandardGetFile(*typelist):
 	"""Ask for an input file, optionally specifying 4-char file types that are
 	allowable"""
-	return apply(PromptGetFile, (None,)+typelist)
+	return PromptGetFile('', *typelist)
 	
 def PromptGetFile(prompt, *typelist):
 	"""Ask for an input file giving the user a prompt message. Optionally you can
 	specifying 4-char file types that are allowable"""
-	args = {}
-	flags = 0x56
-	typehandle = _mktypelist(typelist)
-	if typehandle:
-		args['typeList'] = typehandle
-	else:
-		flags = flags | 0x01
-	if prompt:
-		args['message'] = prompt
-	args['preferenceKey'] = 'PyMC'
-	if _movablemodal:
-		args['eventProc'] = None
-	args['dialogOptionFlags'] = flags
-	_handleSetFolder(args)
-	try:
-		rr = Nav.NavChooseFile(args)
-		good = 1
-	except Nav.error, arg:
-		if arg[0] != -128: # userCancelledErr
-			raise Nav.error, arg
-		good = 0
-		fss = None
-	else:
-		if rr.selection:
-			fss = FSSpec(rr.selection[0])
-		else:
-			fss = None
-			good = 0
-##	if typehandle:
-##		typehandle.DisposeHandle()
-	return fss, good
+	import EasyDialogs
+	if not typelist:
+		typelist = None
+	fss = EasyDialogs.AskFileForOpen(message=prompt, wanted=FSSpec, 
+		typeList=typelist, defaultLocation=_handleSetFolder())
+	return fss, not fss is None
 
 def StandardPutFile(prompt, default=None):
 	"""Ask the user for an output file, with a prompt. Optionally you cn supply a
 	default output filename"""
-	args = {}
-	flags = 0x07
-	if prompt:
-		args['message'] = prompt
-	args['preferenceKey'] = 'PyMC'
-	if _movablemodal:
-		args['eventProc'] = None
-	if default:
-		args['savedFileName'] = default
-	args['dialogOptionFlags'] = flags
-	_handleSetFolder(args)
-	try:
-		rr = Nav.NavPutFile(args)
-		good = 1
-	except Nav.error, arg:
-		if arg[0] != -128: # userCancelledErr
-			raise Nav.error, arg
-		good = 0
-		fss = None
-	else:
-		fss = FSSpec(rr.selection[0])
-	return fss, good
+	import EasyDialogs
+	fss = EasyDialogs.AskFileForSave(wanted=FSSpec, message=prompt, 
+	savedFileName=default, defaultLocation=_handleSetFolder())
+	return fss, not fss is None
 	
 def SetFolder(folder):
 	global _curfolder
 	if _curfolder:
-		rv = _curfolder
+		rv = FSSpec(_curfolder)
 	else:
 		rv = None
-	_curfolder = FSSpec(folder)
+	_curfolder = folder
 	return rv
 	
-def _handleSetFolder(args):
+def _handleSetFolder():
 	global _curfolder
-	if not _curfolder:
-		return
-	import aepack
-	fss = _curfolder
-	aedesc = aepack.pack(fss)
-	args['defaultLocation'] = aedesc
+	rv = _curfolder
 	_curfolder = None
+	return rv
 	
 def GetDirectory(prompt=None):
 	"""Ask the user to select a folder. Optionally you can give a prompt."""
-	args = {}
-	flags = 0x17
-	if prompt:
-		args['message'] = prompt
-	args['preferenceKey'] = 'PyMC'
-	if _movablemodal:
-		args['eventProc'] = None
-	args['dialogOptionFlags'] = flags
-	_handleSetFolder(args)
-	try:
-		rr = Nav.NavChooseFolder(args)
-		good = 1
-	except Nav.error, arg:
-		if arg[0] != -128: # userCancelledErr
-			raise Nav.error, arg
-		good = 0
-		fss = None
-	else:
-		fss = FSSpec(rr.selection[0])
-	return fss, good
-	
+	import EasyDialogs
+	fss = EasyDialogs.AskFolder(message=prompt, wanted=FSSpec, 
+		defaultLocation=_handleSetFolder())
+	return fss, not fss is None
