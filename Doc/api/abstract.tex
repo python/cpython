@@ -269,7 +269,8 @@ determination.
                                                   \moreargs}
   Call the method named \var{method} of object \var{o} with a variable
   number of C arguments.  The C arguments are described by a
-  \cfunction{Py_BuildValue()} format string.  The format may be \NULL,
+  \cfunction{Py_BuildValue()} format string that should 
+  produce a tuple.  The format may be \NULL,
   indicating that no arguments are provided. Returns the result of the
   call on success, or \NULL{} on failure.  This is the equivalent of
   the Python expression \samp{\var{o}.\var{method}(\var{args})}.
