@@ -1,0 +1,76 @@
+This file describes some special Python build types enabled via
+compile-time preprocessor defines.
+
+---------------------------------------------------------------------------
+Py_REF_DEBUG
+
+Turn on aggregate reference counting.  This arranges that extern
+_Py_RefTotal hold a count of all references, the sum of ob_refcnt across
+all objects.  In a debug-mode build, this is where the "8288" comes from
+in
+
+    >>> 23
+    23
+    [8288 refs]
+    >>>
+
+Note that if this count increases when you're not storing away new objects,
+there's probably a leak.  Remember, though, that in interactive mode the
+special name "_" holds a reference to the last result displayed!
+
+Py_REF_DEBUG also checks after every decref to verify that the refcount
+hasn't gone negative, and causes an immediate fatal error if it has.
+
+Special gimmicks:
+
+sys.gettotalrefcount()
+    Return current total of all refcounts.
+    Available under Py_REF_DEBUG in Python 2.3.
+    Before 2.3, Py_TRACE_REFS was required to enable this function.
+---------------------------------------------------------------------------
+Py_TRACE_REFS
+
+Turn on heavy reference debugging.  This is major surgery.  Every PyObject
+grows two more pointers, to maintain a doubly-linked list of all live
+heap-allocated objects (note that, e.g., most builtin type objects are not
+in this list, as they're statically allocated).  Note that because the
+fundamental PyObject layout changes, Python modules compiled with
+Py_TRACE_REFS are incompatible with modules compiled without it.
+
+Py_TRACE_REFS implies Py_REF_DEBUG.
+
+Special gimmicks:
+
+sys.getobjects(max[, type])
+    Return list of the most-recently allocated max objects, most recently
+    allocated first in the list, least-recently allocated last in the
+    list.  max=0 means no limit on list length.  If an optional type
+    object is passed, the list is also restricted to objects of that
+    type.
+
+envar PYTHONDUMPREFS
+    If this envar exists, Py_Finalize() arranges to print a list of
+    all still-live heap objects.
+---------------------------------------------------------------------------
+COUNT_ALLOCS
+
+Special gimmicks:
+
+sys.getcounts()
+---------------------------------------------------------------------------
+PYMALLOC_DEBUG
+
+Special gimmicks:
+
+envar PYTHONMALLOCSTATS
+    If this envar exists, a report of pymalloc summary statistics is
+    printed to stderr whenever a new arena is allocated, and also
+    by Py_Finalize().
+---------------------------------------------------------------------------
+Py_DEBUG
+
+This is what is generally meant by "a debug build" of Python.
+
+Py_DEBUG implies Py_REF_DEBUG, Py_TRACE_REFS, and PYMALLOC_DEBUG (if
+WITH_PYMALLOC is enabled).
+---------------------------------------------------------------------------
