@@ -1,13 +1,13 @@
 \section{Standard Module \sectcode{rexec}}
 \label{module-rexec}
 \stmodindex{rexec}
-\setindexsubitem{(in module rexec)}
+
 
 This module contains the \class{RExec} class, which supports
-\code{r_exec()}, \code{r_eval()}, \code{r_execfile()}, and
-\code{r_import()} methods, which are restricted versions of the standard
-Python functions \code{exec()}, \code{eval()}, \code{execfile()}, and
-the \code{import} statement.
+\method{r_exec()}, \method{r_eval()}, \method{r_execfile()}, and
+\method{r_import()} methods, which are restricted versions of the standard
+Python functions \method{exec()}, \method{eval()}, \method{execfile()}, and
+the \keyword{import} statement.
 Code executed in this restricted environment will
 only have access to modules and functions that are deemed safe; you
 can subclass \class{RExec} to add or remove capabilities as desired.
@@ -17,11 +17,11 @@ unsafe operations like reading or writing disk files, or using TCP/IP
 sockets.  However, it does not protect against code using extremely
 large amounts of memory or CPU time.  
 
-\begin{funcdesc}{RExec}{\optional{hooks\optional{\, verbose}}}
+\begin{classdesc}{RExec}{\optional{hooks\optional{, verbose}}}
 Returns an instance of the \class{RExec} class.  
 
-\var{hooks} is an instance of the \code{RHooks} class or a subclass of it.
-If it is omitted or \code{None}, the default \code{RHooks} class is
+\var{hooks} is an instance of the \class{RHooks} class or a subclass of it.
+If it is omitted or \code{None}, the default \class{RHooks} class is
 instantiated.
 Whenever the \module{RExec} module searches for a module (even a
 built-in one) or reads a module's code, it doesn't actually go out to
@@ -41,10 +41,10 @@ importing applets from a URL for a directory.
 
 If \var{verbose} is true, additional debugging output may be sent to
 standard output.
-\end{funcdesc}
+\end{classdesc}
 
 The \class{RExec} class has the following class attributes, which are
-used by the \code{__init__()} method.  Changing them on an existing
+used by the \method{__init__()} method.  Changing them on an existing
 instance won't have any effect; instead, create a subclass of
 \class{RExec} and assign them new values in the class definition.
 Instances of the new class will then use those new values.  All these
@@ -75,7 +75,7 @@ class as a starting point.
 \end{datadesc}
 
 \begin{datadesc}{ok_path}
-Contains the directories which will be searched when an \code{import}
+Contains the directories which will be searched when an \keyword{import}
 is performed in the restricted environment.  
 The value for \class{RExec} is the same as \code{sys.path} (at the time
 the module is loaded) for unrestricted code.
@@ -83,7 +83,7 @@ the module is loaded) for unrestricted code.
 
 \begin{datadesc}{ok_posix_names}
 % Should this be called ok_os_names?
-Contains the names of the functions in the \code{os} module which will be
+Contains the names of the functions in the \module{os} module which will be
 available to programs running in the restricted environment.  The
 value for \class{RExec} is \code{('error',} \code{'fstat',}
 \code{'listdir',} \code{'lstat',} \code{'readlink',} \code{'stat',}
@@ -93,7 +93,7 @@ value for \class{RExec} is \code{('error',} \code{'fstat',}
 \end{datadesc}
 
 \begin{datadesc}{ok_sys_names}
-Contains the names of the functions and variables in the \code{sys}
+Contains the names of the functions and variables in the \module{sys}
 module which will be available to programs running in the restricted
 environment.  The value for \class{RExec} is \code{('ps1',}
 \code{'ps2',} \code{'copyright',} \code{'version',} \code{'platform',}
@@ -106,25 +106,25 @@ environment.  The value for \class{RExec} is \code{('ps1',}
 \begin{funcdesc}{r_eval}{code}
 \var{code} must either be a string containing a Python expression, or
 a compiled code object, which will be evaluated in the restricted
-environment's \code{__main__} module.  The value of the expression or
+environment's \module{__main__} module.  The value of the expression or
 code object will be returned.
 \end{funcdesc}
 
 \begin{funcdesc}{r_exec}{code}
 \var{code} must either be a string containing one or more lines of
 Python code, or a compiled code object, which will be executed in the
-restricted environment's \code{__main__} module.
+restricted environment's \module{__main__} module.
 \end{funcdesc}
 
 \begin{funcdesc}{r_execfile}{filename}
 Execute the Python code contained in the file \var{filename} in the
-restricted environment's \code{__main__} module.
+restricted environment's \module{__main__} module.
 \end{funcdesc}
 
-Methods whose names begin with \code{s_} are similar to the functions
-beginning with \code{r_}, but the code will be granted access to
+Methods whose names begin with \samp{s_} are similar to the functions
+beginning with \samp{r_}, but the code will be granted access to
 restricted versions of the standard I/O streams \code{sys.stdin},
-\code{sys.stderr}, and \code{sys.stdout}.  
+\code{sys.stderr}, and \code{sys.stdout}.
 
 \begin{funcdesc}{s_eval}{code}
 \var{code} must be a string containing a Python expression, which will
@@ -146,19 +146,19 @@ implicitly called by code executing in the restricted environment.
 Overriding these methods in a subclass is used to change the policies
 enforced by a restricted environment.
 
-\begin{funcdesc}{r_import}{modulename\optional{\, globals\, locals\, fromlist}}
-Import the module \var{modulename}, raising an \code{ImportError}
+\begin{funcdesc}{r_import}{modulename\optional{, globals, locals, fromlist}}
+Import the module \var{modulename}, raising an \exception{ImportError}
 exception if the module is considered unsafe.
 \end{funcdesc}
 
 \begin{funcdesc}{r_open}{filename\optional{\, mode\optional{\, bufsize}}}
-Method called when \code{open()} is called in the restricted
-environment.  The arguments are identical to those of \code{open()},
+Method called when \function{open()} is called in the restricted
+environment.  The arguments are identical to those of \function{open()},
 and a file object (or a class instance compatible with file objects)
 should be returned.  \class{RExec}'s default behaviour is allow opening
 any file for reading, but forbidding any attempt to write a file.  See
 the example below for an implementation of a less restrictive
-\code{r_open()}.
+\method{r_open()}.
 \end{funcdesc}
 
 \begin{funcdesc}{r_reload}{module}
@@ -212,7 +212,7 @@ class TmpWriterRExec(rexec.RExec):
 Notice that the above code will occasionally forbid a perfectly valid
 filename; for example, code in the restricted environment won't be
 able to open a file called \file{/tmp/foo/../bar}.  To fix this, the
-\code{r_open} method would have to simplify the filename to
+\method{r_open()} method would have to simplify the filename to
 \file{/tmp/bar}, which would require splitting apart the filename and
 performing various operations on it.  In cases where security is at
 stake, it may be preferable to write simple code which is sometimes
