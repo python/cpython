@@ -564,8 +564,13 @@ def FrontWindowInsert(stuff):
 			"Can't find window or widget to insert text into; copy to clipboard instead?", 
 			1) == 1:
 		from Carbon import Scrap
-		Scrap.ZeroScrap()
-		Scrap.PutScrap('TEXT', stuff)
+		if hasattr(Scrap, 'PutScrap'):
+			Scrap.ZeroScrap()
+			Scrap.PutScrap('TEXT', stuff)
+		else:
+			Scrap.ClearCurrentScrap()
+			sc = Scrap.GetCurrentScrap()
+			sc.PutScrapFlavor('TEXT', 0, stuff)
 
 
 # not quite based on the same function in FrameWork	

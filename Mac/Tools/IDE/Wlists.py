@@ -176,8 +176,13 @@ class List(Wbase.SelectableWidget):
 			selitems.append(str(self.items[i]))
 		text = string.join(selitems, '\r')
 		if text:
-			Scrap.ZeroScrap()
-			Scrap.PutScrap('TEXT', text)
+			if hasattr(Scrap, 'PutScrap'):
+				Scrap.ZeroScrap()
+				Scrap.PutScrap('TEXT', text)
+			else:
+				Scrap.ClearCurrentScrap()
+				sc = Scrap.GetCurrentScrap()
+				sc.PutScrapFlavor('TEXT', 0, text)
 	
 	def can_copy(self, *args):
 		return len(self.getselection()) <> 0
