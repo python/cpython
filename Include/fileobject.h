@@ -24,6 +24,7 @@ typedef struct {
 	int f_newlinetypes;	/* Types of newlines seen */
 	int f_skipnextlf;	/* Skip next \n */
 #endif
+	PyObject *f_encoding;
 } PyFileObject;
 
 PyAPI_DATA(PyTypeObject) PyFile_Type;
@@ -33,6 +34,7 @@ PyAPI_DATA(PyTypeObject) PyFile_Type;
 
 PyAPI_FUNC(PyObject *) PyFile_FromString(char *, char *);
 PyAPI_FUNC(void) PyFile_SetBufSize(PyObject *, int);
+PyAPI_FUNC(int) PyFile_SetEncoding(PyObject *, const char *);
 PyAPI_FUNC(PyObject *) PyFile_FromFile(FILE *, char *, char *,
                                              int (*)(FILE *));
 PyAPI_FUNC(FILE *) PyFile_AsFile(PyObject *);
