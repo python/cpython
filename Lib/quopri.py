@@ -61,6 +61,8 @@ def encode(input, output, quotetabs, header = 0):
         # that trailing character encoded.
         if s and s[-1:] in ' \t':
             output.write(s[:-1] + quote(s[-1]) + lineEnd)
+        elif s == '.':
+            output.write(quote(s) + lineEnd)
         else:
             output.write(s + lineEnd)
 
