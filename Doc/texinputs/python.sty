@@ -856,6 +856,21 @@
 % Note that \longprogramopt provides the '--'!
 \newcommand{\longprogramopt}[1]{\strong{-{}-#1}}
 
+% \ulink{link text}{URL}
+\@ifundefined{pdfannotlink}{
+  \newcommand{\ulink}[2]{#1}
+}{
+  % The \noindent here is a hack -- we're forcing pdfTeX into
+  % horizontal mode since \pdfstartlink requires that.
+  \newcommand{\ulink}[2]{\noindent{%
+    \pdfstartlink attr{/Border [0 0 0]} user{/S /URI /URI (#2)}%
+    \py@LinkColor%                              color of the link text
+    #1%
+    \py@NormalColor%                    Turn it back off; these are declarative
+    \pdfendlink}%                       and don't appear bound to the current
+  }%                                    formatting "box".
+}
+
 % cited titles:  \citetitle{Title of Work}
 %       online:  \citetitle[url-to-resource]{Title of Work}
 \newcommand{\citetitle}[2][URL]{\emph{#2}}

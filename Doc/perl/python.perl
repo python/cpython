@@ -323,6 +323,13 @@ sub do_cmd_rfc{
             . "$icon</a>" . $_);
 }
 
+sub do_cmd_ulink{
+    local($_) = @_;
+    my $text = next_argument();
+    my $url = next_argument();
+    return "<a class=\"ulink\" href=\"$url\"\n  >$text</a>" . $_;
+}
+
 sub do_cmd_citetitle{
     local($_) = @_;
     my $url = next_optional_argument();
