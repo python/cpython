@@ -192,6 +192,21 @@ def getfile(object):
     raise TypeError, 'arg is not a module, class, method, ' \
                      'function, traceback, frame, or code object'
 
+def getmoduleinfo(path):
+    """Get the module name, suffix, mode, and module type for a given file."""
+    filename = os.path.basename(path)
+    suffixes = map(lambda (suffix, mode, mtype):
+                   (-len(suffix), suffix, mode, mtype), imp.get_suffixes())
+    suffixes.sort() # try longest suffixes first, in case they overlap
+    for neglen, suffix, mode, mtype in suffixes:
+        if filename[neglen:] == suffix:
+            return filename[:neglen], suffix, mode, mtype
+
+def getmodulename(path):
+    """Return the module name for a given file, or None."""
+    info = getmoduleinfo(path)
+    if info: return info[0]
+
 def getsourcefile(object):
     """Return the Python source file an object was defined in, if it exists."""
     filename = getfile(object)
