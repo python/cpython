@@ -321,7 +321,7 @@ pure_purify_set_pool_id(self, args)
 	long memrep;
 	int id;
 
-	if (!PyArg_ParseTuple(args, "li", &memrep, &id))
+	if (!PyArg_ParseTuple(args, "li:purify_set_pool_id", &memrep, &id))
 		return NULL;
 
 	purify_set_pool_id((char*)memrep, id);
@@ -343,7 +343,7 @@ pure_purify_set_user_data(self, args)
 	long memrep;
 	long datarep;
 
-	if (!PyArg_ParseTuple(args, "ll", &memrep, &datarep))
+	if (!PyArg_ParseTuple(args, "ll:purify_set_user_data", &memrep, &datarep))
 		return NULL;
 
 	purify_set_user_data((char*)memrep, (void*)datarep);
@@ -361,7 +361,7 @@ pure_purify_get_user_data(self, args)
 	long memrep;
 	void* data;
 
-	if (!PyArg_ParseTuple(args, "l", &memrep))
+	if (!PyArg_ParseTuple(args, "l:purify_get_user_data", &memrep))
 		return NULL;
 
 	data = purify_get_user_data((char*)memrep);
@@ -411,7 +411,7 @@ pure_purify_map_pool(self, args)
 	PyObject* arg_callable;
 	int id;
 
-	if (!PyArg_ParseTuple(args, "iO", &id, &arg_callable))
+	if (!PyArg_ParseTuple(args, "iO:purify_map_pool", &id, &arg_callable))
 		return NULL;
 
 	if (!PyCallable_Check(arg_callable)) {
@@ -451,7 +451,7 @@ pure_purify_map_pool_id(self, args)
 	PyObject* saved_callable = MapCallable;
 	PyObject* arg_callable;
 
-	if (!PyArg_ParseTuple(args, "O", &arg_callable))
+	if (!PyArg_ParseTuple(args, "O:purify_map_pool_id", &arg_callable))
 		return NULL;
 
 	if (!PyCallable_Check(arg_callable)) {
@@ -530,7 +530,7 @@ pure_purify_name_thread(self, args)
 	int status;
 	char* stringarg;
 
-	if (!PyArg_ParseTuple(args, "s", &stringarg))
+	if (!PyArg_ParseTuple(args, "s:purify_name_thread", &stringarg))
 		return NULL;
 
 	status = purify_name_thread(stringarg);
@@ -666,7 +666,7 @@ pure_purify_watch_n(self, args)
 	char* type;
 	int status;
 
-	if (!PyArg_ParseTuple(args, "lis", &addrrep, &size, &type))
+	if (!PyArg_ParseTuple(args, "lis:purify_watch_n", &addrrep, &size, &type))
 		return NULL;
 
 	status = purify_watch_n((char*)addrrep, size, type);
@@ -689,7 +689,7 @@ pure_purify_watch_remove(self, args)
 	int watchno;
 	int status;
 
-	if (!PyArg_ParseTuple(args, "i", &watchno))
+	if (!PyArg_ParseTuple(args, "i:purify_watch_remove", &watchno))
 		return NULL;
 
 	status = purify_watch_remove(watchno);
@@ -711,7 +711,7 @@ pure_purify_describe(self, args)
 	long addrrep;
 	char* rtn;
 
-	if (!PyArg_ParseTuple(args, "l", &addrrep))
+	if (!PyArg_ParseTuple(args, "l:purify_describe", &addrrep))
 		return NULL;
 
 	rtn = purify_describe((char*)addrrep);
@@ -727,7 +727,7 @@ pure_purify_what_colors(self, args)
 	unsigned int size;
 	int status;
     
-	if (!PyArg_ParseTuple(args, "li", &addrrep, &size))
+	if (!PyArg_ParseTuple(args, "li:purify_what_colors", &addrrep, &size))
 		return NULL;
 
 	status = purify_what_colors((char*)addrrep, size);
@@ -772,7 +772,7 @@ pure_purify_exit(self, args)
 {
 	int status;
 
-	if (!PyArg_ParseTuple(args, "i", &status))
+	if (!PyArg_ParseTuple(args, "i:purify_exit", &status))
 		return NULL;
 
         /* purify_exit doesn't always act like exit(). See the manual */

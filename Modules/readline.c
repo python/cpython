@@ -50,7 +50,7 @@ parse_and_bind(self, args)
 	PyObject *args;
 {
 	char *s, *copy;
-	if (!PyArg_ParseTuple(args, "s", &s))
+	if (!PyArg_ParseTuple(args, "s:parse_and_bind", &s))
 		return NULL;
 	/* Make a copy -- rl_parse_and_bind() modifies its argument */
 	/* Bernard Herzog */
@@ -78,7 +78,7 @@ read_init_file(self, args)
 	PyObject *args;
 {
 	char *s = NULL;
-	if (!PyArg_ParseTuple(args, "|z", &s))
+	if (!PyArg_ParseTuple(args, "|z:read_init_file", &s))
 		return NULL;
 	errno = rl_read_init_file(s);
 	if (errno)
@@ -146,7 +146,7 @@ set_completer_delims(self, args)
 {
 	char *break_chars;
 
-	if(!PyArg_ParseTuple(args, "s", &break_chars)) {
+	if(!PyArg_ParseTuple(args, "s:set_completer_delims", &break_chars)) {
 		return NULL;
 	}
 	free(rl_completer_word_break_characters);
@@ -183,7 +183,7 @@ set_completer(self, args)
 	PyObject *args;
 {
 	PyObject *function = Py_None;
-	if (!PyArg_ParseTuple(args, "|O", &function))
+	if (!PyArg_ParseTuple(args, "|O:set_completer", &function))
 		return NULL;
 	if (function == Py_None) {
 		Py_XDECREF(completer);
@@ -239,7 +239,7 @@ insert_text(self, args)
 	PyObject *args;
 {
 	char *s;
-	if (!PyArg_ParseTuple(args, "s", &s))
+	if (!PyArg_ParseTuple(args, "s:insert_text", &s))
 		return NULL;
 	rl_insert_text(s);
 	Py_INCREF(Py_None);

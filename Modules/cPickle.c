@@ -1868,7 +1868,7 @@ dump(Picklerobject *self, PyObject *args) {
 
 static PyObject *
 Pickle_clear_memo(Picklerobject *self, PyObject *args) {
-  if (args && ! PyArg_ParseTuple(args,"")) return NULL;
+  if (args && ! PyArg_ParseTuple(args,":clear_memo")) return NULL;
   if (self->memo) PyDict_Clear(self->memo);
   Py_INCREF(Py_None);
   return Py_None;
@@ -1882,7 +1882,7 @@ Pickle_getvalue(Picklerobject *self, PyObject *args) {
   char *s, *p, *have_get;
   Pdata *data;
 
-  if (args && ! PyArg_ParseTuple(args,"|i",&clear)) return NULL;
+  if (args && ! PyArg_ParseTuple(args,"|i:getvalue",&clear)) return NULL;
 
   /* Check to make sure we are based on a list */
   if (! Pdata_Check(self->file)) {
@@ -2014,7 +2014,7 @@ Pickler_dump(Picklerobject *self, PyObject *args) {
     PyObject *ob;
     int get=0;
 
-    UNLESS (PyArg_ParseTuple(args, "O|i", &ob, &get))
+    UNLESS (PyArg_ParseTuple(args, "O|i:dump", &ob, &get))
         return NULL;
 
     if (dump(self, ob) < 0)
@@ -2132,10 +2132,10 @@ get_Pickler(PyObject *self, PyObject *args) {
     int bin;
 
     bin=1;
-    if (! PyArg_ParseTuple(args, "|i", &bin)) {
+    if (! PyArg_ParseTuple(args, "|i:Pickler", &bin)) {
         PyErr_Clear();
         bin=0;
-        if (! PyArg_ParseTuple(args, "O|i", &file, &bin))
+        if (! PyArg_ParseTuple(args, "O|i:Pickler", &file, &bin))
           return NULL;
       }
     return (PyObject *)newPicklerobject(file, bin);
@@ -3853,7 +3853,7 @@ noload(Unpicklerobject *self) {
 
 static PyObject *
 Unpickler_load(Unpicklerobject *self, PyObject *args) {
-    UNLESS (PyArg_ParseTuple(args, "")) 
+    UNLESS (PyArg_ParseTuple(args, ":load")) 
         return NULL;
 
     return load(self);
@@ -3861,7 +3861,7 @@ Unpickler_load(Unpicklerobject *self, PyObject *args) {
 
 static PyObject *
 Unpickler_noload(Unpicklerobject *self, PyObject *args) {
-    UNLESS (PyArg_ParseTuple(args, "")) 
+    UNLESS (PyArg_ParseTuple(args, ":noload")) 
         return NULL;
 
     return noload(self);
@@ -3969,7 +3969,7 @@ static PyObject *
 get_Unpickler(PyObject *self, PyObject *args) {
     PyObject *file;
   
-    UNLESS (PyArg_ParseTuple(args, "O", &file))
+    UNLESS (PyArg_ParseTuple(args, "O:Unpickler", &file))
         return NULL;
     return (PyObject *)newUnpicklerobject(file);
 }
@@ -4110,7 +4110,7 @@ cpm_dumps(PyObject *self, PyObject *args) {
     Picklerobject *pickler = 0;
     int bin = 0;
 
-    UNLESS (PyArg_ParseTuple(args, "O|i", &ob, &bin))
+    UNLESS (PyArg_ParseTuple(args, "O|i:dumps", &ob, &bin))
         goto finally;
 
     UNLESS (file = PycStringIO->NewOutput(128))
@@ -4137,7 +4137,7 @@ cpm_load(PyObject *self, PyObject *args) {
     Unpicklerobject *unpickler = 0;
     PyObject *ob, *res = NULL;
 
-    UNLESS (PyArg_ParseTuple(args, "O", &ob))
+    UNLESS (PyArg_ParseTuple(args, "O:load", &ob))
         goto finally;
 
     UNLESS (unpickler = newUnpicklerobject(ob))
@@ -4157,7 +4157,7 @@ cpm_loads(PyObject *self, PyObject *args) {
     PyObject *ob, *file = 0, *res = NULL;
     Unpicklerobject *unpickler = 0;
 
-    UNLESS (PyArg_ParseTuple(args, "S", &ob))
+    UNLESS (PyArg_ParseTuple(args, "S:loads", &ob))
         goto finally;
 
     UNLESS (file = PycStringIO->NewInput(ob))

@@ -846,7 +846,7 @@ builtin_globals(self, args)
 {
 	PyObject *d;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":globals"))
 		return NULL;
 	d = PyEval_GetGlobals();
 	Py_INCREF(d);
@@ -1212,7 +1212,7 @@ builtin_intern(self, args)
 	PyObject *args;
 {
 	PyObject *s;
-	if (!PyArg_ParseTuple(args, "S", &s))
+	if (!PyArg_ParseTuple(args, "S:intern", &s))
 		return NULL;
 	Py_INCREF(s);
 	PyString_InternInPlace(&s);
@@ -1383,7 +1383,7 @@ builtin_locals(self, args)
 {
 	PyObject *d;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":locals"))
 		return NULL;
 	d = PyEval_GetLocals();
 	Py_INCREF(d);
@@ -2091,7 +2091,7 @@ builtin_isinstance(self, args)
 	static PyObject *__class__ = NULL;
 	int retval = 0;
 
-	if (!PyArg_ParseTuple(args, "OO", &inst, &cls))
+	if (!PyArg_ParseTuple(args, "OO:isinstance", &inst, &cls))
 		return NULL;
 
         if (PyClass_Check(cls)) {
@@ -2150,7 +2150,7 @@ builtin_issubclass(self, args)
 	PyObject *cls;
 	int retval;
 
-	if (!PyArg_ParseTuple(args, "OO", &derived, &cls))
+	if (!PyArg_ParseTuple(args, "OO:issubclass", &derived, &cls))
 		return NULL;
 
 	if (!PyClass_Check(derived) || !PyClass_Check(cls)) {

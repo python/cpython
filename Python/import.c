@@ -1951,7 +1951,7 @@ imp_get_magic(self, args)
 {
 	char buf[4];
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":get_magic"))
 		return NULL;
 	buf[0] = (char) ((MAGIC >>  0) & 0xff);
 	buf[1] = (char) ((MAGIC >>  8) & 0xff);
@@ -1969,7 +1969,7 @@ imp_get_suffixes(self, args)
 	PyObject *list;
 	struct filedescr *fdp;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":get_suffixes"))
 		return NULL;
 	list = PyList_New(0);
 	if (list == NULL)
@@ -2032,7 +2032,7 @@ imp_find_module(self, args)
 {
 	char *name;
 	PyObject *path = NULL;
-	if (!PyArg_ParseTuple(args, "s|O", &name, &path))
+	if (!PyArg_ParseTuple(args, "s|O:find_module", &name, &path))
 		return NULL;
 	return call_find_module(name, path);
 }
@@ -2045,7 +2045,7 @@ imp_init_builtin(self, args)
 	char *name;
 	int ret;
 	PyObject *m;
-	if (!PyArg_ParseTuple(args, "s", &name))
+	if (!PyArg_ParseTuple(args, "s:init_builtin", &name))
 		return NULL;
 	ret = init_builtin(name);
 	if (ret < 0)
@@ -2067,7 +2067,7 @@ imp_init_frozen(self, args)
 	char *name;
 	int ret;
 	PyObject *m;
-	if (!PyArg_ParseTuple(args, "s", &name))
+	if (!PyArg_ParseTuple(args, "s:init_frozen", &name))
 		return NULL;
 	ret = PyImport_ImportFrozenModule(name);
 	if (ret < 0)
@@ -2088,7 +2088,7 @@ imp_get_frozen_object(self, args)
 {
 	char *name;
 
-	if (!PyArg_ParseTuple(args, "s", &name))
+	if (!PyArg_ParseTuple(args, "s:get_frozen_object", &name))
 		return NULL;
 	return get_frozen_object(name);
 }
@@ -2099,7 +2099,7 @@ imp_is_builtin(self, args)
 	PyObject *args;
 {
 	char *name;
-	if (!PyArg_ParseTuple(args, "s", &name))
+	if (!PyArg_ParseTuple(args, "s:is_builtin", &name))
 		return NULL;
 	return PyInt_FromLong(is_builtin(name));
 }
@@ -2111,7 +2111,7 @@ imp_is_frozen(self, args)
 {
 	char *name;
 	struct _frozen *p;
-	if (!PyArg_ParseTuple(args, "s", &name))
+	if (!PyArg_ParseTuple(args, "s:is_frozen", &name))
 		return NULL;
 	p = find_frozen(name);
 	return PyInt_FromLong((long) (p == NULL ? 0 : p->size));
@@ -2148,7 +2148,7 @@ imp_load_compiled(self, args)
 	PyObject *fob = NULL;
 	PyObject *m;
 	FILE *fp;
-	if (!PyArg_ParseTuple(args, "ss|O!", &name, &pathname,
+	if (!PyArg_ParseTuple(args, "ss|O!:load_compiled", &name, &pathname,
 			      &PyFile_Type, &fob))
 		return NULL;
 	fp = get_file(pathname, fob, "rb");
@@ -2172,7 +2172,7 @@ imp_load_dynamic(self, args)
 	PyObject *fob = NULL;
 	PyObject *m;
 	FILE *fp = NULL;
-	if (!PyArg_ParseTuple(args, "ss|O!", &name, &pathname,
+	if (!PyArg_ParseTuple(args, "ss|O!:load_dynamic", &name, &pathname,
 			      &PyFile_Type, &fob))
 		return NULL;
 	if (fob) {
@@ -2196,7 +2196,7 @@ imp_load_source(self, args)
 	PyObject *fob = NULL;
 	PyObject *m;
 	FILE *fp;
-	if (!PyArg_ParseTuple(args, "ss|O!", &name, &pathname,
+	if (!PyArg_ParseTuple(args, "ss|O!:load_source", &name, &pathname,
 			      &PyFile_Type, &fob))
 		return NULL;
 	fp = get_file(pathname, fob, "r");
@@ -2218,7 +2218,7 @@ imp_load_resource(self, args)
 	char *pathname;
 	PyObject *m;
 
-	if (!PyArg_ParseTuple(args, "ss", &name, &pathname))
+	if (!PyArg_ParseTuple(args, "ss:load_resource", &name, &pathname))
 		return NULL;
 	m = PyMac_LoadResourceModule(name, pathname);
 	return m;
@@ -2238,7 +2238,7 @@ imp_load_module(self, args)
 	int type;
 	FILE *fp;
 
-	if (!PyArg_ParseTuple(args, "sOs(ssi)",
+	if (!PyArg_ParseTuple(args, "sOs(ssi):load_module",
 			      &name, &fob, &pathname,
 			      &suffix, &mode, &type))
 		return NULL;
@@ -2269,7 +2269,7 @@ imp_load_package(self, args)
 {
 	char *name;
 	char *pathname;
-	if (!PyArg_ParseTuple(args, "ss", &name, &pathname))
+	if (!PyArg_ParseTuple(args, "ss:load_package", &name, &pathname))
 		return NULL;
 	return load_package(name, pathname);
 }
@@ -2280,7 +2280,7 @@ imp_new_module(self, args)
 	PyObject *args;
 {
 	char *name;
-	if (!PyArg_ParseTuple(args, "s", &name))
+	if (!PyArg_ParseTuple(args, "s:new_module", &name))
 		return NULL;
 	return PyModule_New(name);
 }

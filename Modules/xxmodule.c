@@ -84,7 +84,7 @@ Xxo_demo(self, args)
 	XxoObject *self;
 	PyObject *args;
 {
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":demo"))
 		return NULL;
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -163,7 +163,7 @@ xx_foo(self, args)
 {
 	long i, j;
 	long res;
-	if (!PyArg_ParseTuple(args, "ll", &i, &j))
+	if (!PyArg_ParseTuple(args, "ll:foo", &i, &j))
 		return NULL;
 	res = i+j; /* XXX Do something here */
 	return PyInt_FromLong(res);
@@ -179,7 +179,7 @@ xx_new(self, args)
 {
 	XxoObject *rv;
 	
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":new"))
 		return NULL;
 	rv = newXxoObject(args);
 	if ( rv == NULL )
@@ -196,7 +196,7 @@ xx_bug(self, args)
 {
 	PyObject *list, *item;
 	
-	if (!PyArg_ParseTuple(args, "O", &list))
+	if (!PyArg_ParseTuple(args, "O:bug", &list))
 		return NULL;
 	
 	item = PyList_GetItem(list, 0);
@@ -219,7 +219,7 @@ xx_roj(self, args)
 {
 	PyObject *a;
 	long b;
-	if (!PyArg_ParseTuple(args, "O#", &a, &b))
+	if (!PyArg_ParseTuple(args, "O#:roj", &a, &b))
 		return NULL;
 	Py_INCREF(Py_None);
 	return Py_None;

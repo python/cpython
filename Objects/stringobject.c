@@ -612,7 +612,7 @@ string_split(self, args)
 	n = 0;
 	splitcount = 0;
 	maxsplit = 0;
-	if (!PyArg_ParseTuple(args, "|z#i", &sub, &n, &maxsplit))
+	if (!PyArg_ParseTuple(args, "|z#i:split", &sub, &n, &maxsplit))
 		return NULL;
 	if (sub == NULL)
 		return split_whitespace(s, len, maxsplit);
@@ -680,7 +680,7 @@ string_join(self, args)
 	int i, slen;
 	PyObject *seq;
 
-	if (!PyArg_ParseTuple(args, "O", &seq))
+	if (!PyArg_ParseTuple(args, "O:join", &seq))
 		return NULL;
 
 	seqlen = PySequence_Length(seq);
@@ -769,7 +769,7 @@ string_find_internal(self, args)
 	int len = PyString_GET_SIZE(self);
 	int n, i = 0, last = INT_MAX;
 
-	if (!PyArg_ParseTuple(args, "t#|ii", &sub, &n, &i, &last))
+	if (!PyArg_ParseTuple(args, "t#|ii:find", &sub, &n, &i, &last))
 		return -2;
 
 	if (last > len)
@@ -848,7 +848,7 @@ string_rfind_internal(self, args)
 	int len = PyString_GET_SIZE(self), n, j;
 	int i = 0, last = INT_MAX;
 
-	if (!PyArg_ParseTuple(args, "t#|ii", &sub, &n, &i, &last))
+	if (!PyArg_ParseTuple(args, "t#|ii:rfind", &sub, &n, &i, &last))
 		return -2;
 
 	if (last > len)
@@ -926,7 +926,7 @@ do_strip(self, args, striptype)
 	char *s = PyString_AS_STRING(self);
 	int len = PyString_GET_SIZE(self), i, j;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":strip"))
 		return NULL;
 
 	i = 0;
@@ -1010,7 +1010,7 @@ string_lower(self, args)
 	int i, n = PyString_GET_SIZE(self);
 	PyObject *new;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":lower"))
 		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
@@ -1042,7 +1042,7 @@ string_upper(self, args)
 	int i, n = PyString_GET_SIZE(self);
 	PyObject *new;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":upper"))
 		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
@@ -1075,7 +1075,7 @@ string_capitalize(self, args)
 	int i, n = PyString_GET_SIZE(self);
 	PyObject *new;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":capitalize"))
 		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
@@ -1118,7 +1118,7 @@ string_count(self, args)
 	int i = 0, last = INT_MAX;
 	int m, r;
 
-	if (!PyArg_ParseTuple(args, "t#|ii", &sub, &n, &i, &last))
+	if (!PyArg_ParseTuple(args, "t#|ii:count", &sub, &n, &i, &last))
 		return NULL;
 	if (last > len)
 		last = len;
@@ -1162,7 +1162,7 @@ string_swapcase(self, args)
 	int i, n = PyString_GET_SIZE(self);
 	PyObject *new;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":swapcase"))
 		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
@@ -1205,7 +1205,7 @@ string_translate(self, args)
 	PyObject *result;
 	int trans_table[256];
 
-	if (!PyArg_ParseTuple(args, "t#|t#",
+	if (!PyArg_ParseTuple(args, "t#|t#:translate",
 			      &table1, &tablen, &del_table, &dellen))
 		return NULL;
 	if (tablen != 256) {
@@ -1422,7 +1422,7 @@ string_replace(self, args)
 	int count = 0;
 	PyObject *new;
 
-	if (!PyArg_ParseTuple(args, "t#t#|i",
+	if (!PyArg_ParseTuple(args, "t#t#|i:replace",
 			      &pat, &pat_len, &sub, &sub_len, &count))
 		return NULL;
 	if (pat_len <= 0) {
@@ -1466,7 +1466,7 @@ string_startswith(self, args)
 	int start = 0;
 	int end = -1;
 
-	if (!PyArg_ParseTuple(args, "t#|ii", &prefix, &plen, &start, &end))
+	if (!PyArg_ParseTuple(args, "t#|ii:startswith", &prefix, &plen, &start, &end))
 		return NULL;
 
 	/* adopt Java semantics for index out of range.  it is legal for
@@ -1509,7 +1509,7 @@ string_endswith(self, args)
 	int end = -1;
 	int lower, upper;
 
-	if (!PyArg_ParseTuple(args, "t#|ii", &suffix, &plen, &start, &end))
+	if (!PyArg_ParseTuple(args, "t#|ii:endswith", &suffix, &plen, &start, &end))
 		return NULL;
 
 	if (start < 0 || start > len || plen > len)

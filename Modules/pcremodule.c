@@ -109,7 +109,7 @@ PyPcre_exec(self, args)
 	int offsets[100*2]; 
 	PyObject *list;
 
-	if (!PyArg_ParseTuple(args, "t#|iiii", &string, &stringlen, &pos, &endpos, &options))
+	if (!PyArg_ParseTuple(args, "t#|iiii:match", &string, &stringlen, &pos, &endpos, &options))
 		return NULL;
 	if (endpos == -1) {endpos = stringlen;}
 	count = pcre_exec(self->regex, self->regex_extra, 
@@ -193,7 +193,7 @@ PyPcre_compile(self, args)
 	const char *error;
 	
 	int options, erroroffset;
-	if (!PyArg_ParseTuple(args, "siO!", &pattern, &options,
+	if (!PyArg_ParseTuple(args, "siO!:pcre_compile", &pattern, &options,
 			      &PyDict_Type, &dictionary))
 		return NULL;
 	rv = newPcreObject(args);
@@ -471,7 +471,7 @@ PyPcre_expand(self, args)
 	unsigned char *repl;
 	int size, total_len, i, start, pos;
 
-	if (!PyArg_ParseTuple(args, "OS", &match_obj, &repl_obj)) 
+	if (!PyArg_ParseTuple(args, "OS:pcre_expand", &match_obj, &repl_obj)) 
 		return NULL;
 
 	repl=(unsigned char *)PyString_AsString(repl_obj);

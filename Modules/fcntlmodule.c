@@ -234,7 +234,7 @@ fcntl_lockf(self, args)
 	int fd, code, ret, whence = 0;
 	PyObject *lenobj = NULL, *startobj = NULL;
 
-	if (!PyArg_ParseTuple(args, "ii|OOi", &fd, &code,
+	if (!PyArg_ParseTuple(args, "ii|OOi:lockf", &fd, &code,
 			      &lenobj, &startobj, &whence))
 	    return NULL;
 

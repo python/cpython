@@ -578,7 +578,7 @@ complex_conjugate(self, args)
 	PyObject *args;
 {
 	Py_complex c;
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":conjugate"))
 		return NULL;
 	c = ((PyComplexObject *)self)->cval;
 	c.imag = -c.imag;

@@ -50,7 +50,7 @@ CD_allowremoval(self, args)
 	cdplayerobject *self;
 	PyObject *args;
 {
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":allowremoval"))
 		return NULL;
 
 	CDallowremoval(self->ob_cdplayer);
@@ -64,7 +64,7 @@ CD_preventremoval(self, args)
 	cdplayerobject *self;
 	PyObject *args;
 {
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":preventremoval"))
 		return NULL;
 
 	CDpreventremoval(self->ob_cdplayer);
@@ -78,7 +78,7 @@ CD_bestreadsize(self, args)
 	cdplayerobject *self;
 	PyObject *args;
 {
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":bestreadsize"))
 		return NULL;
 
 	return PyInt_FromLong((long) CDbestreadsize(self->ob_cdplayer));
@@ -89,7 +89,7 @@ CD_close(self, args)
 	cdplayerobject *self;
 	PyObject *args;
 {
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":close"))
 		return NULL;
 
 	if (!CDclose(self->ob_cdplayer)) {
@@ -109,7 +109,7 @@ CD_eject(self, args)
 {
 	CDSTATUS status;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":eject"))
 		return NULL;
 
 	if (!CDeject(self->ob_cdplayer)) {
@@ -132,7 +132,7 @@ CD_getstatus(self, args)
 {
 	CDSTATUS status;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":getstatus"))
 		return NULL;
 
 	if (!CDgetstatus(self->ob_cdplayer, &status)) {
@@ -157,7 +157,7 @@ CD_gettrackinfo(self, args)
 	CDTRACKINFO info;
 	CDSTATUS status;
 
-	if (!PyArg_ParseTuple(args, "i", &track))
+	if (!PyArg_ParseTuple(args, "i:gettrackinfo", &track))
 		return NULL;
 
 	if (!CDgettrackinfo(self->ob_cdplayer, track, &info)) {
@@ -181,7 +181,7 @@ CD_msftoblock(self, args)
 {
 	int min, sec, frame;
 
-	if (!PyArg_ParseTuple(args, "iii", &min, &sec, &frame))
+	if (!PyArg_ParseTuple(args, "iii:msftoblock", &min, &sec, &frame))
 		return NULL;
 
 	return PyInt_FromLong((long) CDmsftoblock(self->ob_cdplayer,
@@ -196,7 +196,7 @@ CD_play(self, args)
 	int start, play;
 	CDSTATUS status;
 
-	if (!PyArg_ParseTuple(args, "ii", &start, &play))
+	if (!PyArg_ParseTuple(args, "ii:play", &start, &play))
 		return NULL;
 
 	if (!CDplay(self->ob_cdplayer, start, play)) {
@@ -220,7 +220,7 @@ CD_playabs(self, args)
 	int min, sec, frame, play;
 	CDSTATUS status;
 
-	if (!PyArg_ParseTuple(args, "iiii", &min, &sec, &frame, &play))
+	if (!PyArg_ParseTuple(args, "iiii:playabs", &min, &sec, &frame, &play))
 		return NULL;
 
 	if (!CDplayabs(self->ob_cdplayer, min, sec, frame, play)) {
@@ -244,7 +244,7 @@ CD_playtrack(self, args)
 	int start, play;
 	CDSTATUS status;
 
-	if (!PyArg_ParseTuple(args, "ii", &start, &play))
+	if (!PyArg_ParseTuple(args, "ii:playtrack", &start, &play))
 		return NULL;
 
 	if (!CDplaytrack(self->ob_cdplayer, start, play)) {
@@ -268,7 +268,7 @@ CD_playtrackabs(self, args)
 	int track, min, sec, frame, play;
 	CDSTATUS status;
 
-	if (!PyArg_ParseTuple(args, "iiiii", &track, &min, &sec,
+	if (!PyArg_ParseTuple(args, "iiiii:playtrackabs", &track, &min, &sec,
 			      &frame, &play))
 		return NULL;
 
@@ -293,7 +293,7 @@ CD_readda(self, args)
 	int numframes, n;
 	PyObject *result;
 
-	if (!PyArg_ParseTuple(args, "i", &numframes))
+	if (!PyArg_ParseTuple(args, "i:readda", &numframes))
 		return NULL;
 
 	result = PyString_FromStringAndSize(NULL, numframes * sizeof(CDFRAME));
@@ -322,7 +322,7 @@ CD_seek(self, args)
 	int min, sec, frame;
 	long PyTryBlock;
 
-	if (!PyArg_ParseTuple(args, "iii", &min, &sec, &frame))
+	if (!PyArg_ParseTuple(args, "iii:seek", &min, &sec, &frame))
 		return NULL;
 
 	PyTryBlock = CDseek(self->ob_cdplayer, min, sec, frame);
@@ -342,7 +342,7 @@ CD_seektrack(self, args)
 	int track;
 	long PyTryBlock;
 
-	if (!PyArg_ParseTuple(args, "i", &track))
+	if (!PyArg_ParseTuple(args, "i:seektrack", &track))
 		return NULL;
 
 	PyTryBlock = CDseektrack(self->ob_cdplayer, track);
@@ -361,7 +361,7 @@ CD_seekblock(self, args)
 {
 	unsigned long PyTryBlock;
 
-	if (!PyArg_ParseTuple(args, "l", &PyTryBlock))
+	if (!PyArg_ParseTuple(args, "l:seekblock", &PyTryBlock))
 		return NULL;
 
 	PyTryBlock = CDseekblock(self->ob_cdplayer, PyTryBlock);
@@ -380,7 +380,7 @@ CD_stop(self, args)
 {
 	CDSTATUS status;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":stop"))
 		return NULL;
 
 	if (!CDstop(self->ob_cdplayer)) {
@@ -403,7 +403,7 @@ CD_togglepause(self, args)
 {
 	CDSTATUS status;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":togglepause"))
 		return NULL;
 
 	if (!CDtogglepause(self->ob_cdplayer)) {
@@ -503,7 +503,7 @@ CD_open(self, args)
 	 */
 	dev = NULL;
 	direction = "r";
-	if (!PyArg_ParseTuple(args, "|zs", &dev, &direction))
+	if (!PyArg_ParseTuple(args, "|zs:open", &dev, &direction))
 		return NULL;
 
 	cdp = CDopen(dev, direction);
@@ -605,7 +605,7 @@ CD_deleteparser(self, args)
 {
 	int i;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":deleteparser"))
 		return NULL;
 
 	CDdeleteparser(self->ob_cdparser);
@@ -632,7 +632,7 @@ CD_parseframe(self, args)
 	int length;
 	CDFRAME *p;
 
-	if (!PyArg_ParseTuple(args, "s#", &cdfp, &length))
+	if (!PyArg_ParseTuple(args, "s#:parseframe", &cdfp, &length))
 		return NULL;
 
 	if (length % sizeof(CDFRAME) != 0) {
@@ -660,7 +660,7 @@ CD_removecallback(self, args)
 {
 	int type;
 
-	if (!PyArg_ParseTuple(args, "i", &type))
+	if (!PyArg_ParseTuple(args, "i:removecallback", &type))
 		return NULL;
 
 	if (type < 0 || type >= NCALLBACKS) {
@@ -685,7 +685,7 @@ CD_resetparser(self, args)
 	cdparserobject *self;
 	PyObject *args;
 {
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":resetparser"))
 		return NULL;
 
 	CDresetparser(self->ob_cdparser);
@@ -703,7 +703,7 @@ CD_addcallback(self, args)
 	PyObject *func, *funcarg;
 
 	/* XXX - more work here */
-	if (!PyArg_ParseTuple(args, "iOO", &type, &func, &funcarg))
+	if (!PyArg_ParseTuple(args, "iOO:addcallback", &type, &func, &funcarg))
 		return NULL;
 
 	if (type < 0 || type >= NCALLBACKS) {
@@ -816,7 +816,7 @@ CD_createparser(self, args)
 {
 	CDPARSER *cdp;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":createparser"))
 		return NULL;
 	cdp = CDcreateparser();
 	if (cdp == NULL) {
@@ -833,7 +833,7 @@ CD_msftoframe(self, args)
 {
 	int min, sec, frame;
 
-	if (!PyArg_ParseTuple(args, "iii", &min, &sec, &frame))
+	if (!PyArg_ParseTuple(args, "iii:msftoframe", &min, &sec, &frame))
 		return NULL;
 
 	return PyInt_FromLong((long) CDmsftoframe(min, sec, frame));

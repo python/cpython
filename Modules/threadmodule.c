@@ -251,7 +251,7 @@ thread_PyThread_start_new_thread(self, fargs)
 	PyObject *func, *args = NULL, *keyw = NULL;
 	struct bootstate *boot;
 
-	if (!PyArg_ParseTuple(fargs, "OO|O", &func, &args, &keyw))
+	if (!PyArg_ParseTuple(fargs, "OO|O:start_new_thread", &func, &args, &keyw))
 		return NULL;
 	if (!PyCallable_Check(func)) {
 		PyErr_SetString(PyExc_TypeError,

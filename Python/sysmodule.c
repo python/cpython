@@ -192,7 +192,7 @@ sys_setcheckinterval(self, args)
 	PyObject *args;
 {
 	PyThreadState *tstate = PyThreadState_Get();
-	if (!PyArg_ParseTuple(args, "i", &tstate->interp->checkinterval))
+	if (!PyArg_ParseTuple(args, "i:setcheckinterval", &tstate->interp->checkinterval))
 		return NULL;
 	Py_INCREF(Py_None);
 	return Py_None;

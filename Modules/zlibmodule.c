@@ -74,7 +74,7 @@ PyZlib_compress(self, args)
   int length, level=Z_DEFAULT_COMPRESSION, err;
   z_stream zst;
   
-  if (!PyArg_ParseTuple(args, "s#|i", &input, &length, &level))
+  if (!PyArg_ParseTuple(args, "s#|i:compress", &input, &length, &level))
     return NULL;
   zst.avail_out = length + length/1000 + 12 + 1;
   output=(Byte*)malloc(zst.avail_out);
@@ -172,7 +172,7 @@ PyZlib_decompress(self, args)
   int length, err;
   int wsize=DEF_WBITS, r_strlen=DEFAULTALLOC;
   z_stream zst;
-  if (!PyArg_ParseTuple(args, "s#|ii", &input, &length, &wsize, &r_strlen))
+  if (!PyArg_ParseTuple(args, "s#|ii:decompress", &input, &length, &wsize, &r_strlen))
     return NULL;
 
   if (r_strlen <= 0)
@@ -278,7 +278,7 @@ PyZlib_compressobj(selfptr, args)
   int level=Z_DEFAULT_COMPRESSION, method=DEFLATED;
   int wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL, strategy=0, err;
 
-  if (!PyArg_ParseTuple(args, "|iiiii", &level, &method, &wbits,
+  if (!PyArg_ParseTuple(args, "|iiiii:compressobj", &level, &method, &wbits,
 			&memLevel, &strategy))
       return NULL;
 
@@ -325,7 +325,7 @@ PyZlib_decompressobj(selfptr, args)
 {
   int wbits=DEF_WBITS, err;
   compobject *self;
-  if (!PyArg_ParseTuple(args, "|i", &wbits))
+  if (!PyArg_ParseTuple(args, "|i:decompressobj", &wbits))
     {
      return NULL;
     }  
@@ -403,7 +403,7 @@ PyZlib_objcompress(self, args)
   Byte *input;
   unsigned long start_total_out;
   
-  if (!PyArg_ParseTuple(args, "s#", &input, &inplen))
+  if (!PyArg_ParseTuple(args, "s#:compress", &input, &inplen))
       return NULL;
   self->zst.avail_in = inplen;
   self->zst.next_in = input;
@@ -461,7 +461,7 @@ PyZlib_objdecompress(self, args)
   Byte *input;
   unsigned long start_total_out;
 
-  if (!PyArg_ParseTuple(args, "s#", &input, &inplen))
+  if (!PyArg_ParseTuple(args, "s#:decompress", &input, &inplen))
     return NULL;
   start_total_out = self->zst.total_out;
   RetVal = PyString_FromStringAndSize(NULL, DEFAULTALLOC);
@@ -535,7 +535,7 @@ PyZlib_flush(self, args)
   int flushmode = Z_FINISH;
   unsigned long start_total_out;
 
-  if (!PyArg_ParseTuple(args, "|i", &flushmode))
+  if (!PyArg_ParseTuple(args, "|i:flush", &flushmode))
       return NULL;
 
   /* Flushing with Z_NO_FLUSH is a no-op, so there's no point in
@@ -745,7 +745,7 @@ PyZlib_adler32(self, args)
     Byte *buf;
     int len;
  
-    if (!PyArg_ParseTuple(args, "s#|l", &buf, &len, &adler32val))
+    if (!PyArg_ParseTuple(args, "s#|l:adler32", &buf, &len, &adler32val))
     {
 	return NULL;
     }
@@ -767,7 +767,7 @@ PyZlib_crc32(self, args)
     uLong crc32val=crc32(0L, Z_NULL, 0);
     Byte *buf;
     int len;
-    if (!PyArg_ParseTuple(args, "s#|l", &buf, &len, &crc32val))
+    if (!PyArg_ParseTuple(args, "s#|l:crc32", &buf, &len, &crc32val))
     {
 	return NULL;
     }

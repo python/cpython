@@ -981,7 +981,7 @@ audioop_ratecv(self, args)
 
 	weightA = 1;
 	weightB = 0;
-	if (!PyArg_ParseTuple(args, "s#iiiiO|ii", &cp, &len, &size, &nchannels,
+	if (!PyArg_ParseTuple(args, "s#iiiiO|ii:ratecv", &cp, &len, &size, &nchannels,
 			      &inrate, &outrate, &state, &weightA, &weightB))
 		return NULL;
 	if (size != 1 && size != 2 && size != 4) {
@@ -1034,7 +1034,7 @@ audioop_ratecv(self, args)
 		}
 		for (chan = 0; chan < nchannels; chan++) {
 			if (!PyArg_ParseTuple(PyTuple_GetItem(samps, chan),
-					      "ii",&prev_i[chan],&cur_i[chan]))
+					      "ii:ratecv",&prev_i[chan],&cur_i[chan]))
 				goto exit;
 		}
 	}

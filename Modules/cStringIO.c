@@ -134,7 +134,7 @@ static PyObject *
 O_seek(Oobject *self, PyObject *args) {
   int position, mode = 0;
 
-  UNLESS(PyArg_ParseTuple(args, "i|i", &position, &mode)) {
+  UNLESS(PyArg_ParseTuple(args, "i|i:seek", &position, &mode)) {
     return NULL;
   }
 
@@ -187,7 +187,7 @@ O_read(Oobject *self, PyObject *args) {
   int n = -1;
   char *output;
 
-  UNLESS(PyArg_ParseTuple(args, "|i", &n)) return NULL;
+  UNLESS(PyArg_ParseTuple(args, "|i:read", &n)) return NULL;
 
   n=O_cread((PyObject*)self,&output,n);
 
@@ -264,7 +264,7 @@ O_write(Oobject *self, PyObject *args) {
   char *c;
   int l;
 
-  UNLESS(PyArg_ParseTuple(args, "O", &s)) return NULL;
+  UNLESS(PyArg_ParseTuple(args, "O:write", &s)) return NULL;
   UNLESS(-1 != (l=PyString_Size(s))) return NULL;
   UNLESS(c=PyString_AsString(s)) return NULL;
   UNLESS(-1 != O_cwrite((PyObject*)self,c,l)) return NULL;
@@ -286,7 +286,7 @@ O_getval(Oobject *self, PyObject *args) {
   int s;
 
   use_pos=Py_None;
-  UNLESS(PyArg_ParseTuple(args,"|O",&use_pos)) return NULL;
+  UNLESS(PyArg_ParseTuple(args,"|O:getval",&use_pos)) return NULL;
   if(PyObject_IsTrue(use_pos)) {
       s=self->pos;
       if (s > self->string_size) s=self->string_size;
@@ -350,7 +350,7 @@ O_writelines(Oobject *self, PyObject *args) {
   PyObject *string_module = 0;
   static PyObject *string_joinfields = 0;
 
-  UNLESS(PyArg_ParseTuple(args, "O", &args)) {
+  UNLESS(PyArg_ParseTuple(args, "O:writelines", &args)) {
     return NULL;
   }
 
@@ -500,7 +500,7 @@ static PyObject *
 I_seek(Oobject *self, PyObject *args) {
   int position, mode = 0;
 
-  UNLESS(PyArg_ParseTuple(args, "i|i", &position, &mode)) {
+  UNLESS(PyArg_ParseTuple(args, "i|i:seek", &position, &mode)) {
     return NULL;
   }
 
@@ -603,7 +603,7 @@ static PyObject *
 IO_StringIO(PyObject *self, PyObject *args) {
   PyObject *s=0;
 
-  UNLESS(PyArg_ParseTuple(args, "|O", &s)) return NULL;
+  UNLESS(PyArg_ParseTuple(args, "|O:StringIO", &s)) return NULL;
   if(s) return newIobject(s);
   return newOobject(128);
 }
