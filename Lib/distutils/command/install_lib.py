@@ -15,6 +15,7 @@ class install_lib (Command):
         ('build-dir=','b', "build directory (where to install from)"),
         ('compile', 'c', "compile .py to .pyc"),
         ('optimize', 'o', "compile .py to .pyo (optimized)"),
+        ('skip-build', None, "skip the build steps"),
         ]
                
 
@@ -24,6 +25,7 @@ class install_lib (Command):
         self.build_dir = None
         self.compile = 1
         self.optimize = 1
+        self.skip_build = None
 
     def finalize_options (self):
 
@@ -34,16 +36,19 @@ class install_lib (Command):
                                     ('build_lib', 'build_dir'),
                                     ('install_lib', 'install_dir'),
                                     ('compile_py', 'compile'),
-                                    ('optimize_py', 'optimize'))
+                                    ('optimize_py', 'optimize'),
+                                    ('skip_build', 'skip_build'),
+                                   )
 
 
     def run (self):
 
         # Make sure we have built everything we need first
-        if self.distribution.has_pure_modules():
-            self.run_peer ('build_py')
-        if self.distribution.has_ext_modules():
-            self.run_peer ('build_ext')
+        if not self.skip_build:
+            if self.distribution.has_pure_modules():
+                self.run_peer ('build_py')
+            if self.distribution.has_ext_modules():
+                self.run_peer ('build_ext')
 
         # Install everything: simply dump the entire contents of the build
         # directory to the installation directory (that's the beauty of

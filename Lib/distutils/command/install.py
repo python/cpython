@@ -77,6 +77,11 @@ class install (Command):
         ('install-data=', None,
          "installation directory for data files"),
 
+        # For lazy debuggers who just want to test the install
+        # commands without rerunning "build" all the time
+        ('skip-build', None,
+         "skip rebuilding everything (for testing/debugging)"),
+
         # Where to install documentation (eventually!)
         #('doc-format=', None, "format of documentation to generate"),
         #('install-man=', None, "directory for Unix man pages"),
@@ -128,6 +133,8 @@ class install (Command):
         # file.
         self.extra_path = None
         self.install_path_file = 0
+
+        self.skip_build = 0
 
         # These are only here as a conduit from the 'build' command to the
         # 'install_*' commands that do the real work.  ('build_base' isn't
@@ -270,7 +277,10 @@ class install (Command):
         from distutils.fancy_getopt import longopt_xlate
         print msg + ":"
         for opt in self.user_options:
-            opt_name = string.translate (opt[0][0:-1], longopt_xlate)
+            opt_name = opt[0]
+            if opt_name[-1] == "=":
+                opt_name = opt_name[0:-1]
+            opt_name = string.translate (opt_name, longopt_xlate)
             val = getattr (self, opt_name)
             print "  %s: %s" % (opt_name, val)
 
@@ -409,7 +419,8 @@ class install (Command):
     def run (self):
 
         # Obviously have to build before we can install
-        self.run_peer ('build')
+        if not self.skip_build:
+            self.run_peer ('build')
 
         # Run all sub-commands: currently this just means install all
         # Python modules using 'install_lib'.
