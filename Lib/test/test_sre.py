@@ -1,4 +1,7 @@
-# FIXME: this is basically test_re.py, with a few minor changes
+# SRE test harness for the Python regression suite
+
+# this is based on test_re.py, but uses a test function instead
+# of all those asserts
 
 import sys
 sys.path=['.']+sys.path
@@ -7,227 +10,188 @@ from test_support import verbose, TestFailed
 import sre
 import sys, os, string, traceback
 
+#
+# test support
+
+def test(expression, result, exception=None):
+    try:
+        r = eval(expression)
+    except:
+        if exception:
+            if not isinstance(sys.exc_value, exception):
+                print expression, "FAILED"
+                # display name, not actual value
+                if exception is sre.error:
+                    print "expected", "sre.error"
+                else:
+                    print "expected", exception.__name__
+                print "got", sys.exc_type.__name__, str(sys.exc_value)
+        else:
+            print expression, "FAILED"
+            traceback.print_exc(file=sys.stdout)
+    else:
+        if exception:
+            print expression, "FAILED"
+            if exception is sre.error:
+                print "expected", "sre.error"
+            else:
+                print "expected", exception.__name__
+            print "got result", repr(r)
+        else:
+            if r != result:
+                print expression, "FAILED"
+                print "expected", repr(result)
+                print "got result", repr(r)
+
+if verbose:
+    print 'Running tests on character literals'
+
+for i in range(0, 256):
+    test(r"""sre.match("\%03o" % i, chr(i)) != None""", 1)
+    test(r"""sre.match("\%03o0" % i, chr(i)+"0") != None""", 1)
+    test(r"""sre.match("\%03o8" % i, chr(i)+"8") != None""", 1)
+    test(r"""sre.match("\x%02x" % i, chr(i)) != None""", 1)
+    test(r"""sre.match("\x%02x0" % i, chr(i)+"0") != None""", 1)
+    test(r"""sre.match("\x%02xz" % i, chr(i)+"z") != None""", 1)
+test(r"""sre.match("\911", "")""", None, sre.error)
+
+#
 # Misc tests from Tim Peters' re.doc
 
 if verbose:
     print 'Running tests on sre.search and sre.match'
 
-try:
-    assert sre.search('x*', 'axx').span(0) == (0, 0)
-    assert sre.search('x*', 'axx').span() == (0, 0)
-    assert sre.search('x+', 'axx').span(0) == (1, 3)
-    assert sre.search('x+', 'axx').span() == (1, 3)
-    assert sre.search('x', 'aaa') == None
-except:
-    raise TestFailed, "sre.search"
+test(r"""sre.search('x*', 'axx').span(0)""", (0, 0))
+test(r"""sre.search('x*', 'axx').span()""", (0, 0))
+test(r"""sre.search('x+', 'axx').span(0)""", (1, 3))
+test(r"""sre.search('x+', 'axx').span()""", (1, 3))
+test(r"""sre.search('x', 'aaa')""", None)
 
-try:
-    assert sre.match('a*', 'xxx').span(0) == (0, 0)
-    assert sre.match('a*', 'xxx').span() == (0, 0)
-    assert sre.match('x*', 'xxxa').span(0) == (0, 3)
-    assert sre.match('x*', 'xxxa').span() == (0, 3)
-    assert sre.match('a+', 'xxx') == None
-except:
-    raise TestFailed, "sre.search"
+test(r"""sre.match('a*', 'xxx').span(0)""", (0, 0))
+test(r"""sre.match('a*', 'xxx').span()""", (0, 0))
+test(r"""sre.match('x*', 'xxxa').span(0)""", (0, 3))
+test(r"""sre.match('x*', 'xxxa').span()""", (0, 3))
+test(r"""sre.match('a+', 'xxx')""", None)
 
 if verbose:
     print 'Running tests on sre.sub'
 
-try:
-    assert sre.sub("(?i)b+", "x", "bbbb BBBB") == 'x x'
+test(r"""sre.sub("(?i)b+", "x", "bbbb BBBB")""", 'x x')
 
-    def bump_num(matchobj):
-        int_value = int(matchobj.group(0))
-        return str(int_value + 1)
+def bump_num(matchobj):
+    int_value = int(matchobj.group(0))
+    return str(int_value + 1)
 
-    assert sre.sub(r'\d+', bump_num, '08.2 -2 23x99y') == '9.3 -3 24x100y'
-    assert sre.sub(r'\d+', bump_num, '08.2 -2 23x99y', 3) == '9.3 -3 23x99y'
+test(r"""sre.sub(r'\d+', bump_num, '08.2 -2 23x99y')""", '9.3 -3 24x100y')
+test(r"""sre.sub(r'\d+', bump_num, '08.2 -2 23x99y', 3)""", '9.3 -3 23x99y')
 
-    assert sre.sub('.', lambda m: r"\n", 'x') == '\\n'
-    assert sre.sub('.', r"\n", 'x') == '\n'
+test(r"""sre.sub('.', lambda m: r"\n", 'x')""", '\\n')
+test(r"""sre.sub('.', r"\n", 'x')""", '\n')
 
-    s = r"\1\1"
-    assert sre.sub('(.)', s, 'x') == 'xx'
-    assert sre.sub('(.)', sre.escape(s), 'x') == s
-    assert sre.sub('(.)', lambda m: s, 'x') == s
+s = r"\1\1"
 
-    assert sre.sub('(?P<a>x)', '\g<a>\g<a>', 'xx') == 'xxxx'
-    assert sre.sub('(?P<a>x)', '\g<a>\g<1>', 'xx') == 'xxxx'
-    assert sre.sub('(?P<unk>x)', '\g<unk>\g<unk>', 'xx') == 'xxxx'
-    assert sre.sub('(?P<unk>x)', '\g<1>\g<1>', 'xx') == 'xxxx'
+test(r"""sre.sub('(.)', s, 'x')""", 'xx')
+test(r"""sre.sub('(.)', sre.escape(s), 'x')""", s)
+test(r"""sre.sub('(.)', lambda m: s, 'x')""", s)
 
-    assert sre.sub('a', r'\t\n\v\r\f\a\b\B\Z\a\A\w\W\s\S\d\D', 'a') == '\t\n\v\r\f\a\b\\B\\Z\a\\A\\w\\W\\s\\S\\d\\D'
-    assert sre.sub('a', '\t\n\v\r\f\a', 'a') == '\t\n\v\r\f\a'
-    assert sre.sub('a', '\t\n\v\r\f\a', 'a') == (chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7))
+test(r"""sre.sub('(?P<a>x)', '\g<a>\g<a>', 'xx')""", 'xxxx')
+test(r"""sre.sub('(?P<a>x)', '\g<a>\g<1>', 'xx')""", 'xxxx')
+test(r"""sre.sub('(?P<unk>x)', '\g<unk>\g<unk>', 'xx')""", 'xxxx')
+test(r"""sre.sub('(?P<unk>x)', '\g<1>\g<1>', 'xx')""", 'xxxx')
 
-    assert sre.sub('^\s*', 'X', 'test') == 'Xtest'
-except AssertionError:
-    raise TestFailed, "sre.sub"
+test(r"""sre.sub('a', r'\t\n\v\r\f\a\b\B\Z\a\A\w\W\s\S\d\D', 'a')""", '\t\n\v\r\f\a\b\\B\\Z\a\\A\\w\\W\\s\\S\\d\\D')
+test(r"""sre.sub('a', '\t\n\v\r\f\a', 'a')""", '\t\n\v\r\f\a')
+test(r"""sre.sub('a', '\t\n\v\r\f\a', 'a')""", (chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7)))
 
+test(r"""sre.sub('^\s*', 'X', 'test')""", 'Xtest')
 
-try:
-    assert sre.sub('a', 'b', 'aaaaa') == 'bbbbb'
-    assert sre.sub('a', 'b', 'aaaaa', 1) == 'baaaa'
-except AssertionError:
-    raise TestFailed, "qualified sre.sub"
+# qualified sub
+test(r"""sre.sub('a', 'b', 'aaaaa')""", 'bbbbb')
+test(r"""sre.sub('a', 'b', 'aaaaa', 1)""", 'baaaa')
 
 if verbose:
     print 'Running tests on symbolic references'
 
-try:
-    sre.sub('(?P<a>x)', '\g<a', 'xx')
-except sre.error, reason:
-    pass
-else:
-    raise TestFailed, "symbolic reference"
-
-try:
-    sre.sub('(?P<a>x)', '\g<', 'xx')
-except sre.error, reason:
-    pass
-else:
-    raise TestFailed, "symbolic reference"
-
-try:
-    sre.sub('(?P<a>x)', '\g', 'xx')
-except sre.error, reason:
-    pass
-else:
-    raise TestFailed, "symbolic reference"
-
-try:
-    sre.sub('(?P<a>x)', '\g<a a>', 'xx')
-except sre.error, reason:
-    pass
-else:
-    raise TestFailed, "symbolic reference"
-
-try:
-    sre.sub('(?P<a>x)', '\g<1a1>', 'xx')
-except sre.error, reason:
-    pass
-else:
-    raise TestFailed, "symbolic reference"
-
-try:
-    sre.sub('(?P<a>x)', '\g<ab>', 'xx')
-except IndexError, reason:
-    pass
-else:
-    raise TestFailed, "symbolic reference"
-
-try:
-    sre.sub('(?P<a>x)|(?P<b>y)', '\g<b>', 'xx')
-except sre.error, reason:
-    pass
-else:
-    raise TestFailed, "symbolic reference"
-
-try:
-    sre.sub('(?P<a>x)|(?P<b>y)', '\\2', 'xx')
-except sre.error, reason:
-    pass
-else:
-    raise TestFailed, "symbolic reference"
+test(r"""sre.sub('(?P<a>x)', '\g<a', 'xx')""", None, sre.error)
+test(r"""sre.sub('(?P<a>x)', '\g<', 'xx')""", None, sre.error)
+test(r"""sre.sub('(?P<a>x)', '\g', 'xx')""", None, sre.error)
+test(r"""sre.sub('(?P<a>x)', '\g<a a>', 'xx')""", None, sre.error)
+test(r"""sre.sub('(?P<a>x)', '\g<1a1>', 'xx')""", None, sre.error)
+test(r"""sre.sub('(?P<a>x)', '\g<ab>', 'xx')""", None, IndexError)
+test(r"""sre.sub('(?P<a>x)|(?P<b>y)', '\g<b>', 'xx')""", None, sre.error)
+test(r"""sre.sub('(?P<a>x)|(?P<b>y)', '\\2', 'xx')""", None, sre.error)
 
 if verbose:
     print 'Running tests on sre.subn'
 
-try:
-    assert sre.subn("(?i)b+", "x", "bbbb BBBB") == ('x x', 2)
-    assert sre.subn("b+", "x", "bbbb BBBB") == ('x BBBB', 1)
-    assert sre.subn("b+", "x", "xyz") == ('xyz', 0)
-    assert sre.subn("b*", "x", "xyz") == ('xxxyxzx', 4)
-    assert sre.subn("b*", "x", "xyz", 2) == ('xxxyz', 2)
-except AssertionError:
-    raise TestFailed, "sre.subn"
+test(r"""sre.subn("(?i)b+", "x", "bbbb BBBB")""", ('x x', 2))
+test(r"""sre.subn("b+", "x", "bbbb BBBB")""", ('x BBBB', 1))
+test(r"""sre.subn("b+", "x", "xyz")""", ('xyz', 0))
+test(r"""sre.subn("b*", "x", "xyz")""", ('xxxyxzx', 4))
+test(r"""sre.subn("b*", "x", "xyz", 2)""", ('xxxyz', 2))
 
 if verbose:
     print 'Running tests on sre.split'
 
-try:
-    assert sre.split(":", ":a:b::c") == ['', 'a', 'b', '', 'c']
-    assert sre.split(":*", ":a:b::c") == ['', 'a', 'b', 'c']
-    assert sre.split("(:*)", ":a:b::c") == ['', ':', 'a', ':', 'b', '::', 'c']
-    assert sre.split("(?::*)", ":a:b::c") == ['', 'a', 'b', 'c']
-    assert sre.split("(:)*", ":a:b::c") == ['', ':', 'a', ':', 'b', ':', 'c']
-    assert sre.split("([b:]+)", ":a:b::c") == ['', ':', 'a', ':b::', 'c']
-    assert sre.split("(b)|(:+)", ":a:b::c") == \
-           ['', None, ':', 'a', None, ':', '', 'b', None, '', None, '::', 'c']
-    assert sre.split("(?:b)|(?::+)", ":a:b::c") == ['', 'a', '', '', 'c']
-except AssertionError:
-    raise TestFailed, "sre.split"
+test(r"""sre.split(":", ":a:b::c")""", ['', 'a', 'b', '', 'c'])
+test(r"""sre.split(":*", ":a:b::c")""", ['', 'a', 'b', 'c'])
+test(r"""sre.split("(:*)", ":a:b::c")""", ['', ':', 'a', ':', 'b', '::', 'c'])
+test(r"""sre.split("(?::*)", ":a:b::c")""", ['', 'a', 'b', 'c'])
+test(r"""sre.split("(:)*", ":a:b::c")""", ['', ':', 'a', ':', 'b', ':', 'c'])
+test(r"""sre.split("([b:]+)", ":a:b::c")""", ['', ':', 'a', ':b::', 'c'])
+test(r"""sre.split("(b)|(:+)", ":a:b::c")""",
+     ['', None, ':', 'a', None, ':', '', 'b', None, '', None, '::', 'c'])
+test(r"""sre.split("(?:b)|(?::+)", ":a:b::c")""", ['', 'a', '', '', 'c'])
 
-try:
-    assert sre.split(":", ":a:b::c", 2) == ['', 'a', 'b::c']
-    assert sre.split(':', 'a:b:c:d', 2) == ['a', 'b', 'c:d']
+test(r"""sre.split(":", ":a:b::c", 2)""", ['', 'a', 'b::c'])
+test(r"""sre.split(':', 'a:b:c:d', 2)""", ['a', 'b', 'c:d'])
 
-    assert sre.split("(:)", ":a:b::c", 2) == ['', ':', 'a', ':', 'b::c']
-    assert sre.split("(:*)", ":a:b::c", 2) == ['', ':', 'a', ':', 'b::c']
-except AssertionError:
-    raise TestFailed, "qualified sre.split"
+test(r"""sre.split("(:)", ":a:b::c", 2)""", ['', ':', 'a', ':', 'b::c'])
+test(r"""sre.split("(:*)", ":a:b::c", 2)""", ['', ':', 'a', ':', 'b::c'])
 
 if verbose:
     print "Running tests on sre.findall"
 
-try:
-    assert sre.findall(":+", "abc") == []
-    assert sre.findall(":+", "a:b::c:::d") == [":", "::", ":::"]
-    assert sre.findall("(:+)", "a:b::c:::d") == [":", "::", ":::"]
-    assert sre.findall("(:)(:*)", "a:b::c:::d") == [(":", ""),
-                                                   (":", ":"),
-                                                   (":", "::")]
-    assert sre.findall("(a)|(b)", "abc") == [("a", ""), ("", "b")]
-except AssertionError:
-    raise TestFailed, "sre.findall"
+test(r"""sre.findall(":+", "abc")""", [])
+test(r"""sre.findall(":+", "a:b::c:::d")""", [":", "::", ":::"])
+test(r"""sre.findall("(:+)", "a:b::c:::d")""", [":", "::", ":::"])
+test(r"""sre.findall("(:)(:*)", "a:b::c:::d")""",
+     [(":", ""), (":", ":"), (":", "::")])
+test(r"""sre.findall("(a)|(b)", "abc")""", [("a", ""), ("", "b")])
 
 if verbose:
     print "Running tests on sre.match"
 
-try:
-    # No groups at all
-    m = sre.match('a', 'a') ; assert m.groups() == ()
-    # A single group
-    m = sre.match('(a)', 'a') ; assert m.groups() == ('a',)
+test(r"""sre.match('a', 'a').groups()""", ())
+test(r"""sre.match('(a)', 'a').groups()""", ('a',))
+test(r"""sre.match('(a)', 'a').group(0)""", 'a')
+test(r"""sre.match('(a)', 'a').group(1)""", 'a')
+test(r"""sre.match('(a)', 'a').group(1, 1)""", ('a', 'a'))
 
-    pat = sre.compile('((a)|(b))(c)?')
-    assert pat.match('a').groups() == ('a', 'a', None, None)
-    assert pat.match('b').groups() == ('b', None, 'b', None)
-    assert pat.match('ac').groups() == ('a', 'a', None, 'c')
-    assert pat.match('bc').groups() == ('b', None, 'b', 'c')
-    assert pat.match('bc').groups("") == ('b', "", 'b', 'c')
-except AssertionError:
-    raise TestFailed, "match .groups() method"
+pat = sre.compile('((a)|(b))(c)?')
+test(r"""pat.match('a').groups()""", ('a', 'a', None, None))
+test(r"""pat.match('b').groups()""", ('b', None, 'b', None))
+test(r"""pat.match('ac').groups()""", ('a', 'a', None, 'c'))
+test(r"""pat.match('bc').groups()""", ('b', None, 'b', 'c'))
+test(r"""pat.match('bc').groups("")""", ('b', "", 'b', 'c'))
 
-try:
-    # A single group
-    m = sre.match('(a)', 'a')
-    assert m.group(0) == 'a' ; assert m.group(0) == 'a'
-    assert m.group(1) == 'a' ; assert m.group(1, 1) == ('a', 'a')
-
-    pat = sre.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
-    assert pat.match('a').group(1, 2, 3) == ('a', None, None)
-    assert pat.match('b').group('a1', 'b2', 'c3') == (None, 'b', None)
-    assert pat.match('ac').group(1, 'b2', 3) == ('a', None, 'c')
-except AssertionError:
-    raise TestFailed, "match .group() method"
+pat = sre.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
+test(r"""pat.match('a').group(1, 2, 3)""", ('a', None, None))
+test(r"""pat.match('b').group('a1', 'b2', 'c3')""", (None, 'b', None))
+test(r"""pat.match('ac').group(1, 'b2', 3)""", ('a', None, 'c'))
 
 if verbose:
     print "Running tests on sre.escape"
 
-try:
-    p=""
-    for i in range(0, 256):
-        p = p + chr(i)
-        assert sre.match(sre.escape(chr(i)), chr(i)) != None
-        assert sre.match(sre.escape(chr(i)), chr(i)).span() == (0,1)
+p = ""
+for i in range(0, 256):
+    p = p + chr(i)
+    test(r"""sre.match(sre.escape(chr(i)), chr(i)) != None""", 1)
+    test(r"""sre.match(sre.escape(chr(i)), chr(i)).span()""", (0,1))
 
-    pat=sre.compile( sre.escape(p) )
-    assert pat.match(p) != None
-    assert pat.match(p).span() == (0,256)
-except AssertionError:
-    raise TestFailed, "sre.escape"
-
+pat = sre.compile(sre.escape(p))
+test(r"""pat.match(p) != None""", 1)
+test(r"""pat.match(p).span()""", (0,256))
 
 if verbose:
     print 'Pickling a SRE_Pattern instance'
@@ -248,16 +212,14 @@ try:
 except:
     print TestFailed, 're module cPickle' # expected
 
-try:
-    assert sre.I == sre.IGNORECASE
-    assert sre.L == sre.LOCALE
-    assert sre.M == sre.MULTILINE
-    assert sre.S == sre.DOTALL
-    assert sre.X == sre.VERBOSE
-    assert sre.T == sre.TEMPLATE
-    assert sre.U == sre.UNICODE
-except AssertionError:
-    raise TestFailed, 're module constants'
+# constants
+test(r"""sre.I""", sre.IGNORECASE)
+test(r"""sre.L""", sre.LOCALE)
+test(r"""sre.M""", sre.MULTILINE)
+test(r"""sre.S""", sre.DOTALL)
+test(r"""sre.X""", sre.VERBOSE)
+test(r"""sre.T""", sre.TEMPLATE)
+test(r"""sre.U""", sre.UNICODE)
 
 for flags in [sre.I, sre.M, sre.X, sre.S, sre.L, sre.T, sre.U]:
     try:
@@ -270,10 +232,9 @@ if verbose:
 
 # Try nasty case that overflows the straightforward recursive
 # implementation of repeated groups.
-try:
-    assert sre.match('(x)*', 50000*'x').span() == (0, 50000)
-except RuntimeError, v:
-    print v
+test(r"""sre.match('(x)*', 50000*'x').span()""", (0, 50000), RuntimeError)
+test(r"""sre.match('(x)*y', 50000*'x'+'y').span()""", (0, 50001), RuntimeError)
+test(r"""sre.match('(x)*?y', 50000*'x'+'y').span()""", (0, 50001), RuntimeError)
 
 from re_tests import *
 
