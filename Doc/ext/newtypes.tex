@@ -314,7 +314,7 @@ Try to choose something that will be helpful in such a situation!
 \end{verbatim}
 
 These fields tell the runtime how much memory to allocate when new
-objects of this typed are created.  Python has some builtin support
+objects of this type are created.  Python has some builtin support
 for variable length structures (think: strings, lists) which is where
 the \member{tp_itemsize} field comes in.  This will be dealt with
 later.
@@ -537,7 +537,7 @@ that must be met:
   \item   The name of the attributes must be known when
           \cfunction{PyType_Ready()} is called.
 
-  \item   No special processing is need to record that an attribute
+  \item   No special processing is needed to record that an attribute
           was looked up or set, nor do actions need to be taken based
           on the value.
 \end{enumerate}
