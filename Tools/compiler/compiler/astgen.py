@@ -81,6 +81,8 @@ class NodeInfo:
         print >> buf, "    def __repr__(self):"
         if self.argnames:
             fmt = COMMA.join(["%s"] * self.nargs)
+            if '(' in self.args:
+                fmt = '(%s)' % fmt
             vals = ["repr(self.%s)" % name for name in self.argnames]
             vals = COMMA.join(vals)
             if self.nargs == 1:
