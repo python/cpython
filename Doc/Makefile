@@ -210,7 +210,8 @@ LIBFILES = lib/lib.tex \
     lib/libbinhex.tex lib/libuu.tex \
     lib/libsunaudio.tex lib/libfileinput.tex lib/libimaplib.tex \
     lib/libpoplib.tex lib/libcalendar.tex lib/libpopen2.tex \
-    lib/libbisect.tex lib/libmimetypes.tex
+    lib/libbisect.tex lib/libmimetypes.tex lib/libsmtplib.tex lib/libcmd.tex \
+    lib/libmultifile.tex
 
 # LaTeX source files for Macintosh Library Modules.
 MACLIBFILES = mac/mac.tex mac/libmac.tex mac/libctb.tex mac/libmacconsole.tex \
