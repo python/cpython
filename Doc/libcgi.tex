@@ -1,4 +1,4 @@
-\section{Standard Module \sectcode{cgi}}
+\section{Standard Module \module{cgi}}
 \label{module-cgi}
 \stmodindex{cgi}
 \indexii{WWW}{server}
@@ -8,7 +8,8 @@
 \index{URL}
 
 
-Support module for CGI (Common Gateway Interface) scripts.
+Support module for CGI (Common Gateway Interface) scripts.%
+\index{Common Gateway Interface}
 
 This module defines a number of utilities for use by CGI scripts
 written in Python.
@@ -316,7 +317,7 @@ Unfortunately, a CGI script will generally not run when you try it
 from the command line, and a script that works perfectly from the
 command line may fail mysteriously when run from the server.  There's
 one reason why you should still test your script from the command
-line: if it contains a syntax error, the python interpreter won't
+line: if it contains a syntax error, the Python interpreter won't
 execute it at all, and the HTTP server will most likely send a cryptic
 error to the client.
 
