@@ -3347,30 +3347,61 @@ _PyEval_SliceIndex(PyObject *v, int *pi)
 	return 1;
 }
 
+#undef ISINT
+#define ISINT(x) ((x) == NULL || PyInt_Check(x) || PyLong_Check(x))
+
 static PyObject *
 apply_slice(PyObject *u, PyObject *v, PyObject *w) /* return u[v:w] */
 {
-	int ilow = 0, ihigh = INT_MAX;
-	if (!_PyEval_SliceIndex(v, &ilow))
-		return NULL;
-	if (!_PyEval_SliceIndex(w, &ihigh))
-		return NULL;
-	return PySequence_GetSlice(u, ilow, ihigh);
+	PyTypeObject *tp = u->ob_type;
+	PySequenceMethods *sq = tp->tp_as_sequence;
+
+	if (sq && sq->sq_slice && ISINT(v) && ISINT(w)) {
+		int ilow = 0, ihigh = INT_MAX;
+		if (!_PyEval_SliceIndex(v, &ilow))
+			return NULL;
+		if (!_PyEval_SliceIndex(w, &ihigh))
+			return NULL;
+		return PySequence_GetSlice(u, ilow, ihigh);
+	}
+	else {
+		PyObject *slice = PySlice_New(v, w, NULL);
+		if (slice != NULL)
+			return PyObject_GetItem(u, slice);
+		else
+			return NULL;
+	}
 }
 
 static int
 assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x)
 	/* u[v:w] = x */
 {
-	int ilow = 0, ihigh = INT_MAX;
-	if (!_PyEval_SliceIndex(v, &ilow))
-		return -1;
-	if (!_PyEval_SliceIndex(w, &ihigh))
-		return -1;
-	if (x == NULL)
-		return PySequence_DelSlice(u, ilow, ihigh);
-	else
-		return PySequence_SetSlice(u, ilow, ihigh, x);
+	PyTypeObject *tp = u->ob_type;
+	PySequenceMethods *sq = tp->tp_as_sequence;
+
+	if (sq && sq->sq_slice && ISINT(v) && ISINT(w)) {
+		int ilow = 0, ihigh = INT_MAX;
+		if (!_PyEval_SliceIndex(v, &ilow))
+			return -1;
+		if (!_PyEval_SliceIndex(w, &ihigh))
+			return -1;
+		if (x == NULL)
+			return PySequence_DelSlice(u, ilow, ihigh);
+		else
+			return PySequence_SetSlice(u, ilow, ihigh, x);
+	}
+	else {
+		PyObject *slice = PySlice_New(v, w, NULL);
+		if (slice != NULL) {
+			if (x != NULL)
+				return PyObject_SetItem(u, slice, x);
+			else
+				return PyObject_DelItem(u, slice);
+		}
+		else
+			return -1;
+	}
 }
 
 static PyObject *
