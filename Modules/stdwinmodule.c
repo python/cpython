@@ -166,77 +166,14 @@ static object *
 makepoint(a, b)
 	int a, b;
 {
-	object *v;
-	object *w;
-	if ((v = newtupleobject(2)) == NULL)
-		return NULL;
-	if ((w = newintobject((long)a)) == NULL ||
-		settupleitem(v, 0, w) != 0 ||
-		(w = newintobject((long)b)) == NULL ||
-		settupleitem(v, 1, w) != 0) {
-		DECREF(v);
-		return NULL;
-	}
-	return v;
+	return mkvalue("(ii)", a, b);
 }
 
 static object *
 makerect(a, b, c, d)
 	int a, b, c, d;
 {
-	object *v;
-	object *w;
-	if ((v = newtupleobject(2)) == NULL)
-		return NULL;
-	if ((w = makepoint(a, b)) == NULL ||
-		settupleitem(v, 0, w) != 0 ||
-		(w = makepoint(c, d)) == NULL ||
-		settupleitem(v, 1, w) != 0) {
-		DECREF(v);
-		return NULL;
-	}
-	return v;
-}
-
-static object *
-makemouse(hor, ver, clicks, button, mask)
-	int hor, ver, clicks, button, mask;
-{
-	object *v;
-	object *w;
-	if ((v = newtupleobject(4)) == NULL)
-		return NULL;
-	if ((w = makepoint(hor, ver)) == NULL ||
-		settupleitem(v, 0, w) != 0 ||
-		(w = newintobject((long)clicks)) == NULL ||
-		settupleitem(v, 1, w) != 0 ||
-		(w = newintobject((long)button)) == NULL ||
-		settupleitem(v, 2, w) != 0 ||
-		(w = newintobject((long)mask)) == NULL ||
-		settupleitem(v, 3, w) != 0) {
-		DECREF(v);
-		return NULL;
-	}
-	return v;
-}
-
-static object *
-makemenu(mp, item)
-	object *mp;
-	int item;
-{
-	object *v;
-	object *w;
-	if ((v = newtupleobject(2)) == NULL)
-		return NULL;
-	INCREF(mp);
-	if (settupleitem(v, 0, mp) != 0 ||
-		(w = newintobject((long)item)) == NULL ||
-		settupleitem(v, 1, w) != 0) {
-		DECREF(v);
-		return NULL;
-	}
-	return v;
+	return mkvalue("((ii)(ii))", a, b, c, d);
 }
 
 
@@ -1779,7 +1716,7 @@ stdwin_get_poll_event(poll, args)
 	object *args;
 {
 	EVENT e;
-	object *v, *w;
+	object *u, *v, *w;
 	if (!getnoarg(args))
 		return NULL;
 	if (Drawing != NULL) {
@@ -1804,15 +1741,7 @@ stdwin_get_poll_event(poll, args)
 		/* Turn WC_CLOSE commands into WE_CLOSE events */
 		e.type = WE_CLOSE;
 	}
-	v = newtupleobject(3);
-	if (v == NULL)
-		return NULL;
-	if ((w = newintobject((long)e.type)) == NULL) {
-		DECREF(v);
-		return NULL;
-	}
-	settupleitem(v, 0, w);
-	settupleitem(v, 1, window2object(e.window));
+	v = window2object(e.window);
 	switch (e.type) {
 	case WE_CHAR:
 		{
@@ -1831,7 +1760,8 @@ stdwin_get_poll_event(poll, args)
 	case WE_MOUSE_DOWN:
 	case WE_MOUSE_MOVE:
 	case WE_MOUSE_UP:
-		w = makemouse(e.u.where.h, e.u.where.v,
+		w = mkvalue("((ii)iii)",
+				e.u.where.h, e.u.where.v,
 				e.u.where.clicks,
 				e.u.where.button,
 				e.u.where.mask);
@@ -1839,7 +1769,8 @@ stdwin_get_poll_event(poll, args)
 	case WE_MENU:
 		if (e.u.m.id >= IDOFFSET && e.u.m.id < IDOFFSET+MAXNMENU &&
 				menulist[e.u.m.id - IDOFFSET] != NULL)
-			w = (object *)menulist[e.u.m.id - IDOFFSET];
+			w = mkvalue("(Oi)",
+				    menulist[e.u.m.id - IDOFFSET], e.u.m.item);
 		else {
 			/* Ghost menu event.
 			   Can occur only on the Mac if another part
@@ -1848,7 +1779,6 @@ stdwin_get_poll_event(poll, args)
 			DECREF(v);
 			goto again;
 		}
-		w = makemenu(w, e.u.m.item);
 		break;
 	case WE_LOST_SEL:
 		w = newintobject((long)e.u.sel);
@@ -1862,8 +1792,10 @@ stdwin_get_poll_event(poll, args)
 		DECREF(v);
 		return NULL;
 	}
-	settupleitem(v, 2, w);
-	return v;
+	u = mkvalue("(iOO)", e.type, v, w);
+	XDECREF(v);
+	XDECREF(w);
+	return u;
 }
 
 static object *
