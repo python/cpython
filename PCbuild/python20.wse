@@ -1725,8 +1725,8 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=.\bsddb.pyd
-  Destination=%MAINDIR%\DLLs\bsddb.pyd
+  Source=.\_bsddb.pyd
+  Destination=%MAINDIR%\DLLs\_bsddb.pyd
   Flags=0000000000000010
 end
 item: Install File
@@ -1807,8 +1807,8 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=.\bsddb.lib
-  Destination=%MAINDIR%\libs\bsddb.lib
+  Source=.\_bsddb.lib
+  Destination=%MAINDIR%\libs\_bsddb.lib
   Flags=0000000000000010
 end
 item: Install File
@@ -1853,6 +1853,17 @@ item: Install File
 end
 item: Remark
 end
+item: Remark
+  Text=Oddball -- the Sleepcat DLL
+end
+item: Install File
+  Source=..\..\db-4.0.14\build_win32\Release\libdb40.dll
+  Destination=%MAINDIR%\DLLs\libdb40.dll
+  Description=Sleepycat Berekely DB DLL
+  Flags=0000000000000010
+end
+item: Remark
+end
 item: Install File
   Source=.\python%_pymajor_%%_pyminor_%.lib
   Destination=%MAINDIR%\libs\python%_PYMAJOR_%%_PYMINOR_%.lib
@@ -1887,6 +1898,14 @@ item: Install File
   Destination=%MAINDIR%\Lib
   Description=Library Modules
   Flags=0000000000000010
+end
+item: Remark
+end
+item: Install File
+  Source=..\lib\bsddb\*.py
+  Destination=%MAINDIR%\Lib\bsddb
+  Description=Berkeley database package
+  Flags=0000000100000010
 end
 item: Remark
 end

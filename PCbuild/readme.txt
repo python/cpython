@@ -176,6 +176,11 @@ _bsddb
         http://www.sleepycat.com/docs/ref/build_win/intro.html
     and follow the instructions for building the Sleepycat software.
     Build the Release version.
+    NOTE:  The instructions are for a later release of the software,
+    so use your imagination.  Berkeley_DB.dsw in this release was
+    also pre-MSVC6, so you'll be prompted to upgrade the format (say
+    yes, of course).  Choose configuration "db_buildall - Win32 Release",
+    and build db_buildall.exe.
 
     XXX You have to copy
     XXX     dist\db-4.0.14\build_win32\Release\libdb40.dll
@@ -187,8 +192,6 @@ _bsddb
     XXX DLL.  This gives me a headache.  I would *like* to, as the old
     XXX bsddb 1.85 project apparently managed to do, link the Berkeley
     XXX DLL into the guts of our _bsddb.pyd.  I don't know how to.
-
-    XXX The installer needs to be changed accordingly.
 
     XXX The Sleepycat release we use will probably change before
     XXX 2.3a1.
