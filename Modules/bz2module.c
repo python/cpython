@@ -1978,7 +1978,7 @@ bz2_compress(PyObject *self, PyObject *args, PyObject *kwargs)
 	}
 
 	if (bzs->avail_out != 0)
-		_PyString_Resize(&ret, BZS_TOTAL_OUT(bzs));
+		_PyString_Resize(&ret, (int)BZS_TOTAL_OUT(bzs));
 	BZ2_bzCompressEnd(bzs);
 
 	return ret;
@@ -2057,7 +2057,7 @@ bz2_decompress(PyObject *self, PyObject *args)
 	}
 
 	if (bzs->avail_out != 0)
-		_PyString_Resize(&ret, BZS_TOTAL_OUT(bzs));
+		_PyString_Resize(&ret, (int)BZS_TOTAL_OUT(bzs));
 	BZ2_bzDecompressEnd(bzs);
 
 	return ret;
