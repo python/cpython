@@ -537,7 +537,7 @@ xmlparse_GetBase(xmlparseobject *self, PyObject *args)
 
 static char xmlparse_ExternalEntityParserCreate__doc__[] = 
 "ExternalEntityParserCreate(context, encoding)\n\
-Create a parser for parsing an external entity based on the
+Create a parser for parsing an external entity based on the\n\
 information passed to the ExternalEntityRefHandler.";
 
 static PyObject *
