@@ -21,8 +21,6 @@
 #define SRE_CODE unsigned short
 #endif
 
-#define SRE_CODE unsigned short
-
 typedef struct {
     PyObject_VAR_HEAD
     int groups; /* must be first! */
