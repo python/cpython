@@ -41,7 +41,6 @@ static object *RegexError;	/* Exception */
 
 typedef struct {
 	OB_HEAD
-	object *re_string;	/* The string (for printing) */
 	struct re_pattern_buffer re_patbuf; /* The compiled expression */
 	struct re_registers re_regs; /* The registers from the last match */
 	int re_regs_valid;	/* Nonzero if the registers are valid */
@@ -54,7 +53,6 @@ static void
 reg_dealloc(re)
 	regexobject *re;
 {
-	XDECREF(re->re_string);
 	XDEL(re->re_patbuf.buffer);
 	XDEL(re->re_patbuf.translate);
 	DEL(re);
@@ -91,18 +89,19 @@ reg_match(re, args)
 {
 	object *v;
 	char *buffer;
+	int size;
 	int offset;
 	int result;
-	if (args != NULL && is_stringobject(args)) {
-		v = args;
+	if (getargs(args, "s#", &buffer, &size)) {
 		offset = 0;
 	}
-	else if (!getstrintarg(args, &v, &offset))
-		return NULL;
-	buffer = getstringvalue(v);
+	else {
+		err_clear();
+		if (!getargs(args, "(s#i)", &buffer, &size, &offset))
+			return NULL;
+	}
 	re->re_regs_valid = 0;
-	result = re_match(&re->re_patbuf, buffer, getstringsize(v),
-			  offset, &re->re_regs);
+	result = re_match(&re->re_patbuf, buffer, size, offset, &re->re_regs);
 	if (result < -1) {
 		/* Failure like stack overflow */
 		err_setstr(RegexError, "match failure");
@@ -111,6 +110,7 @@ reg_match(re, args)
 	re->re_regs_valid = result >= 0;
 	return newintobject((long)result); /* Length of the match or -1 */
 }
+
 static object *
 reg_search(re, args)
 	regexobject *re;
@@ -122,18 +122,23 @@ reg_search(re, args)
 	int offset;
 	int range;
 	int result;
-	if (args != NULL && is_stringobject(args)) {
-		v = args;
+	
+	if (getargs(args, "s#", &buffer, &size)) {
 		offset = 0;
 	}
-	else if (!getstrintarg(args, &v, &offset))
-		return NULL;
-	buffer = getstringvalue(v);
-	size = getstringsize(v);
+	else {
+		err_clear();
+		if (!getargs(args, "(s#i)", &buffer, &size, &offset))
+			return NULL;
+	}
 	if (offset < 0 || offset > size) {
 		err_setstr(RegexError, "search offset out of range");
 		return NULL;
 	}
+	/* NB: In Emacs 18.57, the documentation for re_search[_2] and
+	   the implementation don't match: the documentation states that
+	   |range| positions are tried, while the code tries |range|+1
+	   positions.  It seems more productive to believe the code! */
 	range = size - offset;
 	re->re_regs_valid = 0;
 	result = re_search(&re->re_patbuf, buffer, size, offset, range,
@@ -184,31 +189,28 @@ static typeobject Regextype = {
 	0,			/*tp_repr*/
 };
 
-static regexobject *
-newregexobject(string)
-	object *string;
+static object *
+newregexobject(pat, size)
+	char *pat;
+	int size;
 {
 	regexobject *re;
 	re = NEWOBJ(regexobject, &Regextype);
 	if (re != NULL) {
 		char *error;
-		INCREF(string);
-		re->re_string = string;
 		re->re_patbuf.buffer = NULL;
 		re->re_patbuf.allocated = 0;
 		re->re_patbuf.fastmap = re->re_fastmap;
 		re->re_patbuf.translate = NULL;
 		re->re_regs_valid = 0;
-		error = re_compile_pattern(getstringvalue(string),
-					   getstringsize(string),
-					   &re->re_patbuf);
+		error = re_compile_pattern(pat, size, &re->re_patbuf);
 		if (error != NULL) {
 			err_setstr(RegexError, error);
 			DECREF(re);
 			re = NULL;
 		}
 	}
-	return re;
+	return (object *)re;
 }
 
 static object *
@@ -216,10 +218,11 @@ regex_compile(self, args)
 	object *self;
 	object *args;
 {
-	object *string;
-	if (!getstrarg(args, &string))
+	char *pat;
+	int size;
+	if (!getargs(args, "s#", &pat, &size))
 		return NULL;
-	return (object *)newregexobject(string);
+	return newregexobject(pat, size);
 }
 
 static object *cache_pat;
@@ -248,7 +251,7 @@ regex_match(self, args)
 	object *args;
 {
 	object *pat, *string;
-	if (!getstrstrarg(args, &pat, &string))
+	if (!getStrStrarg(args, &pat, &string))
 		return NULL;
 	if (update_cache(pat) < 0)
 		return NULL;
@@ -261,7 +264,7 @@ regex_search(self, args)
 	object *args;
 {
 	object *pat, *string;
-	if (!getstrstrarg(args, &pat, &string))
+	if (!getStrStrarg(args, &pat, &string))
 		return NULL;
 	if (update_cache(pat) < 0)
 		return NULL;
