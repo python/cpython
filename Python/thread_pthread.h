@@ -263,32 +263,93 @@ void release_lock _P1(lock, type_lock lock)
 /*
  * Semaphore support.
  */
-/* NOTE: 100% non-functional at this time - tim */
+
+struct semaphore {
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+	int value;
+};
 
 type_sema allocate_sema _P1(value, int value)
 {
-	char *sema = 0;
+	struct semaphore *sema;
+	int status, error = 0;
+
 	dprintf(("allocate_sema called\n"));
 	if (!initialized)
 		init_thread();
 
+	sema = (struct semaphore *) malloc(sizeof(struct semaphore));
+	if (sema != NULL) {
+		sema->value = value;
+		status = pthread_mutex_init(&sema->mutex,
+					    pthread_mutexattr_default);
+		CHECK_STATUS("pthread_mutex_init");
+		status = pthread_cond_init(&sema->cond,
+					   pthread_condattr_default);
+		CHECK_STATUS("pthread_cond_init");
+		if (error) {
+			free((void *) sema);
+			sema = NULL;
+		}
+	}
 	dprintf(("allocate_sema() -> %lx\n", (long) sema));
 	return (type_sema) sema;
 }
 
 void free_sema _P1(sema, type_sema sema)
 {
+	int status, error = 0;
+	struct semaphore *thesema = (struct semaphore *) sema;
+
 	dprintf(("free_sema(%lx) called\n", (long) sema));
+	status = pthread_cond_destroy(&thesema->cond);
+	CHECK_STATUS("pthread_cond_destroy");
+	status = pthread_mutex_destroy(&thesema->mutex);
+	CHECK_STATUS("pthread_mutex_destroy");
+	free((void *) thesema);
 }
 
 int down_sema _P2(sema, type_sema sema, waitflag, int waitflag)
 {
+	int status, error = 0, success;
+	struct semaphore *thesema = (struct semaphore *) sema;
+
 	dprintf(("down_sema(%lx, %d) called\n", (long) sema, waitflag));
+	status = pthread_mutex_lock(&thesema->mutex);
+	CHECK_STATUS("pthread_mutex_lock");
+	if (waitflag) {
+		while (!error && thesema->value <= 0) {
+			status = pthread_cond_wait(&thesema->cond,
+						   &thesema->mutex);
+			CHECK_STATUS("pthread_cond_wait");
+		}
+	}
+	if (error)
+		success = 0;
+	else if (thesema->value > 0) {
+		thesema->value--;
+		success = 1;
+	}
+	else
+		success = 0;
+	status = pthread_mutex_unlock(&thesema->mutex);
+	CHECK_STATUS("pthread_mutex_unlock");
 	dprintf(("down_sema(%lx) return\n", (long) sema));
-	return -1;
+	return success;
 }
 
 void up_sema _P1(sema, type_sema sema)
 {
+	int status, error = 0;
+	struct semaphore *thesema = (struct semaphore *) sema;
+
 	dprintf(("up_sema(%lx)\n", (long) sema));
+	status = pthread_mutex_lock(&thesema->mutex);
+	CHECK_STATUS("pthread_mutex_lock");
+	thesema->value++;
+	status = pthread_cond_signal(&thesema->cond);
+	CHECK_STATUS("pthread_cond_signal");
+	status = pthread_mutex_unlock(&thesema->mutex);
+	CHECK_STATUS("pthread_mutex_unlock");
 }
