@@ -36,6 +36,11 @@ class MyScanner(Scanner):
 			"AntiTextSetEnabled",
 			"AntiTextGetApplicationAware",
 			"AntiTextSetApplicationAware",
+			# These are tricky: they're not Carbon dependent or anything, but they
+			# exist only on 8.6 or later (both in Carbon and Classic).
+			# Disabling them is the easiest path.
+			'SetAntiAliasedTextEnabled',
+			'IsAntiAliasedTextEnabled',
 			]
 
 	def makegreylist(self):
