@@ -15,6 +15,10 @@ def dis(x=None):
         return
     if type(x) is types.InstanceType:
         x = x.__class__
+    if hasattr(x, 'im_func'):
+        x = x.im_func
+    if hasattr(x, 'func_code'):
+        x = x.func_code
     if hasattr(x, '__dict__'):
         items = x.__dict__.items()
         items.sort()
@@ -28,17 +32,12 @@ def dis(x=None):
                 except TypeError, msg:
                     print "Sorry:", msg
                 print
+    elif hasattr(x, 'co_code'):
+        disassemble(x)
     else:
-        if hasattr(x, 'im_func'):
-            x = x.im_func
-        if hasattr(x, 'func_code'):
-            x = x.func_code
-        if hasattr(x, 'co_code'):
-            disassemble(x)
-        else:
-            raise TypeError, \
-                  "don't know how to disassemble %s objects" % \
-                  type(x).__name__
+        raise TypeError, \
+              "don't know how to disassemble %s objects" % \
+              type(x).__name__
 
 def distb(tb=None):
     """Disassemble a traceback (default: last traceback)."""
