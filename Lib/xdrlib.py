@@ -55,8 +55,8 @@ class Packer:
 	else: self.__buf = self.__buf + '\0\0\0\0'
 
     def pack_uhyper(self, x):
-	self.pack_uint(int(x>>32 & 0xffffffff))
-	self.pack_uint(int(x & 0xffffffff))
+	self.pack_uint(x>>32 & 0xffffffffL)
+	self.pack_uint(x & 0xffffffffL)
 
     pack_hyper = pack_uhyper
 
