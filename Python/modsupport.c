@@ -33,38 +33,37 @@ typedef extended va_double;
 typedef double va_double;
 #endif
 
-
-/* initmodule2() has an additional parameter, 'passthrough', which is
-   passed as 'self' to functions defined in the module.  This is used
-   e.g. by dynamically loaded modules on the Mac. */
+/* initmodule3() has two additional parameters:
+   - doc is the documentation string;
+   - passthrough is passed as self to functions defined in the module.
+*/
 
 object *
-initmodule2(name, methods, passthrough)
+initmodule3(name, methods, doc, passthrough)
 	char *name;
 	struct methodlist *methods;
+	char *doc;
 	object *passthrough;
 {
 	object *m, *d, *v;
 	struct methodlist *ml;
-	char *namebuf;
 	if ((m = add_module(name)) == NULL) {
 		fprintf(stderr, "initializing module: %s\n", name);
 		fatal("can't create a module");
 	}
 	d = getmoduledict(m);
 	for (ml = methods; ml->ml_name != NULL; ml++) {
-		namebuf = NEW(char, strlen(name) + strlen(ml->ml_name) + 2);
-		if (namebuf == NULL)
-			fatal("out of mem for method name");
-		sprintf(namebuf, "%s.%s", name, ml->ml_name);
-		v = newmethodobject(namebuf, ml->ml_meth,
-				    (object *)passthrough,
-				    (ml->ml_varargs ? METH_VARARGS : 0) |
-				    METH_FREENAME);
+		v = newmethodobject(ml, passthrough);
 		if (v == NULL || dictinsert(d, ml->ml_name, v) != 0) {
 			fprintf(stderr, "initializing module: %s\n", name);
 			fatal("can't initialize module");
 		}
+		DECREF(v);
+	}
+	if (doc != NULL) {
+		v = newstringobject(doc);
+		if (v == NULL || dictinsert(d, "__doc__", v) != 0)
+			fatal("can't add doc string");
 		DECREF(v);
 	}
 	return m;
@@ -77,7 +76,7 @@ initmodule(name, methods)
 	char *name;
 	struct methodlist *methods;
 {
-	return initmodule2(name, methods, (object *)NULL);
+	return initmodule3(name, methods, (char *)NULL, (object *)NULL);
 }
 
 
