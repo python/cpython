@@ -83,7 +83,7 @@ class RobotFileParser:
             self.entries.append(entry)
 
     def parse(self, lines):
-        """parse the input lines from a robot.txt file.
+        """parse the input lines from a robots.txt file.
            We allow that a user-agent: line is not preceded by
            one or more blank lines."""
         state = 0
@@ -148,7 +148,7 @@ class RobotFileParser:
 
     def can_fetch(self, useragent, url):
         """using the parsed robots.txt decide if useragent can fetch url"""
-        _debug("Checking robot.txt allowance for:\n  user agent: %s\n  url: %s" %
+        _debug("Checking robots.txt allowance for:\n  user agent: %s\n  url: %s" %
                (useragent, url))
         if self.disallow_all:
             return False
