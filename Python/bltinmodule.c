@@ -1840,7 +1840,7 @@ builtin_sum(PyObject *self, PyObject *args)
 			}
 			break;
 		}
-		temp = PyNumber_Add(result, item);
+		temp = PyNumber_InPlaceAdd(result, item);
 		Py_DECREF(result);
 		Py_DECREF(item);
 		result = temp;
