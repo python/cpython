@@ -496,6 +496,50 @@ PyList_SetSlice(PyObject *a, int ilow, int ihigh, PyObject *v)
 	return list_ass_slice((PyListObject *)a, ilow, ihigh, v);
 }
 
+static PyObject *
+list_inplace_repeat(PyListObject *self, int n)
+{
+	PyObject **items;
+	int size, i, j;
+
+
+	size = PyList_GET_SIZE(self);
+	if (size == 0) {
+		Py_INCREF(self);
+		return (PyObject *)self;
+	}
+
+	items = self->ob_item;
+
+	if (n < 1) {
+		self->ob_item = NULL;
+		self->ob_size = 0;
+		for (i = 0; i < size; i++)
+			Py_XDECREF(items[i]);
+		PyMem_DEL(items);
+		Py_INCREF(self);
+		return (PyObject *)self;
+	}
+
+	NRESIZE(items, PyObject*, size*n);
+	if (items == NULL) {
+		PyErr_NoMemory();
+		goto finally;
+	}
+	self->ob_item = items;
+	for (i = 1; i < n; i++) { /* Start counting at 1, not 0 */
+		for (j = 0; j < size; j++) {
+			PyObject *o = PyList_GET_ITEM(self, j);
+			Py_INCREF(o);
+			PyList_SET_ITEM(self, self->ob_size++, o);
+		}
+	}
+	Py_INCREF(self);
+	return (PyObject *)self;
+  finally:
+  	return NULL;
+}
+
 static int
 list_ass_item(PyListObject *a, int i, PyObject *v)
 {
@@ -556,25 +600,17 @@ listappend(PyListObject *self, PyObject *args)
 	return ins(self, (int) self->ob_size, v);
 }
 
-static PyObject *
-listextend(PyListObject *self, PyObject *args)
+static int
+listextend_internal(PyListObject *self, PyObject *b)
 {
-	PyObject *b = NULL, *res = NULL;
 	PyObject **items;
 	int selflen = PyList_GET_SIZE(self);
 	int blen;
 	register int i;
 
-	if (!PyArg_ParseTuple(args, "O:extend", &b))
-		return NULL;
-
-	b = PySequence_Fast(b, "list.extend() argument must be a sequence");
-	if (!b)
-		return NULL;
-
 	if (PyObject_Size(b) == 0)
 		/* short circuit when b is empty */
-		goto ok;
+		return 0;
 
 	if (self == (PyListObject*)b) {
 		/* as in list_ass_slice() we must special case the
@@ -586,7 +622,7 @@ listextend(PyListObject *self, PyObject *args)
 		Py_DECREF(b);
 		b = PyList_New(selflen);
 		if (!b)
-			return NULL;
+			return -1;
 		for (i = 0; i < selflen; i++) {
 			PyObject *o = PyList_GET_ITEM(self, i);
 			Py_INCREF(o);
@@ -601,8 +637,10 @@ listextend(PyListObject *self, PyObject *args)
 	NRESIZE(items, PyObject*, selflen + blen);
 	if (items == NULL) {
 		PyErr_NoMemory();
-		goto failed;
+		Py_DECREF(b);
+		return -1;
 	}
+
 	self->ob_item = items;
 
 	/* populate the end of self with b's items */
@@ -611,14 +649,44 @@ listextend(PyListObject *self, PyObject *args)
 		Py_INCREF(o);
 		PyList_SET_ITEM(self, self->ob_size++, o);
 	}
-  ok:
-	res = Py_None;
-	Py_INCREF(res);
-  failed:
 	Py_DECREF(b);
-	return res;
+	return 0;
 }
 
+
+static PyObject *
+list_inplace_concat(PyListObject *self, PyObject *other)
+{
+	other = PySequence_Fast(other, "argument to += must be a sequence");
+	if (!other)
+		return NULL;
+
+	if (listextend_internal(self, other) < 0)
+		return NULL;
+
+	Py_INCREF(self);
+	return (PyObject *)self;
+}
+
+static PyObject *
+listextend(PyListObject *self, PyObject *args)
+{
+
+	PyObject *b;
+	
+	if (!PyArg_ParseTuple(args, "O:extend", &b))
+		return NULL;
+
+	b = PySequence_Fast(b, "list.extend() argument must be a sequence");
+	if (!b)
+		return NULL;
+
+	if (listextend_internal(self, b) < 0)
+		return NULL;
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
 
 static PyObject *
 listpop(PyListObject *self, PyObject *args)
@@ -1407,6 +1475,8 @@ static PySequenceMethods list_as_sequence = {
 	(intobjargproc)list_ass_item, /*sq_ass_item*/
 	(intintobjargproc)list_ass_slice, /*sq_ass_slice*/
 	(objobjproc)list_contains, /*sq_contains*/
+	(binaryfunc)list_inplace_concat, /*sq_inplace_concat*/
+	(intargfunc)list_inplace_repeat, /*sq_inplace_repeat*/
 };
 
 PyTypeObject PyList_Type = {

@@ -614,6 +614,486 @@ PyNumber_Power(PyObject *v, PyObject *w, PyObject *z)
 	return res;
 }
 
+/* Binary in-place operators */
+
+/* The in-place operators are defined to fall back to the 'normal',
+   non in-place operations, if the in-place methods are not in place, and to
+   take class instances into account. This is how it is supposed to work:
+
+   - If the left-hand-side object (the first argument) is an
+     instance object, try to let PyInstance_HalfBinOp() handle it.  Pass the
+     non in-place variant of the function as callback, because it will only
+     be used if the left-hand object is changed by coercion.
+
+   - Otherwise, if the left hand object is not an instance object, it has
+     the appropriate struct members, and they are filled, call the
+     appropriate function and return the result. No coercion is done on the
+     arguments; the left-hand object is the one the operation is performed
+     on, and it's up to the function to deal with the right-hand object.
+     
+   - Otherwise, in-place modification is not supported. Handle it exactly as
+     a non in-place operation of the same kind:
+
+     - If either object is an instance, let PyInstance_DoBinOp() handle it.
+     
+     - Otherwise, both arguments are C types. If the left-hand object has
+       the appropriate struct members filled, coerce, call the
+       appropriate function, and return the result.
+  
+     - Otherwise, we are out of options: raise a type error specific to
+       augmented assignment.
+
+   */
+
+#define HASINPLACE(t) PyType_HasFeature((t)->ob_type, Py_TPFLAGS_HAVE_INPLACEOPS)
+
+PyObject *
+PyNumber_InPlaceOr(PyObject *v, PyObject *w)
+{
+	PyObject * (*f)(PyObject *, PyObject *) = NULL;
+	PyObject *x;
+
+	if (PyInstance_Check(v)) {
+		if (PyInstance_HalfBinOp(v, w, "__ior__", &x, PyNumber_Or,
+					0) <= 0)
+			return x;
+	} else if (v->ob_type->tp_as_number != NULL && HASINPLACE(v) &&
+	           (f = v->ob_type->tp_as_number->nb_inplace_or) != NULL)
+		return (*f)(v, w);
+
+	BINOP(v, w, "__or__", "__ror__", PyNumber_Or);
+
+	if (v->ob_type->tp_as_number != NULL) {
+		if (PyNumber_Coerce(&v, &w) != 0)
+			return NULL;
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_or) != NULL)
+			x = (*f)(v, w);
+		Py_DECREF(v);
+		Py_DECREF(w);
+		if (f != NULL)
+			return x;
+	}
+
+	return type_error("bad operand type(s) for |=");
+}
+
+PyObject *
+PyNumber_InPlaceXor(PyObject *v, PyObject *w)
+{
+	PyObject * (*f)(PyObject *, PyObject *) = NULL;
+	PyObject *x;
+
+	if (PyInstance_Check(v)) {
+		if (PyInstance_HalfBinOp(v, w, "__ixor__", &x, PyNumber_Xor,
+					0) <= 0)
+			return x;
+	} else if (v->ob_type->tp_as_number != NULL && HASINPLACE(v) &&
+	           (f = v->ob_type->tp_as_number->nb_inplace_xor) != NULL)
+		return (*f)(v, w);
+
+	BINOP(v, w, "__xor__", "__rxor__", PyNumber_Xor);
+
+	if (v->ob_type->tp_as_number != NULL) {
+		if (PyNumber_Coerce(&v, &w) != 0)
+			return NULL;
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_xor) != NULL)
+			x = (*f)(v, w);
+		Py_DECREF(v);
+		Py_DECREF(w);
+		if (f != NULL)
+			return x;
+	}
+
+	return type_error("bad operand type(s) for ^=");
+}
+
+PyObject *
+PyNumber_InPlaceAnd(PyObject *v, PyObject *w)
+{
+	PyObject * (*f)(PyObject *, PyObject *) = NULL;
+	PyObject *x;
+
+	if (PyInstance_Check(v)) {
+		if (PyInstance_HalfBinOp(v, w, "__iand__", &x, PyNumber_And,
+					0) <= 0)
+			return x;
+	} else if (v->ob_type->tp_as_number != NULL && HASINPLACE(v) &&
+	           (f = v->ob_type->tp_as_number->nb_inplace_and) != NULL)
+		return (*f)(v, w);
+
+	BINOP(v, w, "__and__", "__rand__", PyNumber_And);
+
+	if (v->ob_type->tp_as_number != NULL) {
+		if (PyNumber_Coerce(&v, &w) != 0)
+			return NULL;
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_and) != NULL)
+			x = (*f)(v, w);
+		Py_DECREF(v);
+		Py_DECREF(w);
+		if (f != NULL)
+			return x;
+	}
+
+	return type_error("bad operand type(s) for &=");
+}
+
+PyObject *
+PyNumber_InPlaceLshift(PyObject *v, PyObject *w)
+{
+	PyObject * (*f)(PyObject *, PyObject *) = NULL;
+	PyObject *x;
+
+	if (PyInstance_Check(v)) {
+		if (PyInstance_HalfBinOp(v, w, "__ilshift__", &x,
+					PyNumber_Lshift, 0) <= 0)
+			return x;
+	} else if (v->ob_type->tp_as_number != NULL && HASINPLACE(v) &&
+	           (f = v->ob_type->tp_as_number->nb_inplace_lshift) != NULL)
+		return (*f)(v, w);
+
+	BINOP(v, w, "__lshift__", "__rlshift__", PyNumber_Lshift);
+
+	if (v->ob_type->tp_as_number != NULL) {
+		if (PyNumber_Coerce(&v, &w) != 0)
+			return NULL;
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_lshift) != NULL)
+			x = (*f)(v, w);
+		Py_DECREF(v);
+		Py_DECREF(w);
+		if (f != NULL)
+			return x;
+	}
+
+	return type_error("bad operand type(s) for <<=");
+}
+
+PyObject *
+PyNumber_InPlaceRshift(PyObject *v, PyObject *w)
+{
+	PyObject * (*f)(PyObject *, PyObject *) = NULL;
+	PyObject *x;
+
+	if (PyInstance_Check(v)) {
+		if (PyInstance_HalfBinOp(v, w, "__irshift__", &x,
+					PyNumber_Rshift, 0) <= 0)
+			return x;
+	} else if (v->ob_type->tp_as_number != NULL && HASINPLACE(v) &&
+	           (f = v->ob_type->tp_as_number->nb_inplace_rshift) != NULL)
+		return (*f)(v, w);
+
+	BINOP(v, w, "__rshift__", "__rrshift__", PyNumber_Rshift);
+
+	if (v->ob_type->tp_as_number != NULL) {
+		if (PyNumber_Coerce(&v, &w) != 0)
+			return NULL;
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_rshift) != NULL)
+			x = (*f)(v, w);
+		Py_DECREF(v);
+		Py_DECREF(w);
+		if (f != NULL)
+			return x;
+	}
+
+	return type_error("bad operand type(s) for >>=");
+}
+
+PyObject *
+PyNumber_InPlaceAdd(PyObject *v, PyObject *w)
+{
+	PyObject * (*f)(PyObject *, PyObject *) = NULL;
+	PyObject *x;
+
+	if (PyInstance_Check(v)) {
+		if (PyInstance_HalfBinOp(v, w, "__iadd__", &x,
+					PyNumber_Add, 0) <= 0)
+			return x;
+	} else if (HASINPLACE(v) && (v->ob_type->tp_as_sequence != NULL &&
+		  (f = v->ob_type->tp_as_sequence->sq_inplace_concat) != NULL) ||
+		  (v->ob_type->tp_as_number != NULL &&
+		  (f = v->ob_type->tp_as_number->nb_inplace_add) != NULL))
+		return (*f)(v, w);
+
+	BINOP(v, w, "__add__", "__radd__", PyNumber_Add);
+
+	if (v->ob_type->tp_as_sequence != NULL &&
+	    (f = v->ob_type->tp_as_sequence->sq_concat) != NULL)
+		return (*f)(v, w);
+	else if (v->ob_type->tp_as_number != NULL) {
+		if (PyNumber_Coerce(&v, &w) != 0)
+			return NULL;
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_add) != NULL)
+			x = (*f)(v, w);
+		Py_DECREF(v);
+		Py_DECREF(w);
+		if (f != NULL)
+			return x;
+	}
+
+	return type_error("bad operand type(s) for +=");
+}
+
+PyObject *
+PyNumber_InPlaceSubtract(PyObject *v, PyObject *w)
+{
+	PyObject * (*f)(PyObject *, PyObject *) = NULL;
+	PyObject *x;
+
+	if (PyInstance_Check(v)) {
+		if (PyInstance_HalfBinOp(v, w, "__isub__", &x,
+					PyNumber_Subtract, 0) <= 0)
+			return x;
+	} else if (v->ob_type->tp_as_number != NULL && HASINPLACE(v) &&
+	           (f = v->ob_type->tp_as_number->nb_inplace_subtract) != NULL)
+		return (*f)(v, w);
+
+	BINOP(v, w, "__sub__", "__rsub__", PyNumber_Subtract);
+
+	if (v->ob_type->tp_as_number != NULL) {
+		if (PyNumber_Coerce(&v, &w) != 0)
+			return NULL;
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_subtract) != NULL)
+			x = (*f)(v, w);
+		Py_DECREF(v);
+		Py_DECREF(w);
+		if (f != NULL)
+			return x;
+	}
+
+	return type_error("bad operand type(s) for -=");
+}
+
+PyObject *
+PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
+{
+	PyObject * (*f)(PyObject *, PyObject *) = NULL;
+	PyObject * (*f2)(PyObject *, int) = NULL;
+	PyObject *x;
+
+	if (PyInstance_Check(v)) {
+		if (PyInstance_HalfBinOp(v, w, "__imul__", &x,
+					PyNumber_Multiply, 0) <= 0)
+			return x;
+	} else if (v->ob_type->tp_as_number != NULL && HASINPLACE(v) &&
+		   (f = v->ob_type->tp_as_number->nb_inplace_multiply) != NULL)
+		return (*f)(v, w);
+	else if (v->ob_type->tp_as_sequence != NULL && HASINPLACE(v) &&
+		   (f2 = v->ob_type->tp_as_sequence->sq_inplace_repeat) != NULL) {
+		long mul_value;
+
+		if (PyInt_Check(w)) {
+			mul_value = PyInt_AsLong(w);
+		}
+		else if (PyLong_Check(w)) {
+			mul_value = PyLong_AsLong(w);
+			if (mul_value == -1 && PyErr_Occurred())
+                                return NULL; 
+		}
+		else {
+			return type_error(
+				"can't multiply sequence with non-int");
+		}
+		return (*f2)(v, (int)mul_value);
+	}
+	BINOP(v, w, "__mul__", "__rmul__", PyNumber_Multiply);
+
+/*	if (tp->tp_as_number != NULL &&
+	    w->ob_type->tp_as_sequence != NULL) { */
+		/* number*sequence -- swap v and w */
+/*		PyObject *tmp = v;
+		v = w;
+		w = tmp;
+		tp = v->ob_type;
+	} */
+	if (v->ob_type->tp_as_number != NULL) {
+		if (PyNumber_Coerce(&v, &w) != 0)
+			return NULL;
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_multiply) != NULL)
+			x = (*f)(v, w);
+		Py_DECREF(v);
+		Py_DECREF(w);
+		if (f != NULL)
+			return x;
+	} else if (v->ob_type->tp_as_sequence != NULL &&
+		   (f2 = v->ob_type->tp_as_sequence->sq_repeat) != NULL) {
+		long mul_value;
+
+		if (PyInt_Check(w)) {
+			mul_value = PyInt_AsLong(w);
+		}
+		else if (PyLong_Check(w)) {
+			mul_value = PyLong_AsLong(w);
+			if (mul_value == -1 && PyErr_Occurred())
+                                return NULL; 
+		}
+		else {
+			return type_error(
+				"can't multiply sequence with non-int");
+		}
+		return (*f2)(v, (int)mul_value);
+	}
+	return type_error("bad operand type(s) for *=");
+}
+
+PyObject *
+PyNumber_InPlaceDivide(PyObject *v, PyObject *w)
+{
+	PyObject * (*f)(PyObject *, PyObject *) = NULL;
+	PyObject *x;
+
+	if (PyInstance_Check(v)) {
+		if (PyInstance_HalfBinOp(v, w, "__idiv__", &x,
+					PyNumber_Divide, 0) <= 0)
+			return x;
+	} else if (v->ob_type->tp_as_number != NULL && HASINPLACE(v) &&
+	           (f = v->ob_type->tp_as_number->nb_inplace_divide) != NULL)
+		return (*f)(v, w);
+
+	BINOP(v, w, "__div__", "__rdiv__", PyNumber_Divide);
+
+	if (v->ob_type->tp_as_number != NULL) {
+		if (PyNumber_Coerce(&v, &w) != 0)
+			return NULL;
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_divide) != NULL)
+			x = (*f)(v, w);
+		Py_DECREF(v);
+		Py_DECREF(w);
+		if (f != NULL)
+			return x;
+	}
+
+	return type_error("bad operand type(s) for /=");
+}
+
+PyObject *
+PyNumber_InPlaceRemainder(PyObject *v, PyObject *w)
+{
+	PyObject * (*f)(PyObject *, PyObject *) = NULL;
+	PyObject *x;
+
+	if (PyInstance_Check(v)) {
+		if (PyInstance_HalfBinOp(v, w, "__imod__", &x,
+					PyNumber_Remainder, 0) <= 0)
+			return x;
+	} else if (v->ob_type->tp_as_number != NULL && HASINPLACE(v) &&
+	           (f = v->ob_type->tp_as_number->nb_inplace_remainder) != NULL)
+		return (*f)(v, w);
+
+	if (PyString_Check(v))
+		return PyString_Format(v, w);
+	else if (PyUnicode_Check(v))
+		return PyUnicode_Format(v, w);
+
+	BINOP(v, w, "__mod__", "__rmod__", PyNumber_Remainder);
+
+	if (v->ob_type->tp_as_number != NULL) {
+		if (PyNumber_Coerce(&v, &w) != 0)
+			return NULL;
+		if ((f = v->ob_type->tp_as_number->nb_remainder) != NULL)
+			x = (*f)(v, w);
+		Py_DECREF(v);
+		Py_DECREF(w);
+		if (f != NULL)
+			return x;
+	}
+
+	return type_error("bad operand type(s) for %=");
+}
+
+
+/* In-place Power (binary or ternary, for API consistency) */
+
+static PyObject *
+do_inplace_pow(PyObject *v, PyObject *w)
+{
+	PyObject * (*f)(PyObject *, PyObject *, PyObject *) = NULL;
+	PyObject *x;
+
+	if (PyInstance_Check(v)) {
+		if (PyInstance_HalfBinOp(v, w, "__ipow__", &x, do_pow, 0) <= 0)
+			return x;
+	} else if (v->ob_type->tp_as_number != NULL && HASINPLACE(v) &&
+	           (f = v->ob_type->tp_as_number->nb_inplace_power) != NULL)
+		return (*f)(v, w, Py_None);
+
+	BINOP(v, w, "__pow__", "__rpow__", do_pow);
+
+	if (v->ob_type->tp_as_number == NULL ||
+	    w->ob_type->tp_as_number == NULL) {
+		return type_error("bad operand type(s) for **=");
+	}
+	if (PyNumber_Coerce(&v, &w) != 0)
+		return NULL;
+	if ((f = v->ob_type->tp_as_number->nb_power) != NULL)
+		x = (*f)(v, w, Py_None);
+	else
+		x = type_error("bad operand type(s) for **=");
+	Py_DECREF(v);
+	Py_DECREF(w);
+	return x;
+}
+
+PyObject *
+PyNumber_InPlacePower(PyObject *v, PyObject *w, PyObject *z)
+{
+	PyObject *res;
+	PyObject *v1, *z1, *w2, *z2, *oldv;
+	PyObject * (*f)(PyObject *, PyObject *, PyObject *);
+
+	if (z == Py_None)
+		return do_inplace_pow(v, w);
+	/* XXX The ternary version doesn't do class instance coercions */
+	if (PyInstance_Check(v))
+		return v->ob_type->tp_as_number->nb_inplace_power(v, w, z);
+	if (v->ob_type->tp_as_number == NULL ||
+	    z->ob_type->tp_as_number == NULL ||
+	    w->ob_type->tp_as_number == NULL) {
+		return type_error("(inplace) pow(x, y, z) requires numeric arguments");
+	}
+	oldv = v;
+	Py_INCREF(oldv);
+	res = NULL;
+	if (PyNumber_Coerce(&v, &w) != 0)
+		goto error3;
+	v1 = v;
+	z1 = z;
+	if (PyNumber_Coerce(&v1, &z1) != 0)
+		goto error2;
+	w2 = w;
+	z2 = z1;
+ 	if (PyNumber_Coerce(&w2, &z2) != 0)
+		goto error1;
+	if (oldv == v1 && HASINPLACE(v1) && v->ob_type->tp_as_number != NULL &&
+	    (f = v1->ob_type->tp_as_number->nb_inplace_power) != NULL)
+		res = (*f)(v1, w2, z2);
+	else if (v1->ob_type->tp_as_number != NULL &&
+		 (f = v1->ob_type->tp_as_number->nb_power) != NULL)
+		res = (*f)(v1, w2, z2);
+	else
+		res = type_error(
+			"(inplace) pow(x, y, z) not defined for these operands");
+	Py_DECREF(w2);
+	Py_DECREF(z2);
+  error1:
+	Py_DECREF(v1);
+	Py_DECREF(z1);
+  error2:
+	Py_DECREF(v);
+	Py_DECREF(w);
+  error3:
+	Py_DECREF(oldv);
+	return res;
+}
+
+
 /* Unary operators and functions */
 
 PyObject *
@@ -850,6 +1330,40 @@ PySequence_Repeat(PyObject *o, int count)
 		return null_error();
 
 	m = o->ob_type->tp_as_sequence;
+	if (m && m->sq_repeat)
+		return m->sq_repeat(o, count);
+
+	return type_error("object can't be repeated");
+}
+
+PyObject *
+PySequence_InPlaceConcat(PyObject *s, PyObject *o)
+{
+	PySequenceMethods *m;
+
+	if (s == NULL || o == NULL)
+		return null_error();
+
+	m = s->ob_type->tp_as_sequence;
+	if (m && HASINPLACE(s) && m->sq_inplace_concat)
+		return m->sq_inplace_concat(s, o);
+	if (m && m->sq_concat)
+		return m->sq_concat(s, o);
+
+	return type_error("object can't be concatenated");
+}
+
+PyObject *
+PySequence_InPlaceRepeat(PyObject *o, int count)
+{
+	PySequenceMethods *m;
+
+	if (o == NULL)
+		return null_error();
+
+	m = o->ob_type->tp_as_sequence;
+	if (m && HASINPLACE(o) && m->sq_inplace_repeat)
+		return m->sq_inplace_repeat(o, count);
 	if (m && m->sq_repeat)
 		return m->sq_repeat(o, count);
 
