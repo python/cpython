@@ -14,12 +14,12 @@ semantics of the \code{import} statement.  For examples of why and
 how you would do this, see the standard library modules \code{ni},
 \code{ihooks} and \code{rexec}.  See also the built-in module
 \code{imp}, which defines some useful operations out of which you can
-build your own \code{__import__} function.
+build your own \code{__import__()} function.
 \stindex{import}
-\stmodindex{ni}
-\stmodindex{ihooks}
-\stmodindex{rexec}
-\bimodindex{imp}
+\refstmodindex{ni}
+\refstmodindex{ihooks}
+\refstmodindex{rexec}
+\refbimodindex{imp}
 
 For example, the statement \code{import spam} results in the following
 call:
@@ -599,7 +599,7 @@ returns \code{('a', 'b', 'c')} and \code{tuple([1, 2, 3])} returns
 Return the type of an \var{object}.  The return value is a type
 object.  The standard module \code{types} defines names for all
 built-in types.
-\stmodindex{types}
+\refstmodindex{types}
 \obindex{type}
 For instance:
 
