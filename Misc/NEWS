@@ -149,6 +149,12 @@ Mac
 - EasyDialogs dialogs are now movable-modal, and if the application is
   currently in the background they will ask to be moved to the foreground
   before displaying.
+  
+- OSA Scripting support has improved a lot, and gensuitemodule.py can now
+  be used by mere mortals.
+  
+- The IDE (in a framework build) now includes introductory documentation
+  in Apple Help Viewer format.
 
 
 What's New in Python 2.3 alpha 2?
