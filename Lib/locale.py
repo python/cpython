@@ -282,16 +282,19 @@ def getdefaultlocale(envvars=('LANGUAGE', 'LC_ALL', 'LC_CTYPE', 'LANG')):
         be determined.
 
     """
+
     try:
         # check if it's supported by the _locale module
         import _locale
         code, encoding = _locale._getdefaultlocale()
+    except (ImportError, AttributeError):
+        pass
+    else:
         if sys.platform == "win32" and code and code[:2] == "0x":
             # map windows language identifier to language name
             code = windows_locale.get(int(code, 0))
         return code, encoding
-    except (ImportError, NameError):
-        pass
+
     # fall back on POSIX behaviour
     import os
     lookup = os.environ.get
