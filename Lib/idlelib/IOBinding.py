@@ -87,17 +87,23 @@ class IOBinding:
             else:
                 filename=editFile
             if filename:
-                # if the current window has no filename and hasn't been
-                #   modified, we replace it's contents (no loss).  Otherwise
-                #   we open a new window.
-                if not self.filename and self.get_saved():
+                # If the current window has no filename and hasn't been
+                # modified, we replace its contents (no loss).  Otherwise
+                # we open a new window.  But we won't replace the
+                # shell window (which has an interp(reter) attribute), which
+                # gets set to "not modified" at every new prompt.
+                try:
+                    interp = self.editwin.interp
+                except:
+                    interp = None
+                if not self.filename and self.get_saved() and not interp:
                     self.editwin.flist.open(filename, self.loadfile)
                 else:
                     self.editwin.flist.open(filename)
             else:
                 self.text.focus_set()
-
             return "break"
+        #
         # Code for use outside IDLE:
         if self.get_saved():
             reply = self.maybesave()
