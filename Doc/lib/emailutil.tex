@@ -34,7 +34,7 @@ for a \mailheader{To} or \mailheader{Cc} header.  If the first element of
 \begin{funcdesc}{getaddresses}{fieldvalues}
 This method returns a list of 2-tuples of the form returned by
 \code{parseaddr()}.  \var{fieldvalues} is a sequence of header field
-values as might be returned by \method{Message.getall()}.  Here's a
+values as might be returned by \method{Message.get_all()}.  Here's a
 simple example that gets all the recipients of a message:
 
 \begin{verbatim}
