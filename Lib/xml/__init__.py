@@ -15,7 +15,9 @@ sax -- The Simple API for XML, developed by XML-Dev, led by David
 
 __all__ = ["dom", "parsers", "sax"]
 
-__version__ = "$Revision$"[1:-1].split()[1]
+import string
+__version__ = string.split("$Revision$")[1]
+del string
 
 
 _MINIMUM_XMLPLUS_VERSION = (0, 6, 1)
