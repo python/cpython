@@ -1123,6 +1123,7 @@ comint believe the user typed this string so that
   "Watch output for Python prompt and exec next file waiting in queue.
 This function is appropriate for `comint-output-filter-functions'."
   ;; TBD: this should probably use split-string
+  (pop-to-buffer (current-buffer))
   (when (and (or (string-equal string ">>> ")
 		 (and (>= (length string) 5)
 		      (string-equal (substring string -5) "\n>>> ")))
