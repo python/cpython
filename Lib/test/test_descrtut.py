@@ -315,7 +315,7 @@ test_5 = """
 Attributes defined by get/set methods
 
 
-    >>> class getset(object):
+    >>> class property(object):
     ...
     ...     def __init__(self, get, set=None):
     ...         self.__get = get
@@ -344,7 +344,7 @@ getx() and and setx():
     ...         if x < 0: x = 0
     ...         self.__x = x
     ...
-    ...     x = getset(getx, setx)
+    ...     x = property(getx, setx)
 
 Here's a small demonstration:
 
@@ -357,11 +357,11 @@ Here's a small demonstration:
     0
     >>>
 
-Hmm -- getset is builtin now, so let's try it that way too.
+Hmm -- property is builtin now, so let's try it that way too.
 
-    >>> del getset  # unmask the builtin
-    >>> getset
-    <type 'getset'>
+    >>> del property  # unmask the builtin
+    >>> property
+    <type 'property'>
 
     >>> class C(object):
     ...     def __init__(self):
@@ -371,7 +371,7 @@ Hmm -- getset is builtin now, so let's try it that way too.
     ...     def setx(self, x):
     ...         if x < 0: x = 0
     ...         self.__x = x
-    ...     x = getset(getx, setx)
+    ...     x = property(getx, setx)
 
 
     >>> a = C()
