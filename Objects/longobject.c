@@ -571,7 +571,8 @@ long_format(PyObject *aa, int base, int addL)
 		int last = abs(a->ob_size);
 		int basebits = 1;
 		i = base;
-		while ((i >>= 1) > 1) ++basebits;
+		while ((i >>= 1) > 1)
+			++basebits;
 		
 		i = 0;
 		for (;;) {
@@ -853,7 +854,9 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 			carry += v->ob_digit[i+k] - z
 				+ ((twodigits)zz << SHIFT);
 			v->ob_digit[i+k] = carry & MASK;
-			carry = (carry >> SHIFT) - zz;
+			carry = Py_ARITHMETIC_RIGHT_SHIFT(BASE_TWODIGITS_TYPE,
+							  carry, SHIFT);
+			carry -= zz;
 		}
 		
 		if (i+k < size_v) {
@@ -870,7 +873,9 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 			for (i = 0; i < size_w && i+k < size_v; ++i) {
 				carry += v->ob_digit[i+k] + w->ob_digit[i];
 				v->ob_digit[i+k] = carry & MASK;
-				carry >>= SHIFT;
+				carry = Py_ARITHMETIC_RIGHT_SHIFT(
+						BASE_TWODIGITS_TYPE,
+						carry, SHIFT);
 			}
 		}
 	} /* for j, k */
@@ -988,8 +993,6 @@ x_add(PyLongObject *a, PyLongObject *b)
 	for (i = 0; i < size_b; ++i) {
 		carry += a->ob_digit[i] + b->ob_digit[i];
 		z->ob_digit[i] = carry & MASK;
-		/* The following assumes unsigned shifts don't
-		   propagate the sign bit. */
 		carry >>= SHIFT;
 	}
 	for (; i < size_a; ++i) {

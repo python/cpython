@@ -169,5 +169,10 @@
 /* Defined when any dynamic module loading is enabled */
 #undef HAVE_DYNAMIC_LOADING
 
+/* Define if i>>j for signed int i does not extend the sign bit
+   when i < 0
+*/
+#undef SIGNED_RIGHT_SHIFT_ZERO_FILLS
+
 
 /* Leave that blank line there-- autoheader needs it! */

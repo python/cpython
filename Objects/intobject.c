@@ -721,10 +721,7 @@ int_rshift(v, w)
 			a = 0;
 	}
 	else {
-		if (a < 0)
-			a = ~( ~(unsigned long)a >> b );
-		else
-			a = (unsigned long)a >> b;
+		a = Py_ARITHMETIC_RIGHT_SHIFT(long, a, b);
 	}
 	return PyInt_FromLong(a);
 }
