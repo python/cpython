@@ -31,6 +31,13 @@ Extension modules
 
 - datetime changes:
 
+  The datetime and datetimetz classes have been collapsed into a single
+  datetime class, and likewise the time and timetz classes into a single
+  time class.  Previously, a datetimetz object with tzinfo=None acted
+  exactly like a datetime object, and similarly for timetz.  This wasn't
+  enough of a difference to justify distinct classes, and life is simpler
+  now.
+
   today() and now() now round system timestamps to the closest
   microsecond <http://www.python.org/sf/661086>.  This repairs an
   irritation most likely seen on Windows systems.
@@ -1202,7 +1209,7 @@ Mac
 
 - MacPython no longer maps both \r and \n to \n on input for any text file.
   This feature has been replaced by universal newline support (PEP278).
-  
+
 - The default encoding for Python sourcefiles in MacPython-OS9 is no longer
   mac-roman (or whatever your local Mac encoding was but "ascii", like on
   other platforms. If you really need sourcefiles with Mac characters in them
