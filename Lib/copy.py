@@ -182,8 +182,12 @@ def _deepcopy_tuple(x, memo):
 		pass
 	for i in range(len(x)):
 		if x[i] is not y[i]:
-			return tuple(y)
-	return x
+			y = tuple(y)
+			break
+	else:
+		y = x
+	memo[d] = y
+	return y
 d[types.TupleType] = _deepcopy_tuple
 
 def _deepcopy_dict(x, memo):
