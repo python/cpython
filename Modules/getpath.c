@@ -437,7 +437,7 @@ calculate_path()
 	{
 		char tmpbuffer[MAXPATHLEN+1];
 		int linklen = readlink(progpath, tmpbuffer, MAXPATHLEN);
-		if (linklen != -1) {
+		while (linklen != -1) {
 			/* It's not null terminated! */
 			tmpbuffer[linklen] = '\0';
 			if (tmpbuffer[0] == SEP)
@@ -447,6 +447,7 @@ calculate_path()
 				reduce(argv0_path);
 				joinpath(argv0_path, tmpbuffer);
 			}
+			linklen = readlink(argv0_path, tmpbuffer, MAXPATHLEN);
 		}
 	}
 #endif /* HAVE_READLINK */
