@@ -778,7 +778,7 @@ SIOUXDoAboutBox(void)
 		fontID = kFontIDGeneva;
 	TextFont(fontID);
 	TextSize(9);
-	ParamText(Pstring(PATCHLEVEL), "\p", "\p", "\p");
+	ParamText(Pstring(PY_VERSION), "\p", "\p", "\p");
 	ShowWindow(theWindow);
 	ModalDialog(NULL, &item);
 	DisposeDialog(theDialog);
