@@ -36,8 +36,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "beta"
-__version__ = "0.4.9.5"
-__date__    = "02 October 2004"
+__version__ = "0.4.9.6"
+__date__    = "20 October 2004"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -191,6 +191,21 @@ class LogRecord:
         ct = time.time()
         self.name = name
         self.msg = msg
+        #
+        # The following statement allows passing of a dictionary as a sole
+        # argument, so that you can do something like
+        #  logging.debug("a %(a)d b %(b)s", {'a':1, 'b':2})
+        # Suggested by Stefan Behnel.
+        # Note that without the test for args[0], we get a problem because
+        # during formatting, we test to see if the arg is present using
+        # 'if self.args:'. If the event being logged is e.g. 'Value is %d'
+        # and if the passed arg fails 'if self.args:' then no formatting
+        # is done. For example, logger.warn('Value is %d', 0) would log
+        # 'Value is %d' instead of 'Value is 0'.
+        # For the use case of passing a dictionary, this should not be a
+        # problem.
+        if args and (len(args) == 1) and args[0]:
+            args = args[0]
         self.args = args
         self.levelname = getLevelName(level)
         self.levelno = level
