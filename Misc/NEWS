@@ -76,6 +76,13 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - #232787 -- Modules/timemodule.c, Python/errors.c, Objects/intobject.c
 
+- posixmodule.c - Add missing prototypes in for SunOS 4.1.4, plug memory leak
+
+- #125891 - posixmodule.c - os.popen2,3 and 4 leaked file objects on Windows.
+
+- #128053 - posixmodule.c - #ifdef for including "tmpfile" in the 
+            posix_methods[] array was wrong -- should be HAVE_TMPFILE
+
 What's New in Python 2.0?
 =========================
 

@@ -113,6 +113,9 @@ corresponding Unix manual entries for more information on calls.";
 extern int rename(const char *, const char *);
 extern int pclose(FILE *);
 extern int fclose(FILE *);
+extern int fsync(int);
+extern int lstat(const char *, struct stat *);
+extern int symlink(const char *, const char *);
 #endif
 
 #ifdef NeXT
@@ -2509,6 +2512,8 @@ _PyPopen(char *cmdstring, int mode, int n)
 			 CloseHandle(hChildStderrRdDup);
 
 		 f = Py_BuildValue("OO",p1,p2);
+		 Py_XDECREF(p1);
+		 Py_XDECREF(p2);
 		 file_count = 2;
 		 break;
 	 }
@@ -2539,6 +2544,9 @@ _PyPopen(char *cmdstring, int mode, int n)
 		 PyFile_SetBufSize(p2, 0);
 		 PyFile_SetBufSize(p3, 0);
 		 f = Py_BuildValue("OOO",p1,p2,p3);
+		 Py_XDECREF(p1);
+		 Py_XDECREF(p2);
+		 Py_XDECREF(p3);
 		 file_count = 3;
 		 break;
 	 }
@@ -5348,7 +5356,7 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_STATVFS
 	{"statvfs",	posix_statvfs, METH_VARARGS, posix_statvfs__doc__},
 #endif
-#ifdef HAVE_TMPNAM
+#ifdef HAVE_TMPFILE
 	{"tmpfile",	posix_tmpfile, METH_VARARGS, posix_tmpfile__doc__},
 #endif
 #ifdef HAVE_TEMPNAM
@@ -5569,6 +5577,7 @@ INITFUNC(void)
 	PyDict_SetItemString(d, "error", PyExc_OSError);
 
 #ifdef HAVE_PUTENV
-	posix_putenv_garbage = PyDict_New();
+	if (posix_putenv_garbage == NULL)
+		posix_putenv_garbage = PyDict_New();
 #endif
 }
