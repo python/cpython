@@ -74,6 +74,12 @@ class TestStringIO(TestGenericStringIO):
 class TestcStringIO(TestGenericStringIO):
     MODULE = cStringIO
 
+import sys
+if sys.platform.startswith('java'):
+    # Jython doesn't have a buffer object, so we just do a useless
+    # fake of the buffer tests.
+    buffer = str
+
 class TestBufferStringIO(TestStringIO):
     constructor = buffer
 
