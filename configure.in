@@ -211,7 +211,7 @@ AC_MSG_CHECKING(LINKFORSHARED)
 if test -z "$LINKFORSHARED"
 then
 	case $ac_sys_system in
-	AIX*)	LINKFORSHARED="-Wl,-bE:python.exp";;
+	AIX*)	LINKFORSHARED="-Wl,-bE:python.exp -lld";;
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/sharedmodules";;
 	Linux*) LINKFORSHARED="-rdynamic";;
