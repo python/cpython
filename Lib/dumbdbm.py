@@ -94,7 +94,7 @@ class _Database:
 		f.seek(pos)
 		f.write(val)
 		f.close()
-		return pos, (val)
+		return (pos, len(val))
 	
 	def _addkey(self, key, (pos, siz)):
 		self._index[key] = (pos, siz)
