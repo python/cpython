@@ -1,11 +1,11 @@
 #! /usr/local/bin/python
 import posix
 t1 = posix.times()
-FAQDIR = "/usr/people/guido/python/FAQ"
-import os, sys, time, operator
-os.chdir(FAQDIR)
-sys.path.insert(0, FAQDIR)
 try:
+    FAQDIR = "/usr/people/guido/python/FAQ"
+    import os, sys, time, operator
+    os.chdir(FAQDIR)
+    sys.path.insert(0, FAQDIR)
     import faqwiz
 except SystemExit, n:
     sys.exit(n)
