@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 
-# Module ndiff version 1.5.0
-# Released to the public domain 08-Oct-2000,
-# by Tim Peters (tim_one@email.msn.com).
+# Module ndiff version 1.6.0
+# Released to the public domain 08-Dec-2000,
+# by Tim Peters (tim.one@home.com).
 
 # Provided as-is; use at your own risk; no warranty; no promises; enjoy!
 
@@ -408,13 +408,6 @@ def dump(tag, x, lo, hi):
     for i in xrange(lo, hi):
         print tag, x[i],
 
-# figure out which mark to stick under characters in lines that
-# have changed (blank = same, - = deleted, + = inserted, ^ = replaced)
-_combine = { '  ': ' ',
-             '. ': '-',
-             ' .': '+',
-             '..': '^' }
-
 def plain_replace(a, alo, ahi, b, blo, bhi):
     assert alo < ahi and blo < bhi
     # dump the shorter block first -- reduces the burden on short-term
@@ -491,30 +484,24 @@ def fancy_replace(a, alo, ahi, b, blo, bhi):
     # do intraline marking on the synch pair
     aelt, belt = a[best_i], b[best_j]
     if eqi is None:
-        # pump out a '-', '+', '?' triple for the synched lines;
+        # pump out a '-', '?', '+', '?' quad for the synched lines
         atags = btags = ""
         cruncher.set_seqs(aelt, belt)
         for tag, ai1, ai2, bj1, bj2 in cruncher.get_opcodes():
             la, lb = ai2 - ai1, bj2 - bj1
             if tag == 'replace':
-                atags = atags + '.' * la
-                btags = btags + '.' * lb
+                atags += '^' * la
+                btags += '^' * lb
             elif tag == 'delete':
-                atags = atags + '.' * la
+                atags += '-' * la
             elif tag == 'insert':
-                btags = btags + '.' * lb
+                btags += '+' * lb
             elif tag == 'equal':
-                atags = atags + ' ' * la
-                btags = btags + ' ' * lb
+                atags += ' ' * la
+                btags += ' ' * lb
             else:
                 raise ValueError, 'unknown tag ' + `tag`
-        la, lb = len(atags), len(btags)
-        if la < lb:
-            atags = atags + ' ' * (lb - la)
-        elif lb < la:
-            btags = btags + ' ' * (la - lb)
-        combined = map(lambda x,y: _combine[x+y], atags, btags)
-        printq(aelt, belt, string.rstrip(string.join(combined, '')))
+        printq(aelt, belt, atags, btags)
     else:
         # the synch pair is identical
         print ' ', aelt,
@@ -534,12 +521,16 @@ def fancy_helper(a, alo, ahi, b, blo, bhi):
 # Crap to deal with leading tabs in "?" output.  Can hurt, but will
 # probably help most of the time.
 
-def printq(aline, bline, qline):
+def printq(aline, bline, atags, btags):
     common = min(count_leading(aline, "\t"),
                  count_leading(bline, "\t"))
-    common = min(common, count_leading(qline[:common], " "))
-    qline = "\t" * common + qline[common:]
-    print '-', aline, '+', bline, '?', qline
+    common = min(common, count_leading(atags[:common], " "))
+    print "-", aline,
+    if count_leading(atags, " ") < len(atags):
+        print "?", "\t" * common + atags[common:]
+    print "+", bline,
+    if count_leading(btags, " ") < len(btags):
+        print "?", "\t" * common + btags[common:]
 
 def count_leading(line, ch):
     i, n = 0, len(line)
