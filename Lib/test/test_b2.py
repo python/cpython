@@ -254,20 +254,6 @@ if tuple(xrange(10)) != tuple(range(10)): raise TestFailed, 'xrange(10)'
 if tuple(xrange(5,10)) != tuple(range(5,10)): raise TestFailed, 'xrange(5,10)'
 if tuple(xrange(0,10,2)) != tuple(range(0,10,2)):
     raise TestFailed, 'xrange(0,10,2)'
-# regression tests for SourceForge bug #121695
-def _range_test(r):
-    verify(r.start != r.stop, 'Test not valid for passed-in xrange object.')
-    if r.stop in r:
-        raise TestFailed, 'r.stop in ' + `r`
-    if r.stop-r.step not in r:
-        raise TestFailed, 'r.stop-r.step not in ' + `r`
-    if r.start not in r:
-        raise TestFailed, 'r.start not in ' + `r`
-    if r.stop+r.step in r:
-        raise TestFailed, 'r.stop+r.step in ' + `r`
-_range_test(xrange(10))
-_range_test(xrange(9, -1, -1))
-_range_test(xrange(0, 10, 2))
 
 print 'zip'
 a = (1, 2, 3)
