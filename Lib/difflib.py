@@ -946,7 +946,7 @@ class Differ:
 
         yield "- " + aline
         if atags:
-             yield "? %s%s\n" % ("\t" * common, atags)
+            yield "? %s%s\n" % ("\t" * common, atags)
 
         yield "+ " + bline
         if btags:

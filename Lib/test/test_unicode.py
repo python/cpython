@@ -409,7 +409,7 @@ utfTests = [(u'A\u2262\u0391.', 'A+ImIDkQ.'),  # RFC2152 example
 for x,y in utfTests:
     verify( x.encode('utf-7') == y )
 
-try:        
+try:
     unicode('+3ADYAA-', 'utf-7') # surrogates not supported
 except UnicodeError:
     pass

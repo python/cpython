@@ -648,7 +648,7 @@ class TestCase(unittest.TestCase):
         try:
             self.assertRaises(TypeError, f.writelines, None)
             self.assertRaises(TypeError, f.writelines, 42)
-    
+
             f.writelines(["1\n", "2\n"])
             f.writelines(("3\n", "4\n"))
             f.writelines({'5\n': None})
@@ -678,14 +678,14 @@ class TestCase(unittest.TestCase):
 
                 def __iter__(self):
                     return Iterator(self.start, self.finish)
-                    
-            f.writelines(Whatever(6, 6+2000))            
+
+            f.writelines(Whatever(6, 6+2000))
             f.close()
 
             f = file(TESTFN)
             expected = [str(i) + "\n" for i in range(1, 2006)]
             self.assertEqual(list(f), expected)
-            
+
         finally:
             f.close()
             try:

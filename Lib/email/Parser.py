@@ -14,7 +14,7 @@ EMPTYSTRING = ''
 NL = '\n'
 
 
-
+
 class Parser:
     def __init__(self, _class=Message.Message):
         """Parser of RFC 2822 and MIME email messages.

@@ -20,7 +20,7 @@ SEMISPACE = '; '
 paramre = re.compile(r';\s*')
 
 
-
+
 class Message:
     """Basic message object for use inside the object tree.
 
@@ -430,7 +430,7 @@ class Message:
 
     def get_charsets(self, failobj=None):
         """Return a list containing the charset(s) used in this message.
-    
+
         The returned list of items describes the Content-Type: headers'
         charset parameter for this message and all the subparts in its
         payload.

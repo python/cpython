@@ -7,7 +7,7 @@ import profile
 # (We can't use a helper function increment the timer since it would be
 # included in the profile and would appear to consume all the time.)
 ticks = 0
-    
+
 def test_main():
     global ticks
     ticks = 0
