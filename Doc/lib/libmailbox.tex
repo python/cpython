@@ -18,9 +18,11 @@ argument, \var{fp} by the \method{next()} method of the mailbox
 object.  The default is the \class{rfc822.Message} class (see the
 \refmodule{rfc822} module -- and the note below).
 
-\note{For reasons of this module's internal implementation, you will probably
-want to open the \var{fp} object in binary mode.  This is especially important
-on Windows.}
+\begin{notice}
+  For reasons of this module's internal implementation, you will
+  probably want to open the \var{fp} object in binary mode.  This is
+  especially important on Windows.
+\end{notice}
 
 For maximum portability, messages in a \UNIX-style mailbox are
 separated by any line that begins exactly with the string \code{'From
