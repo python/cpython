@@ -73,6 +73,9 @@ Unicode Integration Proposal (see file Misc/unicode.txt).
 #define INT_MAX 2147483647
 #endif
 
+#ifdef MS_WIN32
+#include <windows.h>
+#endif
 /* Limit for the Unicode object free list */
 
 #define MAX_UNICODE_FREELIST_SIZE       1024
@@ -1478,6 +1481,62 @@ PyObject *PyUnicode_AsASCIIString(PyObject *unicode)
 				 PyUnicode_GET_SIZE(unicode),
 				 NULL);
 }
+
+#ifdef MS_WIN32
+/* --- MBCS codecs for Windows -------------------------------------------- */
+PyObject *PyUnicode_DecodeMBCS(const char *s,
+				int size,
+				const char *errors)
+{
+    PyUnicodeObject *v;
+    Py_UNICODE *p;
+
+    /* First get the size of the result */
+    DWORD usize = MultiByteToWideChar(CP_ACP, 0, s, size, NULL, 0);
+    if (usize==0)
+        return PyErr_SetFromWindowsErrWithFilename(0, NULL);
+
+    v = _PyUnicode_New(usize);
+    if (v == NULL)
+        return NULL;
+    if (usize == 0)
+	return (PyObject *)v;
+    p = PyUnicode_AS_UNICODE(v);
+    if (0 == MultiByteToWideChar(CP_ACP, 0, s, size, p, usize)) {
+        Py_DECREF(v);
+        return PyErr_SetFromWindowsErrWithFilename(0, NULL);
+    }
+
+    return (PyObject *)v;
+}
+
+PyObject *PyUnicode_EncodeMBCS(const Py_UNICODE *p,
+				int size,
+				const char *errors)
+{
+    PyObject *repr;
+    char *s;
+
+    /* First get the size of the result */
+    DWORD mbcssize = WideCharToMultiByte(CP_ACP, 0, p, size, NULL, 0, NULL, NULL);
+    if (mbcssize==0)
+        return PyErr_SetFromWindowsErrWithFilename(0, NULL);
+
+    repr = PyString_FromStringAndSize(NULL, mbcssize);
+    if (repr == NULL)
+        return NULL;
+    if (mbcssize==0)
+        return repr;
+
+    /* Do the conversion */
+    s = PyString_AS_STRING(repr);
+    if (0 == WideCharToMultiByte(CP_ACP, 0, p, size, s, mbcssize, NULL, NULL)) {
+        Py_DECREF(repr);
+        return PyErr_SetFromWindowsErrWithFilename(0, NULL);
+    }
+    return repr;
+}
+#endif /* MS_WIN32 */
 
 /* --- Character Mapping Codec -------------------------------------------- */
 
