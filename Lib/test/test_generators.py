@@ -368,7 +368,7 @@ Next one was posted to c.l.py.
     [1, 2, 3, 4]
 5-combs of [1, 2, 3, 4]:
 
-# From the Iterators list, about the types of these things.
+From the Iterators list, about the types of these things.
 
 >>> def g():
 ...     yield 1
@@ -379,7 +379,7 @@ Next one was posted to c.l.py.
 >>> type(i)
 <type 'generator'>
 >>> dir(i)
-['next']
+['gi_frame', 'gi_running', 'next']
 >>> print i.next.__doc__
 next() -- get the next value, or raise StopIteration
 >>> iter(i) is i
@@ -387,6 +387,26 @@ next() -- get the next value, or raise StopIteration
 >>> import types
 >>> isinstance(i, types.GeneratorType)
 1
+
+And more, added later.
+
+>>> i.gi_running
+0
+>>> type(i.gi_frame)
+<type 'frame'>
+>>> i.gi_running = 42
+Traceback (most recent call last):
+  ...
+TypeError: object has read-only attributes
+>>> def g():
+...     yield me.gi_running
+>>> me = g()
+>>> me.gi_running
+0
+>>> me.next()
+1
+>>> me.gi_running
+0
 """
 
 # Fun tests (for sufficiently warped notions of "fun").
