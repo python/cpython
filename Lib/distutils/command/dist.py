@@ -402,8 +402,16 @@ class Dist (Command):
 
 
     def nuke_release_tree (self, base_dir):
-        self.execute (rmtree, (base_dir,),
-                      "removing %s" % base_dir)
+        try:
+            self.execute (rmtree, (base_dir,),
+                          "removing %s" % base_dir)
+        except (IOError, OSError), exc:
+            if exc.filename:
+                msg = "error removing %s: %s (%s)" % \
+                       (base_dir, exc.strerror, exc.filename)
+            else:
+                msg = "error removing %s: %s" % (base_dir, exc.strerror)
+            self.warn (msg)
 
 
     def make_tarball (self, base_dir, compress="gzip"):
