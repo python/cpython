@@ -1,0 +1,265 @@
+\chapter{Glossary\label{glossary}}
+
+%%% keep the entries sorted and include at least one \index{} item for each
+
+\begin{description}
+
+\index{...}
+\item[...]{The typical Python prompt of the interactive shell when entering
+code for an indented code block.}
+
+\index{>>>}
+\item[>>>]{The typical Python prompt of the interactive shell.  Often seen
+for code examples that can be tried right away in the interpreter.}
+
+\index{__slots__}
+\item[__slots__]{A declaration inside a new-style class that saves
+memory by pre-declaring space for instance attributes and eliminating
+instance dictionaries.  Though popular, the technique is somewhat tricky to
+get right and is best reserved for rare cases where there are large numbers
+of instances in a memory critical application.}
+
+\index{BDFL}
+\item[BDFL]{Benevolent Dictator For Life, a.k.a. \ulink{Guido van
+Rossum}{http://www.python.org/~guido/}, Python's creator.}
+
+\index{byte code}
+\item[byte code]{The internal represenatation of a Python program in the
+interpreter.  The byte code is also cached in the \code{.pyc} and
+{}\code{.pyo} files so that executing the same file is faster the second
+time (compilation from source to byte code can be saved).  This
+"intermediate language" is said to run on a "virtual machine" that calls the
+subroutines corresponding to each bytecode.}
+
+\index{classic class}
+\item[classic class]{Any class which does not inherit from \class{object}.
+See new-style class.}
+
+\index{coercion}
+\item[coercion]{Converting data from one type to another.  For example,
+int(3.15) coerces the floating point number to the integer, 3.  Most
+mathematical operations have rules for coercing their arguments to a common
+type.  For instance, adding 3 + 4.5, causes the integer 3 to be coerced to
+be a float (3.0) before adding to 4.5 resulting in the float 7.5.}
+
+\index{descriptor}
+\item[descriptor]{Any object that defines the methods __get__(), __set__(),
+or __delete__().  When a class attribute is a descriptor, its special
+binding behavior is triggered upon attribute lookup.  Normally, writing
+{}\var{a.b} looks up the object \var{b} in the class dictionary for \var{a},
+but if \var{b} is a descriptor, the defined method gets called.
+Understanding descriptors is a key to a deep understanding of Python because
+they are the basis for many features including functions,
+methods,properties, class methods, static methods, and reference to super
+classes.}
+
+\index{dictionary}
+\item[dictionary]{An associative array, where arbitrary keys are mapped to
+values.  The use of `dict` much resembles that for `list`, but the keys can
+be any object with a `__hash__` function, not just integers starting from
+zero.  Called a hash in Perl.}
+
+\index{EAFP}
+\item[EAFP]{Easier to ask for forgiveness than permission.  This common
+Python coding style assumes the existance of valid keys or attributes and
+catches exceptions if the assumption proves false.  This clean and fast
+style is characterized by the presence of many `try` and `except` statments.
+The technique contrasts with the '''LBYL''' style that is common in many
+other languages such as C.}
+
+\index{__future__}
+\item[__future__]{A pseudo module which programmers can use to enable
+new language features which are not compatible with the current interpreter.
+For example, the expression \code{11 / 4} currently evaluates to \code{2}.
+If the module in which it is executed had enabled ``true division`` by
+executing}
+
+\begin{verbatim}
+from __future__ import division
+\end{verbatim}
+
+the expression \code{11 / 4} would evaluate to \code{2.75}.  By actually
+importing the __future__ module and evaluating its variables, you can see
+when a new feature was first added to the language and when it will becode
+the default:
+
+\begin{verbatim}
+>>> import __future__
+>>> __future__.division
+_Feature((2, 2, 0, 'alpha', 2), (3, 0, 0, 'alpha', 0), 8192)
+\end{verbatim}
+
+\index{generator}
+\item[generator]{A function that returns an iterator.  It looks like a
+normal function except that the \keyword{yield} keyword is used instead of
+{}\keyword{return}.  Generator functions often contain one or more
+{}\keyword{for} or \keyword{while} loops that \keyword{yield} elements back to
+the caller.  The function execution is stopped at the \keyword{yield} keyword
+(returning the result) and is resumed there when the next element is
+requested by calling the \function{next()} method of the returned iterator.}
+
+\index{GIL}
+\item[GIL]{See \em{global interpreter lock}.}
+
+\index{global interpreter lock}
+\item[global interpreter lock]{the lock used by Python threads to assure
+that only one thread can be run at a time.  This simplifies Python by
+assuring that no two processes can access the same memory at the same time.
+Locking the entire interpreter makes it easier for the interpreter to be
+multi-threaded, at the expense of some parallelism on multi-processor
+machines.  Efforts have been made in the past to create a "free-threaded"
+interpreter (one which locks shared data at a much finer granularity), but
+performance suffered in the common single-processor case.}
+
+\index{IDLE}
+\item[IDLE]{an Integrated Development Environment for Python.  IDLE is a
+basic editor and intepreter environment that ships with the standard
+distribution of Python.  Good for beginners and those on a budget, it also
+serves as clear example code for those wanting to implement a moderately
+sophisticated, multi-platform GUI application.}
+
+\index{immutable}
+\item[immutable]{A object with fixed value.  Immutable objects are numbers,
+strings or tuples (and more).  Such an object cannot be altered.  A new object
+has to be created if a different value has to be stored.  They play an
+important role in places where a constant hash value is needed.  For example
+as a key in a dictionary.}
+
+\index{integer division}
+\item[integer division]{Mathematical division discarding any remainder.  For
+example, the expression \code{11 / 4} currently evaluates to 2 in contrast
+to the 2.75 returned by float division.  Also called "floor division".  When
+dividing two integers the outcome will always be another integer (having the
+floor function applied to it).  However, if one of the operands is another
+numeric type (such as a float), the result will be coerced (see coercion) to
+a common type.  For example, a integer divided by a float will result in a
+float value, possibly with a decimal fraction.  Integer division can be
+forced by using the \code{//} operator instead of the \code{/} operator.
+See also, __future__.}
+
+\index{interactive}
+\item[interactive]{Python has an interactive interpreter which means that
+you can try out things and directly see its result.  Just launch
+{}\code{python} with no arguments (possibly by selecting it from your
+computer's main menu).  It is a very powerful way to test out new ideas or
+inspect modules and packages (remember \code{help(x)}).}
+
+\index{interpreted}
+\item[interpreted]{Python is an interpreted language, opposed to a compiled
+one.  This means that the source files can be run right away without first
+making an executable which is then run.  Interpreted languages typicaly have
+a shorter development/debug cycle than compiled ones.  See also
+{}\em{interactive}.}
+
+\index{iterable}
+\item[iterable]{A container object capable of returning its members one at a
+time.  Examples of iterables include all sequence types (\class{list},
+{}\class{str}, \class{tuple}, etc.) and some non-sequence types like
+{}\class{dict} and \class{file} and objects of any classes you define with
+an \function{__iter__} or \function{__getitem__} method.  Iterables can be
+used in a \keyword{for} loop and in many other places where a sequence is
+needed (\function{zip}, \function{map}, ...).  When an iterable object is
+passed as an argument to the builtin function \function{iter()}, it returns
+an iterator for the object.  This iterator is good for one pass over the set
+of values.  When using iterables, it is usually not necessary to call
+{}\function{iter()} or deal with iterator objects yourself - the \code{for}
+statement does that automatically for you, creating a temporary unnamed
+variable to hold the iterator for the duration of the loop.  See also
+iterator, sequence and generator.}
+
+\index{iterator}
+\item[iterator]{An object representing a stream of data.  Repeated calls to
+the iterator's \function{next()} method return successive items in the
+stream.  When no more data is available a \exception{StopIteration}
+exception is raised instead.  At this point the iterator object is exhausted
+and any further calls to its \function{next()} method just raise
+{}\exception{StopIteration} again.  Iterators are required to have an
+{}\function{__iter__()} method that returns the iterator object itself so
+every iterator is also iterable and may be used in most places where other
+iterables are accepted.  One notable exception is code that attempts
+multiple iteration passes.  A container object (such as a list) produces a
+fresh new iterator each time you pass it to the \function{iter()} function
+or use it in a \function{for} loop.  Attempting this with an iterator will
+just return the same exhausted iterator object from the second iteration
+pass and on, making it appear like an empty container.}
+
+\index{list comprehension}
+\item[list comprehension]{A compact way to process all or a subset of elements
+in a sequence and return a list with the results.  \code{result = ["0x\%02x"
+\% x for x in range(256) if x \% 2 == 0]} generates a list of strings
+containing hex numbers (0x..) that are even and in the range from 0 to 255.
+The \keyword{if} clause is optional.  If omitted, all elements in
+{}\code{range(256)} are processed in that case.}
+
+\index{mapping}
+\item[mapping]{A container object (such as \class{dict}) that supports
+arbitrary key lookups using the special method \function{__getitem__()}.}
+
+\index{metaclass}
+\item[metaclass]{The class of a class.  Class definitions create a class
+name, a class dictionary, and a list of base classes.  The metaclass is
+responsible for taking those three arguments and creating the class.  Most
+object oriented programming languages provide a default implementation.
+What makes Python special is that it is possible to create custom
+metaclasses.  Most users never need this tool, but when the need arises,
+metaclasses can provide powerful, elegant solutions.  They have been used
+for logging attribute access, adding thread-safety, tracking object
+creation, implementing singletons, and many other tasks.}
+
+\index{LBYL}
+\item[LBYL]{Look before you leap.  This coding style explicitly tests for
+pre-conditions before making calls or lookups.  This style contrasts with
+the EAFP approach and is characterized the presence of many \keyword{if}
+statements.}
+
+\index{mutable}
+\item[mutable]{Mutable objects can change their value but keep their
+\function{id()}.  See also immutable.}
+
+\index{namespace}
+\item[namespace]{The place where a variable is stored.  Namespaces are
+implemented as dictionary.  There is the local, global and builtins
+namespace and the nested namespaces in objects (in methods).  Namespaces
+support modularity by preventing naming conflicts.  For instance, the
+functions \function{__builtins__.open()} and \function{os.open()} are
+distinguished by their namespaces.  Namespaces also aid readability and
+maintainabilty by making it clear which modules implement a function.  For
+instance, writing \function{random.seed()} or \function{itertools.izip()}
+makes it clear that those functions are implemented by the \module{random}
+and \module{itertools} modules respectively.}
+
+\index{nested scope}
+\item[nested scope]{The ability to refer to a variable in an enclosing
+definition.  For instance, a function defined inside another function can
+refer to variables in the outer function.  Note that nested scopes work only
+for reference and not for assignment which will always write to the
+innermost scope.  In contrast, local variables both read and write in the
+innermost scope.  Likewise, global variables read and write to the global
+namespace.}
+
+\index{new-style class}
+\item[new-style class]{Any class that inherits from \class{object}.  This
+includes all built-in types like \class{list} and \class{dict}.  Only new
+style classes can use Python's newer, versatile features like
+{}\var{__slots__}, descriptors, properties, \var{__getattribute__}, class
+methods, and static methods.}
+
+\index{Python3000}
+\item[Python3000]{A mythical python release, allowed not to be backward
+compatible, with telepathic interface.}
+
+\index{sequence}
+\item[sequence]{An iterable which supports efficient element access using
+integer indices via the \function{__getitem__} and \function{__len()__}
+special methods.  Some builtin sequence types are \class{list}, \class{str},
+{}\class{tuple}, and \class{unicode}.  Note that \class{dict} also supports
+{}\function{__getitem__} and \function{__len__}, but is considered a mapping
+rather than a sequence because the lookups use arbitrary immutable keys
+rather than integers.}
+
+\index{Zen of Python}
+\item[Zen of Python]{listing of Python design principles and philosophies
+that are helpful in understanding and using the language.  The listing can
+be found by typing "import this" at the interactive prompt.}
+
+\end{description}
