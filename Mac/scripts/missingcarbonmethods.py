@@ -2,8 +2,25 @@
 # This module is mainly for documentation purposes, but you could use
 # it to automatically search for usage of methods that are missing.
 #
-# Modules Help and (for the time being) Scrap are completely missing.
 
+missing_icglue = [
+	'ICFindConfigFile',
+	'ICFindUserConfigFile',
+	'ICChooseConfig',
+	'ICChooseNewConfig',
+]
+
+missing_Help = [
+	'Help'
+]
+
+missing_Scrap = [
+	'InfoScrap',
+	'GetScrap',
+	'ZeroScrap',
+	'PutScrap',
+]
+	
 missing_Win = [
 	'GetAuxWin',
 	'GetWindowDataHandle',
@@ -143,7 +160,7 @@ def _search():
 	# Warning: this function only works on Unix
 	import string, os
 	re = string.join(missing, '|')
-	re = """[^a-zA-Z'"](%s)[^a-zA-Z'"]""" % re
+	re = """[^a-zA-Z0-9_'"](%s)[^a-zA-Z0-9_'"]""" % re
 	os.system("find . -name '*.py' -print | xargs egrep '%s'"%re)
 
 if __name__ == '__main__':
