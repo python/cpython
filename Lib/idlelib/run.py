@@ -210,6 +210,9 @@ class MyHandler(rpc.RPCHandler):
         sys.stdin = self.console = self.get_remote_proxy("stdin")
         sys.stdout = self.get_remote_proxy("stdout")
         sys.stderr = self.get_remote_proxy("stderr")
+        import IOBinding
+        sys.stdin.encoding = sys.stdout.encoding = \
+                             sys.stderr.encoding = IOBinding.encoding
         self.interp = self.get_remote_proxy("interp")
         rpc.RPCHandler.getresponse(self, myseq=None, wait=0.05)
 

@@ -741,9 +741,10 @@ class PyShell(OutputWindow):
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
         self.save_stdin = sys.stdin
-        self.stdout = PseudoFile(self, "stdout")
-        self.stderr = PseudoFile(self, "stderr")
-        self.console = PseudoFile(self, "console")
+        import IOBinding
+        self.stdout = PseudoFile(self, "stdout", IOBinding.encoding)
+        self.stderr = PseudoFile(self, "stderr", IOBinding.encoding)
+        self.console = PseudoFile(self, "console", IOBinding.encoding)
         if not use_subprocess:
             sys.stdout = self.stdout
             sys.stderr = self.stderr
@@ -886,6 +887,12 @@ class PyShell(OutputWindow):
         finally:
             self.reading = save
         line = self.text.get("iomark", "end-1c")
+        if isinstance(line, unicode):
+            import IOBinding
+            try:
+                line = line.encode(IOBinding.encoding)
+            except UnicodeError:
+                pass
         self.resetoutput()
         if self.canceled:
             self.canceled = 0
@@ -1090,10 +1097,11 @@ class PyShell(OutputWindow):
 
 class PseudoFile:
 
-    def __init__(self, shell, tags):
+    def __init__(self, shell, tags, encoding=None):
         self.shell = shell
         self.tags = tags
         self.softspace = 0
+        self.encoding = encoding
 
     def write(self, s):
         self.shell.write(s, self.tags)
