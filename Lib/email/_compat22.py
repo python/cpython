@@ -25,10 +25,10 @@ def walk(self):
                 yield subsubpart
 
 
-# Used internally by the Header class
-def _floordiv(x, y):
-    """Do integer division."""
-    return x // y
+# Python 2.2 spells floor division //
+def _floordiv(i, j):
+    """Do a floor division, i/j."""
+    return i // j
 
 
 
