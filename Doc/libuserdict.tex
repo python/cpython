@@ -1,17 +1,13 @@
-\section{Standard Modules \module{UserDict} and \module{UserList}}
-\nodename{UserDict and UserList}
+\section{Standard Module \module{UserDict}}
 \stmodindex{UserDict}
-\stmodindex{UserList}
 \label{module-UserDict}
-\label{module-UserList}
 
-Each of these modules defines a class that acts as a wrapper around
-either dictionary or list objects.  They're useful base classes for
-your own dictionary-like or list-like classes, which can inherit from
+This module defines a class that acts as a wrapper around
+dictionary objects.  It is a useful base class for
+your own dictionary-like classes, which can inherit from
 them and override existing methods or add new ones.  In this way one
-can add new behaviours to dictionaries or lists.
+can add new behaviours to dictionaries.
 
-\setindexsubitem{(in module UserDict)}
 The \module{UserDict} module defines the \class{UserDict} class:
 
 \begin{classdesc}{UserDict}{}
@@ -20,7 +16,22 @@ contents are kept in a regular dictionary, which is accessible via the
 \member{data} attribute of \class{UserDict} instances.
 \end{classdesc}
 
-\setindexsubitem{(in module UserList)}
+\begin{memberdesc}{data}
+A real dictionary used to store the contents of the \class{UserDict}
+class.
+\end{memberdesc}
+
+
+\section{Standard Module \module{UserList}}
+\stmodindex{UserList}
+\label{module-UserList}
+
+This module defines a class that acts as a wrapper around
+list objects.  It is a useful base class for
+your own list-like classes, which can inherit from
+them and override existing methods or add new ones.  In this way one
+can add new behaviours to lists.
+
 The \module{UserList} module defines the \class{UserList} class:
 
 \begin{classdesc}{UserList}{\optional{list}}
@@ -31,3 +42,8 @@ contents are initially set to a copy of \var{list}, defaulting to the
 empty list \code{[]}.  \var{list} can be either a regular Python list,
 or an instance of \class{UserList} (or a subclass).
 \end{classdesc}
+
+\begin{memberdesc}{data}
+A real Python list object used to store the contents of the
+\class{UserList} class.
+\end{memberdesc}
