@@ -926,7 +926,7 @@ class PyShell(OutputWindow):
             client = self.interp.start_subprocess()
             if not client:
                 self.close()
-                return None
+                return False
         else:
             nosub = "==== No Subprocess ===="
         self.write("Python %s on %s\n%s\n%s\nIDLE %s      %s\n" %
@@ -935,7 +935,7 @@ class PyShell(OutputWindow):
         self.showprompt()
         import Tkinter
         Tkinter._default_root = None # 03Jan04 KBK What's this?
-        return client
+        return True
 
     def readline(self):
         save = self.reading
