@@ -37,6 +37,6 @@ extern struct filedescr {
 
 extern object *import_modules;
 
-extern object *load_dynamic_module PROTO((char *name, char *pathname));
+extern object *load_dynamic_module PROTO((char *name, char *pathname, FILE *));
 
 extern int import_maxsuffixsize;
