@@ -46,16 +46,13 @@
 # Customizations -- you *may* have to edit these
 
 # Where are the various programs?
-LATEX=		TEXINPUTS=$(TEXINPUTS) latex
-PDFLATEX=	TEXINPUTS=$(TEXINPUTS) pdflatex
+LATEX=		latex
+PDFLATEX=	pdflatex
 DVIPS=		dvips -N0
 DISTILL=	distill
 KPSEWHICH=	TEXINPUTS=$(TEXINPUTS) kpsewhich
 MAKEINDEX=	makeindex -s $(srcdir)/texinputs/myindex.ist
-L2H=		TEXINPUTS=$(TEXINPUTS) latex2html -init_file $(L2HINIT)
-L2HOUTPUTBASE=	html
 L2HARGS=
-L2HINIT=	$(srcdir)/perl/l2hinit.perl
 WEBCHECKER=	$(PYTHON) $(srcdir)/../Tools/webchecker/webchecker.py
 
 # Install destination -- not used now but might be useful some time...
@@ -83,8 +80,8 @@ INFOFILES=	python-lib.info
 PDFFILES=	api.pdf ext.pdf lib.pdf ref.pdf tut.pdf
 PSFILES=	api.ps ext.ps lib.ps ref.ps tut.ps
 
-MANSTYLES=$(srcdir)/texinputs/fncychap.sty $(srcdir)/texinputs/manual.cls \
-	$(srcdir)/texinputs/python.sty $(srcdir)/texinputs/myindex.ist
+MANSTYLES=texinputs/fncychap.sty texinputs/manual.cls \
+	  texinputs/python.sty texinputs/myindex.ist
 
 # Be careful when messing with this one!
 TEXINPUTS=	.:$(srcdir)/texinputs:
@@ -138,9 +135,9 @@ tut-all:  tut.dvi tut.pdf tut.ps l2htut
 #
 $(PDFFILES): $(srcdir)/tools/toc2bkm.py
 .dvi.pdf:
-	$(PDFLATEX) $*
+	TEXINPUTS=$(srcdir)/$*:$(TEXINPUTS) $(PDFLATEX) $*
 	$(PYTHON) $(srcdir)/tools/toc2bkm.py $*
-	$(PDFLATEX) $*
+	TEXINPUTS=$(srcdir)/$*:$(TEXINPUTS) $(PDFLATEX) $*
 
 # Dependencies
 COMMONTEX=$(MANSTYLES) texinputs/copyright.tex texinputs/boilerplate.tex
@@ -148,56 +145,64 @@ COMMONPERL=perl/manual.perl perl/python.perl
 
 $(DVIFILES): tools/fix_hack tools/mkdvi.sh $(COMMONTEX)
 
-ref.dvi:  ref1.tex ref2.tex ref3.tex ref4.tex \
-	  ref5.tex ref6.tex ref7.tex ref8.tex
+ref.dvi:  ref/ref1.tex ref/ref2.tex ref/ref3.tex ref/ref4.tex \
+	  ref/ref5.tex ref/ref6.tex ref/ref7.tex ref/ref8.tex
 
 # LaTeX source files for the Python Library Reference
-LIBFILES = lib.tex \
-    libintro.tex libobjs.tex libtypes.tex libexcs.tex libfuncs.tex \
-    libpython.tex libsys.tex libtypes2.tex libtraceback.tex libpickle.tex \
-    libshelve.tex libcopy.tex libmarshal.tex libimp.tex libparser.tex \
-    libbltin.tex libmain.tex libstrings.tex libstring.tex libregex.tex \
-    libregsub.tex libstruct.tex libmisc.tex libmath.tex librand.tex \
-    libwhrandom.tex libarray.tex liballos.tex libos.tex libtime.tex \
-    libgetopt.tex libtempfile.tex liberrno.tex libsomeos.tex libsignal.tex \
-    libsocket.tex libselect.tex libthread.tex libunix.tex libposix.tex \
-    libppath.tex libpwd.tex libgrp.tex libcrypt.tex libdbm.tex libgdbm.tex \
-    libtermios.tex libfcntl.tex libposixfile.tex libsyslog.tex libpdb.tex \
-    libprofile.tex libwww.tex libcgi.tex liburllib.tex libhttplib.tex \
-    libftplib.tex libgopherlib.tex libnntplib.tex liburlparse.tex \
-    libhtmllib.tex libsgmllib.tex librfc822.tex libmimetools.tex \
-    libbinascii.tex libmm.tex libaudioop.tex libimageop.tex libaifc.tex \
-    libjpeg.tex librgbimg.tex libcrypto.tex libmd5.tex libmpz.tex \
-    librotor.tex libstdwin.tex libsgi.tex libal.tex \
-    libcd.tex libfl.tex libfm.tex libgl.tex libimgfile.tex libsun.tex \
-    libxdrlib.tex libimghdr.tex \
-    librestricted.tex librexec.tex libbastion.tex \
-    libformatter.tex liboperator.tex libsoundex.tex libresource.tex \
-    libstat.tex libstrio.tex libundoc.tex libmailcap.tex libglob.tex \
-    libuser.tex libanydbm.tex librandom.tex libsite.tex libwhichdb.tex \
-    libbase64.tex libfnmatch.tex libquopri.tex libzlib.tex libsocksvr.tex \
-    libmailbox.tex libcommands.tex libcmath.tex libni.tex libgzip.tex \
-    libpprint.tex libcode.tex libmimify.tex libre.tex \
-    libuserdict.tex libdis.tex libxmllib.tex libqueue.tex \
-    liblocale.tex libbasehttp.tex libcopyreg.tex libsymbol.tex libtoken.tex \
-    libframework.tex libminiae.tex libbinhex.tex libuu.tex libsunaudio.tex \
-    libfileinput.tex libimaplib.tex libpoplib.tex libcalendar.tex \
-    libpopen2.tex libbisect.tex
+LIBFILES = lib/lib.tex \
+    lib/libintro.tex lib/libobjs.tex lib/libtypes.tex lib/libexcs.tex \
+    lib/libfuncs.tex lib/libpython.tex lib/libsys.tex lib/libtypes2.tex \
+    lib/libtraceback.tex lib/libpickle.tex lib/libshelve.tex \
+    lib/libcopy.tex lib/libmarshal.tex lib/libimp.tex lib/libparser.tex \
+    lib/libbltin.tex lib/libmain.tex lib/libstrings.tex lib/libstring.tex \
+    lib/libregex.tex lib/libregsub.tex lib/libstruct.tex lib/libmisc.tex \
+    lib/libmath.tex lib/librand.tex lib/libwhrandom.tex lib/libarray.tex \
+    lib/liballos.tex lib/libos.tex lib/libtime.tex lib/libgetopt.tex \
+    lib/libtempfile.tex lib/liberrno.tex lib/libsomeos.tex lib/libsignal.tex \
+    lib/libsocket.tex lib/libselect.tex lib/libthread.tex lib/libunix.tex \
+    lib/libposix.tex lib/libppath.tex lib/libpwd.tex lib/libgrp.tex \
+    lib/libcrypt.tex lib/libdbm.tex lib/libgdbm.tex lib/libtermios.tex \
+    lib/libfcntl.tex lib/libposixfile.tex lib/libsyslog.tex lib/libpdb.tex \
+    lib/libprofile.tex lib/libwww.tex lib/libcgi.tex lib/liburllib.tex \
+    lib/libhttplib.tex lib/libftplib.tex lib/libgopherlib.tex \
+    lib/libnntplib.tex lib/liburlparse.tex lib/libhtmllib.tex \
+    lib/libsgmllib.tex lib/librfc822.tex lib/libmimetools.tex \
+    lib/libbinascii.tex lib/libmm.tex lib/libaudioop.tex lib/libimageop.tex \
+    lib/libaifc.tex lib/libjpeg.tex lib/librgbimg.tex lib/libcrypto.tex \
+    lib/libmd5.tex lib/libmpz.tex lib/librotor.tex lib/libstdwin.tex \
+    lib/libsgi.tex lib/libal.tex lib/libcd.tex lib/libfl.tex lib/libfm.tex \
+    lib/libgl.tex lib/libimgfile.tex lib/libsun.tex lib/libxdrlib.tex \
+    lib/libimghdr.tex lib/librestricted.tex lib/librexec.tex \
+    lib/libbastion.tex lib/libformatter.tex lib/liboperator.tex \
+    lib/libsoundex.tex lib/libresource.tex lib/libstat.tex lib/libstrio.tex \
+    lib/libundoc.tex lib/libmailcap.tex lib/libglob.tex lib/libuser.tex \
+    lib/libanydbm.tex lib/librandom.tex lib/libsite.tex lib/libwhichdb.tex \
+    lib/libbase64.tex lib/libfnmatch.tex lib/libquopri.tex lib/libzlib.tex \
+    lib/libsocksvr.tex lib/libmailbox.tex lib/libcommands.tex \
+    lib/libcmath.tex lib/libgzip.tex lib/libpprint.tex \
+    lib/libcode.tex lib/libmimify.tex lib/libre.tex lib/libuserdict.tex \
+    lib/libdis.tex lib/libxmllib.tex lib/libqueue.tex lib/liblocale.tex \
+    lib/libbasehttp.tex lib/libcopyreg.tex lib/libsymbol.tex lib/libtoken.tex \
+    lib/libbinhex.tex lib/libuu.tex \
+    lib/libsunaudio.tex lib/libfileinput.tex lib/libimaplib.tex \
+    lib/libpoplib.tex lib/libcalendar.tex lib/libpopen2.tex lib/libbisect.tex
 
-MACLIBFILES = mac.tex libmac.tex libctb.tex libmacconsole.tex \
-    libmacdnr.tex libmacfs.tex libmacos.tex libmacostools.tex \
-    libmactcp.tex libmacspeech.tex libmacui.tex libmacic.tex 
+# LaTeX source files for Macintosh Library Modules.
+MACLIBFILES = mac/mac.tex mac/libmac.tex mac/libctb.tex mac/libmacconsole.tex \
+    mac/libmacdnr.tex mac/libmacfs.tex mac/libmacos.tex mac/libmacostools.tex \
+    mac/libmactcp.tex mac/libmacspeech.tex mac/libmacui.tex mac/libmacic.tex \
+    mac/libframework.tex mac/libminiae.tex
 
 # Python Library Reference
 lib.dvi: tools/indfix.py $(LIBFILES)
 	$(srcdir)/tools/newind.py >$*.ind
 	$(srcdir)/tools/newind.py modindex >mod$*.ind
-	$(LATEX) $*
+	TEXINPUTS=$(srcdir)/lib:$(TEXINPUTS) $(LATEX) $*
 	$(MAKEINDEX) mod$*.idx
 	$(srcdir)/tools/fix_hack $*.idx
 	$(MAKEINDEX) $*.idx
 	$(srcdir)/tools/indfix.py $*.ind
-	$(LATEX) $*
+	TEXINPUTS=$(srcdir)/lib:$(TEXINPUTS) $(LATEX) $*
 
 # Python/C API Reference Manual
 api.dvi: api/api.tex
@@ -259,46 +264,34 @@ lib.texi: python-lib.texi
 # a (trivial) index.html.  Change the definition of $ICONSERVER in
 # perl/l2hinit.perl to use a different location for the icons directory.
 
-$(L2HOUTPUTBASE):
-	mkdir $(L2HOUTPUTBASE)
 
-l2h: l2hapi l2hext l2hlib l2href l2htut
+l2h:
+	(cd html; $(MAKE))
 
-l2hapi: $(COMMONPERL) $(L2HOUTPUTBASE)
-	$(L2H) $(L2HARGS) -dir $(L2HOUTPUTBASE)/api api.tex
-	(MYDIR=`pwd`; cd $(L2HOUTPUTBASE)/api; \
-		$$MYDIR/tools/node2label.pl *.html)
+l2hapi: $(COMMONPERL)
+	TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkhtml.sh api $(L2HARGS)
 
-l2hext: $(COMMONPERL) $(L2HOUTPUTBASE)
-	$(L2H) $(L2HARGS) -dir $(L2HOUTPUTBASE)/ext ext.tex
-	(MYDIR=`pwd`; cd $(L2HOUTPUTBASE)/ext; \
-		$$MYDIR/tools/node2label.pl *.html)
+l2hext: $(COMMONPERL)
+	TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkhtml.sh ext $(L2HARGS)
 
-l2hlib: $(COMMONPERL) $(L2HOUTPUTBASE)
+l2hlib: $(COMMONPERL)
 	$(srcdir)/tools/fix_libaux.sed <`$(KPSEWHICH) lib.aux` >lib1.aux
 	mv lib1.aux `$(KPSEWHICH) lib.aux`
-	if test -d lib ; then rm -f lib/*.html ; fi
-	$(L2H) $(L2HARGS) -dir $(L2HOUTPUTBASE)/lib lib.tex
-	(MYDIR=`pwd`; cd $(L2HOUTPUTBASE)/lib; \
-		$$MYDIR/tools/node2label.pl *.html)
+	TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkhtml.sh lib $(L2HARGS)
 
-l2href: $(COMMONPERL) $(L2HOUTPUTBASE)
-	$(L2H) $(L2HARGS) -dir $(L2HOUTPUTBASE)/ref ref.tex
-	(MYDIR=`pwd`; cd $(L2HOUTPUTBASE)/ref; \
-		$$MYDIR/tools/node2label.pl *.html)
+l2href: $(COMMONPERL)
+	TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkhtml.sh ref $(L2HARGS)
 
-l2htut: $(COMMONPERL) $(L2HOUTPUTBASE)
-	$(L2H) $(L2HARGS) -dir $(L2HOUTPUTBASE)/tut tut.tex
-	(MYDIR=`pwd`; cd $(L2HOUTPUTBASE)/tut; \
-		$$MYDIR/tools/node2label.pl *.html)
+l2htut: $(COMMONPERL)
+	TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkhtml.sh tut $(L2HARGS)
 
 # webchecker needs an extra flag to process the huge index from the libref
 webcheck:
-	$(WEBCHECKER) file:`pwd`/$(L2HOUTPUTBASE)/api/
-	$(WEBCHECKER) file:`pwd`/$(L2HOUTPUTBASE)/ext/
-	$(WEBCHECKER) -m290000 file:`pwd`/$(L2HOUTPUTBASE)/lib/
-	$(WEBCHECKER) file:`pwd`/$(L2HOUTPUTBASE)/ref/
-	$(WEBCHECKER) file:`pwd`/$(L2HOUTPUTBASE)/tut/
+	$(WEBCHECKER) file:`pwd`/api/
+	$(WEBCHECKER) file:`pwd`/ext/
+	$(WEBCHECKER) -m290000 file:`pwd`/lib/
+	$(WEBCHECKER) file:`pwd`/ref/
+	$(WEBCHECKER) file:`pwd`/tut/
 
 lib-info-$(RELEASE).tar.gz: $(INFOFILES)
 	tar cf - python-???.info* | gzip -9 >$@
@@ -308,19 +301,13 @@ latex-$(RELEASE).tar.gz:
 
 # This snags a PDF version if available, but doesn't fail if not.
 pdf-$(RELEASE).tar.gz: $(PDFFILES)
-	if test -f $(srcdir)/ref/ref.pdf ; then \
-		cp $(srcdir)/ref/ref.pdf . ; else true ; fi
 	tar cf - ???.pdf | gzip -9 >$@
-	if test -f ref.pdf ; then rm ref.pdf ; else true ; fi
 
-postscript-$(RELEASE).tar.gz: $(PSFILES) ref/ref.ps
-	cp $(srcdir)/ref/ref.ps .
+postscript-$(RELEASE).tar.gz: $(PSFILES)
 	tar cf - ???.ps | gzip -9 >$@
-	rm ref.ps
 
 html-$(RELEASE).tar.gz:
-	tar cf - index.html icons/ \
-		-C $(L2HOUTPUTBASE) ???/???.css ???/*.html */*.gif \
+	tar cf - index.html ???/???.css ???/*.html */*.gif \
 		| gzip -9 >html-$(RELEASE).tar.gz
 
 # convenience targets:
