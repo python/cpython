@@ -2,20 +2,14 @@
 PAPER=letter
 
 # Where are the various programs?
-LATEX=		latex
-PDFLATEX=	pdflatex
 DVIPS=		dvips -N0 -t $(PAPER)
-MAKEINDEX=	makeindex -s ../texinputs/python.ist
 PYTHON=		python
 
 TOOLSDIR=	../tools
-TEXINPUTS=	.:../texinputs:
 
-MKDVI=		TEXINPUTS=$(TEXINPUTS) $(TOOLSDIR)/mkdvi.sh
-# The --keep option is needed to keep the intermediate files for generating
-# the HTML global module index.
-MKHOWTO=	$(TOOLSDIR)/mkhowto --keep
-MKPDF=		TEXINPUTS=$(TEXINPUTS) $(TOOLSDIR)/mkdvi.sh --pdf
+MKHOWTO=	$(TOOLSDIR)/mkhowto
+MKDVI=		$(MKHOWTO) --dvi
+MKPDF=		$(MKHOWTO) --pdf
 
 
 # what's what
@@ -36,17 +30,14 @@ PSFILES=	$(MANPSFILES) $(HOWTOPSFILES)
 include ../Makefile.deps
 
 
-SCRIPTS:	  ../tools/fix_hack ../tools/mkdvi.sh ../tools/indfix.py
+SCRIPTS:	  ../tools/indfix.py
 
-$(DVIFILES):	  $(SCRIPTS)
-$(PDFFILES):	  $(SCRIPTS)
-
-$(HOWTODVIFILES): ../tools/mkhowto
-$(HOWTOPDFFILES): ../tools/mkhowto
+$(DVIFILES):	  $(SCRIPTS) $(MKHOWTO)
+$(PDFFILES):	  $(SCRIPTS) $(MKHOWTO)
 
 
 # Rules to build PostScript and PDF formats
-.SUFFIXES: .dvi .ps .pdf
+.SUFFIXES: .dvi .ps
 
 .dvi.ps:
 	$(DVIPS) -o $@ $<
@@ -64,20 +55,20 @@ README:	$(PSFILES) $(TOOLSDIR)/getpagecounts
 
 # Python/C API Reference Manual
 api.dvi: api.tex $(APIFILES)
-	$(MKDVI) api
+	$(MKDVI) ../api/api.tex
 
 api.pdf: api.tex $(APIFILES)
-	$(MKPDF) api
+	$(MKPDF) ../api/api.tex
 
 api.tex: ../api/api.tex ../api/refcounts.dat ../tools/anno-api.py
 	$(PYTHON) ../tools/anno-api.py -o $@ ../api/api.tex
 
 # Distributing Python Modules
 dist.dvi: $(DISTFILES)
-	$(MKHOWTO) --dvi ../dist/dist.tex
+	$(MKDVI) ../dist/dist.tex
 
 dist.pdf: $(DISTFILES)
-	$(MKHOWTO) --pdf ../dist/dist.tex
+	$(MKPDF) ../dist/dist.tex
 
 # Documenting Python
 doc.dvi: $(DOCFILES)
@@ -88,10 +79,10 @@ doc.pdf: $(DOCFILES)
 
 # Extending and Embedding the Python Interpreter
 ext.dvi: $(EXTFILES)
-	$(MKDVI) ext
+	$(MKDVI) ../ext/ext.tex
 
 ext.pdf: $(EXTFILES)
-	$(MKPDF) ext
+	$(MKPDF) ../ext/ext.tex
 
 # Installing Python Modules
 inst.dvi: $(INSTFILES)
@@ -102,10 +93,10 @@ inst.pdf: $(INSTFILES)
 
 # Python Library Reference
 lib.dvi: $(LIBFILES)
-	$(MKDVI) lib
+	$(MKDVI) ../lib/lib.tex
 
 lib.pdf: $(LIBFILES)
-	$(MKPDF) lib
+	$(MKPDF) ../lib/lib.tex
 
 # Macintosh Library Modules
 mac.dvi: $(MACFILES)
@@ -116,17 +107,17 @@ mac.pdf: $(MACFILES)
 
 # Python Reference Manual
 ref.dvi: $(REFFILES)
-	$(MKDVI) ref
+	$(MKDVI) ../ref/ref.tex
 
 ref.pdf: $(REFFILES)
-	$(MKPDF) ref
+	$(MKPDF) ../ref/ref.tex
 
 # Python Tutorial
 tut.dvi: $(TUTFILES)
-	$(MKDVI) tut
+	$(MKDVI) ../tut/tut.tex
 
 tut.pdf: $(TUTFILES)
-	$(MKPDF) tut
+	$(MKPDF) ../tut/tut.tex
 
 
 clean:
