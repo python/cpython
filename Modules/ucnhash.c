@@ -11,16 +11,13 @@
 /* database code (cut and pasted from the unidb package) */
 
 static unsigned long
-gethash(const char *s, int len)
+gethash(const char *s, int len, int scale)
 {
     int i;
     unsigned long h = 0;
     unsigned long ix;
     for (i = 0; i < len; i++) {
-        /* magic value 47 was chosen to minimize the number
-           of collisions for the uninames dataset.  see the
-           makeunicodedata script for more background */
-        h = (h * 47) + (unsigned char) toupper(s[i]);
+        h = (h * scale) + (unsigned char) toupper(s[i]);
         ix = h & 0xff000000;
         if (ix)
             h = (h ^ ((ix>>24) & 0xff)) & 0x00ffffff;
@@ -40,8 +37,9 @@ getname(Py_UCS4 code, char* buffer, int buflen)
         return 0;
 
     /* get offset into phrasebook */
-    offset = phrasebook_offset1[(code>>SHIFT)];
-    offset = phrasebook_offset2[(offset<<SHIFT)+(code&((1<<SHIFT)-1))];
+    offset = phrasebook_offset1[(code>>phrasebook_shift)];
+    offset = phrasebook_offset2[(offset<<phrasebook_shift)+
+                               (code&((1<<phrasebook_shift)-1))];
     if (!offset)
         return 0;
 
@@ -99,14 +97,14 @@ static int
 getcode(const char* name, int namelen, Py_UCS4* code)
 {
     unsigned int h, v;
-    unsigned int mask = CODE_SIZE-1;
+    unsigned int mask = code_size-1;
     unsigned int i, incr;
 
     /* the following is the same as python's dictionary lookup, with
        only minor changes.  see the makeunicodedata script for more
        details */
 
-    h = (unsigned int) gethash(name, namelen);
+    h = (unsigned int) gethash(name, namelen, code_magic);
     i = (~h) & mask;
     v = code_hash[i];
     if (!v)
@@ -129,7 +127,7 @@ getcode(const char* name, int namelen, Py_UCS4* code)
         }
         incr = incr << 1;
         if (incr > mask)
-            incr = incr ^ CODE_POLY;
+            incr = incr ^ code_poly;
     }
 }
 
