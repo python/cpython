@@ -2,7 +2,7 @@ test_doctest
 Running doctest.__doc__
 Trying: 1/0
 Expecting:
-Traceback (innermost last):
+Traceback (most recent call last):
   File "<stdin>", line 1, in ?
 ZeroDivisionError: integer division or modulo by zero
 ok
