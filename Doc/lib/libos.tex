@@ -399,6 +399,12 @@ first if necessary.
 Availability: \UNIX, Windows.
 \end{funcdesc}
 
+\begin{funcdesc}{fdatasync}{fd}
+Force write of file with filedescriptor \var{fd} to disk.
+Does not force update of metadata.
+Availability: \UNIX.
+\end{funcdesc}
+
 \begin{funcdesc}{fpathconf}{fd, name}
 Return system configuration information relevant to an open file.
 \var{name} specifies the configuration value to retrieve; it may be a
@@ -426,6 +432,11 @@ Availability: \UNIX, Windows.
 \begin{funcdesc}{fstatvfs}{fd}
 Return information about the filesystem containing the file associated
 with file descriptor \var{fd}, like \function{statvfs()}.
+Availability: \UNIX.
+\end{funcdesc}
+
+\begin{funcdesc}{fsync}{fd}
+Force write of file with filedescriptor \var{fd} to disk.
 Availability: \UNIX.
 \end{funcdesc}
 
