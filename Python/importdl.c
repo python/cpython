@@ -599,6 +599,17 @@ aix_getoldmodules(modlistptr)
 	ldiptr = (struct ld_info *)ldibuf;
 	prevmodptr = NULL;
 	do {
+		if (strstr(ldiptr->ldinfo_filename, "python") == NULL) {
+			/*
+			-- Extract only the modules containing "python" as a
+			-- substring, like the "python[version]" executable or
+			-- "libpython[version].a" in case python is embedded.
+			*/
+			offset = (unsigned int)ldiptr->ldinfo_next;
+			ldiptr = (struct ld_info *)((unsigned int)
+						    ldiptr + offset);
+			continue;
+		}
 		if ((modptr = (ModulePtr)malloc(sizeof(Module))) == NULL) {
 			PyErr_SetString(PyExc_ImportError, strerror(errno));
 			while (*modlistptr) {
