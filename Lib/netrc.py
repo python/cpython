@@ -4,7 +4,20 @@
 
 import os, shlex
 
-__all__ = ["netrc"]
+__all__ = ["netrc", "NetrcParseError"]
+
+
+class NetrcParseError(Exception):
+    """Exception raised on syntax errors in the .netrc file."""
+    def __init__(self, msg, filename=None, lineno=None):
+        self.filename = file
+        self.lineno = lineno
+        self.msg = msg
+        Exception.__init__(self, msg)
+
+    def __str__(self):
+        return "%s (%s, line %s)" % (self.msg, self.filename, self.lineno)
+
 
 class netrc:
     def __init__(self, file=None):
@@ -37,8 +50,8 @@ class netrc:
                     tt = line
                     self.macros[entryname].append(line)
             else:
-                raise SyntaxError, "bad toplevel token %s, file %s, line %d" \
-                                        % (tt, file, lexer.lineno)
+                raise NetrcParseError(
+                    "bad toplevel token %r" % tt, file, lexer.lineno)
 
             # We're looking at start of an entry for a named machine or default.
             if toplevel == 'machine':
@@ -54,7 +67,10 @@ class netrc:
                         lexer.push_token(tt)
                         break
                     else:
-                        raise SyntaxError, "malformed %s entry %s terminated by %s" % (toplevel, entryname, repr(tt))
+                        raise NetrcParseError(
+                            "malformed %s entry %s terminated by %s"
+                            % (toplevel, entryname, repr(tt)),
+                            file, lexer.lineno)
                 elif tt == 'login' or tt == 'user':
                     login = lexer.get_token()
                 elif tt == 'account':
@@ -62,7 +78,8 @@ class netrc:
                 elif tt == 'password':
                     password = lexer.get_token()
                 else:
-                    raise SyntaxError, "bad follower token %s, file %s, line %d"%(tt,file,lexer.lineno)
+                    raise NetrcParseError("bad follower token %r" % tt,
+                                          file, lexer.lineno)
 
     def authenticators(self, host):
         """Return a (user, account, password) tuple for given host."""
