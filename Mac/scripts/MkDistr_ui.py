@@ -263,7 +263,7 @@ class MkDistrUI(Application):
 				return
 			if rv == 1:
 				self.main.save()
-		raise self
+		self._quit()
 		
 	def save(self, *args):
 		self.main.save()
