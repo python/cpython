@@ -66,7 +66,7 @@ r(RuntimeError)
 print '(not used any more?)'
 
 r(SyntaxError)
-try: exec('/\n')
+try: exec '/\n'
 except SyntaxError: pass
 
 r(SystemError)
