@@ -19,6 +19,11 @@ from distutils.spawn import spawn
 # eliminates redundant "creating /foo/bar/baz" messages in dry-run mode
 PATH_CREATED = {}
 
+# for generating verbose output in 'copy_file()'
+_copy_action = { None:   'copying',
+                 'hard': 'hard linking',
+                 'sym':  'symbolically linking' }
+
 # I don't use os.makedirs because a) it's new to Python 1.5.2, and
 # b) it blows up if the directory already exists (I want to silently
 # succeed in that case).
@@ -81,6 +86,30 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
     return created_dirs
 
 # mkpath ()
+
+
+def create_tree (base_dir, files, mode=0777, verbose=0, dry_run=0):
+
+    """Create all the empty directories under 'base_dir' needed to
+       put 'files' there.  'base_dir' is just the a name of a directory
+       which doesn't necessarily exist yet; 'files' is a list of filenames
+       to be interpreted relative to 'base_dir'.  'base_dir' + the
+       directory portion of every file in 'files' will be created if it
+       doesn't already exist.  'mode', 'verbose' and 'dry_run' flags are as
+       for 'mkpath()'."""
+
+    # First get the list of directories to create
+    need_dir = {}
+    for file in files:
+        need_dir[os.path.join (base_dir, os.path.dirname (file))] = 1
+    need_dirs = need_dir.keys()
+    need_dirs.sort()
+
+    # Now create them
+    for dir in need_dirs:
+        mkpath (dir, mode, verbose, dry_run)
+
+# create_tree ()
 
 
 def newer (source, target):
@@ -241,6 +270,7 @@ def copy_file (src, dst,
                preserve_mode=1,
                preserve_times=1,
                update=0,
+               link=None,
                verbose=0,
                dry_run=0):
 
@@ -256,17 +286,32 @@ def copy_file (src, dst,
        'verbose' is true, then a one-line summary of the copy will be
        printed to stdout.
 
+       'link' allows you to make hard links (os.link) or symbolic links
+       (os.symlink) instead of copying: set it to "hard" or "sym"; if it
+       is None (the default), files are copied.  Don't set 'link' on
+       systems that don't support it: 'copy_file()' doesn't check if
+       hard or symbolic linking is availalble.
+
+       Under Mac OS, uses the native file copy function in macostools;
+       on other systems, uses '_copy_file_contents()' to copy file
+       contents.
+
        Return true if the file was copied (or would have been copied),
        false otherwise (ie. 'update' was true and the destination is
        up-to-date)."""
 
-    # XXX doesn't copy Mac-specific metadata
-       
+    # XXX if the destination file already exists, we clobber it if
+    # copying, but blow up if linking.  Hmmm.  And I don't know what
+    # macostools.copyfile() does.  Should definitely be consistent, and
+    # should probably blow up if destination exists and we would be
+    # changing it (ie. it's not already a hard/soft link to src OR
+    # (not update) and (src newer than dst).
+
     from stat import *
 
     if not os.path.isfile (src):
         raise DistutilsFileError, \
-              "can't copy '%s': not a regular file" % src
+              "can't copy '%s': doesn't exist or not a regular file" % src
 
     if os.path.isdir (dst):
         dir = dst
@@ -279,8 +324,13 @@ def copy_file (src, dst,
             print "not copying %s (output up-to-date)" % src
         return 0
 
+    try:
+        action = _copy_action[link]
+    except KeyError:
+        raise ValueError, \
+              "invalid value '%s' for 'link' argument" % link
     if verbose:
-        print "copying %s -> %s" % (src, dir)
+        print "%s %s -> %s" % (action, src, dir)
 
     if dry_run:
         return 1
@@ -293,19 +343,29 @@ def copy_file (src, dst,
         except OSError, exc:
             raise DistutilsFileError, \
                   "could not copy '%s' to '%s': %s" % (src, dst, exc[-1])
-        return 1
     
-    # Otherwise use custom routine
-    _copy_file_contents (src, dst)
-    if preserve_mode or preserve_times:
-        st = os.stat (src)
+    # If linking (hard or symbolic), use the appropriate system call
+    # (Unix only, of course, but that's the caller's responsibility)
+    elif link == 'hard':
+        if not (os.path.exists (dst) and os.path.samefile (src, dst)):
+            os.link (src, dst)
+    elif link == 'sym':
+        if not (os.path.exists (dst) and os.path.samefile (src, dst)):
+            os.symlink (src, dst)
 
-        # According to David Ascher <da@ski.org>, utime() should be done
-        # before chmod() (at least under NT).
-        if preserve_times:
-            os.utime (dst, (st[ST_ATIME], st[ST_MTIME]))
-        if preserve_mode:
-            os.chmod (dst, S_IMODE (st[ST_MODE]))
+    # Otherwise (non-Mac, not linking), copy the file contents and
+    # (optionally) copy the times and mode.
+    else:
+        _copy_file_contents (src, dst)
+        if preserve_mode or preserve_times:
+            st = os.stat (src)
+
+            # According to David Ascher <da@ski.org>, utime() should be done
+            # before chmod() (at least under NT).
+            if preserve_times:
+                os.utime (dst, (st[ST_ATIME], st[ST_MTIME]))
+            if preserve_mode:
+                os.chmod (dst, S_IMODE (st[ST_MODE]))
 
     return 1
 
@@ -375,7 +435,7 @@ def copy_tree (src, dst,
         else:
             copy_file (src_name, dst_name,
                        preserve_mode, preserve_times,
-                       update, verbose, dry_run)
+                       update, None, verbose, dry_run)
             outputs.append (dst_name)
 
     return outputs
@@ -562,7 +622,8 @@ def subst_vars (str, local_vars):
 # subst_vars ()
 
 
-def make_tarball (base_dir, compress="gzip", verbose=0, dry_run=0):
+def make_tarball (base_name, base_dir, compress="gzip",
+                  verbose=0, dry_run=0):
     """Create a (possibly compressed) tar file from all the files under
        'base_dir'.  'compress' must be "gzip" (the default), "compress", or
        None.  Both "tar" and the compression utility named by 'compress'
@@ -584,7 +645,7 @@ def make_tarball (base_dir, compress="gzip", verbose=0, dry_run=0):
         raise ValueError, \
               "bad value for 'compress': must be None, 'gzip', or 'compress'"
 
-    archive_name = base_dir + ".tar"
+    archive_name = base_name + ".tar"
     cmd = ["tar", "-cf", archive_name, base_dir]
     spawn (cmd, verbose=verbose, dry_run=dry_run)
 
@@ -597,21 +658,21 @@ def make_tarball (base_dir, compress="gzip", verbose=0, dry_run=0):
 # make_tarball ()
 
 
-def make_zipfile (base_dir, verbose=0, dry_run=0):
-    """Create a ZIP file from all the files under 'base_dir'.  The
-       output ZIP file will be named 'base_dir' + ".zip".  Uses either the
+def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
+    """Create a zip file from all the files under 'base_dir'.  The
+       output zip file will be named 'base_dir' + ".zip".  Uses either the
        InfoZIP "zip" utility (if installed and found on the default search
        path) or the "zipfile" Python module (if available).  If neither
        tool is available, raises DistutilsExecError.  Returns the name
-       of the output ZIP file."""
+       of the output zip file."""
 
     # This initially assumed the Unix 'zip' utility -- but
     # apparently InfoZIP's zip.exe works the same under Windows, so
     # no changes needed!
 
-    zip_filename = base_dir + ".zip"
+    zip_filename = base_name + ".zip"
     try:
-        spawn (["zip", "-r", zip_filename, base_dir],
+        spawn (["zip", "-rq", zip_filename, base_dir],
                verbose=verbose, dry_run=dry_run)
     except DistutilsExecError:
 
@@ -649,3 +710,52 @@ def make_zipfile (base_dir, verbose=0, dry_run=0):
     return zip_filename
 
 # make_zipfile ()
+
+
+def make_archive (base_name, format,
+                  root_dir=None, base_dir=None,
+                  verbose=0, dry_run=0):
+
+    """Create an archive file (eg. zip or tar).  'base_name' is the name
+    of the file to create, minus any format-specific extension; 'format'
+    is the archive format: one of "zip", "tar", "ztar", or "gztar".
+    'root_dir' is a directory that will be the root directory of the
+    archive; ie. we typically chdir into 'root_dir' before creating the
+    archive.  'base_dir' is the directory where we start archiving from;
+    ie. 'base_dir' will be the common prefix of all files and
+    directories in the archive.  'root_dir' and 'base_dir' both default
+    to the current directory."""
+
+    save_cwd = os.getcwd()
+    if root_dir is not None:
+        if verbose:
+            print "changing into '%s'" % root_dir
+        base_name = os.path.abspath (base_name)
+        if not dry_run:
+            os.chdir (root_dir)
+
+    if base_dir is None:
+        base_dir = os.curdir
+
+    kwargs = { 'verbose': verbose,
+               'dry_run': dry_run }
+    
+    if format == 'gztar':
+        func = make_tarball
+        kwargs['compress'] = 'gzip'
+    elif format == 'ztar':
+        func = make_tarball
+        kwargs['compress'] = 'compress'
+    elif format == 'tar':
+        func = make_tarball
+    elif format == 'zip':
+        func = make_zipfile
+
+    apply (func, (base_name, base_dir), kwargs)
+
+    if root_dir is not None:
+        if verbose:
+            print "changing back to '%s'" % save_cwd
+        os.chdir (save_cwd)
+
+# make_archive ()
