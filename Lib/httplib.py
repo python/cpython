@@ -479,6 +479,7 @@ class HTTPConnection:
 
     def __init__(self, host, port=None, strict=None):
         self.sock = None
+        self._buffer = []
         self.__response = None
         self.__state = _CS_IDLE
         
@@ -543,7 +544,7 @@ class HTTPConnection:
             else:
                 raise NotConnected()
 
-        # send the data to the server. if we get a broken pipe, then close
+        # send the data to the server. if we get a broken pipe, then closesdwu
         # the socket. we want to reconnect when somebody tries to send again.
         #
         # NOTE: we DO propagate the error, though, because we cannot simply
@@ -557,6 +558,23 @@ class HTTPConnection:
                 self.close()
             raise
 
+    def _output(self, s):
+        """Add a line of output to the current request buffer.
+        
+        Aassumes that the line does *not* end with \r\n.
+        """
+        self._buffer.append(s)
+
+    def _send_output(self):
+        """Send the currently buffered request and clear the buffer.
+
+        Appends an extra \r\n to the buffer.
+        """
+        self._buffer.extend(("", ""))
+        msg = "\r\n".join(self._buffer)
+        del self._buffer[:]
+        self.send(msg)
+
     def putrequest(self, method, url, skip_host=0):
         """Send a request to the server.
 
@@ -565,6 +583,7 @@ class HTTPConnection:
         """
 
         # check if a prior response has been completed
+        # XXX What if it hasn't?
         if self.__response and self.__response.isclosed():
             self.__response = None
 
@@ -594,16 +613,9 @@ class HTTPConnection:
 
         if not url:
             url = '/'
-        str = '%s %s %s\r\n' % (method, url, self._http_vsn_str)
+        str = '%s %s %s' % (method, url, self._http_vsn_str)
 
-        try:
-            self.send(str)
-        except socket.error, v:
-            # trap 'Broken pipe' if we're allowed to automatically reconnect
-            if v[0] != 32 or not self.auto_open:
-                raise
-            # try one more time (the socket was closed; this will reopen)
-            self.send(str)
+        self._output(str)
 
         if self._http_vsn == 11:
             # Issue some standard headers for better HTTP/1.1 compliance
@@ -664,8 +676,8 @@ class HTTPConnection:
         if self.__state != _CS_REQ_STARTED:
             raise CannotSendHeader()
 
-        str = '%s: %s\r\n' % (header, value)
-        self.send(str)
+        str = '%s: %s' % (header, value)
+        self._output(str)
 
     def endheaders(self):
         """Indicate that the last header line has been sent to the server."""
@@ -675,7 +687,7 @@ class HTTPConnection:
         else:
             raise CannotSendHeader()
 
-        self.send('\r\n')
+        self._send_output()
 
     def request(self, method, url, body=None, headers={}):
         """Send a complete request to the server."""
@@ -1202,6 +1214,7 @@ def test():
                                ):
             print "https://%s%s" % (host, selector)
             hs = HTTPS()
+            hs.set_debuglevel(dl)
             hs.connect(host)
             hs.putrequest('GET', selector)
             hs.endheaders()
@@ -1213,8 +1226,6 @@ def test():
             if headers:
                 for header in headers.headers: print header.strip()
             print
-
-    return
 
     # Test a buggy server -- returns garbled status line.
     # http://www.yahoo.com/promotions/mom_com97/supermom.html
