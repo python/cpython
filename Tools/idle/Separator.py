@@ -45,6 +45,7 @@ class Separator:
                 f[dim] = getattr(f, "winfo_"+dim)()
         self.div.bind("<Motion>", self.div_motion)
         self.div.bind("<ButtonRelease-1>", self.div_release)
+        self.div.grab_set()
 
     def div_motion(self, event):
         delta = getattr(event, self.dir) - getattr(self.press_event, self.dir)
@@ -61,6 +62,7 @@ class Separator:
     def div_release(self, event):
         self.div_motion(event)
         self.div.unbind("<Motion>")
+        self.div.grab_release()
 
 class VSeparator(Separator):
 
@@ -84,6 +86,7 @@ def main():
             tlist.append(t)
     tlist[0].insert("1.0", "Make your own Mondrian!")
     tlist[1].insert("1.0", "Move the colored dividers...")
+    root.mainloop()
 
 if __name__ == '__main__':
     main()
