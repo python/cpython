@@ -1,22 +1,12 @@
-% zlib compression module version A.01.02
-% Alpha test release.
-% Written by A.M. Kuchling (amk@magnet.com)
-% Comments are welcomed.  
-%
-% Can you think of a better name than zlib?  (The module's purpose isn't 
-% really obvious from the name) 
-
 \section{Built-in Module \sectcode{zlib}}
 \bimodindex{zlib}
 
 For applications that require data compression, the functions in this
-module allow compression and decompression, using a library based on
-GNU zip.  The library is available at
-\code{ftp://godzilli.cs.sunysb.edu/pub/ngf/zlib-1.00.tar.gz}, 
-and is mirrored at
-\code{ftp://ftp.uu.net/graphics/png/src/zlib-1.00.tar.gz}.  Version
-1.00 is the most recent version as of March 18, 1996; use a later
-version if one is available.
+module allow compression and decompression, using the zlib library,
+which is based on GNU zip.  The zlib library has its own home page at
+\code{http://www.cdrom.com/pub/infozip/zlib/}.
+Version 1.0.4 is the most recent version as of April 30, 1997; use a
+later version if one is available.
 
 The available functions in this module are:
 
@@ -65,7 +55,9 @@ error occurs.
 
 \begin{funcdesc}{decompressobj}{\optional{wbits}}
 Returns a compression object, to be used for decompressing data streams
-  that won't fit into memory at once.  The \var{wbits} parameter controls the size of the window buffer; usually this can be left alone.
+that won't fit into memory at once.  The \var{wbits} parameter
+controls the size of the window buffer; usually this can be left
+alone.
 \end{funcdesc}
 
 Compression objects support the following methods:
@@ -92,8 +84,8 @@ Decompress \var{string}, returning a string containing the
 uncompressed data corresponding to at least part of the data in
 \var{string}.  This data should be concatenated to the output produced
 by any preceding calls to the
-\code{decompress()} method.  Some of the input data may be preserved in internal buffers
-for later processing.
+\code{decompress()} method.  Some of the input data may be preserved
+in internal buffers for later processing.
 \end{funcdesc}
 
 \begin{funcdesc}{flush}{}
