@@ -9,10 +9,15 @@ __version__ = '$Revision$'
 
 import errno
 import esistools
+import os
 import re
 import string
 
 from xml.utils import escape
+
+
+EMPTIES_FILENAME = "../sgml/empties.dat"
+LIST_EMPTIES = 0
 
 
 def format_attrs(attrs, xml=0):
@@ -33,11 +38,11 @@ def format_attrs(attrs, xml=0):
     return s
 
 
-_nmtoken_rx = re.compile("[a-z][-._a-z0-9]*", re.IGNORECASE)
+_nmtoken_rx = re.compile("[a-z][-._a-z0-9]*$", re.IGNORECASE)
 def isnmtoken(s):
     return _nmtoken_rx.match(s) is not None
 
-_token_rx = re.compile("[a-z0-9][-._a-z0-9]*", re.IGNORECASE)
+_token_rx = re.compile("[a-z0-9][-._a-z0-9]*$", re.IGNORECASE)
 def istoken(s):
     return _token_rx.match(s) is not None
 
@@ -98,6 +103,16 @@ def do_convert(ifp, ofp, xml=0):
             attrs[name] = esistools.decode(value)
         elif type == "e":
             knownempty = 1
+
+    if LIST_EMPTIES:
+        knownempties.append("")
+        if os.path.isfile(EMPTIES_FILENAME):
+            mode = "a"
+        else:
+            mode = "w"
+        fp = open(EMPTIES_FILENAME, mode)
+        fp.write(string.join(knownempties, "\n"))
+        fp.close()
 
 
 def sgml_convert(ifp, ofp):
