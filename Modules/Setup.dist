@@ -170,6 +170,10 @@ GLHACK=-Dclear=__GLclear
 #operator operator.c	# operator.add() and similar goodies
 #_weakref _weakref.c	# basic weak reference support
 #_testcapi _testcapimodule.c    # Python C API test module
+#_random _randommodule.c	# Random number generator
+#collections collectionsmodule.c # Container types
+#itertools itertoolsmodule.c	# Functions creating iterators for efficient looping 
+#strop stropmodule.c		# String manipulations
 
 #unicodedata unicodedata.c    # static Unicode character database
 
