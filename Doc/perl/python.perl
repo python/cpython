@@ -86,6 +86,7 @@ sub do_cmd_let{
 # the older version of LaTeX2HTML we use doesn't support this, but we use it:
 
 sub do_cmd_textasciitilde{ '~' . @_[0]; }
+sub do_cmd_textasciicircum{ '^' . @_[0]; }
 
 
 # words typeset in a special way (not in HTML though)
