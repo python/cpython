@@ -88,7 +88,8 @@ class LogRecordStreamHandler(StreamRequestHandler):
         logger = logging.getLogger(logname)
         logger.handle(record)
 
-socketDataProcessed = threading.Condition()
+# The server sets socketDataProcessed when it's done.
+socketDataProcessed = threading.Event()
 
 class LogRecordSocketReceiver(ThreadingTCPServer):
     """
@@ -115,9 +116,7 @@ class LogRecordSocketReceiver(ThreadingTCPServer):
                 self.handle_request()
             abort = self.abort
         #notify the main thread that we're about to exit
-        socketDataProcessed.acquire()
-        socketDataProcessed.notify()
-        socketDataProcessed.release()
+        socketDataProcessed.set()
 
     def process_request(self, request, client_address):
         #import threading
@@ -467,9 +466,7 @@ def test_main():
 
     finally:
         #wait for TCP receiver to terminate
-        socketDataProcessed.acquire()
         socketDataProcessed.wait()
-        socketDataProcessed.release()
         for thread in threads:
             thread.join()
         banner("logrecv output", "begin")
