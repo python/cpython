@@ -82,60 +82,83 @@ def maketrans(fromstr, tostr):
 ####################################################################
 import re as _re
 
-class Template(unicode):
+class _TemplateMetaclass(type):
+    pattern = r"""
+    (?P<escaped>%(delim)s{2})       |   # Escape sequence of two delimiters
+    %(delim)s(?P<named>%(id)s)      |   # delimiter and a Python identifier
+    %(delim)s{(?P<braced>%(id)s)}   |   # delimiter and a braced identifier
+    (?P<bogus>%(delim)s)                # Other ill-formed delimiter exprs
+    """
+
+    def __init__(cls, name, bases, dct):
+        super(_TemplateMetaclass, cls).__init__(name, bases, dct)
+        if 'pattern' in dct:
+            pattern = cls.pattern
+        else:
+            pattern = _TemplateMetaclass.pattern % {
+                'delim' : cls.delimiter,
+                'id'    : cls.idpattern,
+                }
+        cls.pattern = _re.compile(pattern, _re.IGNORECASE | _re.VERBOSE)
+
+
+class Template:
     """A string class for supporting $-substitutions."""
-    __slots__ = []
+    __metaclass__ = _TemplateMetaclass
+
+    delimiter = r'\$'
+    idpattern = r'[_a-z][_a-z0-9]*'
+
+    def __init__(self, template):
+        self.template = template
 
     # Search for $$, $identifier, ${identifier}, and any bare $'s
-    pattern = _re.compile(r"""
-      (?P<escaped>\${2})|                # Escape sequence of two $ signs
-      \$(?P<named>[_a-z][_a-z0-9]*)|     # $ and a Python identifier
-      \${(?P<braced>[_a-z][_a-z0-9]*)}|  # $ and a brace delimited identifier
-      (?P<bogus>\$)                      # Other ill-formed $ expressions
-    """, _re.IGNORECASE | _re.VERBOSE)
 
-    def __mod__(self, mapping):
+    def _bogus(self, mo):
+        i = mo.start('bogus')
+        lines = self.template[:i].splitlines(True)
+        if not lines:
+            colno = 1
+            lineno = 1
+        else:
+            colno = i - len(''.join(lines[:-1]))
+            lineno = len(lines)
+        raise ValueError('Invalid placeholder in string: line %d, col %d' %
+                         (lineno, colno))
+
+    def substitute(self, mapping):
         def convert(mo):
             if mo.group('escaped') is not None:
                 return '$'
             if mo.group('bogus') is not None:
-                raise ValueError('Invalid placeholder at index %d' %
-                                 mo.start('bogus'))
+                self._bogus(mo)
             val = mapping[mo.group('named') or mo.group('braced')]
-            return unicode(val)
-        return self.pattern.sub(convert, self)
+            # We use this idiom instead of str() because the latter will fail
+            # if val is a Unicode containing non-ASCII characters.
+            return '%s' % val
+        return self.pattern.sub(convert, self.template)
 
-
-class SafeTemplate(Template):
-    """A string class for supporting $-substitutions.
-
-    This class is 'safe' in the sense that you will never get KeyErrors if
-    there are placeholders missing from the interpolation dictionary.  In that
-    case, you will get the original placeholder in the value string.
-    """
-    __slots__ = []
-
-    def __mod__(self, mapping):
+    def safe_substitute(self, mapping):
         def convert(mo):
             if mo.group('escaped') is not None:
                 return '$'
             if mo.group('bogus') is not None:
-                raise ValueError('Invalid placeholder at index %d' %
-                                 mo.start('bogus'))
+                self._bogus(mo)
             named = mo.group('named')
             if named is not None:
                 try:
-                    return unicode(mapping[named])
+                    # We use this idiom instead of str() because the latter
+                    # will fail if val is a Unicode containing non-ASCII
+                    return '%s' % mapping[named]
                 except KeyError:
                     return '$' + named
             braced = mo.group('braced')
             try:
-                return unicode(mapping[braced])
+                return '%s' % mapping[braced]
             except KeyError:
                 return '${' + braced + '}'
-        return self.pattern.sub(convert, self)
+        return self.pattern.sub(convert, self.template)
 
-del _re
 
 
 ####################################################################

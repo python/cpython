@@ -3,70 +3,120 @@
 # License: http://www.opensource.org/licenses/PythonSoftFoundation.php
 
 import unittest
-from string import Template, SafeTemplate
+from string import Template
+
+
+class Bag:
+    pass
+
+class Mapping:
+    def __getitem__(self, name):
+        obj = self
+        for part in name.split('.'):
+            try:
+                obj = getattr(obj, part)
+            except AttributeError:
+                raise KeyError(name)
+        return obj
+
 
 class TestTemplate(unittest.TestCase):
-
     def test_regular_templates(self):
         s = Template('$who likes to eat a bag of $what worth $$100')
-        self.assertEqual(s % dict(who='tim', what='ham'),
+        self.assertEqual(s.substitute(dict(who='tim', what='ham')),
                          'tim likes to eat a bag of ham worth $100')
-        self.assertRaises(KeyError, lambda s, d: s % d, s, dict(who='tim'))
+        self.assertRaises(KeyError, s.substitute, dict(who='tim'))
 
     def test_regular_templates_with_braces(self):
         s = Template('$who likes ${what} for ${meal}')
-        self.assertEqual(s % dict(who='tim', what='ham', meal='dinner'),
-                         'tim likes ham for dinner')
-        self.assertRaises(KeyError, lambda s, d: s % d,
-                          s, dict(who='tim', what='ham'))
+        d = dict(who='tim', what='ham', meal='dinner')
+        self.assertEqual(s.substitute(d), 'tim likes ham for dinner')
+        self.assertRaises(KeyError, s.substitute,
+                          dict(who='tim', what='ham'))
 
     def test_escapes(self):
         eq = self.assertEqual
         s = Template('$who likes to eat a bag of $$what worth $$100')
-        eq(s % dict(who='tim', what='ham'),
+        eq(s.substitute(dict(who='tim', what='ham')),
            'tim likes to eat a bag of $what worth $100')
         s = Template('$who likes $$')
-        eq(s % dict(who='tim', what='ham'), 'tim likes $')
+        eq(s.substitute(dict(who='tim', what='ham')), 'tim likes $')
 
     def test_percents(self):
+        eq = self.assertEqual
         s = Template('%(foo)s $foo ${foo}')
-        self.assertEqual(s % dict(foo='baz'), '%(foo)s baz baz')
-        s = SafeTemplate('%(foo)s $foo ${foo}')
-        self.assertEqual(s % dict(foo='baz'), '%(foo)s baz baz')
+        d = dict(foo='baz')
+        eq(s.substitute(d), '%(foo)s baz baz')
+        eq(s.safe_substitute(d), '%(foo)s baz baz')
 
     def test_stringification(self):
+        eq = self.assertEqual
         s = Template('tim has eaten $count bags of ham today')
-        self.assertEqual(s % dict(count=7),
-                         'tim has eaten 7 bags of ham today')
-        s = SafeTemplate('tim has eaten $count bags of ham today')
-        self.assertEqual(s % dict(count=7),
-                         'tim has eaten 7 bags of ham today')
-        s = SafeTemplate('tim has eaten ${count} bags of ham today')
-        self.assertEqual(s % dict(count=7),
-                         'tim has eaten 7 bags of ham today')
+        d = dict(count=7)
+        eq(s.substitute(d), 'tim has eaten 7 bags of ham today')
+        eq(s.safe_substitute(d), 'tim has eaten 7 bags of ham today')
+        s = Template('tim has eaten ${count} bags of ham today')
+        eq(s.substitute(d), 'tim has eaten 7 bags of ham today')
 
     def test_SafeTemplate(self):
         eq = self.assertEqual
-        s = SafeTemplate('$who likes ${what} for ${meal}')
-        eq(s % dict(who='tim'),
-           'tim likes ${what} for ${meal}')
-        eq(s % dict(what='ham'),
-           '$who likes ham for ${meal}')
-        eq(s % dict(what='ham', meal='dinner'),
+        s = Template('$who likes ${what} for ${meal}')
+        eq(s.safe_substitute(dict(who='tim')), 'tim likes ${what} for ${meal}')
+        eq(s.safe_substitute(dict(what='ham')), '$who likes ham for ${meal}')
+        eq(s.safe_substitute(dict(what='ham', meal='dinner')),
            '$who likes ham for dinner')
-        eq(s % dict(who='tim', what='ham'),
+        eq(s.safe_substitute(dict(who='tim', what='ham')),
            'tim likes ham for ${meal}')
-        eq(s % dict(who='tim', what='ham', meal='dinner'),
+        eq(s.safe_substitute(dict(who='tim', what='ham', meal='dinner')),
            'tim likes ham for dinner')
 
     def test_invalid_placeholders(self):
         raises = self.assertRaises
         s = Template('$who likes $')
-        raises(ValueError, lambda s, d: s % d, s, dict(who='tim'))
+        raises(ValueError, s.substitute, dict(who='tim'))
         s = Template('$who likes ${what)')
-        raises(ValueError, lambda s, d: s % d, s, dict(who='tim'))
+        raises(ValueError, s.substitute, dict(who='tim'))
         s = Template('$who likes $100')
-        raises(ValueError, lambda s, d: s % d, s, dict(who='tim'))
+        raises(ValueError, s.substitute, dict(who='tim'))
+
+    def test_delimiter_override(self):
+        class PieDelims(Template):
+            delimiter = '@'
+        s = PieDelims('@who likes to eat a bag of @{what} worth $100')
+        self.assertEqual(s.substitute(dict(who='tim', what='ham')),
+                         'tim likes to eat a bag of ham worth $100')
+
+    def test_idpattern_override(self):
+        class PathPattern(Template):
+            idpattern = r'[_a-z][._a-z0-9]*'
+        m = Mapping()
+        m.bag = Bag()
+        m.bag.foo = Bag()
+        m.bag.foo.who = 'tim'
+        m.bag.what = 'ham'
+        s = PathPattern('$bag.foo.who likes to eat a bag of $bag.what')
+        self.assertEqual(s.substitute(m), 'tim likes to eat a bag of ham')
+
+    def test_pattern_override(self):
+        class MyPattern(Template):
+            pattern = r"""
+            (?P<escaped>@{2})                   |
+            @(?P<named>[_a-z][._a-z0-9]*)       |
+            @{(?P<braced>[_a-z][._a-z0-9]*)}    |
+            (?P<bogus>@)
+            """
+        m = Mapping()
+        m.bag = Bag()
+        m.bag.foo = Bag()
+        m.bag.foo.who = 'tim'
+        m.bag.what = 'ham'
+        s = MyPattern('@bag.foo.who likes to eat a bag of @bag.what')
+        self.assertEqual(s.substitute(m), 'tim likes to eat a bag of ham')
+
+    def test_unicode_values(self):
+        s = Template('$who likes $what')
+        d = dict(who=u't\xffm', what=u'f\xfe\fed')
+        self.assertEqual(s.substitute(d), u't\xffm likes f\xfe\x0ced')
 
 
 def suite():
