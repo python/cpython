@@ -796,6 +796,10 @@ sub output_body ( $$$ )
 	      warn "Can't deal with internal HREF anchors yet"; }
 	}
     }
+  elsif ($tag eq "address")
+    { # this is part of the page footer, ignore
+	return 0;
+    }
   elsif ($tag eq "br")
     { print TEXI "\@\n"; }
   elsif ($tag eq "body")
