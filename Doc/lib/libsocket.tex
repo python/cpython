@@ -69,6 +69,22 @@ used for the second argument to \code{socket()}.
 \code{SOCK_DGRAM} appear to be generally useful.)
 \end{datadesc}
 
+\begin{datadesc}{SO_*}
+\dataline{SOMAXCONN}
+\dataline{MSG_*}
+\dataline{SOL_*}
+\dataline{IPPROTO_*}
+\dataline{IPPORT_*}
+\dataline{INADDR_*}
+\dataline{IP_*}
+Many constants of these forms, documented in the Unix documentation on
+sockets and/or the IP protocol, are also defined in the socket module.
+They are generally used in arguments to the \code{setsockopt} and
+\code{getsockopt} methods of socket objects.  In most cases, only
+those symbols that are defined in the Unix header files are defined;
+for a few symbols, default values are provided.
+\end{datadesc}
+
 \begin{funcdesc}{gethostbyname}{hostname}
 Translate a host name to IP address format.  The IP address is
 returned as a string, e.g.,  \code{'100.50.200.5'}.  If the host name
