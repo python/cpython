@@ -8,6 +8,22 @@ except NameError:
     def uni(x):
         return x
 
+# list, tuple and dict subclasses that do or don't overwrite __repr__
+class list2(list):
+    pass
+class list3(list):
+    def __repr__(self):
+        return list.__repr__(self)
+class tuple2(tuple):
+    pass
+class tuple3(tuple):
+    def __repr__(self):
+        return tuple.__repr__(self)
+class dict2(dict):
+    pass
+class dict3(dict):
+    def __repr__(self):
+        return dict.__repr__(self)
 
 class QueryTestCase(unittest.TestCase):
 
@@ -84,11 +100,20 @@ class QueryTestCase(unittest.TestCase):
                    "expected not isreadable for " + `unreadable`)
 
     def test_same_as_repr(self):
-        # Simple objects and small containers that should be same as repr()
+        # Simple objects, small containers and classes that overwrite __repr__
+        # For those the result should be the same as repr()
         verify = self.assert_
-        for simple in (0, 0L, 0+0j, 0.0, "", uni(""), (), [], {}, verify, pprint,
+        for simple in (0, 0L, 0+0j, 0.0, "", uni(""),
+                       (), tuple2(), tuple3(),
+                       [], list2(), list3(),
+                       {}, dict2(), dict3(),
+                       verify, pprint,
                        -6, -6L, -6-6j, -1.5, "x", uni("x"), (3,), [3], {3: 6},
                        (1,2), [3,4], {5: 6, 7: 8},
+                       tuple2((1,2)), tuple3((1,2)), tuple3(range(100)),
+                       [3,4], list2([3,4]), list3([3,4]), list3(range(100)),
+                       {5: 6, 7: 8}, dict2({5: 6, 7: 8}), dict3({5: 6, 7: 8}),
+                       dict3([(x,x) for x in range(100)]),
                        {"xy\tab\n": (3,), 5: [[]], (): {}},
                        range(10, -11, -1)
                       ):
@@ -98,7 +123,6 @@ class QueryTestCase(unittest.TestCase):
                 got = f(simple)
                 verify(native == got, "expected %s got %s from pprint.%s" %
                                       (native, got, function))
-
 
     def test_basic_line_wrap(self):
         # verify basic line-wrapping operation
@@ -117,7 +141,18 @@ class QueryTestCase(unittest.TestCase):
  'main_code_runtime_us': 0,
  'read_io_runtime_us': 0,
  'write_io_runtime_us': 43690}"""
-        self.assertEqual(pprint.pformat(o), exp)
+        for type in [dict, dict2]:
+            self.assertEqual(pprint.pformat(type(o)), exp)
+
+        o = range(100)
+        exp = '[%s]' % ',\n '.join(map(str, o))
+        for type in [list, list2]:
+            self.assertEqual(pprint.pformat(type(o)), exp)
+
+        o = tuple(range(100))
+        exp = '(%s)' % ',\n '.join(map(str, o))
+        for type in [tuple, tuple2]:
+            self.assertEqual(pprint.pformat(type(o)), exp)
 
     def test_subclassing(self):
         o = {'names with spaces': 'should be presented using repr()',

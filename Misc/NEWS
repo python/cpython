@@ -170,6 +170,9 @@ Extension modules
 Library
 -------
 
+- Patch #750542: pprint now will pretty print subclasses of list, tuple
+  and dict too, as long as they don't overwrite __repr__().
+
 - Bug #848614: distutils' msvccompiler fails to find the MSVC6
   compiler because of incomplete registry entries.
 
