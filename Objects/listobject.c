@@ -659,8 +659,6 @@ quicksort(list, compare)
 	PyListObject *list; /* List to sort */
 	PyObject *compare;/* Comparison function object, or NULL for default */
 {
-	int size = list->ob_size; /* Number of elements to sort */
-	PyObject **array = list->ob_item; /* Start of array to sort */
 	register PyObject *tmp, *pivot;
 	register PyObject **l, **r, **p;
 	PyObject **lo, **hi, **notp;
@@ -669,9 +667,11 @@ quicksort(list, compare)
 	PyObject **histack[STACKSIZE];
 
 	/* Start out with the whole array on the work stack */
-	lostack[0] = array;
-	histack[0] = array+size;
+	lostack[0] = list->ob_item;
+	histack[0] = list->ob_item + list->ob_size;
 	top = 1;
+
+#define SETK(X,Y) if ((k = docompare(X,Y,compare,list))==CMPERROR) goto fail
 
 	/* Repeat until the work stack is empty */
 	while (--top >= 0) {
@@ -688,10 +688,7 @@ quicksort(list, compare)
 				pivot = *r;
 				do {
 					p = l + ((r - l) >> 1);
-					k = docompare(pivot, *p,
-						      compare, list);
-					if (k == CMPERROR)
-						return -1;
+					SETK(pivot, *p);
 					if (k < 0)
 						r = p;
 					else
@@ -708,28 +705,30 @@ quicksort(list, compare)
 			continue;
 		}
 
-		/* Choose median of first, middle and last as pivot */
+		/* Choose median of first, middle and last as pivot;
+		   this is a simple unrolled 3-element insertion sort */
 		l = lo;          /* First  */
 		p = lo + (n>>1); /* Middle */
 		r = hi - 1;      /* Last   */
 
-		k = docompare(*p, *l, compare, list);
-		if (k == CMPERROR)
-			return -1;
-		if (k < 0)
-			{ tmp = *p; *p = *l; *l = tmp; }
+		pivot = *p;
+		SETK(pivot, *l);
+		if (k < 0) {
+			*p = *l;
+			*l = pivot;
+		}
 
-		k = docompare(*r, *p, compare, list);
-		if (k == CMPERROR)
-			return -1;
-		if (k < 0)
-			{ tmp = *r; *r = *p; *p = tmp; }
-
-		k = docompare(*p, *l, compare, list);
-		if (k == CMPERROR)
-			return -1;
-		if (k < 0)
-			{ tmp = *p; *p = *l; *l = tmp; }
+		pivot = *r;
+		SETK(pivot, *p);
+		if (k < 0) {
+			*r = *p;
+			*p = pivot;   /* for consistency */
+			SETK(pivot, *l);
+			if (k < 0) {
+				*p = *l;
+				*l = pivot;
+			}
+		}
 
 		pivot = *p;
 		l++;
@@ -741,9 +740,7 @@ quicksort(list, compare)
 
 			/* Move left index to element >= pivot */
 			while (l < p) {
-				k = docompare(*l, pivot, compare, list);
-				if (k == CMPERROR)
-					return -1;
+				SETK(*l, pivot);
 				if (k < 0)
 					l++;
 				else {
@@ -753,9 +750,7 @@ quicksort(list, compare)
 			}
 			/* Move right index to element <= pivot */
 			while (r > p) {
-				k = docompare(pivot, *r, compare, list);
-				if (k == CMPERROR)
-					return -1;
+				SETK(pivot, *r);
 				if (k < 0)
 					r--;
 				else {
@@ -780,9 +775,9 @@ quicksort(list, compare)
 			/* One (exactly) of the pointers is at p */
 			/* assert (p == l) ^ (p == r) */
 			notp = lisp ? r : l;
+			*p = *notp;
 			k = (r - l) >> 1;
 			if (k) {
-				*p = *notp;
 				if (lisp) {
 					p = r - k;
 					l++;
@@ -791,14 +786,12 @@ quicksort(list, compare)
 					p = l + k;
 					r--;
 				}
-				/* assert l < p < r */
 				*notp = *p;
 				*p = pivot;    /* for consistency */
 				continue;
 			}
 
 			/* assert l+1 == r */
-			*p = *notp;
 			*notp = pivot;
 			p = notp;
 			break;
@@ -818,9 +811,7 @@ quicksort(list, compare)
 		 * This wastes a compare if it fails, but can win big
 		 * when there are runs of duplicates.
 		 */
-		k = docompare(pivot, *l, compare, list);
-		if (k == CMPERROR)
-			return -1;
+		SETK(pivot, *l);
 		if (!(k < 0)) {
 			/* Now extend as far as possible (around p) so that:
 			   All in [lo,r) are <= pivot
@@ -831,9 +822,7 @@ quicksort(list, compare)
 			*/
 			while (r > lo) {
 				/* because r-1 < p, *(r-1) <= pivot is known */
-				k = docompare(*(r-1), pivot, compare, list);
-				if (k == CMPERROR)
-					return -1;
+				SETK(*(r-1), pivot);
 				if (k < 0)
 					break;
 				/* <= and not < implies == */
@@ -843,9 +832,7 @@ quicksort(list, compare)
 			l++;
 			while (l < hi) {
 				/* because l > p, pivot <= *l is known */
-				k = docompare(pivot, *l, compare, list);
-				if (k == CMPERROR)
-					return -1;
+				SETK(pivot, *l);
 				if (k < 0)
 					break;
 				/* <= and not < implies == */
@@ -873,6 +860,11 @@ quicksort(list, compare)
 
 	/* Success */
 	return 0;
+
+ fail:
+	return -1;
+
+#undef SETK
 }
 
 static PyObject *
