@@ -10,7 +10,7 @@ import sys, os, string
 from types import *
 from distutils.core import Command, DEBUG
 from distutils import sysconfig
-from distutils.util import write_file, native_path, subst_vars, change_root
+from distutils.util import write_file, convert_path, subst_vars, change_root
 from distutils.errors import DistutilsOptionError
 from glob import glob
 
@@ -423,7 +423,7 @@ class install (Command):
 
             # convert to local form in case Unix notation used (as it
             # should be in setup scripts)
-            extra_dirs = native_path (extra_dirs)
+            extra_dirs = convert_path (extra_dirs)
 
         else:
             path_file = None

@@ -11,7 +11,7 @@ import fnmatch
 from types import *
 from glob import glob
 from distutils.core import Command
-from distutils.util import newer, create_tree, remove_tree, native_path, \
+from distutils.util import newer, create_tree, remove_tree, convert_path, \
      write_file
 from distutils.archive_util import check_archive_formats
 from distutils.text_file import TextFile
@@ -322,7 +322,7 @@ class sdist (Command):
                          action)
                     continue
 
-                pattern_list = map(native_path, words[1:])
+                pattern_list = map(convert_path, words[1:])
 
             elif action in ('recursive-include','recursive-exclude'):
                 if len (words) < 3:
@@ -332,8 +332,8 @@ class sdist (Command):
                          action)
                     continue
 
-                dir = native_path(words[1])
-                pattern_list = map (native_path, words[2:])
+                dir = convert_path(words[1])
+                pattern_list = map (convert_path, words[2:])
 
             elif action in ('graft','prune'):
                 if len (words) != 2:
@@ -343,7 +343,7 @@ class sdist (Command):
                          action)
                     continue
 
-                dir_pattern = native_path (words[1])
+                dir_pattern = convert_path (words[1])
 
             else:
                 template.warn ("invalid manifest template line: " +

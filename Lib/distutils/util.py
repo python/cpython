@@ -58,7 +58,7 @@ def get_platform ():
 # get_platform()
 
 
-def native_path (pathname):
+def convert_path (pathname):
     """Return 'pathname' as a name that will work on the native
        filesystem, i.e. split it on '/' and put it back together again
        using the current directory separator.  Needed because filenames in
@@ -73,16 +73,12 @@ def native_path (pathname):
     if pathname[-1] == '/':
         raise ValueError, "path '%s' cannot end with '/'" % pathname
     if os.sep != '/':
-       if os.sep in pathname:
-            raise ValueError, \
-              "path '%s' cannot contain '%c' character" % (pathname, os.sep)
-       else:
-            paths = string.split (pathname, '/')
-            return apply (os.path.join, paths)
+        paths = string.split (pathname, '/')
+        return apply (os.path.join, paths)
     else:
         return pathname
 
-# native_path ()
+# convert_path ()
 
 
 def change_root (new_root, pathname):
