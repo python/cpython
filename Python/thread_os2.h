@@ -230,7 +230,7 @@ PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
 
 void PyThread_release_lock(PyThread_type_lock aLock)
 {
-#if defined(PYCC_GCC)
+#if !defined(PYCC_GCC)
   type_os2_lock lock = (type_os2_lock)aLock;
 #endif
 
