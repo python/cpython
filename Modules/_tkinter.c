@@ -1546,7 +1546,7 @@ Tktt_DeleteTimerHandler(PyObject *self, PyObject *args)
 
 static PyMethodDef Tktt_methods[] =
 {
-	{"deletetimerhandler", Tktt_DeleteTimerHandler, 1},
+	{"deletetimerhandler", Tktt_DeleteTimerHandler, METH_VARARGS},
 	{NULL, NULL}
 };
 
