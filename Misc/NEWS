@@ -1707,7 +1707,8 @@ Library
 -------
 
 - telnetlib includes symbolic names for the options, and support for
-  setting an option negotiation callback.
+  setting an option negotiation callback. It also supports processing
+  of suboptions.
 
 - The new C standard no longer requires that math libraries set errno to
   ERANGE on overflow.  For platform libraries that exploit this new
