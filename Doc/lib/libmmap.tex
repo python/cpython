@@ -1,0 +1,120 @@
+\section{\module{mmap} ---
+	Memory-mapped file support}
+
+\declaremodule{builtin}{mmap}
+\modulesynopsis{Interface to memory-mapped files for Unix and Windows.}
+
+Memory-mapped file objects behave like both mutable strings and like
+file objects.  You can use mmap objects in most places where strings
+are expected; for example, you can use the \module{re} module to
+search through a memory-mapped file.  Since they're mutable, you can
+change a single character by doing \code{obj[ \var{index} ] = 'a'}, or
+change a substring by assigning to a slice:
+\code{obj[ \var{i1}:\var{i2} ] = '...'}.  You can also read and write
+data starting at the current file position, and \method{seek()}
+through the file to different positions.
+
+A memory-mapped file is created by the following function, which is
+different on Unix and on Windows.
+
+\begin{funcdesc}{mmap}{fileno, length \optional{, tagname} }
+(Windows version) Maps \var{length} bytes from the file specified by
+the file handle \var{fileno}, and returns a mmap object.  If you have
+a Python file object, its
+\method{fileno()} method returns the file's handle, which is just an integer.
+\var{tagname}, if specified, is a string giving a tag name for the mapping. XXX what is the purpose of the tag name?
+\end{funcdesc}
+
+\begin{funcdesc}{mmap}{file, size \optional{, flags, prot}}
+(Unix version) Maps \var{length} bytes from the file specified by the
+file handle \var{fileno}, and returns a mmap object.  If you have a
+Python file object, its \method{fileno()} method returns the file's
+handle, which is just an integer.
+
+\var{flags} specifies the nature of the mapping.  
+\code{MAP_PRIVATE} creates a private copy-on-write mapping, so
+changes to the contents of the mmap object will be private to this
+process, and \code{MAP_SHARED} creates a mapping that's shared
+with all other processes mapping the same areas of the file.
+The default value is \code{MAP_SHARED}.
+
+\var{prot}, if specified, gives the desired memory protection; the two 
+most useful values are \code{PROT_READ} and \code{PROT_WRITE}, to
+specify that the pages may be read or written.
+\var{prot} defaults to \code{PROT_READ | PROT_WRITE}.
+\end{funcdesc}
+
+Memory-mapped file objects support the following methods:
+
+
+\begin{methoddesc}{close}{}
+Close the file.  Subsequent calls to other methods of the object
+will result in an exception being raised.
+\end{methoddesc}
+
+\begin{methoddesc}{find}{\var{string} \optional{, \var{start}}}
+  Returns the lowest index in the object where the substring \var{string} is
+  found.  Returns \code{-1} on failure.
+  \var{start} is the index at which the search begins, and defaults to zero.
+\end{methoddesc}
+
+\begin{methoddesc}{flush}{\optional{\var{offset}, \var{size}}}
+Flushes changes made to the in-memory copy of a file back to disk.
+Without use of this call there is no guarantee that changes are
+written back before the object is destroyed.  If \var{offset} 
+and \var{size} are specified, only changes to the given range of bytes will be flushed to disk; otherwise, the whole extent of the mapping is flushed.
+\end{methoddesc}
+
+\begin{methoddesc}{move}{\var{dest}, \var{src}, \var{count}}
+Copy the \var{count} bytes starting at offset \var{src} 
+to the destination index \var{dest}.
+\end{methoddesc}
+
+\begin{methoddesc}{read}{\var{num}}
+Return a string containing up to \var{num} bytes taken from the
+current file position; the file position is updated to point after the
+bytes that were returned. 
+\end{methoddesc}
+
+\begin{methoddesc}{read_byte}{}
+Returns the character at the current file position, and advancing 
+the file position by 1.
+\end{methoddesc}
+
+\begin{methoddesc}{readline}{}
+Returns a single line, starting at the current file position and up to 
+the next newline.
+\end{methoddesc}
+
+\begin{methoddesc}{resize}{\var{newsize}}
+\end{methoddesc}
+
+\begin{methoddesc}{seek}{\var{pos} \optional{, \var{whence}}}
+  Set the file's current position.
+  \var{whence} argument is optional and defaults to \code{0}
+  (absolute file positioning); other values are \code{1} (seek
+  relative to the current position) and \code{2} (seek relative to the
+  file's end).  
+\end{methoddesc}
+
+\begin{methoddesc}{size}{}
+Return the length of the file, which can be larger than the size
+of the memory-mapped area. 
+\end{methoddesc}
+
+\begin{methoddesc}{tell}{}
+Returns the current position of the file pointer.
+\end{methoddesc}
+
+\begin{methoddesc}{write}{\var{string}}
+Write the bytes in \var{string} into memory at the current position of
+the file pointer; the file position is updated to point after the
+bytes that were written. 
+\end{methoddesc}
+
+\begin{methoddesc}{write_byte}{\var{byte}}
+Write \var{byte} into memory at the current position of
+the file pointer; the file position is advanced by 1.
+\end{methoddesc}
+
+
