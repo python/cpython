@@ -1,6 +1,6 @@
 # Tests for rich comparisons
 
-from test_support import TestFailed, verify
+from test_support import TestFailed, verify, verbose
 
 class Number:
 
@@ -188,6 +188,46 @@ def misbehavin():
     else:
         raise TestFailed, "cmp(Misb(), Misb()) didn't raise RuntimeError"
 
+def recursion():
+    from UserList import UserList
+    a = UserList(); a.append(a)
+    b = UserList(); b.append(b)
+    def check(s, a=a, b=b):
+        if verbose:
+            print "trying", s, "..."
+        verify(eval(s))
+    if verbose:
+        print "recursion tests: a=%s, b=%s" % (a, b)
+    check('a==b')
+    check('a<=b')
+    check('a>=b')
+    check('not a<b')
+    check('not a>b')
+    check('not a!=b')
+    check('cmp(a,b) == 0')
+    a.append(1)
+    b.append(0)
+    if verbose:
+        print "recursion tests: a=%s, b=%s" % (a, b)
+    check('a>b')
+    check('a>=b')
+    check('a!=b')
+    check('not a<b')
+    check('not a<=b')
+    check('not a==b')
+    check('cmp(a,b) == 1')
+    a[1] = -1
+    if verbose:
+        print "recursion tests: a=%s, b=%s" % (a, b)
+    check('a<b')
+    check('a<=b')
+    check('a!=b')
+    check('not a>b')
+    check('not a>=b')
+    check('not a==b')
+    check('cmp(a,b) == -1')
+    if verbose: print "recursion tests ok"
+
 def main():
     basic()
     tabulate()
@@ -195,5 +235,6 @@ def main():
     tabulate(c2=int)
     testvector()
     misbehavin()
+    recursion()
 
 main()
