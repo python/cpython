@@ -12,6 +12,21 @@ What's New in Python 2.3.3c1?
 Core and builtins
 -----------------
 
+- Critical bugfix, for SF bug 839548:  if a weakref with a callback,
+  its callback, and its weakly referenced object, all became part of
+  cyclic garbage during a single run of garbage collection, the order
+  in which they were torn down was unpredictable.  It was possible for
+  the callback to see partially-torn-down objects, leading to immediate
+  segfaults, or, if the callback resurrected garbage objects, to
+  resurrect insane objects that caused segfaults (or other surprises)
+  later.  In one sense this wasn't surprising, because Python's cyclic gc
+  had no knowledge of Python's weakref objects.  It does now.  When
+  weakrefs with callbacks become part of cyclic garbage now, those
+  weakrefs are cleared first.  The callbacks don't trigger then,
+  preventing the problems.  If you need callbacks to trigger, then just
+  as when cyclic gc is not involved, you need to write your code so
+  that weakref objects outlive the objects they weakly reference.
+
 - Critical bugfix, for SF bug 840829:  if cyclic garbage collection
   happened to occur during a weakref callback for a new-style class
   instance, subtle memory corruption could result (in a release build;

@@ -39,6 +39,8 @@ PyAPI_FUNC(PyObject *) PyWeakref_GetObject(PyObject *ref);
 
 PyAPI_FUNC(long) _PyWeakref_GetWeakrefCount(PyWeakReference *head);
 
+PyAPI_FUNC(void) _PyWeakref_ClearRef(PyWeakReference *self);
+
 #define PyWeakref_GET_OBJECT(ref) (((PyWeakReference *)(ref))->wr_object)
 
 
