@@ -761,10 +761,14 @@ PyErr_Print()
 				/* only print colon if the str() of the
 				   object is not the empty string
 				*/
-				if (s && strcmp(PyString_AsString(s), ""))
+				if (s == NULL)
+					err = -1;
+				else if (!PyString_Check(s) ||
+					 PyString_GET_SIZE(s) != 0)
 					err = PyFile_WriteString(": ", f);
 				if (err == 0)
-				  err = PyFile_WriteObject(v, f, Py_PRINT_RAW);
+				  err = PyFile_WriteObject(s, f, Py_PRINT_RAW);
+				Py_XDECREF(s);
 			}
 		}
 		if (err == 0)
