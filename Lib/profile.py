@@ -41,7 +41,7 @@ import time
 import marshal
 from optparse import OptionParser
 
-__all__ = ["run","help","Profile"]
+__all__ = ["run", "runctx", "help", "Profile"]
 
 # Sample timer for use with
 #i_count = 0
