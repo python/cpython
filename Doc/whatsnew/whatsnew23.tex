@@ -24,8 +24,6 @@
 %
 % getopt.gnu_getopt
 %
-% textwrap.py
-%
 % Docstrings now optional (with --without-doc-strings)
 %
 % New dependency argument to distutils.Extension
@@ -467,6 +465,41 @@ bug fixes.  Here's a partial list; consult the \file{Misc/NEWS} file
 in the source tree, or the CVS logs, for a more complete list.
 
 \begin{itemize}
+
+\item The \module{textwrap} module contains functions for wrapping
+strings containing paragraphs of text.  The \function{wrap(\var{text},
+\var{width})} function takes a string and returns a list containing
+the text split into lines of no more than the chosen width.  The
+\function{fill(\var{text}, \var{width})} function returns a single
+string, reformatted to fit into lines no longer than the chosen width.
+(As you can guess, \function{fill()} is built on top of
+\function{wrap()}.  For example:
+
+\begin{verbatim}
+>>> import textwrap
+>>> paragraph = "Not a whit, we defy augury: ... more text ..."
+>>> textwrap.wrap(paragraph, 60)
+["Not a whit, we defy augury: there's a special providence in", 
+ "the fall of a sparrow. If it be now, 'tis not to come; if it", 
+ ...]
+>>> print textwrap.fill(paragraph, 35)
+Not a whit, we defy augury: there's
+a special providence in the fall of
+a sparrow. If it be now, 'tis not
+to come; if it be not to come, it
+will be now; if it be not now, yet
+it will come: the readiness is all.
+>>> 
+\end{verbatim}
+
+The module also contains a \class{TextWrapper} class that actually
+implements the text wrapping strategy.   Both the 
+\class{TextWrapper} class and the \function{wrap()} and
+\function{fill()} functions support a number of additional keyword
+arguments for fine-tuning the formatting; consult the module's
+documentation for details. 
+% XXX add a link to the module docs?
+(Contributed by Greg Ward.)
 
 \item One minor but far-reaching change is that the names of extension
 types defined by the modules included with Python now contain the
