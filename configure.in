@@ -63,7 +63,7 @@ then
 	ac_md_system=`echo $ac_sys_system |
 			   tr -d '[/ ]' | tr '[[A-Z]]' '[[a-z]]'`
 	ac_md_release=`echo $ac_sys_release |
-			   tr -d '[/ ]' | sed 's/\..*//'`
+			   tr -d '[/ ]' | sed 's/^[[A-Z]]\.//' | sed 's/\..*//'`
 	MACHDEP="$ac_md_system$ac_md_release"
 
 	case $MACHDEP in
@@ -1834,7 +1834,7 @@ wchar_h="no"
 # determine wchar_t size
 if test "$wchar_h" = yes
 then
-  AC_CHECK_SIZEOF(wchar_t, 4)
+  AC_CHECK_SIZEOF(wchar_t, 4, [#include <wchar.h>])
 fi
 
 AC_MSG_CHECKING(what type to use for unicode)
