@@ -424,17 +424,20 @@ Foo_Type.ob_type = &PyType_Type;
   in module \module{M} in subpackage \module{Q} in package \module{P}
   should have the \member{tp_name} initializer \code{"P.Q.M.T"}.
 
-  For dynamically allocated type objects, this may be just the type
-  name, if the module name is explicitly stored in the type dict as
-  the value for key \code{'__module__'}.
+  For dynamically allocated type objects, this should just be the type
+  name, and the module name explicitly stored in the type dict as the
+  value for key \code{'__module__'}.
 
-  If the tp_name field contains a dot, everything before the last dot
-  is made accessible as the \member{__module__} attribute, and
-  everything after the last dot is made accessible as the
-  \member{__name__} attribute.  If no dot is present, the entire
-  \member{tp_name} field is made accessible as the \member{__name__}
-  attribute, and the \member{__module__} attribute is undefined
-  (unless explicitly set in the dictionary, as explained above).
+  For statically allocated type objects, the tp_name field should
+  contain a dot.  Everything before the last dot is made accessible as
+  the \member{__module__} attribute, and everything after the last dot
+  is made accessible as the \member{__name__} attribute.
+
+  If no dot is present, the entire \member{tp_name} field is made
+  accessible as the \member{__name__} attribute, and the
+  \member{__module__} attribute is undefined (unless explicitly set in
+  the dictionary, as explained above).  This means your type will be
+  impossible to pickle.
 
   This field is not inherited by subtypes.
 \end{cmemberdesc}
@@ -882,8 +885,8 @@ The following three fields only exist if the
 \begin{cmemberdesc}{PyTypeObject}{traverseproc}{tp_traverse}
   An optional pointer to a traversal function for the garbage
   collector.  This is only used if the \constant{Py_TPFLAGS_HAVE_GC}
-  flag bit is set.  More information in section XXX about garbage
-  collection.
+  flag bit is set.  More information in section
+  \ref{supporting-cycle-detection} about garbage collection.
 
   This field is inherited by subtypes together with \member{tp_clear}
   and the \constant{Py_TPFLAGS_HAVE_GC} flag bit: the flag bit,
@@ -895,7 +898,8 @@ The following three fields only exist if the
 \begin{cmemberdesc}{PyTypeObject}{inquiry}{tp_clear}
   An optional pointer to a clear function for the garbage collector.
   This is only used if the \constant{Py_TPFLAGS_HAVE_GC} flag bit is
-  set.  More information in section XXX about garbage collection.
+  set.  More information in section
+  \ref{supporting-cycle-detection} about garbage collection.
 
   This field is inherited by subtypes together with \member{tp_clear}
   and the \constant{Py_TPFLAGS_HAVE_GC} flag bit: the flag bit,
