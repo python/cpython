@@ -493,11 +493,13 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
 
 
 (defun py-keep-region-active ()
-  ;; Do whatever is necessary to keep the region active in
-  ;; XEmacs 19.  This is unnecessary, but no-op in Emacs 19, so just
-  ;; ignore byte-compiler warnings you might see.
+  ;; do whatever is necessary to keep the region active in XEmacs.
+  ;; Ignore byte-compiler warnings you might see.  Also note that
+  ;; FSF's Emacs 19 does it differently and doesn't its policy doesn't
+  ;; require us to take explicit action.
   (and (boundp 'zmacs-region-stays)
        (setq zmacs-region-stays t)))
+
 
 ;; electric characters
 (defun py-outdent-p ()
@@ -826,7 +828,7 @@ the new line indented."
        ((py-continuation-line-p)
 	(let ((startpos (point))
 	      (open-bracket-pos (py-nesting-level))
-	      endpos searching found)
+	      endpos searching found state)
 	  (if open-bracket-pos
 	      (progn
 		;; align with first item in list; else a normal
@@ -2087,13 +2089,6 @@ local bindings to py-newline-and-indent."))
     (set-buffer cbuf))
   (sit-for 0))
 
-(defun py-keep-region-active ()
-  ;; do whatever is necessary to keep the region active in XEmacs.
-  ;; Ignore byte-compiler warnings you might see.  Also note that
-  ;; FSF's Emacs 19 does it differently and doesn't its policy doesn't
-  ;; require us to take explicit action.
-  (and (boundp 'zmacs-region-stays)
-       (setq zmacs-region-stays t)))
 
 
 (defconst py-version "$Revision$"
