@@ -63,6 +63,12 @@ Extension modules
 
 Library
 
+- The UTF-16, -LE and -BE now raise a NotImplementedError
+  for all calls to .readline(). Previously, they used to just
+  produce garbage or fail with an encoding error -- UTF-16 is
+  a 2-byte encoding and the C lib's line reading APIs don't
+  work well with these.
+
 - compileall now supports quiet operation.
 
 - The BaseHTTPServer implements now optionally HTTP/1.1 persistent
