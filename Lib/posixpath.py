@@ -78,20 +78,11 @@ def split(p):
 def splitext(p):
     """Split the extension from a pathname.  Extension is everything from the
     last dot to the end.  Returns "(root, ext)", either part may be empty."""
-    root, ext = '', ''
-    for c in p:
-        if c == '/':
-            root, ext = root + ext + c, ''
-        elif c == '.':
-            if ext:
-                root, ext = root + ext, c
-            else:
-                ext = c
-        elif ext:
-            ext = ext + c
-        else:
-            root = root + c
-    return root, ext
+    i = p.rfind('.')
+    if i<=p.rfind('/'):
+        return p, ''
+    else:
+        return p[:i], p[i:]
 
 
 # Split a pathname into a drive specification and the rest of the

@@ -62,20 +62,11 @@ def splitext(p):
     pathname component; the root is everything before that.
     It is always true that root + ext == p."""
 
-    root, ext = '', ''
-    for c in p:
-        if c == ':':
-            root, ext = root + ext + c, ''
-        elif c == '.':
-            if ext:
-                root, ext = root + ext, c
-            else:
-                ext = c
-        elif ext:
-            ext = ext + c
-        else:
-            root = root + c
-    return root, ext
+    i = p.rfind('.')
+    if i<=p.rfind(':'):
+        return p, ''
+    else:
+        return p[:i], p[i:]
 
 
 def splitdrive(p):
