@@ -200,6 +200,10 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
         self.check_events("""<a b='' c="">""", [
             ("starttag", "a", [("b", ""), ("c", "")]),
             ])
+        # Regression test for SF patch #669683.
+        self.check_events("<e a=rgb(1,2,3)>", [
+            ("starttag", "e", [("a", "rgb(1,2,3)")]),
+            ])
 
     def test_attr_funky_names(self):
         self.check_events("""<a a.b='v' c:d=v e-f=v>""", [

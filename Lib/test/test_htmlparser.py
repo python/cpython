@@ -197,6 +197,10 @@ DOCTYPE html [
         self._run_check("""<a b='' c="">""", [
             ("starttag", "a", [("b", ""), ("c", "")]),
             ])
+        # Regression test for SF patch #669683.
+        self._run_check("<e a=rgb(1,2,3)>", [
+            ("starttag", "e", [("a", "rgb(1,2,3)")]),
+            ])
 
     def test_attr_entity_replacement(self):
         self._run_check("""<a b='&amp;&gt;&lt;&quot;&apos;'>""", [
