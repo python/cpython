@@ -229,7 +229,7 @@ sub add_module_idx {
     @keys = keys %Modules;
     @keys = sort keysort  @keys;
     foreach $key (@keys) {
-	$index .= "$Modules{$key}$key</a><br>\n"
+	$index .= "$Modules{$key}$key</a><br>\n";
     }
     s/$idx_module_mark/$index<p>/o;
 }
@@ -248,10 +248,32 @@ sub remove_general_markers {
     if (defined &replace_user_references) {
  	&replace_user_references if /$user_ref_mark/;
     }
-}  
+}
 
 
-# $idx_mark will be replaced with the real index at the end
+# In addition to the standard stuff, add label to allow named node files.
+sub do_cmd_textohtmlinfopage {
+    local($_) = @_;
+    if ($INFO) {
+	&anchor_label("about",$CURRENT_FILE,$_);	# this is added
+    }
+    ( ($INFO == 1)
+     ? join('', "<STRONG>$t_title</STRONG><P>\nThis document was generated using the <A HREF=\"$TEX2HTMLADDRESS\"><STRONG>LaTeX</STRONG>2<tt>HTML</tt></A> translator Version $TEX2HTMLVERSION Copyright &#169; 1993, 1994, 1995, 1996,  <A HREF=\"$AUTHORADDRESS\">Nikos Drakos</A>, Computer Based Learning Unit, University of Leeds. <P> The command line arguments were: <BR>
+<STRONG>latex2html</STRONG> <tt>$argv</tt>. <P>The translation was initiated by $address_data[0] on $address_data[1]", $_)
+     : join('',$INFO,$_))
+}
+
+# $idx_mark will be replaced with the real index at the end.
+# In addition to the standard stuff, add label to allow named node files.
+sub do_cmd_textohtmlindex {
+    local($_) = @_;
+    $TITLE = $idx_title;
+    $idxfile = $CURRENT_FILE;
+    &anchor_label("genindex",$CURRENT_FILE,$_);	# this is added
+    join('','<P>' , &make_section_heading($idx_title, "H2"), $idx_mark, $_);
+}
+
+# $idx_module_mark will be replaced with the real index at the end
 sub do_cmd_textohtmlmoduleindex {
     local($_) = @_;
     local($key) = q/modindex/;
