@@ -510,6 +510,8 @@ tok_get(tok, p_start, p_end)
 				} while (isxdigit(c));
 			}
 			else {
+				/* XXX This is broken!  E.g.,
+				   09.9 should be accepted as float! */
 				/* Octal; c is first char of it */
 				/* There's no 'isoctdigit' macro, sigh */
 				while ('0' <= c && c < '8') {
