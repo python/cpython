@@ -25,7 +25,7 @@ item: Global
   Version Copyright=©2001 Python Software Foundation
   Version Company=PythonLabs at Zope Corporation
   Crystal Format=10111100101100000010001001001001
-  Step View=&All
+  Step View=&Properties
   Variable Name1=_WISE_
   Variable Description1=WISE root directory
   Variable Default1=C:\PROGRAM FILES\WISE INSTALLMASTER 8.1
@@ -52,6 +52,15 @@ item: Global
   Variable Description6=Python minor version number; the 3 in 2.3
   Variable Default6=2
   Variable Flags6=00001000
+  Variable Name7=_DOADMIN_
+  Variable Description7=The initial value for %DOADMIN%.
+  Variable Description7=When 0, we never try to write under HKLM,
+  Variable Description7=and install the Python + MS runtime DLLs in
+  Variable Description7=the Python directory instead of the system dir.
+  Variable Default7=1
+  Variable Values7=1
+  Variable Values7=0
+  Variable Flags7=00001010
 end
 item: Set Variable
   Variable=PYVER_STRING
@@ -113,11 +122,19 @@ item: Set Variable
 end
 item: Remark
 end
+item: Set Variable
+  Variable=DOADMIN
+  Value=%_DOADMIN_%
+end
 item: Remark
   Text=Give non-admin users a chance to abort.
 end
 item: Check Configuration
   Flags=10011111
+end
+item: Set Variable
+  Variable=DOADMIN
+  Value=0
 end
 item: Display Message
   Title=Doing non-admin install
@@ -266,8 +283,9 @@ end
 item: Remark
   Text=E: register file extensions (requires Admin privs)
 end
-item: Check Configuration
-  Flags=10111111
+item: If/While Statement
+  Variable=DOADMIN
+  Value=1
 end
 item: Set Variable
   Variable=COMPONENTS
@@ -1307,8 +1325,9 @@ item: Remark
 end
 item: Remark
 end
-item: Check Configuration
-  Flags=10111111
+item: If/While Statement
+  Variable=DOADMIN
+  Value=1
 end
 item: Set Variable
   Variable=DLLDEST
@@ -2089,8 +2108,9 @@ end
 item: Remark
   Text=Write to HKLM for admin, else HKCU.  Keep these blocks otherwise identical!
 end
-item: Check Configuration
-  Flags=10111111
+item: If/While Statement
+  Variable=DOADMIN
+  Value=1
 end
 item: Edit Registry
   Total Keys=1
@@ -2181,8 +2201,9 @@ item: If/While Statement
   Value=B
   Flags=00001010
 end
-item: Check Configuration
-  Flags=10111111
+item: If/While Statement
+  Variable=DOADMIN
+  Value=1
 end
 item: Edit Registry
   Total Keys=1
@@ -2219,8 +2240,9 @@ end
 item: Remark
   Text=Installation Expert, it only shows up in the "If" block below.  Keep in synch!
 end
-item: Check Configuration
-  Flags=10111111
+item: If/While Statement
+  Variable=DOADMIN
+  Value=1
 end
 item: Edit Registry
   Total Keys=1
@@ -2285,7 +2307,7 @@ end
 item: Remark
 end
 item: Remark
-  Text=Populate Start Menu
+  Text=Populate Start Menu group
 end
 item: Remark
 end
