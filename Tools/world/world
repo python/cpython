@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python1.5
 
 """Print the long name of an Internet domain.
 
@@ -17,17 +17,33 @@ in coordination with the ISO 3166 Maintenance Agency at DIN Berlin.
 
 The latest known change to this information was:
 
-    Thu Feb 10 10:20:28 MET 1994
+    Thu Aug  7 17:59:51 MET DST 1997
 
 This script also knows about non-geographic top-level domains.
 
-Usage: %s [-d] [-h] addr [addr ...]
+Usage: %s [-d] [-p|-P file] [-h] addr [addr ...]
 
-    -d (--dump)  -- print mapping of all known top-level domains
-    -h (--help)  -- print this help message
+    --dump
+    -d
+        Print mapping of all top-level domains.
+
+    --parse file
+    --p file
+    --P file
+    --Parse file
+        Parse an iso3166-countrycodes file (given as the argument).
+        This first the two letter country code (it ignores the three
+        letter code), followed by the country name.  With -P option,
+        output is in the form of a Python dictionary, and country
+        names are normalized w.r.t. capitalization.  This makes it
+        appropriate for cutting and pasting back into this file.
+
+    -h
+    --help
+        Print this message.
 
 """
-__version__ = '1.0'
+__version__ = '2.0'
 __author__ = 'Barry Warsaw <bwarsaw@python.org>'
 __source__ = '<url:http://www.python.org/~bwarsaw/pyware/>'
 
@@ -35,12 +51,18 @@ __source__ = '<url:http://www.python.org/~bwarsaw/pyware/>'
 import sys
 import string
 import getopt
+try:
+    import re
+except ImportError:
+    print 'Python 1.5 is required!'
+    sys.exit(1)
 
 
 
 def usage(status=0):
     print __doc__ % sys.argv[0]
     sys.exit(status)
+
 
 def resolve(rawaddr):
     parts = string.splitfields(rawaddr, '.')
@@ -57,17 +79,89 @@ def resolve(rawaddr):
 
 
 
+def parse(file, normalize):
+    try:
+	fp = open(file)
+    except IOError, (err, msg):
+	print msg, ':', file
+
+    cre = re.compile('(.*?)[ \t]+([A-Z]{2})[ \t]+[A-Z]{3}[ \t]+[0-9]{3}')
+    scanning = 0
+
+    if normalize:
+	print 'country = {'
+
+    while 1:
+	line = fp.readline()
+	if line == '':
+	    break			# EOF
+	if scanning:
+	    mo = cre.match(line)
+	    if not mo:
+		line = string.strip(line)
+		if not line:
+		    continue
+		elif line[0] == '-':
+		    break
+		else:
+		    print 'Could not parse line:', line
+		    continue
+	    country, code = mo.group(1, 2)
+	    if normalize:
+		words = string.split(country)
+		for i in range(len(words)):
+		    w = words[i]
+		    # XXX special cases
+		    if w in ('AND', 'OF', 'OF)', 'name:', 'METROPOLITAN'):
+			words[i] = string.lower(w)
+		    elif w == 'THE' and i <> 1:
+			words[i] = string.lower(w)
+		    elif len(w) > 3 and w[1] == "'":
+			words[i] = string.upper(w[0:3]) + \
+				   string.lower(w[3:])
+		    elif w == '(U.S.)':
+			pass
+		    elif w[0] == '(' and w <> '(local':
+			words[i] = '(' + string.capitalize(w[1:])
+		    elif string.find(w, '-'):
+			words[i] = string.join(
+			    map(string.capitalize, string.split(w, '-')),
+			    '-')
+		    else:
+			words[i] = string.capitalize(w)
+		code = string.lower(code)
+		country = string.join(words)
+		print '    "%s": "%s",' % (code, country)
+	    else:
+		print code, country
+	    
+	elif line[0] == '-':
+	    scanning = 1
+
+    if normalize:
+	print '    }'
+
+
 def main():
     help = 0
     status = 0
     dump = 0
+    parsefile = None
+    normalize = 0
 
-    opts, args = getopt.getopt(sys.argv[1:], 'hd', ['help', 'dump'])
+    opts, args = getopt.getopt(sys.argv[1:],
+			       'p:P:hd',
+			       ['parse', 'Parse', 'PARSE', 'help', 'dump'])
     for arg, val in opts:
 	if arg in ('-h', '--help'):
 	    help = 1
 	elif arg in ('-d', '--dump'):
 	    dump = 1
+	elif arg in ('-p', '--parse'):
+	    parsefile = val
+	elif arg in ('-P', '--Parse', '--PARSE'):
+	    parsefile = val
+	    normalize = 1
 
     if help:
 	usage(status)
@@ -84,8 +178,11 @@ def main():
 	codes.sort()
 	for code in codes:
 	    print '    %2s:' % code, country[code]
+    elif parsefile:
+	parse(parsefile, normalize)
     else:
 	map(resolve, args)
+
 
 
 # The mappings
