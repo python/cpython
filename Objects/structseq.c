@@ -22,7 +22,7 @@ PyStructSequence_New(PyTypeObject *type)
 {
 	PyStructSequence *obj;
        
-	obj = PyMalloc_New(PyStructSequence, type);
+	obj = PyObject_New(PyStructSequence, type);
 	obj->ob_size = VISIBLE_SIZE_TP(type);
 
 	return (PyObject*) obj;
@@ -37,7 +37,7 @@ structseq_dealloc(PyStructSequence *obj)
 	for (i = 0; i < size; ++i) {
 		Py_XDECREF(obj->ob_item[i]);
 	}
-	PyMalloc_Del(obj);
+	PyObject_Del(obj);
 }
 
 static int
