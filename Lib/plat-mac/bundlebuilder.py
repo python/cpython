@@ -217,7 +217,8 @@ USE_ZIPIMPORT = "zipimport" in sys.builtin_module_names
 # all the cruft of the real site.py.
 SITE_PY = """\
 import sys
-del sys.path[1:]  # sys.path[0] is Contents/Resources/
+if not %(semi_standalone)s:
+    del sys.path[1:]  # sys.path[0] is Contents/Resources/
 """
 
 if USE_ZIPIMPORT:
@@ -228,8 +229,6 @@ if USE_ZIPIMPORT:
             fullname += ".__init__"
         path = fullname.replace(".", os.sep) + PYC_EXT
         return path, MAGIC + '\0\0\0\0' + marshal.dumps(code)
-
-SITE_CO = compile(SITE_PY, "<-bundlebuilder.py->", "exec")
 
 #
 # Extension modules can't be in the modules zip archive, so a placeholder
@@ -312,6 +311,10 @@ PYTHONFRAMEWORKGOODIES = [
 ]
 
 
+LIB = os.path.join(sys.prefix, "lib", "python" + sys.version[:3])
+SITE_PACKAGES = os.path.join(LIB, "site-packages")
+
+
 class AppBuilder(BundleBuilder):
 
     # Override type of the bundle.
@@ -345,6 +348,9 @@ class AppBuilder(BundleBuilder):
     # If True, build standalone app.
     standalone = 0
 
+    # If True, build semi-standalone app (only includes third-party modules).
+    semi_standalone = 0
+
     # If set, use this for #! lines in stead of sys.executable
     python = None
 
@@ -374,7 +380,8 @@ class AppBuilder(BundleBuilder):
     maybeMissingModules = []
 
     def setup(self):
-        if self.standalone and self.mainprogram is None:
+        if ((self.standalone or self.semi_standalone)
+            and self.mainprogram is None):
             raise BundleBuilderError, ("must specify 'mainprogram' when "
                     "building a standalone application.")
         if self.mainprogram is None and self.executable is None:
@@ -409,7 +416,7 @@ class AppBuilder(BundleBuilder):
 
         self.plist.CFBundleExecutable = self.name
 
-        if self.standalone:
+        if self.standalone or self.semi_standalone:
             self.findDependencies()
 
     def preProcess(self):
@@ -438,7 +445,7 @@ class AppBuilder(BundleBuilder):
                 mainprogrampath = pathjoin(resdirpath, mainprogram)
                 makedirs(resdirpath)
                 open(mainprogrampath, "w").write(ARGV_EMULATOR % locals())
-                if self.standalone:
+                if self.standalone or self.semi_standalone:
                     self.includeModules.append("argvemulator")
                     self.includeModules.append("os")
                 if not self.plist.has_key("CFBundleDocumentTypes"):
@@ -453,7 +460,7 @@ class AppBuilder(BundleBuilder):
             execdir = pathjoin(self.bundlepath, self.execdir)
             bootstrappath = pathjoin(execdir, self.name)
             makedirs(execdir)
-            if self.standalone:
+            if self.standalone or self.semi_standalone:
                 # XXX we're screwed when the end user has deleted
                 # /usr/bin/python
                 hashbang = "/usr/bin/python"
@@ -471,7 +478,7 @@ class AppBuilder(BundleBuilder):
             self.files.append((self.iconfile, pathjoin(resdir, iconbase)))
 
     def postProcess(self):
-        if self.standalone:
+        if self.standalone or self.semi_standalone:
             self.addPythonModules()
         if self.strip and not self.symlink:
             self.stripBinaries()
@@ -507,6 +514,10 @@ class AppBuilder(BundleBuilder):
             dst = pathjoin(destbase, item)
             self.files.append((src, dst))
 
+    def _getSiteCode(self):
+        return compile(SITE_PY % {"semi_standalone": self.semi_standalone},
+                     "<-bundlebuilder.py->", "exec")
+
     def addPythonModules(self):
         self.message("Adding Python modules", 1)
 
@@ -524,7 +535,7 @@ class AppBuilder(BundleBuilder):
             # add site.pyc
             sitepath = pathjoin(self.bundlepath, "Contents", "Resources",
                     "site" + PYC_EXT)
-            writePyc(SITE_CO, sitepath)
+            writePyc(self._getSiteCode(), sitepath)
         else:
             # Create individual .pyc files.
             for name, code, ispkg in self.pymodules:
@@ -581,8 +592,8 @@ class AppBuilder(BundleBuilder):
             mf.import_hook("zlib")
         # manually add our own site.py
         site = mf.add_module("site")
-        site.__code__ = SITE_CO
-        mf.scan_code(SITE_CO, site)
+        site.__code__ = self._getSiteCode()
+        mf.scan_code(site.__code__, site)
 
         # warnings.py gets imported implicitly from C
         mf.import_hook("warnings")
@@ -600,23 +611,31 @@ class AppBuilder(BundleBuilder):
         modules = mf.modules.items()
         modules.sort()
         for name, mod in modules:
-            if mod.__file__ and mod.__code__ is None:
+            path = mod.__file__
+            if path and self.semi_standalone:
+                # skip the standard library
+                if path.startswith(LIB) and not path.startswith(SITE_PACKAGES):
+                    continue
+            if path and mod.__code__ is None:
                 # C extension
-                path = mod.__file__
                 filename = os.path.basename(path)
+                dstpath = name.split(".")[:-1] + [filename]
+                if name != "zlib":
+                    # put all extension module in a separate folder
+                    # inside Contents/Resources/
+                    dstpath = pathjoin("ExtensionModules", *dstpath)
+                else:
+                    # zlib is neccesary for bootstrapping, so don't
+                    # hide it in "ExtensionModules"
+                    dstpath = pathjoin(*dstpath)
                 if USE_ZIPIMPORT:
                     # Python modules are stored in a Zip archive, but put
-                    # extensions in Contents/Resources/.a and add a tiny "loader"
+                    # extensions in Contents/Resources/. Add a tiny "loader"
                     # program in the Zip archive. Due to Thomas Heller.
-                    dstpath = pathjoin("Contents", "Resources", filename)
-                    source = EXT_LOADER % {"name": name, "filename": filename}
+                    source = EXT_LOADER % {"name": name, "filename": dstpath}
                     code = compile(source, "<dynloader for %s>" % name, "exec")
                     mod.__code__ = code
-                else:
-                    # just copy the file
-                    dstpath = name.split(".")[:-1] + [filename]
-                    dstpath = pathjoin("Contents", "Resources", *dstpath)
-                self.files.append((path, dstpath))
+                self.files.append((path, pathjoin("Contents", "Resources", dstpath)))
             if mod.__code__ is not None:
                 ispkg = mod.__path__ is not None
                 if not USE_ZIPIMPORT or name != "site":
@@ -660,7 +679,7 @@ class AppBuilder(BundleBuilder):
         # XXX something decent
         import pprint
         pprint.pprint(self.__dict__)
-        if self.standalone:
+        if self.standalone or self.semi_standalone:
             self.reportMissing()
 
 #
@@ -761,12 +780,15 @@ Options:
       --link-exec        symlink the executable instead of copying it
       --standalone       build a standalone application, which is fully
                          independent of a Python installation
+      --semi-standalone  build a standalone application, which depends on
+                         an installed Python, yet includes all third-party
+                         modules.
       --python=FILE      Python to use in #! line in stead of current Python
       --lib=FILE         shared library or framework to be copied into
                          the bundle
-  -x, --exclude=MODULE   exclude module (with --standalone)
-  -i, --include=MODULE   include module (with --standalone)
-      --package=PACKAGE  include a whole package (with --standalone)
+  -x, --exclude=MODULE   exclude module (with --(semi-)standalone)
+  -i, --include=MODULE   include module (with --(semi-)standalone)
+      --package=PACKAGE  include a whole package (with --(semi-)standalone)
       --strip            strip binaries (remove debug info)
   -v, --verbose          increase verbosity level
   -q, --quiet            decrease verbosity level
@@ -788,7 +810,7 @@ def main(builder=None):
         "mainprogram=", "creator=", "nib=", "plist=", "link",
         "link-exec", "help", "verbose", "quiet", "argv", "standalone",
         "exclude=", "include=", "package=", "strip", "iconfile=",
-        "lib=", "python=")
+        "lib=", "python=", "semi-standalone")
 
     try:
         options, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -836,6 +858,8 @@ def main(builder=None):
             builder.verbosity -= 1
         elif opt == '--standalone':
             builder.standalone = 1
+        elif opt == '--semi-standalone':
+            builder.semi_standalone = 1
         elif opt == '--python':
             builder.python = arg
         elif opt in ('-x', '--exclude'):
