@@ -96,12 +96,9 @@ sys_exit(self, args)
 	object *self;
 	object *args;
 {
-	int sts;
-	if (!getintarg(args, &sts))
-		return NULL;
-	goaway(sts);
-	exit(sts); /* Just in case */
-	/* NOTREACHED */
+	/* Raise SystemExit so callers may catch it or clean up. */
+	err_setval(SystemExit, args);
+	return NULL;
 }
 
 static struct methodlist sys_methods[] = {
