@@ -568,7 +568,7 @@ mmap_item(self, i)
 	int i;
 {
 	CHECK_VALID(NULL);
-	if (i < 0 || i >= self->size) {
+	if (i < 0 || (size_t)i >= self->size) {
 		PyErr_SetString(PyExc_IndexError, "mmap index out of range");
 		return NULL;
 	}
@@ -583,13 +583,13 @@ mmap_slice(self, ilow, ihigh)
 	CHECK_VALID(NULL);
 	if (ilow < 0)
 		ilow = 0;
-	else if (ilow > self->size)
+	else if ((size_t)ilow > self->size)
 		ilow = self->size;
 	if (ihigh < 0)
 		ihigh = 0;
 	if (ihigh < ilow)
 		ihigh = ilow;
-	else if (ihigh > self->size)
+	else if ((size_t)ihigh > self->size)
 		ihigh = self->size;
     
 	return PyString_FromStringAndSize(self->data + ilow, ihigh-ilow);
@@ -628,13 +628,13 @@ mmap_ass_slice(self, ilow, ihigh, v)
 	CHECK_VALID(-1);
 	if (ilow < 0)
 		ilow = 0;
-	else if (ilow > self->size)
+	else if ((size_t)ilow > self->size)
 		ilow = self->size;
 	if (ihigh < 0)
 		ihigh = 0;
 	if (ihigh < ilow)
 		ihigh = ilow;
-	else if (ihigh > self->size)
+	else if ((size_t)ihigh > self->size)
 		ihigh = self->size;
     
 	if (! (PyString_Check(v)) ) {
@@ -661,7 +661,7 @@ mmap_ass_item(self, i, v)
 	const char *buf;
  
 	CHECK_VALID(-1);
-	if (i < 0 || i >= self->size) {
+	if (i < 0 || (size_t)i >= self->size) {
 		PyErr_SetString(PyExc_IndexError, "mmap index out of range");
 		return -1;
 	}
