@@ -1,4 +1,5 @@
 \documentclass{howto}
+\usepackage{distutils}
 % $Id$
 
 \title{What's New in Python 2.3}
@@ -24,13 +25,10 @@ release date of Python 2.3 is currently scheduled for mid-2003.
 This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
 full details, you should refer to the documentation for Python 2.3,
-such as the
-\citetitle[http://www.python.org/doc/2.3/lib/lib.html]{Python Library
-Reference} and the
-\citetitle[http://www.python.org/doc/2.3/ref/ref.html]{Python
-Reference Manual}.  If you want to understand the complete
-implementation and design rationale for a change, refer to the PEP for
-a particular new feature.
+such as the \citetitle[../lib/lib.html]{Python Library Reference} and
+the \citetitle[../ref/ref.html]{Python Reference Manual}.  If you want
+to understand the complete implementation and design rationale for a
+change, refer to the PEP for a particular new feature.
 
 
 %======================================================================
@@ -526,8 +524,8 @@ With all of these features the \module{logging} package should provide
 enough flexibility for even the most complicated applications.  This
 is only a partial overview of the \module{logging} package, so please
 see the \ulink{package's reference
-documentation}{http://www.python.org/dev/doc/devel/lib/module-logging.html}
-for all of the details.  Reading \pep{282} will also be helpful.
+documentation}{../lib/module-logging.html} for all of the details.
+Reading \pep{282} will also be helpful.
 
 
 \begin{seealso}
@@ -707,44 +705,46 @@ See section~\ref{section-pep302} for a description of the new import hooks.
 \end{seealso}
 
 %======================================================================
-\section{PEP 301: Package Index and Metadata for Distutils\label{section-pep301}}
+\section{PEP 301: Package Index and Metadata for
+Distutils\label{section-pep301}}
 
 Support for the long-requested Python catalog makes its first
 appearance in 2.3.
 
-The core component is the new Distutil \samp{register} command.
-Running \code{python setup.py register} will collect up the metadata
+The core component is the new Distutils \command{register} command.
+Running \code{python setup.py register} will collect the metadata
 describing a package, such as its name, version, maintainer,
-description, \&c., and sends it to a central catalog server.
+description, \&c., and send it to a central catalog server.
 Currently the catalog can be browsed at
 \url{http://www.amk.ca/cgi-bin/pypi.cgi}, but it will move to 
 some hostname in the \code{python.org} domain before the final version
 of 2.3 is released.
 
 To make the catalog a bit more useful, a new optional
-\samp{classifiers} keyword argument has been added to the Distutils
+\var{classifiers} keyword argument has been added to the Distutils
 \function{setup()} function.  A list of
-\citetitle[http://www.tuxedo.org/\%7Eesr/trove/]{Trove}-style strings can be supplied to help classify the software.
+\ulink{Trove}{http://catb.org/\textasciitilde esr/trove/}-style
+strings can be supplied to help classify the software.
 
 Here's an example \file{setup.py} with classifiers, written to be compatible 
 with older versions of the Distutils:
 
 \begin{verbatim}
 from distutils import core
-kw = ('name': "Quixote",
+kw = {'name': "Quixote",
       'version': "0.5.1",
       'description': "A highly Pythonic Web application framework",
-       ...
-    )
+      # ...
+      }
 
-if (hasattr(core, 'setup_keywords') and 
-    'classifiers' in core.setup_keywords):
-        kw['classifiers'] = \
-                 ['Topic :: Internet :: WWW/HTTP :: Dynamic Content',
-                  'Environment :: No Input/Output (Daemon)',
-                  'Intended Audience :: Developers'],
+if (  hasattr(core, 'setup_keywords') and 
+      'classifiers' in core.setup_keywords):
+    kw['classifiers'] = \
+        ['Topic :: Internet :: WWW/HTTP :: Dynamic Content',
+         'Environment :: No Input/Output (Daemon)',
+         'Intended Audience :: Developers'],
 
-core.setup (**kw)
+core.setup(**kw)
 \end{verbatim}
 
 The full list of classifiers can be obtained by running 
@@ -752,7 +752,8 @@ The full list of classifiers can be obtained by running
 
 \begin{seealso}
 
-\seepep{301}{Package Index and Metadata for Distutils}{Written and implemented by Richard Jones.}
+\seepep{301}{Package Index and Metadata for Distutils}{Written and
+implemented by Richard Jones.}
 
 \end{seealso}
 
@@ -1079,7 +1080,8 @@ the paper \ulink{``A Monotonic Superclass Linearization for
 Dylan''}{http://www.webcom.com/haahr/dylan/linearization-oopsla96.html}.
 To understand the motivation for this change, 
 read Michele Simionato's article 
-\ulink{``Python 2.3 Method Resolution Order''}{http://www.phyast.pitt.edu/~micheles/mro.html}, or 
+\ulink{``Python 2.3 Method Resolution Order''}
+      {http://www.phyast.pitt.edu/\textasciitilde micheles/mro.html}, or
 read the thread on python-dev starting with the message at
 \url{http://mail.python.org/pipermail/python-dev/2002-October/029035.html}.
 Samuele Pedroni first pointed out the problem and also implemented the
@@ -1712,7 +1714,7 @@ result is the same as that of \method{isoformat()}).  \class{date} and
 added to \class{timedelta} instances.
 
 For more information, refer to the \ulink{module's reference
-documentation}{http://www.python.org/dev/doc/devel/lib/module-datetime.html}.
+documentation}{..//lib/module-datetime.html}.
 (Contributed by Tim Peters.)
 
 
@@ -1786,7 +1788,7 @@ Optik was written by Greg Ward, with suggestions from the readers of
 the Getopt SIG.
 
 \begin{seealso}
-\seeurl{http://optik.sourceforge.net}
+\seeurl{http://optik.sourceforge.net/}
 {The Optik site has tutorial and reference documentation for 
 \module{optparse}.
 % XXX change to point to Python docs, when those docs get written.
@@ -1997,7 +1999,7 @@ Python source distribution, were updated for 2.3.  (Contributed by
 Sean Reifschneider.)
 
 Other new platforms now supported by Python include AtheOS
-(\url{http://www.atheos.cx}), GNU/Hurd, and OpenVMS.
+(\url{http://www.atheos.cx/}), GNU/Hurd, and OpenVMS.
 
 
 %======================================================================
