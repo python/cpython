@@ -1,6 +1,9 @@
-What's New in Python 2.2.1 XXX?
+What's New in Python 2.2.1c1?
 Release date: XXX
 ===============================
+
+This is primarily a bugfix release.  Many bugs have been fixed since
+the release of 2.2 final.  Some of the more notable are listed here.
 
 Core and builtins
 
@@ -10,9 +13,31 @@ Core and builtins
   raises TypeError.  (Before, this would appear to be pickled, but the
   state of the slots would be lost.)
 
-- PyErr_Display will provide file and line information for all exceptions
-  that have an attribute print_file_and_line, not just SyntaxErrors. This
-  fixes the bug that no proper line number is given for bad \x escapes.
+- (1).__nonzero__() would dump core.
+
+- Tim has had another go at getting sensible behaviour with respect to
+  floating point underflow/overflow.
+
+- Adding an instance of subclass of int to, say, a string, could
+  erroneously return "NotImplemented" instead of raising a TypeError.
+
+- Subclassing longs could cause core dumps in certain circumstances.
+
+- PyErr_Display will provide file and line information for all
+  exceptions that have an attribute print_file_and_line, not just
+  SyntaxErrors. This fixes the bug that no proper line number is given
+  for bad \x escapes.
+
+- sys.setprofile() and sys.settrace() would dump core if called with
+  no arguments.
+
+- An obscure & small memory overrun in wide unicode builds have been
+  fixed.
+
+- __doc__ can now be of arbitrary type (in particular, it can be a
+  unicode string).
+
+- complex objects are now immutable (as they should always have been).
 
 Extension modules
 
@@ -21,11 +46,36 @@ Extension modules
   hole was quickly plugged in zlib-1.1.4, and the Windows build of
   Python 2.2.1 now ships with zlib-1.1.4.
 
+- new.instancemethod no longer fails for new-style classes.
+
+- The "pseudo-sequences" returned by os.stat(), os.fstat(),
+  time.localtime() can now be pickled.
+
+- Due to a cut and paste error the object exported as
+  posix.statvfs_result was in fact posix.stat_result.
+
 Library
+
+- The copy module can be used in restricted execution mode.
+
+- A few bugs in the email package have been fixed.
+  XXX more detail!
+
+- StringIO's attitude to unicode strings has been reverted to that of
+  the 2.1.x branch (note cStringIO still knows nothing about unicode).
 
 - webbrowser: tightened up the command passed to os.system() so that
   arbitrary shell code can't be executed because a bogus URL was
   passed in.
+
+- Recursive structures containing new-style classes can now by
+  deep-copied.
+
+- ftplib defaults to passive mode (again).
+
+Tools
+
+- Bugs in IDLE's autoindent when using new-style division were fixed.
 
 
 What's New in Python 2.2 final?
