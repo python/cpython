@@ -3320,6 +3320,22 @@ remove_subclass(PyTypeObject *base, PyTypeObject *type)
 	}
 }
 
+static int
+check_num_args(PyObject *ob, int n)
+{
+	if (!PyTuple_CheckExact(ob)) {
+		PyErr_SetString(PyExc_SystemError,
+		    "PyArg_UnpackTuple() argument list is not a tuple");
+		return 0;
+	}
+	if (n == PyTuple_GET_SIZE(ob))
+		return 1;
+	PyErr_Format(
+	    PyExc_TypeError, 
+	    "expected %d arguments, got %d", n, PyTuple_GET_SIZE(ob));
+	return 0;
+}
+
 /* Generic wrappers for overloadable 'operators' such as __getitem__ */
 
 /* There's a wrapper *function* for each distinct function typedef used
@@ -3334,7 +3350,7 @@ wrap_inquiry(PyObject *self, PyObject *args, void *wrapped)
 	inquiry func = (inquiry)wrapped;
 	int res;
 
-	if (!PyArg_UnpackTuple(args, "", 0, 0))
+	if (!check_num_args(args, 0))
 		return NULL;
 	res = (*func)(self);
 	if (res == -1 && PyErr_Occurred())
@@ -3348,7 +3364,7 @@ wrap_inquirypred(PyObject *self, PyObject *args, void *wrapped)
 	inquiry func = (inquiry)wrapped;
 	int res;
 
-	if (!PyArg_UnpackTuple(args, "", 0, 0))
+	if (!check_num_args(args, 0))
 		return NULL;
 	res = (*func)(self);
 	if (res == -1 && PyErr_Occurred())
@@ -3362,8 +3378,9 @@ wrap_binaryfunc(PyObject *self, PyObject *args, void *wrapped)
 	binaryfunc func = (binaryfunc)wrapped;
 	PyObject *other;
 
-	if (!PyArg_UnpackTuple(args, "", 1, 1, &other))
+	if (!check_num_args(args, 1))
 		return NULL;
+	other = PyTuple_GET_ITEM(args, 0);
 	return (*func)(self, other);
 }
 
@@ -3373,8 +3390,9 @@ wrap_binaryfunc_l(PyObject *self, PyObject *args, void *wrapped)
 	binaryfunc func = (binaryfunc)wrapped;
 	PyObject *other;
 
-	if (!PyArg_UnpackTuple(args, "", 1, 1, &other))
+	if (!check_num_args(args, 1))
 		return NULL;
+	other = PyTuple_GET_ITEM(args, 0);
 	if (!(self->ob_type->tp_flags & Py_TPFLAGS_CHECKTYPES) &&
 	    !PyType_IsSubtype(other->ob_type, self->ob_type)) {
 		Py_INCREF(Py_NotImplemented);
@@ -3389,8 +3407,9 @@ wrap_binaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
 	binaryfunc func = (binaryfunc)wrapped;
 	PyObject *other;
 
-	if (!PyArg_UnpackTuple(args, "", 1, 1, &other))
+	if (!check_num_args(args, 1))
 		return NULL;
+	other = PyTuple_GET_ITEM(args, 0);
 	if (!(self->ob_type->tp_flags & Py_TPFLAGS_CHECKTYPES) &&
 	    !PyType_IsSubtype(other->ob_type, self->ob_type)) {
 		Py_INCREF(Py_NotImplemented);
@@ -3406,8 +3425,9 @@ wrap_coercefunc(PyObject *self, PyObject *args, void *wrapped)
 	PyObject *other, *res;
 	int ok;
 
-	if (!PyArg_UnpackTuple(args, "", 1, 1, &other))
+	if (!check_num_args(args, 1))
 		return NULL;
+	other = PyTuple_GET_ITEM(args, 0);
 	ok = func(&self, &other);
 	if (ok < 0)
 		return NULL;
@@ -3459,7 +3479,7 @@ wrap_unaryfunc(PyObject *self, PyObject *args, void *wrapped)
 {
 	unaryfunc func = (unaryfunc)wrapped;
 
-	if (!PyArg_UnpackTuple(args, "", 0, 0))
+	if (!check_num_args(args, 0))
 		return NULL;
 	return (*func)(self);
 }
@@ -3509,7 +3529,7 @@ wrap_sq_item(PyObject *self, PyObject *args, void *wrapped)
 			return NULL;
 		return (*func)(self, i);
 	}
-	PyArg_UnpackTuple(args, "", 1, 1, &arg);
+	check_num_args(args, 1);
 	assert(PyErr_Occurred());
 	return NULL;
 }
@@ -3551,8 +3571,9 @@ wrap_sq_delitem(PyObject *self, PyObject *args, void *wrapped)
 	int i, res;
 	PyObject *arg;
 
-	if (!PyArg_UnpackTuple(args, "", 1, 1, &arg))
+	if (!check_num_args(args, 1))
 		return NULL;
+	arg = PyTuple_GET_ITEM(args, 0);
 	i = getindex(self, arg);
 	if (i == -1 && PyErr_Occurred())
 		return NULL;
@@ -3602,8 +3623,9 @@ wrap_objobjproc(PyObject *self, PyObject *args, void *wrapped)
 	int res;
 	PyObject *value;
 
-	if (!PyArg_UnpackTuple(args, "", 1, 1, &value))
+	if (!check_num_args(args, 1))
 		return NULL;
+	value = PyTuple_GET_ITEM(args, 0);
 	res = (*func)(self, value);
 	if (res == -1 && PyErr_Occurred())
 		return NULL;
@@ -3634,8 +3656,9 @@ wrap_delitem(PyObject *self, PyObject *args, void *wrapped)
 	int res;
 	PyObject *key;
 
-	if (!PyArg_UnpackTuple(args, "", 1, 1, &key))
+	if (!check_num_args(args, 1))
 		return NULL;
+	key = PyTuple_GET_ITEM(args, 0);
 	res = (*func)(self, key, NULL);
 	if (res == -1 && PyErr_Occurred())
 		return NULL;
@@ -3650,8 +3673,9 @@ wrap_cmpfunc(PyObject *self, PyObject *args, void *wrapped)
 	int res;
 	PyObject *other;
 
-	if (!PyArg_UnpackTuple(args, "", 1, 1, &other))
+	if (!check_num_args(args, 1))
 		return NULL;
+	other = PyTuple_GET_ITEM(args, 0);
 	if (other->ob_type->tp_compare != func &&
 	    !PyType_IsSubtype(other->ob_type, self->ob_type)) {
 		PyErr_Format(
@@ -3711,8 +3735,9 @@ wrap_delattr(PyObject *self, PyObject *args, void *wrapped)
 	int res;
 	PyObject *name;
 
-	if (!PyArg_UnpackTuple(args, "", 1, 1, &name))
+	if (!check_num_args(args, 1))
 		return NULL;
+	name = PyTuple_GET_ITEM(args, 0);
 	if (!hackcheck(self, func, "__delattr__"))
 		return NULL;
 	res = (*func)(self, name, NULL);
@@ -3728,7 +3753,7 @@ wrap_hashfunc(PyObject *self, PyObject *args, void *wrapped)
 	hashfunc func = (hashfunc)wrapped;
 	long res;
 
-	if (!PyArg_UnpackTuple(args, "", 0, 0))
+	if (!check_num_args(args, 0))
 		return NULL;
 	res = (*func)(self);
 	if (res == -1 && PyErr_Occurred())
@@ -3750,8 +3775,9 @@ wrap_richcmpfunc(PyObject *self, PyObject *args, void *wrapped, int op)
 	richcmpfunc func = (richcmpfunc)wrapped;
 	PyObject *other;
 
-	if (!PyArg_UnpackTuple(args, "", 1, 1, &other))
+	if (!check_num_args(args, 1))
 		return NULL;
+	other = PyTuple_GET_ITEM(args, 0);
 	return (*func)(self, other, op);
 }
 
@@ -3776,7 +3802,7 @@ wrap_next(PyObject *self, PyObject *args, void *wrapped)
 	unaryfunc func = (unaryfunc)wrapped;
 	PyObject *res;
 
-	if (!PyArg_UnpackTuple(args, "", 0, 0))
+	if (!check_num_args(args, 0))
 		return NULL;
 	res = (*func)(self);
 	if (res == NULL && !PyErr_Occurred())
@@ -3828,8 +3854,9 @@ wrap_descr_delete(PyObject *self, PyObject *args, void *wrapped)
 	PyObject *obj;
 	int ret;
 
-	if (!PyArg_UnpackTuple(args, "", 1, 1, &obj))
+	if (!check_num_args(args, 1))
 		return NULL;
+	obj = PyTuple_GET_ITEM(args, 0);
 	ret = (*func)(self, obj, NULL);
 	if (ret < 0)
 		return NULL;
