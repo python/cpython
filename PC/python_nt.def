@@ -220,6 +220,8 @@ EXPORTS
 	Py_FatalError
 	Py_Exit
 	Py_Initialize
+	Py_Finalize
+	Py_IsInitialized
 	PyErr_Print
 	PyParser_SimpleParseFile
 	PyParser_SimpleParseString

@@ -42,6 +42,7 @@ char *Py_GetProgramName Py_PROTO((void));
 
 void Py_Initialize Py_PROTO((void));
 void Py_Finalize Py_PROTO((void));
+int Py_IsInitialized Py_PROTO((void));
 PyThreadState *Py_NewInterpreter Py_PROTO((void));
 void Py_EndInterpreter Py_PROTO((PyThreadState *));
 
