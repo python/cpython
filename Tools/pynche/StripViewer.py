@@ -267,17 +267,20 @@ class StripWidget:
 class StripViewer:
     def __init__(self, switchboard, parent=None):
         self.__sb = switchboard
-        self.__reds = StripWidget(switchboard, parent,
+        # create a frame inside the parent
+        self.__frame = Frame(parent)
+        self.__frame.pack()
+        self.__reds = StripWidget(switchboard, self.__frame,
                                   generator=constant_cyan_generator,
                                   axis=0,
                                   label='Red Variations')
 
-        self.__greens = StripWidget(switchboard, parent,
+        self.__greens = StripWidget(switchboard, self.__frame,
                                     generator=constant_magenta_generator,
                                     axis=1,
                                     label='Green Variations')
 
-        self.__blues = StripWidget(switchboard, parent,
+        self.__blues = StripWidget(switchboard, self.__frame,
                                    generator=constant_yellow_generator,
                                    axis=2,
                                    label='Blue Variations')

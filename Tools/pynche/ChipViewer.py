@@ -53,7 +53,7 @@ class ChipViewer:
     def __init__(self, switchboard, parent=None):
         self.__sb = switchboard
         self.__frame = Frame(parent)
-        self.__frame.pack()
+        self.__frame.pack(expand=YES, fill=BOTH)
         # create the chip that will display the currently selected color
         # exactly
         self.__sframe = Frame(self.__frame)
