@@ -22,6 +22,8 @@ camcorder.py	record video movies or make snapshots (in movie format)
 		p	pause recording (record single frame if paused)
 		ESC	quit
 
+colorsys.py	color conversions, used by video
+
 statit.py	various statistics operations on movie files
 
 syncaudio.py	record audio synchronized with camcorder -a
@@ -37,9 +39,12 @@ vcopy.py	selectively write frames from one movie file to another
 		commands: 'n' gets next frame; 'w' writes current frame
 
 video.py	player for movies recorded by camcorder.py
-		usage: video [-l] [-p pf] [moviefile [soundfile [skipbytes]]]
+		usage: video [-l] [-p pf] [-m mag] [-F]
+					[moviefile [soundfile [skipbytes]]]
 		-p pf		override packfactor (to zoom)
 		-l		looping -- restart movie when done
+		-m mag		magnification
+		-F		run at max speed
 		moviefile	default is film.video
 		soundfile	default is none (no sound)
 		skipbytes	byte offset in soundfile where sound starts
