@@ -60,16 +60,6 @@ class MyScanner(Scanner):
 			'RunStandardAlert',
 			]
 
-	def makegreylist(self):
-		return [
-			('#if TARGET_API_MAC_CARBON', [
-				'InsertDialogItem',
-				'RemoveDialogItems',
-				'GetParamText',
-				'CloseStandardSheet',
-				'RunStandardAlert',
-			])]
-			
 	def makeblacklisttypes(self):
 		return [
 			"AlertStdAlertParamPtr",	# Too much work, for now

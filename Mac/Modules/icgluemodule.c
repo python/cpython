@@ -35,16 +35,6 @@ PERFORMANCE OF THIS SOFTWARE.
 extern int ResObj_Convert(PyObject *, Handle *); /* From Resmodule.c */
 
 #ifdef WITHOUT_FRAMEWORKS
-// #if !TARGET_API_MAC_OS8
-// /* The Carbon headers define PRAGMA_ALIGN_SUPPORT to something illegal,
-// ** because you shouldn't use it for Carbon. All good and well, but portable
-// ** code still needs it. So, we undefine it here.
-// */
-// #undef PRAGMA_ALIGN_SUPPORTED
-// #define PRAGMA_ALIGN_SUPPORTED 0
-// #endif /* !TARGET_API_MAC_OS8 */
-
-// #include "ICAPI.h"
 #include <InternetConfig.h>
 #else
 #include <Carbon/Carbon.h>
@@ -66,79 +56,6 @@ static PyTypeObject Icitype;
 
 
 /* ---------------------------------------------------------------- */
-
-#if TARGET_API_MAC_OS8
-static char ici_ICFindConfigFile__doc__[] = 
-"()->None; Find config file in standard places"
-;
-
-static PyObject *
-ici_ICFindConfigFile(iciobject *self, PyObject *args)
-{
-	OSStatus err;
-	
-	if (!PyArg_ParseTuple(args, ""))
-		return NULL;
-	if ((err=ICFindConfigFile(self->inst, 0, NULL)) != 0 )
-		return PyMac_Error(err);
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-
-static char ici_ICFindUserConfigFile__doc__[] = 
-"(vRefNum, dirID)->None; Find config file in specified place"
-;
-
-static PyObject *
-ici_ICFindUserConfigFile(iciobject *self, PyObject *args)
-{
-	OSStatus err;
-	ICDirSpec where;	
-
-	if (!PyArg_ParseTuple(args, "sl", &where.vRefNum, &where.dirID))
-		return NULL;
-	if ((err=ICFindUserConfigFile(self->inst, &where)) != 0 )
-		return PyMac_Error(err);
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-
-static char ici_ICChooseConfig__doc__[] = 
-"()->None; Let the user choose a config file"
-;
-
-static PyObject *
-ici_ICChooseConfig(iciobject *self, PyObject *args)
-{
-	OSStatus err;
-	
-	if (!PyArg_ParseTuple(args, ""))
-		return NULL;
-	if ((err=ICChooseConfig(self->inst)) != 0 )
-		return PyMac_Error(err);
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-static char ici_ICChooseNewConfig__doc__[] = 
-"()->None; Let the user choose a new config file"
-;
-
-static PyObject *
-ici_ICChooseNewConfig(iciobject *self, PyObject *args)
-{
-	OSStatus err;
-	
-	if (!PyArg_ParseTuple(args, ""))
-		return NULL;
-	if ((err=ICChooseNewConfig(self->inst)) != 0 )
-		return PyMac_Error(err);
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-#endif /* TARGET_API_MAC_OS8 */
 
 
 static char ici_ICGetSeed__doc__[] = 
@@ -423,12 +340,6 @@ ici_ICMapTypeCreator(iciobject *self, PyObject *args)
 
 
 static struct PyMethodDef ici_methods[] = {
-#if TARGET_API_MAC_OS8
- {"ICFindConfigFile",	(PyCFunction)ici_ICFindConfigFile,	METH_VARARGS,	ici_ICFindConfigFile__doc__},
- {"ICFindUserConfigFile",	(PyCFunction)ici_ICFindUserConfigFile,	METH_VARARGS,	ici_ICFindUserConfigFile__doc__},
- {"ICChooseConfig",	(PyCFunction)ici_ICChooseConfig,	METH_VARARGS,	ici_ICChooseConfig__doc__},
- {"ICChooseNewConfig",	(PyCFunction)ici_ICChooseNewConfig,	METH_VARARGS,	ici_ICChooseNewConfig__doc__},
-#endif /* TARGET_API_MAC_OS8 */
  {"ICGetSeed",	(PyCFunction)ici_ICGetSeed,	METH_VARARGS,	ici_ICGetSeed__doc__},
  {"ICBegin",	(PyCFunction)ici_ICBegin,	METH_VARARGS,	ici_ICBegin__doc__},
  {"ICFindPrefHandle",	(PyCFunction)ici_ICFindPrefHandle,	METH_VARARGS,	ici_ICFindPrefHandle__doc__},

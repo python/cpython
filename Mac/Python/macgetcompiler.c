@@ -47,13 +47,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define HASTHREAD " WITHOUT_THREAD"
 #endif
 
-#if TARGET_API_MAC_CARBON
-#define TARGET_API ""
-#else
-#define TARGET_API " PPC"
-#endif
-
-#define COMPILER " [CW" TARGET_API HASGUSI HASTHREAD"]"
+#define COMPILER " [CW" HASGUSI HASTHREAD"]"
 #endif
 
 #ifdef MPW

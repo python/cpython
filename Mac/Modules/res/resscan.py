@@ -45,33 +45,19 @@ class ResourcesScanner(Scanner):
 ##			"RmveResource",		# RemoveResource
 ##			"SizeResource",		# GetResourceSizeOnDisk
 ##			"MaxSizeRsrc",		# GetMaxResourceSize
+			# OS8 only
+			'RGetResource',
+			'OpenResFile',
+			'CreateResFile',
+			'RsrcZoneInit',
+			'InitResources',
+			'RsrcMapEntry',
 			]
 			
 	def makeblacklisttypes(self):
 		return [
 			]
 			
-	def makegreylist(self):
-		return [
-			('#if TARGET_API_MAC_OS8', [
-				'RGetResource',
-				'OpenResFile',
-				'CreateResFile',
-				'RsrcZoneInit',
-				'InitResources',
-				'RsrcMapEntry',
-			]),
-			('#if TARGET_API_MAC_CARBON', [
-				'GetNextResourceFile',
-				'GetTopResourceFile',
-				'FSpOpenOrphanResFile',
-				'DetachResourceFile',
-				'InsertResourceFile',
-				'FSpResourceFileAlreadyOpen',
-				'FSOpenResourceFile',
-				'FSCreateResourceFile',
-			])]
-
 	def makerepairinstructions(self):
 		return [
 			([("Str255", "*", "InMode")],

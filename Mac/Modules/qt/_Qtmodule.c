@@ -6276,58 +6276,6 @@ static PyObject *MovieObj_GetMovieDefaultDataRef(MovieObject *_self, PyObject *_
 	return _res;
 }
 
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *MovieObj_SetMovieAnchorDataRef(MovieObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	Handle dataRef;
-	OSType dataRefType;
-#ifndef SetMovieAnchorDataRef
-	PyMac_PRECHECK(SetMovieAnchorDataRef);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      ResObj_Convert, &dataRef,
-	                      PyMac_GetOSType, &dataRefType))
-		return NULL;
-	_err = SetMovieAnchorDataRef(_self->ob_itself,
-	                             dataRef,
-	                             dataRefType);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *MovieObj_GetMovieAnchorDataRef(MovieObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	Handle dataRef;
-	OSType dataRefType;
-	long outFlags;
-#ifndef GetMovieAnchorDataRef
-	PyMac_PRECHECK(GetMovieAnchorDataRef);
-#endif
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = GetMovieAnchorDataRef(_self->ob_itself,
-	                             &dataRef,
-	                             &dataRefType,
-	                             &outFlags);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&O&l",
-	                     ResObj_New, dataRef,
-	                     PyMac_BuildOSType, dataRefType,
-	                     outFlags);
-	return _res;
-}
-#endif
-
 static PyObject *MovieObj_SetMovieColorTable(MovieObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -6533,24 +6481,6 @@ static PyObject *MovieObj_GetMovieStatus(MovieObject *_self, PyObject *_args)
 	                     TrackObj_New, firstProblemTrack);
 	return _res;
 }
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *MovieObj_GetMovieLoadState(MovieObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	long _rv;
-#ifndef GetMovieLoadState
-	PyMac_PRECHECK(GetMovieLoadState);
-#endif
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = GetMovieLoadState(_self->ob_itself);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-#endif
 
 static PyObject *MovieObj_NewMovieController(MovieObject *_self, PyObject *_args)
 {
@@ -6859,16 +6789,6 @@ static PyMethodDef MovieObj_methods[] = {
 	 PyDoc_STR("(Handle dataRef, OSType dataRefType) -> None")},
 	{"GetMovieDefaultDataRef", (PyCFunction)MovieObj_GetMovieDefaultDataRef, 1,
 	 PyDoc_STR("() -> (Handle dataRef, OSType dataRefType)")},
-
-#if !TARGET_API_MAC_CARBON
-	{"SetMovieAnchorDataRef", (PyCFunction)MovieObj_SetMovieAnchorDataRef, 1,
-	 PyDoc_STR("(Handle dataRef, OSType dataRefType) -> None")},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"GetMovieAnchorDataRef", (PyCFunction)MovieObj_GetMovieAnchorDataRef, 1,
-	 PyDoc_STR("() -> (Handle dataRef, OSType dataRefType, long outFlags)")},
-#endif
 	{"SetMovieColorTable", (PyCFunction)MovieObj_SetMovieColorTable, 1,
 	 PyDoc_STR("(CTabHandle ctab) -> None")},
 	{"GetMovieColorTable", (PyCFunction)MovieObj_GetMovieColorTable, 1,
@@ -6887,11 +6807,6 @@ static PyMethodDef MovieObj_methods[] = {
 	 PyDoc_STR("(TimeValue time, TimeValue duration) -> (RgnHandle _rv)")},
 	{"GetMovieStatus", (PyCFunction)MovieObj_GetMovieStatus, 1,
 	 PyDoc_STR("() -> (ComponentResult _rv, Track firstProblemTrack)")},
-
-#if !TARGET_API_MAC_CARBON
-	{"GetMovieLoadState", (PyCFunction)MovieObj_GetMovieLoadState, 1,
-	 PyDoc_STR("() -> (long _rv)")},
-#endif
 	{"NewMovieController", (PyCFunction)MovieObj_NewMovieController, 1,
 	 PyDoc_STR("(Rect movieRect, long someFlags) -> (MovieController _rv)")},
 	{"PutMovieOnScrap", (PyCFunction)MovieObj_PutMovieOnScrap, 1,
@@ -6980,28 +6895,6 @@ PyTypeObject Movie_Type = {
 
 /* --------------------- End object type Movie ---------------------- */
 
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Qt_CheckQuickTimeRegistration(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	void * registrationKey;
-	long flags;
-#ifndef CheckQuickTimeRegistration
-	PyMac_PRECHECK(CheckQuickTimeRegistration);
-#endif
-	if (!PyArg_ParseTuple(_args, "sl",
-	                      &registrationKey,
-	                      &flags))
-		return NULL;
-	CheckQuickTimeRegistration(registrationKey,
-	                           flags);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
 
 static PyObject *Qt_EnterMovies(PyObject *_self, PyObject *_args)
 {
@@ -7134,44 +7027,6 @@ static PyObject *Qt_GetDataHandler(PyObject *_self, PyObject *_args)
 	                     CmpObj_New, _rv);
 	return _res;
 }
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Qt_OpenADataHandler(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	Handle dataRef;
-	OSType dataHandlerSubType;
-	Handle anchorDataRef;
-	OSType anchorDataRefType;
-	TimeBase tb;
-	long flags;
-	ComponentInstance dh;
-#ifndef OpenADataHandler
-	PyMac_PRECHECK(OpenADataHandler);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&O&O&O&l",
-	                      ResObj_Convert, &dataRef,
-	                      PyMac_GetOSType, &dataHandlerSubType,
-	                      ResObj_Convert, &anchorDataRef,
-	                      PyMac_GetOSType, &anchorDataRefType,
-	                      TimeBaseObj_Convert, &tb,
-	                      &flags))
-		return NULL;
-	_err = OpenADataHandler(dataRef,
-	                        dataHandlerSubType,
-	                        anchorDataRef,
-	                        anchorDataRefType,
-	                        tb,
-	                        flags,
-	                        &dh);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     CmpInstObj_New, dh);
-	return _res;
-}
-#endif
 
 static PyObject *Qt_PasteHandleIntoMovie(PyObject *_self, PyObject *_args)
 {
@@ -8846,35 +8701,6 @@ static PyObject *Qt_SpriteMediaGetActionVariable(PyObject *_self, PyObject *_arg
 	return _res;
 }
 
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Qt_SpriteMediaGetIndImageProperty(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MediaHandler mh;
-	short imageIndex;
-	long imagePropertyType;
-	void * imagePropertyValue;
-#ifndef SpriteMediaGetIndImageProperty
-	PyMac_PRECHECK(SpriteMediaGetIndImageProperty);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&hls",
-	                      CmpInstObj_Convert, &mh,
-	                      &imageIndex,
-	                      &imagePropertyType,
-	                      &imagePropertyValue))
-		return NULL;
-	_rv = SpriteMediaGetIndImageProperty(mh,
-	                                     imageIndex,
-	                                     imagePropertyType,
-	                                     imagePropertyValue);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-#endif
-
 static PyObject *Qt_SpriteMediaDisposeSprite(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -9258,151 +9084,6 @@ static PyObject *Qt_FlashMediaGetSupportedSwfVersion(PyObject *_self, PyObject *
 	return _res;
 }
 
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Qt_MovieMediaGetCurrentMovieProperty(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MediaHandler mh;
-	OSType whichProperty;
-	void * value;
-#ifndef MovieMediaGetCurrentMovieProperty
-	PyMac_PRECHECK(MovieMediaGetCurrentMovieProperty);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&s",
-	                      CmpInstObj_Convert, &mh,
-	                      PyMac_GetOSType, &whichProperty,
-	                      &value))
-		return NULL;
-	_rv = MovieMediaGetCurrentMovieProperty(mh,
-	                                        whichProperty,
-	                                        value);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Qt_MovieMediaGetCurrentTrackProperty(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MediaHandler mh;
-	long trackID;
-	OSType whichProperty;
-	void * value;
-#ifndef MovieMediaGetCurrentTrackProperty
-	PyMac_PRECHECK(MovieMediaGetCurrentTrackProperty);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&lO&s",
-	                      CmpInstObj_Convert, &mh,
-	                      &trackID,
-	                      PyMac_GetOSType, &whichProperty,
-	                      &value))
-		return NULL;
-	_rv = MovieMediaGetCurrentTrackProperty(mh,
-	                                        trackID,
-	                                        whichProperty,
-	                                        value);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Qt_MovieMediaGetChildMovieDataReference(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MediaHandler mh;
-	QTAtomID dataRefID;
-	short dataRefIndex;
-	OSType dataRefType;
-	Handle dataRef;
-	QTAtomID dataRefIDOut;
-	short dataRefIndexOut;
-#ifndef MovieMediaGetChildMovieDataReference
-	PyMac_PRECHECK(MovieMediaGetChildMovieDataReference);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&lh",
-	                      CmpInstObj_Convert, &mh,
-	                      &dataRefID,
-	                      &dataRefIndex))
-		return NULL;
-	_rv = MovieMediaGetChildMovieDataReference(mh,
-	                                           dataRefID,
-	                                           dataRefIndex,
-	                                           &dataRefType,
-	                                           &dataRef,
-	                                           &dataRefIDOut,
-	                                           &dataRefIndexOut);
-	_res = Py_BuildValue("lO&O&lh",
-	                     _rv,
-	                     PyMac_BuildOSType, dataRefType,
-	                     ResObj_New, dataRef,
-	                     dataRefIDOut,
-	                     dataRefIndexOut);
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Qt_MovieMediaSetChildMovieDataReference(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MediaHandler mh;
-	QTAtomID dataRefID;
-	OSType dataRefType;
-	Handle dataRef;
-#ifndef MovieMediaSetChildMovieDataReference
-	PyMac_PRECHECK(MovieMediaSetChildMovieDataReference);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&lO&O&",
-	                      CmpInstObj_Convert, &mh,
-	                      &dataRefID,
-	                      PyMac_GetOSType, &dataRefType,
-	                      ResObj_Convert, &dataRef))
-		return NULL;
-	_rv = MovieMediaSetChildMovieDataReference(mh,
-	                                           dataRefID,
-	                                           dataRefType,
-	                                           dataRef);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Qt_MovieMediaLoadChildMovieFromDataReference(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MediaHandler mh;
-	QTAtomID dataRefID;
-#ifndef MovieMediaLoadChildMovieFromDataReference
-	PyMac_PRECHECK(MovieMediaLoadChildMovieFromDataReference);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &mh,
-	                      &dataRefID))
-		return NULL;
-	_rv = MovieMediaLoadChildMovieFromDataReference(mh,
-	                                                dataRefID);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-#endif
-
 static PyObject *Qt_Media3DGetCurrentGroup(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -9636,29 +9317,6 @@ static PyObject *Qt_Media3DGetCameraRange(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Qt_Media3DGetViewObject(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MediaHandler mh;
-	void * tq3viewObject;
-#ifndef Media3DGetViewObject
-	PyMac_PRECHECK(Media3DGetViewObject);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&s",
-	                      CmpInstObj_Convert, &mh,
-	                      &tq3viewObject))
-		return NULL;
-	_rv = Media3DGetViewObject(mh,
-	                           tq3viewObject);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-#endif
-
 static PyObject *Qt_NewTimeBase(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -9834,11 +9492,6 @@ static PyObject *Qt_MoviesTask(PyObject *_self, PyObject *_args)
 }
 
 static PyMethodDef Qt_methods[] = {
-
-#if !TARGET_API_MAC_CARBON
-	{"CheckQuickTimeRegistration", (PyCFunction)Qt_CheckQuickTimeRegistration, 1,
-	 PyDoc_STR("(void * registrationKey, long flags) -> None")},
-#endif
 	{"EnterMovies", (PyCFunction)Qt_EnterMovies, 1,
 	 PyDoc_STR("() -> None")},
 	{"ExitMovies", (PyCFunction)Qt_ExitMovies, 1,
@@ -9855,11 +9508,6 @@ static PyMethodDef Qt_methods[] = {
 	 PyDoc_STR("(long flags) -> (Movie _rv)")},
 	{"GetDataHandler", (PyCFunction)Qt_GetDataHandler, 1,
 	 PyDoc_STR("(Handle dataRef, OSType dataHandlerSubType, long flags) -> (Component _rv)")},
-
-#if !TARGET_API_MAC_CARBON
-	{"OpenADataHandler", (PyCFunction)Qt_OpenADataHandler, 1,
-	 PyDoc_STR("(Handle dataRef, OSType dataHandlerSubType, Handle anchorDataRef, OSType anchorDataRefType, TimeBase tb, long flags) -> (ComponentInstance dh)")},
-#endif
 	{"PasteHandleIntoMovie", (PyCFunction)Qt_PasteHandleIntoMovie, 1,
 	 PyDoc_STR("(Handle h, OSType handleType, Movie theMovie, long flags, ComponentInstance userComp) -> None")},
 	{"GetMovieImporterForDataRef", (PyCFunction)Qt_GetMovieImporterForDataRef, 1,
@@ -9988,11 +9636,6 @@ static PyMethodDef Qt_methods[] = {
 	 PyDoc_STR("(MediaHandler mh, QTAtomID variableID, float value) -> (ComponentResult _rv)")},
 	{"SpriteMediaGetActionVariable", (PyCFunction)Qt_SpriteMediaGetActionVariable, 1,
 	 PyDoc_STR("(MediaHandler mh, QTAtomID variableID) -> (ComponentResult _rv, float value)")},
-
-#if !TARGET_API_MAC_CARBON
-	{"SpriteMediaGetIndImageProperty", (PyCFunction)Qt_SpriteMediaGetIndImageProperty, 1,
-	 PyDoc_STR("(MediaHandler mh, short imageIndex, long imagePropertyType, void * imagePropertyValue) -> (ComponentResult _rv)")},
-#endif
 	{"SpriteMediaDisposeSprite", (PyCFunction)Qt_SpriteMediaDisposeSprite, 1,
 	 PyDoc_STR("(MediaHandler mh, QTAtomID spriteID) -> (ComponentResult _rv)")},
 	{"SpriteMediaSetActionVariableToString", (PyCFunction)Qt_SpriteMediaSetActionVariableToString, 1,
@@ -10025,31 +9668,6 @@ static PyMethodDef Qt_methods[] = {
 	 PyDoc_STR("(MediaHandler mh, long buttonID, long transition) -> (ComponentResult _rv, char path)")},
 	{"FlashMediaGetSupportedSwfVersion", (PyCFunction)Qt_FlashMediaGetSupportedSwfVersion, 1,
 	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, UInt8 swfVersion)")},
-
-#if !TARGET_API_MAC_CARBON
-	{"MovieMediaGetCurrentMovieProperty", (PyCFunction)Qt_MovieMediaGetCurrentMovieProperty, 1,
-	 PyDoc_STR("(MediaHandler mh, OSType whichProperty, void * value) -> (ComponentResult _rv)")},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"MovieMediaGetCurrentTrackProperty", (PyCFunction)Qt_MovieMediaGetCurrentTrackProperty, 1,
-	 PyDoc_STR("(MediaHandler mh, long trackID, OSType whichProperty, void * value) -> (ComponentResult _rv)")},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"MovieMediaGetChildMovieDataReference", (PyCFunction)Qt_MovieMediaGetChildMovieDataReference, 1,
-	 PyDoc_STR("(MediaHandler mh, QTAtomID dataRefID, short dataRefIndex) -> (ComponentResult _rv, OSType dataRefType, Handle dataRef, QTAtomID dataRefIDOut, short dataRefIndexOut)")},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"MovieMediaSetChildMovieDataReference", (PyCFunction)Qt_MovieMediaSetChildMovieDataReference, 1,
-	 PyDoc_STR("(MediaHandler mh, QTAtomID dataRefID, OSType dataRefType, Handle dataRef) -> (ComponentResult _rv)")},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"MovieMediaLoadChildMovieFromDataReference", (PyCFunction)Qt_MovieMediaLoadChildMovieFromDataReference, 1,
-	 PyDoc_STR("(MediaHandler mh, QTAtomID dataRefID) -> (ComponentResult _rv)")},
-#endif
 	{"Media3DGetCurrentGroup", (PyCFunction)Qt_Media3DGetCurrentGroup, 1,
 	 PyDoc_STR("(MediaHandler mh, void * group) -> (ComponentResult _rv)")},
 	{"Media3DTranslateNamedObjectTo", (PyCFunction)Qt_Media3DTranslateNamedObjectTo, 1,
@@ -10070,11 +9688,6 @@ static PyMethodDef Qt_methods[] = {
 	 PyDoc_STR("(MediaHandler mh, void * tQ3CameraRange) -> (ComponentResult _rv)")},
 	{"Media3DGetCameraRange", (PyCFunction)Qt_Media3DGetCameraRange, 1,
 	 PyDoc_STR("(MediaHandler mh, void * tQ3CameraRange) -> (ComponentResult _rv)")},
-
-#if !TARGET_API_MAC_CARBON
-	{"Media3DGetViewObject", (PyCFunction)Qt_Media3DGetViewObject, 1,
-	 PyDoc_STR("(MediaHandler mh, void * tq3viewObject) -> (ComponentResult _rv)")},
-#endif
 	{"NewTimeBase", (PyCFunction)Qt_NewTimeBase, 1,
 	 PyDoc_STR("() -> (TimeBase _rv)")},
 	{"ConvertTime", (PyCFunction)Qt_ConvertTime, 1,

@@ -382,7 +382,6 @@ _mfs_GetFSSpecFromFSSpec(PyObject *self, FSSpec *fssp)
 static int
 _mfs_GetFSSpecFromFSRef(PyObject *self, FSSpec *fssp)
 {
-#if !TARGET_API_MAC_OS8
 	static FSRef *fsrp;
 	
 	if ( is_mfsrobject(self) ) {
@@ -390,7 +389,6 @@ _mfs_GetFSSpecFromFSRef(PyObject *self, FSSpec *fssp)
 		if ( FSGetCatalogInfo(&((mfsrobject *)self)->fsref, kFSCatInfoNone, NULL, NULL, fssp, NULL) == noErr )
 			return 1;
 	}
-#endif
 	return 0;
 }
 
@@ -398,12 +396,10 @@ _mfs_GetFSSpecFromFSRef(PyObject *self, FSSpec *fssp)
 static int
 _mfs_GetFSRefFromFSRef(PyObject *self, FSRef *fsrp)
 {
-#if !TARGET_API_MAC_OS8
 	if ( is_mfsrobject(self) ) {
 		*fsrp = ((mfsrobject *)self)->fsref;
 		return 1;
 	}
-#endif
 	return 0;
 }
 
@@ -411,12 +407,10 @@ _mfs_GetFSRefFromFSRef(PyObject *self, FSRef *fsrp)
 static int
 _mfs_GetFSRefFromFSSpec(PyObject *self, FSRef *fsrp)
 {
-#if !TARGET_API_MAC_OS8
 	if ( is_mfssobject(self) ) {
 		if ( FSpMakeFSRef(&((mfssobject *)self)->fsspec, fsrp) == noErr )
 			return 1;
 	}
-#endif
 	return 0;
 }
 
@@ -533,10 +527,6 @@ mfss_NewAliasMinimal(mfssobject *self, PyObject *args)
 static PyObject *
 mfss_FSpMakeFSRef(mfssobject *self, PyObject *args)
 {
-#if TARGET_API_MAC_OS8
-	PyErr_SetString(PyExc_NotImplementedError, "FSRef objects not supported on this platform");
-	return 0;
-#else
 	OSErr err;
 	FSRef fsref;
 	
@@ -548,7 +538,6 @@ mfss_FSpMakeFSRef(mfssobject *self, PyObject *args)
 		return NULL;
 	}
 	return (PyObject *)newmfsrobject(&fsref);
-#endif
 }
 
 /* XXXX These routines should be replaced by a wrapper to the *FInfo routines */
@@ -777,7 +766,6 @@ statichere PyTypeObject Mfsstype = {
 
 /* End of code for FSSpec objects */
 /* -------------------------------------------------------- */
-#if !TARGET_API_MAC_OS8
 static PyObject *
 mfsr_as_fsspec(mfsrobject *self, PyObject *args)
 {
@@ -891,7 +879,6 @@ statichere PyTypeObject Mfsrtype = {
 };
 
 /* End of code for FSRef objects */
-#endif /* !TARGET_API_MAC_OS8 */
 /* -------------------------------------------------------- */
 
 static PyObject *
@@ -911,91 +898,6 @@ mfs_ResolveAliasFile(PyObject *self, PyObject *args)
 	return Py_BuildValue("Oii", newmfssobject(&fss), (int)isfolder, (int)wasaliased);
 }
 
-#if !TARGET_API_MAC_CARBON
-static PyObject *
-mfs_StandardGetFile(PyObject *self, PyObject *args)
-{
-	SFTypeList list;
-	short numtypes;
-	StandardFileReply reply;
-	
-	list[0] = list[1] = list[2] = list[3] = 0;
-	numtypes = 0;
-	if (!PyArg_ParseTuple(args, "|O&O&O&O&", PyMac_GetOSType, &list[0],
-			 PyMac_GetOSType, &list[1], PyMac_GetOSType, &list[2],
-			  PyMac_GetOSType, &list[3]) )
-		return NULL;
-	while ( numtypes < 4 && list[numtypes] ) {
-		numtypes++;
-	}
-	if ( numtypes == 0 )
-		numtypes = -1;
-	StandardGetFile((FileFilterUPP)0, numtypes, list, &reply);
-	return Py_BuildValue("(Oi)", newmfssobject(&reply.sfFile), reply.sfGood);
-}
-
-static PyObject *
-mfs_PromptGetFile(PyObject *self, PyObject *args)
-{
-	SFTypeList list;
-	short numtypes;
-	StandardFileReply reply;
-	char *prompt = NULL;
-	
-	list[0] = list[1] = list[2] = list[3] = 0;
-	numtypes = 0;
-	if (!PyArg_ParseTuple(args, "s|O&O&O&O&", &prompt, PyMac_GetOSType, &list[0],
-			 PyMac_GetOSType, &list[1], PyMac_GetOSType, &list[2],
-			  PyMac_GetOSType, &list[3]) )
-		return NULL;
-	while ( numtypes < 4 && list[numtypes] ) {
-		numtypes++;
-	}
-	if ( numtypes == 0 )
-		numtypes = -1;
-	PyMac_PromptGetFile(numtypes, list, &reply, prompt);
-	return Py_BuildValue("(Oi)", newmfssobject(&reply.sfFile), reply.sfGood);
-}
-
-static PyObject *
-mfs_StandardPutFile(PyObject *self, PyObject *args)
-{
-	Str255 prompt, dft;
-	StandardFileReply reply;
-	
-	dft[0] = 0;
-	if (!PyArg_ParseTuple(args, "O&|O&", PyMac_GetStr255, &prompt, PyMac_GetStr255, &dft) )
-		return NULL;
-	StandardPutFile(prompt, dft, &reply);
-	return Py_BuildValue("(Oi)",newmfssobject(&reply.sfFile), reply.sfGood);
-}
-
-/*
-** Set initial directory for file dialogs */
-static PyObject *
-mfs_SetFolder(PyObject *self, PyObject *args)
-{
-	FSSpec spec;
-	FSSpec ospec;
-	short orefnum;
-	long oparid;
-	
-	/* Get old values */
-	orefnum = -LMGetSFSaveDisk();
-	oparid = LMGetCurDirStore();
-	(void)FSMakeFSSpec(orefnum, oparid, "\pplaceholder", &ospec);
-	
-	/* Go to working directory by default */
-	(void)FSMakeFSSpec(0, 0, "\p:placeholder", &spec);
-	if (!PyArg_ParseTuple(args, "|O&", PyMac_GetFSSpec, &spec))
-		return NULL;
-	/* Set standard-file working directory */
-	LMSetSFSaveDisk(-spec.vRefNum);
-	LMSetCurDirStore(spec.parID);
-	return (PyObject *)newmfssobject(&ospec);
-}
-#endif
-
 static PyObject *
 mfs_FSSpec(PyObject *self, PyObject *args)
 {
@@ -1009,16 +911,11 @@ mfs_FSSpec(PyObject *self, PyObject *args)
 static PyObject *
 mfs_FSRef(PyObject *self, PyObject *args)
 {
-#if TARGET_API_MAC_OS8
-	PyErr_SetString(PyExc_NotImplementedError, "FSRef objects not supported on this platform");
-	return 0;
-#else
 	FSRef fsr;
 
 	if (!PyArg_ParseTuple(args, "O&", PyMac_GetFSRef, &fsr))
 		return NULL;
 	return (PyObject *)newmfsrobject(&fsr);
-#endif
 }
 
 static PyObject *
@@ -1055,22 +952,6 @@ mfs_RawAlias(PyObject *self, PyObject *args)
 	HUnlock(h);
 	return (PyObject *)newmfsaobject((AliasHandle)h);
 }
-
-#if !TARGET_API_MAC_CARBON
-static PyObject *
-mfs_GetDirectory(PyObject *self, PyObject *args)
-{
-	FSSpec fsdir;
-	int ok;
-	char *prompt = NULL;
-		
-	if (!PyArg_ParseTuple(args, "|s", &prompt) )
-		return NULL;
-		
-	ok = PyMac_GetDirectory(&fsdir, prompt);
-	return Py_BuildValue("(Oi)", newmfssobject(&fsdir), ok);
-}
-#endif
 
 static PyObject *
 mfs_FindFolder(PyObject *self, PyObject *args)
@@ -1143,13 +1024,6 @@ mfs_NewAliasMinimalFromFullPath(PyObject *self, PyObject *args)
 
 static struct PyMethodDef mfs_methods[] = {
 	{"ResolveAliasFile",	mfs_ResolveAliasFile,	1},
-#if !TARGET_API_MAC_CARBON
-	{"StandardGetFile",		mfs_StandardGetFile,	1},
-	{"PromptGetFile",		mfs_PromptGetFile,		1},
-	{"StandardPutFile",		mfs_StandardPutFile,	1},
-	{"GetDirectory",		mfs_GetDirectory,		1},
-	{"SetFolder",			mfs_SetFolder,			1},
-#endif
 	{"FSSpec",				mfs_FSSpec,				1},
 	{"FSRef",				mfs_FSRef,				1},
 	{"RawFSSpec",			mfs_RawFSSpec,			1},
@@ -1170,10 +1044,6 @@ static struct PyMethodDef mfs_methods[] = {
 int
 PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 {
-#if TARGET_API_MAC_OS8
-	PyErr_SetString(PyExc_TypeError, "FSRef objects not supported on this platform");
-	return 0;
-#else
 	/* If it's an FSRef we're also okay. */
 	if (_mfs_GetFSRefFromFSRef(v, fsr))
 		return 1;
@@ -1195,17 +1065,12 @@ PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 	}
 	PyErr_SetString(PyExc_TypeError, "FSRef argument should be existing FSRef, FSSpec or (OSX only) pathname");
 	return 0;
-#endif
 }
 
 /* Convert FSSpec to PyObject */
 PyObject *PyMac_BuildFSRef(FSRef *v)
 {
-#if TARGET_API_MAC_OS8
-	return NULL;
-#else
 	return (PyObject *)newmfsrobject(v);
-#endif
 }
 
 /*

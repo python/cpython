@@ -36,21 +36,6 @@ class MyScanner(Scanner):
 				listname = "methods"
 		return classname, listname
 
-	def makegreylist(self):
-		return [
-			('#if !TARGET_API_MAC_CARBON', [
-				'SystemEvent',
-				'SystemTask',
-				'SystemClick',
-				'GetOSEvent',
-				'OSEventAvail',
-			]),
-			('#if TARGET_API_MAC_CARBON', [
-				'CheckEventQueueForUserCancel',
-				'GetCurrentKeyModifiers',
-				'GetGlobalMouse',
-			])]
-
 	def makeblacklistnames(self):
 		return [
 			"KeyTranslate",
@@ -58,6 +43,12 @@ class MyScanner(Scanner):
 			"WaitNextEvent",	# Manually generated because of optional region
 			# Constants with funny definitions
 			"osEvtMessageMask",
+			# OS8 calls
+			'SystemEvent',
+			'SystemTask',
+			'SystemClick',
+			'GetOSEvent',
+			'OSEventAvail',
 			]
 
 	def makeblacklisttypes(self):

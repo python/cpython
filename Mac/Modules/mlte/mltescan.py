@@ -78,12 +78,12 @@ kTXNFontSizeAttributeSize = 4
 			"kTXNFontSizeAttributeSize",
 			"status",
 			"justification",
+			'TXNTSMCheck', # OS8
 			]
 
 	def makegreylist(self):
 		return [
 			('#if TARGET_API_MAC_OS8', [
-				'TXNTSMCheck',
 			])]
 
 

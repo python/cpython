@@ -46,19 +46,9 @@ class MyScanner(Scanner):
 			"svAllAvailableData",
 			# Something in a comment accidentally seen as a const definition
 			"err",
+			# OS8 only
+			'IconServicesTerminate',
 			]
-
-	def makegreylist(self):
-		return [
-			('#if !TARGET_API_MAC_CARBON', [
-				'IconServicesTerminate',
-			]),
-			('#if TARGET_API_MAC_CARBON', [
-				'WriteIconFile',
-				'ReadIconFile',
-				'RegisterIconRefFromIconFile',
-				'GetIconRefVariant',
-			])]
 
 	def makeblacklisttypes(self):
 		return [

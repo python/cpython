@@ -174,19 +174,6 @@ int GUSISIOUXSocket::isatty()
 }
 static bool input_pending()
 {
-#if !TARGET_API_MAC_CARBON
-	// Jack thinks that completely removing this code is a bit
-	// too much...
-	QHdrPtr eventQueue = LMGetEventQueue();
-	EvQElPtr element = (EvQElPtr)eventQueue->qHead;
-	
-	// now, count the number of pending keyDown events.
-	while (element != nil) {
-		if (element->evtQWhat == keyDown || element->evtQWhat == autoKey)
-			return true;
-		element = (EvQElPtr)element->qLink;
-	}
-#endif
 	return false;
 }
 

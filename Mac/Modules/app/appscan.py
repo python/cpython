@@ -51,16 +51,6 @@ class MyScanner(Scanner):
 			"appearanceBadCursorIndexErr",
 			]
 
-	def makegreylist(self):
-		return [
-			('#if TARGET_API_MAC_CARBON', [
-				'GetThemeMetric',
-				'GetThemeTextShadowOutset',
-				'GetThemeTextDimensions',
-				'TruncateThemeText',
-				'DrawThemeTextBox',
-			])]
-			
 	def makeblacklisttypes(self):
 		return [
 			"MenuTitleDrawingUPP",

@@ -38,13 +38,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Windows.h>
 #include <Fonts.h>
 #include <Balloons.h>
-#if TARGET_API_MAC_CARBON
 #include <CFBundle.h>
 #include <CFURL.h>
 #include <CFString.h>
 #include <CFBase.h>
 #include <CFArray.h>
-#endif /* TARGET_API_MAC_CARBON */
 #include <Gestalt.h>
 #include <Appearance.h>
 #else
@@ -94,16 +92,6 @@ void PyMac_Exit(int); /* Forward */
 static void
 init_mac_world(void)
 {
-#if !TARGET_API_MAC_CARBON
-	/* These aren't needed for carbon */
-	MaxApplZone();
-	InitGraf(&qd.thePort);
-	InitFonts();
-	InitWindows();
-	TEInit();
-	InitDialogs((long)0);
-	InitMenus();
-#endif
 	InitCursor();
 }
 
@@ -176,12 +164,6 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 			DisposeDialog(dialog);
 			exit(0);
 		}
-#if !TARGET_API_MAC_CARBON
-		if ( item == OPT_HELP ) {
-			HMSetBalloons(!HMGetBalloons());
-		}
-#endif
-#if !TARGET_API_MAC_OSX
 		if ( item == OPT_CMDLINE ) {
 			int old_argc = *argcp;
 			int i;
@@ -202,7 +184,6 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 			
 			/* XXXX Is it not safe to use free() here, apparently */
 		}
-#endif /* !TARGET_API_MAC_OSX */
 #define OPT_ITEM(num, var) \
 		if ( item == (num) ) { \
 			p->var = !p->var; \
@@ -279,9 +260,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 	/* Get options from preference file (or from applet resource fork) */
 	PyMac_options.keep_console = POPT_KEEPCONSOLE_OUTPUT;		/* default-default */
 	PyMac_options.unixnewlines = 1;
-#if !TARGET_API_MAC_OSX
 	PyMac_PreferenceOptions(&PyMac_options);
-#endif
 
 	if ( embedded ) {
 		static char *emb_argv[] = {"embedded-python", 0};
@@ -293,11 +272,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 		** In MachoPython we skip this step if we already have plausible
 		** command line arguments.
 		*/
-#if TARGET_API_MAC_OSX
-		if (*argcp == 2 && strncmp((*argvp)[1], "-psn_", 5) == 0)
-#endif
 			*argcp = PyMac_GetArgv(argvp, PyMac_options.noargs);
-#if !TARGET_API_MAC_OSX
 #ifndef NO_ARGV0_CHDIR
 		if (*argcp >= 1 && (*argvp)[0] && (*argvp)[0][0]) {
 			/* Workaround for MacOS X, which currently (DP4) doesn't set
@@ -311,7 +286,6 @@ init_common(int *argcp, char ***argvp, int embedded)
 			chdir(app_wd);
 		}
 #endif
-#endif
 		/* Do interactive option setting, if allowed and <option> depressed */
 		PyMac_InteractiveOptions(&PyMac_options, argcp, argvp);
 	}
@@ -324,7 +298,6 @@ init_common(int *argcp, char ***argvp, int embedded)
 	Py_NoSiteFlag = PyMac_options.nosite;
 	Py_TabcheckFlag = PyMac_options.tabwarn;
 	Py_DivisionWarningFlag = PyMac_options.divisionwarn;
-#if !TARGET_API_MAC_OSX
 	if ( PyMac_options.noargs ) {
 		/* don't process events at all without the scripts permission */
 		PyMacSchedParams scp;
@@ -334,7 +307,6 @@ init_common(int *argcp, char ***argvp, int embedded)
 		/* Should we disable command-dot as well? */
 		PyMac_SetSchedParams(&scp);
 	}
-#endif /* !TARGET_API_MAC_OSX */
 
 	/* Set buffering */
 	if (PyMac_options.unbuffered) {
@@ -446,103 +418,6 @@ PyMac_Initialize(void)
 
 #endif /* USE_MAC_APPLET_SUPPORT */
 
-#if TARGET_API_MAC_OSX /* Really: TARGET_API_MAC_CARBON */
-
-static int
-locateResourcePy(CFStringRef resourceType, char *resourceName, char *resourceURLCStr, int length)
-{
-    CFBundleRef mainBundle = NULL;
-    CFURLRef URL, absoluteURL;
-    CFStringRef filenameString, filepathString, rsrcString;
-    CFIndex size, i;
-    CFArrayRef arrayRef = NULL;
-    int success = 0;
-    
-#if TARGET_API_MAC_OSX
-	CFURLPathStyle thePathStyle = kCFURLPOSIXPathStyle;
-#else
-	CFURLPathStyle thePathStyle = kCFURLHFSPathStyle;
-#endif
-
-    /* Get a reference to our main bundle */
-    mainBundle = CFBundleGetMainBundle();
-
-	/* If we are running inside a bundle, look through it. Otherwise, do nothing. */
-	if (mainBundle) {
-	    /* Create a CFString with the resource name in it */
-	    rsrcString = CFStringCreateWithCString(0, resourceName, kCFStringEncodingMacRoman);
-
-	    /* Look for py files in the main bundle by type */
-	    arrayRef = CFBundleCopyResourceURLsOfType( mainBundle, 
-	            resourceType, 
-	           NULL );
-
-	    /* See if there are any filename matches */
-	    size = CFArrayGetCount(arrayRef);
-	    for (i = 0; i < size; i++) {
-	        URL = CFArrayGetValueAtIndex(arrayRef, i);
-	        filenameString = CFURLCopyLastPathComponent(URL);
-	        if (CFStringCompare(filenameString, rsrcString, 0) == kCFCompareEqualTo) {
-	            /* We found a match, get the file's full path */
-	            absoluteURL = CFURLCopyAbsoluteURL(URL);
-	            filepathString = CFURLCopyFileSystemPath(absoluteURL, thePathStyle);
-	            CFRelease(absoluteURL);
-
-	            /* Copy the full path into the caller's character buffer */
-	            success = CFStringGetCString(filepathString, resourceURLCStr, length,
-	                                        kCFStringEncodingMacRoman);
-
-	            CFRelease(filepathString);
-	        }
-	        CFRelease(filenameString);
-	    }
-		CFRelease(arrayRef);
-	    CFRelease(rsrcString);
-	}
-    return success;
-}
-
-#endif /* TARGET_API_MAC_CARBON */
-
-#if TARGET_API_MAC_OSX
-
-int
-main(int argc, char **argv)
-{
-    static char scriptpath[1024];
-    char *script = NULL;
-
-	/* First we see whether we have __rawmain__.py and run that if it
-	** is there
-	*/
-	if (locateResourcePy(CFSTR("py"), "__rawmain__.py", scriptpath, 1024)) {
-		/* If we have a raw main we don't do AppleEvent processing.
-		** Notice that this also means we keep the -psn.... argv[1]
-		** value intact. Not sure whether that is important to someone,
-		** but you never know...
-		*/
-		script = scriptpath;
-	} else if (locateResourcePy(CFSTR("pyc"), "__rawmain__.pyc", scriptpath, 1024)) {
-		script = scriptpath;
-	} else {
-		/* Otherwise we look for __main__.py. Whether that is
-		** found or not we also process AppleEvent arguments.
-		*/
-		if (locateResourcePy(CFSTR("py"), "__main__.py", scriptpath, 1024))
-			script = scriptpath;
-		else if (locateResourcePy(CFSTR("pyc"), "__main__.pyc", scriptpath, 1024))
-			script = scriptpath;
-			
-		init_common(&argc, &argv, 0);
-
-	}
-
-	PyMac_Main(argc, argv, script);
-    return 0;
-}
-
-#else
-
 /* For normal application */
 void
 PyMac_InitApplication(void)
@@ -556,12 +431,6 @@ PyMac_InitApplication(void)
 
 	init_common(&argc, &argv, 0);
 
-#if TARGET_API_MAC_OSX /* Really: TARGET_API_MAC_CARBON */
-	/* If we are running inside of a bundle, and a __main__.py is available, use it */
-	if (locateResourcePy("__main__.py", scriptpath, 1024))
-		script = scriptpath;
-#endif
-	
 	if ( argc > 1 ) {
 		/* We're running a script. Attempt to change current directory */
 		char curwd[256], *endp;
@@ -582,7 +451,6 @@ PyMac_InitApplication(void)
 	}
 	PyMac_Main(argc, argv, script);
 }
-#endif /* TARGET_API_MAC_OSX */
 
 /* Main program */
 
@@ -605,11 +473,7 @@ PyMac_Main(int argc, char **argv, char *filename)
 	if (Py_VerboseFlag ||
 	    (command == NULL && filename == NULL && isatty((int)fileno(fp))))
 		fprintf(stderr, "%s %s on %s\n%s\n",
-#if !TARGET_API_MAC_OSX
 			"Python",
-#else
-			"Pythonw",
-#endif
 			Py_GetVersion(), Py_GetPlatform(), COPYRIGHT);
 	
 	if (filename != NULL) {
@@ -620,10 +484,8 @@ PyMac_Main(int argc, char **argv, char *filename)
 		}
 	}
 	
-#if !TARGET_API_MAC_OSX
 	/* We initialize the menubar here, hoping SIOUX is initialized by now */
 	PyMac_InitMenuBar();
-#endif
 
 	Py_Initialize();
 	
@@ -651,7 +513,6 @@ PyMac_Main(int argc, char **argv, char *filename)
 	/*NOTREACHED*/
 }
 
-#if !TARGET_API_MAC_OSX
 /*
 ** Reset the "unseen output" flag
 */
@@ -683,7 +544,6 @@ abort(void)
 	console_output_state = STATE_LASTWRITE;
 	PyMac_Exit(1);
 }
-#endif /* !TARGET_API_MAC_OSX */
 
 /*
 ** Terminate application
@@ -739,7 +599,6 @@ PyMac_Exit(int status)
 	exit(status);
 }
 
-#if !TARGET_API_MAC_OSX
 /* Make the *original* argc/argv available to other modules.
    This is rare, but it is needed by the secureware extension. */
 
@@ -749,10 +608,8 @@ Py_GetArgcArgv(int *argc,char ***argv)
 	*argc = orig_argc;
 	*argv = orig_argv;
 }
-#endif
 
 /* More cruft that shouldn't really be here, used in sysmodule.c */
-#if !TARGET_API_MAC_OSX
 /* Return the program name -- some code out there needs this. */
 char *
 Py_GetProgramFullPath(void)
@@ -796,5 +653,4 @@ __convert_to_newlines(unsigned char * buf, size_t * n_ptr)
 			*p = '\r';
 }
 #endif /* WITHOUT_UNIX_NEWLINES */
-#endif /* !TARGET_API_MAC_OSX */
 

@@ -54,11 +54,7 @@ typedef unsigned long refcontype;
 #include "Python.h"
 #include "macglue.h"
 
-#ifdef TARGET_API_MAC_OSX
-#define PATHNAMELEN 1024
-#else
 #define PATHNAMELEN 256
-#endif
 
 static int arg_count;
 static char *arg_vector[256];
@@ -79,8 +75,6 @@ strdup(const char *src)
 }
 #endif
 
-
-#if !TARGET_API_MAC_OSX
 /* Initialize FSSpec and full name of current application */
 
 OSErr
@@ -104,7 +98,6 @@ PyMac_init_process_location(void)
 	applocation_inited = 1;
 	return 0;
 }
-#endif /* !TARGET_API_MAC_OSX */
 
 /* Check that there aren't any args remaining in the event */
 
@@ -229,9 +222,6 @@ event_loop(void)
 	
 	got_one = 0;
 	for (n = 0; n < 100 && !got_one; n++) {
-#if !TARGET_API_MAC_CARBON
-		SystemTask();
-#endif
 		ok = GetNextEvent(everyEvent, &event);
 		if (ok && event.what == kHighLevelEvent) {
 			AEProcessAppleEvent(&event);
@@ -245,13 +235,8 @@ int
 PyMac_GetArgv(char ***pargv, int noevents)
 {
 	arg_count = 0;
-#if TARGET_API_MAC_OSX
-	/* In an OSX bundle argv[0] is okay */
-	arg_count++;
-#else
 	(void)PyMac_init_process_location();
 	arg_vector[arg_count++] = strdup(PyMac_ApplicationPath);
-#endif /* TARGET_API_MAC_OSX */
 	
 	if( !noevents ) {
 		set_ae_handlers();

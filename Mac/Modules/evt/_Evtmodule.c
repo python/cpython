@@ -211,52 +211,6 @@ static PyObject *Evt_PostEvent(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Evt_OSEventAvail(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	EventMask mask;
-	EventRecord theEvent;
-#ifndef OSEventAvail
-	PyMac_PRECHECK(OSEventAvail);
-#endif
-	if (!PyArg_ParseTuple(_args, "H",
-	                      &mask))
-		return NULL;
-	_rv = OSEventAvail(mask,
-	                   &theEvent);
-	_res = Py_BuildValue("bO&",
-	                     _rv,
-	                     PyMac_BuildEventRecord, &theEvent);
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Evt_GetOSEvent(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	EventMask mask;
-	EventRecord theEvent;
-#ifndef GetOSEvent
-	PyMac_PRECHECK(GetOSEvent);
-#endif
-	if (!PyArg_ParseTuple(_args, "H",
-	                      &mask))
-		return NULL;
-	_rv = GetOSEvent(mask,
-	                 &theEvent);
-	_res = Py_BuildValue("bO&",
-	                     _rv,
-	                     PyMac_BuildEventRecord, &theEvent);
-	return _res;
-}
-#endif
-
 static PyObject *Evt_FlushEvents(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -276,67 +230,6 @@ static PyObject *Evt_FlushEvents(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Evt_SystemClick(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	EventRecord theEvent;
-	WindowPtr theWindow;
-#ifndef SystemClick
-	PyMac_PRECHECK(SystemClick);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      PyMac_GetEventRecord, &theEvent,
-	                      WinObj_Convert, &theWindow))
-		return NULL;
-	SystemClick(&theEvent,
-	            theWindow);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Evt_SystemTask(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-#ifndef SystemTask
-	PyMac_PRECHECK(SystemTask);
-#endif
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	SystemTask();
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Evt_SystemEvent(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	EventRecord theEvent;
-#ifndef SystemEvent
-	PyMac_PRECHECK(SystemEvent);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetEventRecord, &theEvent))
-		return NULL;
-	_rv = SystemEvent(&theEvent);
-	_res = Py_BuildValue("b",
-	                     _rv);
-	return _res;
-}
-#endif
-
-#if TARGET_API_MAC_CARBON
-
 static PyObject *Evt_GetGlobalMouse(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -351,9 +244,6 @@ static PyObject *Evt_GetGlobalMouse(PyObject *_self, PyObject *_args)
 	                     PyMac_BuildPoint, globalMouse);
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_CARBON
 
 static PyObject *Evt_GetCurrentKeyModifiers(PyObject *_self, PyObject *_args)
 {
@@ -369,9 +259,6 @@ static PyObject *Evt_GetCurrentKeyModifiers(PyObject *_self, PyObject *_args)
 	                     _rv);
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_CARBON
 
 static PyObject *Evt_CheckEventQueueForUserCancel(PyObject *_self, PyObject *_args)
 {
@@ -387,7 +274,6 @@ static PyObject *Evt_CheckEventQueueForUserCancel(PyObject *_self, PyObject *_ar
 	                     _rv);
 	return _res;
 }
-#endif
 
 static PyObject *Evt_KeyScript(PyObject *_self, PyObject *_args)
 {
@@ -613,48 +499,14 @@ static PyMethodDef Evt_methods[] = {
 	 PyDoc_STR("(EventMask eventMask) -> (Boolean _rv, EventRecord theEvent)")},
 	{"PostEvent", (PyCFunction)Evt_PostEvent, 1,
 	 PyDoc_STR("(EventKind eventNum, UInt32 eventMsg) -> None")},
-
-#if !TARGET_API_MAC_CARBON
-	{"OSEventAvail", (PyCFunction)Evt_OSEventAvail, 1,
-	 PyDoc_STR("(EventMask mask) -> (Boolean _rv, EventRecord theEvent)")},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"GetOSEvent", (PyCFunction)Evt_GetOSEvent, 1,
-	 PyDoc_STR("(EventMask mask) -> (Boolean _rv, EventRecord theEvent)")},
-#endif
 	{"FlushEvents", (PyCFunction)Evt_FlushEvents, 1,
 	 PyDoc_STR("(EventMask whichMask, EventMask stopMask) -> None")},
-
-#if !TARGET_API_MAC_CARBON
-	{"SystemClick", (PyCFunction)Evt_SystemClick, 1,
-	 PyDoc_STR("(EventRecord theEvent, WindowPtr theWindow) -> None")},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"SystemTask", (PyCFunction)Evt_SystemTask, 1,
-	 PyDoc_STR("() -> None")},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"SystemEvent", (PyCFunction)Evt_SystemEvent, 1,
-	 PyDoc_STR("(EventRecord theEvent) -> (Boolean _rv)")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"GetGlobalMouse", (PyCFunction)Evt_GetGlobalMouse, 1,
 	 PyDoc_STR("() -> (Point globalMouse)")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"GetCurrentKeyModifiers", (PyCFunction)Evt_GetCurrentKeyModifiers, 1,
 	 PyDoc_STR("() -> (UInt32 _rv)")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"CheckEventQueueForUserCancel", (PyCFunction)Evt_CheckEventQueueForUserCancel, 1,
 	 PyDoc_STR("() -> (Boolean _rv)")},
-#endif
 	{"KeyScript", (PyCFunction)Evt_KeyScript, 1,
 	 PyDoc_STR("(short code) -> None")},
 	{"IsCmdChar", (PyCFunction)Evt_IsCmdChar, 1,

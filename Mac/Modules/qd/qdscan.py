@@ -118,25 +118,6 @@ extend						= 0x40
 			'CursorComponentSetData',
 			]
 
-	def makegreylist(self):
-		return [
-			('#if !TARGET_API_MAC_CARBON', [
-			]),
-			('#if TARGET_API_MAC_CARBON', [
-				'IsPortOffscreen',	# Lazy
-				'IsPortColor',	# Lazy
-				'IsRegionRectangular',
-				'CreateNewPort',
-				'DisposePort',
-				'SetQDError',
-				'IsPortPolyBeingDefined',
-				'QDSetDirtyRegion',
-				'QDGetDirtyRegion',
-				'IsValidPort',
-				'RgnToHandle',
-			])]
-
-
 	def makeblacklisttypes(self):
 		return [
 			'CIconHandle', # Obsolete

@@ -83,12 +83,6 @@ int PyMac_FindCodeResourceModule(PyStringObject *, char *, char *); /* Test for 
 PyObject * PyMac_LoadCodeResourceModule(char *, char *); /* Load 'PYD ' resource from file */
 struct filedescr *PyMac_FindModuleExtension(char *, size_t *, char *); /* Look for module in single folder */
 
-#if TARGET_API_MAC_OS8
-int PyMac_GetDirectory(FSSpec *dirfss, char *prompt);		/* Ask user for a directory */
-void PyMac_PromptGetFile(short numTypes, ConstSFTypeListPtr typeList, 
-	StandardFileReply *reply, char *prompt);	/* Ask user for file, with prompt */
-#endif /* TARGET_API_MAC_OS8 */
-
 void PyMac_InitApplet(void);			/* Initialize and run an Applet */
 void PyMac_Initialize(void);			/* Initialize function for embedding Python */
 

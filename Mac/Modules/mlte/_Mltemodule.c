@@ -245,27 +245,6 @@ static PyObject *TXNObj_TXNClick(TXNObjectObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_OS8
-
-static PyObject *TXNObj_TXNTSMCheck(TXNObjectObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	EventRecord ioEvent;
-#ifndef TXNTSMCheck
-	PyMac_PRECHECK(TXNTSMCheck);
-#endif
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = TXNTSMCheck(_self->ob_itself,
-	                  &ioEvent);
-	_res = Py_BuildValue("bO&",
-	                     _rv,
-	                     PyMac_BuildEventRecord, &ioEvent);
-	return _res;
-}
-#endif
-
 static PyObject *TXNObj_TXNSelectAll(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1193,11 +1172,6 @@ static PyMethodDef TXNObj_methods[] = {
 	 PyDoc_STR("(RgnHandle ioCursorRgn) -> None")},
 	{"TXNClick", (PyCFunction)TXNObj_TXNClick, 1,
 	 PyDoc_STR("(EventRecord iEvent) -> None")},
-
-#if TARGET_API_MAC_OS8
-	{"TXNTSMCheck", (PyCFunction)TXNObj_TXNTSMCheck, 1,
-	 PyDoc_STR("() -> (Boolean _rv, EventRecord ioEvent)")},
-#endif
 	{"TXNSelectAll", (PyCFunction)TXNObj_TXNSelectAll, 1,
 	 PyDoc_STR("() -> None")},
 	{"TXNFocus", (PyCFunction)TXNObj_TXNFocus, 1,

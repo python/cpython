@@ -105,12 +105,6 @@ extern int _QdRGB_Convert(PyObject *, RGBColorPtr);
 
 #endif /* ACCESSOR_CALLS_ARE_FUNCTIONS */
 
-#if !TARGET_API_MAC_CARBON
-#define QDFlushPortBuffer(port, rgn) /* pass */
-#define QDIsPortBufferDirty(port) 0
-#define QDIsPortBuffered(port) 0
-#endif /* !TARGET_API_MAC_CARBON  */
-
 static PyObject *BMObj_NewCopied(BitMapPtr);
 
 /*
@@ -219,8 +213,6 @@ static PyObject *GrafObj_MacSetPort(GrafPortObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_CARBON
-
 static PyObject *GrafObj_IsValidPort(GrafPortObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -235,7 +227,6 @@ static PyObject *GrafObj_IsValidPort(GrafPortObject *_self, PyObject *_args)
 	                     _rv);
 	return _res;
 }
-#endif
 
 static PyObject *GrafObj_GetPortPixMap(GrafPortObject *_self, PyObject *_args)
 {
@@ -636,8 +627,6 @@ static PyObject *GrafObj_IsPortPictureBeingDefined(GrafPortObject *_self, PyObje
 	return _res;
 }
 
-#if TARGET_API_MAC_CARBON
-
 static PyObject *GrafObj_IsPortPolyBeingDefined(GrafPortObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -652,9 +641,6 @@ static PyObject *GrafObj_IsPortPolyBeingDefined(GrafPortObject *_self, PyObject 
 	                     _rv);
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_CARBON
 
 static PyObject *GrafObj_IsPortOffscreen(GrafPortObject *_self, PyObject *_args)
 {
@@ -670,9 +656,6 @@ static PyObject *GrafObj_IsPortOffscreen(GrafPortObject *_self, PyObject *_args)
 	                     _rv);
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_CARBON
 
 static PyObject *GrafObj_IsPortColor(GrafPortObject *_self, PyObject *_args)
 {
@@ -688,7 +671,6 @@ static PyObject *GrafObj_IsPortColor(GrafPortObject *_self, PyObject *_args)
 	                     _rv);
 	return _res;
 }
-#endif
 
 static PyObject *GrafObj_SetPortBounds(GrafPortObject *_self, PyObject *_args)
 {
@@ -860,8 +842,6 @@ static PyObject *GrafObj_SetPortFracHPenLocation(GrafPortObject *_self, PyObject
 	return _res;
 }
 
-#if TARGET_API_MAC_CARBON
-
 static PyObject *GrafObj_DisposePort(GrafPortObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -875,7 +855,6 @@ static PyObject *GrafObj_DisposePort(GrafPortObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
-#endif
 
 static PyObject *GrafObj_QDIsPortBuffered(GrafPortObject *_self, PyObject *_args)
 {
@@ -924,8 +903,6 @@ static PyObject *GrafObj_QDFlushPortBuffer(GrafPortObject *_self, PyObject *_arg
 	return _res;
 }
 
-#if TARGET_API_MAC_CARBON
-
 static PyObject *GrafObj_QDGetDirtyRegion(GrafPortObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -944,9 +921,6 @@ static PyObject *GrafObj_QDGetDirtyRegion(GrafPortObject *_self, PyObject *_args
 	_res = Py_None;
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_CARBON
 
 static PyObject *GrafObj_QDSetDirtyRegion(GrafPortObject *_self, PyObject *_args)
 {
@@ -966,16 +940,12 @@ static PyObject *GrafObj_QDSetDirtyRegion(GrafPortObject *_self, PyObject *_args
 	_res = Py_None;
 	return _res;
 }
-#endif
 
 static PyMethodDef GrafObj_methods[] = {
 	{"MacSetPort", (PyCFunction)GrafObj_MacSetPort, 1,
 	 PyDoc_STR("() -> None")},
-
-#if TARGET_API_MAC_CARBON
 	{"IsValidPort", (PyCFunction)GrafObj_IsValidPort, 1,
 	 PyDoc_STR("() -> (Boolean _rv)")},
-#endif
 	{"GetPortPixMap", (PyCFunction)GrafObj_GetPortPixMap, 1,
 	 PyDoc_STR("() -> (PixMapHandle _rv)")},
 	{"GetPortBitMapForCopyBits", (PyCFunction)GrafObj_GetPortBitMapForCopyBits, 1,
@@ -1026,21 +996,12 @@ static PyMethodDef GrafObj_methods[] = {
 	 PyDoc_STR("() -> (Boolean _rv)")},
 	{"IsPortPictureBeingDefined", (PyCFunction)GrafObj_IsPortPictureBeingDefined, 1,
 	 PyDoc_STR("() -> (Boolean _rv)")},
-
-#if TARGET_API_MAC_CARBON
 	{"IsPortPolyBeingDefined", (PyCFunction)GrafObj_IsPortPolyBeingDefined, 1,
 	 PyDoc_STR("() -> (Boolean _rv)")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"IsPortOffscreen", (PyCFunction)GrafObj_IsPortOffscreen, 1,
 	 PyDoc_STR("() -> (Boolean _rv)")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"IsPortColor", (PyCFunction)GrafObj_IsPortColor, 1,
 	 PyDoc_STR("() -> (Boolean _rv)")},
-#endif
 	{"SetPortBounds", (PyCFunction)GrafObj_SetPortBounds, 1,
 	 PyDoc_STR("(Rect rect) -> None")},
 	{"SetPortOpColor", (PyCFunction)GrafObj_SetPortOpColor, 1,
@@ -1061,27 +1022,18 @@ static PyMethodDef GrafObj_methods[] = {
 	 PyDoc_STR("(SInt32 penMode) -> None")},
 	{"SetPortFracHPenLocation", (PyCFunction)GrafObj_SetPortFracHPenLocation, 1,
 	 PyDoc_STR("(short pnLocHFrac) -> None")},
-
-#if TARGET_API_MAC_CARBON
 	{"DisposePort", (PyCFunction)GrafObj_DisposePort, 1,
 	 PyDoc_STR("() -> None")},
-#endif
 	{"QDIsPortBuffered", (PyCFunction)GrafObj_QDIsPortBuffered, 1,
 	 PyDoc_STR("() -> (Boolean _rv)")},
 	{"QDIsPortBufferDirty", (PyCFunction)GrafObj_QDIsPortBufferDirty, 1,
 	 PyDoc_STR("() -> (Boolean _rv)")},
 	{"QDFlushPortBuffer", (PyCFunction)GrafObj_QDFlushPortBuffer, 1,
 	 PyDoc_STR("(RgnHandle region) -> None")},
-
-#if TARGET_API_MAC_CARBON
 	{"QDGetDirtyRegion", (PyCFunction)GrafObj_QDGetDirtyRegion, 1,
 	 PyDoc_STR("(RgnHandle rgn) -> None")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"QDSetDirtyRegion", (PyCFunction)GrafObj_QDSetDirtyRegion, 1,
 	 PyDoc_STR("(RgnHandle rgn) -> None")},
-#endif
 	{NULL, NULL, 0}
 };
 
@@ -2548,8 +2500,6 @@ static PyObject *Qd_BitMapToRegion(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_CARBON
-
 static PyObject *Qd_RgnToHandle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -2568,7 +2518,6 @@ static PyObject *Qd_RgnToHandle(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
-#endif
 
 static PyObject *Qd_DisposeRgn(PyObject *_self, PyObject *_args)
 {
@@ -5005,8 +4954,6 @@ static PyObject *Qd_GetRegionBounds(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_CARBON
-
 static PyObject *Qd_IsRegionRectangular(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -5023,9 +4970,6 @@ static PyObject *Qd_IsRegionRectangular(PyObject *_self, PyObject *_args)
 	                     _rv);
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_CARBON
 
 static PyObject *Qd_CreateNewPort(PyObject *_self, PyObject *_args)
 {
@@ -5041,9 +4985,6 @@ static PyObject *Qd_CreateNewPort(PyObject *_self, PyObject *_args)
 	                     GrafObj_New, _rv);
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_CARBON
 
 static PyObject *Qd_SetQDError(PyObject *_self, PyObject *_args)
 {
@@ -5060,7 +5001,6 @@ static PyObject *Qd_SetQDError(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
-#endif
 
 static PyObject *Qd_LMGetScrVRes(PyObject *_self, PyObject *_args)
 {
@@ -6456,11 +6396,8 @@ static PyMethodDef Qd_methods[] = {
 	 PyDoc_STR("(RgnHandle dstRgn) -> None")},
 	{"BitMapToRegion", (PyCFunction)Qd_BitMapToRegion, 1,
 	 PyDoc_STR("(RgnHandle region, BitMapPtr bMap) -> None")},
-
-#if TARGET_API_MAC_CARBON
 	{"RgnToHandle", (PyCFunction)Qd_RgnToHandle, 1,
 	 PyDoc_STR("(RgnHandle region, Handle flattenedRgnDataHdl) -> None")},
-#endif
 	{"DisposeRgn", (PyCFunction)Qd_DisposeRgn, 1,
 	 PyDoc_STR("(RgnHandle rgn) -> None")},
 	{"MacCopyRgn", (PyCFunction)Qd_MacCopyRgn, 1,
@@ -6723,21 +6660,12 @@ static PyMethodDef Qd_methods[] = {
 	 PyDoc_STR("(Cursor arrow) -> None")},
 	{"GetRegionBounds", (PyCFunction)Qd_GetRegionBounds, 1,
 	 PyDoc_STR("(RgnHandle region) -> (Rect bounds)")},
-
-#if TARGET_API_MAC_CARBON
 	{"IsRegionRectangular", (PyCFunction)Qd_IsRegionRectangular, 1,
 	 PyDoc_STR("(RgnHandle region) -> (Boolean _rv)")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"CreateNewPort", (PyCFunction)Qd_CreateNewPort, 1,
 	 PyDoc_STR("() -> (CGrafPtr _rv)")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"SetQDError", (PyCFunction)Qd_SetQDError, 1,
 	 PyDoc_STR("(OSErr err) -> None")},
-#endif
 	{"LMGetScrVRes", (PyCFunction)Qd_LMGetScrVRes, 1,
 	 PyDoc_STR("() -> (SInt16 _rv)")},
 	{"LMSetScrVRes", (PyCFunction)Qd_LMSetScrVRes, 1,

@@ -151,12 +151,6 @@ extern int _QdRGB_Convert(PyObject *, RGBColorPtr);
 
 #endif /* ACCESSOR_CALLS_ARE_FUNCTIONS */
 
-#if !TARGET_API_MAC_CARBON
-#define QDFlushPortBuffer(port, rgn) /* pass */
-#define QDIsPortBufferDirty(port) 0
-#define QDIsPortBuffered(port) 0
-#endif /* !TARGET_API_MAC_CARBON  */
-
 static PyObject *BMObj_NewCopied(BitMapPtr);
 
 /*

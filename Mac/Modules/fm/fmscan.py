@@ -42,14 +42,15 @@ class MyScanner(Scanner):
 			# Disabling them is the easiest path.
 			'SetAntiAliasedTextEnabled',
 			'IsAntiAliasedTextEnabled',
+			# OS8-only
+			'InitFonts',
+			'SetFontLock',
+			'FlushFonts',
 			]
 
 	def makegreylist(self):
 		return [
 			('#if !TARGET_API_MAC_CARBON', [
-				'InitFonts',
-				'SetFontLock',
-				'FlushFonts',
 			])]
 	def makeblacklisttypes(self):
 		return [

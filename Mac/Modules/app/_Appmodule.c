@@ -924,8 +924,6 @@ static PyObject *App_UseThemeFont(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_CARBON
-
 static PyObject *App_DrawThemeTextBox(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -959,9 +957,6 @@ static PyObject *App_DrawThemeTextBox(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_CARBON
 
 static PyObject *App_TruncateThemeText(PyObject *_self, PyObject *_args)
 {
@@ -994,9 +989,6 @@ static PyObject *App_TruncateThemeText(PyObject *_self, PyObject *_args)
 	                     outTruncated);
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_CARBON
 
 static PyObject *App_GetThemeTextDimensions(PyObject *_self, PyObject *_args)
 {
@@ -1030,9 +1022,6 @@ static PyObject *App_GetThemeTextDimensions(PyObject *_self, PyObject *_args)
 	                     outBaseline);
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_CARBON
 
 static PyObject *App_GetThemeTextShadowOutset(PyObject *_self, PyObject *_args)
 {
@@ -1056,7 +1045,6 @@ static PyObject *App_GetThemeTextShadowOutset(PyObject *_self, PyObject *_args)
 	                     PyMac_BuildRect, &outOutset);
 	return _res;
 }
-#endif
 
 static PyObject *App_DrawThemeScrollBarArrows(PyObject *_self, PyObject *_args)
 {
@@ -1658,8 +1646,6 @@ static PyObject *App_GetThemeTextColor(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_CARBON
-
 static PyObject *App_GetThemeMetric(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1679,7 +1665,6 @@ static PyObject *App_GetThemeMetric(PyObject *_self, PyObject *_args)
 	                     outMetric);
 	return _res;
 }
-#endif
 
 static PyMethodDef App_methods[] = {
 	{"RegisterAppearanceClient", (PyCFunction)App_RegisterAppearanceClient, 1,
@@ -1754,26 +1739,14 @@ static PyMethodDef App_methods[] = {
 	 PyDoc_STR("() -> (ThemeCheckBoxStyle outStyle)")},
 	{"UseThemeFont", (PyCFunction)App_UseThemeFont, 1,
 	 PyDoc_STR("(ThemeFontID inFontID, ScriptCode inScript) -> None")},
-
-#if TARGET_API_MAC_CARBON
 	{"DrawThemeTextBox", (PyCFunction)App_DrawThemeTextBox, 1,
 	 PyDoc_STR("(CFStringRef inString, ThemeFontID inFontID, ThemeDrawState inState, Boolean inWrapToWidth, Rect inBoundingBox, SInt16 inJust) -> None")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"TruncateThemeText", (PyCFunction)App_TruncateThemeText, 1,
 	 PyDoc_STR("(CFMutableStringRef inString, ThemeFontID inFontID, ThemeDrawState inState, SInt16 inPixelWidthLimit, TruncCode inTruncWhere) -> (Boolean outTruncated)")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"GetThemeTextDimensions", (PyCFunction)App_GetThemeTextDimensions, 1,
 	 PyDoc_STR("(CFStringRef inString, ThemeFontID inFontID, ThemeDrawState inState, Boolean inWrapToWidth, Point ioBounds) -> (Point ioBounds, SInt16 outBaseline)")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"GetThemeTextShadowOutset", (PyCFunction)App_GetThemeTextShadowOutset, 1,
 	 PyDoc_STR("(ThemeFontID inFontID, ThemeDrawState inState) -> (Rect outOutset)")},
-#endif
 	{"DrawThemeScrollBarArrows", (PyCFunction)App_DrawThemeScrollBarArrows, 1,
 	 PyDoc_STR("(Rect bounds, ThemeTrackEnableState enableState, ThemeTrackPressState pressState, Boolean isHoriz) -> (Rect trackBounds)")},
 	{"GetThemeScrollBarTrackRect", (PyCFunction)App_GetThemeScrollBarTrackRect, 1,
@@ -1822,11 +1795,8 @@ static PyMethodDef App_methods[] = {
 	 PyDoc_STR("(ThemeBrush inBrush, SInt16 inDepth, Boolean inColorDev) -> (RGBColor outColor)")},
 	{"GetThemeTextColor", (PyCFunction)App_GetThemeTextColor, 1,
 	 PyDoc_STR("(ThemeTextColor inColor, SInt16 inDepth, Boolean inColorDev) -> (RGBColor outColor)")},
-
-#if TARGET_API_MAC_CARBON
 	{"GetThemeMetric", (PyCFunction)App_GetThemeMetric, 1,
 	 PyDoc_STR("(ThemeMetric inMetric) -> (SInt32 outMetric)")},
-#endif
 	{NULL, NULL, 0}
 };
 

@@ -59,14 +59,9 @@ class MyScanner(Scanner):
 			"OpenAComponent",
 			"GetComponentPublicResource", # Missing in CW Pro 6
 			"CallComponentGetPublicResource", # Missing in CW Pro 6
+			'SetComponentInstanceA5',
+			'GetComponentInstanceA5',
 			]
-
-	def makegreylist(self):
-		return [
-			('#if !TARGET_API_MAC_CARBON', [
-				'SetComponentInstanceA5',
-				'GetComponentInstanceA5',
-			])]
 
 	def makeblacklisttypes(self):
 		return [
