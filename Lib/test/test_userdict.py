@@ -1,7 +1,7 @@
 # Check every path through every method of UserDict
 
 from test_support import verify, verbose
-from UserDict import UserDict
+from UserDict import UserDict, IterableUserDict
 
 d0 = {}
 d1 = {"one": 1}
@@ -12,7 +12,7 @@ d2 = {"one": 1, "two": 2}
 u = UserDict()
 u0 = UserDict(d0)
 u1 = UserDict(d1)
-u2 = UserDict(d2)
+u2 = IterableUserDict(d2)
 
 uu = UserDict(u)
 uu0 = UserDict(u0)
