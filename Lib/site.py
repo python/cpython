@@ -201,8 +201,14 @@ class _Printer:
                     break
 
 __builtin__.copyright = _Printer("copyright", sys.copyright)
-__builtin__.credits = _Printer("credits",
-    "Python development is led by BeOpen PythonLabs (www.pythonlabs.com).")
+if sys.platform[:4] == 'java':
+    __builtin__.credits = _Printer(
+        "credits",
+        "Jython is maintained by the Jython developers (www.jython.org).")
+else:
+    __builtin__.credits = _Printer("credits", """\
+Thanks to CWI, CNRI, BeOpen.com, Digital Creations and a cast of thousands
+for supporting Python development.  See www.python.org for more information.""")
 here = os.path.dirname(os.__file__)
 __builtin__.license = _Printer(
     "license", "See http://www.pythonlabs.com/products/python2.0/license.html",
@@ -242,7 +248,7 @@ except ImportError:
 #
 # Remove sys.setdefaultencoding() so that users cannot change the
 # encoding after initialization.  The test for presence is needed when
-# this module is run as a script, becuase this code is executed twice.
+# this module is run as a script, because this code is executed twice.
 #
 if hasattr(sys, "setdefaultencoding"):
     del sys.setdefaultencoding
