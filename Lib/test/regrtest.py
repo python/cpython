@@ -630,6 +630,7 @@ _expectations = {
         test_gl
         test_grp
         test_iconv_codecs
+        test_ioctl
         test_imgfile
         test_largefile
         test_linuxaudiodev
@@ -651,6 +652,7 @@ _expectations = {
         test_socketserver
         test_sunaudiodev
         test_sundry
+        test_tarfile
         test_timing
         test_unicode_file
         """,
