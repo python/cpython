@@ -368,13 +368,15 @@ class Pickler:
 
     def save_newobj(self, obj):
         # Save a new-style class instance, using protocol 2.
-        # XXX Much of this is still experimental.
+        # XXX This is still experimental.
         assert self.proto >= 2          # This only works for protocol 2
         t = type(obj)
         getnewargs = getattr(obj, "__getnewargs__", None)
         if getnewargs:
             args = getnewargs()         # This bette not reference obj
         else:
+            # XXX These types should each grow a __getnewargs__
+            # implementation so this special-casing is unnecessary.
             for cls in int, long, float, complex, str, UnicodeType, tuple:
                 if cls and isinstance(obj, cls):
                     args = (cls(obj),)
