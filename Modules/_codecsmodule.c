@@ -20,8 +20,14 @@
      <encoding>_decode(char_buffer_obj[,errors='strict']) -> 
         (Unicode object, bytes consumed)
 
+   <encoding>_encode() interfaces also accept non-Unicode object as
+   input. The objects are then converted to Unicode using
+   PyUnicode_FromObject() prior to applying the conversion.
+
    These <encoding>s are available: utf_8, unicode_escape,
-   raw_unicode_escape, unicode_internal, latin_1, ascii (7-bit)
+   raw_unicode_escape, unicode_internal, latin_1, ascii (7-bit),
+   mbcs (on win32).
+
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 
@@ -344,17 +350,22 @@ static PyObject *
 utf_8_encode(PyObject *self,
 	    PyObject *args)
 {
-    PyObject *str;
+    PyObject *str, *v;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:utf_8_encode",
+    if (!PyArg_ParseTuple(args, "O|z:utf_8_encode",
 			  &str, &errors))
 	return NULL;
 
-    return codec_tuple(PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(str),
-					    PyUnicode_GET_SIZE(str),
-					    errors),
-		       PyUnicode_GET_SIZE(str));
+    str = PyUnicode_FromObject(str);
+    if (str == NULL)
+	return NULL;
+    v = codec_tuple(PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(str),
+					 PyUnicode_GET_SIZE(str),
+					 errors),
+		    PyUnicode_GET_SIZE(str));
+    Py_DECREF(str);
+    return v;
 }
 
 /* This version provides access to the byteorder parameter of the
@@ -368,147 +379,186 @@ static PyObject *
 utf_16_encode(PyObject *self,
 	    PyObject *args)
 {
-    PyObject *str;
+    PyObject *str, *v;
     const char *errors = NULL;
     int byteorder = 0;
 
-    if (!PyArg_ParseTuple(args, "U|zi:utf_16_encode",
+    if (!PyArg_ParseTuple(args, "O|zi:utf_16_encode",
 			  &str, &errors, &byteorder))
 	return NULL;
 
-    return codec_tuple(PyUnicode_EncodeUTF16(PyUnicode_AS_UNICODE(str),
-					     PyUnicode_GET_SIZE(str),
-					     errors,
-					     byteorder),
-		       PyUnicode_GET_SIZE(str));
+    str = PyUnicode_FromObject(str);
+    if (str == NULL)
+	return NULL;
+    v = codec_tuple(PyUnicode_EncodeUTF16(PyUnicode_AS_UNICODE(str),
+					  PyUnicode_GET_SIZE(str),
+					  errors,
+					  byteorder),
+		    PyUnicode_GET_SIZE(str));
+    Py_DECREF(str);
+    return v;
 }
 
 static PyObject *
 utf_16_le_encode(PyObject *self,
 		 PyObject *args)
 {
-    PyObject *str;
+    PyObject *str, *v;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|zi:utf_16_le_encode",
+    if (!PyArg_ParseTuple(args, "O|zi:utf_16_le_encode",
 			  &str, &errors))
 	return NULL;
 
-    return codec_tuple(PyUnicode_EncodeUTF16(PyUnicode_AS_UNICODE(str),
+    str = PyUnicode_FromObject(str);
+    if (str == NULL)
+	return NULL;
+    v = codec_tuple(PyUnicode_EncodeUTF16(PyUnicode_AS_UNICODE(str),
 					     PyUnicode_GET_SIZE(str),
 					     errors,
 					     -1),
 		       PyUnicode_GET_SIZE(str));
+    Py_DECREF(str);
+    return v;
 }
 
 static PyObject *
 utf_16_be_encode(PyObject *self,
 		 PyObject *args)
 {
-    PyObject *str;
+    PyObject *str, *v;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|zi:utf_16_be_encode",
+    if (!PyArg_ParseTuple(args, "O|zi:utf_16_be_encode",
 			  &str, &errors))
 	return NULL;
 
-    return codec_tuple(PyUnicode_EncodeUTF16(PyUnicode_AS_UNICODE(str),
-					     PyUnicode_GET_SIZE(str),
-					     errors,
-					     +1),
-		       PyUnicode_GET_SIZE(str));
+    str = PyUnicode_FromObject(str);
+    if (str == NULL)
+	return NULL;
+    v = codec_tuple(PyUnicode_EncodeUTF16(PyUnicode_AS_UNICODE(str),
+					  PyUnicode_GET_SIZE(str),
+					  errors,
+					  +1),
+		    PyUnicode_GET_SIZE(str));
+    Py_DECREF(str);
+    return v;
 }
 
 static PyObject *
 unicode_escape_encode(PyObject *self,
 		     PyObject *args)
 {
-    PyObject *str;
+    PyObject *str, *v;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:unicode_escape_encode",
+    if (!PyArg_ParseTuple(args, "O|z:unicode_escape_encode",
 			  &str, &errors))
 	return NULL;
 
-    return codec_tuple(PyUnicode_EncodeUnicodeEscape(
-			       PyUnicode_AS_UNICODE(str), 
-			       PyUnicode_GET_SIZE(str)),
-		       PyUnicode_GET_SIZE(str));
+    str = PyUnicode_FromObject(str);
+    if (str == NULL)
+	return NULL;
+    v = codec_tuple(PyUnicode_EncodeUnicodeEscape(PyUnicode_AS_UNICODE(str), 
+						  PyUnicode_GET_SIZE(str)),
+		    PyUnicode_GET_SIZE(str));
+    Py_DECREF(str);
+    return v;
 }
 
 static PyObject *
 raw_unicode_escape_encode(PyObject *self,
 			PyObject *args)
 {
-    PyObject *str;
+    PyObject *str, *v;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:raw_unicode_escape_encode",
+    if (!PyArg_ParseTuple(args, "O|z:raw_unicode_escape_encode",
 			  &str, &errors))
 	return NULL;
 
-    return codec_tuple(PyUnicode_EncodeRawUnicodeEscape(
+    str = PyUnicode_FromObject(str);
+    if (str == NULL)
+	return NULL;
+    v = codec_tuple(PyUnicode_EncodeRawUnicodeEscape(
 			       PyUnicode_AS_UNICODE(str), 
 			       PyUnicode_GET_SIZE(str)),
-		       PyUnicode_GET_SIZE(str));
+		    PyUnicode_GET_SIZE(str));
+    Py_DECREF(str);
+    return v;
 }
 
 static PyObject *
 latin_1_encode(PyObject *self,
 	       PyObject *args)
 {
-    PyObject *str;
+    PyObject *str, *v;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:latin_1_encode",
+    if (!PyArg_ParseTuple(args, "O|z:latin_1_encode",
 			  &str, &errors))
 	return NULL;
 
-    return codec_tuple(PyUnicode_EncodeLatin1(
+    str = PyUnicode_FromObject(str);
+    if (str == NULL)
+	return NULL;
+    v = codec_tuple(PyUnicode_EncodeLatin1(
 			       PyUnicode_AS_UNICODE(str), 
 			       PyUnicode_GET_SIZE(str),
 			       errors),
-		       PyUnicode_GET_SIZE(str));
+		    PyUnicode_GET_SIZE(str));
+    Py_DECREF(str);
+    return v;
 }
 
 static PyObject *
 ascii_encode(PyObject *self,
 	     PyObject *args)
 {
-    PyObject *str;
+    PyObject *str, *v;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:ascii_encode",
+    if (!PyArg_ParseTuple(args, "O|z:ascii_encode",
 			  &str, &errors))
 	return NULL;
 
-    return codec_tuple(PyUnicode_EncodeASCII(
+    str = PyUnicode_FromObject(str);
+    if (str == NULL)
+	return NULL;
+    v = codec_tuple(PyUnicode_EncodeASCII(
 			       PyUnicode_AS_UNICODE(str), 
 			       PyUnicode_GET_SIZE(str),
 			       errors),
-		       PyUnicode_GET_SIZE(str));
+		    PyUnicode_GET_SIZE(str));
+    Py_DECREF(str);
+    return v;
 }
 
 static PyObject *
 charmap_encode(PyObject *self,
 	     PyObject *args)
 {
-    PyObject *str;
+    PyObject *str, *v;
     const char *errors = NULL;
     PyObject *mapping = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|zO:charmap_encode",
+    if (!PyArg_ParseTuple(args, "O|zO:charmap_encode",
 			  &str, &errors, &mapping))
 	return NULL;
     if (mapping == Py_None)
 	mapping = NULL;
 
-    return codec_tuple(PyUnicode_EncodeCharmap(
+    str = PyUnicode_FromObject(str);
+    if (str == NULL)
+	return NULL;
+    v = codec_tuple(PyUnicode_EncodeCharmap(
 			       PyUnicode_AS_UNICODE(str), 
 			       PyUnicode_GET_SIZE(str),
 			       mapping, 
 			       errors),
-		       PyUnicode_GET_SIZE(str));
+		    PyUnicode_GET_SIZE(str));
+    Py_DECREF(str);
+    return v;
 }
 
 #ifdef MS_WIN32
@@ -517,18 +567,23 @@ static PyObject *
 mbcs_encode(PyObject *self,
 	    PyObject *args)
 {
-    PyObject *str;
+    PyObject *str, *v;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "U|z:mbcs_encode",
+    if (!PyArg_ParseTuple(args, "O|z:mbcs_encode",
 			  &str, &errors))
 	return NULL;
 
-    return codec_tuple(PyUnicode_EncodeMBCS(
+    str = PyUnicode_FromObject(str);
+    if (str == NULL)
+	return NULL;
+    v = codec_tuple(PyUnicode_EncodeMBCS(
 			       PyUnicode_AS_UNICODE(str), 
 			       PyUnicode_GET_SIZE(str),
 			       errors),
-		       PyUnicode_GET_SIZE(str));
+		    PyUnicode_GET_SIZE(str));
+    Py_DECREF(str);
+    return v;
 }
 
 #endif /* MS_WIN32 */
