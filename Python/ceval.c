@@ -403,17 +403,14 @@ eval_code2(co, globals, locals,
 			current_frame,		/*back*/
 			co,			/*code*/
 			globals,		/*globals*/
-			locals,			/*locals*/
-			owner,			/*owner*/
-			co->co_stacksize,	/*nvalues*/
-			CO_MAXBLOCKS);		/*nblocks*/
+			locals);		/*locals*/
 	if (f == NULL)
 		return NULL;
 
 	current_frame = f;
 
 	if (co->co_nlocals > 0)
-		fastlocals = ((listobject *)f->f_fastlocals)->ob_item;
+		fastlocals = f->f_localsplus;
 
 	if (co->co_argcount > 0 ||
 	    co->co_flags & (CO_VARARGS | CO_VARKEYWORDS)) {
@@ -2127,15 +2124,6 @@ getglobals()
 		return NULL;
 	else
 		return current_frame->f_globals;
-}
-
-object *
-getowner()
-{
-	if (current_frame == NULL)
-		return NULL;
-	else
-		return current_frame->f_owner;
 }
 
 object *
