@@ -1424,11 +1424,15 @@ PyObject_Dir(PyObject *arg)
 	}
 
 	/* Elif this is some form of module, we only want its dict. */
-	else if (PyObject_TypeCheck(arg, &PyModule_Type)) {
+	else if (PyModule_Check(arg)) {
 		masterdict = PyObject_GetAttrString(arg, "__dict__");
 		if (masterdict == NULL)
 			goto error;
-		assert(PyDict_Check(masterdict));
+		if (!PyDict_Check(masterdict)) {
+			PyErr_SetString(PyExc_TypeError,
+					"module.__dict__ is not a dictionary");
+			goto error;
+		}
 	}
 
 	/* Elif some form of type or class, grab its dict and its bases.
