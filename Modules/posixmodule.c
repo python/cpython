@@ -319,27 +319,6 @@ posix_utimes(self, args)
 	return None;
 }
 
-#ifdef NO_GETCWD
-
-#include "errno.h"
-
-/* Quick hack to get posix.getcwd() working for pure BSD 4.3 */
-/* XXX This assumes MAXPATHLEN = 1024 !!! */
-
-static char *
-getcwd(buf, size)
-	char *buf;
-	int size;
-{
-	extern char *getwd PROTO((char *));
-	register char *ret = getwd(buf);
-	if (ret == NULL)
-		errno = EACCES; /* Most likely error */
-	return ret;
-}
-
-#endif /* NO_GETCWD */
-
 
 #ifndef NO_LSTAT
 
