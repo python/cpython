@@ -1,6 +1,6 @@
 "Test posix functions"
 
-from test_support import TestSkipped, TestFailed, TESTFN, run_suite
+from test.test_support import TestSkipped, TestFailed, TESTFN, run_suite
 
 try:
     import posix

@@ -572,6 +572,7 @@ _expectations = {
         test_openpty
         test_ossaudiodev
         test_poll
+        test_posix
         test_pty
         test_pwd
         test_resource
