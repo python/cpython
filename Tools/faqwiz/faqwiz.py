@@ -42,7 +42,7 @@ def replace(s, old, new):
 def escape(s):
     s = replace(s, '&', '&amp;')
     s = replace(s, '<', '&lt;')
-    s = replace(s, '>', '&gt')
+    s = replace(s, '>', '&gt;')
     return s
 
 def escapeq(s):
