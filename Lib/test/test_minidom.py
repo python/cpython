@@ -618,22 +618,33 @@ names.sort()
 
 failed = []
 
+try:
+    Node.allnodes
+except AttributeError:
+    # We don't actually have the minidom from teh standard library,
+    # but are picking up the PyXML version from site-packages.
+    def check_allnodes():
+        pass
+else:
+    def check_allnodes():
+        confirm(len(Node.allnodes) == 0,
+                "assertion: len(Node.allnodes) == 0")
+        if len(Node.allnodes):
+            print "Garbage left over:"
+            if verbose:
+                print Node.allnodes.items()[0:10]
+            else:
+                # Don't print specific nodes if repeatable results
+                # are needed
+                print len(Node.allnodes)
+        Node.allnodes = {}
+
 for name in names:
     if name.startswith("test"):
         func = globals()[name]
         try:
             func()
-            confirm(len(Node.allnodes) == 0,
-                    "assertion: len(Node.allnodes) == 0")
-            if len(Node.allnodes):
-                print "Garbage left over:"
-                if verbose:
-                    print Node.allnodes.items()[0:10]
-                else:
-                    # Don't print specific nodes if repeatable results
-                    # are needed
-                    print len(Node.allnodes)
-            Node.allnodes = {}
+            check_allnodes()
         except:
             failed.append(name)
             print "Test Failed: ", name
