@@ -316,6 +316,7 @@ EXPORTS
 	Py_GetPath
 	Py_GetExecPrefix
 	Py_GetPrefix
+	Py_GetProgramFullPath
 	Py_GetProgramName
 	PySlice_New
 	PySlice_GetIndices
