@@ -44,6 +44,7 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <WASTE.h>
 #include <WEObjectHandlers.h>
+#include <WETabs.h>
 
 /* Exported by Qdmodule.c: */
 extern PyObject *QdRGB_New(RGBColor *);
@@ -1448,6 +1449,50 @@ static PyObject *wasteObj_WEFeatureFlag(_self, _args)
 	return _res;
 }
 
+static PyObject *wasteObj_WEInstallTabHooks(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = WEInstallTabHooks(_self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *wasteObj_WERemoveTabHooks(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = WERemoveTabHooks(_self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *wasteObj_WEIsTabHooks(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = WEIsTabHooks(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
 static PyMethodDef wasteObj_methods[] = {
 	{"WEGetText", (PyCFunction)wasteObj_WEGetText, 1,
 	 "() -> (Handle _rv)"},
@@ -1565,6 +1610,12 @@ static PyMethodDef wasteObj_methods[] = {
 	 "() -> None"},
 	{"WEFeatureFlag", (PyCFunction)wasteObj_WEFeatureFlag, 1,
 	 "(SInt16 feature, SInt16 action) -> (SInt16 _rv)"},
+	{"WEInstallTabHooks", (PyCFunction)wasteObj_WEInstallTabHooks, 1,
+	 "() -> None"},
+	{"WERemoveTabHooks", (PyCFunction)wasteObj_WERemoveTabHooks, 1,
+	 "() -> None"},
+	{"WEIsTabHooks", (PyCFunction)wasteObj_WEIsTabHooks, 1,
+	 "() -> (Boolean _rv)"},
 	{NULL, NULL, 0}
 };
 
