@@ -1303,7 +1303,7 @@ string_find_internal(PyStringObject *self, PyObject *args, int dir)
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(subobj))
-		return PyUnicode_Find((PyObject *)self, subobj, i, last, 1);
+		return PyUnicode_Find((PyObject *)self, subobj, i, last, dir);
 #endif
 	else if (PyObject_AsCharBuffer(subobj, &sub, &n))
 		return -2;
@@ -2145,7 +2145,7 @@ string_startswith(PyStringObject *self, PyObject *args)
 	const char* prefix;
 	int plen;
 	int start = 0;
-	int end = -1;
+	int end = INT_MAX;
 	PyObject *subobj;
 
 	if (!PyArg_ParseTuple(args, "O|O&O&:startswith", &subobj,
@@ -2204,7 +2204,7 @@ string_endswith(PyStringObject *self, PyObject *args)
 	const char* suffix;
 	int slen;
 	int start = 0;
-	int end = -1;
+	int end = INT_MAX;
 	int lower, upper;
 	PyObject *subobj;
 
