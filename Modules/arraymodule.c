@@ -617,6 +617,17 @@ array_slice(arrayobject *a, int ilow, int ihigh)
 }
 
 static PyObject *
+array_copy(arrayobject *a, PyObject *unused)
+{
+	return array_slice(a, 0, a->ob_size);
+}
+
+PyDoc_STRVAR(copy_doc,
+"copy(array)\n\
+\n\
+ Return a copy of the array.");
+
+static PyObject *
 array_concat(arrayobject *a, PyObject *bb)
 {
 	int size;
@@ -1409,8 +1420,12 @@ PyMethodDef array_methods[] = {
 	 buffer_info_doc},
 	{"byteswap",	(PyCFunction)array_byteswap,	METH_NOARGS,
 	 byteswap_doc},
+	{"__copy__",	(PyCFunction)array_copy,	METH_NOARGS,
+	 copy_doc},
 	{"count",	(PyCFunction)array_count,	METH_O,
 	 count_doc},
+	{"__deepcopy__",(PyCFunction)array_copy,	METH_NOARGS,
+	 copy_doc},
 	{"extend",      (PyCFunction)array_extend,	METH_O,
 	 extend_doc},
 	{"fromfile",	(PyCFunction)array_fromfile,	METH_VARARGS,
