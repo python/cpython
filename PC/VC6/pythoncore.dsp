@@ -93,6 +93,10 @@ LINK32=link.exe
 # Name "pythoncore - Win32 Debug"
 # Begin Source File
 
+SOURCE=..\..\Modules\cjkcodecs\_big5.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\_bisectmodule.c
 # End Source File
 # Begin Source File
@@ -101,11 +105,79 @@ SOURCE=..\..\Modules\_codecsmodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\cjkcodecs\_cp932.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_cp949.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_cp950.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\_csv.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\cjkcodecs\_euc_jisx0213.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_euc_jp.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_euc_kr.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_gb18030.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_gb2312.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_gbk.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\_hotshot.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_hz.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_iso2022_jp.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_iso2022_jp_1.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_iso2022_jp_2.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_iso2022_jp_3.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_iso2022_jp_ext.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_iso2022_kr.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_johab.c
 # End Source File
 # Begin Source File
 
@@ -114,6 +186,14 @@ SOURCE=..\..\Modules\_localemodule.c
 # Begin Source File
 
 SOURCE=..\..\Modules\_randommodule.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_shift_jis.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\_shift_jisx0213.c
 # End Source File
 # Begin Source File
 
@@ -367,6 +447,22 @@ SOURCE=..\..\Modules\main.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\cjkcodecs\mapdata_ja_JP.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\mapdata_ko_KR.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\mapdata_zh_CN.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\mapdata_zh_TW.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Python\marshal.c
 # End Source File
 # Begin Source File
@@ -404,6 +500,10 @@ SOURCE=..\..\Objects\moduleobject.c
 # Begin Source File
 
 SOURCE=..\msvcrtmodule.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\cjkcodecs\multibytecodec.c
 # End Source File
 # Begin Source File
 
