@@ -65,7 +65,7 @@ class Bdb:
         # XXX 'arg' is no longer used
         if self.botframe is None:
             # First call of dispatch since reset()
-            self.botframe = frame
+            self.botframe = frame.f_back # (CT) Note that this may also be None!
             return self.trace_dispatch
         if not (self.stop_here(frame) or self.break_anywhere(frame)):
             # No need to trace this function
@@ -91,8 +91,8 @@ class Bdb:
     # definition of stopping and breakpoints.
 
     def stop_here(self, frame):
-        if self.stopframe is None:
-            return True
+		# (CT) stopframe may now also be None, see dispatch_call.
+		# (CT) the former test for None is therefore removed from here.
         if frame is self.stopframe:
             return True
         while frame is not None and frame is not self.stopframe:
@@ -169,10 +169,7 @@ class Bdb:
 
     def set_trace(self):
         """Start debugging from here."""
-        try:
-            raise Exception
-        except:
-            frame = sys.exc_info()[2].tb_frame.f_back
+        frame = sys._getframe().f_back
         self.reset()
         while frame:
             frame.f_trace = self.trace_dispatch
@@ -189,10 +186,7 @@ class Bdb:
         if not self.breaks:
             # no breakpoints; run without debugger overhead
             sys.settrace(None)
-            try:
-                raise Exception
-            except:
-                frame = sys.exc_info()[2].tb_frame.f_back
+            frame = sys._getframe().f_back
             while frame and frame is not self.botframe:
                 del frame.f_trace
                 frame = frame.f_back
