@@ -132,13 +132,8 @@ class LogReader:
             else:
                 raise ValueError, "unknown event type"
 
-    if sys.version < "2.2":
-        # Don't add this for newer Python versions; we only want iteration
-        # support, not general sequence support.
-        __getitem__ = next
-    else:
-        def __iter__(self):
-            return self
+    def __iter__(self):
+        return self
 
     #
     #  helpers
