@@ -268,7 +268,7 @@ PyMac_GetFixed(PyObject *v, Fixed *f)
 	return 1;
 }
 
-/* Convert a Point to a Python object */
+/* Convert a Fixed to a Python object */
 PyObject *
 PyMac_BuildFixed(Fixed f)
 {
@@ -348,63 +348,63 @@ int routinename(PyObject *pyobj, object *cobj) { \
 }
 GLUE_CONVERT(FSSpec, PyMac_GetFSSpec, "macfs")
 
-GLUE_NEW(AppleEvent *, AEDesc_New, "_AE") /* XXXX Why by address? */
-GLUE_CONVERT(AppleEvent, AEDesc_Convert, "_AE")
+GLUE_NEW(AppleEvent *, AEDesc_New, "Carbon.AE") /* XXXX Why by address? */
+GLUE_CONVERT(AppleEvent, AEDesc_Convert, "Carbon.AE")
 
-GLUE_NEW(Component, CmpObj_New, "_Cm")
-GLUE_CONVERT(Component, CmpObj_Convert, "_Cm")
-GLUE_NEW(ComponentInstance, CmpInstObj_New, "_Cm")
-GLUE_CONVERT(ComponentInstance, CmpInstObj_Convert, "_Cm")
+GLUE_NEW(Component, CmpObj_New, "Carbon.Cm")
+GLUE_CONVERT(Component, CmpObj_Convert, "Carbon.Cm")
+GLUE_NEW(ComponentInstance, CmpInstObj_New, "Carbon.Cm")
+GLUE_CONVERT(ComponentInstance, CmpInstObj_Convert, "Carbon.Cm")
 
-GLUE_NEW(ControlHandle, CtlObj_New, "_Ctl")
-GLUE_CONVERT(ControlHandle, CtlObj_Convert, "_Ctl")
+GLUE_NEW(ControlHandle, CtlObj_New, "Carbon.Ctl")
+GLUE_CONVERT(ControlHandle, CtlObj_Convert, "Carbon.Ctl")
 
-GLUE_NEW(DialogPtr, DlgObj_New, "_Dlg")
-GLUE_CONVERT(DialogPtr, DlgObj_Convert, "_Dlg")
-GLUE_NEW(DialogPtr, DlgObj_WhichDialog, "_Dlg")
+GLUE_NEW(DialogPtr, DlgObj_New, "Carbon.Dlg")
+GLUE_CONVERT(DialogPtr, DlgObj_Convert, "Carbon.Dlg")
+GLUE_NEW(DialogPtr, DlgObj_WhichDialog, "Carbon.Dlg")
 
-GLUE_NEW(DragReference, DragObj_New, "_Drag")
-GLUE_CONVERT(DragReference, DragObj_Convert, "_Drag")
+GLUE_NEW(DragReference, DragObj_New, "Carbon.Drag")
+GLUE_CONVERT(DragReference, DragObj_Convert, "Carbon.Drag")
 
-GLUE_NEW(ListHandle, ListObj_New, "_List")
-GLUE_CONVERT(ListHandle, ListObj_Convert, "_List")
+GLUE_NEW(ListHandle, ListObj_New, "Carbon.List")
+GLUE_CONVERT(ListHandle, ListObj_Convert, "Carbon.List")
 
-GLUE_NEW(MenuHandle, MenuObj_New, "_Menu")
-GLUE_CONVERT(MenuHandle, MenuObj_Convert, "_Menu")
+GLUE_NEW(MenuHandle, MenuObj_New, "Carbon.Menu")
+GLUE_CONVERT(MenuHandle, MenuObj_Convert, "Carbon.Menu")
 
-GLUE_NEW(GrafPtr, GrafObj_New, "_Qd")
-GLUE_CONVERT(GrafPtr, GrafObj_Convert, "_Qd")
-GLUE_NEW(BitMapPtr, BMObj_New, "_Qd")
-GLUE_CONVERT(BitMapPtr, BMObj_Convert, "_Qd")
-GLUE_NEW(RGBColor *, QdRGB_New, "_Qd") /* XXXX Why? */
-GLUE_CONVERT(RGBColor, QdRGB_Convert, "_Qd")
+GLUE_NEW(GrafPtr, GrafObj_New, "Carbon.Qd")
+GLUE_CONVERT(GrafPtr, GrafObj_Convert, "Carbon.Qd")
+GLUE_NEW(BitMapPtr, BMObj_New, "Carbon.Qd")
+GLUE_CONVERT(BitMapPtr, BMObj_Convert, "Carbon.Qd")
+GLUE_NEW(RGBColor *, QdRGB_New, "Carbon.Qd") /* XXXX Why? */
+GLUE_CONVERT(RGBColor, QdRGB_Convert, "Carbon.Qd")
 
-GLUE_NEW(GWorldPtr, GWorldObj_New, "_Qdoffs")
-GLUE_CONVERT(GWorldPtr, GWorldObj_Convert, "_Qdoffs")
+GLUE_NEW(GWorldPtr, GWorldObj_New, "Carbon.Qdoffs")
+GLUE_CONVERT(GWorldPtr, GWorldObj_Convert, "Carbon.Qdoffs")
 
-GLUE_NEW(Track, TrackObj_New, "_Qt")
-GLUE_CONVERT(Track, TrackObj_Convert, "_Qt")
-GLUE_NEW(Movie, MovieObj_New, "_Qt")
-GLUE_CONVERT(Movie, MovieObj_Convert, "_Qt")
-GLUE_NEW(MovieController, MovieCtlObj_New, "_Qt")
-GLUE_CONVERT(MovieController, MovieCtlObj_Convert, "_Qt")
-GLUE_NEW(TimeBase, TimeBaseObj_New, "_Qt")
-GLUE_CONVERT(TimeBase, TimeBaseObj_Convert, "_Qt")
-GLUE_NEW(UserData, UserDataObj_New, "_Qt")
-GLUE_CONVERT(UserData, UserDataObj_Convert, "_Qt")
-GLUE_NEW(Media, MediaObj_New, "_Qt")
-GLUE_CONVERT(Media, MediaObj_Convert, "_Qt")
+GLUE_NEW(Track, TrackObj_New, "Carbon.Qt")
+GLUE_CONVERT(Track, TrackObj_Convert, "Carbon.Qt")
+GLUE_NEW(Movie, MovieObj_New, "Carbon.Qt")
+GLUE_CONVERT(Movie, MovieObj_Convert, "Carbon.Qt")
+GLUE_NEW(MovieController, MovieCtlObj_New, "Carbon.Qt")
+GLUE_CONVERT(MovieController, MovieCtlObj_Convert, "Carbon.Qt")
+GLUE_NEW(TimeBase, TimeBaseObj_New, "Carbon.Qt")
+GLUE_CONVERT(TimeBase, TimeBaseObj_Convert, "Carbon.Qt")
+GLUE_NEW(UserData, UserDataObj_New, "Carbon.Qt")
+GLUE_CONVERT(UserData, UserDataObj_Convert, "Carbon.Qt")
+GLUE_NEW(Media, MediaObj_New, "Carbon.Qt")
+GLUE_CONVERT(Media, MediaObj_Convert, "Carbon.Qt")
 
-GLUE_NEW(Handle, ResObj_New, "_Res")
-GLUE_CONVERT(Handle, ResObj_Convert, "_Res")
-GLUE_NEW(Handle, OptResObj_New, "_Res")
-GLUE_CONVERT(Handle, OptResObj_Convert, "_Res")
+GLUE_NEW(Handle, ResObj_New, "Carbon.Res")
+GLUE_CONVERT(Handle, ResObj_Convert, "Carbon.Res")
+GLUE_NEW(Handle, OptResObj_New, "Carbon.Res")
+GLUE_CONVERT(Handle, OptResObj_Convert, "Carbon.Res")
 
-GLUE_NEW(TEHandle, TEObj_New, "_TE")
-GLUE_CONVERT(TEHandle, TEObj_Convert, "_TE")
+GLUE_NEW(TEHandle, TEObj_New, "Carbon.TE")
+GLUE_CONVERT(TEHandle, TEObj_Convert, "Carbon.TE")
 
-GLUE_NEW(WindowPtr, WinObj_New, "_Win")
-GLUE_CONVERT(WindowPtr, WinObj_Convert, "_Win")
-GLUE_NEW(WindowPtr, WinObj_WhichWindow, "_Win")
+GLUE_NEW(WindowPtr, WinObj_New, "Carbon.Win")
+GLUE_CONVERT(WindowPtr, WinObj_Convert, "Carbon.Win")
+GLUE_NEW(WindowPtr, WinObj_WhichWindow, "Carbon.Win")
 
 #endif /* USE_TOOLBOX_OBJECT_GLUE */
