@@ -82,9 +82,10 @@ PyTuple_New(size)
 			sizeof(PyTupleObject) + size * sizeof(PyObject *));
 		if (op == NULL)
 			return PyErr_NoMemory();
+
+		op->ob_type = &PyTuple_Type;
+		op->ob_size = size;
 	}
-	op->ob_type = &PyTuple_Type;
-	op->ob_size = size;
 	for (i = 0; i < size; i++)
 		op->ob_item[i] = NULL;
 	_Py_NewReference(op);
@@ -158,15 +159,20 @@ tupledealloc(op)
 	register PyTupleObject *op;
 {
 	register int i;
-	for (i = 0; i < op->ob_size; i++)
-		Py_XDECREF(op->ob_item[i]);
+
+	if (op->ob_size > 0) {
+		i = op->ob_size;
+		while (--i >= 0)
+			Py_XDECREF(op->ob_item[i]);
 #if MAXSAVESIZE > 0
-	if (0 < op->ob_size && op->ob_size < MAXSAVESIZE) {
-		op->ob_item[0] = (PyObject *) free_tuples[op->ob_size];
-		free_tuples[op->ob_size] = op;
-	} else
+		if (op->ob_size < MAXSAVESIZE) {
+			op->ob_item[0] = (PyObject *) free_tuples[op->ob_size];
+			free_tuples[op->ob_size] = op;
+			return;
+		}
 #endif
-		free((ANY *)op);
+	}
+	free((ANY *)op);
 }
 
 static int
