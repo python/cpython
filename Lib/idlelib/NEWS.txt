@@ -3,6 +3,9 @@ What's New in IDLE 1.1.1?
 
 *Release date: XX-JAN-2005*
 
+- If an extension can't be loaded, print warning and skip it instead of
+  erroring out.
+
 - Improve error handling when .idlerc can't be created (warn and exit)
 
 - The GUI was hanging if the shell window was closed while a raw_input() 

@@ -744,7 +744,11 @@ class EditorWindow:
         return idleConf.GetExtensions(editor_only=True)
 
     def load_extension(self, name):
-        mod = __import__(name, globals(), locals(), [])
+        try:
+            mod = __import__(name, globals(), locals(), [])
+        except ImportError:
+            print "\nFailed to import extension: ", name
+            return None
         cls = getattr(mod, name)
         keydefs = idleConf.GetExtensionBindings(name)
         if hasattr(cls, "menudefs"):
