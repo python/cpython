@@ -17,6 +17,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- the cPickle module no longer accepts the deprecated None option in the
+  args tuple returned by __reduce__().
+
 - itertools.islice() now accepts None for the start and step arguments.
   This allows islice() to work more readily with slices:
       islice(s.start, s.stop, s.step)
@@ -24,6 +27,9 @@ Extension Modules
 
 Library
 -------
+
+- the pickle module no longer accepts the deprecated None option in the
+  args tuple returned by __reduce__().
 
 - optparse now optionally imports gettext.  This allows its use in setup.py.
 
