@@ -11,8 +11,8 @@ Inputs outside this range may cause exceptions or invalid outputs.
 Supported color systems:
 RGB: Red, Green, Blue components
 YIQ: used by composite video signals
-HLS: Hue, Luminance, S???
-HSV: Hue, Saturation, Value(?)
+HLS: Hue, Luminance, Saturation
+HSV: Hue, Saturation, Value
 """
 # References:
 # XXX Where's the literature?
