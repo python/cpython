@@ -33,13 +33,30 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <signal.h>
 #include <setjmp.h>
 
-#ifdef __STDC__
-#include <time.h>
-#else /* !__STDC__ */
-typedef unsigned long time_t;
-extern time_t time();
-#endif /* !__STDC__ */
+/* What happens here is not trivial.
+   The BSD_TIME code needs <sys/time.h> (for struct timeval).
+   The rest of the code needs only time_t, except some MS-DOS
+   code which needs clock_t as well.
+   Standard C says that time_t is defined in <time.h>, and
+   does not have <sys/types.h>; THINK C agrees (MS-DOS too?).
+   What's worse, in pure 4.3 BSD, older SunOS versions, and
+   probably everything derived from BSD, you can't #include
+   both <time.h> and <sys/time.h> in the same file, since
+   <sys/time.h> includes <time.h> without any protection,
+   and <time.h> contains a typedef, which can't be parsed twice!
+   So on traditional UNIX systems we include <sys/types.h>
+   and <sys/time.h> and hope this implies <time.h> and time_t,
+   while on other systems, including conforming Standard C
+   systems (where 'unix' can't be defined), we rely on <time.h>.
+   Still one problem: BSD_TIME won't work with strict Standard C...
+*/
 
+#ifdef unix
+#include <sys/types.h>
+#include <sys/time.h> /* Implies <time.h> everywhere, as far as I know */
+#else /* !unix */
+#include <time.h>
+#endif /* !unix */
 
 /* Time methods */
 
@@ -51,7 +68,7 @@ time_time(self, args)
 	time_t secs;
 	if (!getnoarg(args))
 		return NULL;
-	secs = time((time_t *)NULL);
+	time(&secs);
 #ifdef THINK_C
 #ifndef THINK_C_3_0
 /* Difference in origin between Mac and Unix clocks: */
@@ -108,6 +125,10 @@ extern long sys_milli();
 #ifdef BSD_TIME
 #define DO_MILLI
 #endif /* BSD_TIME */
+
+#ifdef TURBO_C
+#define DO_MILLI
+#endif
 
 #ifdef DO_MILLI
 
@@ -172,6 +193,7 @@ inittime()
 
 #define MacTicks	(* (long *)0x16A)
 
+#ifdef THINK_C_3_0
 sleep(msecs)
 	int msecs;
 {
@@ -183,6 +205,7 @@ sleep(msecs)
 			sleep_catcher(SIGINT);
 	}
 }
+#endif
 
 millisleep(msecs)
 	long msecs;
@@ -207,9 +230,6 @@ millitimer()
 
 #ifdef BSD_TIME
 
-#include <sys/types.h>
-#include <sys/time.h>
-
 long
 millitimer()
 {
@@ -232,3 +252,27 @@ millisleep(msecs)
 
 #endif /* BSD_TIME */
 
+
+#ifdef TURBO_C /* Maybe also for MS-DOS? */
+
+#ifndef CLOCKS_PER_SEC
+#define CLOCKS_PER_SEC 55	/* 54.945 msec per tick (18.2 HZ clock) */
+#endif
+
+static
+millisleep(msecs)
+	long msecs;
+{
+	delay(msecs);
+}
+
+static long
+millitimer()
+{
+	clock_t ticks;
+
+	ticks = clock();	/* ticks since program start */
+	return ticks * CLOCKS_PER_SEC;
+}
+
+#endif /* TURBO_C */
