@@ -1932,7 +1932,7 @@ implementation detail and may change in future releases of Python.
   failure; the appropriate exception will be set.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyFile_WriteString}{char *s, PyFileObject *p}
+\begin{cfuncdesc}{int}{PyFile_WriteString}{const char *s, PyFileObject *p}
   Writes string \var{s} to file object \var{p}.  Returns \code{0} on
   success or \code{-1} on failure; the appropriate exception will be
   set.

@@ -314,7 +314,7 @@ PyFile_WriteObject:PyFileObject*:p:0:
 PyFile_WriteObject:int:flags::
 
 PyFile_WriteString:int:::
-PyFile_WriteString:char*:s::
+PyFile_WriteString:const char*:s::
 PyFile_WriteString:PyFileObject*:p:0:
 PyFile_WriteString:int:flags::
 
