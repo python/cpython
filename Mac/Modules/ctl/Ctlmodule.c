@@ -92,21 +92,8 @@ CtlObj_Convert(v, p_itself)
 static void CtlObj_dealloc(self)
 	ControlObject *self;
 {
-	SetCRefCon(self->ob_itself, (long)0); /* Make it forget about us */
+	if (self->ob_itself) SetCRefCon(self->ob_itself, (long)0); /* Make it forget about us */
 	PyMem_DEL(self);
-}
-
-static PyObject *CtlObj_DisposeControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	DisposeControl(_self->ob_itself);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
 }
 
 static PyObject *CtlObj_ShowControl(_self, _args)
@@ -452,9 +439,26 @@ static PyObject *CtlObj_as_Resource(_self, _args)
 
 }
 
+static PyObject *CtlObj_DisposeControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+		if (!PyArg_ParseTuple(_args, ""))
+			return NULL;
+		if ( _self->ob_itself ) {
+			SetCRefCon(_self->ob_itself, (long)0); /* Make it forget about us */
+			DisposeControl(_self->ob_itself);
+			_self->ob_itself = NULL;
+		}
+		Py_INCREF(Py_None);
+		_res = Py_None;
+		return _res;
+
+}
+
 static PyMethodDef CtlObj_methods[] = {
-	{"DisposeControl", (PyCFunction)CtlObj_DisposeControl, 1,
-	 "() -> None"},
 	{"ShowControl", (PyCFunction)CtlObj_ShowControl, 1,
 	 "() -> None"},
 	{"HideControl", (PyCFunction)CtlObj_HideControl, 1,
@@ -499,6 +503,8 @@ static PyMethodDef CtlObj_methods[] = {
 	 "() -> (SInt32 _rv)"},
 	{"as_Resource", (PyCFunction)CtlObj_as_Resource, 1,
 	 "Return this Control as a Resource"},
+	{"DisposeControl", (PyCFunction)CtlObj_DisposeControl, 1,
+	 "() -> None"},
 	{NULL, NULL, 0}
 };
 
@@ -588,21 +594,6 @@ static PyObject *Ctl_GetNewControl(_self, _args)
 	return _res;
 }
 
-static PyObject *Ctl_KillControls(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	WindowPtr theWindow;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      WinObj_Convert, &theWindow))
-		return NULL;
-	KillControls(theWindow);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *Ctl_DrawControls(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -663,8 +654,6 @@ static PyMethodDef Ctl_methods[] = {
 	 "(WindowPtr theWindow, Rect boundsRect, Str255 title, Boolean visible, SInt16 value, SInt16 min, SInt16 max, SInt16 procID, SInt32 refCon) -> (ControlHandle _rv)"},
 	{"GetNewControl", (PyCFunction)Ctl_GetNewControl, 1,
 	 "(SInt16 controlID, WindowPtr owner) -> (ControlHandle _rv)"},
-	{"KillControls", (PyCFunction)Ctl_KillControls, 1,
-	 "(WindowPtr theWindow) -> None"},
 	{"DrawControls", (PyCFunction)Ctl_DrawControls, 1,
 	 "(WindowPtr theWindow) -> None"},
 	{"UpdateControls", (PyCFunction)Ctl_UpdateControls, 1,

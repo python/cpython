@@ -69,7 +69,7 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		GlobalObjectDefinition.outputInitStructMembers(self)
 		Output("SetCRefCon(itself, (long)it);")
 	def outputCleanupStructMembers(self):
-		Output("SetCRefCon(self->ob_itself, (long)0); /* Make it forget about us */")
+		Output("if (self->ob_itself) SetCRefCon(self->ob_itself, (long)0); /* Make it forget about us */")
 		
 # Create the generator groups and link them
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)

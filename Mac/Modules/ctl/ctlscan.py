@@ -30,7 +30,7 @@ class MyScanner(Scanner):
 
 	def makeblacklistnames(self):
 		return [
-			'DisposeControl' # Implied by deletion of control object
+			'DisposeControl', # Generated manually
 			'KillControls', # Implied by close of dialog
 			'SetCtlAction',
 			]
