@@ -1484,6 +1484,9 @@ err_input(perrdetail *err)
 			msg = "unknown decode error";
 		break;
 	}
+	case E_LINECONT:
+		msg = "unexpected character after line continuation character";
+		break;
 	default:
 		fprintf(stderr, "error=%d\n", err->error);
 		msg = "unknown parsing error";

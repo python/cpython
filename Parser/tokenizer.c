@@ -1413,7 +1413,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 	if (c == '\\') {
 		c = tok_nextc(tok);
 		if (c != '\n') {
-			tok->done = E_TOKEN;
+			tok->done = E_LINECONT;
 			tok->cur = tok->inp;
 			return ERRORTOKEN;
 		}
