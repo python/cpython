@@ -977,7 +977,7 @@ def add_files(db):
     lib.add_file('python%s%s.lib' % (major, minor))
     # Add the mingw-format library
     if have_mingw:
-	lib.add_file('libpython%s%s.a' % (major, minor))
+        lib.add_file('libpython%s%s.a' % (major, minor))
     if have_tcl:
         # Add Tcl/Tk
         tcldirs = [(root, '../tcltk/lib', 'tcl')]

@@ -907,10 +907,10 @@ class PimpPackage_installer(PimpPackage):
 
     def installPackageOnly(self, output=None):
         """Install a single source package.
-        
+
         If output is given it should be a file-like object and it
         will receive a log of what happened."""
-                    
+
         if self._dict.has_key('Post-install-command'):
             return "%s: Installer package cannot have Post-install-command" % self.fullname()
 
@@ -918,7 +918,7 @@ class PimpPackage_installer(PimpPackage):
             if _cmd(output, '/tmp', self._dict['Pre-install-command']):
                 return "pre-install %s: running \"%s\" failed" % \
                     (self.fullname(), self._dict['Pre-install-command'])
-                    
+
         self.beforeInstall()
 
         installcmd = self._dict.get('Install-command')
@@ -926,7 +926,7 @@ class PimpPackage_installer(PimpPackage):
             if '%' in installcmd:
                 installcmd = installcmd % self.archiveFilename
         else:
-                installcmd = 'open \"%s\"' % self.archiveFilename
+            installcmd = 'open \"%s\"' % self.archiveFilename
         if _cmd(output, "/tmp", installcmd):
             return '%s: install command failed (use verbose for details)' % self.fullname()
         return '%s: downloaded and opened. Install manually and restart Package Manager' % self.archiveFilename

@@ -43,12 +43,12 @@ def findline(lines, start):
         if lines[i][:len(start)] == start:
             return i
     return -1
-    
+
 def fix(makefile, do_apply):
     """Fix the Makefile, if required."""
     fixed = False
     lines = open(makefile).readlines()
-    
+
     for old, new in CHANGES:
         i = findline(lines, new)
         if i >= 0:
@@ -61,7 +61,7 @@ def fix(makefile, do_apply):
             return 2
         lines[i] = new
         fixed = True
-       
+
     if fixed:
         if do_apply:
             print 'fixapplepython23: Fix to Apple-installed Python 2.3 applied'
@@ -74,7 +74,7 @@ def fix(makefile, do_apply):
     else:
         print 'fixapplepython23: No fix needed, appears to have been applied before'
         return 0
-        
+
 def makescript(filename, compiler):
     """Create a wrapper script for a compiler"""
     dirname = os.path.split(filename)[0]
@@ -85,7 +85,7 @@ def makescript(filename, compiler):
     fp.close()
     os.chmod(filename, 0755)
     print 'fixapplepython23: Created', filename
-    
+
 def main():
     # Check for -n option
     if len(sys.argv) > 1 and sys.argv[1] == '-n':
@@ -113,7 +113,6 @@ def main():
     #  Finally fix the makefile
     rv = fix(MAKEFILE, do_apply)
     sys.exit(rv)
-    
+
 if __name__ == '__main__':
     main()
-    
