@@ -241,7 +241,7 @@ Py_Main(argc, argv)
 	    (filename != NULL || command != NULL))
 		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
 
-	Py_Cleanup();
+	Py_Finalize();
 	return sts;
 }
 
