@@ -633,7 +633,7 @@ class IMAP4:
                 _log('> %s' % data)
 
         try:
-            self.sock.send('%s%s' % (data, CRLF))
+            self.sock.sendall('%s%s' % (data, CRLF))
         except socket.error, val:
             raise self.abort('socket error: %s' % val)
 
@@ -657,8 +657,8 @@ class IMAP4:
                     _mesg('write literal size %s' % len(literal))
 
             try:
-                self.sock.send(literal)
-                self.sock.send(CRLF)
+                self.sock.sendall(literal)
+                self.sock.sendall(CRLF)
             except socket.error, val:
                 raise self.abort('socket error: %s' % val)
 

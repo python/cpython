@@ -190,7 +190,7 @@ class Telnet:
         if IAC in buffer:
             buffer = buffer.replace(IAC, IAC+IAC)
         self.msg("send %s", `buffer`)
-        self.sock.send(buffer)
+        self.sock.sendall(buffer)
 
     def read_until(self, match, timeout=None):
         """Read until a given string is encountered or until timeout.
@@ -325,12 +325,12 @@ class Telnet:
                 elif c in (DO, DONT):
                     opt = self.rawq_getchar()
                     self.msg('IAC %s %d', c == DO and 'DO' or 'DONT', ord(c))
-                    self.sock.send(IAC + WONT + opt)
+                    self.sock.sendall(IAC + WONT + opt)
                 elif c in (WILL, WONT):
                     opt = self.rawq_getchar()
                     self.msg('IAC %s %d',
                              c == WILL and 'WILL' or 'WONT', ord(c))
-                    self.sock.send(IAC + DONT + opt)
+                    self.sock.sendall(IAC + DONT + opt)
                 else:
                     self.msg('IAC %s not recognized' % `c`)
         except EOFError: # raised by self.rawq_getchar()

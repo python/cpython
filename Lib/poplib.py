@@ -84,7 +84,7 @@ class POP3:
 
     def _putline(self, line):
         #if self._debugging > 1: print '*put*', `line`
-        self.sock.send('%s%s' % (line, CRLF))
+        self.sock.sendall('%s%s' % (line, CRLF))
 
 
     # Internal: send one command to the server (through _putline())

@@ -178,7 +178,7 @@ class NNTP:
         """Internal: send one line to the server, appending CRLF."""
         line = line + CRLF
         if self.debugging > 1: print '*put*', `line`
-        self.sock.send(line)
+        self.sock.sendall(line)
 
     def putcmd(self, line):
         """Internal: send one command to the server (through putline())."""
