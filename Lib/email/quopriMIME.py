@@ -82,7 +82,7 @@ def body_quopri_len(str):
 def _max_append(L, s, maxlen, extra=''):
     if not L:
         L.append(s.lstrip())
-    elif len(L[-1]) + len(s) < maxlen:
+    elif len(L[-1]) + len(s) <= maxlen:
         L[-1] += extra + s
     else:
         L.append(s.lstrip())
@@ -116,7 +116,8 @@ def header_encode(header, charset="iso-8859-1", keep_eols=False,
       =?charset?q?Silly_=C8nglish_Kn=EEghts?="
 
     with each line wrapped safely at, at most, maxlinelen characters (defaults
-    to 76 characters).
+    to 76 characters).  If maxlinelen is None, the entire string is encoded in
+    one chunk with no splitting.
 
     End-of-line characters (\\r, \\n, \\r\\n) will be automatically converted
     to the canonical email line separator \\r\\n unless the keep_eols
@@ -134,9 +135,13 @@ def header_encode(header, charset="iso-8859-1", keep_eols=False,
         header = fix_eols(header)
 
     # Quopri encode each line, in encoded chunks no greater than maxlinelen in
-    # lenght, after the RFC chrome is added in.
+    # length, after the RFC chrome is added in.
     quoted = []
-    max_encoded = maxlinelen - len(charset) - MISC_LEN
+    if maxlinelen is None:
+        # An obnoxiously large number that's good enough
+        max_encoded = 100000
+    else:
+        max_encoded = maxlinelen - len(charset) - MISC_LEN - 1
 
     for c in header:
         # Space may be represented as _ instead of =20 for readability
