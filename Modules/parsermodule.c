@@ -1174,8 +1174,8 @@ validate_varargslist(tree)
 		if (res && (remaining >= 4)) {
 		    res = validate_comma(CHILD(tree, pos));
 		    if (--remaining == 3)
-			res == (validate_star(CHILD(tree, pos + 1))
-				&& validate_star(CHILD(tree, pos + 2)));
+			res = (validate_star(CHILD(tree, pos + 1))
+			       && validate_star(CHILD(tree, pos + 2)));
 		    else
 			validate_ntype(CHILD(tree, pos + 1), DOUBLESTAR);
 		}
