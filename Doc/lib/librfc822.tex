@@ -6,11 +6,11 @@
 
 This module defines a class, \class{Message}, which represents an
 ``email message'' as defined by the Internet standard
-\rfc{2822}\footnote{This module originally conformed to \rfc{822},
+\rfc{2822}.\footnote{This module originally conformed to \rfc{822},
 hence the name.  Since then, \rfc{2822} has been released as an
 update to \rfc{822}.  This module should be considered
 \rfc{2822}-conformant, especially in cases where the
-syntax or semantics have changed since \rfc{822}.}.  Such messages
+syntax or semantics have changed since \rfc{822}.}  Such messages
 consist of a collection of message headers, and a message body.  This
 module also defines a helper class
 \class{AddressList} for parsing \rfc{2822} addresses.  Please refer to
@@ -72,8 +72,8 @@ are stripped off.
 \end{funcdesc}
 
 \begin{funcdesc}{parseaddr}{address}
-Parse address -- which should be the value of some address-containing
-field such as \code{To:} or \code{Cc:} -- into its constituent
+Parse \var{address}, which should be the value of some address-containing
+field such as \code{To:} or \code{Cc:}, into its constituent
 ``realname'' and ``email address'' parts.  Returns a tuple of that
 information, unless the parse fails, in which case a 2-tuple of
 \code{(None, None)} is returned.
@@ -257,7 +257,7 @@ also support the mapping writable interface \code{\var{m}[name] =
 value} and \code{del \var{m}[name]}.  \class{Message} objects do not
 support the \method{clear()}, \method{copy()}, \method{popitem()}, or
 \method{update()} methods of the mapping interface.  (Support for
-\method{.get()} and \method{.setdefault()} was only added in Python
+\method{get()} and \method{setdefault()} was only added in Python
 2.2.)
 
 Finally, \class{Message} instances have two public instance variables:
