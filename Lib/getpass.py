@@ -3,43 +3,27 @@
 getpass(prompt) - prompt for a password, with echo turned off
 getuser() - get the user name from the environment or password database
 
+On Windows, the msvcrt module will be used.
+On the Mac EasyDialogs.AskPassword is used, if available.
+
 Authors: Piers Lauder (original)
          Guido van Rossum (Windows support and cleanup)
 """
 
+import sys
 
-def getpass(prompt='Password: '):
+def unix_getpass(prompt='Password: '):
 	"""Prompt for a password, with echo turned off.
 
 	Restore terminal settings at end.
-
-	On Windows, this calls win_getpass(prompt) which uses the
-	msvcrt module to get the same effect.
-	
-	On the Mac EasyDialogs.AskPassword is used, if available.
-
 	"""
 
-	import sys
 	try:
 		fd = sys.stdin.fileno()
 	except:
 		return default_getpass(prompt)
-	try:
-		import termios, TERMIOS
-	except ImportError:
-		try:
-			import msvcrt
-		except ImportError:
-			try:
-				from EasyDialogs import AskPassword
-			except ImportError:
-				return default_getpass(prompt)
-			else:
-				return AskPassword(prompt)
-		else:
-			return win_getpass(prompt)
 
+	getpass = default_getpass
 	old = termios.tcgetattr(fd)	# a copy to save
 	new = old[:]
 
@@ -76,6 +60,7 @@ def win_getpass(prompt='Password: '):
 
 
 def default_getpass(prompt='Password: '):
+	print "Warning: Problem with getpass. Passwords may be echoed."
 	return _raw_input(prompt)
 
 
@@ -112,3 +97,22 @@ def getuser():
 	# If this fails, the exception will "explain" why
 	import pwd
 	return pwd.getpwuid(os.getuid())[0]
+
+# Bind the name getpass to the appropriate function
+try:
+	import termios, TERMIOS
+except ImportError:
+	try:
+		import msvcrt
+	except ImportError:
+		try:
+			from EasyDialogs import AskPassword
+		except ImportError:
+			getpass = default_getpass
+		else:
+			getpass = AskPassword
+	else:
+		getpass = win_getpass
+else:
+	getpass = unix_getpass
+
