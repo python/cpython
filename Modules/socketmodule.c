@@ -95,6 +95,11 @@ Socket methods:
 #define O_NDELAY O_NONBLOCK	/* For QNX only? */
 #endif
 
+#ifdef USE_GUSI
+/* fdopen() isn't declared in stdio.h (sigh) */
+#include <GUSI.h>
+#endif
+
 
 /* Here we have some hacks to choose between K&R or ANSI style function
    definitions.  For NT to build this as an extension module (ie, DLL)
