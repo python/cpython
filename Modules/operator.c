@@ -102,6 +102,15 @@ spamrc(op_gt           , Py_GT)
 spamrc(op_ge           , Py_GE)
 
 static PyObject*
+op_pow(PyObject *s, PyObject *a)
+{
+	PyObject *a1, *a2;
+	if (PyArg_ParseTuple(a,"OO:pow",&a1,&a2))
+		return PyNumber_Power(a1, a2, Py_None);
+	return NULL;
+}
+
+static PyObject*
 op_getslice(PyObject *s, PyObject *a)
 {
         PyObject *a1;
@@ -199,6 +208,7 @@ spam2(setitem,__setitem__,
  "setitem(a, b, c) -- Same as a[b] = c.")
 spam2(delitem,__delitem__,
  "delitem(a, b) -- Same as del a[b].")
+spam2(pow,__pow__, "pow(a, b) -- Same as a**b.")
 spam2(getslice,__getslice__,
  "getslice(a, b, c) -- Same as a[b:c].")
 spam2(setslice,__setslice__,

@@ -131,6 +131,11 @@ Return the bitwise or of \var{a} and \var{b}.
 Return \var{o} positive.
 \end{funcdesc}
 
+\begin{funcdesc}{pow}{a, b}
+\funcline{__pow__}{a, b}
+Return \var{a} \code{**} \var{b}, for \var{a} and \var{b} numbers.
+\end{funcdesc}
+
 \begin{funcdesc}{rshift}{a, b}
 \funcline{__rshift__}{a, b}
 Return \var{a} shifted right by \var{b}.
@@ -310,6 +315,8 @@ symbols in the Python syntax and the functions in the
           {\code{invert(\var{a})}}
   \lineiii{Bitwise Or}{\code{\var{a} | \var{b}}}
           {\code{or_(\var{a}, \var{b})}}
+  \lineiii{Exponentiation}{\code{\var{a} ** \var{b}}}
+          {\code{pow(\var{a}, \var{b})}}
   \lineiii{Indexed Assignment}{\code{\var{o}[\var{k}] = \var{v}}}
           {\code{setitem(\var{o}, \var{k}, \var{v})}}
   \lineiii{Indexed Deletion}{\code{del \var{o}[\var{k}]}}
