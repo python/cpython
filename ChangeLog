@@ -1,0 +1,40 @@
+Mon Jan  3 00:02:24 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/regexpr.c: redid Tracy Tims' changes to minimize diffs
+	(only two added lines now)
+
+	* Modules/regexmodule.c: fix core dump when asking a plain regex
+	object for a named group
+
+Sun Jan  2 23:10:44 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* README, Python/version.c: changed version string to 1.0.0 BETA 2
+
+	* Modules/{regexpr.{c,h},regexmodule.c}: merged in Tracy Tims'
+	mods for named subexpressions
+
+	* Include/regexpr.h: moved to Modules/regexpr.h
+
+	* Modules/timingmodule.c: change tests for no arguments
+
+	* configure.in: remove strtoul from AC_REPLACE_FUNCS; remove
+	initial blank line (which got copied into configure so it wouldn't
+	start with #!/bin/sh as required)
+
+	* Python/compile.c: call mystrto(u)l instrad of strto(u)l
+
+	* Python/Makefile.in: add mystrtoul.c to OBJS
+
+	* Python/mystrtoul.c: renamed from strtol.c; renamed functions to
+	mystrto(u)l; this is now a standard source file (since some
+	systems have a strto(u)l that doesn't report errors properly)
+
+	* Modules/Setup: added entry for timing module
+
+	* Modules/{timing.h,timingmodule.c}: new files implementing GNN's
+	timing module
+
+========================================================================
+Release of 1.0.0 BETA (Jan 1 1994)
+========================================================================
+
