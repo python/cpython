@@ -275,7 +275,7 @@ class FancyGetopt:
             if not self.takes_arg[opt]:     # boolean option?
                 if val != '':               # shouldn't have a value!
                     raise DistutilsInternalError, \
-                          "this can't happen: bad option value '%s'" % value
+                          "this can't happen: bad option value '%s'" % val
 
                 alias = self.negative_alias.get(opt)
                 if alias:
