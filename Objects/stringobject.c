@@ -4334,13 +4334,13 @@ PyString_InternInPlace(PyObject **p)
 		return;
 	}
 
-	if (PyDict_SetItem(interned, s, s) < 0) {
+	if (PyDict_SetItem(interned, (PyObject *)s, (PyObject *)s) < 0) {
 		PyErr_Clear();
 		return;
 	}
 	/* The two references in interned are not counted by refcnt.
 	   The string deallocator will take care of this */
-	(*p)->ob_refcnt -= 2;
+	s->ob_refcnt -= 2;
 	PyString_CHECK_INTERNED(s) = SSTATE_INTERNED_MORTAL;
 }
 
