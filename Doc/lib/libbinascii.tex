@@ -85,19 +85,21 @@ crc.  This is consistent with the ZIP file checksum.  Use as follows:
 \end{funcdesc}
  
 \begin{funcdesc}{b2a_hex}{data}
+\funcline{hexlify}{data}
 Return the hexadecimal representation of the binary \var{data}.  Every
 byte of \var{data} is converted into the corresponding 2-digit hex
-representation.  The resulting string is therefore, twice as long as
-the length of \var{data}.  This function is also available as
-\function{hexlify()}.
+representation.  The resulting string is therefore twice as long as
+the length of \var{data}.
 \end{funcdesc}
 
 \begin{funcdesc}{a2b_hex}{hexstr}
+\funcline{unhexlify}{hexstr}
 Return the binary data represented by the hexadecimal string
 \var{hexstr}.  This function is the inverse of \function{b2a_hex()}.
 \var{hexstr} must contain an even number of hexadecimal digits (which
 can be upper or lower case), otherwise a \exception{TypeError} is
-raised.  This function is also available as \function{unhexlify()}.
+raised.
+\end{funcdesc}
 
 \begin{excdesc}{Error}
 Exception raised on errors. These are usually programming errors.
@@ -111,9 +113,9 @@ again.
 
 
 \begin{seealso}
-  \seemodule{base64}{support for base64 encoding used in MIME email messages}
+  \seemodule{base64}{Support for base64 encoding used in MIME email messages.}
 
-  \seemodule{binhex}{support for the binhex format used on the Macintosh}
+  \seemodule{binhex}{Support for the binhex format used on the Macintosh.}
 
-  \seemodule{uu}{support for UU encoding used on \UNIX{}}
+  \seemodule{uu}{Support for UU encoding used on \UNIX.}
 \end{seealso}
