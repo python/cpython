@@ -239,26 +239,16 @@ lib.texi: python-lib.texi
 # a (trivial) index.html.  Change the definition of $ICONSERVER in
 # .latex2html-init to use a different location for the icons directory.
 
-# The sed hack rips out a superfluous comma which I haven't found the
-# source of.  The prominent location makes it worth the extra step;
-# this affects the title pages!
-
 l2h: l2hapi l2hext l2hlib l2htut
 
 l2htut: tut.dvi manual.perl python.perl
 	$(L2H) $(L2HARGS) tut.tex
 	(cd tut; ../node2label.pl *.html)
-	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
-		<tut/tut.html >tut/xxx
-	mv tut/xxx tut/tut.html
 	ln -s tut.html tut/index.html || true
 
 l2hext: ext.dvi manual.perl python.perl
 	$(L2H) $(L2HARGS) ext.tex
 	(cd ext; ../node2label.pl *.html)
-	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
-		<ext/ext.html >ext/xxx
-	mv ext/xxx ext/ext.html
 	ln -s ext.html ext/index.html || true
 
 l2hlib: lib.dvi manual.perl python.perl
@@ -267,17 +257,11 @@ l2hlib: lib.dvi manual.perl python.perl
 	if [ -d lib ] ; then rm -f lib/*.html ; fi
 	$(L2H) $(L2HARGS) lib.tex
 	(cd lib; ../node2label.pl *.html)
-	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
-		<lib/lib.html >lib/xxx
-	mv lib/xxx lib/lib.html
 	ln -s lib.html lib/index.html || true
 
 l2hapi: api.dvi manual.perl python.perl
 	$(L2H) $(L2HARGS) api.tex
 	(cd api; ../node2label.pl *.html)
-	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
-		<api/api.html >api/xxx
-	mv api/xxx api/api.html
 	ln -s api.html api/index.html || true
 
 info-$(VERSION).tar.gz: $(INFOFILES)
