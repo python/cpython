@@ -1,5 +1,6 @@
 from UserList import UserList
 from test_support import TestFailed
+import string
 
 def f(*a, **k):
     print a, k
@@ -172,3 +173,32 @@ except TypeError:
     pass
 else:
     raise TestFailed, 'expected TypeError; no exception raised'
+
+a, b, d, e, v, k = 'A', 'B', 'D', 'E', 'V', 'K'
+funcs = []
+maxargs = {}
+for args in ['', 'a', 'ab']:
+    for defargs in ['', 'd', 'de']:
+        for vararg in ['', 'v']:
+            for kwarg in ['', 'k']:
+                name = 'z' + args + defargs + vararg + kwarg
+                arglist = list(args) + map(
+                    lambda x: '%s="%s"' % (x, x), defargs)
+                if vararg: arglist.append('*' + vararg)
+                if kwarg: arglist.append('**' + kwarg)
+                decl = 'def %s(%s): print "ok %s", a, b, d, e, v, k' % (
+                    name, string.join(arglist, ', '), name)
+                exec(decl)
+                func = eval(name)
+                funcs.append(func)
+                maxargs[func] = len(args + defargs)
+
+for name in ['za', 'zade', 'zabk', 'zabdv', 'zabdevk']:
+    func = eval(name)
+    for args in [(), (1, 2), (1, 2, 3, 4, 5)]:
+        for kwargs in ['', 'a', 'd', 'ad', 'abde']:
+            kwdict = {}
+            for k in kwargs: kwdict[k] = k + k
+            print func.func_name, args, kwdict, '->',
+            try: apply(func, args, kwdict)
+            except TypeError, err: print err
