@@ -1,22 +1,23 @@
 \section{\module{MacOS} ---
-         Access to MacOS interpreter features}
+         Access to Mac OS interpreter features}
 
 \declaremodule{builtin}{MacOS}
   \platform{Mac}
-\modulesynopsis{Access to MacOS specific interpreter features.}
+\modulesynopsis{Access to Mac OS-specific interpreter features.}
 
 
 This module provides access to MacOS specific functionality in the
 Python interpreter, such as how the interpreter eventloop functions
 and the like. Use with care.
 
-Note the capitalisation of the module name, this is a historical
+Note the capitalization of the module name; this is a historical
 artifact.
+
 \begin{datadesc}{runtimemodel}
-Either \code{"ppc"}, \code{"carbon"} or \code{"macho"}. This signifies
-whether this Python uses the classic (InterfaceLib style) runtime
-model, the MacOS X compatible CarbonLib style or the MacOS X-only
-Mach-O style.
+Either \code{'ppc'}, \code{'carbon'} or \code{'macho'}.  This
+signifies whether this Python uses the classic (InterfaceLib style)
+runtime model, the Mac OS X compatible CarbonLib style or the Mac OS
+X-only Mach-O style.
 \end{datadesc}
 
 \begin{excdesc}{Error}
@@ -25,7 +26,7 @@ functions in this module or from other mac-specific modules like the
 toolbox interfaces. The arguments are the integer error code (the
 \cdata{OSErr} value) and a textual description of the error code.
 Symbolic names for all known error codes are defined in the standard
-module \module{macerrors}\refstmodindex{macerrors}.
+module \refmodule{macerrors}.\refstmodindex{macerrors}
 \end{excdesc}
 
 \begin{funcdesc}{SetEventHandler}{handler}
