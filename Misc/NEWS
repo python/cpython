@@ -2,7 +2,11 @@ What's New in Python 2.2.1 final?
 Release date: XX-Apr-2002
 =================================
 
-Core
+Core and builtins
+
+- Added new builtin function bool() and new builtin constants True and
+  False to ease backporting of code developed for Python 2.3.  In 2.2,
+  bool() returns 1 or 0, True == 1, and False == 0.
 
 - Fixed super() to work correctly with class methods.  [SF bug #535444]
 

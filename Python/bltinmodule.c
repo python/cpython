@@ -107,6 +107,26 @@ Note that classes are callable, as are instances with a __call__() method.";
 
 
 static PyObject *
+builtin_bool(PyObject *self, PyObject *x)
+{
+	long b = PyObject_IsTrue(x);
+	if (b < 0)
+		return NULL;
+	if (b)
+		x = Py_True;
+	else
+		x = Py_False;
+	Py_INCREF(x);
+	return x;
+}
+
+static char bool_doc[] =
+"bool(x) -> integer\n\
+\n\
+Normalize Boolean: return True (1) when x is true, False (0) otherwise.";
+
+
+static PyObject *
 builtin_buffer(PyObject *self, PyObject *args)
 {
 	PyObject *ob;
@@ -1773,6 +1793,7 @@ static PyMethodDef builtin_methods[] = {
  	{"__import__",	builtin___import__, METH_VARARGS, import_doc},
  	{"abs",		builtin_abs,        METH_O, abs_doc},
  	{"apply",	builtin_apply,      METH_VARARGS, apply_doc},
+	{"bool",	builtin_bool, 	    METH_O, bool_doc},
  	{"buffer",	builtin_buffer,     METH_VARARGS, buffer_doc},
  	{"callable",	builtin_callable,   METH_O, callable_doc},
  	{"chr",		builtin_chr,        METH_VARARGS, chr_doc},
@@ -1844,6 +1865,8 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("None",		Py_None);
 	SETBUILTIN("Ellipsis",		Py_Ellipsis);
 	SETBUILTIN("NotImplemented",	Py_NotImplemented);
+	SETBUILTIN("True",		Py_True);
+	SETBUILTIN("False",		Py_False);
 	SETBUILTIN("classmethod",	&PyClassMethod_Type);
 #ifndef WITHOUT_COMPLEX
 	SETBUILTIN("complex",		&PyComplex_Type);
