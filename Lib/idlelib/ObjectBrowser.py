@@ -134,18 +134,18 @@ def make_objecttreeitem(labeltext, object, setfunction=None):
 
 # Test script
 
-def test():
+def _test():
     import sys
-    from Tkinter import Toplevel
-    import PyShell
-    root = Toplevel(PyShell.root)
+    from Tkinter import Tk
+    root = Tk()
     root.configure(bd=0, bg="yellow")
     root.focus_set()
     sc = ScrolledCanvas(root, bg="white", highlightthickness=0, takefocus=1)
     sc.frame.pack(expand=1, fill="both")
     item = make_objecttreeitem("sys", sys)
     node = TreeNode(sc.canvas, None, item)
-    node.expand()
+    node.update()
+    root.mainloop()
 
 if __name__ == '__main__':
-    test()
+    _test()
