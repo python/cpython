@@ -16,12 +16,55 @@ from EditorWindow import fixwordbreaks
 from FileList import FileList, MultiEditorWindow, MultiIOBinding
 from ColorDelegator import ColorDelegator
 
+# We need to patch linecache.checkcache, because we don't want it
+# to throw away our <pyshell#...> entries.
+# Rather than repeating its code here, we save those entries,
+# then call the original function, and then restore the saved entries.
+def linecache_checkcache(orig_checkcache=linecache.checkcache):
+    cache = linecache.cache
+    save = {}
+    for filename in cache.keys():
+        if filename[:1] + filename[-1:] == '<>':
+            save[filename] = cache[filename]
+    orig_checkcache()
+    cache.update(save)
+linecache.checkcache = linecache_checkcache
+
 
 class PyShellEditorWindow(MultiEditorWindow):
+    
+    def __init__(self, *args):
+        apply(MultiEditorWindow.__init__, (self,) + args)
+        self.text.bind("<3>", self.right_menu_event)
       
     def fixedwindowsmenu(self, wmenu):
         wmenu.add_command(label="Python Shell", command=self.flist.open_shell)
         wmenu.add_separator()
+    
+    menu = None
+    
+    def right_menu_event(self, event):
+        self.text.mark_set("insert", "@%d,%d" % (event.x, event.y))
+        if not self.menu:
+            self.make_menu()
+        menu = self.menu
+        iswin = sys.platform[:3] == 'win'
+        if iswin:
+            self.text.config(cursor="arrow")
+        menu.tk_popup(event.x_root, event.y_root)
+        if iswin:
+            self.text.config(cursor="ibeam")
+
+    def make_menu(self):
+        self.menu = menu = Menu(self.text, tearoff=0)
+        menu.add_command(label="Set breakpoint here",
+                          command=self.set_breakpoint_here)
+    
+    def set_breakpoint_here(self):
+        if not self.flist.pyshell or not self.flist.pyshell.interp.debugger:
+            self.text.bell()
+            return
+        self.flist.pyshell.interp.debugger.set_breakpoint_here(self)
 
 
 class PyShellFileList(FileList):
@@ -84,7 +127,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def runsource(self, source):
         # Extend base class to stuff the source in the line cache
-        filename = "<console#%d>" % self.gid
+        filename = "<pyshell#%d>" % self.gid
         self.gid = self.gid + 1
         lines = string.split(source, "\n")
         linecache.cache[filename] = len(source)+1, 0, lines, filename
@@ -187,8 +230,9 @@ class PyShell(PyShellEditorWindow):
     menu_specs = PyShellEditorWindow.menu_specs[:]
     menu_specs.insert(len(menu_specs)-1, ("debug", "Debug"))
    
-    # New class
+    # New classes
     from History import History
+    from PopupMenu import PopupMenu
 
     def __init__(self, flist=None):
         self.interp = ModifiedInterpreter(self)
@@ -222,6 +266,7 @@ class PyShell(PyShellEditorWindow):
         self.console = PseudoFile(self, "console")
 
         self.history = self.History(self.text)
+        self.popup = self.PopupMenu(self.text, self.flist)
 
     tagdefs = {
         ##"stdin":   {"background": "yellow"},
@@ -239,6 +284,7 @@ class PyShell(PyShellEditorWindow):
                     apply(self.text.configure, (), cnf)
                 else:
                     apply(self.text.tag_configure, (tag,), cnf)
+        self.text.tag_raise("sel")
 
     reading = 0
     executing = 0
