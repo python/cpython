@@ -8,7 +8,7 @@ import sys
 import types
 from cStringIO import StringIO
 
-from compiler import ast, parse, walk
+from compiler import ast, parse, walk, syntax
 from compiler import pyassem, misc, future, symbols
 from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL
 from compiler.consts import CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS,\
@@ -41,17 +41,19 @@ class BlockStack(misc.Stack):
         self.__super_init(self)
         self.loop = None
 
-    
-
 def compile(filename, display=0):
     f = open(filename)
     buf = f.read()
     f.close()
     mod = Module(buf, filename)
-    mod.compile(display)
-    f = open(filename + "c", "wb")
-    mod.dump(f)
-    f.close()
+    try:
+        mod.compile(display)
+    except SyntaxError, err:
+        print "SyntaxError:", err
+    else:
+        f = open(filename + "c", "wb")
+        mod.dump(f)
+        f.close()
 
 class Module:
     def __init__(self, source, filename):
@@ -61,7 +63,9 @@ class Module:
 
     def compile(self, display=0):
         tree = parse(self.source)
-        gen = ModuleCodeGenerator(self.filename, tree)
+        misc.set_filename(self.filename, tree)
+        syntax.check(tree)
+        gen = ModuleCodeGenerator(tree)
         if display:
             import pprint
             print pprint.pprint(tree)
@@ -149,12 +153,11 @@ class CodeGenerator:
     __initialized = None
     class_name = None # provide default for instance variable
 
-    def __init__(self, filename):
+    def __init__(self):
         if self.__initialized is None:
             self.initClass()
             self.__class__.__initialized = 1
         self.checkClass()
-        self.filename = filename
         self.locals = misc.Stack()
         self.setups = misc.Stack()
         self.curStack = 0
@@ -306,7 +309,7 @@ class CodeGenerator:
         self._visitFuncOrLambda(node, isLambda=1)
 
     def _visitFuncOrLambda(self, node, isLambda=0):
-        gen = self.FunctionGen(node, self.filename, self.scopes, isLambda,
+        gen = self.FunctionGen(node, self.scopes, isLambda,
                                self.class_name, self.get_module())
         walk(node.code, gen)
         gen.finish()
@@ -324,7 +327,7 @@ class CodeGenerator:
             self.emit('MAKE_FUNCTION', len(node.defaults))
 
     def visitClass(self, node):
-        gen = self.ClassGen(node, self.filename, self.scopes,
+        gen = self.ClassGen(node, self.scopes,
                             self.get_module())
         if node.doc:
             self.emit('LOAD_CONST', node.doc)
@@ -430,14 +433,14 @@ class CodeGenerator:
     def visitBreak(self, node):
         if not self.setups:
             raise SyntaxError, "'break' outside loop (%s, %d)" % \
-                  (self.filename, node.lineno)
+                  (node.filename, node.lineno)
         self.set_lineno(node)
         self.emit('BREAK_LOOP')
 
     def visitContinue(self, node):
         if not self.setups:
             raise SyntaxError, "'continue' outside loop (%s, %d)" % \
-                  (self.filename, node.lineno)
+                  (node.filename, node.lineno)
         kind, block = self.setups.top()
         if kind == LOOP:
             self.set_lineno(node)
@@ -454,12 +457,12 @@ class CodeGenerator:
                     break
             if kind != LOOP:
                 raise SyntaxError, "'continue' outside loop (%s, %d)" % \
-                      (self.filename, node.lineno)
+                      (node.filename, node.lineno)
             self.emit('CONTINUE_LOOP', loop_block)
             self.nextBlock()
         elif kind == END_FINALLY:
             msg = "'continue' not allowed inside 'finally' clause (%s, %d)"  
-            raise SyntaxError, msg % (self.filename, node.lineno)
+            raise SyntaxError, msg % (node.filename, node.lineno)
 
     def visitTest(self, node, jump):
         end = self.newBlock()
@@ -1085,10 +1088,10 @@ class ModuleCodeGenerator(NestedScopeMixin, CodeGenerator):
 
     scopes = None
     
-    def __init__(self, filename, tree):
-        self.graph = pyassem.PyFlowGraph("<module>", filename)
+    def __init__(self, tree):
+        self.graph = pyassem.PyFlowGraph("<module>", tree.filename)
         self.futures = future.find_futures(tree)
-        self.__super_init(filename)
+        self.__super_init()
         walk(tree, self)
 
     def get_module(self):
@@ -1098,7 +1101,7 @@ class AbstractFunctionCode:
     optimized = 1
     lambdaCount = 0
 
-    def __init__(self, func, filename, scopes, isLambda, class_name, mod):
+    def __init__(self, func, scopes, isLambda, class_name, mod):
         self.class_name = class_name
         self.module = mod
         if isLambda:
@@ -1108,10 +1111,10 @@ class AbstractFunctionCode:
         else:
             name = func.name
         args, hasTupleArg = generateArgList(func.argnames)
-        self.graph = pyassem.PyFlowGraph(name, filename, args, 
+        self.graph = pyassem.PyFlowGraph(name, func.filename, args, 
                                          optimized=1) 
         self.isLambda = isLambda
-        self.super_init(filename)
+        self.super_init()
 
         if not isLambda and func.doc:
             self.setDocstring(func.doc)
@@ -1162,10 +1165,10 @@ class FunctionCodeGenerator(NestedScopeMixin, AbstractFunctionCode,
 
     __super_init = AbstractFunctionCode.__init__
 
-    def __init__(self, func, filename, scopes, isLambda, class_name, mod):
+    def __init__(self, func, scopes, isLambda, class_name, mod):
         self.scopes = scopes
         self.scope = scopes[func]
-        self.__super_init(func, filename, scopes, isLambda, class_name, mod)
+        self.__super_init(func, scopes, isLambda, class_name, mod)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
         if self.graph.checkFlag(CO_GENERATOR_ALLOWED):
@@ -1174,12 +1177,12 @@ class FunctionCodeGenerator(NestedScopeMixin, AbstractFunctionCode,
 
 class AbstractClassCode:
 
-    def __init__(self, klass, filename, scopes, module):
+    def __init__(self, klass, scopes, module):
         self.class_name = klass.name
         self.module = module
-        self.graph = pyassem.PyFlowGraph(klass.name, filename,
+        self.graph = pyassem.PyFlowGraph(klass.name, klass.filename,
                                            optimized=0, klass=1)
-        self.super_init(filename)
+        self.super_init()
         lnf = walk(klass.code, self.NameFinder(), verbose=0)
         self.locals.push(lnf.getLocals())
         self.graph.setFlag(CO_NEWLOCALS)
@@ -1200,10 +1203,10 @@ class ClassCodeGenerator(NestedScopeMixin, AbstractClassCode, CodeGenerator):
 
     __super_init = AbstractClassCode.__init__
 
-    def __init__(self, klass, filename, scopes, module):
+    def __init__(self, klass, scopes, module):
         self.scopes = scopes
         self.scope = scopes[klass]
-        self.__super_init(klass, filename, scopes, module)
+        self.__super_init(klass, scopes, module)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
 ##        self.graph.setFlag(CO_NESTED)
