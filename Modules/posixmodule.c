@@ -4458,7 +4458,7 @@ posix_setegid (PyObject *self, PyObject *args)
 
 #ifdef HAVE_SETREUID
 PyDoc_STRVAR(posix_setreuid__doc__,
-"seteuid(ruid, euid)\n\n\
+"setreuid(ruid, euid)\n\n\
 Set the current process's real and effective user ids.");
 
 static PyObject *
@@ -4478,7 +4478,7 @@ posix_setreuid (PyObject *self, PyObject *args)
 
 #ifdef HAVE_SETREGID
 PyDoc_STRVAR(posix_setregid__doc__,
-"setegid(rgid, egid)\n\n\
+"setregid(rgid, egid)\n\n\
 Set the current process's real and effective group ids.");
 
 static PyObject *
