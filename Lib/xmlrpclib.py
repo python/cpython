@@ -149,6 +149,11 @@ except NameError:
     unicode = None # unicode support not available
 
 try:
+    import datetime
+except ImportError:
+    datetime = None
+
+try:
     _bool_is_builtin = False.__class__.__name__ == "bool"
 except NameError:
     _bool_is_builtin = 0
@@ -349,7 +354,10 @@ class DateTime:
 
     def __init__(self, value=0):
         if not isinstance(value, StringType):
-            if not isinstance(value, (TupleType, time.struct_time)):
+            if datetime and isinstance(value, datetime.datetime):
+                self.value = value.strftime("%Y%m%dT%H:%M:%S")
+                return
+            elif not isinstance(value, (TupleType, time.struct_time)):
                 if value == 0:
                     value = time.time()
                 value = time.localtime(value)
@@ -698,6 +706,13 @@ class Marshaller:
         write("</struct></value>\n")
         del self.memo[i]
     dispatch[DictType] = dump_struct
+
+    if datetime:
+        def dump_datetime(self, value, write):
+            write("<value><dateTime.iso8601>")
+            write(value.strftime("%Y%m%dT%H:%M:%S"))
+            write("</dateTime.iso8601></value>\n")
+        dispatch[datetime.datetime] = dump_datetime
 
     def dump_instance(self, value, write):
         # check for special wrappers
