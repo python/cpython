@@ -21,7 +21,6 @@ color formats, and for calculating other color values.
 """
 
 import sys
-import string
 import re
 from types import *
 import operator
@@ -30,6 +29,8 @@ class BadColor(Exception):
     pass
 
 DEFAULT_DB = None
+SPACE = ' '
+COMMASPACE = ', '
 
 
 
@@ -45,10 +46,8 @@ class ColorDB:
 	#
 	# key is (red, green, blue) tuple, value is (name, [aliases])
 	self.__byrgb = {}
-	#
 	# key is name, value is (red, green, blue)
 	self.__byname = {}
-	#
         # all unique names (non-aliases).  built-on demand
         self.__allnames = None
 	while 1:
@@ -56,38 +55,30 @@ class ColorDB:
 	    if not line:
 		break
 	    # get this compiled regular expression from derived class
-##            print '%3d: %s' % (lineno, line[:-1])
 	    mo = self._re.match(line)
 	    if not mo:
-		sys.stderr.write('Error in %s, line %d\n' % (fp.name, lineno))
-		lineno = lineno + 1
+                print >> sys.stderr, 'Error in', fp.name, ' line', lineno
+		lineno += 1
 		continue
-	    #
 	    # extract the red, green, blue, and name
-	    #
             red, green, blue = self._extractrgb(mo)
             name = self._extractname(mo)
-	    keyname = string.lower(name)
-##            print keyname, '(%d, %d, %d)' % (red, green, blue)
-	    #
-	    # TBD: for now the `name' is just the first named color with the
+	    keyname = name.lower()
+	    # BAW: for now the `name' is just the first named color with the
 	    # rgb values we find.  Later, we might want to make the two word
 	    # version the `name', or the CapitalizedVersion, etc.
-	    #
 	    key = (red, green, blue)
 	    foundname, aliases = self.__byrgb.get(key, (name, []))
 	    if foundname <> name and foundname not in aliases:
 		aliases.append(name)
 	    self.__byrgb[key] = (foundname, aliases)
-	    #
 	    # add to byname lookup
-	    #
 	    self.__byname[keyname] = key
 	    lineno = lineno + 1
 
     # override in derived classes
     def _extractrgb(self, mo):
-        return map(int, mo.group('red', 'green', 'blue'))
+        return [int(x) for x in mo.group('red', 'green', 'blue')]
 
     def _extractname(self, mo):
         return mo.group('name')
@@ -104,7 +95,7 @@ class ColorDB:
 
     def find_byname(self, name):
         """Return (red, green, blue) for name"""
-	name = string.lower(name)
+	name = name.lower()
 	try:
 	    return self.__byname[name]
 	except KeyError:
@@ -112,13 +103,13 @@ class ColorDB:
 
     def nearest(self, red, green, blue):
         """Return the name of color nearest (red, green, blue)"""
-	# TBD: should we use Voronoi diagrams, Delaunay triangulation, or
+	# BAW: should we use Voronoi diagrams, Delaunay triangulation, or
 	# octree for speeding up the locating of nearest point?  Exhaustive
 	# search is inefficient, but seems fast enough.
 	nearest = -1
 	nearest_name = ''
 	for name, aliases in self.__byrgb.values():
-	    r, g, b = self.__byname[string.lower(name)]
+	    r, g, b = self.__byname[name.lower()]
 	    rdelta = red - r
 	    gdelta = green - g
 	    bdelta = blue - b
@@ -136,7 +127,7 @@ class ColorDB:
                 self.__allnames.append(name)
             # sort irregardless of case
             def nocase_cmp(n1, n2):
-                return cmp(string.lower(n1), string.lower(n2))
+                return cmp(n1.lower(), n2.lower())
             self.__allnames.sort(nocase_cmp)
         return self.__allnames
 
@@ -163,7 +154,7 @@ class LightlinkDB(HTML40DB):
     _re = re.compile('(?P<name>(.+))\s+(?P<hexrgb>#[0-9a-fA-F]{6})')
 
     def _extractname(self, mo):
-        return string.strip(mo.group('name'))
+        return mo.group('name').strip()
 
 class WebsafeDB(ColorDB):
     _re = re.compile('(?P<hexrgb>#[0-9a-fA-F]{6})')
@@ -172,7 +163,7 @@ class WebsafeDB(ColorDB):
         return rrggbb_to_triplet(mo.group('hexrgb'))
 
     def _extractname(self, mo):
-        return string.upper(mo.group('hexrgb'))
+        return mo.group('hexrgb').upper()
 
 
 
@@ -218,9 +209,9 @@ def get_colordb(file, filetype=None):
 
 
 _namedict = {}
-def rrggbb_to_triplet(color, atoi=string.atoi):
+
+def rrggbb_to_triplet(color):
     """Converts a #rrggbb color to the tuple (red, green, blue)."""
-    global _namedict
     rgbtuple = _namedict.get(color)
     if rgbtuple is None:
         if color[0] <> '#':
@@ -228,7 +219,7 @@ def rrggbb_to_triplet(color, atoi=string.atoi):
 	red = color[1:3]
 	green = color[3:5]
 	blue = color[5:7]
-	rgbtuple = (atoi(red, 16), atoi(green, 16), atoi(blue, 16))
+        rgbtuple = int(red, 16), int(green, 16), int(blue, 16)
 	_namedict[color] = rgbtuple
     return rgbtuple
 
@@ -260,8 +251,6 @@ def triplet_to_brightness(rgbtuple):
 
 
 if __name__ == '__main__':
-    import string
-
     colordb = get_colordb('/usr/openwin/lib/rgb.txt')
     if not colordb:
 	print 'No parseable color database found'
@@ -271,7 +260,7 @@ if __name__ == '__main__':
     red, green, blue = rgbtuple = colordb.find_byname(target)
     print target, ':', red, green, blue, triplet_to_rrggbb(rgbtuple)
     name, aliases = colordb.find_byrgb(rgbtuple)
-    print 'name:', name, 'aliases:', string.join(aliases, ", ")
+    print 'name:', name, 'aliases:', COMMASPACE.join(aliases)
     r, g, b = (1, 1, 128)			  # nearest to navy
     r, g, b = (145, 238, 144)			  # nearest to lightgreen
     r, g, b = (255, 251, 250)			  # snow
@@ -286,4 +275,4 @@ if __name__ == '__main__':
         r, g, b = colordb.find_byname(n)
         aliases = colordb.aliases_of(r, g, b)
         print '%20s: (%3d/%3d/%3d) == %s' % (n, r, g, b,
-                                             string.join(aliases[1:]))
+                                             SPACE.join(aliases[1:]))
