@@ -1660,5 +1660,51 @@ sub do_env_alltt {
     $_;
 }
 
+sub do_cmd_verbatiminput{
+    local($_) = @_;
+    my $fname = next_argument();
+    my $file;
+    my $found = 0;
+    my $texpath;
+    # Search TEXINPUTS for the input file, the way we're supposed to:
+    foreach $texpath (split /$envkey/, $TEXINPUTS) {
+        $file = "$texpath$dd$fname";
+        last if ($found = (-f $file));
+    }
+    my $text;
+    if ($found) {
+        open(MYFILE, "<$file") || die "\n$!\n";
+        read(MYFILE, $text, 1024*1024);
+        close(MYFILE);
+        #
+        # These rewrites convert the raw text to something that will
+        # be properly visible as HTML and also will pass through the
+        # vagaries of conversion through LaTeX2HTML.  The order in
+        # which the specific rewrites are performed is significant.
+        #
+        $text =~ s/\&/\&amp;/g;
+        # These need to happen before the normal < and > re-writes,
+        # since we need to avoid LaTeX2HTML's attempt to perform
+        # ligature processing without regard to context (since it
+        # doesn't have font information).
+        $text =~ s/--/-&\#45;/g;
+        $text =~ s/<</\&lt;\&\#60;/g;
+        $text =~ s/>>/\&gt;\&\#62;/g;
+        # Just normal re-writes...
+        $text =~ s/</\&lt;/g;
+        $text =~ s/>/\&gt;/g;
+        # These last isn't needed for the HTML, but is needed to get
+        # past LaTeX2HTML processing TeX macros.  We use &#92; instead
+        # of &sol; since many browsers don't support that.
+        $text =~ s/\\/\&\#92;/g;
+    }
+    else {
+        $text = '<b>Could not locate requested file <i>$fname</i>!</b>\n';
+    }
+    return ($alltt_start
+            . $text
+            . $alltt_end
+            . $_);
+}
 
 1;				# This must be the last line
