@@ -1,7 +1,3 @@
-#!/usr/local/bin/python
-# -*- mode: python -*-
-# $Id$
-
 import sys
 sys.path=['.']+sys.path
 
