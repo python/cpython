@@ -1,0 +1,71 @@
+This document describes some caveats about the use of Valgrind with
+Python.  Valgrind is used periodically by Python developers to try 
+to ensure there are no memory leaks or invalid memory reads/writes.
+
+If you don't want to read about the details of using Valgrind, there
+are still two things you must do to suppress the warnings.  First, 
+you must use a suppressions file.  One is supplied in
+Misc/valgrind-python.supp.  Second, you must do one of the following:
+
+  * Uncomment Py_USING_MEMORY_DEBUGGER in Objects/obmalloc.c,
+    then rebuild Python 
+  * Uncomment the lines in Misc/valgrind-python.supp that 
+    suppress the warnings for PyObject_Free and PyObject_Realloc
+
+Details:
+--------
+Python uses its own allocation scheme on top of malloc called PyMalloc.
+Valgrind my show some unexpected results when PyMalloc is used.
+Starting with Python 2.3, PyMalloc is used by default.  You can disable
+PyMalloc when configuring python by adding the --without-pymalloc option.
+If you disable PyMalloc, most of the information in this document and 
+the supplied suppressions file will not be useful.
+
+If you use valgrind on a default build of Python,  you will see
+many errors like:
+
+        ==6399== Use of uninitialised value of size 4
+        ==6399== at 0x4A9BDE7E: PyObject_Free (obmalloc.c:711)
+        ==6399== by 0x4A9B8198: dictresize (dictobject.c:477)
+
+These are expected and not a problem.  Tim Peters explains
+the situation:
+
+        PyMalloc needs to know whether an arbitrary address is one
+	that's managed by it, or is managed by the system malloc.  
+	The current scheme allows this to be determined in constant
+	time, regardless of how many memory areas are under pymalloc's
+	control.
+
+        The memory pymalloc manages itself is in one or more "arenas",
+	each a large contiguous memory area obtained from malloc.  
+	The base address of each arena is saved by pymalloc 
+	in a vector, and a field at the start of each arena contains
+	the index of that arena's base address in that vector.
+
+        Given an arbitrary address, pymalloc computes the arena base
+	address corresponding to it, then looks at "the index" stored
+	near there.  If the index read up is out of bounds for the
+	vector of arena base addresses pymalloc maintains, then
+	pymalloc knows for certain that this address is not under
+	pymalloc's control.  Otherwise the index is in bounds, and
+	pymalloc compares
+
+            the arena base address stored at that index in the vector
+
+        to
+
+            the computed arena address
+
+        pymalloc controls this arena if and only if they're equal.
+
+        It doesn't matter whether the memory pymalloc reads up ("the
+	index") is initialized.  If it's not initialized, then
+	whatever trash gets read up will lead pymalloc to conclude
+	(correctly) that the address isn't controlled by it.
+
+        This determination has to be made on every call to one of
+	pymalloc's free/realloc entry points, so its speed is critical
+	(Python allocates and frees dynamic memory at a ferocious rate
+	-- everything in Python, from integers to "stack frames",
+	lives in the heap).

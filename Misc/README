@@ -24,8 +24,10 @@ pymemcompat.h	Memory interface compatibility file.
 python.man	UNIX man page for the python interpreter
 python-mode.el	Emacs mode for editing Python programs
 README		The file you're reading now
+README.valgrind	Information for Valgrind users, see valgrind-python.supp
 RFD		Request For Discussion about a Python newsgroup
 RPM		(Old) tools to build RPMs
 SpecialBuilds.txt     Describes extra symbols you can set for debug builds
 setuid-prog.c	C helper program for set-uid Python scripts
 vgrindefs	Python configuration for vgrind (a generic pretty printer)
+valgrind-python.supp	Valgrind suppression file, see README.valgrind
