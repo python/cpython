@@ -179,7 +179,7 @@ def main():
 		  version,
 		  '</TITLE>\n',
 		  '</HEAD><body>\n',
-		  '(This file was generated using',
+		  '(This file was generated using\n',
 		  '<A HREF="faq2html.py">faq2html.py</A>.)<P>\n']
     lines.append('<P></BODY></HTML>\n')
 
