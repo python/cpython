@@ -621,7 +621,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         hr = HorizontalRule()
 
         # List the mro, if non-trivial.
-        mro = inspect.getmro(object)
+        mro = list(inspect.getmro(object))
         if len(mro) > 2:
             hr.maybe()
             push('<dl><dt>Method resolution order:</dt>\n')
@@ -693,11 +693,11 @@ TT { font-family: lucidatypewriter, lucida console, courier }
             except TypeError:
                 pass
 
-        # Sort attrs by name of defining class.
-        attrs.sort(lambda t1, t2: cmp(t1[2].__name__, t2[2].__name__))
-
-        thisclass = object  # list attrs defined here first
         while attrs:
+            if mro:
+                thisclass = mro.pop(0)
+            else:
+                thisclass = attrs[0][2]
             attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
 
             if thisclass is object:
@@ -722,12 +722,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
             attrs = spilldata("Data and non-method functions %s" % tag, attrs,
                               lambda t: t[1] == 'data')
             assert attrs == []
-
-            # Split off the attributes inherited from the next class (note
-            # that inherited remains sorted by class name).
-            if inherited:
-                attrs = inherited
-                thisclass = attrs[0][2]
+            attrs = inherited
 
         contents = ''.join(contents)
 
@@ -1008,7 +1003,7 @@ class TextDoc(Doc):
         push = contents.append
 
         # List the mro, if non-trivial.
-        mro = inspect.getmro(object)
+        mro = list(inspect.getmro(object))
         if len(mro) > 2:
             push("Method resolution order:")
             for base in mro:
@@ -1072,12 +1067,11 @@ class TextDoc(Doc):
             return attrs
 
         attrs = inspect.classify_class_attrs(object)
-
-        # Sort attrs by name of defining class.
-        attrs.sort(lambda t1, t2: cmp(t1[2].__name__, t2[2].__name__))
-
-        thisclass = object  # list attrs defined here first
         while attrs:
+            if mro:
+                thisclass = mro.pop(0)
+            else:
+                thisclass = attrs[0][2]
             attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
 
             if thisclass is object:
@@ -1101,12 +1095,7 @@ class TextDoc(Doc):
             attrs = spilldata("Data and non-method functions %s:\n" % tag,
                               attrs, lambda t: t[1] == 'data')
             assert attrs == []
-
-            # Split off the attributes inherited from the next class (note
-            # that inherited remains sorted by class name).
-            if inherited:
-                attrs = inherited
-                thisclass = attrs[0][2]
+            attrs = inherited
 
         contents = '\n'.join(contents)
         if not contents:
