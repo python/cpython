@@ -174,7 +174,7 @@ class Editor(W.Window):
 		return '<%s>' % self.title
 	
 	def setupwidgets(self, text):
-		topbarheight = 28
+		topbarheight = 24
 		popfieldwidth = 80
 		self.lastlineno = None
 		
@@ -197,9 +197,9 @@ class Editor(W.Window):
 		
 		self.bevelbox = W.BevelBox((0, 0, 0, topbarheight))
 		self.hline = W.HorizontalLine((0, topbarheight, 0, 0))
-		self.infotext = W.TextBox((175, 7, -4, 14), backgroundcolor = (0xe000, 0xe000, 0xe000))
-		self.runbutton = W.Button((6, 5, 60, 16), runButtonLabels[0], self.run)
-		self.runselbutton = W.Button((78, 5, 90, 16), runSelButtonLabels[0], self.runselection)
+		self.infotext = W.TextBox((175, 6, -4, 14), backgroundcolor = (0xe000, 0xe000, 0xe000))
+		self.runbutton = W.BevelButton((6, 4, 80, 16), runButtonLabels[0], self.run)
+		self.runselbutton = W.BevelButton((90, 4, 80, 16), runSelButtonLabels[0], self.runselection)
 		
 		# bind some keys
 		editor.bind("cmdr", self.runbutton.push)
@@ -800,6 +800,7 @@ def _makewholewordpattern(word):
 	if word[-1] in _wordchars:
 		pattern = pattern + notwordcharspat
 	return re.compile(pattern)
+
 
 class SearchEngine:
 	

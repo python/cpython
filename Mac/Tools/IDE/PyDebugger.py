@@ -681,7 +681,6 @@ class BreakpointsViewer:
 	
 	def __init__(self, debugger):
 		self.debugger = debugger
-		import Lists
 		self.w = W.Window((300, 250), 'Breakpoints', minsize = (200, 200))
 		self.w.panes = W.HorizontalPanes((8, 8, -8, -32), (0.3, 0.7))
 		self.w.panes.files = W.List(None, callback = self.filehit)		#, flags = Lists.lOnlyOne)

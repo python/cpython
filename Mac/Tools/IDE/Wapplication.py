@@ -9,7 +9,7 @@ from types import *
 
 from Carbon import Menu; MenuToolbox = Menu; del Menu
 
-KILLUNKNOWNWINDOWS=1	# Set to 0 for debugging.
+KILLUNKNOWNWINDOWS = 0  # Set to 0 for debugging.
 
 class Application(FrameWork.Application):
 	

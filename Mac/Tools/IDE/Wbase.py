@@ -1,4 +1,4 @@
-from Carbon import Evt, Qd, QuickDraw, Win
+from Carbon import App, Evt, Qd, QuickDraw, Win
 import string
 from types import *
 import sys
@@ -329,15 +329,7 @@ class SelectableWidget(ClickableWidget):
 	def drawselframe(self, onoff):
 		if not self._parentwindow._hasselframes:
 			return
-		thickrect = Qd.InsetRect(self._bounds, -3, -3)
-		state = Qd.GetPenState()
-		Qd.PenSize(2, 2)
-		if onoff:
-			Qd.PenPat(Qd.qd.black)
-		else:
-			Qd.PenPat(Qd.qd.white)
-		Qd.FrameRect(thickrect)
-		Qd.SetPenState(state)
+		App.DrawThemeFocusRect(self._bounds, onoff)
 	
 	def adjust(self, oldbounds):
 		self.SetPort()

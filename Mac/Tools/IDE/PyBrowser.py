@@ -143,6 +143,7 @@ class BrowserWidget(W.List):
 		newcol = -1
 		#W.SetCursor('fist')
 		while Evt.Button():
+			Evt.WaitNextEvent(0, 1, None)  # needed for OSX
 			(x, y) = Evt.GetMouse()
 			if (x, y) <> lastpoint:
 				newcol = x + diff
@@ -307,7 +308,7 @@ class Browser:
 				title = title + ': ' + name
 		self.w = w = W.Window((300, 400), title, minsize = (100, 100))
 		w.info = W.TextBox((18, 8, -70, 15))
-		w.updatebutton = W.Button((-64, 4, 50, 16), 'Update', self.update)
+		w.updatebutton = W.BevelButton((-64, 4, 50, 16), 'Update', self.update)
 		w.browser = BrowserWidget((-1, 24, 1, -14), None)
 		w.bind('cmdu', w.updatebutton.push)
 		w.open()

@@ -17,6 +17,7 @@ class ControlWidget(Wbase.ClickableWidget):
 		self._min = min
 		self._max = max
 		self._enabled = 1
+		self._viewsize = 0
 	
 	def open(self):
 		self._calcbounds()
@@ -29,8 +30,8 @@ class ControlWidget(Wbase.ClickableWidget):
 						self._max, 
 						self._procID, 
 						0)
-		self.SetPort()
-		#self.GetWindow().ValidWindowRect(self._bounds)
+		if self._viewsize:
+			self._control.SetControlViewSize(self._viewsize)
 		self.enable(self._enabled)
 	
 	def adjust(self, oldbounds):
@@ -75,9 +76,11 @@ class ControlWidget(Wbase.ClickableWidget):
 			self._control.Draw1Control()
 	
 	def test(self, point):
-		ctltype, control = Ctl.FindControl(point, self._parentwindow.wid)
-		if self._enabled and control == self._control:
+		if Qd.PtInRect(point, self._bounds) and self._enabled:
 			return 1
+		#ctltype, control = Ctl.FindControl(point, self._parentwindow.wid)
+		#if self._enabled and control == self._control:
+		#	return 1
 	
 	def click(self, point, modifiers):
 		if not self._enabled:
@@ -112,16 +115,19 @@ class Button(ControlWidget):
 	
 	"""Standard push button."""
 	
+	procID = Controls.pushButProc | Controls.useWFont
+	
 	def __init__(self, possize, title = "Button", callback = None):
-		procID = Controls.pushButProc | Controls.useWFont
-		ControlWidget.__init__(self, possize, title, procID, callback, 0, 0, 1)
+		ControlWidget.__init__(self, possize, title, self.procID, callback, 0, 0, 1)
 		self._isdefault = 0
 	
 	def push(self):
 		if not self._enabled:
 			return
+		# emulate the pushing of the button
 		import time
 		self._control.HiliteControl(Controls.kControlButtonPart)
+		Qd.QDFlushPortBuffer(self._parentwindow.wid, None)  # needed under OSX
 		time.sleep(0.1)
 		self._control.HiliteControl(0)
 		if self._callback:
@@ -139,7 +145,25 @@ class Button(ControlWidget):
 		if self._visible:
 			self._control.Draw1Control()
 	
+	def open(self):
+		ControlWidget.open(self)
+		if self._isdefault:
+			self._setdefault(self._isdefault)
+	
 	def _setdefault(self, onoff):
+		c = self._control
+		if c is not None:
+			if onoff:
+				data = "\xFF"
+			else:
+				data = "\0"
+			# hide before changing state, otherwise the button isn't always
+			# redrawn correctly, although it's quite different under Aqua
+			# and Classic...
+			c.HideControl()
+			c.SetControlData(Controls.kControlNoPart,
+					Controls.kControlPushButtonDefaultTag, data)
+			c.ShowControl()
 		self._isdefault = onoff
 	
 	def adjust(self, oldbounds):
@@ -150,6 +174,10 @@ class Button(ControlWidget):
 			self.GetWindow().InvalWindowRect(old)
 			self.GetWindow().InvalWindowRect(new)
 		ControlWidget.adjust(self, oldbounds)
+
+
+class BevelButton(Button):
+	procID = Controls.kControlBevelButtonNormalBevelProc | Controls.useWFont
 
 
 class CheckBox(ControlWidget):
@@ -250,13 +278,22 @@ class Scrollbar(ControlWidget):
 			Wbase.CallbackCall(self._callback, 1, '--')
 	
 	def setmin(self, min):
-		self._control.SetControl32BitMinimum(min)
+		if self._control is not None:
+			self._control.SetControl32BitMinimum(min)
+		else:
+			self._min = min
 	
 	def setmax(self, max):
-		self._control.SetControl32BitMaximum(max)
+		if self._control is not None:
+			self._control.SetControl32BitMaximum(max)
+		else:
+			self._max = max
 	
-	def setviewsize(self, view):
-		self._control.SetControlViewSize(view)
+	def setviewsize(self, viewsize):
+		if self._control is not None:
+			self._control.SetControlViewSize(viewsize)
+		else:
+			self._viewsize = viewsize
 	
 	def getmin(self):
 		return self._control.GetControl32BitMinimum()
@@ -312,7 +349,7 @@ class Scrollbar(ControlWidget):
 	def draw(self, visRgn = None):
 		if self._visible:
 			self._control.Draw1Control()
-			Qd.FrameRect(self._bounds)
+			#Qd.FrameRect(self._bounds)
 	
 	def adjust(self, oldbounds):
 		self.SetPort()

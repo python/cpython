@@ -1,6 +1,8 @@
 from Carbon import Evt, Events, Fm, Fonts
 from Carbon import Qd, Res, Scrap
 from Carbon import TE, TextEdit, Win
+from Carbon import App
+from Carbon.Appearance import kThemeStateActive, kThemeStateInactive
 import waste
 import WASTEconst
 import Wbase
@@ -55,25 +57,29 @@ class TextBox(Wbase.Widget):
 class _ScrollWidget:
 	
 	# to be overridden
-	def getscrollbarvalues(self):
+	def getscrollrects(self):
+		"""Return (destrect, viewrect)."""
 		return None, None
 	
 	# internal method
-	def updatescrollbars(self):
-		vx, vy = self.getscrollbarvalues()
-		if self._parent._barx:
-			if vx <> None:
-				self._parent._barx.enable(1)
-				self._parent._barx.set(vx)
-			else:
-				self._parent._barx.enable(0)
-		if self._parent._bary:
-			if vy <> None:
-				self._parent._bary.enable(1)
-				self._parent._bary.set(vy)
-			else:
-				self._parent._bary.enable(0)
 	
+	def updatescrollbars(self):
+		(dl, dt, dr, db), (vl, vt, vr, vb) = self.getscrollrects()
+		if self._parent._barx:
+			viewwidth = vr - vl
+			destwidth = dr - dl
+			bar = self._parent._barx
+			bar.setmax(destwidth - viewwidth)
+			bar.setviewsize(viewwidth)
+			bar.set(vl - dl)
+		if self._parent._bary:
+			viewheight = vb - vt
+			destheight = db - dt
+			bar = self._parent._bary
+			bar.setmax(destheight - viewheight)
+			bar.setviewsize(viewheight)
+			bar.set(vt - dt)
+
 
 UNDOLABELS = [	# Indexed by WEGetUndoInfo() value
 	None, "", "typing", "Cut", "Paste", "Clear", "Drag", "Style",
@@ -373,6 +379,7 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 			if self._selected and self._activated:
 				self.drawselframe(1)
 			Qd.FrameRect(self._bounds)
+			#App.DrawThemeEditTextFrame(self._bounds, kThemeStateActive)
 	
 	# scrolling
 	def scrollpageup(self):
@@ -385,13 +392,13 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 	
 	def scrolltop(self):
 		if self._parent._bary and self._parent._bary._enabled:
-			self.vscroll(0)
+			self.vscroll(self._parent._bary.getmin())
 		if self._parent._barx and self._parent._barx._enabled:
-			self.hscroll(0)
+			self.hscroll(self._parent._barx.getmin())
 	
 	def scrollbottom(self):
 		if self._parent._bary and self._parent._bary._enabled:
-			self.vscroll(32767)
+			self.vscroll(self._parent._bary.getmax())
 	
 	# menu handlers
 	def domenu_copy(self, *args):
@@ -469,20 +476,15 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		self.selectall()
 	
 	# private
-	def getscrollbarvalues(self):
-		dr = self.ted.WEGetDestRect()
-		vr = self.ted.WEGetViewRect()
-		vx = Wcontrols._scalebarvalue(dr[0], dr[2], vr[0], vr[2])
-		vy = Wcontrols._scalebarvalue(dr[1], dr[3], vr[1], vr[3])
-		return vx, vy
+	def getscrollrects(self):
+		return self.ted.WEGetDestRect(), self.ted.WEGetViewRect()
 	
 	def vscroll(self, value):
 		lineheight = self.ted.WEGetHeight(0, 1)
 		dr = self.ted.WEGetDestRect()
 		vr = self.ted.WEGetViewRect()
-		destheight = dr[3] - dr[1]
 		viewheight = vr[3] - vr[1]
-		viewoffset = maxdelta = vr[1] - dr[1]
+		maxdelta = vr[1] - dr[1]
 		mindelta = vr[3] - dr[3]
 		if value == "+":
 			delta = lineheight
@@ -493,11 +495,7 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		elif value == "--":
 			delta = lineheight - viewheight
 		else:	# in thumb
-			cur = (32767L * viewoffset) / (destheight - viewheight)
-			delta = (cur-value)*(destheight - viewheight)/32767
-			if abs(delta - viewoffset) <=2:
-				# compensate for irritating rounding error
-				delta = viewoffset
+			delta = vr[1] - dr[1] - value
 		delta = min(maxdelta, delta)
 		delta = max(mindelta, delta)
 		self.ted.WEScroll(0, delta)
@@ -519,11 +517,12 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		elif value == "--":
 			delta = 0.5 * (vr[0] - vr[2])
 		else:	# in thumb
-			cur = (32767 * viewoffset) / (destwidth - viewwidth)
-			delta = (cur-value)*(destwidth - viewwidth)/32767
-			if abs(delta - viewoffset) <=2:
-				# compensate for irritating rounding error
-				delta = viewoffset
+			delta = vr[0] - dr[0] - value
+			#cur = (32767 * viewoffset) / (destwidth - viewwidth)
+			#delta = (cur-value)*(destwidth - viewwidth)/32767
+			#if abs(delta - viewoffset) <=2:
+			#	# compensate for irritating rounding error
+			#	delta = viewoffset
 		delta = min(maxdelta, delta)
 		delta = max(mindelta, delta)
 		self.ted.WEScroll(delta, 0)
@@ -923,6 +922,7 @@ class PyEditor(TextEditor):
 					if autoscroll:
 						self.ted.WEFeatureFlag(WASTEconst.weFAutoScroll, 0)
 					self.ted.WESetSelection(count, count + 1)
+					Qd.QDFlushPortBuffer(self._parentwindow.wid, None)  # needed under OSX
 					time.sleep(0.2)
 					self.ted.WESetSelection(selstart, selend)
 					if autoscroll:
