@@ -69,7 +69,7 @@ weakref_ref(PyObject *self, PyObject *args)
     PyObject *callback = NULL;
     PyObject *result = NULL;
 
-    if (PyArg_ParseTuple(args, "O|O:ref", &object, &callback)) {
+    if (PyArg_UnpackTuple(args, "ref", 1, 2, &object, &callback)) {
         result = PyWeakref_NewRef(object, callback);
     }
     return result;
@@ -88,7 +88,7 @@ weakref_proxy(PyObject *self, PyObject *args)
     PyObject *callback = NULL;
     PyObject *result = NULL;
 
-    if (PyArg_ParseTuple(args, "O|O:new", &object, &callback)) {
+    if (PyArg_UnpackTuple(args, "proxy", 1, 2, &object, &callback)) {
         result = PyWeakref_NewProxy(object, callback);
     }
     return result;
