@@ -47,7 +47,9 @@ EventTypeSpec_New(EventTypeSpec *in)
 static int
 EventTypeSpec_Convert(PyObject *v, EventTypeSpec *out)
 {
-	if (PyArg_Parse(v, "(O&l)", PyMac_GetOSType, &(out->eventClass), &(out->eventKind)))
+	if (PyArg_Parse(v, "(O&l)",
+	                PyMac_GetOSType, &(out->eventClass),
+	                &(out->eventKind)))
 		return 1;
 	return NULL;
 }
@@ -106,7 +108,9 @@ myEventHandler(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject
 	PyEval_RestoreThread(_save);
 #endif /* USE_MAC_MP_MULTITHREADING */
 
-	retValue = PyObject_CallFunction((PyObject *)outPyObject, "O&O&", EventHandlerCallRef_New, handlerRef, EventRef_New, event);
+	retValue = PyObject_CallFunction((PyObject *)outPyObject, "O&O&",
+	                                 EventHandlerCallRef_New, handlerRef,
+	                                 EventRef_New, event);
 	if (retValue == NULL) {
 		PySys_WriteStderr("Error in event handler callback:\n");
 		PyErr_Print();  /* this also clears the error */
@@ -340,6 +344,40 @@ static PyObject *EventRef_SendEventToEventTarget(EventRefObject *_self, PyObject
 	return _res;
 }
 
+static PyObject *EventRef_GetEventParameter(EventRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+
+	UInt32 bufferSize;
+	EventParamName inName;
+	EventParamType inType;
+	OSErr _err;
+	void * buffer;
+
+	if (!PyArg_ParseTuple(_args, "O&O&", PyMac_GetOSType, &inName, PyMac_GetOSType, &inType))
+	      return NULL;
+
+	/* Figure out the size by passing a null buffer to GetEventParameter */
+	_err = GetEventParameter(_self->ob_itself, inName, inType, NULL, 0, &bufferSize, NULL);
+
+	if (_err != noErr)
+	      return PyMac_Error(_err);
+	buffer = PyMem_NEW(char, bufferSize);
+	if (buffer == NULL)
+	      return PyErr_NoMemory();
+
+	_err = GetEventParameter(_self->ob_itself, inName, inType, NULL, bufferSize, NULL, buffer);
+
+	if (_err != noErr) {
+	      PyMem_DEL(buffer);
+	      return PyMac_Error(_err);
+	}
+	_res = Py_BuildValue("s#", buffer, bufferSize);
+	PyMem_DEL(buffer);
+	return _res;
+
+}
+
 static PyMethodDef EventRef_methods[] = {
 	{"RetainEvent", (PyCFunction)EventRef_RetainEvent, 1,
 	 "() -> (EventRef _rv)"},
@@ -365,6 +403,8 @@ static PyMethodDef EventRef_methods[] = {
 	 "(UInt16 inMask) -> (Boolean _rv)"},
 	{"SendEventToEventTarget", (PyCFunction)EventRef_SendEventToEventTarget, 1,
 	 "(EventTargetRef inTarget) -> None"},
+	{"GetEventParameter", (PyCFunction)EventRef_GetEventParameter, 1,
+	 "(EventParamName eventName, EventParamType eventType) -> (String eventParamData)"},
 	{NULL, NULL, 0}
 };
 

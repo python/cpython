@@ -105,7 +105,9 @@ EventTypeSpec_New(EventTypeSpec *in)
 static int
 EventTypeSpec_Convert(PyObject *v, EventTypeSpec *out)
 {
-	if (PyArg_Parse(v, "(O&l)", PyMac_GetOSType, &(out->eventClass), &(out->eventKind)))
+	if (PyArg_Parse(v, "(O&l)",
+	                PyMac_GetOSType, &(out->eventClass),
+	                &(out->eventKind)))
 		return 1;
 	return NULL;
 }
@@ -164,7 +166,9 @@ myEventHandler(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject
 	PyEval_RestoreThread(_save);
 #endif /* USE_MAC_MP_MULTITHREADING */
 
-	retValue = PyObject_CallFunction((PyObject *)outPyObject, "O&O&", EventHandlerCallRef_New, handlerRef, EventRef_New, event);
+	retValue = PyObject_CallFunction((PyObject *)outPyObject, "O&O&",
+	                                 EventHandlerCallRef_New, handlerRef,
+	                                 EventRef_New, event);
 	if (retValue == NULL) {
 		PySys_WriteStderr("Error in event handler callback:\n");
 		PyErr_Print();  /* this also clears the error */
@@ -284,6 +288,42 @@ return _res;"""
 f = ManualGenerator("InstallEventHandler", installeventhandler);
 f.docstring = lambda: "(EventTypeSpec inSpec, Method callback) -> (EventHandlerRef outRef)"
 EventTargetRefobject.add(f)
+
+# This may not be the best, but at least it lets you get the raw data back into python as a string. You'll have to cut it up yourself and parse the result.
+
+geteventparameter = """
+UInt32 bufferSize;
+EventParamName inName;
+EventParamType inType;
+OSErr _err;
+void * buffer;
+
+if (!PyArg_ParseTuple(_args, "O&O&", PyMac_GetOSType, &inName, PyMac_GetOSType, &inType))
+      return NULL;
+
+/* Figure out the size by passing a null buffer to GetEventParameter */
+_err = GetEventParameter(_self->ob_itself, inName, inType, NULL, 0, &bufferSize, NULL);
+
+if (_err != noErr)
+      return PyMac_Error(_err);
+buffer = PyMem_NEW(char, bufferSize);
+if (buffer == NULL)
+      return PyErr_NoMemory();
+
+_err = GetEventParameter(_self->ob_itself, inName, inType, NULL, bufferSize, NULL, buffer);
+
+if (_err != noErr) {
+      PyMem_DEL(buffer);
+      return PyMac_Error(_err);
+}
+_res = Py_BuildValue("s#", buffer, bufferSize);
+PyMem_DEL(buffer);
+return _res;
+"""
+
+f = ManualGenerator("GetEventParameter", geteventparameter);
+f.docstring = lambda: "(EventParamName eventName, EventParamType eventType) -> (String eventParamData)"
+EventRefobject.add(f)
 
 runappeventloop = """
 #if USE_MAC_MP_MULTITHREADING
