@@ -337,7 +337,12 @@ AC_ARG_ENABLE(shared,
 
 if test -z "$enable_shared"
 then 
-  enable_shared="no"
+  case $ac_sys_system in
+  CYGWIN*)
+    enable_shared="yes";;
+  *)
+    enable_shared="no";;
+  esac
 fi
 AC_MSG_RESULT($enable_shared)
 
