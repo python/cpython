@@ -1685,15 +1685,22 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
-	
+
+	if (c != Py_None && ((PyLongObject *)c)->ob_size == 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"pow() 3rd argument cannot be 0");
+		z = NULL;
+		goto error;
+	}
+
 	size_b = b->ob_size;
 	if (size_b < 0) {
 		Py_DECREF(a);
 		Py_DECREF(b);
 		Py_DECREF(c);
 		if (x != Py_None) {
-			PyErr_SetString(PyExc_TypeError, "integer pow() arg "
-			     "3 must not be specified when arg 2 is < 0");
+			PyErr_SetString(PyExc_TypeError, "pow() 2nd argument "
+			     "cannot be negative when 3rd argument specified");
 			return NULL;
 		}
 		/* Return a float.  This works because we know that

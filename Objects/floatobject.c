@@ -495,8 +495,8 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 	double iv, iw, ix;
 
 	if ((PyObject *)z != Py_None) {
-		PyErr_SetString(PyExc_TypeError,
-			"3rd argument to floating pow() must be None");
+		PyErr_SetString(PyExc_TypeError, "pow() 3rd argument not "
+			"allowed unless all other arguments are integers");
 		return NULL;
 	}
 
