@@ -221,6 +221,10 @@ class FTP:
 		if not user: user = 'anonymous'
 		if user == 'anonymous' and passwd in ('', '-'):
 			thishost = socket.gethostname()
+			# Make sure it is fully qualified
+			if not '.' in thishost:
+			    thisaddr = socket.gethostbyname(thishost)
+			    thishost = socket.gethostbyaddr(thisaddr)[0]
 			try:
 				if os.environ.has_key('LOGNAME'):
 					realuser = os.environ['LOGNAME']
