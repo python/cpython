@@ -60,12 +60,22 @@ acquire it again without blocking; the thread must release it once
 for each time it has acquired it.
 \end{funcdesc}
 
-\begin{funcdesc}{Semaphore}{}
+\begin{funcdesc}{Semaphore}{\optional{value}}
 A factory function that returns a new semaphore object.  A
 semaphore manages a counter representing the number of \method{release()}
 calls minus the number of \method{acquire()} calls, plus an initial value.
 The \method{acquire()} method blocks if necessary until it can return
-without making the counter negative.
+without making the counter negative.  If not given, \var{value} defaults to
+1. 
+\end{funcdesc}
+
+\begin{funcdesc}{BoundedSemaphore}{\optional{value}}
+A factory function that returns a new bounded semaphore object.  A bounded
+semaphore checks to make sure its current value doesn't exceed its initial
+value.  If it does, \exception{ValueError} is raised. In most situations
+semaphores are used to guard resources with limited capacity.  If the
+semaphore is released too many times it's a sign of a bug.  If not given,
+\var{value} defaults to 1. 
 \end{funcdesc}
 
 \begin{classdesc*}{Thread}{}
@@ -366,6 +376,34 @@ entry and another thread is waiting for it to become larger
 than zero again, wake up that thread.
 \end{methoddesc}
 
+
+\subsubsection{\class{Semaphore} Example \label{semaphore-examples}}
+
+Semaphores are often used to guard resources with limited capacity, for
+example, a database server.  In any situation where the size of the resource
+size is fixed, you should use a bounded semaphore.  Before spawning any
+worker threads, your main thread would initialize the semaphore:
+
+\begin{verbatim}
+maxconnections = 5
+...
+pool_sema = BoundedSemaphore(value=maxconnections)
+\end{verbatim}
+
+Once spawned, worker threads call the semaphore's acquire and release
+methods when they need to connect to the server:
+
+\begin{verbatim}
+pool_sema.acquire()
+conn = connectdb()
+... use connection ...
+conn.close()
+pool_sema.release()
+\end{verbatim}
+
+The use of a bounded semaphore reduces the chance that a programming error
+which causes the semaphore to be released more than it's acquired will go
+undetected.
 
 \subsection{Event Objects \label{event-objects}}
 
