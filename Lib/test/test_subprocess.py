@@ -394,6 +394,17 @@ class ProcessTestCase(unittest.TestCase):
         # Subsequent invocations should just return the returncode
         self.assertEqual(p.wait(), 0)
 
+
+    def test_invalid_bufsize(self):
+        # an invalid type of the bufsize argument should raise
+        # TypeError.
+        try:
+            subprocess.Popen([sys.executable, "-c", "pass"], "orange")
+        except TypeError:
+            pass
+        else:
+            self.fail("Expected TypeError")
+
     #
     # POSIX tests
     #

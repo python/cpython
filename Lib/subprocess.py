@@ -504,6 +504,9 @@ class Popen(object):
         """Create new Popen instance."""
         _cleanup()
 
+        if not isinstance(bufsize, (int, long)):
+            raise TypeError("bufsize must be an integer")
+
         if mswindows:
             if preexec_fn is not None:
                 raise ValueError("preexec_fn is not supported on Windows "
