@@ -37,15 +37,17 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "traceback.h"
 
 /* Turn this on if your compiler chokes on the big switch: */
-/* #define CASE_TOO_BIG 1 /**/
+/* #define CASE_TOO_BIG 1  	/**/
 
-#ifndef NDEBUG
+/* Turn this on if you want to debug the interpreter: */
+/* (This can be on even if NDEBUG is defined) */
+/* #define DEBUG 1  		/**/
+
+#if defined(DEBUG) || !defined(NDEBUG)
 /* For debugging the interpreter: */
 #define LLTRACE  1	/* Low-level trace feature */
 #define CHECKEXC 1	/* Double-check exception checking */
 #endif
-
-#define DEBUG
 
 
 /* Forward declarations */
@@ -183,7 +185,7 @@ eval_code(co, globals, locals, arg)
 	char *name;		/* Name used by some instructions */
 	int needmerge = 0;
 #ifdef LLTRACE
-	int lltrace = dictlookup(globals, "__lltrace__") != NULL;
+	int lltrace;
 #endif
 #ifdef DEBUG
 	/* Make it easier to find out where we are with dbx */
@@ -232,6 +234,10 @@ eval_code(co, globals, locals, arg)
 		if (locals == NULL)
 			locals = globals;
 	}
+
+#ifdef LLTRACE
+	lltrace = dictlookup(globals, "__lltrace__") != NULL;
+#endif
 
 	f = newframeobject(
 			current_frame,		/*back*/
@@ -1523,6 +1529,7 @@ locals_2_fast(f, clear)
 {
 	/* Merge f->f_locals into f->f_fastlocals */
 	object *locals, *fast, *map;
+	object *error_type, *error_value;
 	int i;
 	if (f == NULL)
 		return;
@@ -1534,6 +1541,7 @@ locals_2_fast(f, clear)
 	if (!is_dictobject(locals) || !is_listobject(fast) ||
 	    !is_dictobject(map))
 		return;
+	err_get(&error_type, &error_value);
 	i = getdictsize(map);
 	while (--i >= 0) {
 		object *key;
@@ -1555,6 +1563,7 @@ locals_2_fast(f, clear)
 			if (setlistitem(fast, j, value) != 0)
 				err_clear();
 	}
+	err_setval(error_type, error_value);
 }
 
 void
