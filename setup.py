@@ -449,9 +449,23 @@ class PyBuildExt(build_ext):
         # Andrew Kuchling's zlib module.
         # This require zlib 1.1.3 (or later).
         # See http://www.cdrom.com/pub/infozip/zlib/
-        if (self.compiler.find_library_file(lib_dirs, 'z')):
-            exts.append( Extension('zlib', ['zlibmodule.c'],
-                                   libraries = ['z']) )
+        zlib_inc = find_file('zlib.h', [], inc_dirs)
+        if zlib_inc is not None:
+            zlib_h = zlib_inc[0] + '/zlib.h'
+            version = '"0.0.0"'
+            version_req = '"1.1.3"'
+            fp = open(zlib_h)
+            while 1:
+                line = fp.readline()
+                if not line:
+                    break
+                if line.find('#define ZLIB_VERSION', 0) == 0:
+                    version = line.split()[2]
+                    break
+            if version >= version_req:
+                if (self.compiler.find_library_file(lib_dirs, 'z')):
+                    exts.append( Extension('zlib', ['zlibmodule.c'],
+                                           libraries = ['z']) )
 
         # Interface to the Expat XML parser
         #
