@@ -326,44 +326,7 @@ float_compare(PyFloatObject *v, PyFloatObject *w)
 static long
 float_hash(PyFloatObject *v)
 {
-	double intpart, fractpart;
-	long x;
-	/* This is designed so that Python numbers with the same
-	   value hash to the same value, otherwise comparisons
-	   of mapping keys will turn out weird */
-
-#ifdef MPW /* MPW C modf expects pointer to extended as second argument */
-{
-	extended e;
-	fractpart = modf(v->ob_fval, &e);
-	intpart = e;
-}
-#else
-	fractpart = modf(v->ob_fval, &intpart);
-#endif
-
-	if (fractpart == 0.0) {
-		if (intpart > LONG_MAX || -intpart > LONG_MAX) {
-			/* Convert to long int and use its hash... */
-			PyObject *w = PyLong_FromDouble(v->ob_fval);
-			if (w == NULL)
-				return -1;
-			x = PyObject_Hash(w);
-			Py_DECREF(w);
-			return x;
-		}
-		x = (long)intpart;
-	}
-	else {
-		/* Note -- if you change this code, also change the copy
-		   in complexobject.c */
-		x = _Py_HashDouble(v->ob_fval);
-		if (x == -1)
-			return -1;
-	}
-	if (x == -1)
-		x = -2;
-	return x;
+	return _Py_HashDouble(v->ob_fval);
 }
 
 static PyObject *

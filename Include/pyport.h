@@ -103,7 +103,7 @@ extern "C" {
 #define Py_ARITHMETIC_RIGHT_SHIFT(TYPE, I, J) ((I) >> (J))
 #endif
 
-/* Py_FORCE_EXPANSION
+/* Py_FORCE_EXPANSION(X)
  * "Simply" returns its argument.  However, macro expansions within the
  * argument are evaluated.  This unfortunate trickery is needed to get
  * token-pasting to work as desired in some cases.
@@ -123,6 +123,14 @@ extern "C" {
 #define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
 #endif
 
+/* Py_IS_INFINITY(X)
+ * Return 1 if float or double arg is an infinity, else 0.
+ * Caution:
+ *    X is evaluated more than once.
+ *    This implementation may set the underflow flag if |X| is very small;
+ *    it really can't be implemented correctly (& easily) before C99.
+ */
+ #define Py_IS_INFINITY(X) ((X) && (X)*0.5 == (X))
 
 /**************************************************************************
 Prototypes that are missing from the standard include files on some systems
