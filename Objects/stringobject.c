@@ -2786,7 +2786,6 @@ PyString_Format(PyObject *format, PyObject *args)
 			int flags = 0;
 			int width = -1;
 			int prec = -1;
-			int size = 0;
 			int c = '\0';
 			int fill;
 			PyObject *v = NULL;
@@ -2924,7 +2923,6 @@ PyString_Format(PyObject *format, PyObject *args)
 			} /* prec */
 			if (fmtcnt >= 0) {
 				if (c == 'h' || c == 'l' || c == 'L') {
-					size = c;
 					if (--fmtcnt >= 0)
 						c = *fmt++;
 				}
