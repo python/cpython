@@ -2,39 +2,53 @@
          Subprocesses with accessible I/O streams}
 
 \declaremodule{standard}{popen2}
-  \platform{Unix}
+  \platform{Unix, Windows}
 \modulesynopsis{Subprocesses with accessible standard I/O streams.}
 \sectionauthor{Drew Csillag}{drew_csillag@geocities.com}
 
 
-This module allows you to spawn processes and connect their 
-input/output/error pipes and obtain their return codes under \UNIX.
-Similar functionality exists for Windows platforms using the
-\module{win32pipe} module provided as part of Mark Hammond's Windows
-extensions.
+This module allows you to spawn processes and connect to their
+input/output/error pipes and obtain their return codes under
+\UNIX{} and Windows.
 
-The primary interface offered by this module is a pair of factory
-functions:
+Note that starting with Python 2.0, this functionality is available
+using functions from the \refmodule{os} module which have the same
+names as the factory functions here, but the order of the return
+values is more intuitive in the \refmodule{os} module variants.
 
-\begin{funcdesc}{popen2}{cmd\optional{, bufsize}}
-Executes \var{cmd} as a sub-process.  If \var{bufsize} is specified, 
-it specifies the buffer size for the I/O pipes.  Returns the file
-objects \code{(\var{child_stdout}, \var{child_stdin})}.
+The primary interface offered by this module is a trio of factory
+functions.  For each of these, if \var{bufsize} is specified, 
+it specifies the buffer size for the I/O pipes.  \var{mode}, if
+provided, should be the string \code{'b'} or \code{'t'}; on Windows
+this is needed to determine whether the file objects should be opened
+in binary or text mode.  The default value for \var{mode} is
+\code{'t'}.
+
+\begin{funcdesc}{popen2}{cmd\optional{, bufsize\optional{, mode}}}
+Executes \var{cmd} as a sub-process.  Returns the file objects
+\code{(\var{child_stdout}, \var{child_stdin})}.
 \end{funcdesc}
 
-\begin{funcdesc}{popen3}{cmd\optional{, bufsize}}
-Executes \var{cmd} as a sub-process.  If \var{bufsize} is specified, 
-it specifies the buffer size for the I/O pipes.  Returns the file
-objects \code{(\var{child_stdout}, \var{child_stdin},
-\var{child_stderr})}.
+\begin{funcdesc}{popen3}{cmd\optional{, bufsize\optional{, mode}}}
+Executes \var{cmd} as a sub-process.  Returns the file objects
+\code{(\var{child_stdout}, \var{child_stdin}, \var{child_stderr})}.
 \end{funcdesc}
 
-The class defining the objects returned by the factory functions is
-also available:
+\begin{funcdesc}{popen4}{cmd\optional{, bufsize\optional{, mode}}}
+Executes \var{cmd} as a sub-process.  Returns the file objects
+\code{(\var{child_stdout_and_stderr}, \var{child_stdin})}.
+\versionadded{2.0}
+\end{funcdesc}
+
+
+On \UNIX, a class defining the objects returned by the factory
+functions is also available.  These are not used for the Windows
+implementation, and are not available on that platform.
 
 \begin{classdesc}{Popen3}{cmd\optional{, capturestderr\optional{, bufsize}}}
 This class represents a child process.  Normally, \class{Popen3}
-instances are created using the factory functions described above.
+instances are created using the \function{popen2()} and
+\function{popen3()} factory functions described above.
 
 If not using one off the helper functions to create \class{Popen3}
 objects, the parameter \var{cmd} is the shell command to execute in a
@@ -44,10 +58,18 @@ The default is false.  If the \var{bufsize} parameter is specified, it
 specifies the size of the I/O buffers to/from the child process.
 \end{classdesc}
 
+\begin{classdesc}{Popen4}{cmd\optional{, bufsize}}
+Similar to \class{Popen3}, but always captures standard error into the
+same file object as standard output.  These are typically created
+using \function{popen4()}.
+\versionadded{2.0}
+\end{classdesc}
 
-\subsection{Popen3 Objects \label{popen3-objects}}
 
-Instances of the \class{Popen3} class have the following methods:
+\subsection{Popen3 and Popen4 Objects \label{popen3-objects}}
+
+Instances of the \class{Popen3} and \class{Popen4} classes have the
+following methods:
 
 \begin{methoddesc}{poll}{}
 Returns \code{-1} if child process hasn't completed yet, or its return 
@@ -59,10 +81,12 @@ Waits for and returns the return code of the child process.
 \end{methoddesc}
 
 
-The following attributes of \class{Popen3} objects are also available: 
+The following attributes are also available: 
 
 \begin{memberdesc}{fromchild}
-A file object that provides output from the child process.
+A file object that provides output from the child process.  For
+\class{Popen4} instances, this will provide both the standard output
+and standard error streams.
 \end{memberdesc}
 
 \begin{memberdesc}{tochild}
@@ -72,6 +96,7 @@ A file object that provides input to the child process.
 \begin{memberdesc}{childerr}
 Where the standard error from the child process goes is
 \var{capturestderr} was true for the constructor, or \code{None}.
+This will always be \code{None} for \class{Popen4} instances.
 \end{memberdesc}
 
 \begin{memberdesc}{pid}
