@@ -1,4 +1,4 @@
-from test.test_support import verbose, have_unicode
+from test.test_support import verbose, have_unicode, TestFailed
 import sys
 
 # test string formatting operator (I am not sure if this is being tested
@@ -210,9 +210,15 @@ def test_exc(formatstr, args, exception, excmsg):
         if verbose: print 'no'
         print 'Unexpected exception'
         raise
+    else:
+        raise TestFailed, 'did not get expected exception: %s' % excmsg
 
 test_exc('abc %a', 1, ValueError,
          "unsupported format character 'a' (0x61) at index 5")
 if have_unicode:
     test_exc(unicode('abc %\u3000','raw-unicode-escape'), 1, ValueError,
              "unsupported format character '?' (0x3000) at index 5")
+
+test_exc('%d', '1', TypeError, "int argument required")
+test_exc('%g', '1', TypeError, "float argument required")
+
