@@ -301,6 +301,20 @@ Py_Main(int argc, char **argv)
 		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
 
 	Py_Finalize();
+
+#ifdef __INSURE__
+	/* Insure++ is a memory analysis tool that aids in discovering
+	 * memory leaks and other memory problems.  On Python exit, the
+	 * interned string dictionary is flagged as being in use at exit
+	 * (which it is).  Under normal circumstances, this is fine because
+	 * the memory will be automatically reclaimed by the system.  Under
+	 * memory debugging, it's a huge source of useless noise, so we
+	 * trade off slower shutdown for less distraction in the memory
+	 * reports.  -baw
+	 */
+	_Py_ReleaseInternedStrings();
+#endif /* __INSURE__ */
+
 	return sts;
 }
 
