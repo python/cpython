@@ -48,6 +48,7 @@
 ;; - proper interaction with pending-del and del-sel modes.
 ;; - New py-electric-colon (:) command for improved outdenting.  Also
 ;;   py-indent-line (TAB) should handle outdented lines better.
+;; - New commands py-outdent-left (C-c C-l) and py-indent-right (C-c C-r)
 
 ;; Here's a brief to do list:
 ;;
@@ -247,6 +248,8 @@ Currently-active file is at the head of the list.")
 	    ("\n"	 . py-newline-and-indent)
 	    ("\C-c:"	 . py-guess-indent-offset)
 	    ("\C-c\t"	 . py-indent-region)
+	    ("\C-c\C-l"  . py-outdent-left)
+	    ("\C-c\C-r"  . py-indent-right)
 	    ("\C-c<"	 . py-shift-region-left)
 	    ("\C-c>"	 . py-shift-region-right)
 	    ("\C-c\C-n"  . py-next-statement)
@@ -442,6 +445,44 @@ argument is provided, that many colons are inserted non-electrically."
 	(delete-horizontal-space)
 	(indent-to (- indent outdent))
 	))))
+
+(defun py-indent-right (arg)
+  "Indent the line by one `py-indent-offset' level.
+With numeric arg, indent by that many levels.  You cannot indent
+farther right than the distance the line would be indented by
+\\[py-indent-line]."
+  (interactive "p")
+  (let ((col (current-indentation))
+	(want (* arg py-indent-offset))
+	(indent (py-compute-indentation))
+	(pos (- (point-max) (point)))
+	(bol (save-excursion (beginning-of-line) (point))))
+    (if (<= (+ col want) indent)
+	(progn
+	  (beginning-of-line)
+	  (delete-horizontal-space)
+	  (indent-to (+ col want))
+	  (if (> (- (point-max) pos) (point))
+	      (goto-char (- (point-max) pos)))
+	  ))))
+
+(defun py-outdent-left (arg)
+  "Outdent the line by one `py-indent-offset' level.
+With numeric arg, outdent by that many levels.  You cannot outdent
+farther left than column zero."
+  (interactive "p")
+  (let ((col (current-indentation))
+	(want (* arg py-indent-offset))
+	(pos (- (point-max) (point)))
+	(bol (save-excursion (beginning-of-line) (point))))
+    (if (<= 0 (- col want))
+	(progn
+	  (beginning-of-line)
+	  (delete-horizontal-space)
+	  (indent-to (- col want))
+	  (if (> (- (point-max) pos) (point))
+	      (goto-char (- (point-max) pos)))
+	  ))))
 
 
 ;;; Functions that execute Python commands in a subprocess
