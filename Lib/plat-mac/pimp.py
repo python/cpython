@@ -78,7 +78,7 @@ class PimpUnpacker:
         self._dir = dir
         self._renames = renames
                 
-    def unpack(self, archive, output=None):
+    def unpack(self, archive, output=None, package=None):
         return None
         
 class PimpCommandUnpacker(PimpUnpacker):
@@ -86,7 +86,7 @@ class PimpCommandUnpacker(PimpUnpacker):
     
     _can_rename = False
     
-    def unpack(self, archive, output=None):
+    def unpack(self, archive, output=None, package=None):
         cmd = self.argument % archive
         if _cmd(output, self._dir, cmd):
             return "unpack command failed"
@@ -96,7 +96,7 @@ class PimpTarUnpacker(PimpUnpacker):
     
     _can_rename = True
     
-    def unpack(self, archive, output=None):
+    def unpack(self, archive, output=None, package=None):
         tf = tarfile.open(archive, "r")
         members = tf.getmembers()
         skip = []
@@ -132,9 +132,11 @@ class PimpTarUnpacker(PimpUnpacker):
             tf.extract(member, self._dir)
         if skip:
             names = [member.name for member in skip if member.name[-1] != '/']
+            if package:
+                names = package.filterExpectedSkips(names)
             if names:
                 return "Not all files were unpacked: %s" % " ".join(names)
-        
+                        
 ARCHIVE_FORMATS = [
     (".tar.Z", PimpTarUnpacker, None),
     (".taz", PimpTarUnpacker, None),
@@ -180,6 +182,9 @@ class PimpPreferences:
             installDir = DEFAULT_INSTALLDIR
             self.installLocations = []
         self.installDir = installDir
+        
+    def isUserInstall(self):
+        return self.installDir != DEFAULT_INSTALLDIR
 
     def check(self):
         """Check that the preferences make sense: directories exist and are
@@ -370,7 +375,9 @@ ALLOWED_KEYS = [
     "Pre-install-command",
     "Post-install-command",
     "Prerequisites",
-    "MD5Sum"
+    "MD5Sum",
+    "User-install-skips",
+    "Systemwide-only",
 ]
 
 class PimpPackage:
@@ -394,6 +401,7 @@ class PimpPackage:
     def shortdescription(self): return self.description().splitlines()[0]
     def homepage(self): return self._dict.get('Home-page')
     def downloadURL(self): return self._dict.get('Download-URL')
+    def systemwideOnly(self): return self._dict.get('Systemwide-only')
     
     def fullname(self):
         """Return the full name "name-version-flavor" of a package.
@@ -484,6 +492,10 @@ class PimpPackage:
                 return []
             return [(None, 
                 "%s: This package cannot be installed automatically (no Download-URL field)" %
+                    self.fullname())]
+        if self.systemwideOnly() and self._db.preferences.isUserInstall():
+            return [(None,
+                "%s: This package can only be installed system-wide" %
                     self.fullname())]
         if not self._dict.get('Prerequisites'):
             return []
@@ -617,6 +629,22 @@ class PimpPackage:
                 if not line in sys.path:
                     sys.path.append(line)           
 
+    def filterExpectedSkips(self, names):
+        """Return a list that contains only unpexpected skips"""
+        if not self._db.preferences.isUserInstall():
+            return names
+        expected_skips = self._dict.get('User-install-skips')
+        if not expected_skips:
+            return names
+        newnames = []
+        for name in names:
+            for skip in expected_skips:
+                if name[:len(skip)] == skip:
+                    break
+            else:
+                newnames.append(name)
+        return newnames
+
 class PimpPackage_binary(PimpPackage):
 
     def unpackPackageOnly(self, output=None):
@@ -659,7 +687,7 @@ class PimpPackage_binary(PimpPackage):
             install_renames.append((oldloc, newloc))
                 
         unpacker = unpackerClass(arg, dir="/", renames=install_renames)
-        rv = unpacker.unpack(self.archiveFilename, output=output)
+        rv = unpacker.unpack(self.archiveFilename, output=output, package=self)
         if rv:
             return rv
         
