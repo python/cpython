@@ -71,10 +71,13 @@ def mkcorealias(src, altsrc):
 	except os.error:
 		pass
 	do_copy = ask_copy()
-	if do_copy:
-		macostools.copy(os.path.join(sys.exec_prefix, src), dst)
-	else:
-		macostools.mkalias(os.path.join(sys.exec_prefix, src), dst)
+	try:
+		if do_copy:
+			macostools.copy(os.path.join(sys.exec_prefix, src), dst)
+		else:
+			macostools.mkalias(os.path.join(sys.exec_prefix, src), dst)
+	except IOError:
+		return 0
 	return 1
 	
 do_copy = None
@@ -166,6 +169,7 @@ def main():
 		Dlg.CautionAlert(ALERT_NOCORE, None)
 		if verbose:
 			print "Warning: PythonCore not copied to Extensions folder"
+			print "         (Applets will not work unless run from the Python folder)"
 	if sys.argv[0][-7:] == 'Classic':
 		do_classic = 1
 	elif sys.argv[0][-6:] == 'Carbon':
