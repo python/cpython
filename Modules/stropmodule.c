@@ -132,7 +132,7 @@ strop_splitfields(self, args)
 
 	i = j = 0;
 	while (i+n <= len) {
-		if (s[i] == sub[0] && (n == 1 || strncmp(s+i, sub, n) == 0)) {
+		if (s[i] == sub[0] && (n == 1 || memcmp(s+i, sub, n) == 0)) {
 			item = newsizedstringobject(s+j, (int)(i-j));
 			if (item == NULL)
 				goto fail;
@@ -261,7 +261,7 @@ strop_find(self, args)
 	len -= n;
 	for (; i <= len; ++i)
 		if (s[i] == sub[0] &&
-		    (n == 1 || strncmp(&s[i+1], &sub[1], n-1) == 0))
+		    (n == 1 || memcmp(&s[i+1], &sub[1], n-1) == 0))
 			return newintobject((long)i);
 
 	return newintobject(-1L);
@@ -294,7 +294,7 @@ strop_rfind(self, args)
 
 	for (j = len-n; j >= i; --j)
 		if (s[j] == sub[0] &&
-		    (n == 1 || strncmp(&s[j+1], &sub[1], n-1) == 0))
+		    (n == 1 || memcmp(&s[j+1], &sub[1], n-1) == 0))
 			return newintobject((long)j);
 
 	return newintobject(-1L);
