@@ -542,7 +542,9 @@ static struct constant {
 #ifdef VDISCARD
 	{"VDISCARD", VDISCARD},
 #endif
+#ifdef VWERASE
 	{"VWERASE", VWERASE},
+#endif
 	{"VLNEXT", VLNEXT},
 	{"VEOL2", VEOL2},
 
