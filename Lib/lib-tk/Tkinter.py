@@ -2139,11 +2139,11 @@ class Canvas(Widget):
     def scan_mark(self, x, y):
         """Remember the current X, Y coordinates."""
         self.tk.call(self._w, 'scan', 'mark', x, y)
-    def scan_dragto(self, x, y):
-        """Adjust the view of the canvas to 10 times the
+    def scan_dragto(self, x, y, gain=10):
+        """Adjust the view of the canvas to GAIN times the
         difference between X and Y and the coordinates given in
         scan_mark."""
-        self.tk.call(self._w, 'scan', 'dragto', x, y)
+        self.tk.call(self._w, 'scan', 'dragto', x, y, gain)
     def select_adjust(self, tagOrId, index):
         """Adjust the end of the selection near the cursor of an item TAGORID to index."""
         self.tk.call(self._w, 'select', 'adjust', tagOrId, index)

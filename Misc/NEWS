@@ -88,6 +88,9 @@ Library
 
 - urlparse can now parse imap:// URLs.  See SF feature request #618024.
 
+- Tkinter.Canvas.scan_dragto() provides an optional parameter to support
+  the gain value which is passed to Tk.  SF bug# 602259.
+
 Tools/Demos
 -----------
 
