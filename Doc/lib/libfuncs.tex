@@ -873,13 +873,16 @@ def my_import(name):
   behaviour of \code{str()} except that it returns Unicode strings
   instead of 8-bit strings. More precisely, if \var{object} is an
   Unicode string or subclass it will return a Unicode string without
-  any additional decoding applied. For objects which provide a
-  \code{__unicode__} method, it will call this method without
-  arguments to create a Unicode string. For all other objects, the
-  8-bit string version or representation is requested and then
-  converted to a Unicode string using the codec for the default
-  encoding in \code{'strict'} mode.
+  any additional decoding applied.
+
+  For objects which provide a \method{__unicode__()} method, it will
+  call this method without arguments to create a Unicode string. For
+  all other objects, the 8-bit string version or representation is
+  requested and then converted to a Unicode string using the codec for
+  the default encoding in \code{'strict'} mode.
+
   \versionadded{2.0}
+  \versionchanged[Support for \method{__unicode__()} added]{2.2}
 \end{funcdesc}
 
 \begin{funcdesc}{vars}{\optional{object}}
