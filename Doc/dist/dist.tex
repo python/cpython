@@ -393,7 +393,7 @@ setup(name = "foo", version = "1.0",
 \end{verbatim}
 
 The \class{Extension} class (actually, the underlying extension-building
-machinery implemented by the \command{built\_ext} command) supports a
+machinery implemented by the \command{build\_ext} command) supports a
 great deal of flexibility in describing Python extensions, which is
 explained in the following sections.  
 
@@ -1028,7 +1028,7 @@ the Distutils is driven by the setup script.  To make your life easier,
 the \command{bdist\_rpm} command normally creates a \file{.spec} file
 based on the information you supply in the setup script, on the command
 line, and in any Distutils configuration files.  Various options and
-section in the \file{.spec} file are derived from options in the setup
+sections in the \file{.spec} file are derived from options in the setup
 script as follows:
 \begin{tableii}{l|l}{textrm}%
   {RPM \file{.spec} file option or section}{Distutils setup script option}
@@ -1052,11 +1052,11 @@ through options to the \command{bdist\_rpm} command as follows:
   \lineiii{Release}{\option{release}}{``1''}
   \lineiii{Group}{\option{group}}{``Development/Libraries''}
   \lineiii{Vendor}{\option{vendor}}{(see above)}
-  \lineiii{Packager}{packager}{(none)}
-  \lineiii{Provides}{provides}{(none)}
-  \lineiii{Requires}{requires}{(none)}
-  \lineiii{Conflicts}{conflicts}{(none)}
-  \lineiii{Obsoletes}{obsoletes}{(none)}
+  \lineiii{Packager}{\option{packager}}{(none)}
+  \lineiii{Provides}{\option{provides}}{(none)}
+  \lineiii{Requires}{\option{requires}}{(none)}
+  \lineiii{Conflicts}{\option{conflicts}}{(none)}
+  \lineiii{Obsoletes}{\option{obsoletes}}{(none)}
   \lineiii{Distribution}{\option{distribution\_name}}{(none)}
   \lineiii{BuildRequires}{\option{build\_requires}}{(none)}
   \lineiii{Icon}{\option{icon}}{(none)}
