@@ -138,3 +138,19 @@ try:
     eff.id.foo
 except AttributeError: pass
 else: raise TestFailed
+
+# Regression test for a crash in pre-2.1a1
+def another():
+    pass
+del another.__dict__
+del another.func_dict
+another.func_dict = None
+
+try:
+    del another.bar
+except AttributeError: pass
+else: raise TestFailed
+
+# This isn't specifically related to function attributes, but it does test a
+# core dump regression in funcobject.c
+del another.func_defaults
