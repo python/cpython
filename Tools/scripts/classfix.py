@@ -1,3 +1,4 @@
+#! /ufs/guido/bin/sgi/python
 #! /usr/local/python
 
 # Fix Python source files to use the new class definition syntax,
@@ -13,19 +14,21 @@
 # arguments).  Of course, the original file is kept as a back-up
 # (with a "~" attached to its name).
 #
-# Undoubtedly you can do this using find and sed, but this is
+# Changes made are reported to stdout in a diff-like format.
+#
+# Undoubtedly you can do this using find and sed or perl, but this is
 # a nice example of Python code that recurses down a directory tree
 # and uses regular expressions.  Also note several subtleties like
 # preserving the file's mode and avoiding to even write a temp file
 # when no changes are needed for a file.
 #
-# Changes made are reported to stdout in a diff-like format.
+# NB: by changing only the function fixline() you can turn this
+# into a program for a different change to Python programs...
 
 import sys
-import regexp
+import regex
 import posix
 import path
-import string
 from stat import *
 
 err = sys.stderr.write
@@ -35,7 +38,7 @@ rep = sys.stdout.write
 def main():
 	bad = 0
 	if not sys.argv[1:]: # No arguments
-		err('usage: classfix file-or-directory ...\n')
+		err('usage: ' + argv[0] + ' file-or-directory ...\n')
 		sys.exit(2)
 	for arg in sys.argv[1:]:
 		if path.isdir(arg):
@@ -47,7 +50,9 @@ def main():
 			if fix(arg): bad = 1
 	sys.exit(bad)
 
-ispython = regexp.compile('^[a-zA-Z0-9_]+\.py$').match # This is a method!
+ispythonprog = regex.compile('^[a-zA-Z0-9_]+\.py$')
+def ispython(name):
+	return ispythonprog.match(name) >= 0
 
 def recursedown(dirname):
 	dbg('recursedown(' + `dirname` + ')\n')
@@ -57,26 +62,22 @@ def recursedown(dirname):
 	except posix.error, msg:
 		err(dirname + ': cannot list directory: ' + `msg` + '\n')
 		return 1
+	names.sort()
+	subdirs = []
 	for name in names:
 		if name in ('.', '..'): continue
 		fullname = path.join(dirname, name)
 		if path.islink(fullname): pass
 		elif path.isdir(fullname):
-			if recursedown(fullname): bad = 1
+			subdirs.append(fullname)
 		elif ispython(name):
 			if fix(fullname): bad = 1
+	for fullname in subdirs:
+		if recursedown(fullname): bad = 1
 	return bad
 
-# This expression doesn't catch *all* class definition headers,
-# but it's darn pretty close.
-classexpr = '^([ \t]*class +[a-zA-Z0-9_]+) *\( *\) *((=.*)?):'
-findclass = regexp.compile(classexpr).match # This is a method!
-
-baseexpr = '^ *(.*) *\( *\) *$'
-findbase = regexp.compile(baseexpr).match # This is a method, too!
-
 def fix(filename):
-##	dbg('fix(' + `filename` + ')\n')
+	dbg('fix(' + `filename` + ')\n')
 	try:
 		f = open(filename, 'r')
 	except IOError, msg:
@@ -84,54 +85,43 @@ def fix(filename):
 		return 1
 	head, tail = path.split(filename)
 	tempname = path.join(head, '@' + tail)
-	tf = None
+	g = None
 	# If we find a match, we rewind the file and start over but
 	# now copy everything to a temp file.
+	lineno = 0
 	while 1:
 		line = f.readline()
 		if not line: break
-		res = findclass(line)
-		if not res:
-			if tf: tf.write(line)
-			continue
-		if not tf:
-			try:
-				tf = open(tempname, 'w')
-			except IOError, msg:
-				f.close()
-				err(tempname+': cannot create: '+`msg`+'\n')
-				return 1
-			rep(filename + ':\n')
-			# Rewind the input file and start all over:
-			f.seek(0)
-			continue
-		a0, b0 = res[0] # Whole match (up to ':')
-		a1, b1 = res[1] # First subexpression (up to classname)
-		a2, b2 = res[2] # Second subexpression (=.*)
-		head = line[:b1]
-		tail = line[b0:] # Unmatched rest of line
-		if a2 = b2: # No base classes -- easy case
-			newline = head + ':' + tail
-		else:
-			# Get rid of leading '='
-			basepart = line[a2+1:b2]
-			# Extract list of base expressions
-			bases = string.splitfields(basepart, ',')
-			# Strip trailing '()' from each base expression
-			for i in range(len(bases)):
-				res = findbase(bases[i])
-				if res:
-					(x0, y0), (x1, y1) = res
-					bases[i] = bases[i][x1:y1]
-			# Join the bases back again and build the new line
-			basepart = string.joinfields(bases, ', ')
-			newline = head + '(' + basepart + '):' + tail
-		rep('< ' + line)
-		rep('> ' + newline)
-		tf.write(newline)
+		lineno = lineno + 1
+		while line[-2:] == '\\\n':
+			nextline = f.readline()
+			if not nextline: break
+			line = line + nextline
+			lineno = lineno + 1
+		newline = fixline(line)
+		if newline != line:
+			if g is None:
+				try:
+					g = open(tempname, 'w')
+				except IOError, msg:
+					f.close()
+					err(tempname+': cannot create: '+\
+					    `msg`+'\n')
+					return 1
+				f.seek(0)
+				lineno = 0
+				rep(filename + ':\n')
+				continue # restart from the beginning
+			rep(`lineno` + '\n')
+			rep('< ' + line)
+			rep('> ' + newline)
+		if g is not None:
+			g.write(newline)
+
+	# End of file
 	f.close()
-	if not tf: return 0 # No changes
-	
+	if not g: return 0 # No changes
+
 	# Finishing touch -- move files
 
 	# First copy the file's mode to the temp file
@@ -153,5 +143,47 @@ def fix(filename):
 		return 1
 	# Return succes
 	return 0
+
+# This expression doesn't catch *all* class definition headers,
+# but it's pretty darn close.
+classexpr = '^\([ \t]*class +[a-zA-Z0-9_]+\) *( *) *\(\(=.*\)?\):'
+classprog = regex.compile(classexpr)
+
+# Expressions for finding base class expressions.
+baseexpr = '^ *\(.*\) *( *) *$'
+baseprog = regex.compile(baseexpr)
+
+import string
+
+def fixline(line):
+	if classprog.match(line) < 0: # No 'class' keyword -- no change
+		return line
+	
+	(a0, b0), (a1, b1), (a2, b2) = classprog.regs[:3]
+	# a0, b0 = Whole match (up to ':')
+	# a1, b1 = First subexpression (up to classname)
+	# a2, b2 = Second subexpression (=.*)
+	head = line[:b1]
+	tail = line[b0:] # Unmatched rest of line
+	
+	if a2 == b2: # No base classes -- easy case
+		return head + ':' + tail
+	
+	# Get rid of leading '='
+	basepart = line[a2+1:b2]
+
+	# Extract list of base expressions
+	bases = string.splitfields(basepart, ',')
+	
+	# Strip trailing '()' from each base expression
+	for i in range(len(bases)):
+		if baseprog.match(bases[i]) >= 0:
+			x1, y1 = baseprog.regs[1]
+			bases[i] = bases[i][x1:y1]
+	
+	# Join the bases back again and build the new line
+	basepart = string.joinfields(bases, ', ')
+	
+	return head + '(' + basepart + '):' + tail
 
 main()
