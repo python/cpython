@@ -62,12 +62,22 @@ extern long getmtime(); /* In getmtime.c */
    WITH_MAC_DL	-- Mac dynamic linking (highly experimental)
    SHORT_EXT	-- short extension for dynamic module, e.g. ".so"
    LONG_EXT	-- long extension, e.g. "module.so"
+   hpux		-- HP-UX Dynamic Linking - defined by the compiler
 
    (The other WITH_* symbols are used only once, to set the
    appropriate symbols.)
 */
 
 /* Configure dynamic linking */
+
+#ifdef hpux
+#define DYNAMIC_LINK
+#include <errno.h>
+typedef void (*dl_funcptr)();
+#define _DL_FUNCPTR_DEFINED 1
+#define SHORT_EXT ".sl"
+#define LONG_EXT "module.sl"
+#endif 
 
 #ifdef NT
 #define DYNAMIC_LINK
@@ -124,7 +134,7 @@ typedef void (*dl_funcptr)();
 #define LONG_EXT "module.so"
 #endif /* USE_SHLIB */
 
-#ifdef USE_DL
+#if defined(USE_DL) || defined(hpux)
 #include "dl.h"
 #endif
 
@@ -143,7 +153,11 @@ typedef void (*dl_funcptr)();
 extern char *getprogramname();
 
 #ifndef FUNCNAME_PATTERN
+#if defined(__hp9000s300)
+#define FUNCNAME_PATTERN "_init%s"
+#else
 #define FUNCNAME_PATTERN "init%s"
+#endif
 #endif
 
 #if !defined(SHORT_EXT) && !defined(LONG_EXT)
@@ -316,7 +330,34 @@ load_dynamic_module(name, namebuf, m, m_ret)
 			return NULL;
 	}
 #endif /* USE_RLD */
+#ifdef hpux
+	{
+		shl_t lib;
+		int flags;
 
+		flags = BIND_DEFERRED;
+		if (verbose)
+                {
+                        flags = BIND_IMMEDIATE | BIND_NONFATAL | BIND_VERBOSE;
+                        printf("shl_load %s\n",namebuf);
+                }
+                lib = shl_load(namebuf, flags, 0);
+                if (lib == NULL)
+                {
+                        char buf[256];
+                        if (verbose)
+                                perror(namebuf);
+                        sprintf(buf,"Failed to load %s", namebuf);
+                        err_setstr(ImportError, buf);
+                        return NULL;
+                }
+                if (verbose)
+                        printf("shl_findsym %s\n", funcname);
+                shl_findsym(&lib, funcname, TYPE_UNDEFINED, (void *) &p);
+                if (p == NULL && verbose)
+                        perror(funcname);
+	}
+#endif hpux
 	if (p == NULL) {
 		err_setstr(ImportError,
 		   "dynamic module does not define init function");
