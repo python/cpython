@@ -713,10 +713,26 @@ newdatatype_compare(newdatatypeobject * obj1, newdatatypeobject * obj2)
 
 \subsection{Abstract Protocol Support}
 
+Python supports a variety of \emph{abstract} `protocols;' the specific
+interfaces provided to use these interfaces are documented in the
+\citetitle[../api/api.html]{Python/C API Reference Manual} in the
+chapter ``\ulink{Abstract Objects Layer}{../api/abstract.html}.''
+
+A number of these abstract interfaces were defined early in the
+development of the Python implementation.  In particular, the number,
+mapping, and sequence protocols have been part of Python since the
+beginning.  Other protocols have been added over time.  For protocols
+which depend on several handler routines from the type implementation,
+the older protocols have been defined as optional blocks of handlers
+referenced by the type object, while newer protocols have been added
+using additional slots in the main type object, with a flag bit being
+set to indicate that the slots are present.  (The flag bit does not
+indicate that the slot values are non-\NULL.)
+
 \begin{verbatim}
-  tp_as_number;
-  tp_as_sequence;
-  tp_as_mapping;
+    PyNumberMethods   tp_as_number;
+    PySequenceMethods tp_as_sequence;
+    PyMappingMethods  tp_as_mapping;
 \end{verbatim}
 
 If you wish your object to be able to act like a number, a sequence,
@@ -777,7 +793,7 @@ This function takes three arguments:
     saying that keyword arguments are not supported.
 \end{enumerate}
        
-Here is a desultory example of the implementation of call function.
+Here is a desultory example of the implementation of the call function.
 
 \begin{verbatim}
 /* Implement the call function.
@@ -804,6 +820,46 @@ newdatatype_call(newdatatypeobject *obj, PyObject *args, PyObject *other)
     return result;
 }
 \end{verbatim}
+
+XXX some fields need to be added here...
+
+
+\begin{verbatim}
+    /* Added in release 2.2 */
+    /* Iterators */
+    getiterfunc tp_iter;
+    iternextfunc tp_iternext;
+\end{verbatim}
+
+These functions provide support for the iterator protocol.  Any object
+which wishes to support iteration over it's contents (which may be
+generated during iteration) must implement the \code{tp_iter}
+handler.  Objects which are returned by a \code{tp_iter} handler must
+implement both the \code{tp_iter} and \code{tp_iternext} handlers.
+Both handlers take exactly one parameter, the instance for which they
+are being called, and return a new reference.  In the case of an
+error, they should set an exception and return \NULL.
+
+For an object which represents an iterable collection, the
+\code{tp_iter} handler must return an iterator object.  The iterator
+object is responsible for maintaining the state of the iteration.  For
+collections which can support multiple iterators which do not
+interfere with each other (as lists and tuples do), a new iterator
+should be created and returned.  Objects which can only be iterated
+over once (usually due to side effects of iteration) should implement
+this handler by returning a new reference to themselves, and should
+also implement the \code{tp_iternext} handler.  File objects are an
+example of such an iterator.
+
+Iterator objects should implement both handlers.  The \code{tp_iter}
+handler should return a new reference to the iterator (this is the
+same as the \code{tp_iter} handler for objects which can only be
+iterated over destructively).  The \code{tp_iternext} handler should
+return a new reference to the next object in the iteration if there is
+one.  If the iteration has reached the end, it may return \NULL{}
+without setting an exception or it may set \exception{StopIteration};
+avoiding the exception can yield slightly better performance.  If an
+actual error occurs, it should set an exception and return \NULL.
 
 
 \subsection{More Suggestions}
