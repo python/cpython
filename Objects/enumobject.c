@@ -78,13 +78,6 @@ enum_next(enumobject *en)
 	return result;
 }
 
-static PyObject *
-enum_getiter(PyObject *en)
-{
-	Py_INCREF(en);
-	return en;
-}
-
 PyDoc_STRVAR(enum_doc,
 "enumerate(iterable) -> create an enumerating-iterator");
 
@@ -117,7 +110,7 @@ PyTypeObject PyEnum_Type = {
 	0,                              /* tp_clear */
 	0,                              /* tp_richcompare */
 	0,                              /* tp_weaklistoffset */
-	(getiterfunc)enum_getiter,      /* tp_iter */
+	PyObject_GenericGetIter,	/* tp_iter */
 	(iternextfunc)enum_next,        /* tp_iternext */
 	0,                              /* tp_methods */
 	0,                              /* tp_members */

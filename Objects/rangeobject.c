@@ -246,13 +246,6 @@ range_iter(PyObject *seq)
 }
 
 static PyObject *
-rangeiter_getiter(PyObject *it)
-{
-	Py_INCREF(it);
-	return it;
-}
-
-static PyObject *
 rangeiter_next(rangeiterobject *r)
 {
 	if (r->index < r->len) 
@@ -288,7 +281,7 @@ static PyTypeObject Pyrangeiter_Type = {
 	0,                                      /* tp_clear */
 	0,                                      /* tp_richcompare */
 	0,                                      /* tp_weaklistoffset */
-	(getiterfunc)rangeiter_getiter,		/* tp_iter */
+	PyObject_GenericGetIter,		/* tp_iter */
 	(iternextfunc)rangeiter_next,		/* tp_iternext */
 	0,					/* tp_methods */
 };

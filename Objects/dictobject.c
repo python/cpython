@@ -2013,13 +2013,6 @@ dictiter_dealloc(dictiterobject *di)
 	PyObject_Del(di);
 }
 
-static PyObject *
-dictiter_getiter(PyObject *it)
-{
-	Py_INCREF(it);
-	return it;
-}
-
 static PyObject *dictiter_iternext(dictiterobject *di)
 {
 	PyObject *key, *value;
@@ -2069,7 +2062,7 @@ PyTypeObject PyDictIter_Type = {
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
-	(getiterfunc)dictiter_getiter,		/* tp_iter */
+	PyObject_GenericGetIter,		/* tp_iter */
 	(iternextfunc)dictiter_iternext,	/* tp_iternext */
 	0,					/* tp_methods */
 	0,					/* tp_members */
