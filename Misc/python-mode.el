@@ -286,6 +286,18 @@ relative path, the value of variable `default-directory' for the
 buffer is prepended to come up with a file name.")
 (make-variable-buffer-local 'py-master-file)
 
+(defcustom py-pychecker-command "pychecker"
+  "*Shell command used to run Pychecker."
+  :type 'string
+  :group 'python
+  :tag "Pychecker Command")
+
+(defcustom py-pychecker-command-args '("--stdlib")
+  "*List of string arguments to be passed to pychecker."
+  :type '(repeat string)
+  :group 'python
+  :tag "Pychecker Command Args")
+
 
 
 ;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -297,6 +309,16 @@ buffer is prepended to come up with a file name.")
   "A list of features extant in the Emacs you are using.
 There are many flavors of Emacs out there, with different levels of
 support for features needed by `python-mode'.")
+
+;; Face for None, True, False, self, and Ellipsis
+(defvar py-pseudo-keyword-face 'py-pseudo-keyword-face
+  "Face for pseudo keywords in Python mode, like self, True, False, Ellipsis.")
+(make-face 'py-pseudo-keyword-face)
+
+(defun py-font-lock-mode-hook ()
+  (or (face-differs-from-default-p 'py-pseudo-keyword-face)
+      (copy-face 'font-lock-keyword-face 'py-pseudo-keyword-face)))
+(add-hook 'font-lock-mode-hook 'py-font-lock-mode-hook)
 
 (defvar python-font-lock-keywords
   (let ((kw1 (mapconcat 'identity
@@ -327,6 +349,9 @@ support for features needed by `python-mode'.")
      ;; functions
      '("\\bdef[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
        1 font-lock-function-name-face)
+     ;; pseudo-keywords
+     '("\\b\\(self\\|None\\|True\\|False\\|Ellipsis\\)\\b"
+       1 py-pseudo-keyword-face)
      ))
   "Additional expressions to highlight in Python mode.")
 (put 'python-mode 'font-lock-defaults '(python-font-lock-keywords))
@@ -337,6 +362,7 @@ support for features needed by `python-mode'.")
 Currently-active file is at the head of the list.")
 
 (defvar py-pdbtrack-is-tracking-p nil)
+(defvar py-pychecker-history nil)
 
 
 
@@ -509,6 +535,7 @@ Currently-active file is at the head of the list.")
   ;; information
   (define-key py-mode-map "\C-c\C-b" 'py-submit-bug-report)
   (define-key py-mode-map "\C-c\C-v" 'py-version)
+  (define-key py-mode-map "\C-c\C-w" 'py-pychecker-run)
   ;; shadow global bindings for newline-and-indent w/ the py- version.
   ;; BAW - this is extremely bad form, but I'm not going to change it
   ;; for now.
@@ -1424,9 +1451,7 @@ is inserted at the end.  See also the command `py-clear-queue'."
 	    (if err-p
 		(pop-to-buffer py-exception-buffer)))
 	  ))
-      ;; TBD: delete the buffer
-      )
-     )
+      ))
     ;; Clean up after ourselves.
     (kill-buffer buf)))
 
@@ -2609,12 +2634,30 @@ A `nomenclature' is a fancy way of saying AWordWithMixedCaseNotUnderscores."
 
 
 
-;; Skip's python-help commands. The guts of this function is stolen
-;; from XEmacs's symbol-near-point, but without the useless
-;; regexp-quote call on the results, nor the interactive bit.  Also,
-;; we've added the temporary syntax table setting, which Skip
-;; originally had broken out into a separate function.  Note that
-;; Emacs doesn't have the original function.
+;; Pychecker
+(defun py-pychecker-run (command)
+  "*Run pychecker (default on the file currently visited)."
+  (interactive
+   (let ((default
+           (format "%s %s %s" py-pychecker-command
+		   (mapconcat 'identity py-pychecker-command-args " ")
+		   (buffer-file-name))))
+
+     (list
+      (read-shell-command "Run pychecker like this: "
+                          default
+                          py-pychecker-history))))
+  (save-some-buffers (not py-ask-about-save) nil)
+  (compile command))
+
+
+
+;; pydoc commands. The guts of this function is stolen from XEmacs's
+;; symbol-near-point, but without the useless regexp-quote call on the
+;; results, nor the interactive bit.  Also, we've added the temporary
+;; syntax table setting, which Skip originally had broken out into a
+;; separate function.  Note that Emacs doesn't have the original
+;; function.
 (defun py-symbol-near-point ()
   "Return the first textual item to the nearest point."
   ;; alg stolen from etag.el
