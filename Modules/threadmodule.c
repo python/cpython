@@ -255,7 +255,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 }
 
 static char start_new_doc[] =
-"start_new_thread(functon, args[, kwargs])\n\
+"start_new_thread(function, args[, kwargs])\n\
 (start_new() is an obsolete synonym)\n\
 \n\
 Start a new thread.  The thread will call the function with positional\n\
