@@ -20,6 +20,8 @@ def main():
 	scanner = AppleEventsScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()
+	print "=== Testing definitions output code ==="
+	execfile(defsoutput, {}, {})
 	print "=== Done Scanning and Generating, now doing 'import aesupport' ==="
 	import aesupport
 	print "=== Done 'import aesupport'.  It's up to you to compile AEmodule.c ==="

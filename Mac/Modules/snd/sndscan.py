@@ -16,6 +16,8 @@ def main():
 	scanner = SoundScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()
+	print "=== Testing definitions output code ==="
+	execfile(defsoutput, {}, {})
 	print "=== Done scanning and generating, now doing 'import sndsupport' ==="
 	import sndsupport
 	print "=== Done.  It's up to you to compile Sndmodule.c ==="

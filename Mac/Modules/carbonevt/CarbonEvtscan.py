@@ -19,6 +19,8 @@ def main():
 	scanner = CarbonEvents_Scanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()
+	print "=== Testing definitions output code ==="
+	execfile(defsoutput, {}, {})
 	print "--done scanning, importing--"
 	import CarbonEvtsupport
 	print "done"
