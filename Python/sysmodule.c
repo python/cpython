@@ -182,7 +182,7 @@ sys_getcounts(self, args)
 }
 #endif
 
-#ifdef TRACE_REFS
+#ifdef Py_TRACE_REFS
 extern PyObject *getobjects Py_PROTO((PyObject *, PyObject *));
 #endif
 static struct methodlist sys_methods[] = {
@@ -191,7 +191,7 @@ static struct methodlist sys_methods[] = {
 #ifdef COUNT_ALLOCS
 	{"getcounts",	sys_getcounts, 0},
 #endif
-#ifdef TRACE_REFS
+#ifdef Py_TRACE_REFS
 	{"getobjects",	getobjects, 1},
 #endif
 #ifdef USE_MALLOPT
