@@ -37,8 +37,8 @@ class BaseTestCase(unittest.TestCase):
         result = wrap(text, width, **kwargs)
         self.check(result, expect)
 
-    def check_split(self, wrapper, text, expect):
-        result = wrapper._split(text)
+    def check_split(self, text, expect):
+        result = self.wrapper._split(text)
         self.assertEquals(result, expect,
                           "\nexpected %r\n"
                           "but got  %r" % (expect, result))
@@ -174,12 +174,12 @@ What a mess!
         expect = ["Here's", " ", "an", " ", "--", " ", "em-", "dash", " ",
                   "and", "--", "here's", " ", "another", "---",
                   "and", " ", "another!"]
-        self.check_split(self.wrapper, text, expect)
+        self.check_split(text, expect)
 
         text = "and then--bam!--he was gone"
         expect = ["and", " ", "then", "--", "bam!", "--",
                   "he", " ", "was", " ", "gone"]
-        self.check_split(self.wrapper, text, expect)
+        self.check_split(text, expect)
 
 
     def test_unix_options (self):
@@ -214,7 +214,20 @@ What a mess!
         text = "the -n option, or --dry-run or --dryrun"
         expect = ["the", " ", "-n", " ", "option,", " ", "or", " ",
                   "--dry-", "run", " ", "or", " ", "--dryrun"]
-        self.check_split(self.wrapper, text, expect)
+        self.check_split(text, expect)
+
+    def test_funky_hyphens (self):
+        # Screwy edge cases cooked up by David Goodger.  All reported
+        # in SF bug #596434.
+        self.check_split("what the--hey!", ["what", " ", "the", "--", "hey!"])
+        self.check_split("what the--", ["what", " ", "the--"])
+        self.check_split("what the--.", ["what", " ", "the--."])
+        self.check_split("--text--.", ["--text--."])
+
+        # I think David got this wrong in the bug report, but it can't
+        # hurt to make sure it stays right!
+        self.check_split("--option", ["--option"])
+        self.check_split("--option-opt", ["--option-", "opt"])
 
     def test_split(self):
         # Ensure that the standard _split() method works as advertised
