@@ -118,7 +118,7 @@ libmac.tex libmacconsole.tex libmacdnr.tex \
 	libmm.tex libmpz.tex \
 libnntplib.tex \
 libobjs.tex libos.tex \
-libpanel.tex libpickle.tex libposix.tex libposixfile.tex \
+libpanel.tex libparser.tex libpickle.tex libposix.tex libposixfile.tex \
 	libppath.tex libprofile.tex libpwd.tex libpython.tex \
 librand.tex libregex.tex libregsub.tex \
 	librfc822.tex librgbimg.tex librotor.tex \
