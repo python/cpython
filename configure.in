@@ -255,7 +255,7 @@ then
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/sharedmodules";;
 	Linux*) LINKFORSHARED="-rdynamic";;
-	next) LINKFORSHARED="-u libsys_s";;
+	next/*) LINKFORSHARED="-u libsys_s";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
 	IRIX*/6*) LINKFORSHARED="$SGI_ABI -all";;
 	esac
