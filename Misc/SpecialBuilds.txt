@@ -107,7 +107,7 @@ sys.getcounts()
 
         (tp_name, tp_allocs, tp_frees, tp_maxalloc)
 
-    Each distinct type objects gets a distinct entry in this list, even
+    Each distinct type object gets a distinct entry in this list, even
     if two or more type objects have the same tp_name (in which case
     there's no way to distinguish them by looking at this list).  The
     list is ordered by time of first object allocation:  the type object
