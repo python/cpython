@@ -217,12 +217,12 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 				errBuf[sizeof(errBuf)-1] = '\0';
 			}
 			PyErr_SetString(PyExc_ImportError, errBuf);
-		return NULL;
+			return NULL;
 		} else {
 			char buffer[256];
 
 			PyOS_snprintf(buffer, sizeof(buffer), "python%d%d.dll",
-				PY_MAJOR_VERSION,PY_MINOR_VERSION);
+				      PY_MAJOR_VERSION,PY_MINOR_VERSION);
 			import_python = GetPythonImport(hDLL);
 
 			if (import_python &&
