@@ -23,6 +23,7 @@ else:
     raise RuntimeError, "cannot find a useable array type"
 
 def _compile(code, pattern, flags):
+    # internal: compile a (sub)pattern
     emit = code.append
     for op, av in pattern:
 	if op is ANY:
@@ -152,21 +153,75 @@ def _compile(code, pattern, flags):
 	else:
 	    raise ValueError, ("unsupported operand type", op)
 
+def _compile_info(code, pattern, flags):
+    # internal: compile an info block.  in the current version,
+    # this contains min/max pattern width and a literal prefix,
+    # if any
+    lo, hi = pattern.getwidth()
+    if lo == 0:
+	return # not worth it
+    # look for a literal prefix
+    prefix = []
+    if not (flags & SRE_FLAG_IGNORECASE):
+	for op, av in pattern.data:
+	    if op is LITERAL:
+		prefix.append(ord(av))
+	    else:
+		break
+    # add an info block
+    emit = code.append
+    emit(OPCODES[INFO])
+    skip = len(code); emit(0)
+    # literal flag
+    mask = 0
+    if len(prefix) == len(pattern.data):
+	mask = 1
+    emit(mask)
+    # pattern length
+    emit(lo)
+    if hi < 32768:
+	emit(hi)
+    else:
+	emit(0)
+    # add literal prefix
+    emit(len(prefix))
+    if prefix:
+	code.extend(prefix)
+	# generate overlap table
+	table = [-1] + ([0]*len(prefix))
+	for i in range(len(prefix)):
+	    table[i+1] = table[i]+1
+	    while table[i+1] > 0 and prefix[i] != prefix[table[i+1]-1]:
+		table[i+1] = table[table[i+1]-1]+1
+	code.extend(table[1:]) # don't store first entry
+    code[skip] = len(code) - skip
+
 def compile(p, flags=0):
     # internal: convert pattern list to internal format
+
+    # compile, as necessary
     if type(p) in (type(""), type(u"")):
 	import sre_parse
 	pattern = p
 	p = sre_parse.parse(p)
     else:
 	pattern = None
+
     flags = p.pattern.flags | flags
     code = []
+
+    # compile info block
+    _compile_info(code, p, flags)
+
+    # compile the pattern
     _compile(code, p.data, flags)
+
     code.append(OPCODES[SUCCESS])
-    # FIXME: <fl> get rid of this limitation
+
+    # FIXME: <fl> get rid of this limitation!
     assert p.pattern.groups <= 100,\
 	   "sorry, but this version only supports 100 named groups"
+
     return _sre.compile(
 	pattern, flags,
 	array.array(WORDSIZE, code).tostring(),
