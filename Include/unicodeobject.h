@@ -1,8 +1,5 @@
 #ifndef Py_UNICODEOBJECT_H
 #define Py_UNICODEOBJECT_H
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /*
 
@@ -109,8 +106,9 @@ typedef unsigned short Py_UNICODE;
 /* --- Internal Unicode Operations ---------------------------------------- */
 
 /* If you want Python to use the compiler's wctype.h functions instead
-   of the ones supplied with Python, define WANT_WCTYPE_FUNCTIONS.
-   This reduces the interpreter's code size. */
+   of the ones supplied with Python, define WANT_WCTYPE_FUNCTIONS or
+   configure Python using --with-ctype-functions.  This reduces the
+   interpreter's code size. */
 
 #if defined(HAVE_USABLE_WCHAR_T) && defined(WANT_WCTYPE_FUNCTIONS)
 
@@ -168,6 +166,10 @@ typedef unsigned short Py_UNICODE;
 #define Py_UNICODE_MATCH(string, offset, substring)\
     (!memcmp((string)->str + (offset), (substring)->str,\
              (substring)->length*sizeof(Py_UNICODE)))
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* --- Unicode Type ------------------------------------------------------- */
 
@@ -647,7 +649,7 @@ extern DL_IMPORT(int) PyUnicode_Find(
     int direction		/* Find direction: +1 forward, -1 backward */
     );
 
-/* Count the number of occurances of substr in str[start:end]. */
+/* Count the number of occurrences of substr in str[start:end]. */
 
 extern DL_IMPORT(int) PyUnicode_Count(
     PyObject *str,		/* String */ 
@@ -656,7 +658,7 @@ extern DL_IMPORT(int) PyUnicode_Count(
     int end			/* Stop index */
     );
 
-/* Replace at most maxcount occurances of substr in str with replstr
+/* Replace at most maxcount occurrences of substr in str with replstr
    and return the resulting Unicode object. */
 
 extern DL_IMPORT(PyObject *) PyUnicode_Replace(

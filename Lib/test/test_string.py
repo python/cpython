@@ -143,6 +143,7 @@ test('translate', 'abc', 'Abc', table)
 test('translate', 'xyz', 'xyz', table)
 
 test('replace', 'one!two!three!', 'one@two!three!', '!', '@', 1)
+test('replace', 'one!two!three!', 'onetwothree', '!', '')
 test('replace', 'one!two!three!', 'one@two@three!', '!', '@', 2)
 test('replace', 'one!two!three!', 'one@two@three@', '!', '@', 3)
 test('replace', 'one!two!three!', 'one@two@three@', '!', '@', 4)

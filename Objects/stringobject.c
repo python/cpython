@@ -1395,7 +1395,7 @@ string_translate(self, args)
 
   strstr replacement for arbitrary blocks of memory.
 
-  Locates the first occurance in the memory pointed to by MEM of the
+  Locates the first occurrence in the memory pointed to by MEM of the
   contents of memory pointed to by PAT.  Returns the index into MEM if
   found, or -1 if not found.  If len of PAT is greater than length of
   MEM, the function returns -1.
@@ -1578,7 +1578,7 @@ string_replace(self, args)
 		return NULL;
 
 	if (sub_len <= 0) {
-		PyErr_SetString(PyExc_ValueError, "empty replacement string");
+		PyErr_SetString(PyExc_ValueError, "empty pattern string");
 		return NULL;
 	}
 	new_s = mymemreplace(str,len,sub,sub_len,repl,repl_len,count,&out_len);

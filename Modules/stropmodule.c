@@ -1054,7 +1054,7 @@ strop_translate(self, args)
 
   strstr replacement for arbitrary blocks of memory.
 
-  Locates the first occurance in the memory pointed to by MEM of the
+  Locates the first occurrence in the memory pointed to by MEM of the
   contents of memory pointed to by PAT.  Returns the index into MEM if
   found, or -1 if not found.  If len of PAT is greater than length of
   MEM, the function returns -1.

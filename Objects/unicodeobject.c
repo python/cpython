@@ -83,7 +83,7 @@ Unicode Integration Proposal (see file Misc/unicode.txt).
    all objects on the free list having a size less than this
    limit. This reduces malloc() overhead for small Unicode objects.  
 
-   At worse this will result in MAX_UNICODE_FREELIST_SIZE *
+   At worst this will result in MAX_UNICODE_FREELIST_SIZE *
    (sizeof(PyUnicodeObject) + STAYALIVE_SIZE_LIMIT +
    malloc()-overhead) bytes of unused garbage.
 
@@ -180,7 +180,7 @@ PyUnicodeObject *_PyUnicode_New(int length)
         unicode_freelist = *(PyUnicodeObject **)unicode_freelist;
         unicode_freelist_size--;
         unicode->ob_type = &PyUnicode_Type;
-        _Py_NewReference(unicode);
+        _Py_NewReference((PyObject *)unicode);
 	if (unicode->str) {
 	    if (unicode->length < length &&
 		_PyUnicode_Resize(unicode, length)) {
@@ -199,16 +199,19 @@ PyUnicodeObject *_PyUnicode_New(int length)
 	unicode->str = PyMem_NEW(Py_UNICODE, length + 1);
     }
 
-    if (!unicode->str) {
-        PyMem_DEL(unicode);
-        PyErr_NoMemory();
-        return NULL;
-    }
+    if (!unicode->str) 
+	goto onError;
     unicode->str[length] = 0;
     unicode->length = length;
     unicode->hash = -1;
     unicode->utf8str = NULL;
     return unicode;
+
+ onError:
+    _Py_ForgetReference((PyObject *)unicode);
+    PyMem_DEL(unicode);
+    PyErr_NoMemory();
+    return NULL;
 }
 
 static
@@ -224,7 +227,6 @@ void _PyUnicode_Free(register PyUnicodeObject *unicode)
         *(PyUnicodeObject **)unicode = unicode_freelist;
         unicode_freelist = unicode;
         unicode_freelist_size++;
-        _Py_ForgetReference(unicode);
     }
     else {
 	free(unicode->str);
@@ -489,7 +491,7 @@ int utf8_decoding_error(const char **source,
     }
     else {
         PyErr_Format(PyExc_ValueError,
-                     "UTF-8 decoding error; unkown error handling code: %s",
+                     "UTF-8 decoding error; unknown error handling code: %s",
                      errors);
         return -1;
     }
@@ -611,7 +613,7 @@ int utf8_encoding_error(const Py_UNICODE **source,
     else {
 	PyErr_Format(PyExc_ValueError,
 		     "UTF-8 encoding error; "
-		     "unkown error handling code: %s",
+		     "unknown error handling code: %s",
 		     errors);
 	return -1;
     }
@@ -733,7 +735,7 @@ int utf16_decoding_error(const Py_UNICODE **source,
     }
     else {
         PyErr_Format(PyExc_ValueError,
-                     "UTF-16 decoding error; unkown error handling code: %s",
+                     "UTF-16 decoding error; unknown error handling code: %s",
                      errors);
         return -1;
     }
@@ -921,7 +923,7 @@ int unicodeescape_decoding_error(const char **source,
     else {
         PyErr_Format(PyExc_ValueError,
                      "Unicode-Escape decoding error; "
-                     "unkown error handling code: %s",
+                     "unknown error handling code: %s",
                      errors);
         return -1;
     }
@@ -1051,6 +1053,10 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
 
 */
 
+static const Py_UNICODE *findchar(const Py_UNICODE *s,
+				  int size,
+				  Py_UNICODE ch);
+
 static
 PyObject *unicodeescape_string(const Py_UNICODE *s,
                                int size,
@@ -1069,9 +1075,6 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
     p = q = PyString_AS_STRING(repr);
 
     if (quotes) {
-        static const Py_UNICODE *findchar(const Py_UNICODE *s,
-					  int size,
-					  Py_UNICODE ch);
         *p++ = 'u';
         *p++ = (findchar(s, size, '\'') && 
                 !findchar(s, size, '"')) ? '"' : '\'';
@@ -1298,7 +1301,7 @@ int latin1_encoding_error(const Py_UNICODE **source,
     else {
 	PyErr_Format(PyExc_ValueError,
 		     "Latin-1 encoding error; "
-		     "unkown error handling code: %s",
+		     "unknown error handling code: %s",
 		     errors);
 	return -1;
     }
@@ -1369,7 +1372,7 @@ int ascii_decoding_error(const char **source,
     else {
 	PyErr_Format(PyExc_ValueError,
 		     "ASCII decoding error; "
-		     "unkown error handling code: %s",
+		     "unknown error handling code: %s",
 		     errors);
 	return -1;
     }
@@ -1431,7 +1434,7 @@ int ascii_encoding_error(const Py_UNICODE **source,
     else {
 	PyErr_Format(PyExc_ValueError,
 		     "ASCII encoding error; "
-		     "unkown error handling code: %s",
+		     "unknown error handling code: %s",
 		     errors);
 	return -1;
     }
@@ -1502,7 +1505,7 @@ int charmap_decoding_error(const char **source,
     else {
 	PyErr_Format(PyExc_ValueError,
 		     "charmap decoding error; "
-		     "unkown error handling code: %s",
+		     "unknown error handling code: %s",
 		     errors);
 	return -1;
     }
@@ -1618,7 +1621,7 @@ int charmap_encoding_error(const Py_UNICODE **source,
     else {
 	PyErr_Format(PyExc_ValueError,
 		     "charmap encoding error; "
-		     "unkown error handling code: %s",
+		     "unknown error handling code: %s",
 		     errors);
 	return -1;
     }
@@ -1750,7 +1753,7 @@ int translate_error(const Py_UNICODE **source,
     else {
 	PyErr_Format(PyExc_ValueError,
 		     "translate error; "
-		     "unkown error handling code: %s",
+		     "unknown error handling code: %s",
 		     errors);
 	return -1;
     }
