@@ -3,13 +3,12 @@
 \bimodindex{macdnr}
 
 This module provides an interface to the Macintosh Domain Name
-Resolver.  It is usually used in conjunction with the \var{mactcp}
+Resolver.  It is usually used in conjunction with the \module{mactcp}
 module, to map hostnames to IP-addresses.  It may not be available in
 all Mac Python versions.
 
-The \code{macdnr} module defines the following functions:
+The \module{macdnr} module defines the following functions:
 
-\setindexsubitem{(in module macdnr)}
 
 \begin{funcdesc}{Open}{\optional{filename}}
 Open the domain name resolver extension.  If \var{filename} is given it
@@ -61,22 +60,23 @@ its attributes to obtain the information when it is.
 Alternatively, you can also reference the result attributes directly,
 this will result in an implicit wait for the query to complete.
 
-The \var{rtnCode} and \var{cname} attributes are always available, the
-others depend on the type of query (address, hinfo or mx).
+The \member{rtnCode} and \member{cname} attributes are always
+available, the others depend on the type of query (address, hinfo or
+mx).
 
-\setindexsubitem{(dnr result object method)}
+\setindexsubitem{(dnr result method)}
 
-% Add args, as in {arg1\, arg2 \optional{\, arg3}}
+% Add args, as in {arg1, arg2 \optional{, arg3}}
 \begin{funcdesc}{wait}{}
 Wait for the query to complete.
 \end{funcdesc}
 
-% Add args, as in {arg1\, arg2 \optional{\, arg3}}
+% Add args, as in {arg1, arg2 \optional{, arg3}}
 \begin{funcdesc}{isdone}{}
-Return 1 if the query is complete.
+Return \code{1} if the query is complete.
 \end{funcdesc}
 
-\setindexsubitem{(dnr result object attribute)}
+\setindexsubitem{(dnr result attribute)}
 
 \begin{datadesc}{rtnCode}
 The error code returned by the query.
@@ -96,17 +96,17 @@ zero.  Valid only for address queries.
 
 \begin{datadesc}{cpuType}
 \dataline{osType}
-Textual strings giving the machine type an OS name.  Valid for hinfo
+Textual strings giving the machine type an OS name.  Valid for ``hinfo''
 queries.
 \end{datadesc}
 
 \begin{datadesc}{exchange}
-The name of a mail-exchanger host.  Valid for mx queries.
+The name of a mail-exchanger host.  Valid for ``mx'' queries.
 \end{datadesc}
 
 \begin{datadesc}{preference}
 The preference of this mx record.  Not too useful, since the Macintosh
-will only return a single mx record.  Mx queries only.
+will only return a single mx record.  Valid for ``mx'' queries only.
 \end{datadesc}
 
 The simplest way to use the module to convert names to dotted-decimal
