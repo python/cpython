@@ -73,7 +73,7 @@ C API
 - Because Python's magic number scheme broke on January 1st, we decided
   to stop Python development.  Thanks for all the fish!
 
-- Some of us don't like fish, so we changed Python's magic number 
+- Some of us don't like fish, so we changed Python's magic number
   scheme to a new one. See Python/import.c for details.
 
 New platforms
@@ -83,6 +83,10 @@ New platforms
 Tests
 
 Windows
+
+- file.truncate([newsize]) now works on Windows for all newsize values.
+  It used to fail if newsize didn't fit in 32 bits, reflecting a
+  limitation of MS _chsize (which is no longer used).
 
 - os.waitpid() is now implemented for Windows, and can be used to block
   until a specified process exits.  This is similar to, but not exactly

@@ -1154,9 +1154,8 @@ Files have the following methods:
 \begin{methoddesc}[file]{truncate}{\optional{size}}
   Truncate the file's size.  If the optional \var{size} argument
   present, the file is truncated to (at most) that size.  The size
-  defaults to the current position.  Availability of this function
-  depends on the operating system version (for example, not all
-  \UNIX{} versions support this operation).
+  defaults to the current position.
+  Availability:  Windows, many \UNIX variants.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{write}{str}
