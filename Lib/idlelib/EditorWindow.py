@@ -19,6 +19,20 @@ import aboutDialog, textView, configDialog
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
 
+def _find_module(fullname, path=None):
+    """Version of imp.find_module() that handles hierarchical module names"""
+
+    file = None
+    for tgt in fullname.split('.'):
+        if file is not None:
+            file.close()            # close intermediate files
+        (file, filename, descr) = imp.find_module(tgt, path)
+        if descr[2] == imp.PY_SOURCE:
+            break                   # find but not load the source file
+        module = imp.load_module(tgt, file, filename, descr)
+        path = module.__path__
+    return file, filename, descr
+
 class EditorWindow:
     from Percolator import Percolator
     from ColorDelegator import ColorDelegator
@@ -183,7 +197,7 @@ class EditorWindow:
         self.text.after_idle(self.set_line_and_column)
 
     def set_line_and_column(self, event=None):
-        line, column = string.split(self.text.index(INSERT), '.')
+        line, column = self.text.index(INSERT).split('.')
         self.status_bar.set_label('column', 'Col: %s' % column)
         self.status_bar.set_label('line', 'Ln: %s' % line)
 
@@ -346,20 +360,19 @@ class EditorWindow:
         except TclError:
             name = ""
         else:
-            name = string.strip(name)
+            name = name.strip()
         if not name:
             name = tkSimpleDialog.askstring("Module",
                      "Enter the name of a Python module\n"
                      "to search on sys.path and open:",
                      parent=self.text)
             if name:
-                name = string.strip(name)
+                name = name.strip()
             if not name:
                 return
-        # XXX Ought to support package syntax
         # XXX Ought to insert current file's directory in front of path
         try:
-            (f, file, (suffix, mode, type)) = imp.find_module(name)
+            (f, file, (suffix, mode, type)) = _find_module(name)
         except (NameError, ImportError), msg:
             tkMessageBox.showerror("Import error", str(msg), parent=self.text)
             return
@@ -401,17 +414,17 @@ class EditorWindow:
 
     def ispythonsource(self, filename):
         if not filename:
-            return 1
+            return True
         base, ext = os.path.splitext(os.path.basename(filename))
         if os.path.normcase(ext) in (".py", ".pyw"):
-            return 1
+            return True
         try:
             f = open(filename)
             line = f.readline()
             f.close()
         except IOError:
-            return 0
-        return line[:2] == '#!' and string.find(line, 'python') >= 0
+            return False
+        return line.startswith('#!') and 'python' in line
 
     def close_hook(self):
         if self.flist:
@@ -621,7 +634,7 @@ class EditorWindow:
         top, bot = self.getwindowlines()
         lineno = self.getlineno(mark)
         height = bot - top
-        newtop = max(1, lineno - height/2)
+        newtop = max(1, lineno - height//2)
         text.yview(float(newtop))
 
     def getwindowlines(self):
@@ -712,7 +725,7 @@ class EditorWindow:
         if keydefs:
             self.apply_bindings(keydefs)
             for vevent in keydefs.keys():
-                methodname = string.replace(vevent, "-", "_")
+                methodname = vevent.replace("-", "_")
                 while methodname[:1] == '<':
                     methodname = methodname[1:]
                 while methodname[-1:] == '>':
@@ -1300,7 +1313,7 @@ class IndentSearcher:
 def prepstr(s):
     # Helper to extract the underscore from a string, e.g.
     # prepstr("Co_py") returns (2, "Copy").
-    i = string.find(s, '_')
+    i = s.find('_')
     if i >= 0:
         s = s[:i] + s[i+1:]
     return i, s
@@ -1317,7 +1330,7 @@ def get_accelerator(keydefs, event):
     if not keylist:
         return ""
     s = keylist[0]
-    s = re.sub(r"-[a-z]\b", lambda m: string.upper(m.group()), s)
+    s = re.sub(r"-[a-z]\b", lambda m: m.group().upper(), s)
     s = re.sub(r"\b\w+\b", lambda m: keynames.get(m.group(), m.group()), s)
     s = re.sub("Key-", "", s)
     s = re.sub("Cancel","Ctrl-Break",s)   # dscherer@cmu.edu
