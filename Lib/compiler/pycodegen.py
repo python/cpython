@@ -11,8 +11,9 @@ from cStringIO import StringIO
 from compiler import ast, parse, walk
 from compiler import pyassem, misc, future, symbols
 from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL
-from compiler.pyassem import CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS,\
-     CO_NESTED, TupleArg
+from compiler.consts import CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS,\
+     CO_NESTED, CO_GENERATOR
+from compiler.pyassem import TupleArg
 
 # Do we have Python 1.x or Python 2.x?
 try:
@@ -495,10 +496,10 @@ class CodeGenerator:
         anchor = self.newBlock()
 
         self.visit(node.list)
-        self.visit(ast.Const(0))
+        self.emit('GET_ITER')
         self.nextBlock(start)
         self.emit('SET_LINENO', node.lineno)
-        self.emit('FOR_LOOP', anchor)
+        self.emit('FOR_ITER', anchor)
         self.nextBlock()
         self.visit(node.assign)
         return start, anchor
@@ -1199,6 +1200,8 @@ class NestedFunctionCodeGenerator(AbstractFunctionCode,
         self.__super_init(func, filename, scopes, isLambda, class_name)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
+        if self.scope.generator is not None:
+            self.graph.setFlag(CO_GENERATOR)
 ##        self.graph.setFlag(CO_NESTED)
 
 class AbstractClassCode:

@@ -1,6 +1,5 @@
-# code flags
-CO_VARARGS = 1
-CO_VARKEYWORDS = 2
+from new import * # import all the CO_xxx flags
+del classobj, code, function, instance, instancemethod, module
 
 # operation flags
 OP_ASSIGN = 'OP_ASSIGN'
