@@ -139,7 +139,7 @@ class HTTPMessage(mimetools.Message):
 
         self.dict = {}
         self.unixfrom = ''
-        self.headers = list = []
+        self.headers = hlist = []
         self.status = ''
         headerseen = ""
         firstline = 1
@@ -148,7 +148,7 @@ class HTTPMessage(mimetools.Message):
             unread = self.fp.unread
         elif self.seekable:
             tell = self.fp.tell
-        while 1:
+        while True:
             if tell:
                 try:
                     startofline = tell()
@@ -168,7 +168,7 @@ class HTTPMessage(mimetools.Message):
                 # XXX Not sure if continuation lines are handled properly
                 # for http and/or for repeating headers
                 # It's a continuation line.
-                list.append(line)
+                hlist.append(line)
                 self.addcontinue(headerseen, line.strip())
                 continue
             elif self.iscomment(line):
@@ -180,7 +180,7 @@ class HTTPMessage(mimetools.Message):
             headerseen = self.isheader(line)
             if headerseen:
                 # It's a legal header line, save it.
-                list.append(line)
+                hlist.append(line)
                 self.addheader(headerseen, line[len(headerseen)+1:].strip())
                 continue
             else:
@@ -264,12 +264,12 @@ class HTTPResponse:
             return
 
         # read until we get a non-100 response
-        while 1:
+        while True:
             version, status, reason = self._read_status()
             if status != 100:
                 break
             # skip the header from the 100 response
-            while 1:
+            while True:
                 skip = self.fp.readline().strip()
                 if not skip:
                     break
@@ -411,7 +411,7 @@ class HTTPResponse:
 
         # XXX This accumulates chunks by repeated string concatenation,
         # which is not efficient as the number or size of chunks gets big.
-        while 1:
+        while True:
             if chunk_left is None:
                 line = self.fp.readline()
                 i = line.find(';')
@@ -441,7 +441,7 @@ class HTTPResponse:
 
         # read and discard trailer up to the CRLF terminator
         ### note: we shouldn't have any trailers!
-        while 1:
+        while True:
             line = self.fp.readline()
             if line == '\r\n':
                 break
@@ -471,8 +471,8 @@ class HTTPResponse:
             chunk = self.fp.read(amt)
             if not chunk:
                 raise IncompleteRead(s)
-            s = s + chunk
-            amt = amt - len(chunk)
+            s += chunk
+            amt -= len(chunk)
         return s
 
     def getheader(self, name, default=None):
@@ -728,7 +728,7 @@ class HTTPConnection:
 
         if body:
             self.putheader('Content-Length', str(len(body)))
-        for hdr, value in headers.items():
+        for hdr, value in headers.iteritems():
             self.putheader(hdr, value)
         self.endheaders()
 
@@ -840,7 +840,7 @@ class SSLFile(SharedSocketClient):
     def _read(self):
         buf = ''
         # put in a loop so that we retry on transient errors
-        while 1:
+        while True:
             try:
                 buf = self._ssl.read(self._bufsize)
             except socket.sslerror, err:
@@ -864,42 +864,32 @@ class SSLFile(SharedSocketClient):
 
     def read(self, size=None):
         L = [self._buf]
-        avail = len(self._buf)
-        while size is None or avail < size:
-            s = self._read()
-            if s == '':
-                break
-            L.append(s)
-            avail += len(s)
-        all = "".join(L)
         if size is None:
             self._buf = ''
-            return all
+            for s in iter(self._read, ""):
+                L.append(s)
+            return "".join(L)
         else:
-            self._buf = all[size:]
-            return all[:size]
+            avail = len(self._buf)
+            for s in iter(self._read, ""):
+                L.append(s)
+                avail += len(s)
+                if avail >= size:
+                    all = "".join(L)
+                    self._buf = all[size:]
+                    return all[:size]
 
     def readline(self):
         L = [self._buf]
         self._buf = ''
-        while 1:
-            i = L[-1].find("\n")
-            if i >= 0:
-                break
-            s = self._read()
-            if s == '':
-                break
+        for s in iter(self._read, ""):
             L.append(s)
-        if i == -1:
-            # loop exited because there is no more data
-            return "".join(L)
-        else:
-            all = "".join(L)
-            # XXX could do enough bookkeeping not to do a 2nd search
-            i = all.find("\n") + 1
-            line = all[:i]
-            self._buf = all[i:]
-            return line
+            if "\n" in s:
+                i = s.find("\n") + 1
+                self._buf = s[i:]
+                L[-1] = s[:i]
+                break
+        return "".join(L)
 
 class FakeSocket(SharedSocketClient):
 
