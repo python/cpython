@@ -51,6 +51,12 @@ operations to control debugging.
 Return the debugging flags currently set.
 \end{funcdesc}
 
+\begin{funcdesc}{get_objects}{}
+Returns a list of all objects tracked by the collector, excluding the
+list returned.
+\versionadded{2.2}
+\end{funcdesc}
+
 \begin{funcdesc}{set_threshold}{threshold0\optional{,
                                 threshold1\optional{, threshold2}}}
 Set the garbage collection thresholds (the collection frequency).
