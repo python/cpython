@@ -1447,10 +1447,14 @@ array_repr(arrayobject *a)
 		PyObject *t_empty = PyTuple_New(0);
 		PyOS_snprintf(buf, sizeof(buf), "array('%c', ", typecode);
 		s = PyString_FromString(buf);
+#ifdef Py_USING_UNICODE
 		if (typecode == 'c')
+#endif
 			v = array_tostring(a, t_empty);
+#ifdef Py_USING_UNICODE
 		else
 			v = array_tounicode(a, t_empty);
+#endif
 		Py_DECREF(t_empty);
 		t = PyObject_Repr(v);
 		Py_XDECREF(v);
