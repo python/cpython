@@ -61,9 +61,17 @@ newfileobject(name, mode)
 	f = (fileobject *) newopenfileobject((FILE *)NULL, name, mode);
 	if (f == NULL)
 		return NULL;
-	if ((f->f_fp = fopen(name, mode)) == NULL) {
+#ifdef THINK_C
+	if (*mode == '*') {
+		FILE *fopenRF();
+		f->f_fp = fopenRF(name, mode+1);
+	}
+	else
+#endif
+	f->f_fp = fopen(name, mode);
+	if (f->f_fp == NULL) {
+		err_errno(RuntimeError);
 		DECREF(f);
-		err_errno(RuntimeError); /* XXX Should use another error */
 		return NULL;
 	}
 	return (object *)f;
