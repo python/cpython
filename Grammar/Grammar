@@ -102,3 +102,6 @@ list_for: 'for' exprlist 'in' testlist_safe [list_iter]
 list_if: 'if' test [list_iter]
 
 testlist1: test (',' test)*
+
+# not used in grammar, but may appear in "node" passed from Parser to Compiler
+encoding_decl: NAME

@@ -25,6 +25,7 @@ extern "C" {
 #define E_OVERFLOW      19	/* Node had too many children */
 #define E_TOODEEP	20	/* Too many indentation levels */
 #define E_DEDENT	21	/* No matching outer block for dedent */
+#define E_DECODE	22	/* Error in decoding into Unicode */
 
 #ifdef __cplusplus
 }

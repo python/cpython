@@ -4,6 +4,7 @@
 extern "C" {
 #endif
 
+#include "object.h"
 
 /* Tokenizer interface */
 
@@ -38,6 +39,16 @@ struct tok_state {
 	int alterror;	/* Issue error if alternate tabs don't match */
 	int alttabsize;	/* Alternate tab spacing */
 	int altindstack[MAXINDENT];	/* Stack of alternate indents */
+	/* Stuff for PEP 0263 */
+	int decoding_state;	/* -1:decoding, 0:init, 1:raw */
+	int decoding_erred;	/* whether erred in decoding  */
+	int read_coding_spec;	/* whether 'coding:...' has been read  */
+	int issued_encoding_warning; /* whether non-ASCII warning was issued */
+	char *encoding;
+	PyObject *decoding_readline; /* codecs.open(...).readline */
+	PyObject *decoding_buffer;
+	const char* enc;
+	const char* str;
 };
 
 extern struct tok_state *PyTokenizer_FromString(char *);

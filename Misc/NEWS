@@ -6,6 +6,8 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- Encoding declarations (PEP 263, phase 1) have been implemented.
+
 - list.sort() has a new implementation.  While cross-platform results
   may vary, and in data-dependent ways, this is much faster on many
   kinds of partially ordered lists than the previous implementation,

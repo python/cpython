@@ -485,6 +485,7 @@ struct compiling {
 	int c_closure;		/* Is nested w/freevars? */
 	struct symtable *c_symtable; /* pointer to module symbol table */
         PyFutureFeatures *c_future; /* pointer to module's __future__ */
+	char *c_encoding;	/* source encoding (a borrowed reference) */
 };
 
 static int
@@ -1182,6 +1183,23 @@ parsenumber(struct compiling *co, char *s)
 }
 
 static PyObject *
+decode_utf8(char **sPtr, char *end, char* encoding)
+{
+	PyObject *u, *v;
+	char *s, *t;
+	t = s = *sPtr;
+	/* while (s < end && *s != '\\') s++; */ /* inefficient for u".." */
+	while (s < end && (*s & 0x80)) s++;
+	*sPtr = s;
+	u = PyUnicode_DecodeUTF8(t, s - t, NULL);
+	if (u == NULL)
+		return NULL;
+	v = PyUnicode_AsEncodedString(u, encoding, NULL);
+	Py_DECREF(u);
+	return v;
+}
+
+static PyObject *
 parsestr(struct compiling *com, char *s)
 {
 	PyObject *v;
@@ -1193,6 +1211,8 @@ parsestr(struct compiling *com, char *s)
 	int first = *s;
 	int quote = first;
 	int rawmode = 0;
+	char* encoding = ((com == NULL) ? NULL : com->c_encoding);
+	int need_encoding;
 	int unicode = 0;
 
 	if (isalpha(quote) || quote == '_') {
@@ -1230,28 +1250,101 @@ parsestr(struct compiling *com, char *s)
 	}
 #ifdef Py_USING_UNICODE
 	if (unicode || Py_UnicodeFlag) {
+		PyObject *u, *w;
+		if (encoding == NULL) {
+			buf = s;
+			u = NULL;
+		} else if (strcmp(encoding, "iso-8859-1") == 0) {
+			buf = s;
+			u = NULL;
+		} else {
+			/* "\XX" may become "\u005c\uHHLL" (12 bytes) */
+			u = PyString_FromStringAndSize((char *)NULL, len * 4);
+			if (u == NULL)
+				return NULL;
+			p = buf = PyString_AsString(u);
+			end = s + len;
+			while (s < end) {
+				if (*s == '\\') {
+					*p++ = *s++;
+					if (*s & 0x80) {
+						strcpy(p, "u005c");
+						p += 5;
+					}
+				}
+				if (*s & 0x80) { /* XXX inefficient */
+					char *r;
+					int rn, i;
+					w = decode_utf8(&s, end, "utf-16-be");
+					if (w == NULL) {
+						Py_DECREF(u);
+						return NULL;
+					}
+					r = PyString_AsString(w);
+					rn = PyString_Size(w);
+					assert(rn % 2 == 0);
+					for (i = 0; i < rn; i += 2) {
+						sprintf(p, "\\u%02x%02x",
+							r[i + 0] & 0xFF,
+							r[i + 1] & 0xFF);
+						p += 6;
+					}
+					Py_DECREF(w);
+				} else {
+					*p++ = *s++;
+				}
+			}
+			len = p - buf;
+		}
 		if (rawmode)
-			v = PyUnicode_DecodeRawUnicodeEscape(
-				 s, len, NULL);
+			v = PyUnicode_DecodeRawUnicodeEscape(buf, len, NULL);
 		else
-			v = PyUnicode_DecodeUnicodeEscape(
-				s, len, NULL);
+			v = PyUnicode_DecodeUnicodeEscape(buf, len, NULL);
+		Py_XDECREF(u);
 		if (v == NULL)
 			PyErr_SyntaxLocation(com->c_filename, com->c_lineno);
 		return v;
 			
 	}
 #endif
-	if (rawmode || strchr(s, '\\') == NULL)
-		return PyString_FromStringAndSize(s, len);
-	v = PyString_FromStringAndSize((char *)NULL, len);
+	need_encoding = (encoding != NULL &&
+			 strcmp(encoding, "utf-8") != 0 &&
+			 strcmp(encoding, "iso-8859-1") != 0);
+	if (rawmode || strchr(s, '\\') == NULL) {
+		if (need_encoding) {
+			PyObject* u = PyUnicode_DecodeUTF8(s, len, NULL);
+			if (u == NULL)
+				return NULL;
+			v = PyUnicode_AsEncodedString(u, encoding, NULL);
+			Py_DECREF(u);
+			return v;
+		} else {
+			return PyString_FromStringAndSize(s, len);
+		}
+	}
+	v = PyString_FromStringAndSize((char *)NULL, /* XXX 4 is enough? */
+				       need_encoding ? len * 4 : len);
 	if (v == NULL)
 		return NULL;
 	p = buf = PyString_AsString(v);
 	end = s + len;
 	while (s < end) {
 		if (*s != '\\') {
-			*p++ = *s++;
+		  ORDINAL: 
+			if (need_encoding && (*s & 0x80)) {
+				char *r;
+				int rn;
+				PyObject* w = decode_utf8(&s, end, encoding);
+				if (w == NULL)
+					return NULL;
+				r = PyString_AsString(w);
+				rn = PyString_Size(w);
+				memcpy(p, r, rn);
+				p += rn;
+				Py_DECREF(w);
+			} else {
+				*p++ = *s++;
+			}
 			continue;
 		}
 		s++;
@@ -1320,8 +1413,8 @@ parsestr(struct compiling *com, char *s)
 #endif
 		default:
 			*p++ = '\\';
-			*p++ = s[-1];
-			break;
+			s--;
+			goto ORDINAL;
 		}
 	}
 	_PyString_Resize(&v, (int)(p - buf));
@@ -4149,6 +4242,12 @@ jcompile(node *n, char *filename, struct compiling *base,
 	PyCodeObject *co;
 	if (!com_init(&sc, filename))
 		return NULL;
+	if (TYPE(n) == encoding_decl) {
+		sc.c_encoding = STR(n);
+		n = CHILD(n, 0);
+	} else {
+		sc.c_encoding = NULL;
+	}
 	if (base) {
 		sc.c_private = base->c_private;
 		sc.c_symtable = base->c_symtable;
@@ -4157,6 +4256,10 @@ jcompile(node *n, char *filename, struct compiling *base,
 		    || (sc.c_symtable->st_cur->ste_type == TYPE_FUNCTION))
 			sc.c_nested = 1;
 		sc.c_flags |= base->c_flags & PyCF_MASK;
+		if (base->c_encoding != NULL) {
+			assert(sc.c_encoding == NULL);
+			sc.c_encoding = base->c_encoding;
+		}
 	} else {
 		sc.c_private = NULL;
 		sc.c_future = PyNode_Future(n, filename);
