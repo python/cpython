@@ -37,7 +37,7 @@ pointers to many free third party Python modules, programs and tools,
 and additional documentation.
 
 The Python interpreter is easily extended with new functions and data
-types implemented in C or C++ (or other languages callable from C).
+types implemented in \C{} or \Cpp{} (or other languages callable from \C{}).
 Python is also suitable as an extension language for customizable
 applications.
 
@@ -49,8 +49,8 @@ self-contained, so the tutorial can be read off-line as well.
 For a description of standard objects and modules, see the
 \emph{Python Library Reference} document.  The \emph{Python Reference
 Manual} gives a more formal definition of the language.  To write
-extensions in C or C++, read the \emph{Extending and Embedding} and
-\emph{Python/C API} manuals.  There are also several books covering
+extensions in \C{} or \Cpp{}, read the \emph{Extending and Embedding} and
+\emph{Python/\C{} API} manuals.  There are also several books covering
 Python in depth.
 
 This tutorial does not attempt to be comprehensive and cover every
@@ -75,15 +75,15 @@ modules described in the \emph{Python Library Reference}.
 If you ever wrote a large shell script, you probably know this
 feeling: you'd love to add yet another feature, but it's already so
 slow, and so big, and so complicated; or the feature involves a system
-call or other function that is only accessible from C \ldots Usually
+call or other function that is only accessible from \C{} \ldots Usually
 the problem at hand isn't serious enough to warrant rewriting the
-script in C; perhaps the problem requires variable-length strings or
+script in \C{}; perhaps the problem requires variable-length strings or
 other data types (like sorted lists of file names) that are easy in
-the shell but lots of work to implement in C, or perhaps you're not
-sufficiently familiar with C.
+the shell but lots of work to implement in \C{}, or perhaps you're not
+sufficiently familiar with \C{}.
 
-Another situation: perhaps you have to work with several C libraries,
-and the usual C write/compile/test/re-compile cycle is too slow.  You
+Another situation: perhaps you have to work with several \C{} libraries,
+and the usual \C{} write/compile/test/re-compile cycle is too slow.  You
 need to develop software more quickly.  Possibly perhaps you've
 written a program that could use an extension language, and you don't
 want to design a language, write and debug an interpreter for it, then
@@ -92,10 +92,10 @@ tie it into your application.
 In such cases, Python may be just the language for you.  Python is
 simple to use, but it is a real programming language, offering much
 more structure and support for large programs than the shell has.  On
-the other hand, it also offers much more error checking than C, and,
+the other hand, it also offers much more error checking than \C{}, and,
 being a \emph{very-high-level language}, it has high-level data types
 built in, such as flexible arrays and dictionaries that would cost you
-days to implement efficiently in C.  Because of its more general data
+days to implement efficiently in \C{}.  Because of its more general data
 types Python is applicable to a much larger problem domain than
 \emph{Awk} or even \emph{Perl}, yet many things are at least as easy
 in Python as in those languages.
@@ -115,7 +115,7 @@ programs, or to test functions during bottom-up program development.
 It is also a handy desk calculator.
 
 Python allows writing very compact and readable programs.  Programs
-written in Python are typically much shorter than equivalent C
+written in Python are typically much shorter than equivalent \C{}
 programs, for several reasons:
 \begin{itemize}
 \item
@@ -128,12 +128,12 @@ brackets;
 no variable or argument declarations are necessary.
 \end{itemize}
 
-Python is \emph{extensible}: if you know how to program in C it is easy
+Python is \emph{extensible}: if you know how to program in \C{} it is easy
 to add a new built-in function or module to the interpreter, either to
 perform critical operations at maximum speed, or to link Python
 programs to libraries that may only be available in binary form (such
 as a vendor-specific graphics library).  Once you are really hooked,
-you can link the Python interpreter into an application written in C
+you can link the Python interpreter into an application written in \C{}
 and use it as an extension or command language for that application.
 
 By the way, the language is named after the BBC show ``Monty Python's
@@ -182,7 +182,7 @@ interpreter by typing the following commands: \code{import sys ;
 sys.exit()}.
 
 The interpreter's line-editing features usually aren't very
-sophisticated.  On Unix, whoever installed the interpreter may have
+sophisticated.  On \UNIX{}, whoever installed the interpreter may have
 enabled support for the GNU readline library, which adds more
 elaborate interactive editing and history features. Perhaps the
 quickest check to see whether command line editing is supported is
@@ -343,7 +343,7 @@ for the primary prompt, \code{>>>}.  (It shouldn't take long.)
 The interpreter acts as a simple calculator: you can type an
 expression at it and it will write the value.  Expression syntax is
 straightforward: the operators \code{+}, \code{-}, \code{*} and \code{/}
-work just like in most other languages (e.g., Pascal or C); parentheses
+work just like in most other languages (e.g., Pascal or \C{}); parentheses
 can be used for grouping.  For example:
 
 \bcode\begin{verbatim}
@@ -364,7 +364,7 @@ can be used for grouping.  For example:
 >>> 
 \end{verbatim}\ecode
 %
-Like in C, the equal sign (\code{=}) is used to assign a value to a
+Like in \C{}, the equal sign (\code{=}) is used to assign a value to a
 variable.  The value of an assignment is not written:
 
 \bcode\begin{verbatim}
@@ -550,7 +550,7 @@ Two string literals next to each other are automatically concatenated;
 the first line above could also have been written \code{word = 'Help'
 'A'}; this only works with two literals, not with arbitrary string expressions.
 
-Strings can be subscripted (indexed); like in C, the first character
+Strings can be subscripted (indexed); like in \C{}, the first character
 of a string has subscript (index) 0.  There is no separate character
 type; a character is simply a string of size one.  Like in Icon,
 substrings can be specified with the \emph{slice} notation: two indices
@@ -805,12 +805,12 @@ assignments take place.
 
 \item
 The \code{while} loop executes as long as the condition (here: \code{b <
-10}) remains true.  In Python, like in C, any non-zero integer value is
+10}) remains true.  In Python, like in \C{}, any non-zero integer value is
 true; zero is false.  The condition may also be a string or list value,
 in fact any sequence; anything with a non-zero length is true, empty
 sequences are false.  The test used in the example is a simple
 comparison.  The standard comparison operators are written the same as
-in C: \code{<}, \code{>}, \code{==}, \code{<=}, \code{>=} and \code{!=}.
+in \C{}: \code{<}, \code{>}, \code{==}, \code{<=}, \code{>=} and \code{!=}.
 
 \item
 The \emph{body} of the loop is \emph{indented}: indentation is Python's
@@ -889,9 +889,9 @@ found in other languages.
 \section{For Statements}
 
 The \code{for} statement in Python differs a bit from what you may be
-used to in C or Pascal.  Rather than always iterating over an
+used to in \C{} or Pascal.  Rather than always iterating over an
 arithmetic progression of numbers (like in Pascal), or leaving the user
-completely free in the iteration test and step (as C), Python's
+completely free in the iteration test and step (as \C{}), Python's
 \code{for} statement iterates over the items of any sequence (e.g., a
 list or a string), in the order that they appear in the sequence.  For 
 example (no pun intended):
@@ -968,10 +968,10 @@ To iterate over the indices of a sequence, combine \code{range()} and
 
 \section{Break and Continue Statements, and Else Clauses on Loops}
 
-The \code{break} statement, like in C, breaks out of the smallest
+The \code{break} statement, like in \C{}, breaks out of the smallest
 enclosing \code{for} or \code{while} loop.
 
-The \code{continue} statement, also borrowed from C, continues with the
+The \code{continue} statement, also borrowed from \C{}, continues with the
 next iteration of the loop.
 
 Loop statements may have an \code{else} clause; it is executed when the
@@ -1084,7 +1084,7 @@ mechanism:
 \end{verbatim}\ecode
 %
 You might object that \code{fib} is not a function but a procedure.  In
-Python, like in C, procedures are just functions that don't return a
+Python, like in \C{}, procedures are just functions that don't return a
 value.  In fact, technically speaking, procedures do return a value,
 albeit a rather boring one.  This value is called \code{None} (it's a
 built-in name).  Writing the value \code{None} is normally suppressed by
@@ -1624,7 +1624,7 @@ expression to a variable.  For example,
 >>> 
 \end{verbatim}\ecode
 %
-Note that in Python, unlike C, assignment cannot occur inside expressions.
+Note that in Python, unlike \C{}, assignment cannot occur inside expressions.
 
 \section{Comparing Sequences and Other Types}
 
@@ -2075,18 +2075,18 @@ right operand, e.g.
     >>> 
 \end{verbatim}
 
-Most formats work exactly as in C and require that you pass the proper
+Most formats work exactly as in \C{} and require that you pass the proper
 type; however, if you don't you get an exception, not a core dump.
 The \verb\%s\ format is more relaxed: if the corresponding argument is
 not a string object, it is converted to string using the \verb\str()\
 built-in function.  Using \verb\*\ to pass the width or precision in
-as a separate (integer) argument is supported.  The C formats
+as a separate (integer) argument is supported.  The \C{} formats
 \verb\%n\ and \verb\%p\ are not supported.
 
 If you have a really long format string that you don't want to split
 up, it would be nice if you could reference the variables to be
 formatted by name instead of by position.  This can be done by using
-an extension of C formats using the form \verb\%(name)format\, e.g.
+an extension of \C{} formats using the form \verb\%(name)format\, e.g.
 
 \begin{verbatim}
     >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
@@ -2895,9 +2895,9 @@ users (``clients'') of an object.  In other words, classes are not
 usable to implement pure abstract data types.  In fact, nothing in
 Python makes it possible to enforce data hiding --- it is all based
 upon convention.  (On the other hand, the Python implementation,
-written in C, can completely hide implementation details and control
+written in \C{}, can completely hide implementation details and control
 access to an object if necessary; this can be used by extensions to
-Python written in C.)
+Python written in \C{}.)
 
 
 Clients should use data attributes with care --- clients may mess up
@@ -3174,7 +3174,7 @@ class VirtualAttributes:
 \section{Odds and ends}
 
 Sometimes it is useful to have a data type similar to the Pascal
-``record'' or C ``struct'', bundling together a couple of named data
+``record'' or \C{} ``struct'', bundling together a couple of named data
 items.  An empty class definition will do nicely, e.g.:
 
 \begin{verbatim}
@@ -3274,8 +3274,8 @@ You should read, or at least page through, the Library Reference,
 which gives complete (though terse) reference material about types,
 functions, and modules that can save you a lot of time when writing
 Python programs.  The standard Python distribution includes a
-\emph{lot} of code in both C and Python; there are modules to read
-Unix mailboxes, retrieve documents via HTTP, generate random numbers,
+\emph{lot} of code in both \C{} and Python; there are modules to read
+\UNIX{} mailboxes, retrieve documents via HTTP, generate random numbers,
 parse command-line options, write CGI programs, compress data, and a
 lot more; skimming through the Library Reference will give you an idea
 of what's available.
