@@ -27,7 +27,7 @@ import os
 import sys
 
 
-__version__ = '1.8'
+__version__ = '1.9'
 
 MAXFTPCACHE = 10		# Trim the ftp cache beyond this size
 
@@ -81,7 +81,7 @@ def urlcleanup():
 ftpcache = {}
 class URLopener:
 
-	__tempfiles = []
+	__tempfiles = None
 
 	# Constructor
 	def __init__(self, proxies=None):
@@ -91,6 +91,7 @@ class URLopener:
 		server_version = "Python-urllib/%s" % __version__
 		self.addheaders = [('User-agent', server_version)]
 		self.__tempfiles = []
+		self.__unlink = os.unlink # See cleanup()
 		self.tempcache = None
 		# Undocumented feature: if you assign {} to tempcache,
 		# it is used to cache files retrieved with
@@ -110,15 +111,18 @@ class URLopener:
 		self.cleanup()
 
 	def cleanup(self):
+		# This code sometimes runs when the rest of this module
+		# has already been deleted, so it can't use any globals
+		# or import anything.
 		if self.__tempfiles:
-			import os
 			for file in self.__tempfiles:
 				try:
-					os.unlink(file)
-				except os.error:
+					self.__unlink(file)
+				except:
 					pass
-		URLopener.__tempfiles = []
-		self.tempcache = None
+			del self.__tempfiles[:]
+		if self.tempcache:
+		    self.tempcache.clear()
 
 	# Add a header to be used by the HTTP interface only
 	# e.g. u.addheader('Accept', 'sound/basic')
@@ -429,11 +433,9 @@ class FancyURLopener(URLopener):
 			return None, None
 
 	def echo_off(self):
-		import os
 		os.system("stty -echo")
 
 	def echo_on(self):
-		import os
 		print
 		os.system("stty echo")
 
