@@ -151,13 +151,18 @@ class ExampleASTVisitor(ASTVisitor):
             print
 
 class CodeGenerator:
+    # XXX this should be combined with PythonVMCode.  there is no
+    # clear way to split the functionality into two classes.
+
+    MODULE_NAMESPACE = 1
+    FUNCTION_NAMESPACE = 2
+    
     def __init__(self, filename=None):
         self.filename = filename
 	self.code = PythonVMCode(filename=filename)
         self.code.setFlags(0)
 	self.locals = misc.Stack()
-        # track the current and max stack size
-        # XXX does this belong here or in the PythonVMCode?
+        self.namespace = self.MODULE_NAMESPACE
         self.curStack = 0
         self.maxStack = 0
 
@@ -167,7 +172,8 @@ class CodeGenerator:
         self.filename = filename
         args = func.argnames
 	self.code = PythonVMCode(len(args), name=func.name,
-                                 filename=filename, args=args) 
+                                 filename=filename, args=args)
+        self.namespace = self.FUNCTION_NAMESPACE
         if func.varargs:
             self.code.setVarArgs()
         if func.kwargs:
@@ -191,6 +197,24 @@ class CodeGenerator:
 
     def isLocalName(self, name):
 	return self.locals.top().has_elt(name)
+
+    def _nameOp(self, prefix, name):
+        if self.isLocalName(name):
+            if self.namespace == self.MODULE_NAMESPACE:
+                self.code.emit(prefix + '_NAME', name)
+            else:
+                self.code.emit(prefix + '_FAST', name)
+        else:
+            self.code.emit(prefix + '_GLOBAL', name)
+
+    def storeName(self, name):
+        self._nameOp('STORE', name)
+
+    def loadName(self, name):
+        self._nameOp('LOAD', name)
+
+    def delName(self, name):
+        self._nameOp('DELETE', name)
 
     def push(self, n):
         self.curStack = self.curStack + n
@@ -235,10 +259,7 @@ class CodeGenerator:
         self.code.setLineNo(node.lineno)
         for name in node.names:
             self.code.emit('IMPORT_NAME', name)
-            if self.isLocalName(name):
-                self.code.emit('STORE_FAST', name)
-            else:
-                self.code.emit('STORE_GLOBAL', name)
+            self.storeName(name)
 
     def visitFrom(self, node):
         self.code.setLineNo(node.lineno)
@@ -255,8 +276,7 @@ class CodeGenerator:
             self.visit(default)
         self.code.emit('LOAD_CONST', codeBody)
         self.code.emit('MAKE_FUNCTION', len(node.defaults))
-        # XXX nested functions break here!
-        self.code.emit('STORE_NAME', node.name)
+        self.storeName(node.name)
         return 1
 
     def visitCallFunc(self, node):
@@ -424,10 +444,7 @@ class CodeGenerator:
     def visitAssName(self, node):
         if node.flags != 'OP_ASSIGN':
             print "oops", node.flags
-        if self.isLocalName(node.name):
-            self.code.emit('STORE_FAST', node.name)
-        else:
-            self.code.emit('STORE_GLOBAL', node.name)
+        self.storeName(node.name)
         self.pop(1)
 
     def visitAssAttr(self, node):
@@ -505,10 +522,7 @@ class CodeGenerator:
         return self.visitTest(node, 'JUMP_IF_TRUE')
 
     def visitName(self, node):
-        if self.isLocalName(node.name):
-	    self.code.loadFast(node.name)
-	else:
-	    self.code.loadGlobal(node.name)
+        self.loadName(node.name)
         self.push(1)
 
     def visitConst(self, node):
@@ -758,8 +772,7 @@ class PythonVMCode:
                 try:
                     hi, lo = divmod(oparg, 256)
                 except TypeError:
-                    print opname, oparg
-                    raise
+                    raise TypeError, "untranslated arg: %s, %s" % (opname, oparg)
                 lnotab.addCode(chr(self.opnum[opname]) + chr(lo) +
                                chr(hi))
         # why is a module a special case?
@@ -832,9 +845,9 @@ class PythonVMCode:
         return arg
 
     nameOps = ('STORE_NAME', 'IMPORT_NAME', 'IMPORT_FROM',
-               'STORE_ATTR', 'LOAD_ATTR')
-    localOps = ('LOAD_FAST', 'STORE_FAST')
-    globalOps = ('LOAD_GLOBAL', 'STORE_GLOBAL')
+               'STORE_ATTR', 'LOAD_ATTR', 'LOAD_NAME', 'DELETE_NAME')
+    localOps = ('LOAD_FAST', 'STORE_FAST', 'DELETE_FAST')
+    globalOps = ('LOAD_GLOBAL', 'STORE_GLOBAL', 'DELETE_GLOBAL')
 
     def _lookupName(self, name, list, list2=None):
         """Return index of name in list, appending if necessary
