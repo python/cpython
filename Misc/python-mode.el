@@ -517,6 +517,8 @@ Currently-active file is at the head of the list.")
   (define-key py-mode-map "\C-c\C-r"  'py-shift-region-right)
   (define-key py-mode-map "\C-c<"     'py-shift-region-left)
   (define-key py-mode-map "\C-c>"     'py-shift-region-right)
+  ;; paragraph and string filling
+  (define-key py-mode-map "\eq"       'py-fill-paragraph)
   ;; subprocess commands
   (define-key py-mode-map "\C-c\C-c"  'py-execute-buffer)
   (define-key py-mode-map "\C-c\C-m"  'py-execute-import-or-reload)
@@ -3480,6 +3482,156 @@ These are Python temporary files awaiting execution."
 (or (assq 'py-pdbtrack-minor-mode-string minor-mode-alist)
     (push '(py-pdbtrack-is-tracking-p py-pdbtrack-minor-mode-string)
 	  minor-mode-alist))
+
+
+
+;;; paragraph and string filling code from Bernhard Herzog
+;;; see http://mail.python.org/pipermail/python-list/2002-May/103189.html
+
+(defun py-fill-comment (&optional justify)
+  "Fill the comment paragraph around point"
+  (let (;; Non-nil if the current line contains a comment.
+	has-comment
+
+	;; If has-comment, the appropriate fill-prefix for the comment.
+	comment-fill-prefix)
+
+    ;; Figure out what kind of comment we are looking at.
+    (save-excursion
+      (beginning-of-line)
+      (cond
+       ;; A line with nothing but a comment on it?
+       ((looking-at "[ \t]*#[# \t]*")
+	(setq has-comment t
+	      comment-fill-prefix (buffer-substring (match-beginning 0)
+						    (match-end 0))))
+
+       ;; A line with some code, followed by a comment? Remember that the hash
+       ;; which starts the comment shouldn't be part of a string or character.
+       ((progn
+	  (while (not (looking-at "#\\|$"))
+	    (skip-chars-forward "^#\n\"'\\")
+	    (cond
+	     ((eq (char-after (point)) ?\\) (forward-char 2))
+	     ((memq (char-after (point)) '(?\" ?')) (forward-sexp 1))))
+	  (looking-at "#+[\t ]*"))
+	(setq has-comment t)
+	(setq comment-fill-prefix
+	      (concat (make-string (current-column) ? )
+		      (buffer-substring (match-beginning 0) (match-end 0)))))))
+
+    (if (not has-comment)
+	(fill-paragraph justify)
+
+      ;; Narrow to include only the comment, and then fill the region.
+      (save-restriction
+	(narrow-to-region
+
+	 ;; Find the first line we should include in the region to fill.
+	 (save-excursion
+	   (while (and (zerop (forward-line -1))
+		       (looking-at "^[ \t]*#")))
+
+	   ;; We may have gone to far.  Go forward again.
+	   (or (looking-at "^[ \t]*#")
+	       (forward-line 1))
+	   (point))
+
+	 ;; Find the beginning of the first line past the region to fill.
+	 (save-excursion
+	   (while (progn (forward-line 1)
+			 (looking-at "^[ \t]*#")))
+	   (point)))
+
+	;; Lines with only hashes on them can be paragraph boundaries.
+	(let ((paragraph-start (concat paragraph-start "\\|[ \t#]*$"))
+	      (paragraph-separate (concat paragraph-separate "\\|[ \t#]*$"))
+	      (fill-prefix comment-fill-prefix))
+	  ;;(message "paragraph-start %S paragraph-separate %S"
+	  ;;paragraph-start paragraph-separate)
+	  (fill-paragraph justify))))
+    t))
+
+
+(defun py-fill-string (start &optional justify)
+  "Fill the paragraph around (point) in the string starting at start"
+  ;; basic strategy: narrow to the string and call the default
+  ;; implementation
+  (let (;; the start of the string's contents
+	string-start
+	;; the end of the string's contents
+	string-end
+	;; length of the string's delimiter
+	delim-length
+	;; The string delimiter
+	delim
+	)
+
+    (save-excursion
+      (goto-char start)
+      (if (looking-at "\\('''\\|\"\"\"\\|'\\|\"\\)\\\\?\n?")
+	  (setq string-start (match-end 0)
+		delim-length (- (match-end 1) (match-beginning 1))
+		delim (buffer-substring-no-properties (match-beginning 1)
+						      (match-end 1)))
+	(error "The parameter start is not the beginning of a python string"))
+
+      ;; if the string is the first token on a line and doesn't start with
+      ;; a newline, fill as if the string starts at the beginning of the
+      ;; line. this helps with one line docstrings
+      (save-excursion
+	(beginning-of-line)
+	(and (/= (char-before string-start) ?\n)
+	     (looking-at (concat "[ \t]*" delim))
+	     (setq string-start (point))))
+
+      (forward-sexp (if (= delim-length 3) 2 1))
+
+      ;; with both triple quoted strings and single/double quoted strings
+      ;; we're now directly behind the first char of the end delimiter
+      ;; (this doesn't work correctly when the triple quoted string
+      ;; contains the quote mark itself). The end of the string's contents
+      ;; is one less than point
+      (setq string-end (1- (point))))
+
+    ;; Narrow to the string's contents and fill the current paragraph
+    (save-restriction
+      (narrow-to-region string-start string-end)
+      (let ((ends-with-newline (= (char-before (point-max)) ?\n)))
+	(fill-paragraph justify)
+	(if (and (not ends-with-newline)
+		 (= (char-before (point-max)) ?\n))
+	    ;; the default fill-paragraph implementation has inserted a
+	    ;; newline at the end. Remove it again.
+	    (save-excursion
+	      (goto-char (point-max))
+	      (delete-char -1)))))
+
+    ;; return t to indicate that we've done our work
+    t))
+
+(defun py-fill-paragraph (&optional justify)
+  "Like \\[fill-paragraph], but handle Python comments and strings.
+If any of the current line is a comment, fill the comment or the
+paragraph of it that point is in, preserving the comment's indentation
+and initial `#'s.
+If point is inside a string, narrow to that string and fill.
+"
+  (interactive "P")
+  (let* ((bod (py-point 'bod))
+	 (pps (parse-partial-sexp bod (point))))
+    (cond
+     ;; are we inside a comment or on a line with only whitespace before
+     ;; the comment start?
+     ((or (nth 4 pps)
+	  (save-excursion (beginning-of-line) (looking-at "[ \t]*#")))
+      (py-fill-comment justify))
+     ;; are we inside a string?
+     ((nth 3 pps)
+      (py-fill-string (nth 2 pps)))
+     ;; otherwise use the default
+     (t
+      (fill-paragraph justify)))))
 
 
 
