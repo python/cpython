@@ -767,7 +767,7 @@ See doctest.testmod docs for the meaning of optionflags.
         if self.verbose:
             print "Running", name + ".__doc__"
         f, t = run_docstring_examples(object, self.globs, self.verbose, name,
-                                      self.compileflags)
+                                      self.compileflags, self.optionflags)
         if self.verbose:
             print f, "of", t, "examples failed in", name + ".__doc__"
         self.__record_outcome(name, f, t)
