@@ -14,7 +14,7 @@ def dis(x=None):
 		if hasattr(x, 'co_code'):
 			disassemble(x)
 		else:
-			raise ValueError, \
+			raise TypeError, \
 			      "don't know how to disassemble %s objects" % \
 			      type(x).__name__
 
