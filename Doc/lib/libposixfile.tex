@@ -6,7 +6,8 @@
 
 \emph{Note:} This module will become obsolete in a future release.
 The locking operation that it provides is done better and more
-portably by the \code{fcntl.lockf()} call.
+portably by the \function{fcntl.lockf()} call.%
+\index{lockf()@\idxcode{lockf()} (in module fcntl)}
 
 This module implements some additional functionality over the built-in
 file objects.  In particular, it implements file locking, control over
@@ -14,15 +15,15 @@ the file flags, and an easy interface to duplicate the file object.
 The module defines a new file object, the posixfile object.  It
 has all the standard file object methods and adds the methods
 described below.  This module only works for certain flavors of
-\UNIX{}, since it uses \code{fcntl()} for file locking.
+\UNIX{}, since it uses \function{fcntl()} for file locking.
 
-To instantiate a posixfile object, use the \code{open()} function in
-the posixfile module.  The resulting object looks and feels roughly
-the same as a standard file object.
+To instantiate a posixfile object, use the \function{open()} function
+in the \module{posixfile} module.  The resulting object looks and
+feels roughly the same as a standard file object.
 
-The posixfile module defines the following constants:
+The \module{posixfile} module defines the following constants:
 
-\setindexsubitem{(in module posixfile)}
+
 \begin{datadesc}{SEEK_SET}
 Offset is calculated from the start of the file.
 \end{datadesc}
@@ -35,14 +36,14 @@ Offset is calculated from the current position in the file.
 Offset is calculated from the end of the file.
 \end{datadesc}
 
-The posixfile module defines the following functions:
+The \module{posixfile} module defines the following functions:
 
-\setindexsubitem{(in module posixfile)}
 
-\begin{funcdesc}{open}{filename\optional{\, mode\optional{\, bufsize}}}
+\begin{funcdesc}{open}{filename\optional{, mode\optional{, bufsize}}}
  Create a new posixfile object with the given filename and mode.  The
  \var{filename}, \var{mode} and \var{bufsize} arguments are
- interpreted the same way as by the built-in \code{open()} function.
+ interpreted the same way as by the built-in \function{open()}
+ function.
 \end{funcdesc}
 
 \begin{funcdesc}{fileopen}{fileobject}
@@ -54,17 +55,17 @@ The posixfile module defines the following functions:
 The posixfile object defines the following additional methods:
 
 \setindexsubitem{(posixfile method)}
-\begin{funcdesc}{lock}{fmt\, \optional{len\optional{\, start\optional{\, whence}}}}
+\begin{funcdesc}{lock}{fmt, \optional{len\optional{, start\optional{, whence}}}}
  Lock the specified section of the file that the file object is
  referring to.  The format is explained
  below in a table.  The \var{len} argument specifies the length of the
  section that should be locked. The default is \code{0}. \var{start}
  specifies the starting offset of the section, where the default is
  \code{0}.  The \var{whence} argument specifies where the offset is
- relative to. It accepts one of the constants \code{SEEK_SET},
- \code{SEEK_CUR} or \code{SEEK_END}.  The default is \code{SEEK_SET}.
- For more information about the arguments refer to the fcntl
- manual page on your system.
+ relative to. It accepts one of the constants \constant{SEEK_SET},
+ \constant{SEEK_CUR} or \constant{SEEK_END}.  The default is
+ \constant{SEEK_SET}.  For more information about the arguments refer
+ to the \manpage{fcntl}{2} manual page on your system.
 \end{funcdesc}
 
 \begin{funcdesc}{flags}{\optional{flags}}
@@ -73,8 +74,8 @@ The posixfile object defines the following additional methods:
  otherwise.  The format is explained below in a table.  Without
  the \var{flags} argument
  a string indicating the current flags is returned (this is
- the same as the '?' modifier).  For more information about the flags
- refer to the fcntl manual page on your system.
+ the same as the \samp{?} modifier).  For more information about the
+ flags refer to the \manpage{fcntl}{2} manual page on your system.
 \end{funcdesc}
 
 \begin{funcdesc}{dup}{}
@@ -95,9 +96,10 @@ The posixfile object defines the following additional methods:
  standard file object.
 \end{funcdesc}
 
-All methods return \code{IOError} when the request fails.
+All methods raise \exception{IOError} when the request fails.
 
-Format characters for the \code{lock()} method have the following meaning:
+Format characters for the \method{lock()} method have the following
+meaning:
 
 \begin{tableii}{|c|l|}{samp}{Format}{Meaning}
   \lineii{u}{unlock the specified region}
@@ -115,12 +117,13 @@ In addition the following modifiers can be added to the format:
 
 Note:
 
-(1) The lock returned is in the format \code{(mode, len, start,
-whence, pid)} where mode is a character representing the type of lock
-('r' or 'w').  This modifier prevents a request from being granted; it
-is for query purposes only.
+(1) The lock returned is in the format \code{(\var{mode}, \var{len},
+\var{start}, \var{whence}, \var{pid})} where \var{mode} is a character
+representing the type of lock ('r' or 'w').  This modifier prevents a
+request from being granted; it is for query purposes only.
 
-Format character for the \code{flags()} method have the following meaning:
+Format characters for the \method{flags()} method have the following
+meanings:
 
 \begin{tableii}{|c|l|}{samp}{Format}{Meaning}
   \lineii{a}{append only flag}
@@ -148,9 +151,9 @@ by the same call.
 Examples:
 
 \begin{verbatim}
-from posixfile import *
+import posixfile
 
-file = open('/tmp/test', 'w')
+file = posixfile.open('/tmp/test', 'w')
 file.lock('w|')
 ...
 file.lock('u')
