@@ -27,6 +27,10 @@ Core and builtins
   segfault in a debug build, but provided less predictable behavior in
   a release build.
 
+- Fixed a bug in object.__reduce_ex__ when using protocol 2.  Failure
+  to clear the error when attempts to get the __getstate__ attribute
+  fail caused intermittent errors and odd behavior.
+
 What's New in Python 2.3.3 (final)?
 ===================================
 
