@@ -165,6 +165,7 @@ OBJECTS		=                              \
                   $(PATHOBJ)\MethodObject.obj  \
                   $(PATHOBJ)\ModuleObject.obj  \
                   $(PATHOBJ)\Object.obj        \
+                  $(PATHOBJ)\ObMalloc.obj      \
                   $(PATHOBJ)\RangeObject.obj   \
                   $(PATHOBJ)\SliceObject.obj   \
                   $(PATHOBJ)\StringObject.obj  \

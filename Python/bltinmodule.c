@@ -575,7 +575,7 @@ builtin_execfile(PyObject *self, PyObject *args)
 		struct stat s;
 		if (stat(filename, &s) == 0) {
 			if (S_ISDIR(s.st_mode))
-#				if defined(PY_OS2) && defined(PYCC_VACPP)
+#				if defined(PYOS_OS2) && defined(PYCC_VACPP)
 					errno = EOS2ERR;
 #				else
 					errno = EISDIR;
