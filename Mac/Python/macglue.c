@@ -179,6 +179,23 @@ static PyObject *python_event_handler;
 */
 int PyMac_AppearanceCompliant;
 
+#ifndef WITHOUT_UNIX_NEWLINES
+/*
+** Experimental feature (for 2.2a2): allow unix newlines
+** as well as Mac newlines on input. We replace a lowlevel
+** MSL routine to accomplish this
+*/
+void
+__convert_to_newlines(unsigned char * buf, size_t * n_ptr)
+{
+	unsigned char *p;
+	size_t n = *n_ptr;
+	
+	for(p=buf; n > 0; p++, n--)
+		if ( *p == '\r' ) *p = '\n';
+}
+#endif /* WITHOUT_UNIX_NEWLINES */
+
 /* Given an FSSpec, return the FSSpec of the parent folder */
 
 static OSErr
