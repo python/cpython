@@ -13,4 +13,5 @@ buildapp(
 	name="IDLE",
 	mainprogram="idle.py",
 	argv_emulation=1,
+	iconfile="Icons/idle.icns",
 )
