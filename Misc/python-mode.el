@@ -242,8 +242,8 @@ the Emacs bell is also rung as a warning."
    ;; return the features
    features)
   "A list of features extant in the Emacs you are using.
-There are many flavors of Emacs out there, each with different
-features supporting those needed by CC Mode.")
+There are many flavors of Emacs out there, with different levels of
+support for features needed by `python-mode'.")
 
 (defvar python-font-lock-keywords
   (let ((kw1 (mapconcat 'identity
