@@ -1291,6 +1291,20 @@ then
   AC_DEFINE(SIGNED_RIGHT_SHIFT_ZERO_FILLS)
 fi
 
+# check for getc_unlocked and related locking functions
+AC_MSG_CHECKING(for getc_unlocked() and friends)
+AC_CACHE_VAL(ac_cv_have_getc_unlocked, [
+AC_TRY_LINK([#include <stdio.h>],[
+	FILE *f = fopen("/dev/null", "r");
+	flockfile(f);
+	getc_unlocked(f);
+	funlockfile(f);
+], ac_cv_have_getc_unlocked=yes, ac_cv_have_getc_unlocked=no)])
+AC_MSG_RESULT($ac_cv_have_getc_unlocked)
+if test "$ac_cv_have_getc_unlocked" = yes
+then
+  AC_DEFINE(HAVE_GETC_UNLOCKED)
+fi
 
 # THIS MUST BE LAST, IT CAN BREAK OTHER TESTS!
 # Add sys/socket.h to confdefs.h
