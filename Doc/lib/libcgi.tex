@@ -45,7 +45,7 @@ telling the client what kind of data is following.  Python code to
 generate a minimal header section looks like this:
 
 \begin{verbatim}
-print "Content-type: text/html"     # HTML is following
+print "Content-Type: text/html"     # HTML is following
 print                               # blank line, end of headers
 \end{verbatim}
 
@@ -58,9 +58,6 @@ print "<TITLE>CGI script output</TITLE>"
 print "<H1>This is my first CGI script</H1>"
 print "Hello, world!"
 \end{verbatim}
-
-(It may not be fully legal HTML according to the letter of the
-standard, but any browser will understand it.)
 
 \subsection{Using the cgi module}
 \nodename{Using the cgi module}
@@ -77,9 +74,16 @@ value of various environment variables set according to the CGI
 standard).  Since it may consume standard input, it should be
 instantiated only once.
 
-The \class{FieldStorage} instance can be accessed as if it were a Python 
-dictionary.  For instance, the following code (which assumes that the 
-\code{content-type} header and blank line have already been printed)
+The \class{FieldStorage} instance can be indexed like a Python
+dictionary, and also supports the standard dictionary methods
+\function{has_key()} and \function{keys()}.
+Form fields containing empty strings are ignored
+and do not appear in the dictionary; to keep such values, provide
+the optional \samp{keep_blank_values} argument when creating the
+\class {FieldStorage} instance.
+
+For instance, the following code (which assumes that the 
+\code{Content-Type} header and blank line have already been printed)
 checks that the fields \code{name} and \code{addr} are both set to a
 non-empty string:
 
@@ -87,23 +91,30 @@ non-empty string:
 form = cgi.FieldStorage()
 form_ok = 0
 if form.has_key("name") and form.has_key("addr"):
-    if form["name"].value != "" and form["addr"].value != "":
-        form_ok = 1
+    form_ok = 1
 if not form_ok:
     print "<H1>Error</H1>"
     print "Please fill in the name and addr fields."
     return
+print "<p>name:", form["name"].value
+print "<p>addr:", form["addr"].value
 ...further form processing here...
 \end{verbatim}
 
 Here the fields, accessed through \samp{form[\var{key}]}, are
 themselves instances of \class{FieldStorage} (or
 \class{MiniFieldStorage}, depending on the form encoding).
+The \member{value} attribute of the instance yields the string value
+of the field.  The \function{getvalue()} method returns this string value
+directly; it also accepts an optional second argument as a default to
+return if the requested key is not present.
 
 If the submitted form data contains more than one field with the same
 name, the object retrieved by \samp{form[\var{key}]} is not a
 \class{FieldStorage} or \class{MiniFieldStorage}
-instance but a list of such instances.  If you expect this possibility
+instance but a list of such instances.  Similarly, in this situation,
+\samp{form.getvalue(\var{key})} would return a list of strings.
+If you expect this possibility
 (i.e., when your HTML form contains multiple fields with the same
 name), use the \function{type()} function to determine whether you
 have a single instance or a list of instances.  For example, here's
@@ -111,27 +122,21 @@ code that concatenates any number of username fields, separated by
 commas:
 
 \begin{verbatim}
-username = form["username"]
-if type(username) is type([]):
+value = form.getvalue("username", "")
+if type(value) is type([]):
     # Multiple username fields specified
-    usernames = ""
-    for item in username:
-        if usernames:
-            # Next item -- insert comma
-            usernames = usernames + "," + item.value
-        else:
-            # First item -- don't insert comma
-            usernames = item.value
+    usernames = ",".join(value)
 else:
-    # Single username field specified
-    usernames = username.value
+    # Single or no username field specified
+    usernames = value
 \end{verbatim}
 
-If a field represents an uploaded file, the value attribute reads the
+If a field represents an uploaded file, accessing the value via the
+\member{value} attribute or the \function{getvalue()} method reads the
 entire file in memory as a string.  This may not be what you want.
-You can test for an uploaded file by testing either the filename
-attribute or the file attribute.  You can then read the data at
-leisure from the file attribute:
+You can test for an uploaded file by testing either the \member{filename}
+attribute or the \member{file} attribute.  You can then read the data at
+leisure from the \member{file} attribute:
 
 \begin{verbatim}
 fileitem = form["userfile"]
@@ -157,7 +162,8 @@ When a form is submitted in the ``old'' format (as the query string or
 as a single data part of type
 \mimetype{application/x-www-form-urlencoded}), the items will actually
 be instances of the class \class{MiniFieldStorage}.  In this case, the
-list, file and filename attributes are always \code{None}.
+\member{list}, \member{file}, and \member{filename} attributes are
+always \code{None}.
 
 
 \subsection{Old classes}
@@ -233,23 +239,22 @@ exception.
 \begin{funcdesc}{parse_multipart}{fp, pdict}
 Parse input of type \mimetype{multipart/form-data} (for 
 file uploads).  Arguments are \var{fp} for the input file and
-\var{pdict} for the dictionary containing other parameters of
-\code{content-type} header
+\var{pdict} for a dictionary containing other parameters in
+the \code{Content-Type} header.
 
 Returns a dictionary just like \function{parse_qs()} keys are the
 field names, each value is a list of values for that field.  This is
 easy to use but not much good if you are expecting megabytes to be
 uploaded --- in that case, use the \class{FieldStorage} class instead
-which is much more flexible.  Note that \code{content-type} is the
-raw, unparsed contents of the \code{content-type} header.
+which is much more flexible.
 
 Note that this does not parse nested multipart parts --- use
 \class{FieldStorage} for that.
 \end{funcdesc}
 
 \begin{funcdesc}{parse_header}{string}
-Parse a header like \code{content-type} into a main
-content-type and a dictionary of parameters.
+Parse a MIME header (such as \code{Content-Type}) into a main
+value and a dictionary of parameters.
 \end{funcdesc}
 
 \begin{funcdesc}{test}{}
@@ -432,7 +437,7 @@ For example:
 \begin{verbatim}
 import sys
 import traceback
-print "Content-type: text/html"
+print "Content-Type: text/html"
 print
 sys.stderr = sys.stdout
 try:
@@ -454,7 +459,7 @@ built-in modules):
 \begin{verbatim}
 import sys
 sys.stderr = sys.stdout
-print "Content-type: text/plain"
+print "Content-Type: text/plain"
 print
 ...your code here...
 \end{verbatim}
