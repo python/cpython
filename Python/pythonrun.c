@@ -37,7 +37,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "compile.h"
 #include "eval.h"
 #include "ceval.h"
-#include "pythonrun.h"
 #include "import.h"
 #include "marshal.h"
 
@@ -148,7 +147,7 @@ run_tty_loop(fp, filename)
 	}
 	for (;;) {
 		ret = run_tty_1(fp, filename);
-#ifdef REF_DEBUG
+#ifdef Py_REF_DEBUG
 		fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
 #endif
 		if (ret == E_EOF)
@@ -653,15 +652,15 @@ goaway(sts)
 	
 	err_clear();
 
-#ifdef REF_DEBUG
+#ifdef Py_REF_DEBUG
 	fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
 #endif
 
-#ifdef TRACE_REFS
+#ifdef Py_TRACE_REFS
 	if (askyesno("Print left references?")) {
 		printrefs(stderr);
 	}
-#endif /* TRACE_REFS */
+#endif /* Py_TRACE_REFS */
 
 #ifdef macintosh
 	PyMac_Exit(sts);
@@ -714,7 +713,7 @@ initsigs()
 	initintr(); /* May imply initsignal() */
 }
 
-#ifdef TRACE_REFS
+#ifdef Py_TRACE_REFS
 /* Ask a yes/no question */
 
 int
