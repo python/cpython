@@ -53,5 +53,4 @@ def translate(pat):
 			res = res + ('\\' + c)
 		else:
 			res = res + c
-	print 'translate(' + `pat` + ') == ' + `res`
 	return res
