@@ -71,6 +71,21 @@ class TestGenericStringIO(unittest.TestCase):
 class TestStringIO(TestGenericStringIO):
     MODULE = StringIO
 
+    def test_unicode(self):
+
+        # The StringIO module also supports concatenating Unicode
+        # snippets to larger Unicode strings. This is tested by this
+        # method. Note that cStringIO does not support this extension.
+        
+        f = self.MODULE.StringIO()
+        f.write(self._line[:6])
+        f.seek(3)
+        f.write(unicode(self._line[20:26]))
+        f.write(unicode(self._line[52]))
+        s = f.getvalue()
+        self.assertEqual(s, unicode('abcuvwxyz!'))
+        self.assertEqual(type(s), types.UnicodeType)
+
 class TestcStringIO(TestGenericStringIO):
     MODULE = cStringIO
 
