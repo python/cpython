@@ -687,6 +687,10 @@ items.sort()
 for (name, value) in items:
     if name[ : 5] == "test_":
         confirm(value(), name)
+# We delete the items variable so that the assignment to items above
+# doesn't pick up the old value of items (which messes with attempts
+# to find reference leaks).
+del items
 
 if verbose:
     print "%d tests, %d failures" % (tests, len(failures))
