@@ -341,7 +341,7 @@ newarrayobject(size, descr)
 	}
 	nbytes = size * descr->itemsize;
 	/* Check for overflow */
-	if (nbytes / descr->itemsize != size) {
+	if (nbytes / descr->itemsize != (size_t)size) {
 		return PyErr_NoMemory();
 	}
 	op = PyMem_NEW(arrayobject, 1);
@@ -933,7 +933,7 @@ array_tofile(self, args)
 		return NULL;
 	}
 	if (self->ob_size > 0) {
-		if (fwrite(self->ob_item, self->ob_descr->itemsize,
+		if ((int)fwrite(self->ob_item, self->ob_descr->itemsize,
 			   self->ob_size, fp) != self->ob_size) {
 			PyErr_SetFromErrno(PyExc_IOError);
 			clearerr(fp);

@@ -163,10 +163,10 @@ putlong(outf, val)
 {
 	unsigned char buf[4];
 
-	buf[0] = (val >> 24);
-	buf[1] = (val >> 16);
-	buf[2] = (val >> 8);
-	buf[3] = (val >> 0);
+	buf[0] = (unsigned char) (val >> 24);
+	buf[1] = (unsigned char) (val >> 16);
+	buf[2] = (unsigned char) (val >> 8);
+	buf[3] = (unsigned char) (val >> 0);
 	return fwrite(buf, 4, 1, outf);
 }
 
@@ -314,7 +314,7 @@ longimagedata(self, args)
 		tablen = ysize * zsize * sizeof(long);
 		starttab = (long *)malloc(tablen);
 		lengthtab = (long *)malloc(tablen);
-		rlebuflen = 1.05 * xsize +10;
+		rlebuflen = (int) (1.05 * xsize +10);
 		rledat = (unsigned char *)malloc(rlebuflen);
 		if (!starttab || !lengthtab || !rledat) {
 			PyErr_NoMemory();
@@ -603,7 +603,7 @@ longstoimage(self, args)
 
 	starttab = (long *)malloc(tablen);
 	lengthtab = (long *)malloc(tablen);
-	rlebuflen = 1.05 * xsize + 10;
+	rlebuflen = (int) (1.05 * xsize + 10);
 	rlebuf = (unsigned char *)malloc(rlebuflen);
 	lumbuf = (unsigned char *)malloc(xsize * sizeof(long));
 	if (!starttab || !lengthtab || !rlebuf || !lumbuf) {
@@ -714,7 +714,7 @@ compressrow(lbuf, rlebuf, z, cnt)
 		iptr -= 8;
 		count = (iptr - sptr) / 4;
 		while (count) {
-			todo = count > 126 ? 126 : count;
+			todo = count > 126 ? 126 : (short)count;
 			count -= todo;
 			*optr++ = 0x80 | todo;
 			while (todo > 8) {
@@ -742,10 +742,10 @@ compressrow(lbuf, rlebuf, z, cnt)
 			iptr += 4;
 		count = (iptr - sptr) / 4;
 		while (count) {
-			todo = count > 126 ? 126 : count;
+			todo = count > 126 ? 126 : (short)count;
 			count -= todo;
-			*optr++ = todo;
-			*optr++ = cc;
+			*optr++ = (unsigned char) todo;
+			*optr++ = (unsigned char) cc;
 		}
 	}
 	*optr++ = 0;
