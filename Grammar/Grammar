@@ -36,7 +36,6 @@ fplist: fpdef (',' fpdef)* [',']
 
 stmt: simple_stmt | compound_stmt
 simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
-#small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | access_stmt | exec_stmt
 small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | exec_stmt | assert_stmt
 expr_stmt: testlist (augassign testlist | ('=' testlist)*)
 augassign: '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>=' | '**='
@@ -54,10 +53,6 @@ import_as_name: NAME [NAME NAME]
 dotted_as_name: dotted_name [NAME NAME]
 dotted_name: NAME ('.' NAME)*
 global_stmt: 'global' NAME (',' NAME)*
-#access_stmt: 'access' ('*' | NAME (',' NAME)*) ':' accesstype  (',' accesstype)*
-#accesstype: NAME+
-## accesstype should be ('public' | 'protected' | 'private') ['read'] ['write']
-## but can't be because that would create undesirable reserved words!
 exec_stmt: 'exec' expr ['in' test [',' test]]
 assert_stmt: 'assert' test [',' test]
 
