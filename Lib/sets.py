@@ -176,13 +176,8 @@ class BaseSet(object):
             little, big = self, other
         else:
             little, big = other, self
-        result = self.__class__()
-        data = result._data
-        value = True
-        for elt in little:
-            if elt in big:
-                data[elt] = value
-        return result
+        common = filter(big._data.has_key, little._data.iterkeys())
+        return self.__class__(common)
 
     def intersection(self, other):
         """Return the intersection of two sets as a new set.
