@@ -19,12 +19,12 @@ specs.  As a result, the parsing rules used are a bit less strict.
 
 \begin{excdesc}{CookieError}
 Exception failing because of \rfc{2109} invalidity: incorrect
-attributes, incorrect \code{Set-Cookie} header, etc.
+attributes, incorrect \mimeheader{Set-Cookie} header, etc.
 \end{excdesc}
 
 \begin{classdesc}{BaseCookie}{\optional{input}}
 This class is a dictionary-like object whose keys are strings and
-whose values are \class{Morsel}s. Note that upon setting a key to
+whose values are \class{Morsel} instances. Note that upon setting a key to
 a value, the value is first converted to a \class{Morsel} containing
 the key and the value.
 
@@ -40,13 +40,12 @@ and \function{str()} respectively.
 \begin{classdesc}{SerialCookie}{\optional{input}}
 This class derives from \class{BaseCookie} and overrides
 \method{value_decode()} and \method{value_encode()} to be the
-\function{pickle.loads()} and  \function{pickle.dumps()}.  
+\function{pickle.loads()} and \function{pickle.dumps()}.
 
-\strong{Do not use this class!}  Reading pickled values from untrusted
+\deprecated{2.3}{Reading pickled values from untrusted
 cookie data is a huge security hole, as pickle strings can be crafted
 to cause arbitrary code to execute on your server.  It is supported
-for backwards compatibility only, and may eventually go away.
-\deprecated{2.3}
+for backwards compatibility only, and may eventually go away.}
 \end{classdesc}
 
 \begin{classdesc}{SmartCookie}{\optional{input}}
@@ -56,9 +55,8 @@ valid pickle, and otherwise the value itself. It overrides
 \method{value_encode()} to be \function{pickle.dumps()} unless it is a
 string, in which case it returns the value itself.
 
-\strong{Note:} The same security warning from \class{SerialCookie}
-applies here.
-\deprecated{2.3}
+\deprecated{2.3}{The same security warning from \class{SerialCookie}
+applies here.}
 \end{classdesc}
 
 A further security note is warranted.  For backwards compatibility,
