@@ -12,6 +12,7 @@ setup(
     'lfcr.py',
     'logmerge.py',
     '../../Lib/tabnanny.py',
+    '../../Lib/timeit.py',
     'untabify.py',
     ],
   )
