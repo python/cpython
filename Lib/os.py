@@ -18,7 +18,10 @@
 
 try:
 	from posix import *
-	from posix import _exit
+	try:
+		from posix import _exit
+	except ImportError:
+		pass
 	name = 'posix'
 	curdir = '.'
 	pardir = '..'

@@ -42,9 +42,9 @@ if cmp(1, -1) <> 1: raise TestFailed, 'cmp(1, -1)'
 if cmp(1, 1) <> 0: raise TestFailed, 'cmp(1, 1)'
 
 print 'coerce'
-if coerce(1, 1.1) <> (1.0, 1.1): raise TestFailed, 'coerce(1, 1.1)'
+if fcmp(coerce(1, 1.1), (1.0, 1.1)): raise TestFailed, 'coerce(1, 1.1)'
 if coerce(1, 1L) <> (1L, 1L): raise TestFailed, 'coerce(1, 1L)'
-if coerce(1L, 1.1) <> (1.0, 1.1): raise TestFailed, 'coerce(1L, 1.1)'
+if fcmp(coerce(1L, 1.1), (1.0, 1.1)): raise TestFailed, 'coerce(1L, 1.1)'
 
 print 'dir'
 x = 1
@@ -68,10 +68,14 @@ if divmod(-12, 7L) <> (-2, 2L): raise TestFailed, 'divmod(-12, 7L)'
 if divmod(12L, -7) <> (-2L, -2): raise TestFailed, 'divmod(12L, -7)'
 if divmod(-12L, -7) <> (1L, -5): raise TestFailed, 'divmod(-12L, -7)'
 #
-if divmod(3.25, 1.0) <> (3.0, 0.25): raise TestFailed, 'divmod(3.25, 1.0)'
-if divmod(-3.25, 1.0) <> (-4.0, 0.75): raise TestFailed, 'divmod(-3.25, 1.0)'
-if divmod(3.25, -1.0) <> (-4.0, -0.75): raise TestFailed, 'divmod(3.25, -1.0)'
-if divmod(-3.25, -1.0) <> (3.0, -0.25): raise TestFailed, 'divmod(-3.25, -1.0)'
+if fcmp(divmod(3.25, 1.0), (3.0, 0.25)):
+	raise TestFailed, 'divmod(3.25, 1.0)'
+if fcmp(divmod(-3.25, 1.0), (-4.0, 0.75)):
+	raise TestFailed, 'divmod(-3.25, 1.0)'
+if fcmp(divmod(3.25, -1.0), (-4.0, -0.75)):
+	raise TestFailed, 'divmod(3.25, -1.0)'
+if fcmp(divmod(-3.25, -1.0), (3.0, -0.25)):
+	raise TestFailed, 'divmod(-3.25, -1.0)'
 
 print 'eval'
 if eval('1+1') <> 2: raise TestFailed, 'eval(\'1+1\')'
