@@ -2647,6 +2647,18 @@ then
   AC_CHECK_SIZEOF(wchar_t, 4, [#include <wchar.h>])
 fi
 
+AC_MSG_CHECKING(for UCS-4 tcl)
+have_ucs4_tcl=no
+AC_TRY_COMPILE([
+#include <tcl.h>
+#if TCL_UTF_MAX != 6
+# error "NOT UCS4_TCL"
+#endif], [], [
+  AC_DEFINE(HAVE_UCS4_TCL, 1, [Define this if you have tcl and TCL_UTF_MAX==6])
+  have_ucs4_tcl=yes
+])
+AC_MSG_RESULT($have_ucs4_tcl)
+
 AC_MSG_CHECKING(what type to use for unicode)
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_ENABLE(unicode, 
@@ -2657,7 +2669,12 @@ AC_ARG_ENABLE(unicode,
 if test $enable_unicode = yes
 then
   # Without any arguments, Py_UNICODE defaults to two-byte mode
-  enable_unicode="ucs2"
+  case "$have_ucs4_tcl" in
+  yes) enable_unicode="ucs4"
+       ;;
+  *)   enable_unicode="ucs2"
+       ;;
+  esac
 fi
 
 AH_TEMPLATE(Py_UNICODE_SIZE,
