@@ -43,7 +43,7 @@ Copyright (C) 1994 Steen Lumholt.
 #endif
 
 #ifndef PyMODINIT_FUNC
-#define PyPyMODINIT_FUNC void
+#define PyMODINIT_FUNC void
 #endif
 
 /* Starting with Tcl 8.4, many APIs offer const-correctness.  Unfortunately,
