@@ -429,6 +429,16 @@ def ints():
     # The following crashes in Python 2.2
     vereq((1).__nonzero__(), 1)
     vereq((0).__nonzero__(), 0)
+    # This returns 'NotImplemented' in Python 2.2
+    class C(int):
+        def __add__(self, other):
+            return NotImplemented
+    try:
+        C() + ""
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "NotImplemented should have caused TypeErrpr"
 
 def longs():
     if verbose: print "Testing long operations..."
