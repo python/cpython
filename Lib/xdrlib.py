@@ -268,7 +268,7 @@ class Unpacker:
 
 
 # test suite
-def __test():
+def _test():
     p = Packer()
     packtest = [
 	(p.pack_uint,    (9,)),
@@ -321,4 +321,4 @@ def __test():
 	count = count + 1
 
 if __name__ == '__main__':
-    __test()
+    _test()
