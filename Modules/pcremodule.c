@@ -204,7 +204,7 @@ PyPcre_compile(self, args)
 				 &error, &erroroffset, dictionary);
 	if (rv->regex==NULL) 
 	{
-		PyMem_DEL(rv);
+		Py_DECREF(rv);
 		if (!PyErr_Occurred())
 		{
 			PyObject *errval = Py_BuildValue("si", error, erroroffset);
@@ -217,7 +217,7 @@ PyPcre_compile(self, args)
 	if (rv->regex_extra==NULL && error!=NULL) 
 	{
 		PyObject *errval = Py_BuildValue("si", error, 0);
-		PyMem_DEL(rv);
+		Py_DECREF(rv);
 		PyErr_SetObject(ErrorObject, errval);
 		Py_XDECREF(errval);
 		return NULL;
@@ -228,7 +228,7 @@ PyPcre_compile(self, args)
 		PyObject *errval = Py_BuildValue("si", error, rv->num_groups);
 		PyErr_SetObject(ErrorObject, errval);
 		Py_XDECREF(errval);
-		PyMem_DEL(rv);
+		Py_DECREF(rv);
 		return NULL;
 	}
 	return (PyObject *)rv;
