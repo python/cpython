@@ -33,18 +33,23 @@ INSTALL_SCHEMES = {
     'nt': {
         'purelib': '$base',
         'platlib': '$base',
-        'headers': '$base\\Include\\$dist_name',
-        'scripts': '$base\\Scripts',
+        'headers': '$base/Include/$dist_name',
+        'scripts': '$base/Scripts',
         'data'   : '$base',
         },
     'mac': {
-        'purelib': '$base:Lib:site-packages',
-        'platlib': '$base:Lib:site-packages',
-        'headers': '$base:Include:$dist_name',
-        'scripts': '$base:Scripts',
+        'purelib': '$base/Lib/site-packages',
+        'platlib': '$base/Lib/site-packages',
+        'headers': '$base/Include/$dist_name',
+        'scripts': '$base/Scripts',
         'data'   : '$base',
         }
     }
+
+# The keys to an installation scheme; if any new types of files are to be
+# installed, be sure to add an entry to every installation scheme above,
+# and to SCHEME_KEYS here.
+SCHEME_KEYS = ('purelib', 'platlib', 'headers', 'scripts', 'data')
 
 
 class install (Command):
@@ -130,14 +135,24 @@ class install (Command):
 
         # These two are for putting non-packagized distributions into their
         # own directory and creating a .pth file if it makes sense.
-        # 'extra_path' comes from the setup file; 'install_path_file' is
-        # set only if we determine that it makes sense to install a path
-        # file.
+        # 'extra_path' comes from the setup file; 'install_path_file' can
+        # be turned off if it makes no sense to install a .pth file.  (But
+        # better to install it uselessly than to guess wrong and not
+        # install it when it's necessary and would be used!)  Currently,
+        # 'install_path_file' is always true unless some outsider meddles
+        # with it.
         self.extra_path = None
-        self.install_path_file = 0
+        self.install_path_file = 1
 
+        # 'force' forces installation, even if target files are not
+        # out-of-date.  'skip_build' skips running the "build" command,
+        # handy if you know it's not necessary.  'warn_dir' (which is *not*
+        # a user option, it's just there so the bdist_* commands can turn
+        # it off) determines whether we warn about installing to a
+        # directory not in sys.path.
         self.force = 0
         self.skip_build = 0
+        self.warn_dir = 1
 
         # These are only here as a conduit from the 'build' command to the
         # 'install_*' commands that do the real work.  ('build_base' isn't
@@ -256,6 +271,12 @@ class install (Command):
             else:
                 self.install_lib = self.install_purelib
                     
+
+        # Convert directories from Unix /-separated syntax to the local
+        # convention.
+        self.convert_paths('lib', 'purelib', 'platlib',
+                           'scripts', 'data', 'headers')
+
         # Well, we're not actually fully completely finalized yet: we still
         # have to deal with 'extra_path', which is the hack for allowing
         # non-packagized module distributions (hello, Numerical Python!) to
@@ -267,11 +288,8 @@ class install (Command):
         # If a new root directory was supplied, make all the installation
         # dirs relative to it.
         if self.root is not None:
-            for name in ('libbase', 'lib', 'purelib', 'platlib',
-                         'scripts', 'data', 'headers'):
-                attr = "install_" + name
-                new_val = change_root (self.root, getattr (self, attr))
-                setattr (self, attr, new_val)
+            self.change_roots('libbase', 'lib', 'purelib', 'platlib',
+                              'scripts', 'data', 'headers')
 
         self.dump_dirs ("after prepending root")
 
@@ -324,21 +342,10 @@ class install (Command):
 
                 self.prefix = os.path.normpath (sys.prefix)
                 self.exec_prefix = os.path.normpath (sys.exec_prefix)
-                self.install_path_file = 1
 
             else:
                 if self.exec_prefix is None:
                     self.exec_prefix = self.prefix
-
-
-            # XXX since we don't *know* that a user-supplied prefix really
-            # points to another Python installation, we can't be sure that
-            # writing a .pth file there will actually work -- so we don't
-            # try.  That is, we only set 'install_path_file' if the user
-            # didn't supply prefix.  There are certainly circumstances
-            # under which we *should* install a .pth file when the user
-            # supplies a prefix, namely when that prefix actually points to
-            # another Python installation.  Hmmm.
 
             self.install_base = self.prefix
             self.install_platbase = self.exec_prefix
@@ -351,10 +358,6 @@ class install (Command):
 
         if self.prefix is None:
             self.prefix = os.path.normpath (sys.prefix)
-            self.install_path_file = 1
-
-        # XXX same caveat regarding 'install_path_file' as in
-        # 'finalize_unix()'.
 
         self.install_base = self.install_platbase = self.prefix
         try:
@@ -369,7 +372,7 @@ class install (Command):
     def select_scheme (self, name):
         # it's the caller's problem if they supply a bad name!
         scheme = INSTALL_SCHEMES[name]
-        for key in ('purelib', 'platlib', 'headers', 'scripts', 'data'):
+        for key in SCHEME_KEYS:
             attrname = 'install_' + key
             if getattr(self, attrname) is None:
                 setattr(self, attrname, scheme[key])
@@ -397,6 +400,12 @@ class install (Command):
                              'install_headers',
                              'install_scripts',
                              'install_data',])
+
+
+    def convert_paths (self, *names):
+        for name in names:
+            attr = "install_" + name
+            setattr(self, attr, convert_path(getattr(self, attr)))
 
 
     def handle_extra_path (self):
@@ -433,6 +442,12 @@ class install (Command):
     # handle_extra_path ()
 
 
+    def change_roots (self, *names):
+        for name in names:
+            attr = "install_" + name
+            setattr(self, attr, change_root(self.root, getattr(self, attr)))
+
+
     def run (self):
 
         # Obviously have to build before we can install
@@ -458,13 +473,14 @@ class install (Command):
                          "writing list of installed files to '%s'" %
                          self.record)
 
-        normalized_path = map (os.path.normpath, sys.path)
-        if (not (self.path_file and self.install_path_file) and
-            os.path.normpath (self.install_lib) not in normalized_path):
-            self.warn (("modules installed to '%s', which is not in " +
-                        "Python's module search path (sys.path) -- " +
-                        "you'll have to change the search path yourself") %
-                       self.install_lib)
+        normalized_path = map(os.path.normpath, sys.path)
+        if (self.warn_dir and
+            not (self.path_file and self.install_path_file) and
+            os.path.normpath(self.install_lib) not in normalized_path):
+            self.warn(("modules installed to '%s', which is not in " +
+                       "Python's module search path (sys.path) -- " +
+                       "you'll have to change the search path yourself") %
+                      self.install_lib)
 
     # run ()
 
@@ -516,10 +532,7 @@ class install (Command):
                           (filename, [self.extra_dirs]),
                           "creating %s" % filename)
         else:
-            self.warn (("path file '%s' not created for alternate or custom " +
-                        "installation (path files only work with standard " +
-                        "installations)") %
-                       filename)
+            self.warn("path file '%s' not created" % filename)
 
     # 'sub_commands': a list of commands this command might have to run to
     # get its work done.  See cmd.py for more info.
