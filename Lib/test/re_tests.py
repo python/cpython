@@ -666,4 +666,5 @@ else:
     # bug 410271: \b broken under locales
     (r'\b.\b', 'a', SUCCEED, 'found', 'a'),
     (r'(?u)\b.\b', u, SUCCEED, 'found', u),
+    (r'(?u)\w', u, SUCCEED, 'found', u),
     ])
