@@ -3,6 +3,9 @@ What's New in IDLE 1.2a0?
 
 *Release date: XX-XXX-2005*
 
+- Add config-main option to make the 'history' feature non-cyclic.
+  Default remains cyclic.  Python Patch 914546 Noam Raphael.
+
 - Removed ability to configure tabs indent from Options dialog.  This 'feature'
   has never worked and no one has complained.  It is still possible to set a
   default tabs (v. spaces) indent 'manually' via config-main.def (or to turn on

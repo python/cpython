@@ -1,3 +1,5 @@
+from configHandler import idleConf
+
 class History:
 
     def __init__(self, text, output_sep = "\n"):
@@ -6,6 +8,7 @@ class History:
         self.history_prefix = None
         self.history_pointer = None
         self.output_sep = output_sep
+        self.cyclic = idleConf.GetOption("main", "History", "cyclic", 1, "bool")
         text.bind("<<history-previous>>", self.history_prev)
         text.bind("<<history-next>>", self.history_next)
 
@@ -40,7 +43,11 @@ class History:
             if reverse:
                 pointer = nhist
             else:
-                pointer = -1
+                if self.cyclic:
+                    pointer = -1
+                else:
+                    self.text.bell()
+                    return
         nprefix = len(prefix)
         while 1:
             if reverse:
@@ -49,10 +56,13 @@ class History:
                 pointer = pointer + 1
             if pointer < 0 or pointer >= nhist:
                 self.text.bell()
-                if self._get_source("iomark", "end-1c") != prefix:
-                    self.text.delete("iomark", "end-1c")
-                    self._put_source("iomark", prefix)
-                pointer = prefix = None
+                if not self.cyclic and pointer < 0:
+                    return
+                else:
+                    if self._get_source("iomark", "end-1c") != prefix:
+                        self.text.delete("iomark", "end-1c")
+                        self._put_source("iomark", prefix)
+                    pointer = prefix = None
                 break
             item = self.history[pointer]
             if item[:nprefix] == prefix and len(item) > nprefix:
