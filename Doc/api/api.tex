@@ -934,6 +934,16 @@ returns \NULL{}, so a wrapper function around a system call can write
 error.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyErr_SetFromErrnoWithFilename}{PyObject *type,
+                                                             char *filename}
+Similar to \cfunction{PyErr_SetFromErrno()}, with the additional
+behavior that if \var{filename} is not \NULL, it is passed to the
+constructor of \var{type} as a third parameter.  In the case of
+exceptions such as \exception{IOError} and \exception{OSError}, this
+is used to define the \member{filename} attribute of the exception
+instance.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{void}{PyErr_BadInternalCall}{}
 This is a shorthand for \samp{PyErr_SetString(PyExc_TypeError,
 \var{message})}, where \var{message} indicates that an internal
