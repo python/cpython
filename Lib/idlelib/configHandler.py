@@ -518,10 +518,16 @@ class IdleConf:
         if keySetName:
             for event in keyBindings.keys():
                 binding=self.GetKeyBinding(keySetName,event)
-                if binding: #otherwise will keep default
+                if binding:
                     keyBindings[event]=binding
+                else: #we are going to return a default, print warning
+                    warning=('\n Warning: configHandler.py - IdleConf.GetCoreKeys'+
+                               ' -\n problem retrieving key binding for event '+
+                               `event`+'\n from key set '+`keySetName`+'.\n'+
+                               ' returning default value: '+`keyBindings[event]`+'\n')
+                    sys.stderr.write(warning)
         return keyBindings
-
+    
     def GetExtraHelpSourceList(self,configSet):
         """
         Returns a list of tuples containing the details of any additional
