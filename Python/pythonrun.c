@@ -77,6 +77,7 @@ int Py_VerboseFlag; /* Needed by import.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
 int Py_NoSiteFlag; /* Suppress 'import site' */
 int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c */
+int Py_FrozenFlag; /* Needed by getpath.c */
 
 static int initialized = 0;
 
@@ -367,6 +368,24 @@ Py_GetProgramName()
 	return progname;
 }
 
+static char *default_home = NULL;
+
+void
+Py_SetPythonHome(home)
+	char *home;
+{
+	default_home = home;
+}
+
+char *
+Py_GetPythonHome()
+{
+	char *home = default_home;
+	if (home == NULL)
+		home = getenv("PYTHONHOME");
+	return home;
+}
+
 /* Create __main__ module */
 
 static void
@@ -641,6 +660,13 @@ finally:
 void
 PyErr_Print()
 {
+	PyErr_PrintEx(1);
+}
+
+void
+PyErr_PrintEx(set_sys_last_vars)
+	int set_sys_last_vars;
+{
 	int err = 0;
 	PyObject *exception, *v, *tb, *f;
 	PyErr_Fetch(&exception, &v, &tb);
@@ -679,9 +705,11 @@ PyErr_Print()
 			Py_Exit(1);
 		}
 	}
-	PySys_SetObject("last_type", exception);
-	PySys_SetObject("last_value", v);
-	PySys_SetObject("last_traceback", tb);
+	if (set_sys_last_vars) {
+		PySys_SetObject("last_type", exception);
+		PySys_SetObject("last_value", v);
+		PySys_SetObject("last_traceback", tb);
+	}
 	f = PySys_GetObject("stderr");
 	if (f == NULL)
 		fprintf(stderr, "lost sys.stderr\n");
