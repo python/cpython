@@ -436,6 +436,8 @@ class bdist_rpm (Command):
     def _format_changelog(self, changelog):
         """Format the changelog correctly and convert it to a list of strings
         """
+        if not changelog:
+            return changelog
         new_changelog = []
         for line in string.split(string.strip(changelog), '\n'):
             line = string.strip(line)
