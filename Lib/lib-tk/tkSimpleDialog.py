@@ -119,10 +119,9 @@ class _QueryDialog(Dialog):
                  minvalue = None, maxvalue = None,
                  parent = None):
 
-        from Tkinter import _default_root
-
         if not parent:
-            parent = _default_root
+            import Tkinter
+            parent = Tkinter._default_root
 
         self.prompt   = prompt
         self.minvalue = minvalue
