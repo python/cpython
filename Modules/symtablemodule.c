@@ -59,6 +59,7 @@ init_symtable(void)
 	PyModule_AddIntConstant(m, "DEF_FREE_GLOBAL", DEF_FREE_GLOBAL);
 	PyModule_AddIntConstant(m, "DEF_FREE_CLASS", DEF_FREE_CLASS);
 	PyModule_AddIntConstant(m, "DEF_IMPORT", DEF_IMPORT);
+	PyModule_AddIntConstant(m, "DEF_BOUND", DEF_BOUND);
 
 	PyModule_AddIntConstant(m, "TYPE_FUNCTION", TYPE_FUNCTION);
 	PyModule_AddIntConstant(m, "TYPE_CLASS", TYPE_CLASS);
