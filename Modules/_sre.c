@@ -2979,8 +2979,7 @@ static PyMethodDef _functions[] = {
     {NULL, NULL}
 };
 
-DL_EXPORT(void)
-init_sre(void)
+PyMODINIT_FUNC init_sre(void)
 {
     PyObject* m;
     PyObject* d;

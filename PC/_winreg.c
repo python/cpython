@@ -1423,7 +1423,7 @@ inskey(PyObject * d, char * name, HKEY key)
 
 #define ADD_KEY(val) inskey(d, #val, val)
 
-__declspec(dllexport) void init_winreg(void)
+PyMODINIT_FUNC init_winreg(void)
 {
 	PyObject *m, *d;
 	m = Py_InitModule3("_winreg", winreg_methods, module_doc);

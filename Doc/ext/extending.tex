@@ -212,7 +212,7 @@ and initialize it in your module's initialization function
 the error checking for now):
 
 \begin{verbatim}
-void
+PyMODINIT_FUNC
 initspam(void)
 {
     PyObject *m;
@@ -240,6 +240,7 @@ discarded, causing \cdata{SpamError} to become a dangling pointer.
 Should it become a dangling pointer, C code which raises the exception
 could cause a core dump or other unintended side effects.
 
+We discuss the use of PyMODINIT_FUNC later in this sample.
 
 \section{Back to the Example
          \label{backToExample}}
@@ -339,14 +340,16 @@ module, and should be the only non-\keyword{static} item defined in
 the module file:
 
 \begin{verbatim}
-void
+PyMODINIT_FUNC
 initspam(void)
 {
     (void) Py_InitModule("spam", SpamMethods);
 }
 \end{verbatim}
 
-Note that for \Cpp, this method must be declared \code{extern "C"}.
+Note that PyMODINIT_FUNC declares the function as \code{void} return type, 
+declares any special linkage declarations required by the platform, and for 
+\Cpp declares the function as \code{extern "C"}.
 
 When the Python program imports module \module{spam} for the first
 time, \cfunction{initspam()} is called. (See below for comments about
@@ -1263,7 +1266,7 @@ the module's initialization function must take care of initializing
 the C API pointer array:
 
 \begin{verbatim}
-void
+PyMODINIT_FUNC
 initspam(void)
 {
     PyObject *m;
@@ -1352,7 +1355,7 @@ rather macro) \cfunction{import_spam()} in its initialization
 function:
 
 \begin{verbatim}
-void
+PyMODINIT_FUNC
 initclient(void)
 {
     PyObject *m;

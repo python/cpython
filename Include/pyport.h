@@ -379,19 +379,82 @@ extern int fsync(int fd);
 extern double hypot(double, double);
 #endif
 
-#ifndef __CYGWIN__
-#ifndef DL_IMPORT       /* declarations for DLL import */
-#define DL_IMPORT(RTYPE) RTYPE
+/* Declarations for symbol visibility.
+
+  PyAPI_FUNC(type): Declares a public Python API function and return type
+  PyAPI_DATA(type): Declares public Python data and its type 
+  PyMODINIT_FUNC:   A Python module init function.  If these functions are
+                    inside the Python core, they are private to the core.  
+                    If in an extension module, it may be declared with 
+                    external linkage depending on the platform.
+
+  As a number of platforms support/require "__declspec(dllimport/dllexport)",
+  we support a HAVE_DECLSPEC_DLL macro to save duplication.
+*/
+
+/* 
+All windows ports, except cygwin, are handled in PC/pyconfig.h
+BeOS is only other autoconf platform requiring special linkage handling
+and both these use __declspec()
+*/
+#if defined(__CYGWIN__) || defined(__BEOS__)
+#	define HAVE_DECLSPEC_DLL
 #endif
-#else /* __CYGWIN__ */
-#ifdef USE_DL_IMPORT
-#define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
-#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
-#else /* !USE_DL_IMPORT */
-#define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
-#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
-#endif /* USE_DL_IMPORT */
-#endif /* __CYGWIN__ */
+
+#if defined(Py_ENABLE_SHARED) /* only get special linkage if built as shared */
+#	if defined(HAVE_DECLSPEC_DLL)
+#		ifdef Py_BUILD_CORE
+#			define PyAPI_FUNC(RTYPE) __declspec(dllexport) RTYPE
+#			define PyAPI_DATA(RTYPE) __declspec(dllexport) RTYPE
+			/* module init functions inside the core need no external linkage */
+#			define PyMODINIT_FUNC void
+#		else /* Py_BUILD_CORE */
+			/* Building an extension module, or an embedded situation */
+			/* public Python functions and data are imported */
+#			define PyAPI_FUNC(RTYPE) __declspec(dllimport) RTYPE
+#			define PyAPI_DATA(RTYPE) __declspec(dllimport) RTYPE
+			/* module init functions outside the core must be exported */
+#			if defined(__cplusplus)
+#				define PyMODINIT_FUNC extern "C" __declspec(dllexport) void
+#			else /* __cplusplus */
+#				define PyMODINIT_FUNC __declspec(dllexport) void
+#			endif /* __cplusplus */
+#		endif /* Py_BUILD_CORE */
+#	endif /* HAVE_DECLSPEC */
+#endif /* Py_ENABLE_SHARED */
+
+/* If no external linkage macros defined by now, create defaults */
+#ifndef PyAPI_FUNC
+#	define PyAPI_FUNC(RTYPE) RTYPE
+#endif
+#ifndef PyAPI_DATA
+#	define PyAPI_DATA(RTYPE) RTYPE
+#endif
+#ifndef PyMODINIT_FUNC
+#	if defined(__cplusplus)
+#		define PyMODINIT_FUNC extern "C" void
+#	else /* __cplusplus */
+#		define PyMODINIT_FUNC void
+#	endif /* __cplusplus */
+#endif
+
+/* Deprecated DL_IMPORT and DL_EXPORT macros */
+#if defined(Py_ENABLE_SHARED) && defined (HAVE_DECLSPEC_DLL)
+#	if defined(Py_BUILD_CORE)
+#		define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
+#		define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+#	else
+#		define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
+#		define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+#	endif
+#endif
+#ifndef DL_EXPORT
+#	define DL_EXPORT(RTYPE) RTYPE
+#endif
+#ifndef DL_IMPORT
+#	define DL_IMPORT(RTYPE) RTYPE
+#endif
+/* End of deprecated DL_* macros */
 
 /* If the fd manipulation macros aren't defined,
    here is a set that should do the job */
@@ -456,15 +519,6 @@ typedef	struct fd_set {
  * overflows.
  */
 #error "LONG_BIT definition appears wrong for platform (bad gcc/glibc config?)."
-#endif
-
-/*
- * Rename some functions for the Borland compiler
- */
-#ifdef __BORLANDC__
-#  include <io.h>
-#  define _chsize chsize
-#  define _setmode setmode
 #endif
 
 #ifdef __cplusplus
