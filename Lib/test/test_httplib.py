@@ -78,4 +78,17 @@ def _test():
     if cookies != hdr:
         raise AssertionError, "multiple headers not combined properly"
 
+    # test that the library doesn't attempt to read any data
+    # from a head request
+    conn = httplib.HTTPConnection("www.python.org")
+    conn.connect()
+    conn.request("HEAD", "/", headers={"Connection" : "keep-alive"})
+    resp = conn.getresponse()
+    if resp.status != 200:
+        raise AssertionError, "Expected status 200, got %d" % resp.status
+    if resp.read() != "":
+        raise AssertionError, "Did not expect response from HEAD request"
+    resp.close()
+    conn.close()
+
 test()
