@@ -190,7 +190,7 @@ webcheck:
 # Release packaging targets:
 
 info-$(RELEASE).tgz: info
-	(cd $(INFODIR); tar cf - python-???.info*) | gzip -9 >$@
+	(cd $(INFODIR); tar cf - python.dir python-???.info*) | gzip -9 >$@
 
 latex-$(RELEASE).tgz:
 	$(TOOLSDIR)/mktarball.sh $(RELEASE)
