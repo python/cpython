@@ -577,7 +577,7 @@ on_completion(char *text, int state)
 /* A more flexible constructor that saves the "begidx" and "endidx"
  * before calling the normal completer */
 
-char **
+static char **
 flex_complete(char *text, int start, int end)
 {
 	Py_XDECREF(begidx);
