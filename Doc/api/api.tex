@@ -2169,7 +2169,7 @@ specified in \var{name} with the mode specified in \var{mode}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject *}{PyFile_FromFile}{FILE *fp,
-              char *name, char *mode, int (*close})
+              char *name, char *mode, int (*close)}
 Creates a new \code{PyFileObject} from the already-open \var{fp}.
 The function \var{close} will be called when the file should be
 closed.
