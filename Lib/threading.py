@@ -185,31 +185,33 @@ class _Condition(_Verbose):
         waiter.acquire()
         self.__waiters.append(waiter)
         saved_state = self._release_save()
-        if timeout is None:
-            waiter.acquire()
-            if __debug__:
-                self._note("%s.wait(): got it", self)
-        else:
-            endtime = _time() + timeout
-            delay = 0.000001 # 1 usec
-            while 1:
-                gotit = waiter.acquire(0)
-                if gotit or _time() >= endtime:
-                    break
-                _sleep(delay)
-                if delay < 1.0:
-                    delay = delay * 2.0
-            if not gotit:
+        try:    # restore state no matter what (e.g., KeyboardInterrupt)
+            if timeout is None:
+                waiter.acquire()
                 if __debug__:
-                    self._note("%s.wait(%s): timed out", self, timeout)
-                try:
-                    self.__waiters.remove(waiter)
-                except ValueError:
-                    pass
+                    self._note("%s.wait(): got it", self)
             else:
-                if __debug__:
-                    self._note("%s.wait(%s): got it", self, timeout)
-        self._acquire_restore(saved_state)
+                endtime = _time() + timeout
+                delay = 0.000001 # 1 usec
+                while 1:
+                    gotit = waiter.acquire(0)
+                    if gotit or _time() >= endtime:
+                        break
+                    _sleep(delay)
+                    if delay < 1.0:
+                        delay = delay * 2.0
+                if not gotit:
+                    if __debug__:
+                        self._note("%s.wait(%s): timed out", self, timeout)
+                    try:
+                        self.__waiters.remove(waiter)
+                    except ValueError:
+                        pass
+                else:
+                    if __debug__:
+                        self._note("%s.wait(%s): got it", self, timeout)
+        finally:
+            self._acquire_restore(saved_state)
 
     def notify(self, n=1):
         me = currentThread()
