@@ -11,8 +11,17 @@ BEGINDEFINITION=re.compile("^<<(?P<name>.*)>>=\s*")
 USEDEFINITION=re.compile("^(?P<pre>.*)<<(?P<name>.*)>>(?P<post>[^=].*)")
 ENDDEFINITION=re.compile("^@")
 
+DEFAULT_CONFIG="""
+config = [
+	("^.*\.cp$", ":unweave-src"),
+	("^.*\.h$", ":unweave-include"),
+]
+genlinedirectives = 0
+gencomments = 1
+"""
+
 class Processor:
-	def __init__(self, filename):
+	def __init__(self, filename, config={}):
 		self.items = {}
 		self.filename = filename
 		self.fp = open(filename)
@@ -20,6 +29,15 @@ class Processor:
 		self.resolving = {}
 		self.resolved = {}
 		self.pushback = None
+		# Options
+		if config.has_key("genlinedirectives"):
+			self.genlinedirectives = config["genlinedirectives"]
+		else:
+			self.genlinedirectives = 1
+		if config.has_key("gencomments"):
+			self.gencomments = config["gencomments"]
+		else:
+			self.gencomments = 0
 		
 	def _readline(self):
 		"""Read a line. Allow for pushback"""
@@ -50,10 +68,9 @@ class Processor:
 			if mo:
 				pre = mo.group('pre')
 				if pre:
-					rv.append((lineno, pre+'\n'))
+##					rv.append((lineno, pre+'\n'))
+					rv.append((lineno, pre))
 			rv.append((lineno, line))
-			# For simplicity we add #line directives now, if
-			# needed.
 			if mo:
 				post = mo.group('post')
 				if post and post != '\n':
@@ -69,6 +86,7 @@ class Processor:
 			
 	def read(self):
 		"""Read the source file and store all definitions"""
+		savedcomment = []
 		while 1:
 			lineno, line = self._readline()
 			if not line: break
@@ -76,10 +94,33 @@ class Processor:
 			if mo:
 				name = mo.group('name')
 				value = self._readitem()
+				if self.gencomments:
+					defline = [(lineno, '// <%s>=\n'%name)]
+					if savedcomment:
+						savedcomment = savedcomment + [(lineno, '//\n')] + defline
+					else:
+						savedcomment = defline
+					savedcomment = self._extendlines(savedcomment)
+					value = savedcomment + value
+					savedcomment = []
 				self._define(name, value)
 			else:
-				pass # We could output the TeX code but we don't bother.
-				
+				if self.gencomments:
+					# It seems initial blank lines are ignored:-(
+					if savedcomment or line.strip():
+						savedcomment.append((lineno, '// '+line))
+						
+	def _extendlines(self, comment):
+		# This routine mimicks some artefact of Matthias' code.
+		rv = []
+		for lineno, line in comment:
+			line = line[:-1]
+			if len(line) < 75:
+				line = line + (75-len(line))*' '
+			line = line + '\n'
+			rv.append((lineno, line))
+		return rv
+		
 	def resolve(self):
 		"""Resolve all references"""
 		for name in self.items.keys():
@@ -134,7 +175,7 @@ class Processor:
 		rv = []
 		for lineno, line in data:
 			curlineno = curlineno + 1
-			if line and line != '\n' and lineno != curlineno:
+			if self.genlinedirectives and line and line != '\n' and lineno != curlineno:
 				rv.append(self._linedirective(lineno))
 				curlineno = lineno
 			rv.append(line)
@@ -150,27 +191,24 @@ class Processor:
 		fp = open(pathname, "w").writelines(data)
 		
 def process(file, config):
-	pr = Processor(file)
+	pr = Processor(file, config)
 	pr.read()
 	pr.resolve()
-	for pattern, folder in config:
+	for pattern, folder in config['config']:
 		pr.save(folder, pattern)
 	
 def readconfig():
 	"""Read a configuration file, if it doesn't exist create it."""
 	configname = sys.argv[0] + '.config'
 	if not os.path.exists(configname):
-		confstr = """config = [
-	("^.*\.cp$", ":unweave-src"),
-	("^.*\.h$", ":unweave-include"),
-]"""
+		confstr = DEFAULT_CONFIG
 		open(configname, "w").write(confstr)
 		print "Created config file", configname
 ##		print "Please check and adapt (if needed)"
 ##		sys.exit(0)
 	namespace = {}
 	execfile(configname, namespace)
-	return namespace['config']
+	return namespace
 
 def main():
 	config = readconfig()
@@ -185,7 +223,7 @@ def main():
 		fss, ok = macfs.PromptGetFile("Select .nw source file", "TEXT")
 		if not ok:
 			sys.exit(0)
-		process(fss.as_pathname())
+		process(fss.as_pathname(), config)
 		
 if __name__ == "__main__":
 	main()
