@@ -6,14 +6,13 @@
 
 import imghdr
 
-# Intrapackage imports
-import MIMEBase
-import Errors
-import Encoders
+from email import Errors
+from email import Encoders
+from email.MIMENonMultipart import MIMENonMultipart
 
 
 
-class MIMEImage(MIMEBase.MIMEBase):
+class MIMEImage(MIMENonMultipart):
     """Class for generating image/* type MIME documents."""
 
     def __init__(self, _imagedata, _subtype=None,
@@ -41,6 +40,6 @@ class MIMEImage(MIMEBase.MIMEBase):
             _subtype = imghdr.what(None, _imagedata)
         if _subtype is None:
             raise TypeError, 'Could not guess image MIME subtype'
-        MIMEBase.MIMEBase.__init__(self, 'image', _subtype, **_params)
+        MIMENonMultipart.__init__(self, 'image', _subtype, **_params)
         self.set_payload(_imagedata)
         _encoder(self)

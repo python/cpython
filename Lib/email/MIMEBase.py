@@ -4,7 +4,7 @@
 """Base class for MIME specializations.
 """
 
-import Message
+from email import Message
 
 
 
