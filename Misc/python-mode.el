@@ -4,10 +4,9 @@
 
 ;; Author: 1995-1997 Barry A. Warsaw
 ;;         1992-1994 Tim Peters
-;; Maintainer:    python-mode@python.org
-;; Created:       Feb 1992
-;; Version:       3.0
-;; Keywords: python languages oop
+;; Maintainer: python-mode@python.org
+;; Created:    Feb 1992
+;; Keywords:   python languages oop
 
 (defconst py-version "3.0"
   "`python-mode' version number.")
@@ -32,10 +31,10 @@
 
 ;; python-mode.el is currently distributed with XEmacs 19 and XEmacs
 ;; 20.  Since this file is not GPL'd it is not distributed with Emacs,
-;; but it is compatible with the EOL 19 series and current 20 series
-;; Emacsen.  By default, in XEmacs when you visit a .py file, it is
-;; put in Python mode.  In Emacs, you need to add the following to
-;; your .emacs file (you don't need this for XEmacs):
+;; but it is compatible with 19.34 and the current 20 series Emacsen.
+;; By default, in XEmacs when you visit a .py file, it is put in
+;; Python mode.  In Emacs, you need to add the following to your
+;; .emacs file (you don't need this for XEmacs):
 ;;
 ;;     (autoload 'python-mode "python-mode" "Python editing mode." t)
 ;;     (setq auto-mode-alist
@@ -854,110 +853,32 @@ Electric behavior is inhibited inside a string or comment."
 	    )))))
 
 
-;;; Functions that execute Python commands in a subprocess
-;;;###autoload
-(defun py-shell ()
-  "Start an interactive Python interpreter in another window.
-This is like Shell mode, except that Python is running in the window
-instead of a shell.  See the `Interactive Shell' and `Shell Mode'
-sections of the Emacs manual for details, especially for the key
-bindings active in the `*Python*' buffer.
-
-See the docs for variable `py-scroll-buffer' for info on scrolling
-behavior in the process window.
-
-Warning: Don't use an interactive Python if you change sys.ps1 or
-sys.ps2 from their default values, or if you're running code that
-prints `>>> ' or `... ' at the start of a line.  `python-mode' can't
-distinguish your output from Python's output, and assumes that `>>> '
-at the start of a line is a prompt from Python.  Similarly, the Emacs
-Shell mode code assumes that both `>>> ' and `... ' at the start of a
-line are Python prompts.  Bad things can happen if you fool either
-mode.
-
-Warning:  If you do any editing *in* the process buffer *while* the
-buffer is accepting output from Python, do NOT attempt to `undo' the
-changes.  Some of the output (nowhere near the parts you changed!) may
-be lost if you do.  This appears to be an Emacs bug, an unfortunate
-interaction between undo and process filters; the same problem exists in
-non-Python process buffers using the default (Emacs-supplied) process
-filter."
-  ;; BAW - should undo be disabled in the python process buffer, if
-  ;; this bug still exists?
-  (interactive)
-  (require 'comint)
-  (switch-to-buffer-other-window (make-comint "Python" py-python-command))
-  (make-local-variable 'comint-prompt-regexp)
-  (setq comint-prompt-regexp "^>>> \\|^[.][.][.] ")
-  (set-process-filter (get-buffer-process (current-buffer)) nil)
-  (set-syntax-table py-mode-syntax-table)
-  (local-set-key [tab] 'self-insert-command))
-
-(defun py-execute-region (start end)
-  "Send the region between START and END to a Python interpreter.
-If there is a *Python* process it is used.
-
-Hint: If you want to execute part of a Python file several times
-\(e.g., perhaps you're developing a function and want to flesh it out
-a bit at a time), use `\\[narrow-to-region]' to restrict the buffer to
-the region of interest, and send the code to a *Python* process via
-`\\[py-execute-buffer]' instead.
-
-Following are subtleties to note when using a *Python* process:
-
-If a *Python* process is used, the region is copied into a temporary
-file (in directory `py-temp-directory'), and an `execfile' command is
-sent to Python naming that file.  If you send regions faster than
-Python can execute them, `python-mode' will save them into distinct
-temp files, and execute the next one in the queue the next time it
-sees a `>>> ' prompt from Python.  Each time this happens, the process
-buffer is popped into a window (if it's not already in some window) so
-you can see it, and a comment of the form
-
-  \t## working on region in file <name> ...
-
-is inserted at the end.
-
-Caution: No more than 26 regions can be pending at any given time.
-This limit is (indirectly) inherited from libc's mktemp(3).
-`python-mode' does not try to protect you from exceeding the limit.
-It's extremely unlikely that you'll get anywhere close to the limit in
-practice, unless you're trying to be a jerk <grin>.
-
-See the `\\[py-shell]' docs for additional warnings."
-  (interactive "r")
-  (or (< start end)
-      (error "Region is empty"))
-  (let ((pyproc (get-process "Python"))
-	fname)
-    (if (null pyproc)
-	(let ((outbuf "*Python Output*"))
-	  (shell-command-on-region start end py-python-command outbuf)
-	  (save-excursion
-	    (set-buffer outbuf)
-	    ;; TBD: ???
-	    (goto-char (point-max))))
-      ;; else feed it thru a temp file
-      (setq fname (py-make-temp-name))
-      (write-region start end fname nil 'no-msg)
-      (setq py-file-queue (append py-file-queue (list fname)))
-      (if (cdr py-file-queue)
-	  (message "File %s queued for execution" fname)
-	;; else
-	(py-execute-file pyproc fname)))))
-
-(defun py-execute-file (pyproc fname)
-  (py-append-to-process-buffer
-   pyproc
-   (format "## working on region in file %s ...\n" fname))
-  (process-send-string pyproc (format "execfile('%s')\n" fname)))
+;; Python subprocess utilities and filters
+(defun py-execute-file (proc filename)
+  ;; Send a properly formatted execfile('FILENAME') to the underlying
+  ;; Python interpreter process FILENAME.  Make that process's buffer
+  ;; visible and force display.  Also make comint believe the user
+  ;; typed this string so that kill-output-from-shell does The Right
+  ;; Thing.
+  (let ((curbuf (current-buffer))
+	(procbuf (process-buffer proc))
+	(comint-scroll-to-bottom-on-output t)
+	(msg (format "## working on region in file %s...\n" filename))
+	(cmd (format "execfile('%s')\n" filename)))
+    (unwind-protect
+	(progn
+	  (set-buffer procbuf)
+	  (goto-char (point-max))
+	  (move-marker (process-mark proc) (point))
+	  (funcall (process-filter proc) proc msg))
+      (set-buffer curbuf))
+    (process-send-string proc cmd)))
 
 (defun py-process-filter (pyproc string)
   (let ((curbuf (current-buffer))
 	(pbuf (process-buffer pyproc))
 	(pmark (process-mark pyproc))
 	file-finished)
-
     ;; make sure we switch to a different buffer at least once.  if we
     ;; *don't* do this, then if the process buffer is in the selected
     ;; window, and point is before the end, and lots of output is
@@ -1017,16 +938,114 @@ See the `\\[py-shell]' docs for additional warnings."
 	    ))
       (set-buffer curbuf))))
 
-(defun py-execute-buffer ()
+
+;;; Subprocess commands
+
+;;;###autoload
+(defun py-shell ()
+  "Start an interactive Python interpreter in another window.
+This is like Shell mode, except that Python is running in the window
+instead of a shell.  See the `Interactive Shell' and `Shell Mode'
+sections of the Emacs manual for details, especially for the key
+bindings active in the `*Python*' buffer.
+
+See the docs for variable `py-scroll-buffer' for info on scrolling
+behavior in the process window.
+
+Warning: Don't use an interactive Python if you change sys.ps1 or
+sys.ps2 from their default values, or if you're running code that
+prints `>>> ' or `... ' at the start of a line.  `python-mode' can't
+distinguish your output from Python's output, and assumes that `>>> '
+at the start of a line is a prompt from Python.  Similarly, the Emacs
+Shell mode code assumes that both `>>> ' and `... ' at the start of a
+line are Python prompts.  Bad things can happen if you fool either
+mode.
+
+Warning:  If you do any editing *in* the process buffer *while* the
+buffer is accepting output from Python, do NOT attempt to `undo' the
+changes.  Some of the output (nowhere near the parts you changed!) may
+be lost if you do.  This appears to be an Emacs bug, an unfortunate
+interaction between undo and process filters; the same problem exists in
+non-Python process buffers using the default (Emacs-supplied) process
+filter."
+  ;; BAW - should undo be disabled in the python process buffer, if
+  ;; this bug still exists?
+  (interactive)
+  (require 'comint)
+  (switch-to-buffer-other-window (make-comint "Python" py-python-command "-i"))
+  (make-local-variable 'comint-prompt-regexp)
+  (setq comint-prompt-regexp "^>>> \\|^[.][.][.] ")
+  (set-process-filter (get-buffer-process (current-buffer)) 'py-process-filter)
+  (set-syntax-table py-mode-syntax-table)
+  (local-set-key [tab] 'self-insert-command))
+
+
+(defun py-clear-queue ()
+  "Clear the queue of temporary files waiting to execute."
+  (interactive)
+  (let ((n (length py-file-queue)))
+    (mapcar 'delete-file py-file-queue)
+    (setq py-file-queue nil)
+    (message "%d pending files de-queued." n)))
+
+(defun py-execute-region (start end &optional async)
+  "Execute the the region in a Python interpreter.
+The region is first copied into a temporary file (in the directory
+`py-temp-directory').  If there is no Python interpreter shell
+running, this file is executed synchronously using
+`shell-command-on-region'.  If the program is long running, use an
+optional \\[universal-argument] to run the command asynchronously in
+its own buffer.
+
+If the Python interpreter shell is running, the region is execfile()'d
+in that shell.  If you try to execute regions too quickly,
+`python-mode' will queue them up and execute them one at a time when
+it sees a `>>> ' prompt from Python.  Each time this happens, the
+process buffer is popped into a window (if it's not already in some
+window) so you can see it, and a comment of the form
+
+    \t## working on region in file <name>...
+
+is inserted at the end.  See also the command `py-clear-queue'."
+  (interactive "r\nP")
+  (or (< start end)
+      (error "Region is empty"))
+  (let* ((proc (get-process "Python"))
+	 (temp (make-temp-name "python"))
+	 (file (concat (file-name-as-directory py-temp-directory) temp))
+	 (outbuf "*Python Output*"))
+    (write-region start end file nil 'nomsg)
+    (cond
+     ;; always run the code in it's own asynchronous subprocess
+     (async
+      (let* ((buf (generate-new-buffer-name "*Python Output*")))
+	(start-process "Python" buf py-python-command "-u" file)
+	(pop-to-buffer buf)
+	))
+     ;; if the Python interpreter shell is running, queue it up for
+     ;; execution there.
+     (proc
+      ;; use the existing python shell
+      (if (not py-file-queue)
+	  (py-execute-file proc file)
+	(push file py-file-queue)
+	(message "File %s queued for execution" file))
+      )
+     (t
+      ;; otherwise either run it synchronously in a subprocess
+      (shell-command-on-region start end py-python-command outbuf)
+      ))))
+
+;; Code execution command
+(defun py-execute-buffer (&optional async)
   "Send the contents of the buffer to a Python interpreter.
 If there is a *Python* process buffer it is used.  If a clipping
 restriction is in effect, only the accessible portion of the buffer is
 sent.  A trailing newline will be supplied if needed.
 
 See the `\\[py-execute-region]' docs for an account of some subtleties."
-  (interactive)
-  (py-execute-region (point-min) (point-max)))
-
+  (interactive "P")
+  (py-execute-region (point-min) (point-max) async))
 
 
 ;; Functions for Python style indentation
@@ -2363,10 +2382,6 @@ local bindings to py-newline-and-indent."))
 	(intern (buffer-substring (match-beginning 1) (match-end 1)))
       nil)))
 
-(defun py-make-temp-name ()
-  (make-temp-name
-   (concat (file-name-as-directory py-temp-directory) "python")))
-
 (defun py-delete-file-silently (fname)
   (condition-case nil
       (delete-file fname)
@@ -2377,30 +2392,6 @@ local bindings to py-newline-and-indent."))
   (py-safe (while py-file-queue
 	     (py-delete-file-silently (car py-file-queue))
 	     (setq py-file-queue (cdr py-file-queue)))))
-
-;; make PROCESS's buffer visible, append STRING to it, and force
-;; display; also make shell-mode believe the user typed this string,
-;; so that kill-output-from-shell and show-output-from-shell work
-;; "right"
-(defun py-append-to-process-buffer (process string)
-  (let ((cbuf (current-buffer))
-	(pbuf (process-buffer process))
-	(py-scroll-process-buffer t))
-    (set-buffer pbuf)
-    (goto-char (point-max))
-    (move-marker (process-mark process) (point))
-    (funcall (process-filter process) process string)
-    (set-buffer cbuf))
-  (sit-for 0))
-
-;; older Emacsen don't have this function
-(if (not (fboundp 'match-string))
-    (defun match-string (n)
-      (let ((beg (match-beginning n))
-	    (end (match-end n)))
-	(if (and beg end)
-	    (buffer-substring beg end)
-	  nil))))
 
 (defun py-current-defun ()
   ;; tell add-log.el how to find the current function/method/variable
