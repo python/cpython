@@ -375,8 +375,8 @@ class Distribution:
         help).
         """
         #
-        # We now have enough information to show the Macintosh dialog that allows
-        # the user to interactively specify the "command line".
+        # We now have enough information to show the Macintosh dialog
+        # that allows the user to interactively specify the "command line".
         #
         if sys.platform == 'mac':
             import EasyDialogs
@@ -508,10 +508,10 @@ class Distribution:
                     if callable(func):
                         func()
                     else:
-                        raise DistutilsClassError, \
-                            ("invalid help function %s for help option '%s': "
-                             "must be a callable object (function, etc.)") % \
-                            (`func`, help_option)
+                        raise DistutilsClassError(
+                            "invalid help function %s for help option '%s': "
+                            "must be a callable object (function, etc.)"
+                            % (`func`, help_option))
 
             if help_option_found: 
                 return
