@@ -2560,7 +2560,7 @@ date_weekday(PyDateTime_Date *self)
 static PyObject *
 date_getstate(PyDateTime_Date *self)
 {
-	return PyString_FromStringAndSize(self->data,
+	return PyString_FromStringAndSize((char *)self->data,
 					  _PyDateTime_DATE_DATASIZE);
 }
 
@@ -3356,7 +3356,7 @@ datetime_gettime(PyDateTime_DateTime *self)
 static PyObject *
 datetime_getstate(PyDateTime_DateTime *self)
 {
-	return PyString_FromStringAndSize(self->data,
+	return PyString_FromStringAndSize((char *)self->data,
 					  _PyDateTime_DATETIME_DATASIZE);
 }
 
@@ -3826,7 +3826,7 @@ time_nonzero(PyDateTime_Time *self)
 static PyObject *
 time_getstate(PyDateTime_Time *self)
 {
-	return PyString_FromStringAndSize(self->data,
+	return PyString_FromStringAndSize((char *)self->data,
 					  _PyDateTime_TIME_DATASIZE);
 }
 
