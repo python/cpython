@@ -963,6 +963,7 @@ Py_GetArgcArgv
 Py_GetProgramName
 PyMac_Exit
 PyMac_InitApplication
+PyMac_Initialize
 PyMac_InitApplet
 guesstabsize
 PyMac_BuildFixed
@@ -1013,6 +1014,7 @@ FindApplicationFromCreator
 inittime
 initstruct
 initstrop
+initsoundex
 initsocket
 initselect
 initrotor
@@ -1026,6 +1028,7 @@ _Py_re_compile_pattern
 _Py_re_set_syntax
 initregex
 initparser
+initoperator
 initnew
 initmd5
 _Py_MD5Final
@@ -1034,6 +1037,8 @@ _Py_MD5Init
 initmath
 myfabs
 initimageop
+Py_GetBuildInfo
+initerrno
 initcmath
 initbinascii
 initaudioop
@@ -1062,6 +1067,8 @@ PyTuple_SetItem
 PyTuple_GetItem
 PyTuple_Size
 PyTuple_New
+PyString_InternFromString
+PyString_InternInPlace
 PyString_Format
 _PyString_Resize
 PyString_ConcatAndDel
@@ -1112,8 +1119,10 @@ PyDict_GetItem
 PyDict_New
 PyLong_FromString
 PyLong_AsDouble
+PyLong_AsUnsignedLong
 PyLong_AsLong
 PyLong_FromDouble
+PyLong_FromUnsignedLong
 PyLong_FromLong
 _PyLong_New
 PyList_AsTuple
@@ -1139,7 +1148,6 @@ PyFrame_LocalsToFast
 PyFrame_FastToLocals
 PyFrame_BlockPop
 PyFrame_BlockSetup
-PyFrame_ExtendStack
 PyFrame_New
 PyFloat_AsString
 PyFloat_AsDouble
@@ -1164,6 +1172,7 @@ _Py_c_prod
 _Py_c_neg
 _Py_c_diff
 _Py_c_sum
+PyCObject_Import
 PyCObject_AsVoidPtr
 PyCObject_FromVoidPtr
 PyMethod_Class
@@ -1186,6 +1195,7 @@ PyMapping_Check
 PySequence_Index
 PySequence_In
 PySequence_Count
+PySequence_List
 PySequence_Tuple
 PySequence_DelSlice
 PySequence_SetSlice
@@ -1223,7 +1233,6 @@ PyObject_GetItem
 PyObject_Length
 PyObject_Type
 PyObject_Cmp
-Py_ReturnNullError
 PyTraceBack_Print
 PyTraceBack_Store
 PyTraceBack_Fetch
@@ -1237,6 +1246,7 @@ PySys_GetObject
 PyMember_Set
 PyMember_Get
 PyErr_CheckSignals
+Py_FdIsInteractive
 Py_Exit
 Py_Cleanup
 Py_AtExit
@@ -1287,6 +1297,7 @@ PyArg_ParseTupleAndKeywords
 PyArgs_VaParse
 PyArg_ParseTuple
 PyArg_Parse
+PyErr_Format
 PyErr_BadInternalCall
 PyErr_SetFromErrno
 PyErr_NoMemory
@@ -1298,6 +1309,7 @@ PyErr_SetString
 PyErr_SetNone
 PyErr_SetObject
 PyErr_Restore
+PyCode_Addr2Line
 PyNode_Compile
 PyCode_New
 PyArg_GetFloatArray
@@ -1317,7 +1329,6 @@ PyEval_CallObject
 Py_FlushLine
 PyEval_GetRestricted
 PyEval_GetFrame
-PyEval_GetOwner
 PyEval_GetGlobals
 PyEval_GetLocals
 PyEval_GetBuiltins
@@ -1456,6 +1467,8 @@ PyString_Type
 PySlice_Type
 _Py_EllipsisObject
 PyRange_Type
+_Py_abstract_hack
+_Py_cobject_hack
 _Py_NoneStruct
 PyModule_Type
 PyCFunction_Type
@@ -1547,12 +1560,14 @@ _PySys_ProfileFunc
 Py_DebugFlag
 Py_VerboseFlag
 Py_SuppressPrintingFlag
+Py_InteractiveFlag
 import_modules
 optarg
 PyExc_AccessError
 PyExc_AttributeError
 PyExc_ConflictError
 PyExc_EOFError
+PyExc_FloatingPointError
 PyExc_IOError
 PyExc_ImportError
 PyExc_IndexError
