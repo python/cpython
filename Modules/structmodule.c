@@ -317,6 +317,27 @@ struct_pack(self, args)
 }
 
 
+/* Helper to convert a list to a tuple */
+
+static object *
+totuple(list)
+	object *list;
+{
+	int len = getlistsize(list);
+	object *tuple = newtupleobject(len);
+	if (tuple != NULL) {
+		int i;
+		for (i = 0; i < len; i++) {
+			object *v = getlistitem(list, i);
+			INCREF(v);
+			settupleitem(tuple, i, v);
+		}
+	}
+	DECREF(list);
+	return tuple;
+}
+
+
 /* unpack(fmt, string) --> (v1, v2, ...) */
 
 static object *
@@ -409,12 +430,13 @@ struct_unpack(self, args)
 		}
 	}
 
-	return res;
+	return totuple(res);
 
  fail:
 	DECREF(res);
 	return NULL;
 }
+
 
 /* List of functions */
 
