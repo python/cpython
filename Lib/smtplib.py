@@ -294,8 +294,8 @@ class SMTP:
         """SMTP 'rcpt' command -- indicates 1 recipient for this mail."""
         optionlist = ''
         if options and self.does_esmtp:
-            optionlist = string.join(options, ' ')
-        self.putcmd("rcpt","TO:%s %s" % (quoteaddr(recip),optionlist))
+            optionlist = ' ' + string.join(options, ' ')
+        self.putcmd("rcpt","TO:%s%s" % (quoteaddr(recip),optionlist))
         return self.getreply()
 
     def data(self,msg):
