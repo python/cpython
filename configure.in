@@ -1593,8 +1593,8 @@ AC_CHECK_FUNCS(alarm chown chroot clock confstr ctermid ctermid_r execv \
  putenv readlink \
  select setegid seteuid setgid setgroups \
  setlocale setregid setreuid setsid setpgid setuid setvbuf snprintf \
- sigaction siginterrupt sigrelse strftime strptime symlink sysconf \
- tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
+ sigaction siginterrupt sigprocmask sigrelse strftime strptime symlink \
+ sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unsetenv waitpid _getpty getpriority)
 
 # check for openpty and forkpty

@@ -18,10 +18,6 @@ the handler for \constant{SIGCHLD}, which follows the underlying
 implementation.
 
 \item
-There is no way to ``block'' signals temporarily from critical
-sections (since this is not supported by all \UNIX{} flavors).
-
-\item
 Although Python signal handlers are called asynchronously as far as
 the Python user is concerned, they can only occur between the
 ``atomic'' instructions of the Python interpreter.  This means that
@@ -92,6 +88,16 @@ The variables defined in the \module{signal} module are:
   One more than the number of the highest signal number.
 \end{datadesc}
 
+\begin{datadesc}{SIG_BLOCK}
+\end{datadesc}
+\begin{datadesc}{SIG_UNBLOCK}
+\end{datadesc}
+\begin{datadesc}{SIG_SETMASK}
+  These constants are for use as the first parameter of the
+  \function{sigprocmask} function described below.
+\end{datadesc}
+
+
 The \module{signal} module defines the following functions:
 
 \begin{funcdesc}{alarm}{time}
@@ -142,6 +148,46 @@ The \module{signal} module defines the following functions:
   and the current stack frame (\code{None} or a frame object; see the
   reference manual for a description of frame objects).
 \obindex{frame}
+\end{funcdesc}
+
+The following functions are supported if your platform does.  Most
+modern \UNIX-alikes now do.
+
+\begin{funcdesc}{sigpending}{}
+  Return the set of pending signals, i.e. a list containing the
+  numbers of those signals that have been raised while blocked.
+  \versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{sigprocmask}{how, sigset}
+  Change the list of currently blocked signals.  The parameter
+  \var{how} should be one of \constant{SIG_BLOCK},
+  \constant{SIG_UNBLOCK} or \constant{SIG_SETMASK} and \var{sigset}
+  should be a sequence of signal numbers.  The behaviour of the call
+  depends on the value of \var{how}:
+
+  \begin{tableii}{l|l}{textrm}{Value of \var{how}}{Behaviour of call}
+    \lineii{\constant{SIG_BLOCK}}
+	   {The set of blocked signals is the union of the current set
+            and \var{sigset}.}
+    \lineii{\constant{SIG_UNBLOCK}}      
+           {The signals in \var{sigset} are removed from the current
+            set of blocked signals.  It is legal to attempt to unblock 
+            a signal which is not blocked.}
+    \lineii{\constant{SIG_SETMASK}}
+	   {The set of blocked signals is set to the \var{sigset}.}
+  \end{tableii}
+
+  A list contating the numbers of the previously blocked signals is
+  returned.
+  \versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{sigsuspend}{sigset}
+  Temporarily replace the signal mask with \var{sigset} (which should
+  be a sequnce of signal numbers) and suspend the process until a
+  signal is received.
+  \versionadded{2.3}
 \end{funcdesc}
 
 \subsection{Example}

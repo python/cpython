@@ -106,6 +106,9 @@ Extension modules
   of sizeof(int)!=sizeof(long)!=sizeof(void*) is delayed until dl.open
   is called.
 
+- signal.sigpending, signal.sigprocmask and signal.sigsuspend have
+  been added where available.
+
 Library
 
 - added degree/radian conversion functions to the math module.
