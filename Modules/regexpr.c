@@ -611,7 +611,7 @@ static void re_compile_fastmap_aux(code,
 		{
 			syntaxcode = code[pos++];
 			for (a = 0; a < 256; a++)
-				if (SYNTAX(a) == syntaxcode)
+				if (SYNTAX(a) & syntaxcode) 
 					fastmap[a] = 1;
 			return;
 		}
@@ -619,7 +619,7 @@ static void re_compile_fastmap_aux(code,
 		{
 			syntaxcode = code[pos++];
 			for (a = 0; a < 256; a++)
-				if (SYNTAX(a) != syntaxcode)
+				if (!(SYNTAX(a) & syntaxcode) )
 					fastmap[a] = 1;
 			return;
 		}
@@ -1866,12 +1866,12 @@ int re_match(bufp,
 			if (translate)
 			{
 				while (text < textend &&
-				       translate[SYNTAX(*text)] == a)
+				       (SYNTAX(translate[*text]) & a) )
 					text++;
 			}
 			else
 			{
-				while (text < textend && SYNTAX(*text) == a)
+				while (text < textend && (SYNTAX(*text) & a) )
 					text++;
 			}
 			break;
@@ -1882,12 +1882,12 @@ int re_match(bufp,
 			if (translate)
 			{
 				while (text < textend &&
-				       translate[SYNTAX(*text)] != a)
+				       !(SYNTAX(translate[*text]) & a) )
 					text++;
 			}
 			else
 			{
-				while (text < textend && SYNTAX(*text) != a)
+				while (text < textend && !(SYNTAX(*text) & a) )
 					text++;
 			}
 			break;
