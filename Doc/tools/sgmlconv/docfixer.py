@@ -1002,7 +1002,9 @@ def convert(ifp, ofp):
         "subsubsection": ("\n", "\n\n"),
         "paragraph": ("\n", "\n\n"),
         "subparagraph": ("\n", "\n\n"),
+        "description": ("\n", "\n\n"),
         "enumeration": ("\n", "\n\n"),
+        "item": ("\n", "\n\n"),
         })
     cleanup_root_text(doc)
     cleanup_trailing_parens(fragment, ["function", "method", "cfunction"])
