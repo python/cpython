@@ -180,6 +180,7 @@ I_PPC_SMALL : (buildmwproject, "CWIE", [
 I_PPC_EXTENSIONS : (buildmwproject, "CWIE", [
 		(":Extensions:Imaging:_imaging.prj", "_imaging.ppc"),
 		(":Extensions:Imaging:_tkinter.prj", "_tkinter.ppc"),
+		(":Extensions:img:Mac:imgmodules.prj", "imgmodules PPC"),
 		(":Extensions:Numerical:Mac:numpymodules.prj", "multiarraymodule"),
 		(":Extensions:Numerical:Mac:numpymodules.prj", "_numpy"),
 		(":Extensions:Numerical:Mac:numpymodules.prj", "umathmodule"),
@@ -192,6 +193,7 @@ I_PPC_EXTENSIONS : (buildmwproject, "CWIE", [
 I_68K_EXTENSIONS : (buildmwproject, "CWIE", [
 		(":Extensions:Imaging:_imaging.prj", "_imaging.CFM68K"),
 		(":Extensions:Imaging:_tkinter.prj", "_tkinter.CFM68K"),
+		(":Extensions:img:Mac:imgmodules.prj", "imgmodules CFM68K"),
 ##		(":Extensions:NumPy:numpymodules.prj", "numpymodules.CFM68K"),
 	]),
 
