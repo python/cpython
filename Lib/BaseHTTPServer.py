@@ -87,6 +87,8 @@ DEFAULT_ERROR_MESSAGE = """\
 
 class HTTPServer(SocketServer.TCPServer):
 
+    allow_reuse_address = 1    # Seems to make sense in testing environment
+
     def server_bind(self):
         """Override server_bind to store the server name."""
         SocketServer.TCPServer.server_bind(self)
