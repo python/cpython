@@ -32,6 +32,23 @@ del types
 import xml.dom
 _Node = xml.dom.Node
 
+
+if list is type([]):
+    class NodeList(list):
+        def item(self, index):
+            if 0 <= index < len(self):
+                return self[index]
+
+        def __getattr__(self, name):
+            if name == "length":
+                return len(self)
+            raise AttributeError, name
+
+else:
+    def NodeList():
+        return []
+    
+
 class Node(_Node):
     allnodes = {}
     _debug = 0
@@ -41,7 +58,7 @@ class Node(_Node):
     namespaceURI = None # this is non-null only for elements and attributes
 
     def __init__(self):
-        self.childNodes = []
+        self.childNodes = NodeList()
         self.parentNode = self.ownerDocument = None
         if Node._debug:
             index = repr(id(self)) + repr(self.__class__)
@@ -234,7 +251,7 @@ class Node(_Node):
         clone = new.instance(self.__class__, self.__dict__.copy())
         if self._makeParentNodes:
             clone.parentNode = None
-        clone.childNodes = []
+        clone.childNodes = NodeList()
         if deep:
             for child in self.childNodes:
                 clone.appendChild(child.cloneNode(1))
