@@ -157,12 +157,12 @@ class EditorWindow(object):
         vbar['command'] = text.yview
         vbar.pack(side=RIGHT, fill=Y)
         text['yscrollcommand'] = vbar.set
-        fontWeight='normal'
-        if idleConf.GetOption('main','EditorWindow','font-bold',type='bool'):
+        fontWeight = 'normal'
+        if idleConf.GetOption('main', 'EditorWindow', 'font-bold', type='bool'):
             fontWeight='bold'
-        text.config(font=(idleConf.GetOption('main','EditorWindow','font'),
-                idleConf.GetOption('main','EditorWindow','font-size'),
-                fontWeight))
+        text.config(font=(idleConf.GetOption('main', 'EditorWindow', 'font'),
+                          idleConf.GetOption('main', 'EditorWindow', 'font-size'),
+                          fontWeight))
         text_frame.pack(side=LEFT, fill=BOTH, expand=1)
         text.pack(side=TOP, fill=BOTH, expand=1)
         text.focus_set()
@@ -173,19 +173,23 @@ class EditorWindow(object):
         #                  which will cause Tabnanny to nag!
         #         false -> tab characters are converted to spaces by indent
         #                  and dedent cmds, and ditto TAB keystrokes
-        self.usetabs = False
-
-        # indentwidth is the number of characters per logical indent level.
-        # Recommended Python default indent is four spaces.
-        self.indentwidth = 4
+        # Although use-spaces=0 can be configured manually in config-main.def,
+        # configuration of tabs v. spaces is not supported in the configuration
+        # dialog.  IDLE promotes the preferred Python indentation: use spaces!
+        usespaces = idleConf.GetOption('main', 'Indent', 'use-spaces', type='bool')
+        self.usetabs = not usespaces
 
         # tabwidth is the display width of a literal tab character.
         # CAUTION:  telling Tk to use anything other than its default
         # tab setting causes it to use an entirely different tabbing algorithm,
         # treating tab stops as fixed distances from the left margin.
         # Nobody expects this, so for now tabwidth should never be changed.
-        self.tabwidth = 8    # for IDLE use, must remain 8 until Tk is fixed.
-                             # indentwidth should be 8 when usetabs is True.
+        self.tabwidth = 8    # must remain 8 until Tk is fixed.
+
+        # indentwidth is the number of screen characters per indent level.
+        # The recommended Python indentation is four spaces.
+        self.indentwidth = self.tabwidth
+        self.set_notabs_indentwidth()
 
         # If context_use_ps1 is true, parsing searches back for a ps1 line;
         # else searches for a popular (if, def, ...) Python stmt.
@@ -582,6 +586,13 @@ class EditorWindow(object):
                         if event:
                             accel=get_accelerator(keydefs, event)
                             menu.entryconfig(index,accelerator=accel)
+
+    def set_notabs_indentwidth(self):
+        "Update the indentwidth if changed and not using tabs in this window"
+        # Called from configDialog.py
+        if not self.usetabs:
+            self.indentwidth = idleConf.GetOption('main', 'Indent','num-spaces',
+                                                  type='int')
 
     def reset_help_menu_entries(self):
         "Update the additional help entries on the Help menu"
