@@ -37,6 +37,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define TYPE_NULL	'0'
 #define TYPE_NONE	'N'
+#define TYPE_ELLIPSES   '.'
 #define TYPE_INT	'i'
 #define TYPE_FLOAT	'f'
 #define TYPE_COMPLEX	'x'
@@ -129,6 +130,8 @@ w_object(v, p)
 		w_byte(TYPE_NULL, p);
 	else if (v == None)
 		w_byte(TYPE_NONE, p);
+	else if (v == Py_Ellipses)
+	        w_byte(TYPE_ELLIPSES, p);  
 	else if (is_intobject(v)) {
 		w_byte(TYPE_INT, p);
 		w_long(getintvalue(v), p);
@@ -321,6 +324,10 @@ r_object(p)
 	case TYPE_NONE:
 		INCREF(None);
 		return None;
+	
+	case TYPE_ELLIPSES:
+		INCREF(Py_Ellipses);
+		return Py_Ellipses;
 	
 	case TYPE_INT:
 		return newintobject(r_long(p));

@@ -47,6 +47,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <ctype.h>
 #include <errno.h>
 
+#define OP_DELETE 0
+#define OP_ASSIGN 1
+#define OP_APPLY 2
+
 #define OFF(x) offsetof(codeobject, x)
 
 static struct memberlist code_memberlist[] = {
@@ -821,31 +825,6 @@ com_slice(c, n, op)
 	}
 }
 
-static void
-com_apply_subscript(c, n)
-	struct compiling *c;
-	node *n;
-{
-	REQ(n, subscript);
-	if (TYPE(CHILD(n, 0)) == COLON || (NCH(n) > 1 && TYPE(CHILD(n, 1)) == COLON)) {
-		/* It's a slice: [expr] ':' [expr] */
-		com_slice(c, n, SLICE);
-	}
-	else {
-		/* It's a list of subscripts */
-		if (NCH(n) == 1)
-			com_node(c, CHILD(n, 0));
-		else {
-			int i;
-			int len = (NCH(n)+1)/2;
-			for (i = 0; i < NCH(n); i += 2)
-				com_node(c, CHILD(n, i));
-			com_addoparg(c, BUILD_TUPLE, len);
-		}
-		com_addbyte(c, BINARY_SUBSCR);
-	}
-}
-
 static int
 com_argument(c, n, inkeywords)
 	struct compiling *c;
@@ -924,6 +903,107 @@ com_select_member(c, n)
 }
 
 static void
+com_sliceobj(c, n)
+	struct compiling *c;
+	node *n;
+{
+	int i=0;
+	int ns=2; /* number of slice arguments */
+	int first_missing=0;
+	node *ch;
+
+	/* first argument */
+	if (TYPE(CHILD(n,i)) == COLON) {
+		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+		i++;
+	}
+	else {
+		com_node(c, CHILD(n,i));
+		i++;
+		REQ(CHILD(n,i),COLON);
+		i++;
+	}
+	/* second argument */
+	if (i < NCH(n) && TYPE(CHILD(n,i)) == test) {
+		com_node(c, CHILD(n,i));
+		i++;
+	}
+	else com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+	/* remaining arguments */
+	for (; i < NCH(n); i++) {
+		ns++;
+		ch=CHILD(n,i);
+		REQ(ch, sliceop);
+		if (NCH(ch) == 1) {
+			/* right argument of ':' missing */
+			com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+		}
+		else
+			com_node(c, CHILD(ch,1));
+	}
+	com_addoparg(c, BUILD_SLICE, ns);
+}
+
+static void
+com_subscript(c, n)
+	struct compiling *c;
+	node *n;
+{
+	node *ch;
+	REQ(n, subscript);
+	ch = CHILD(n,0);
+	/* check for rubber index */
+	if (TYPE(ch) == DOT && TYPE(CHILD(n,1)) == DOT)
+		com_addoparg(c, LOAD_CONST, com_addconst(c, Py_Ellipses));
+	else {
+		/* check for slice */
+		if ((TYPE(ch) == COLON || NCH(n) > 1))
+			com_sliceobj(c, n);
+		else {
+			REQ(ch, test);
+			com_node(c, ch);
+		}
+	}
+}
+
+static void
+com_subscriptlist(c, n, assigning)
+	struct compiling *c;
+	node *n;
+	int assigning;
+{
+	int i, op;
+	REQ(n, subscriptlist);
+	/* Check to make backward compatible slice behavior for '[i:j]' */
+	if (NCH(n) == 1) {
+		node *sub = CHILD(n, 0); /* subscript */
+		/* Make it is a simple slice.
+           should have exactly one colon. */
+        if ((TYPE(CHILD(sub, 0)) == COLON
+             || (NCH(sub) > 1 && TYPE(CHILD(sub, 1)) == COLON))
+            && (TYPE(CHILD(sub,NCH(sub)-1)) != sliceop)) {
+			if (assigning == OP_APPLY)
+				op = SLICE;
+			else
+				op = ((assigning == OP_ASSIGN) ? STORE_SLICE : DELETE_SLICE);
+			com_slice(c, sub, op);
+			return;
+		}
+	}
+	/* Else normal subscriptlist.  Compile each subscript. */
+	for (i = 0; i < NCH(n); i += 2)
+		com_subscript(c, CHILD(n, i));
+	/* Put multiple subscripts into a tuple */
+	if (NCH(n) > 1)
+		com_addoparg(c, BUILD_TUPLE, (NCH(n)+1) / 2);
+	if (assigning == OP_APPLY)
+		op = BINARY_SUBSCR;
+	else
+		op = ((assigning == OP_ASSIGN) ? STORE_SUBSCR : DELETE_SUBSCR);
+	com_addbyte(c, op);
+}
+
+static void
 com_apply_trailer(c, n)
 	struct compiling *c;
 	node *n;
@@ -937,7 +1017,7 @@ com_apply_trailer(c, n)
 		com_select_member(c, CHILD(n, 1));
 		break;
 	case LSQB:
-		com_apply_subscript(c, CHILD(n, 1));
+		com_subscriptlist(c, CHILD(n, 1), OP_APPLY);
 		break;
 	default:
 		err_setstr(SystemError,
@@ -970,6 +1050,7 @@ com_factor(c, n)
 	struct compiling *c;
 	node *n;
 {
+	int i;
 	REQ(n, factor);
 	if (TYPE(CHILD(n, 0)) == PLUS) {
 		com_factor(c, CHILD(n, 1));
@@ -1365,33 +1446,6 @@ com_assign_attr(c, n, assigning)
 }
 
 static void
-com_assign_slice(c, n, assigning)
-	struct compiling *c;
-	node *n;
-	int assigning;
-{
-	com_slice(c, n, assigning ? STORE_SLICE : DELETE_SLICE);
-}
-
-static void
-com_assign_subscript(c, n, assigning)
-	struct compiling *c;
-	node *n;
-	int assigning;
-{
-	if (NCH(n) == 1)
-		com_node(c, CHILD(n, 0));
-	else {
-		int i;
-		int len = (NCH(n)+1)/2;
-		for (i = 0; i < NCH(n); i += 2)
-			com_node(c, CHILD(n, i));
-		com_addoparg(c, BUILD_TUPLE, len);
-	}
-	com_addbyte(c, assigning ? STORE_SUBSCR : DELETE_SUBSCR);
-}
-
-static void
 com_assign_trailer(c, n, assigning)
 	struct compiling *c;
 	node *n;
@@ -1406,13 +1460,8 @@ com_assign_trailer(c, n, assigning)
 	case DOT: /* '.' NAME */
 		com_assign_attr(c, CHILD(n, 1), assigning);
 		break;
-	case LSQB: /* '[' subscript ']' */
-		n = CHILD(n, 1);
-		REQ(n, subscript); /* subscript: expr (',' expr)* | [expr] ':' [expr] */
-		if (TYPE(CHILD(n, 0)) == COLON || (NCH(n) > 1 && TYPE(CHILD(n, 1)) == COLON))
-			com_assign_slice(c, n, assigning);
-		else
-			com_assign_subscript(c, n, assigning);
+	case LSQB: /* '[' subscriptlist ']' */
+		com_subscriptlist(c, CHILD(n, 1), assigning);
 		break;
 	default:
 		err_setstr(SystemError, "unknown trailer type");
@@ -1585,7 +1634,7 @@ com_expr_stmt(c, n)
 		for (i = 0; i < NCH(n)-2; i+=2) {
 			if (i+2 < NCH(n)-2)
 				com_addbyte(c, DUP_TOP);
-			com_assign(c, CHILD(n, i), 1/*assign*/);
+			com_assign(c, CHILD(n, i), OP_ASSIGN);
 		}
 	}
 }
@@ -1896,7 +1945,7 @@ com_for_stmt(c, n)
 	c->c_begin = c->c_nexti;
 	com_addoparg(c, SET_LINENO, n->n_lineno);
 	com_addfwref(c, FOR_LOOP, &anchor);
-	com_assign(c, CHILD(n, 1), 1/*assigning*/);
+	com_assign(c, CHILD(n, 1), OP_ASSIGN);
 	c->c_loops++;
 	com_node(c, CHILD(n, 5));
 	c->c_loops--;
@@ -2015,7 +2064,7 @@ com_try_except(c, n)
 		}
 		com_addbyte(c, POP_TOP);
 		if (NCH(ch) > 3)
-			com_assign(c, CHILD(ch, 3), 1/*assigning*/);
+			com_assign(c, CHILD(ch, 3), OP_ASSIGN);
 		else
 			com_addbyte(c, POP_TOP);
 		com_addbyte(c, POP_TOP);
@@ -2342,7 +2391,7 @@ com_node(c, n)
 		com_print_stmt(c, n);
 		break;
 	case del_stmt: /* 'del' exprlist */
-		com_assign(c, CHILD(n, 1), 0/*delete*/);
+		com_assign(c, CHILD(n, 1), OP_DELETE);
 		break;
 	case pass_stmt:
 		break;
