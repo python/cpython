@@ -588,6 +588,8 @@ class HorizontalPanes(Widget):
 			Qd.PenPat(Qd.qd.gray)
 			Qd.PaintRect(rect)
 			lastpos = pos
+			Qd.QDFlushPortBuffer(self._parentwindow.wid, None)
+			Evt.WaitNextEvent(0, 3)
 		Qd.PaintRect(rect)
 		Qd.PenNormal()
 		SetCursor("watch")
@@ -599,7 +601,7 @@ class HorizontalPanes(Widget):
 		self.makepanebounds()
 		self.installbounds()
 		self._calcbounds()
-	
+
 
 class VerticalPanes(HorizontalPanes):
 	"""see HorizontalPanes"""
