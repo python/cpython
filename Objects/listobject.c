@@ -11,6 +11,7 @@
 #include "listobject.h"
 #include "objimpl.h"
 #include "modsupport.h"
+#include "errors.h"
 
 typedef struct {
 	OB_VARHEAD
@@ -24,13 +25,12 @@ newlistobject(size)
 	int i;
 	listobject *op;
 	if (size < 0) {
-		errno = EINVAL;
+		err_badcall();
 		return NULL;
 	}
 	op = (listobject *) malloc(sizeof(listobject));
 	if (op == NULL) {
-		errno = ENOMEM;
-		return NULL;
+		return err_nomem();
 	}
 	if (size <= 0) {
 		op->ob_item = NULL;
@@ -39,8 +39,7 @@ newlistobject(size)
 		op->ob_item = (object **) malloc(size * sizeof(object *));
 		if (op->ob_item == NULL) {
 			free((ANY *)op);
-			errno = ENOMEM;
-			return NULL;
+			return err_nomem();
 		}
 	}
 	NEWREF(op);
@@ -56,7 +55,7 @@ getlistsize(op)
 	object *op;
 {
 	if (!is_listobject(op)) {
-		errno = EBADF;
+		err_badcall();
 		return -1;
 	}
 	else
@@ -69,11 +68,11 @@ getlistitem(op, i)
 	int i;
 {
 	if (!is_listobject(op)) {
-		errno = EBADF;
+		err_badcall();
 		return NULL;
 	}
 	if (i < 0 || i >= ((listobject *)op) -> ob_size) {
-		errno = EDOM;
+		err_setstr(IndexError, "list index out of range");
 		return NULL;
 	}
 	return ((listobject *)op) -> ob_item[i];
@@ -89,12 +88,14 @@ setlistitem(op, i, newitem)
 	if (!is_listobject(op)) {
 		if (newitem != NULL)
 			DECREF(newitem);
-		return errno = EBADF;
+		err_badcall();
+		return -1;
 	}
 	if (i < 0 || i >= ((listobject *)op) -> ob_size) {
 		if (newitem != NULL)
 			DECREF(newitem);
-		return errno = EDOM;
+		err_setstr(IndexError, "list assignment index out of range");
+		return -1;
 	}
 	olditem = ((listobject *)op) -> ob_item[i];
 	((listobject *)op) -> ob_item[i] = newitem;
@@ -111,12 +112,16 @@ ins1(self, where, v)
 {
 	int i;
 	object **items;
-	if (v == NULL)
-		return errno = EINVAL;
+	if (v == NULL) {
+		err_badcall();
+		return -1;
+	}
 	items = self->ob_item;
 	RESIZE(items, object *, self->ob_size+1);
-	if (items == NULL)
-		return errno = ENOMEM;
+	if (items == NULL) {
+		err_nomem();
+		return -1;
+	}
 	if (where < 0)
 		where = 0;
 	if (where > self->ob_size)
@@ -136,8 +141,10 @@ inslistitem(op, where, newitem)
 	int where;
 	object *newitem;
 {
-	if (!is_listobject(op))
-		return errno = EBADF;
+	if (!is_listobject(op)) {
+		err_badcall();
+		return -1;
+	}
 	return ins1((listobject *)op, where, newitem);
 }
 
@@ -146,8 +153,10 @@ addlistitem(op, newitem)
 	object *op;
 	object *newitem;
 {
-	if (!is_listobject(op))
-		return errno = EBADF;
+	if (!is_listobject(op)) {
+		err_badcall();
+		return -1;
+	}
 	return ins1((listobject *)op,
 		(int) ((listobject *)op)->ob_size, newitem);
 }
@@ -234,7 +243,7 @@ list_item(a, i)
 	int i;
 {
 	if (i < 0 || i >= a->ob_size) {
-		errno = EDOM;
+		err_setstr(IndexError, "list index out of range");
 		return NULL;
 	}
 	INCREF(a->ob_item[i]);
@@ -278,15 +287,14 @@ list_concat(a, bb)
 	int i;
 	listobject *np;
 	if (!is_listobject(bb)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 #define b ((listobject *)bb)
 	size = a->ob_size + b->ob_size;
 	np = (listobject *) newlistobject(size);
 	if (np == NULL) {
-		errno = ENOMEM;
-		return NULL;
+		return err_nomem();
 	}
 	for (i = 0; i < a->ob_size; i++) {
 		object *v = a->ob_item[i];
@@ -308,8 +316,10 @@ list_ass_item(a, i, v)
 	int i;
 	object *v;
 {
-	if (i < 0 || i >= a->ob_size)
-		return errno = EDOM;
+	if (i < 0 || i >= a->ob_size) {
+		err_setstr(IndexError, "list assignment index out of range");
+		return -1;
+	}
 	if (v == NULL)
 		return list_ass_slice(a, i, i+1, v);
 	INCREF(v);
@@ -333,8 +343,10 @@ list_ass_slice(a, ilow, ihigh, v)
 		n = 0;
 	else if (is_listobject(v))
 		n = b->ob_size;
-	else
-		return errno = EINVAL;
+	else {
+		err_badarg();
+		return -1;
+	}
 	if (ilow < 0)
 		ilow = 0;
 	else if (ilow > a->ob_size)
@@ -360,8 +372,10 @@ list_ass_slice(a, ilow, ihigh, v)
 	}
 	else { /* Insert d items; DECREF ihigh-ilow items */
 		RESIZE(item, object *, a->ob_size + d);
-		if (item == NULL)
-			return errno = ENOMEM;
+		if (item == NULL) {
+			err_nomem();
+			return -1;
+		}
 		for (k = a->ob_size; --k >= ihigh; )
 			item[k+d] = item[k];
 		for (/*k = ihigh-1*/; k >= ilow; --k)
@@ -397,7 +411,7 @@ listinsert(self, args)
 {
 	int i;
 	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 	if (!getintarg(gettupleitem(args, 0), &i))
@@ -426,14 +440,14 @@ listsort(self, args)
 	object *args;
 {
 	if (args != NULL) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
-	errno = 0;
+	err_clear();
 	if (self->ob_size > 1)
 		qsort((char *)self->ob_item,
 				(int) self->ob_size, sizeof(object *), cmp);
-	if (errno != 0)
+	if (err_occurred())
 		return NULL;
 	INCREF(None);
 	return None;

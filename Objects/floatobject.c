@@ -1,5 +1,8 @@
 /* Float object implementation */
 
+/* XXX There should be overflow checks here, but it's hard to check
+   for any kind of float exception without losing portability. */
+
 #include <stdio.h>
 #include <math.h>
 #include <ctype.h>
@@ -9,6 +12,7 @@
 #include "floatobject.h"
 #include "stringobject.h"
 #include "objimpl.h"
+#include "errors.h"
 
 object *
 newfloatobject(fval)
@@ -16,14 +20,11 @@ newfloatobject(fval)
 {
 	/* For efficiency, this code is copied from newobject() */
 	register floatobject *op = (floatobject *) malloc(sizeof(floatobject));
-	if (op == NULL) {
-		errno = ENOMEM;
-	}
-	else {
-		NEWREF(op);
-		op->ob_type = &Floattype;
-		op->ob_fval = fval;
-	}
+	if (op == NULL)
+		return err_nomem();
+	NEWREF(op);
+	op->ob_type = &Floattype;
+	op->ob_fval = fval;
 	return (object *) op;
 }
 
@@ -32,7 +33,7 @@ getfloatvalue(op)
 	object *op;
 {
 	if (!is_floatobject(op)) {
-		errno = EBADF;
+		err_badarg();
 		return -1;
 	}
 	else
@@ -104,7 +105,7 @@ float_add(v, w)
 	object *w;
 {
 	if (!is_floatobject(w)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 	return newfloatobject(v->ob_fval + ((floatobject *)w) -> ob_fval);
@@ -116,7 +117,7 @@ float_sub(v, w)
 	object *w;
 {
 	if (!is_floatobject(w)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 	return newfloatobject(v->ob_fval - ((floatobject *)w) -> ob_fval);
@@ -128,7 +129,7 @@ float_mul(v, w)
 	object *w;
 {
 	if (!is_floatobject(w)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 	return newfloatobject(v->ob_fval * ((floatobject *)w) -> ob_fval);
@@ -140,11 +141,11 @@ float_div(v, w)
 	object *w;
 {
 	if (!is_floatobject(w)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 	if (((floatobject *)w) -> ob_fval == 0) {
-		errno = EDOM;
+		err_setstr(ZeroDivisionError, "float division by zero");
 		return NULL;
 	}
 	return newfloatobject(v->ob_fval / ((floatobject *)w) -> ob_fval);
@@ -158,12 +159,12 @@ float_rem(v, w)
 	double wx;
 	extern double fmod();
 	if (!is_floatobject(w)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 	wx = ((floatobject *)w) -> ob_fval;
 	if (wx == 0.0) {
-		errno = EDOM;
+		err_setstr(ZeroDivisionError, "float division by zero");
 		return NULL;
 	}
 	return newfloatobject(fmod(v->ob_fval, wx));
@@ -177,17 +178,21 @@ float_pow(v, w)
 	double iv, iw, ix;
 	extern double pow();
 	if (!is_floatobject(w)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 	iv = v->ob_fval;
 	iw = ((floatobject *)w)->ob_fval;
+	if (iw == 0.0)
+		return newfloatobject(1.0); /* x**0 is always 1, even 0**0 */
 	errno = 0;
 	ix = pow(iv, iw);
-	if (errno != 0)
+	if (errno != 0) {
+		/* XXX could it be another type of error? */
+		err_errno(OverflowError);
 		return NULL;
-	else
-		return newfloatobject(ix);
+	}
+	return newfloatobject(ix);
 }
 
 static object *

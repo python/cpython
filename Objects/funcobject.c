@@ -36,7 +36,7 @@ getfuncnode(op)
 	object *op;
 {
 	if (!is_funcobject(op)) {
-		errno = EBADF;
+		err_badcall();
 		return NULL;
 	}
 	return ((funcobject *) op) -> func_node;
@@ -47,7 +47,7 @@ getfuncglobals(op)
 	object *op;
 {
 	if (!is_funcobject(op)) {
-		errno = EBADF;
+		err_badcall();
 		return NULL;
 	}
 	return ((funcobject *) op) -> func_globals;

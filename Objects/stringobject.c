@@ -7,6 +7,7 @@
 #include "stringobject.h"
 #include "intobject.h"
 #include "objimpl.h"
+#include "errors.h"
 
 object *
 newsizedstringobject(str, size)
@@ -15,17 +16,14 @@ newsizedstringobject(str, size)
 {
 	register stringobject *op = (stringobject *)
 		malloc(sizeof(stringobject) + size * sizeof(char));
-	if (op == NULL) {
-		errno = ENOMEM;
-	}
-	else {
-		NEWREF(op);
-		op->ob_type = &Stringtype;
-		op->ob_size = size;
-		if (str != NULL)
-			memcpy(op->ob_sval, str, size);
-		op->ob_sval[size] = '\0';
-	}
+	if (op == NULL)
+		return err_nomem();
+	NEWREF(op);
+	op->ob_type = &Stringtype;
+	op->ob_size = size;
+	if (str != NULL)
+		memcpy(op->ob_sval, str, size);
+	op->ob_sval[size] = '\0';
 	return (object *) op;
 }
 
@@ -36,15 +34,12 @@ newstringobject(str)
 	register unsigned int size = strlen(str);
 	register stringobject *op = (stringobject *)
 		malloc(sizeof(stringobject) + size * sizeof(char));
-	if (op == NULL) {
-		errno = ENOMEM;
-	}
-	else {
-		NEWREF(op);
-		op->ob_type = &Stringtype;
-		op->ob_size = size;
-		strcpy(op->ob_sval, str);
-	}
+	if (op == NULL)
+		return err_nomem();
+	NEWREF(op);
+	op->ob_type = &Stringtype;
+	op->ob_size = size;
+	strcpy(op->ob_sval, str);
 	return (object *) op;
 }
 
@@ -53,7 +48,7 @@ getstringsize(op)
 	register object *op;
 {
 	if (!is_stringobject(op)) {
-		errno = EBADF;
+		err_badcall();
 		return -1;
 	}
 	return ((stringobject *)op) -> ob_size;
@@ -64,7 +59,7 @@ getstringvalue(op)
 	register object *op;
 {
 	if (!is_stringobject(op)) {
-		errno = EBADF;
+		err_badcall();
 		return NULL;
 	}
 	return ((stringobject *)op) -> ob_sval;
@@ -105,7 +100,7 @@ stringrepr(op)
 	int newsize = 2 + 4 * op->ob_size * sizeof(char);
 	object *v = newsizedstringobject((char *)NULL, newsize);
 	if (v == NULL) {
-		errno = ENOMEM;
+		return err_nomem();
 	}
 	else {
 		register int i;
@@ -132,8 +127,8 @@ stringrepr(op)
 		*p++ = '\'';
 		*p = '\0';
 		resizestring(&v, (int) (p - ((stringobject *)v)->ob_sval));
+		return v;
 	}
-	return v;
 }
 
 static int
@@ -151,7 +146,7 @@ stringconcat(a, bb)
 	register unsigned int size;
 	register stringobject *op;
 	if (!is_stringobject(bb)) {
-		errno = EINVAL;
+		err_badarg();
 		return NULL;
 	}
 #define b ((stringobject *)bb)
@@ -167,17 +162,14 @@ stringconcat(a, bb)
 	size = a->ob_size + b->ob_size;
 	op = (stringobject *)
 		malloc(sizeof(stringobject) + size * sizeof(char));
-	if (op == NULL) {
-		errno = ENOMEM;
-	}
-	else {
-		NEWREF(op);
-		op->ob_type = &Stringtype;
-		op->ob_size = size;
-		memcpy(op->ob_sval, a->ob_sval, (int) a->ob_size);
-		memcpy(op->ob_sval + a->ob_size, b->ob_sval, (int) b->ob_size);
-		op->ob_sval[size] = '\0';
-	}
+	if (op == NULL)
+		return err_nomem();
+	NEWREF(op);
+	op->ob_type = &Stringtype;
+	op->ob_size = size;
+	memcpy(op->ob_sval, a->ob_sval, (int) a->ob_size);
+	memcpy(op->ob_sval + a->ob_size, b->ob_sval, (int) b->ob_size);
+	op->ob_sval[size] = '\0';
 	return (object *) op;
 #undef b
 }
@@ -199,17 +191,14 @@ stringrepeat(a, n)
 	}
 	op = (stringobject *)
 		malloc(sizeof(stringobject) + size * sizeof(char));
-	if (op == NULL) {
-		errno = ENOMEM;
-	}
-	else {
-		NEWREF(op);
-		op->ob_type = &Stringtype;
-		op->ob_size = size;
-		for (i = 0; i < size; i += a->ob_size)
-			memcpy(op->ob_sval+i, a->ob_sval, (int) a->ob_size);
-		op->ob_sval[size] = '\0';
-	}
+	if (op == NULL)
+		return err_nomem();
+	NEWREF(op);
+	op->ob_type = &Stringtype;
+	op->ob_size = size;
+	for (i = 0; i < size; i += a->ob_size)
+		memcpy(op->ob_sval+i, a->ob_sval, (int) a->ob_size);
+	op->ob_sval[size] = '\0';
 	return (object *) op;
 }
 
@@ -241,7 +230,7 @@ stringitem(a, i)
 	register int i;
 {
 	if (i < 0 || i >= a->ob_size) {
-		errno = EDOM;
+		err_setstr(IndexError, "string index out of range");
 		return NULL;
 	}
 	return stringslice(a, i, i+1);
@@ -312,14 +301,16 @@ resizestring(pv, newsize)
 	if (!is_stringobject(v) || v->ob_refcnt != 1) {
 		*pv = 0;
 		DECREF(v);
-		return errno = EBADF;
+		err_badcall();
+		return -1;
 	}
 	*pv = (object *)
 		realloc((char *)v,
 			sizeof(stringobject) + newsize * sizeof(char));
 	if (*pv == NULL) {
 		DECREF(v);
-		return errno = ENOMEM;
+		err_nomem();
+		return -1;
 	}
 	v = (stringobject *) *pv;
 	v->ob_size = newsize;

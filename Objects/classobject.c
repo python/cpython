@@ -108,7 +108,7 @@ newclassmemberobject(class)
 {
 	register classmemberobject *cm;
 	if (!is_classobject(class)) {
-		errno = EINVAL;
+		err_badcall();
 		return NULL;
 	}
 	cm = NEWOBJ(classmemberobject, &Classmembertype);
@@ -148,14 +148,14 @@ classmember_getattr(cm, name)
 	}
 	v = class_getattr(cm->cm_class, name);
 	if (v == NULL)
-		return v; /* class_getattr() has set errno */
+		return v; /* class_getattr() has set the error */
 	if (is_funcobject(v)) {
 		object *w = newclassmethodobject(v, (object *)cm);
 		DECREF(v);
 		return w;
 	}
 	DECREF(v);
-	errno = ESRCH;
+	err_setstr(NameError, name);
 	return NULL;
 }
 
@@ -205,7 +205,7 @@ newclassmethodobject(func, self)
 {
 	register classmethodobject *cm;
 	if (!is_funcobject(func)) {
-		errno = EINVAL;
+		err_badcall();
 		return NULL;
 	}
 	cm = NEWOBJ(classmethodobject, &Classmethodtype);
@@ -223,7 +223,7 @@ classmethodgetfunc(cm)
 	register object *cm;
 {
 	if (!is_classmethodobject(cm)) {
-		errno = EINVAL;
+		err_badcall();
 		return NULL;
 	}
 	return ((classmethodobject *)cm)->cm_func;
@@ -234,7 +234,7 @@ classmethodgetself(cm)
 	register object *cm;
 {
 	if (!is_classmethodobject(cm)) {
-		errno = EINVAL;
+		err_badcall();
 		return NULL;
 	}
 	return ((classmethodobject *)cm)->cm_self;
