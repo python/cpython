@@ -15,9 +15,7 @@ class TestSkipped(Error):
     example, if some resource can't be used, such as the network
     appears to be unavailable, this should be raised instead of
     TestFailed.
-
     """
-
 
 verbose = 1                             # Flag set to 0 by regrtest.py
 use_large_resources = 1 # Flag set to 0 by regrtest.py
@@ -73,13 +71,11 @@ def findfile(file, here=__file__):
     return file
 
 def verify(condition, reason='test failed'):
+    """Verify that condition is true. If not, raise an AssertionError.
 
-    """ Verify that condition is true. If not, raise an
-        AssertionError.
-
-        The optinal argument reason can be given to provide
-        a better error text.
-
+       The optinal argument reason can be given to provide
+       a better error text.
     """
+
     if not condition:
-        raise AssertionError,reason
+        raise AssertionError(reason)
