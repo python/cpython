@@ -568,24 +568,24 @@ class Bitand(Node):
 class LeftShift(Node):
   nodes['<<'] = 'LeftShift'
 
-  def __init__(self, (expr, shift)):
-    self.expr = expr
-    self.shift = shift
-    self._children = ('<<', (expr, shift))
+  def __init__(self, (left, right)):
+    self.left = left
+    self.right = right
+    self._children = ('<<', (left, right))
 
   def __repr__(self):
-    return "LeftShift(%s,%s)" % self._children[1:]
+    return "LeftShift(%s)" % self._children[1:]
 
 class RightShift(Node):
   nodes['>>'] = 'RightShift'
 
-  def __init__(self, (expr, shift)):
-    self.expr = expr
-    self.shift = shift
-    self._children = ('>>', (expr, shift))
+  def __init__(self, (left, right)):
+    self.left = left
+    self.right = right
+    self._children = ('>>', (left, right))
 
   def __repr__(self):
-    return "RightShift(%s,%s)" % self._children[1:]
+    return "RightShift(%s)" % self._children[1:]
 
 class Add(Node):
   nodes['+'] = 'Add'
