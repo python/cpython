@@ -100,8 +100,8 @@ CD_getvolume(self, args)
 		return NULL;
 	}
 #endif
-
-	return mkvalue("(iiiii)", CDgetvolume(self->ob_cdplayer, &vol), \
+	retval = CDgetvolume(self->ob_cdplayer, &vol);
+	return mkvalue("(iiiii)", retval,
 		       vol.chan0, vol.chan1, vol.chan2, vol.chan3);
 }
 
@@ -115,17 +115,11 @@ CD_setvolume(self, args)
 
 	CheckPlayer(self);
 
-	if (!getargs(args, "(bbbb)", &vol.chan0, &vol.chan1, \
+	if (!getargs(args, "(bbbb)", &vol.chan0, &vol.chan1,
 		     &vol.chan2, &vol.chan3))
 		return NULL;
 
-	if (!CDsetvolume(self->ob_cdplayer, &vol)) {
-		err_setstr(RuntimeError, "setvolume failed");
-		return NULL;
-	}
-
-	INCREF(None);
-	return None;
+	return newintobject(CDsetvolume(self->ob_cdplayer, &vol));
 }
 
 static object *
