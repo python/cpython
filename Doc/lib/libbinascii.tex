@@ -71,6 +71,18 @@ length divisible by 3 (except possibly the last fragment).
 Compute the binhex4 crc value of \var{data}, starting with an initial
 \var{crc} and returning the result.
 \end{funcdesc}
+
+\begin{funcdesc}{crc32}{data\optional{, crc}}
+Compute CRC-32, the 32-bit checksum of data, starting with an initial
+crc.  This is consistent with the ZIP file checksum.  Use as follows:
+\begin{verbatim}
+    print binascii.crc32("hello world")
+    # Or, in two pieces:
+    crc = binascii.crc32("hello")
+    crc = binascii.crc32(" world", crc)
+    print crc
+\end{verbatim}
+\end{funcdesc}
  
 \begin{excdesc}{Error}
 Exception raised on errors. These are usually programming errors.
