@@ -5,6 +5,9 @@ import unittest
 import sys
 import difflib
 
+if not __debug__:
+    raise test_support.TestSkipped, "tracing not supported under -O"
+
 # A very basic example.  If this fails, we're in deep trouble.
 def basic():
     return 1
