@@ -2,7 +2,7 @@ Pynche - The PYthonically Natural Color and Hue Editor
 
 Contact: Barry A. Warsaw
 Email:   bwarsaw@python.org
-Version: 1.2
+Version: 1.3
 
 Introduction
 
@@ -16,12 +16,13 @@ Introduction
     changed the name because these days, too many other systems have
     the acronym `ICE'.
 
-    Pynche should work with Python 1.5.2, 2.0, or 2.1, using Tk 8.0.x.
-    It's been tested on Solaris 2.6, Windows NT 4, and various Linux
-    distros.  You'll want to be sure to have at least Tk 8.0.3 for
-    Windows.  Also, Pynche is very colormap intensive, so it doesn't
-    work very well on 8-bit graphics cards; 24bit+ graphics cards are
-    so cheap these days, I'll probably never "fix" that.
+    Pynche should work with any variant of Python after 1.5.2
+    (e.g. 2.0.1 and 2.1.1), using Tk 8.0.x.  It's been tested on
+    Solaris 2.6, Windows NT 4, and various Linux distros.  You'll want
+    to be sure to have at least Tk 8.0.3 for Windows.  Also, Pynche is
+    very colormap intensive, so it doesn't work very well on 8-bit
+    graphics cards; 24bit+ graphics cards are so cheap these days,
+    I'll probably never "fix" that.
 
     Pynche must find a text database of colors names in order to
     provide `nearest' color matching.  Pynche is distributed with an
@@ -164,7 +165,12 @@ The Proof Window
     color chips.  The Selected chip shows you a larger version of the
     color selected in the variation strips, along with its X11 color
     specification.  The Nearest chip shows you the closest color in
-    the X11 database to the selected color, giving its X11 color name.
+    the X11 database to the selected color, giving its X11 color
+    specification, and below that, its X11 color name.  When the
+    Selected chip color exactly matches the Nearest chip color, you
+    will see the color name appear below the color specification for
+    the Selected chip.
+    
     Clicking on the Nearest color chip selects that color.  Color
     distance is calculated in the 3D space of the RGB color solid and
     if more than one color name is the same distance from the selected
@@ -175,6 +181,9 @@ The Proof Window
     is designated the "primary" name, and this is shown under the
     Nearest chip.  The other names are "aliases" and they are visible
     in the Color List Window (see below).
+
+    Both the color specifications and color names are selectable for
+    copying and pasting into another window.
 
 
 The Type-in Window
