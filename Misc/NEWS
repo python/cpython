@@ -12,6 +12,10 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Implemented rich comparisons for floats, which seems to make
+  comparisons involving NaNs somewhat less surprising when the
+  underlying C compiler actually implements C99 semantics.
+
 - Optimized list.extend() to save memory and no longer create
   intermediate sequences.  Also, extend() now pre-allocates the
   needed memory whenever the length of the iterable is known in

@@ -360,6 +360,40 @@ float_compare(PyFloatObject *v, PyFloatObject *w)
 	return (i < j) ? -1 : (i > j) ? 1 : 0;
 }
 
+static PyObject*
+float_richcompare(PyObject *v, PyObject *w, int op)
+{
+	double i, j;
+	int r = 0;
+
+	CONVERT_TO_DOUBLE(v, i);
+	CONVERT_TO_DOUBLE(w, j);
+
+	PyFPE_START_PROTECT("richcompare", return NULL)
+	switch (op) {
+	case Py_EQ:
+		r = i==j;
+		break;
+	case Py_NE:
+		r = i!=j;
+		break;
+	case Py_LE:
+		r = i<=j;
+		break;
+	case Py_GE:
+		r = i>=j;
+		break;
+	case Py_LT:
+		r = i<j;
+		break;
+	case Py_GT:
+		r = i>j;
+		break;
+	}
+	PyFPE_END_PROTECT(a)
+	return PyBool_FromLong(r);
+}
+
 static long
 float_hash(PyFloatObject *v)
 {
@@ -834,7 +868,7 @@ PyTypeObject PyFloat_Type = {
 	float_doc,				/* tp_doc */
  	0,					/* tp_traverse */
 	0,					/* tp_clear */
-	0,					/* tp_richcompare */
+	(richcmpfunc)float_richcompare,		/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
