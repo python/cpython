@@ -740,7 +740,15 @@ class DocTestParser:
 
         # Divide want into lines; check that it's properly
         # indented; and then strip the indentation.
-        want_lines = m.group('want').rstrip().split('\n')
+        want = m.group('want')
+
+        # Strip trailing newline and following spaces
+        l = len(want.rstrip())
+        l = want.find('\n', l)
+        if l >= 0:
+            want = want[:l]
+            
+        want_lines = want.split('\n')
         self._check_prefix(want_lines, ' '*indent, name,
                            lineno+len(source_lines))
         want = '\n'.join([wl[indent:] for wl in want_lines])
@@ -1063,6 +1071,8 @@ class DocTestFinder:
             filename = None
         else:
             filename = getattr(module, '__file__', module.__name__)
+            if filename[-4:] in (".pyc", ".pyo"):
+                filename = filename[:-1]
         return self._parser.get_doctest(docstring, globs, name,
                                         filename, lineno)
 
@@ -1199,6 +1209,7 @@ class DocTestRunner:
             verbose = '-v' in sys.argv
         self._verbose = verbose
         self.optionflags = optionflags
+        self.original_optionflags = optionflags
 
         # Keep track of the examples we've run.
         self.tries = 0
@@ -1246,20 +1257,22 @@ class DocTestRunner:
             _tag_msg("Exception raised", _exception_traceback(exc_info)))
 
     def _failure_header(self, test, example):
-        s = (self.DIVIDER + "\n" +
-             _tag_msg("Failure in example", example.source))
-        if test.filename is None:
-            # [XX] I'm not putting +1 here, to give the same output
-            # as the old version.  But I think it *should* go here.
-            return s + ("from line #%s of %s\n" %
-                        (example.lineno, test.name))
-        elif test.lineno is None:
-            return s + ("from line #%s of %s in %s\n" %
-                        (example.lineno+1, test.name, test.filename))
+        out = [self.DIVIDER]
+        if test.filename:
+            if test.lineno is not None and example.lineno is not None:
+                lineno = test.lineno + example.lineno + 1
+            else:
+                lineno = '?'
+            out.append('File "%s", line %s, in %s' %
+                       (test.filename, lineno, test.name))
         else:
-            lineno = test.lineno+example.lineno+1
-            return s + ("from line #%s of %s (%s)\n" %
-                        (lineno, test.filename, test.name))
+            out.append('Line %s, in %s' % (example.lineno+1, test.name))
+        out.append('Failed example:')
+        source = example.source
+        if source.endswith('\n'):
+            source = source[:-1]
+        out.append('    ' + '\n    '.join(source.split('\n')))
+        return '\n'.join(out)+'\n'
 
     #/////////////////////////////////////////////////////////////////
     # DocTest Running
@@ -1568,6 +1581,7 @@ class OutputChecker:
         compare `want` and `got`.  `indent` is the indentation of the
         original example.
         """
+        
         # If <BLANKLINE>s are being used, then replace blank lines
         # with <BLANKLINE> in the actual output string.
         if not (optionflags & DONT_ACCEPT_BLANKLINE):
@@ -1600,8 +1614,13 @@ class OutputChecker:
 
         # If we're not using diff, then simply list the expected
         # output followed by the actual output.
-        return (_tag_msg("Expected", want or "Nothing") +
-                _tag_msg("Got", got))
+        if want.endswith('\n'):
+            want = want[:-1]
+        want = '    ' + '\n    '.join(want.split('\n'))
+        if got.endswith('\n'):
+            got = got[:-1]
+        got = '    ' + '\n    '.join(got.split('\n'))
+        return "Expected:\n%s\nGot:\n%s\n" % (want, got)
 
 class DocTestFailure(Exception):
     """A DocTest example has failed in debugging mode.
@@ -1989,6 +2008,7 @@ class DocTestCase(unittest.TestCase):
 
     def __init__(self, test, optionflags=0, setUp=None, tearDown=None,
                  checker=None):
+
         unittest.TestCase.__init__(self)
         self._dt_optionflags = optionflags
         self._dt_checker = checker
@@ -2025,7 +2045,7 @@ class DocTestCase(unittest.TestCase):
         if test.lineno is None:
             lineno = 'unknown line number'
         else:
-            lineno = 'line %s' % test.lineno
+            lineno = '%s' % test.lineno
         lname = '.'.join(test.name.split('.')[-1:])
         return ('Failed doctest test for %s\n'
                 '  File "%s", line %s, in %s\n\n%s'
@@ -2150,9 +2170,7 @@ def DocTestSuite(module=None, globs=None, extraglobs=None,
             continue
         if not test.filename:
             filename = module.__file__
-            if filename.endswith(".pyc"):
-                filename = filename[:-1]
-            elif filename.endswith(".pyo"):
+            if filename[-4:] in (".pyc", ".pyo"):
                 filename = filename[:-1]
             test.filename = filename
         suite.addTest(DocTestCase(test, optionflags, setUp, tearDown,
@@ -2469,10 +2487,13 @@ def test1(): r"""
 ...      42
 ... ''', 'XYZ')
 **********************************************************************
-Failure in example: print x
-from line #2 of XYZ
-Expected: 42
-Got: 84
+Line 3, in XYZ
+Failed example:
+    print x
+Expected:
+    42
+Got:
+    84
 (1, 2)
 >>> t.runstring(">>> x = x * 2\n>>> print x\n84\n", 'example2')
 (0, 2)
