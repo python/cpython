@@ -764,15 +764,8 @@ PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
 PyObject *
 PyNumber_InPlaceRemainder(PyObject *v, PyObject *w)
 {
-	if (PyString_Check(v))
-		return PyString_Format(v, w);
-#ifdef Py_USING_UNICODE
-	else if (PyUnicode_Check(v))
-		return PyUnicode_Format(v, w);
-#endif
-	else
-		return binary_iop(v, w, NB_SLOT(nb_inplace_remainder),
-					NB_SLOT(nb_remainder), "%=");
+	return binary_iop(v, w, NB_SLOT(nb_inplace_remainder),
+				NB_SLOT(nb_remainder), "%=");
 }
 
 PyObject *
