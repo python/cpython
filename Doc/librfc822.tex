@@ -62,41 +62,42 @@ switch dates.  Not enough to worry about for common use.
 \end{funcdesc}
 
 \subsection{Message Objects}
+\label{message-objects}
 
 A \class{Message} instance has the following methods:
 
-\begin{funcdesc}{rewindbody}{}
+\begin{methoddesc}{rewindbody}{}
 Seek to the start of the message body.  This only works if the file
 object is seekable.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getallmatchingheaders}{name}
+\begin{methoddesc}{getallmatchingheaders}{name}
 Return a list of lines consisting of all headers matching
 \var{name}, if any.  Each physical line, whether it is a continuation
 line or not, is a separate list item.  Return the empty list if no
 header matches \var{name}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getfirstmatchingheader}{name}
+\begin{methoddesc}{getfirstmatchingheader}{name}
 Return a list of lines comprising the first header matching
 \var{name}, and its continuation line(s), if any.  Return \code{None}
 if there is no header matching \var{name}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getrawheader}{name}
+\begin{methoddesc}{getrawheader}{name}
 Return a single string consisting of the text after the colon in the
 first header matching \var{name}.  This includes leading whitespace,
 the trailing linefeed, and internal linefeeds and whitespace if there
 any continuation line(s) were present.  Return \code{None} if there is
 no header matching \var{name}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getheader}{name}
+\begin{methoddesc}{getheader}{name}
 Like \code{getrawheader(\var{name})}, but strip leading and trailing
 whitespace.  Internal whitespace is not stripped.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getaddr}{name}
+\begin{methoddesc}{getaddr}{name}
 Return a pair \code{(\var{full name}, \var{email address})} parsed
 from the string returned by \code{getheader(\var{name})}.  If no
 header matching \var{name} exists, return \code{(None, None)};
@@ -110,9 +111,9 @@ Example: If \var{m}'s first \code{From} header contains the string
 If the header contained
 \code{'Jack Jansen <jack@cwi.nl>'} instead, it would yield the
 exact same result.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getaddrlist}{name}
+\begin{methoddesc}{getaddrlist}{name}
 This is similar to \code{getaddr(\var{list})}, but parses a header
 containing a list of email addresses (e.g. a \code{To} header) and
 returns a list of \code{(\var{full name}, \var{email address})} pairs
@@ -121,9 +122,9 @@ header matching \var{name}, return an empty list.
 
 XXX The current version of this function is not really correct.  It
 yields bogus results if a full name contains a comma.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getdate}{name}
+\begin{methoddesc}{getdate}{name}
 Retrieve a header using \method{getheader()} and parse it into a 9-tuple
 compatible with \function{time.mktime()}.  If there is no header matching
 \var{name}, or it is unparsable, return \code{None}.
@@ -132,32 +133,33 @@ Date parsing appears to be a black art, and not all mailers adhere to
 the standard.  While it has been tested and found correct on a large
 collection of email from many sources, it is still possible that this
 function may occasionally yield an incorrect result.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getdate_tz}{name}
+\begin{methoddesc}{getdate_tz}{name}
 Retrieve a header using \method{getheader()} and parse it into a
 10-tuple; the first 9 elements will make a tuple compatible with
 \function{time.mktime()}, and the 10th is a number giving the offset
 of the date's timezone from UTC.  Similarly to \method{getdate()}, if
 there is no header matching \var{name}, or it is unparsable, return
 \code{None}. 
-\end{funcdesc}
+\end{methoddesc}
 
 \class{Message} instances also support a read-only mapping interface.
-In particular: \code{\var{m}[name]} is the same as
-\code{\var{m}.getheader(name)}; and \code{len(\var{m})},
+In particular: \code{\var{m}[name]} is like
+\code{\var{m}.getheader(name)} but raises \exception{KeyError} if
+there is no matching header; and \code{len(\var{m})},
 \code{\var{m}.has_key(name)}, \code{\var{m}.keys()},
 \code{\var{m}.values()} and \code{\var{m}.items()} act as expected
 (and consistently).
 
 Finally, \class{Message} instances have two public instance variables:
 
-\begin{datadesc}{headers}
+\begin{memberdesc}{headers}
 A list containing the entire set of header lines, in the order in
 which they were read.  Each line contains a trailing newline.  The
 blank line terminating the headers is not contained in the list.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{fp}
+\begin{memberdesc}{fp}
 The file object passed at instantiation time.
-\end{datadesc}
+\end{memberdesc}
