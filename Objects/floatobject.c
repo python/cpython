@@ -631,11 +631,13 @@ PyFloat_Fini()
 	fsum = 0;
 	list = block_list;
 	block_list = NULL;
+	free_list = NULL;
 	while (list != NULL) {
-		p = &list->objects[0];
 		bc++;
 		frem = 0;
-		for (i = 0; i < N_FLOATOBJECTS; i++, p++) {
+		for (i = 0, p = &list->objects[0];
+		     i < N_FLOATOBJECTS;
+		     i++, p++) {
 			if (PyFloat_Check(p) && p->ob_refcnt != 0)
 				frem++;
 		}
@@ -643,6 +645,15 @@ PyFloat_Fini()
 		if (frem) {
 			list->next = block_list;
 			block_list = list;
+			for (i = 0, p = &list->objects[0];
+			     i < N_FLOATOBJECTS;
+			     i++, p++) {
+				if (!PyFloat_Check(p) || p->ob_refcnt == 0) {
+					p->ob_type = (struct _typeobject *)
+						free_list;
+					free_list = p;
+				}
+			}
 		}
 		else {
 			PyMem_FREE(list);
@@ -666,13 +677,14 @@ PyFloat_Fini()
 	if (Py_VerboseFlag > 1) {
 		list = block_list;
 		while (list != NULL) {
-			p = &list->objects[0];
-			for (i = 0; i < N_FLOATOBJECTS; i++, p++) {
+			for (i = 0, p = &list->objects[0];
+			     i < N_FLOATOBJECTS;
+			     i++, p++) {
 				if (PyFloat_Check(p) && p->ob_refcnt != 0) {
 					char buf[100];
 					PyFloat_AsString(buf, p);
 					fprintf(stderr,
-			     "#   <float object at %lx, refcnt=%d, val=%s>\n",
+			     "#   <float at %lx, refcnt=%d, val=%s>\n",
 						p, p->ob_refcnt, buf);
 				}
 			}
