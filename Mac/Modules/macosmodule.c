@@ -505,7 +505,6 @@ MacOS_splash(PyObject *self, PyObject *args)
 	static DialogPtr curdialog;
 	WindowRef theWindow;
 	CGrafPtr thePort;
-	short item;
 	short xpos, ypos, width, height, swidth, sheight;
 	
 	if (!PyArg_ParseTuple(args, "|i", &resid))
