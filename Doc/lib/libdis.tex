@@ -278,17 +278,17 @@ expression statement is terminated with \code{POP_STACK}.
 
 \begin{opcodedesc}{PRINT_ITEM}{}
 Prints TOS.  There is one such instruction for
-each item in the print statement.
+each item in the \keyword{print} statement.
 \end{opcodedesc}
 
 \begin{opcodedesc}{PRINT_NEWLINE}{}
 Prints a new line on \code{sys.stdout}.  This is generated as the
-last operation of a print statement, unless the statement ends
-with a comma.
+last operation of a \keyword{print} statement, unless the statement
+ends with a comma.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BREAK_LOOP}{}
-Terminates a loop due to a break statement.
+Terminates a loop due to a \keyword{break} statement.
 \end{opcodedesc}
 
 \begin{opcodedesc}{LOAD_LOCALS}{}
@@ -302,14 +302,14 @@ Returns with TOS to the caller of the function.
 \end{opcodedesc}
 
 \begin{opcodedesc}{IMPORT_STAR}{}
-Loads all symbols not starting with '_' directly from the module TOS
+Loads all symbols not starting with \character{_} directly from the module TOS
 to the local namespace. The module is popped after loading all names.
-This opcode implements 'from module import *'.
-\begin{opcodedesc}
+This opcode implements \code{from module import *}.
+\end{opcodedesc}
 
 \begin{opcodedesc}{EXEC_STMT}{}
 Implements \code{exec TOS2,TOS1,TOS}.  The compiler fills
-missing optional parameters with None.
+missing optional parameters with \code{None}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{POP_BLOCK}{}
@@ -318,9 +318,9 @@ stack of blocks, denoting nested loops, try statements, and such.
 \end{opcodedesc}
 
 \begin{opcodedesc}{END_FINALLY}{}
-Terminates a finally-block.  The interpreter recalls whether the
-exception has to be re-raised, or whether the function returns,
-and continues with the outer-next block.
+Terminates a \keyword{finally} clause.  The interpreter recalls
+whether the exception has to be re-raised, or whether the function
+returns, and continues with the outer-next block.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BUILD_CLASS}{}
@@ -396,12 +396,12 @@ Works as \code{BUILD_TUPLE}, but creates a list.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BUILD_MAP}{zero}
-Pushes an empty dictionary object onto the stack.  The argument is ignored
-and set to zero by the compiler.
+Pushes a new empty dictionary object onto the stack.  The argument is
+ignored and set to zero by the compiler.
 \end{opcodedesc}
 
 \begin{opcodedesc}{LOAD_ATTR}{namei}
-Replaces TOS with \code{getattr(TOS,co_names[\var{namei}]}.
+Replaces TOS with \code{getattr(TOS, co_names[\var{namei}]}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{COMPARE_OP}{opname}
@@ -493,7 +493,7 @@ Sets the current line number to \var{lineno}.
 
 \begin{opcodedesc}{RAISE_VARARGS}{argc}
 Raises an exception. \var{argc} indicates the number of parameters
-to the raise statement, ranging from 1 to 3.  The handler will find
+to the raise statement, ranging from 0 to 3.  The handler will find
 the traceback as TOS2, the parameter as TOS1, and the exception
 as TOS.
 \end{opcodedesc}
@@ -518,7 +518,8 @@ default parameters, which are found below TOS.
 Pushes a slice object on the stack.  \var{argc} must be 2 or 3.  If it
 is 2, \code{slice(TOS1, TOS)} is pushed; if it is 3,
 \code{slice(TOS2, TOS1, TOS)} is pushed.
-See the \code{slice()}\bifuncindex{slice} built-in function.
+See the \code{slice()}\bifuncindex{slice} built-in function for more
+information.
 \end{opcodedesc}
 
 \begin{opcodedesc}{CALL_FUNCTION_VAR}{argc}
