@@ -14,7 +14,9 @@ from Tkinter import *
 from Tkinter import _cnfmerge
 
 class ScrolledText(Text):
-	def __init__(self, master=None, cnf={}, **kw):
+	def __init__(self, master=None, cnf=None, **kw):
+		if cnf is None:
+			cnf = {}
 		if kw:
 			cnf = _cnfmerge((cnf, kw))
 		fcnf = {}
