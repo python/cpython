@@ -3,7 +3,8 @@ import sys
 import os
 import string
 
-PROJECTDIR = os.path.join(sys.prefix, ":Mac:Build")
+PYTHONDIR = sys.prefix
+PROJECTDIR = os.path.join(PYTHONDIR, ":Mac:Build")
 MODULEDIRS = [	# Relative to projectdirs
 	"::Modules:%s",
 	"::Modules",
