@@ -82,6 +82,10 @@ Library
 Build
 -----
 
+- Building on darwin now includes /opt/local/include and /opt/local/lib for
+  building extension modules.  This is so as to include software installed as
+  a DarwinPorts port <http://darwinports.opendarwin.org/>
+
 - pyport.h now defines a Py_IS_NAN macro.  It works as-is when the
   platform C computes true for ``x != x`` if and only if X is a NaN.
   Other platforms can override the default definition with a platform-
