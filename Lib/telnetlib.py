@@ -40,7 +40,6 @@ To do:
 import sys
 import socket
 import select
-import string
 
 # Tunable parameters
 DEBUGLEVEL = 0
@@ -187,7 +186,7 @@ class Telnet:
 
         """
         if IAC in buffer:
-            buffer = string.replace(buffer, IAC, IAC+IAC)
+            buffer = buffer.replace(IAC, IAC+IAC)
         self.msg("send %s", `buffer`)
         self.sock.send(buffer)
 
@@ -201,7 +200,7 @@ class Telnet:
         """
         n = len(match)
         self.process_rawq()
-        i = string.find(self.cookedq, match)
+        i = self.cookedq.find(match)
         if i >= 0:
             i = i+n
             buf = self.cookedq[:i]
@@ -215,7 +214,7 @@ class Telnet:
             i = max(0, len(self.cookedq)-n)
             self.fill_rawq()
             self.process_rawq()
-            i = string.find(self.cookedq, match, i)
+            i = self.cookedq.find(match, i)
             if i >= 0:
                 i = i+n
                 buf = self.cookedq[:i]
