@@ -38,8 +38,6 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Object and type object interface */
 
 /*
-123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
-
 Objects are structures allocated on the heap.  Special rules apply to
 the use of objects to ensure they are properly garbage-collected.
 Objects are never allocated statically or on the stack; they must be
@@ -80,8 +78,6 @@ type and back.
 
 A standard interface exists for objects that contain an array of items
 whose size is determined when the object is allocated.
-
-123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
 */
 
 #ifdef Py_DEBUG
@@ -121,8 +117,6 @@ typedef struct {
 
 
 /*
-123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
-
 Type objects contain a string containing the type name (to help somewhat
 in debugging), the allocation parameters (see newobj() and newvarobj()),
 and methods for accessing objects of the type.  Methods are optional,a
@@ -329,8 +323,6 @@ given type object has a specified feature.
 
 
 /*
-123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
-
 The macros Py_INCREF(op) and Py_DECREF(op) are used to increment or decrement
 reference counts.  Py_DECREF calls the object's deallocator function; for
 objects that don't contain references to other objects or heap memory
@@ -473,8 +465,6 @@ object, so I can't just put extern in all cases. :-( )
 
 
 /*
-123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
-
 More conventions
 ================
 
@@ -522,8 +512,6 @@ argument consume a reference count; however this may quickly get
 confusing (even the current practice is already confusing).  Consider
 it carefully, it may save lots of calls to Py_INCREF() and Py_DECREF() at
 times.
-
-123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
 */
 
 #ifdef __cplusplus
