@@ -30,12 +30,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "config.h"
 #endif
 
-#ifdef macintosh
-#include "stat.h"
-#else
 #include <sys/types.h>
 #include <sys/stat.h>
-#endif
 
 long
 getmtime(path)
