@@ -567,6 +567,22 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.compile(pattern).split("a.b.c"),
                          ['a','b','c'])
 
+    def test_bug_581080(self):
+        iter = re.finditer(r"\s", "a b")
+        self.assertEqual(iter.next().span(), (1,2))
+        self.assertRaises(StopIteration, iter.next)
+
+        scanner = re.compile(r"\s").scanner("a b")
+        self.assertEqual(scanner.search().span(), (1, 2))
+        self.assertEqual(scanner.search(), None)
+
+    def test_bug_817234(self):
+        iter = re.finditer(r".*", "asdf")
+        self.assertEqual(iter.next().span(), (0, 4))
+        self.assertEqual(iter.next().span(), (4, 4))
+        self.assertRaises(StopIteration, iter.next)
+
+
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR
     if verbose:

@@ -539,7 +539,7 @@ SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, int maxcount)
         break;
 
     case SRE_OP_ANY_ALL:
-        /* repeated dot wildcare.  skip to the end of the target
+        /* repeated dot wildcard.  skip to the end of the target
            string, and backtrack from there */
         TRACE(("|%p|%p|COUNT ANY_ALL\n", pattern, ptr));
         ptr = end;
@@ -3244,8 +3244,7 @@ scanner_match(ScannerObject* self, PyObject* args)
     match = pattern_new_match((PatternObject*) self->pattern,
                                state, status);
 
-    if ((status == 0 || state->ptr == state->start) &&
-        state->ptr < state->end)
+    if (status == 0 || state->ptr == state->start)
         state->start = (void*) ((char*) state->ptr + state->charsize);
     else
         state->start = state->ptr;
@@ -3276,8 +3275,7 @@ scanner_search(ScannerObject* self, PyObject* args)
     match = pattern_new_match((PatternObject*) self->pattern,
                                state, status);
 
-    if ((status == 0 || state->ptr == state->start) &&
-        state->ptr < state->end)
+    if (status == 0 || state->ptr == state->start)
         state->start = (void*) ((char*) state->ptr + state->charsize);
     else
         state->start = state->ptr;
