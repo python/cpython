@@ -32,6 +32,9 @@ Extension modules
 
 - fcntl now exposes the strops.h I_* constants.
 
+- Fix a crash on Solaris that occurred when calling close() on
+  an mmap'ed file which was already closed.  (SF patch #665913)
+
 - datetime changes:
 
   The datetime and datetimetz classes have been collapsed into a single
@@ -102,9 +105,6 @@ Extension modules
   seconds".  Leap seconds are ignored now.  On such platforms, it's
   possible to have timestamps that differ by a second, yet where
   datetimes constructed from them are equal.
-
-- Fix a crash on Solaris that occurred when calling close() on
-  an mmap'ed file which was already closed.  (SF patch #665913)
 
 Library
 -------
@@ -180,6 +180,9 @@ TBD
 
 Windows
 -------
+
+- The bsddb module now ships with Sleepycat's 4.1.25.NC, the latest
+  release without strong cryptography.
 
 - sys.path[0], if it contains a directory name, is now always an
   absolute pathname.
