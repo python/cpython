@@ -230,6 +230,7 @@ static int
 func_set_code(PyFunctionObject *op, PyObject *value)
 {
 	PyObject *tmp;
+	int nfree, nclosure;
 
 	if (restricted())
 		return -1;
@@ -238,6 +239,17 @@ func_set_code(PyFunctionObject *op, PyObject *value)
 	if (value == NULL || !PyCode_Check(value)) {
 		PyErr_SetString(PyExc_TypeError,
 				"func_code must be set to a code object");
+		return -1;
+	}
+	nfree = PyCode_GetNumFree((PyCodeObject *)value);
+	nclosure = (op->func_closure == NULL ? 0 :
+		    PyTuple_GET_SIZE(op->func_closure));
+	if (nclosure != nfree) {
+		PyErr_Format(PyExc_ValueError,
+			     "%s() requires a code object with %d free vars,"
+			     " not %d",
+			     PyString_AsString(op->func_name),
+			     nclosure, nfree);
 		return -1;
 	}
 	tmp = op->func_code;
