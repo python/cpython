@@ -850,7 +850,7 @@ u'\xe4\xf6\xfc'
 >>> str(u"הצü")
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
-UnicodeError: ASCII encoding error: ordinal not in range(128)
+UnicodeEncodeError: 'ascii' codec can't encode characters in position 0-2: ordinal not in range(128)
 \end{verbatim}
 
 To convert a Unicode string into an 8-bit string using a specific
