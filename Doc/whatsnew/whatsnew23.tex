@@ -327,7 +327,7 @@ Other systems also allow Unicode strings as file names but convert
 them to byte strings before passing them to the system, which can
 cause a \exception{UnicodeError} to be raised. Applications can test
 whether arbitrary Unicode strings are supported as file names by
-checking \member{os.path.unicode_file_names}, a Boolean value.
+checking \member{os.path.supports_unicode_filenames}, a Boolean value.
 
 \begin{seealso}
 
@@ -2106,10 +2106,10 @@ name.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Simon Brunning, Michael Chermside, Scott David Daniels,
-Fred~L. Drake, Jr., Kelly Gerber, Raymond Hettinger, Michael Hudson,
-Detlef Lannert, Martin von L\"owis, Andrew MacIntyre, Lalo Martins,
-Gustavo Niemeyer, Neal Norwitz, Hans Nowak, Chris Reedy, Vinay Sajip,
-Neil Schemenauer, Jason Tishler, Just van~Rossum.
+article: Simon Brunning, Michael Chermside, Andrew Dalke, Scott David
+Daniels, Fred~L. Drake, Jr., Kelly Gerber, Raymond Hettinger, Michael
+Hudson, Detlef Lannert, Martin von L\"owis, Andrew MacIntyre, Lalo
+Martins, Gustavo Niemeyer, Neal Norwitz, Hans Nowak, Chris Reedy,
+Vinay Sajip, Neil Schemenauer, Jason Tishler, Just van~Rossum.
 
 \end{document}
