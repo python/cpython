@@ -157,7 +157,7 @@ def process_common(template, progress, code, rsrcname, destname, is_update, copy
 		Res.CloseResFile(input)
 	
 	# Check which resource-types we should not copy from the template
-	skiptypes = []
+	skiptypes = ['vers']
 	if 'SIZE' in typesfound: skiptypes.append('SIZE')
 	if 'BNDL' in typesfound: skiptypes = skiptypes + ['BNDL', 'FREF', 'icl4', 
 			'icl8', 'ics4', 'ics8', 'ICN#', 'ics#']
