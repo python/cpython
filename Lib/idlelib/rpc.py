@@ -119,7 +119,7 @@ class SocketIO:
             pass
 
     def localcall(self, request):
-        ##self.debug("localcall:", request) 
+        self.debug("localcall:", request) 
         try:
             how, (oid, methodname, args, kwargs) = request
         except TypeError:
@@ -165,6 +165,7 @@ class SocketIO:
             return ("EXCEPTION", (mod, name, args, tb))
 
     def remotecall(self, oid, methodname, args, kwargs):
+        self.debug("remotecall:", oid, methodname, args, kwargs) 
         seq = self.asynccall(oid, methodname, args, kwargs)
         return self.asyncreturn(seq)
 
@@ -197,10 +198,12 @@ class SocketIO:
                         pass
                     else:
                         raise getattr(__import__(mod), name)(*args)
-            else:
-                if mod:
-                    name = mod + "." + name
-                raise name, args
+# XXX KBK 15Jun02  mod is False here, also want to raise remaining exceptions
+#           else:
+#               if mod:
+#                   name = mod + "." + name
+#               raise name, args
+            raise name, args
         if how == "ERROR":
             raise RuntimeError, what
         raise SystemError, (how, what)

@@ -30,9 +30,9 @@ class Executive:
     def runcode(self, code):
         exec code in self.locals
 
-    def start_debugger(self, gui_oid):
+    def start_the_debugger(self, gui_adap_oid):
         import RemoteDebugger
-        return RemoteDebugger.start_debugger(self.conn, gui_oid)
+        return RemoteDebugger.start_debugger(self.conn, gui_adap_oid)
 
     def stackviewer(self, flist_oid=None):
         if not hasattr(sys, "last_traceback"):

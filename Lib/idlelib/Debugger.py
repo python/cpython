@@ -52,7 +52,7 @@ class Idb(bdb.Bdb):
 
 class Debugger:
 
-    interacting = 0
+    # interacting = 0  # XXX KBK 14Jun02 move to __init__
     vstack = vsource = vlocals = vglobals = None
 
     def __init__(self, pyshell, idb=None):
@@ -60,8 +60,10 @@ class Debugger:
             idb = Idb(self)
         self.pyshell = pyshell
         self.idb = idb
+        self.frame = None
         self.make_gui()
-
+        self.interacting = 0
+        
     def run(self, *args):
         try:
             self.interacting = 1
@@ -155,7 +157,7 @@ class Debugger:
         if self.vglobals.get():
             self.show_globals()
 
-    frame = None
+    # frame = None  # XXX KBK 14Jun02  Move to __init__
 
     def interaction(self, message, frame, info=None):
         self.frame = frame
@@ -300,10 +302,11 @@ class Debugger:
             gdict = frame.f_globals
             if lv and gv and ldict is gdict:
                 ldict = None
+        # Calls OldStackviewer.NamespaceViewer.load_dict():
         if lv:
-            lv.load_dict(ldict, force)
+            lv.load_dict(ldict, force, self.pyshell.interp.rpcclt)
         if gv:
-            gv.load_dict(gdict, force)
+            gv.load_dict(gdict, force, self.pyshell.interp.rpcclt)
 
     def set_breakpoint_here(self, edit):
         text = edit.text
@@ -312,7 +315,7 @@ class Debugger:
             text.bell()
             return
         lineno = int(float(text.index("insert")))
-        msg = self.set_break(filename, lineno)
+        msg = self.idb.set_break(filename, lineno)
         if msg:
             text.bell()
             return
