@@ -1058,7 +1058,7 @@ class IMAP4_SSL(IMAP4):
         # sslobj.read() sometimes returns < size bytes
         data = self.sslobj.read(size)
         while len(data) < size:
-                data += self.sslobj.read(size-len(data))
+            data += self.sslobj.read(size-len(data))
 
         return data
 

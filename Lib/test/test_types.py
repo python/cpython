@@ -211,7 +211,7 @@ if have_unicode:
     vereq(a[-100:100:], a)
     vereq(a[100:-100:-1], a[::-1])
     vereq(a[-100L:100L:2L], unicode('02468', 'ascii'))
-    
+
 
 print '6.5.2 Tuples'
 if len(()) != 0: raise TestFailed, 'len(())'

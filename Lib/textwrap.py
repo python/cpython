@@ -48,7 +48,7 @@ class TextWrapper:
     whitespace_trans = string.maketrans(string.whitespace,
                                         ' ' * len(string.whitespace))
 
-    # This funky little regex is just the trick for splitting 
+    # This funky little regex is just the trick for splitting
     # text up into word-wrappable chunks.  E.g.
     #   "Hello there -- you goof-ball, use the -b option!"
     # splits into
@@ -81,7 +81,7 @@ class TextWrapper:
         self.replace_whitespace = replace_whitespace
         self.fix_sentence_endings = fix_sentence_endings
         self.break_long_words = break_long_words
-        
+
 
     # -- Private methods -----------------------------------------------
     # (possibly useful for subclasses to override)
@@ -209,7 +209,7 @@ class TextWrapper:
                     break
 
             # The current line is full, and the next chunk is too big to
-            # fit on *any* line (not just this one).  
+            # fit on *any* line (not just this one).
             if chunks and len(chunks[0]) > width:
                 self._handle_long_word(chunks, cur_line, cur_len, width)
 

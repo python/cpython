@@ -125,4 +125,3 @@ if hasattr(signal, "sigprocmask"):
             pass
         else:
             raise TestFailed, "sigsupsend didn't raise"
-    

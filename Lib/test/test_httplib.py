@@ -56,4 +56,3 @@ r.begin()
 cookies = r.getheader("Set-Cookie")
 if cookies != hdr:
     raise AssertionError, "multiple headers not combined properly"
-               

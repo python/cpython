@@ -276,7 +276,7 @@ class HTTPResponse:
                     break
                 if self.debuglevel > 0:
                     print "header:", skip
-            
+
         self.status = status
         self.reason = reason.strip()
         if version == 'HTTP/1.0':
@@ -482,7 +482,7 @@ class HTTPConnection:
         self._buffer = []
         self.__response = None
         self.__state = _CS_IDLE
-        
+
         self._set_hostport(host, port)
         if strict is not None:
             self.strict = strict
@@ -815,7 +815,7 @@ class SSLFile(SharedSocketClient):
     """File-like object wrapping an SSL socket."""
 
     BUFSIZE = 8192
-    
+
     def __init__(self, sock, ssl, bufsize=None):
         SharedSocketClient.__init__(self, sock)
         self._ssl = ssl
@@ -1139,7 +1139,7 @@ class LineAndFileWrapper:
             if amt is None:
                 return s + self._file.read()
             else:
-                return s + self._file.read(amt - len(s))                
+                return s + self._file.read(amt - len(s))
         else:
             assert amt <= self._line_left
             i = self._line_offset
@@ -1150,7 +1150,7 @@ class LineAndFileWrapper:
             if self._line_left == 0:
                 self._done()
             return s
-        
+
     def readline(self):
         s = self._line[self._line_offset:]
         self._done()
@@ -1207,7 +1207,7 @@ def test():
     h.close()
 
     if hasattr(socket, 'ssl'):
-        
+
         for host, selector in (('sourceforge.net', '/projects/python'),
                                ('dbserv2.theopalgroup.com', '/mediumfile'),
                                ('dbserv2.theopalgroup.com', '/smallfile'),

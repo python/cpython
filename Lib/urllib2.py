@@ -165,7 +165,7 @@ class HTTPError(URLError, addinfourl):
         # The addinfourl classes depend on fp being a valid file
         # object.  In some cases, the HTTPError may not have a valid
         # file object.  If this happens, the simplest workaround is to
-        # not initialize the base classes.  
+        # not initialize the base classes.
         if fp is not None:
             self.__super_init(fp, hdrs, url)
 
@@ -460,7 +460,7 @@ class ProxyHandler(BaseHandler):
             user_pass, host = host.split('@', 1)
             if ':' in user_pass:
                 user, password = user_pass.split(':', 1)
-                user_pass = base64.encodestring('%s:%s' % (unquote(user), 
+                user_pass = base64.encodestring('%s:%s' % (unquote(user),
                                                            unquote(password)))
                 req.add_header('Proxy-Authorization', 'Basic ' + user_pass)
         host = unquote(host)
