@@ -1,9 +1,45 @@
+IDLEfork NEWS
+=============
+(For a more detailed change log, see the file ChangeLog.)
+---------------------------------------------------------
+
+
+IDLEfork 0.8.1 (xx JUN 2001)
+----------------------------
+New tarball released as a result of the 'revitalisation' of the IDLEfork
+project. 
+
+This release is based on a merging of the earlier IDLE fork work with
+current cvs IDLE (post IDLE version 0.8), with some minor additional
+coding by Kurt B. Kaiser and Stephen M. Gava.
+
+This release is basically functional but also contains some known 
+breakages, for instance with running things from the shell window, that
+may well have been introduced in a hasty attempt to change IDLEfork's
+previous startup behaviour.
+
+This release is being made now to mark the point at which IDLEfork is 
+launching into a new stage of development. 
+
+IDLEfork CVS will now be branched to enable further development and 
+exploration of the two "execution in a remote process" patches submitted 
+by David Scherer (David's is currently in IDLEfork) and GvR on a branch, 
+while stabilisation and development of less heavyweight improvements 
+(like user customisation) can continue on the trunk.
+
+
+IDLE fork 0.7.1 (15 AUG 2000)
+-----------------------------
+First project tarball released.
+
+This was the first release of IDLE fork, which at this stage was a 
+combination of IDLE 0.5 and the VPython idle fork, with additional
+changes coded by David Scherer, Peter Schneider-Kamp and 
+Nicholas Riley. 
+
+
 original IDLE NEWS.txt :
 ========================
-
-(For a more detailed change log, see the file ChangeLog.)
-
-----------------------------------------------------------------------
 
 New in IDLE 0.5 (2/15/2000)
 -------------------------
