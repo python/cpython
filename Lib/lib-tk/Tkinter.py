@@ -378,7 +378,7 @@ class Misc:
     getint = int
     getdouble = float
     def getboolean(self, s):
-        """Return a boolean value  for Tcl boolean values true and false given as parameter."""
+        """Return a boolean value for Tcl boolean values true and false given as parameter."""
         return self.tk.getboolean(s)
     def focus_set(self):
         """Direct input focus to this widget.
