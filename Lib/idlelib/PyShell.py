@@ -450,9 +450,15 @@ class PyShell(OutputWindow):
     ColorDelegator = ModifiedColorDelegator
     UndoDelegator = ModifiedUndoDelegator
 
-    # Override menu bar specs
-    menu_specs = PyShellEditorWindow.menu_specs[:]
-    menu_specs.insert(len(menu_specs)-3, ("debug", "_Debug"))
+    # Override menus: Run and Format not desired in shell; add Debug
+    menu_specs = [
+        ("file", "_File"),
+        ("edit", "_Edit"),
+        ("debug", "_Debug"),
+        ("settings", "_Settings"),
+        ("windows", "_Windows"),
+        ("help", "_Help"),
+    ]
 
     # New classes
     from IdleHistory import History
@@ -825,6 +831,7 @@ class PyShell(OutputWindow):
         self.console.write(s)
         self.text.mark_set("insert", "end-1c")
         self.set_line_and_column()
+        self.io.reset_undo()
 
     def resetoutput(self):
         source = self.text.get("iomark", "end-1c")
