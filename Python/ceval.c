@@ -775,7 +775,8 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				PUSH(x);
 				continue;
 			default:
-				Py_FatalError("invalid argument to DUP_TOPX (bytecode corruption?)");
+				Py_FatalError("invalid argument to DUP_TOPX"
+					      " (bytecode corruption?)");
 			}
 			break;
 
