@@ -70,6 +70,7 @@ typedef struct {
 	int leftindex;	/* in range(BLOCKLEN) */
 	int rightindex;	/* in range(BLOCKLEN) */
 	int len;
+	long state;	/* incremented whenever the indices move */
 	PyObject *weakreflist; /* List of weak references */
 } dequeobject;
 
@@ -98,6 +99,7 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	deque->leftindex = CENTER + 1;
 	deque->rightindex = CENTER;
 	deque->len = 0;
+	deque->state = 0;
 	deque->weakreflist = NULL;
 
 	return (PyObject *)deque;
@@ -108,6 +110,7 @@ deque_append(dequeobject *deque, PyObject *item)
 {
 	deque->rightindex++;
 	deque->len++;
+	deque->state++;
 	if (deque->rightindex == BLOCKLEN) {
 		block *b = newblock(deque->rightblock, NULL);
 		if (b == NULL)
@@ -129,6 +132,7 @@ deque_appendleft(dequeobject *deque, PyObject *item)
 {
 	deque->leftindex--;
 	deque->len++;
+	deque->state++;
 	if (deque->leftindex == -1) {
 		block *b = newblock(NULL, deque->leftblock);
 		if (b == NULL)
@@ -158,6 +162,7 @@ deque_pop(dequeobject *deque, PyObject *unused)
 	item = deque->rightblock->data[deque->rightindex];
 	deque->rightindex--;
 	deque->len--;
+	deque->state++;
 
 	if (deque->rightindex == -1) {
 		if (deque->len == 0) {
@@ -193,6 +198,7 @@ deque_popleft(dequeobject *deque, PyObject *unused)
 	item = deque->leftblock->data[deque->leftindex];
 	deque->leftindex++;
 	deque->len--;
+	deque->state++;
 
 	if (deque->leftindex == BLOCKLEN) {
 		if (deque->len == 0) {
@@ -229,6 +235,7 @@ deque_extend(dequeobject *deque, PyObject *iterable)
 	while ((item = PyIter_Next(it)) != NULL) {
 		deque->rightindex++;
 		deque->len++;
+		deque->state++;
 		if (deque->rightindex == BLOCKLEN) {
 			block *b = newblock(deque->rightblock, NULL);
 			if (b == NULL) {
@@ -264,6 +271,7 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 	while ((item = PyIter_Next(it)) != NULL) {
 		deque->leftindex--;
 		deque->len++;
+		deque->state++;
 		if (deque->leftindex == -1) {
 			block *b = newblock(NULL, deque->leftblock);
 			if (b == NULL) {
@@ -341,13 +349,14 @@ deque_clear(dequeobject *deque)
 {
 	PyObject *item;
 
-	while (deque_len(deque)) {
+	while (deque->len) {
 		item = deque_pop(deque, NULL);
 		assert (item != NULL);
 		Py_DECREF(item);
 	}
 	assert(deque->leftblock == deque->rightblock &&
-		deque->leftindex > deque->rightindex);
+	       deque->leftindex - 1 == deque->rightindex &&
+	       deque->len == 0);
 	return 0;
 }
 
@@ -822,8 +831,8 @@ typedef struct {
 	int index;
 	block *b;
 	dequeobject *deque;
-	int len;
-	int counter;
+	long state;	/* state when the iterator is created */
+	int counter;    /* number of items remaining for iteration */
 } dequeiterobject;
 
 PyTypeObject dequeiter_type;
@@ -840,7 +849,7 @@ deque_iter(dequeobject *deque)
 	it->index = deque->leftindex;
 	Py_INCREF(deque);
 	it->deque = deque;
-	it->len = deque->len;
+	it->state = deque->state;
 	it->counter = deque->len;
 	return (PyObject *)it;
 }
@@ -856,24 +865,27 @@ static PyObject *
 dequeiter_next(dequeiterobject *it)
 {
 	PyObject *item;
-	if (it->b == it->deque->rightblock && it->index > it->deque->rightindex)
+
+	if (it->counter == 0)
 		return NULL;
 
-	if (it->len != it->deque->len) {
-		it->len = -1; /* Make this state sticky */
+	if (it->deque->state != it->state) {
 		it->counter = 0;
 		PyErr_SetString(PyExc_RuntimeError,
-				"deque changed size during iteration");
+				"deque mutated during iteration");
 		return NULL;
 	}
+	assert (!(it->b == it->deque->rightblock && 
+		  it->index > it->deque->rightindex));
 
 	item = it->b->data[it->index];
 	it->index++;
-	if (it->index == BLOCKLEN && it->b->rightlink != NULL) {
+	it->counter--;
+	if (it->index == BLOCKLEN && it->counter > 0) {
+		assert (it->b->rightlink != NULL);
 		it->b = it->b->rightlink;
 		it->index = 0;
 	}
-	it->counter--;
 	Py_INCREF(item);
 	return item;
 }
@@ -938,7 +950,7 @@ deque_reviter(dequeobject *deque)
 	it->index = deque->rightindex;
 	Py_INCREF(deque);
 	it->deque = deque;
-	it->len = deque->len;
+	it->state = deque->state;
 	it->counter = deque->len;
 	return (PyObject *)it;
 }
@@ -947,24 +959,26 @@ static PyObject *
 dequereviter_next(dequeiterobject *it)
 {
 	PyObject *item;
-	if (it->b == it->deque->leftblock && it->index < it->deque->leftindex)
+	if (it->counter == 0)
 		return NULL;
 
-	if (it->len != it->deque->len) {
-		it->len = -1; /* Make this state sticky */
+	if (it->deque->state != it->state) {
 		it->counter = 0;
 		PyErr_SetString(PyExc_RuntimeError,
-				"deque changed size during iteration");
+				"deque mutated during iteration");
 		return NULL;
 	}
+	assert (!(it->b == it->deque->leftblock && 
+		  it->index < it->deque->leftindex));
 
 	item = it->b->data[it->index];
 	it->index--;
-	if (it->index == -1 && it->b->leftlink != NULL) {
+	it->counter--;
+	if (it->index == -1 && it->counter > 0) {
+		assert (it->b->leftlink != NULL);
 		it->b = it->b->leftlink;
 		it->index = BLOCKLEN - 1;
 	}
-	it->counter--;
 	Py_INCREF(item);
 	return item;
 }
