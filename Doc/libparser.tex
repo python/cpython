@@ -1,0 +1,250 @@
+% libparser.tex
+%
+% Introductory documentation for the new parser built-in module.
+%
+% Copyright 1995 Virginia Polytechnic Institute and State University
+% and Fred L. Drake, Jr.  This copyright notice must be distributed on
+% all copies, but this document otherwise may be distributed as part
+% of the Python distribution.  No fee may be charged for this document
+% in any representation, either on paper or electronically.  This
+% restriction does not affect other elements in a distributed package
+% in any way.
+%
+
+\section{Built-in Module \sectcode{parser}}
+\bimodindex{parser}
+
+
+% ==== 2. ====
+% Give a short overview of what the module does.
+% If it is platform specific, mention this.
+% Mention other important restrictions or general operating principles.
+
+The \code{parser} module provides an interface to Python's internal
+parser and byte-code compiler.  The primary purpose for this interface
+is to allow Python code to edit the parse tree of a Python expression
+and create executable code from this.  This can be better than trying
+to parse and modify an arbitrary Python code fragment as a string, and
+ensures that parsing is performed in a manner identical to the code
+forming the application.  It's also faster.
+
+There are a few things to note about this module which are important
+to making use of the data structures created.  This is not a tutorial
+on editing the parse trees for Python code.
+
+Most importantly, a good understanding of the Python grammar processed
+by the internal parser is required.  For full information on the
+language syntax, refer to the Language Reference.  The parser itself
+is created from a grammar specification defined in the file
+\code{Grammar/Grammar} in the standard Python distribution.  The parse
+trees stored in the ``AST objects'' created by this module are the
+actual output from the internal parser when created by the
+\code{expr()} or \code{suite()} functions, described below.  The AST
+objects created by \code{tuple2ast()} faithfully simulate those
+structures.
+
+Each element of the tuples returned by \code{ast2tuple()} has a simple
+form.  Tuples representing non-terminal elements in the grammar always
+have a length greater than one.  The first element is an integer which
+identifies a production in the grammar.  These integers are given
+symbolic names in the C header file \code{Include/graminit.h} and the
+Python module \code{Lib/symbol.py}.  Each additional element of the
+tuple represents a component of the production as recognized in the
+input string: these are always tuples which have the same form as the
+parent.  An important aspect of this structure which should be noted
+is that keywords used to identify the parent node type, such as the
+keyword \code{if} in an \emph{if\_stmt}, are included in the node tree
+without any special treatment.  For example, the \code{if} keyword is
+represented by the tuple \code{(1, 'if')}, where \code{1} is the
+numeric value associated with all \code{NAME} elements, including
+variable and function names defined by the user.
+
+Terminal elements are represented in much the same way, but without
+any child elements and the addition of the source text which was
+identified.  The example of the \code{if} keyword above is
+representative.  The various types of terminal symbols are defined in
+the C header file \code{Include/token.h} and the Python module
+\code{Lib/token.py}.
+
+The AST objects are not actually required to support the functionality
+of this module, but are provided for three purposes: to allow an
+application to amortize the cost of processing complex parse trees, to
+provide a parse tree representation which conserves memory space when
+compared to the Python tuple representation, and to ease the creation
+of additional modules in C which manipulate parse trees.  A simple
+``wrapper'' module may be created in Python if desired to hide the use
+of AST objects.
+
+
+% ==== 3. ====
+% List the public functions defined by the module.  Begin with a
+% standard phrase.  You may also list the exceptions and other data
+% items defined in the module, insofar as they are important for the
+% user.
+
+The \code{parser} module defines the following functions:
+
+% ---- 3.1. ----
+% Redefine the ``indexsubitem'' macro to point to this module
+% (alternatively, you can put this at the top of the file):
+
+\renewcommand{\indexsubitem}{(in module parser)}
+
+% ---- 3.2. ----
+% For each function, use a ``funcdesc'' block.  This has exactly two
+% parameters (each parameters is contained in a set of curly braces):
+% the first parameter is the function name (this automatically
+% generates an index entry); the second parameter is the function's
+% argument list.  If there are no arguments, use an empty pair of
+% curly braces.  If there is more than one argument, separate the
+% arguments with backslash-comma.  Optional parts of the parameter
+% list are contained in \optional{...} (this generates a set of square
+% brackets around its parameter).  Arguments are automatically set in
+% italics in the parameter list.  Each argument should be mentioned at
+% least once in the description; each usage (even inside \code{...})
+% should be enclosed in \var{...}.
+
+\begin{funcdesc}{ast2tuple}{ast}
+This function accepts an AST object from the caller in
+\code{\var{ast}} and returns a Python tuple representing the
+equivelent parse tree.  The resulting tuple representation can be used
+for inspection or the creation of a new parse tree in tuple form.
+This function does not fail so long as memory is available to build
+the tuple representation.
+\end{funcdesc}
+
+
+\begin{funcdesc}{compileast}{ast\optional{\, filename \code{= '<ast>'}}}
+The Python byte compiler can be invoked on an AST object to produce
+code objects which can be used as part of an \code{exec} statement or
+a call to the built-in \code{eval()} function.  This function provides
+the interface to the compiler, passing the internal parse tree from
+\code{\var{ast}} to the parser, using the source file name specified
+by the \code{\var{filename}} parameter.  The default value supplied
+for \code{\var{filename}} indicates that the source was an AST object.
+\end{funcdesc}
+
+
+\begin{funcdesc}{expr}{string}
+The \code{expr()} function parses the parameter \code{\var{string}}
+as if it were an input to \code{compile(\var{string}, 'eval')}.  If
+the parse succeeds, an AST object is created to hold the internal
+parse tree representation, otherwise an appropriate exception is
+thrown.
+\end{funcdesc}
+
+
+\begin{funcdesc}{isexpr}{ast}
+When \code{\var{ast}} represents an \code{'eval'} form, this function
+returns a true value (\code{1}), otherwise it returns false
+(\code{0}).  This is useful, since code objects normally cannot be
+queried for this information using existing built-in functions.  Note
+that the code objects created by \code{compileast()} cannot be queried
+like this either, and are identical to those created by the built-in
+\code{compile()} function.
+\end{funcdesc}
+
+
+\begin{funcdesc}{issuite}{ast}
+This function mirrors \code{isexpr()} in that it reports whether an
+AST object represents a suite of statements.  It is not safe to assume
+that this function is equivelent to \code{not isexpr(\var{ast})}, as
+additional syntactic fragments may be supported in the future.
+\end{funcdesc}
+
+
+\begin{funcdesc}{suite}{string}
+The \code{suite()} function parses the parameter \code{\var{string}}
+as if it were an input to \code{compile(\var{string}, 'exec')}.  If
+the parse succeeds, an AST object is created to hold the internal
+parse tree representation, otherwise an appropriate exception is
+thrown.
+\end{funcdesc}
+
+
+\begin{funcdesc}{tuple2ast}{tuple}
+This function accepts a parse tree represented as a tuple and builds
+an internal representation if possible.  If it can validate that the
+tree conforms to the Python syntax and all nodes are valid node types
+in the host version of Python, an AST object is created from the
+internal representation and returned to the called.  If there is a
+problem creating the internal representation, or if the tree cannot be
+validated, a \code{ParserError} exception is thrown.  An AST object
+created this way should not be assumed to compile correctly; normal
+exceptions thrown by compilation may still be initiated when the AST
+object is passed to \code{compileast()}.  This will normally indicate
+problems not related to syntax (such as a \code{MemoryError}
+exception).
+\end{funcdesc}
+
+
+% --- 3.4. ---
+% Exceptions are described using a ``excdesc'' block.  This has only
+% one parameter: the exception name.
+
+\subsection{Exceptions and Error Handling}
+
+The parser module defines a single exception, but may also pass other
+built-in exceptions from other portions of the Python runtime
+environment.  See each function for information about the exceptions
+it can raise.
+
+\begin{excdesc}{ParserError}
+Exception raised when a failure occurs within the parser module.  This
+is generally produced for validation failures rather than the built in
+\code{SyntaxError} thrown during normal parsing.
+The exception argument is either a string describing the reason of the
+failure or a tuple containing a tuple causing the failure from a parse
+tree passed to \code{tuple2ast()} and an explanatory string.  Calls to
+\code{tuple2ast()} need to be able to handle either type of exception,
+while calls to other functions in the module will only need to be
+aware of the simple string values.
+\end{excdesc}
+
+Note that the functions \code{compileast()}, \code{expr()}, and
+\code{suite()} may throw exceptions which are normally thrown by the
+parsing and compilation process.  These include the built in
+exceptions \code{MemoryError}, \code{OverflowError},
+\code{SyntaxError}, and \code{SystemError}.  In these cases, these
+exceptions carry all the meaning normally associated with them.  Refer
+to the descriptions of each function for detailed information.
+
+% ---- 3.5. ----
+% There is no standard block type for classes.  I generally use
+% ``funcdesc'' blocks, since class instantiation looks very much like
+% a function call.
+
+
+% ==== 4. ====
+% Now is probably a good time for a complete example.  (Alternatively,
+% an example giving the flavor of the module may be given before the
+% detailed list of functions.)
+
+\subsection{Example}
+
+A simple example:
+
+\begin{verbatim}
+>>> import parser
+>>> ast = parser.expr('a + 5')
+>>> code = parser.compileast(ast)
+>>> a = 5
+>>> eval(code)
+10
+\end{verbatim}
+
+
+\subsection{AST Objects}
+
+AST objects (returned by \code{expr()}, \code{suite()}, and
+\code{tuple2ast()}, described above) have no methods of their own.
+Some of the functions defined which accept an AST object as their
+first argument may change to object methods in the future.
+
+Ordered and equality comparisons are supported between AST objects.
+
+\renewcommand{\indexsubitem}{(ast method)}
+
+%\begin{funcdesc}{empty}{}
+%Empty the can into the trash.
+%\end{funcdesc}
