@@ -679,12 +679,24 @@ regex_set_syntax(self, args)
 	return PyInt_FromLong((long)syntax);
 }
 
+static PyObject *
+regex_get_syntax(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	if (!PyArg_Parse(args, ""))
+		return NULL;
+	return PyInt_FromLong((long)re_syntax);
+}
+
+
 static struct PyMethodDef regex_global_methods[] = {
 	{"compile",	regex_compile, 1},
 	{"symcomp",	regex_symcomp, 1},
 	{"match",	regex_match, 0},
 	{"search",	regex_search, 0},
 	{"set_syntax",	regex_set_syntax, 0},
+	{"get_syntax",  regex_get_syntax, 0},
 	{NULL,		NULL}		     /* sentinel */
 };
 
