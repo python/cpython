@@ -96,6 +96,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/emailmessage.tex \
 	lib/emailparser.tex \
 	lib/emailutil.tex \
+	lib/mimelib.tex \
 	lib/libintro.tex \
 	lib/libobjs.tex \
 	lib/libstdtypes.tex \
