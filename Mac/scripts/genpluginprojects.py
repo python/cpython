@@ -168,6 +168,8 @@ def	genallprojects(force=0):
 	genpluginproject("ppc", "_Help", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Icn", libraries=["IconServicesLib"], 
 			libraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "_IBCarbon", sources=[":ibcarbon:_IBCarbon.c"], 
+			outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Icn", outputdir="::Lib:Carbon")
 	genpluginproject("all", "_List", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Menu", outputdir="::Lib:Carbon")
