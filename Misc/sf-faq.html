@@ -1,406 +1,390 @@
-<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
-<html>
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.72 [en] (X11; I; Linux 2.2.13 i686) [Netscape]">
+  <title>Python at SourceForge - Frequently Asked Questions</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 </head>
-<body text="#000000" bgcolor="#99CCFF" link="#0000EF" vlink="#51188E" alink="#FF0000">
+
+<body text="#000000" bgcolor="#99CCFF" link="#0000EF" vlink="#51188E"
+alink="#FF0000">
 
 <center>
-<h1>
-Python at SourceForge - Frequently Asked Questions</h1></center>
+<h1>Python at SourceForge - Frequently Asked Questions</h1>
+</center>
 
-<h1>
-0. Contents</h1>
+<h1>0. Contents</h1>
 
-<h2>
-<a href="#general">1. General</a></h2>
-
+<h2><a href="#general">1. General</a></h2>
 <ol>
-<li>
-<a href="#g1">What is SourceForge?</a></li>
-
-<li>
-<a href="#g2">Where do I find Python there?</a></li>
-
-<li>
-<a href="#g3">How can I change the pages at python.sourceforge.net?</a></li>
+  <li><a href="#g1">What is SourceForge?</a></li>
+  <li><a href="#g2">Where do I find Python there?</a></li>
+  <li><a href="#g3">How can I change the pages at
+  python.sourceforge.net?</a></li>
 </ol>
 
-<h2>
-<a href="#cvs">2. CVS</a></h2>
-
+<h2><a href="#cvs">2. CVS</a></h2>
 <ol>
-<li>
-<a href="#c1">How do I check out a CVS version of Python?</a></li>
-
-<li>
-<a href="#c2">What settings should I use?</a></li>
-
-<li>
-<a href="#c3">Troubleshooting: "Permission Denied"</a></li>
-
-<li>
-<a href="#c4">Where can I learn more about CVS?</a></li>
+  <li><a href="#c1">How do I check out a CVS version of Python?</a></li>
+  <li><a href="#c2">What settings should I use?</a></li>
+  <li><a href="#c3">Troubleshooting: "Permission Denied"</a></li>
+  <li><a href="#c4">Where can I learn more about CVS?</a></li>
 </ol>
 
-<h2>
-<a href="#patches">3. Patches</a></h2>
-
+<h2><a href="#patches">3. Patches</a></h2>
 <ol>
-<li>
-<a href="#p1">How to make a patch?</a></li>
-
-<li>
-<a href="#p2">How to submit patches?</a></li>
-
-<li>
-<a href="#p3">How to change the status of a patch?</a></li>
+  <li><a href="#p1">How to make a patch?</a></li>
+  <li><a href="#p2">How to submit patches?</a></li>
+  <li><a href="#p3">How to change the status of a patch?</a></li>
 </ol>
 
-<h2>
-<a href="#appendix">A. Appendix</a></h2>
-
+<h2><a href="#appendix">A. Appendix</a></h2>
 <ol>
-<li>
-<a href="#a1">Patch Manager Guidelines [09.07.2000]</a></li>
-
-<li>
-<a href="#a2">Python Patch Submission Guidelines [29.06.2000]</a></li>
+  <li><a href="#a1">Patch Manager Guidelines [09.07.2000]</a></li>
+  <li><a href="#a2">Python Patch Submission Guidelines [29.06.2000]</a></li>
 </ol>
 
-<h1>
-<a NAME="general"></a>1. General</h1>
+<h1><a name="general" id="general"></a>1. General</h1>
 
-<h3>
-<a NAME="g1"></a>1.1.:</h3>
+<h3><a name="g1" id="g1"></a>1.1.:</h3>
 
-<h4>
-Q: What is SourceForge?</h4>
+<h4>Q: What is SourceForge?</h4>
 
-<h4>
-A:</h4>
-<a href="http://sourceforge.net">SourceForge</a> is a free hosting service
-for <a href="http://opensource.org">OpenSource</a> projects. The main website
-is found at
-<blockquote><tt><a href="http://sourceforge.net">http://sourceforge.net</a></tt></blockquote>
+<h4>A:</h4>
+<a href="http://sourceforge.net">SourceForge</a> is a free hosting service for
+<a href="http://opensource.org">OpenSource</a> projects. The main website is
+found at
 
-<h3>
-<a NAME="g2"></a>1.2.:</h3>
+<blockquote>
+  <tt><a
+href="http://sourceforge.net">http://sourceforge.net</a></tt></blockquote>
 
-<h4>
-Q: Where can I find Python on SourceForge?</h4>
+<h3><a name="g2" id="g2"></a>1.2.:</h3>
 
-<h4>
-A:</h4>
+<h4>Q: Where can I find Python on SourceForge?</h4>
+
+<h4>A:</h4>
 The <a href="http://sourceforge.net/projects/python">Python project page</a>
 can be found at
-<blockquote><tt><a href="http://sourceforge.net/projects/python">http://sourceforge.net/projects/python</a></tt></blockquote>
 
-<h3>
-<a NAME="g3"></a>1.3.:</h3>
+<blockquote>
+  <tt><a
+  href="http://sourceforge.net/projects/python">http://sourceforge.net/projects/python</a></tt></blockquote>
 
-<h4>
-Q: How can I change the pages at python.sourceforge.net?</h4>
+<h3><a name="g3" id="g3"></a>1.3.:</h3>
 
-<h4>
-A:</h4>
-First you have to be in the SourceForge group "<tt>python</tt>" (true for
-all developers). Then you can upload files using scp:
-<blockquote><tt>scp mylocalfile.html sf_username@shell.sourceforge.net:/home/groups/python/htdocs/</tt></blockquote>
+<h4>Q: How can I change the pages at python.sourceforge.net?</h4>
+
+<h4>A:</h4>
+First you have to be in the SourceForge group "<tt>python</tt>" (true for all
+developers). Then you can upload files using scp:
+
+<blockquote>
+  <tt>scp mylocalfile.html
+  sf_username@shell.sourceforge.net:/home/groups/python/htdocs/</tt></blockquote>
 If you want to edit or remove files, you can use ssh:
-<blockquote><tt>ssh -l sf_username shell.sourceforge.net</tt>
-<br><tt>cd /home/groups/python/htdocs</tt>
-<br><tt>rm garbage.html</tt>
-<br><tt>vi changeme.html</tt></blockquote>
 
-<h1>
-<a NAME="cvs"></a>2. CVS</h1>
+<blockquote>
+  <tt>ssh -l sf_username shell.sourceforge.net</tt><br />
+  <tt>cd /home/groups/python/htdocs</tt><br />
+  <tt>rm garbage.html</tt><br />
+  <tt>vi changeme.html</tt></blockquote>
 
-<h3>
-<a NAME="c1"></a>2.1.:</h3>
+<h1><a name="cvs" id="cvs"></a>2. CVS</h1>
 
-<h4>
-Q: How do I check out a CVS version of Python?</h4>
+<h3><a name="c1" id="c1"></a>2.1.:</h3>
 
-<h4>
-A:</h4>
-If&nbsp; you are not a SourceForge-recognized Python developer you can
-still check out an anonymous CVS version (read-only) of Python:
-<blockquote><tt>export CVSROOT=:pserver:anonymous@cvs.python.sourceforge.net:/cvsroot/python</tt>
-<br><tt>cvs login</tt>
-<br><tt>cvs -z3 co python</tt></blockquote>
-If you are indeed a developer you can check out a read/write version with
-ssh:
-<blockquote><tt>export CVS_RSH=ssh</tt>
-<br><tt>export CVSROOT=sf_username@cvs.python.sourceforge.net:/cvsroot/python</tt>
-<br><tt>cvs -z3 co python</tt></blockquote>
+<h4>Q: How do I check out a CVS version of Python?</h4>
 
-<h3>
-<a NAME="c2"></a>2.2.:</h3>
+<h4>A:</h4>
+If you are not a SourceForge-recognized Python developer you can still check
+out an anonymous CVS version (read-only) of Python:
 
-<h4>
-Q:&nbsp; What setting should I use?</h4>
+<blockquote>
+  <tt>export
+  CVSROOT=:pserver:anonymous@cvs.python.sourceforge.net:/cvsroot/python</tt><br
+  />
+  <tt>cvs login</tt><br />
+  <tt>cvs -z3 co python</tt></blockquote>
+If you are indeed a developer you can check out a read/write version with ssh:
 
-<h4>
-A:</h4>
+<blockquote>
+  <tt>export CVS_RSH=ssh</tt><br />
+  <tt>export
+  CVSROOT=sf_username@cvs.python.sourceforge.net:/cvsroot/python</tt><br />
+  <tt>cvs -z3 co python</tt></blockquote>
+
+<h3><a name="c2" id="c2"></a>2.2.:</h3>
+
+<h4>Q: What setting should I use?</h4>
+
+<h4>A:</h4>
 That is, of course, hard to answer in the general case. I use the following
 .cvsrc file:
-<blockquote><tt>diff -c</tt>
-<br><tt>update -d</tt></blockquote>
-This defaults diff to context diffs (almost a requirement as everything
-else is harder to read) and tells update to automatically checkout new
+
+<blockquote>
+  <tt>diff -c</tt><br />
+  <tt>update -d</tt></blockquote>
+This defaults diff to context diffs (almost a requirement as everything else
+is harder to read) and tells update to automatically checkout new
 subdirectories.
-<h3>
-<a NAME="c3"></a>2.3.:</h3>
 
-<h4>
-Q: I get the following error message:</h4>
+<h3><a name="c3" id="c3"></a>2.3.:</h3>
 
-<blockquote><tt>Sorry, you don't have read/write access to the history
-file /cvsroot/python/CVSROOT/history</tt>
-<br><tt>Permission denied</tt></blockquote>
+<h4>Q: I get the following error message:</h4>
 
-<h4>
-A:</h4>
-If you are not a developer, you don't have read/write access. You have
-to check out an anonymous copy. If you are a developer you have to be in
-the SourceForge group "<tt>python</tt>". You can check this with the following
+<blockquote>
+  <tt>Sorry, you don't have read/write access to the history file
+  /cvsroot/python/CVSROOT/history</tt><br />
+  <tt>Permission denied</tt></blockquote>
+
+<h4>A:</h4>
+If you are not a developer, you don't have read/write access. You have to
+check out an anonymous copy. If you are a developer you have to be in the
+SourceForge group "<tt>python</tt>". You can check this with the following
 commands:
-<blockquote><tt>ssh -l sf_username shell.sourceforge.net</tt>
-<br><tt>groups</tt></blockquote>
-If you have just recently (&lt; 6 hours) been added to the Python project,
-you probably have to wait for the SourceForge servers to synch up. This
-can take up to 6 hours.
-<h3>
-<a NAME="c4"></a>2.4.:</h3>
 
-<h4>
-Q: Where can I learn more about CVS?</h4>
+<blockquote>
+  <tt>ssh -l sf_username shell.sourceforge.net</tt><br />
+  <tt>groups</tt></blockquote>
+If you have just recently (&lt; 6 hours) been added to the Python project, you
+probably have to wait for the SourceForge servers to synch up. This can take
+up to 6 hours.
 
-<h4>
-A:</h4>
+<h3><a name="c4" id="c4"></a>2.4.:</h3>
+
+<h4>Q: Where can I learn more about CVS?</h4>
+
+<h4>A:</h4>
 For SourceForge specific information consult their CVS documentation at
-<blockquote><tt><a href="http://sfdocs.sourceforge.net/sfdocs">http://sfdocs.sourceforge.net/sfdocs</a></tt></blockquote>
+
+<blockquote>
+  <tt><a
+  href="http://sfdocs.sourceforge.net/sfdocs">http://sfdocs.sourceforge.net/sfdocs</a></tt></blockquote>
 For general (and more advanced) information consult the free CVS Book at
-<blockquote><tt><a href="http://cvsbook.red-bean.com/cvsbook.html#Introduction">http://cvsbook.red-bean.com/cvsbook.html#Introduction</a></tt></blockquote>
 
-<h1>
-<a NAME="patches"></a>3. Patches</h1>
+<blockquote>
+  <tt><a
+  href="http://cvsbook.red-bean.com/cvsbook.html#Introduction">http://cvsbook.red-bean.com/cvsbook.html#Introduction</a></tt></blockquote>
 
-<h3>
-<a NAME="p1"></a>3.1.:</h3>
+<h1><a name="patches" id="patches"></a>3. Patches</h1>
 
-<h4>
-Q: How to make a patch?</h4>
+<h3><a name="p1" id="p1"></a>3.1.:</h3>
 
-<h4>
-A:</h4>
+<h4>Q: How to make a patch?</h4>
+
+<h4>A:</h4>
 If you are using CVS (anonymous or developer) you can use CVS to make the
 patches for you. Just edit your local copy and enter the following command:
-<blockquote><tt>cvs diff | tee ~/name_of_the_patch.diff</tt></blockquote>
-Else you can use the diff util which comes with most operating systems
-(a Windows version is available as part of the cygwin tools).
-<br>&nbsp;
-<h3>
-<a NAME="p2"></a>3.2.:</h3>
 
-<h4>
-Q: How to submit a patch?</h4>
+<blockquote>
+  <tt>cvs diff | tee ~/name_of_the_patch.diff</tt></blockquote>
+Else you can use the diff util which comes with most operating systems (a
+Windows version is available as part of the cygwin tools). <br />
 
-<h4>
-A:</h4>
+
+<h3><a name="p2" id="p2"></a>3.2.:</h3>
+
+<h4>Q: How to submit a patch?</h4>
+
+<h4>A:</h4>
 Please read the <a href="http://www.python.org/patches">Patch Submission
 Guidelines</a> at
-<blockquote><tt><a href="http://www.python.org/patches">http://www.python.org/patches</a></tt></blockquote>
-A <a href="#a2">recent copy</a> can be found in the Appendix of this FAQ.
-<br>&nbsp;
-<h3>
-<a NAME="p3"></a>3.3.:</h3>
 
-<h4>
-Q: How to change the status of a patch?</h4>
+<blockquote>
+  <tt><a
+  href="http://www.python.org/patches">http://www.python.org/patches</a></tt></blockquote>
+A <a href="#a2">recent copy</a> can be found in the Appendix of this FAQ. <br
+/>
 
-<h4>
-A:</h4>
-To change the status of a patch or assign it to somebody else you have
-to be a) a SourceForge-recognized Python developer and b) a patch administrator.
+
+<h3><a name="p3" id="p3"></a>3.3.:</h3>
+
+<h4>Q: How to change the status of a patch?</h4>
+
+<h4>A:</h4>
+To change the status of a patch or assign it to somebody else you have to be
+a) a SourceForge-recognized Python developer and b) a patch administrator.
 Unfortunately the SourceForge default for developers is not to be patch
 administrators. Contact one of the project administrators if the following
 does not work for you.
+
 <p>Click on the patch itself. In the screen that comes up, there is a drop-box
-for "Assigned To:" and a drop-box for "Status:" where you can select a
-new responsible developer or a new status respectively. After selecting
-the appropriate victim and status, hit the "Submit Changes" button at the
-bottom of the page.
+for "Assigned To:" and a drop-box for "Status:" where you can select a new
+responsible developer or a new status respectively. After selecting the
+appropriate victim and status, hit the "Submit Changes" button at the bottom
+of the page.</p>
+
 <p>For more information about the use of the "Status:" and "Assigned To:"
-fields consult the <a href="#a1">Patch Manager Guidelines</a>. A recent
-copy can be found in the Appendix of this FAQ.
-<br>&nbsp;
-<h1>
-<a NAME="appendix"></a>A. Appendix</h1>
+fields consult the <a href="#a1">Patch Manager Guidelines</a>. A recent copy
+can be found in the Appendix of this FAQ.<br />
+</p>
 
-<h3>
-<a NAME="a1"></a>A.1.: Patch Manager Guidelines</h3>
+<h1><a name="appendix" id="appendix"></a>A. Appendix</h1>
 
-<h4>
-Intended use of SourceForge patch status &amp; "assigned to" fields</h4>
-revision 2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<h3><a name="a1" id="a1"></a>A.1.: Patch Manager Guidelines</h3>
+
+<h4>Intended use of SourceForge patch status &amp; "assigned to" fields</h4>
+Revision 2 <br />
 09-Jul-2000
-<p>In general, the status field should be close to self-explanatory, and
-the "Assigned to:" field should be the person responsible for taking the
-next step in the patch process.&nbsp; Both fields are expected to change
-value over the life of a patch; the normal workflow is detailed below.
-<p>When you've got the time and the ability, feel free to move any patch
-that catches your eye along, whether or not it's been assigned to you.&nbsp;
-And if you're assigned to a patch but aren't going to take reasonably quick
-action (for whatever reason), please assign it to someone else ASAP:&nbsp;
-at those times you can't actively help, actively get out of the way.
-<p>If you're an expert in some area and know that a patch in that area
-is both needed and non-controversial, just commit your changes directly
--- no need then to get the patch mechanism involved in it.
-<p>You should add a comment to every patch assigned to you at least once
-a week, if only to say that you realize it's still on your plate.&nbsp;
-This rule is meant to force your attention periodically:&nbsp; patches
-get harder &amp; harder to deal with the longer they sit.
-<br>&nbsp;
-<h4>
-Open</h4>
 
-<blockquote>The initial status of all patches.
-<br>The patch is under consideration, but has not been reviewed yet.
-<br>The status will normally change to Accepted or Rejected next.
-<br>The person submitting the patch should (if they can) assign it to the
-person they most want to review it.
-<br>Else the patch will be assigned via [xxx a list of expertise areas
-should be developed] [xxx but since this hasn't happened and volunteers
-are too few, random assignment is better than nothing:&nbsp; if you're
-a Python developer, expect to get assigned out of the blue!]
-<br>Discussion of major patches is carried out on the Python-Dev mailing
-list.&nbsp; For simple patches, the SourceForge comment mechanism should
-be sufficient. [xxx an email gateway would be great, ditto Ping's Roundup]</blockquote>
+<p>In general, the status field should be close to self-explanatory, and the
+"Assigned to:" field should be the person responsible for taking the next step
+in the patch process. Both fields are expected to change value over the life
+of a patch; the normal workflow is detailed below.</p>
 
-<h4>
-Accepted</h4>
+<p>When you've got the time and the ability, feel free to move any patch that
+catches your eye along, whether or not it's been assigned to you. And if
+you're assigned to a patch but aren't going to take reasonably quick action
+(for whatever reason), please assign it to someone else ASAP: at those times
+you can't actively help, actively get out of the way.</p>
 
-<blockquote>The powers that be accepted the patch, but it hasn't been applied
-yet. [xxx flesh out -- Guido Bottleneck avoidable here?]
-<br>The status will normally change to Closed next.
-<br>The person changing the status to Accepted should, at the same time,
-assign the patch to whoever they believe is most likely to be able &amp;
-willing to apply it (the submitter if possible).</blockquote>
+<p>If you're an expert in some area and know that a patch in that area is both
+needed and non-controversial, just commit your changes directly -- no need
+then to get the patch mechanism involved in it.</p>
 
-<h4>
-Closed</h4>
+<p>You should add a comment to every patch assigned to you at least once a
+week, if only to say that you realize it's still on your plate. This rule is
+meant to force your attention periodically: patches get harder &amp; harder to
+deal with the longer they sit.<br />
+</p>
 
-<blockquote>The patch has been accepted and applied.
-<br>The previous status was Accepted, or possibly Open if the submitter
-was Guido (or moral equivalent in some particular area of expertise).</blockquote>
+<h4>Open</h4>
 
-<h4>
-Rejected</h4>
+<blockquote>
+  The initial status of all patches.<br />
+  The patch is under consideration, but has not been reviewed yet.<br />
+  The status will normally change to Accepted or Rejected next.<br />
+  The person submitting the patch should (if they can) assign it to the person
+  they most want to review it.<br />
+  Else the patch will be assigned via [xxx a list of expertise areas should be
+  developed] [xxx but since this hasn't happened and volunteers are too few,
+  random assignment is better than nothing: if you're a Python developer,
+  expect to get assigned out of the blue!]<br />
+  Discussion of major patches is carried out on the Python-Dev mailing list.
+  For simple patches, the SourceForge comment mechanism should be sufficient.
+  [xxx an email gateway would be great, ditto Ping's Roundup]</blockquote>
 
-<blockquote>The patch has been reviewed and rejected.
-<br>When the objections are addressed, the status may change to Open again.
-<br>The person changing the status to Rejected should assign the patch
-back to the submitter, or if it's clear the patch will never be accepted,
-assign it to None.
-<br>Note that SourceForge allows the submitter to overwrite the patch with
-a new version.</blockquote>
+<h4>Accepted</h4>
 
-<h4>
-Out of date</h4>
+<blockquote>
+  The powers that be accepted the patch, but it hasn't been applied yet. [xxx
+  flesh out -- Guido Bottleneck avoidable here?]<br />
+  The status will normally change to Closed next.<br />
+  The person changing the status to Accepted should, at the same time, assign
+  the patch to whoever they believe is most likely to be able &amp; willing to
+  apply it (the submitter if possible).</blockquote>
 
-<blockquote>Previous status was Open or Accepted or Postponed, but the
-patch no longer works.
-<br>Please enter a comment when changing the status to "Out of date", to
-record the nature of the problem and the previous status.
-<br>Also assign it back to the submitter, as they need to upload a new
-version (note that SourceForge will not allow anyone other than the original
-submitter to update the patch).</blockquote>
+<h4>Closed</h4>
 
-<h4>
-Postponed</h4>
+<blockquote>
+  The patch has been accepted and applied.<br />
+  The previous status was Accepted, or possibly Open if the submitter was
+  Guido (or moral equivalent in some particular area of
+expertise).</blockquote>
 
-<blockquote>The previous status was Open or Accepted, but for some reason
-(e.g., pending release) the patch should not be reviewed or applied until
-further notice.
-<br>The status will normally change to Open or Accepted next.
-<br>Please enter a comment when changing the status to Postponed, to record
-the reason, the previous status, and the conditions under which the patch
-should revert to Open or Accepted.&nbsp; Also assign the patch to whoever
-is most likely able and willing to decide when the status should change
-again.</blockquote>
+<h4>Rejected</h4>
 
-<h4>
-Deleted</h4>
+<blockquote>
+  The patch has been reviewed and rejected.<br />
+  When the objections are addressed, the status may change to Open again.<br
+  />
+  The person changing the status to Rejected should assign the patch back to
+  the submitter, or if it's clear the patch will never be accepted, assign it
+  to None.<br />
+  Note that SourceForge allows the submitter to overwrite the patch with a new
+  version.</blockquote>
 
-<blockquote>Bit bucket.
-<br>Use only if it's OK for the patch and its SourceForge history to disappear.
-<br>As of 09-July-2000, SF does not actually throw away Deleted patches,
-but that may change.</blockquote>
+<h4>Out of date</h4>
 
-<h3>
-<a NAME="a2"></a>A.2.: Python Patch Submission Guidelines</h3>
-<b>New: CNRI is no longer involved in Python patches.</b> We no longer
-request legal disclaimers. Also, We're now using the SourceForge Patch
-Manager (a single mailing list became unmanageable).
-<p>Many people contribute patches to Python. We've set up a new system
-to deal with these. Here are the main guidelines:
+<blockquote>
+  Previous status was Open or Accepted or Postponed, but the patch no longer
+  works.<br />
+  Please enter a comment when changing the status to "Out of date", to record
+  the nature of the problem and the previous status.<br />
+  Also assign it back to the submitter, as they need to upload a new version
+  (note that SourceForge will not allow anyone other than the original
+  submitter to update the patch).</blockquote>
+
+<h4>Postponed</h4>
+
+<blockquote>
+  The previous status was Open or Accepted, but for some reason (e.g., pending
+  release) the patch should not be reviewed or applied until further
+  notice.<br />
+  The status will normally change to Open or Accepted next.<br />
+  Please enter a comment when changing the status to Postponed, to record the
+  reason, the previous status, and the conditions under which the patch should
+  revert to Open or Accepted. Also assign the patch to whoever is most likely
+  able and willing to decide when the status should change again.</blockquote>
+
+<h4>Deleted</h4>
+
+<blockquote>
+  Bit bucket.<br />
+  Use only if it's OK for the patch and its SourceForge history to
+  disappear.<br />
+  As of 09-July-2000, SF does not actually throw away Deleted patches, but
+  that may change.</blockquote>
+
+<h3><a name="a2" id="a2"></a>A.2.: Python Patch Submission Guidelines</h3>
+<b>New: CNRI is no longer involved in Python patches.</b> We no longer request
+legal disclaimers. Also, We're now using the SourceForge Patch Manager (a
+single mailing list became unmanageable).
+
+<p>Many people contribute patches to Python. We've set up a new system to deal
+with these. Here are the main guidelines:</p>
 <ul>
-<li>
-<b>Submit your patch to the <a href="http://sourceforge.net/patch/?group_id=5470">patch
-manager</a> interface at <a href="http://sourceforge.net/project/?group_id=5470">SourceForge</a>.</b>
-We strongly recommend that you <a href="http://sourceforge.net/account/register.php">register
-with SourceForge</a> before submitting a patch. If you send patches directly
-to Guido you introduce an extra delay. Ditto for the "patches@python.org"
-mailing list address; this address should no longer be used for patch submission.
-The patch manager is for
-<b>patches</b> only; if you have a problem or
-suggestion but don't know how to write the code for it, use the <a href="http://www.python.org/search/search_bugs.html">Python
-Bugs List</a> instead. The bugs list is searchable; if you have a problem
-and you're not sure if it has been reported or fixed already, this is the
-first place to look. (There used to be a separate TODO list; we now prefer
-that you use the bugs list for suggestions and requests too.)</li>
-
-<p><br><b>Submit documentation patches the same way.</b> When adding the
-patch, be sure to set the "<b>Category</b>" field to "<b>documentation</b>".
-For documentation errors without patches, please use the <a href="http://www.python.org/search/search_bugs.html">Python
-Bugs List</a> instead.
-<li>
-We like context diffs. We grudgingly accept unified diffs.
-<b>Straight
-("ed-style") diffs are right out!</b> If you don't know how to generate
-context diffs, you're probably not qualified to produce high-quality patches
-anyway &lt;0.5 wink>.</li>
-
-<li>
-We appreciate it if you send patches relative to the <a href="http://sourceforge.net/cvs/?group_id=5470">current
-CVS tree</a>. These are our latest sources. It's almost a year since Python
-1.5.2 was released, and many source files have been touched in more or
-less significant ways; a patch relative to Python 1.5.2 can cause a lot
-of extra pain to apply right. Even a patch relative to the latest alpha
-or beta release may be way out of date.</li>
-
-<li>
-Please add a succinct message to your SourceForge entry that explains what
-the patch is about that we can use directly as a checkin message. Ideally,
-such a message explains the problem and describes the fix in a few lines.</li>
-
-<li>
-For patches that add or change functionality: please also update the <b>documentation</b>
-and the <b>testcases</b> (the Lib/test subdirectory). For new modules,
-we appreciate a new test module (typically test/test_spam.py). In this
-case, there's no need to mail the documentation to a different address
-(in fact, in order to verify that the bundle is complete, it's easier to
-mail everything together).</li>
-
-<li>
-There are a variety of additional <a href="http://www.python.org/patches/style.html">style
-requirements</a>. Please have a look at these before writing new code.
-Also have a look at the general <a href="http://www.python.org/doc/essays/styleguide.html">Python
-Style Guide</a>.</li>
+  <li><b>Submit your patch to the <a
+    href="http://sourceforge.net/patch/?group_id=5470">patch manager</a>
+    interface at <a
+    href="http://sourceforge.net/project/?group_id=5470">SourceForge</a>.</b>
+    We strongly recommend that you <a
+    href="http://sourceforge.net/account/register.php">register with
+    SourceForge</a> before submitting a patch. If you send patches directly to
+    Guido you introduce an extra delay. Ditto for the "patches@python.org"
+    mailing list address; this address should no longer be used for patch
+    submission. The patch manager is for <b>patches</b> only; if you have a
+    problem or suggestion but don't know how to write the code for it, use the
+    <a href="http://www.python.org/search/search_bugs.html">Python Bugs
+    List</a> instead. The bugs list is searchable; if you have a problem and
+    you're not sure if it has been reported or fixed already, this is the
+    first place to look. (There used to be a separate TODO list; we now prefer
+    that you use the bugs list for suggestions and requests too.)</li>
+  <li style="list-style: none"><b>Submit documentation patches the same
+    way.</b> When adding the patch, be sure to set the "<b>Category</b>" field
+    to "<b>documentation</b>". For documentation errors without patches,
+    please use the <a
+    href="http://www.python.org/search/search_bugs.html">Python Bugs List</a>
+    instead.</li>
+  <li>We like context diffs. We grudgingly accept unified diffs. <b>Straight
+    ("ed-style") diffs are right out!</b> If you don't know how to generate
+    context diffs, you're probably not qualified to produce high-quality
+    patches anyway &lt;0.5 wink&gt;.</li>
+  <li>We appreciate it if you send patches relative to the <a
+    href="http://sourceforge.net/cvs/?group_id=5470">current CVS tree</a>.
+    These are our latest sources. It's almost a year since Python 1.5.2 was
+    released, and many source files have been touched in more or less
+    significant ways; a patch relative to Python 1.5.2 can cause a lot of
+    extra pain to apply right. Even a patch relative to the latest alpha or
+    beta release may be way out of date.</li>
+  <li>Please add a succinct message to your SourceForge entry that explains
+    what the patch is about that we can use directly as a checkin message.
+    Ideally, such a message explains the problem and describes the fix in a
+    few lines.</li>
+  <li>For patches that add or change functionality: please also update the
+    <b>documentation</b> and the <b>testcases</b> (the Lib/test subdirectory).
+    For new modules, we appreciate a new test module (typically
+    test/test_spam.py). In this case, there's no need to mail the
+    documentation to a different address (in fact, in order to verify that the
+    bundle is complete, it's easier to mail everything together).</li>
+  <li>There are a variety of additional <a
+    href="http://www.python.org/patches/style.html">style requirements</a>.
+    Please have a look at these before writing new code. Also have a look at
+    the general <a
+    href="http://www.python.org/doc/essays/styleguide.html">Python Style
+    Guide</a>.</li>
 </ul>
-
 </body>
 </html>
