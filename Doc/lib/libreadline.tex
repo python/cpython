@@ -42,6 +42,17 @@ Save a readline history file.
 The default filename is \file{\~{}/.history}.
 \end{funcdesc}
 
+\begin{funcdesc}{get_history_length}{}
+Return the desired length of the history file.  Negative values imply
+unlimited history file size.
+\end{funcdesc}
+
+\begin{funcdesc}{set_history_length}{length}
+Set the number of lines to save in the history file.
+\func{write_history_file} uses this value to truncate the history file when
+saving.  Negative values imply unlimited history file size.
+\end{funcdesc}
+
 \begin{funcdesc}{set_completer}{\optional{function}}
 Set or remove the completer function.  The completer function is
 called as \code{\var{function}(\var{text}, \var{state})},
