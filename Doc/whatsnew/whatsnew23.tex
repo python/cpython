@@ -2,7 +2,7 @@
 % $Id$
 
 \title{What's New in Python 2.3}
-\release{0.06}
+\release{0.07}
 \author{A.M. Kuchling}
 \authoraddress{\email{amk@amk.ca}}
 
@@ -717,9 +717,11 @@ Gordon McMillan's \module{iu} module.  Three new items
 are added to the \module{sys} module:
 
 \begin{itemize}
-  \item \code{sys.path_hooks} is a list of functions.  Each function
-takes a string containing a path and returns either \code{None} or an
-importer object that will handle imports from this path.
+  \item \code{sys.path_hooks} is a list of callable objects; most 
+often they'll be classes.  Each callable takes a string containing
+a path and either returns an importer object that will handle imports
+from this path or raises an \exception{ImportError} exception if it
+can't handle this path.
 
   \item \code{sys.path_importer_cache} caches importer objects for
 each path, so \code{sys.path_hooks} will only need to be traversed
@@ -747,11 +749,16 @@ like this (simplified a bit; see \pep{302} for the full details):
 for mp in sys.meta_path:
     loader = mp(fullname)
     if loader is not None:
-        <module> = loader(fullname)
+        <module> = loader.load_module(fullname)
         
 for path in sys.path:
     for hook in sys.path_hooks:
-        importer = hook(path)
+        try:
+            importer = hook(path)
+        except ImportError:
+            # ImportError, so try the other path hooks
+            pass
+        else:
         if importer is not None:
             loader = importer.find_module(fullname)
             <module> = loader.load_module(fullname)
@@ -2014,9 +2021,9 @@ name.
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Simon Brunning, Michael Chermside, Scott David Daniels,
-Fred~L. Drake, Jr., Kelly Gerber, Raymond Hettinger, Michael Hudson, Detlef Lannert,
-Martin von L\"owis, Andrew MacIntyre, Lalo Martins, Gustavo Niemeyer,
-Neal Norwitz, Chris Reedy, Vinay Sajip, Neil Schemenauer, Jason
-Tishler.
+Fred~L. Drake, Jr., Kelly Gerber, Raymond Hettinger, Michael Hudson,
+Detlef Lannert, Martin von L\"owis, Andrew MacIntyre, Lalo Martins,
+Gustavo Niemeyer, Neal Norwitz, Hans Nowak, Chris Reedy, Vinay Sajip,
+Neil Schemenauer, Jason Tishler, Just van~Rossum.
 
 \end{document}
