@@ -847,6 +847,12 @@ get_line(PyFileObject *f, int n)
 		if (c == '\n')
 			break;
 		if (c == EOF) {
+			if (ferror(fp)) {
+				PyErr_SetFromErrno(PyExc_IOError);
+				clearerr(fp);
+				Py_DECREF(v);
+				return NULL;
+			}
 			clearerr(fp);
 			if (PyErr_CheckSignals()) {
 				Py_DECREF(v);
