@@ -451,7 +451,6 @@ class EditorWindow:
                 self.color.close(doh) # Cancel colorization
             if not colorizing:
                 self.top.destroy()
-            self.top.after_idle(WindowList.call_callbacks)
         return reply
 
     def load_extensions(self):
