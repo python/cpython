@@ -385,7 +385,7 @@ class ConfigParser:
         r'\]'                                 # ]
         )
     OPTCRE = re.compile(
-        r'(?P<option>[^:=\s]+)'               # very permissive!
+        r'(?P<option>[^:=\s][^:=]*)'          # very permissive!
         r'\s*(?P<vi>[:=])\s*'                 # any number of space/tab,
                                               # followed by separator
                                               # (either : or =), followed
@@ -415,7 +415,8 @@ class ConfigParser:
             # comment or blank line?
             if line.strip() == '' or line[0] in '#;':
                 continue
-            if line.split(None, 1)[0].lower() == 'rem' and line[0] in "rR":      # no leading whitespace
+            if line.split(None, 1)[0].lower() == 'rem' and line[0] in "rR":
+                # no leading whitespace
                 continue
             # continuation line?
             if line[0].isspace() and cursect is not None and optname:
@@ -455,7 +456,7 @@ class ConfigParser:
                         # allow empty values
                         if optval == '""':
                             optval = ''
-                        optname = self.optionxform(optname)
+                        optname = self.optionxform(optname.rstrip())
                         cursect[optname] = optval
                     else:
                         # a non-fatal parsing error occurred.  set up the
