@@ -54,6 +54,8 @@ opt_dialog_map = [
 	"nointopt",
 	"noargs",
 	"delayconsole",
+	"divisionwarn",
+	"unixnewlines",
 	]
 opt_dialog_dict = {}
 for i in range(len(opt_dialog_map)):
@@ -61,15 +63,15 @@ for i in range(len(opt_dialog_map)):
 		opt_dialog_dict[opt_dialog_map[i]] = i
 # 1 thru 10 are the options
 # The GUSI creator/type and delay-console
-OD_CREATOR_ITEM = 18
-OD_TYPE_ITEM = 19
+OD_CREATOR_ITEM = 20
+OD_TYPE_ITEM = 21
 OD_OK_ITEM = 1
 OD_CANCEL_ITEM = 2
-OD_HELP_ITEM = 20
-OD_KEEPALWAYS_ITEM = 14
-OD_KEEPOUTPUT_ITEM = 15
-OD_KEEPERROR_ITEM = 16
-OD_KEEPNEVER_ITEM = 17
+OD_HELP_ITEM = 22
+OD_KEEPALWAYS_ITEM = 16
+OD_KEEPOUTPUT_ITEM = 17
+OD_KEEPERROR_ITEM = 18
+OD_KEEPNEVER_ITEM = 19
 
 def optinteract(options):
 	"""Let the user interact with the options dialog"""
