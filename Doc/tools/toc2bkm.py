@@ -86,14 +86,12 @@ def clean_title(title):
 	m = title_rx.search(title, pos)
 	if m:
 	    start = m.start()
-	    print "found", `title[start:m.end()]`
 	    if title[start:start+15] != "\\textunderscore":
 		title = title[:start] + title[m.end():]
 	    pos = start + 1
 	else:
 	    break
     title = string.translate(title, title_trans, "{}")
-    print `title`
     return title
 
 
