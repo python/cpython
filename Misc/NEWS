@@ -59,13 +59,13 @@ Library
 
 - Bug #1017553: fix bug in tarfile.filemode()
 
-- Bug #737473: fix bug that old source code is shown in tracebacks even if
+- Patch #737473: fix bug that old source code is shown in tracebacks even if
   the source code is updated and reloaded.
 
 Build
 -----
 
-...
+- Patch #1044395: --enable-shared is allowed in FreeBSD also.
 
 C API
 -----
