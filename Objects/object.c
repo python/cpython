@@ -1373,6 +1373,7 @@ PyCallable_Check(PyObject *x)
 NoObject is usable as a non-NULL undefined value, used by the macro None.
 There is (and should be!) no way to create other objects of this type,
 so there is exactly one (which is indestructible, by the way).
+(XXX This type and the type of NotImplemented below should be unified.)
 */
 
 /* ARGSUSED */
@@ -1393,10 +1394,10 @@ none_dealloc(PyObject* ignore)
 }
 
 
-static PyTypeObject PyNothing_Type = {
+static PyTypeObject PyNone_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
-	"None",
+	"NoneType",
 	0,
 	0,
 	(destructor)none_dealloc,	     /*tp_dealloc*/ /*never called*/
@@ -1412,7 +1413,7 @@ static PyTypeObject PyNothing_Type = {
 };
 
 PyObject _Py_NoneStruct = {
-	PyObject_HEAD_INIT(&PyNothing_Type)
+	PyObject_HEAD_INIT(&PyNone_Type)
 };
 
 /* NotImplemented is an object that can be used to signal that an
@@ -1427,7 +1428,7 @@ NotImplemented_repr(PyObject *op)
 static PyTypeObject PyNotImplemented_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
-	"NotImplemented",
+	"NotImplementedType",
 	0,
 	0,
 	(destructor)none_dealloc,	     /*tp_dealloc*/ /*never called*/
@@ -1445,6 +1446,22 @@ static PyTypeObject PyNotImplemented_Type = {
 PyObject _Py_NotImplementedStruct = {
 	PyObject_HEAD_INIT(&PyNotImplemented_Type)
 };
+
+void
+_Py_ReadyTypes(void)
+{
+	if (PyType_Ready(&PyType_Type) < 0)
+		Py_FatalError("Can't initialize 'type'");
+
+	if (PyType_Ready(&PyList_Type) < 0)
+		Py_FatalError("Can't initialize 'list'");
+
+	if (PyType_Ready(&PyNone_Type) < 0)
+		Py_FatalError("Can't initialize type(None)");
+
+	if (PyType_Ready(&PyNotImplemented_Type) < 0)
+		Py_FatalError("Can't initialize type(NotImplemented)");
+}
 
 
 #ifdef Py_TRACE_REFS
