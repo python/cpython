@@ -89,6 +89,7 @@ for string literals (i.e., tokens other than string literals cannot be
 split across physical lines using a backslash).  A backslash is
 illegal elsewhere on a line outside a string literal.
 
+
 \subsection{Implicit line joining\label{implicit-joining}}
 
 Expressions in parentheses, square brackets or curly braces can be
@@ -108,14 +109,17 @@ allowed.  There is no NEWLINE token between implicit continuation
 lines.  Implicitly continued lines can also occur within triple-quoted
 strings (see below); in that case they cannot carry comments.
 
-\subsection{Blank lines\label{blank-lines}}
 
-A logical line that contains only spaces, tabs, formfeeds and possibly a
-comment, is ignored (i.e., no NEWLINE token is generated), except that
-during interactive input of statements, an entirely blank logical line
-(i.e. one containing not even whitespace or a comment)
-terminates a multi-line statement.
-\index{blank line}
+\subsection{Blank lines \index{blank line}\label{blank-lines}}
+
+A logical line that contains only spaces, tabs, formfeeds and possibly
+a comment, is ignored (i.e., no NEWLINE token is generated).  During
+interactive input of statements, handling of a blank line may differ
+depending on the implementation of the read-eval-print loop.  In the
+standard implementation, an entirely blank logical line (i.e.\ one
+containing not even whitespace or a comment) terminates a multi-line
+statement.
+
 
 \subsection{Indentation\label{indentation}}
 
