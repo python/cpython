@@ -11,7 +11,21 @@
 #include <windows.h>
 #include "importdl.h"
 
-extern BOOL PyWin_IsWin32s();
+/* Return whether this is Win32s, i.e., Win32 API on Win 3.1(1).
+   This function is exported! */
+
+BOOL PyWin_IsWin32s()
+{
+	static BOOL bIsWin32s = -1; /* flag as "not yet looked" */
+
+	if (bIsWin32s == -1) {
+		OSVERSIONINFO ver;
+		ver.dwOSVersionInfoSize = sizeof(ver);
+		GetVersionEx(&ver);
+		bIsWin32s = ver.dwPlatformId == VER_PLATFORM_WIN32s;
+	}
+	return bIsWin32s;
+}
 
 FILE *PyWin_FindRegisteredModule( const char *moduleName, struct filedescr **ppFileDesc, char *pathBuf, int pathLen)
 {
