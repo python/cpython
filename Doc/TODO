@@ -14,5 +14,12 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 
 * Review libppath.tex for completeness, & system-specific behaviors.
 
-* Figure out how to make the link borders in the PDF output go away
-  completely.
+* Finish upgrade to LaTeX2HTML 98.1.  Most important: figure out a way to
+  avoid image creation, & if necessary, make sure image creation at least
+  doesn't fail.
+
+* Migrate myformat.sty to a pair of classes and a shared package, to complete
+  the transition to LaTeX2e.
+
+* Figure out the texinfo indexing and function-description markup, and make
+  partparse.py do the right thing.  Or toss the info conversion (again).
