@@ -86,7 +86,7 @@ def make_adder6(x):
 inc = make_adder6(1)
 plus10 = make_adder6(10)
 
-verify(inc(1) == 2)
+verify(inc(1) == 11) # there's only one global
 verify(plus10(-2) == 8)
 
 print "7. nearest enclosing scope"
