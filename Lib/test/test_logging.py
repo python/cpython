@@ -463,6 +463,7 @@ def test_main_inner():
             thread.join()
         banner("logrecv output", "begin")
         sys.stdout.write(sockOut.getvalue())
+        sockhdlr.close()
         sockOut.close()
         banner("logrecv output", "end")
         sys.stdout.flush()
