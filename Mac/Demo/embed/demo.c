@@ -1,35 +1,43 @@
 /* Example of embedding Python in another program */
 
 #include "Python.h"
-#ifdef macintosh
 #include "macglue.h"
-#endif /* macintosh */
 
 static char *argv0;
+
+long my_writehandler(char *buf, long count)
+{
+	long mycount;
+	unsigned char mybuf[255];
+	
+	mycount = count;
+	if (mycount > 255 ) mycount = 255;
+	mybuf[0] = (unsigned char)mycount;
+	strncpy((char *)mybuf+1, buf, mycount);
+	DebugStr(mybuf);
+	return count;
+}
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-#ifdef macintosh
 	/* So the user can set argc/argv to something interesting */
 	argc = ccommand(&argv);
-#endif
 	/* Save a copy of argv0 */
 	argv0 = argv[0];
 
-	/* Initialize the Python interpreter.  Required. */
-#ifdef macintosh
 	/* If the first option is "-q" we don't open a console */
 	if ( argc > 1 && strcmp(argv[1], "-q") == 0 ) {
 		PyMac_SetConsoleHandler(PyMac_DummyReadHandler, PyMac_DummyWriteHandler,
 			PyMac_DummyWriteHandler);
-/*		freopen("demo output", "w", stdout); */
-	}
+	} else
+	if ( argc > 1 && strcmp(argv[1], "-d") == 0 )  {
+		PyMac_SetConsoleHandler(PyMac_DummyReadHandler, my_writehandler,
+			my_writehandler);
+	} 
+	/* Initialize the Python interpreter.  Required. */
 	PyMac_Initialize();
-#else
-	Py_Initialize();
-#endif
 
 	/* Define sys.argv.  It is up to the application if you
 	   want this; you can also let it undefined (since the Python 
