@@ -3433,6 +3433,15 @@ wrap_descr_get(PyObject *self, PyObject *args, void *wrapped)
 
 	if (!PyArg_ParseTuple(args, "O|O", &obj, &type))
 		return NULL;
+	if (obj == Py_None)
+		obj = NULL;
+	if (type == Py_None)
+		type = NULL;
+	if (type == NULL &&obj == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+				"__get__(None, None) is invalid");
+		return NULL;
+	}
 	return (*func)(self, obj, type);
 }
 
