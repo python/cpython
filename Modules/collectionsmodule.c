@@ -8,20 +8,33 @@
 */
 
 #define BLOCKLEN 46
+#define CENTER ((BLOCKLEN - 1) / 2)
 
 /* A `dequeobject` is composed of a doubly-linked list of `block` nodes.
  * This list is not circular (the leftmost block has leftlink==NULL,
  * and the rightmost block has rightlink==NULL).  A deque d's first
  * element is at d.leftblock[leftindex] and its last element is at
  * d.rightblock[rightindex]; note that, unlike as for Python slice
- * indices, these indices are inclusive on both ends.
- * The list of blocks is never empty.  An empty deque d has
- * d.leftblock == d.rightblock != NULL; d.len == 0; and
- * d.leftindex > d.rightindex; checking for d.len == 0 is the intended
- * way to see whether d is empty.
- * Note that since d.leftindex and d.rightindex may be indices into
- * distinct blocks (and certainly are, for any d with len(d) > BLOCKLEN),
- * it's not generally true that d.leftindex <= d.rightindex.
+ * indices, these indices are inclusive on both ends.  By being inclusive
+ * on both ends, algorithms for left and right operations become 
+ * symmetrical which simplifies the design.
+ * 
+ * The list of blocks is never empty, so d.leftblock and d.rightblock
+ * are never equal to NULL.
+ *
+ * The indices, d.leftindex and d.rightindex are always in the range
+ *     0 <= index < BLOCKLEN.
+ *
+ * Empty deques have d.len == 0; d.leftblock==d.rightblock;
+ * d.leftindex == CENTER+1; and d.rightindex == CENTER.
+ * Checking for d.len == 0 is the intended way to see whether d is empty.
+ *
+ * Whenever d.leftblock == d.rightblock, 
+ *     d.leftindex + d.len == d.rightindex + 1.
+ * 
+ * However, when d.leftblock != rightblock, d.leftindex and d.rightindex
+ * are indices into distinct blocks and have no relationship to one
+ * another (for example, sometimes d.leftindex > d.rightindex).
  */
 
 typedef struct BLOCK {
@@ -71,10 +84,11 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 	}
 
+	assert(BLOCKLEN >= 2);
 	deque->leftblock = b;
 	deque->rightblock = b;
-	deque->leftindex = BLOCKLEN / 2 + 1;
-	deque->rightindex = BLOCKLEN / 2;
+	deque->leftindex = CENTER + 1;
+	deque->rightindex = CENTER;
 	deque->len = 0;
 	deque->weakreflist = NULL;
 
@@ -142,8 +156,8 @@ deque_pop(dequeobject *deque, PyObject *unused)
 			assert(deque->leftblock == deque->rightblock);
 			assert(deque->leftindex == deque->rightindex+1);
 			/* re-center instead of freeing a block */
-			deque->leftindex = BLOCKLEN / 2 + 1;
-			deque->rightindex = BLOCKLEN / 2;
+			deque->leftindex = CENTER + 1;
+			deque->rightindex = CENTER;
 		} else {
 			prevblock = deque->rightblock->leftlink;
 			assert(deque->leftblock != deque->rightblock);
@@ -177,8 +191,8 @@ deque_popleft(dequeobject *deque, PyObject *unused)
 			assert(deque->leftblock == deque->rightblock);
 			assert(deque->leftindex == deque->rightindex+1);
 			/* re-center instead of freeing a block */
-			deque->leftindex = BLOCKLEN / 2 + 1;
-			deque->rightindex = BLOCKLEN / 2;
+			deque->leftindex = CENTER + 1;
+			deque->rightindex = CENTER;
 		} else {
 			assert(deque->leftblock != deque->rightblock);
 			prevblock = deque->leftblock->rightlink;
