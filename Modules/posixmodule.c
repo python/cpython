@@ -612,11 +612,28 @@ static PyStructSequence_Desc statvfs_result_desc = {
 static PyTypeObject StatResultType;
 static PyTypeObject StatVFSResultType;
 
+static void
+fill_time(PyObject *v, int index, time_t sec, unsigned long nsec)
+{
+	PyObject *val;
+	if (nsec) {
+		val = PyFloat_FromDouble(sec + 1e-9*nsec);
+	} else {
+#if SIZEOF_TIME_T > SIZEOF_LONG
+		val = PyLong_FromLongLong((LONG_LONG)sec);
+#else
+		val = PyInt_FromLong((long)sec);
+#endif
+	}
+	PyStructSequence_SET_ITEM(v, index, val);
+}
+
 /* pack a system stat C structure into the Python stat tuple
    (used by posix_stat() and posix_fstat()) */
 static PyObject*
 _pystat_fromstructstat(STRUCT_STAT st)
 {
+	unsigned long ansec, mnsec, cnsec;
 	PyObject *v = PyStructSequence_New(&StatResultType);
 	if (v == NULL)
 		return NULL;
@@ -643,18 +660,17 @@ _pystat_fromstructstat(STRUCT_STAT st)
 #else
         PyStructSequence_SET_ITEM(v, 6, PyInt_FromLong(st.st_size));
 #endif
-#if SIZEOF_TIME_T > SIZEOF_LONG
-        PyStructSequence_SET_ITEM(v, 7,
-				  PyLong_FromLongLong((LONG_LONG)st.st_atime));
-        PyStructSequence_SET_ITEM(v, 8,
-				  PyLong_FromLongLong((LONG_LONG)st.st_mtime));
-        PyStructSequence_SET_ITEM(v, 9,
-				  PyLong_FromLongLong((LONG_LONG)st.st_ctime));
+
+#ifdef HAVE_STAT_TV_NSEC
+	ansec = st.st_atim.tv_nsec;
+	mnsec = st.st_mtim.tv_nsec;
+	cnsec = st.st_ctim.tv_nsec;
 #else
-	PyStructSequence_SET_ITEM(v, 7, PyInt_FromLong((long)st.st_atime));
-        PyStructSequence_SET_ITEM(v, 8, PyInt_FromLong((long)st.st_mtime));
-        PyStructSequence_SET_ITEM(v, 9, PyInt_FromLong((long)st.st_ctime));
+	ansec = mnsec = cnsec = 0;
 #endif
+	fill_time(v, 7, st.st_atime, ansec);
+	fill_time(v, 8, st.st_mtime, mnsec);
+	fill_time(v, 9, st.st_ctime, cnsec);
 
 #ifdef HAVE_ST_BLKSIZE
 	PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,

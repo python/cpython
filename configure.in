@@ -2240,6 +2240,23 @@ then
   [Define if nice() returns success/failure instead of the new priority.])
 fi
 
+# Look for subsecond timestamps in struct stat
+AC_MSG_CHECKING(for tv_nsec in struct stat)
+AC_CACHE_VAL(ac_cv_stat_tv_nsec,
+AC_TRY_COMPILE([#include <sys/stat.h>], [
+struct stat st;
+st.st_mtim.tv_nsec = 1;
+],
+ac_cv_stat_tv_nsec = yes,
+ac_cv_stat_tv_nsec=no,
+ac_cv_stat_tv_nsec=no))
+AC_MSG_RESULT($ac_cv_stat_tv_nsec)
+if test "$ac_cv_stat_tv_nsec" = yes
+then
+  AC_DEFINE(HAVE_STAT_TV_NSEC, 1,
+  [Define if you have struct stat.st_mtim.tv_nsec])
+fi
+
 # On HP/UX 11.0, mvwdelch is a block with a return statement
 AC_MSG_CHECKING(whether mvwdelch is an expression)
 AC_CACHE_VAL(ac_cv_mvwdelch_is_expression,
