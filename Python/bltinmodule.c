@@ -756,8 +756,14 @@ builtin_eval(PyObject *self, PyObject *args)
 					 PyEval_GetBuiltins()) != 0)
 			return NULL;
 	}
-	if (PyCode_Check(cmd))
+	if (PyCode_Check(cmd)) {
+		if (PyCode_GetNumFree((PyCodeObject *)cmd) > 0) {
+			PyErr_SetString(PyExc_TypeError,
+		"code object passed to eval() may not contain free variables");
+			return NULL;
+		}
 		return PyEval_EvalCode((PyCodeObject *) cmd, globals, locals);
+	}
 	if (!PyString_Check(cmd) &&
 	    !PyUnicode_Check(cmd)) {
 		PyErr_SetString(PyExc_TypeError,

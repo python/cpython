@@ -3514,6 +3514,11 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 	if (PyDict_GetItemString(globals, "__builtins__") == NULL)
 		PyDict_SetItemString(globals, "__builtins__", f->f_builtins);
 	if (PyCode_Check(prog)) {
+		if (PyCode_GetNumFree((PyCodeObject *)prog) > 0) {
+			PyErr_SetString(PyExc_TypeError,
+		"code object passed to exec may not contain free variables");
+			return -1;
+		}
 		v = PyEval_EvalCode((PyCodeObject *) prog, globals, locals);
 	}
 	else if (PyFile_Check(prog)) {
