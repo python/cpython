@@ -1,4 +1,18 @@
+Thu Jan 13 16:40:28 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Makefile.in: add rule to build Makefile; add VPATH for that;
+	remove dependency on configure script (you can run 'make autoconf'
+	instead); add Lib/test to path for test target; 
+
 Wed Jan 12 10:17:41 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* acconfig.h: added HAVE_ALTZONE
+
+	* configure.in: test for altzone; check for working
+	termcap/termlib when --with-readline used; don't test for readline
+	function; send errors to stderr
+
+	* Lib/test_grammar.py: fix 64-bit int test for max negative int
 
 	* Python/import.c (get_module): call dlerror() when dlopen() fails
 	(also some layout changes)

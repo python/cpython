@@ -13,6 +13,9 @@
    and (consequently) setpgrp() as setpgrp(0, 0). */
 #undef GETPGRP_HAVE_ARGS
 
+/* Define this if your time.h defines altzone */
+#undef HAVE_ALTZONE
+
 /* Define if your compiler supports function prototypes */
 #undef HAVE_PROTOTYPES
 
