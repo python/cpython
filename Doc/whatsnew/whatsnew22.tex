@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.2}
-\release{0.09}
+\release{0.10}
 \author{A.M. Kuchling}
 \authoraddress{\email{akuchlin@mems-exchange.org}}
 \begin{document}
@@ -417,7 +417,7 @@ this clear:
 
 \begin{verbatim}
 >>> class C(object):
-...     __slots__ = ['template', 'name']
+...     __slots__ = ('template', 'name')
 ...
 >>> obj = C()
 >>> print obj.template
