@@ -7,6 +7,7 @@ from Carbon import Dlg
 import sys
 import socket
 import string
+import macresource
 #
 # Definitions for our resources
 ID_MAIN=512
@@ -15,15 +16,10 @@ ITEM_LOOKUP_ENTRY=1
 ITEM_RESULT=2
 ITEM_LOOKUP_BUTTON=3
 ITEM_QUIT_BUTTON=4
-    
-            
+
 def main():
     """Main routine: open resource file, call dialog handler"""
-    try:
-        Res.FSpOpenResFile("dnslookup-1.rsrc", 1)
-    except Res.Error:
-        EasyDialogs.Message("Cannot open dnslookup-1.rsrc")
-        sys.exit(1) 
+    macresource.need("DLOG", ID_MAIN, "dnslookup-1.rsrc")
     do_dialog()
 
 def do_dialog():

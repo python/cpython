@@ -8,6 +8,7 @@ from Carbon import Win
 from Carbon import List
 import sys
 import struct
+import macresource
 
 #
 # Resource definitions
@@ -20,14 +21,7 @@ LEFT=200
 TOP=64
 
 def main():
-	try:
-		dummy = Res.GetResource('DLOG', ID_MAIN)
-	except Res.Error:
-		try:
-			Res.FSpOpenResFile("oldPICTbrowse.rsrc", 0)
-		except Res.Error, arg:
-			EasyDialogs.Message("Cannot open PICTbrowse.rsrc: "+arg[1])
-			sys.exit(1)	
+	macresource.need('DLOG', ID_MAIN, "oldPICTbrowse.rsrc")
 	PICTbrowse()
 
 class PICTbrowse(FrameWork.Application):
