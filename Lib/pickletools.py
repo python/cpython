@@ -1,4 +1,4 @@
-""""Executable documentation" for the pickle module.
+'''"Executable documentation" for the pickle module.
 
 Extensive comments about the pickle protocols and pickle-machine opcodes
 can be found here.  Some functions meant for external use:
@@ -8,7 +8,7 @@ genops(pickle)
 
 dis(pickle, out=None, indentlevel=4)
    Print a symbolic disassembly of a pickle.
-"""
+'''
 
 # Other ideas:
 #
@@ -126,10 +126,10 @@ The third major set of additions came in Python 2.3, and is called "protocol
   the registry contents are predefined (there's nothing akin to the memo's
   PUT).
 
-Another, independent change with Python 2.3 is the abandonment of any
-pretense that it might be safe to pickles received from untrusted
+Another independent change with Python 2.3 is the abandonment of any
+pretense that it might be safe to load pickles received from untrusted
 parties -- no sufficient security analysis has been done to guarantee
-this and there isn't a use case to warrants the expense of such an
+this and there isn't a use case that warrants the expense of such an
 analysis.
 
 To this end, all tests for __safe_for_unpickling__ or for
