@@ -32,7 +32,7 @@ ln -fsh python$PYVER $TOOLDIR/python
 rm -f $TOOLDIR/pythonw$PYVER
 cat > $TOOLDIR/pythonw$PYVER <<EOF
 #!/bin/sh
-exec "$DEST/Library/Frameworks/Python.framework/Versions/$PYVER/Resources/Python.app/Contents/MacOS/python" "\$@"
+exec "$DEST/Library/Frameworks/Python.framework/Versions/$PYVER/Resources/Python.app/Contents/MacOS/Python" "\$@"
 EOF
 chmod +x $TOOLDIR/pythonw$PYVER
 ln -fsh pythonw$PYVER $TOOLDIR/pythonw
