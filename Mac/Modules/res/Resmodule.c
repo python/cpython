@@ -1353,6 +1353,8 @@ static PyObject *Res_DetachResourceFile(_self, _args)
 }
 #endif
 
+#if TARGET_API_MAC_CARBON
+
 static PyObject *Res_FSpResourceFileAlreadyOpen(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1378,6 +1380,7 @@ static PyObject *Res_FSpResourceFileAlreadyOpen(_self, _args)
 	                     refNum);
 	return _res;
 }
+#endif
 
 #if TARGET_API_MAC_CARBON
 
@@ -1600,8 +1603,11 @@ static PyMethodDef Res_methods[] = {
 	{"DetachResourceFile", (PyCFunction)Res_DetachResourceFile, 1,
 	 "(SInt16 refNum) -> (OSErr _rv)"},
 #endif
+
+#if TARGET_API_MAC_CARBON
 	{"FSpResourceFileAlreadyOpen", (PyCFunction)Res_FSpResourceFileAlreadyOpen, 1,
 	 "(FSSpec resourceFile) -> (Boolean _rv, Boolean inChain, SInt16 refNum)"},
+#endif
 
 #if TARGET_API_MAC_CARBON
 	{"FSpOpenOrphanResFile", (PyCFunction)Res_FSpOpenOrphanResFile, 1,
