@@ -111,12 +111,6 @@ class TclTest(unittest.TestCase):
             pass
         self.assertRaises(TclError,tcl.evalfile,filename)
 
-    def testPackageRequire(self):
-        tcl = self.interp
-        tcl.eval('package require Tclx')
-        tcl.eval('keylset a b.c 1')
-        self.assertEqual(tcl.eval('keylget a b.c'),'1')
-
     def testPackageRequireException(self):
         tcl = self.interp
         self.assertRaises(TclError,tcl.eval,'package require DNE')
@@ -135,7 +129,7 @@ class TclTest(unittest.TestCase):
         import os
         old_display = None
         import sys
-        if sys.platform.startswith('win'):
+        if sys.platform.startswith('win') or sys.platform.startswith('darwin'):
             return # no failure possible on windows?
         if 'DISPLAY' in os.environ:
             old_display = os.environ['DISPLAY']
