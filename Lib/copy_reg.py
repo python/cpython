@@ -12,6 +12,7 @@ __all__ = ["pickle", "constructor",
 dispatch_table = {}
 
 def pickle(ob_type, pickle_function, constructor_ob=None):
+    # constructor_ob exists only for backwards compatibility.
     if type(ob_type) is _ClassType:
         raise TypeError("copy_reg is not intended for use with classes")
 
@@ -19,10 +20,9 @@ def pickle(ob_type, pickle_function, constructor_ob=None):
         raise TypeError("reduction functions must be callable")
     dispatch_table[ob_type] = pickle_function
 
-    if constructor_ob is not None:
-        constructor(constructor_ob)
-
 def constructor(object):
+    # XXX This function should be deprecated.  It is a vestige of
+    # the old __safe_for_unpickling__ code.
     if not callable(object):
         raise TypeError("constructors must be callable")
 
