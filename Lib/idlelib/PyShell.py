@@ -261,7 +261,6 @@ class ModifiedColorDelegator(ColorDelegator):
             "stdout": idleConf.GetHighlight(theme, "stdout"),
             "stderr": idleConf.GetHighlight(theme, "stderr"),
             "console": idleConf.GetHighlight(theme, "console"),
-            "ERROR": idleConf.GetHighlight(theme, "error"),
             None: idleConf.GetHighlight(theme, "normal"),
         })
 
