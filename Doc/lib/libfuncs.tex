@@ -880,6 +880,14 @@ class C(object):
   when passed to \function{eval()}.
 \end{funcdesc}
 
+\begin{funcdesc}{reversed}{seq}
+  Return a reverse iterator.  \var{seq} must be an object which
+  supports the sequence protocol (the __len__() method and the
+  \method{__getitem__()} method with integer arguments starting at
+  \code{0}).
+  \versionadded{2.4}
+\end{funcdesc}
+
 \begin{funcdesc}{round}{x\optional{, n}}
   Return the floating point value \var{x} rounded to \var{n} digits
   after the decimal point.  If \var{n} is omitted, it defaults to zero.

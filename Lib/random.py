@@ -253,7 +253,7 @@ class Random(_random.Random):
 
         if random is None:
             random = self.random
-        for i in xrange(len(x)-1, 0, -1):
+        for i in reversed(xrange(1, len(x))):
             # pick an element in x[:i+1] with which to exchange x[i]
             j = int(random() * (i+1))
             x[i], x[j] = x[j], x[i]

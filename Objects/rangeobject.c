@@ -171,6 +171,15 @@ static PySequenceMethods range_as_sequence = {
 };
 
 static PyObject * range_iter(PyObject *seq);
+static PyObject * range_reverse(PyObject *seq);
+
+PyDoc_STRVAR(reverse_doc,
+"Returns a reverse iterator.");
+
+static PyMethodDef range_methods[] = {
+	{"__reversed__",	(PyCFunction)range_reverse, METH_NOARGS, reverse_doc},
+ 	{NULL,		NULL}		/* sentinel */
+};
 
 PyTypeObject PyRange_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -201,7 +210,7 @@ PyTypeObject PyRange_Type = {
 	0,				/* tp_weaklistoffset */
 	(getiterfunc)range_iter,	/* tp_iter */
 	0,				/* tp_iternext */
-	0,				/* tp_methods */	
+	range_methods,			/* tp_methods */	
 	0,				/* tp_members */
 	0,				/* tp_getset */
 	0,				/* tp_base */
@@ -242,6 +251,32 @@ range_iter(PyObject *seq)
 	it->start = ((rangeobject *)seq)->start;
 	it->step = ((rangeobject *)seq)->step;
 	it->len = ((rangeobject *)seq)->len;
+	return (PyObject *)it;
+}
+
+static PyObject *
+range_reverse(PyObject *seq)
+{
+	rangeiterobject *it;
+	long start, step, len;
+
+	if (!PyRange_Check(seq)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	it = PyObject_New(rangeiterobject, &Pyrangeiter_Type);
+	if (it == NULL)
+		return NULL;
+
+	start = ((rangeobject *)seq)->start;
+	step = ((rangeobject *)seq)->step;
+	len = ((rangeobject *)seq)->len;
+
+	it->index = 0;
+	it->start = start + (len-1) * step;
+	it->step = -step;
+	it->len = len;
+
 	return (PyObject *)it;
 }
 
