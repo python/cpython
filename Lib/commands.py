@@ -49,7 +49,7 @@ def mkarg(x):
 		return ' \'' + x + '\''
 	s = ' "'
 	for c in x:
-		if c in '\\$"':
+		if c in '\\$"`':
 			s = s + '\\'
 		s = s + c
 	s = s + '"'
