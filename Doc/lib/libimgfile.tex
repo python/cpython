@@ -42,9 +42,8 @@ after scaling. The filter forms supported are \code{'impulse'},
 \code{'gaussian'}. If a filter is specified \var{blur} is an optional
 parameter specifying the blurriness of the filter. It defaults to \code{1.0}.
 
-\code{readscaled} makes no
-attempt to keep the aspect ratio correct, so that is the users'
-responsibility.
+\function{readscaled()} makes no attempt to keep the aspect ratio
+correct, so that is the users' responsibility.
 \end{funcdesc}
 
 \begin{funcdesc}{ttob}{flag}
@@ -59,5 +58,5 @@ This function writes the RGB or greyscale data in \var{data} to image
 file \var{file}. \var{x} and \var{y} give the size of the image,
 \var{z} is 1 for 1 byte greyscale images or 3 for RGB images (which are
 stored as 4 byte values of which only the lower three bytes are used).
-These are the formats returned by \code{gl.lrectread}.
+These are the formats returned by \function{gl.lrectread()}.
 \end{funcdesc}
