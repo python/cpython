@@ -12,6 +12,9 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Removed PendingDeprecationWarning from apply().  apply() remains
+  deprecated, but the nuissance warning will not be issued.
+
 - At Python shutdown time (Py_Finalize()), 2.3 called cyclic garbage
   collection twice, both before and after tearing down modules.  The
   call after tearing down modules has been disabled, because too much
