@@ -1,4 +1,4 @@
-# Copyright (C) 2002 Python Software Foundation
+# Copyright (C) 2002-2004 Python Software Foundation
 #
 # A torture test of the email package.  This should not be run as part of the
 # standard Python test suite since it requires several meg of email messages
@@ -53,7 +53,7 @@ class TestCrispinTorture(TortureBase):
         eq(type(payload), ListType)
         eq(len(payload), 12)
         eq(msg.preamble, None)
-        eq(msg.epilogue, '\n\n')
+        eq(msg.epilogue, '\n')
         # Probably the best way to verify the message is parsed correctly is to
         # dump its structure and compare it against the known structure.
         fp = StringIO()
