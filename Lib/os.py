@@ -25,6 +25,7 @@ altsep = None
 
 if 'posix' in _names:
     name = 'posix'
+    linesep = '\n'
     curdir = '.'; pardir = '..'; sep = '/'; pathsep = ':'
     defpath = ':/bin:/usr/bin'
     from posix import *
@@ -37,6 +38,7 @@ if 'posix' in _names:
     del posixpath
 elif 'nt' in _names:
     name = 'nt'
+    linesep = '\r\n'
     curdir = '.'; pardir = '..'; sep = '\\'; pathsep = ';'
     defpath = '.;C:\\bin'
     from nt import *
@@ -49,6 +51,7 @@ elif 'nt' in _names:
     del ntpath
 elif 'dos' in _names:
     name = 'dos'
+    linesep = '\r\n'
     curdir = '.'; pardir = '..'; sep = '\\'; pathsep = ';'
     defpath = '.;C:\\bin'
     from dos import *
@@ -61,6 +64,7 @@ elif 'dos' in _names:
     del dospath
 elif 'os2' in _names:
     name = 'os2'
+    linesep = '\r\n'
     curdir = '.'; pardir = '..'; sep = '\\'; pathsep = ';'
     defpath = '.;C:\\bin'
     from os2 import *
@@ -73,6 +77,7 @@ elif 'os2' in _names:
     del ntpath
 elif 'mac' in _names:
     name = 'mac'
+    linesep = '\r'
     curdir = ':'; pardir = '::'; sep = ':'; pathsep = '\n'
     defpath = ':'
     from mac import *
