@@ -55,6 +55,12 @@ class _Dialog(Dialog):
         if result:
             # keep directory and filename until next time
             import os
+            # convert Tcl path objects to strings
+            try:
+                result = result.string
+            except AttributeError:
+                # it already is a string
+                pass
             path, file = os.path.split(result)
             self.options["initialdir"] = path
             self.options["initialfile"] = file

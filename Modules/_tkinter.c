@@ -684,6 +684,7 @@ Tkapp_ThreadSend(TkappObject *self, Tcl_Event *ev,
 typedef struct {
 	PyObject_HEAD
 	Tcl_Obj *value;
+	PyObject *string; /* This cannot cause cycles. */
 } PyTclObject;
 
 staticforward PyTypeObject PyTclObject_Type;
@@ -698,6 +699,7 @@ newPyTclObject(Tcl_Obj *arg)
 		return NULL;
 	Tcl_IncrRefCount(arg);
 	self->value = arg;
+	self->string = NULL;
 	return (PyObject*)self;
 }
 
@@ -705,14 +707,68 @@ static void
 PyTclObject_dealloc(PyTclObject *self)
 {
 	Tcl_DecrRefCount(self->value);
+	Py_XDECREF(self->string);
 	PyObject_Del(self);
 }
 
 static PyObject *
 PyTclObject_str(PyTclObject *self)
 {
+	if (self->string && PyString_Check(self->string)) {
+		Py_INCREF(self->string);
+		return self->string;
+	}
+	/* XXX Could cache value if it is an ASCII string. */
 	return PyString_FromString(Tcl_GetString(self->value));
 }
+
+/* Like _str, but create Unicode if necessary. */
+static PyObject *
+PyTclObject_string(PyTclObject *self, void *ignored)
+{
+	char *s;
+	int i, len;
+	if (!self->string) {
+		s = Tcl_GetStringFromObj(self->value, &len);
+		for (i = 0; i < len; i++)
+			if (s[i] & 0x80)
+				break;
+#ifdef Py_USING_UNICODE
+		if (i == len)
+			/* It is an ASCII string. */
+			self->string = PyString_FromStringAndSize(s, len);
+		else {
+			self->string = PyUnicode_DecodeUTF8(s, len, "strict");
+			if (!self->string) {
+				PyErr_Clear();
+				self->string = PyString_FromStringAndSize(s, len);
+			}
+		}
+#else
+		self->string = PyString_FromStringAndSize(s, len);
+#endif
+		if (!self->string)
+			return NULL;
+	}
+	Py_INCREF(self->string);
+	return self->string;
+}
+
+#ifdef Py_USING_UNICODE
+static PyObject *
+PyTclObject_unicode(PyTclObject *self, void *ignored)
+{
+	char *s;
+	int len;
+	if (self->string && PyUnicode_Check(self->string)) {
+		Py_INCREF(self->string);
+		return self->string;
+	}
+	/* XXX Could chache result if it is non-ASCII. */
+	s = Tcl_GetStringFromObj(self->value, &len);
+	return PyUnicode_DecodeUTF8(s, len, "strict");
+}
+#endif
 
 static PyObject *
 PyTclObject_repr(PyTclObject *self)
@@ -731,7 +787,14 @@ get_typename(PyTclObject* obj, void* ignored)
 
 static PyGetSetDef PyTclObject_getsetlist[] = {
 	{"typename", (getter)get_typename, NULL, "name of the Tcl type"},
+	{"string", (getter)PyTclObject_string, NULL, "name of the Tcl type"},
 	{0},
+};
+
+static PyMethodDef PyTclObject_methods[] = {
+	{"__unicode__",	(PyCFunction)PyTclObject_unicode, METH_NOARGS,
+	 "convert argument to unicode"},
+	{0}
 };
 
 statichere PyTypeObject PyTclObject_Type = {
@@ -764,7 +827,7 @@ statichere PyTypeObject PyTclObject_Type = {
         0,                      /*tp_weaklistoffset*/
         0,                      /*tp_iter*/
         0,                      /*tp_iternext*/
-        0,                      /*tp_methods*/
+        PyTclObject_methods,    /*tp_methods*/
         0,			/*tp_members*/
         PyTclObject_getsetlist, /*tp_getset*/
         0,                      /*tp_base*/
