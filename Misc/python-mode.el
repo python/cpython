@@ -968,6 +968,8 @@ py-beep-if-tab-change\t\tring the bell if `tab-width' is changed"
   (save-excursion
     (and (progn (back-to-indentation)
 		(looking-at py-outdent-re))
+	 ;; short circuit infloop on illegal construct
+	 (not (bobp))
 	 (progn (forward-line -1)
 		(py-goto-initial-line)
 		(back-to-indentation)
