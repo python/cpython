@@ -53,6 +53,8 @@ def _reduce(self):
     if base is object:
         state = None
     else:
+        if base is self.__class__:
+            raise TypeError, "can't pickle %s objects" % base.__name__
         state = base(self)
     args = (self.__class__, base, state)
     try:
