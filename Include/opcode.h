@@ -132,6 +132,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define SET_LINENO	127	/* Current line number */
 
+/* It used to be the case that opcodes should fit in 7 bits.  This is
+   no longer the case -- 8 bits is fine (the instruction stream is now
+   a sequence of unsigned characters).  We gladly use the new space
+   for new opcodes. */
+
+#define RAISE_VARARGS	130	/* Number of raise arguments (1, 2 or 3) */
+#define CALL_FUNCTION	131	/* #args + (#kwargs<<8) */
+
 /* Comparison operator codes (argument to COMPARE_OP) */
 enum cmp_op {LT, LE, EQ, NE, GT, GE, IN, NOT_IN, IS, IS_NOT, EXC_MATCH, BAD};
 
