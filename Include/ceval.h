@@ -30,7 +30,6 @@ struct _frame; /* Avoid including frameobject.h */
 PyAPI_FUNC(PyObject *) PyEval_GetBuiltins(void);
 PyAPI_FUNC(PyObject *) PyEval_GetGlobals(void);
 PyAPI_FUNC(PyObject *) PyEval_GetLocals(void);
-PyAPI_FUNC(PyObject *) PyEval_GetOwner(void);
 PyAPI_FUNC(struct _frame *) PyEval_GetFrame(void);
 PyAPI_FUNC(int) PyEval_GetRestricted(void);
 
