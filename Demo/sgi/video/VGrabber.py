@@ -71,8 +71,10 @@ def grab_hsv(w, h, pf):
 	raise Error, 'Sorry, grabbing hsv not implemented'
 
 def grab_jpeg(w, h, pf):
-	# XXX Ought to grab rgb and compress it
-	raise Error, 'sorry, grabbing jpeg not implemented'
+	data, dummy = grab_rgb(w, h, pf)
+	import jpeg
+	data = jpeg.compress(data, w, h, 4)
+	return data, None
 
 def grab_jpeggrey(w, h, pf):
 	raise Error, 'sorry, grabbing jpeggrey not implemented'
