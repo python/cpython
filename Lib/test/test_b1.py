@@ -60,6 +60,7 @@ if chr(32) != ' ': raise TestFailed, 'chr(32)'
 if chr(65) != 'A': raise TestFailed, 'chr(65)'
 if chr(97) != 'a': raise TestFailed, 'chr(97)'
 
+# cmp
 print 'cmp'
 if cmp(-1, 1) != -1: raise TestFailed, 'cmp(-1, 1)'
 if cmp(1, -1) != 1: raise TestFailed, 'cmp(1, -1)'
@@ -465,7 +466,7 @@ if map(int, Squares(10)) != [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]:
     raise TestFailed, 'map(int, Squares(10))'
 if map(None, Squares(3), Squares(2)) != [(0,0), (1,1), (4,None)]:
     raise TestFailed, 'map(None, Squares(3), Squares(2))'
-if map(max, Squares(3), Squares(2)) != [0, 1, None]:
+if map(max, Squares(3), Squares(2)) != [0, 1, 4]:
     raise TestFailed, 'map(max, Squares(3), Squares(2))'
 
 print 'max'
