@@ -279,7 +279,7 @@ mark_fini(SRE_STATE* state)
 }
 
 static int
-mark_save(SRE_STATE* state, int lo, int hi)
+mark_save(SRE_STATE* state, int lo, int hi, int *mark_stack_base)
 {
     void* stack;
     int size;
@@ -323,11 +323,13 @@ mark_save(SRE_STATE* state, int lo, int hi)
 
     state->mark_stack_base += size;
 
+    *mark_stack_base = state->mark_stack_base;
+
     return 0;
 }
 
 static int
-mark_restore(SRE_STATE* state, int lo, int hi)
+mark_restore(SRE_STATE* state, int lo, int hi, int *mark_stack_base)
 {
     int size;
 
@@ -336,7 +338,7 @@ mark_restore(SRE_STATE* state, int lo, int hi)
 
     size = (hi - lo) + 1;
 
-    state->mark_stack_base -= size;
+    state->mark_stack_base = *mark_stack_base - size;
 
     TRACE(("copy %d:%d from %d\n", lo, hi, state->mark_stack_base));
 
@@ -712,7 +714,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
     SRE_CHAR* ptr = state->ptr;
     int i, count;
     SRE_REPEAT* rp;
-    int lastmark, lastindex;
+    int lastmark, lastindex, mark_stack_base;
     SRE_CODE chr;
 
     SRE_REPEAT rep; /* FIXME: <fl> allocate in STATE instead */
@@ -948,7 +950,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                     (ptr >= end || !SRE_CHARSET(pattern + 3, (SRE_CODE) *ptr)))
                     continue;
                 if (state->repeat) {
-                    i = mark_save(state, 0, lastmark);
+                    i = mark_save(state, 0, lastmark, &mark_stack_base);
                     if (i < 0)
                         return i;
                 }
@@ -957,7 +959,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 if (i)
                     return i;
                 if (state->repeat) {
-                    i = mark_restore(state, 0, lastmark);
+                    i = mark_restore(state, 0, lastmark, &mark_stack_base);
                     if (i < 0)
                         return i;
                 }
@@ -1157,14 +1159,14 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 /* we may have enough matches, but if we can
                    match another item, do so */
                 rp->count = count;
-                i = mark_save(state, 0, lastmark);
+                i = mark_save(state, 0, lastmark, &mark_stack_base);
                 if (i < 0)
                     return i;
                 /* RECURSIVE */
                 i = SRE_MATCH(state, rp->pattern + 3, level + 1);
                 if (i)
                     return i;
-                i = mark_restore(state, 0, lastmark);
+                i = mark_restore(state, 0, lastmark, &mark_stack_base);
                 LASTMARK_RESTORE();
                 if (i < 0)
                     return i;

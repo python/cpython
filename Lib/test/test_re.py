@@ -295,6 +295,13 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match('^((a)c|[ab])*?c', 'abc').groups(),
                          ('b', None))
 
+    def test_bug_725149(self):
+        # mark_stack_base restoring before restoring marks
+        self.assertEqual(re.match('(a)(?:(?=(b)*)c)*', 'abb').groups(),
+                         ('a', None))
+        self.assertEqual(re.match('(a)((?!(b)*))*', 'abb').groups(),
+                         ('a', None, None))
+
     def test_finditer(self):
         iter = re.finditer(r":+", "a:b::c:::d")
         self.assertEqual([item.group(0) for item in iter],
