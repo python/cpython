@@ -16,6 +16,33 @@
 #include "Python.h"
 #include "structseq.h"
 
+#if defined(__VMS)
+#    include <ctype.h>			/* tolower() */
+#    include <descrip.h>		/* string descriptors */
+#    include <dvidef.h>			/* DVI$_name */
+#    include <file.h>			/* -> O_RDWR */
+#    include <jpidef.h>			/* JPI$_name */
+#    include <lib$routines.h>		/* LIB$name */
+#    include <ots$routines.h>		/* OTS$name */
+#    include <ssdef.h>			/* SS$_name */
+#    include <unixio.h>
+#    include <unixlib.h>
+#    include <stat.h>
+/* ----- */
+/* DECC on Alpha does redefine these already */
+#    ifndef shell$from_vms
+#        define shell$from_vms(_p1_,_p2_,_p3_) decc$from_vms(_p1_,_p2_,_p3_)
+#    endif
+#    ifndef shell$translate_vms
+#        define shell$translate_vms(_p1_) decc$translate_vms(_p1_)
+#    endif
+#    ifndef shell$to_vms
+#        define shell$to_vms(_p1_,_p2_,_p3_,_p4_,_p5_) \
+		decc$to_vms(_p1_,_p2_,_p3_,_p4_,_p5_)
+#    endif
+#    include <wait.h>			/* define wait() */
+#endif /* defined(__VMS) */
+
 PyDoc_STRVAR(posix__doc__,
 "This module provides access to operating system functionality that is\n\
 standardized by the C Standard and the POSIX standard (a thinly\n\
@@ -94,8 +121,8 @@ corresponding Unix manual entries for more information on calls.");
 #define HAVE_SYSTEM	1
 #define HAVE_CWAIT	1
 #else
-#if defined(PYOS_OS2) && defined(PYCC_GCC)
-/* Everything needed is defined in PC/os2emx/pyconfig.h */
+#if defined(PYOS_OS2) && defined(PYCC_GCC) || defined(__VMS)
+/* Everything needed is defined in PC/os2emx/pyconfig.h or vms/pyconfig.h */
 #else			/* all other compilers */
 /* Unix functions that the configure script doesn't check for */
 #define HAVE_EXECV      1
@@ -304,6 +331,198 @@ static char **environ;
 extern char **environ;
 #endif /* !_MSC_VER */
 
+#if defined(__VMS)
+static char psxmod_gt_psxpath[1026];
+
+static int 
+psxmod_from_vms_action (char *spec)
+{
+	(void)strcpy(psxmod_gt_psxpath, spec);
+	return 1;
+}
+
+/* Return a dictionary corresponding to the VMS 'environment table' */
+static char* at_home = "HOME";
+static char* at_path = "PATH";
+
+static char psxmod_t_command [] = "SYS$COMMAND";
+/* add some values to provide a similar environment like POSIX */
+void
+psmmod_add_posix_env(PyObject *d)
+{
+	/* -------------------- */
+	struct dsc$descriptor_s r_device_name;
+	long l_devbufsiz;
+	long l_tt_page;
+	long l_item_code;
+	long l_status;
+	PyObject *o;
+	struct dsc$descriptor_s r_resultant_string;
+	char t_resultant_string[13]; /* enough space for username (12)+ '\0' */
+	char *at_resultant_string;
+	short int w_resultant_length;
+
+	/* set up string descriptor */
+	r_device_name.dsc$w_length  = strlen(psxmod_t_command);
+	r_device_name.dsc$b_dtype = DSC$K_DTYPE_T;
+	r_device_name.dsc$b_class = DSC$K_CLASS_S;
+	r_device_name.dsc$a_pointer = &psxmod_t_command[0];
+
+	/* -------------------- */
+	/* COLUMNS = $getdvi("SYS$COMMAND","DEVBUFSIZ") */
+	l_item_code = DVI$_DEVBUFSIZ;	
+	l_status = lib$getdvi(&l_item_code,
+			      0,		/* [channel]	 */
+			      &r_device_name,
+			      &l_devbufsiz,	/* integer-value */
+			      0,		/* resultant_string */
+			      0);		/* resultant_length */
+	if (l_status == SS$_NORMAL) {
+		/* create a string object here to comply with POSIX */
+
+		/* set up string descriptor */
+		r_resultant_string.dsc$w_length  =
+		    (sizeof(t_resultant_string) - 1); /* ommit '\0' at end */
+		r_resultant_string.dsc$b_dtype   = DSC$K_DTYPE_T;
+		r_resultant_string.dsc$b_class   = DSC$K_CLASS_S;
+		r_resultant_string.dsc$a_pointer = &t_resultant_string[0];
+
+		/* Convert Signed Integer to Decimal Text */
+		l_status = ots$cvt_l_ti(&l_devbufsiz, &r_resultant_string, 1,
+					4, 0);
+		if (l_status == SS$_NORMAL) {
+			/* terminate string for 'C'-style */
+			t_resultant_string[sizeof(t_resultant_string)-1] = '\0';
+			/* string appears as: '      value' -- skip ' ' */
+			at_resultant_string = &t_resultant_string[0];
+			while ((*at_resultant_string == ' ' ) && 
+		       	       (*at_resultant_string != '\0')) {
+				at_resultant_string++;	/* skip prefix spaces */
+			}
+
+			o = Py_BuildValue("s", at_resultant_string);
+			if (o != NULL) {
+				(void) PyDict_SetItemString(d, "COLUMNS", o);
+				Py_DECREF(o);
+			}
+		} /* (l_status = ots$cvt_l_ti() == SS$_NORMAL) */
+	} /* (l_status = lib$getdvi(DVI$_DEVBUFSIZ) == SS$_NORMAL) */
+	/* LINES = $getdvi("SYS$COMMAND","TT_PAGE") */
+	l_item_code = DVI$_TT_PAGE;
+	l_status = lib$getdvi(&l_item_code,
+			      0,		/* [channel]	 */
+			      &r_device_name,
+		              &l_tt_page,	/* integer-value */
+			      0,		/* resultant_string */
+			      0);		/* resultant_length */
+	if (l_status == SS$_NORMAL) {
+		/* create a string object here to comply with POSIX */
+
+		/* set up string descriptor */
+		r_resultant_string.dsc$w_length  =
+		    (sizeof(t_resultant_string) - 1); /* ommit '\0' at end */
+		r_resultant_string.dsc$b_dtype   = DSC$K_DTYPE_T;
+		r_resultant_string.dsc$b_class   = DSC$K_CLASS_S;
+		r_resultant_string.dsc$a_pointer = &t_resultant_string[0];
+
+		/* Convert Signed Integer to Decimal Text */
+		l_status = ots$cvt_l_ti(&l_tt_page, &r_resultant_string,
+					1, 4, 0);
+		if (l_status == SS$_NORMAL) {
+			/* terminate string for 'C'-style */
+		    	t_resultant_string[sizeof(t_resultant_string)-1] = '\0';
+		    	/* string appears as: '      value' -- skip ' ' */
+		    	at_resultant_string = &t_resultant_string[0];
+		    	while ((*at_resultant_string == ' ' ) && 
+			       (*at_resultant_string != '\0')) {
+				at_resultant_string++; /* skip prefix spaces */
+			}
+
+		    	o = Py_BuildValue("s", at_resultant_string);
+		    	if (o != NULL) {
+				(void)PyDict_SetItemString(d, "LINES", o);
+				Py_DECREF(o);
+			}
+		} /* (l_status = ots$cvt_l_ti() == SS$_NORMAL) */
+	} /* (l_status = lib$getdvi(DVI$_TT_PAGE) == SS$_NORMAL) */
+	/* else -- ignore error */
+
+	/* LOGNAME = $getjpi(0,"USERNAME") */
+	l_item_code = JPI$_USERNAME;
+
+	/* set up string descriptor */
+	r_resultant_string.dsc$w_length  =
+		    (sizeof(t_resultant_string) - 1); /* ommit '\0' at end */
+	r_resultant_string.dsc$b_dtype   = DSC$K_DTYPE_T;
+	r_resultant_string.dsc$b_class   = DSC$K_CLASS_S;
+	r_resultant_string.dsc$a_pointer = &t_resultant_string[0];
+
+	l_status = lib$getjpi(&l_item_code, 0, 0, 0,
+			      &r_resultant_string, &w_resultant_length);
+	if (l_status == SS$_NORMAL){
+		t_resultant_string[w_resultant_length] = '\0';
+
+		/* remove any trailing spaces by replacing 1st one with '\0' */
+		at_resultant_string = &t_resultant_string[0];
+		while ((*at_resultant_string != ' ' ) &&
+		       (*at_resultant_string != '\0')) {
+			/* lowercase for compatibility with POSIX */
+			*at_resultant_string = tolower(*at_resultant_string);
+			at_resultant_string++;	/* skip non-blank */
+		}
+		*at_resultant_string = '\0';	/* terminate */
+
+		o = Py_BuildValue("s", &t_resultant_string[0]);
+		if (o != NULL) {
+			(void) PyDict_SetItemString(d, "LOGNAME", o);
+			(void) PyDict_SetItemString(d, "USERNAME", o);
+			Py_DECREF(o);
+		}
+	} /* (l_status == SS$_NORMAL) */
+
+	/* OS = "OpenVMS" */
+	o = PyString_FromString ("OpenVMS");
+	if (o != NULL) {
+		(void)PyDict_SetItemString(d, "OS", o);
+		Py_DECREF(o);
+	}
+}
+
+/* @@ posix env:
+COLUMNS=80	$ write sys$output f$getdvi("SYS$COMMAND","DEVBUFSIZ")
+LINES=47	$ write sys$output f$getdvi("SYS$COMMAND","TT_PAGE")
+LOGNAME=zessin	$ write sys$output f$edit(f$getjpi(0,"username"), -
+			"collapse,lowercase")
+OS=OpenVMS
+PS1=HERE $
+
+TZ=CET-1:00CET DST,M3.5.0/2:00,M10.5.0/3:00
+		$ write sys$output f$trnlnm("POSIX$DEFAULT_TZ")
+			"CET-1:00CET DST-2:00,M3.5.0/2:00,M10.5.0/3:00"
+		$ write sys$output f$trnlnm("UCX$TZ")
+			"MET-1MET_DST-2,M3.5.0/2,M10.5.0/3"
+PAGER=more
+TERM=vt300_series
+SHELL=/bin/sh
+HOME=/dka100/user/zessin
+_=/bin/env
+
+>>> for v in os.environ.items():
+...   print v
+...
+('HOME', '/user_here/zessin')
+('COLUMNS', '80')
+('LINES', '24')
+('PATH', '/python_disk/python/python-1_5_2/vms')
+('OS', 'OpenVMS')
+('USER', 'ZESSIN')
+('LOGNAME', 'zessin')
+('TERM', 'vt300-80')
+('USERNAME', 'zessin')
+>>>
+*/
+#endif /* __VMS */
+
 static PyObject *
 convertenviron(void)
 {
@@ -330,7 +549,19 @@ convertenviron(void)
 			PyErr_Clear();
 			continue;
 		}
+#if defined(__VMS)
+		if ((strncmp(at_home, *e, sizeof(at_home)) == 0) ||
+		    (strncmp(at_path, *e, sizeof(at_path)) == 0)) {
+			(void)shell$from_vms(p+1, psxmod_from_vms_action, 0);
+			/* 0 = no wildcard expansion */
+			v = PyString_FromString(psxmod_gt_psxpath);
+		}
+		else {
+			v = PyString_FromString(p+1);
+		}
+#else
 		v = PyString_FromString(p+1);
+#endif
 		if (v == NULL) {
 			PyErr_Clear();
 			Py_DECREF(k);
@@ -343,6 +574,9 @@ convertenviron(void)
 		Py_DECREF(k);
 		Py_DECREF(v);
 	}
+#if defined(__VMS)
+        psmmod_add_posix_env(d);
+#endif /* defined(__VMS) */
 #if defined(PYOS_OS2)
     {
         APIRET rc;
@@ -895,7 +1129,11 @@ _pystat_fromstructstat(STRUCT_STAT st)
 static PyObject *
 posix_do_stat(PyObject *self, PyObject *args, 
 	      char *format,
+#ifdef __VMS
+	      int (*statfunc)(const char *, STRUCT_STAT *, ...),
+#else
 	      int (*statfunc)(const char *, STRUCT_STAT *),
+#endif
 	      char *wformat,
 	      int (*wstatfunc)(const Py_UNICODE *, STRUCT_STAT *))
 {
@@ -1048,7 +1286,17 @@ posix_ttyname(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "i:ttyname", &id))
 		return NULL;
 
+#if defined(__VMS)
+	/* DECC V5.0 - only about FD= 0 @@ try getname()+$getdvi(dvi$_devnam) */
+	if (id == 0) {
+		ret = ttyname();
+	}
+	else {
+		ret = NULL;
+	}
+#else
 	ret = ttyname(id);
+#endif
 	if (ret == NULL)
 		return(posix_error());
 	return(PyString_FromString(ret));
@@ -1092,7 +1340,12 @@ posix_chdir(PyObject *self, PyObject *args)
 #elif defined(PYOS_OS2) && defined(PYCC_GCC)
 	return posix_1str(args, "et:chdir", _chdir2, NULL, NULL);
 #else
+#ifdef __VMS
+	return posix_1str(args, "et:chdir", (int (*)(const char *))chdir, 
+			  NULL, NULL);
+#else
 	return posix_1str(args, "et:chdir", chdir, NULL, NULL);
+#endif
 #endif
 }
 
@@ -1247,7 +1500,12 @@ posix_getcwd(PyObject *self, PyObject *args)
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
 	res = _getcwd2(buf, sizeof buf);
 #else
+#if defined(__VMS)
+	/* 0 = force Unix-style path if in the VMS DCL environment! */
+	res = getcwd(buf, sizeof buf, 0);
+#else
 	res = getcwd(buf, sizeof buf);
+#endif
 #endif
 	Py_END_ALLOW_THREADS
 	if (res == NULL)
@@ -5115,7 +5373,11 @@ posix_pipe(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, ":pipe"))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
+#if defined(__VMS)
+	res = pipe(fds,0,2100); /* bigger mailbox quota than 512 */
+#else
 	res = pipe(fds);
+#endif
 	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return posix_error();

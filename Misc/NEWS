@@ -826,6 +826,8 @@ C API
 New platforms
 -------------
 
+- OpenVMS is now supported.
+
 - AtheOS is now supported.
 
 - the EMX runtime environment on OS/2 is now supported.

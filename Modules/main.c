@@ -4,6 +4,11 @@
 #include "osdefs.h"
 #include "compile.h" /* For CO_FUTURE_DIVISION */
 
+#ifdef __VMS
+extern int PyVMS_init(int* pvi_argc, char*** pvi_argv);
+extern PyObject* pyvms_gr_empty_string;
+#endif
+
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
 #include <fcntl.h>
 #endif
@@ -98,7 +103,18 @@ usage(int exitcode, char* program)
 		fprintf(f, usage_3);
 		fprintf(f, usage_4, DELIM, DELIM, PYTHONHOMEHELP);
 	}
+#if defined(__VMS)
+	if (exitcode == 0) {
+		/* suppress 'error' message */
+		exit(1);
+	}
+	else {
+		/* STS$M_INHIB_MSG + SS$_ABORT */
+		exit(0x1000002c);
+	}
+#else
 	exit(exitcode);
+#endif
 	/*NOTREACHED*/
 }
 
@@ -145,7 +161,12 @@ Py_Main(int argc, char **argv)
 		if ((fp = fopen(filename, "r")) == NULL) {
 			fprintf(stderr, "%s: can't open file '%s'\n",
 				argv[0], filename);
+#if defined(__VMS)
+			/* STS$M_INHIB_MSG + SS$_ABORT */
+			exit(0x1000002c);
+#else
 			exit(2);
+#endif
 		}
 	}
 	/* Skip option-processing if we are an applet */
@@ -338,14 +359,50 @@ Py_Main(int argc, char **argv)
 #endif /* !MS_WINDOWS */
 		/* Leave stderr alone - it should be unbuffered anyway. */
   	}
+#ifdef __VMS
+	else {
+		setvbuf (stdout, (char *)NULL, _IOLBF, BUFSIZ);
+	}
+#endif /* __VMS */
 
 	Py_SetProgramName(argv[0]);
+#ifdef __VMS
+	PyVMS_init(&argc, &argv);
+#endif
 	Py_Initialize();
+
+#ifdef __VMS
+	/* create an empty string object */
+	pyvms_gr_empty_string = Py_BuildValue("s#", Py_None, (unsigned int)0);
+#endif
 
 	if (Py_VerboseFlag ||
 	    (command == NULL && filename == NULL && stdin_is_interactive))
+#ifndef __VMS
 		fprintf(stderr, "Python %s on %s\n%s\n",
 			Py_GetVersion(), Py_GetPlatform(), COPYRIGHT);
+#else
+		fprintf(stderr, "Python %s on %s %s (%s_float)\n%s\n",
+			Py_GetVersion(), Py_GetPlatform(),
+#  ifdef __ALPHA
+			"Alpha",
+#  else
+			"VAX",
+#  endif
+#  if __IEEE_FLOAT
+			"T",
+#  else
+#    if __D_FLOAT
+			"D",
+#    else
+#      if __G_FLOAT
+			"G",
+#      endif /* __G_FLOAT */
+#    endif /* __D_FLOAT */
+#  endif /* __IEEE_FLOAT */
+			COPYRIGHT); /* << @@ defined above in this file */
+/*			Py_GetCopyright()); */
+#endif /* __VMS */
 
 	if (command != NULL) {
 		/* Backup _PyOS_optind and force sys.argv[0] = '-c' */

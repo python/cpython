@@ -92,7 +92,11 @@
  */
 
 #ifndef VERSION
+#if defined(__VMS)
+#define VERSION "2_1"
+#else
 #define VERSION "2.1"
+#endif
 #endif
 
 #ifndef VPATH
