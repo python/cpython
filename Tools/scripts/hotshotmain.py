@@ -39,6 +39,7 @@ def run_hotshot(filename, profile, args):
 
 def main(args):
     parser = optparse.OptionParser(__doc__)
+    parser.disable_interspersed_args()
     parser.add_option("-p", "--profile", action="store", default=PROFILE,
                       dest="profile", help='Specify profile file to use')
     (options, args) = parser.parse_args(args)
