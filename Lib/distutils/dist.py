@@ -711,7 +711,7 @@ class Distribution:
             command_name = command.get_command_name()
 
         if not command.finalized:
-            return
+            return command
         command.initialize_options()
         command.finalized = 0
         self._set_command_options(command)
