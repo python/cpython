@@ -14,7 +14,7 @@ tokenizer exactly.
 
 """
 
-__version__ = "Ka-Ping Yee, 4 March 1997, updated by GvR, 6 March 1997"
+__version__ = "Ka-Ping Yee, 4 March 1997, updated by GvR, 10 March 1997"
 
 import string, regex
 from token import *
@@ -24,14 +24,15 @@ def group(*choices): return '\(' + string.join(choices, '\|') + '\)'
 Ignore = '[ \f\t]*\([\]\r?\n[ \t]*\)*\(#.*\)?'
 Name = '[a-zA-Z_][a-zA-Z0-9_]*'
 
+ImagZero = '0[jJ]' # This is not caught by any of the following
 Hexnumber = '0[xX][0-9a-fA-F]*[lL]?'
 Octnumber = '0[0-7]*[lL]?'
-Decnumber = '[1-9][0-9]*[lL]?'
-Intnumber = group(Hexnumber, Octnumber, Decnumber)
+Decnumber = '[1-9][0-9]*[lLjJ]?'
+Intnumber = group(ImagZero, Hexnumber, Octnumber, Decnumber)
 Exponent = '[eE][-+]?[0-9]+'
 Pointfloat = group('[0-9]+\.[0-9]*', '\.[0-9]+') + group(Exponent) + '?'
 Expfloat = '[0-9]+' + Exponent
-Floatnumber = group(Pointfloat, Expfloat)
+Floatnumber = group(Pointfloat, Expfloat) + "[jJ]?"
 Number = group(Floatnumber, Intnumber)
 
 Single = group('^\'', '[^\]\'')
