@@ -1,0 +1,62 @@
+-*- Text -*-
+This is the file .../ibrowse/dir, which contains the topmost node of the
+Info hierarchy.  The first time you invoke Ibrowse you start off
+looking at that node, which is (dir)Top.  (This is a copy of the Info
+dir node, except that the reference to Info is replaced by one to Ibrowse.)
+
+File: dir	Node: Top	This is the top of the INFO tree
+  This (the Directory node) gives a menu of major topics. 
+  Typing "d" returns here, "q" exits, "?" lists all INFO commands, "h" 
+  gives a primer for first-timers, "mTexinfo<Return>" visits Texinfo topic,
+  etc.
+  --- PLEASE ADD DOCUMENTATION TO THIS TREE. (See INFO topic first.) ---
+
+* Menu: The list of major topics begins on the next line.
+
+* Ibrowse: (ibrowse).	Documentation browsing system.
+
+* Emacs: (emacs).  The extensible self-documenting text editor.
+
+* VIP: (vip).   A VI-emulation for Emacs.
+
+* Texinfo: (texinfo).
+		With one source file, make either a printed manual
+		(through TeX) or an Info file (through texinfo).
+		Full documentation in this menu item.
+
+* Termcap: (termcap).
+		The termcap library, which enables application programs
+		to handle all types of character-display terminals.
+
+* Regex: (regex).
+		The GNU regular expression library.
+
+* Bison: (bison.info).
+		The GNU yacc-compatible parser generator.
+
+* GCC: (gcc.info).
+		The GNU C compiler.
+
+* G++: (g-whiz).
+		The GNU C++ compiler.
+
+* LibG++: (libg++).
+		The GNU C++ library.
+
+* GDB: (gdb.info).
+		The GNU debugger.
+
+* CPP: (cpp.info).
+		The GNU C preprocessor.
+
+* Lispref: (lispref).
+		The GNU Emacs Lisp reference manual.
+
+* Make: (make-info).
+		The GNU make program.
+
+* M4: (m4).
+		The GNU m4 program.
+
+* Gawk: (gawk-info).
+		GNU awk.
