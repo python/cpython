@@ -2162,6 +2162,21 @@ What is your quest?  It is the holy grail.
 What is your favorite color?  It is blue.
 \end{verbatim}
 
+To loop over a sequence in reverse, first specify the sequence
+in a forward direction and then call the \function{reversed()}
+function.
+
+\begin{verbatim}
+>>> for i in reversed(xrange(1,10,2)):
+...     print i
+...
+9
+7
+5
+3
+1
+\end{verbatim}
+
 
 \section{More on Conditions \label{conditions}}
 
