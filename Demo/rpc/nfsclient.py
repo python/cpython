@@ -211,5 +211,3 @@ def test():
 		list = ncl.Listdir(fh)
 		for item in list: print item
 		mcl.Umnt(filesys)
-	
-test()
