@@ -1,6 +1,8 @@
 Filesystem, RCS and CVS client and server classes
 =================================================
 
+*** See the security warning at the end of this file! ***
+
 This directory contains various modules and classes that support
 remote file system operations.
 
@@ -22,6 +24,8 @@ RCSProxy.py		RCS interface classes
 
 client.py		Client class
 server.py		Server class
+
+security.py		Security mix-in class (not very secure I think)
 
 cmdfw.py		CommandFrameWork class
 			(used by rcvs, should be used by rrcs as well)
@@ -82,3 +86,15 @@ instantiate a client.
 
 The modules client and server should probably be renamed to Client and
 Server in order to match the class names.
+
+
+*** Security warning: this version requires that you have a file
+$HOME/.python_keyfile at the server and client side containing two comma-
+separated numbers.  The security system at the moment makes no guarantees
+of actuallng being secure -- however it requires that the key file
+exists and contains the same numbers at both ends for this to work.
+(You can specify an alternative keyfile in $PYTHON_KEYFILE).
+Have a look at the Security class in security.py for details;
+basically, if the key file contains (x, y), then the security server
+class chooses a random number z (the challenge) in the range 10..100000
+and the client must be able to produce pow(z, x, y) (i.e. z**x mod y).
