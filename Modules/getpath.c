@@ -98,7 +98,7 @@
  */
 
 #ifndef VERSION
-#define VERSION "1.5"
+#define VERSION "2.0"
 #endif
 
 #ifndef VPATH
@@ -122,7 +122,7 @@
 #ifndef LANDMARK
 #define LANDMARK "os.py"
 #endif
-
+ 
 static char prefix[MAXPATHLEN+1];
 static char exec_prefix[MAXPATHLEN+1];
 static char progpath[MAXPATHLEN+1];
@@ -201,6 +201,11 @@ isdir(char *filename)			/* Is directory */
 }
 
 
+/* joinpath requires that any buffer argument passed to it has at
+   least MAXPATHLEN + 1 bytes allocated.  If this requirement is met,
+   it guarantees that it will never overflow the buffer.  If stuff
+   is too long, buffer will contain a truncated copy of stuff.
+*/
 static void
 joinpath(char *buffer, char *stuff)
 {
@@ -219,6 +224,10 @@ joinpath(char *buffer, char *stuff)
     buffer[n+k] = '\0';
 }
 
+/* init_path_from_argv0 requirs that path be allocated at least
+   MAXPATHLEN + 1 bytes and that argv0_path be no more than MAXPATHLEN
+   bytes. 
+*/
 static void
 init_path_from_argv0(char *path, char *argv0_path)
 {
@@ -237,6 +246,9 @@ init_path_from_argv0(char *path, char *argv0_path)
     }
 }
 
+/* search_for_prefix requires that argv0_path be no more than MAXPATHLEN 
+   bytes long.
+*/
 static int
 search_for_prefix(char *argv0_path, char *home)
 {
@@ -246,7 +258,7 @@ search_for_prefix(char *argv0_path, char *home)
     /* If PYTHONHOME is set, we believe it unconditionally */
     if (home) {
         char *delim;
-        strcpy(prefix, home);
+        strncpy(prefix, home, MAXPATHLEN);
         delim = strchr(prefix, DELIM);
         if (delim)
             *delim = '\0';
@@ -293,7 +305,7 @@ search_for_prefix(char *argv0_path, char *home)
     } while (prefix[0]);
 
     /* Look at configure's PREFIX */
-    strcpy(prefix, PREFIX);
+    strncpy(prefix, PREFIX, MAXPATHLEN);
     joinpath(prefix, lib_python);
     joinpath(prefix, LANDMARK);
     if (ismodule(prefix))
@@ -304,6 +316,9 @@ search_for_prefix(char *argv0_path, char *home)
 }
 
 
+/* search_for_exec_prefix requires that argv0_path be no more than
+   MAXPATHLEN bytes long.  
+*/
 static int
 search_for_exec_prefix(char *argv0_path, char *home)
 {
@@ -314,9 +329,9 @@ search_for_exec_prefix(char *argv0_path, char *home)
         char *delim;
         delim = strchr(home, DELIM);
         if (delim)
-            strcpy(exec_prefix, delim+1);
+            strncpy(exec_prefix, delim+1, MAXPATHLEN);
         else
-            strcpy(exec_prefix, home);
+            strncpy(exec_prefix, home, MAXPATHLEN);
         joinpath(exec_prefix, lib_python);
         joinpath(exec_prefix, "lib-dynload");
         return 1;
@@ -343,7 +358,7 @@ search_for_exec_prefix(char *argv0_path, char *home)
     } while (exec_prefix[0]);
 
     /* Look at configure's EXEC_PREFIX */
-    strcpy(exec_prefix, EXEC_PREFIX);
+    strncpy(exec_prefix, EXEC_PREFIX, MAXPATHLEN);
     joinpath(exec_prefix, lib_python);
     joinpath(exec_prefix, "lib-dynload");
     if (isdir(exec_prefix))
@@ -377,6 +392,7 @@ calculate_path(void)
 #endif
 	
 #ifdef WITH_NEXT_FRAMEWORK
+    /* XXX Need to check this code for buffer overflows */
     pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
     /* Use dylib functions to find out where the framework was loaded from */
     buf = NSLibraryNameForModule(pythonModule);
@@ -393,7 +409,7 @@ calculate_path(void)
 #endif
 	
 	/* Initialize this dynamically for K&R C */
-	sprintf(lib_python, "lib/python%s", VERSION);
+	sprintf(lib_python, "lib/python%.9s", VERSION);
 
 	/* If there is no slash in the argv0 path, then we have to
 	 * assume python is on the user's $PATH, since there's no
@@ -401,18 +417,22 @@ calculate_path(void)
 	 * $PATH isn't exported, you lose.
 	 */
 	if (strchr(prog, SEP))
-            strcpy(progpath, prog);
+            strncpy(progpath, prog, MAXPATHLEN);
 	else if (path) {
+	    int bufspace = MAXPATHLEN;
             while (1) {
                 char *delim = strchr(path, DELIM);
 
                 if (delim) {
                     size_t len = delim - path;
+		    if (len > bufspace)
+			len = bufspace;
                     strncpy(progpath, path, len);
                     *(progpath + len) = '\0';
+		    bufspace -= len;
                 }
                 else
-                    strcpy(progpath, path);
+                    strncpy(progpath, path, bufspace);
 
                 joinpath(progpath, prog);
                 if (isxfile(progpath))
@@ -431,7 +451,7 @@ calculate_path(void)
     }
 #endif
 
-    strcpy(argv0_path, progpath);
+    strncpy(argv0_path, progpath, MAXPATHLEN);
 	
 #if HAVE_READLINK
     {
@@ -441,7 +461,9 @@ calculate_path(void)
             /* It's not null terminated! */
             tmpbuffer[linklen] = '\0';
             if (tmpbuffer[0] == SEP)
-                strcpy(argv0_path, tmpbuffer);
+		/* tmpbuffer should never be longer than MAXPATHLEN,
+		   but extra check does not hurt */
+                strncpy(argv0_path, tmpbuffer, MAXPATHLEN);
             else {
                 /* Interpret relative to progpath */
                 reduce(argv0_path);
@@ -453,12 +475,15 @@ calculate_path(void)
 #endif /* HAVE_READLINK */
 
     reduce(argv0_path);
+    /* At this point, argv0_path is guaranteed to be less than
+       MAXPATHLEN bytes long.
+    */
 
     if (!(pfound = search_for_prefix(argv0_path, home))) {
         if (!Py_FrozenFlag)
             fprintf(stderr,
                     "Could not find platform independent libraries <prefix>\n");
-        strcpy(prefix, PREFIX);
+        strncpy(prefix, PREFIX, MAXPATHLEN);
         joinpath(prefix, lib_python);
     }
     else
@@ -468,7 +493,7 @@ calculate_path(void)
         if (!Py_FrozenFlag)
             fprintf(stderr,
                     "Could not find platform dependent libraries <exec_prefix>\n");
-        strcpy(exec_prefix, EXEC_PREFIX);
+        strncpy(exec_prefix, EXEC_PREFIX, MAXPATHLEN);
         joinpath(exec_prefix, "lib/lib-dynload");
     }
     /* If we found EXEC_PREFIX do *not* reduce it!  (Yet.) */
@@ -565,7 +590,7 @@ calculate_path(void)
         reduce(prefix);
     }
     else
-        strcpy(prefix, PREFIX);
+        strncpy(prefix, PREFIX, MAXPATHLEN);
 
     if (efound > 0) {
         reduce(exec_prefix);
@@ -573,7 +598,7 @@ calculate_path(void)
         reduce(exec_prefix);
     }
     else
-        strcpy(exec_prefix, EXEC_PREFIX);
+        strncpy(exec_prefix, EXEC_PREFIX, MAXPATHLEN);
 }
 
 
