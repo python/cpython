@@ -31,8 +31,12 @@ typedef __int64 hs_time;
 #ifndef HAVE_GETTIMEOFDAY
 #error "This module requires gettimeofday() on non-Windows platforms!"
 #endif
+#ifdef macintosh
+#include <sys/time.h>
+#else
 #include <sys/resource.h>
 #include <sys/times.h>
+#endif
 typedef struct timeval hs_time;
 #endif
 
@@ -47,6 +51,10 @@ typedef struct timeval hs_time;
 #endif
 
 #define BUFFERSIZE 10240
+
+#ifdef macintosh
+#define PATH_MAX 254
+#endif
 
 #ifndef PATH_MAX
 #   ifdef MAX_PATH
@@ -304,7 +312,7 @@ unpack_string(LogReaderObject *self, PyObject **pvalue)
             err = ERR_EOF;
         }
         else {
-            *pvalue = PyString_FromStringAndSize(self->buffer + self->index,
+            *pvalue = PyString_FromStringAndSize((char *)self->buffer + self->index,
                                                  len);
             if (*pvalue == NULL) {
                 self->index = oldindex;
@@ -889,7 +897,7 @@ calibrate(void)
         }
 #endif
     }
-#ifdef MS_WIN32
+#if defined(MS_WIN32) || defined(macintosh)
     rusage_diff = -1;
 #else
     {
