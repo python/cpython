@@ -364,6 +364,10 @@ parsenumber(s)
 		}
 		return newintobject(x);
 	}
+	if (*end == 'l' || *end == 'L') {
+		extern object *long_scan();
+		return long_scan(s, 0);
+	}
 	errno = 0;
 	xx = strtod(s, &end);
 	if (*end == '\0') {
