@@ -86,10 +86,13 @@ def my_import(name):
   otherwise it returns \code{True}.  \code{bool} is also a class,
   which is a subclass of \code{int}.  Class \code{bool} cannot be
   subclassed further.  Its only instances are \code{False} and
-  \code{True}.  If no argument is given, this function returns
-  \code{False}.
+  \code{True}.
+
 \indexii{Boolean}{type}
 \versionadded{2.2.1}
+
+  If no argument is given, this function returns \code{False}.
+  \versionchanged{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{buffer}{object\optional{, offset\optional{, size}}}
@@ -676,6 +679,16 @@ class C:
   With a single argument \var{s}, return the smallest item of a
   non-empty sequence (such as a string, tuple or list).  With more
   than one argument, return the smallest of the arguments.
+\end{funcdesc}
+
+\begin{funcdesc}{object}{}
+Return a new featureless object.  \function{object} is a base 
+for all new style classes.  It has the methods that are common
+to all instances of new style classes.
+\versionadded{2.2}
+
+This function does not accept any arguments.  \versionchanged{2.3}
+Formerly, it accepted arguments but ignored them.
 \end{funcdesc}
 
 \begin{funcdesc}{oct}{x}
