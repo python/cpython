@@ -37,7 +37,7 @@ class TestPlistlib(unittest.TestCase):
         else:
             pl['aDate'] = plistlib.Date(time.mktime(time.gmtime()))
         return pl
-        
+
     def test_create(self):
         pl = self._create()
         self.assertEqual(pl["aString"], "Doodah")
@@ -47,7 +47,7 @@ class TestPlistlib(unittest.TestCase):
         pl = self._create()
         pl.write(test_support.TESTFN)
         pl2 = plistlib.Plist.fromFile(test_support.TESTFN)
-        self.assertEqual(dict(pl), dict(pl2))        
+        self.assertEqual(dict(pl), dict(pl2))
 
 
 
