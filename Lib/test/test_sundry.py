@@ -1,4 +1,4 @@
-"""Do a minimal test of all the modules that aren't otherwise tested"""
+"""Do a minimal test of all the modules that aren't otherwise tested."""
 
 import BaseHTTPServer
 import CGIHTTPServer
@@ -85,9 +85,13 @@ import test
 import toaiff
 #import tzparse
 import urllib2
-import user
 import uu
 import webbrowser
 import whichdb
 import xdrlib
 import xml
+
+# Can't test the "user" module -- if the user has a ~/.pythonrc.py, it
+# can screw up all sorts of things (esp. if it prints!).
+#
+#import user
