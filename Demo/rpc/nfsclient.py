@@ -1,5 +1,8 @@
 # NFS RPC client -- RFC 1094
 
+# XXX This is not yet complete.
+# XXX Only GETATTR, SETTTR, LOOKUP and READDIR are supported.
+
 # (See mountclient.py for some hints on how to write RPC clients in
 # Python in general)
 
