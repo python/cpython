@@ -3099,6 +3099,51 @@ def copy_setstate():
     vereq(b.foo, 24)
     vereq(b.getfoo(), 24)
 
+def slices():
+    if verbose:
+        print "Testing cases with slices and overridden __getitem__ ..."
+    # Strings
+    vereq("hello"[:4], "hell")
+    vereq("hello"[slice(4)], "hell")
+    vereq(str.__getitem__("hello", slice(4)), "hell")
+    class S(str):
+        def __getitem__(self, x):
+            return str.__getitem__(self, x)
+    vereq(S("hello")[:4], "hell")
+    vereq(S("hello")[slice(4)], "hell")
+    vereq(S("hello").__getitem__(slice(4)), "hell")
+    # Tuples
+    vereq((1,2,3)[:2], (1,2))
+    vereq((1,2,3)[slice(2)], (1,2))
+    vereq(tuple.__getitem__((1,2,3), slice(2)), (1,2))
+    class T(tuple):
+        def __getitem__(self, x):
+            return tuple.__getitem__(self, x)
+    vereq(T((1,2,3))[:2], (1,2))
+    vereq(T((1,2,3))[slice(2)], (1,2))
+    vereq(T((1,2,3)).__getitem__(slice(2)), (1,2))
+    # Lists
+    vereq([1,2,3][:2], [1,2])
+    vereq([1,2,3][slice(2)], [1,2])
+    vereq(list.__getitem__([1,2,3], slice(2)), [1,2])
+    class L(list):
+        def __getitem__(self, x):
+            return list.__getitem__(self, x)
+    vereq(L([1,2,3])[:2], [1,2])
+    vereq(L([1,2,3])[slice(2)], [1,2])
+    vereq(L([1,2,3]).__getitem__(slice(2)), [1,2])
+    # Now do lists and __setitem__
+    a = L([1,2,3])
+    a[slice(1, 3)] = [3,2]
+    vereq(a, [1,3,2])
+    a[slice(0, 2, 1)] = [3,1]
+    vereq(a, [3,1,2])
+    a.__setitem__(slice(1, 3), [2,1])
+    vereq(a, [3,2,1])
+    a.__setitem__(slice(0, 2, 1), [2,3])
+    vereq(a, [2,3,1])
+
+
 def do_this_first():
     if verbose:
         print "Testing SF bug 551412 ..."
@@ -3182,6 +3227,7 @@ def test_main():
     docdescriptor()
     string_exceptions()
     copy_setstate()
+    slices()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
