@@ -99,9 +99,14 @@ def buildapplet():
 			if tp == 'APPL':
 				buildtools.update(template, filename, dstfilename)
 			else:
-				buildtools.process(template, filename, dstfilename, 1,
-						rsrcname=rsrcfilename, others=extras, raw=raw,
-						progress=verbose, destroot=destroot)
+				if destroot:
+					buildtools.process(template, filename, dstfilename, 1,
+							rsrcname=rsrcfilename, others=extras, raw=raw,
+							progress=verbose, destroot=destroot)
+				else:
+					buildtools.process(template, filename, dstfilename, 1,
+							rsrcname=rsrcfilename, others=extras, raw=raw,
+							progress=verbose)
 
 def usage():
 	print "BuildApplet creates an application from a Python source file"
