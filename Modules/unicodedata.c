@@ -326,7 +326,7 @@ _getucname(Py_UCS4 code, char* buffer, int buflen)
     int word;
     unsigned char* w;
 
-    if (SBase <= code && code <= SBase+SCount) {
+    if (SBase <= code && code < SBase+SCount) {
 	/* Hangul syllable. */
 	int SIndex = code - SBase;
 	int L = SIndex / NCount;
