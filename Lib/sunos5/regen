@@ -1,0 +1,10 @@
+#! /bin/sh
+case `uname -sr` in
+'SunOS 5.'*)	;;
+*)	echo Probably not on a Solaris 2 system 1>&2
+	exit 1;;
+esac
+set -v
+h2py /usr/include/sys/fcntl.h
+h2py /usr/include/sys/socket.h
+h2py -i '(u_long)' /usr/include/netinet/in.h
