@@ -259,7 +259,7 @@ PyErr_NoMemory(void)
 }
 
 PyObject *
-PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
+PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
 {
 	PyObject *v;
 	char *s;
@@ -314,8 +314,8 @@ PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
 	}
 #endif /* Unix/Windows */
 #endif /* PLAN 9*/
-	if (filename != NULL)
-		v = Py_BuildValue("(iss)", i, s, filename);
+	if (filenameObject != NULL)
+		v = Py_BuildValue("(isO)", i, s, filenameObject);
 	else
 		v = Py_BuildValue("(is)", i, s);
 	if (v != NULL) {
@@ -330,17 +330,39 @@ PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
 
 
 PyObject *
+PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
+{
+	PyObject *name = filename ? PyString_FromString(filename) : NULL;
+	PyObject *result = PyErr_SetFromErrnoWithFilenameObject(exc, name);
+	Py_DECREF(name);
+	return result;
+}
+
+#ifdef Py_WIN_WIDE_FILENAMES
+PyObject *
+PyErr_SetFromErrnoWithUnicodeFilename(PyObject *exc, Py_UNICODE *filename)
+{
+	PyObject *name = filename ? 
+	                 PyUnicode_FromUnicode(filename, wcslen(filename)) : 
+	                 NULL;
+	PyObject *result = PyErr_SetFromErrnoWithFilenameObject(exc, name);
+	Py_XDECREF(name);
+	return result;
+}
+#endif /* Py_WIN_WIDE_FILENAMES */
+
+PyObject *
 PyErr_SetFromErrno(PyObject *exc)
 {
-	return PyErr_SetFromErrnoWithFilename(exc, NULL);
+	return PyErr_SetFromErrnoWithFilenameObject(exc, NULL);
 }
 
 #ifdef MS_WINDOWS 
 /* Windows specific error code handling */
-PyObject *PyErr_SetExcFromWindowsErrWithFilename(
+PyObject *PyErr_SetExcFromWindowsErrWithFilenameObject(
 	PyObject *exc,
 	int ierr,
-	const char *filename)
+	PyObject *filenameObject)
 {
 	int len;
 	char *s;
@@ -362,8 +384,8 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilename(
 	/* remove trailing cr/lf and dots */
 	while (len > 0 && (s[len-1] <= ' ' || s[len-1] == '.'))
 		s[--len] = '\0';
-	if (filename != NULL)
-		v = Py_BuildValue("(iss)", err, s, filename);
+	if (filenameObject != NULL)
+		v = Py_BuildValue("(isO)", err, s, filenameObject);
 	else
 		v = Py_BuildValue("(is)", err, s);
 	if (v != NULL) {
@@ -373,6 +395,36 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilename(
 	LocalFree(s);
 	return NULL;
 }
+
+PyObject *PyErr_SetExcFromWindowsErrWithFilename(
+	PyObject *exc,
+	int ierr,
+	const char *filename)
+{
+	PyObject *name = filename ? PyString_FromString(filename) : NULL;
+	PyObject *ret = PyErr_SetExcFromWindowsErrWithFilenameObject(exc, 
+	                                                             ierr, 
+	                                                             name);
+	Py_XDECREF(name);
+	return ret;
+}
+
+#ifdef Py_WIN_WIDE_FILENAMES
+PyObject *PyErr_SetExcFromWindowsErrWithUnicodeFilename(
+	PyObject *exc,
+	int ierr,
+	const Py_UNICODE *filename)
+{
+	PyObject *name = filename ? 
+	                 PyUnicode_FromUnicode(filename, wcslen(filename)) : 
+	                 NULL;
+	PyObject *ret = PyErr_SetExcFromWindowsErrWithFilenameObject(exc, 
+	                                                             ierr, 
+	                                                             name);
+	Py_XDECREF(name);
+	return ret;
+}
+#endif /* Py_WIN_WIDE_FILENAMES */
 
 PyObject *PyErr_SetExcFromWindowsErr(PyObject *exc, int ierr)
 {
@@ -388,9 +440,29 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
 	int ierr,
 	const char *filename)
 {
-	return PyErr_SetExcFromWindowsErrWithFilename(PyExc_WindowsError,
-						      ierr, filename);
+	PyObject *name = filename ? PyString_FromString(filename) : NULL;
+	PyObject *result = PyErr_SetExcFromWindowsErrWithFilenameObject(
+						      PyExc_WindowsError,
+						      ierr, name);
+	Py_XDECREF(result);
+	return result;
 }
+
+#ifdef Py_WIN_WIDE_FILENAMES
+PyObject *PyErr_SetFromWindowsErrWithUnicodeFilename(
+	int ierr,
+	const Py_UNICODE *filename)
+{
+	PyObject *name = filename ? 
+	                 PyUnicode_FromUnicode(filename, wcslen(filename)) : 
+	                 NULL;
+	PyObject *result = PyErr_SetExcFromWindowsErrWithFilenameObject(
+						      PyExc_WindowsError,
+						      ierr, name);
+	Py_XDECREF(result);
+	return result;
+}
+#endif /* Py_WIN_WIDE_FILENAMES */
 #endif /* MS_WINDOWS */
 
 void
