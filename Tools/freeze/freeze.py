@@ -298,8 +298,9 @@ def main():
     cflags = defines + includes + ['$(OPT)']
     libs = [os.path.join(binlib, 'libpython$(VERSION).a')]
 
-    makevars = parsesetup.getmakevars(makefile_in)
     somevars = {}
+    if os.path.exists(makefile_in):
+        makevars = parsesetup.getmakevars(makefile_in)
     for key in makevars.keys():
         somevars[key] = makevars[key]
 
