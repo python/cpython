@@ -43,6 +43,15 @@ PERFORMANCE OF THIS SOFTWARE.
 	Use Tcl 8.0 if available (even alpha or beta).
 	The oldest usable version is 4.1p1/7.5p1.
 
+   XXX Further speed-up ideas, involving Tcl 8.0 features:
+
+   - In Tcl_Call(), create Tcl objects from the arguments, possibly using
+   intelligent mappings between Python objects and Tcl objects (e.g. ints,
+   floats and Tcl window pointers could be handled specially).
+
+   - Register a new Tcl type, "Python callable", which can be called more
+   efficiently and passed to Tcl_EvalObj() directly (if this is possible).
+
 */
 
 
@@ -395,21 +404,107 @@ Tkapp_Call(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	char *cmd  = Merge(args);
-	PyObject *res = NULL;
+	/* This is copied from Merge() */
+	PyObject *tmp = NULL;
+	char *argvStore[ARGSZ];
+	char **argv = NULL;
+	int fvStore[ARGSZ];
+	int *fv = NULL;
+	int argc = 0, i;
+	PyObject *res = NULL; /* except this has a different type */
+	Tcl_CmdInfo info; /* and this is added */
+	Tcl_Interp *interp = Tkapp_Interp(self); /* and this too */
 
-	if (!cmd)
-		PyErr_SetString(Tkinter_TclError, "merge failed");
+	if (!(tmp = PyList_New(0)))
+	    return NULL;
 
-	else if (Tcl_Eval(Tkapp_Interp(self), cmd) == TCL_ERROR)
-		res = Tkinter_Error(self);
+	argv = argvStore;
+	fv = fvStore;
 
-	else
-		res = PyString_FromString(Tkapp_Result(self));
+	if (args == NULL)
+		argc = 0;
 
-	if (cmd)
+	else if (!PyTuple_Check(args)) {
+		argc = 1;
+		fv[0] = 0;
+		argv[0] = AsString(args, tmp);
+	}
+	else {
+		argc = PyTuple_Size(args);
+
+		if (argc > ARGSZ) {
+			argv = (char **)ckalloc(argc * sizeof(char *));
+			fv = (int *)ckalloc(argc * sizeof(int));
+			if (argv == NULL || fv == NULL) {
+				PyErr_NoMemory();
+				goto finally;
+			}
+		}
+
+		for (i = 0; i < argc; i++) {
+			PyObject *v = PyTuple_GetItem(args, i);
+			if (PyTuple_Check(v)) {
+				fv[i] = 1;
+				if (!(argv[i] = Merge(v)))
+					goto finally;
+			}
+			else if (v == Py_None) {
+				argc = i;
+				break;
+			}
+			else {
+				fv[i] = 0;
+				argv[i] = AsString(v, tmp);
+			}
+		}
+	}
+	/* End code copied from Merge() */
+
+	/* All this to avoid a call to Tcl_Merge() and the corresponding call
+	   to Tcl_SplitList() inside Tcl_Eval()...  It can save a bundle! */
+	if (Py_VerboseFlag >= 2) {
+		for (i = 0; i < argc; i++)
+			fprintf(stderr, "%s ", argv[i]);
+	}
+	if (argc < 1 ||
+	    !Tcl_GetCommandInfo(interp, argv[0], &info) ||
+	    info.proc == NULL)
+	{
+		char *cmd;
+		if (Py_VerboseFlag >= 2)
+			fprintf(stderr, "... use TclEval ");
+		cmd = Tcl_Merge(argc, argv);
+		i = Tcl_Eval(interp, cmd);
 		ckfree(cmd);
+	}
+	else {
+		Tcl_ResetResult(interp);
+		i = (*info.proc)(info.clientData, interp, argc, argv);
+	}
+	if (i == TCL_ERROR) {
+		if (Py_VerboseFlag >= 2)
+			fprintf(stderr, "... error: '%s'\n",
+				interp->result);
+		Tkinter_Error(self);
+	}
+	else {
+		if (Py_VerboseFlag >= 2)
+			fprintf(stderr, "-> '%s'\n", interp->result);
+		res = PyString_FromString(interp->result);
+	}
 
+	/* Copied from Merge() again */
+  finally:
+	for (i = 0; i < argc; i++)
+		if (fv[i]) {
+			ckfree(argv[i]);
+		}
+	if (argv != argvStore)
+		ckfree(FREECAST argv);
+	if (fv != fvStore)
+		ckfree(FREECAST fv);
+
+	Py_DECREF(tmp);
 	return res;
 }
 
@@ -419,6 +514,12 @@ Tkapp_GlobalCall(self, args)
 	PyObject *self;
 	PyObject *args;
 {
+	/* Could do the same here as for Tkapp_Call(), but this is not used
+	   much, so I can't be bothered.  Unfortunately Tcl doesn't export a
+	   way for the user to do what all its Global* variants do (save and
+	   reset the scope pointer, call the local version, restore the saved
+	   scope pointer). */
+
 	char *cmd  = Merge(args);
 	PyObject *res = NULL;
 	
