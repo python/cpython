@@ -2164,68 +2164,6 @@ com_newlocal(c, name)
 	return i;
 }
 
-#ifdef SUPPORT_OBSOLETE_ACCESS
-
-#define strequ(a, b) (strcmp((a), (b)) == 0)
-
-static void
-com_access_stmt(c, n)
-	struct compiling *c;
-	node *n;
-{
-	int i, j, k, mode, imode;
-	PyObject *vmode;
-	REQ(n, access_stmt);
-	/* 'access' NAME (',' NAME)* ':' accesstype (',' accesstype)*
-	   accesstype: NAME+ */
-
-	/* Find where the colon is */
-	i = 1;
-	while (TYPE(CHILD(n,i-1)) != COLON)
-		i += 1;
-
-	/* Calculate the mode mask */
-	mode = 0;
-	for (j = i; j < NCH(n); j += 2) {
-		int r = 0, w = 0, p = 0;
-		for (k = 0; k < NCH(CHILD(n,j)); k++) {
-			if (strequ(STR(CHILD(CHILD(n,j),k)), "public"))
-				p = 0;
-			else if (strequ(STR(CHILD(CHILD(n,j),k)), "protected"))
-				p = 1;
-			else if (strequ(STR(CHILD(CHILD(n,j),k)), "private"))
-				p = 2;
-			else if (strequ(STR(CHILD(CHILD(n,j),k)), "read"))
-				r = 1;
-			else if (strequ(STR(CHILD(CHILD(n,j),k)), "write"))
-				w = 1;
-			else /* XXX should make this an exception */
-				fprintf(stderr, "bad access type %s\n",
-					STR(CHILD(CHILD(n,j),k)));
-		}
-		if (r == 0 && w == 0)
-			r = w = 1;
-		if (p == 0) {
-			if (r == 1) mode |= AC_R_PUBLIC;
-			if (w == 1) mode |= AC_W_PUBLIC;
-		} else if (p == 1) {
-			if (r == 1) mode |= AC_R_PROTECTED;
-			if (w == 1) mode |= AC_W_PROTECTED;
-		} else {
-			if (r == 1) mode |= AC_R_PRIVATE;
-			if (w == 1) mode |= AC_W_PRIVATE;
-		}
-	}
-	vmode = PyInt_FromLong((long)mode);
-	imode = com_addconst(c, vmode);
-	Py_XDECREF(vmode);
-	for (i = 1; TYPE(CHILD(n,i-1)) != COLON; i+=2) {
-		com_addoparg(c, LOAD_CONST, imode);
-		com_addopname(c, ACCESS_MODE, CHILD(n, i));
-	}
-}
-#endif
-
 static void
 com_exec_stmt(c, n)
 	struct compiling *c;
@@ -2938,11 +2876,6 @@ com_node(c, n)
 	case global_stmt:
 		com_global_stmt(c, n);
 		break;
-#ifdef SUPPORT_OBSOLETE_ACCESS
-	case access_stmt:
-		com_access_stmt(c, n);
-		break;
-#endif
 	case exec_stmt:
 		com_exec_stmt(c, n);
 		break;
