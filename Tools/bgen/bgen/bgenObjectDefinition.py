@@ -22,6 +22,7 @@ class ObjectDefinition(GeneratorGroup):
 		self.typename = name + '_Type'
 		self.argref = ""	# set to "*" if arg to <type>_New should be pointer
 		self.static = "static " # set to "" to make <type>_New and <type>_Convert public
+		self.modulename = None
 
 	def add(self, g, dupcheck=0):
 		g.setselftype(self.objecttype, self.itselftype)
@@ -30,6 +31,9 @@ class ObjectDefinition(GeneratorGroup):
 	def reference(self):
 		# In case we are referenced from a module
 		pass
+		
+	def setmodulename(self, name):
+		self.modulename = name
 
 	def generate(self):
 		# XXX This should use long strings and %(varname)s substitution!
@@ -166,7 +170,10 @@ class ObjectDefinition(GeneratorGroup):
 		IndentLevel()
 		Output("PyObject_HEAD_INIT(NULL)")
 		Output("0, /*ob_size*/")
-		Output("\"%s\", /*tp_name*/", self.name)
+		if self.modulename:
+			Output("\"%s.%s\", /*tp_name*/", self.modulename, self.name)
+		else:
+			Output("\"%s\", /*tp_name*/", self.name)
 		Output("sizeof(%s), /*tp_basicsize*/", self.objecttype)
 		Output("0, /*tp_itemsize*/")
 		Output("/* methods */")
