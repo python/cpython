@@ -1088,10 +1088,9 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds, char *methnam
 static PyObject *
 dict_update(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	if (dict_update_common(self, args, kwds, "update") == -1)
-		return NULL;
-	Py_INCREF(Py_None);
-	return Py_None;
+	if (dict_update_common(self, args, kwds, "update") != -1)
+		Py_RETURN_NONE;
+	return NULL;
 }
 
 /* Update unconditionally replaces existing items.
@@ -1593,8 +1592,7 @@ static PyObject *
 dict_clear(register dictobject *mp)
 {
 	PyDict_Clear((PyObject *)mp);
-	Py_INCREF(Py_None);
-	return Py_None;
+	Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2050,7 +2048,9 @@ dictiter_dealloc(dictiterobject *di)
 static int
 dictiter_len(dictiterobject *di)
 {
-	return di->len;
+	if (di->di_dict != NULL && di->di_used == di->di_dict->ma_used)
+		return di->len;
+	return 0;
 }
 
 static PySequenceMethods dictiter_as_sequence = {
