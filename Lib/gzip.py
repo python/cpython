@@ -27,14 +27,52 @@ def read32(input):
     return struct.unpack("<l", input.read(4))[0]
 
 def open(filename, mode="rb", compresslevel=9):
+    """Shorthand for GzipFile(filename, mode, compresslevel).
+
+    The filename argument is required; mode defaults to 'rb'
+    and compresslevel defaults to 9.
+
+    """
     return GzipFile(filename, mode, compresslevel)
 
 class GzipFile:
+    """The GzipFile class simulates most of the methods of a file object with
+    the exception of the readinto(), truncate(), and xreadlines() methods.
+
+    """
 
     myfileobj = None
 
     def __init__(self, filename=None, mode=None,
                  compresslevel=9, fileobj=None):
+        """Constructor for the GzipFile class.
+
+        At least one of fileobj and filename must be given a
+        non-trivial value.
+
+        The new class instance is based on fileobj, which can be a regular
+        file, a StringIO object, or any other object which simulates a file.
+        It defaults to None, in which case filename is opened to provide
+        a file object.
+
+        When fileobj is not None, the filename argument is only used to be
+        included in the gzip file header, which may includes the original
+        filename of the uncompressed file.  It defaults to the filename of
+        fileobj, if discernible; otherwise, it defaults to the empty string,
+        and in this case the original filename is not included in the header.
+
+        The mode argument can be any of 'r', 'rb', 'a', 'ab', 'w', or 'wb',
+        depending on whether the file will be read or written.  The default
+        is the mode of fileobj if discernible; otherwise, the default is 'rb'.
+        Be aware that only the 'rb', 'ab', and 'wb' values should be used
+        for cross-platform portability.
+
+        The compresslevel argument is an integer from 1 to 9 controlling the
+        level of compression; 1 is fastest and produces the least compression,
+        and 9 is slowest and produces the most compression.  The default is 9.
+
+        """
+
         # guarantee the file is opened in binary mode on platforms
         # that care about that sort of thing
         if mode and 'b' not in mode:

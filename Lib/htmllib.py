@@ -11,10 +11,23 @@ from formatter import AS_IS
 __all__ = ["HTMLParser"]
 
 class HTMLParser(SGMLParser):
+    """This is the basic HTML parser class.
+
+    It supports all entity names required by the HTML 2.0 specification
+    RFC 1866.  It also defines handlers for all HTML 2.0 and many HTML 3.0
+    and 3.2 elements.
+
+    """
 
     from htmlentitydefs import entitydefs
 
     def __init__(self, formatter, verbose=0):
+        """Creates an instance of the HTMLParser class.
+
+        The formatter parameter is the formatter instance associated with
+        the parser.
+
+        """
         SGMLParser.__init__(self, verbose)
         self.formatter = formatter
         self.savedata = None
@@ -43,9 +56,24 @@ class HTMLParser(SGMLParser):
     # --- Hooks to save data; shouldn't need to be overridden
 
     def save_bgn(self):
+        """Begins saving character data in a buffer instead of sending it
+        to the formatter object.
+
+        Retrieve the stored data via the save_end() method.  Use of the
+        save_bgn() / save_end() pair may not be nested.
+
+        """
         self.savedata = ''
 
     def save_end(self):
+        """Ends buffering character data and returns all data saved since
+        the preceding call to the save_bgn() method.
+
+        If the nofill flag is false, whitespace is collapsed to single
+        spaces.  A call to this method without a preceding call to the
+        save_bgn() method will raise a TypeError exception.
+
+        """
         data = self.savedata
         self.savedata = None
         if not self.nofill:
@@ -55,11 +83,26 @@ class HTMLParser(SGMLParser):
     # --- Hooks for anchors; should probably be overridden
 
     def anchor_bgn(self, href, name, type):
+        """This method is called at the start of an anchor region.
+
+        The arguments correspond to the attributes of the <A> tag with
+        the same names.  The default implementation maintains a list of
+        hyperlinks (defined by the HREF attribute for <A> tags) within
+        the document.  The list of hyperlinks is available as the data
+        attribute anchorlist.
+
+        """
         self.anchor = href
         if self.anchor:
             self.anchorlist.append(href)
 
     def anchor_end(self):
+        """This method is called at the end of an anchor region.
+
+        The default implementation adds a textual footnote marker using an
+        index into the list of hyperlinks created by the anchor_bgn()method.
+
+        """
         if self.anchor:
             self.handle_data("[%d]" % len(self.anchorlist))
             self.anchor = None
@@ -67,6 +110,12 @@ class HTMLParser(SGMLParser):
     # --- Hook for images; should probably be overridden
 
     def handle_image(self, src, alt, *args):
+        """This method is called to handle images.
+
+        The default implementation simply passes the alt value to the
+        handle_data() method.
+
+        """
         self.handle_data(alt)
 
     # --------- Top level elememts

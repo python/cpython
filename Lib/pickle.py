@@ -41,9 +41,31 @@ compatible_formats = ["1.0", "1.1", "1.2"] # Old format versions we can read
 mdumps = marshal.dumps
 mloads = marshal.loads
 
-class PickleError(Exception): pass
-class PicklingError(PickleError): pass
-class UnpicklingError(PickleError): pass
+class PickleError(Exception):
+    """A common base class for the other pickling exceptions.
+
+    Inherits from \exception{Exception}.
+
+    """
+    pass
+
+class PicklingError(PickleError):
+    """This exception is raised when an unpicklable object is passed to the
+    dump() method.
+
+    """
+    pass
+
+class UnpicklingError(PickleError):
+    """This exception is raised when there is a problem unpickling an object,
+    such as a security violation.
+
+    Note that other exceptions may also be raised during unpickling, including
+    (but not necessarily limited to) AttributeError, EOFError, ImportError,
+    and IndexError.
+
+    """
+    pass
 
 class _Stop(Exception):
     def __init__(self, value):
@@ -111,14 +133,39 @@ del x
 class Pickler:
 
     def __init__(self, file, bin = 0):
+        """This takes a file-like object for writing a pickle data stream.
+
+        The optional bin parameter if true, tells the pickler to use the more
+        efficient binary pickle format, otherwise the ASCII format is used
+        (this is the default).
+
+        The file parameter must have a write() method that accepts a single
+        string argument.  It can thus be an open file object, a StringIO
+        object, or any other custom object that meets this interface.
+
+        """
         self.write = file.write
         self.memo = {}
         self.bin = bin
 
     def clear_memo(self):
+        """Clears the pickler's "memo".
+
+        The memo is the data structure that remembers which objects the
+        pickler has already seen, so that shared or recursive objects pickled
+        by reference and not by value.  This method is useful when re-using
+        picklers.
+
+        """
         self.memo.clear()
 
     def dump(self, object):
+        """Write a pickled representation of object to the open file object.
+
+        Either the binary or ASCII format will be used, depending on the
+        value of the bin flag passed to the constructor.
+
+        """
         self.save(object)
         self.write(STOP)
 
@@ -594,11 +641,30 @@ def whichmodule(cls, clsname):
 class Unpickler:
 
     def __init__(self, file):
+        """This takes a file-like object for reading a pickle data stream.
+
+        This class automatically determines whether the data stream was
+        written in binary mode or not, so it does not need a flag as in
+        the Pickler class factory.
+
+        The file-like object must have two methods, a read() method that
+        takes an integer argument, and a readline() method that requires no
+        arguments.  Both methods should return a string.  Thus file-like
+        object can be a file object opened for reading, a StringIO object,
+        or any other custom object that meets this interface.
+
+        """
         self.readline = file.readline
         self.read = file.read
         self.memo = {}
 
     def load(self):
+        """Read a pickled object representation from the open file object.
+
+        Return the reconstituted object hierarchy specified in the file
+        object.
+
+        """
         self.mark = object() # any new unique object
         self.stack = []
         self.append = self.stack.append
