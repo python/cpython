@@ -17,7 +17,9 @@ typedef struct {
     int expected;
 } perrdetail;
 
+#if 0
 #define PyPARSE_YIELD_IS_KEYWORD	0x0001
+#endif
 
 extern DL_IMPORT(node *) PyParser_ParseString(char *, grammar *, int,
                                               perrdetail *);

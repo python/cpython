@@ -2984,10 +2984,12 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 			result = 1;
 			cf->cf_flags |= compilerflags;
 		}
+#if 0 /* future keyword */
 		if (codeflags & CO_GENERATOR_ALLOWED) {
 			result = 1;
 			cf->cf_flags |= CO_GENERATOR_ALLOWED;
 		}
+#endif
 	}
 	return result;
 }
