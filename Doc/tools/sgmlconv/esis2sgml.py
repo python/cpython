@@ -97,7 +97,7 @@ def convert(ifp, ofp, xml=0, autoclose=(), verbatims=()):
             data = esistools.decode(data)
             data = escape(data)
             if not inverbatim:
-                data = string.replace(data, "---", "&mdash;")
+                data = data.replace("---", "&mdash;")
             ofp.write(data)
             if "\n" in data:
                 lastopened = None
@@ -139,7 +139,7 @@ def convert(ifp, ofp, xml=0, autoclose=(), verbatims=()):
             lastempty = 0
             inverbatim = 0
         elif type == "A":
-            name, type, value = string.split(data, " ", 2)
+            name, type, value = data.split(" ", 2)
             name = map_gi(name, _attr_map)
             attrs[name] = esistools.decode(value)
         elif type == "e":
@@ -165,7 +165,7 @@ def dump_empty_element_names(knownempties):
             line = fp.readline()
             if not line:
                 break
-            gi = string.strip(line)
+            gi = line.strip()
             if gi:
                 d[gi] = gi
     fp = open(EMPTIES_FILENAME, "w")
@@ -177,9 +177,9 @@ def dump_empty_element_names(knownempties):
 
 
 def update_gi_map(map, names, fromsgml=1):
-    for name in string.split(names, ","):
+    for name in names.split(","):
         if fromsgml:
-            uncased = string.lower(name)
+            uncased = name.lower()
         else:
             uncased = name
         map[uncased] = name
@@ -211,7 +211,7 @@ def main():
         elif opt in ("-x", "--xml"):
             xml = 1
         elif opt in ("-a", "--autoclose"):
-            autoclose = string.split(arg, ",")
+            autoclose = arg.split(",")
         elif opt == "--elements-map":
             elem_names = ("%s,%s" % (elem_names, arg))[1:]
         elif opt == "--attributes-map":
@@ -241,9 +241,9 @@ def main():
         # stream but set up conversion tables to get the case right on output
         global _normalize_case
         _normalize_case = string.lower
-        update_gi_map(_elem_map, string.split(elem_names, ","))
-        update_gi_map(_attr_map, string.split(attr_names, ","))
-        update_gi_map(_values_map, string.split(value_names, ","))
+        update_gi_map(_elem_map, elem_names.split(","))
+        update_gi_map(_attr_map, attr_names.split(","))
+        update_gi_map(_values_map, value_names.split(","))
     else:
         global map_gi
         map_gi = null_map_gi

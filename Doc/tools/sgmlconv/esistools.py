@@ -1,7 +1,6 @@
 """Miscellaneous utility functions useful for dealing with ESIS streams."""
 
 import re
-import string
 
 import xml.dom.pulldom
 
@@ -182,7 +181,7 @@ class ESISReader(xml.sax.xmlreader.XMLReader):
         elif token == '?':
             if handler:
                 if ' ' in data:
-                    target, data = string.split(data, None, 1)
+                    target, data = data.split(None, 1)
                 else:
                     target, data = data, ""
                 handler.processingInstruction(target, decode(data))
