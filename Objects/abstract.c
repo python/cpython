@@ -639,12 +639,6 @@ PyNumber_TrueDivide(PyObject *v, PyObject *w)
 PyObject *
 PyNumber_Remainder(PyObject *v, PyObject *w)
 {
-	if (PyString_Check(v))
-		return PyString_Format(v, w);
-#ifdef Py_USING_UNICODE
-	else if (PyUnicode_Check(v))
-		return PyUnicode_Format(v, w);
-#endif
 	return binary_op(v, w, NB_SLOT(nb_remainder), "%");
 }
 
