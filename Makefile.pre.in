@@ -590,7 +590,7 @@ bininstall:	altbininstall
 # This goes into $(exec_prefix)
 altbininstall:	$(BUILDPYTHON)
 	@if test "$(PYTHONFRAMEWORKDIR)" != no-framework; then \
-		if test ! -f $(PYTHONFRAMEWORKINSTALLDIR)/Versions/Current/Resources/Info.plist; then \
+		if test ! -f $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Versions/Current/Resources/Info.plist; then \
 			echo 'Framework build: use "make frameworkinstall" in stead of "make install"'; \
 			exit 1; \
 		fi; \
@@ -835,39 +835,40 @@ frameworkinstallstructure:	$(LDLIBRARY)
 	fi
 	@for i in $(prefix)/Resources/English.lproj $(prefix)/lib; do\
 		if test ! -d $(DESTDIR)$$i; then \
-			echo "Creating directory $$i"; \
-			$(INSTALL) -d -m $(DIRMODE) $$i; \
+			echo "Creating directory $(DESTDIR)$$i"; \
+			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$$i; \
 		else	true; \
 		fi; \
 	done
-	$(LN) -fsn include/python$(VERSION) $(prefix)/Headers
-	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist $(prefix)/Resources/Info.plist
-	$(INSTALL_DATA) $(RESSRCDIR)/version.plist $(prefix)/Resources/version.plist
+	$(LN) -fsn include/python$(VERSION) $(DESTDIR)$(prefix)/Headers
+	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist $(DESTDIR)$(prefix)/Resources/Info.plist
+	$(INSTALL_DATA) $(RESSRCDIR)/version.plist $(DESTDIR)$(prefix)/Resources/version.plist
 	$(INSTALL_DATA) $(RESSRCDIR)/English.lproj/InfoPlist.strings \
-		$(prefix)/Resources/English.lproj/InfoPlist.strings
-	$(LN) -fsn $(VERSION) $(PYTHONFRAMEWORKINSTALLDIR)/Versions/Current
-	$(LN) -fsn Versions/Current/Python $(PYTHONFRAMEWORKINSTALLDIR)/Python
-	$(LN) -fsn Versions/Current/Headers $(PYTHONFRAMEWORKINSTALLDIR)/Headers
-	$(LN) -fsn Versions/Current/Resources $(PYTHONFRAMEWORKINSTALLDIR)/Resources
-	$(INSTALL_DATA) $(LDLIBRARY) $(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
+		$(DESTDIR)$(prefix)/Resources/English.lproj/InfoPlist.strings
+	$(LN) -fsn $(VERSION) $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Versions/Current
+	$(LN) -fsn Versions/Current/Python $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Python
+	$(LN) -fsn Versions/Current/Headers $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers
+	$(LN) -fsn Versions/Current/Resources $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Resources
+	$(INSTALL_DATA) $(LDLIBRARY) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
 
 # This installs Mac/Lib into the framework
 frameworkinstallmaclib:
 	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installmacsubtree \
 		BUILDPYTHON=./$(BUILDPYTHON) DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
-		srcdir=$(srcdir) builddir=. prefix=$(prefix) LIBDEST=$(LIBDEST)
+		srcdir=$(srcdir) builddir=. prefix=$(prefix) LIBDEST=$(LIBDEST) \
+		DESTDIR=$(DESTDIR)
 
 # This installs the IDE, the Launcher and other apps into /Applications
 frameworkinstallapps:
 	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installapps \
 		BUILDPYTHON=./$(BUILDPYTHON) DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
-		srcdir=$(srcdir) builddir=. dstroot=$(PYTHONFRAMEWORKPREFIX)/../..
+		srcdir=$(srcdir) builddir=. DESTDIR=$(DESTDIR)
 
 # This install the unix python and pythonw tools in /usr/local/bin
 frameworkinstallunixtools:
 	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installunixtools \
 		DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
-		srcdir=$(srcdir) builddir=. dstroot=$(PYTHONFRAMEWORKPREFIX)/../..
+		srcdir=$(srcdir) builddir=. DESTDIR=$(DESTDIR)
 
 # This installs IDLE
 idleinstall:
