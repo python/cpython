@@ -38,10 +38,6 @@ TESTMOD = "ziptestmodule"
 TESTPACK = "ziptestpackage"
 TESTPACK2 = "ziptestpackage2"
 TEMP_ZIP = os.path.abspath("junk95142.zip")
-if sys.platform == 'mac':
-    CURDIRPREFIX=':'
-else:
-    CURDIRPREFIX=''
 
 class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
@@ -68,7 +64,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             if expected_ext:
                 file = mod.get_file()
                 self.assertEquals(file, os.path.join(TEMP_ZIP,
-                                  CURDIRPREFIX + os.sep.join(modules) + expected_ext))
+                                  *modules) + expected_ext)
         finally:
             z.close()
             os.remove(TEMP_ZIP)
