@@ -302,7 +302,11 @@ PyAPI_FUNC(void) PyObject_GC_Del(void *);
 		( (type *) _PyObject_GC_NewVar((typeobj), (n)) )
 
 
-/* Utility macro to help write tp_traverse functions */
+/* Utility macro to help write tp_traverse functions.
+ * To use this macro, the tp_traverse function must name its arguments
+ * "visit" and "arg".  This is intended to keep tp_traverse functions
+ * looking as much alike as possible.
+ */
 #define Py_VISIT(op)					\
         do { 						\
                 if (op) {				\
