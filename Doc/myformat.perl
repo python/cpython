@@ -346,17 +346,19 @@ sub make_str_index_entry{
 # (Used with LaTeX2HTML 96.1*)
 sub replace_verbatim {
     # Modifies $_
-    s/$verbatim_mark(verbatim)(\d+)/<p><dl><dd><font size=\"-1\"><pre>$verbatim{$2}<\/pre><\/font><\/dl>/go;
+    local($prefix,$suffix) = ("\n<p><dl><dd><pre><font size=-1>\n",
+			      "</font></pre></dl>");
+    s/$verbatim_mark(verbatim)(\d+)/$prefix$verbatim{$2}$suffix/go;
     s/$verbatim_mark(rawhtml)(\d+)/$verbatim{$2}/ego;	# Raw HTML
 }
-  
+
 # (Used with LaTeX2HTML 98.1)
 sub replace_verbatim_hook{
     # Modifies $_
+    local($prefix,$suffix) = ("\n<p><dl><dd><font size=-1>",
+			      "</font></dl>");
     s/$math_verbatim_rx/&put_comment("MATH: ".$verbatim{$1})/eg;
-#    s/$verbatim_mark(verbatim\*?)(\d+)#/<PRE>\n$verbatim{$2}\n<\/PRE>/go;
-    s/$verbatim_mark(\w*[vV]erbatim\*?)(\d+)#/\n<p><dl><dd><font size=\"-1\">$verbatim{$2}<\/font><\/dl>\n/go;
-#    s/$verbatim_mark(rawhtml)(\d+)#/$verbatim{$2}/eg; # Raw HTML
+    s/$verbatim_mark(\w*[vV]erbatim\*?)(\d+)\#/$prefix$verbatim{$2}$suffix/go;
     # Raw HTML, but replacements may have protected characters
     s/$verbatim_mark(rawhtml)(\d+)#/&unprotect_raw_html($verbatim{$2})/eg;
     s/$verbatim_mark$keepcomments(\d+)#/$verbatim{$2}/ego; # Raw TeX
