@@ -1200,7 +1200,7 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
                     ch2 = s[i];
                     if (0xDC00 <= ch2 && ch2 <= 0xDFFF) {
                         
-                        if ((p - q) >= (cbAllocated - 4)) {
+                        if ((Py_uintptr_t)(p - q) >= (cbAllocated - 4)) {
                             /* Provide enough room for some more
                                surrogates */
                             cbAllocated += 4*10;
@@ -1225,7 +1225,7 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
             *p++ = (char)(0x80 | (ch & 0x3f));
 
         } else {
-            if ((p - q) >= (cbAllocated - 4)) {
+            if ((Py_uintptr_t)(p - q) >= (cbAllocated - 4)) {
                 /* Provide enough room for some more
                    surrogates */
                 cbAllocated += 4*10;
