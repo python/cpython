@@ -6,7 +6,7 @@ a generic tool and CodeGenerator as a specific tool.
 """
 
 from p2c import transformer, ast
-from pyassem import StackRef, PyAssembler
+from pyassem import StackRef, PyAssembler, TupleArg
 import dis
 import misc
 import marshal
@@ -203,7 +203,7 @@ class CodeGenerator:
             if type(elt) == types.StringType:
                 args.append(elt)
             elif type(elt) == types.TupleType:
-                args.append(".nested%d" % count)
+                args.append(TupleArg(count, elt))
                 count = count + 1
                 extra.extend(misc.flatten(elt))
             else:
@@ -343,7 +343,6 @@ class CodeGenerator:
 
     def visitLambda(self, node):
         node.name = '<lambda>'
-        node.varargs = node.kwargs = None
         self._visitFuncOrLambda(node, 'Lambda')
         return 1
 
@@ -633,10 +632,13 @@ class CodeGenerator:
         return 1
 
     def visitAssName(self, node):
-        # XXX handle OP_DELETE
-        if node.flags != 'OP_ASSIGN':
+        if node.flags == 'OP_ASSIGN':
+            self.storeName(node.name)
+        elif node.flags == 'OP_DELETE':
+            self.delName(node.name)
+        else:
             print "oops", node.flags
-        self.storeName(node.name)
+        return 1
 
     def visitAssAttr(self, node):
         self.visit(node.expr)
@@ -650,7 +652,8 @@ class CodeGenerator:
         return 1
 
     def visitAssTuple(self, node):
-        self.emit('UNPACK_TUPLE', len(node.nodes))
+        if findOp(node) != 'OP_DELETE':
+            self.emit('UNPACK_TUPLE', len(node.nodes))
         for child in node.nodes:
             self.visit(child)
         return 1
@@ -838,6 +841,7 @@ class CodeGenerator:
         else:
             self.visit(node.globals)
         self.emit('EXEC_STMT')
+        return 1
 
 class LocalNameFinder:
     def __init__(self, names=()):
@@ -881,6 +885,20 @@ class LocalNameFinder:
 
     def visitAssName(self, node):
         self.names.add(node.name)
+
+class OpFinder:
+    def __init__(self):
+        self.op = None
+    def visitAssName(self, node):
+        if self.op is None:
+            self.op = node.flags
+        elif self.op != node.flags:
+            raise ValueError, "mixed ops in stmt"
+
+def findOp(node):
+    v = OpFinder()
+    walk(node, v)
+    return v.op
 
 class Loop:
     def __init__(self):

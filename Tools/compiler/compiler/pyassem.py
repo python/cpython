@@ -42,6 +42,15 @@ CO_NEWLOCALS = 0x0002
 CO_VARARGS = 0x0004
 CO_VARKEYWORDS = 0x0008
 
+class TupleArg:
+    def __init__(self, count, names):
+        self.count = count
+        self.names = names
+    def __repr__(self):
+        return "TupleArg(%s, %s)" % (self.count, self.names)
+    def getName(self):
+        return ".nested%d" % self.count
+
 class PyAssembler:
     """Creates Python code objects
     """
@@ -54,6 +63,7 @@ class PyAssembler:
 	self.insts = []
         # used by makeCodeObject
         self._getArgCount(args)
+        print name, args, self.argcount
         self.code = ''
         self.consts = [docstring]
         self.filename = filename
@@ -61,6 +71,10 @@ class PyAssembler:
         self.name = name
         self.names = []
         self.varnames = list(args) or []
+        for i in range(len(self.varnames)):
+            var = self.varnames[i]
+            if isinstance(var, TupleArg):
+                self.varnames[i] = var.getName()
         # lnotab support
         self.firstlineno = 0
         self.lastlineno = 0
@@ -68,14 +82,12 @@ class PyAssembler:
         self.lnotab = ''
 
     def _getArgCount(self, args):
-        if args and args[0][0] == '.':
-            for i in range(len(args)):
-                if args[i][0] == '.':
-                    num = i
-            self.argcount = num + 1
-        else:
-            self.argcount = len(args)
-                
+        self.argcount = len(args)
+        if args:
+            for arg in args:
+                if isinstance(arg, TupleArg):
+                    numNames = len(misc.flatten(arg.names))
+                    self.argcount = self.argcount - numNames 
 
     def __repr__(self):
         return "<bytecode: %d instrs>" % len(self.insts)
@@ -88,7 +100,9 @@ class PyAssembler:
         self.flags = self.flags | CO_OPTIMIZED
 
     def setVarArgs(self):
-        self.flags = self.flags | CO_VARARGS
+        if not self.flags & CO_VARARGS:
+            self.flags = self.flags | CO_VARARGS
+            self.argcount = self.argcount - 1
 
     def setKWArgs(self):
         self.flags = self.flags | CO_VARKEYWORDS
