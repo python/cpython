@@ -437,8 +437,7 @@ class BuiltinTest(unittest.TestCase):
     def test_hex(self):
         self.assertEqual(hex(16), '0x10')
         self.assertEqual(hex(16L), '0x10L')
-        self.assertEqual(len(hex(-1)), len(hex(sys.maxint)))
-        self.assert_(hex(-16) in ('0xfffffff0', '0xfffffffffffffff0'))
+        self.assertEqual(hex(-16), '-0x10')
         self.assertEqual(hex(-16L), '-0x10L')
         self.assertRaises(TypeError, hex, {})
 
@@ -757,7 +756,7 @@ class BuiltinTest(unittest.TestCase):
     def test_oct(self):
         self.assertEqual(oct(100), '0144')
         self.assertEqual(oct(100L), '0144L')
-        self.assert_(oct(-100) in ('037777777634', '01777777777777777777634'))
+        self.assertEqual(oct(-100), '-0144')
         self.assertEqual(oct(-100L), '-0144L')
         self.assertRaises(TypeError, oct, ())
 

@@ -119,15 +119,18 @@ if 1:
 
     def test_unary_minus(self):
         # Verify treatment of unary minus on negative numbers SF bug #660455
-        warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning)
-        warnings.filterwarnings("ignore", "hex.* of negative int", FutureWarning)
-        # XXX Of course the following test will have to be changed in Python 2.4
-        # This test is in a <string> so the filterwarnings() can affect it
-        all_one_bits = '0xffffffff'
-        if sys.maxint != 2147483647:
+        if sys.maxint == 2147483647:
+            # 32-bit machine
+            all_one_bits = '0xffffffff'
+            self.assertEqual(eval(all_one_bits), 4294967295L)
+            self.assertEqual(eval("-" + all_one_bits), -4294967295L)
+        elif sys.maxint == 9223372036854775807:
+            # 64-bit machine
             all_one_bits = '0xffffffffffffffff'
-        self.assertEqual(eval(all_one_bits), -1)
-        self.assertEqual(eval("-" + all_one_bits), 1)
+            self.assertEqual(eval(all_one_bits), 18446744073709551615L)
+            self.assertEqual(eval("-" + all_one_bits), -18446744073709551615L)
+        else:
+            self.fail("How many bits *does* this machine have???")
 
     def test_sequence_unpacking_error(self):
         # Verify sequence packing/unpacking with "or".  SF bug #757818
