@@ -13,12 +13,19 @@ class TestBasicOps(unittest.TestCase):
         def isEven(x):
             return x%2==0
         self.assertEqual(list(ifilter(isEven, range(6))), [0,2,4])
-        self.assertEqual(list(ifilter(isEven, range(6), True)), [1,3,5])
         self.assertEqual(list(ifilter(None, [0,1,0,2,0])), [1,2])
         self.assertRaises(TypeError, ifilter)
         self.assertRaises(TypeError, ifilter, 3)
         self.assertRaises(TypeError, ifilter, isEven, 3)
-        self.assertRaises(TypeError, ifilter, isEven, [3], True, 4)
+
+    def test_ifilterfalse(self):
+        def isEven(x):
+            return x%2==0
+        self.assertEqual(list(ifilterfalse(isEven, range(6))), [1,3,5])
+        self.assertEqual(list(ifilterfalse(None, [0,1,0,2,0])), [0,0,0])
+        self.assertRaises(TypeError, ifilterfalse)
+        self.assertRaises(TypeError, ifilterfalse, 3)
+        self.assertRaises(TypeError, ifilterfalse, isEven, 3)
 
     def test_izip(self):
         ans = [(x,y) for x, y in izip('abc',count())]
@@ -133,7 +140,19 @@ Samuele
 
 >>> def nth(iterable, n):
 ...     "Returns the nth item"
-...     return islice(iterable, n, n+1).next()
+...     return list(islice(iterable, n, n+1))
+
+>>> def all(pred, seq):
+...     "Returns True if pred(x) is True for every element in the iterable"
+...     return not nth(ifilterfalse(pred, seq), 0)
+
+>>> def some(pred, seq):
+...     "Returns True if pred(x) is True at least one element in the iterable"
+...     return bool(nth(ifilter(pred, seq), 0))
+
+>>> def no(pred, seq):
+...     "Returns True if pred(x) is False for every element in the iterable"
+...     return not nth(ifilter(pred, seq), 0)
 
 """
 

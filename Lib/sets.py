@@ -57,7 +57,7 @@ what's tested is actually `z in y'.
 
 
 __all__ = ['BaseSet', 'Set', 'ImmutableSet']
-from itertools import ifilter
+from itertools import ifilter, ifilterfalse
 
 class BaseSet(object):
     """Common base class for mutable and immutable sets."""
@@ -204,9 +204,9 @@ class BaseSet(object):
         value = True
         selfdata = self._data
         otherdata = other._data
-        for elt in ifilter(otherdata.has_key, selfdata, True):
+        for elt in ifilterfalse(otherdata.has_key, selfdata):
             data[elt] = value
-        for elt in ifilter(selfdata.has_key, otherdata, True):
+        for elt in ifilterfalse(selfdata.has_key, otherdata):
             data[elt] = value
         return result
 
@@ -227,7 +227,7 @@ class BaseSet(object):
         result = self.__class__()
         data = result._data
         value = True
-        for elt in ifilter(other._data.has_key, self, True):
+        for elt in ifilterfalse(other._data.has_key, self):
             data[elt] = value
         return result
 
@@ -260,7 +260,7 @@ class BaseSet(object):
         self._binary_sanity_check(other)
         if len(self) > len(other):  # Fast check for obvious cases
             return False
-        for elt in ifilter(other._data.has_key, self, True):
+        for elt in ifilterfalse(other._data.has_key, self):
             return False
         return True
 
@@ -269,7 +269,7 @@ class BaseSet(object):
         self._binary_sanity_check(other)
         if len(self) < len(other):  # Fast check for obvious cases
             return False
-        for elt in ifilter(self._data.has_key, other, True):
+        for elt in ifilterfalse(self._data.has_key, other):
             return False
         return True
 
