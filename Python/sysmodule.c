@@ -594,8 +594,7 @@ PySys_SetArgv(argc, argv)
 
       The first function writes to sys.stdout; the second to sys.stderr.  When
       there is a problem, they write to the real (C level) stdout or stderr;
-      no exceptions are raised (but a pending exception may be cleared when a
-      new exception is caught).
+      no exceptions are raised.
 
       Both take a printf-style format string as their first argument followed
       by a variable length argument list determined by the format string.
@@ -619,18 +618,22 @@ mywrite(name, fp, format, va)
 	va_list va;
 {
 	PyObject *file;
+	PyObject *error_type, *error_value, *error_traceback;
 
+	PyErr_Fetch(&error_type, &error_value, &error_traceback);
 	file = PySys_GetObject(name);
 	if (file == NULL || PyFile_AsFile(file) == fp)
 		vfprintf(fp, format, va);
 	else {
 		char buffer[1001];
-		vsprintf(buffer, format, va);
+		if (vsprintf(buffer, format, va) >= sizeof(buffer))
+		    Py_FatalError("PySys_WriteStdout/err: buffer overrun");
 		if (PyFile_WriteString(buffer, file) != 0) {
 			PyErr_Clear();
 			fputs(buffer, fp);
 		}
 	}
+	PyErr_Restore(error_type, error_value, error_traceback);
 }
 
 void
