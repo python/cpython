@@ -174,13 +174,13 @@ Py_Initialize(void)
 
 	_PyImportHooks_Init();
 
-	PyModule_WarningsModule = PyImport_ImportModule("warnings");
-
 	initsigs(); /* Signal handling stuff, including initintr() */
 
 	initmain(); /* Module __main__ */
 	if (!Py_NoSiteFlag)
 		initsite(); /* Module site */
+
+	PyModule_WarningsModule = PyImport_ImportModule("warnings");
 }
 
 #ifdef COUNT_ALLOCS
