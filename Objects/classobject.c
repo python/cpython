@@ -1559,7 +1559,6 @@ instancemethod_repr(a)
 		fname = PyString_AS_STRING(funcname);
 	else
 		fname = "?";
-	Py_XDECREF(funcname);
 	if (fclassname != NULL && PyString_Check(fclassname))
 		fcname = PyString_AsString(fclassname);
 	else
@@ -1575,6 +1574,7 @@ instancemethod_repr(a)
 		sprintf(buf, "<method %.60s.%.60s of %.60s instance at %lx>",
 			fcname, fname, icname, (long)self);
 	}
+	Py_XDECREF(funcname);
 	return PyString_FromString(buf);
 }
 
