@@ -46,7 +46,7 @@ class HMAC:
         key = key + chr(0) * (blocksize - len(key))
         self.outer.update(_strxor(key, opad))
         self.inner.update(_strxor(key, ipad))
-        if (msg):
+        if msg is not None:
             self.update(msg)
 
 ##    def clear(self):
