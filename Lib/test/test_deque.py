@@ -14,6 +14,17 @@ def fail():
     raise SyntaxError
     yield 1
 
+class BadCmp:
+    def __eq__(self, other):
+        raise RuntimeError
+
+class MutateCmp:
+    def __init__(self, deque):
+        self.deque = deque
+    def __eq__(self, other):
+        self.deque.clear()
+        return True
+
 class TestBasic(unittest.TestCase):
 
     def test_basics(self):
@@ -196,6 +207,30 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(list(d), [])
         d.clear()               # clear an emtpy deque
         self.assertEqual(list(d), [])
+
+    def test_remove(self):
+        d = deque('abcdefghcij')
+        d.remove('c')
+        self.assertEqual(d, deque('abdefghcij'))
+        d.remove('c')
+        self.assertEqual(d, deque('abdefghij'))
+        self.assertRaises(ValueError, d.remove, 'c')
+        self.assertEqual(d, deque('abdefghij'))
+
+        # Handle comparision errors
+        d = deque(['a', 'b', BadCmp(), 'c'])
+        e = deque(d)
+        self.assertRaises(RuntimeError, d.remove, 'c')
+        for x, y in zip(d, e):
+            # verify that original order and values are retained.
+            self.assert_(x is y)
+
+        # Handle evil mutator
+        d = deque(['ab'])
+        d.extend([MutateCmp(d), 'c'])
+        e = deque(d)
+        self.assertRaises(IndexError, d.remove, 'c')
+        self.assertEqual(d, deque())
 
     def test_repr(self):
         d = deque(xrange(200))
