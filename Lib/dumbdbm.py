@@ -166,5 +166,5 @@ def open(file, flag=None, mode=0666):
     will be modified by the prevailing umask).
 
     """
-    # flag, mode arguments are currently ignored
+    # flag argument is currently ignored
     return _Database(file, mode)
