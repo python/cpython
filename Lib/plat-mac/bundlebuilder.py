@@ -171,10 +171,10 @@ class BundleBuilder(Defaults):
         files = self.files[:]
         for path in self.resources:
             files.append((path, pathjoin("Contents", "Resources",
-                os.path.basename(os.path.normpath(path)))))
+                os.path.basename(path))))
         for path in self.libs:
             files.append((path, pathjoin("Contents", "Frameworks",
-                os.path.basename(os.path.normpath(path)))))
+                os.path.basename(path))))
         if self.symlink:
             self.message("Making symbolic links", 1)
             msg = "Making symlink from"
@@ -488,9 +488,16 @@ class AppBuilder(BundleBuilder):
 
     def addPythonFramework(self):
         # If we're building a standalone app with Python.framework,
-        # include a minimal subset of Python.framework
+        # include a minimal subset of Python.framework, *unless*
+        # Python.framework was specified manually in self.libs.
+        for lib in self.libs:
+            if os.path.basename(lib) == "Python.framework":
+                # a Python.framework was specified as a library
+                return
+
         frameworkpath = sys.exec_prefix[:sys.exec_prefix.find(
             "Python.framework") + len("Python.framework")]
+
         version = sys.version[:3]
         frameworkpath = pathjoin(frameworkpath, "Versions", version)
         destbase = pathjoin("Contents", "Frameworks", "Python.framework",
@@ -693,7 +700,7 @@ def copy(src, dst, mkdirs=0):
     if mkdirs:
         makedirs(os.path.dirname(dst))
     if os.path.isdir(src):
-        shutil.copytree(src, dst)
+        shutil.copytree(src, dst, symlinks=1)
     else:
         shutil.copy2(src, dst)
 
@@ -794,7 +801,7 @@ def main(builder=None):
         elif opt in ('-n', '--name'):
             builder.name = arg
         elif opt in ('-r', '--resource'):
-            builder.resources.append(arg)
+            builder.resources.append(os.path.normpath(arg))
         elif opt in ('-f', '--file'):
             srcdst = arg.split(':')
             if len(srcdst) != 2:
@@ -812,7 +819,7 @@ def main(builder=None):
         elif opt == '--iconfile':
             builder.iconfile = arg
         elif opt == "--lib":
-            builder.libs.append(arg)
+            builder.libs.append(os.path.normpath(arg))
         elif opt == "--nib":
             builder.nibname = arg
         elif opt in ('-p', '--plist'):
