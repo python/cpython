@@ -8,3 +8,12 @@
 
 # Garbage collection enabled with --with-cycle-gc
 @USE_GC_MODULE@gc gcmodule.c
+
+# You may want this to be built as a dynamically loaded module; uncomment
+# the following line in that case:
+
+#*shared*
+
+# bsddb module enabled by --with-libdb or presence of db.h
+@USE_BSDDB_MODULE@bsddb bsddbmodule.c -ldb
+

@@ -30,8 +30,11 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-/* If using Berkeley DB 2.0 or newer, change this include to <db_185.h>: */
+#ifdef HAVE_DB_185_H
+#include <db_185.h>
+#else
 #include <db.h>
+#endif
 /* Please don't include internal header files of the Berkeley db package
    (it messes up the info required in the Setup file) */
 

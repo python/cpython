@@ -151,6 +151,9 @@
    (shared library plus accessory files). */
 #undef WITH_NEXT_FRAMEWORK
 
+/* Define if you want to use BSD db. */
+#undef WITH_LIBDB
+
 /* Define if you want to build an interpreter with many run-time checks  */
 #undef Py_DEBUG
 
