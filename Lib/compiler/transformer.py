@@ -1,3 +1,19 @@
+#
+# Copyright (C) 1997-1998 Greg Stein. All Rights Reserved.
+#
+# This module is provided under a BSD-ish license. See
+#   http://www.opensource.org/licenses/bsd-license.html
+# and replace OWNER, ORGANIZATION, and YEAR as appropriate.
+#
+#
+# Written by Greg Stein (gstein@lyra.org)
+#        and Bill Tutt (rassilon@lima.mudlib.org)
+# February 1997.
+#
+# Support for ast.Node subclasses written and other revisions by
+#  Jeremy Hylton (jeremy@cnri.reston.va.us)
+#
+
 """Parse tree transformation module.
 
 Transforms Python source code into an abstract syntax tree (AST)
@@ -8,14 +24,6 @@ parse(buf) -> AST
 parseFile(path) -> AST
 """
 
-# Copyright 1997-1998 Greg Stein and Bill Tutt
-#
-# Written by Greg Stein (gstein@lyra.org)
-#        and Bill Tutt (rassilon@lima.mudlib.org)
-# February 1997.
-#
-# Support for Node subclasses written and other revisions by
-#  Jeremy Hylton (jeremy@cnri.reston.va.us)
 #
 # The output tree has the following nodes:
 #
