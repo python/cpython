@@ -35,6 +35,10 @@ except ImportError:
 
 __all__ = ["StringIO"]
 
+def _complain_ifclosed(closed):
+    if closed:
+        raise ValueError, "I/O operation on closed file"
+
 class StringIO:
     """class StringIO([buffer])
 
@@ -55,7 +59,7 @@ class StringIO:
         self.len = len(buf)
         self.buflist = []
         self.pos = 0
-        self.closed = 0
+        self.closed = False
         self.softspace = 0
 
     def __iter__(self):
@@ -73,17 +77,15 @@ class StringIO:
         """Free the memory buffer.
         """
         if not self.closed:
-            self.closed = 1
+            self.closed = True
             del self.buf, self.pos
 
     def isatty(self):
-        if self.closed:
-            raise ValueError, "I/O operation on closed file"
+        _complain_ifclosed(self.closed)
         return False
 
     def seek(self, pos, mode = 0):
-        if self.closed:
-            raise ValueError, "I/O operation on closed file"
+        _complain_ifclosed(self.closed)
         if self.buflist:
             self.buf += ''.join(self.buflist)
             self.buflist = []
@@ -94,13 +96,11 @@ class StringIO:
         self.pos = max(0, pos)
 
     def tell(self):
-        if self.closed:
-            raise ValueError, "I/O operation on closed file"
+        _complain_ifclosed(self.closed)
         return self.pos
 
     def read(self, n = -1):
-        if self.closed:
-            raise ValueError, "I/O operation on closed file"
+        _complain_ifclosed(self.closed)
         if self.buflist:
             self.buf += ''.join(self.buflist)
             self.buflist = []
@@ -113,8 +113,7 @@ class StringIO:
         return r
 
     def readline(self, length=None):
-        if self.closed:
-            raise ValueError, "I/O operation on closed file"
+        _complain_ifclosed(self.closed)
         if self.buflist:
             self.buf += ''.join(self.buflist)
             self.buflist = []
@@ -143,8 +142,7 @@ class StringIO:
         return lines
 
     def truncate(self, size=None):
-        if self.closed:
-            raise ValueError, "I/O operation on closed file"
+        _complain_ifclosed(self.closed) 
         if size is None:
             size = self.pos
         elif size < 0:
@@ -154,8 +152,7 @@ class StringIO:
         self.buf = self.getvalue()[:size]
 
     def write(self, s):
-        if self.closed:
-            raise ValueError, "I/O operation on closed file"
+        _complain_ifclosed(self.closed)
         if not s: return
         # Force s to be a string or unicode
         if not isinstance(s, basestring):
@@ -185,8 +182,7 @@ class StringIO:
         self.write(''.join(list))
 
     def flush(self):
-        if self.closed:
-            raise ValueError, "I/O operation on closed file"
+        _complain_ifclosed(self.closed)
 
     def getvalue(self):
         """
