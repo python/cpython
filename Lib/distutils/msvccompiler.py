@@ -309,6 +309,12 @@ class MSVCCompiler (CCompiler) :
             else:
                 self.mkpath (os.path.dirname (obj))
 
+                if debug:
+                    # pass the full pathname to MSVC in debug mode,
+                    # this allows the debugger to find the source file
+                    # without asking the user to browse for it
+                    src = os.path.abspath(src)
+
                 if ext in self._c_extensions:
                     input_opt = "/Tc" + src
                 elif ext in self._cpp_extensions:
