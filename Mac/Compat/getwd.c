@@ -28,9 +28,6 @@
 */
 
 #include "macdefs.h"
-#if defined(MPW) || defined(__MWERKS__)
-#include <Strings.h>
-#endif
 
 #define ROOTID 2 /* Root directory ID */
 
