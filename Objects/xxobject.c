@@ -25,7 +25,7 @@ static xxobject *
 newxxobject(arg)
 	object *arg;
 {
-	textobject *xp;
+	xxobject *xp;
 	xp = NEWOBJ(xxobject, &Xxtype);
 	if (xp == NULL)
 		return NULL;
