@@ -1433,7 +1433,7 @@ else
 fi
 
 # generate output files
-AC_OUTPUT(Makefile \
+AC_OUTPUT(Makefile setup.cfg \
  Objects/Makefile \
  Parser/Makefile \
  Grammar/Makefile \

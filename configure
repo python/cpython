@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.190 
+# From configure.in Revision: 1.191 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -6505,7 +6505,7 @@ done
 
 ac_given_srcdir=$srcdir
 
-trap 'rm -fr `echo "Makefile \
+trap 'rm -fr `echo "Makefile setup.cfg \
  Objects/Makefile \
  Parser/Makefile \
  Grammar/Makefile \
@@ -6633,7 +6633,7 @@ EOF
 
 cat >> $CONFIG_STATUS <<EOF
 
-CONFIG_FILES=\${CONFIG_FILES-"Makefile \
+CONFIG_FILES=\${CONFIG_FILES-"Makefile setup.cfg \
  Objects/Makefile \
  Parser/Makefile \
  Grammar/Makefile \
