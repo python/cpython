@@ -989,18 +989,17 @@ for Distutils (see section~\ref{config-files}.)
 \end{seealso}
 
 
-\subsubsection{GNU C / Cygwin / MinGW32}
+\subsubsection{GNU C / Cygwin / MinGW}
 
 This section describes the necessary steps to use Distutils with the
-GNU C/\Cpp{} compilers in their Cygwin and MinGW32
+GNU C/\Cpp{} compilers in their Cygwin and MinGW
 distributions.\footnote{Check
 \url{http://sources.redhat.com/cygwin/} and
 \url{http://www.mingw.org/} for more information}
+For a Python interpreter that was built with Cygwin, everything should
+work without any of these following steps.
 
-\XXX{For a Python which was built with Cygwin, all should work without 
-any of these following steps.}
-
-These compilers also require some special libraries.
+These compilers require some special libraries.
 This task is more complex than for Borland's \Cpp, because there is no
 program to convert the library.
 % I don't understand what the next line means. --amk
@@ -1038,7 +1037,7 @@ python setup.py build --compiler=cygwin
 
 and for Cygwin in no-cygwin mode\footnote{Then you have no
 \POSIX{} emulation available, but you also don't need
-\file{cygwin1.dll}.} or for MinGW32 type:
+\file{cygwin1.dll}.} or for MinGW type:
  
 \begin{verbatim}
 python setup.py build --compiler=mingw32
@@ -1050,12 +1049,12 @@ for Distutils (see section~\ref{config-files}.)
 
 \begin{seealso}
   \seetitle[http://www.zope.org/Members/als/tips/win32_mingw_modules]
-    {Building Python modules on MS Windows platform with MinGW32}
-    {Information about building the required libraries for the MinGW32
+    {Building Python modules on MS Windows platform with MinGW}
+    {Information about building the required libraries for the MinGW
      environment.}
 
   \seeurl{http://pyopengl.sourceforge.net/ftp/win32-stuff/}
-    {Converted import libraries in Cygwin/MinGW32 and Borland format,
+    {Converted import libraries in Cygwin/MinGW and Borland format,
      and a script to create the registry entries needed for Distutils
      to locate the built Python.}
 \end{seealso}
