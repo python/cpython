@@ -4,10 +4,11 @@
 
 # Released to the public domain, by Tim Peters, 15 April 1998.
 
-__version__ = "5"
+__version__ = "6"
 
 import os
 import sys
+import string
 import getopt
 import tokenize
 
@@ -88,6 +89,7 @@ def check(file):
             print "offending line:", `line`
             print nag.get_msg()
         else:
+            if ' ' in file: file = '"' + file + '"'
             if filename_only: print file
             else: print file, badline, `line`
         return
