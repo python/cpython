@@ -364,6 +364,10 @@ Extension modules
   loop in the search function, once the pointer exceeded the buffer
   limit.
 
+- The os.fdopen function now enforces a file mode starting with the
+  letter 'r', 'w' or 'a', otherwise a ValueError is raised. This fixes
+  bug #623464.
+
 Library
 -------
 
