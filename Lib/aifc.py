@@ -55,9 +55,7 @@
 #
 # Reading AIFF files:
 #	f = aifc.open(file, 'r')
-# or
-#	f = aifc.openfp(filep, 'r')
-# where file is the name of a file and filep is an open file pointer.
+# where file is either the name of a file or an open file pointer.
 # The open file pointer must have methods read(), seek(), and close().
 # In some types of audio files, if the setpos() method is not used,
 # the seek() method is not necessary.
@@ -90,9 +88,7 @@
 #
 # Writing AIFF files:
 #	f = aifc.open(file, 'w')
-# or
-#	f = aifc.openfp(filep, 'w')
-# where file is the name of a file and filep is an open file pointer.
+# where file is either the name of a file or an open file pointer.
 # The open file pointer must have methods write(), tell(), seek(), and
 # close().
 #
@@ -361,6 +357,12 @@ class Aifc_read:
 	#		file for readframes()
 	# _ssnd_chunk -- instantiation of a chunk class for the SSND chunk
 	# _framesize -- size of one frame in the file
+
+	access _file, _nchannels, _nframes, _sampwidth, _framerate, \
+		  _comptype, _compname, _markers, _soundpos, _version, \
+		  _decomp, _comm_chunk_read, __aifc, _ssnd_seek_needed, \
+		  _ssnd_chunk, _framesize: private
+
 	def initfp(self, file):
 		self._file = file
 		self._version = 0
@@ -524,6 +526,8 @@ class Aifc_read:
 	#
 	# Internal methods.
 	#
+	access *: private
+
 	def _decomp_data(self, data):
 		dummy = self._decomp.SetParam(CL.FRAME_BUFFER_SIZE,
 					      len(data) * 2)
@@ -635,13 +639,17 @@ class Aifc_write:
 	# _datalength -- the size of the audio samples written to the header
 	# _datawritten -- the size of the audio samples actually written
 
+	access _file, _comptype, _compname, _nchannels, _sampwidth, \
+		  _framerate, _nframes, _aifc, _version, _comp, \
+		  _nframeswritten, _datalength, _datawritten: private
+
 	def __init__(self, f):
 		if type(f) == type(''):
 			filename = f
 			f = builtin.open(f, 'w')
 		else:
+			# else, assume it is an open file object already
 			filename = '???'
-		# else, assume it is an open file object already
 		self.initfp(f)
 		if filename[-5:] == '.aiff':
 			self._aifc = 0
@@ -826,6 +834,8 @@ class Aifc_write:
 	#
 	# Internal methods.
 	#
+	access *: private
+
 	def _comp_data(self, data):
 		dum = self._comp.SetParam(CL.FRAME_BUFFER_SIZE, len(data))
 		dum = self._comp.SetParam(CL.COMPRESSED_BUFFER_SIZE, len(data))
@@ -987,6 +997,6 @@ def open(f, mode):
 	elif mode == 'w':
 		return Aifc_write(f)
 	else:
-		raise Error, 'mode must be \'r\' or \'w\''
+		raise Error, "mode must be 'r' or 'w'"
 
 openfp = open # B/W compatibility

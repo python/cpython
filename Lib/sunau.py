@@ -37,9 +37,7 @@
 #
 # Reading audio files:
 #	f = au.open(file, 'r')
-# or
-#	f = au.openfp(filep, 'r')
-# where file is the name of a file and filep is an open file pointer.
+# where file is either the name of a file or an open file pointer.
 # The open file pointer must have methods read(), seek(), and close().
 # When the setpos() and rewind() methods are not used, the seek()
 # method is not  necessary.
@@ -72,9 +70,7 @@
 #
 # Writing audio files:
 #	f = au.open(file, 'w')
-# or
-#	f = au.openfp(filep, 'w')
-# where file is the name of a file and filep is an open file pointer.
+# where file is either the name of a file or an open file pointer.
 # The open file pointer must have methods write(), tell(), seek(), and
 # close().
 #
@@ -151,6 +147,20 @@ def _write_u32(file, x):
 		file.write(chr(int(data[i])))
 
 class Au_read:
+	access _file, _soundpos, _hdr_size, _data_size, _encoding, \
+		  _sampwidth, _framesize, _framerate, _nchannels, \
+		  _framesize, _info: private
+
+	def __init__(self, f):
+		if type(f) == type(''):
+			import builtin
+			f = builtin.open(f, 'r')
+		self.initfp(f)
+
+	def __del__(self):
+		if self._file:
+			self.close()
+
 	def initfp(self, file):
 		self._file = file
 		self._soundpos = 0
@@ -192,16 +202,6 @@ class Au_read:
 					break
 		else:
 			self._info = ''
-
-	def __init__(self, f):
-		if type(f) == type(''):
-			import builtin
-			f = builtin.open(f, 'r')
-		self.initfp(f)
-
-	def __del__(self):
-		if self._file:
-			self.close()
 
 	def getfp(self):
 		return self._file
@@ -278,11 +278,19 @@ class Au_read:
 		self._file = None
 
 class Au_write:
+	access _file, _framerate, _nchannels, _sampwidth, _framesize, \
+		  _nframes, _nframeswritten, _datawritten, _info, \
+		  _comptype: private
+
 	def __init__(self, f):
 		if type(f) == type(''):
 			import builtin
 			f = builtin.open(f, 'w')
 		self.initfp(f)
+
+	def __del__(self):
+		if self._file:
+			self.close()
 
 	def initfp(self, file):
 		self._file = file
@@ -296,10 +304,6 @@ class Au_write:
 		self._datalength = 0
 		self._info = ''
 		self._comptype = 'ULAW'	# default is U-law
-
-	def __del__(self):
-		if self._file:
-			self.close()
 
 	def setnchannels(self, nchannels):
 		if self._nframeswritten:
@@ -404,6 +408,8 @@ class Au_write:
 	#
 	# private methods
 	#
+	access *: private
+
 	def _ensure_header_written(self):
 		if not self._nframeswritten:
 			if not self._nchannels:
