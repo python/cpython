@@ -106,7 +106,7 @@ sys_exc_info(self, args)
 	PyObject *args;
 {
 	PyThreadState *tstate;
-	if (!PyArg_Parse(args, ""))
+	if (!PyArg_ParseTuple(args, ":exc_info"))
 		return NULL;
 	tstate = PyThreadState_Get();
 	return Py_BuildValue(
@@ -214,7 +214,7 @@ sys_mdebug(self, args)
 	PyObject *args;
 {
 	int flag;
-	if (!PyArg_Parse(args, "i", &flag))
+	if (!PyArg_ParseTuple(args, "i:mdebug", &flag))
 		return NULL;
 	mallopt(M_DEBUG, flag);
 	Py_INCREF(Py_None);
@@ -228,7 +228,7 @@ sys_getrefcount(self, args)
 	PyObject *args;
 {
 	PyObject *arg;
-	if (!PyArg_Parse(args, "O", &arg))
+	if (!PyArg_ParseTuple(args, "O:getrefcount", &arg))
 		return NULL;
 	return PyInt_FromLong((long) arg->ob_refcnt);
 }
@@ -246,7 +246,7 @@ sys_getcounts(self, args)
 {
 	extern PyObject *get_counts Py_PROTO((void));
 
-	if (!PyArg_Parse(args, ""))
+	if (!PyArg_ParseTuple(args, ":getcounts"))
 		return NULL;
 	return get_counts();
 }
@@ -264,10 +264,10 @@ extern PyObject *_Py_GetDXProfile Py_PROTO((PyObject *,  PyObject *));
 
 static PyMethodDef sys_methods[] = {
 	/* Might as well keep this in alphabetic order */
-	{"exc_info",	sys_exc_info, 0, exc_info_doc},
+	{"exc_info",	sys_exc_info, 1, exc_info_doc},
 	{"exit",	sys_exit, 0, exit_doc},
 #ifdef COUNT_ALLOCS
-	{"getcounts",	sys_getcounts, 0},
+	{"getcounts",	sys_getcounts, 1},
 #endif
 #ifdef DYNAMIC_EXECUTION_PROFILE
 	{"getdxp",	_Py_GetDXProfile, 1},
@@ -275,9 +275,9 @@ static PyMethodDef sys_methods[] = {
 #ifdef Py_TRACE_REFS
 	{"getobjects",	_Py_GetObjects, 1},
 #endif
-	{"getrefcount",	sys_getrefcount, 0, getrefcount_doc},
+	{"getrefcount",	sys_getrefcount, 1, getrefcount_doc},
 #ifdef USE_MALLOPT
-	{"mdebug",	sys_mdebug, 0},
+	{"mdebug",	sys_mdebug, 1},
 #endif
 	{"setcheckinterval",	sys_setcheckinterval, 1, setcheckinterval_doc},
 	{"setprofile",	sys_setprofile, 0, setprofile_doc},
