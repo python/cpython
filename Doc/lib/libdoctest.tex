@@ -1,22 +1,33 @@
 \section{\module{doctest} ---
-         Test docstrings represent reality}
+         Test interactive Python examples}
 
 \declaremodule{standard}{doctest}
 \moduleauthor{Tim Peters}{tim_one@users.sourceforge.net}
 \sectionauthor{Tim Peters}{tim_one@users.sourceforge.net}
 \sectionauthor{Moshe Zadka}{moshez@debian.org}
+\sectionauthor{Edward Loper}{edloper@users.sourceforge.net}
 
-\modulesynopsis{A framework for verifying examples in docstrings.}
+\modulesynopsis{A framework for verifying interactive Python examples.}
 
-The \module{doctest} module searches a module's docstrings for text that looks
-like an interactive Python session, then executes all such sessions to verify
-they still work exactly as shown.  Here's a complete but small example:
+The \module{doctest} module searches for pieces of text that look like
+interactive Python sessions, and then executes those sessions to
+verify that they work exactly as shown.  There are two common ways to
+use doctest:
+
+\begin{enumerate}
+\item To check that a module's docstrings are up-to-date by verifying
+      that all interactive examples still work as documented.
+\item To perform regression testing by verifying that interactive
+      examples from a test file or a test object work as expected.
+\end{enumerate}
+
+Here's a complete but small example:
 
 \begin{verbatim}
 """
-This is module example.
+This is the "example" module.
 
-Example supplies one function, factorial.  For example,
+The example module supplies one function, factorial().  For example,
 
 >>> factorial(5)
 120
@@ -141,7 +152,8 @@ That's all you need to know to start making productive use of
 details.  Note that there are many examples of doctests in
 the standard Python test suite and libraries.
 
-\subsection{Simple Usage}
+\subsection{Simple Usage: Checking Examples in 
+            Docstrings\label{doctest-simple-testmod}}
 
 The simplest way to start using doctest (but not necessarily the way
 you'll continue to do it) is to end each module \module{M} with:
@@ -185,12 +197,59 @@ You can force verbose mode by passing \code{verbose=True} to
 prohibit it by passing \code{verbose=False}.  In either of those cases,
 \code{sys.argv} is not examined by \function{testmod()}.
 
-In any case, \function{testmod()} returns a 2-tuple of ints \code{(\var{f},
-\var{t})}, where \var{f} is the number of docstring examples that
-failed and \var{t} is the total number of docstring examples
-tried.
+In any case, \function{testmod()} returns a 2-tuple of ints
+\samp{(\var{failure_count}, \var{test_count})}, where
+\var{failure_count} is the number of docstring examples that failed
+and \var{test_count} is the total number of docstring examples tested.
 
-\subsection{Which Docstrings Are Examined?}
+For more information on \function{testmod()}, see
+section~\ref{doctest-basic-api}.
+
+\subsection{Simple Usage: Checking Examples in a Text
+            File\label{doctest-simple-testfile}}
+
+Another simple application of doctest is testing interactive examples
+in a text file.  This can be done with the \function{testfile()}
+function:
+
+\begin{verbatim}
+import doctest
+doctest.testfile("mytests.txt")
+\end{verbatim}
+
+This short script will execute and verify any interactive Python
+examples contained in the file \file{mytests.txt}.  As with
+\function{testmod()}, it won't display anything unless an example
+fails.  If an example does fail, then the failing example(s) and the
+cause(s) of the failure(s) are printed to stdout, using the same
+format as \function{testmod()}.
+
+By default, \function{testfile()} looks for files in the calling
+module's directory.  See section~\ref{doctest-basic-api} for a
+description of the optional arguments that can be used to tell it to
+look for files in other locations.
+
+Like \function{testmod()}, \function{testfile()}'s verbosity can be
+set with the \programopt{-v} command-line switch or with the optional
+keyword argument \var{verbose}.  And like \function{testmod()},
+\function{testfile()} returns a 2-tuple of ints
+\samp{(\var{failure_count}, \var{test_count})}, where
+\var{failure_count} is the number of docstring examples that failed
+and \var{test_count} is the total number of docstring examples tested.
+
+For more information on \function{testfile()}, see
+section~\ref{doctest-basic-api}.
+
+\subsection{How It Works\label{doctest-how-it-works}}
+
+This section examines in detail how doctest works: which docstrings it
+looks at, how it finds interactive examples, what execution context it
+uses, how it handles exceptions, and how option flags can be used to
+control its behavior.  This is the information that you need to know
+to write doctest examples; for information about actually running
+doctest on these examples, see the following sections.
+
+\subsubsection{Which Docstrings Are Examined?\label{doctest-which-docstrings}}
 
 The module docstring, and all function, class and method docstrings are
 searched.  Objects imported into the module are not searched.
@@ -212,10 +271,98 @@ their contained methods and nested classes.
 \versionchanged[A "private name" concept is deprecated and no longer
                 documented]{2.4}
 
+\subsubsection{How are Docstring Examples
+               Recognized?\label{doctest-finding-examples}}
 
-\subsection{What's the Execution Context?}
+In most cases a copy-and-paste of an interactive console session works
+fine, but doctest isn't trying to do an exact emulation of any specific
+Python shell.  All hard tab characters are expanded to spaces, using
+8-column tab stops.  If you don't believe tabs should mean that, too
+bad:  don't use hard tabs, or write your own \class{DocTestParser}
+class.
 
-By default, each time \function{testmod()} finds a docstring to test, it
+\versionchanged[Expanding tabs to spaces is new; previous versions
+                tried to preserve hard tabs, with confusing results]{2.4}
+
+\begin{verbatim}
+>>> # comments are ignored
+>>> x = 12
+>>> x
+12
+>>> if x == 13:
+...     print "yes"
+... else:
+...     print "no"
+...     print "NO"
+...     print "NO!!!"
+...
+no
+NO
+NO!!!
+>>>
+\end{verbatim}
+
+Any expected output must immediately follow the final
+\code{'>\code{>}>~'} or \code{'...~'} line containing the code, and
+the expected output (if any) extends to the next \code{'>\code{>}>~'}
+or all-whitespace line.
+
+The fine print:
+
+\begin{itemize}
+
+\item Expected output cannot contain an all-whitespace line, since such a
+  line is taken to signal the end of expected output.  If expected
+  output does contain a blank line, put \code{<BLANKLINE>} in your
+  doctest example each place a blank line is expected.
+  \versionchanged[\code{<BLANKLINE>} was added; there was no way to
+                  use expected output containing empty lines in
+                  previous versions]{2.4}
+
+\item Output to stdout is captured, but not output to stderr (exception
+  tracebacks are captured via a different means).
+
+\item If you continue a line via backslashing in an interactive session,
+  or for any other reason use a backslash, you should use a raw
+  docstring, which will preserve your backslashes exactly as you type
+  them:
+
+\begin{verbatim}
+>>> def f(x):
+...     r'''Backslashes in a raw docstring: m\n'''
+>>> print f.__doc__
+Backslashes in a raw docstring: m\n
+\end{verbatim}
+
+  Otherwise, the backslash will be interpreted as part of the string.
+  E.g., the "{\textbackslash}" above would be interpreted as a newline
+  character.  Alternatively, you can double each backslash in the
+  doctest version (and not use a raw string):
+
+\begin{verbatim}
+>>> def f(x):
+...     '''Backslashes in a raw docstring: m\\n'''
+>>> print f.__doc__
+Backslashes in a raw docstring: m\n
+\end{verbatim}
+
+\item The starting column doesn't matter:
+
+\begin{verbatim}
+  >>> assert "Easy!"
+        >>> import math
+            >>> math.floor(1.9)
+            1.0
+\end{verbatim}
+
+and as many leading whitespace characters are stripped from the
+expected output as appeared in the initial \code{'>\code{>}>~'} line
+that started the example.
+\end{itemize}
+
+\subsubsection{What's the Execution Context?\label{doctest-execution-context}}
+
+By default, each time \module{doctest} finds a docstring to test, it
 uses a \emph{shallow copy} of \module{M}'s globals, so that running tests
 doesn't change the module's real globals, and so that one test in
 \module{M} can't leave behind crumbs that accidentally allow another test
@@ -224,9 +371,10 @@ in \module{M}, and names defined earlier in the docstring being run.
 Examples cannot see names defined in other docstrings.
 
 You can force use of your own dict as the execution context by passing
-\code{globs=your_dict} to \function{testmod()} instead.
+\code{globs=your_dict} to \function{testmod()} or
+\function{testfile()} instead.
 
-\subsection{What About Exceptions?}
+\subsubsection{What About Exceptions?\label{doctest-exceptions}}
 
 No problem, provided that the traceback is the only output produced by
 the example:  just paste in the traceback.  Since tracebacks contain
@@ -322,8 +470,7 @@ Some details you should read once, but won't need to remember:
 \versionchanged[The ability to handle a multi-line exception detail
                 was added]{2.4}
 
-
-\subsection{Option Flags and Directives\label{doctest-options}}
+\subsubsection{Option Flags and Directives\label{doctest-options}}
 
 A number of option flags control various aspects of doctest's
 behavior.  Symbolic names for the flags are supplied as module constants,
@@ -444,8 +591,9 @@ The second group of options controls how test failures are reported:
     A bitmask or'ing together all the reporting flags above.
 \end{datadesc}
 
-A "doctest directive" is a trailing Python comment on a line of a doctest
-example:
+"Doctest directives" may be used to modify the option flags for
+individual examples.  Doctest directives are expressed as a special
+Python comment following an example's source code:
 
 \begin{productionlist}[doctest]
     \production{directive}
@@ -462,11 +610,11 @@ example:
 
 Whitespace is not allowed between the \code{+} or \code{-} and the
 directive option name.  The directive option name can be any of the
-option names explained above.
+option flag names explained above.
 
-The doctest directives appearing in a single example modify doctest's
-behavior for that single example.  Use \code{+} to enable the named
-behavior, or \code{-} to disable it.
+An example's doctest directives modify doctest's behavior for that
+single example.  Use \code{+} to enable the named behavior, or
+\code{-} to disable it.
 
 For example, this test passes:
 
@@ -494,8 +642,8 @@ by commas:
 [0,    1, ...,   18,    19]
 \end{verbatim}
 
-If multiple directives are used for a single example, then they are
-combined:
+If multiple directive comments are used for a single example, then
+they are combined:
 
 \begin{verbatim}
 >>> print range(20) # doctest: +ELLIPSIS
@@ -504,7 +652,7 @@ combined:
 \end{verbatim}
 
 As the previous example shows, you can add \samp{...} lines to your
-example containing only directives.  This can also be useful when an
+example containing only directives.  This can be useful when an
 example is too long for a directive to comfortably fit on the same
 line:
 
@@ -531,23 +679,185 @@ can be useful.
     matches an empty line in actual output; and doctest directives
     were added]{2.4}
 
+\subsubsection{Warnings\label{doctest-warnings}}
 
-\subsection{Advanced Usage}
+\begin{itemize}
 
-Several module level functions are available for controlling how doctests
-are run.
+\item \module{doctest} is serious about requiring exact matches in expected
+  output.  If even a single character doesn't match, the test fails.  This
+  will probably surprise you a few times, as you learn exactly what Python
+  does and doesn't guarantee about output.  For example, when printing a
+  dict, Python doesn't guarantee that the key-value pairs will be printed
+  in any particular order, so a test like
 
-\begin{funcdesc}{debug}{module, name}
-  Debug a single docstring containing doctests.
+% Hey! What happened to Monty Python examples?
+% Tim: ask Guido -- it's his example!
+\begin{verbatim}
+>>> foo()
+{"Hermione": "hippogryph", "Harry": "broomstick"}
+\end{verbatim}
 
-  Provide the \var{module} (or dotted name of the module) containing the
-  docstring to be debugged and the \var{name} (within the module) of the
-  object with the docstring to be debugged.
+is vulnerable!  One workaround is to do
 
-  The doctest examples are extracted (see function \function{testsource()}),
-  and written to a temporary file.  The Python debugger, \refmodule{pdb},
-  is then invoked on that file.
-  \versionadded{2.3}
+\begin{verbatim}
+>>> foo() == {"Hermione": "hippogryph", "Harry": "broomstick"}
+True
+\end{verbatim}
+
+instead.  Another is to do
+
+\begin{verbatim}
+>>> d = foo().items()
+>>> d.sort()
+>>> d
+[('Harry', 'broomstick'), ('Hermione', 'hippogryph')]
+\end{verbatim}
+
+There are others, but you get the idea.
+
+Another bad idea is to print things that embed an object address, like
+
+\begin{verbatim}
+>>> id(1.0) # certain to fail some of the time
+7948648
+\end{verbatim}
+
+Floating-point numbers are also subject to small output variations across
+platforms, because Python defers to the platform C library for float
+formatting, and C libraries vary widely in quality here.
+
+\begin{verbatim}
+>>> 1./7  # risky
+0.14285714285714285
+>>> print 1./7 # safer
+0.142857142857
+>>> print round(1./7, 6) # much safer
+0.142857
+\end{verbatim}
+
+Numbers of the form \code{I/2.**J} are safe across all platforms, and I
+often contrive doctest examples to produce numbers of that form:
+
+\begin{verbatim}
+>>> 3./4  # utterly safe
+0.75
+\end{verbatim}
+
+Simple fractions are also easier for people to understand, and that makes
+for better documentation.
+
+\item Be careful if you have code that must only execute once.
+
+If you have module-level code that must only execute once, a more foolproof
+definition of \function{_test()} is
+
+% [XX] How is this safer??  The only difference I see is that this
+% imports (but doesn't use) sys.  -edloper
+\begin{verbatim}
+def _test():
+    import doctest, sys
+    doctest.testmod()
+\end{verbatim}
+
+\item WYSIWYG isn't always the case, starting in Python 2.3.  The
+  string form of boolean results changed from \code{'0'} and
+  \code{'1'} to \code{'False'} and \code{'True'} in Python 2.3.
+  This makes it clumsy to write a doctest showing boolean results that
+  passes under multiple versions of Python.  In Python 2.3, by default,
+  and as a special case, if an expected output block consists solely
+  of \code{'0'} and the actual output block consists solely of
+  \code{'False'}, that's accepted as an exact match, and similarly for
+  \code{'1'} versus \code{'True'}.  This behavior can be turned off by
+  passing the new (in 2.3) module constant
+  \constant{DONT_ACCEPT_TRUE_FOR_1} as the value of \function{testmod()}'s
+  new (in 2.3) optional \var{optionflags} argument.  Some years after
+  the integer spellings of booleans are history, this hack will
+  probably be removed again.
+
+\end{itemize}
+
+\subsection{Basic API\label{doctest-basic-api}}
+
+The functions \function{testmod()} and \function{testfile()} provide a
+simple interface to doctest that should be sufficient for most basic
+uses.  For a more informal introduction to these two functions, see
+sections \ref{doctest-simple-testmod} and
+\ref{doctest-simple-testfile}.
+
+\begin{funcdesc}{testfile}{filename\optional{, module_relative}\optional{,
+                          name}\optional{, package}\optional{,
+                          globs}\optional{, verbose}\optional{,
+                          report}\optional{, optionflags}\optional{,
+                          extraglobs}\optional{, raise_on_error}}
+
+  All arguments except \var{filename} are optional, and should be
+  specified in keyword form.
+
+  Test examples in the file named \var{filename}.  Return
+  \samp{(\var{failure_count}, \var{test_count})}.
+
+  Optional argument \var{module_relative} specifies how the filename
+  should be interpreted:
+
+  \begin{itemize}
+  \item If \var{module_relative} is \code{True} (the default), then
+        \var{filename} specifies an os-independent module-relative
+        path.  By default, this path is relative to the calling
+        module's directory; but if the \var{package} argument is
+        specified, then it is relative to that package.  To ensure
+        os-independence, \var{filename} should use \code{/} characters
+        to separate path segments, and may not be an absolute path
+        (i.e., it may not begin with \code{/}).
+  \item If \var{module_relative} is \code{False}, then \var{filename}
+        specifies an os-specific path.  The path may be absolute or
+        relative; relative paths are resolved with respect to the
+        current working directory.
+  \end{itemize}
+
+  Optional argument \var{name} gives the name of the test; by default,
+  or if \code{None}, \code{os.path.basename(\var{filename})} is used.
+
+  Optional argument \var{package} is a Python package or the name of a
+  Python package whose directory should be used as the base directory
+  for a module-relative filename.  If no package is specified, then
+  the calling module's directory is used as the base directory for
+  module-relative filenames.  It is an error to specify \var{package}
+  if \var{module_relative} is \code{False}.
+
+  Optional argument \var{globs} gives a dict to be used as the globals
+  when executing examples; by default, or if \code{None},
+  \code{\var{m}.__dict__} is used.  A new shallow copy of this dict is
+  created for the doctest, so its examples start with a clean slate.
+
+  Optional argument \var{extraglobs} gives a dict merged into the
+  globals used to execute examples.  This works like
+  \method{dict.update()}:  if \var{globs} and \var{extraglobs} have a
+  common key, the associated value in \var{extraglobs} appears in the
+  combined dict.  By default, or if \code{None}, no extra globals are
+  used.  This is an advanced feature that allows parameterization of
+  doctests.  For example, a doctest can be written for a base class, using
+  a generic name for the class, then reused to test any number of
+  subclasses by passing an \var{extraglobs} dict mapping the generic
+  name to the subclass to be tested.
+
+  Optional argument \var{verbose} prints lots of stuff if true, and prints
+  only failures if false; by default, or if \code{None}, it's true
+  if and only if \code{'-v'} is in \code{sys.argv}.
+
+  Optional argument \var{report} prints a summary at the end when true,
+  else prints nothing at the end.  In verbose mode, the summary is
+  detailed, else the summary is very brief (in fact, empty if all tests
+  passed).
+
+  Optional argument \var{optionflags} or's together option flags.  See
+  see section~\ref{doctest-options}.
+
+  Optional argument \var{raise_on_error} defaults to false.  If true,
+  an exception is raised upon the first failure or unexpected exception
+  in an example.  This allows failures to be post-mortem debugged.
+  Default behavior is to continue running examples.
+
+  \versionadded{2.4}
 \end{funcdesc}
 
 \begin{funcdesc}{testmod}{\optional{m}\optional{, name}\optional{,
@@ -604,7 +914,7 @@ are run.
   passed).
 
   Optional argument \var{optionflags} or's together option flags.  See
-  see section \ref{doctest-options}.
+  see section~\ref{doctest-options}.
 
   Optional argument \var{raise_on_error} defaults to false.  If true,
   an exception is raised upon the first failure or unexpected exception
@@ -634,6 +944,615 @@ are run.
                   and \var{exclude_empty} were added]{2.4}
 \end{funcdesc}
 
+\subsection{Unittest API\label{doctest-unittest-api}}
+
+Doctest provides several functions that can be used to create
+\module{unittest} test suites from doctest examples.  These test
+suites can then be run using \module{unittest} test runners:
+
+\begin{verbatim}
+  import unittest
+  import doctest
+  import my_module_with_doctests
+
+  suite = doctest.DocTestSuite(my_module_with_doctests)
+  runner = unittest.TextTestRunner()
+  runner.run(suite)
+\end{verbatim}
+
+\begin{funcdesc}{DocFileSuite}{*paths, **kw}
+  Convert doctest tests from one or more text files to a
+  \class{\refmodule{unittest}.TestSuite}.
+
+  The returned \class{TestSuite} is to be run by the unittest
+  framework and runs the interactive examples in each file.  If an
+  example in any file fails, then the synthesized unit test fails, and
+  a \exception{failureException} exception is raised showing the
+  name of the file containing the test and a (sometimes approximate)
+  line number.
+
+  A number of options may be provided as keyword arguments:
+
+  The optional argument \var{module_relative} specifies how
+  the the filenames in \var{paths} should be interpreted:
+
+  \begin{itemize}
+  \item If \var{module_relative} is \code{True} (the default), then
+        each filename specifies an os-independent module-relative
+        path.  By default, this path is relative to the calling
+        module's directory; but if the \var{package} argument is
+        specified, then it is relative to that package.  To ensure
+        os-independence, each filename should use \code{/} characters
+        to separate path segments, and may not be an absolute path
+        (i.e., it may not begin with \code{/}).
+  \item If \var{module_relative} is \code{False}, then each filename
+        specifies an os-specific path.  The path may be absolute or
+        relative; relative paths are resolved with respect to the
+        current working directory.
+  \end{itemize}
+
+  The optional argument \var{package} is a Python package or the name
+  of a Python package whose directory should be used as the base
+  directory for module-relative filenames.  If no package is
+  specified, then the calling module's directory is used as the base
+  directory for module-relative filenames.  It is an error to specify
+  \var{package} if \var{module_relative} is \code{False}.
+
+  The optional argument \var{setUp} specifies a set-up function for
+  the test suite.  This is called before running the tests in each
+  file.  The \var{setUp} function will be passed a \class{DocTest}
+  object.  The setUp function can access the test globals as the
+  \var{globs} attribute of the test passed.
+
+  The optional argument \var{tearDown} specifies a tear-down function
+  for the test suite.  This is called after running the tests in each
+  file.  The \var{tearDown} function will be passed a \class{DocTest}
+  object.  The setUp function can access the test globals as the
+  \var{globs} attribute of the test passed.
+
+  The optional argument \var{globs} is a dictionary containing the
+  initial global variables for the tests.  A new copy of this
+  dictionary is created for each test.  By default, \var{globs} is
+  empty.
+
+  The optional argument \var{optionflags} specifies the default
+  doctest options for the tests.  It is created by or-ing together
+  individual option flags.
+
+  \versionadded{2.4}
+\end{funcdesc}
+
+\begin{funcdesc}{DocTestSuite}{\optional{module}\optional{,
+                              globs}\optional{, extraglobs}\optional{,
+                              test_finder}\optional{, setUp}\optional{,
+                              tearDown}\optional{, checker}}
+  Convert doctest tests for a module to a
+  \class{\refmodule{unittest}.TestSuite}.
+
+  The returned \class{TestSuite} is to be run by the unittest framework
+  and runs each doctest in the module.  If any of the doctests fail,
+  then the synthesized unit test fails, and a \exception{failureException}
+  exception is raised showing the name of the file containing the test and a
+  (sometimes approximate) line number.
+
+  The optional argument \var{module} provides the module to be tested.  It
+  can be a module object or a (possibly dotted) module name.  If not
+  specified, the module calling this function is used.
+
+  The optional argument \var{globs} is a dictionary containing the
+  initial global variables for the tests.  A new copy of this
+  dictionary is created for each test.  By default, \var{globs} is
+  empty.
+
+  The optional argument \var{extraglobs} specifies an extra set of
+  global variables, which is merged into \var{globs}.  By default, no
+  extra globals are used.
+
+  The optional argument \var{test_finder} is the \class{DocTestFinder}
+  object (or a drop-in replacement) that is used to extract doctests
+  from the module.
+
+  The optional argument \var{setUp} specifies a set-up function for
+  the test suite.  This is called before running the tests in each
+  file.  The \var{setUp} function will be passed a \class{DocTest}
+  object.  The setUp function can access the test globals as the
+  \var{globs} attribute of the test passed.
+
+  The optional argument \var{tearDown} specifies a tear-down function
+  for the test suite.  This is called after running the tests in each
+  file.  The \var{tearDown} function will be passed a \class{DocTest}
+  object.  The setUp function can access the test globals as the
+  \var{globs} attribute of the test passed.
+
+  The optional argument \var{optionflags} specifies the default
+  doctest options for the tests.  It is created by or-ing together
+  individual option flags.
+
+  \versionadded{2.3}
+  \versionchanged[The parameters \var{globs}, \var{extraglobs},
+    \var{test_finder}, \var{setUp}, \var{tearDown}, and
+    \var{optionflags} were added]{2.4}
+  \versionchanged[This function now uses the same search technique as
+    \function{testmod()}.]{2.4}
+\end{funcdesc}
+
+\subsection{Advanced API\label{doctest-advanced-api}}
+
+The basic API is a simple wrapper that's intended to make doctest easy
+to use.  It is fairly flexible, and should meet most user's needs;
+however, if you require more fine grained control over testing, or
+wish to extend doctest's capabilities, then you should use the
+advanced API.
+
+The advanced API revolves around two container classes, which are used
+to store the interactive examples extracted from doctest cases:
+
+\begin{itemize}
+\item \class{Example}: A single python statement, paired with its
+      expected output.
+\item \class{DocTest}: A collection of \class{Example}s, typically
+      extracted from a single docstring or text file.
+\end{itemize}
+
+Additional processing classes are defined to find, parse, and run, and
+check doctest examples:
+
+\begin{itemize}
+\item \class{DocTestFinder}: Finds all docstrings in a given module,
+      and uses a \class{DocTestParser} to create a \class{DocTest}
+      from every docstring that contains interactive examples.
+\item \class{DocTestParser}: Creates a \class{DocTest} object from
+      a string (such as an object's docstring).
+\item \class{DocTestRunner}: Executes the examples in a
+      \class{DocTest}, and uses an \class{OutputChecker} to verify
+      their output.
+\item \class{OutputChecker}: Compares the actual output from a
+      doctest example with the expected output, and decides whether
+      they match.
+\end{itemize}
+
+The relationship between these processing classes is summarized in the
+following diagram:
+
+\begin{verbatim}
+                            list of:
++------+                   +---------+
+|module| --DocTestFinder-> | DocTest | --DocTestRunner-> results
++------+    |        ^     +---------+     |       ^    (printed)
+            |        |     | Example |     |       |
+            V        |     |   ...   |     V       |
+           DocTestParser   | Example |   OutputChecker
+                           +---------+
+\end{verbatim}
+
+\subsubsection{DocTest Objects\label{doctest-DocTest}}
+\begin{classdesc}{DocTest}{examples, globs, name, filename, lineno,
+                           docstring}
+    A collection of doctest examples that should be run in a single
+    namespace.  The constructor arguments are used to initialize the
+    member variables of the same names.
+    \versionadded{2.4}
+\end{classdesc}
+
+\class{DocTest} defines the following member variables.  They are
+initialized by the constructor, and should not be modified directly.
+
+\begin{memberdesc}{examples}
+    A list of \class{Example} objects encoding the individual
+    interactive Python examples that should be run by this test.
+\end{memberdesc}
+
+\begin{memberdesc}{globs}
+    The namespace (aka globals) that the examples should be run in.
+    This is a dictionary mapping names to values.  Any changes to the
+    namespace made by the examples (such as binding new variables)
+    will be reflected in \member{globs} after the test is run.
+\end{memberdesc}
+
+\begin{memberdesc}{name}
+    A string name identifying the \class{DocTest}.  Typically, this is
+    the name of the object or file that the test was extracted from.
+\end{memberdesc}
+
+\begin{memberdesc}{filename}
+    The name of the file that this \class{DocTest} was extracted from;
+    or \code{None} if the filename is unknown, or if the
+    \class{DocTest} was not extracted from a file.
+\end{memberdesc}
+
+\begin{memberdesc}{lineno}
+    The line number within \member{filename} where this
+    \class{DocTest} begins, or \code{None} if the line number is
+    unavailable.  This line number is zero-based with respect to the
+    beginning of the file.
+\end{memberdesc}
+
+\begin{memberdesc}{docstring}
+    The string that the test was extracted from, or `None` if the
+    string is unavailable, or if the test was not extracted from a
+    string.
+\end{memberdesc}
+
+\subsubsection{Example Objects\label{doctest-Example}}
+\begin{classdesc}{Example}{source, want\optional{,
+                           exc_msg}\optional{, lineno}\optional{,
+                           indent}\optional{, options}}
+    A single interactive example, consisting of a Python statement and
+    its expected output.  The constructor arguments are used to
+    initialize the member variables of the same names.
+    \versionadded{2.4}
+\end{classdesc}
+
+\class{Example} defines the following member variables.  They are
+initialized by the constructor, and should not be modified directly.
+
+\begin{memberdesc}{source}
+    A string containing the example's source code.  This source code
+    consists of a single Python statement, and always ends with a
+    newline; the constructor adds a newline when necessary.
+\end{memberdesc}
+
+\begin{memberdesc}{want}
+    The expected output from running the example's source code (either
+    from stdout, or a traceback in case of exception).  \member{want}
+    ends with a newline unless no output is expected, in which case
+    it's an empty string.  The constructor adds a newline when
+    necessary.
+\end{memberdesc}
+
+\begin{memberdesc}{exc_msg}
+    The exception message generated by the example, if the example is
+    expected to generate an exception; or \code{None} if it is not
+    expected to generate an exception.  This exception message is
+    compared against the return value of
+    \function{traceback.format_exception_only()}.  \member{exc_msg}
+    ends with a newline unless it's \code{None}.  The constructor adds
+    a newline if needed.
+\end{memberdesc}
+
+\begin{memberdesc}{lineno}
+    The line number within the string containing this example where
+    the example begins.  This line number is zero-based with respect
+    to the beginning of the containing string.
+\end{memberdesc}
+
+\begin{memberdesc}{indent}
+    The example's indentation in the containing string.  I.e., the
+    number of space characters that preceed the example's first
+    prompt.
+\end{memberdesc}
+
+\begin{memberdesc}{options}
+    A dictionary mapping from option flags to \code{True} or
+    \code{False}, which is used to override default options for this
+    example.  Any option flags not contained in this dictionary are
+    left at their default value (as specified by the
+    \class{DocTestRunner}'s
+\member{optionflags}).  By default, no options are set.
+\end{memberdesc}
+
+\subsubsection{DocTestFinder objects\label{doctest-DocTestFinder}}
+\begin{classdesc}{DocTestFinder}{\optional{verbose}\optional{,
+                                parser}\optional{, recurse}\optional{,
+                                exclude_empty}}
+    A processing class used to extract the \class{DocTest}s that are
+    relevant to a given object, from its docstring and the docstrings
+    of its contained objects.  \class{DocTest}s can currently be
+    extracted from the following object types: modules, functions,
+    classes, methods, staticmethods, classmethods, and properties.
+
+    The optional argument \var{verbose} can be used to display the
+    objects searched by the finder.  It defaults to \code{False} (no
+    output).
+
+    The optional argument \var{parser} specifies the
+    \class{DocTestParser} object (or a drop-in replacement) that is
+    used to extract doctests from docstrings.
+
+    If the optional argument \var{recurse} is false, then
+    \method{DocTestFinder.find()} will only examine the given object,
+    and not any contained objects.
+
+    If the optional argument \var{exclude_empty} is false, then
+    \method{DocTestFinder.find()} will include tests for objects with
+    empty docstrings.
+
+    \versionadded{2.4}
+\end{classdesc}
+
+\class{DocTestFinder} defines the following method:
+
+\begin{methoddesc}{find}{obj\optional{, name}\optional{, 
+                   module}\optional{, globs}\optional{, extraglobs}}
+    Return a list of the \class{DocTest}s that are defined by
+    \var{obj}'s docstring, or by any of its contained objects'
+    docstrings.
+
+    The optional argument \var{name} specifies the object's name; this
+    name will be used to construct names for the returned
+    \class{DocTest}s.  If \var{name} is not specified, then
+    \code{var.__name__} is used.
+
+    The optional parameter \var{module} is the module that contains
+    the given object.  If the module is not specified or is None, then
+    the test finder will attempt to automatically determine the
+    correct module.  The object's module is used:
+
+    \begin{itemize}
+    \item As a default namespace, if `globs` is not specified.
+    \item To prevent the DocTestFinder from extracting DocTests
+          from objects that are imported from other modules.  (Contained
+          objects with modules other than \var{module} are ignored.)
+    \item To find the name of the file containing the object.
+    \item To help find the line number of the object within its file.
+    \end{itemize}
+
+    If \var{module} is \code{False}, no attempt to find the module
+    will be made.  This is obscure, of use mostly in testing doctest
+    itself: if \var{module} is \code{False}, or is \code{None} but
+    cannot be found automatically, then all objects are considered to
+    belong to the (non-existent) module, so all contained objects will
+    (recursively) be searched for doctests.
+
+    The globals for each \class{DocTest} is formed by combining
+    \var{globs} and \var{extraglobs} (bindings in \var{extraglobs}
+    override bindings in \var{globs}).  A new copy of the globals
+    dictionary is created for each \class{DocTest}.  If \var{globs} is
+    not specified, then it defaults to the module's \var{__dict__}, if
+    specified, or \code{\{\}} otherwise.  If \var{extraglobs} is not
+    specified, then it defaults to \code{\{\}}.
+\end{methoddesc}
+
+\subsubsection{DocTestParser objects\label{doctest-DocTestParser}}
+\begin{classdesc}{DocTestParser}{}
+    A processing class used to extract interactive examples from a
+    string, and use them to create a \class{DocTest} object.
+    \versionadded{2.4}
+\end{classdesc}
+
+\class{DocTestParser} defines the following methods:
+
+\begin{methoddesc}{get_doctest}{string, globs, name, filename, lineno}
+    Extract all doctest examples from the given string, and collect
+    them into a \class{DocTest} object.
+
+    \var{globs}, \var{name}, \var{filename}, and \var{lineno} are
+    attributes for the new \class{DocTest} object.  See the
+    documentation for \class{DocTest} for more information.
+\end{methoddesc}
+
+\begin{methoddesc}{get_examples}{string\optional{, name}}
+    Extract all doctest examples from the given string, and return
+    them as a list of \class{Example} objects.  Line numbers are
+    0-based.  The optional argument \var{name} is a name identifying
+    this string, and is only used for error messages.
+\end{methoddesc}
+
+\begin{methoddesc}{parse}{string\optional{, name}}
+    Divide the given string into examples and intervening text, and
+    return them as a list of alternating \class{Example}s and strings.
+    Line numbers for the \class{Example}s are 0-based.  The optional
+    argument \var{name} is a name identifying this string, and is only
+    used for error messages.
+\end{methoddesc}
+
+\subsubsection{DocTestRunner objects\label{doctest-DocTestRunner}}
+\begin{classdesc}{DocTestRunner}{\optional{checker}\optional{,
+                                 verbose}\optional{, optionflags}}
+    A processing class used to execute and verify the interactive
+    examples in a \class{DocTest}.
+
+    The comparison between expected outputs and actual outputs is done
+    by an \class{OutputChecker}.  This comparison may be customized
+    with a number of option flags; see section~\ref{doctest-options}
+    for more information.  If the option flags are insufficient, then
+    the comparison may also be customized by passing a subclass of
+    \class{OutputChecker} to the constructor.
+
+    The test runner's display output can be controlled in two ways.
+    First, an output function can be passed to
+    \method{TestRunner.run()}; this function will be called with
+    strings that should be displayed.  It defaults to
+    \code{sys.stdout.write}.  If capturing the output is not
+    sufficient, then the display output can be also customized by
+    subclassing DocTestRunner, and overriding the methods
+    \method{report_start}, \method{report_success},
+    \method{report_unexpected_exception}, and \method{report_failure}.
+
+    The optional keyword argument \var{checker} specifies the
+    \class{OutputChecker} object (or drop-in replacement) that should
+    be used to compare the expected outputs to the actual outputs of
+    doctest examples.
+
+    The optional keyword argument \var{verbose} controls the
+    \class{DocTestRunner}'s verbosity.  If \var{verbose} is
+    \code{True}, then information is printed about each example, as it
+    is run.  If \var{verbose} is \code{False}, then only failures are
+    printed.  If \var{verbose} is unspecified, or \code{None}, then
+    verbose output is used iff the command-line switch \programopt{-v}
+    is used.
+
+    The optional keyword argument \var{optionflags} can be used to
+    control how the test runner compares expected output to actual
+    output, and how it displays failures.  For more information, see
+    section~\ref{doctest-options}.
+
+    \versionadded{2.4}
+\end{classdesc}
+
+\class{DocTestParser} defines the following methods:
+
+\begin{methoddesc}{report_start}{out, test, example}
+    Report that the test runner is about to process the given example.
+    This method is provided to allow subclasses of
+    \class{DocTestRunner} to customize their output; it should not be
+    called directly.
+
+    \var{example} is the example about to be processed.  \var{test} is
+    the test containing \var{example}.  \var{out} is the output
+    function that was passed to \method{DocTestRunner.run()}.
+\end{methoddesc}
+
+\begin{methoddesc}{report_success}{out, test, example, got}
+    Report that the given example ran successfully.  This method is
+    provided to allow subclasses of \class{DocTestRunner} to customize
+    their output; it should not be called directly.
+
+    \var{example} is the example about to be processed.  \var{got} is
+    the actual output from the example.  \var{test} is the test
+    containing \var{example}.  \var{out} is the output function that
+    was passed to \method{DocTestRunner.run()}.
+\end{methoddesc}
+
+\begin{methoddesc}{report_failure}{out, test, example, got}
+    Report that the given example failed.  This method is provided to
+    allow subclasses of \class{DocTestRunner} to customize their
+    output; it should not be called directly.
+
+    \var{example} is the example about to be processed.  \var{got} is
+    the actual output from the example.  \var{test} is the test
+    containing \var{example}.  \var{out} is the output function that
+    was passed to \method{DocTestRunner.run()}.
+\end{methoddesc}
+
+\begin{methoddesc}{report_unexpected_exception}{out, test, example, exc_info}
+    Report that the given example raised an unexpected exception.
+    This method is provided to allow subclasses of
+    \class{DocTestRunner} to customize their output; it should not be
+    called directly.
+
+    \var{example} is the example about to be processed.
+    \var{exc_info} is a tuple containing information about the
+    unexpected exception (as returned by \function{sys.exc_info()}).
+    \var{test} is the test containing \var{example}.  \var{out} is the
+    output function that was passed to \method{DocTestRunner.run()}.
+\end{methoddesc}
+
+\begin{methoddesc}{run}{test\optional{, compileflags}\optional{,
+                        out}\optional{, clear_globs}}
+    Run the examples in \var{test} (a \class{DocTest} object), and
+    display the results using the writer function \var{out}.
+
+    The examples are run in the namespace \code{test.globs}.  If
+    \var{clear_globs} is true (the default), then this namespace will
+    be cleared after the test runs, to help with garbage collection.
+    If you would like to examine the namespace after the test
+    completes, then use \var{clear_globs=False}.
+
+    \var{compileflags} gives the set of flags that should be used by
+    the Python compiler when running the examples.  If not specified,
+    then it will default to the set of future-import flags that apply
+    to \var{globs}.
+
+    The output of each example is checked using the
+    \class{DocTestRunner}'s output checker, and the results are
+    formatted by the \method{DocTestRunner.report_*} methods.
+\end{methoddesc}
+
+\begin{methoddesc}{summarize}{\optional{verbose}}
+    Print a summary of all the test cases that have been run by this
+    DocTestRunner, and return a tuple \samp{(\var{failure_count},
+    \var{test_count})}.
+
+    The optional \var{verbose} argument controls how detailed the
+    summary is.  If the verbosity is not specified, then the
+    \class{DocTestRunner}'s verbosity is used.
+\end{methoddesc}
+
+\subsubsection{OutputChecker objects\label{doctest-OutputChecker}}
+
+\begin{classdesc}{OutputChecker}{}
+    A class used to check the whether the actual output from a doctest
+    example matches the expected output.  \class{OutputChecker}
+    defines two methods: \method{check_output}, which compares a given
+    pair of outputs, and returns true if they match; and
+    \method{output_difference}, which returns a string describing the
+    differences between two outputs.
+    \versionadded{2.4}
+\end{classdesc}
+
+\class{OutputChecker} defines the following methods:
+
+\begin{methoddesc}{check_output}{want, got, optionflags}
+    Return \code{True} iff the actual output from an example
+    (\var{got}) matches the expected output (\var{want}).  These
+    strings are always considered to match if they are identical; but
+    depending on what option flags the test runner is using, several
+    non-exact match types are also possible.  See
+    section~\ref{doctest-options} for more information about option
+    flags.
+\end{methoddesc}
+
+\begin{methoddesc}{output_difference}{example, got, optionflags}
+    Return a string describing the differences between the expected
+    output for a given example (\var{example}) and the actual output
+    (\var{got}).  \var{optionflags} is the set of option flags used to
+    compare \var{want} and \var{got}.
+\end{methoddesc}
+
+\subsection{Debugging\label{doctest-debugging}}
+
+Doctest provides three mechanisms for debugging doctest examples:
+
+\begin{enumerate}
+\item The \function{debug()} function converts a specified doctest
+      to a Python script, and executes that script using \module{pdb}.
+\item The \class{DebugRunner} class is a subclass of
+      \class{DocTestRunner} that raises an exception for the first
+      failing example, containing information about that example.
+      This information can be used to perform post-mortem debugging on
+      the example.
+\item The unittest cases generated by \function{DocTestSuite()}
+      support the \method{debug} method defined by
+      \class{unittest.TestCase}.
+\end{enumerate}
+
+\begin{funcdesc}{debug}{module, name}
+  Debug a single doctest docstring.
+
+  Provide the \var{module} (or dotted name of the module) containing
+  the docstring to be debugged and the fully qualified dotted
+  \var{name} of the object with the docstring to be debugged.
+
+  The doctest examples are extracted (see function \function{testsource()}),
+  and written to a temporary file.  The Python debugger, \refmodule{pdb},
+  is then invoked on that file.
+  \versionadded{2.3}
+\end{funcdesc}
+
+\begin{classdesc}{DebugRunner}{\optional{checker}\optional{,
+                                 verbose}\optional{, optionflags}}
+
+    A subclass of \class{DocTestRunner} that raises an exception as
+    soon as a failure is encountered.  If an unexpected exception
+    occurs, an \exception{UnexpectedException} exception is raised,
+    containing the test, the example, and the original exception.  If
+    the output doesn't match, then a \exception{DocTestFailure}
+    exception is raised, containing the test, the example, and the
+    actual output.
+
+    For information about the constructor parameters and methods, see
+    the documentation for \class{DocTestRunner} in
+    section~\ref{doctest-advanced-api}.
+\end{classdesc}
+
+\begin{excclassdesc}{DocTestFailure}{test, example, got}
+    An exception thrown by \class{DocTestRunner} to signal that a
+    doctest example's actual output did not match its expected output.
+    The constructor arguments are used to initialize the member
+    variables of the same names.
+\end{excclassdesc}
+\exception{DocTestFailure} defines the following member variables:
+\begin{memberdesc}{test}
+    The \class{DocTest} object that was being run when the example failed.
+\end{memberdesc}
+\begin{memberdesc}{example}
+    The \class{Example} that failed.
+\end{memberdesc}
+\begin{memberdesc}{got}
+    The example's actual output.
+\end{memberdesc}
+
 \begin{funcdesc}{testsource}{module, name}
   Extract the doctest examples from a docstring.
 
@@ -647,250 +1566,87 @@ are run.
   \versionadded{2.3}
 \end{funcdesc}
 
-\begin{funcdesc}{DocTestSuite}{\optional{module}}
-  Convert doctest tests for a module to a
-  \class{\refmodule{unittest}.TestSuite}.
+\begin{excclassdesc}{UnexpectedException}{test, example, got}
+    An exception thrown by \class{DocTestRunner} to signal that a
+    doctest example raised an unexpected exception.  The constructor
+    arguments are used to initialize the member variables of the same
+    names.
+\end{excclassdesc}
+\exception{UnexpectedException} defines the following member variables:
+\begin{memberdesc}{test}
+    The \class{DocTest} object that was being run when the example failed.
+\end{memberdesc}
+\begin{memberdesc}{example}
+    The \class{Example} that failed.
+\end{memberdesc}
+\begin{memberdesc}{exc_info}
+    A tuple containing information about the unexpected exception, as
+    returned by \function{sys.exc_info()}.
+\end{memberdesc}
 
-  The returned \class{TestSuite} is to be run by the unittest framework
-  and runs each doctest in the module.  If any of the doctests fail,
-  then the synthesized unit test fails, and a \exception{DocTestTestFailure}
-  exception is raised showing the name of the file containing the test and a
-  (sometimes approximate) line number.
-
-  The optional \var{module} argument provides the module to be tested.  It
-  can be a module object or a (possibly dotted) module name.  If not
-  specified, the module calling this function is used.
-
-  Example using one of the many ways that the \refmodule{unittest} module
-  can use a \class{TestSuite}:
-
-  \begin{verbatim}
-    import unittest
-    import doctest
-    import my_module_with_doctests
-
-    suite = doctest.DocTestSuite(my_module_with_doctests)
-    runner = unittest.TextTestRunner()
-    runner.run(suite)
-  \end{verbatim}
-
-  \versionadded{2.3}
-  \warning{This function does not currently search \code{M.__test__}
-  and its search technique does not exactly match \function{testmod()} in
-  every detail.  Future versions will bring the two into convergence.}
+\begin{funcdesc}{register_optionflag}{name}
+    Create a new option flag with a given name, and return the new
+    flag's integer value.  \function{register_optionflag()} can be
+    used when subclassing \class{OutputChecker} or
+    \class{DocTestRunner} to create new options that are supported by
+    your subclasses.  \function{register_optionflag} should always be
+    called using the following idiom:
+\begin{verbatim}
+  MY_FLAG = register_optionflag('MY_FLAG')
+\end{verbatim}
 \end{funcdesc}
 
+\subsection{Soapbox\label{doctest-soapbox}}
 
-\subsection{How are Docstring Examples Recognized?}
-
-In most cases a copy-and-paste of an interactive console session works
-fine, but doctest isn't trying to do an exact emulation of any specific
-Python shell.  All hard tab characters are expanded to spaces, using
-8-column tab stops.  If you don't believe tabs should mean that, too
-bad:  don't use hard tabs, or write your own \class{DocTestParser}
-class.
-
-\versionchanged[Expanding tabs to spaces is new; previous versions
-                tried to preserve hard tabs, with confusing results]{2.4}
-
-\begin{verbatim}
->>> # comments are ignored
->>> x = 12
->>> x
-12
->>> if x == 13:
-...     print "yes"
-... else:
-...     print "no"
-...     print "NO"
-...     print "NO!!!"
-...
-no
-NO
-NO!!!
->>>
-\end{verbatim}
-
-Any expected output must immediately follow the final
-\code{'>\code{>}>~'} or \code{'...~'} line containing the code, and
-the expected output (if any) extends to the next \code{'>\code{>}>~'}
-or all-whitespace line.
-
-The fine print:
-
-\begin{itemize}
-
-\item Expected output cannot contain an all-whitespace line, since such a
-  line is taken to signal the end of expected output.  If expected
-  output does contain a blank line, put \code{<BLANKLINE>} in your
-  doctest example each place a blank line is expected.
-  \versionchanged[\code{<BLANKLINE>} was added; there was no way to
-                  use expected output containing empty lines in
-                  previous versions]{2.4}
-
-\item Output to stdout is captured, but not output to stderr (exception
-  tracebacks are captured via a different means).
-
-\item If you continue a line via backslashing in an interactive session,
-  or for any other reason use a backslash, you should use a raw
-  docstring, which will preserve your backslahses exactly as you type
-  them:
-
-\begin{verbatim}
->>> def f(x):
-...     r'''Backslashes in a raw docstring: m\n'''
->>> print f.__doc__
-Backslashes in a raw docstring: m\n
-\end{verbatim}
-
-  Otherwise, the backslash will be interpreted as part of the string.
-  E.g., the "{\textbackslash}" above would be interpreted as a newline
-  character.  Alternatively, you can double each backslash in the
-  doctest version (and not use a raw string):
-
-\begin{verbatim}
->>> def f(x):
-...     '''Backslashes in a raw docstring: m\\n'''
->>> print f.__doc__
-Backslashes in a raw docstring: m\n
-\end{verbatim}
-
-\item The starting column doesn't matter:
-
-\begin{verbatim}
-  >>> assert "Easy!"
-        >>> import math
-            >>> math.floor(1.9)
-            1.0
-\end{verbatim}
-
-and as many leading whitespace characters are stripped from the
-expected output as appeared in the initial \code{'>\code{>}>~'} line
-that started the example.
-\end{itemize}
-
-\subsection{Warnings}
+As mentioned in the introduction, \module{doctest} has two primary
+uses:
 
 \begin{enumerate}
-
-\item \module{doctest} is serious about requiring exact matches in expected
-  output.  If even a single character doesn't match, the test fails.  This
-  will probably surprise you a few times, as you learn exactly what Python
-  does and doesn't guarantee about output.  For example, when printing a
-  dict, Python doesn't guarantee that the key-value pairs will be printed
-  in any particular order, so a test like
-
-% Hey! What happened to Monty Python examples?
-% Tim: ask Guido -- it's his example!
-\begin{verbatim}
->>> foo()
-{"Hermione": "hippogryph", "Harry": "broomstick"}
->>>
-\end{verbatim}
-
-is vulnerable!  One workaround is to do
-
-\begin{verbatim}
->>> foo() == {"Hermione": "hippogryph", "Harry": "broomstick"}
-True
->>>
-\end{verbatim}
-
-instead.  Another is to do
-
-\begin{verbatim}
->>> d = foo().items()
->>> d.sort()
->>> d
-[('Harry', 'broomstick'), ('Hermione', 'hippogryph')]
-\end{verbatim}
-
-There are others, but you get the idea.
-
-Another bad idea is to print things that embed an object address, like
-
-\begin{verbatim}
->>> id(1.0) # certain to fail some of the time
-7948648
->>>
-\end{verbatim}
-
-Floating-point numbers are also subject to small output variations across
-platforms, because Python defers to the platform C library for float
-formatting, and C libraries vary widely in quality here.
-
-\begin{verbatim}
->>> 1./7  # risky
-0.14285714285714285
->>> print 1./7 # safer
-0.142857142857
->>> print round(1./7, 6) # much safer
-0.142857
-\end{verbatim}
-
-Numbers of the form \code{I/2.**J} are safe across all platforms, and I
-often contrive doctest examples to produce numbers of that form:
-
-\begin{verbatim}
->>> 3./4  # utterly safe
-0.75
-\end{verbatim}
-
-Simple fractions are also easier for people to understand, and that makes
-for better documentation.
-
-\item Be careful if you have code that must only execute once.
-
-If you have module-level code that must only execute once, a more foolproof
-definition of \function{_test()} is
-
-\begin{verbatim}
-def _test():
-    import doctest, sys
-    doctest.testmod()
-\end{verbatim}
-
-\item WYSIWYG isn't always the case, starting in Python 2.3.  The
-  string form of boolean results changed from \code{'0'} and
-  \code{'1'} to \code{'False'} and \code{'True'} in Python 2.3.
-  This makes it clumsy to write a doctest showing boolean results that
-  passes under multiple versions of Python.  In Python 2.3, by default,
-  and as a special case, if an expected output block consists solely
-  of \code{'0'} and the actual output block consists solely of
-  \code{'False'}, that's accepted as an exact match, and similarly for
-  \code{'1'} versus \code{'True'}.  This behavior can be turned off by
-  passing the new (in 2.3) module constant
-  \constant{DONT_ACCEPT_TRUE_FOR_1} as the value of \function{testmod()}'s
-  new (in 2.3) optional \var{optionflags} argument.  Some years after
-  the integer spellings of booleans are history, this hack will
-  probably be removed again.
-
+\item Checking examples in docstrings.
+\item Regression testing.
 \end{enumerate}
 
+These two uses have different requirements, and it is important to
+distinguish them.  In particular, filling your docstrings with obscure
+test cases makes for bad documentation.
 
-\subsection{Soapbox}
-
-The first word in ``doctest'' is ``doc,'' and that's why the author
-wrote \refmodule{doctest}: to keep documentation up to date.  It so
-happens that \refmodule{doctest} makes a pleasant unit testing
-environment, but that's not its primary purpose.
-
-Choose docstring examples with care.  There's an art to this that
-needs to be learned---it may not be natural at first.  Examples should
-add genuine value to the documentation.  A good example can often be
-worth many words.  If possible, show just a few normal cases, show
-endcases, show interesting subtle cases, and show an example of each
-kind of exception that can be raised.  You're probably testing for
-endcases and subtle cases anyway in an interactive shell:
-\refmodule{doctest} wants to make it as easy as possible to capture
-those sessions, and will verify they continue to work as designed
-forever after.
-
+When writing a docstring, choose docstring examples with care.
+There's an art to this that needs to be learned---it may not be
+natural at first.  Examples should add genuine value to the
+documentation.  A good example can often be worth many words.
+% [edloper] I think this may be excessive for many cases; let's
+% just leave it to the user's judgement:
+%% If possible, show just a few normal cases, show endcases, show
+%% interesting subtle cases, and show an example of each kind of
+%% exception that can be raised.  You're probably testing for endcases
+%% and subtle cases anyway in an interactive shell:
+%% \refmodule{doctest} wants to make it as easy as possible to capture
+%% those sessions, and will verify they continue to work as designed
+%% forever after.
 If done with care, the examples will be invaluable for your users, and
 will pay back the time it takes to collect them many times over as the
 years go by and things change.  I'm still amazed at how often one of
 my \refmodule{doctest} examples stops working after a ``harmless''
 change.
 
-For exhaustive testing, or testing boring cases that add no value to the
-docs, define a \code{__test__} dict instead.  That's what it's for.
+Doctest also makes an excellent tool for writing regression testing.
+By interleaving prose and examples, it becomes much easier to keep
+track of what's actually being tested, and why.  When a test fails,
+the prose descriptions makes it much easier to figure out what the
+problem is, and how it should be fixed.  Regression testing is best
+confined to dedicated objects or files.  There are several options for
+organizing regressions:
+
+\begin{itemize}
+\item Define functions named \code{_regrtest_\textit{topic}} that
+      consist of single docstrings, containing test cases for the
+      named topics.  These functions can be included in the same file
+      as the module, or separated out into a separate test file.
+\item Define a \code{__test__} dictionary mapping from regression test
+      topics to docstrings containing test cases.
+\item Write a text file containing test cases as interactive examples,
+      and test that file using \function{testfunc()}.
+\end{itemize}
+
+
+
