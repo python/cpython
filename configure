@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.215.2.2 
+# From configure.in Revision: 1.215.2.3 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -1817,7 +1817,7 @@ signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h termios.h \
 sys/audioio.h sys/file.h sys/lock.h sys/modem.h db_185.h db.h \
 sys/param.h sys/select.h sys/socket.h sys/time.h sys/times.h \
 sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h \
-ndbm.h db1/ndbm.h gdbm/ndbm.h
+ndbm.h db1/ndbm.h gdbm/ndbm.h sys/resource.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
@@ -6215,6 +6215,51 @@ else
 fi
 
 
+echo $ac_n "checking for broken nice()""... $ac_c" 1>&6
+echo "configure:6220: checking for broken nice()" >&5
+if eval "test \"`echo '$''{'ac_cv_broken_nice'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+if test "$cross_compiling" = yes; then
+    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+else
+  cat > conftest.$ac_ext <<EOF
+#line 6229 "configure"
+#include "confdefs.h"
+
+int main()
+{
+	int val1 = nice(1);
+	if (val1 != -1 && val1 == nice(2))
+		exit(0);
+	exit(1);
+}
+
+EOF
+if { (eval echo configure:6241: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  ac_cv_broken_nice=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  ac_cv_broken_nice=no
+fi
+rm -fr conftest*
+fi
+
+fi
+
+echo "$ac_t""$ac_cv_broken_nice" 1>&6
+if test "$ac_cv_broken_nice" = yes
+then
+  cat >> confdefs.h <<\EOF
+#define HAVE_BROKEN_NICE 1
+EOF
+
+fi
+
 # THIS MUST BE LAST, IT CAN BREAK OTHER TESTS!
 # Add sys/socket.h to confdefs.h
 cat >> confdefs.h <<\EOF
@@ -6223,12 +6268,12 @@ cat >> confdefs.h <<\EOF
 #endif
 EOF
 echo $ac_n "checking for socklen_t""... $ac_c" 1>&6
-echo "configure:6227: checking for socklen_t" >&5
+echo "configure:6272: checking for socklen_t" >&5
 if eval "test \"`echo '$''{'ac_cv_type_socklen_t'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 6232 "configure"
+#line 6277 "configure"
 #include "confdefs.h"
 #include <sys/types.h>
 #if STDC_HEADERS
@@ -6277,7 +6322,7 @@ done
 
 SRCDIRS="Parser Grammar Objects Python Modules"
 echo $ac_n "checking for build directories""... $ac_c" 1>&6
-echo "configure:6281: checking for build directories" >&5
+echo "configure:6326: checking for build directories" >&5
 for dir in $SRCDIRS; do
     if test ! -d $dir; then
         mkdir $dir

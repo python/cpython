@@ -384,7 +384,7 @@ signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h termios.h \
 sys/audioio.h sys/file.h sys/lock.h sys/modem.h db_185.h db.h \
 sys/param.h sys/select.h sys/socket.h sys/time.h sys/times.h \
 sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h \
-ndbm.h db1/ndbm.h gdbm/ndbm.h)
+ndbm.h db1/ndbm.h gdbm/ndbm.h sys/resource.h)
 AC_HEADER_DIRENT
 
 # checks for typedefs
@@ -1333,6 +1333,23 @@ fi
 # check for readline 4.2
 AC_CHECK_LIB(readline, rl_completion_matches,
 	AC_DEFINE(HAVE_RL_COMPLETION_MATCHES), , -ltermcap)
+
+AC_MSG_CHECKING(for broken nice())
+AC_CACHE_VAL(ac_cv_broken_nice, [
+AC_TRY_RUN([
+int main()
+{
+	int val1 = nice(1);
+	if (val1 != -1 && val1 == nice(2))
+		exit(0);
+	exit(1);
+}
+],ac_cv_broken_nice=yes, ac_cv_broken_nice=no)])
+AC_MSG_RESULT($ac_cv_broken_nice)
+if test "$ac_cv_broken_nice" = yes
+then
+  AC_DEFINE(HAVE_BROKEN_NICE)
+fi
 
 # THIS MUST BE LAST, IT CAN BREAK OTHER TESTS!
 # Add sys/socket.h to confdefs.h
