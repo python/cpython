@@ -69,8 +69,6 @@ Extension modules
 
   A typo was fixed in DBCursor.join_item(), preventing a crash.
 
-- The time module 
-
 Library
 -------
 
