@@ -1,0 +1,41 @@
+import ntpath
+import string
+
+errors = 0
+
+def tester(fn, wantResult):
+	fn = string.replace(fn, "\\", "\\\\")
+	gotResult = eval(fn)
+	if wantResult != gotResult:
+		print "error!"
+		print "evaluated: " + str(fn)
+		print "should be: " + str(wantResult)
+		print " returned: " + str(gotResult)
+		print ""
+		global errors
+		errors = errors + 1
+
+tester('ntpath.splitdrive("c:\\foo\\bar")', ('c:', '\\foo\\bar'))
+tester('ntpath.splitdrive("\\\\conky\\mountpoint\\foo\\bar")', ('\\\\conky\\mountpoint', '\\foo\\bar'))
+tester('ntpath.splitdrive("c:/foo/bar")', ('c:', '/foo/bar'))
+tester('ntpath.splitdrive("//conky/mountpoint/foo/bar")', ('//conky/mountpoint', '/foo/bar'))
+
+tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
+tester('ntpath.split("\\\\conky\\mountpoint\\foo\\bar")', ('\\\\conky\\mountpoint\\foo', 'bar'))
+
+tester('ntpath.split("c:\\")', ('c:\\', ''))
+tester('ntpath.split("\\\\conky\\mountpoint\\")', ('\\\\conky\\mountpoint\\', ''))
+
+tester('ntpath.split("c:/")', ('c:/', ''))
+tester('ntpath.split("//conky/mountpoint/")', ('//conky/mountpoint/', ''))
+
+tester('ntpath.isabs("c:\\")', 1)
+tester('ntpath.isabs("\\\\conky\\mountpoint\\")', 1)
+tester('ntpath.isabs("\\foo")', 1)
+tester('ntpath.isabs("\\foo\\bar")', 1)
+
+if errors:
+	print str(errors) + " errors."
+else:
+	print "No errors.  Thank your lucky stars."
+
