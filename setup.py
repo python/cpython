@@ -172,6 +172,13 @@ class PyBuildExt(build_ext):
                                         self.get_ext_filename(fullname))
             os.remove(ext_filename)
 
+            # XXX -- This relies on a Vile HACK in
+            # distutils.command.build_ext.build_extension().  The
+            # _built_objects attribute is stored there strictly for
+            # use here.
+            for filename in self._built_objects:
+                os.remove(filename)
+
     def get_platform (self):
         # Get value of sys.platform
         platform = sys.platform
