@@ -238,6 +238,7 @@ def test_both():
                 pass
             else:
                 verify(0, "Incompatible parameters should raise ValueError.")
+            f.close()
     finally:
         try:
             os.unlink(TESTFN)
@@ -252,6 +253,7 @@ def test_both():
         data = 'aabaac\x00deef\x00\x00aa\x00'
         n = len(data)
         f.write(data)
+        f.flush()
         m = mmap.mmap(f.fileno(), n)
         f.close()
 
