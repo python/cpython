@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -26,7 +26,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* XXX TO DO LIST
    - __init__ and __del__ (and all other similar methods)
-     should be usable even when private, not ignored (???)
+     should be usable even when private, not ignored
 */
 
 #include "allobjects.h"
@@ -321,12 +321,12 @@ typeobject Accesstype = {
 	sizeof(accessobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	access_dealloc,		/*tp_dealloc*/
+	(destructor)access_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	access_getattr,		/*tp_getattr*/
+	(getattrfunc)access_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
 	0,			/*tp_compare*/
-	access_repr,		/*tp_repr*/
+	(reprfunc)access_repr, /*tp_repr*/
 	0,			/*tp_as_number*/
 	0,			/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/

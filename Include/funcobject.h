@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -35,6 +35,8 @@ typedef struct {
 	object *func_code;
 	object *func_globals;
 	object *func_name;
+	int	func_argcount;
+	object *func_argdefs;
 } funcobject;
 
 extern typeobject Functype;
@@ -44,6 +46,8 @@ extern typeobject Functype;
 extern object *newfuncobject PROTO((object *, object *));
 extern object *getfunccode PROTO((object *));
 extern object *getfuncglobals PROTO((object *));
+extern object *getfuncargstuff PROTO((object *, int *));
+extern int     setfuncargstuff PROTO((object *, int, object *));
 
 #ifdef __cplusplus
 }

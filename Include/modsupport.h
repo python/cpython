@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -30,21 +30,28 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Module support interface */
 
-#ifdef HAVE_PROTOTYPES
-#define USE_STDARG
+#ifdef HAVE_STDARG_PROTOTYPES
+
+#include <stdarg.h>
+
+extern int getargs PROTO((object *, char *, ...));
+extern object *mkvalue PROTO((char *, ...));
+
+#else
+
+#include <varargs.h>
+
+/* Better to have no prototypes at all for varargs functions in this case */
+extern int getargs();
+extern object *mkvalue();
+
 #endif
 
-#ifdef USE_STDARG
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
+extern int vgetargs PROTO((object *, char *, va_list));
+extern object *vmkvalue PROTO((char *, va_list));
 
 extern object *initmodule PROTO((char *, struct methodlist *));
-extern int getargs PROTO((object *, char *, ...));
-extern int vgetargs PROTO((object *, char *, va_list));
-extern object *mkvalue PROTO((char *, ...));
-extern object *vmkvalue PROTO((char *, va_list));
+extern object *initmodule2 PROTO((char *, struct methodlist *, object *));
 
 /* The following are obsolete -- use getargs directly! */
 #define getnoarg(v) getargs(v, "")

@@ -179,7 +179,10 @@ def _read_short(file):
 
 def _read_string(file):
 	length = ord(file.read(1))
-	data = file.read(length)
+	if length == 0:
+		data = ''
+	else:
+		data = file.read(length)
 	if length & 1 == 0:
 		dummy = file.read(1)
 	return data

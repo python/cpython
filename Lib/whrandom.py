@@ -35,31 +35,25 @@ class whrandom:
 	# Without arguments, initialize from current time.
 	# With arguments (x, y, z), initialize from them.
 	#
-	def __init__(self, *xyz):
-		if not xyz:
+	def __init__(self, x = None, y = None, z = None):
+		if x is None:
 			# Initialize from current time
 			import time
 			t = int(time.time())
 			t, x = divmod(t, 256)
 			t, y = divmod(t, 256)
 			t, z = divmod(t, 256)
-		else:
-			# Initialize from arguments (x, y, z)
-			x, y, z = xyz
 		self.seed(x, y, z)
 	#
 	# Set the seed from (x, y, z).
 	# These must be integers in the range [0, 256).
 	#
-	def seed(self, *xyz):
-		if type(xyz) <> type(()) or len(xyz) <> 3:
-			raise TypeError, '3 seeds required'
-		x, y, z = xyz
+	def seed(self, x, y, z):
 		if not type(x) == type(y) == type(z) == type(0):
 			raise TypeError, 'seeds must be integers'
 		if not 0 <= x < 256 and 0 <= y < 256 and 0 <= z < 256:
 			raise ValueError, 'seeds must be in range(0, 256)'
-		self._seed = xyz
+		self._seed = (x, y, z)
 	#
 	# Get the next random number in the range [0.0, 1.0).
 	#

@@ -95,30 +95,18 @@ def joinfields(words, sep):
 
 # Find substring, raise exception if not found
 index_error = 'substring not found in string.index'
-def index(s, sub, *args):
-	if args:
-		if len(args) > 1:
-			raise TypeError, 'string.index(): too many args'
-		i = args[0]
-		if i < 0: i = i + len(s)
-	else:
-		i = 0
+def index(s, sub, i = 0):
+	if i < 0: i = i + len(s)
 	n = len(sub)
 	m = len(s) + 1 - n
 	while i < m:
 		if sub == s[i:i+n]: return i
 		i = i+1
-	raise index_error, (s, sub) + args
+	raise index_error, (s, sub, i)
 
 # Find last substring, raise exception if not found
-def rindex(s, sub, *args):
-	if args:
-		if len(args) > 1:
-			raise TypeError, 'string.rindex(): too many args'
-		i = args[0]
-		if i < 0: i = i + len(s)
-	else:
-		i = 0
+def rindex(s, sub, i = 0):
+	if i < 0: i = i + len(s)
 	n = len(sub)
 	m = len(s) + 1 - n
 	r = None
@@ -126,20 +114,35 @@ def rindex(s, sub, *args):
 		if sub == s[i:i+n]: r = i
 		i = i+1
 	if r is None:
-		raise index_error, (s, sub) + args
+		raise index_error, (s, sub, i)
+	return r
+
+# Count non-overlapping occurrences of substring
+def count(s, sub, i = 0):
+	if i < 0: i = i + len(s)
+	n = len(sub)
+	m = len(s) + 1 - n
+	if n == 0: return m-i
+	r = 0
+	while i < m:
+		if sub == s[i:i+n]:
+			r = r+1
+			i = i+n
+		else:
+			i = i+1
 	return r
 
 # Find substring, return -1 if not found
-def find(*args):
+def find(s, sub, i = 0):
 	try:
-		return apply(index, args)
+		return index(s, sub, i)
 	except index_error:
 		return -1
 
 # Find last substring, return -1 if not found
-def rfind(*args):
+def rfind(s, sub, i = 0):
 	try:
-		return apply(rindex, args)
+		return rindex(s, sub, i)
 	except index_error:
 		return -1
 
@@ -157,7 +160,7 @@ def atof(str):
 	if regex.match('[0-9]*\(\.[0-9]*\)?\([eE][-+]?[0-9]+\)?', s) != len(s):
 		raise atof_error, str
 	try:
-		return eval(sign + s)
+		return float(eval(sign + s))
 	except SyntaxError:
 		raise atof_error, str
 
@@ -242,12 +245,36 @@ def expandtabs(s, tabsize):
 # it redefines some string operations that are 100-1000 times faster.
 # It also defines values for whitespace, lowercase and uppercase
 # that match <ctype.h>'s definitions.
-# The manipulation with index_error is needed for compatibility.
 
 try:
 	from strop import *
 	letters = lowercase + uppercase
+except ImportError:
+	pass # Use the original, slow versions
+
+# If certain functions are found, redefine the corresponding exceptions
+# as ValueError
+
+try:
 	from strop import index
 	index_error = ValueError
+except ImportError:
+	pass # Use the original, slow versions
+
+try:
+	from strop import atoi
+	atoi_error = ValueError
+except ImportError:
+	pass # Use the original, slow versions
+
+try:
+	from strop import atof
+	atof_error = ValueError
+except ImportError:
+	pass # Use the original, slow versions
+
+try:
+	from strop import atol
+	atol_error = ValueError
 except ImportError:
 	pass # Use the original, slow versions

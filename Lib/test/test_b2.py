@@ -121,6 +121,25 @@ if reduce(lambda x, y: x*y, range(2,8), 1) <> 5040:
 	raise TestFailed, 'reduce(): compute 7!'
 if reduce(lambda x, y: x*y, range(2,21), 1L) <> 2432902008176640000L:
 	raise TestFailed, 'reduce(): compute 20!, use long'
+class Squares:
+	def __init__(self, max):
+		self.max = max
+		self.sofar = []
+	def __len__(self): return len(self.sofar)
+	def __getitem__(self, i):
+		if not 0 <= i < self.max: raise IndexError
+		n = len(self.sofar)
+		while n <= i:
+			self.sofar.append(n*n)
+			n = n+1
+		return self.sofar[i]
+if reduce(lambda x, y: x+y, Squares(10)) != 285:
+	raise TestFailed, 'reduce(<+>, Squares(10))'
+if reduce(lambda x, y: x+y, Squares(10), 0) != 285:
+	raise TestFailed, 'reduce(<+>, Squares(10), 0)'
+if reduce(lambda x, y: x+y, Squares(0), 0) != 0:
+	raise TestFailed, 'reduce(<+>, Squares(0), 0)'
+
 
 print 'reload'
 import string

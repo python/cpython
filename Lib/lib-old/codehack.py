@@ -7,6 +7,10 @@ import string
 import os
 import linecache
 
+# XXX The functions getcodename() and getfuncname() are now obsolete
+# XXX as code and function objects now have a name attribute --
+# XXX co.co_name and f.func_name.
+
 # Extract the function or class name from a code object.
 # This is a bit of a hack, since a code object doesn't contain
 # the name directly.  So what do we do:

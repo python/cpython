@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -39,8 +39,8 @@ int run_script PROTO((FILE *, char *));
 int run_tty_1 PROTO((FILE *, char *));
 int run_tty_loop PROTO((FILE *, char *));
 
-int parse_string PROTO((char *, int, struct _node **));
-int parse_file PROTO((FILE *, char *, int, struct _node **));
+struct _node *parse_string PROTO((char *, int));
+struct _node *parse_file PROTO((FILE *, char *, int));
 
 object *run_string PROTO((char *, int, object *, object *));
 object *run_file PROTO((FILE *, char *, int, object *, object *));
@@ -50,6 +50,8 @@ object *compile_string PROTO((char *, char *, int));
 void print_error PROTO((void));
 
 void goaway PROTO((int));
+
+void cleanup PROTO((void));
 
 #ifdef __cplusplus
 }

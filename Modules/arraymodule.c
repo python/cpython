@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -30,22 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "allobjects.h"
 #include "modsupport.h"
 #include "ceval.h"
-
-#ifdef i860
-/* Cray APP doesn't have memmove */
-#define NEED_MEMMOVE
-extern char *memcpy();
-#endif
-
-#if defined(sun) && !defined(__STDC__)
-/* SunOS doesn't have memmove */
-#define NEED_MEMMOVE
-extern char *memcpy();
-#endif
-
-#ifdef NEED_MEMMOVE
-extern char *memmove();
-#endif
+#include <sys/types.h>		/* For size_t */
 
 struct arrayobject; /* Forward */
 
@@ -62,7 +47,7 @@ typedef struct arrayobject {
 	struct arraydescr *ob_descr;
 } arrayobject;
 
-extern typeobject Arraytype;
+staticforward typeobject Arraytype;
 
 #define is_arrayobject(op) ((op)->ob_type == &Arraytype)
 
@@ -252,7 +237,7 @@ newarrayobject(size, descr)
 {
 	int i;
 	arrayobject *op;
-	MALLARG nbytes;
+	size_t nbytes;
 	int itemsize;
 	if (size < 0) {
 		err_badcall();
@@ -962,22 +947,22 @@ array_tostring(self, args)
 }
 
 static struct methodlist array_methods[] = {
-	{"append",	array_append},
-	{"byteswap",	array_byteswap},
-/*	{"count",	array_count},*/
-	{"fromfile",	array_fromfile},
-	{"fromlist",	array_fromlist},
-	{"fromstring",	array_fromstring},
-/*	{"index",	array_index},*/
-	{"insert",	array_insert},
-	{"read",	array_fromfile},
-/*	{"remove",	array_remove},*/
-	{"reverse",	array_reverse},
-/*	{"sort",	array_sort},*/
-	{"tofile",	array_tofile},
-	{"tolist",	array_tolist},
-	{"tostring",	array_tostring},
-	{"write",	array_tofile},
+	{"append",	(method)array_append},
+	{"byteswap",	(method)array_byteswap},
+/*	{"count",	(method)array_count},*/
+	{"fromfile",	(method)array_fromfile},
+	{"fromlist",	(method)array_fromlist},
+	{"fromstring",	(method)array_fromstring},
+/*	{"index",	(method)array_index},*/
+	{"insert",	(method)array_insert},
+	{"read",	(method)array_fromfile},
+/*	{"remove",	(method)array_remove},*/
+	{"reverse",	(method)array_reverse},
+/*	{"sort",	(method)array_sort},*/
+	{"tofile",	(method)array_tofile},
+	{"tolist",	(method)array_tolist},
+	{"tostring",	(method)array_tostring},
+	{"write",	(method)array_tofile},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -1060,65 +1045,51 @@ array_repr(a)
 		v = array_tostring(a, (object *)NULL);
 		t = reprobject(v);
 		XDECREF(v);
-		joinstring(&s, t);
-		XDECREF(t);
-		t = newstringobject(")");
-		joinstring(&s, t);
-		XDECREF(t);
-		if (err_occurred()) {
-			XDECREF(s);
-			s = NULL;
-		}
+		joinstring_decref(&s, t);
+		joinstring_decref(&s, newstringobject(")"));
 		return s;
 	}
 	sprintf(buf, "array('%c', [", a->ob_descr->typecode);
 	s = newstringobject(buf);
 	comma = newstringobject(", ");
 	for (i = 0; i < len && !err_occurred(); i++) {
+		if (i > 0)
+			joinstring(&s, comma);
 		v = (a->ob_descr->getitem)(a, i);
 		t = reprobject(v);
 		XDECREF(v);
-		if (i > 0)
-			joinstring(&s, comma);
-		joinstring(&s, t);
-		XDECREF(t);
+		joinstring_decref(&s, t);
 	}
 	XDECREF(comma);
-	t = newstringobject("])");
-	joinstring(&s, t);
-	XDECREF(t);
-	if (err_occurred()) {
-		XDECREF(s);
-		s = NULL;
-	}
+	joinstring_decref(&s, newstringobject("])"));
 	return s;
 }
 
 static sequence_methods array_as_sequence = {
-	array_length,	/*sq_length*/
-	array_concat,	/*sq_concat*/
-	array_repeat,	/*sq_repeat*/
-	array_item,	/*sq_item*/
-	array_slice,	/*sq_slice*/
-	array_ass_item,	/*sq_ass_item*/
-	array_ass_slice, /*sq_ass_slice*/
+	(inquiry)array_length,			/*sq_length*/
+	(binaryfunc)array_concat,		/*sq_concat*/
+	(intargfunc)array_repeat,		/*sq_repeat*/
+	(intargfunc)array_item,			/*sq_item*/
+	(intintargfunc)array_slice,		/*sq_slice*/
+	(intobjargproc)array_ass_item,		/*sq_ass_item*/
+	(intintobjargproc)array_ass_slice,	/*sq_ass_slice*/
 };
 
-typeobject Arraytype = {
+static typeobject Arraytype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
 	"array",
 	sizeof(arrayobject),
 	0,
-	array_dealloc,	/*tp_dealloc*/
-	array_print,	/*tp_print*/
-	array_getattr,	/*tp_getattr*/
-	0,		/*tp_setattr*/
-	array_compare,	/*tp_compare*/
-	array_repr,	/*tp_repr*/
-	0,		/*tp_as_number*/
-	&array_as_sequence,	/*tp_as_sequence*/
-	0,		/*tp_as_mapping*/
+	(destructor)array_dealloc,	/*tp_dealloc*/
+	(printfunc)array_print,		/*tp_print*/
+	(getattrfunc)array_getattr,	/*tp_getattr*/
+	0,				/*tp_setattr*/
+	(cmpfunc)array_compare,		/*tp_compare*/
+	(reprfunc)array_repr,		/*tp_repr*/
+	0,				/*tp_as_number*/
+	&array_as_sequence,		/*tp_as_sequence*/
+	0,				/*tp_as_mapping*/
 };
 
 
@@ -1187,33 +1158,3 @@ initarray()
 {
 	initmodule("array", a_methods);
 }
-
-
-#ifdef NEED_MEMMOVE
-
-/* A perhaps slow but I hope correct implementation of memmove */
-
-char *memmove(dst, src, n)
-	char *dst;
-	char *src;
-	int n;
-{
-	char *realdst = dst;
-	if (n <= 0)
-		return dst;
-	if (src >= dst+n || dst >= src+n)
-		return memcpy(dst, src, n);
-	if (src > dst) {
-		while (--n >= 0)
-			*dst++ = *src++;
-	}
-	else if (src < dst) {
-		src += n;
-		dst += n;
-		while (--n >= 0)
-			*--dst = *--src;
-	}
-	return realdst;
-}
-
-#endif

@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -28,7 +28,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
+#ifdef MPW /* This is for MPW's File command */
+
+#define assert(e) { if (!(e)) { printf("### Python: Assertion failed:\n\
+    File %s; Line %d\n", __FILE__, __LINE__); abort(); } }
+#else
 #define assert(e) { if (!(e)) { printf("Assertion failed\n"); abort(); } }
+#endif
 
 #ifdef __cplusplus
 }

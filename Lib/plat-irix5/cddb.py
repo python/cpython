@@ -138,6 +138,19 @@ class Cddb:
 					continue
 				self.track[trackno] = value
 		f.close()
+		for i in range(2, len(self.track)):
+			track = self.track[i]
+			# if track title starts with `,', use initial part
+			# of previous track's title
+			if track[0] == ',':
+				try:
+					off = string.index(self.track[i - 1],
+							   ',')
+				except string.index_error:
+					pass
+				else:
+					self.track[i] = self.track[i-1][:off] \
+							+ track
 
 	def write(self):
 		import posixpath
@@ -153,6 +166,17 @@ class Cddb:
 		f.write('album.title:\t' + self.title + '\n')
 		f.write('album.artist:\t' + self.artist + '\n')
 		f.write('album.toc:\t' + self.toc + '\n')
+		prevpref = None
 		for i in range(1, len(self.track)):
-			f.write('track' + `i` + '.title:\t' + self.track[i] + '\n')
+			track = self.track[i]
+			try:
+				off = string.index(track, ',')
+			except string.index_error:
+				prevpref = None
+			else:
+				if prevpref and track[:off] == prevpref:
+					track = track[off:]
+				else:
+					prevpref = track[:off]
+			f.write('track' + `i` + '.title:\t' + track + '\n')
 		f.close()

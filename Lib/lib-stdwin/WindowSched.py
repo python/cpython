@@ -1,5 +1,5 @@
 # Combine a real-time scheduling queue and stdwin event handling.
-# Uses the millisecond timer.
+# Keeps times in milliseconds.
 
 import stdwin, stdwinq
 from stdwinevents import WE_TIMER
@@ -19,11 +19,11 @@ def delayfunc(msecs):
 		mainloop.dispatch(event)
 		return
 	#
-	# Use millisleep for very short delays or if there are no windows
+	# Use sleep for very short delays or if there are no windows
 	#
 	if msecs < 100 or mainloop.countwindows() == 0:
 		if msecs > 0:
-			time.millisleep(msecs)
+			time.sleep(msecs * 0.001)
 		return
 	#
 	# Post a timer event on an arbitrary window and wait for it
@@ -35,7 +35,10 @@ def delayfunc(msecs):
 	if event[0] <> WE_TIMER:
 		mainloop.dispatch(event)
 
-q = sched.scheduler(time.millitimer, delayfunc)
+def millitimer():
+	return int(1000 * time.time())
+
+q = sched.scheduler(millitimer, delayfunc)
 
 # Export functions enter, enterabs and cancel just like a scheduler
 #

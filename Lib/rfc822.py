@@ -1,8 +1,8 @@
 # RFC-822 message manipulation class.
 #
 # XXX This is only a very rough sketch of a full RFC-822 parser;
-# additional methods are needed to parse addresses and dates, and to
-# tokenize lines according to various other syntax rules.
+# in particular the tokenizing of addresses does not adhere to all the
+# quoting rules.
 #
 # Directions for use:
 #
@@ -22,6 +22,17 @@
 # embedded whitespace (including newlines) exactly as they are
 # specified in the header, and leave the case of the text unchanged.
 #
+# For addresses and address lists there are functions
+#   realname, mailaddress = m.getaddr(name) and
+#   list = m.getaddrlist(name)
+# where the latter returns a list of (realname, mailaddr) tuples.
+#
+# There is also a method
+#   time = m.getdate(name)
+# which parses a Date-like field and returns a time-compatible tuple,
+# i.e. a tuple such as returned by time.localtime() or accepted by
+# time.mktime().
+#
 # See the class definition for lower level access methods.
 #
 # There are also some utility functions here.
@@ -29,6 +40,7 @@
 
 import regex
 import string
+import time
 
 
 class Message:
@@ -105,12 +117,13 @@ class Message:
 
 	# Method to determine whether a line is a legal end of
 	# RFC-822 headers.  You may override this method if your
-	# application wants to bend the rules, e.g. to accept lines
-	# ending in '\r\n', to strip trailing whitespace, or to
-	# recognise MH template separators ('--------'). 
+	# application wants to bend the rules, e.g. to strip trailing
+	# whitespace, or to recognise MH template separators
+	# ('--------').  For convenience (e.g. for code reading from
+	# sockets) a line consisting of \r\n also matches.
 
 	def islast(self, line):
-		return line == '\n'
+		return line == '\n' or line == '\r\n'
 
 
 	# Look through the list of headers and find all lines matching
@@ -178,27 +191,94 @@ class Message:
 		return string.strip(text)
 
 
-	# XXX The next step would be to define self.getaddr(name)
-	# and self.getaddrlist(name) which would parse a header
-	# consisting of a single mail address and a number of mail
-	# addresses, respectively.  Lower level functions would be
-	# parseaddr(string) and parseaddrlist(string).
+	# Retrieve a single address from a header as a tuple, e.g.
+	# ('Guido van Rossum', 'guido@cwi.nl').
 
-	# XXX Similar, there would be a function self.getdate(name) to
-	# return a date in canonical form (perhaps a number compatible
-	# to time.time()) and a function parsedate(string).
+	def getaddr(self, name):
+		data = self.getheader(name)
+		if not data:
+			return None, None
+		return parseaddr(data)
 
-	# XXX The inverses of the parse functions may also be useful.
+	# Retrieve a list of addresses from a header, where each
+	# address is a tuple as returned by getaddr().
 
+	def getaddrlist(self, name):
+		# XXX This function is not really correct.  The split
+		# on ',' might fail in the case of commas within
+		# quoted strings.
+		data = self.getheader(name)
+		if not data:
+			return []
+		data = string.splitfields(data, ',')
+		for i in range(len(data)):
+			data[i] = parseaddr(data[i])
+		return data
+
+	# Retrieve a date field from a header as a tuple compatible
+	# with time.mktime().
+
+	def getdate(self, name):
+		data = self.getheader(name)
+		if not data:
+			return None
+		return parsedate(data)
+
+
+	# Access as a dictionary (only finds first header of each type):
+
+	def __len__(self):
+		types = {}
+		for line in self.headers:
+			if line[0] in string.whitespace: continue
+			i = string.find(line, ':')
+			if i > 0:
+				name = string.lower(line[:i])
+				types[name] = None
+		return len(types)
+
+	def __getitem__(self, name):
+		value = self.getheader(name)
+		if value is None: raise KeyError, name
+		return value
+
+	def has_key(self, name):
+		value = self.getheader(name)
+		return value is not None
+
+	def keys(self):
+		types = {}
+		for line in self.headers:
+			if line[0] in string.whitespace: continue
+			i = string.find(line, ':')
+			if i > 0:
+				name = line[:i]
+				key = string.lower(name)
+				types[key] = name
+		return types.values()
+
+	def values(self):
+		values = []
+		for name in self.keys():
+			values.append(self[name])
+		return values
+
+	def items(self):
+		items = []
+		for name in self.keys():
+			items.append(name, self[name])
+		return items
 
 
 
 # Utility functions
 # -----------------
 
+# XXX Should fix these to be really conformant.
+# XXX The inverses of the parse functions may also be useful.
+
 
 # Remove quotes from a string.
-# XXX Should fix this to be really conformant.
 
 def unquote(str):
 	if len(str) > 1:
@@ -207,3 +287,107 @@ def unquote(str):
 		if str[0] == '<' and str[-1:] == '>':
 			return str[1:-1]
 	return str
+
+
+# Parse an address into (name, address) tuple
+
+def parseaddr(address):
+	# This is probably not perfect
+	address = string.strip(address)
+	# Case 1: part of the address is in <xx@xx> form.
+	pos = regex.search('<.*>', address)
+	if pos >= 0:
+		name = address[:pos]
+		address = address[pos:]
+		length = regex.match('<.*>', address)
+		name = name + address[length:]
+		address = address[:length]
+	else:
+		# Case 2: part of the address is in (comment) form
+		pos = regex.search('(.*)', address)
+		if pos >= 0:
+			name = address[pos:]
+			address = address[:pos]
+			length = regex.match('(.*)', name)
+			address = address + name[length:]
+			name = name[:length]
+		else:
+			# Case 3: neither. Only an address
+			name = ''
+	name = string.strip(name)
+	address = string.strip(address)
+	if address and address[0] == '<' and address[-1] == '>':
+		address = address[1:-1]
+	if name and name[0] == '(' and name[-1] == ')':
+		name = name[1:-1]
+	return name, address
+
+
+# Parse a date field
+
+_monthnames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
+	  'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+def parsedate(data):
+	# XXX This completely ignores timezone matters at the moment...
+	data = string.split(data)
+	if data[0][-1] == ',':
+		# There's a dayname here. Skip it
+		del data[0]
+	if len(data) < 5:
+		return None
+	data = data[:5]
+	[dd, mm, yy, tm, tz] = data
+	if not mm in _monthnames:
+		return None
+	mm = _monthnames.index(mm)+1
+	tm = string.splitfields(tm, ':')
+	if len(tm) == 2:
+		[thh, tmm] = tm
+		tss = '0'
+	else:
+		[thh, tmm, tss] = tm
+	try:
+		yy = string.atoi(yy)
+		dd = string.atoi(dd)
+		thh = string.atoi(thh)
+		tmm = string.atoi(tmm)
+		tss = string.atoi(tss)
+	except string.atoi_error:
+		return None
+	tuple = (yy, mm, dd, thh, tmm, tss, 0, 0, 0)
+	return tuple
+
+
+# When used as script, run a small test program.
+# The first command line argument must be a filename containing one
+# message in RFC-822 format.
+
+if __name__ == '__main__':
+	import sys
+	file = '/ufs/guido/Mail/drafts/,1'
+	if sys.argv[1:]: file = sys.argv[1]
+	f = open(file, 'r')
+	m = Message(f)
+	print 'From:', m.getaddr('from')
+	print 'To:', m.getaddrlist('to')
+	print 'Subject:', m.getheader('subject')
+	print 'Date:', m.getheader('date')
+	date = m.getdate('date')
+	if date:
+		print 'ParsedDate:', time.asctime(date)
+	else:
+		print 'ParsedDate:', None
+	m.rewindbody()
+	n = 0
+	while f.readline():
+		n = n + 1
+	print 'Lines:', n
+	print '-'*70
+	print 'len =', len(m)
+	if m.has_key('Date'): print 'Date =', m['Date']
+	if m.has_key('X-Nonsense'): pass
+	print 'keys =', m.keys()
+	print 'values =', m.values()
+	print 'items =', m.items()
+	

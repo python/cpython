@@ -1,5 +1,5 @@
 /**********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -24,7 +24,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* AL module -- interface to Mark Callow's Audio Library (AL). */
 
-#include "audio.h"
+#include <audio.h>
 
 /* Check which version audio library we have: */
 #ifdef AL_ERROR_NUMBER
@@ -50,7 +50,7 @@ typedef struct {
 	ALconfig ob_config;
 } configobject;
 
-extern typeobject Configtype; /* Forward */
+staticforward typeobject Configtype;
 
 #define is_configobject(v) ((v)->ob_type == &Configtype)
 
@@ -184,17 +184,17 @@ al_setfloatmax(self, args)
 #endif /* AL_405 */
 	
 static struct methodlist config_methods[] = {
-	{"getqueuesize",	al_getqueuesize},
-	{"setqueuesize",	al_setqueuesize},
-	{"getwidth",		al_getwidth},
-	{"setwidth",		al_setwidth},
-	{"getchannels",		al_getchannels},
-	{"setchannels",		al_setchannels},
+	{"getqueuesize",	(method)al_getqueuesize},
+	{"setqueuesize",	(method)al_setqueuesize},
+	{"getwidth",		(method)al_getwidth},
+	{"setwidth",		(method)al_setwidth},
+	{"getchannels",		(method)al_getchannels},
+	{"setchannels",		(method)al_setchannels},
 #ifdef AL_405
-	{"getsampfmt",		al_getsampfmt},
-	{"setsampfmt",		al_setsampfmt},
-	{"getfloatmax",		al_getfloatmax},
-	{"setfloatmax",		al_setfloatmax},
+	{"getsampfmt",		(method)al_getsampfmt},
+	{"setsampfmt",		(method)al_setsampfmt},
+	{"getfloatmax",		(method)al_getfloatmax},
+	{"setfloatmax",		(method)al_setfloatmax},
 #endif /* AL_405 */
 	{NULL,			NULL}		/* sentinel */
 };
@@ -215,16 +215,16 @@ config_getattr(self, name)
 	return findmethod(config_methods, (object *)self, name);
 }
 
-typeobject Configtype = {
+static typeobject Configtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"config",		/*tp_name*/
 	sizeof(configobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	config_dealloc,		/*tp_dealloc*/
+	(destructor)config_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	config_getattr,		/*tp_getattr*/
+	(getattrfunc)config_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
@@ -250,7 +250,7 @@ typedef struct {
 	ALport ob_port;
 } portobject;
 
-extern typeobject Porttype; /* Forward */
+staticforward typeobject Porttype;
 
 #define is_portobject(v) ((v)->ob_type == &Porttype)
 
@@ -489,20 +489,19 @@ al_getstatus (self, args)
 #endif /* AL_405 */
 
 static struct methodlist port_methods[] = {
-	{"closeport",		al_closeport},
-	{"close",		al_closeport},
-	{"getfd",		al_getfd},
-        {"fileno",		al_getfd},
-	{"getfilled",		al_getfilled},
-	{"getfillable",		al_getfillable},
-	{"readsamps",		al_readsamps},
-	{"writesamps",		al_writesamps},
-	{"setfillpoint",	al_setfillpoint},
-	{"getfillpoint",	al_getfillpoint},
-	{"setconfig",		al_setconfig},
-	{"getconfig",		al_getconfig},
+	{"closeport",		(method)al_closeport},
+	{"getfd",		(method)al_getfd},
+        {"fileno",		(method)al_getfd},
+	{"getfilled",		(method)al_getfilled},
+	{"getfillable",		(method)al_getfillable},
+	{"readsamps",		(method)al_readsamps},
+	{"writesamps",		(method)al_writesamps},
+	{"setfillpoint",	(method)al_setfillpoint},
+	{"getfillpoint",	(method)al_getfillpoint},
+	{"setconfig",		(method)al_setconfig},
+	{"getconfig",		(method)al_getconfig},
 #ifdef AL_405
-	{"getstatus",		al_getstatus},
+	{"getstatus",		(method)al_getstatus},
 #endif /* AL_405 */	    
 	{NULL,			NULL}		/* sentinel */
 };
@@ -524,16 +523,16 @@ port_getattr(p, name)
 	return findmethod(port_methods, (object *)p, name);
 }
 
-typeobject Porttype = {
+static typeobject Porttype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"port",			/*tp_name*/
 	sizeof(portobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	port_dealloc,		/*tp_dealloc*/
+	(destructor)port_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	port_getattr,		/*tp_getattr*/
+	(getattrfunc)port_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
@@ -736,14 +735,14 @@ al_getminmax(self, args)
 }
 
 static struct methodlist al_methods[] = {
-	{"openport",		al_openport},
-	{"newconfig",		al_newconfig},
-	{"queryparams",		al_queryparams},
-	{"getparams",		al_getparams},
-	{"setparams",		al_setparams},
-	{"getname",		al_getname},
-	{"getdefault",		al_getdefault},
-	{"getminmax",		al_getminmax},
+	{"openport",		(method)al_openport},
+	{"newconfig",		(method)al_newconfig},
+	{"queryparams",		(method)al_queryparams},
+	{"getparams",		(method)al_getparams},
+	{"setparams",		(method)al_setparams},
+	{"getname",		(method)al_getname},
+	{"getdefault",		(method)al_getdefault},
+	{"getminmax",		(method)al_getminmax},
 	{NULL,			NULL}		/* sentinel */
 };
 

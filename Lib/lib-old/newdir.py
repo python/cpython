@@ -65,11 +65,9 @@ def is_function(x):
 # Approximation of builtin dir(); but note that this lists the user's
 # variables by default, not the current local name space.
 
-def dir(*args):
-	if len(args) > 0:
-		if len(args) == 1:
-			args = args[0]
-		return listattrs(args)
+def dir(x = None):
+	if x is not None:
+		return listattrs(x)
 	else:
 		import __main__
 		return listattrs(__main__)

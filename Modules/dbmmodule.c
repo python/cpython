@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -39,7 +39,7 @@ typedef struct {
 	DBM *di_dbm;
 } dbmobject;
 
-extern typeobject Dbmtype;	/* Really forward */
+staticforward typeobject Dbmtype;
 
 #define is_dbmobject(v) ((v)->ob_type == &Dbmtype)
 
@@ -131,6 +131,7 @@ dbm_ass_sub(dp, v, w)
 	dp->di_size = -1;
 	if (w == NULL) {
 	    if ( dbm_delete(dp->di_dbm, krec) < 0 ) {
+		dbm_clearerr(dp->di_dbm);
 		err_setstr(KeyError, GETSTRINGVALUE((stringobject *)v));
 		return -1;
 	    }
@@ -141,6 +142,7 @@ dbm_ass_sub(dp, v, w)
 		return -1;
 	    }
 	    if ( dbm_store(dp->di_dbm, krec, drec, DBM_REPLACE) < 0 ) {
+		dbm_clearerr(dp->di_dbm);
 		err_setstr(DbmError, "Cannot add item to database");
 		return -1;
 	    }
@@ -154,9 +156,9 @@ dbm_ass_sub(dp, v, w)
 }
 
 static mapping_methods dbm_as_mapping = {
-	dbm_length,	/*mp_length*/
-	dbm_subscript,	/*mp_subscript*/
-	dbm_ass_sub,	/*mp_ass_subscript*/
+	(inquiry)dbm_length,		/*mp_length*/
+	(binaryfunc)dbm_subscript,	/*mp_subscript*/
+	(objobjargproc)dbm_ass_sub,	/*mp_ass_subscript*/
 };
 
 static object *
@@ -201,8 +203,8 @@ dbm_has_key(dp, args)
 }
 
 static struct methodlist dbm_methods[] = {
-	{"keys",	dbm_keys},
-	{"has_key",	dbm_has_key},
+	{"keys",	(method)dbm_keys},
+	{"has_key",	(method)dbm_has_key},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -214,20 +216,20 @@ dbm_getattr(dp, name)
 	return findmethod(dbm_methods, (object *)dp, name);
 }
 
-typeobject Dbmtype = {
+static typeobject Dbmtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
 	"Dbm_dictionary",
 	sizeof(dbmobject),
 	0,
-	dbm_dealloc,	/*tp_dealloc*/
-	0,		/*tp_print*/
-	dbm_getattr,	/*tp_getattr*/
-	0,		/*tp_setattr*/
-	0,		/*tp_compare*/
-	0,		/*tp_repr*/
-	0,		/*tp_as_number*/
-	0,		/*tp_as_sequence*/
+	(destructor)dbm_dealloc, /*tp_dealloc*/
+	0,			/*tp_print*/
+	(getattrfunc)dbm_getattr, /*tp_getattr*/
+	0,			/*tp_setattr*/
+	0,			/*tp_compare*/
+	0,			/*tp_repr*/
+	0,			/*tp_as_number*/
+	0,			/*tp_as_sequence*/
 	&dbm_as_mapping,	/*tp_as_mapping*/
 };
 
@@ -258,7 +260,7 @@ dbmopen(self, args)
 }
 
 static struct methodlist dbmmodule_methods[] = {
-    { "open", dbmopen },
+    { "open", (method)dbmopen },
     { 0, 0 },
 };
 

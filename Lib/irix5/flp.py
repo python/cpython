@@ -432,10 +432,10 @@ def _select_crfunc(fm, cl):
 
 def test():
     import time
-    t0 = time.millitimer()
+    t0 = time.time()
     if len(sys.argv) == 2:
 	forms = parse_forms(sys.argv[1])
-	t1 = time.millitimer()
+	t1 = time.time()
 	print 'parse time:', 0.001*(t1-t0), 'sec.'
 	keys = forms.keys()
 	keys.sort()
@@ -443,8 +443,8 @@ def test():
 	    _printform(forms[i])
     elif len(sys.argv) == 3:
 	form = parse_form(sys.argv[1], sys.argv[2])
-	t1 = time.millitimer()
-	print 'parse time:', 0.001*(t1-t0), 'sec.'
+	t1 = time.time()
+	print 'parse time:', round(t1-t0, 3), 'sec.'
 	_printform(form)
     else:
 	print 'Usage: test fdfile [form]'

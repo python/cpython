@@ -6,12 +6,11 @@
 #
 # Each instance is parametrized with two functions, one that is
 # supposed to return the current time, one that is supposed to
-# implement a delay.  You can implement fine- or course-grained
-# real-time scheduling by substituting time and sleep or millitimer
-# and millisleep from the built-in module time, or you can implement
-# simulated time by writing your own functions.  This can also be
-# used to integrate scheduling with STDWIN events; the delay function
-# is allowed to modify the queue.  Time can be expressed as
+# implement a delay.  You can implement real-time scheduling by
+# substituting time and sleep from built-in module time, or you can
+# implement simulated time by writing your own functions.  This can
+# also be used to integrate scheduling with STDWIN events; the delay
+# function is allowed to modify the queue.  Time can be expressed as
 # integers or floating point numbers, as long as it is consistent.
 
 # Events are specified by tuples (time, priority, action, argument).

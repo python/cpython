@@ -1,6 +1,9 @@
 #ifndef _THREAD_H_included
 #define _THREAD_H_included
 
+#define NO_EXIT_PROG		/* don't define exit_prog() */
+				/* (the result is no use of signals on SGI) */
+
 #ifndef PROTO
 #if defined(__STDC__) || defined(__cplusplus)
 #define PROTO(args)	args
@@ -20,6 +23,7 @@ void init_thread PROTO((void));
 int start_new_thread PROTO((void (*)(void *), void *));
 void exit_thread PROTO((void));
 void _exit_thread PROTO((void));
+long get_thread_ident PROTO((void));
 
 type_lock allocate_lock PROTO((void));
 void free_lock PROTO((type_lock));
@@ -33,8 +37,10 @@ void free_sema PROTO((type_sema));
 void down_sema PROTO((type_sema));
 void up_sema PROTO((type_sema));
 
+#ifndef NO_EXIT_PROG
 void exit_prog PROTO((int));
 void _exit_prog PROTO((int));
+#endif
 
 #ifdef __cplusplus
 }

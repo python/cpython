@@ -1,8 +1,10 @@
 # Various tools used by MIME-reading or MIME-writing programs.
 
 
-import string
+import os
 import rfc822
+import string
+import tempfile
 
 
 # A derived class of rfc822.Message that knows about MIME headers and
@@ -67,7 +69,7 @@ class Message(rfc822.Message):
 	def getencoding(self):
 		if self.encodingheader == None:
 			return '7bit'
-		return self.encodingheader
+		return string.lower(self.encodingheader)
 
 	def gettype(self):
 		return self.type
@@ -110,3 +112,75 @@ def choose_boundary():
 	timestamp = `int(time.time())`
 	seed = `rand.rand()`
 	return _prefix + '.' + timestamp + '.' + seed
+
+
+# Subroutines for decoding some common content-transfer-types
+
+# XXX This requires that uudecode and mmencode are in $PATH
+
+def decode(input, output, encoding):
+	if decodetab.has_key(encoding):
+		pipethrough(input, decodetab[encoding], output)
+	else:
+		raise ValueError, \
+		      'unknown Content-Transfer-Encoding: %s' % encoding
+
+def encode(input, output, encoding):
+	if encodetab.has_key(encoding):
+		pipethrough(input, encodetab[encoding], output)
+	else:
+		raise ValueError, \
+		      'unknown Content-Transfer-Encoding: %s' % encoding
+
+uudecode_pipe = '''(
+TEMP=/tmp/@uu.$$
+sed "s%^begin [0-7][0-7]* .*%begin 600 $TEMP%" | uudecode
+cat $TEMP
+rm $TEMP
+)'''
+
+decodetab = {
+	'uuencode':		uudecode_pipe,
+	'x-uuencode':		uudecode_pipe,
+	'quoted-printable':	'mmencode -u -q',
+	'base64':		'mmencode -u -b',
+}
+
+encodetab = {
+	'x-uuencode':		'uuencode tempfile',
+	'uuencode':		'uuencode tempfile',
+	'quoted-printable':	'mmencode -q',
+	'base64':		'mmencode -b',
+}
+
+def pipeto(input, command):
+	pipe = os.popen(command, 'w')
+	copyliteral(input, pipe)
+	pipe.close()
+
+def pipethrough(input, command, output):
+	tempname = tempfile.mktemp()
+	try:
+		temp = open(tempname, 'w')
+	except IOError:
+		print '*** Cannot create temp file', `tempname`
+		return
+	copyliteral(input, temp)
+	temp.close()
+	pipe = os.popen(command + ' <' + tempname, 'r')
+	copybinary(pipe, output)
+	pipe.close()
+	os.unlink(tempname)
+
+def copyliteral(input, output):
+	while 1:
+		line = input.readline()
+		if not line: break
+		output.write(line)
+
+def copybinary(input, output):
+	BUFSIZE = 8192
+	while 1:
+		line = input.read(BUFSIZE)
+		if not line: break
+		output.write(line)

@@ -1,7 +1,16 @@
-# This file is used by the makesetup script to construct Makefile.in
-# and config.c, from Makefile.in.in (sic!) and config.c.in,
-# respectively.
-#
+# The file Setup is used by the makesetup script to construct the files
+# Makefile and config.c, from Makefile.pre and config.c.in,
+# respectively.  The file Setup itself is initially copied from
+# Setup.in; once it exists it will not be overwritten, so you can edit
+# Setup to your heart's content.  One possibility is to overwrite it
+# with a copy of Setup.sgi or Setup.sunos[45] before you start editing.
+# Note that Makefile.pre is created from Makefile.pre.in by the toplevel
+# configure script.
+
+# (VPATH notes: Setup and Makefile.pre are in the build directory, as
+# are Makefile and config.c; Setup.in and config.c.in are in the source
+# directory.)
+
 # Each line in this file describes one or more optional modules.
 # Comment out lines to suppress modules.
 # Lines have the following structure:
@@ -19,13 +28,35 @@
 # <name> = <value>
 #
 # which defines a Make variable definition inserted into Makefile.in
-#
+
 # NOTE: As a standard policy, as many modules as can be supported by a
 # platform should be present.  The distribution comes with all modules
 # enabled that are supported by most platforms and don't require you
 # to ftp sources from elsewhere.  To make this easier for SGI
 # platforms, you can copy Setup.sgi to Setup (or edit Makefile.in.in
 # to use Setup.sgi instead of Setup).
+
+
+# Some special rules to define PYTHONPATH.
+# Edit the definitions below to indicate which options you are using.
+# Don't add any whitespace or comments!
+
+# Don't edit this (usually)
+DESTLIB=$(prefix)/lib/python
+
+# Standard enabled (tests are always available)
+TESTPATH=:$(DESTLIB)/test
+
+# Enable this for SGI systems
+#ARCHPATH=:$(DESTLIB)/sgi
+
+# Enable this for Sun systems
+#ARCHPATH=:$(DESTLIB)/sun4
+
+# Enable this if stdwin installed
+#STDWINPATH=:$(DESTLIB)/stdwin
+
+PYTHONPATH=.:$(DESTLIB)$(TESTPATH)$(ARCHPATH)$(STDWINPATH)
 
 
 # Modules that should always be present (non UNIX dependent)
@@ -41,18 +72,25 @@ time timemodule.o	# time operations and variables
 
 
 # Modules with some UNIX dependencies -- on by default.
-# Note that some UNIX versions still don't support all of these
-# so you may have to comment them out before the build completes.
+# (If you have a really backward UNIX, select and socket may not be
+# supported...)
 
-dbm dbmmodule.o		# dbm(3) may require -ldbm or similar
 fcntl fcntlmodule.o	# fcntl(2) and ioctl(2)
-nis nismodule.o		# Sun yellow pages -- not everywhere
-pwd grp pwdmodule.o	# pwd(3) and grp(3)
+pwd pwdmodule.o		# pwd(3) 
+grp grpmodule.o		# grp(3)
+crypt cryptmodule.o	# crypt(3)
 select selectmodule.o	# select(2); not on ancient System V
 socket socketmodule.o	# socket(2); not on ancient System V
 
 
-# Multimedia modules -- off by default
+# Some more UNIX dependent modules -- off by default, since these
+# are not supported by all UNIX systems.
+
+#dbm dbmmodule.o 	# dbm(3) may require -lndbm or similar
+#nis nismodule.o 	# Sun yellow pages -- not everywhere
+
+
+# Multimedia modules -- on by default.
 # These represent audio samples or images as strings
 
 audioop audioopmodule.o # Operations on audio samples
@@ -69,7 +107,7 @@ rgbimg rgbimgmodule.o   # Read SGI RGB image files (but coded portably)
 # "-lX11_s".
 
 #STDWIN=/ufs/guido/src/stdwin
-#ARCH=sgi
+#ARCH=???
 #stdwin stdwinmodule.o -I$(STDWIN)/H $(STDWIN)/Build/$(ARCH)/x11/lib/lib.a -lX11
 
 
@@ -81,10 +119,12 @@ md5 md5module.o md5c.o
 
 
 # The mpz module interfaces to the GNU Multiple Precision library.
-# You need to ftp the GNU MP library.  This was last tested with a
-# somewhat modified (to get around bugs) version of GMP 1.2; it will
-# likely need some work for more recent versions.  The GMP variable
-# must point to the GMP source directory.
+# You need to ftp the GNU MP library.  
+# The GMP variable must point to the GMP source directory.
+# This was originally written and tested against GMP 1.2.  I have
+# compiled it against GMP 1.3.2 (the latest I believe) and it seems to
+# work OK, but I haven't tested it thoroughly (lacking knowledge about
+# it).
 
 #GMP=/ufs/guido/src/gmp
 #mpz mpzmodule.o -I$(GMP) $(GMP)/libgmp.a
@@ -102,12 +142,13 @@ rotor rotormodule.o
 # installed; you may be better off switching on only 'fm' and 'gl'
 # (Font Manager and Graphics Library).
 
-#al almodule.o -laudio		# audio
-#cd cdmodule.o -lcdaudio -lds	#
-#cl clmodule.o -lcl
+#                               # ADD THESE FOR IRIX5:
+#al almodule.o -laudio
+#cd cdmodule.o -lcdaudio -lds	# -lmediad
+#cl clmodule.o -lcl		# -lawareaudio
 #fm fmmodule.o -lfm_s -lgl_s
-#gl glmodule.o -lgl_s
-#imgfile imgfilemodule.o -limage -lgutil -lm
+#gl glmodule.o -lgl_s -lX11_s
+#imgfile imgfilemodule.o -limage -lgutil
 #sgi sgimodule.o
 #sv svmodule.o yuvconvert.o -lsvideo -lXext -lX11_s
 
@@ -132,6 +173,34 @@ rotor rotormodule.o
 # --with-thread option passed to the configure script for this to work.
 
 # thread threadmodule.o
+
+
+# GNN's timing module
+# timing timingmodule.o
+
+
+# Lance Ellinghouse's signal module
+# signal signalmodule.o
+
+
+# Tommy Burnette's 'new' module (creates new empty objects of certain kinds)
+# new newmodule.o
+
+
+# John Redford's sybase module
+# sybase sybasemodule.o
+
+
+# Generic (SunOS / SVR4) dynamic loading module
+# dl dlmodule.o
+
+
+# Jack Jansen's imgformat module
+# imgformat imgformatmodule.o
+
+
+# Lance Ellinghouse's syslog module
+# syslog syslogmodule.o
 
 
 # Example -- included for reference only

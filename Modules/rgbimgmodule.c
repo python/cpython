@@ -16,7 +16,9 @@
  */
 #include "allobjects.h"
 #include "modsupport.h"
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <string.h>
 
 /*
@@ -199,7 +201,7 @@ IMAGE *image;
 
 static int writetab(outf,tab,len)
 FILE *outf;
-unsigned long *tab;
+/*unsigned*/ long *tab;
 int len;
 {
     int r;
@@ -213,7 +215,7 @@ int len;
 
 static readtab(inf,tab,len)
 FILE *inf;
-unsigned long *tab;
+/*unsigned*/ long *tab;
 int len;
 {
     while(len) {
@@ -744,7 +746,7 @@ initrgbimg()
     object *m, *d;
     m = initmodule("rgbimg", rgbimg_methods);
     d = getmoduledict(m);
-    ImgfileError = newstringobject("rgbimg,error");
+    ImgfileError = newstringobject("rgbimg.error");
     if (ImgfileError == NULL || dictinsert(d, "error", ImgfileError))
 	fatal("can't define rgbimg.error");
 }

@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -34,7 +34,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* A label of an arc */
 
-typedef struct _label {
+typedef struct {
 	int	lb_type;
 	char	*lb_str;
 } label;
@@ -43,21 +43,21 @@ typedef struct _label {
 
 /* A list of labels */
 
-typedef struct _labellist {
+typedef struct {
 	int	ll_nlabels;
 	label	*ll_label;
 } labellist;
 
 /* An arc from one state to another */
 
-typedef struct _arc {
+typedef struct {
 	short		a_lbl;		/* Label of this arc */
 	short		a_arrow;	/* State where this arc goes to */
 } arc;
 
 /* A state in a DFA */
 
-typedef struct _state {
+typedef struct {
 	int		 s_narcs;
 	arc		*s_arc;		/* Array of arcs */
 	
@@ -70,7 +70,7 @@ typedef struct _state {
 
 /* A DFA */
 
-typedef struct _dfa {
+typedef struct {
 	int		 d_type;	/* Non-terminal this represents */
 	char		*d_name;	/* For printing */
 	int		 d_initial;	/* Initial state */
@@ -81,7 +81,7 @@ typedef struct _dfa {
 
 /* A grammar */
 
-typedef struct _grammar {
+typedef struct {
 	int		 g_ndfas;
 	dfa		*g_dfa;		/* Array of DFAs */
 	labellist	 g_ll;

@@ -67,6 +67,10 @@ if (-12) + 24 <> 12: raise TestFailed, 'int op'
 if (-12) + (-24) <> -36: raise TestFailed, 'int op'
 if not 12 < 24: raise TestFailed, 'int op'
 if not -24 < -12: raise TestFailed, 'int op'
+# Test for a particular bug in integer multiply
+xsize, ysize, zsize = 238, 356, 4
+if not (xsize*ysize*zsize == zsize*xsize*ysize == 338912):
+	raise TestFailed, 'int mul commutativity'
 print '6.4.2 Long integers'
 if 12L + 24L <> 36L: raise TestFailed, 'long op'
 if 12L + (-24L) <> -12L: raise TestFailed, 'long op'
@@ -94,6 +98,8 @@ if 0*'abcde' <> '': raise TestFailed, 'string repetition 0*'
 if min('abc') <> 'a' or max('abc') <> 'c': raise TestFailed, 'min/max string'
 if 'a' in 'abc' and 'b' in 'abc' and 'c' in 'abc' and 'd' not in 'abc': pass
 else: raise TestFailed, 'in/not in string'
+x = 'x'*103
+if '%s!'%x != x+'!': raise TestFailed, 'nasty string formatting bug'
 
 print '6.5.2 Tuples'
 if len(()) <> 0: raise TestFailed, 'len(())'

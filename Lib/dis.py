@@ -135,7 +135,8 @@ def_op('BREAK_LOOP', 80)
 def_op('RAISE_EXCEPTION', 81)
 def_op('LOAD_LOCALS', 82)
 def_op('RETURN_VALUE', 83)
-
+def_op('LOAD_GLOBALS', 84)
+def_op('EXEC_STMT', 85)
 def_op('BUILD_FUNCTION', 86)
 def_op('POP_BLOCK', 87)
 def_op('END_FINALLY', 88)
@@ -173,6 +174,7 @@ jrel_op('FOR_LOOP', 114)	# Number of bytes to skip
 
 name_op('LOAD_LOCAL', 115)	# Index in name list
 name_op('LOAD_GLOBAL', 116)	# Index in name list
+def_op('SET_FUNC_ARGS', 117)	# Argcount
 
 jrel_op('SETUP_LOOP', 120)	# Distance to target address
 jrel_op('SETUP_EXCEPT', 121)	# ""

@@ -61,9 +61,10 @@ u(p)
 	Move the current frame one level up in the stack trace
 	(to a newer frame).
 
-b(reak) [lineno]
-	With a line number argument, set a break there in the current file.
-	Without argument, list all breaks.
+b(reak) [lineno | function]
+	With a line number argument, set a break there in the current
+	file.  With a function name, set a break at the entry of that
+	function.  Without argument, list all breaks.
 
 cl(ear) [lineno]
 	With a line number argument, clear that break in the current file.

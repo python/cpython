@@ -1,5 +1,5 @@
 /**********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -440,23 +440,23 @@ CD_togglepause(self, args)
 }
 	
 static struct methodlist cdplayer_methods[] = {
-	{"allowremoval",	CD_allowremoval},
-	{"bestreadsize",	CD_bestreadsize},
-	{"close",		CD_close},
-	{"eject",		CD_eject},
-	{"getstatus",		CD_getstatus},
-	{"gettrackinfo",	CD_gettrackinfo},
-	{"msftoblock",		CD_msftoblock},
-	{"play",		CD_play},
-	{"playabs",		CD_playabs},
-	{"playtrack",		CD_playtrack},
-	{"playtrackabs",	CD_playtrackabs},
-	{"preventremoval",	CD_preventremoval},
-	{"readda",		CD_readda},
-	{"seek",		CD_seek},
-	{"seektrack",		CD_seektrack},
-	{"stop",		CD_stop},
-	{"togglepause",		CD_togglepause},
+	{"allowremoval",	(method)CD_allowremoval},
+	{"bestreadsize",	(method)CD_bestreadsize},
+	{"close",		(method)CD_close},
+	{"eject",		(method)CD_eject},
+	{"getstatus",		(method)CD_getstatus},
+	{"gettrackinfo",	(method)CD_gettrackinfo},
+	{"msftoblock",		(method)CD_msftoblock},
+	{"play",		(method)CD_play},
+	{"playabs",		(method)CD_playabs},
+	{"playtrack",		(method)CD_playtrack},
+	{"playtrackabs",	(method)CD_playtrackabs},
+	{"preventremoval",	(method)CD_preventremoval},
+	{"readda",		(method)CD_readda},
+	{"seek",		(method)CD_seek},
+	{"seektrack",		(method)CD_seektrack},
+	{"stop",		(method)CD_stop},
+	{"togglepause",		(method)CD_togglepause},
 	{NULL,			NULL} 		/* sentinel */
 };
 
@@ -484,9 +484,9 @@ typeobject CdPlayertype = {
 	sizeof(cdplayerobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	cdplayer_dealloc,	/*tp_dealloc*/
+	(destructor)cdplayer_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	cdplayer_getattr,	/*tp_getattr*/
+	(getattrfunc)cdplayer_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
@@ -755,12 +755,12 @@ CD_addcallback(self, args)
 }
 
 static struct methodlist cdparser_methods[] = {
-	{"addcallback",		CD_addcallback},
-	{"deleteparser",	CD_deleteparser},
-	{"parseframe",		CD_parseframe},
-	{"removecallback",	CD_removecallback},
-	{"resetparser",		CD_resetparser},
-	{"setcallback",		CD_addcallback}, /* backward compatibility */
+	{"addcallback",		(method)CD_addcallback},
+	{"deleteparser",	(method)CD_deleteparser},
+	{"parseframe",		(method)CD_parseframe},
+	{"removecallback",	(method)CD_removecallback},
+	{"resetparser",		(method)CD_resetparser},
+	{"setcallback",		(method)CD_addcallback}, /* backward compatibility */
 	{NULL,			NULL} 		/* sentinel */
 };
 
@@ -795,9 +795,9 @@ typeobject CdParsertype = {
 	sizeof(cdparserobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	cdparser_dealloc,	/*tp_dealloc*/
+	(destructor)cdparser_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	cdparser_getattr,	/*tp_getattr*/
+	(getattrfunc)cdparser_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
@@ -877,10 +877,10 @@ CD_timetoa(self, args)
 }
 
 static struct methodlist CD_methods[] = {
-	{"sbtoa",	CD_sbtoa},
-	{"open",	CD_open},
-	{"createparser",CD_createparser},
-	{"timetoa",	CD_timetoa},
+	{"sbtoa",	(method)CD_sbtoa},
+	{"open",	(method)CD_open},
+	{"createparser",(method)CD_createparser},
+	{"timetoa",	(method)CD_timetoa},
 	{NULL,		NULL}	/* Sentinel */
 };
 

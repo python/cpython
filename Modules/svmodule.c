@@ -1,5 +1,5 @@
 /**********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -227,7 +227,7 @@ svc_lrectwrite(self, args)
 #endif
 
 static object *
-writefile(self, args)
+svc_writefile(self, args)
 	captureobject *self;
 	object *args;
 {
@@ -276,19 +276,19 @@ svc_FindVisibleRegion(self, args)
 }
 
 static struct methodlist capture_methods[] = {
-	{"YUVtoRGB",		svc_YUVtoRGB},
-	{"RGB8toRGB32",		svc_RGB8toRGB32},
-	{"InterleaveFields",	svc_InterleaveFields},
-	{"UnlockCaptureData",	svc_UnlockCaptureData},
-	{"FindVisibleRegion",	svc_FindVisibleRegion},
-	{"GetFields",		svc_GetFields},
-	{"YUVtoYUV422DC",	svc_YUVtoYUV422DC},
-	{"YUVtoYUV422DC_quarter",svc_YUVtoYUV422DC_quarter},
-	{"YUVtoYUV422DC_sixteenth",svc_YUVtoYUV422DC_sixteenth},
+	{"YUVtoRGB",		(method)svc_YUVtoRGB},
+	{"RGB8toRGB32",		(method)svc_RGB8toRGB32},
+	{"InterleaveFields",	(method)svc_InterleaveFields},
+	{"UnlockCaptureData",	(method)svc_UnlockCaptureData},
+	{"FindVisibleRegion",	(method)svc_FindVisibleRegion},
+	{"GetFields",		(method)svc_GetFields},
+	{"YUVtoYUV422DC",	(method)svc_YUVtoYUV422DC},
+	{"YUVtoYUV422DC_quarter",(method)svc_YUVtoYUV422DC_quarter},
+	{"YUVtoYUV422DC_sixteenth",(method)svc_YUVtoYUV422DC_sixteenth},
 #ifdef USE_GL
-	{"lrectwrite",		svc_lrectwrite},
+	{"lrectwrite",		(method)svc_lrectwrite},
 #endif
-	{"writefile",		writefile},
+	{"writefile",		(method)svc_writefile},
 	{NULL,			NULL} 		/* sentinel */
 };
 
@@ -316,17 +316,17 @@ capture_getattr(self, name)
 
 typeobject Capturetype = {
 	OB_HEAD_INIT(&Typetype)
-	0,			/*ob_size*/
-	"capture",		/*tp_name*/
-	sizeof(captureobject),	/*tp_size*/
-	0,			/*tp_itemsize*/
+	0,				/*ob_size*/
+	"capture",			/*tp_name*/
+	sizeof(captureobject),		/*tp_size*/
+	0,				/*tp_itemsize*/
 	/* methods */
-	capture_dealloc,	/*tp_dealloc*/
-	0,			/*tp_print*/
-	capture_getattr,	/*tp_getattr*/
-	0,			/*tp_setattr*/
-	0,			/*tp_compare*/
-	0,			/*tp_repr*/
+	(destructor)capture_dealloc,	/*tp_dealloc*/
+	0,				/*tp_print*/
+	(getattrfunc)capture_getattr,	/*tp_getattr*/
+	0,				/*tp_setattr*/
+	0,				/*tp_compare*/
+	0,				/*tp_repr*/
 };
 
 static object *
@@ -835,25 +835,25 @@ sv_SetParam(self, args)
 }
 
 static struct methodlist svideo_methods[] = {
-	{"BindGLWindow",	sv_BindGLWindow},
-	{"EndContinuousCapture",sv_EndContinuousCapture},
-	{"IsVideoDisplayed",	sv_IsVideoDisplayed},
-	{"OutputOffset",	sv_OutputOffset},
-	{"PutFrame",		sv_PutFrame},
-	{"QuerySize",		sv_QuerySize},
-	{"SetSize",		sv_SetSize},
-	{"SetStdDefaults",	sv_SetStdDefaults},
-	{"UseExclusive",	sv_UseExclusive},
-	{"WindowOffset",	sv_WindowOffset},
-	{"InitContinuousCapture",sv_InitContinuousCapture},
-	{"CaptureBurst",	sv_CaptureBurst},
-	{"CaptureOneFrame",	sv_CaptureOneFrame},
-	{"GetCaptureData",	sv_GetCaptureData},
-	{"CloseVideo",		sv_CloseVideo},
-	{"LoadMap",		sv_LoadMap},
-	{"GetParam",		sv_GetParam},
-	{"GetParamRange",	sv_GetParamRange},
-	{"SetParam",		sv_SetParam},
+	{"BindGLWindow",	(method)sv_BindGLWindow},
+	{"EndContinuousCapture",(method)sv_EndContinuousCapture},
+	{"IsVideoDisplayed",	(method)sv_IsVideoDisplayed},
+	{"OutputOffset",	(method)sv_OutputOffset},
+	{"PutFrame",		(method)sv_PutFrame},
+	{"QuerySize",		(method)sv_QuerySize},
+	{"SetSize",		(method)sv_SetSize},
+	{"SetStdDefaults",	(method)sv_SetStdDefaults},
+	{"UseExclusive",	(method)sv_UseExclusive},
+	{"WindowOffset",	(method)sv_WindowOffset},
+	{"InitContinuousCapture",(method)sv_InitContinuousCapture},
+	{"CaptureBurst",	(method)sv_CaptureBurst},
+	{"CaptureOneFrame",	(method)sv_CaptureOneFrame},
+	{"GetCaptureData",	(method)sv_GetCaptureData},
+	{"CloseVideo",		(method)sv_CloseVideo},
+	{"LoadMap",		(method)sv_LoadMap},
+	{"GetParam",		(method)sv_GetParam},
+	{"GetParamRange",	(method)sv_GetParamRange},
+	{"SetParam",		(method)sv_SetParam},
 	{NULL,			NULL} 		/* sentinel */
 };
 
@@ -930,9 +930,9 @@ typeobject Svtype = {
 	sizeof(svobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	svideo_dealloc,		/*tp_dealloc*/
+	(destructor)svideo_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	svideo_getattr,		/*tp_getattr*/
+	(getattrfunc)svideo_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
@@ -973,10 +973,10 @@ sv_OpenVideo(self, args)
 }
 
 static struct methodlist sv_methods[] = {
-	{"InterleaveFields",	sv_InterleaveFields},
-	{"RGB8toRGB32",		sv_RGB8toRGB32},
-	{"YUVtoRGB",		sv_YUVtoRGB},
-	{"OpenVideo",		sv_OpenVideo},
+	{"InterleaveFields",	(method)sv_InterleaveFields},
+	{"RGB8toRGB32",		(method)sv_RGB8toRGB32},
+	{"YUVtoRGB",		(method)sv_YUVtoRGB},
+	{"OpenVideo",		(method)sv_OpenVideo},
 	{NULL,			NULL}	/* Sentinel */
 };
 

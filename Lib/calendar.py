@@ -106,12 +106,7 @@ def weekheader(width):
 	return str
 
 # Print a month's calendar
-def prmonth(year, month, *rest):
-	if rest[2:]: raise TypeError, 'too many args'
-	w = 0
-	l = 0
-	if rest[0:]: w = rest[0]
-	if rest[1:]: l = rest[1]
+def prmonth(year, month, w = 0, l = 0):
 	w = max(2, w)
 	l = max(1, l)
 	print _center(month_name[month] + ' ' + `year`, 7*(w+1) - 1),

@@ -60,10 +60,7 @@ class NNTP:
 	# - host: hostname to connect to
 	# - port: port to connect to (default the standard NNTP port)
 
-	def __init__(self, host, *args):
-		if len(args) > 1: raise TypeError, 'too many args'
-		if args: port = args[0]
-		else: port = NNTP_PORT
+	def __init__(self, host, port = NNTP_PORT):
 		self.host = host
 		self.port = port
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

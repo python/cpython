@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -675,9 +675,9 @@ static typeobject Cltype = {
 	sizeof(clobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	cl_dealloc,		/*tp_dealloc*/
+	(destructor)cl_dealloc,	/*tp_dealloc*/
 	0,			/*tp_print*/
-	cl_getattr,		/*tp_getattr*/
+	(getattrfunc)cl_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
@@ -711,7 +711,7 @@ doOpen(object *self, object *args, int (*open_func)(int, CL_Handle *),
 			err_setstr(ClError, "Open(De)Compressor failed");
 		return NULL;
 	}
-	return new;
+	return (object *)new;
 }
 
 static object *

@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -33,7 +33,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 void err_set PROTO((object *));
 void err_setval PROTO((object *, object *));
 void err_setstr PROTO((object *, char *));
-int err_occurred PROTO((void));
+object *err_occurred PROTO((void));
 void err_get PROTO((object **, object **));
 void err_clear PROTO((void));
 
@@ -64,11 +64,12 @@ extern object *ZeroDivisionError;
 extern int err_badarg PROTO((void));
 extern object *err_nomem PROTO((void));
 extern object *err_errno PROTO((object *));
-extern void err_input PROTO((int));
 
 extern void err_badcall PROTO((void));
 
 extern object *err_getexc PROTO((void));
+
+extern int sigcheck PROTO((void)); /* In sigcheck.c or signalmodule.c */
 
 #ifdef __cplusplus
 }

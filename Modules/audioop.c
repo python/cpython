@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -22,16 +22,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* audioopmodele - Module to detect peak values in arrays */
-
-#ifdef sun
-#define signed
-#endif
-
-#include <math.h>
+/* audioopmodule - Module to detect peak values in arrays */
 
 #include "allobjects.h"
 #include "modsupport.h"
+
+#if defined(__CHAR_UNSIGNED__) && defined(signed)
+!ERROR!; READ THE SOURCE FILE!;
+/* This module currently does not work on systems where only unsigned
+   characters are available.  Take it out of Setup.  Sorry. */
+#endif
+
+#include <math.h>
 
 /* Code shamelessly stolen from sox,
 ** (c) Craig Reese, Joe Campbell and Jeff Poskanzer 1989 */
@@ -210,32 +212,6 @@ audioop_max(self, args)
 	if ( val > max ) max = val;
     }
     return newintobject(max);
-}
-
-static object *
-audioop_minmax(self, args)
-	object *self;
-	object *args;
-{
-	signed char *cp;
-	int len, size, val;
-	int i;
-	int min = 0x7fffffff, max = -0x7fffffff;
-
-	if (!getargs(args, "(s#i)", &cp, &len, &size))
-		return NULL;
-	if (size != 1 && size != 2 && size != 4) {
-		err_setstr(AudioopError, "Size should be 1, 2 or 4");
-		return NULL;
-	}
-	for (i = 0; i < len; i += size) {
-		if (size == 1) val = (int) *CHARP(cp, i);
-		else if (size == 2) val = (int) *SHORTP(cp, i);
-		else if (size == 4) val = (int) *LONGP(cp, i);
-		if (val > max) max = val;
-		if (val < min) min = val;
-	}
-	return mkvalue("(ii)", min, max);
 }
 
 static object *
@@ -997,136 +973,6 @@ audioop_ulaw2lin(self, args)
 }
 
 static object *
-audioop_lin2adpcm3(self, args)
-    object *self;
-    object *args;
-{
-    signed char *cp;
-    signed char *ncp;
-    int len, size, val, step, valprev, delta;
-    object *rv, *state, *str;
-    int i;
-
-    if ( !getargs(args, "(s#iO)",
-		  &cp, &len, &size, &state) )
-      return 0;
-    
-
-    if ( size != 1 && size != 2 && size != 4) {
-	err_setstr(AudioopError, "Size should be 1, 2 or 4");
-	return 0;
-    }
-    
-    str = newsizedstringobject(NULL, len/size);
-    if ( str == 0 )
-      return 0;
-    ncp = (signed char *)getstringvalue(str);
-
-    /* Decode state, should have (value, step) */
-    if ( state == None ) {
-	/* First time, it seems. Set defaults */
-	valprev = 0;
-	step = 4;	/* The '4' is magic. Dunno it's significance */
-    } else if ( !getargs(state, "(ii)", &valprev, &step) )
-      return 0;
-
-    for ( i=0; i < len; i += size ) {
-	if ( size == 1 )      val = ((int)*CHARP(cp, i)) << 8;
-	else if ( size == 2 ) val = (int)*SHORTP(cp, i);
-	else if ( size == 4 ) val = ((int)*LONGP(cp, i)) >> 16;
-
-	/* Step 1 - compute difference with previous value */
-	delta = (val - valprev)/step;
-
-	/* Step 2 - Clamp */
-	if ( delta < -4 )
-	  delta = -4;
-	else if ( delta > 3 )
-	  delta = 3;
-
-	/* Step 3 - Update previous value */
-	valprev += delta*step;
-
-	/* Step 4 - Clamp previous value to 16 bits */
-	if ( valprev > 32767 )
-	  valprev = 32767;
-	else if ( valprev < -32768 )
-	  valprev = -32768;
-
-	/* Step 5 - Update step value */
-	step = step * newstep[abs(delta)];
-	step++;		/* Don't understand this. */
-
-	/* Step 6 - Output value (as a whole byte, currently) */
-	*ncp++ = delta;
-    }
-    rv = mkvalue("(O(ii))", str, valprev, step);
-    DECREF(str);
-    return rv;
-}
-
-static object *
-audioop_adpcm32lin(self, args)
-    object *self;
-    object *args;
-{
-    signed char *cp;
-    signed char *ncp;
-    int len, size, val, valprev, step, delta;
-    object *rv, *str, *state;
-    int i;
-
-    if ( !getargs(args, "(s#iO)",
-		  &cp, &len, &size, &state) )
-      return 0;
-
-    if ( size != 1 && size != 2 && size != 4) {
-	err_setstr(AudioopError, "Size should be 1, 2 or 4");
-	return 0;
-    }
-    
-    /* Decode state, should have (value, step) */
-    if ( state == None ) {
-	/* First time, it seems. Set defaults */
-	valprev = 0;
-	step = 4;	/* The '4' is magic. Dunno it's significance */
-    } else if ( !getargs(state, "(ii)", &valprev, &step) )
-      return 0;
-    
-    str = newsizedstringobject(NULL, len*size);
-    if ( str == 0 )
-      return 0;
-    ncp = (signed char *)getstringvalue(str);
-    
-    for ( i=0; i < len*size; i += size ) {
-	/* Step 1 - get the delta value */
-	delta = *cp++;
-
-	/* Step 2 - update output value */
-	valprev = valprev + delta*step;
-
-	/* Step 3 - clamp output value */
-	if ( valprev > 32767 )
-	  valprev = 32767;
-	else if ( valprev < -32768 )
-	  valprev = -32768;
-
-	/* Step 4 - Update step value */
-	step = step * newstep[abs(delta)];
-	step++;
-
-	/* Step 5 - Output value */
-	if ( size == 1 )      *CHARP(ncp, i) = (signed char)(valprev >> 8);
-	else if ( size == 2 ) *SHORTP(ncp, i) = (short)(valprev);
-	else if ( size == 4 ) *LONGP(ncp, i) = (long)(valprev<<16);
-    }
-
-    rv = mkvalue("(O(ii))", str, valprev, step);
-    DECREF(str);
-    return rv;
-}
-
-static object *
 audioop_lin2adpcm(self, args)
     object *self;
     object *args;
@@ -1330,7 +1176,6 @@ audioop_adpcm2lin(self, args)
 
 static struct methodlist audioop_methods[] = {
     { "max", audioop_max },
-    { "minmax", audioop_minmax },
     { "avg", audioop_avg },
     { "maxpp", audioop_maxpp },
     { "avgpp", audioop_avgpp },
@@ -1347,8 +1192,6 @@ static struct methodlist audioop_methods[] = {
     { "lin2lin", audioop_lin2lin },
     { "adpcm2lin", audioop_adpcm2lin },
     { "lin2adpcm", audioop_lin2adpcm },
-    { "adpcm32lin", audioop_adpcm32lin },
-    { "lin2adpcm3", audioop_lin2adpcm3 },
     { "tomono", audioop_tomono },
     { "tostereo", audioop_tostereo },
     { "getsample", audioop_getsample },

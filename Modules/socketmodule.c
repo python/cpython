@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -30,7 +30,7 @@ This module provides an interface to Berkeley socket IPC.
 Limitations:
 
 - only AF_INET and AF_UNIX address families are supported
-- no asynchronous I/O (but read polling: avail)
+- no asynchronous I/O (but you can use select() on sockets)
 - no read/write operations (use send/recv or makefile instead)
 - setsockopt() and getsockopt() only support integer options
 
@@ -51,7 +51,6 @@ Interface:
 Socket methods:
 
 - s.accept() --> new socket object, sockaddr
-- s.avail() --> boolean
 - s.setsockopt(level, optname, flag) --> None
 - s.getsockopt(level, optname) --> flag
 - s.bind(sockaddr) --> None
@@ -62,8 +61,8 @@ Socket methods:
 - s.makefile(mode) --> file object
 - s.recv(nbytes [,flags]) --> string
 - s.recvfrom(nbytes [,flags]) --> string, sockaddr
-- s.send(string [,flags]) --> None
-- s.sendto(string, [flags,] sockaddr) --> None
+- s.send(string [,flags]) --> nbytes
+- s.sendto(string, [flags,] sockaddr) --> nbytes
 - s.shutdown(how) --> None
 - s.close() --> None
 
@@ -73,17 +72,17 @@ Socket methods:
 #include "modsupport.h"
 #include "ceval.h"
 
-#include "myselect.h" /* Implies <sys/types.h>, <sys/time.h>, <sys/param.h> */
+#include <sys/types.h>
+#include "mytime.h"
 
 #include <signal.h>
+#include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
-#include <netdb.h>
-
-#ifdef i860
-/* Cray APP doesn't have getpeername() */
-#define NO_GETPEERNAME
+#else
+#undef AF_UNIX
 #endif
 
 
@@ -121,7 +120,7 @@ typedef struct {
    some of which call newsocobject(), which uses Socktype, so
    there has to be a circular reference. */
 
-extern typeobject Socktype; /* Forward */
+staticforward typeobject Socktype;
 
 
 /* Create a new socket object.
@@ -233,11 +232,13 @@ makesockaddr(addr, addrlen)
 		return ret;
 	}
 
+#ifdef AF_UNIX
 	case AF_UNIX:
 	{
 		struct sockaddr_un *a = (struct sockaddr_un *) addr;
 		return newstringobject(a->sun_path);
 	}
+#endif /* AF_UNIX */
 
 	/* More cases here... */
 
@@ -263,6 +264,7 @@ getsockaddrarg(s, args, addr_ret, len_ret)
 {
 	switch (s->sock_family) {
 
+#ifdef AF_UNIX
 	case AF_UNIX:
 	{
 		static struct sockaddr_un addr;
@@ -280,6 +282,7 @@ getsockaddrarg(s, args, addr_ret, len_ret)
 		*len_ret = len + sizeof addr.sun_family;
 		return 1;
 	}
+#endif /* AF_UNIX */
 
 	case AF_INET:
 	{
@@ -318,11 +321,13 @@ getsockaddrlen(s, len_ret)
 {
 	switch (s->sock_family) {
 
+#ifdef AF_UNIX
 	case AF_UNIX:
 	{
 		*len_ret = sizeof (struct sockaddr_un);
 		return 1;
 	}
+#endif /* AF_UNIX */
 
 	case AF_INET:
 	{
@@ -477,29 +482,6 @@ sock_getsockopt(s, args)
 }
 
 
-/* s.avail() method */
-
-static object *
-sock_avail(s, args)
-	sockobject *s;
-	object *args;
-{
-	struct timeval timeout;
-	fd_set readers;
-	int n;
-	if (!getnoarg(args))
-		return NULL;
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 0;
-	FD_ZERO(&readers);
-	FD_SET(s->sock_fd, &readers);
-	n = select(s->sock_fd+1, &readers, (fd_set *)0, (fd_set *)0, &timeout);
-	if (n < 0)
-		return socket_error();
-	return newintobject((long) (n != 0));
-}
-
-
 /* s.bind(sockaddr) method */
 
 static object *
@@ -599,7 +581,7 @@ sock_getsockname(s, args)
 }
 
 
-#ifndef NO_GETPEERNAME
+#ifdef HAVE_GETPEERNAME		/* Cray APP doesn't have this :-( */
 /* s.getpeername() method */
 
 static object *
@@ -620,7 +602,7 @@ sock_getpeername(s, args)
 		return socket_error();
 	return makesockaddr((struct sockaddr *) addrbuf, addrlen);
 }
-#endif
+#endif /* HAVE_GETPEERNAME */
 
 
 /* s.listen(n) method */
@@ -635,6 +617,8 @@ sock_listen(s, args)
 	if (!getintarg(args, &backlog))
 		return NULL;
 	BGN_SAVE
+	if (backlog < 1)
+		backlog = 1;
 	res = listen(s->sock_fd, backlog);
 	END_SAVE
 	if (res < 0)
@@ -755,8 +739,7 @@ sock_send(s, args)
 	END_SAVE
 	if (n < 0)
 		return socket_error();
-	INCREF(None);
-	return None;
+	return newintobject((long)n);
 }
 
 
@@ -784,8 +767,7 @@ sock_sendto(s, args)
 	END_SAVE
 	if (n < 0)
 		return socket_error();
-	INCREF(None);
-	return None;
+	return newintobject((long)n);
 }
 
 
@@ -813,27 +795,26 @@ sock_shutdown(s, args)
 /* List of methods for socket objects */
 
 static struct methodlist sock_methods[] = {
-	{"accept",	sock_accept},
-	{"avail",	sock_avail},
-	{"allowbroadcast",	sock_allowbroadcast},
-	{"setsockopt",	sock_setsockopt},
-	{"getsockopt",	sock_getsockopt},
-	{"bind",	sock_bind},
-	{"close",	sock_close},
-	{"connect",	sock_connect},
-	{"fileno",	sock_fileno},
-	{"getsockname",	sock_getsockname},
-#ifndef NO_GETPEERNAME
-	{"getpeername",	sock_getpeername},
+	{"accept",		(method)sock_accept},
+	{"allowbroadcast",	(method)sock_allowbroadcast},
+	{"setsockopt",		(method)sock_setsockopt},
+	{"getsockopt",		(method)sock_getsockopt},
+	{"bind",		(method)sock_bind},
+	{"close",		(method)sock_close},
+	{"connect",		(method)sock_connect},
+	{"fileno",		(method)sock_fileno},
+	{"getsockname",		(method)sock_getsockname},
+#ifdef HAVE_GETPEERNAME
+	{"getpeername",		(method)sock_getpeername},
 #endif
-	{"listen",	sock_listen},
-	{"makefile",	sock_makefile},
-	{"recv",	sock_recv},
-	{"recvfrom",	sock_recvfrom},
-	{"send",	sock_send},
-	{"sendto",	sock_sendto},
-	{"shutdown",	sock_shutdown},
-	{NULL,		NULL}		/* sentinel */
+	{"listen",		(method)sock_listen},
+	{"makefile",		(method)sock_makefile},
+	{"recv",		(method)sock_recv},
+	{"recvfrom",		(method)sock_recvfrom},
+	{"send",		(method)sock_send},
+	{"sendto",		(method)sock_sendto},
+	{"shutdown",		(method)sock_shutdown},
+	{NULL,			NULL}		/* sentinel */
 };
 
 
@@ -860,19 +841,17 @@ sock_getattr(s, name)
 }
 
 
-/* Type object for socket objects.
-   XXX This should be static, but some compilers don't grok the
-   XXX forward reference to it in that case... */
+/* Type object for socket objects. */
 
-typeobject Socktype = {
+static typeobject Socktype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
 	"socket",
 	sizeof(sockobject),
 	0,
-	sock_dealloc,	/*tp_dealloc*/
+	(destructor)sock_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
-	sock_getattr,	/*tp_getattr*/
+	(getattrfunc)sock_getattr, /*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
 	0,		/*tp_repr*/
@@ -1061,7 +1040,9 @@ initsocket()
 	if (SocketError == NULL || dictinsert(d, "error", SocketError) != 0)
 		fatal("can't define socket.error");
 	insint(d, "AF_INET", AF_INET);
+#ifdef AF_UNIX
 	insint(d, "AF_UNIX", AF_UNIX);
+#endif /* AF_UNIX */
 	insint(d, "SOCK_STREAM", SOCK_STREAM);
 	insint(d, "SOCK_DGRAM", SOCK_DGRAM);
 	insint(d, "SOCK_RAW", SOCK_RAW);

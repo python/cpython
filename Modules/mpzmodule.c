@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -21,6 +21,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
+
 /* MPZ module */
 
 /* This module provides an interface to an alternate Multi-Precision
@@ -35,6 +36,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "allobjects.h"
 #include "modsupport.h"		/* For getargs() etc. */
 #include <assert.h>
+#include <sys/types.h>		/* For size_t */
 
 /*
 **	These are the cpp-flags used in this file...
@@ -89,7 +91,7 @@ typedef struct {
         MP_INT	mpz;		/* the actual number */
 } mpzobject;
 
-extern typeobject MPZtype;	/* Really static, forward */
+staticforward typeobject MPZtype;
 
 #define is_mpzobject(v)		((v)->ob_type == &MPZtype)
 
@@ -993,8 +995,10 @@ mpz_mpzcoerce(z)
 	err_setstr(TypeError, "number coercion (to mpzobject) failed");
 	return NULL;
 } /* mpz_mpzcoerce() */
-
-static void mpz_divm();
+	
+/* Forward */
+static void mpz_divm PROTO((MP_INT *res, const MP_INT *num,
+			    const MP_INT *den, const MP_INT *mod));
 
 static object *
 MPZ_powm(self, args)
@@ -1546,7 +1550,7 @@ static struct methodlist mpz_methods[] = {
 	{"hex",			mpz_hex},
 	{"oct",			mpz_oct},
 #endif /* def MPZ_CONVERSIONS_AS_METHODS */
-	{"binary", (object * (*) (object *, object *)) mpz_binary},
+	{"binary",		(object *(*)(object *, object *))mpz_binary},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1601,9 +1605,10 @@ mpz_repr(v)
 
 
 
-#define UF (object* (*) FPROTO((object *))) /* Unary function */
-#define BF (object* (*) FPROTO((object *, object *))) /* Binary function */
-#define IF (int (*) FPROTO((object *))) /* Int function */
+#define UF (unaryfunc)
+#define BF (binaryfunc)
+#define IF (inquiry)
+#define CF (coercion)
 
 static number_methods mpz_as_number = {
 	BF mpz_addition,	/*nb_add*/
@@ -1623,8 +1628,7 @@ static number_methods mpz_as_number = {
 	BF mpz_andfunc,		/*nb_and*/
 	BF mpz_xorfunc,		/*nb_xor*/
 	BF mpz_orfunc,		/*nb_or*/
-	(int (*) FPROTO((object **, object **)))
-	mpz_coerce,		/*nb_coerce*/
+	CF mpz_coerce,		/*nb_coerce*/
 #ifndef MPZ_CONVERSIONS_AS_METHODS
 	UF mpz_int,		/*nb_int*/
 	UF mpz_long,		/*nb_long*/
@@ -1641,13 +1645,13 @@ static typeobject MPZtype = {
 	sizeof(mpzobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	(void (*) (object *)) mpz_dealloc,	/*tp_dealloc*/
-	0,		/*tp_print*/
-	(object * (*)(object *, char *)) mpz_getattr,	/*tp_getattr*/
-	0,		/*tp_setattr*/
-	(int (*) (object *, object *))  mpz_compare,	/*tp_compare*/
-	mpz_repr,	/*tp_repr*/
-        &mpz_as_number, /*tp_as_number*/
+	(destructor)mpz_dealloc, /*tp_dealloc*/
+	0,			/*tp_print*/
+	(getattrfunc)mpz_getattr, /*tp_getattr*/
+	0,			/*tp_setattr*/
+	(cmpfunc)mpz_compare,	/*tp_compare*/
+	(reprfunc)mpz_repr,	/*tp_repr*/
+        &mpz_as_number, 	/*tp_as_number*/
 };
 
 /* List of functions exported by this module */

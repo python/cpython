@@ -97,6 +97,22 @@ if filter(None, [1, 'hello', [], [3], '', None, 9, 0]) <> [1, 'hello', [3], 9]:
 	raise TestFailed, 'filter (remove false values)'
 if filter(lambda x: x > 0, [1, -3, 9, 0, 2]) <> [1, 9, 2]:
 	raise TestFailed, 'filter (keep positives)'
+class Squares:
+	def __init__(self, max):
+		self.max = max
+		self.sofar = []
+	def __len__(self): return len(self.sofar)
+	def __getitem__(self, i):
+		if not 0 <= i < self.max: raise IndexError
+		n = len(self.sofar)
+		while n <= i:
+			self.sofar.append(n*n)
+			n = n+1
+		return self.sofar[i]
+if filter(None, Squares(10)) != [1, 4, 9, 16, 25, 36, 49, 64, 81]:
+	raise TestFailed, 'filter(None, Squares(10))'
+if filter(lambda x: x%2, Squares(10)) != [1, 9, 25, 49, 81]:
+	raise TestFailed, 'filter(oddp, Squares(10))'
 
 print 'float'
 if float(3.14) <> 3.14: raise TestFailed, 'float(3.14)'
@@ -158,6 +174,14 @@ if map(plus, [1, 3, 7], [4, 9, 2]) <> [1+4, 3+9, 7+2]:
 	raise TestFailed, 'map(plus, [1, 3, 7], [4, 9, 2])'
 if map(plus, [1, 3, 7], [4, 9, 2], [1, 1, 0]) <> [1+4+1, 3+9+1, 7+2+0]:
 	raise TestFailed, 'map(plus, [1, 3, 7], [4, 9, 2], [1, 1, 0])'
+if map(None, Squares(10)) != [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]:
+	raise TestFailed, 'map(None, Squares(10))'
+if map(int, Squares(10)) != [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]:
+	raise TestFailed, 'map(int, Squares(10))'
+if map(None, Squares(3), Squares(2)) != [(0,0), (1,1), (4,None)]:
+	raise TestFailed, 'map(None: x, Squares(3), Squares(2))'
+if map(max, Squares(3), Squares(2)) != [0, 1, 4]:
+	raise TestFailed, 'map(None: x, Squares(3), Squares(2))'
 
 print 'max'
 if max('123123') <> '3': raise TestFailed, 'max(\'123123\')'

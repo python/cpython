@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -89,7 +89,7 @@ typedef struct {
 	unsigned char *advances; /* [num_rotors] */
 } rotorobject;
 
-extern typeobject Rotortype;	/* Really static, forward */
+staticforward typeobject Rotortype;
 
 #define is_rotorobject(v)		((v)->ob_type == &Rotortype)
 
@@ -486,7 +486,7 @@ static unsigned char RTR_e_char(r, p)
 		}
 	} else {
 		while (i < r->rotors) {
-			tp = r->e_rotor[(i*r->size)+(((r->positions[i] ^ tp) % r->size))];
+			tp = r->e_rotor[(i*r->size)+(((r->positions[i] ^ tp) % (unsigned int) r->size))];
 			i++;
 		}
 	}
@@ -525,7 +525,7 @@ static unsigned char RTR_d_char(r, c)
 		}
 	} else {
 		while (0 <= i) {
-			tc = (r->positions[i] ^ r->d_rotor[(i*r->size)+tc]) % r->size;
+			tc = (r->positions[i] ^ r->d_rotor[(i*r->size)+tc]) % (unsigned int) r->size;
 			i--;
 		}
 	}
@@ -656,7 +656,7 @@ rotor_encrypt(self, args)
 	}
 	memset(tmp,'\0',len+1);
 	memcpy(tmp,string,len);
-	RTR_e_region(self,tmp,len, TRUE);
+	RTR_e_region(self,(unsigned char *)tmp,len, TRUE);
 	rtn = newsizedstringobject(tmp,len);
 	free(tmp);
 	return(rtn);
@@ -680,7 +680,7 @@ rotor_encryptmore(self, args)
 	}
 	memset(tmp,'\0',len+1);
 	memcpy(tmp,string,len);
-	RTR_e_region(self,tmp,len, FALSE);
+	RTR_e_region(self,(unsigned char *)tmp,len, FALSE);
 	rtn = newsizedstringobject(tmp,len);
 	free(tmp);
 	return(rtn);
@@ -704,7 +704,7 @@ rotor_decrypt(self, args)
 	}
 	memset(tmp,'\0',len+1);
 	memcpy(tmp,string,len);
-	RTR_d_region(self,tmp,len, TRUE);
+	RTR_d_region(self,(unsigned char *)tmp,len, TRUE);
 	rtn = newsizedstringobject(tmp,len);
 	free(tmp);
 	return(rtn);
@@ -728,7 +728,7 @@ rotor_decryptmore(self, args)
 	}
 	memset(tmp,'\0',len+1);
 	memcpy(tmp,string,len);
-	RTR_d_region(self,tmp,len, FALSE);
+	RTR_d_region(self,(unsigned char *)tmp,len, FALSE);
 	rtn = newsizedstringobject(tmp,len);
 	free(tmp);
 	return(rtn);
@@ -749,11 +749,11 @@ rotor_setkey(self, args)
 }
 
 static struct methodlist rotor_methods[] = {
-	{"encrypt",	rotor_encrypt},
-	{"encryptmore",	rotor_encryptmore},
-	{"decrypt",	rotor_decrypt},
-	{"decryptmore",	rotor_decryptmore},
-	{"setkey",	rotor_setkey},
+	{"encrypt",	(method)rotor_encrypt},
+	{"encryptmore",	(method)rotor_encryptmore},
+	{"decrypt",	(method)rotor_decrypt},
+	{"decryptmore",	(method)rotor_decryptmore},
+	{"setkey",	(method)rotor_setkey},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -769,17 +769,17 @@ rotor_getattr(s, name)
 
 static typeobject Rotortype = {
 	OB_HEAD_INIT(&Typetype)
-	0,			/*ob_size*/
+	0,				/*ob_size*/
 	"rotor",			/*tp_name*/
-	sizeof(rotorobject),	/*tp_size*/
-	0,			/*tp_itemsize*/
+	sizeof(rotorobject),		/*tp_size*/
+	0,				/*tp_itemsize*/
 	/* methods */
-	rotor_dealloc,	/*tp_dealloc*/
-	0,		/*tp_print*/
-	rotor_getattr,		/*tp_getattr*/
-	0,		/*tp_setattr*/
-	0,		/*tp_compare*/
-	0,		/*tp_repr*/
+	(destructor)rotor_dealloc,	/*tp_dealloc*/
+	0,				/*tp_print*/
+	(getattrfunc)rotor_getattr,	/*tp_getattr*/
+	0,				/*tp_setattr*/
+	0,				/*tp_compare*/
+	0,				/*tp_repr*/
 };
 
 

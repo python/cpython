@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -40,8 +40,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef HUGE_VAL
 #endif
 
+#ifndef macintosh
 #ifndef __STDC__
 extern double fmod PROTO((double, double));
+#endif
 #endif
 
 #ifdef HUGE_VAL
@@ -132,9 +134,13 @@ FUNC1(math_sqrt, sqrt)
 FUNC1(math_tan, tan)
 FUNC1(math_tanh, tanh)
 
+#ifndef macintosh
+
 double	frexp PROTO((double, int *));
 double	ldexp PROTO((double, int));
 double	modf PROTO((double, double *));
+
+#endif
 
 static object *
 math_frexp(self, args)
@@ -180,7 +186,15 @@ math_modf(self, args)
 	if (!getdoublearg(args, &x))
 		return NULL;
 	errno = 0;
+#ifdef MPW /* MPW C modf expects pointer to extended as second argument */
+{
+	extended e;
+	x = modf(x, &e);
+	y = e;
+}
+#else
 	x = modf(x, &y);
+#endif
 	CHECK(x);
 	if (errno != 0)
 		return math_error();

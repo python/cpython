@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -75,7 +75,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define HAVE_BITMAPS
 #endif /* !macintosh */
 
-#ifdef USE_THREAD
+#ifdef WITH_THREAD
 
 #include "thread.h"
 
@@ -113,7 +113,7 @@ typedef struct {
 	object	*w_attr;	/* Attributes dictionary */
 } windowobject;
 
-extern typeobject Windowtype;	/* Really static, forward */
+staticforward typeobject Windowtype;
 
 #define is_windowobject(wp) ((wp)->ob_type == &Windowtype)
 
@@ -124,7 +124,7 @@ typedef struct {
 	object	*m_attr;	/* Attributes dictionary */
 } menuobject;
 
-extern typeobject Menutype;	/* Really static, forward */
+staticforward typeobject Menutype;
 
 #define is_menuobject(mp) ((mp)->ob_type == &Menutype)
 
@@ -134,7 +134,7 @@ typedef struct {
 	object	*b_attr;	/* Attributes dictionary */
 } bitmapobject;
 
-extern typeobject Bitmaptype;	/* Really static, forward */
+staticforward typeobject Bitmaptype;
 
 #define is_bitmapobject(mp) ((mp)->ob_type == &Bitmaptype)
 
@@ -730,44 +730,44 @@ drawing_bitmap(self, args)
 
 static struct methodlist drawing_methods[] = {
 #ifdef HAVE_BITMAPS
-	{"bitmap",	drawing_bitmap},
+	{"bitmap",	(method)drawing_bitmap},
 #endif
-	{"box",		drawing_box},
-	{"circle",	drawing_circle},
-	{"cliprect",	drawing_cliprect},
-	{"close",	drawing_close},
-	{"elarc",	drawing_elarc},
-	{"enddrawing",	drawing_close},
-	{"erase",	drawing_erase},
-	{"fillcircle",	drawing_fillcircle},
-	{"fillelarc",	drawing_fillelarc},
-	{"fillpoly",	drawing_fillpoly},
-	{"invert",	drawing_invert},
-	{"line",	drawing_line},
-	{"noclip",	drawing_noclip},
-	{"paint",	drawing_paint},
-	{"poly",	drawing_poly},
-	{"shade",	drawing_shade},
-	{"text",	drawing_text},
-	{"xorcircle",	drawing_xorcircle},
-	{"xorelarc",	drawing_xorelarc},
-	{"xorline",	drawing_xorline},
-	{"xorpoly",	drawing_xorpoly},
+	{"box",		(method)drawing_box},
+	{"circle",	(method)drawing_circle},
+	{"cliprect",	(method)drawing_cliprect},
+	{"close",	(method)drawing_close},
+	{"elarc",	(method)drawing_elarc},
+	{"enddrawing",	(method)drawing_close},
+	{"erase",	(method)drawing_erase},
+	{"fillcircle",	(method)drawing_fillcircle},
+	{"fillelarc",	(method)drawing_fillelarc},
+	{"fillpoly",	(method)drawing_fillpoly},
+	{"invert",	(method)drawing_invert},
+	{"line",	(method)drawing_line},
+	{"noclip",	(method)drawing_noclip},
+	{"paint",	(method)drawing_paint},
+	{"poly",	(method)drawing_poly},
+	{"shade",	(method)drawing_shade},
+	{"text",	(method)drawing_text},
+	{"xorcircle",	(method)drawing_xorcircle},
+	{"xorelarc",	(method)drawing_xorelarc},
+	{"xorline",	(method)drawing_xorline},
+	{"xorpoly",	(method)drawing_xorpoly},
 	
 	/* Text measuring methods: */
-	{"baseline",	drawing_baseline},
-	{"lineheight",	drawing_lineheight},
-	{"textbreak",	drawing_textbreak},
-	{"textwidth",	drawing_textwidth},
+	{"baseline",	(method)drawing_baseline},
+	{"lineheight",	(method)drawing_lineheight},
+	{"textbreak",	(method)drawing_textbreak},
+	{"textwidth",	(method)drawing_textwidth},
 
 	/* Font setting methods: */
-	{"setfont",	drawing_setfont},
+	{"setfont",	(method)drawing_setfont},
 	
 	/* Color methods: */
-	{"getbgcolor",	drawing_getbgcolor},
-	{"getfgcolor",	drawing_getfgcolor},
-	{"setbgcolor",	drawing_setbgcolor},
-	{"setfgcolor",	drawing_setfgcolor},
+	{"getbgcolor",	(method)drawing_getbgcolor},
+	{"getfgcolor",	(method)drawing_getfgcolor},
+	{"setbgcolor",	(method)drawing_setbgcolor},
+	{"setfgcolor",	(method)drawing_setfgcolor},
 
 	{NULL,		NULL}		/* sentinel */
 };
@@ -791,9 +791,9 @@ typeobject Drawingtype = {
 	sizeof(drawingobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	drawing_dealloc,	/*tp_dealloc*/
+	(destructor)drawing_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	drawing_getattr,	/*tp_getattr*/
+	(getattrfunc)drawing_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
@@ -809,7 +809,7 @@ typedef struct {
 	object		*t_attr;	/* Attributes dictionary */
 } textobject;
 
-extern typeobject Texttype;	/* Really static, forward */
+staticforward typeobject Texttype;
 
 static textobject *
 newtextobject(wp, left, top, right, bottom)
@@ -1073,20 +1073,20 @@ text_setview(self, args)
 }
 
 static struct methodlist text_methods[] = {
-	{"arrow",	text_arrow},
-	{"close",	text_close},
-	{"draw",	text_draw},
-	{"event",	text_event},
-	{"getfocus",	text_getfocus},
-	{"getfocustext",text_getfocustext},
-	{"getrect",	text_getrect},
-	{"gettext",	text_gettext},
-	{"move",	text_move},
-	{"replace",	text_replace},
-	{"setactive",	text_setactive},
-	{"setfocus",	text_setfocus},
-	{"settext",	text_settext},
-	{"setview",	text_setview},
+	{"arrow",	(method)text_arrow},
+	{"close",	(method)text_close},
+	{"draw",	(method)text_draw},
+	{"event",	(method)text_event},
+	{"getfocus",	(method)text_getfocus},
+	{"getfocustext",(method)text_getfocustext},
+	{"getrect",	(method)text_getrect},
+	{"gettext",	(method)text_gettext},
+	{"move",	(method)text_move},
+	{"replace",	(method)text_replace},
+	{"setactive",	(method)text_setactive},
+	{"setfocus",	(method)text_setfocus},
+	{"settext",	(method)text_settext},
+	{"setview",	(method)text_setview},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -1137,17 +1137,17 @@ text_setattr(tp, name, v)
 		return dictinsert(tp->t_attr, name, v);
 }
 
-typeobject Texttype = {
+static typeobject Texttype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"textedit",		/*tp_name*/
 	sizeof(textobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	text_dealloc,		/*tp_dealloc*/
+	(destructor)text_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	text_getattr,		/*tp_getattr*/
-	text_setattr,		/*tp_setattr*/
+	(getattrfunc)text_getattr, /*tp_getattr*/
+	(setattrfunc)text_setattr, /*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
 };
@@ -1289,11 +1289,11 @@ menu_check(self, args)
 }
 
 static struct methodlist menu_methods[] = {
-	{"additem",	menu_additem},
-	{"setitem",	menu_setitem},
-	{"enable",	menu_enable},
-	{"check",	menu_check},
-	{"close",	menu_close},
+	{"additem",	(method)menu_additem},
+	{"setitem",	(method)menu_setitem},
+	{"enable",	(method)menu_enable},
+	{"check",	(method)menu_check},
+	{"close",	(method)menu_close},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -1344,17 +1344,17 @@ menu_setattr(mp, name, v)
 		return dictinsert(mp->m_attr, name, v);
 }
 
-typeobject Menutype = {
+static typeobject Menutype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"menu",			/*tp_name*/
 	sizeof(menuobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	menu_dealloc,		/*tp_dealloc*/
+	(destructor)menu_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	menu_getattr,		/*tp_getattr*/
-	menu_setattr,		/*tp_setattr*/
+	(getattrfunc)menu_getattr, /*tp_getattr*/
+	(setattrfunc)menu_setattr, /*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
 };
@@ -1447,10 +1447,10 @@ bitmap_getsize(self, args)
 }
 
 static struct methodlist bitmap_methods[] = {
-	{"close",	bitmap_close},
-	{"getsize",	bitmap_getsize},
-	{"getbit",	bitmap_getbit},
-	{"setbit",	bitmap_setbit},
+	{"close",	(method)bitmap_close},
+	{"getsize",	(method)bitmap_getsize},
+	{"getbit",	(method)bitmap_getbit},
+	{"setbit",	(method)bitmap_setbit},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -1501,17 +1501,17 @@ bitmap_setattr(bp, name, v)
 		return dictinsert(bp->b_attr, name, v);
 }
 
-typeobject Bitmaptype = {
+static typeobject Bitmaptype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"bitmap",			/*tp_name*/
 	sizeof(bitmapobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	bitmap_dealloc,		/*tp_dealloc*/
+	(destructor)bitmap_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	bitmap_getattr,		/*tp_getattr*/
-	bitmap_setattr,		/*tp_setattr*/
+	(getattrfunc)bitmap_getattr, /*tp_getattr*/
+	(setattrfunc)bitmap_setattr, /*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
 };
@@ -1852,29 +1852,29 @@ window_getxwindowid(self, args)
 #endif
 
 static struct methodlist window_methods[] = {
-	{"begindrawing",window_begindrawing},
-	{"change",	window_change},
-	{"close",	window_close},
-	{"getdocsize",	window_getdocsize},
-	{"getorigin",	window_getorigin},
-	{"gettitle",	window_gettitle},
-	{"getwinpos",	window_getwinpos},
-	{"getwinsize",	window_getwinsize},
-	{"menucreate",	window_menucreate},
-	{"scroll",	window_scroll},
-	{"setactive",	window_setactive},
-	{"setdocsize",	window_setdocsize},
-	{"setorigin",	window_setorigin},
-	{"setselection",window_setselection},
-	{"settimer",	window_settimer},
-	{"settitle",	window_settitle},
-	{"setwincursor",window_setwincursor},
-	{"setwinpos",	window_setwinpos},
-	{"setwinsize",	window_setwinsize},
-	{"show",	window_show},
-	{"textcreate",	window_textcreate},
+	{"begindrawing",(method)window_begindrawing},
+	{"change",	(method)window_change},
+	{"close",	(method)window_close},
+	{"getdocsize",	(method)window_getdocsize},
+	{"getorigin",	(method)window_getorigin},
+	{"gettitle",	(method)window_gettitle},
+	{"getwinpos",	(method)window_getwinpos},
+	{"getwinsize",	(method)window_getwinsize},
+	{"menucreate",	(method)window_menucreate},
+	{"scroll",	(method)window_scroll},
+	{"setactive",	(method)window_setactive},
+	{"setdocsize",	(method)window_setdocsize},
+	{"setorigin",	(method)window_setorigin},
+	{"setselection",(method)window_setselection},
+	{"settimer",	(method)window_settimer},
+	{"settitle",	(method)window_settitle},
+	{"setwincursor",(method)window_setwincursor},
+	{"setwinpos",	(method)window_setwinpos},
+	{"setwinsize",	(method)window_setwinsize},
+	{"show",	(method)window_show},
+	{"textcreate",	(method)window_textcreate},
 #ifdef CWI_HACKS
-	{"getxwindowid",window_getxwindowid},
+	{"getxwindowid",(method)window_getxwindowid},
 #endif
 	{NULL,		NULL}		/* sentinel */
 };
@@ -1926,17 +1926,17 @@ window_setattr(wp, name, v)
 		return dictinsert(wp->w_attr, name, v);
 }
 
-typeobject Windowtype = {
+static typeobject Windowtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"window",		/*tp_name*/
 	sizeof(windowobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	window_dealloc,		/*tp_dealloc*/
+	(destructor)window_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	window_getattr,		/*tp_getattr*/
-	window_setattr,		/*tp_setattr*/
+	(getattrfunc)window_getattr, /*tp_getattr*/
+	(setattrfunc)window_setattr, /*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
 };
@@ -2515,23 +2515,24 @@ static struct methodlist stdwin_methods[] = {
 	{"setdefwinsize",	stdwin_setdefwinsize},
 	
 	/* Text measuring methods borrow code from drawing objects: */
-	{"baseline",		drawing_baseline},
-	{"lineheight",		drawing_lineheight},
-	{"textbreak",		drawing_textbreak},
-	{"textwidth",		drawing_textwidth},
+	{"baseline",		(method)drawing_baseline},
+	{"lineheight",		(method)drawing_lineheight},
+	{"textbreak",		(method)drawing_textbreak},
+	{"textwidth",		(method)drawing_textwidth},
 
 	/* Same for font setting methods: */
-	{"setfont",		drawing_setfont},
+	{"setfont",		(method)drawing_setfont},
 
 	/* Same for color setting/getting methods: */
-	{"getbgcolor",		drawing_getbgcolor},
-	{"getfgcolor",		drawing_getfgcolor},
-	{"setbgcolor",		drawing_setbgcolor},
-	{"setfgcolor",		drawing_setfgcolor},
+	{"getbgcolor",		(method)drawing_getbgcolor},
+	{"getfgcolor",		(method)drawing_getfgcolor},
+	{"setbgcolor",		(method)drawing_setbgcolor},
+	{"setfgcolor",		(method)drawing_setfgcolor},
 
 	{NULL,			NULL}		/* sentinel */
 };
 
+#ifndef macintosh
 static int
 checkstringlist(args, ps, pn)
 	object *args;
@@ -2592,6 +2593,7 @@ putbackstringlist(list, s, n)
 	DECREF(newlist);
 	return 1;
 }
+#endif /* macintosh */
 
 void
 initstdwin()
@@ -2601,6 +2603,9 @@ initstdwin()
 	char buf[1000];
 
 	if (!inited) {
+#ifdef macintosh
+		winit();
+#else
 		int argc = 0;
 		char **argv = NULL;
 		object *sys_argv = sysget("argv");
@@ -2625,6 +2630,7 @@ initstdwin()
 			if (!putbackstringlist(sys_argv, argv, argc))
 				err_clear();
 		}
+#endif
 		inited = 1;
 	}
 	m = initmodule("stdwin", stdwin_methods);
@@ -2634,7 +2640,7 @@ initstdwin()
 	StdwinError = newstringobject("stdwin.error");
 	if (StdwinError == NULL || dictinsert(d, "error", StdwinError) != 0)
 		fatal("can't define stdwin.error");
-#ifdef USE_THREAD
+#ifdef WITH_THREAD
 	StdwinLock = allocate_lock();
 	if (StdwinLock == NULL)
 		fatal("can't allocate stdwin lock");

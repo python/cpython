@@ -9,17 +9,17 @@ VPATH=		@srcdir@
 
 CC=		@CC@
 RANLIB=		@RANLIB@
+AR=		@AR@
+
 DEFS=		@DEFS@
 
 
 # === Other things that are customizable but not by configure ===
 
-TOP=		..
-INCLDIR=	$(TOP)/Py
-OPT=		-g
-CFLAGS=		$(OPT) -I$(INCLDIR) $(DEFS)
+INCLDIR=	$(srcdir)/../Include
+OPT=		-O
+CFLAGS=		$(OPT) -I$(INCLDIR) -I.. $(DEFS)
 
-AR=		ar
 MKDEP=		mkdep
 SHELL=		/bin/sh
 
@@ -34,13 +34,7 @@ PARSEROBJS=	acceler.o grammar1.o \
 
 PGENOBJS=	pgenmain.o
 
-PARSERSRCS=	acceler.c fgetsintr.c grammar1.c \
-		intrcheck.c listnode.c myreadline.c node.c parser.c \
-		parsetok.c tokenizer.c bitset.c \
-		firstsets.c grammar.c metagrammar.c pgen.c \
-		printgrammar.c
-
-PGENSRCS=	pgenmain.c
+OBJS=		$(PGENOBJS) $(PARSEROBJS)
 
 PGEN=		pgen
 
@@ -64,11 +58,32 @@ clean:
 clobber:	clean
 		-rm -f $(PGEN) *.a tags TAGS
 
-Makefile:	Makefile.in $(TOP)/config.status
-		CONFIG_FILES=Makefile $(SHELL) $(TOP)/config.status
+Makefile:	$(srcdir)/Makefile.in ../config.status
+		(cd ..; CONFIG_FILES=Parser/Makefile CONFIG_HEADERS= \
+		$(SHELL) config.status)
 
-depend:		$(PARSERSRCS) $(PGENSRCS)
-		$(MKDEP) $(CFLAGS) $(PARSERSRCS) $(PGENSRCS)
+depend:
+		$(MKDEP) $(CFLAGS) `echo $(OBJS) | tr ' ' '\012' | \
+					sed 's|\(.*\)\.o|$(srcdir)/\1.c|'`
+
+.PRECIOUS:	Makefile
+
+acceler.o: acceler.c
+grammar1.o: grammar1.c
+intrcheck.o: intrcheck.c
+listnode.o: listnode.c
+myreadline.o: myreadline.c
+node.o: node.c
+parser.o: parser.c
+parsetok.o: parsetok.c
+tokenizer.o: tokenizer.c
+bitset.o: bitset.c
+firstsets.o: firstsets.c
+grammar.o: grammar.c
+metagrammar.o: metagrammar.c
+pgen.o: pgen.c
+printgrammar.o: printgrammar.c
+pgenmain.o: pgenmain.c
 
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.

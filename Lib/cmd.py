@@ -56,8 +56,36 @@ class Cmd:
 		else:
 			import newdir
 			names = newdir.dir(self.__class__)
-			cmds = []
+			cmds_doc = []
+			cmds_undoc = []
+			help = {}
+			for name in names:
+				if name[:5] == 'help_':
+					help[name[5:]]=1
 			for name in names:
 				if name[:3] == 'do_':
-					cmds.append(name[3:])
-			print cmds
+					cmd=name[3:]
+					if help.has_key(cmd):
+						cmds_doc.append(cmd)
+						del help[cmd]
+					else:
+						cmds_undoc.append(cmd)
+			print 
+			self.print_topics("Documented commands (type help " \
+		                          "<topic>):",cmds_doc, 15, 80)
+			self.print_topics("Miscellaneous help topics:",
+		                          help.keys(), 15, 80)
+			self.print_topics("Undocumented commands:", 
+		                          cmds_undoc, 15, 80)
+
+	def print_topics(self, header, cmds, cmdlen, maxcol):
+		if cmds:
+			print header;
+			print "="*len(header)
+			(cmds_per_line,junk)=divmod(maxcol,cmdlen)
+			col=cmds_per_line
+			for cmd in cmds:
+				if col==0: print
+				print (("%-"+`cmdlen`+"s") % cmd),
+				col = (col+1) % cmds_per_line
+			print "\n"

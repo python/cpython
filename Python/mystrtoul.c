@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -22,6 +22,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+/* strtol and strtoul, renamed to avoid conflicts */
+
 /*
 **	strtoul
 **		This is a general purpose routine for converting
@@ -40,7 +46,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 
 unsigned long
-strtoul(str, ptr, base)
+mystrtoul(str, ptr, base)
 register char *	str;
 char **		ptr;
 int		base;
@@ -108,8 +114,10 @@ int		base;
 	}
 	temp = result;
 	result = result * base + c;
+#ifndef MPW
 	if ((result - c) / base != temp)	/* overflow */
 	    ovf = 1;
+#endif
 	str++;
     }
 
@@ -125,7 +133,7 @@ int		base;
 }
 
 long
-strtol(str, ptr, base)
+mystrtol(str, ptr, base)
 char *	str;
 char ** ptr;
 int	base;
@@ -140,7 +148,7 @@ int	base;
 	if (sign == '+' || sign == '-')
 		str++;
 	
-	result = (long) strtoul(str, ptr, base);
+	result = (long) mystrtoul(str, ptr, base);
 	
 	/* Signal overflow if the result appears negative,
 	   except for the largest negative integer */

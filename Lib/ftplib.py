@@ -9,10 +9,7 @@
 # >>> from ftplib import FTP
 # >>> ftp = FTP('ftp.cwi.nl') # connect to host, default port
 # >>> ftp.login() # default, i.e.: user anonymous, passwd user@hostname
-# >>> def handle_one_line(line): # callback for ftp.retrlines
-# ...     print line
-# ... 
-# >>> ftp.retrlines('LIST', handle_one_line) # list directory contents
+# >>> ftp.retrlines('LIST') # list directory contents
 # total 43
 # d--x--x--x   2 root     root         512 Jul  1 16:50 bin
 # d--x--x--x   2 root     root         512 Sep 16  1991 etc
@@ -20,7 +17,7 @@
 # drwxr-srwt  15 root     ftp        10240 Nov  5 20:43 pub
 # >>> ftp.quit()
 #
-# To download a file, use ftp.retrlines('RETR ' + filename, handle_one_line),
+# To download a file, use ftp.retrlines('RETR ' + filename),
 # or ftp.retrbinary() with slightly different arguments.
 # To upload a file, use ftp.storlines() or ftp.storbinary(), which have
 # an open file as argument.
@@ -30,8 +27,13 @@
 
 import os
 import sys
-import socket
 import string
+
+# Import SOCKS module if it exists, else standard socket module socket
+try:
+    import SOCKS; socket = SOCKS
+except ImportError:
+    import socket
 
 
 # Magic number from <socket.h>
@@ -59,14 +61,6 @@ all_errors = (error_reply, error_temp, error_perm, error_proto, \
 CRLF = '\r\n'
 
 
-# Next port to be used by makeport(), with PORT_OFFSET added
-# (This is now only used when the python interpreter doesn't support
-# the getsockname() method yet)
-nextport = 0
-PORT_OFFSET = 40000
-PORT_CYCLE = 1000
-
-
 # The class itself
 class FTP:
 
@@ -74,7 +68,7 @@ class FTP:
 	# Initialize host to localhost, port to standard ftp port
 	# Optional arguments are host (for connect()),
 	# and user, passwd, acct (for login())
-	def __init__(self, *args):
+	def __init__(self, host = '', user = '', passwd = '', acct = ''):
 		# Initialize the instance to something mostly harmless
 		self.debugging = 0
 		self.host = ''
@@ -82,18 +76,16 @@ class FTP:
 		self.sock = None
 		self.file = None
 		self.welcome = None
-		if args:
-			self.connect(args[0])
-			if args[1:]:
-				apply(self.login, args[1:])
+		if host:
+			self.connect(host)
+			if user: self.login(user, passwd, acct)
 
 	# Connect to host.  Arguments:
 	# - host: hostname to connect to (default previous host)
 	# - port: port to connect to (default previous port)
-	def connect(self, *args):
-		if args: self.host = args[0]
-		if args[1:]: self.port = args[1]
-		if args[2:]: raise TypeError, 'too many args'
+	def connect(self, host = '', port = 0):
+		if host: self.host = host
+		if port: self.port = port
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.sock.connect(self.host, self.port)
 		self.file = self.sock.makefile('r')
@@ -208,19 +200,8 @@ class FTP:
 	def makeport(self):
 		global nextport
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		try:
-			getsockname = sock.getsockname
-		except AttributeError:
-			if self.debugging > 1:
-				print '*** getsockname not supported',
-				print '-- using manual port assignment ***'
-			port = nextport + PORT_OFFSET
-			nextport = (nextport + 1) % PORT_CYCLE
-			sock.bind('', port)
-			getsockname = None
-		sock.listen(0) # Assigns the port if not explicitly bound
-		if getsockname:
-			host, port = getsockname()
+		sock.listen(1)
+		host, port = sock.getsockname()
 		resp = self.sendport(port)
 		return sock
 
@@ -235,13 +216,7 @@ class FTP:
 		return conn
 
 	# Login, default anonymous
-	def login(self, *args):
-		user = passwd = acct = ''
-		n = len(args)
-		if n > 3: raise TypeError, 'too many arguments'
-		if n > 0: user = args[0]
-		if n > 1: passwd = args[1]
-		if n > 2: acct = args[2]
+	def login(self, user = '', passwd = '', acct = ''):
 		if not user: user = 'anonymous'
 		if user == 'anonymous' and passwd in ('', '-'):
 			thishost = socket.gethostname()
@@ -278,11 +253,7 @@ class FTP:
 	# The callback function is called for each line, with trailing
 	# CRLF stripped.  This creates a new port for you.
 	# print_lines is the default callback 
-	def retrlines(self, cmd, *args):
-		callback = None
-		if args:
-			callback = args[0]
-			if args[1:]: raise TypeError, 'too many args'
+	def retrlines(self, cmd, callback = None):
 		if not callback: callback = print_line
 		resp = self.sendcmd('TYPE A')
 		conn = self.transfercmd(cmd)
@@ -423,30 +394,22 @@ def print_line(line):
 # Usage: ftp [-d] host [-l[dir]] [-d[dir]] [file] ...
 def test():
 	import marshal
-	global nextport
-	try:
-		nextport = marshal.load(open('.@nextport', 'r'))
-	except IOError:
-		pass
-	try:
-		debugging = 0
-		while sys.argv[1] == '-d':
-			debugging = debugging+1
-			del sys.argv[1]
-		host = sys.argv[1]
-		ftp = FTP(host)
-		ftp.set_debuglevel(debugging)
-		ftp.login()
-		for file in sys.argv[2:]:
-			if file[:2] == '-l':
-				ftp.dir(file[2:])
-			elif file[:2] == '-d':
-				cmd = 'CWD'
-				if file[2:]: cmd = cmd + ' ' + file[2:]
-				resp = ftp.sendcmd(cmd)
-			else:
-				ftp.retrbinary('RETR ' + file, \
-					       sys.stdout.write, 1024)
-		ftp.quit()
-	finally:
-		marshal.dump(nextport, open('.@nextport', 'w'))
+	debugging = 0
+	while sys.argv[1] == '-d':
+		debugging = debugging+1
+		del sys.argv[1]
+	host = sys.argv[1]
+	ftp = FTP(host)
+	ftp.set_debuglevel(debugging)
+	ftp.login()
+	for file in sys.argv[2:]:
+		if file[:2] == '-l':
+			ftp.dir(file[2:])
+		elif file[:2] == '-d':
+			cmd = 'CWD'
+			if file[2:]: cmd = cmd + ' ' + file[2:]
+			resp = ftp.sendcmd(cmd)
+		else:
+			ftp.retrbinary('RETR ' + file, \
+				       sys.stdout.write, 1024)
+	ftp.quit()

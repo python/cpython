@@ -15,8 +15,6 @@ eval_input
 funcdef
 simple_stmt
 expr_stmt
-1
-(1, 2, 3)
 print_stmt
 1 2 3
 1 2 3
@@ -29,20 +27,11 @@ continue_stmt
 return_stmt
 raise_stmt
 import_stmt
-[1]
-[2]
-[3]
-[4]
-[5]
-[6]
 global_stmt
 exec_stmt
 if_stmt
 while_stmt
 for_stmt
-[1]
-[2]
-[3]
 try_stmt
 suite
 test

@@ -4,7 +4,7 @@ XXX support mstop parameter on search
 */
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -35,6 +35,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 
 #include "regexpr.h"
+#include "ctype.h"
 
 static object *RegexError;	/* Exception */	
 
@@ -45,6 +46,9 @@ typedef struct {
 	char re_fastmap[256];	/* Storage for fastmap */
 	object *re_translate;	/* String object for translate table */
 	object *re_lastok;	/* String object last matched/searched */
+	object *re_groupindex;	/* Group name to index dictionary */
+	object *re_givenpat;	/* Pattern with symbolic groups */
+	object *re_realpat;	/* Pattern without symbolic groups */
 } regexobject;
 
 /* Regex object methods */
@@ -55,8 +59,9 @@ reg_dealloc(re)
 {
 	XDECREF(re->re_translate);
 	XDECREF(re->re_lastok);
-	XDEL(re->re_patbuf.buffer);
-	XDEL(re->re_patbuf.translate);
+	XDECREF(re->re_groupindex);
+	XDECREF(re->re_givenpat);
+	XDECREF(re->re_realpat);
 	DEL(re);
 }
 
@@ -188,8 +193,24 @@ reg_group(re, args)
 		}
 		return res;
 	}
-	if (!getargs(args, "i", &i))
-		return NULL;
+	if (!getargs(args, "i", &i)) {
+		object *n;
+		err_clear();
+		if (!getargs(args, "S", &n))
+			return NULL;
+		else {
+			object *index;
+			if (re->re_groupindex == NULL)
+				index = NULL;
+			else
+				index = mappinglookup(re->re_groupindex, n);
+			if (index == NULL) {
+				err_setstr(RegexError, "group() group name doesn't exist");
+				return NULL;
+			}
+			i = getintvalue(index);
+		}
+	}
 	if (i < 0 || i >= RE_NREGS) {
 		err_setstr(RegexError, "group() index out of range");
 		return NULL;
@@ -209,9 +230,9 @@ reg_group(re, args)
 }
 
 static struct methodlist reg_methods[] = {
-	{"match",	reg_match},
-	{"search",	reg_search},
-	{"group",	reg_group},
+	{"match",	(method)reg_match},
+	{"search",	(method)reg_search},
+	{"group",	(method)reg_group},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -243,12 +264,39 @@ reg_getattr(re, name)
 		INCREF(re->re_translate);
 		return re->re_translate;
 	}
+	if (strcmp(name, "groupindex") == 0) {
+		if (re->re_groupindex == NULL) {
+			INCREF(None);
+			return None;
+		}
+		INCREF(re->re_groupindex);
+		return re->re_groupindex;
+	}
+	if (strcmp(name, "realpat") == 0) {
+		if (re->re_realpat == NULL) {
+			INCREF(None);
+			return None;
+		}
+		INCREF(re->re_realpat);
+		return re->re_realpat;
+	}
+	if (strcmp(name, "givenpat") == 0) {
+		if (re->re_givenpat == NULL) {
+			INCREF(None);
+			return None;
+		}
+		INCREF(re->re_givenpat);
+		return re->re_givenpat;
+	}
 	if (strcmp(name, "__members__") == 0) {
-		object *list = newlistobject(3);
+		object *list = newlistobject(6);
 		if (list) {
 			setlistitem(list, 0, newstringobject("last"));
 			setlistitem(list, 1, newstringobject("regs"));
 			setlistitem(list, 2, newstringobject("translate"));
+			setlistitem(list, 3, newstringobject("groupindex"));
+			setlistitem(list, 4, newstringobject("realpat"));
+			setlistitem(list, 5, newstringobject("givenpat"));
 			if (err_occurred()) {
 				DECREF(list);
 				list = NULL;
@@ -266,21 +314,25 @@ static typeobject Regextype = {
 	sizeof(regexobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	reg_dealloc,		/*tp_dealloc*/
+	(destructor)reg_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	reg_getattr,		/*tp_getattr*/
+	(getattrfunc)reg_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
 };
 
 static object *
-newregexobject(pat, size, translate)
-	char *pat;
-	int size;
+newregexobject(pattern, translate, givenpat, groupindex)
+	object *pattern;
 	object *translate;
+	object *givenpat;
+	object *groupindex;
 {
 	regexobject *re;
+	char *pat = getstringvalue(pattern);
+	int size = getstringsize(pattern);
+
 	if (translate != NULL && getstringsize(translate) != 256) {
 		err_setstr(RegexError,
 			   "translation table must be 256 bytes");
@@ -299,6 +351,11 @@ newregexobject(pat, size, translate)
 		XINCREF(translate);
 		re->re_translate = translate;
 		re->re_lastok = NULL;
+		re->re_groupindex = groupindex;
+		INCREF(pattern);
+		re->re_realpat = pattern;
+		INCREF(givenpat);
+		re->re_givenpat = givenpat;
 		error = re_compile_pattern(pat, size, &re->re_patbuf);
 		if (error != NULL) {
 			err_setstr(RegexError, error);
@@ -314,16 +371,130 @@ regex_compile(self, args)
 	object *self;
 	object *args;
 {
-	char *pat;
-	int size;
+	object *pat = NULL;
 	object *tran = NULL;
-	if (!getargs(args, "s#", &pat, &size)) {
+	if (!getargs(args, "S", &pat)) {
 		err_clear();
-		if (!getargs(args, "(s#S)", &pat, &size, &tran))
+		if (!getargs(args, "(SS)", &pat, &tran))
 			return NULL;
 	}
-	return newregexobject(pat, size, tran);
+	return newregexobject(pat, tran, pat, NULL);
 }
+
+static object *
+symcomp(pattern, gdict)
+	object *pattern;
+	object *gdict;
+{
+	char *opat = getstringvalue(pattern);
+	char *oend = opat + getstringsize(pattern);
+	int group_count = 0;
+	int escaped = 0;
+	char *o = opat;
+	char *n;
+	char name_buf[128];
+	char *g;
+	object *npattern;
+	int require_escape = re_syntax & RE_NO_BK_PARENS ? 0 : 1;
+
+	npattern = newsizedstringobject((char*)NULL, getstringsize(pattern));
+	if (npattern == NULL)
+		return NULL;
+	n = getstringvalue(npattern);
+
+	while (o < oend) {
+		if (*o == '(' && escaped == require_escape) {
+			char *backtrack;
+			escaped = 0;
+			++group_count;
+			*n++ = *o;
+			if (++o >= oend || *o != '<')
+				continue;
+			/* *o == '<' */
+			if (o+1 < oend && *(o+1) == '>')
+				continue;
+			backtrack = o;
+			g = name_buf;
+			for (++o; o < oend;) {
+				if (*o == '>') {
+					object *group_name = NULL;
+					object *group_index = NULL;
+					*g++ = '\0';
+					group_name = newstringobject(name_buf);
+					group_index = newintobject(group_count);
+					if (group_name == NULL || group_index == NULL
+					    || mappinginsert(gdict, group_name, group_index) != 0) {
+						XDECREF(group_name);
+						XDECREF(group_index);
+						XDECREF(npattern);
+						return NULL;
+					}
+					++o; /* eat the '>' */
+					break;
+				}
+				if (!isalnum(*o) && *o != '_') {
+					o = backtrack;
+					break;
+				}
+				*g++ = *o++;
+			}
+		}
+		if (*o == '[' && !escaped) {
+			*n++ = *o;
+			++o;	/* eat the char following '[' */
+			*n++ = *o;
+			while (o < oend && *o != ']') {
+				++o;
+				*n++ = *o;
+			}
+			if (o < oend)
+				++o;
+		}
+		else if (*o == '\\') {
+			escaped = 1;
+			*n++ = *o;
+			++o;
+		}
+		else {
+			escaped = 0;
+			*n++ = *o;
+			++o;
+		}
+	}
+
+	if (resizestring(&npattern, n - getstringvalue(npattern)) == 0)
+		return npattern;
+	else {
+		DECREF(npattern);
+		return NULL;
+	}
+
+}
+
+static object *
+regex_symcomp(self, args)
+	object *self;
+	object *args;
+{
+	object *pattern;
+	object *tran = NULL;
+	object *gdict = NULL;
+	object *npattern;
+	if (!getargs(args, "S", &pattern)) {
+		err_clear();
+		if (!getargs(args, "(SS)", &pattern, &tran))
+			return NULL;
+	}
+	gdict = newmappingobject();
+	if (gdict == NULL
+	    || (npattern = symcomp(pattern, gdict)) == NULL) {
+		DECREF(gdict);
+		DECREF(pattern);
+		return NULL;
+	}
+	return newregexobject(npattern, tran, pattern, gdict);
+}
+
 
 static object *cache_pat;
 static object *cache_prog;
@@ -384,6 +555,7 @@ regex_set_syntax(self, args)
 
 static struct methodlist regex_global_methods[] = {
 	{"compile",	regex_compile},
+	{"symcomp",	regex_symcomp},
 	{"match",	regex_match},
 	{"search",	regex_search},
 	{"set_syntax",	regex_set_syntax},
