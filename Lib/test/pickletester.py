@@ -31,7 +31,7 @@ a""" + \
 p4
 g4
 """ + \
-"""(ipickletester
+"""(i__main__
 C
 p5
 """ + \
@@ -54,7 +54,7 @@ BINDATA = ']q\x01(K\x00L1L\nG@\x00\x00\x00\x00\x00\x00\x00' + \
           '\x00G\x00\x00\x00\x00\x00\x00\x00\x00tRq\x03K\x01J\xff\xff' + \
           '\xff\xffK\xffJ\x01\xff\xff\xffJ\x00\xff\xff\xffM\xff\xff' + \
           'J\x01\x00\xff\xffJ\x00\x00\xff\xffJ\xff\xff\xff\x7fJ\x01\x00' + \
-          '\x00\x80J\x00\x00\x00\x80(U\x03abcq\x04h\x04(cpickletester\n' + \
+          '\x00\x80J\x00\x00\x00\x80(U\x03abcq\x04h\x04(c__main__\n' + \
           'C\nq\x05oq\x06}q\x07(U\x03fooq\x08K\x01U\x03barq\tK\x02ubh' + \
           '\x06tq\nh\nK\x05e.'
 
@@ -64,6 +64,7 @@ class C:
 
 import __main__
 __main__.C = C
+C.__module__ = "__main__"
 
 # Call this with the module to be tested (pickle or cPickle).
 
