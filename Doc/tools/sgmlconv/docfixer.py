@@ -526,26 +526,7 @@ def cleanup_synopses(doc, fragment):
         create_module_info(doc, node)
 
 
-def remap_element_names(root, name_map):
-    queue = []
-    for child in root.childNodes:
-        if child.nodeType == ELEMENT:
-            queue.append(child)
-    while queue:
-        node = queue.pop()
-        tagName = node.tagName
-        if name_map.has_key(tagName):
-            name, attrs = name_map[tagName]
-            node._node.name = name
-            for attr, value in attrs.items():
-                node.setAttribute(attr, value)
-        for child in node.childNodes:
-            if child.nodeType == ELEMENT:
-                queue.append(child)
-
-
 def fixup_table_structures(doc, fragment):
-    # must be done after remap_element_names(), or the tables won't be found
     for table in find_all_elements(fragment, "table"):
         fixup_table(doc, table)
 
@@ -628,6 +609,8 @@ RECURSE_INTO_PARA_CONTAINERS = (
     "section", "subsection", "subsubsection",
     "paragraph", "subparagraph", "back-matter",
     "howto", "manual",
+    "item", "itemize", "fulllineitems", "enumeration", "descriptionlist",
+    "definitionlist", "definition",
     )
 
 PARA_LEVEL_ELEMENTS = (
@@ -637,16 +620,16 @@ PARA_LEVEL_ELEMENTS = (
     "funcdesc", "methoddesc", "excdesc", "memberdesc", "membderdescni",
     "funcdescni", "methoddescni", "excdescni",
     "tableii", "tableiii", "tableiv", "localmoduletable",
-    "sectionauthor", "seealso",
+    "sectionauthor", "seealso", "itemize",
     # include <para>, so we can just do it again to get subsequent paras:
     PARA_ELEMENT,
     )
 
 PARA_LEVEL_PRECEEDERS = (
-    "index", "indexii", "indexiii", "indexiv", "setindexsubitem",
+    "setindexsubitem",
     "stindex", "obindex", "COMMENT", "label", "input", "title",
     "versionadded", "versionchanged", "declaremodule", "modulesynopsis",
-    "moduleauthor", "indexterm",
+    "moduleauthor", "indexterm", "leader",
     )
 
 
@@ -884,7 +867,7 @@ def fixup_refmodindexes_chunk(container):
             ewrite(entry.toxml() + "\n")
             continue
         found = 0
-        module_name = entry.getAttribute("name")
+        module_name = entry.getAttribute("module")
         for node in module_entries:
             if len(node.childNodes) != 1:
                 continue
@@ -986,15 +969,6 @@ def convert(ifp, ofp):
     normalize(fragment)
     fixup_paras(doc, fragment)
     fixup_sectionauthors(doc, fragment)
-    remap_element_names(fragment, {
-        "tableii": ("table", {"cols": "2"}),
-        "tableiii": ("table", {"cols": "3"}),
-        "tableiv": ("table", {"cols": "4"}),
-        "lineii": ("row", {}),
-        "lineiii": ("row", {}),
-        "lineiv": ("row", {}),
-        "refmodule": ("module", {"link": "link"}),
-        })
     fixup_table_structures(doc, fragment)
     fixup_rfc_references(doc, fragment)
     fixup_signatures(doc, fragment)
