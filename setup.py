@@ -655,12 +655,8 @@ class PyBuildExt(build_ext):
                 exts.append( Extension('nis', ['nismodule.c'],
                                        libraries = libs) )
 
-        # Curses support, requring the System V version of curses, often
+        # Curses support, requiring the System V version of curses, often
         # provided by the ncurses library.
-        if platform == 'sunos4':
-            inc_dirs += ['/usr/5include']
-            lib_dirs += ['/usr/5lib']
-
         if (self.compiler.find_library_file(lib_dirs, 'ncurses')):
             curses_libs = ['ncurses']
             exts.append( Extension('_curses', ['_cursesmodule.c'],
