@@ -2,15 +2,12 @@
 
 """Python utility to print MD5 checksums of argument files.
 
-Works with Python 1.5.2 and later.
+Works with Python 2.1 and later.
 """
 
 import sys, md5
 
 BLOCKSIZE = 1024*1024
-
-def hexify(s):
-    return ("%02x"*len(s)) % tuple(map(ord, s))
 
 def main():
     args = sys.argv[1:]
@@ -26,7 +23,7 @@ def main():
                 break
             sum.update(block)
         f.close()
-        print hexify(sum.digest()), file
+        print sum.hexdigest(), file
 
 if __name__ == "__main__":
     main()
