@@ -440,6 +440,13 @@ class sdist (Command):
 
         # while loop over lines of template file
 
+        # Prune away the build and source distribution directories
+        build = self.find_peer ('build')
+        exclude_pattern (self.files, None, prefix=build.build_base)
+
+        base_dir = self.distribution.get_fullname()
+        exclude_pattern (self.files, None, prefix=base_dir)
+
     # read_template ()
 
 
