@@ -8,10 +8,28 @@ Directions for use:
 
 To create a Message object: first open a file, e.g.:
   fp = open(file, 'r')
-(or use any other legal way of getting an open file object, e.g. use
-sys.stdin or call os.popen()).
+You can use any other legal way of getting an open file object, e.g. use
+sys.stdin or call os.popen().
 Then pass the open file object to the Message() constructor:
   m = Message(fp)
+
+This class can work with any input object that supports read and seek
+methods.  The initialization method which parses the message will work
+even without seek capability, but in that case the final seek to the
+start of the delimiter line won't take place.  However, if the input
+object has an `unread' method that can push back a line of input,
+Message will use that to push back the delimiter line.   Thus this class
+can be used to parse messages coming from a buffered stream.
+
+The optional `seekable' argument is provided as a workaround for
+certain stdio libraries in which tell() discards buffered data before
+discovering that the lseek() system call doesn't work.  For maximum
+portability, you should set the seekable argument to zero to prevent
+that initial \code{tell} when passing in an unseekable object such as
+a a file object created from a socket object.  If it is 1 on entry --
+which it is by default -- the tell() method of the open file object is
+called once; if this raises an exception, seekable is reset to 0.  For 
+other nonzero values of seekable, this test is not made.
 
 To get the text of a particular header there are several methods:
   str = m.getheader(name)
@@ -50,6 +68,15 @@ class Message:
     
     def __init__(self, fp, seekable = 1):
         """Initialize the class instance and read the headers."""
+        if seekable == 1:
+            # Exercise tell() to make sure it works
+            # (and then assume seek() works, too)
+            try:
+                fp.tell()
+            except:
+                seekable = 0
+            else:
+                seekable = 1
         self.fp = fp
         self.seekable = seekable
         self.startofheaders = None
@@ -122,6 +149,8 @@ class Message:
                 headerseen = string.lower(line[:i])
                 self.dict[headerseen] = string.strip(
                 line[i+1:])
+            elif self.iscomment(line):
+                pass
             else:
                 # It's not a header line; stop here.
                 if not headerseen:
@@ -129,11 +158,12 @@ class Message:
                 else:
                     self.status = 'Bad header'
                 # Try to undo the read.
-                if self.seekable:
+                if getattr(self.fp, 'unread'):
+                    self.fp.unread(line)
+                elif self.seekable:
                     self.fp.seek(-len(line), 1)
                 else:
-                    self.status = \
-                                                self.status + '; bad seek'
+                    self.status = self.status + '; bad seek'
                 break
     
     def islast(self, line):
@@ -146,6 +176,15 @@ class Message:
         line consisting of \r\n also matches.                
         """
         return line in _blanklines
+
+    def iscomment(self, line):
+        """Determine whether a line should be skipped entirely.
+
+        You may override this method in order to use Message parsing
+        on tagged data in RFC822-like formats that support embedded
+        comments or free-text data.
+        """
+        return None
     
     def getallmatchingheaders(self, name):
         """Find all header lines matching a given header name.
@@ -208,7 +247,7 @@ class Message:
         list[0] = list[0][len(name) + 1:]
         return string.joinfields(list, '')
     
-    def getheader(self, name):
+    def getheader(self, name, default=None):
         """Get the header value for a name.
         
         This is the normal interface: it return a stripped
@@ -219,7 +258,8 @@ class Message:
         try:
             return self.dict[string.lower(name)]
         except KeyError:
-            return None
+            return default
+    get = getheader
     
     def getaddr(self, name):
         """Get a single address from a header, as a tuple.
@@ -325,6 +365,11 @@ class Message:
         """
         return self.dict.items()
 
+    def __str__(self):
+        str = ''
+        for hdr in self.headers:
+            str = str + hdr
+        return str
 
 
 # Utility functions
