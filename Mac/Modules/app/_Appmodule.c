@@ -660,6 +660,40 @@ static PyObject *App_UseThemeFont(PyObject *_self, PyObject *_args)
 
 #if TARGET_API_MAC_CARBON
 
+static PyObject *App_DrawThemeTextBox(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	CFStringRef inString;
+	ThemeFontID inFontID;
+	ThemeDrawState inState;
+	Boolean inWrapToWidth;
+	Rect inBoundingBox;
+	SInt16 inJust;
+	if (!PyArg_ParseTuple(_args, "O&HlbO&h",
+	                      CFStringRefObj_Convert, &inString,
+	                      &inFontID,
+	                      &inState,
+	                      &inWrapToWidth,
+	                      PyMac_GetRect, &inBoundingBox,
+	                      &inJust))
+		return NULL;
+	_err = DrawThemeTextBox(inString,
+	                        inFontID,
+	                        inState,
+	                        inWrapToWidth,
+	                        &inBoundingBox,
+	                        inJust,
+	                        NULL);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
 static PyObject *App_TruncateThemeText(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -702,11 +736,12 @@ static PyObject *App_GetThemeTextDimensions(PyObject *_self, PyObject *_args)
 	Boolean inWrapToWidth;
 	Point ioBounds;
 	SInt16 outBaseline;
-	if (!PyArg_ParseTuple(_args, "O&Hlb",
+	if (!PyArg_ParseTuple(_args, "O&HlbO&",
 	                      CFStringRefObj_Convert, &inString,
 	                      &inFontID,
 	                      &inState,
-	                      &inWrapToWidth))
+	                      &inWrapToWidth,
+	                      PyMac_GetPoint, &ioBounds))
 		return NULL;
 	_err = GetThemeTextDimensions(inString,
 	                              inFontID,
@@ -1204,13 +1239,18 @@ static PyMethodDef App_methods[] = {
 	 "(ThemeFontID inFontID, ScriptCode inScript) -> None"},
 
 #if TARGET_API_MAC_CARBON
+	{"DrawThemeTextBox", (PyCFunction)App_DrawThemeTextBox, 1,
+	 "(CFStringRef inString, ThemeFontID inFontID, ThemeDrawState inState, Boolean inWrapToWidth, Rect inBoundingBox, SInt16 inJust) -> None"},
+#endif
+
+#if TARGET_API_MAC_CARBON
 	{"TruncateThemeText", (PyCFunction)App_TruncateThemeText, 1,
 	 "(CFMutableStringRef inString, ThemeFontID inFontID, ThemeDrawState inState, SInt16 inPixelWidthLimit, TruncCode inTruncWhere) -> (Boolean outTruncated)"},
 #endif
 
 #if TARGET_API_MAC_CARBON
 	{"GetThemeTextDimensions", (PyCFunction)App_GetThemeTextDimensions, 1,
-	 "(CFStringRef inString, ThemeFontID inFontID, ThemeDrawState inState, Boolean inWrapToWidth) -> (Point ioBounds, SInt16 outBaseline)"},
+	 "(CFStringRef inString, ThemeFontID inFontID, ThemeDrawState inState, Boolean inWrapToWidth, Point ioBounds) -> (Point ioBounds, SInt16 outBaseline)"},
 #endif
 
 #if TARGET_API_MAC_CARBON

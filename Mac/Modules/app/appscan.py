@@ -48,7 +48,6 @@ class MyScanner(Scanner):
 			"appearanceBadTextColorIndexErr",
 			"appearanceThemeHasNoAccents",
 			"appearanceBadCursorIndexErr",
-			"DrawThemeTextBox",    # Funny void* out param
 			]
 
 	def makegreylist(self):
@@ -58,6 +57,7 @@ class MyScanner(Scanner):
 				'GetThemeTextShadowOutset',
 				'GetThemeTextDimensions',
 				'TruncateThemeText',
+				'DrawThemeTextBox',
 			])]
 			
 	def makeblacklisttypes(self):
@@ -80,6 +80,10 @@ class MyScanner(Scanner):
 
 	def makerepairinstructions(self):
 		return [
+			([("void", 'inContext', "OutMode")],
+			 [("NULL", 'inContext', "InMode")]),
+			([("Point", 'ioBounds', "OutMode")],
+			 [("Point", 'ioBounds', "InOutMode")]),
 			]
 			
 if __name__ == "__main__":
