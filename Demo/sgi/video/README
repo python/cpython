@@ -57,12 +57,20 @@ Vtime.py	(unrelated to vtime!!!) Copy a video file,
 
 Vedit.py	interactive video editing program
 
+Vsend.py	unicast or multicast live video as UDP packets
+
+Vreceive.py	receive transmissions from Vsend
+
 
 These modules are used by the above programs:
 
 VFile.py	classes that read and write CMIF video files
 
 Viewer.py	two viewer classes used by Vedit
+
+LiveVideoIn.py	live video input class, used by Vsend
+
+LiveVideoOut.py	live video output class, used by Vsend and Vreceive
 
 
 The following are C programs, either for efficiency or because they

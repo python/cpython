@@ -54,7 +54,7 @@ class LiveVideoIn:
 		# Initialize capture
 		v.SetSize(self.realwidth, self.realheight)
 		dummy = v.InitContinuousCapture(SV.RGB8_FRAMES, \
-			  self.realwidth, self.realheight, 2, 5)
+			  self.realwidth, self.realheight, 1, 5)
 		self.data = None
 		self.lpos = 0
 		return self
