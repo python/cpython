@@ -12,7 +12,7 @@ class AutoExpand:
     }
 
     unix_keydefs = {
-        '<<expand-word>>': ['<Meta-slash>'],
+        '<<expand-word>>': ['<Meta-slash>', '<Alt-slash>'],
     }
 
     menudefs = [
@@ -25,7 +25,6 @@ class AutoExpand:
 
     def __init__(self, editwin):
         self.text = editwin.text
-        self.text.wordlist = None # XXX what is this?
         self.state = None
 
     def expand_word_event(self, event):
