@@ -33,7 +33,7 @@ import socket
 import string
 import regex
 import regsub
-import rfc822
+import mimetools
 
 HTTP_VERSION = 'HTTP/1.0'
 HTTP_PORT = 80
@@ -46,6 +46,7 @@ class HTTP:
 
 	def __init__(self, host = '', port = 0):
 		self.debuglevel = 0
+		self.file = None
 		if host: self.connect(host, port)
 
 	def set_debuglevel(self, debuglevel):
@@ -90,11 +91,16 @@ class HTTP:
 		errcode, errmsg = replyprog.group(1, 2)
 		errcode = string.atoi(errcode)
 		errmsg = string.strip(errmsg)
-		self.headers = rfc822.Message(self.file, 0)
+		self.headers = mimetools.Message(self.file, 0)
 		return errcode, errmsg, self.headers
 
 	def getfile(self):
 		return self.file
+
+	def close(self):
+		if self.file:
+			self.file.close()
+		self.file = None
 
 
 def test():
