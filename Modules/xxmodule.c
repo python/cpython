@@ -57,7 +57,8 @@ Xxo_demo(XxoObject *self, PyObject *args)
 }
 
 static PyMethodDef Xxo_methods[] = {
-	{"demo",	(PyCFunction)Xxo_demo,	METH_VARARGS},
+	{"demo",	(PyCFunction)Xxo_demo,	METH_VARARGS,
+		PyDoc_STR("demo() -> None")},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -143,6 +144,11 @@ static PyTypeObject Xxo_Type = {
 
 /* Function of two integers returning integer */
 
+PyDoc_STRVAR(xx_foo_doc,
+"foo(i,j)\n\
+\n\
+Return the sum of i and j.");
+
 static PyObject *
 xx_foo(PyObject *self, PyObject *args)
 {
@@ -208,13 +214,19 @@ xx_roj(PyObject *self, PyObject *args)
 /* List of functions defined in the module */
 
 static PyMethodDef xx_methods[] = {
-	{"roj",		xx_roj,		METH_VARARGS},
-	{"foo",		xx_foo,		METH_VARARGS},
-	{"new",		xx_new,		METH_VARARGS},
-	{"bug",		xx_bug,		METH_VARARGS},
+	{"roj",		xx_roj,		METH_VARARGS,
+		PyDoc_STR("roj(a,b) -> None")},
+	{"foo",		xx_foo,		METH_VARARGS,
+	 	xx_foo_doc},
+	{"new",		xx_new,		METH_VARARGS,
+		PyDoc_STR("new() -> new Xx object")},
+	{"bug",		xx_bug,		METH_VARARGS,
+		PyDoc_STR("bug(o) -> None")},
 	{NULL,		NULL}		/* sentinel */
 };
 
+PyDoc_STRVAR(module_doc,
+"This is a template module just for instruction.");
 
 /* Initialization function for the module (*must* be called initxx) */
 
@@ -228,7 +240,7 @@ initxx(void)
 	Xxo_Type.ob_type = &PyType_Type;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule("xx", xx_methods);
+	m = Py_InitModule3("xx", xx_methods, module_doc);
 
 	/* Add some symbolic constants to the module */
 	if (ErrorObject == NULL) {
