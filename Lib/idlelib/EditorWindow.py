@@ -590,17 +590,7 @@ class EditorWindow:
         cls = getattr(mod, name)
         ins = cls(self)
         self.extensions[name] = ins
-        kdnames = ["keydefs"]
-        if sys.platform == 'win32':
-            kdnames.append("windows_keydefs")
-        elif sys.platform == 'mac':
-            kdnames.append("mac_keydefs")
-        else:
-            kdnames.append("unix_keydefs")
-        keydefs = {}
-        for kdname in kdnames:
-            if hasattr(ins, kdname):
-                keydefs.update(getattr(ins, kdname))
+        keydefs=idleConf.GetExtensionBindings(name)
         if keydefs:
             self.apply_bindings(keydefs)
             for vevent in keydefs.keys():
@@ -612,6 +602,7 @@ class EditorWindow:
                 methodname = methodname + "_event"
                 if hasattr(ins, methodname):
                     self.text.bind(vevent, getattr(ins, methodname))
+       
         if hasattr(ins, "menudefs"):
             self.fill_menus(ins.menudefs, keydefs)
         return ins
