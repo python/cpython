@@ -57,6 +57,12 @@ struct pair_encodemap {
 	DBCHAR code;
 };
 
+/* There are really static, and (re)declared so later by the expansions
+ * of the BEGIN_MAPPINGS_LIST and BEGIN_CODECS_LIST macros, but it's
+ * not legal C to declare a static array of unknown size.  It would be
+ * better if the code were rearranged so as to not require declaration
+ * of these names before the macros define them.
+ */
 extern const MultibyteCodec codec_list[];
 extern const struct dbcs_map mapping_list[];
 
