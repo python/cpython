@@ -179,7 +179,7 @@ class Grail:
         import tempfile
         tempdir = os.path.join(tempfile.gettempdir(),
                                ".grail-unix")
-        user = pwd.getpwuid(_os.getuid())[0]
+        user = pwd.getpwuid(os.getuid())[0]
         filename = os.path.join(tempdir, user + "-*")
         maybes = glob.glob(filename)
         if not maybes:
