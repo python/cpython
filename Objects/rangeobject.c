@@ -31,21 +31,18 @@ typedef struct {
 	long	start;
 	long	step;
 	long	len;
-	int	reps;
 } rangeobject;
 
 
 object *
-newrangeobject(start, len, step, reps)
+newrangeobject(start, len, step)
 	long start, len, step;
-	int reps;
 {
 	rangeobject *obj = (rangeobject *) newobject(&Rangetype);
 
 	obj->start = start;
 	obj->len   = len;
 	obj->step  = step;
-	obj->reps  = reps;
 
 	return (object *) obj;
 }
@@ -62,19 +59,19 @@ range_item(r, i)
 	rangeobject *r;
 	int i;
 {
-	if (i < 0 || i >= r->len * r->reps) {
+	if (i < 0 || i >= r->len) {
 		err_setstr(IndexError, "range object index out of range");
 		return NULL;
 	}
 
-	return newintobject(r->start + (i % r->len) * r->step);
+	return newintobject(r->start + i * r->step);
 }
 
 static int
 range_length(r)
 	rangeobject *r;
 {
-	return r->len * r->reps;
+	return r->len;
 }
 
 static object *
@@ -82,55 +79,9 @@ range_repr(r)
 	rangeobject *r;
 {
 	char buf[80];
-	if (r->reps != 1)
-		sprintf(buf, "(xrange(%ld, %ld, %ld) * %d)",
-			r->start,
-			r->start + r->len * r->step,
-			r->step,
-			r->reps);
-	else
-		sprintf(buf, "xrange(%ld, %ld, %ld)",
-			r->start,
-			r->start + r->len * r->step,
-			r->step);
+	sprintf(buf, "xrange(%ld, %ld, %ld)",
+		r->start, r->start + r->len * r->step, r->step);
 	return newstringobject(buf);
-}
-
-object *
-range_concat(r, obj)
-	rangeobject *r;
-	object *obj;
-{
-	if (is_rangeobject(obj)) {
-		rangeobject *s = (rangeobject *)obj;
-		if (r->start == s->start && r->len == s->len &&
-		    r->step == s->step)
-			return newrangeobject(r->start, r->len, r->step,
-					      r->reps + s->reps);
-	}
-	err_setstr(TypeError, "cannot concatenate different range objects");
-	return NULL;
-}
-
-object *
-range_repeat(r, n)
-	rangeobject *r;
-	int n;
-{
-	if (n < 0)
-		return (object *) newrangeobject(0, 0, 1, 1);
-
-	else if (n == 1) {
-		INCREF(r);
-		return (object *) r;
-	}
-
-	else
-		return (object *) newrangeobject(
-						r->start,
-						r->len,
-						r->step,
-						r->reps * n);
 }
 
 static int
@@ -145,36 +96,33 @@ range_compare(r1, r2)
 
 	else if (r1->len != r2->len)
 		return r1->len - r2->len;
-
-	else
-		return r1->reps - r2->reps;
 }
 
 static object *
-range_slice(r, low, high)
+range_concat(r, s)
 	rangeobject *r;
-	int low, high;
+	object *s;
 {
-	if (r->reps != 1) {
-		err_setstr(TypeError, "cannot slice a replicated range");
-		return NULL;
-	}
-	if (low < 0)
-		low = 0;
-	else if (low > r->len)
-		low = r->len;
-	if (high < 0)
-		high = 0;
-	if (high < low)
-		high = low;
-	else if (high > r->len)
-		high = r->len;
+	err_setstr(TypeError, "concat not supported by xrange object");
+	return NULL;
+}
 
-	return (object *) newrangeobject(
-				low * r->step + r->start,
-				high - low,
-				r->step,
-				1);
+static object *
+range_repeat(r, n)
+	rangeobject *r;
+	int n;
+{
+	err_setstr(TypeError, "repeat not supported by xrange object");
+	return NULL;
+}
+
+static object *
+range_slice(r, i, j)
+	rangeobject *r;
+	int i, j;
+{
+	err_setstr(TypeError, "slice not supported by xrange object");
+	return NULL;
 }
 
 static sequence_methods range_as_sequence = {
@@ -190,7 +138,7 @@ static sequence_methods range_as_sequence = {
 typeobject Rangetype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/* Number of items for varobject */
-	"range",		/* Name of this type */
+	"xrange",		/* Name of this type */
 	sizeof(rangeobject),	/* Basic object size */
 	0,			/* Item size for varobject */
 	range_dealloc,		/*tp_dealloc*/

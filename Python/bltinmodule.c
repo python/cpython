@@ -922,7 +922,7 @@ builtin_xrange(self, v)
 	if (len < 0)
 		len = 0;
 
-	return newrangeobject(start, len, step, 1);
+	return newrangeobject(start, len, step);
 }
 
 static object *
@@ -1280,16 +1280,10 @@ filtertuple(func, tuple)
 {
 	object *result;
 	register int i, j;
-	int len = gettuplesize(tuple), shared = 0;
+	int len = gettuplesize(tuple);
 
-	if (tuple->ob_refcnt == 1) {
-		result = tuple;
-		shared = 1;
-		/* defer INCREF (resizetuple wants it to be one) */
-	}
-	else
-		if ((result = newtupleobject(len)) == NULL)
-			return NULL;
+	if ((result = newtupleobject(len)) == NULL)
+		return NULL;
 
 	for (i = j = 0; i < len; ++i) {
 		object *item, *good;
@@ -1322,14 +1316,10 @@ filtertuple(func, tuple)
 	if (resizetuple(&result, j, 0) < 0)
 		return NULL;
 
-	if (shared)
-		INCREF(result);
-
 	return result;
 
 Fail_1:
-	if (!shared)
-		DECREF(result);
+	DECREF(result);
 	return NULL;
 }
 
@@ -1343,28 +1333,15 @@ filterstring(func, strobj)
 {
 	object *result;
 	register int i, j;
-	int len = getstringsize(strobj), shared = 0;
+	int len = getstringsize(strobj);
 
-	if (strobj->ob_refcnt == 1) {
-		result = strobj;
-		shared = 1;
-		/* defer INCREF (resizestring wants it to be one) */
-
-		if (func == None) {
-			INCREF(result);
-			return result;
-		}
+	if (func == None) {
+		/* No character is ever false -- share input string */
+		INCREF(result);
+		return result;
 	}
-	else {
-		if ((result = newsizedstringobject(NULL, len)) == NULL)
-			return NULL;
-
-		if (func == None) {
-			strcpy(GETSTRINGVALUE((stringobject *)result),
-			       GETSTRINGVALUE((stringobject *)strobj));
-			return result;
-		}
-	}
+	if ((result = newsizedstringobject(NULL, len)) == NULL)
+		return NULL;
 
 	for (i = j = 0; i < len; ++i) {
 		object *item, *arg, *good;
@@ -1391,13 +1368,9 @@ filterstring(func, strobj)
 	if (resizestring(&result, j) < 0)
 		return NULL;
 
-	if (shared)
-		INCREF(result);
-
 	return result;
 
 Fail_1:
-	if (!shared)
-		DECREF(result);
+	DECREF(result);
 	return NULL;
 }
