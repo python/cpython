@@ -101,7 +101,8 @@ sub do_cmd_sub{ ' > ' . $_[0]; }
 # words typeset in a special way (not in HTML though)
 
 sub do_cmd_ABC{ 'ABC' . $_[0]; }
-sub do_cmd_UNIX{ 'Unix'. $_[0]; }
+sub do_cmd_UNIX{ '<font style="font-variant: small-caps;">Unix</font>'
+                 . $_[0]; }
 sub do_cmd_ASCII{ 'ASCII' . $_[0]; }
 sub do_cmd_POSIX{ 'POSIX' . $_[0]; }
 sub do_cmd_C{ 'C' . $_[0]; }
