@@ -34,22 +34,7 @@ SOVERSION=1.0
 # on Linux, so we need _GNU_SOURCE to re-enable them (makedev, tm_zone).
 AC_DEFINE(_GNU_SOURCE, 1, [Define on Linux to activate all library features])
 
-# The definition of _GNU_SOURCE potentially causes a change of the value
-# of _XOPEN_SOURCE. So define it only conditionally.
-AH_VERBATIM([_XOPEN_SOURCE],
-[/* Define on UNIX to activate XPG/5 features.  */
-#ifndef _XOPEN_SOURCE
-# undef _XOPEN_SOURCE
-#endif])
-
 define_xopen_source=yes
-
-# On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires definition
-# of _XOPEN_SOURCE_EXTENDED and _POSIX_C_SOURCE, or else several APIs
-# are not declared. Since this is also needed in some cases for HP-UX,
-# we define it globally.
-AC_DEFINE(_XOPEN_SOURCE_EXTENDED, 1, Define to activate Unix95-and-earlier features)
-AC_DEFINE(_POSIX_C_SOURCE, 199506L, Define to activate features from IEEE Stds 1003.{123}-1995)
 
 # Arguments passed to configure.
 AC_SUBST(CONFIG_ARGS)
@@ -135,11 +120,25 @@ case $ac_sys_system/$ac_sys_release in
   # even though select is a POSIX function. Reported by J. Ribbens.
   OpenBSD/2.* | OpenBSD/3.@<:@012@:>@) 
     define_xopen_source=no;;
+  # On FreeBSD 5.0, chroot and setgroups are not declared if _XOPEN_SOURCE
+  # is define. Reported by M. Recht.
+  FreeBSD/5.0*)
+    define_xopen_source=no;;
 esac
 
 if test $define_xopen_source = yes
 then
-  AC_DEFINE(_XOPEN_SOURCE, 500)
+  AC_DEFINE(_XOPEN_SOURCE, 600, 
+            Define to the level of X/Open that your system supports)
+
+  # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires
+  # definition of _XOPEN_SOURCE_EXTENDED and _POSIX_C_SOURCE, or else
+  # several APIs are not declared. Since this is also needed in some
+  # cases for HP-UX, we define it globally.
+  
+  AC_DEFINE(_XOPEN_SOURCE_EXTENDED, 1, Define to activate Unix95-and-earlier features)
+  AC_DEFINE(_POSIX_C_SOURCE, 200112L, Define to activate features from IEEE Stds 1003.1-2001)
+
 fi
 
 #
