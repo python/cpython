@@ -1099,6 +1099,10 @@ class _ExpectedSkips:
                 if eval('test_codecmaps_' + cc).skip_expected:
                     self.expected.add('test_codecmaps_' + cc)
 
+            if sys.maxint == 9223372036854775807L:
+                self.expected.add('test_rgbimg')
+                self.expected.add('test_imageop')
+
             if not sys.platform in ("mac", "darwin"):
                 MAC_ONLY = ["test_macostools", "test_macfs", "test_aepack",
                             "test_plistlib", "test_scriptpackages"]
