@@ -129,8 +129,8 @@ class ScriptBinding:
                 except:
                     (sys.last_type, sys.last_value,
                      sys.last_traceback) = sys.exc_info()
-##                    linecache.checkcache()
-##                    traceback.print_exc()
+                    linecache.checkcache()
+                    traceback.print_exc()
                     if not debugger:
                         from StackViewer import StackBrowser
                         sv = StackBrowser(self.root, self.flist)
