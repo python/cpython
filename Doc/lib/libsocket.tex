@@ -515,27 +515,27 @@ block until they can proceed.
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{settimeout}{value}
-Set a timeout on blocking socket operations. Value can be any numeric value
-or \var{None}. Socket operations will raise an \exception{error} exception
-if the timeout period \var{value} has elapsed before the operation has
-completed. Setting a timeout of \var{None} disables timeouts on socket
-operations.
+Set a timeout on blocking socket operations. Value can be any numeric
+value or \code{None}. Socket operations will raise an
+\exception{error} exception if the timeout period \var{value} has
+elapsed before the operation has completed. Setting a timeout of
+\code{None} disables timeouts on socket operations.
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{gettimeout}{}
-Returns the timeout in floating seconds associated with socket operations.
-A timeout of None indicates that timeouts on socket operations are
-disabled.
+Returns the timeout in floating seconds associated with socket
+operations.  A timeout of \code{None} indicates that timeouts on
+socket operations are disabled.
 \end{methoddesc}
 
 Some notes on the interaction between socket blocking and timeouts:
-socket blocking mode takes precendence over timeouts. If a socket
-if set to non-blocking mode, then timeouts set on sockets are never
-don't mean anything. The timeout value associated with the socket
-can still be set via settimeout and its value retrieved via gettimeout,
-but the timeout is never enforced (i.e, an exception will never be
-thrown). Otherwise, if the socket is in blocking mode, setting the
-timeout will raise an exception as expected.
+socket blocking mode takes precendence over timeouts. If a socket if
+set to non-blocking mode, then timeouts set on sockets are not used.
+The timeout value associated with the socket can still be set using
+\method{settimeout()} and its value retrieved using
+\method{gettimeout()}, but the timeout is never enforced (an exception
+will never be thrown).  Otherwise, if the socket is in blocking mode,
+setting the timeout will raise an exception as expected.
 
 \begin{methoddesc}[socket]{setsockopt}{level, optname, value}
 Set the value of the given socket option (see the \UNIX{} manual page
