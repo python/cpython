@@ -64,6 +64,10 @@ def waste_Extension():
 
 setup(name="MacPython for Jaguar extensions", version="2.2",
     ext_modules=[
+        Extension("OverrideFrom23._AE",
+            [SRCDIR + "/Mac/Modules/ae/_AEmodule.c"],
+            include_dirs=[SRCDIR+"/Mac/Include"],
+            extra_link_args=['-framework', 'Carbon']),
         Extension("OverrideFrom23._Res",
             [SRCDIR + "/Mac/Modules/res/_Resmodule.c"],
             include_dirs=[SRCDIR+"/Mac/Include"],
