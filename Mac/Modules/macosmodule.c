@@ -734,5 +734,8 @@ initMacOS()
 		if( PyDict_SetItemString(d, "string_id_to_buffer", Py_BuildValue("i", off)) != 0)
 			Py_FatalError("Can't define MacOS.string_id_to_buffer");
 	}
+	if (PyDict_SetItemString(d, "AppearanceCompliant", 
+				Py_BuildValue("i", PyMac_AppearanceCompliant)) != 0)
+		Py_FatalError("can't define MacOS.AppearanceCompliant");
 }
 

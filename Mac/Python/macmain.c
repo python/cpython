@@ -37,6 +37,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Windows.h>
 #include <Fonts.h>
 #include <Balloons.h>
+#ifdef USE_APPEARANCE
+#include <Gestalt.h>
+#include <Appearance.h>
+#endif /* USE_APPEARANCE */
 #ifdef __MWERKS__
 #include <SIOUX.h>
 #define USE_SIOUX
@@ -64,6 +68,21 @@ PyMac_PrefRecord options;
 static void Py_Main Py_PROTO((int, char **)); /* Forward */
 void PyMac_Exit Py_PROTO((int)); /* Forward */
 
+static void init_appearance()
+{
+#ifdef USE_APPEARANCE
+	OSErr err;
+	SInt32 response;
+
+	err = Gestalt(gestaltAppearanceAttr,&response);
+	if ( err ) goto no_appearance;
+	if ( !(response&(1<<gestaltAppearanceExists)) ) goto no_appearance;
+	/* XXXX Should we check the version? Compat-mode? */
+	PyMac_AppearanceCompliant = 1;
+no_appearance:
+	return;
+#endif /* USE_APPEARANCE */
+}
 /* Initialize the Mac toolbox world */
 
 static void
@@ -80,6 +99,7 @@ init_mac_world()
 	InitDialogs((long)0);
 	InitMenus();
 	InitCursor();
+	init_appearance();
 #endif
 }
 

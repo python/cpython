@@ -72,6 +72,7 @@ extern char PyMac_ApplicationPath[];		/* Application location (from macargv.c) *
 extern OSErr PyMac_init_application_location Py_PROTO((void));	/* Init the above */
 extern OSErr PyMac_GetFullPath Py_PROTO((FSSpec *, char *)); /* convert fsspec->path (macargv.c) */
 extern int PyMac_GetArgv Py_PROTO((char ***, int));	/* Get argc, argv (from macargv.c) */
+extern int PyMac_AppearanceCompliant;	/* True if in appearance support mode */
 
 extern PyObject *PyMac_OSErrException;		/* Exception for OSErr */
 PyObject *PyMac_GetOSErrException(void);	/* Initialize & return it */
