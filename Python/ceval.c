@@ -639,6 +639,42 @@ eval_code(co, globals, locals, arg)
 				err_setstr(NameError, getstringvalue(w));
 			break;
 		
+		case UNPACK_VARARG:
+			if (EMPTY()) {
+				err_setstr(TypeError,
+					   "no argument list");
+				why = WHY_EXCEPTION;
+				break;
+			}
+			v = POP();
+			if (!is_tupleobject(v)) {
+				err_setstr(TypeError,
+					   "bad argument list");
+				why = WHY_EXCEPTION;
+			}
+			else if (gettuplesize(v) < oparg) {
+				err_setstr(TypeError,
+					"not enough arguments");
+				why = WHY_EXCEPTION;
+			}
+			else if (oparg == 0) {
+				PUSH(v);
+				break;
+			}
+			else {
+				x = gettupleslice(v, oparg, gettuplesize(v));
+				if (x != NULL) {
+					PUSH(x);
+					for (; --oparg >= 0; ) {
+						w = gettupleitem(v, oparg);
+						INCREF(w);
+						PUSH(w);
+					}
+				}
+			}
+			DECREF(v);
+			break;
+		
 		case UNPACK_ARG:
 			/* Implement various compatibility hacks:
 			   (a) f(a,b,...) should accept f((1,2,...))
