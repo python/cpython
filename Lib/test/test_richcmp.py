@@ -1,6 +1,9 @@
 # Tests for rich comparisons
 
-from test.test_support import TestFailed, verify, verbose
+import unittest
+from test import test_support
+
+import operator
 
 class Number:
 
@@ -26,10 +29,10 @@ class Number:
         return self.x >= other
 
     def __cmp__(self, other):
-        raise TestFailed, "Number.__cmp__() should not be called"
+        raise test_support.TestFailed, "Number.__cmp__() should not be called"
 
     def __repr__(self):
-        return "Number(%s)" % repr(self.x)
+        return "Number(%r)" % (self.x, )
 
 class Vector:
 
@@ -52,10 +55,10 @@ class Vector:
         raise TypeError, "Vectors cannot be used in Boolean contexts"
 
     def __cmp__(self, other):
-        raise TestFailed, "Vector.__cmp__() should not be called"
+        raise test_support.TestFailed, "Vector.__cmp__() should not be called"
 
     def __repr__(self):
-        return "Vector(%s)" % repr(self.data)
+        return "Vector(%r)" % (self.data, )
 
     def __lt__(self, other):
         return Vector([a < b for a, b in zip(self.data, self.__cast(other))])
@@ -82,180 +85,274 @@ class Vector:
             raise ValueError, "Cannot compare vectors of different length"
         return other
 
-operators = "<", "<=", "==", "!=", ">", ">="
-opmap = {}
-for op in operators:
-    opmap[op] = eval("lambda a, b: a %s b" % op)
+opmap = {
+    "lt": (lambda a,b: a< b, operator.lt, operator.__lt__),
+    "le": (lambda a,b: a<=b, operator.le, operator.__le__),
+    "eq": (lambda a,b: a==b, operator.eq, operator.__eq__),
+    "ne": (lambda a,b: a!=b, operator.ne, operator.__ne__),
+    "gt": (lambda a,b: a> b, operator.gt, operator.__gt__),
+    "ge": (lambda a,b: a>=b, operator.ge, operator.__ge__)
+}
 
-def testvector():
-    a = Vector(range(2))
-    b = Vector(range(3))
-    for op in operators:
-        try:
-            opmap[op](a, b)
-        except ValueError:
+class VectorTest(unittest.TestCase):
+
+    def checkfail(self, error, opname, *args):
+        for op in opmap[opname]:
+            self.assertRaises(error, op, *args)
+
+    def checkequal(self, opname, a, b, expres):
+        for op in opmap[opname]:
+            realres = op(a, b)
+            # can't use assertEqual(realres, expres) here
+            self.assertEqual(len(realres), len(expres))
+            for i in xrange(len(realres)):
+                # results are bool, so we can use "is" here
+                self.assert_(realres[i] is expres[i])
+
+    def test_mixed(self):
+        # check that comparisons involving Vector objects
+        # which return rich results (i.e. Vectors with itemwise
+        # comparison results) work
+        a = Vector(range(2))
+        b = Vector(range(3))
+        # all comparisons should fail for different length
+        for opname in opmap:
+            self.checkfail(ValueError, opname, a, b)
+
+        a = range(5)
+        b = 5 * [2]
+        # try mixed arguments (but not (a, b) as that won't return a bool vector)
+        args = [(a, Vector(b)), (Vector(a), b), (Vector(a), Vector(b))]
+        for (a, b) in args:
+            self.checkequal("lt", a, b, [True,  True,  False, False, False])
+            self.checkequal("le", a, b, [True,  True,  True,  False, False])
+            self.checkequal("eq", a, b, [False, False, True,  False, False])
+            self.checkequal("ne", a, b, [True,  True,  False, True,  True ])
+            self.checkequal("gt", a, b, [False, False, False, True,  True ])
+            self.checkequal("ge", a, b, [False, False, True,  True,  True ])
+
+            for ops in opmap.itervalues():
+                for op in ops:
+                    # calls __nonzero__, which should fail
+                    self.assertRaises(TypeError, bool, op(a, b))
+
+class NumberTest(unittest.TestCase):
+
+    def test_basic(self):
+        # Check that comparisons involving Number objects
+        # give the same results give as comparing the
+        # corresponding ints
+        for a in xrange(3):
+            for b in xrange(3):
+                for typea in (int, Number):
+                    for typeb in (int, Number):
+                        if typea==typeb==int:
+                            continue # the combination int, int is useless
+                        ta = typea(a)
+                        tb = typeb(b)
+                        for ops in opmap.itervalues():
+                            for op in ops:
+                                realoutcome = op(a, b)
+                                testoutcome = op(ta, tb)
+                                self.assertEqual(realoutcome, testoutcome)
+
+    def checkvalue(self, opname, a, b, expres):
+        for typea in (int, Number):
+            for typeb in (int, Number):
+                ta = typea(a)
+                tb = typeb(b)
+                for op in opmap[opname]:
+                    realres = op(ta, tb)
+                    realres = getattr(realres, "x", realres)
+                    self.assert_(realres is expres)
+
+    def test_values(self):
+        # check all operators and all comparison results
+        self.checkvalue("lt", 0, 0, False)
+        self.checkvalue("le", 0, 0, True )
+        self.checkvalue("eq", 0, 0, True )
+        self.checkvalue("ne", 0, 0, False)
+        self.checkvalue("gt", 0, 0, False)
+        self.checkvalue("ge", 0, 0, True )
+
+        self.checkvalue("lt", 0, 1, True )
+        self.checkvalue("le", 0, 1, True )
+        self.checkvalue("eq", 0, 1, False)
+        self.checkvalue("ne", 0, 1, True )
+        self.checkvalue("gt", 0, 1, False)
+        self.checkvalue("ge", 0, 1, False)
+
+        self.checkvalue("lt", 1, 0, False)
+        self.checkvalue("le", 1, 0, False)
+        self.checkvalue("eq", 1, 0, False)
+        self.checkvalue("ne", 1, 0, True )
+        self.checkvalue("gt", 1, 0, True )
+        self.checkvalue("ge", 1, 0, True )
+
+class MiscTest(unittest.TestCase):
+
+    def test_misbehavin(self):
+        class Misb:
+            def __lt__(self, other): return 0
+            def __gt__(self, other): return 0
+            def __eq__(self, other): return 0
+            def __le__(self, other): raise TestFailed, "This shouldn't happen"
+            def __ge__(self, other): raise TestFailed, "This shouldn't happen"
+            def __ne__(self, other): raise TestFailed, "This shouldn't happen"
+            def __cmp__(self, other): raise RuntimeError, "expected"
+        a = Misb()
+        b = Misb()
+        self.assertEqual(a<b, 0)
+        self.assertEqual(a==b, 0)
+        self.assertEqual(a>b, 0)
+        self.assertRaises(RuntimeError, cmp, a, b)
+
+    def test_not(self):
+        # Check that exceptions in __nonzero__ are properly
+        # propagated by the not operator
+        import operator
+        class Exc:
             pass
-        else:
-            raise TestFailed, "a %s b for different length should fail" % op
-    a = Vector(range(5))
-    b = Vector(5 * [2])
-    for op in operators:
-        print "%23s %-2s %-23s -> %s" % (a, op, b, opmap[op](a, b))
-        print "%23s %-2s %-23s -> %s" % (a, op, b.data, opmap[op](a, b.data))
-        print "%23s %-2s %-23s -> %s" % (a.data, op, b, opmap[op](a.data, b))
-        try:
-            if opmap[op](a, b):
-                raise TestFailed, "a %s b shouldn't be true" % op
-            else:
-                raise TestFailed, "a %s b shouldn't be false" % op
-        except TypeError:
+        class Bad:
+            def __nonzero__(self):
+                raise Exc
+
+        def do(bad):
+            not bad
+
+        for func in (do, operator.not_):
+            self.assertRaises(Exc, func, Bad())
+
+    def test_recursion(self):
+        # Check comparison for recursive objects
+        from UserList import UserList
+        a = UserList(); a.append(a)
+        b = UserList(); b.append(b)
+
+        self.assert_(a == b)
+        self.assert_(not a != b)
+        a.append(1)
+        self.assert_(a == a[0])
+        self.assert_(not a != a[0])
+        self.assert_(a != b)
+        self.assert_(not a == b)
+        b.append(0)
+        self.assert_(a != b)
+        self.assert_(not a == b)
+        a[1] = -1
+        self.assert_(a != b)
+        self.assert_(not a == b)
+
+        a = UserList()
+        b = UserList()
+        a.append(b)
+        b.append(a)
+        self.assert_(a == b)
+        self.assert_(not a != b)
+
+        b.append(17)
+        self.assert_(a != b)
+        self.assert_(not a == b)
+        a.append(17)
+        self.assert_(a == b)
+        self.assert_(not a != b)
+
+    def test_recursion2(self):
+        # This test exercises the circular structure handling code
+        # in PyObject_RichCompare()
+        class Weird(object):
+            def __eq__(self, other):
+                return self != other
+            def __ne__(self, other):
+                return self == other
+            def __lt__(self, other):
+                return self > other
+            def __gt__(self, other):
+                return self < other
+
+        self.assert_(Weird() == Weird())
+        self.assert_(not (Weird() != Weird()))
+
+        for op in opmap["lt"]:
+            self.assertRaises(ValueError, op, Weird(), Weird())
+
+class DictTest(unittest.TestCase):
+
+    def test_dicts(self):
+        # Verify that __eq__ and __ne__ work for dicts even if the keys and
+        # values don't support anything other than __eq__ and __ne__.  Complex
+        # numbers are a fine example of that.
+        import random
+        imag1a = {}
+        for i in range(50):
+            imag1a[random.randrange(100)*1j] = random.randrange(100)*1j
+        items = imag1a.items()
+        random.shuffle(items)
+        imag1b = {}
+        for k, v in items:
+            imag1b[k] = v
+        imag2 = imag1b.copy()
+        imag2[k] = v + 1.0
+        self.assert_(imag1a == imag1a)
+        self.assert_(imag1a == imag1b)
+        self.assert_(imag2 == imag2)
+        self.assert_(imag1a != imag2)
+        for opname in ("lt", "le", "gt", "ge"):
+            for op in opmap[opname]:
+                self.assertRaises(TypeError, op, imag1a, imag2)
+
+class ListTest(unittest.TestCase):
+
+    def assertIs(self, a, b):
+        self.assert_(a is b)
+
+    def test_coverage(self):
+        # exercise all comparisons for lists
+        x = [42]
+        self.assertIs(x<x, False)
+        self.assertIs(x<=x, True)
+        self.assertIs(x==x, True)
+        self.assertIs(x!=x, False)
+        self.assertIs(x>x, False)
+        self.assertIs(x>=x, True)
+        y = [42, 42]
+        self.assertIs(x<y, True)
+        self.assertIs(x<=y, True)
+        self.assertIs(x==y, False)
+        self.assertIs(x!=y, True)
+        self.assertIs(x>y, False)
+        self.assertIs(x>=y, False)
+
+    def test_badentry(self):
+        # make sure that exceptions for item comparison are properly
+        # propagated in list comparisons
+        class Exc:
             pass
+        class Bad:
+            def __eq__(self, other):
+                raise Exc
 
-def testop(a, b, op):
-    try:
-        ax = a.x
-    except AttributeError:
-        ax = a
-    try:
-        bx = b.x
-    except AttributeError:
-        bx = b
-    opfunc = opmap[op]
-    realoutcome = opfunc(ax, bx)
-    testoutcome = opfunc(a, b)
-    if realoutcome != testoutcome:
-        print "Error for", a, op, b, ": expected", realoutcome,
-        print "but got", testoutcome
-##    else:
-##        print a, op, b, "-->", testoutcome # and "true" or "false"
+        x = [Bad()]
+        y = [Bad()]
 
-def testit(a, b):
-    testop(a, b, "<")
-    testop(a, b, "<=")
-    testop(a, b, "==")
-    testop(a, b, "!=")
-    testop(a, b, ">")
-    testop(a, b, ">=")
+        for op in opmap["eq"]:
+            self.assertRaises(Exc, op, x, y)
 
-def basic():
-    for a in range(3):
-        for b in range(3):
-            testit(Number(a), Number(b))
-            testit(a, Number(b))
-            testit(Number(a), b)
+    def test_goodentry(self):
+        # This test exercises the final call to PyObject_RichCompare()
+        # in Objects/listobject.c::list_richcompare()
+        class Good:
+            def __lt__(self, other):
+                return True
 
-def tabulate(c1=Number, c2=Number):
-    for op in operators:
-        opfunc = opmap[op]
-        print
-        print "operator:", op
-        print
-        print "%9s" % "",
-        for b in range(3):
-            b = c2(b)
-            print "| %9s" % b,
-        print "|"
-        print '----------+-' * 4
-        for a in range(3):
-            a = c1(a)
-            print "%9s" % a,
-            for b in range(3):
-                b = c2(b)
-                print "| %9s" % opfunc(a, b),
-            print "|"
-        print '----------+-' * 4
-    print
-    print '*' * 50
+        x = [Good()]
+        y = [Good()]
 
-def misbehavin():
-    class Misb:
-        def __lt__(self, other): return 0
-        def __gt__(self, other): return 0
-        def __eq__(self, other): return 0
-        def __le__(self, other): raise TestFailed, "This shouldn't happen"
-        def __ge__(self, other): raise TestFailed, "This shouldn't happen"
-        def __ne__(self, other): raise TestFailed, "This shouldn't happen"
-        def __cmp__(self, other): raise RuntimeError, "expected"
-    a = Misb()
-    b = Misb()
-    verify((a<b) == 0)
-    verify((a==b) == 0)
-    verify((a>b) == 0)
-    try:
-        print cmp(a, b)
-    except RuntimeError:
-        pass
-    else:
-        raise TestFailed, "cmp(Misb(), Misb()) didn't raise RuntimeError"
+        for op in opmap["lt"]:
+            self.assertIs(op(x, y), True)
 
-def recursion():
-    from UserList import UserList
-    a = UserList(); a.append(a)
-    b = UserList(); b.append(b)
-    def check(s, a=a, b=b):
-        if verbose:
-            print "check", s
-        try:
-            if not eval(s):
-                raise TestFailed, s + " was false but expected to be true"
-        except RuntimeError, msg:
-            raise TestFailed, str(msg)
-    if verbose:
-        print "recursion tests: a=%s, b=%s" % (a, b)
-    check('a==b')
-    check('not a!=b')
-    a.append(1)
-    if verbose:
-        print "recursion tests: a=%s, b=%s" % (a, b)
-    check('a!=b')
-    check('not a==b')
-    b.append(0)
-    if verbose:
-        print "recursion tests: a=%s, b=%s" % (a, b)
-    check('a!=b')
-    check('not a==b')
-    a[1] = -1
-    if verbose:
-        print "recursion tests: a=%s, b=%s" % (a, b)
-    check('a!=b')
-    check('not a==b')
-    if verbose: print "recursion tests ok"
+def test_main():
+    test_support.run_classtests(VectorTest, NumberTest, MiscTest, DictTest, ListTest)
 
-def dicts():
-    # Verify that __eq__ and __ne__ work for dicts even if the keys and
-    # values don't support anything other than __eq__ and __ne__.  Complex
-    # numbers are a fine example of that.
-    import random
-    imag1a = {}
-    for i in range(50):
-        imag1a[random.randrange(100)*1j] = random.randrange(100)*1j
-    items = imag1a.items()
-    random.shuffle(items)
-    imag1b = {}
-    for k, v in items:
-        imag1b[k] = v
-    imag2 = imag1b.copy()
-    imag2[k] = v + 1.0
-    verify(imag1a == imag1a, "imag1a == imag1a should have worked")
-    verify(imag1a == imag1b, "imag1a == imag1b should have worked")
-    verify(imag2 == imag2, "imag2 == imag2 should have worked")
-    verify(imag1a != imag2, "imag1a != imag2 should have worked")
-    for op in "<", "<=", ">", ">=":
-        try:
-            eval("imag1a %s imag2" % op)
-        except TypeError:
-            pass
-        else:
-            raise TestFailed("expected TypeError from imag1a %s imag2" % op)
-
-def main():
-    basic()
-    tabulate()
-    tabulate(c1=int)
-    tabulate(c2=int)
-    testvector()
-    misbehavin()
-    recursion()
-    dicts()
-
-main()
+if __name__ == "__main__":
+    test_main()
