@@ -135,7 +135,8 @@ extern "C" {
 #define EXTENDED_ARG  143
 
 /* Comparison operator codes (argument to COMPARE_OP) */
-enum cmp_op {LT, LE, EQ, NE, GT, GE, IN, NOT_IN, IS, IS_NOT, EXC_MATCH, BAD};
+enum cmp_op {LT=Py_LT, LE=Py_LE, EQ=Py_EQ, NE=Py_NE, GT=Py_GT, GE=Py_GE,
+	     IN, NOT_IN, IS, IS_NOT, EXC_MATCH, BAD};
 
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
 
