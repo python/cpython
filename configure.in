@@ -48,9 +48,10 @@ AC_DEFINE(_POSIX_C_SOURCE, 199506L, Define to activate features from IEEE Stds 1
 AC_SUBST(CONFIG_ARGS)
 CONFIG_ARGS="$ac_configure_args"
 
-
+dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_ENABLE(framework,
-[  --enable-framework[=INSTALLDIR] Build (MacOSX|Darwin) framework],[
+              AC_HELP_STRING(--enable-framework@<:@=INSTALLDIR@:>@, Build (MacOSX|Darwin) framework),
+[
 	case $enableval in
 	yes) 
 		enableval=/Library/Frameworks
@@ -83,7 +84,8 @@ AC_SUBST(PYTHONFRAMEWORKPREFIX)
 AC_SUBST(PYTHONFRAMEWORKINSTALLDIR)
 
 ##AC_ARG_WITH(dyld,
-##[  --with-dyld                     Use (OpenStep|Rhapsody) dynamic linker],,)
+##            AC_HELP_STRING(--with-dyld,
+##                           Use (OpenStep|Rhapsody) dynamic linker))
 ##
 # Set name for machine-dependent library files
 AC_SUBST(MACHDEP)
@@ -131,7 +133,9 @@ AC_MSG_RESULT($MACHDEP)
 
 # checks for alternative programs
 AC_MSG_CHECKING(for --without-gcc)
-AC_ARG_WITH(gcc, [  --without-gcc                   never use gcc], [
+AC_ARG_WITH(gcc,
+            AC_HELP_STRING(--without-gcc,never use gcc),
+[
 	case $withval in
 	no)	CC=cc
 		without_gcc=yes;;
@@ -157,7 +161,7 @@ AC_ARG_WITH(gcc, [  --without-gcc                   never use gcc], [
 			OPT=-O
 			;;
 		*)
-			AC_ERROR(Unknown BeOS platform \"$BE_HOST_CPU\")
+			AC_MSG_ERROR([Unknown BeOS platform "$BE_HOST_CPU"])
 			;;
 		esac
 		AR="\$(srcdir)/Modules/ar_beos"
@@ -174,7 +178,9 @@ AC_SUBST(CXX)
 AC_SUBST(MAINOBJ)
 MAINOBJ=python.o
 AC_MSG_CHECKING(for --with-cxx=<compiler>)
-AC_ARG_WITH(cxx, [  --with-cxx=<compiler>           enable C++ support],[
+AC_ARG_WITH(cxx,
+            AC_HELP_STRING(--with-cxx=<compiler>, enable C++ support),
+[
 	check_cxx=no
 	case $withval in
 	no)	CXX=
@@ -190,7 +196,7 @@ AC_MSG_RESULT($with_cxx)
 
 if test "$with_cxx" = "yes"
 then
-	AC_ERROR(must supply a compiler when using --with-cxx)
+	AC_MSG_ERROR([must supply a compiler when using --with-cxx])
 fi
 
 dnl The following fragment works similar to AC_PROG_CXX.
@@ -221,8 +227,8 @@ fi
 # If the user switches compilers, we can't believe the cache
 if test ! -z "$ac_cv_prog_CC" -a ! -z "$CC" -a "$CC" != "$ac_cv_prog_CC"
 then
-  AC_ERROR(cached CC is different -- throw away $cache_file
-(it is also a good idea to do 'make clean' before compiling))
+  AC_MSG_ERROR([cached CC is different -- throw away $cache_file
+(it is also a good idea to do 'make clean' before compiling)])
 fi
 
 AC_PROG_CC
@@ -233,7 +239,9 @@ AC_MINIX
 
 AC_EXEEXT
 AC_MSG_CHECKING(for --with-suffix)
-AC_ARG_WITH(suffix, [  --with-suffix=.exe              set executable suffix],[
+AC_ARG_WITH(suffix,
+            AC_HELP_STRING(--with-suffix=.exe, set executable suffix),
+[
 	case $withval in
 	no)	EXEEXT=;;
 	yes)	EXEEXT=.exe;;
@@ -348,7 +356,7 @@ AC_MSG_RESULT($LINKCC)
 
 AC_MSG_CHECKING(for --enable-shared)
 AC_ARG_ENABLE(shared,
-[  --enable-shared                 disable/enable building shared python library])
+              AC_HELP_STRING(--enable-shared, disable/enable building shared python library))
 
 if test -z "$enable_shared"
 then 
@@ -456,7 +464,8 @@ fi
 # Check for --with-pydebug
 AC_MSG_CHECKING(for --with-pydebug)
 AC_ARG_WITH(pydebug, 
-[  --with-pydebug                  build with Py_DEBUG defined], [
+            AC_HELP_STRING(--with-pydebug, build with Py_DEBUG defined),
+[
 if test "$withval" != no
 then 
   AC_DEFINE(Py_DEBUG, 1, 
@@ -830,7 +839,7 @@ CC="$ac_save_cc"
 
 AC_MSG_CHECKING(for --enable-toolbox-glue)
 AC_ARG_ENABLE(toolbox-glue,
-[  --enable-toolbox-glue            disable/enable MacOSX glue code for extensions])
+              AC_HELP_STRING(--enable-toolbox-glue, disable/enable MacOSX glue code for extensions))
 
 if test -z "$enable_toolbox_glue"
 then 
@@ -1139,17 +1148,19 @@ esac
 
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs,
-[  --with-libs='lib1 ...'          link against additional libs], [
+            AC_HELP_STRING(--with-libs='lib1 ...', link against additional libs),
+[
 AC_MSG_RESULT($withval)
 LIBS="$withval $LIBS"
-], AC_MSG_RESULT(no))
+],
+[AC_MSG_RESULT(no)])
 
 # Determine if signalmodule should be used.
 AC_SUBST(USE_SIGNAL_MODULE)
 AC_SUBST(SIGNAL_OBJS)
 AC_MSG_CHECKING(for --with-signal-module)
 AC_ARG_WITH(signal-module,
-[  --with-signal-module            disable/enable signal module])
+            AC_HELP_STRING(--with-signal-module, disable/enable signal module))
 
 if test -z "$with_signal_module"
 then with_signal_module="yes"
@@ -1171,13 +1182,14 @@ USE_THREAD_MODULE=""
 AC_MSG_CHECKING(for --with-dec-threads)
 AC_SUBST(LDLAST)
 AC_ARG_WITH(dec-threads,
-[  --with-dec-threads              use DEC Alpha/OSF1 thread-safe libraries], [
+            AC_HELP_STRING(--with-dec-threads, use DEC Alpha/OSF1 thread-safe libraries),
+[
 AC_MSG_RESULT($withval)
 LDLAST=-threads
 if test "${with_thread+set}" != set; then
    with_thread="$withval";
 fi],
-AC_MSG_RESULT(no))
+[AC_MSG_RESULT(no)])
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
@@ -1188,13 +1200,15 @@ AH_TEMPLATE(WITH_THREAD,
   [Define if you want to compile in rudimentary thread support])
 
 AC_MSG_CHECKING(for --with-threads)
+dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_WITH(threads,
-[  --with(out)-threads[=DIRECTORY] disable/enable thread support])
+            AC_HELP_STRING(--with(out)-threads@<:@=DIRECTORY@:>@, disable/enable thread support))
 
 # --with-thread is deprecated, but check for it anyway
+dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_WITH(thread,
-[  --with(out)-thread[=DIRECTORY]  deprecated; use --with(out)-threads],[
-with_threads=$with_thread])
+            AC_HELP_STRING(--with(out)-thread@<:@=DIRECTORY@:>@, deprecated; use --with(out)-threads),
+            [with_threads=$with_thread])
 
 if test -z "$with_threads"
 then with_threads="yes"
@@ -1250,14 +1264,15 @@ else
     [Define if you are using Mach cthreads under mach /])
     THREADOBJ="Python/thread.o"],[
     AC_MSG_CHECKING(for --with-pth)
-    AC_ARG_WITH(pth,
-    [  --with-pth                      use GNU pth threading libraries], [
-    AC_MSG_RESULT($withval)
-    AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(HAVE_PTH, 1, [Define if you have GNU PTH threads.])
-    LIBS="-lpth $LIBS"
-    THREADOBJ="Python/thread.o"],[
-    AC_MSG_RESULT(no)
+    AC_ARG_WITH([pth],
+                AC_HELP_STRING(--with-pth, use GNU pth threading libraries),
+                [AC_MSG_RESULT($withval)
+                  AC_DEFINE([WITH_THREAD])
+                  AC_DEFINE([HAVE_PTH], 1,
+                            [Define if you have GNU PTH threads.])
+                  LIBS="-lpth $LIBS"
+                  THREADOBJ="Python/thread.o"],
+	        [AC_MSG_RESULT(no)
 
     # Just looking for pthread_create in libpthread is not enough:
     # on HP/UX, pthread.h renames pthread_create to a different symbol name.
@@ -1374,8 +1389,8 @@ fi
 AH_TEMPLATE(ENABLE_IPV6, [Define if --enable-ipv6 is specified])
 AC_MSG_CHECKING([if --enable-ipv6 is specified])
 AC_ARG_ENABLE(ipv6,
-[  --enable-ipv6                   Enable ipv6 (with ipv4) support
-  --disable-ipv6                  Disable ipv6 support],
+[  --enable-ipv6           Enable ipv6 (with ipv4) support
+  --disable-ipv6          Disable ipv6 support],
 [ case "$enableval" in
   no)
        AC_MSG_RESULT(no)
@@ -1540,7 +1555,7 @@ fi
 # Check for universal newline support
 AC_MSG_CHECKING(for --with-universal-newlines)
 AC_ARG_WITH(universal-newlines,
-[  --with(out)-universal-newlines            disable/enable foreign newlines])
+            AC_HELP_STRING(--with(out)-universal-newlines, disable/enable foreign newlines))
 
 if test -z "$with_universal_newlines"
 then with_universal_newlines="yes"
@@ -1555,7 +1570,7 @@ AC_MSG_RESULT($with_universal_newlines)
 # Check for --with-doc-strings
 AC_MSG_CHECKING(for --with-doc-strings)
 AC_ARG_WITH(doc-strings,
-[  --with(out)-doc-strings         disable/enable documentation strings])
+            AC_HELP_STRING(--with(out)-doc-strings, disable/enable documentation strings))
 
 if test -z "$with_doc_strings"
 then with_doc_strings="yes"
@@ -1570,7 +1585,7 @@ AC_MSG_RESULT($with_doc_strings)
 # Check for Python-specific malloc support
 AC_MSG_CHECKING(for --with-pymalloc)
 AC_ARG_WITH(pymalloc,
-[  --with(out)-pymalloc            disable/enable specialized mallocs])
+            AC_HELP_STRING(--with(out)-pymalloc, disable/enable specialized mallocs))
 
 if test -z "$with_pymalloc"
 then with_pymalloc="yes"
@@ -1585,7 +1600,8 @@ AC_MSG_RESULT($with_pymalloc)
 # Check for --with-wctype-functions
 AC_MSG_CHECKING(for --with-wctype-functions)
 AC_ARG_WITH(wctype-functions, 
-[  --with-wctype-functions         use wctype.h functions], [
+            AC_HELP_STRING(--with-wctype-functions, use wctype.h functions),
+[
 if test "$withval" != no
 then 
   AC_DEFINE(WANT_WCTYPE_FUNCTIONS, 1,
@@ -1602,7 +1618,8 @@ DLINCLDIR=.
 
 AC_MSG_CHECKING(for --with-sgi-dl)
 AC_ARG_WITH(sgi-dl,
-[  --with-sgi-dl=DIRECTORY         IRIX 4 dynamic linking], [
+            AC_HELP_STRING(--with-sgi-dl=DIRECTORY, IRIX 4 dynamic linking),
+[
 AC_MSG_RESULT($withval)
 AC_DEFINE(WITH_SGI_DL, 1,
   [Define if you want to use SGI (IRIX 4) dynamic linking.
@@ -1614,13 +1631,15 @@ DYNLOADFILE="dynload_dl.o"
 dldir=$withval
 if test ! -z "$dldir" -a -d "$dldir"
 then LDFLAGS="$LDFLAGS -L$dldir"
-else AC_ERROR(proper usage is --with-sgi-dl=DIRECTORY)
+else AC_MSG_ERROR([proper usage is --with-sgi-dl=DIRECTORY])
 fi
 DLINCLDIR=${dldir}
 LIBS="$LIBS -ldl -lmld"], AC_MSG_RESULT(no))
 
 AC_MSG_CHECKING(for --with-dl-dld)
-AC_ARG_WITH(dl-dld, [  --with-dl-dld=DL_DIR,DLD_DIR    GNU dynamic linking], [
+AC_ARG_WITH(dl-dld,
+            AC_HELP_STRING(--with-dl-dld=DL_DIR, GNU dynamic linking),
+[
 AC_MSG_RESULT($withval)
 AC_DEFINE(WITH_DL_DLD, 1, 
   [Define if you want to emulate SGI (IRIX 4) dynamic linking.
@@ -1637,7 +1656,7 @@ dldir=`echo "$withval" | sed 's/,.*//'`
 dlddir=`echo "$withval" | sed 's/.*,//'`
 if test ! -z "$dldir" -a -d "$dldir" -a ! -z "$dlddir" -a -d "$dlddir"
 then LDFLAGS="$LDFLAGS -L$dldir -L$dlddir"
-else AC_ERROR(proper usage is --with-dl-dld=DL_DIRECTORY,DLD_DIRECTORY)
+else AC_MSG_ERROR([proper usage is --with-dl-dld=DL_DIRECTORY,DLD_DIRECTORY])
 fi
 DLINCLDIR=${dldir}
 LIBS="$LIBS -ldl -ldld"], AC_MSG_RESULT(no))
@@ -2093,7 +2112,8 @@ AC_CHECK_FUNC(__fpu_control,
 # Check for --with-fpectl
 AC_MSG_CHECKING(for --with-fpectl)
 AC_ARG_WITH(fpectl,
-[  --with-fpectl                   enable SIGFPE catching], [
+            AC_HELP_STRING(--with-fpectl, enable SIGFPE catching),
+[
 if test "$withval" != no
 then 
   AC_DEFINE(WANT_SIGFPE_HANDLER, 1,
@@ -2111,30 +2131,34 @@ BeOS) ;;
 *) LIBM=-lm
 esac
 AC_MSG_CHECKING(for --with-libm=STRING)
-AC_ARG_WITH(libm, [  --with-libm=STRING              math library], [
+AC_ARG_WITH(libm,
+            AC_HELP_STRING(--with-libm=STRING, math library),
+[
 if test "$withval" = no
 then LIBM=
      AC_MSG_RESULT(force LIBM empty)
 elif test "$withval" != yes
 then LIBM=$withval
-     AC_MSG_RESULT(set LIBM=\"$withval\")
-else AC_ERROR(proper usage is --with-libm=STRING)
+     AC_MSG_RESULT(set LIBM="$withval")
+else AC_MSG_ERROR([proper usage is --with-libm=STRING])
 fi],
-[AC_MSG_RESULT(default LIBM=\"$LIBM\")])
+[AC_MSG_RESULT(default LIBM="$LIBM")])
 
 # check for --with-libc=...
 AC_SUBST(LIBC)
 AC_MSG_CHECKING(for --with-libc=STRING)
-AC_ARG_WITH(libc, [  --with-libc=STRING              C library], [
+AC_ARG_WITH(libc,
+            AC_HELP_STRING(--with-libc=STRING, C library),
+[
 if test "$withval" = no
 then LIBC=
      AC_MSG_RESULT(force LIBC empty)
 elif test "$withval" != yes
 then LIBC=$withval
-     AC_MSG_RESULT(set LIBC=\"$withval\")
-else AC_ERROR(proper usage is --with-libc=STRING)
+     AC_MSG_RESULT(set LIBC="$withval")
+else AC_MSG_ERROR([proper usage is --with-libc=STRING])
 fi],
-[AC_MSG_RESULT(default LIBC=\"$LIBC\")])
+[AC_MSG_RESULT(default LIBC="$LIBC")])
 
 # check for hypot() in math library
 LIBS_SAVE=$LIBS
@@ -2187,8 +2211,11 @@ then
 fi
 
 AC_MSG_CHECKING(what type to use for unicode)
+dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_ENABLE(unicode, 
-[  --enable-unicode[=ucs2,ucs4]    Enable Unicode strings (default is yes)],,enable_unicode=yes)
+              AC_HELP_STRING(--enable-unicode@<:@=ucs@<:@24@:>@@:>@, Enable Unicode strings (default is yes)),
+              [],
+              [enable_unicode=yes])
 
 if test $enable_unicode = yes
 then
