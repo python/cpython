@@ -171,33 +171,30 @@ PyEval_ReleaseThread(tstate)
 PyThreadState *
 PyEval_SaveThread()
 {
+	PyThreadState *tstate = PyThreadState_Swap(NULL);
+	if (tstate == NULL)
+		Py_FatalError("PyEval_SaveThread: NULL tstate");
 #ifdef WITH_THREAD
-	if (interpreter_lock) {
-		PyThreadState *tstate = PyThreadState_Swap(NULL);
-		if (tstate == NULL)
-			Py_FatalError("PyEval_SaveThread: NULL tstate");
+	if (interpreter_lock)
 		release_lock(interpreter_lock);
-		return tstate;
-	}
 #endif
-	return NULL;
+	return tstate;
 }
 
 void
 PyEval_RestoreThread(tstate)
 	PyThreadState *tstate;
 {
+	if (tstate == NULL)
+		Py_FatalError("PyEval_RestoreThread: NULL tstate");
 #ifdef WITH_THREAD
 	if (interpreter_lock) {
-		int err;
-		err = errno;
-		if (tstate == NULL)
-			Py_FatalError("PyEval_RestoreThread: NULL tstate");
+		int err = errno;
 		acquire_lock(interpreter_lock, 1);
-		PyThreadState_Swap(tstate);
 		errno = err;
 	}
 #endif
+	PyThreadState_Swap(tstate);
 }
 
 
