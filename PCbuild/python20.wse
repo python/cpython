@@ -36,7 +36,7 @@ item: Global
   Variable Name3=_DOC_
   Variable Description3=The unpacked HTML doc directory.
   Variable Default3=..\html
-  Variable Flags3=00000001
+  Variable Flags3=00001001
   Variable Name4=_SYS_
   Variable Description4=System directory (where to find MSVCRT.DLL)
   Variable Default4=C:\Windows\System
@@ -94,6 +94,7 @@ end
 item: Set Variable
   Variable=GROUP
   Value=Python %PY_VERSION%
+  Flags=10000000
 end
 item: Remark
   Text=MAINDIR is the app directory; user can override.
