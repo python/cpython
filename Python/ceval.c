@@ -2909,7 +2909,7 @@ maybe_call_line_trace(int opcode, Py_tracefunc func, PyObject *obj,
 		 >>   21 LOAD_CONST               0 (None)
 		      24 RETURN_VALUE
 
-	   If a is false, execution will jump to instruction at offset
+	   If 'a' is false, execution will jump to instruction at offset
 	   15 and the co_lnotab will claim that execution has moved to
 	   line 3.  This is at best misleading.  In this case we could
 	   associate the POP_TOP with line 4, but that doesn't make
@@ -2920,21 +2920,32 @@ maybe_call_line_trace(int opcode, Py_tracefunc func, PyObject *obj,
 	   current instruction offset matches the offset given for the
 	   start of a line by the co_lnotab.
 
-	   This also takes care of the situation where a is true.
+	   This also takes care of the situation where 'a' is true.
 	   Execution will jump from instruction offset 12 to offset 21.
 	   Then the co_lnotab would imply that execution has moved to line
 	   5, which is again misleading.
+
+	   Why do we set f_lineno when tracing?  Well, consider the code
+	   above when 'a' is true.  If stepping through this with 'n' in
+	   pdb, you would stop at line 1 with a "call" type event, then
+	   line events on lines 2 and 3, then a "return" type event -- but
+	   you would be shown line 5 during this event.  This is a change
+	   from the behaviour in 2.2 and before, and I've found it
+	   confusing in practice.  By setting and using f_lineno when
+	   tracing, one can report a line number different from that
+	   suggested by f_lasti on this one occasion where it's desirable.
 	*/
 
 	if ((frame->f_lasti < *instr_lb || frame->f_lasti >= *instr_ub)) {
 		PyCodeObject* co = frame->f_code;
-		int size, addr;
+		int size, addr, line;
 		unsigned char* p;
 
 		size = PyString_GET_SIZE(co->co_lnotab) / 2;
 		p = (unsigned char*)PyString_AS_STRING(co->co_lnotab);
 
 		addr = 0;
+		line = co->co_firstlineno;
 
 		/* possible optimization: if f->f_lasti == instr_ub
 		   (likely to be a common case) then we already know
@@ -2951,12 +2962,14 @@ maybe_call_line_trace(int opcode, Py_tracefunc func, PyObject *obj,
 			if (addr + *p > frame->f_lasti)
 				break;
 			addr += *p++;
-			p++;
+			line += *p++;
 			--size;
 		}
-		if (addr == frame->f_lasti)
+		if (addr == frame->f_lasti) {
+			frame->f_lineno = line;
 			call_trace(func, obj, frame, 
 				   PyTrace_LINE, Py_None);
+		}
 		*instr_lb = addr;
 		if (size > 0) {
 			while (--size >= 0) {
