@@ -3471,26 +3471,28 @@ unicode_getitem(PyUnicodeObject *self, int index)
 static long
 unicode_hash(PyUnicodeObject *self)
 {
-    long hash;
-    PyObject *utf8;
+    /* Since Unicode objects compare equal to their ASCII string
+       counterparts, they should use the individual character values
+       as basis for their hash value.  This is needed to assure that
+       strings and Unicode objects behave in the same way as
+       dictionary keys. */
 
-    /* Since Unicode objects compare equal to their UTF-8 string
-       counterparts, they should also use the UTF-8 strings as basis
-       for their hash value. This is needed to assure that strings and
-       Unicode objects behave in the same way as dictionary
-       keys. Unfortunately, this costs some performance and also some
-       memory if the cached UTF-8 representation is not used later
-       on. */
+    register int len;
+    register Py_UNICODE *p;
+    register long x;
+
     if (self->hash != -1)
 	return self->hash;
-    utf8 = _PyUnicode_AsUTF8String((PyObject *)self, NULL);
-    if (utf8 == NULL)
-	return -1;
-    hash = PyObject_Hash(utf8);
-    if (hash == -1)
-	return -1;
-    self->hash = hash;
-    return hash;
+    len = PyUnicode_GET_SIZE(self);
+    p = PyUnicode_AS_UNICODE(self);
+    x = *p << 7;
+    while (--len >= 0)
+	x = (1000003*x) ^ *p++;
+    x ^= PyUnicode_GET_SIZE(self);
+    if (x == -1)
+	x = -2;
+    self->hash = x;
+    return x;
 }
 
 static char index__doc__[] =
