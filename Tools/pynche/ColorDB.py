@@ -164,6 +164,11 @@ def triplet_to_rrggbb(rgbtuple):
     return '#%s%s%s' % tuple(map(hexify, rgbtuple))
 
 
+def triplet_to_pmwrgb(rgbtuple, MAX=256.0):
+    r, g, b = rgbtuple
+    return r/MAX, g/MAX, b/MAX
+
+
 
 if __name__ == '__main__':
     import string
