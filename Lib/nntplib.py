@@ -170,12 +170,12 @@ class NNTP:
 
 	# Process a LIST command.  Return:
 	# - resp: server response if succesful
-	# - list: list of (group, first, last, flag) (strings)
+	# - list: list of (group, last, first, flag) (strings)
 
 	def list(self):
 		resp, list = self.longcmd('LIST')
 		for i in range(len(list)):
-			# Parse lines into "group first last flag"
+			# Parse lines into "group last first flag"
 			list[i] = string.split(list[i])
 		return resp, list
 
