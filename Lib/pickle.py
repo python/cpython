@@ -1,134 +1,29 @@
-"""\
-Pickling Algorithm
-------------------
+"""create portable serialized representations of Python objects.
 
-This module implements a basic but powerful algorithm for "pickling" (a.k.a.
-serializing, marshalling or flattening) nearly arbitrary Python objects.
-This is a more primitive notion than persistency -- although pickle
-reads and writes file objects, it does not handle the issue of naming
-persistent objects, nor the (even more complicated) area of concurrent
-access to persistent objects.  The pickle module can transform a complex
-object into a byte stream and it can transform the byte stream into
-an object with the same internal structure.  The most obvious thing to
-do with these byte streams is to write them onto a file, but it is also
-conceivable to send them across a network or store them in a database.
+See module cPickle for a (much) faster implementation.
+See module copy_reg for a mechanism for registering custom picklers.
 
-Unlike the built-in marshal module, pickle handles the following correctly:
+Classes:
 
-- recursive objects
-- pointer sharing
-- classes and class instances
+    Pickler
+    Unpickler
 
-Pickle is Python-specific.  This has the advantage that there are no
-restrictions imposed by external standards such as CORBA (which probably
-can't represent pointer sharing or recursive objects); however it means
-that non-Python programs may not be able to reconstruct pickled Python
-objects.
+Functions:
 
-Pickle uses a printable ASCII representation.  This is slightly more
-voluminous than a binary representation.  However, small integers actually
-take *less* space when represented as minimal-size decimal strings than
-when represented as 32-bit binary numbers, and strings are only much longer
-if they contain control characters or 8-bit characters.  The big advantage
-of using printable ASCII (and of some other characteristics of pickle's
-representation) is that for debugging or recovery purposes it is possible
-for a human to read the pickled file with a standard text editor.  (I could
-have gone a step further and used a notation like S-expressions, but the
-parser would have been considerably more complicated and slower, and the
-files would probably have become much larger.)
+    dump(object, file)
+    dumps(object) -> string
+    load(file) -> object
+    loads(string) -> object
 
-Pickle doesn't handle code objects, which marshal does.
-I suppose pickle could, and maybe it should, but there's probably no
-great need for it right now (as long as marshal continues to be used
-for reading and writing code objects), and at least this avoids
-the possibility of smuggling Trojan horses into a program.
+Misc variables:
 
-For the benefit of persistency modules written using pickle, it supports
-the notion of a reference to an object outside the pickled data stream.
-Such objects are referenced by a name, which is an arbitrary string of
-printable ASCII characters.  The resolution of such names is not defined
-by the pickle module -- the persistent object module will have to implement
-a method "persistent_load".  To write references to persistent objects,
-the persistent module must define a method "persistent_id" which returns
-either None or the persistent ID of the object.
+    __ version__
+    format_version
+    compatible_formats
 
-There are some restrictions on the pickling of class instances.
-
-First of all, the class must be defined at the top level in a module.
-
-Next, it must normally be possible to create class instances by
-calling the class without arguments.  Usually, this is best
-accomplished by providing default values for all arguments to its
-__init__ method (if it has one).  If this is undesirable, the
-class can define a method __getinitargs__, which should return a
-*tuple* containing the arguments to be passed to the class
-constructor.
-
-Classes can influence how their instances are pickled -- if the class defines
-the method __getstate__, it is called and the return state is pickled
-as the contents for the instance, and if the class defines the
-method __setstate__, it is called with the unpickled state.  (Note
-that these methods can also be used to implement copying class instances.)
-If there is no __getstate__ method, the instance's __dict__
-is pickled.  If there is no __setstate__ method, the pickled object
-must be a dictionary and its items are assigned to the new instance's
-dictionary.  (If a class defines both __getstate__ and __setstate__,
-the state object needn't be a dictionary -- these methods can do what they
-want.)
-
-Note that when class instances are pickled, their class's code and data
-is not pickled along with them.  Only the instance data is pickled.
-This is done on purpose, so you can fix bugs in a class or add methods and
-still load objects that were created with an earlier version of the
-class.  If you plan to have long-lived objects that will see many versions
-of a class, it may be worth to put a version number in the objects so
-that suitable conversions can be made by the class's __setstate__ method.
-
-The interface is as follows:
-
-To pickle an object x onto a file f, open for writing:
-
-    p = pickle.Pickler(f)
-    p.dump(x)
-
-To unpickle an object x from a file f, open for reading:
-
-    u = pickle.Unpickler(f)
-    x = u.load()
-
-The Pickler class only calls the method f.write with a string argument
-(XXX possibly the interface should pass f.write instead of f).
-The Unpickler calls the methods f.read(with an integer argument)
-and f.readline(without argument), both returning a string.
-It is explicitly allowed to pass non-file objects here, as long as they
-have the right methods.
-
-The following types can be pickled:
-
-- None
-- integers, long integers, floating point numbers
-- strings
-- tuples, lists and dictionaries containing only picklable objects
-- class instances whose __dict__ or __setstate__() is picklable
-- classes
-
-Attempts to pickle unpicklable objects will raise an exception
-after having written an unspecified number of bytes to the file argument.
-
-It is possible to make multiple calls to Pickler.dump() or to
-Unpickler.load(), as long as there is a one-to-one correspondence
-between pickler and Unpickler objects and between dump and load calls
-for any pair of corresponding Pickler and Unpicklers.  WARNING: this
-is intended for pickleing multiple objects without intervening modifications
-to the objects or their parts.  If you modify an object and then pickle
-it again using the same Pickler instance, the object is not pickled
-again -- a reference to it is pickled and the Unpickler will return
-the old value, not the modified one.  (XXX There are two problems here:
-(a) detecting changes, and (b) marshalling a minimal set of changes.
-I have no answers.  Garbage Collection may also become a problem here.)
 """
 
-__version__ = "1.8"                     # Code version
+__version__ = "1.9"                     # Code version
 
 from types import *
 from copy_reg import dispatch_table, safe_constructors
@@ -702,11 +597,12 @@ class Unpickler:
         module = self.readline()[:-1]
         name = self.readline()[:-1]
         klass = self.find_class(module, name)
-## 	if (type(klass) is not ClassType):
-##             raise SystemError, "Imported object %s from module %s is " \
-##                                "not a class" % (name, module)
-
-        value = apply(klass, args)
+	if (not args and type(klass) is ClassType and
+	    not hasattr(klass, "__getinitargs__")):
+	    value = _EmptyClass()
+	    value.__class__ = klass
+	else:
+	    value = apply(klass, args)
         self.append(value)
     dispatch[INST] = load_inst
 
@@ -717,7 +613,12 @@ class Unpickler:
         del stack[k + 1]
         args = tuple(stack[k + 1:]) 
         del stack[k:]
-        value = apply(klass, args)
+	if (not args and type(klass) is ClassType and
+	    not hasattr(klass, "__getinitargs__")):
+	    value = _EmptyClass()
+	    value.__class__ = klass
+	else:
+	    value = apply(klass, args)
         self.append(value)
     dispatch[OBJ] = load_obj                
 
@@ -863,6 +764,10 @@ class Unpickler:
         raise STOP, value
     dispatch[STOP] = load_stop
 
+# Helper class for load_inst/load_obj
+
+class _EmptyClass:
+    pass
 
 # Shorthands
 
