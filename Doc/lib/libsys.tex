@@ -369,7 +369,11 @@ else:
   information on the Python profiler.  The system's profile function
   is called similarly to the system's trace function (see
   \function{settrace()}), but it isn't called for each executed line
-  of code (only on call and return and when an exception occurs).
+  of code (only on call and return, but the return event is reported
+  even when an exception has been set).  The function is
+  thread-specific, but there is no way for the profiler to know about
+  context switches between threads, so it does not make sense to use
+  this in the presence of multiple threads.
   Also, its return value is not used, so it can simply return
   \code{None}.
 \end{funcdesc}
@@ -389,7 +393,10 @@ else:
   Set the system's trace function,\index{trace function} which allows
   you to implement a Python source code debugger in Python.  See
   section \ref{debugger-hooks}, ``How It Works,'' in the chapter on
-  the Python debugger.\index{debugger}
+  the Python debugger.\index{debugger}  The function is
+  thread-specific; for a debugger to support multiple threads, it must
+  be registered using \function{settrace()} for each thread being
+  debugged.
 \end{funcdesc}
 
 \begin{datadesc}{stdin}
