@@ -19,6 +19,9 @@ DL_IMPORT(void) PySys_WriteStderr(const char *format, ...);
 extern DL_IMPORT(PyObject *) _PySys_TraceFunc, *_PySys_ProfileFunc;
 extern DL_IMPORT(int) _PySys_CheckInterval;
 
+DL_IMPORT(void) PySys_ResetWarnOptions(void);
+DL_IMPORT(void) PySys_AddWarnOption(char *);
+
 #ifdef __cplusplus
 }
 #endif
