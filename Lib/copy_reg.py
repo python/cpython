@@ -78,9 +78,9 @@ def _reduce(self):
 # don't have this restriction.)  Codes are positive ints; 0 is
 # reserved.
 
-extension_registry = {}                 # key -> code
-inverted_registry = {}                  # code -> key
-extension_cache = {}                    # code -> object
+_extension_registry = {}                # key -> code
+_inverted_registry = {}                 # code -> key
+_extension_cache = {}                   # code -> object
 # Don't ever rebind those names:  cPickle grabs a reference to them when
 # it's initialized, and won't see a rebinding.
 
@@ -90,32 +90,32 @@ def add_extension(module, name, code):
     if not 1 <= code < 0x7fffffff:
         raise ValueError, "code out of range"
     key = (module, name)
-    if (extension_registry.get(key) == code and
-        inverted_registry.get(code) == key):
+    if (_extension_registry.get(key) == code and
+        _inverted_registry.get(code) == key):
         return # Redundant registrations are benign
-    if key in extension_registry:
+    if key in _extension_registry:
         raise ValueError("key %s is already registered with code %s" %
-                         (key, extension_registry[key]))
-    if code in inverted_registry:
+                         (key, _extension_registry[key]))
+    if code in _inverted_registry:
         raise ValueError("code %s is already in use for key %s" %
-                         (code, inverted_registry[code]))
-    extension_registry[key] = code
-    inverted_registry[code] = key
+                         (code, _inverted_registry[code]))
+    _extension_registry[key] = code
+    _inverted_registry[code] = key
 
 def remove_extension(module, name, code):
     """Unregister an extension code.  For testing only."""
     key = (module, name)
-    if (extension_registry.get(key) != code or
-        inverted_registry.get(code) != key):
+    if (_extension_registry.get(key) != code or
+        _inverted_registry.get(code) != key):
         raise ValueError("key %s is not registered with code %s" %
                          (key, code))
-    del extension_registry[key]
-    del inverted_registry[code]
-    if code in extension_cache:
-        del extension_cache[code]
+    del _extension_registry[key]
+    del _inverted_registry[code]
+    if code in _extension_cache:
+        del _extension_cache[code]
 
 def clear_extension_cache():
-    extension_cache.clear()
+    _extension_cache.clear()
 
 # Standard extension code assignments
 
