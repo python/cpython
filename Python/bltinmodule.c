@@ -2003,6 +2003,56 @@ static char vars_doc[] =
 Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.";
 
+static int
+abstract_issubclass(derived, cls, err, first)
+	PyObject *derived;
+	PyObject *cls;
+	char *err;
+	int first;
+{
+	static PyObject *__bases__ = NULL;
+	PyObject *bases;
+	int i, l, n;
+	int r = 0;
+
+	if (__bases__ == NULL) {
+		__bases__ = PyString_FromString("__bases__");
+		if (__bases__ == NULL)
+			return -1;
+	}
+
+	if (first) {
+		bases = PyObject_GetAttr(cls, __bases__);
+		if (bases == NULL || !PyTuple_Check(bases)) {
+		        Py_XDECREF(bases);
+	        	PyErr_SetString(PyExc_TypeError, err);
+			return -1;
+		}
+		Py_DECREF(bases);
+	}
+
+	if (derived == cls)
+		return 1;
+
+	bases = PyObject_GetAttr(derived, __bases__);
+	if (bases == NULL || !PyTuple_Check(bases)) {
+	        Py_XDECREF(bases);
+	        PyErr_SetString(PyExc_TypeError, err);
+		return -1;
+	}
+
+	n = PyTuple_GET_SIZE(bases);
+	for (i = 0; i < n; i++) {
+		r = abstract_issubclass(PyTuple_GET_ITEM(bases, i),
+					cls, err, 0);
+		if (r != 0)
+			break;
+	}
+
+	Py_DECREF(bases);
+
+	return r;
+}
 
 static PyObject *
 builtin_isinstance(self, args)
@@ -2011,27 +2061,49 @@ builtin_isinstance(self, args)
 {
 	PyObject *inst;
 	PyObject *cls;
-	int retval;
+	PyObject *icls;
+	static PyObject *__class__ = NULL;
+	int retval = 0;
 
 	if (!PyArg_ParseTuple(args, "OO", &inst, &cls))
 		return NULL;
-	if (PyType_Check(cls)) {
-		retval = ((PyObject *)(inst->ob_type) == cls);
-	}
-	else {
-		if (!PyClass_Check(cls)) {
-			PyErr_SetString(PyExc_TypeError,
-					"second argument must be a class");
-			return NULL;
-		}
 
-		if (!PyInstance_Check(inst))
-			retval = 0;
-		else {
+        if (PyClass_Check(cls)) {
+		if (PyInstance_Check(inst)) {
 			PyObject *inclass =
 				(PyObject*)((PyInstanceObject*)inst)->in_class;
 			retval = PyClass_IsSubclass(inclass, cls);
 		}
+	}
+	else if (PyType_Check(cls)) {
+		retval = ((PyObject *)(inst->ob_type) == cls);
+	}
+	else if (!PyInstance_Check(inst)) {
+	        if (__class__ == NULL) {
+			__class__ = PyString_FromString("__class__");
+			if (__class__ == NULL)
+				return NULL;
+		}
+		icls = PyObject_GetAttr(inst, __class__);
+		if (icls != NULL) {
+			retval = abstract_issubclass(
+				icls, cls,
+				"second argument must be a class", 
+				1);
+			Py_DECREF(icls);
+			if (retval < 0)
+				return NULL;
+		}
+		else {
+			PyErr_SetString(PyExc_TypeError,
+					"second argument must be a class");
+			return NULL;
+		}
+	}
+        else {
+		PyErr_SetString(PyExc_TypeError,
+				"second argument must be a class");
+		return NULL;
 	}
 	return PyInt_FromLong(retval);
 }
@@ -2054,13 +2126,18 @@ builtin_issubclass(self, args)
 
 	if (!PyArg_ParseTuple(args, "OO", &derived, &cls))
 		return NULL;
+
 	if (!PyClass_Check(derived) || !PyClass_Check(cls)) {
-		PyErr_SetString(PyExc_TypeError, "arguments must be classes");
-		return NULL;
+		retval = abstract_issubclass(
+				derived, cls, "arguments must be classes", 1);
+		if (retval < 0) 
+			return NULL;
 	}
-	/* shortcut */
-	if (!(retval = (derived == cls)))
-		retval = PyClass_IsSubclass(derived, cls);
+	else {
+		/* shortcut */
+	  	if (!(retval = (derived == cls)))
+			retval = PyClass_IsSubclass(derived, cls);
+	}
 
 	return PyInt_FromLong(retval);
 }
