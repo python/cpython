@@ -167,16 +167,16 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(cmp(-1, 1), -1)
         self.assertEqual(cmp(1, -1), 1)
         self.assertEqual(cmp(1, 1), 0)
-        # verify that circular objects are handled
+        # verify that circular objects are not handled
         a = []; a.append(a)
         b = []; b.append(b)
         from UserList import UserList
         c = UserList(); c.append(c)
-        self.assertEqual(cmp(a, b), 0)
-        self.assertEqual(cmp(b, c), 0)
-        self.assertEqual(cmp(c, a), 0)
-        self.assertEqual(cmp(a, c), 0)
-        # okay, now break the cycles
+        self.assertRaises(RuntimeError, cmp, a, b)
+        self.assertRaises(RuntimeError, cmp, b, c)
+        self.assertRaises(RuntimeError, cmp, c, a)
+        self.assertRaises(RuntimeError, cmp, a, c)
+       # okay, now break the cycles
         a.pop(); b.pop(); c.pop()
         self.assertRaises(TypeError, cmp)
 

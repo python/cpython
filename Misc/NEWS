@@ -47,6 +47,10 @@ Core and builtins
 - obj.__contains__() now returns True/False instead of 1/0.  SF patch
   820195.
 
+- Python no longer tries to be smart about recursive comparisons.
+  When comparing containers with cyclic references to themselves it
+  will now just hit the recursion limit.  See SF patch 825639.
+
 Extension modules
 -----------------
 

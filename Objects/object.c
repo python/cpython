@@ -740,120 +740,6 @@ do_cmp(PyObject *v, PyObject *w)
 	return default_3way_compare(v, w);
 }
 
-/* compare_nesting is incremented before calling compare (for
-   some types) and decremented on exit.  If the count exceeds the
-   nesting limit, enable code to detect circular data structures.
-
-   This is a tunable parameter that should only affect the performance
-   of comparisons, nothing else.  Setting it high makes comparing deeply
-   nested non-cyclical data structures faster, but makes comparing cyclical
-   data structures slower.
-*/
-#define NESTING_LIMIT 20
-
-static int compare_nesting = 0;
-
-static PyObject*
-get_inprogress_dict(void)
-{
-	static PyObject *key;
-	PyObject *tstate_dict, *inprogress;
-
-	if (key == NULL) {
-		key = PyString_InternFromString("cmp_state");
-		if (key == NULL)
-			return NULL;
-	}
-
-	tstate_dict = PyThreadState_GetDict();
-	if (tstate_dict == NULL) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-
-	inprogress = PyDict_GetItem(tstate_dict, key);
-	if (inprogress == NULL) {
-		inprogress = PyDict_New();
-		if (inprogress == NULL)
-			return NULL;
-		if (PyDict_SetItem(tstate_dict, key, inprogress) == -1) {
-		    Py_DECREF(inprogress);
-		    return NULL;
-		}
-		Py_DECREF(inprogress);
-	}
-
-	return inprogress;
-}
-
-/* If the comparison "v op w" is already in progress in this thread, returns
- * a borrowed reference to Py_None (the caller must not decref).
- * If it's not already in progress, returns "a token" which must eventually
- * be passed to delete_token().  The caller must not decref this either
- * (delete_token decrefs it).  The token must not survive beyond any point
- * where v or w may die.
- * If an error occurs (out-of-memory), returns NULL.
- */
-static PyObject *
-check_recursion(PyObject *v, PyObject *w, int op)
-{
-	PyObject *inprogress;
-	PyObject *token;
-	Py_uintptr_t iv = (Py_uintptr_t)v;
-	Py_uintptr_t iw = (Py_uintptr_t)w;
-	PyObject *x, *y, *z;
-
-	inprogress = get_inprogress_dict();
-	if (inprogress == NULL)
-		return NULL;
-
-	token = PyTuple_New(3);
-	if (token == NULL)
-		return NULL;
-
-	if (iv <= iw) {
-		PyTuple_SET_ITEM(token, 0, x = PyLong_FromVoidPtr((void *)v));
-		PyTuple_SET_ITEM(token, 1, y = PyLong_FromVoidPtr((void *)w));
-		if (op >= 0)
-			op = swapped_op[op];
-	} else {
-		PyTuple_SET_ITEM(token, 0, x = PyLong_FromVoidPtr((void *)w));
-		PyTuple_SET_ITEM(token, 1, y = PyLong_FromVoidPtr((void *)v));
-	}
-	PyTuple_SET_ITEM(token, 2, z = PyInt_FromLong((long)op));
-	if (x == NULL || y == NULL || z == NULL) {
-		Py_DECREF(token);
-		return NULL;
-	}
-
-	if (PyDict_GetItem(inprogress, token) != NULL) {
-		Py_DECREF(token);
-		return Py_None; /* Without INCREF! */
-	}
-
-	if (PyDict_SetItem(inprogress, token, token) < 0) {
-		Py_DECREF(token);
-		return NULL;
-	}
-
-	return token;
-}
-
-static void
-delete_token(PyObject *token)
-{
-	PyObject *inprogress;
-
-	if (token == NULL || token == Py_None)
-		return;
-	inprogress = get_inprogress_dict();
-	if (inprogress == NULL)
-		PyErr_Clear();
-	else
-		PyDict_DelItem(inprogress, token);
-	Py_DECREF(token);
-}
-
 /* Compare v to w.  Return
    -1 if v <  w or exception (PyErr_Occurred() true in latter case).
     0 if v == w.
@@ -867,12 +753,6 @@ PyObject_Compare(PyObject *v, PyObject *w)
 	PyTypeObject *vtp;
 	int result;
 
-#if defined(USE_STACKCHECK)
-	if (PyOS_CheckStack()) {
-		PyErr_SetString(PyExc_MemoryError, "Stack overflow");
-		return -1;
-	}
-#endif
 	if (v == NULL || w == NULL) {
 		PyErr_BadInternalCall();
 		return -1;
@@ -880,31 +760,10 @@ PyObject_Compare(PyObject *v, PyObject *w)
 	if (v == w)
 		return 0;
 	vtp = v->ob_type;
-	compare_nesting++;
-	if (compare_nesting > NESTING_LIMIT &&
-	    (vtp->tp_as_mapping || vtp->tp_as_sequence) &&
-	    !PyString_CheckExact(v) &&
-	    !PyTuple_CheckExact(v)) {
-		/* try to detect circular data structures */
-		PyObject *token = check_recursion(v, w, -1);
-
-		if (token == NULL) {
-			result = -1;
-		}
-		else if (token == Py_None) {
-			/* already comparing these objects.  assume
-			   they're equal until shown otherwise */
-                        result = 0;
-		}
-		else {
-			result = do_cmp(v, w);
-			delete_token(token);
-		}
-	}
-	else {
-		result = do_cmp(v, w);
-	}
-	compare_nesting--;
+	if (Py_EnterRecursiveCall(" in cmp"))
+		return -1;
+	result = do_cmp(v, w);
+	Py_LeaveRecursiveCall();
 	return result < 0 ? -1 : result;
 }
 
@@ -975,41 +834,10 @@ PyObject_RichCompare(PyObject *v, PyObject *w, int op)
 	PyObject *res;
 
 	assert(Py_LT <= op && op <= Py_GE);
+	if (Py_EnterRecursiveCall(" in cmp"))
+		return NULL;
 
-	compare_nesting++;
-	if (compare_nesting > NESTING_LIMIT &&
-	    (v->ob_type->tp_as_mapping || v->ob_type->tp_as_sequence) &&
-	    !PyString_CheckExact(v) &&
-	    !PyTuple_CheckExact(v)) {
-		/* try to detect circular data structures */
-		PyObject *token = check_recursion(v, w, op);
-		if (token == NULL) {
-			res = NULL;
-			goto Done;
-		}
-		else if (token == Py_None) {
-			/* already comparing these objects with this operator.
-			   assume they're equal until shown otherwise */
-			if (op == Py_EQ)
-				res = Py_True;
-			else if (op == Py_NE)
-				res = Py_False;
-			else {
-				PyErr_SetString(PyExc_ValueError,
-					"can't order recursive values");
-				res = NULL;
-			}
-			Py_XINCREF(res);
-		}
-		else {
-			res = do_richcmp(v, w, op);
-			delete_token(token);
-		}
-		goto Done;
-	}
-
-	/* No nesting extremism.
-	   If the types are equal, and not old-style instances, try to
+	/* If the types are equal, and not old-style instances, try to
 	   get out cheap (don't bother with coercions etc.). */
 	if (v->ob_type == w->ob_type && !PyInstance_Check(v)) {
 		cmpfunc fcmp;
@@ -1041,7 +869,7 @@ PyObject_RichCompare(PyObject *v, PyObject *w, int op)
 	/* Fast path not taken, or couldn't deliver a useful result. */
 	res = do_richcmp(v, w, op);
 Done:
-	compare_nesting--;
+	Py_LeaveRecursiveCall();
 	return res;
 }
 
