@@ -17,11 +17,11 @@ script = """
  (
         set %(x)s
         sleep 2
-        kill -5 %(pid)d
+        kill -HUP %(pid)d
         sleep 2
-        kill -2 %(pid)d
+        kill -USR1 %(pid)d
         sleep 2
-        kill -3 %(pid)d
+        kill -USR2 %(pid)d
  ) &
 """ % vars()
 
@@ -37,29 +37,36 @@ def handlerB(*args):
     raise HandlerBCalled, args
 
 signal.alarm(20)                        # Entire test lasts at most 20 sec.
-signal.signal(5, handlerA)
-signal.signal(2, handlerB)
-signal.signal(3, signal.SIG_IGN)
-signal.signal(signal.SIGALRM, signal.default_int_handler)
-
-os.system(script)
-
-print "starting pause() loop..."
+hup = signal.signal(signal.SIGHUP, handlerA)
+usr1 = signal.signal(signal.SIGUSR1, handlerB)
+usr2 = signal.signal(signal.SIGUSR2, signal.SIG_IGN)
+alrm = signal.signal(signal.SIGALRM, signal.default_int_handler)
 
 try:
-    while 1:
-        if verbose:
-            print "call pause()..."
-        try:
-            signal.pause()
-            if verbose:
-                print "pause() returned"
-        except HandlerBCalled:
-            if verbose:
-                print "HandlerBCalled exception caught"
-            else:
-                pass
+    os.system(script)
 
-except KeyboardInterrupt:
-    if verbose:
-        print "KeyboardInterrupt (assume the alarm() went off)"
+    print "starting pause() loop..."
+
+    try:
+        while 1:
+            if verbose:
+                print "call pause()..."
+            try:
+                signal.pause()
+                if verbose:
+                    print "pause() returned"
+            except HandlerBCalled:
+                if verbose:
+                    print "HandlerBCalled exception caught"
+                else:
+                    pass
+
+    except KeyboardInterrupt:
+        if verbose:
+            print "KeyboardInterrupt (assume the alarm() went off)"
+
+finally:
+    signal.signal(signal.SIGHUP, hup)
+    signal.signal(signal.SIGUSR1, usr1)
+    signal.signal(signal.SIGUSR2, usr2)
+    signal.signal(signal.SIGALRM, alrm)
