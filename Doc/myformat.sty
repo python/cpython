@@ -2,6 +2,11 @@
 % myformat.sty for the Python doc  [updated to work with Latex2e]
 %
 
+\NeedsTeXFormat{LaTeX2e}[1995/12/01]
+\ProvidesPackage{myformat}
+             [1998/01/11 $Revision$
+                 LaTeX package (Python manual markup)]
+
 % Increase printable page size (copied from fullpage.sty)
 \topmargin 0pt
 \advance \topmargin by -\headheight
@@ -98,9 +103,6 @@
 \index{#4!#1 #2 #3}
 }
 
-% Index an Internet RFC
-\newcommand{\rfcindex}[1]{\index{RFC!#1}}
-
 % Command to generate a reference to a function, statement, keyword, operator
 \newcommand{\stindex}[1]{\indexii{statement}{#1@{\idxcode{#1}}}}
 \newcommand{\opindex}[1]{\indexii{operator}{#1@{\idxcode{#1}}}}
@@ -128,6 +130,7 @@
 
 % Additional string for an index entry
 \newcommand{\indexsubitem}{}
+\newcommand{\setindexsubitem}[1]{\renewcommand{\indexsubitem}{#1}}
 \newcommand{\ttindex}[1]{\index{#1@{\idxcode{#1}} \indexsubitem}}
 
 
@@ -200,12 +203,13 @@
 \newcommand{\key}[1]{\mbox{\tt #1}}
 \newcommand{\samp}[1]{\mbox{`\code{#1}'}}
 % This weird definition of \var{} allows it to always appear in roman italics,
-% and won't be sans-serif in code fragments.
+% and won't get funky in code fragments when we play around with fonts.
 \newcommand{\var}[1]{\mbox{\textrm{\textit{#1\/}}}}
-\let\file=\samp
 \newcommand{\dfn}[1]{{\em #1\/}}
 \renewcommand{\emph}[1]{{\em #1\/}}
 \newcommand{\strong}[1]{{\bf #1}}
+% let's experiment with a new font:
+\newcommand{\file}[1]{\mbox{`\textsf{#1}'}}
 
 \newcommand{\varvars}[1]{{\def\,{\/{\char`\,}}\var{#1}}}
 
@@ -231,7 +235,7 @@
 \let\constant=\code
 
 \newcommand{\manpage}[2]{{\emph{#1}(#2)}}
-\newcommand{\rfc}[1]{RFC #1\rfcindex{#1}}
+\newcommand{\rfc}[1]{RFC #1\index{RFC!RFC #1}}
 \let\email=\code
 \let\url=\code
 
@@ -263,7 +267,7 @@
 % flip around, especially with multiple indexes.
 %
 \let\OldTheindex=\theindex
-\def\theindex{%
+\renewcommand{\theindex}{%
   \OldTheindex%
   \addcontentsline{toc}{chapter}{\indexname}%
 }
@@ -273,7 +277,7 @@
 % 'openright' option is used.
 %
 \let\OldEndAbstract=\endabstract
-\def\endabstract{
+\renewcommand{\endabstract}{
   \if@openright
     \ifodd\value{page}
       \typeout{Adding blank page after the abstract.}
@@ -289,20 +293,131 @@
 % individual document files.
 %
 \let\OldTableofcontents=\tableofcontents
-\def\tableofcontents{%
-  \pagebreak
-  \pagestyle{plain}
-  {
-  \parskip = 0mm
-  \OldTableofcontents
-  \if@openright
-    \ifodd\value{page}
-      \typeout{Adding blank page after the table of contents.}
-      \pagebreak\hspace{0pt}
-    \fi
-  \fi
+\renewcommand{\tableofcontents}[0]{%
+  \setcounter{page}{1}%
+  \pagebreak%
+  \pagestyle{plain}%
+  {%
+  \parskip = 0mm%
+  \OldTableofcontents%
+  \if@openright%
+    \ifodd\value{page}%
+      \typeout{Adding blank page after the table of contents.}%
+      \pagebreak\hspace{0pt}%
+    \fi%
+  \fi%
+  }%
+  \pagebreak%
+}
+
+% Allow the release number to be specified independently of the \date{}.  This
+% allows the date to reflect the document's date and release to specify the
+% Python release that is documented.
+\newcommand{\@release}{}
+\newcommand{\version}{}
+\newcommand{\releasename}{Release}
+\newcommand{\release}[1]{%
+  \renewcommand{\@release}{\releasename\space\version}%
+  \renewcommand{\version}{#1}%
+}
+
+% Allow specification of the author's address separately from the author's
+% name.  This can be used to format them differently, which is a good thing.
+\newcommand{\@authoraddress}{}
+\newcommand{\authoraddress}[1]{\renewcommand{\@authoraddress}{#1}}
+
+% Change the title page to look a bit better, and fit in with the fncychap
+% ``Bjarne'' style a bit better.
+\renewcommand{\maketitle}{\begin{titlepage}%
+  \let\footnotesize\small
+  \let\footnoterule\relax
+  \@ifundefined{ChTitleVar}{}{%
+    \mghrulefill{\RW}}%
+  \begin{flushright}%
+    {\huge \@title \par}%
+    {\em\LARGE \@release \par}
+    \vfill
+    {\LARGE \@author \par}
+    \vfill\vfill
+    {\large
+     \@date \par
+     \vskip 3em
+     \@authoraddress \par
+    }%
+  \end{flushright}%\par
+  \@thanks
+  \end{titlepage}%
+  \setcounter{footnote}{0}%
+  \let\thanks\relax\let\maketitle\relax
+  \gdef\@thanks{}\gdef\@author{}\gdef\@title{}
+}
+
+% ``minitoc'' support; works fairly well but not all chapters do well with it.
+% Has some weird side effects that I haven't tracked down; don't use it for
+% real at this time.
+%
+% To enable, uncomment the following line only:
+%\RequirePackage{minitoc}
+
+% Leave the rest as-is:
+\newif\if@minitocprinted
+\newcommand{\suppressminitoc}{\@minitocprintedtrue}
+\@ifundefined{minitoc}{
+  % allow \minitoc to be used even if the package hasn't been loaded.
+  \newcommand{\minitoc}{\@minitocprintedtrue}
+}{
+  \dominitoc
+  \newif\if@firstsection
+  \let\OldChapter=\chapter
+  \let\OldSection=\section
+  \let\OldMinitoc=\minitoc
+  % This will only include the minitoc once per chapter
+  \renewcommand{\minitoc}{%
+    \if@minitocprinted{}\else%
+      \OldMinitoc%
+      \@minitocprintedtrue%
+    \fi%
   }
-  \pagebreak
+  % This includes a minitoc before the first \section{}, if it hasn't
+  % already been printed using an explicit \minitoc call.
+  \newcommand{\NewSection}[1]{%
+    \if@firstsection%
+      \if@minitocprinted{}\else%
+        \vskip 15pt%
+        \minitoc%
+        \@firstsectionfalse%
+      \fi%
+    \fi%
+    \OldSection{#1}%
+  }
+  % Reset the flags for each chaper to let the automatic stuff work.
+  \newcommand{\NewChapter}[1]{%
+    \OldChapter{#1}%
+    \@firstsectiontrue%
+    \@minitocprintedfalse%
+  }
+  \let\chapter=\NewChapter
+  \let\section=\NewSection
+  \typeout{Including mini Tables of Contents in each chapter.}
+}
+
+% This sets up the fancy chapter headings that make the documents look at
+% least a little better than the usual LaTeX output.
+%
+\RequirePackage[Bjarne]{fncychap}
+\@ifundefined{ChTitleVar}{}{
+  \ChTitleVar{\raggedleft \rm\Huge}
+  % This creates chapter heads without the leading \vspace*{}:
+  \def\@makechapterhead#1{%
+    {\parindent \z@ \raggedright \normalfont
+      \ifnum \c@secnumdepth >\m@ne
+        \DOCH
+      \fi
+      \interlinepenalty\@M
+      \DOTI{#1}
+    }
+  }
+  \typeout{Using fancy chapter headings.}
 }
 
 % Uncomment the following line to use a PostScript font instead of bitmaps:
