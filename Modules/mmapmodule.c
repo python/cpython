@@ -118,7 +118,7 @@ mmap_read_byte_method (mmap_object * self,
 	char value;
 	char * where = (self->data+self->pos);
 	CHECK_VALID(NULL);
-	if ((where >= 0) && (where < (self->data+self->size))) {
+	if ((where >= (char *)0) && (where < (self->data+self->size))) {
 		value = (char) *(where);
 		self->pos += 1;
 		return Py_BuildValue("c", (char) *(where));
