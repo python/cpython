@@ -1,6 +1,9 @@
 # Complex numbers
 # ---------------
 
+# [Now that Python has a complex data type built-in, this is not very
+# useful, but it's still a nice example class]
+
 # This module represents complex numbers as instances of the class Complex.
 # A Complex instance z has two data attribues, z.re (the real part) and z.im
 # (the imaginary part).  In fact, z.re and z.im can have any value -- all
@@ -15,6 +18,7 @@
 # PolarToComplex([r [,phi [,fullcircle]]]) ->
 #	the complex number z for which r == z.radius() and phi == z.angle(fullcircle)
 #	(r and phi default to 0)
+# exp(z) -> returns the complex exponential of z. Equivalent to pow(math.e,z).
 #
 # Complex numbers have the following methods:
 # z.abs() -> absolute value of z
@@ -202,7 +206,9 @@ class Complex:
 		if z is not None:
 			raise TypeError, 'Complex does not support ternary pow()'
 		if IsComplex(n):
-			if n.im: raise TypeError, 'Complex to the Complex power'
+			if n.im: 
+			  if self.im: raise TypeError, 'Complex to the Complex power'
+			  else: return exp(math.log(self.re)*n)
 			n = n.re
 		r = pow(self.abs(), n)
 		phi = n*self.angle()
@@ -211,6 +217,10 @@ class Complex:
 	def __rpow__(self, base):
 		base = ToComplex(base)
 		return pow(base, self)
+		
+def exp(z):
+	r = math.exp(z.re)
+	return Complex(math.cos(z.im)*r,math.sin(z.im)*r)
 
 
 def checkop(expr, a, b, value, fuzz = 1e-6):
