@@ -297,9 +297,9 @@ PyObject *PyUnicode_FromUnicode(const Py_UNICODE *u,
 	    unicode = unicode_latin1[*u];
 	    if (!unicode) {
 		unicode = _PyUnicode_New(1);
-		unicode->str[0] = *u;
 		if (!unicode)
 		    return NULL;
+		unicode->str[0] = *u;
 		unicode_latin1[*u] = unicode;
 	    }
 	    Py_INCREF(unicode);
