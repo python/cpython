@@ -360,7 +360,7 @@ static void
 PyCursesWindow_Dealloc(PyCursesWindowObject *wo)
 {
   if (wo->win != stdscr) delwin(wo->win);
-  PyMem_DEL(wo);
+  PyObject_DEL(wo);
 }
 
 /* Addch, Addstr, Addnstr */
