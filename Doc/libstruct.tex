@@ -61,6 +61,9 @@ and Python values should be obvious given their types:
 A format character may be preceded by an integral repeat count; e.g.\
 the format string \code{'4h'} means exactly the same as \code{'hhhh'}.
 
+Whitespace characters between formats are ignored; a count and its
+format must not contain whitespace though.
+
 For the \code{'s'} format character, the count is interpreted as the
 size of the string, not a repeat count like for the other format
 characters; e.g. \code{'10s'} means a single 10-byte string, while

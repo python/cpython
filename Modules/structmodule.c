@@ -38,6 +38,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "mymath.h"
 
 #include <limits.h>
+#include <ctype.h>
 
 
 /* Exception */
@@ -981,6 +982,8 @@ calcsize(fmt, f)
 	s = fmt;
 	size = 0;
 	while ((c = *s++) != '\0') {
+		if (isspace(c))
+			continue;
 		if ('0' <= c && c <= '9') {
 			num = c - '0';
 			while ('0' <= (c = *s++) && c <= '9') {
@@ -1075,6 +1078,8 @@ struct_pack(self, args)
 	res = restart = PyString_AsString(result);
 
 	while ((c = *s++) != '\0') {
+		if (isspace(c))
+			continue;
 		if ('0' <= c && c <= '9') {
 			num = c - '0';
 			while ('0' <= (c = *s++) && c <= '9')
@@ -1179,6 +1184,8 @@ struct_unpack(self, args)
 	str = start;
 	s = fmt;
 	while ((c = *s++) != '\0') {
+		if (isspace(c))
+			continue;
 		if ('0' <= c && c <= '9') {
 			num = c - '0';
 			while ('0' <= (c = *s++) && c <= '9')
