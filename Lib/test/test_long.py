@@ -296,8 +296,8 @@ def test_auto_overflow():
             checkit(x, '*', y)
 
             if y:
-                expected = longx // longy
-                got = x // y
+                expected = longx / longy
+                got = x / y
                 checkit(x, '/', y)
 
                 expected = longx // longy
