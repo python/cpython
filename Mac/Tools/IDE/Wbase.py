@@ -8,6 +8,10 @@ class WidgetsError(Exception): pass
 DEBUG = 0
 
 
+def _intRect((l, t, r, b)):
+	return (int(l), int(t), int(r), int(b))
+
+
 class Widget:
 	
 	"""Base class for all widgets."""
@@ -115,7 +119,7 @@ class Widget:
 			# the bounds relative to our parent widget.
 			width = pr - pl
 			height = pb - pt
-			self._bounds = Qd.OffsetRect(self._possize(width, height), pl, pt)
+			self._bounds = Qd.OffsetRect(_intRect(self._possize(width, height)), pl, pt)
 		else:
 			# _possize must be a 4-tuple. This is where the algorithm by Peter Kriens and
 			# Petr van Blokland kicks in. (*** Parts of this algorithm are applied for 
@@ -571,7 +575,7 @@ class HorizontalPanes(Widget):
 		# track mouse --- XXX  move to separate method?
 		Qd.PenMode(QuickDraw.srcXor)
 		Qd.PenPat(Qd.GetQDGlobalsGray())
-		Qd.PaintRect(rect)
+		Qd.PaintRect(_intRect(rect))
 		lastpos = None
 		while Evt.Button():
 			pos = orgpos - orgmouse + Evt.GetMouse()[self._direction]
@@ -580,17 +584,17 @@ class HorizontalPanes(Widget):
 			if pos == lastpos:
 				continue
 			Qd.PenPat(Qd.GetQDGlobalsGray())
-			Qd.PaintRect(rect)
+			Qd.PaintRect(_intRect(rect))
 			if self._direction:
 				rect = l, pos - 1, r, pos
 			else:
 				rect = pos - 1, t, pos, b
 			Qd.PenPat(Qd.GetQDGlobalsGray())
-			Qd.PaintRect(rect)
+			Qd.PaintRect(_intRect(rect))
 			lastpos = pos
 			self._parentwindow.wid.GetWindowPort().QDFlushPortBuffer(None)
 			Evt.WaitNextEvent(0, 3)
-		Qd.PaintRect(rect)
+		Qd.PaintRect(_intRect(rect))
 		Qd.PenNormal()
 		SetCursor("watch")
 		
