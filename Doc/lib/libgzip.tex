@@ -41,8 +41,8 @@ The \var{mode} argument can be any of \code{'r'}, \code{'rb'},
 \code{'a'}, \code{'ab'}, \code{'w'}, or \code{'wb'}, depending on
 whether the file will be read or written.  The default is the mode of
 \var{fileobj} if discernible; otherwise, the default is \code{'rb'}.
-Be aware that only the \code{'rb'}, \code{'ab'}, and \code{'wb'}
-values should be used for cross-platform portability.
+If not given, the 'b' flag will be added to the mode to ensure the
+file is opened in binary mode for cross-platform portability.
 
 The \var{compresslevel} argument is an integer from \code{1} to
 \code{9} controlling the level of compression; \code{1} is fastest and
