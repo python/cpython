@@ -83,11 +83,12 @@ module_dealloc(m)
 	free((char *)m);
 }
 
+/* ARGSUSED */
 static int
 module_print(m, fp, flags)
 	moduleobject *m;
 	FILE *fp;
-	int flags;
+	int flags; /* Not used but required by interface */
 {
 	fprintf(fp, "<module '%s'>", getstringvalue(m->md_name));
 	return 0;
