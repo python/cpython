@@ -877,13 +877,14 @@ static int mymemcnt(mem, len, pat, pat_len)
        the new string allocated locally, or
        NULL if an error occurred.
 */
-static char *mymemreplace(str, len, pat, pat_len, sub, sub_len, out_len)
+static char *mymemreplace(str, len, pat, pat_len, sub, sub_len, count, out_len)
 	char *str;
 	int len;     /* input string  */
 	char *pat;
 	int pat_len; /* pattern string to find */
 	char *sub;
 	int sub_len; /* substitution string */
+	int count;   /* number of replacements, 0 == all */
 	int *out_len;
 
 {
@@ -896,6 +897,8 @@ static char *mymemreplace(str, len, pat, pat_len, sub, sub_len, out_len)
 
 	/* find length of output string */
 	nfound = mymemcnt(str, len, pat, pat_len);
+	if (count > 0)
+		nfound = nfound > count ? count : nfound;
 	if (nfound == 0)
 		goto return_same;
 	new_len = len + nfound*(sub_len - pat_len);
@@ -921,6 +924,9 @@ static char *mymemreplace(str, len, pat, pat_len, sub, sub_len, out_len)
 		new_s += offset; /* move new_s to dest for sub string */
 		memcpy(new_s, sub, sub_len); /* copy substring into new_s */
 		new_s += sub_len; /* offset new_s past sub string */
+
+		/* break when we've done count replacements */
+		if (--count == 0) break;
 	}
 	/* copy any remaining values into output string */
 	if (len > 0)
@@ -940,12 +946,14 @@ strop_replace(self, args)
 {
 	char *str, *pat,*sub,*new_s;
 	int len,pat_len,sub_len,out_len;
+	int count = 0;
 	PyObject *new;
 
-	if (!PyArg_ParseTuple(args, "s#s#s#",
-			      &str, &len, &pat, &pat_len, &sub, &sub_len))
+	if (!PyArg_ParseTuple(args, "s#s#s#|i",
+			      &str, &len, &pat, &pat_len, &sub, &sub_len,
+			      &count))
 		return NULL;
-	new_s = mymemreplace(str,len,pat,pat_len,sub,sub_len,&out_len);
+	new_s = mymemreplace(str,len,pat,pat_len,sub,sub_len,count,&out_len);
 	if (new_s == NULL) {
 		PyErr_NoMemory();
 		return NULL;
