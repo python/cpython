@@ -1029,10 +1029,10 @@ then
 	NetBSD*) LDSHARED="cc -shared ${LDFLAGS}";;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
-		then LDSHARED="$(CC) -shared"
-		else LDSHARED="$(CC) -G"
+		then LDSHARED='$(CC) -shared'
+		else LDSHARED='$(CC) -G'
 		fi;;
-	SCO_SV*) LDSHARED="$(CC) -Wl,-G,-Bexport";;
+	SCO_SV*) LDSHARED='$(CC) -Wl,-G,-Bexport';;
 	Monterey*) LDSHARED="cc -G -dy -Bdynamic -Bexport -L/usr/lib/ia64l64";;
 	CYGWIN*) LDSHARED="gcc -shared -Wl,--enable-auto-image-base";;
 	atheos*) LDSHARED="gcc -shared";;
