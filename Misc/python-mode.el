@@ -25,56 +25,43 @@
 ;; subsequently left the net; in 1995, Barry Warsaw inherited the
 ;; mode and is the current maintainer.
 
-;; At some point this mode will undergo a rewrite to bring it more in
-;; line with GNU Emacs Lisp coding standards, and to wax all the Emacs
-;; 18 support.  But all in all, the mode works exceedingly well, and
-;; I've simply been tweaking it as I go along.  Ain't it wonderful
-;; that Python has a much more sane syntax than C? (or <shudder> C++?!
-;; :-).  I can say that; I maintain CC Mode!
+;; Note: this version of python-mode.el is no longer compatible with
+;; Emacs 18.  For a gabazillion reasons, I highly recommend upgrading
+;; to X/Emacs 19 or X/Emacs 20.  For older versions of the 19 series,
+;; you may need to acquire the Custom library.
 
-;; The following statements, placed in your .emacs file or
-;; site-init.el, will cause this file to be autoloaded, and
-;; python-mode invoked, when visiting .py files (assuming this file is
-;; in your load-path):
+;; python-mode.el is currently distributed with XEmacs 19 and XEmacs
+;; 20.  Since this file is not GPL'd it is not distributed with Emacs,
+;; but it is compatible with the EOL 19 series and current 20 series
+;; Emacsen.  By default, in XEmacs when you visit a .py file, it is
+;; put in Python mode.  In Emacs, you need to add the following to
+;; your .emacs file (you don't need this for XEmacs):
 ;;
-;;	(autoload 'python-mode "python-mode" "Python editing mode." t)
-;;	(setq auto-mode-alist
-;;	      (cons '("\\.py$" . python-mode) auto-mode-alist))
+;;     (autoload 'python-mode "python-mode" "Python editing mode." t)
+;;     (setq auto-mode-alist
+;;	     (cons '("\\.py$" . python-mode) auto-mode-alist))
+;;     (setq interpreter-mode-alist
+;;           (cons '("python" . python-mode) interpreter-mode-alist))
 ;;
+;; Assuming python-mode.el is on your load-path, it will be invoked
+;; when you visit a .py file, or a file with a first line that looks
+;; like:
+;;
+;;   #! /usr/bin/env python
+
 ;; If you want font-lock support for Python source code (a.k.a. syntax
 ;; coloring, highlighting), add this to your .emacs file:
 ;;
 ;;     (add-hook 'python-mode-hook 'turn-on-font-lock)
 ;;
-;; But you better be sure you're version of Emacs supports
-;; font-lock-mode!  As of this writing, the latest Emacs and XEmacs
-;; 19's do.
+;; Again, this should not be necessary for XEmacs, since it Just Works.
 
-;; Here's a brief list of recent additions/improvements/changes:
-;;
-;; - Wrapping and indentation within triple quote strings now works.
-;; - `Standard' bug reporting mechanism (use C-c C-b)
-;; - py-mark-block was moved to C-c C-m
-;; - C-c C-v shows you the python-mode version
-;; - a basic python-font-lock-keywords has been added for (X)Emacs 19
-;; - proper interaction with pending-del and del-sel modes.
-;; - Better support for outdenting: py-electric-colon (:) and
-;;   py-indent-line (TAB) improvements; one level of outdentation
-;;   added after a return, raise, break, pass, or continue statement.
-;;   Defeated by prefixing command with C-u.
-;; - New py-electric-colon (:) command for improved outdenting  Also
-;;   py-indent-line (TAB) should handle outdented lines better
-;; - improved (I think) C-c > and C-c <
-;; - py-(forward|backward)-into-nomenclature, not bound, but useful on
-;;   M-f and M-b respectively.
-;; - integration with imenu by Perry A. Stoll <stoll@atr-sw.atr.co.jp>
-;; - py-indent-offset now defaults to 4
-;; - new variable py-honor-comment-indentation
-;; - comment-region bound to C-c #
-;; - py-delete-char obeys numeric arguments
-;; - Small modification to rule for "indenting comment lines", such
-;;   lines must now also be indented less than or equal to the
-;;   indentation of the previous statement.
+;; To submit bug reports, use C-c C-b.  Please include a complete, but
+;; concise code sample and a recipe for reproducing the bug.  Send
+;; suggestions and other comments to python-mode@python.org.
+
+;; When in a Python mode buffer, do a C-h m for more help.  It's
+;; doubtful that a texinfo manual would be very useful.
 
 ;; Here's a brief to do list:
 ;;
@@ -88,14 +75,6 @@
 ;;   left justified. Avoids syntax errors.
 ;; - Add a py-goto-error or some such that would scan an exception in
 ;;   the py-shell buffer, and pop you to that line in the file.
-
-;; If you can think of more things you'd like to see, drop me a line.
-;; If you want to report bugs, use py-submit-bug-report (C-c C-b).
-;;
-;; Note that I only test things on XEmacs 19 and to some degree on
-;; Emacs 19.  If you port stuff to FSF Emacs 19, or Emacs 18, please
-;; send me your patches.  Byte compiler complaints can probably be
-;; safely ignored.
 
 ;;; Code:
 
@@ -157,7 +136,8 @@ indentation hints, unless the comment character is in column zero."
   :type '(choice
 	  (const :tag "Skip all comment lines (fast)" nil)
 	  (const :tag "Single # `sets' indentation for next line" t)
-	  (const :tag "Single # `sets' indentation except at column zero" other)
+	  (const :tag "Single # `sets' indentation except at column zero"
+		 other)
 	  )
   :group 'python)
 
@@ -253,7 +233,7 @@ supported list, along with the values for this variable:
 ")
 
 (defvar python-font-lock-keywords
-  (let* ((keywords '("and"        "break"      "class"
+  (let* ((keywords '("and"        "assert"     "break"      "class"
 		     "continue"   "def"        "del"        "elif"
 		     "else:"      "except"     "except:"    "exec"
 		     "finally:"   "for"        "from"       "global"
@@ -330,18 +310,24 @@ Currently-active file is at the head of the list.")
 	  "\\)"))
   
 
+;; Regexp matching keywords which typically close a block
+(defconst py-block-closing-keywords-re
+  "\\(return\\|raise\\|break\\|continue\\|pass\\)")
+
 ;; Regexp matching lines to not outdent after.
 (defconst py-no-outdent-re
-  (concat "\\(" (mapconcat 'identity
-			   '("try:"
-			     "except\\(\\s +.*\\)?:"
-			     "while\\s +.*:"
-			     "for\\s +.*:"
-			     "if\\s +.*:"
-			     "elif\\s +.*:"
-			     "\\(return\\|break\\|raise\\|continue\\)[ \t\n]"
-			     )
-			   "\\|")
+  (concat
+   "\\("
+   (mapconcat 'identity
+	      (list "try:"
+		    "except\\(\\s +.*\\)?:"
+		    "while\\s +.*:"
+		    "for\\s +.*:"
+		    "if\\s +.*:"
+		    "elif\\s +.*:"
+		    (concat py-block-closing-keywords-re "[ \t\n]")
+		    )
+	      "\\|")
 	  "\\)"))
 
 ;; Regexp matching a function, method or variable assignment.  If you
@@ -903,7 +889,7 @@ filter."
   (switch-to-buffer-other-window (make-comint "Python" py-python-command))
   (make-local-variable 'comint-prompt-regexp)
   (setq comint-prompt-regexp "^>>> \\|^[.][.][.] ")
-  (set-process-filter (get-buffer-process (current-buffer)) 'py-process-filter)
+  (set-process-filter (get-buffer-process (current-buffer)) nil)
   (set-syntax-table py-mode-syntax-table)
   (local-set-key [tab] 'self-insert-command))
 
@@ -940,11 +926,17 @@ practice, unless you're trying to be a jerk <grin>.
 
 See the `\\[py-shell]' docs for additional warnings."
   (interactive "r")
-  (or (< start end) (error "Region is empty"))
+  (or (< start end)
+      (error "Region is empty"))
   (let ((pyproc (get-process "Python"))
 	fname)
     (if (null pyproc)
-	(shell-command-on-region start end py-python-command)
+	(let ((outbuf "*Python Output*"))
+	  (shell-command-on-region start end py-python-command outbuf)
+	  (save-excursion
+	    (set-buffer outbuf)
+	    ;; TBD: ???
+	    (goto-char (point-max))))
       ;; else feed it thru a temp file
       (setq fname (py-make-temp-name))
       (write-region start end fname nil 'no-msg)
@@ -2248,10 +2240,7 @@ local bindings to py-newline-and-indent."))
       (if (and (not (zerop (car state)))
 	       (not (eobp)))
 	  (progn
-	    (parse-partial-sexp (point) (point-max)
-				(if py-parse-partial-sexp-works-p
-				    0 (- 0 (car state)))
-				nil state)
+	    (parse-partial-sexp (point) (point-max) 0 nil state)
 	    (forward-line 1))))))
 
 ;; t iff statement opens a block == iff it ends with a colon that's
@@ -2290,7 +2279,7 @@ local bindings to py-newline-and-indent."))
   (let ((here (point)))
     (back-to-indentation)
     (prog1
-	(looking-at "\\(return\\|raise\\|break\\|continue\\|pass\\)\\>")
+	(looking-at (concat py-block-closing-keywords-re "\\>"))
       (goto-char here))))
 
 ;; go to point right beyond final line of block begun by the current
