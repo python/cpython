@@ -524,7 +524,11 @@ default_3way_compare(PyObject *v, PyObject *w)
 	int c;
 
 	if (v->ob_type == w->ob_type) {
-		/* same type: compare pointers */
+		/* When comparing these pointers, they must be cast to
+		 * integer types (i.e. Py_uintptr_t, our spelling of C9X's
+		 * uintptr_t).  ANSI specifies that pointer compares other
+		 * than == and != to non-related structures are undefined.
+		 */
 		Py_uintptr_t vv = (Py_uintptr_t)v;
 		Py_uintptr_t ww = (Py_uintptr_t)w;
 		return (vv < ww) ? -1 : (vv > ww) ? 1 : 0;
