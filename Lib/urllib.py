@@ -28,7 +28,7 @@ import os
 import sys
 
 
-__version__ = '1.12'    # XXX This version is not always updated :-(
+__version__ = '1.13'    # XXX This version is not always updated :-(
 
 MAXFTPCACHE = 10        # Trim the ftp cache beyond this size
 
@@ -82,6 +82,8 @@ class URLopener:
 
     __tempfiles = None
 
+    version = "Python-urllib/%s" % __version__
+
     # Constructor
     def __init__(self, proxies=None, **x509):
         if proxies is None:
@@ -90,8 +92,7 @@ class URLopener:
         self.proxies = proxies
         self.key_file = x509.get('key_file')
         self.cert_file = x509.get('cert_file')
-        server_version = "Python-urllib/%s" % __version__
-        self.addheaders = [('User-agent', server_version)]
+        self.addheaders = [('User-agent', self.version)]
         self.__tempfiles = []
         self.__unlink = os.unlink # See cleanup()
         self.tempcache = None
