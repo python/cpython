@@ -93,7 +93,6 @@ future_parse(PyFutureFeatures *ff, node *n, const char *filename)
 {
 	int i, r;
  loop:
-
 	switch (TYPE(n)) {
 
 	case single_input:
@@ -222,6 +221,7 @@ future_parse(PyFutureFeatures *ff, node *n, const char *filename)
 			n = CHILD(n, 0);
 			goto loop;
 		}
+                ff->ff_last_lineno = n->n_lineno;
 		break;
 
 	case atom:
@@ -258,4 +258,3 @@ PyNode_Future(node *n, const char *filename)
 	}
 	return ff;
 }
-
