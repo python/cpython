@@ -37,7 +37,7 @@ SHELL=		/bin/sh
 
 AROBJS=		\
 		bltinmodule.o \
-		ceval.o compile.o \
+		ceval.o compile.o codecs.o \
 		errors.o \
 		frozen.o frozenmain.o \
 		getargs.o getcompiler.o getcopyright.o getmtime.o \
@@ -91,6 +91,7 @@ depend:
 
 bltinmodule.o: bltinmodule.c
 ceval.o: ceval.c
+codecs.o: codecs.c
 compile.o: compile.c
 dup2.o: dup2.c
 dynload_aix.o: dynload_aix.c
