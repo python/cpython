@@ -66,7 +66,7 @@ def synopsis(filename, cache={}):
             result = split(module.__doc__ or '', '\n')[0]
         else: # text modules can be directly examined
             line = file.readline()
-            while line[:1] == '#' or strip(line) == '':
+            while line[:1] == '#' or not strip(line):
                 line = file.readline()
                 if not line: break
             line = strip(line)
@@ -125,8 +125,9 @@ def isconstant(object):
 
 def replace(text, *pairs):
     """Do a series of global replacements on a string."""
-    for old, new in pairs:
-        text = join(split(text, old), new)
+    while pairs:
+        text = join(split(text, pairs[0]), pairs[1])
+        pairs = pairs[2:]
     return text
 
 def cram(text, maxlen):
@@ -224,7 +225,7 @@ class HTMLRepr(Repr):
         self.maxstring = self.maxother = 100
 
     def escape(self, text):
-        return replace(text, ('&', '&amp;'), ('<', '&lt;'), ('>', '&gt;'))
+        return replace(text, '&', '&amp;', '<', '&lt;', '>', '&gt;')
 
     def repr(self, object):
         return Repr.repr(self, object)
@@ -239,7 +240,7 @@ class HTMLRepr(Repr):
     def repr_string(self, x, level):
         test = cram(x, self.maxstring)
         testrepr = repr(test)
-        if '\\' in test and '\\' not in replace(testrepr, (r'\\', '')):
+        if '\\' in test and '\\' not in replace(testrepr, r'\\', ''):
             # Backslashes are only literal in the string and are never
             # needed to make any special characters, so show a raw string.
             return 'r' + testrepr[0] + self.escape(test) + testrepr[0]
@@ -316,8 +317,8 @@ TT { font-family: lucida console, lucida typewriter, courier }
     def preformat(self, text):
         """Format literal preformatted text."""
         text = self.escape(expandtabs(text))
-        return replace(text, ('\n\n', '\n \n'), ('\n\n', '\n \n'),
-                             (' ', '&nbsp;'), ('\n', '<br>\n'))
+        return replace(text, '\n\n', '\n \n', '\n\n', '\n \n',
+                             ' ', '&nbsp;', '\n', '<br>\n')
 
     def multicolumn(self, list, format, cols=4):
         """Format a list of items into a multi-column list."""
@@ -343,9 +344,7 @@ TT { font-family: lucida console, lucida typewriter, courier }
 
     def classlink(self, object, modname, *dicts):
         """Make a link for a class."""
-        name = object.__name__
-        if object.__module__ != modname:
-            name = object.__module__ + '.' + name
+        name = classname(object, modname)
         for dict in dicts:
             if dict.has_key(object):
                 return '<a href="%s">%s</a>' % (dict[object], name)
@@ -425,7 +424,7 @@ TT { font-family: lucida console, lucida typewriter, courier }
                     entry, modname, classes, c)
         return '<dl>\n%s</dl>\n' % result
 
-    def docmodule(self, object, name=None):
+    def docmodule(self, object, name=None, mod=None):
         """Produce HTML documentation for a module object."""
         name = object.__name__ # ignore the passed-in name
         parts = split(name, '.')
@@ -509,13 +508,13 @@ TT { font-family: lucida console, lucida typewriter, courier }
             contents = [self.formattree(
                 inspect.getclasstree(classlist, 1), name, cdict)]
             for key, value in classes:
-                contents.append(self.document(value, key, fdict, cdict))
+                contents.append(self.document(value, key, name, fdict, cdict))
             result = result + self.bigsection(
                 'Classes', '#ffffff', '#ee77aa', join(contents))
         if funcs:
             contents = []
             for key, value in funcs:
-                contents.append(self.document(value, key, fdict, cdict))
+                contents.append(self.document(value, key, name, fdict, cdict))
             result = result + self.bigsection(
                 'Functions', '#ffffff', '#eeaa77', join(contents))
         if constants:
@@ -535,21 +534,20 @@ TT { font-family: lucida console, lucida typewriter, courier }
 
         return result
 
-    def docclass(self, object, name=None, funcs={}, classes={}):
+    def docclass(self, object, name=None, mod=None, funcs={}, classes={}):
         """Produce HTML documentation for a class object."""
         realname = object.__name__
         name = name or realname
         bases = object.__bases__
         contents = ''
 
-        methods, mdict = [], {}
-        for key, value in allmethods(object).items():
-            methods.append((key, value))
-            mdict[key] = mdict[value] = '#' + name + '-' + key
+        methods, mdict = allmethods(object).items(), {}
         methods.sort()
         for key, value in methods:
+            mdict[key] = mdict[value] = '#' + name + '-' + key
+        for key, value in methods:
             contents = contents + self.document(
-                value, key, funcs, classes, mdict, object)
+                value, key, mod, funcs, classes, mdict, object)
 
         if name == realname:
             title = '<a name="%s">class <strong>%s</strong></a>' % (
@@ -573,7 +571,7 @@ TT { font-family: lucida console, lucida typewriter, courier }
         """Format an argument default value as text."""
         return self.small(self.grey('=' + self.repr(object)))
 
-    def docroutine(self, object, name=None,
+    def docroutine(self, object, name=None, mod=None,
                    funcs={}, classes={}, methods={}, cl=None):
         """Produce HTML documentation for a function or method object."""
         realname = object.__name__
@@ -583,18 +581,16 @@ TT { font-family: lucida console, lucida typewriter, courier }
         skipdocs = 0
         if inspect.ismethod(object):
             if cl:
-                if object.im_class is not cl:
-                    base = object.im_class
-                    url = '#%s-%s' % (base.__name__, name)
-                    basename = base.__name__
-                    if base.__module__ != cl.__module__:
-                        url = base.__module__ + '.html' + url
-                        basename = base.__module__ + '.' + basename
-                    note = ' from <a href="%s">%s</a>' % (url, basename)
+                imclass = object.im_class
+                if imclass is not cl:
+                    url = '%s.html#%s-%s' % (
+                        imclass.__module__, imclass.__name__, name)
+                    note = ' from <a href="%s">%s</a>' % (
+                        url, classname(imclass, mod))
                     skipdocs = 1
             else:
                 note = (object.im_self and
-                        ' method of ' + self.repr(object.im_self) or
+                        ' method of %s instance' + object.im_self.__class__ or
                         ' unbound %s method' % object.im_class.__name__)
             object = object.im_func
 
@@ -631,9 +627,10 @@ TT { font-family: lucida console, lucida typewriter, courier }
             doc = doc and '<dd>' + self.small('<tt>%s</tt>' % doc)
             return '<dl><dt>%s%s</dl>\n' % (decl, doc)
 
-    def docother(self, object, name=None):
+    def docother(self, object, name=None, mod=None):
         """Produce HTML documentation for a data object."""
-        return '<strong>%s</strong> = %s' % (name, self.repr(object))
+        lhs = name and '<strong>%s</strong> = ' % name or ''
+        return lhs + self.repr(object)
 
     def index(self, dir, shadowed=None):
         """Generate an HTML index for a directory of modules."""
@@ -682,7 +679,7 @@ class TextRepr(Repr):
     def repr_string(self, x, level):
         test = cram(x, self.maxstring)
         testrepr = repr(test)
-        if '\\' in test and '\\' not in replace(testrepr, (r'\\', '')):
+        if '\\' in test and '\\' not in replace(testrepr, r'\\', ''):
             # Backslashes are only literal in the string and are never
             # needed to make any special characters, so show a raw string.
             return 'r' + testrepr[0] + test + testrepr[0]
@@ -736,7 +733,7 @@ class TextDoc(Doc):
                     entry, modname, c, prefix + '    ')
         return result
 
-    def docmodule(self, object, name=None):
+    def docmodule(self, object, name=None, mod=None):
         """Produce text documentation for a given module object."""
         name = object.__name__ # ignore the passed-in name
         synop, desc = splitdoc(getdoc(object))
@@ -780,19 +777,19 @@ class TextDoc(Doc):
             contents = [self.formattree(
                 inspect.getclasstree(classlist, 1), name)]
             for key, value in classes:
-                contents.append(self.document(value, key))
+                contents.append(self.document(value, key, name))
             result = result + self.section('CLASSES', join(contents, '\n'))
 
         if funcs:
             contents = []
             for key, value in funcs:
-                contents.append(self.document(value, key))
+                contents.append(self.document(value, key, name))
             result = result + self.section('FUNCTIONS', join(contents, '\n'))
 
         if constants:
             contents = []
             for key, value in constants:
-                contents.append(self.docother(value, key, 70))
+                contents.append(self.docother(value, key, name, 70))
             result = result + self.section('CONSTANTS', join(contents, '\n'))
 
         if hasattr(object, '__version__'):
@@ -808,7 +805,7 @@ class TextDoc(Doc):
             result = result + self.section('CREDITS', str(object.__credits__))
         return result
 
-    def docclass(self, object, name=None):
+    def docclass(self, object, name=None, mod=None):
         """Produce text documentation for a given class object."""
         realname = object.__name__
         name = name or realname
@@ -828,7 +825,7 @@ class TextDoc(Doc):
         methods = allmethods(object).items()
         methods.sort()
         for key, value in methods:
-            contents = contents + '\n' + self.document(value, key, object)
+            contents = contents + '\n' + self.document(value, key, mod, object)
 
         if not contents: return title + '\n'
         return title + '\n' + self.indent(rstrip(contents), ' |  ') + '\n'
@@ -837,26 +834,22 @@ class TextDoc(Doc):
         """Format an argument default value as text."""
         return '=' + self.repr(object)
 
-    def docroutine(self, object, name=None, cl=None):
+    def docroutine(self, object, name=None, mod=None, cl=None):
         """Produce text documentation for a function or method object."""
         realname = object.__name__
         name = name or realname
         note = ''
         skipdocs = 0
         if inspect.ismethod(object):
+            imclass = object.im_class
             if cl:
-                if object.im_class is not cl:
-                    base = object.im_class
-                    basename = base.__name__
-                    if base.__module__ != cl.__module__:
-                        basename = base.__module__ + '.' + basename
-                    note = ' from %s' % basename
+                if imclass is not cl:
+                    note = ' from ' + classname(imclass, mod)
                     skipdocs = 1
             else:
-                if object.im_self:
-                    note = ' method of %s' % self.repr(object.im_self)
-                else:
-                    note = ' unbound %s method' % object.im_class.__name__
+                note = (object.im_self and
+                        ' method of %s instance' + object.im_self.__class__ or
+                        ' unbound %s method' % classname(imclass, mod))
             object = object.im_func
 
         if name == realname:
@@ -883,14 +876,14 @@ class TextDoc(Doc):
             doc = getdoc(object) or ''
             return decl + '\n' + (doc and rstrip(self.indent(doc)) + '\n')
 
-    def docother(self, object, name=None, maxlen=None):
+    def docother(self, object, name=None, mod=None, maxlen=None):
         """Produce text documentation for a data object."""
         repr = self.repr(object)
         if maxlen:
-            line = name + ' = ' + repr
+            line = (name and name + ' = ' or '') + repr
             chop = maxlen - len(line)
             if chop < 0: repr = repr[:chop] + '...'
-        line = self.bold(name) + ' = ' + repr
+        line = (name and self.bold(name) + ' = ' or '') + repr
         return line
 
 # --------------------------------------------------------- user interfaces
@@ -1017,95 +1010,83 @@ def describe(thing):
         return 'instance of ' + thing.__class__.__name__
     return type(thing).__name__
 
-def freshimport(name, cache={}):
-    """Import a module, reloading it if the source file has changed."""
-    topmodule = __import__(name)
-    module = None
-    for component in split(name, '.'):
-        if module == None:
-            module = topmodule
-            path = split(name, '.')[0]
+def freshimport(path, cache={}):
+    """Import a module freshly from disk, making sure it's up to date."""
+    if sys.modules.has_key(path):
+        # This is the only way to be sure.  Checking the mtime of the file
+        # isn't good enough (e.g. what if the module contains a class that
+        # inherits from another module that has changed?).
+        if path not in sys.builtin_module_names:
+            del sys.modules[path]
+    try:
+        module = __import__(path)
+    except:
+        # Did the error occur before or after the module was found?
+        (exc, value, tb) = info = sys.exc_info()
+        if sys.modules.has_key(path):
+            # An error occured while executing the imported module.
+            raise ErrorDuringImport(sys.modules[path].__file__, info)
+        elif exc is SyntaxError:
+            # A SyntaxError occurred before we could execute the module.
+            raise ErrorDuringImport(value.filename, info)
+        elif exc is ImportError and \
+             split(lower(str(value)))[:2] == ['no', 'module']:
+            # The module was not found.
+            return None
         else:
-            module = getattr(module, component)
-            path = path + '.' + component
-        if hasattr(module, '__file__'):
-            file = module.__file__
-            if os.path.exists(file):
-                info = (file, os.path.getmtime(file), os.path.getsize(file))
-                if cache.get(path) == info:
-                    continue
-            module = reload(module)
-            file = module.__file__
-            if os.path.exists(file):
-                info = (file, os.path.getmtime(file), os.path.getsize(file))
-            cache[path] = info
+            # Some other error occurred during the importing process.
+            raise ErrorDuringImport(path, sys.exc_info())
+    for part in split(path, '.')[1:]:
+        try: module = getattr(module, part)
+        except AttributeError: return None
     return module
 
 def locate(path):
-    """Locate an object by name (or dotted path), importing as necessary."""
-    if not path: # special case: imp.find_module('') strangely succeeds
-        return None
-    if type(path) is not types.StringType:
-        return path
+    """Locate an object by name or dotted path, importing as necessary."""
     parts = split(path, '.')
-    n = len(parts)
-    while n > 0:
-        path = join(parts[:n], '.')
-        try:
-            module = freshimport(path)
-        except:
-            # Did the error occur before or after the module was found?
-            (exc, value, tb) = info = sys.exc_info()
-            if sys.modules.has_key(path):
-                # An error occured while executing the imported module.
-                raise ErrorDuringImport(sys.modules[path].__file__, info)
-            elif exc is SyntaxError:
-                # A SyntaxError occurred before we could execute the module.
-                raise ErrorDuringImport(value.filename, info)
-            elif exc is ImportError and \
-                 split(lower(str(value)))[:2] == ['no', 'module']:
-                # The module was not found.
-                n = n - 1
-                continue
-            else:
-                # Some other error occurred before executing the module.
-                raise ErrorDuringImport(path, sys.exc_info())
-        try:
-            x = module
-            for p in parts[n:]:
-                x = getattr(x, p)
-            return x
-        except AttributeError:
-            n = n - 1
-            continue
-    if hasattr(__builtins__, path):
-        return getattr(__builtins__, path)
-    return None
+    module, n = None, 0
+    while n < len(parts):
+        nextmodule = freshimport(join(parts[:n+1], '.'))
+        if nextmodule: module, n = nextmodule, n + 1
+        else: break
+    if module:
+        object = module
+        for part in parts[n:]:
+            try: object = getattr(object, part)
+            except AttributeError: return None
+        return object
+    else:
+        import __builtin__
+        if hasattr(__builtin__, path):
+            return getattr(__builtin__, path)
 
 # --------------------------------------- interactive interpreter interface
 
 text = TextDoc()
 html = HTMLDoc()
 
-def doc(thing):
-    """Display documentation on an object (for interactive use)."""
-    if type(thing) is type(""):
+def doc(thing, title='Python Library Documentation: '):
+    """Display text documentation, given an object or a path to an object."""
+    suffix, name = '', None
+    if type(thing) is type(''):
         try:
             object = locate(thing)
         except ErrorDuringImport, value:
             print value
             return
-        if object:
-            thing = object
-        else:
+        if not object:
             print 'no Python documentation found for %s' % repr(thing)
             return
+        parts = split(thing, '.')
+        if len(parts) > 1: suffix = ' in ' + join(parts[:-1], '.')
+        name = parts[-1]
+        thing = object
 
     desc = describe(thing)
     module = inspect.getmodule(thing)
-    if module and module is not thing:
-        desc = desc + ' in module ' + module.__name__
-    pager('Help on %s:\n\n' % desc + text.document(thing))
+    if not suffix and module and module is not thing:
+        suffix = ' in module ' + module.__name__
+    pager(title + desc + suffix + '\n\n' + text.document(object, name))
 
 def writedoc(key):
     """Write HTML documentation to a file in the current directory."""
@@ -1154,25 +1135,13 @@ help(module) or call help('modulename').''' % sys.version[:3]
 
 help = Helper()
 
-def man(key):
-    """Display documentation on an object in a form similar to man(1)."""
-    object = locate(key)
-    if object:
-        title = 'Python Library Documentation: ' + describe(object)
-        lastdot = rfind(key, '.')
-        if lastdot > 0: title = title + ' in ' + key[:lastdot]
-        pager('\n' + title + '\n\n' + text.document(object, key))
-        found = 1
-    else:
-        print 'no Python documentation found for %s' % repr(key)
-
 class Scanner:
     """A generic tree iterator."""
-    def __init__(self, roots, children, recurse):
+    def __init__(self, roots, children, descendp):
         self.roots = roots[:]
         self.state = []
         self.children = children
-        self.recurse = recurse
+        self.descendp = descendp
 
     def next(self):
         if not self.state:
@@ -1185,7 +1154,7 @@ class Scanner:
             self.state.pop()
             return self.next()
         child = children.pop(0)
-        if self.recurse(child):
+        if self.descendp(child):
             self.state.append((child, self.children(child)))
         return child
 
@@ -1203,13 +1172,14 @@ class ModuleScanner(Scanner):
                 children.append((path, package + (package and '.') + file))
             else:
                 children.append((path, package))
-        children.sort()
+        children.sort() # so that spam.py comes before spam.pyc or spam.pyo
         return children
 
     def ispackage(self, (dir, package)):
         return ispackage(dir)
 
     def run(self, key, callback, completer=None):
+        key = lower(key)
         self.quit = 0
         seen = {}
 
@@ -1217,7 +1187,7 @@ class ModuleScanner(Scanner):
             if modname != '__main__':
                 seen[modname] = 1
                 desc = split(freshimport(modname).__doc__ or '', '\n')[0]
-                if find(lower(modname + ' - ' + desc), lower(key)) >= 0:
+                if find(lower(modname + ' - ' + desc), key) >= 0:
                     callback(None, modname, desc)
 
         while not self.quit:
@@ -1228,10 +1198,13 @@ class ModuleScanner(Scanner):
             if os.path.isfile(path) and modname:
                 modname = package + (package and '.') + modname
                 if not seen.has_key(modname):
-                    seen[modname] = 1
-                    desc = synopsis(path) or ''
-                    if find(lower(modname + ' - ' + desc), lower(key)) >= 0:
-                        callback(path, modname, desc)
+                    seen[modname] = 1 # if we see spam.py, skip spam.pyc
+                    if key:
+                        desc = synopsis(path) or ''
+                        if find(lower(modname + ' - ' + desc), key) >= 0:
+                            callback(path, modname, desc)
+                    else:
+                        callback(path, modname, '')
         if completer: completer()
 
 def apropos(key):
@@ -1247,8 +1220,8 @@ def apropos(key):
 
 # --------------------------------------------------- web browser interface
 
-def serve(port, callback=None):
-    import BaseHTTPServer, mimetools, select
+def serve(port, callback=None, finalizer=None):
+    import BaseHTTPServer, SocketServer, mimetools, select
 
     # Patch up mimetools.Message so it doesn't break if rfc822 is reloaded.
     class Message(mimetools.Message):
@@ -1306,7 +1279,7 @@ pydoc</strong> by Ka-Ping Yee &lt;ping@lfw.org&gt;</font></small></small>'''
 
         def log_message(self, *args): pass
 
-    class DocServer(BaseHTTPServer.HTTPServer):
+    class DocServer(SocketServer.ForkingMixIn, BaseHTTPServer.HTTPServer):
         def __init__(self, port, callback):
             host = (sys.platform == 'mac') and '127.0.0.1' or 'localhost'
             self.address = ('', port)
@@ -1329,10 +1302,12 @@ pydoc</strong> by Ka-Ping Yee &lt;ping@lfw.org&gt;</font></small></small>'''
     DocServer.handler = DocHandler
     DocHandler.MessageClass = Message
     try:
-        DocServer(port, callback).serve_until_quit()
-    except (KeyboardInterrupt, select.error):
-        pass
-    print 'server stopped'
+        try:
+            DocServer(port, callback).serve_until_quit()
+        except (KeyboardInterrupt, select.error):
+            pass
+    finally:
+        if finalizer: finalizer()
 
 # ----------------------------------------------------- graphical interface
 
@@ -1404,7 +1379,8 @@ def gui():
             self.window.wm_minsize(self.minwidth, self.minheight)
 
             import threading
-            threading.Thread(target=serve, args=(port, self.ready)).start()
+            threading.Thread(
+                target=serve, args=(port, self.ready, self.quit)).start()
 
         def ready(self, server):
             self.server = server
@@ -1544,8 +1520,10 @@ def cli():
                 except ValueError:
                     raise BadUsage
                 def ready(server):
-                    print 'server ready at %s' % server.url
-                serve(port, ready)
+                    print 'pydoc server ready at %s' % server.url
+                def stopped():
+                    print 'pydoc server stopped'
+                serve(port, ready, stopped)
                 return
             if opt == '-w':
                 writing = 1
@@ -1561,7 +1539,7 @@ def cli():
                     else:
                         writedoc(arg)
                 else:
-                    man(arg)
+                    doc(arg)
             except ErrorDuringImport, value:
                 print value
 
