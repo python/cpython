@@ -285,6 +285,8 @@ def run_doctest(module, verbosity=None):
         f, t = doctest.testmod(module, verbose=verbosity)
         if f:
             raise TestFailed("%d of %d doctests failed" % (f, t))
-        return f, t
     finally:
         sys.stdout = save_stdout
+    if verbose:
+        print 'Ran %d doctests with zero failures' % (t,)
+    return f, t
