@@ -38,6 +38,7 @@ PERFORMANCE OF THIS SOFTWARE.
 static PyObject *class_lookup
 	Py_PROTO((PyClassObject *, PyObject *, PyClassObject **));
 static PyObject *instance_getattr1 Py_PROTO((PyInstanceObject *, PyObject *));
+static PyObject *instance_getattr2 Py_PROTO((PyInstanceObject *, PyObject *));
 
 static PyObject *getattrstr, *setattrstr, *delattrstr;
 
@@ -456,9 +457,8 @@ PyInstance_New(class, arg, kw)
 	}
 	if (initstr == NULL)
 		initstr = PyString_InternFromString("__init__");
-	init = instance_getattr1(inst, initstr);
+	init = instance_getattr2(inst, initstr);
 	if (init == NULL) {
-		PyErr_Clear();
 		if ((arg != NULL && (!PyTuple_Check(arg) ||
 				     PyTuple_Size(arg) != 0))
 		    || (kw != NULL && (!PyDict_Check(kw) ||
@@ -515,7 +515,7 @@ instance_dealloc(inst)
 	PyErr_Fetch(&error_type, &error_value, &error_traceback);
 	if (delstr == NULL)
 		delstr = PyString_InternFromString("__del__");
-	if ((del = instance_getattr1(inst, delstr)) != NULL) {
+	if ((del = instance_getattr2(inst, delstr)) != NULL) {
 		PyObject *res = PyEval_CallObject(del, (PyObject *)NULL);
 		if (res == NULL) {
 			PyObject *f, *t, *v, *tb;
@@ -571,7 +571,6 @@ instance_getattr1(inst, name)
 {
 	register PyObject *v;
 	register char *sname = PyString_AsString(name);
-	PyClassObject *class;
 	if (sname[0] == '_' && sname[1] == '_') {
 		if (strcmp(sname, "__dict__") == 0) {
 			if (PyEval_GetRestricted()) {
@@ -587,17 +586,27 @@ instance_getattr1(inst, name)
 			return (PyObject *)inst->in_class;
 		}
 	}
+	v = instance_getattr2(inst, name);
+	if (v == NULL) {
+		PyErr_Format(PyExc_AttributeError,"'%.50s' instance has no attribute '%.400s'",
+			     PyString_AS_STRING(inst->in_class->cl_name), sname);
+	}
+	return v;
+}
+
+static PyObject *
+instance_getattr2(inst, name)
+	register PyInstanceObject *inst;
+	PyObject *name;
+{
+	register PyObject *v;
+	PyClassObject *class;
 	class = NULL;
 	v = PyDict_GetItem(inst->in_dict, name);
 	if (v == NULL) {
 		v = class_lookup(inst->in_class, name, &class);
-		if (v == NULL) {
-			PyErr_Format(PyExc_AttributeError,
-				     "'%.50s' instance has no attribute '%.400s'",
-				     PyString_AsString(inst->in_class->cl_name),
-				     sname);
-			return NULL;
-		}
+		if (v == NULL)
+			return v;
 	}
 	Py_INCREF(v);
 	if (class != NULL) {
