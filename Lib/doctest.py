@@ -1629,8 +1629,8 @@ class OutputChecker:
         # Check if we should use diff.
         if self._do_a_fancy_diff(want, got, optionflags):
             # Split want & got into lines.
-            want_lines = [l+'\n' for l in want.split('\n')]
-            got_lines = [l+'\n' for l in got.split('\n')]
+            want_lines = want.splitlines(True)  # True == keep line ends
+            got_lines = got.splitlines(True)
             # Use difflib to find their differences.
             if optionflags & REPORT_UDIFF:
                 diff = difflib.unified_diff(want_lines, got_lines, n=2)

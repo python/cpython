@@ -972,7 +972,7 @@ and actual outputs to be displayed using a unified diff:
     Failed example:
         print '\n'.join('abcdefg')
     Differences (unified diff with -expected +actual):
-        @@ -1,8 +1,8 @@
+        @@ -1,7 +1,7 @@
          a
         -B
         +b
@@ -982,7 +982,6 @@ and actual outputs to be displayed using a unified diff:
          f
          g
         -h
-    <BLANKLINE>
     (1, 1)
 
 The REPORT_CDIFF flag causes failures that involve multi-line expected
@@ -998,7 +997,7 @@ and actual outputs to be displayed using a context diff:
         print '\n'.join('abcdefg')
     Differences (context diff with expected followed by actual):
         ***************
-        *** 1,8 ****
+        *** 1,7 ****
           a
         ! B
           c
@@ -1006,8 +1005,7 @@ and actual outputs to be displayed using a context diff:
           f
           g
         - h
-    <BLANKLINE>
-        --- 1,8 ----
+        --- 1,7 ----
           a
         ! b
           c
@@ -1015,7 +1013,6 @@ and actual outputs to be displayed using a context diff:
         + e
           f
           g
-    <BLANKLINE>
     (1, 1)
 
 
@@ -1040,7 +1037,6 @@ marking, as well as interline differences.
         ?                       ^
         + a b  c d e f g h i   j k l m
         ?     +              ++    ^
-    <BLANKLINE>
     (1, 1)
 
 The REPORT_ONLY_FIRST_FAILURE supresses result output after the first
