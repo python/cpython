@@ -179,6 +179,7 @@ Here's an overview of the questions per chapter:
   4.39. Q. How to implement persistent objects in Python?  (Persistent ==
         automatically saved to and restored from disk.)
   4.40. Q. I try to use __spam and I get an error about _SomeClassName__spam.
+  4.41. Q. How do I delete a file?  And other file questions.
 
  5. Extending Python
   5.1. Q. Can I create my own functions in C?
@@ -1707,6 +1708,22 @@ create presistent mappings containing arbitrary Python objects.
 A. Variables with double leading underscore are "mangled" to provide a
 simple but effective way to define class private variables.  See the
 chapter "New in Release 1.4" in the Python Tutorial.
+
+4.41. Q. How do I delete a file?  And other file questions.
+
+A. Use os.remove(filename) or os.unlink(filename); for documentation,
+see the posix section of the library manual.  They are the same,
+unlink() is simply the Unix name for this function.  In earlier
+versions of Python, only os.unlink() was available.
+
+To remove a directory, use os.rmdir(); use os.mkdir() to create one.
+
+To rename a file, use os.rename().
+
+To truncate a file, open it using f = open(filename, "w+"), and use
+f.truncate(offset); offset defaults to the current seek position.
+There's also os.ftruncate(fd, offset) for files opened with os.open()
+-- for advanced Unix hacks only.
 
 
 5. Extending Python
