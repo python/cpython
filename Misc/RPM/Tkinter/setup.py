@@ -11,7 +11,7 @@ setup(name="Tkinter-2.0",
       version="8.0",
       description="Python interface to Tk GUI toolkit",
       author="Python development team",
-      author_email="pythoneers@beopen.com",
+      author_email="pythoneers@zope.com",
       url="http://www.pythonlabs.com/products/python2.0/",
       licence="Modified CNRI Open Source License",
       
