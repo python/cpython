@@ -129,7 +129,7 @@ It is always available.
   also \code{'/usr/local'}.  This can be set at build time with the
   \longprogramopt{exec-prefix} argument to the \program{configure}
   script.  Specifically, all configuration files (e.g. the
-  \file{config.h} header file) are installed in the directory
+  \file{pyconfig.h} header file) are installed in the directory
   \code{exec_prefix + '/lib/python\var{version}/config'}, and shared
   library modules are installed in \code{exec_prefix +
   '/lib/python\var{version}/lib-dynload'}, where \var{version} is
@@ -298,7 +298,7 @@ else:
   the \longprogramopt{prefix} argument to the \program{configure}
   script.  The main collection of Python library modules is installed
   in the directory \code{prefix + '/lib/python\var{version}'} while
-  the platform independent header files (all except \file{config.h})
+  the platform independent header files (all except \file{pyconfig.h})
   are stored in \code{prefix + '/include/python\var{version}'}, where
   \var{version} is equal to \code{version[:3]}.
 \end{datadesc}

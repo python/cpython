@@ -46,7 +46,7 @@ corresponding Unix manual entries for more information on calls.";
 #endif /* HAVE_UNISTD_H */
 
 /* Various compilers have only certain posix functions */
-/* XXX Gosh I wish these were all moved into config.h */
+/* XXX Gosh I wish these were all moved into pyconfig.h */
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
 #include <process.h>
 #else

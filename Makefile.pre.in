@@ -118,7 +118,7 @@ SRCDIRS= 	@SRCDIRS@
 SUBDIRSTOO=	Include Lib Misc Demo
 
 # Files and directories to be distributed
-CONFIGFILES=	configure configure.in acconfig.h config.h.in Makefile.pre.in
+CONFIGFILES=	configure configure.in acconfig.h pyconfig.h.in Makefile.pre.in
 DISTFILES=	README ChangeLog $(CONFIGFILES)
 DISTDIRS=	$(SUBDIRS) $(SUBDIRSTOO) Ext-dummy
 DIST=		$(DISTFILES) $(DISTDIRS)
@@ -417,7 +417,7 @@ Mac/Python/macglue.o: $(srcdir)/Mac/Python/macglue.c
 
 PYTHON_HEADERS= \
 		Include/Python.h \
-		config.h \
+		pyconfig.h \
 		Include/patchlevel.h \
 		Include/pyport.h \
 		Include/pymem.h \
@@ -650,7 +650,7 @@ inclinstall:
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY); \
 		$(INSTALL_DATA) $$i $(INCLUDEPY); \
 	done
-	$(INSTALL_DATA) config.h $(CONFINCLUDEPY)/config.h
+	$(INSTALL_DATA) pyconfig.h $(CONFINCLUDEPY)/pyconfig.h
 
 # Install the library and miscellaneous stuff needed for extending/embedding
 # This goes into $(exec_prefix)
@@ -732,7 +732,7 @@ recheck:
 	$(SHELL) config.status --recheck
 	$(SHELL) config.status
 
-# Rebuild the configure script from configure.in; also rebuild config.h.in
+# Rebuild the configure script from configure.in; also rebuild pyconfig.h.in
 autoconf:
 	(cd $(srcdir); autoconf)
 	(cd $(srcdir); autoheader)
@@ -762,7 +762,7 @@ clean:
 clobber: clean
 	-rm -f $(PYTHON) $(PGEN) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
 		tags TAGS \
-		config.cache config.log config.h Modules/config.c 
+		config.cache config.log pyconfig.h Modules/config.c 
 	-rm -rf build platform
 
 # Make things extra clean, before making a distribution:

@@ -73,7 +73,7 @@ class CygwinCCompiler (UnixCCompiler):
                          (status, details))
         if status is not CONFIG_H_OK:
             self.warn(
-                "Python's config.h doesn't seem to support your compiler.  " +
+                "Python's pyconfig.h doesn't seem to support your compiler.  " +
                 ("Reason: %s." % details) +
                 "Compiling may fail because of undefined preprocessor macros.")
         
@@ -335,7 +335,7 @@ class Mingw32CCompiler (CygwinCCompiler):
 
 # class Mingw32CCompiler
 
-# Because these compilers aren't configured in Python's config.h file by
+# Because these compilers aren't configured in Python's pyconfig.h file by
 # default, we should at least warn the user if he is using a unmodified
 # version.
 
@@ -345,7 +345,7 @@ CONFIG_H_UNCERTAIN = "uncertain"
 
 def check_config_h():
 
-    """Check if the current Python installation (specifically, config.h)
+    """Check if the current Python installation (specifically, pyconfig.h)
     appears amenable to building extensions with GCC.  Returns a tuple
     (status, details), where 'status' is one of the following constants:
       CONFIG_H_OK
@@ -353,21 +353,21 @@ def check_config_h():
       CONFIG_H_NOTOK
         doesn't look good
       CONFIG_H_UNCERTAIN
-        not sure -- unable to read config.h
+        not sure -- unable to read pyconfig.h
     'details' is a human-readable string explaining the situation.
 
     Note there are two ways to conclude "OK": either 'sys.version' contains
     the string "GCC" (implying that this Python was built with GCC), or the
-    installed "config.h" contains the string "__GNUC__".
+    installed "pyconfig.h" contains the string "__GNUC__".
     """
 
     # XXX since this function also checks sys.version, it's not strictly a
-    # "config.h" check -- should probably be renamed...
+    # "pyconfig.h" check -- should probably be renamed...
 
     from distutils import sysconfig
     import string
     # if sys.version contains GCC then python was compiled with
-    # GCC, and the config.h file should be OK
+    # GCC, and the pyconfig.h file should be OK
     if string.find(sys.version,"GCC") >= 0:
         return (CONFIG_H_OK, "sys.version mentions 'GCC'")
     
@@ -386,7 +386,7 @@ def check_config_h():
                 "couldn't read '%s': %s" % (fn, exc.strerror))
 
     else:
-        # "config.h" contains an "#ifdef __GNUC__" or something similar
+        # "pyconfig.h" contains an "#ifdef __GNUC__" or something similar
         if string.find(s,"__GNUC__") >= 0:
             return (CONFIG_H_OK, "'%s' mentions '__GNUC__'" % fn)
         else:

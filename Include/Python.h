@@ -21,7 +21,7 @@
 /* Include nearly all Python header files */
 
 #include "patchlevel.h"
-#include "config.h"
+#include "pyconfig.h"
 
 #ifdef HAVE_LIMITS_H
 #include <limits.h>

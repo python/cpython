@@ -4,7 +4,7 @@
    and is slow and inaccurate.
    But it's good enough for the occasional string literal... */
 
-#include "config.h"
+#include "pyconfig.h"
 
 #include <ctype.h>
 
