@@ -66,8 +66,9 @@ The module defines the following functions:
   
   If it is false, the buffer's mutability is ignored and behaviour is
   as for a read-only buffer, except that the 1024 byte limit mentioned
-  above is avoided -- so long as the buffer you pass is longer than
-  what the operating system wants to put there, things should work.
+  above is avoided -- so long as the buffer you pass is as least as
+  long as what the operating system wants to put there, things should
+  work.
   
   If \var{mutate_flag} is true, then the buffer is (in effect) passed
   to the underlying \function{ioctl()} system call, the latter's
