@@ -16,8 +16,9 @@ To work with plist data in strings, you can use readPlistFromString()
 and writePlistToString().
 
 Values can be strings, integers, floats, booleans, tuples, lists,
-dictionaries, Data or Date objects. String values (including dictionary
-keys) may be unicode strings -- they will be written out as UTF-8.
+dictionaries, Data or datetime.datetime objects. String values (including
+dictionary keys) may be unicode strings -- they will be written out as
+UTF-8.
 
 This module exports a class named Dict(), which allows you to easily
 construct (nested) dicts using keyword arguments as well as accessing
@@ -27,8 +28,6 @@ Dict instances when loading plist data.
 
 The <data> plist type is supported through the Data class. This is a
 thin wrapper around a Python string.
-
-The <date> plist data has support through the Date class.
 
 Generate Plist example:
 
@@ -45,7 +44,7 @@ Generate Plist example:
         ),
         someData = Data("<binary gunk>"),
         someMoreData = Data("<lots of binary gunk>" * 10),
-        aDate = Date(time.mktime(time.gmtime())),
+        aDate = datetime.datetime.fromtimestamp(time.mktime(time.gmtime())),
     )
     # unicode keys are possible, but a little awkward to use:
     pl[u'\xc5benraa'] = "That was a unicode key."
@@ -63,7 +62,7 @@ Parse Plist example:
 __all__ = [
     "readPlist", "writePlist", "readPlistFromString", "writePlistToString",
     "readPlistFromResource", "writePlistToResource",
-    "Plist", "Data", "Date", "Dict"
+    "Plist", "Data", "Dict"
 ]
 # Note: the Plist class has been deprecated.
 
@@ -195,6 +194,23 @@ _controlStripper = re.compile(r"[\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0e\x0
 #  a loss of precision)
 _dateParser = re.compile(r"(?P<year>\d\d\d\d)(?:-(?P<month>\d\d)(?:-(?P<day>\d\d)(?:T(?P<hour>\d\d)(?::(?P<minute>\d\d)(?::(?P<second>\d\d))?)?)?)?)?Z")
 
+def _dateFromString(s):
+    order = ('year', 'month', 'day', 'hour', 'minute', 'second')
+    gd = _dateParser.match(s).groupdict()
+    lst = []
+    for key in order:
+        val = gd[key]
+        if val is None:
+            break
+        lst.append(int(val))
+    return datetime.datetime(*lst)
+
+def _dateToString(d):
+    return '%04d-%02d-%02dT%02d:%02d:%02dZ' % (
+        d.year, d.month, d.day,
+        d.hour, d.minute, d.second
+    )
+
 def _escapeAndEncode(text):
     text = text.replace("\r\n", "\n")       # convert DOS line endings
     text = text.replace("\r", "\n")         # convert Mac line endings
@@ -234,8 +250,8 @@ class PlistWriter(DumbXMLWriter):
             self.writeDict(value)
         elif isinstance(value, Data):
             self.writeData(value)
-        elif isinstance(value, Date):
-            self.simpleElement("date", value.toString())
+        elif isinstance(value, datetime.datetime):
+            self.simpleElement("date", _dateToString(value))
         elif isinstance(value, (tuple, list)):
             self.writeArray(value)
         else:
@@ -340,49 +356,6 @@ class Data:
         return "%s(%s)" % (self.__class__.__name__, repr(self.data))
 
 
-class Date:
-
-    """Primitive date wrapper, uses UTC datetime instances internally.
-    """
-
-    def __init__(self, date):
-        if isinstance(date, datetime.datetime):
-            pass
-        elif isinstance(date, (float, int)):
-            date = datetime.datetime.fromtimestamp(date)
-        elif isinstance(date, basestring):
-            order = ('year', 'month', 'day', 'hour', 'minute', 'second')
-            gd = _dateParser.match(date).groupdict()
-            lst = []
-            for key in order:
-                val = gd[key]
-                if val is None:
-                    break
-                lst.append(int(val))
-            date = datetime.datetime(*lst)
-        else:
-            raise ValueError, "Can't convert %r to datetime" % (date,)
-        self.date = date
-
-    def toString(self):
-        d = self.date
-        return '%04d-%02d-%02dT%02d:%02d:%02dZ' % (
-            d.year, d.month, d.day,
-            d.second, d.minute, d.hour,
-        )
-
-    def __cmp__(self, other):
-        if isinstance(other, self.__class__):
-            return cmp(self.date, other.date)
-        elif isinstance(other, (datetime.datetime, float, int, basestring)):
-            return cmp(self.date, Date(other).date)
-        else:
-            return cmp(id(self), id(other))
-
-    def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, repr(self.toString()))
-
-
 class PlistParser:
 
     def __init__(self):
@@ -464,4 +437,4 @@ class PlistParser:
     def end_data(self):
         self.addObject(Data.fromBase64(self.getData()))
     def end_date(self):
-        self.addObject(Date(self.getData()))
+        self.addObject(_dateFromString(self.getData()))
