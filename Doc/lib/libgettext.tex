@@ -632,9 +632,9 @@ between them explicitly, like so:
 \begin{verbatim}
 import gettext
 
-lang1 = gettext.translation(languages=['en'])
-lang2 = gettext.translation(languages=['fr'])
-lang3 = gettext.translation(languages=['de'])
+lang1 = gettext.translation('myapplication', languages=['en'])
+lang2 = gettext.translation('myapplication', languages=['fr'])
+lang3 = gettext.translation('myapplication', languages=['de'])
 
 # start by using language1
 lang1.install()
