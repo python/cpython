@@ -621,7 +621,7 @@ class IMAP4:
     def setacl(self, mailbox, who, what):
         """Set a mailbox acl.
 
-        (typ, [data]) = <instance>.create(mailbox, who, what)
+        (typ, [data]) = <instance>.setacl(mailbox, who, what)
         """
         return self._simple_command('SETACL', mailbox, who, what)
 
