@@ -118,6 +118,14 @@ Core and builtins
   same as split() except that it scans the string from the end
   working towards the beginning.  See SF feature request 801847.
 
+- in a thread on comp.lang.python, several people noted that list()
+  was much slower than in 2.1 and earlier versions of Python, when used
+  to create new lists from existing lists.  Duncan Booth did some
+  research that uncovered an optimisation that, for lists below
+  about 100 elements, was actually slower than the normal case. The
+  special case criteria have been tightened to rectify the performance
+  regression.
+
 Extension modules
 -----------------
 
