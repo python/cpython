@@ -21,10 +21,9 @@ XXX TO DO
 - freeze entries
 - username/password for editors
 - Change references to other Q's and whole sections
-- Browse should display menu of 7 sections & let you pick
-  (or frontpage should have the option to browse a section or all)
 - support adding annotations, too
 - make it more generic (so you can create your own FAQ)
+- more OO structure, e.g. add a class representing one FAQ entry
 
 """
 
@@ -198,7 +197,7 @@ class FAQServer:
 	n = 0
 	for (mtime, name) in list:
 	    headers, text = self.read(name)
-	    if headers:
+	    if headers and headers.has_key('last-changed-date'):
 		self.show(name, headers['title'], text)
 		n = n+1
 	if not n:
@@ -356,6 +355,7 @@ class FAQServer:
 	if not headers:
 	    self.error("Invalid file name", name)
 	    return
+	self.prologue("Info for %s" % name)
 	print '<PRE>'
 	sys.stdout.flush()
 	os.system("/depot/gnu/plat/bin/rlog -r %s </dev/null 2>&1" % self.name)
@@ -368,6 +368,7 @@ class FAQServer:
 	if not headers:
 	    self.error("Invalid file name", name)
 	    return
+	self.prologue("RCS log for %s" % name)
 	print '<PRE>'
 	sys.stdout.flush()
 	os.system("/depot/gnu/plat/bin/rlog %s </dev/null 2>&1" % self.name)
