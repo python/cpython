@@ -5,6 +5,8 @@ AskString(prompt, default) -- ask for a string, display OK and Cancel buttons.
 AskYesNoCancel(question, default) -- display a question and Yes, No and Cancel buttons.
 bar = Progress(label, maxvalue) -- Display a progress bar
 bar.set(value) -- Set value
+bar.inc( *amount ) -- increment value by amount (default=1)
+bar.label( *newlabel ) -- get or set text label. 
 
 More documentation in each function.
 This module uses DLOG resources 256, 257 and 258.
@@ -14,7 +16,7 @@ Based upon STDWIN dialogs with the same names and functions.
 from Dlg import GetNewDialog, SetDialogItemText, GetDialogItemText, ModalDialog
 import Qd
 import QuickDraw
-
+import Dlg,Win,Evt,Events # sdm7g
 
 def Message(msg):
 	"""Display a MESSAGE string.
@@ -110,18 +112,43 @@ def AskYesNoCancel(question, default = 0):
 		if n == 2: return 1
 		if n == 3: return 0
 		if n == 4: return -1
+
+
 		
+
+screenbounds = Qd.qd.screenBits.bounds
+screenbounds = screenbounds[0]+4, screenbounds[1]+4, \
+	screenbounds[2]-4, screenbounds[3]-4
+
+				
 class ProgressBar:
-	def __init__(self, label="Working...", maxval=100):
-		self.label = label
+	def __init__(self, title="Working...", maxval=100, label=""):
 		self.maxval = maxval
 		self.curval = -1
 		self.d = GetNewDialog(259, -1)
-		tp, text_h, rect = self.d.GetDialogItem(2)
-		SetDialogItemText(text_h, label)
+		self.title(title)
+		self.label(label)
 		self._update(0)
+
+	def __del__( self ):
+		self.d.HideWindow()
+		del self.d
 		
+	def title(self, newstr=""):
+		"""title(text) - Set title of progress window"""
+		w = self.d.GetDialogWindow()
+		w.SetWTitle(newstr)
+		
+	def label( self, *newstr ):
+		"""label(text) - Set text in progress box"""
+		if newstr:
+			self._label = newstr[0]
+		tp, text_h, rect = self.d.GetDialogItem(2)
+		SetDialogItemText(text_h, self._label)		
+
+				
 	def _update(self, value):
+		self.d.BringToFront()
 		tp, h, bar_rect = self.d.GetDialogItem(3)
 		Qd.SetPort(self.d)
 		
@@ -143,28 +170,64 @@ class ProgressBar:
 		Qd.BackColor(QuickDraw.whiteColor)
 		
 		# Test for cancel button
-		if ModalDialog(_ProgressBar_filterfunc) == 1:
-			raise KeyboardInterrupt
+		
+		ready, ev = Evt.WaitNextEvent( Events.mDownMask, 1  )
+		if ready : 
+			what,msg,when,where,mod = ev
+			part = Win.FindWindow(where)[0]
+			if Dlg.IsDialogEvent(ev):
+				ds = Dlg.DialogSelect(ev)
+				if ds[0] and ds[1] == self.d and ds[-1] == 1:
+					raise KeyboardInterrupt, ev
+			else:
+				if part == 4:	# inDrag 
+					self.d.DragWindow(where, screenbounds)
+				else:
+					MacOS.HandleEvent(ev) 
+			
 			
 	def set(self, value):
+		"""set(value) - Set progress bar position"""
 		if value < 0: value = 0
 		if value > self.maxval: value = self.maxval
+		self.curval = value
 		self._update(value)
-		
-def _ProgressBar_filterfunc(*args):
-	return 2 # Disabled, for now.
-	
+
+	def inc(self, n=1):
+		"""inc(amt) - Increment progress bar position"""
+		self.set(self.curval + n)
+
 def test():
+	import time
+	import MacOS
+
 	Message("Testing EasyDialogs.")
 	ok = AskYesNoCancel("Do you want to proceed?")
 	if ok > 0:
 		s = AskString("Enter your first name")
 		Message("Thank you,\015%s" % `s`)
-	bar = ProgressBar("Counting...", 100)
-	for i in range(100):
-		bar.set(i)
-	del bar
+	text = ( "Working Hard...", "Hardly Working..." , 
+			"So far, so good!", "Keep on truckin'" )
+	bar = ProgressBar("Progress, progress...", 100)
+	try:
+		appsw = MacOS.EnableAppswitch(0)
+		for i in range(100):
+			bar.set(i)
+			time.sleep(0.1)
+			if i % 10 == 0:
+				bar.label(text[(i/10) % 4])
+		bar.label("Done.")
+		time.sleep(0.3) 	# give'em a chance to see the done.
+	finally:
+		del bar
+		MacOS.EnableAppswitch(appsw)
 
 
+	
+	
 if __name__ == '__main__':
-	test()
+	try:
+		test()
+	except KeyboardInterrupt:
+		Message("Operation Canceled.")
+
