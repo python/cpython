@@ -253,6 +253,17 @@ if str(buffer(a, 0, 2)) != 'as':
     raise TestFailed, 'specifying buffer size failed'
 if str(buffer(a, 1, 2)) != 'sd':
     raise TestFailed, 'specifying buffer offset and size failed'
+try: buffer(buffer('asdf', 1), -1)
+except ValueError: pass
+else: raise TestFailed, "buffer(buffer('asdf', 1), -1) should raise ValueError"
+if str(buffer(buffer('asdf', 0, 2), 0)) != 'as':
+    raise TestFailed, 'composing length-specified buffer failed'
+if str(buffer(buffer('asdf', 0, 2), 0, 5000)) != 'as':
+    raise TestFailed, 'composing length-specified buffer failed'
+if str(buffer(buffer('asdf', 0, 2), 0, -1)) != 'as':
+    raise TestFailed, 'composing length-specified buffer failed' 
+if str(buffer(buffer('asdf', 0, 2), 1, 2)) != 's':
+    raise TestFailed, 'composing length-specified buffer failed'
 
 try: a[1] = 'g'
 except TypeError: pass
