@@ -209,9 +209,12 @@ def grok_environment_error (exc, prefix="error: "):
 
 
 # Needed by 'split_quoted()'
-_wordchars_re = re.compile(r'[^\\\'\"%s ]*' % string.whitespace)
-_squote_re = re.compile(r"'(?:[^'\\]|\\.)*'")
-_dquote_re = re.compile(r'"(?:[^"\\]|\\.)*"')
+_wordchars_re = _squote_re = _dquote_re = None
+def _init_regex():
+    global _wordchars_re, _squote_re, _dquote_re
+    _wordchars_re = re.compile(r'[^\\\'\"%s ]*' % string.whitespace)
+    _squote_re = re.compile(r"'(?:[^'\\]|\\.)*'")
+    _dquote_re = re.compile(r'"(?:[^"\\]|\\.)*"')
 
 def split_quoted (s):
     """Split a string up according to Unix shell-like rules for quotes and
@@ -227,6 +230,7 @@ def split_quoted (s):
     # This is a nice algorithm for splitting up a single string, since it
     # doesn't require character-by-character examination.  It was a little
     # bit of a brain-bender to get it working right, though...
+    if _wordchars_re is None: _init_regex()
 
     s = string.strip(s)
     words = []
