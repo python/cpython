@@ -27,6 +27,16 @@ RuntimeError
 (not used any more?)
 spam
 SyntaxError
+'continue' not supported inside 'try' clause
+ok
+'continue' not supported inside 'try' clause
+ok
+'continue' not supported inside 'try' clause
+ok
+'continue' not properly in loop
+ok
+'continue' not properly in loop
+ok
 spam
 IndentationError
 spam
