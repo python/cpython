@@ -268,7 +268,7 @@ class test__mkstemp_inner(TC):
         def __del__(self):
             self._close(self.fd)
             self._unlink(self.name)
-            
+
     def do_create(self, dir=None, pre="", suf="", bin=1):
         if dir is None:
             dir = tempfile.gettempdir()
@@ -485,7 +485,7 @@ class test_mkdtemp(TC):
         os.rmdir(self.do_create(suf="b"))
         os.rmdir(self.do_create(pre="a", suf="b"))
         os.rmdir(self.do_create(pre="aa", suf=".txt"))
-        
+
     def test_basic_many(self):
         """mkdtemp can create many directories (stochastic)"""
         extant = range(1000)

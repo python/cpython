@@ -58,11 +58,14 @@ except (ImportError, AttributeError):
         release = acquire
 
 _text_openflags = _os.O_RDWR | _os.O_CREAT | _os.O_EXCL
-if hasattr(_os, 'O_NOINHERIT'): _text_openflags |= _os.O_NOINHERIT
-if hasattr(_os, 'O_NOFOLLOW'): _text_openflags |= _os.O_NOFOLLOW
+if hasattr(_os, 'O_NOINHERIT'):
+    _text_openflags |= _os.O_NOINHERIT
+if hasattr(_os, 'O_NOFOLLOW'):
+    _text_openflags |= _os.O_NOFOLLOW
 
 _bin_openflags = _text_openflags
-if hasattr(_os, 'O_BINARY'): _bin_openflags |= _os.O_BINARY
+if hasattr(_os, 'O_BINARY'):
+    _bin_openflags |= _os.O_BINARY
 
 if hasattr(_os, 'TMP_MAX'):
     TMP_MAX = _os.TMP_MAX
@@ -177,7 +180,7 @@ def _candidate_tempdir_list():
         dirlist.append(_os.curdir)
 
     return dirlist
-    
+
 def _get_default_tempdir():
     """Calculate the default directory to use for temporary files.
     This routine should be called through '_once' (see above) as we
@@ -239,7 +242,7 @@ def _mkstemp_inner(dir, pre, suf, flags):
             raise
 
     raise IOError, (_errno.EEXIST, "No usable temporary file name found")
-    
+
 
 # User visible interfaces.
 
@@ -302,7 +305,7 @@ def mkdtemp(suffix="", prefix=template, dir=gettempdir()):
     """
 
     names = _get_candidate_names()
-    
+
     for seq in xrange(TMP_MAX):
         name = names.next()
         file = _os.path.join(dir, prefix + name + suffix)
