@@ -28,9 +28,12 @@
 #include <string.h>
 
 #define bool	int
+#ifndef TRUE
 #define TRUE	1
+#endif
+#ifndef FALSE
 #define FALSE	0
-
+#endif
 
 bool    opterr = TRUE;          /* generate error messages */
 int     optind = 1;             /* index into argv array   */
