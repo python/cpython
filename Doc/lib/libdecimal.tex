@@ -932,9 +932,9 @@ def pi():
     """Compute Pi to the current precision.
 
     >>> print pi()
-    3.141592653589793238462643383279502887
+    3.141592653589793238462643383
     """
-    getcontext().prec += 9  # extra digits for intermediate steps
+    getcontext().prec += 2  # extra digits for intermediate steps
     three = Decimal(3)      # substitute "three=3.0" for regular floats
     lastc, t, c, n, na, d, da = 0, three, 3, 1, 0, 0, 24
     while c != lastc:
@@ -943,22 +943,22 @@ def pi():
         d, da = d+da, da+32
         t = (t * n) / d
         c += t
-    getcontext().prec -= 9
-    return c
+    getcontext().prec -= 2
+    return c + 0
 
 def exp(x):
     """Return e raised to the power of x.  Result type matches input type.
 
     >>> print exp(Decimal(1))
-    2.718281828459045235360287471352662498
+    2.718281828459045235360287471
     >>> print exp(Decimal(2))
-    7.389056098930650227230427460575007813
+    7.389056098930650227230427461
     >>> print exp(2.0)
     7.38905609893
     >>> print exp(2+0j)
     (7.38905609893+0j)
     """
-    getcontext().prec += 9  # extra digits for intermediate steps
+    getcontext().prec += 2  # extra digits for intermediate steps
     i, laste, e, fact, num = 0, 0, 1, 1, 1
     while e != laste:
         laste = e    
@@ -966,20 +966,20 @@ def exp(x):
         fact *= i
         num *= x     
         e += num / fact   
-    getcontext().prec -= 9        
-    return e
+    getcontext().prec -= 2        
+    return e + 0
 
 def cos(x):
     """Return the cosine of x as measured in radians.
 
     >>> print cos(Decimal('0.5'))
-    0.8775825618903727161162815826038296521
+    0.8775825618903727161162815826
     >>> print cos(0.5)
     0.87758256189
     >>> print cos(0.5+0j)
     (0.87758256189+0j)
     """
-    getcontext().prec += 9  # extra digits for intermediate steps
+    getcontext().prec += 2  # extra digits for intermediate steps
     i, laste, e, fact, num, sign = 0, 0, 1, 1, 1, 1
     while e != laste:
         laste = e    
@@ -988,20 +988,20 @@ def cos(x):
         num *= x * x
         sign *= -1
         e += num / fact * sign 
-    getcontext().prec -= 9        
-    return e    
+    getcontext().prec -= 2        
+    return e + 0
 
 def sin(x):
     """Return the cosine of x as measured in radians.
 
     >>> print sin(Decimal('0.5'))
-    0.4794255386042030002732879352155713880
+    0.4794255386042030002732879352
     >>> print sin(0.5)
     0.479425538604
     >>> print sin(0.5+0j)
     (0.479425538604+0j)
     """
-    getcontext().prec += 9  # extra digits for intermediate steps
+    getcontext().prec += 2  # extra digits for intermediate steps
     i, laste, e, fact, num, sign = 1, 0, x, 1, x, 1
     while e != laste:
         laste = e    
@@ -1010,7 +1010,7 @@ def sin(x):
         num *= x * x
         sign *= -1
         e += num / fact * sign 
-    getcontext().prec -= 9        
-    return e
+    getcontext().prec -= 2        
+    return e + 0
 
 \end{verbatim}                                             
