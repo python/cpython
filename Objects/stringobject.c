@@ -3060,9 +3060,7 @@ _PyString_Resize(PyObject **pv, int newsize)
 		return -1;
 	}
 	/* XXX UNREF/NEWREF interface should be more symmetrical */
-#ifdef Py_REF_DEBUG
-	--_Py_RefTotal;
-#endif
+	_Py_DEC_REFTOTAL;
 	_Py_ForgetReference(v);
 	*pv = (PyObject *)
 		PyObject_REALLOC((char *)v,

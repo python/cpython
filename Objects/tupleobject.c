@@ -677,9 +677,7 @@ _PyTuple_Resize(PyObject **pv, int newsize)
 	}
 
 	/* XXX UNREF/NEWREF interface should be more symmetrical */
-#ifdef Py_REF_DEBUG
-	--_Py_RefTotal;
-#endif
+	_Py_DEC_REFTOTAL;
 	_PyObject_GC_UNTRACK(v);
 	_Py_ForgetReference((PyObject *) v);
 	/* DECREF items deleted by shrinkage */

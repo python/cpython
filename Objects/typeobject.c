@@ -365,22 +365,8 @@ call_finalizer(PyObject *self)
 	PyObject *error_type, *error_value, *error_traceback;
 
 	/* Temporarily resurrect the object. */
-#ifdef Py_TRACE_REFS
-#ifndef Py_REF_DEBUG
-#   error "Py_TRACE_REFS defined but Py_REF_DEBUG not."
-#endif
-	/* much too complicated if Py_TRACE_REFS defined */
-	_Py_NewReference((PyObject *)self);
-#ifdef COUNT_ALLOCS
-	/* compensate for boost in _Py_NewReference; note that
-	 * _Py_RefTotal was also boosted; we'll knock that down later.
-	 */
-	self->ob_type->tp_allocs--;
-#endif
-#else /* !Py_TRACE_REFS */
-	/* Py_INCREF boosts _Py_RefTotal if Py_REF_DEBUG is defined */
-	Py_INCREF(self);
-#endif /* !Py_TRACE_REFS */
+	assert(self->ob_refcnt == 0);
+	self->ob_refcnt = 1;
 
 	/* Save the current exception, if any. */
 	PyErr_Fetch(&error_type, &error_value, &error_traceback);
@@ -402,28 +388,32 @@ call_finalizer(PyObject *self)
 	/* Undo the temporary resurrection; can't use DECREF here, it would
 	 * cause a recursive call.
 	 */
-#ifdef Py_REF_DEBUG
-	/* _Py_RefTotal was boosted either by _Py_NewReference or
-	 * Py_INCREF above.
-	 */
-	_Py_RefTotal--;
-#endif
-	if (--self->ob_refcnt > 0) {
-#ifdef COUNT_ALLOCS
-		self->ob_type->tp_frees--;
-#endif
-		_PyObject_GC_TRACK(self);
-		return -1; /* __del__ added a reference; don't delete now */
-	}
-#ifdef Py_TRACE_REFS
-	_Py_ForgetReference((PyObject *)self);
-#ifdef COUNT_ALLOCS
-	/* compensate for increment in _Py_ForgetReference */
-	self->ob_type->tp_frees--;
-#endif
-#endif
+	assert(self->ob_refcnt > 0);
+	if (--self->ob_refcnt == 0)
+		return 0;	/* this is the normal path out */
 
-	return 0;
+	/* __del__ resurrected it!  Make it look like the original Py_DECREF
+	 * never happened.
+	 */
+	{
+		int refcnt = self->ob_refcnt;
+		_Py_NewReference(self);
+		self->ob_refcnt = refcnt;
+	}
+	assert(_Py_AS_GC(self)->gc.gc_refs != _PyGC_REFS_UNTRACKED);
+	/* If Py_REF_DEBUG, the original decref dropped _Py_RefTotal, but
+	 * _Py_NewReference bumped it again, so that's a wash.
+	 * If Py_TRACE_REFS, _Py_NewReference re-added self to the object
+	 * chain, so no more to do there either.
+	 * If COUNT_ALLOCS, the original decref bumped tp_frees, and
+	 * _Py_NewReference bumped tp_allocs:  both of those need to be
+	 * undone.
+	 */
+#ifdef COUNT_ALLOCS
+	--self->ob_type->tp_frees;
+	--self->ob_type->tp_allocs;
+#endif
+	return -1; /* __del__ added a reference; don't delete now */
 }
 
 static void
@@ -1387,13 +1377,13 @@ type_getattro(PyTypeObject *type, PyObject *name)
 
 	/* No readable descriptor found yet */
 	meta_get = NULL;
-		
+
 	/* Look for the attribute in the metatype */
 	meta_attribute = _PyType_Lookup(metatype, name);
 
 	if (meta_attribute != NULL) {
 		meta_get = meta_attribute->ob_type->tp_descr_get;
-				
+
 		if (meta_get != NULL && PyDescr_IsData(meta_attribute)) {
 			/* Data descriptors implement tp_descr_set to intercept
 			 * writes. Assume the attribute is not overridden in
@@ -1416,7 +1406,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
 			return local_get(attribute, (PyObject *)NULL,
 					 (PyObject *)type);
 		}
-		
+
 		Py_INCREF(attribute);
 		return attribute;
 	}

@@ -7,7 +7,7 @@
 #include "macglue.h"
 #endif
 
-#if defined( Py_TRACE_REFS ) || defined( Py_REF_DEBUG )
+#ifdef Py_REF_DEBUG
 DL_IMPORT(long) _Py_RefTotal;
 #endif
 
@@ -1876,13 +1876,13 @@ _Py_ResetReferences(void)
 void
 _Py_NewReference(PyObject *op)
 {
-	_Py_RefTotal++;
+	_Py_INC_REFTOTAL;
 	op->ob_refcnt = 1;
 	op->_ob_next = refchain._ob_next;
 	op->_ob_prev = &refchain;
 	refchain._ob_next->_ob_prev = op;
 	refchain._ob_next = op;
-	_PyMAYBE_BUMP_COUNT(op);
+	_Py_INC_TPALLOCS(op);
 }
 
 void
@@ -1907,7 +1907,7 @@ _Py_ForgetReference(register PyObject *op)
 	op->_ob_next->_ob_prev = op->_ob_prev;
 	op->_ob_prev->_ob_next = op->_ob_next;
 	op->_ob_next = op->_ob_prev = NULL;
-	_PyMAYBE_BUMP_FREECOUNT(op);
+	_Py_INC_TPFREES(op);
 }
 
 void
