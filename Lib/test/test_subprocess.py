@@ -56,7 +56,7 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_stdout_none(self):
         # .stdout is None when not redirected
-        p = subprocess.Popen([sys.executable, "-c", 
+        p = subprocess.Popen([sys.executable, "-c",
                              'print "    this bit of output is from a '
                              'test of stdout in a different '
                              'process ..."'],
@@ -350,11 +350,16 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_poll(self):
         p = subprocess.Popen([sys.executable,
-                          "-c", "import time; time.sleep(4)"])
-        while p.poll() == None:
-            sys.stdout.write(".")
-            sys.stdout.flush()
-            time.sleep(0.5)
+                          "-c", "import time; time.sleep(1)"])
+        count = 0
+        while p.poll() is None:
+            time.sleep(0.1)
+            count += 1
+        # We expect that the poll loop probably went around about 10 times,
+        # but, based on system scheduling we can't control, it's possible
+        # poll() never returned None.  It "should be" very rare that it
+        # didn't go around at least twice.
+        self.assert_(count >= 2)
         # Subsequent invocations should just return the returncode
         self.assertEqual(p.poll(), 0)
 
