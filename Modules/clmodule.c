@@ -41,6 +41,11 @@ typedef struct {
 	object *ob_data; 
 } clobject;
 
+#define CheckCompressor(self)	if ((self)->ob_compressorHdl == NULL) { \
+					err_setstr(RuntimeError, "(de)compressor not active"); \
+					return NULL; \
+					}
+
 extern typeobject Cltype;	/* Really static, forward */
 
 #define is_clobject(v)		((v)->ob_type == &Cltype)
@@ -63,12 +68,58 @@ cl_ErrorHandler(long errnum, const char *fmt, ...)
 }
 
 static object *
+cl_CloseCompressor(self, args)
+	clobject *self;
+	object *args;
+{
+	CheckCompressor(self);
+
+	if (!getnoarg(args))
+		return NULL;
+
+	if (clCloseCompressor(self->ob_compressorHdl) == FAILURE) {
+		if (!error_handler_called)
+			err_setstr(ClError, "CloseCompressor failed");
+		return NULL;
+	}
+
+	self->ob_compressorHdl = NULL;
+
+	INCREF(None);
+	return None;
+}
+
+static object *
+cl_CloseDecompressor(self, args)
+	clobject *self;
+	object *args;
+{
+	CheckCompressor(self);
+
+	if (!getnoarg(args))
+		return NULL;
+
+	if (clCloseDecompressor(self->ob_compressorHdl) == FAILURE) {
+		if (!error_handler_called)
+			err_setstr(ClError, "CloseDecompressor failed");
+		return NULL;
+	}
+
+	self->ob_compressorHdl = NULL;
+
+	INCREF(None);
+	return None;
+}
+
+static object *
 cl_Compress(self, args)
 	clobject *self;
 	object *args;
 {
 	object *data;
 	long frameIndex, numberOfFrames, dataSize;
+
+	CheckCompressor(self);
 
 	if (!getargs(args, "(ii)", &frameIndex, &numberOfFrames))
 		return NULL;
@@ -104,6 +155,8 @@ cl_Decompress(self, args)
 	object *data;
 	long frameIndex, numberOfFrames;
 
+	CheckCompressor(self);
+
 	if (!getargs(args, "(ii)", &frameIndex, &numberOfFrames))
 		return NULL;
 
@@ -133,6 +186,8 @@ cl_GetCompressorInfo(self, args)
 	void *info;
 	object *infoObject, *res;
 
+	CheckCompressor(self);
+
 	if (!getnoarg(args))
 		return NULL;
 
@@ -153,6 +208,8 @@ cl_GetDefault(self, args)
 {
 	long initial, result;
 
+	CheckCompressor(self);
+
 	if (!getargs(args, "i", &initial))
 		return NULL;
 
@@ -170,6 +227,8 @@ cl_GetMinMax(self, args)
 	object *args;
 {
 	long param, min, max;
+
+	CheckCompressor(self);
 
 	if (!getargs(args, "i", &param))
 		return NULL;
@@ -189,6 +248,8 @@ cl_GetName(self, args)
 {
 	long descriptor;
 	char *name;
+
+	CheckCompressor(self);
 
 	if (!getargs(args, "i", &descriptor))
 		return NULL;
@@ -217,6 +278,8 @@ doParams(self, args, func, modified)
 	long length;
 	int i;
 	
+	CheckCompressor(self);
+
 	if (!getargs(args, "O", &list))
 		return NULL;
 	if (!is_listobject(list)) {
@@ -277,6 +340,8 @@ cl_QueryParams(self, args)
 	object *list;
 	int i;
 
+	CheckCompressor(self);
+
 	if (!getnoarg(args))
 		return NULL;
 
@@ -315,6 +380,7 @@ cl_QueryParams(self, args)
 }
 
 static struct methodlist compressor_methods[] = {
+	{"CloseCompressor",	cl_CloseCompressor},
 	{"Compress",		cl_Compress},
 	{"GetCompressorInfo",	cl_GetCompressorInfo},
 	{"GetDefault",		cl_GetDefault},
@@ -327,6 +393,7 @@ static struct methodlist compressor_methods[] = {
 };
 
 static struct methodlist decompressor_methods[] = {
+	{"CloseDecompressor",	cl_CloseDecompressor},
 	{"Decompress",		cl_Decompress},
 	{"GetDefault",		cl_GetDefault},
 	{"GetMinMax",		cl_GetMinMax},
@@ -536,8 +603,18 @@ cl_OpenDecompressor(self, args)
 	clobject *new;
 	object *res;
 
-	if (!getargs(args, "(s#OO)", &info, &infoSize, &GetDataCBPtr,
-		     &callbackID))
+	if (!getargs(args, "((iiiiiiiiii)s#OO)",
+		     &compressionFormat.width,
+		     &compressionFormat.height,
+		     &compressionFormat.frameSize,
+		     &compressionFormat.dataMaxSize,
+		     &compressionFormat.originalFormat,
+		     &compressionFormat.components,
+		     &compressionFormat.bitsPerComponent,
+		     &compressionFormat.frameRate,
+		     &compressionFormat.numberOfFrames,
+		     &compressionFormat.compressionScheme,
+		     &info, &infoSize, &GetDataCBPtr, &callbackID))
 		return NULL;
 
 	new = NEWOBJ(clobject, &Cltype);
@@ -552,6 +629,7 @@ cl_OpenDecompressor(self, args)
 	error_handler_called = 0;
 	if (clOpenDecompressor(&compressionFormat, infoSize, info, GetData,
 			       (void *) new, &new->ob_compressorHdl) == FAILURE) {
+		new->ob_compressorHdl = NULL; /* just in case... */
 		DECREF(new);
 		if (!error_handler_called)
 			err_setstr(ClError, "opendecompressor failed");
@@ -566,21 +644,9 @@ cl_OpenDecompressor(self, args)
 	new->ob_callbackID = callbackID;
 	XINCREF(new->ob_callbackID);
 	new->ob_data = NULL;
+	new->ob_dataMaxSize = compressionFormat.dataMaxSize;
 
-	res = mkvalue("(O(iiiiiiiiii))", new, 
-		     compressionFormat.width,
-		     compressionFormat.height,
-		     compressionFormat.frameSize,
-		     compressionFormat.dataMaxSize,
-		     compressionFormat.originalFormat,
-		     compressionFormat.components,
-		     compressionFormat.bitsPerComponent,
-		     compressionFormat.frameRate,
-		     compressionFormat.numberOfFrames,
-		     compressionFormat.compressionScheme);
-
-	DECREF(new);
-	return res;
+	return new;
 }
 
 static object *
