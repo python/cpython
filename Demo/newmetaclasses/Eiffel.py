@@ -9,6 +9,7 @@ class EiffelBaseMetaClass(type):
         return super(EiffelBaseMetaClass, meta).__new__(meta, name, bases,
                                                         dict)
 
+    @classmethod
     def convert_methods(cls, dict):
         """Replace functions in dict with EiffelMethod wrappers.
 
@@ -30,11 +31,10 @@ class EiffelBaseMetaClass(type):
             if pre or post:
                 dict[k] = cls.make_eiffel_method(dict[m], pre, post)
 
-    convert_methods = classmethod(convert_methods)
-
 class EiffelMetaClass1(EiffelBaseMetaClass):
     # an implementation of the "eiffel" meta class that uses nested functions
 
+    @staticmethod
     def make_eiffel_method(func, pre, post):
         def method(self, *args, **kwargs):
             if pre:
@@ -48,8 +48,6 @@ class EiffelMetaClass1(EiffelBaseMetaClass):
             method.__doc__ = func.__doc__
 
         return method
-
-    make_eiffel_method = staticmethod(make_eiffel_method)
 
 class EiffelMethodWrapper:
 

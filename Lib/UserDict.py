@@ -63,12 +63,12 @@ class UserDict:
         return self.data.popitem()
     def __contains__(self, key):
         return key in self.data
+    @classmethod
     def fromkeys(cls, iterable, value=None):
         d = cls()
         for key in iterable:
             d[key] = value
         return d
-    fromkeys = classmethod(fromkeys)
 
 class IterableUserDict(UserDict):
     def __iter__(self):
