@@ -401,7 +401,10 @@ class FormulaCell(BaseCell):
     def recalc(self, rexec):
         if self.value is None:
             try:
-                self.value = rexec.r_eval(self.translated)
+                # A hack to evaluate expressions using true division
+                rexec.r_exec("from __future__ import division\n" +
+                             "__value__ = eval(%s)" % repr(self.translated))
+                self.value = rexec.r_eval("__value__")
             except:
                 exc = sys.exc_info()[0]
                 if hasattr(exc, "__name__"):
@@ -490,7 +493,6 @@ class SheetGUI:
 
     TO DO:
     - clear multiple cells
-    - Select rows or columns
     - Insert, clear, remove rows or columns
     - Show new contents while typing
     - Scroll bars
@@ -535,6 +537,7 @@ class SheetGUI:
         self.entry.bind("<Shift-Return>", self.shift_return_event)
         self.entry.bind("<Tab>", self.tab_event)
         self.entry.bind("<Shift-Tab>", self.shift_tab_event)
+        self.entry.bind("<Delete>", self.delete_event)
         # Now create the cell grid
         self.makegrid(rows, columns)
         # Select the top-left cell
@@ -544,11 +547,22 @@ class SheetGUI:
         # Copy the sheet cells to the GUI cells
         self.sync()
 
+    def delete_event(self, event):
+        if self.cornerxy != self.currentxy and self.cornerxy is not None:
+            self.sheet.clearcells(*(self.currentxy + self.cornerxy))
+        else:
+            self.sheet.clearcell(*self.currentxy)
+        self.sync()
+        self.entry.delete(0, 'end')
+        return "break"
+
     def makegrid(self, rows, columns):
         """Helper to create the grid of GUI cells.
 
         The edge (x==0 or y==0) is filled with labels; the rest is real cells.
         """
+        self.rows = rows
+        self.columns = columns
         self.gridcells = {}
         # Create the top row of labels
         for x in range(1, columns+1):
@@ -556,11 +570,23 @@ class SheetGUI:
             cell = Tk.Label(self.cellgrid, text=colnum2name(x), relief='raised')
             cell.grid_configure(column=x, row=0, sticky='WE')
             self.gridcells[x, 0] = cell
+            cell.__x = x
+            cell.__y = 0
+            cell.bind("<ButtonPress-1>", self.selectcolumn)
+            cell.bind("<B1-Motion>", self.extendcolumn)
+            cell.bind("<ButtonRelease-1>", self.extendcolumn)
+            cell.bind("<Shift-Button-1>", self.extendcolumn)
         # Create the leftmost column of labels
         for y in range(1, rows+1):
             cell = Tk.Label(self.cellgrid, text=str(y), relief='raised')
             cell.grid_configure(column=0, row=y, sticky='WE')
             self.gridcells[0, y] = cell
+            cell.__x = 0
+            cell.__y = y
+            cell.bind("<ButtonPress-1>", self.selectrow)
+            cell.bind("<B1-Motion>", self.extendrow)
+            cell.bind("<ButtonRelease-1>", self.extendrow)
+            cell.bind("<Shift-Button-1>", self.extendrow)
         # Create the real cells
         for x in range(1, columns+1):
             for y in range(1, rows+1):
@@ -568,12 +594,56 @@ class SheetGUI:
                                 bg='white', fg='black')
                 cell.grid_configure(column=x, row=y, sticky='NWSE')
                 self.gridcells[x, y] = cell
-                def helper(event, self=self, x=x, y=y):
-                    self.setcurrent(x, y)
-                cell.bind("<Button-1>", helper)
-                def shelper(event, self=self, x=x, y=y):
-                    self.setcorner(x, y)
-                cell.bind("<Shift-Button-1>", shelper)
+                cell.__x = x
+                cell.__y = y
+                # Bind mouse events
+                cell.bind("<ButtonPress-1>", self.press)
+                cell.bind("<B1-Motion>", self.motion)
+                cell.bind("<ButtonRelease-1>", self.release)
+                cell.bind("<Shift-Button-1>", self.release)
+
+    def selectcolumn(self, event):
+        x, y = self.whichxy(event)
+        self.setcurrent(x, 1)
+        self.setcorner(x, self.rows)
+
+    def extendcolumn(self, event):
+        x, y = self.whichxy(event)
+        if x > 0:
+            self.setcurrent(self.currentxy[0], 1)
+            self.setcorner(x, self.rows)
+
+    def selectrow(self, event):
+        x, y = self.whichxy(event)
+        self.setcurrent(1, y)
+        self.setcorner(self.columns, y)
+
+    def extendrow(self, event):
+        x, y = self.whichxy(event)
+        if y > 0:
+            self.setcurrent(1, self.currentxy[1])
+            self.setcorner(self.columns, y)
+
+    def press(self, event):
+        x, y = self.whichxy(event)
+        if x > 0 and y > 0:
+            self.setcurrent(x, y)
+
+    def motion(self, event):
+        x, y = self.whichxy(event)
+        if x > 0 and y > 0:
+            self.setcorner(x, y)
+
+    release = motion
+
+    def whichxy(self, event):
+        w = self.cellgrid.winfo_containing(event.x_root, event.y_root)
+        if w is not None and isinstance(w, Tk.Label):
+            try:
+                return w.__x, w.__y
+            except AttributeError:
+                pass
+        return 0, 0
 
     def save(self):
         self.sheet.save(self.filename)
@@ -600,7 +670,7 @@ class SheetGUI:
         self.cornerxy = None
         gridcell = self.gridcells.get(self.currentxy)
         if gridcell is not None:
-            gridcell['bg'] = 'lightBlue'
+            gridcell['bg'] = 'yellow'
 
     def setcorner(self, x, y):
         if self.currentxy is None or self.currentxy == (x, y):
@@ -619,6 +689,9 @@ class SheetGUI:
                 gridcell = self.gridcells.get((x, y))
                 if gridcell is not None:
                     gridcell['bg'] = 'lightBlue'
+        gridcell = self.gridcells.get(self.currentxy)
+        if gridcell is not None:
+            gridcell['bg'] = 'yellow'
         name1 = cellname(*self.currentxy)
         name2 = cellname(*self.cornerxy)
         self.beacon['text'] = "%s:%s" % (name1, name2)
@@ -732,7 +805,11 @@ def test_basic():
 
 def test_gui():
     "GUI test."
-    g = SheetGUI()
+    if sys.argv[1:]:
+        filename = sys.argv[1]
+    else:
+        filename = "sheet1.xml"
+    g = SheetGUI(filename)
     g.root.mainloop()
 
 if __name__ == '__main__':
