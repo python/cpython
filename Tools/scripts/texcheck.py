@@ -14,8 +14,8 @@ Command line usage:
     python texcheck.py [-h] [-k keyword] foobar.tex
 
 Options:
-    -m          Munge parenthesis and brackets.  [0,n) would normally mismatch.
-    -k keyword: Keyword is a valid LaTeX command.  Do not include the backslash.
+    -m          Munge parenthesis and brackets. [0,n) would normally mismatch.
+    -k keyword: Keyword is a valid LaTeX command. Do not include the backslash.
     -f:         Forward-slash warnings suppressed.
     -d:         Delimiter check only (useful for non-LaTeX files).
     -h:         Help
@@ -52,6 +52,11 @@ cmdstr = r"""
     \refmodindex \seerfc \makeindex \makemodindex \renewcommand
     \indexname \appendix \protect \indexiv \mbox \textasciitilde
     \platform \seeurl \leftmargin \labelwidth \localmoduletable
+    \LaTeX \copyright \memberline \backslash \pi \centerline
+    \caption \vspace \textwidth \menuselection \textless
+    \makevar \csimplemacro \menuselection \bfcode \sub \release
+    \email \kwindex \refexmodindex \filenq \e \menuselection
+    \exindex \linev \newsgroup \verbatim \setshortversion
 """
 
 def matchclose(c_lineno, c_symbol, openers, pairmap):
@@ -85,8 +90,6 @@ def checkit(source, opts, morecmds=[]):
     for cmd in morecmds:
         validcmds.add('\\' + cmd)
 
-    openers = []                            # Stack of pending open delimiters
-
     if '-m' in opts:
         pairmap = {']':'[(', ')':'(['}      # Munged openers
     else:
@@ -94,6 +97,10 @@ def checkit(source, opts, morecmds=[]):
     openpunct = sets.Set('([')  # Set of valid openers
 
     delimiters = re.compile(r'\\(begin|end){([_a-zA-Z]+)}|([()\[\]])')
+    braces = re.compile(r'({)|(})')
+
+    openers = []                            # Stack of pending open delimiters
+    bracestack = []                         # Stack of pending open braces
 
     tablestart = re.compile(r'\\begin{(?:long)?table([iv]+)}')
     tableline = re.compile(r'\\line([iv]+){')
@@ -107,7 +114,7 @@ def checkit(source, opts, morecmds=[]):
     for lineno, line in izip(count(startline), islice(source, startline-1, None)):
         line = line.rstrip()
 
-        if '-f' not in opts and '/' in line:
+        if '/' in line and '-f' not in opts and '-d' not in opts:
             # Warn whenever forward slashes encountered
             line = line.rstrip()
             print 'Warning, forward slash on line %d: %s' % (lineno, line)
@@ -123,7 +130,7 @@ def checkit(source, opts, morecmds=[]):
                 if cmd not in validcmds:
                     print r'Warning, unknown tex cmd on line %d: \%s' % (lineno, cmd)
 
-        # Check balancing of open/close markers (parens, brackets, etc)
+        # Check balancing of open/close parenthesis and brackets
         for begend, name, punct in delimiters.findall(line):
             if '-v' in opts:
                 print lineno, '|', begend, name, punct,
@@ -137,6 +144,18 @@ def checkit(source, opts, morecmds=[]):
                 matchclose(lineno, punct, openers, pairmap)
             if '-v' in opts:
                 print '   --> ', openers
+
+        # Balance opening and closing braces
+        for open, close in braces.findall(line):
+            if open == '{':
+                bracestack.append(lineno)
+            if close == '}':
+                try:
+                    bracestack.pop()
+                except IndexError:
+                    print r'Warning, unmatched } on line %s.' % (lineno,)
+            if '-v' in opts:
+                print '   --> ', bracestack
 
         # Check table levels (make sure lineii only inside tableii)
         m = tablestart.search(line)
@@ -152,6 +171,8 @@ def checkit(source, opts, morecmds=[]):
     lastline = lineno
     for lineno, symbol in openers:
         print "Unmatched open delimiter '%s' on line %d" % (symbol, lineno)
+    for lineno in bracestack:
+        print "Unmatched { on line %d" % (lineno,)
     print 'Done checking %d lines.' % (lastline,)
     return 0
 
