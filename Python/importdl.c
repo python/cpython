@@ -54,8 +54,6 @@ _PyImport_LoadDynamicModule(char *name, char *pathname, FILE *fp)
 	_Py_PackageContext = oldcontext;
 	if (PyErr_Occurred())
 		return NULL;
-	if (_PyImport_FixupExtension(name, pathname) == NULL)
-		return NULL;
 
 	m = PyDict_GetItemString(PyImport_GetModuleDict(), name);
 	if (m == NULL) {
@@ -66,6 +64,9 @@ _PyImport_LoadDynamicModule(char *name, char *pathname, FILE *fp)
 	/* Remember the filename as the __file__ attribute */
 	if (PyModule_AddStringConstant(m, "__file__", pathname) < 0)
 		PyErr_Clear(); /* Not important enough to report */
+
+	if (_PyImport_FixupExtension(name, pathname) == NULL)
+		return NULL;
 	if (Py_VerboseFlag)
 		PySys_WriteStderr(
 			"import %s # dynamically loaded from %s\n",

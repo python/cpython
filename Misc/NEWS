@@ -20,6 +20,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- Bug #698282: Add __file__ to dynamic modules in multiple interpreters.
+
 - Patch #798145: Return correct information from nl_langinfo(RADIXCHAR).
 
 - Bug #797447: Correct confusing error message for unsupported locales.
