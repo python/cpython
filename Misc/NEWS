@@ -57,9 +57,16 @@ Type/class unification and new-style classes
 
 Core and builtins
 
-- XXX Karatsuba multiplication.  This is currently used if and only
-  if envar KARAT exists.  It needs more correctness and speed testing,
-  the latter especially with unbalanced bit lengths.
+- When multiplying very large integers, a version of the so-called
+  Karatsuba algorithm is now used.  This is most effective if the
+  inputs have roughly the same size.  If they both have about N digits,
+  Karatsuba multiplication has O(N**1.58) runtime (the exponent is
+  log_base_2(3)) instead of the previous O(N**2).  Measured results may
+  be better or worse than that, depending on platform quirks.  Note that
+  this is a simple implementation, and there's no intent here to compete
+  with, e.g., gmp.  It simply gives a very nice speedup when it applies.
+  XXX Karatsuba multiplication can be slower when the inputs have very
+  XXX different sizes.
 
 - u'%c' will now raise a ValueError in case the argument is an
   integer outside the valid range of Unicode code point ordinals.
