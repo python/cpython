@@ -866,7 +866,7 @@
 \newenvironment{tableii}[4]{%
   \begin{center}%
     \def\lineii##1##2{\csname#2\endcsname{##1}&##2\\}%
-    \begin{tabular}{#1}\strong{#3}&\strong{#4} \\* \hline\hline%
+    \begin{tabular}{#1}\strong{#3}&\strong{#4} \\* \hline%
 }{%
     \end{tabular}%
   \end{center}%
@@ -875,7 +875,7 @@
 \newenvironment{longtableii}[4]{%
   \begin{center}%
     \def\lineii##1##2{\csname#2\endcsname{##1}&##2\\}%
-    \begin{longtable}[c]{#1}\strong{#3}&\strong{#4} \\* \hline\hline\endhead%
+    \begin{longtable}[c]{#1}\strong{#3}&\strong{#4} \\* \hline\endhead%
 }{%
     \end{longtable}%
   \end{center}%
@@ -885,7 +885,7 @@
   \begin{center}%
     \def\lineiii##1##2##3{\csname#2\endcsname{##1}&##2&##3\\}%
     \begin{tabular}{#1}\strong{#3}&\strong{#4}&\strong{#5} \\%
-      \hline\hline%
+      \hline%
 }{%
     \end{tabular}%
   \end{center}%
@@ -895,7 +895,7 @@
   \begin{center}%
     \def\lineiii##1##2##3{\csname#2\endcsname{##1}&##2&##3\\}%
     \begin{longtable}[c]{#1}\strong{#3}&\strong{#4}&\strong{#5} \\%
-      \hline\hline\endhead%
+      \hline\endhead%
 }{%
     \end{longtable}%
   \end{center}%
@@ -905,7 +905,7 @@
   \begin{center}%
     \def\lineiv##1##2##3##4{\csname#2\endcsname{##1}&##2&##3&##4\\}%
     \begin{tabular}{#1}\strong{#3}&\strong{#4}&\strong{#5}&\strong{#6} \\%
-      \hline\hline%
+      \hline%
 }{%
     \end{tabular}%
   \end{center}%
@@ -916,7 +916,7 @@
     \def\lineiv##1##2##3##4{\csname#2\endcsname{##1}&##2&##3&##4\\}%
     \begin{longtable}[c]{#1}\strong{#3}&\strong{#4}&\strong{#5}&\strong{#6}%
       \\%
-      \hline\hline\endhead%
+      \hline\endhead%
 }{%
     \end{longtable}%
   \end{center}%
