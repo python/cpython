@@ -294,6 +294,14 @@ static PyMethodDef termios_methods[] =
 };
 
 
+#if defined(VSWTCH) && !defined(VSWTC)
+#define VSWTC VSWTCH
+#endif
+
+#if defined(VSWTC) && !defined(VSWTCH)
+#define VSWTCH VSWTC
+#endif
+
 static struct constant {
 	char *name;
 	long value;
@@ -320,7 +328,9 @@ static struct constant {
 #ifdef B230400
 	{"B230400", B230400},
 #endif
+#ifdef CBAUDEX
 	{"CBAUDEX", CBAUDEX},
+#endif
 
 	/* tcsetattr() constants */
 	{"TCSANOW", TCSANOW},
@@ -440,6 +450,7 @@ static struct constant {
 	{"VTIME", VTIME},
 	{"VMIN", VMIN},
 	{"VSWTC", VSWTC},
+	{"VSWTCH", VSWTCH},
 	{"VSTART", VSTART},
 	{"VSTOP", VSTOP},
 	{"VSUSP", VSUSP},
