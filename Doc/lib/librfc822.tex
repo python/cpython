@@ -255,10 +255,10 @@ there is no header matching \var{name}, or it is unparsable, return
 In particular: \code{\var{m}[name]} is like
 \code{\var{m}.getheader(name)} but raises \exception{KeyError} if
 there is no matching header; and \code{len(\var{m})},
-\code{\var{m}.get(\var{name}\optional{\var{, default}})},
+\code{\var{m}.get(\var{name}\optional{, \var{default}})},
 \code{\var{m}.has_key(\var{name})}, \code{\var{m}.keys()},
 \code{\var{m}.values()} \code{\var{m}.items()}, and
-\code{\var{m}.setdefault(\var{name}\optional{\var{, default}})} act as
+\code{\var{m}.setdefault(\var{name}\optional{, \var{default}})} act as
 expected, with the one difference that \method{setdefault()} uses
 an empty string as the default value.  \class{Message} instances
 also support the mapping writable interface \code{\var{m}[name] =

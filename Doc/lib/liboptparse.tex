@@ -82,14 +82,14 @@ First, we need to establish some terminology.
 a chunk of text that a user enters on the command-line, and that the
 shell passes to \cfunction{execl()} or \cfunction{execv()}.  In
 Python, arguments are elements of
-\var{sys.argv[1:]}. (\var{sys.argv[0]} is the name of the program
+\code{sys.argv[1:]}. (\code{sys.argv[0]} is the name of the program
 being executed; in the context of parsing arguments, it's not very
 important.)  \UNIX{} shells also use the term ``word''.
 
 It is occasionally desirable to use an argument list other than
-\var{sys.argv[1:]}, so you should read ``argument'' as ``an element of
-\var{sys.argv[1:]}, or of some other list provided as a substitute for
-\var{sys.argv[1:]}''.
+\code{sys.argv[1:]}, so you should read ``argument'' as ``an element of
+\code{sys.argv[1:]}, or of some other list provided as a substitute for
+\code{sys.argv[1:]}''.
 
 \term{option}
   an argument used to supply extra information to guide or customize
@@ -306,10 +306,10 @@ args = ["-f", "foo.txt"]
 \end{verbatim}
 
 (Note that if you don't pass an argument list to
-\function{parse_args()}, it automatically uses \var{sys.argv[1:]}.)
+\function{parse_args()}, it automatically uses \code{sys.argv[1:]}.)
 
 When \module{optparse} sees the \programopt{-f}, it consumes the next
-argument---\code{foo.txt}---and stores it in the \var{filename}
+argument---\code{foo.txt}---and stores it in the \member{filename}
 attribute of a special object.  That object is the first return value
 from \function{parse_args()}, so:
 
@@ -354,9 +354,9 @@ parser.add_option("-f", "--file", dest="filename")
 If you don't supply a destination, \module{optparse} figures out a
 sensible default from the option strings: if the first long option
 string is \longprogramopt{foo-bar}, then the default destination is
-\var{foo_bar}.  If there are no long option strings,
+\member{foo_bar}.  If there are no long option strings,
 \module{optparse} looks at the first short option: the default
-destination for \programopt{-f} is \var{f}.
+destination for \programopt{-f} is \member{f}.
 
 Adding types is fairly easy; please refer to
 section~\ref{optparse-adding-types}, ``Adding new types.''
@@ -380,8 +380,8 @@ perfectly OK.  (It just means you have to be a bit careful when setting
 default values---see below.)
 
 When \module{optparse} sees \programopt{-v} on the command line, it sets
-\var{options.verbose} to \code{True}; when it sees \programopt{-q}, it
-sets \var{options.verbose} to \code{False}.
+\code{options.verbose} to \code{True}; when it sees \programopt{-q}, it
+sets \code{options.verbose} to \code{False}.
 
 \subsubsection{Setting default values\label{optparse-setting-default-values}}
 
@@ -394,7 +394,7 @@ address that need, \module{optparse} lets you supply a default value for
 each destination, which is assigned before the command-line is parsed.
 
 First, consider the verbose/quiet example.  If we want
-\module{optparse} to set \var{verbose} to \code{True} unless
+\module{optparse} to set \member{verbose} to \code{True} unless
 \programopt{-q} is seen, then we can do this:
 
 \begin{verbatim}
@@ -411,7 +411,7 @@ parser.add_option("-q", action="store_false", dest="verbose", default=True)
 
 Those are equivalent because you're supplying a default value for the
 option's \emph{destination}, and these two options happen to have the same
-destination (the \var{verbose} variable).
+destination (the \member{verbose} variable).
 
 Consider this:
 
@@ -420,7 +420,7 @@ parser.add_option("-v", action="store_true", dest="verbose", default=False)
 parser.add_option("-q", action="store_false", dest="verbose", default=True)
 \end{verbatim}
 
-Again, the default value for \var{verbose} will be \code{True}: the last
+Again, the default value for \member{verbose} will be \code{True}: the last
 default value supplied for any particular destination is the one that
 counts.
 
@@ -428,7 +428,7 @@ counts.
 
 The last feature that you will use in every script is
 \module{optparse}'s ability to generate help messages.  All you have
-to do is supply a \var{help} value when you add an option.  Let's
+to do is supply a \var{help} argument when you add an option.  Let's
 create a new parser and populate it with user-friendly (documented)
 options:
 
@@ -738,7 +738,7 @@ parser.parse_args()
 \end{verbatim}
 
 one of the first things \module{optparse} does is create a
-\var{values} object:
+\code{values} object:
 
 \begin{verbatim}
 values = Values()
@@ -786,7 +786,7 @@ value according to \var{type} and stored in \var{dest}.  If
 \code{nargs > 1}, multiple arguments will be consumed from the command
 line; all will be converted according to \var{type} and stored to
 \var{dest} as a tuple.  See section~\ref{optparse-option-types},
-``Option types'' below.
+``Option types,'' below.
 
 If \var{choices} (a sequence of strings) is supplied, the type
 defaults to ``choice''.
@@ -795,9 +795,9 @@ If \var{type} is not supplied, it defaults to ``string''.
 
 If \var{dest} is not supplied, \module{optparse} derives a
 destination from the first long option strings (e.g.,
-\longprogramopt{foo-bar} becomes \var{foo_bar}).  If there are no long
+\longprogramopt{foo-bar} becomes \member{foo_bar}).  If there are no long
 option strings, \module{optparse} derives a destination from the first
-short option string (e.g., \programopt{-f} becomes \var{f}).
+short option string (e.g., \programopt{-f} becomes \member{f}).
 
 Example:
 
@@ -1217,7 +1217,7 @@ is the \class{Option} instance that's calling the callback.
 \term{opt}
 is the option string seen on the command-line that's triggering the
 callback.  (If an abbreviated long option was used, \var{opt} will be
-the full, canonical option string---e.g. if the user puts
+the full, canonical option string---for example, if the user puts
 \longprogramopt{foo} on the command-line as an abbreviation for
 \longprogramopt{foobar}, then \var{opt} will be
 \longprogramopt{foobar}.)
@@ -1676,7 +1676,7 @@ You'll have to
 The second, much more complex, possibility is to override the
 command-line syntax implemented by \module{optparse}.  In this case,
 you'd leave the whole machinery of option actions and types alone, but
-rewrite the code that processes \var{sys.argv}.  You'll need to
+rewrite the code that processes \code{sys.argv}.  You'll need to
 subclass \class{OptionParser} in any case; depending on how radical a
 rewrite you want, you'll probably need to override one or all of
 \method{parse_args()}, \method{_process_long_opt()}, and
