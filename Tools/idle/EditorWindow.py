@@ -2,7 +2,16 @@ import sys
 import os
 import string
 from Tkinter import *
+import tkMessageBox
 
+about_title = "About IDLE"
+about_text = """\
+IDLE 0.1
+
+A not totally unintegrated development environment for Python
+
+by Guido van Rossum
+"""
 
 class EditorWindow:
 
@@ -14,12 +23,18 @@ class EditorWindow:
     from AutoIndent import AutoIndent
     from AutoExpand import AutoExpand
     import Bindings
+    
+    about_title = about_title
+    about_text = about_text    
 
     def __init__(self, root, filename=None):
-        self.top = top = Toplevel(root)
+        self.root = root
+        self.menubar = Menu(root)
+        self.top = top = Toplevel(root, menu=self.menubar)
         self.vbar = vbar = Scrollbar(top, name='vbar')
         self.text = text = Text(top, name='text')
 
+        self.createmenubar()
         self.Bindings.apply_bindings(text)
 
         self.top.protocol("WM_DELETE_WINDOW", self.close)
@@ -59,6 +74,35 @@ class EditorWindow:
                 io.set_filename(filename)
 
         self.saved_change_hook()
+
+    def createmenubar(self):
+        mbar = self.menubar
+
+        self.filemenu = Menu(mbar)
+
+        self.editmenu = Menu(mbar)
+
+        self.helpmenu = Menu(mbar, name="help")
+        self.helpmenu.add_command(label="Help...", command=self.help_dialog)
+        self.helpmenu.add_separator()
+        self.helpmenu.add_command(label="About...", command=self.about_dialog)
+
+        mbar.add_cascade(label="File", menu=self.filemenu)
+        mbar.add_cascade(label="Edit", menu=self.editmenu)
+        mbar.add_cascade(label="Help", menu=self.helpmenu)
+
+        dict = {"file": self.filemenu,
+                "edit": self.editmenu,
+                "help": self.helpmenu}
+        self.Bindings.fill_menus(self.text, dict)
+
+    def about_dialog(self):
+        tkMessageBox.showinfo(self.about_title, self.about_text,
+                              master=self.text)
+
+    def help_dialog(self):
+        from HelpWindow import HelpWindow
+        HelpWindow(root=self.root)
 
     def gotoline(self, lineno):
         if lineno is not None and lineno > 0:
