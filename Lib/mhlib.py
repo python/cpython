@@ -31,9 +31,16 @@
 # list = f.listmessages() # list of messages in folder (as numbers)
 # n = f.getcurrent()      # get current message
 # f.setcurrent(n)         # set current message
+# n = f.getlast()         # get last message (0 if no messagse)
+# f.setlast(n)            # set last message (internal use only)
 #
 # dict = f.getsequences() # dictionary of sequences in folder {name: list}
 # f.putsequences(dict)    # write sequences back to folder
+#
+# f.removemessages(list)  # remove messages in list from folder
+# f.refilemessages(list, tofolder) # move messages in list to other folder
+# f.movemessage(n, tofolder, ton)  # move one message to a given destination
+# f.copymessage(n, tofolder, ton)  # copy one message to a given destination
 #
 # m = f.openmessage(n)    # new open message object (costs a file descriptor)
 # m is a derived class of mimetools.Message(rfc822.Message), with:
@@ -43,11 +50,10 @@
 # s = m.getbodytext(0)    # text of message's body, not decoded
 #
 # XXX To do, functionality:
-# - remove, refile messages
 # - annotate messages
 # - create, send messages
 #
-# XXX To do, orgaanization:
+# XXX To do, organization:
 # - move IntSet to separate file
 # - move most Message functionality to module mimetools
 
@@ -68,6 +74,7 @@ import regex
 import string
 import mimetools
 import multifile
+import shutil
 
 
 # Exported constants
@@ -363,12 +370,20 @@ class Folder:
 			topath = tofolder.getmessagefilename(ton)
 			try:
 				os.rename(path, topath)
-				# XXX What if it's on a different filesystem?
-			except os.error, msg:
-				errors.append(msg)
-			else:
-				tofolder.setlast(ton)
-				refiled.append(n)
+			except os.error:
+				# Try copying
+				try:
+					shutil.copy2(path, topath)
+					os.unlink(path)
+				except (IOError, os.error), msg:
+					errors.append(msg)
+					try:
+						os.unlink(topath)
+					except os.error:
+						pass
+					continue
+			tofolder.setlast(ton)
+			refiled.append(n)
 		if refiled:
 			self.removefromallsequences(refiled)
 		if errors:
@@ -376,6 +391,64 @@ class Folder:
 				raise os.error, errors[0]
 			else:
 				raise os.error, ('multiple errors:', errors)
+
+	# Move one message over a specific destination message,
+	# which may or may not already exist.
+	def movemessage(self, n, tofolder, ton):
+		path = self.getmessagefilename(n)
+		# Open it to check that it exists
+		f = open(path)
+		f.close()
+		del f
+		topath = tofolder.getmessagefilename(ton)
+		backuptopath = tofolder.getmessagefilename(',%d' % ton)
+		try:
+			os.rename(topath, backuptopath)
+		except os.error:
+			pass
+		try:
+			os.rename(path, topath)
+		except os.error:
+			# Try copying
+			ok = 0
+			try:
+				tofolder.setlast(None)
+				shutil.copy2(path, topath)
+				ok = 1
+			finally:
+				if not ok:
+					try:
+						os.unlink(topath)
+					except os.error:
+						pass
+			os.unlink(path)
+		self.removefromallsequences([n])
+
+	# Copy one message over a specific destination message,
+	# which may or may not already exist.
+	def copymessage(self, n, tofolder, ton):
+		path = self.getmessagefilename(n)
+		# Open it to check that it exists
+		f = open(path)
+		f.close()
+		del f
+		topath = tofolder.getmessagefilename(ton)
+		backuptopath = tofolder.getmessagefilename(',%d' % ton)
+		try:
+			os.rename(topath, backuptopath)
+		except os.error:
+			pass
+		ok = 0
+		try:
+			tofolder.setlast(None)
+			shutil.copy2(path, topath)
+			ok = 1
+		finally:
+			if not ok:
+				try:
+					os.unlink(topath)
+				except os.error:
+					pass
 
 	# Remove one or more messages from all sequeuces (including last)
 	def removefromallsequences(self, list):
