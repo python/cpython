@@ -92,7 +92,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "cobject.h"
 #include "traceback.h"
 #include "sliceobject.h"
+#include "unicodeobject.h"
 
+#include "codecs.h"
 #include "pyerrors.h"
 #include "mymalloc.h"
 
