@@ -33,6 +33,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    distribution. */
 
 typedef ANY *PyUnivPtr;
+typedef struct methodlist PyMethodDef;
 
 #define Py_NO_DEBUG NDEBUG
 #define Py_TRACE_REFS TRACE_REFS
@@ -88,6 +89,7 @@ typedef ANY *PyUnivPtr;
 #define PyIntObject intobject
 #define PyLongObject longobject
 #define PyNothingObject noobject
+#define PyObject object
 #define PyStringObject stringobject
 #define PyTypeObject typeobject
 #define PyListObject listobject
