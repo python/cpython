@@ -565,7 +565,7 @@ posix_popen(self, args)
 	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2 ||
 		!is_stringobject(name = gettupleitem(args, 0)) ||
 		!is_stringobject(mode = gettupleitem(args, 1))) {
-		err_setstr(TypeError, "open() requires 2 string arguments");
+		err_setstr(TypeError, "popen() requires 2 string arguments");
 		return NULL;
 	}
 	fp = popen(getstringvalue(name), getstringvalue(mode));
