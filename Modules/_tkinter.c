@@ -924,7 +924,7 @@ Tkapp_CreateFileHandler (self, args)
   data = Py_BuildValue ("(OO)", func, file);
 
 #if (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION) >= 4001
-#ifdef NT
+#ifdef MS_WINDOWS
   /* We assume this is a socket... */
   tfile = Tcl_GetFile((ClientData)id, TCL_WIN_SOCKET);
 #else
@@ -959,7 +959,7 @@ Tkapp_DeleteFileHandler (self, args)
     return NULL;
 
 #if (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION) >= 4001
-#ifdef NT
+#ifdef MS_WINDOWS
   /* We assume this is a socket... */
   tfile = Tcl_GetFile((ClientData)id, TCL_WIN_SOCKET);
 #else
