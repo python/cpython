@@ -5,7 +5,7 @@ the filename and a bit of context.
 By Just, with a little glue by Jack"""
 
 import EasyDialogs
-import macfs
+import MacOS
 import re
 import os
 import string
@@ -20,8 +20,8 @@ def walk(top, recurse=1):
 				path = os.path.join(top, name)
 				walk(path)
 	else:
-		cr, tp = macfs.FSSpec(top).GetCreatorType()
-		if tp == 'TEXT' and top[-4:] <> ".hqx":
+		cr, tp = MacOS.GetCreatorAndType(top)
+		if tp in ('TEXT', '\0\0\0\0') and top[-4:] <> ".hqx":
 			data = open(top).read()
 			badcount = 0
 			for ch in data[:256]:
@@ -44,11 +44,14 @@ def walk(top, recurse=1):
 				pos = j
 
 def main():
-	pathname = EasyDialogs.AskFolder()
-	if pathname:
-		walk(pathname)
+	if sys.argv[1:]:
+		for pathname in sys.argv[1:]:
+			walk(pathname)
+	else:
+		pathname = EasyDialogs.AskFolder()
+		if pathname:
+			walk(pathname)
 		
 if __name__ == '__main__':
 	main()
-	sys.exit(1) # So we see the output
 	
