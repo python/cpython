@@ -238,7 +238,9 @@ option in the given \var{section}.
 
 \begin{methoddesc}{set}{section, option, value}
 If the given section exists, set the given option to the specified value;
-otherwise raise \exception{NoSectionError}.
+otherwise raise \exception{NoSectionError}.  \var{value} must be a
+string (\class{str} or \class{unicode}); if not, \exception{TypeError}
+is raised.
 \versionadded{1.6}
 \end{methoddesc}
 
