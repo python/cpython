@@ -517,7 +517,7 @@ class Profile:
 	# simulate an event processing activity (from user's perspective)
 	def profiler_simulation(self, x, y, z):  
 		t = self.timer()
-		t = t[0] + t[1]
+		## t = t[0] + t[1]
 		self.ut = t
 
 
