@@ -60,14 +60,18 @@ Py_InitModule4(char *name, PyMethodDef *methods, char *doc,
 		v = PyCFunction_New(ml, passthrough);
 		if (v == NULL)
 			return NULL;
-		if (PyDict_SetItemString(d, ml->ml_name, v) != 0)
+		if (PyDict_SetItemString(d, ml->ml_name, v) != 0) {
+			Py_DECREF(v);
 			return NULL;
+		}
 		Py_DECREF(v);
 	}
 	if (doc != NULL) {
 		v = PyString_FromString(doc);
-		if (v == NULL || PyDict_SetItemString(d, "__doc__", v) != 0)
+		if (v == NULL || PyDict_SetItemString(d, "__doc__", v) != 0) {
+			Py_DECREF(v);
 			return NULL;
+		}
 		Py_DECREF(v);
 	}
 	return m;
