@@ -413,7 +413,7 @@ teedataobject_dealloc(teedataobject *tdo)
 PyDoc_STRVAR(teedataobject_doc, "Data container common to multiple tee objects.");
 
 static PyTypeObject teedataobject_type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(0)	/* Must fill in type value later */
 	0,					/* ob_size */
 	"itertools.tee_dataobject",		/* tp_name */
 	sizeof(teedataobject),			/* tp_basicsize */
@@ -2465,6 +2465,7 @@ inititertools(void)
 		NULL
 	};
 
+	teedataobject_type.ob_type = &PyType_Type;
 	m = Py_InitModule3("itertools", module_methods, module_doc);
 
 	for (i=0 ; typelist[i] != NULL ; i++) {
