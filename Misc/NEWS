@@ -35,7 +35,7 @@ Library
   ``codecs.StreamReader.readlines()`` have a new argument ``keepends``.
   Trailing "\n"s will be stripped from the lines if ``keepends`` is false.
 
-- ``doctest.master was`` put back in, and ``doctest.testmod()`` once again
+- ``doctest.master`` was put back in, and ``doctest.testmod()`` once again
   updates it.  This isn't good, because every ``testmod()`` call
   contributes to bloating the "hidden" state of ``doctest.master``, but
   some old code apparently relies on it.  For now, all we can do is
