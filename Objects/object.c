@@ -100,11 +100,20 @@ inc_count(tp)
 }
 #endif
 
+#ifndef MS_COREDLL
 object *
 newobject(tp)
 	typeobject *tp;
+#else
+object *
+newobject(tp,op)
+	typeobject *tp;
+	PyObject *op;
+#endif
 {
+#ifndef MS_COREDLL
 	object *op = (object *) malloc(tp->tp_basicsize);
+#endif
 	if (op == NULL)
 		return err_nomem();
 	op->ob_type = tp;
@@ -112,13 +121,23 @@ newobject(tp)
 	return op;
 }
 
+#ifndef MS_COREDLL
 varobject *
 newvarobject(tp, size)
 	typeobject *tp;
 	int size;
+#else
+varobject *
+newvarobject(tp, size, op)
+	typeobject *tp;
+	int size;
+	varobject *op;
+#endif
 {
+#ifndef MS_COREDLL
 	varobject *op = (varobject *)
 		malloc(tp->tp_basicsize + size * tp->tp_itemsize);
+#endif
 	if (op == NULL)
 		return (varobject *)err_nomem();
 	op->ob_type = tp;
