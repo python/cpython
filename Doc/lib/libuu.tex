@@ -31,13 +31,17 @@ The \module{uu} module defines the following functions:
   respectively.
 \end{funcdesc}
 
-\begin{funcdesc}{decode}{in_file\optional{, out_file\optional{, mode}}}
+\begin{funcdesc}{decode}{in_file\optional{, out_file\optional{, mode\optional{, quiet}}}}
   This call decodes uuencoded file \var{in_file} placing the result on
   file \var{out_file}. If \var{out_file} is a pathname, \var{mode} is
   used to set the permission bits if the file must be
   created. Defaults for \var{out_file} and \var{mode} are taken from
   the uuencode header.  However, if the file specified in the header
   already exists, a \exception{uu.Error} is raised.
+
+  \function{decode} may print a warning to stderr if the input was produced 
+  by an incorrect uuencoder and Python could recover from that error.
+  Setting \var{quiet} to True silences this warning.
 \end{funcdesc}
 
 \begin{excclassdesc}{Error}{}
