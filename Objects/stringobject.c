@@ -241,28 +241,38 @@ stringslice(a, i, j)
 	return newsizedstringobject(a->ob_sval + i, (int) (j-i));
 }
 
+#ifdef __STDC__
+#include <limits.h>
+#else
+#ifndef UCHAR_MAX
+#define UCHAR_MAX 255
+#endif
+#endif
+
+static object *characters[UCHAR_MAX + 1];
+
 static object *
 stringitem(a, i)
 	stringobject *a;
 	register int i;
 {
-	/* This is optimized since this is a common operation! */
-
-	register stringobject *op;
+	int c;
+	object *v;
 	if (i < 0 || i >= a->ob_size) {
 		err_setstr(IndexError, "string index out of range");
 		return NULL;
 	}
-	op = (stringobject *)
-		malloc(sizeof(stringobject) + sizeof(char));
-	if (op == NULL)
-		return err_nomem();
-	NEWREF(op);
-	op->ob_type = &Stringtype;
-	op->ob_size = 1;
-	op->ob_sval[0] = a->ob_sval[i];
-	op->ob_sval[1] = '\0';
-	return (object *) op;
+	c = a->ob_sval[i] & UCHAR_MAX;
+	v = characters[c];
+	if (v == NULL) {
+		v = newsizedstringobject((char *)NULL, 1);
+		if (v == NULL)
+			return NULL;
+		characters[c] = v;
+		((stringobject *)v)->ob_sval[0] = c;
+	}
+	INCREF(v);
+	return v;
 }
 
 static int
