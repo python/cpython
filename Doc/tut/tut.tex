@@ -657,15 +657,14 @@ the first line above could also have been written \samp{word = 'Help'
 expressions:
 
 \begin{verbatim}
->>> import string
 >>> 'str' 'ing'                   #  <-  This is ok
 'string'
->>> string.strip('str') + 'ing'   #  <-  This is ok
+>>> 'str'.strip() + 'ing'   #  <-  This is ok
 'string'
->>> string.strip('str') 'ing'     #  <-  This is invalid
+>>> 'str'.strip() 'ing'     #  <-  This is invalid
   File "<stdin>", line 1, in ?
-    string.strip('str') 'ing'
-                            ^
+    'str'.strip() 'ing'
+                      ^
 SyntaxError: invalid syntax
 \end{verbatim}
 
@@ -805,6 +804,21 @@ The built-in function \function{len()} returns the length of a string:
 >>> len(s)
 34
 \end{verbatim}
+
+
+\begin{seealso}
+  \seetitle[../lib/typesseq.html]{Sequence Types}%
+           {Strings, and the Unicode strings described in the next
+            section, are examples of \emph{sequence types}, and
+            support the common operations supported by such types.}
+  \seetitle[../lib/string-methods.html]{String Methods}%
+           {Both strings and Unicode strings support a large number of
+            methods for basic transformations and searching.}
+  \seetitle[../lib/typesseq-strings.html]{String Formatting Operations}%
+           {The formatting operations invoked when strings and Unicode
+            strings are the left operand of the \code{\%} operator are
+            described in more detail here.}
+\end{seealso}
 
 
 \subsection{Unicode Strings \label{unicodeStrings}}
@@ -1516,7 +1530,7 @@ TypeError: function() got multiple values for keyword argument 'a'
 \end{verbatim}
 
 When a final formal parameter of the form \code{**\var{name}} is
-present, it receives a dictionary containing all keyword arguments
+present, it receives a \ulink{dictionary}{../lib/typesmapping.html} containing all keyword arguments
 whose keyword doesn't correspond to a formal parameter.  This may be
 combined with a formal parameter of the form
 \code{*\var{name}} (described in the next subsection) which receives a
@@ -1978,9 +1992,10 @@ another value is assigned to it).  We'll find other uses for
 
 We saw that lists and strings have many common properties, such as
 indexing and slicing operations.  They are two examples of
-\emph{sequence} data types.  Since Python is an evolving language,
-other sequence data types may be added.  There is also another
-standard sequence data type: the \emph{tuple}.
+\ulink{\emph{sequence} data types}{../lib/typesseq.html}.  Since
+Python is an evolving language, other sequence data types may be
+added.  There is also another standard sequence data type: the
+\emph{tuple}.
 
 A tuple consists of a number of values separated by commas, for
 instance:
@@ -2050,7 +2065,8 @@ always creates a tuple, and unpacking works for any sequence.
 
 \section{Dictionaries \label{dictionaries}}
 
-Another useful data type built into Python is the \emph{dictionary}.
+Another useful data type built into Python is the
+\ulink{\emph{dictionary}}{../lib/typesmapping.html}.
 Dictionaries are sometimes found in other languages as ``associative
 memories'' or ``associative arrays''.  Unlike sequences, which are
 indexed by a range of numbers, dictionaries are indexed by \emph{keys},
@@ -2078,11 +2094,11 @@ If you store using a key that is already in use, the old value
 associated with that key is forgotten.  It is an error to extract a
 value using a non-existent key.
 
-The \code{keys()} method of a dictionary object returns a list of all
+The \method{keys()} method of a dictionary object returns a list of all
 the keys used in the dictionary, in random order (if you want it
-sorted, just apply the \code{sort()} method to the list of keys).  To
+sorted, just apply the \method{sort()} method to the list of keys).  To
 check whether a single key is in the dictionary, use the
-\code{has_key()} method of the dictionary.
+\method{has_key()} method of the dictionary.
 
 Here is a small example using a dictionary:
 
@@ -2872,11 +2888,10 @@ The value of x is 32.5, and y is 40000...
 Here are two ways to write a table of squares and cubes:
 
 \begin{verbatim}
->>> import string
 >>> for x in range(1, 11):
-...     print string.rjust(repr(x), 2), string.rjust(repr(x*x), 3),
+...     print repr(x).rjust(2), repr(x*x).rjust(3),
 ...     # Note trailing comma on previous line
-...     print string.rjust(repr(x*x*x), 4)
+...     print repr(x*x*x).rjust(4)
 ...
  1   1    1
  2   4    8
@@ -2906,28 +2921,27 @@ Here are two ways to write a table of squares and cubes:
 (Note that one space between each column was added by the way
 \keyword{print} works: it always adds spaces between its arguments.)
 
-This example demonstrates the function \function{string.rjust()},
+This example demonstrates the \method{rjust()} method of string objects,
 which right-justifies a string in a field of a given width by padding
-it with spaces on the left.  There are similar functions
-\function{string.ljust()} and \function{string.center()}.  These
-functions do not write anything, they just return a new string.  If
+it with spaces on the left.  There are similar methods
+\method{ljust()} and \method{center()}.  These
+methods do not write anything, they just return a new string.  If
 the input string is too long, they don't truncate it, but return it
 unchanged; this will mess up your column lay-out but that's usually
 better than the alternative, which would be lying about a value.  (If
 you really want truncation you can always add a slice operation, as in
-\samp{string.ljust(x,~n)[0:n]}.)
+\samp{x.ljust(~n)[:n]}.)
 
-There is another function, \function{string.zfill()}, which pads a
+There is another method, \method{zfill()}, which pads a
 numeric string on the left with zeros.  It understands about plus and
 minus signs:
 
 \begin{verbatim}
->>> import string
->>> string.zfill('12', 5)
+>>> '12'.zfill(5)
 '00012'
->>> string.zfill('-3.14', 7)
+>>> '-3.14'.zfill(7)
 '-003.14'
->>> string.zfill('3.14159265359', 5)
+>>> '3.14159265359'.zfill(5)
 '3.14159265359'
 \end{verbatim}
 
@@ -3110,7 +3124,7 @@ objects.
 Strings can easily be written to and read from a file. Numbers take a
 bit more effort, since the \method{read()} method only returns
 strings, which will have to be passed to a function like
-\function{string.atoi()}, which takes a string like \code{'123'} and
+\function{int()}, which takes a string like \code{'123'} and
 returns its numeric value 123.  However, when you want to save more
 complex data types like lists, dictionaries, or class instances,
 things get a lot more complicated.
@@ -3297,12 +3311,12 @@ error message and then re-raise the exception (allowing a caller to
 handle the exception as well):
 
 \begin{verbatim}
-import string, sys
+import sys
 
 try:
     f = open('myfile.txt')
     s = f.readline()
-    i = int(string.strip(s))
+    i = int(s.strip())
 except IOError, (errno, strerror):
     print "I/O error(%s): %s" % (errno, strerror)
 except ValueError:
@@ -4466,7 +4480,8 @@ Tab: complete
 \end{verbatim}
 
 in your \file{\~{}/.inputrc}.  (Of course, this makes it harder to
-type indented continuation lines.)
+type indented continuation lines if you're accustomed to using
+\kbd{Tab} for that purpose.)
 
 Automatic completion of variable and module names is optionally
 available.  To enable it in the interpreter's interactive mode, add
