@@ -491,7 +491,6 @@ typedef struct {
 typedef struct {
 	PyObject_HEAD
 	PySocketSockObject *Socket;	/* Socket on which we're layered */
-	PyObject 	*x_attr;	/* Attributes dictionary */
 	SSL_CTX* 	ctx;
 	SSL*     	ssl;
 	X509*    	server_cert;
@@ -2499,54 +2498,41 @@ static SSLObject *
 newSSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 {
 	SSLObject *self;
+	PyObject *error = NULL;
 
 	self = PyObject_New(SSLObject, &SSL_Type); /* Create new object */
 	if (self == NULL){
-		PyErr_SetObject(SSLErrorObject,
-				PyString_FromString("newSSLObject error"));
-		return NULL;
+		error =  PyString_FromString("newSSLObject error");
+		goto fail;
 	}
 	memset(self->server, '\0', sizeof(char) * 256);
 	memset(self->issuer, '\0', sizeof(char) * 256);
 
-	self->x_attr = PyDict_New();
 	self->ctx = SSL_CTX_new(SSLv23_method()); /* Set up context */
 	if (self->ctx == NULL) {
-		PyErr_SetObject(SSLErrorObject,
-				PyString_FromString("SSL_CTX_new error"));
-		PyObject_Del(self);
-		return NULL;
+		error = PyString_FromString("SSL_CTX_new error");
+		goto fail;
 	}
 
-	if ( (key_file && !cert_file) || (!key_file && cert_file) )
-	{
-		PyErr_SetObject(SSLErrorObject,
-		      PyString_FromString(
-			"Both the key & certificate files must be specified"));
-		PyObject_Del(self);
-		return NULL;
+	if ((key_file && !cert_file) || (!key_file && cert_file)) {
+		error = PyString_FromString(
+			"Both the key & certificate files must be specified");
+		goto fail;
 	}
 
-	if (key_file && cert_file)
-	{
+	if (key_file && cert_file) {
 		if (SSL_CTX_use_PrivateKey_file(self->ctx, key_file,
-						SSL_FILETYPE_PEM) < 1)
-		{
-			PyErr_SetObject(SSLErrorObject,
-				PyString_FromString(
-				  "SSL_CTX_use_PrivateKey_file error"));
-			PyObject_Del(self);
-			return NULL;
+						SSL_FILETYPE_PEM) < 1) {
+			error = PyString_FromString(
+				"SSL_CTX_use_PrivateKey_file error");
+			goto fail;
 		}
 
 		if (SSL_CTX_use_certificate_chain_file(self->ctx,
-						       cert_file) < 1)
-		{
-			PyErr_SetObject(SSLErrorObject,
-				PyString_FromString(
-				  "SSL_CTX_use_certificate_chain_file error"));
-			PyObject_Del(self);
-			return NULL;
+						       cert_file) < 1) {
+			error = PyString_FromString(
+				"SSL_CTX_use_certificate_chain_file error");
+			goto fail;
 		}
 	}
 
@@ -2556,12 +2542,11 @@ newSSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 	SSL_set_fd(self->ssl, Sock->sock_fd);	/* Set the socket for SSL */
 	SSL_set_connect_state(self->ssl);
 
+	/* Actually negotiate SSL connection */
+	/* XXX If SSL_connect() returns 0, it's also a failure. */
 	if ((SSL_connect(self->ssl)) == -1) {
-		/* Actually negotiate SSL connection */
-		PyErr_SetObject(SSLErrorObject,
-				PyString_FromString("SSL_connect error"));
-		PyObject_Del(self);
-		return NULL;
+		error = PyString_FromString("SSL_connect error");
+		goto fail;
 	}
 	self->ssl->debug = 1;
 
@@ -2571,10 +2556,16 @@ newSSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 		X509_NAME_oneline(X509_get_issuer_name(self->server_cert),
 				  self->issuer, 256);
 	}
-	self->x_attr = NULL;
 	self->Socket = Sock;
 	Py_INCREF(self->Socket);
 	return self;
+ fail:
+	if (error) {
+		PyErr_SetObject(SSLErrorObject, error);
+		Py_DECREF(error);
+	}
+	Py_DECREF(self);
+	return NULL;
 }
 
 /* This is the Python function called for new object initialization */
@@ -2629,7 +2620,6 @@ static void SSL_dealloc(SSLObject *self)
 		X509_free (self->server_cert);
 	SSL_free(self->ssl);
 	SSL_CTX_free(self->ctx);
-	Py_XDECREF(self->x_attr);
 	Py_XDECREF(self->Socket);
 	PyObject_Del(self);
 }
