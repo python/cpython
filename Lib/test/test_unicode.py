@@ -362,10 +362,7 @@ if sys.platform[:4] != 'java':
 
 verify(u"%(x)s, %(y)s" % {'x':u"abc", 'y':"def"} == u'abc, def')
 try:
-    if sys.platform[:4] != 'java':
-        value = u"%(x)s, %(ä)s" % {'x':u"abc", u'ä'.encode('utf-8'):"def"}
-    else:
-        value = u"%(x)s, %(ä)s" % {'x':u"abc", u'ä':"def"}
+    value = u"%(x)s, %(ä)s" % {'x':u"abc", u'ä':"def"}
 except KeyError:
     print '*** formatting failed for "%s"' % "u'abc, def'"
 else:
