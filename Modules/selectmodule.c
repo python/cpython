@@ -181,18 +181,31 @@ set2list(fd_set *set, pylist fd2obj[FD_SETSIZE + 3])
 	return NULL;
 }
 
-    
+#undef SELECT_USES_HEAP
+#if FD_SETSIZE > 1024
+#define SELECT_USES_HEAP
+#endif /* FD_SETSIZE > 1024 */
+
 static PyObject *
 select_select(PyObject *self, PyObject *args)
 {
-#ifdef MS_WINDOWS
+#ifdef SELECT_USES_HEAP
 	/* This would be an awful lot of stack space on Windows! */
 	pylist *rfd2obj, *wfd2obj, *efd2obj;
-#else
+#else  /* !SELECT_USES_HEAP */
+	/* XXX: Why, oh why does this add 3?!  As far as anyone can tell,
+	 * it should only add 1 for the sentinel.
+	 *
+	 * XXX: All this should probably be implemented as follows:
+	 * - find the highest descriptor we're interested in
+	 * - add one
+	 * - that's the size
+	 * See: Stevens, APitUE, $12.5.1
+	 */
 	pylist rfd2obj[FD_SETSIZE + 3];
 	pylist wfd2obj[FD_SETSIZE + 3];
 	pylist efd2obj[FD_SETSIZE + 3];
-#endif
+#endif /* SELECT_USES_HEAP */
 	PyObject *ifdlist, *ofdlist, *efdlist;
 	PyObject *ret = NULL;
 	PyObject *tout = Py_None;
@@ -237,7 +250,7 @@ select_select(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-#ifdef MS_WINDOWS
+#ifdef SELECT_USES_HEAP
 	/* Allocate memory for the lists */
 	rfd2obj = PyMem_NEW(pylist, FD_SETSIZE + 3);
 	wfd2obj = PyMem_NEW(pylist, FD_SETSIZE + 3);
@@ -248,7 +261,7 @@ select_select(PyObject *self, PyObject *args)
 		if (efd2obj) PyMem_DEL(efd2obj);
 		return NULL;
 	}
-#endif
+#endif /* SELECT_USES_HEAP */
 	/* Convert lists to fd_sets, and get maximum fd number
 	 * propagates the Python exception set in list2set()
 	 */
@@ -302,11 +315,11 @@ select_select(PyObject *self, PyObject *args)
 	reap_obj(rfd2obj);
 	reap_obj(wfd2obj);
 	reap_obj(efd2obj);
-#ifdef MS_WINDOWS
+#ifdef SELECT_USES_HEAP
 	PyMem_DEL(rfd2obj);
 	PyMem_DEL(wfd2obj);
 	PyMem_DEL(efd2obj);
-#endif
+#endif /* SELECT_USES_HEAP */
 	return ret;
 }
 
