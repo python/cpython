@@ -109,7 +109,7 @@ removed from \var{garbage} too.  For example, after breaking cycles, do
 \code{del gc.garbage[:]} to empty the list.  It's generally better
 to avoid the issue by not creating cycles containing objects with
 \method{__del__()} methods, and \var{garbage} can be examined in that
-case to verify that no such are being created.
+case to verify that no such cycles are being created.
 
 If \constant{DEBUG_SAVEALL} is set, then all unreachable objects will
 be added to this list rather than freed.
