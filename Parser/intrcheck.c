@@ -24,17 +24,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Check for interrupts */
 
-#ifdef THINK_C
-#include <MacHeaders>
-#define macintosh
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 #include "myproto.h"
 #include "intrcheck.h"
+
+#ifdef macintosh
+#ifdef THINK_C
+#include <OSEvents.h>
+#endif
+#include <Events.h>
+#endif
+
 
 
 #ifdef QUICKWIN
@@ -157,6 +160,28 @@ intrcheck()
 	if (interrupted) {
 		interrupted = 0;
 		return 1;
+	}
+	return 0;
+}
+
+/* intrpeek() is like intrcheck(), but it doesn't flush the events. The
+** idea is that you call intrpeek() somewhere in a busy-wait loop, and return
+** None as soon as it returns 0. The mainloop will then pick up the cmd-. soon
+** thereafter.
+*/
+int
+intrpeek()
+{
+	register EvQElPtr q;
+	
+	q = (EvQElPtr) GetEvQHdr()->qHead;
+	
+	for (; q; q = (EvQElPtr)q->qLink) {
+		if (q->evtQWhat == keyDown &&
+				(char)q->evtQMessage == '.' &&
+				(q->evtQModifiers & cmdKey) != 0) {
+			return 1;
+		}
 	}
 	return 0;
 }
