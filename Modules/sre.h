@@ -14,17 +14,18 @@
 
 #include "sre_constants.h"
 
-/* Python objects */
-
 typedef struct {
     PyObject_HEAD
     PyObject* code; /* link to the code string object */
-    PyObject* pattern; /* link to the pattern source (or None) */
     int groups;
     PyObject* groupindex;
+    /* compatibility */
+    PyObject* pattern; /* pattern source (or None) */
+    int flags; /* flags used when compiling pattern source */
 } PatternObject;
 
-#define PatternObject_GetCode(o) ((void*) PyString_AS_STRING((o)->code))
+#define PatternObject_GetCode(o)\
+    ((void*) PyString_AS_STRING(((PatternObject*)(o))->code))
 
 typedef struct {
     PyObject_HEAD
@@ -34,5 +35,28 @@ typedef struct {
     int mark[2];
 } MatchObject;
 
-#endif
+typedef struct {
+    /* string pointers */
+    void* ptr; /* current position (also end of current slice) */
+    void* beginning; /* start of original string */
+    void* start; /* start of current slice */
+    void* end; /* end of original string */
+    /* character size */
+    int charsize;
+    /* registers */
+    int marks;
+    void* mark[64]; /* FIXME: <fl> should be dynamically allocated! */
+    /* backtracking stack */
+    void** stack;
+    int stacksize;
+    int stackbase;
+} SRE_STATE;
 
+typedef struct {
+    PyObject_HEAD
+    PyObject* pattern;
+    PyObject* string;
+    SRE_STATE state;
+} CursorObject;
+
+#endif

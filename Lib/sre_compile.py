@@ -14,9 +14,6 @@
 # other compatibility work.
 #
 
-# FIXME: <fl> formalize (objectify?) and document the compiler code
-# format, so that other frontends can use this compiler
-
 import array, string, sys
 
 import _sre
@@ -45,64 +42,70 @@ class Code:
 	self.data.append(code)
     def todata(self):
 	# print self.data
-	return array.array(WORDSIZE, self.data).tostring()
+	try:
+	    return array.array(WORDSIZE, self.data).tostring()
+	except OverflowError:
+	    print self.data
+	    raise
 
-def _lower(literal):
-    # return _sre._lower(literal) # FIXME
-    return string.lower(literal)
-
-def _compile(code, pattern, flags):
+def _compile(code, pattern, flags, level=0):
     append = code.append
     for op, av in pattern:
 	if op is ANY:
-	    if "s" in flags:
-		append(CODES[op]) # any character at all!
+	    if flags & SRE_FLAG_DOTALL:
+		append(OPCODES[op]) # any character at all!
 	    else:
-		append(CODES[NOT_LITERAL])
-		append(10)
+		append(OPCODES[CATEGORY])
+		append(CHCODES[CATEGORY_NOT_LINEBREAK])
 	elif op in (SUCCESS, FAILURE):
-	    append(CODES[op])
+	    append(OPCODES[op])
 	elif op is AT:
-	    append(CODES[op])
-	    append(POSITIONS[av])
+	    append(OPCODES[op])
+	    if flags & SRE_FLAG_MULTILINE:
+		append(ATCODES[AT_MULTILINE[av]])
+	    else:
+		append(ATCODES[av])
 	elif op is BRANCH:
-	    append(CODES[op])
+	    append(OPCODES[op])
 	    tail = []
 	    for av in av[1]:
 		skip = len(code); append(0)
-		_compile(code, av, flags)
-		append(CODES[JUMP])
+		_compile(code, av, flags, level)
+		append(OPCODES[JUMP])
 		tail.append(len(code)); append(0)
 		code[skip] = len(code) - skip
 	    append(0) # end of branch
 	    for tail in tail:
 		code[tail] = len(code) - tail
 	elif op is CALL:
-	    append(CODES[op])
+	    append(OPCODES[op])
 	    skip = len(code); append(0)
-	    _compile(code, av, flags)
-	    append(CODES[SUCCESS])
+	    _compile(code, av, flags, level+1)
+	    append(OPCODES[SUCCESS])
 	    code[skip] = len(code) - skip
 	elif op is CATEGORY: # not used by current parser
-	    append(CODES[op])
-	    append(CATEGORIES[av])
+	    append(OPCODES[op])
+	    if flags & SRE_FLAG_LOCALE:
+		append(CH_LOCALE[CHCODES[av]])
+	    else:
+		append(CHCODES[av])
 	elif op is GROUP:
-	    if "i" in flags:
-		append(CODES[MAP_IGNORE[op]])
+	    if flags & SRE_FLAG_IGNORECASE:
+		append(OPCODES[OP_IGNORE[op]])
 	    else:
-		append(CODES[op])
-	    append(av)
+		append(OPCODES[op])
+	    append(av-1)
 	elif op is IN:
-	    if "i" in flags:
-		append(CODES[MAP_IGNORE[op]])
+	    if flags & SRE_FLAG_IGNORECASE:
+		append(OPCODES[OP_IGNORE[op]])
 		def fixup(literal):
-		    return ord(_lower(literal))
+		    return ord(literal.lower())
 	    else:
-		append(CODES[op])
+		append(OPCODES[op])
 		fixup = ord
 	    skip = len(code); append(0)
 	    for op, av in av:
-		append(CODES[op])
+		append(OPCODES[op])
 		if op is NEGATE:
 		    pass
 		elif op is LITERAL:
@@ -111,58 +114,60 @@ def _compile(code, pattern, flags):
 		    append(fixup(av[0]))
 		    append(fixup(av[1]))
 		elif op is CATEGORY:
-		    append(CATEGORIES[av])
+		    if flags & SRE_FLAG_LOCALE:
+			append(CH_LOCALE[CHCODES[av]])
+		    else:
+			append(CHCODES[av])
 		else:
 		    raise ValueError, "unsupported set operator"
-	    append(CODES[FAILURE])
+	    append(OPCODES[FAILURE])
 	    code[skip] = len(code) - skip
 	elif op in (LITERAL, NOT_LITERAL):
-	    if "i" in flags:
-		append(CODES[MAP_IGNORE[op]])
-		append(ord(_lower(av)))
+	    if flags & SRE_FLAG_IGNORECASE:
+		append(OPCODES[OP_IGNORE[op]])
+		append(ord(av.lower()))
 	    else:
-		append(CODES[op])
+		append(OPCODES[op])
 		append(ord(av))
 	elif op is MARK:
-	    append(CODES[op])
+	    append(OPCODES[op])
 	    append(av)
  	elif op in (REPEAT, MIN_REPEAT, MAX_REPEAT):
 	    lo, hi = av[2].getwidth()
  	    if lo == 0:
  		raise SyntaxError, "cannot repeat zero-width items"
 	    if lo == hi == 1 and op is MAX_REPEAT:
-		append(CODES[MAX_REPEAT_ONE])
+		append(OPCODES[MAX_REPEAT_ONE])
 		skip = len(code); append(0)
 		append(av[0])
 		append(av[1])
-		_compile(code, av[2], flags)
-		append(CODES[SUCCESS])
+		_compile(code, av[2], flags, level+1)
+		append(OPCODES[SUCCESS])
 		code[skip] = len(code) - skip
 	    else:
-		append(CODES[op])
+		append(OPCODES[op])
 		skip = len(code); append(0)
 		append(av[0])
 		append(av[1])
-		_compile(code, av[2], flags)
+		_compile(code, av[2], flags, level+1)
 		if op is MIN_REPEAT:
-		    append(CODES[MIN_UNTIL])
+		    append(OPCODES[MIN_UNTIL])
 		else:
-		    # FIXME: MAX_REPEAT PROBABLY DOESN'T WORK (?)
-		    append(CODES[MAX_UNTIL])
+		    append(OPCODES[MAX_UNTIL])
 		code[skip] = len(code) - skip
 	elif op is SUBPATTERN:
-## 	    group = av[0]
-## 	    if group:
-## 		append(CODES[MARK])
-## 		append((group-1)*2)
-	    _compile(code, av[1], flags)
-## 	    if group:
-## 		append(CODES[MARK])
-## 		append((group-1)*2+1)
+ 	    group = av[0]
+ 	    if group:
+ 		append(OPCODES[MARK])
+ 		append((group-1)*2)
+	    _compile(code, av[1], flags, level+1)
+ 	    if group:
+ 		append(OPCODES[MARK])
+ 		append((group-1)*2+1)
 	else:
 	    raise ValueError, ("unsupported operand type", op)
 
-def compile(p, flags=()):
+def compile(p, flags=0):
     # convert pattern list to internal format
     if type(p) in (type(""), type(u"")):
 	import sre_parse
@@ -170,12 +175,10 @@ def compile(p, flags=()):
 	p = sre_parse.parse(p)
     else:
 	pattern = None
-    # print p.getwidth()
-    # print p
+    flags = p.pattern.flags | flags
     code = Code()
-    _compile(code, p.data, p.pattern.flags)
-    code.append(CODES[SUCCESS])
-    # print list(code.data)
+    _compile(code, p.data, flags)
+    code.append(OPCODES[SUCCESS])
     data = code.todata()
     if 0: # debugging
 	print
@@ -183,5 +186,8 @@ def compile(p, flags=()):
 	import sre_disasm
 	sre_disasm.disasm(data)
 	print "-" * 68
-    # print len(data), p.pattern.groups, len(p.pattern.groupdict)
-    return _sre.compile(pattern, data, p.pattern.groups-1, p.pattern.groupdict)
+    return _sre.compile(
+	pattern, flags,
+	data,
+	p.pattern.groups-1, p.pattern.groupdict
+	)
