@@ -153,6 +153,11 @@ A list display is a possibly empty series of expressions enclosed in
 square brackets:
 
 \begin{productionlist}
+  \production{test}
+             {\token{and_test} ( "or" \token{and_test} )*
+              | \token{lambda_form}}
+  \production{testlist}
+             {\token{test} ( "," \token{test} )* [ "," ]}
   \production{list_display}
              {"[" [\token{listmaker}] "]"}
   \production{listmaker}
