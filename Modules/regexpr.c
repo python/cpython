@@ -1,3 +1,7 @@
+/*
+ * -*- mode: c-mode; c-file-style: python -*-
+ */
+
 /* regexpr.c
  *
  * Author: Tatu Ylonen <ylo@ngs.fi>
@@ -57,6 +61,12 @@ char *realloc();
 #endif /* __STDC__ */
 #endif /* THINK_C */
 
+/* The original code blithely assumed that sizeof(short) == 2.  Not
+ * always true.  Original instances of "(short)x" were replaced by
+ * SHORT(x), where SHORT is #defined below.  */
+
+#define SHORT(x) ((x) & 0x8000 ? (x) - 0x10000 : (x))
+
 /* The stack implementation is taken from an idea by Andrew Kuchling.
  * It's a doubly linked list of arrays. The advantages of this over a
  * simple linked list are that the number of mallocs required are
@@ -75,27 +85,27 @@ char *realloc();
 
 typedef union item_t
 {
-      struct
-      {
-	    int num;
-	    int level;
-	    char *start;
-	    char *end;
-      } reg;
-      struct
-      {
-	    int count;
-	    int level;
-	    int phantom;
-	    char *code;
-	    char *text;
-      } fail;
-      struct
-      {
-	    int num;
-	    int level;
-	    int count;
-      } cntr;
+	struct
+	{
+		int num;
+		int level;
+		char *start;
+		char *end;
+	} reg;
+	struct
+	{
+		int count;
+		int level;
+		int phantom;
+		char *code;
+		char *text;
+	} fail;
+	struct
+	{
+		int num;
+		int level;
+		int count;
+	} cntr;
 } item_t;
 
 #define STACK_PAGE_SIZE 256
@@ -105,42 +115,97 @@ typedef union item_t
 
 typedef struct item_page_t
 {
-      item_t items[STACK_PAGE_SIZE];
-      struct item_page_t *prev;
-      struct item_page_t *next;
+	item_t items[STACK_PAGE_SIZE];
+	struct item_page_t *prev;
+	struct item_page_t *next;
 } item_page_t;
 
 
 typedef struct match_state
 {
-      /* Structure to encapsulate the stack. */
-      struct
-      {
-	    /* index into the curent page.  If index == 0 and you need
-	     * to pop and item, move to the previous page and set
-	     * index = STACK_PAGE_SIZE - 1.  Otherwise decrement index
-	     * to push a page. If index == STACK_PAGE_SIZE and you
-	     * need to push a page move to the next page and set index
-	     * = 0. If there is no new next page, allocate a new page
-	     * and link it in. Otherwise, increment index to push a
-	     * page. */
-	    int index;
-	    item_page_t *current; /* Pointer to the current page. */
-	    item_page_t first; /* First page is statically allocated. */
-      } stack;
-      char *start[NUM_REGISTERS];
-      char *end[NUM_REGISTERS];
+	/* The number of registers that have been pushed onto the stack
+	 * since the last failure point. */
 
-      int changed[NUM_REGISTERS];
-      /* The number of registers that have been pushed onto the stack
-       * since the last failure point. */
-      int count;
-      /* Used to control when registers need to be pushed onto the
-       * stack. */
-      int level;
-      /* The number of failure points on the stack. */
-      int point;
+	int count;
+
+	/* Used to control when registers need to be pushed onto the
+	 * stack. */
+	
+	int level;
+	
+	/* The number of failure points on the stack. */
+	
+	int point;
+	
+	/* Storage for the registers.  Each register consists of two
+	 * pointers to characters.  So register N is represented as
+	 * start[N] and end[N].  The pointers must be converted to
+	 * offsets from the beginning of the string before returning the
+	 * registers to the calling program. */
+	
+	char *start[NUM_REGISTERS];
+	char *end[NUM_REGISTERS];
+	
+	/* Keeps track of whether a register has changed recently. */
+	
+	int changed[NUM_REGISTERS];
+	
+	/* Structure to encapsulate the stack. */
+	struct
+	{
+		/* index into the curent page.  If index == 0 and you need
+		 * to pop an item, move to the previous page and set index
+		 * = STACK_PAGE_SIZE - 1.  Otherwise decrement index to
+		 * push a page. If index == STACK_PAGE_SIZE and you need
+		 * to push a page move to the next page and set index =
+		 * 0. If there is no new next page, allocate a new page
+		 * and link it in. Otherwise, increment index to push a
+		 * page. */
+		
+		int index;
+		item_page_t *current; /* Pointer to the current page. */
+		item_page_t first; /* First page is statically allocated. */
+	} stack;
 } match_state;
+
+/* Initialize a state object */
+
+/* #define NEW_STATE(state) \ */
+/* memset(&state, 0, (void *)(&state.stack) - (void *)(&state)); \ */
+/* state.stack.current = &state.stack.first; \ */
+/* state.stack.first.prev = NULL; \ */
+/* state.stack.first.next = NULL; \ */
+/* state.stack.index = 0; \ */
+/* state.level = 1 */
+
+#define NEW_STATE(state, nregs) \
+{ \
+	int i; \
+	for (i = 0; i < nregs; i++) \
+	{ \
+		state.start[i] = NULL; \
+		state.end[i] = NULL; \
+		state.changed[i] = 0; \
+	} \
+	state.stack.current = &state.stack.first; \
+	state.stack.first.prev = NULL; \
+	state.stack.first.next = NULL; \
+	state.stack.index = 0; \
+	state.level = 1; \
+	state.count = 0; \
+	state.level = 0; \
+	state.point = 0; \
+}
+
+/* Free any memory that might have been malloc'd */
+
+#define FREE_STATE(state) \
+while(state.stack.first.next != NULL) \
+{ \
+	state.stack.current = state.stack.first.next; \
+	state.stack.first.next = state.stack.current->next; \
+	free(state.stack.current); \
+}
 
 /* Discard the top 'count' stack items. */
 
@@ -226,24 +291,6 @@ else \
 #define STACK_EMPTY(stack) ((stack.index == 0) && \
 			    (stack.current->prev == NULL))
 
-
-/* Initialize a state object */
-
-#define NEW_STATE(state) \
-memset(&state, 0, sizeof(match_state)); \
-state.stack.current = &state.stack.first; \
-state.level = 1
-
-/* Free any memory that might have been malloc'd */
-
-#define FREE_STATE(state) \
-while(state.stack.first.next != NULL) \
-{ \
-   state.stack.current = state.stack.first.next; \
-   state.stack.first.next = state.stack.current->next; \
-   free(state.stack.current); \
-}
-
 /* Return the start of register 'reg' */
 
 #define GET_REG_START(state, reg) (state.start[reg])
@@ -301,22 +348,6 @@ state.end[reg] = text
 }
 
 /* Update the last failure point with a new position in the text. */
-
-/* #define UPDATE_FAILURE(state, xtext, on_error) \ */
-/* { \ */
-/*    item_t *item; \ */
-/*    STACK_DISCARD(state.stack, state.count, on_error); \ */
-/*    STACK_TOP(state.stack, item, on_error); \ */
-/*    item->fail.text = xtext; \ */
-/*    state.count = 0; \ */
-/* } */
-
-/* #define UPDATE_FAILURE(state, xtext, on_error) \ */
-/* { \ */
-/*    item_t *item; \ */
-/*    STACK_BACK(state.stack, item, state.count + 1, on_error); \ */
-/*    item->fail.text = xtext; \ */
-/* } */
 
 #define UPDATE_FAILURE(state, xtext, on_error) \
 { \
@@ -391,7 +422,8 @@ enum regexp_compiled_ops /* opcodes for compiled regexp */
   Cwordbound,		/* match if at word boundary */
   Cnotwordbound,	/* match if not at word boundary */
   Csyntaxspec,		/* matches syntax code (1 byte follows) */
-  Cnotsyntaxspec	/* matches if syntax code does not match (1 byte foll)*/
+  Cnotsyntaxspec,	/* matches if syntax code does not match (1 byte foll)*/
+  Crepeat1
 };
 
 enum regexp_syntax_op	/* syntax codes for plain and quoted characters */
@@ -581,6 +613,8 @@ static void re_compile_fastmap_aux(char *code,
 	 case Cwordbound:
 	 case Cnotwordbound:
 	 {
+	    for (a = 0; a < 256; a++)
+	       fastmap[a] = 1;
 	    break;
 	 }
 	 case Csyntaxspec:
@@ -648,7 +682,7 @@ static void re_compile_fastmap_aux(char *code,
 	 {
 	    a = (unsigned char)code[pos++];
 	    a |= (unsigned char)code[pos++] << 8;
-	    pos += (int)(short)a;
+	    pos += (int)SHORT(a);
 	    if (visited[pos])
 	    {
 	       /* argh... the regexp contains empty loops.  This is not
@@ -664,8 +698,13 @@ static void re_compile_fastmap_aux(char *code,
 	 {
 	    a = (unsigned char)code[pos++];
 	    a |= (unsigned char)code[pos++] << 8;
-	    a = pos + (int)(short)a;
+	    a = pos + (int)SHORT(a);
 	    re_compile_fastmap_aux(code, a, visited, can_be_null, fastmap);
+	    break;
+	 }
+	 case Crepeat1:
+	 {
+	    pos += 2;
 	    break;
 	 }
 	 default:
@@ -754,10 +793,11 @@ static int re_optimize_star_jump(regexp_t bufp, char *code)
    char ch;
    int a;
    int b;
+   int num_instructions = 0;
 
    a = (unsigned char)*code++;
    a |= (unsigned char)*code++ << 8;
-   a = (int)(short)a;
+   a = (int)SHORT(a);
 
    p1 = code + a + 3; /* skip the failure_jump */
    assert(p1[-3] == Cfailure_jump);
@@ -775,6 +815,7 @@ static int re_optimize_star_jump(regexp_t bufp, char *code)
       
    /* loop until we find something that consumes a character */
   loop_p1:
+   num_instructions++;
    switch (*p1++)
    {
       case Cbol:
@@ -824,6 +865,7 @@ static int re_optimize_star_jump(regexp_t bufp, char *code)
    /* now we know that we can't backtrack. */
    while (p1 != p2 - 3)
    {
+      num_instructions++;
       switch (*p1++)
       {
 	 case Cend:
@@ -873,11 +915,22 @@ static int re_optimize_star_jump(regexp_t bufp, char *code)
       }
    }
 
+  make_update_jump:
    code -= 3;
    a += 3;  /* jump to after the Cfailure_jump */
    code[0] = Cupdate_failure_jump;
    code[1] = a & 0xff;
    code[2] = a >> 8;
+   if (num_instructions > 1)
+      return 1;
+   assert(num_instructions == 1);
+   /* if the only instruction matches a        single character, we can do
+    * better
+    */
+   p1 = code + 3 + a;   /* start of sole instruction */
+   if (*p1 == Cset || *p1 == Cexact || *p1 == Canychar ||
+       *p1 == Csyntaxspec || *p1 == Cnotsyntaxspec)
+      code[0] =        Crepeat1;
    return 1;
 
   make_normal_jump:
@@ -939,6 +992,7 @@ static int re_optimize(regexp_t bufp)
 	 case Cjump:
 	 case Cdummy_failure_jump:
 	 case Cfailure_jump:
+	 case Crepeat1:
 	 {
 	    code += 2;
 	    break;
@@ -1111,7 +1165,8 @@ char *re_compile_pattern(char *regex, int size, regexp_t bufp)
       re_compile_initialize();
    bufp->used = 0;
    bufp->fastmap_accurate = 0;
-   bufp->uses_registers = 0;
+   bufp->uses_registers = 1;
+   bufp->num_registers = 1;
    translate = bufp->translate;
    pattern = bufp->buffer;
    alloc = bufp->allocated;
@@ -1289,6 +1344,7 @@ char *re_compile_pattern(char *regex, int size, regexp_t bufp)
 	       STORE(Cstart_memory);
 	       STORE(next_register);
 	       open_registers[num_open_registers++] = next_register;
+	       bufp->num_registers++;
 	       next_register++;
 	    }
 	    paren_depth++;
@@ -1545,27 +1601,8 @@ int re_match(regexp_t bufp,
   code = bufp->buffer;
   
   translate = bufp->translate;
-/*   translated = NULL; */
-/*   if (bufp->translate) */
-/*   { */
-/*      char *t1; */
-/*      char *t2; */
-     
-/*      translated = malloc(size); */
-/*      if (translated == NULL) */
-/* 	goto error; */
-
-/*      t1 = string; */
-/*      t2 = translated; */
-/*      while(t1 < textend) */
-/* 	*t2++ = bufp->translate[*t1++]; */
-     
-/*      text = translated + pos; */
-/*      textstart = translated; */
-/*      textend = translated + size; */
-/*   } */
   
-  NEW_STATE(state);
+  NEW_STATE(state, bufp->num_registers);
   
   continue_matching:
   switch (*code++)
@@ -1587,7 +1624,7 @@ int re_match(regexp_t bufp,
 	   }
 	   else
 	   {
-	      for (a = 1; a < RE_NREGS; a++)
+	      for (a = 1; a < bufp->num_registers; a++)
 	      {
 		 if ((GET_REG_START(state, a) == NULL) ||
 		     (GET_REG_END(state, a) == NULL))
@@ -1599,10 +1636,13 @@ int re_match(regexp_t bufp,
 		 old_regs->start[a] = GET_REG_START(state, a) - textstart;
 		 old_regs->end[a] = GET_REG_END(state, a) - textstart;
 	      }
+	      for (; a < RE_NREGS; a++)
+	      {
+		 old_regs->start[a] = -1;
+		 old_regs->end[a] = -1;
+	      }
 	   }
 	}
-/* 	if(translated) */
-/* 	   free(translated); */
 	FREE_STATE(state);
 	return match_end - pos;
      }
@@ -1703,18 +1743,18 @@ int re_match(regexp_t bufp,
      {
 	a = (unsigned char)*code++;
 	a |= (unsigned char)*code++ << 8;
-	code += (int)(short)a;
+	code += (int)SHORT(a);
 	goto continue_matching;
      }
      case Cdummy_failure_jump:
      {
 	a = (unsigned char)*code++;
 	a |= (unsigned char)*code++ << 8;
-	a = (int)(short)a;
+	a = (int)SHORT(a);
 	assert(*code == Cfailure_jump);
 	b = (unsigned char)code[1];
 	b |= (unsigned char)code[2] << 8;
-	PUSH_FAILURE(state, code + (int)(short)b + 3, NULL, goto error);
+	PUSH_FAILURE(state, code + (int)SHORT(b) + 3, NULL, goto error);
 	code += a;
 	goto continue_matching;
      }
@@ -1722,9 +1762,119 @@ int re_match(regexp_t bufp,
      {
 	a = (unsigned char)*code++;
 	a |= (unsigned char)*code++ << 8;
-	a = (int)(short)a;
+	a = (int)SHORT(a);
 	PUSH_FAILURE(state, code + a, text, goto error);
 	goto continue_matching;
+     }
+     case Crepeat1:
+     {
+	char *pinst;
+	a = (unsigned char)*code++;
+	a |= (unsigned char)*code++ << 8;
+	a = (int)SHORT(a);
+	pinst = code + a;
+	/* pinst is sole instruction in loop, and it matches a
+	 * single character.  Since Crepeat1 was originally a
+	 * Cupdate_failure_jump, we also know that backtracking is
+	 * useless:  so long as the single-character expression matches,
+	 * it must be used.  Also, in the case of +, we've already
+	 * matched one character, so + can't fail:  nothing here can
+	 * cause a failure.
+	 */
+	switch (*pinst++)
+	{
+	   case Cset:
+	   {
+              if (translate)
+	      {
+		 while (text < textend)
+		 {
+		    ch = translate[(unsigned char)*text];
+		    if (pinst[ch/8] & (1<<(ch & 7)))
+		       text++;
+		    else
+		       break;
+		 }
+              }
+              else
+              {
+		 while (text < textend)
+		 {
+		    ch = (unsigned char)*text;
+		    if (pinst[ch/8] & (1<<(ch & 7)))
+		       text++;
+		    else
+		       break;
+		 }
+              }
+	      break;
+	   }
+	   case Cexact:
+	   {
+	      ch = (unsigned char)*pinst;
+              if (translate)
+	      {
+		 while (text < textend &&
+			translate[(unsigned char)*text] == ch)
+		    text++;
+              }
+              else
+              {
+		 while (text < textend && (unsigned char)*text == ch)
+		    text++;
+              }
+	      break;
+	   }
+	   case Canychar:
+	   {
+	      while (text < textend && (unsigned char)*text != '\n')
+		 text++;
+	      break;
+	   }
+	   case Csyntaxspec:
+	   {
+	      a = (unsigned char)*pinst;
+              if (translate)
+	      {
+		 while (text < textend &&
+			translate[SYNTAX(*text)] == a)
+		    text++;
+              }
+              else
+              {
+                while (text < textend && SYNTAX(*text) == a)
+                   text++;
+              }
+	      break;
+	   }
+	   case Cnotsyntaxspec:
+	   {
+	      a = (unsigned char)*pinst;
+              if (translate)
+	      {
+		 while (text < textend &&
+			translate[SYNTAX(*text)] != a)
+		    text++;
+              }
+              else
+              {
+		 while (text < textend && SYNTAX(*text) != a)
+		    text++;
+              }
+	      break;
+	   }
+	   default:
+	   {
+	      abort();
+	      /*NOTREACHED*/
+	   }
+	}
+	/* due to the funky way + and * are compiled, the top failure-
+	 * stack entry at this point is actually a success entry --
+	 * update it & pop it
+	 */
+	UPDATE_FAILURE(state, text, goto error);
+	goto fail;      /* i.e., succeed <wink/sigh> */
      }
      case Cbegbuf:
      {
