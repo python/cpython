@@ -32,11 +32,11 @@ Not all Python object types are supported; in general, only objects
 whose value is independent from a particular invocation of Python can
 be written and read by this module.  The following types are supported:
 \code{None}, integers, long integers, floating point numbers,
-strings, tuples, lists, dictionaries, and code objects, where it
-should be understood that tuples, lists and dictionaries are only
-supported as long as the values contained therein are themselves
-supported; and recursive lists and dictionaries should not be written
-(they will cause infinite loops).
+strings, Unicode objects, tuples, lists, dictionaries, and code
+objects, where it should be understood that tuples, lists and
+dictionaries are only supported as long as the values contained
+therein are themselves supported; and recursive lists and dictionaries
+should not be written (they will cause infinite loops).
 
 \strong{Caveat:} On machines where C's \code{long int} type has more than
 32 bits (such as the DEC Alpha), it
