@@ -342,12 +342,13 @@ TT { font-family: lucida console, lucida typewriter, courier }
                 return '<a href="%s">%s</a>' % (dict[name], name)
         return name
 
-    def classlink(self, object, modname, *dicts):
+    def classlink(self, object, modname):
         """Make a link for a class."""
         name = classname(object, modname)
-        for dict in dicts:
-            if dict.has_key(object):
-                return '<a href="%s">%s</a>' % (dict[object], name)
+        if sys.modules.has_key(object.__module__) and \
+            getattr(sys.modules[object.__module__], object.__name__) is object:
+            return '<a href="%s.html#%s">%s</a>' % (
+                object.__module__, object.__name__, name)
         return name
 
     def modulelink(self, object):
@@ -405,23 +406,23 @@ TT { font-family: lucida console, lucida typewriter, courier }
 
     # ---------------------------------------------- type-specific routines
 
-    def formattree(self, tree, modname, classes={}, parent=None):
+    def formattree(self, tree, modname, parent=None):
         """Produce HTML for a class tree as given by inspect.getclasstree()."""
         result = ''
         for entry in tree:
             if type(entry) is type(()):
                 c, bases = entry
                 result = result + '<dt><font face="helvetica, arial"><small>'
-                result = result + self.classlink(c, modname, classes)
+                result = result + self.classlink(c, modname)
                 if bases and bases != (parent,):
                     parents = []
                     for base in bases:
-                        parents.append(self.classlink(base, modname, classes))
+                        parents.append(self.classlink(base, modname))
                     result = result + '(' + join(parents, ', ') + ')'
                 result = result + '\n</small></font></dt>'
             elif type(entry) is type([]):
                 result = result + '<dd>\n%s</dd>\n' % self.formattree(
-                    entry, modname, classes, c)
+                    entry, modname, c)
         return '<dl>\n%s</dl>\n' % result
 
     def docmodule(self, object, name=None, mod=None):
@@ -505,8 +506,8 @@ TT { font-family: lucida console, lucida typewriter, courier }
 
         if classes:
             classlist = map(lambda (key, value): value, classes)
-            contents = [self.formattree(
-                inspect.getclasstree(classlist, 1), name, cdict)]
+            contents = [
+                self.formattree(inspect.getclasstree(classlist, 1), name)]
             for key, value in classes:
                 contents.append(self.document(value, key, name, fdict, cdict))
             result = result + self.bigsection(
@@ -558,8 +559,7 @@ TT { font-family: lucida console, lucida typewriter, courier }
         if bases:
             parents = []
             for base in bases:
-                parents.append(
-                    self.classlink(base, object.__module__, classes))
+                parents.append(self.classlink(base, object.__module__))
             title = title + '(%s)' % join(parents, ', ')
         doc = self.markup(
             getdoc(object), self.preformat, funcs, classes, mdict)
@@ -583,16 +583,14 @@ TT { font-family: lucida console, lucida typewriter, courier }
             imclass = object.im_class
             if cl:
                 if imclass is not cl:
-                    url = '%s.html#%s-%s' % (
-                        imclass.__module__, imclass.__name__, name)
-                    note = ' from <a href="%s">%s</a>' % (
-                        url, classname(imclass, mod))
+                    note = ' from ' + self.classlink(imclass, mod)
                     skipdocs = 1
             else:
-                inst = object.im_self
-                note = (inst and
-                    ' method of %s instance' % classname(inst.__class__, mod) or
-                    ' unbound %s method' % classname(imclass, mod))
+                if object.im_self:
+                    note = ' method of %s instance' % self.classlink(
+                        object.im_self.__class__, mod)
+                else:
+                    note = ' unbound %s method' % self.classlink(imclass,mod)
             object = object.im_func
 
         if name == realname:
@@ -848,10 +846,11 @@ class TextDoc(Doc):
                     note = ' from ' + classname(imclass, mod)
                     skipdocs = 1
             else:
-                inst = object.im_self
-                note = (inst and
-                    ' method of %s instance' % classname(inst.__class__, mod) or
-                    ' unbound %s method' % classname(imclass, mod))
+                if object.im_self:
+                    note = ' method of %s instance' % classname(
+                        object.im_self.__class__, mod)
+                else:
+                    note = ' unbound %s method' % classname(imclass,mod)
             object = object.im_func
 
         if name == realname:
