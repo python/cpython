@@ -722,7 +722,7 @@ set_tp_print(PySetObject *so, FILE *fp, int flags)
 		if (firstpass == 1)
 			firstpass = 0;
 		else
-			fprintf(fp, ",");
+			fprintf(fp, ", ");
 		if (PyObject_Print(item, fp, 0) != 0) {
 			Py_DECREF(it);
 			Py_DECREF(item);
