@@ -17,9 +17,37 @@
 #include <ctype.h>
 
 #ifdef WITH_TSC
-#include <asm/msr.h>
 
 typedef unsigned long long uint64;
+
+#if defined(__ppc__) /* <- Don't know if this is the correct symbol; this
+			   section should work for GCC on any PowerPC platform,
+			   irrespective of OS.  POWER?  Who knows :-) */
+
+#define rdtscll(var) ppc_getcounter(&var)
+
+static void
+ppc_getcounter(uint64 *v)
+{
+	register unsigned long tbu, tb, tbu2;
+
+  loop:
+	asm volatile ("mftbu %0" : "=r" (tbu) );
+	asm volatile ("mftb  %0" : "=r" (tb)  );
+	asm volatile ("mftbu %0" : "=r" (tbu2));
+	if (__builtin_expect(tbu != tbu2, 0)) goto loop;
+
+	/* The slightly peculiar way of writing the next lines is 
+	   compiled better by GCC than any other way I tried. */
+	((long*)(v))[0] = tbu;
+	((long*)(v))[1] = tb;
+}
+
+#else /* this section is for linux/x86 */
+
+#include <asm/msr.h>
+
+#endif
 
 void dump_tsc(int opcode, int ticked, uint64 inst0, uint64 inst1, 
 	      uint64 loop0, uint64 loop1, uint64 intr0, uint64 intr1)
@@ -34,6 +62,7 @@ void dump_tsc(int opcode, int ticked, uint64 inst0, uint64 inst1,
 	fprintf(stderr, "opcode=%03d t=%d inst=%06lld loop=%06lld\n",
 		opcode, ticked, inst, loop);
 }
+
 #endif
 
 /* Turn this on if your compiler chokes on the big switch: */
@@ -545,6 +574,9 @@ PyEval_EvalFrame(PyFrameObject *f)
 	rdtscll(inst1);
 	rdtscll(loop0);
 	rdtscll(loop1);
+
+	/* shut up the compiler */
+	opcode = 0;
 #endif
 
 /* Code access macros */

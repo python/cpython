@@ -465,7 +465,7 @@ PyDoc_STRVAR(settscdump_doc,
 \n\
 If true, tell the Python interpreter to dump VM measurements to\n\
 stderr.  If false, turn off dump.  The measurements are based on the\n\
-Pentium time-stamp counter."
+processor's time-stamp counter."
 ); 
 #endif /* TSC */
 

@@ -57,6 +57,9 @@ Tools/Demos
 Build
 -----
 
+- The --with-tsc flag to configure to enable VM profiling with the
+  processor's timestamp counter now works on PPC platforms.
+
 C API
 -----
 

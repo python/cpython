@@ -227,3 +227,28 @@ When this symbol is defined, the ceval mainloop and helper functions
 count the number of function calls made.  It keeps detailed statistics
 about what kind of object was called and whether the call hit any of
 the special fast paths in the code.
+
+---------------------------------------------------------------------------
+WITH_TSC                                          introduced for Python 2.4
+
+Super-lowlevel profiling of the interpreter.  When enabled, the sys
+module grows a new function:
+
+settscdump(bool)
+    If true, tell the Python interpreter to dump VM measurements to
+    stderr.  If false, turn off dump.  The measurements are based on the
+    processor's time-stamp counter.
+
+This build option requires a small amount of platform specific code.
+Currently this code is present for linux/x86 and any PowerPC platform
+that uses GCC (i.e. OS X and linux/ppc).
+
+On the PowerPC the rate at which the time base register is incremented
+is not defined by the architecture specification, so you'll need to
+find the manual for your specific processor.  For the 750CX, 750CXe,
+750FX (all sold as the G3) we find:
+
+    The time base counter is clocked at a frequency that is 
+    one-fourth that of the bus clock.
+
+This build is enabled by the --with-tsc flag to configure.
