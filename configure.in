@@ -70,6 +70,7 @@ then
 	case $MACHDEP in
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
+        irix646) MACHDEP="irix6";;
 	'')	MACHDEP="unknown";;
 	esac
 fi
