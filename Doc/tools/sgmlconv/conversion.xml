@@ -70,8 +70,9 @@
 
   <!-- Module referencing. -->
   <macro name="refmodule" outputname="module">
+    <!-- this causes the optional parameter to \refmodule to be
+         discarded -->
     <attribute name="" optional="yes"/>
-    <attribute name="link">yes</attribute>
     <content/>
     </macro>
 
@@ -184,6 +185,8 @@
 
   <!-- "See also:" sections. -->
   <macro name="seemodule">
+    <!-- this causes the optional parameter to \seemodule to be
+         discarded -->
     <attribute name="" optional="yes"/>
     <attribute name="name"/>
     <child name="description"/>
