@@ -396,16 +396,17 @@ dictresize(dictobject *mp, int minused)
 	mp->ma_fill = 0;
 	mp->ma_used = 0;
 
-	/* Make two passes, so we can avoid decrefs
-	   (and possible side effects) till the table is copied */
+	/* Copy the data over; this is refcount-neutral for active entries;
+	   dummy entries aren't copied over, of course */
 	for (i = 0, ep = oldtable; i < oldsize; i++, ep++) {
-		if (ep->me_value != NULL)
-			insertdict(mp,ep->me_key,ep->me_hash,ep->me_value);
-	}
-	for (i = 0, ep = oldtable; i < oldsize; i++, ep++) {
-		if (ep->me_value == NULL) {
-			Py_XDECREF(ep->me_key);
+		if (ep->me_value != NULL)	/* active entry */
+			insertdict(mp, ep->me_key, ep->me_hash, ep->me_value);
+
+		else if (ep->me_key != NULL) {	/* dummy entry */
+			assert(ep->me_key == dummy);
+			Py_DECREF(ep->me_key);
 		}
+		/* else key == value == NULL:  nothing to do */
 	}
 
 	if (oldtable != NULL)
