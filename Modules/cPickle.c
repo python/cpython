@@ -4308,6 +4308,7 @@ Unpickler_dealloc(Unpicklerobject *self) {
     Py_XDECREF(self->pers_func);
     Py_XDECREF(self->arg);
     Py_XDECREF(self->last_string);
+    Py_XDECREF(self->find_class);
     Py_XDECREF(self->safe_constructors);
 
     if (self->marks) {
@@ -4340,6 +4341,8 @@ Unpickler_traverse(Unpicklerobject *self, visitproc visit, void *arg)
 	VISIT(self->pers_func);
 	VISIT(self->arg);
 	VISIT(self->last_string);
+	VISIT(self->find_class);
+	VISIT(self->safe_constructors);
 #undef VISIT
 	return 0;
 }
@@ -4356,6 +4359,8 @@ Unpickler_clear(Unpicklerobject *self)
 	CLEAR(self->pers_func);
 	CLEAR(self->arg);
 	CLEAR(self->last_string);
+	CLEAR(self->find_class);
+	CLEAR(self->safe_constructors);
 #undef CLEAR
 	return 0;
 }
