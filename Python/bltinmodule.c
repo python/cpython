@@ -153,15 +153,11 @@ builtin_filter(PyObject *self, PyObject *args)
 		return NULL;
 
 	/* Guess a result list size. */
-	len = -1;   /* unknown */
-	if (PySequence_Check(seq) &&
-	    seq->ob_type->tp_as_sequence->sq_length) {
-		len = PySequence_Size(seq);
-		if (len < 0)
-			PyErr_Clear();
+	len = PyObject_Size(seq);
+	if (len < 0) {
+		PyErr_Clear();
+		len = 8;	/* arbitrary */
 	}
-	if (len < 0)
-		len = 8;  /* arbitrary */
 
 	/* Pre-allocate argument list tuple. */
 	arg = PyTuple_New(1);
