@@ -39,9 +39,10 @@ The \module{uu} module defines the following functions:
   the uuencode header.  However, if the file specified in the header
   already exists, a \exception{uu.Error} is raised.
 
-  \function{decode} may print a warning to stderr if the input was produced 
-  by an incorrect uuencoder and Python could recover from that error.
-  Setting \var{quiet} to True silences this warning.
+  \function{decode()} may print a warning to standard error if the
+  input was produced by an incorrect uuencoder and Python could
+  recover from that error.  Setting \var{quiet} to a true value
+  silences this warning.
 \end{funcdesc}
 
 \begin{excclassdesc}{Error}{}
