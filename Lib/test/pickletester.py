@@ -57,31 +57,49 @@ def dotest(pickle):
     x.append(5)
     r = []
     r.append(r)
+
     print "dumps()"
     s = pickle.dumps(x)
+
     print "loads()"
     x2 = pickle.loads(s)
-    if x2 == x: print "ok"
-    else: print "bad"
+    if x2 == x:
+        print "ok"
+    else:
+        print "bad"
+
     print "loads() DATA"
     x2 = pickle.loads(DATA)
-    if x2 == x: print "ok"
-    else: print "bad"
+    if x2 == x:
+        print "ok"
+    else:
+        print "bad"
+
     print "dumps() binary"
     s = pickle.dumps(x, 1)
+
     print "loads() binary"
     x2 = pickle.loads(s)
-    if x2 == x: print "ok"
-    else: print "bad"
+    if x2 == x:
+        print "ok"
+    else:
+        print "bad"
+
     print "loads() BINDATA"
     x2 = pickle.loads(BINDATA)
-    if x2 == x: print "ok"
-    else: print "bad"
-    s = pickle.dumps(r)
+    if x2 == x:
+        print "ok"
+    else:
+        print "bad"
+
     print "dumps() RECURSIVE"
+    s = pickle.dumps(r)
     x2 = pickle.loads(s)
-    if x2 == r: print "ok"
-    else: print "bad"
+    if x2 == r:
+        print "ok"
+    else:
+        print "bad"
+
     # don't create cyclic garbage
     del x2[0]
     del r[0]
@@ -97,6 +115,7 @@ def dotest(pickle):
         pass
     else:
         print "dump to closed file should raise ValueError"
+
     f = open(fn, "r")
     f.close()
     try:
