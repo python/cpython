@@ -63,7 +63,7 @@ def main():
     while 1:
         line = fp.readline()
         if not line: break
-        if line.find('{1, "') > -1:
+        if '{1, "' in line:
             match = strprog.search(line)
             if match:
                 lines.append("        '" + match.group(1) + "',\n")

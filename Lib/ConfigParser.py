@@ -554,7 +554,7 @@ class ConfigParser(RawConfigParser):
         depth = MAX_INTERPOLATION_DEPTH
         while depth:                    # Loop through this until it's done
             depth -= 1
-            if value.find("%(") != -1:
+            if "%(" in value:
                 try:
                     value = value % vars
                 except KeyError, e:
@@ -562,7 +562,7 @@ class ConfigParser(RawConfigParser):
                         option, section, rawval, e[0])
             else:
                 break
-        if value.find("%(") != -1:
+        if "%(" in value:
             raise InterpolationDepthError(option, section, rawval)
         return value
 
