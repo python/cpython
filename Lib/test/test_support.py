@@ -19,8 +19,8 @@ class TestSkipped(Error):
     TestFailed.
     """
 
-verbose = 1                             # Flag set to 0 by regrtest.py
-use_large_resources = 1 # Flag set to 0 by regrtest.py
+verbose = 1              # Flag set to 0 by regrtest.py
+use_resources = []       # Flag set to [] by regrtest.py
 
 def unload(name):
     try:
@@ -36,6 +36,12 @@ def forget(modname):
             os.unlink(os.path.join(dirname, modname + '.pyc'))
         except os.error:
             pass
+
+def requires(resource, msg=None):
+    if resource not in use_resources:
+        if msg is None:
+            msg = "Use of the `%s' resource not enabled" % resource
+        raise TestSkipped(msg)
 
 FUZZ = 1e-6
 
