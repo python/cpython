@@ -40,7 +40,7 @@ def valid_identifier(id):
 _cache = {}
 _MAXCACHE = 20
 
-def _cachecompile(pattern, flags):
+def _cachecompile(pattern, flags=0):
     key = (pattern, flags)
     try:
 	return _cache[key]
@@ -59,13 +59,19 @@ def search(pattern, string, flags=0):
     return _cachecompile(pattern, flags).search(string)
   
 def sub(pattern, repl, string, count=0):
-    return _cachecompile(pattern).sub(repl, string, count)
+    if type(pattern) == type(''):
+	pattern = _cachecompile(pattern)
+    return pattern.sub(repl, string, count)
 
 def subn(pattern, repl, string, count=0):
-    return _cachecompile(pattern).subn(repl, string, count)
+    if type(pattern) == type(''):
+	pattern = _cachecompile(pattern)
+    return pattern.subn(repl, string, count)
   
 def split(pattern, string, maxsplit=0):
-    return _cachecompile(pattern).subn(string, maxsplit)
+    if type(pattern) == type(''):
+	pattern = _cachecompile(pattern)
+    return pattern.split(string, maxsplit)
 
 #
 #
@@ -126,14 +132,86 @@ class RegexObject:
 			   regs)
     
     def sub(self, repl, string, count=0):
-	pass
+	return self.subn(repl, string, count)[0]
     
-    def subn(self, repl, string, count=0):
-	pass
+    def subn(self, repl, source, count=0):
+	if count < 0: raise error, "negative substibution count"
+	if count == 0: import sys; count = sys.maxint
+	if type(repl) == type(''):
+	    if '\\' in repl:
+		repl = lambda m, r=repl: _expand(m, r)
+	    else:
+		repl = lambda m, r=repl: r
+	n = 0		# Number of matches
+	pos = 0		# Where to start searching
+	lastmatch = -1	# End of last match
+	results = []	# Substrings making up the result
+	end = len(source)
+	while n < count and pos <= end:
+	    m = self.search(source, pos)
+	    if not m: break
+	    i, j = m.span(0)
+	    if i == j == lastmatch:
+		# Empty match adjacent to previous match
+		pos = pos+1
+		results.append(source[lastmatch:pos])
+		continue
+	    if pos < i: results.append(source[pos:i])
+	    results.append(repl(m))
+	    pos = lastmatch = j
+	    if i == j:
+		# Last match was empty; don't try here again
+		pos = pos+1
+		results.append(source[lastmatch:pos])
+	    n = n+1
+	results.append(source[pos:])
+	return (string.join(results, ''), n)
     
-    def split(self, string, maxsplit=0):
-	pass
-    
+    def split(self, source, maxsplit=0):
+	if maxsplit < 0: raise error, "negative split count"
+	if maxsplit == 0: import sys; maxsplit = sys.maxint
+	n = 0
+	pos = 0
+	lastmatch = 0
+	results = []
+	end = len(source)
+	while n < maxsplit:
+	    m = self.search(source, pos)
+	    if not m: break
+	    i, j = m.span(0)
+	    if i == j:
+		# Empty match
+		if pos >= end: break
+		pos = pos+1
+		continue
+	    results.append(source[lastmatch:i])
+	    g = m.group()
+	    if g:
+		results[len(results):] = list(g)
+	    pos = lastmatch = j
+	results.append(source[lastmatch:])
+	return results
+
+def _expand(m, repl):
+    results = []
+    index = 0
+    size = len(repl)
+    while index < size:
+	found = string.find(repl, '\\', index)
+	if found < 0:
+	    results.append(repl[index:])
+	    break
+	if found > index:
+	    results.append(repl[index:found])
+	escape_type, value, index = expand_escape(repl, found+1, REPLACEMENT)
+	if escape_type == CHAR:
+	    results.append(value)
+	elif escape_type == MEMORY_REFERENCE:
+	    results.append(m.group(value))
+	else:
+	    raise error, "bad escape in replacement"
+    return string.join(results, '')
+
 class MatchObject:
     def __init__(self, re, string, pos, regs):
 	self.re = re
