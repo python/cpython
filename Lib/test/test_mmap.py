@@ -198,11 +198,12 @@ def test_both():
             # we do not expect a ValueError on Windows
             if sys.platform.startswith('win'):
                 verify(0, "Opening mmap with size+1 should work on Windows.")
-            pass
         else:
             # we expect a ValueError on Unix, but not on Windows
             if not sys.platform.startswith('win'):
                 verify(0, "Opening mmap with size+1 should raise ValueError.")
+            del m
+        del f
 
         print "  Opening mmap with access=ACCESS_WRITE"
         f = open(TESTFN, "r+b")
