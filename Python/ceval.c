@@ -3197,7 +3197,7 @@ PyEval_GetFuncDesc(PyObject *func)
 
 #define EXT_POP(STACK_POINTER) (*--(STACK_POINTER))
 
-void
+static void
 err_args(PyObject *func, int flags, int nargs)
 {
 	if (flags & METH_NOARGS)
