@@ -476,11 +476,11 @@ enough information is saved so that the next time \method{next()} is
 invoked, the function can proceed exactly as if the \keyword{yield}
 statement were just another external call.
 
-One restriction in the use of the \keyword{yield} statement is is that
-is is not allowed in the try clause of a \keyword{try}
-...\ \keyword{finally} construct.  The difficulty is that there's no
-guarantee the generator will ever be resumed, hence no guarantee that
-the \keyword{finally} block will ever get executed.
+The \keyword{yield} statement is not allowed in the \keyword{try}
+clause of a \keyword{try} ...\ \keyword{finally} construct.  The
+difficulty is that there's no guarantee the generator will ever be
+resumed, hence no guarantee that the \keyword{finally} block will ever
+get executed.
 
 \begin{seealso}
   \seepep{0255}{Simple Generators}
