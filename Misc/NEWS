@@ -224,6 +224,12 @@ Extension modules
 Library
 -------
 
+- the platform dependent path related variables sep, altsep, extsep,
+  pathsep, curdir, pardir and defpath are now defined in the platform
+  dependent path modules (e.g. ntpath.py) rather than os.py.  These
+  variables continue to be available via os.path (see 
+  <http://www.python.org/sf/680789>).
+
 - array.array was added to the types repr.py knows about (see
   <http://www.python.org/sf/680789>).
 
