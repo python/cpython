@@ -143,14 +143,16 @@ Like \function{unquote()}, but also replaces plus signs by spaces, as
 required for unquoting HTML form values.
 \end{funcdesc}
 
-\begin{funcdesc}{urlencode}{dict}
+\begin{funcdesc}{urlencode}{dict\optional{, doseq}}
 Convert a dictionary to a ``url-encoded'' string, suitable to pass to
 \function{urlopen()} above as the optional \var{data} argument.  This
 is useful to pass a dictionary of form fields to a \code{POST}
 request.  The resulting string is a series of
 \code{\var{key}=\var{value}} pairs separated by \character{\&}
 characters, where both \var{key} and \var{value} are quoted using
-\function{quote_plus()} above.
+\function{quote_plus()} above.  If the optional parameter \var{doseq} is
+present and evaluates to true, individual \code{\var{key}=\var{value}} pairs
+are generated for each element of the sequence.
 \end{funcdesc}
 
 The public functions \function{urlopen()} and
