@@ -44,7 +44,6 @@ static struct memberlist frame_memberlist[] = {
 #if 0
 	{"f_fastlocals",T_OBJECT,	OFF(f_fastlocals),RO}, /* XXX Unsafe */
 #endif
-	{"f_localmap",	T_OBJECT,	OFF(f_localmap),RO},
 	{"f_lasti",	T_INT,		OFF(f_lasti),	RO},
 	{"f_lineno",	T_INT,		OFF(f_lineno),	RO},
 	{"f_restricted",T_INT,		OFF(f_restricted),RO},
@@ -105,7 +104,6 @@ frame_dealloc(f)
 	XDECREF(f->f_locals);
 	XDECREF(f->f_owner);
 	XDECREF(f->f_fastlocals);
-	XDECREF(f->f_localmap);
 	XDECREF(f->f_trace);
 	f->f_back = free_list;
 	free_list = f;
@@ -149,7 +147,7 @@ newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 	if ((back != NULL && !is_frameobject(back)) ||
 		code == NULL || !is_codeobject(code) ||
 		globals == NULL || !is_dictobject(globals) ||
-		locals == NULL || !is_dictobject(locals) ||
+		locals != NULL && !is_dictobject(locals) ||
 		nvalues < 0 || nblocks < 0) {
 		err_badcall();
 		return NULL;
@@ -163,6 +161,8 @@ newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 	}
 	if (free_list == NULL) {
 		f = NEWOBJ(frameobject, &Frametype);
+		if (f == NULL)
+			return NULL;
 		f->f_nvalues = f->f_nblocks = 0;
 		f->f_valuestack = NULL;
 		f->f_blockstack = NULL;
@@ -173,41 +173,56 @@ newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 		f->ob_type = &Frametype;
 		NEWREF(f);
 	}
-	if (f != NULL) {
-		XINCREF(back);
-		f->f_back = back;
-		INCREF(code);
-		f->f_code = code;
-		XINCREF(builtins);
-		f->f_builtins = builtins;
-		INCREF(globals);
-		f->f_globals = globals;
-		INCREF(locals);
-		f->f_locals = locals;
-		XINCREF(owner);
-		f->f_owner = owner;
-		f->f_fastlocals = NULL;
-		f->f_localmap = NULL;
-		if (nvalues > f->f_nvalues || f->f_valuestack == NULL) {
-			XDEL(f->f_valuestack);
-			f->f_valuestack = NEW(object *, nvalues+1);
-			f->f_nvalues = nvalues;
-		}
-		if (nblocks > f->f_nblocks || f->f_blockstack == NULL) {
-			XDEL(f->f_blockstack);
-			f->f_blockstack = NEW(block, nblocks+1);
-			f->f_nblocks = nblocks;
-		}
-		f->f_iblock = 0;
-		f->f_lasti = 0;
-		f->f_lineno = -1;
-		f->f_restricted = (builtins != getbuiltindict());
-		f->f_trace = NULL;
-		if (f->f_valuestack == NULL || f->f_blockstack == NULL) {
-			err_nomem();
+	XINCREF(back);
+	f->f_back = back;
+	INCREF(code);
+	f->f_code = code;
+	XINCREF(builtins);
+	f->f_builtins = builtins;
+	INCREF(globals);
+	f->f_globals = globals;
+	if ((code->co_flags & (CO_NEWLOCALS|CO_OPTIMIZED)) == CO_NEWLOCALS) {
+		locals = newdictobject();
+		if (locals == NULL) {
 			DECREF(f);
-			f = NULL;
+			return NULL;
 		}
+	}
+	else {
+		if (locals == NULL)
+			locals = globals;
+		INCREF(locals);
+	}
+	f->f_locals = locals;
+	XINCREF(owner);
+	f->f_owner = owner;
+	f->f_fastlocals = NULL;
+	if (code->co_nlocals > 0) {
+		f->f_fastlocals = newlistobject(code->co_nlocals);
+		if (f->f_fastlocals == NULL) {
+			DECREF(f);
+			return NULL;
+		}
+	}
+	if (nvalues > f->f_nvalues || f->f_valuestack == NULL) {
+		XDEL(f->f_valuestack);
+		f->f_valuestack = NEW(object *, nvalues+1);
+		f->f_nvalues = nvalues;
+	}
+	if (nblocks > f->f_nblocks || f->f_blockstack == NULL) {
+		XDEL(f->f_blockstack);
+		f->f_blockstack = NEW(block, nblocks+1);
+		f->f_nblocks = nblocks;
+	}
+	f->f_iblock = 0;
+	f->f_lasti = 0;
+	f->f_lineno = -1;
+	f->f_restricted = (builtins != getbuiltindict());
+	f->f_trace = NULL;
+	if (f->f_valuestack == NULL || f->f_blockstack == NULL) {
+		err_nomem();
+		DECREF(f);
+		return NULL;
 	}
 	return f;
 }
@@ -270,11 +285,18 @@ fast_2_locals(f)
 	int j;
 	if (f == NULL)
 		return;
-	locals = f->f_locals;
 	fast = f->f_fastlocals;
-	map = f->f_localmap;
-	if (locals == NULL || fast == NULL || map == NULL)
+	if (fast == NULL || f->f_code->co_nlocals == 0)
 		return;
+	map = f->f_code->co_varnames;
+	locals = f->f_locals;
+	if (locals == NULL) {
+		locals = f->f_locals = newdictobject();
+		if (locals == NULL) {
+			err_clear(); /* Can't report it :-( */
+			return;
+		}
+	}
 	if (!is_dictobject(locals) || !is_listobject(fast) ||
 	    !is_tupleobject(map))
 		return;
@@ -308,8 +330,8 @@ locals_2_fast(f, clear)
 		return;
 	locals = f->f_locals;
 	fast = f->f_fastlocals;
-	map = f->f_localmap;
-	if (locals == NULL || fast == NULL || map == NULL)
+	map = f->f_code->co_varnames;
+	if (locals == NULL || fast == NULL || f->f_code->co_nlocals == 0)
 		return;
 	if (!is_dictobject(locals) || !is_listobject(fast) ||
 	    !is_tupleobject(map))
