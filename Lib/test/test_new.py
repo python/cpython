@@ -47,14 +47,21 @@ im()
 verify(c.get_yolks() == 1 and c.get_more_yolks() == 4,
        'Broken call of hand-crafted instance method')
 
+# It's unclear what the semantics should be for a code object compiled at
+# module scope, but bound and run in a function.  In CPython, `c' is global
+# (by accident?) while in Jython, `c' is local.  The intent of the test
+# clearly is to make `c' global, so let's be explicit about it.
 codestr = '''
+global c
 a = 1
 b = 2
 c = a + b
 '''
 
 ccode = compile(codestr, '<string>', 'exec')
-g = {'c': 0, '__builtins__': __builtins__}
+# Jython doesn't have a __builtins__, so use a portable alternative
+import __builtin__
+g = {'c': 0, '__builtins__': __builtin__}
 # this test could be more robust
 print 'new.function()'
 func = new.function(ccode, g)
@@ -65,11 +72,13 @@ verify(g['c'] == 3,
        'Could not create a proper function object')
 
 # bogus test of new.code()
-print 'new.code()'
-d = new.code(3, 3, 3, 3, codestr, (), (), (),
-             "<string>", "<name>", 1, "", (), ())
-# test backwards-compatibility version with no freevars or cellvars
-d = new.code(3, 3, 3, 3, codestr, (), (), (),
-             "<string>", "<name>", 1, "")
-if verbose:
-    print d
+# Note: Jython will never have new.code()
+if hasattr(new, 'code'):
+    print 'new.code()'
+    d = new.code(3, 3, 3, 3, codestr, (), (), (),
+                 "<string>", "<name>", 1, "", (), ())
+    # test backwards-compatibility version with no freevars or cellvars
+    d = new.code(3, 3, 3, 3, codestr, (), (), (),
+                 "<string>", "<name>", 1, "")
+    if verbose:
+        print d
