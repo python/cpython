@@ -29,6 +29,7 @@
 #ifdef UNIX
 #include <unistd.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #endif
 
 #include <string.h>
@@ -49,7 +50,7 @@ typedef struct {
 #endif
 
 #ifdef UNIX
-  /* No Unix-specific information at this point in time */
+        int fd;
 #endif
 } mmap_object;
 
@@ -210,7 +211,7 @@ mmap_find_method (mmap_object *self,
 
 static PyObject *
 mmap_write_method (mmap_object * self,
-		       PyObject * args)
+		   PyObject * args)
 {
 	long length;
 	char * data;
@@ -264,7 +265,14 @@ mmap_size_method (mmap_object * self,
 #endif /* MS_WIN32 */
 
 #ifdef UNIX
-	return (Py_BuildValue ("l", self->size) );
+	{
+		struct stat buf;
+		if (-1 == fstat(self->fd, &buf)) {
+			PyErr_SetFromErrno(mmap_module_error);
+			return NULL;
+		}
+		return (Py_BuildValue ("l", buf.st_size) );
+	}
 #endif /* UNIX */
 }
 
@@ -717,6 +725,7 @@ new_mmap_object (PyObject * self, PyObject * args, PyObject *kwdict)
 	if (m_obj == NULL) {return NULL;}
 	m_obj->size = (size_t) map_size;
 	m_obj->pos = (size_t) 0;
+	m_obj->fd = fd;
 	m_obj->data = mmap(NULL, map_size, 
 			   prot, flags,
 			   fd, 0);
