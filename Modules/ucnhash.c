@@ -1,4 +1,4 @@
-#include <ucnhash.h>
+#include "ucnhash.h"
 
 /*
  * The hash is produced using the algorithm described in
@@ -19,8 +19,8 @@
 #define k_cKeys  10538
 
 
-static const unsigned short G[k_cHashElements]; 
-static const _Py_UnicodeCharacterName aucn[k_cKeys];   
+staticforward const unsigned short G[k_cHashElements]; 
+staticforward const _Py_UnicodeCharacterName aucn[k_cKeys];   
 
 static long f1(const char *key, unsigned int cch)
 {
