@@ -4,5 +4,5 @@ import bsddb
 
 error = bsddb.error
 
-def open(file, flag, mode):
+def open(file, flag, mode=0666):
     return bsddb.hashopen(file, flag, mode)
