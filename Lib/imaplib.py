@@ -423,10 +423,10 @@ class IMAP4:
     def getquota(self, root):
         """Get the quota root's resource usage and limits.
 
-	Part of the IMAP4 QUOTA extension defined in rfc2087.
+        Part of the IMAP4 QUOTA extension defined in rfc2087.
 
         (typ, [data]) = <instance>.getquota(root)
-	"""
+        """
         typ, dat = self._simple_command('GETQUOTA', root)
         return self._untagged_response(typ, dat, 'QUOTA')
 
@@ -435,11 +435,11 @@ class IMAP4:
         """Get the list of quota roots for the named mailbox.
 
         (typ, [[QUOTAROOT responses...], [QUOTA responses]]) = <instance>.getquotaroot(mailbox)
-	"""
+        """
         typ, dat = self._simple_command('GETQUOTA', root)
         typ, quota = self._untagged_response(typ, dat, 'QUOTA')
         typ, quotaroot = self._untagged_response(typ, dat, 'QUOTAROOT')
-	return typ, [quotaroot, quota]
+        return typ, [quotaroot, quota]
 
 
     def list(self, directory='""', pattern='*'):
@@ -596,7 +596,7 @@ class IMAP4:
         """Set the quota root's resource limits.
 
         (typ, [data]) = <instance>.setquota(root, limits)
-	"""
+        """
         typ, dat = self._simple_command('SETQUOTA', root, limits)
         return self._untagged_response(typ, dat, 'QUOTA')
 
