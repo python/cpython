@@ -23,8 +23,8 @@ PyAPI_FUNC(int) PyModule_AddObject(PyObject *, char *, PyObject *);
 PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, char *, long);
 PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, char *, char *);
 
-#define PYTHON_API_VERSION 1011
-#define PYTHON_API_STRING "1011"
+#define PYTHON_API_VERSION 1012
+#define PYTHON_API_STRING "1012"
 /* The API version is maintained (independently from the Python version)
    so we can detect mismatches between the interpreter and dynamically
    loaded modules.  These are diagnosed by an error message but
@@ -37,6 +37,9 @@ PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, char *, char *);
 
    Please add a line or two to the top of this log for each API
    version change:
+
+   19-Aug-2002  GvR	1012	Changes to string object struct for
+   				interning changes, saving 3 bytes.
 
    17-Jul-2001	GvR	1011	Descr-branch, just to be on the safe side
 
