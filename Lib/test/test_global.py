@@ -37,4 +37,3 @@ def wrong3():
     global x
 """
 compile_and_catch_warning(prog_text_3)
-

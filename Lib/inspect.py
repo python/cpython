@@ -612,5 +612,5 @@ def stack(context=1):
     return getouterframes(currentframe().f_back, context)
 
 def trace(context=1):
-    """Return a list of records for the stack below the current exception.""" 
+    """Return a list of records for the stack below the current exception."""
     return getinnerframes(sys.exc_traceback, context)
