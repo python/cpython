@@ -226,6 +226,8 @@ _ssl
     the build.  This Python script locates and builds your OpenSSL
     installation, then invokes a simple makefile to build the final .pyd.
 
+    Win9x users:  see "Win9x note" below.
+
     build_ssl.py attempts to catch the most common errors (such as not
     being able to find OpenSSL sources, or not being able to find a Perl
     that works with OpenSSL) and give a reasonable error message.
@@ -236,6 +238,31 @@ _ssl
 
     build_ssl.py/MSVC isn't clever enough to clean OpenSSL - you must do
     this by hand.
+
+    Win9x note:  If, near the start of the build process, you see
+    something like
+
+        C:\Code\openssl-0.9.6g>set OPTS=no-asm
+        Out of environment space
+
+    then you're in trouble, and will probable also see these errors near
+    the end of the process:
+
+        NMAKE : fatal error U1073: don't know how to make
+            'crypto\md5\asm\m5_win32.asm'
+        Stop.
+        NMAKE : fatal error U1073: don't know how to make
+            'C:\Code\openssl-0.9.6g/out32/libeay32.lib'
+        Stop.
+
+    You need more environment space.  Win9x only has room for 256 bytes
+    by default, and especially after installing ActivePerl (which fiddles
+    the PATH envar), you're likely to run out.  KB Q230205
+
+        http://support.microsoft.com/default.aspx?scid=KB;en-us;q230205
+
+    explains how to edit CONFIG.SYS to cure this.
+
 
 YOUR OWN EXTENSION DLLs
 -----------------------
