@@ -193,7 +193,8 @@ class Request:
         self.port = None
         self.data = data
         self.headers = {}
-        self.headers.update(headers)
+        for key, value in headers.iteritems():
+            self.add_header(key, value)
 
     def __getattr__(self, attr):
         # XXX this is a fallback mechanism to guard against these
@@ -248,7 +249,7 @@ class Request:
 
     def add_header(self, key, val):
         # useful for something like authentication
-        self.headers[key] = val
+        self.headers[key.capitalize()] = val
 
 class OpenerDirector:
     def __init__(self):
@@ -478,7 +479,7 @@ class ProxyHandler(BaseHandler):
             proxies = getproxies()
         assert hasattr(proxies, 'has_key'), "proxies must be a mapping"
         self.proxies = proxies
-        for type, url in proxies.items():
+        for type, url in proxies.iteritems():
             setattr(self, '%s_open' % type,
                     lambda r, proxy=url, type=type, meth=self.proxy_open: \
                     meth(r, proxy, type))
@@ -563,7 +564,7 @@ class HTTPPasswordMgr:
     def find_user_password(self, realm, authuri):
         domains = self.passwd.get(realm, {})
         authuri = self.reduce_uri(authuri)
-        for uris, authinfo in domains.items():
+        for uris, authinfo in domains.iteritems():
             for uri in uris:
                 if self.is_suburi(uri, authuri):
                     return authinfo
@@ -805,7 +806,7 @@ class AbstractHTTPHandler(BaseHandler):
             name, value = args
             if name not in req.headers:
                 h.putheader(*args)
-        for k, v in req.headers.items():
+        for k, v in req.headers.iteritems():
             h.putheader(k, v)
         # httplib will attempt to connect() here.  be prepared
         # to convert a socket error to a URLError.
@@ -1012,7 +1013,7 @@ class CacheFTPHandler(FTPHandler):
         # first check for old ones
         t = time.time()
         if self.soonest <= t:
-            for k, v in self.timeout.items():
+            for k, v in self.timeout.iteritems():
                 if v < t:
                     self.cache[k].close()
                     del self.cache[k]
@@ -1021,7 +1022,7 @@ class CacheFTPHandler(FTPHandler):
 
         # then check the size
         if len(self.cache) == self.max_conns:
-            for k, v in self.timeout.items():
+            for k, v in self.timeout.iteritems():
                 if v == self.soonest:
                     del self.cache[k]
                     del self.timeout[k]
