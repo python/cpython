@@ -9,7 +9,7 @@
     The robots.txt Exclusion Protocol is implemented as specified in
     http://info.webcrawler.com/mak/projects/robots/norobots-rfc.html
 """
-import re,string,urlparse,urllib
+import re,urlparse,urllib
 
 __all__ = ["RobotFileParser"]
 
@@ -71,7 +71,7 @@ class RobotFileParser:
         entry = Entry()
 
         for line in lines:
-            line = string.strip(line)
+            line = line.strip()
             linenumber = linenumber + 1
             if not line:
                 if state==1:
@@ -85,16 +85,16 @@ class RobotFileParser:
                     entry = Entry()
                     state = 0
             # remove optional comment and strip line
-            i = string.find(line, '#')
+            i = line.find('#')
             if i>=0:
                 line = line[:i]
-            line = string.strip(line)
+            line = line.strip()
             if not line:
                 continue
-            line = string.split(line, ':', 1)
+            line = line.split(':', 1)
             if len(line) == 2:
-                line[0] = string.lower(string.strip(line[0]))
-                line[1] = string.strip(line[1])
+                line[0] = line[0].strip().lower()
+                line[1] = line[1].strip()
                 if line[0] == "user-agent":
                     if state==2:
                         _debug("line %d: warning: you should insert a blank"
@@ -136,7 +136,7 @@ class RobotFileParser:
             return 1
         # search for given user agent matches
         # the first match counts
-        useragent = string.lower(useragent)
+        useragent = useragent.lower()
         url = urllib.quote(urlparse.urlparse(url)[2])
         for entry in self.entries:
             if entry.applies_to(useragent):
