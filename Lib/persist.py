@@ -62,7 +62,7 @@ def writedict(dict, fp):
 		sys.stdout = savestdout
 
 def readdict(dict, fp):
-	contents = fp.read()		# Or: util.readopenfile(fp)
+	contents = fp.read()
 	globals = {}
 	exec(contents, globals)
 	top = globals['top']
