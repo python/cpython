@@ -18,6 +18,9 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "Python.h"
 
 #include <ctype.h>
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
 
 
 int PyArg_Parse Py_PROTO((PyObject *, char *, ...));
