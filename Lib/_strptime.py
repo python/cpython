@@ -306,12 +306,14 @@ class TimeRE(dict):
 
     def __init__(self, locale_time=LocaleTime()):
         """Init inst with non-locale regexes and store LocaleTime object."""
+        # XXX: should 0 be valid for:
+        #          day (d), julian day (j), month (m), and hour12 (I)?
         super(TimeRE,self).__init__({
             # The " \d" option is to make %c from ANSI C work
             'd': r"(?P<d>3[0-1]|[0-2]\d|\d| \d)",
             'H': r"(?P<H>2[0-3]|[0-1]\d|\d)",
             'I': r"(?P<I>0\d|1[0-2]|\d)",
-            'j': r"(?P<j>(?:3[0-5]\d|6[0-6])|[0-2]\d\d|\d)",
+            'j': r"(?P<j>(?:3[0-5]\d|36[0-6])|[0-2]\d\d|\d\d|\d)",
             'm': r"(?P<m>0\d|1[0-2]|\d)",
             'M': r"(?P<M>[0-5]\d|\d)",
             'S': r"(?P<S>6[0-1]|[0-5]\d|\d)",
