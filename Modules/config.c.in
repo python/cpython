@@ -139,6 +139,9 @@ extern void initsocket();
 #ifdef USE_JPEG
 extern void initjpeg();
 #endif
+#ifdef USE_CD
+extern void initcd();
+#endif
 
 struct {
 	char *name;
@@ -193,6 +196,10 @@ struct {
 
 #ifdef USE_JPEG
 	{"jpeg",	initjpeg},
+#endif
+
+#ifdef USE_CD
+	{"cd",		initcd},
 #endif
 
 	{0,		0}		/* Sentinel */
