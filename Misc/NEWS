@@ -351,7 +351,7 @@ HTTP server.
 Tkinter -- optimization of function flatten
 
 urllib -- scans environment variables for proxy configuration,
-e.g. http_proxy. 
+e.g. http_proxy.
 
 whichdb -- recognizes dumbdbm format
 
@@ -367,7 +367,7 @@ poly, zmod, strop, util, whatsound.
 Changed, New, Obsolete Tools
 ----------------------------
 
-XXX: are there any?  If not, say "None" here.
+None.
 
 
 C-level Changes
@@ -417,5 +417,36 @@ that are the same as their non-Ex counterparts except they take an
 extra flag argument that tells them to close the file when done.
 
 XXX There were other API changes that should be fleshed out here.
+
+
+Windows Changes
+---------------
+
+New popen2/popen3/peopen4 in os module (see Changed Modules above).
+
+os.popen is much more usable on Windows 95 and 98.  See Microsoft
+Knowledge Base article Q150956.  The Win9x workaround described there
+is implemented by the new w9xpopen.exe helper in the root of your
+Python installation.  Note that Python uses this internally; it is not
+a standalone program.
+
+Administrator privileges are no longer required to install Python
+on Windows NT or Windows 2000.  If you have administrator privileges,
+Python's registry info will be written under HKEY_LOCAL_MACHINE.
+Otherwise the installer backs off to writing Python's registry info
+under HKEY_CURRENT_USER.  The latter is sufficent for all "normal"
+uses of Python, but will prevent some advanced uses from working
+(for example, running a Python script as an NT service, or possibly
+from CGI).
+
+[This was new in 1.6] The installer no longer runs a separate Tcl/Tk
+installer; instead, it installs the needed Tcl/Tk files directly in the
+Python directory.  If you already have a Tcl/Tk installation, this
+wastes some disk space (about 4 Megs) but avoids problems with
+conflicting Tcl/Tk installations, and makes it much easier for Python
+to ensure that Tcl/Tk can find all its files.
+
+[This was new in 1.6] The Windows installer now installs by default in
+\Python20\ on the default volume, instead of \Program Files\Python-2.0\.
 
 ======================================================================
