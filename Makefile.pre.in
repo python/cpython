@@ -881,4 +881,8 @@ funny:
 		-o -name MANIFEST \
 		-o -print
 
+# Dependencies
+
+Python/thread.o: $(srcdir)/Python/thread_*.h
+
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
