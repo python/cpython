@@ -29,9 +29,6 @@ LIBS=		@LIBS@
 LIBM=		@LIBM@
 LIBC=		@LIBC@
 
-# Machine-dependent subdirectories
-MACHDEP=	@MACHDEP@
-
 # Install prefix for architecture-independent files
 prefix=		@prefix@
 
@@ -61,6 +58,8 @@ MAKESETUP=	$(srcdir)/makesetup
 
 OBJS=		$(MODOBJS)
 
+ADDOBJS=	main.o config.o getpath.o
+
 LIB=		libModules.a
 
 MYLIBS=		$(LIB) \
@@ -80,14 +79,10 @@ $(LIB):		$& $(OBJS) Makefile
 		$(AR) cr $(LIB) $(OBJS)
 		$(RANLIB) $(LIB)
 
-../python:	config.o $(MYLIBS) Makefile
-		$(LINKCC) $(OPT) config.o $(LINKFORSHARED) \
+../python:	$(MYLIBS) $(ADDOBJS) Makefile
+		$(LINKCC) $(OPT) $(LINKFORSHARED) $(ADDOBJS) \
 		      $(MYLIBS) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python
 		mv python ../python
-
-config.o:	config.c Makefile $(MYLIBS)
-		$(LINKCC) $(CFLAGS) -DPYTHONPATH=\"$(PYTHONPATH)\" \
-		          -DPLATFORM=\"$(MACHDEP)\" -c config.c
 
 clean:
 		-rm -f *.o python core *~ [@,#]* *.old *.orig *.rej
@@ -95,6 +90,10 @@ clean:
 clobber:	clean
 		-rm -f *.a tags TAGS config.c glmodule.c Makefile.pre
 		-rm -f *.so so_locations
+
+getpath.o:	getpath.c Makefile
+		$(CC) -c $(CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
+		      $(srcdir)/getpath.c
 
 config.c Makefile: Makefile.pre config.c.in $(MAKESETUP) Setup
 		$(SHELL) $(MAKESETUP) Setup
@@ -127,6 +126,7 @@ fmmodule.o: fmmodule.c
 glmodule.o: glmodule.c
 imageop.o: imageop.c
 imgfile.o: imgfile.c
+main.o: main.c
 mathmodule.o: mathmodule.c
 md5c.o: md5c.c
 md5module.o: md5module.c
