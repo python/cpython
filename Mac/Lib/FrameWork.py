@@ -126,6 +126,11 @@ class Application:
 				return
 		if ok:
 			self.dispatch(event)
+		else:
+			self.idle()
+			
+	def idle(self):
+		pass
 	
 	def getevent(self, mask = everyEvent, wait = 0):
 		ok, event = WaitNextEvent(mask, wait)
