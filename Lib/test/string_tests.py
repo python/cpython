@@ -543,6 +543,7 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal('"', "%c", '__mod__', 34)
         self.checkequal('$', "%c", '__mod__', 36)
         self.checkequal('10', "%d", '__mod__', 10)
+        self.checkequal('\x7f', "%c", '__mod__', 0x7f)
 
         for ordinal in (-100, 0x200000):
             # unicode raises ValueError, str raises OverflowError

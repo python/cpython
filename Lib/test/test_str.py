@@ -14,6 +14,10 @@ class StrTest(
     def fixtype(self, obj):
         return obj
 
+    def test_formatting(self):
+        string_tests.MixinStrUnicodeUserStringTest.test_formatting(self)
+        self.assertRaises(OverflowError, '%c'.__mod__, 0x1234)
+
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(StrTest))
