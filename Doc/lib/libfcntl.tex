@@ -16,13 +16,15 @@ It is an interface to the \cfunction{fcntl()} and \cfunction{ioctl()}
 All functions in this module take a file descriptor \var{fd} as their
 first argument.  This can be an integer file descriptor, such as
 returned by \code{sys.stdin.fileno()}, or a file object, such as
-\code{sys.stdin} itself.
+\code{sys.stdin} itself, which provides a \method{fileno()} which
+returns a genuine file descriptor.
 
 The module defines the following functions:
 
 
 \begin{funcdesc}{fcntl}{fd, op\optional{, arg}}
-  Perform the requested operation on file descriptor \var{fd}.
+  Perform the requested operation on file descriptor \var{fd} (file
+  objects providing a \method{fileno()} method are accepted as well).
   The operation is defined by \var{op} and is operating system
   dependent.  These codes are also found in the \module{fcntl}
   module. The argument \var{arg} is optional, and defaults to the
@@ -52,7 +54,8 @@ The module defines the following functions:
 \end{funcdesc}
 
 \begin{funcdesc}{flock}{fd, op}
-Perform the lock operation \var{op} on file descriptor \var{fd}.
+Perform the lock operation \var{op} on file descriptor \var{fd} (file
+  objects providing a \method{fileno()} method are accepted as well).
 See the \UNIX{} manual \manpage{flock}{3} for details.  (On some
 systems, this function is emulated using \cfunction{fcntl()}.)
 \end{funcdesc}
@@ -75,7 +78,9 @@ lock acquisition.  If \constant{LOCK_NB} is used and the lock cannot
 be acquired, an \exception{IOError} will be raised and the exception
 will have an \var{errno} attribute set to \constant{EACCES} or
 \constant{EAGAIN} (depending on the operating system; for portability,
-check for both values).
+check for both values).  On at least some systems, \constant{LOCK_EX}
+can only be used if the file descriptor refers to a file opened for
+writing.
 
 \var{length} is the number of bytes to lock, \var{start} is the byte
 offset at which the lock starts, relative to \var{whence}, and
