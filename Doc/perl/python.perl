@@ -743,16 +743,15 @@ sub idx_cmd_refstmodindex($){
 sub do_cmd_nodename{ return do_cmd_label($_[0]); }
 
 sub init_myformat(){
-    # These markers must be non-empty or the main latex2html script
-    # may remove a surrounding element that has not other content as
-    # "extraneous"; this ensures these elements (usually hyperlink
-    # targets) are not removed improperly.  We use comments since
-    # there's no meaningful actual content.
+    # This depends on the override of text_cleanup() in l2hinit.perl;
+    # if that function cleans out empty tags, the first three of these
+    # variables must be set to comments.
+    #
     # Thanks to Dave Kuhlman for figuring why some named anchors were
     # being lost.
-    $anchor_invisible_mark = '<!--x-->';
-    $anchor_invisible_mark2 = '<!--y-->';
-    $anchor_mark = '<!--z-->';
+    $anchor_invisible_mark = '';
+    $anchor_invisible_mark2 = '';
+    $anchor_mark = '';
     $icons{'anchor_mark'} = '';
 }
 init_myformat();
