@@ -2047,16 +2047,44 @@ com_assert_stmt(struct compiling *c, node *n)
 static void
 com_print_stmt(struct compiling *c, node *n)
 {
-	int i;
+	int i = 1;
+	node* stream = NULL;
+
 	REQ(n, print_stmt); /* 'print' (test ',')* [test] */
-	for (i = 1; i < NCH(n); i += 2) {
-		com_node(c, CHILD(n, i));
-		com_addbyte(c, PRINT_ITEM);
-		com_pop(c, 1);
+
+	/* are we using the extended print form? */
+	if (NCH(n) >= 2 && TYPE(CHILD(n, 1)) == RIGHTSHIFT) {
+		stream = CHILD(n, 2);
+		if (NCH(n) > 3 && TYPE(CHILD(n, 3)) == COMMA)
+			i = 4;
+		else
+			i = 3;
 	}
-	if (TYPE(CHILD(n, NCH(n)-1)) != COMMA)
-		com_addbyte(c, PRINT_NEWLINE);
-		/* XXX Alternatively, LOAD_CONST '\n' and then PRINT_ITEM */
+	for (; i < NCH(n); i += 2) {
+		if (stream != NULL) {
+			/* stack: [...] => [... obj stream] */
+			com_node(c, CHILD(n, i));
+			com_node(c, stream);
+			com_addbyte(c, PRINT_ITEM_TO);
+			com_pop(c, 2);
+		}
+		else {
+			/* stack: [...] => [... obj] */
+			com_node(c, CHILD(n, i));
+			com_addbyte(c, PRINT_ITEM);
+			com_pop(c, 1);
+		}
+	}
+	/* XXX Alternatively, LOAD_CONST '\n' and then PRINT_ITEM */
+	if (TYPE(CHILD(n, NCH(n)-1)) != COMMA) {
+		if (stream != NULL) {
+			com_node(c, stream);
+			com_addbyte(c, PRINT_NEWLINE_TO);
+			com_pop(c, 1);
+		}
+		else
+			com_addbyte(c, PRINT_NEWLINE);
+	}
 }
 
 static void
