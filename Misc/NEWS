@@ -308,6 +308,8 @@ Extension modules
 Library
 -------
 
+- stringprep.py now uses built-in set() instead of sets.Set().
+
 - Bug #876278: Unbounded recursion in modulefinder
 
 - Bug #780300: Swap public and system ID in LexicalHandler.startDTD.
