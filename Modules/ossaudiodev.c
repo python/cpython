@@ -127,10 +127,6 @@ newladobject(PyObject *arg)
         PyErr_SetFromErrnoWithFilename(LinuxAudioError, basedev);
         return NULL;
     }
-    if (imode == O_WRONLY && ioctl(fd, SNDCTL_DSP_NONBLOCK, NULL) == -1) {
-        PyErr_SetFromErrnoWithFilename(LinuxAudioError, basedev);
-        return NULL;
-    }
     if (ioctl(fd, SNDCTL_DSP_GETFMTS, &afmts) == -1) {
         PyErr_SetFromErrnoWithFilename(LinuxAudioError, basedev);
         return NULL;
@@ -155,6 +151,123 @@ lad_dealloc(lad_t *xp)
 	close(xp->x_fd);
     PyObject_Del(xp);
 }
+
+
+/* Methods to wrap the OSS ioctls.  The calling convention is pretty
+   simple:
+     nonblock()        -> ioctl(fd, SNDCTL_DSP_NONBLOCK)
+     fmt = setfmt(fmt) -> ioctl(fd, SNDCTL_DSP_SETFMT, &fmt)
+     etc.
+*/
+
+
+/* _do_ioctl_1() is a private helper function used for the OSS ioctls --
+   SNDCTL_DSP_{SETFMT,CHANNELS,SPEED} -- that that are called from C
+   like this:
+     ioctl(fd, SNDCTL_DSP_cmd, &arg)
+
+   where arg is the value to set, and on return the driver sets arg to
+   the value that was actually set.  Mapping this to Python is obvious:
+     arg = dsp.xxx(arg)
+*/
+static PyObject *
+_do_ioctl_1(lad_t *self, PyObject *args, char *fname, int cmd)
+{
+    char argfmt[13] = "i:";
+    int arg;
+
+    assert(strlen(fname) <= 10);
+    strcat(argfmt, fname);
+    if (!PyArg_ParseTuple(args, argfmt, &arg))
+	return NULL;
+
+    if (ioctl(self->x_fd, cmd, &arg) == -1)
+        return PyErr_SetFromErrno(LinuxAudioError);
+    return PyInt_FromLong(arg);
+}
+
+/* _do_ioctl_0() is a private helper for the no-argument ioctls:
+   SNDCTL_DSP_{SYNC,RESET,POST}. */
+static PyObject *
+_do_ioctl_0(lad_t *self, PyObject *args, char *fname, int cmd)
+{
+    char argfmt[12] = ":";
+
+    assert(strlen(fname) <= 10);
+    strcat(argfmt, fname);
+    if (!PyArg_ParseTuple(args, argfmt))
+	return NULL;
+
+    if (ioctl(self->x_fd, cmd, 0) == -1)
+        return PyErr_SetFromErrno(LinuxAudioError);
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
+static PyObject *
+lad_nonblock(lad_t *self, PyObject *args)
+{
+    /* Hmmm: it doesn't appear to be possible to return to blocking
+       mode once we're in non-blocking mode! */
+    if (!PyArg_ParseTuple(args, ":nonblock"))
+	return NULL;
+    if (ioctl(self->x_fd, SNDCTL_DSP_NONBLOCK, NULL) == -1)
+        return PyErr_SetFromErrno(LinuxAudioError);
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *
+lad_setfmt(lad_t *self, PyObject *args)
+{
+    return _do_ioctl_1(self, args, "setfmt", SNDCTL_DSP_SETFMT);
+}
+
+static PyObject *
+lad_getfmts(lad_t *self, PyObject *args)
+{
+    int mask;
+    if (!PyArg_ParseTuple(args, ":getfmts"))
+	return NULL;
+    if (ioctl(self->x_fd, SNDCTL_DSP_GETFMTS, &mask) == -1)
+        return PyErr_SetFromErrno(LinuxAudioError);
+    return PyInt_FromLong(mask);
+}
+
+static PyObject *
+lad_channels(lad_t *self, PyObject *args)
+{
+    return _do_ioctl_1(self, args, "channels", SNDCTL_DSP_CHANNELS);
+}
+
+static PyObject *
+lad_speed(lad_t *self, PyObject *args)
+{
+    return _do_ioctl_1(self, args, "speed", SNDCTL_DSP_SPEED);
+}
+
+static PyObject *
+lad_sync(lad_t *self, PyObject *args)
+{
+    return _do_ioctl_0(self, args, "sync", SNDCTL_DSP_SYNC);
+}
+    
+static PyObject *
+lad_reset(lad_t *self, PyObject *args)
+{
+    return _do_ioctl_0(self, args, "reset", SNDCTL_DSP_RESET);
+}
+    
+static PyObject *
+lad_post(lad_t *self, PyObject *args)
+{
+    return _do_ioctl_0(self, args, "post", SNDCTL_DSP_POST);
+}
+
+
+/* Regular file methods: read(), write(), close(), etc. as well
+   as one convenience method, writeall(). */
 
 static PyObject *
 lad_read(lad_t *self, PyObject *args)
@@ -184,40 +297,58 @@ lad_write(lad_t *self, PyObject *args)
 {
     char *cp;
     int rv, size;
-    fd_set write_set_fds;
-    struct timeval tv;
-    int select_retval;
-    
-    if (!PyArg_ParseTuple(args, "s#:write", &cp, &size)) 
+
+    if (!PyArg_ParseTuple(args, "s#:write", &cp, &size)) {
 	return NULL;
+    }
+    if ((rv = write(self->x_fd, cp, size)) == -1) {
+        return PyErr_SetFromErrno(LinuxAudioError);
+    } else {
+        self->x_ocount += rv;
+    }
+    return PyInt_FromLong(rv);
+}
+
+static PyObject *
+lad_writeall(lad_t *self, PyObject *args)
+{
+    char *cp;
+    int rv, size;
+    fd_set write_set_fds;
+    int select_rv;
+    
+    /* NB. writeall() is only useful in non-blocking mode: according to
+       Guenter Geiger <geiger@xdv.org> on the linux-audio-dev list
+       (http://eca.cx/lad/2002/11/0380.html), OSS guarantees that
+       write() in blocking mode consumes the whole buffer.  In blocking
+       mode, the behaviour of write() and writeall() from Python is
+       indistinguishable. */
+
+    if (!PyArg_ParseTuple(args, "s#:write", &cp, &size)) 
+        return NULL;
 
     /* use select to wait for audio device to be available */
     FD_ZERO(&write_set_fds);
     FD_SET(self->x_fd, &write_set_fds);
-    tv.tv_sec = 4; /* timeout values */
-    tv.tv_usec = 0; 
 
     while (size > 0) {
-      select_retval = select(self->x_fd+1, NULL, &write_set_fds, NULL, &tv);
-      tv.tv_sec = 1; tv.tv_usec = 0; /* willing to wait this long next time*/
-      if (select_retval) {
-        if ((rv = write(self->x_fd, cp, size)) == -1) {
-	  if (errno != EAGAIN) {
-	    PyErr_SetFromErrno(LinuxAudioError);
-	    return NULL;
-	  } else {
-	    errno = 0; /* EAGAIN: buffer is full, try again */
-	  }
-        } else {
-	  self->x_ocount += rv;
-	  size -= rv;
-	  cp += rv;
-	}
-      } else {
-	/* printf("Not able to write to linux audio device within %ld seconds\n", tv.tv_sec); */
-	PyErr_SetFromErrno(LinuxAudioError);
-	return NULL;
-      }
+        select_rv = select(self->x_fd+1, NULL, &write_set_fds, NULL, NULL);
+        assert(select_rv != 0);         /* no timeout, can't expire */
+        if (select_rv == -1)
+            return PyErr_SetFromErrno(LinuxAudioError);
+
+        rv = write(self->x_fd, cp, size);
+        if (rv == -1) {
+            if (errno == EAGAIN) {      /* buffer is full, try again */
+                errno = 0;
+                continue;
+            } else                      /* it's a real error */
+                return PyErr_SetFromErrno(LinuxAudioError);
+        } else {                        /* wrote rv bytes */
+            self->x_ocount += rv;
+            size -= rv;
+            cp += rv;
+        }
     }
     Py_INCREF(Py_None);
     return Py_None;
@@ -244,6 +375,10 @@ lad_fileno(lad_t *self, PyObject *args)
 	return NULL;
     return PyInt_FromLong(self->x_fd);
 }
+
+
+/* Convenience methods: these generally wrap a couple of ioctls into one
+   common task. */
 
 static PyObject *
 lad_setparameters(lad_t *self, PyObject *args)
@@ -410,20 +545,6 @@ lad_obuffree(lad_t *self, PyObject *args)
     return PyInt_FromLong(ai.bytes / (ssize * nchannels));
 }
 
-/* Flush the device */
-static PyObject *
-lad_flush(lad_t *self, PyObject *args)
-{
-    if (!PyArg_ParseTuple(args, ":flush")) return NULL;
-
-    if (ioctl(self->x_fd, SNDCTL_DSP_SYNC, NULL) == -1) {
-        PyErr_SetFromErrno(LinuxAudioError);
-        return NULL;
-    }
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
 static PyObject *
 lad_getptr(lad_t *self, PyObject *args)
 {
@@ -445,16 +566,33 @@ lad_getptr(lad_t *self, PyObject *args)
 }
 
 static PyMethodDef lad_methods[] = {
+    /* Regular file methods */
     { "read",		(PyCFunction)lad_read, METH_VARARGS },
     { "write",		(PyCFunction)lad_write, METH_VARARGS },
+    { "writeall",	(PyCFunction)lad_writeall, METH_VARARGS },
+    { "close",		(PyCFunction)lad_close, METH_VARARGS },
+    { "fileno",     	(PyCFunction)lad_fileno, METH_VARARGS },
+
+    /* Simple ioctl wrappers */
+    { "nonblock",       (PyCFunction)lad_nonblock, METH_VARARGS },
+    { "setfmt",		(PyCFunction)lad_setfmt, METH_VARARGS },
+    { "getfmts",        (PyCFunction)lad_getfmts, METH_VARARGS },
+    { "channels",       (PyCFunction)lad_channels, METH_VARARGS },
+    { "speed",          (PyCFunction)lad_speed, METH_VARARGS },
+    { "sync", 		(PyCFunction)lad_sync, METH_VARARGS },
+    { "reset", 		(PyCFunction)lad_reset, METH_VARARGS },
+    { "post", 		(PyCFunction)lad_post, METH_VARARGS },
+
+    /* Convenience methods -- wrap a couple of ioctls together */
     { "setparameters",	(PyCFunction)lad_setparameters, METH_VARARGS },
     { "bufsize",	(PyCFunction)lad_bufsize, METH_VARARGS },
     { "obufcount",	(PyCFunction)lad_obufcount, METH_VARARGS },
     { "obuffree",	(PyCFunction)lad_obuffree, METH_VARARGS },
-    { "flush",		(PyCFunction)lad_flush, METH_VARARGS },
-    { "close",		(PyCFunction)lad_close, METH_VARARGS },
-    { "fileno",     	(PyCFunction)lad_fileno, METH_VARARGS },
     { "getptr",         (PyCFunction)lad_getptr, METH_VARARGS },
+
+    /* Aliases for backwards compatibility */
+    { "flush",		(PyCFunction)lad_sync, METH_VARARGS },
+
     { NULL,		NULL}		/* sentinel */
 };
 
