@@ -1033,6 +1033,8 @@ static PyTypeObject PyCursesPad_Type = {
 
 /* -------------------------------------------------------*/
 
+static PyObject *ModDict;
+
 static PyObject * 
 PyCurses_InitScr(self, args)
      PyObject * self;
@@ -1052,7 +1054,7 @@ PyCurses_InitScr(self, args)
 
 /* This was moved from initcurses() because core dumped on SGI */
 #define SetDictChar(string,ch) \
-	PyDict_SetItemString(d,string,PyInt_FromLong(ch));
+	PyDict_SetItemString(ModDict,string,PyInt_FromLong(ch));
  
 	/* Here are some graphic symbols you can use */
         SetDictChar("ACS_ULCORNER",(ACS_ULCORNER));
@@ -1387,6 +1389,7 @@ initcurses()
 	Py_INCREF(PyCurses_ERR);
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
+	ModDict = d; /* For PyCurses_InitScr */
 
 	/* Make the version available */
 	PyDict_SetItemString(d,"version",
