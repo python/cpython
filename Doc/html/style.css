@@ -72,7 +72,7 @@ var                     { font-family: times, serif;
 
 div.warning             { background-color: #fffaf0;
                           border: thin solid black;
-                          padding: 0.5em;
+                          padding: 1em 1em 0em 1em;
                           margin-left: 2em;
                           margin-right: 2em; }
 
@@ -82,7 +82,7 @@ div.warning .label      { font-family: sans-serif;
 
 div.note                { background-color: #fffaf0;
                           border: thin solid black;
-                          padding: 0.5em;
+                          padding: 1em 1em 0em 1em;
                           margin-left: 2em;
                           margin-right: 2em; }
 
