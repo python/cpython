@@ -15,7 +15,7 @@ SignedByte = Type("SignedByte", "b")
 ScriptCode = Type("ScriptCode", "h")
 Size = Type("Size", "l")
 Style = Type("Style", "b")
-StyleParameter = Type("Style", "h")
+StyleParameter = Type("StyleParameter", "h")
 CharParameter = Type("CharParameter", "h")
 TextEncoding = Type("TextEncoding", "l")
 
@@ -31,7 +31,8 @@ ConstStr255Param = OpaqueArrayType("Str255", "PyMac_BuildStr255", "PyMac_GetStr2
 Str255 = OpaqueArrayType("Str255", "PyMac_BuildStr255", "PyMac_GetStr255")
 
 # File System Specifications
-FSSpec = FSSpec_ptr = OpaqueType("FSSpec", "PyMac_BuildFSSpec", "PyMac_GetFSSpec")
+FSSpec_ptr = OpaqueType("FSSpec", "PyMac_BuildFSSpec", "PyMac_GetFSSpec")
+FSSpec = OpaqueByValueType("FSSpec", "PyMac_BuildFSSpec", "PyMac_GetFSSpec")
 
 # OSType and ResType: 4-byte character strings
 def OSTypeType(typename):
@@ -85,6 +86,7 @@ OSStatus = OSErrType("OSStatus", 'l')
 # Various buffer types
 
 InBuffer = VarInputBufferType('char', 'long', 'l')		# (buf, len)
+OptionalInBuffer = OptionalVarInputBufferType('char', 'long', 'l')		# (buf, len)
 
 InOutBuffer = HeapInputOutputBufferType('char', 'long', 'l')	# (inbuf, outbuf, len)
 VarInOutBuffer = VarHeapInputOutputBufferType('char', 'long', 'l') # (inbuf, outbuf, &len)
@@ -151,9 +153,9 @@ initstuff = """
 # This requires that the OSErr type (defined above) has a non-trivial
 # errorCheck method.
 class OSErrMixIn:
-	"Mix-in class to treat OSErr return values special"
+	"Mix-in class to treat OSErr/OSStatus return values special"
 	def makereturnvar(self):
-		if self.returntype is OSErr:
+		if self.returntype.__class__ == OSErrType:
 			return Variable(self.returntype, "_err", ErrorMode)
 		else:
 			return Variable(self.returntype, "_rv", OutMode)
