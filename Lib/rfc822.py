@@ -221,27 +221,24 @@ class Message:
 	# ('Guido van Rossum', 'guido@cwi.nl').
 
 	def getaddr(self, name):
-		try:
-			data = self[name]
-		except KeyError:
-			return None, None
-		return parseaddr(data)
+		# New, by Ben Escoto
+		alist = self.getaddrlist(name)
+		if alist:
+			return alist[0]
+		else:
+			return (None, None)
 
 	# Retrieve a list of addresses from a header, where each
 	# address is a tuple as returned by getaddr().
 
 	def getaddrlist(self, name):
-		# XXX This function is not really correct.  The split
-		# on ',' might fail in the case of commas within
-		# quoted strings.
+		# New, by Ben Escoto
 		try:
 			data = self[name]
 		except KeyError:
 			return []
-		data = string.splitfields(data, ',')
-		for i in range(len(data)):
-			data[i] = parseaddr(data[i])
-		return data
+		a = AddrlistClass(data)
+		return a.getaddrlist()
 
 	# Retrieve a date field from a header as a tuple compatible
 	# with time.mktime().
@@ -291,7 +288,7 @@ class Message:
 # Utility functions
 # -----------------
 
-# XXX Should fix these to be really conformant.
+# XXX Should fix unquote() and quote() to be really conformant.
 # XXX The inverses of the parse functions may also be useful.
 
 
@@ -306,12 +303,7 @@ def unquote(str):
 	return str
 
 
-# Parse an address into (name, address) tuple
-# (By Sjoerd Mullender)
-
-error = 'parseaddr.error'
-
-specials = re.compile(r'[][()<>,.;:@\" \000-\037\177-\377]')
+# Add quotes around a string.
 
 def quote(str):
 	return '"%s"' % string.join(
@@ -322,114 +314,244 @@ def quote(str):
 		'"'),
 	    '\\"')
 
+
+# External interface to parse an address
+
 def parseaddr(address):
-	token = []			# the current token
-	tokens = []			# the list of tokens
-	backslash = 0
-	dquote = 0
-	was_quoted = 0
-	space = 0
-	paren = 0
-	for c in address:
-		if backslash:
-			token.append(c)
-			backslash = 0
-		if c == '\\':
-			backslash = 1
-			was_quoted = 1
-			continue
-		if dquote:
-			if c == '"':
-				dquote = 0
-			else:
-				token.append(c)
-			continue
-		if c == '"':
-			dquote = 1
-			was_quoted = 1
-			continue
-		if paren:
-			if c == '(':
-				paren = paren + 1
-			elif c == ')':
-				paren = paren - 1
-				if paren == 0:
-					token = string.join(token, '')
-					tokens.append((2, token))
-					token = []
-					continue
-			token.append(c)
-			continue
-		if c == '(':
-			paren = 1
-			token = string.join(token, '')
-			tokens.append((was_quoted, token))
-			was_quoted = 0
-			token = []
-			continue
-		if c in string.whitespace:
-			space = 1
-			continue
-		if c in '<>@,;:.[]':
-			token = string.join(token, '')
-			tokens.append((was_quoted, token))
-			was_quoted = 0
-			token = []
-			tokens.append((0, c))
-			space = 0
-			continue
-		if space:
-			token = string.join(token, '')
-			tokens.append((was_quoted, token))
-			was_quoted = 0
-			token = []
-			space = 0
-		token.append(c)
-	token = string.join(token, '')
-	tokens.append((was_quoted, token))
-	if (0, '<') in tokens:
-		name = []
-		addr = []
-		cur = name
-		for token in tokens:
-			if token[1] == '':
-				continue
-			if token == (0, '<'):
-				if addr:
-					raise error, 'syntax error'
-				cur = addr
-			elif token == (0, '>'):
-				if cur is not addr:
-					raise error, 'syntax error'
-				cur = name
-			elif token[0] == 2:
-				if cur is name:
-					name.append('(' + token[1] + ')')
-				else:
-					name.append(token[1])
-			elif token[0] == 1 and cur is addr:
-				if specials.search(token[1]):
-					cur.append(quote(token[1]))
-				else:
-					cur.append(token[1])
-			else:
-				cur.append(token[1])
+    a = AddrlistClass(address)
+    list = a.getaddrlist()
+    if not list:
+	return (None, None)
+    else:
+	return list[0]
+
+
+# Address parser class by Ben Escoto
+
+class AddrlistClass:
+
+    def __init__(self, field):
+
+	self.specials = '()<>@,:;.\"[]'
+	self.pos = 0
+	self.LWS = ' \t'
+	self.CR = '\r'
+	self.atomends = self.specials + self.LWS + self.CR
+
+	self.field = field
+	self.commentlist = []
+
+
+    def gotonext(self):
+
+	while self.pos < len(self.field):
+	    if self.field[self.pos] in self.LWS + '\n\r':
+		self.pos = self.pos + 1
+	    elif self.field[self.pos] == '(':
+		self.commentlist.append(self.getcomment())
+	    else: break
+
+    def getaddrlist(self):
+
+	ad = self.getaddress()
+	if ad:
+	    return ad + self.getaddrlist()
+	else: return []
+
+    def getaddress(self):
+	self.commentlist = []
+	self.gotonext()
+
+	oldpos = self.pos
+	oldcl = self.commentlist
+	plist = self.getphraselist()
+
+	self.gotonext()
+	returnlist = []
+
+	if self.pos >= len(self.field):
+	    # Bad email address technically, no domain.
+	    if plist:
+		returnlist = [(string.join(self.commentlist), plist[0])]
+
+	elif self.field[self.pos] in '.@':
+	    # email address is just an addrspec
+	    # this isn't very efficient since we start over
+	    self.pos = oldpos
+	    self.commentlist = oldcl
+	    addrspec = self.getaddrspec()
+	    returnlist = [(string.join(self.commentlist), addrspec)]
+
+	elif self.field[self.pos] == ':':
+	    # address is a group
+	    returnlist = []
+
+	    self.pos = self.pos + 1
+	    while self.pos < len(self.field):
+		self.gotonext()
+		if self.field[self.pos] == ';':
+		    self.pos = self.pos + 1
+		    break
+		returnlist = returnlist + self.getaddress()
+
+	elif self.field[self.pos] == '<':
+	    # Address is a phrase then a route addr
+	    routeaddr = self.getrouteaddr()
+	    
+	    if self.commentlist:
+		returnlist = [(string.join(plist) + ' (' + \
+			 string.join(self.commentlist) + ')', routeaddr)]
+	    else: returnlist = [(string.join(plist), routeaddr)]
+
 	else:
-		name = []
-		addr = []
-		for token in tokens:
-			if token[1] == '':
-				continue
-			if token[0] == 2:
-				name.append(token[1])
-			elif token[0] == 1:
-				if specials.search(token[1]):
-					addr.append(quote(token[1]))
-				else:
-					addr.append(token[1])
-			else:
-				addr.append(token[1])
-	return string.join(name, ' '), string.join(addr, '')
+	    if plist:
+		returnlist = [(string.join(self.commentlist), plist[0])]
+
+	self.gotonext()
+	if self.pos < len(self.field) and self.field[self.pos] == ',':
+	    self.pos = self.pos + 1
+	return returnlist
+
+
+    def getrouteaddr(self):
+	# This just skips all the route stuff and returns the addrspec
+	if self.field[self.pos] != '<':
+	    return
+
+	expectroute = 0
+	self.pos = self.pos + 1
+	self.gotonext()
+	while self.pos < len(self.field):
+	    if expectroute:
+		self.getdomain()
+		expectroute = 0
+	    elif self.field[self.pos] == '>':
+		self.pos = self.pos + 1
+		break
+	    elif self.field[self.pos] == '@':
+		self.pos = self.pos + 1
+		expectroute = 1
+	    elif self.field[self.pos] == ':':
+		self.pos = self.pos + 1
+		expectaddrspec = 1
+	    else:
+		adlist = self.getaddrspec()
+		self.pos = self.pos + 1
+		break
+	    self.gotonext()
+
+	return adlist
+
+
+    def getaddrspec(self):
+
+	aslist = []
+
+	self.gotonext()
+	while self.pos < len(self.field):
+	    if self.field[self.pos] == '.':
+		aslist.append('.')
+		self.pos = self.pos + 1
+	    elif self.field[self.pos] == '"':
+		aslist.append(self.getquote())
+	    elif self.field[self.pos] in self.atomends:
+		break
+	    else: aslist.append(self.getatom())
+	    self.gotonext()
+
+	if self.pos >= len(self.field) or self.field[self.pos] != '@':
+	    return string.join(aslist, '')
+
+	aslist.append('@')
+	self.pos = self.pos + 1
+	self.gotonext()
+	return string.join(aslist, '') + self.getdomain()
+
+
+    def getdomain(self):
+
+	sdlist = []
+	while self.pos < len(self.field):
+	    if self.field[self.pos] in self.LWS:
+		self.pos = self.pos + 1
+	    elif self.field[self.pos] == '(':
+		self.commentlist.append(self.getcomment())
+	    elif self.field[self.pos] == '[':
+		sdlist.append(self.getdomainliteral())
+	    elif self.field[self.pos] == '.':
+		self.pos = self.pos + 1
+		sdlist.append('.')
+	    elif self.field[self.pos] in self.atomends:
+		break
+	    else: sdlist.append(self.getatom())
+
+	return string.join(sdlist, '')
+
+
+    def getdelimited(self, beginchar, endchars, allowcomments = 1):
+
+	if self.field[self.pos] != beginchar:
+	    return ''
+
+	slist = ['']
+	quote = 0
+	self.pos = self.pos + 1
+	while self.pos < len(self.field):
+	    if quote == 1:
+		slist.append(self.field[self.pos])
+		quote = 0
+	    elif self.field[self.pos] in endchars:
+		self.pos = self.pos + 1
+		break
+	    elif allowcomments and self.field[self.pos] == '(':
+		slist.append(self.getcomment())
+	    elif self.field[self.pos] == '\\':
+		quote = 1
+	    else:
+		slist.append(self.field[self.pos])
+	    self.pos = self.pos + 1
+
+	return string.join(slist, '')
+
+    def getquote(self):
+	return self.getdelimited('"', '"\r', 0)
+
+    def getcomment(self):
+	return self.getdelimited('(', ')\r', 1)
+
+    def getdomainliteral(self):
+	return self.getdelimited('[', ']\r', 0)
+
+
+    def getatom(self):
+
+	atomlist = ['']
+
+	while self.pos < len(self.field):
+	    if self.field[self.pos] in self.atomends:
+		break
+	    else: atomlist.append(self.field[self.pos])
+	    self.pos = self.pos + 1
+
+	return string.join(atomlist, '')
+
+
+    def getphraselist(self):
+
+	plist = []
+
+	while self.pos < len(self.field):
+	    if self.field[self.pos] in self.LWS:
+		self.pos = self.pos + 1
+	    elif self.field[self.pos] == '"':
+		plist.append(self.getquote())
+	    elif self.field[self.pos] == '(':
+		self.commentlist.append(self.getcomment())
+	    elif self.field[self.pos] in self.atomends:
+		break
+	    else: plist.append(self.getatom())
+
+	return plist
 
 
 # Parse a date field
