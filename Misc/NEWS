@@ -6,6 +6,12 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- A new type object, 'string', is added.  This is a common base type
+  for 'str' and 'unicode', and can be used instead of
+  types.StringTypes, e.g. to test whether something is "a string":
+  isinstance(x, string) is True for Unicode and 8-bit strings.  This
+  is an abstract base class and cannot be instantiated directly.
+
 - Deprecated features of xrange objects have been removed as
   promised.  The start, stop, and step attributes and the tolist()
   method no longer exist.  xrange repetition and slicing have been

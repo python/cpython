@@ -1905,6 +1905,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("object",		&PyBaseObject_Type);
 	SETBUILTIN("staticmethod",	&PyStaticMethod_Type);
 	SETBUILTIN("str",		&PyString_Type);
+	SETBUILTIN("string",		&PyBaseString_Type);
 	SETBUILTIN("super",		&PySuper_Type);
 	SETBUILTIN("tuple",		&PyTuple_Type);
 	SETBUILTIN("type",		&PyType_Type);
