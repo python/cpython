@@ -94,8 +94,8 @@ Return a new empty module object called \var{name}.  This object is
 \end{funcdesc}
 
 \begin{funcdesc}{lock_held}{}
-Return 1 if the import lock is currently held, else 0.
-On platforms without threads, always return 0.
+Return \code{True} if the import lock is currently held, else \code{False}.
+On platforms without threads, always return \code{False}.
 
 On platforms with threads, a thread executing an import holds an internal
 lock until the import is complete.
@@ -174,8 +174,8 @@ module called \var{name}.
 \end{funcdesc}
 
 \begin{funcdesc}{is_frozen}{name}
-Return \code{1} if there is a frozen module (see
-\function{init_frozen()}) called \var{name}, or \code{0} if there is
+Return \code{True} if there is a frozen module (see
+\function{init_frozen()}) called \var{name}, or \code{False} if there is
 no such module.
 \end{funcdesc}
 

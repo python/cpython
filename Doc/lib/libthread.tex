@@ -82,8 +82,8 @@ reason for existence), and returns \code{None}.  If the integer
 value: if it is zero, the lock is only acquired if it can be acquired
 immediately without waiting, while if it is nonzero, the lock is
 acquired unconditionally as before.  If an argument is present, the
-return value is \code{1} if the lock is acquired successfully,
-\code{0} if not.
+return value is \code{True} if the lock is acquired successfully,
+\code{False} if not.
 \end{methoddesc}
 
 \begin{methoddesc}[lock]{release}{}
@@ -92,8 +92,8 @@ necessarily by the same thread.
 \end{methoddesc}
 
 \begin{methoddesc}[lock]{locked}{}
-Return the status of the lock:\ \code{1} if it has been acquired by
-some thread, \code{0} if not.
+Return the status of the lock:\ \code{True} if it has been acquired by
+some thread, \code{False} if not.
 \end{methoddesc}
 
 \strong{Caveats:}
