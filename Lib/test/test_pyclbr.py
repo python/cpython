@@ -140,7 +140,8 @@ class PyclbrTest(unittest.TestCase):
         cm('aifc', ignore=('openfp',))    # set with =
 
         cm('httplib', ignore=('error',    # set with =
-                              'HTTPS'))   # not on all platforms
+                              'HTTPS',
+                              'HTTP11'))   # not on all platforms
 
         cm('Cookie', ignore=('__str__', 'Cookie')) # set with =
 
