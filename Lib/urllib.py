@@ -426,7 +426,7 @@ class URLopener:
         dirs, file = dirs[:-1], dirs[-1]
         if dirs and not dirs[0]: dirs = dirs[1:]
         if dirs and not dirs[0]: dirs[0] = '/'
-        key = (user, host, port, string.joinfields(dirs, '/'))
+        key = user, host, port, string.join(dirs, '/')
         # XXX thread unsafe!
         if len(self.ftpcache) > MAXFTPCACHE:
             # Prune the cache, rather arbitrarily
@@ -1013,22 +1013,58 @@ def unquote_plus(s):
 
 always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ' 
                'abcdefghijklmnopqrstuvwxyz'
-               '0123456789' '_,.-')
+               '0123456789' '_.-')
+
+_fast_safe_test = always_safe + '/'
+_fast_safe = None
+
+def _fast_quote(s):
+    global _fast_safe
+    if _fast_safe is None:
+        _fast_safe = {}
+        for c in _fast_safe_test:
+            _fast_safe[c] = c
+    res = list(s)
+    for i in range(len(res)):
+        c = res[i]
+        if not _fast_safe.has_key(c):
+            res[i] = '%%%02x' % ord(c)
+    return string.join(res, '')
+
 def quote(s, safe = '/'):
-    """quote('abc def') -> 'abc%20def'."""
-    # XXX Can speed this up an order of magnitude
+    """quote('abc def') -> 'abc%20def'
+    
+    Each part of a URL, e.g. the path info, the query, etc., has a
+    different set of reserved characters that must be quoted.
+
+    RFC 2396 Uniform Resource Identifiers (URI): Generic Syntax lists
+    the following reserved characters.
+
+    reserved    = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+" |
+                  "$" | ","
+
+    Each of these characters is reserved in some component of a URL,
+    but not necessarily in all of them.
+
+    By default, the quote function is intended for quoting the path
+    section of a URL.  Thus, it will not encode '/'.  This character
+    is reserved, but in typical usage the quote function is being
+    called on a path where the existing slash characters are used as
+    reserved characters.
+    """
     safe = always_safe + safe
+    if _fast_safe_test == safe:
+        return _fast_quote(s)
     res = list(s)
     for i in range(len(res)):
         c = res[i]
         if c not in safe:
             res[i] = '%%%02x' % ord(c)
-    return string.joinfields(res, '')
+    return string.join(res, '')
 
-def quote_plus(s, safe = '/'):
-    # XXX Can speed this up an order of magnitude
+def quote_plus(s, safe = ''):
+    """Quote the query fragment of a URL; replacing ' ' with '+'"""
     if ' ' in s:
-        # replace ' ' with '+'
         l = string.split(s, ' ')
         for i in range(len(l)):
             l[i] = quote(l[i], safe)
