@@ -397,6 +397,7 @@ def parseaddr(address):
 
 _monthnames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
 	  'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+_daynames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 # The timezone table does not include the military time zones defined
 # in RFC822, other than Z.  According to RFC1123, the description in
@@ -414,7 +415,7 @@ _timezones = {'UT':0, 'UTC':0, 'GMT':0, 'Z':0,
 
 def parsedate_tz(data):
 	data = string.split(data)
-	if data[0][-1] == ',':
+	if data[0][-1] == ',' or data[0] in _daynames:
 		# There's a dayname here. Skip it
 		del data[0]
 	if len(data) == 3: # RFC 850 date, deprecated
@@ -433,7 +434,9 @@ def parsedate_tz(data):
 	data = data[:5]
 	[dd, mm, yy, tm, tz] = data
 	if not mm in _monthnames:
-		return None
+		dd, mm, yy, tm, tz = mm, dd, tm, yy, tz
+		if not mm in _monthnames:
+			return None
 	mm = _monthnames.index(mm)+1
 	tm = string.splitfields(tm, ':')
 	if len(tm) == 2:
