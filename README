@@ -163,17 +163,18 @@ Linux:  On Linux version 1.x, once you've built Python, use it to run
 	status of a module from static to shared, you must remove its
 	.o file or do a "make clean".)
 
-DEC Alpha OFS/1: When enabling threads, use --with-dec-threads, not
+DEC Unix: When enabling threads, use --with-dec-threads, not
 	--with-thread.
 
 AIX:	A complete overhaul of the shared library support is now in
 	place.  To enable it, uncomment the LINKCC line in the Setup
 	file.  See Misc/AIX-NOTES for some notes on how it's done.
 
-	WARNING!  In some versions of AIX 3.x, you get errors about
+	WARNING!  In some versions of AIX, you get errors about
 	Invalid Indent when running the Python test set.  This appears
 	to be a bug in the AIX compiler.  Rebuild Parser/tokenizer.c
-	using OPT="" or OPT=-g, or use gcc.
+	using OPT="" or OPT=-g, or use gcc.  According to the latest
+	reports, it seems this compiler bug is still present in 4.2.1.
 
 HP-UX:	Shared library support now works by default (at least on HP-UX
 	9.x).  One other problem remains: the HP ANSI C compiler (cc
@@ -258,21 +259,24 @@ Testing
 -------
 
 To test the interpreter that you have just built, type "make test".
-This runs the test set silently, twice (once with no compiled files,
-once with the compiled files left by the previous test run).  Each
-test run should print "All tests OK." and nothing more.  (The test set
-does not test the built-in modules, but will find most other problems
-with the interpreter.)
+This runs the test set twice (once with no compiled files, once with
+the compiled files left by the previous test run).  The test set
+produces some output.  You can generally ignore the messages about
+skipped tests due to an optional feature that can't be imported (if
+you want to test those modules, edit Modules/Setup to configure them).
+If a messages is printed about a failed test or a traceback or core
+dump is produced, something's wrong.  On some systems, test_strftime
+fails due to a non-standard implementation of strftime() in the C
+library.  This can be ignored (or you can complain to your vendor).
 
 IMPORTANT: If the tests fail and you decide to mail a bug report,
 *don't* include the output of "make test".  It is useless.  Run the
-following command instead:
+test that fails manually, as follows:
 
-    PYTHONPATH=../Lib:../Lib/test:./Modules ./python -c 'import testall'
+	python ../Lib/test/test_whatever.py
 
 (substituting the top of the source tree for .. if you built in a
-different directory).  This gives the output of the tests and shows
-which test failed.
+different directory).  This runs the test in verbose mode.
 
 
 Installing
@@ -376,7 +380,7 @@ clean" before giving up or complaining!).
 	enabled automatically because there are run-time penalties
 	when support for them is compiled in even if you don't use
 	them.)  IMPORTANT: run "make clean" after changing (either
-	enabling or disabling) this option!  Note: for DEC Alpha OSF/1,
+	enabling or disabling) this option!  Note: for DEC Unix
 	use --with-dec-threads instead.
 
 --with-sgi-dl: On SGI IRIX 4, dynamic loading of extension modules is
