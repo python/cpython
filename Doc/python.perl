@@ -99,7 +99,7 @@ sub do_cmd_url{
 sub do_cmd_manpage{
     # two parameters:  \manpage{name}{section}
     local($_) = @_;
-    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
+#    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
     s/$next_pair_pr_rx$any_next_pair_pr_rx3/<i>\2<\/i>(\4)/;
     $_;
 }
@@ -154,7 +154,7 @@ sub do_cmd_strong{
 sub do_cmd_deprecated{
     # two parameters:  \deprecated{version}{whattodo}
     local($_) = @_;
-    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
+#    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
     local($release,$action) = ($2, $4);
     s/$next_pair_pr_rx$any_next_pair_pr_rx3//;
     "<b>Deprecated since release $release.</b>"
@@ -630,15 +630,12 @@ sub do_cmd_seemodule{
     # Insert the right magic to jump to the module definition.  This should
     # work most of the time, at least for repeat builds....
     local($_) = @_;
-    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
-    s/$next_pair_pr_rx$any_next_pair_pr_rx3//;
-    local($module,$text,$node,$key) = ($2, $4, '', "module$2");
-    $key =~ s/_//g;
-    # XXX somewhat bogus computation of $node
-#    $node = $external_labels{$key} unless
-#      ($node = $ref_files{$key});
-    $node = $key;
-    "<p>Module <tt><b><a href=\"$node#$key\">$module</a></b></tt>"
+    local($opt_arg) = "(\\[([^\\]]*)])?";
+#    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
+    s/$opt_arg$any_next_pair_pr_rx3$any_next_pair_pr_rx5//;
+    local($module,$text,$key) = ($4, $6, $2);
+    $key = $module if not $key;
+    "<p>Module <tt><b><a href=\"module-$key.html\">$module</a></b></tt>"
       . "&nbsp;&nbsp;&nbsp;($text)</p>"
       . $_;
 }

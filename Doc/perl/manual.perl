@@ -8,10 +8,7 @@
 
 package main;
 
-$mydir = `pwd`;
-chop $mydir;
-unshift(@INC, $mydir);
-
-require "python.perl";
+&do_require_package("report");
+&do_require_package("python");
 
 1;				# sheesh....
