@@ -51,10 +51,10 @@ def check(file):
 		print "%s: Token Error: %s" % (`file`, str(msg))
 
 	if verbose > 1:
-		print "checking", `file`, "with tabsize 4..."
+		print "checking", `file`, "with tabsize 1..."
 	f.seek(0)
 	alttokens = []
-	tokenize.tabsize = 4
+	tokenize.tabsize = 1
 	try:
 		tokenize.tokenize(f.readline, alttokens.append)
 	except tokenize.TokenError, msg:
@@ -62,10 +62,30 @@ def check(file):
 	f.close()
 
 	if tokens != alttokens:
+		badline = 0
+		n, altn = len(tokens), len(alttokens)
+		for i in range(max(n, altn)):
+			if i >= n:
+				x = None
+			else:
+				x = tokens[i]
+			if i >= altn:
+				y = None
+			else:
+				y = alttokens[i]
+			if x != y:
+				if x:
+					kind, token, start, end, line = x
+				else:
+					kind, token, start, end, line = y
+				badline = start[0]
+				break
 		if verbose:
-			print "%s: *** Trouble in tab city! ***" % `file`
+			print "%s: *** Line %d: trouble in tab city! ***" % (
+				`file`, badline)
+			print "offending line:", `line`
 		else:
-			print file
+			print file, badline, `line`
 	else:
 		if verbose:
 			print "%s: Clean bill of health." % `file`
