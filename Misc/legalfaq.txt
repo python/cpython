@@ -1,0 +1,77 @@
+Frequently Asked Questions about CNRI's legal policy regarding
+contributions to Python
+
+If you have a question that isn't answered here, please write
+<guido@python.org>
+
+Q. What are the legal requirements for contributions to Python?
+
+CNRI's lawyers recommend that we collect legal agreements for all new
+contributions.  For small contributions, a simple two-paragraph note
+in the email containing the contribution suffices (see
+bugrelease.txt).  For more substantial contribution, we require a
+mailed signed copy of a simple form (see wetsign.txt).  We have tried
+to make the legal language as simple as possible.
+
+Q. Why does CNRI require this?
+
+In order to make it possible to protect Python against potential
+infringements.  Other organizations that distribute free software do
+the similar things; for example, the GNU project requires a much more
+strongly worded form, assigning all copyrights to the Free Software
+Foundation, for all contributions to GNU software.
+
+Q. When is a contribution small enough to require only an email note?
+
+This is determined by us on a per-contribution basis.  Up to 20 lines
+of patches typically qualify as small; however if you manage to do
+something truly spectacular in 20 lines or less we may ask you to send
+in the signature form anyway.
+
+Q. I have contributed to Python in the past.  Should I sign and mail
+in a form now?
+
+Yes, please.  We are in the process of getting wet signatures for all
+major contributions to Python up to now.  If you contributed a module
+or more, we'll try to get in touch with you; you can save us the
+effort and mail us the signed form right away!
+
+Q. Do I have to accurately list everything I contributed?
+
+No.  If you made multiple contributions in the past, it is sufficient
+to write in the form under "description" something like "everything
+I've contributed until &lt;date&gt;."  If you continue to make
+significant contributions in the future, you can send us an update
+form using a similar formulation every once in a while.
+
+Q. Can I send in a form to cover all my future contributions?
+
+No.  However it's okay if you send in a form, say, once a year,
+covering all your contributions from the last time you sent one in
+until the date you sign the new form.
+
+Q. Does the form protect me against copyright or patent infringement
+suits?
+
+If you infringe somebody's rights, no form in the world that you sign
+can protect you.  The form only protects CNRI, because the act of
+collecting the forms shows that CNRI is doing "due diligence"
+regarding asserting the origin of contributions.
+
+Q. Does the form protect me against claims from damage resulting from
+use of my contribution?
+
+We have reluctantly added a paragraph wherein you disclaim all
+warranties etc.  You may see this as some form of protection.  However
+the law regarding such disclaimers is complicated and varies widely
+between states and countries, and the particular disclaimer used on
+the form may not cover you in all cases.
+
+Q. Does the form transfer my copyrights to CNRI?
+
+No.  CNRI only gets certain non-exclusive rights.  See the form for
+the exact list of rights.
+
+Q. If I don't sign, will my past contributions be removed from Python?
+
+That is up to CNRI's lawyers to decide.

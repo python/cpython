@@ -1,0 +1,26 @@
+If you send us a minor contribution by email (bug fix, patch,
+suggestion, or other minor enhancement), please incorporate the
+following paragraphs in your email message.  For more substantial
+contributions, we may require a wet signature; see the separate form
+(wetsign.txt).  See the contribution policy FAQ (legalfaq.txt) for
+more information.
+
+"""
+I confirm that, to the best of my knowledge and belief, this
+contribution is free of any claims of third parties under
+copyright, patent or other rights or interests ("claims").  To
+the extent that I have any such claims, I hereby grant to CNRI a
+nonexclusive, irrevocable, royalty-free, worldwide license to
+reproduce, distribute, perform and/or display publicly, prepare
+derivative versions, and otherwise use this contribution as part
+of the Python software and its related documentation, or any
+derivative versions thereof, at no cost to CNRI or its licensed
+users, and to authorize others to do so.
+
+I acknowledge that CNRI may, at its sole discretion, decide
+whether or not to incorporate this contribution in the Python
+software and its related documentation.  I further grant CNRI
+permission to use my name and other identifying information
+provided to CNRI by me for use in connection with the Python
+software and its related documentation.
+"""
