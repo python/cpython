@@ -2724,7 +2724,7 @@ com_argdefs(c, n)
 			/* Treat "(a=1, b)" as an error */
 			if (ndefs)
 				com_error(c, PyExc_SyntaxError,
-					  "Missing parameter default value");
+			    "non-default argument follows default argument");
 		}
 		if (t != COMMA)
 			break;
