@@ -33,7 +33,7 @@ high-speed functions provided by the \refmodule{operator} module.
 The module author welcomes suggestions for other basic building blocks
 to be added to future versions of the module.
 
-Whether cast in pure python form or C code, tools that use iterators
+Whether cast in pure python form or compiled code, tools that use iterators
 are more memory efficient (and faster) than their list based counterparts.
 Adopting the principles of just-in-time manufacturing, they create
 data when and where needed instead of consuming memory with the
@@ -377,15 +377,16 @@ Check 1201 is for $764.05
 Check 1202 is for $823.14
 
 >>> import operator
->>> for cube in imap(operator.pow, xrange(1,4), repeat(3)):
+>>> for cube in imap(operator.pow, xrange(1,5), repeat(3)):
 ...    print cube
 ...
 1
 8
 27
+64
 
 >>> reportlines = ['EuroPython', 'Roster', '', 'alex', '', 'laura',
-                  '', 'martin', '', 'walter', '', 'samuele']
+                  '', 'martin', '', 'walter', '', 'mark']
 >>> for name in islice(reportlines, 3, None, 2):
 ...    print name.title()
 ...
@@ -393,7 +394,7 @@ Alex
 Laura
 Martin
 Walter
-Samuele
+Mark
 
 # Show a dictionary sorted and grouped by value
 >>> from operator import itemgetter
@@ -422,10 +423,20 @@ Samuele
 
 \end{verbatim}
 
-This section shows how itertools can be combined to create other more
-powerful itertools.  Note that \function{enumerate()} and \method{iteritems()}
-already have efficient implementations.  They are included here
-to illustrate how higher level tools can be created from building blocks.
+
+\subsection{Recipes \label{itertools-recipes}}
+
+This section shows recipes for creating an extended toolset using the
+existing itertools as building blocks.
+
+The extended tools offer the same high performance as the underlying
+toolset.  The superior memory performance is kept by processing elements one
+at a time rather than bringing the whole iterable into memory all at once.
+Code volume is kept small by linking the tools together in a functional style
+which helps eliminate temporary variables.  High speed is retained by
+preferring ``vectorized'' building blocks over the use of for-loops and
+generators which incur interpreter overhead.
+
 
 \begin{verbatim}
 def take(n, seq):
@@ -462,7 +473,11 @@ def quantify(seq, pred=bool):
     return sum(imap(pred, seq))
 
 def padnone(seq):
-    "Returns the sequence elements and then returns None indefinitely"
+    """Returns the sequence elements and then returns None indefinitely.
+
+    Useful for emulating the behavior of the built-in map() function.
+
+    """
     return chain(seq, repeat(None))
 
 def ncycles(seq, n):
@@ -476,8 +491,11 @@ def flatten(listOfLists):
     return list(chain(*listOfLists))
 
 def repeatfunc(func, times=None, *args):
-    "Repeat calls to func with specified arguments."
-    "Example:  repeatfunc(random.random)"
+    """Repeat calls to func with specified arguments.
+    
+    Example:  repeatfunc(random.random)
+    
+    """
     if times is None:
         return starmap(func, repeat(args))
     else:
