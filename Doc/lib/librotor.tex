@@ -29,7 +29,8 @@ The available functions in this module are:
 
 \begin{funcdesc}{newrotor}{key\optional{, numrotors}}
 Return a rotor object. \var{key} is a string containing the encryption key
-for the object; it can contain arbitrary binary data. The key will be used
+for the object; it can contain arbitrary binary data but not null bytes.
+The key will be used
 to randomly generate the rotor permutations and their initial positions.
 \var{numrotors} is the number of rotor permutations in the returned object;
 if it is omitted, a default value of 6 will be used.
@@ -38,7 +39,7 @@ if it is omitted, a default value of 6 will be used.
 Rotor objects have the following methods:
 
 \begin{methoddesc}[rotor]{setkey}{key}
-Sets the rotor's key to \var{key}.
+Sets the rotor's key to \var{key}. The key should not contain null bytes.
 \end{methoddesc}
 
 \begin{methoddesc}[rotor]{encrypt}{plaintext}
