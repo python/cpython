@@ -1,0 +1,100 @@
+\section{\module{shutil} ---
+         High-level file operations.}
+
+\declaremodule{standard}{shutil}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+% partly based on the docstrings
+
+
+The \module{shutil} module offers a number of high-level operations on
+files and collections of files.  In particular, functions are provided 
+which support file copying and removal.
+
+\strong{Caveat:}  On MacOS, the resource fork and other metadata are
+not used.  For file copies, this means that resources will be lost and 
+file type and creator codes will not be correct.
+
+
+\begin{funcdesc}{copyfile}{src, dst}
+  Copy the contents of \var{src} to \var{dst}.  If \var{dst} exists,
+  it will be replaced, otherwise it will be created.
+\end{funcdesc}
+
+\begin{funcdesc}{copymode}{src, dst}
+  Copy the permission bits from \var{src} to \var{dst}.  The file
+  contents, owner, and group are unaffected.
+\end{funcdesc}
+
+\begin{funcdesc}{copystat}{src, dst}
+  Copy the permission bits, last access time, and last modification
+  time from \var{src} to \var{dst}.  The file contents, owner, and
+  group are unaffected.
+\end{funcdesc}
+
+\begin{funcdesc}{copy}{src, dst}
+  Copy the file \var{src} to the file or directory \var{dst}.  If
+  \var{dst} is a directory, a file with the same basename as \var{src} 
+  is created (or overwritten) in the directory specified.  Permission
+  bits are copied.
+\end{funcdesc}
+
+\begin{funcdesc}{copy2}{src, dst}
+  Similar to \function{copy()}, but last access time and last
+  modification time are copied as well.  This is similar to the
+  \UNIX{} command \program{cp -p}.
+\end{funcdesc}
+
+\begin{funcdesc}{copytree}{src, dst\optional{, symlinks}}
+  Recursively copy an entire directory tree rooted at \var{src}.  The
+  destination directory, named by \var{dst}, must not already exist;
+  it will be created.  Individual files are copied using
+  \function{copy2()}.  If \var{symlinks} is true, symbolic links in
+  the source tree are represented as symbolic links in the new tree;
+  if false or omitted, the contents of the linked files are copied to
+  the new tree.  Errors are reported to standard output.
+
+  The source code for this should be considered an example rather than 
+  a tool.
+\end{funcdesc}
+
+\begin{funcdesc}{rmtree}{path\optional{, ignore_errors\optional{, onerror}}}
+  Delete an entire directory tree.  If \var{ignore_errors} is true,
+  errors will be ignored; if false or omitted, errors are handled by
+  calling a handler specified by \var{onerror} or raise an exception.
+
+  If \var{onerror} is provided, it must be a callable that accepts
+  three parameters: \var{function}, \var{path}, and \var{excinfo}.
+  The first parameter, \var{function}, is the function which raised
+  the exception; it will be \function{os.remove()} or
+  \function{os.rmdir()}.  The second parameter, \var{path}, will be
+  the path name passed to \var{function}.  The third parameter,
+  \var{excinfo}, will be the exception information return by
+  \function{sys.exc_info()}.  Exceptions raised by \var{onerror} will
+  not be caught.
+\end{funcdesc}
+
+
+\subsection{Example \label{shutil-example}}
+
+This example is the implementation of the \function{copytree()}
+function, described above, with the docstring omitted.
+
+\begin{verbatim}
+def copytree(src, dst, symlinks=0):
+    names = os.listdir(src)
+    os.mkdir(dst)
+    for name in names:
+        srcname = os.path.join(src, name)
+        dstname = os.path.join(dst, name)
+        try:
+            if symlinks and os.path.islink(srcname):
+                linkto = os.readlink(srcname)
+                os.symlink(linkto, dstname)
+            elif os.path.isdir(srcname):
+                copytree(srcname, dstname)
+            else:
+                copy2(srcname, dstname)
+            # XXX What about devices, sockets etc.?
+        except (IOError, os.error), why:
+            print "Can't copy %s to %s: %s" % (`srcname`, `dstname`, str(why))
+\end{verbatim}
