@@ -54,6 +54,21 @@ builtin_abs(self, v)
 }
 
 static object *
+builtin_apply(self, v)
+	object *self;
+	object *v;
+{
+	object *func, *args;
+	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
+		err_setstr(TypeError, "apply() requires (func,args)");
+		return NULL;
+	}
+	func = gettupleitem(v, 0);
+	args = gettupleitem(v, 1);
+	return call_object(func, args);
+}
+
+static object *
 builtin_chr(self, v)
 	object *self;
 	object *v;
@@ -550,29 +565,30 @@ builtin_type(self, v)
 }
 
 static struct methodlist builtin_methods[] = {
-	{"abs", builtin_abs},
-	{"chr", builtin_chr},
-	{"dir", builtin_dir},
-	{"divmod", builtin_divmod},
-	{"eval", builtin_eval},
-	{"exec", builtin_exec},
-	{"float", builtin_float},
-	{"hex", builtin_hex},
-	{"input", builtin_input},
-	{"int", builtin_int},
-	{"len", builtin_len},
-	{"long", builtin_long},
-	{"max", builtin_max},
-	{"min", builtin_min},
-	{"oct", builtin_oct},
-	{"open", builtin_open}, /* XXX move to OS module */
-	{"ord", builtin_ord},
-	{"pow", builtin_pow},
-	{"range", builtin_range},
-	{"raw_input", builtin_raw_input},
-	{"reload", builtin_reload},
-	{"type", builtin_type},
-	{NULL, NULL},
+	{"abs",		builtin_abs},
+	{"apply",	builtin_apply},
+	{"chr",		builtin_chr},
+	{"dir",		builtin_dir},
+	{"divmod",	builtin_divmod},
+	{"eval",	builtin_eval},
+	{"exec",	builtin_exec},
+	{"float",	builtin_float},
+	{"hex",		builtin_hex},
+	{"input",	builtin_input},
+	{"int",		builtin_int},
+	{"len",		builtin_len},
+	{"long",	builtin_long},
+	{"max",		builtin_max},
+	{"min",		builtin_min},
+	{"oct",		builtin_oct},
+	{"open",	builtin_open}, /* XXX move to OS module */
+	{"ord",		builtin_ord},
+	{"pow",		builtin_pow},
+	{"range",	builtin_range},
+	{"raw_input",	builtin_raw_input},
+	{"reload",	builtin_reload},
+	{"type",	builtin_type},
+	{NULL,		NULL},
 };
 
 static object *builtin_dict;
@@ -602,6 +618,7 @@ object *IndexError;
 object *ValueError;
 object *KeyError;
 object *OverflowError;
+object *SyntaxError;
 
 static object *
 newstdexception(name, message)
@@ -636,6 +653,8 @@ initerrors()
 	KeyError = newstdexception("KeyError", "invalid key");
 	OverflowError =
 		newstdexception("OverflowError", "arithmetic overflow");
+	SyntaxError =
+		newstdexception("SyntaxError", "syntax error");
 }
 
 void
