@@ -108,7 +108,8 @@ def copytree(src, dst, symlinks=False):
 
     """
     names = os.listdir(src)
-    os.mkdir(dst)
+    os.makedirs(dst)
+    copystat(src, dst)
     errors = []
     for name in names:
         srcname = os.path.join(src, name)
