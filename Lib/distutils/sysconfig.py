@@ -306,7 +306,7 @@ def _init_posix():
     # -- these paths are relative to the Python source, but when installed
     # the scripts are in another directory.
     if python_build:
-	g['LDSHARED'] = g['BLDSHARED']
+        g['LDSHARED'] = g['BLDSHARED']
 
     global _config_vars
     _config_vars = g
