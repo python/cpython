@@ -1232,7 +1232,8 @@ PyCurses_InitScr(self, args)
 	SetDictInt("ACS_DEGREE",  (ACS_DEGREE));
 	SetDictInt("ACS_PLMINUS", (ACS_PLMINUS));
 	SetDictInt("ACS_BULLET",  (ACS_BULLET));
-	SetDictInt("ACS_LARROW",  (ACS_RARROW));
+	SetDictInt("ACS_LARROW",  (ACS_LARROW));
+	SetDictInt("ACS_RARROW",  (ACS_RARROW));
 	SetDictInt("ACS_DARROW",  (ACS_DARROW));
 	SetDictInt("ACS_UARROW",  (ACS_UARROW));
 	SetDictInt("ACS_BOARD",   (ACS_BOARD));
