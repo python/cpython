@@ -74,7 +74,7 @@ SYSLIBS=	$(LIBM) $(LIBC)
 
 all:		$(LIB) ../python sharedmods
 
-$(LIB):		$(OBJS) Makefile
+$(LIB):		$& $(OBJS) Makefile
 		-rm -f $(LIB)
 		$(AR) cr $(LIB) $(OBJS)
 		$(RANLIB) $(LIB)

@@ -47,7 +47,7 @@ LIB=		libObjects.a
 
 all:		$(LIB)
 
-$(LIB):		$(OBJS)
+$(LIB):		$& $(OBJS)
 		-rm -f $(LIB)
 		$(AR) cr $(LIB) $(OBJS)
 		$(RANLIB) $(LIB)
