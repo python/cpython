@@ -1068,11 +1068,11 @@ involving threads.  Normally, multiple threads in the Python
 interpreter can't get in each other's way, because there is a global
 lock protecting Python's entire object space.  However, it is possible
 to temporarily release this lock using the macro
-\code{Py_BEGIN_ALLOW_THREADS}, and to re-acquire it using
-\code{Py_END_ALLOW_THREADS}.  This is common around blocking I/O
-calls, to let other threads use the processor while waiting for the I/O to
-complete.  Obviously, the following function has the same problem as
-the previous one:
+\csimplemacro{Py_BEGIN_ALLOW_THREADS}, and to re-acquire it using
+\csimplemacro{Py_END_ALLOW_THREADS}.  This is common around blocking
+I/O calls, to let other threads use the processor while waiting for
+the I/O to complete.  Obviously, the following function has the same
+problem as the previous one:
 
 \begin{verbatim}
 bug(PyObject *list) {
