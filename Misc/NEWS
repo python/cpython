@@ -2,6 +2,9 @@ What's New in Python 2.2.3 ?
 Release date: XX-XXX-2003
 ============================
 
+- Fix problem building on OSF1 because the compiler only accepted
+  preprocessor directives that start in column 1.  (SF bug #691793.)
+
 - Fixed two places in PyObject_Generic{Get,Set}Attr() where the
   tp_descr_{get,set} slot of a descriptor's type was accessed without
   checking tp_flags whether those slots actually exist.  This could
