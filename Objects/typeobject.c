@@ -2251,6 +2251,24 @@ object_init(PyObject *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
+/* If we don't have a tp_new for a new-style class, new will use this one.
+   Therefore this should take no arguments/keywords.  However, this new may
+   also be inherited by objects that define a tp_init but no tp_new.  These
+   objects WILL pass argumets to tp_new, because it gets the same args as
+   tp_init.  So only allow arguments if we aren't using the default init, in
+   which case we expect init to handle argument parsing. */
+static PyObject *
+object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	if (type->tp_init == object_init && (PyTuple_GET_SIZE(args) ||
+	     (kwds && PyDict_Check(kwds) && PyDict_Size(kwds)))) {
+		PyErr_SetString(PyExc_TypeError,
+				"default __new__ takes no parameters");
+		return NULL;
+	}
+	return type->tp_alloc(type, 0);
+}
+
 static void
 object_dealloc(PyObject *self)
 {
@@ -2487,7 +2505,7 @@ PyTypeObject PyBaseObject_Type = {
 	0,					/* tp_dictoffset */
 	object_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
-	PyType_GenericNew,			/* tp_new */
+	object_new,				/* tp_new */
 	PyObject_Del,           		/* tp_free */
 };
 
