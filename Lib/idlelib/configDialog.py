@@ -337,6 +337,7 @@ class ConfigDialog(Toplevel):
         #tkVars
         self.winWidth=StringVar(self)
         self.winHeight=StringVar(self)
+        self.paraWidth=StringVar(self)
         self.startupEdit=IntVar(self)
         self.autoSave=IntVar(self)
         self.encoding=StringVar(self)
@@ -349,6 +350,7 @@ class ConfigDialog(Toplevel):
         frameRun=Frame(frame,borderwidth=2,relief=GROOVE)
         frameSave=Frame(frame,borderwidth=2,relief=GROOVE)
         frameWinSize=Frame(frame,borderwidth=2,relief=GROOVE)
+        frameParaSize=Frame(frame,borderwidth=2,relief=GROOVE)
         frameEncoding=Frame(frame,borderwidth=2,relief=GROOVE)
         frameHelp=Frame(frame,borderwidth=2,relief=GROOVE)
         #frameRun
@@ -373,6 +375,11 @@ class ConfigDialog(Toplevel):
                 width=3)
         labelWinHeightTitle=Label(frameWinSize,text='Height')
         entryWinHeight=Entry(frameWinSize,textvariable=self.winHeight,
+                width=3)
+        #paragraphFormatWidth
+        labelParaWidthTitle=Label(frameParaSize,text='Paragraph reformat'+
+                ' width (in characters)')
+        entryParaWidth=Entry(frameParaSize,textvariable=self.paraWidth,
                 width=3)
         #frameEncoding
         labelEncodingTitle=Label(frameEncoding,text="Default Source Encoding")
@@ -411,6 +418,7 @@ class ConfigDialog(Toplevel):
         frameRun.pack(side=TOP,padx=5,pady=5,fill=X)
         frameSave.pack(side=TOP,padx=5,pady=5,fill=X)
         frameWinSize.pack(side=TOP,padx=5,pady=5,fill=X)
+        frameParaSize.pack(side=TOP,padx=5,pady=5,fill=X)
         frameEncoding.pack(side=TOP,padx=5,pady=5,fill=X)
         frameHelp.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
         #frameRun
@@ -429,6 +437,9 @@ class ConfigDialog(Toplevel):
         labelWinHeightTitle.pack(side=RIGHT,anchor=E,pady=5)
         entryWinWidth.pack(side=RIGHT,anchor=E,padx=10,pady=5)
         labelWinWidthTitle.pack(side=RIGHT,anchor=E,pady=5)
+        #paragraphFormatWidth
+        labelParaWidthTitle.pack(side=LEFT,anchor=W,padx=5,pady=5)
+        entryParaWidth.pack(side=RIGHT,anchor=E,padx=10,pady=5)
         #frameEncoding
         labelEncodingTitle.pack(side=LEFT,anchor=W,padx=5,pady=5)
         radioEncNone.pack(side=RIGHT,anchor=E,pady=5)
@@ -466,6 +477,7 @@ class ConfigDialog(Toplevel):
         self.keysAreBuiltin.trace_variable('w',self.VarChanged_keysAreBuiltin)
         self.winWidth.trace_variable('w',self.VarChanged_winWidth)
         self.winHeight.trace_variable('w',self.VarChanged_winHeight)
+        self.paraWidth.trace_variable('w',self.VarChanged_paraWidth)
         self.startupEdit.trace_variable('w',self.VarChanged_startupEdit)
         self.autoSave.trace_variable('w',self.VarChanged_autoSave)
         self.encoding.trace_variable('w',self.VarChanged_encoding)
@@ -557,6 +569,10 @@ class ConfigDialog(Toplevel):
     def VarChanged_winHeight(self,*params):
         value=self.winHeight.get()
         self.AddChangedItem('main','EditorWindow','height',value)
+
+    def VarChanged_paraWidth(self,*params):
+        value=self.paraWidth.get()
+        self.AddChangedItem('main','FormatParagraph','paragraph',value)
 
     def VarChanged_startupEdit(self,*params):
         value=self.startupEdit.get()
@@ -1070,6 +1086,8 @@ class ConfigDialog(Toplevel):
         #initial window size
         self.winWidth.set(idleConf.GetOption('main','EditorWindow','width'))
         self.winHeight.set(idleConf.GetOption('main','EditorWindow','height'))
+        #initial paragraph reformat size
+        self.paraWidth.set(idleConf.GetOption('main','FormatParagraph','paragraph'))
         # default source encoding
         self.encoding.set(idleConf.GetOption('main', 'EditorWindow',
                                              'encoding', default='none'))
