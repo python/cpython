@@ -60,7 +60,7 @@ install_PythonLauncher:
 	cd $(srcdir)/Mac/OSX/PythonLauncher/PythonLauncher.pbproj ; \
 	pbxbuild -target PythonLauncher -buildstyle Deployment install \
 		DSTROOT=$(DESTDIR)/ INSTALL_PATH=$(PYTHONAPPSPATH)
-	
+
 install_Python:
 	@if test ! -f $(DOCINDEX); then \
 		echo WARNING: you should run Apple Help Indexing Tool on $(DOCDIR); \
@@ -106,8 +106,8 @@ install_Python:
 			esac; \
 		done; \
 	done
-	$(INSTALL_PROGRAM) $(STRIPFLAG) $(BUILDPYTHON) $(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/Python	
-	
+	$(INSTALL_PROGRAM) $(STRIPFLAG) $(BUILDPYTHON) $(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/Python
+
 install_IDE:
 	@if ! $(BUILDPYTHON) -c "import waste"; then  \
 		echo PythonIDE needs the \"waste\" extension module; \
@@ -161,13 +161,13 @@ install_IDLE:
 			$(srcdir)/Lib/idlelib/idle ; \
 	fi
 
-		
+
 install_BuildApplet:
 	$(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
 		--python $(INSTALLED_PYTHONW) \
 		--output $(DESTDIR)$(PYTHONAPPSDIR)/BuildApplet.app \
 		$(srcdir)/Mac/scripts/BuildApplet.py
-		
+
 MACLIBDEST=$(LIBDEST)/plat-mac
 MACTOOLSDEST=$(prefix)/Mac/Tools
 MACTOOLSSRC=$(srcdir)/Mac/Tools
@@ -220,7 +220,7 @@ installmacsubtree:
 			esac; \
 		done; \
 	done
-	
+
 
 	$(BUILDPYTHON) $(CACHERSRC) -v $(DESTDIR)$(MACLIBDEST) $(DESTDIR)$(MACTOOLSDEST)
 	$(BUILDPYTHON) -Wi -tt $(compileall) -d $(MACTOOLSDEST) -x badsyntax $(DESTDIR)$(MACTOOLSDEST)
@@ -243,7 +243,7 @@ installunixtools:
 	echo "exec \"$(INSTALLED_PYTHONW)\" \"\$$@\"" >> pythonw.sh
 	$(INSTALL) pythonw.sh $(DESTDIR)$(bindir)/pythonw$(VERSION)
 	$(INSTALL_SYMLINK) pythonw$(VERSION) $(DESTDIR)$(bindir)/pythonw
-	
+
 installextras:
 	$(INSTALL) -d $(DESTDIR)$(PYTHONAPPSDIR)/Extras
 	$(INSTALL) $(srcdir)/Mac/OSX/Extras.ReadMe.txt $(DESTDIR)$(PYTHONAPPSDIR)/Extras/ReadMe
@@ -251,4 +251,3 @@ installextras:
 		$(DESTDIR)$(PYTHONAPPSDIR)/Extras/Demo
 	$(BUILDPYTHON) $(srcdir)/Mac/OSX/Extras.install.py $(srcdir)/Tools \
 		$(DESTDIR)$(PYTHONAPPSDIR)/Extras/Tools
-		
