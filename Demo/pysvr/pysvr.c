@@ -111,6 +111,11 @@ main_thread(int port)
 		exit(1);
 	}
 
+#ifdef SO_REUSEADDR
+	i = 1;
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &i, sizeof i);
+#endif
+
 	memset((char *)&addr, '\0', sizeof addr);
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
@@ -213,7 +218,6 @@ init_python()
 {
 	if (gtstate)
 		return;
-	Py_Initialize(); /* Initialize the interpreter */
 	Py_Initialize(); /* Initialize the interpreter */
 	PyEval_InitThreads(); /* Create (and acquire) the interpreter lock */
 	gtstate = PyEval_SaveThread(); /* Release the thread state */
