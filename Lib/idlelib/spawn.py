@@ -42,7 +42,7 @@ elif hasattr(os, 'spawnv'):
   #   kill_zombies function is a noop.
 
   def spawn(bin, *args):
-    nargs = [bin]
+    nargs = ['"'+bin+'"']
     for arg in args:
       nargs.append( '"'+arg+'"' )
     os.spawnv( os.P_NOWAIT, bin, nargs )
