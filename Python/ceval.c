@@ -2199,15 +2199,6 @@ eval_frame(PyFrameObject *f)
 
 	} /* main loop */
 
-	/* Pop remaining stack entries */
-
-	/*
-	while (!EMPTY()) {
-		v = POP();
-		Py_XDECREF(v);
-	}
-	*/
-
 	if (why != WHY_RETURN && why != WHY_YIELD)
 		retval = NULL;
 
