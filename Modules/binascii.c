@@ -874,31 +874,135 @@ binascii_crc32(PyObject *self, PyObject *args)
 	return Py_BuildValue("l", crc ^ 0xFFFFFFFFUL);
 }
 
+
+static PyObject *
+binascii_hexlify(PyObject *self, PyObject *args)
+{
+	char* argbuf;
+	int arglen;
+	PyObject *retval;
+	char* retbuf;
+	int i, j;
+
+	if (!PyArg_ParseTuple(args, "t#:b2a_hex", &argbuf, &arglen))
+		return NULL;
+
+	retval = PyString_FromStringAndSize(NULL, arglen*2);
+	if (!retval)
+		return NULL;
+	retbuf = PyString_AsString(retval);
+	if (!retbuf)
+		goto finally;
+
+	/* make hex version of string, taken from shamodule.c */
+	for (i=j=0; i < arglen; i++) {
+		char c;
+		c = (argbuf[i] >> 4) & 0xf;
+		c = (c>9) ? c+'a'-10 : c + '0';
+		retbuf[j++] = c;
+		c = argbuf[i] & 0xf;
+		c = (c>9) ? c+'a'-10 : c + '0';
+		retbuf[j++] = c;
+	}
+	return retval;
+
+  finally:
+	Py_DECREF(retval);
+	return NULL;
+}
+
+static char doc_hexlify[] =
+"b2a_hex(data) -> s; Hexadecimal representation of binary data.\n\
+\n\
+This function is also available as \"hexlify()\".";
+
+
+static int
+to_int(char c) 
+{
+	if (isdigit(c))
+		return c - '0';
+	else {
+		if (isupper(c))
+			c = tolower(c);
+		if (c >= 'a' && c <= 'f')
+			return c - 'a' + 10;
+	}
+	return -1;
+}
+
+
+static PyObject *
+binascii_unhexlify(PyObject *self, PyObject *args)
+{
+	char* argbuf;
+	int arglen;
+	PyObject *retval;
+	char* retbuf;
+	int i, j;
+
+	if (!PyArg_ParseTuple(args, "s#:a2b_hex", &argbuf, &arglen))
+		return NULL;
+
+	/* XXX What should we do about odd-lengthed strings?  Should we add
+	 * an implicit leading zero, or a trailing zero?  For now, raise an
+	 * exception.
+	 */
+	if (arglen % 2) {
+		PyErr_SetString(PyExc_TypeError, "odd lengthed string");
+		return NULL;
+	}
+
+	retval = PyString_FromStringAndSize(NULL, (arglen/2));
+	if (!retval)
+		return NULL;
+	retbuf = PyString_AsString(retval);
+	if (!retbuf)
+		goto finally;
+
+	for (i=j=0; i < arglen; i += 2) {
+		int top = to_int(Py_CHARMASK(argbuf[i]));
+		int bot = to_int(Py_CHARMASK(argbuf[i+1]));
+		if (top == -1 || bot == -1) {
+			PyErr_SetString(PyExc_TypeError,
+					"non-hexadecimal digit found");
+			goto finally;
+		}
+		retbuf[j++] = (top << 4) + bot;
+	}
+	return retval;
+
+  finally:
+	Py_DECREF(retval);
+	return NULL;
+}
+
+static char doc_unhexlify[] =
+"a2b_hex(hexstr) -> s; Binary data of hexadecimal representation.\n\
+\n\
+hexstr must contain an even number of hex digits (upper or lower case).\n\
+This function is also available as \"unhexlify()\"";
+
+
 /* List of functions defined in the module */
 
 static struct PyMethodDef binascii_module_methods[] = {
-	{"a2b_uu",		binascii_a2b_uu,	
-	 METH_VARARGS,	doc_a2b_uu},
-	{"b2a_uu",		binascii_b2a_uu,	
-	 METH_VARARGS,	doc_b2a_uu},
-	{"a2b_base64",		binascii_a2b_base64,	
-	 METH_VARARGS,
-	 doc_a2b_base64},
-	{"b2a_base64",		binascii_b2a_base64,	
-	 METH_VARARGS, doc_b2a_base64},
-	{"a2b_hqx",		binascii_a2b_hqx,	
-	 METH_VARARGS, doc_a2b_hqx},
-	{"b2a_hqx",		binascii_b2a_hqx,	
-	 METH_VARARGS, doc_b2a_hqx},
-	{"rlecode_hqx",		binascii_rlecode_hqx,	
-	 METH_VARARGS, doc_rlecode_hqx},
-	{"rledecode_hqx",	binascii_rledecode_hqx,	
-	 METH_VARARGS, doc_rledecode_hqx},
-	{"crc_hqx",		binascii_crc_hqx,	
-	 METH_VARARGS,	doc_crc_hqx},
-	{"crc32",		binascii_crc32,		
-	 METH_VARARGS, doc_crc32},
-	{NULL,			NULL}		/* sentinel */
+	{"a2b_uu",     binascii_a2b_uu,     METH_VARARGS, doc_a2b_uu},
+	{"b2a_uu",     binascii_b2a_uu,     METH_VARARGS, doc_b2a_uu},
+	{"a2b_base64", binascii_a2b_base64, METH_VARARGS, doc_a2b_base64},
+	{"b2a_base64", binascii_b2a_base64, METH_VARARGS, doc_b2a_base64},
+	{"a2b_hqx",    binascii_a2b_hqx,    METH_VARARGS, doc_a2b_hqx},
+	{"b2a_hqx",    binascii_b2a_hqx,    METH_VARARGS, doc_b2a_hqx},
+	{"b2a_hex",    binascii_hexlify,    METH_VARARGS, doc_hexlify},
+	{"a2b_hex",    binascii_unhexlify,  METH_VARARGS, doc_unhexlify},
+	{"hexlify",    binascii_hexlify,    METH_VARARGS, doc_hexlify},
+	{"unhexlify",  binascii_unhexlify,  METH_VARARGS, doc_unhexlify},
+	{"rlecode_hqx",   binascii_rlecode_hqx, METH_VARARGS, doc_rlecode_hqx},
+	{"rledecode_hqx", binascii_rledecode_hqx, METH_VARARGS,
+	 doc_rledecode_hqx},
+	{"crc_hqx",    binascii_crc_hqx,    METH_VARARGS, doc_crc_hqx},
+	{"crc32",      binascii_crc32,      METH_VARARGS, doc_crc32},
+	{NULL, NULL}			     /* sentinel */
 };
 
 
