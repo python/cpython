@@ -1812,11 +1812,34 @@ def test_DocFileSuite():
          >>> suite.run(unittest.TestResult())
          <unittest.TestResult run=2 errors=0 failures=2>
 
-       Note that '/' should be used as a path separator.  It will be
-       converted to a native separator at run time:
-
+       '/' should be used as a path separator.  It will be converted
+       to a native separator at run time:
 
          >>> suite = doctest.DocFileSuite('../test/test_doctest.txt')
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=1 errors=0 failures=1>
+
+       If DocFileSuite is used from an interactive session, then files
+       are resolved relative to the directory of sys.argv[0]:
+
+         >>> import new, os.path, test.test_doctest
+         >>> save_argv = sys.argv
+         >>> sys.argv = [test.test_doctest.__file__]
+         >>> suite = doctest.DocFileSuite('test_doctest.txt',
+         ...                              package=new.module('__main__'))
+         >>> sys.argv = save_argv
+
+       Absolute paths may also be used; they should use the native
+       path separator (*not* '/').
+
+         >>> # Get the absolute path of the test package.
+         >>> test_doctest_path = os.path.abspath(test.test_doctest.__file__)
+         >>> test_pkg_path = os.path.split(test_doctest_path)[0]
+
+         >>> # Use it to find the absolute path of test_doctest.txt.
+         >>> test_file = os.path.join(test_pkg_path, 'test_doctest.txt')
+
+         >>> suite = doctest.DocFileSuite(test_file)
          >>> suite.run(unittest.TestResult())
          <unittest.TestResult run=1 errors=0 failures=1>
 
