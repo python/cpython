@@ -17,32 +17,9 @@
 #endif
 
 /* GNU readline definitions */
-/* If you have string.h, you might need to add yourself to this #if... [cjh] */
-#if defined(__BEOS__)
-#undef HAVE_CONFIG_H
-/* At max warnings, we need protos for everything. [cjh] */
+#undef HAVE_CONFIG_H /* Else readline/chardefs.h includes strings.h */
 #include <readline/readline.h>
 #include <readline/history.h>
-#include <unistd.h>
-#else
-#include <readline/readline.h> /* You may need to add an -I option to Setup */
-
-#ifdef __CYGWIN__
-#include <readline/history.h>
-#else /* !__CYGWIN__ */
-extern int rl_parse_and_bind(char *);
-extern int rl_read_init_file(char *);
-extern int rl_insert_text(char *);
-extern int rl_bind_key(int, Function *);
-extern int rl_bind_key_in_map(int, Function *, Keymap);
-extern int rl_initialize(void);
-extern int add_history(char *);
-extern int read_history(char *);
-extern int write_history(char *);
-extern int history_truncate_file(char *, int);
-extern Function *rl_event_hook;
-#endif /* !__CYGWIN__ */
-#endif
 
 /* Pointers needed from outside (but not declared in a header file). */
 extern DL_IMPORT(int) (*PyOS_InputHook)(void);
