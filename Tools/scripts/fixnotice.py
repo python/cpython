@@ -50,9 +50,9 @@ import os, sys, string
 def main():
     args = sys.argv[1:]
     if not args:
-	print "No arguments."
+        print "No arguments."
     for arg in args:
-	process(arg)
+        process(arg)
 
 def process(arg):
     f = open(arg)
@@ -60,8 +60,8 @@ def process(arg):
     f.close()
     i = string.find(data, OLD_NOTICE)
     if i < 0:
-##	print "No old notice in", arg
-	return
+##         print "No old notice in", arg
+        return
     data = data[:i] + NEW_NOTICE + data[i+len(OLD_NOTICE):]
     new = arg + ".new"
     backup = arg + ".bak"
