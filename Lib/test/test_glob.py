@@ -2,6 +2,7 @@ import unittest
 from test.test_support import run_unittest, TESTFN
 import glob
 import os
+from sets import Set
 
 def mkdirs(fname):
     if os.path.exists(fname) or fname == '':
@@ -61,11 +62,7 @@ class GlobTests(unittest.TestCase):
         return glob.glob(p)
 
     def assertSequencesEqual_noorder(self, l1, l2):
-        l1 = list(l1)
-        l2 = list(l2)
-        l1.sort()
-        l2.sort()
-        self.assertEqual(l1, l2)
+        self.assertEqual(Set(l1), Set(l2))
 
     def test_glob_literal(self):
         eq = self.assertSequencesEqual_noorder

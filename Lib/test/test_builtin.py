@@ -2,6 +2,7 @@
 
 import test.test_support, unittest
 from test.test_support import fcmp, have_unicode, TESTFN, unlink
+from sets import Set
 
 import sys, warnings, cStringIO
 warnings.filterwarnings("ignore", "hex../oct.. of negative int",
@@ -1159,18 +1160,9 @@ class BuiltinTest(unittest.TestCase):
     get_vars_f2 = staticmethod(get_vars_f2)
 
     def test_vars(self):
-        a = b = None
-        a = vars().keys()
-        b = dir()
-        a.sort()
-        b.sort()
-        self.assertEqual(a, b)
+        self.assertEqual(Set(vars()), Set(dir()))
         import sys
-        a = vars(sys).keys()
-        b = dir(sys)
-        a.sort()
-        b.sort()
-        self.assertEqual(a, b)
+        self.assertEqual(Set(vars(sys)), Set(dir(sys)))
         self.assertEqual(self.get_vars_f0(), {})
         self.assertEqual(self.get_vars_f2(), {'a': 1, 'b': 2})
         self.assertRaises(TypeError, vars, 42, 42)

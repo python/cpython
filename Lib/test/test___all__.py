@@ -2,6 +2,7 @@ import unittest
 from test import test_support
 
 from test.test_support import verify, verbose
+from sets import Set
 import sys
 import warnings
 
@@ -42,10 +43,8 @@ class AllTest(unittest.TestCase):
         exec "from %s import *" % modname in names
         if names.has_key("__builtins__"):
             del names["__builtins__"]
-        keys = names.keys()
-        keys.sort()
-        all = list(sys.modules[modname].__all__) # in case it's a tuple
-        all.sort()
+        keys = Set(names)
+        all = Set(sys.modules[modname].__all__)
         verify(keys==all, "%s != %s" % (keys, all))
 
     def test_all(self):

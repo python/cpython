@@ -7,6 +7,7 @@ import unittest, sys
 from types import ClassType, FunctionType, MethodType
 import pyclbr
 from unittest import TestCase
+from sets import Set
 
 # This next line triggers an error on old versions of pyclbr.
 
@@ -23,17 +24,10 @@ class PyclbrTest(TestCase):
 
     def assertListEq(self, l1, l2, ignore):
         ''' succeed iff {l1} - {ignore} == {l2} - {ignore} '''
-        l1.sort()
-        l2.sort()
-        try:
-            for p1, p2 in (l1, l2), (l2, l1):
-                for item in p1:
-                    ok = (item in p2) or (item in ignore)
-                    if not ok:
-                        self.fail("%r missing" % item)
-        except:
+        missing = (Set(l1) ^ Set(l2)) - Set(ignore)
+        if missing:
             print >>sys.stderr, "l1=%r\nl2=%r\nignore=%r" % (l1, l2, ignore)
-            raise
+            self.fail("%r missing" % missing.pop())
 
     def assertHasattr(self, obj, attr, ignore):
         ''' succeed iff hasattr(obj,attr) or attr in ignore. '''
