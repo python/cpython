@@ -100,6 +100,13 @@ def isdir(s):
 	return S_ISDIR(st[ST_MODE])
 
 
+# Return true if the pathname refers to a symbolic link.
+# (Always false on the Mac, until we understand Aliases.)
+
+def islink(s):
+	return 0
+
+
 # Return true if the pathname refers to an existing regular file.
 
 def isfile(s):
