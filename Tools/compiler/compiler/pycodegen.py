@@ -671,6 +671,7 @@ class CodeGenerator:
         if node.flags == 'OP_ASSIGN':
             self.storeName(node.name)
         elif node.flags == 'OP_DELETE':
+            self.set_lineno(node)
             self.delName(node.name)
         else:
             print "oops", node.flags
@@ -716,6 +717,7 @@ class CodeGenerator:
         '-=' : 'INPLACE_SUBTRACT',
         '*=' : 'INPLACE_MULTIPLY',
         '/=' : 'INPLACE_DIVIDE',
+        '//=': 'INPLACE_FLOOR_DIVIDE',
         '%=' : 'INPLACE_MODULO',
         '**=': 'INPLACE_POWER',
         '>>=': 'INPLACE_RSHIFT',
@@ -888,6 +890,9 @@ class CodeGenerator:
 
     def visitDiv(self, node):
         return self.binaryOp(node, 'BINARY_DIVIDE')
+
+    def visitFloorDiv(self, node):
+        return self.binaryOp(node, 'BINARY_FLOOR_DIVIDE')
 
     def visitMod(self, node):
         return self.binaryOp(node, 'BINARY_MODULO')
@@ -1168,7 +1173,7 @@ class AbstractClassCode:
     def __init__(self, klass, filename, scopes):
         self.class_name = klass.name
         self.graph = pyassem.PyFlowGraph(klass.name, filename,
-                                           optimized=0)
+                                           optimized=0, klass=1)
         self.super_init(filename)
         lnf = walk(klass.code, self.NameFinder(), verbose=0)
         self.locals.push(lnf.getLocals())
