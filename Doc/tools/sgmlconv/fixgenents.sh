@@ -16,28 +16,30 @@ if [ "$1" ]; then
     shift 1
 fi
 
-grep -v '^<?xml .*?>$$' | sed '
-s|<ABC/>|\&ABC;|g
-s|<ASCII/>|\&ASCII;|g
-s|<C/>|\&C;|g
-s|<Cpp/>|\&Cpp;|g
-s|<EOF/>|\&EOF;|g
-s|<NULL/>|\&NULL;|g
-s|<POSIX/>|\&POSIX;|g
-s|<UNIX/>|\&UNIX;|g
-s|<e/>|\&bsol;|g
+sed '
+s|<ABC/>|ABC|g
+s|<ASCII/>|ASCII|g
+s|<C/>|C|g
+s|<Cpp/>|C++|g
+s|<EOF/>|EOF|g
+s|<LaTeX/>|LaTeX|g
+s|<NULL/>|NULL|g
+s|<POSIX/>|POSIX|g
+s|<UNIX/>|Unix|g
+s|<e/>|\\|g
 s|<geq/>|\&ge;|g
 s|<ldots/>|\&hellip|g
 s|<leq/>|\&le;|g
-s|<ABC>|\&ABC;|g
-s|<ASCII>|\&ASCII;|g
-s|<C>|\&C;|g
-s|<Cpp>|\&Cpp;|g
-s|<EOF>|\&EOF;|g
-s|<NULL>|\&NULL;|g
-s|<POSIX>|\&POSIX;|g
-s|<UNIX>|\&UNIX;|g
-s|<e>|\&bsol;|g
+s|<ABC>|ABC|g
+s|<ASCII>|ASCII|g
+s|<C>|C|g
+s|<Cpp>|C++|g
+s|<EOF>|EOF|g
+s|<LaTeX>|LaTeX|g
+s|<NULL>|NULL|g
+s|<POSIX>|POSIX|g
+s|<UNIX>|Unix|g
+s|<e>|\\|g
 s|<geq>|\&ge;|g
 s|<ldots>|\&hellip|g
 s|<leq>|\&le;|g
