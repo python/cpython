@@ -337,14 +337,14 @@ Implements \code{del name}, where \var{namei} is the index into
 \member{co_names} attribute of the code object.
 \end{opcodedesc}
 
-\begin{opcodedesc}{UNPACK_TUPLE}{count}
+\begin{opcodedesc}{UNPACK_SEQUENCE}{count}
 Unpacks TOS into \var{count} individual values, which are put onto
 the stack right-to-left.
 \end{opcodedesc}
 
-\begin{opcodedesc}{UNPACK_LIST}{count}
-Unpacks TOS into \var{count} individual values.
-\end{opcodedesc}
+%\begin{opcodedesc}{UNPACK_LIST}{count}
+%This opcode is obsolete.
+%\end{opcodedesc}
 
 %\begin{opcodedesc}{UNPACK_ARG}{count}
 %This opcode is obsolete.
