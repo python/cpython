@@ -1,7 +1,7 @@
 """Package Install Manager for Python.
 
 This is currently a MacOSX-only strawman implementation. 
-Motto: "He may be shabby, but he gets you what you need" :-) 
+Despite other rumours the name stands for "Packman IMPlementation".
 
 Tools to allow easy installation of packages. The idea is that there is
 an online XML database per (platform, python-version) containing packages
@@ -35,7 +35,7 @@ _scriptExc_BadInstalled = "pimp._scriptExc_BadInstalled"
 
 NO_EXECUTE=0
 
-PIMP_VERSION="0.2"
+PIMP_VERSION="0.3"
 
 # Flavors:
 # source: setup-based package
@@ -44,7 +44,7 @@ DEFAULT_FLAVORORDER=['source', 'binary']
 DEFAULT_DOWNLOADDIR='/tmp'
 DEFAULT_BUILDDIR='/tmp'
 DEFAULT_INSTALLDIR=distutils.sysconfig.get_python_lib()
-DEFAULT_PIMPDATABASE="http://homepages.cwi.nl/~jack/pimp-0.2/pimp-%s.plist" % distutils.util.get_platform()
+DEFAULT_PIMPDATABASE="http://www.python.org/packman/version-0.3/%s.plist" % distutils.util.get_platform()
 
 def _cmd(output, dir, *cmditems):
     """Internal routine to run a shell command in a given directory."""
