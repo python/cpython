@@ -1,0 +1,62 @@
+Building a MacPython-OSX on top of Jaguar's /usr/bin/python
+-----------------------------------------------------------
+
+One way of getting MacPython functionality is to use the Python that Apple
+supplies since MacOSX 10.2, and extend this with the missing bits.
+
+(Another way is building a framework python, see Mac/OSX/README for
+details on that).
+
+Preparation
+-----------
+
+First of all you have to fix two things in the python distributed
+by Apple. This paragraph is valid for 10.2 through 10.2.2, so if you
+have a later version of Jaguar your mileage may vary.
+
+1. /usr/lib/python2.2/config/Makefile has an erronuous reference to
+   building for intel processors. Edit the file with sudo, and change
+   the line
+   LDFLAGS=        -arch i386 -arch ppc
+   to
+   LDFLAGS=        -arch ppc
+2. /usr/lib/python2.2/site-packages is not writeable except by root.
+   Make it writeable by administrators by doing
+   sudo chgrp admin /usr/lib/python2.2/site-packages
+   sudo chmod g+w /usr/lib/python2.2/site-packages
+   Alternatively you can do the make's below as superuser, but I
+   would advise against this.
+   
+Building
+--------
+
+Typing "make -f Makefile.jaguar" will build and install almost everything you need.
+If you also want the "pythonw" unix program, which allows you to run GUI scripts from
+a Terminal window, you should also do "sudo make -f Makefile.jaguar install_pythonw".
+
+What do you get
+---------------
+
+After the make you will have a folder /Applications/MacPython-OSX that contains the
+IDE and BuildApplet applications. Also, you will find a folder "python-additions" there
+that contains the MacPython-specific additions to your installed Python. The only thing
+that is installed outside the /Applications/MacPython-OSX folder is
+/usr/lib/python2.2/site-packages/MacPython.pth, which is the magic file that will make
+python find the new modules.
+
+Uninstalling
+------------
+1. Remove /Applications/MacPython-OSX
+2. Remove /usr/lib/python2.2/site-packages/MacPython.pth
+
+How does it work?
+-----------------
+
+Makefile.jaguar does most of the work by calling on Makefile (which is normally used
+to build the Mac extensions for a framework-based python) after setting various
+variables such that everything is built for /usr/bin/python. Some extension modules
+(that are included in framework python 2.3a0, but missing from static python 2.2)
+are built with setup.py. And some Carbon modules are built to replace their 2.2
+versions, which lack required functionality. The stubs in Mac/Lib/Carbon know about
+this overriding.
+
