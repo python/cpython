@@ -91,8 +91,8 @@ class Bdb:
     # definition of stopping and breakpoints.
 
     def stop_here(self, frame):
-		# (CT) stopframe may now also be None, see dispatch_call.
-		# (CT) the former test for None is therefore removed from here.
+        # (CT) stopframe may now also be None, see dispatch_call.
+        # (CT) the former test for None is therefore removed from here.
         if frame is self.stopframe:
             return True
         while frame is not None and frame is not self.stopframe:
