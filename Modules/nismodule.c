@@ -295,7 +295,9 @@ nis_maplist ()
 	char *server = "";
 	int mapi = 0;
 
-	yp_get_default_domain (&dom);
+	if ((err = yp_get_default_domain (&dom)) != 0)
+		return nis_error(err);
+
 	while (!strcmp("", server) && aliases[mapi].map != 0L) {
 		yp_master (dom, aliases[mapi].map, &server);
 		mapi++;
@@ -325,6 +327,8 @@ nis_maps (self, args)
 	nismaplist *maps;
 	PyObject *list;
 
+        if (!PyArg_NoArgs(args))
+		return NULL;
 	if ((maps = nis_maplist ()) == NULL)
 		return NULL;
 	if ((list = PyList_New(0)) == NULL)
