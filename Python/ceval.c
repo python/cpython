@@ -196,10 +196,14 @@ Py_AddPendingCall(func, arg)
 	int (*func) PROTO((ANY *));
 	ANY *arg;
 {
+	static int busy = 0;
 	int i, j;
 	/* XXX Begin critical section */
 	/* XXX If you want this to be safe against nested
 	   XXX asynchronous calls, you'll have to work harder! */
+	if (busy)
+		return -1;
+	busy = 1;
 	i = pendinglast;
 	j = (i + 1) % NPENDINGCALLS;
 	if (j == pendingfirst)
@@ -207,17 +211,22 @@ Py_AddPendingCall(func, arg)
 	pendingcalls[i].func = func;
 	pendingcalls[i].arg = arg;
 	pendinglast = j;
+	busy = 0;
 	/* XXX End critical section */
 	return 0;
 }
 
-static int
-MakePendingCalls()
+int
+Py_MakePendingCalls()
 {
+	static int busy = 0;
 #ifdef WITH_THREAD
 	if (get_thread_ident() != main_thread)
 		return 0;
 #endif
+	if (busy)
+		return 0;
+	busy = 1;
 	for (;;) {
 		int i;
 		int (*func) PROTO((ANY *));
@@ -228,9 +237,12 @@ MakePendingCalls()
 		func = pendingcalls[i].func;
 		arg = pendingcalls[i].arg;
 		pendingfirst = (i + 1) % NPENDINGCALLS;
-		if (func(arg) < 0)
+		if (func(arg) < 0) {
+			busy = 0;
 			return -1;
+		}
 	}
+	busy = 0;
 	return 0;
 }
 
@@ -398,7 +410,7 @@ eval_code(co, globals, locals, owner, arg)
 		   So we do it only every Nth instruction. */
 		
 		if (pendingfirst != pendinglast) {
-			if (MakePendingCalls() < 0) {
+			if (Py_MakePendingCalls() < 0) {
 				why = WHY_EXCEPTION;
 				goto on_error;
 			}
@@ -1736,10 +1748,18 @@ flushline()
 }
 
 
+#define BINOP(opname, ropname) \
+	do { \
+		if (is_instanceobject(v) || is_instanceobject(w)) \
+			return instancebinop(v, w, opname, ropname); \
+	} while (0)
+
+
 static object *
 or(v, w)
 	object *v, *w;
 {
+	BINOP("__or__", "__ror__");
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		object * (*f) FPROTO((object *, object *));
@@ -1760,6 +1780,7 @@ static object *
 xor(v, w)
 	object *v, *w;
 {
+	BINOP("__xor__", "__rxor__");
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		object * (*f) FPROTO((object *, object *));
@@ -1780,6 +1801,7 @@ static object *
 and(v, w)
 	object *v, *w;
 {
+	BINOP("__and__", "__rand__");
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		object * (*f) FPROTO((object *, object *));
@@ -1800,6 +1822,7 @@ static object *
 lshift(v, w)
 	object *v, *w;
 {
+	BINOP("__lshift__", "__rshift__");
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		object * (*f) FPROTO((object *, object *));
@@ -1820,6 +1843,7 @@ static object *
 rshift(v, w)
 	object *v, *w;
 {
+	BINOP("__rshift__", "__rrshift__");
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		object * (*f) FPROTO((object *, object *));
@@ -1840,6 +1864,7 @@ static object *
 add(v, w)
 	object *v, *w;
 {
+	BINOP("__add__", "__radd__");
 	if (v->ob_type->tp_as_sequence != NULL)
 		return (*v->ob_type->tp_as_sequence->sq_concat)(v, w);
 	else if (v->ob_type->tp_as_number != NULL) {
@@ -1859,6 +1884,7 @@ static object *
 sub(v, w)
 	object *v, *w;
 {
+	BINOP("__sub__", "__rsub__");
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		if (coerce(&v, &w) != 0)
@@ -1878,6 +1904,7 @@ mul(v, w)
 {
 	typeobject *tp;
 	tp = v->ob_type;
+	BINOP("__mul__", "__rmul__");
 	if (tp->tp_as_number != NULL &&
 	    w->ob_type->tp_as_sequence != NULL &&
 	    !is_instanceobject(v)) {
@@ -1921,6 +1948,7 @@ static object *
 divide(v, w)
 	object *v, *w;
 {
+	BINOP("__div__", "__rdiv__");
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		if (coerce(&v, &w) != 0)
@@ -1938,6 +1966,7 @@ static object *
 rem(v, w)
 	object *v, *w;
 {
+	BINOP("__mod__", "__rmod__");
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		if (coerce(&v, &w) != 0)

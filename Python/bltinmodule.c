@@ -243,6 +243,8 @@ builtin_coerce(self, args)
 
 	if (!getargs(args, "(OO)", &v, &w))
 		return NULL;
+	if (is_instanceobject(v) || is_instanceobject(w))
+		return instancebinop(v, w, "__coerce__", "__rcoerce__");
 	if (coerce(&v, &w) < 0)
 		return NULL;
 	res = mkvalue("(OO)", v, w);
@@ -314,9 +316,11 @@ builtin_divmod(self, args)
 	object *v, *w, *x;
 	if (!getargs(args, "(OO)", &v, &w))
 		return NULL;
+	if (is_instanceobject(v) || is_instanceobject(w))
+		return instancebinop(v, w, "__divmod__", "__rdivmod__");
 	if (v->ob_type->tp_as_number == NULL ||
 				w->ob_type->tp_as_number == NULL) {
-		err_setstr(TypeError, "divmod() requires numeric arguments");
+		err_setstr(TypeError, "divmod() requires numeric or class instance arguments");
 		return NULL;
 	}
 	if (coerce(&v, &w) != 0)
@@ -876,11 +880,16 @@ builtin_pow(self, args)
 {
 	object *v, *w, *z, *x;
  	z = None;
-	if (!getargs(args, "(OO)", &v, &w)) {
-		 err_clear();
-		 if (!getargs(args, "(OOO)", &v, &w, &z)) {
-			return NULL;
-		}
+	if (!newgetargs(args, "OO|O", &v, &w, &z))
+		return NULL;
+	if (z == None) {
+		if (is_instanceobject(v) || is_instanceobject(w))
+			return instancebinop(v, w, "__pow__", "__rpow__");
+	}
+	else {
+		/* XXX The ternary version doesn't do coercions */
+		if (is_instanceobject(v))
+			return v->ob_type->tp_as_number->nb_power(v, w, z);
 	}
 	if (v->ob_type->tp_as_number == NULL ||
 	    (z!=None && z->ob_type->tp_as_number == NULL) ||
