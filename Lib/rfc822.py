@@ -488,7 +488,7 @@ def quote(str):
 def parseaddr(address):
     """Parse an address into a (realname, mailaddr) tuple."""
     a = AddrlistClass(address)
-    list = a.getaddrlist()
+    list = a.addresslist
     if not list:
         return (None, None)
     else:
