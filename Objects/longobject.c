@@ -1650,8 +1650,11 @@ k_mul(PyLongObject *a, PyLongObject *b)
 	if (2 * asize <= bsize)
 		return k_lopsided_mul(a, b);
 
+	/* Split a & b into hi & lo pieces. */
 	shift = bsize >> 1;
 	if (kmul_split(a, shift, &ah, &al) < 0) goto fail;
+	assert(ah->ob_size > 0);	/* the split isn't degenerate */
+
 	if (kmul_split(b, shift, &bh, &bl) < 0) goto fail;
 
 	/* The plan:
@@ -1735,15 +1738,9 @@ k_mul(PyLongObject *a, PyLongObject *b)
 	if (t3 == NULL) goto fail;
 	assert(t3->ob_size >= 0);
 
-	/* Add t3.  Caution:  t3 can spill one bit beyond the allocated
-	 * result space; it's t3-al*bl-ah*bh that always fits.  We have
-	 * to arrange to ignore the high bit.
+	/* Add t3.  It's not obvious why we can't run out of room here.
+	 * See the (*) comment after this function.
 	 */
-	if (t3->ob_size > i) {
-		assert(t3->ob_size == i+1);	/* just one digit over */
-		assert(t3->ob_digit[t3->ob_size - 1] == 1); /* & just one bit */
-		--t3->ob_size;	/* ignore the overflow bit */
-	}
 	(void)v_iadd(ret->ob_digit + shift, i, t3->ob_digit, t3->ob_size);
 	Py_DECREF(t3);
 
@@ -1757,6 +1754,45 @@ k_mul(PyLongObject *a, PyLongObject *b)
 	Py_XDECREF(bl);
 	return NULL;
 }
+
+/* (*) Why adding t3 can't "run out of room" above.
+
+We allocated space for asize + bsize result digits.  We're adding t3 at an
+offset of shift digits, so there are asize + bsize - shift allocated digits
+remaining.  Because degenerate shifts of "a" were weeded out, asize is at
+least shift + 1.  If bsize is odd then bsize == 2*shift + 1, else bsize ==
+2*shift.  Therefore there are at least shift+1 + 2*shift - shift =
+
+2*shift+1 allocated digits remaining when bsize is even, or at least
+2*shift+2 allocated digits remaining when bsize is odd.
+
+Now in bh+bl, if bsize is even bh has at most shift digits, while if bsize
+is odd bh has at most shift+1 digits.  The sum bh+bl has at most
+
+shift   digits plus 1 bit when bsize is even
+shift+1 digits plus 1 bit when bsize is odd
+
+The same is true of ah+al, so (ah+al)(bh+bl) has at most
+
+2*shift   digits + 2 bits when bsize is even
+2*shift+2 digits + 2 bits when bsize is odd
+
+If bsize is even, we have at most 2*shift digits + 2 bits to fit into at
+least 2*shift+1 digits.  Since a digit has SHIFT bits, and SHIFT >= 2,
+there's always enough room to fit the 2 bits into the "spare" digit.
+
+If bsize is odd, we have at most 2*shift+2 digits + 2 bits to fit into at
+least 2*shift+2 digits, and there's not obviously enough room for the
+extra two bits.  We need a sharper analysis in this case.  The major
+laziness was in the "the same is true of ah+al" clause:  ah+al can't actually
+have shift+1 digits + 1 bit unless bsize is odd and asize == bsize.  In that
+case, we actually have (2*shift+1)*2 - shift = 3*shift + 2 allocated digits
+remaining, and that's obviously plenty to hold 2*shift + 2 digits + 2 bits.
+Else (bsize is odd and asize < bsize) ah and al each have at most shift digits,
+so ah+al has at most shift digits + 1 bit, and (ah+al)*(bh+bl) has at most
+2*shift+1 digits + 2 bits, and again 2*shift+2 digits + 2 bits is
+enough to hold it.
+*/
 
 /* b has at least twice the digits of a, and a is big enough that Karatsuba
  * would pay off *if* the inputs had balanced sizes.  View b as a sequence
