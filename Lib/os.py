@@ -627,5 +627,5 @@ def _pickle_statvfs_result(sr):
 try:
     _copy_reg.pickle(statvfs_result, _pickle_statvfs_result,
                      _make_statvfs_result)
-except NameError: # stat_result may not exist
+except NameError: # statvfs_result may not exist
     pass
