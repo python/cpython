@@ -51,19 +51,21 @@ If \var{value} is not \code{None}, this function prints it to
 \code{sys.displayhook} is called on the result of evaluating
 an expression entered in an interactive Python session.
 The display of these values can be customized by assigning
-another function to \code{sys.displayhook}.
+another one-argument function to \code{sys.displayhook}.
 \end{funcdesc}
 
 \begin{funcdesc}{excepthook}{\var{type}, \var{value}, \var{traceback}}
 This function prints out a given traceback and exception to
 \code{sys.stderr}.
 
-\code{sys.excepthook} is called when an exception is raised
-and uncaught.  In an interactive session this happens just before
+When an exception is raised and uncaught, the interpreter calls
+\code{sys.excepthook} with three arguments, the exception class,
+exception instance, and a traceback object.
+In an interactive session this happens just before
 control is returned to the prompt; in a Python program this happens
 just before the program exits.
 The handling of such top-level exceptions can be customized by
-assigning another function to \code{sys.excepthook}.
+assigning another three-argument function to \code{sys.excepthook}.
 \end{funcdesc}
 
 \begin{datadesc}{__displayhook__}
