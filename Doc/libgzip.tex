@@ -12,9 +12,11 @@ file object.
 \class{GzipFile} objects simulate most of the methods of a file
 object, though it's not possible to use the \method{seek()} and
 \method{tell()} methods to access the file randomly.
+\withsubitem{(class in gzip)}{\ttindex{GzipFile}}
 
 
-\begin{funcdesc}{open}{fileobj\optional{, filename\optional{, mode\optional{, compresslevel}}}}
+\begin{funcdesc}{open}{fileobj\optional{, filename\optional{,
+                       mode\optional{, compresslevel}}}}
   Returns a new \class{GzipFile} object on top of \var{fileobj}, which
   can be a regular file, a \class{StringIO} object, or any object which
   simulates a file.
