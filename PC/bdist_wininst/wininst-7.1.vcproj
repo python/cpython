@@ -24,7 +24,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="1"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\Include,..\..\..\zlib-1.1.4"
+				AdditionalIncludeDirectories="..\..\Include,..\..\..\zlib-1.2.1"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -41,7 +41,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\..\zlib-1.1.4\zlib.lib imagehlp.lib comctl32.lib"
+				AdditionalDependencies="..\..\..\zlib-1.2.1\zlib.lib imagehlp.lib comctl32.lib"
 				OutputFile="..\..\lib\distutils\command/wininst-7.1.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -59,7 +59,7 @@
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="c:\util\upx.exe --best &quot;$(TARGETPATH)&quot; || echo &quot;wininst.exe not compressed&quot;"/>
+				CommandLine="c:\util\upx.exe --force --best &quot;$(TARGETPATH)&quot; || echo &quot;wininst.exe not compressed&quot;"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -90,7 +90,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\Include,..\..\..\zlib-1.1.4"
+				AdditionalIncludeDirectories="..\..\Include,..\..\..\zlib-1.2.1"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
@@ -107,7 +107,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\..\zlib-1.1.4\zlib.lib imagehlp.lib comctl32.lib"
+				AdditionalDependencies="..\..\..\zlib-1.2.1\zlib.lib imagehlp.lib comctl32.lib"
 				OutputFile="..\..\lib\distutils\command/wininst-7.1_d.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
