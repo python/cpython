@@ -44,8 +44,11 @@ def testInsertBefore():
     nelem = dom.createElement("element")
     root.insertBefore(nelem, elem)
     confirm(len(root.childNodes) == 2
+            and root.childNodes.length == 2
             and root.childNodes[0] is nelem
+            and root.childNodes.item(0) is nelem
             and root.childNodes[1] is elem
+            and root.childNodes.item(1) is elem
             and root.firstChild is nelem
             and root.lastChild is elem
             and root.toxml() == "<doc><element/><foo/></doc>"
@@ -53,8 +56,11 @@ def testInsertBefore():
     nelem = dom.createElement("element")
     root.insertBefore(nelem, None)
     confirm(len(root.childNodes) == 3
+            and root.childNodes.length == 3
             and root.childNodes[1] is elem
+            and root.childNodes.item(1) is elem
             and root.childNodes[2] is nelem
+            and root.childNodes.item(2) is nelem
             and root.lastChild is nelem
             and nelem.previousSibling is elem
             and root.toxml() == "<doc><element/><foo/><element/></doc>"
@@ -62,8 +68,11 @@ def testInsertBefore():
     nelem2 = dom.createElement("bar")
     root.insertBefore(nelem2, nelem)
     confirm(len(root.childNodes) == 4
+            and root.childNodes.length == 4
             and root.childNodes[2] is nelem2
+            and root.childNodes.item(2) is nelem2
             and root.childNodes[3] is nelem
+            and root.childNodes.item(3) is nelem
             and nelem2.nextSibling is nelem
             and nelem.previousSibling is nelem2
             and root.toxml() == "<doc><element/><foo/><bar/><element/></doc>"
@@ -369,6 +378,7 @@ def testHasChildNodes(): pass
 def testCloneElementShallow():
     dom, clone = _setupCloneElement(0)
     confirm(len(clone.childNodes) == 0
+            and clone.childNodes.length == 0
             and clone.parentNode is None
             and clone.toxml() == '<doc attr="value"/>'
             , "testCloneElementShallow")
@@ -377,6 +387,7 @@ def testCloneElementShallow():
 def testCloneElementDeep():
     dom, clone = _setupCloneElement(1)
     confirm(len(clone.childNodes) == 1
+            and clone.childNodes.length == 1
             and clone.parentNode is None
             and clone.toxml() == '<doc attr="value"><foo/></doc>'
             , "testCloneElementDeep")
@@ -432,9 +443,11 @@ def testNormalize():
     root = doc.documentElement
     root.appendChild(doc.createTextNode("first"))
     root.appendChild(doc.createTextNode("second"))
-    confirm(len(root.childNodes) == 2, "testNormalize -- preparation")
+    confirm(len(root.childNodes) == 2
+            and root.childNodes.length == 2, "testNormalize -- preparation")
     doc.normalize()
     confirm(len(root.childNodes) == 1
+            and root.childNodes.length == 1
             and root.firstChild is root.lastChild
             and root.firstChild.data == "firstsecond"
             , "testNormalize -- result")
@@ -444,7 +457,8 @@ def testNormalize():
     root = doc.documentElement
     root.appendChild(doc.createTextNode(""))
     doc.normalize()
-    confirm(len(root.childNodes) == 0,
+    confirm(len(root.childNodes) == 0
+            and root.childNodes.length == 0,
             "testNormalize -- single empty node removed")
     doc.unlink()
 
@@ -475,6 +489,18 @@ def testParents():
             elm2b.parentNode is elm1 and
             elm3.parentNode is elm2b, "testParents")
 
+    doc.unlink()
+
+def testNodeListItem():
+    doc = parseString("<doc><e/><e/></doc>")
+    children = doc.childNodes
+    docelem = children[0]
+    confirm(children[0] is children.item(0)
+            and children.item(1) is None
+            and docelem.childNodes.item(0) is docelem.childNodes[0]
+            and docelem.childNodes.item(1) is docelem.childNodes[1]
+            and docelem.childNodes.item(0).childNodes.item(0) is None,
+            "test NodeList.item()")
     doc.unlink()
 
 def testSAX2DOM():
