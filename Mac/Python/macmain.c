@@ -62,9 +62,6 @@ extern PyMac_AddLibResources(void);
 #define COPYRIGHT \
     "Type \"copyright\", \"credits\" or \"license\" for more information."
 
-
-extern int Py_DebugFlag; /* For parser.c, declared in pythonrun.c */
-extern int Py_VerboseFlag; /* For import.c, declared in pythonrun.c */
 short PyMac_AppRefNum;	/* RefNum of application resource fork */
 
 /* For Py_GetArgcArgv(); set by main() */
@@ -159,6 +156,7 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 
 	SET_OPT_ITEM(OPT_INSPECT, inspect);
 	SET_OPT_ITEM(OPT_VERBOSE, verbose);
+	/* OPT_VERBOSEVERBOSE is default off */
 	SET_OPT_ITEM(OPT_OPTIMIZE, optimize);
 	SET_OPT_ITEM(OPT_UNBUFFERED, unbuffered);
 	SET_OPT_ITEM(OPT_DEBUGGING, debugging);
@@ -173,7 +171,8 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 /*	SET_OPT_ITEM(OPT_KEEPCONSOLE, keep_console); */
 	SET_OPT_ITEM(OPT_TABWARN, tabwarn);
 	SET_OPT_ITEM(OPT_NOSITE, nosite);
-	SET_OPT_ITEM(OPT_NONAVSERV, nonavservice);
+	SET_OPT_ITEM(OPT_DIVISIONWARN, divisionwarn);
+	SET_OPT_ITEM(OPT_UNIXNEWLINES, unixnewlines);
 	/* The rest are not settable interactively */
 
 #undef SET_OPT_ITEM
@@ -219,6 +218,16 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 		
 		OPT_ITEM(OPT_INSPECT, inspect);
 		OPT_ITEM(OPT_VERBOSE, verbose);
+		if ( item == OPT_VERBOSEVERBOSE ) {
+			if ( p->verbose == 2 )
+				p->verbose = 1;
+			else
+				p->verbose = 2;
+			GetDialogItem(dialog, OPT_VERBOSE, &type, (Handle *)&handle, &rect);
+			SetControlValue(handle, 1);
+		}
+		GetDialogItem(dialog, OPT_VERBOSEVERBOSE, &type, (Handle *)&handle, &rect);
+		SetControlValue(handle, p->verbose == 2);
 		OPT_ITEM(OPT_OPTIMIZE, optimize);
 		OPT_ITEM(OPT_UNBUFFERED, unbuffered);
 		OPT_ITEM(OPT_DEBUGGING, debugging);
@@ -236,7 +245,8 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 		SetControlValue(handle, (short)(p->keep_console == POPT_KEEPCONSOLE_NEVER));
 		OPT_ITEM(OPT_TABWARN, tabwarn);
 		OPT_ITEM(OPT_NOSITE, nosite);
-		OPT_ITEM(OPT_NONAVSERV, nonavservice);
+		OPT_ITEM(OPT_DIVISIONWARN, divisionwarn);
+		OPT_ITEM(OPT_UNIXNEWLINES, unixnewlines);
 		
 #undef OPT_ITEM
 	}
@@ -315,6 +325,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 	Py_DebugFlag = PyMac_options.debugging;
 	Py_NoSiteFlag = PyMac_options.nosite;
 	Py_TabcheckFlag = PyMac_options.tabwarn;
+	Py_DivisionWarningFlag = PyMac_options.divisionwarn;
 	if ( PyMac_options.noargs ) {
 		/* don't process events at all without the scripts permission */
 		PyMacSchedParams scp;
@@ -675,3 +686,23 @@ PyMac_GetDelayConsoleFlag()
 {
 	return (int)PyMac_options.delayconsole;
 }
+
+#ifndef WITHOUT_UNIX_NEWLINES
+/*
+** Experimental feature (for 2.2a2): optionally allow unix newlines
+** as well as Mac newlines on input. We replace a lowlevel
+** MSL routine to accomplish this.
+*/
+void
+__convert_to_newlines(unsigned char * buf, size_t * n_ptr)
+{
+	unsigned char *p;
+	size_t n = *n_ptr;
+	
+	for(p=buf; n > 0; p++, n--)
+		if ( *p == '\r' ) *p = '\n';
+		else if ( *p == '\n' && !PyMac_options.unixnewlines )
+			*p = '\r';
+}
+#endif /* WITHOUT_UNIX_NEWLINES */
+
