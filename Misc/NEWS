@@ -292,6 +292,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- resource.getrlimit() now returns longs instead of ints.
+
 - readline now dynamically adjusts its input/output stream if
   sys.stdin/stdout changes.
 

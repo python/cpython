@@ -132,7 +132,7 @@ resource_getrlimit(PyObject *self, PyObject *args)
 				     (LONG_LONG) rl.rlim_max);
 	}
 #endif
-	return Py_BuildValue("ii", (long) rl.rlim_cur, (long) rl.rlim_max);
+	return Py_BuildValue("ll", (long) rl.rlim_cur, (long) rl.rlim_max);
 }
 
 static PyObject *
