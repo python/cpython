@@ -22,14 +22,14 @@ intobject TrueObject = {
 static object *
 err_ovf()
 {
-	err_setstr(RuntimeError, "integer overflow");
+	err_setstr(OverflowError, "integer overflow");
 	return NULL;
 }
 
 static object *
 err_zdiv()
 {
-	err_setstr(RuntimeError, "division by zero");
+	err_setstr(ZeroDivisionError, "integer division by zero");
 	return NULL;
 }
 
@@ -55,7 +55,7 @@ getintvalue(op)
 	register object *op;
 {
 	if (!is_intobject(op)) {
-		err_badarg();
+		err_badcall();
 		return -1;
 	}
 	else
