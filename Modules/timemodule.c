@@ -61,6 +61,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef HAVE_FTIME
 #include <sys/timeb.h>
+extern int ftime();
 #endif
 
 #ifdef __WATCOMC__
