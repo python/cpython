@@ -1,4 +1,4 @@
-#!/ufs/guido/bin/sgi/python-405
+#!/ufs/guido/bin/sgi/python
 
 # Send live video UDP packets.
 # Usage: Vsend [-b] [-h height] [-p port] [-s size] [-t ttl] [-w width]
