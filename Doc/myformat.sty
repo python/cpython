@@ -96,9 +96,14 @@
 \newcommand{\bifuncindex}[1]{\index{#1@{\tt#1} (built-in function)}}
 
 % Add an index entry for a module
-\newcommand{\modindex}[2]{\index{#1@{\tt#1} (#2module)}}
-\newcommand{\bimodindex}[1]{\modindex{#1}{built-in }}
-\newcommand{\stmodindex}[1]{\modindex{#1}{standard }}
+\newcommand{\refmodule}[2]{\index{#1@{\tt#1} (#2module)}}
+\newcommand{\refbimodindex}[1]{\refmodule{#1}{built-in }}
+\newcommand{\refstmodindex}[1]{\refmodule{#1}{standard }}
+
+% Add the defining entry for a module
+\newcommand{\defmodindex}[2]{\index{#1@{\tt#1} (#2module)|textbf}}
+\newcommand{\bimodindex}[1]{\defmodindex{#1}{built-in }}
+\newcommand{\stmodindex}[1]{\defmodindex{#1}{standard }}
 
 % Additional string for an index entry
 \newcommand{\indexsubitem}{}
