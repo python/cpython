@@ -236,6 +236,7 @@
   % Calculate the text width for the minipage:
   \setlength{\py@codewidth}{\linewidth}%
   \addtolength{\py@codewidth}{-\parindent}%
+  \let\e=\textbackslash%
   %
   \par\indent%
   \begin{minipage}[t]{\py@codewidth}%
