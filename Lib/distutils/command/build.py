@@ -10,7 +10,7 @@ import os
 from distutils.core import Command
 
 
-class Build (Command):
+class build (Command):
 
     description = "build everything needed to install"
 

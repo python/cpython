@@ -14,7 +14,7 @@ from distutils.core import Command
 from distutils.errors import *
 
 
-class BuildPy (Command):
+class build_py (Command):
 
     description = "\"build\" pure Python modules (copy to build directory)"
 

@@ -26,7 +26,7 @@ from distutils.errors import *
 from distutils.ccompiler import new_compiler
 
 
-class BuildLib (Command):
+class build_lib (Command):
 
     options = [('debug', 'g',
                 "compile with debugging information"),
