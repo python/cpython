@@ -77,8 +77,7 @@ def splitdrive(p):
 
 
 # Split a path in head (everything up to the last '/') and tail (the
-# rest).  If the original path ends in '/' but is not the root, this
-# '/' is stripped.  After the trailing '/' is stripped, the invariant
+# rest).  After the trailing '/' is stripped, the invariant
 # join(head, tail) == p holds.
 # The resulting head won't end in '/' unless it is the root.
 
@@ -87,24 +86,18 @@ def split(p):
 
     Return tuple (head, tail) where tail is everything after the final slash.
     Either part may be empty."""
+
     d, p = splitdrive(p)
-    slashes = ''
-    while p and p[-1:] in '/\\':
-        slashes = slashes + p[-1]
-        p = p[:-1]
-    if p == '':
-        p = p + slashes
-    head, tail = '', ''
-    for c in p:
-        tail = tail + c
-        if c in '/\\':
-            head, tail = head + tail, ''
-    slashes = ''
-    while head and head[-1:] in '/\\':
-        slashes = slashes + head[-1]
-        head = head[:-1]
-    if head == '':
-        head = head + slashes
+    # set i to index beyond p's last slash
+    i = len(p)
+    while i and p[i-1] not in '/\\':
+        i = i - 1
+    head, tail = p[:i], p[i:]  # now tail has no slashes
+    # remove trailing slashes from head, unless it's all slashes
+    head2 = head
+    while head2 and head2[-1] in '/\\':
+        head2 = head2[:-1]
+    head = head2 or head
     return d + head, tail
 
 
