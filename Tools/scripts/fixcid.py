@@ -4,7 +4,7 @@
 # This actually tokenizes the files (to some extent) so it can
 # avoid making substitutions inside strings or comments.
 # Inside strings, substitutions are never made; inside comments,
-# it is a user option (on by default).
+# it is a user option (off by default).
 #
 # The substitutions are read from one or more files whose lines,
 # when not empty, after stripping comments starting with #,
