@@ -323,10 +323,11 @@ Currently-active file is at the head of the list.")
 	    ( ?\* . "." ) ( ?\+ . "." ) ( ?\- . "." )
 	    ( ?\/ . "." ) ( ?\< . "." ) ( ?\= . "." )
 	    ( ?\> . "." ) ( ?\| . "." )
-	    ;; Guido and I disagree about this. Underscore should be
-	    ;; symbol constituent by not word.  For historical
-	    ;; reasons, I leave it as is. -baw
-	    ;;( ?\_ . "_" )	; underscore is legit in symbols, but not words
+	    ;; for historical reasons, underscore is word class
+	    ;; instead of symbol class.  it should be symbol class,
+	    ;; but if you're tempted to change it, try binding M-f and
+	    ;; M-b to py-forward-into-nomenclature and
+	    ;; py-backward-into-nomenclature instead. -baw
 	    ( ?\_ . "w" )	; underscore is legit in words
 	    ( ?\' . "\"")	; single quote is string quote
 	    ( ?\" . "\"" )	; double quote is string quote too
