@@ -1,0 +1,261 @@
+\section{\module{inspect} ---
+         Inspect live objects}
+\declaremodule{standard}{inspect}
+\modulesynopsis{Extract information and source code from live objects.}
+\index{inspect}
+
+\versionadded{2.1}
+
+The \code{inspect} module provides several useful functions
+to help get information about live objects such as modules,
+classes, methods, functions, tracebacks, frame objects, and
+code objects.  For example, it can help you examine the
+contents of a class, retrieve the source code of a method,
+extract and format the argument list for a function, or
+get all the information you need to display a detailed traceback.
+
+There are four main kinds of services provided by this module:
+type checking, getting source code, inspecting classes
+and functions, and examining the interpreter stack.
+
+\subsection{Types and members
+            \label{inspect-types}}
+
+The \function{getmembers()} function retrieves the members
+of an object such as a class or module.
+The nine functions whose names begin with ``is'' are mainly
+provided as convenient choices for the second argument to
+\function{getmembers()}.  They also help you determine when
+you can expect to find the following special attributes:
+
+\begin{tableiii}{c|l|l}{}{Type}{Attribute}{Description}
+  \lineiii{module}{__doc__}{documentation string}
+  \lineiii{}{__file__}{filename (missing for built-in modules)}
+  \lineiii{}{}{}
+
+  \lineiii{class}{__doc__}{documentation string}
+  \lineiii{}{__module__}{name of module in which this class was defined}
+  \lineiii{}{}{}
+
+  \lineiii{method}{__doc__}{documentation string}
+  \lineiii{}{__name__}{name with which this method was defined}
+  \lineiii{}{im_class}{class object in which this method belongs}
+  \lineiii{}{im_func}{function object containing implementation of method}
+  \lineiii{}{im_self}{instance to which this method is bound, or \code{None}}
+  \lineiii{}{}{}
+
+  \lineiii{function}{__doc__}{documentation string}
+  \lineiii{}{__name__}{name with which this function was defined}
+  \lineiii{}{func_code}{code object containing compiled function bytecode}
+  \lineiii{}{func_defaults}{tuple of any default values for arguments}
+  \lineiii{}{func_doc}{(same as __doc__)}
+  \lineiii{}{func_globals}{global namespace in which this function was defined}
+  \lineiii{}{func_name}{(same as __name__)}
+  \lineiii{}{}{}
+
+  \lineiii{traceback}{tb_frame}{frame object at this level}
+  \lineiii{}{tb_lasti}{index of last attempted instruction in bytecode}
+  \lineiii{}{tb_lineno}{current line number in Python source code}
+  \lineiii{}{tb_next}{next inner traceback object (called by this level)}
+  \lineiii{}{}{}
+
+  \lineiii{frame}{f_back}{next outer frame object (this frame's caller)}
+  \lineiii{}{f_builtins}{built-in namespace seen by this frame}
+  \lineiii{}{f_code}{code object being executed in this frame}
+  \lineiii{}{f_exc_traceback}{traceback if raised in this frame, or \code{None}}
+  \lineiii{}{f_exc_type}{exception type if raised in this frame, or \code{None}}
+  \lineiii{}{f_exc_value}{exception value if raised in this frame, or \code{None}}
+  \lineiii{}{f_globals}{global namespace seen by this frame}
+  \lineiii{}{f_lasti}{index of last attempted instruction in bytecode}
+  \lineiii{}{f_lineno}{current line number in Python source code}
+  \lineiii{}{f_locals}{local namespace seen by this frame}
+  \lineiii{}{f_restricted}{0 or 1 if frame is in restricted execution mode}
+  \lineiii{}{f_trace}{tracing function for this frame, or \code{None}}
+  \lineiii{}{}{}
+
+  \lineiii{code}{co_argcount}{number of arguments (not including * or ** args)}
+  \lineiii{}{co_code}{string of raw compiled bytecode}
+  \lineiii{}{co_consts}{tuple of constants used in the bytecode}
+  \lineiii{}{co_filename}{name of file in which this code object was created}
+  \lineiii{}{co_firstlineno}{number of first line in Python source code}
+  \lineiii{}{co_flags}{bitmap: 1=optimized \code{|} 2=newlocals \code{|} 4=*arg \code{|} 8=**arg}
+  \lineiii{}{co_lnotab}{encoded mapping of line numbers to bytecode indices}
+  \lineiii{}{co_name}{name with which this code object was defined}
+  \lineiii{}{co_names}{tuple of names of local variables}
+  \lineiii{}{co_nlocals}{number of local variables}
+  \lineiii{}{co_stacksize}{virtual machine stack space required}
+  \lineiii{}{co_varnames}{tuple of names of arguments and local variables}
+  \lineiii{}{}{}
+
+  \lineiii{builtin}{__doc__}{documentation string}
+  \lineiii{}{__name__}{original name of this function or method}
+  \lineiii{}{__self__}{instance to which a method is bound, or \code{None}}
+\end{tableiii}
+
+\begin{funcdesc}{getmembers}{object\optional{, predicate}}
+  Return all the members of an object in a list of (name, value) pairs
+  sorted by name.  If the optional \var{predicate} argument is supplied,
+  only members for which the predicate returns a true value are included.
+\end{funcdesc}
+
+\begin{funcdesc}{ismodule}{object}
+  Return true if the object is a module.
+\end{funcdesc}
+
+\begin{funcdesc}{isclass}{object}
+  Return true if the object is a class.
+\end{funcdesc}
+
+\begin{funcdesc}{ismethod}{object}
+  Return true if the object is a method.
+\end{funcdesc}
+
+\begin{funcdesc}{isfunction}{object}
+  Return true if the object is a Python function or unnamed (lambda) function.
+\end{funcdesc}
+
+\begin{funcdesc}{istraceback}{object}
+  Return true if the object is a traceback.
+\end{funcdesc}
+
+\begin{funcdesc}{isframe}{object}
+  Return true if the object is a frame.
+\end{funcdesc}
+
+\begin{funcdesc}{iscode}{object}
+  Return true if the object is a code.
+\end{funcdesc}
+
+\begin{funcdesc}{isbuiltin}{object}
+  Return true if the object is a built-in function.
+\end{funcdesc}
+
+\begin{funcdesc}{isroutine}{object}
+  Return true if the object is a user-defined or built-in function or method.
+\end{funcdesc}
+
+\subsection{Retrieving source code
+            \label{inspect-source}}
+
+\begin{funcdesc}{getdoc}{object}
+  Get the documentation string for an object.
+  All tabs are expanded to spaces.  To clean up docstrings that are
+  indented to line up with blocks of code, any whitespace than can be
+  uniformly removed from the second line onwards is removed.
+\end{funcdesc}
+
+\begin{funcdesc}{getcomments}{object}
+  Return in a single string any lines of comments immediately preceding
+  the object's source code (for a class, function, or method), or at the
+  top of the Python source file (if the object is a module).
+\end{funcdesc}
+
+\begin{funcdesc}{getfile}{object}
+  Return the name of the (text or binary) file in which an object was defined.
+  This will fail with a TypeError if the object is a built-in module,
+  class, or function.
+\end{funcdesc}
+
+\begin{funcdesc}{getmodule}{object}
+  Try to guess which module an object was defined in.
+\end{funcdesc}
+
+\begin{funcdesc}{getsourcefile}{object}
+  Return the name of the Python source file in which an object was defined.
+  This will fail with a TypeError if the object is a built-in module,
+  class, or function.
+\end{funcdesc}
+
+\begin{funcdesc}{getsourcelines}{object}
+  Return a list of source lines and starting line number for an object.
+  The argument may be a module, class, method, function, traceback, frame,
+  or code object.  The source code is returned as a list of the lines
+  corresponding to the object and the line number indicates where in the
+  original source file the first line of code was found.  An IOError is
+  raised if the source code cannot be retrieved.
+\end{funcdesc}
+
+\begin{funcdesc}{getsource}{object}
+  Return the text of the source code for an object.
+  The argument may be a module, class, method, function, traceback, frame,
+  or code object.  The source code is returned as a single string.  An
+  IOError is raised if the source code cannot be retrieved.
+\end{funcdesc}
+
+\subsection{Classes and functions
+            \label{inspect-classes-functions}}
+
+\begin{funcdesc}{getclasstree}{classes\optional{, unique}}
+  Arrange the given list of classes into a hierarchy of nested lists.
+  Where a nested list appears, it contains classes derived from the class
+  whose entry immediately precedes the list.  Each entry is a 2-tuple
+  containing a class and a tuple of its base classes.  If the \var{unique}
+  argument is true, exactly one entry appears in the returned structure
+  for each class in the given list.  Otherwise, classes using multiple
+  inheritance and their descendants will appear multiple times.
+\end{funcdesc}
+
+\begin{funcdesc}{getargspec}{func}
+  Get the names and default values of a function's arguments.
+  A tuple of four things is returned: (args, varargs, varkw, defaults).
+  \var{args} is a list of the argument names (it may contain nested lists).
+  \var{varargs} and \var{varkw} are the names of the * and ** arguments or
+  \code{None}.
+  \var{defaults} is a tuple of default argument values; if this tuple
+  has \var{n} elements, they correspond to the last \var{n} elements
+  listed in \var{args}.
+\end{funcdesc}
+
+\begin{funcdesc}{getargvalues}{frame}
+  Get information about arguments passed into a particular frame.
+  A tuple of four things is returned: (args, varargs, varkw, locals).
+  \var{args} is a list of the argument names (it may contain nested lists).
+  \var{varargs} and \var{varkw} are the names of the * and ** arguments or
+  \code{None}.
+  \var{locals} is the locals dictionary of the given frame.
+\end{funcdesc}
+
+\begin{funcdesc}{formatargspec}{args\optional{, varargs, varkw, defaults,
+argformat, varargsformat, varkwformat, defaultformat}}
+  Format a pretty argument spec from the four values returned by getargspec.
+  The other four arguments are the corresponding optional formatting functions
+  that are called to turn names and values into strings.
+\end{funcdesc}
+
+\begin{funcdesc}{formatargvalues}{args\optional{, varargs, varkw, locals,
+argformat, varargsformat, varkwformat, valueformat}}
+  Format a pretty argument spec from the four values returned by getargvalues.
+  The other four arguments are the corresponding optional formatting functions
+  that are called to turn names and values into strings.
+\end{funcdesc}
+
+\subsection{The interpreter stack
+            \label{inspect-stack}}
+
+When the following functions return ``frame records'', each record
+is a tuple of six items: the frame object, the filename,
+the line number of the current line, the function name, a list of
+lines of context from the source code, and the index of the current
+line within that list.
+The optional \var{context} argument specifies the number of lines of
+context to return, which are centered around the current line.
+
+\begin{funcdesc}{getouterframes}{frame\optional{, context}}
+  Get a list of frame records for a frame and all higher (calling) frames.
+\end{funcdesc}
+
+\begin{funcdesc}{getinnerframes}{traceback\optional{, context}}
+  Get a list of frame records for a traceback's frame and all lower frames.
+\end{funcdesc}
+
+\begin{funcdesc}{currentframe}{}
+  Return the frame object for the caller's stack frame.
+\end{funcdesc}
+
+\begin{funcdesc}{stack}{\optional{context}}
+  Return a list of frame records for the stack above the caller's frame.
+\end{funcdesc}
+
+\begin{funcdesc}{trace}{\optional{context}}
+  Return a list of frame records for the stack below the current exception.
+\end{funcdesc}
