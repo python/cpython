@@ -4,6 +4,7 @@ from weakref import proxy
 import operator
 import copy
 import pickle
+import os
 
 class PassThru(Exception):
     pass
@@ -201,6 +202,8 @@ class TestSet(TestJointOps):
         self.assertEqual(s, set(self.word))
         s.__init__(self.otherword)
         self.assertEqual(s, set(self.otherword))
+        self.assertRaises(TypeError, s.__init__, s, 2);
+        self.assertRaises(TypeError, s.__init__, 1);
 
     def test_constructor_identity(self):
         s = self.thetype(range(3))
@@ -435,6 +438,17 @@ class TestBasicOps(unittest.TestCase):
     def test_repr(self):
         if self.repr is not None:
             self.assertEqual(repr(self.set), self.repr)
+
+    def test_print(self):
+        try:
+            fo = open(test_support.TESTFN, "wb")
+            print >> fo, self.set,
+            fo.close()
+            fo = open(test_support.TESTFN, "rb")
+            self.assertEqual(fo.read(), repr(self.set))
+        finally:
+            fo.close()
+            os.remove(test_support.TESTFN)
 
     def test_length(self):
         self.assertEqual(len(self.set), self.length)
