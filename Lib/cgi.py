@@ -34,6 +34,7 @@ __version__ = "2.6"
 # Imports
 # =======
 
+from operator import attrgetter
 import sys
 import os
 import urllib
@@ -331,7 +332,7 @@ def parse_header(line):
     Return the main content-type and a dictionary of options.
 
     """
-    plist = map(lambda x: x.strip(), line.split(';'))
+    plist = [x.strip() for x in line.split(';')]
     key = plist.pop(0).lower()
     pdict = {}
     for p in plist:
@@ -570,7 +571,7 @@ class FieldStorage:
         if key in self:
             value = self[key]
             if type(value) is type([]):
-                return map(lambda v: v.value, value)
+                return map(attrgetter('value'), value)
             else:
                 return value.value
         else:
@@ -592,7 +593,7 @@ class FieldStorage:
         if key in self:
             value = self[key]
             if type(value) is type([]):
-                return map(lambda v: v.value, value)
+                return map(attrgetter('value'), value)
             else:
                 return [value.value]
         else:
