@@ -34,6 +34,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Desk.h>
 #include <Traps.h>
 #include <Processes.h>
+#ifdef THINK_C
+#include <OSEvents.h> /* For EvQElPtr */
+#endif
 
 #include <signal.h>
 
