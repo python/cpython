@@ -2,7 +2,10 @@
 
 __version__ = "$Revision$"
 
-import _tkinter # If this fails your Python is not configured for Tk
+import sys
+if sys.platform == "win32":
+    import FixTk # Attempt to configure Tcl/Tk without requiring PATH
+import _tkinter # If this fails your Python may not be configured for Tk
 tkinter = _tkinter # b/w compat for export
 TclError = _tkinter.TclError
 from types import *
