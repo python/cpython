@@ -32,6 +32,7 @@ def importing(module):
 	Qd.SetPort(splash)
 	fontID = Fm.GetFNum("Python-Sans")
 	if not fontID:
+		from Fonts import geneva
 		fontID = geneva
 	Qd.TextFont(fontID)
 	Qd.TextSize(9)
@@ -64,7 +65,7 @@ def my__import__(name, globals=None, locals=None, fromlist=None):
 			return rv
 		return _real__import__(name)
 
-install_importhook()
+#install_importhook()
 
 kHighLevelEvent = 23
 import Win
