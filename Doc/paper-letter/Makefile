@@ -134,7 +134,7 @@ tut.pdf: $(TUTFILES)
 
 
 clean:
-	rm -f *~ *.aux *.idx *.ilg *.ind *.log *.toc *.bkm *.syn
+	rm -f *~ *.aux *.idx *.ilg *.ind *.log *.toc *.bkm *.syn *.pla
 
 clobber: clean
 	rm -f $(DVIFILES) $(PSFILES) $(PDFFILES)
