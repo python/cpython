@@ -205,7 +205,7 @@ class UnixCCompiler (CCompiler):
 
         self.link_shared_object (
             objects,
-            self.shared_library_filename (output_libname),
+            self.library_filename (output_libname, lib_type='shared'),
             output_dir,
             libraries,
             library_dirs,
@@ -320,8 +320,10 @@ class UnixCCompiler (CCompiler):
     def find_library_file (self, dirs, lib):
 
         for dir in dirs:
-            shared = os.path.join (dir, self.shared_library_filename (lib))
-            static = os.path.join (dir, self.library_filename (lib))
+            shared = os.path.join (
+                dir, self.library_filename (lib, lib_type='shared'))
+            static = os.path.join (
+                dir, self.library_filename (lib, lib_type='static'))
 
             # We're second-guessing the linker here, with not much hard
             # data to go on: GCC seems to prefer the shared library, so I'm
