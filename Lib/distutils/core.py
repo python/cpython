@@ -125,9 +125,7 @@ def setup (**attrs):
     try:
         ok = dist.parse_command_line()
     except DistutilsArgError, msg:
-        script = os.path.basename(dist.script_name)
-        raise SystemExit, \
-              gen_usage(dist.script_name) + "\nerror: %s" % msg
+        raise SystemExit, gen_usage(dist.script_name) + "\nerror: %s" % msg
 
     if DEBUG:
         print "options (after parsing command line):"

@@ -145,7 +145,6 @@ class bdist_packager (Command):
 
 
     def initialize_options (self):
-        d = self.distribution
         self.keep_temp = 0
         self.control_only = 0
         self.no_autorelocate = 0
@@ -187,8 +186,7 @@ class bdist_packager (Command):
             self.pkg_dir = os.path.join(bdist_base, 'binary')
 
         if not self.plat_name:
-            d = self.distribution
-            self.plat = d.get_platforms()
+            self.plat = self.distribution.get_platforms()
         if self.distribution.has_ext_modules():
             self.plat_name = [sys.platform,]
         else:
@@ -237,12 +235,6 @@ class bdist_packager (Command):
 
         log.info("installing to %s", self.pkg_dir)
         self.run_command('install')
-
-        # And make an archive relative to the root of the
-        # pseudo-installation tree.
-        archive_basename = "%s.%s" % (self.distribution.get_fullname(),
-                                      self.plat_name)
-
         if not self.keep_temp:
             remove_tree(self.pkg_dir, dry_run=self.dry_run)
 
