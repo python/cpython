@@ -53,9 +53,9 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 ..\..\..\zlib-1.1.4\zlib.lib imagehlp.lib comdlg32.lib ole32.lib comctl32.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /machine:I386 /nodefaultlib:"LIBC"
+# ADD LINK32 ..\..\..\zlib-1.1.4\zlib.lib imagehlp.lib comdlg32.lib ole32.lib comctl32.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\lib\distutils\command/wininst-6.exe"
 # Begin Special Build Tool
-TargetPath=\sf\python\dist\src\lib\distutils\command\wininst.exe
+TargetPath=\sf\python\dist\src\lib\distutils\command\wininst-6.exe
 SOURCE="$(InputPath)"
 PostBuild_Cmds=upx.exe --best $(TARGETPATH) || echo "wininst.exe not compressed"
 # End Special Build Tool
@@ -84,7 +84,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 ..\..\..\zlib-1.1.4\zlib.lib imagehlp.lib comdlg32.lib ole32.lib comctl32.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /pdb:none /debug /machine:I386 /nodefaultlib:"LIBC" /out:"./wininst_d.exe"
+# ADD LINK32 ..\..\..\zlib-1.1.4\zlib.lib imagehlp.lib comdlg32.lib ole32.lib comctl32.lib kernel32.lib user32.lib gdi32.lib advapi32.lib shell32.lib /nologo /subsystem:windows /pdb:none /debug /machine:I386 /nodefaultlib:"LIBC" /out:"..\..\lib\distutils\command/wininst-6_d.exe"
 
 !ENDIF 
 
