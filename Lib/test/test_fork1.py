@@ -10,6 +10,11 @@ active threads survive in the child after a fork(); this is an error.
 
 import os, sys, time, thread
 
+try:
+    os.fork
+except AttributeError:
+    raise ImportError, "os.fork not defined -- skipping test_fork1"
+
 LONGSLEEP = 2
 
 SHORTSLEEP = 0.5
