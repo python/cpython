@@ -410,10 +410,13 @@ PyMac_Error(OSErr err)
 int
 PyOS_CheckStack()
 {
-	long left;
+	char here;
+	static char *sentinel = 0;
 	
-	left = StackSpace();
-	if ( left < MINIMUM_STACK_SIZE )
+	if ( sentinel == 0 ) {		
+		sentinel = &here - StackSpace() + MINIMUM_STACK_SIZE;
+	}
+	if ( &here < sentinel )
 		return -1;
 	return 0;
 }
