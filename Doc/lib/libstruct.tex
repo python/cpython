@@ -168,8 +168,8 @@ big-endian machine):
 \begin{verbatim}
 >>> from struct import *
 >>> pack('hhl', 1, 2, 3)
-'\000\001\000\002\000\000\000\003'
->>> unpack('hhl', '\000\001\000\002\000\000\000\003')
+'\x00\x01\x00\x02\x00\x00\x00\x03'
+>>> unpack('hhl', '\x00\x01\x00\x02\x00\x00\x00\x03')
 (1, 2, 3)
 >>> calcsize('hhl')
 8

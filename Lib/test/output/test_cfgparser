@@ -24,18 +24,18 @@ Value interpolation too deeply recursive:
 
 Testing for parsing errors...
 Caught expected exception: File contains parsing errors: <???>
-	[line  2]: '  extra-spaces: splat\012'
+	[line  2]: '  extra-spaces: splat\n'
 Caught expected exception: File contains parsing errors: <???>
-	[line  2]: '  extra-spaces= splat\012'
+	[line  2]: '  extra-spaces= splat\n'
 Caught expected exception: File contains parsing errors: <???>
-	[line  2]: 'option-without-value\012'
+	[line  2]: 'option-without-value\n'
 Caught expected exception: File contains parsing errors: <???>
-	[line  2]: ':value-without-option-name\012'
+	[line  2]: ':value-without-option-name\n'
 Caught expected exception: File contains parsing errors: <???>
-	[line  2]: '=value-without-option-name\012'
+	[line  2]: '=value-without-option-name\n'
 Caught expected exception: File contains no section headers.
 file: <???>, line: 1
-'No Section!\012'
+'No Section!\n'
 
 Testing query interface...
 []

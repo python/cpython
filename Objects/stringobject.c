@@ -335,8 +335,14 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 		c = op->ob_sval[i];
 		if (c == quote || c == '\\')
 			fprintf(fp, "\\%c", c);
-		else if (c < ' ' || c >= 0177)
-			fprintf(fp, "\\%03o", c & 0377);
+                else if (c == '\t')
+                        fprintf(fp, "\\t");
+                else if (c == '\n')
+                        fprintf(fp, "\\n");
+                else if (c == '\r')
+                        fprintf(fp, "\\r");
+		else if (c < ' ' || c >= 0x7f)
+			fprintf(fp, "\\x%02x", c & 0xff);
 		else
 			fputc(c, fp);
 	}
@@ -374,10 +380,15 @@ string_repr(register PyStringObject *op)
 			c = op->ob_sval[i];
 			if (c == quote || c == '\\')
 				*p++ = '\\', *p++ = c;
-			else if (c < ' ' || c >= 0177) {
-				sprintf(p, "\\%03o", c & 0377);
-				while (*p != '\0')
-					p++;
+			else if (c == '\t')
+				*p++ = '\\', *p++ = 't';
+			else if (c == '\n')
+				*p++ = '\\', *p++ = 'n';
+			else if (c == '\r')
+				*p++ = '\\', *p++ = 'r';
+			else if (c < ' ' || c >= 0x7f) {
+				sprintf(p, "\\x%02x", c & 0xff);
+                                p += 4;
 			}
 			else
 				*p++ = c;

@@ -801,37 +801,29 @@ Apart from these standard encodings, Python provides a whole set of
 other ways of creating Unicode strings on the basis of a known
 encoding. 
 
-The builtin \function{unicode()}\bifuncindex{unicode} provides access
+The built-in function \function{unicode()}\bifuncindex{unicode} provides access
 to all registered Unicode codecs (COders and DECoders). Some of the
 more well known encodings which these codecs can convert are
 \emph{Latin-1}, \emph{ASCII}, \emph{UTF-8} and \emph{UTF-16}. The latter two
-are variable length encodings which permit to store Unicode characters
-in 8 or 16 bits. Python uses UTF-8 as default encoding. This becomes
-noticeable when printing Unicode strings or writing them to files.
+are variable-length encodings which store Unicode characters
+in blocks of 8 or 16 bits. To print a Unicode string or write it to a file,
+you must convert it to a string with the \method{encode()} method.
 
 \begin{verbatim}
 >>> u"הצü"
 u'\344\366\374'
->>> str(u"הצü")
+>>> u"הצü".encode('UTF-8')
 '\303\244\303\266\303\274'
 \end{verbatim}
 
 If you have data in a specific encoding and want to produce a
 corresponding Unicode string from it, you can use the
-\function{unicode()} builtin with the encoding name as second
+\function{unicode()} function with the encoding name as second
 argument.
 
 \begin{verbatim}
 >>> unicode('\303\244\303\266\303\274','UTF-8')
 u'\344\366\374'
-\end{verbatim}
-
-To convert the Unicode string back into a string using the original
-encoding, the objects provide an \method{encode()} method.
-
-\begin{verbatim}
->>> u"הצü".encode('UTF-8')
-'\303\244\303\266\303\274'
 \end{verbatim}
 
 

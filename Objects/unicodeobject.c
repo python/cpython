@@ -1343,7 +1343,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
     char *p;
     char *q;
 
-    static const char *hexdigit = "0123456789ABCDEF";
+    static const char *hexdigit = "0123456789abcdef";
 
     repr = PyString_FromStringAndSize(NULL, 2 + 6*size + 1);
     if (repr == NULL)
@@ -1372,12 +1372,25 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
             *p++ = hexdigit[(ch >> 4) & 0xf];
             *p++ = hexdigit[ch & 15];
         }
-        /* Map non-printable US ASCII to '\ooo' */
+        /* Map special whitespace to '\t', \n', '\r' */
+        else if (ch == '\t') {
+            *p++ = '\\';
+            *p++ = 't';
+        }
+        else if (ch == '\n') {
+            *p++ = '\\';
+            *p++ = 'n';
+        }
+        else if (ch == '\r') {
+            *p++ = '\\';
+            *p++ = 'r';
+        }
+        /* Map non-printable US ASCII to '\xhh' */
         else if (ch < ' ' || ch >= 128) {
             *p++ = '\\';
-            *p++ = hexdigit[(ch >> 6) & 7];
-            *p++ = hexdigit[(ch >> 3) & 7];
-            *p++ = hexdigit[ch & 7];
+            *p++ = 'x';
+            *p++ = hexdigit[(ch >> 4) & 0xf];
+            *p++ = hexdigit[ch & 15];
         } 
         /* Copy everything else as-is */
         else
@@ -1498,7 +1511,7 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
     char *p;
     char *q;
 
-    static const char *hexdigit = "0123456789ABCDEF";
+    static const char *hexdigit = "0123456789abcdef";
 
     repr = PyString_FromStringAndSize(NULL, 6 * size);
     if (repr == NULL)
