@@ -138,3 +138,6 @@ clean:
 
 clobber: clean
 	rm -f $(DVIFILES) $(PSFILES) $(PDFFILES)
+
+realclean: clobber
+distclean: clobber
