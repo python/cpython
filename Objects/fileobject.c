@@ -312,6 +312,7 @@ file_dealloc(PyFileObject *f)
 		(*f->f_close)(f->f_fp);
 		Py_END_ALLOW_THREADS
 	}
+	PyMem_Free(f->f_setbuf);
 	Py_XDECREF(f->f_name);
 	Py_XDECREF(f->f_mode);
 	Py_XDECREF(f->f_encoding);
@@ -358,6 +359,7 @@ file_close(PyFileObject *f)
 		f->f_fp = NULL;
 	}
 	PyMem_Free(f->f_setbuf);
+	f->f_setbuf = NULL;
 	if (sts == EOF)
 		return PyErr_SetFromErrno(PyExc_IOError);
 	if (sts != 0)
