@@ -1,5 +1,5 @@
 %
-% myformat.sty for the Python doc  [updated to work with Latex2e]
+% myformat.sty for the Python doc  [works only with with Latex2e]
 %
 
 \NeedsTeXFormat{LaTeX2e}[1995/12/01]
@@ -22,8 +22,13 @@
 % font, which makes for smaller PostScript and a font that more people 
 % like.
 %
-\RequirePackage{fancyhdr}\typeout{Using fancier footers than usual....}
+% The "fncychap" package is used to get the nice chapter headers.  The
+% .sty file is distributed with Python, so you should not need to disable
+% it.
+%
+\RequirePackage{fancyhdr}\typeout{Using fancier footers than usual.}
 \RequirePackage{times}\typeout{Using times fonts instead of Computer Modern.}
+\RequirePackage[Bjarne]{fncychap}\typeout{Using nice chapter headings.}
 
 
 % for PDF output, use maximal compression, revise \label{} to support named
@@ -53,36 +58,42 @@
 % Style parameters and macros used by most documents here
 \raggedbottom
 \sloppy
-\parindent =       0mm
-\parskip =         2mm
+\parindent = 0mm
+\parskip =   2mm
+\hbadness = 5000		% don't print trivial gripes
 
-% uncomment the following line if you have the fancyhdr package available:
-\pagestyle{empty}			% start this way; change for
-\pagenumbering{roman}			% ToC & chapters
+\pagestyle{empty}		% start this way; change for
+\pagenumbering{roman}		% ToC & chapters
 \setcounter{secnumdepth}{1}
+
+% Use this to set the font family for headers and other decor:
+\newcommand{\HeaderFamily}{\sffamily}
 
 % Redefine the 'normal' header/footer style when using "fancyhdr" package:
 \@ifundefined{fancyhf}{}{
-  \fancypagestyle{normal}{%
-    \fancyhf{}%
-    \fancyfoot[LE,RO]{{\HeaderFamily\thepage}}%
-    \fancyfoot[LO]{{\HeaderFamily\nouppercase{\rightmark}}}%
-    \fancyfoot[RE]{{\HeaderFamily\nouppercase{\leftmark}}}%
-    \renewcommand{\headrulewidth}{0pt}%
-    \renewcommand{\footrulewidth}{0.4pt}%
+  % Use \pagestyle{normal} as the primary pagestyle for text.
+  \fancypagestyle{normal}{
+    \fancyhf{}
+    \fancyfoot[LE,RO]{{\HeaderFamily\thepage}}
+    \fancyfoot[LO]{{\HeaderFamily\nouppercase{\rightmark}}}
+    \fancyfoot[RE]{{\HeaderFamily\nouppercase{\leftmark}}}
+    \renewcommand{\headrulewidth}{0pt}
+    \renewcommand{\footrulewidth}{0.4pt}
   }
   % Update the plain style so we get the page number & footer line,
   % but not a chapter or section title.  This is to keep the first
   % page of a chapter and the blank page between chapters `clean.'
-  \fancypagestyle{plain}{%
-    \fancyhf{}%
-    \fancyfoot[LE,RO]{{\HeaderFamily\thepage}}%
-    \renewcommand{\headrulewidth}{0pt}%
-    \renewcommand{\footrulewidth}{0.4pt}%
+  \fancypagestyle{plain}{
+    \fancyhf{}
+    \fancyfoot[LE,RO]{{\HeaderFamily\thepage}}
+    \renewcommand{\headrulewidth}{0pt}
+    \renewcommand{\footrulewidth}{0.4pt}
   }
   % Redefine \cleardoublepage so that the blank page between chapters
-  % gets the plain style and not the fancy style.
-  \renewcommand{\cleardoublepage}{\clearpage\if@twoside \ifodd\c@page\else
+  % gets the plain style and not the fancy style.  This is described
+  % in the documentation for the fancyhdr package by Piet von Oostrum.
+  \renewcommand{\cleardoublepage}{
+    \clearpage\if@twoside \ifodd\c@page\else
     \hbox{}
     \thispagestyle{plain}
     \newpage
@@ -127,9 +138,7 @@
 \renewcommand{\verbatim}{\b@code\OldVerbatim}
 \renewcommand{\endverbatim}{\OldEndVerbatim\e@code}
 
-% Augment the sectioning commands used to get our own font family in
-% place:
-\newcommand{\HeaderFamily}{\sffamily}
+% Augment the sectioning commands used to get our own font family in place:
 \renewcommand{\section}{\@startsection {section}{1}{\z@}%
                                    {-3.5ex \@plus -1ex \@minus -.2ex}%
                                    {2.3ex \@plus.2ex}%
@@ -208,7 +217,7 @@
 \newcommand{\opindex}[1]{\indexii{operator}{#1@{\idxcode{#1}}}}
 \newcommand{\exindex}[1]{\indexii{exception}{#1@{\idxcode{#1}}}}
 \newcommand{\obindex}[1]{\indexii{object}{#1}}
-\newcommand{\bifuncindex}[1]{\index{#1@{\idxcode{#1}} (built-in function)}}
+\newcommand{\bifuncindex}[1]{\index{#1@{\idxcode{#1()}} (built-in function)}}
 
 % Add an index entry for a module
 \newcommand{\refmodule}[2]{\index{#1@{\idxcode{#1}} (#2module)}}
@@ -235,60 +244,80 @@
 
 
 % from user-level, fulllineitems should be called as an environment
-\def\fulllineitems{\list{}{\labelwidth \leftmargin \labelsep 0pt
-\rightmargin 0pt \topsep -\parskip \partopsep \parskip
-\itemsep -\parsep
-\let\makelabel\itemnewline}}
-\let\endfulllineitems\endlist
+\newenvironment{fulllineitems}{
+  \begin{list}{}{\labelwidth \leftmargin \labelsep 0pt
+                 \rightmargin 0pt \topsep -\parskip \partopsep \parskip
+                 \itemsep -\parsep
+                 \let\makelabel=\itemnewline}
+}{\end{list}}
 
 
 % cfuncdesc should be called as
 % \begin{cfuncdesc}{type}{name}{arglist}
 % ... description ...
 % \end{cfuncdesc}
-\newcommand{\cfuncline}[3]{\item[\code{#1 \bfcode{#2}(\varvars{#3})}]\ttindex{#2}}
-\newcommand{\cfuncdesc}[3]{\fulllineitems\cfuncline{#1}{#2}{#3}}
-\let\endcfuncdesc\endfulllineitems
+\newenvironment{cfuncdesc}[3]{%
+  \begin{fulllineitems}%
+    \item[\code{#1 \bfcode{#2}(\varvars{#3})}]%
+    \index{#2@{\idxcode{#2()}}}%
+}{\end{fulllineitems}}
 
-\newcommand{\cvarline}[2]{\item[\code{#1 \bfcode{#2}}]\ttindex{#2}}
-\newcommand{\cvardesc}[2]{\fulllineitems\cvarline{#1}{#2}}
-\let\endcvardesc\endfulllineitems
+\newenvironment{cvardesc}[2]{%
+  \begin{fulllineitems}%
+    \item[\code{#1 \bfcode{#2}}]%
+    \index{#2@{\idxcode{#2}}}%
+}{\end{fulllineitems}}
 
-\newcommand{\ctypeline}[1]{\item[\bfcode{#1}]\ttindex{#1}}
-\newcommand{\ctypedesc}[1]{\fulllineitems\ctypeline{#1}}
-\let\endctypedesc\endfulllineitems
+\newenvironment{ctypedesc}[1]{%
+  \begin{fulllineitems}%
+    \item[\bfcode{#1}]\ttindex{#1}
+}{\end{fulllineitems}}
 
-% funcdesc should be called as an \begin{funcdesc} ... \end{funcdesc}
-\newcommand{\funcline}[2]{\funclineni{#1}{#2}\ttindex{#1}}
-\newcommand{\funcdesc}[2]{\fulllineitems\funcline{#1}{#2}}
-\let\endfuncdesc\endfulllineitems
-\newcommand{\optional}[1]{{\textnormal{\Large[}}{#1}\hspace{0.5mm}{\textnormal{\Large]}}}
+\newcommand{\funcline}[2]{\funclineni{#1}{#2}\ttindex{#1()}}
+\newenvironment{funcdesc}[2]{%
+  \begin{fulllineitems}%
+    \funcline{#1}{#2}%
+}{\end{fulllineitems}}
+
+\newcommand{\optional}[1]{%
+  {\textnormal{\Large[}}{#1}\hspace{0.5mm}{\textnormal{\Large]}}}
 
 % similar to {funcdesc}, but doesn't add to the index
 \newcommand{\funclineni}[2]{\item[\code{\bfcode{#1}(\varvars{#2})}]}
-\newcommand{\funcdescni}[2]{\fulllineitems\funclineni{#1}{#2}}
-\let\endfuncdescni\endfulllineitems
+\newenvironment{funcdescni}[2]{%
+  \begin{fulllineitems}%
+    \funclineni{#1}{#2}%
+}{\end{fulllineitems}}
 
-% same for excdesc
-\newcommand{\excline}[1]{\item[\bfcode{#1}]\ttindex{#1}}
-\newcommand{\excdesc}[1]{\fulllineitems\excline{#1}}
-\let\endexcdesc\endfulllineitems
+\newenvironment{classdesc}[2]{%
+  \begin{fulllineitems}%
+    \item[\code{\bfcode{#1}(\varvars{#2})}]%
+    \ttindex{#1}%
+    \def\baseclasses##1{}%
+}{\end{fulllineitems}}
 
-% same for datadesc
+\newenvironment{excdesc}[1]{%
+  \begin{fulllineitems}%
+    \item[\bfcode{#1}]\ttindex{#1}%
+}{\end{fulllineitems}}
+
 \newcommand{\dataline}[1]{\datalineni{#1}\ttindex{#1}}
-\newcommand{\datadesc}[1]{\fulllineitems\dataline{#1}}
-\let\enddatadesc\endfulllineitems
+\newenvironment{datadesc}[1]{%
+  \begin{fulllineitems}%
+    \dataline{#1}%
+}{\end{fulllineitems}}
 
 % similar to {datadesc}, but doesn't add to the index
 \newcommand{\datalineni}[1]{\item[\bfcode{#1}]}
-\newcommand{\datadescni}[1]{\fulllineitems\datalineni{#1}}
-\let\enddatadescni\endfulllineitems
+\newenvironment{datadescni}[1]{%
+  \begin{fulllineitems}%
+    \datalineni{#1}%
+}{\end{fulllineitems}}
 
-
-% opcodedesc should be called as an \begin{opcodedesc} ... \end{opcodedesc}
-\newcommand{\opcodeline}[2]{\item[\bfcode{#1}\quad\var{#2}]}
-\newcommand{\opcodedesc}[2]{\fulllineitems\opcodeline{#1}{#2}}
-\let\endopcodedesc\endfulllineitems
+\newenvironment{opcodedesc}[2]{%
+  \begin{fulllineitems}%
+    \item[\bfcode{#1}\quad\var{#2}]%
+}{\end{fulllineitems}}
 
 
 \let\nodename=\label
@@ -308,7 +337,7 @@
 \newcommand{\code}[1]{{\@vobeyspaces\@noligs\def\{{\char`\{}\def\}{\char`\}}\def\~{\char`\~}\def\^{\char`\^}\def\e{\char`\\}\def\${\char`\$}\def\#{\char`\#}\def\&{\char`\&}\def\%{\char`\%}%
 \mbox{\codefont{#1}}}}
 
-\newcommand{\bfcode}[1]{\code{\bfseries#1}} %bold-faced code font
+\newcommand{\bfcode}[1]{\code{\bfseries#1}} % bold-faced code font
 \newcommand{\kbd}[1]{\mbox{\tt #1}}
 \newcommand{\key}[1]{\mbox{\tt #1}}
 \newcommand{\samp}[1]{\mbox{`\code{#1}'}}
@@ -316,8 +345,8 @@
 % italics, and won't get funky in code fragments when we play around
 % with fonts.
 \newcommand{\var}[1]{\mbox{\normalsize\textrm{\textit{#1\/}}}}
-\newcommand{\dfn}[1]{{\em #1\/}}
 \renewcommand{\emph}[1]{{\em #1\/}}
+\newcommand{\dfn}[1]{\emph{#1}}
 \newcommand{\strong}[1]{{\bf #1}}
 % let's experiment with a new font:
 \newcommand{\file}[1]{\mbox{`\small\textsf{#1}'}}
@@ -351,10 +380,14 @@
 \let\exception=\code
 \let\class=\code
 \let\function=\code
-\let\cfunction=\code
+\let\member=\code
 \let\method=\code
 
-% constants defined in Python modules, not language constants:
+\let\cfunction=\code
+\let\ctype=\code
+\let\cdata=\code
+
+% constants defined in Python modules or C headers, not language constants:
 \let\constant=\code
 
 \newcommand{\manpage}[2]{{\emph{#1}(#2)}}
@@ -362,14 +395,31 @@
 \newcommand{\program}[1]{\strong{#1}}
 
 
-\newenvironment{tableii}[4]{\begin{center}\def\lineii##1##2{\csname#2\endcsname{##1}&##2\\}\begin{tabular}{#1}\hline#3&#4\\
-\hline}{\hline\end{tabular}\end{center}}
+\newenvironment{tableii}[4]{%
+  \begin{center}%
+    \def\lineii##1##2{\csname#2\endcsname{##1}&##2\\}%
+    \begin{tabular}{#1}\hline#3&#4\\ \hline%
+}{%
+      \hline%
+    \end{tabular}%
+  \end{center}%
+}
 
-\newenvironment{tableiii}[5]{\begin{center}\def\lineiii##1##2##3{\csname#2\endcsname{##1}&##2&##3\\}\begin{tabular}{#1}\hline#3&#4&#5\\
-\hline}{\hline\end{tabular}\end{center}}
+\newenvironment{tableiii}[5]{%
+  \begin{center}%
+    \def\lineiii##1##2##3{\csname#2\endcsname{##1}&##2&##3\\}%
+    \begin{tabular}{#1}\hline#3&#4&#5\\%
+      \hline%
+}{%
+      \hline%
+    \end{tabular}%
+  \end{center}%
+}
 
-\newcommand{\itemnewline}[1]{\@tempdima\linewidth
-\advance\@tempdima \leftmargin\makebox[\@tempdima][l]{#1}}
+\newcommand{\itemnewline}[1]{%
+  \@tempdima\linewidth%
+  \advance\@tempdima \leftmargin\makebox[\@tempdima][l]{#1}%
+}
 
 \newcommand{\sectcode}[1]{{\sectcodefont{#1}}}
 
@@ -380,24 +430,23 @@
 %    \seetext{\emph{Encyclopedia Britannica}}.          % Ref to a book
 %  \end{seealso}
 
-\newenvironment{seealso}[0]{\strong{See Also:}\par}{\par}
-\newcommand{\seemodule}[2]{\ref{module-#1}:%
-  \quad Module \module{#1}\quad(#2)}
-\newcommand{\seebimodule}[2]{\ref{module-#1}:%
-  \quad Built-in Module \module{#1}\quad(#2)}
-\newcommand{\seestmodule}[2]{\ref{module-#1}:%
-  \quad Standard Module \module{#1}\quad(#2)}
-\newcommand{\seetext}[1]{\par{#1}}
+\newenvironment{seealso}[0]{
+  \strong{See Also:}\par
+  % These should only be defined within the {seealso} environment:
+  \def\seemodule##1##2{\ref{module-##1}:\quad Module \module{##1}\quad (##2)}
+  \def\seetext##1{\par{##1}}
+}{\par}
+
 
 % Fix the theindex environment to add an entry to the Table of
 % Contents; this is much nicer than just having to jump to the end of
 % the book and flip around, especially with multiple indexes.
 %
 \let\OldTheindex=\theindex
-\renewcommand{\theindex}{%
-  \cleardoublepage%
-  \OldTheindex%
-  \addcontentsline{toc}{chapter}{\indexname}%
+\renewcommand{\theindex}{
+  \cleardoublepage
+  \OldTheindex
+  \addcontentsline{toc}{chapter}{\indexname}
 }
 
 %  Use a similar trick to catch the end of the {abstract} environment,
@@ -461,29 +510,30 @@
 % Change the title page to look a bit better, and fit in with the
 % fncychap ``Bjarne'' style a bit better.
 %
-\renewcommand{\maketitle}{\begin{titlepage}%
-  \let\footnotesize\small
-  \let\footnoterule\relax
-  \@ifundefined{ChTitleVar}{}{%
-    \mghrulefill{\RW}}%
-  \@ifundefined{pdfinfo}{}{
-    \pdfinfo
-      author {\@author}
-      title {\@title}
-  }
-  \begin{flushright}%
-    {\rm\Huge\HeaderFamily \@title \par}%
-    {\em\LARGE\HeaderFamily \@release \par}
-    \vfill
-    {\LARGE\HeaderFamily \@author \par}
-    \vfill\vfill
-    {\large
-     \@date \par
-     \vskip 3em
-     \@authoraddress \par
-    }%
-  \end{flushright}%\par
-  \@thanks
+\renewcommand{\maketitle}{%
+  \begin{titlepage}%
+    \let\footnotesize\small
+    \let\footnoterule\relax
+    \@ifundefined{ChTitleVar}{}{%
+      \mghrulefill{\RW}}%
+    \@ifundefined{pdfinfo}{}{
+      \pdfinfo
+        author {\@author}
+        title {\@title}
+    }
+    \begin{flushright}%
+      {\rm\Huge\HeaderFamily \@title \par}%
+      {\em\LARGE\HeaderFamily \@release \par}
+      \vfill
+      {\LARGE\HeaderFamily \@author \par}
+      \vfill\vfill
+      {\large
+       \@date \par
+       \vskip 3em
+       \@authoraddress \par
+      }%
+    \end{flushright}%\par
+    \@thanks
   \end{titlepage}%
   \setcounter{footnote}{0}%
   \let\thanks\relax\let\maketitle\relax
@@ -502,7 +552,6 @@
 % modules'' at the top of module-documentation chapters.  But it might 
 % require a completely new environment, perhaps based on {list}.
 
-% Leave the rest as-is:
 \newif\if@minitocprinted
 \newcommand{\suppressminitoc}{\@minitocprintedtrue}
 \@ifundefined{minitoc}{
@@ -547,7 +596,6 @@
 % This sets up the fancy chapter headings that make the documents look
 % at least a little better than the usual LaTeX output.
 %
-\RequirePackage[Bjarne]{fncychap}
 \@ifundefined{ChTitleVar}{}{
   \ChNameVar{\raggedleft\normalsize\HeaderFamily}
   \ChNumVar{\raggedleft \bfseries\Large\HeaderFamily}
