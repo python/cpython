@@ -202,7 +202,7 @@ run_script(fp, filename)
 	ext = filename + strlen(filename) - 4;
 	if ( strcmp(ext, ".pyc") == 0 ) {
 		/* Try to run a pyc file. First, re-open in binary */
-		fclose(fp);
+		/* Don't close, done in main: fclose(fp); */
 		if( (fp = fopen(filename, "rb")) == NULL ) {
 			fprintf(stderr, "python: Can't reopen .pyc file\n");
 			return -1;
