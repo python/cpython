@@ -1157,10 +1157,15 @@ parsenumber(struct compiling *co, char *s)
 	if (s[0] == '0') {
 		x = (long) PyOS_strtoul(s, &end, 0);
 		if (x < 0 && errno == 0) {
-			if (PyErr_Warn(PyExc_DeprecationWarning,
-				       "hex/oct constants > sys.maxint "
-				       "will return positive values "
-				       "in Python 2.4 and up") < 0)
+			if (PyErr_WarnExplicit(
+				    PyExc_DeprecationWarning,
+				    "hex/oct constants > sys.maxint "
+				    "will return positive values "
+				    "in Python 2.4 and up",
+				    co->c_filename,
+				    co->c_lineno,
+				    NULL,
+				    NULL) < 0)
 				return NULL;
 			errno = 0; /* Might be changed by PyErr_Warn() */
 		}
