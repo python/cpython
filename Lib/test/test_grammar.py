@@ -417,6 +417,12 @@ if l.has_key('__builtins__'): del l['__builtins__']
 if (g, l) != ({'a':1}, {'b':2}): raise TestFailed, 'exec ... in g (%s), l (%s)' %(g,l)
 
 
+print "assert_stmt" # assert_stmt: 'assert' test [',' test]
+assert 1
+assert 1, 1
+assert lambda x:x
+assert 1, lambda x:x+1
+
 ### compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
 # Tested below
 
