@@ -384,150 +384,6 @@ else
   fi
 fi
 
-# Check for enable-ipv6
-AC_MSG_CHECKING([whether to enable ipv6])
-AC_ARG_ENABLE(ipv6,
-[  --enable-ipv6                   Enable ipv6 (with ipv4) support
-  --disable-ipv6                  Disable ipv6 support],
-[ case "$enableval" in
-  no)
-       AC_MSG_RESULT(no)
-       ipv6=no
-       ;;
-  *)   AC_MSG_RESULT(yes)
-       AC_DEFINE(ENABLE_IPV6)
-       ipv6=yes
-       ;;
-  esac ],
-
-  AC_TRY_RUN([ /* AF_INET6 available check */
-#include <sys/types.h>
-#include <sys/socket.h>
-main()
-{
- if (socket(AF_INET6, SOCK_STREAM, 0) < 0)
-   exit(1);
- else
-   exit(0);
-}
-],
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(ENABLE_IPV6)
-  ipv6=yes,
-  AC_MSG_RESULT(no)
-  ipv6=no,
-  AC_MSG_RESULT(no)
-  ipv6=no
-))
-
-ipv6type=unknown
-ipv6lib=none
-ipv6trylibc=no
-
-if test "$ipv6" = "yes"; then
-	AC_MSG_CHECKING([ipv6 stack type])
-	for i in inria kame linux-glibc linux-inet6 toshiba v6d zeta; do
-		case $i in
-		inria)
-			dnl http://www.kame.net/
-			AC_EGREP_CPP(yes, [dnl
-#include <netinet/in.h>
-#ifdef IPV6_INRIA_VERSION
-yes
-#endif],
-				[ipv6type=$i;
-				OPT="-DINET6 $OPT"])
-			;;
-		kame)
-			dnl http://www.kame.net/
-			AC_EGREP_CPP(yes, [dnl
-#include <netinet/in.h>
-#ifdef __KAME__
-yes
-#endif],
-				[ipv6type=$i;
-				ipv6lib=inet6
-				ipv6libdir=/usr/local/v6/lib
-				ipv6trylibc=yes
-				OPT="-DINET6 $OPT"])
-			;;
-		linux-glibc)
-			dnl http://www.v6.linux.or.jp/
-			AC_EGREP_CPP(yes, [dnl
-#include <features.h>
-#if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))
-yes
-#endif],
-				[ipv6type=$i;
-				ipv6trylibc=yes
-				OPT="-DINET6 $OPT"])
-			;;
-		linux-inet6)
-			dnl http://www.v6.linux.or.jp/
-			if test -d /usr/inet6; then
-				ipv6type=$i
-				ipv6lib=inet6
-				ipv6libdir=/usr/inet6/lib
-				OPT="-DINET6 -I/usr/inet6/include $OPT"
-			fi
-			;;
-		toshiba)
-			AC_EGREP_CPP(yes, [dnl
-#include <sys/param.h>
-#ifdef _TOSHIBA_INET6
-yes
-#endif],
-				[ipv6type=$i;
-				ipv6lib=inet6;
-				ipv6libdir=/usr/local/v6/lib;
-				OPT="-DINET6 $OPT"])
-			;;
-		v6d)
-			AC_EGREP_CPP(yes, [dnl
-#include </usr/local/v6/include/sys/v6config.h>
-#ifdef __V6D__
-yes
-#endif],
-				[ipv6type=$i;
-				ipv6lib=v6;
-				ipv6libdir=/usr/local/v6/lib;
-				OPT="-I/usr/local/v6/include $OPT"])
-			;;
-		zeta)
-			AC_EGREP_CPP(yes, [dnl
-#include <sys/param.h>
-#ifdef _ZETA_MINAMI_INET6
-yes
-#endif],
-				[ipv6type=$i;
-				ipv6lib=inet6;
-				ipv6libdir=/usr/local/v6/lib;
-				OPT="-DINET6 $OPT"])
-			;;
-		esac
-		if test "$ipv6type" != "unknown"; then
-			break
-		fi
-	done
-	AC_MSG_RESULT($ipv6type)
-fi
-
-if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
-	if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
-		LIBS="-L$ipv6libdir -l$ipv6lib $LIBS"
-		echo "using lib$ipv6lib"
-	else
-		if test $ipv6trylibc = "yes"; then
-			echo "using libc"
-		else
-			echo 'Fatal: no $ipv6lib library found.  cannot continue.'
-			echo "You need to fetch lib$ipv6lib.a from appropriate"
-			echo 'ipv6 kit and compile beforehand.'
-			exit 1
-		fi
-	fi
-fi
-
 # -Kpthread, if available, provides the right #defines
 # and linker options to make pthread_create available
 AC_MSG_CHECKING(whether $CC accepts -Kpthread)
@@ -1078,6 +934,159 @@ else
         OSF1) LDLAST=-threads;;
         esac
     fi
+fi
+
+# Check for enable-ipv6
+AC_MSG_CHECKING([whether to enable ipv6])
+AC_ARG_ENABLE(ipv6,
+[  --enable-ipv6                   Enable ipv6 (with ipv4) support
+  --disable-ipv6                  Disable ipv6 support],
+[ case "$enableval" in
+  no)
+       AC_MSG_RESULT(no)
+       ipv6=no
+       ;;
+  *)   AC_MSG_RESULT(yes)
+       AC_DEFINE(ENABLE_IPV6)
+       ipv6=yes
+       ;;
+  esac ],
+
+  AC_TRY_RUN([ /* AF_INET6 available check */
+#include <sys/types.h>
+#include <sys/socket.h>
+main()
+{
+ if (socket(AF_INET6, SOCK_STREAM, 0) < 0)
+   exit(1);
+ else
+   exit(0);
+}
+],
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(ENABLE_IPV6)
+  ipv6=yes,
+  AC_MSG_RESULT(no)
+  ipv6=no,
+  AC_MSG_RESULT(no)
+  ipv6=no
+))
+
+ipv6type=unknown
+ipv6lib=none
+ipv6trylibc=no
+
+if test "$ipv6" = "yes"; then
+	AC_MSG_CHECKING([ipv6 stack type])
+	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta; do
+		case $i in
+		inria)
+			dnl http://www.kame.net/
+			AC_EGREP_CPP(yes, [dnl
+#include <netinet/in.h>
+#ifdef IPV6_INRIA_VERSION
+yes
+#endif],
+				[ipv6type=$i;
+				OPT="-DINET6 $OPT"])
+			;;
+		kame)
+			dnl http://www.kame.net/
+			AC_EGREP_CPP(yes, [dnl
+#include <netinet/in.h>
+#ifdef __KAME__
+yes
+#endif],
+				[ipv6type=$i;
+				ipv6lib=inet6
+				ipv6libdir=/usr/local/v6/lib
+				ipv6trylibc=yes
+				OPT="-DINET6 $OPT"])
+			;;
+		linux-glibc)
+			dnl http://www.v6.linux.or.jp/
+			AC_EGREP_CPP(yes, [dnl
+#include <features.h>
+#if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))
+yes
+#endif],
+				[ipv6type=$i;
+				ipv6trylibc=yes
+				OPT="-DINET6 $OPT"])
+			;;
+		linux-inet6)
+			dnl http://www.v6.linux.or.jp/
+			if test -d /usr/inet6; then
+				ipv6type=$i
+				ipv6lib=inet6
+				ipv6libdir=/usr/inet6/lib
+				OPT="-DINET6 -I/usr/inet6/include $OPT"
+			fi
+			;;
+		solaris)
+			if test -f /etc/netconfig; then
+                          if /usr/xpg4/bin/grep -q tcp6 /etc/netconfig; then
+				ipv6type=$i
+				ipv6trylibc=yes
+				OPT="-DINET6 $OPT"
+                          fi
+                        fi
+			;;
+		toshiba)
+			AC_EGREP_CPP(yes, [dnl
+#include <sys/param.h>
+#ifdef _TOSHIBA_INET6
+yes
+#endif],
+				[ipv6type=$i;
+				ipv6lib=inet6;
+				ipv6libdir=/usr/local/v6/lib;
+				OPT="-DINET6 $OPT"])
+			;;
+		v6d)
+			AC_EGREP_CPP(yes, [dnl
+#include </usr/local/v6/include/sys/v6config.h>
+#ifdef __V6D__
+yes
+#endif],
+				[ipv6type=$i;
+				ipv6lib=v6;
+				ipv6libdir=/usr/local/v6/lib;
+				OPT="-I/usr/local/v6/include $OPT"])
+			;;
+		zeta)
+			AC_EGREP_CPP(yes, [dnl
+#include <sys/param.h>
+#ifdef _ZETA_MINAMI_INET6
+yes
+#endif],
+				[ipv6type=$i;
+				ipv6lib=inet6;
+				ipv6libdir=/usr/local/v6/lib;
+				OPT="-DINET6 $OPT"])
+			;;
+		esac
+		if test "$ipv6type" != "unknown"; then
+			break
+		fi
+	done
+	AC_MSG_RESULT($ipv6type)
+fi
+
+if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
+	if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
+		LIBS="-L$ipv6libdir -l$ipv6lib $LIBS"
+		echo "using lib$ipv6lib"
+	else
+		if test $ipv6trylibc = "yes"; then
+			echo "using libc"
+		else
+			echo 'Fatal: no $ipv6lib library found.  cannot continue.'
+			echo "You need to fetch lib$ipv6lib.a from appropriate"
+			echo 'ipv6 kit and compile beforehand.'
+			exit 1
+		fi
+	fi
 fi
 
 # Check for GC support
