@@ -168,7 +168,7 @@ lookmapping(mp, key, hash)
 	register unsigned incr;
 	register unsigned long sum = (unsigned long) hash;
 	register mappingentry *freeslot = NULL;
-	register int mask = mp->ma_size-1;
+	register unsigned int mask = mp->ma_size-1;
 	mappingentry *ep0 = mp->ma_table;
 	register mappingentry *ep;
 	/* We must come up with (i, incr) such that 0 <= i < ma_size
