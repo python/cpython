@@ -59,6 +59,11 @@ aliases = {
     'macroman': 'mac_roman',
     'macturkish': 'mac_turkish',
 
+    # Windows
+    'windows_1252': 'cp1252',
+    'windows_1254': 'cp1254',
+    'windows_1255': 'cp1255',
+
     # MBCS
     'dbcs': 'mbcs',
 
