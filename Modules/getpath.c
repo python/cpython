@@ -485,6 +485,7 @@ calculate_path(void)
         reduce(prefix);
 
     strncpy(zip_path, prefix, MAXPATHLEN);
+    zip_path[MAXPATHLEN] = '\0';
     if (pfound > 0) { /* Use the reduced prefix returned by Py_GetPrefix() */
         reduce(zip_path);
         reduce(zip_path);
