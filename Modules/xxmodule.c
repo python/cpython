@@ -185,12 +185,36 @@ xx_new(self, args)
 	return (PyObject *)rv;
 }
 
+/* Example with subtle bug from extensions manual ("Thin Ice"). */
+
+static PyObject *
+xx_bug(self, args)
+    PyObject *self;
+    PyObject *args;
+{
+	PyObject *list, *item;
+	
+	if (!PyArg_ParseTuple(args, "O", &list))
+		return NULL;
+	
+	item = PyList_GetItem(list, 0);
+	/* Py_INCREF(item); */
+	PyList_SetItem(list, 1, PyInt_FromLong(0L));
+	PyObject_Print(item, stdout, 0);
+	printf("\n");
+	/* Py_DECREF(item); */
+	
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 
 /* List of functions defined in the module */
 
 static PyMethodDef xx_methods[] = {
 	{"foo",		xx_foo,		1},
 	{"new",		xx_new,		1},
+	{"bug",		xx_bug,		1},
 	{NULL,		NULL}		/* sentinel */
 };
 
