@@ -3,6 +3,8 @@
 Implements the Distutils 'bdist_rpm' command (create RPM source and binary
 distributions)."""
 
+# This module should be kept compatible with Python 1.5.2.
+
 __revision__ = "$Id$"
 
 import sys, os, string

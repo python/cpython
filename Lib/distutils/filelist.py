@@ -4,6 +4,8 @@ Provides the FileList class, used for poking about the filesystem
 and building lists of files.
 """
 
+# This module should be kept compatible with Python 1.5.2.
+
 __revision__ = "$Id$"
 
 import os, string, re

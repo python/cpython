@@ -5,6 +5,8 @@ platform-independent data files."""
 
 # contributed by Bastian Kleineidam
 
+# This module should be kept compatible with Python 1.5.2.
+
 __revision__ = "$Id$"
 
 import os

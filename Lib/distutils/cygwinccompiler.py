@@ -41,6 +41,8 @@ cygwin in no-cygwin mode).
 #     in the dlls.
 #   *** only the version of June 2000 shows these problems
 
+# This module should be kept compatible with Python 1.5.2.
+
 __revision__ = "$Id$"
 
 import os,sys,copy

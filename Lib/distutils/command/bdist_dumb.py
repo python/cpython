@@ -4,6 +4,8 @@ Implements the Distutils 'bdist_dumb' command (create a "dumb" built
 distribution -- i.e., just an archive to be unpacked under $prefix or
 $exec_prefix)."""
 
+# This module should be kept compatible with Python 1.5.2.
+
 __revision__ = "$Id$"
 
 import os

@@ -8,6 +8,8 @@ used from a setup script as
    setup (...)
 """
 
+# This module should be kept compatible with Python 1.5.2.
+
 __revision__ = "$Id$"
 
 __version__ = "1.0.3"

@@ -11,6 +11,8 @@ for the Borland C++ compiler.
 # someone should sit down and factor out the common code as
 # WindowsCCompiler!  --GPW
 
+# This module should be kept compatible with Python 1.5.2.
+
 __revision__ = "$Id$"
 
 
