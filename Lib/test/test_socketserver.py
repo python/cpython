@@ -1,11 +1,6 @@
 # Test suite for SocketServer.py
 
-# XXX This must be run manually -- somehow the I/O redirection of the
-# regression test breaks the test.
-
 from test_support import verbose, verify, TESTFN, TestSkipped
-if not verbose:
-    raise TestSkipped, "test_socketserver can only be run manually"
 
 from SocketServer import *
 import socket
@@ -153,10 +148,16 @@ def testall():
         # client address so this cannot work:
         ##testloop(socket.AF_UNIX, dgramservers, MyDatagramHandler, testdgram)
 
-def main():
+def test_main():
+    import imp
+    if imp.lock_held():
+        # If the import lock is held, the threads will hang.
+        raise TestSkipped("can't run when import lock is held")
+
     try:
         testall()
     finally:
         cleanup()
 
-main()
+if __name__ == "__main__":
+    test_main()
