@@ -41,3 +41,4 @@ def test(methodname, input, output, *args):
         print (methodname, input, output, args, res[0], res[1], res[2])
 
 string_tests.run_method_tests(test)
+string_tests.run_contains_tests(test)

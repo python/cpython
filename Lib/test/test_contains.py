@@ -45,17 +45,8 @@ except TypeError:
 check('c' in 'abc', "'c' not in 'abc'")
 check('d' not in 'abc', "'d' in 'abc'")
 
-try:
-    '' in 'abc'
-    check(0, "'' in 'abc' did not raise error")
-except TypeError:
-    pass
-
-try:
-    'ab' in 'abc'
-    check(0, "'ab' in 'abc' did not raise error")
-except TypeError:
-    pass
+check('' in '', "'' not in ''")
+check('' in 'abc', "'' not in 'abc'")
 
 try:
     None in 'abc'
@@ -71,17 +62,12 @@ if have_unicode:
     check('c' in unicode('abc'), "'c' not in u'abc'")
     check('d' not in unicode('abc'), "'d' in u'abc'")
 
-    try:
-        '' in unicode('abc')
-        check(0, "'' in u'abc' did not raise error")
-    except TypeError:
-        pass
-
-    try:
-        'ab' in unicode('abc')
-        check(0, "'ab' in u'abc' did not raise error")
-    except TypeError:
-        pass
+    check('' in unicode(''), "'' not in u''")
+    check(unicode('') in '', "u'' not in ''")
+    check(unicode('') in unicode(''), "u'' not in u''")
+    check('' in unicode('abc'), "'' not in u'abc'")
+    check(unicode('') in 'abc', "u'' not in 'abc'")
+    check(unicode('') in unicode('abc'), "u'' not in u'abc'")
 
     try:
         None in unicode('abc')
@@ -94,34 +80,10 @@ if have_unicode:
     check(unicode('c') in unicode('abc'), "u'c' not in u'abc'")
     check(unicode('d') not in unicode('abc'), "u'd' in u'abc'")
 
-    try:
-        unicode('') in unicode('abc')
-        check(0, "u'' in u'abc' did not raise error")
-    except TypeError:
-        pass
-
-    try:
-        unicode('ab') in unicode('abc')
-        check(0, "u'ab' in u'abc' did not raise error")
-    except TypeError:
-        pass
-
     # Test Unicode char in string
 
     check(unicode('c') in 'abc', "u'c' not in 'abc'")
     check(unicode('d') not in 'abc', "u'd' in 'abc'")
-
-    try:
-        unicode('') in 'abc'
-        check(0, "u'' in 'abc' did not raise error")
-    except TypeError:
-        pass
-
-    try:
-        unicode('ab') in 'abc'
-        check(0, "u'ab' in 'abc' did not raise error")
-    except TypeError:
-        pass
 
 # A collection of tests on builtin sequence types
 a = range(10)

@@ -3732,15 +3732,14 @@ int PyUnicode_Contains(PyObject *container,
 		       PyObject *element)
 {
     PyUnicodeObject *u = NULL, *v = NULL;
-    int result;
-    register const Py_UNICODE *p, *e;
-    register Py_UNICODE ch;
+    int result, size;
+    register const Py_UNICODE *lhs, *end, *rhs;
 
     /* Coerce the two arguments */
     v = (PyUnicodeObject *)PyUnicode_FromObject(element);
     if (v == NULL) {
 	PyErr_SetString(PyExc_TypeError,
-	    "'in <string>' requires character as left operand");
+	    "'in <string>' requires string as left operand");
 	goto onError;
     }
     u = (PyUnicodeObject *)PyUnicode_FromObject(container);
@@ -3749,20 +3748,27 @@ int PyUnicode_Contains(PyObject *container,
 	goto onError;
     }
 
-    /* Check v in u */
-    if (PyUnicode_GET_SIZE(v) != 1) {
-	PyErr_SetString(PyExc_TypeError,
-	    "'in <string>' requires character as left operand");
-	goto onError;
-    }
-    ch = *PyUnicode_AS_UNICODE(v);
-    p = PyUnicode_AS_UNICODE(u);
-    e = p + PyUnicode_GET_SIZE(u);
+    size = PyUnicode_GET_SIZE(v);
+    rhs = PyUnicode_AS_UNICODE(v);
+    lhs = PyUnicode_AS_UNICODE(u);
+
     result = 0;
-    while (p < e) {
-	if (*p++ == ch) {
-	    result = 1;
-	    break;
+    if (size == 1) {
+	end = lhs + PyUnicode_GET_SIZE(u);
+	while (lhs < end) {
+	    if (*lhs++ == *rhs) {
+		result = 1;
+		break;
+	    }
+	}
+    }
+    else {
+	end = lhs + (PyUnicode_GET_SIZE(u) - size);
+	while (lhs <= end) {
+	    if (memcmp(lhs++, rhs, size) == 0) {
+		result = 1;
+		break;
+	    }
 	}
     }
 

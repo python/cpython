@@ -432,15 +432,15 @@ This table lists the sequence operations sorted in ascending priority
 and \var{j} are integers:
 
 \begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
-  \lineiii{\var{x} in \var{s}}{\code{1} if an item of \var{s} is equal to \var{x}, else \code{0}}{}
+  \lineiii{\var{x} in \var{s}}{\code{1} if an item of \var{s} is equal to \var{x}, else \code{0}}{(1)}
   \lineiii{\var{x} not in \var{s}}{\code{0} if an item of \var{s} is
-equal to \var{x}, else \code{1}}{}
+equal to \var{x}, else \code{1}}{(1)}
   \hline
   \lineiii{\var{s} + \var{t}}{the concatenation of \var{s} and \var{t}}{}
-  \lineiii{\var{s} * \var{n}\textrm{,} \var{n} * \var{s}}{\var{n} shallow copies of \var{s} concatenated}{(1)}
+  \lineiii{\var{s} * \var{n}\textrm{,} \var{n} * \var{s}}{\var{n} shallow copies of \var{s} concatenated}{(2)}
   \hline
-  \lineiii{\var{s}[\var{i}]}{\var{i}'th item of \var{s}, origin 0}{(2)}
-  \lineiii{\var{s}[\var{i}:\var{j}]}{slice of \var{s} from \var{i} to \var{j}}{(2), (3)}
+  \lineiii{\var{s}[\var{i}]}{\var{i}'th item of \var{s}, origin 0}{(3)}
+  \lineiii{\var{s}[\var{i}:\var{j}]}{slice of \var{s} from \var{i} to \var{j}}{(3), (4)}
   \hline
   \lineiii{len(\var{s})}{length of \var{s}}{}
   \lineiii{min(\var{s})}{smallest item of \var{s}}{}
@@ -461,7 +461,12 @@ equal to \var{x}, else \code{1}}{}
 Notes:
 
 \begin{description}
-\item[(1)] Values of \var{n} less than \code{0} are treated as
+\item[(1)] When \var{s} is a string or Unicode string object the
+\code{in} and \code{not in} operations act like a substring test.  In
+Python versions before 2.3, \var{x} had to be a string of length 1.
+In Python 2.3 and beyond, \var{x} may be a string of any length.
+
+\item[(2)] Values of \var{n} less than \code{0} are treated as
   \code{0} (which yields an empty sequence of the same type as
   \var{s}).  Note also that the copies are shallow; nested structures
   are not copied.  This often haunts new Python programmers; consider:
@@ -489,12 +494,12 @@ Notes:
 [[3], [5], [7]]
 \end{verbatim}
 
-\item[(2)] If \var{i} or \var{j} is negative, the index is relative to
+\item[(3)] If \var{i} or \var{j} is negative, the index is relative to
   the end of the string: \code{len(\var{s}) + \var{i}} or
   \code{len(\var{s}) + \var{j}} is substituted.  But note that \code{-0} is
   still \code{0}.
 
-\item[(3)] The slice of \var{s} from \var{i} to \var{j} is defined as
+\item[(4)] The slice of \var{s} from \var{i} to \var{j} is defined as
   the sequence of items with index \var{k} such that \code{\var{i} <=
   \var{k} < \var{j}}.  If \var{i} or \var{j} is greater than
   \code{len(\var{s})}, use \code{len(\var{s})}.  If \var{i} is omitted,
