@@ -510,6 +510,9 @@ class TestDateOnly(unittest.TestCase):
         dt2 = dt - delta
         self.assertEqual(dt2, dt - days)
 
+class SubclassDate(date):
+    sub_var = 1
+
 class TestDate(HarmlessMixedComparison):
     # Tests here should pass for both dates and datetimes, except for a
     # few tests that TestDateTime overrides.
@@ -1029,6 +1032,15 @@ class TestDate(HarmlessMixedComparison):
         self.assertEqual(dt1.toordinal(), dt2.toordinal())
         self.assertEqual(dt2.newmeth(-7), dt1.year + dt1.month - 7)
 
+    def test_pickling_subclass_date(self):
+
+        args = 6, 7, 23
+        orig = SubclassDate(*args)
+        for pickler, unpickler, proto in pickle_choices:
+            green = pickler.dumps(orig, proto)
+            derived = unpickler.loads(green)
+            self.assertEqual(orig, derived)
+
     def test_backdoor_resistance(self):
         # For fast unpickling, the constructor accepts a pickle string.
         # This is a low-overhead backdoor.  A user can (by intent or
@@ -1052,6 +1064,9 @@ class TestDate(HarmlessMixedComparison):
 
 #############################################################################
 # datetime tests
+
+class SubclassDatetime(datetime):
+    sub_var = 1
 
 class TestDateTime(TestDate):
 
@@ -1296,6 +1311,14 @@ class TestDateTime(TestDate):
         self.assertEqual(b.month, 2)
         self.assertEqual(b.day, 7)
 
+    def test_pickling_subclass_datetime(self):
+        args = 6, 7, 23, 20, 59, 1, 64**2
+        orig = SubclassDatetime(*args)
+        for pickler, unpickler, proto in pickle_choices:
+            green = pickler.dumps(orig, proto)
+            derived = unpickler.loads(green)
+            self.assertEqual(orig, derived)
+
     def test_more_compare(self):
         # The test_compare() inherited from TestDate covers the error cases.
         # We just want to test lexicographic ordering on the members datetime
@@ -1500,6 +1523,9 @@ class TestDateTime(TestDate):
         self.assertEqual(dt2.newmeth(-7), dt1.year + dt1.month +
                                           dt1.second - 7)
 
+class SubclassTime(time):
+    sub_var = 1
+
 class TestTime(HarmlessMixedComparison):
 
     theclass = time
@@ -1695,6 +1721,14 @@ class TestTime(HarmlessMixedComparison):
     def test_pickling(self):
         args = 20, 59, 16, 64**2
         orig = self.theclass(*args)
+        for pickler, unpickler, proto in pickle_choices:
+            green = pickler.dumps(orig, proto)
+            derived = unpickler.loads(green)
+            self.assertEqual(orig, derived)
+
+    def test_pickling_subclass_time(self):
+        args = 20, 59, 16, 64**2
+        orig = SubclassTime(*args)
         for pickler, unpickler, proto in pickle_choices:
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
