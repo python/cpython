@@ -55,8 +55,11 @@ class Electrons:
 		try:
 			while 1:
 				self.random_move(self.n)
-		finally:
-			self.tk.destroy()
+		except TclError:
+			try:
+				self.tk.destroy()
+			except TclError:
+				pass
 
 
 # Main program
