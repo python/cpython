@@ -3553,9 +3553,10 @@ Traceback (most recent call last):
 __main__.MyError: 'oops!'
 \end{verbatim}
 
-In this example, the default \method{__init__} of \class{Exception} has
-been overriden.  The new behavior simply creates the \var{value} attribute.
-This replaces the default behavior of creating the \var{args} attribute.
+In this example, the default \method{__init__} of \class{Exception}
+has been overridden.  The new behavior simply creates the \var{value}
+attribute.  This replaces the default behavior of creating the
+\var{args} attribute.
 
 Exception classes can be defined which do anything any other class can
 do, but are usually kept simple, often only offering a number of
@@ -4636,7 +4637,7 @@ for sending mail:
 
 >>> import smtplib
 >>> server = smtplib.SMTP('localhost')
->>> server.sendmail('soothsayer@example.org', 'jceasar@example.org',
+>>> server.sendmail('soothsayer@example.org', 'jcaesar@example.org',
 """To: jcaesar@example.org
 From: soothsayer@example.org
 
