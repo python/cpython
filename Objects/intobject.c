@@ -1064,7 +1064,7 @@ _PyInt_Init(void)
 	int ival;
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
 	for (ival = -NSMALLNEGINTS; ival < NSMALLPOSINTS; ival++) {
-		if ((free_list = fill_free_list()) == NULL)
+              if (!free_list && (free_list = fill_free_list()) == NULL)
 			return 0;
 		/* PyObject_New is inlined */
 		v = free_list;
