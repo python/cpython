@@ -828,6 +828,8 @@ class PyBuildExt(build_ext):
                     extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_IBCarbon', ['ibcarbon/_IBCarbon.c'],
                     extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_Launch', ['launch/_Launchmodule.c'],
+                    extra_link_args=['-framework', 'ApplicationServices']) )
             exts.append( Extension('_List', ['list/_Listmodule.c'],
                     extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_Menu', ['menu/_Menumodule.c'],
