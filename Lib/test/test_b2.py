@@ -344,7 +344,17 @@ except:
 if not exc:
     raise TestFailed, 'zip(a, b) - missing expected TypeError'
 
+# Make sure zip doesn't try to allocate a billion elements for the
+# result list when one of its arguments doesn't say how long it is.
+# A MemoryError is the most likely failure mode.
+class SequenceWithoutALength:
+    def __getitem__(self, i):
+        if i == 5:
+            raise IndexError
+        else:
+            return i
+vereq(zip(SequenceWithoutALength(), xrange(2**30)),
+      list(enumerate(range(5))))
 
 # Epilogue -- unlink the temp file
-
 unlink(TESTFN)
