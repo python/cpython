@@ -102,7 +102,7 @@ class _RLock(_Verbose):
             self.__owner = me
             self.__count = 1
             if __debug__:
-                self._note("%s.acquire(%s): initial succes", self, blocking)
+                self._note("%s.acquire(%s): initial success", self, blocking)
         else:
             if __debug__:
                 self._note("%s.acquire(%s): failure", self, blocking)
