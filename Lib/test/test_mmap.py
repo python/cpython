@@ -205,7 +205,7 @@ def test_both():
             # we expect a ValueError on Unix, but not on Windows
             if not sys.platform.startswith('win'):
                 verify(0, "Opening mmap with size+1 should raise ValueError.")
-        m.close()
+            m.close()
         f.close()
         if sys.platform.startswith('win'):
             # Repair damage from the resizing test.
