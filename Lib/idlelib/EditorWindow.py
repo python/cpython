@@ -952,9 +952,11 @@ class EditorWindow:
         have = len(chars.expandtabs(tabwidth))
         assert have > 0
         want = ((have - 1) // self.indentwidth) * self.indentwidth
+        # Debug prompt is multilined....
+        last_line_of_prompt = sys.ps1.split('\n')[-1]
         ncharsdeleted = 0
         while 1:
-            if chars == sys.ps1:
+            if chars == last_line_of_prompt:
                 break
             chars = chars[:-1]
             ncharsdeleted = ncharsdeleted + 1
@@ -1011,19 +1013,18 @@ class EditorWindow:
                 text.mark_set("insert", first)
             line = text.get("insert linestart", "insert")
             i, n = 0, len(line)
-            if line == sys.ps1:
-                return "break"
             while i < n and line[i] in " \t":
                 i = i+1
             if i == n:
-                # the cursor is in or at leading indentation; just inject
-                # an empty line at the start
+                # the cursor is in or at leading indentation in a continuation
+                # line; just inject an empty line at the start
                 text.insert("insert linestart", '\n')
                 return "break"
             indent = line[:i]
-            # strip whitespace before insert point
+            # strip whitespace before insert point unless it's in the prompt
             i = 0
-            while line and line[-1] in " \t":
+            last_line_of_prompt = sys.ps1.split('\n')[-1]
+            while line and line[-1] in " \t" and line != last_line_of_prompt:
                 line = line[:-1]
                 i = i+1
             if i:
