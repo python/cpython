@@ -152,6 +152,11 @@ class Profile:
 			if hasattr(os, 'times'):
 				self.timer = os.times
 				self.dispatcher = self.trace_dispatch
+			elif os.name == 'mac':
+				import MacOS
+				self.timer = MacOS.GetTicks
+				self.dispatcher = self.trace_dispatch_mac
+				self.get_time = self.get_time_mac
 			else:
 				self.timer = time.time
 				self.dispatcher = self.trace_dispatch_i
@@ -175,6 +180,8 @@ class Profile:
 			t = reduce(lambda x,y: x+y, t, 0)
 		return t
 		
+	def get_time_mac(self):
+		return self.timer()/60.0
 
 	# Heavily optimized dispatch routine for os.times() timer
 
@@ -201,6 +208,16 @@ class Profile:
 			self.t = self.timer()
 		else:
 			self.t = self.timer() - t  # put back unrecorded delta
+		return
+	
+	# Dispatch routine for macintosh (timer returns time in ticks of 1/60th second)
+
+	def trace_dispatch_mac(self, frame, event, arg):
+		t = self.timer()/60.0 - self.t # - 1 # Integer calibration constant
+		if self.dispatch[event](frame,t):
+			self.t = self.timer()/60.0
+		else:
+			self.t = self.timer()/60.0 - t  # put back unrecorded delta
 		return
 
 
@@ -338,7 +355,7 @@ class Profile:
 			  print_stats()
 
 	def dump_stats(self, file):
-		f = open(file, 'w')
+		f = open(file, 'wb')
 		self.create_stats()
 		marshal.dump(self.stats, f)
 		f.close()
