@@ -3,8 +3,8 @@
 Modified from bdist_dumb by Mark W. Alexander <slash@dotnetslash.net>
 
 Implements the Distutils 'bdist_packager' abstract command
-to be subclassed by binary package creation commands."""
-
+to be subclassed by binary package creation commands.
+"""
 
 __revision__ = "$Id: bdist_packager.py,v 0.1 2001/04/4 mwa"
 
@@ -114,34 +114,33 @@ class bdist_packager (Command):
         return self.name + '-' + self.version + '-' + \
                self.revision + '-' + py_ver
 
-    def get_script (self,attr):
+    def get_script (self, attr):
         # accept a script as a string ("line\012line\012..."),
         # a filename, or a list
         # XXX We could probably get away with copy_file, but I'm
         # guessing this will be more flexible later on....
-        val = getattr(self,attr)
-        ret=None
-        if val:
-            try:
-                os.stat(val)
-                # script is a file
-                ret=[]
-                f=open(val)
-                ret=string.split(f.read(),"\012");
-                f.close()
-                #return ret
-            except:
-                if type(val)==type(""):
-                    # script is a string
-                    ret = string.split(val,"\012")
-                elif type(val)==type([]):
-                    # script is a list
-                    ret = val
-                else:
-                    raise RuntimeError, \
-                        "cannot figure out what to do with 'request' option (%s)" \
-                        % val
-            return ret
+        val = getattr(self, attr)
+        if val is None:
+            return None
+        try:
+            os.stat(val)
+            # script is a file
+            ret = []
+            f = open(val)
+            ret = string.split(f.read(), "\012");
+            f.close()
+        except:
+            if type(val) == type(""):
+                # script is a string
+                ret = string.split(val, "\012")
+            elif type(val) == type([]):
+                # script is a list
+                ret = val
+            else:
+                raise RuntimeError, \
+                    "cannot figure out what to do with 'request' option (%s)" \
+                    % val
+        return ret
 
 
     def initialize_options (self):
