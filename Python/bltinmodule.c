@@ -232,8 +232,10 @@ builtin_filter(self, args)
 					goto Fail_1;
 			}
 			else {
+				int status = PyList_Append(result, item);
 				j++;
-				if (PyList_Append(result, item) < 0)
+				Py_DECREF(item);
+				if (status < 0)
 					goto Fail_1;
 			}
 		} else {
@@ -901,9 +903,10 @@ builtin_map(self, args)
 				goto Fail_1;
 		}
 		if (i >= len) {
-			if (PyList_Append(result, value) < 0)
-				goto Fail_1;
+			int status = PyList_Append(result, value);
 			Py_DECREF(value);
+			if (status < 0)
+				goto Fail_1;
 		}
 		else {
 			if (PyList_SetItem(result, i, value) < 0)
