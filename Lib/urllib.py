@@ -968,7 +968,7 @@ def splituser(host):
     global _userprog
     if _userprog is None:
         import re
-        _userprog = re.compile('^([^@]*)@(.*)$')
+        _userprog = re.compile('^(.*)@(.*)$')
 
     match = _userprog.match(host)
     if match: return map(unquote, match.group(1, 2))
