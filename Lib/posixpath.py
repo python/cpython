@@ -1,4 +1,4 @@
-# Module 'path' -- common operations on POSIX pathnames
+# Module 'posixpath' -- common operations on POSIX pathnames
 
 import posix
 import stat
@@ -31,20 +31,24 @@ def join(a, b):
 	return a + '/' + b
 
 
-# Split a path in head (empty or ending in '/') and tail (no '/').
-# The tail will be empty if the path ends in '/'.
-# It is always true that head + tail == p; also join(head, tail) == p.
-# Note that because head ends in '/', if you want to find all components
-# of a path by repeatedly getting the head, you will have to strip off
-# the trailing '/' yourself (another function should be defined to
-# split an entire path into components.)
+# Split a path in head (everything up to the last '/') and tail (the
+# rest).  If the original path ends in '/' but is not the root, this
+# '/' is stripped.  After the trailing '/' is stripped, the invariant
+# join(head, tail) == p holds.
+# The resulting head won't end in '/' unless it is the root.
 
 def split(p):
+	if p[-1:] == '/' and p <> '/'*len(p):
+		while p[-1] == '/':
+			p = p[:-1]
 	head, tail = '', ''
 	for c in p:
 		tail = tail + c
 		if c == '/':
 			head, tail = head + tail, ''
+	if head[-1:] == '/' and head <> '/'*len(head):
+		while head[-1] == '/':
+			head = head[:-1]
 	return head, tail
 
 
@@ -119,7 +123,7 @@ def isdir(path):
 	return stat.S_ISDIR(st[stat.ST_MODE])
 
 
-# Is a path a regulat file?
+# Is a path a regular file?
 # This follows symbolic links, so both islink() and isdir() can be true
 # for the same path.
 
