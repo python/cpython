@@ -24,15 +24,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Signal module -- many thanks to Lance Ellinghouse */
 
-#include "allobjects.h"
-#include "modsupport.h"
-#include "ceval.h"
+#include "Python.h"
 #include "intrcheck.h"
 
 #include <signal.h>
 #include <errno.h>
-
-#include "rename1.h"
 
 #ifndef SIG_ERR
 #define SIG_ERR ((RETSIGTYPE (*)())-1)
@@ -102,6 +98,15 @@ PySignal_Handler(sig_num)
 		PySignal_IsTripped++;
 		PySignal_SignalHandlerArray[sig_num].tripped = 1;
 #ifdef WITH_THREAD
+	}
+#endif
+#ifdef SIGCHLD
+	if (sig_num == SIGCHLD) {
+		/* To avoid infinite recursion, this signal remains
+		   reset until explicit re-instated.
+		   Don't clear the 'func' field as it is our pointer
+		   to the Python handler... */
+		return;
 	}
 #endif
 	(void *)signal(sig_num, &PySignal_Handler);

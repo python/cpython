@@ -1,23 +1,8 @@
 /* termiosmodule.c -- POSIX terminal I/O module implementation.  */
 
-#if 0
-#include <Py/Python.h>
-#else
-
-#include "allobjects.h"
-#include "pythonrun.h"
-#include "intrcheck.h"
-#include "modsupport.h"
-#include "sysmodule.h"
-
-#ifndef PyObject
-#define PyObject object
-typedef struct methodlist PyMethodDef;
-#endif
+#include <Python.h>
 
 #define PyInit_termios inittermios
-
-#endif /* 0 */
 
 #include <termios.h>
 

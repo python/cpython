@@ -138,13 +138,9 @@ None              notimeout(int)    int=0 or int=1
 
 /* curses module */
 
-#include "allobjects.h"
-#include "fileobject.h"
-#include "modsupport.h"
+#include "Python.h"
 
 #include <curses.h>
-
-#include "rename1.h"
 
 typedef struct {
 	PyObject_HEAD

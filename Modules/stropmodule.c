@@ -206,10 +206,8 @@ strop_find(self, args)
 	if (getargs(args, "(s#s#i)", &s, &len, &sub, &n, &i)) {
 		if (i < 0)
 			i += len;
-		if (i < 0 || i+n > len) {
-			err_setstr(ValueError, "start offset out of range");
-			return NULL;
-		}
+		if (i < 0)
+			i = 0;
 	}
 	else {
 		err_clear();
@@ -242,10 +240,8 @@ strop_rfind(self, args)
 	if (getargs(args, "(s#s#i)", &s, &len, &sub, &n, &i)) {
 		if (i < 0)
 			i += len;
-		if (i < 0 || i+n > len) {
-			err_setstr(ValueError, "start offset out of range");
-			return NULL;
-		}
+		if (i < 0)
+			i = 0;
 	}
 	else {
 		err_clear();
