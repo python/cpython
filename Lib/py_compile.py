@@ -14,16 +14,22 @@ def wr_long(f, x):
 def compile(file, cfile = None):
 	import os, marshal, __builtin__
 	f = open(file)
+	try:
+	    timestamp = os.fstat(file.fileno())
+	except AttributeError:
+	    timestamp = long(os.stat(file)[8])
 	codestring = f.read()
 	f.close()
-	timestamp = long(os.stat(file)[8])
 	codeobject = __builtin__.compile(codestring, file, 'exec')
 	if not cfile:
 		cfile = file + (__debug__ and 'c' or 'o')
 	fc = open(cfile, 'wb')
-	fc.write(MAGIC)
+	fc.write('\0\0\0\0')
 	wr_long(fc, timestamp)
 	marshal.dump(codeobject, fc)
+	fc.flush()
+	fc.seek(0, 0)
+	fc.write(MAGIC)
 	fc.close()
 	if os.name == 'mac':
 		import macfs
