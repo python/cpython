@@ -369,7 +369,7 @@ load_dynamic_module(name, namebuf, m, m_ret)
                 if (p == NULL && verbose)
                         perror(funcname);
 	}
-#endif hpux
+#endif /* hpux */
 	if (p == NULL) {
 		err_setstr(ImportError,
 		   "dynamic module does not define init function");
