@@ -355,10 +355,10 @@ PyLong_FromLongLong(ival)
 	/* In case the compiler is faking it. */
 	return PyLong_FromLong( (long)ival );
 #else
-	if( ival <= (LONG_LONG)LONG_MAX ) {
+	if ((LONG_LONG)LONG_MIN <= ival && ival <= (LONG_LONG)LONG_MAX) {
 		return PyLong_FromLong( (long)ival );
 	}
-	else if( ival <= (unsigned LONG_LONG)ULONG_MAX ) {
+	else if (0 <= ival && ival <= (unsigned LONG_LONG)ULONG_MAX) {
 		return PyLong_FromUnsignedLong( (unsigned long)ival );
 	}
 	else {
