@@ -8,7 +8,7 @@ set the first day of the week (0=Monday, 6=Sunday)."""
 # Revision 2: uses functions from built-in time module
 
 # Import functions and variables from time module
-from time import localtime, mktime
+from time import localtime, mktime, strftime
 
 __all__ = ["error","setfirstweekday","firstweekday","isleap",
            "leapdays","weekday","monthrange","monthcalendar",
@@ -24,17 +24,19 @@ February = 2
 # Number of days per month (except for February in leap years)
 mdays = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
+class _localized_name:
+    def __init__(self, format):
+        self.format = format
+    def __getitem__(self, item):
+        return strftime(self.format, (item,)*9).capitalize()
+
 # Full and abbreviated names of weekdays
-day_name = ['Monday', 'Tuesday', 'Wednesday', 'Thursday',
-            'Friday', 'Saturday', 'Sunday']
-day_abbr = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+day_name = _localized_name('%A')
+day_abbr = _localized_name('%a')
 
 # Full and abbreviated names of months (1-based arrays!!!)
-month_name = ['', 'January', 'February', 'March', 'April',
-              'May', 'June', 'July', 'August',
-              'September', 'October',  'November', 'December']
-month_abbr = ['   ', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+month_name = _localized_name('%B')
+month_abbr = _localized_name('%b')
 
 # Constants for weekdays
 (MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY) = range(7)
