@@ -16,15 +16,14 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 /* Shorthands to return certain errors */
 
 static PyObject *
-type_error(msg)
-	char *msg;
+type_error(char *msg)
 {
 	PyErr_SetString(PyExc_TypeError, msg);
 	return NULL;
 }
 
 static PyObject *
-null_error()
+null_error(void)
 {
 	if (!PyErr_Occurred())
 		PyErr_SetString(PyExc_SystemError,
@@ -35,10 +34,7 @@ null_error()
 /* Operations on any object */
 
 int
-PyObject_Cmp(o1, o2, result)
-	PyObject *o1;
-	PyObject *o2;
-	int *result;
+PyObject_Cmp(PyObject *o1, PyObject *o2, int *result)
 {
 	int r;
 
@@ -54,8 +50,7 @@ PyObject_Cmp(o1, o2, result)
 }
 
 PyObject *
-PyObject_Type(o)
-	PyObject *o;
+PyObject_Type(PyObject *o)
 {
 	PyObject *v;
 
@@ -67,8 +62,7 @@ PyObject_Type(o)
 }
 
 int
-PyObject_Length(o)
-	PyObject *o;
+PyObject_Length(PyObject *o)
 {
 	PySequenceMethods *m;
 
@@ -85,9 +79,7 @@ PyObject_Length(o)
 }
 
 PyObject *
-PyObject_GetItem(o, key)
-	PyObject *o;
-	PyObject *key;
+PyObject_GetItem(PyObject *o, PyObject *key)
 {
 	PyMappingMethods *m;
 
@@ -114,10 +106,7 @@ PyObject_GetItem(o, key)
 }
 
 int
-PyObject_SetItem(o, key, value)
-	PyObject *o;
-	PyObject *key;
-	PyObject *value;
+PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
 {
 	PyMappingMethods *m;
 
@@ -147,9 +136,7 @@ PyObject_SetItem(o, key, value)
 }
 
 int
-PyObject_DelItem(o, key)
-	PyObject *o;
-	PyObject *key;
+PyObject_DelItem(PyObject *o, PyObject *key)
 {
 	PyMappingMethods *m;
 
@@ -289,8 +276,7 @@ int PyObject_AsWriteBuffer(PyObject *obj,
 /* Operations on numbers */
 
 int
-PyNumber_Check(o)
-	PyObject *o;
+PyNumber_Check(PyObject *o)
 {
 	return o && o->ob_type->tp_as_number;
 }
@@ -302,8 +288,7 @@ PyNumber_Check(o)
 		return PyInstance_DoBinOp(v, w, opname, ropname, thisfunc)
 
 PyObject *
-PyNumber_Or(v, w)
-	PyObject *v, *w;
+PyNumber_Or(PyObject *v, PyObject *w)
 {
         extern int PyNumber_Coerce();
 
@@ -324,8 +309,7 @@ PyNumber_Or(v, w)
 }
 
 PyObject *
-PyNumber_Xor(v, w)
-	PyObject *v, *w;
+PyNumber_Xor(PyObject *v, PyObject *w)
 {
         extern int PyNumber_Coerce();
 
@@ -346,8 +330,7 @@ PyNumber_Xor(v, w)
 }
 
 PyObject *
-PyNumber_And(v, w)
-	PyObject *v, *w;
+PyNumber_And(PyObject *v, PyObject *w)
 {
 	BINOP(v, w, "__and__", "__rand__", PyNumber_And);
 	if (v->ob_type->tp_as_number != NULL) {
@@ -366,8 +349,7 @@ PyNumber_And(v, w)
 }
 
 PyObject *
-PyNumber_Lshift(v, w)
-	PyObject *v, *w;
+PyNumber_Lshift(PyObject *v, PyObject *w)
 {
 	BINOP(v, w, "__lshift__", "__rlshift__", PyNumber_Lshift);
 	if (v->ob_type->tp_as_number != NULL) {
@@ -386,8 +368,7 @@ PyNumber_Lshift(v, w)
 }
 
 PyObject *
-PyNumber_Rshift(v, w)
-	PyObject *v, *w;
+PyNumber_Rshift(PyObject *v, PyObject *w)
 {
 	BINOP(v, w, "__rshift__", "__rrshift__", PyNumber_Rshift);
 	if (v->ob_type->tp_as_number != NULL) {
@@ -406,8 +387,7 @@ PyNumber_Rshift(v, w)
 }
 
 PyObject *
-PyNumber_Add(v, w)
-	PyObject *v, *w;
+PyNumber_Add(PyObject *v, PyObject *w)
 {
 	PySequenceMethods *m;
 
@@ -431,8 +411,7 @@ PyNumber_Add(v, w)
 }
 
 PyObject *
-PyNumber_Subtract(v, w)
-	PyObject *v, *w;
+PyNumber_Subtract(PyObject *v, PyObject *w)
 {
 	BINOP(v, w, "__sub__", "__rsub__", PyNumber_Subtract);
 	if (v->ob_type->tp_as_number != NULL) {
@@ -451,8 +430,7 @@ PyNumber_Subtract(v, w)
 }
 
 PyObject *
-PyNumber_Multiply(v, w)
-	PyObject *v, *w;
+PyNumber_Multiply(PyObject *v, PyObject *w)
 {
 	PyTypeObject *tp = v->ob_type;
 	PySequenceMethods *m;
@@ -509,8 +487,7 @@ PyNumber_Multiply(v, w)
 }
 
 PyObject *
-PyNumber_Divide(v, w)
-	PyObject *v, *w;
+PyNumber_Divide(PyObject *v, PyObject *w)
 {
 	BINOP(v, w, "__div__", "__rdiv__", PyNumber_Divide);
 	if (v->ob_type->tp_as_number != NULL) {
@@ -529,8 +506,7 @@ PyNumber_Divide(v, w)
 }
 
 PyObject *
-PyNumber_Remainder(v, w)
-	PyObject *v, *w;
+PyNumber_Remainder(PyObject *v, PyObject *w)
 {
 	if (PyString_Check(v))
 		return PyString_Format(v, w);
@@ -553,8 +529,7 @@ PyNumber_Remainder(v, w)
 }
 
 PyObject *
-PyNumber_Divmod(v, w)
-	PyObject *v, *w;
+PyNumber_Divmod(PyObject *v, PyObject *w)
 {
 	BINOP(v, w, "__divmod__", "__rdivmod__", PyNumber_Divmod);
 	if (v->ob_type->tp_as_number != NULL) {
@@ -575,8 +550,7 @@ PyNumber_Divmod(v, w)
 /* Power (binary or ternary) */
 
 static PyObject *
-do_pow(v, w)
-	PyObject *v, *w;
+do_pow(PyObject *v, PyObject *w)
 {
 	PyObject *res;
 	PyObject * (*f)(PyObject *, PyObject *, PyObject *);
@@ -599,8 +573,7 @@ do_pow(v, w)
 }
 
 PyObject *
-PyNumber_Power(v, w, z)
-	PyObject *v, *w, *z;
+PyNumber_Power(PyObject *v, PyObject *w, PyObject *z)
 {
 	PyObject *res;
 	PyObject *v1, *z1, *w2, *z2;
@@ -646,8 +619,7 @@ PyNumber_Power(v, w, z)
 /* Unary operators and functions */
 
 PyObject *
-PyNumber_Negative(o)
-	PyObject *o;
+PyNumber_Negative(PyObject *o)
 {
 	PyNumberMethods *m;
 
@@ -661,8 +633,7 @@ PyNumber_Negative(o)
 }
 
 PyObject *
-PyNumber_Positive(o)
-	PyObject *o;
+PyNumber_Positive(PyObject *o)
 {
 	PyNumberMethods *m;
 
@@ -676,8 +647,7 @@ PyNumber_Positive(o)
 }
 
 PyObject *
-PyNumber_Invert(o)
-	PyObject *o;
+PyNumber_Invert(PyObject *o)
 {
 	PyNumberMethods *m;
 
@@ -691,8 +661,7 @@ PyNumber_Invert(o)
 }
 
 PyObject *
-PyNumber_Absolute(o)
-	PyObject *o;
+PyNumber_Absolute(PyObject *o)
 {
 	PyNumberMethods *m;
 
@@ -707,9 +676,7 @@ PyNumber_Absolute(o)
 
 /* Add a check for embedded NULL-bytes in the argument. */
 static PyObject *
-int_from_string(s, len)
-	const char *s;
-	int len;
+int_from_string(const char *s, int len)
 {
 	char *end;
 	PyObject *x;
@@ -727,8 +694,7 @@ int_from_string(s, len)
 }
 
 PyObject *
-PyNumber_Int(o)
-	PyObject *o;
+PyNumber_Int(PyObject *o)
 {
 	PyNumberMethods *m;
 	const char *buffer;
@@ -758,9 +724,7 @@ PyNumber_Int(o)
 
 /* Add a check for embedded NULL-bytes in the argument. */
 static PyObject *
-long_from_string(s, len)
-	const char *s;
-	int len;
+long_from_string(const char *s, int len)
 {
 	char *end;
 	PyObject *x;
@@ -778,8 +742,7 @@ long_from_string(s, len)
 }
 
 PyObject *
-PyNumber_Long(o)
-	PyObject *o;
+PyNumber_Long(PyObject *o)
 {
 	PyNumberMethods *m;
 	const char *buffer;
@@ -813,8 +776,7 @@ PyNumber_Long(o)
 }
 
 PyObject *
-PyNumber_Float(o)
-	PyObject *o;
+PyNumber_Float(PyObject *o)
 {
 	PyNumberMethods *m;
 
@@ -835,15 +797,13 @@ PyNumber_Float(o)
 /* Operations on sequences */
 
 int
-PySequence_Check(s)
-	PyObject *s;
+PySequence_Check(PyObject *s)
 {
 	return s != NULL && s->ob_type->tp_as_sequence;
 }
 
 int
-PySequence_Length(s)
-	PyObject *s;
+PySequence_Length(PyObject *s)
 {
 	PySequenceMethods *m;
 
@@ -861,9 +821,7 @@ PySequence_Length(s)
 }
 
 PyObject *
-PySequence_Concat(s, o)
-	PyObject *s;
-	PyObject *o;
+PySequence_Concat(PyObject *s, PyObject *o)
 {
 	PySequenceMethods *m;
 
@@ -878,9 +836,7 @@ PySequence_Concat(s, o)
 }
 
 PyObject *
-PySequence_Repeat(o, count)
-	PyObject *o;
-	int count;
+PySequence_Repeat(PyObject *o, int count)
 {
 	PySequenceMethods *m;
 
@@ -895,9 +851,7 @@ PySequence_Repeat(o, count)
 }
 
 PyObject *
-PySequence_GetItem(s, i)
-	PyObject *s;
-	int i;
+PySequence_GetItem(PyObject *s, int i)
 {
 	PySequenceMethods *m;
 
@@ -921,10 +875,7 @@ PySequence_GetItem(s, i)
 }
 
 PyObject *
-PySequence_GetSlice(s, i1, i2)
-	PyObject *s;
-	int i1;
-	int i2;
+PySequence_GetSlice(PyObject *s, int i1, int i2)
 {
 	PySequenceMethods *m;
 
@@ -950,10 +901,7 @@ PySequence_GetSlice(s, i1, i2)
 }
 
 int
-PySequence_SetItem(s, i, o)
-	PyObject *s;
-	int i;
-	PyObject *o;
+PySequence_SetItem(PyObject *s, int i, PyObject *o)
 {
 	PySequenceMethods *m;
 
@@ -980,9 +928,7 @@ PySequence_SetItem(s, i, o)
 }
 
 int
-PySequence_DelItem(s, i)
-	PyObject *s;
-	int i;
+PySequence_DelItem(PyObject *s, int i)
 {
 	PySequenceMethods *m;
 
@@ -1009,11 +955,7 @@ PySequence_DelItem(s, i)
 }
 
 int
-PySequence_SetSlice(s, i1, i2, o)
-	PyObject *s;
-	int i1;
-	int i2;
-	PyObject *o;
+PySequence_SetSlice(PyObject *s, int i1, int i2, PyObject *o)
 {
 	PySequenceMethods *m;
 
@@ -1042,10 +984,7 @@ PySequence_SetSlice(s, i1, i2, o)
 }
 
 int
-PySequence_DelSlice(s, i1, i2)
-	PyObject *s;
-	int i1;
-	int i2;
+PySequence_DelSlice(PyObject *s, int i1, int i2)
 {
 	PySequenceMethods *m;
 
@@ -1074,8 +1013,7 @@ PySequence_DelSlice(s, i1, i2)
 }
 
 PyObject *
-PySequence_Tuple(v)
-	PyObject *v;
+PySequence_Tuple(PyObject *v)
 {
 	PySequenceMethods *m;
 
@@ -1135,8 +1073,7 @@ PySequence_Tuple(v)
 }
 
 PyObject *
-PySequence_List(v)
-	PyObject *v;
+PySequence_List(PyObject *v)
 {
 	PySequenceMethods *m;
 
@@ -1187,9 +1124,7 @@ PySequence_List(v)
 }
 
 PyObject *
-PySequence_Fast(v, m)
-	PyObject *v;
-	const char* m;
+PySequence_Fast(PyObject *v, const char *m)
 {
 	if (v == NULL)
 		return null_error();
@@ -1207,9 +1142,7 @@ PySequence_Fast(v, m)
 }
 
 int
-PySequence_Count(s, o)
-	PyObject *s;
-	PyObject *o;
+PySequence_Count(PyObject *s, PyObject *o)
 {
 	int l, i, n, cmp, err;
 	PyObject *item;
@@ -1239,9 +1172,7 @@ PySequence_Count(s, o)
 }
 
 int
-PySequence_Contains(w, v) /* v in w */
-	PyObject *w;
-	PyObject *v;
+PySequence_Contains(PyObject *w, PyObject *v) /* v in w */
 {
 	int i, cmp;
 	PyObject *x;
@@ -1285,17 +1216,13 @@ PySequence_Contains(w, v) /* v in w */
 /* Backwards compatibility */
 #undef PySequence_In
 int
-PySequence_In(w, v)
-	PyObject *w;
-	PyObject *v;
+PySequence_In(PyObject *w, PyObject *v)
 {
 	return PySequence_Contains(w, v);
 }
 
 int
-PySequence_Index(s, o)
-	PyObject *s;
-	PyObject *o;
+PySequence_Index(PyObject *s, PyObject *o)
 {
 	int l, i, cmp, err;
 	PyObject *item;
@@ -1328,15 +1255,13 @@ PySequence_Index(s, o)
 /* Operations on mappings */
 
 int
-PyMapping_Check(o)
-	PyObject *o;
+PyMapping_Check(PyObject *o)
 {
 	return o && o->ob_type->tp_as_mapping;
 }
 
 int
-PyMapping_Length(o)
-	PyObject *o;
+PyMapping_Length(PyObject *o)
 {
 	PyMappingMethods *m;
 
@@ -1354,9 +1279,7 @@ PyMapping_Length(o)
 }
 
 PyObject *
-PyMapping_GetItemString(o, key)
-	PyObject *o;
-	char *key;
+PyMapping_GetItemString(PyObject *o, char *key)
 {
 	PyObject *okey, *r;
 
@@ -1372,10 +1295,7 @@ PyMapping_GetItemString(o, key)
 }
 
 int
-PyMapping_SetItemString(o, key, value)
-	PyObject *o;
-	char *key;
-	PyObject *value;
+PyMapping_SetItemString(PyObject *o, char *key, PyObject *value)
 {
 	PyObject *okey;
 	int r;
@@ -1394,9 +1314,7 @@ PyMapping_SetItemString(o, key, value)
 }
 
 int
-PyMapping_HasKeyString(o, key)
-	PyObject *o;
-	char *key;
+PyMapping_HasKeyString(PyObject *o, char *key)
 {
 	PyObject *v;
 
@@ -1410,9 +1328,7 @@ PyMapping_HasKeyString(o, key)
 }
 
 int
-PyMapping_HasKey(o, key)
-	PyObject *o;
-	PyObject *key;
+PyMapping_HasKey(PyObject *o, PyObject *key)
 {
 	PyObject *v;
 
@@ -1430,8 +1346,7 @@ PyMapping_HasKey(o, key)
 /* XXX PyCallable_Check() is in object.c */
 
 PyObject *
-PyObject_CallObject(o, a)
-	PyObject *o, *a;
+PyObject_CallObject(PyObject *o, PyObject *a)
 {
 	PyObject *r;
 	PyObject *args = a;
