@@ -1426,7 +1426,7 @@ BZ2Comp_compress(BZ2CompObject *self, PyObject *args)
 	int datasize;
 	int bufsize = SMALLCHUNK;
 	long totalout;
-	PyObject *ret;
+	PyObject *ret = NULL;
 	bz_stream *bzs = &self->bzs;
 	int bzerror;
 
@@ -1495,7 +1495,7 @@ static PyObject *
 BZ2Comp_flush(BZ2CompObject *self)
 {
 	int bufsize = SMALLCHUNK;
-	PyObject *ret;
+	PyObject *ret = NULL;
 	bz_stream *bzs = &self->bzs;
 	int totalout;
 	int bzerror;
@@ -1905,7 +1905,7 @@ bz2_compress(PyObject *self, PyObject *args, PyObject *kwargs)
 	char *data;
 	int datasize;
 	int bufsize;
-	PyObject *ret;
+	PyObject *ret = NULL;
 	bz_stream _bzs;
 	bz_stream *bzs = &_bzs;
 	int bzerror;
