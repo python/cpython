@@ -27,7 +27,6 @@ __version__ = "$Revision$"       # Code version
 
 from types import *
 from copy_reg import dispatch_table, safe_constructors
-import string
 import marshal
 import sys
 import struct
@@ -41,6 +40,10 @@ mloads = marshal.loads
 class PickleError(Exception): pass
 class PicklingError(PickleError): pass
 class UnpicklingError(PickleError): pass
+
+class _Stop(Exception):
+    def __init__(self, value):
+        self.value = value
 
 try:
     from org.python.core import PyStringMap
@@ -514,8 +517,8 @@ class Unpickler:
             while 1:
                 key = read(1)
                 dispatch[key](self)
-        except STOP, value:
-            return value
+        except _Stop, stopinst:
+            return stopinst.value
 
     def marker(self):
         stack = self.stack
@@ -549,7 +552,7 @@ class Unpickler:
     dispatch[NONE] = load_none
 
     def load_int(self):
-        self.append(string.atoi(self.readline()[:-1]))
+        self.append(int(self.readline()[:-1]))
     dispatch[INT] = load_int
 
     def load_binint(self):
@@ -565,11 +568,11 @@ class Unpickler:
     dispatch[BININT2] = load_binint2
  
     def load_long(self):
-        self.append(string.atol(self.readline()[:-1], 0))
+        self.append(long(self.readline()[:-1], 0))
     dispatch[LONG] = load_long
 
     def load_float(self):
-        self.append(string.atof(self.readline()[:-1]))
+        self.append(float(self.readline()[:-1]))
     dispatch[FLOAT] = load_float
 
     def load_binfloat(self, unpack=struct.unpack):
@@ -872,7 +875,7 @@ class Unpickler:
     def load_stop(self):
         value = self.stack[-1]
         del self.stack[-1]
-        raise STOP, value
+        raise _Stop(value)
     dispatch[STOP] = load_stop
 
 # Helper class for load_inst/load_obj
