@@ -1,5 +1,31 @@
 Mon Jan  3 00:02:24 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
+	* configure.in: added AC_REVISION call to top
+
+	* Modules/flmodule.c (form_setattr): one NULL should be 0
+
+	* Include/myselect.h: this now implies mytime.h and attempts to
+	work around systems where sys/select.h and sys/time.h can't be
+	included together
+
+	* Modules/socketmodule.c, Doc/libsocket.tex: remove socket avail()
+	method -- you can use select instead
+
+	* Modules/Setup: disable dbm, it is not truly portable
+
+	* Lib/sunau.py: incorporate one-line fix by Sjoerd
+
+	* Include/pgenheaders.h: include <stdlib.h> if its symbol
+	defined, not just on the mac
+
+	* Include/grammar.h: remove redundant structure tags
+
+	* Include/cgensupport.h: avoid possible macro argument
+	substitution inside string literal
+
+	* configure.in, Include/config.h.in: add test whether sys/select.h
+	and sys/times.h can be included by the same program
+
 	* Include/config.h.in: add lines for HAVE_SYS_UN_H and
 	HAVE_GETPEERNAME
 
