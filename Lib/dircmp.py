@@ -2,9 +2,7 @@
 #
 # Defines a class to build directory diff tools on.
 
-import posix
-
-import path
+import os
 
 import dircache
 import cmpcache
@@ -18,8 +16,8 @@ class dircmp:
 	def new(dd, (a, b)): # Initialize
 		dd.a = a
 		dd.b = b
-		# Properties that caller may change before callingdd. run():
-		dd.hide = ['.', '..'] # Names never to be shown
+		# Properties that caller may change before calling dd.run():
+		dd.hide = [os.curdir, os.pardir] # Names never to be shown
 		dd.ignore = ['RCS', 'tags'] # Names ignored in comparison
 		#
 		return dd
@@ -53,18 +51,18 @@ class dircmp:
 		dd.common_funny = []
 		#
 		for x in dd.common:
-			a_path = path.join(dd.a, x)
-			b_path = path.join(dd.b, x)
+			a_path = os.path.join(dd.a, x)
+			b_path = os.path.join(dd.b, x)
 			#
 			ok = 1
 			try:
 				a_stat = statcache.stat(a_path)
-			except posix.error, why:
+			except os.error, why:
 				# print 'Can\'t stat', a_path, ':', why[1]
 				ok = 0
 			try:
 				b_stat = statcache.stat(b_path)
-			except posix.error, why:
+			except os.error, why:
 				# print 'Can\'t stat', b_path, ':', why[1]
 				ok = 0
 			#
@@ -92,8 +90,8 @@ class dircmp:
 		# The hide and ignore properties are inherited from the parent
 		dd.subdirs = {}
 		for x in dd.common_dirs:
-			a_x = path.join(dd.a, x)
-			b_x = path.join(dd.b, x)
+			a_x = os.path.join(dd.a, x)
+			b_x = os.path.join(dd.b, x)
 			dd.subdirs[x] = newdd = dircmp().new(a_x, b_x)
 			newdd.hide = dd.hide
 			newdd.ignore = dd.ignore
@@ -151,7 +149,7 @@ class dircmp:
 def cmpfiles(a, b, common):
 	res = ([], [], [])
 	for x in common:
-		res[cmp(path.join(a, x), path.join(b, x))].append(x)
+		res[cmp(os.path.join(a, x), os.path.join(b, x))].append(x)
 	return res
 
 
@@ -165,7 +163,7 @@ def cmp(a, b):
 	try:
 		if cmpcache.cmp(a, b): return 0
 		return 1
-	except posix.error:
+	except os.error:
 		return 2
 
 

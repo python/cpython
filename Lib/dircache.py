@@ -1,11 +1,10 @@
 # Module 'dircache'
 #
-# Return a sorted list of the files in a POSIX directory, using a cache
+# Return a sorted list of the files in a directory, using a cache
 # to avoid reading the directory more often than necessary.
 # Also contains a subroutine to append slashes to directories.
 
-import posix
-import path
+import os
 
 cache = {}
 
@@ -16,13 +15,13 @@ def listdir(path): # List directory contents, using cache
 	except KeyError:
 		cached_mtime, list = -1, []
 	try:
-		mtime = posix.stat(path)[8]
-	except posix.error:
+		mtime = os.stat(path)[8]
+	except os.error:
 		return []
 	if mtime <> cached_mtime:
 		try:
-			list = posix.listdir(path)
-		except posix.error:
+			list = os.listdir(path)
+		except os.error:
 			return []
 		list.sort()
 	cache[path] = mtime, list
@@ -32,5 +31,5 @@ opendir = listdir # XXX backward compatibility
 
 def annotate(head, list): # Add '/' suffixes to directories
 	for i in range(len(list)):
-		if path.isdir(path.join(head, list[i])):
+		if os.path.isdir(os.path.join(head, list[i])):
 			list[i] = list[i] + '/'
