@@ -205,6 +205,8 @@ class UnixCCompiler(CCompiler):
             return "-L" + dir
         elif sys.platform[:5] == "hp-ux":
             return "+s -L" + dir
+        elif sys.platform[:7] == "irix646" or sys.platform[:6] == "osf1V5":
+            return ["-rpath", dir]
         elif compiler[:3] == "gcc" or compiler[:3] == "g++":
             return "-Wl,-R" + dir
         else:
