@@ -351,7 +351,7 @@ binascii_a2b_base64(self, args)
 		if ( this_ch == BASE64_PAD )
 			npad++;
 		this_ch = table_a2b_base64[(*ascii_data) & 0x7f];
-		if ( this_ch == -1 ) continue;
+		if ( this_ch == (unsigned char) -1 ) continue;
 		/*
 		** Shift it in on the low end, and see if there's
 		** a byte ready for output.
