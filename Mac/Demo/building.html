@@ -483,6 +483,12 @@ how to obtain the passwords. <p>
 You should end up with a folder structure as described at the top of this
 document. <p>
 
+Note that while the Mac folder is now a subfolder of your toplevel Python
+folder this does not mean that they "act as one" as far as CVS is concerned.
+To update all your sources you have to do a "cvs update" in the toplevel
+Python folder and another one in the Mac folder. This is again a cvs problem:
+it cannot deal with subpackages coming from different repositories. <p>
+
 <H2>Odds and ends</H2>
 
 Some remarks that I could not fit in elsewhere:
