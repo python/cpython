@@ -40,10 +40,14 @@ int     optind = 1;             /* index into argv array   */
 char *  optarg = NULL;          /* optional argument       */
 
 
+#ifndef __BEOS__
 int getopt(argc,argv,optstring)
 int argc; 
 char *argv[]; 
 char optstring[];
+#else
+int getopt( int argc, char *const *argv, const char *optstring )
+#endif
 {
 	static   char *opt_ptr = "";
 	register char *ptr;
