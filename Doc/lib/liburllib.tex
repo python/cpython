@@ -140,6 +140,30 @@ must in standard \mimetype{application/x-www-form-urlencoded} format;
 see the \function{urlencode()} function below.
 \end{funcdesc}
 
+\begin{datadesc}{_urlopener}
+The public functions \function{urlopen()} and
+\function{urlretrieve()} create an instance of the
+\class{FancyURLopener} class and use it to perform their requested
+actions.  To override this functionality, programmers can create a
+subclass of \class{URLopener} or \class{FancyURLopener}, then assign
+that an instance of that class to the
+\code{urllib._urlopener} variable before calling the desired function.
+For example, applications may want to specify a different
+\mailheader{User-Agent} header than \class{URLopener} defines.  This
+can be accomplished with the following code:
+
+\begin{verbatim}
+import urllib
+
+class AppURLopener(urllib.FancyURLopener):
+    def __init__(self, *args):
+        self.version = "App/1.7"
+        urllib.FancyURLopener.__init__(self, *args)
+
+urllib._urlopener = AppURLopener()
+\end{verbatim}
+\end{datadesc}
+
 \begin{funcdesc}{urlcleanup}{}
 Clear the cache that may have been built up by previous calls to
 \function{urlretrieve()}.
@@ -188,25 +212,18 @@ order of parameters in the encoded string will match the order of parameter
 tuples in the sequence.
 \end{funcdesc}
 
-The public functions \function{urlopen()} and
-\function{urlretrieve()} create an instance of the
-\class{FancyURLopener} class and use it to perform their requested
-actions.  To override this functionality, programmers can create a
-subclass of \class{URLopener} or \class{FancyURLopener}, then assign
-that an instance of that class to the
-\code{urllib._urlopener} variable before calling the desired function.
-For example, applications may want to specify a different
-\mailheader{User-Agent} header than \class{URLopener} defines.  This
-can be accomplished with the following code:
+\begin{funcdesc}{pathname2url}{path}
+Convert the pathname \var{path} from the local syntax for a path to
+the form used in the path component of a URL.  This does not produce a
+complete URL.  The return value will already be quoted using the
+\function{quote()} function.
+\end{funcdesc}
 
-\begin{verbatim}
-class AppURLopener(urllib.FancyURLopener):
-    def __init__(self, *args):
-        self.version = "App/1.7"
-        urllib.FancyURLopener.__init__(self, *args)
-
-urllib._urlopener = AppURLopener()
-\end{verbatim}
+\begin{funcdesc}{url2pathname}{path}
+Convert the path component \var{path} from an encoded URL to the local
+syntax for a path.  This does not accept a complete URL.  This
+function uses \function{unquote()} to decode \var{path}.
+\end{funcdesc}
 
 \begin{classdesc}{URLopener}{\optional{proxies\optional{, **x509}}}
 Base class for opening and reading URLs.  Unless you need to support
