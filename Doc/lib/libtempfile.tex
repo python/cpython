@@ -59,8 +59,11 @@ The \var{dir}, \var{prefix} and \var{suffix} parameters are passed to
 				     \optional{, dir}}
 This function operates exactly as \function{TemporaryFile} does,
 except that the file is guaranteed to have a visible name in the file
-system.  That name can be retrieved from the \member{name} member of
-the file object.
+system (on \UNIX, the directory entry is not unlinked).  That name can
+be retrieved from the \member{name} member of the file object.  Whether
+the name can be used to open the file a second time, while the
+named temporary file is still open, varies across platforms (it can
+be so used on \UNIX; it cannot on Windows NT or later).
 \versionadded{2.3}
 \end{funcdesc}
 
