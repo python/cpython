@@ -150,6 +150,11 @@ those symbols that are defined in the \UNIX{} header files are defined;
 for a few symbols, default values are provided.
 \end{datadesc}
 
+\begin{datadesc}{has_ipv6}
+This constant contains a boolean value which indicates if IPv6 is
+supported on this platform.
+\end{datadesc}
+
 \begin{funcdesc}{getaddrinfo}{host, port\optional{, family, socktype, proto, flags}}
 
 Resolves the \var{host}/\var{port} argument, into a sequence of
@@ -347,6 +352,43 @@ length, \exception{socket.error} will be raised.
 \function{inet_ntoa()} does not support IPv6, and
 \function{getnameinfo()} should be used instead for IPv4/v6 dual stack
 support.
+\end{funcdesc}
+
+\begin{funcdesc}{inet_pton}{address_family, ip_string}
+Convert an IP address from its family-specific string format to a packed,
+binary format.
+
+Supported values for address_family are currently \constant{AF_INET}
+and \constant{AF_INET6}. 
+
+\function{inet_pton()} is useful when a library or network protocol calls for
+an object of type \ctype{struct in_addr} (similar to \function{inet_aton()})
+or \ctype{struct in6_addr}.
+
+If the IP address string passed to this function is invalid,
+\exception{socket.error} will be raised. Note that exactly what is valid
+depends on both the value of \var{address_family} and the underlying
+implementation of \cfunction{inet_pton()}.
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{inet_ntop}{address_family, packed_ip}
+Convert a packed IP address (a string of some number of characters) to its
+standard, family-specific string representation (for example, '7.10.0.5' or
+'5aef:2b::8')
+
+Supported values for address_family are currently \constant{AF_INET}
+and \constant{AF_INET6}. 
+
+\function{inet_pton()} is useful when a library or network protocol calls for
+an object of type \ctype{struct in_addr} (similar to \function{inet_aton()})
+or \ctype{struct in6_addr}.
+
+If the string passed to this function is not the correct length for the
+specified address family, \exception{ValueError} will be raised.
+A \exception{socket.error} is raised for errors from the call to
+\function{inet_ntop()}.
+\versionadded{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{getdefaulttimeout}{}
