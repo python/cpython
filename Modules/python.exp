@@ -42,8 +42,6 @@ PyCallable_Check
 PyClass_IsSubclass
 PyClass_New
 PyClass_Type
-PyCObject_FromVoidPtr
-PyCObject_AsVoidPtr
 PyCode_New
 PyCode_Type
 PyComplex_AsCComplex
@@ -89,7 +87,6 @@ PyEval_GetBuiltins
 PyEval_GetFrame
 PyEval_GetGlobals
 PyEval_GetLocals
-PyEval_GetOwner
 PyEval_GetRestricted
 PyEval_RestoreThread
 PyEval_SaveThread
@@ -127,7 +124,6 @@ PyFloat_FromDouble
 PyFloat_Type
 PyFrame_BlockPop
 PyFrame_BlockSetup
-PyFrame_ExtendStack
 PyFrame_FastToLocals
 PyFrame_LocalsToFast
 PyFrame_New
@@ -307,10 +303,8 @@ PyTokenizer_Free
 PyTokenizer_FromFile
 PyTokenizer_FromString
 PyTokenizer_Get
-PyTraceBack_Fetch
 PyTraceBack_Here
 PyTraceBack_Print
-PyTraceBack_Store
 PyTraceBack_Type
 PyTuple_GetItem
 PyTuple_GetSlice
@@ -342,7 +336,6 @@ Py_GetVersion
 Py_InitModule4
 Py_Initialize
 Py_MakePendingCalls
-Py_ReturnNullError
 Py_SuppressPrintingFlag
 Py_VaBuildValue
 Py_VerboseFlag
@@ -355,9 +348,6 @@ _PyObject_NewVar
 _PyParser_Grammar
 _PyParser_TokenNames
 _PyString_Resize
-_PySys_CheckInterval
-_PySys_ProfileFunc
-_PySys_TraceFunc
 _PyTuple_Resize
 _Py_EllipsisObject
 _Py_MD5Final
@@ -390,9 +380,7 @@ _Py_printnonterminals
 _Py_re_compile_fastmap
 _Py_re_compile_pattern
 _Py_re_match
-_Py_re_match_2
 _Py_re_search
-_Py_re_search_2
 _Py_re_set_syntax
 _Py_re_syntax
 _Py_samebitset
