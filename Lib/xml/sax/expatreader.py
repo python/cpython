@@ -196,7 +196,6 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 
         try:
             xmlreader.IncrementalParser.parse(self, source)
-            self._parser.Parse("",1)
         except:
             return 0  # FIXME: save error info here?
 
