@@ -757,34 +757,31 @@ TAGS::
 # files, which clobber removes those as well
 
 clean:
-	-rm -f core *~ [@,#]* *.old *.orig *.rej
-	-rm -rf build
 	# avoid long command lines, same as LIBRARY_OBJS MAINOBJ PGOBJS
 	-rm -f $(PARSER_OBJS)
 	-rm -f $(OBJECT_OBJS)
 	-rm -f $(PYTHON_OBJS)
-	-rm -f $(MODULE_OBJS) $(SIGNAL_OBJS)
+	-rm -f $(MODULE_OBJS) $(SIGNAL_OBJS) Modules/getbuildinfo.o
 	-rm -f $(MODOBJS) $(MAINOBJ) $(PGOBJS)
+	if test -f build; then find build -name '*.o' -exec rm -f {} ';' ; fi
+	find $(srcdir) -name '*.py[co]' -exec rm -f {} ';'
 
 clobber: clean
 	-rm -f tags TAGS $(PYTHON) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
-		Modules/*.so Modules/*.sl
+		Modules/*.so Modules/*.sl Parser/pgen
+	-rm -rf build
 
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]
 distclean: clobber
-	-rm -f Makefile Makefile.pre buildno config.status config.log \
-		config.cache config.h setup.cfg Modules/config.c \
+	-rm -f core Makefile Makefile.pre buildno config.status \
+		config.log config.cache config.h Modules/config.c \
 		Modules/Setup Modules/Setup.local Modules/Setup.config
-	-for i in $(SUBDIRSTOO); do \
-		 for f in $$i/*.in; do \
-			f=`basename "$$f" .in`; \
-			if test "$$f" != "*"; then \
-				echo rm -f "$$i/$$f"; \
-				rm -f "$$i/$$f"; \
-			fi; \
-		 done; \
-	done
+	find $(srcdir) '(' -name '*.fdc' -o -name '*~' \
+			   -o -name '[@,#]*' -o -name '*.old' \
+			   -o -name '*.orig' -o -name '*.rej' \
+			   -o -name '*.bak' ')' \
+			   -exec rm -f {} ';'
 
 # Check for smelly exported symbols (not starting with Py/_Py)
 smelly: all
