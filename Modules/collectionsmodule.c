@@ -15,7 +15,8 @@ typedef struct BLOCK {
 	PyObject *data[BLOCKLEN];
 } block;
 
-static block *newblock(block *leftlink, block *rightlink) {
+static block *
+newblock(block *leftlink, block *rightlink) {
 	block *b = PyMem_Malloc(sizeof(block));
 	if (b == NULL) {
 		PyErr_NoMemory();
