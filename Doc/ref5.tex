@@ -604,10 +604,11 @@ object.  $x ~\verb\is not\~ y$ yields the inverse truth value.
 Boolean operations have the lowest priority of all Python operations:
 
 \begin{verbatim}
-condition:      or_test
+condition:      or_test | lambda_form
 or_test:        and_test | or_test "or" and_test
 and_test:       not_test | and_test "and" not_test
 not_test:       comparison | "not" not_test
+lambda_form:	"lambda" [parameter_list]: condition
 \end{verbatim}
 
 In the context of Boolean operations, and also when conditions are
@@ -637,6 +638,19 @@ replaced by a default value if it is empty, the expression
 invent a value anyway, it does not bother to return a value of the
 same type as its argument, so e.g. \verb\not 'foo'\ yields \verb\0\,
 not \verb\''\.)
+
+Lambda forms (lambda expressions) have the same syntactic position as
+conditions.  They are a shorthand to create anonymous functions; the
+expression \verb\lambda\ {\em arguments}\verb\:\ {\em condition}
+yields a function object that behaves virtually identical to one
+defined with \verb\def\ {\em name}\verb\(\{\em arguments}\verb\) :
+return\ {\em condition}.  See section \ref{function} for the syntax of
+parameter lists.  Note that functions created with lambda forms cannot
+contain statements.
+\label{lambda}
+\indexii{lambda}{expression}
+\indexii{lambda}{form}
+\indexii{anonmymous}{function}
 
 \section{Expression lists and condition lists}
 \indexii{expression}{list}
