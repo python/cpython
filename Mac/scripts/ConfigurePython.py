@@ -18,6 +18,9 @@ SPLASH_REMOVE=513
 SPLASH_CFM68K=514
 SPLASH_PPC=515
 SPLASH_NUMPY=516
+ALERT_NONBOOT=517
+ALERT_NONBOOT_COPY=1
+ALERT_NONBOOT_ALIAS=2
 
 ppc_goals = [
 ## 	("AE.ppc.slb", "toolboxmodules.ppc.slb"),
@@ -134,7 +137,19 @@ def mkcorealias(src, altsrc):
 		os.unlink(dst)
 	except os.error:
 		pass
-	macostools.mkalias(os.path.join(sys.exec_prefix, src), dst)
+	do_copy = 0
+	if macfs.FSSpec(sys.exec_prefix).as_tuple()[0] != -1: # XXXX
+		try:
+			import Dlg
+			rv = Dlg.CautionAlert(ALERT_NONBOOT, None)
+			if rv == ALERT_NONBOOT_COPY:
+				do_copy = 1
+		except ImportError:
+			pass
+	if do_copy:
+		macostools.copy(os.path.join(sys.exec_prefix, src), dst)
+	else:
+		macostools.mkalias(os.path.join(sys.exec_prefix, src), dst)
 	if verbose:  print ' ', dst, '->', src
 	return 1
 	
