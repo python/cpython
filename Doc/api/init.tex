@@ -682,7 +682,7 @@ interpreter lock has been created.
   If this function returns \NULL, no exception has been raised and the
   caller should assume no current thread state is available.
   \versionchanged[Previously this could only be called when a current
-  thread is active, and \NULL meant that an exception was raised]{2.3}
+  thread is active, and \NULL{} meant that an exception was raised]{2.3}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyThreadState_SetAsyncExc}{long id, PyObject *exc}
