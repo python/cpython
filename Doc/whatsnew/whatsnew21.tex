@@ -626,12 +626,13 @@ Python packages to a central server.
 
 \begin{itemize}
 
-\item Ka-Ping Yee contributed two new modules: \module{inspect.py}, a module for
-getting information about live Python code, and \module{pydoc.py}, a
-module for interactively converting docstrings to HTML or text.
-As a bonus, \file{Tools/scripts/pydoc}, which is now automatically
-installed, uses \module{pydoc.py} to display documentation given a Python module, package, or class name.  For example,
-\samp{pydoc xml.dom} displays the following:
+\item Ka-Ping Yee contributed two new modules: \module{inspect.py}, a
+module for getting information about live Python code, and
+\module{pydoc.py}, a module for interactively converting docstrings to
+HTML or text.  As a bonus, \file{Tools/scripts/pydoc}, which is now
+automatically installed, uses \module{pydoc.py} to display
+documentation given a Python module, package, or class name.  For
+example, \samp{pydoc xml.dom} displays the following:
 
 \begin{verbatim}
 Python Library Documentation: package xml.dom in xml
@@ -650,6 +651,7 @@ DESCRIPTION
       ...
 \end{verbatim}
 
+\file{pydoc} also includes a Tk-based interactive help browser.  
 \file{pydoc} quickly becomes addictive; try it out!
 
 \item Two different modules for unit testing were added to the
@@ -718,6 +720,11 @@ unsuitable for your application or network setup, call
 
 \item Support for raw socket access has been added to the
 \module{socket} module, contributed by Grant Edwards.
+
+\item The \module{pstats} module now contains a simple interactive
+statistics browser for displaying timing profiles for Python programs,
+invoked when the module is run as a script.  Contributed by 
+Eric S.\ Raymond.
 
 \item A new implementation-dependent function, \function{sys._getframe(\optional{depth})},
 has been added to return a given frame object from the current call stack.
