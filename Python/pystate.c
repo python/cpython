@@ -52,7 +52,8 @@ PyInterpreterState_New()
 
 
 void
-PyInterpreterState_Delete(PyInterpreterState *interp)
+PyInterpreterState_Delete(interp)
+	PyInterpreterState *interp;
 {
 	Py_XDECREF(interp->import_modules);
 	Py_XDECREF(interp->sysdict);
@@ -62,7 +63,8 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 
 
 PyThreadState *
-PyThreadState_New(PyInterpreterState *interp)
+PyThreadState_New(interp)
+	PyInterpreterState *interp;
 {
 	PyThreadState *tstate = PyMem_NEW(PyThreadState, 1);
 	/* fprintf(stderr, "new tstate -> %p\n", tstate); */
@@ -93,7 +95,8 @@ PyThreadState_New(PyInterpreterState *interp)
 
 
 void
-PyThreadState_Delete(PyThreadState *tstate)
+PyThreadState_Delete(tstate)
+	PyThreadState *tstate;
 {
 	/* fprintf(stderr, "delete tstate %p\n", tstate); */
 	if (tstate == current_tstate)
@@ -126,7 +129,8 @@ PyThreadState_Get()
 
 
 PyThreadState *
-PyThreadState_Swap(PyThreadState *new)
+PyThreadState_Swap(new)
+	PyThreadState *new;
 {
 	PyThreadState *old = current_tstate;
 	/* fprintf(stderr, "swap tstate new=%p <--> old=%p\n", new, old); */
