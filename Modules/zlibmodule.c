@@ -508,7 +508,8 @@ PyZlib_objdecompress(self, args)
       int pos = self->zst.next_in - input;  /* Position in the string */
       Py_XDECREF(self->unused_data);  /* Free the original, empty string */
 
-      self->unused_data = PyString_FromStringAndSize(input+pos, inplen-pos);
+      self->unused_data = PyString_FromStringAndSize((char *)input+pos,
+						     inplen-pos);
       if (self->unused_data == NULL) return NULL;
   }
 
