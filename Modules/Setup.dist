@@ -98,6 +98,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 posix posixmodule.c		# posix (UNIX) system calls
 _sre _sre.c			# Fredrik Lundh's new regular expressions
+new newmodule.c			# Tommy Burnette's 'new' module
 
 # The rest of the modules listed in this file are all commented out by
 # default.  Usually they can be detected and built as dynamically
@@ -345,11 +346,6 @@ GLHACK=-Dclear=__GLclear
 #_curses _cursesmodule.c -lcurses -ltermcap
 # Wrapper for the panel library that's part of ncurses and SYSV curses.
 #_curses_panel _curses_panel.c -lpanel -lncurses 
-
-
-# Tommy Burnette's 'new' module (creates new empty objects of certain kinds):
-
-#new newmodule.c
 
 
 # Generic (SunOS / SVR4) dynamic loading module.
