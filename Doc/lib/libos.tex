@@ -1014,7 +1014,7 @@ functions are described in section \ref{os-newstreams}.
 \funcline{spawnvpe}{mode, file, args, env}
 Execute the program \var{path} in a new process.  If \var{mode} is
 \constant{P_NOWAIT}, this function returns the process ID of the new
-process; it \var{mode} is \constant{P_WAIT}, returns the process's
+process; if \var{mode} is \constant{P_WAIT}, returns the process's
 exit code if it exits normally, or \code{-\var{signal}}, where
 \var{signal} is the signal that killed the process.
 
