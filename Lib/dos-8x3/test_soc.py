@@ -20,7 +20,8 @@ def missing_ok(str):
     except AttributeError:
 	pass
 
-print socket.error
+try: raise socket.error
+except socket.error: print "socket.error"
 
 socket.AF_INET
 

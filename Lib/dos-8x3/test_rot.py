@@ -9,7 +9,7 @@ B = 'cheese shop'
 a = r.encrypt(A)
 print `a`
 b = r.encryptmore(B)
-print b
+print `b`
 
 A1 = r.decrypt(a)
 print A1
