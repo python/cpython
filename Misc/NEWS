@@ -473,7 +473,7 @@ garbage collection.  There's also an option to the configure script
 that lets you enable or disable the garbage collection.  In 2.0b1,
 it's on by default, so that we (hopefully) can collect decent user
 experience with this new feature.  There are some questions about its
-performance.  if it proves to be too much of a problem, we'll turn it
+performance.  If it proves to be too much of a problem, we'll turn it
 off by default in the final 2.0 release.
 
 
