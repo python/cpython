@@ -4,6 +4,9 @@ Release date: dd-mmm-2002
 
 Core and builtins
 
+- Classes using __slots__ are now properly garbage collected.
+  [SF bug 519621]
+
 - Repaired a slow memory leak possible only in programs creating a
   great many cyclic structures involving frames.  Reported on
   SourceForge as bug 543148.

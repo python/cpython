@@ -1093,6 +1093,18 @@ def slots():
     del x
     vereq(Counted.counter, 0)
 
+    # Test cyclical leaks [SF bug 519621]
+    class F(object):
+        __slots__ = ['a', 'b']
+    log = []
+    s = F()
+    s.a = [Counted(), s]
+    vereq(Counted.counter, 1)
+    s = None
+    import gc
+    gc.collect()
+    vereq(Counted.counter, 0)
+
 def dynamics():
     if verbose: print "Testing class attribute propagation..."
     class D(object):
