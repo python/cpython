@@ -42,10 +42,10 @@ class ConfigDialog(Toplevel):
         #value a dictionary, whose key:value pairs are item=value pairs for
         #that config file section.
         self.changedItems={'main':{},'highlight':{},'keys':{},'extensions':{}}
-        #defaultItems. This dictionary is loaded with the values from the
-        #default config files. It is used for comparison with self.changedItems
-        #to decide which changed items actually need saving.
-        self.defaultItems=self.GetDefaultItems()
+#         #defaultItems. This dictionary is loaded with the values from the
+#         #default config files. It is used for comparison with self.changedItems
+#         #to decide which changed items actually need saving.
+#         self.defaultItems=self.GetDefaultItems()
         self.CreateWidgets()
         self.resizable(height=FALSE,width=FALSE)
         self.transient(parent)
@@ -472,6 +472,7 @@ class ConfigDialog(Toplevel):
         self.AddChangedItem('extensions',extension,'enabled',value)
 
     def AddChangedItem(self,type,section,item,value):
+        value=str(value) #make sure we use a string
         if not self.changedItems[type].has_key(section):
             self.changedItems[type][section]={}    
         self.changedItems[type][section][item]=value
@@ -522,6 +523,8 @@ class ConfigDialog(Toplevel):
                 message=('Your changes will be saved as a new Custom Key Set. '+
                         'Enter a name for your new Custom Key Set below.')
                 usedNames=idleConf.GetSectionList('user','keys')
+                for newName in self.changedItems['keys'].keys():
+                    if newName not in usedNames: usedNames.append(newName)
                 newKeySet=GetCfgSectionNameDialog(self,'New Custom Key Set',
                         message,usedNames)
                 if not newKeySet.result: #user cancelled custom key set creation
@@ -557,7 +560,8 @@ class ConfigDialog(Toplevel):
                     prevKeySet[event])
         #change gui over to the new key set
         customKeyList=idleConf.GetSectionList('user','keys')
-        customKeyList.append(newKeySetName)
+        for newName in self.changedItems['keys'].keys():
+            if newName not in customKeyList: customKeyList.append(newName)
         customKeyList.sort()
         print newKeySetName,customKeyList,self.changedItems['keys'][newKeySetName]
         self.optMenuKeysCustom.SetMenu(customKeyList,newKeySetName)
@@ -574,6 +578,8 @@ class ConfigDialog(Toplevel):
                 message=('Your changes will be saved as a new Custom Theme. '+
                         'Enter a name for your new Custom Theme below.')
                 usedNames=idleConf.GetSectionList('user','highlight')
+                for newName in self.changedItems['highlight'].keys():
+                    if newName not in usedNames: usedNames.append(newName)
                 newTheme=GetCfgSectionNameDialog(self,'New Custom Theme',
                         message,usedNames)
                 if not newTheme.result: #user cancelled custom theme creation
@@ -601,7 +607,8 @@ class ConfigDialog(Toplevel):
         self.changedItems['highlight'][newThemeName]=newTheme    
         #change gui over to the new theme
         customThemeList=idleConf.GetSectionList('user','highlight')
-        customThemeList.append(newThemeName)
+        for newName in self.changedItems['highlight'].keys():
+            if newName not in customThemeList: customThemeList.append(newName)
         customThemeList.sort()
         print newThemeName,customThemeList,newTheme
         self.optMenuThemeCustom.SetMenu(customThemeList,newThemeName)
@@ -805,21 +812,30 @@ class ConfigDialog(Toplevel):
         ### general page
         self.LoadGeneralCfg()
         
+    def SetUserValue(self,configType,section,item,value):
+        print idleConf.defaultCfg[configType].Get(section,item),value
+        if idleConf.defaultCfg[configType].has_option(section,item):
+            if idleConf.defaultCfg[configType].Get(section,item)==value:
+                #the setting equals a default setting, remove it from user cfg
+                return idleConf.userCfg[configType].RemoveOption(section,item)
+        #if we got here set the option
+        return idleConf.userCfg[configType].SetOption(section,item,value)
+            
     def SaveConfigs(self):
         """
         save configuration changes to user config files.
         """
-        #DEBUG
-        print self.defaultItems
-        print self.changedItems
         for configType in self.changedItems.keys():
+            cfgTypeHasChanges=0
             for section in self.changedItems[configType].keys():
                 for item in self.changedItems[configType][section].keys():
-                    #DEBUG
                     value=self.changedItems[configType][section][item]
-                    print configType, section, item, value 
-                    print self.changedItems
-                    
+                    print configType,section,item,value
+                    if self.SetUserValue(configType,section,item,value):
+                        cfgTypeHasChanges=1
+            if cfgTypeHasChanges: 
+                idleConf.userCfg[configType].Save()                
+    
     def Cancel(self):
         self.destroy()
 

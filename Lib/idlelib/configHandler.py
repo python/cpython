@@ -57,14 +57,71 @@ class IdleConfParser(ConfigParser):
         
 class IdleUserConfParser(IdleConfParser):
     """
-    IdleConfigParser specialised for user configuration handling
+    IdleConfigParser specialised for user configuration handling.
     """
+
+    def AddSection(self,section):
+        """
+        if section doesn't exist, add it
+        """
+        if not self.has_section(section):
+            self.add_section(section)
+    
+    def RemoveEmptySections(self):
+        """
+        remove any sections that have no options
+        """
+        for section in self.sections():
+            if not self.GetOptionList(section):
+                self.remove_section(section) 
+    
+    def IsEmpty(self):
+        """
+        Remove empty sections and then return 1 if parser has no sections
+        left, else return 0.
+        """
+        self.RemoveEmptySections()
+        if self.sections():
+            return 0
+        else:
+            return 1
+    
+    def RemoveOption(self,section,option):
+        """
+        If section/option exists, remove it.
+        Returns 1 if option was removed, 0 otherwise.
+        """
+        if self.has_section(section):
+            return self.remove_option(section,option)
+    
+    def SetOption(self,section,option,value):
+        """
+        Sets option to value, adding section if required.
+        Returns 1 if option was added or changed, otherwise 0.
+        """
+        if self.has_option(section,option):
+            if self.get(section,option)==value:
+                return 0
+            else:
+                self.set(section,option,value)
+                return 1
+        else:
+            if not self.has_section(section):
+                self.add_section(section)
+            self.set(section,option,value)
+            return 1
+     
     def Save(self):
         """
-        write loaded user configuration file back to disk
+        If config isn't empty, write file to disk. If config is empty,
+        remove the file from disk if it exists.
         """
-        # this is a user config, it can be written to disk
-        self.write()
+        if not self.IsEmpty():
+            cfgFile=open(self.file,'w')
+            self.write(cfgFile)
+        else:
+            if os.path.exists(self.file):
+                os.remove(self.file)    
 
 class IdleConf:
     """
