@@ -88,7 +88,7 @@ sub custom_driver_hook {
     # seems to be sufficiently general that it should be fine for HOWTO
     # processing.
     #
-    my $file = @_[0];
+    my $file = $_[0];
     my($jobname, $dir, $ext) = fileparse($file, '\..*');
     $dir = L2hos->Make_directory_absolute($dir);
     $dir =~ s/$dd$//;
@@ -128,7 +128,7 @@ $my_icon_names{'previous_page'} = 'previous';
 $my_icon_names{'next_page'} = 'next';
 
 sub get_my_icon($) {
-    my $name = @_[0];
+    my $name = $_[0];
     my $text = $my_icon_tags{$name};
     if ($my_icon_names{$name}) {
         $name = $my_icon_names{$name};
@@ -142,7 +142,7 @@ sub get_my_icon($) {
 }
 
 sub use_my_icon($) {
-    my $s = @_[0];
+    my $s = $_[0];
     if ($s =~ /\<tex2html_([a-z_]+)_visible_mark\>/) {
         my $r = get_my_icon($1);
         $s =~ s/\<tex2html_[a-z_]+_visible_mark\>/$r/;
@@ -276,7 +276,7 @@ sub replace_icons_hook {}
 
 sub do_cmd_arabic {
     # get rid of that nasty <SPAN CLASS="arabic">...</SPAN>
-    my($ctr, $val, $id, $text) = &read_counter_value(@_[0]);
+    my($ctr, $val, $id, $text) = &read_counter_value($_[0]);
     return ($val ? farabic($val) : "0") . $text;
 }
 
@@ -320,7 +320,7 @@ sub add_module_idx() {
     my $allthesame = 1;
     my $prefix = '';
     foreach $key (keys %Modules) {
-	$key =~ s/<tt>([a-zA-Z0-9._]*)<\/tt>/\1/;
+	$key =~ s/<tt>([a-zA-Z0-9._]*)<\/tt>/$1/;
 	my $plat = "$ModulePlatforms{$key}";
 	$plat = ''
 	  if ($plat eq $IGNORE_PLATFORM_ANNOTATION);
@@ -337,7 +337,7 @@ sub add_module_idx() {
 	my $nkey = $1;
 	my $moditem = "$Modules{$key}";
 	my $plat = '';
-	$key =~ s/<tt>([a-zA-Z0-9._]*)<\/tt>/\1/;
+	$key =~ s/<tt>([a-zA-Z0-9._]*)<\/tt>/$1/;
 	if ($ModulePlatforms{$key} && !$allthesame) {
 	    $plat = (" <em>(<span class=\"platform\">$ModulePlatforms{$key}"
 		     . '</span>)</em>');
@@ -503,7 +503,7 @@ sub add_bbl_and_idx_dummy_commands {
         print "\nadd_bbl_and_idx_dummy_commands ==> adding module index";
         my $rx = "([\\\\]begin\\s*$O\\d+$C\\s*theindex[\\s\\S]*)"
           . "([\\\\]begin\\s*$O\\d+$C\\s*theindex)";
-        s/$rx/\\textohtmlmoduleindex \1 \\textohtmlindex \2/o;
+        s/$rx/\\textohtmlmoduleindex $1 \\textohtmlindex $2/o;
         # Add a button to the navigation areas:
         $CUSTOM_BUTTONS .= ('<a href="modindex.html" title="Module Index">'
                             . get_my_icon('modules')
@@ -514,7 +514,7 @@ sub add_bbl_and_idx_dummy_commands {
     elsif (scalar(@parts) == 2) {
         print "\nadd_bbl_and_idx_dummy_commands ==> adding general index";
         my $rx = "([\\\\]begin\\s*$O\\d+$C\\s*theindex)";
-        s/$rx/\\textohtmlindex \1/o;
+        s/$rx/\\textohtmlindex $1/o;
         $HAVE_GENERAL_INDEX = 1;
     }
     elsif (scalar(@parts) == 1) {
