@@ -61,7 +61,7 @@
  *
  * For small requests, the allocator sub-allocates <Big> blocks of memory.
  * Requests greater than 256 bytes are routed to the system's allocator.
- *    
+ *
  * Small requests are grouped in size classes spaced 8 bytes apart, due
  * to the required valid alignment of the returned address. Requests of
  * a particular size are serviced from memory pools of 4K (one VMM page).
@@ -94,7 +94,7 @@
  *	  ...                   ...                     ...
  *	241-248                 248                      30
  *	249-256                 256                      31
- *	
+ *
  *	0, 257 and up: routed to the underlying allocator.
  */
 
@@ -472,7 +472,7 @@ _PyMalloc_Malloc(size_t nbytes)
 			UNLOCK();
 			goto redirect;
 		}
-		/* 
+		/*
 		 * Keep a reference in the list of allocated arenas. We might
 		 * want to release (some of) them in the future. The first
 		 * word is never used, no matter whether the returned address
@@ -491,7 +491,7 @@ _PyMalloc_Malloc(size_t nbytes)
         /* The small block allocator ends here. */
 
 	redirect:
-	
+
 	/*
 	 * Redirect the original request to the underlying (libc) allocator.
 	 * We jump here on bigger requests, on error in the code above (as a
@@ -641,14 +641,14 @@ _PyMalloc_Calloc(size_t nbel, size_t elsz)
 */
 
 #else	/* ! WITH_PYMALLOC */
-void
-*_PyMalloc_Malloc(size_t n)
+void *
+_PyMalloc_Malloc(size_t n)
 {
 	return PyMem_MALLOC(n);
 }
 
-void
-*_PyMalloc_Realloc(void *p, size_t n)
+void *
+_PyMalloc_Realloc(void *p, size_t n)
 {
 	return PyMem_REALLOC(p, n);
 }
@@ -660,8 +660,8 @@ _PyMalloc_Free(void *p)
 }
 #endif /* WITH_PYMALLOC */
 
-PyObject
-*_PyMalloc_New(PyTypeObject *tp)
+PyObject *
+_PyMalloc_New(PyTypeObject *tp)
 {
 	PyObject *op;
 	op = (PyObject *) _PyMalloc_MALLOC(_PyObject_SIZE(tp));
