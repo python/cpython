@@ -97,7 +97,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.2.5"
+#define PY_BSDDB_VERSION "4.2.6"
 static char *rcs_id = "$Id$";
 
 
@@ -2401,7 +2401,7 @@ DB_has_key(DBObject* self, PyObject* args)
     data.flags = DB_DBT_USERMEM;
 
     MYDB_BEGIN_ALLOW_THREADS;
-    err = self->db->get(self->db, NULL, &key, &data, 0);
+    err = self->db->get(self->db, txn, &key, &data, 0);
     MYDB_END_ALLOW_THREADS;
     FREE_DBT(key);
     return PyInt_FromLong((err == ENOMEM) || (err == 0));
