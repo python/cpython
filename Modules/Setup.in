@@ -89,7 +89,8 @@ PYTHONPATH=$(COREPYTHONPATH)
 # Some modules that are normally always on:
 
 regex regexmodule.c regexpr.c	# Regular expressions, GNU Emacs style
-reop reopmodule.c		# Additional RE support (also needs regexpr.c)
+reop reopmodule.c		# Additional RE support (for re1.py)
+pcre pcremodule.c pypcre.c	# Regular expressions, Perl style (for re.py)
 posix posixmodule.c		# posix (UNIX) system calls
 signal signalmodule.c		# signal(2)
 
