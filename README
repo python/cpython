@@ -26,7 +26,8 @@ Misc/NEWS.  Some highlights:
 
   - The new "re" module (Perl style regular expressions) is here.  It
   is based on Philip Hazel's pcre code; the Python interfaces were put
-  together by Andrew Kuchling.  The regex module is declared obsolete.
+  together by Andrew Kuchling, Tim Peters and Jeffrey Ollie.  The
+  regex module is declared obsolete.
 
   - In support of the re module, a new form of string literals is
   introduced, "raw strings": e.g. r"\n" is equal to "\\n".
@@ -306,9 +307,37 @@ SunOS 4.x: When using the standard "cc" compiler, certain modules may
 NeXT:   To build fat binaries, use the --with-next-archs switch
 	described below.
 
-QNX:	Edit the top level Makefile to use the following compile options:
-	OPT = -Ox -Q -U_M_IX86 -U__WATCOMC__
-	Edit the Makefile in the Modules directory to read:
+QNX:	Chris Herborth (chrish@qnx.com) writes:
+	configure works best if you use GNU bash; a port is available on
+	ftp.qnx.com in /usr/free.  I used the following process to build,
+	test and install Python 1.5 under QNX:
+
+	1) SHELL=/usr/local/bin/bash CC=cc CFLAGS=-5 -O RANLIB=: \
+	    bash ./configure --verbose --without-gcc --with-libm=""
+
+	2) copy Modules/Setup.in to Modules/Setup; edit Modules/Setup to
+	   activate everything that makes sense for your system... tested
+	   here at QNX with the following modules:
+
+		regex reop pcre posix signal readline array cmath math strop
+		struct time operator _locale fcntl pwd grp crypt select socket
+		errno termios audioop imageop rgbimg md5 timing rotor syslog
+		new gdbm soundex binascii parser cStringIO cPickle zlib
+
+	3) SHELL=/usr/local/bin/bash make SHELL=/usr/local/bin/bash
+
+	4) SHELL=/usr/local/bin/bash make SHELL=/usr/local/bin/bash test
+
+	   The socket, strftime and possibly gdbm tests might fail in the
+	   test harness; going through them by hand shows that they work.
+	   A good exercise for the reader: make these work "out of the box".
+
+	5) SHELL=/usr/local/bin/bash make SHELL=/usr/local/bin/bash install
+
+	If you get SIGSEGVs while running Python (I haven't yet, but I've
+	only run small programs and the test cases), you're probably running
+	out of stack; the default 32k could be a little tight.  To increase
+	the stack size, edit the Makefile in the Modules directory to read:
 	LDFLAGS = -N 48k
 
 Cray T3E: Konrad Hinsen writes:
