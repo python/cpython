@@ -1999,12 +1999,13 @@ the highest priority, and \code{or} the lowest, so that
 course, parentheses can be used to express the desired composition.
 
 The Boolean operators \code{and} and \code{or} are so-called
-\emph{shortcut} operators: their arguments are evaluated from left to
-right, and evaluation stops as soon as the outcome is determined.
-E.g., if \code{A} and \code{C} are true but \code{B} is false, \code{A
-and B and C} does not evaluate the expression C.  In general, the
-return value of a shortcut operator, when used as a general value and
-not as a Boolean, is the last evaluated argument.
+\emph{short-circuit} operators: their arguments are evaluated from
+left to right, and evaluation stops as soon as the outcome is
+determined.  For example, if \code{A} and \code{C} are true but
+\code{B} is false, \code{A and B and C} does not evaluate the
+expression \code{C}.  In general, the return value of a short-circuit
+operator, when used as a general value and not as a Boolean, is the
+last evaluated argument.
 
 It is possible to assign the result of a comparison or other Boolean
 expression to a variable.  For example,
