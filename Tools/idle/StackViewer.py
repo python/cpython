@@ -97,7 +97,7 @@ class StackBrowser:
 class StackViewer(ScrolledList):
 
     def __init__(self, master, flist, browser):
-        ScrolledList.__init__(self, master)
+        ScrolledList.__init__(self, master, width=80)
         self.flist = flist
         self.browser = browser
         self.stack = []
