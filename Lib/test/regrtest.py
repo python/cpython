@@ -194,6 +194,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         for module in sys.modules.keys():
             if module not in save_modules and module.startswith("test."):
                 test_support.unload(module)
+
+    # The lists won't be sorted if running with -r
+    good.sort()
+    bad.sort()
+    skipped.sort()
+    
     if good and not quiet:
         if not bad and not skipped and len(good) > 1:
             print "All",
