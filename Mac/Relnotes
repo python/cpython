@@ -2,12 +2,55 @@ Changes in 2.2.1 since 2.2
 ----------------------------
 
 These release notes refer to Mac-specific changes only. See NEWS (in the Misc folder)
-for machine-independent changes.
+for machine-independent changes. These notes are meant primarily for MacPython
+but some of the information may be relevant to using Mac-specific features under
+Mac OS X unix Python (a.k.a. MachoPython) too.
 
 - This release should work on multiprocessor OSX machines.
 - The problem with incomplete read()s on sockets has been fixed.
 - NavServices is now weaklinked, so this release should work on a virgin Mac OS 8.1.
-- Much more: to be supplied.
+- test_longexp took days to finish on OSX. It now fails with a message so the
+  other tests continue.
+- The IDE looks better under OSX after redesign of some windows.
+- The IDE browser now has some understanding of the 2.2 object model.
+- IDE readline() output is echoed to the output window.
+- IDE output is flushed to the screen more often under OSX.
+- IDE doesn't have a second quit menu under OSX anymore.
+- IDE scrollbars now have live feedback.
+- IDE now does copy/paste under OSX.
+- IDE: minimal support for floating windows.
+- The IDE now sort-of works under MachoPython.
+- macostools.mkalias() can now handle folders.
+- macresource module fixed to work under MachoPython.
+- macfs.FSRef objects now have an as_pathname method.
+- The ic module returned bogus values for creator/type. Fixed.
+- Carbon.App: support for various missing methods added.
+- Carbon.CarbonEvt: various method signatures fixed.
+- Carbon.CF: Unicode support added.
+- Carbon.CG: did not import. Fixed.
+- Carbon.CG:  various missing methods added.
+- Carbon.Ctl: ControlActionProcs weren't supported. Fixed.
+- Carbon.Drag: exceptions in callback routines are now printed.
+- Carbon.Fm: QDTextBounds was missing. Added.
+- Carbon.Menu: support for optional MenuObjs was added.
+- Carbon.Mlte: unicode support added.
+- Carbon.Scrap: fixed to work under Carbon by finally implementing the
+  Carbon Scrap Manager interface.
+- Carbon.Snd: SndRecord and SndRecordToFile were missing. Added.
+- Applescript suites had a problem with the required events being in either Standard
+  or Required. Fixed by introducing a new common base suite for them.
+- Applescript example rewritten.
+- Applescript can now handle Unicode parameters.
+- An Applescript suite with a start() event no longer causes problems.
+- Exceptions in AE callback routines are now printed.
+- waste: updated to current version, thereby getting it to work under MachoPython.
+- gensuitemodule: better handling of verbs that are Python keywords.
+- gensuitemodule: enum values are now identify()d.
+- MachoPython: Python.app build process fixed.
+- MachoPython: Python.app can now be called from the command line.
+- MachoPython: MacOS error exceptions now include the textual error in
+  stead of only the numeric error code.
+- Embedding: don't call PyMac_OutputSeen if we have a custom console.
 
 Known problems
 --------------
