@@ -83,9 +83,11 @@ class MyScanner(Scanner_OSX):
 			"CFStringGetPascalStringPtr", # TBD automatically
 			"CFStringGetCStringPtr", 
 			"CFStringGetCharactersPtr",
+			"CFStringGetCString", 
+			"CFStringGetCharacters",
 			# OSX only, to be done
-			"CFURLCreateWithFileSystemPath",
-			"CFURLCreateStringWithFileSystemPath",
+##			"CFURLCreateWithFileSystemPath",
+##			"CFURLCreateStringWithFileSystemPath",
 			]
 
 	def makegreylist(self):
