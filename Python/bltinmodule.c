@@ -470,8 +470,8 @@ static struct methodlist builtin_methods[] = {
 	{"input", builtin_input},
 	{"int", builtin_int},
 	{"len", builtin_len},
-	{"min", builtin_min},
 	{"max", builtin_max},
+	{"min", builtin_min},
 	{"open", builtin_open}, /* XXX move to OS module */
 	{"ord", builtin_ord},
 	{"range", builtin_range},
