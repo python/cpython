@@ -39,6 +39,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "getapplbycreator.h"
 
+#include "pythonresources.h"
+extern PyMac_PrefRecord PyMac_options;
+
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern int _PyMac_GetFSSpec(PyObject *, FSSpec *);
 extern PyObject *_PyMac_BuildFSSpec(FSSpec *);
@@ -1206,6 +1209,33 @@ PyObject *PyMac_BuildFSSpec(FSSpec *v)
 	return (PyObject *)newmfssobject(v);
 }
 
+
+/*
+** Import the macfsn module, which will override the Standard File
+** calls in the macfs builtin module by Navigation Services versions,
+** if available on this machine.
+*/
+static void
+PyMac_InstallNavServicesForSF(void)
+{
+	if ( !PyMac_options.nonavservice ) {
+		PyObject *m = PyImport_ImportModule("macfsn");
+		
+		if ( m == NULL ) {
+			PySys_WriteStderr("'import macfsn' failed; ");
+			if (Py_VerboseFlag) {
+				PySys_WriteStderr("traceback:\n");
+				PyErr_Print();
+			}
+			else {
+				PySys_WriteStderr("use -v for traceback\n");
+			}
+			PyErr_Clear();
+		}
+	}
+}
+
+
 /* Initialization function for the module (*must* be called initmacfs) */
 
 void
@@ -1235,5 +1265,6 @@ initmacfs(void)
 	Mfsitype.ob_type = &PyType_Type;
 	Py_INCREF(&Mfsitype);
 	PyDict_SetItemString(d, "FInfoType", (PyObject *)&Mfsitype);
-	/* XXXX Add constants here */
+
+	PyMac_InstallNavServicesForSF();
 }
