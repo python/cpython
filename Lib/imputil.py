@@ -27,75 +27,204 @@ import __builtin__
 import struct
 import marshal
 
-class Importer:
-  "Base class for replacing standard import functions."
+_StringType = type('')
+_ModuleType = type(sys)
+
+class ImportManager:
+  "Manage the import process."
 
   def install(self):
+    ### warning: Python 1.6 will have a different hook mechanism; this
+    ### code will need to change.
     self.__chain_import = __builtin__.__import__
     self.__chain_reload = __builtin__.reload
     __builtin__.__import__ = self._import_hook
-    __builtin__.reload = self._reload_hook
+    ### fix this
+    #__builtin__.reload = None
+    #__builtin__.reload = self._reload_hook
+
+  def add_suffix(self, suffix, importer):
+    assert isinstance(importer, SuffixImporter)
+    self.suffixes.append((suffix, importer))
 
   ######################################################################
   #
   # PRIVATE METHODS
   #
-  def _import_hook(self, name, globals=None, locals=None, fromlist=None):
-    """Python calls this hook to locate and import a module.
+  def __init__(self):
+    # we're definitely going to be importing something in the future,
+    # so let's just load the OS-related facilities.
+    if not _os_stat:
+      _os_bootstrap()
 
-    This method attempts to load the (dotted) module name. If it cannot
-    find it, then it delegates the import to the next import hook in the
-    chain (where "next" is defined as the import hook that was in place
-    at the time this Importer instance was installed).
-    """
+    # Initialize the set of suffixes that we recognize and import.
+    # The default will import dynamic-load modules first, followed by
+    # .py files (or a .py file's cached bytecode)
+    self.suffixes = [ ]
+    for desc in imp.get_suffixes():
+      if desc[2] == imp.C_EXTENSION:
+        self.suffixes.append((desc[0], DynLoadSuffixImporter(desc)))
+    self.suffixes.append(('.py', PySuffixImporter()))
 
-    ### insert a fast-path check for whether the module is already
-    ### loaded? use a variant of _determine_import_context() which
-    ### returns a context regardless of Importer used. generate an
-    ### fqname and look in sys.modules for it.
+    # This is the importer that we use for grabbing stuff from the
+    # filesystem. It defines one more method (import_from_dir) for our use.
+    self.fs_imp = _FilesystemImporter(self.suffixes)
 
-    ### note that given module a.b which imports c, if c is already
-    ### loaded, python still wants to look for a.c
+  def _import_hook(self, fqname, globals=None, locals=None, fromlist=None):
+    """Python calls this hook to locate and import a module."""
+
+    parts = strop.split(fqname, '.')
 
     # determine the context of this import
     parent = self._determine_import_context(globals)
 
-    # import the module within the context, or from the default context
-    top, tail = self._import_top_module(parent, name)
-    if top is None:
-      # the module was not found; delegate to the next import hook
-      return self.__chain_import(name, globals, locals, fromlist)
+    # if there is a parent, then its importer should manage this import
+    if parent:
+      module = parent.__importer__._do_import(parent, parts, fromlist)
+      if module:
+        return module
 
-    # the top module may be under the control of a different importer.
-    # if so, then defer to that importer for completion of the import.
-    # note it may be self, or is undefined so we (self) may as well
-    # finish the import.
-    importer = top.__dict__.get('__importer__', self)
-    return importer._finish_import(top, tail, fromlist)
+    # has the top module already been imported?
+    try:
+      top_module = sys.modules[parts[0]]
+    except KeyError:
 
-  def _finish_import(self, top, tail, fromlist):
+      # look for the topmost module
+      top_module = self._import_top_module(parts[0])
+      if not top_module:
+        # the topmost module wasn't found at all.
+        raise ImportError, 'No module named ' + fqname
+        return self.__chain_import(name, globals, locals, fromlist)
+
+    # fast-path simple imports
+    if len(parts) == 1:
+      if not fromlist:
+        return top_module
+
+      if not top_module.__dict__.get('__ispkg__'):
+        # __ispkg__ isn't defined (the module was not imported by us), or
+        # it is zero.
+        #
+        # In the former case, there is no way that we could import
+        # sub-modules that occur in the fromlist (but we can't raise an
+        # error because it may just be names) because we don't know how
+        # to deal with packages that were imported by other systems.
+        #
+        # In the latter case (__ispkg__ == 0), there can't be any sub-
+        # modules present, so we can just return.
+        #
+        # In both cases, since len(parts) == 1, the top_module is also
+        # the "bottom" which is the defined return when a fromlist exists.
+        return top_module
+
+    importer = top_module.__dict__.get('__importer__')
+    if importer:
+      return importer._finish_import(top_module, parts[1:], fromlist)
+
+    # If the importer does not exist, then we have to bail. A missing importer
+    # means that something else imported the module, and we have no knowledge
+    # of how to get sub-modules out of the thing.
+    raise ImportError, 'No module named ' + fqname
+    return self.__chain_import(name, globals, locals, fromlist)
+
+  def _determine_import_context(self, globals):
+    """Returns the context in which a module should be imported.
+
+    The context could be a loaded (package) module and the imported module
+    will be looked for within that package. The context could also be None,
+    meaning there is no context -- the module should be looked for as a
+    "top-level" module.
+    """
+
+    if not globals or not globals.get('__importer__'):
+      # globals does not refer to one of our modules or packages. That
+      # implies there is no relative import context (as far as we are
+      # concerned), and it should just pick it off the standard path.
+      return None
+
+    # The globals refer to a module or package of ours. It will define
+    # the context of the new import. Get the module/package fqname.
+    parent_fqname = globals['__name__']
+
+    # if a package is performing the import, then return itself (imports
+    # refer to pkg contents)
+    if globals['__ispkg__']:
+      parent = sys.modules[parent_fqname]
+      assert globals is parent.__dict__
+      return parent
+
+    i = strop.rfind(parent_fqname, '.')
+
+    # a module outside of a package has no particular import context
+    if i == -1:
+      return None
+
+    # if a module in a package is performing the import, then return the
+    # package (imports refer to siblings)
+    parent_fqname = parent_fqname[:i]
+    parent = sys.modules[parent_fqname]
+    assert parent.__name__ == parent_fqname
+    return parent
+
+  def _import_top_module(self, name):
+    # scan sys.path looking for a location in the filesystem that contains
+    # the module, or an Importer object that can import the module.
+    for item in sys.path:
+      if type(item) == _StringType:
+        module = self.fs_imp.import_from_dir(item, name)
+      else:
+        module = item.import_top(name)
+      if module:
+        return module
+    return None
+
+  def _reload_hook(self, module):
+    "Python calls this hook to reload a module."
+
+    # reloading of a module may or may not be possible (depending on the
+    # importer), but at least we can validate that it's ours to reload
+    importer = module.__dict__.get('__importer__')
+    if not importer:
+      return self.__chain_reload(module)
+
+    # okay. it is using the imputil system, and we must delegate it, but
+    # we don't know what to do (yet)
+    ### we should blast the module dict and do another get_code(). need to
+    ### flesh this out and add proper docco...
+    raise SystemError, "reload not yet implemented"
+
+
+class Importer:
+  "Base class for replacing standard import functions."
+
+  def install(self):
+    sys.path.insert(0, self)
+
+  def import_top(self, name):
+    "Import a top-level module."
+    return self._import_one(None, name, name)
+
+  ######################################################################
+  #
+  # PRIVATE METHODS
+  #
+  def _finish_import(self, top, parts, fromlist):
     # if "a.b.c" was provided, then load the ".b.c" portion down from
     # below the top-level module.
-    bottom = self._load_tail(top, tail)
+    bottom = self._load_tail(top, parts)
 
     # if the form is "import a.b.c", then return "a"
     if not fromlist:
       # no fromlist: return the top of the import tree
       return top
 
-    # the top module was imported by self, or it was not imported through
-    # the Importer mechanism and self is simply handling the import of
-    # the sub-modules and fromlist.
+    # the top module was imported by self.
     #
-    # this means that the bottom module was also imported by self, or we
-    # are handling things in the absence of a prior Importer
-    #
-    # ### why the heck are we handling it? what is the example scenario
-    # ### where this happens? note that we can't determine is_package()
-    # ### for non-Importer modules.
+    # this means that the bottom module was also imported by self (just
+    # now, or in the past and we fetched it from sys.modules).
     #
     # since we imported/handled the bottom module, this means that we can
-    # also handle its fromlist (and reliably determine is_package()).
+    # also handle its fromlist (and reliably use __ispkg__).
 
     # if the bottom node is a package, then (potentially) import some modules.
     #
@@ -107,98 +236,11 @@ class Importer:
     #       from the bottom (package) module; some will be modules that
     #       we imported and stored in the namespace, others are expected
     #       to be present already.
-    if self._is_package(bottom.__dict__):
+    if bottom.__ispkg__:
       self._import_fromlist(bottom, fromlist)
 
     # if the form is "from a.b import c, d" then return "b"
     return bottom
-
-  def _reload_hook(self, module):
-    "Python calls this hook to reload a module."
-
-    # reloading of a module may or may not be possible (depending on the
-    # importer), but at least we can validate that it's ours to reload
-    importer = module.__dict__.get('__importer__', None)
-    if importer is not self:
-      return self.__chain_reload(module)
-
-    # okay. it is ours, but we don't know what to do (yet)
-    ### we should blast the module dict and do another get_code(). need to
-    ### flesh this out and add proper docco...
-    raise SystemError, "reload not yet implemented"
-
-  def _determine_import_context(self, globals):
-    """Returns the context in which a module should be imported.
-
-    The context could be a loaded (package) module and the imported module
-    will be looked for within that package. The context could also be None,
-    meaning there is no context -- the module should be looked for as a
-    "top-level" module.
-    """
-
-    if not globals or \
-       globals.get('__importer__', None) is not self:
-      # globals does not refer to one of our modules or packages.
-      # That implies there is no relative import context, and it
-      # should just pick it off the standard path.
-      return None
-
-    # The globals refer to a module or package of ours. It will define
-    # the context of the new import. Get the module/package fqname.
-    parent_fqname = globals['__name__']
-
-    # for a package, return itself (imports refer to pkg contents)
-    if self._is_package(globals):
-      parent = sys.modules[parent_fqname]
-      assert globals is parent.__dict__
-      return parent
-
-    i = strop.rfind(parent_fqname, '.')
-
-    # a module outside of a package has no particular import context
-    if i == -1:
-      return None
-
-    # for a module in a package, return the package (imports refer to siblings)
-    parent_fqname = parent_fqname[:i]
-    parent = sys.modules[parent_fqname]
-    assert parent.__name__ == parent_fqname
-    return parent
-
-  def _import_top_module(self, parent, name):
-    """Locate the top of the import tree (relative or absolute).
-
-    parent defines the context in which the import should occur. See
-    _determine_import_context() for details.
-
-    Returns a tuple (module, tail). module is the loaded (top-level) module,
-    or None if the module is not found. tail is the remaining portion of
-    the dotted name.
-    """
-    i = strop.find(name, '.')
-    if i == -1:
-      head = name
-      tail = ""
-    else:
-      head = name[:i]
-      tail = name[i+1:]
-    if parent:
-      fqname = "%s.%s" % (parent.__name__, head)
-    else:
-      fqname = head
-    module = self._import_one(parent, head, fqname)
-    if module:
-      # the module was relative, or no context existed (the module was
-      # simply found on the path).
-      return module, tail
-    if parent:
-      # we tried relative, now try an absolute import (from the path)
-      module = self._import_one(None, head, head)
-      if module:
-        return module, tail
-
-    # the module wasn't found
-    return None, None
 
   def _import_one(self, parent, modname, fqname):
     "Import a single module."
@@ -214,46 +256,53 @@ class Importer:
     if result is None:
       return None
 
-    # did get_code() return an actual module? (rather than a code object)
-    is_module = type(result[1]) is type(sys)
+    ### backwards-compat
+    if len(result) == 2:
+      result = result + ({},)
 
-    # use the returned module, or create a new one to exec code into
-    if is_module:
-      module = result[1]
-    else:
-      module = imp.new_module(fqname)
-
-    ### record packages a bit differently??
-    module.__importer__ = self
-    module.__ispkg__ = result[0]
-
-    # if present, the third item is a set of values to insert into the module
-    if len(result) > 2:
-      module.__dict__.update(result[2])
-
-    # the module is almost ready... make it visible
-    sys.modules[fqname] = module
-
-    # execute the code within the module's namespace
-    if not is_module:
-      exec result[1] in module.__dict__
+    module = self._process_result(result, fqname)
 
     # insert the module into its parent
     if parent:
       setattr(parent, modname, module)
     return module
 
-  def _load_tail(self, m, tail):
+  def _process_result(self, (ispkg, code, values), fqname):
+    # did get_code() return an actual module? (rather than a code object)
+    is_module = type(code) is _ModuleType
+
+    # use the returned module, or create a new one to exec code into
+    if is_module:
+      module = code
+    else:
+      module = imp.new_module(fqname)
+
+    ### record packages a bit differently??
+    module.__importer__ = self
+    module.__ispkg__ = ispkg
+
+    # insert additional values into the module (before executing the code)
+    module.__dict__.update(values)
+
+    # the module is almost ready... make it visible
+    sys.modules[fqname] = module
+
+    # execute the code within the module's namespace
+    if not is_module:
+      exec code in module.__dict__
+
+    return module
+
+  def _load_tail(self, m, parts):
     """Import the rest of the modules, down from the top-level module.
 
     Returns the last module in the dotted list of modules.
     """
-    if tail:
-      for part in strop.splitfields(tail, '.'):
-        fqname = "%s.%s" % (m.__name__, part)
-        m = self._import_one(m, part, fqname)
-        if not m:
-          raise ImportError, "No module named " + fqname
+    for part in parts:
+      fqname = "%s.%s" % (m.__name__, part)
+      m = self._import_one(m, part, fqname)
+      if not m:
+        raise ImportError, "No module named " + fqname
     return m
 
   def _import_fromlist(self, package, fromlist):
@@ -273,17 +322,20 @@ class Importer:
         if not submod:
           raise ImportError, "cannot import name " + subname
 
-  def _is_package(self, module_dict):
-    """Determine if a given module (dictionary) specifies a package.
+  def _do_import(self, parent, parts, fromlist):
+    """Attempt to import the module relative to parent.
 
-    The package status is in the module-level name __ispkg__. The module
-    must also have been imported by self, so that we can reliably apply
-    semantic meaning to __ispkg__.
-
-    ### weaken the test to issubclass(Importer)?
+    This method is used when the import context specifies that <self>
+    imported the parent module.
     """
-    return module_dict.get('__importer__', None) is self and \
-           module_dict['__ispkg__']
+    top_name = parts[0]
+    top_fqname = parent.__name__ + '.' + top_name
+    top_module = self._import_one(parent, top_name, top_fqname)
+    if not top_module:
+      # this importer and parent could not find the module (relatively)
+      return None
+
+    return self._finish_import(top_module, parts[1:], fromlist)
 
   ######################################################################
   #
@@ -301,7 +353,7 @@ class Importer:
     dotted name from the "root" of the module namespace down to the modname.
     If there is no parent, then modname==fqname.
 
-    This method should return None, a 2-tuple, or a 3-tuple.
+    This method should return None, or a 3-tuple.
 
     * If the module was not found, then None should be returned.
 
@@ -312,9 +364,9 @@ class Importer:
       executed within the new module's namespace). This item can also
       be a fully-loaded module object (e.g. loaded from a shared lib).
 
-    * If present, the third item is a dictionary of name/value pairs that
-      will be inserted into new module before the code object is executed.
-      This provided in case the module's code expects certain values (such
+    * The third item is a dictionary of name/value pairs that will be
+      inserted into new module before the code object is executed. This
+      is provided in case the module's code expects certain values (such
       as where the module was found). When the second item is a module
       object, then these names/values will be inserted *after* the module
       has been loaded/initialized.
@@ -653,6 +705,92 @@ class BuiltinImporter(Importer):
 
 
 ######################################################################
+#
+# Internal importer used for importing from the filesystem
+#
+class _FilesystemImporter(Importer):
+  def __init__(self, suffixes):
+    # this list is shared with the ImportManager.
+    self.suffixes = suffixes
+
+  def import_from_dir(self, dir, fqname):
+    result = self._import_pathname(_os_path_join(dir, fqname), fqname)
+    if result:
+      return self._process_result(result, fqname)
+    return None
+
+  def get_code(self, parent, modname, fqname):
+    # This importer is never used with an empty parent. Its existence is
+    # private to the ImportManager. The ImportManager uses the
+    # import_from_dir() method to import top-level modules/packages.
+    # This method is only used when we look for a module within a package.
+    assert parent
+
+    return self._import_pathname(_os_path_join(parent.__pkgdir__, modname),
+                                 fqname)
+
+  def _import_pathname(self, pathname, fqname):
+    if _os_path_isdir(pathname):
+      result = self._import_pathname(_os_path_join(pathname, '__init__'),
+                                     fqname)
+      if result:
+        values = result[2]
+        values['__pkgdir__'] = pathname
+        values['__path__'] = [ pathname ]
+        return 1, result[1], values
+      return None
+
+    for suffix, importer in self.suffixes:
+      filename = pathname + suffix
+      try:
+        finfo = _os_stat(filename)
+      except OSError:
+        pass
+      else:
+        return importer.import_file(filename, finfo, fqname)
+    return None
+
+######################################################################
+#
+# SUFFIX-BASED IMPORTERS
+#
+
+class SuffixImporter:
+  def import_file(self, filename, finfo, fqname):
+    raise RuntimeError
+
+class PySuffixImporter(SuffixImporter):
+  def import_file(self, filename, finfo, fqname):
+    file = filename[:-3] + _suffix
+    t_py = long(finfo[8])
+    t_pyc = _timestamp(file)
+
+    code = None
+    if t_pyc is not None and t_pyc >= t_py:
+      f = open(file, 'rb')
+      if f.read(4) == imp.get_magic():
+        t = struct.unpack('<I', f.read(4))[0]
+        if t == t_py:
+          code = marshal.load(f)
+      f.close()
+    if code is None:
+      file = filename
+      code = _compile(file, t_py)
+
+    return 0, code, { '__file__' : file }
+
+class DynLoadSuffixImporter(SuffixImporter):
+  def __init__(self, desc):
+    self.desc = desc
+
+  def import_file(self, filename, finfo, fqname):
+    fp = open(filename, self.desc[1])
+    module = imp.load_module(fqname, fp, filename, self.desc)
+    module.__file__ = filename
+    return 0, module, { }
+
+
+######################################################################
 
 def _test_dir():
   "Debug/test function to create DirectoryImporters from sys.path."
@@ -674,5 +812,9 @@ def _print_importers():
       print name, module.__dict__.get('__importer__', '-- no importer')
     else:
       print name, '-- non-existent module'
+
+def _test_revamp():
+  ImportManager().install()
+  sys.path.insert(0, BuiltinImporter())
 
 ######################################################################
