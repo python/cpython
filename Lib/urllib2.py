@@ -436,9 +436,6 @@ class HTTPRedirectHandler(BaseHandler):
             newurl = headers['uri']
         else:
             return
-        nil = fp.read()
-        fp.close()
-
         newurl = urlparse.urljoin(req.get_full_url(), newurl)
 
         # XXX Probably want to forget about the state of the current
@@ -450,9 +447,15 @@ class HTTPRedirectHandler(BaseHandler):
             if len(req.error_302_dict)>10 or \
                req.error_302_dict.has_key(newurl):
                 raise HTTPError(req.get_full_url(), code,
-                                self.inf_msg + msg, headers)
+                                self.inf_msg + msg, headers, fp)
             new.error_302_dict.update(req.error_302_dict)
         new.error_302_dict[newurl] = newurl
+
+        # Don't close the fp until we are sure that we won't use it
+        # with HTTPError.  
+        fp.read()
+        fp.close()
+
         return self.parent.open(new)
 
     http_error_301 = http_error_302
@@ -525,7 +528,6 @@ class CustomProxyHandler(BaseHandler):
         return None
 
     def do_proxy(self, p, req):
-        p
         return self.parent.open(req)
 
     def add_proxy(self, cpo):
@@ -659,7 +661,7 @@ class AbstractDigestAuthHandler:
 
     def __init__(self, passwd=None):
         if passwd is None:
-            passwd = HTTPPassowrdMgr()
+            passwd = HTTPPasswordMgr()
         self.passwd = passwd
         self.add_password = self.passwd.add_password
         self.__current_realm = None
@@ -1051,7 +1053,7 @@ class OpenerFactory:
         pass
 
     def build_opener(self):
-        opener = OpenerDirectory()
+        opener = OpenerDirector()
         for ph in self.proxy_handlers:
             if type(ph) == types.ClassType:
                 ph = ph()
