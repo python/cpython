@@ -2494,20 +2494,6 @@ PyTypeObject PyBaseObject_Type = {
 
 /* Initialize the __dict__ in a type object */
 
-static PyObject *
-create_specialmethod(PyMethodDef *meth, PyObject *(*func)(PyObject *))
-{
-	PyObject *cfunc;
-	PyObject *result;
-
-	cfunc = PyCFunction_New(meth, NULL);
-	if (cfunc == NULL)
-		return NULL;
-	result = func(cfunc);
-	Py_DECREF(cfunc);
-	return result;
-}
-
 static int
 add_methods(PyTypeObject *type, PyMethodDef *meth)
 {
@@ -2526,7 +2512,11 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
 			descr = PyDescr_NewClassMethod(type, meth);
 		}
 		else if (meth->ml_flags & METH_STATIC) {
-			descr = create_specialmethod(meth, PyStaticMethod_New);
+			PyObject *cfunc = PyCFunction_New(meth, NULL);
+			if (cfunc == NULL)
+				return -1;
+			descr = PyStaticMethod_New(cfunc);
+			Py_DECREF(cfunc);
 		}
 		else {
 			descr = PyDescr_NewMethod(type, meth);
