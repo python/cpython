@@ -41,8 +41,7 @@ __credits__ = """Guido van Rossum, for an excellent programming language.
 Tommy Burnette, the original creator of manpy.
 Paul Prescod, for all his work on onlinehelp.
 Richard Chamberlain, for the first implementation of textdoc.
-
-Mynd you, møøse bites Kan be pretty nasti..."""
+"""
 
 # Known bugs that can't be fixed here:
 #   - imp.load_module() cannot be prevented from clobbering existing
