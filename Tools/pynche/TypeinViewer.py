@@ -12,10 +12,12 @@ color selection will be made on every change to the text field.  Otherwise,
 you must hit Return or Tab to select the color.
 """
 
-from Tkinter import *
-import string
+import sys
 import re
+from Tkinter import *
 
+
+
 class TypeinViewer:
     def __init__(self, switchboard, master=None):
         # non-gui ivars
@@ -31,7 +33,12 @@ class TypeinViewer:
         # Red
         self.__xl = Label(self.__frame, text='Red:')
         self.__xl.grid(row=0, column=0, sticky=E)
-        self.__x = Entry(self.__frame, width=4)
+        subframe = Frame(self.__frame)
+        subframe.grid(row=0, column=1)
+        self.__xox = Label(subframe, text='0x')
+        self.__xox.grid(row=0, column=0, sticky=E)
+        self.__xox['font'] = 'courier'
+        self.__x = Entry(subframe, width=3)
         self.__x.grid(row=0, column=1)
         self.__x.bindtags(self.__x.bindtags() + ('Normalize', 'Update'))
         self.__x.bind_class('Normalize', '<Key>', self.__normalize)
@@ -39,14 +46,24 @@ class TypeinViewer:
         # Green
         self.__yl = Label(self.__frame, text='Green:')
         self.__yl.grid(row=1, column=0, sticky=E)
-        self.__y = Entry(self.__frame, width=4)
-        self.__y.grid(row=1, column=1)
+        subframe = Frame(self.__frame)
+        subframe.grid(row=1, column=1)
+        self.__yox = Label(subframe, text='0x')
+        self.__yox.grid(row=0, column=0, sticky=E)
+        self.__yox['font'] = 'courier'
+        self.__y = Entry(subframe, width=3)
+        self.__y.grid(row=0, column=1)
         self.__y.bindtags(self.__y.bindtags() + ('Normalize', 'Update'))
         # Blue
         self.__zl = Label(self.__frame, text='Blue:')
         self.__zl.grid(row=2, column=0, sticky=E)
-        self.__z = Entry(self.__frame, width=4)
-        self.__z.grid(row=2, column=1)
+        subframe = Frame(self.__frame)
+        subframe.grid(row=2, column=1)
+        self.__zox = Label(subframe, text='0x')
+        self.__zox.grid(row=0, column=0, sticky=E)
+        self.__zox['font'] = 'courier'
+        self.__z = Entry(subframe, width=3)
+        self.__z.grid(row=0, column=1)
         self.__z.bindtags(self.__z.bindtags() + ('Normalize', 'Update'))
         # Update while typing?
         self.__uwt = Checkbutton(self.__frame,
@@ -62,6 +79,13 @@ class TypeinViewer:
 
     def __togglehex(self, event=None):
         red, green, blue = self.__sb.current_rgb()
+        if self.__hexp.get():
+            label = '0x'
+        else:
+            label = '  '
+        self.__xox['text'] = label
+        self.__yox['text'] = label
+        self.__zox['text'] = label
         self.update_yourself(red, green, blue)
 
     def __normalize(self, event=None):
@@ -70,31 +94,27 @@ class TypeinViewer:
         icursor = ew.index(INSERT)
         if contents and contents[0] in 'xX' and self.__hexp.get():
             contents = '0' + contents
-        # figure out what the contents value is in the current base
+        # Figure out the contents in the current base.
         try:
             if self.__hexp.get():
-                v = string.atoi(contents, 16)
+                v = int(contents, 16)
             else:
-                v = string.atoi(contents)
+                v = int(contents)
         except ValueError:
             v = None
-        # if value is not legal, delete the last character inserted and ring
-        # the bell
-        if v is None or v < 0 or v > 255:
+        # If value is not legal, or empty, delete the last character inserted
+        # and ring the bell.  Don't ring the bell if the field is empty (it'll
+        # just equal zero.
+        if v is None:
+            pass
+        elif v < 0 or v > 255:
             i = ew.index(INSERT)
             if event.char:
                 contents = contents[:i-1] + contents[i:]
-                icursor = icursor-1
+                icursor -= 1
             ew.bell()
         elif self.__hexp.get():
-            # Special case: our contents were 0x0 and we just deleted the
-            # trailing 0.  We want our contents to now be 0x and not 0x0.
-            if v == 0 and contents == '0':
-                contents = '0x'
-                icursor = END
-                ew.bell()
-            elif not (v == 0 and contents == '0x'):
-                contents = hex(v)
+            contents = hex(v)[2:]
         else:
             contents = int(v)
         ew.delete(0, END)
@@ -106,36 +126,21 @@ class TypeinViewer:
             self.__update(event)
 
     def __update(self, event=None):
-        redstr = self.__x.get()
-        greenstr = self.__y.get()
-        bluestr = self.__z.get()
+        redstr = self.__x.get() or '0'
+        greenstr = self.__y.get() or '0'
+        bluestr = self.__z.get() or '0'
         if self.__hexp.get():
-            red = string.atoi(redstr, 16)
-            green = string.atoi(greenstr, 16)
-            blue = string.atoi(bluestr, 16)
+            base = 16
         else:
-            def intify(colorstr):
-                if colorstr == '':
-                    return 0
-                else:
-                    return string.atoi(colorstr)
-            red, green, blue = map(intify, (redstr, greenstr, bluestr))
+            base = 10
+        red, green, blue = [int(x, base) for x in (redstr, greenstr, bluestr)]
         self.__sb.update_views(red, green, blue)
 
     def update_yourself(self, red, green, blue):
         if self.__hexp.get():
-            # Special case: our contents were 0x0 and we just deleted the
-            # trailing 0.  We want our contents to now be 0x and not 0x0.
-            def hexify((color, widget)):
-                contents = widget.get()
-                if not (color == 0 and contents == '0x'):
-                    return hex(color)
-                return contents
-            redstr, greenstr, bluestr = map(hexify, ((red, self.__x),
-                                                     (green, self.__y),
-                                                     (blue, self.__z)))
+            sred, sgreen, sblue = [hex(x)[2:] for x in (red, green, blue)]
         else:
-            redstr, greenstr, bluestr = red, green, blue
+            sred, sgreen, sblue = red, green, blue
         x, y, z = self.__x, self.__y, self.__z
         xicursor = x.index(INSERT)
         yicursor = y.index(INSERT)
@@ -143,9 +148,9 @@ class TypeinViewer:
         x.delete(0, END)
         y.delete(0, END)
         z.delete(0, END)
-        x.insert(0, redstr)
-        y.insert(0, greenstr)
-        z.insert(0, bluestr)
+        x.insert(0, sred)
+        y.insert(0, sgreen)
+        z.insert(0, sblue)
         x.icursor(xicursor)
         y.icursor(yicursor)
         z.icursor(zicursor)
