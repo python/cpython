@@ -87,3 +87,8 @@ checkJoin('g/../h', 'http://a/b/c/h')
 #checkJoin('http:', 'http:')
 
 print errors, "errors"
+
+# One more test backported from 2.3
+for u in ['Python', './Python']:
+    if urlparse.urlunparse(urlparse.urlparse(u)) != u:
+        print "*** urlparse/urlunparse failure for", `u`
