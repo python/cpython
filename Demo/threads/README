@@ -1,14 +1,10 @@
 This directory contains some demonstrations of the thread module.
-This module is only available, optionally, for a few platforms: SGI
-IRIX 4 and IRIX 5, SunOS 4 (not completely functioning), Solaris 2,
-and supposedly any platform that supports Posix Threads (currently
-only tested with KSR's implementation).  See ../../Python/thread.c.
 
 These are mostly "proof of concept" type applications:
 
-bug.py		Demonstrate a bug with importing modules in threads.
-condition.py	Condition variables test by Tim Peters.
-find.py		Parallelized "find(1)" (looks for directories).
 Generator.py	Generator class implemented with threads.
+bug.py		Demonstrate a bug with importing modules in threads.
+find.py		Parallelized "find(1)" (looks for directories).
+sync.py		Condition variables primitives by Tim Peters.
 telnet.py	Version of ../sockets/telnet.py using threads.
-wpi.py		Version of ../scripts/pi.py using threads and stdwin.
+wpi.py		Version of ../scripts/pi.py using threads (needs stdwin).
