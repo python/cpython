@@ -7,8 +7,9 @@ import getopt
 import re
 import socket
 import time
-import warnings
 import traceback
+import types
+import warnings
 
 import linecache
 from code import InteractiveInterpreter
