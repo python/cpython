@@ -38,6 +38,7 @@ extern "C" {
 extern DL_IMPORT(int) Py_DebugFlag;
 extern DL_IMPORT(int) Py_VerboseFlag;
 extern DL_IMPORT(int) Py_SuppressPrintingFlag;
+extern DL_IMPORT(int) Py_InteractiveFlag;
 
 void Py_FatalError	Py_PROTO((char *));
 
