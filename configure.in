@@ -641,6 +641,22 @@ AC_SUBST(BASECFLAGS)
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
+    # Python violates C99 rules, by casting between incompatible
+    # pointer types. GCC may generate bad code as a result of that,
+    # so use -fno-strict-aliasing if supported.
+    AC_MSG_CHECKING(whether $CC accepts -fno-strict-aliasing)
+     ac_save_cc="$CC"
+     CC="$CC -fno-strict-aliasing"
+     AC_TRY_RUN([int main() { return 0; }],
+     ac_cv_no_strict_aliasing_ok=yes,
+     ac_cv_no_strict_aliasing_ok=no,
+     ac_cv_no_strict_aliasing_ok=no)
+     CC="$ac_save_cc"
+    AC_MSG_RESULT($ac_cv_no_strict_aliasing_ok)
+    if test $ac_cv_no_strict_aliasing_ok = yes
+    then
+      BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"
+    fi
     case $ac_sys_system in
 	SCO_SV*)
 	    BASECFLAGS="$BASECFLAGS -m486 -DSCO5"
