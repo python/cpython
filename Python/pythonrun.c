@@ -329,15 +329,40 @@ Py_Finalize(void)
 	warnings_module = NULL;
 
 	/* Collect garbage.  This may call finalizers; it's nice to call these
-	   before all modules are destroyed. */
+	 * before all modules are destroyed.
+	 * XXX If a __del__ or weakref callback is triggered here, and tries to
+	 * XXX import a module, bad things can happen, because Python no
+	 * XXX longer believes it's initialized.
+	 * XXX     Fatal Python error: Interpreter not initialized (version mismatch?)
+	 * XXX is easy to provoke that way.  I've also seen, e.g.,
+	 * XXX     Exception exceptions.ImportError: 'No module named sha'
+	 * XXX         in <function callback at 0x008F5718> ignored
+	 * XXX but I'm unclear on exactly how that one happens.  In any case,
+	 * XXX I haven't seen a real-life report of either of these.
+         */
 	PyGC_Collect();
 
 	/* Destroy all modules */
 	PyImport_Cleanup();
 
 	/* Collect final garbage.  This disposes of cycles created by
-	   new-style class definitions, for example. */
+	 * new-style class definitions, for example.
+	 * XXX This is disabled because it caused too many problems.  If
+	 * XXX a __del__ or weakref callback triggers here, Python code has
+	 * XXX a hard time running, because even the sys module has been
+	 * XXX cleared out (sys.stdout is gone, sys.excepthook is gone, etc).
+	 * XXX One symptom is a sequence of information-free messages
+	 * XXX coming from threads (if a __del__ or callback is invoked,
+	 * XXX other threads can execute too, and any exception they encounter
+	 * XXX triggers a comedy of errors as subsystem after subsystem
+	 * XXX fails to find what it *expects* to find in sys to help report
+	 * XXX the exception and consequent unexpected failures).  I've also
+	 * XXX seen segfaults then, after adding print statements to the
+	 * XXX Python code getting called.
+	 */
+#if 0
 	PyGC_Collect();
+#endif
 
 	/* Destroy the database used by _PyImport_{Fixup,Find}Extension */
 	_PyImport_Fini();

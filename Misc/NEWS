@@ -12,6 +12,16 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- At Python shutdown time (Py_Finalize()), 2.3 called cyclic garbage
+  collection twice, both before and after tearing down modules.  The
+  call after tearing down modules has been disabled, because too much
+  of Python has been torn down then for __del__ methods and weakref
+  callbacks to execute sanely.  The most common symptom was a sequence
+  of uninformative messages on stderr when Python shut down, produced
+  by threads trying to raise exceptions, but unable to report the nature
+  of their problems because too much of the sys module had already been
+  destroyed.
+
 - Removed FutureWarnings related to hex/oct literals and conversions
   and left shifts.  (Thanks to Kalle Svensson for SF patch 849227.)
   This addresses most of the remaining semantic changes promised by
