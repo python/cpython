@@ -89,8 +89,8 @@ class _Database(UserDict.DictMixin):
             pass
 
         f = _open(self._dirfile, 'w', self._mode)
-        for key, (pos, siz) in self._index.items():
-            f.write("%r, (%d, %d)\n" % (key, pos, siz))
+        for key, pos_and_siz_pair in self._index.iteritems():
+            f.write("%r, %r\n" % (key, pos_and_siz_pair))
         f.close()
 
     def __getitem__(self, key):
