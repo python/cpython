@@ -2959,7 +2959,8 @@ init_socket(void)
 
 /* Simplistic emulation code for inet_pton that only works for IPv4 */
 #ifndef HAVE_INET_PTON
-int my_inet_pton (int af, char *src, void *dst)
+int 
+inet_pton (int af, char *src, void *dst)
 {
 	if(af == AF_INET){
 		long packed_addr;
@@ -2978,7 +2979,7 @@ int my_inet_pton (int af, char *src, void *dst)
 }
 
 char *
-my_inet_ntop(int af, void *src, char *dst, socklen_t size)
+inet_ntop(int af, void *src, char *dst, socklen_t size)
 {
 	if (af == AF_INET) {
 		struct in_addr packed_addr;
