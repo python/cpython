@@ -494,6 +494,8 @@ eval_frame(PyFrameObject *f)
 	PyThreadState *tstate = PyThreadState_GET();
 	PyCodeObject *co;
 	unsigned char *first_instr;
+	PyObject *names;
+	PyObject *consts;
 #ifdef LLTRACE
 	int lltrace;
 #endif
@@ -512,8 +514,7 @@ eval_frame(PyFrameObject *f)
 
 /* Code access macros */
 
-#define GETCONST(i)	(GETITEM(co->co_consts, (i)))
-#define GETNAMEV(i)	(GETITEM(co->co_names, (i)))
+#define GETNAMEV(i)	(GETITEM(names, (i)))
 #define INSTR_OFFSET()	(next_instr - first_instr)
 #define NEXTOP()	(*next_instr++)
 #define NEXTARG()	(next_instr += 2, (next_instr[-1]<<8) + next_instr[-2])
@@ -575,6 +576,8 @@ eval_frame(PyFrameObject *f)
 
 	tstate->frame = f;
 	co = f->f_code;
+	names = co->co_names;
+	consts = co->co_consts;
 	fastlocals = f->f_localsplus;
 	freevars = f->f_localsplus + f->f_nlocals;
 	_PyCode_GETCODEPTR(co, &first_instr);
@@ -753,7 +756,7 @@ eval_frame(PyFrameObject *f)
 			break;
 
 		case LOAD_CONST:
-			x = GETCONST(oparg);
+			x = GETITEM(consts, oparg);
 			Py_INCREF(x);
 			PUSH(x);
 			goto fast_next_opcode;
