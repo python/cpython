@@ -224,17 +224,6 @@ class BCPPCompiler(CCompiler) :
             else:
                 ld_args = self.ldflags_shared[:]
 
-            # Borland C++ has problems with '/' in paths
-            objects = map(os.path.normpath, objects)
-            startup_obj = 'c0d32'
-            objects.insert(0, startup_obj)
-
-            # either exchange python15.lib in the python libs directory against
-            # a Borland-like one, or create one with name bcpp_python15.lib 
-            # there and remove the pragmas from config.h  
-            libraries.append ('import32')
-            libraries.append ('cw32mt')
-
             # Create a temporary exports file for use by the linker
             head, tail = os.path.split (output_filename)
             modname, ext = os.path.splitext (tail)
@@ -245,6 +234,17 @@ class BCPPCompiler(CCompiler) :
                 contents.append('  %s=_%s' % (sym, sym))
             self.execute(write_file, (def_file, contents),
                          "writing %s" % def_file)
+
+            # Borland C++ has problems with '/' in paths
+            objects = map(os.path.normpath, objects)
+            startup_obj = 'c0d32'
+            objects.insert(0, startup_obj)
+
+            # either exchange python15.lib in the python libs directory against
+            # a Borland-like one, or create one with name bcpp_python15.lib 
+            # there and remove the pragmas from config.h  
+            libraries.append ('import32')
+            libraries.append ('cw32mt')
 
             # Start building command line flags and options.
 
@@ -377,9 +377,9 @@ class BCPPCompiler(CCompiler) :
         # seems to have a different format for static libraries.
         if debug:
             dlib = (lib + "_d")
-            try_names = ("bcpp_" + dlib, "bcpp_" + lib, dlib, lib)
+            try_names = (dlib + "_bcpp", lib + "_bcpp", dlib, lib)
         else:
-            try_names = ("bcpp_" + lib, lib)
+            try_names = (lib + "_bcpp", lib)
 
         for dir in dirs:
             for name in try_names:
