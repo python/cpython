@@ -128,7 +128,7 @@ the old value, not the modified one.  (XXX There are two problems here:
 I have no answers.  Garbage Collection may also become a problem here.)
 """
 
-__version__ = "1.7"                     # Code version
+__version__ = "1.8"                     # Code version
 
 from types import *
 from copy_reg import *
@@ -538,7 +538,8 @@ def whichmodule(cls, clsname):
     import sys
 
     for name, module in sys.modules.items():
-        if hasattr(module, clsname) and \
+	if name != '__main__' and \
+	    hasattr(module, clsname) and \
             getattr(module, clsname) is cls:
             break
     else:
@@ -677,9 +678,9 @@ class Unpickler:
         module = self.readline()[:-1]
         name = self.readline()[:-1]
         klass = self.find_class(module, name)
-	if (type(klass) is not ClassType):
-            raise SystemError, "Imported object %s from module %s is " \
-                               "not a class" % (name, module)
+## 	if (type(klass) is not ClassType):
+##             raise SystemError, "Imported object %s from module %s is " \
+##                                "not a class" % (name, module)
 
         value = apply(klass, args)
         self.append(value)
