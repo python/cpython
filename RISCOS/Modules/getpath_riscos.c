@@ -1,24 +1,28 @@
 #include "Python.h"
 #include "osdefs.h"
 
-static char *prefix,*exec_prefix,*progpath,*module_search_path=0;
+static char *prefix, *exec_prefix, *progpath, *module_search_path=NULL;
 
 static void
 calculate_path()
-{ char *pypath=getenv("Python$Path");
-  if(pypath)
-  { module_search_path=malloc(strlen(pypath)+1);
-    if (module_search_path) sprintf(module_search_path,"%s",pypath);
-    else
-    {  /* We can't exit, so print a warning and limp along */
-       fprintf(stderr, "Not enough memory for dynamic PYTHONPATH.\n");
-       fprintf(stderr, "Using default static PYTHONPATH.\n");
-    }
-  }
-  if(!module_search_path) module_search_path = "<Python$Dir>.Lib";
-  prefix="<Python$Dir>";
-  exec_prefix=prefix;
-  progpath=Py_GetProgramName();
+{ 
+	char *pypath = getenv("Python$Path");
+	if (pypath) {
+		int pathlen = strlen(pypath);
+		module_search_path = malloc(pathlen + 1);
+		if (module_search_path) 
+			strncpy(module_search_path, pypath, pathlen);
+		else {
+			fprintf(stderr, 
+				"Not enough memory for dynamic PYTHONPATH.\n"
+				"Using default static PYTHONPATH.\n");
+		}
+	}
+	if (!module_search_path) 
+		module_search_path = "<Python$Dir>.Lib";
+	prefix = "<Python$Dir>";
+	exec_prefix = prefix;
+	progpath = Py_GetProgramName();
 }
 
 /* External interface */
