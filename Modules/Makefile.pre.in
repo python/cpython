@@ -44,12 +44,13 @@ SO=		@SO@
 LDSHARED=	@LDSHARED@
 CCSHARED=	@CCSHARED@
 LINKFORSHARED=	@LINKFORSHARED@
-BINLIBDEST=	$(exec_prefix)/lib/python$(VERSION)
-DESTSHARED=	$(BINLIBDEST)/$(MACHDEP)
+LIBDIR=		$(exec_prefix)/lib
+BINLIBDEST=	$(LIBDIR)/python$(VERSION)
+DESTSHARED=	$(BINLIBDEST)/sharedmodules
 
 # Portable install script (configure doesn't always guess right)
 INSTALL=	@srcdir@/../install-sh -c
-INSTALL_PROGRAM=${INSTALL}
+INSTALL_PROGRAM=${INSTALL} -m 755
 INSTALL_DATA=	${INSTALL} -m 644
 
 # === Variables that are customizable by hand or by inclusion in Setup ===
@@ -197,7 +198,7 @@ asharedinstall:	$(DESTSHARED) $(ASHAREDMODULE)$(SO)
 echodestshared: $(DESTSHARED)
 	echo 	$(DESTSHARED)
 
-DESTDIRS=	$(exec_prefix) $(exec_prefix)/lib $(BINLIBDEST) $(DESTSHARED)
+DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
 
 $(DESTSHARED): 
 		@for i in $(DESTDIRS); \
