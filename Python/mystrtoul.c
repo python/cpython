@@ -128,8 +128,14 @@ int		base;
 	temp = result;
 	result = result * base + c;
 #ifndef MPW
-	if ((result - c) / base != temp)	/* overflow */
-	    ovf = 1;
+	if(base == 10) {
+		if(((long)(result - c) / base != temp))	/* overflow */
+			ovf = 1;
+	}
+	else {
+		if ((result - c) / base != temp)	/* overflow */
+			ovf = 1;
+	}
 #endif
 	str++;
     }
