@@ -501,7 +501,7 @@ if test $enable_shared = "yes"; then
           ;;
     SunOS*)
 	  LDLIBRARY='libpython$(VERSION).so'
-	  BLDLIBRARY='-Wl,-rpath,$(LIBDIR) -L. -lpython$(VERSION)'
+	  BLDLIBRARY='-Wl,-R,$(LIBDIR) -L. -lpython$(VERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH
           ;;
     Linux*|GNU*|NetBSD*)
