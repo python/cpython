@@ -11,6 +11,27 @@ import cmd
 import bdb
 import repr
 import os
+import re
+
+def find_function(funcname, filename):
+	cre = re.compile(r'def\s+%s\s*[(]' % funcname)
+	try:
+		fp = open(filename)
+	except IOError:
+		return None
+	# consumer of this info expects the first line to be 1
+	lineno = 1
+	answer = None
+	while 1:
+		line = fp.readline()
+		if line == '':
+			break
+		if cre.match(line):
+			answer = funcname, filename, lineno
+			break
+		lineno = lineno + 1
+	fp.close()
+	return answer
 
 
 # Interaction prompt line will separate file and call info from code
@@ -26,7 +47,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		bdb.Bdb.__init__(self)
 		cmd.Cmd.__init__(self)
 		self.prompt = '(Pdb) '
-		self.lineinfoCmd = 'egrep -n "def *%s *[(:]" %s /dev/null'
 		self.aliases = {}
 		# Try to load readline if it exists
 		try:
@@ -283,13 +303,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			if f:
 				fname = f
 			item = parts[1]
-		grepstring = self.lineinfoCmd % (item, fname)
-		answer = os.popen(grepstring, 'r').readline()
-		if answer:
-			f, line, junk = string.split(answer, ':', 2)
-			return(item, f,line)
-		else:
-			return failed
+		answer = find_function(item, fname)
+		return answer or failed
 		
 	def checkline(self, filename, lineno):
 		"""Return line number of first line at or after input
