@@ -168,7 +168,8 @@ typedef unsigned short Py_UNICODE;
     while (0)
 
 #define Py_UNICODE_MATCH(string, offset, substring)\
-    (!memcmp((string)->str + (offset), (substring)->str,\
+    ((*((string)->str + (offset)) == *((substring)->str)) &&\
+     !memcmp((string)->str + (offset), (substring)->str,\
              (substring)->length*sizeof(Py_UNICODE)))
 
 #ifdef __cplusplus
