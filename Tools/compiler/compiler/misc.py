@@ -64,3 +64,12 @@ def mangle(name, klass):
         klass = klass[:MANGLE_LEN-tlen]
 
     return "_%s%s" % (klass, name)
+
+def set_filename(filename, tree):
+    """Set the filename attribute to filename on every node in tree"""
+    worklist = [tree]
+    while worklist:
+        node = worklist.pop(0)
+        node.filename = filename
+        worklist.extend(node.getChildNodes())
+        
