@@ -1130,19 +1130,12 @@ parsestr(struct compiling *com, char *s)
 	int first = *s;
 	int quote = first;
 	int rawmode = 0;
-#ifdef Py_USING_UNICODE
 	int unicode = 0;
-#endif
+
 	if (isalpha(quote) || quote == '_') {
 		if (quote == 'u' || quote == 'U') {
-#ifdef Py_USING_UNICODE
 			quote = *++s;
 			unicode = 1;
-#else
-			com_error(com, PyExc_SyntaxError,
-				  "Unicode literals not supported in this Python");
-			return NULL;
-#endif
 		}
 		if (quote == 'r' || quote == 'R') {
 			quote = *++s;
@@ -1250,6 +1243,18 @@ parsestr(struct compiling *com, char *s)
 			com_error(com, PyExc_ValueError, 
 				  "invalid \\x escape");
 			return NULL;
+#ifndef Py_USING_UNICODE
+		case 'u':
+		case 'U':
+		case 'N':
+			if (unicode) {
+				Py_DECREF(v);
+				com_error(com, PyExc_ValueError,
+					  "Unicode escapes not legal "
+					  "when Unicode disabled");
+				return NULL;
+			}
+#endif
 		default:
 			*p++ = '\\';
 			*p++ = s[-1];
