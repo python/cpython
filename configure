@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.64 
+# From configure.in Revision: 1.65 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.12 
@@ -577,7 +577,7 @@ fi
  			sed -e 's/://' -e 's/\./_/'` && \
 			ac_sys_system=next && ac_sys_release=$4
 
-		MACHDEP="$ac_sys_system$ac_sys_release"
+		MACHDEP="plat-$ac_sys_system$ac_sys_release"
 	fi
 fi
 
@@ -597,10 +597,10 @@ then
 			   tr -d '/ ' | tr '[A-Z]' '[a-z]'`
 	ac_md_release=`echo $ac_sys_release |
 			   tr -d '/ ' | sed 's/\..*//'`
-	MACHDEP="$ac_md_system$ac_md_release"
+	MACHDEP="plat-$ac_md_system$ac_md_release"
 
 	case $MACHDEP in
-	'')	MACHDEP=unknown;;
+	'')	MACHDEP="plat-unknown";;
 	esac
 fi
 echo "$ac_t""$MACHDEP" 1>&6
