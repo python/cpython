@@ -95,31 +95,31 @@ Comparison with Python's Samplesort Hybrid
   below that, it's either astronomically lucky, or is finding exploitable
   structure in the data.
 
-      n   lg(n!)    *sort     3sort    +sort   %sort    ~sort     !sort
--------  -------   ------  --------  -------  ------  -------  --------
-  32768   444255   453096   453614    32908   452871   130491    469141  old
-                   449235    33019    33016    51328   188720     65534  new
-                    0.86% 1273.80%   -0.33%  782.31%  -30.85%   615.87%  %ch from new
+      n   lg(n!)    *sort    3sort     +sort   %sort    ~sort     !sort
+-------  -------   ------   -------  -------  ------  -------  --------
+  32768   444255   453096   453614    32908   452871   130491    469141 old
+                   448885    33016    33007    50426   182083     65534 new
+                    0.94% 1273.92%   -0.30%  798.09%  -28.33%   615.87% %ch from new
 
   65536   954037   972699   981940    65686   973104   260029   1004607
-                   963714    65824    65809   103409   377634    131070
-                    0.93% 1391.77%   -0.19%  841.02%  -31.14%   666.47%
+                   962991    65821    65808   101667   364341    131070
+                    1.01% 1391.83%   -0.19%  857.15%  -28.63%   666.47%
 
  131072  2039137  2101881  2091491   131232  2092894   554790   2161379
-                  2059092   131413   131362   209130   755476    262142
-                    2.08% 1491.54%   -0.10%  900.76%  -26.56%   724.51%
+                  2057533   131410   131361   206193   728871    262142
+                    2.16% 1491.58%   -0.10%  915.02%  -23.88%   724.51%
 
  262144  4340409  4464460  4403233   262314  4445884  1107842   4584560
-                  4380687   262440   262460   421998  1511174    524286
-                    1.91% 1577.81%   -0.06%  953.53%  -26.69%   774.44%
+                  4377402   262437   262459   416347  1457945    524286
+                    1.99% 1577.82%   -0.06%  967.83%  -24.01%   774.44%
 
  524288  9205096 9453356   9408463   524468  9441930  2218577   9692015
-                 9285709    524581   524634   848590  3022584   1048574
-                   1.81%  1693.52%   -0.03% 1012.66%  -26.60%   824.30%
+                 9278734    524580   524633   837947  2916107   1048574
+                   1.88%  1693.52%   -0.03% 1026.79%  -23.92%   824.30%
 
 1048576 19458756 19950272 19838588  1048766 19912134  4430649  20434212
-                 19621118  1048960  1048942  1715806  6045418   2097150
-                    1.68% 1791.26%   -0.02% 1060.51%  -26.71%   874.38%
+                 19606028  1048958  1048941  1694896  5832445   2097150
+                    1.76% 1791.27%   -0.02% 1074.83%  -24.03%   874.38%
 
   Discussion of cases:
 
@@ -170,7 +170,6 @@ Comparison with Python's Samplesort Hybrid
 + Here's the highwater mark for the number of heap-based temp slots (4
   bytes each on this box) needed by each test, again with arguments
   "15 20 1":
-
 
    2**i  *sort \sort /sort  3sort  +sort  %sort  ~sort  =sort  !sort
   32768  16384     0     0   6256      0  10821  12288      0  16383
@@ -430,6 +429,11 @@ etc.  We stay in galloping mode until both searches find slices to copy
 less than MIN_GALLOP elements long, at which point we go back to one-pair-
 at-a-time mode.
 
+A refinement:  The MergeState struct contains the value of min_gallop that
+controls when we enter galloping mode, initialized to MIN_GALLOP.
+merge_lo() and merge_hi() adjust this higher when gallooping isn't paying
+off, and lower when it is.
+
 
 Galloping
 ---------
@@ -536,13 +540,21 @@ at the other values.  At and after i=6, galloping always wins.
 
 We can't guess in advance when it's going to win, though, so we do one pair
 at a time until the evidence seems strong that galloping may pay.  MIN_GALLOP
-is 8 as I type this, and that's pretty strong evidence.  However, if the data
-is random, it simply will trigger galloping mode purely by luck every now
-and again, and it's quite likely to hit one of the losing cases next.  8
-favors protecting against a slowdown on random data at the expense of giving
-up small wins on lightly clustered data, and tiny marginal wins on highly
-clustered data (they win huge anyway, and if you're getting a factor of
-10 speedup, another percent just isn't worth fighting for).
+is 7, and that's pretty strong evidence.  However, if the data is random, it
+simply will trigger galloping mode purely by luck every now and again, and
+it's quite likely to hit one of the losing cases next.  On the other hand,
+in cases like ~sort, galloping always pays, and MIN_GALLOP is larger than it
+"should be" then.  So the MergeState struct keeps a min_gallop variable
+that merge_lo and merge_hi adjust:  the longer we stay in galloping mode,
+the smaller min_gallop gets, making it easier to transition back to
+galloping mode (if we ever leave it in the current merge, and at the
+start of the next merge).  But whenever the gallop loop doesn't pay,
+min_gallop is increased by one, making it harder to transition to back
+to galloping mode (and again both within a merge and across merges).  For
+random data, this all but eliminates the gallop penalty:  min_gallop grows
+large enough that we almost never get into galloping mode.  And for cases
+like ~sort, min_gallop can fall to as low as 1.  This seems to work well,
+but in all it's a minor improvement over using a fixed MIN_GALLOP value.
 
 
 Galloping Complication
@@ -567,6 +579,9 @@ wildly unbalanced runs already enjoys excellent performance.
 
 Comparing Average # of Compares on Random Arrays
 ------------------------------------------------
+[NOTE:  This was done when the new algorithm used about 0.1% more compares
+ on random data than does its current incarnation.]
+
 Here list.sort() is samplesort, and list.msort() this sort:
 
 """
