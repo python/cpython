@@ -17,37 +17,37 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 /* Interface to random parts in ceval.c */
 
 DL_IMPORT(PyObject *) PyEval_CallObjectWithKeywords
-	Py_PROTO((PyObject *, PyObject *, PyObject *));
+	(PyObject *, PyObject *, PyObject *);
 
 /* DLL-level Backwards compatibility: */
 #undef PyEval_CallObject
-DL_IMPORT(PyObject *) PyEval_CallObject Py_PROTO((PyObject *, PyObject *));
+DL_IMPORT(PyObject *) PyEval_CallObject(PyObject *, PyObject *);
 
 /* Inline this */
 #define PyEval_CallObject(func,arg) \
         PyEval_CallObjectWithKeywords(func, arg, (PyObject *)NULL)
 
 #ifdef HAVE_STDARG_PROTOTYPES
-DL_IMPORT(PyObject *) PyEval_CallFunction Py_PROTO((PyObject *obj, char *format, ...));
-DL_IMPORT(PyObject *) PyEval_CallMethod Py_PROTO((PyObject *obj,
-				      char *methodname, char *format, ...));
+DL_IMPORT(PyObject *) PyEval_CallFunction(PyObject *obj, char *format, ...);
+DL_IMPORT(PyObject *) PyEval_CallMethod(PyObject *obj,
+                                        char *methodname, char *format, ...);
 #else
 /* Better to have no prototypes at all for varargs functions in this case */
 DL_IMPORT(PyObject *) PyEval_CallFunction();
 DL_IMPORT(PyObject *) PyEval_CallMethod();
 #endif
 
-DL_IMPORT(PyObject *) PyEval_GetBuiltins Py_PROTO((void));
-DL_IMPORT(PyObject *) PyEval_GetGlobals Py_PROTO((void));
-DL_IMPORT(PyObject *) PyEval_GetLocals Py_PROTO((void));
-DL_IMPORT(PyObject *) PyEval_GetOwner Py_PROTO((void));
-DL_IMPORT(PyObject *) PyEval_GetFrame Py_PROTO((void));
-DL_IMPORT(int) PyEval_GetRestricted Py_PROTO((void));
+DL_IMPORT(PyObject *) PyEval_GetBuiltins(void);
+DL_IMPORT(PyObject *) PyEval_GetGlobals(void);
+DL_IMPORT(PyObject *) PyEval_GetLocals(void);
+DL_IMPORT(PyObject *) PyEval_GetOwner(void);
+DL_IMPORT(PyObject *) PyEval_GetFrame(void);
+DL_IMPORT(int) PyEval_GetRestricted(void);
 
-DL_IMPORT(int) Py_FlushLine Py_PROTO((void));
+DL_IMPORT(int) Py_FlushLine(void);
 
-DL_IMPORT(int) Py_AddPendingCall Py_PROTO((int (*func) Py_PROTO((ANY *)), ANY *arg));
-DL_IMPORT(int) Py_MakePendingCalls Py_PROTO((void));
+DL_IMPORT(int) Py_AddPendingCall(int (*func)(ANY *), ANY *arg);
+DL_IMPORT(int) Py_MakePendingCalls(void);
 
 
 /* Interface for threads.
@@ -95,16 +95,16 @@ DL_IMPORT(int) Py_MakePendingCalls Py_PROTO((void));
    mechanism!
 */
 
-extern DL_IMPORT(PyThreadState *) PyEval_SaveThread Py_PROTO((void));
-extern DL_IMPORT(void) PyEval_RestoreThread Py_PROTO((PyThreadState *));
+extern DL_IMPORT(PyThreadState *) PyEval_SaveThread(void);
+extern DL_IMPORT(void) PyEval_RestoreThread(PyThreadState *);
 
 #ifdef WITH_THREAD
 
-extern DL_IMPORT(void) PyEval_InitThreads Py_PROTO((void));
-extern DL_IMPORT(void) PyEval_AcquireLock Py_PROTO((void));
-extern DL_IMPORT(void) PyEval_ReleaseLock Py_PROTO((void));
-extern DL_IMPORT(void) PyEval_AcquireThread Py_PROTO((PyThreadState *tstate));
-extern DL_IMPORT(void) PyEval_ReleaseThread Py_PROTO((PyThreadState *tstate));
+extern DL_IMPORT(void) PyEval_InitThreads(void);
+extern DL_IMPORT(void) PyEval_AcquireLock(void);
+extern DL_IMPORT(void) PyEval_ReleaseLock(void);
+extern DL_IMPORT(void) PyEval_AcquireThread(PyThreadState *tstate);
+extern DL_IMPORT(void) PyEval_ReleaseThread(PyThreadState *tstate);
 
 #define Py_BEGIN_ALLOW_THREADS { \
 			PyThreadState *_save; \
@@ -123,7 +123,7 @@ extern DL_IMPORT(void) PyEval_ReleaseThread Py_PROTO((PyThreadState *tstate));
 
 #endif /* !WITH_THREAD */
 
-extern DL_IMPORT(int) _PyEval_SliceIndex Py_PROTO((PyObject *, int *));
+extern DL_IMPORT(int) _PyEval_SliceIndex(PyObject *, int *);
 
 
 #ifdef __cplusplus

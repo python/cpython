@@ -1,9 +1,3 @@
-#ifndef Py_MARSHAL_H
-#define Py_MARSHAL_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /***********************************************************
 Copyright (c) 2000, BeOpen.com.
 Copyright (c) 1995-2000, Corporation for National Research Initiatives.
@@ -16,15 +10,21 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 /* Interface for marshal.c */
 
-DL_IMPORT(void) PyMarshal_WriteLongToFile Py_PROTO((long, FILE *));
-DL_IMPORT(void) PyMarshal_WriteShortToFile Py_PROTO((int, FILE *));
-DL_IMPORT(void) PyMarshal_WriteObjectToFile Py_PROTO((PyObject *, FILE *));
-DL_IMPORT(PyObject *) PyMarshal_WriteObjectToString Py_PROTO((PyObject *));
+#ifndef Py_MARSHAL_H
+#define Py_MARSHAL_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-DL_IMPORT(long) PyMarshal_ReadLongFromFile Py_PROTO((FILE *));
-DL_IMPORT(int) PyMarshal_ReadShortFromFile Py_PROTO((FILE *));
-DL_IMPORT(PyObject *) PyMarshal_ReadObjectFromFile Py_PROTO((FILE *));
-DL_IMPORT(PyObject *) PyMarshal_ReadObjectFromString Py_PROTO((char *, int));
+DL_IMPORT(void) PyMarshal_WriteLongToFile(long, FILE *);
+DL_IMPORT(void) PyMarshal_WriteShortToFile(int, FILE *);
+DL_IMPORT(void) PyMarshal_WriteObjectToFile(PyObject *, FILE *);
+DL_IMPORT(PyObject *) PyMarshal_WriteObjectToString(PyObject *);
+
+DL_IMPORT(long) PyMarshal_ReadLongFromFile(FILE *);
+DL_IMPORT(int) PyMarshal_ReadShortFromFile(FILE *);
+DL_IMPORT(PyObject *) PyMarshal_ReadObjectFromFile(FILE *);
+DL_IMPORT(PyObject *) PyMarshal_ReadObjectFromString(char *, int);
 
 #ifdef __cplusplus
 }

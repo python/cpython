@@ -1,9 +1,3 @@
-#ifndef Py_IMPORT_H
-#define Py_IMPORT_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /***********************************************************
 Copyright (c) 2000, BeOpen.com.
 Copyright (c) 1995-2000, Corporation for National Research Initiatives.
@@ -16,37 +10,43 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 /* Module definition and import interface */
 
-DL_IMPORT(long) PyImport_GetMagicNumber Py_PROTO((void));
-DL_IMPORT(PyObject *) PyImport_ExecCodeModule Py_PROTO((char *name, PyObject *co));
-DL_IMPORT(PyObject *) PyImport_ExecCodeModuleEx Py_PROTO((
-	char *name, PyObject *co, char *pathname));
-DL_IMPORT(PyObject *) PyImport_GetModuleDict Py_PROTO((void));
-DL_IMPORT(PyObject *) PyImport_AddModule Py_PROTO((char *name));
-DL_IMPORT(PyObject *) PyImport_ImportModule Py_PROTO((char *name));
-DL_IMPORT(PyObject *) PyImport_ImportModuleEx Py_PROTO((
-	char *name, PyObject *globals, PyObject *locals, PyObject *fromlist));
-DL_IMPORT(PyObject *) PyImport_Import Py_PROTO((PyObject *name));
-DL_IMPORT(PyObject *) PyImport_ReloadModule Py_PROTO((PyObject *m));
-DL_IMPORT(void) PyImport_Cleanup Py_PROTO((void));
-DL_IMPORT(int) PyImport_ImportFrozenModule Py_PROTO((char *));
+#ifndef Py_IMPORT_H
+#define Py_IMPORT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-extern DL_IMPORT(PyObject *)_PyImport_FindExtension Py_PROTO((char *, char *));
-extern DL_IMPORT(PyObject *)_PyImport_FixupExtension Py_PROTO((char *, char *));
+DL_IMPORT(long) PyImport_GetMagicNumber(void);
+DL_IMPORT(PyObject *) PyImport_ExecCodeModule(char *name, PyObject *co);
+DL_IMPORT(PyObject *) PyImport_ExecCodeModuleEx(
+	char *name, PyObject *co, char *pathname);
+DL_IMPORT(PyObject *) PyImport_GetModuleDict(void);
+DL_IMPORT(PyObject *) PyImport_AddModule(char *name);
+DL_IMPORT(PyObject *) PyImport_ImportModule(char *name);
+DL_IMPORT(PyObject *) PyImport_ImportModuleEx(
+	char *name, PyObject *globals, PyObject *locals, PyObject *fromlist);
+DL_IMPORT(PyObject *) PyImport_Import(PyObject *name);
+DL_IMPORT(PyObject *) PyImport_ReloadModule(PyObject *m);
+DL_IMPORT(void) PyImport_Cleanup(void);
+DL_IMPORT(int) PyImport_ImportFrozenModule(char *);
+
+extern DL_IMPORT(PyObject *)_PyImport_FindExtension(char *, char *);
+extern DL_IMPORT(PyObject *)_PyImport_FixupExtension(char *, char *);
 
 struct _inittab {
-	char *name;
-	void (*initfunc)();
+    char *name;
+    void (*initfunc)();
 };
 
 extern DL_IMPORT(struct _inittab *) PyImport_Inittab;
 
-extern DL_IMPORT(int) PyImport_AppendInittab Py_PROTO((char *name, void (*initfunc)()));
-extern DL_IMPORT(int) PyImport_ExtendInittab Py_PROTO((struct _inittab *newtab));
+extern DL_IMPORT(int) PyImport_AppendInittab(char *name, void (*initfunc)());
+extern DL_IMPORT(int) PyImport_ExtendInittab(struct _inittab *newtab);
 
 struct _frozen {
-	char *name;
-	unsigned char *code;
-	int size;
+    char *name;
+    unsigned char *code;
+    int size;
 };
 
 /* Embedding apps may change this pointer to point to their favorite
