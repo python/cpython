@@ -30,8 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Interface to execute compiled code */
 
-PyObject *PyEval_EvalCode
-	Py_PROTO((PyCodeObject *, PyObject *, PyObject *, PyObject *, PyObject *));
+PyObject *PyEval_EvalCode Py_PROTO((PyCodeObject *, PyObject *, PyObject *));
 
 #ifdef __cplusplus
 }

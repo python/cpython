@@ -31,6 +31,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Interface to random parts in ceval.c */
 
 PyObject *PyEval_CallObject Py_PROTO((PyObject *, PyObject *));
+PyObject *PyEval_CallObjectWithKeywords
+	Py_PROTO((PyObject *, PyObject *, PyObject *));
 
 PyObject *PyEval_GetBuiltins Py_PROTO((void));
 PyObject *PyEval_GetGlobals Py_PROTO((void));

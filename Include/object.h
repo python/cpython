@@ -217,7 +217,7 @@ typedef struct _typeobject {
 	/* More standard operations (at end for binary compatibility) */
 
 	hashfunc tp_hash;
-	binaryfunc tp_call;
+	ternaryfunc tp_call;
 	reprfunc tp_str;
 
 	/* Space for future expansion */

@@ -28,24 +28,28 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Definitions for compiled intermediate code */
+/* Definitions for bytecode */
 
-
-/* An intermediate code fragment contains:
-   - a string that encodes the instructions,
-   - a list of the constants,
-   - a list of the names used,
-   - the filename from which it was compiled,
-   - the name of the object for which it was compiled. */
-
+/* Bytecode object */
 typedef struct {
 	PyObject_HEAD
-	PyStringObject *co_code;	/* instruction opcodes */
-	PyObject *co_consts;	/* list of immutable constant objects */
-	PyObject *co_names;	/* list of stringobjects */
-	PyObject *co_filename;	/* string */
-	PyObject *co_name;	/* string */
+	int co_argcount;	/* #arguments, except *args */
+	int co_nlocals;		/* #local variables */
+	int co_flags;		/* CO_..., see below */
+	PyStringObject *co_code; /* instruction opcodes */
+	PyObject *co_consts;	/* list (constants used) */
+	PyObject *co_names;	/* list of strings (names used) */
+	PyObject *co_varnames;	/* tuple of strings (local variable names) */
+	/* The rest doesn't count for hash/cmp */
+	PyObject *co_filename;	/* string (where it was loaded from) */
+	PyObject *co_name;	/* string (name, for reference) */
 } PyCodeObject;
+
+/* Masks for co_flags above */
+#define CO_OPTIMIZED	0x0001
+#define CO_NEWLOCALS	0x0002
+#define CO_VARARGS	0x0004
+#define CO_VARKEYWORDS	0x0008
 
 extern DL_IMPORT(PyTypeObject) PyCode_Type;
 
@@ -55,8 +59,9 @@ extern DL_IMPORT(PyTypeObject) PyCode_Type;
 /* Public interface */
 struct _node; /* Declare the existence of this type */
 PyCodeObject *PyNode_Compile Py_PROTO((struct _node *, char *));
-PyCodeObject *PyCode_New
-	Py_PROTO((PyObject *, PyObject *, PyObject *, PyObject *, PyObject *));
+PyCodeObject *PyCode_New Py_PROTO((
+	int, int, int, PyObject *, PyObject *, PyObject *, PyObject *,
+	PyObject *, PyObject *)); /* same as struct above */
 
 #ifdef __cplusplus
 }
