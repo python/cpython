@@ -44,7 +44,7 @@ below. If the ordinary character is not on the list, then the
 resulting RE will match the second character.
     \\number  Matches the contents of the group of the same number.
     \\A       Matches only at the start of the string.
-    \\Z       Matches only at the end of the string. 
+    \\Z       Matches only at the end of the string.
     \\b       Matches the empty string, but only at the start or end of a word.
     \\B       Matches the empty string, but not at the start or end of a word.
     \\d       Matches any decimal digit; equivalent to the set [0-9].
@@ -55,7 +55,7 @@ resulting RE will match the second character.
              With LOCALE, it will match the set [0-9_] plus characters defined
              as letters for the current locale.
     \\W       Matches the complement of \\w.
-    \\\\       Matches a literal backslash. 
+    \\\\       Matches a literal backslash.
 
 This module exports the following functions:
     match    Match a regular expression pattern to the beginning of a string.
@@ -100,8 +100,8 @@ from pcre import *
 I = IGNORECASE
 L = LOCALE
 M = MULTILINE
-S = DOTALL 
-X = VERBOSE 
+S = DOTALL
+X = VERBOSE
 
 
 #
@@ -125,7 +125,7 @@ def _cachecompile(pattern, flags=0):
 
 def match(pattern, string, flags=0):
     """match (pattern, string[, flags]) -> MatchObject or None
-    
+
     If zero or more characters at the beginning of string match the
     regular expression pattern, return a corresponding MatchObject
     instance. Return None if the string does not match the pattern;
@@ -135,12 +135,12 @@ def match(pattern, string, flags=0):
     search() instead.
 
     """
-    
+
     return _cachecompile(pattern, flags).match(string)
-  
+
 def search(pattern, string, flags=0):
     """search (pattern, string[, flags]) -> MatchObject or None
-    
+
     Scan through string looking for a location where the regular
     expression pattern produces a match, and return a corresponding
     MatchObject instance. Return None if no position in the string
@@ -149,10 +149,10 @@ def search(pattern, string, flags=0):
 
     """
     return _cachecompile(pattern, flags).search(string)
-  
+
 def sub(pattern, repl, string, count=0):
     """sub(pattern, repl, string[, count=0]) -> string
-    
+
     Return the string obtained by replacing the leftmost
     non-overlapping occurrences of pattern in string by the
     replacement repl. If the pattern isn't found, string is returned
@@ -177,7 +177,7 @@ def sub(pattern, repl, string, count=0):
 
 def subn(pattern, repl, string, count=0):
     """subn(pattern, repl, string[, count=0]) -> (string, num substitutions)
-    
+
     Perform the same operation as sub(), but return a tuple
     (new_string, number_of_subs_made).
 
@@ -185,10 +185,10 @@ def subn(pattern, repl, string, count=0):
     if type(pattern) == type(''):
         pattern = _cachecompile(pattern)
     return pattern.subn(repl, string, count)
-  
+
 def split(pattern, string, maxsplit=0):
     """split(pattern, string[, maxsplit=0]) -> list of strings
-    
+
     Split string by the occurrences of pattern. If capturing
     parentheses are used in pattern, then the text of all groups in
     the pattern are also returned as part of the resulting list. If
@@ -203,7 +203,7 @@ def split(pattern, string, maxsplit=0):
 
 def findall(pattern, string):
     """findall(pattern, string) -> list
-    
+
     Return a list of all non-overlapping matches of pattern in
     string. If one or more groups are present in the pattern, return a
     list of groups; this will be a list of tuples if the pattern has
@@ -216,7 +216,7 @@ def findall(pattern, string):
 
 def escape(pattern):
     """escape(string) -> string
-    
+
     Return string with all non-alphanumerics backslashed; this is
     useful if you want to match an arbitrary literal string that may
     have regular expression metacharacters in it.
@@ -242,7 +242,7 @@ def compile(pattern, flags=0):
     groupindex={}
     code=pcre_compile(pattern, flags, groupindex)
     return RegexObject(pattern, flags, code, groupindex)
-    
+
 
 #
 #   Class definitions
@@ -258,18 +258,18 @@ class RegexObject:
     subn     Same as sub, but also return the number of substitutions made.
     split    Split a string by the occurrences of the pattern.
     findall  Find all occurrences of the pattern in a string.
-    
+
     """
 
     def __init__(self, pattern, flags, code, groupindex):
-        self.code = code 
+        self.code = code
         self.flags = flags
         self.pattern = pattern
         self.groupindex = groupindex
 
     def search(self, string, pos=0, endpos=None):
         """search(string[, pos][, endpos]) -> MatchObject or None
-        
+
         Scan through string looking for a location where this regular
         expression produces a match, and return a corresponding
         MatchObject instance. Return None if no position in the string
@@ -277,24 +277,24 @@ class RegexObject:
         a zero-length match at some point in the string. The optional
         pos and endpos parameters have the same meaning as for the
         match() method.
-    
+
         """
-        if endpos is None or endpos>len(string): 
+        if endpos is None or endpos>len(string):
             endpos=len(string)
         if endpos<pos: endpos=pos
         regs = self.code.match(string, pos, endpos, 0)
         if regs is None:
             return None
         self._num_regs=len(regs)
-        
+
         return MatchObject(self,
                            string,
                            pos, endpos,
                            regs)
-    
+
     def match(self, string, pos=0, endpos=None):
         """match(string[, pos][, endpos]) -> MatchObject or None
-        
+
         If zero or more characters at the beginning of string match
         this regular expression, return a corresponding MatchObject
         instance. Return None if the string does not match the
@@ -316,7 +316,7 @@ class RegexObject:
         searched for a match.
 
         """
-        if endpos is None or endpos>len(string): 
+        if endpos is None or endpos>len(string):
             endpos=len(string)
         if endpos<pos: endpos=pos
         regs = self.code.match(string, pos, endpos, ANCHORED)
@@ -327,23 +327,23 @@ class RegexObject:
                            string,
                            pos, endpos,
                            regs)
-    
+
     def sub(self, repl, string, count=0):
         """sub(repl, string[, count=0]) -> string
-        
+
         Return the string obtained by replacing the leftmost
         non-overlapping occurrences of the compiled pattern in string
         by the replacement repl. If the pattern isn't found, string is
         returned unchanged.
 
         Identical to the sub() function, using the compiled pattern.
-        
+
         """
         return self.subn(repl, string, count)[0]
-    
-    def subn(self, repl, source, count=0): 
+
+    def subn(self, repl, source, count=0):
         """subn(repl, string[, count=0]) -> tuple
-        
+
         Perform the same operation as sub(), but return a tuple
         (new_string, number_of_subs_made).
 
@@ -399,17 +399,17 @@ class RegexObject:
             n = n + 1
         append(source[pos:])
         return (string.join(results, ''), n)
-                                                                            
+
     def split(self, source, maxsplit=0):
         """split(source[, maxsplit=0]) -> list of strings
-    
+
         Split string by the occurrences of the compiled pattern. If
         capturing parentheses are used in the pattern, then the text
         of all groups in the pattern are also returned as part of the
         resulting list. If maxsplit is nonzero, at most maxsplit
         splits occur, and the remainder of the string is returned as
         the final element of the list.
-        
+
         """
         if maxsplit < 0:
             raise error, "negative split count"
@@ -449,7 +449,7 @@ class RegexObject:
 
     def findall(self, source):
         """findall(source) -> list
-    
+
         Return a list of all non-overlapping matches of the compiled
         pattern in string. If one or more groups are present in the
         pattern, return a list of groups; this will be a list of
@@ -487,7 +487,7 @@ class RegexObject:
     def __getinitargs__(self):
         return (None,None,None,None) # any 4 elements, to work around
                                      # problems with the
-                                     # pickle/cPickle modules not yet 
+                                     # pickle/cPickle modules not yet
                                      # ignoring the __init__ function
     def __getstate__(self):
         return self.pattern, self.flags, self.groupindex
@@ -517,13 +517,13 @@ class MatchObject:
     def __init__(self, re, string, pos, endpos, regs):
         self.re = re
         self.string = string
-        self.pos = pos 
+        self.pos = pos
         self.endpos = endpos
         self.regs = regs
-        
+
     def start(self, g = 0):
         """start([group=0]) -> int or None
-        
+
         Return the index of the start of the substring matched by
         group; group defaults to zero (meaning the whole matched
         substring). Return -1 if group exists but did not contribute
@@ -536,10 +536,10 @@ class MatchObject:
             except (KeyError, TypeError):
                 raise IndexError, 'group %s is undefined' % `g`
         return self.regs[g][0]
-    
+
     def end(self, g = 0):
         """end([group=0]) -> int or None
-        
+
         Return the indices of the end of the substring matched by
         group; group defaults to zero (meaning the whole matched
         substring). Return -1 if group exists but did not contribute
@@ -552,10 +552,10 @@ class MatchObject:
             except (KeyError, TypeError):
                 raise IndexError, 'group %s is undefined' % `g`
         return self.regs[g][1]
-    
+
     def span(self, g = 0):
         """span([group=0]) -> tuple
-        
+
         Return the 2-tuple (m.start(group), m.end(group)). Note that
         if group did not contribute to the match, this is (-1,
         -1). Group defaults to zero (meaning the whole matched
@@ -568,10 +568,10 @@ class MatchObject:
             except (KeyError, TypeError):
                 raise IndexError, 'group %s is undefined' % `g`
         return self.regs[g]
-    
+
     def groups(self, default=None):
         """groups([default=None]) -> tuple
-        
+
         Return a tuple containing all the subgroups of the match, from
         1 up to however many groups are in the pattern. The default
         argument is used for groups that did not participate in the
@@ -589,7 +589,7 @@ class MatchObject:
 
     def group(self, *groups):
         """group([group1, group2, ...]) -> string or tuple
-        
+
         Return one or more subgroups of the match. If there is a
         single argument, the result is a single string; if there are
         multiple arguments, the result is a tuple with one item per
@@ -636,7 +636,7 @@ class MatchObject:
 
     def groupdict(self, default=None):
         """groupdict([default=None]) -> dictionary
-        
+
         Return a dictionary containing all the named subgroups of the
         match, keyed by the subgroup name. The default argument is
         used for groups that did not participate in the match.

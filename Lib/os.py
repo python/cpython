@@ -213,7 +213,7 @@ def execlpe(file, *args):
 
     Execute the executable file (which is searched for along $PATH)
     with argument list args and environment env, replacing the current
-    process. """    
+    process. """
     env = args[-1]
     execvpe(file, args[:-1], env)
 
@@ -231,7 +231,7 @@ def execvpe(file, args, env):
     Execute the executable file (which is searched for along $PATH)
     with argument list args and environment env , replacing the
     current process.
-    args may be a list or tuple of strings. """    
+    args may be a list or tuple of strings. """
     _execvpe(file, args, env)
 
 _notfound = None
@@ -370,7 +370,7 @@ if _exists("fork") and not _exists("spawnv") and _exists("execv"):
 Execute file with arguments from args in a subprocess.
 If mode == P_NOWAIT return the pid of the process.
 If mode == P_WAIT return the process's exit code if it exits normally;
-otherwise return -SIG, where SIG is the signal that killed it. """   
+otherwise return -SIG, where SIG is the signal that killed it. """
         return _spawnvef(mode, file, args, None, execv)
 
     def spawnve(mode, file, args, env):

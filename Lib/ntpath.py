@@ -1,5 +1,5 @@
 # Module 'ntpath' -- common operations on WinNT/Win95 pathnames
-"""Common pathname manipulations, WindowsNT/95 version. 
+"""Common pathname manipulations, WindowsNT/95 version.
 
 Instead of importing this module directly, import os and refer to this
 module as os.path.
@@ -254,7 +254,7 @@ def ismount(path):
 def walk(top, func, arg):
     """Directory tree walk whth callback function.
 
-    walk(top, func, arg) calls func(arg, d, files) for each directory d 
+    walk(top, func, arg) calls func(arg, d, files) for each directory d
     in the tree rooted at top (including top itself); files is a list
     of all the files and subdirs in directory d."""
     try:
@@ -313,7 +313,7 @@ def expanduser(path):
 # XXX With COMMAND.COM you can use any characters in a variable name,
 # XXX except '^|<>='.
 
-def expandvars(path):  
+def expandvars(path):
     """Expand shell variables of form $var and ${var}.
 
     Unknown variables are left unchanged."""
