@@ -8,6 +8,8 @@
 # See the sre.py file for information on usage and redistribution.
 #
 
+"""Internal support module for sre"""
+
 # XXX: show string offset and offending character for all errors
 
 # this module works under 1.5.2 and later.  don't use string methods

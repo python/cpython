@@ -9,6 +9,8 @@
 # See the sre.py file for information on usage and redistribution.
 #
 
+"""Internal support module for sre"""
+
 # update when constants are added or removed
 
 MAGIC = 20010701
