@@ -34,9 +34,8 @@ provides an overview of the new features for Python programmers.
 Refer to the Python 2.1 documentation, or to the specific PEP, for
 more details about any new feature that particularly interests you.
 
-Currently 2.1 is available in an alpha release, but the release
-schedule calls for a beta release by late February 2001, and a final
-release in April 2001.
+Currently 2.1 is available in a beta release, and the final release is
+planned for April 2001.
 
 %======================================================================
 \section{PEP 227: Nested Scopes}
@@ -308,25 +307,18 @@ Instead of having to edit the \file{Modules/Setup} file in order to
 enable modules, a \file{setup.py} script in the top directory of the
 Python source distribution is run at build time, and attempts to
 discover which modules can be enabled by examining the modules and
-header files on the system.  In 2.1alpha1, there's very little you can
-do to change \file{setup.py}'s behaviour, or to discover why a given
-module isn't compiled.  If you run into problems in 2.1alpha1, please
-report them, and be prepared to dive into \file{setup.py} in order to
-fix autodetection of a given library on your system.  In the alpha2
-release I plan to add ways to have more control over what the script
-does (probably command-line arguments to \file{configure} or to
-\file{setup.py}).
-
-If it turns out to be impossible to make autodetection work reliably,
-it's possible that this change may become an optional build method
-instead of the default, or it may even be backed out completely.
+header files on the system.  If a module is configured in
+\file{Modules/Setup}, the \file{setup.py} script won't attempt to
+compile that module and will defer to the \file{Modules/Setup} file's
+contents.  This provides a way to specific any strange command-line
+flags or libraries that are required for a specific platform.
 
 In another far-reaching change to the build mechanism, Neil
 Schemenauer restructured things so Python now uses a single makefile
 that isn't recursive, instead of makefiles in the top directory and in
-each of the Python/, Parser/, Objects/, and Modules/ subdirectories.
-This makes building Python faster, and also makes the build process
-clearer and simpler.
+each of the \file{Python/}, \file{Parser/}, \file{Objects/}, and
+\file{Modules/} subdirectories.  This makes building Python faster
+and also makes hacking the Makefiles clearer and simpler.
 
 \begin{seealso} 
 
@@ -429,7 +421,19 @@ Fred~L. Drake,~Jr.}
 %======================================================================
 \section{PEP 235: Case-Insensitive Platforms and \keyword{import}}
 
-XXX
+Some operating systems have filesystems that are case-insensitive,
+MacOS and Windows being the primary examples; on these systems, it's
+impossible to distinguish the filenames \samp{FILE.PY} and
+\samp{file.py}, even though they do store the file's name 
+in its original case (they're case-preserving, too).
+
+In Python 2.1, the \keyword{import} statement will work to simulate
+case-sensitivity on case-insensitive platforms.  Python will now
+search for the first case-sensitive match by default, raising an
+\exception{ImportError} if no such file is found, so \code{import file}
+will not import a module named \samp{FILE.PY}.  Case-insensitive
+matching can be requested by setting the PYTHONCASEOK environment
+variable before starting the Python interpreter.
 
 %======================================================================
 \section{PEP 217: Interactive Display Hook}
