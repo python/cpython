@@ -746,7 +746,6 @@ do_cmp(PyObject *v, PyObject *w)
 int
 PyObject_Compare(PyObject *v, PyObject *w)
 {
-	PyTypeObject *vtp;
 	int result;
 
 	if (v == NULL || w == NULL) {
@@ -755,7 +754,6 @@ PyObject_Compare(PyObject *v, PyObject *w)
 	}
 	if (v == w)
 		return 0;
-	vtp = v->ob_type;
 	if (Py_EnterRecursiveCall(" in cmp"))
 		return -1;
 	result = do_cmp(v, w);
