@@ -2,8 +2,6 @@
 
 Utility functions for manipulating directories and directory trees."""
 
-# created 2000/04/03, Greg Ward (extracted from util.py)
-
 __revision__ = "$Id$"
 
 import os

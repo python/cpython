@@ -4,9 +4,6 @@ Provides the Distribution class, which represents the module distribution
 being built/installed/distributed.
 """
 
-# created 2000/04/03, Greg Ward
-# (extricated from core.py; actually dates back to the beginning)
-
 __revision__ = "$Id$"
 
 import sys, os, string, re

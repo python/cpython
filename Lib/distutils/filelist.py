@@ -4,11 +4,6 @@ Provides the FileList class, used for poking about the filesystem
 and building lists of files.
 """
 
-# created 2000/07/17, Rene Liebscher (as template.py)
-# most parts taken from commands/sdist.py
-# renamed 2000/07/29 (to filelist.py) and officially added to
-#  the Distutils source, Greg Ward
-
 __revision__ = "$Id$"
 
 import os, string, re

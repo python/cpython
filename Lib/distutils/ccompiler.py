@@ -3,8 +3,6 @@
 Contains CCompiler, an abstract base class that defines the interface
 for the Distutils compiler abstraction model."""
 
-# created 1999/07/05, Greg Ward
-
 __revision__ = "$Id$"
 
 import sys, os, re

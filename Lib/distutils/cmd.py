@@ -4,9 +4,6 @@ Provides the Command class, the base class for the command classes
 in the distutils.command package.
 """
 
-# created 2000/04/03, Greg Ward
-# (extricated from core.py; actually dates back to the beginning)
-
 __revision__ = "$Id$"
 
 import sys, os, string, re

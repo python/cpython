@@ -4,8 +4,6 @@ Implements the Distutils 'install' command."""
 
 from distutils import log
 
-# created 1999/03/13, Greg Ward
-
 __revision__ = "$Id$"
 
 import sys, os, string

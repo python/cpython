@@ -4,7 +4,7 @@ Contains MSVCCompiler, an implementation of the abstract CCompiler class
 for the Microsoft Visual Studio."""
 
 
-# created 1999/08/19, Perry Stoll
+# Written by Perry Stoll
 # hacked by Robin Becker and Thomas Heller to do a better job of
 #   finding DevStudio (through the registry)
 

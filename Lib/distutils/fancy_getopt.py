@@ -8,8 +8,6 @@ additional features:
   * options set attributes of a passed-in object
 """
 
-# created 1999/03/03, Greg Ward
-
 __revision__ = "$Id$"
 
 import sys, string, re

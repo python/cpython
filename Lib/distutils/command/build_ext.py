@@ -4,8 +4,6 @@ Implements the Distutils 'build_ext' command, for building extension
 modules (currently limited to C extensions, should accommodate C++
 extensions ASAP)."""
 
-# created 1999/08/09, Greg Ward
-
 __revision__ = "$Id$"
 
 import sys, os, string, re

@@ -7,7 +7,6 @@ available.
 
 Written by:   Fred L. Drake, Jr.
 Email:        <fdrake@acm.org>
-Initial date: 17-Dec-1998
 """
 
 __revision__ = "$Id$"

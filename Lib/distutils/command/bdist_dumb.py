@@ -4,8 +4,6 @@ Implements the Distutils 'bdist_dumb' command (create a "dumb" built
 distribution -- i.e., just an archive to be unpacked under $prefix or
 $exec_prefix)."""
 
-# created 2000/03/29, Greg Ward
-
 __revision__ = "$Id$"
 
 import os

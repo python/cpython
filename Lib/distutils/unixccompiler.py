@@ -13,8 +13,6 @@ the "typical" Unix-style command-line C compiler:
   * link shared library handled by 'cc -shared'
 """
 
-# created 1999/07/05, Greg Ward
-
 __revision__ = "$Id$"
 
 import os, sys
