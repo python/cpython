@@ -6,9 +6,9 @@
 
 <BODY BGCOLOR="FFFFFF">
 
-<H1>Metaprogramming in Python 1.5</H1>
+<H1>Metaprogramming in Python 1.5 (DRAFT)</H1>
 
-<H4>XXX Don't link to this page!  It is very much a work in progress.</H4>
+<H4>XXX This is very much a work in progress.</H4>
 
 <P>While Python 1.5 is only out as a <A
 HREF="http://grail.cnri.reston.va.us/python/1.5a3/">restricted alpha
@@ -267,7 +267,7 @@ class Instance:
             value = self.__klass__.__namespace__[name]
         except KeyError:
             raise AttributeError, name
-        if type(value) is not types.FuncType:
+        if type(value) is not types.FunctionType:
             return value
         return BoundMethod(value, self)
 
@@ -276,20 +276,150 @@ class BoundMethod:
         self.function = function
         self.instance = instance
     def __call__(self, *args):
-        print "calling", self.function, "for", instance, "with", args
+        print "calling", self.function, "for", self.instance, "with", args
         return apply(self.function, (self.instance,) + args)
+
+Trace = Tracing('Trace', (), {})
+
+class MyTracedClass(Trace):
+    def method1(self, a):
+        self.a = a
+    def method2(self):
+        return self.a
+
+aninstance = MyTracedClass()
+
+aninstance.method1(10)
+
+print "the answer is %d" % aninstance.method2()
+</PRE>
+
+Confused already?  The intention is to read this from top down.  The
+Tracing class is the metaclass we're defining.  Its structure is
+really simple.
+
+<P>
+
+<UL>
+
+<LI>The __init__ method is invoked when a new Tracing instance is
+created, e.g. the definition of class MyTracedClass later in the
+example.  It simply saves the class name, base classes and namespace
+as instance variables.<P>
+
+<LI>The __call__ method is invoked when a Tracing instance is called,
+e.g. the creation of aninstance later in the example.  It returns an
+instance of the class Instance, which is defined next.<P>
+
+</UL>
+
+<P>The class Instance is the class used for all instances of classes
+built using the Tracing metaclass, e.g. aninstance.  It has two
+methods:
+
+<P>
+
+<UL>
+
+<LI>The __init__ method is invoked from the Tracing.__call__ method
+above to initialize a new instance.  It saves the class reference as
+an instance variable.  It uses a funny name because the user's
+instance variables (e.g. self.a later in the example) live in the same
+namespace.<P>
+
+<LI>The __getattr__ method is invoked whenever the user code
+references an attribute of the instance that is not an instance
+variable (nor a class variable; but except for __init__ and
+__getattr__ there are no class variables).  It will be called, for
+example, when aninstance.method1 is referenced in the example, with
+self set to aninstance and name set to the string "method1".<P>
+
+</UL>
+
+<P>The __getattr__ method looks the name up in the __namespace__
+dictionary.  If it isn't found, it raises an AttributeError exception.
+(In a more realistic example, it would first have to look through the
+base classes as well.)  If it is found, there are two possibilities:
+it's either a function or it isn't.  If it's not a function, it is
+assumed to be a class variable, and its value is returned.  If it's a
+function, we have to ``wrap'' it in instance of yet another helper
+class, BoundMethod.
+
+<P>The BoundMethod class is needed to implement a familiar feature:
+when a method is defined, it has an initial argument, self, which is
+automatically bound to the relevant instance when it is called.  For
+example, aninstance.method1(10) is equivalent to method1(aninstance,
+10).  In the example if this call, first a temporary BoundMethod
+instance is created with the following constructor call: temp =
+BoundMethod(method1, aninstance); then this instance is called as
+temp(10).  After the call, the temporary instance is discarded.
+
+<P>
+
+<UL>
+
+<LI>The __init__ method is invoked for the constructor call
+BoundMethod(method1, aninstance).  It simply saves away its
+arguments.<P>
+
+<LI>The __call__ method is invoked when the bound method instance is
+called, as in temp(10).  It needs to call method1(aninstance, 10).
+However, even though self.function is now method1 and self.instance is
+aninstance, it can't call self.function(self.instance, args) directly,
+because it should work regardless of the number of arguments passed.
+(For simplicity, support for keyword arguments has been omitted.)<P>
+
+</UL>
+
+<P>In order to be able to support arbitrary argument lists, the
+__call__ method first constructs a new argument tuple.  Conveniently,
+because of the notation *args in __call__'s own argument list, the
+arguments to __call__ (except for self) are placed in the tuple args.
+To construct the desired argument list, we concatenate a singleton
+tuple containing the instance with the args tuple: (self.instance,) +
+args.  (Note the trailing comma used to construct the singleton
+tuple.)  In our example, the resulting argument tuple is (aninstance,
+10).
+
+<P>The intrinsic function apply() takes a function and an argument
+tuple and calls the function for it.  In our example, we are calling
+apply(method1, (aninstance, 10)) which is equivalent to calling
+method(aninstance, 10).
+
+<P>From here on, things should come together quite easily.  The output
+of the example code is something like this:
+
+<PRE>
+calling <function method1 at ae8d8> for <Instance instance at 95ab0> with (10,)
+calling <function method2 at ae900> for <Instance instance at 95ab0> with ()
+the answer is 10
+</PRE>
+
+<P>That was about the shortest meaningful example that I could come up
+with.  A real tracing metaclass (for example, <A
+HREF="#Trace">Trace.py</A> discussed below) needs to be more
+complicated in two dimensions.
+
+<P>First, it needs to support more advanced Python features such as
+class variables, inheritance, __init__ methods, and keyword arguments.
+
+<P>Second, it needs to provide a more flexible way to handle the
+actual tracing information; perhaps it should be possible to write
+your own tracing function that gets called, perhaps it should be
+possible to enable and disable tracing on a per-class or per-instance
+basis, and perhaps a filter so that only interesting calls are traced;
+it should also be able to trace the return value of the call (or the
+exception it raised if an error occurs).  Even the Trace.py example
+doesn't support all these features yet.
+
+<P>
+
 <HR>
 
-Confused already?  
+<H1>Real-life Examples</H1>
 
-
-<P>XXX More text is needed here.  For now, have a look at some very
-preliminary examples that I coded up to teach myself how to use this
-feature:
-
-
-
-<H2>Real-life Examples</H2>
+<P>Have a look at some very preliminary examples that I coded up to
+teach myself how to use metaprogramming:
 
 <DL>
 
@@ -313,13 +443,13 @@ and ``Color.red + 1'' raise a TypeError exception.
 
 <P>
 
-<DT><A HREF="Trace.py">Trace.py</A>
+<DT><A NAME=Trace></A><A HREF="Trace.py">Trace.py</A>
 
-<DD>The resulting classes work much like standard classes, but by
-setting a special class or instance attribute __trace_output__ to
-point to a file, all calls to the class's methods are traced.  It was
-a bit of a struggle to get this right.  This should probably redone
-using the generic metaclass below.
+<DD>The resulting classes work much like standard
+classes, but by setting a special class or instance attribute
+__trace_output__ to point to a file, all calls to the class's methods
+are traced.  It was a bit of a struggle to get this right.  This
+should probably redone using the generic metaclass below.
 
 <P>
 
@@ -338,12 +468,30 @@ hooks tough; we provide a similar hook _getattr_ instead.
 <P>
 
 <DT><A HREF="Eiffel.py">Eiffel.py</A>
-
+ppp
 <DD>Uses the above generic metaclass to implement Eiffel style
 pre-conditions and post-conditions.
 
 <P>
+
+<DT><A HREF="Synch.py">Synch.py</A>
+
+<DD>Uses the above generic metaclass to implement synchronized
+methods.
+
+<P>
+
 </DL>
+
+<P>A pattern seems to be emerging: almost all these uses of
+metaclasses (except for Enum, which is probably more cute than useful)
+mostly work by placing wrappers around method calls.  An obvious
+problem with that is that it's not easy to combine the features of
+different metaclasses, while this would actually be quite useful: for
+example, I wouldn't mind getting a trace from the test run of the
+Synch module, and it would be interesting to add preconditions to it
+as well.  This needs more research.  Perhaps a metaclass could be
+provided that allows stackable wrappers...
 
 </BODY>
 
