@@ -1299,7 +1299,8 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	/* make sure we got an acceptable number of arguments; the message
 	   is a little confusing with keywords since keyword arguments
 	   which are supplied, but don't match the required arguments
-	   are not included in the "%d given" part of the message */
+	   are not included in the "%d given" part of the message 
+	   XXX and this isn't a bug!? */
 	if (len < min || max < len) {
 		if (message == NULL) {
 			PyOS_snprintf(msgbuf, sizeof(msgbuf),
