@@ -263,23 +263,24 @@ class Distribution:
         and setup.cfg in the current directory.
         """
         files = []
-        if os.name == "posix":
-            check_environ()
+        check_environ()
 
-            sys_dir = os.path.dirname(sys.modules['distutils'].__file__)
-            sys_file = os.path.join(sys_dir, "pydistutils.cfg")
-            if os.path.isfile(sys_file):
-                files.append(sys_file)
+        if os.name=='posix':
+	    sys_dir = os.path.dirname(sys.modules['distutils'].__file__)
+	    user_filename = ".pydistutils.cfg"
+	else:
+	    sys_dir = sysconfig.PREFIX
+	    user_filename = "pydistutils.cfg"
+	
+        sys_file = os.path.join(sys_dir, "pydistutils.cfg")
+        if os.path.isfile(sys_file):
+            files.append(sys_file)
 
-            user_file = os.path.join(os.environ.get('HOME'),
-                                     ".pydistutils.cfg")
+	if os.environ.has_key('HOME'):
+    	    user_file = os.path.join(os.environ.get('HOME'),
+                                     user_filename)
             if os.path.isfile(user_file):
                 files.append(user_file)
-
-        else:
-            sys_file = os.path.join (sysconfig.PREFIX, "pydistutils.cfg")
-            if os.path.isfile(sys_file):
-                files.append(sys_file)
 
         # All platforms support local setup.cfg
         local_file = "setup.cfg"
