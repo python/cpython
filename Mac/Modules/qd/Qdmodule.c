@@ -144,8 +144,14 @@ GrafObj_Convert(v, p_itself)
 	PyObject *v;
 	GrafPtr *p_itself;
 {
-	if (DlgObj_Check(v) || WinObj_Check(v)) {
-		*p_itself = ((GrafPortObject *)v)->ob_itself;
+	if (DlgObj_Check(v)) {
+		DialogRef dlg = (DialogRef)((GrafPortObject *)v)->ob_itself;
+		*p_itself = (GrafPtr)GetWindowPort(GetDialogWindow(dlg));
+		return 1;
+	}
+	if (WinObj_Check(v)) {
+		WindowRef win = (WindowRef)((GrafPortObject *)v)->ob_itself;
+		*p_itself = (GrafPtr)GetWindowPort(win);
 		return 1;
 	}
 	if (!GrafObj_Check(v))

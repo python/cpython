@@ -219,8 +219,14 @@ class MyGRObjectDefinition(GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
 	def outputCheckConvertArg(self):
-		OutLbrace("if (DlgObj_Check(v) || WinObj_Check(v))")
-		Output("*p_itself = ((GrafPortObject *)v)->ob_itself;")
+		OutLbrace("if (DlgObj_Check(v))")
+		Output("DialogRef dlg = (DialogRef)((GrafPortObject *)v)->ob_itself;")
+		Output("*p_itself = (GrafPtr)GetWindowPort(GetDialogWindow(dlg));")
+		Output("return 1;")
+		OutRbrace()
+		OutLbrace("if (WinObj_Check(v))")
+		Output("WindowRef win = (WindowRef)((GrafPortObject *)v)->ob_itself;")
+		Output("*p_itself = (GrafPtr)GetWindowPort(win);")
 		Output("return 1;")
 		OutRbrace()
 	def outputGetattrHook(self):
