@@ -4211,7 +4211,11 @@ posix_tempnam(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "|zz:tempnam", &dir, &pfx))
         return NULL;
+#ifdef MS_WIN32
+    name = _tempnam(dir, pfx);
+#else
     name = tempnam(dir, pfx);
+#endif
     if (name == NULL)
         return PyErr_NoMemory();
     result = PyString_FromString(name);
