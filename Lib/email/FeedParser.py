@@ -309,8 +309,6 @@ class FeedParser:
                             if eolmo:
                                 preamble[-1] = lastline[:-len(eolmo.group(0))]
                             self._cur.preamble = EMPTYSTRING.join(preamble)
-                        #import pdb ; pdb.set_trace()
-                        # See SF bug #1030941
                         capturing_preamble = False
                         self._input.unreadline(line)
                         continue
@@ -367,10 +365,16 @@ class FeedParser:
             # We've seen either the EOF or the end boundary.  If we're still
             # capturing the preamble, we never saw the start boundary.  Note
             # that as a defect and store the captured text as the payload.
-            # Otherwise everything from here to the EOF is epilogue.
+            # Everything from here to the EOF is epilogue.
             if capturing_preamble:
                 self._cur.defects.append(Errors.StartBoundaryNotFoundDefect())
                 self._cur.set_payload(EMPTYSTRING.join(preamble))
+                epilogue = []
+                for line in self._input:
+                    if line is NeedMoreData:
+                        yield NeedMoreData
+                        continue
+                self._cur.epilogue = EMPTYSTRING.join(epilogue)
                 return
             # If the end boundary ended in a newline, we'll need to make sure
             # the epilogue isn't None
