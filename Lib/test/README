@@ -13,7 +13,7 @@ module, you should write one or more test cases to exercise that new
 functionality.  There are different ways to do this within the regression
 testing facility provided with Python; any particular test should use only
 one of these options.  Each option requires writing a test module using the
-conventions of the the selected option:
+conventions of the selected option:
 
     - PyUnit_ based tests
     - doctest_ based tests
@@ -41,7 +41,7 @@ Java implementation of Beck's original SmallTalk test framework.  Please
 see the documentation of the unittest_ module for detailed information on
 the interface and general guidelines on writing PyUnit based tests.
 
-The test_support helper module provides a two functions for use by
+The test_support helper module provides two functions for use by
 PyUnit based tests in the Python regression testing framework:
 
 - ``run_unittest()`` takes a ``unittest.TestCase`` derived class as a
