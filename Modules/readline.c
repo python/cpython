@@ -349,7 +349,7 @@ It should return the next possible completion starting with 'text'.");
 
 
 static PyObject *
-get_completer(PyObject *self, PyObject *args)
+get_completer(PyObject *self, PyObject *noargs)
 {
 	if (completer == NULL) {
 		Py_INCREF(Py_None);
