@@ -36,15 +36,25 @@ TILDE = 32
 CIRCUMFLEX = 33
 LEFTSHIFT = 34
 RIGHTSHIFT = 35
-OP = 36
-ERRORTOKEN = 37
+DOUBLESTAR = 36
+OP = 37
+ERRORTOKEN = 38
 
 names = dir()
 tok_name = {}
 for name in names:
-	number = eval(name)
+    number = eval(name)
+    if type(number) is type(0):
 	tok_name[number] = name
 
-N_TOKENS = 38				# Number of tokens including ERRORTOKEN
-
+N_TOKENS = 39				# Number of tokens including ERRORTOKEN
 NT_OFFSET = 256				# Start of non-terminal symbols
+
+def ISTERMINAL(x):
+    return x < NT_OFFSET
+
+def ISNONTERMINAL(x):
+    return x >= NT_OFFSET
+
+def ISEOF(x):
+    return x == ENDMARKER
