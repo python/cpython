@@ -227,7 +227,7 @@ equivalent to the set \code{[\^ \e t\e n\e r\e f\e v]}.
 equivalent to the set \code{[a-zA-Z0-9_]}.
 %
 \item[\code{\e W}] Matches any non-alphanumeric character; this is
-equivalent to the set \code{[\^a-zA-Z0-9_]}.
+equivalent to the set \code{[\^ a-zA-Z0-9_]}.
 
 \item[\code{\e Z}]Matches only at the end of the string.
 %
@@ -341,12 +341,13 @@ Perform the same operation as \code{sub()}, but return a tuple
 Compiled regular expression objects support the following methods and
 attributes:
 
-\renewcommand{\indexsubitem}{(regex method)}
+\renewcommand{\indexsubitem}{(re method)}
 \begin{funcdesc}{match}{string\optional{\, pos}}
-  Return how many characters at the beginning of \var{string} match
-  the compiled regular expression.  Return \code{-1} if the string
-  does not match the pattern (this is different from a zero-length
-  match!).
+  If zero or more characters at the beginning of \var{string} match
+  this regular expression, return a corresponding
+  \code{Match} object.  Return \code{None} if the string does not
+  match the pattern; note that this is different from a zero-length
+  match.
   
   The optional second parameter \var{pos} gives an index in the string
   where the search is to start; it defaults to \code{0}.  This is not
@@ -357,10 +358,10 @@ attributes:
 \end{funcdesc}
 
 \begin{funcdesc}{search}{string\optional{\, pos}}
-  Return the first position in \var{string} that matches the regular
-  expression \code{pattern}.  Return \code{-1} if no position in the
-  string matches the pattern (this is different from a zero-length
-  match anywhere!).
+  Scan through \var{string} looking for a location where this regular
+  expression produces a match.  Return \code{None} if no
+  position in the string matches the pattern; note that this is
+  different from finding a zero-length match at some point in the string.
   
   The optional second parameter has the same meaning as for the
   \code{match} method.
