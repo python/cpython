@@ -7,7 +7,7 @@ import ColorDB
 from ChipWidget import ChipWidget
 from TypeinWidget import TypeinWidget
 from StripWidget import StripWidget
-from OptionsWidget import OptionsWidget
+from OptionsWidget import PyncheOptions
 
 
 
@@ -114,11 +114,12 @@ class PyncheWidget(Pmw.MegaWidget):
 
 	# create chip window
 	group = Pmw.Group(parent, tag_text='Current Color')
+        interior = group.interior()
 	group.pack(side=LEFT, expand=YES, fill=BOTH)
-	self.__selected = ChipWidget(group.interior(),
+	self.__selected = ChipWidget(interior,
 				     label_text='Selected')
 	self.__selected.grid()
-	self.__nearest = ChipWidget(group.interior(),
+	self.__nearest = ChipWidget(interior,
 				    label_text='Nearest')
 	self.__nearest.grid(row=0, column=1)
 
@@ -128,9 +129,18 @@ class PyncheWidget(Pmw.MegaWidget):
 	self.__chip.bind('<ButtonPress-1>', self.__buttonpress)
 	self.__chip.bind('<ButtonRelease-1>', self.__buttonrelease)
 
-	# create the options window
-	self.__typein = TypeinWidget(group.interior())
+	# create the type-in window
+	self.__typein = TypeinWidget(interior)
 	self.__typein.grid(row=0, column=2)
+
+	# create the type-in color name field
+## 	self.__colorname = self.createcomponent(
+## 	    'colorname', (), None,
+## 	    Pmw.EntryField, (interior,),
+## 	    label_text='Color Name'
+##             )
+## 	self.__colorname.pack()
+## 	self.__colorname.configure(command=self.__set_color_by_name())
 
 	# Check keywords and initialize options
 	self.initialiseoptions(PyncheWidget)
@@ -173,6 +183,11 @@ class PyncheWidget(Pmw.MegaWidget):
     def __set_color(self):
 	self.set_color(self, self['color'])
 
+    def __set_color_by_name(self):
+	colorname = self.__colorname.get()
+	rgbtuple = self.__colordb.find_byname(colorname)
+	self.set_color(self, rgbtuple)
+
     def __buttonpress(self, event=None):
 	self.__chip.configure(relief=SUNKEN)
 
@@ -200,8 +215,15 @@ class PyncheWidget(Pmw.MegaWidget):
 
     def __popup_options(self, event=None):
 	if not self.__options_dialog:
-	    self.__options_dialog = OptionsWidget()
-	self.__options_dialog.activate()
-	# now gather up the new options
+	    self.__options_dialog = PyncheOptions(
+                title='Pynche Options',
+                applycommand=self.__apply)
+        # pop up the window, non-modal
+        self.__options_dialog.deiconify()
+
+    def __apply(self):
 	self.__typein.set_update_on_typing(
 	    self.__options_dialog.get_value('typing'))
+	flag = self.__options_dialog.get_value('dragging')
+	for strip in (self.__reds, self.__greens, self.__blues):
+	    strip.set_update_while_dragging(flag)
