@@ -563,7 +563,7 @@ class FancyURLopener(URLopener):
         host = host[i:]
         user, passwd = self.get_user_passwd(host, realm, i)
         if not (user or passwd): return None
-        host = user + ':' + passwd + '@' + host
+        host = quote(user, safe='') + ':' + quote(passwd, safe='') + '@' + host
         newurl = 'http://' + host + selector
         if data is None:
             return self.open(newurl)
@@ -576,9 +576,9 @@ class FancyURLopener(URLopener):
         host = host[i:]
         user, passwd = self.get_user_passwd(host, realm, i)
         if not (user or passwd): return None
-        host = user + ':' + passwd + '@' + host
+        host = quote(user, safe='') + ':' + quote(passwd, safe='') + '@' + host
         newurl = '//' + host + selector
-        return self.open_https(newurl)
+        return self.open_https(newurl, data)
 
     def get_user_passwd(self, host, realm, clear_cache = 0):
         key = realm + '@' + host.lower()
