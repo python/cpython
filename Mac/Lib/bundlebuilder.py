@@ -365,7 +365,7 @@ def main(builder=None):
 	if builder is None:
 		builder = AppBuilder(verbosity=1)
 
-	shortopts = "b:n:r:e:m:c:plhvq"
+	shortopts = "b:n:r:e:m:c:p:lhvq"
 	longopts = ("builddir=", "name=", "resource=", "executable=",
 		"mainprogram=", "creator=", "nib=", "plist=", "link",
 		"link-exec", "help", "verbose", "quiet")
