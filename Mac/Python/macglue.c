@@ -117,7 +117,6 @@ static int in_foreground;
 
 int PyMac_DoYieldEnabled = 1;	/* Don't do eventloop when false */
 
-
 /* Convert C to Pascal string. Returns pointer to static buffer. */
 unsigned char *
 Pstring(char *str)
@@ -787,26 +786,7 @@ PyMac_BuildEventRecord(EventRecord *e)
 }
 
 
-#ifndef USE_MAC_SHARED_LIBRARY
-
-/* For normal application */
-void
-main()
-{
-	int argc;
-	char **argv;
-	
-#ifdef __MWERKS__
-	SIOUXSettings.asktosaveonclose = 0;
-	SIOUXSettings.showstatusline = 0;
-	SIOUXSettings.tabspaces = 4;
-#endif
-	argc = PyMac_GetArgv(&argv);
-	Py_Main(argc, argv);
-}
-
-#else /* USE_MAC_SHARED_LIBRARY */
-
+#ifdef USE_MAC_APPLET_SUPPORT
 /* Applet support */
 
 /* Run a compiled Python Python script from 'PYC ' resource __main__ */
@@ -850,9 +830,7 @@ PyMac_InitApplet()
 	char **argv;
 	int err;
 
-#ifdef USE_MAC_SHARED_LIBRARY
 	PyMac_AddLibResources();
-#endif
 #ifdef __MWERKS__
 	SIOUXSettings.asktosaveonclose = 0;
 	SIOUXSettings.showstatusline = 0;
@@ -873,4 +851,34 @@ PyMac_InitApplet()
 	/* XXX Should we bother to Py_Exit(sts)? */
 }
 
-#endif /* USE_MAC_SHARED_LIBRARY */
+#endif /* USE_MAC_APPLET_SUPPORT */
+
+/* For normal application */
+void
+PyMac_InitApplication()
+{
+	int argc;
+	char **argv;
+	
+#ifdef USE_MAC_SHARED_LIBRARY
+	PyMac_AddLibResources();
+#endif
+#ifdef __MWERKS__
+	SIOUXSettings.asktosaveonclose = 0;
+	SIOUXSettings.showstatusline = 0;
+	SIOUXSettings.tabspaces = 4;
+#endif
+	argc = PyMac_GetArgv(&argv);
+	if ( argc > 1 ) {
+		/* We're running a script. Attempt to change current directory */
+		char curwd[256], *endp;
+		
+		strcpy(curwd, argv[1]);
+		endp = strrchr(curwd, ':');
+		if ( endp && endp > curwd ) {
+			*endp = '\0';
+			chdir(curwd);
+		}
+	}
+	Py_Main(argc, argv);
+}
