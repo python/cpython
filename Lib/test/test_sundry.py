@@ -55,7 +55,6 @@ import mimetypes
 import mimify
 import multifile
 import mutex
-import netrc
 import nntplib
 import nturl2path
 import pdb
