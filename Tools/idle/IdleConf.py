@@ -44,8 +44,8 @@ class IdleConfParser(ConfigParser):
         return exts
 
     def reload(self):
-        global IdleConf
-        IdleConf = IdleConfParser()
+        global idleconf
+        idleconf = IdleConfParser()
         load(_dir) # _dir is a global holding the last directory loaded
 
 class SectionConfigParser:
@@ -105,17 +105,9 @@ def load(dir):
         homedir = os.environ['HOME']
     except KeyError:
         homedir = os.getcwd()
-    
-    for file in (os.path.join(dir, "config.txt"),
-                 genplatfile,
-                 platfile,
-                 os.path.join(homedir, ".idle"),
-                 ):
-        try:
-            f = open(file)
-        except IOError:
-            continue
-        IdleConf.readfp(f)
-        f.close()
 
-IdleConf = IdleConfParser()
+    idleconf.read((os.path.join(dir, "config.txt"), genplatfile, platfile,
+                   os.path.join(homedir, ".idle")))
+
+idleconf = IdleConfParser()
+

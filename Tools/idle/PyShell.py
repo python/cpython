@@ -16,7 +16,7 @@ from EditorWindow import EditorWindow, fixwordbreaks
 from FileList import FileList
 from ColorDelegator import ColorDelegator
 from OutputWindow import OutputWindow
-from IdleConf import IdleConf
+from IdleConf import idleconf
 import idlever
 
 # We need to patch linecache.checkcache, because we don't want it
@@ -115,7 +115,7 @@ class ModifiedColorDelegator(ColorDelegator):
         ColorDelegator.recolorize_main(self)
 
     tagdefs = ColorDelegator.tagdefs.copy()
-    cconf = IdleConf.getsection('Colors')
+    cconf = idleconf.getsection('Colors')
 
     tagdefs.update({
         "stdin": cconf.getcolor("stdin"),
