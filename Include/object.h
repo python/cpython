@@ -488,9 +488,9 @@ given type object has a specified feature.
 /* Objects support garbage collection (see objimp.h) */
 #define Py_TPFLAGS_HAVE_GC (1L<<14)
 
-/* These last two bits are preserved for Stackless Python */
+/* These two bits are preserved for Stackless Python, next after this is 16 */
 #ifdef STACKLESS
-#define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION (3L<<(sizeof(int)*8-2))
+#define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION (3L<<15)
 #else
 #define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION 0
 #endif
