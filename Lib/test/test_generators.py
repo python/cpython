@@ -14,13 +14,16 @@ Let's try a simple generator:
     1
     >>> g.next()
     2
+
+    "Falling off the end" stops the generator:
+
     >>> g.next()
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
       File "<stdin>", line 2, in g
     StopIteration
 
-"return" stops the generator:
+"return" also stops the generator:
 
     >>> def f():
     ...     yield 1
@@ -424,7 +427,7 @@ arguments are iterable -- a LazyList is the same as a generator to times().
 
 >>> def m235():
 ...     yield 1
-...     # Gack:  m235  below actually refers to a LazyList.
+...     # Gack:  m235 below actually refers to a LazyList.
 ...     me_times2 = times(2, m235)
 ...     me_times3 = times(3, m235)
 ...     me_times5 = times(5, m235)
@@ -443,11 +446,87 @@ arguments are iterable -- a LazyList is the same as a generator to times().
 [400, 405, 432, 450, 480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675]
 """
 
+# syntax_tests mostly provokes SyntaxErrors.
 
-__test__ = {"tut": tutorial_tests,
-            "pep": pep_tests,
-            "email": email_tests,
-            "fun": fun_tests}
+syntax_tests = """
+
+>>> def f():
+...     return 22
+...     yield 1
+Traceback (most recent call last):
+  ...
+SyntaxError: 'return' with argument inside generator (<string>, line 2)
+
+>>> def f():
+...     yield 1
+...     return 22
+Traceback (most recent call last):
+  ...
+SyntaxError: 'return' with argument inside generator (<string>, line 3)
+
+"return None" is not the same as "return" in a generator:
+
+>>> def f():
+...     yield 1
+...     return None
+Traceback (most recent call last):
+  ...
+SyntaxError: 'return' with argument inside generator (<string>, line 3)
+
+This one is fine:
+
+>>> def f():
+...     yield 1
+...     return
+
+>>> def f():
+...     try:
+...         yield 1
+...     finally:
+...         pass
+Traceback (most recent call last):
+  ...
+SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (<string>, line 3)
+
+>>> def f():
+...     try:
+...         try:
+...             1/0
+...         except ZeroDivisionError:
+...             yield 666  # bad because *outer* try has finally
+...         except:
+...             pass
+...     finally:
+...         pass
+Traceback (most recent call last):
+  ...
+SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (<string>, line 6)
+
+But this is fine:
+
+>>> def f():
+...     try:
+...         try:
+...             yield 12
+...             1/0
+...         except ZeroDivisionError:
+...             yield 666
+...         except:
+...             try:
+...                 x = 12
+...             finally:
+...                 yield 12
+...     except:
+...         return
+>>> list(f())
+[12, 666]
+"""
+
+__test__ = {"tut":      tutorial_tests,
+            "pep":      pep_tests,
+            "email":    email_tests,
+            "fun":      fun_tests,
+            "syntax":   syntax_tests}
 
 # Magic test name that regrtest.py invokes *after* importing this module.
 # This worms around a bootstrap problem.
