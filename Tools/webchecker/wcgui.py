@@ -264,6 +264,7 @@ class CheckerWindow(webchecker.Checker):
 	    if rawlink != url:
 		d.put(" (%s)" % rawlink)
 	    d.put("\n")
+	d.text.yview("1.0")
 
     def setbad(self, url, msg):
 	webchecker.Checker.setbad(self, url, msg)
