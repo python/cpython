@@ -13,6 +13,10 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "Python.h"
 #include "structmember.h"
 
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
+
 #ifndef DONT_HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif /* DONT_HAVE_SYS_TYPES_H */
