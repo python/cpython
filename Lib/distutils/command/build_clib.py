@@ -42,9 +42,10 @@ class build_clib (Command):
         ('compiler=', 'c',
          "specify the compiler type"),
         ]
+
     help_options = [
         ('help-compiler', None,
-         "lists available compilers",show_compilers),
+         "list available compilers", show_compilers),
 	]
 
     def initialize_options (self):

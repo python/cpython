@@ -36,9 +36,10 @@ class build (Command):
         ('force', 'f',
          "forcibly build everything (ignore file timestamps)"),
         ]
+
     help_options = [
         ('help-compiler', None,
-         "lists available compilers",show_compilers),
+         "list available compilers", show_compilers),
 	]
 
     def initialize_options (self):

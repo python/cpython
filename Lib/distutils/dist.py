@@ -437,11 +437,14 @@ class Distribution:
             negative_opt = copy (negative_opt)
             negative_opt.update (cmd_class.negative_opt)
 
-	# Check for help_options in command class
-	# They have a different format (tuple of four) so we need to preprocess them here 
-	help_options = []
-	if hasattr(cmd_class,"help_options") and type (cmd_class.help_options) is ListType:
-	    help_options = map(lambda x:(x[0],x[1],x[2]),cmd_class.help_options)
+	# Check for help_options in command class.  They have a different
+	# format (tuple of four) so we need to preprocess them here.
+	if (hasattr(cmd_class, 'help_options') and
+            type (cmd_class.help_options) is ListType):
+            help_options = fix_help_options(cmd_class.help_options)
+        else:
+            help_optiosn = []
+
 
         # All commands support the global options too, just by adding
         # in 'global_options'.
@@ -453,12 +456,14 @@ class Distribution:
             self._show_help(parser, display_options=0, commands=[cmd_class])
             return
 
-	if hasattr(cmd_class,"help_options") and type (cmd_class.help_options) is ListType:
+	if (hasattr(cmd_class, 'help_options') and
+            type (cmd_class.help_options) is ListType):
 	    help_option_found=0
 	    for help_option in cmd_class.help_options:
 		if hasattr(opts, parser.get_attr_name(help_option[0])):
 		    help_option_found=1
-		    #print "showing help for option %s of command %s" % (help_option[0],cmd_class)
+		    #print "showing help for option %s of command %s" % \
+                    #      (help_option[0],cmd_class)
 		    if callable(help_option[3]):
 			help_option[3]()
 		    else:
@@ -518,9 +523,10 @@ class Distribution:
                 klass = command
             else:
                 klass = self.get_command_class (command)
-	    if hasattr(klass,"help_options") and type (klass.help_options) is ListType:
-		parser.set_option_table (klass.user_options+
-					 map(lambda x:(x[0],x[1],x[2]),klass.help_options))
+	    if (hasattr(klass, 'help_options') and
+                type (klass.help_options) is ListType):
+		parser.set_option_table (klass.user_options +
+                                         fix_help_options(klass.help_options))
 	    else:
         	parser.set_option_table (klass.user_options)
             parser.print_help ("Options for '%s' command:" % klass.__name__)
@@ -889,6 +895,17 @@ class DistributionMetadata:
         return self.long_description or "UNKNOWN"
 
 # class DistributionMetadata
+
+
+def fix_help_options (options):
+    """Convert a 4-tuple 'help_options' list as found in various command
+    classes to the 3-tuple form required by FancyGetopt.
+    """
+    new_options = []
+    for help_tuple in options:
+        new_options.append(help_tuple[0:3])
+    return new_options
+
 
 if __name__ == "__main__":
     dist = Distribution ()
