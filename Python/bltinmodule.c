@@ -890,6 +890,17 @@ builtin_getattr(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "OO|O:getattr", &v, &name, &dflt))
 		return NULL;
+	if (PyUnicode_Check(name)) {
+		name = _PyUnicode_AsDefaultEncodedString(name, NULL);
+		if (name == NULL)
+			return NULL;
+	}
+
+	if (!PyString_Check(name)) {
+		PyErr_SetString(PyExc_TypeError,
+				"attribute name must be string");
+		return NULL;
+	}
 	result = PyObject_GetAttr(v, name);
 	if (result == NULL && dflt != NULL) {
 		PyErr_Clear();
