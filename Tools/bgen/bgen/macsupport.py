@@ -41,7 +41,8 @@ wide_ptr = OpaqueType("wide", "PyMac_Buildwide", "PyMac_Getwide")
 # Pascal strings
 ConstStr255Param = OpaqueArrayType("Str255", "PyMac_BuildStr255", "PyMac_GetStr255")
 Str255 = OpaqueArrayType("Str255", "PyMac_BuildStr255", "PyMac_GetStr255")
-StringPtr = OpaqueByValueType("StringPtr", "PyMac_BuildStr255", "BUG")
+StringPtr = OpaqueByValueType("StringPtr", "PyMac_BuildStr255", "PyMac_GetStr255")
+ConstStringPtr = StringPtr
 
 # File System Specifications
 FSSpec_ptr = OpaqueType("FSSpec", "PyMac_BuildFSSpec", "PyMac_GetFSSpec")
@@ -100,6 +101,7 @@ OSStatus = OSErrType("OSStatus", 'l')
 # Various buffer types
 
 InBuffer = VarInputBufferType('char', 'long', 'l')		# (buf, len)
+UcharInBuffer  = VarInputBufferType('unsigned char', 'long', 'l')		# (buf, len)
 OptionalInBuffer = OptionalVarInputBufferType('char', 'long', 'l')		# (buf, len)
 
 InOutBuffer = HeapInputOutputBufferType('char', 'long', 'l')	# (inbuf, outbuf, len)
