@@ -2,12 +2,44 @@
 
 """Remote CVS -- command line interface"""
 
+# XXX To do:
+#
+# Functionality:
+# - descend into directories
+# - cvs add; cvs rm
+# - commit new files
+# - conflict resolution
+# - cvs log
+# - other relevant commands?
+# - branches
+#
+# - Finesses:
+# - retain file mode's x bits
+# - complain when "nothing known about filename"
+# - edit log message the way CVS lets you edit it
+# - cvs diff -rREVA -rREVB
+# - send mail the way CVS sends it
+#
+# Performance:
+# - cache remote checksums (for every revision ever seen!)
+# - translate symbolic revisions to numeric revisions
+#
+# Reliability:
+# - remote locking
+#
+# Security:
+# - Authenticated RPC?
+
+
 from cvslib import CVS, File
 import md5
 import os
 import string
 import sys
 from cmdfw import CommandFrameWork
+
+
+DEF_LOCAL = 1				# Default -l
 
 
 class MyFile(File):
@@ -121,21 +153,29 @@ class MyFile(File):
 
 	def diff(self, opts = []):
 		self.action()		# To update lseen, rseen
-		if self.lsum == self.rsum:
-			return
-		import tempfile
 		flags = ''
+		rev = self.rrev
+		# XXX should support two rev options too!
 		for o, a in opts:
-			flags = flags + ' ' + o + a
+			if o == '-r':
+				rev = a
+			else:
+				flags = flags + ' ' + o + a
+		if rev == self.rrev and self.lsum == self.rsum:
+			return
 		flags = flags[1:]
 		fn = self.file
-		data = self.proxy.get(fn)
+		data = self.proxy.get((fn, rev))
+		sum = md5.new(data).digest()
+		if self.lsum == sum:
+			return
+		import tempfile
 		tfn = tempfile.mktemp()
 		try:
 			tf = open(tfn, 'w')
 			tf.write(data)
 			tf.close()
-			print 'diff %s -r%s %s' % (flags, self.rrev, fn)
+			print 'diff %s -r%s %s' % (flags, rev, fn)
 			sts = os.system('diff %s %s %s' % (flags, tfn, fn))
 			if sts:
 				print '='*70
@@ -168,6 +208,21 @@ class MyFile(File):
 		self.enew = 0
 		self.edeleted = 0
 		self.eseen = 1		# Done
+		self.extra = ''
+
+
+SENDMAIL = "/usr/lib/sendmail -t"
+MAILFORM = """To: %s
+Subject: CVS changes: %s
+
+...Message from rcvs...
+
+Committed files:
+	%s
+
+Log message:
+	%s
+"""
 
 
 class RCVS(CVS):
@@ -183,6 +238,7 @@ class RCVS(CVS):
 
 	def commit(self, files, message = ""):
 		list = self.whichentries(files)
+		if not list: return
 		ok = 1
 		for e in list:
 			if not e.commitcheck():
@@ -194,6 +250,26 @@ class RCVS(CVS):
 			message = raw_input("One-liner: ")
 		for e in list:
 			e.commit(message)
+		self.mailinfo(files, message)
+
+	def mailinfo(self, files, message = ""):
+		towhom = "sjoerd@cwi.nl, jack@cwi.nl" # XXX
+		mailtext = MAILFORM % (towhom, string.join(files),
+					string.join(files), message)
+		print '-'*70
+		print mailtext
+		print '-'*70
+		ok = raw_input("OK to mail to %s? " % towhom)
+		if string.lower(string.strip(ok)) in ('y', 'ye', 'yes'):
+			p = os.popen(SENDMAIL, "w")
+			p.write(mailtext)
+			sts = p.close()
+			if sts:
+				print "Sendmail exit status %s" % str(sts)
+			else:
+				print "Mail sent."
+		else:
+			print "No mail sent."
 
 	def report(self, files):
 		for e in self.whichentries(files):
@@ -250,6 +326,31 @@ class rcvs(CommandFrameWork):
 		self.proxy = None
 		self.cvs = RCVS()
 
+	def recurse(self):
+		if self.proxy:
+			self.proxy._close()
+		self.proxy = None
+		names = os.listdir(os.curdir)
+		for name in names:
+			if name == os.curdir or name == os.pardir:
+				continue
+			if name == "CVS":
+				continue
+			if not os.path.isdir(name):
+				continue
+			if os.path.islink(name):
+				continue
+			print "--- entering subdirectory", name, "---"
+			os.chdir(name)
+			try:
+				if os.path.isdir("CVS"):
+					self.__class__().run()
+				else:
+					self.recurse()
+			finally:
+				os.chdir(os.pardir)
+				print "--- left subdirectory", name, "---"
+
 	def options(self, opts):
 		self.opts = opts
 
@@ -263,10 +364,18 @@ class rcvs(CommandFrameWork):
 		self.cvs.report([])
 
 	def do_update(self, opts, files):
-		"""update [file] ..."""
+		"""update [-l] [-R] [file] ..."""
+		local = DEF_LOCAL
+		for o, a in opts:
+			if o == '-l': local = 1
+			if o == '-R': local = 0
 		self.cvs.update(files)
 		self.cvs.putentries()
+		if not local and not files:
+			self.recurse()
+	flags_update = '-lR'
 	do_up = do_update
+	flags_up = flags_update
 
 	def do_commit(self, opts, files):
 		"""commit [-m message] [file] ..."""
@@ -275,14 +384,16 @@ class rcvs(CommandFrameWork):
 			if o == '-m': message = a
 		self.cvs.commit(files, message)
 		self.cvs.putentries()
-	do_com = do_commit
 	flags_commit = 'm:'
+	do_com = do_commit
+	flags_com = flags_commit
 
 	def do_diff(self, opts, files):
 		"""diff [difflags] [file] ..."""
 		self.cvs.diff(files, opts)
+	flags_diff = 'cbitwcefhnlr:sD:S:'
 	do_dif = do_diff
-	flags_diff = 'cbitwcefhnlrsD:S:'
+	flags_dif = flags_diff
 
 
 
