@@ -32,7 +32,7 @@ There is a tool in the standard distribution that looks through a file
 for an 'AETE' or 'AEUT' resource, the internal representation of the
 AppleScript dictionary. This tool is called
 <CODE>gensuitemodule.py</CODE>, and lives in
-<CODE>Tools:bgen:ae</CODE>. When we start it, it asks us for an input
+<CODE>Mac:scripts</CODE>. When we start it, it asks us for an input
 file and we point it to the Eudora Light executable. It starts parsing
 the AETE resource, and for each AppleEvent suite it finds it prompts
 us for the filename of the resulting python module. Remember to change
@@ -46,7 +46,7 @@ gensuitemodule does not currently understand this. Creating the empty
 <CODE>Required_Suite.py</CODE> would hide the correct module of that
 name from our application. <p>
 
-<CITE>
+<BLOCKQUOTE>
 Time for a sidebar. If you want to re-create
 <CODE>Required_Suite.py</CODE> or one of the other standard modules
 you should look in <CODE>System Folder:Extensions:Scripting
@@ -55,7 +55,7 @@ AppleEvent dictionaries live. Also, if you are looking for the
 <CODE>Finder_Suite</CODE> interface: don't look in the finder (it has
 an old System 7.0 scripting suite), look at the extension <CODE>Finder
 Scripting Extension</CODE>. <p>
-</CITE>
+</BLOCKQUOTE>
 
 Let's glance at the <A
 HREF="scripting/Eudora_Suite.py">Eudora_Suite.py</A> just created. You
@@ -81,7 +81,7 @@ arguments the verb expects, and it makes handy use of the keyword
 argument scheme introduced in Python 1.3 to present a palatable
 interface to the python programmer. You will see that each method
 calls some routines from <CODE>aetools</CODE>, an auxiliary module
-living in <CODE>Tools:bgen:ae</CODE> which contains some other nifty
+living in <CODE>Lib:toolbox</CODE> which contains some other nifty
 AppleEvent tools as well. Have a look at it sometime, there is (of
 course) no documentation yet. <p>
 
@@ -130,10 +130,7 @@ together in the right way. <p>
 
 Looking at the sourcefile <A
 HREF="scripting/testeudora.py">testeudora.py</A> we see that it starts
-with some imports (and some <CODE>addpack</CODE> calls to extend
-<CODE>sys.path</CODE> to include <CODE>Tools:bgen:ae</CODE>, use of
-<CODE>ni</CODE> should be preferred over <CODE>addpack</CODE> but I
-have not managed to master it yet). Then we get the class definition
+with some imports. Then we get the class definition
 for our main object and a constant giving the signature of Eudora. <p>
 
 This, again, needs a little explanation. There are various ways to
