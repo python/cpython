@@ -451,7 +451,7 @@ class ThreadingMixIn:
 
     # Decides how threads will act upon termination of the
     # main process
-    daemon_threads = 0
+    daemon_threads = False
 
     def process_request_thread(self, request, client_address):
         """Same as in BaseServer but as a thread.
