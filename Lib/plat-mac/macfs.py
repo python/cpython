@@ -35,7 +35,11 @@ if time.gmtime(0)[0] == 1970:
 			t = t + 0x10000000L
 		return (0, int(t), 0)
 else:
-	def _utc2time(utc): return utc[1]
+	def _utc2time(utc): 
+		t = utc[1]
+		if t < 0:
+			t = t + 0x100000000L
+		return t
 	def _time2utc(t):
 		if t > 0x7fffffff:
 			t = t - 0x100000000L
