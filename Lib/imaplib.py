@@ -16,7 +16,7 @@ Public functions:       Internaldate2tuple
 # String method conversion by ESR, February 2001.
 # GET/SETACL contributed by Anthony Baxter <anthony@interlink.com.au> April 2001.
 
-__version__ = "2.49"
+__version__ = "2.50"
 
 import binascii, re, socket, time, random, sys
 
@@ -52,7 +52,7 @@ Commands = {
         'LSUB':         ('AUTH', 'SELECTED'),
         'NAMESPACE':    ('AUTH', 'SELECTED'),
         'NOOP':         ('NONAUTH', 'AUTH', 'SELECTED', 'LOGOUT'),
-        'PARTIAL':      ('SELECTED',),
+        'PARTIAL':      ('SELECTED',),                                  # NB: obsolete
         'RENAME':       ('AUTH', 'SELECTED'),
         'SEARCH':       ('SELECTED',),
         'SELECT':       ('AUTH', 'SELECTED'),
@@ -158,9 +158,12 @@ class IMAP4:
         # request and store CAPABILITY response.
 
         if __debug__:
+            self._cmd_log_len = 10
+            self._cmd_log_idx = 0
+            self._cmd_log = {}           # Last `_cmd_log_len' interactions
             if self.debug >= 1:
-                _mesg('imaplib version %s' % __version__)
-                _mesg('new IMAP4 connection, tag=%s' % self.tagpre)
+                self._mesg('imaplib version %s' % __version__)
+                self._mesg('new IMAP4 connection, tag=%s' % self.tagpre)
 
         self.welcome = self._get_response()
         if self.untagged_responses.has_key('PREAUTH'):
@@ -178,7 +181,7 @@ class IMAP4:
 
         if __debug__:
             if self.debug >= 3:
-                _mesg('CAPABILITIES: %s' % `self.capabilities`)
+                self._mesg('CAPABILITIES: %s' % `self.capabilities`)
 
         for version in AllowedVersions:
             if not version in self.capabilities:
@@ -223,6 +226,7 @@ class IMAP4:
     def send(self, data):
         """Send data to remote."""
         self.sock.sendall(data)
+
 
     def shutdown(self):
         """Close I/O established in "open"."""
@@ -482,7 +486,7 @@ class IMAP4:
         """
         if __debug__:
             if self.debug >= 3:
-                _dump_ur(self.untagged_responses)
+                self._dump_ur(self.untagged_responses)
         return self._simple_command('NOOP')
 
 
@@ -546,7 +550,7 @@ class IMAP4:
                 and not readonly:
             if __debug__:
                 if self.debug >= 1:
-                    _dump_ur(self.untagged_responses)
+                    self._dump_ur(self.untagged_responses)
             raise self.readonly('%s is not writable' % mailbox)
         return typ, self.untagged_responses.get('EXISTS', [None])
 
@@ -663,7 +667,7 @@ class IMAP4:
         ur = self.untagged_responses
         if __debug__:
             if self.debug >= 5:
-                _mesg('untagged_responses[%s] %s += ["%s"]' %
+                self._mesg('untagged_responses[%s] %s += ["%s"]' %
                         (typ, len(ur.get(typ,'')), dat))
         if ur.has_key(typ):
             ur[typ].append(dat)
@@ -709,9 +713,9 @@ class IMAP4:
 
         if __debug__:
             if self.debug >= 4:
-                _mesg('> %s' % data)
+                self._mesg('> %s' % data)
             else:
-                _log('> %s' % data)
+                self._log('> %s' % data)
 
         try:
             self.send('%s%s' % (data, CRLF))
@@ -735,7 +739,7 @@ class IMAP4:
 
             if __debug__:
                 if self.debug >= 4:
-                    _mesg('write literal size %s' % len(literal))
+                    self._mesg('write literal size %s' % len(literal))
 
             try:
                 self.send(literal)
@@ -814,7 +818,7 @@ class IMAP4:
                 size = int(self.mo.group('size'))
                 if __debug__:
                     if self.debug >= 4:
-                        _mesg('read literal size %s' % size)
+                        self._mesg('read literal size %s' % size)
                 data = self.read(size)
 
                 # Store response with literal as tuple
@@ -834,7 +838,7 @@ class IMAP4:
 
         if __debug__:
             if self.debug >= 1 and typ in ('NO', 'BAD', 'BYE'):
-                _mesg('%s response: %s' % (typ, dat))
+                self._mesg('%s response: %s' % (typ, dat))
 
         return resp
 
@@ -857,7 +861,7 @@ class IMAP4:
             except self.abort, val:
                 if __debug__:
                     if self.debug >= 1:
-                        print_log()
+                        self.print_log()
                 raise
 
 
@@ -872,9 +876,9 @@ class IMAP4:
         line = line[:-2]
         if __debug__:
             if self.debug >= 4:
-                _mesg('< %s' % line)
+                self._mesg('< %s' % line)
             else:
-                _log('< %s' % line)
+                self._log('< %s' % line)
         return line
 
 
@@ -886,7 +890,7 @@ class IMAP4:
         self.mo = cre.match(s)
         if __debug__:
             if self.mo is not None and self.debug >= 5:
-                _mesg("\tmatched r'%s' => %s" % (cre.pattern, `self.mo.groups()`))
+                self._mesg("\tmatched r'%s' => %s" % (cre.pattern, `self.mo.groups()`))
         return self.mo is not None
 
 
@@ -934,9 +938,47 @@ class IMAP4:
         data = self.untagged_responses[name]
         if __debug__:
             if self.debug >= 5:
-                _mesg('untagged_responses[%s] => %s' % (name, data))
+                self._mesg('untagged_responses[%s] => %s' % (name, data))
         del self.untagged_responses[name]
         return typ, data
+
+
+    if __debug__:
+
+        def _mesg(self, s, secs=None):
+            if secs is None:
+                secs = time.time()
+            tm = time.strftime('%M:%S', time.localtime(secs))
+            sys.stderr.write('  %s.%02d %s\n' % (tm, (secs*100)%100, s))
+            sys.stderr.flush()
+
+        def _dump_ur(self, dict):
+            # Dump untagged responses (in `dict').
+            l = dict.items()
+            if not l: return
+            t = '\n\t\t'
+            l = map(lambda x:'%s: "%s"' % (x[0], x[1][0] and '" "'.join(x[1]) or ''), l)
+            self._mesg('untagged responses dump:%s%s' % (t, t.join(l)))
+
+        def _log(self, line):
+            # Keep log of last `_cmd_log_len' interactions for debugging.
+            self._cmd_log[self._cmd_log_idx] = (line, time.time())
+            self._cmd_log_idx += 1
+            if self._cmd_log_idx >= self._cmd_log_len:
+                self._cmd_log_idx = 0
+
+        def print_log(self):
+            self._mesg('last %d IMAP4 interactions:' % len(self._cmd_log))
+            i, n = self._cmd_log_idx, self._cmd_log_len
+            while n:
+                try:
+                    apply(self._mesg, self._cmd_log[i])
+                except:
+                    pass
+                i += 1
+                if i >= self._cmd_log_len:
+                    i = 0
+                n -= 1
 
 
 
@@ -1082,39 +1124,6 @@ def Time2Internaldate(date_time):
 
 
 
-if __debug__:
-
-    def _mesg(s, secs=None):
-        if secs is None:
-            secs = time.time()
-        tm = time.strftime('%M:%S', time.localtime(secs))
-        sys.stderr.write('  %s.%02d %s\n' % (tm, (secs*100)%100, s))
-        sys.stderr.flush()
-
-    def _dump_ur(dict):
-        # Dump untagged responses (in `dict').
-        l = dict.items()
-        if not l: return
-        t = '\n\t\t'
-        l = map(lambda x:'%s: "%s"' % (x[0], x[1][0] and '" "'.join(x[1]) or ''), l)
-        _mesg('untagged responses dump:%s%s' % (t, t.join(l)))
-
-    _cmd_log = []           # Last `_cmd_log_len' interactions
-    _cmd_log_len = 10
-
-    def _log(line):
-        # Keep log of last `_cmd_log_len' interactions for debugging.
-        if len(_cmd_log) == _cmd_log_len:
-            del _cmd_log[0]
-        _cmd_log.append((time.time(), line))
-
-    def print_log():
-        _mesg('last %d IMAP4 interactions:' % len(_cmd_log))
-        for secs,line in _cmd_log:
-            _mesg(line, secs)
-
-
-
 if __name__ == '__main__':
 
     import getopt, getpass
@@ -1145,7 +1154,7 @@ if __name__ == '__main__':
     ('list', ('/tmp', 'yy*')),
     ('select', ('/tmp/yyz 2',)),
     ('search', (None, 'SUBJECT', 'test')),
-    ('partial', ('1', 'RFC822', 1, 1024)),
+    ('fetch', ('1', '(FLAGS INTERNALDATE RFC822)')),
     ('store', ('1', 'FLAGS', '(\Deleted)')),
     ('namespace', ()),
     ('expunge', ()),
@@ -1164,15 +1173,15 @@ if __name__ == '__main__':
     )
 
     def run(cmd, args):
-        _mesg('%s %s' % (cmd, args))
+        M._mesg('%s %s' % (cmd, args))
         typ, dat = apply(getattr(M, cmd), args)
-        _mesg('%s => %s %s' % (cmd, typ, dat))
+        M._mesg('%s => %s %s' % (cmd, typ, dat))
         return dat
 
     try:
         M = IMAP4(host)
-        _mesg('PROTOCOL_VERSION = %s' % M.PROTOCOL_VERSION)
-        _mesg('CAPABILITIES = %s' % `M.capabilities`)
+        M._mesg('PROTOCOL_VERSION = %s' % M.PROTOCOL_VERSION)
+        M._mesg('CAPABILITIES = %s' % `M.capabilities`)
 
         for cmd,args in test_seq1:
             run(cmd, args)
