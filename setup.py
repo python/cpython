@@ -1,7 +1,12 @@
+# Autodetecting setup.py script for building the Python extensions
+#
 # To be fixed:
 #   Implement --disable-modules setting
+#
 
-import sys, os, string, getopt
+__version__ = "$Revision$"
+
+import sys, os, getopt
 from distutils import sysconfig
 from distutils.errors import *
 from distutils.core import Extension, setup
