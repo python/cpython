@@ -7,6 +7,7 @@ copy(src, dst) - Full copy of 'src' to 'dst'
 import macfs
 import Res
 import os
+from MACFS import *
 
 Error = 'macostools.Error'
 
@@ -74,7 +75,8 @@ def copy(src, dst, createpath=0):
 	
 	sf = srcfss.GetFInfo()
 	df = dstfss.GetFInfo()
-	df.Creator, df.Type, df.Flags = sf.Creator, sf.Type, sf.Flags
+	df.Creator, df.Type = sf.Creator, sf.Type
+	df.Flags = (sf.Flags & (kIsStationary|kNameLocked|kHasBundle|kIsInvisible|kIsAlias))
 	dstfss.SetFInfo(df)
 	
 def copytree(src, dst):
