@@ -241,7 +241,7 @@ class Profile:
 
     def trace_dispatch_exception(self, frame, t):
         rt, rtt, rct, rfn, rframe, rcur = self.cur
-        if (not rframe is frame) and rcur:
+        if (rframe is frame) and rcur:
             return self.trace_dispatch_return(rframe, t)
         return 0
 
