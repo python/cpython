@@ -84,11 +84,20 @@ else:
     print 'FQDN not found'
 
 if hasattr(socket, 'getservbyname'):
-    print socket.getservbyname('telnet', 'tcp')
+    # try a few protocols - not everyone has telnet enabled
+    class Found(Exception): pass
     try:
-        socket.getservbyname('telnet', 'udp')
-    except socket.error:
+        for proto in ("telnet", "ssh", "www", "ftp"):
+            for how in ("tcp", "udp"):
+                try:
+                    socket.getservbyname(proto, how)
+                    raise Found
+                except socket.error:
+                    pass
+    except Found:
         pass
+    else:
+        print "socket.error", "socket.getservbyname failed"
 
 import sys
 if not sys.platform.startswith('java'):
