@@ -483,7 +483,7 @@ prospect as debugging continues.")
   "^> \\(.*\\)(\\([0-9]+\\))\\([?a-zA-Z0-9_]+\\)()"
   "Regular expression pdbtrack uses to find a stack trace entry.")
 
-(defconst py-pdbtrack-input-prompt "\n[(<]?pdb[>)]? "
+(defconst py-pdbtrack-input-prompt "\n[(<]+pdb[>)]+ "
   "Regular expression pdbtrack uses to recognize a pdb prompt.")
 
 (defconst py-pdbtrack-track-range 10000
@@ -1290,8 +1290,8 @@ If the traceback target file path is invalid, we look for the most
 recently visited python-mode buffer which either has the name of the
 current function \(or class) or which defines the function \(or
 class).  This is to provide for remote scripts, eg, Zope's 'Script
-(Python)' - put a _copy_ of the script in a python-mode buffer named
-for the script and pdbtrack will find it.)"
+(Python)' - put a _copy_ of the script in a buffer named for the
+script, and set to python-mode, and pdbtrack will find it.)"
   ;; Instead of trying to piece things together from partial text
   ;; (which can be almost useless depending on Emacs version), we
   ;; monitor to the point where we have the next pdb prompt, and then
@@ -1378,7 +1378,7 @@ problem as best as we can determine."
             ((= (elt filename 0) ?\<)
              (format "(Non-file source: '%s')" filename))
 
-            (t (format "Function/file not found: %s(), %s" funcname filename)))
+            (t (format "Not found: %s(), %s" funcname filename)))
       )
     )
   )
