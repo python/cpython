@@ -262,14 +262,11 @@ class Distribution:
         should be parsed.  The filenames returned are guaranteed to exist
         (modulo nasty race conditions).
 
-        On Unix, there are three possible config files: pydistutils.cfg in
-        the Distutils installation directory (ie. where the top-level
-        Distutils __inst__.py file lives), .pydistutils.cfg in the user's
-        home directory, and setup.cfg in the current directory.
-
-        On Windows and Mac OS, there are two possible config files:
-        pydistutils.cfg in the Python installation directory (sys.prefix)
-        and setup.cfg in the current directory.
+        There are three possible config files: distutils.cfg in the
+        Distutils installation directory (ie. where the top-level
+        Distutils __inst__.py file lives), a file in the user's home
+        directory named .pydistutils.cfg on Unix and pydistutils.cfg
+        on Windows/Mac, and setup.cfg in the current directory.
         """
         files = []
         check_environ()
