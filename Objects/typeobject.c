@@ -1745,6 +1745,13 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
 		return -1;
 	}
 	new = (PyTypeObject *)value;
+	if (!(new->tp_flags & Py_TPFLAGS_HEAPTYPE) ||
+	    !(old->tp_flags & Py_TPFLAGS_HEAPTYPE))
+	{
+		PyErr_Format(PyExc_TypeError,
+			     "__class__ assignment: only for heap types");
+		return -1;
+	}
 	if (new->tp_dealloc != old->tp_dealloc ||
 	    new->tp_free != old->tp_free)
 	{
@@ -1771,13 +1778,9 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
 			     old->tp_name);
 		return -1;
 	}
-	if (new->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-		Py_INCREF(new);
-	}
+	Py_INCREF(new);
 	self->ob_type = new;
-	if (old->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-		Py_DECREF(old);
-	}
+	Py_DECREF(old);
 	return 0;
 }
 
