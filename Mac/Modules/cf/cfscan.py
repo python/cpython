@@ -13,7 +13,8 @@ OBJECTS = ("CFTypeRef",
 		"CFArrayRef", "CFMutableArrayRef",
 		"CFDataRef", "CFMutableDataRef",
 		"CFDictionaryRef", "CFMutableDictionaryRef",
-		"CFStringRef", "CFMutableStringRef", 
+		"CFStringRef", "CFMutableStringRef",
+		"CFURLRef",
 		)
 # ADD object typenames here
 
@@ -35,7 +36,7 @@ def main():
 		"CFString.h",
 ##		"CFStringEncodingExt.h",
 ##		"CFTimeZone.h",
-##		"CFURL.h",
+		"CFURL.h",
 		]
 	output = SHORT + "gen.py"
 	defsoutput = TOOLBOXDIR + LONG + ".py"
@@ -81,7 +82,10 @@ class MyScanner(Scanner_OSX):
 			"CFStringGetPascalString", # Use the C-string methods.
 			"CFStringGetPascalStringPtr", # TBD automatically
 			"CFStringGetCStringPtr", 
-			"CFStringGetCharactersPtr", 
+			"CFStringGetCharactersPtr",
+			# OSX only, to be done
+			"CFURLCreateWithFileSystemPath",
+			"CFURLCreateStringWithFileSystemPath",
 			]
 
 	def makegreylist(self):
@@ -104,10 +108,18 @@ class MyScanner(Scanner_OSX):
 
 	def makerepairinstructions(self):
 		return [
+			# Buffers in CF seem to be passed as UInt8 * normally.
 			([("UInt8_ptr", "*", "InMode"), ("CFIndex", "*", "InMode")],
 			 [("UcharInBuffer", "*", "*")]),
+			 
+			# Some functions return a const char *. Don't worry, we won't modify it.
 			([("const_char_ptr", "*", "ReturnMode")],
 			 [("return_stringptr", "*", "*")]),
+			 
+			# base URLs are optional (pass None for NULL)
+			([("CFURLRef", "baseURL", "InMode")],
+			 [("OptionalCFURLRef", "*", "*")]),
+			 
 			]
 			
 if __name__ == "__main__":

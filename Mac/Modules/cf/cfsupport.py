@@ -27,10 +27,12 @@ includestuff = includestuff + """
 #endif
 
 /* For now we declare them forward here. They'll go to mactoolbox later */
-extern PyObject *CFTypeRefObj_New(CFTypeRef);
-extern int CFTypeRefObj_Convert(PyObject *, CFTypeRef *);
-extern PyObject *CFStringRefObj_New(CFStringRef);
-extern int CFStringRefObj_Convert(PyObject *, CFStringRef *);
+staticforward PyObject *CFTypeRefObj_New(CFTypeRef);
+staticforward int CFTypeRefObj_Convert(PyObject *, CFTypeRef *);
+staticforward PyObject *CFStringRefObj_New(CFStringRef);
+staticforward int CFStringRefObj_Convert(PyObject *, CFStringRef *);
+
+staticforward int CFURLRefObj_Convert(PyObject *, CFURLRef *);
 
 // ADD declarations
 #ifdef NOTYET_USE_TOOLBOX_OBJECT_GLUE
@@ -42,7 +44,7 @@ extern int CFStringRefObj_Convert(PyObject *, CFStringRef *);
 #endif
 
 /*
-** Parse/generate RGB records
+** Parse/generate CFRange records
 */
 PyObject *CFRange_New(CFRange *itself)
 {
@@ -61,6 +63,17 @@ CFRange_Convert(PyObject *v, CFRange *p_itself)
 	return 1;
 }
 
+/* Optional CFURL argument or None (passed as NULL) */
+int
+OptionalCFURLRefObj_Convert(PyObject *v, CFURLRef *p_itself)
+{
+    if ( v == Py_None ) {
+    	p_itself = NULL;
+    	return 1;
+    }
+    return CFURLRefObj_Convert(v, p_itself);
+}
+
 """
 
 initstuff = initstuff + """
@@ -75,7 +88,8 @@ CFIndex = Type("CFIndex", "l")
 CFRange = OpaqueByValueType('CFRange', 'CFRange')
 CFOptionFlags = Type("CFOptionFlags", "l")
 CFStringEncoding = Type("CFStringEncoding", "l")
-CFComparisonResult = Type("CFComparisonResult", "l")  # a bit dangerous...
+CFComparisonResult = Type("CFComparisonResult", "l")  # a bit dangerous, it's an enum
+CFURLPathStyle = Type("CFURLPathStyle", "l") #  a bit dangerous, it's an enum
 
 char_ptr = stringptr
 return_stringptr = Type("char *", "s")	# ONLY FOR RETURN VALUES!!
@@ -96,6 +110,8 @@ CFDictionaryRef = OpaqueByValueType("CFDictionaryRef", "CFDictionaryRefObj")
 CFMutableDictionaryRef = OpaqueByValueType("CFMutableDictionaryRef", "CFMutableDictionaryRefObj")
 CFStringRef = OpaqueByValueType("CFStringRef", "CFStringRefObj")
 CFMutableStringRef = OpaqueByValueType("CFMutableStringRef", "CFMutableStringRefObj")
+CFURLRef = OpaqueByValueType("CFURLRef", "CFURLRefObj")
+OptionalCFURLRef  = OpaqueByValueType("CFURLRef", "OptionalCFURLRefObj")
 # ADD object type here
 
 # Our (opaque) objects
@@ -160,7 +176,7 @@ class CFArrayRefObjectDefinition(MyGlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFArrayRef object at 0x%%08.8x for 0x%%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFArrayRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 	
@@ -172,7 +188,7 @@ class CFMutableArrayRefObjectDefinition(MyGlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFMutableArrayRef object at 0x%%08.8x for 0x%%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFMutableArrayRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 	
@@ -184,7 +200,7 @@ class CFDictionaryRefObjectDefinition(MyGlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFDictionaryRef object at 0x%%08.8x for 0x%%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFDictionaryRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 	
@@ -196,7 +212,7 @@ class CFMutableDictionaryRefObjectDefinition(MyGlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFMutableDictionaryRef object at 0x%%08.8x for 0x%%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFMutableDictionaryRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 	
@@ -208,7 +224,7 @@ class CFDataRefObjectDefinition(MyGlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFDataRef object at 0x%%08.8x for 0x%%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFDataRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 	
@@ -220,7 +236,7 @@ class CFMutableDataRefObjectDefinition(MyGlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFMutableDataRef object at 0x%%08.8x for 0x%%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFMutableDataRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 
@@ -232,7 +248,7 @@ class CFStringRefObjectDefinition(MyGlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFStringRef object at 0x%%08.8x for 0x%%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFStringRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 
@@ -244,7 +260,19 @@ class CFMutableStringRefObjectDefinition(CFStringRefObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFMutableStringRef object at 0x%%08.8x for 0x%%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFMutableStringRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
+		Output("return PyString_FromString(buf);")
+		OutRbrace()
+
+class CFURLRefObjectDefinition(MyGlobalObjectDefinition):
+	basechain = "&CFTypeRefObj_chain"
+	
+	def outputRepr(self):
+		Output()
+		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
+		OutLbrace()
+		Output("char buf[100];")
+		Output("""sprintf(buf, "<CFURL object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 
@@ -256,14 +284,15 @@ class CFMutableStringRefObjectDefinition(CFStringRefObjectDefinition):
 # Create the generator groups and link them
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)
 CFTypeRef_object = CFTypeRefObjectDefinition('CFTypeRef', 'CFTypeRefObj', 'CFTypeRef')
-CFArrayRef_object = CFTypeRefObjectDefinition('CFArrayRef', 'CFArrayRefObj', 'CFArrayRef')
-CFMutableArrayRef_object = CFTypeRefObjectDefinition('CFMutableArrayRef', 'CFMutableArrayRefObj', 'CFMutableArrayRef')
-CFDictionaryRef_object = CFTypeRefObjectDefinition('CFDictionaryRef', 'CFDictionaryRefObj', 'CFDictionaryRef')
-CFMutableDictionaryRef_object = CFTypeRefObjectDefinition('CFMutableDictionaryRef', 'CFMutableDictionaryRefObj', 'CFMutableDictionaryRef')
-CFDataRef_object = CFTypeRefObjectDefinition('CFDataRef', 'CFDataRefObj', 'CFDataRef')
-CFMutableDataRef_object = CFTypeRefObjectDefinition('CFMutableDataRef', 'CFMutableDataRefObj', 'CFMutableDataRef')
-CFStringRef_object = CFTypeRefObjectDefinition('CFStringRef', 'CFStringRefObj', 'CFStringRef')
-CFMutableStringRef_object = CFTypeRefObjectDefinition('CFMutableStringRef', 'CFMutableStringRefObj', 'CFMutableStringRef')
+CFArrayRef_object = CFArrayRefObjectDefinition('CFArrayRef', 'CFArrayRefObj', 'CFArrayRef')
+CFMutableArrayRef_object = CFMutableArrayRefObjectDefinition('CFMutableArrayRef', 'CFMutableArrayRefObj', 'CFMutableArrayRef')
+CFDictionaryRef_object = CFDictionaryRefObjectDefinition('CFDictionaryRef', 'CFDictionaryRefObj', 'CFDictionaryRef')
+CFMutableDictionaryRef_object = CFMutableDictionaryRefObjectDefinition('CFMutableDictionaryRef', 'CFMutableDictionaryRefObj', 'CFMutableDictionaryRef')
+CFDataRef_object = CFDataRefObjectDefinition('CFDataRef', 'CFDataRefObj', 'CFDataRef')
+CFMutableDataRef_object = CFMutableDataRefObjectDefinition('CFMutableDataRef', 'CFMutableDataRefObj', 'CFMutableDataRef')
+CFStringRef_object = CFStringRefObjectDefinition('CFStringRef', 'CFStringRefObj', 'CFStringRef')
+CFMutableStringRef_object = CFMutableStringRefObjectDefinition('CFMutableStringRef', 'CFMutableStringRefObj', 'CFMutableStringRef')
+CFURLRef_object = CFURLRefObjectDefinition('CFURLRef', 'CFURLRefObj', 'CFURLRef')
 
 # ADD object here
 
@@ -276,6 +305,7 @@ module.addobject(CFDataRef_object)
 module.addobject(CFMutableDataRef_object)
 module.addobject(CFStringRef_object)
 module.addobject(CFMutableStringRef_object)
+module.addobject(CFURLRef_object)
 # ADD addobject call here
 
 # Create the generator classes used to populate the lists
@@ -293,6 +323,7 @@ CFDataRef_methods = []
 CFMutableDataRef_methods = []
 CFStringRef_methods = []
 CFMutableStringRef_methods = []
+CFURLRef_methods = []
 
 # ADD _methods initializer here
 execfile(INPUTFILE)
@@ -310,6 +341,7 @@ for f in CFDataRef_methods: CFDataRef_object.add(f)
 for f in CFMutableDataRef_methods: CFMutableDataRef_object.add(f)
 for f in CFStringRef_methods: CFStringRef_object.add(f)
 for f in CFMutableStringRef_methods: CFMutableStringRef_object.add(f)
+for f in CFURLRef_methods: CFURLRef_object.add(f)
 
 # ADD add forloop here
 

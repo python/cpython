@@ -15,10 +15,12 @@
 #endif
 
 /* For now we declare them forward here. They'll go to mactoolbox later */
-extern PyObject *CFTypeRefObj_New(CFTypeRef);
-extern int CFTypeRefObj_Convert(PyObject *, CFTypeRef *);
-extern PyObject *CFStringRefObj_New(CFStringRef);
-extern int CFStringRefObj_Convert(PyObject *, CFStringRef *);
+staticforward PyObject *CFTypeRefObj_New(CFTypeRef);
+staticforward int CFTypeRefObj_Convert(PyObject *, CFTypeRef *);
+staticforward PyObject *CFStringRefObj_New(CFStringRef);
+staticforward int CFStringRefObj_Convert(PyObject *, CFStringRef *);
+
+staticforward int CFURLRefObj_Convert(PyObject *, CFURLRef *);
 
 // ADD declarations
 #ifdef NOTYET_USE_TOOLBOX_OBJECT_GLUE
@@ -30,7 +32,7 @@ extern int CFStringRefObj_Convert(PyObject *, CFStringRef *);
 #endif
 
 /*
-** Parse/generate RGB records
+** Parse/generate CFRange records
 */
 PyObject *CFRange_New(CFRange *itself)
 {
@@ -47,6 +49,17 @@ CFRange_Convert(PyObject *v, CFRange *p_itself)
 	p_itself->location = (CFIndex)location;
 	p_itself->length = (CFIndex)length;
 	return 1;
+}
+
+/* Optional CFURL argument or None (passed as NULL) */
+int
+OptionalCFURLRefObj_Convert(PyObject *v, CFURLRef *p_itself)
+{
+    if ( v == Py_None ) {
+    	p_itself = NULL;
+    	return 1;
+    }
+    return CFURLRefObj_Convert(v, p_itself);
 }
 
 
@@ -333,7 +346,7 @@ static PyMethodDef CFArrayRefObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain CFArrayRefObj_chain = { CFArrayRefObj_methods, NULL };
+PyMethodChain CFArrayRefObj_chain = { CFArrayRefObj_methods, &CFTypeRefObj_chain };
 
 static PyObject *CFArrayRefObj_getattr(CFArrayRefObject *self, char *name)
 {
@@ -353,7 +366,7 @@ static int CFArrayRefObj_compare(CFArrayRefObject *self, CFArrayRefObject *other
 static PyObject * CFArrayRefObj_repr(CFArrayRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFTypeRef type-%d object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
+	sprintf(buf, "<CFArrayRef object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -484,7 +497,7 @@ static PyMethodDef CFMutableArrayRefObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain CFMutableArrayRefObj_chain = { CFMutableArrayRefObj_methods, NULL };
+PyMethodChain CFMutableArrayRefObj_chain = { CFMutableArrayRefObj_methods, &CFArrayRefObj_chain };
 
 static PyObject *CFMutableArrayRefObj_getattr(CFMutableArrayRefObject *self, char *name)
 {
@@ -504,7 +517,7 @@ static int CFMutableArrayRefObj_compare(CFMutableArrayRefObject *self, CFMutable
 static PyObject * CFMutableArrayRefObj_repr(CFMutableArrayRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFTypeRef type-%d object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
+	sprintf(buf, "<CFMutableArrayRef object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -601,7 +614,7 @@ static PyMethodDef CFDictionaryRefObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain CFDictionaryRefObj_chain = { CFDictionaryRefObj_methods, NULL };
+PyMethodChain CFDictionaryRefObj_chain = { CFDictionaryRefObj_methods, &CFTypeRefObj_chain };
 
 static PyObject *CFDictionaryRefObj_getattr(CFDictionaryRefObject *self, char *name)
 {
@@ -621,7 +634,7 @@ static int CFDictionaryRefObj_compare(CFDictionaryRefObject *self, CFDictionaryR
 static PyObject * CFDictionaryRefObj_repr(CFDictionaryRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFTypeRef type-%d object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
+	sprintf(buf, "<CFDictionaryRef object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -717,7 +730,7 @@ static PyMethodDef CFMutableDictionaryRefObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain CFMutableDictionaryRefObj_chain = { CFMutableDictionaryRefObj_methods, NULL };
+PyMethodChain CFMutableDictionaryRefObj_chain = { CFMutableDictionaryRefObj_methods, &CFDictionaryRefObj_chain };
 
 static PyObject *CFMutableDictionaryRefObj_getattr(CFMutableDictionaryRefObject *self, char *name)
 {
@@ -737,7 +750,7 @@ static int CFMutableDictionaryRefObj_compare(CFMutableDictionaryRefObject *self,
 static PyObject * CFMutableDictionaryRefObj_repr(CFMutableDictionaryRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFTypeRef type-%d object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
+	sprintf(buf, "<CFMutableDictionaryRef object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -834,7 +847,7 @@ static PyMethodDef CFDataRefObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain CFDataRefObj_chain = { CFDataRefObj_methods, NULL };
+PyMethodChain CFDataRefObj_chain = { CFDataRefObj_methods, &CFTypeRefObj_chain };
 
 static PyObject *CFDataRefObj_getattr(CFDataRefObject *self, char *name)
 {
@@ -854,7 +867,7 @@ static int CFDataRefObj_compare(CFDataRefObject *self, CFDataRefObject *other)
 static PyObject * CFDataRefObj_repr(CFDataRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFTypeRef type-%d object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
+	sprintf(buf, "<CFDataRef object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -1028,7 +1041,7 @@ static PyMethodDef CFMutableDataRefObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain CFMutableDataRefObj_chain = { CFMutableDataRefObj_methods, NULL };
+PyMethodChain CFMutableDataRefObj_chain = { CFMutableDataRefObj_methods, &CFDataRefObj_chain };
 
 static PyObject *CFMutableDataRefObj_getattr(CFMutableDataRefObject *self, char *name)
 {
@@ -1048,7 +1061,7 @@ static int CFMutableDataRefObj_compare(CFMutableDataRefObject *self, CFMutableDa
 static PyObject * CFMutableDataRefObj_repr(CFMutableDataRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFTypeRef type-%d object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
+	sprintf(buf, "<CFMutableDataRef object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -1433,7 +1446,7 @@ static PyMethodDef CFStringRefObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain CFStringRefObj_chain = { CFStringRefObj_methods, NULL };
+PyMethodChain CFStringRefObj_chain = { CFStringRefObj_methods, &CFTypeRefObj_chain };
 
 static PyObject *CFStringRefObj_getattr(CFStringRefObject *self, char *name)
 {
@@ -1453,7 +1466,7 @@ static int CFStringRefObj_compare(CFStringRefObject *self, CFStringRefObject *ot
 static PyObject * CFStringRefObj_repr(CFStringRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFTypeRef type-%d object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
+	sprintf(buf, "<CFStringRef object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -1711,7 +1724,7 @@ static PyMethodDef CFMutableStringRefObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain CFMutableStringRefObj_chain = { CFMutableStringRefObj_methods, NULL };
+PyMethodChain CFMutableStringRefObj_chain = { CFMutableStringRefObj_methods, &CFStringRefObj_chain };
 
 static PyObject *CFMutableStringRefObj_getattr(CFMutableStringRefObject *self, char *name)
 {
@@ -1731,7 +1744,7 @@ static int CFMutableStringRefObj_compare(CFMutableStringRefObject *self, CFMutab
 static PyObject * CFMutableStringRefObj_repr(CFMutableStringRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFTypeRef type-%d object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
+	sprintf(buf, "<CFMutableStringRef object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -1761,6 +1774,342 @@ PyTypeObject CFMutableStringRef_Type = {
 };
 
 /* --------------- End object type CFMutableStringRef --------------- */
+
+
+/* ---------------------- Object type CFURLRef ---------------------- */
+
+PyTypeObject CFURLRef_Type;
+
+#define CFURLRefObj_Check(x) ((x)->ob_type == &CFURLRef_Type)
+
+typedef struct CFURLRefObject {
+	PyObject_HEAD
+	CFURLRef ob_itself;
+	void (*ob_freeit)(CFTypeRef ptr);
+} CFURLRefObject;
+
+PyObject *CFURLRefObj_New(CFURLRef itself)
+{
+	CFURLRefObject *it;
+	if (itself == NULL) return PyMac_Error(resNotFound);
+	CFRetain(itself);
+	it = PyObject_NEW(CFURLRefObject, &CFURLRef_Type);
+	if (it == NULL) return NULL;
+	it->ob_itself = itself;
+	it->ob_freeit = CFRelease;
+	return (PyObject *)it;
+}
+CFURLRefObj_Convert(PyObject *v, CFURLRef *p_itself)
+{
+
+	if (v == Py_None) { *p_itself = NULL; return 1; }
+	/* Check for other CF objects here */
+
+	if (!CFURLRefObj_Check(v))
+	{
+		PyErr_SetString(PyExc_TypeError, "CFURLRef required");
+		return 0;
+	}
+	*p_itself = ((CFURLRefObject *)v)->ob_itself;
+	return 1;
+}
+
+static void CFURLRefObj_dealloc(CFURLRefObject *self)
+{
+	if (self->ob_freeit && self->ob_itself)
+	{
+		self->ob_freeit((CFTypeRef)self->ob_itself);
+	}
+	PyMem_DEL(self);
+}
+
+static PyObject *CFURLRefObj_CFURLCopyAbsoluteURL(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFURLRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLCopyAbsoluteURL(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFURLRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLGetString(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLGetString(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLGetBaseURL(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFURLRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLGetBaseURL(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFURLRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCanBeDecomposed(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLCanBeDecomposed(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCopyScheme(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLCopyScheme(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCopyNetLocation(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLCopyNetLocation(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCopyPath(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLCopyPath(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLHasDirectoryPath(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLHasDirectoryPath(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCopyResourceSpecifier(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLCopyResourceSpecifier(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCopyHostName(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLCopyHostName(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLGetPortNumber(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	SInt32 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLGetPortNumber(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCopyUserName(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLCopyUserName(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCopyPassword(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLCopyPassword(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCopyParameterString(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	CFStringRef charactersToLeaveEscaped;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CFStringRefObj_Convert, &charactersToLeaveEscaped))
+		return NULL;
+	_rv = CFURLCopyParameterString(_self->ob_itself,
+	                               charactersToLeaveEscaped);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCopyQueryString(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	CFStringRef charactersToLeaveEscaped;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CFStringRefObj_Convert, &charactersToLeaveEscaped))
+		return NULL;
+	_rv = CFURLCopyQueryString(_self->ob_itself,
+	                           charactersToLeaveEscaped);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CFURLRefObj_CFURLCopyFragment(CFURLRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	CFStringRef charactersToLeaveEscaped;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CFStringRefObj_Convert, &charactersToLeaveEscaped))
+		return NULL;
+	_rv = CFURLCopyFragment(_self->ob_itself,
+	                        charactersToLeaveEscaped);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyMethodDef CFURLRefObj_methods[] = {
+	{"CFURLCopyAbsoluteURL", (PyCFunction)CFURLRefObj_CFURLCopyAbsoluteURL, 1,
+	 "() -> (CFURLRef _rv)"},
+	{"CFURLGetString", (PyCFunction)CFURLRefObj_CFURLGetString, 1,
+	 "() -> (CFStringRef _rv)"},
+	{"CFURLGetBaseURL", (PyCFunction)CFURLRefObj_CFURLGetBaseURL, 1,
+	 "() -> (CFURLRef _rv)"},
+	{"CFURLCanBeDecomposed", (PyCFunction)CFURLRefObj_CFURLCanBeDecomposed, 1,
+	 "() -> (Boolean _rv)"},
+	{"CFURLCopyScheme", (PyCFunction)CFURLRefObj_CFURLCopyScheme, 1,
+	 "() -> (CFStringRef _rv)"},
+	{"CFURLCopyNetLocation", (PyCFunction)CFURLRefObj_CFURLCopyNetLocation, 1,
+	 "() -> (CFStringRef _rv)"},
+	{"CFURLCopyPath", (PyCFunction)CFURLRefObj_CFURLCopyPath, 1,
+	 "() -> (CFStringRef _rv)"},
+	{"CFURLHasDirectoryPath", (PyCFunction)CFURLRefObj_CFURLHasDirectoryPath, 1,
+	 "() -> (Boolean _rv)"},
+	{"CFURLCopyResourceSpecifier", (PyCFunction)CFURLRefObj_CFURLCopyResourceSpecifier, 1,
+	 "() -> (CFStringRef _rv)"},
+	{"CFURLCopyHostName", (PyCFunction)CFURLRefObj_CFURLCopyHostName, 1,
+	 "() -> (CFStringRef _rv)"},
+	{"CFURLGetPortNumber", (PyCFunction)CFURLRefObj_CFURLGetPortNumber, 1,
+	 "() -> (SInt32 _rv)"},
+	{"CFURLCopyUserName", (PyCFunction)CFURLRefObj_CFURLCopyUserName, 1,
+	 "() -> (CFStringRef _rv)"},
+	{"CFURLCopyPassword", (PyCFunction)CFURLRefObj_CFURLCopyPassword, 1,
+	 "() -> (CFStringRef _rv)"},
+	{"CFURLCopyParameterString", (PyCFunction)CFURLRefObj_CFURLCopyParameterString, 1,
+	 "(CFStringRef charactersToLeaveEscaped) -> (CFStringRef _rv)"},
+	{"CFURLCopyQueryString", (PyCFunction)CFURLRefObj_CFURLCopyQueryString, 1,
+	 "(CFStringRef charactersToLeaveEscaped) -> (CFStringRef _rv)"},
+	{"CFURLCopyFragment", (PyCFunction)CFURLRefObj_CFURLCopyFragment, 1,
+	 "(CFStringRef charactersToLeaveEscaped) -> (CFStringRef _rv)"},
+	{NULL, NULL, 0}
+};
+
+PyMethodChain CFURLRefObj_chain = { CFURLRefObj_methods, &CFTypeRefObj_chain };
+
+static PyObject *CFURLRefObj_getattr(CFURLRefObject *self, char *name)
+{
+	return Py_FindMethodInChain(&CFURLRefObj_chain, (PyObject *)self, name);
+}
+
+#define CFURLRefObj_setattr NULL
+
+static int CFURLRefObj_compare(CFURLRefObject *self, CFURLRefObject *other)
+{
+	/* XXXX Or should we use CFEqual?? */
+	if ( self->ob_itself > other->ob_itself ) return 1;
+	if ( self->ob_itself < other->ob_itself ) return -1;
+	return 0;
+}
+
+static PyObject * CFURLRefObj_repr(CFURLRefObject *self)
+{
+	char buf[100];
+	sprintf(buf, "<CFURL object at 0x%08.8x for 0x%08.8x>", CFGetTypeID(self->ob_itself), self, self->ob_itself);
+	return PyString_FromString(buf);
+}
+
+static int CFURLRefObj_hash(CFURLRefObject *self)
+{
+	/* XXXX Or should we use CFHash?? */
+	return (int)self->ob_itself;
+}
+
+PyTypeObject CFURLRef_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0, /*ob_size*/
+	"CFURLRef", /*tp_name*/
+	sizeof(CFURLRefObject), /*tp_basicsize*/
+	0, /*tp_itemsize*/
+	/* methods */
+	(destructor) CFURLRefObj_dealloc, /*tp_dealloc*/
+	0, /*tp_print*/
+	(getattrfunc) CFURLRefObj_getattr, /*tp_getattr*/
+	(setattrfunc) CFURLRefObj_setattr, /*tp_setattr*/
+	(cmpfunc) CFURLRefObj_compare, /*tp_compare*/
+	(reprfunc) CFURLRefObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) CFURLRefObj_hash, /*tp_hash*/
+};
+
+/* -------------------- End object type CFURLRef -------------------- */
 
 
 static PyObject *CF_CFAllocatorGetTypeID(PyObject *_self, PyObject *_args)
@@ -2446,6 +2795,100 @@ static PyObject *CF___CFStringMakeConstantString(PyObject *_self, PyObject *_arg
 	return _res;
 }
 
+static PyObject *CF_CFURLGetTypeID(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFTypeID _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = CFURLGetTypeID();
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CF_CFURLCreateWithBytes(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFURLRef _rv;
+	unsigned char *URLBytes__in__;
+	long URLBytes__len__;
+	int URLBytes__in_len__;
+	CFStringEncoding encoding;
+	CFURLRef baseURL;
+	if (!PyArg_ParseTuple(_args, "s#lO&",
+	                      &URLBytes__in__, &URLBytes__in_len__,
+	                      &encoding,
+	                      OptionalCFURLRefObj_Convert, &baseURL))
+		return NULL;
+	URLBytes__len__ = URLBytes__in_len__;
+	_rv = CFURLCreateWithBytes((CFAllocatorRef)NULL,
+	                           URLBytes__in__, URLBytes__len__,
+	                           encoding,
+	                           baseURL);
+	_res = Py_BuildValue("O&",
+	                     CFURLRefObj_New, _rv);
+ URLBytes__error__: ;
+	return _res;
+}
+
+static PyObject *CF_CFURLCreateData(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFDataRef _rv;
+	CFURLRef url;
+	CFStringEncoding encoding;
+	Boolean escapeWhitespace;
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CFURLRefObj_Convert, &url,
+	                      &encoding,
+	                      &escapeWhitespace))
+		return NULL;
+	_rv = CFURLCreateData((CFAllocatorRef)NULL,
+	                      url,
+	                      encoding,
+	                      escapeWhitespace);
+	_res = Py_BuildValue("O&",
+	                     CFDataRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CF_CFURLCreateWithString(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFURLRef _rv;
+	CFStringRef URLString;
+	CFURLRef baseURL;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CFStringRefObj_Convert, &URLString,
+	                      OptionalCFURLRefObj_Convert, &baseURL))
+		return NULL;
+	_rv = CFURLCreateWithString((CFAllocatorRef)NULL,
+	                            URLString,
+	                            baseURL);
+	_res = Py_BuildValue("O&",
+	                     CFURLRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CF_CFURLCreateStringByReplacingPercentEscapes(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	CFStringRef originalString;
+	CFStringRef charactersToLeaveEscaped;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CFStringRefObj_Convert, &originalString,
+	                      CFStringRefObj_Convert, &charactersToLeaveEscaped))
+		return NULL;
+	_rv = CFURLCreateStringByReplacingPercentEscapes((CFAllocatorRef)NULL,
+	                                                 originalString,
+	                                                 charactersToLeaveEscaped);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
 static PyMethodDef CF_methods[] = {
 	{"CFAllocatorGetTypeID", (PyCFunction)CF_CFAllocatorGetTypeID, 1,
 	 "() -> (CFTypeID _rv)"},
@@ -2531,6 +2974,16 @@ static PyMethodDef CF_methods[] = {
 	 "(CFStringEncoding encoding) -> (CFStringRef _rv)"},
 	{"__CFStringMakeConstantString", (PyCFunction)CF___CFStringMakeConstantString, 1,
 	 "(char* cStr) -> (CFStringRef _rv)"},
+	{"CFURLGetTypeID", (PyCFunction)CF_CFURLGetTypeID, 1,
+	 "() -> (CFTypeID _rv)"},
+	{"CFURLCreateWithBytes", (PyCFunction)CF_CFURLCreateWithBytes, 1,
+	 "(Buffer URLBytes, CFStringEncoding encoding, CFURLRef baseURL) -> (CFURLRef _rv)"},
+	{"CFURLCreateData", (PyCFunction)CF_CFURLCreateData, 1,
+	 "(CFURLRef url, CFStringEncoding encoding, Boolean escapeWhitespace) -> (CFDataRef _rv)"},
+	{"CFURLCreateWithString", (PyCFunction)CF_CFURLCreateWithString, 1,
+	 "(CFStringRef URLString, CFURLRef baseURL) -> (CFURLRef _rv)"},
+	{"CFURLCreateStringByReplacingPercentEscapes", (PyCFunction)CF_CFURLCreateStringByReplacingPercentEscapes, 1,
+	 "(CFStringRef originalString, CFStringRef charactersToLeaveEscaped) -> (CFStringRef _rv)"},
 	{NULL, NULL, 0}
 };
 
@@ -2590,6 +3043,10 @@ void initCF(void)
 	Py_INCREF(&CFMutableStringRef_Type);
 	if (PyDict_SetItemString(d, "CFMutableStringRefType", (PyObject *)&CFMutableStringRef_Type) != 0)
 		Py_FatalError("can't initialize CFMutableStringRefType");
+	CFURLRef_Type.ob_type = &PyType_Type;
+	Py_INCREF(&CFURLRef_Type);
+	if (PyDict_SetItemString(d, "CFURLRefType", (PyObject *)&CFURLRef_Type) != 0)
+		Py_FatalError("can't initialize CFURLRefType");
 }
 
 /* ========================= End module CF ========================== */
