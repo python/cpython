@@ -88,7 +88,8 @@ parentheses-enclosed group begins with a group name in angular
 brackets, e.g. \code{'\e(<id>[a-z][a-z0-9]*\e)'}, the group can
 be referenced by its name in arguments to the \code{group} method of
 the resulting compiled regular expression object, like this:
-\code{p.group('id')}.
+\code{p.group('id')}.  Group names may contain alphanumeric characters
+and \code{'_'} only.
 \end{funcdesc}
 
 \begin{excdesc}{error}
