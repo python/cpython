@@ -368,7 +368,7 @@ PyObject *PyUnicode_FromWideChar(register const wchar_t *w,
 	register Py_UNICODE *u;
 	register int i;
 	u = PyUnicode_AS_UNICODE(unicode);
-	for (i = size; i >= 0; i--)
+	for (i = size; i > 0; i--)
 	    *u++ = *w++;
     }
 #endif
@@ -393,7 +393,7 @@ int PyUnicode_AsWideChar(PyUnicodeObject *unicode,
 	register Py_UNICODE *u;
 	register int i;
 	u = PyUnicode_AS_UNICODE(unicode);
-	for (i = size; i >= 0; i--)
+	for (i = size; i > 0; i--)
 	    *w++ = *u++;
     }
 #endif
