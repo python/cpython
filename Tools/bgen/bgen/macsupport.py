@@ -46,9 +46,9 @@ ConstStringPtr = StringPtr
 
 # File System Specifications
 FSSpec_ptr = OpaqueType("FSSpec", "PyMac_BuildFSSpec", "PyMac_GetFSSpec")
-FSSpec = OpaqueByValueType("FSSpec", "PyMac_BuildFSSpec", "PyMac_GetFSSpec")
+FSSpec = OpaqueByValueStructType("FSSpec", "PyMac_BuildFSSpec", "PyMac_GetFSSpec")
 FSRef_ptr = OpaqueType("FSRef", "PyMac_BuildFSRef", "PyMac_GetFSRef")
-FSRef = OpaqueByValueType("FSRef", "PyMac_BuildFSRef", "PyMac_GetFSRef")
+FSRef = OpaqueByValueStructType("FSRef", "PyMac_BuildFSRef", "PyMac_GetFSRef")
 
 # OSType and ResType: 4-byte character strings
 def OSTypeType(typename):
