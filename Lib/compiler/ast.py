@@ -414,7 +414,7 @@ class Backquote(Node):
   nodes['backquote'] = 'Backquote'
 
   def __init__(self, node):
-    self.node = node
+    self.expr = node
     self._children = ('backquote', node)
 
   def __repr__(self):
@@ -657,7 +657,7 @@ class UnaryAdd(Node):
   nodes['unary+'] = 'UnaryAdd'
 
   def __init__(self, node):
-    self.node = node
+    self.expr = node
     self._children = ('unary+', node)
 
   def __repr__(self):
@@ -667,7 +667,7 @@ class UnarySub(Node):
   nodes['unary-'] = 'UnarySub'
 
   def __init__(self, node):
-    self.node = node
+    self.expr = node
     self._children = ('unary-', node)
 
   def __repr__(self):
@@ -677,7 +677,7 @@ class Invert(Node):
   nodes['invert'] = 'Invert'
 
   def __init__(self, node):
-    self.node = node
+    self.expr = node
     self._children = ('invert', node)
 
   def __repr__(self):
