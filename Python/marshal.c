@@ -403,7 +403,6 @@ r_object(RFILE *p)
 	
 	case TYPE_FLOAT:
 		{
-			extern double atof(const char *);
 			char buf[256];
 			double dx;
 			n = r_byte(p);
@@ -422,7 +421,6 @@ r_object(RFILE *p)
 #ifndef WITHOUT_COMPLEX
 	case TYPE_COMPLEX:
 		{
-			extern double atof(const char *);
 			char buf[256];
 			Py_complex c;
 			n = r_byte(p);
