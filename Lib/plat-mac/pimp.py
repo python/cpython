@@ -160,6 +160,13 @@ class PimpPreferences:
             buildDir = DEFAULT_BUILDDIR
         if not pimpDatabase:
             pimpDatabase = DEFAULT_PIMPDATABASE
+        self.setInstallDir(installDir)
+        self.flavorOrder = flavorOrder
+        self.downloadDir = downloadDir
+        self.buildDir = buildDir
+        self.pimpDatabase = pimpDatabase
+        
+    def setInstallDir(self, installDir=None):
         if installDir:
             # Installing to non-standard location.
             self.installLocations = [
@@ -170,12 +177,8 @@ class PimpPreferences:
         else:
             installDir = DEFAULT_INSTALLDIR
             self.installLocations = []
-        self.flavorOrder = flavorOrder
-        self.downloadDir = downloadDir
-        self.buildDir = buildDir
         self.installDir = installDir
-        self.pimpDatabase = pimpDatabase
-        
+
     def check(self):
         """Check that the preferences make sense: directories exist and are
         writable, the install directory is on sys.path, etc."""
@@ -465,7 +468,7 @@ class PimpPackage:
         rv = []
         if not self._dict.get('Download-URL'):
             return [(None, 
-                "%s: This package needs to be installed manually (no Download-URL field)" %
+                "%s: This package cannot be installed automatically (no Download-URL field)" %
                     self.fullname())]
         if not self._dict.get('Prerequisites'):
             return []
@@ -755,7 +758,7 @@ class PimpInstaller:
             if pkg:
                 self._prepareInstall(pkg, force, recursive)
             else:
-                self._curmessages.append("Requires: %s" % descr)
+                self._curmessages.append("Problem with dependency: %s" % descr)
                 
     def prepareInstall(self, package, force=0, recursive=1):
         """Prepare installation of a package.
