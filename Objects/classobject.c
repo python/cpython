@@ -487,37 +487,52 @@ instance_dealloc(register PyInstanceObject *inst)
 	PyObject *error_type, *error_value, *error_traceback;
 	PyObject *del;
 	static PyObject *delstr;
-#ifdef Py_TRACE_REFS
+#ifdef Py_REF_DEBUG
 	extern long _Py_RefTotal;
 #endif
-	/* Call the __del__ method if it exists.  First temporarily
-	   revive the object and save the current exception, if any. */
+	/* Temporarily resurrect the object. */
 #ifdef Py_TRACE_REFS
+#ifndef Py_REF_DEBUG
+#   error "Py_TRACE_REFS defined but Py_REF_DEBUG not."
+#endif
 	/* much too complicated if Py_TRACE_REFS defined */
 	inst->ob_type = &PyInstance_Type;
 	_Py_NewReference((PyObject *)inst);
-	_Py_RefTotal--;		/* compensate for increment in NEWREF */
 #ifdef COUNT_ALLOCS
-	inst->ob_type->tp_alloc--; /* ditto */
+	/* compensate for boost in _Py_NewReference; note that
+	 * _Py_RefTotal was also boosted; we'll knock that down later.
+	 */
+	inst->ob_type->tp_alloc--;
 #endif
 #else /* !Py_TRACE_REFS */
+	/* Py_INCREF boosts _Py_RefTotal if Py_REF_DEBUG is defined */
 	Py_INCREF(inst);
 #endif /* !Py_TRACE_REFS */
+
+	/* Save the current exception, if any. */
 	PyErr_Fetch(&error_type, &error_value, &error_traceback);
+	/* Execute __del__ method, if any. */
 	if (delstr == NULL)
 		delstr = PyString_InternFromString("__del__");
 	if ((del = instance_getattr2(inst, delstr)) != NULL) {
 		PyObject *res = PyEval_CallObject(del, (PyObject *)NULL);
-		if (res == NULL) {
+		if (res == NULL)
 			PyErr_WriteUnraisable(del);
-		}
 		else
 			Py_DECREF(res);
 		Py_DECREF(del);
 	}
-	/* Restore the saved exception and undo the temporary revival */
+	/* Restore the saved exception. */
 	PyErr_Restore(error_type, error_value, error_traceback);
-	/* Can't use DECREF here, it would cause a recursive call */
+	/* Undo the temporary resurrection; can't use DECREF here, it would
+	 * cause a recursive call.
+	 */
+#ifdef Py_REF_DEBUG
+	/* _Py_RefTotal was boosted either by _Py_NewReference or
+	 * Py_INCREF above.
+	 */
+	_Py_RefTotal--;
+#endif
 	if (--inst->ob_refcnt > 0) {
 #ifdef COUNT_ALLOCS
 		inst->ob_type->tp_free--;
@@ -525,14 +540,15 @@ instance_dealloc(register PyInstanceObject *inst)
 		return; /* __del__ added a reference; don't delete now */
 	}
 #ifdef Py_TRACE_REFS
-#ifdef COUNT_ALLOCS
-	inst->ob_type->tp_free--;	/* compensate for increment in UNREF */
-#endif
 	_Py_ForgetReference((PyObject *)inst);
+#ifdef COUNT_ALLOCS
+	/* compensate for increment in _Py_ForgetReference */
+	inst->ob_type->tp_free--;
+#endif
 #ifndef WITH_CYCLE_GC
 	inst->ob_type = NULL;
 #endif
-#endif /* Py_TRACE_REFS */
+#endif
 	PyObject_GC_Fini(inst);
 	Py_DECREF(inst->in_class);
 	Py_XDECREF(inst->in_dict);
