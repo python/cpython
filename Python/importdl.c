@@ -298,7 +298,8 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 		(void)FSMakeFSSpec(0, 0, Pstring(pathname), &libspec);
 		err = ResolveAliasFile(&libspec, 1, &isfolder, &didsomething);
 		if ( err ) {
-			sprintf(buf, "%s: %s", pathname, PyMac_StrError(err));
+			sprintf(buf, "%.255s: %.200s",
+				pathname, PyMac_StrError(err));
 			PyErr_SetString(PyExc_ImportError, buf);
 			return NULL;
 		}
@@ -318,7 +319,8 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 				      kLoadCFrag, &connID, &mainAddr,
 				      errMessage);
 		if ( err ) {
-			sprintf(buf, "%.*s: %s", errMessage[0], errMessage+1,
+			sprintf(buf, "%.*s: %.200s",
+				errMessage[0], errMessage+1,
 				PyMac_StrError(err));
 			PyErr_SetString(PyExc_ImportError, buf);
 			return NULL;
@@ -326,7 +328,8 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 		/* Locate the address of the correct init function */
 		err = FindSymbol(connID, Pstring(funcname), &symAddr, &class);
 		if ( err ) {
-			sprintf(buf, "%s: %s", funcname, PyMac_StrError(err));
+			sprintf(buf, "%s: %.200s",
+				funcname, PyMac_StrError(err));
 			PyErr_SetString(PyExc_ImportError, buf);
 			return NULL;
 		}
