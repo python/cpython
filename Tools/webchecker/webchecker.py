@@ -564,11 +564,21 @@ class MyHTMLParser(sgmllib.SGMLParser):
 	sgmllib.SGMLParser.__init__ (self)
 
     def start_a(self, attributes):
+	self.link_attr(attributes, 'href')
+
+    def end_a(self): pass
+
+    def do_img(self, attributes):
+	self.link_attr(attributes, 'src', 'lowsrc')
+
+    def do_frame(self, attributes):
+	self.link_attr(attributes, 'src')
+
+    def link_attr(self, attributes, *args):
 	for name, value in attributes:
-	    if name == 'href':
+	    if name in args:
 		if value: value = string.strip(value)
 		if value: self.links[value] = None
-		return	# match only first href
 
     def do_base(self, attributes):
 	for name, value in attributes:
@@ -578,7 +588,6 @@ class MyHTMLParser(sgmllib.SGMLParser):
 		    if verbose > 1:
 			print "  Base", value
 		    self.base = value
-		return	# match only first href
 
     def getlinks(self):
 	return self.links.keys()
