@@ -22,11 +22,12 @@ help.  Calling help(thing) on a Python object documents the object."""
 __author__ = "Ka-Ping Yee <ping@lfw.org>"
 __date__ = "26 February 2001"
 __version__ = "$Revision$"
-__credits__ = """Tommy Burnette, the original creator of manpy.
+__credits__ = """Guido van Rossum, for an excellent programming language.
+Tommy Burnette, the original creator of manpy.
 Paul Prescod, for all his work on onlinehelp.
 Richard Chamberlain, for the first implementation of textdoc.
 
-A moose bit my sister once."""
+Mynd you, møøse bites Kan be pretty nasti..."""
 
 import sys, imp, os, stat, re, types, inspect
 from repr import Repr
