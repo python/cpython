@@ -535,6 +535,19 @@ PyMapping_SetItemString:PyObject*:v:+1:
 PyMapping_Values:PyObject*::+1:
 PyMapping_Values:PyObject*:o:0:
 
+PyMarshal_ReadLastObjectFromFile:PyObject*::+1:
+PyMarshal_ReadLastObjectFromFile:FILE*:file::
+
+PyMarshal_ReadObjectFromFile:PyObject*::+1:
+PyMarshal_ReadObjectFromFile:FILE*:file::
+
+PyMarshal_ReadObjectFromString:PyObject*::+1:
+PyMarshal_ReadObjectFromString:char*:string::
+PyMarshal_ReadObjectFromString:int:len::
+
+PyMarshal_WriteObjectToString:PyObject*::+1:
+PyMarshal_WriteObjectToString:PyObject*:value:0:
+
 PyMethod_Class:PyObject*::0:
 PyMethod_Class:PyObject*:im:0:
 
@@ -1095,6 +1108,15 @@ PyTuple_SetItem:PyObject*:o:0:
 PyTuple_Size:int:::
 PyTuple_Size:PyTupleObject*:p:0:
 
+PyType_GenericAlloc:PyObject*::+1:
+PyType_GenericAlloc:PyObject*:type:0:
+PyType_GenericAlloc:int:nitems:0:
+
+PyType_GenericNew:PyObject*::+1:
+PyType_GenericNew:PyObject*:type:0:
+PyType_GenericNew:PyObject*:args:0:
+PyType_GenericNew:PyObject*:kwds:0:
+
 PyUnicode_Check:int:::
 PyUnicode_Check:PyObject*:o:0:
 
@@ -1370,6 +1392,24 @@ PyUnicode_Format:PyObject*:args:0:
 PyUnicode_Contains:int:::
 PyUnicode_Contains:PyObject*:container:0:
 PyUnicode_Contains:PyObject*:element:0:
+
+PyWeakref_GET_OBJECT:PyObject*::0:
+PyWeakref_GET_OBJECT:PyObject*:ref:0:
+
+PyWeakref_GetObject:PyObject*::+1:
+PyWeakref_GetObject:PyObject*:ref:0:
+
+PyWeakref_NewProxy:PyObject*::+1:
+PyWeakref_NewProxy:PyObject*:ob:0:
+PyWeakref_NewProxy:PyObject*:callback:0:
+
+PyWeakref_NewRef:PyObject*::+1:
+PyWeakref_NewRef:PyObject*:ob:0:
+PyWeakref_NewRef:PyObject*:callback:0:
+
+PyWrapper_New:PyObject*::+1:
+PyWrapper_New:PyObject*:d:0:
+PyWrapper_New:PyObject*:self:0:
 
 Py_AtExit:int:::
 Py_AtExit:void (*)():func::
