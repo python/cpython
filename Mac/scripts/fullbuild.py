@@ -95,6 +95,7 @@ PLUGIN_INSTRUCTIONS=[
 		":PlugIns:qtmodules.ppc.µ",
 		":PlugIns:waste.ppc.µ",
 		":PlugIns:_tkinter.ppc.µ",
+		":PlugIns:calldll.ppc.µ",
 	])
 ]
 CFM68KPLUGIN_INSTRUCTIONS=[
