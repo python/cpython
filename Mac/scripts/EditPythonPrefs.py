@@ -37,31 +37,34 @@ OPT_DIALOG_ID = 510
 # Map dialog item numbers to option names (and the reverse)
 opt_dialog_map = [
 	None,
+	None,
 	"inspect",
 	"verbose",
 	"optimize",
 	"unbuffered",
 	"debugging",
-	"keepopen",
-	"keeperror",
+	"tabwarn",
+	"nosite",
+	"nonavservice",
 	"nointopt",
 	"noargs",
 	"delayconsole",
-	None, None, None, None, None, None, None, None, # 11-18 are different
-	"tabwarn",
-	"nosite",
-	"nonavservice"]
+	]
 opt_dialog_dict = {}
 for i in range(len(opt_dialog_map)):
 	if opt_dialog_map[i]:
 		opt_dialog_dict[opt_dialog_map[i]] = i
 # 1 thru 10 are the options
 # The GUSI creator/type and delay-console
-OD_CREATOR_ITEM = 11
-OD_TYPE_ITEM = 12
-OD_OK_ITEM = 13
-OD_CANCEL_ITEM = 14
-OD_HELP_ITEM = 22
+OD_CREATOR_ITEM = 18
+OD_TYPE_ITEM = 19
+OD_OK_ITEM = 1
+OD_CANCEL_ITEM = 2
+OD_HELP_ITEM = 20
+OD_KEEPALWAYS_ITEM = 14
+OD_KEEPOUTPUT_ITEM = 15
+OD_KEEPERROR_ITEM = 16
+OD_KEEPNEVER_ITEM = 17
 
 def optinteract(options):
 	"""Let the user interact with the options dialog"""
@@ -72,12 +75,19 @@ def optinteract(options):
 	SetDialogItemText(htext, options['type'])
 	d.SetDialogDefaultItem(OD_OK_ITEM)
 	d.SetDialogCancelItem(OD_CANCEL_ITEM)
-	
 	while 1:
 		for name in opt_dialog_dict.keys():
 			num = opt_dialog_dict[name]
 			ctl = d.GetDialogItemAsControl(num)
 			ctl.SetControlValue(options[name])
+		ctl = d.GetDialogItemAsControl(OD_KEEPALWAYS_ITEM)
+		ctl.SetControlValue(options['keep_console'] == 3)
+		ctl = d.GetDialogItemAsControl(OD_KEEPOUTPUT_ITEM)
+		ctl.SetControlValue(options['keep_console'] == 1)
+		ctl = d.GetDialogItemAsControl(OD_KEEPERROR_ITEM)
+		ctl.SetControlValue(options['keep_console'] == 2)
+		ctl = d.GetDialogItemAsControl(OD_KEEPNEVER_ITEM)
+		ctl.SetControlValue(options['keep_console'] == 0)
 		n = ModalDialog(None)
 		if n == OD_OK_ITEM:
 			htext = d.GetDialogItemAsControl(OD_CREATOR_ITEM)
@@ -94,6 +104,14 @@ def optinteract(options):
 			return
 		elif n in (OD_CREATOR_ITEM, OD_TYPE_ITEM):
 			pass
+		elif n == OD_KEEPALWAYS_ITEM:
+			options['keep_console'] = 3;
+		elif n == OD_KEEPOUTPUT_ITEM:
+			options['keep_console'] = 1;
+		elif n == OD_KEEPERROR_ITEM:
+			options['keep_console'] = 2;
+		elif n == OD_KEEPNEVER_ITEM:
+			options['keep_console'] = 0;
 		elif n == OD_HELP_ITEM:
 			onoff = Help.HMGetBalloons()
 			Help.HMSetBalloons(not onoff)

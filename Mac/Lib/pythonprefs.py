@@ -16,7 +16,7 @@ OVERRIDE_POPT_ID = 229
 OVERRIDE_GUSI_ID = 10241
 
 # version
-CUR_VERSION=5
+CUR_VERSION=6
 
 preffilename = PstringLoader(AnyResLoader('STR ', resname=PREFNAME_NAME)).load()
 pref_fss = preferencefile(preffilename, 'Pyth', 'pref')
@@ -88,7 +88,7 @@ class PythonOptions:
 		dict['creator'], dict['type'], dict['delayconsole'] = self.gusi.load()
 		flags = self.popt.load()
 		dict['version'], dict['inspect'], dict['verbose'], dict['optimize'], \
-			dict['unbuffered'], dict['debugging'], dict['keepopen'], dict['keeperror'], \
+			dict['unbuffered'], dict['debugging'], dummy, dict['keep_console'], \
 			dict['nointopt'], dict['noargs'], dict['tabwarn'], \
 			dict['nosite'], dict['nonavservice'] = flags
 		return dict
@@ -99,7 +99,7 @@ class PythonOptions:
 		self.dir.save(diralias)
 		self.gusi.save((dict['creator'], dict['type'], dict['delayconsole']))
 		flags = dict['version'], dict['inspect'], dict['verbose'], dict['optimize'], \
-			dict['unbuffered'], dict['debugging'], dict['keepopen'], dict['keeperror'], \
+			dict['unbuffered'], dict['debugging'], 0, dict['keep_console'], \
 			dict['nointopt'], dict['noargs'], dict['tabwarn'], \
 			dict['nosite'], dict['nonavservice']
 		self.popt.save(flags)

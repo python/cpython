@@ -53,6 +53,9 @@ extern int ccommand(char ***);
 #ifdef USE_MAC_SHARED_LIBRARY
 extern PyMac_AddLibResources(void);
 #endif
+#ifdef USE_GUSI
+#include "GUSISIOUX.h"
+#endif
 
 #define STARTUP "PythonStartup"
 
@@ -151,8 +154,15 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 	SET_OPT_ITEM(OPT_OPTIMIZE, optimize);
 	SET_OPT_ITEM(OPT_UNBUFFERED, unbuffered);
 	SET_OPT_ITEM(OPT_DEBUGGING, debugging);
-	SET_OPT_ITEM(OPT_KEEPNORMAL, keep_normal);
-	SET_OPT_ITEM(OPT_KEEPERROR, keep_error);
+	GetDialogItem(dialog, OPT_KEEPALWAYS, &type, (Handle *)&handle, &rect);
+	SetControlValue(handle, (short)(p->keep_console == POPT_KEEPCONSOLE_ALWAYS));
+	GetDialogItem(dialog, OPT_KEEPOUTPUT, &type, (Handle *)&handle, &rect);
+	SetControlValue(handle, (short)(p->keep_console == POPT_KEEPCONSOLE_OUTPUT));
+	GetDialogItem(dialog, OPT_KEEPERROR, &type, (Handle *)&handle, &rect);
+	SetControlValue(handle, (short)(p->keep_console == POPT_KEEPCONSOLE_ERROR));
+	GetDialogItem(dialog, OPT_KEEPNEVER, &type, (Handle *)&handle, &rect);
+	SetControlValue(handle, (short)(p->keep_console == POPT_KEEPCONSOLE_NEVER));
+/*	SET_OPT_ITEM(OPT_KEEPCONSOLE, keep_console); */
 	SET_OPT_ITEM(OPT_TABWARN, tabwarn);
 	SET_OPT_ITEM(OPT_NOSITE, nosite);
 	SET_OPT_ITEM(OPT_NONAVSERV, nonavservice);
@@ -204,8 +214,18 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 		OPT_ITEM(OPT_OPTIMIZE, optimize);
 		OPT_ITEM(OPT_UNBUFFERED, unbuffered);
 		OPT_ITEM(OPT_DEBUGGING, debugging);
-		OPT_ITEM(OPT_KEEPNORMAL, keep_normal);
-		OPT_ITEM(OPT_KEEPERROR, keep_error);
+		if ( item == OPT_KEEPALWAYS ) p->keep_console = POPT_KEEPCONSOLE_ALWAYS;
+		if ( item == OPT_KEEPOUTPUT ) p->keep_console = POPT_KEEPCONSOLE_OUTPUT;
+		if ( item == OPT_KEEPERROR ) p->keep_console = POPT_KEEPCONSOLE_ERROR;
+		if ( item == OPT_KEEPNEVER ) p->keep_console = POPT_KEEPCONSOLE_NEVER;
+		GetDialogItem(dialog, OPT_KEEPALWAYS, &type, (Handle *)&handle, &rect);
+		SetControlValue(handle, (short)(p->keep_console == POPT_KEEPCONSOLE_ALWAYS));
+		GetDialogItem(dialog, OPT_KEEPOUTPUT, &type, (Handle *)&handle, &rect);
+		SetControlValue(handle, (short)(p->keep_console == POPT_KEEPCONSOLE_OUTPUT));
+		GetDialogItem(dialog, OPT_KEEPERROR, &type, (Handle *)&handle, &rect);
+		SetControlValue(handle, (short)(p->keep_console == POPT_KEEPCONSOLE_ERROR));
+		GetDialogItem(dialog, OPT_KEEPNEVER, &type, (Handle *)&handle, &rect);
+		SetControlValue(handle, (short)(p->keep_console == POPT_KEEPCONSOLE_NEVER));
 		OPT_ITEM(OPT_TABWARN, tabwarn);
 		OPT_ITEM(OPT_NOSITE, nosite);
 		OPT_ITEM(OPT_NONAVSERV, nonavservice);
@@ -252,7 +272,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 #endif
 
 	/* Get options from preference file (or from applet resource fork) */
-	options.keep_error = 1;		/* default-default */
+	options.keep_console = POPT_KEEPCONSOLE_OUTPUT;		/* default-default */
 	PyMac_PreferenceOptions(&options);
 	
 	if ( embedded ) {
@@ -281,7 +301,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 	}
 	
 	/* Copy selected options to where the machine-independent stuff wants it */
-	Py_VerboseFlag = options.verbose *2;
+	Py_VerboseFlag = options.verbose;
 /*	Py_SuppressPrintingFlag = options.suppress_print; */
 	Py_OptimizeFlag = options.optimize;
 	Py_DebugFlag = options.debugging;
@@ -525,18 +545,31 @@ void
 PyMac_Exit(status)
 	int status;
 {
-	int keep;
+	int keep = 0;
 
 #if __profile__ == 1
 	ProfilerDump("\pPython Profiler Results");
 	ProfilerTerm();
 #endif	
-	if ( status )
-		keep = options.keep_error;
-	else
-		keep = options.keep_normal;
 		
 #ifdef USE_SIOUX
+	switch (options.keep_console) {
+	case POPT_KEEPCONSOLE_NEVER:
+		keep = 0;
+		break;
+	case POPT_KEEPCONSOLE_OUTPUT:
+		if (gusisioux_state == GUSISIOUX_STATE_LASTWRITE ||
+				gusisioux_state == GUSISIOUX_STATE_UNKNOWN )
+			keep = 1;
+		else
+			keep = 0;
+		break;
+	case POPT_KEEPCONSOLE_ERROR:
+		keep = (status != 0);
+		break;
+	default:
+		keep = 1;
+	}
 	if (keep) {
 		SIOUXSettings.standalone = 1;
 		SIOUXSettings.autocloseonquit = 0;

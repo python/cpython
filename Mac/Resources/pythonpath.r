@@ -15,8 +15,11 @@ type 'Popt' {
 	byte noOptimize = 0, optimize = 1;
 	byte noUnbuffered = 0, unbuffered = 1;
 	byte noDebugParser = 0, debugParser = 1;
-	byte closeOnNormalExit = 0, noCloseOnNormalExit = 1;
-	byte closeOnErrorExit = 0, noCloseOnErrorExit = 1;
+	byte unused_0 = 0, unused_1 = 1;
+	byte closeAlways = POPT_KEEPCONSOLE_NEVER,
+	     noCloseOutput = POPT_KEEPCONSOLE_OUTPUT,
+	     noCloseError = POPT_KEEPCONSOLE_ERROR,
+	     closeNever = POPT_KEEPCONSOLE_ALWAYS;
 	byte interactiveOptions = 0, noInteractiveOptions = 1;
 	byte argcArgv = 0, noArgcArgv = 1;
 	byte newStandardExceptions = 0, oldStandardExceptions = 1;
@@ -62,8 +65,8 @@ resource 'Popt' (PYTHONOPTIONS_ID, "Options") {
 	noOptimize,
 	noUnbuffered,
 	noDebugParser,
-	closeOnNormalExit,
-	noCloseOnErrorExit,
+	unused_0,
+	noCloseOutput,
 	interactiveOptions,
 	argcArgv,
 	newStandardExceptions,

@@ -68,9 +68,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define OPT_OPTIMIZE	5
 #define OPT_UNBUFFERED	6
 #define OPT_DEBUGGING	7
-#define OPT_KEEPNORMAL	8
-#define OPT_KEEPERROR	9
-#define OPT_CMDLINE		10
+#define OPT_KEEPALWAYS	8
+#define OPT_KEEPOUTPUT	9
+#define OPT_KEEPERROR   10
+#define OPT_KEEPNEVER   11
+#define OPT_CMDLINE		12
 #define OPT_TABWARN	13
 #define OPT_NOSITE	14
 #define OPT_HELP	15
@@ -134,17 +136,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* The Python options resource and offset of its members */
 #define PYTHONOPTIONS_ID 228
 #define PYTHONOPTIONSOVERRIDE_ID 229
-#if 0
-#define POPT_INSPECT	0
-#define POPT_VERBOSE	1
-#define POPT_OPTIMIZE	2
-#define POPT_UNBUFFERED	3
-#define POPT_DEBUGGING	4
-#define POPT_KEEPNORM	5
-#define POPT_KEEPERR	6
-#endif
 
-#define POPT_VERSION_CURRENT	5	/* Current version number */
+#define POPT_VERSION_CURRENT	6	/* Current version number */
+#define   POPT_KEEPCONSOLE_NEVER  0
+#define   POPT_KEEPCONSOLE_OUTPUT 1
+#define   POPT_KEEPCONSOLE_ERROR  2
+#define   POPT_KEEPCONSOLE_ALWAYS 3
 
 #ifndef rez
 typedef struct PyMac_PrefRecord {
@@ -154,8 +151,8 @@ typedef struct PyMac_PrefRecord {
 	unsigned char	optimize;
 	unsigned char	unbuffered;
 	unsigned char	debugging;
-	unsigned char	keep_normal;
-	unsigned char	keep_error;
+	unsigned char	unused;
+	unsigned char	keep_console;
 	unsigned char	nointopt;
 	unsigned char	noargs;
 	unsigned char	tabwarn;
