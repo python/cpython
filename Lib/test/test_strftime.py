@@ -28,8 +28,11 @@ def strftest(now):
 
     jan1 = time.localtime(time.mktime((now[0], 1, 1) + (0,)*6))
 
-    if now[8]: tz = time.tzname[1]
-    else: tz = time.tzname[0]
+    try:
+	if now[8]: tz = time.tzname[1]
+	else: tz = time.tzname[0]
+    except AttributeError:
+    	tz = ''
 
     if now[3] > 12: clock12 = now[3] - 12
     elif now[3] > 0: clock12 = now[3]
@@ -66,7 +69,6 @@ def strftest(now):
 	 '%m/%d/%y %H:%M:%S'),
 	('%Y', '%d' % now[0], 'year with century'),
 	('%y', '%02d' % (now[0]%100), 'year without century'),
-	('%Z', tz, 'time zone name'),
 	('%%', '%', 'single percent sign'),
 	)
 
@@ -80,6 +82,7 @@ def strftest(now):
 	 'year without century rendered using fieldwidth'),
 	('%n', '\n', 'newline character'),
 	('%t', '\t', 'tab character'),
+	('%Z', tz, 'time zone name'),
 	)
 
     if verbose:
