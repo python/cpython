@@ -1158,7 +1158,7 @@ parsenumber(struct compiling *co, char *s)
 		x = (long) PyOS_strtoul(s, &end, 0);
 		if (x < 0 && errno == 0) {
 			if (PyErr_WarnExplicit(
-				    PyExc_DeprecationWarning,
+				    PyExc_FutureWarning,
 				    "hex/oct constants > sys.maxint "
 				    "will return positive values "
 				    "in Python 2.4 and up",

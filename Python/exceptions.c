@@ -112,7 +112,8 @@ Exception\n\
       +-- PendingDeprecationWarning\n\
       +-- SyntaxWarning\n\
       +-- OverflowWarning\n\
-      +-- RuntimeWarning"
+      +-- RuntimeWarning\n\
+      +-- FutureWarning"
 );
 
 
@@ -902,6 +903,10 @@ PyDoc_STRVAR(OverflowWarning__doc__,
 PyDoc_STRVAR(RuntimeWarning__doc__,
 "Base class for warnings about dubious runtime behavior.");
 
+PyDoc_STRVAR(FutureWarning__doc__,
+"Base class for warnings about constructs that will change semantically "
+"in the future.");
+
 
 
 /* module global functions */
@@ -964,6 +969,7 @@ PyObject *PyExc_PendingDeprecationWarning;
 PyObject *PyExc_SyntaxWarning;
 PyObject *PyExc_OverflowWarning;
 PyObject *PyExc_RuntimeWarning;
+PyObject *PyExc_FutureWarning;
 
 
 
@@ -1044,6 +1050,8 @@ static struct {
   OverflowWarning__doc__},
  {"RuntimeWarning", &PyExc_RuntimeWarning, &PyExc_Warning,
   RuntimeWarning__doc__},
+ {"FutureWarning", &PyExc_FutureWarning, &PyExc_Warning,
+  FutureWarning__doc__},
  /* Sentinel */
  {NULL}
 };
