@@ -724,6 +724,16 @@ class AbstractPickleTests(unittest.TestCase):
 # XXX along with the references to it in test_pickle.py.
 class TempAbstractPickleTests(unittest.TestCase):
 
+    def test_simple_newobj(self):
+        x = object.__new__(SimpleNewObj)  # avoid __init__
+        x.abc = 666
+        for proto in protocols:
+            s = self.dumps(x, proto)
+            self.assertEqual(opcode_in_pickle(pickle.NEWOBJ, s), proto >= 2)
+            y = self.loads(s)   # will raise TypeError if __init__ called
+            self.assertEqual(y.abc, 666)
+            self.assertEqual(x.__dict__, y.__dict__)
+
     def test_newobj_list_slots(self):
         x = SlotList([1, 2, 3])
         x.foo = 42
@@ -770,6 +780,11 @@ myclasses = [MyInt, MyLong, MyFloat,
 
 class SlotList(MyList):
     __slots__ = ["foo"]
+
+class SimpleNewObj(object):
+    def __init__(self, a, b, c):
+        # raise an error, to make sure this isn't called
+        raise TypeError("SimpleNewObj.__init__() didn't expect to get called")
 
 class AbstractPickleModuleTests(unittest.TestCase):
 
