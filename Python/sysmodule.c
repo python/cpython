@@ -269,10 +269,10 @@ initsys()
 	dictinsert(sysdict, "builtin_module_names",
 		   v = list_builtin_module_names());
 	XDECREF(v);
-#ifdef PYTHONWIN
+#ifdef MS_COREDLL
 	dictinsert(sysdict, "dllhandle", v = newintobject((int)PyWin_DLLhModule));
 	XDECREF(v);
-	dictinsert(sysdict, "winver", v = newstringobject(WIN32_PATCH_LEVEL));
+	dictinsert(sysdict, "winver", v = newstringobject(MS_DLL_ID));
 	XDECREF(v);
 #endif
 	if (err_occurred())
