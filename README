@@ -1,4 +1,4 @@
-This is Python release 1.4 beta 1
+This is Python release 1.4 beta 2
 =================================
 
 It's a beta release.  Only use this if you want to help me iron the
@@ -9,10 +9,24 @@ Also try running configue with the --with-thread and --with-readline
 options (described below).
 
 
-What's new in this release?
----------------------------
+What's new since 1.4 beta 1?
+----------------------------
+
+- New modules: errno, operator
+
+- Changes for Numerical Python: slice and ellipses objects, and
+corresponding syntax:
+
+	- x[lo:hi:stride]
+	- x[a, ..., z]
 
 XXX
+
+
+What's new since Python release 1.3?
+------------------------------------
+
+See the Misc/NEWS file.
 
 
 What is Python anyway?
@@ -51,16 +65,16 @@ A modest plug
 
 
 *************************************************************************
-*									*
-*   Python exists, and is free, thanks to the contributed efforts	*
-*   of many people.  The PSA was created to maximize the results	*
-*   of those efforts, by helping to coordinate them.  The PSA		*
-*   operates web, ftp and email servers, organizes Python		*
-*   workshops, and engages in other activities that benefit the		*
-*   Python user community.  The PSA is seeking support for these	*
-*   activities.  See this URL for information on how to join:		*
-*   http://www.python.org/psa/Joining.html				*
-*									*
+*                                                                       *
+*     Python exists, and is free, thanks to the contributed efforts     *
+*     of many people.  The PSA was created to maximize the results      *
+*     of those efforts, by helping to coordinate them.  The PSA         *
+*     operates web, ftp and email servers, organizes Python             *
+*     workshops, and engages in other activities that benefit the       *
+*     Python user community.  The PSA is seeking support for these      *
+*     activities.  See this URL for information on how to join:         *
+*     http://www.python.org/psa/Joining.html                            *
+*                                                                       *
 *************************************************************************
 
 
@@ -303,15 +317,21 @@ all object files by running "make clean" before rebuilding.
 	to use the shared C library, you can pass --with-libc=-lc_s.
 	These libraries are passed after all other libraries, the C
 	library last.
+	
+--with-next-archs='arch1 arch2': Under NEXTSTEP, this will build
+	all compiled binaries with the architectures listed.  Includes
+	correctly setting the target architecture specific resource
+	directory.
 
 
 Extensions
 ----------
 
 You can also build an "extended" interpreter, using modules that are
-not contained in the Modules directory.  Extensions are distributed as
-a separate tar file (currently extensions.tar.gz).  See the README
-file there.
+not contained in the Modules directory.  See the manual titled
+"Extending and Embedding the Python Interpreter" (Doc/ext.tex) for
+more details on writing an extension or building an existing
+extension.
 
 
 Building for multiple architectures (using the VPATH feature)
@@ -501,11 +521,9 @@ Distribution structure
 Most subdirectories have their own README file.  Most files have
 comments.
 
-ChangeLog	A raw list of changes since the first 1.0.0 BETA release
 Contrib/	Interesting or useful Python code contributed by others
 Demo/		Demonstration scripts, modules and programs
 Doc/		Documentation (LaTeX sources)
-Extensions/	Extension modules (distributed separately)
 Grammar/	Input for the parser generator
 Include/	Public header files
 Lib/		Python library modules
