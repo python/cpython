@@ -549,7 +549,7 @@ if sys.maxint == 0x7fffffff:
         # thread for the details:
 
         #     http://sources.redhat.com/ml/newlib/2002/msg00369.html
-        list(xrange(sys.maxint / 4))
+        list(xrange(sys.maxint // 2))
     except MemoryError:
         pass
     else:
