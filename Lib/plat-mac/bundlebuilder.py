@@ -266,7 +266,7 @@ STRIP_EXEC = "/usr/bin/strip"
 # sys.executable later.
 #
 BOOTSTRAP_SCRIPT = """\
-#!/usr/bin/env python
+#!%(hashbang)s
 
 import sys, os
 execdir = os.path.dirname(sys.argv[0])
@@ -423,6 +423,14 @@ class AppBuilder(BundleBuilder):
 			execdir = pathjoin(self.bundlepath, self.execdir)
 			bootstrappath = pathjoin(execdir, self.name)
 			makedirs(execdir)
+			if self.standalone:
+				# XXX we're screwed when the end user has deleted
+				# /usr/bin/python
+				hashbang = "/usr/bin/python"
+			else:
+				hashbang = sys.executable
+				while os.path.islink(hashbang):
+					hashbang = os.readlink(hashbang)
 			open(bootstrappath, "w").write(BOOTSTRAP_SCRIPT % locals())
 			os.chmod(bootstrappath, 0775)
 
