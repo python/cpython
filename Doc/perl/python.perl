@@ -130,7 +130,10 @@ sub do_cmd_envvar{
     s/$next_pair_pr_rx//;
     my($br_id,$envvar) = ($1, $2);
     my($name,$aname,$ahref) = link_info($br_id);
-    add_index_entry("environment variables!$envvar@\$$envvar", $ahref);
+    # The <tt> here is really to keep buildindex.py from making
+    # the variable name case-insensitive.
+    add_index_entry("environment variables!$envvar@<tt>\$$envvar</tt>",
+		    $ahref);
     add_index_entry("$envvar@\$$envvar", $ahref);
     "$aname\$$envvar</a>" . $_;
 }
@@ -216,10 +219,17 @@ sub do_cmd_withsubitem{
 sub do_cmd_makemodindex{ @_[0]; }
 
 # We're in the document subdirectory when this happens!
+#
 open(IDXFILE, ">index.dat") || die "\n$!\n";
 open(INTLABELS, ">intlabels.pl") || die "\n$!\n";
-print INTLABELS
-  "%internal_labels = ();\n1;  # hack in case there are no entries\n\n";
+print INTLABELS "%internal_labels = ();\n";
+print INTLABELS "1;		# hack in case there are no entries\n\n";
+
+# Using \0 for this is bad because we can't use common tools to work with the
+# resulting files.  Things like grep can be useful with this stuff!
+#
+$IDXFILE_FIELD_SEP = "\1";
+
 
 sub gen_target_name{
     "l2h-" . @_[0];
@@ -247,7 +257,7 @@ sub add_index_entry{
     my($str,$ahref) = @_;
     $str = gen_index_id($str, '');
     $index{$str} .= $ahref;
-    print IDXFILE $ahref, "\0", $str, "\n";
+    print IDXFILE $ahref, $IDXFILE_FIELD_SEP, $str, "\n";
 }
 
 sub link_info{
@@ -346,23 +356,13 @@ sub my_parword_index_helper{
 }
 
 
-# Set this to true to strip out the <tt>...</tt> from index entries;
-# this is analogous to using the second definition of \idxcode{} from
-# myformat.sty.
-#
-# It is used from &make_mod_index_entry() and &make_str_index_entry().
-#
-$STRIP_INDEX_TT = 1;
-
 sub make_mod_index_entry{
     my($br_id,$str,$define) = @_;
     my($name,$aname,$ahref) = link_info($br_id);
-    $str =~ s|<tt>(.*)</tt>|\1|
-        if $STRIP_INDEX_TT;
     # equivalent of add_index_entry() using $define instead of ''
     $str = gen_index_id($str, $define);
     $index{$str} .= $ahref;
-    print IDXFILE $ahref, "\0", $str, "\n";
+    print IDXFILE $ahref, $IDXFILE_FIELD_SEP, $str, "\n";
 
     if ($define eq 'DEF') {
 	# add to the module index
@@ -398,8 +398,6 @@ sub do_cmd_bifuncindex{
     local($_) = @_;
     s/$next_pair_pr_rx[\n]?//o;
     my($br_id,$str,$fname) = ($1, $2, "<tt>$2()</tt>");
-    $fname = "$str()"
-      if $STRIP_INDEX_TT;
     make_index_entry($br_id, "$fname (built-in function)") . $_;
 }
 
@@ -442,8 +440,6 @@ init_myformat();
 sub make_str_index_entry{
     my($br_id,$str) = @_;
     my($name,$aname,$ahref) = link_info($br_id);
-    $str =~ s|<tt>(.*)</tt>|\1|
-        if $STRIP_INDEX_TT;
     add_index_entry($str, $ahref);
     "$aname$str</a>";
 }
@@ -542,10 +538,7 @@ sub do_env_funcdescni{
     if (/$funcdesc_rx/o) {
 	$function_name = "$2";
 	$arg_list = "$4";
-	if ($STRIP_INDEX_TT) {
-	    $idx = "$function_name"; }
-	else {
-	    $idx = "<tt>$function_name</tt>"; }
+	$idx = "<tt>$function_name</tt>";
     }
     "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>$'</dl>";
 }
@@ -632,9 +625,7 @@ sub do_env_excdesc{
     local($_) = @_;
     /$next_pair_rx/o;
     my($br_id,$excname,$rest) = ($1, $2, $');
-    my $idx = make_str_index_entry($br_id,
-			"<tt>$excname</tt> (exception in $THIS_MODULE)");
-    $idx =~ s/ \(.*\)//;
+    my $idx = make_str_index_entry($br_id, "<tt>$excname</tt>");
     "<dl><dt><b>$idx</b>\n<dd>$rest</dl>"
 }
 
