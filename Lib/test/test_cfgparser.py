@@ -242,6 +242,27 @@ class TestCaseBase(unittest.TestCase):
         self.assertRaises(TypeError, cf.set, "sect", "option2", 1.0)
         self.assertRaises(TypeError, cf.set, "sect", "option2", object())
 
+    def test_read_returns_file_list(self):
+        file1 = test_support.findfile("cfgparser.1")
+        # check when we pass a mix of readable and non-readable files:
+        cf = self.newconfig()
+        parsed_files = cf.read([file1, "nonexistant-file"])
+        self.assertEqual(parsed_files, [file1])
+        self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
+        # check when we pass only a filename:
+        cf = self.newconfig()
+        parsed_files = cf.read(file1)
+        self.assertEqual(parsed_files, [file1])
+        self.assertEqual(cf.get("Foo Bar", "foo"), "newbar")
+        # check when we pass only missing files:
+        cf = self.newconfig()
+        parsed_files = cf.read(["nonexistant-file"])
+        self.assertEqual(parsed_files, [])
+        # check when we pass no files:
+        cf = self.newconfig()
+        parsed_files = cf.read([])
+        self.assertEqual(parsed_files, [])
+
     # shared by subclasses
     def get_interpolation_config(self):
         return self.fromstring(
