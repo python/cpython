@@ -681,7 +681,7 @@ def movetotrash(path):
 	"""move the object to the trash"""
 	fss = macfs.FSSpec(path)
 	trashfolder = macfs.FSSpec(macfs.FindFolder(fss.as_tuple()[0], 'trsh', 0) + ("",)).as_pathname()
-	findertools.move(path, trashfolder)
+	move(path, trashfolder)
 
 def emptytrash():
 	"""empty the trash"""
