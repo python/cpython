@@ -165,14 +165,13 @@ you'll continue to do it) is to end each module \module{M} with:
 \begin{verbatim}
 def _test():
     import doctest
-    return doctest.testmod()
+    doctest.testmod()
 
 if __name__ == "__main__":
     _test()
 \end{verbatim}
 
-\module{doctest} then examines docstrings in the module calling
-\function{testmod()}.
+\module{doctest} then examines docstrings in module \module{M}.
 
 Running the module as a script causes the examples in the docstrings
 to get executed and verified:
@@ -184,7 +183,7 @@ python M.py
 This won't display anything unless an example fails, in which case the
 failing example(s) and the cause(s) of the failure(s) are printed to stdout,
 and the final line of output is
-\samp{'***Test Failed*** \var{N} failures.'}, where \var{N} is the
+\samp{***Test Failed*** \var{N} failures.}, where \var{N} is the
 number of examples that failed.
 
 Run it with the \programopt{-v} switch instead:
@@ -199,12 +198,8 @@ output, along with assorted summaries at the end.
 You can force verbose mode by passing \code{verbose=True} to
 \function{testmod()}, or
 prohibit it by passing \code{verbose=False}.  In either of those cases,
-\code{sys.argv} is not examined by \function{testmod()}.
-
-In any case, \function{testmod()} returns a 2-tuple of ints
-\samp{(\var{failure_count}, \var{test_count})}, where
-\var{failure_count} is the number of docstring examples that failed
-and \var{test_count} is the total number of docstring examples tested.
+\code{sys.argv} is not examined by \function{testmod()} (so passing
+\programopt{-v} or not has no effect).
 
 For more information on \function{testmod()}, see
 section~\ref{doctest-basic-api}.
@@ -218,15 +213,50 @@ function:
 
 \begin{verbatim}
 import doctest
-doctest.testfile("mytests.txt")
+doctest.testfile("example.txt")
 \end{verbatim}
 
-This short script will execute and verify any interactive Python
-examples contained in the file \file{mytests.txt}.  As with
-\function{testmod()}, it won't display anything unless an example
-fails.  If an example does fail, then the failing example(s) and the
-cause(s) of the failure(s) are printed to stdout, using the same
-format as \function{testmod()}.
+That short script executes and verifies any interactive Python
+examples contained in the file \file{example.txt}.  The file content
+is treated as if it were a single giant docstring; the file doesn't
+need to contain a Python program!   For example, perhaps \file{example.txt}
+contains this:
+
+\begin{verbatim}
+The ``example`` module
+======================
+
+Using ``factorial``
+-------------------
+
+This is an example text file in reStructuredText format.  First import
+``factorial`` from the ``example`` module:
+
+    >>> from example import factorial
+
+Now use it:
+
+    >>> factorial(6)
+    120
+\end{verbatim}
+
+Running \code{doctest.testfile("example.txt")} then finds the error
+in this documentation:
+
+\begin{verbatim}
+File "./example.txt", line 14, in example.txt
+Failed example:
+    factorial(6)
+Expected:
+    120
+Got:
+    720
+\end{verbatim}
+
+As with \function{testmod()}, \function{testfile()} won't display anything
+unless an example fails.  If an example does fail, then the failing
+example(s) and the cause(s) of the failure(s) are printed to stdout, using
+the same format as \function{testmod()}.
 
 By default, \function{testfile()} looks for files in the calling
 module's directory.  See section~\ref{doctest-basic-api} for a
@@ -235,11 +265,7 @@ look for files in other locations.
 
 Like \function{testmod()}, \function{testfile()}'s verbosity can be
 set with the \programopt{-v} command-line switch or with the optional
-keyword argument \var{verbose}.  And like \function{testmod()},
-\function{testfile()} returns a 2-tuple of ints
-\samp{(\var{failure_count}, \var{test_count})}, where
-\var{failure_count} is the number of docstring examples that failed
-and \var{test_count} is the total number of docstring examples tested.
+keyword argument \var{verbose}.
 
 For more information on \function{testfile()}, see
 section~\ref{doctest-basic-api}.
