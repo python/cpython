@@ -231,27 +231,22 @@ md5 md5module.c md5c.c
 #timing timingmodule.c
 
 
-# Steen Lumholt's tkinter module.
-#
-# For use with plain Tk, use the first line.
-#
-# For use with extended Tk (i.e. if you have added extra widgets to
-# the Tk library, such as the common "studButton" and "triButton"
-# extensions), edit tkappinit.c, add appropriate -DWITH_... and
-# libraries/objects to the second line, and use that.
-#
-# Make sure to edit the -l arguments to use the correct versions!
-#
-# In all cases also enable the last line (TKPATH).
+# The _tkinter module.
 #
 # See the section "The Tk interface" in ../README for more info.
+#
+# Enable the TKPATH line and choose the most applicable _tkinter line.
+# You may have to change /usr/local to wherever Tcl/Tk are installed.
+# Change the -l arguments to use Tcl 7.4 and Tk 4.0!
 
-# *** Use ONE of the following two lines, see previous comments ***
-#_tkinter _tkinter.c -I/usr/local/include -L/usr/local/lib -ltk4.1 -ltcl7.5 -lX11
-#_tkinter _tkinter.c tkappinit.c -DWITH_APPINIT -I/usr/local/include -L/usr/local/lib -ltk4.1 -ltcl7.5 -lX11
-
-# *** ALWAYS use this line as well ***
+# *** ALWAYS enable this line:
 #TKPATH=:$(DESTLIB)/tkinter
+
+# *** Enable *one* of the following lines:
+# For Solaris:
+#_tkinter _tkinter.c -I/usr/openwin/include -I/usr/local/include -L/usr/openwin/lib -L/usr/local/lib -ltk4.1 -ltcl7.5 -lX11
+# For generic system (may have to add -I/-L options to find X11):
+#_tkinter _tkinter.c -I/usr/local/include -L/usr/local/lib -ltk4.1 -ltcl7.5 -lX11
 
 
 # Lance Ellinghaus's modules:
