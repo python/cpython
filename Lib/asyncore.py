@@ -308,7 +308,8 @@ class dispatcher:
             self.addr = address
             self.connected = 1
             self.handle_connect()
-        raise socket.error, err
+        else:
+            raise socket.error, err
 
     def accept (self):
         try:
