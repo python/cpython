@@ -57,7 +57,7 @@ extern int unlink PROTO((const char *));
 extern int pclose PROTO((FILE *));
 #ifdef HAVE_SYMLINK
 extern int symlink PROTO((const char *, const char *));
-#endif /_ HAVE_SYMLINK */
+#endif /* HAVE_SYMLINK */
 #ifdef HAVE_LSTAT
 extern int lstat PROTO((const char *, struct stat *));
 #endif /* HAVE_LSTAT */
