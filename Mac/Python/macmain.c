@@ -53,14 +53,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 extern int Py_DebugFlag; /* For parser.c, declared in pythonrun.c */
 extern int Py_VerboseFlag; /* For import.c, declared in pythonrun.c */
-extern int Py_SuppressPrintingFlag; /* For ceval.c, declared in pythonrun.c */
 short PyMac_AppRefNum;	/* RefNum of application resource fork */
-
-
-/* Subroutines that live in their own file */
-extern char *Py_GetVersion Py_PROTO((void));
-extern char *Py_GetCopyright Py_PROTO((void));
-
 
 /* For Py_GetArgcArgv(); set by main() */
 static char **orig_argv;
@@ -131,7 +124,7 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 
 	SET_OPT_ITEM(OPT_INSPECT, inspect);
 	SET_OPT_ITEM(OPT_VERBOSE, verbose);
-	SET_OPT_ITEM(OPT_SUPPRESS, suppress_print);
+/*	SET_OPT_ITEM(OPT_SUPPRESS, suppress_print); */
 	SET_OPT_ITEM(OPT_UNBUFFERED, unbuffered);
 	SET_OPT_ITEM(OPT_DEBUGGING, debugging);
 	SET_OPT_ITEM(OPT_KEEPNORMAL, keep_normal);
@@ -176,7 +169,7 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 		
 		OPT_ITEM(OPT_INSPECT, inspect);
 		OPT_ITEM(OPT_VERBOSE, verbose);
-		OPT_ITEM(OPT_SUPPRESS, suppress_print);
+/*		OPT_ITEM(OPT_SUPPRESS, suppress_print); */
 		OPT_ITEM(OPT_UNBUFFERED, unbuffered);
 		OPT_ITEM(OPT_DEBUGGING, debugging);
 		OPT_ITEM(OPT_KEEPNORMAL, keep_normal);
@@ -239,7 +232,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 	
 	/* Copy selected options to where the machine-independent stuff wants it */
 	Py_VerboseFlag = options.verbose;
-	Py_SuppressPrintingFlag = options.suppress_print;
+/*	Py_SuppressPrintingFlag = options.suppress_print; */
 	Py_DebugFlag = options.debugging;
 	if ( options.noargs ) {
 		/* don't process events at all without the scripts permission */
@@ -266,6 +259,11 @@ init_common(int *argcp, char ***argvp, int embedded)
 	/* collectSummary or collectDetailed, timebase, #routines, max stack depth */
 	ProfilerInit(collectSummary, bestTimeBase, 2000, 150);
 #endif
+
+	/* Tell the rest of python about our argc/argv */
+	orig_argc = *argcp;	/* For Py_GetArgcArgv() */
+	orig_argv = *argvp;
+	Py_SetProgramName((*argvp)[0]);
 }
 
 /*
@@ -396,8 +394,6 @@ Py_Main(argc, argv)
 	char *filename = NULL;
 	FILE *fp = stdin;
 
-	orig_argc = argc;	/* For Py_GetArgcArgv() */
-	orig_argv = argv;
 	filename = argv[1];
 
 	if (Py_VerboseFlag ||
@@ -483,18 +479,10 @@ PyMac_Exit(status)
 }
 
 /* Return the program name -- some code out there needs this. */
-
-char *
-Py_GetProgramName()
-{
-	return orig_argv[0];
-}
-
-/* The same, but used differently */
 char *
 Py_GetProgramFullPath()
 {
-	return Py_GetProgramName();
+	return orig_argv[0];
 }
 
 
