@@ -23,6 +23,11 @@
 # has another way to reference private data (besides global variables).
 # Parameterless functions or methods cannot be used, however.
 
+# XXX The timefunc and delayfunc should have been defined as methods
+# XXX so you can define new kinds of schedulers using subclassing
+# XXX instead of having to define a module or class just to hold
+# XXX the global state of your particular time and delay functtions.
+
 class scheduler():
 	#
 	# Initialize a new instance, passing the time and delay functions
