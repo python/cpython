@@ -3169,6 +3169,12 @@ def do_this_first():
     except:
         pass
 
+    if verbose:
+        print "Testing SF bug 570483..."
+    # Another segfault only when run early
+    # (before PyType_Ready(tuple) is called)
+    type.mro(tuple)
+
 def test_main():
     do_this_first()
     class_docstrings()
