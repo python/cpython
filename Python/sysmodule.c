@@ -70,7 +70,7 @@ PySys_SetObject(char *name, PyObject *v)
 static PyObject *
 sys_displayhook(PyObject *self, PyObject *args)
 {
-	PyObject *o, *stdout;
+	PyObject *o, *outf;
 	PyInterpreterState *interp = PyThreadState_Get()->interp;
 	PyObject *modules = interp->modules;
 	PyObject *builtins = PyDict_GetItemString(modules, "__builtin__");
@@ -90,14 +90,14 @@ sys_displayhook(PyObject *self, PyObject *args)
 		return NULL;
 	if (Py_FlushLine() != 0)
 		return NULL;
-	stdout = PySys_GetObject("stdout");
-	if (stdout == NULL) {
+	outf = PySys_GetObject("stdout");
+	if (outf == NULL) {
 		PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
 		return NULL;
 	}
-	if (PyFile_WriteObject(o, stdout, 0) != 0)
+	if (PyFile_WriteObject(o, outf, 0) != 0)
 		return NULL;
-	PyFile_SoftSpace(stdout, 1);
+	PyFile_SoftSpace(outf, 1);
 	if (Py_FlushLine() != 0)
 		return NULL;
 	if (PyObject_SetAttrString(builtins, "_", o) != 0)
