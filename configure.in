@@ -305,13 +305,26 @@ then
 	fi
 fi
 
-AC_MSG_CHECKING(for --with-thread)
-# Let --with-threads be an alias for --with-thread
+AC_MSG_CHECKING(for --with-dec-threads)
+AC_SUBST(LDLAST)
+AC_ARG_WITH(dec-threads,
+[--with-dec-threads        use DEC Alpha/OSF1 thread-safe libraries],
+[AC_MSG_RESULT($withval)
+LDLAST=-threads
 if test "${with_thread+set}" != set; then
-   if test "${with_threads+set}" = set; then
-      with_thread="$with_threads";
-   fi
-fi
+   with_thread="$withval";
+fi],
+AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING(for --with-threads)
+AC_ARG_WITH(threads, [--with-threads            alias for --with-thread],
+[AC_MSG_RESULT($withval)
+if test "${with_thread+set}" != set; then
+   with_thread="$withval";
+fi],
+AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING(for --with-thread)
 AC_ARG_WITH(thread, [--with-thread[=DIRECTORY] make interpreter thread-safe], [
 AC_MSG_RESULT($withval)
 if test -d "$withval"
