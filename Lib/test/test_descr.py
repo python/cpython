@@ -1364,7 +1364,7 @@ def inherits():
     verify(repr(hexint(7) + 9) == "0x10")
     verify(repr(hexint(1000) + 7) == "0x3ef")
     a = hexint(12345)
-    #XXX verify(int(a) == 12345)
+    verify(int(a) == 12345)
     verify(int(a).__class__ is int)
 
     class octlong(long):
@@ -1382,7 +1382,7 @@ def inherits():
     # because the example uses a short int left argument.)
     verify(str(5 + octlong(3000)) == "05675")
     a = octlong(12345)
-    #XXX verify(long(a) == 12345L)
+    verify(long(a) == 12345L)
     verify(long(a).__class__ is long)
 
     class precfloat(float):
@@ -1394,7 +1394,7 @@ def inherits():
             return "%.*g" % (self.prec, self)
     verify(repr(precfloat(1.1)) == "1.1")
     a = precfloat(12345)
-    #XXX verify(float(a) == 12345.0)
+    verify(float(a) == 12345.0)
     verify(float(a).__class__ is float)
 
     class madtuple(tuple):
@@ -1419,7 +1419,7 @@ def inherits():
     verify(tuple(a).__class__ is tuple)
     a = madtuple(())
     verify(tuple(a) == ())
-    #XXX verify(tuple(a).__class__ is tuple)
+    verify(tuple(a).__class__ is tuple)
 
     class madstring(str):
         _rev = None
@@ -1439,11 +1439,11 @@ def inherits():
         u = t.rev()
         verify(u == s)
     s = madstring("12345")
-    #XXX verify(str(s) == "12345")
+    verify(str(s) == "12345")
     verify(str(s).__class__ is str)
 
     s = madstring("\x00" * 5)
-    #XXX verify(str(s) == "\x00" * 5)
+    verify(str(s) == "\x00" * 5)
     verify(str(s).__class__ is str)
 
     class madunicode(unicode):
