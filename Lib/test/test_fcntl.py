@@ -12,9 +12,9 @@ filename = '/tmp/delete-me'
 
 # the example from the library docs
 f = open(filename,'w')
-rv = fcntl.fcntl(f.fileno(), FCNTL.F_SETFL, FCNTL.FNDELAY)
+rv = fcntl.fcntl(f.fileno(), FCNTL.F_SETFL, os.O_NONBLOCK)
 if verbose:
-    print 'Status from fnctl with O_NDELAY: ', rv
+    print 'Status from fnctl with O_NONBLOCK: ', rv
     
 lockdata = struct.pack('hhllhh', FCNTL.F_WRLCK, 0, 0, 0, 0, 0)
 if verbose:
