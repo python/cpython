@@ -33,6 +33,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <signal.h>
 #include <setjmp.h>
 
+#ifdef macintosh
+#define NO_UNISTD
+#endif
+
 #ifndef NO_UNISTD
 #include <unistd.h>
 #endif

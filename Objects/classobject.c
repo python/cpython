@@ -396,7 +396,7 @@ instance_ass_subscript(inst, key, value)
 		arg = mkvalue("(OO)", key, value);
 	if (arg == NULL) {
 		DECREF(func);
-		return NULL;
+		return -1;
 	}
 	res = call_object(func, arg);
 	DECREF(func);
@@ -509,14 +509,14 @@ instance_ass_item(inst, i, item)
 	else
 		func = instance_getattr(inst, "__setitem__");
 	if (func == NULL)
-		return NULL;
+		return -1;
 	if (item == NULL)
 		arg = mkvalue("i", i);
 	else
 		arg = mkvalue("(iO)", i, item);
 	if (arg == NULL) {
 		DECREF(func);
-		return NULL;
+		return -1;
 	}
 	res = call_object(func, arg);
 	DECREF(func);
@@ -540,14 +540,14 @@ instance_ass_slice(inst, i, j, value)
 	else
 		func = instance_getattr(inst, "__setslice__");
 	if (func == NULL)
-		return NULL;
+		return -1;
 	if (value == NULL)
 		arg = mkvalue("(ii)", i, j);
 	else
 		arg = mkvalue("(iiO)", i, j, value);
 	if (arg == NULL) {
 		DECREF(func);
-		return NULL;
+		return -1;
 	}
 	res = call_object(func, arg);
 	DECREF(func);
