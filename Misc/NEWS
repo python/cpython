@@ -9,6 +9,26 @@ What's New in Python 2.4 beta 2?
 
 *Release date: XX-XXX-XXXX*
 
+License
+-------
+
+The Python Software Foundation changed the license under which Python
+is released, to remove Python version numbers.  There were no other
+changes to the license.  So, for example, wherever the license for
+Python 2.3 said "Python 2.3", the new license says "Python".  The
+intent is to make it possible to refer to the PSF license in a more
+durable way.  For example, some people say they're confused by that
+the Open Source Initiative's entry for the Python Software Foundation
+License::
+
+      http://www.opensource.org/licenses/PythonSoftFoundation.php
+
+says "Python 2.1.1" all over it, wondering whether it applies only
+to Python 2.1.1.
+
+The official name of the new license is the Python Software Foundation
+License Version 2.
+
 Core and builtins
 -----------------
 
@@ -83,7 +103,7 @@ What's New in Python 2.4 beta 1?
 Core and builtins
 -----------------
 
-- Patch #975056: Restartable signals were not correctly disabled on 
+- Patch #975056: Restartable signals were not correctly disabled on
   BSD systems. Consistently use PyOS_setsig() instead of signal().
 
 - The internal portable implementation of thread-local storage (TLS), used
@@ -119,7 +139,7 @@ Library
 -------
 
 - Patch 1046644: distutils build_ext grew two new options - --swig for
-  specifying the swig executable to use, and --swig-opts to specify 
+  specifying the swig executable to use, and --swig-opts to specify
   options to pass to swig. --swig-opts="-c++" is the new way to spell
   --swig-cpp.
 
