@@ -1,4 +1,4 @@
-# Generated from 'flap:CW9 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDraw.h'
+# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDraw.h'
 
 invalColReq = -1
 srcCopy = 0
@@ -95,7 +95,7 @@ kVerticalConstraint = 1
 kHorizontalConstraint = 2
 kCursorImageMajorVersion = 0x0001
 kCursorImageMinorVersion = 0x0000
-# Generated from 'flap:CW9 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDrawText.h'
+# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDrawText.h'
 
 leftCaret = 0
 rightCaret = -1

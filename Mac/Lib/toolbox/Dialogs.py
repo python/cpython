@@ -1,4 +1,4 @@
-# Generated from 'flap:CW9 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Dialogs.h'
+# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Dialogs.h'
 
 ctrlItem = 4
 btnCtrl = 0
