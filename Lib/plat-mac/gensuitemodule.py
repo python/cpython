@@ -36,13 +36,15 @@ def usage():
 --base package   Use another base package in stead of default StdSuites (-b)
 --edit old=new   Edit suite names, use empty new to skip a suite (-e)
 --creator code   Set creator code for package (-c)
+--dump           Dump aete resource to stdout in stead of creating module (-d)
+--verbose        Tell us what happens (-v)
 """)
 	sys.exit(1)
 
 def main():
 	if len(sys.argv) > 1:
-		SHORTOPTS = "rb:o:e:c:"
-		LONGOPTS = ("resource", "base=", "output=", "edit=", "creator=")
+		SHORTOPTS = "rb:o:e:c:dv"
+		LONGOPTS = ("resource", "base=", "output=", "edit=", "creator=", "dump", "verbose")
 		try:
 			opts, args = getopt.getopt(sys.argv[1:], SHORTOPTS, LONGOPTS)
 		except getopt.GetoptError:
@@ -53,6 +55,8 @@ def main():
 		output = None
 		edit_modnames = []
 		creatorsignature = None
+		dump = None
+		verbose = None
 		
 		for o, a in opts:
 			if o in ('-r', '--resource'):
@@ -71,6 +75,10 @@ def main():
 					sys.stderr.write("creator must be 4-char string\n")
 					sys.exit(1)
 				creatorsignature = a
+			if o in ('-d', '--dump'):
+				dump = sys.stdout
+			if o in ('-v', '--verbose'):
+				verbose = sys.stderr
 				
 					
 		if output and len(args) > 1:
@@ -79,7 +87,8 @@ def main():
 			
 		for filename in args:
 			process_func(filename, output=output, basepkgname=basepkgname, 
-				edit_modnames=edit_modnames, creatorsignature=creatorsignature)
+				edit_modnames=edit_modnames, creatorsignature=creatorsignature,
+				dump=dump, verbose=verbose)
 	else:
 		main_interactive()
 		
@@ -103,12 +112,13 @@ def main_interactive(interact=0, basepkgname='StdSuites'):
 				yes="Continue", default=2, no="") <= 0:
 			return
 	try:
-		processfile(filename, edit_modnames=edit_modnames, basepkgname=basepkgname)
+		processfile(filename, edit_modnames=edit_modnames, basepkgname=basepkgname,
+		verbose=sys.stderr)
 	except MacOS.Error, arg:
 		print "Error getting terminology:", arg
 		print "Retry, manually parsing resources"
 		processfile_fromresource(filename, edit_modnames=edit_modnames,
-			basepkgname=basepkgname)
+			basepkgname=basepkgname, verbose=sys.stderr)
 			
 def is_scriptable(application):
 	"""Return true if the application is scriptable"""
@@ -132,12 +142,13 @@ def is_scriptable(application):
 	return n_terminology > 0
 
 def processfile_fromresource(fullname, output=None, basepkgname=None, 
-		edit_modnames=None, creatorsignature=None):
+		edit_modnames=None, creatorsignature=None, dump=None, verbose=None):
 	"""Process all resources in a single file"""
-	if not is_scriptable(fullname):
-		print "Warning: app does not seem scriptable: %s" % fullname
+	if not is_scriptable(fullname) and verbose:
+		print >>verbose, "Warning: app does not seem scriptable: %s" % fullname
 	cur = CurResFile()
-	print "Processing", fullname
+	if verbose:
+		print >>verbose, "Processing", fullname
 	rf = macresource.open_pathname(fullname)
 	try:
 		UseResFile(rf)
@@ -148,12 +159,14 @@ def processfile_fromresource(fullname, output=None, basepkgname=None,
 		for i in range(Count1Resources('aeut')):
 			res = Get1IndResource('aeut', 1+i)
 			resources.append(res)
-		print "\nLISTING aete+aeut RESOURCES IN", `fullname`
+		if verbose:	
+			print >>verbose, "\nLISTING aete+aeut RESOURCES IN", `fullname`
 		aetelist = []
 		for res in resources:
-			print "decoding", res.GetResInfo(), "..."
+			if verbose:
+				print >>verbose, "decoding", res.GetResInfo(), "..."
 			data = res.data
-			aete = decode(data)
+			aete = decode(data, verbose)
 			aetelist.append((aete, res.GetResInfo()))
 	finally:
 		if rf <> cur:
@@ -161,42 +174,54 @@ def processfile_fromresource(fullname, output=None, basepkgname=None,
 			UseResFile(cur)
 	# switch back (needed for dialogs in Python)
 	UseResFile(cur)
+	if dump:
+		dumpaetelist(aetelist, dump)
 	compileaetelist(aetelist, fullname, output=output, 
 		basepkgname=basepkgname, edit_modnames=edit_modnames,
-		creatorsignature=creatorsignature)
+		creatorsignature=creatorsignature, verbose=verbose)
 
 def processfile(fullname, output=None, basepkgname=None, 
-		edit_modnames=None, creatorsignature=None):
+		edit_modnames=None, creatorsignature=None, dump=None,
+		verbose=None):
 	"""Ask an application for its terminology and process that"""
-	if not is_scriptable(fullname):
-		print "Warning: app does not seem scriptable: %s" % fullname
-	print "\nASKING FOR aete DICTIONARY IN", `fullname`
+	if not is_scriptable(fullname) and verbose:
+		print >>verbose, "Warning: app does not seem scriptable: %s" % fullname
+	if verbose:
+		print >>verbose, "\nASKING FOR aete DICTIONARY IN", `fullname`
 	try:
 		aedescobj, launched = OSATerminology.GetAppTerminology(fullname)
 	except MacOS.Error, arg:
 		if arg[0] in (-1701, -192): # errAEDescNotFound, resNotFound
-			print "GetAppTerminology failed with errAEDescNotFound/resNotFound, trying manually"
-			aedata, sig = getappterminology(fullname)
+			if verbose:
+				print >>verbose, "GetAppTerminology failed with errAEDescNotFound/resNotFound, trying manually"
+			aedata, sig = getappterminology(fullname, verbose=verbose)
 			if not creatorsignature:
 				creatorsignature = sig
 		else:
 			raise
 	else:
 		if launched:
-			print "Launched", fullname
+			if verbose:
+				print >>verbose, "Launched", fullname
 		raw = aetools.unpack(aedescobj)
 		if not raw: 
-			print 'Unpack returned empty value:', raw
+			if verbose:
+				print >>verbose, 'Unpack returned empty value:', raw
 			return
-		if not raw[0].data: 
-			print 'Unpack returned value without data:', raw
+		if not raw[0].data:
+			if verbose:
+				print >>verbose, 'Unpack returned value without data:', raw
 			return
 		aedata = raw[0]
-	aete = decode(aedata.data)
+	aete = decode(aedata.data, verbose)
+	if dump:
+		dumpaetelist([aete], dump)
+		return
 	compileaete(aete, None, fullname, output=output, basepkgname=basepkgname,
-		creatorsignature=creatorsignature, edit_modnames=edit_modnames)
+		creatorsignature=creatorsignature, edit_modnames=edit_modnames, 
+		verbose=verbose)
 		
-def getappterminology(fullname):
+def getappterminology(fullname, verbose=None):
 	"""Get application terminology by sending an AppleEvent"""
 	# First check that we actually can send AppleEvents
 	if not MacOS.WMAvailable():
@@ -220,7 +245,8 @@ def getappterminology(fullname):
 	try:
 		talker._start()
 	except (MacOS.Error, aetools.Error), arg:
-		print 'Warning: start() failed, continuing anyway:', arg
+		if verbose:
+			print >>verbose, 'Warning: start() failed, continuing anyway:', arg
 	reply = talker.send("ascr", "gdte")
 	#reply2 = talker.send("ascr", "gdut")
 	# Now pick the bits out of the return that we need.
@@ -228,13 +254,17 @@ def getappterminology(fullname):
 	
 
 def compileaetelist(aetelist, fullname, output=None, basepkgname=None, 
-			edit_modnames=None, creatorsignature=None):
+			edit_modnames=None, creatorsignature=None, verbose=None):
 	for aete, resinfo in aetelist:
 		compileaete(aete, resinfo, fullname, output=output, 
 			basepkgname=basepkgname, edit_modnames=edit_modnames,
-			creatorsignature=creatorsignature)
-		
-def decode(data):
+			creatorsignature=creatorsignature, verbose=verbose)
+
+def dumpaetelist(aetelist, output):
+	import pprint
+	pprint.pprint(aetelist, output)
+	
+def decode(data, verbose=None):
 	"""Decode a resource into a python data structure"""
 	f = StringIO.StringIO(data)
 	aete = generic(getaete, f)
@@ -242,8 +272,8 @@ def decode(data):
 	processed = f.tell()
 	unprocessed = len(f.read())
 	total = f.tell()
-	if unprocessed:
-		sys.stderr.write("%d processed + %d unprocessed = %d total\n" %
+	if unprocessed and verbose:
+		verbose.write("%d processed + %d unprocessed = %d total\n" %
 		                 (processed, unprocessed, total))
 	return aete
 
@@ -398,7 +428,7 @@ getaete = [
 	]
 
 def compileaete(aete, resinfo, fname, output=None, basepkgname=None, 
-		edit_modnames=None, creatorsignature=None):
+		edit_modnames=None, creatorsignature=None, verbose=None):
 	"""Generate code for a full aete resource. fname passed for doc purposes"""
 	[version, language, script, suites] = aete
 	major, minor = divmod(version, 256)
@@ -438,7 +468,7 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
 	allsuites = []
 	for suite in suites:
 		code, suite, pathname, modname, precompinfo = precompilesuite(suite, basepackage, 
-				output=output, edit_modnames=edit_modnames)
+				output=output, edit_modnames=edit_modnames, verbose=verbose)
 		if not code:
 			continue
 		allprecompinfo = allprecompinfo + precompinfo
@@ -447,7 +477,7 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
 		allsuites.append(suiteinfo)
 	for suiteinfo in allsuites:
 		compilesuite(suiteinfo, major, minor, language, script, fname, basepackage, 
-				allprecompinfo, interact=(edit_modnames is None))
+				allprecompinfo, interact=(edit_modnames is None), verbose=verbose)
 	initfilename = os.path.join(output, '__init__.py')
 	fp = open(initfilename, 'w')
 	MacOS.SetCreatorAndType(initfilename, 'Pyth', 'TEXT')
@@ -511,7 +541,8 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
 		fp.write("\t_moduleName = '%s'\n\n"%packagename)
 	fp.close()
 	
-def precompilesuite(suite, basepackage=None, edit_modnames=None, output=None):
+def precompilesuite(suite, basepackage=None, edit_modnames=None, output=None,
+		verbose=None):
 	"""Parse a single suite without generating the output. This step is needed
 	so we can resolve recursive references by suites to enums/comps/etc declared
 	in other suites"""
@@ -548,7 +579,8 @@ def precompilesuite(suite, basepackage=None, edit_modnames=None, output=None):
 	for event in events:
 		findenumsinevent(event, enumsneeded)
 
-	objc = ObjectCompiler(None, basemodule, interact=(edit_modnames is None))
+	objc = ObjectCompiler(None, basemodule, interact=(edit_modnames is None),
+		verbose=verbose)
 	for cls in classes:
 		objc.compileclass(cls)
 	for cls in classes:
@@ -568,7 +600,7 @@ def precompilesuite(suite, basepackage=None, edit_modnames=None, output=None):
 	return code, suite, pathname, modname, precompinfo
 
 def compilesuite((suite, pathname, modname), major, minor, language, script, 
-		fname, basepackage, precompinfo, interact=1):
+		fname, basepackage, precompinfo, interact=1, verbose=None):
 	"""Generate code for a single suite"""
 	[name, desc, code, level, version, events, classes, comps, enums] = suite
 	# Sort various lists, so re-generated source is easier compared
@@ -624,7 +656,8 @@ def compilesuite((suite, pathname, modname), major, minor, language, script,
 	else:
 		fp.write("\tpass\n\n")
 
-	objc = ObjectCompiler(fp, basemodule, precompinfo, interact=interact)
+	objc = ObjectCompiler(fp, basemodule, precompinfo, interact=interact,
+		verbose=verbose)
 	for cls in classes:
 		objc.compileclass(cls)
 	for cls in classes:
@@ -778,7 +811,7 @@ def findenumsinevent(event, enumsneeded):
 #
 class CodeNameMapper:
 	
-	def __init__(self, interact=1):
+	def __init__(self, interact=1, verbose=None):
 		self.code2name = {
 			"property" : {},
 			"class" : {},
@@ -794,6 +827,7 @@ class CodeNameMapper:
 		self.modulename = None
 		self.star_imported = 0
 		self.can_interact = interact
+		self.verbose = verbose
 		
 	def addnamecode(self, type, name, code):
 		self.name2code[type][name] = code
@@ -837,17 +871,19 @@ class CodeNameMapper:
 		return self
 			
 class ObjectCompiler:
-	def __init__(self, fp, basesuite=None, othernamemappers=None, interact=1):
+	def __init__(self, fp, basesuite=None, othernamemappers=None, interact=1, 
+			verbose=None):
 		self.fp = fp
+		self.verbose = verbose
 		self.basesuite = basesuite
 		self.can_interact = interact
-		self.namemappers = [CodeNameMapper(self.can_interact)]
+		self.namemappers = [CodeNameMapper(self.can_interact, self.verbose)]
 		if othernamemappers:
 			self.othernamemappers = othernamemappers[:]
 		else:
 			self.othernamemappers = []
 		if basesuite:
-			basemapper = CodeNameMapper(self.can_interact)
+			basemapper = CodeNameMapper(self.can_interact, self.verbose)
 			basemapper.addmodule(basesuite, '', 1)
 			self.namemappers.append(basemapper)
 		
@@ -881,13 +917,14 @@ class ObjectCompiler:
 				else:
 					m = None
 				if not m: return None, None, None
-				mapper = CodeNameMapper(self.can_interact)
+				mapper = CodeNameMapper(self.can_interact, self.verbose)
 				mapper.addmodule(m, m.__name__, 0)
 				self.namemappers.append(mapper)
 	
 	def askdefinitionmodule(self, type, code):
 		if not self.can_interact:
-			print "** No definition for %s '%s' found" % (type, code)
+			if self.verbose:
+				print >>self.verbose, "** No definition for %s '%s' found" % (type, code)
 			return None
 		path = EasyDialogs.AskFileForSave(message='Where is %s %s declared?'%(type, code))
 		if not path: return
@@ -954,7 +991,8 @@ class ObjectCompiler:
 			# This is an other name (plural or so) for something else. Skip.
 			if self.fp and (elements or len(properties) > 1 or (len(properties) == 1 and
 				properties[0][1] != 'c@#!')):
-				print '** Skip multiple %s of %s (code %s)' % (cname, self.namemappers[0].findcodename('class', code)[0], `code`)
+				if self.verbose:
+					print >>self.verbose, '** Skip multiple %s of %s (code %s)' % (cname, self.namemappers[0].findcodename('class', code)[0], `code`)
 				raise RuntimeError, "About to skip non-empty class"
 			return
 		plist = []
