@@ -1383,7 +1383,7 @@ char *re_compile_pattern(unsigned char *regex, int size, regexp_t bufp)
 			if (a < '0' || a > '9')
 				goto bad_match_register;
 			ch = 10 * (a - '0') + ch - '0';
-			if (ch <= 0 || ch >= RE_NREGS)
+			if (ch == 0 || ch >= RE_NREGS)
 				goto bad_match_register;
 			bufp->uses_registers = 1;
 			opcode = Cmatch_memory;
