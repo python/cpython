@@ -377,7 +377,7 @@ else:
         from riscosenviron import _Environ
     elif name in ('os2', 'nt', 'dos'):  # Where Env Var Names Must Be UPPERCASE
         # But we store them as upper case
-        class _Environ(UserDict.UserDict):
+        class _Environ(UserDict.IterableUserDict):
             def __init__(self, environ):
                 UserDict.UserDict.__init__(self)
                 data = self.data
