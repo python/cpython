@@ -133,7 +133,7 @@ class upload(Command):
         schema, netloc, url, params, query, fragments = \
             urlparse.urlparse(self.repository)
         assert not params and not query and not fragments
-        if schema == 'http': 
+        if schema == 'http':
             http = httplib.HTTPConnection(netloc)
         elif schema == 'https':
             http = httplib.HTTPSConnection(netloc)
@@ -145,7 +145,7 @@ class upload(Command):
         try:
             http.connect()
             http.putrequest("POST", url)
-            http.putheader('Content-type', 
+            http.putheader('Content-type',
                            'multipart/form-data; boundary=%s'%boundary)
             http.putheader('Content-length', str(len(body)))
             http.putheader('Authorization', auth)
@@ -157,11 +157,10 @@ class upload(Command):
 
         r = http.getresponse()
         if r.status == 200:
-            self.announce('Server response (%s): %s' % (r.status, r.reason), 
+            self.announce('Server response (%s): %s' % (r.status, r.reason),
                           log.INFO)
         else:
-            self.announce('Upload failed (%s): %s' % (r.status, r.reason), 
+            self.announce('Upload failed (%s): %s' % (r.status, r.reason),
                           log.ERROR)
         if self.show_response:
             print '-'*75, r.read(), '-'*75
-

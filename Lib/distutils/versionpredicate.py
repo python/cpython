@@ -101,10 +101,10 @@ class VersionPredicate:
 
         versionPredicateStr = versionPredicateStr.strip()
         if not versionPredicateStr:
-           raise ValueError("empty package restriction")
+            raise ValueError("empty package restriction")
         match = re_validPackage.match(versionPredicateStr)
         if not match:
-           raise ValueError("bad package name in %r" % versionPredicateStr)
+            raise ValueError("bad package name in %r" % versionPredicateStr)
         self.name, paren = match.groups()
         paren = paren.strip()
         if paren:
@@ -114,7 +114,7 @@ class VersionPredicate:
             str = match.groups()[0]
             self.pred = [splitUp(aPred) for aPred in str.split(",")]
             if not self.pred:
-                raise ValueError("empty parenthesized list in %r" 
+                raise ValueError("empty parenthesized list in %r"
                                  % versionPredicateStr)
         else:
             self.pred = []

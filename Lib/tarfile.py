@@ -665,7 +665,7 @@ class ExFileObject(object):
         if not result:
             raise StopIteration
         return result
-        
+
 #class ExFileObject
 
 #------------------

@@ -626,14 +626,14 @@ class Popen(object):
         process to terminate.  The optional input argument should be a
         string to be sent to the child process, or None, if no data
         should be sent to the child.
-        
+
         communicate() returns a tuple (stdout, stderr)."""
 
         # Optimization: If we are only using one pipe, or no pipe at
         # all, using select() or threads is unnecessary.
         if [self.stdin, self.stdout, self.stderr].count(None) >= 2:
-            stdout = None 
-            stderr = None 
+            stdout = None
+            stderr = None
             if self.stdin:
                 if input:
                     self.stdin.write(input)
@@ -644,7 +644,7 @@ class Popen(object):
                 stderr = self.stderr.read()
             self.wait()
             return (stdout, stderr)
-        
+
         return self._communicate(input)
 
 
