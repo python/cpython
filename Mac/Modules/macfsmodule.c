@@ -37,7 +37,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define FileFilterUPP FileFilterProcPtr
 #endif
 
-
 static object *ErrorObject;
 
 /* ----------------------------------------------------- */
@@ -550,12 +549,28 @@ mfs_RawAlias(self, args)
 	return (object *)newmfsaobject((AliasHandle)h);
 }
 
+static object *
+mfs_GetDirectory(self, args)
+	object *self;	/* Not used */
+	object *args;
+{
+	FSSpec fsdir;
+	int ok;
+		
+	if (!newgetargs(args, "") )
+		return NULL;
+		
+	ok = PyMac_GetDirectory(&fsdir);
+	return mkvalue("(Oi)", newmfssobject(&fsdir), ok);
+}
+
 /* List of methods defined in the module */
 
 static struct methodlist mfs_methods[] = {
 	{"ResolveAliasFile",	mfs_ResolveAliasFile,	1},
 	{"StandardGetFile",		mfs_StandardGetFile,	1},
 	{"StandardPutFile",		mfs_StandardPutFile,	1},
+	{"GetDirectory",		mfs_GetDirectory,		1},
 	{"FSSpec",				mfs_FSSpec,				1},
 	{"RawFSSpec",			mfs_RawFSSpec,			1},
 	{"RawAlias",			mfs_RawAlias,			1},
