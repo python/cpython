@@ -20,6 +20,8 @@ HTML options:
                         values: gif (default), png.
     --numeric           Don't rename the HTML files; just keep node#.html for
                         the filenames.
+    --style             Specify the CSS file to use for the output (filename,
+                        not a URL).
 
 Other options:
     --a4		Format for A4 paper.
@@ -42,8 +44,8 @@ import sys
 import tempfile
 
 
-MYDIR = os.path.normpath(os.path.join(os.getcwd(), sys.path[0]))
-TOPDIR = os.path.normpath(os.path.join(MYDIR, os.pardir))
+MYDIR = os.path.abspath(sys.path[0])
+TOPDIR = os.path.dirname(MYDIR)
 
 ISTFILE = os.path.join(TOPDIR, "texinputs", "python.ist")
 NODE2LABEL_SCRIPT = os.path.join(MYDIR, "node2label.pl")
@@ -109,7 +111,7 @@ class Options:
                                     "address=", "a4", "letter",
                                     "link=", "split=", "logging", "debugging",
                                     "keep", "quiet", "runs=", "image-type=",
-                                    "about=", "numeric"]
+                                    "about=", "numeric", "style="]
                                    + list(self.ALL_FORMATS))
         for opt, arg in opts:
             if opt == "--all":
@@ -144,9 +146,11 @@ class Options:
             elif opt == "--about":
                 # always make this absolute:
                 self.about_file = os.path.normpath(
-                    os.path.join(os.getcwd(), arg))
+                    os.path.abspath(arg))
             elif opt == "--numeric":
                 self.numeric = 1
+            elif opt == "--style":
+                self.style_file = os.path.abspath(arg)
             #
             # Format specifiers:
             #
