@@ -771,13 +771,17 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
             ch = ((s[0] & 0x7) << 18) + ((s[1] & 0x3f) << 12) +
                  ((s[2] & 0x3f) << 6) + (s[3] & 0x3f);
             /* validate and convert to UTF-16 */
-            if ((ch < 0x10000) ||   /* minimum value allowed for 4
+            if ((ch < 0x10000)        /* minimum value allowed for 4
                                        byte encoding */
-                (ch > 0x10ffff)) {  /* maximum value allowed for
+                || (ch > 0x10ffff))   /* maximum value allowed for
                                        UTF-16 */
+	    {
                 errmsg = "illegal encoding";
 		goto utf8Error;
 	    }
+#if Py_UNICODE_SIZE == 4
+	    *p++ = (Py_UNICODE)ch;
+#else
             /*  compute and append the two surrogates: */
             
             /*  translate from 10000..10FFFF to 0..FFFF */
@@ -788,6 +792,7 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
                     
             /*  low surrogate = bottom 10 bits added to DC00 */
             *p++ = (Py_UNICODE)(0xDC00 + (ch & 0x03FF));
+#endif
             break;
 
         default:
@@ -878,7 +883,13 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
             *p++ = 0x80 | (ch & 0x3f);
             cbWritten += 2;
         }
-        else {
+        else if (ch < 0x10000) {
+#if Py_UNICODE_SIZE == 4
+	    *p++ = 0xe0 | (ch>>12);
+            *p++ = 0x80 | ((ch>>6) & 0x3f);
+            *p++ = 0x80 | (ch & 0x3f);
+            cbWritten += 3;
+#else
             /* Check for high surrogate */
             if (0xD800 <= ch && ch <= 0xDBFF) {
                 if (i != size) {
@@ -909,7 +920,14 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
             }
             *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
             *p++ = (char)(0x80 | (ch & 0x3f));
-        }
+#endif
+        } else {
+            *p++ = 0xf0 | (ch>>18);
+            *p++ = 0x80 | ((ch>>12) & 0x3f);
+            *p++ = 0x80 | ((ch>>6) & 0x3f);
+            *p++ = 0x80 | (ch & 0x3f);
+            cbWritten += 4;
+	}
     }
     *p = '\0';
     if (_PyString_Resize(&v, p - q))
@@ -935,7 +953,7 @@ PyObject *PyUnicode_AsUTF8String(PyObject *unicode)
 /* --- UTF-16 Codec ------------------------------------------------------- */
 
 static
-int utf16_decoding_error(const Py_UNICODE **source,
+int utf16_decoding_error(const Py_UCS2 **source,
 			 Py_UNICODE **dest,
 			 const char *errors,
 			 const char *details) 
@@ -973,12 +991,12 @@ PyObject *PyUnicode_DecodeUTF16(const char *s,
 {
     PyUnicodeObject *unicode;
     Py_UNICODE *p;
-    const Py_UNICODE *q, *e;
+    const Py_UCS2 *q, *e;
     int bo = 0;
     const char *errmsg = "";
 
     /* size should be an even number */
-    if (size % sizeof(Py_UNICODE) != 0) {
+    if (size % sizeof(Py_UCS2) != 0) {
 	if (utf16_decoding_error(NULL, NULL, errors, "truncated data"))
 	    return NULL;
 	/* The remaining input chars are ignored if we fall through
@@ -995,8 +1013,8 @@ PyObject *PyUnicode_DecodeUTF16(const char *s,
 
     /* Unpack UTF-16 encoded data */
     p = unicode->str;
-    q = (Py_UNICODE *)s;
-    e = q + (size / sizeof(Py_UNICODE));
+    q = (Py_UCS2 *)s;
+    e = q + (size / sizeof(Py_UCS2));
 
     if (byteorder)
 	bo = *byteorder;
@@ -1026,7 +1044,7 @@ PyObject *PyUnicode_DecodeUTF16(const char *s,
     }
     
     while (q < e) {
-	register Py_UNICODE ch = *q++;
+	register Py_UCS2 ch = *q++;
 
 	/* Swap input bytes if needed. (This assumes
 	   sizeof(Py_UNICODE) == 2 !) */
@@ -1048,17 +1066,33 @@ PyObject *PyUnicode_DecodeUTF16(const char *s,
 	    goto utf16Error;
 	}
 	if (0xDC00 <= *q && *q <= 0xDFFF) {
-	    q++;
-	    if (0xD800 <= *q && *q <= 0xDBFF) {
+	    Py_UCS2 ch2 = *q++;
+#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+	    if (bo == 1)
+		    ch = (ch >> 8) | (ch << 8);
+#else    
+	    if (bo == -1)
+		    ch = (ch >> 8) | (ch << 8);
+#endif
+	    if (0xD800 <= ch && ch <= 0xDBFF) {
+#if Py_UNICODE_SIZE == 2
 		/* This is valid data (a UTF-16 surrogate pair), but
 		   we are not able to store this information since our
 		   Py_UNICODE type only has 16 bits... this might
 		   change someday, even though it's unlikely. */
 		errmsg = "code pairs are not supported";
 		goto utf16Error;
-	    }
-	    else
+#else
+		*p++ = (((ch & 0x3FF)<<10) | (ch2 & 0x3FF)) + 0x10000;
 		continue;
+#endif
+		
+	    }
+	    else {
+                errmsg = "illegal UTF-16 surrogate";
+		goto utf16Error;
+	    }
+
 	}
 	errmsg = "illegal encoding";
 	/* Fall through to report the error */
@@ -1090,17 +1124,20 @@ PyObject *PyUnicode_EncodeUTF16(const Py_UNICODE *s,
 				int byteorder)
 {
     PyObject *v;
-    Py_UNICODE *p;
+    Py_UCS2 *p;
     char *q;
+    int i, pairs, doswap = 1;
 
-    /* We don't create UTF-16 pairs... */
+    for (i = pairs = 0; i < size; i++)
+	if (s[i] >= 0x10000)
+	    pairs++;
     v = PyString_FromStringAndSize(NULL, 
-			sizeof(Py_UNICODE) * (size + (byteorder == 0)));
+		  sizeof(Py_UCS2) * (size + pairs + (byteorder == 0)));
     if (v == NULL)
         return NULL;
 
     q = PyString_AS_STRING(v);
-    p = (Py_UNICODE *)q;
+    p = (Py_UCS2 *)q;
     if (byteorder == 0)
 	*p++ = 0xFEFF;
     if (size == 0)
@@ -1112,12 +1149,24 @@ PyObject *PyUnicode_EncodeUTF16(const Py_UNICODE *s,
 	byteorder == 1
 #endif
 	)
-	Py_UNICODE_COPY(p, s, size);
-    else
-	while (size-- > 0) {
-	    Py_UNICODE ch = *s++;
-	    *p++ = (ch >> 8) | (ch << 8);
+	doswap = 0;
+    while (size-- > 0) {
+	Py_UNICODE ch = *s++;
+	Py_UNICODE ch2 = 0;
+	if (ch >= 0x10000) {
+	    ch2 = 0xDC00|((ch-0x10000) & 0x3FF);
+	    ch  = 0xD800|((ch-0x10000)>>10);
 	}
+	if (doswap){
+	    *p++ = (ch >> 8) | (ch << 8);
+	    if (ch2)
+		*p++ = (ch2 >> 8) | (ch2 << 8);
+	}else{
+	    *p++ = ch;
+	    if(ch2)
+		*p++ = ch2;
+	}
+    }
     return v;
 }
 
@@ -1271,10 +1320,14 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                 /* UCS-2 character */
                 *p++ = (Py_UNICODE) chr;
             else if (chr <= 0x10ffff) {
-                /* UCS-4 character.  store as two surrogate characters */
+                /* UCS-4 character. Either store directly, or as surrogate pair. */
+#if Py_UNICODE_SIZE == 4
+                *p++ = chr;
+#else
                 chr -= 0x10000L;
                 *p++ = 0xD800 + (Py_UNICODE) (chr >> 10);
                 *p++ = 0xDC00 + (Py_UNICODE) (chr & 0x03FF);
+#endif
             } else {
                 if (unicodeescape_decoding_error(
                     &s, &x, errors,
@@ -1383,6 +1436,19 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
             *p++ = '\\';
             *p++ = (char) ch;
         } 
+        /* Map 21-bit characters to '\U00xxxxxx' */
+        else if (ch >= 0x10000) {
+            *p++ = '\\';
+            *p++ = 'U';
+            *p++ = hexdigit[(ch >> 28) & 0xf];
+            *p++ = hexdigit[(ch >> 24) & 0xf];
+            *p++ = hexdigit[(ch >> 20) & 0xf];
+            *p++ = hexdigit[(ch >> 16) & 0xf];
+            *p++ = hexdigit[(ch >> 12) & 0xf];
+            *p++ = hexdigit[(ch >> 8) & 0xf];
+            *p++ = hexdigit[(ch >> 4) & 0xf];
+            *p++ = hexdigit[ch & 15];
+        }
         /* Map 16-bit characters to '\uxxxx' */
         else if (ch >= 256) {
             *p++ = '\\';
@@ -5280,13 +5346,6 @@ PyTypeObject PyUnicode_Type = {
 void _PyUnicode_Init(void)
 {
     int i;
-
-    /* Doublecheck the configuration... */
-#ifndef USE_UCS4_STORAGE
-    if (sizeof(Py_UNICODE) != 2)
-        Py_FatalError("Unicode configuration error: "
-		      "sizeof(Py_UNICODE) != 2 bytes");
-#endif
 
     /* Init the implementation */
     unicode_freelist = NULL;
