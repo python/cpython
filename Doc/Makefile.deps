@@ -46,6 +46,7 @@ REFFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 # LaTeX source files for the Python Library Reference
 LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/lib.tex \
+	lib/distutils.tex \
 	texinputs/reportingbugs.tex \
 	lib/libintro.tex \
 	lib/libobjs.tex \
