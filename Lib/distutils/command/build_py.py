@@ -20,7 +20,7 @@ class build_py (Command):
 
     user_options = [
         ('build-lib=', 'd', "directory to \"build\" (copy) to"),
-        ('force', 'f', "forcibly build everything (ignore file timestamps"),
+        ('force', 'f', "forcibly build everything (ignore file timestamps)"),
         ]
 
 

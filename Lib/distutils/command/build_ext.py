@@ -55,7 +55,7 @@ class build_ext (Command):
         ('build-temp=', 't',
          "directory for temporary files (build by-products)"),
         ('inplace', 'i',
-         "ignore build-lib and put compiled extensions into the source" +
+         "ignore build-lib and put compiled extensions into the source " +
          "directory alongside your pure Python modules"),
         ('include-dirs=', 'I',
          "list of directories to search for header files"),
