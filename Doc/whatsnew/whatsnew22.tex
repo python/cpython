@@ -69,7 +69,7 @@ something like this:
 
 \method{__getitem__()} is more properly used to define an indexing
 operation on an object so that you can write \code{obj[5]} to retrieve
-the fifth element.  It's a bit misleading when you're using this only
+the sixth element.  It's a bit misleading when you're using this only
 to support \keyword{for} loops.  Consider some file-like object that
 wants to be looped over; the \var{index} parameter is essentially
 meaningless, as the class probably assumes that a series of
@@ -510,11 +510,11 @@ Jeremy Hylton.}
 \begin{itemize}
 
   \item The \module{xmlrpclib} module was contributed to the standard
-library by Fredrik Lundh.  It provides support for writing XML-RPC
-clients; XML-RPC is a simple remote procedure call protocol built on
-top of HTTP and XML. For example, the following snippet retrieves a
-list of RSS channels from the O'Reilly Network, and then retrieves a
-list of the recent headlines for one channel:
+  library by Fredrik Lundh.  It provides support for writing XML-RPC
+  clients; XML-RPC is a simple remote procedure call protocol built on
+  top of HTTP and XML. For example, the following snippet retrieves a
+  list of RSS channels from the O'Reilly Network, and then retrieves a
+  list of the recent headlines for one channel:
 
 \begin{verbatim}
 import xmlrpclib
@@ -584,6 +584,11 @@ See \url{http://www.xmlrpc.com/} for more information about XML-RPC.
   of legal characters defined by the current locale.  The buggy
   modules have all been fixed to use \constant{ascii_letters} instead.
   (Reported by an unknown person; fixed by Fred L. Drake, Jr.)
+
+  \item The \module{mimetypes} module now makes it easier to use
+  alternative MIME-type databases by the addition of a
+  \class{MimeTypes} class, which takes a list of filenames to be
+  parsed.  (Contributed by Fred L. Drake, Jr.)
 
 \end{itemize}
 
@@ -701,11 +706,18 @@ changes are:
 
   \item On Windows, Python can now be compiled with Borland C thanks 
   to a number of patches contributed by Stephen Hansen.
-
+  
   \item Another Windows enhancement: Wise Solutions generously offered
   PythonLabs use of their InstallerMaster 8.1 system.  Earlier
   PythonLabs Windows installers used Wise 5.0a, which was beginning to
   show its age.  (Packaged up by Tim Peters.)
+
+  \item Files ending in \samp{.pyw} can now be imported on Windows.
+  \samp{.pyw} is a Windows-only thing, used to indicate that a script
+  needs to be run using PYTHONW.EXE instead of PYTHON.EXE in order to
+  prevent a DOS console from popping up to display the output.  This
+  patch makes it possible to import such scripts, in case they're also
+  usable as modules.  (Implemented by David Bolen.)
 
   \item On platforms where Python uses the C \cfunction{dlopen()} function 
   to load extension modules, it's now possible to set the flags used 
@@ -720,7 +732,7 @@ changes are:
 
 The author would like to thank the following people for offering
 suggestions and corrections to various drafts of this article: Fred
-Bremmer, Fred L. Drake, Jr., Mark Hammond, Marc-Andr\'e Lemburg,
-Tim Peters, Neil Schemenauer, Guido van Rossum.  
+Bremmer, Keith Briggs, Fred L. Drake, Jr., Mark Hammond, Marc-Andr\'e
+Lemburg, Tim Peters, Neil Schemenauer, Guido van Rossum.
 
 \end{document}
