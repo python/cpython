@@ -17,7 +17,7 @@
 # only withs with Python 1.5, alpha 3 or newer.)
 
 # Create a file Setup.in for your extension.  This file follows the
-# format of the Modules/Setup.in file; see the instructions there.
+# format of the Modules/Setup.dist file; see the instructions there.
 # For a simple module called "spam" on file "spammodule.c", it can
 # contain a single line:
 #   spam spammodule.c
