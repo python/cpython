@@ -1,0 +1,541 @@
+ 			  A Python Bestiary
+		 Itemizing Python Objects and Nuances
+
+   $Revision$ $Date$ 	ken.manheimer@nist.gov
+
+  			   Notable lexical entities
+			   ========================
+
+    Keywords
+
+     	access	       and	      break	     class
+     	continue       def	      del	     elif
+     	else	       except	      exec	     finally
+     	for	       from	      global	     if
+     	import	       in	      is	     lambda
+     	not	       or	      pass	     print
+     	raise	       return	      try	     while
+
+    String Literal Escapes
+
+     \newline  Ignored (escape newline)
+     \\ Backslash (\)	     \e Escape (ESC)		\v Vertical Tab (VT)
+     \' Single quote (')     \f Formfeed (FF)		\0XX  char with
+     \" Double quote (")     \n Linefeed (LF)		      octal value XX
+     \a Bell (BEL)	     \r Carriage Return (CR)	\xXX  char with
+     \b Backspace (BS)	     \t Horizontal Tab (TAB)	      hex value XX
+
+    Illegitimate Tokens (only valid in strings): @ $ ?
+
+   Operating environment (Unix)
+
+    Shell environment vars:
+
+     PYTHONPATH:    dirs to be prepended to module search path; a la shell PATH
+     PYTHONSTARTUP: names path of file to be loaded on interactive startup
+
+    Internal (module sys) vars ('import sys' to refer to them):
+
+     argv		- list of command and arguments passed to python script
+     builtin_module_names - list of names of modules compiled in to python
+   ( exc_* values are set only during handling of a raised exception)
+     exc_type		- type of exception being handled
+     exc_value		- exception's parameter ('raise's 2nd arg)
+     exc_traceback	- exception's traceback obj
+     exit(N)		- exit from python with status N, by raising SystemExit
+     exitfunc		- function hook, to be called on exit if set
+     last_type		- type of last unhandled exception
+     last_value		- value of last unhandled exception
+     last_traceback	- traceback of last unhandled exception
+     modules		- list of modules already loaded
+     path		- list of strings specifying module-load search path
+     ps1='>>>'		- string specifying primary prompt, iff interactive
+     ps2='...'		- string specifying secondary prompt, iff interactive
+     settrace		- system trace function, used by debuggers, etc
+     setprofile		- system profile function
+     stdin		- standard input file object
+     stdout		- standard output file object
+     stderr		- standard error file object
+     tracebacklimit=1000 - maximum number of traceback levels to print
+
+
+     Objects - behaviors, special attributes, operations, statements, etc
+     ====================================================================
+
+    General object aspects
+
+     Boolean values and operators
+
+      False values:	None, numeric zeros, empty sequences and mappings
+      True values:	all other values
+
+      not X: if X is false then 1, else 0
+    ( 'or', 'and' evaluate second arg only if necessary to determine outcome)
+      X or Y: if X is false then Y, else X
+      X and Y: if X is false then X, else Y
+
+     Special methods for any type				(s: self)
+
+      id(obj)		unique identifier for object (currently, its address)
+      __init__(s, args)	object instantiation - see Classes, below
+      __del__(s)	object demise
+      __repr__(s)	repr() and `...` conversions
+      __str__(s)	str() and 'print' statement
+      __cmp__(s)	implements <, ==, >, <=, <>, !=, >=, is [not]
+      __hash__(s)	hash() and dictionary operations
+
+     Special informative state attributes for some types:
+
+      X.__dict__	dict used to store object's writeable attributes
+      X.__methods__	list of X's methods; on many built-in types.
+      X.__members__	lists of X's data attributes
+      X.__class__	class to which X belongs
+      X.__bases__	tuple of X base classes
+
+     General Name Space behavior and binding
+
+      Name space search order: local, global, builtin
+
+      "global" name space = file = module
+      "local" name space = function or method
+
+      Code Block scopes		(ns = name space, cb = containing block)
+
+     ( global ns generally is containing module, unless overriden by args)
+
+       Code block type	Local ns		Notes
+       ---------------	--------		-----
+       Module		same as global ns
+       Script		same as global ns	global ns is __main__
+       Interactive cmd	same as global ns	global ns is __main__
+       Class def	new ns
+       Function body	new ns
+       'exec' string	local ns of cb	    (or args)
+       'eval' string	local ns of caller  (or args)
+       'execfile' file	local ns of caller  (or args)
+       'input' expr	local ns of caller
+
+      Binding operations and exceptions:
+
+     ~ SyntaxError: on attempt to bind to literals or other non-bindables
+     ~ NameError: on attempt to evaluate unbound atom
+
+     ( for object attribute functions, obj: object, nm: string, val: any value)
+       getattr(obj, nm)		get value of obj.nm
+       hasattr(obj, nm)		true if obj has nm attribute
+       setattr(obj, nm, val)	set obj.nm to val
+
+       assignment statement: 	targ1, targ2, ,,, = obj1, obj2, ,,,
+       deletion statement:	del obj1, obj2, ...
+       for loop target identifiers, 'except' clauses (see Statements, below)
+       formal params		(see Callables, below)
+       import statement		(see Modules objects, below)
+       class and func defs	(see Callables, below)
+
+      Name space linkage
+
+       global statement: global var, ...	# Interpret 'var's as globals
+     X access statement: access ...	# control inst and class vars access
+
+   @ Built-in Exceptions
+
+      AttributeError	On attribute reference or assignment failure
+      EOFError		Immediate end-of-file hit by input() or raw_input()
+      IOError		I/O-related I/O operation failure
+      ImportError	On failure of `import' to find module or name
+      IndexError	On out-of-range sequence subscript
+      KeyError		On reference to a non-existent mapping (dict) key
+      KeyboardInterrupt	On user entry of the interrupt key (often `Control-C')
+      MemoryError	On recoverable memory exhaustion
+      NameError		On failure to find a local or global (unqualified) name
+      OverflowError	On excessively large arithmetic operation
+      RuntimeError	Obsolete catch-all; define a suitable error instead
+      SyntaxError	On parser encountering a syntax error
+      SystemError	On non-fatal interpreter error - bug - report it
+      SystemExit	On `sys.exit()'
+      TypeError		On passing inappropriate type to built-in op or func
+      ValueError	On arg error not covered by TypeError or more precise
+      ZeroDivisionError	On division or modulo operation with 0 as 2nd arg
+
+    			       **** Numbers ****
+
+   @ Integers: 'C' long, >= 32 bits precision; OverflowError if bounds exceeded
+   @ Long Integers: unlimited precision - '2147483648L'
+   @ Floating point: machine double-precision floating point - '2147483648.0'
+
+     Numeric operations vs special methods		(s = self, o = other)
+
+      s+o	=  __add__(s,o)		s-o	   =  __sub__(s,o)
+      s*o	=  __mul__(s,o)		s/o	   =  __div__(s,o)
+      s%o	=  __mod__(s,o)		divmod(s,o) = __divmod__(s,o)
+      pow(s,o)	=  __pow__(s,o)
+      s&o	=  __and__(s,o)		
+      s^o	=  __xor__(s,o)		s|o	   =  __xor__(s,o)
+      s<<o	=  __lshift__(s,o)	s>>o	   =  __rshift__(s,o)
+      nonzero(s) = __nonzero__(s)	coerce(s,o) = __coerce__(s,o)
+      -s  	=  __neg__(s)		+s	   =  __pos__(s)  
+      abs(s)	=  __abs__(s)		~s	   =  __invert__(s)  (bitwise)
+      int(s)  	=  __int__(s)		long(s)	   =  __long__(s)
+      float(s)	=  __float__(s)
+      oct(s)  	=  __oct__(s)		hex(s)	   =  __hex__(s)
+
+     Numeric functions:
+
+      range(start=0,end,step=1)  create arithmetic progression list
+      round(x, n=0)		 round floating point x to n decimal places
+      xrange(start=0,end,step=1) create virtual arithmetic progressions tuple
+
+     Numeric exceptions:
+
+    ~ TypeError: raised on application of arithemetic opertion to non-number
+    ~ OverflowError: numeric bounds exceeded
+    ~ ZeroDivisionError: raised when zero second argument of div or modulo op
+
+    		**** Collections - Sequences and Mappings ****
+
+     Collections general operations vs methods  (s: self, i: index or key)
+
+      len(s)	= __len__(s)	    length of object, >= 0.  Length 0 == false
+      s[i]	= __getitem__(s,i)  Element at index/key i, origin 0
+
+     Sequences
+
+    @ String (immutable sequence): 'string contents'
+
+       'this is a string'
+       "and so is this"
+       ''' and this begins a 'multi-line' string with embedded quotes...
+       and this is the end of that string.'''
+
+       `expr`		= __repr__(expr), converts arbitrary expr to string
+       chr(int)	 	string of ascii letter at ordinate in (0 <= int < 256)
+       ord(string) 	ascii ordinate of string (string must be length 1)
+       string % arg	format operator, a la C sprintf
+         arg for single directive can be any (suitable) type
+         arg for multiple directives must be tuple or dict
+         dict (mapping) arg uses parenthesized directives that are keys into it
+         supports %, c, s, i, d, u, o, x, X, e, E, f, g, G directives
+         * can be width and precision; directs use of corresponding (int) args
+         * can not be used with dict args
+         flag characters -, +, blank, #, and 0 understood.
+         %s conversion takes any python object, converts using `str()'
+         ANSI directives %p and %n not supported
+         %s conversions do *not* take \000 as end of string
+
+    @ Tuples (immutable sequence): (oneelem, another, etc)
+
+       parens may be left off all but empty tuples
+       singletons represented by affixing a comma to an expr
+       empty tuple represented using empty parens
+
+    @ Lists (mutable sequence): [oneelem, another, etc]
+
+       assignment - must be 1-1 map of items in target and object sequences
+       deletion - similar rules as for assignment
+
+       List special methods: see mutable sequence ops vs methods, below
+
+      Sequences general ops vs methods	      (s: self, i,j: indices, v: val)
+
+       All collections general methods, plus:
+       s[i:j]	        __getslice__(s,i,j), all s[k] s.t. i <= k < j
+       min(s)		smallest item of s
+       max(s)		largest item of s
+       v [not] in s	1 if v [not] equal to an item in s, else 0
+       s + seq		concatenation of s and seq
+       s * num		num copies of s concatenated, also, `num * s'
+
+      Immutable sequence ops vs methods     (s: self, i,j: indices, v: val)
+
+       All collections and sequences general methods, plus:
+       s[i:j]	        __getslice__(s,i,j), all s[k] s.t. i <= k < j
+     ( For s[i:j], len(self) is intrinsically added to i, j < 0)
+     ( Complex elems of immutable seqs may be mutable, see dictionaries, below)
+
+      Mutable sequence ops vs methods	      (s: self, i,j: indices, v: val)
+
+       All sequences' general methods, plus:
+     ( for non-slice refs, i < 0 intrinsically has len(s) added)
+     ( For slice refs, len(s) *is not* intrinsically added to i, j < 0)
+     ( for assignment/deletion, index refs must point to existing items
+       s[i]=v		= __setitem__(s,i,v)
+       del s[i]		= __delitem__(s,i)
+       s[i:j]		= __getslice__(s,i,j)
+       s[i:j]=seq	= __setslice__(s,i,j,seq)
+       del s[i:j]	= __delslice__(s,i,j)	== s[i:j] = []
+       s.append(seq)	== `s[len(seq):len(seq)] = seq'	(but faster)
+       s.count(v)	number of i's for which `s[i] == v'
+       s.index(v)	first i such that `s[i] == v', or IndexError if none
+       s.insert(i, v)	== `s[i:i] = [v]'
+       s.remove(v)	== `del s[s.index(v)]', or IndexError if v not in s
+       s.reverse()	reverse the items of s in place
+       s.sort()		permute s items so s[i] <= s[j], for i < j
+
+     Mappings
+
+    @ Dictionaries: {key1: val1, key2: val2, ...}
+
+       built-in types as keys must be unalterable: obj & all contents immutable
+       User-defined classes as keys must have __hash__() and __cmp__() methods
+     ~ TypeError is raised if key not acceptable
+     ~ KeyError is raised if reference made using non-existent key
+       key types may vary (contrary to ref man)
+
+      Dictionaries ops vs methods		(s: self, k: key, v: val)
+
+       all collections general ops, plus:
+       hash(s)		= __hash__(s) - hash value for dictionary references
+       s[k]=v		= __setitem__(s,k,v)
+       del s[k]		= __delitem__(s,k)
+       s.items()	= a list copy of s's (key, item) pairs
+       s.keys()		= a list copy of s's keys
+       s.values()	= a list copy of s's values
+       s.has_keys(k)	= 1 if s has key k, else 0
+     ( s.items, .keys, and .values yield random but mutually consistent order)
+
+    			      **** Callables ****
+
+   @ User defined functions: 'def name (param-list): suite'
+
+      suite is not evaluated at statement execution, but at function invocation
+      function parameters, comma separated on param-list:
+      func_code: special attr, code object representing compiled function body
+      func_globals: special attr, ref to global dict of funcs definition module
+      func(arg-list)	invocation
+
+   @ User defined methods: like functions, with extra implicit arg
+
+      Same as functions, but passed class instance as additional first argument
+      im_self: special attr, method's class instance object
+      im_func: special attr, function object
+      mthd(args)	invocation, same as mthd.im_func(mthd.im_self, args)
+
+   @ Classes: 'class name[ (inheritance)]: suite'
+
+      inheritance list is evaluated, if any, to identify base classes for name
+      suite is executed in new local name space, which goes to the class object
+      class name is bound in encompassing local name space
+      container for dictionary containing class's ns dictionary
+      __dict__: ro attr, class ns as dictionary object
+      __bases__: ro attr, class' base classes in tuple
+      __init__(self, args..): implements object instantiation
+      __del__(self): implements impending object deletion
+
+   @ Class instances
+
+      __dict__: ro attr, class' attribute dictionary
+      __class__: ro attr, instance's class object
+
+     Callables special method vs ops		(f: function)
+
+      apply(f, args-tuple)	call f with args-tuple as arg list
+      compile(str, flnm, kind)	compile string into exectuable code object
+      eval(str, glbls=, lcls=)	evaluate string as expression (cond_list)
+      filter(f, seq)		=> seq of seq elems for which f is true
+      map(f, lst, [lst2, ...])	=> list of f applied to succesive lsts elems
+      reduce(f, lst, initlzr)	=> value of f applied to elems and cume result
+
+  @ 			 **** Null object: `None' ****
+
+  @		**** Type objects, print as: <type 'int'> ****
+   ( '<...>' form is only for printing - cannot be entered that way,
+
+     accessed via built-in func 'type()'
+   ( equal only when identical (same id()),
+     so can't just use the string name, must use object with the same str val)
+
+  @ 			       **** Modules ****
+
+     functions and methods in a module share module's ("global") namespace
+     function uses "global" statement to instantiate var in global context
+     Modules use "import" to incorp other module's names - see Name Spaces
+
+     Special attrs, methods, and operations
+
+      __dict__: attr, module's ns as dictionary; can modify vals but not sruct
+      __name__: ro attr, module's name as string
+      import		Instantiate module or module components within another
+      reload(amod)	Reread an imported module
+
+  @ 				**** Files ****
+
+     wrapper around a C stdio file pointer
+     sys.stdin, sys.stdout, sys.stderr are standard io-stream file objects
+
+     File operations:
+
+       open(nm, mode='r', bufsize=sysdef)    return new file object
+       close()		A closed file cannot be read or written anymore.
+       flush()		Flush the internal buffer, like stdio's `fflush()'.
+       isatty()		1 if file connected to a tty(-like) device, else 0.
+       read(SIZE) 	Read up to SIZE bytes frm file, less on EOF or no data
+       readline()	Read one entire line from the file.
+       readlines() 	`readline()' til EOF and return list  of lines read.
+       seek(OFFSET,WHENCE) Set file's current position, like stdio's `fseek()'
+       tell()		Return file's current position, like stdio's `ftell()'.
+       write(STR)	Write a string to the file.  There is no return value.
+
+     File functions:
+
+      input(prompt='')	     like raw input but accept '\' line continuations
+      print exp, exp2, ...  Write values to stdout
+      raw_input(prompt='')   prompt then read single line of input
+
+    			    **** Internal types ****
+
+   @ Code objects - represent exectuable code - function obj sans context
+   @ Frame objects - represent executable frames - may occur in traceback objs
+   @ Traceback objects - stack trace of an exception
+
+   			      Control statements
+			      ==================
+
+    		           * Calls and Evaluation *
+
+   ( See also Callables, in Objects section above, for ops and methods.)
+
+     exec: exec expr [ in expr2 [, expr3]]  # Dynamic execution of python code
+     return: return [expr]	# Leave current func call with expr value
+
+    			  * Conditionals and Loops *
+   (			See also Boolean values, above)
+
+     break: break		# Terminate nearest enclosing loop
+     continue: continue		# Continue next cycle of enclosing loop
+     if:	if cond: suite [\n elif cond: suite \n ...] [\n else: suite]
+     for:	for targs in conds: suite [ \n else: suite ]
+     while:	while cond: suite [ \n else : suite ]
+
+    				 * Exceptions *
+
+     raise: raise expr [, expr2]   # Raise exception expr, passing expr2 if any
+     try...			# Handle exceptions:
+     try: suite [\n except [cond [, targ]]: suite \n ... \n] [else: suite]
+     try: suite \n finally: suite	# Specify a 'cleanup' handler
+   ( two 'try' forms cannot be mixed together)
+
+   				System modules
+				==============
+  @			 	 * Built-ins *
+
+     sys		Interpreter state (see Operating Environment, above)
+     __builtin__	Access to all built-in python identifiers
+     __main__		Scope of the interpreters main program, script or stdin
+     array		Obj efficiently representing arrays of basic values
+     math		Math functions of C standard
+     time 		Time-related functions
+     regex		Regular expression matching operations
+     marshal		Read and write some python values in binary format
+     strop		Miscellaneous string operations
+     struct		Convert between python values and C structs
+
+  @ 				 * Standard *
+
+     getopt		Parse cmd line args in sys.argv.  A la UNIX 'getopt'.
+     os			Portable interface to OS dependent functionality
+     pdb		text-oriented debugger
+     rand		Pseudo-random generator, like C rand()
+     regsub		Functions useful for working with regular expressions
+     string		Useful string and characters functions and exceptions
+     wdb		window-oriented debugger
+     whrandom		Wichmann-Hill pseudo-random number generator
+
+  @			       * Miscellaneous *
+
+     dis		Python disassembler
+     glob		Filename globbing (a la unix shell)
+     grep		File string search
+     posixpath		Common operations on POSIX pathnames
+     profile		Python code profiler
+     repr		`...` repr operator with presentation constraints
+     string		All of builtin 'strop', plus
+     tb			Traceback browser and printer
+     tempfile		Produce a temporary-file name
+     util		Miscellaneous functions that don't belong elsewhere
+
+  @ 				   * Unix *
+
+     dbm		Dict/file-like interface to Unix ndbm database library
+     grp		Interface to Unix group database
+     posix		Standardized UNIX OS functionality - see 'os', above
+     posixpath		POSIX pathname functions - see 'os', above
+     pwd		Access to the Unix password database
+     select		Access to Unix select multiplex file synchronization
+     socket		Access to BSD socket interface
+     thread		Low-level primitives for working with process threads
+
+  @ 				* Multimedia *
+
+     audioop		Useful operations on sound fragments
+     imageop		Useful operations on images
+     jpeg		Access to jpeg image compressor and decompressor
+     rgbimg		Access SGI imglib image files
+
+  @ 			 * Cryptographic Extensions *
+
+     md5		Interface to RSA's MD5 message digest algorithm
+     mpz		Interface to int part of GNU multiple precision library
+     rotor		Implementation of a rotor-based encryption algorithm
+
+  @ 				  * Stdwin *	Standard Window System
+
+     stdwin		Standard Window System interface
+     stdwinevents	Stdwin event, command, and selection constants
+     rect		Rectangle manipulation operations
+
+  @ 				 * SGI IRIX * (4 & 5)
+
+     al		SGI audio facilities
+     AL		al constants
+     fl		Interface to FORMS library
+     FL		fl constants
+     flp	Functions for form designer
+     fm		Access to font manager library
+     gl		Access to graphics library
+     GL		Constants for gl
+     DEVICE	More constants for gl
+     imgfile	Imglib image file interface
+
+  @ 				   * Suns *
+
+     sunaudiodev	Access to sun audio interface
+
+  @ 				  * Contrib *
+
+     syslog
+
+     metalbase
+
+   			       Idioms and hints
+			       ================
+
+    Invoke main if running as script:	     if __name__ == '__main__': main()
+
+    General object-type miscellany
+     What type is someobj; eg, a list:	     if type(someobj) == type([]):
+     Convert number to hex or octal string:  hex(122)	  => '0x7a'
+     Convert string to number:		     eval('0x7a') => 122
+
+    Sequence Slice conceptualization:
+       +---+---+---+---+---+		     Indices point ~between~ chars:
+       | s | t | u | f | f |		      - first char's left edge = 0,
+       +---+---+---+---+---+		      - nth char's right edge = n.
+       0   1   2   3   4   5		     (Note that -0 == 0, so it does
+      -5  -4  -3  -2  -1		      not count from right.)
+
+    Sequences miscellany:
+     Create merge of lists:		     map(None, lst1, lst2, ...)
+     It's faster to list.append(elem) than to list[len(list):] = [elem]
+     Copy structure of seq a to b:	     b = a[:]
+
+    Comma (tuple vs expression grouping) nuances:
+     to specify a tuple of one element:	     ('element',)
+     to specify a tuple containing 1 tuple: (('contained', 'tuple'),)
+     "TypeError: call of non-function" often means a list missing a comma
+
+    Namespace and object surveillance:
+     get dictful object keys/key-vals:	     dir(), vars()
+     Current context globals:		     eval(__name__ + '.__dict__')
+     Current context locals:		     vars()
+     Methods supported by X (some objs):     X.__methods__	
+     X's data attributes (some objs):	     X.__members__	
