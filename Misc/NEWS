@@ -18,36 +18,38 @@ http://starship.python.net/crew/amk/python/writing/new-python/.
 What's new in 2.0 beta 2 (since beta 1)?
 ========================================
 
+
 Core language, builtins, and interpreter
 
 - Add support for unbounded ints in %d,i,u,x,X,o formats; for example
-  "%d" % 2L**64 == "18446744073709551616"
+  "%d" % 2L**64 == "18446744073709551616".
 
-- Add -h and -V flags to print the usage message and Python version
-  number and exit immediately.polation.  
+- Add -h and -V command line options to print the usage message and
+  Python version number and exit immediately.
+
 
 Standard library and extensions
 
-- array: reverse method of array now works.  buffer_info now does
+- array: reverse() method of array now works.  buffer_info() now does
   argument checking; it still takes no arguments.
 
-- asyncore/asynchat: included most recent version from Sam Rushing
+- asyncore/asynchat: Included most recent version from Sam Rushing.
 
-- cgi: accept & or ; as separate characters when parsing form data
+- cgi: Accept '&' or ';' as separator characters when parsing form data.
 
-- CGIHTTPServer: now works on Windows (and perhaps even Mac).
+- CGIHTTPServer: Now works on Windows (and perhaps even Mac).
 
 - ConfigParser: When reading the file, options spelled in upper case
-  letters are now accessible.
+  letters are now correctly converted to lowercase.
 
 - copy: Copy Unicode objects atomically.
 
-- cPickle: fails gracefully when copy_reg can't be imported
+- cPickle: Fail gracefully when copy_reg can't be imported.
 
-- cStringIO: implemented readlines method.
+- cStringIO: Implemented readlines() method.
 
-- dbm: Add set and setdefault methods to dbm object.  Add constant
-  library to module that names the library used.  Better doc strings
+- dbm: Add set() and setdefault() methods to dbm object.  Add constant
+  `library' to module that names the library used.  Better doc strings
   and argument checking.  Uses configure to determine which ndbm.h
   file to include; Berkeley DB's nbdm is now an option.
 
@@ -61,38 +63,39 @@ Standard library and extensions
   found by the collector will be saved in gc.garbage.  This is useful
   for debugging a program that creates reference cycles.
 
-- httplib: Three changes.  Restore support for set_debuglevel feature
+- httplib: Three changes: Restore support for set_debuglevel feature
   of HTTP class.  Do not close socket on zero-length response.  Do not
   crash when server sends invalid content-length header.
 
-- mailbox: XXX conformance to maildir specification ???
+- mailbox: Mailbox class conforms better to qmail specifications.
 
-- operator: Add contains, invert, __invert__ as aliases for
-  __contains__, inv, and __inv__ respectively.
+- operator: Add contains(), invert(), __invert__() as aliases for
+  __contains__(), inv(), and __inv__() respectively.
 
-- os: Add support for popen2 and popen3 on all platforms where fork
-  exists.  
+- os: Add support for popen2() and popen3() on all platforms where
+  fork() exists.  (popen4() is still in the works.)
 
-- os: (Windows only) Add startfile function that acts like double-
+- os: (Windows only:) Add startfile() function that acts like double-
   clicking on a file in Explorer (or passing the file name to the
   DOS "start" command).
 
-- os.path: (Windows, DOS) Treat trailing colon correctly in
+- os.path: (Windows, DOS:) Treat trailing colon correctly in
   os.path.join.  os.path.join("a:", "b") yields "a:b".
 
 - pickle: Now raises ValueError when an invalid pickle that contains
   a non-string repr where a string repr was expected.  This behavior
   matches cPickle.
 
-- posixfile: XXX remove __del__ method ???
+- posixfile: Remove broken __del__() method.
 
-- py_compile: support \r in source file
+- py_compile: support CR+LF line terminators in source file.
 
 - readline: Does not immediately exit when ^C is hit when readline and
-  threads are configured.  Adds defintion of rl_library_version.
+  threads are configured.  Adds defintion of rl_library_version.  (The
+  latter addition requires GNU readline 2.2 or later.)
 
 - rfc822: Domain literals returned by AddrlistClass method
-  getdomainliteral are now properly wrapped in brackets.
+  getdomainliteral() are now properly wrapped in brackets.
 
 - site: sys.setdefaultencoding() should only be called in case the
   standard default encoding ("ascii") is changed. This saves quite a
@@ -100,29 +103,29 @@ Standard library and extensions
   setdefaultencoding() will initialize the codec registry and the
   encodings package.
 
-- socket: Support for size hint in readlines method of object returned
-  by makefile.
+- socket: Support for size hint in readlines() method of object returned
+  by makefile().
 
-- sre: Added experimental expand method to match objects.  Does not
+- sre: Added experimental expand() method to match objects.  Does not
   user buffer interface on Unicode strings.  Does not hang if group id
   is followed by whitespace.
 
-- StringIO: size hint in readlines is now supported as documented. 
+- StringIO: size hint in readlines() is now supported as documented. 
 
 - struct: Check ranges for bytes and shorts.
 
 - urllib: Improved handling of win32 proxy settings. Fixed quote and
-  quote_plus functions so that the always encode a comma ','.
+  quote_plus functions so that the always encode a comma.
 
 - Tkinter: Image objects are now guaranteed to have unique ids.  Set
   event.delta to zero if Tk version doesn't support mousewheel.
   Removed some debugging prints.
 
-- UserList: now implements __contains__.
+- UserList: now implements __contains__().
 
-- webbrower: On Windows, use os.startfile instead of os.popen, which
-  works around a bug in certain versions of Norton AntiVirus that
-  leads directly to a Blue Screen freeze.
+- webbrower: On Windows, use os.startfile() instead of os.popen(),
+  which works around a bug in Norton AntiVirus 2000 that leads directly
+  to a Blue Screen freeze.
 
 - xml: New version detection code allows PyXML to override standard
   XML package if PyXML version is greater than 0.6.1.
@@ -132,6 +135,7 @@ Standard library and extensions
 - xml.sax: XXX
 
 - XXX pyexpat: XXX
+
 
 C API
 
@@ -143,38 +147,47 @@ C API
   removed and add #error to Python.h if NULL isn't defined after
   #include of stdio.h.
 
-- Py_PROTO macros that were removed in 2.0b1 have been restored for
+- Py_PROTO() macros that were removed in 2.0b1 have been restored for
   backwards compatibility (at the source level) with old extensions.
 
-- XXX PyOS_sighandler_t, PyOS_getsig, PyOS_setsig
+- A wrapper API was added for signal() and sigaction().  Instead of
+  either function, always use PyOS_getsig() to get a signal handler
+  and PyOS_setsig() to set one.  A new convenience typedef
+  PyOS_sighandler_t is defined for the type of signal handlers.
 
-- Add PyString_AsStringAndSize call that provides access to the
+- Add PyString_AsStringAndSize() function that provides access to the
   internal data buffer and size of a string object -- or the default
   encoded version of a Unicode object.
+
+- The standard header <limits.h> is now included by Python.h (if it
+  exists).
+
 
 Internals
 
 - On Unix, fix code for finding Python installation directory so that
   it works when argv[0] is a relative path.
 
-- Added a true unicode_internal_encode function and fixed the
-  unicode_internal_decode function to support Unicode objects directly
+- Added a true unicode_internal_encode() function and fixed the
+  unicode_internal_decode function() to support Unicode objects directly
   rather than by generating a copy of the object.
 
 - Several of the internal Unicode tables are much smaller now, and
   the source code should be much friendlier to weaker compilers.
 
+
 Build and platform-specific issues
 
 - Better support of GNU Pth via --with-pth configure option.
 
-- Fix linker problems on Reliant UNIX
+- Fix linker problems on Reliant UNIX.
 
 - Changes for the benefit of SunOS 4.1.4 (really!).  mmapmodule.c:
   Don't define MS_SYNC to be zero when it is undefined.  Added missing
   prototypes in posixmodule.c.
 
-- Improved support for HP-UX build
+- Improved support for HP-UX build -- threads should now be correctly
+  configured (on HP-UX 10.20 and 11.00).
 
 
 What's new in 2.0 beta 1?
@@ -289,7 +302,7 @@ from another list (or lists).  The simplest form is:
     [<expression> for <variable> in <sequence>]
 
 For example, [i**2 for i in range(4)] yields the list [0, 1, 4, 9].
-This is more efficient than map() with a lambda.
+This is more efficient than a for loop with a list.append() call.
 
 You can also add a condition:
 
@@ -297,7 +310,7 @@ You can also add a condition:
 
 For example, [w for w in words if w == w.lower()] would yield the list
 of words that contain no uppercase characters.  This is more efficient
-than filter() with a lambda.
+than a for loop with an if statement and a list.append() call.
 
 You can also have nested for loops and more than one 'if' clause.  For
 example, here's a function that flattens a sequence of sequences::
@@ -614,5 +627,26 @@ to ensure that Tcl/Tk can find all its files.
 
 [This was new in 1.6] The Windows installer now installs by default in
 \Python20\ on the default volume, instead of \Program Files\Python-2.0\.
+
+
+Updates to the changes between 1.5.2 and 1.6
+--------------------------------------------
+
+The 1.6 NEWS file can't be changed after the release is done, so here
+is some late-breaking news:
+
+New APIs in locale.py: normalize(), getdefaultlocale(), resetlocale(),
+and changes to getlocale() and setlocale().
+
+The new module is now enabled per default.
+
+It is not true that the encodings codecs cannot be used for normal
+strings: the string.encode() (which is also present on 8-bit strings
+!) allows using them for 8-bit strings too, e.g. to convert files from
+cp1252 (Windows) to latin-1 or vice-versa.
+
+Japanese codecs are available from Tamito KAJIYAMA:
+http://pseudo.grad.sccs.chukyo-u.ac.jp/~kajiyama/python/
+
 
 ======================================================================
