@@ -350,13 +350,13 @@ class addinfo(addbase):
 
 def basejoin(base, url):
 	type, path = splittype(url)
-	if type: return url
 	host, path = splithost(path)
+	if type and host: return url
 	basetype, basepath = splittype(base)
 	basehost, basepath = splithost(basepath)
 	basepath, basetag = splittag(basepath)
 	basepath, basequery = splitquery(basepath)
-	type = basetype or 'file'
+	if not type: type = basetype or 'file'
 	if path[:1] != '/':
 		i = string.rfind(basepath, '/')
 		if i < 0: basepath = '/'
