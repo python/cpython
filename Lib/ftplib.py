@@ -339,7 +339,7 @@ class FTP:
 		The argument is a RETR or LIST command.
 		The callback function (2nd argument) is called for each line,
 		with trailing CRLF stripped.  This creates a new port for you.
-		print_lines is the default callback.'''
+		print_line() is the default callback.'''
 		if not callback: callback = print_line
 		resp = self.sendcmd('TYPE A')
 		conn = self.transfercmd(cmd)
