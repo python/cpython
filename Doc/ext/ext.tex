@@ -51,10 +51,7 @@ functions and modules (both built-in and written in Python) that give
 the language its wide application range.
 
 For a detailed description of the whole Python/C API, see the separate
-\emph{Python/C API Reference Manual}.  \strong{Note:} While that
-manual is still in a state of flux, it is safe to say that it is much
-more up to date than the manual you're reading currently (which has
-been in need for an upgrade for some time now).
+\emph{Python/C API Reference Manual}.
 
 
 \end{abstract}
@@ -62,11 +59,8 @@ been in need for an upgrade for some time now).
 \tableofcontents
 
 
-\chapter{Extending Python with C or \Cpp{} code}
+\chapter{Extending Python with C or \Cpp{} \label{intro}}
 
-
-%\section{Introduction}
-\label{intro}
 
 It is quite easy to add new built-in modules to Python, if you know
 how to program in C.  Such \dfn{extension modules} can do two things
@@ -753,9 +747,7 @@ Some example calls:
     long k, l;
     char *s;
     int size;
-\end{verbatim}
 
-\begin{verbatim}
     ok = PyArg_ParseTuple(args, ""); /* No arguments */
         /* Python call: f() */
 \end{verbatim}
@@ -1016,10 +1008,9 @@ Examples (to the left the call, to the right the resulting Python value):
                   1, 2, 3, 4, 5, 6)          (((1, 2), (3, 4)), (5, 6))
 \end{verbatim}
 
+
 \section{Reference Counts
          \label{refcounts}}
-
-%\subsection{Introduction}
 
 In languages like C or \Cpp{}, the programmer is responsible for
 dynamic allocation and deallocation of memory on the heap.  In C,
@@ -1129,6 +1120,7 @@ which the reference was borrowed --- it creates a new owned reference,
 and gives full owner responsibilities (i.e., the new owner must
 dispose of the reference properly, as well as the previous owner).
 
+
 \subsection{Ownership Rules
             \label{ownershipRules}}
 
@@ -1178,6 +1170,7 @@ on, it must be turned into an owned reference by calling
 The object reference returned from a C function that is called from
 Python must be an owned reference --- ownership is tranferred from the
 function to its caller.
+
 
 \subsection{Thin Ice
             \label{thinIce}}
@@ -1260,6 +1253,7 @@ bug(PyObject *list) {
     PyObject_Print(item, stdout, 0); /* BUG! */
 }
 \end{verbatim}
+
 
 \subsection{NULL Pointers
             \label{nullPointers}}
@@ -1413,10 +1407,13 @@ spam_system(self, args)
 \end{verbatim}
 
 In the beginning of the module, right after the line
+
 \begin{verbatim}
 #include "Python.h"
 \end{verbatim}
+
 two more lines must be added:
+
 \begin{verbatim}
 #define SPAM_MODULE
 #include "spammodule.h"
@@ -1426,6 +1423,7 @@ The \code{\#define} is used to tell the header file that it is being
 included in the exporting module, not a client module. Finally,
 the module's initialization function must take care of initializing
 the C API pointer array:
+
 \begin{verbatim}
 void
 initspam()
@@ -1580,15 +1578,16 @@ ExtensionClass ExtensionClass.c
 \end{verbatim}
 
 This is the simplest form of a module definition line.  It defines a
-dule, \module{ExtensionClass}, which has a single source file,
+module, \module{ExtensionClass}, which has a single source file,
 \file{ExtensionClass.c}.
 
-Here is a slightly more complex example that uses an \strong{-I}
-option to specify an include directory:
+This slightly more complex example uses an \strong{-I} option to
+specify an include directory:
 
 \begin{verbatim}
+EC=/projects/ExtensionClass
 cPersistence cPersistence.c -I$(EC)
-\end{verbatim}
+\end{verbatim} % $ <-- bow to font lock
 
 This example also illustrates the format for variable references.
 
@@ -1614,7 +1613,7 @@ Here is a complete \file{Setup} file for building a
 # include file.
 EC=/projects/ExtensionClass
 cPersistence cPersistence.c -I$(EC)
-\end{verbatim}
+\end{verbatim} % $ <-- bow to font lock
 
 After the \file{Setup} file has been created, \file{Makefile.pre.in}
 is run with the \samp{boot} target to create a make file:
@@ -1634,7 +1633,8 @@ It's not necessary to re-run \file{Makefile.pre.in} if the
 \file{Setup} file is changed.  The make file automatically rebuilds
 itself if the \file{Setup} file changes.
 
-\section{Building Custom Interpreters}
+
+\section{Building Custom Interpreters \label{custom-interps}}
 
 The make file built by \file{Makefile.pre.in} can be run with the
 \samp{static} target to build an interpreter:
@@ -1648,7 +1648,8 @@ will be statically linked into the interpreter.  Typically, a
 \samp{*shared*} line is omitted from the Setup file when a custom
 interpreter is desired.
 
-\section{Module Definition Options}
+
+\section{Module Definition Options \label{module-defn-options}}
 
 Several compiler options are supported:
 
@@ -1666,13 +1667,13 @@ Other compiler options can be included (snuck in) by putting them
 in variable variables.
 
 Source files can include files with \file{.c}, \file{.C}, \file{.cc},
-and \file{.c++} extensions. 
+\file{.cpp}, \file{.cxx}, and \file{.c++} extensions. 
 
-Other input files include files with \file{.o} or \file{.a}
-extensions.
+Other input files include files with \file{.a}, \file{.o}, \file{.sl}, 
+and \file{.so} extensions.
 
 
-\section{Example}
+\section{Example \label{module-defn-example}}
 
 Here is a more complicated example from \file{Modules/Setup.in}:
 
@@ -1703,7 +1704,9 @@ It is a good idea to include a copy of \file{Makefile.pre.in} for
 people who do not have a source distribution of Python.
 
 Do not distribute a make file.  People building your modules
-should use \file{Makefile.pre.in} to build their own make file.
+should use \file{Makefile.pre.in} to build their own make file.  A
+\file{README} file included in the package should provide simple
+instructions to perform the build.
 
 Work is being done to make building and installing Python extensions
 easier for all platforms; this work in likely to supplant the current
@@ -1723,6 +1726,7 @@ detailed background information on how it works.  The explanatory
 material is useful for both the Windows programmer learning to build
 Python extensions and the \UNIX{} programming interested in producing
 software which can be successfully built on both \UNIX{} and Windows.
+
 
 \section{A Cookbook Approach \label{win-cookbook}}
 
