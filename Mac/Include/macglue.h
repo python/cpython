@@ -22,10 +22,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-#ifndef SystemSevenOrLater
-#define SystemSevenOrLater 1
-#endif
-
 #include <Types.h>
 #include <Files.h>
 #include <Events.h>
@@ -44,10 +40,6 @@ typedef struct {
 	double		bg_yield;		/* yield at most so long when in background */
 } PyMacSchedParams;
 
-
-#ifdef GENERATINGCFM				/* Defined to 0 or 1 in Universal headers */
-#define HAVE_UNIVERSAL_HEADERS
-#endif
 
 #ifdef USE_GUSI1
 void PyMac_FixGUSIcd(void);		/* Workaround for GUSI chdir() call */

@@ -36,12 +36,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <ToolUtils.h>
 #include <OSUtils.h>
 
-#ifndef HAVE_UNIVERSAL_HEADERS
-#define ConnectionCompletionUPP ProcPtr
-#define ConnectionChooseIdleUPP ProcPtr
-#define NewConnectionCompletionProc(x) (x)
-#define NewConnectionChooseIdleProc(x) (x)
-#endif
 
 #define 	_UnimplementedToolTrap	0xA89F
 #define 	_CommToolboxTrap		0x8B

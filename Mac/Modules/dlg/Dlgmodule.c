@@ -10,10 +10,6 @@
 
 #include <Dialogs.h>
 
-#ifndef HAVE_UNIVERSAL_HEADERS
-#define NewModalFilterProc(x) (x)
-#endif
-
 /* XXX Shouldn't this be a stack? */
 static PyObject *Dlg_FilterProc_callback = NULL;
 
