@@ -108,7 +108,7 @@ class AbstractFormatter:
     def add_hor_rule(self, *args, **kw):
         if not self.hard_break:
             self.writer.send_line_break()
-        apply(self.writer.send_hor_rule, args, kw)
+        self.writer.send_hor_rule(*args, **kw)
         self.hard_break = self.nospace = 1
         self.have_label = self.para_end = self.softspace = self.parskip = 0
 

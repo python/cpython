@@ -251,7 +251,7 @@ class Folder:
 
     def error(self, *args):
         """Error message handler."""
-        apply(self.mh.error, args)
+        self.mh.error(*args)
 
     def getfullname(self):
         """Return the full pathname of the folder."""

@@ -471,7 +471,7 @@ class Trace:
         if not self.donothing:
             sys.settrace(self.globaltrace)
         try:
-            result = apply(func, args, kw)
+            result = func(*args, **kw)
         finally:
             if not self.donothing:
                 sys.settrace(None)

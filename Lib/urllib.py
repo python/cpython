@@ -293,7 +293,7 @@ class URLopener:
             h.putrequest('GET', selector)
         if auth: h.putheader('Authorization', 'Basic %s' % auth)
         if realhost: h.putheader('Host', realhost)
-        for args in self.addheaders: apply(h.putheader, args)
+        for args in self.addheaders: h.putheader(*args)
         h.endheaders()
         if data is not None:
             h.send(data)
@@ -371,7 +371,7 @@ class URLopener:
                 h.putrequest('GET', selector)
             if auth: h.putheader('Authorization: Basic %s' % auth)
             if realhost: h.putheader('Host', realhost)
-            for args in self.addheaders: apply(h.putheader, args)
+            for args in self.addheaders: h.putheader(*args)
             h.endheaders()
             if data is not None:
                 h.send(data)
@@ -541,7 +541,7 @@ class FancyURLopener(URLopener):
     """Derived class with handlers for errors we can handle (perhaps)."""
 
     def __init__(self, *args, **kwargs):
-        apply(URLopener.__init__, (self,) + args, kwargs)
+        URLopener.__init__(self, *args, **kwargs)
         self.auth_cache = {}
         self.tries = 0
         self.maxtries = 10
@@ -804,7 +804,7 @@ class addclosehook(addbase):
     def close(self):
         addbase.close(self)
         if self.closehook:
-            apply(self.closehook, self.hookargs)
+            self.closehook(*self.hookargs)
             self.closehook = None
             self.hookargs = None
 

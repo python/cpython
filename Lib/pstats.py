@@ -76,7 +76,7 @@ class Stats:
             arg = args[0]
             args = args[1:]
         self.init(arg)
-        apply(self.add, args)
+        self.add(*args)
 
     def init(self, arg):
         self.all_callees = None  # calc only if needed
@@ -134,7 +134,7 @@ class Stats:
 
     def add(self, *arg_list):
         if not arg_list: return self
-        if len(arg_list) > 1: apply(self.add, arg_list[1:])
+        if len(arg_list) > 1: self.add(*arg_list[1:])
         other = arg_list[0]
         if type(self) != type(other) or self.__class__ != other.__class__:
             other = Stats(other)
@@ -528,7 +528,7 @@ if __name__ == '__main__':
                     pass
                 processed.append(term)
             if self.stats:
-                apply(getattr(self.stats, fn), processed)
+                getattr(self.stats, fn)(*processed)
             else:
                 print "No statistics object is loaded."
             return 0
@@ -594,7 +594,7 @@ if __name__ == '__main__':
         def do_sort(self, line):
             abbrevs = self.stats.get_sort_arg_defs()
             if line and not filter(lambda x,a=abbrevs: x not in a,line.split()):
-                apply(self.stats.sort_stats, line.split())
+                self.stats.sort_stats(*line.split())
             else:
                 print "Valid sort keys (unique prefixes are accepted):"
                 for (key, value) in Stats.sort_arg_dict_default.iteritems():

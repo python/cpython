@@ -1,6 +1,5 @@
 from test.test_support import TestFailed, verbose, verify
 import struct
-## import pdb
 
 import sys
 ISBIGENDIAN = sys.byteorder == "big"
@@ -21,23 +20,21 @@ def bigendian_to_native(value):
 
 def simple_err(func, *args):
     try:
-        apply(func, args)
+        func(*args)
     except struct.error:
         pass
     else:
         raise TestFailed, "%s%s did not raise struct.error" % (
             func.__name__, args)
-##      pdb.set_trace()
 
 def any_err(func, *args):
     try:
-        apply(func, args)
+        func(*args)
     except (struct.error, OverflowError, TypeError):
         pass
     else:
         raise TestFailed, "%s%s did not raise error" % (
             func.__name__, args)
-##      pdb.set_trace()
 
 
 simple_err(struct.calcsize, 'Z')

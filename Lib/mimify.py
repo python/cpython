@@ -461,4 +461,4 @@ if __name__ == '__main__' or (len(sys.argv) > 0 and sys.argv[0] == 'mimify'):
         encode_args = (args[0], args[1])
     if decode_base64:
         encode_args = encode_args + (decode_base64,)
-    apply(encode, encode_args)
+    encode(*encode_args)

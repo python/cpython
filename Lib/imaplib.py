@@ -579,9 +579,9 @@ class IMAP4:
         """
         name = 'SEARCH'
         if charset:
-            typ, dat = apply(self._simple_command, (name, 'CHARSET', charset) + criteria)
+            typ, dat = self._simple_command(name, 'CHARSET', charset, *criteria)
         else:
-            typ, dat = apply(self._simple_command, (name,) + criteria)
+            typ, dat = self._simple_command(name, *criteria)
         return self._untagged_response(typ, dat, name)
 
 
@@ -642,7 +642,7 @@ class IMAP4:
         #       raise self.error('unimplemented extension command: %s' % name)
         if (sort_criteria[0],sort_criteria[-1]) != ('(',')'):
             sort_criteria = '(%s)' % sort_criteria
-        typ, dat = apply(self._simple_command, (name, sort_criteria, charset) + search_criteria)
+        typ, dat = self._simple_command(name, sort_criteria, charset, *search_criteria)
         return self._untagged_response(typ, dat, name)
 
 
@@ -692,7 +692,7 @@ class IMAP4:
             raise self.error('command %s illegal in state %s'
                                     % (command, self.state))
         name = 'UID'
-        typ, dat = apply(self._simple_command, (name, command) + args)
+        typ, dat = self._simple_command(name, command, *args)
         if command in ('SEARCH', 'SORT'):
             name = command
         else:
@@ -723,7 +723,7 @@ class IMAP4:
         #    raise self.error('unknown extension command: %s' % name)
         if not name in Commands:
             Commands[name] = (self.state,)
-        return apply(self._simple_command, (name,) + args)
+        return self._simple_command(name, *args)
 
 
 
@@ -995,7 +995,7 @@ class IMAP4:
 
     def _simple_command(self, name, *args):
 
-        return self._command_complete(name, apply(self._command, (name,) + args))
+        return self._command_complete(name, self._command(name, *args))
 
 
     def _untagged_response(self, typ, dat, name):
@@ -1040,7 +1040,7 @@ class IMAP4:
             i, n = self._cmd_log_idx, self._cmd_log_len
             while n:
                 try:
-                    apply(self._mesg, self._cmd_log[i])
+                    self._mesg(*self._cmd_log[i])
                 except:
                     pass
                 i += 1
@@ -1390,7 +1390,7 @@ if __name__ == '__main__':
 
     def run(cmd, args):
         M._mesg('%s %s' % (cmd, args))
-        typ, dat = apply(getattr(M, cmd), args)
+        typ, dat = getattr(M, cmd)(*args)
         M._mesg('%s => %s %s' % (cmd, typ, dat))
         if typ == 'NO': raise dat[0]
         return dat

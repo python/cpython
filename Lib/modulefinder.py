@@ -97,13 +97,13 @@ class ModuleFinder:
         level = args[0]
         if level <= self.debug:
             self.indent = self.indent + 1
-            apply(self.msg, args)
+            self.msg(*args)
 
     def msgout(self, *args):
         level = args[0]
         if level <= self.debug:
             self.indent = self.indent - 1
-            apply(self.msg, args)
+            self.msg(*args)
 
     def run_script(self, pathname):
         self.msg(2, "run_script", pathname)

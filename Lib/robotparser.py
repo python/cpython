@@ -230,7 +230,7 @@ class Entry:
 
 class URLopener(urllib.FancyURLopener):
     def __init__(self, *args):
-        apply(urllib.FancyURLopener.__init__, (self,) + args)
+        urllib.FancyURLopener.__init__(self, *args)
         self.errcode = 200
 
     def http_error_default(self, url, fp, errcode, errmsg, headers):

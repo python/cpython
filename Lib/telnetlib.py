@@ -311,7 +311,7 @@ class Telnet:
         s_args = s_reply
         if timeout is not None:
             s_args = s_args + (timeout,)
-        while not self.eof and apply(select.select, s_args) == s_reply:
+        while not self.eof and select.select(*s_args) == s_reply:
             i = max(0, len(self.cookedq)-n)
             self.fill_rawq()
             self.process_rawq()

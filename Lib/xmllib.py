@@ -809,7 +809,7 @@ class TestXMLParser(XMLParser):
 
     def __init__(self, **kw):
         self.testdata = ""
-        apply(XMLParser.__init__, (self,), kw)
+        XMLParser.__init__(self, **kw)
 
     def handle_xml(self, encoding, standalone):
         self.flush()

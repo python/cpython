@@ -83,7 +83,7 @@ class _Verbose:
 
     def note(self, *args):
         if self.verbose:
-            apply(self.message, args)
+            self.message(*args)
 
     def message(self, format, *args):
         if args:
@@ -194,7 +194,7 @@ class Hooks(_Verbose):
     def path_islink(self, x): return os.path.islink(x)
     # etc.
 
-    def openfile(self, *x): return apply(open, x)
+    def openfile(self, *x): return open(*x)
     openfile_error = IOError
     def listdir(self, x): return os.listdir(x)
     listdir_error = os.error

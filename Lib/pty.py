@@ -163,7 +163,7 @@ def spawn(argv, master_read=_read, stdin_read=_read):
         argv = (argv,)
     pid, master_fd = fork()
     if pid == CHILD:
-        apply(os.execlp, (argv[0],) + argv)
+        os.execlp(argv[0], *argv)
     try:
         mode = tty.tcgetattr(STDIN_FILENO)
         tty.setraw(STDIN_FILENO)

@@ -416,7 +416,7 @@ class Profile:
         self.set_cmd(`func`)
         sys.setprofile(self.dispatcher)
         try:
-            return apply(func, args, kw)
+            return func(*args, **kw)
         finally:
             sys.setprofile(None)
 

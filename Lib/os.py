@@ -271,7 +271,7 @@ def _execvpe(file, args, env=None):
 
     head, tail = path.split(file)
     if head:
-        apply(func, (file,) + argrest)
+        func(file, *argrest)
         return
     if 'PATH' in env:
         envpath = env['PATH']
@@ -283,7 +283,7 @@ def _execvpe(file, args, env=None):
     for dir in PATH:
         fullname = path.join(dir, file)
         try:
-            apply(func, (fullname,) + argrest)
+            func(fullname, *argrest)
         except error, e:
             tb = sys.exc_info()[2]
             if (e.errno != ENOENT and e.errno != ENOTDIR

@@ -41,7 +41,7 @@ __all__ = ["NNTP","NNTPReplyError","NNTPTemporaryError",
 class NNTPError(Exception):
     """Base class for all nntplib exceptions"""
     def __init__(self, *args):
-        apply(Exception.__init__, (self,)+args)
+        Exception.__init__(self, *args)
         try:
             self.response = args[0]
         except IndexError:

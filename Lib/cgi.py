@@ -88,7 +88,7 @@ def initlog(*allargs):
         log = nolog
     else:
         log = dolog
-    apply(log, allargs)
+    log(*allargs)
 
 def dolog(fmt, *args):
     """Write a log message to the log file.  See initlog() for docs."""

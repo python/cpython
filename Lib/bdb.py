@@ -385,7 +385,7 @@ class Bdb:
         res = None
         try:
             try:
-                res = apply(func, args)
+                res = func(*args)
             except BdbQuit:
                 pass
         finally:
