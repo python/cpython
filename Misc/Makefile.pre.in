@@ -95,7 +95,8 @@ TARGET=		python
 PYTHON=		python
 
 # Add more -I and -D options here
-CFLAGS=		$(OPT) -I$(INCLUDEPY) -I$(EXECINCLUDEPY) $(DEFS)
+CFLAGS=		$(OPT)
+CPPFLAGS=	-I$(INCLUDEPY) -I$(EXECINCLUDEPY) $(DEFS)
 
 # These two variables can be set in Setup to merge extensions.
 # See example[23].
@@ -228,7 +229,7 @@ do-it-again:
 
 # Make config.o from the config.c created by makesetup
 config.o:	config.c
-		$(CC) $(CFLAGS) -c config.c
+		$(CC) $(CFLAGS) $(CPPFLAGS) -c config.c
 
 # Setup is copied from Setup.in *only* if it doesn't yet exist
 Setup:

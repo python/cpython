@@ -19,7 +19,7 @@ def makemakefile(outfp, makevars, files, target):
             base = os.path.basename(file)
             dest = base[:-2] + '.o'
             outfp.write("%s: %s\n" % (dest, file))
-            outfp.write("\t$(CC) $(CFLAGS) -c %s\n" % file)
+            outfp.write("\t$(CC) $(CFLAGS) $(CPPFLAGS) -c %s\n" % file)
             files[i] = dest
             deps.append(dest)
 
