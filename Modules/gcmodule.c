@@ -819,7 +819,9 @@ _PyObject_GC_Track(PyObject *op)
 void
 _PyObject_GC_UnTrack(PyObject *op)
 {
-	_PyObject_GC_UNTRACK(op);
+	PyGC_Head *gc = AS_GC(op);
+	if (gc->gc.gc_next != NULL)
+		_PyObject_GC_UNTRACK(op);
 }
 
 PyObject *
