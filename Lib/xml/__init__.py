@@ -13,11 +13,10 @@ sax -- The Simple API for XML, developed by XML-Dev, led by David
 """
 
 
-if __name__ == "xml":
-    try:
-        import _xmlplus
-    except ImportError:
-        pass
-    else:
-        import sys
-        sys.modules[__name__] = _xmlplus
+try:
+    import _xmlplus
+except ImportError:
+    pass
+else:
+    import sys
+    sys.modules[__name__] = _xmlplus
