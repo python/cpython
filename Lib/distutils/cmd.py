@@ -353,7 +353,7 @@ class install_misc (Command):
 
     def initialize_options (self):
         self.install_dir = None
-        self.outfiles = None
+        self.outfiles = []
 
     def _install_dir_from (self, dirname):
         self.set_undefined_options('install', (dirname, 'install_dir'))
