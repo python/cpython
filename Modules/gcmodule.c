@@ -39,6 +39,7 @@ static PyGC_Head generation2 = {&generation2, &generation2, 0};
 static int generation = 0; /* current generation being collected */
 
 /* collection frequencies, XXX tune these */
+static int enabled = 1; /* automatic collection enabled? */
 static int threshold0 = 100; /* net new containers before collection */
 static int threshold1 = 10;  /* generation0 collections before collecting 1 */
 static int threshold2 = 10;  /* generation1 collections before collecting 2 */
@@ -492,7 +493,7 @@ _PyGC_Insert(PyObject *op)
 		abort();
 	}
 #endif
-	if (threshold0 && allocated > threshold0 && !collecting) {
+	if (allocated > threshold0 && enabled && threshold0 && !collecting) {
 		collecting++;
 		collect_generations();
 		collecting--;
@@ -516,15 +517,68 @@ _PyGC_Remove(PyObject *op)
 	}
 }
 
+static char gc_enable__doc__[] =
+"enable() -> None\n"
+"\n"
+"Enable automatic garbage collection.\n"
+;
 
-static char collect__doc__[] =
+static PyObject *
+gc_enable(PyObject *self, PyObject *args)
+{
+
+	if (!PyArg_ParseTuple(args, ":enable"))	/* check no args */
+		return NULL;
+
+	enabled = 1;
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char gc_disable__doc__[] =
+"disable() -> None\n"
+"\n"
+"Disable automatic garbage collection.\n"
+;
+
+static PyObject *
+gc_disable(PyObject *self, PyObject *args)
+{
+
+	if (!PyArg_ParseTuple(args, ":disable"))	/* check no args */
+		return NULL;
+
+	enabled = 0;
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char gc_isenabled__doc__[] =
+"isenabled() -> status\n"
+"\n"
+"Returns true if automatic garbage collection is enabled.\n"
+;
+
+static PyObject *
+gc_isenabled(PyObject *self, PyObject *args)
+{
+
+	if (!PyArg_ParseTuple(args, ":isenabled"))	/* check no args */
+		return NULL;
+
+	return Py_BuildValue("i", enabled);
+}
+
+static char gc_collect__doc__[] =
 "collect() -> n\n"
 "\n"
 "Run a full collection.  The number of unreachable objects is returned.\n"
 ;
 
 static PyObject *
-Py_collect(PyObject *self, PyObject *args)
+gc_collect(PyObject *self, PyObject *args)
 {
 	long n;
 
@@ -539,7 +593,7 @@ Py_collect(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", n);
 }
 
-static char set_debug__doc__[] = 
+static char gc_set_debug__doc__[] = 
 "set_debug(flags) -> None\n"
 "\n"
 "Set the garbage collection debugging flags. Debugging information is\n"
@@ -556,7 +610,7 @@ static char set_debug__doc__[] =
 ;
 
 static PyObject *
-Py_set_debug(PyObject *self, PyObject *args)
+gc_set_debug(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, "l:get_debug", &debug))
 		return NULL;
@@ -565,14 +619,14 @@ Py_set_debug(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char get_debug__doc__[] = 
+static char gc_get_debug__doc__[] = 
 "get_debug() -> flags\n"
 "\n"
 "Get the garbage collection debugging flags.\n"
 ;
 
 static PyObject *
-Py_get_debug(PyObject *self, PyObject *args)
+gc_get_debug(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":get_debug"))	/* no args */
 		return NULL;
@@ -580,7 +634,7 @@ Py_get_debug(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", debug);
 }
 
-static char set_thresh__doc__[] =
+static char gc_set_thresh__doc__[] =
 "set_threshold(threshold0, [threhold1, threshold2]) -> None\n"
 "\n"
 "Sets the collection thresholds.  Setting threshold0 to zero disables\n"
@@ -588,7 +642,7 @@ static char set_thresh__doc__[] =
 ;
 
 static PyObject *
-Py_set_thresh(PyObject *self, PyObject *args)
+gc_set_thresh(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, "i|ii:set_threshold", &threshold0, 
 				&threshold1, &threshold2))
@@ -598,14 +652,14 @@ Py_set_thresh(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char get_thresh__doc__[] =
+static char gc_get_thresh__doc__[] =
 "get_threshold() -> (threshold0, threshold1, threshold2)\n"
 "\n"
 "Return the current collection thresholds\n"
 ;
 
 static PyObject *
-Py_get_thresh(PyObject *self, PyObject *args)
+gc_get_thresh(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":get_threshold"))	/* no args */
 		return NULL;
@@ -617,6 +671,9 @@ Py_get_thresh(PyObject *self, PyObject *args)
 static char gc__doc__ [] =
 "This module provides access to the garbage collector for reference cycles.\n"
 "\n"
+"enable() -- Enable automatic garbage collection.\n"
+"disable() -- Disable automatic garbage collection.\n"
+"isenabled() -- Returns true if automatic collection is enabled.\n"
 "collect() -- Do a full collection right now.\n"
 "set_debug() -- Set debugging flags.\n"
 "get_debug() -- Get debugging flags.\n"
@@ -625,11 +682,14 @@ static char gc__doc__ [] =
 ;
 
 static PyMethodDef GcMethods[] = {
-	{"set_debug",		Py_set_debug,  METH_VARARGS, set_debug__doc__},
-	{"get_debug",		Py_get_debug,  METH_VARARGS, get_debug__doc__},
-	{"set_threshold",	Py_set_thresh, METH_VARARGS, set_thresh__doc__},
-	{"get_threshold",	Py_get_thresh, METH_VARARGS, get_thresh__doc__},
-	{"collect",		Py_collect,    METH_VARARGS, collect__doc__},
+	{"enable",	   gc_enable,     METH_VARARGS, gc_enable__doc__},
+	{"disable",	   gc_disable,    METH_VARARGS, gc_disable__doc__},
+	{"isenabled",	   gc_isenabled,  METH_VARARGS, gc_isenabled__doc__},
+	{"set_debug",	   gc_set_debug,  METH_VARARGS, gc_set_debug__doc__},
+	{"get_debug",	   gc_get_debug,  METH_VARARGS, gc_get_debug__doc__},
+	{"set_threshold",  gc_set_thresh, METH_VARARGS, gc_set_thresh__doc__},
+	{"get_threshold",  gc_get_thresh, METH_VARARGS, gc_get_thresh__doc__},
+	{"collect",	   gc_collect,    METH_VARARGS, gc_collect__doc__},
 	{NULL,	NULL}		/* Sentinel */
 };
 

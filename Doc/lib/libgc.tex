@@ -5,17 +5,29 @@
 \moduleauthor{Neil Schemenauer}{nascheme@enme.ucalgary.ca}
 \sectionauthor{Neil Schemenauer}{nascheme@enme.ucalgary.ca}
 
-This module provides an interface to the optional garbage collector.
-It provides the ability to disable the collector, tune the collection
+This module provides an interface to the optional garbage collector.  It
+provides the ability to disable the collector, tune the collection
 frequency, and set debugging options.  It also provides access to
-unreachable objects that the collector found but cannot free.  Since
-the collector supplements the reference counting already used in
-Python, you can disable the collector if you are sure your program
-does not create reference cycles.  The collector can be disabled by
-calling \code{gc.set_threshold(0)}.  To debug a leaking program call
+unreachable objects that the collector found but cannot free.  Since the
+collector supplements the reference counting already used in Python, you
+can disable the collector if you are sure your program does not create
+reference cycles.  Automatic collection can be disabled by calling
+\code{gc.disable()}.  To debug a leaking program call
 \code{gc.set_debug(gc.DEBUG_LEAK)}.
 
 The \module{gc} module provides the following functions:
+
+\begin{funcdesc}{enable}{}
+Enable automatic garbage collection.
+\end{funcdesc}
+
+\begin{funcdesc}{disable}{}
+Disable automatic garbage collection.
+\end{funcdesc}
+
+\begin{funcdesc}{isenabled}{}
+Returns true if automatic collection is enabled.
+\end{funcdesc}
 
 \begin{funcdesc}{collect}{}
 Run a full collection.  All generations are examined and the
