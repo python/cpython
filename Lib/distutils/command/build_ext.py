@@ -451,14 +451,6 @@ class build_ext (Command):
         for undef in ext.undef_macros:
             macros.append((undef,))
 
-        # XXX and if we support CFLAGS, why not CC (compiler
-        # executable), CPPFLAGS (pre-processor options), and LDFLAGS
-        # (linker options) too?
-        # XXX should we use shlex to properly parse CFLAGS?
-
-        if os.environ.has_key('CFLAGS'):
-            extra_args.extend(string.split(os.environ['CFLAGS']))
-
         objects = self.compiler.compile(sources,
                                         output_dir=self.build_temp,
                                         macros=macros,
@@ -484,7 +476,6 @@ class build_ext (Command):
         if ext.extra_objects:
             objects.extend(ext.extra_objects)
         extra_args = ext.extra_link_args or []
-
 
         self.compiler.link_shared_object(
             objects, ext_filename,
