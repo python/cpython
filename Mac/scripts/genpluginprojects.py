@@ -144,8 +144,10 @@ def	genallprojects(force=0):
 	genpluginproject("all", "Sndihooks", sources=[":snd:Sndihooks.c"])
 	genpluginproject("ppc", "TE", libraries=["DragLib"])
 	genpluginproject("carbon", "TE")
+	genpluginproject("ppc", "Mlte", libraries=["Textension"])
+	genpluginproject("carbon", "Mlte")
 	
-	# OSX Only?
+	# Carbon Only?
 	genpluginproject("carbon", "CF")
 	
 	# Other Mac modules
