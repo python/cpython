@@ -23,6 +23,7 @@ is read when the database is opened, and some updates rewrite the whole index)
 
 import os as _os
 import __builtin__
+import UserDict
 
 _open = __builtin__.open
 
@@ -30,7 +31,7 @@ _BLOCKSIZE = 512
 
 error = IOError                         # For anydbm
 
-class _Database:
+class _Database(UserDict.DictMixin):
 
     def __init__(self, file, mode):
         self._mode = mode
