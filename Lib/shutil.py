@@ -127,17 +127,17 @@ def rmtree(path, ignore_errors=0, onerror=None):
     """
     cmdtuples = []
     _build_cmdtuple(path, cmdtuples)
-    for cmd in cmdtuples:
+    for func, arg in cmdtuples:
         try:
-            apply(cmd[0], (cmd[1],))
-        except:
+            func(arg)
+        except OSError:
             exc = sys.exc_info()
             if ignore_errors:
                 pass
             elif onerror is not None:
-                onerror(cmd[0], cmd[1], exc)
+                onerror(func, arg, exc)
             else:
-                raise exc[0], (exc[1][0], exc[1][1] + ' removing '+cmd[1])
+                raise exc[0], (exc[1][0], exc[1][1] + ' removing '+arg)
 
 # Helper for rmtree()
 def _build_cmdtuple(path, cmdtuples):
