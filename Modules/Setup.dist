@@ -109,6 +109,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 # setup.py script in the root of the Python source tree.
 
 posix posixmodule.c		# posix (UNIX) system calls
+errno errnomodule.c		# posix (UNIX) errno values
 _sre _sre.c			# Fredrik Lundh's new regular expressions
 
 # The rest of the modules listed in this file are all commented out by
@@ -177,7 +178,6 @@ GLHACK=-Dclear=__GLclear
 #fcntl fcntlmodule.c	# fcntl(2) and ioctl(2)
 #pwd pwdmodule.c		# pwd(3) 
 #grp grpmodule.c		# grp(3)
-#errno errnomodule.c	# posix (UNIX) errno values
 #select selectmodule.c	# select(2); not on ancient System V
 
 # Memory-mapped files (also works on Win32).
