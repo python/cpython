@@ -93,6 +93,8 @@ class Distribution:
          "print the long package description"),
         ('platforms', None,
          "print the list of platforms"),
+        ('classifiers', None,
+         "print the list of classifiers"),
         ('keywords', None,
          "print the list of keywords"),
         ]
@@ -634,6 +636,8 @@ class Distribution:
                 value = getattr(self.metadata, "get_"+opt)()
                 if opt in ['keywords', 'platforms']:
                     print string.join(value, ',')
+                elif opt == 'classifiers':
+                    print string.join(value, '\n')
                 else:
                     print value
                 any_display_options = 1
@@ -962,7 +966,7 @@ class DistributionMetadata:
                          "maintainer", "maintainer_email", "url",
                          "license", "description", "long_description",
                          "keywords", "platforms", "fullname", "contact",
-                         "contact_email", "licence")
+                         "contact_email", "licence", "classifiers")
 
     def __init__ (self):
         self.name = None
@@ -977,6 +981,7 @@ class DistributionMetadata:
         self.long_description = None
         self.keywords = None
         self.platforms = None
+        self.classifiers = None
 
     def write_pkg_info (self, base_dir):
         """Write the PKG-INFO file into the release tree.
@@ -1002,6 +1007,9 @@ class DistributionMetadata:
 
         for platform in self.get_platforms():
             pkg_info.write('Platform: %s\n' % platform )
+
+        for classifier in self.get_classifiers():
+            pkg_info.write('Classifier: %s\n' % classifier )
 
         pkg_info.close()
 
@@ -1058,6 +1066,9 @@ class DistributionMetadata:
 
     def get_platforms(self):
         return self.platforms or ["UNKNOWN"]
+
+    def get_classifiers(self):
+        return self.classifiers or []
 
 # class DistributionMetadata
 
