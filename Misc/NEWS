@@ -64,11 +64,11 @@ Core
   "cooperative super calls" in a multiple inheritance setting.  For an
   explanation, see http://www.python.org/2.2/descrintro.html#cooperation
 
-- A new built-in type, getset, has been added.  This enables the
-  creation of "computed attributes".  Such attributes are implemented
-  by getter and setter functions (or only one of these for read-only
-  or write-only attributes), without the need to override
-  __getattr__.  See http://www.python.org/2.2/descrintro.html#getset
+- A new built-in type, property, has been added.  This enables the
+  creation of "properties".  These are attributes implemented by
+  getter and setter functions (or only one of these for read-only or
+  write-only attributes), without the need to override __getattr__.
+  See http://www.python.org/2.2/descrintro.html#property
 
 - The syntax of floating-point and imaginary literals has been
   liberalized, to allow leading zeroes.  Examples of literals now
