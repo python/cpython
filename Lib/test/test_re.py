@@ -9,35 +9,97 @@ import sys, os, string, traceback
 
 # Misc tests from Tim Peters' re.doc
 
+if verbose:
+    print 'Running tests on re.sub'
+
 try:
-
     assert re.sub("(?i)b+", "x", "bbbb BBBB") == 'x x'
-
+    
     def bump_num(matchobj):
 	int_value = int(matchobj.group(0))
 	return str(int_value + 1)
 
-    assert re.sub(r"\d+", bump_num, '08.2 -2 23x99y') == '9.3 -3 24x100y'
-
+    assert re.sub(r'\d+', bump_num, '08.2 -2 23x99y') == '9.3 -3 24x100y'
+    
     assert re.sub('.', lambda m: r"\n", 'x') == '\\n'
     assert re.sub('.', r"\n", 'x') == '\n'
-
+    
     s = r"\1\1"
     assert re.sub('(.)', s, 'x') == 'xx'
     assert re.sub('(.)', re.escape(s), 'x') == s
     assert re.sub('(.)', lambda m: s, 'x') == s
 
+    assert re.sub('(?P<a>x)', '\g<a>\g<a>', 'xx') == 'xxxx'
+
 except AssertionError:
     raise TestFailed, "re.sub"
+
+if verbose:
+    print 'Running tests on symbolic references'
+
+try:
+    re.sub('(?P<a>x)', '\g<a', 'xx')
+except re.error, reason:
+    pass
+else:
+    raise TestFailed, "symbolic reference"
+
+try:
+    re.sub('(?P<a>x)', '\g<', 'xx')
+except re.error, reason:
+    pass
+else:
+    raise TestFailed, "symbolic reference"
+
+try:
+    re.sub('(?P<a>x)', '\g', 'xx')
+except re.error, reason:
+    pass
+else:
+    raise TestFailed, "symbolic reference"
+
+try:
+    re.sub('(?P<a>x)', '\g<a a>', 'xx')
+except re.error, reason:
+    pass
+else:
+    raise TestFailed, "symbolic reference"
+
+try:
+    re.sub('(?P<a>x)', '\g<ab>', 'xx')
+except IndexError, reason:
+    pass
+else:
+    raise TestFailed, "symbolic reference"
+
+try:
+    re.sub('(?P<a>x)|(?P<b>y)', '\g<b>', 'xx')
+except re.error, reason:
+    pass
+else:
+    raise TestFailed, "symbolic reference"
+
+try:
+    re.sub('(?P<a>x)|(?P<b>y)', '\\2', 'xx')
+except re.error, reason:
+    pass
+else:
+    raise TestFailed, "symbolic reference"
+
+if verbose:
+    print 'Running tests on re.subn'
 
 try:
     assert re.subn("(?i)b+", "x", "bbbb BBBB") == ('x x', 2)
     assert re.subn("b+", "x", "bbbb BBBB") == ('x BBBB', 1)
     assert re.subn("b+", "x", "xyz") == ('xyz', 0)
     assert re.subn("b*", "x", "xyz") == ('xxxyxzx', 4)
-
+    
 except AssertionError:
     raise TestFailed, "re.subn"
+
+if verbose:
+    print 'Running tests on re.split'
 
 try:
     assert re.split(":", ":a:b::c") == ['', 'a', 'b', '', 'c']
@@ -47,14 +109,15 @@ try:
     assert re.split("(:)*", ":a:b::c") == ['', ':', 'a', ':', 'b', ':', 'c']
     assert re.split("([b:]+)", ":a:b::c") == ['', ':', 'a', ':b::', 'c']
     assert re.split("(b)|(:+)", ":a:b::c") == \
-	   ['', None, ':', 'a', None, ':', '', 'b', None, '', None, '::', 'c']
+           ['', None, ':', 'a', None, ':', '', 'b', None, '', None, '::', 'c']
     assert re.split("(?:b)|(?::+)", ":a:b::c") == ['', 'a', '', '', 'c']
-
+    
 except AssertionError:
     raise TestFailed, "re.split"
 
 from re_tests import *
-if verbose: print 'Running re_tests test suite'
+if verbose:
+    print 'Running re_tests test suite'
 
 for t in tests:
     print t
@@ -73,8 +136,6 @@ for t in tests:
 	if outcome==SYNTAX_ERROR: pass	# Expected a syntax error
 	else: 
 	    print '=== Syntax error:', t
-    except KeyboardInterrupt:
-	raise KeyboardInterrupt
     except:
 	print '*** Unexpected error ***'
 	if verbose:
