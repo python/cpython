@@ -112,6 +112,13 @@ def revparse(rev):
     [major, minor] = map(string.atoi, m.group(1, 2))
     return major, minor
 
+logon = 0
+def log(text):
+    if logon:
+        logfile = open("logfile", "a")
+        logfile.write(text + "\n")
+        logfile.close()
+
 def load_cookies():
     if not os.environ.has_key('HTTP_COOKIE'):
         return {}
@@ -177,6 +184,7 @@ class UserInput:
 
     def __init__(self):
         self.__form = cgi.FieldStorage()
+        #log("\n\nbody: " + self.body)
 
     def __getattr__(self, name):
         if name[0] == '_':
@@ -776,7 +784,12 @@ class FaqWizard:
         if self.ui.body == entry.body and self.ui.title == entry.title:
             self.error("You didn't make any changes!")
             return
-        # XXX Should lock here
+
+        # need to lock here because otherwise the file exists and is not writable (on NT)
+        command = interpolate(SH_LOCK, file=file)
+        p = os.popen(command)
+        output = p.read()
+
         try:
             os.unlink(file)
         except os.error:
@@ -799,14 +812,15 @@ class FaqWizard:
         emit(LOGHEADER, self.ui, os.environ, date=date, _file=f)
         f.close()
 
-        command = interpolate(
-            SH_LOCK + '\n' + SH_CHECKIN,
-            file=file, tfn=tfn)
-
+        command = interpolate(SH_CHECKIN, file=file, tfn=tfn)
+        log("\n\n" + command)
         p = os.popen(command)
         output = p.read()
         sts = p.close()
-        # XXX Should unlock here
+        log("output: " + output)
+        log("done: " + str(sts))
+        log("TempFile:\n" + open(tfn).read() + "end")
+        
         if not sts:
             self.prologue(T_COMMITTED)
             emit(COMMITTED)
