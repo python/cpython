@@ -17,6 +17,8 @@ simple_stmt:    expression_stmt
               | continue_stmt
               | import_stmt
               | global_stmt
+              | access_stmt
+              | exec_stmt
 \end{verbatim}
 
 \section{Expression statements}
@@ -466,3 +468,40 @@ definition, function definition, or \verb\import\ statement.
 restrictions, but programs should not abuse this freedom, as future
 implementations may enforce them or silently change the meaning of the
 program.)
+
+\section{The {\tt access} statement} \label{access}
+\stindex{access}
+
+\begin{verbatim}
+access_stmt:    "access" ...
+\end{verbatim}
+
+This statement will be used in the future to control access to
+instance and class variables.  Currently its syntax and effects are
+undefined; however the keyword \verb\access\ is a reserved word for
+the parser.
+
+\section{The {\tt exec} statement} \label{exec}
+\stindex{exec}
+
+\begin{verbatim}
+exec_stmt:    "exec" expression ["in" expression ["," expression]]
+\end{verbatim}
+
+This statement supports dynamic execution of Python code.  The first
+expression should evaluate to either a string, an open file object, or
+a code object.  If it is a string, the string is parsed as a suite of
+Python statements which is then executed (unless a syntax error
+occurs).  If it is an open file, the file is parsed until EOF and
+executed.  If it is a code object, it is simply executed.
+
+In all cases, if the optional parts are omitted, the code is executed
+in the current scope.  If only the first expression after \verb\in\ is
+specified, it should be a dictionary, which will be used for both the
+global and the local variables.  If two expressions are given, both
+must be dictionaries and they are used for the global and local
+variables, respectively.
+
+Note: dynamic evaluation of expressions is supported by the built-in
+function \verb\eval\.
+
