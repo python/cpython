@@ -78,6 +78,10 @@ Extension modules
 Library
 -------
 
+- The sets module now raises TypeError in __cmp__, to clarify that
+  sets are not intended to be three-way-compared; the comparison
+  operators are overloaded as subset/superset tests.
+
 - Bastion.py and rexec.py are disabled.  These modules are not safe in
   Python 2.2. or 2.3.
 
