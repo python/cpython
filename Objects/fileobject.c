@@ -123,7 +123,6 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 		/* Metroworks only, not testable, so unchanged */
 		if (errno == 0) {
 			PyErr_SetString(PyExc_IOError, "Cannot open file");
-			Py_DECREF(f);
 			return NULL;
 		}
 #endif
