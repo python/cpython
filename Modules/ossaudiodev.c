@@ -173,17 +173,17 @@ oss_dealloc(oss_t *xp)
      arg = dsp.xxx(arg)
 */
 static PyObject *
-_do_ioctl_1(oss_t *self, PyObject *args, char *fname, int cmd)
+_do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
 {
-    char argfmt[13] = "i:";
+    char argfmt[33] = "i:";
     int arg;
 
-    assert(strlen(fname) <= 10);
+    assert(strlen(fname) <= 30);
     strcat(argfmt, fname);
     if (!PyArg_ParseTuple(args, argfmt, &arg))
 	return NULL;
 
-    if (ioctl(self->x_fd, cmd, &arg) == -1)
+    if (ioctl(fd, cmd, &arg) == -1)
         return PyErr_SetFromErrno(PyExc_IOError);
     return PyInt_FromLong(arg);
 }
@@ -191,16 +191,16 @@ _do_ioctl_1(oss_t *self, PyObject *args, char *fname, int cmd)
 /* _do_ioctl_0() is a private helper for the no-argument ioctls:
    SNDCTL_DSP_{SYNC,RESET,POST}. */
 static PyObject *
-_do_ioctl_0(oss_t *self, PyObject *args, char *fname, int cmd)
+_do_ioctl_0(int fd, PyObject *args, char *fname, int cmd)
 {
-    char argfmt[12] = ":";
+    char argfmt[32] = ":";
 
-    assert(strlen(fname) <= 10);
+    assert(strlen(fname) <= 30);
     strcat(argfmt, fname);
     if (!PyArg_ParseTuple(args, argfmt))
 	return NULL;
 
-    if (ioctl(self->x_fd, cmd, 0) == -1)
+    if (ioctl(fd, cmd, 0) == -1)
         return PyErr_SetFromErrno(PyExc_IOError);
     Py_INCREF(Py_None);
     return Py_None;
@@ -223,7 +223,7 @@ oss_nonblock(oss_t *self, PyObject *args)
 static PyObject *
 oss_setfmt(oss_t *self, PyObject *args)
 {
-    return _do_ioctl_1(self, args, "setfmt", SNDCTL_DSP_SETFMT);
+    return _do_ioctl_1(self->x_fd, args, "setfmt", SNDCTL_DSP_SETFMT);
 }
 
 static PyObject *
@@ -240,31 +240,31 @@ oss_getfmts(oss_t *self, PyObject *args)
 static PyObject *
 oss_channels(oss_t *self, PyObject *args)
 {
-    return _do_ioctl_1(self, args, "channels", SNDCTL_DSP_CHANNELS);
+    return _do_ioctl_1(self->x_fd, args, "channels", SNDCTL_DSP_CHANNELS);
 }
 
 static PyObject *
 oss_speed(oss_t *self, PyObject *args)
 {
-    return _do_ioctl_1(self, args, "speed", SNDCTL_DSP_SPEED);
+    return _do_ioctl_1(self->x_fd, args, "speed", SNDCTL_DSP_SPEED);
 }
 
 static PyObject *
 oss_sync(oss_t *self, PyObject *args)
 {
-    return _do_ioctl_0(self, args, "sync", SNDCTL_DSP_SYNC);
+    return _do_ioctl_0(self->x_fd, args, "sync", SNDCTL_DSP_SYNC);
 }
     
 static PyObject *
 oss_reset(oss_t *self, PyObject *args)
 {
-    return _do_ioctl_0(self, args, "reset", SNDCTL_DSP_RESET);
+    return _do_ioctl_0(self->x_fd, args, "reset", SNDCTL_DSP_RESET);
 }
     
 static PyObject *
 oss_post(oss_t *self, PyObject *args)
 {
-    return _do_ioctl_0(self, args, "post", SNDCTL_DSP_POST);
+    return _do_ioctl_0(self->x_fd, args, "post", SNDCTL_DSP_POST);
 }
 
 
