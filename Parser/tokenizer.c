@@ -83,6 +83,7 @@ char *tok_name[] = {
 	"CIRCUMFLEX",
 	"LEFTSHIFT",
 	"RIGHTSHIFT",
+	"DOUBLESTAR",
 	/* This table must match the #defines in token.h! */
 	"OP",
 	"<ERRORTOKEN>",
@@ -394,6 +395,11 @@ tok_2char(c1, c2)
 		case '>':	return RIGHTSHIFT;
 		}
 		break;
+	case '*':
+		switch (c2) {
+		case '*':	return DOUBLESTAR;
+		}
+		break;
 	}
 	return OP;
 }
@@ -558,7 +564,7 @@ tok_get(tok, p_start, p_end)
 			return DOT;
 		}
 	}
-	
+
 	/* Number */
 	if (isdigit(c)) {
 		if (c == '0') {
@@ -566,6 +572,10 @@ tok_get(tok, p_start, p_end)
 			c = tok_nextc(tok);
 			if (c == '.')
 				goto fraction;
+#ifndef WITHOUT_COMPLEX
+			if (c == 'i' || c == 'I' || c == 'j' || c == 'J')
+				goto imaginary;
+#endif
 			if (c == 'x' || c == 'X') {
 				/* Hex */
 				do {
@@ -611,6 +621,12 @@ tok_get(tok, p_start, p_end)
 						c = tok_nextc(tok);
 					}
 				}
+#ifndef WITHOUT_COMPLEX
+				if (c == 'i' || c == 'I' || c == 'j' || c == 'J')
+					/* Imaginary part */
+		imaginary:
+					c = tok_nextc(tok);
+#endif
 			}
 		}
 		tok_backup(tok, c);
