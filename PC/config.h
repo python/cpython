@@ -197,12 +197,14 @@ typedef int pid_t;
 
 #ifdef MS_WIN32
 
+#ifndef USE_DL_EXPORT
 /* So nobody needs to specify the .lib in their Makefile any more */
 #ifdef _DEBUG
 #pragma comment(lib,"python15_d.lib")
 #else
 #pragma comment(lib,"python15.lib")
 #endif
+#endif /* USE_DL_EXPORT */
 
 #define SIZEOF_INT 4
 #define SIZEOF_LONG 4
