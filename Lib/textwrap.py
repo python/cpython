@@ -1,5 +1,4 @@
-"""
-Utilities for wrapping text strings and filling text paragraphs.
+"""Text wrapping and filling.
 """
 
 # Copyright (C) 2001 Gregory P. Ward.
@@ -231,11 +230,11 @@ class TextWrapper:
     def wrap(self, text):
         """wrap(text : string) -> [string]
 
-        Split 'text' into multiple lines of no more than 'self.width'
-        characters each, and return the list of strings that results.
-        Tabs in 'text' are expanded with string.expandtabs(), and all
-        other whitespace characters (including newline) are converted to
-        space.
+        Reformat the single paragraph in 'text' so it fits in lines of
+        no more than 'self.width' columns, and return a list of wrapped
+        lines.  Tabs in 'text' are expanded with string.expandtabs(),
+        and all other whitespace characters (including newline) are
+        converted to space.
         """
         text = self._munge_whitespace(text)
         if len(text) <= self.width:
@@ -248,18 +247,36 @@ class TextWrapper:
     def fill(self, text):
         """fill(text : string) -> string
 
-        Reformat the paragraph in 'text' to fit in lines of no more than
-        'width' columns.
+        Reformat the single paragraph in 'text' to fit in lines of no
+        more than 'self.width' columns, and return a new string
+        containing the entire wrapped paragraph.
         """
         return "\n".join(self.wrap(text))
 
 
-# Convenience interface
+# -- Convenience interface ---------------------------------------------
 
 def wrap(text, width=70, **kwargs):
+    """Wrap a single paragraph of text, returning a list of wrapped lines.
+
+    Reformat the single paragraph in 'text' so it fits in lines of no
+    more than 'width' columns, and return a list of wrapped lines.  By
+    default, tabs in 'text' are expanded with string.expandtabs(), and
+    all other whitespace characters (including newline) are converted to
+    space.  See TextWrapper class for available keyword args to customize
+    wrapping behaviour.
+    """
     w = TextWrapper(width=width, **kwargs)
     return w.wrap(text)
 
 def fill(text, width=70, **kwargs):
+    """Fill a single paragraph of text, returning a new string.
+
+    Reformat the single paragraph in 'text' to fit in lines of no more
+    than 'width' columns, and return a new string containing the entire
+    wrapped paragraph.  As with wrap(), tabs are expanded and other
+    whitespace characters converted to space.  See TextWrapper class for
+    available keyword args to customize wrapping behaviour.
+    """
     w = TextWrapper(width=width, **kwargs)
     return w.fill(text)
