@@ -58,7 +58,9 @@ char copyright[] = " SRE 0.9.8 Copyright (c) 1997-2000 by Secret Labs AB ";
 /* optional features */
 
 /* prevent run-away recursion (bad patterns on long strings) */
+#if !defined(USE_STACKCHECK)
 #define USE_RECURSION_LIMIT 10000
+#endif
 
 /* enables fast searching */
 #define USE_FAST_SEARCH
@@ -526,6 +528,11 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
     SRE_REPEAT rep; /* FIXME: <fl> allocate in STATE instead */
 
     TRACE(("%8d: enter %d\n", PTR(ptr), level));
+
+#if defined(USE_STACKCHECK)
+    if (level % 10 == 0 && PyOS_CheckStack()) {
+        return SRE_ERROR_RECURSION_LIMIT;
+#endif
 
 #if defined(USE_RECURSION_LIMIT)
     if (level > USE_RECURSION_LIMIT)
