@@ -92,11 +92,11 @@ All methods return \code{IOError} when the request fails.
 
 Format characters for the \code{lock()} method have the following meaning:
 
-\begin{tableii}{|c|l|}{samp}{Format}{Meaning}
-  \lineii{u}{unlock the specified region}
-  \lineii{r}{request a read lock for the specified section}
-  \lineii{w}{request a write lock for the specified section}
-\end{tableii}
+\begin{tableiii}{|c|l|c|}{samp}{Format}{Meaning}{}
+  \lineiii{u}{unlock the specified region}{}
+  \lineiii{r}{request a read lock for the specified section}{}
+  \lineiii{w}{request a write lock for the specified section}{}
+\end{tableiii}
 
 In addition the following modifiers can be added to the format:
 
@@ -115,12 +115,12 @@ is for query purposes only.
 
 Format character for the \code{flags()} method have the following meaning:
 
-\begin{tableii}{|c|l|}{samp}{Format}{Meaning}
-  \lineii{a}{append only flag}
-  \lineii{c}{close on exec flag}
-  \lineii{n}{no delay flag (also called non-blocking flag)}
-  \lineii{s}{synchronization flag}
-\end{tableii}
+\begin{tableiii}{|c|l|c|}{samp}{Format}{Meaning}{}
+  \lineiii{a}{append only flag}{}
+  \lineiii{c}{close on exec flag}{}
+  \lineiii{n}{no delay flag (also called non-blocking flag)}{}
+  \lineiii{s}{synchronization flag}{}
+\end{tableiii}
 
 In addition the following modifiers can be added to the format:
 

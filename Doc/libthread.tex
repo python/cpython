@@ -7,7 +7,9 @@ threads of control sharing their global data space.  For
 synchronization, simple locks (a.k.a. \dfn{mutexes} or \dfn{binary
 semaphores}) are provided.
 
-The module is optional and supported on SGI and Sun Sparc systems only.
+The module is optional and supported on SGI IRIX 4.x and 5.x and Sun
+Solaris 2.x systems, as well as on systems that have a PTHREAD
+implementation (e.g. KSR).
 
 It defines the following constant and functions:
 
@@ -39,6 +41,14 @@ or in other threads, is not executed.
 \begin{funcdesc}{allocate_lock}{}
 Return a new lock object.  Methods of locks are described below.  The
 lock is initially unlocked.
+\end{funcdesc}
+
+\begin{funcdesc}{get_ident}{}
+Return the `thread identifier' of the current thread.  This is a
+nonzero integer.  Its value has no direct meaning; it is intended as a
+magic cookie to be used e.g. to index a dictionary of thread-specific
+data.  Thread identifiers may be recycled when a thread exits and
+another thread is created.
 \end{funcdesc}
 
 Lock objects have the following methods:
