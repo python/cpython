@@ -50,9 +50,20 @@ class UserString:
             return self.__class__(other + self.data)
         else:
             return self.__class__(str(other) + self.data)
+    def __iadd__(self, other):
+        if isinstance(other, UserString):
+            self.data += other.data
+        elif isinstance(other, StringType) or isinstance(other, UnicodeType):
+            self.data += other
+        else
+            self.data += str(other)
+        return self
     def __mul__(self, n):
         return self.__class__(self.data*n)
     __rmul__ = __mul__
+    def __imull__(self, n):
+        self.data += n
+        return self
 
     # the following methods are defined in alphabetical order:
     def capitalize(self): return self.__class__(self.data.capitalize())

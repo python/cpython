@@ -1,0 +1,48 @@
+test_augassign
+6
+[6]
+6
+[1, 2, 3, 4, 1, 2, 3, 4]
+[1, 2, 1, 2, 3]
+1
+1
+1
+11
+1
+12
+1
+1
+13
+__add__ called
+__radd__ called
+__iadd__ called
+__sub__ called
+__rsub__ called
+__isub__ called
+__mul__ called
+__rmul__ called
+__imul__ called
+__div__ called
+__rdiv__ called
+__idiv__ called
+__mod__ called
+__rmod__ called
+__imod__ called
+__pow__ called
+__rpow__ called
+__ipow__ called
+__or__ called
+__ror__ called
+__ior__ called
+__and__ called
+__rand__ called
+__iand__ called
+__xor__ called
+__rxor__ called
+__ixor__ called
+__rshift__ called
+__rrshift__ called
+__irshift__ called
+__lshift__ called
+__rlshift__ called
+__ilshift__ called
