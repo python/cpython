@@ -1,5 +1,5 @@
 /*
-     cPickle.c,v 1.53 1998/05/05 15:41:31 jim Exp
+     cPickle.c,v 1.57 1998/08/12 12:13:28 jim Exp
 
      Copyright 
 
@@ -55,7 +55,7 @@
 static char cPickle_module_documentation[] = 
 "C implementation and optimization of the Python pickle module\n"
 "\n"
-"cPickle.c,v 1.53 1998/05/05 15:41:31 jim Exp\n"
+"cPickle.c,v 1.57 1998/08/12 12:13:28 jim Exp\n"
 ;
 
 #include "Python.h"
@@ -147,6 +147,7 @@ typedef struct {
      PyObject *pers_func;
      PyObject *inst_pers_func;
      int bin;
+     int fast; /* Fast mode doesn't save in memo, don't use if circ ref */
      int (*write_func)();
      char *write_buf;
      int buf_size;
@@ -507,8 +508,10 @@ get(Picklerobject *self, PyObject *id) {
     char s[30];
     int len;
 
-    UNLESS(value = PyDict_GetItem(self->memo, id))
+    UNLESS(value = PyDict_GetItem(self->memo, id)) {
+	PyErr_SetObject(PyExc_KeyError, id);
         return -1;
+      }
 
     UNLESS(value = PyTuple_GetItem(value, 0))
         return -1;
@@ -545,7 +548,7 @@ get(Picklerobject *self, PyObject *id) {
 
 static int
 put(Picklerobject *self, PyObject *ob) {
-    if (ob->ob_refcnt < 2)
+    if (ob->ob_refcnt < 2 || self->fast)
         return 0;
 
     return put2(self, ob);
@@ -557,6 +560,9 @@ put2(Picklerobject *self, PyObject *ob) {
     char c_str[30];
     int p, len, res = -1;
     PyObject *py_ob_id = 0, *memo_len = 0, *t = 0;
+
+    if (self->fast) return 0;
+
     if ((p = PyDict_Size(self->memo)) < 0)
         goto finally;
 
@@ -675,10 +681,8 @@ whichmodule(PyObject *global, PyObject *global_name) {
     if (module) return module;
     PyErr_Clear();
 
-    UNLESS(modules_dict = PySys_GetObject("modules")) {
-	PyErr_SetString(PyExc_SystemError, "lost sys.modules");
+    UNLESS(modules_dict = PySys_GetObject("modules"))
         return NULL;
-    }
 
     i = 0;
     while ((j = PyDict_Next(modules_dict, &i, &name, &module))) {
@@ -1762,6 +1766,7 @@ newPicklerobject(PyObject *file, int bin) {
     self->inst_pers_func = NULL;
     self->write_buf = NULL;
     self->bin = bin;
+    self->fast = 0;
     self->buf_size = 0;
     self->dispatch_table = NULL;
 
@@ -1876,6 +1881,12 @@ Pickler_getattr(Picklerobject *self, char *name) {
         Py_INCREF(PicklingError);
         return PicklingError;
     }
+
+    if(strcmp(name, "binary")==0)
+      return PyInt_FromLong(self->bin);
+
+    if(strcmp(name, "fast")==0)
+      return PyInt_FromLong(self->fast);
   
     return Py_FindMethod(Pickler_methods, (PyObject *)self, name);
 }
@@ -1883,6 +1894,13 @@ Pickler_getattr(Picklerobject *self, char *name) {
 
 int 
 Pickler_setattr(Picklerobject *self, char *name, PyObject *value) {
+
+    if(! value) {
+        PyErr_SetString(PyExc_TypeError,
+			"attribute deletion is not supported");
+	return -1;
+    }
+  
     if (strcmp(name, "persistent_id") == 0) {
         Py_XDECREF(self->pers_func);
         self->pers_func = value;
@@ -1895,6 +1913,27 @@ Pickler_setattr(Picklerobject *self, char *name, PyObject *value) {
         self->inst_pers_func = value;
         Py_INCREF(value);
         return 0;
+    }
+
+    if (strcmp(name, "memo") == 0) {
+        if(! PyDict_Check(value)) {
+	  PyErr_SetString(PyExc_TypeError, "memo must be a dictionary");
+	  return -1;
+	}
+        Py_XDECREF(self->memo);
+        self->memo = value;
+        Py_INCREF(value);
+        return 0;
+    }
+
+    if(strcmp(name, "binary")==0) {
+        self->bin=PyObject_IsTrue(value);
+	return 0;
+    }
+
+    if(strcmp(name, "fast")==0) {
+        self->fast=PyObject_IsTrue(value);
+	return 0;
     }
 
     PyErr_SetString(PyExc_AttributeError, name);
@@ -1952,14 +1991,13 @@ find_class(PyObject *py_module_name, PyObject *py_global_name) {
     if (global == NULL) {
 	char buf[256 + 37];
 	sprintf(buf, "Failed to import class %.128s from moduile %.128s",
-		PyString_AS_STRING(py_global_name),
-		PyString_AS_STRING(py_module_name));  
+		PyString_AS_STRING((PyStringObject*)py_global_name),
+		PyString_AS_STRING((PyStringObject*)py_module_name));  
 	PyErr_SetString(PyExc_SystemError, buf);
 	return NULL;
     }
     return global;
 }
-
 
 static int
 marker(Unpicklerobject *self) {
@@ -2539,8 +2577,8 @@ Instance_New(PyObject *cls, PyObject *args) {
   if (!has_key)
     if(!(safe = PyObject_GetAttr(cls, __safe_for_unpickling___str)) ||
        !PyObject_IsTrue(safe)) {
-      cPickle_ErrFormat(UnpicklingError,
-   "%s is not safe for unpickling", "O", cls);
+	cPickle_ErrFormat(UnpicklingError,
+			  "%s is not safe for unpickling", "O", cls);
       Py_XDECREF(safe);
       return NULL;
   }
@@ -2864,8 +2902,10 @@ load_get(Unpicklerobject *self) {
     UNLESS(py_str = PyString_FromStringAndSize(s, len - 1))
         goto finally;
   
-    UNLESS(value = PyDict_GetItem(self->memo, py_str))  
+    UNLESS(value = PyDict_GetItem(self->memo, py_str)) {
+	PyErr_SetObject(PyExc_KeyError, py_str);
         goto finally;
+      }
 
     if (PyList_Append(self->stack, value) < 0)
         goto finally;
@@ -2894,8 +2934,10 @@ load_binget(Unpicklerobject *self) {
     UNLESS(py_key = PyInt_FromLong((long)key))
         goto finally;
 
-    UNLESS(value = PyDict_GetItem(self->memo, py_key))  
+    UNLESS(value = PyDict_GetItem(self->memo, py_key)) {
+        PyErr_SetObject(PyExc_KeyError, py_key);
         goto finally;
+    }
 
     if (PyList_Append(self->stack, value) < 0)
         goto finally;
@@ -2931,8 +2973,10 @@ load_long_binget(Unpicklerobject *self) {
     UNLESS(py_key = PyInt_FromLong(key))
         goto finally;
 
-    UNLESS(value = PyDict_GetItem(self->memo, py_key))  
+    UNLESS(value = PyDict_GetItem(self->memo, py_key)) {
+	PyErr_SetObject(PyExc_KeyError, py_key);
         goto finally;
+    }
 
     if (PyList_Append(self->stack, value) < 0)
         goto finally;
@@ -3507,8 +3551,7 @@ load(Unpicklerobject *self) {
         break;
     }
 
-    err = PyErr_Occurred();
-    if (err && PyErr_ExceptionMatches(PyExc_EOFError)) {
+    if ((err = PyErr_Occurred()) == PyExc_EOFError) {
         PyErr_SetNone(PyExc_EOFError);
         goto err;
     }    
@@ -3805,8 +3848,7 @@ noload(Unpicklerobject *self) {
         break;
     }
 
-    err = PyErr_Occurred();
-    if (err && PyErr_ExceptionMatches(PyExc_EOFError)) {
+    if ((err = PyErr_Occurred()) == PyExc_EOFError) {
         PyErr_SetNone(PyExc_EOFError);
         goto err;
     }    
@@ -4016,9 +4058,27 @@ Unpickler_getattr(Unpicklerobject *self, char *name) {
 
 static int
 Unpickler_setattr(Unpicklerobject *self, char *name, PyObject *value) {
+
+    if(! value) {
+        PyErr_SetString(PyExc_TypeError,
+			"attribute deletion is not supported");
+	return -1;
+    }
+
     if (!strcmp(name, "persistent_load")) {
         Py_XDECREF(self->pers_func);
         self->pers_func = value;
+        Py_INCREF(value);
+        return 0;
+    }
+
+    if (strcmp(name, "memo") == 0) {
+        if(! PyDict_Check(value)) {
+	  PyErr_SetString(PyExc_TypeError, "memo must be a dictionary");
+	  return -1;
+	}
+        Py_XDECREF(self->memo);
+        self->memo = value;
         Py_INCREF(value);
         return 0;
     }
@@ -4275,7 +4335,7 @@ init_stuff(PyObject *module, PyObject *module_dict) {
 void
 initcPickle() {
     PyObject *m, *d, *v;
-    char *rev="1.53";
+    char *rev="1.57";
     PyObject *format_version;
     PyObject *compatible_formats;
 
