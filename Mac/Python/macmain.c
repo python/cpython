@@ -503,11 +503,11 @@ Py_GetArgcArgv(argc,argv)
 char *
 Py_GetPrefix()
 {
-	return "";
+	return PyMac_GetPythonDir();
 }
 
 char *
 Py_GetExecPrefix()
 {
-	return "";
+	return PyMac_GetPythonDir();
 }
