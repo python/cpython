@@ -208,7 +208,7 @@ class StripWidget:
 	tags = ('chip',)
 	for c in range(self.__numchips):
 	    color = 'grey'
-	    rect = canvas.create_rectangle(
+	    canvas.create_rectangle(
 		x, y, x+chipwidth, y+chipheight,
 		fill=color, outline=color,
 		tags=tags)
@@ -291,7 +291,6 @@ class StripWidget:
 	i = 1
 	chip = 0
 	chips = self.__chips = []
-	tclcmd = []
 	tk = self.__canvas.tk
         # get the red, green, and blue components for all chips
         for t in self.__generator(self.__numchips, red, green, blue):
@@ -401,25 +400,25 @@ class StripViewer:
         red, green, blue = self.__sb.current_rgb()
         self.update_yourself(red, green, blue)
 
-    def __togglegentype(self, event=None):
-        which = self.__gentypevar.get()
-        if which == 0:
-            self.__reds.set(label='Red Variations',
-                            generator=constant_cyan_generator)
-            self.__greens.set(label='Green Variations',
-                              generator=constant_magenta_generator)
-            self.__blues.set(label='Blue Variations',
-                             generator=constant_yellow_generator)
-        elif which == 1:
-            self.__reds.set(label='Red Constant',
-                            generator=constant_red_generator)
-            self.__greens.set(label='Green Constant',
-                              generator=constant_green_generator)
-            self.__blues.set(label='Blue Constant',
-                             generator=constant_blue_generator)
-        else:
-            assert 0
-        self.__sb.update_views_current()
+##    def __togglegentype(self, event=None):
+##        which = self.__gentypevar.get()
+##        if which == 0:
+##            self.__reds.set(label='Red Variations',
+##                            generator=constant_cyan_generator)
+##            self.__greens.set(label='Green Variations',
+##                              generator=constant_magenta_generator)
+##            self.__blues.set(label='Blue Variations',
+##                             generator=constant_yellow_generator)
+##        elif which == 1:
+##            self.__reds.set(label='Red Constant',
+##                            generator=constant_red_generator)
+##            self.__greens.set(label='Green Constant',
+##                              generator=constant_green_generator)
+##            self.__blues.set(label='Blue Constant',
+##                             generator=constant_blue_generator)
+##        else:
+##            assert 0
+##        self.__sb.update_views_current()
 
     def __toblack(self, event=None):
         self.__sb.update_views(0, 0, 0)
