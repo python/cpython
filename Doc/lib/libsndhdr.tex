@@ -28,9 +28,8 @@ u-LAW\index{u-LAW}.
 
 \begin{funcdesc}{what}{filename}
   Determines the type of sound data stored in the file \var{filename}
-  using \function{whathdr()}.  If not successful, \function{whatraw()} 
-  is used.  If neither attempt succeeds, returns \code{None},
-  otherwise it returns a tuple as described above.
+  using \function{whathdr()}.  If it succeeds, returns a tuple as
+  described above, otherwise \code{None} is returned.
 \end{funcdesc}
 
 
@@ -39,14 +38,4 @@ u-LAW\index{u-LAW}.
   header.  The name of the file is given by \var{filename}.  This
   function returns a tuple as described above on success, or
   \code{None}.
-\end{funcdesc}
-
-
-\begin{funcdesc}{whatraw}{filename}
-  Determines the type of raw sound data stored in a file without a
-  header.  The name of the file is given by \var{filename}.  This
-  function returns a tuple as described above on success, or
-  \code{None}.
-
-  This requires the \program{whatsound} program to work.
 \end{funcdesc}
