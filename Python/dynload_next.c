@@ -120,6 +120,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 		NSModule newModule;
 		NSSymbol theSym;
 		const char *errString;
+		char errBuf[512];
 	
 		if (NSIsSymbolNameDefined(funcname)) {
 			theSym = NSLookupAndBindSymbol(funcname);
@@ -150,8 +151,15 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 		if (errString == NULL) {
 			newModule = NSLinkModule(image, pathname,
 				NSLINKMODULE_OPTION_BINDNOW|NSLINKMODULE_OPTION_RETURN_ON_ERROR);
-			if (!newModule)
-				errString = "Failure linking new module";
+			if (newModule == NULL) {
+				int errNo;
+				char *fileName, *moreErrorStr;
+				NSLinkEditErrors c;
+				NSLinkEditError( &c, &errNo, &fileName, &moreErrorStr );
+				PyOS_snprintf(errBuf, 512, "Failure linking new module: %s: %s", 
+						fileName, moreErrorStr);
+				errString = errBuf;
+			}
 		}
 		if (errString != NULL) {
 			PyErr_SetString(PyExc_ImportError, errString);
