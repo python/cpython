@@ -33,6 +33,7 @@
 #include "myproto.h" /* For PROTO macro --Guido */
 
 #include <stdio.h>
+#include "Python.h"
 
 #ifndef NDEBUG
 #define NDEBUG 1
@@ -85,16 +86,16 @@ typedef union item_t
 	{
 		int num;
 		int level;
-		char *start;
-		char *end;
+		unsigned char *start;
+		unsigned char *end;
 	} reg;
 	struct
 	{
 		int count;
 		int level;
 		int phantom;
-		char *code;
-		char *text;
+		unsigned char *code;
+		unsigned char *text;
 	} fail;
 	struct
 	{
@@ -139,8 +140,8 @@ typedef struct match_state
 	 * offsets from the beginning of the string before returning the
 	 * registers to the calling program. */
 	
-	char *start[NUM_REGISTERS];
-	char *end[NUM_REGISTERS];
+	unsigned char *start[NUM_REGISTERS];
+	unsigned char *end[NUM_REGISTERS];
 	
 	/* Keeps track of whether a register has changed recently. */
 	
@@ -422,7 +423,7 @@ enum regexp_compiled_ops /* opcodes for compiled regexp */
 	Cwordbound,	      /* match if at word boundary */
 	Cnotwordbound,        /* match if not at word boundary */
 	Csyntaxspec,	      /* matches syntax code (1 byte follows) */
-	Cnotsyntaxspec,       /* matches if syntax code does not match (1 byte foll)*/
+	Cnotsyntaxspec,       /* matches if syntax code does not match (1 byte follows) */
 	Crepeat1
 };
 
@@ -469,7 +470,7 @@ static int regexp_ansi_sequences;
 
 #define SYNTAX(ch) re_syntax_table[(unsigned char)(ch)]
 
-char re_syntax_table[256];
+unsigned char re_syntax_table[256];
 
 void re_compile_initialize(void)
 {
@@ -593,11 +594,11 @@ static int hex_char_to_decimal(int ch)
 	return 16;
 }
 
-static void re_compile_fastmap_aux(char *code,
+static void re_compile_fastmap_aux(unsigned char *code,
 				   int pos,
-				   char *visited,
-				   char *can_be_null,
-				   char *fastmap)
+				   unsigned char *visited,
+				   unsigned char *can_be_null,
+				   unsigned char *fastmap)
 {
 	int a;
 	int b;
@@ -717,19 +718,20 @@ static void re_compile_fastmap_aux(char *code,
 		}
 		default:
 		{
-			abort();  /* probably some opcode is missing from this switch */
+		        PyErr_SetString(PyExc_SystemError, "Unknown regex opcode: memory corrupted?");
+		        return;
 			/*NOTREACHED*/
 		}
 		}
 }
 
-static int re_do_compile_fastmap(char *buffer,
+static int re_do_compile_fastmap(unsigned char *buffer,
 				 int used,
 				 int pos,
-				 char *can_be_null,
-				 char *fastmap)
+				 unsigned char *can_be_null,
+				 unsigned char *fastmap)
 {
-	char small_visited[512], *visited;
+	unsigned char small_visited[512], *visited;
    
 	if (used <= sizeof(small_visited))
 		visited = small_visited;
@@ -759,6 +761,7 @@ void re_compile_fastmap(regexp_t bufp)
 				   &bufp->can_be_null,
 				   bufp->fastmap))
 		return;
+	if (PyErr_Occurred()) return;
 	if (bufp->buffer[0] == Cbol)
 		bufp->anchor = 1;   /* begline */
 	else
@@ -792,22 +795,29 @@ void re_compile_fastmap(regexp_t bufp)
  *
  */
 
-static int re_optimize_star_jump(regexp_t bufp, char *code)
+static int re_optimize_star_jump(regexp_t bufp, unsigned char *code)
 {
-	char map[256];
-	char can_be_null;
-	char *p1;
-	char *p2;
-	char ch;
+	unsigned char map[256];
+	unsigned char can_be_null;
+	unsigned char *p1;
+	unsigned char *p2;
+	unsigned char ch;
 	int a;
 	int b;
 	int num_instructions = 0;
-	
+
 	a = (unsigned char)*code++;
 	a |= (unsigned char)*code++ << 8;
 	a = (int)SHORT(a);
 	
 	p1 = code + a + 3; /* skip the failure_jump */
+	/* Check that the jump is within the pattern */
+	if (p1<bufp->buffer || bufp->buffer+bufp->used<p1)
+	  {
+	    PyErr_SetString(PyExc_SystemError, "Regex VM jump out of bounds (failure_jump opt)");
+	    return 0;
+	  }
+	
 	assert(p1[-3] == Cfailure_jump);
 	p2 = code;
 	/* p1 points inside loop, p2 points to after loop */
@@ -923,7 +933,7 @@ static int re_optimize_star_jump(regexp_t bufp, char *code)
 		}
 	}
 	
-  make_update_jump:
+	/* make_update_jump: */
 	code -= 3;
 	a += 3;  /* jump to after the Cfailure_jump */
 	code[0] = Cupdate_failure_jump;
@@ -948,7 +958,7 @@ static int re_optimize_star_jump(regexp_t bufp, char *code)
 
 static int re_optimize(regexp_t bufp)
 {
-	char *code;
+	unsigned char *code;
 	
 	code = bufp->buffer;
 	
@@ -1073,7 +1083,7 @@ else \
     
 #define GETHEX(var) \
 { \
-	char gethex_ch, gethex_value; \
+	unsigned char gethex_ch, gethex_value; \
 	NEXTCHAR(gethex_ch); \
 	gethex_value = hex_char_to_decimal(gethex_ch); \
 	if (gethex_value == 16) \
@@ -1147,7 +1157,7 @@ else \
 	} \
 }
 
-char *re_compile_pattern(char *regex, int size, regexp_t bufp)
+unsigned char *re_compile_pattern(unsigned char *regex, int size, regexp_t bufp)
 {
 	int a;
 	int pos;
@@ -1161,8 +1171,8 @@ char *re_compile_pattern(char *regex, int size, regexp_t bufp)
 	int future_jumps[MAX_NESTING];
 	int num_jumps;
 	unsigned char ch = '\0';
-	char *pattern;
-	char *translate;
+	unsigned char *pattern;
+	unsigned char *translate;
 	int next_register;
 	int paren_depth;
 	int num_open_registers;
@@ -1580,23 +1590,23 @@ if (translate) \
 	var = translate[var]
 
 int re_match(regexp_t bufp,
-	     char *string,
+	     unsigned char *string,
 	     int size,
 	     int pos,
 	     regexp_registers_t old_regs)
 {
-	char *code;
-	char *translate;
-	char *text;
-	char *textstart;
-	char *textend;
+	unsigned char *code;
+	unsigned char *translate;
+	unsigned char *text;
+	unsigned char *textstart;
+	unsigned char *textend;
 	int a;
 	int b;
 	int ch;
 	int reg;
 	int match_end;
-	char *regstart;
-	char *regend;
+	unsigned char *regstart;
+	unsigned char *regend;
 	int regsize;
 	match_state state;
   
@@ -1738,18 +1748,36 @@ int re_match(regexp_t bufp,
 		a = (unsigned char)*code++;
 		a |= (unsigned char)*code++ << 8;
 		code += (int)SHORT(a);
+		if (code<bufp->buffer || bufp->buffer+bufp->used<code) {
+		        PyErr_SetString(PyExc_SystemError, "Regex VM jump out of bounds (Cjump)");
+			FREE_STATE(state);
+            	        return -2;
+         	}
 		goto continue_matching;
 	}
 	case Cdummy_failure_jump:
 	{
+                unsigned char *failuredest;
+	  
 		a = (unsigned char)*code++;
 		a |= (unsigned char)*code++ << 8;
 		a = (int)SHORT(a);
 		assert(*code == Cfailure_jump);
 		b = (unsigned char)code[1];
 		b |= (unsigned char)code[2] << 8;
-		PUSH_FAILURE(state, code + (int)SHORT(b) + 3, NULL, goto error);
+                failuredest = code + (int)SHORT(b) + 3;
+		if (failuredest<bufp->buffer || bufp->buffer+bufp->used < failuredest) {
+		        PyErr_SetString(PyExc_SystemError, "Regex VM jump out of bounds (Cdummy_failure_jump failuredest)");
+			FREE_STATE(state);
+            	        return -2;
+		}
+		PUSH_FAILURE(state, failuredest, NULL, goto error);
 		code += a;
+		if (code<bufp->buffer || bufp->buffer+bufp->used < code) {
+		        PyErr_SetString(PyExc_SystemError, "Regex VM jump out of bounds (Cdummy_failure_jump code)");
+			FREE_STATE(state);
+            	        return -2;
+         	}
 		goto continue_matching;
 	}
 	case Cfailure_jump:
@@ -1757,16 +1785,26 @@ int re_match(regexp_t bufp,
 		a = (unsigned char)*code++;
 		a |= (unsigned char)*code++ << 8;
 		a = (int)SHORT(a);
+		if (code+a<bufp->buffer || bufp->buffer+bufp->used < code+a) {
+		        PyErr_SetString(PyExc_SystemError, "Regex VM jump out of bounds (Cfailure_jump)");
+			FREE_STATE(state);
+            	        return -2;
+         	}
 		PUSH_FAILURE(state, code + a, text, goto error);
 		goto continue_matching;
 	}
 	case Crepeat1:
 	{
-		char *pinst;
+		unsigned char *pinst;
 		a = (unsigned char)*code++;
 		a |= (unsigned char)*code++ << 8;
 		a = (int)SHORT(a);
 		pinst = code + a;
+		if (pinst<bufp->buffer || bufp->buffer+bufp->used<pinst) {
+		        PyErr_SetString(PyExc_SystemError, "Regex VM jump out of bounds (Crepeat1)");
+			FREE_STATE(state);
+            	        return -2;
+         	}
 		/* pinst is sole instruction in loop, and it matches a
 		 * single character.  Since Crepeat1 was originally a
 		 * Cupdate_failure_jump, we also know that backtracking
@@ -1777,8 +1815,8 @@ int re_match(regexp_t bufp,
 		switch (*pinst++)
 		{
 		case Cset:
-		{
-			if (translate)
+		  {
+		        if (translate)
 			{
 				while (text < textend)
 				{
@@ -1801,7 +1839,7 @@ int re_match(regexp_t bufp,
 				}
 			}
 			break;
-		}
+                }
 		case Cexact:
 		{
 			ch = (unsigned char)*pinst;
@@ -1858,7 +1896,9 @@ int re_match(regexp_t bufp,
 		}
 		default:
 		{
-			abort();
+		        FREE_STATE(state);
+		        PyErr_SetString(PyExc_SystemError, "Unknown regex opcode: memory corrupted?");
+		        return -2;
 			/*NOTREACHED*/
 		}
 		}
@@ -1884,7 +1924,7 @@ int re_match(regexp_t bufp,
 	{
 		if (text == textend)
 			goto fail;
-		if (!(SYNTAX(*text) & Sword))
+		if (!(SYNTAX(*text) & Sword)) 
 			goto fail;
 		if (text == textstart)
 			goto continue_matching;
@@ -1900,9 +1940,9 @@ int re_match(regexp_t bufp,
 			goto fail;
 		if (text == textend)
 			goto continue_matching;
-		if (SYNTAX(*text) & Sword)
-			goto fail;
-		goto continue_matching;
+		if (!(SYNTAX(*text) & Sword))
+		        goto continue_matching;
+                goto fail;
 	}
 	case Cwordbound:
 	{
@@ -1936,15 +1976,19 @@ int re_match(regexp_t bufp,
 	{
 		NEXTCHAR(ch);
 		if (SYNTAX(ch) & (unsigned char)*code++)
-			break;
+			goto fail;
 		goto continue_matching;
 	}
 	default:
 	{
-		abort();
+	        FREE_STATE(state);
+	        PyErr_SetString(PyExc_SystemError, "Unknown regex opcode: memory corrupted?");
+		return -2;
 		/*NOTREACHED*/
 	}
 	}
+	
+	
 
 #if 0 /* This line is never reached --Guido */
 	abort();
@@ -1952,7 +1996,8 @@ int re_match(regexp_t bufp,
 	/*
 	 *NOTREACHED
 	 */
-  
+
+	/* Using "break;" in the above switch statement is equivalent to "goto fail;" */
   fail:
 	POP_FAILURE(state, code, text, goto done_matching, goto error);
 	goto continue_matching;
@@ -1969,33 +2014,37 @@ int re_match(regexp_t bufp,
 	FREE_STATE(state);
 	return -2;
 }
+	
 
 #undef PREFETCH
 #undef NEXTCHAR
 
 int re_search(regexp_t bufp,
-	      char *string,
+	      unsigned char *string,
 	      int size,
 	      int pos,
 	      int range,
 	      regexp_registers_t regs)
 {
-	char *fastmap;
-	char *translate;
-	char *text;
-	char *partstart;
-	char *partend;
+	unsigned char *fastmap;
+	unsigned char *translate;
+	unsigned char *text;
+	unsigned char *partstart;
+	unsigned char *partend;
 	int dir;
 	int ret;
-	char anchor;
+	unsigned char anchor;
   
 	assert(size >= 0 && pos >= 0);
 	assert(pos + range >= 0 && pos + range <= size); /* Bugfix by ylo */
   
 	fastmap = bufp->fastmap;
 	translate = bufp->translate;
-	if (fastmap && !bufp->fastmap_accurate)
-		re_compile_fastmap(bufp);
+	if (fastmap && !bufp->fastmap_accurate) {
+                re_compile_fastmap(bufp);
+	        if (PyErr_Occurred()) return -2;
+	}
+	
 	anchor = bufp->anchor;
 	if (bufp->can_be_null == 1) /* can_be_null == 2: can match null at eob */
 		fastmap = NULL;

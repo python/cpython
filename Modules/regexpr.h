@@ -33,16 +33,16 @@ extern "C" {
 
 typedef struct re_pattern_buffer
 {
-	char *buffer;          /* compiled pattern */
+	unsigned char *buffer;          /* compiled pattern */
 	int allocated;         /* allocated size of compiled pattern */
 	int used;              /* actual length of compiled pattern */
-	char *fastmap;         /* fastmap[ch] is true if ch can start pattern */
-	char *translate;       /* translation to apply during compilation/matching */
-	char fastmap_accurate; /* true if fastmap is valid */
-	char can_be_null;      /* true if can match empty string */
-	char uses_registers;   /* registers are used and need to be initialized */
+	unsigned char *fastmap;         /* fastmap[ch] is true if ch can start pattern */
+	unsigned char *translate;       /* translation to apply during compilation/matching */
+	unsigned char fastmap_accurate; /* true if fastmap is valid */
+	unsigned char can_be_null;      /* true if can match empty string */
+	unsigned char uses_registers;   /* registers are used and need to be initialized */
 	int num_registers;     /* number of registers used */
-	char anchor;           /* anchor: 0=none 1=begline 2=begbuf */
+	unsigned char anchor;           /* anchor: 0=none 1=begline 2=begbuf */
 } *regexp_t;
 
 typedef struct re_registers
@@ -93,7 +93,7 @@ extern int re_syntax;
 /* This is the actual syntax mask.  It was added so that Python could do
  * syntax-dependent munging of patterns before compilation. */
 
-extern char re_syntax_table[256];
+extern unsigned char re_syntax_table[256];
 
 void re_compile_initialize(void);
 
@@ -101,7 +101,7 @@ int re_set_syntax(int syntax);
 /* This sets the syntax to use and returns the previous syntax.  The
  * syntax is specified by a bit mask of the above defined bits. */
 
-char *re_compile_pattern(char *regex, int regex_size, regexp_t compiled);
+unsigned char *re_compile_pattern(unsigned char *regex, int regex_size, regexp_t compiled);
 /* This compiles the regexp (given in regex and length in regex_size).
  * This returns NULL if the regexp compiled successfully, and an error
  * message if an error was encountered.  The buffer field must be
@@ -110,14 +110,14 @@ char *re_compile_pattern(char *regex, int regex_size, regexp_t compiled);
  * buffer is NULL).  Also, the translate field must be set to point to a
  * valid translation table, or NULL if it is not used. */
 
-int re_match(regexp_t compiled, char *string, int size, int pos,
+int re_match(regexp_t compiled, unsigned char *string, int size, int pos,
 	     regexp_registers_t old_regs);
 /* This tries to match the regexp against the string.  This returns the
  * length of the matched portion, or -1 if the pattern could not be
  * matched and -2 if an error (such as failure stack overflow) is
  * encountered. */
 
-int re_search(regexp_t compiled, char *string, int size, int startpos,
+int re_search(regexp_t compiled, unsigned char *string, int size, int startpos,
 	      int range, regexp_registers_t regs);
 /* This rearches for a substring matching the regexp.  This returns the
  * first index at which a match is found.  range specifies at how many
@@ -132,28 +132,16 @@ void re_compile_fastmap(regexp_t compiled);
  * the calling program must have initialized the fastmap field to point
  * to an array of 256 characters. */
 
-char *re_comp(char *s);
-/* BSD 4.2 regex library routine re_comp.  This compiles the regexp into
- * an internal buffer.  This returns NULL if the regexp was compiled
- * successfully, and an error message if there was an error. */
-
-int re_exec(char *s);
-/* BSD 4.2 regexp library routine re_exec.  This returns true if the
- * string matches the regular expression (that is, a matching part is
- * found anywhere in the string). */
-
 #else /* HAVE_PROTOTYPES */
 
 extern int re_syntax;
-extern char re_syntax_table[256];
+extern unsigned char re_syntax_table[256];
 void re_compile_initialize();
 int re_set_syntax();
-char *re_compile_pattern();
+unsigned char *re_compile_pattern();
 int re_match();
 int re_search();
 void re_compile_fastmap();
-char *re_comp();
-int re_exec();
 
 #endif /* HAVE_PROTOTYPES */
 

@@ -318,6 +318,7 @@ tests = [
 #    ('((((((((((a))))))))))\\41', 'aa', FAIL),
 #    ('((((((((((a))))))))))\\41', 'a!', SUCCEED, 'found', 'a!'),
     ('((((((((((a))))))))))\\41', '', SYNTAX_ERROR),
+    ('(?i)((((((((((a))))))))))\\41', '', SYNTAX_ERROR),
     ('(((((((((a)))))))))', 'a', SUCCEED, 'found', 'a'),
     ('multiple words of text', 'uh-uh', FAIL),
     ('multiple words', 'multiple words, yeah', SUCCEED, 'found', 'multiple words'),
@@ -448,7 +449,6 @@ tests = [
     ('(?i)((((((((((a))))))))))\\10', 'AA', SUCCEED, 'found', 'AA'),
     #('(?i)((((((((((a))))))))))\\41', 'AA', FAIL),
     #('(?i)((((((((((a))))))))))\\41', 'A!', SUCCEED, 'found', 'A!'),
-    ('(?i)((((((((((a))))))))))\\41', '', SYNTAX_ERROR),
     ('(?i)(((((((((a)))))))))', 'A', SUCCEED, 'found', 'A'),
     ('(?i)(?:(?:(?:(?:(?:(?:(?:(?:(?:(a))))))))))', 'A', SUCCEED, 'g1', 'A'),
     ('(?i)(?:(?:(?:(?:(?:(?:(?:(?:(?:(a|b|c))))))))))', 'C', SUCCEED, 'g1', 'C'),
@@ -506,10 +506,21 @@ xyzabc
     ('a.b', 'a\nb', FAIL),
     ('(?s)a.b', 'a\nb', SUCCEED, 'found', 'a\nb'),
 
-    # test \w, etc.
+    # test \w, etc. both inside and outside character classes
 
     ('\\w+', '--ab_cd0123--', SUCCEED, 'found', 'ab_cd0123'),
+    ('[\\w]+', '--ab_cd0123--', SUCCEED, 'found', 'ab_cd0123'),
     ('\\D+', '1234abc5678', SUCCEED, 'found', 'abc'),
+    ('[\\D]+', '1234abc5678', SUCCEED, 'found', 'abc'),
     ('[\\da-fA-F]+', '123abc', SUCCEED, 'found', '123abc'),
     ('[\\d-x]', '-', SYNTAX_ERROR),
+    (r'([\s]*)([\S]*)([\s]*)', ' testing!1972', SUCCEED, 'g3+g2+g1', 'testing!1972 '),
+    (r'(\s*)(\S*)(\s*)', ' testing!1972', SUCCEED, 'g3+g2+g1', 'testing!1972 '),
+
+    (r'\xff', '\377', SUCCEED, 'found', chr(255)),
+    (r'\x00ff', '\377', SUCCEED, 'found', chr(255)),
+    (r'\t\n\v\r\f\a\g', '\t\n\v\r\f\ag', SUCCEED, 'found', '\t\n\v\r\f\ag'),
+    ('\t\n\v\r\f\a\g', '\t\n\v\r\f\ag', SUCCEED, 'found', '\t\n\v\r\f\ag'),
+    (r'\t\n\v\r\f\a', '\t\n\v\r\f\a', SUCCEED, 'found', chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7)),
+    (r'[\t][\n][\v][\r][\f][\a][\A][\b][\B][\Z][\g]', '\t\n\v\r\f\aA\bBZg', SUCCEED, 'found', '\t\n\v\r\f\aA\bBZg'),
 ]

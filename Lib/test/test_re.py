@@ -31,6 +31,10 @@ try:
 
     assert re.sub('(?P<a>x)', '\g<a>\g<a>', 'xx') == 'xxxx'
 
+    assert re.sub('a', r'\t\n\v\r\f\a\b\B\Z\a\A\w\W\s\S\d\D', 'a') == '\t\n\v\r\f\a\bBZ\aAwWsSdD'
+    assert re.sub('a', '\t\n\v\r\f\a', 'a') == '\t\n\v\r\f\a'
+    assert re.sub('a', '\t\n\v\r\f\a', 'a') == (chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7))
+
 except AssertionError:
     raise TestFailed, "re.sub"
 
@@ -120,7 +124,6 @@ if verbose:
     print 'Running re_tests test suite'
 
 for t in tests:
-    print t
     sys.stdout.flush()
     pattern=s=outcome=repl=expected=None
     if len(t)==5:
@@ -136,6 +139,7 @@ for t in tests:
 	if outcome==SYNTAX_ERROR: pass	# Expected a syntax error
 	else: 
 	    print '=== Syntax error:', t
+    except KeyboardInterrupt: raise KeyboardInterrupt
     except:
 	print '*** Unexpected error ***'
 	if verbose:
@@ -182,3 +186,10 @@ for t in tests:
 		    print repr(repl)+' should be '+repr(expected)
 	    else:
 		print '=== Failed incorrectly', t
+
+            # Try the match with IGNORECASE enabled, and check that it
+	    # still succeeds.
+            obj=re.compile(pattern, re.IGNORECASE)
+            result=obj.search(s)
+            if result==None:
+                print '=== Fails on case-insensitive match', t
