@@ -2086,7 +2086,7 @@ static int
 validate_arglist(node *tree)
 {
     int nch = NCH(tree);
-    int i, ok;
+    int i, ok = 1;
     node *last;
 
     if (nch <= 0)
