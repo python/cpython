@@ -98,32 +98,17 @@ extern typeobject Menutype;	/* Really static, forward */
 /* Strongly stdwin-specific argument handlers */
 
 static int
-getmousedetail(v, ep)
-	object *v;
-	EVENT *ep;
-{
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 4)
-		return err_badarg();
-	return getintintarg(gettupleitem(v, 0),
-					&ep->u.where.h, &ep->u.where.v) &&
-		getintarg(gettupleitem(v, 1), &ep->u.where.clicks) &&
-		getintarg(gettupleitem(v, 2), &ep->u.where.button) &&
-		getintarg(gettupleitem(v, 3), &ep->u.where.mask);
-}
-
-static int
 getmenudetail(v, ep)
 	object *v;
 	EVENT *ep;
 {
-	object *mp;
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2)
+	menuobject *mp;
+	if (!getargs(v, "(Oi)", &mp, &ep->u.m.item))
+		return 0;
+	if (!is_menuobject(mp))
 		return err_badarg();
-	mp = gettupleitem(v, 0);
-	if (mp == NULL || !is_menuobject(mp))
-		return err_badarg();
-	ep->u.m.id = ((menuobject *)mp) -> m_id;
-	return getintarg(gettupleitem(v, 1), &ep->u.m.item);
+	ep->u.m.id = mp->m_id;
+	return 1;
 }
 
 static int
@@ -133,24 +118,22 @@ geteventarg(v, ep)
 {
 	object *wp, *detail;
 	int a[4];
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 3)
-		return err_badarg();
-	if (!getintarg(gettupleitem(v, 0), &ep->type))
+	if (!getargs(v, "(iOO)", &ep->type, &wp, &detail))
 		return 0;
-	wp = gettupleitem(v, 1);
-	if (wp == None)
-		ep->window = NULL;
-	else if (wp == NULL || !is_windowobject(wp))
-		return err_badarg();
-	else
+	if (is_windowobject(wp))
 		ep->window = ((windowobject *)wp) -> w_win;
-	detail = gettupleitem(v, 2);
-	switch (ep->type) {
-	case WE_CHAR:
-		if (!is_stringobject(detail) || getstringsize(detail) != 1)
+	else if (wp == None)
+		ep->window = NULL;
+	else
 		return err_badarg();
-		ep->u.character = getstringvalue(detail)[0];
-		return 1;
+	switch (ep->type) {
+	case WE_CHAR: {
+			char c;
+			if (!getargs(detail, "c", &c))
+				return 0;
+			ep->u.character = c;
+			return 1;
+		}
 	case WE_COMMAND:
 		return getintarg(detail, &ep->u.command);
 	case WE_DRAW:
@@ -164,7 +147,11 @@ geteventarg(v, ep)
 	case WE_MOUSE_DOWN:
 	case WE_MOUSE_UP:
 	case WE_MOUSE_MOVE:
-		return getmousedetail(detail, ep);
+		return getargs(detail, "((ii)iii)",
+				&ep->u.where.h, &ep->u.where.v,
+				&ep->u.where.clicks,
+				&ep->u.where.button,
+				&ep->u.where.mask);
 	case WE_MENU:
 		return getmenudetail(detail, ep);
 	default:
@@ -561,11 +548,11 @@ drawing_text(dp, args)
 	drawingobject *dp;
 	object *args;
 {
-	int a[2];
-	object *s;
-	if (!getpointstrarg(args, a, &s))
+	int h, v, size;
+	char *text;
+	if (!getargs(args, "((ii)s#)", &h, &v, &text, &size))
 		return NULL;
-	wdrawtext(a[0], a[1], getstringvalue(s), (int)getstringsize(s));
+	wdrawtext(h, v, text, size);
 	INCREF(None);
 	return None;
 }
@@ -597,11 +584,11 @@ drawing_textwidth(dp, args)
 	drawingobject *dp;
 	object *args;
 {
-	object *s;
-	if (!getstrarg(args, &s))
+	char *text;
+	int size;
+	if (!getargs(args, "s#", &text, &size))
 		return NULL;
-	return newintobject(
-		(long)wtextwidth(getstringvalue(s), (int)getstringsize(s)));
+	return newintobject((long)wtextwidth(text, size));
 }
 
 static object *
@@ -609,12 +596,11 @@ drawing_textbreak(dp, args)
 	drawingobject *dp;
 	object *args;
 {
-	object *s;
-	int a;
-	if (!getstrintarg(args, &s, &a))
+	char *text;
+	int size, width;
+	if (!getargs(args, "(s#i)", &text, &size, &width))
 		return NULL;
-	return newintobject(
-		(long)wtextbreak(getstringvalue(s), (int)getstringsize(s), a));
+	return newintobject((long)wtextbreak(text, size, width));
 }
 
 static object *
@@ -622,53 +608,46 @@ drawing_setfont(self, args)
 	drawingobject *self;
 	object *args;
 {
-	object *font, *style;
-	int size;
-	if (args == NULL) {
-		err_badarg();
-		return NULL;
-	}
-	if (is_stringobject(args)) {
-		font = args;
-		style = NULL;
-		size = 0;
-	}
-	else if (is_tupleobject(args)) {
-		int n = gettuplesize(args);
-		if (n == 2) {
-			if (!getstrintarg(args, &font, &size))
-				return NULL;
-			style = NULL;
-		}
-		else if (!getstrstrintarg(args, &font, &style, &size))
+	char *font;
+	char style = '\0';
+	int size = 0;
+	if (args == NULL || !is_tupleobject(args)) {
+		if (!getargs(args, "z", font))
 			return NULL;
 	}
 	else {
-		err_badarg();
-		return NULL;
-	}
-	wsetfont(getstringvalue(font));
-	if (style != NULL) {
-		switch (*getstringvalue(style)) {
-		case 'b':
-			wsetbold();
-			break;
-		case 'i':
-			wsetitalic();
-			break;
-		case 'o':
-			wsetbolditalic();
-			break;
-		case 'u':
-			wsetunderline();
-			break;
-		default:
-			wsetplain();
-			break;
+		int n = gettuplesize(args);
+		if (n == 2) {
+			if (!getargs(args, "(zi)", &font, &size))
+				return NULL;
+		}
+		else if (!getargs(args, "(zic)", &font, &size, &style)) {
+			err_clear();
+			if (!getargs(args, "(zci)", &font, &style, &size))
+				return NULL;
 		}
 	}
+	if (font != NULL)
+		wsetfont(font);
 	if (size != 0)
 		wsetsize(size);
+	switch (style) {
+	case 'b':
+		wsetbold();
+		break;
+	case 'i':
+		wsetitalic();
+		break;
+	case 'o':
+		wsetbolditalic();
+		break;
+	case 'u':
+		wsetunderline();
+		break;
+	case 'p':
+		wsetplain();
+		break;
+	}
 	INCREF(None);
 	return None;
 }
@@ -990,10 +969,10 @@ text_replace(self, args)
 	textobject *self;
 	object *args;
 {
-	object *text;
+	char *text;
 	if (!getstrarg(args, &text))
 		return NULL;
-	tereplace(self->t_text, getstringvalue(text));
+	tereplace(self->t_text, text);
 	INCREF(None);
 	return None;
 }
@@ -1029,16 +1008,15 @@ text_settext(self, args)
 	textobject *self;
 	object *args;
 {
-	object *text;
+	char *text;
 	char *buf;
 	int size;
-	if (!getstrarg(args, &text))
+	if (!getargs(args, "s#", &text, &size))
 		return NULL;
-	size = getstringsize(text);
 	if ((buf = NEW(char, size)) == NULL) {
 		return err_nomem();
 	}
-	memcpy(buf, getstringvalue(text), size);
+	memcpy(buf, text, size);
 	tesetbuf(self->t_text, buf, size); /* Becomes owner of buffer */
 	INCREF(None);
 	return None;
@@ -1143,9 +1121,10 @@ typeobject Texttype = {
 #define MAXNMENU 200		/* Max #menus we allow */
 static menuobject *menulist[MAXNMENU];
 
+static menuobject *newmenuobject PROTO((char *));
 static menuobject *
 newmenuobject(title)
-	object *title;
+	char *title;
 {
 	int id;
 	MENU *menu;
@@ -1158,7 +1137,7 @@ newmenuobject(title)
 		err_setstr(StdwinError, "creating too many menus");
 		return NULL;
 	}
-	menu = wmenucreate(id + IDOFFSET, getstringvalue(title));
+	menu = wmenucreate(id + IDOFFSET, title);
 	if (menu == NULL)
 		return (menuobject *) err_nomem();
 	mp = NEWOBJ(menuobject, &Menutype);
@@ -1214,24 +1193,17 @@ menu_additem(self, args)
 	menuobject *self;
 	object *args;
 {
-	object *text;
-	int shortcut;
+	char *text;
+	int shortcut = -1;
 	if (is_tupleobject(args)) {
-		object *v;
-		if (!getstrstrarg(args, &text, &v))
+		char c;
+		if (!getargs(args, "(sc)", &text, &c))
 			return NULL;
-		if (getstringsize(v) != 1) {
-			err_badarg();
-			return NULL;
-		}
-		shortcut = *getstringvalue(v) & 0xff;
+		shortcut = c;
 	}
-	else {
-		if (!getstrarg(args, &text))
-			return NULL;
-		shortcut = -1;
-	}
-	wmenuadditem(self->m_menu, getstringvalue(text), shortcut);
+	else if (!getstrarg(args, &text))
+		return NULL;
+	wmenuadditem(self->m_menu, text, shortcut);
 	INCREF(None);
 	return None;
 }
@@ -1242,10 +1214,10 @@ menu_setitem(self, args)
 	object *args;
 {
 	int index;
-	object *text;
+	char *text;
 	if (!getintstrarg(args, &index, &text))
 		return NULL;
-	wmenusetitem(self->m_menu, index, getstringvalue(text));
+	wmenusetitem(self->m_menu, index, text);
 	INCREF(None);
 	return None;
 }
@@ -1507,18 +1479,6 @@ window_scroll(wp, args)
 }
 
 static object *
-window_setactive(wp, args)
-	windowobject *wp;
-	object *args;
-{
-	if (!getnoarg(args))
-		return NULL;
-	wsetactive(wp->w_win);
-	INCREF(None);
-	return None;
-}
-
-static object *
 window_setdocsize(wp, args)
 	windowobject *wp;
 	object *args;
@@ -1550,7 +1510,7 @@ window_settitle(wp, args)
 	object *args;
 {
 	object *title;
-	if (!getstrarg(args, &title))
+	if (!getStrarg(args, &title))
 		return NULL;
 	DECREF(wp->w_title);
 	INCREF(title);
@@ -1592,7 +1552,7 @@ window_menucreate(self, args)
 	object *args;
 {
 	menuobject *mp;
-	object *title;
+	char *title;
 	if (!getstrarg(args, &title))
 		return NULL;
 	wmenusetdeflocal(1);
@@ -1621,13 +1581,11 @@ window_setselection(self, args)
 	windowobject *self;
 	object *args;
 {
-	int sel;
-	object *str;
-	int ok;
-	if (!getintstrarg(args, &sel, &str))
+	int sel, size, ok;
+	char *text;
+	if (!getargs(args, "(is#)", &sel, &text, &size))
 		return NULL;
-	ok = wsetselection(self->w_win, sel,
-		getstringvalue(str), (int)getstringsize(str));
+	ok = wsetselection(self->w_win, sel, text, size);
 	return newintobject(ok);
 }
 
@@ -1636,16 +1594,28 @@ window_setwincursor(self, args)
 	windowobject *self;
 	object *args;
 {
-	object *str;
+	char *name;
 	CURSOR *c;
-	if (!getstrarg(args, &str))
+	if (!getstrarg(args, &name))
 		return NULL;
-	c = wfetchcursor(getstringvalue(str));
+	c = wfetchcursor(name);
 	if (c == NULL) {
 		err_setstr(StdwinError, "no such cursor");
 		return NULL;
 	}
 	wsetwincursor(self->w_win, c);
+	INCREF(None);
+	return None;
+}
+
+static object *
+window_setactive(self, args)
+	windowobject *self;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	wsetactive(self->w_win);
 	INCREF(None);
 	return None;
 }
@@ -1754,7 +1724,7 @@ stdwin_open(sw, args)
 	int tag;
 	object *title;
 	windowobject *wp;
-	if (!getstrarg(args, &title))
+	if (!getStrarg(args, &title))
 		return NULL;
 	for (tag = 0; tag < MAXNWIN; tag++) {
 		if (windowlist[tag] == NULL)
@@ -1988,7 +1958,7 @@ stdwin_menucreate(self, args)
 	object *self;
 	object *args;
 {
-	object *title;
+	char *title;
 	if (!getstrarg(args, &title))
 		return NULL;
 	wmenusetdeflocal(0);
@@ -2000,14 +1970,14 @@ stdwin_askfile(self, args)
 	object *self;
 	object *args;
 {
-	object *prompt, *dflt;
+	char *prompt, *dflt;
 	int new, ret;
 	char buf[256];
 	if (!getstrstrintarg(args, &prompt, &dflt, &new))
 		return NULL;
-	strncpy(buf, getstringvalue(dflt), sizeof buf);
+	strncpy(buf, dflt, sizeof buf);
 	buf[sizeof buf - 1] = '\0';
-	ret = waskfile(getstringvalue(prompt), buf, sizeof buf, new);
+	ret = waskfile(prompt, buf, sizeof buf, new);
 	if (!ret) {
 		err_set(KeyboardInterrupt);
 		return NULL;
@@ -2020,11 +1990,11 @@ stdwin_askync(self, args)
 	object *self;
 	object *args;
 {
-	object *prompt;
+	char *prompt;
 	int new, ret;
 	if (!getstrintarg(args, &prompt, &new))
 		return NULL;
-	ret = waskync(getstringvalue(prompt), new);
+	ret = waskync(prompt, new);
 	if (ret < 0) {
 		err_set(KeyboardInterrupt);
 		return NULL;
@@ -2037,14 +2007,14 @@ stdwin_askstr(self, args)
 	object *self;
 	object *args;
 {
-	object *prompt, *dflt;
+	char *prompt, *dflt;
 	int ret;
 	char buf[256];
 	if (!getstrstrarg(args, &prompt, &dflt))
 		return NULL;
-	strncpy(buf, getstringvalue(dflt), sizeof buf);
+	strncpy(buf, dflt, sizeof buf);
 	buf[sizeof buf - 1] = '\0';
-	ret = waskstr(getstringvalue(prompt), buf, sizeof buf);
+	ret = waskstr(prompt, buf, sizeof buf);
 	if (!ret) {
 		err_set(KeyboardInterrupt);
 		return NULL;
@@ -2057,10 +2027,10 @@ stdwin_message(self, args)
 	object *self;
 	object *args;
 {
-	object *msg;
+	char *msg;
 	if (!getstrarg(args, &msg))
 		return NULL;
-	wmessage(getstringvalue(msg));
+	wmessage(msg);
 	INCREF(None);
 	return None;
 }
@@ -2082,11 +2052,11 @@ stdwin_setcutbuffer(self, args)
 	object *self;
 	object *args;
 {
-	int i;
-	object *str;
-	if (!getintstrarg(args, &i, &str))
+	int i, size;
+	char *str;
+	if (!getargs(args, "(is#)", &i, &str, &size))
 		return NULL;
-	wsetcutbuffer(i, getstringvalue(str), getstringsize(str));
+	wsetcutbuffer(i, str, size);
 	INCREF(None);
 	return None;
 }
@@ -2166,10 +2136,10 @@ stdwin_fetchcolor(self, args)
 	object *self;
 	object *args;
 {
-	object *colorname;
+	char *colorname;
 	if (!getstrarg(args, &colorname))
 		return NULL;
-	return newintobject((long)wfetchcolor(getstringvalue(colorname)));
+	return newintobject((long)wfetchcolor(colorname));
 }
 
 static object *
