@@ -6,6 +6,7 @@ csv.py - read/write/investigate CSV files
 import re
 from _csv import Error, __version__, writer, reader, register_dialect, \
                  unregister_dialect, get_dialect, list_dialects, \
+                 set_field_limit, \
                  QUOTE_MINIMAL, QUOTE_ALL, QUOTE_NONNUMERIC, QUOTE_NONE, \
                  __doc__
 from _csv import Dialect as _Dialect

@@ -44,6 +44,7 @@ module instead.
 
 static PyObject *error_obj;	/* CSV exception */
 static PyObject *dialects;      /* Dialect registry */
+static long field_limit = 128 * 1024;	/* max parsed field size */
 
 typedef enum {
 	START_RECORD, START_FIELD, ESCAPED_CHAR, IN_FIELD, 
@@ -527,15 +528,21 @@ parse_grow_buff(ReaderObj *self)
 	return 1;
 }
 
-static void
+static int
 parse_add_char(ReaderObj *self, char c)
 {
+	if (self->field_len >= field_limit) {
+		PyErr_Format(error_obj, "field larger than field limit (%ld)",
+			     field_limit);
+		return -1;
+	}
 	if (self->field_len == self->field_size && !parse_grow_buff(self))
-		return;
+		return -1;
 	self->field[self->field_len++] = c;
+	return 0;
 }
 
-static void
+static int
 parse_process_char(ReaderObj *self, char c)
 {
         DialectObj *dialect = self->dialect;
@@ -574,13 +581,15 @@ parse_process_char(ReaderObj *self, char c)
 		}
 		else {
 			/* begin new unquoted field */
-			parse_add_char(self, c);
+			if (parse_add_char(self, c) < 0)
+				return -1;
 			self->state = IN_FIELD;
 		}
 		break;
 
 	case ESCAPED_CHAR:
-		parse_add_char(self, c);
+		if (parse_add_char(self, c) < 0)
+			return -1;
 		self->state = IN_FIELD;
 		break;
 
@@ -602,7 +611,8 @@ parse_process_char(ReaderObj *self, char c)
 		}
 		else {
 			/* normal character - save in field */
-			parse_add_char(self, c);
+			if (parse_add_char(self, c) < 0)
+				return -1;
 		}
 		break;
 
@@ -610,7 +620,8 @@ parse_process_char(ReaderObj *self, char c)
 		/* in quoted field */
 		if (c == '\n') {
 			/* end of line - save '\n' in field */
-			parse_add_char(self, '\n');
+			if (parse_add_char(self, '\n') < 0)
+				return -1;
 		}
 		else if (c == dialect->escapechar) {
 			/* Possible escape character */
@@ -629,12 +640,14 @@ parse_process_char(ReaderObj *self, char c)
 		}
 		else {
 			/* normal character - save in field */
-			parse_add_char(self, c);
+			if (parse_add_char(self, c) < 0)
+				return -1;
 		}
 		break;
 
 	case ESCAPE_IN_QUOTED_FIELD:
-		parse_add_char(self, c);
+		if (parse_add_char(self, c) < 0)
+			return -1;
 		self->state = IN_QUOTED_FIELD;
 		break;
 
@@ -643,7 +656,8 @@ parse_process_char(ReaderObj *self, char c)
 		if (dialect->quoting != QUOTE_NONE && 
                     c == dialect->quotechar) {
 			/* save "" as " */
-			parse_add_char(self, c);
+			if (parse_add_char(self, c) < 0)
+				return -1;
 			self->state = IN_QUOTED_FIELD;
 		}
 		else if (c == dialect->delimiter) {
@@ -657,7 +671,8 @@ parse_process_char(ReaderObj *self, char c)
 			self->state = START_RECORD;
 		}
 		else if (!dialect->strict) {
-			parse_add_char(self, c);
+			if (parse_add_char(self, c) < 0)
+				return -1;
 			self->state = IN_FIELD;
 		}
 		else {
@@ -666,10 +681,12 @@ parse_process_char(ReaderObj *self, char c)
 			PyErr_Format(error_obj, "%c expected after %c", 
 					dialect->delimiter, 
                                         dialect->quotechar);
+			return -1;
 		}
 		break;
 
 	}
+	return 0;
 }
 
 /*
@@ -754,13 +771,15 @@ Reader_iternext(ReaderObj *self)
                                 return PyErr_Format(error_obj, 
                                                     "newline inside string");
                         }
-                        parse_process_char(self, c);
-                        if (PyErr_Occurred()) {
-                                Py_DECREF(lineobj);
-                                return NULL;
-                        }
-                }
-                parse_process_char(self, '\n');
+			if (parse_process_char(self, c) < 0) {
+				Py_DECREF(lineobj);
+				return NULL;
+			}
+		}
+		if (parse_process_char(self, '\n') < 0) {
+			Py_DECREF(lineobj);
+			return NULL;
+		}
                 Py_DECREF(lineobj);
         } while (self->state != START_RECORD);
 
@@ -1387,6 +1406,25 @@ csv_get_dialect(PyObject *module, PyObject *name_obj)
         return get_dialect_from_registry(name_obj);
 }
 
+static PyObject *
+csv_set_field_limit(PyObject *module, PyObject *args)
+{
+	PyObject *new_limit = NULL;
+	long old_limit = field_limit;
+
+	if (!PyArg_UnpackTuple(args, "set_field_limit", 0, 1, &new_limit))
+		return NULL;
+	if (new_limit != NULL) {
+		if (!PyInt_Check(new_limit)) {
+			PyErr_Format(PyExc_TypeError, 
+				     "limit must be an integer");
+			return NULL;
+		}
+		field_limit = PyInt_AsLong(new_limit);
+	}
+	return PyInt_FromLong(old_limit);
+}
+
 /*
  * MODULE
  */
@@ -1494,20 +1532,29 @@ PyDoc_STRVAR(csv_unregister_dialect_doc,
 "Delete the name/dialect mapping associated with a string name.\n"
 "    csv.unregister_dialect(name)");
 
+PyDoc_STRVAR(csv_set_field_limit_doc,
+"Sets an upper limit on parsed fields.\n"
+"    csv.set_field_limit([limit])\n"
+"\n"
+"Returns old limit. If limit is not given, no new limit is set and\n"
+"the old limit is returned");
+
 static struct PyMethodDef csv_methods[] = {
-        { "reader", (PyCFunction)csv_reader, 
-            METH_VARARGS | METH_KEYWORDS, csv_reader_doc},
-        { "writer", (PyCFunction)csv_writer, 
-            METH_VARARGS | METH_KEYWORDS, csv_writer_doc},
-        { "list_dialects", (PyCFunction)csv_list_dialects, 
-            METH_NOARGS, csv_list_dialects_doc},
-        { "register_dialect", (PyCFunction)csv_register_dialect, 
+	{ "reader", (PyCFunction)csv_reader, 
+		METH_VARARGS | METH_KEYWORDS, csv_reader_doc},
+	{ "writer", (PyCFunction)csv_writer, 
+		METH_VARARGS | METH_KEYWORDS, csv_writer_doc},
+	{ "list_dialects", (PyCFunction)csv_list_dialects, 
+		METH_NOARGS, csv_list_dialects_doc},
+	{ "register_dialect", (PyCFunction)csv_register_dialect, 
 		METH_VARARGS | METH_KEYWORDS, csv_register_dialect_doc},
-        { "unregister_dialect", (PyCFunction)csv_unregister_dialect, 
-            METH_O, csv_unregister_dialect_doc},
-        { "get_dialect", (PyCFunction)csv_get_dialect, 
-            METH_O, csv_get_dialect_doc},
-        { NULL, NULL }
+	{ "unregister_dialect", (PyCFunction)csv_unregister_dialect, 
+		METH_O, csv_unregister_dialect_doc},
+	{ "get_dialect", (PyCFunction)csv_get_dialect, 
+		METH_O, csv_get_dialect_doc},
+	{ "set_field_limit", (PyCFunction)csv_set_field_limit, 
+		METH_VARARGS, csv_set_field_limit_doc},
+	{ NULL, NULL }
 };
 
 PyMODINIT_FUNC
