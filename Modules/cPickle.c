@@ -3698,6 +3698,53 @@ load_inst(Unpicklerobject *self)
 	return 0;
 }
 
+static int
+load_newobj(Unpicklerobject *self)
+{
+	PyObject *args = NULL;
+	PyObject *clsraw = NULL;
+	PyTypeObject *cls;	/* clsraw cast to its true type */
+	PyObject *obj;
+
+	/* Stack is ... cls argtuple, and we want to call
+	 * cls.__new__(cls, *argtuple).
+	 */
+	PDATA_POP(self->stack, args);
+	if (args == NULL) goto Fail;
+	if (! PyTuple_Check(args)) {
+		PyErr_SetString(UnpicklingError, "NEWOBJ expected an arg "
+						 "tuple.");
+		goto Fail;
+	}
+
+	PDATA_POP(self->stack, clsraw);
+	cls = (PyTypeObject *)clsraw;
+	if (cls == NULL) goto Fail;
+	if (! PyType_Check(cls)) {
+		PyErr_SetString(UnpicklingError, "NEWOBJ class argument "
+					 	 "isn't a type object");
+		goto Fail;
+	}
+	if (cls->tp_new == NULL) {
+		PyErr_SetString(UnpicklingError, "NEWOBJ class argument "
+						 "has NULL tp_new");
+		goto Fail;
+	}
+
+	/* Call __new__. */
+	obj = cls->tp_new(cls, args, NULL);
+	if (obj == NULL) goto Fail;
+
+ 	Py_DECREF(args);
+ 	Py_DECREF(clsraw);
+	PDATA_PUSH(self->stack, obj, -1);
+ 	return 0;
+
+ Fail:
+ 	Py_XDECREF(args);
+ 	Py_XDECREF(clsraw);
+ 	return -1;
+}
 
 static int
 load_global(Unpicklerobject *self)
@@ -4461,6 +4508,11 @@ load(Unpicklerobject *self)
 				break;
 			continue;
 
+		case NEWOBJ:
+			if (load_newobj(self) < 0)
+				break;
+			continue;
+
 		case GLOBAL:
 			if (load_global(self) < 0)
 				break;
@@ -4638,8 +4690,25 @@ noload_inst(Unpicklerobject *self)
 	Pdata_clear(self->stack, i);
 	if (self->readline_func(self, &s) < 0) return -1;
 	if (self->readline_func(self, &s) < 0) return -1;
-	PDATA_APPEND(self->stack, Py_None,-1);
+	PDATA_APPEND(self->stack, Py_None, -1);
 	return 0;
+}
+
+static int
+noload_newobj(Unpicklerobject *self)
+{
+	PyObject *obj;
+
+	PDATA_POP(self->stack, obj);	/* pop argtuple */
+	if (obj == NULL) return -1;
+	Py_DECREF(obj);
+
+	PDATA_POP(self->stack, obj);	/* pop cls */
+	if (obj == NULL) return -1;
+	Py_DECREF(obj);
+
+	PDATA_APPEND(self->stack, Py_None, -1);
+ 	return 0;
 }
 
 static int
@@ -4826,6 +4895,11 @@ noload(Unpicklerobject *self)
 
 		case INST:
 			if (noload_inst(self) < 0)
+				break;
+			continue;
+
+		case NEWOBJ:
+			if (noload_newobj(self) < 0)
 				break;
 			continue;
 
