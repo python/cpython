@@ -130,4 +130,3 @@ f.close()
 ##      pass
 
 os.unlink(name)
-print >>sys.stderr, name, "exists:", os.path.exists(name)
