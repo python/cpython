@@ -143,8 +143,9 @@ Two more operations with the same syntactic priority, \code{in} and
 
 \subsection{Numeric Types}
 
-There are three numeric types: \dfn{plain integers}, \dfn{long integers}, and
-\dfn{floating point numbers}.  Plain integers (also just called \dfn{integers})
+There are four numeric types: \dfn{plain integers}, \dfn{long integers}, 
+\dfn{floating point numbers}, and \dfn{complex numbers}.
+Plain integers (also just called \dfn{integers})
 are implemented using \code{long} in \C{}, which gives them at least 32
 bits of precision.  Long integers have unlimited precision.  Floating
 point numbers are implemented using \code{double} in \C{}.  All bets on
@@ -155,7 +156,12 @@ working with.
 \indexii{integer}{type}
 \indexiii{long}{integer}{type}
 \indexii{floating point}{type}
+\indexii{complex number}{type}
 \indexii{\C{}}{language}
+
+Complex numbers have a real and imaginary part, which are both
+implemented using \code{double} in \C{}.  To extract these parts from
+a complex number \code{z}, use \code{z.real} and \code{z.imag}.  
 
 Numbers are created by numeric literals or as the result of built-in
 functions and operators.  Unadorned integer literals (including hex
@@ -163,27 +169,32 @@ and octal numbers) yield plain integers.  Integer literals with an \samp{L}
 or \samp{l} suffix yield long integers
 (\samp{L} is preferred because \code{1l} looks too much like eleven!).
 Numeric literals containing a decimal point or an exponent sign yield
-floating point numbers.
+floating point numbers.  Appending \code{j} or \code{J} to a numeric
+literal yields a complex number.
 \indexii{numeric}{literals}
 \indexii{integer}{literals}
 \indexiii{long}{integer}{literals}
 \indexii{floating point}{literals}
+\indexii{complex number}{literals}
 \indexii{hexadecimal}{literals}
 \indexii{octal}{literals}
 
 Python fully supports mixed arithmetic: when a binary arithmetic
 operator has operands of different numeric types, the operand with the
 ``smaller'' type is converted to that of the other, where plain
-integer is smaller than long integer is smaller than floating point.
+integer is smaller than long integer is smaller than floating point is
+smaller than complex.
 Comparisons between numbers of mixed type use the same rule.%
 \footnote{As a consequence, the list \code{[1, 2]} is considered equal
 	to \code{[1.0, 2.0]}, and similar for tuples.}
-The functions \code{int()}, \code{long()} and \code{float()} can be used
+The functions \code{int()}, \code{long()}, \code{float()},
+and \code{complex()} can be used
 to coerce numbers to a specific type.
 \index{arithmetic}
 \bifuncindex{int}
 \bifuncindex{long}
 \bifuncindex{float}
+\bifuncindex{complex}
 
 All numeric types support the following operations, sorted by
 ascending priority (operations in the same box have the same
@@ -201,12 +212,14 @@ comparison operations):
   \lineiii{-\var{x}}{\var{x} negated}{}
   \lineiii{+\var{x}}{\var{x} unchanged}{}
   \hline
-  \lineiii{abs(\var{x})}{absolute value of \var{x}}{}
+  \lineiii{abs(\var{x})}{absolute value or magnitude of \var{x}}{}
   \lineiii{int(\var{x})}{\var{x} converted to integer}{(2)}
   \lineiii{long(\var{x})}{\var{x} converted to long integer}{(2)}
   \lineiii{float(\var{x})}{\var{x} converted to floating point}{}
+  \lineiii{complex(\var{re},\var{im})}{a complex number with real part \var{re}, imaginary part \var{im}.  \var{im} defaults to zero.}{}
   \lineiii{divmod(\var{x}, \var{y})}{the pair \code{(\var{x} / \var{y}, \var{x} \%{} \var{y})}}{(3)}
   \lineiii{pow(\var{x}, \var{y})}{\var{x} to the power \var{y}}{}
+  \lineiii{\var{x}**\var{y}}{\var{x} to the power \var{y}}{}
 \end{tableiii}
 \indexiii{operations on}{numeric}{types}
 
@@ -439,11 +452,9 @@ The following operations are defined on mutable sequence types (where
   \lineiii{\var{s}.remove(\var{x})}
 	{same as \code{del \var{s}[\var{s}.index(\var{x})]}}{(1)}
   \lineiii{\var{s}.reverse()}
-	{reverses the items of \var{s} in place}{}
+	{reverses the items of \var{s} in place}{(3)}
   \lineiii{\var{s}.sort()}
-	{permutes the items of \var{s} to satisfy
-        \code{\var{s}[\var{i}] <= \var{s}[\var{j}]},
-        for \code{\var{i} < \var{j}}}{(2)}
+	{sort the items of \var{s} in place}{(2), (3)}
 \end{tableiii}
 \indexiv{operations on}{mutable}{sequence}{types}
 \indexiii{operations on}{sequence}{types}
@@ -474,6 +485,12 @@ Notes:
   to use calls to \code{sort()} and \code{reverse()} than to use
   \code{sort()} with a comparison function that reverses the ordering of
   the elements.
+
+\item[(3)] The \code{sort()} and \code{reverse()} methods modify the
+list in place for economy of space when sorting or reversing a large
+list.  They don't return the sorted or reversed list to remind you of
+this side effect.
+
 \end{description}
 
 \subsection{Mapping Types}
@@ -504,12 +521,12 @@ mapping, \var{k} is a key and \var{x} is an arbitrary object):
   \lineiii{\var{a}[\var{k}]}{the item of \var{a} with key \var{k}}{(1)}
   \lineiii{\var{a}[\var{k}] = \var{x}}{set \code{\var{a}[\var{k}]} to \var{x}}{}
   \lineiii{del \var{a}[\var{k}]}{remove \code{\var{a}[\var{k}]} from \var{a}}{(1)}
-  \lineiii{\var{a}.absorb(b)}{\code{for k, v in b.items(): a[k] = v}}{(3)}
   \lineiii{\var{a}.clear()}{remove all items from \code{a}}{}
   \lineiii{\var{a}.copy()}{a (shallow) copy of \code{a}}{}
   \lineiii{\var{a}.has_key(\var{k})}{\code{1} if \var{a} has a key \var{k}, else \code{0}}{}
   \lineiii{\var{a}.items()}{a copy of \var{a}'s list of (key, item) pairs}{(2)}
   \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(2)}
+  \lineiii{\var{a}.update(b)}{\code{for k, v in b.items(): a[k] = v}}{(3)}
   \lineiii{\var{a}.values()}{a copy of \var{a}'s list of values}{(2)}
 \end{tableiii}
 \indexiii{operations on}{mapping}{types}
