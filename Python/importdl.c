@@ -182,11 +182,6 @@ load_dynamic_module(name, pathname)
 	object *m;
 	char funcname[258];
 	dl_funcptr p = NULL;
-	if (m != NULL) {
-		err_setstr(ImportError,
-			   "cannot reload dynamically loaded module");
-		return NULL;
-	}
 	sprintf(funcname, FUNCNAME_PATTERN, name);
 #ifdef WITH_MAC_DL
 	{
