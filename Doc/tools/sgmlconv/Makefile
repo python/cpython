@@ -11,6 +11,7 @@ TOOLSDIR=$(TOPDIR)/tools
 
 SGMLRULES=../$(TOOLSDIR)/sgmlconv/make.rules
 SUBDIRS=api ext lib mac ref tut
+SUBMAKE=$(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR)
 
 all:	sgml
 
@@ -19,45 +20,41 @@ all:	sgml
 
 sgml:
 	for DIR in $(SUBDIRS) ; do \
-	    (cd $$DIR; \
-	     $(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR) sgml) || exit $$?; \
-	done
+	    (cd $$DIR; $(SUBMAKE) sgml) || exit $$? ; done
 
 xml:
 	for DIR in $(SUBDIRS) ; do \
-	    (cd $$DIR; \
-	     $(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR) xml) || exit $$?; \
-	done
+	    (cd $$DIR; $(SUBMAKE) xml) || exit $$? ; done
+
+esis:
+	for DIR in $(SUBDIRS) ; do \
+	    (cd $$DIR; $(SUBMAKE) esis) || exit $$? ; done
 
 tarball:  sgml
-	tar cf - sgml tools/sgmlconv */*.sgml | gzip -9 >sgml-1.5.2b1.tgz
+	tar cf - sgml tools/sgmlconv */*.sgml | gzip -9 >sgml-1.5.2b2.tgz
 
 api:
-	cd api; $(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR)
+	cd api; $(SUBMAKE)
 
 ext:
-	cd ext; $(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR)
+	cd ext; $(SUBMAKE)
 
 lib:
-	cd lib; $(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR)
+	cd lib; $(SUBMAKE)
 
 mac:
-	cd mac; $(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR)
+	cd mac; $(SUBMAKE)
 
 ref:
-	cd ref; $(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR)
+	cd ref; $(SUBMAKE)
 
 tut:
-	cd tut; $(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR)
+	cd tut; $(SUBMAKE)
 
 clean:
 	for DIR in $(SUBDIRS) ; do \
-	    (cd $$DIR; \
-	     $(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR) clean) \
-	done
+	    (cd $$DIR; $(SUBMAKE) clean) ; done
 
 clobber:
 	for DIR in $(SUBDIRS) ; do \
-	    (cd $$DIR; \
-	     $(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR) clobber) \
-	done
+	    (cd $$DIR; $(SUBMAKE) clobber) ; done
