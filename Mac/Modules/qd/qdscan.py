@@ -100,7 +100,6 @@ extend						= 0x40
 			'GetPortHWND',
 			'GetHWNDPort',
 			'GetPICTFromDIB',
-			'GetPortBitMapForCopyBits', # Something funny in the declaration
 			
 			'HandleToRgn', # Funny signature
 
