@@ -180,12 +180,18 @@ new_class(PyObject* unused, PyObject* args)
 }
 
 static PyMethodDef new_methods[] = {
-	{"instance",		new_instance,		1, new_instance_doc},
-	{"instancemethod",	new_instancemethod,	1, new_im_doc},
-	{"function",		new_function,		1, new_function_doc},
-	{"code",		new_code,		1, new_code_doc},
-	{"module",		new_module,		1, new_module_doc},
-	{"classobj",		new_class,		1, new_class_doc},
+	{"instance",		new_instance,		
+	 METH_VARARGS, new_instance_doc},
+	{"instancemethod",	new_instancemethod,	
+	 METH_VARARGS, new_im_doc},
+	{"function",		new_function,		
+	 METH_VARARGS, new_function_doc},
+	{"code",		new_code,		
+	 METH_VARARGS, new_code_doc},
+	{"module",		new_module,		
+	 METH_VARARGS, new_module_doc},
+	{"classobj",		new_class,		
+	 METH_VARARGS, new_class_doc},
 	{NULL,			NULL}		/* sentinel */
 };
 

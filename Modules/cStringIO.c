@@ -617,7 +617,8 @@ IO_StringIO(PyObject *self, PyObject *args) {
 /* List of methods defined in the module */
 
 static struct PyMethodDef IO_methods[] = {
-  {"StringIO",	(PyCFunction)IO_StringIO,	1,	IO_StringIO__doc__},
+  {"StringIO",	(PyCFunction)IO_StringIO,	
+   METH_VARARGS,	IO_StringIO__doc__},
   {NULL,		NULL}		/* sentinel */
 };
 

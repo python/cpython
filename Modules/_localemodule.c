@@ -389,10 +389,14 @@ PyLocale_getdefaultlocale(PyObject* self, PyObject* args)
 #endif
 
 static struct PyMethodDef PyLocale_Methods[] = {
-  {"setlocale", (PyCFunction) PyLocale_setlocale, 1, setlocale__doc__},
-  {"localeconv", (PyCFunction) PyLocale_localeconv, 0, localeconv__doc__},
-  {"strcoll", (PyCFunction) PyLocale_strcoll, 1, strcoll__doc__},
-  {"strxfrm", (PyCFunction) PyLocale_strxfrm, 1, strxfrm__doc__},
+  {"setlocale", (PyCFunction) PyLocale_setlocale, 
+   METH_VARARGS, setlocale__doc__},
+  {"localeconv", (PyCFunction) PyLocale_localeconv, 
+   0, localeconv__doc__},
+  {"strcoll", (PyCFunction) PyLocale_strcoll, 
+   METH_VARARGS, strcoll__doc__},
+  {"strxfrm", (PyCFunction) PyLocale_strxfrm, 
+   METH_VARARGS, strxfrm__doc__},
 #if defined(MS_WIN32) || defined(macintosh)
   {"_getdefaultlocale", (PyCFunction) PyLocale_getdefaultlocale, 0},
 #endif

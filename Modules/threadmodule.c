@@ -337,9 +337,11 @@ be relied upon, and the number should be seen purely as a magic cookie.\n\
 A thread's identity may be reused for another thread after it exits.";
 
 static PyMethodDef thread_methods[] = {
-	{"start_new_thread",	(PyCFunction)thread_PyThread_start_new_thread, 1,
+	{"start_new_thread",	(PyCFunction)thread_PyThread_start_new_thread,
+	                        METH_VARARGS,
 				start_new_doc},
-	{"start_new",		(PyCFunction)thread_PyThread_start_new_thread, 1,
+	{"start_new",		(PyCFunction)thread_PyThread_start_new_thread, 
+	                        METH_VARARGS,
 				start_new_doc},
 	{"allocate_lock",	(PyCFunction)thread_PyThread_allocate_lock, 0,
 				allocate_doc},

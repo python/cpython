@@ -227,8 +227,8 @@ is made.";
 /* List of functions exported by this module */
 
 static PyMethodDef md5_functions[] = {
-	{"new",		(PyCFunction)MD5_new, 1, new_doc},
-	{"md5",		(PyCFunction)MD5_new, 1, new_doc}, /* Backward compatibility */
+	{"new",		(PyCFunction)MD5_new, METH_VARARGS, new_doc},
+	{"md5",		(PyCFunction)MD5_new, METH_VARARGS, new_doc}, /* Backward compatibility */
 	{NULL,		NULL}	/* Sentinel */
 };
 
