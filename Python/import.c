@@ -26,6 +26,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 
+/* XXX Some of the following are duplicate with allobjects.h... */
 #include "node.h"
 #include "token.h"
 #include "graminit.h"
@@ -44,8 +45,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef argument
 #include "macglue.h"
 #endif
-
-extern int verbose; /* Defined in pythonrun.c */
 
 extern long getmtime(); /* In getmtime.c */
 
@@ -452,8 +451,25 @@ find_module(name, path, buf, buflen, p_fp)
 #endif
 		if (len > 0 && buf[len-1] != SEP)
 			buf[len++] = SEP;
+#ifdef IMPORT_8x3_NAMES
+		/* see if we are searching in directory dos_8x3 */
+		if (len > 7 && !strncmp(buf + len - 8, "dos_8x3", 7)){
+			int j;
+			char ch;  /* limit name to eight lower-case characters */
+			for (j = 0; (ch = name[j]) && j < 8; j++)
+				if (isupper(ch))
+					buf[len++] = tolower(ch);
+				else
+					buf[len++] = ch;
+		}
+		else{	/* Not in dos_8x3, use the full name */
+			strcpy(buf+len, name);
+			len += namelen;
+		}
+#else
 		strcpy(buf+len, name);
 		len += namelen;
+#endif
 		for (fdp = import_filetab; fdp->suffix != NULL; fdp++) {
 			strcpy(buf+len, fdp->suffix);
 			if (verbose > 1)
