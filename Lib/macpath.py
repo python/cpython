@@ -125,7 +125,7 @@ def islink(s):
     """Return true if the pathname refers to a symbolic link.
     Always false on the Mac, until we understand Aliases.)"""
 
-    return 0
+    return False
 
 
 def isfile(s):
@@ -134,7 +134,7 @@ def isfile(s):
     try:
         st = os.stat(s)
     except os.error:
-        return 0
+        return False
     return S_ISREG(st[ST_MODE])
 
 

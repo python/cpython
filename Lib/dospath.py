@@ -141,7 +141,7 @@ def islink(path):
     """Is a path a symbolic link?
     This will always return false on systems where posix.lstat doesn't exist."""
 
-    return 0
+    return False
 
 
 def exists(path):

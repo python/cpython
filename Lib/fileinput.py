@@ -154,7 +154,7 @@ class FileInput:
         self._lineno = 0
         self._filelineno = 0
         self._file = None
-        self._isstdin = 0
+        self._isstdin = False
         self._backupfilename = None
         self._buffer = []
         self._bufindex = 0
@@ -214,7 +214,7 @@ class FileInput:
             try: os.unlink(backupfilename)
             except: pass
 
-        self._isstdin = 0
+        self._isstdin = False
         self._buffer = []
         self._bufindex = 0
 
@@ -235,12 +235,12 @@ class FileInput:
             self._files = self._files[1:]
             self._filelineno = 0
             self._file = None
-            self._isstdin = 0
+            self._isstdin = False
             self._backupfilename = 0
             if self._filename == '-':
                 self._filename = '<stdin>'
                 self._file = sys.stdin
-                self._isstdin = 1
+                self._isstdin = True
             else:
                 if self._inplace:
                     self._backupfilename = (

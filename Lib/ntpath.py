@@ -235,7 +235,7 @@ def getatime(filename):
 
 def islink(path):
     """Test for symbolic link.  On WindowsNT/95 always returns false"""
-    return 0
+    return False
 
 
 # Does a path exist?
@@ -259,7 +259,7 @@ def isdir(path):
     try:
         st = os.stat(path)
     except os.error:
-        return 0
+        return False
     return stat.S_ISDIR(st[stat.ST_MODE])
 
 
@@ -272,7 +272,7 @@ def isfile(path):
     try:
         st = os.stat(path)
     except os.error:
-        return 0
+        return False
     return stat.S_ISREG(st[stat.ST_MODE])
 
 

@@ -126,8 +126,8 @@ class PrettyPrinter:
         objid = _id(object)
         if objid in context:
             stream.write(_recursion(object))
-            self.__recursive = 1
-            self.__readable = 0
+            self.__recursive = True
+            self.__readable = False
             return
         rep = self.__repr(object, context, level - 1)
         typ = _type(object)
@@ -195,9 +195,9 @@ class PrettyPrinter:
         repr, readable, recursive = self.format(object, context.copy(),
                                                 self.__depth, level)
         if not readable:
-            self.__readable = 0
+            self.__readable = False
         if recursive:
-            self.__recursive = 1
+            self.__recursive = True
         return repr
 
     def format(self, object, context, maxlevels, level):
@@ -214,7 +214,7 @@ def _safe_repr(object, context, maxlevels, level):
     typ = _type(object)
     if typ is StringType:
         if 'locale' not in _sys_modules:
-            return `object`, 1, 0
+            return `object`, True, False
         if "'" in object and '"' not in object:
             closure = '"'
             quotes = {'"': '\\"'}
@@ -229,19 +229,19 @@ def _safe_repr(object, context, maxlevels, level):
                 write(char)
             else:
                 write(qget(char, `char`[1:-1]))
-        return ("%s%s%s" % (closure, sio.getvalue(), closure)), 1, 0
+        return ("%s%s%s" % (closure, sio.getvalue(), closure)), True, False
 
     if typ is DictType:
         if not object:
-            return "{}", 1, 0
+            return "{}", True, False
         objid = _id(object)
         if maxlevels and level > maxlevels:
-            return "{...}", 0, objid in context
+            return "{...}", False, objid in context
         if objid in context:
-            return _recursion(object), 0, 1
+            return _recursion(object), False, True
         context[objid] = 1
-        readable = 1
-        recursive = 0
+        readable = True
+        recursive = False
         components = []
         append = components.append
         level += 1
@@ -252,29 +252,29 @@ def _safe_repr(object, context, maxlevels, level):
             append("%s: %s" % (krepr, vrepr))
             readable = readable and kreadable and vreadable
             if krecur or vrecur:
-                recursive = 1
+                recursive = True
         del context[objid]
         return "{%s}" % _commajoin(components), readable, recursive
 
     if typ is ListType or typ is TupleType:
         if typ is ListType:
             if not object:
-                return "[]", 1, 0
+                return "[]", True, False
             format = "[%s]"
         elif _len(object) == 1:
             format = "(%s,)"
         else:
             if not object:
-                return "()", 1, 0
+                return "()", True, False
             format = "(%s)"
         objid = _id(object)
         if maxlevels and level > maxlevels:
-            return format % "...", 0, objid in context
+            return format % "...", False, objid in context
         if objid in context:
-            return _recursion(object), 0, 1
+            return _recursion(object), False, True
         context[objid] = 1
-        readable = 1
-        recursive = 0
+        readable = True
+        recursive = False
         components = []
         append = components.append
         level += 1
@@ -282,14 +282,14 @@ def _safe_repr(object, context, maxlevels, level):
             orepr, oreadable, orecur = _safe_repr(o, context, maxlevels, level)
             append(orepr)
             if not oreadable:
-                readable = 0
+                readable = False
             if orecur:
-                recursive = 1
+                recursive = True
         del context[objid]
         return format % _commajoin(components), readable, recursive
 
     rep = `object`
-    return rep, (rep and not rep.startswith('<')), 0
+    return rep, (rep and not rep.startswith('<')), False
 
 
 def _recursion(object):

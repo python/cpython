@@ -59,7 +59,7 @@ class StringIO:
     def isatty(self):
         if self.closed:
             raise ValueError, "I/O operation on closed file"
-        return 0
+        return False
 
     def seek(self, pos, mode = 0):
         if self.closed:

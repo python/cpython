@@ -443,7 +443,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                                 r'RFC[- ]?(\d+)|'
                                 r'PEP[- ]?(\d+)|'
                                 r'(self\.)?(\w+))')
-        while 1:
+        while True:
             match = pattern.search(text, here)
             if not match: break
             start, end = match.span()
@@ -1521,7 +1521,7 @@ has the same effect as typing a particular string at the help> prompt.
 
     def interact(self):
         self.output.write('\n')
-        while 1:
+        while True:
             self.output.write('help> ')
             self.output.flush()
             try:
@@ -1710,10 +1710,11 @@ class ModuleScanner(Scanner):
         if not (os.path.islink(dir) and inode in self.inodes):
             self.inodes.append(inode) # detect circular symbolic links
             return ispackage(dir)
+        return False
 
     def run(self, callback, key=None, completer=None):
         if key: key = lower(key)
-        self.quit = 0
+        self.quit = False
         seen = {}
 
         for modname in sys.builtin_module_names:
@@ -1825,7 +1826,7 @@ pydoc</strong> by Ka-Ping Yee &lt;ping@lfw.org&gt;</font>'''
 
         def serve_until_quit(self):
             import select
-            self.quit = 0
+            self.quit = False
             while not self.quit:
                 rd, wr, ex = select.select([self.socket.fileno()], [], [], 1)
                 if rd: self.handle_request()

@@ -546,13 +546,13 @@ class HTTPPasswordMgr:
         Both args must be URIs in reduced form.
         """
         if base == test:
-            return 1
+            return True
         if base[0] != test[0]:
-            return 0
+            return False
         common = posixpath.commonprefix((base[1], test[1]))
         if len(common) == len(base[1]):
-            return 1
-        return 0
+            return True
+        return False
 
 
 class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):

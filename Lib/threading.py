@@ -30,7 +30,7 @@ del StringIO
 
 # Debug support (adapted from ihooks.py)
 
-_VERBOSE = 0
+_VERBOSE = 0 # XXX Bool or int?
 
 if __debug__:
 
@@ -198,7 +198,7 @@ class _Condition(_Verbose):
                 # than 20 times per second (or the timeout time remaining).
                 endtime = _time() + timeout
                 delay = 0.0005 # 500 us -> initial delay of 1 ms
-                while 1:
+                while True:
                     gotit = waiter.acquire(0)
                     if gotit:
                         break
@@ -256,7 +256,7 @@ class _Semaphore(_Verbose):
         self.__value = value
 
     def acquire(self, blocking=1):
-        rc = 0
+        rc = False
         self.__cond.acquire()
         while self.__value == 0:
             if not blocking:
@@ -270,7 +270,7 @@ class _Semaphore(_Verbose):
             if __debug__:
                 self._note("%s.acquire: success, value=%s",
                            self, self.__value)
-            rc = 1
+            rc = True
         self.__cond.release()
         return rc
 
@@ -309,20 +309,20 @@ class _Event(_Verbose):
     def __init__(self, verbose=None):
         _Verbose.__init__(self, verbose)
         self.__cond = Condition(Lock())
-        self.__flag = 0
+        self.__flag = False
 
     def isSet(self):
         return self.__flag
 
     def set(self):
         self.__cond.acquire()
-        self.__flag = 1
+        self.__flag = True
         self.__cond.notifyAll()
         self.__cond.release()
 
     def clear(self):
         self.__cond.acquire()
-        self.__flag = 0
+        self.__flag = False
         self.__cond.release()
 
     def wait(self, timeout=None):
@@ -348,7 +348,7 @@ _limbo = {}
 
 class Thread(_Verbose):
 
-    __initialized = 0
+    __initialized = False
 
     def __init__(self, group=None, target=None, name=None,
                  args=(), kwargs={}, verbose=None):
@@ -359,10 +359,10 @@ class Thread(_Verbose):
         self.__args = args
         self.__kwargs = kwargs
         self.__daemonic = self._set_daemon()
-        self.__started = 0
-        self.__stopped = 0
+        self.__started = False
+        self.__stopped = False
         self.__block = Condition(Lock())
-        self.__initialized = 1
+        self.__initialized = True
 
     def _set_daemon(self):
         # Overridden in _MainThread and _DummyThread
@@ -388,7 +388,7 @@ class Thread(_Verbose):
         _limbo[self] = self
         _active_limbo_lock.release()
         _start_new_thread(self.__bootstrap, ())
-        self.__started = 1
+        self.__started = True
         _sleep(0.000001)    # 1 usec, to let the thread run (Solaris hack)
 
     def run(self):
@@ -397,7 +397,7 @@ class Thread(_Verbose):
 
     def __bootstrap(self):
         try:
-            self.__started = 1
+            self.__started = True
             _active_limbo_lock.acquire()
             _active[_get_ident()] = self
             del _limbo[self]
@@ -428,7 +428,7 @@ class Thread(_Verbose):
 
     def __stop(self):
         self.__block.acquire()
-        self.__stopped = 1
+        self.__stopped = True
         self.__block.notifyAll()
         self.__block.release()
 
@@ -523,7 +523,7 @@ class _MainThread(Thread):
 
     def __init__(self):
         Thread.__init__(self, name="MainThread")
-        self._Thread__started = 1
+        self._Thread__started = True
         _active_limbo_lock.acquire()
         _active[_get_ident()] = self
         _active_limbo_lock.release()
@@ -531,7 +531,7 @@ class _MainThread(Thread):
         atexit.register(self.__exitfunc)
 
     def _set_daemon(self):
-        return 0
+        return False
 
     def __exitfunc(self):
         self._Thread__stop()
@@ -564,16 +564,16 @@ class _DummyThread(Thread):
 
     def __init__(self):
         Thread.__init__(self, name=_newname("Dummy-%d"))
-        self._Thread__started = 1
+        self._Thread__started = True
         _active_limbo_lock.acquire()
         _active[_get_ident()] = self
         _active_limbo_lock.release()
 
     def _set_daemon(self):
-        return 1
+        return True
 
     def join(self, timeout=None):
-        assert 0, "cannot join a dummy thread"
+        assert False, "cannot join a dummy thread"
 
 
 # Global API functions
