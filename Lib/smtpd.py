@@ -372,7 +372,6 @@ class PureProxy(SMTPServer):
 class MailmanProxy(PureProxy):
     def process_message(self, peer, mailfrom, rcpttos, data):
         from cStringIO import StringIO
-        import paths
         from Mailman import Utils
         from Mailman import Message
         from Mailman import MailList
