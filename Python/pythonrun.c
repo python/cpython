@@ -936,7 +936,7 @@ run_pyc_file(FILE *fp, char *filename, PyObject *globals, PyObject *locals)
 		return NULL;
 	}
 	(void) PyMarshal_ReadLongFromFile(fp);
-	v = PyMarshal_ReadObjectFromFile(fp);
+	v = PyMarshal_ReadLastObjectFromFile(fp);
 	fclose(fp);
 	if (v == NULL || !PyCode_Check(v)) {
 		Py_XDECREF(v);

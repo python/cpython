@@ -555,7 +555,7 @@ read_compiled_module(char *cpathname, FILE *fp)
 {
 	PyObject *co;
 
-	co = PyMarshal_ReadObjectFromFile(fp);
+	co = PyMarshal_ReadLastObjectFromFile(fp);
 	/* Ugly: rd_object() may return NULL with or without error */
 	if (co == NULL || !PyCode_Check(co)) {
 		if (!PyErr_Occurred())

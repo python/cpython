@@ -110,10 +110,10 @@ w_object(PyObject *v, WFILE *p)
 	PyBufferProcs *pb;
 
 	p->depth++;
-	
+
 	if (p->depth > MAX_MARSHAL_STACK_DEPTH) {
 		p->error = 2;
-	} 
+	}
 	else if (v == NULL) {
 		w_byte(TYPE_NULL, p);
 	}
@@ -363,31 +363,31 @@ r_object(RFILE *p)
 	PyObject *v, *v2;
 	long i, n;
 	int type = r_byte(p);
-	
+
 	switch (type) {
-	
+
 	case EOF:
 		PyErr_SetString(PyExc_EOFError,
 				"EOF read where object expected");
 		return NULL;
-	
+
 	case TYPE_NULL:
 		return NULL;
-	
+
 	case TYPE_NONE:
 		Py_INCREF(Py_None);
 		return Py_None;
-	
+
 	case TYPE_ELLIPSIS:
 		Py_INCREF(Py_Ellipsis);
 		return Py_Ellipsis;
-	
+
 	case TYPE_INT:
 		return PyInt_FromLong(r_long(p));
-	
+
 	case TYPE_INT64:
 		return PyInt_FromLong(r_long64(p));
-	
+
 	case TYPE_LONG:
 		{
 			int size;
@@ -402,7 +402,7 @@ r_object(RFILE *p)
 				ob->ob_digit[i] = r_short(p);
 			return (PyObject *)ob;
 		}
-	
+
 	case TYPE_FLOAT:
 		{
 			char buf[256];
@@ -419,7 +419,7 @@ r_object(RFILE *p)
 			PyFPE_END_PROTECT(dx)
 			return PyFloat_FromDouble(dx);
 		}
-	
+
 #ifndef WITHOUT_COMPLEX
 	case TYPE_COMPLEX:
 		{
@@ -448,7 +448,7 @@ r_object(RFILE *p)
 			return PyComplex_FromCComplex(c);
 		}
 #endif
-	
+
 	case TYPE_STRING:
 		n = r_long(p);
 		if (n < 0) {
@@ -465,7 +465,7 @@ r_object(RFILE *p)
 			}
 		}
 		return v;
-	
+
 	case TYPE_UNICODE:
 	    {
 		char *buffer;
@@ -488,7 +488,7 @@ r_object(RFILE *p)
 		PyMem_DEL(buffer);
 		return v;
 	    }
-	    
+
 	case TYPE_TUPLE:
 		n = r_long(p);
 		if (n < 0) {
@@ -508,7 +508,7 @@ r_object(RFILE *p)
 			PyTuple_SET_ITEM(v, (int)i, v2);
 		}
 		return v;
-	
+
 	case TYPE_LIST:
 		n = r_long(p);
 		if (n < 0) {
@@ -528,7 +528,7 @@ r_object(RFILE *p)
 			PyList_SetItem(v, (int)i, v2);
 		}
 		return v;
-	
+
 	case TYPE_DICT:
 		v = PyDict_New();
 		if (v == NULL)
@@ -545,7 +545,7 @@ r_object(RFILE *p)
 			Py_XDECREF(val);
 		}
 		return v;
-	
+
 	case TYPE_CODE:
 		{
 			int argcount = r_short(p);
@@ -562,7 +562,7 @@ r_object(RFILE *p)
 			PyObject *name = NULL;
 			int firstlineno = 0;
 			PyObject *lnotab = NULL;
-			
+
 			code = r_object(p);
 			if (code) consts = r_object(p);
 			if (consts) names = r_object(p);
@@ -575,13 +575,13 @@ r_object(RFILE *p)
 				firstlineno = r_short(p);
 				lnotab = r_object(p);
 			}
-			
+
 			if (!PyErr_Occurred()) {
 				v = (PyObject *) PyCode_New(
-					argcount, nlocals, stacksize, flags,  
+					argcount, nlocals, stacksize, flags,
 					code, consts, names, varnames,
-					freevars, cellvars, filename, name, 
-					firstlineno, lnotab);  
+					freevars, cellvars, filename, name,
+					firstlineno, lnotab);
 			}
 			else
 				v = NULL;
@@ -597,13 +597,13 @@ r_object(RFILE *p)
 
 		}
 		return v;
-	
+
 	default:
 		/* Bogus data got written, which isn't ideal.
 		   This will let you keep working and recover. */
 		PyErr_SetString(PyExc_ValueError, "bad marshal data");
 		return NULL;
-	
+
 	}
 }
 
@@ -627,20 +627,21 @@ getfilesize(FILE *fp)
 		return st.st_size;
 }
 #endif
- 
+
 /* If we can get the size of the file up-front, and it's reasonably small,
  * read it in one gulp and delegate to ...FromString() instead.  Much quicker
  * than reading a byte at a time from file; speeds .pyc imports.
+ * CAUTION:  since this may read the entire remainder of the file, don't
+ * call it unless you know you're done with the file.
  */
 PyObject *
-PyMarshal_ReadObjectFromFile(FILE *fp)
+PyMarshal_ReadLastObjectFromFile(FILE *fp)
 {
 /* 75% of 2.1's .pyc files can exploit SMALL_FILE_LIMIT.
  * REASONABLE_FILE_LIMIT is by defn something big enough for Tkinter.pyc.
  */
 #define SMALL_FILE_LIMIT (1L << 14)
 #define REASONABLE_FILE_LIMIT (1L << 18)
-	RFILE rf;
 #ifdef HAVE_FSTAT
 	off_t filesize;
 #endif
@@ -665,13 +666,28 @@ PyMarshal_ReadObjectFromFile(FILE *fp)
 				PyMem_FREE(pBuf);
 			return v;
 		}
-		
+
 	}
 #endif
-	rf.fp = fp;
-	return r_object(&rf);
+	/* We don't have fstat, or we do but the file is larger than
+	 * REASONABLE_FILE_LIMIT or malloc failed -- read a byte at a time.
+	 */
+	return PyMarshal_ReadObjectFromFile(fp);
+
 #undef SMALL_FILE_LIMIT
 #undef REASONABLE_FILE_LIMIT
+}
+
+PyObject *
+PyMarshal_ReadObjectFromFile(FILE *fp)
+{
+	RFILE rf;
+	if (PyErr_Occurred()) {
+		fprintf(stderr, "XXX rd_object called with exception set\n");
+		return NULL;
+	}
+	rf.fp = fp;
+	return r_object(&rf);
 }
 
 PyObject *
@@ -708,7 +724,7 @@ PyMarshal_WriteObjectToString(PyObject *x) /* wrs_object() */
 			   PyString_AS_STRING((PyStringObject *)wf.str)));
 	if (wf.error) {
 		Py_XDECREF(wf.str);
-		PyErr_SetString(PyExc_ValueError, 
+		PyErr_SetString(PyExc_ValueError,
 				(wf.error==1)?"unmarshallable object"
 				:"object too deeply nested to marshal");
 		return NULL;
@@ -738,7 +754,7 @@ marshal_dump(PyObject *self, PyObject *args)
 	wf.depth = 0;
 	w_object(x, &wf);
 	if (wf.error) {
-		PyErr_SetString(PyExc_ValueError, 
+		PyErr_SetString(PyExc_ValueError,
 				(wf.error==1)?"unmarshallable object"
 				:"object too deeply nested to marshal");
 		return NULL;
