@@ -141,6 +141,7 @@ class TCPServer:
     - address_family
     - socket_type
     - request_queue_size (only for stream sockets)
+    - reuse_address
 
     Instance variables:
 
@@ -155,6 +156,8 @@ class TCPServer:
     socket_type = socket.SOCK_STREAM
 
     request_queue_size = 5
+
+    allow_reuse_address = 0
 
     def __init__(self, server_address, RequestHandlerClass):
         """Constructor.  May be extended, do not override."""
@@ -171,6 +174,8 @@ class TCPServer:
         May be overridden.
 
         """
+        if self.allow_reuse_address:
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind(self.server_address)
 
     def server_activate(self):
