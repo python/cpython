@@ -31,7 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Functions used by cgen output */
 
-#include "allobjects.h"
+#include "Python.h"
 #include "cgensupport.h"
 
 
@@ -41,57 +41,57 @@ PERFORMANCE OF THIS SOFTWARE.
    one argument. */
 
 int
-getiobjectarg(args, nargs, i, p_arg)
-	register object *args;
+PyArg_GetObject(args, nargs, i, p_arg)
+	register PyObject *args;
 	int nargs, i;
-	object **p_arg;
+	PyObject **p_arg;
 {
 	if (nargs != 1) {
-		if (args == NULL || !is_tupleobject(args) ||
-				nargs != gettuplesize(args) ||
+		if (args == NULL || !PyTuple_Check(args) ||
+				nargs != PyTuple_Size(args) ||
 				i < 0 || i >= nargs) {
-			return err_badarg();
+			return PyErr_BadArgument();
 		}
 		else {
-			args = gettupleitem(args, i);
+			args = PyTuple_GetItem(args, i);
 		}
 	}
 	if (args == NULL) {
-		return err_badarg();
+		return PyErr_BadArgument();
 	}
 	*p_arg = args;
 	return 1;
 }
 
 int
-getilongarg(args, nargs, i, p_arg)
-	register object *args;
+PyArg_GetLong(args, nargs, i, p_arg)
+	register PyObject *args;
 	int nargs, i;
 	long *p_arg;
 {
 	if (nargs != 1) {
-		if (args == NULL || !is_tupleobject(args) ||
-				nargs != gettuplesize(args) ||
+		if (args == NULL || !PyTuple_Check(args) ||
+				nargs != PyTuple_Size(args) ||
 				i < 0 || i >= nargs) {
-			return err_badarg();
+			return PyErr_BadArgument();
 		}
-		args = gettupleitem(args, i);
+		args = PyTuple_GetItem(args, i);
 	}
-	if (args == NULL || !is_intobject(args)) {
-		return err_badarg();
+	if (args == NULL || !PyInt_Check(args)) {
+		return PyErr_BadArgument();
 	}
-	*p_arg = getintvalue(args);
+	*p_arg = PyInt_AsLong(args);
 	return 1;
 }
 
 int
-getishortarg(args, nargs, i, p_arg)
-	register object *args;
+PyArg_GetShort(args, nargs, i, p_arg)
+	register PyObject *args;
 	int nargs, i;
 	short *p_arg;
 {
 	long x;
-	if (!getilongarg(args, nargs, i, &x))
+	if (!PyArg_GetLong(args, nargs, i, &x))
 		return 0;
 	*p_arg = (short) x;
 	return 1;
@@ -99,59 +99,59 @@ getishortarg(args, nargs, i, p_arg)
 
 static int
 extractdouble(v, p_arg)
-	register object *v;
+	register PyObject *v;
 	double *p_arg;
 {
 	if (v == NULL) {
 		/* Fall through to error return at end of function */
 	}
-	else if (is_floatobject(v)) {
-		*p_arg = GETFLOATVALUE((floatobject *)v);
+	else if (PyFloat_Check(v)) {
+		*p_arg = PyFloat_AS_DOUBLE((PyFloatObject *)v);
 		return 1;
 	}
-	else if (is_intobject(v)) {
-		*p_arg = GETINTVALUE((intobject *)v);
+	else if (PyInt_Check(v)) {
+		*p_arg = PyInt_AS_LONG((PyIntObject *)v);
 		return 1;
 	}
-	else if (is_longobject(v)) {
-		*p_arg = dgetlongvalue(v);
+	else if (PyLong_Check(v)) {
+		*p_arg = PyLong_AsDouble(v);
 		return 1;
 	}
-	return err_badarg();
+	return PyErr_BadArgument();
 }
 
 static int
 extractfloat(v, p_arg)
-	register object *v;
+	register PyObject *v;
 	float *p_arg;
 {
 	if (v == NULL) {
 		/* Fall through to error return at end of function */
 	}
-	else if (is_floatobject(v)) {
-		*p_arg = (float) GETFLOATVALUE((floatobject *)v);
+	else if (PyFloat_Check(v)) {
+		*p_arg = (float) PyFloat_AS_DOUBLE((PyFloatObject *)v);
 		return 1;
 	}
-	else if (is_intobject(v)) {
-		*p_arg = (float) GETINTVALUE((intobject *)v);
+	else if (PyInt_Check(v)) {
+		*p_arg = (float) PyInt_AS_LONG((PyIntObject *)v);
 		return 1;
 	}
-	else if (is_longobject(v)) {
-		*p_arg = (float) dgetlongvalue(v);
+	else if (PyLong_Check(v)) {
+		*p_arg = (float) PyLong_AsDouble(v);
 		return 1;
 	}
-	return err_badarg();
+	return PyErr_BadArgument();
 }
 
 int
-getifloatarg(args, nargs, i, p_arg)
-	register object *args;
+PyArg_GetFloat(args, nargs, i, p_arg)
+	register PyObject *args;
 	int nargs, i;
 	float *p_arg;
 {
-	object *v;
+	PyObject *v;
 	float x;
-	if (!getiobjectarg(args, nargs, i, &v))
+	if (!PyArg_GetObject(args, nargs, i, &v))
 		return 0;
 	if (!extractfloat(v, &x))
 		return 0;
@@ -160,66 +160,66 @@ getifloatarg(args, nargs, i, p_arg)
 }
 
 int
-getistringarg(args, nargs, i, p_arg)
-	object *args;
+PyArg_GetString(args, nargs, i, p_arg)
+	PyObject *args;
 	int nargs, i;
 	string *p_arg;
 {
-	object *v;
-	if (!getiobjectarg(args, nargs, i, &v))
+	PyObject *v;
+	if (!PyArg_GetObject(args, nargs, i, &v))
 		return 0;
-	if (!is_stringobject(v)) {
-		return err_badarg();
+	if (!PyString_Check(v)) {
+		return PyErr_BadArgument();
 	}
-	*p_arg = getstringvalue(v);
+	*p_arg = PyString_AsString(v);
 	return 1;
 }
 
 int
-getichararg(args, nargs, i, p_arg)
-	object *args;
+PyArg_GetChar(args, nargs, i, p_arg)
+	PyObject *args;
 	int nargs, i;
 	char *p_arg;
 {
 	string x;
-	if (!getistringarg(args, nargs, i, &x))
+	if (!PyArg_GetString(args, nargs, i, &x))
 		return 0;
 	if (x[0] == '\0' || x[1] != '\0') {
 		/* Not exactly one char */
-		return err_badarg();
+		return PyErr_BadArgument();
 	}
 	*p_arg = x[0];
 	return 1;
 }
 
 int
-getilongarraysize(args, nargs, i, p_arg)
-	object *args;
+PyArg_GetLongArraySize(args, nargs, i, p_arg)
+	PyObject *args;
 	int nargs, i;
 	long *p_arg;
 {
-	object *v;
-	if (!getiobjectarg(args, nargs, i, &v))
+	PyObject *v;
+	if (!PyArg_GetObject(args, nargs, i, &v))
 		return 0;
-	if (is_tupleobject(v)) {
-		*p_arg = gettuplesize(v);
+	if (PyTuple_Check(v)) {
+		*p_arg = PyTuple_Size(v);
 		return 1;
 	}
-	if (is_listobject(v)) {
-		*p_arg = getlistsize(v);
+	if (PyList_Check(v)) {
+		*p_arg = PyList_Size(v);
 		return 1;
 	}
-	return err_badarg();
+	return PyErr_BadArgument();
 }
 
 int
-getishortarraysize(args, nargs, i, p_arg)
-	object *args;
+PyArg_GetShortArraySize(args, nargs, i, p_arg)
+	PyObject *args;
 	int nargs, i;
 	short *p_arg;
 {
 	long x;
-	if (!getilongarraysize(args, nargs, i, &x))
+	if (!PyArg_GetLongArraySize(args, nargs, i, &x))
 		return 0;
 	*p_arg = (short) x;
 	return 1;
@@ -228,157 +228,157 @@ getishortarraysize(args, nargs, i, p_arg)
 /* XXX The following four are too similar.  Should share more code. */
 
 int
-getilongarray(args, nargs, i, n, p_arg)
-	object *args;
+PyArg_GetLongArray(args, nargs, i, n, p_arg)
+	PyObject *args;
 	int nargs, i;
 	int n;
 	long *p_arg; /* [n] */
 {
-	object *v, *w;
-	if (!getiobjectarg(args, nargs, i, &v))
+	PyObject *v, *w;
+	if (!PyArg_GetObject(args, nargs, i, &v))
 		return 0;
-	if (is_tupleobject(v)) {
-		if (gettuplesize(v) != n) {
-			return err_badarg();
+	if (PyTuple_Check(v)) {
+		if (PyTuple_Size(v) != n) {
+			return PyErr_BadArgument();
 		}
 		for (i = 0; i < n; i++) {
-			w = gettupleitem(v, i);
-			if (!is_intobject(w)) {
-				return err_badarg();
+			w = PyTuple_GetItem(v, i);
+			if (!PyInt_Check(w)) {
+				return PyErr_BadArgument();
 			}
-			p_arg[i] = getintvalue(w);
+			p_arg[i] = PyInt_AsLong(w);
 		}
 		return 1;
 	}
-	else if (is_listobject(v)) {
-		if (getlistsize(v) != n) {
-			return err_badarg();
+	else if (PyList_Check(v)) {
+		if (PyList_Size(v) != n) {
+			return PyErr_BadArgument();
 		}
 		for (i = 0; i < n; i++) {
-			w = getlistitem(v, i);
-			if (!is_intobject(w)) {
-				return err_badarg();
+			w = PyList_GetItem(v, i);
+			if (!PyInt_Check(w)) {
+				return PyErr_BadArgument();
 			}
-			p_arg[i] = getintvalue(w);
+			p_arg[i] = PyInt_AsLong(w);
 		}
 		return 1;
 	}
 	else {
-		return err_badarg();
+		return PyErr_BadArgument();
 	}
 }
 
 int
-getishortarray(args, nargs, i, n, p_arg)
-	object *args;
+PyArg_GetShortArray(args, nargs, i, n, p_arg)
+	PyObject *args;
 	int nargs, i;
 	int n;
 	short *p_arg; /* [n] */
 {
-	object *v, *w;
-	if (!getiobjectarg(args, nargs, i, &v))
+	PyObject *v, *w;
+	if (!PyArg_GetObject(args, nargs, i, &v))
 		return 0;
-	if (is_tupleobject(v)) {
-		if (gettuplesize(v) != n) {
-			return err_badarg();
+	if (PyTuple_Check(v)) {
+		if (PyTuple_Size(v) != n) {
+			return PyErr_BadArgument();
 		}
 		for (i = 0; i < n; i++) {
-			w = gettupleitem(v, i);
-			if (!is_intobject(w)) {
-				return err_badarg();
+			w = PyTuple_GetItem(v, i);
+			if (!PyInt_Check(w)) {
+				return PyErr_BadArgument();
 			}
-			p_arg[i] = (short) getintvalue(w);
+			p_arg[i] = (short) PyInt_AsLong(w);
 		}
 		return 1;
 	}
-	else if (is_listobject(v)) {
-		if (getlistsize(v) != n) {
-			return err_badarg();
+	else if (PyList_Check(v)) {
+		if (PyList_Size(v) != n) {
+			return PyErr_BadArgument();
 		}
 		for (i = 0; i < n; i++) {
-			w = getlistitem(v, i);
-			if (!is_intobject(w)) {
-				return err_badarg();
+			w = PyList_GetItem(v, i);
+			if (!PyInt_Check(w)) {
+				return PyErr_BadArgument();
 			}
-			p_arg[i] = (short) getintvalue(w);
+			p_arg[i] = (short) PyInt_AsLong(w);
 		}
 		return 1;
 	}
 	else {
-		return err_badarg();
+		return PyErr_BadArgument();
 	}
 }
 
 int
-getidoublearray(args, nargs, i, n, p_arg)
-	object *args;
+PyArg_GetDoubleArray(args, nargs, i, n, p_arg)
+	PyObject *args;
 	int nargs, i;
 	int n;
 	double *p_arg; /* [n] */
 {
-	object *v, *w;
-	if (!getiobjectarg(args, nargs, i, &v))
+	PyObject *v, *w;
+	if (!PyArg_GetObject(args, nargs, i, &v))
 		return 0;
-	if (is_tupleobject(v)) {
-		if (gettuplesize(v) != n) {
-			return err_badarg();
+	if (PyTuple_Check(v)) {
+		if (PyTuple_Size(v) != n) {
+			return PyErr_BadArgument();
 		}
 		for (i = 0; i < n; i++) {
-			w = gettupleitem(v, i);
+			w = PyTuple_GetItem(v, i);
 			if (!extractdouble(w, &p_arg[i]))
 				return 0;
 		}
 		return 1;
 	}
-	else if (is_listobject(v)) {
-		if (getlistsize(v) != n) {
-			return err_badarg();
+	else if (PyList_Check(v)) {
+		if (PyList_Size(v) != n) {
+			return PyErr_BadArgument();
 		}
 		for (i = 0; i < n; i++) {
-			w = getlistitem(v, i);
+			w = PyList_GetItem(v, i);
 			if (!extractdouble(w, &p_arg[i]))
 				return 0;
 		}
 		return 1;
 	}
 	else {
-		return err_badarg();
+		return PyErr_BadArgument();
 	}
 }
 
 int
-getifloatarray(args, nargs, i, n, p_arg)
-	object *args;
+PyArg_GetFloatArray(args, nargs, i, n, p_arg)
+	PyObject *args;
 	int nargs, i;
 	int n;
 	float *p_arg; /* [n] */
 {
-	object *v, *w;
-	if (!getiobjectarg(args, nargs, i, &v))
+	PyObject *v, *w;
+	if (!PyArg_GetObject(args, nargs, i, &v))
 		return 0;
-	if (is_tupleobject(v)) {
-		if (gettuplesize(v) != n) {
-			return err_badarg();
+	if (PyTuple_Check(v)) {
+		if (PyTuple_Size(v) != n) {
+			return PyErr_BadArgument();
 		}
 		for (i = 0; i < n; i++) {
-			w = gettupleitem(v, i);
+			w = PyTuple_GetItem(v, i);
 			if (!extractfloat(w, &p_arg[i]))
 				return 0;
 		}
 		return 1;
 	}
-	else if (is_listobject(v)) {
-		if (getlistsize(v) != n) {
-			return err_badarg();
+	else if (PyList_Check(v)) {
+		if (PyList_Size(v) != n) {
+			return PyErr_BadArgument();
 		}
 		for (i = 0; i < n; i++) {
-			w = getlistitem(v, i);
+			w = PyList_GetItem(v, i);
 			if (!extractfloat(w, &p_arg[i]))
 				return 0;
 		}
 		return 1;
 	}
 	else {
-		return err_badarg();
+		return PyErr_BadArgument();
 	}
 }
