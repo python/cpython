@@ -23,9 +23,10 @@ class MSVCCompiler (CCompiler) :
 
     def __init__ (self,
                   verbose=0,
-                  dry_run=0):
+                  dry_run=0,
+                  force=0):
 
-        CCompiler.__init__ (self, verbose, dry_run)
+        CCompiler.__init__ (self, verbose, dry_run, force)
 
         # XXX This is a nasty dependency to add on something otherwise
         # pretty clean.  move it to build_ext under an nt specific part.
@@ -164,9 +165,9 @@ class MSVCCompiler (CCompiler) :
         if library_dirs is None:
             library_dirs = []
         
-        lib_opts = gen_lib_options (self.library_dirs + library_dirs,
-                                    self.libraries + libraries,
-                                    "/LIBPATH:%s", "%s.lib")
+        lib_opts = gen_lib_options (self,
+                                    self.library_dirs + library_dirs,
+                                    self.libraries + libraries)
 
         ld_args = self.ldflags_shared + lib_opts + \
                   objects + ['/OUT:' + output_filename]
@@ -200,6 +201,9 @@ class MSVCCompiler (CCompiler) :
            specified source filename."""
         return self._change_extensions( source_filenames, self._shared_lib_ext )
 
+    # XXX ummm... these aren't right, are they?  I thought library 'foo' on
+    # DOS/Windows was to be found in "foo.lib", not "libfoo.lib"!
+
     def library_filename (self, libname):
         """Return the static library filename corresponding to the
            specified library name."""
@@ -209,5 +213,26 @@ class MSVCCompiler (CCompiler) :
         """Return the shared library filename corresponding to the
            specified library name."""
         return "lib%s%s" %( libname, self._shared_lib_ext )
+
+
+    def library_dir_option (self, dir):
+        return "/LIBPATH:" + dir
+
+    def library_option (self, lib):
+        return self.library_filename (lib)
+
+
+    def find_library_file (self, dirs, lib):
+
+        for dir in dirs:
+            libfile = os.path.join (dir, self.library_filename (lib))
+            if os.path.exists (libfile):
+                return libfile
+
+        else:
+            # Oops, didn't find it in *any* of 'dirs'
+            return None
+
+    # find_library_file ()
 
 # class MSVCCompiler
