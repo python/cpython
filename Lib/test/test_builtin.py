@@ -408,6 +408,29 @@ class BuiltinTest(unittest.TestCase):
                 unicode("345")
             )
 
+    def test_filter_subclasses(self):
+        # test, that filter() never returns tuple, str or unicode subclasses
+        funcs = (None, lambda x: True)
+        class tuple2(tuple):
+            pass
+        class str2(str):
+            pass
+        inputs = {
+            tuple2: [(), (1,2,3)],
+            str2:   ["", "123"]
+        }
+        if have_unicode:
+            class unicode2(unicode):
+                pass
+            inputs[unicode2] = [unicode(), unicode("123")]
+
+        for func in funcs:
+            for (cls, inps) in inputs.iteritems():
+                for inp in inps:
+                    out = filter(func, cls(inp))
+                    self.assertEqual(inp, out)
+                    self.assert_(not isinstance(out, cls))
+
     def test_float(self):
         self.assertEqual(float(3.14), 3.14)
         self.assertEqual(float(314), 314.0)
