@@ -4,6 +4,20 @@ Project: core implementation
 Still to do
 -----------
 
+Treat all binary operators the same way as I just did for rich
+comparison: in a <op> b, if isinstance(b, type(a)), try b.__rop__(a)
+before trying a.__op__(b).
+
+Make __dynamic__ the default (this requires more performance work --
+one particular test, test_descr.inherits(), is about 10x slower when
+__dynamic__ is 1. :-(
+
+Add __del__ handlers.
+
+Allow assignment to __bases__ and __dict__?
+
+Support mixed multiple inheritance from classic and new-style classes?
+
 Check for conflicts between base classes.  I fear that the rules used
 to decide whether multiple bases have conflicting instance variables
 aren't strict enough.  I think that sometimes two different classes
@@ -15,18 +29,6 @@ that order).  Now suppose class D derives from B and C.  In which
 order should the base classes X and Y be searched?  This is an order
 conflict, and should be disallowed; currently the test for this is not
 implemented.
-
-Allow assignment to __bases__ and __dict__?
-
-Make __dynamic__ the default.
-
-Add __del__ handlers.
-
-Add __coerce__?
-
-Support pickling (via __reduce__)
-
-Support mixed multiple inheritance from classic and new-style classes?
 
 Done (mostly)
 -------------
