@@ -403,7 +403,7 @@ run_node(n, filename, globals, locals)
 	return v;
 }
 
-object *
+static object *
 run_pyc_file(fp, filename, globals, locals)
 	FILE *fp;
 	char *filename;
@@ -534,6 +534,9 @@ fatal(msg)
 	char *msg;
 {
 	fprintf(stderr, "Fatal Python error: %s\n", msg);
+#ifdef macintosh
+	for (;;);
+#endif
 	abort();
 }
 
