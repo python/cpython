@@ -39,8 +39,23 @@ class TypeinViewer:
         # Hex/Dec
         self.__hex = Checkbutton(self.__frame,
                                  text='Hexadecimal',
-                                 variable=self.__hexp)
+                                 variable=self.__hexp,
+                                 command=self.__togglehex)
         self.__hex.grid(row=4, column=0, columnspan=2, sticky=W)
+
+    def __togglehex(self, event=None):
+        rstr = self.__x.get()
+        gstr = self.__y.get()
+        bstr = self.__z.get()
+        if self.__hexp.get():
+            # it was decimal and is now hex
+            apply(self.update_yourself, tuple(map(int, (rstr, gstr, bstr))))
+        else:
+            # it was hex and is now decimal
+            red = string.atoi(rstr, 16)
+            green = string.atoi(gstr, 16)
+            blue = string.atoi(bstr, 16)
+            self.update_yourself(red, green, blue)
 
     def __normalize(self, event=None):
         ew = event.widget
@@ -55,9 +70,11 @@ class TypeinViewer:
                 v = string.atoi(contents)
         except ValueError:
             v = None
-        # if value is not legal, delete the last character and ring the bell
+        # if value is not legal, delete the last character inserted and ring
+        # the bell
         if v is None or v < 0 or v > 255:
-            contents = contents[:-1]
+            i = ew.index(INSERT)
+            contents = contents[:i-1] + contents[i:]
             ew.bell()
         elif self.__hexp.get():
             contents = hex(v)
@@ -86,7 +103,7 @@ class TypeinViewer:
         if self.__hexp.get():
             redstr, greenstr, bluestr = map(hex, (red, green, blue))
         else:
-            redstr, greenstr, bluestr = map(int, (red, green, blue))
+            redstr, greenstr, bluestr = red, green, blue
         self.__x.delete(0, END)
         self.__y.delete(0, END)
         self.__z.delete(0, END)
