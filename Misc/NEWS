@@ -27,6 +27,14 @@ Core language, builtins, and interpreter
   fit in an int.  In 1.6 and earlier, a negative long formatted
   via %u raised an error if it was too big to fit in an int.
 
+Windows changes
+
+- select module:  By default under Windows, a select() call
+  can specify no more than 64 sockets.  Python now boosts
+  this Microsoft default to 512.  If you need even more than
+  that, see the MS docs (you'll need to #define FD_SETSIZE
+  and recompile Python from source).
+
 
 What's New in Python 2.0?
 =========================
