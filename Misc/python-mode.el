@@ -257,12 +257,8 @@ features supporting those needed by CC Mode.")
 		     ))
 	 (kwregex (mapconcat 'identity keywords "\\|")))
     (list
-     ;; keywords not at beginning of line
-     (cons (concat "\\s-\\(" kwregex "\\)[ \n\t(]") 1)
-     ;; keywords at beginning of line.  i don't think regexps are
-     ;; powerful enough to handle these two cases in one regexp.
-     ;; prove me wrong!
-     (cons (concat "^\\(" kwregex "\\)[ \n\t(]") 1)
+     ;; keywords
+     (cons (concat "\\b\\(" kwregex "\\)\\b[ \n\t(]") 1)
      ;; classes
      '("\\bclass[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
        1 font-lock-type-face)
