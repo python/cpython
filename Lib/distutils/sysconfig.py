@@ -140,7 +140,12 @@ def get_config_h_filename():
     """Return full pathname of installed pyconfig.h file."""
     if python_build: inc_dir = '.'
     else:            inc_dir = get_python_inc(plat_specific=1)
-    return os.path.join(inc_dir, "pyconfig.h")
+    if sys.version < '2.2':
+        config_h = 'config.h'
+    else:
+        # The name of the config.h file changed in 2.2
+        config_h = 'pyconfig.h'
+    return os.path.join(inc_dir, config_h)
 
 
 def get_makefile_filename():
