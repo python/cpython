@@ -11,9 +11,9 @@ import fnmatch
 from types import *
 from glob import glob
 from distutils.core import Command
-from distutils.util import newer, create_tree, remove_tree, convert_path, \
-     write_file
-from distutils.archive_util import check_archive_formats,ARCHIVE_FORMATS
+from distutils.util import \
+     convert_path, create_tree, remove_tree, newer, write_file, \
+     check_archive_formats, ARCHIVE_FORMATS
 from distutils.text_file import TextFile
 from distutils.errors import DistutilsExecError, DistutilsOptionError
 
@@ -40,19 +40,27 @@ class sdist (Command):
          "keep the distribution tree around after creating " +
          "archive file(s)"),
         ]
-    # prints all possible arguments to --formats
-    def show_formats():
+
+
+    # XXX ugh: this has to precede the 'help_options' list, because
+    # it is mentioned there -- also, this is not a method, even though
+    # it's defined in a class: double-ugh!
+    def show_formats ():
+        """Print all possible values for the 'formats' option -- used by
+        the "--help-formats" command-line option.
+        """
 	from distutils.fancy_getopt import FancyGetopt 
-	list_of_formats=[]
+	formats=[]
 	for format in ARCHIVE_FORMATS.keys():
-	    list_of_formats.append(("formats="+format,None,ARCHIVE_FORMATS[format][2]))
-	list_of_formats.sort()
-	pretty_printer=FancyGetopt(list_of_formats)
-	pretty_printer.print_help("List of available distribution formats:")
+	    formats.append(("formats="+format,None,ARCHIVE_FORMATS[format][2]))
+	formats.sort()
+	pretty_printer = FancyGetopt(formats)
+	pretty_printer.print_help(
+            "List of available source distribution formats:")
 
     help_options = [
         ('help-formats', None,
-         "lists available distribution formats",show_formats),
+         "lists available distribution formats", show_formats),
 	]
 
     negative_opts = {'use-defaults': 'no-defaults'}
