@@ -131,10 +131,21 @@ DESCRIPTOR_ELEMENTS = (
     )
 
 def fixup_descriptors(doc):
-    for tagName in DESCRIPTOR_ELEMENTS:
-        nodes = find_all_elements(doc, tagName)
-        for node in nodes:
-            rewrite_descriptor(doc, node)
+    sections = find_all_elements(doc, "section")
+    for section in sections:
+        find_and_fix_descriptors(doc, section)
+
+
+def find_and_fix_descriptors(doc, container):
+    children = container.childNodes
+    for child in children:
+        if child.nodeType == xml.dom.core.ELEMENT:
+            tagName = child.tagName
+            if tagName in DESCRIPTOR_ELEMENTS:
+                rewrite_descriptor(doc, child)
+            elif tagName == "subsection":
+                find_and_fix_descriptors(doc, child)
+
 
 def rewrite_descriptor(doc, descriptor):
     #
