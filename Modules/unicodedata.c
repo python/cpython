@@ -511,7 +511,7 @@ unicodedata_normalize(PyObject *self, PyObject *args)
     char *form;
     PyObject *input;
 
-    if(!PyArg_ParseTuple(args, "sO!:normalized",
+    if(!PyArg_ParseTuple(args, "sO!:normalize",
                          &form, &PyUnicode_Type, &input))
         return NULL;
 
