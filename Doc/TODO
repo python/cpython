@@ -45,6 +45,10 @@ Reference Manual
 * Document new comparison support for recursive objects (lang. ref.?
   library ref.? (cmp() function).  [Jeremy Hylton]
 
+* Range literals need to be documented.  [Thomas Wouters]
+
+* Augmented assignment.  [Thomas Wouters]
+
 Library Reference
 -----------------
 
