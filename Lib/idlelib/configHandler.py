@@ -257,7 +257,6 @@ class IdleConf:
             '<<center-insert>>': ['<Control-l>'],
             '<<close-all-windows>>': ['<Control-q>'],
             '<<close-window>>': ['<Alt-F4>'],
-            '<<dump-undo-state>>': ['<Control-backslash>'],
             '<<end-of-file>>': ['<Control-d>'],
             '<<python-docs>>': ['<F1>'],
             '<<python-context-help>>': ['<Shift-F1>'], 

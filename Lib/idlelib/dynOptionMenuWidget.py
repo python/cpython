@@ -1,9 +1,3 @@
-##---------------------------------------------------------------------------##
-##
-## idle - modified OptionMenu widget 
-## elguavas
-## 
-##---------------------------------------------------------------------------##
 """
 OptionMenu widget modified to allow dynamic menu reconfiguration
 and setting of highlightthickness
