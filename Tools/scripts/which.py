@@ -13,7 +13,7 @@ from stat import *
 def msg(str):
     sys.stderr.write(str + '\n')
 
-pathlist = os.environ['PATH'].split(':')
+pathlist = os.environ['PATH'].split(os.pathsep)
 
 sts = 0
 longlist = ''
