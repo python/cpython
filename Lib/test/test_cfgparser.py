@@ -16,6 +16,7 @@ def basic(src):
                  r'Internationalized Stuff',
                  r'Long Line',
                  r'Section\with$weird%characters[' '\t',
+                 r'Spaces',
                  r'Spacey Bar',
                  ],
            "unexpected list of section names")
@@ -26,6 +27,8 @@ def basic(src):
     verify(cf.get('Foo Bar', 'foo', raw=1) == 'bar')
     verify(cf.get('Spacey Bar', 'foo', raw=1) == 'bar')
     verify(cf.get('Commented Bar', 'foo', raw=1) == 'bar')
+    verify(cf.get('Spaces', 'key with spaces', raw=1) == 'value')
+    verify(cf.get('Spaces', 'another with spaces', raw=1) == 'splat!')
 
     verify('__name__' not in cf.options("Foo Bar"),
            '__name__ "option" should not be exposed by the API!')
@@ -225,6 +228,9 @@ foo[bg]: Bulgarian
 foo=Default
 foo[en]=English
 foo[de]=Deutsch
+[Spaces]
+key with spaces : value
+another with spaces = splat!
 """)
 write("""[Long Line]
 foo: this line is much, much longer than my editor
