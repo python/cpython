@@ -437,8 +437,8 @@ class Transformer:
         assert nodelist[2][1] == 'import'
         fromname = self.com_dotted_name(nodelist[1])
         if nodelist[3][0] == token.STAR:
-            # TODO(jhylton): where is the lineno?
-            return From(fromname, [('*', None)])
+            return From(fromname, [('*', None)],
+                        lineno=nodelist[0][2])
         else:
             node = nodelist[3 + (nodelist[3][0] == token.LPAR)]
             return From(fromname, self.com_import_as_names(node),
