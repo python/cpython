@@ -82,6 +82,7 @@ class AllTest(unittest.TestCase):
         self.check_all("copy_reg")
         self.check_all("csv")
         self.check_all("dbhash")
+        self.check_all("decimal")
         self.check_all("difflib")
         self.check_all("dircache")
         self.check_all("dis")
