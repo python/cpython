@@ -26,15 +26,8 @@ Copyright (C) 2001-2002 Vinay Sajip. All Rights Reserved.
 
 import select
 import os, sys, string, struct, types, cPickle, cStringIO
-import socket, threading, time, locale
+import socket, threading, time
 import logging, logging.handlers, logging.config
-
-try:
-    cur_locale = locale.setlocale(locale.LC_ALL, '')
-except (ValueError, locale.Error):
-    # this happens on a Solaris box which only supports "C" locale
-    # or a Mac OS X box which supports very little locale stuff at all
-    cur_locale = None
 
 BANNER = "-- %-10s %-6s ---------------------------------------------------\n"
 
@@ -407,7 +400,7 @@ def banner(nm, typ):
     sys.stdout.write(sep)
     sys.stdout.flush()
 
-def test_main():
+def test_main_inner():
     rootLogger = logging.getLogger("")
     rootLogger.setLevel(logging.DEBUG)
     hdlr = logging.StreamHandler(sys.stdout)
@@ -474,8 +467,24 @@ def test_main():
         banner("logrecv output", "end")
         sys.stdout.flush()
 
-    if cur_locale:
-        locale.setlocale(locale.LC_ALL, "C")
+def test_main():
+    import locale
+    # Set the locale to the platform-dependent default.  I have no idea
+    # why the test does this, but in any case we save the current locale
+    # first so we can restore it at the end.
+    try:
+        original_locale = locale.setlocale(locale.LC_ALL)
+        locale.setlocale(locale.LC_ALL, '')
+    except (ValueError, locale.Error):
+        # this happens on a Solaris box which only supports "C" locale
+        # or a Mac OS X box which supports very little locale stuff at all
+        original_locale = None
+
+    try:
+        test_main_inner()
+    finally:
+        if original_locale:
+            locale.setlocale(locale.LC_ALL, original_locale)
 
 if __name__ == "__main__":
     sys.stdout.write("test_logging\n")
