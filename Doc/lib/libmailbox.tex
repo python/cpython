@@ -16,7 +16,7 @@ mailbox file.  The optional \var{factory} parameter is a callable that
 should create new message objects.  \var{factory} is called with one
 argument, \var{fp} by the \method{next()} method of the mailbox
 object.  The default is the \class{rfc822.Message} class (see the
-\refmodule{rfc822} module).
+\refmodule{rfc822} module -- and the note below).
 
 For maximum portability, messages in a \UNIX-style mailbox are
 separated by any line that begins exactly with the string \code{'From
@@ -83,6 +83,40 @@ messages start with the EOOH line and end with a line containing only
 \class{UnixMailbox} class.
 \end{classdesc}
 
+Note that because the \refmodule{rfc822} module is deprecated, it is
+recommended that you use the \refmodule{email} package to create
+message objects from a mailbox.  (The default can't be changed for
+backwards compatibility reasons.)  The safest way to do this is with
+bit of code:
+
+\begin{verbatim}
+import email
+import email.Errors
+import mailbox
+
+def msgfactory(fp):
+    try:
+        return email.message_from_file(fp)
+    except email.Errors.MessageParseError:
+        # Don't return None since that will
+	# stop the mailbox iterator
+	return ''
+
+mbox = mailbox.UnixMailbox(fp, msgfactory)
+\end{verbatim}
+
+The above wrapper is defensive against ill-formed MIME messages in the
+mailbox, but you have to be prepared to receive the empty string from
+the mailbox's \function{next()} method.  On the other hand, if you
+know your mailbox contains only well-formed MIME messages, you can
+simplify this to:
+
+\begin{verbatim}
+import email
+import mailbox
+
+mbox = mailbox.UnixMailbox(fp, email.message_from_file)
+\end{verbatim}
 
 \begin{seealso}
   \seetitle[http://www.qmail.org/man/man5/mbox.html]{mbox -
