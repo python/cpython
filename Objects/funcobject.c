@@ -252,6 +252,7 @@ func_dealloc(PyFunctionObject *op)
 	Py_XDECREF(op->func_defaults);
 	Py_XDECREF(op->func_doc);
 	Py_XDECREF(op->func_dict);
+	Py_XDECREF(op->func_closure);
 	op = (PyFunctionObject *) PyObject_AS_GC(op);
 	PyObject_DEL(op);
 }
@@ -300,6 +301,11 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 	}
 	if (f->func_dict) {
 		err = visit(f->func_dict, arg);
+		if (err)
+			return err;
+	}
+	if (f->func_closure) {
+		err = visit(f->func_closure, arg);
 		if (err)
 			return err;
 	}
