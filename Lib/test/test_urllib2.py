@@ -433,22 +433,8 @@ class HandlerTests(unittest.TestCase):
                 if self.raise_on_endheaders:
                     import socket
                     raise socket.error()
-            def putrequest(self, method, selector):
-                self.method, self.selector = method, selector
-            def putheader(self, key, value):
-                self.req_headers.append((key, value))
-            def endheaders(self):
-                if self.raise_on_endheaders:
-                    import socket
-                    raise socket.error()
-            def send(self, data):
-                self.data = data
-            def getreply(self):
-                return 200, "OK", {}
             def getresponse(self):
                 return MockHTTPResponse(MockFile(), {}, 200, "OK")
-            def getfile(self):
-                return MockFile()
 
         h = urllib2.AbstractHTTPHandler()
         o = h.parent = MockOpener()
