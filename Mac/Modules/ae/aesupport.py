@@ -77,8 +77,8 @@ AEEventHandlerUPP = EventHandlerProcPtr
 AlwaysFalse = FakeType("0")
 
 
-AEFunction = OSErrFunctionGenerator
-AEMethod = OSErrMethodGenerator
+AEFunction = OSErrWeakLinkFunctionGenerator
+AEMethod = OSErrWeakLinkMethodGenerator
 
 
 includestuff = includestuff + """

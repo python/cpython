@@ -75,7 +75,7 @@ module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)
 ##module.addobject(object)
 
 # Create the generator classes used to populate the lists
-Function = OSErrFunctionGenerator
+Function = OSErrWeakLinkFunctionGenerator
 ##Method = OSErrMethodGenerator
 
 # Create and populate the lists
