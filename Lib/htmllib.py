@@ -30,6 +30,9 @@ class HTMLParser(SGMLParser):
         """
         SGMLParser.__init__(self, verbose)
         self.formatter = formatter
+
+    def reset(self):
+        SGMLParser.reset(self)
         self.savedata = None
         self.isindex = 0
         self.title = None
