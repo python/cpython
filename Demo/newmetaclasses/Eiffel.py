@@ -138,6 +138,7 @@ def _test(metaclass):
         pass # result ==  100
     else:
         assert False
+    s.m2(5)
 
 if __name__ == "__main__":
     _test(EiffelMetaClass1)
