@@ -293,11 +293,9 @@ MACFILES= $(HOWTOSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	mac/libaepack.tex \
 	mac/libaetypes.tex \
 	mac/libctb.tex \
-	mac/libmacdnr.tex \
 	mac/libmacfs.tex \
 	mac/libmacos.tex \
 	mac/libmacostools.tex \
-	mac/libmactcp.tex \
 	mac/libmacspeech.tex \
 	mac/libmacui.tex \
 	mac/libmacic.tex \
