@@ -22,7 +22,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* AL module -- interface to Mark Callows' Audio Library (AL). */
+/* AL module -- interface to Mark Callow's Audio Library (AL). */
 
 #include "audio.h"
 
