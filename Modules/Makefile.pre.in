@@ -52,7 +52,8 @@ INSTALL_DATA=	${INSTALL} -m 644
 
 LINKCC=		$(CC)
 INCLDIR=	$(srcdir)/../Include
-CFLAGS=		$(OPT) -I$(INCLDIR) -I.. $(DEFS)
+CONFIGINCLDIR=	..
+CFLAGS=		$(OPT) -I$(INCLDIR) -I$(CONFIGINCLDIR) $(DEFS)
 
 MKDEP=		mkdep
 SHELL=		/bin/sh
@@ -86,6 +87,12 @@ SYSLIBS=	$(LIBM) $(LIBC)
 # === Rules ===
 
 all:		$(LIB) ../python sharedmods
+
+asharedmodule:	$(ASHAREDMODULE)$(SO)
+
+$(ASHAREDMODULE)$(SO): $(ASHAREDMODULESOBS)
+	$(LDSHARED) -o $(ASHAREDMODULE)$(SO) $(ASHAREDMODULESOBS) \
+	$(ASHAREDMODULESEXTRA)
 
 $(LIB):		$& $(OBJS) Makefile
 		-rm -f $(LIB)
@@ -176,6 +183,15 @@ sharedinstall:	$(DESTSHARED) $(SHAREDMODS)
 			then $(INSTALL_DATA) $$i $(DESTSHARED)/$$i; \
 			fi; \
 		done
+
+# Install a shared module from outside of setup
+asharedinstall:	$(DESTSHARED) $(ASHAREDMODULE)$(SO)
+		-for i in dummy $(ASHAREDMODULE)$(SO); do \
+		    if test -f $$i; then mv $$i $(DESTSHARED)/$$i; fi; done
+
+# This is handy when modules need to know where the destination directory is:
+echodestshared: $(DESTSHARED)
+	echo 	$(DESTSHARED)
 
 DIRMODE=755
 
