@@ -1,0 +1,71 @@
+\section{\module{chunk} ---
+         Helper for reading IFF chunks}
+
+\declaremodule{standard}{chunk}
+\sectionauthor{Moshe Zadka}{mzadka@geocities.com}
+\modulesynopsis{Helper class for reading from IFF-based file formats.}
+
+The \module{chunk} module defines a class for interfacing to ``IFF''
+chunk-based files, like TIFF or AIFF.  This is used as a helper module
+for the \refmodule{aifc} and \refmodule{wave} modules.
+
+The \module{chunk} module defines the following class:
+
+\begin{classdesc}{Chunk}{file\optional{, align}}
+The chunk from \var{file} starting at \var{file}'s current
+position. The \var{align} argument, which defaults to true, determines 
+whether to align chunk data on 2-byte boundaries.
+
+\exception{EOFError} is raised if \var{file} does not contain enough
+data to read the IFF header.
+\end{classdesc}
+
+The IFF header format is described in this table:
+
+\begin{tableiii}{c|c|l}{textrm}{Offset}{Length}{Contents}
+  \lineiii{0}{4}{Chunk ID}
+  \lineiii{4}{4}{Size of chunk in big-endian byte order, including the 
+                 header}
+\end{tableiii}
+
+
+\subsection{Chunk Objects \label{iff-chunk-objects}}
+
+Chunk objects have the following methods:
+
+\begin{methoddesc}{getname}{}
+Return the ID of the chunk.
+\end{methoddesc}
+
+\begin{methoddesc}{close}{}
+Close the chunk, forwarding the file pointer to the end of the chunk.
+\end{methoddesc}
+
+\begin{methoddesc}{isatty}{}
+Returns false unless the chunk has been closed, in which case
+\exception{ValueError} is raised.
+\end{methoddesc}
+
+\begin{methoddesc}{seek}{offset\optional{, whence}}
+Seek to a position within the chunk. If file pointer is not seekable,
+or \var{offset} would point outside the chunk, an error is raised.
+\var{whence} is interpreted the same as for the \method{seek()} method
+on file objects; see section \ref{bltin-file-objects} for more
+information.
+\end{methoddesc}
+
+\begin{methoddesc}{tell}{}
+Return the current position within this chunk.
+\end{methoddesc}
+
+\begin{methoddesc}{read}{\optional{n}}
+Read at most \var{n} bytes from the chunk. If \var{n} is omitted
+or negative, read until the end of the chunk.
+\end{methoddesc}
+
+\begin{methoddesc}{skip}{}
+Skip to the end of the chunk.  All further calls to \method{read()}
+for the chunk will return \code{''}.  If you are not interested in the
+contents of the chunk, this method should be called so that the file
+points to the start of the next chunk.
+\end{methoddesc}
