@@ -2278,7 +2278,7 @@ Py_UniversalNewlineFread(char *buf, size_t n,
 
 	if (!fobj || !PyFile_Check(fobj)) {
 		errno = ENXIO;	/* What can you do... */
-		return -1;
+		return 0;
 	}
 	if (!f->f_univ_newline)
 		return fread(buf, 1, n, stream);
@@ -2294,6 +2294,9 @@ Py_UniversalNewlineFread(char *buf, size_t n,
 
 		nread = fread(dst, 1, n, stream);
 		assert(nread <= n);
+		if (nread == 0)
+			break;
+
 		n -= nread; /* assuming 1 byte out for each in; will adjust */
 		shortread = n != 0;	/* true iff EOF or error */
 		while (nread--) {
