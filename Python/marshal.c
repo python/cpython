@@ -457,7 +457,7 @@ r_object(RFILE *p)
 			}
 			buf[n] = '\0';
 			PyFPE_START_PROTECT("atof", return 0)
-			dx = atof(buf);
+			dx = PyOS_ascii_atof(buf);
 			PyFPE_END_PROTECT(dx)
 			return PyFloat_FromDouble(dx);
 		}
@@ -475,7 +475,7 @@ r_object(RFILE *p)
 			}
 			buf[n] = '\0';
 			PyFPE_START_PROTECT("atof", return 0)
-			c.real = atof(buf);
+			c.real = PyOS_ascii_atof(buf);
 			PyFPE_END_PROTECT(c)
 			n = r_byte(p);
 			if (n == EOF || r_string(buf, (int)n, p) != n) {
@@ -485,7 +485,7 @@ r_object(RFILE *p)
 			}
 			buf[n] = '\0';
 			PyFPE_START_PROTECT("atof", return 0)
-			c.imag = atof(buf);
+			c.imag = PyOS_ascii_atof(buf);
 			PyFPE_END_PROTECT(c)
 			return PyComplex_FromCComplex(c);
 		}

@@ -3319,7 +3319,7 @@ load_float(Unpicklerobject *self)
 	if (!( s=pystrndup(s,len)))  return -1;
 
 	errno = 0;
-	d = strtod(s, &endptr);
+	d = PyOS_ascii_strtod(s, &endptr);
 
 	if (errno || (endptr[0] != '\n') || (endptr[1] != '\0')) {
 		PyErr_SetString(PyExc_ValueError,

@@ -838,7 +838,6 @@ PyDoc_STRVAR(atof__doc__,
 static PyObject *
 strop_atof(PyObject *self, PyObject *args)
 {
-	extern double strtod(const char *, char **);
 	char *s, *end;
 	double x;
 	char buffer[256]; /* For errors */
@@ -854,7 +853,7 @@ strop_atof(PyObject *self, PyObject *args)
 	}
 	errno = 0;
 	PyFPE_START_PROTECT("strop_atof", return 0)
-	x = strtod(s, &end);
+	x = PyOS_ascii_strtod(s, &end);
 	PyFPE_END_PROTECT(x)
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;

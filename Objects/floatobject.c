@@ -132,7 +132,7 @@ PyFloat_FromString(PyObject *v, char **pend)
 	 * key off errno.
          */
 	PyFPE_START_PROTECT("strtod", return NULL)
-	x = strtod(s, (char **)&end);
+	x = PyOS_ascii_strtod(s, (char **)&end);
 	PyFPE_END_PROTECT(x)
 	errno = 0;
 	/* Believe it or not, Solaris 2.6 can move end *beyond* the null
@@ -164,7 +164,7 @@ PyFloat_FromString(PyObject *v, char **pend)
 		/* See above -- may have been strtod being anal
 		   about denorms. */
 		PyFPE_START_PROTECT("atof", return NULL)
-		x = atof(s);
+		x = PyOS_ascii_atof(s);
 		PyFPE_END_PROTECT(x)
 		errno = 0;    /* whether atof ever set errno is undefined */
 	}
@@ -223,6 +223,7 @@ static void
 format_float(char *buf, size_t buflen, PyFloatObject *v, int precision)
 {
 	register char *cp;
+	char format[32];
 	/* Subroutine for float_repr and float_print.
 	   We want float numbers to be recognizable as such,
 	   i.e., they should contain a decimal point or an exponent.
@@ -230,7 +231,8 @@ format_float(char *buf, size_t buflen, PyFloatObject *v, int precision)
 	   in such cases, we append ".0" to the string. */
 
 	assert(PyFloat_Check(v));
-	PyOS_snprintf(buf, buflen, "%.*g", precision, v->ob_fval);
+	PyOS_snprintf(format, 32, "%%.%ig", precision);
+	PyOS_ascii_formatd(buf, buflen, format, v->ob_fval);
 	cp = buf;
 	if (*cp == '-')
 		cp++;

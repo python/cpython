@@ -247,6 +247,7 @@ PYTHON_OBJS=	\
 		Python/sysmodule.o \
 		Python/traceback.o \
 		Python/getopt.o \
+		Python/pystrtod.o \
 		Python/$(DYNLOADFILE) \
 		$(MACHDEP_OBJS) \
 		$(THREADOBJ)
