@@ -54,7 +54,7 @@ CtlObj_WhichControl(ControlHandle c)
 	if (c == NULL)
 		it = NULL;
 	else
-		it = (PyObject *) GetCRefCon(c);
+		it = (PyObject *) GetControlReference(c);
 	if (it == NULL || ((ControlObject *)it)->ob_itself != c)
 		it = Py_None;
 	Py_INCREF(it);
@@ -67,9 +67,9 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
 	def outputInitStructMembers(self):
 		GlobalObjectDefinition.outputInitStructMembers(self)
-		Output("SetCRefCon(itself, (long)it);")
+		Output("SetControlReference(itself, (long)it);")
 	def outputCleanupStructMembers(self):
-		Output("if (self->ob_itself) SetCRefCon(self->ob_itself, (long)0); /* Make it forget about us */")
+		Output("if (self->ob_itself) SetControlReference(self->ob_itself, (long)0); /* Make it forget about us */")
 		
 # Create the generator groups and link them
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)
