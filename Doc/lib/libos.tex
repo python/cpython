@@ -1514,11 +1514,19 @@ Execute the command (a string) in a subshell.  This is implemented by
 calling the Standard C function \cfunction{system()}, and has the
 same limitations.  Changes to \code{posix.environ}, \code{sys.stdin},
 etc.\ are not reflected in the environment of the executed command.
-The return value is the exit status of the process encoded in the
-format specified for \function{wait()}, except on Windows 95 and 98,
-where it is always \code{0}.  Note that \POSIX{} does not specify the
-meaning of the return value of the C \cfunction{system()} function,
-so the return value of the Python function is system-dependent.
+
+On \UNIX the return value is the exit status of the process encoded in the
+format specified for \function{wait()}.  Note that \POSIX{} does not
+specify the meaning of the return value of the C \cfunction{system()}
+function, so the return value of the Python function is system-dependent.
+
+On Windows the return value is that returned by the system shell after
+running \var{command}, given by the Windows environment variable
+\code{COMSPEC}: on \code{command.com} systems (Windows 95, 98 and ME)
+this is always \code{0}; on \code{cmd.exe} systems (Windows NT, 2000
+and XP) this is the exit status of the command run; on systems using
+a non-native shell, consult your shell documentation.
+
 Availability: \UNIX, Windows.
 \end{funcdesc}
 
