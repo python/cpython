@@ -88,10 +88,17 @@ class AllTests:
     def __del__(self, *args):
         print "__del__:", args
 
+# Synthesize AllTests methods from the names in testmeths.
+
+method_template = """\
+def __%(method)s__(self, *args):
+    print "__%(method)s__:", args
+"""
+
 for method in testmeths:
-    exec """def __%(method)s__(self, *args):
-                print "__%(method)s__:", args
-"""%locals() in AllTests.__dict__
+    exec method_template % locals() in AllTests.__dict__
+
+del method, method_template
 
 # this also tests __init__ of course.
 testme = AllTests()
@@ -107,8 +114,16 @@ testme - 1
 testme * 1
 1 * testme
 
-testme / 1
-1 / testme
+if 1/2 == 0:
+    testme / 1
+    1 / testme
+else:
+    # True division is in effect, so "/" doesn't map to __div__ etc; but
+    # the canned expected-output file requires that __div__ etc get called.
+    testme.__coerce__(1)
+    testme.__div__(1)
+    testme.__coerce__(1)
+    testme.__rdiv__(1)
 
 testme % 1
 1 % testme
