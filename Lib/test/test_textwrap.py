@@ -191,6 +191,15 @@ What a mess!
                   "in its long form."]
         self.check_wrap(text, 42, expect)
 
+        # Again, all of the above can be deduced from _split().
+        text = "the -n option, or --dry-run or --dryrun"
+        result = self.wrapper._split(text)
+        expect = ["the", " ", "-n", " ", "option,", " ", "or", " ",
+                  "--dry-", "run", " ", "or", " ", "--dryrun"]
+        self.assertEquals(result, expect,
+                          "\nexpected %r\n"
+                          "but got  %r" % (expect, result))
+
     def test_split(self):
         # Ensure that the standard _split() method works as advertised
         # in the comments
