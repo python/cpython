@@ -2,9 +2,10 @@ from test.test_support import verbose, TestFailed, TestSkipped, verify
 import sys
 from unicodedata import normalize
 try:
-    data = open("NormalizationTest.txt","r").readlines()
+    data = open("NormalizationTest.txt", "r").readlines()
 except IOError:
-    raise TestSkipped("NormalizationTest.txt not found, download from http://www.unicode.org/Public/UNIDATA/NormalizationTest.txt")
+    raise TestSkipped("NormalizationTest.txt not found, download from "
+                "http://www.unicode.org/Public/UNIDATA/NormalizationTest.txt")
 
 class RangeError:
     pass
