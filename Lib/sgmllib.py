@@ -178,7 +178,7 @@ class SGMLParser:
 		attrfind = regex.compile(
 		  '[ \t\n]+\([a-zA-Z_][a-zA-Z_0-9]*\)' +
 		  '\([ \t\n]*=[ \t\n]*' +
-		     '\(\'[^\']*\';\|"[^"]*"\|[-a-zA-Z0-9./:+*%?!()_#]+\)\)?')
+		     '\(\'[^\']*\'\|"[^"]*"\|[-a-zA-Z0-9./:+*%?!()_#]*\)\)?')
 		k = tagfind.match(rawdata, i+1)
 		if k < 0:
 			raise RuntimeError, 'unexpected call to parse_starttag'
