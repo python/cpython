@@ -30,6 +30,8 @@ Extension modules
 Library
 -------
 
+- Bug #780461: platform.mac_ver() raised MacOSError exception under OS X.
+
 - Bug #812202:  random.randrange() returned only even numbers
   for range lengths above 2**53.
 
