@@ -3295,7 +3295,7 @@ load_mark(Unpicklerobject *self) {
     if ((self->num_marks + 1) >= self->marks_size) {
         s=self->marks_size+20;
         if (s <= self->num_marks) s=self->num_marks + 1;
-        if (self->marks)
+        if (self->marks == NULL)
             self->marks=(int *)malloc(s * sizeof(int));
         else
             self->marks=(int *)realloc(self->marks, s * sizeof(int));
