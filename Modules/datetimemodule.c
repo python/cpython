@@ -2117,7 +2117,7 @@ static PyTypeObject PyDateTime_DeltaType = {
 	0,						/* tp_init */
 	0,						/* tp_alloc */
 	delta_new,					/* tp_new */
-	_PyObject_Del,					/* tp_free */
+	PyObject_Del,					/* tp_free */
 };
 
 /*
@@ -2670,7 +2670,7 @@ static PyTypeObject PyDateTime_DateType = {
 	0,						/* tp_init */
 	0,						/* tp_alloc */
 	date_new,					/* tp_new */
-	_PyObject_Del,					/* tp_free */
+	PyObject_Del,					/* tp_free */
 };
 
 /*
@@ -3441,7 +3441,7 @@ statichere PyTypeObject PyDateTime_TimeType = {
 	0,					/* tp_init */
 	0,					/* tp_alloc */
 	time_new,				/* tp_new */
-	_PyObject_Del,				/* tp_free */
+	PyObject_Del,				/* tp_free */
 };
 
 /*
@@ -4462,7 +4462,7 @@ statichere PyTypeObject PyDateTime_DateTimeType = {
 	0,					/* tp_init */
 	0,					/* tp_alloc */
 	datetime_new,				/* tp_new */
-	_PyObject_Del,				/* tp_free */
+	PyObject_Del,				/* tp_free */
 };
 
 /* ---------------------------------------------------------------------------
