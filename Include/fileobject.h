@@ -55,7 +55,7 @@ size_t Py_UniversalNewlineFread(char *, size_t, FILE *, PyObject *);
 #else
 #define PY_STDIOTEXTMODE ""
 #define Py_UniversalNewlineFgets(buf, len, fp, obj) fgets((buf), (len), (fp))
-#define Py_UniversalNewlineFread(buf, len, fp, obj)
+#define Py_UniversalNewlineFread(buf, len, fp, obj) \
 		fread((buf), 1, (len), (fp))
 #endif /* WITH_UNIVERSAL_NEWLINES */
 #ifdef __cplusplus
