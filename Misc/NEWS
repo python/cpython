@@ -44,6 +44,17 @@ Extension modules
 Library
 -------
 
+- Updated the decimal package's min() and max() methods to match the
+  latest revision of the General Decimal Arithmetic Specification.
+  Quiet NaNs are ignored and equal values are sorted based on sign
+  and exponent.
+
+- The decimal package's Context.copy() method now returns deep copies.
+
+- Deprecated sys.exitfunc in favor of the atexit module.  The sys.exitfunc
+  attribute will be kept around for backwards compatability and atexit
+  will just become the one preferred way to do it.
+
 - patch #675551: Add get_history_item and replace_history_item functions
   to the readline module.
 
@@ -80,6 +91,9 @@ Library
 
 Tools/Demos
 -----------
+
+- IDLE's shortcut keys for windows are now case insensitive so that
+  Control-V works the same as Control-v.
 
 - pygettext.py: Generate POT-Creation-Date header in ISO format.
 
