@@ -105,6 +105,8 @@ class PyBuildExt(build_ext):
             moddirlist.append(macmoddir)
             incdirlist.append('./Mac/Include')
 
+        alldirlist = moddirlist + incdirlist
+
         # Fix up the paths for scripts, too
         self.distribution.scripts = [os.path.join(srcdir, filename)
                                      for filename in self.distribution.scripts]
@@ -112,6 +114,9 @@ class PyBuildExt(build_ext):
         for ext in self.extensions[:]:
             ext.sources = [ find_module_file(filename, moddirlist)
                             for filename in ext.sources ]
+            if ext.depends is not None:
+                ext.depends = [find_module_file(filename, alldirlist)
+                               for filename in ext.depends]
             ext.include_dirs.append( '.' ) # to get config.h
             for incdir in incdirlist:
                 ext.include_dirs.append( os.path.join(srcdir, incdir) )
@@ -386,7 +391,7 @@ class PyBuildExt(build_ext):
 
         # socket(2)
         exts.append( Extension('_socket', ['socketmodule.c'],
-                               depends = ['Modules/socketmodule.h']) )
+                               depends = ['socketmodule.h']) )
         # Detect SSL support for the socket module (via _ssl)
         ssl_incs = find_file('openssl/ssl.h', inc_dirs,
                              ['/usr/local/ssl/include',
@@ -404,7 +409,7 @@ class PyBuildExt(build_ext):
                                    include_dirs = ssl_incs,
                                    library_dirs = ssl_libs,
                                    libraries = ['ssl', 'crypto'],
-                                   depends = ['Modules/socketmodule.h']), )
+                                   depends = ['socketmodule.h']), )
 
         # Modules that provide persistent dictionary-like semantics.  You will
         # probably want to arrange for at least one of them to be available on
