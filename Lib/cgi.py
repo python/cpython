@@ -864,7 +864,7 @@ def print_exception(type=None, value=None, tb=None, limit=None):
         type, value, tb = sys.exc_info()
     import traceback
     print
-    print "<H3>Traceback (innermost last):</H3>"
+    print "<H3>Traceback (most recent call last):</H3>"
     list = traceback.format_tb(tb, limit) + \
            traceback.format_exception_only(type, value)
     print "<PRE>%s<B>%s</B></PRE>" % (

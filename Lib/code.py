@@ -141,7 +141,7 @@ class InteractiveInterpreter:
             del tblist[:1]
             list = traceback.format_list(tblist)
             if list:
-                list.insert(0, "Traceback (innermost last):\n")
+                list.insert(0, "Traceback (most recent call last):\n")
             list[len(list):] = traceback.format_exception_only(type, value)
         finally:
             tblist = tb = None
