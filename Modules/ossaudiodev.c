@@ -385,7 +385,12 @@ oss_read(oss_audio_t *self, PyObject *args)
     if (rv == NULL)
         return NULL;
     cp = PyString_AS_STRING(rv);
-    if ((count = read(self->fd, cp, size)) < 0) {
+
+    Py_BEGIN_ALLOW_THREADS
+    count = read(self->fd, cp, size);
+    Py_END_ALLOW_THREADS
+
+    if (count < 0) {
         PyErr_SetFromErrno(PyExc_IOError);
         Py_DECREF(rv);
         return NULL;
@@ -404,7 +409,12 @@ oss_write(oss_audio_t *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s#:write", &cp, &size)) {
         return NULL;
     }
-    if ((rv = write(self->fd, cp, size)) == -1) {
+
+    Py_BEGIN_ALLOW_THREADS
+    rv = write(self->fd, cp, size);
+    Py_END_ALLOW_THREADS
+
+    if (rv == -1) {
         return PyErr_SetFromErrno(PyExc_IOError);
     } else {
         self->ocount += rv;
@@ -435,12 +445,16 @@ oss_writeall(oss_audio_t *self, PyObject *args)
     FD_SET(self->fd, &write_set_fds);
 
     while (size > 0) {
+        Py_BEGIN_ALLOW_THREADS
         select_rv = select(self->fd+1, NULL, &write_set_fds, NULL, NULL);
+        Py_END_ALLOW_THREADS
         assert(select_rv != 0);         /* no timeout, can't expire */
         if (select_rv == -1)
             return PyErr_SetFromErrno(PyExc_IOError);
 
+        Py_BEGIN_ALLOW_THREADS
         rv = write(self->fd, cp, size);
+        Py_END_ALLOW_THREADS
         if (rv == -1) {
             if (errno == EAGAIN) {      /* buffer is full, try again */
                 errno = 0;
