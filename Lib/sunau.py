@@ -1,6 +1,6 @@
 """Stuff to parse Sun and NeXT audio files.
 
-An audio consists of a header followed by the data.  The structure
+An audio file consists of a header followed by the data.  The structure
 of the header is as follows.
 
         +---------------+
@@ -26,7 +26,7 @@ info field, all header fields are 4 bytes in size.  They are all
 
 The header size really gives the start of the data.
 The data size is the physical size of the data.  From the other
-parameter the number of frames can be calculated.
+parameters the number of frames can be calculated.
 The encoding gives the way in which audio samples are encoded.
 Possible values are listed below.
 The info field currently consists of an ASCII string giving a
