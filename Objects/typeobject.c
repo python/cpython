@@ -1589,6 +1589,11 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
 	PyTypeObject *old = self->ob_type;
 	PyTypeObject *new, *newbase, *oldbase;
 
+	if (value == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+				"can't delete __class__ attribute");
+		return -1;
+	}
 	if (!PyType_Check(value)) {
 		PyErr_Format(PyExc_TypeError,
 		  "__class__ must be set to new-style class, not '%s' object",
