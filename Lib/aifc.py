@@ -133,7 +133,7 @@
 # changed by calling aiff() or aifc() before the first writeframes or
 # writeframesraw.
 
-import builtin
+import __builtin__
 try:
 	import CL
 except ImportError:
@@ -410,7 +410,7 @@ class Aifc_read:
 
 	def __init__(self, f):
 		if type(f) == type(''):
-			f = builtin.open(f, 'r')
+			f = __builtin__.open(f, 'r')
 		# else, assume it is an open file object already
 		self.initfp(f)
 
@@ -616,7 +616,7 @@ class Aifc_write:
 	def __init__(self, f):
 		if type(f) == type(''):
 			filename = f
-			f = builtin.open(f, 'w')
+			f = __builtin__.open(f, 'w')
 		else:
 			# else, assume it is an open file object already
 			filename = '???'
