@@ -685,7 +685,7 @@ read_directory(char *archive)
 			     "'%.200s'", archive);
 		return NULL;
 	}
-	if (get_long(endof_central_dir) != 0x06054B50) {
+	if (get_long((unsigned char *)endof_central_dir) != 0x06054B50) {
 		/* Bad: End of Central Dir signature */
 		fclose(fp);
 		PyErr_Format(ZipImportError, "not a Zip file: "
@@ -693,7 +693,7 @@ read_directory(char *archive)
 		return NULL;
 	}
 
-	header_offset = get_long(endof_central_dir + 16);
+	header_offset = get_long((unsigned char *)endof_central_dir + 16);
 
 	files = PyDict_New();
 	if (files == NULL)
@@ -911,7 +911,7 @@ unmarshal_code(char *pathname, PyObject *data, time_t mtime)
 		return NULL;
 	}
 
-	if (get_long(buf) != PyImport_GetMagicNumber()) {
+	if (get_long((unsigned char *)buf) != PyImport_GetMagicNumber()) {
 		if (Py_VerboseFlag)
 			PySys_WriteStderr("# %s has bad magic\n",
 					  pathname);
@@ -919,7 +919,7 @@ unmarshal_code(char *pathname, PyObject *data, time_t mtime)
 		return Py_None;  /* signal caller to try alternative */
 	}
 
-	if (mtime != 0 && !eq_mtime(get_long(buf + 4), mtime)) {
+	if (mtime != 0 && !eq_mtime(get_long((unsigned char *)buf + 4), mtime)) {
 		if (Py_VerboseFlag)
 			PySys_WriteStderr("# %s has bad mtime\n",
 					  pathname);
