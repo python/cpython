@@ -1,18 +1,20 @@
-# This file can be invoked from the "python.app" target in the 
-# main Makefile. The next two variables are overridden on the 
+# This file can be invoked from the various frameworkinstall... targets in the 
+# main Makefile. The next couple of variables are overridden on the 
 # commandline in that case.
 
-# assume user was invoking from Mac/OSX directory and building in source tree
+VERSION=2.3
 builddir = ../..
 srcdir = ../..
-VERSION=2.3
-
+LIBDEST=$(prefix)/lib/python$(VERSION)
 prefix=/Library/Frameworks/Python.framework/Versions/$(VERSION)
-PYTHONAPPSDIR=/Applications/Python
+dstroot=/.
+
+# These are normally glimpsed from the previous set
+bindir=$(dstroot)/usr/local/bin
+PYTHONAPPSDIR=$(dstroot)/Applications/Python
 APPINSTALLDIR=$(prefix)/Resources/Python.app
 
 # Variables for installing the "normal" unix binaries
-UNIXBINDIR=/usr/local/bin
 INSTALLED_PYTHON=$(prefix)/bin/python
 INSTALLED_PYTHONW=$(APPINSTALLDIR)/Contents/MacOS/python
 
@@ -27,7 +29,7 @@ STRIPFLAG=-s
 OPT=-g -O3 -Wall -Wstrict-prototypes -Wno-long-double -no-cpp-precomp \
 	-fno-common -dynamic
 INCLUDES=-I$(builddir) -I$(srcdir)/Include -I$(srcdir)/Mac/Include
-DEFINES=-DHAVE_CONFIG_H
+DEFINES=
 
 CFLAGS=$(OPT) $(DEFINES) $(INCLUDES)
 LDFLAGS=-F$(builddir) -framework System -framework Python -framework Carbon \
@@ -44,11 +46,11 @@ RESOURCEDIR=$(srcdir)/Mac/Resources
 RESOURCEFILE=python.rsrc
 RFCONVERTER=$(srcdir)/Mac/Lib/applesingle.py
 
-install_all: install_PythonLauncher install_Python install_BuildApplet install_IDE
+installapps: install_PythonLauncher install_Python install_BuildApplet install_IDE
 
 install_PythonLauncher:
 	cd $(srcdir)/Mac/OSX/PythonLauncher/PythonLauncher.pbproj ; \
-	pbxbuild -target PythonLauncher -buildstyle Deployment DSTROOT=/ install
+	pbxbuild -target PythonLauncher -buildstyle Deployment DSTROOT=$(dstroot) install
 	
 install_Python: $(PYTHON)
 	@for i in $(PYTHONAPPSDIR) $(APPINSTALLDIR) $(APPINSTALLDIR)/Contents; do \
@@ -221,20 +223,22 @@ installmacsubtree:
 		done; \
 	done
 
-	$(INSTALL_DATA) $(srcdir)/Mac/OSX/Mac.pth $(prefix)/lib/python$(VERSION)/site-packages/
+	$(INSTALL_DATA) $(srcdir)/Mac/OSX/Mac.pth $(LIBDEST)/site-packages/
 	
 # Put symlinks "python" and "pythonw" in the standard place
 $(INSTALLED_PYTHONW): install_Python
-# $(INSTALLED_PYTHON) has to be done by the main Makefile, we cannot do that here.
 
-installunixprograms: $(INSTALLED_PYTHON) $(INSTALLED_PYTHONW) pythonw.sh
-	$(INSTALL) -d $(UNIXBINDIR)
-	$(INSTALL_SYMLINK) $(INSTALLED_PYTHON) $(UNIXBINDIR)/python
-	$(INSTALL) pythonw.sh $(UNIXBINDIR)/pythonw
+# $(INSTALLED_PYTHON) has to be done by the main Makefile, we cannot do that here.
+# At least this rule will give an error if it doesn't exist.
+
+installunixtools: $(INSTALLED_PYTHON) $(INSTALLED_PYTHONW) $(srcdir)/Mac/OSX/pythonw.sh
+	$(INSTALL) -d $(bindir)
+	$(INSTALL_SYMLINK) $(INSTALLED_PYTHON) $(bindir)/python
+	$(INSTALL) $(srcdir)/Mac/OSX/pythonw.sh $(bindir)/pythonw
 	
 # This is for development purposes: create a Mac.pth that refers to the source
 # directories
 dontinstallmacsubtree:
 	l=`cd $(srcdir)/Mac/Lib; pwd`; \
-	echo $$l > $(prefix)/lib/python$(VERSION)/site-packages/Mac.pth ; \
-	echo $$l/lib-scriptpackages >> $(prefix)/lib/python$(VERSION)/site-packages/Mac.pth
+	echo $$l > $(LIBDEST)/site-packages/Mac.pth ; \
+	echo $$l/lib-scriptpackages >> $(LIBDEST)/site-packages/Mac.pth
