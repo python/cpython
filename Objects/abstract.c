@@ -332,14 +332,14 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
 		if (slotw == slotv)
 			slotw = NULL;
 	}
-	if (slotw && PyType_IsSubtype(w->ob_type, v->ob_type)) {
-		x = slotw(v, w);
-		if (x != Py_NotImplemented)
-			return x;
-		Py_DECREF(x); /* can't do it */
-		slotw = NULL;
-	}
 	if (slotv) {
+		if (slotw && PyType_IsSubtype(w->ob_type, v->ob_type)) {
+			x = slotw(v, w);
+			if (x != Py_NotImplemented)
+				return x;
+			Py_DECREF(x); /* can't do it */
+			slotw = NULL;
+		}
 		x = slotv(v, w);
 		if (x != Py_NotImplemented)
 			return x;
@@ -442,14 +442,14 @@ ternary_op(PyObject *v,
 		if (slotw == slotv)
 			slotw = NULL;
 	}
-	if (slotw && PyType_IsSubtype(w->ob_type, v->ob_type)) {
-		x = slotw(v, w, z);
-		if (x != Py_NotImplemented)
-			return x;
-		Py_DECREF(x); /* can't do it */
-		slotw = NULL;
-	}
 	if (slotv) {
+		if (slotw && PyType_IsSubtype(w->ob_type, v->ob_type)) {
+			x = slotw(v, w, z);
+			if (x != Py_NotImplemented)
+				return x;
+			Py_DECREF(x); /* can't do it */
+			slotw = NULL;
+		}
 		x = slotv(v, w, z);
 		if (x != Py_NotImplemented)
 			return x;
