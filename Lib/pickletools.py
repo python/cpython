@@ -1510,7 +1510,7 @@ assure_pickle_consistency()
 # A pickle opcode generator.
 
 def genops(pickle):
-    """"Generate all the opcodes in a pickle.
+    """Generate all the opcodes in a pickle.
 
     'pickle' is a file-like object, or string, containing the pickle.
 
