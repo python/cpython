@@ -13,6 +13,7 @@ from quopri import encodestring as _encodestring
 def _qencode(s):
     return _encodestring(s, quotetabs=1)
 
+
 def _bencode(s):
     # We can't quite use base64.encodestring() since it tacks on a "courtesy
     # newline".  Blech!
