@@ -1376,7 +1376,6 @@ com_list_for(struct compiling *c, node *n, node *e, char *t)
 	com_node(c, CHILD(n, 3)); /* expr */
 	com_addbyte(c, GET_ITER);
 	c->c_begin = c->c_nexti;
-	com_addoparg(c, SET_LINENO, n->n_lineno);
 	com_addfwref(c, FOR_ITER, &anchor);
 	com_push(c, 1);
 	com_assign(c, CHILD(n, 1), OP_ASSIGN, NULL);
@@ -1395,7 +1394,6 @@ com_list_if(struct compiling *c, node *n, node *e, char *t)
 	int anchor = 0;
 	int a = 0;
 	/* list_iter: 'if' test [list_iter] */
-	com_addoparg(c, SET_LINENO, n->n_lineno);
 	com_node(c, CHILD(n, 1));
 	com_addfwref(c, JUMP_IF_FALSE, &a);
 	com_addbyte(c, POP_TOP);
