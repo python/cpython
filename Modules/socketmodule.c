@@ -1471,7 +1471,7 @@ PySocketSock_recv(PySocketSockObject *s, PyObject *args)
 	if (buf == NULL)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	n = recv(s->sock_fd, PyString_AsString(buf), len, flags);
+	n = recv(s->sock_fd, PyString_AS_STRING(buf), len, flags);
 	Py_END_ALLOW_THREADS
 	if (n < 0) {
 		Py_DECREF(buf);
