@@ -49,9 +49,7 @@ inappropriate error.
 \setindexsubitem{(built-in exception base class)}
 
 The following exceptions are only used as base classes for other
-exceptions.  When string-based standard exceptions are used, they
-are tuples containing the directly derived classes.
-\strong{Note:}  These will always be classes in Python 1.6.
+exceptions.
 
 \begin{excdesc}{Exception}
 The root class for exceptions.  All built-in exceptions are derived
@@ -191,7 +189,7 @@ Raised when an \keyword{assert} statement fails.
   still be rescued (by deleting some objects).  The associated value is
   a string indicating what kind of (internal) operation ran out of memory.
   Note that because of the underlying memory management architecture
-  (\C{}'s \cfunction{malloc()} function), the interpreter may not
+  (C's \cfunction{malloc()} function), the interpreter may not
   always be able to completely recover from this situation; it
   nevertheless raises an exception so that a stack traceback can be
   printed, in case a run-away program was the cause.
@@ -224,7 +222,7 @@ Raised when an \keyword{assert} statement fails.
   Raised when the result of an arithmetic operation is too large to be
   represented.  This cannot occur for long integers (which would rather
   raise \exception{MemoryError} than give up).  Because of the lack of
-  standardization of floating point exception handling in \C{}, most
+  standardization of floating point exception handling in C, most
   floating point operations also aren't checked.  For plain integers,
   all operations that can overflow are checked except left shift, where
   typical applications prefer to drop bits than raise an exception.
@@ -273,16 +271,15 @@ For class exceptions, \function{str()} returns only the message.
   This exception is raised by the \function{sys.exit()} function.  When it
   is not handled, the Python interpreter exits; no stack traceback is
   printed.  If the associated value is a plain integer, it specifies the
-  system exit status (passed to \C{}'s \cfunction{exit()} function); if it is
+  system exit status (passed to C's \cfunction{exit()} function); if it is
   \code{None}, the exit status is zero; if it has another type (such as
   a string), the object's value is printed and the exit status is one.
 
-When class exceptions are used, the instance has an attribute
-\member{code} which is set to the proposed exit status or error message
-(defaulting to \code{None}).  Also, this exception derives directly
-from \exception{Exception} and not \exception{StandardError}, since it 
-is not technically an error.
-  
+  Instances have an attribute \member{code} which is set to the
+  proposed exit status or error message (defaulting to \code{None}).
+  Also, this exception derives directly from \exception{Exception} and
+  not \exception{StandardError}, since it is not technically an error.
+
   A call to \function{sys.exit()} is translated into an exception so that
   clean-up handlers (\keyword{finally} clauses of \keyword{try} statements)
   can be executed, and so that a debugger can execute a script without
@@ -297,9 +294,17 @@ is not technically an error.
   details about the type mismatch.
 \end{excdesc}
 
+\begin{excdesc}{UnboundLocalError}
+  Raised when a reference is made to a local variable in a function or
+  method, but no value has been bound to that variable.  This is a
+  subclass of \exception{NameError}.
+\versionadded{1.6}
+\end{excdesc}
+
 \begin{excdesc}{UnicodeError}
   Raised when a Unicode-related encoding or decoding error occurs.  It
   is a subclass of \exception{ValueError}.
+\versionadded{1.6}
 \end{excdesc}
 
 \begin{excdesc}{ValueError}
