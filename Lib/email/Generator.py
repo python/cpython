@@ -273,6 +273,8 @@ class Generator:
         print >> self._fp, '\n--' + boundary + '--',
         # Write out any epilogue
         if msg.epilogue is not None:
+            if not msg.epilogue.startswith('\n'):
+                print >> self._fp
             self._fp.write(msg.epilogue)
 
     def _handle_multipart_digest(self, msg):
