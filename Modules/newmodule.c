@@ -144,6 +144,24 @@ new_module(unused, args)
 	return newmoduleobject(name);
 }
 
+static char new_class_doc[] =
+"Create a class object from (NAME, BASE_CLASSES, DICT).";
+
+static object *
+new_class(unused, args)
+	object* unused;
+	object* args;
+{
+	object * name;
+	object * classes;
+	object * dict;
+  
+	if (!newgetargs(args, "SO!O!", &name, &Tupletype, &classes,
+			&Mappingtype, &dict))
+		return NULL;
+	return newclassobject(classes, dict, name);
+}
+
 static struct methodlist new_methods[] = {
 	{"instancemethod",	new_instancemethod,	1, new_im_doc},
 #if 0
@@ -151,6 +169,7 @@ static struct methodlist new_methods[] = {
 #endif
 	{"code",		new_code,		1, new_code_doc},
 	{"module",		new_module,		1, new_module_doc},
+	{"classobj",		new_class,		1, new_class_doc},
 	{NULL,			NULL}		/* sentinel */
 };
 
