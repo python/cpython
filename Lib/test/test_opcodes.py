@@ -50,12 +50,12 @@ b = BClass()
 
 try: raise AClass, b
 except BClass, v:
-    if v != b: raise TestFailed
-else: raise TestFailed
+    if v != b: raise TestFailed, "v!=b"
+else: raise TestFailed, "no exception"
 
 try: raise b
 except AClass, v:
-    if v != b: raise TestFailed
+    if v != b: raise TestFailed, "v!=b AClass"
 
 # not enough arguments
 try:  raise BClass, a
@@ -64,21 +64,21 @@ except TypeError: pass
 try:  raise DClass, a
 except DClass, v:
     if not isinstance(v, DClass):
-        raise TestFailed
+        raise TestFailed, "v not DClass"
 
 print '2.3 comparing function objects'
 
 f = eval('lambda: None')
 g = eval('lambda: None')
-if f != g: raise TestFailed
+if f == g: raise TestFailed, "functions should not be same"
 
 f = eval('lambda a: a')
 g = eval('lambda a: a')
-if f != g: raise TestFailed
+if f == g: raise TestFailed, "functions should not be same"
 
 f = eval('lambda a=1: a')
 g = eval('lambda a=1: a')
-if f != g: raise TestFailed
+if f == g: raise TestFailed, "functions should not be same"
 
 f = eval('lambda: 0')
 g = eval('lambda: 1')

@@ -154,3 +154,22 @@ else: raise TestFailed
 # This isn't specifically related to function attributes, but it does test a
 # core dump regression in funcobject.c
 del another.func_defaults
+
+def foo():
+	pass
+
+def bar():
+	pass
+
+def temp():
+	print 1
+
+if foo==bar: raise TestFailed
+
+d={}
+d[foo] = 1
+
+foo.func_code = temp.func_code
+
+d[foo]
+
