@@ -130,6 +130,7 @@ __all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'nlargest',
            'nsmallest']
 
 from itertools import islice, repeat
+import bisect
 
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
@@ -196,6 +197,28 @@ def nsmallest(iterable, n):
 
     Equivalent to:  sorted(iterable)[:n]
     """
+    if hasattr(iterable, '__len__') and n * 10 <= len(iterable):
+        # For smaller values of n, the bisect method is faster than a minheap.
+        # It is also memory efficient, consuming only n elements of space.
+        it = iter(iterable)
+        result = sorted(islice(it, 0, n))
+        if not result:
+            return result
+        insort = bisect.insort
+        pop = result.pop
+        los = result[-1]    # los --> Largest of the nsmallest
+        for elem in it:
+            if los <= elem:
+                continue
+            insort(result, elem)
+            pop()
+            los = result[-1]
+        return result
+    # An alternative approach manifests the whole iterable in memory but
+    # saves comparisons by heapifying all at once.  Also, saves time
+    # over bisect.insort() which has O(n) data movement time for every
+    # insertion.  Finding the n smallest of an m length iterable requires
+    #    O(m) + O(n log m) comparisons.
     h = list(iterable)
     heapify(h)
     return map(heappop, repeat(h, min(n, len(h))))

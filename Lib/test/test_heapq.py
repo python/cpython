@@ -92,6 +92,7 @@ class TestHeap(unittest.TestCase):
     def test_nsmallest(self):
         data = [random.randrange(2000) for i in range(1000)]
         self.assertEqual(nsmallest(data, 400), sorted(data)[:400])
+        self.assertEqual(nsmallest(data, 50), sorted(data)[:50])
 
     def test_largest(self):
         data = [random.randrange(2000) for i in range(1000)]
