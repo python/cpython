@@ -191,7 +191,7 @@ class URLopener:
 		dirs, file = dirs[:-1], dirs[-1]
 		if dirs and not dirs[0]: dirs = dirs[1:]
 		key = (user, host, port, string.joinfields(dirs, '/'))
-		print 'key =', key
+##		print 'key =', key
 		try:
 			if not self.ftpcache.has_key(key):
 				self.ftpcache[key] = \
