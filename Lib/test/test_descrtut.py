@@ -192,7 +192,7 @@ Instead, you can get the same information from the list type:
      '__delitem__',
      '__eq__',
      '__ge__',
-     '__getattr__',
+     '__getattribute__',
      '__getitem__',
      '__getslice__',
      '__gt__',

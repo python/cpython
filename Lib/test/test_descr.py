@@ -678,9 +678,9 @@ def pymods():
     class MM(MT):
         def __init__(self):
             MT.__init__(self)
-        def __getattr__(self, name):
+        def __getattribute__(self, name):
             log.append(("getattr", name))
-            return MT.__getattr__(self, name)
+            return MT.__getattribute__(self, name)
         def __setattr__(self, name, value):
             log.append(("setattr", name, value))
             MT.__setattr__(self, name, value)
@@ -881,8 +881,8 @@ def dynamics():
         if name == "spam":
             return "spam"
         else:
-            return object.__getattr__(self, name)
-    C.__getattr__ = mygetattr
+            return object.__getattribute__(self, name)
+    C.__getattribute__ = mygetattr
     verify(a.spam == "spam")
     a.new = 12
     verify(a.new == 12)
@@ -1105,11 +1105,11 @@ def overloading():
 
     class C(B):
 
-        def __getattr__(self, name):
+        def __getattribute__(self, name):
             if name == "foo":
                 return ("getattr", name)
             else:
-                return B.__getattr__(self, name)
+                return B.__getattribute__(self, name)
         def __setattr__(self, name, value):
             if name == "foo":
                 self.setattr = (name, value)

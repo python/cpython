@@ -2061,8 +2061,8 @@ static struct wrapperbase tab_repr[] = {
 };
 
 static struct wrapperbase tab_getattr[] = {
-	{"__getattr__", (wrapperfunc)wrap_binaryfunc,
-	 "x.__getattr__('name') <==> x.name"},
+	{"__getattribute__", (wrapperfunc)wrap_binaryfunc,
+	 "x.__getattribute__('name') <==> x.name"},
 	{0}
 };
 
@@ -2877,7 +2877,7 @@ slot_tp_getattro(PyObject *self, PyObject *name)
 	static PyObject *getattr_str = NULL;
 
 	if (getattr_str == NULL) {
-		getattr_str = PyString_InternFromString("__getattr__");
+		getattr_str = PyString_InternFromString("__getattribute__");
 		if (getattr_str == NULL)
 			return NULL;
 	}
@@ -3196,7 +3196,7 @@ override_slots(PyTypeObject *type, PyObject *dict)
 	TPSLOT("__hash__", tp_hash, slot_tp_hash);
 	TPSLOT("__call__", tp_call, slot_tp_call);
 	TPSLOT("__str__", tp_str, slot_tp_str);
-	TPSLOT("__getattr__", tp_getattro, slot_tp_getattro);
+	TPSLOT("__getattribute__", tp_getattro, slot_tp_getattro);
 	TPSLOT("__setattr__", tp_setattro, slot_tp_setattro);
 	TPSLOT("__lt__", tp_richcompare, slot_tp_richcompare);
 	TPSLOT("__le__", tp_richcompare, slot_tp_richcompare);
