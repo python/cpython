@@ -5,7 +5,7 @@ for the Distutils compiler abstraction model."""
 
 # created 1999/07/05, Greg Ward
 
-__rcsid__ = "$Id$"
+__revision__ = "$Id$"
 
 import sys, os
 from types import *

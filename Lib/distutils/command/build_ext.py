@@ -6,7 +6,7 @@ extensions ASAP)."""
 
 # created 1999/08/09, Greg Ward
 
-__rcsid__ = "$Id$"
+__revision__ = "$Id$"
 
 import sys, os, string, re
 from types import *

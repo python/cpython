@@ -9,7 +9,7 @@ file causing it."""
 
 # created 1999/03/08, Greg Ward
 
-__rcsid__ = "$Id$"
+__revision__ = "$Id$"
 
 import os, string
 from distutils.errors import *

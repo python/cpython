@@ -8,4 +8,4 @@ used from a setup script as
    setup (...)
 """
 
-__rcsid__ = "$Id$"
+__revision__ = "$Id$"

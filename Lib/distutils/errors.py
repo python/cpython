@@ -10,7 +10,7 @@ symbols whose names start with "Distutils" and end with "Error"."""
 
 # created 1999/03/03, Greg Ward
 
-__rcsid__ = "$Id$"
+__revision__ = "$Id$"
 
 import types
 

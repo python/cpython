@@ -5,7 +5,7 @@ specific functions for launching another program in a sub-process."""
 
 # created 1999/07/24, Greg Ward
 
-__rcsid__ = "$Id$"
+__revision__ = "$Id$"
 
 import sys, os, string
 from distutils.errors import *
