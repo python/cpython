@@ -53,7 +53,12 @@ class install_lib (Command):
         # Install everything: simply dump the entire contents of the build
         # directory to the installation directory (that's the beauty of
         # having a build directory!)
-        outfiles = self.copy_tree (self.build_dir, self.install_dir)
+        if os.path.isdir(self.build_dir):
+            outfiles = self.copy_tree (self.build_dir, self.install_dir)
+        else:
+            self.warn("'%s' does not exist -- no Python modules to install" %
+                      self.build_dir)
+            return
 
         # (Optionally) compile .py to .pyc
         # XXX hey! we can't control whether we optimize or not; that's up
