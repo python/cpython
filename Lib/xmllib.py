@@ -195,9 +195,9 @@ class XMLParser:
             rescan = 0
             if str[0] == '#':
                 if str[1] == 'x':
-                    str = chr(string.atoi(str[2:], 16))
+                    str = chr(int(str[2:], 16))
                 else:
-                    str = chr(string.atoi(str[1:]))
+                    str = chr(int(str[1:]))
                 if data[i - 1] != ';':
                     self.syntax_error("`;' missing after char reference")
                     i = i-1
@@ -245,7 +245,7 @@ class XMLParser:
             if self.nomoretags:
                 data = rawdata[i:n]
                 self.handle_data(data)
-                self.lineno = self.lineno + string.count(data, '\n')
+                self.lineno = self.lineno + data.count('\n')
                 i = n
                 break
             res = interesting.search(rawdata, i)
@@ -263,7 +263,7 @@ class XMLParser:
                 if not self.__accept_utf8 and illegal.search(data):
                     self.syntax_error('illegal character in content')
                 self.handle_data(data)
-                self.lineno = self.lineno + string.count(data, '\n')
+                self.lineno = self.lineno + data.count('\n')
             i = j
             if i == n: break
             if rawdata[i] == '<':
@@ -271,37 +271,37 @@ class XMLParser:
                     if self.literal:
                         data = rawdata[i]
                         self.handle_data(data)
-                        self.lineno = self.lineno + string.count(data, '\n')
+                        self.lineno = self.lineno + data.count('\n')
                         i = i+1
                         continue
                     k = self.parse_starttag(i)
                     if k < 0: break
                     self.__seen_starttag = 1
-                    self.lineno = self.lineno + string.count(rawdata[i:k], '\n')
+                    self.lineno = self.lineno + rawdata[i:k].count('\n')
                     i = k
                     continue
                 if endtagopen.match(rawdata, i):
                     k = self.parse_endtag(i)
                     if k < 0: break
-                    self.lineno = self.lineno + string.count(rawdata[i:k], '\n')
+                    self.lineno = self.lineno + rawdata[i:k].count('\n')
                     i =  k
                     continue
                 if commentopen.match(rawdata, i):
                     if self.literal:
                         data = rawdata[i]
                         self.handle_data(data)
-                        self.lineno = self.lineno + string.count(data, '\n')
+                        self.lineno = self.lineno + data.count('\n')
                         i = i+1
                         continue
                     k = self.parse_comment(i)
                     if k < 0: break
-                    self.lineno = self.lineno + string.count(rawdata[i:k], '\n')
+                    self.lineno = self.lineno + rawdata[i:k].count('\n')
                     i = k
                     continue
                 if cdataopen.match(rawdata, i):
                     k = self.parse_cdata(i)
                     if k < 0: break
-                    self.lineno = self.lineno + string.count(rawdata[i:k], '\n')
+                    self.lineno = self.lineno + rawdata[i:k].count('\n')
                     i = k
                     continue
                 res = xmldecl.match(rawdata, i)
@@ -322,7 +322,7 @@ class XMLParser:
                 if res:
                     k = self.parse_proc(i)
                     if k < 0: break
-                    self.lineno = self.lineno + string.count(rawdata[i:k], '\n')
+                    self.lineno = self.lineno + rawdata[i:k].count('\n')
                     i = k
                     continue
                 res = doctype.match(rawdata, i)
@@ -330,7 +330,7 @@ class XMLParser:
                     if self.literal:
                         data = rawdata[i]
                         self.handle_data(data)
-                        self.lineno = self.lineno + string.count(data, '\n')
+                        self.lineno = self.lineno + data.count('\n')
                         i = i+1
                         continue
                     if self.__seen_doctype:
@@ -341,8 +341,8 @@ class XMLParser:
                     if k < 0: break
                     self.__seen_doctype = res.group('name')
                     if self.__map_case:
-                        self.__seen_doctype = string.lower(self.__seen_doctype)
-                    self.lineno = self.lineno + string.count(rawdata[i:k], '\n')
+                        self.__seen_doctype = self.__seen_doctype.lower()
+                    self.lineno = self.lineno + rawdata[i:k].count('\n')
                     i = k
                     continue
             elif rawdata[i] == '&':
@@ -360,7 +360,7 @@ class XMLParser:
                     if not self.stack:
                         self.syntax_error('data not in content')
                     self.handle_charref(res.group('char')[:-1])
-                    self.lineno = self.lineno + string.count(res.group(0), '\n')
+                    self.lineno = self.lineno + res.group(0).count('\n')
                     continue
                 res = entityref.match(rawdata, i)
                 if res is not None:
@@ -370,14 +370,14 @@ class XMLParser:
                         i = i-1
                     name = res.group('name')
                     if self.__map_case:
-                        name = string.lower(name)
+                        name = name.lower()
                     if self.entitydefs.has_key(name):
                         self.rawdata = rawdata = rawdata[:res.start(0)] + self.entitydefs[name] + rawdata[i:]
                         n = len(rawdata)
                         i = res.start(0)
                     else:
                         self.unknown_entityref(name)
-                    self.lineno = self.lineno + string.count(res.group(0), '\n')
+                    self.lineno = self.lineno + res.group(0).count('\n')
                     continue
             elif rawdata[i] == ']':
                 if self.literal:
@@ -406,7 +406,7 @@ class XMLParser:
             if not self.__accept_utf8 and illegal.search(data):
                 self.syntax_error('illegal character in content')
             self.handle_data(data)
-            self.lineno = self.lineno + string.count(data, '\n')
+            self.lineno = self.lineno + data.count('\n')
             self.rawdata = rawdata[i+1:]
             return self.goahead(end)
         self.rawdata = rawdata[i:]
@@ -442,11 +442,11 @@ class XMLParser:
         n = len(rawdata)
         name = res.group('name')
         if self.__map_case:
-            name = string.lower(name)
+            name = name.lower()
         pubid, syslit = res.group('pubid', 'syslit')
         if pubid is not None:
             pubid = pubid[1:-1]         # remove quotes
-            pubid = string.join(string.split(pubid)) # normalize
+            pubid = ' '.join(pubid.split()) # normalize
         if syslit is not None: syslit = syslit[1:-1] # remove quotes
         j = k = res.end(0)
         if k >= n:
@@ -516,7 +516,7 @@ class XMLParser:
         k = res.end(0)
         name = res.group(0)
         if self.__map_case:
-            name = string.lower(name)
+            name = name.lower()
         if name == 'xml:namespace':
             self.syntax_error('old-fashioned namespace declaration')
             self.__use_namespaces = -1
@@ -541,7 +541,7 @@ class XMLParser:
                 self.syntax_error('xml:namespace prefix not unique')
             self.__namespaces[prefix] = attrdict['ns']
         else:
-            if string.lower(name) == 'xml':
+            if name.lower() == 'xml':
                 self.syntax_error('illegal processing instruction target name')
             self.handle_proc(name, rawdata[k:j])
         return end.end(0)
@@ -557,7 +557,7 @@ class XMLParser:
                 break
             attrname, attrvalue = res.group('name', 'value')
             if self.__map_case:
-                attrname = string.lower(attrname)
+                attrname = attrname.lower()
             i = res.end(0)
             if attrvalue is None:
                 self.syntax_error("no value specified for attribute `%s'" % attrname)
@@ -579,7 +579,7 @@ class XMLParser:
                 self.syntax_error("`<' illegal in attribute value")
             if attrdict.has_key(attrname):
                 self.syntax_error("attribute `%s' specified twice" % attrname)
-            attrvalue = string.translate(attrvalue, attrtrans)
+            attrvalue = attrvalue.translate(attrtrans)
             attrdict[attrname] = self.translate_references(attrvalue)
         return attrdict, namespace, i
 
@@ -596,7 +596,7 @@ class XMLParser:
             return end.end(0)
         nstag = tagname = tag.group('tagname')
         if self.__map_case:
-            nstag = tagname = string.lower(nstag)
+            nstag = tagname = nstag.lower()
         if not self.__seen_starttag and self.__seen_doctype and \
            tagname != self.__seen_doctype:
             self.syntax_error('starttag does not match DOCTYPE')
@@ -636,7 +636,7 @@ class XMLParser:
                 if res is not None:
                     aprefix, key = res.group('prefix', 'local')
                     if self.__map_case:
-                        key = string.lower(key)
+                        key = key.lower()
                     if aprefix is None:
                         aprefix = ''
                     ans = None
@@ -686,7 +686,7 @@ class XMLParser:
         else:
             tag = res.group(0)
             if self.__map_case:
-                tag = string.lower(tag)
+                tag = tag.lower()
             if self.literal:
                 if not self.stack or tag != self.stack[-1][0]:
                     self.handle_data(rawdata[i])
@@ -754,10 +754,10 @@ class XMLParser:
     def handle_charref(self, name):
         try:
             if name[0] == 'x':
-                n = string.atoi(name[1:], 16)
+                n = int(name[1:], 16)
             else:
-                n = string.atoi(name)
-        except string.atoi_error:
+                n = int(name)
+        except ValueError:
             self.unknown_charref(name)
             return
         if not 0 <= n <= 255:
