@@ -546,15 +546,19 @@ int
 Tcl_AppInit(Tcl_Interp *interp)
 {
 	Tk_Window main;
+	const char * _tkinter_skip_tk_init;
 
-	main = Tk_MainWindow(interp);
 	if (Tcl_Init(interp) == TCL_ERROR) {
 		PySys_WriteStderr("Tcl_Init error: %s\n", Tcl_GetStringResult(interp));
 		return TCL_ERROR;
 	}
-	if (Tk_Init(interp) == TCL_ERROR) {
-		PySys_WriteStderr("Tk_Init error: %s\n", Tcl_GetStringResult(interp));
-		return TCL_ERROR;
+	_tkinter_skip_tk_init =	Tcl_GetVar(interp, "_tkinter_skip_tk_init", TCL_GLOBAL_ONLY);
+	if (_tkinter_skip_tk_init == NULL || strcmp(_tkinter_skip_tk_init, "1")	!= 0) {
+		main = Tk_MainWindow(interp);
+		if (Tk_Init(interp) == TCL_ERROR) {
+			PySys_WriteStderr("Tk_Init error: %s\n", Tcl_GetStringResult(interp));
+			return TCL_ERROR;
+		}
 	}
 	return TCL_OK;
 }
@@ -572,11 +576,10 @@ static void DisableEventHook(void); /* Forward */
 
 static TkappObject *
 Tkapp_New(char *screenName, char *baseName, char *className,
-	  int interactive, int wantobjects)
+	  int interactive, int wantobjects, int	wantTk)
 {
 	TkappObject *v;
 	char *argv0;
-
 	v = PyObject_New(TkappObject, &Tkapp_Type);
 	if (v == NULL)
 		return NULL;
@@ -636,6 +639,10 @@ Tkapp_New(char *screenName, char *baseName, char *className,
 		argv0[0] = tolower(argv0[0]);
 	Tcl_SetVar(v->interp, "argv0", argv0, TCL_GLOBAL_ONLY);
 	ckfree(argv0);
+
+	if (! wantTk) {
+	    Tcl_SetVar(v->interp, "_tkinter_skip_tk_init", "1",	TCL_GLOBAL_ONLY);
+	}
 
 	if (Tcl_AppInit(v->interp) != TCL_OK)
 		return (TkappObject *)Tkinter_Error((PyObject *)v);
@@ -2562,6 +2569,41 @@ Tkapp_InterpAddr(PyObject *self, PyObject *args)
 	return PyInt_FromLong((long)Tkapp_Interp(self));
 }
 
+static PyObject	*
+Tkapp_TkInit(PyObject *self, PyObject *args)
+{
+	Tcl_Interp *interp = Tkapp_Interp(self);
+	Tk_Window main;
+	const char * _tk_exists = NULL;
+	PyObject *res =	NULL;
+	int err;
+	main = Tk_MainWindow(interp);
+	if (!PyArg_ParseTuple(args, ":loadtk"))
+		return NULL;
+
+	/* We want to guard against calling Tk_Init() multiple times */
+	CHECK_TCL_APPARTMENT;
+	ENTER_TCL
+	err = Tcl_Eval(Tkapp_Interp(self), "info exists	tk_version");
+	ENTER_OVERLAP
+	if (err == TCL_ERROR) {
+		res = Tkinter_Error(self);
+	} else {
+		_tk_exists = Tkapp_Result(self);
+	}
+	LEAVE_OVERLAP_TCL
+	if (err == TCL_ERROR) {
+		return NULL;
+	}
+	if (_tk_exists == NULL || strcmp(_tk_exists, "1") != 0)	{
+		if (Tk_Init(interp)	== TCL_ERROR) {
+		        PyErr_SetString(Tkinter_TclError, Tcl_GetStringResult(Tkapp_Interp(self)));
+			return NULL;
+		}
+	}
+	Py_INCREF(Py_None);
+	return Py_None;
+}
 
 static PyObject *
 Tkapp_WantObjects(PyObject *self, PyObject *args)
@@ -2629,6 +2671,7 @@ static PyMethodDef Tkapp_methods[] =
 	{"dooneevent", 	       Tkapp_DoOneEvent, METH_VARARGS},
 	{"quit", 	       Tkapp_Quit, METH_VARARGS},
 	{"interpaddr",         Tkapp_InterpAddr, METH_VARARGS},
+	{"loadtk",	       Tkapp_TkInit, METH_VARARGS},
 	{NULL, 		       NULL}
 };
 
@@ -2793,6 +2836,7 @@ Tkinter_Create(PyObject *self, PyObject *args)
 	char *className = NULL;
 	int interactive = 0;
 	int wantobjects = 0;
+	int wantTk = 1;	/* If false, then Tk_Init() doesn't get	called */
 
 	baseName = strrchr(Py_GetProgramName(), '/');
 	if (baseName != NULL)
@@ -2801,13 +2845,13 @@ Tkinter_Create(PyObject *self, PyObject *args)
 		baseName = Py_GetProgramName();
 	className = "Tk";
   
-	if (!PyArg_ParseTuple(args, "|zssii:create",
+	if (!PyArg_ParseTuple(args, "|zssiii:create",
 			      &screenName, &baseName, &className,
-			      &interactive, &wantobjects))
+			      &interactive, &wantobjects, &wantTk))
 		return NULL;
 
 	return (PyObject *) Tkapp_New(screenName, baseName, className, 
-				      interactive, wantobjects);
+				      interactive, wantobjects,	wantTk);
 }
 
 static PyObject *
