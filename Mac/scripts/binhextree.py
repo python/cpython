@@ -118,7 +118,11 @@ extensions = [
 	]
 
 def walker(arg, top, names):
-	for n in names:
+	lnames = names[:]
+	for n in lnames:
+		if n[0] == '(' and n[-1] == ')':
+			names.remove(n)
+			continue
 		for ext, handler in extensions:
 			if n[-len(ext):] == ext:
 				name = os.path.join(top, n)
