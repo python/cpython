@@ -495,6 +495,7 @@ class CodeGenerator:
     # misc
 
     def visitDiscard(self, node):
+        self.set_lineno(node)
         self.visit(node.expr)
         self.emit('POP_TOP')
 
