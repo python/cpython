@@ -707,7 +707,7 @@ static PyMethodDef MacOS_Methods[] = {
 
 
 void
-MacOS_Init()
+initMacOS()
 {
 	PyObject *m, *d;
 	

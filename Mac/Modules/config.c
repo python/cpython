@@ -37,7 +37,7 @@ extern void initcmath();
 #endif
 extern void initparser();
 extern void initmac();
-extern void MacOS_Init();
+extern void initMacOS();
 extern void initregex();
 extern void initstrop();
 extern void initstruct();
@@ -169,7 +169,7 @@ struct _inittab _PyImport_Inittab[] = {
 #endif
 	{"parser", initparser},
 	{"mac", initmac},
-	{"MacOS", MacOS_Init},
+	{"MacOS", initMacOS},
 	{"regex", initregex},
 	{"strop", initstrop},
 	{"struct", initstruct},
