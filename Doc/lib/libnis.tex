@@ -1,0 +1,48 @@
+\section{\module{nis} ---
+         Interface to Sun's NIS (Yello Pages)}
+
+\declaremodule{extension}{nis}
+  \platform{UNIX}
+\moduleauthor{Fred Gansevles}{Fred.Gansevles@cs.utwente.nl}
+\sectionauthor{Moshe Zadka}{mzadka@geocities.com}
+\modulesynopsis{Interface to Sun's N.I.S. (a.k.a. Yellow Pages) library.}
+
+The \module{nis} module gives a thin wrapper around the NIS library, useful
+for central administration of several hosts.
+
+Because NIS exists only on \UNIX{} systems, this module is
+only available for \UNIX{}.
+
+The \module{nis} module defines the following functions:
+
+\begin{funcdesc}{match}{key, mapname}
+Return the match for \var{key} in map \var{mapname}, or raise an
+error (\exception{nis.error}) if there is none.
+Both should be strings, \var{key} is 8-bit clean.
+Return value is an arbitary array of bytes (i.e., may contain \code{NULL}
+and other joys).
+
+Note that \var{mapname} is first checked if it is an alias to another name.
+XXX Describe list of all aliases? Internal for the C code, so
+    I'm not sure it's a good idea.
+\end{funcdesc}
+
+\begin{funcdesc}{cat}{mapname}
+Return a dictionary mapping \var{key} to \var{value} such that
+\code{match(\var{key}, \var{mapname})==\var{value}}.
+Note that both keys and values of the dictionary are arbitary
+arrays of bytes.
+
+Note that \var{mapname} is first checked if it is an alias to another name.
+\end{funcdesc}
+
+\begin{funcdesc}{maps}{}
+Return a list of all valid maps.
+\end{funcdesc}
+
+
+The \module{nis} module defines the following exception:
+
+\begin{excdesc}{error}
+An error raised when a NIS function returns an error code.
+\end{excdesc}
