@@ -11,6 +11,11 @@
 
 \section{Introduction}
 
+{\large This document is a draft, and is subject to change until
+Python 2.1 is released.  Please send any comments, bug reports, or questions,
+no matter how minor, to \email{amk1@bigfoot.com}.
+}
+
 It's that time again... time for a new Python release, version 2.1.
 One recent goal of the Python development team has been to accelerate
 the pace of new releases, with a new release coming every 6 to 9
@@ -44,7 +49,8 @@ For example, in the Zope Web application server, functions are marked
 as safe for public access by having a docstring, and in John Aycock's
 SPARK parsing framework, docstrings hold parts of the BNF grammar to
 be parsed.  This overloading is unfortunate, since docstrings are
-really intended to hold a function's documentation, and means you
+really intended to hold a function's documentation, and it 
+means you
 can't properly document functions intended for private use in Zope.
 
 Attributes can now be set and retrieved on functions, using the
@@ -147,7 +153,7 @@ based on earlier work by David Ascher, and implemented by Guido van Rossum.}
 Over its 10 years of existence, Python has accumulated a certain
 number of obsolete modules and features along the way.  It's difficult
 to know when a feature is safe to remove, since there's no way of
-knowing how much code uses it -- perhaps no programs depend on the
+knowing how much code uses it --- perhaps no programs depend on the
 feature, or perhaps many do.  To enable removing old features in a
 more structured way, a warning framework was added.  When the Python
 developers want to get rid of a feature, it will first trigger a
@@ -223,8 +229,26 @@ installations often don't contain all useful modules they could.
 Python 2.0 added the Distutils, a set of modules for distributing and
 installing extensions.  In Python 2.1, the Distutils are used to
 compile much of the standard library of extension modules,
-autodetecting which ones are supported on the current machine.  
-It's hoped that this will make Python installations easier and more featureful.
+autodetecting which ones are supported on the current machine.  It's
+hoped that this will make Python installations easier and more
+featureful.
+
+Instead of having to edit the \file{Modules/Setup} file in order to
+enable modules, a \file{setup.py} script in the top directory of the
+Python source distribution is run at build time, and attempts to
+discover which modules can be enabled by examining the modules and
+header files on the system.  In 2.1alpha1, there's very little you can
+do to change \file{setup.py}'s behaviour, or to discover why a given
+module isn't compiled.  If you run into problems in 2.1alpha1, please
+report them, and be prepared to dive into \file{setup.py} in order to
+fix autodetection of a given library on your system.  In the alpha2
+release I plan to add ways to have more control over what the script
+does (probably command-line arguments to \file{configure} or to
+\file{setup.py}).
+
+If it turns out to be impossible to make autodetection work reliably,
+it's possible that this change may become an optional build method
+instead of the default, or it may even be backed out completely.
 
 \begin{seealso}
 \seepep{229}{Using Distutils to Build Python}{Written and implemented by A.M. Kuchling.}
@@ -319,8 +343,8 @@ by Jeff Epler. The new method, \method{xreadlines()}, is similar to
 the existing \function{xrange()} built-in.  \function{xreadlines()}
 returns an opaque sequence object that only supports being iterated
 over, reading a line on every iteration but not reading the entire
-file into memory as the existing \method{readline()} method.  You'd
-use it like this:
+file into memory as the existing \method{readlines()} method does.
+You'd use it like this:
 
 \begin{verbatim}
 for line in sys.stdin.xreadlines():
@@ -346,7 +370,7 @@ panel library figures out where panels overlap and which sections are
 visible.
 
 \item Modules can now control which names are imported when \code{from
-\var{module} import *} is used, by defining a \code{__all__} attribute
+\var{module} import *} is used, by defining an \code{__all__} attribute
 containing a list of names that will be imported.  One common
 complaint is that if the module imports other modules such as
 \module{sys} or \module{string}, \code{from \var{module} import *}
@@ -402,21 +426,39 @@ CVS logs for the full details if you want them.
 
 
 % ======================================================================
-\section{XXX Nested Scopes ?}
+\section{Nested Scopes}
 
-xxx
+% XXX
+The PEP for this new feature hasn't been completed yet, and the
+requisite changes haven't been checked into CVS yet.
+
+\begin{seealso}
+
+\seepep{227}{Statically Nested Scopes}{Written and implemented by Jeremy Hylton.}
+
+\end{seealso}
+
 
 % ======================================================================
-\section{XXX Weak References ?}
+\section{Weak References}
 
-xxx
+% XXX
+The PEP for this new feature hasn't been completed yet, and the
+requisite changes haven't been checked into CVS yet.
+
+
+\begin{seealso}
+
+\seepep{205}{Statically Nested Scopes}{Written and implemented by Jeremy Hylton.}
+
+\end{seealso}
+
 
 % ======================================================================
 \section{Acknowledgements}
 
 The author would like to thank the following people for offering
-suggestions on various drafts of this article: Michael Hudson,
-Marc-Andr\'e Lemburg, 
-Neil Schemenauer, Thomas Wouters.
+suggestions on various drafts of this article: David Goodger, Michael
+Hudson, Marc-Andr\'e Lemburg, Neil Schemenauer, Thomas Wouters.
 
 \end{document}
