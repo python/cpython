@@ -21,6 +21,10 @@
 # <module> is anything else but should be a valid Python
 # identifier (letters, digits, underscores, beginning with non-digit)
 #
+# (As the makesetup script changes, it may recognize some other
+# arguments as well, e.g. *.so and *.sl as libraries.  See the big
+# case statement in the makesetup script.)
+#
 # Lines can also have the form
 #
 # <name> = <value>
@@ -29,7 +33,7 @@
 #
 # Finally, if a line has the literal form
 #
-# *noconfig*
+# *shared*
 #
 # (that is including the '*' and '*' !) then the following modules will
 # not be included in the config.c file, nor in the list of objects to be
@@ -38,7 +42,8 @@
 # shared libraries will still be added to the Makefile, and their
 # names will be collected in the Make variable SHAREDMODS.  This is
 # used to build modules as shared libraries.  (They must be installed
-# using "make sharedinstall".)
+# using "make sharedinstall".)  (For compatibility, *noconfig* has the
+# same effect as *shared*.)
 
 # NOTE: As a standard policy, as many modules as can be supported by a
 # platform should be present.  The distribution comes with all modules
@@ -100,18 +105,18 @@ signal signalmodule.c		# signal(2)
 # modules are to be built as shared libraries (see above for more
 # detail):
 
-#*noconfig*
+#*shared*
 
 
 # Modules that should always be present (non UNIX dependent):
 
 array arraymodule.c	# array objects
-cmath cmathmodule.c	# complex math library functions
-math mathmodule.c	# math library functions, e.g. sin()
+cmath cmathmodule.c # -lm # complex math library functions
+math mathmodule.c # -lm # math library functions, e.g. sin()
 regex regexmodule.c regexpr.c	# Regular expressions, GNU Emacs style
 strop stropmodule.c	# fast string operations implemented in C
 struct structmodule.c	# binary structure packing/unpacking
-time timemodule.c	# time operations and variables
+time timemodule.c # -lm # time operations and variables
 operator operator.c	# operator.add() and similar goodies
 
 
