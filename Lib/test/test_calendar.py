@@ -37,10 +37,9 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(len(value), 7)
             self.assertEqual(len(value[:]), 7)
             # ensure they're all unique
-            d = {}
-            for v in value:
-                d[v] = 1
-            self.assertEqual(len(d), 7)
+            self.assertEqual(len(set(value)), 7)
+            # verify it "acts like a sequence" in two forms of iteration
+            self.assertEqual(value[::-1], list(reversed(value)))
 
     def test_months(self):
         for attr in "month_name", "month_abbr":
@@ -49,10 +48,9 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(len(value[:]), 13)
             self.assertEqual(value[0], "")
             # ensure they're all unique
-            d = {}
-            for v in value:
-                d[v] = 1
-            self.assertEqual(len(d), 13)
+            self.assertEqual(len(set(value)), 13)
+            # verify it "acts like a sequence" in two forms of iteration
+            self.assertEqual(value[::-1], list(reversed(value)))
 
 
 class MonthCalendarTestCase(unittest.TestCase):

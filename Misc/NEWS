@@ -32,6 +32,17 @@ Library
 - ``doctest``'s new support for adding ``pdb.set_trace()`` calls to
   doctests was broken in a dramatic but shallow way.  Fixed.
 
+- Bug 1065388:  ``calendar``'s ``day_name``, ``day_abbr``, ``month_name``,
+  and ``month_abbr`` attributes emulate sequences of locale-correct
+  spellings of month and day names.  Because the locale can change at
+  any time, the correct spelling is recomputed whenever one of these is
+  indexed.  In the worst case, the index may be a slice object, so these
+  recomputed every day or month name each time they were indexed.  This is
+  much slower than necessary in the usual case, when the index is just an
+  integer.  In that case, only the single spelling needed is recomputed
+  now; and, when the index is a slice object, only the spellings needed
+  by the slice are recomputed now.
+
 - Patch 1061679: Added ``__all__`` to pickletools.py.
 
 Build

@@ -28,27 +28,37 @@ mdays = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 # fresh on each call, in case the user changes locale between calls.
 
 class _localized_month:
+
+    _months = [datetime.date(2001, i+1, 1).strftime for i in range(12)]
+    _months.insert(0, lambda x: "")
+
     def __init__(self, format):
         self.format = format
 
     def __getitem__(self, i):
-        data = [datetime.date(2001, j, 1).strftime(self.format)
-                     for j in range(1, 13)]
-        data.insert(0, "")
-        return data[i]
+        funcs = self._months[i]
+        if isinstance(i, slice):
+            return [f(self.format) for f in funcs]
+        else:
+            return funcs(self.format)
 
     def __len__(self):
         return 13
 
 class _localized_day:
+
+    # January 1, 2001, was a Monday.
+    _days = [datetime.date(2001, 1, i+1).strftime for i in range(7)]
+
     def __init__(self, format):
         self.format = format
 
     def __getitem__(self, i):
-        # January 1, 2001, was a Monday.
-        data = [datetime.date(2001, 1, j+1).strftime(self.format)
-                     for j in range(7)]
-        return data[i]
+        funcs = self._days[i]
+        if isinstance(i, slice):
+            return [f(self.format) for f in funcs]
+        else:
+            return funcs(self.format)
 
     def __len__(self):
         return 7
