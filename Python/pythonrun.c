@@ -245,6 +245,7 @@ print_error()
 	if (f == NULL)
 		fprintf(stderr, "lost sys.stderr\n");
 	else {
+		printtraceback(f);
 		if (writeobject(exception, f, PRINT_RAW) != 0)
 			err_clear();
 		if (v != NULL && v != None) {
@@ -253,7 +254,6 @@ print_error()
 				err_clear();
 		}
 		writestring("\n", f);
-		printtraceback(f);
 	}
 	XDECREF(exception);
 	XDECREF(v);

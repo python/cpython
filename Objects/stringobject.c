@@ -491,13 +491,13 @@ formatstring(format, args)
 		err_badcall();
 		return NULL;
 	}
-	reslen = rescnt = 100;
+	fmt = getstringvalue(format);
+	fmtcnt = getstringsize(format);
+	reslen = rescnt = fmtcnt + 100;
 	result = newsizedstringobject((char *)NULL, reslen);
 	if (result == NULL)
 		return NULL;
 	res = getstringvalue(result);
-	fmt = getstringvalue(format);
-	fmtcnt = getstringsize(format);
 	if (is_tupleobject(args)) {
 		arglen = gettuplesize(args);
 		argidx = 0;
@@ -509,12 +509,11 @@ formatstring(format, args)
 	while (--fmtcnt >= 0) {
 		if (*fmt != '%') {
 			if (--rescnt < 0) {
-				rescnt = reslen;
-				reslen = reslen * 2; /* Maybe less when big? */
+				rescnt = fmtcnt + 100;
+				reslen += rescnt;
 				if (resizestring(&result, reslen) < 0)
 					return NULL;
-				res = getstringvalue(result) + rescnt;
-				rescnt = reslen - rescnt;
+				res = getstringvalue(result) + reslen - rescnt;
 			}
 			*res++ = *fmt++;
 		}
@@ -692,12 +691,12 @@ formatstring(format, args)
 			if (width < len)
 				width = len;
 			if (rescnt < width + (sign != '\0')) {
-				rescnt = reslen;
-				reslen = reslen + width + 100;
+				reslen -= rescnt;
+				rescnt = width + fmtcnt + 100;
+				reslen += rescnt;
 				if (resizestring(&result, reslen) < 0)
 					return NULL;
-				res = getstringvalue(result) + rescnt;
-				rescnt = reslen - rescnt;
+				res = getstringvalue(result) + reslen - rescnt;
 			}
 			if (sign) {
 				*res++ = sign;

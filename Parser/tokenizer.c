@@ -170,30 +170,14 @@ static int
 tok_nextc(tok)
 	register struct tok_state *tok;
 {
-	if (tok->done != E_OK)
-		return EOF;
-	
 	for (;;) {
-		if (tok->cur < tok->inp)
-			return *tok->cur++;
+		if (tok->cur != tok->inp)
+			return *tok->cur++; /* Fast path */
+		if (tok->done != E_OK)
+			return EOF;
 		if (tok->fp == NULL) {
 			tok->done = E_EOF;
 			return EOF;
-		}
-		if (tok->inp > tok->buf && tok->inp[-1] == '\n')
-			tok->inp = tok->buf;
-		if (tok->inp == tok->end) {
-			int n = tok->end - tok->buf;
-			char *new = tok->buf;
-			RESIZE(new, char, n+n);
-			if (new == NULL) {
-				fprintf(stderr, "tokenizer out of mem\n");
-				tok->done = E_NOMEM;
-				return EOF;
-			}
-			tok->buf = new;
-			tok->inp = tok->buf + n;
-			tok->end = tok->inp + n;
 		}
 #ifdef USE_READLINE
 		if (tok->prompt != NULL) {
@@ -211,46 +195,71 @@ tok_nextc(tok)
 			(void) intrcheck(); /* Clear pending interrupt */
 			if (tok->nextprompt != NULL)
 				tok->prompt = tok->nextprompt;
-				/* XXX different semantics w/o readline()! */
 			if (tok->buf == NULL) {
 				tok->done = E_EOF;
 			}
 			else {
-				unsigned int n = strlen(tok->buf);
-				if (n > 0)
+				tok->end = strchr(tok->buf, '\0');
+				if (tok->end > tok->buf)
 					add_history(tok->buf);
-				/* Append the '\n' that readline()
-				   doesn't give us, for the tokenizer... */
-				tok->buf = realloc(tok->buf, n+2);
-				if (tok->buf == NULL)
-					tok->done = E_NOMEM;
-				else {
-					tok->end = tok->buf + n;
-					*tok->end++ = '\n';
-					*tok->end = '\0';
-					tok->inp = tok->end;
-					tok->cur = tok->buf;
-				}
+				/* Replace trailing '\n' by '\0'
+				   (we don't need a '\0', but the
+				   tokenizer wants a '\n'...) */
+				*tok->end++ = '\n';
+				tok->inp = tok->end;
+				tok->cur = tok->buf;
 			}
 		}
 		else
 #endif
 		{
-			tok->cur = tok->inp;
-			if (tok->prompt != NULL && tok->inp == tok->buf) {
+			if (tok->prompt != NULL) {
 				fprintf(stderr, "%s", tok->prompt);
-				tok->prompt = tok->nextprompt;
+				if (tok->nextprompt != NULL)
+					tok->prompt = tok->nextprompt;
 			}
-			tok->done = fgets_intr(tok->inp,
-				(int)(tok->end - tok->inp), tok->fp);
+			if (tok->buf == NULL) {
+				tok->buf = NEW(char, BUFSIZ);
+				if (tok->buf == NULL) {
+					tok->done = E_NOMEM;
+					return EOF;
+				}
+				tok->end = tok->buf + BUFSIZ;
+			}
+			tok->done = fgets_intr(tok->buf,
+				(int)(tok->end - tok->buf), tok->fp);
+			tok->inp = strchr(tok->buf, '\0');
+			/* Read until '\n' or EOF */
+			while (tok->inp+1==tok->end && tok->inp[-1]!='\n') {
+				int curvalid = tok->inp - tok->buf;
+				int cursize = tok->end - tok->buf;
+				int newsize = cursize + BUFSIZ;
+				char *newbuf = tok->buf;
+				RESIZE(newbuf, char, newsize);
+				if (newbuf == NULL) {
+					tok->done = E_NOMEM;
+					tok->cur = tok->inp;
+					return EOF;
+				}
+				tok->buf = newbuf;
+				tok->inp = tok->buf + curvalid;
+				tok->end = tok->buf + newsize;
+				if (fgets_intr(tok->inp,
+					       (int)(tok->end - tok->inp),
+					       tok->fp) != E_OK)
+					break;
+				tok->inp = strchr(tok->inp, '\0');
+			}
+			tok->cur = tok->buf;
 		}
 		if (tok->done != E_OK) {
 			if (tok->prompt != NULL)
 				fprintf(stderr, "\n");
+			tok->cur = tok->inp;
 			return EOF;
 		}
-		tok->inp = strchr(tok->inp, '\0');
 	}
+	/*NOTREACHED*/
 }
 
 
@@ -390,6 +399,7 @@ tok_get(tok, p_start, p_end)
 				if (tok->indent+1 >= MAXINDENT) {
 					fprintf(stderr, "excessive indent\n");
 					tok->done = E_TOKEN;
+					tok->cur = tok->inp;
 					return ERRORTOKEN;
 				}
 				tok->pendin++;
@@ -405,6 +415,7 @@ tok_get(tok, p_start, p_end)
 				if (col != tok->indstack[tok->indent]) {
 					fprintf(stderr, "inconsistent dedent\n");
 					tok->done = E_TOKEN;
+					tok->cur = tok->inp;
 					return ERRORTOKEN;
 				}
 			}
@@ -558,6 +569,7 @@ tok_get(tok, p_start, p_end)
 			c = tok_nextc(tok);
 			if (c == '\n' || c == EOF) {
 				tok->done = E_TOKEN;
+				tok->cur = tok->inp;
 				return ERRORTOKEN;
 			}
 			if (c == '\\') {
@@ -565,6 +577,7 @@ tok_get(tok, p_start, p_end)
 				*p_end = tok->cur;
 				if (c == '\n' || c == EOF) {
 					tok->done = E_TOKEN;
+					tok->cur = tok->inp;
 					return ERRORTOKEN;
 				}
 				continue;
@@ -581,6 +594,7 @@ tok_get(tok, p_start, p_end)
 		c = tok_nextc(tok);
 		if (c != '\n') {
 			tok->done = E_TOKEN;
+			tok->cur = tok->inp;
 			return ERRORTOKEN;
 		}
 		tok->lineno++;
