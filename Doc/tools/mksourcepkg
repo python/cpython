@@ -16,8 +16,6 @@ with [tag]:  generate from the named tag
 #* should be modified to get the Python version number automatically
 #  from the Makefile or someplace.
 
-__version__ = "$Revision$"
-
 import getopt
 import glob
 import os
@@ -63,9 +61,9 @@ def main():
                formats["bzip2"] = 1
                formats["gzip"] = 1
                formats["zip"] = 1
-     formats = formats.keys()
      if formats:
           # make order human-predictable
+          formats = formats.keys()
           formats.sort()
      else:
           formats = ["gzip"]
@@ -101,8 +99,12 @@ def main():
      else:
           run("cvs -Q -d%s checkout -d Doc python/dist/src/Doc" % cvsroot)
           # remove CVS directories
-          for p in ('*/CVS', '*/*/CVS', '*/*/*/CVS'):
+          for p in ('*/CVS', '*/*/CVS', '*/*/*/CVS',
+                    '.cvsignore', '*/.cvsignore'):
                map(shutil.rmtree, glob.glob(p))
+     LICENSE = os.path.normpath(
+          os.path.join(mydir, os.pardir, os.pardir, "LICENSE"))
+     shutil.copyfile(LICENSE, "Doc/LICENSE")
      if tools:
           archive = "doctools-" + release
           # we don't want the actual documents in this case:
