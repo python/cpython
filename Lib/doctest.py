@@ -2051,7 +2051,7 @@ def testfile(filename, module_relative=True, name=None, package=None,
     if package and not module_relative:
         raise ValueError("Package may only be specified for module-"
                          "relative paths.")
-                         
+
     # Relativize the path
     if module_relative:
         package = _normalize_module(package)
@@ -2458,7 +2458,7 @@ def DocFileTest(path, module_relative=True, package=None,
     if package and not module_relative:
         raise ValueError("Package may only be specified for module-"
                          "relative paths.")
-    
+
     # Relativize the path.
     if module_relative:
         package = _normalize_module(package)
@@ -2475,7 +2475,7 @@ def DocFileTest(path, module_relative=True, package=None,
 
 def DocFileSuite(*paths, **kw):
     """A unittest suite for one or more doctest files.
-    
+
     The path to each doctest file is given as a string; the
     interpretation of that string depends on the keyword argument
     "module_relative".
@@ -2491,7 +2491,7 @@ def DocFileSuite(*paths, **kw):
       "filename" should use "/" characters to separate path
       segments, and may not be an absolute path (i.e., it may not
       begin with "/").
-      
+
       If "module_relative" is False, then the given file paths are
       interpreted as os-specific paths.  These paths may be absolute
       or relative (to the current working directory).
