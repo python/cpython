@@ -883,7 +883,8 @@ require SynopsisTable;
 
 sub get_chapter_id(){
     my $id = do_cmd_thechapter('');
-    $id =~ s/<SPAN CLASS="arabic">(\d+)<\/SPAN>\./\1/;
+    $id =~ s/<SPAN CLASS="arabic">(\d+)<\/SPAN>/\1/;
+    $id =~ s/\.//;
     return $id;
 }
 
