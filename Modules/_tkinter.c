@@ -1647,7 +1647,12 @@ GetVar(PyObject *self, PyObject *args, int flags)
 	ENTER_TCL
 	tres = Tcl_GetVar2Ex(Tkapp_Interp(self), name1, name2, flags);
 	ENTER_OVERLAP
-	res = FromObj(self, tres);
+	if (((TkappObject*)self)->wantobjects) {
+		res = FromObj(self, tres);
+	}
+	else {
+		res = PyString_FromString(Tcl_GetString(tres));
+	}
 	LEAVE_OVERLAP_TCL
 	return res;
 }
