@@ -170,6 +170,18 @@ class ContainerTestCase(unittest.TestCase):
         self.assertEqual(t, new)
         os.unlink(test_support.TESTFN)
 
+    def test_sets(self):
+        for constructor in (set, frozenset):
+            t = constructor(self.d.keys())
+            new = marshal.loads(marshal.dumps(t))
+            self.assertEqual(t, new)
+            self.assert_(isinstance(new, constructor))
+            self.assertNotEqual(id(t), id(new))
+            marshal.dump(t, file(test_support.TESTFN, "wb"))
+            marshal.load(file(test_support.TESTFN, "rb"))
+            self.assertEqual(t, new)
+            os.unlink(test_support.TESTFN)
+
 class BugsTestCase(unittest.TestCase):
     def test_bug_5888452(self):
         # Simple-minded check for SF 588452: Debug build crashes
