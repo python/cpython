@@ -101,6 +101,9 @@ class HTMLParserTestCase(TestCaseBase):
         self._run_check("<?processing instruction>", [
             ("pi", "processing instruction"),
             ])
+        self._run_check("<?processing instruction ?>", [
+            ("pi", "processing instruction ?"),
+            ])
 
     def test_simple_html(self):
         self._run_check("""
