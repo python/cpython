@@ -36,6 +36,9 @@ def OSTypeType(typename):
 OSType = OSTypeType("OSType")
 ResType = OSTypeType("ResType")
 
+# Version numbers
+NumVersion = OpaqueByValueType("NumVersion", "PyMac_BuildNumVersion", "BUG")
+
 # Handles (always resources in our case)
 Handle = OpaqueByValueType("Handle", "ResObj")
 MenuHandle = OpaqueByValueType("MenuHandle", "MenuObj")
