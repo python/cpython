@@ -598,8 +598,8 @@ ignored.
 
 \begin{verbatim}
 >>> def dashrepl(matchobj):
-....    if matchobj.group(0) == '-': return ' '
-....    else: return '-'
+...     if matchobj.group(0) == '-': return ' '
+...     else: return '-'
 >>> re.sub('-{1,2}', dashrepl, 'pro----gram-files')
 'pro--gram files'
 \end{verbatim}
