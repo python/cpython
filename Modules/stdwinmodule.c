@@ -30,6 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 	dp: a drawing structure (only one can exist at a time)
 	mp: a menu
 	tp: a textedit block
+	bp: a bitmap
 */
 
 /* Rules for translating C stdwin function calls into Python stwin:
@@ -115,6 +116,16 @@ typedef struct {
 extern typeobject Menutype;	/* Really static, forward */
 
 #define is_menuobject(mp) ((mp)->ob_type == &Menutype)
+
+typedef struct {
+	OB_HEAD
+	BITMAP	*b_bitmap;
+	object	*b_attr;	/* Attributes dictionary */
+} bitmapobject;
+
+extern typeobject Bitmaptype;	/* Really static, forward */
+
+#define is_bitmapobject(mp) ((mp)->ob_type == &Bitmaptype)
 
 
 /* Strongly stdwin-specific argument handlers */
@@ -664,7 +675,46 @@ drawing_setfgcolor(self, args)
 	return None;
 }
 
+static object *
+drawing_bitmap(self, args)
+	object *self;
+	object *args;
+{
+	int h, v;
+	object *bp;
+	object *mask = NULL;
+	if (!getargs(args, "((ii)O)", &h, &v, &bp)) {
+		err_clear();
+		if (!getargs(args, "((ii)OO)", &h, &v, &bp, &mask))
+			return NULL;
+		if (mask == None)
+			mask = NULL;
+		else if (!is_bitmapobject(mask)) {
+			err_badarg();
+			return NULL;
+		}
+	}
+	if (!is_bitmapobject(bp)) {
+		err_badarg();
+		return NULL;
+	}
+	if (((bitmapobject *)bp)->b_bitmap == NULL ||
+	    mask != NULL && ((bitmapobject *)mask)->b_bitmap == NULL) {
+		err_setstr(StdwinError, "bitmap object already close");
+		return NULL;
+	}
+	if (mask == NULL)
+		wdrawbitmap(h, v, ((bitmapobject *)bp)->b_bitmap, ALLBITS);
+	else
+		wdrawbitmap(h, v,
+			    ((bitmapobject *)bp)->b_bitmap,
+			    ((bitmapobject *)bp)->b_bitmap);
+	INCREF(None);
+	return None;
+}
+
 static struct methodlist drawing_methods[] = {
+	{"bitmap",	drawing_bitmap},
 	{"box",		drawing_box},
 	{"circle",	drawing_circle},
 	{"cliprect",	drawing_cliprect},
@@ -1293,6 +1343,161 @@ typeobject Menutype = {
 };
 
 
+/* Bitmaps objects */
+
+static bitmapobject *newbitmapobject PROTO((int, int));
+static bitmapobject *
+newbitmapobject(width, height)
+	int width, height;
+{
+	BITMAP *bitmap;
+	bitmapobject *bp;
+	bitmap = wnewbitmap(width, height);
+	if (bitmap == NULL)
+		return (bitmapobject *) err_nomem();
+	bp = NEWOBJ(bitmapobject, &Bitmaptype);
+	if (bp != NULL) {
+		bp->b_bitmap = bitmap;
+		bp->b_attr = NULL;
+	}
+	else
+		wfreebitmap(bitmap);
+	return bp;
+}
+
+/* Bitmap methods */
+
+static void
+bitmap_dealloc(bp)
+	bitmapobject *bp;
+{
+	if (bp->b_bitmap != NULL)
+		wfreebitmap(bp->b_bitmap);
+	XDECREF(bp->b_attr);
+	DEL(bp);
+}
+
+static object *
+bitmap_close(bp, args)
+	bitmapobject *bp;
+	object *args;
+{
+	if (bp->b_bitmap != NULL)
+		wfreebitmap(bp->b_bitmap);
+	bp->b_bitmap = NULL;
+	XDECREF(bp->b_attr);
+	bp->b_attr = NULL;
+	INCREF(None);
+	return None;
+}
+
+static object *
+bitmap_setbit(self, args)
+	bitmapobject *self;
+	object *args;
+{
+	int a[3];
+	if (!getpointintarg(args, a))
+		return NULL;
+	wsetbit(self->b_bitmap, a[0], a[1], a[2]);
+	INCREF(None);
+	return None;
+}
+
+static object *
+bitmap_getbit(self, args)
+	bitmapobject *self;
+	object *args;
+{
+	int a[2];
+	if (!getpointarg(args, a))
+		return NULL;
+	return newintobject((long) wgetbit(self->b_bitmap, a[0], a[1]));
+}
+
+static object *
+bitmap_getsize(self, args)
+	bitmapobject *self;
+	object *args;
+{
+	int width, height;
+	if (!getnoarg(args))
+		return NULL;
+	wgetbitmapsize(self->b_bitmap, &width, &height);
+	return mkvalue("(ii)", width, height);
+}
+
+static struct methodlist bitmap_methods[] = {
+	{"close",	bitmap_close},
+	{"getsize",	bitmap_getsize},
+	{"getbit",	bitmap_getbit},
+	{"setbit",	bitmap_setbit},
+	{NULL,		NULL}		/* sentinel */
+};
+
+static object *
+bitmap_getattr(bp, name)
+	bitmapobject *bp;
+	char *name;
+{
+	object *v = NULL;
+	if (bp->b_bitmap == NULL) {
+		err_setstr(StdwinError, "bitmap object already closed");
+		return NULL;
+	}
+	if (strcmp(name, "__dict__") == 0) {
+		v = bp->b_attr;
+		if (v == NULL)
+			v = None;
+	}
+	else if (bp->b_attr != NULL) {
+		v = dictlookup(bp->b_attr, name);
+	}
+	if (v != NULL) {
+		INCREF(v);
+		return v;
+	}
+	return findmethod(bitmap_methods, (object *)bp, name);
+}
+
+static int
+bitmap_setattr(bp, name, v)
+	bitmapobject *bp;
+	char *name;
+	object *v;
+{
+	if (bp->b_attr == NULL) {
+		bp->b_attr = newdictobject();
+		if (bp->b_attr == NULL)
+			return -1;
+	}
+	if (v == NULL) {
+		int rv = dictremove(bp->b_attr, name);
+		if (rv < 0)
+			err_setstr(AttributeError,
+			        "delete non-existing bitmap object attribute");
+		return rv;
+	}
+	else
+		return dictinsert(bp->b_attr, name, v);
+}
+
+typeobject Bitmaptype = {
+	OB_HEAD_INIT(&Typetype)
+	0,			/*ob_size*/
+	"bitmap",			/*tp_name*/
+	sizeof(bitmapobject),	/*tp_size*/
+	0,			/*tp_itemsize*/
+	/* methods */
+	bitmap_dealloc,		/*tp_dealloc*/
+	0,			/*tp_print*/
+	bitmap_getattr,		/*tp_getattr*/
+	bitmap_setattr,		/*tp_setattr*/
+	0,			/*tp_compare*/
+	0,			/*tp_repr*/
+};
+
+
 /* Windows */
 
 #define MAXNWIN 50
@@ -1403,6 +1608,32 @@ window_getwinsize(wp, args)
 		return NULL;
 	wgetwinsize(wp->w_win, &width, &height);
 	return makepoint(width, height);
+}
+
+static object *
+window_setwinpos(wp, args)
+	windowobject *wp;
+	object *args;
+{
+	int a[2];
+	if (!getpointarg(args, a))
+		return NULL;
+	wsetwinpos(wp->w_win, a[0], a[1]);
+	INCREF(None);
+	return None;
+}
+
+static object *
+window_setwinsize(wp, args)
+	windowobject *wp;
+	object *args;
+{
+	int a[2];
+	if (!getpointarg(args, a))
+		return NULL;
+	wsetwinsize(wp->w_win, a[0], a[1]);
+	INCREF(None);
+	return None;
 }
 
 static object *
@@ -1617,6 +1848,8 @@ static struct methodlist window_methods[] = {
 	{"settimer",	window_settimer},
 	{"settitle",	window_settitle},
 	{"setwincursor",window_setwincursor},
+	{"setwinpos",	window_setwinpos},
+	{"setwinsize",	window_setwinsize},
 	{"show",	window_show},
 	{"textcreate",	window_textcreate},
 #ifdef CWI_HACKS
@@ -2168,6 +2401,46 @@ stdwin_connectionnumber(self, args)
 }
 #endif
 
+static object *
+stdwin_listfontnames(self, args)
+	object *self;
+	object *args;
+{
+	char *pattern;
+	char **fontnames;
+	int count;
+	object *list;
+	if (!getargs(args, "z", &pattern))
+		return NULL;
+	fontnames = wlistfontnames(pattern, &count);
+	list = newlistobject(count);
+	if (list != NULL) {
+		int i;
+		for (i = 0; i < count; i++) {
+			object *v = newstringobject(fontnames[i]);
+			if (v == NULL) {
+				DECREF(list);
+				list = NULL;
+				break;
+			}
+			setlistitem(list, i, v);
+		}
+	}
+	return list;
+}
+
+static object *
+stdwin_newbitmap(self, args)
+	object *self;
+	object *args;
+{
+	int width, height;
+	bitmapobject *bp;
+	if (!getargs(args, "(ii)", &width, &height))
+		return NULL;
+	return (object *)newbitmapobject(width, height);
+}
+
 static struct methodlist stdwin_methods[] = {
 	{"askfile",		stdwin_askfile},
 	{"askstr",		stdwin_askstr},
@@ -2187,8 +2460,10 @@ static struct methodlist stdwin_methods[] = {
 	{"getscrmm",		stdwin_getscrmm},
 	{"getscrsize",		stdwin_getscrsize},
 	{"getselection",	stdwin_getselection},
+	{"listfontnames",	stdwin_listfontnames},
 	{"menucreate",		stdwin_menucreate},
 	{"message",		stdwin_message},
+	{"newbitmap",		stdwin_newbitmap},
 	{"open",		stdwin_open},
 	{"pollevent",		stdwin_pollevent},
 	{"resetselection",	stdwin_resetselection},

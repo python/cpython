@@ -458,13 +458,10 @@ listinsert(self, args)
 	object *args;
 {
 	int i;
-	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2) {
-		err_badarg();
+	object *v;
+	if (!getargs(args, "(iO)", &i, &v))
 		return NULL;
-	}
-	if (!getintarg(gettupleitem(args, 0), &i))
-		return NULL;
-	return ins(self, i, gettupleitem(args, 1));
+	return ins(self, i, v);
 }
 
 static object *
@@ -472,7 +469,10 @@ listappend(self, args)
 	listobject *self;
 	object *args;
 {
-	return ins(self, (int) self->ob_size, args);
+	object *v;
+	if (!getargs(args, "O", &v))
+		return NULL;
+	return ins(self, (int) self->ob_size, v);
 }
 
 static object *cmpfunc;
@@ -495,13 +495,9 @@ cmp(v, w)
 		return cmpobject(* (object **) v, * (object **) w);
 
 	/* Call the user-supplied comparison function */
-	t = newtupleobject(2);
+	t = mkvalue("OO", v, w);
 	if (t == NULL)
 		return 0;
-	INCREF(* (object **) v);
-	settupleitem(t, 0, * (object **) v);
-	INCREF(* (object **) w);
-	settupleitem(t, 1, * (object **) w);
 	res = call_object(cmpfunc, t);
 	DECREF(t);
 	if (res == NULL)
