@@ -1008,7 +1008,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 {
 	PyObject *name, *bases, *dict;
 	static char *kwlist[] = {"name", "bases", "dict", 0};
-	static char buffer[256];
 	PyObject *slots, *tmp, *newslots;
 	PyTypeObject *type, *base, *tmptype, *winner;
 	etype *et;
@@ -1171,6 +1170,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			goto bad_slots;
 		for (i = j = 0; i < nslots; i++) {
 			char *s;
+			char buffer[256];
 			tmp = PyTuple_GET_ITEM(slots, i);
 			s = PyString_AS_STRING(tmp);
 			if ((add_dict && strcmp(s, "__dict__") == 0) ||
