@@ -2,11 +2,19 @@ from test_support import verify, verbose, TestFailed
 from UserList import UserList
 import string
 
+def sortdict(d):
+    keys = d.keys()
+    keys.sort()
+    lst = []
+    for k in keys:
+        lst.append("%r: %r" % (k, d[k]))
+    return "{%s}" % ", ".join(lst)
+
 def f(*a, **k):
-    print a, k
+    print a, sortdict(k)
 
 def g(x, *y, **z):
-    print x, y, z
+    print x, y, sortdict(z)
 
 def h(j=1, a=2, h=3):
     print j, a, h
@@ -81,8 +89,8 @@ d = {'a': 1, 'b': 2, 'c': 3}
 d2 = d.copy()
 verify(d == d2)
 g(1, d=4, **d)
-print d
-print d2
+print sortdict(d)
+print sortdict(d2)
 verify(d == d2, "function call modified dictionary")
 
 # what about willful misconduct?
@@ -199,6 +207,6 @@ for name in ['za', 'zade', 'zabk', 'zabdv', 'zabdevk']:
         for kwargs in ['', 'a', 'd', 'ad', 'abde']:
             kwdict = {}
             for k in kwargs: kwdict[k] = k + k
-            print func.func_name, args, kwdict, '->',
+            print func.func_name, args, sortdict(kwdict), '->',
             try: apply(func, args, kwdict)
             except TypeError, err: print err
