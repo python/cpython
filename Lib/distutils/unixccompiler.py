@@ -17,7 +17,7 @@ the "typical" Unix-style command-line C compiler:
 
 __revision__ = "$Id$"
 
-import string, re, os, sys
+import os, sys
 from types import *
 from copy import copy
 from distutils import sysconfig

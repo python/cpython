@@ -7,7 +7,6 @@ swinstall depot"""
 
 __revision__ = "$Id: bdist_sdux.py,v 0.2 "
 import os, string
-import glob
 from types import *
 from distutils.core import Command, DEBUG
 from distutils.util import get_platform
