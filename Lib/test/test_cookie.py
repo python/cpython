@@ -10,6 +10,9 @@ cases = [
     ('chips=ahoy; vienna=finger', {'chips':'ahoy', 'vienna':'finger'}),
     ('keebler="E=mc2; L=\\"Loves\\"; fudge=\\012;";',
      {'keebler' : 'E=mc2; L="Loves"; fudge=\012;'}),
+
+    # Check illegal cookies that have an '=' char in an unquoted value
+    ('keebler=E=mc2;', {'keebler' : 'E=mc2'})
     ]
 
 for data, dict in cases:

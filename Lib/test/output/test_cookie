@@ -10,6 +10,10 @@ Set-Cookie: chips=ahoy;
 Set-Cookie: keebler="E=mc2; L=\"Loves\"; fudge=\012;";
   keebler 'E=mc2; L="Loves"; fudge=\n;' 'E=mc2; L="Loves"; fudge=\n;'
 Set-Cookie: keebler="E=mc2; L=\"Loves\"; fudge=\012;";
+<SimpleCookie: keebler='E=mc2'>
+Set-Cookie: keebler=E=mc2;
+  keebler 'E=mc2' 'E=mc2'
+Set-Cookie: keebler=E=mc2;
 Set-Cookie: Customer="WILE_E_COYOTE"; Path=/acme;
 
         <SCRIPT LANGUAGE="JavaScript">
