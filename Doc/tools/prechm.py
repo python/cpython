@@ -80,7 +80,7 @@ Title=Python %(version)s Documentation
 
 [WINDOWS]
 %(arch)s="Python %(version)s Documentation","%(arch)s.hhc","%(arch)s.hhk",\
-"index.html","index.html",,,,,0x63520,220,0x10384e,[271,372,740,718],,,,,,,0
+"index.html","index.html",,,,,0x63520,220,0x10384e,[0,0,1024,768],,,,,,,0
 
 [FILES]
 '''
@@ -150,6 +150,38 @@ class Book:
 # Library Doc list of books:
 # each 'book' : (Dir, Title, First page, Content page, Index page)
 supported_libraries = {
+    '2.4':
+    [
+        Book('.', 'Main page', 'index'),
+        Book('.', 'Global Module Index', 'modindex'),
+        Book('whatsnew', "What's New", 'index', 'contents'),
+        Book('tut','Tutorial','tut','node2'),
+        Book('lib','Library Reference','lib','contents','genindex'),
+        Book('ref','Language Reference','ref','contents','genindex'),
+        Book('mac','Macintosh Reference','mac','contents','genindex'),
+        Book('ext','Extending and Embedding','ext','contents'),
+        Book('api','Python/C API','api','contents','genindex'),
+        Book('doc','Documenting Python','doc','contents'),
+        Book('inst','Installing Python Modules', 'inst', 'index'),
+        Book('dist','Distributing Python Modules', 'dist', 'index'),
+    ],
+
+    '2.3':
+    [
+        Book('.', 'Main page', 'index'),
+        Book('.', 'Global Module Index', 'modindex'),
+        Book('whatsnew', "What's New", 'index', 'contents'),
+        Book('tut','Tutorial','tut','node2'),
+        Book('lib','Library Reference','lib','contents','genindex'),
+        Book('ref','Language Reference','ref','contents','genindex'),
+        Book('mac','Macintosh Reference','mac','contents','genindex'),
+        Book('ext','Extending and Embedding','ext','contents'),
+        Book('api','Python/C API','api','contents','genindex'),
+        Book('doc','Documenting Python','doc','contents'),
+        Book('inst','Installing Python Modules', 'inst', 'index'),
+        Book('dist','Distributing Python Modules', 'dist', 'index'),
+    ],
+
     '2.2':
     [
         Book('.', 'Main page', 'index'),
