@@ -2259,13 +2259,13 @@ Pickler_dump(Picklerobject *self, PyObject *args) {
 
 
 static struct PyMethodDef Pickler_methods[] = {
-  {"dump",          (PyCFunction)Pickler_dump,  1,
+  {"dump",          (PyCFunction)Pickler_dump,  METH_VARARGS,
    "dump(object) --"
    "Write an object in pickle format to the object's pickle stream\n"
   },
-  {"clear_memo",  (PyCFunction)Pickle_clear_memo,  1,
+  {"clear_memo",  (PyCFunction)Pickle_clear_memo,  METH_VARARGS,
    "clear_memo() -- Clear the picklers memo"},
-  {"getvalue",  (PyCFunction)Pickle_getvalue,  1,
+  {"getvalue",  (PyCFunction)Pickle_getvalue,  METH_VARARGS,
    "getvalue() -- Finish picking a list-based pickle"},
   {NULL,                NULL}           /* sentinel */
 };
@@ -4179,10 +4179,10 @@ Unpickler_noload(Unpicklerobject *self, PyObject *args) {
 
 
 static struct PyMethodDef Unpickler_methods[] = {
-  {"load",         (PyCFunction)Unpickler_load,   1,
+  {"load",         (PyCFunction)Unpickler_load,   METH_VARARGS,
    "load() -- Load a pickle"
   },
-  {"noload",         (PyCFunction)Unpickler_noload,   1,
+  {"noload",         (PyCFunction)Unpickler_noload,   METH_VARARGS,
    "noload() -- not load a pickle, but go through most of the motions\n"
    "\n"
    "This function can be used to read past a pickle without instantiating\n"
@@ -4513,7 +4513,7 @@ static PyTypeObject Unpicklertype = {
 };
 
 static struct PyMethodDef cPickle_methods[] = {
-  {"dump",         (PyCFunction)cpm_dump,         1,
+  {"dump",         (PyCFunction)cpm_dump,         METH_VARARGS,
    "dump(object, file, [binary]) --"
    "Write an object in pickle format to the given file\n"
    "\n"
@@ -4521,7 +4521,7 @@ static struct PyMethodDef cPickle_methods[] = {
    "pickle will be written in binary format, which is more space and\n"
    "computationally efficient. \n"
   },
-  {"dumps",        (PyCFunction)cpm_dumps,        1,
+  {"dumps",        (PyCFunction)cpm_dumps,        METH_VARARGS,
    "dumps(object, [binary]) --"
    "Return a string containing an object in pickle format\n"
    "\n"
@@ -4529,18 +4529,18 @@ static struct PyMethodDef cPickle_methods[] = {
    "pickle will be written in binary format, which is more space and\n"
    "computationally efficient. \n"
   },
-  {"load",         (PyCFunction)cpm_load,         1,
+  {"load",         (PyCFunction)cpm_load,         METH_VARARGS,
    "load(file) -- Load a pickle from the given file"},
-  {"loads",        (PyCFunction)cpm_loads,        1,
+  {"loads",        (PyCFunction)cpm_loads,        METH_VARARGS,
    "loads(string) -- Load a pickle from the given string"},
-  {"Pickler",      (PyCFunction)get_Pickler,      1,
+  {"Pickler",      (PyCFunction)get_Pickler,      METH_VARARGS,
    "Pickler(file, [binary]) -- Create a pickler\n"
    "\n"
    "If the optional argument, binary, is provided and is true, then\n"
    "pickles will be written in binary format, which is more space and\n"
    "computationally efficient. \n"
   },
-  {"Unpickler",    (PyCFunction)get_Unpickler,    1,
+  {"Unpickler",    (PyCFunction)get_Unpickler,    METH_VARARGS,
    "Unpickler(file) -- Create an unpickler"},
   { NULL, NULL }
 };

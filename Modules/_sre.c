@@ -2938,8 +2938,8 @@ scanner_search(ScannerObject* self, PyObject* args)
 }
 
 static PyMethodDef scanner_methods[] = {
-    {"match", (PyCFunction) scanner_match, 0},
-    {"search", (PyCFunction) scanner_search, 0},
+    {"match", (PyCFunction) scanner_match, METH_OLDARGS},
+    {"search", (PyCFunction) scanner_search, METH_OLDARGS},
     {NULL, NULL}
 };
 
@@ -2974,9 +2974,9 @@ statichere PyTypeObject Scanner_Type = {
 };
 
 static PyMethodDef _functions[] = {
-    {"compile", _compile, 1},
-    {"getcodesize", sre_codesize, 1},
-    {"getlower", sre_getlower, 1},
+    {"compile", _compile, METH_VARARGS},
+    {"getcodesize", sre_codesize, METH_VARARGS},
+    {"getlower", sre_getlower, METH_VARARGS},
     {NULL, NULL}
 };
 
