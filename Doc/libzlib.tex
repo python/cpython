@@ -1,0 +1,107 @@
+% zlib compression module version A.01.02
+% Alpha test release.
+% Written by A.M. Kuchling (amk@magnet.com)
+% Comments are welcomed.  
+%
+% Can you think of a better name than zlib?  (The module's purpose isn't 
+% really obvious from the name) 
+
+\section{Built-in Module \sectcode{zlib}}
+\bimodindex{zlib}
+
+For applications that require data compression, the functions in this
+module allow compression and decompression, using a library based on
+GNU zip.  The library is available at
+\code{ftp://godzilli.cs.sunysb.edu/pub/ngf/zlib-1.00.tar.gz}, 
+and is mirrored at
+\code{ftp://ftp.uu.net/graphics/png/src/zlib-1.00.tar.gz}.  Version
+1.00 is the most recent version as of March 18, 1996; use a later
+version if one is available.
+
+The available functions in this module are:
+
+\renewcommand{\indexsubitem}{(in module zlib)}
+\begin{funcdesc}{adler32}{string\optional{\, value}}
+   Computes a Adler-32 checksum of \var{string}.  (An Adler-32
+   checksum is almost as reliable as a CRC32 but can be computed much
+   more quickly.)  If \var{value} is present, it is used as the
+   starting value of the checksum; otherwise, a fixed default value is
+   used.  This allows computing a running checksum over the
+   concatenation of several input strings.  The algorithm is not
+   cryptographically strong, and should not be used for
+   authentication or digital signatures.
+\end{funcdesc}
+
+\begin{funcdesc}{compress}{string\optional{\, level}}
+Compresses the data in \var{string}, returning a string contained
+compressed data.  \var{level} is an integer from 1 to 9 controlling
+the level of compression; 1 is fastest and produces the least
+compression, 9 is slowest and produces the most.  The default value is
+6, which .  Raises the \code{zlib.error} exception if any error occurs.
+\end{funcdesc}
+
+\begin{funcdesc}{compressobj}{\optional{level}}
+Returns a compression object, to be used for compressing data streams
+  that won't fit into memory at once.  \var{level} is an integer from
+  1 to 9 controlling the level of compression; 1 is fastest and
+  produces the least compression, 9 is slowest and produces the most.
+  The default value is 6.
+\end{funcdesc}
+
+\begin{funcdesc}{crc32}{string\optional{\, value}}
+   Computes a CRC (Cyclic Redundancy Check) sum of \var{string}. If
+   \var{value} is present, it is used as the starting value of the
+   checksum; otherwise, a fixed default value is used.  This allows
+   computing a running checksum over the concatenation of several
+   input strings.  The algorithm is not cryptographically strong, and
+   should not be used for authentication or digital signatures.
+\end{funcdesc}
+
+\begin{funcdesc}{decompress}{string}
+Decompresses the data in \var{string}, returning a string containing
+the uncompressed data.  Raises the \code{zlib.error} exception if any
+error occurs.
+\end{funcdesc}
+
+\begin{funcdesc}{decompressobj}{\optional{wbits}}
+Returns a compression object, to be used for decompressing data streams
+  that won't fit into memory at once.  The \var{wbits} parameter controls the size of the window buffer; usually this can be left alone.
+\end{funcdesc}
+
+Compression objects support the following methods:
+
+\begin{funcdesc}{compress}{string}
+Compress \var{string}, returning a string containing compressed data
+for at least part of the data in \var{string}.  This data should be
+concatenated to the output produced by any preceding calls to the
+\code{compress()} method.  Some input may be kept in internal buffers
+for later processing.
+\end{funcdesc}
+
+\begin{funcdesc}{flush}{}
+All pending input is processed, and an string containing the remaining
+compressed output is returned.  After calling \code{flush()}, the
+\code{compress()} method cannot be called again; the only realistic
+action is to delete the object.
+\end{funcdesc}
+
+Decompression objects support the following methods:
+
+\begin{funcdesc}{decompress}{string}
+Decompress \var{string}, returning a string containing the
+uncompressed data corresponding to at least part of the data in
+\var{string}.  This data should be concatenated to the output produced
+by any preceding calls to the
+\code{decompress()} method.  Some of the input data may be preserved in internal buffers
+for later processing.
+\end{funcdesc}
+
+\begin{funcdesc}{flush}{}
+All pending input is processed, and a string containing the remaining
+uncompressed output is returned.  After calling \code{flush()}, the
+\code{decompress()} method cannot be called again; the only realistic
+action is to delete the object.
+\end{funcdesc}
+
+
+
