@@ -752,6 +752,37 @@ CC="$ac_save_cc"])
 AC_MSG_RESULT($ac_cv_kpthread)
 fi
 
+if test $ac_cv_kpthread = no
+then
+# -Kthread, if available, provides the right #defines
+# and linker options to make pthread_create available
+# Some compilers won't report that they do not support -Kthread,
+# so we need to run a program to see whether it really made the
+# function available.
+AC_MSG_CHECKING(whether $CC accepts -Kthread)
+AC_CACHE_VAL(ac_cv_kthread,
+[ac_save_cc="$CC"
+CC="$CC -Kthread"
+AC_TRY_RUN([
+#include <pthread.h>
+
+void* routine(void* p){return NULL;}
+
+int main(){
+  pthread_t p;
+  if(pthread_create(&p,NULL,routine,NULL)!=0)
+    return 1;
+  (void)pthread_detach(p);
+  return 0;
+}
+],
+  ac_cv_kthread=yes,
+  ac_cv_kthread=no,
+  ac_cv_kthread=no)
+CC="$ac_save_cc"])
+AC_MSG_RESULT($ac_cv_kthread)
+fi
+
 dnl # check for ANSI or K&R ("traditional") preprocessor
 dnl AC_MSG_CHECKING(for C preprocessor type)
 dnl AC_TRY_COMPILE([
@@ -940,6 +971,8 @@ AC_DEFINE_UNQUOTED(SIZEOF_TIME_T, $ac_cv_sizeof_time_t,
 ac_save_cc="$CC"
 if test "$ac_cv_kpthread" = "yes"
 then CC="$CC -Kpthread"
+elif test "$ac_cv_kthread" = "yes"
+then CC="$CC -Kthread"
 fi
 AC_MSG_CHECKING(for pthread_t)
 have_pthread_t=no
@@ -1364,6 +1397,12 @@ then
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
+    AC_DEFINE(WITH_THREAD)
+    posix_threads=yes
+    THREADOBJ="Python/thread.o"
+elif test "$ac_cv_kthread" = "yes"
+then
+    CC="$CC -Kthread"
     AC_DEFINE(WITH_THREAD)
     posix_threads=yes
     THREADOBJ="Python/thread.o"
