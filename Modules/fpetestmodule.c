@@ -46,11 +46,12 @@
 static PyObject *fpe_error;
 void initfpetest(void);
 static PyObject *test(PyObject *self,PyObject *args);
-static int db0(void);
-static int overflow(void);
-static int nest1(double);
-static int nest2(double);
+static double db0(double);
+static double overflow(double);
+static double nest1(int, double);
+static double nest2(int, double);
 static double nest3(double);
+static void printerr(double);
 
 static PyMethodDef fpetest_methods[] = {
     {"test",		 (PyCFunction) test,		 1},
@@ -59,159 +60,116 @@ static PyMethodDef fpetest_methods[] = {
 
 static PyObject *test(PyObject *self,PyObject *args)
 {
-    int i = 0, r;
+    double r;
 
-    fprintf(stderr,"Test trapping overflow\n");
-    r = overflow();
-    if(r){
-      fprintf(stderr,"(Note: No exception was raised.)\n");
-      PyErr_Clear();
-    }else{
-      fprintf(stderr,"Trapped:: ");
-      PyErr_Print();
-      PyErr_Clear();
-    }
-    i += r;
+    fprintf(stderr,"overflow");
+    r = overflow(1.e160);
+    printerr(r);
 
-    fprintf(stderr,"Test trapping division by zero\n");
-    r = db0();
-    if(r){
-      fprintf(stderr,"(Note: No exception was raised.)\n");
-      PyErr_Clear();
-    }else{
-      fprintf(stderr,"Trapped:: ");
-      PyErr_Print();
-      PyErr_Clear();
-    }
-    i += r;
+    fprintf(stderr,"\ndiv by 0");
+    r = db0(0.0);
+    printerr(r);
 
-    fprintf(stderr,"Test nested protection zones, outer zone\n");
-    r = nest1(0.0);
-    if(r){
-      fprintf(stderr,"(Note: No exception was raised.)\n");
-      PyErr_Clear();
-    }else{
-      fprintf(stderr,"Trapped:: ");
-      PyErr_Print();
-      PyErr_Clear();
-    }
-    i += r;
+    fprintf(stderr,"\nnested outer");
+    r = nest1(0, 0.0);
+    printerr(r);
 
-    fprintf(stderr,"Test nested protection zones, inner zone\n");
-    fprintf(stderr,"(Note: Return will apparently come from outer zone.)\n");
-    r = nest1(1.0);
-    if(r){
-      fprintf(stderr,"(Note: No exception was raised.)\n");
-      PyErr_Clear();
-    }else{
-      fprintf(stderr,"Trapped:: ");
-      PyErr_Print();
-      PyErr_Clear();
-    }
-    i += r;
+    fprintf(stderr,"\nnested inner");
+    r = nest1(1, 1.0);
+    printerr(r);
 
-    fprintf(stderr,"Test nested protection zones, trailing outer zone\n");
-    r = nest1(2.0);
-    if(r){
-      fprintf(stderr,"(Note: No exception was raised.)\n");
-      PyErr_Clear();
-    }else{
-      fprintf(stderr,"Trapped:: ");
-      PyErr_Print();
-      PyErr_Clear();
-    }
-    i += r;
+    fprintf(stderr,"\ntrailing outer");
+    r = nest1(2, 2.0);
+    printerr(r);
 
-    fprintf(stderr,"Test nested function calls, prior error\n");
-    r = nest2(0.0);
-    if(r){
-      fprintf(stderr,"(Note: No exception was raised.)\n");
-      PyErr_Clear();
-    }else{
-      fprintf(stderr,"Trapped:: ");
-      PyErr_Print();
-      PyErr_Clear();
-    }
-    i += r;
+    fprintf(stderr,"\nnested prior");
+    r = nest2(0, 0.0);
+    printerr(r);
 
-    fprintf(stderr,"Test nested function calls, interior error\n");
-    r = nest2(1.0);
-    if(r){
-      fprintf(stderr,"(Note: No exception was raised.)\n");
-      PyErr_Clear();
-    }else{
-      fprintf(stderr,"Trapped:: ");
-      PyErr_Print();
-      PyErr_Clear();
-    }
-    i += r;
+    fprintf(stderr,"\nnested interior");
+    r = nest2(1, 1.0);
+    printerr(r);
 
-    fprintf(stderr,"Test nested function calls, trailing error\n");
-    r = nest2(2.0);
-    if(r){
-      fprintf(stderr,"(Note: No exception was raised.)\n");
-      PyErr_Clear();
-    }else{
-      fprintf(stderr,"Trapped:: ");
-      PyErr_Print();
-      PyErr_Clear();
-    }
-    i += r;
+    fprintf(stderr,"\nnested trailing");
+    r = nest2(2, 2.0);
+    printerr(r);
 
-    fprintf(stderr,"Number of tests failed: %d\n", i);
     Py_INCREF (Py_None);
     return Py_None;
 }
 
-static int nest1(double x)
+static void printerr(double r)
 {
-  double a = 1.0;
-  PyFPE_START_PROTECT("Division by zero, outer zone", return 0)
-  a = 1./x;
-    PyFPE_START_PROTECT("Division by zero, inner zone", return 0)
-    a = 1./(1. - x);
-    PyFPE_END_PROTECT
-  a = 1./(2. - x);
-  PyFPE_END_PROTECT
-  return(1);
+    if(r == 3.1416){
+      fprintf(stderr,"\tPASS\n");
+      PyErr_Print();
+    }else{
+      fprintf(stderr,"\tFAIL\n");
+    }
+    PyErr_Clear();
 }
 
-static int nest2(double x)
+static double nest1(int i, double x)
 {
   double a = 1.0;
-  PyFPE_START_PROTECT("Division by zero, prior error", return 0)
-  a = 1./x;
-  a = nest3(x);
-  a = 1./(2. - x);
+
+  PyFPE_START_PROTECT("Division by zero, outer zone", return 3.1416)
+  if(i == 0){
+    a = 1./x;
+  }else if(i == 1){
+    /* This (following) message is never seen. */
+    PyFPE_START_PROTECT("Division by zero, inner zone", return 3.1416)
+    a = 1./(1. - x);
+    PyFPE_END_PROTECT
+  }else if(i == 2){
+    a = 1./(2. - x);
+  }
   PyFPE_END_PROTECT
-  return(1);
+
+  return a;
+}
+
+static double nest2(int i, double x)
+{
+  double a = 1.0;
+  PyFPE_START_PROTECT("Division by zero, prior error", return 3.1416)
+  if(i == 0){
+    a = 1./x;
+  }else if(i == 1){
+    a = nest3(x);
+  }else if(i == 2){
+    a = 1./(2. - x);
+  }
+  PyFPE_END_PROTECT
+  return a;
 }
 
 static double nest3(double x)
 {
   double result;
-  PyFPE_START_PROTECT("Division by zero, nest3 error", return 0)
+  /* This (following) message is never seen. */
+  PyFPE_START_PROTECT("Division by zero, nest3 error", return 3.1416)
   result = 1./(1. - x);
   PyFPE_END_PROTECT
   return result;
 }
 
-static int db0(void)
+static double db0(double x)
 {
-  double a = 1.0;
-  PyFPE_START_PROTECT("Division by zero", return 0)
-  a = 1./(a - 1.);
+  double a;
+  PyFPE_START_PROTECT("Division by zero", return 3.1416)
+  a = 1./x;
   PyFPE_END_PROTECT
-  return(1);
+  return a;
 }
 
-static int overflow(void)
+static double overflow(double b)
 {
-  double a, b = 1.e200;
-  PyFPE_START_PROTECT("Overflow", return 0)
+  double a;
+  PyFPE_START_PROTECT("Overflow", return 3.1416)
   a = b*b;
   PyFPE_END_PROTECT
-  return(1);
+  return a;
 }
 
 void initfpetest(void)
