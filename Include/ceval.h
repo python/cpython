@@ -48,7 +48,7 @@ PyObject *PyEval_GetOwner Py_PROTO((void));
 PyObject *PyEval_GetFrame Py_PROTO((void));
 int PyEval_GetRestricted Py_PROTO((void));
 
-void Py_FlushLine Py_PROTO((void));
+int Py_FlushLine Py_PROTO((void));
 
 int Py_AddPendingCall Py_PROTO((int (*func) Py_PROTO((ANY *)), ANY *arg));
 int Py_MakePendingCalls Py_PROTO((void));
