@@ -267,7 +267,8 @@ of all the files and subdirs in directory "d".
     for name in names:
         if name not in exceptions:
             name = join(top, name)
-            if isdir(name) and not islink(name):
+            st = os.lstat(name)
+            if stat.S_ISDIR(st[stat.ST_MODE]):
                 walk(name, func, arg)
 
 
