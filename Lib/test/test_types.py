@@ -389,3 +389,12 @@ for copymode in -1, +1:
                     str(ta), str(tb))
         if a: raise TestFailed, 'a not empty after popitems: %s' % str(a)
         if b: raise TestFailed, 'b not empty after popitems: %s' % str(b)
+
+try: type(1, 2)
+except TypeError: pass
+else: raise TestFailed, 'type(), w/2 args expected TypeError'
+
+try: type(1, 2, 3, 4)
+except TypeError: pass
+else: raise TestFailed, 'type(), w/4 args expected TypeError'
+
