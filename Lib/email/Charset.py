@@ -35,6 +35,20 @@ CHARSETS = {
     # input        header enc  body enc output conv
     'iso-8859-1':  (QP,        QP,      None),
     'iso-8859-2':  (QP,        QP,      None),
+    'iso-8859-3':  (QP,        QP,      None),
+    'iso-8859-4':  (QP,        QP,      None),
+    # iso-8859-5 is Cyrillic, and not especially used
+    # iso-8859-6 is Arabic, also not particularly used
+    # iso-8859-7 is Greek, QP will not make it readable
+    # iso-8859-8 is Hebrew, QP will not make it readable
+    'iso-8859-9':  (QP,        QP,      None),
+    'iso-8859-10': (QP,        QP,      None),
+    # iso-8859-11 is Thai, QP will not make it readable
+    'iso-8859-13': (QP,        QP,      None),
+    'iso-8859-14': (QP,        QP,      None),
+    'iso-8859-15': (QP,        QP,      None),
+    'windows-1252':(QP,        QP,      None),
+    'viscii':      (QP,        QP,      None),
     'us-ascii':    (None,      None,    None),
     'big5':        (BASE64,    BASE64,  None),
     'gb2312':      (BASE64,    BASE64,  None),
@@ -52,6 +66,25 @@ CHARSETS = {
 ALIASES = {
     'latin_1': 'iso-8859-1',
     'latin-1': 'iso-8859-1',
+    'latin_2': 'iso-8859-2',
+    'latin-2': 'iso-8859-2',
+    'latin_3': 'iso-8859-3',
+    'latin-3': 'iso-8859-3',
+    'latin_4': 'iso-8859-4',
+    'latin-4': 'iso-8859-4',
+    'latin_5': 'iso-8859-9',
+    'latin-5': 'iso-8859-9',
+    'latin_6': 'iso-8859-10',
+    'latin-6': 'iso-8859-10',
+    'latin_7': 'iso-8859-13',
+    'latin-7': 'iso-8859-13',
+    'latin_8': 'iso-8859-14',
+    'latin-8': 'iso-8859-14',
+    'latin_9': 'iso-8859-15',
+    'latin-9': 'iso-8859-15',
+    'cp949':   'ks_c_5601-1987',
+    'euc_jp':  'euc-jp',
+    'euc_kr':  'euc-kr',
     'ascii':   'us-ascii',
     }
 
@@ -69,6 +102,10 @@ CODEC_MAP = {
     'euc-jp':      'japanese.euc-jp',
     'iso-2022-jp': 'japanese.iso-2022-jp',
     'shift_jis':   'japanese.shift_jis',
+    'euc-kr':      'korean.euc-kr',
+    'ks_c_5601-1987': 'korean.cp949',
+    'iso-2022-kr': 'korean.iso-2022-kr',
+    'johab':       'korean.johab',
     'gb2132':      'eucgb2312_cn',
     'big5':        'big5_tw',
     'utf-8':       'utf-8',
