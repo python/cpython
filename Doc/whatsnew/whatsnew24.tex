@@ -782,12 +782,33 @@ If the separation is large, then you might as well use
 another, \function{tee()} is ideal.  Possible applications include
 bookmarking, windowing, or lookahead iterators.
 
+\item A \function{basicConfig} function was added to the
+\module{logging} package to simplify log configuration.  It defaults
+to logging to standard error, but a
+number of optional keyword arguments can be specified to 
+log to a particular file, change the logging format, or set  the
+logging level.  For example:
+
+\begin{verbatim}
+import logging
+logging.basicConfig(filename = '/var/log/application.log',
+    level=0,  # Log all messages, including debugging,
+    format='%(levelname):%(process):%(thread):%(message)')	            
+\end{verbatim}
+
+Another addition to \module{logging} is a
+\class{TimedRotatingFileHandler} class which rotates its log files at
+a timed interval.  The module already had \class{RotatingFileHandler},
+which rotated logs once the file exceeded a certain size.  Both
+classes derive from a new \class{BaseRotatingHandler} class that can
+be used to implement other rotating handlers.
+
 \item The \module{operator} module gained two new functions, 
 \function{attrgetter(\var{attr})} and \function{itemgetter(\var{index})}.
 Both functions return callables that take a single argument and return
 the corresponding attribute or item; these callables make excellent
-data extractors when used with \function{map()} or \function{sorted()}.
-For example:
+data extractors when used with \function{map()} or
+\function{sorted()}.  For example:
 
 \begin{verbatim}
 >>> L = [('c', 2), ('d', 1), ('a', 4), ('b', 3)]
