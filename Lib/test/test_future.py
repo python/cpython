@@ -1,47 +1,89 @@
 # Test various flavors of legal and illegal future statements
 
-from test.test_support import unload
+import unittest
+from test import test_support
 import re
 
 rx = re.compile('\((\S+).py, line (\d+)')
 
-def check_error_location(msg):
-    mo = rx.search(msg)
-    print "SyntaxError %s %s" % mo.group(1, 2)
+def get_error_location(msg):
+    mo = rx.search(str(msg))
+    return mo.group(1, 2)
 
-# The first two tests should work
+class FutureTest(unittest.TestCase):
 
-unload('test_future1')
-from test import test_future1
+    def test_future1(self):
+        test_support.unload('test_future1')
+        from test import test_future1
+        self.assertEqual(test_future1.result, 6)
 
-unload('test_future2')
-from test import test_future2
+    def test_future2(self):
+        test_support.unload('test_future2')
+        from test import test_future2
+        self.assertEqual(test_future2.result, 6)
 
-unload('test_future3')
-from test import test_future3
+    def test_future3(self):
+        test_support.unload('test_future3')
+        from test import test_future3
 
-# The remaining tests should fail
-try:
-    from test import badsyntax_future3
-except SyntaxError, msg:
-    check_error_location(str(msg))
+    def test_badfuture3(self):
+        try:
+            from test import badsyntax_future3
+        except SyntaxError, msg:
+            self.assertEqual(get_error_location(msg), ("badsyntax_future3", '3'))
+        else:
+            self.fail("expected exception didn't occur")
 
-try:
-    from test import badsyntax_future4
-except SyntaxError, msg:
-    check_error_location(str(msg))
+    def test_badfuture4(self):
+        try:
+            from test import badsyntax_future4
+        except SyntaxError, msg:
+            self.assertEqual(get_error_location(msg), ("badsyntax_future4", '3'))
+        else:
+            self.fail("expected exception didn't occur")
 
-try:
-    from test import badsyntax_future5
-except SyntaxError, msg:
-    check_error_location(str(msg))
+    def test_badfuture5(self):
+        try:
+            from test import badsyntax_future5
+        except SyntaxError, msg:
+            self.assertEqual(get_error_location(msg), ("badsyntax_future5", '4'))
+        else:
+            self.fail("expected exception didn't occur")
 
-try:
-    from test import badsyntax_future6
-except SyntaxError, msg:
-    check_error_location(str(msg))
+    def test_badfuture6(self):
+        try:
+            from test import badsyntax_future6
+        except SyntaxError, msg:
+            self.assertEqual(get_error_location(msg), ("badsyntax_future6", '3'))
+        else:
+            self.fail("expected exception didn't occur")
 
-try:
-    from test import badsyntax_future7
-except SyntaxError, msg:
-    check_error_location(str(msg))
+    def test_badfuture7(self):
+        try:
+            from test import badsyntax_future7
+        except SyntaxError, msg:
+            self.assertEqual(get_error_location(msg), ("badsyntax_future7", '3'))
+        else:
+            self.fail("expected exception didn't occur")
+
+    def test_badfuture8(self):
+        try:
+            from test import badsyntax_future8
+        except SyntaxError, msg:
+            self.assertEqual(get_error_location(msg), ("badsyntax_future8", '3'))
+        else:
+            self.fail("expected exception didn't occur")
+
+    def test_badfuture9(self):
+        try:
+            from test import badsyntax_future9
+        except SyntaxError, msg:
+            self.assertEqual(get_error_location(msg), ("badsyntax_future9", '3'))
+        else:
+            self.fail("expected exception didn't occur")
+
+def test_main():
+    test_support.run_unittest(FutureTest)
+
+if __name__ == "__main__":
+    test_main()

@@ -8,4 +8,4 @@ def f(x):
         return x + y
     return g
 
-print f(2)(4)
+result = f(2)(4)
