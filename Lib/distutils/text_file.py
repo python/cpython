@@ -53,10 +53,10 @@ class TextFile:
             self.file = file
             self.current_line = 0       # assuming that file is at BOF!
 
-        # 'linestart' stores the file offset of the start of each logical
-        # line; it is used to back up the file pointer when the caller
-        # wants to "unread" a line
-        self.linestart = []
+        # 'linebuf' is a stack of lines that will be emptied before we
+        # actually read from the file; it's only populated by an
+        # 'unreadline()' operation
+        self.linebuf = []
         
 
     def open (self, filename):
@@ -83,14 +83,18 @@ class TextFile:
 
     def readline (self):
 
+        # If any "unread" lines waiting in 'linebuf', return the top
+        # one.  (We don't actually buffer read-ahead data -- lines only
+        # get put in 'linebuf' if the client explicitly does an
+        # 'unreadline()'.
+        if self.linebuf:
+            line = self.linebuf[-1]
+            del self.linebuf[-1]
+            return line
+
         buildup_line = ''
 
         while 1:
-            # record current file position; this will be appended to
-            # the linestart array *unless* we're accumulating a
-            # continued logical line
-            current_pos = self.file.tell()
-
             # read the line, optionally strip comments
             line = self.file.readline()
             if self.strip_comments and line:
@@ -111,11 +115,6 @@ class TextFile:
                     self.current_line[1] = self.current_line[1] + 1
                 else:
                     self.current_line = [self.current_line, self.current_line+1]
-
-                # Forget current position: don't want to save it in the
-                # middle of a logical line
-                current_pos = None
-
             # just an ordinary line, read it as usual
             else:
                 if not line:
@@ -126,7 +125,7 @@ class TextFile:
                     self.current_line = self.current_line[1] + 1
                 else:
                     self.current_line = self.current_line + 1
-
+                
 
             # strip whitespace however the client wants (leading and
             # trailing, or one or the other, or neither)
@@ -143,12 +142,6 @@ class TextFile:
             if line == '' or line == '\n' and self.skip_blanks:
                 continue
 
-            # if we're still here and have kept the current position,
-            # then this physical line starts a logical line; record its
-            # starting offset
-            if current_pos is not None:
-                self.linestart.append (current_pos)
-                
             if self.join_lines:
                 if line[-1] == '\\':
                     buildup_line = line[:-1]
@@ -168,14 +161,6 @@ class TextFile:
     # end readline
 
 
-    def unreadline (self):
-        if not self.linestart:
-            raise IOError, "at beginning of file -- can't unreadline"
-        pos = self.linestart[-1]
-        del self.linestart[-1]
-        self.file.seek (pos)        
-
-
     def readlines (self):
         lines = []
         while 1:
@@ -183,6 +168,10 @@ class TextFile:
             if line is None:
                 return lines
             lines.append (line)
+
+
+    def unreadline (self, line):
+        self.linebuf.append (line)
 
 
 if __name__ == "__main__":
