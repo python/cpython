@@ -584,6 +584,11 @@ A. There shouldn't be any -- I've seen several complaints but more
 reports on successful "out-of-the-box" ports on Linux.  The standard
 configure script runs just fine on Linux.
 
+Q. Trouble with prototypes on Ultrix.
+
+A. Ultrix cc seems broken -- use gcc, or edit config.h to #undef
+HAVE_PROTOTYPES.
+
 3.11. Q. Other trouble building Python on platform X.
 
 A. Please email the details to <guido@cwi.nl> and I'll look into it.
