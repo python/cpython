@@ -581,7 +581,11 @@ class SheetGUI:
         self.rows = rows
         self.columns = columns
         self.gridcells = {}
-        # Create the top row of labels
+        # Create the top left corner cell (which selects all)
+        cell = Tk.Label(self.cellgrid, relief='raised')
+        cell.grid_configure(column=0, row=0, sticky='NSWE')
+        cell.bind("<ButtonPress-1>", self.selectall)
+        # Create the top row of labels, and confiure the grid columns
         for x in range(1, columns+1):
             self.cellgrid.grid_columnconfigure(x, minsize=64)
             cell = Tk.Label(self.cellgrid, text=colnum2name(x), relief='raised')
@@ -609,7 +613,7 @@ class SheetGUI:
             for y in range(1, rows+1):
                 cell = Tk.Label(self.cellgrid, relief='sunken',
                                 bg='white', fg='black')
-                cell.grid_configure(column=x, row=y, sticky='NWSE')
+                cell.grid_configure(column=x, row=y, sticky='NSWE')
                 self.gridcells[x, y] = cell
                 cell.__x = x
                 cell.__y = y
@@ -619,27 +623,31 @@ class SheetGUI:
                 cell.bind("<ButtonRelease-1>", self.release)
                 cell.bind("<Shift-Button-1>", self.release)
 
+    def selectall(self, event):
+        self.setcurrent(1, 1)
+        self.setcorner(sys.maxint, sys.maxint)
+
     def selectcolumn(self, event):
         x, y = self.whichxy(event)
         self.setcurrent(x, 1)
-        self.setcorner(x, self.rows)
+        self.setcorner(x, sys.maxint)
 
     def extendcolumn(self, event):
         x, y = self.whichxy(event)
         if x > 0:
             self.setcurrent(self.currentxy[0], 1)
-            self.setcorner(x, self.rows)
+            self.setcorner(x, sys.maxint)
 
     def selectrow(self, event):
         x, y = self.whichxy(event)
         self.setcurrent(1, y)
-        self.setcorner(self.columns, y)
+        self.setcorner(sys.maxint, y)
 
     def extendrow(self, event):
         x, y = self.whichxy(event)
         if y > 0:
             self.setcurrent(1, self.currentxy[1])
-            self.setcorner(self.columns, y)
+            self.setcorner(sys.maxint, y)
 
     def press(self, event):
         x, y = self.whichxy(event)
@@ -691,17 +699,32 @@ class SheetGUI:
             x1, x2 = x2, x1
         if y1 > y2:
             y1, y2 = y2, y1
-        for x in range(x1, x2+1):
-            for y in range(y1, y2+1):
-                gridcell = self.gridcells.get((x, y))
-                if gridcell is not None:
-                    gridcell['bg'] = 'lightBlue'
+        for (x, y), cell in self.gridcells.iteritems():
+            if x1 <= x <= x2 and y1 <= y <= y2:
+                cell['bg'] = 'lightBlue'
         gridcell = self.gridcells.get(self.currentxy)
         if gridcell is not None:
             gridcell['bg'] = 'yellow'
-        name1 = cellname(*self.currentxy)
-        name2 = cellname(*self.cornerxy)
-        self.beacon['text'] = "%s:%s" % (name1, name2)
+        self.setbeacon(x1, y1, x2, y2)
+
+    def setbeacon(self, x1, y1, x2, y2):
+        if x1 == y1 == 1 and x2 == y2 == sys.maxint:
+            name = ":"
+        elif (x1, x2) == (1, sys.maxint):
+            if y1 == y2:
+                name = "%d" % y1
+            else:
+                name = "%d:%d" % (y1, y2)
+        elif (y1, y2) == (1, sys.maxint):
+            if x1 == x2:
+                name = "%s" % colnum2name(x1)
+            else:
+                name = "%s:%s" % (colnum2name(x1), colnum2name(x2))
+        else:
+            name1 = cellname(*self.currentxy)
+            name2 = cellname(*self.cornerxy)
+            name = "%s:%s" % (name1, name2)
+        self.beacon['text'] = name
 
 
     def clearfocus(self):
@@ -712,11 +735,9 @@ class SheetGUI:
                 x1, x2 = x2, x1
             if y1 > y2:
                 y1, y2 = y2, y1
-            for x in range(x1, x2+1):
-                for y in range(y1, y2+1):
-                    gridcell = self.gridcells.get((x, y))
-                    if gridcell is not None:
-                        gridcell['bg'] = 'white'
+            for (x, y), cell in self.gridcells.iteritems():
+                if x1 <= x <= x2 and y1 <= y <= y2:
+                    cell['bg'] = 'white'
 
     def return_event(self, event):
         "Callback for the Return key."
