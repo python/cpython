@@ -25,7 +25,7 @@ FILE *PyWin_FindRegisteredModule( const char *moduleName, struct filedescr **ppF
 	if (RegQueryValue(keyBase, moduleKey, pathBuf, &modNameSize)!=ERROR_SUCCESS)
 		return NULL;
 	// use the file extension to locate the type entry.
-	for (fdp = import_filetab; fdp->suffix != NULL; fdp++) {
+	for (fdp = _PyImport_Filetab; fdp->suffix != NULL; fdp++) {
 		int extLen=strlen(fdp->suffix);
 		if (modNameSize>extLen && strnicmp(pathBuf+(modNameSize-extLen-1),fdp->suffix,extLen)==0)
 			break;
