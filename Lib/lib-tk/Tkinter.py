@@ -1707,9 +1707,9 @@ class Text(Widget):
 		return self.tk.call(tuple(args))
 	def see(self, index):
 		self.tk.call(self._w, 'see', index)
-	def tag_add(self, tagName, index1, index2=None):
+	def tag_add(self, tagName, index1, *args):
 		self.tk.call(
-			self._w, 'tag', 'add', tagName, index1, index2)
+			(self._w, 'tag', 'add', tagName, index1) + args)
 	def tag_unbind(self, tagName, sequence, funcid=None):
 		self.tk.call(self._w, 'tag', 'bind', tagName, sequence, '')
 		if funcid:
