@@ -384,13 +384,11 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 	if (PyFloat_Check(w))
 		j = PyFloat_AS_DOUBLE(w);
 
-	else if (Py_IS_INFINITY(i)) {
-		/* XXX If we had a reliable way to check whether i is a
-		 * XXX NaN, it would belong in this branch too.
-		 */
+	else if (Py_IS_INFINITY(i) || Py_IS_NAN(i)) {
 		if (PyInt_Check(w) || PyLong_Check(w))
-			/* The magnitude of i exceeds any finite integer,
-			 * so it doesn't matter which int we compare i with.
+			/* If i is an infinity, its magnitude exceeds any
+			 * finite integer, so it doesn't matter which int we
+			 * compare i with.  If i is a NaN, similarly.
 			 */
 			j = 0.0;
 		else
@@ -403,7 +401,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 		 * Cray single with 48 bits of precision, and long has 64
 		 * bits.
 		 */
-#if SIZEOF_LONG > 4
+#if SIZEOF_LONG > 6
 		unsigned long abs = (unsigned long)(jj < 0 ? -jj : jj);
 		if (abs >> 48) {
 			/* Needs more than 48 bits.  Make it take the
@@ -443,10 +441,10 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 		nbits = _PyLong_NumBits(w);
 		if (nbits == (size_t)-1 && PyErr_Occurred()) {
 			/* This long is so large that size_t isn't big enough
-			 * to hold the # of Python digits.  Replace with
-			 * little doubles that give the same outcome --
-			 * w is so large that its magnitude must exceed
-			 * the magnitude of any finite float.
+			 * to hold the # of bits.  Replace with little doubles
+			 * that give the same outcome -- w is so large that
+			 * its magnitude must exceed the magnitude of any
+			 * finite float.
 			 */
 			PyErr_Clear();
 			i = (double)vsign;
