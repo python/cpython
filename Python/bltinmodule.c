@@ -2261,6 +2261,9 @@ _PyBuiltin_Init(void)
 		return NULL;
 	if (PyDict_SetItemString(dict, "Ellipsis", Py_Ellipsis) < 0)
 		return NULL;
+	if (PyDict_SetItemString(dict, "NotImplemented", 
+				 Py_NotImplemented) < 0)
+		return NULL;
 	debug = PyInt_FromLong(Py_OptimizeFlag == 0);
 	if (PyDict_SetItemString(dict, "__debug__", debug) < 0) {
 		Py_XDECREF(debug);
