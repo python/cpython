@@ -114,9 +114,9 @@ except ImportError:
     from StringIO import StringIO
 
 # not sure how many of these need to be gotten rid of
-from urllib import unwrap, unquote, splittype, splithost, \
-     addinfourl, splitport, splitgophertype, splitquery, \
-     splitattr, ftpwrapper, noheaders, splituser, splitpasswd, splitvalue
+from urllib import (unwrap, unquote, splittype, splithost,
+     addinfourl, splitport, splitgophertype, splitquery,
+     splitattr, ftpwrapper, noheaders, splituser, splitpasswd, splitvalue)
 
 # support for FileHandler, proxies via environment variables
 from urllib import localhost, url2pathname, getproxies

@@ -12,9 +12,9 @@ libwww-perl, I hope.
 """
 
 import time, re, logging
-from cookielib import reraise_unmasked_exceptions, FileCookieJar, Cookie, \
-     MISSING_FILENAME_TEXT, join_header_words, split_header_words, \
-     iso2time, time2isoz
+from cookielib import (reraise_unmasked_exceptions, FileCookieJar, Cookie,
+     MISSING_FILENAME_TEXT, join_header_words, split_header_words,
+     iso2time, time2isoz)
 
 def lwp_cookie_str(cookie):
     """Return string representation of Cookie in an the LWP cookie file format.
