@@ -26,13 +26,6 @@ compiler specific".  Therefore, these should be very rare.
 
 */
 
-/* Suggested by Rene Liebscher <R.Liebscher@gmx.de> to avoid a GCC 2.91.*
-   bug that requires structure imports.  More recent versions of the
-   compiler don't exhibit this bug.
-*/
-#if (__GNUC__==2) && (__GNUC_MINOR__<=91)
-#warning "Please use an up-to-date version of gcc! (>2.91 recommended)"
-#endif
 
 /*
  Some systems require special declarations for data items imported
@@ -230,14 +223,158 @@ typedef int pid_t;
 /* XXX These defines are likely incomplete, but should be easy to fix. */
 #ifdef __BORLANDC__
 #define COMPILER "[Borland]"
-#define PYTHONPATH ".;.\\lib;.\\lib\\plat-win;.\\lib\\dos-8x3"
-#define IMPORT_8x3_NAMES
 #define HAVE_CLOCK
 #define HAVE_STRFTIME
+
+#ifdef _WIN32
+
+/* tested with BCC 5.5 (__BORLANDC__ >= 0x0550)
+ */
+#define NT	/* NT is obsolete - please use MS_WIN32 instead */
+#define MS_WIN32
+#define MS_WINDOWS
+
+/* For NT the Python core is in a DLL by default.  Test the
+standard macro MS_COREDLL to find out.  If you have an exception
+you must define MS_NO_COREDLL (do not test this macro) */
+#ifndef MS_NO_COREDLL
+#define MS_COREDLL	/* Python core is in a DLL */
+#ifndef USE_DL_EXPORT
+#define USE_DL_IMPORT
+#endif /* !USE_DL_EXPORT */
+#endif /* !MS_NO_COREDLL */
+
+#define PYTHONPATH ".\\DLLs;.\\lib;.\\lib\\plat-win;.\\lib\\lib-tk"
+typedef int pid_t;
+#define WORD_BIT 32
+#include <stdio.h>
+#define HAVE_STRERROR
+#define NT_THREADS
+#define WITH_THREAD
+#ifndef NETSCAPE_PI
+#define USE_SOCKET
+#endif
+/* BCC55 seems to understand __declspec(dllimport), it is used in its
+   own header files (winnt.h, ...) */
+#ifdef USE_DL_IMPORT
+#define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
+#endif
+#ifdef USE_DL_EXPORT
+#define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
+#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+#endif
+
+#define HAVE_LONG_LONG 1
+#define LONG_LONG __int64
+
+#else /* !_WIN32 */
+/* XXX These defines are likely incomplete, but should be easy to fix. */
+
+#define PYTHONPATH ".;.\\lib;.\\lib\\plat-win;.\\lib\\dos-8x3"
+#define IMPORT_8x3_NAMES
 #ifdef USE_DL_IMPORT
 #define DL_IMPORT(RTYPE)  RTYPE __import
 #endif
+
+#endif /* !_WIN32 */
+
 #endif /* BORLANDC */
+
+/* egcs/gnu-win32 defines __GNUC__ and _WIN32 */
+#if defined(__GNUC__) && defined(_WIN32)
+/* XXX These defines are likely incomplete, but should be easy to fix. 
+   They should be complete enough to build extension modules. */
+/* Suggested by Rene Liebscher <R.Liebscher@gmx.de> to avoid a GCC 2.91.*
+   bug that requires structure imports.  More recent versions of the
+   compiler don't exhibit this bug.
+*/
+#if (__GNUC__==2) && (__GNUC_MINOR__<=91)
+#warning "Please use an up-to-date version of gcc! (>2.91 recommended)"
+#endif
+
+#define NT	/* NT is obsolete - please use MS_WIN32 instead */
+#define MS_WIN32
+#define MS_WINDOWS
+
+/* For NT the Python core is in a DLL by default.  Test the
+standard macro MS_COREDLL to find out.  If you have an exception
+you must define MS_NO_COREDLL (do not test this macro) */
+#ifndef MS_NO_COREDLL
+#define MS_COREDLL	/* Python core is in a DLL */
+#ifndef USE_DL_EXPORT
+#define USE_DL_IMPORT
+#endif /* !USE_DL_EXPORT */
+#endif /* !MS_NO_COREDLL */
+
+#define COMPILER "[gcc]"
+#define PYTHONPATH ".\\DLLs;.\\lib;.\\lib\\plat-win;.\\lib\\lib-tk"
+#define WORD_BIT 32
+#define hypot _hypot
+#include <stdio.h>
+#define HAVE_CLOCK
+#define HAVE_STRFTIME
+#define HAVE_STRERROR
+#define NT_THREADS
+#define WITH_THREAD
+#ifndef NETSCAPE_PI
+#define USE_SOCKET
+#endif
+#ifdef USE_DL_IMPORT
+#define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
+#endif
+#ifdef USE_DL_EXPORT
+#define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
+#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+#endif
+
+#define HAVE_LONG_LONG 1
+#define LONG_LONG long long 
+#endif /* GNUC */
+
+/* lcc-win32 defines __LCC__ */
+
+#if defined(__LCC__)
+/* XXX These defines are likely incomplete, but should be easy to fix. 
+   They should be complete enough to build extension modules. */
+
+#define NT	/* NT is obsolete - please use MS_WIN32 instead */
+#define MS_WIN32
+#define MS_WINDOWS
+
+/* For NT the Python core is in a DLL by default.  Test the
+standard macro MS_COREDLL to find out.  If you have an exception
+you must define MS_NO_COREDLL (do not test this macro) */
+#ifndef MS_NO_COREDLL
+#define MS_COREDLL	/* Python core is in a DLL */
+#ifndef USE_DL_EXPORT
+#define USE_DL_IMPORT
+#endif /* !USE_DL_EXPORT */
+#endif /* !MS_NO_COREDLL */
+
+#define COMPILER "[lcc-win32]"
+#define PYTHONPATH ".\\DLLs;.\\lib;.\\lib\\plat-win;.\\lib\\lib-tk"
+typedef int pid_t;
+#define WORD_BIT 32
+#include <stdio.h>
+#define HAVE_CLOCK
+#define HAVE_STRFTIME
+#define HAVE_STRERROR
+#define NT_THREADS
+#define WITH_THREAD
+#ifndef NETSCAPE_PI
+#define USE_SOCKET
+#endif
+#ifdef USE_DL_IMPORT
+#define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
+#endif
+#ifdef USE_DL_EXPORT
+#define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
+#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+#endif
+
+#define HAVE_LONG_LONG 1
+#define LONG_LONG __int64
+#endif /* LCC */
 
 /* End of compilers - finish up */
 
