@@ -168,6 +168,18 @@ The field width is normally 2 except for \code{\%j} where it is 3.
 
 \end{funcdesc}
 
+\begin{funcdesc}{strptime}{string\optional{, format}}
+Parse a string representing a time according to a format.  The return 
+value is a tuple as returned by \code{gmtime()} or \code{localtime()}.
+The format uses the same directives as those used by
+\code{strftime()}; it defaults to \code{"\%a \%b \%d \%H:\%M:\%S \%Y"}
+which matches the formatting returned by \code{ctime()}.  The same
+platform caveats apply; see the local Unix documentation for
+restrictions or additional supported directives.  This function may
+not be defined on all platforms.
+
+\end{funcdesc}
+
 \begin{funcdesc}{time}{}
 Return the time as a floating point number expressed in seconds since
 the epoch, in UTC.  Note that even though the time is always returned
