@@ -396,10 +396,11 @@ class Document( Node ):
         self.nodeValue=None
 
     def appendChild( self, node ):
-        if node.nodeType==Node.ELEMENT_NODE and self.documentElement:
-            raise TypeError, "Two document elements disallowed"
-        else:
-            self.documentElement=node
+        if node.nodeType==Node.ELEMENT_NODE:
+            if self.documentElement:
+                raise TypeError, "Two document elements disallowed"
+            else:
+                self.documentElement=node
         Node.appendChild( self, node )
         return node
 
