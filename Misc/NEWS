@@ -193,6 +193,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- Bug #920575: A problem that _locale module segfaults on
+  nl_langinfo(ERA) caused by GNU libc's illegal NULL return is fixed.
+
 - array objects now support the copy module.  Also, their resizing
   scheme has been updated the same as for list objects.  The improves
   the performance (speed and memory usage) of append() operations.

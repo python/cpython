@@ -592,8 +592,12 @@ PyLocale_nl_langinfo(PyObject* self, PyObject* args)
     }
 #endif
     for (i = 0; langinfo_constants[i].name; i++)
-	    if (langinfo_constants[i].value == item)
-		    return PyString_FromString(nl_langinfo(item));
+        if (langinfo_constants[i].value == item) {
+            /* Check NULL as a workaround for GNU libc's returning NULL
+               instead of an empty string for nl_langinfo(ERA).  */
+            const char *result = nl_langinfo(item);
+            return PyString_FromString(result != NULL ? result : "");
+        }
     PyErr_SetString(PyExc_ValueError, "unsupported langinfo constant");
     return NULL;
 }
