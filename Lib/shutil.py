@@ -83,11 +83,11 @@ def copy2(src, dst):
     copystat(src, dst)
 
 
-def copytree(src, dst, symlinks=0):
+def copytree(src, dst, symlinks=False):
     """Recursively copy a directory tree using copy2().
 
     The destination directory must not already exist.
-    Error are reported to standard output.
+    If exception(s) occur, an Error is raised with a list of reasons.
 
     If the optional symlinks flag is true, symbolic links in the
     source tree result in symbolic links in the destination tree; if
@@ -164,7 +164,7 @@ def move(src, dst):
         os.rename(src, dst)
     except OSError:
         if os.path.isdir(src):
-            copytree(src, dst, symlinks=1)
+            copytree(src, dst, symlinks=True)
             rmtree(src)
         else:
             copy2(src,dst)
