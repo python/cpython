@@ -19,6 +19,7 @@ Date: Fri, 25 Oct 1996 15:19:23 -0600 (MDT)
        AIX C compiler version 3.1.2 on AIX 4.1.3 and AIX 4.1.4
        AIX C compiler version 1.3.0 on AIX 3.2.5
     If you have this problem, please report the compiler/OS version.
+    [Postscript: it has also been spotted on AIX 4.2.1 --Guido]
 
 (2) Stefan Esser (se@MI.Uni-Koeln.DE), in work done to compile Python
     1.0.0 on AIX 3.2.4, reports that AIX compilers don't like the LANG
