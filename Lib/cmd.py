@@ -91,11 +91,9 @@ class Cmd:
 			if hasattr(self, 'do_shell'):
 				line = 'shell'
 			else:
-				self.default(line)
-				return
+				return self.default(line)
 		elif not line:
-			self.emptyline()
-			return
+			return self.emptyline()
 		self.lastcmd = line
 		i, n = 0, len(line)
 		while i < n and line[i] in self.identchars: i = i+1
