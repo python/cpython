@@ -64,6 +64,10 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
   unbound methods to be reclaimed.  This plugs a large memory leak in a
   common Py_Initialize()/dosomething/Py_Finalize() loop.
 
+- #122162 -- unicodeobject.c --- Fix unicode .split() off-by-one
+
+- Loosely based on patch #103249 -- Fix core dumps in PyUnicode_Count
+
 What's New in Python 2.0?
 =========================
 

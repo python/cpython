@@ -2357,6 +2357,17 @@ int count(PyUnicodeObject *self,
 {
     int count = 0;
 
+    if (start < 0)
+        start += self->length;
+    if (start < 0)
+        start = 0;
+    if (end > self->length)
+        end = self->length;
+    if (end < 0)
+        end += self->length;
+    if (end < 0)
+        end = 0;
+
     if (substring->length == 0)
 	return (end - start + 1);
 
@@ -2925,7 +2936,7 @@ PyObject *split_substring(PyUnicodeObject *self,
     int sublen = substring->length;
     PyObject *str;
 
-    for (i = j = 0; i < len - sublen; ) {
+    for (i = j = 0; i <= len - sublen; ) {
 	if (Py_UNICODE_MATCH(self, i, substring)) {
 	    if (maxcount-- <= 0)
 		break;

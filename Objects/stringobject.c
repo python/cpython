@@ -1236,9 +1236,14 @@ string_count(PyStringObject *self, PyObject *args)
 		sub = PyString_AS_STRING(subobj);
 		n = PyString_GET_SIZE(subobj);
 	}
-	else if (PyUnicode_Check(subobj))
-		return PyInt_FromLong(
-		        PyUnicode_Count((PyObject *)self, subobj, i, last));
+	else if (PyUnicode_Check(subobj)) {
+		int count;
+		count = PyUnicode_Count((PyObject *)self, subobj, i, last);
+		if (count == -1)
+			return NULL;
+		else
+		    	return PyInt_FromLong((long) count);
+	}
 	else if (PyObject_AsCharBuffer(subobj, &sub, &n))
 		return NULL;
 
@@ -1637,10 +1642,15 @@ string_startswith(PyStringObject *self, PyObject *args)
 		prefix = PyString_AS_STRING(subobj);
 		plen = PyString_GET_SIZE(subobj);
 	}
-	else if (PyUnicode_Check(subobj))
-		return PyInt_FromLong(
-		        PyUnicode_Tailmatch((PyObject *)self, 
-					    subobj, start, end, -1));
+	else if (PyUnicode_Check(subobj)) {
+	    	int rc;
+		rc = PyUnicode_Tailmatch((PyObject *)self, 
+					  subobj, start, end, -1);
+		if (rc == -1)
+			return NULL;
+		else
+			return PyInt_FromLong((long) rc);
+	}
 	else if (PyObject_AsCharBuffer(subobj, &prefix, &plen))
 		return NULL;
 
@@ -1690,10 +1700,15 @@ string_endswith(PyStringObject *self, PyObject *args)
 		suffix = PyString_AS_STRING(subobj);
 		slen = PyString_GET_SIZE(subobj);
 	}
-	else if (PyUnicode_Check(subobj))
-		return PyInt_FromLong(
-		        PyUnicode_Tailmatch((PyObject *)self, 
-					    subobj, start, end, +1));
+	else if (PyUnicode_Check(subobj)) {
+	    	int rc;
+		rc = PyUnicode_Tailmatch((PyObject *)self, 
+					  subobj, start, end, +1);
+		if (rc == -1)
+			return NULL;
+		else
+			return PyInt_FromLong((long) rc);
+	}
 	else if (PyObject_AsCharBuffer(subobj, &suffix, &slen))
 		return NULL;
 
