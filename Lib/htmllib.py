@@ -1,139 +1,103 @@
-# New HTML class
+"""HTML 2.0 parser.
 
-# XXX Check against HTML 2.0 spec
-
-# XXX reorder methods according to hierarchy
-# - html structure: head, body, title, isindex
-# - headers
-# - lists, items
-# - paragraph styles
-# - forms
-# - character styles
-# - images
-# - bookkeeping
-# - output generation
+See the HTML 2.0 specification:
+http://www.w3.org/hypertext/WWW/MarkUp/html-spec/html-spec_toc.html
+"""
 
 
 import sys
 import regsub
 import string
 from sgmllib import SGMLParser
-
-
-ROMAN = 0
-ITALIC = 1
-BOLD = 2
-FIXED = 3
+from formatter import AS_IS
 
 
 class HTMLParser(SGMLParser):
 
-    def __init__(self):
-	SGMLParser.__init__(self)
-	self.savedata = None
-	self.isindex = 0
-	self.title = ''
-	self.para = None
-	self.lists = []
-	self.styles = []
-	self.nofill = 0
-	self.nospace = 1
-	self.softspace = 0
+    def __init__(self, formatter):
+        SGMLParser.__init__(self)
+        self.formatter = formatter
+        self.savedata = None
+        self.isindex = 0
+        self.title = None
+        self.base = None
+        self.anchor = None
+        self.anchorlist = []
+        self.nofill = 0
+        self.list_stack = []
 
-    # --- Data
+    # ------ Methods used internally; some may be overridden
 
-    def handle_image(self, src, alt):
-	self.handle_data(alt)
+    # --- Formatter interface, taking care of 'savedata' mode;
+    # shouldn't need to be overridden
 
     def handle_data(self, data):
-	if self.nofill:
-	    self.handle_literal(data)
-	    return
-	data = regsub.gsub('[ \t\n\r]+', ' ', data)
-	if self.nospace and data[:1] == ' ': data = data[1:]
-	if not data: return
-	self.nospace = 0
-	if self.softspace and data[:1] != ' ': data = ' ' + data
-	if data[-1:] == ' ':
-	    data = data[:-1]
-	    self.softspace = 1
-	self.output_data(data)
-
-    def handle_literal(self, data):
-	self.nospace = 0
-	self.softspace = 0
-	self.output_data(data)
-
-    def output_data(self, data):
-	if self.savedata is not None:
+        if self.savedata is not None:
 	    self.savedata = self.savedata + data
-	else:
-	    self.write_data(data)
+        else:
+	    if self.nofill:
+		self.formatter.add_literal_data(data)
+	    else:
+		self.formatter.add_flowing_data(data)
 
-    def write_data(self, data):
-	sys.stdout.write(data)
+    # --- Hooks to save data; shouldn't need to be overridden
 
     def save_bgn(self):
-	self.savedata = ''
-	self.nospace = 1
-	self.softspace = 0
+        self.savedata = ''
 
     def save_end(self):
-	saved = self.savedata
-	self.savedata = None
-	self.nospace = 1
-	self.softspace = 0
-	return saved
+        data = self.savedata
+        self.savedata = None
+        return string.join(string.split(data))
 
-    def new_para(self):
-	pass
-
-    def new_style(self):
-	pass
-
-    # --- Generic style changes
-
-    def para_bgn(self, tag):
-	if not self.nospace:
-	    self.handle_literal('\n')
-	    self.nospace = 1
-	    self.softspace = 0
-	if tag is not None:
-	    self.para = tag
-	self.new_para()
-
-    def para_end(self):
-	self.para_bgn('')
-
-    def push_list(self, tag):
-	self.lists.append(tag)
-	self.para_bgn(None)
-
-    def pop_list(self):
-	del self.lists[-1]
-	self.para_end()
-
-    def literal_bgn(self, tag, attrs):
-	self.para_bgn(tag)
-
-    def literal_end(self, tag):
-	self.para_end()
-
-    def push_style(self, tag):
-	self.styles.append(tag)
-	self.new_style()
-
-    def pop_style(self):
-	del self.styles[-1]
-	self.new_style()
+    # --- Hooks for anchors; should probably be overridden
 
     def anchor_bgn(self, href, name, type):
-	self.push_style(href and 'a' or None)
+        self.anchor = href
+        if self.anchor:
+	    self.anchorlist.append(href)
 
     def anchor_end(self):
-	self.pop_style()
+        if self.anchor:
+	    self.handle_data("[%d]" % len(self.anchorlist))
+	    self.anchor = None
 
-    # --- Top level tags
+    # --- Hook for images; should probably be overridden
+
+    def handle_image(self, src, alt):
+        self.handle_data(alt)
+
+    # --- Hooks for forms; should probably be overridden
+
+    def form_bgn(self, action, method, enctype):
+        self.do_p([])
+        self.handle_data("<FORM>")
+
+    def form_end(self):
+        self.handle_data("</FORM>")
+        self.do_p([])
+
+    def handle_input(self, type, options):
+        self.handle_data("<INPUT>")
+
+    def select_bgn(self, name, size, multiple):
+        self.handle_data("<SELECT>")
+
+    def select_end(self):
+        self.handle_data("</SELECT>")
+
+    def handle_option(self, value, selected):
+        self.handle_data("<OPTION>")
+
+    def textarea_bgn(self, name, rows, cols):
+        self.handle_data("<TEXTAREA>")
+        self.start_pre([])
+
+    def textarea_end(self):
+        self.end_pre()
+        self.handle_data("</TEXTAREA>")
+
+    # --------- Top level elememts
 
     def start_html(self, attrs): pass
     def end_html(self): pass
@@ -144,231 +108,374 @@ class HTMLParser(SGMLParser):
     def start_body(self, attrs): pass
     def end_body(self): pass
 
-    def do_isindex(self, attrs):
-	self.isindex = 1
+    # ------ Head elements
 
     def start_title(self, attrs):
-	self.save_bgn()
+        self.save_bgn()
 
     def end_title(self):
-	self.title = self.save_end()
+        self.title = self.save_end()
 
-    # --- Old HTML 'literal text' tags
+    def do_base(self, attrs):
+        for a, v in attrs:
+            if a == 'href':
+                self.base = v
 
-    def start_listing(self, attrs):
-	self.setliteral('listing')
-	self.literal_bgn('listing', attrs)
+    def do_isindex(self, attrs):
+        self.isindex = 1
 
-    def end_listing(self):
-	self.literal_end('listing')
+    def do_link(self, attrs):
+        pass
 
-    def start_xmp(self, attrs):
-	self.setliteral('xmp')
-	self.literal_bgn('xmp', attrs)
+    def do_meta(self, attrs):
+        pass
 
-    def end_xmp(self):
-	self.literal_end('xmp')
+    def do_nextid(self, attrs): # Deprecated
+        pass
 
-    def do_plaintext(self, attrs):
-	self.setnomoretags()
-	self.literal_bgn('plaintext', attrs)
+    # ------ Body elements
 
-    # --- Anchors
-
-    def start_a(self, attrs):
-	href = ''
-	name = ''
-	type = ''
-	for attrname, value in attrs:
-	    if attrname == 'href':
-		href = value
-	    if attrname == 'name':
-		name = value
-	    if attrname == 'type':
-		type = string.lower(value)
-	if not (href or name):
-	    return
-	self.anchor_bgn(href, name, type)
-
-    def end_a(self):
-	self.anchor_end()
-
-    # --- Paragraph tags
-
-    def do_p(self, attrs):
-	self.para_bgn(None)
-
-    def do_br(self, attrs):
-	self.handle_literal('\n')
-	self.nospace = 1
-	self.softspace = 0
-
-    def do_hr(self, attrs):
-	self.para_bgn(None)
-	self.handle_literal('-'*40)
-	self.para_end()
+    # --- Headings
 
     def start_h1(self, attrs):
-	self.para_bgn('h1')
-
-    def start_h2(self, attrs):
-	self.para_bgn('h2')
-
-    def start_h3(self, attrs):
-	self.para_bgn('h3')
-
-    def start_h4(self, attrs):
-	self.para_bgn('h4')
-
-    def start_h5(self, attrs):
-	self.para_bgn('h5')
-
-    def start_h6(self, attrs):
-	self.para_bgn('h6')
+        self.formatter.end_paragraph(1)
+        self.formatter.push_font(('h1', 0, 1, 0))
 
     def end_h1(self):
-	self.para_end()
+        self.formatter.end_paragraph(1)
+        self.formatter.pop_font()
 
-    end_h2 = end_h1
-    end_h3 = end_h2
-    end_h4 = end_h3
-    end_h5 = end_h4
-    end_h6 = end_h5
+    def start_h2(self, attrs):
+        self.formatter.end_paragraph(1)
+        self.formatter.push_font(('h2', 0, 1, 0))
 
-    def start_ul(self, attrs):
-	self.para_bgn(None)
-	self.push_list('ul')
+    def end_h2(self):
+        self.formatter.end_paragraph(1)
+        self.formatter.pop_font()
 
-    def start_ol(self, attrs):
-	self.para_bgn(None)
-	self.push_list('ol')
+    def start_h3(self, attrs):
+        self.formatter.end_paragraph(1)
+        self.formatter.push_font(('h3', 0, 1, 0))
 
-    def end_ul(self):
-	self.pop_list()
-	self.para_end()
+    def end_h3(self):
+        self.formatter.end_paragraph(1)
+        self.formatter.pop_font()
 
-    def do_li(self, attrs):
-	self.para_bgn('li%d' % len(self.lists))
+    def start_h4(self, attrs):
+        self.formatter.end_paragraph(1)
+        self.formatter.push_font(('h4', 0, 1, 0))
 
-    start_dir = start_menu = start_ul
-    end_dir = end_menu = end_ol = end_ul
+    def end_h4(self):
+        self.formatter.end_paragraph(1)
+        self.formatter.pop_font()
 
-    def start_dl(self, attrs):
-	self.para_bgn(None)
-	self.push_list('dl')
+    def start_h5(self, attrs):
+        self.formatter.end_paragraph(1)
+        self.formatter.push_font(('h5', 0, 1, 0))
 
-    def end_dl(self):
-	self.pop_list()
-	self.para_end()
+    def end_h5(self):
+        self.formatter.end_paragraph(1)
+        self.formatter.pop_font()
 
-    def do_dt(self, attrs):
-	self.para_bgn('dt%d' % len(self.lists))
+    def start_h6(self, attrs):
+        self.formatter.end_paragraph(1)
+        self.formatter.push_font(('h6', 0, 1, 0))
 
-    def do_dd(self, attrs):
-	self.para_bgn('dd%d' % len(self.lists))
+    def end_h6(self):
+        self.formatter.end_paragraph(1)
+        self.formatter.pop_font()
 
-    def start_address(self, attrs):
-	self.para_bgn('address')
+    # --- Block Structuring Elements
 
-    def end_address(self):
-	self.para_end()
+    def do_p(self, attrs):
+        self.formatter.end_paragraph(1)
 
     def start_pre(self, attrs):
-	self.para_bgn('pre')
-	self.nofill = self.nofill + 1
+        self.formatter.end_paragraph(1)
+        self.formatter.push_font((AS_IS, AS_IS, AS_IS, 1))
+        self.nofill = self.nofill + 1
 
     def end_pre(self):
-	self.nofill = self.nofill - 1
-	self.para_end()
+        self.formatter.end_paragraph(1)
+        self.formatter.pop_font()
+        self.nofill = max(0, self.nofill - 1)
 
-    start_typewriter = start_pre
-    end_typewriter = end_pre
+    def start_xmp(self, attrs):
+        self.start_pre(attrs)
+        self.setliteral('xmp') # Tell SGML parser
+
+    def end_xmp(self):
+        self.end_pre()
+
+    def start_listing(self, attrs):
+        self.start_pre(attrs)
+        self.setliteral('listing') # Tell SGML parser
+
+    def end_listing(self):
+        self.end_pre()
+
+    def start_address(self, attrs):
+        self.formatter.end_paragraph(0)
+        self.formatter.push_font((AS_IS, 1, AS_IS, AS_IS))
+
+    def end_address(self):
+        self.formatter.end_paragraph(0)
+        self.formatter.pop_font()
+
+    def start_blockquote(self, attrs):
+        self.formatter.end_paragraph(1)
+        self.formatter.push_margin('blockquote')
+
+    def end_blockquote(self):
+        self.formatter.end_paragraph(0)
+        self.formatter.pop_margin()
+
+    # --- List Elements
+
+    def start_ul(self, attrs):
+        self.formatter.end_paragraph(not self.list_stack)
+        self.formatter.push_margin('ul')
+        self.list_stack.append(['ul', '*', 0])
+
+    def end_ul(self):
+        if self.list_stack: del self.list_stack[-1]
+        self.formatter.end_paragraph(not self.list_stack)
+        self.formatter.pop_margin()
+
+    def do_li(self, attrs):
+        self.formatter.end_paragraph(0)
+        if self.list_stack:
+	    [dummy, label, counter] = top = self.list_stack[-1]
+	    top[2] = counter = counter+1
+        else:
+	    label, counter = '*', 0
+        self.formatter.add_label_data(label, counter)
+
+    def start_ol(self, attrs):
+        self.formatter.end_paragraph(not self.list_stack)
+        self.formatter.push_margin('ol')
+        label = '1.'
+        for a, v in attrs:
+            if a == 'type':
+		if len(v) == 1: v = v + '.'
+		label = v
+        self.list_stack.append(['ol', label, 0])
+
+    def end_ol(self):
+        if self.list_stack: del self.list_stack[-1]
+        self.formatter.end_paragraph(not self.list_stack)
+        self.formatter.pop_margin()
+
+    def start_menu(self, attrs):
+        self.start_ul(attrs)
+
+    def end_menu(self):
+        self.end_ul()
+
+    def start_dir(self, attrs):
+        self.start_ul(attrs)
+
+    def end_dir(self):
+        self.end_ul()
+
+    def start_dl(self, attrs):
+        self.formatter.end_paragraph(0)
+        self.list_stack.append(['dl', '', 0])
+
+    def end_dl(self):
+        self.ddpop()
+        if self.list_stack: del self.list_stack[-1]
+
+    def do_dt(self, attrs):
+        self.ddpop()
+
+    def do_dd(self, attrs):
+        self.ddpop()
+        self.formatter.push_margin('dd')
+        self.list_stack.append(['dd', '', 0])
+
+    def ddpop(self):
+        self.formatter.end_paragraph(0)
+        if self.list_stack:
+            if self.list_stack[-1][0] == 'dd':
+		del self.list_stack[-1]
+		self.formatter.pop_margin()
+
+    # --- Phrase Markup
+
+    # Idiomatic Elements
+
+    def start_cite(self, attrs): self.start_i(attrs)
+    def end_cite(self): self.end_i()
+
+    def start_code(self, attrs): self.start_tt(attrs)
+    def end_code(self): self.end_tt()
+
+    def start_em(self, attrs): self.start_i(attrs)
+    def end_em(self): self.end_i()
+
+    def start_kbd(self, attrs): self.start_tt(attrs)
+    def end_kbd(self): self.end_tt()
+
+    def start_samp(self, attrs): self.start_tt(attrs)
+    def end_samp(self): self.end_tt()
+
+    def start_string(self, attrs): self.start_b(attrs)
+    def end_b(self): self.end_b()
+
+    def start_var(self, attrs): self.start_i(attrs)
+    def end_var(self): self.end_var()
+
+    # Typographic Elements
+
+    def start_i(self, attrs):
+	self.formatter.push_font((AS_IS, 1, AS_IS, AS_IS))
+    def end_i(self):
+	self.formatter.pop_font()
+
+    def start_b(self, attrs):
+	self.formatter.push_font((AS_IS, AS_IS, 1, AS_IS))
+    def end_b(self):
+	self.formatter.pop_font()
+
+    def start_tt(self, attrs):
+	self.formatter.push_font((AS_IS, AS_IS, AS_IS, 1))
+    def end_tt(self):
+	self.formatter.pop_font()
+
+    def start_a(self, attrs):
+        href = ''
+        name = ''
+        type = ''
+        for attrname, value in attrs:
+            if attrname == 'href':
+                href = value
+            if attrname == 'name':
+                name = value
+            if attrname == 'type':
+                type = string.lower(value)
+        self.anchor_bgn(href, name, type)
+
+    def end_a(self):
+        self.anchor_end()
+
+    # --- Line Break
+
+    def do_br(self, attrs):
+        self.formatter.add_line_break()
+
+    # --- Horizontal Rule
+
+    def do_hr(self, attrs):
+        self.formatter.add_hor_rule()
+
+    # --- Image
 
     def do_img(self, attrs):
-	src = ''
-	alt = ' (image) '
-	for attrname, value in attrs:
-	    if attrname == 'alt':
-		alt = value
-	    if attrname == 'src':
-		src = value
-	self.handle_image(src, alt)
+        align = ''
+        alt = '(image)'
+        ismap = ''
+        src = ''
+        for attrname, value in attrs:
+            if attrname == 'align':
+                align = value
+            if attrname == 'alt':
+                alt = value
+            if attrname == 'ismap':
+                ismap = value
+            if attrname == 'src':
+                src = value
+        self.handle_image(src, alt)
 
-    # --- Character tags -- physical styles
-
-    def start_tt(self, attrs): self.push_style(FIXED)
-    def end_tt(self): self.pop_style()
-
-    def start_b(self, attrs): self.push_style(BOLD)
-    def end_b(self): self.pop_style()
-
-    def start_i(self, attrs): self.push_style(ITALIC)
-    def end_i(self): self.pop_style()
-
-    def start_u(self, attrs): self.push_style(ITALIC) # Underline???
-    def end_u(self): self.pop_style()
-
-    def start_r(self, attrs): self.push_style(ROMAN) # Not official
-    def end_r(self): self.pop_style()
-
-    # --- Charaacter tags -- logical styles
-
-    start_em = start_i
-    end_em = end_i
-
-    start_strong = start_b
-    end_strong = end_b
-
-    start_code = start_tt
-    end_code = end_tt
-
-    start_samp = start_tt
-    end_samp = end_tt
-
-    start_kbd = start_tt
-    end_kbd = end_tt
-
-    start_file = start_tt # unofficial
-    end_file = end_tt
-
-    start_var = start_i
-    end_var = end_i
-
-    start_dfn = start_i
-    end_dfn = end_i
-
-    start_cite = start_i
-    end_cite = end_i
-
-    start_hp1 = start_i
-    end_hp1 = start_i
-
-    start_hp2 = start_b
-    end_hp2 = end_b
-
-    # --- Form tags
+    # ------ Forms
 
     def start_form(self, attrs):
-	self.para_bgn(None)
+        action = ''
+        method = ''
+        enctype = ''
+        for a, v in attrs:
+            if a == 'action': action = v
+            if a == 'method': method = v
+            if a == 'enctype': enctype = v
+        self.form_bgn(action, method, enctype)
 
     def end_form(self):
-	self.para_end()
+        self.form_end()
+
+    def do_input(self, attrs):
+        type = ''
+        options = {}
+        for a, v in attrs:
+	    if a == 'type': type = string.lower(v)
+	    else: options[a] = v
+        self.handle_input(type, options)
+
+    def start_select(self, attrs):
+        name = ''
+        size = 0
+        multiple = 0
+        for a, v in attrs:
+            if a == 'multiple': multiple = 1
+            if a == 'name': name = v
+            if a == 'size':
+                try: size = string.atoi(size)
+                except: pass
+        self.select_bgn(name, size, multiple)
+
+    def end_select(self):
+        self.select_end()
+
+    def do_option(self, attrs):
+        value = ''
+        selected = 1
+        for a, v in attrs:
+            if a == 'value': value = v
+            if a == 'selected': selected = 1
+        self.handle_option(value, selected)
+
+    def start_textarea(self, attrs):
+        name = ''
+        rows = 0
+        cols = 0
+        for a, v in attrs:
+            if a == 'name': name = v
+            if a == 'rows':
+                try: rows = string.atoi(v)
+                except: pass
+            if a == 'cols':
+                try: cols = string.atoi(v)
+                except: pass
+        self.textarea_bgn(name, rows, cols)
+
+    def end_textarea(self):
+        self.textarea_end()
+
+    # --- Really Old Unofficial Deprecated Stuff
+
+    def do_plaintext(self, attrs):
+        self.start_pre(attrs)
+        self.setnomoretags() # Tell SGML parser
 
     # --- Unhandled tags
 
     def unknown_starttag(self, tag, attrs):
-	pass
+        pass
 
     def unknown_endtag(self, tag):
-	pass
+        pass
 
 
 def test():
+    import sys
     file = 'test.html'
-    f = open(file, 'r')
-    data = f.read()
-    f.close()
-    p = HTMLParser()
+    if sys.argv[1:]: file = sys.argv[1]
+    fp = open(file, 'r')
+    data = fp.read()
+    fp.close()
+    from formatter import DumbWriter, AbstractFormatter
+    w = DumbWriter()
+    f = AbstractFormatter(w)
+    p = HTMLParser(f)
     p.feed(data)
     p.close()
 
