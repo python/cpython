@@ -9,3 +9,4 @@
 #define USE_MAC_DYNAMIC_LOADING
 #endif
 #define USE_GUSI
+#define USE_STACKCHECK

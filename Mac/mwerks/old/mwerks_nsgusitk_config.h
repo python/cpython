@@ -12,3 +12,5 @@
 #endif
 #define USE_GUSI
 #define USE_WASTE
+#define USE_STACKCHECK
+

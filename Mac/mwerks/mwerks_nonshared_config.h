@@ -5,6 +5,7 @@
 #define USE_MACSPEECH
 #define USE_IMG
 #define USE_MACCTB
+#define USE_STACKCHECK
 #ifdef __powerc
 #define USE_MAC_DYNAMIC_LOADING
 #endif

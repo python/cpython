@@ -5,3 +5,5 @@
 /* #define USE_MACTCP */
 /* #define USE_BGEN */
 /* #define USE_MACSPEECH */
+#define USE_STACKCHECK
+
