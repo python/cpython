@@ -458,6 +458,8 @@ the instance.
 \withsubitem{(copy protocol)}{\ttindex{__getinitargs__()}}
 \withsubitem{(instance constructor)}{\ttindex{__init__()}}
 
+\withsubitem{(copy protocol)}{\ttindex{__getnewargs__()}}
+
 New-style types can provide a \method{__getnewargs__()} method that is
 used for protocol 2.  Implementing this method is needed if the type
 establishes some internal invariants when the instance is created, or
