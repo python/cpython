@@ -581,17 +581,6 @@ TypeError: object doesn't support item assignment
 
 \end{datadesc}
 
-\begin{datadesc}{NORMALIZE_NUMBERS}
-    When specified, number literals in the expected output will match
-    corresponding number literals in the actual output if their values
-    are equal (to ten digits of precision).  For example, \code{1.1}
-    will match \code{1.1000000000000001}; and \code{1L} will match
-    \code{1} and \code{1.0}.  Currently, \constant{NORMALIZE_NUMBERS}
-    can fail to normalize numbers when used in conjunction with
-    ellipsis.  In particular, if an ellipsis marker matches one or
-    more numbers, then number normalization is not supported.
-\end{datadesc}
-
 \begin{datadesc}{COMPARISON_FLAGS}
     A bitmask or'ing together all the comparison flags above.
 \end{datadesc}
@@ -713,7 +702,7 @@ can be useful.
 
 \versionchanged[Constants \constant{DONT_ACCEPT_BLANKLINE},
     \constant{NORMALIZE_WHITESPACE}, \constant{ELLIPSIS},
-    \constant{IGNORE_EXCEPTION_DETAIL}, \constant{NORMALIZE_NUMBERS},
+    \constant{IGNORE_EXCEPTION_DETAIL},
     \constant{REPORT_UDIFF}, \constant{REPORT_CDIFF},
     \constant{REPORT_NDIFF}, \constant{REPORT_ONLY_FIRST_FAILURE},
     \constant{COMPARISON_FLAGS} and \constant{REPORTING_FLAGS}
@@ -751,7 +740,6 @@ in any particular order, so a test like
 
 % Hey! What happened to Monty Python examples?
 % Tim: ask Guido -- it's his example!
-% doctest: ignore
 \begin{verbatim}
 >>> foo()
 {"Hermione": "hippogryph", "Harry": "broomstick"}
@@ -759,7 +747,6 @@ in any particular order, so a test like
 
 is vulnerable!  One workaround is to do
 
-% doctest: ignore
 \begin{verbatim}
 >>> foo() == {"Hermione": "hippogryph", "Harry": "broomstick"}
 True
@@ -767,7 +754,6 @@ True
 
 instead.  Another is to do
 
-% doctest: ignore
 \begin{verbatim}
 >>> d = foo().items()
 >>> d.sort()
@@ -779,7 +765,6 @@ There are others, but you get the idea.
 
 Another bad idea is to print things that embed an object address, like
 
-% doctest: ignore
 \begin{verbatim}
 >>> id(1.0) # certain to fail some of the time
 7948648
@@ -791,7 +776,6 @@ Another bad idea is to print things that embed an object address, like
 The \constant{ELLIPSIS} directive gives a nice approach for the last
 example:
 
-% doctest: ignore
 \begin{verbatim}
 >>> C() #doctest: +ELLIPSIS
 <__main__.C instance at 0x...>
@@ -801,7 +785,6 @@ Floating-point numbers are also subject to small output variations across
 platforms, because Python defers to the platform C library for float
 formatting, and C libraries vary widely in quality here.
 
-% doctest: ignore
 \begin{verbatim}
 >>> 1./7  # risky
 0.14285714285714285
@@ -1635,7 +1618,6 @@ Doctest provides several mechanisms for debugging doctest examples:
 
       Then an interactive Python session may look like this:
 
-% doctest: ignore
 \begin{verbatim}
 >>> import a, doctest
 >>> doctest.testmod(a)

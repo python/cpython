@@ -55,7 +55,6 @@ __all__ = [
     'NORMALIZE_WHITESPACE',
     'ELLIPSIS',
     'IGNORE_EXCEPTION_DETAIL',
-    'NORMALIZE_NUMBERS',
     'COMPARISON_FLAGS',
     'REPORT_UDIFF',
     'REPORT_CDIFF',
@@ -140,14 +139,12 @@ DONT_ACCEPT_BLANKLINE = register_optionflag('DONT_ACCEPT_BLANKLINE')
 NORMALIZE_WHITESPACE = register_optionflag('NORMALIZE_WHITESPACE')
 ELLIPSIS = register_optionflag('ELLIPSIS')
 IGNORE_EXCEPTION_DETAIL = register_optionflag('IGNORE_EXCEPTION_DETAIL')
-NORMALIZE_NUMBERS = register_optionflag('NORMALIZE_NUMBERS')
 
 COMPARISON_FLAGS = (DONT_ACCEPT_TRUE_FOR_1 |
                     DONT_ACCEPT_BLANKLINE |
                     NORMALIZE_WHITESPACE |
                     ELLIPSIS |
-                    IGNORE_EXCEPTION_DETAIL |
-                    NORMALIZE_NUMBERS)
+                    IGNORE_EXCEPTION_DETAIL)
 
 REPORT_UDIFF = register_optionflag('REPORT_UDIFF')
 REPORT_CDIFF = register_optionflag('REPORT_CDIFF')
@@ -279,72 +276,6 @@ class _SpoofOut(StringIO):
         StringIO.truncate(self, size)
         if hasattr(self, "softspace"):
             del self.softspace
-
-# The number of digits of precision that must be equal for
-# NORMALIZE_NUMBERS to consider two numbers equal.
-_NORMALIZE_NUMBERS_PRECISION_THRESHOLD = 10
-
-# A regular expression that matches Python number literals.  This is
-# used by _normalize_numbers to look for numbers that should be
-# normalized.
-_NUMBER_LITERAL = re.compile(r'''
-    (\d+[.]\d*(?:[eE][-+]?\d+)?[jJ]? | # float (w/ digits left of ".")
-        [.]\d+(?:[eE][-+]?\d+)?[jJ]? | # float (no digits left of ".")
-     \d+      (?:[eE][-+]?\d+) [jJ]? | # float (no ".", exponent only)
-     \d                        [jJ]  | # float (no ".", imaginary only)
-     0[xX]\d+[lL]?                   | # hexint
-     0[0-7]*[lL]?                    | # octint or zero
-     \d+[lL]?                        ) # decint
-     ''', re.VERBOSE)
-
-def _normalize_numbers(want, got):
-    """
-    If all the numbers in `want` and `got` match (one-for-one), then
-    return a new version of `got` with the exact number strings from
-    `want` spliced in.  Two numbers match if `str` of their float
-    values are equal.  (I.e., `x` matches `y` if
-    `str(float(x))==str(float(y))`).
-    """
-    want_pieces = _NUMBER_LITERAL.split(want)
-    got_pieces = _NUMBER_LITERAL.split(got)
-
-    # If they don't have the same number of numbers, fail immediately.
-    if len(want_pieces) != len(got_pieces):
-        return got
-
-    # If any individual numbers don't match, then fail.
-    for i in range(1, len(got_pieces), 2):
-        w, g = eval(want_pieces[i]), eval(got_pieces[i])
-        if not _numbers_match(w, g):
-            return got
-
-    # Success; replace numbers in got w/ numbers from want.
-    for i in range(1, len(got_pieces), 2):
-        got_pieces[i] = want_pieces[i]
-    return ''.join(got_pieces)
-
-def _numbers_match(x, y):
-    """
-    A helper function for _normalize_numbers, that returns true if the
-    numbers `x` and `y` are close enough to match for NORMALIZE_NUMBERS.
-    """
-    # Equal numbers match.
-    if x == y:
-        return True
-    # Split up complex numbers into real & imag.
-    if isinstance(x, complex):
-        return (isinstance(y, complex) and
-                _numbers_match(x.real, y.real) and
-                _numbers_match(x.imag, y.imag))
-    # If the signs are different, they don't match.
-    if x*y < 0:
-        return False
-    # If one is zero and the other isn't, they don't match.
-    if x==0 or y==0:
-        return False
-    # They're not exactly equal, but are they close enough?
-    threshold = 10**-_NORMALIZE_NUMBERS_PRECISION_THRESHOLD
-    return (abs(x-y) / min(abs(x), abs(y))) < threshold
 
 # Worst-case linear-time ellipsis matching.
 def _ellipsis_match(want, got):
@@ -1572,13 +1503,6 @@ class OutputChecker:
             if got == want:
                 return True
 
-        # This flag causes doctest to treat numbers that are within a
-        # small threshold as if they are equal.
-        if optionflags & NORMALIZE_NUMBERS:
-            got = _normalize_numbers(want, got)
-            if got == want:
-                return True
-
         # The ELLIPSIS flag says to let the sequence "..." in `want`
         # match any substring in `got`.
         if optionflags & ELLIPSIS:
@@ -1859,7 +1783,6 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
         NORMALIZE_WHITESPACE
         ELLIPSIS
         IGNORE_EXCEPTION_DETAIL
-        NORMALIZE_NUMBERS
         REPORT_UDIFF
         REPORT_CDIFF
         REPORT_NDIFF
@@ -1982,7 +1905,6 @@ def testfile(filename, module_relative=True, name=None, package=None,
         NORMALIZE_WHITESPACE
         ELLIPSIS
         IGNORE_EXCEPTION_DETAIL
-        NORMALIZE_NUMBERS
         REPORT_UDIFF
         REPORT_CDIFF
         REPORT_NDIFF
