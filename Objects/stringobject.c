@@ -774,22 +774,17 @@ string_join(PyStringObject *self, PyObject *args)
 		if (!PyString_Check(item)){
 			if (PyUnicode_Check(item)) {
 				Py_DECREF(res);
-				Py_DECREF(item);
 				return PyUnicode_Join((PyObject *)self, 
 						      seq);
 			}
 			PyErr_Format(PyExc_TypeError,
 			     "sequence item %i: expected string, %.80s found",
 				     i, item->ob_type->tp_name);
-			Py_DECREF(item);
-			Py_DECREF(seq);
 			goto finally;
 		}
 		slen = PyString_GET_SIZE(item);
 		while (reslen + slen + seplen >= sz) {
 			if (_PyString_Resize(&res, sz*2)) {
-				Py_DECREF(item);
-				Py_DECREF(seq);
 				goto finally;
 			}
 			sz *= 2;
@@ -801,15 +796,16 @@ string_join(PyStringObject *self, PyObject *args)
 			reslen += seplen;
 		}
 		memcpy(p, PyString_AS_STRING(item), slen);
-		Py_DECREF(item);
 		p += slen;
 		reslen += slen;
 	}
 	if (_PyString_Resize(&res, reslen))
 		goto finally;
+	Py_DECREF(seq);
 	return res;
 
   finally:
+	Py_DECREF(seq);
 	Py_DECREF(res);
 	return NULL;
 }
