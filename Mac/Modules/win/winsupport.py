@@ -56,6 +56,16 @@ PropertyTag = OSTypeType("PropertyTag")
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_WinObj_New(WindowRef);
+extern PyObject *_WinObj_WhichWindow(WindowRef);
+extern int _WinObj_Convert(PyObject *, WindowRef *);
+
+#define WinObj_New _WinObj_New
+#define WinObj_WhichWindow _WinObj_WhichWindow
+#define WinObj_Convert _WinObj_Convert
+#endif
+
 #if !ACCESSOR_CALLS_ARE_FUNCTIONS
 /* Carbon calls that we emulate in classic mode */
 #define GetWindowSpareFlag(win) (((CWindowPeek)(win))->spareFlag)
@@ -103,6 +113,12 @@ WinObj_WhichWindow(w)
 }
 """
 
+initstuff = initstuff + """
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(WinObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(WinObj_WhichWindow);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(WinObj_Convert);
+"""
+
 class MyObjectDefinition(GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
@@ -118,10 +134,21 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		Output("it->ob_freeit = PyMac_AutoDisposeWindow;")
 		OutRbrace()
 	def outputCheckConvertArg(self):
+		Output("#if 1")
+		OutLbrace()
+		Output("DialogRef dlg;")
+		OutLbrace("if (DlgObj_Convert(v, &dlg) && dlg)")
+		Output("*p_itself = GetDialogWindow(dlg);")
+		Output("return 1;")
+		OutRbrace()
+		Output("PyErr_Clear();")
+		OutRbrace()
+		Output("#else")
 		OutLbrace("if (DlgObj_Check(v))")
 		Output("*p_itself = DlgObj_ConvertToWindow(v);")
 		Output("return 1;")
 		OutRbrace()
+		Output("#endif")
 		Out("""
 		if (v == Py_None) { *p_itself = NULL; return 1; }
 		if (PyInt_Check(v)) { *p_itself = (WindowPtr)PyInt_AsLong(v); return 1; }

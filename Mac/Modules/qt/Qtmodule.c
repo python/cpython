@@ -10,6 +10,33 @@
 
 #include <Movies.h>
 
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_TrackObj_New(Track);
+extern int _TrackObj_Convert(PyObject *, Track *);
+extern PyObject *_MovieObj_New(Movie);
+extern int _MovieObj_Convert(PyObject *, Movie *);
+extern PyObject *_MovieCtlObj_New(MovieController);
+extern int _MovieCtlObj_Convert(PyObject *, MovieController *);
+extern PyObject *_TimeBaseObj_New(TimeBase);
+extern int _TimeBaseObj_Convert(PyObject *, TimeBase *);
+extern PyObject *_UserDataObj_New(UserData);
+extern int _UserDataObj_Convert(PyObject *, UserData *);
+extern PyObject *_MediaObj_New(Media);
+extern int _MediaObj_Convert(PyObject *, Media *);
+
+#define TrackObj_New _TrackObj_New
+#define TrackObj_Convert _TrackObj_Convert
+#define MovieObj_New _MovieObj_New
+#define MovieObj_Convert _MovieObj_Convert
+#define MovieCtlObj_New _MovieCtlObj_New
+#define MovieCtlObj_Convert _MovieCtlObj_Convert
+#define TimeBaseObj_New _TimeBaseObj_New
+#define TimeBaseObj_Convert _TimeBaseObj_Convert
+#define UserDataObj_New _UserDataObj_New
+#define UserDataObj_Convert _UserDataObj_Convert
+#define MediaObj_New _MediaObj_New
+#define MediaObj_Convert _MediaObj_Convert
+#endif
 
 /* Macro to allow us to GetNextInterestingTime without duration */
 #define GetMediaNextInterestingTimeOnly(media, flags, time, rate, rv) 			GetMediaNextInterestingTime(media, flags, time, rate, rv, NULL)
@@ -9159,6 +9186,19 @@ void initQt()
 	PyObject *d;
 
 
+
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(TrackObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TrackObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(MovieObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MovieObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(MovieCtlObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MovieCtlObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(TimeBaseObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TimeBaseObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(UserDataObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(UserDataObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(MediaObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MediaObj_Convert);
 
 
 	m = Py_InitModule("Qt", Qt_methods);

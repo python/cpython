@@ -10,6 +10,16 @@
 
 #include <Windows.h>
 
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_WinObj_New(WindowRef);
+extern PyObject *_WinObj_WhichWindow(WindowRef);
+extern int _WinObj_Convert(PyObject *, WindowRef *);
+
+#define WinObj_New _WinObj_New
+#define WinObj_WhichWindow _WinObj_WhichWindow
+#define WinObj_Convert _WinObj_Convert
+#endif
+
 #if !ACCESSOR_CALLS_ARE_FUNCTIONS
 /* Carbon calls that we emulate in classic mode */
 #define GetWindowSpareFlag(win) (((CWindowPeek)(win))->spareFlag)
@@ -65,10 +75,21 @@ WinObj_Convert(v, p_itself)
 	PyObject *v;
 	WindowPtr *p_itself;
 {
+#if 1
+	{
+		DialogRef dlg;
+		if (DlgObj_Convert(v, &dlg) && dlg) {
+			*p_itself = GetDialogWindow(dlg);
+			return 1;
+		}
+		PyErr_Clear();
+	}
+#else
 	if (DlgObj_Check(v)) {
 		*p_itself = DlgObj_ConvertToWindow(v);
 		return 1;
 	}
+#endif
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }
 	if (PyInt_Check(v)) { *p_itself = (WindowPtr)PyInt_AsLong(v); return 1; }
@@ -3056,6 +3077,10 @@ void initWin()
 	PyObject *d;
 
 
+
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(WinObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(WinObj_WhichWindow);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(WinObj_Convert);
 
 
 	m = Py_InitModule("Win", Win_methods);

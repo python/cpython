@@ -10,6 +10,14 @@
 
 #include <TextEdit.h>
 
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_TEObj_New(TEHandle);
+extern int _TEObj_Convert(PyObject *, TEHandle *);
+
+#define TEObj_New _TEObj_New
+#define TEObj_Convert _TEObj_Convert
+#endif
+
 #define as_TE(h) ((TEHandle)h)
 #define as_Resource(teh) ((Handle)teh)
 
@@ -1104,6 +1112,9 @@ void initTE()
 	PyObject *d;
 
 
+
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(TEObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TEObj_Convert);
 
 
 	m = Py_InitModule("TE", TE_methods);

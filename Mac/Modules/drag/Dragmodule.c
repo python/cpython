@@ -19,6 +19,14 @@ DragInputUPP dragglue_InputUPP;
 DragDrawingUPP dragglue_DrawingUPP;
 #endif
 
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_DragObj_New(DragRef);
+extern int _DragObj_Convert(PyObject *, DragRef *);
+
+#define DragObj_New _DragObj_New
+#define DragObj_Convert _DragObj_Convert
+#endif
+
 static PyObject *Drag_Error;
 
 /* ---------------------- Object type DragObj ----------------------- */
@@ -1039,6 +1047,9 @@ void initDrag()
 	PyObject *d;
 
 
+
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(DragObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(DragObj_Convert);
 
 
 	m = Py_InitModule("Drag", Drag_methods);

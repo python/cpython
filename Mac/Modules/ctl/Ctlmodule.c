@@ -13,6 +13,14 @@
 #include <ControlDefinitions.h>
 #endif
 
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_CtlObj_New(ControlHandle);
+extern int _CtlObj_Convert(PyObject *, ControlHandle *);
+
+#define CtlObj_New _CtlObj_New
+#define CtlObj_Convert _CtlObj_Convert
+#endif
+
 staticforward PyObject *CtlObj_WhichControl(ControlHandle);
 
 #define as_Control(h) ((ControlHandle)h)
@@ -2925,6 +2933,8 @@ void initCtl()
 	myidleproc_upp = NewControlUserPaneIdleProc(myidleproc);
 	myhittestproc_upp = NewControlUserPaneHitTestProc(myhittestproc);
 	mytrackingproc_upp = NewControlUserPaneTrackingProc(mytrackingproc);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(CtlObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CtlObj_Convert);
 
 
 	m = Py_InitModule("Ctl", Ctl_methods);

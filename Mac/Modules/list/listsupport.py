@@ -37,6 +37,15 @@ CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 
+
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_ListObj_New(ListHandle);
+extern int _ListObj_Convert(PyObject *, ListHandle *);
+
+#define ListObj_New _ListObj_New
+#define ListObj_Convert _ListObj_Convert
+#endif
+
 #if !ACCESSOR_CALLS_ARE_FUNCTIONS
 #define GetListPort(list) ((CGrafPtr)(*(list))->port)
 #define GetListVerticalScrollBar(list) ((*(list))->vScroll)
@@ -64,6 +73,11 @@ includestuff = includestuff + """
 
 #define as_List(x) ((ListHandle)x)
 #define as_Resource(lh) ((Handle)lh)
+"""
+
+initstuff = initstuff + """
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(ListObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ListObj_Convert);
 """
 
 class ListMethodGenerator(MethodGenerator):

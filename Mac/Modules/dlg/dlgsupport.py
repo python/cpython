@@ -32,6 +32,15 @@ EventMask = Type("EventMask", "H")
 
 includestuff = includestuff + """
 #include <Dialogs.h>
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_DlgObj_New(DialogRef);
+extern PyObject *_DlgObj_WhichDialog(DialogRef);
+extern int _DlgObj_Convert(PyObject *, DialogRef *);
+
+#define DlgObj_New _DlgObj_New
+#define DlgObj_WhichDialog _DlgObj_WhichDialog
+#define DlgObj_Convert _DlgObj_Convert
+#endif
 
 #if !ACCESSOR_CALLS_ARE_FUNCTIONS
 #define GetDialogTextEditHandle(dlg) (((DialogPeek)(dlg))->textH)
@@ -139,7 +148,7 @@ extern PyMethodChain WinObj_chain;
 
 finalstuff = finalstuff + """
 /* Return the WindowPtr corresponding to a DialogObject */
-
+#if 0
 WindowPtr
 DlgObj_ConvertToWindow(self)
 	PyObject *self;
@@ -148,6 +157,7 @@ DlgObj_ConvertToWindow(self)
 		return GetDialogWindow(((DialogObject *)self)->ob_itself);
 	return NULL;
 }
+#endif
 /* Return the object corresponding to the dialog, or None */
 
 PyObject *
@@ -178,6 +188,12 @@ DlgObj_WhichDialog(d)
 	}
 	return it;
 }
+"""
+
+initstuff = initstuff + """
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(DlgObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(DlgObj_WhichDialog);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(DlgObj_Convert);
 """
 
 

@@ -26,6 +26,17 @@ includestuff = includestuff + """
 #include <Resources.h>
 #include <string.h>
 
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern PyObject *_ResObj_New(Handle);
+extern int _ResObj_Convert(PyObject *, Handle *);
+extern PyObject *_OptResObj_New(Handle);
+extern int _OptResObj_Convert(PyObject *, Handle *);
+#define ResObj_New _ResObj_New
+#define ResObj_Convert _ResObj_Convert
+#define OptResObj_New _OptResObj_New
+#define OptResObj_Convert _OptResObj_Convert
+#endif
+
 /* Function to dispose a resource, with a "normal" calling sequence */
 static void
 PyMac_AutoDisposeHandle(Handle h)
@@ -75,6 +86,10 @@ OptResObj_Convert(v, p_itself)
 """
 
 initstuff = initstuff + """
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(ResObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ResObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(OptResObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(OptResObj_Convert);
 """
 
 module = MacModule('Res', 'Res', includestuff, finalstuff, initstuff)
