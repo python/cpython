@@ -35,7 +35,7 @@ future_check_features(PyFutureFeatures *ff, node *n, char *filename)
 		if (strcmp(feature, FUTURE_NESTED_SCOPES) == 0) {
 			continue;
 		} else if (strcmp(feature, FUTURE_GENERATORS) == 0) {
-			ff->ff_features |= CO_GENERATOR_ALLOWED;
+			continue;
 		} else if (strcmp(feature, FUTURE_DIVISION) == 0) {
 			ff->ff_features |= CO_FUTURE_DIVISION;
 		} else if (strcmp(feature, "braces") == 0) {
