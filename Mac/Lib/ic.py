@@ -176,6 +176,9 @@ class IC:
 		return rv
 		
 	def has_key(self, key):
+		return self.__contains__(key)
+		
+	def __contains__(self, key):
 		try:
 			dummy = self.ic.ICFindPrefHandle(key, self.h)
 		except icglue.error:
