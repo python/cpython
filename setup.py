@@ -130,6 +130,17 @@ class PyBuildExt(build_ext):
         except (CCompilerError, DistutilsError), why:
             self.announce('WARNING: building of extension "%s" failed: %s' %
                           (ext.name, sys.exc_info()[1]))
+            return
+        try:
+            __import__(ext.name)
+        except ImportError:
+            self.announce('WARNING: removing "%s" since importing it failed' %
+                          ext.name)
+            assert not self.inplace
+            fullname = self.get_ext_fullname(ext.name)
+            ext_filename = os.path.join(self.build_lib,
+                                        self.get_ext_filename(fullname))
+            os.remove(ext_filename)
 
     def get_platform (self):
         # Get value of sys.platform
@@ -602,6 +613,9 @@ class PyBuildInstall(install):
         self.warn_dir=0
     
 def main():
+    # turn off warnings when deprecated modules are imported
+    import warnings
+    warnings.filterwarnings("ignore",category=DeprecationWarning)
     setup(name = 'Python standard library',
           version = '%d.%d' % sys.version_info[:2],
           cmdclass = {'build_ext':PyBuildExt, 'install':PyBuildInstall},
