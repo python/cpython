@@ -66,12 +66,12 @@ class MyScanner(Scanner):
 			"MenuItemDrawingUPP",
 			"ThemeIteratorUPP",
 			"ThemeTabTitleDrawUPP",
-			"ThemeEraseUPP",
-			"ThemeButtonDrawUPP",
+#			"ThemeEraseUPP",
+#			"ThemeButtonDrawUPP",
 			"WindowTitleDrawingUPP",
 			"ProcessSerialNumber_ptr",		# Too much work for now.
 			"ThemeTrackDrawInfo_ptr", 	# Too much work
-			"ThemeButtonDrawInfo_ptr",	# ditto
+#			"ThemeButtonDrawInfo_ptr",	# ditto
 			"ThemeWindowMetrics_ptr",	# ditto
 #			"ThemeDrawingState",	# This is an opaque pointer, so it should be simple. Later.
 			"Collection",		# No interface to collection mgr yet.

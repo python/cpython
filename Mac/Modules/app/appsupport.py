@@ -73,12 +73,26 @@ CFStringRef = OpaqueByValueType("CFStringRef", "CFStringRefObj")
 CFMutableStringRef = OpaqueByValueType("CFMutableStringRef", "CFMutableStringRefObj")
 TruncCode = Type("TruncCode", "h")
 
+
+ThemeButtonKind = UInt16
+ThemeButtonDrawInfo_ptr = OpaqueType("ThemeButtonDrawInfo", "ThemeButtonDrawInfo")
+ThemeEraseUPP = FakeType("NULL")
+ThemeButtonDrawUPP = FakeType("NULL")
+
+
 includestuff = includestuff + """
 #ifdef WITHOUT_FRAMEWORKS
 #include <Appearance.h>
 #else
 #include <Carbon/Carbon.h>
 #endif
+
+
+
+int ThemeButtonDrawInfo_Convert(PyObject *v, ThemeButtonDrawInfo *p_itself)
+{
+	return PyArg_Parse(v, "(iHH)", &p_itself->state, &p_itself->value, &p_itself->adornment);
+}
 
 """
 

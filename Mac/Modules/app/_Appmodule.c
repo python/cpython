@@ -27,6 +27,13 @@
 #endif
 
 
+
+int ThemeButtonDrawInfo_Convert(PyObject *v, ThemeButtonDrawInfo *p_itself)
+{
+	return PyArg_Parse(v, "(iHH)", &p_itself->state, &p_itself->value, &p_itself->adornment);
+}
+
+
 static PyObject *App_Error;
 
 /* ----------------- Object type ThemeDrawingState ------------------ */
@@ -996,6 +1003,103 @@ static PyObject *App_DrawThemeScrollBarDelimiters(PyObject *_self, PyObject *_ar
 	return _res;
 }
 
+static PyObject *App_DrawThemeButton(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Rect inBounds;
+	UInt16 inKind;
+	ThemeButtonDrawInfo inNewInfo;
+	ThemeButtonDrawInfo inPrevInfo;
+	UInt32 inUserData;
+	if (!PyArg_ParseTuple(_args, "O&HO&O&l",
+	                      PyMac_GetRect, &inBounds,
+	                      &inKind,
+	                      ThemeButtonDrawInfo_Convert, &inNewInfo,
+	                      ThemeButtonDrawInfo_Convert, &inPrevInfo,
+	                      &inUserData))
+		return NULL;
+	_err = DrawThemeButton(&inBounds,
+	                       inKind,
+	                       &inNewInfo,
+	                       &inPrevInfo,
+	                       NULL,
+	                       NULL,
+	                       inUserData);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_GetThemeButtonRegion(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Rect inBounds;
+	UInt16 inKind;
+	ThemeButtonDrawInfo inNewInfo;
+	if (!PyArg_ParseTuple(_args, "O&HO&",
+	                      PyMac_GetRect, &inBounds,
+	                      &inKind,
+	                      ThemeButtonDrawInfo_Convert, &inNewInfo))
+		return NULL;
+	_err = GetThemeButtonRegion(&inBounds,
+	                            inKind,
+	                            &inNewInfo,
+	                            (RgnHandle)0);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_GetThemeButtonContentBounds(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Rect inBounds;
+	UInt16 inKind;
+	ThemeButtonDrawInfo inDrawInfo;
+	Rect outBounds;
+	if (!PyArg_ParseTuple(_args, "O&HO&",
+	                      PyMac_GetRect, &inBounds,
+	                      &inKind,
+	                      ThemeButtonDrawInfo_Convert, &inDrawInfo))
+		return NULL;
+	_err = GetThemeButtonContentBounds(&inBounds,
+	                                   inKind,
+	                                   &inDrawInfo,
+	                                   &outBounds);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &outBounds);
+	return _res;
+}
+
+static PyObject *App_GetThemeButtonBackgroundBounds(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Rect inBounds;
+	UInt16 inKind;
+	ThemeButtonDrawInfo inDrawInfo;
+	Rect outBounds;
+	if (!PyArg_ParseTuple(_args, "O&HO&",
+	                      PyMac_GetRect, &inBounds,
+	                      &inKind,
+	                      ThemeButtonDrawInfo_Convert, &inDrawInfo))
+		return NULL;
+	_err = GetThemeButtonBackgroundBounds(&inBounds,
+	                                      inKind,
+	                                      &inDrawInfo,
+	                                      &outBounds);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &outBounds);
+	return _res;
+}
+
 static PyObject *App_PlayThemeSound(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1051,6 +1155,59 @@ static PyObject *App_DrawThemeTickMark(PyObject *_self, PyObject *_args)
 		return NULL;
 	_err = DrawThemeTickMark(&bounds,
 	                         state);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_DrawThemeChasingArrows(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Rect bounds;
+	UInt32 index;
+	ThemeDrawState state;
+	UInt32 eraseData;
+	if (!PyArg_ParseTuple(_args, "O&lll",
+	                      PyMac_GetRect, &bounds,
+	                      &index,
+	                      &state,
+	                      &eraseData))
+		return NULL;
+	_err = DrawThemeChasingArrows(&bounds,
+	                              index,
+	                              state,
+	                              NULL,
+	                              eraseData);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *App_DrawThemePopupArrow(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Rect bounds;
+	ThemeArrowOrientation orientation;
+	ThemePopupArrowSize size;
+	ThemeDrawState state;
+	UInt32 eraseData;
+	if (!PyArg_ParseTuple(_args, "O&HHll",
+	                      PyMac_GetRect, &bounds,
+	                      &orientation,
+	                      &size,
+	                      &state,
+	                      &eraseData))
+		return NULL;
+	_err = DrawThemePopupArrow(&bounds,
+	                           orientation,
+	                           size,
+	                           state,
+	                           NULL,
+	                           eraseData);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -1387,6 +1544,14 @@ static PyMethodDef App_methods[] = {
 	 "(Rect scrollBarBounds, ThemeTrackEnableState enableState, ThemeTrackPressState pressState, Boolean isHoriz, Point ptHit) -> (Boolean _rv, Rect trackBounds, ControlPartCode partcode)"},
 	{"DrawThemeScrollBarDelimiters", (PyCFunction)App_DrawThemeScrollBarDelimiters, 1,
 	 "(ThemeWindowType flavor, Rect inContRect, ThemeDrawState state, ThemeWindowAttributes attributes) -> None"},
+	{"DrawThemeButton", (PyCFunction)App_DrawThemeButton, 1,
+	 "(Rect inBounds, UInt16 inKind, ThemeButtonDrawInfo inNewInfo, ThemeButtonDrawInfo inPrevInfo, UInt32 inUserData) -> None"},
+	{"GetThemeButtonRegion", (PyCFunction)App_GetThemeButtonRegion, 1,
+	 "(Rect inBounds, UInt16 inKind, ThemeButtonDrawInfo inNewInfo) -> None"},
+	{"GetThemeButtonContentBounds", (PyCFunction)App_GetThemeButtonContentBounds, 1,
+	 "(Rect inBounds, UInt16 inKind, ThemeButtonDrawInfo inDrawInfo) -> (Rect outBounds)"},
+	{"GetThemeButtonBackgroundBounds", (PyCFunction)App_GetThemeButtonBackgroundBounds, 1,
+	 "(Rect inBounds, UInt16 inKind, ThemeButtonDrawInfo inDrawInfo) -> (Rect outBounds)"},
 	{"PlayThemeSound", (PyCFunction)App_PlayThemeSound, 1,
 	 "(ThemeSoundKind kind) -> None"},
 	{"BeginThemeDragSound", (PyCFunction)App_BeginThemeDragSound, 1,
@@ -1395,6 +1560,10 @@ static PyMethodDef App_methods[] = {
 	 "() -> None"},
 	{"DrawThemeTickMark", (PyCFunction)App_DrawThemeTickMark, 1,
 	 "(Rect bounds, ThemeDrawState state) -> None"},
+	{"DrawThemeChasingArrows", (PyCFunction)App_DrawThemeChasingArrows, 1,
+	 "(Rect bounds, UInt32 index, ThemeDrawState state, UInt32 eraseData) -> None"},
+	{"DrawThemePopupArrow", (PyCFunction)App_DrawThemePopupArrow, 1,
+	 "(Rect bounds, ThemeArrowOrientation orientation, ThemePopupArrowSize size, ThemeDrawState state, UInt32 eraseData) -> None"},
 	{"DrawThemeStandaloneGrowBox", (PyCFunction)App_DrawThemeStandaloneGrowBox, 1,
 	 "(Point origin, ThemeGrowDirection growDirection, Boolean isSmall, ThemeDrawState state) -> None"},
 	{"DrawThemeStandaloneNoGrowBox", (PyCFunction)App_DrawThemeStandaloneNoGrowBox, 1,
