@@ -51,6 +51,9 @@ pass to the configure script.
 
 AIX users: read the file Misc/AIX-NOTES before trying to build.
 
+HP-UX users: read the file Misc/HPUX-NOTES if you want to be able to
+use shared libraries for dynamically loaded modules.
+
 Minix users: when using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
 
 You can configure the interpreter to contain fewer or more built-in

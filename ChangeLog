@@ -1,3 +1,72 @@
+Mon Sep 12 12:53:07 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/urlparse.py: URL parser according to the latest Internet
+	draft
+
+	* README: added note about HP-UX
+
+Sun Sep 11 12:12:28 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Misc/indent.pro: Steen's approximation of my C style as a GNU
+	indent profile
+
+	* Modules/{Setup.in,termios.c}: add Steen's termios; also
+	Lib/[pt]ty.py, Demo/scripts/script.py, Lib/irix5/TERMIOS.py
+
+	* Demo/scripts/h2py.py: merged in Steen Lumholt's changes to
+	handle #include.  Now also handles one-argument macros.
+
+	* configure.in: use uname to decide how to create / link shared
+	libraries and to set $(MACHDEP) (machine dependent subdirectory of
+	Lib)
+
+	* Makefile.in: shared library support; added targer sharedinstall
+	which move shared libraries into Lib/$(MACHDEP)
+
+	* Modules/{Makefile.pre.in,Setup.in,makesetup}: support shared
+	libraries.  Had to re-engineer rule production in makesetup
+	because sed was dumping core on the script fed to it -- now the
+	rules are always appended to the end of the Makefile.
+
+Fri Sep  9 11:35:28 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/uu.py: new module, does uuencode/uudecode (thanks to Lance)
+
+	* Grammar/Grammar: fewer #diagram:break hacks needed; removed
+	history from file
+
+Thu Sep  8 10:24:41 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Parser/grammar1.c (finddfa): massive speed up by using direct
+	addressing instead of searching
+
+Wed Sep  7 08:49:37 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Include/rename1.h: added PyArg_GetInt
+
+	* pythonrun.h: added Py_AtExit
+
+	* Doc/libsocket.tex, Modules/socketmodule.c: added Tommy
+	Burnette's setblocking() method
+
+	* Modules/signalmodule.c: adapted to new module style (Lance);
+	added {BGN,END}_SAVE around pause() call
+
+	* Objects/object.c (DELREF): must zap type pointer *before*
+	calling free() (or other destructor)
+
+Sat Sep  3 14:12:38 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/{Setup.in,tkintermodule.c,tkappinit.c}: moved tkinter
+	into the main Modules directory, and its Lib and Demo
+	subdirectories into the main Lib and Demo directories.  Moved
+	definition of STDWIN component and TK component of PYTHONPATH to
+	their respective sections so it's easier to remember to enable
+	them.
+
+	* Python/pythonrun.c (cleanup), Include/pythonrun.h: added
+	Py_AtExit() -- register cleanup functions for C modules
+
 Tue Aug 30 10:53:50 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Python/getmtime.c: Remove mac specifics (Mac subdirectory has
