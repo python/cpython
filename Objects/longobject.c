@@ -287,7 +287,7 @@ _PyLong_NumBits(PyObject *vv)
 		digit msd = v->ob_digit[ndigits - 1];
 
 		result = (ndigits - 1) * SHIFT;
-		if (result / SHIFT != ndigits - 1)
+		if (result / SHIFT != (size_t)ndigits - 1)
 			goto Overflow;
 		do {
 			++result;
