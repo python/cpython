@@ -184,6 +184,10 @@ python-lib.info: lib.texi
 	-$(MAKEINFO) --footnote-style end --fill-column 72 \
 		     --paragraph-indent 0 lib.texi
 
+# this is needed to prevent a second set of info files from being generated,
+# at least when using GNU make
+.PHONY: lib.info
+
 lib.info: python-lib.info
 
 # Targets to convert the manuals to HTML using Nikos Drakos' LaTeX to
