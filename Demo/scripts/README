@@ -37,5 +37,6 @@ pp.py			Emulate some Perl command line options
 primes.py		Print prime numbers
 ptags.py		Create vi tags file for Python modules
 suff.py			Sort a list of files by suffix
+unbirthday.py		Print unbirthday count
 which.py		Find a program in $PATH
 xxci.py			Wrapper for rcsdiff and ci
