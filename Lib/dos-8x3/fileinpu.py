@@ -73,11 +73,11 @@ XXX Possible additions:
 
 """
 
-import sys, os
+import sys, os, stat
 
 _state = None
 
-def input(files=(), inplace=0, backup=""):
+def input(files=None, inplace=0, backup=""):
     global _state
     if _state and _state._file:
         raise RuntimeError, "input() already active"
@@ -123,15 +123,16 @@ def isstdin():
 
 class FileInput:
 
-    def __init__(self, files=(), inplace=0, backup=""):
+    def __init__(self, files=None, inplace=0, backup=""):
         if type(files) == type(''):
             files = (files,)
         else:
-            files = tuple(files)
+            if files is None:
+                files = sys.argv[1:]
             if not files:
-                files = tuple(sys.argv[1:])
-                if not files:
-                    files = ('-',)
+                files = ('-',)
+            else:
+                files = tuple(files)
         self._files = files
         self._inplace = inplace
         self._backup = backup
@@ -203,10 +204,22 @@ class FileInput:
                         self._filename + (self._backup or ".bak"))
                     try: os.unlink(self._backupfilename)
                     except os.error: pass
-                    # The next three lines may raise IOError
+                    # The next few lines may raise IOError
                     os.rename(self._filename, self._backupfilename)
                     self._file = open(self._backupfilename, "r")
-                    self._output = open(self._filename, "w")
+                    try:
+                        perm = os.fstat(self._file.fileno())[stat.ST_MODE]
+                    except:
+                        self._output = open(self._filename, "w")
+                    else:
+                        fd = os.open(self._filename,
+                                     os.O_CREAT | os.O_WRONLY | os.O_TRUNC,
+                                     perm)
+                        self._output = os.fdopen(fd, "w")
+                        try:
+                            os.chmod(self._filename, perm)
+                        except:
+                            pass
                     self._savestdout = sys.stdout
                     sys.stdout = self._output
                 else:

@@ -1,5 +1,4 @@
-# threading.py:
-# Proposed new threading module, emulating a subset of Java's threading model
+"""Proposed new threading module, emulating a subset of Java's threading model."""
 
 import sys
 import time
@@ -238,7 +237,7 @@ def Semaphore(*args, **kwargs):
 
 class _Semaphore(_Verbose):
 
-    # After Tim Peters' semaphore class, but bnot quite the same (no maximum)
+    # After Tim Peters' semaphore class, but not quite the same (no maximum)
 
     def __init__(self, value=1, verbose=None):
         assert value >= 0, "Semaphore initial value must be >= 0"
@@ -506,7 +505,7 @@ class _DummyThread(Thread):
     
     def __init__(self):
         Thread.__init__(self, name=_newname("Dummy-%d"))
-        self.__Thread_started = 1
+        self._Thread__started = 1
         _active_limbo_lock.acquire()
         _active[_get_ident()] = self
         _active_limbo_lock.release()

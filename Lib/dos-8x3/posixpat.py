@@ -1,13 +1,13 @@
-# Module 'posixpath' -- common operations on Posix pathnames.
-# Some of this can actually be useful on non-Posix systems too, e.g.
-# for manipulation of the pathname component of URLs.
-# The "os.path" name is an alias for this module on Posix systems;
-# on other systems (e.g. Mac, Windows), os.path provides the same
-# operations in a manner specific to that platform, and is an alias
-# to another module (e.g. macpath, ntpath).
-"""Common pathname manipulations, Posix version. 
-Instead of importing this module
-directly, import os and refer to this module as os.path.
+"""Common operations on Posix pathnames.
+
+Instead of importing this module directly, import os and refer to
+this module as os.path.  The "os.path" name is an alias for this
+module on Posix systems; on other systems (e.g. Mac, Windows),
+os.path provides the same operations in a manner specific to that
+platform, and is an alias to another module (e.g. macpath, ntpath).
+
+Some of this can actually be useful on non-Posix systems too, e.g.
+for manipulation of the pathname component of URLs.
 """
 
 import os
@@ -143,7 +143,7 @@ def getmtime(filename):
 def getatime(filename):
     """Return the last access time of a file, reported by os.stat()."""
     st = os.stat(filename)
-    return st[stat.ST_MTIME]
+    return st[stat.ST_ATIME]
 
 
 # Is a path a symbolic link?
@@ -254,7 +254,7 @@ def ismount(path):
 # or to impose a different order of visiting.
 
 def walk(top, func, arg):
-    """walk(top,func,args) calls func(arg, d, files) for each directory "d" 
+    """walk(top,func,arg) calls func(arg, d, files) for each directory "d" 
 in the tree  rooted at "top" (including "top" itself).  "files" is a list
 of all the files and subdirs in directory "d".
 """
@@ -263,11 +263,10 @@ of all the files and subdirs in directory "d".
     except os.error:
         return
     func(arg, top, names)
-    exceptions = ('.', '..')
     for name in names:
-        if name not in exceptions:
             name = join(top, name)
-            if isdir(name) and not islink(name):
+            st = os.lstat(name)
+            if stat.S_ISDIR(st[stat.ST_MODE]):
                 walk(name, func, arg)
 
 
@@ -369,8 +368,8 @@ def normpath(path):
     return slashes + string.joinfields(comps, '/')
 
 
-# Return an absolute path.
 def abspath(path):
+    """Return an absolute path."""
     if not isabs(path):
         path = join(os.getcwd(), path)
     return normpath(path)

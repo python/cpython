@@ -3,6 +3,9 @@
 This module builds on SimpleHTTPServer by implementing GET and POST
 requests to cgi-bin scripts.
 
+If the os.fork() function is not present, this module will not work;
+SystemError will be raised instead.
+
 """
 
 
@@ -10,13 +13,16 @@ __version__ = "0.3"
 
 
 import os
-import sys
-import time
-import socket
 import string
 import urllib
 import BaseHTTPServer
 import SimpleHTTPServer
+
+
+try:
+    os.fork
+except AttributeError:
+    raise SystemError, __name__ + " requires os.fork()"
 
 
 class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
@@ -150,6 +156,9 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             ua = self.headers.getheader('user-agent')
             if ua:
                 env['HTTP_USER_AGENT'] = ua
+            co = filter(None, self.headers.getheaders('cookie'))
+            if co:
+                env['HTTP_COOKIE'] = string.join(co, ', ')
             # XXX Other HTTP_* headers
             decoded_query = string.replace(query, '+', ' ')
             try:
@@ -177,7 +186,7 @@ def nobody_uid():
     import pwd
     try:
         nobody = pwd.getpwnam('nobody')[2]
-    except pwd.error:
+    except KeyError:
         nobody = 1 + max(map(lambda x: x[2], pwd.getpwall()))
     return nobody
 

@@ -1,4 +1,4 @@
-# A multi-producer, multi-consumer queue.
+"""A multi-producer, multi-consumer queue."""
 
 # define this exception to be compatible with Python 1.5's class
 # exceptions, but also when -X option is used.
@@ -15,7 +15,7 @@ except TypeError:
     Full = 'Queue.Full'
 
 class Queue:
-    def __init__(self, maxsize):
+    def __init__(self, maxsize=0):
         """Initialize a queue object with a given maximum size.
 
         If maxsize is <= 0, the queue size is infinite.

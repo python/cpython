@@ -140,11 +140,17 @@ x = eval('1, 0 or 1')
 print 'funcdef'
 ### 'def' NAME parameters ':' suite
 ### parameters: '(' [varargslist] ')'
-### varargslist: (fpdef ['=' test] ',')* '*' NAME
-###            | fpdef ['=' test] (',' fpdef ['=' test])* [',']
+### varargslist: (fpdef ['=' test] ',')* ('*' NAME [',' ('**'|'*' '*') NAME]
+###            | ('**'|'*' '*') NAME)
+###            | fpdef ['=' test] (',' fpdef ['=' test])* [',']  
 ### fpdef: NAME | '(' fplist ')'
 ### fplist: fpdef (',' fpdef)* [',']
+### arglist: (argument ',')* (argument | *' test [',' '**' test] | '**' test)
+### argument: [test '='] test	# Really [keyword '='] test
 def f1(): pass
+f1()
+f1(*())
+f1(*(), **{})
 def f2(one_argument): pass
 def f3(two, arguments): pass
 def f4(two, (compound, (argument, list))): pass
@@ -157,16 +163,27 @@ def v3(a, (b, c), *rest): pass
 def d01(a=1): pass
 d01()
 d01(1)
+d01(*(1,))
+d01(**{'a':2})
 def d11(a, b=1): pass
 d11(1)
 d11(1, 2)
+d11(1, **{'b':2})
 def d21(a, b, c=1): pass
 d21(1, 2)
 d21(1, 2, 3)
+d21(*(1, 2, 3))
+d21(1, *(2, 3))
+d21(1, 2, *(3,))
+d21(1, 2, **{'c':3})
 def d02(a=1, b=2): pass
 d02()
 d02(1)
 d02(1, 2)
+d02(*(1, 2))
+d02(1, *(2,))
+d02(1, **{'b':2})
+d02(**{'a': 1, 'b': 2})
 def d12(a, b=1, c=2): pass
 d12(1)
 d12(1, 2)
@@ -179,6 +196,9 @@ def d01v(a=1, *rest): pass
 d01v()
 d01v(1)
 d01v(1, 2)
+d01v(*(1, 2, 3, 4))
+d01v(*(1,))
+d01v(**{'a':2})
 def d11v(a, b=1, *rest): pass
 d11v(1)
 d11v(1, 2)
@@ -187,21 +207,31 @@ def d21v(a, b, c=1, *rest): pass
 d21v(1, 2)
 d21v(1, 2, 3)
 d21v(1, 2, 3, 4)
+d21v(*(1, 2, 3, 4))
+d21v(1, 2, **{'c': 3})
 def d02v(a=1, b=2, *rest): pass
 d02v()
 d02v(1)
 d02v(1, 2)
 d02v(1, 2, 3)
+d02v(1, *(2, 3, 4))
+d02v(**{'a': 1, 'b': 2})
 def d12v(a, b=1, c=2, *rest): pass
 d12v(1)
 d12v(1, 2)
 d12v(1, 2, 3)
 d12v(1, 2, 3, 4)
+d12v(*(1, 2, 3, 4))
+d12v(1, 2, *(3, 4, 5))
+d12v(1, *(2,), **{'c': 3})
 def d22v(a, b, c=1, d=2, *rest): pass
 d22v(1, 2)
 d22v(1, 2, 3)
 d22v(1, 2, 3, 4)
 d22v(1, 2, 3, 4, 5)
+d22v(*(1, 2, 3, 4))
+d22v(1, 2, *(3, 4, 5))
+d22v(1, *(2, 3), **{'d': 4})
 
 ### stmt: simple_stmt | compound_stmt
 # Tested below
@@ -455,6 +485,7 @@ v2(1,2,3,4,5,6,7,8,9,0)
 v3(1,(2,3))
 v3(1,(2,3),4)
 v3(1,(2,3),4,5,6,7,8,9,0)
+print
 import sys, time
 c = sys.path[0]
 x = time.time()

@@ -1,4 +1,4 @@
-# A more or less complete user-defined wrapper around dictionary objects
+"""A more or less complete user-defined wrapper around dictionary objects."""
 
 class UserDict:
     def __init__(self, dict=None):
