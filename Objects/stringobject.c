@@ -1098,8 +1098,8 @@ static char split__doc__[] =
 \n\
 Return a list of the words in the string S, using sep as the\n\
 delimiter string.  If maxsplit is given, at most maxsplit\n\
-splits are done. If sep is not specified, any whitespace string\n\
-is a separator.";
+splits are done. If sep is not specified or is None, any\n\
+whitespace string is a separator.";
 
 static PyObject *
 string_split(PyStringObject *self, PyObject *args)
