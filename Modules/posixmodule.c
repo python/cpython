@@ -2314,11 +2314,13 @@ posix_execve(PyObject *self, PyObject *args)
 		getitem = PyTuple_GetItem;
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError, "execve() arg 2 must be a tuple or list");
+		PyErr_SetString(PyExc_TypeError,
+				"execve() arg 2 must be a tuple or list");
 		goto fail_0;
 	}
 	if (!PyMapping_Check(env)) {
-		PyErr_SetString(PyExc_TypeError, "execve() arg 3 must be a mapping object");
+		PyErr_SetString(PyExc_TypeError,
+				"execve() arg 3 must be a mapping object");
 		goto fail_0;
 	}
 
@@ -2347,6 +2349,8 @@ posix_execve(PyObject *self, PyObject *args)
 	argvlist[argc] = NULL;
 
 	i = PyMapping_Size(env);
+	if (i < 0)
+		goto fail_1;
 	envlist = PyMem_NEW(char *, i + 1);
 	if (envlist == NULL) {
 		PyErr_NoMemory();
@@ -2357,6 +2361,11 @@ posix_execve(PyObject *self, PyObject *args)
 	vals = PyMapping_Values(env);
 	if (!keys || !vals)
 		goto fail_2;
+	if (!PyList_Check(keys) || !PyList_Check(vals)) {
+		PyErr_SetString(PyExc_TypeError,
+			"execve(): env.keys() or env.values() is not a list");
+		goto fail_2;
+	}
 
 	for (pos = 0; pos < i; pos++) {
 		char *p, *k, *v;
@@ -2367,8 +2376,14 @@ posix_execve(PyObject *self, PyObject *args)
 		if (!key || !val)
 			goto fail_2;
 
-		if (!PyArg_Parse(key, "s;execve() arg 3 contains a non-string key", &k) ||
-		    !PyArg_Parse(val, "s;execve() arg 3 contains a non-string value", &v))
+		if (!PyArg_Parse(
+			    key,
+			    "s;execve() arg 3 contains a non-string key",
+			    &k) ||
+		    !PyArg_Parse(
+			    val,
+			    "s;execve() arg 3 contains a non-string value",
+			    &v))
 		{
 			goto fail_2;
 		}
@@ -2402,15 +2417,15 @@ posix_execve(PyObject *self, PyObject *args)
 
 	(void) posix_error();
 
- fail_2:
+  fail_2:
 	while (--envc >= 0)
 		PyMem_DEL(envlist[envc]);
 	PyMem_DEL(envlist);
- fail_1:
-	free_string_array(argvlist,lastarg);
+  fail_1:
+	free_string_array(argvlist, lastarg);
 	Py_XDECREF(vals);
 	Py_XDECREF(keys);
- fail_0:
+  fail_0:
 	PyMem_Free(path);
 	return NULL;
 }
@@ -2452,7 +2467,8 @@ posix_spawnv(PyObject *self, PyObject *args)
 		getitem = PyTuple_GetItem;
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError, "spawnv() arg 2 must be a tuple or list");
+		PyErr_SetString(PyExc_TypeError,
+				"spawnv() arg 2 must be a tuple or list");
 		PyMem_Free(path);
 		return NULL;
 	}
@@ -2467,8 +2483,9 @@ posix_spawnv(PyObject *self, PyObject *args)
 				 Py_FileSystemDefaultEncoding,
 				 &argvlist[i])) {
 			free_string_array(argvlist, i);
-			PyErr_SetString(PyExc_TypeError,
-					"spawnv() arg 2 must contain only strings");
+			PyErr_SetString(
+				PyExc_TypeError,
+				"spawnv() arg 2 must contain only strings");
 			PyMem_Free(path);
 			return NULL;
 		}
@@ -2541,11 +2558,13 @@ posix_spawnve(PyObject *self, PyObject *args)
 		getitem = PyTuple_GetItem;
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError, "spawnve() arg 2 must be a tuple or list");
+		PyErr_SetString(PyExc_TypeError,
+				"spawnve() arg 2 must be a tuple or list");
 		goto fail_0;
 	}
 	if (!PyMapping_Check(env)) {
-		PyErr_SetString(PyExc_TypeError, "spawnve() arg 3 must be a mapping object");
+		PyErr_SetString(PyExc_TypeError,
+				"spawnve() arg 3 must be a mapping object");
 		goto fail_0;
 	}
 
@@ -2556,7 +2575,7 @@ posix_spawnve(PyObject *self, PyObject *args)
 	}
 	for (i = 0; i < argc; i++) {
 		if (!PyArg_Parse((*getitem)(argv, i),
-				 "et;spawnve() arg 2 must contain only strings",
+			     "et;spawnve() arg 2 must contain only strings",
 				 Py_FileSystemDefaultEncoding,
 				 &argvlist[i]))
 		{
@@ -2568,6 +2587,8 @@ posix_spawnve(PyObject *self, PyObject *args)
 	argvlist[argc] = NULL;
 
 	i = PyMapping_Size(env);
+	if (i < 0)
+		goto fail_1;
 	envlist = PyMem_NEW(char *, i + 1);
 	if (envlist == NULL) {
 		PyErr_NoMemory();
@@ -2578,6 +2599,11 @@ posix_spawnve(PyObject *self, PyObject *args)
 	vals = PyMapping_Values(env);
 	if (!keys || !vals)
 		goto fail_2;
+	if (!PyList_Check(keys) || !PyList_Check(vals)) {
+		PyErr_SetString(PyExc_TypeError,
+			"spawnve(): env.keys() or env.values() is not a list");
+		goto fail_2;
+	}
 
 	for (pos = 0; pos < i; pos++) {
 		char *p, *k, *v;
@@ -2588,8 +2614,14 @@ posix_spawnve(PyObject *self, PyObject *args)
 		if (!key || !val)
 			goto fail_2;
 
-		if (!PyArg_Parse(key, "s;spawnve() arg 3 contains a non-string key", &k) ||
-		    !PyArg_Parse(val, "s;spawnve() arg 3 contains a non-string value", &v))
+		if (!PyArg_Parse(
+			    key,
+			    "s;spawnve() arg 3 contains a non-string key",
+			    &k) ||
+		    !PyArg_Parse(
+			    val,
+			    "s;spawnve() arg 3 contains a non-string value",
+			    &v))
 		{
 			goto fail_2;
 		}
@@ -2626,11 +2658,11 @@ posix_spawnve(PyObject *self, PyObject *args)
 		res = Py_BuildValue("L", (LONG_LONG) spawnval);
 #endif
 
- fail_2:
+  fail_2:
 	while (--envc >= 0)
 		PyMem_DEL(envlist[envc]);
 	PyMem_DEL(envlist);
- fail_1:
+  fail_1:
 	free_string_array(argvlist, lastarg);
 	Py_XDECREF(vals);
 	Py_XDECREF(keys);
