@@ -548,7 +548,7 @@ SHA_new(self, args, kwdict)
 	if ((new = newSHAobject()) == NULL)
 		return NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|s#", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwdict, "|s#:new", kwlist,
 					 &cp, &len)) {
 	        Py_DECREF(new);
 		return NULL;

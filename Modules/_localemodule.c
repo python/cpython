@@ -135,7 +135,7 @@ PyLocale_setlocale(self,args)
   char *locale=0,*result;
   PyObject *result_object;
   struct lconv *lc;
-  if(!PyArg_ParseTuple(args,"i|z",&category,&locale))return 0;
+  if(!PyArg_ParseTuple(args,"i|z:setlocale",&category,&locale))return 0;
   if(locale){
     /* set locale */
     result=setlocale(category,locale);
@@ -266,7 +266,7 @@ PyLocale_strcoll(self,args)
   PyObject *args;
 {
   char *s1,*s2;
-  if(!PyArg_ParseTuple(args,"ss",&s1,&s2))
+  if(!PyArg_ParseTuple(args,"ss:strcoll",&s1,&s2))
      return NULL;
   return PyInt_FromLong(strcoll(s1,s2));
 }
@@ -283,7 +283,7 @@ PyLocale_strxfrm(self,args)
   char *s,*buf;
   int n1,n2;
   PyObject *result;
-  if(!PyArg_ParseTuple(args,"s",&s))
+  if(!PyArg_ParseTuple(args,"s:strxfrm",&s))
      return NULL;
   /* assume no change in size, first */
   n1=strlen(s)+1;

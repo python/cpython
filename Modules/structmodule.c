@@ -1097,7 +1097,7 @@ struct_calcsize(self, args)
 	const formatdef *f;
 	int size;
 
-	if (!PyArg_ParseTuple(args, "s", &fmt))
+	if (!PyArg_ParseTuple(args, "s:calcsize", &fmt))
 		return NULL;
 	f = whichtable(&fmt);
 	size = calcsize(fmt, f);
@@ -1262,7 +1262,7 @@ struct_unpack(self, args)
 	int len, size, num;
 	PyObject *res, *v;
 
-	if (!PyArg_ParseTuple(args, "ss#", &fmt, &start, &len))
+	if (!PyArg_ParseTuple(args, "ss#:unpack", &fmt, &start, &len))
 		return NULL;
 	f = whichtable(&fmt);
 	size = calcsize(fmt, f);

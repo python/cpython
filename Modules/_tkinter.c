@@ -697,7 +697,7 @@ Tkapp_Eval(self, args)
 	PyObject *res = NULL;
 	int err;
   
-	if (!PyArg_ParseTuple(args, "s", &script))
+	if (!PyArg_ParseTuple(args, "s:eval", &script))
 		return NULL;
 
 	ENTER_TCL
@@ -720,7 +720,7 @@ Tkapp_GlobalEval(self, args)
 	PyObject *res = NULL;
 	int err;
 
-	if (!PyArg_ParseTuple(args, "s", &script))
+	if (!PyArg_ParseTuple(args, "s:globaleval", &script))
 		return NULL;
 
 	ENTER_TCL
@@ -743,7 +743,7 @@ Tkapp_EvalFile(self, args)
 	PyObject *res = NULL;
 	int err;
 
-	if (!PyArg_ParseTuple(args, "s", &fileName))
+	if (!PyArg_ParseTuple(args, "s:evalfile", &fileName))
 		return NULL;
 
 	ENTER_TCL
@@ -788,7 +788,7 @@ Tkapp_AddErrorInfo(self, args)
 {
 	char *msg;
 
-	if (!PyArg_ParseTuple(args, "s", &msg))
+	if (!PyArg_ParseTuple(args, "s:adderrorinfo", &msg))
 		return NULL;
 	ENTER_TCL
 	Tcl_AddErrorInfo(Tkapp_Interp(self), msg);
@@ -816,7 +816,7 @@ SetVar(self, args, flags)
 	if (!tmp)
 		return NULL;
 
-	if (PyArg_ParseTuple(args, "sO", &name1, &newValue)) {
+	if (PyArg_ParseTuple(args, "sO:setvar", &name1, &newValue)) {
 		/* XXX Merge? */
 		s = AsString(newValue, tmp);
 		ENTER_TCL
@@ -825,7 +825,7 @@ SetVar(self, args, flags)
 	}
 	else {
 		PyErr_Clear();
-		if (PyArg_ParseTuple(args, "ssO", &name1, &name2, &newValue)) {
+		if (PyArg_ParseTuple(args, "ssO:setvar", &name1, &name2, &newValue)) {
 			s = AsString (newValue, tmp);
 			ENTER_TCL
 			ok = Tcl_SetVar2(Tkapp_Interp(self), name1, name2, 
@@ -873,7 +873,7 @@ GetVar(self, args, flags)
 	char *name1, *name2=NULL, *s;
 	PyObject *res = NULL;
 
-	if (!PyArg_ParseTuple(args, "s|s", &name1, &name2))
+	if (!PyArg_ParseTuple(args, "s|s:getvar", &name1, &name2))
 		return NULL;
 	ENTER_TCL
 	if (name2 == NULL)
@@ -919,7 +919,7 @@ UnsetVar(self, args, flags)
 	PyObject *res = NULL;
 	int code;
 
-	if (!PyArg_ParseTuple(args, "s|s", &name1, &name2))
+	if (!PyArg_ParseTuple(args, "s|s:unsetvar", &name1, &name2))
 		return NULL;
 	ENTER_TCL
 	if (name2 == NULL)
@@ -967,7 +967,7 @@ Tkapp_GetInt(self, args)
 	char *s;
 	int v;
 
-	if (!PyArg_ParseTuple(args, "s", &s))
+	if (!PyArg_ParseTuple(args, "s:getint", &s))
 		return NULL;
 	if (Tcl_GetInt(Tkapp_Interp(self), s, &v) == TCL_ERROR)
 		return Tkinter_Error(self);
@@ -982,7 +982,7 @@ Tkapp_GetDouble(self, args)
 	char *s;
 	double v;
 
-	if (!PyArg_ParseTuple(args, "s", &s))
+	if (!PyArg_ParseTuple(args, "s:getdouble", &s))
 		return NULL;
 	if (Tcl_GetDouble(Tkapp_Interp(self), s, &v) == TCL_ERROR)
 		return Tkinter_Error(self);
@@ -997,7 +997,7 @@ Tkapp_GetBoolean(self, args)
 	char *s;
 	int v;
 
-	if (!PyArg_ParseTuple(args, "s", &s))
+	if (!PyArg_ParseTuple(args, "s:getboolean", &s))
 		return NULL;
 	if (Tcl_GetBoolean(Tkapp_Interp(self), s, &v) == TCL_ERROR)
 		return Tkinter_Error(self);
@@ -1013,7 +1013,7 @@ Tkapp_ExprString(self, args)
 	PyObject *res = NULL;
 	int retval;
 
-	if (!PyArg_ParseTuple(args, "s", &s))
+	if (!PyArg_ParseTuple(args, "s:exprstring", &s))
 		return NULL;
 	ENTER_TCL
 	retval = Tcl_ExprString(Tkapp_Interp(self), s);
@@ -1036,7 +1036,7 @@ Tkapp_ExprLong(self, args)
 	int retval;
 	long v;
 
-	if (!PyArg_ParseTuple(args, "s", &s))
+	if (!PyArg_ParseTuple(args, "s:exprlong", &s))
 		return NULL;
 	ENTER_TCL
 	retval = Tcl_ExprLong(Tkapp_Interp(self), s, &v);
@@ -1059,7 +1059,7 @@ Tkapp_ExprDouble(self, args)
 	double v;
 	int retval;
 
-	if (!PyArg_ParseTuple(args, "s", &s))
+	if (!PyArg_ParseTuple(args, "s:exprdouble", &s))
 		return NULL;
 	PyFPE_START_PROTECT("Tkapp_ExprDouble", return 0)
 	ENTER_TCL
@@ -1084,7 +1084,7 @@ Tkapp_ExprBoolean(self, args)
 	int retval;
 	int v;
 
-	if (!PyArg_ParseTuple(args, "s", &s))
+	if (!PyArg_ParseTuple(args, "s:exprboolean", &s))
 		return NULL;
 	ENTER_TCL
 	retval = Tcl_ExprBoolean(Tkapp_Interp(self), s, &v);
@@ -1110,7 +1110,7 @@ Tkapp_SplitList(self, args)
 	PyObject *v;
 	int i;
 
-	if (!PyArg_ParseTuple(args, "s", &list))
+	if (!PyArg_ParseTuple(args, "s:splitlist", &list))
 		return NULL;
 
 	if (Tcl_SplitList(Tkapp_Interp(self), list, &argc, &argv) == TCL_ERROR)
@@ -1140,7 +1140,7 @@ Tkapp_Split(self, args)
 {
 	char *list;
 
-	if (!PyArg_ParseTuple(args, "s", &list))
+	if (!PyArg_ParseTuple(args, "s:split", &list))
 		return NULL;
 	return Split(list);
 }
@@ -1261,7 +1261,7 @@ Tkapp_CreateCommand(self, args)
 	PyObject *func;
 	Tcl_Command err;
 
-	if (!PyArg_ParseTuple(args, "sO", &cmdName, &func))
+	if (!PyArg_ParseTuple(args, "sO:createcommand", &cmdName, &func))
 		return NULL;
 	if (!PyCallable_Check(func)) {
 		PyErr_SetString(PyExc_TypeError, "command not callable");
@@ -1300,7 +1300,7 @@ Tkapp_DeleteCommand(self, args)
 	char *cmdName;
 	int err;
 
-	if (!PyArg_ParseTuple(args, "s", &cmdName))
+	if (!PyArg_ParseTuple(args, "s:deletecommand", &cmdName))
 		return NULL;
 	ENTER_TCL
 	err = Tcl_DeleteCommand(Tkapp_Interp(self), cmdName);
@@ -1443,7 +1443,7 @@ Tkapp_CreateFileHandler(self, args)
 	int mask, id;
 	FHANDLE tfile;
 
-	if (!PyArg_ParseTuple(args, "OiO", &file, &mask, &func))
+	if (!PyArg_ParseTuple(args, "OiO:createfilehandler", &file, &mask, &func))
 		return NULL;
 	id = GetFileNo(file);
 	if (id < 0)
@@ -1476,7 +1476,7 @@ Tkapp_DeleteFileHandler(self, args)
 	int id;
 	FHANDLE tfile;
   
-	if (!PyArg_ParseTuple(args, "O", &file))
+	if (!PyArg_ParseTuple(args, "O:deletefilehandler", &file))
 		return NULL;
 	id = GetFileNo(file);
 	if (id < 0)
@@ -1513,7 +1513,7 @@ Tktt_DeleteTimerHandler(self, args)
 	TkttObject *v = (TkttObject *)self;
 	PyObject *func = v->func;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":deletetimerhandler"))
 		return NULL;
 	if (v->token != NULL) {
 		Tcl_DeleteTimerHandler(v->token);
@@ -1646,7 +1646,7 @@ Tkapp_CreateTimerHandler(self, args)
 	PyObject *func;
 	TkttObject *v;
 
-	if (!PyArg_ParseTuple(args, "iO", &milliseconds, &func))
+	if (!PyArg_ParseTuple(args, "iO:createtimerhandler", &milliseconds, &func))
 		return NULL;
 	if (!PyCallable_Check(func)) {
 		PyErr_SetString(PyExc_TypeError, "bad argument list");
@@ -1672,7 +1672,7 @@ Tkapp_MainLoop(self, args)
 	PyThreadState *tstate = PyThreadState_Get();
 #endif
 
-	if (!PyArg_ParseTuple(args, "|i", &threshold))
+	if (!PyArg_ParseTuple(args, "|i:mainloop", &threshold))
 		return NULL;
 
 	quitMainLoop = 0;
@@ -1721,7 +1721,7 @@ Tkapp_DoOneEvent(self, args)
 	int flags = 0;
 	int rv;
 
-	if (!PyArg_ParseTuple(args, "|i", &flags))
+	if (!PyArg_ParseTuple(args, "|i:dooneevent", &flags))
 		return NULL;
 
 	ENTER_TCL
@@ -1736,7 +1736,7 @@ Tkapp_Quit(self, args)
 	PyObject *args;
 {
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":quit"))
 		return NULL;
 
 	quitMainLoop = 1;
@@ -1750,7 +1750,7 @@ Tkapp_InterpAddr(self, args)
 	PyObject *args;
 {
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":interpaddr"))
 		return NULL;
 
 	return PyInt_FromLong((long)Tkapp_Interp(self));
@@ -1862,7 +1862,7 @@ Tkinter_Create(self, args)
 		baseName = Py_GetProgramName();
 	className = "Tk";
   
-	if (!PyArg_ParseTuple(args, "|zssi",
+	if (!PyArg_ParseTuple(args, "|zssi:create",
 			      &screenName, &baseName, &className,
 			      &interactive))
 		return NULL;

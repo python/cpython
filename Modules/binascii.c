@@ -213,7 +213,7 @@ binascii_a2b_uu(self, args)
 	PyObject *rv;
 	int ascii_len, bin_len;
 	
-	if ( !PyArg_ParseTuple(args, "t#", &ascii_data, &ascii_len) )
+	if ( !PyArg_ParseTuple(args, "t#:a2b_uu", &ascii_data, &ascii_len) )
 		return NULL;
 
 	/* First byte: binary data length (in bytes) */
@@ -290,7 +290,7 @@ binascii_b2a_uu(self, args)
 	PyObject *rv;
 	int bin_len;
 	
-	if ( !PyArg_ParseTuple(args, "s#", &bin_data, &bin_len) )
+	if ( !PyArg_ParseTuple(args, "s#:b2a_uu", &bin_data, &bin_len) )
 		return NULL;
 	if ( bin_len > 45 ) {
 		/* The 45 is a limit that appears in all uuencode's */
@@ -372,7 +372,7 @@ binascii_a2b_base64(self, args)
 	int ascii_len, bin_len;
 	int quad_pos = 0;
 	
-	if ( !PyArg_ParseTuple(args, "t#", &ascii_data, &ascii_len) )
+	if ( !PyArg_ParseTuple(args, "t#:a2b_base64", &ascii_data, &ascii_len) )
 		return NULL;
 
 	bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
@@ -456,7 +456,7 @@ binascii_b2a_base64(self, args)
 	PyObject *rv;
 	int bin_len;
 	
-	if ( !PyArg_ParseTuple(args, "s#", &bin_data, &bin_len) )
+	if ( !PyArg_ParseTuple(args, "s#:b2a_base64", &bin_data, &bin_len) )
 		return NULL;
 	if ( bin_len > BASE64_MAXBIN ) {
 		PyErr_SetString(Error, "Too much data for base64 line");
@@ -510,7 +510,7 @@ binascii_a2b_hqx(self, args)
 	int len;
 	int done = 0;
 	
-	if ( !PyArg_ParseTuple(args, "t#", &ascii_data, &len) )
+	if ( !PyArg_ParseTuple(args, "t#:a2b_hqx", &ascii_data, &len) )
 		return NULL;
 
 	/* Allocate a string that is too big (fixed later) */
@@ -573,7 +573,7 @@ PyObject *args;
 	unsigned char ch;
 	int in, inend, len;
 	
-	if ( !PyArg_ParseTuple(args, "s#", &in_data, &len) )
+	if ( !PyArg_ParseTuple(args, "s#:rlecode_hqx", &in_data, &len) )
 		return NULL;
 
 	/* Worst case: output is twice as big as input (fixed later) */
@@ -624,7 +624,7 @@ binascii_b2a_hqx(self, args)
 	PyObject *rv;
 	int len;
 	
-	if ( !PyArg_ParseTuple(args, "s#", &bin_data, &len) )
+	if ( !PyArg_ParseTuple(args, "s#:b2a_hqx", &bin_data, &len) )
 		return NULL;
 
 	/* Allocate a buffer that is at least large enough */
@@ -664,7 +664,7 @@ binascii_rledecode_hqx(self, args)
 	PyObject *rv;
 	int in_len, out_len, out_len_left;
 
-	if ( !PyArg_ParseTuple(args, "s#", &in_data, &in_len) )
+	if ( !PyArg_ParseTuple(args, "s#:rledecode_hqx", &in_data, &in_len) )
 		return NULL;
 
 	/* Empty string is a special case */
@@ -762,7 +762,7 @@ PyObject *args;
 	unsigned int crc;
 	int len;
 	
-	if ( !PyArg_ParseTuple(args, "s#i", &bin_data, &len, &crc) )
+	if ( !PyArg_ParseTuple(args, "s#i:crc_hqx", &bin_data, &len, &crc) )
 		return NULL;
 
 	while(len--) {
@@ -902,7 +902,7 @@ binascii_crc32(self, args)
 	unsigned long crc = 0UL;	/* initial value of CRC */
 	int len;
 	
-	if ( !PyArg_ParseTuple(args, "s#|l", &bin_data, &len, &crc) )
+	if ( !PyArg_ParseTuple(args, "s#|l:crc32", &bin_data, &len, &crc) )
 		return NULL;
 
 	crc = crc ^ 0xFFFFFFFFUL;

@@ -45,7 +45,7 @@ new_instance(unused, args)
 	PyObject* klass;
 	PyObject *dict;
 	PyInstanceObject *inst;
-	if (!PyArg_ParseTuple(args, "O!O!",
+	if (!PyArg_ParseTuple(args, "O!O!:instance",
 			      &PyClass_Type, &klass,
 			      &PyDict_Type, &dict))
 		return NULL;
@@ -71,7 +71,7 @@ new_instancemethod(unused, args)
 	PyObject* self;
 	PyObject* classObj;
 
-	if (!PyArg_ParseTuple(args, "OOO!",
+	if (!PyArg_ParseTuple(args, "OOO!:instancemethod",
 			      &func,
 			      &self,
 			      &PyClass_Type, &classObj))
@@ -105,7 +105,7 @@ new_function(unused, args)
 	PyObject* defaults = Py_None;
 	PyFunctionObject* newfunc;
 
-	if (!PyArg_ParseTuple(args, "O!O!|SO!",
+	if (!PyArg_ParseTuple(args, "O!O!|SO!:function",
 			      &PyCode_Type, &code,
 			      &PyDict_Type, &globals,
 			      &name,
@@ -152,7 +152,7 @@ new_code(unused, args)
 	PyObject* lnotab;
 	PyBufferProcs *pb;
 
-	if (!PyArg_ParseTuple(args, "iiiiOO!O!O!SSiS",
+	if (!PyArg_ParseTuple(args, "iiiiOO!O!O!SSiS:code",
 			      &argcount, &nlocals, &stacksize, &flags,
 			      &code,
 			      &PyTuple_Type, &consts,
@@ -188,7 +188,7 @@ new_module(unused, args)
 {
 	char *name;
   
-	if (!PyArg_ParseTuple(args, "s", &name))
+	if (!PyArg_ParseTuple(args, "s:module", &name))
 		return NULL;
 	return PyModule_New(name);
 }
@@ -205,7 +205,7 @@ new_class(unused, args)
 	PyObject * classes;
 	PyObject * dict;
   
-	if (!PyArg_ParseTuple(args, "SO!O!", &name, &PyTuple_Type, &classes,
+	if (!PyArg_ParseTuple(args, "SO!O!:class", &name, &PyTuple_Type, &classes,
 			      &PyDict_Type, &dict))
 		return NULL;
 	return PyClass_New(classes, dict, name);

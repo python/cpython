@@ -373,7 +373,7 @@ time_strftime(self, args)
 
 	memset((ANY *) &buf, '\0', sizeof(buf));
 
-	if (!PyArg_ParseTuple(args, "sO", &fmt, &tup) || !gettmarg(tup, &buf))
+	if (!PyArg_ParseTuple(args, "sO:strftime", &fmt, &tup) || !gettmarg(tup, &buf))
 		return NULL;
 	fmtlen = strlen(fmt);
 
@@ -421,7 +421,7 @@ time_strptime(self, args)
 	char *buf;
 	char *s;
 
-	if (!PyArg_ParseTuple(args, "s|s", &buf, &fmt)) {
+	if (!PyArg_ParseTuple(args, "s|s:strptime", &buf, &fmt)) {
 		PyErr_SetString(PyExc_ValueError, "invalid argument");
 		return NULL;
 	}
@@ -455,7 +455,7 @@ time_asctime(self, args)
 	PyObject *tup;
 	struct tm buf;
 	char *p;
-	if (!PyArg_ParseTuple(args, "O", &tup))
+	if (!PyArg_ParseTuple(args, "O:asctime", &tup))
 		return NULL;
 	if (!gettmarg(tup, &buf))
 		return NULL;
@@ -506,7 +506,7 @@ time_mktime(self, args)
 	PyObject *tup;
 	struct tm buf;
 	time_t tt;
-	if (!PyArg_ParseTuple(args, "O", &tup))
+	if (!PyArg_ParseTuple(args, "O:mktime", &tup))
 		return NULL;
 	tt = time(&tt);
 	buf = *localtime(&tt);

@@ -119,7 +119,7 @@ regobj_match(re, args)
 	int offset = 0;
 	int result;
 
-	if (!PyArg_ParseTuple(args, "O|i", &argstring, &offset))
+	if (!PyArg_ParseTuple(args, "O|i:match", &argstring, &offset))
 		return NULL;
 	if (!PyArg_Parse(argstring, "t#", &buffer, &size))
 		return NULL;
@@ -158,9 +158,9 @@ regobj_search(re, args)
 	int range;
 	int result;
 	
-	if (!PyArg_ParseTuple(args, "O|i", &argstring, &offset))
+	if (!PyArg_ParseTuple(args, "O|i:search", &argstring, &offset))
 		return NULL;
-	if (!PyArg_Parse(argstring, "t#", &buffer, &size))
+	if (!PyArg_Parse(argstring, "t#:search", &buffer, &size))
 		return NULL;
 
 	if (offset < 0 || offset > size) {
@@ -459,7 +459,7 @@ regex_compile(self, args)
 	PyObject *pat = NULL;
 	PyObject *tran = NULL;
 
-	if (!PyArg_ParseTuple(args, "S|S", &pat, &tran))
+	if (!PyArg_ParseTuple(args, "S|S:compile", &pat, &tran))
 		return NULL;
 	return newregexobject(pat, tran, pat, NULL);
 }
@@ -584,7 +584,7 @@ regex_symcomp(self, args)
 	PyObject *npattern;
 	PyObject *retval = NULL;
 
-	if (!PyArg_ParseTuple(args, "S|S", &pattern, &tran))
+	if (!PyArg_ParseTuple(args, "S|S:symcomp", &pattern, &tran))
 		return NULL;
 
 	gdict = PyDict_New();

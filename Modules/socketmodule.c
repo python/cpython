@@ -1096,7 +1096,7 @@ BUILD_FUNC_DEF_2(PySocketSock_makefile,PySocketSockObject *,s, PyObject *,args)
 	FILE *fp;
 	PyObject *f;
 
-	if (!PyArg_ParseTuple(args, "|si", &mode, &bufsize))
+	if (!PyArg_ParseTuple(args, "|si:makefile", &mode, &bufsize))
 		return NULL;
 #ifdef MS_WIN32
 	if (((fd = _open_osfhandle(s->sock_fd, _O_BINARY)) < 0) ||
@@ -1131,7 +1131,7 @@ BUILD_FUNC_DEF_2(PySocketSock_recv,PySocketSockObject *,s, PyObject *,args)
 {
 	int len, n, flags = 0;
 	PyObject *buf;
-	if (!PyArg_ParseTuple(args, "i|i", &len, &flags))
+	if (!PyArg_ParseTuple(args, "i|i:recv", &len, &flags))
 		return NULL;
 	buf = PyString_FromStringAndSize((char *) 0, len);
 	if (buf == NULL)
@@ -1168,7 +1168,7 @@ BUILD_FUNC_DEF_2(PySocketSock_recvfrom,PySocketSockObject *,s, PyObject *,args)
 	PyObject *ret = NULL;
 
 	int addrlen, len, n, flags = 0;
-	if (!PyArg_ParseTuple(args, "i|i", &len, &flags))
+	if (!PyArg_ParseTuple(args, "i|i:recvfrom", &len, &flags))
 		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
@@ -1218,7 +1218,7 @@ BUILD_FUNC_DEF_2(PySocketSock_send,PySocketSockObject *,s, PyObject *,args)
 {
 	char *buf;
 	int len, n, flags = 0;
-	if (!PyArg_ParseTuple(args, "s#|i", &buf, &len, &flags))
+	if (!PyArg_ParseTuple(args, "s#|i:send", &buf, &len, &flags))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	n = send(s->sock_fd, buf, len, flags);
@@ -1702,7 +1702,7 @@ BUILD_FUNC_DEF_2(PySocket_socket,PyObject *,self, PyObject *,args)
 	int fd;
 #endif
 	int family, type, proto = 0;
-	if (!PyArg_ParseTuple(args, "ii|i", &family, &type, &proto))
+	if (!PyArg_ParseTuple(args, "ii|i:socket", &family, &type, &proto))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	fd = socket(family, type, proto);
@@ -1747,7 +1747,7 @@ BUILD_FUNC_DEF_2(PySocket_fromfd,PyObject *,self, PyObject *,args)
 {
 	PySocketSockObject *s;
 	int fd, family, type, proto = 0;
-	if (!PyArg_ParseTuple(args, "iii|i", &fd, &family, &type, &proto))
+	if (!PyArg_ParseTuple(args, "iii|i:fromfd", &fd, &family, &type, &proto))
 		return NULL;
 	/* Dup the fd so it and the socket can be closed independently */
 	fd = dup(fd);
@@ -2015,7 +2015,7 @@ BUILD_FUNC_DEF_2(PySocket_ssl, PyObject *, self, PyObject *, args)
 	char *key_file;
 	char *cert_file;
   
-	if (!PyArg_ParseTuple(args, "O!zz",
+	if (!PyArg_ParseTuple(args, "O!zz:ssl",
 			      &PySocketSock_Type, (PyObject*)&Sock,
 			      &key_file, &cert_file) )
 		return NULL;
@@ -2094,7 +2094,7 @@ static PyObject *SSL_SSLwrite(SSLObject *self, PyObject *args)
 	char *data;
 	int len = 0;
   
-	if (!PyArg_ParseTuple(args, "s|i", &data, &len))
+	if (!PyArg_ParseTuple(args, "s|i:write", &data, &len))
 		return NULL;
   
 	if (!len)
@@ -2111,7 +2111,7 @@ static PyObject *SSL_SSLread(SSLObject *self, PyObject *args)
 	int len = 1024;
 	int res;
   
-	PyArg_ParseTuple(args, "|i", &len);
+	PyArg_ParseTuple(args, "|i:read", &len);
   
 	if (!(buf = PyString_FromStringAndSize((char *) 0, len)))
 		return NULL;	/* Error object should already be set */

@@ -141,7 +141,7 @@ strop_splitfields(self, args)
 	n = 0;
 	splitcount = 0;
 	maxsplit = 0;
-	if (!PyArg_ParseTuple(args, "t#|z#i", &s, &len, &sub, &n, &maxsplit))
+	if (!PyArg_ParseTuple(args, "t#|z#i:split", &s, &len, &sub, &n, &maxsplit))
 		return NULL;
 	if (sub == NULL)
 		return split_whitespace(s, len, maxsplit);
@@ -211,7 +211,7 @@ strop_joinfields(self, args)
 	char* p = NULL;
 	intargfunc getitemfunc;
 
-	if (!PyArg_ParseTuple(args, "O|t#", &seq, &sep, &seplen))
+	if (!PyArg_ParseTuple(args, "O|t#:join", &seq, &sep, &seplen))
 		return NULL;
 	if (sep == NULL) {
 		sep = " ";
@@ -338,7 +338,7 @@ strop_find(self, args)
 	char *s, *sub;
 	int len, n, i = 0, last = INT_MAX;
 
-	if (!PyArg_ParseTuple(args, "t#t#|ii", &s, &len, &sub, &n, &i, &last))
+	if (!PyArg_ParseTuple(args, "t#t#|ii:find", &s, &len, &sub, &n, &i, &last))
 		return NULL;
 
 	if (last > len)
@@ -383,7 +383,7 @@ strop_rfind(self, args)
 	int len, n, j;
 	int i = 0, last = INT_MAX;
 
-	if (!PyArg_ParseTuple(args, "t#t#|ii", &s, &len, &sub, &n, &i, &last))
+	if (!PyArg_ParseTuple(args, "t#t#|ii:rfind", &s, &len, &sub, &n, &i, &last))
 		return NULL;
 
 	if (last > len)
@@ -642,7 +642,7 @@ strop_expandtabs(self, args)
 	int tabsize = 8;
 
 	/* Get arguments */
-	if (!PyArg_ParseTuple(args, "s#|i", &string, &stringlen, &tabsize))
+	if (!PyArg_ParseTuple(args, "s#|i:expandtabs", &string, &stringlen, &tabsize))
 		return NULL;
 	if (tabsize < 1) {
 		PyErr_SetString(PyExc_ValueError,
@@ -708,7 +708,7 @@ strop_count(self, args)
 	int i = 0, last = INT_MAX;
 	int m, r;
 
-	if (!PyArg_ParseTuple(args, "t#t#|ii", &s, &len, &sub, &n, &i, &last))
+	if (!PyArg_ParseTuple(args, "t#t#|ii:count", &s, &len, &sub, &n, &i, &last))
 		return NULL;
 	if (last > len)
 		last = len;
@@ -803,7 +803,7 @@ strop_atoi(self, args)
 	long x;
 	char buffer[256]; /* For errors */
 
-	if (!PyArg_ParseTuple(args, "s|i", &s, &base))
+	if (!PyArg_ParseTuple(args, "s|i:atoi", &s, &base))
 		return NULL;
 
 	if ((base != 0 && base < 2) || base > 36) {
@@ -858,7 +858,7 @@ strop_atol(self, args)
 	PyObject *x;
 	char buffer[256]; /* For errors */
 
-	if (!PyArg_ParseTuple(args, "s|i", &s, &base))
+	if (!PyArg_ParseTuple(args, "s|i:atol", &s, &base))
 		return NULL;
 
 	if ((base != 0 && base < 2) || base > 36) {
@@ -904,7 +904,7 @@ strop_atof(self, args)
 	double x;
 	char buffer[256]; /* For errors */
 
-	if (!PyArg_ParseTuple(args, "s", &s))
+	if (!PyArg_ParseTuple(args, "s:atof", &s))
 		return NULL;
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
@@ -948,7 +948,7 @@ strop_maketrans(self, args)
 	int i, fromlen=0, tolen=0;
 	PyObject *result;
 
-	if (!PyArg_ParseTuple(args, "t#t#", &from, &fromlen, &to, &tolen))
+	if (!PyArg_ParseTuple(args, "t#t#:maketrans", &from, &fromlen, &to, &tolen))
 		return NULL;
 
 	if (fromlen != tolen) {
@@ -991,7 +991,7 @@ strop_translate(self, args)
 	PyObject *result;
 	int trans_table[256];
 
-	if (!PyArg_ParseTuple(args, "St#|t#", &input_obj,
+	if (!PyArg_ParseTuple(args, "St#|t#:translate", &input_obj,
 			      &table1, &tablen, &del_table, &dellen))
 		return NULL;
 	if (tablen != 256) {
@@ -1205,7 +1205,7 @@ strop_replace(self, args)
 	int count = 0;
 	PyObject *new;
 
-	if (!PyArg_ParseTuple(args, "t#t#t#|i",
+	if (!PyArg_ParseTuple(args, "t#t#t#|i:replace",
 			      &str, &len, &pat, &pat_len, &sub, &sub_len,
 			      &count))
 		return NULL;

@@ -237,7 +237,7 @@ MD5_new(self, args)
 	unsigned char *cp = NULL;
 	int len = 0;
 
-	if (!PyArg_ParseTuple(args, "|s#", &cp, &len))
+	if (!PyArg_ParseTuple(args, "|s#:new", &cp, &len))
 		return NULL;
 
 	if ((md5p = newmd5object()) == NULL)

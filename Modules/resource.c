@@ -60,7 +60,7 @@ resource_getrusage(self, args)
 	int who;
 	struct rusage ru;
 
-	if (!PyArg_ParseTuple(args, "i", &who))
+	if (!PyArg_ParseTuple(args, "i:getrusage", &who))
 		return NULL;
 
 	if (getrusage(who, &ru) == -1) {
@@ -107,7 +107,7 @@ resource_getrlimit(self, args)
 	struct rlimit rl;
 	int resource;
 
-	if (!PyArg_ParseTuple(args, "i", &resource)) 
+	if (!PyArg_ParseTuple(args, "i:getrlimit", &resource)) 
 		return NULL;
 
 	if (resource < 0 || resource >= RLIM_NLIMITS) {
@@ -140,7 +140,7 @@ resource_setrlimit(self, args)
 	int resource;
 	PyObject *curobj, *maxobj;
 
-	if (!PyArg_ParseTuple(args, "i(OO)", &resource, &curobj, &maxobj))
+	if (!PyArg_ParseTuple(args, "i(OO):setrlimit", &resource, &curobj, &maxobj))
 		return NULL;
 
 	if (resource < 0 || resource >= RLIM_NLIMITS) {
@@ -182,7 +182,7 @@ resource_getpagesize(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":getpagesize"))
 		return NULL;
 	return Py_BuildValue("i", getpagesize());
 }

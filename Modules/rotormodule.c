@@ -583,7 +583,7 @@ rotorobj_setkey(self, args)
 {
 	char *key;
 
-	if (!PyArg_ParseTuple(args, "s", &key))
+	if (!PyArg_ParseTuple(args, "s:setkey", &key))
 		return NULL;
 
 	set_key(self, key);
@@ -639,7 +639,7 @@ rotor_rotor(self, args)
 	int len;
 	int num_rotors = 6;
 
-	if (!PyArg_ParseTuple(args, "s#|i", &string, &len, &num_rotors))
+	if (!PyArg_ParseTuple(args, "s#|i:newrotor", &string, &len, &num_rotors))
 		return NULL;
 
 	r = rotorobj_new(num_rotors, string);

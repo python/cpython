@@ -281,7 +281,7 @@ SetConfig(self, args, func)
 {
 	int par;
 
-	if (!PyArg_ParseTuple(args, "i", &par))
+	if (!PyArg_ParseTuple(args, "i:SetConfig", &par))
 		return NULL;
 
 	if ((*func)(self->config, par) == -1)
@@ -299,7 +299,7 @@ GetConfig(self, args, func)
 {	
 	int par;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetConfig"))
 		return NULL;
 	
 	if ((par = (*func)(self->config)) == -1)
@@ -397,7 +397,7 @@ alc_SetFloatMax(self, args)
 {
 	double maximum_value;
 
-	if (!PyArg_ParseTuple(args, "d", &maximum_value))
+	if (!PyArg_ParseTuple(args, "d:SetFloatMax", &maximum_value))
 		return NULL;
 	if (alSetFloatMax(self->config, maximum_value) < 0)
 		return NULL;
@@ -417,7 +417,7 @@ alc_GetFloatMax(self, args)
 {
 	double maximum_value;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetFloatMax"))
 		return NULL;
 	if ((maximum_value = alGetFloatMax(self->config)) == 0)
 		return NULL;
@@ -486,7 +486,7 @@ setconfig(self, args, func)
 {
 	long par;
 
-	if (!PyArg_ParseTuple(args, "l", &par))
+	if (!PyArg_ParseTuple(args, "l:SetConfig", &par))
 		return NULL;
 
 	if ((*func)(self->config, par) == -1)
@@ -504,7 +504,7 @@ getconfig(self, args, func)
 {	
 	long par;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetConfig"))
 		return NULL;
 	
 	if ((par = (*func)(self->config)) == -1)
@@ -586,7 +586,7 @@ alc_getfloatmax(self, args)
 {
 	double arg;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetFloatMax"))
 		return 0;
 	if ((arg = ALgetfloatmax(self->config)) == 0)
 		return NULL;
@@ -600,7 +600,7 @@ alc_setfloatmax(self, args)
 {
 	double arg;
 
-	if (!PyArg_ParseTuple(args, "d", &arg))
+	if (!PyArg_ParseTuple(args, "d:SetFloatMax", &arg))
 		return 0;
 	if (ALsetfloatmax(self->config, arg) == -1)
 		return NULL;
@@ -723,7 +723,7 @@ alp_SetConfig(self, args)
 	PyObject *args;
 {
 	alcobject *config;
-	if (!PyArg_ParseTuple(args, "O!", &Alctype, &config))
+	if (!PyArg_ParseTuple(args, "O!:SetConfig", &Alctype, &config))
 		return NULL;
 	if (alSetConfig(self->port, config->config) < 0)
 		return NULL;
@@ -742,7 +742,7 @@ alp_GetConfig(self, args)
 	PyObject *args;
 {
 	ALconfig config;
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetConfig"))
 		return NULL;
 	if ((config = alGetConfig(self->port)) == NULL)
 		return NULL;
@@ -761,7 +761,7 @@ alp_GetResource(self, args)
 {
 	int resource;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetResource"))
 		return NULL;
 	if ((resource = alGetResource(self->port)) == 0)
 		return NULL;
@@ -780,7 +780,7 @@ alp_GetFD(self, args)
 {
 	int fd;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetFD"))
 		return NULL;
 
 	if ((fd = alGetFD(self->port)) < 0)
@@ -801,7 +801,7 @@ alp_GetFilled(self, args)
 {
 	int filled;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetFilled"))
 		return NULL;
 	if ((filled = alGetFilled(self->port)) < 0)
 		return NULL;
@@ -820,7 +820,7 @@ alp_GetFillable(self, args)
 {
 	int fillable;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetFillable"))
 		return NULL;
 	if ((fillable = alGetFillable(self->port)) < 0)
 		return NULL;
@@ -844,7 +844,7 @@ alp_ReadFrames(self, args)
 	int ch;
 	ALconfig c;
 
-	if (!PyArg_ParseTuple(args, "i", &framecount))
+	if (!PyArg_ParseTuple(args, "i:ReadFrames", &framecount))
 		return NULL;
 	if (framecount < 0) {
 		PyErr_SetString(ErrorObject, "negative framecount");
@@ -910,7 +910,7 @@ alp_DiscardFrames(self, args)
 {
 	int framecount;
 
-	if (!PyArg_ParseTuple(args, "i", &framecount))
+	if (!PyArg_ParseTuple(args, "i:DiscardFrames", &framecount))
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
@@ -935,7 +935,7 @@ alp_ZeroFrames(self, args)
 {
 	int framecount;
 
-	if (!PyArg_ParseTuple(args, "i", &framecount))
+	if (!PyArg_ParseTuple(args, "i:ZeroFrames", &framecount))
 		return NULL;
 
 	if (framecount < 0) {
@@ -963,7 +963,7 @@ alp_SetFillPoint(self, args)
 {
 	int fillpoint;
 
-	if (!PyArg_ParseTuple(args, "i", &fillpoint))
+	if (!PyArg_ParseTuple(args, "i:SetFillPoint", &fillpoint))
 		return NULL;
 
 	if (alSetFillPoint(self->port, fillpoint) < 0)
@@ -985,7 +985,7 @@ alp_GetFillPoint(self, args)
 {
 	int fillpoint;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetFillPoint"))
 		return NULL;
 
 	if ((fillpoint = alGetFillPoint(self->port)) < 0)
@@ -1006,7 +1006,7 @@ alp_GetFrameNumber(self, args)
 {
 	stamp_t fnum;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetFrameNumber"))
 		return NULL;
 
 	if (alGetFrameNumber(self->port, &fnum) < 0)
@@ -1028,7 +1028,7 @@ alp_GetFrameTime(self, args)
 	stamp_t fnum, time;
 	PyObject *ret, *v0, *v1;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetFrameTime"))
 		return NULL;
 	if (alGetFrameTime(self->port, &fnum, &time) < 0)
 		return NULL;
@@ -1060,7 +1060,7 @@ alp_WriteFrames(self, args)
 	int size, ch;
 	ALconfig c;
 
-	if (!PyArg_ParseTuple(args, "s#", &samples, &length))
+	if (!PyArg_ParseTuple(args, "s#:WriteFrames", &samples, &length))
 		return NULL;
 	c = alGetConfig(self->port);
 	switch (alGetSampFmt(c)) {
@@ -1123,7 +1123,7 @@ alp_ClosePort(self, args)
 	alpobject *self;
 	PyObject *args;
 {
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":ClosePort"))
 		return NULL;
 	if (alClosePort(self->port) < 0)
 		return NULL;
@@ -1140,7 +1140,7 @@ alp_closeport(self, args)
 	alpobject *self;
 	PyObject *args;
 {
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":ClosePort"))
 		return NULL;
 	if (ALcloseport(self->port) < 0)
 		return NULL;
@@ -1150,13 +1150,13 @@ alp_closeport(self, args)
 }
 
 static PyObject *
-alp_getfd (self, args)
+alp_getfd(self, args)
 	alpobject *self;
 	PyObject *args;
 {
 	int fd;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetFD"))
 		return NULL;
 	if ((fd = ALgetfd(self-> port)) == -1)
 		return NULL;
@@ -1170,7 +1170,7 @@ alp_getfilled(self, args)
 {
 	long count;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetFilled"))
 		return NULL;
 	if ((count = ALgetfilled(self-> port)) == -1)
 		return NULL;
@@ -1184,7 +1184,7 @@ alp_getfillable(self, args)
 {
 	long count;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetFillable"))
 		return NULL;
 	if ((count = ALgetfillable(self-> port)) == -1)
 		return NULL;
@@ -1202,7 +1202,7 @@ alp_readsamps(self, args)
 	int width;
 	int ret;
 
-	if (!PyArg_ParseTuple(args, "l", &count))
+	if (!PyArg_ParseTuple(args, "l:readsamps", &count))
 		return NULL;
 
 	if (count <= 0) {
@@ -1248,7 +1248,7 @@ alp_writesamps(self, args)
 	ALconfig c;
 	int ret;
 
-	if (!PyArg_ParseTuple(args, "s#", &buf, &size))
+	if (!PyArg_ParseTuple(args, "s#:writesamps", &buf, &size))
 		return NULL;
 
 	c = ALgetconfig(self->port);
@@ -1281,7 +1281,7 @@ alp_getfillpoint(self, args)
 {
 	long count;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetFillPoint"))
 		return NULL;
 	if ((count = ALgetfillpoint(self->port)) == -1)
 		return NULL;
@@ -1289,13 +1289,13 @@ alp_getfillpoint(self, args)
 }
 
 static PyObject *
-alp_setfillpoint (self, args)
+alp_setfillpoint(self, args)
 	alpobject *self;
 	PyObject *args;
 {
 	long count;
 
-	if (!PyArg_ParseTuple(args, "l", &count))
+	if (!PyArg_ParseTuple(args, "l:SetFillPoint", &count))
 		return NULL;
 	if (ALsetfillpoint(self->port, count) == -1)
 		return NULL;
@@ -1310,7 +1310,7 @@ alp_setconfig(self, args)
 {
 	alcobject *config;
 
-	if (!PyArg_ParseTuple(args, "O!", &Alctype, &config))
+	if (!PyArg_ParseTuple(args, "O!:SetConfig", &Alctype, &config))
 		return NULL;
 	if (ALsetconfig(self->port, config->config) == -1)
 		return NULL;
@@ -1325,7 +1325,7 @@ alp_getconfig(self, args)
 {
 	ALconfig config;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":GetConfig"))
 		return NULL;
 	config = ALgetconfig(self->port);
 	if (config == NULL)
@@ -1504,7 +1504,7 @@ al_NewConfig(self, args)
 {
 	ALconfig config;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":NewConfig"))
 		return NULL;
 	if ((config = alNewConfig()) == NULL)
 		return NULL;
@@ -1524,7 +1524,7 @@ al_OpenPort(self, args)
 	char *name, *dir;
 	alcobject *config = NULL;
 
-	if (!PyArg_ParseTuple(args, "ss|O!", &name, &dir, &Alctype, &config))
+	if (!PyArg_ParseTuple(args, "ss|O!:OpenPort", &name, &dir, &Alctype, &config))
 		return NULL;
 	if ((port = alOpenPort(name, dir, config ? config->config : NULL)) == NULL)
 		return NULL;
@@ -1545,7 +1545,7 @@ al_Connect(self, args)
 	ALparamInfo *propinfo = NULL;
 	PyObject *propobj = NULL;
 
-	if (!PyArg_ParseTuple(args, "ii|O!", &source, &dest, &PyList_Type, &propobj))
+	if (!PyArg_ParseTuple(args, "ii|O!:Connect", &source, &dest, &PyList_Type, &propobj))
 		return NULL;
 	if (propobj != NULL) {
 		nprops = python2params(source, dest, propobj, &props, &propinfo);
@@ -1584,7 +1584,7 @@ al_Disconnect(self, args)
 {
 	int res;
 
-	if (!PyArg_ParseTuple(args, "i", &res))
+	if (!PyArg_ParseTuple(args, "i:Disconnect", &res))
 		return NULL;
 	if (alDisconnect(res) < 0)
 		return NULL;
@@ -1607,7 +1607,7 @@ al_GetParams(self, args)
 	int i, j, npvs;
 	ALparamInfo *pinfo;
 
-	if (!PyArg_ParseTuple(args, "iO!", &resource, &PyList_Type, &pvslist))
+	if (!PyArg_ParseTuple(args, "iO!:GetParams", &resource, &PyList_Type, &pvslist))
 		return NULL;
 	npvs = PyList_Size(pvslist);
 	pvs = PyMem_NEW(ALpv, npvs);
@@ -1753,7 +1753,7 @@ al_SetParams(self, args)
 	ALparamInfo *pinfo;
 	int npvs, i;
 
-	if (!PyArg_ParseTuple(args, "iO!", &resource, &PyList_Type, &pvslist))
+	if (!PyArg_ParseTuple(args, "iO!:SetParams", &resource, &PyList_Type, &pvslist))
 		return NULL;
 	npvs = python2params(resource, -1, pvslist, &pvs, &pinfo);
 	if (npvs < 0)
@@ -1804,7 +1804,7 @@ al_QueryValues(self, args)
 	PyObject *qualobj = NULL;
 	PyObject *res = NULL, *item;
 
-	if (!PyArg_ParseTuple(args, "ii|O!", &resource, &param,
+	if (!PyArg_ParseTuple(args, "ii|O!:QueryValues", &resource, &param,
 			      &PyList_Type, &qualobj))
 		return NULL;
 	if (qualobj != NULL) {
@@ -1881,7 +1881,7 @@ al_GetParamInfo(self, args)
 	ALparamInfo pinfo;
 	PyObject *v, *item;;
 
-	if (!PyArg_ParseTuple(args, "ii", &res, &param))
+	if (!PyArg_ParseTuple(args, "ii:GetParamInfo", &res, &param))
 		return NULL;
 	if (alGetParamInfo(res, param, &pinfo) < 0)
 		return NULL;
@@ -1965,7 +1965,7 @@ al_GetResourceByName(self, args)
 	int res, start_res, type;
 	char *name;
 
-	if (!PyArg_ParseTuple(args, "isi", &start_res, &name, &type))
+	if (!PyArg_ParseTuple(args, "isi:GetResourceByName", &start_res, &name, &type))
 		return NULL;
 	if ((res = alGetResourceByName(start_res, name, type)) == 0)
 		return NULL;
@@ -1983,7 +1983,7 @@ al_IsSubtype(self, args)
 {
 	int type, subtype;
 
-	if (!PyArg_ParseTuple(args, "ii", &type, &subtype))
+	if (!PyArg_ParseTuple(args, "ii:IsSubtype", &type, &subtype))
 		return NULL;
 	return PyInt_FromLong((long) alIsSubtype(type, subtype));
 }
@@ -1998,7 +1998,7 @@ al_SetErrorHandler(self, args)
 	PyObject *args;
 {
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":SetErrorHandler"))
 		return NULL;
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -2016,7 +2016,7 @@ al_openport(self, args)
 	ALport port;
 	alcobject *config = NULL;
 
-	if (!PyArg_ParseTuple(args, "ss|O!", &name, &dir, &Alctype, &config))
+	if (!PyArg_ParseTuple(args, "ss|O!:OpenPort", &name, &dir, &Alctype, &config))
 		return NULL;
 	if ((port = ALopenport(name, dir, config ? config->config : NULL)) == NULL)
 		return NULL;
@@ -2029,7 +2029,7 @@ al_newconfig(self, args)
 {
 	ALconfig config;
 
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":NewConfig"))
 		return NULL;
 	if ((config = ALnewconfig ()) == NULL)
 		return NULL;
@@ -2047,7 +2047,7 @@ al_queryparams(self, args)
 	PyObject *v = NULL;
 	int i;
 
-	if (!PyArg_ParseTuple(args, "l", &device))
+	if (!PyArg_ParseTuple(args, "l:queryparams", &device))
 		return NULL;
 	if ((length = ALqueryparams(device, PVdummy, 2L)) == -1)
 		return NULL;
@@ -2127,7 +2127,7 @@ al_getname(self, args)
 	long device, descriptor;
 	char *name;
 
-	if (!PyArg_ParseTuple(args, "ll", &device, &descriptor))
+	if (!PyArg_ParseTuple(args, "ll:getname", &device, &descriptor))
 		return NULL;
 	if ((name = ALgetname(device, descriptor)) == NULL)
 		return NULL;
@@ -2140,7 +2140,7 @@ al_getdefault(self, args)
 {
 	long device, descriptor, value;
 
-	if (!PyArg_ParseTuple(args, "ll", &device, &descriptor))
+	if (!PyArg_ParseTuple(args, "ll:getdefault", &device, &descriptor))
 		return NULL;
 	if ((value = ALgetdefault(device, descriptor)) == -1)
 		return NULL;
@@ -2153,7 +2153,7 @@ al_getminmax(self, args)
 {
 	long device, descriptor, min, max;
 
-	if (!PyArg_ParseTuple(args, "ll", &device, &descriptor))
+	if (!PyArg_ParseTuple(args, "ll:getminmax", &device, &descriptor))
 		return NULL;
 	min = -1;
 	max = -1;

@@ -243,7 +243,7 @@ select_select(self, args)
 	int n;
 
 	/* convert arguments */
-	if (!PyArg_ParseTuple(args, "OOO|O",
+	if (!PyArg_ParseTuple(args, "OOO|O:select",
 			      &ifdlist, &ofdlist, &efdlist, &tout))
 		return NULL;
 

@@ -490,7 +490,7 @@ PyObject *args;
 	int iflags;
 	int mode = 0666;
 
-	if ( !PyArg_ParseTuple(args, "s|si", &name, &flags, &mode) )
+	if ( !PyArg_ParseTuple(args, "s|si:open", &name, &flags, &mode) )
 		return NULL;
 	switch (flags[0]) {
 	case 'r':

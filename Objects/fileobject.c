@@ -263,7 +263,7 @@ file_seek(f, args)
 	if (f->f_fp == NULL)
 		return err_closed();
 	whence = 0;
-	if (!PyArg_ParseTuple(args, "O|i", &offobj, &whence))
+	if (!PyArg_ParseTuple(args, "O|i:seek", &offobj, &whence))
 		return NULL;
 #if !defined(HAVE_LARGEFILE_SUPPORT)
 	offset = PyInt_AsLong(offobj);
@@ -305,7 +305,7 @@ file_truncate(f, args)
 	if (f->f_fp == NULL)
 		return err_closed();
 	newsizeobj = NULL;
-	if (!PyArg_ParseTuple(args, "|O", &newsizeobj))
+	if (!PyArg_ParseTuple(args, "|O:truncate", &newsizeobj))
 		return NULL;
 	if (newsizeobj != NULL) {
 #if !defined(HAVE_LARGEFILE_SUPPORT)
@@ -518,7 +518,7 @@ file_read(f, args)
 	
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (!PyArg_ParseTuple(args, "|l", &bytesrequested))
+	if (!PyArg_ParseTuple(args, "|l:read", &bytesrequested))
 		return NULL;
 	if (bytesrequested < 0)
 		buffersize = new_buffersize(f, (size_t)0);
@@ -732,7 +732,7 @@ file_readline(f, args)
 
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (!PyArg_ParseTuple(args, "|i", &n))
+	if (!PyArg_ParseTuple(args, "|i:readline", &n))
 		return NULL;
 	if (n == 0)
 		return PyString_FromString("");
@@ -761,7 +761,7 @@ file_readlines(f, args)
 
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (!PyArg_ParseTuple(args, "|l", &sizehint))
+	if (!PyArg_ParseTuple(args, "|l:readlines", &sizehint))
 		return NULL;
 	if ((list = PyList_New(0)) == NULL)
 		return NULL;

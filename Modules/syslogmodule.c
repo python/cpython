@@ -105,7 +105,7 @@ syslog_closelog(self, args)
 	PyObject * self;
 	PyObject * args;
 {
-	if (!PyArg_ParseTuple(args, ""))
+	if (!PyArg_ParseTuple(args, ":closelog"))
 		return NULL;
 	closelog();
 	Py_XDECREF(S_ident_o);
@@ -134,7 +134,7 @@ syslog_log_mask(self, args)
 {
 	long mask;
 	long pri;
-	if (!PyArg_ParseTuple(args, "l", &pri))
+	if (!PyArg_ParseTuple(args, "l:LOG_MASK", &pri))
 		return NULL;
 	mask = LOG_MASK(pri);
 	return PyInt_FromLong(mask);
@@ -147,7 +147,7 @@ syslog_log_upto(self, args)
 {
 	long mask;
 	long pri;
-	if (!PyArg_ParseTuple(args, "l", &pri))
+	if (!PyArg_ParseTuple(args, "l:LOG_UPTO", &pri))
 		return NULL;
 	mask = LOG_UPTO(pri);
 	return PyInt_FromLong(mask);
