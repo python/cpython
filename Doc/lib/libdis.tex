@@ -51,18 +51,14 @@ is indicated.
 Disassembles a code object, indicating the last instruction if \var{lasti}
 was provided.  The output is divided in the following columns:
 
-\newcounter{discounter}
-\begin{list}{\arabic{discounter}.}{%
-  \usecounter{discounter}
-  \setlength{\leftmargin}{4.5mm}
-  \setlength{\labelsep}{1.5mm}}
+\begin{enumerate}
 \item the current instruction, indicated as \samp{-->},
 \item a labelled instruction, indicated with \samp{>>},
 \item the address of the instruction,
 \item the operation code name,
 \item operation parameters, and
 \item interpretation of the parameters in parentheses.
-\end{list}
+\end{enumerate}
 
 The parameter interpretation recognizes local and global
 variable names, constant values, branch targets, and compare
