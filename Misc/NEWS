@@ -104,6 +104,9 @@ Extension modules
 Library
 -------
 
+- Plugged a minor hole in tempfile.mktemp() due to the use of
+  os.path.exists(), switched to using os.lstat() directly if possible.
+
 - heapq.py has been converted to C for improved performance
 
 - traceback.format_exc has been added (similar to print_exc but it returns
