@@ -3,14 +3,14 @@ Newsgroups: comp.lang.python,comp.answers,news.answers
 Followup-to: comp.lang.python
 From: guido@cwi.nl (Guido van Rossum)
 Reply-to: guido@cwi.nl (Guido van Rossum)
-Expires: Sat, 1 Apr 1995 00:00:00 GMT
+Expires: Mon, 1 May 1995 00:00:00 GMT
 Supersedes: <D1sGoJ.Mps@cwi.nl>
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
 Submitted-by: Guido van Rossum <guido@cwi.nl>
-Version: 1.20++
-Last-modified: 16 Februari 1995
+Version: 1.22
+Last-modified: 10 April 1995
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -158,6 +158,7 @@ Here's an overview of the questions per chapter:
   4.30. Q. What other WWW tools are there for Python?
   4.31. Q. How do I run a subprocess with pipes connected to both input
         and output?
+  4.32. Q. How do I call a function if I have the arguments in a tuple?
 
  5. Extending Python
   5.1. Q. Can I create my own functions in C?
@@ -448,6 +449,10 @@ engine.  Contact: Matt Conway <conway@virginia.edu>.
 The ILU project at Xerox PARC can generate Python glue for ILU
 interfaces.  See <URL:ftp://ftp.parc.xerox.com/pub/ilu/ilu.html>.
 
+The University of California, Irvine uses a student administration
+system called TELE-Vision written entirely in Python.  Contact: Ray
+Price <rlprice@uci.edu>.
+
 If you have done a significant project in Python that you'd like to be
 included in the list above, send me email!
 
@@ -456,9 +461,9 @@ included in the list above, send me email!
 A. Several companies have revealed to me that they are planning or
 considering use of Python in a future product.
 
-The furthest is Sunrise Software, who already have a product out using
-Python -- they use Python for a GUI management application and an SNMP
-network management application.  Contact: <info@sunrise.com>.
+Sunrise Software, have a product out using Python -- they use Python
+for a GUI management application and an SNMP network management
+application.  Contact: <info@sunrise.com>.
 
 Infoseek uses Python to implement their commercial WWW information
 retrieval service <URL:http://www.infoseek.com/>.  Contact:
@@ -471,9 +476,15 @@ Paul Everitt of Connecting Minds is planning a Lotus Notes gateway.
 Contact: <Paul.Everitt@cminds.com>.  Or see their WWW server
 <URL:http://www.cminds.com/>.
 
-Individuals at many other companies are using Python for
-internal development (witness their contributions to the Python
-mailing list or newsgroup).
+KaPRE in Boulder, CO is using Python for on-site customization of C++
+applications, rapid-prototyping/development,
+language-based-components, and possibly more.  This is pretty solid:
+Python's being shipped with their tool-set now, to beta sites.
+Contact: <lutz@KaPRE.COM> (Mark Lutz).
+
+Individuals at many other companies are using Python for internal
+development or for as yet unannounced products (witness their
+contributions to the Python mailing list or newsgroup).
 
 Python has also been elected as an extension language by MADE, a
 consortium supported by the European Committee's ESPRIT program and
@@ -633,7 +644,7 @@ VPATH.  Try running "make clobber" in the source directory.
 
 3.10. Q. Trouble building or linking with the GNU readline library.
 
-A. Consider using readline 2.0.  From the Python 1.1 README:
+A. Consider using readline 2.0.  Some hints:
 
 - You can use the GNU readline library to improve the interactive user
 interface: this gives you line editing and command history when
@@ -669,36 +680,25 @@ stdwin.h file (in the STDWIN distribution, subdirectory H). The
 GL conflict has been solved in the Python configure script by a
 hack that forces use of the static version of the termcap library.
 
-- Check the newsgroup gnu.bash.bugs <URL:news:gnu.bash.bugs> for
-specific problems with the readline library (I don't get this group
-here but I've been told that it is the place for readline bugs.)
+- Check the newsgroup gnu.bash.bug <URL:news:gnu.bash.bug> for
+specific problems with the readline library (I don't read this group
+but I've been told that it is the place for readline bugs).
 
 3.11. Q. Trouble building Python on Linux.
 
-A. In 1.1 and 1.1.1, there's a bug in the reference counting logic of
+A. If you're building Python 1.2, Slackware 2.2 has a buggy bash
+(version 1.14.3) which breaks a sed script that is used to build
+Modules/Makefile.  Replace /bin/sh with /bin/ash in both makesetup and
+Makefile.pre.in.
+
+In 1.1 and 1.1.1, there's a bug in the reference counting logic of
 ternary pow() which is only tripped by very picky mallocs, like the
 GNU malloc on Linux.  This has been fixed in 1.2.  To continue the
-tests, just disable the tests of pow() with three arguments from
-Lib/test/test_b2.py.
+tests in 1.1(.1), just disable the tests of pow() with three arguments
+from Lib/test/test_b2.py.
 
-Apart from this, Python builds and runs fine on most Linux versions.
-Bennet Todd has this to say on the subject:
-
-  It seems to work for some people but not for others.
-
-  This might depend on which Linux release you're using.  Older Linux
-  releases had (understandably) fewer gracious hack to improve Unix
-  compatibility; really old Linux was Posix 1003.1 compatible, without
-  nearly as much Unix compatibility as one might have wished.  Current
-  releases of Linux build most current free software, either BSD or
-  System V, with little or no trouble.
-
-  Besides that, there are quite a few different releases currently,
-  including MCC, Slackware, SLS, and Debian, and probably more.  The
-  differences between their compilation environments are far smaller
-  than they used to be, but they're still updated with different
-  frequencies.  It's likely that the current Slackware works fine, as
-  it currently seems to be the most popular.  But that's just a guess.
+Apart from this, Python builds and runs fine on most Linux versions
+(if you run into trouble on an old Linux version, consider upgrading).
 
 3.12. Q. Trouble with prototypes on Ultrix.
 
@@ -707,10 +707,10 @@ HAVE_PROTOTYPES.
 
 3.13. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
 
-A. You need to pass "-posix" to the C compiler, especially in the link
-phase -- it uses the correct version of the C library.  The easiest
-way is perhaps to do "make OPT=-posix".  You also need to remove this
-NeXT-specific section from import.c:
+A.  (This is fixed in 1.2.)  You need to pass "-posix" to the C
+compiler, especially in the link phase -- it uses the correct version
+of the C library.  The easiest way is perhaps to do "make OPT=-posix".
+You also need to remove this NeXT-specific section from import.c:
 
                 #if defined(NeXT) || defined(WITH_RLD) 
                 #define DYNAMIC_LINK
@@ -1378,6 +1378,21 @@ code to use these in the library module pty.py -- I'm afraid you're on
 your own here.  What's *really* needed is a Python interface to Don
 Libes' expect library -- any takers?
 
+4.32. Q. How do I call a function if I have the arguments in a tuple?
+
+A. Use the built-in function apply().  For instance,
+
+    func(1, 2, 3)
+
+is equivalent to
+
+    args = (1, 2, 3)
+    apply(func, args)
+
+Note that func(args) is not the same -- it calls func() with exactly
+one argument, the tuple args, instead of three arguments, the integers
+1, 2 and 3.
+
 
 5. Extending Python
 ===================
@@ -1791,10 +1806,12 @@ of Visual C++ 2.0.
 
 7.5. Q. Is there an OS/2 version of Python?
 
-A. Yes.  You can ftp it from the usual places as pyth_os2.zip, e.g.
-<URL:ftp://ftp.cwi.nl/pub/python/pyth_os2.zip>.  This contains both an
-executable and Makefiles for those fortunate enough to have a C
-compiler.
+A. Yes.  You can ftp an old version from the usual places as
+pyth_os2.zip, e.g.  <URL:ftp://ftp.cwi.nl/pub/python/pyth_os2.zip>.
+This contains both an executable and Makefiles for those fortunate
+enough to have a C compiler.  A newer port is in progress -- Chris
+Vale <cvale@netcom.com> is doing the work, using Borland C, based on
+Mark Hammond's NT port.
 
 7.6. Q. Is there a VMS version of Python?
 
