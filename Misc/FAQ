@@ -3,20 +3,20 @@ Newsgroups: comp.lang.python,comp.answers,news.answers
 Followup-to: comp.lang.python
 From: guido@cnri.reston.va.us (Guido van Rossum)
 Reply-to: guido@cnri.reston.va.us (Guido van Rossum)
-Expires: Fri, 1 Nov 1996 00:00:00 GMT
-Supersedes: <DFMAv8.3Hp@cwi.nl>
+Expires: Sun, 1 Dec 1996 00:00:00 GMT
+Supersedes: <DxJ3t1.CJv@cwi.nl>
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
 Submitted-by: Guido van Rossum <guido@cnri.reston.va.us>
-Version: 1.34
-Last-modified: 9 September 1996
+Version: $Revision$
+Last-modified: 11 September 1996
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
 the answer to question 1.1 for a short overview).
 
-Copyright 1993-1995 Guido van Rossum.  Unchanged electronic
+Copyright 1993-1996 Guido van Rossum.  Unchanged electronic
 redistribution of this FAQ is allowed.  Printed redistribution only
 with permission of the author.  No warranties.
 
@@ -214,19 +214,16 @@ Here's an overview of the questions per chapter:
 
  7. Using Python on non-UNIX platforms
   7.1. Q. Is there a Mac version of Python?
-  7.2. Q. Is there a DOS version of Python?
-  7.3. Q. Is there a Windows 3.1(1) version of Python?
-  7.4. Q. Is there a Windows NT version of Python?
-  7.5. Q. Is there a Windows 95 version of Python?
-  7.6. Q. Is there an OS/2 version of Python?
-  7.7. Q. Is there a VMS version of Python?
-  7.8. Q. What about IBM mainframes, or other non-UNIX platforms?
-  7.9. Q. Where are the source or Makefiles for the non-UNIX versions?
-  7.10. Q. What is the status and support for the non-UNIX versions?
-  7.11. Q. I have a PC version but it appears to be only a binary.
-        Where's the library?
-  7.12. Q. Where's the documentation for the Mac or PC version?
-  7.13. Q. The Mac (PC) version doesn't seem to have any facilities for
+  7.2. Q. Are there DOS and Windows versions of Python?
+  7.3. Q. Is there an OS/2 version of Python?
+  7.4. Q. Is there a VMS version of Python?
+  7.5. Q. What about IBM mainframes, or other non-UNIX platforms?
+  7.6. Q. Where are the source or Makefiles for the non-UNIX versions?
+  7.7. Q. What is the status and support for the non-UNIX versions?
+  7.8. Q. I have a PC version but it appears to be only a binary.
+       Where's the library?
+  7.9. Q. Where's the documentation for the Mac or PC version?
+  7.10. Q. The Mac (PC) version doesn't seem to have any facilities for
         creating or editing programs apart from entering it interactively, and
         there seems to be no way to save code that was entered interactively.
         How do I create a Python program on the Mac (PC)?
@@ -1101,72 +1098,74 @@ STDWIN-related lines so it's easy to miss it.
 
 A. Depending on what platform(s) you are aiming at, there are several.
 
+Currently supported solutions:
+
 - There's a neat object-oriented interface to the Tcl/Tk widget set,
-called Tkinter.  As of python 1.1, it is part of the standard Python
-distribution -- all you need to do is enable it in Modules/Setup
-(provided you have already installed Tk and Tcl).  This is probably
-the easiest to install and use, and the most complete widget set.  It
-is also very likely that in the future the standard Python GUI API
-will be based on or at least look very much like the Tkinter
-interface.  For more info about Tk, including pointers to the source,
-see the Tcl/Tk home page <URL:http://www.sunlabs.com/research/tcl/>.
-
-- The standard Python distribution comes with an interface to STDWIN,
-a platform-independent low-level windowing interface.  You have to ftp
-the source for STDWIN separately,
-e.g. <URL:ftp://ftp.cwi.nl/pub/stdwin/> or gatekeeper.dec.com in
-pub/misc/stdwin <URL:ftp://gatekeeper.dec.com/pub/misc/stdwin/>.
-STDWIN runs under X11 or the Mac; a Windows port has been attempted
-but I can't seem to get it working.  Note that STDWIN is really not
-powerful enough to implement a modern GUI (no widgets, etc.) and that
-I don't have the time to maintain or extend it, so you may be better
-off using Tkinter or the Motif interface, unless you require
-portability to the Mac (which is also offered by SUIT, by the way --
-see below).
-
-- For SGI IRIX only, there's an interface to the complete GL (Graphics
-Library -- low level but very good 3D capabilities) as well as to
-FORMS (a buttons-and-sliders-etc package built on top of GL by Mark
-Overmars -- ftp'able from <URL:ftp://ftp.cs.ruu.nl/pub/SGI/FORMS/>).
+called Tkinter.  It is part of the standard Python distribution and
+well-supported -- all you need to do is build and install Tcl/Tk and
+enable the _tkinter module and the TKPATH definition in Modules/Setup
+when building Python.  This is probably the easiest to install and
+use, and the most complete widget set.  It is also very likely that in
+the future the standard Python GUI API will be based on or at least
+look very much like the Tkinter interface.  For more info about Tk,
+including pointers to the source, see the Tcl/Tk home page
+<URL:http://www.sunlabs.com/research/tcl/>.  Tcl/Tk is now fully
+portable to the Mac and Windows platforms (NT and 95 only); you need
+Python 1.4beta3 or later and Tk 4.1patch1 or later.
 
 - There's an interface to X11, including the Athena and Motif widget
 sets (and a few individual widgets, like Mosaic's HTML widget and
-SGI's GL widget) in the Extensions set, which is separately ftp'able
-<URL:ftp://ftp.python.org/pub/python/src/extensions.tar.gz>.
+SGI's GL widget) available from
+<URL:ftp://ftp.python.org/pub/python/src/X-extension.tar.gz>.
+Support by Sjoerd Mullender <sjoerd@cwi.nl>.
 
-- There's an interface to SUIT, the U of Virginia's Simple User
-Interface Toolkit; it can be ftp'ed from
-<URL:ftp://uvacs.cs.virginia.edu/pub/suit/python/SUIT_python.tar.Z>.
-A PC binary of Python 1.0.2 compiled with DJGPP and with SUIT support
-built-in has been made available by Antonio Costa
-<URL:ftp://asterix.inescn.pt/pub/PC/python/pyt102su.exe> (a
-self-extracting archive).  Note that the UVa people themselves have
-expressed doubts about SUIT, and are planning to build a Python GUI
-API based upon Tk (though not necessarily on Tkinter); see
-<URL:http://server.cs.virginia.edu/~tnb2d/IT/IT.html>.
+- The Mac port has a rich and ever-growing set of modules that support
+the native Mac toolbox calls.  See the documentation that comes with
+the Mac port.  See <URL:ftp://ftp.python.org/pub/python/mac>.  Support
+by Jack Jansen <jack@cwi.nl>.
 
-- There's an interface to WAFE, a Tcl interface to the X11 Motif and
-Athena widget sets.  Last I heard about it it was included in the WAFE
-1.0 prerelease
-<URL:ftp://ftp.wu-wien.ac.at/pub/src/X11/wafe/wafe-1.0.tar.gz-prerelease>.
+- The NT port supported by Mark Hammond <MHammond@skippinet.com.au>
+(see question 7.2) includes an interface to the Microsoft Foundation
+Classes and a Python programming environment using it that's written
+mostly in Python.  See
+<URL:ftp://ftp.python.org/pub/python/pythonwin/>.
 
-- The NT port by Mark Hammond (see question 7.4) includes an interface
-to the Microsoft Foundation Classes and a Python programming
-environment using it that's written mostly in Python.  See
-<URL:ftp://ftp.python.org/pub/python/nt/>.
+- There's an object-oriented GUI based on the Microsoft Foundation
+Classes model called WPY, supported by Jim Ahlstrom <jim@interet.com>.
+Programs written in WPY run unchanged and with native look and feel on
+Windows NT/95, Windows 3.1 (using win32s), and on Unix (using Tk).
+Source and binaries for Windows and Linux are available in
+<URL:ftp://ftp.python.org/pub/python/wpy/>.
+
+Obsolete or minority solutions:
 
 - There's an interface to wxWindows.  wxWindows is a portable GUI
 class library written in C++.  It supports XView, Motif, MS-Windows as
-targets.  There is some support for Macs and CURSES as well.  wxWindows
-preserves the look and feel of the underlying graphics toolkit.  See
-the wxPython WWW page at
+targets.  There is some support for Macs and CURSES as well.
+wxWindows preserves the look and feel of the underlying graphics
+toolkit.  See the wxPython WWW page at
 <URL:http://www.aiai.ed.ac.uk/~jacs/wx/wxpython/wxpython.html>.
+Support for wxPython (by Harri Pasanen <pa@tekla.fi>) appears
+to have a low priority.
 
-- There's an object-oriented GUI based on the Microsoft Foundation
-Classes model called WPY.  Programs written in WPY run unchanged and
-with native look and feel on NT, Windows 3.1 (using win32s) and on
-Unix (using Tk).  Source and binaries for NT and Linux are available
-in <URL:ftp://ftp.python.org/pub/python/wpy>.
+- For SGI IRIX only, there are unsupported interfaces to the complete
+GL (Graphics Library -- low level but very good 3D capabilities) as
+well as to FORMS (a buttons-and-sliders-etc package built on top of GL
+by Mark Overmars -- ftp'able from
+<URL:ftp://ftp.cs.ruu.nl/pub/SGI/FORMS/>).  This is probably also
+becoming obsolete, as OpenGL takes over.
+
+- There's an interface to STDWIN, a platform-independent low-level
+windowing interface for Mac and X11.  This is totally unsupported and
+rapidly becoming obsolete.  The STDWIN sources are at
+<URL:ftp://ftp.cwi.nl/pub/stdwin/>.  (For info about STDWIN 2.0,
+please refer to Steven Pemberton <steven@cwi.nl> -- I believe it is
+also dead.)
+
+- There once was an interface to WAFE, a Tcl interface to the X11
+Motif and Athena widget sets.  WAFE is at
+<URL:ftp://ftp.wu-wien.ac.at/pub/src/X11/wafe/>.  It's not clear what
+the status of the Python support is.
 
 - (The Fresco port that was mentioned in earlier versions of this FAQ
 no longer seems to exist.  Inquire with Mark Linton.)
@@ -1213,7 +1212,7 @@ can prove by looking at the code that this can't happen (e.g. because
 b is a constant or has a type that can never be false), but in general
 this can be a problem.
 
-Steve Majewski (or was it Tim Peters?) suggested the following
+Tim Peters (who wishes it was Steve Majewski) suggested the following
 solution: (a and [b] or [c])[0].  Because [b] is a singleton list it
 is never false, so the wrong path is never taken; then applying [0] to
 the whole thing gets the b or c that you really wanted.  Ugly, but it
@@ -1343,11 +1342,11 @@ alias.  Incidentally, this trick is also handy if you want to decide
 dynamically (e.g. depending on availability of resources) which base
 class to use.  Example:
 
-BaseAlias = <real base class>
-class Derived(BaseAlias):
-        def meth(self):
-                BaseAlias.meth(self)
-                ...
+        BaseAlias = <real base class>
+        class Derived(BaseAlias):
+                def meth(self):
+                        BaseAlias.meth(self)
+                        ...
 
 4.26. Q. How can I find the methods or attributes of an object?
 
@@ -1525,19 +1524,19 @@ XtAddInput() call, which allows you to register a callback function
 which will be called from the Tk mainloop when I/O is possible on a
 file descriptor.  Here's what you need:
 
-	from Tkinter import tkinter
-	tkinter.createfilehandler(file, mask, callback)
+        from Tkinter import tkinter
+        tkinter.createfilehandler(file, mask, callback)
 
 The file may be a Python file or socket object (actually, anything
 with a fileno() method), or an integer file descriptor.  The mask is
 one of the constants tkinter.READABLE or tkinter.WRITABLE.  The
 callback is called as follows:
 
-	callback(file, mask)
+        callback(file, mask)
 
 You must unregister the callback when you're done, using
 
-	tkinter.deletefilehandler(file)
+        tkinter.deletefilehandler(file)
 
 Note: since you don't know *how many bytes* are available for reading,
 you can't use the Python file object's read or readline methods, since
@@ -1656,10 +1655,10 @@ created by the expression l[:].
 
 - For dictionaries, the following function returns a clone:
 
-	def dictclone(o):
-	    n = {}
-	    for k in o.keys(): n[k] = o[k]
-	    return n
+        def dictclone(o):
+            n = {}
+            for k in o.keys(): n[k] = o[k]
+            return n
 
 - Finally, for generic objects, the "copy" module defines two
 functions for copying objects.  copy.copy(x) returns a copy as shown
@@ -1999,8 +1998,8 @@ that a lambda form yields) is assigned!
 6.10. Q. Why don't lambdas have access to variables defined in the
 containing scope?
 
-A. Because they are implemented as ordinary functions.  See question
-4.5 above.
+A. Because they are implemented as ordinary functions.
+See question 4.5 above.
 
 6.11. Q. Why can't recursive functions be defined inside other functions?
 
@@ -2123,58 +2122,43 @@ off-the-shelf technology.
 A. Yes, see the "mac" subdirectory of the distribution sites,
 e.g. <URL:ftp://ftp.python.org/pub/python/mac/>.
 
-7.2. Q. Is there a DOS version of Python?
+7.2. Q. Are there DOS and Windows versions of Python?
 
-A. Yes, see the "pc" subdirectory of the distribution sites,
-e.g. <URL:ftp://ftp.python.org/pub/python/pc/>.
+A. Yes.  There is a plethora of not-always-compatible versions.  See
+the "pythonwin", "wpy", "nt" and "pc" subdirectories of the
+distribution sites.  A quick comparison:
 
-7.3. Q. Is there a Windows 3.1(1) version of Python?
+PythonWin: Extensive support for the 32-bit native Windows API and GUI
+building using MFC.  Windows NT and Windows 95 only (and Windows
+3.1(1) using win32s, until Microsoft stops supporting it :-( ).
+<URL:ftp://ftp.python.org/pub/python/pythonwin/>.
 
-A. Yes, also see the "pc" subdirectory of the distribution sites,
-e.g. <URL:ftp://ftp.python.org/pub/python/pc/>.  You may also be able
-to run either of the Windows NT versions (see next question) if you
-have Microsoft's "win32s".
+WPY: Ports to DOS, Windows 3.1(1), Windows 95, Windows NT and OS/2.
+Also contains a GUI package that offers portability between Windows 
+(not DOS) and Unix, and native look and feel on both.
+<URL:ftp://ftp.python.org/pub/python/wpy/>.
 
-7.4. Q. Is there a Windows NT version of Python?
-
-A. There are two, both sporting DLL support for dynamic loading of
-Python modules, and extensions to access the Win32 GUI API.
-
-Mark Hammond <MHammond@cmutual.com.au> maintains an NT port which
-includes an interface to the Microsoft Foundation Classes and a Python
-programming environment using it that's written mostly in Python.  See
+NT: Basic ports built straight from the 1.4 distribution for Windows
+95 and Windows NT.  This will eventually provide core support for
+both PythonWin and WPY on all 32-bit Microsoft platforms.
 <URL:ftp://ftp.python.org/pub/python/nt/>.
 
-Jim Ahlstrom's WPY portable GUI runs on Windows NT and is modeled
-after the Microsoft Foundation Classes.  Source and binaries are
-available in <URL:ftp://ftp.python.org/pub/python/wpy>.
+PC: Old, unsupported ports to DOS, Windows 3.1(1) and OS/2.
+<URL:ftp://ftp.python.org/pub/python/pc/>.
 
-Sam Rushing <rushing@squirl.oau.org> once announced he knows how to
-build Python for the Windows NT on the DEC Alpha AXP.
+7.3. Q. Is there an OS/2 version of Python?
 
-Note that currently there is no unified compilation environment for
-all NT platforms -- hopefully Microsoft will fix this with the release
-of Visual C++ 2.0.
+A. Yes, see the "pc" and "wpy" subdirectory of the distribution sites
+(see above).
 
-7.5. Q. Is there a Windows 95 version of Python?
-
-A. The Windows NT versions might work, otherwise the Windows 3.1(1)
-version should work (isn't Windows 95 supposed to be backwards
-compatible?).
-
-7.6. Q. Is there an OS/2 version of Python?
-
-A. Yes, also see the "pc" subdirectory of the distribution sites,
-e.g. <URL:ftp://ftp.python.org/pub/python/pc/>.
-
-7.7. Q. Is there a VMS version of Python?
+7.4. Q. Is there a VMS version of Python?
 
 A. Donn Cave <donn@cac.washington.edu> did a partial port.  The
 results of his efforts are on public display in
 <<URL:ftp://ftp.python.org/pub/python/contrib/vms.tar.gz/>.  Someone
 else is working on a more complete port, for details watch the list.
 
-7.8. Q. What about IBM mainframes, or other non-UNIX platforms?
+7.5. Q. What about IBM mainframes, or other non-UNIX platforms?
 
 A. I haven't heard about these, except I remember hearing about an
 OS/9 port and a port to Vxworks (both operating systems for embedded
@@ -2183,12 +2167,12 @@ newsgroup and ask there, you may find exactly what you need.  For
 example, a port to MPE/iX 5.0 on HP3000 computers was just announced,
 see <URL:http://www.allegro.com/software/>.
 
-7.9. Q. Where are the source or Makefiles for the non-UNIX versions?
+7.6. Q. Where are the source or Makefiles for the non-UNIX versions?
 
 A. The standard sources can (almost) be used.  Additional sources can
 be found in the platform-specific subdirectories of the distribution.
 
-7.10. Q. What is the status and support for the non-UNIX versions?
+7.7. Q. What is the status and support for the non-UNIX versions?
 
 A. I don't have access to most of these platforms, so in general I am
 dependent on material submitted by volunteers(*).  However I strive to
@@ -2199,7 +2183,7 @@ version to the various non-UNIX platforms should be easy.
 (*) For the Macintosh, that volunteer is me, with help from Jack
 Jansen <jack@cwi.nl>.
 
-7.11. Q. I have a PC version but it appears to be only a binary.
+7.8. Q. I have a PC version but it appears to be only a binary.
 Where's the library?
 
 A. You still need to copy the files from the distribution directory
@@ -2222,12 +2206,12 @@ as follows (talking to a DOS prompt):
 
         C> SET PYTHONPATH=C:\misc\python\lib
 
-7.12. Q. Where's the documentation for the Mac or PC version?
+7.9. Q. Where's the documentation for the Mac or PC version?
 
 A.  The documentation for the Unix version also applies to the Mac and
 PC versions.  Where applicable, differences are indicated in the text.
 
-7.13. Q. The Mac (PC) version doesn't seem to have any facilities for
+7.10. Q. The Mac (PC) version doesn't seem to have any facilities for
 creating or editing programs apart from entering it interactively, and
 there seems to be no way to save code that was entered interactively.
 How do I create a Python program on the Mac (PC)?
