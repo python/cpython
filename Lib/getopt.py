@@ -31,7 +31,7 @@ option involved with the exception.
 # - a option string with a W followed by semicolon should
 #   treat "-W foo" as "--foo"
 
-__all__ = ["GetoptError","error","getopt"]
+__all__ = ["GetoptError","error","getopt","gnu_getopt"]
 
 import os
 
