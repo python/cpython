@@ -13,21 +13,8 @@
 # 
 # If you have a previous version of Python installed that you don't
 # want to overwrite, you can use "make altinstall" instead of "make
-# install".  This changes the install procedure so it installs the
-# Python binary as "python<version>".  The libraries and include files
-# are always installed in a subdirectory called "python<version>".
-# "make altinstall" does not install the manual page.  If you want to
-# make this installation the "official" installation but want to keep
-# the old binary around "just in case", rename the installed python
-# binary to "python<oldversion>" before running "make install".
-# (This only works between different versions, e.g. 1.3 and 1.4 --
-# different betas of the same version will overwrite each other in
-# installation unless you override the VERSION Make variable.)
-# 
-# In fact, "make install" or "make bininstall" installs the binary
-# as python<version> and makes a hard link to python, so when
-# installing a new version in the future, nothing of the current
-# version will be lost (except for the man page).
+# install".  Refer to the "Installing" section in the README file for
+# additional details.
 # 
 # See also the section "Build instructions" in the README file.
 
