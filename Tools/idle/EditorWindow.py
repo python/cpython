@@ -116,6 +116,7 @@ class EditorWindow:
         self.top.bind("<<close-window>>", self.close_event)
         text.bind("<<center-insert>>", self.center_insert_event)
         text.bind("<<help>>", self.help_dialog)
+        text.bind("<<python-docs>>", self.python_docs)
         text.bind("<<about-idle>>", self.about_dialog)
         text.bind("<<open-module>>", self.open_module)
         text.bind("<<do-nothing>>", lambda event: "break")
@@ -258,18 +259,23 @@ class EditorWindow:
     helpfile = "help.txt"
 
     def help_dialog(self, event=None):
-        helpfile = self.helpfile
-        if not os.path.exists(helpfile):
-            base = os.path.basename(self.helpfile)
-            for dir in sys.path:
-                fullname = os.path.join(dir, base)
-                if os.path.exists(fullname):
-                    helpfile = fullname
-                    break
+        try:
+            helpfile = os.path.join(os.path.dirname(__file__), self.helpfile)
+        except NameError:
+            helpfile = self.helpfile
         if self.flist:
             self.flist.open(helpfile)
         else:
             self.io.loadfile(helpfile)
+
+    # XXX Fix these for Windows
+    help_viewer = "netscape -remote 'openurl(%(url)s)' 2>/dev/null || " \
+                  "netscape %(url)s &"
+    help_url = "http://www.python.org/doc/current/"
+
+    def python_docs(self, event=None):
+        cmd = self.help_viewer % {"url": self.help_url}
+        os.system(cmd)
 
     def select_all(self, event=None):
         self.text.tag_add("sel", "1.0", "end-1c")
