@@ -495,7 +495,11 @@ def test_main(verbose=None):
                       TestDistributions,
                       TestModule]
 
-    if random._urandom is not None:
+    try:
+        random.HardwareRandom().random()
+    except NotImplementedError:
+        pass
+    else:
         testclasses.append(HardwareRandom_TestBasicOps)
 
     test_support.run_unittest(*testclasses)

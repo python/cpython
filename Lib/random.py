@@ -44,6 +44,8 @@ from types import MethodType as _MethodType, BuiltinMethodType as _BuiltinMethod
 from math import log as _log, exp as _exp, pi as _pi, e as _e
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from math import floor as _floor
+from os import urandom as _urandom
+from binascii import hexlify as _hexlify
 
 __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
@@ -58,13 +60,6 @@ LOG4 = _log(4.0)
 SG_MAGICCONST = 1.0 + _log(4.5)
 BPF = 53        # Number of bits in a float
 RECIP_BPF = 2**-BPF
-
-try:
-    from os import urandom as _urandom
-    from binascii import hexlify as _hexlify
-    _urandom(1)                         # verify that urandom is implemented
-except (ImportError, NotImplementedError):
-    _urandom = None
 
 
 # Translated by Guido van Rossum from C source provided by
@@ -111,11 +106,11 @@ class Random(_random.Random):
         """
 
         if a is None:
-            if _urandom is None:
+            try:
+                a = long(_hexlify(_urandom(16)), 16)
+            except NotImplementedError:
                 import time
                 a = long(time.time() * 256) # use fractional seconds
-            else:
-                a = long(_hexlify(_urandom(16)), 16)
 
         super(Random, self).seed(a)
         self.gauss_next = None
@@ -620,11 +615,11 @@ class WichmannHill(Random):
         """
 
         if a is None:
-            if _urandom is None:
+            try:
+                a = long(_hexlify(_urandom(16)), 16)
+            except NotImplementedError:
                 import time
                 a = long(time.time() * 256) # use fractional seconds
-            else:
-                a = long(_hexlify(_urandom(16)), 16)
 
         if not isinstance(a, (int, long)):
             a = hash(a)
@@ -759,14 +754,10 @@ class HardwareRandom(Random):
 
     def random(self):
         """Get the next random number in the range [0.0, 1.0)."""
-        if _urandom is None:
-            raise NotImplementedError('Cannot find hardware entropy source')
         return (long(_hexlify(_urandom(7)), 16) >> 3) * RECIP_BPF
 
     def getrandbits(self, k):
         """getrandbits(k) -> x.  Generates a long int with k random bits."""
-        if _urandom is None:
-            raise NotImplementedError('Cannot find hardware entropy source')
         if k <= 0:
             raise ValueError('number of bits must be greater than zero')
         if k != int(k):
