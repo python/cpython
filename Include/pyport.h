@@ -384,9 +384,19 @@ extern int fsync(int fd);
 extern double hypot(double, double);
 #endif
 
+#ifndef __CYGWIN__
 #ifndef DL_IMPORT       /* declarations for DLL import */
 #define DL_IMPORT(RTYPE) RTYPE
 #endif
+#else /* __CYGWIN__ */
+#ifdef USE_DL_IMPORT
+#define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
+#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+#else /* !USE_DL_IMPORT */
+#define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
+#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+#endif /* USE_DL_IMPORT */
+#endif /* __CYGWIN__ */
 
 /* If the fd manipulation macros aren't defined,
    here is a set that should do the job */

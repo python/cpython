@@ -22,12 +22,13 @@
 
 #include "patchlevel.h"
 #include "pyconfig.h"
+#include "pyport.h"
 
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
 
-/* pyconfig.h may or may not define DL_IMPORT */
+/* pyconfig.h or pyport.h may or may not define DL_IMPORT */
 #ifndef DL_IMPORT	/* declarations for DLL import/export */
 #define DL_IMPORT(RTYPE) RTYPE
 #endif
@@ -58,8 +59,6 @@
  * assert() calls won't be removed.
  */
 #include <assert.h>
-
-#include "pyport.h"
 
 /* Debug-mode build with pymalloc implies PYMALLOC_DEBUG.
  *  PYMALLOC_DEBUG is in error if pymalloc is not in use.
