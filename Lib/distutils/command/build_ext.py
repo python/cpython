@@ -367,11 +367,12 @@ class build_ext (Command):
 	    else:
         	self.announce ("building '%s' extension" % ext.name)
 
-            # First step: compile the source code to object files.  This
-            # drops the object files in the current directory, regardless
-            # of where the source is (may be a bad thing, but that's how a
-            # Makefile.pre.in-based system does it, so at least there's a
-            # precedent!)
+            # First, scan the sources for SWIG definition files (.i), run
+            # SWIG on 'em to create .c files, and modify the sources list
+            # accordingly.
+            sources = self.swig_sources(sources)
+
+            # Next, compile the source code to object files.
 
             # XXX not honouring 'define_macros' or 'undef_macros' -- the
             # CCompiler API needs to change to accomodate this, and I
@@ -428,6 +429,74 @@ class build_ext (Command):
 
     # build_extensions ()
 
+
+    def swig_sources (self, sources):
+
+        """Walk the list of source files in 'sources', looking for SWIG
+        interface (.i) files.  Run SWIG on all that are found, and
+        return a modified 'sources' list with SWIG source files replaced
+        by the generated C (or C++) files.
+        """
+
+        new_sources = []
+        swig_sources = []
+        swig_targets = {}
+
+        # XXX this drops generated C files into the source tree, which
+        # is fine for developers who want to distribute the generated
+        # source -- but there should be an option to put SWIG output in
+        # the temp dir.
+
+        for source in sources:
+            (base, ext) = os.path.splitext(source)
+            if ext in self.swig_ext():
+                new_sources.append(base + ".c") # umm, what if it's C++?
+                swig_files.append(source)
+                swig_targets[source] = new_sources[-1]
+            else:
+                new_sources.append(source)
+
+        if not swig_files:
+            return new_sources
+
+        swig = self.find_swig()
+        swig_cmd = [swig, "-python", "-dnone", "-ISWIG"] # again, C++?!?
+
+        for source in swig_sources:
+            self.announce ("swigging %s to %s" % (src, obj))
+            self.spawn(swig_cmd + ["-o", swig_targets[source], source])
+
+        return new_sources
+
+    # swig_sources ()
+
+    def find_swig (self):
+        """Return the name of the SWIG executable.  On Unix, this is
+        just "swig" -- it should be in the PATH.  Tries a bit harder on
+        Windows.
+        """
+
+        if os.name == "posix":
+            return "swig"
+        elif os.name == "nt":
+
+            # Look for SWIG in its standard installation directory on
+            # Windows (or so I presume!).  If we find it there, great;
+            # if not, act like Unix and assume it's in the PATH.
+            for vers in ("1.3", "1.2", "1.1"):
+                fn = os.path.join("c:\\swig%s" % vers, "swig.exe")
+                if os.path.isfile (fn):
+                    return fn
+            else:
+                return "swig.exe"
+
+        else:
+            raise DistutilsPlatformError, \
+                  ("I don't know how to find (much less run) SWIG "
+                   "on platform '%s'") % os.name
+
+    # find_swig ()
+    
 
     # -- Hooks ---------------------------------------------------------
 
