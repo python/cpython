@@ -259,6 +259,7 @@ distclean:	clobber
 		-$(MAKE) -f $(srcdir)/Makefile.in \
 			SUBDIRS="$(SUBDIRSTOO)" clobber
 		-rm -f config.status config.log config.cache config.h Makefile
+		-rm -f Modules/Makefile
 		-for i in $(SUBDIRS) $(SUBDIRSTOO); do \
 			 for f in $$i/*.in; do \
 				f=`basename "$$f" .in`; \
