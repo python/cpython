@@ -14,8 +14,6 @@
 #define USE_MACSPEECH		/* Include macspeech module in core Python */
 #define USE_IMG	       		/* Include img modules in core Python */
 #define USE_MACCTB		/* Include ctb module in core Python */
-/* #define USE_STDWIN		/* Include stdwin module in core Python */
-/* #define USE_MACTCP		/* Include mactcp (*not* socket) modules in core */
 #define USE_TK			/* Include _tkinter module in core Python */
 #define MAC_TCL			/* This *must* be on if USE_TK is on */
 /* #define USE_MAC_SHARED_LIBRARY	/* Enable code to add shared-library resources */
