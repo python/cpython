@@ -313,7 +313,7 @@ newgenericobject(generic, methods)
 /* void func (object, float) */
 static object *
 call_forms_INf (func, obj, args)
-	void *(*func)(FL_OBJECT *, float);
+	void (*func)(FL_OBJECT *, float);
 	FL_OBJECT *obj;
 	object *args;
 {
@@ -330,7 +330,7 @@ call_forms_INf (func, obj, args)
 /* void func (object, float) */
 static object *
 call_forms_INfINf (func, obj, args)
-	void *(*func)(FL_OBJECT *, float, float);
+	void (*func)(FL_OBJECT *, float, float);
 	FL_OBJECT *obj;
 	object *args;
 {
@@ -347,7 +347,7 @@ call_forms_INfINf (func, obj, args)
 /* void func (object, int) */
 static object *
 call_forms_INi (func, obj, args)
-	void *(*func)(FL_OBJECT *, int);
+	void (*func)(FL_OBJECT *, int);
 	FL_OBJECT *obj;
 	object *args;
 {
@@ -364,7 +364,7 @@ call_forms_INi (func, obj, args)
 /* void func (object, string) */
 static object *
 call_forms_INstr (func, obj, args)
-	void *(*func)(FL_OBJECT *, char *);
+	void (*func)(FL_OBJECT *, char *);
 	FL_OBJECT *obj;
 	object *args;
 {  
@@ -382,7 +382,7 @@ call_forms_INstr (func, obj, args)
 /* voide func (object, int, string) */
 static object *
 call_forms_INiINstr (func, obj, args)
-	void *(*func)(FL_OBJECT *, int, char *);
+	void (*func)(FL_OBJECT *, int, char *);
 	FL_OBJECT *obj;
 	object *args;
 {
@@ -401,7 +401,7 @@ call_forms_INiINstr (func, obj, args)
 /* void func (object, float) */
 static object *
 call_forms_INiINi (func, obj, args)
-	void *(*func)(FL_OBJECT *, float, float);
+	void (*func)(FL_OBJECT *, float, float);
 	FL_OBJECT *obj;
 	object *args;
 {
@@ -466,7 +466,7 @@ call_forms_Rf (func, obj, args)
 
 static object *
 call_forms_OUTfOUTf (func, obj, args)
-	void *(*func)(FL_OBJECT *, float *, float *);
+	void (*func)(FL_OBJECT *, float *, float *);
 	FL_OBJECT *obj;
 	object *args;
 {
@@ -488,7 +488,7 @@ call_forms_OUTfOUTf (func, obj, args)
 #ifdef UNUSED
 static object *
 call_forms_OUTf (func, obj, args)
-        void *(*func)(FL_OBJECT *, float *);
+        void (*func)(FL_OBJECT *, float *);
 	FL_OBJECT *obj;
 	object *args;
 {
@@ -584,6 +584,8 @@ load_browser (g, args)
 	genericobject *g;
 	object *args;
 {
+	/* XXX strictly speaking this is wrong since fl_load_browser
+	   XXX returns int, not void */
 	return call_forms_INstr (fl_load_browser, g-> ob_generic, args);
 }
 
@@ -1000,7 +1002,7 @@ set_menu (g, args)
 	genericobject *g;
 	object *args;
 {
-  return call_forms_INstr (fl_set_menu, g-> ob_generic, args);
+	return call_forms_INstr (fl_set_menu, g-> ob_generic, args);
 }
 
 static object *
@@ -1008,7 +1010,9 @@ get_menu (g, args)
 	genericobject *g;
 	object *args;
 {
-  return call_forms_Ri (fl_get_menu, g-> ob_generic, args);
+	/* XXX strictly speaking this is wrong since fl_get_menu
+	   XXX returns long, not int */
+	return call_forms_Ri (fl_get_menu, g-> ob_generic, args);
 }
 
 static object *
@@ -1016,7 +1020,7 @@ addto_menu (g, args)
 	genericobject *g;
 	object *args;
 {
-  return call_forms_INstr (fl_addto_menu, g-> ob_generic, args);
+	return call_forms_INstr (fl_addto_menu, g-> ob_generic, args);
 }
 
 static struct methodlist menu_methods[] = {
@@ -1301,20 +1305,20 @@ generic_add_object (f, args, func, internal_methods)
   int type;
   float x, y, w, h;
   object *name;
-  FL_OBJECT *genobj;
+  FL_OBJECT *obj;
 
   if (!getintfloatfloatfloatfloatstrarg (args,&type,&x,&y,&w,&h,&name))
     return NULL;
   
   fl_addto_form (f-> ob_form);
   
-  genobj = (*func) (type, x, y, w, h, getstringvalue (name));
+  obj = (*func) (type, x, y, w, h, getstringvalue (name));
 
   fl_end_form ();
 
-  if (genobj == NULL) { err_nomem(); return NULL; }
+  if (obj == NULL) { err_nomem(); return NULL; }
 
-  return newgenericobject (genobj, internal_methods);
+  return newgenericobject (obj, internal_methods);
 }
 
 static object *
@@ -1746,7 +1750,7 @@ forms_do_or_check_forms(dummy, args, func)
 		}
 		arg = newtupleobject(2);
 		INCREF(g);
-		settupleitem(arg, 0, g);
+		settupleitem(arg, 0, (object *)g);
 		INCREF(g->ob_callback_arg);
 		settupleitem(arg, 1, g->ob_callback_arg);
 		res = call_object(g->ob_callback, arg);
