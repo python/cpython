@@ -1177,7 +1177,7 @@ def identify(str):
     """Turn any string into an identifier:
     - replace space by _
     - replace other illegal chars by _xx_ (hex code)
-    - prepend _ if the result is a python keyword
+    - append _ if the result is a python keyword
     """
     if not str:
         return "empty_ae_name_"
