@@ -2369,10 +2369,7 @@ static PyMethodDef _functions[] = {
     {NULL, NULL}
 };
 
-void
-#if defined(WIN32)
-__declspec(dllexport)
-#endif
+DL_EXPORT(void)
 init_sre(void)
 {
     PyObject* m;
