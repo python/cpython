@@ -148,7 +148,7 @@ def get_build_version():
     i = string.find(sys.version, prefix)
     if i == -1:
         return 6
-    i += len(prefix)
+    i = i + len(prefix)
     s, rest = sys.version[i:].split(" ", 1)
     n = int(s[:-2])
     if n == 12:
