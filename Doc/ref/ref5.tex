@@ -740,14 +740,35 @@ execution of a program.
 
 \end{itemize}
 
-The operators \keyword{in} and \keyword{not in} test for sequence
-membership: if \var{y} is a sequence, \code{\var{x} in \var{y}} is
-true if and only if there exists an index \var{i} such that
-\code{\var{x} = \var{y}[\var{i}]}.
-\code{\var{x} not in \var{y}} yields the inverse truth value.  The
-exception \exception{TypeError} is raised when \var{y} is not a sequence,
-or when \var{y} is a string and \var{x} is not a string of length
-one.\footnote{The latter restriction is sometimes a nuisance.}
+The operators \keyword{in} and \keyword{not in} test for set
+membership: every type can define membership in whatever way is
+appropriate.  Traditionally, this interface has been tightly bound
+the sequence interface, which is related in that presence in a sequence
+can be usefully interpreted as membership in a set.
+
+For the list, tuple types, \code{\var{x} in \var{y}} is true if and only
+if there exists such an index \var{i} such that
+\code{var{x} == \var{y}[\var{i}]} is true.
+
+For the Unicode and string types, \code{\var{x} in \var{y}} is true if and only
+if there exists such an index \var{i} such that
+\code{var{x} == \var{y}[\var{i}]} is true. If \code{\var{x}} is not
+a string of length \code{1} or a unicode object of length \code{1},
+a \exception{TypeError} exception is raised.
+
+For user-defined classes which define the \method{__contains__()} method,
+\code{\var{x} in \var{y}} is true if and only if
+\code{\var{y}.__contains__(\var{x})} is true.
+
+For user-defined classes which do not define \method{__contains__()} and
+do define \var{__getitem__}, \code{\var{x} in \var{y}} is true if and only
+if there is a non-negative integer index \var{i} such that
+\code{\var{x} == \var{y}[\var{i}]}, and all lower integer indices
+do not raise \exception{IndexError} exception. (If any other exception
+is raised, it is as if \keyword{in} raised that exception).
+
+The operator \keyword{not in} is defined to have the inverse true value
+of \keyword{in}.
 \opindex{in}
 \opindex{not in}
 \indexii{membership}{test}
