@@ -27,3 +27,4 @@ CVS
 Makefile*
 Setup.in
 [(]*[)]
+.cvsignore
