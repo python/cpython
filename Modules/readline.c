@@ -304,11 +304,9 @@ py_remove_history(PyObject *self, PyObject *args)
                 return NULL;
         entry = remove_history(entry_number);
         if (!entry) {
-                char buf[80];
-                PyOS_snprintf(buf, sizeof(buf),
-                              "No history item at position %i",
-                              entry_number);
-                PyErr_SetString(PyExc_ValueError, buf);
+                PyErr_Format(PyExc_ValueError,
+                             "No history item at position %d",
+                             entry_number);
                 return NULL;
         }
         /* free memory allocated for the history entry */
@@ -323,7 +321,7 @@ py_remove_history(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(doc_remove_history,
-"remove_history(pos) -> None\n\
+"remove_history_item(pos) -> None\n\
 remove history item given by its position");
 
 static PyObject *
@@ -338,11 +336,9 @@ py_replace_history(PyObject *self, PyObject *args)
         }
         old_entry = replace_history_entry(entry_number, line, (void *)NULL);
         if (!old_entry) {
-                char buf[80];
-                PyOS_snprintf(buf, sizeof(buf),
-                              "No history item at position %i",
-                              entry_number);
-                PyErr_SetString(PyExc_ValueError, buf);
+                PyErr_Format(PyExc_ValueError,
+                             "No history item at position %d",
+                             entry_number);
                 return NULL;
         }
         /* free memory allocated for the old history entry */
@@ -357,7 +353,7 @@ py_replace_history(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(doc_replace_history,
-"replace_history(pos, line) -> None\n\
+"replace_history_item(pos, line) -> None\n\
 replaces history item given by its position with contents of line");
 
 /* Add a line to the history buffer */
