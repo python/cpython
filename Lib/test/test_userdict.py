@@ -81,12 +81,15 @@ verify(u2.keys() == d2.keys())
 verify(u2.items() == d2.items())
 verify(u2.values() == d2.values())
 
-# Test has_key
+# Test has_key and "in".
 
 for i in u2.keys():
     verify(u2.has_key(i) == 1)
+    verify((i in u2) == 1)
     verify(u1.has_key(i) == d1.has_key(i))
+    verify((i in u1) == (i in d1))
     verify(u0.has_key(i) == d0.has_key(i))
+    verify((i in u0) == (i in d0))
 
 # Test update
 
@@ -100,3 +103,14 @@ for i in u2.keys():
     verify(u2.get(i) == u2[i])
     verify(u1.get(i) == d1.get(i))
     verify(u0.get(i) == d0.get(i))
+
+# Test "in" iteration.
+for i in xrange(20):
+    u2[i] = str(i)
+ikeys = []
+for k in u2:
+    ikeys.append(k)
+ikeys.sort()
+keys = u2.keys()
+keys.sort()
+verify(ikeys == keys)
