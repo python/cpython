@@ -102,7 +102,8 @@ class instances are callable if they have a \method{__call__()} method.
   Return a string of one character whose \ASCII{} code is the integer
   \var{i}, e.g., \code{chr(97)} returns the string \code{'a'}.  This is the
   inverse of \function{ord()}.  The argument must be in the range [0..255],
-  inclusive.
+  inclusive; \exception{ValueError} will be raised if \var{i} is
+  outside that range.
 \end{funcdesc}
 
 \begin{funcdesc}{cmp}{x, y}
