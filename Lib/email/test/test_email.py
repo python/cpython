@@ -484,21 +484,21 @@ class TestEncoders(unittest.TestCase):
     def test_encode_noop(self):
         eq = self.assertEqual
         msg = MIMEText('hello world', _encoder=Encoders.encode_noop)
-        eq(msg.get_payload(), 'hello world\n')
+        eq(msg.get_payload(), 'hello world')
 
     def test_encode_7bit(self):
         eq = self.assertEqual
         msg = MIMEText('hello world', _encoder=Encoders.encode_7or8bit)
-        eq(msg.get_payload(), 'hello world\n')
+        eq(msg.get_payload(), 'hello world')
         eq(msg['content-transfer-encoding'], '7bit')
         msg = MIMEText('hello \x7f world', _encoder=Encoders.encode_7or8bit)
-        eq(msg.get_payload(), 'hello \x7f world\n')
+        eq(msg.get_payload(), 'hello \x7f world')
         eq(msg['content-transfer-encoding'], '7bit')
 
     def test_encode_8bit(self):
         eq = self.assertEqual
         msg = MIMEText('hello \x80 world', _encoder=Encoders.encode_7or8bit)
-        eq(msg.get_payload(), 'hello \x80 world\n')
+        eq(msg.get_payload(), 'hello \x80 world')
         eq(msg['content-transfer-encoding'], '8bit')
 
     def test_encode_empty_payload(self):
@@ -510,13 +510,13 @@ class TestEncoders(unittest.TestCase):
     def test_encode_base64(self):
         eq = self.assertEqual
         msg = MIMEText('hello world', _encoder=Encoders.encode_base64)
-        eq(msg.get_payload(), 'aGVsbG8gd29ybGQK\n')
+        eq(msg.get_payload(), 'aGVsbG8gd29ybGQ=')
         eq(msg['content-transfer-encoding'], 'base64')
 
     def test_encode_quoted_printable(self):
         eq = self.assertEqual
         msg = MIMEText('hello world', _encoder=Encoders.encode_quopri)
-        eq(msg.get_payload(), 'hello=20world\n')
+        eq(msg.get_payload(), 'hello=20world')
         eq(msg['content-transfer-encoding'], 'quoted-printable')
 
     def test_default_cte(self):
@@ -1005,7 +1005,7 @@ class TestMIMEText(unittest.TestCase):
                is missing)
 
     def test_payload(self):
-        self.assertEqual(self._msg.get_payload(), 'hello there\n')
+        self.assertEqual(self._msg.get_payload(), 'hello there')
         self.failUnless(not self._msg.is_multipart())
 
     def test_charset(self):
@@ -1123,7 +1123,6 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 
 hello world
-
 --BOUNDARY--
 ''')
 
@@ -1151,7 +1150,6 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 
 hello world
-
 --BOUNDARY--
 ''')
 
@@ -1471,14 +1469,12 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 
 One
-
 --BOUNDARY
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 
 Two
-
 --BOUNDARY--
 """)
 
