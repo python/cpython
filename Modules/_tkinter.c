@@ -2045,6 +2045,12 @@ init_tkinter()
 	Tktt_Type.ob_type = &PyType_Type;
 	PyDict_SetItemString(d, "TkttType", (PyObject *)&Tktt_Type);
 
+#if TKMAJORMINOR >= 8000
+	/* This helps the dynamic loader; in Unicode aware Tcl versions
+	   it also helps Tcl find its encodings. */
+	Tcl_FindExecutable(Py_GetProgramName());
+#endif
+
 	if (PyErr_Occurred())
 		return;
 
