@@ -1,0 +1,56 @@
+\section{\module{sha} ---
+         SHA message digest algorithm}
+
+\declaremodule{builtin}{sha}
+\modulesynopsis{NIST's secure hash algorithm, SHA.}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+
+
+This module implements the interface to NIST's\index{NIST} secure hash 
+algorithm,\index{Secure Hash Algorithm} known as SHA.  It is used in
+the same way as the \refmodule{md5} module:\ use the \function{new()}
+to create an sha object, then feed this object with arbitrary strings
+using the \method{update()} method, and at any point you can ask it
+for the \dfn{digest} of the contatenation of the strings fed to it
+so far.\index{checksum!SHA}  SHA digests are 160 bits instead of 128
+bits.
+
+
+\begin{funcdesc}{new}{\optional{string}}
+  Return a new sha object.  If \var{string} is present, the method
+  call \code{update(\var{string})} is made.
+\end{funcdesc}
+
+
+The following values are provided as constants in the module and as
+attributes of the sha objects returned by \function{new()}:
+
+\begin{datadesc}{blocksize}
+  Size of the blocks fed into the hash function; this is always
+  \code{1}.  This size is used to allow an arbitrary string to be
+  hashed.
+\end{datadesc}
+
+\begin{datadesc}{digestsize}
+  The size of the resulting digest in bytes.  This is always
+  \code{20}.
+\end{datadesc}
+
+
+A sha object has all the methods the md5 objects have, plus one:
+
+\begin{methoddesc}[sha]{hexdigest}{}
+  Return the digest value as a string of hexadecimal digits.  This may 
+  be used to exchange the value safely in email or other non-binary
+  environments.
+\end{methoddesc}
+
+
+\begin{seealso}
+  \seetext{The Secure Hash Algorithm is defined by NIST document FIPS
+           PUB 180-1: \emph{Secure Hash Standard}, published in April
+           of 1995.  It is available online as plain text at
+           \url{http://csrc.nist.gov/fips/fip180-1.txt} (at least one
+           diagram was omitted) and as PostScript at
+           \url{http://csrc.nist.gov/fips/fip180-1.ps}.}
+\end{seealso}
