@@ -15,7 +15,7 @@ from os import popen
 # This results in Python being spawned and printing the sys.argv list.
 # We can then eval() the result of this, and see what each argv was.
 def _do_test_commandline(cmdline, expected):
-    cmd = 'python -c "import sys;print sys.argv" %s' % (cmdline,)
+    cmd = '%s -c "import sys;print sys.argv" %s' % (sys.executable, cmdline)
     data = popen(cmd).read()
     got = eval(data)[1:] # strip off argv[0]
     if got != expected:
