@@ -320,7 +320,7 @@ Schemenauer, with fixes from the Python Labs crew.}
 Python's Unicode support has been enhanced a bit in 2.2.  Unicode
 strings are usually stored as UCS-2, as 16-bit unsigned integers.
 Python 2.2 can also be compiled to use UCS-4, 32-bit unsigned integers
-by supplying \verb|--enable-unicode=ucs4| to the configure script.
+by supplying \longprogramopt{enable-unicode=ucs4} to the configure script.
 
 XXX explain surrogates?  I have to figure out what the changes mean to users.
 
@@ -497,7 +497,7 @@ items = s.meerkat.getItems( {'channel': 4} )
 See \url{http://www.xmlrpc.com} for more information about XML-RPC.
 
   \item The \module{socket} module can be compiled to support IPv6;
-  specify the \code|--enable-ipv6| option to Python's configure
+  specify the \longprogramopt{enable-ipv6} option to Python's configure
   script.  (Contributed by Jun-ichiro ``itojun'' Hagino.)
 
   \item Two new format characters were added to the \module{struct}
