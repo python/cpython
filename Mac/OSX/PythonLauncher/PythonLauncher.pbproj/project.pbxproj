@@ -288,6 +288,7 @@
 			buildSettings = {
 				FRAMEWORK_SEARCH_PATHS = "";
 				HEADER_SEARCH_PATHS = "";
+				INSTALL_MODE_FLAG = "a+rX";
 				INSTALL_PATH = /Applications/Python;
 				LIBRARY_SEARCH_PATHS = "";
 				OTHER_LDFLAGS = "";
