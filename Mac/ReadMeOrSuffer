@@ -74,6 +74,8 @@ PPC users have a couple of applets in the main folder they may want to try,
 
 - EditPythonPrefs allows you to edit the preferences file, to change the
   python home folder or modify the initial sys.path setting.
+  The default settings are "liberal", you can remove stdwin and tkinter if
+  you don't use them, and Mac:Lib:... if you don't have a source distribution.
 - RunLibScript allows you to run any script as __main__ after setting arguments,
   changing stdin/stdout/workdir, etc.
 - For PPC only, mkapplet creates a python applet, a tiny application written
