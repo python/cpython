@@ -745,13 +745,28 @@ PyErr_Print()
 			/* Don't do anything else */
 		}
 		else if (PyClass_Check(exception)) {
-			PyObject* className =
-				((PyClassObject*)exception)->cl_name;
-			if (className == NULL)
+			PyClassObject* exc = (PyClassObject*)exception;
+			PyObject* className = exc->cl_name;
+			PyObject* moduleName =
+			      PyDict_GetItemString(exc->cl_dict, "__module__");
+
+			if (moduleName == NULL)
 				err = PyFile_WriteString("<unknown>", f);
-			else
-				err = PyFile_WriteObject(className, f,
-							 Py_PRINT_RAW);
+			else {
+				char* modstr = PyString_AsString(moduleName);
+				if (modstr && strcmp(modstr, "exceptions")) 
+				{
+					err = PyFile_WriteString(modstr, f);
+					err += PyFile_WriteString(".", f);
+				}
+			}
+			if (err == 0) {
+				if (className == NULL)
+				      err = PyFile_WriteString("<unknown>", f);
+				else
+				      err = PyFile_WriteObject(className, f,
+							       Py_PRINT_RAW);
+			}
 		}
 		else
 			err = PyFile_WriteObject(exception, f, Py_PRINT_RAW);
