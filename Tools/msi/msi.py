@@ -22,6 +22,8 @@ srcdir = os.path.abspath("../..")
 # goes into file name and ProductCode. Defaults to
 # current_version.day for Snapshot, current_version otherwise
 full_current_version = None
+# Is Tcl available at all?
+have_tcl = True
 
 try:
     from config import *
@@ -762,7 +764,8 @@ def add_features(db):
     ext_feature = Feature(db, "Extensions", "Register Extensions",
                           "Make this Python installation the default Python installation", 3,
                          parent = default_feature)
-    tcltk = Feature(db, "TclTk", "Tcl/Tk", "Tkinter, IDLE, pydoc", 5,
+    if have_tcl:
+        tcltk = Feature(db, "TclTk", "Tcl/Tk", "Tkinter, IDLE, pydoc", 5,
                     parent = default_feature, attributes=2)
     htmlfiles = Feature(db, "Documentation", "Documentation",
                         "Python HTMLHelp File", 7, parent = default_feature)
@@ -811,7 +814,8 @@ def add_files(db):
     # Add all executables, icons, text files into the TARGETDIR component
     root = PyDirectory(db, cab, None, srcdir, "TARGETDIR", "SourceDir")
     default_feature.set_current()
-    root.add_file("PCBuild/w9xpopen.exe")
+    if not msilib.Win64:
+        root.add_file("PCBuild/w9xpopen.exe")
     root.add_file("PC/py.ico")
     root.add_file("PC/pyc.ico")
     root.add_file("README.txt", src="README")
@@ -851,6 +855,8 @@ def add_files(db):
         if dir == "CVS" or dir.startswith("plat-"):
             continue
         elif dir in ["lib-tk", "idlelib", "Icons"]:
+            if not have_tcl:
+                continue
             tcltk.set_current()
         elif dir in ['test', 'output']:
             testsuite.set_current()
@@ -913,15 +919,16 @@ def add_files(db):
             continue
         dlls.append(f)
         lib.add_file(f)
-    if not os.path.exists(srcdir+"/PCBuild/_tkinter.pyd"):
-        print "WARNING: Missing _tkinter.pyd"
-    else:
-        lib.start_component("TkDLLs", tcltk)
-        lib.add_file("_tkinter.pyd")
-        dlls.append("_tkinter.pyd")
-        tcldir = os.path.normpath(srcdir+"/../tcltk/bin")
-        for f in glob.glob1(tcldir, "*.dll"):
-            lib.add_file(f, src=os.path.join(tcldir, f))
+    if have_tcl:
+        if not os.path.exists(srcdir+"/PCBuild/_tkinter.pyd"):
+            print "WARNING: Missing _tkinter.pyd"
+        else:
+            lib.start_component("TkDLLs", tcltk)
+            lib.add_file("_tkinter.pyd")
+            dlls.append("_tkinter.pyd")
+            tcldir = os.path.normpath(srcdir+"/../tcltk/bin")
+            for f in glob.glob1(tcldir, "*.dll"):
+                lib.add_file(f, src=os.path.join(tcldir, f))
     # check whether there are any unknown extensions
     for f in glob.glob1(srcdir+"/PCBuild", "*.pyd"):
         if f.endswith("_d.pyd"): continue # debug version
@@ -938,19 +945,20 @@ def add_files(db):
     for f in dlls:
         lib.add_file(f.replace('pyd','lib'))
     lib.add_file('python%s%s.lib' % (major, minor))
-    # Add Tcl/Tk
-    tcldirs = [(root, '../tcltk/lib', 'tcl')]
-    tcltk.set_current()
-    while tcldirs:
-        parent, phys, dir = tcldirs.pop()
-        lib = PyDirectory(db, cab, parent, phys, dir, "%s|%s" % (parent.make_short(dir), dir))
-        if not os.path.exists(lib.absolute):
-            continue
-        for f in os.listdir(lib.absolute):
-            if os.path.isdir(os.path.join(lib.absolute, f)):
-                tcldirs.append((lib, f, f))
-            else:
-                lib.add_file(f)
+    if have_tcl:
+        # Add Tcl/Tk
+        tcldirs = [(root, '../tcltk/lib', 'tcl')]
+        tcltk.set_current()
+        while tcldirs:
+            parent, phys, dir = tcldirs.pop()
+            lib = PyDirectory(db, cab, parent, phys, dir, "%s|%s" % (parent.make_short(dir), dir))
+            if not os.path.exists(lib.absolute):
+                continue
+            for f in os.listdir(lib.absolute):
+                if os.path.isdir(os.path.join(lib.absolute, f)):
+                    tcldirs.append((lib, f, f))
+                else:
+                    lib.add_file(f)
     # Add tools
     tools.set_current()
     tooldir = PyDirectory(db, cab, root, "Tools", "Tools", "TOOLS|Tools")
@@ -965,8 +973,9 @@ def add_files(db):
             x.glob("*.txt")
         if f == 'Scripts':
             lib.add_file("README.txt", src="README")
-            lib.start_component("pydocgui.pyw", tcltk, keyfile="pydocgui.pyw")
-            lib.add_file("pydocgui.pyw")
+            if have_tcl:
+                lib.start_component("pydocgui.pyw", tcltk, keyfile="pydocgui.pyw")
+                lib.add_file("pydocgui.pyw")
     # Add documentation
     htmlfiles.set_current()
     lib = PyDirectory(db, cab, root, "Doc", "Doc", "DOC|Doc")
@@ -984,25 +993,32 @@ def add_registry(db):
     # IDLE verbs depend on the tcltk feature.
     # msidbComponentAttributesRegistryKeyPath = 4
     # -1 for Root specifies "dependent on ALLUSERS property"
+    tcldata = []
+    if have_tcl:
+        tcldata = [
+            ("REGISTRY.tcl", msilib.gen_uuid(), "TARGETDIR", 4,
+               "&%s <> 2" % ext_feature.id, "py.IDLE")]
     add_data(db, "Component",
              # msidbComponentAttributesRegistryKeyPath = 4
              [("REGISTRY", msilib.gen_uuid(), "TARGETDIR", 4, None,
                "InstallPath"),
               ("REGISTRY.def", msilib.gen_uuid(), "TARGETDIR", 4,
-               None, None),
-              ("REGISTRY.tcl", msilib.gen_uuid(), "TARGETDIR", 4,
-               "&%s <> 2" % ext_feature.id, "py.IDLE")])
+               None, None)] + tcldata)
     # See "FeatureComponents Table".
     # The association between TclTk and pythonw.exe is necessary to make ICE59
     # happy, because the installer otherwise believes that the IDLE and PyDoc
     # shortcuts might get installed without pythonw.exe being install. This
     # is not true, since installing TclTk will install the default feature, which
     # will cause pythonw.exe to be installed.
+    tcldata = []
+    if have_tcl:
+        tcltkdata = [(tcltk.id, "REGISTRY.tcl"),
+                     (tcltk.id, "pythonw.exe")]
     add_data(db, "FeatureComponents",
              [(default_feature.id, "REGISTRY"),
-              (ext_feature.id, "REGISTRY.def"),
-              (tcltk.id, "REGISTRY.tcl"),
-              (tcltk.id, "pythonw.exe")])
+              (ext_feature.id, "REGISTRY.def")] +
+              tcldata
+              )
 
     pat = r"Software\Classes\%sPython.%sFile\shell\%s\command"
     ewi = "Edit with IDLE"
@@ -1028,7 +1044,8 @@ def add_registry(db):
     # Non-advertised verbs: for advertised verbs, we would need to invoke the same
     # executable for both open and "Edit with IDLE". This cannot work, as we want
     # to use pythonw.exe in either case
-    add_data(db, "Registry",
+    if have_tcl:
+        add_data(db, "Registry",
             [#Verbs
              ("py.IDLE", -1, pat % (testprefix, "", ewi), "",
               r'"[TARGETDIR]pythonw.exe" "[TARGETDIR]Lib\idlelib\idle.pyw" -n -e "%1"',
@@ -1058,12 +1075,17 @@ def add_registry(db):
               ("MenuDir", "ProgramMenuFolder", "PY%s%s|%sPython %s.%s" % (major,minor,testprefix,major,minor))])
     add_data(db, "RemoveFile",
              [("MenuDir", "TARGETDIR", None, "MenuDir", 2)])
-    add_data(db, "Shortcut",
-             [# Advertised shortcuts: targets are features, not files
+    tcltkshortcuts = []
+    if have_tcl:
+        tcltkshortcuts = [
               ("IDLE", "MenuDir", "IDLE|IDLE (Python GUI)", "pythonw.exe",
                tcltk.id, r"[TARGETDIR]Lib\idlelib\idle.pyw", None, None, "python_icon.exe", 0, None, "TARGETDIR"),
               ("PyDoc", "MenuDir", "MODDOCS|Module Docs", "pythonw.exe",
                tcltk.id, r"[TARGETDIR]Tools\scripts\pydocgui.pyw", None, None, "python_icon.exe", 0, None, "TARGETDIR"),
+              ]
+    add_data(db, "Shortcut",
+             tcltkshortcuts +
+             [# Advertised shortcuts: targets are features, not files
               ("Python", "MenuDir", "PYTHON|Python (command line)", "python.exe",
                default_feature.id, None, None, None, "python_icon.exe", 2, None, "TARGETDIR"),
               ("Manual", "MenuDir", "MANUAL|Python Manuals", "documentation",
