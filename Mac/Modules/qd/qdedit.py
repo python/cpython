@@ -1,5 +1,5 @@
 f = Function(void, 'SetPort',
-	(WindowPtr, 'thePort', InMode),
+	(GrafPtr, 'thePort', InMode),
 )
 functions.append(f)
 
