@@ -106,6 +106,7 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 			"file() constructor not accessible in restricted mode");
 		return NULL;
 	}
+	errno = 0;
 #ifdef HAVE_FOPENRF
 	if (*mode == '*') {
 		FILE *fopenRF();
