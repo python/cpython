@@ -182,7 +182,7 @@ class _posixfile_:
                             'freebsd6', 'bsdos2', 'bsdos3', 'bsdos4'):
             flock = struct.pack('lxxxxlxxxxlhh', \
                   l_start, l_len, os.getpid(), l_type, l_whence)
-        elif sys.platform in ['aix3', 'aix4']:
+        elif sys.platform in ('aix3', 'aix4'):
             flock = struct.pack('hhlllii', \
                   l_type, l_whence, l_start, l_len, 0, 0, 0)
         else:
@@ -198,7 +198,7 @@ class _posixfile_:
                                 'bsdos2', 'bsdos3', 'bsdos4'):
                 l_start, l_len, l_pid, l_type, l_whence = \
                     struct.unpack('lxxxxlxxxxlhh', flock)
-            elif sys.platform in ['aix3', 'aix4']:
+            elif sys.platform in ('aix3', 'aix4'):
                 l_type, l_whence, l_start, l_len, l_sysid, l_pid, l_vfs = \
                     struct.unpack('hhlllii', flock)
             elif sys.platform == "linux2":

@@ -384,7 +384,7 @@ class OpenerDirector:
                                 'unknown_open', req)
 
     def error(self, proto, *args):
-        if proto in ['http', 'https']:
+        if proto in ('http', 'https'):
             # XXX http[s] protocols are special-cased
             dict = self.handle_error['http'] # https is not different than http
             proto = args[2]  # YUCK!
