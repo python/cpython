@@ -639,6 +639,12 @@ class Distribution:
     def has_modules (self):
         return self.has_pure_modules() or self.has_ext_modules()
 
+    def has_scripts (self):
+        return self.scripts and len(self.scripts) > 0
+
+    def has_data_files (self):
+        return self.data_files and len(self.data_files) > 0
+
     def is_pure (self):
         return (self.has_pure_modules() and
                 not self.has_ext_modules() and
