@@ -80,7 +80,8 @@ au BufNewFile *.py,*.pyw,*.c,*.h set fileformat=unix
 "``let python_highlight_all=1``
 "``syntax on``
 
-" Automatically indent: ``filetype indent on``
+" Automatically indent based on file type: ``filetype indent on``
+" Keep indentation level from previous line: ``set autoindent``
 
 " Folding based on indentation: ``set foldmethod=indent``
 
