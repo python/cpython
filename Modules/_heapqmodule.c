@@ -186,8 +186,9 @@ PyDoc_STRVAR(heapreplace_doc,
 This is more efficient than heappop() followed by heappush(), and can be\n\
 more appropriate when using a fixed-size heap.  Note that the value\n\
 returned may be larger than item!  That constrains reasonable uses of\n\
-this routine unless written as part of a larger expression:\n\n\
-    result = item <= heap[0] and item  or  heapreplace(heap, item)\n");
+this routine unless written as part of a conditional replacement:\n\n\
+        if item > heap[0]:\n\
+            item = heapreplace(heap, item)\n");
 
 static PyObject *
 heapify(PyObject *self, PyObject *heap)
