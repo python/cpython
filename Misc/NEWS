@@ -42,6 +42,10 @@ Core and builtins
 Library
 -------
 
+- Bug #926075: Fixed a bug that returns a wrong pattern object
+  for a string or unicode object in sre.compile() when a different
+  type pattern with the same value exists.
+
 - Bug #924361: Properly support normalization of empty unicode strings.
 
 - Fixed a caching bug in platform.platform() where the argument of 'terse' was

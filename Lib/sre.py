@@ -215,7 +215,8 @@ def _join(seq, sep):
 
 def _compile(*key):
     # internal: compile pattern
-    p = _cache.get(key)
+    cachekey = (type(key[0]),) + key
+    p = _cache.get(cachekey)
     if p is not None:
         return p
     pattern, flags = key
@@ -229,7 +230,7 @@ def _compile(*key):
         raise error, v # invalid expression
     if len(_cache) >= _MAXCACHE:
         _cache.clear()
-    _cache[key] = p
+    _cache[cachekey] = p
     return p
 
 def _compile_repl(*key):
