@@ -2,13 +2,14 @@
 
 import sys
 import os
-BGENDIR=os.path.join(sys.prefix, ':Tools:bgen:bgen')
+from bgenlocations import TOOLBOXDIR, BGENDIR
 sys.path.append(BGENDIR)
 from scantools import Scanner
-from bgenlocations import MWERKSDIR, TOOLBOXDIR
 
-#WASTEDIR=":::::Waste 1.3 Distribution:WASTE C/C++ Headers:"
-WASTEDIR=MWERKSDIR + 'MacOS Support:(Third Party Support):Waste 2.0 Distribution:C_C++ Headers:'
+WASTEDIR='/Applications/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/MacOS Support/(Third Party Support)/Waste 2.0 Distribution/C_C++ Headers/'
+		
+if not os.path.exists(WASTEDIR):
+	raise 'Error: not found: %s', WASTEDIR
 
 OBJECT = "TEHandle"
 SHORT = "waste"
