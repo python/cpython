@@ -261,7 +261,7 @@ class MyGlobalObjectDefinition(GlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFTypeRef type-%%d object at 0x%%8.8x for 0x%%8.8x>", CFGetTypeID(self->ob_itself), (unsigned)self, (unsigned)self->ob_itself);""")
+		Output("""sprintf(buf, "<CFTypeRef type-%%d object at 0x%%8.8x for 0x%%8.8x>", (int)CFGetTypeID(self->ob_itself), (unsigned)self, (unsigned)self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 
@@ -558,7 +558,8 @@ CFTypeRef_object.add(f)
 
 # Convert CF objects to Python objects
 toPython_body = """
-return PyCF_CF2Python(_self->ob_itself);
+_res = PyCF_CF2Python(_self->ob_itself);
+return _res;
 """
 
 f = ManualGenerator("toPython", toPython_body);
@@ -582,7 +583,8 @@ if (typeid == CFDictionaryGetTypeID())
 if (typeid == CFURLGetTypeID())
 	return Py_BuildValue("O&", CFURLRefObj_New, rv);
 
-return Py_BuildValue("O&", CFTypeRefObj_New, rv);
+_res = Py_BuildValue("O&", CFTypeRefObj_New, rv);
+return _res;
 """
 f = ManualGenerator("toCF", toCF_body);
 f.docstring = lambda: "(python_object) -> (CF_object)"
