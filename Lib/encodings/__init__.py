@@ -27,7 +27,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """#"
 
-import string,codecs,aliases
+import codecs,aliases
 
 _cache = {}
 _unknown = '--unknown--'
@@ -40,7 +40,7 @@ def search_function(encoding):
         return entry
 
     # Import the module
-    modname = string.replace(encoding, '-', '_')
+    modname = encoding.replace('-', '_')
     modname = aliases.aliases.get(modname,modname)
     try:
         mod = __import__(modname,globals(),locals(),'*')
