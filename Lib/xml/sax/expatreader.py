@@ -69,8 +69,8 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 
     def feed(self, data, isFinal = 0):
         if not self._parsing:
-            self._parsing = 1
             self.reset()
+            self._parsing = 1
             self._cont_handler.startDocument()
 
         try:
@@ -117,6 +117,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 #         self._parser.NotStandaloneHandler = 
         self._parser.ExternalEntityRefHandler = self.external_entity_ref
 
+        self._parsing = 0
         self._entity_stack = []
         
     # Locator methods
