@@ -101,20 +101,32 @@ builtin_apply(self, args)
 	PyObject *args;
 {
 	PyObject *func, *alist = NULL, *kwdict = NULL;
+	PyObject *t = NULL, *retval = NULL;
 
 	if (!PyArg_ParseTuple(args, "O|OO:apply", &func, &alist, &kwdict))
 		return NULL;
-	if (alist != NULL && !PyTuple_Check(alist)) {
-		PyErr_SetString(PyExc_TypeError,
-				"apply() 2nd argument must be tuple");
-		return NULL;
+	if (alist != NULL) {
+		if (!PyTuple_Check(alist)) {
+			if (!PySequence_Check(alist)) {
+				PyErr_SetString(PyExc_TypeError,
+				    "apply() 2nd argument must be a sequence");
+				return NULL;
+			}
+			t = PySequence_Tuple(alist);
+			if (t == NULL)
+				return NULL;
+			alist = t;
+		}
 	}
 	if (kwdict != NULL && !PyDict_Check(kwdict)) {
 		PyErr_SetString(PyExc_TypeError,
 			   "apply() 3rd argument must be dictionary");
-		return NULL;
+		goto finally;
 	}
-	return PyEval_CallObjectWithKeywords(func, alist, kwdict);
+	retval = PyEval_CallObjectWithKeywords(func, alist, kwdict);
+  finally:
+	Py_XDECREF(t);
+	return retval;
 }
 
 static char apply_doc[] =
