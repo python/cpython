@@ -53,6 +53,20 @@ Send comments and patches to the Python Documentation Team:
 Thanks!
 
 
+What happened to the Macintosh chapter of the Python Library Reference?
+-----------------------------------------------------------------------
+
+The directory mac/ contains the LaTeX sources for the "Macintosh
+Library Modules" manual; this is not currently included in the build
+system.  To build, do the following:
+
+	cd Doc/mac
+	../tools/mkhowto.sh --ps --pdf --html mac
+
+(Any combination of --ps, --pdf, and --html may be used depending on
+your needs; the default is --pdf.)
+
+
 What tools do I need?
 ---------------------
 
