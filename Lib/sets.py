@@ -133,7 +133,9 @@ class BaseSet(object):
 
     def copy(self):
         """Return a shallow copy of a set."""
-        return self.__class__(self)
+        result = self.__class__([])
+        result._data.update(self._data)
+        return result
 
     __copy__ = copy # For the copy module
 
