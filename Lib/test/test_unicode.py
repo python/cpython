@@ -495,19 +495,18 @@ else:
 verify(unicode('+3ADYAA-', 'utf-7', 'replace') == u'\ufffd')
 
 # UTF-8 specific encoding tests:
-verify(u'\u20ac'.encode('utf-8') == \
-       ''.join((chr(0xe2), chr(0x82), chr(0xac))) )
-verify(u'\ud800\udc02'.encode('utf-8') == \
-       ''.join((chr(0xf0), chr(0x90), chr(0x80), chr(0x82))) )
-verify(u'\ud84d\udc56'.encode('utf-8') == \
-       ''.join((chr(0xf0), chr(0xa3), chr(0x91), chr(0x96))) )
+verify(u'\u20ac'.encode('utf-8') == '\xe2\x82\xac')
+verify(u'\ud800\udc02'.encode('utf-8') == '\xf0\x90\x80\x82')
+verify(u'\ud84d\udc56'.encode('utf-8') == '\xf0\xa3\x91\x96')
+verify(u'\ud800'.encode('utf-8') == '\xed\xa0\x80')
+verify(u'\udc00'.encode('utf-8') == '\xed\xb0\x80')
+verify((u'\ud800\udc02'*1000).encode('utf-8') ==
+       '\xf0\x90\x80\x82'*1000)
+
 # UTF-8 specific decoding tests
-verify(unicode(''.join((chr(0xf0), chr(0xa3), chr(0x91), chr(0x96))),
-               'utf-8') == u'\U00023456' )
-verify(unicode(''.join((chr(0xf0), chr(0x90), chr(0x80), chr(0x82))),
-               'utf-8') == u'\U00010002' )
-verify(unicode(''.join((chr(0xe2), chr(0x82), chr(0xac))),
-               'utf-8') == u'\u20ac' )
+verify(unicode('\xf0\xa3\x91\x96', 'utf-8') == u'\U00023456' )
+verify(unicode('\xf0\x90\x80\x82', 'utf-8') == u'\U00010002' )
+verify(unicode('\xe2\x82\xac', 'utf-8') == u'\u20ac' )
 
 # Other possible utf-8 test cases:
 # * strict decoding testing for all of the
