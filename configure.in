@@ -646,6 +646,9 @@ yes)
     OpenUNIX*|UnixWare*)
 	BASECFLAGS="$BASECFLAGS -K pentium,host,inline,loop_unroll,alloca "
 	;;
+    OSF*)
+	BASECFLAGS="$BASECFLAGS -ieee -std"
+    	;;
     SCO_SV*)
 	BASECFLAGS="$BASECFLAGS -belf -Ki486 -DSCO5"
 	;;
