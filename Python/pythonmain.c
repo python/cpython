@@ -300,9 +300,6 @@ print_error()
 			goaway(1);
 		}
 	}
-	/*
-	fprintf(stderr, "Unhandled exception: ");
-	*/
 	if (printobject(exception, stderr, PRINT_RAW) != 0)
 		err_clear();
 	if (v != NULL && v != None) {
