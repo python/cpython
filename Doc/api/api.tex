@@ -3088,24 +3088,23 @@ Return true if the argument is a tuple object.
 Return a new tuple object of size \var{len}, or \NULL{} on failure.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyTuple_Size}{PyTupleObject *p}
+\begin{cfuncdesc}{int}{PyTuple_Size}{PyObject *p}
 Takes a pointer to a tuple object, and returns the size
 of that tuple.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyTuple_GetItem}{PyTupleObject *p, int pos}
+\begin{cfuncdesc}{PyObject*}{PyTuple_GetItem}{PyObject *p, int pos}
 Returns the object at position \var{pos} in the tuple pointed
 to by \var{p}.  If \var{pos} is out of bounds, returns \NULL{} and
 sets an \exception{IndexError} exception.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyTuple_GET_ITEM}{PyTupleObject *p, int pos}
+\begin{cfuncdesc}{PyObject*}{PyTuple_GET_ITEM}{PyObject *p, int pos}
 Does the same, but does no checking of its arguments.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyTuple_GetSlice}{PyTupleObject *p,
-            int low,
-            int high}
+\begin{cfuncdesc}{PyObject*}{PyTuple_GetSlice}{PyObject *p,
+                                               int low, int high}
 Takes a slice of the tuple pointed to by \var{p} from
 \var{low} to \var{high} and returns it as a new tuple.
 \end{cfuncdesc}
@@ -3124,7 +3123,7 @@ should \emph{only} be used to fill in brand new tuples.
 \strong{Note:}  This function ``steals'' a reference to \var{o}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{_PyTuple_Resize}{PyTupleObject *p,
+\begin{cfuncdesc}{int}{_PyTuple_Resize}{PyObject **p,
                                         int newsize, int last_is_sticky}
 Can be used to resize a tuple.  \var{newsize} will be the new length
 of the tuple.  Because tuples are \emph{supposed} to be immutable,
