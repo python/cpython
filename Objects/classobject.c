@@ -904,7 +904,7 @@ instance_traverse(PyInstanceObject *o, visitproc visit, void *arg)
 		if (err)
 			return err;
 	}
-	return 1;
+	return 0;
 }
 
 static PyObject *getitemstr, *setitemstr, *delitemstr, *lenstr;
@@ -1741,7 +1741,7 @@ instancemethod_traverse(PyMethodObject *im, visitproc visit, void *arg)
 		if (err)
 			return err;
 	}
-	return 1;
+	return 0;
 }
 
 PyTypeObject PyMethod_Type = {
