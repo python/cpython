@@ -12,8 +12,9 @@ works).
 
 This will append site-specific paths to to the module search path.  It
 starts with sys.prefix and sys.exec_prefix (if different) and appends
-lib/python<version>/packages.  The resulting directory, if it exists,
-is added to sys.path, and also inspected for path configuration files.
+lib/python<version>/site-packages as well as lib/site-python.  The
+resulting directories, if they exist, are appended to sys.path, and
+also inspected for path configuration files.
 
 A path configuration file is a file whose name has the form
 <package>.pth; its contents are additional directories (one per line)
@@ -23,9 +24,10 @@ sys.path more than once.  Blank lines and lines beginning with
 \code{#} are skipped.
 
 For example, suppose sys.prefix and sys.exec_prefix are set to
-/usr/local and there is a directory /usr/local/python1.5/packages with
-three subdirectories, foo, bar and spam, and two path configuration
-files, foo.pth and bar.pth.  Assume foo.pth contains the following:
+/usr/local and there is a directory /usr/local/python1.5/site-packages
+with three subdirectories, foo, bar and spam, and two path
+configuration files, foo.pth and bar.pth.  Assume foo.pth contains the
+following:
 
   # foo package configuration
   foo
@@ -39,8 +41,8 @@ and bar.pth contains:
 
 Then the following directories are added to sys.path, in this order:
 
-  /usr/local/lib/python1.5/packages/bar
-  /usr/local/lib/python1.5/packages/foo
+  /usr/local/lib/python1.5/site-packages/bar
+  /usr/local/lib/python1.5/site-packages/foo
 
 Note that bletch is omitted because it doesn't exist; bar precedes foo
 because bar.pth comes alphabetically before foo.pth; and spam is
@@ -99,7 +101,7 @@ for prefix in prefixes:
 	    sitedirs = [os.path.join(prefix,
 				     "lib",
 				     "python" + sys.version[:3],
-				     "packages"),
+				     "site-packages"),
 			os.path.join(prefix, "lib", "site-python")]
 	else:
 	    sitedirs = [prefix]
