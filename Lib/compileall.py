@@ -44,11 +44,11 @@ def compile_dir(dir, maxlevels=10, ddir=None,
     success = 1
     for name in names:
         fullname = os.path.join(dir, name)
-        if ddir:
+        if ddir is not None:
             dfile = os.path.join(ddir, name)
         else:
             dfile = None
-        if rx:
+        if rx is not None:
             mo = rx.search(fullname)
             if mo:
                 continue
