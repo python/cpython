@@ -1,34 +1,46 @@
 \section{History of the software}
 
 Python was created in the early 1990s by Guido van Rossum at Stichting
-Mathematisch Centrum (CWI) in the Netherlands as a successor of a
-language called ABC.  Guido is Python's principal author, although it
-includes many contributions from others.  The last version released
-from CWI was Python 1.2.  In 1995, Guido continued his work on Python
-at the Corporation for National Research Initiatives (CNRI) in Reston,
-Virginia where he released several versions of the software.  Python
-1.6 was the last of the versions released by CNRI.  In 2000, Guido and
-the Python core development team moved to BeOpen.com to form the
-BeOpen PythonLabs team.  Python 2.0 was the first and only release
-from BeOpen.com.
+Mathematisch Centrum (CWI, see \url{http://www.cwi.nl/}) in the Netherlands
+as a successor of a language called ABC.  Guido remains Python's
+principal author, although it includes many contributions from others.
 
-Following the release of Python 1.6, and after Guido van Rossum left
-CNRI to work with commercial software developers, it became clear that
-the ability to use Python with software available under the GNU Public
-License (GPL) was very desirable.  CNRI and the Free Software
-Foundation (FSF) interacted to develop enabling wording changes to the
-Python license.  Python 1.6.1 is essentially the same as Python 1.6,
-with a few minor bug fixes, and with a different license that enables
-later versions to be GPL-compatible.  Python 2.0.1 is a derivative work
-of Python 1.6.1, as well as of Python 2.0.
+In 1995, Guido continued his work on Python at the Corporation for
+National Research Initiatives (CNRI, see \url{http://www.cnri.reston.va.us/})
+in Reston, Virginia where he released several versions of the
+software.
 
-After Python 2.0 was released by BeOpen.com, Guido van Rossum and the
-other PythonLabs developers joined Digital Creations.  All
-intellectual property added from this point on, including Python
-2.0.1 and its alpha and beta releases, is owned by the Python Software
-Foundation (PSF), a non-profit modeled after the Apache Software
-Foundation.  See \url{http://www.python.org/psf/} for more information
-about the PSF.
+In May 2000, Guido and the Python core development team moved to
+BeOpen.com to form the BeOpen PythonLabs team.  In October of the same
+year, the PythonLabs team moved to Digital Creations (see
+\url{http://www.digicool.com/}).  In 2001, the Python Software
+Foundation (PSF, see \url{http://www.python.org/psf/}) was formed, a
+non-profit organization created specifically to own Python-related
+Intellectual Property.  Digital Creations is a sponsoring member of
+the PSF.
+
+All Python releases are Open Source (see
+\url{http://www.opensource.org/} for the Open Source Definition).
+Historically, most, but not all, Python releases have also been
+GPL-compatible; the table below summarizes the various releases.
+
+\begin{tablev}{c|c|c|c|c}{textrm}{Release}{Derived from}{Year}{Owner}{GPL compatible?}
+  \linev{0.9.0 thru 1.2}{n/a}{1991-1995}{CWI}{yes}
+  \linev{1.3 thru 1.5.2}{1.2}{1995-1999}{CNRI}{yes}
+  \linev{1.6}{1.5.2}{2000}{CNRI}{no}
+  \linev{2.0}{1.6}{2000}{BeOpen.com}{no}
+  \linev{1.6.1}{1.6}{2001}{CNRI}{no}
+  \linev{2.1}{2.0+1.6.1}{2001}{PSF}{no}
+  \linev{2.0.1}{2.0+1.6.1}{2001}{PSF}{yes}
+  \linev{2.1.1}{2.1+2.0.1}{2001}{PSF}{yes}
+  \linev{2.2}{2.1.1}{2001}{PSF}{yes}
+\end{tablev}
+
+\strong{Note:}  GPL-compatible doesn't mean that we're distributing
+Python under the GPL.  All Python licenses, unlike the GPL, let you
+distribute a modified version without making your changes open source.
+The GPL-compatible licenses make it possible to combine Python with
+other software that is released under the GPL; the others don't.
 
 Thanks to the many outside volunteers who have worked under Guido's
 direction to make these releases possible.
@@ -36,7 +48,7 @@ direction to make these releases possible.
 
 \section{Terms and conditions for accessing or otherwise using Python}
 
-\centerline{\strong{PSF LICENSE AGREEMENT}}
+\centerline{\strong{PSF LICENSE AGREEMENT FOR PYTHON 2.2}}
 
 \begin{enumerate}
 \item
@@ -96,7 +108,7 @@ Agreement.
 \end{enumerate}
 
 
-\centerline{\strong{BEOPEN.COM TERMS AND CONDITIONS FOR PYTHON 2.0}}
+\centerline{\strong{BEOPEN.COM LICENSE AGREEMENT FOR PYTHON 2.0}}
 
 \centerline{\strong{BEOPEN PYTHON OPEN SOURCE LICENSE AGREEMENT VERSION 1}}
 
@@ -154,7 +166,7 @@ Agreement.
 \end{enumerate}
 
 
-\centerline{\strong{CNRI OPEN SOURCE GPL-COMPATIBLE LICENSE AGREEMENT}}
+\centerline{\strong{CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1}}
 
 \begin{enumerate}
 \item
@@ -236,7 +248,7 @@ bound by the terms and conditions of this License Agreement.
 
 
 
-\centerline{\strong{CWI PERMISSIONS STATEMENT AND DISCLAIMER}}
+\centerline{\strong{CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2}}
 
 Copyright \copyright{} 1991 - 1995, Stichting Mathematisch Centrum
 Amsterdam, The Netherlands.  All rights reserved.
