@@ -39,13 +39,24 @@ prefix=		@prefix@
 # Install prefix for architecture-dependent files
 exec_prefix=	@exec_prefix@
 
+# Expanded directories
+BINDIR=		$(exec_prefix)/bin
+LIBDIR=		$(exec_prefix)/lib
+MANDIR=		$(prefix)/man
+INCLUDEDIR=	$(prefix)/include
+SCRIPTDIR=	$(prefix)/lib
+
+# Detailed destination directories
+BINLIBDEST=	$(LIBDIR)/python$(VERSION)
+LIBDEST=	$(SCRIPTDIR)/python$(VERSION)
+INCLUDEPY=	$(INCLUDEDIR)/python$(VERSION)
+LIBP=		$(LIBDIR)/python$(VERSION)
+
 # Symbols used for using shared libraries
 SO=		@SO@
 LDSHARED=	@LDSHARED@
 CCSHARED=	@CCSHARED@
 LINKFORSHARED=	@LINKFORSHARED@
-LIBDIR=		$(exec_prefix)/lib
-BINLIBDEST=	$(LIBDIR)/python$(VERSION)
 DESTSHARED=	$(BINLIBDEST)/sharedmodules
 
 # Portable install script (configure doesn't always guess right)
