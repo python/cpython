@@ -4,20 +4,21 @@ Classes:
     dircmp
 
 Functions:
-    cmp(f1, f2, shallow=1, use_statcache=0) -> int
+    cmp(f1, f2, shallow=1) -> int
     cmpfiles(a, b, common) -> ([], [], [])
 
 """
 
 import os
 import stat
+import warnings
 
 __all__ = ["cmp","dircmp","cmpfiles"]
 
 _cache = {}
 BUFSIZE=8*1024
 
-def cmp(f1, f2, shallow=1, use_statcache=0):
+def cmp(f1, f2, shallow=1, use_statcache=None):
     """Compare two files.
 
     Arguments:
@@ -39,6 +40,10 @@ def cmp(f1, f2, shallow=1, use_statcache=0):
     with a cache invalidation mechanism relying on stale signatures.
 
     """
+    if use_statcache is not None:
+        warnings.warn("use_statcache argument is deprecated",
+                      DeprecationWarning)
+
     s1 = _sig(os.stat(f1))
     s2 = _sig(os.stat(f2))
     if s1[0] != stat.S_IFREG or s2[0] != stat.S_IFREG:
@@ -261,7 +266,7 @@ class dircmp:
             sd.report_full_closure()
 
 
-def cmpfiles(a, b, common, shallow=1, use_statcache=0):
+def cmpfiles(a, b, common, shallow=1, use_statcache=None):
     """Compare common files in two directories.
 
     a, b -- directory names
@@ -275,6 +280,9 @@ def cmpfiles(a, b, common, shallow=1, use_statcache=0):
       filenames that aren't regular files.
 
     """
+    if use_statcache is not None:
+        warnings.warn("use_statcache argument is deprecated",
+                      DeprecationWarning)
     res = ([], [], [])
     for x in common:
         ax = os.path.join(a, x)
@@ -312,7 +320,7 @@ def demo():
     import getopt
     options, args = getopt.getopt(sys.argv[1:], 'r')
     if len(args) != 2:
-        raise getopt.error, 'need exactly two args'
+        raise getopt.GetoptError('need exactly two args', None)
     dd = dircmp(args[0], args[1])
     if ('-r', '') in options:
         dd.report_full_closure()
