@@ -740,16 +740,16 @@ oss_mixer_set(oss_mixer_t *self, PyObject *args)
 }
 
 static PyObject *
-oss_mixer_getrecsrc(oss_mixer_t *self, PyObject *args)
+oss_mixer_get_recsrc(oss_mixer_t *self, PyObject *args)
 {
-    return _do_ioctl_1_internal(self->fd, args, "getrecsrc",
+    return _do_ioctl_1_internal(self->fd, args, "get_recsrc",
         SOUND_MIXER_READ_RECSRC);
 }
 
 static PyObject *
-oss_mixer_setrecsrc(oss_mixer_t *self, PyObject *args)
+oss_mixer_set_recsrc(oss_mixer_t *self, PyObject *args)
 {
-    return _do_ioctl_1(self->fd, args, "setrecsrc",
+    return _do_ioctl_1(self->fd, args, "set_recsrc",
         SOUND_MIXER_WRITE_RECSRC);
 }
 
@@ -796,8 +796,8 @@ static PyMethodDef oss_mixer_methods[] = {
     { "recdevices",     (PyCFunction)oss_mixer_recdevices, METH_VARARGS},   
     { "get",            (PyCFunction)oss_mixer_get, METH_VARARGS },
     { "set",            (PyCFunction)oss_mixer_set, METH_VARARGS },
-    { "getrecsrc",      (PyCFunction)oss_mixer_getrecsrc, METH_VARARGS },
-    { "setrecsrc",      (PyCFunction)oss_mixer_setrecsrc, METH_VARARGS },
+    { "get_recsrc",     (PyCFunction)oss_mixer_get_recsrc, METH_VARARGS },
+    { "set_recsrc",     (PyCFunction)oss_mixer_set_recsrc, METH_VARARGS },
     
     { NULL,             NULL}
 };
