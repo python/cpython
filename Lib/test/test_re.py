@@ -276,6 +276,25 @@ class ReTests(unittest.TestCase):
             self.assertEqual(re.match(r'((.%s):)?z'%op, 'a:z').groups(),
                              ('a:', 'a'))
 
+    def test_bug_725106(self):
+        # capturing groups in alternatives in repeats
+        self.assertEqual(re.match('^((a)|b)*', 'abc').groups(),
+                         ('b', 'a'))
+        self.assertEqual(re.match('^(([ab])|c)*', 'abc').groups(),
+                         ('c', 'b'))
+        self.assertEqual(re.match('^((d)|[ab])*', 'abc').groups(),
+                         ('b', None))
+        self.assertEqual(re.match('^((a)c|[ab])*', 'abc').groups(),
+                         ('b', None))
+        self.assertEqual(re.match('^((a)|b)*?c', 'abc').groups(),
+                         ('b', 'a'))
+        self.assertEqual(re.match('^(([ab])|c)*?d', 'abcd').groups(),
+                         ('c', 'b'))
+        self.assertEqual(re.match('^((d)|[ab])*?c', 'abc').groups(),
+                         ('b', None))
+        self.assertEqual(re.match('^((a)c|[ab])*?c', 'abc').groups(),
+                         ('b', None))
+
     def test_finditer(self):
         iter = re.finditer(r":+", "a:b::c:::d")
         self.assertEqual([item.group(0) for item in iter],
