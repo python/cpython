@@ -64,14 +64,13 @@ PERL_BINARY = "perl"
 PYTHON_BINARY = "python"
 
 
-def usage(options):
-    print __doc__ % options
+def usage(options, file):
+    print >>file, __doc__ % options
 
 def error(options, message, err=2):
-    sys.stdout = sys.stderr
-    print message
-    print
-    usage(options)
+    print >>sys.stderr, message
+    print >>sys.stderr
+    usage(options, sys.stderr)
     sys.exit(2)
 
 
@@ -151,7 +150,7 @@ class Options:
                 self.formats = list(self.ALL_FORMATS)
                 self.dvips_safe = "ps" in self.formats
             elif opt in ("-H", "--help"):
-                usage(self)
+                usage(self, sys.stdout)
                 sys.exit()
             elif opt == "--iconserver":
                 self.icon_server = arg
