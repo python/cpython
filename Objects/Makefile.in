@@ -26,14 +26,14 @@ SHELL=		/bin/sh
 
 # === Fixed definitions ===
 
-OBJS=		accessobject.o \
+OBJS=		abstract.o accessobject.o \
 		classobject.o fileobject.o floatobject.o \
 		frameobject.o funcobject.o intobject.o listobject.o \
 		longobject.o mappingobject.o methodobject.o \
 		moduleobject.o object.o rangeobject.o stringobject.o \
 		tupleobject.o typeobject.o
 
-SRCS=		accessobject.c \
+SRCS=		abstract.c accessobject.c \
 		classobject.c fileobject.c floatobject.c \
 		frameobject.c funcobject.c intobject.c listobject.c \
 		longobject.c mappingobject.c methodobject.c \
@@ -68,6 +68,7 @@ depend:
 
 .PRECIOUS:	Makefile
 
+abstract.o: abstract.c
 accessobject.o: accessobject.c
 classobject.o: classobject.c
 fileobject.o: fileobject.c

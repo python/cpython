@@ -43,8 +43,7 @@ newfuncobject(code, globals)
 		op->func_globals = globals;
 		op->func_name = ((codeobject *)code)->co_name;
 		INCREF(op->func_name);
-		op->func_argcount = -1; /* Unknown */
-		op->func_argdefs = NULL; /* No default arguments */
+		op->func_defaults = NULL; /* No default arguments */
 		consts = ((codeobject *)code)->co_consts;
 		if (gettuplesize(consts) >= 1) {
 			doc = gettupleitem(consts, 0);
@@ -82,40 +81,35 @@ getfuncglobals(op)
 }
 
 object *
-getfuncargstuff(op, argcount_return)
+PyFunction_GetDefaults(op)
 	object *op;
-	int *argcount_return;
 {
 	if (!is_funcobject(op)) {
 		err_badcall();
 		return NULL;
 	}
-	*argcount_return = ((funcobject *) op) -> func_argcount;
-	return ((funcobject *) op) -> func_argdefs;
+	return ((funcobject *) op) -> func_defaults;
 }
 
 int
-setfuncargstuff(op, argcount, argdefs)
+PyFunction_SetDefaults(op, defaults)
 	object *op;
-	int argcount;
-	object *argdefs;
+	object *defaults;
 {
-	if (!is_funcobject(op) ||
-	    argdefs != NULL && !is_tupleobject(argdefs)) {
+	if (!is_funcobject(op)) {
 		err_badcall();
 		return -1;
 	}
-	if (argdefs == None)
-		argdefs = NULL;
-	else if (is_tupleobject(argdefs))
-		XINCREF(argdefs);
+	if (defaults == None)
+		defaults = NULL;
+	else if (is_tupleobject(defaults))
+		XINCREF(defaults);
 	else {
 		err_setstr(SystemError, "non-tuple default args");
 		return -1;
 	}
-	((funcobject *) op) -> func_argcount = argcount;
-	XDECREF(((funcobject *) op) -> func_argdefs);
-	((funcobject *) op) -> func_argdefs = argdefs;
+	XDECREF(((funcobject *) op) -> func_defaults);
+	((funcobject *) op) -> func_defaults = defaults;
 	return 0;
 }
 
@@ -128,8 +122,7 @@ static struct memberlist func_memberlist[] = {
 	{"func_globals",T_OBJECT,	OFF(func_globals),	READONLY},
 	{"func_name",	T_OBJECT,	OFF(func_name),		READONLY},
 	{"__name__",	T_OBJECT,	OFF(func_name),		READONLY},
-	{"func_argcount",T_INT,		OFF(func_argcount),	READONLY},
-	{"func_argdefs",T_OBJECT,	OFF(func_argdefs),	READONLY},
+	{"func_defaults",T_OBJECT,	OFF(func_defaults),	READONLY},
 	{"func_doc",	T_OBJECT,	OFF(func_doc)},
 	{"__doc__",	T_OBJECT,	OFF(func_doc)},
 	{NULL}	/* Sentinel */
@@ -155,7 +148,7 @@ func_dealloc(op)
 	DECREF(op->func_code);
 	DECREF(op->func_globals);
 	DECREF(op->func_name);
-	XDECREF(op->func_argdefs);
+	XDECREF(op->func_defaults);
 	XDECREF(op->func_doc);
 	DEL(op);
 }
@@ -181,10 +174,7 @@ func_compare(f, g)
 	int c;
 	if (f->func_globals != g->func_globals)
 		return (f->func_globals < g->func_globals) ? -1 : 1;
-	c = f->func_argcount < g->func_argcount;
-	if (c != 0)
-		return c < 0 ? -1 : 1;
-	c = cmpobject(f->func_argdefs, g->func_argdefs);
+	c = cmpobject(f->func_defaults, g->func_defaults);
 	if (c != 0)
 		return c;
 	return cmpobject(f->func_code, g->func_code);
