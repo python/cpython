@@ -56,7 +56,11 @@ class PullDOM(xml.sax.ContentHandler):
             # provide us with the original name. If not, create
             # *a* valid tagName from the current context.
             if tagName is None:
-                tagName = self._current_context[uri] + ":" + localname
+                prefix = self._current_context[uri]
+                if prefix:
+                    tagName = prefix + ":" + localname
+                else:
+                    tagName = localname
             node = self.document.createElementNS(uri, tagName)
         else:
             # When the tagname is not prefixed, it just appears as
@@ -66,7 +70,11 @@ class PullDOM(xml.sax.ContentHandler):
         for aname,value in attrs.items():
             a_uri, a_localname = aname
             if a_uri:
-                qname = self._current_context[a_uri] + ":" + a_localname
+                prefix = self._current_context[a_uri]
+                if prefix:
+                    qname = prefix + ":" + a_localname
+                else:
+                    qname = a_localname
                 attr = self.document.createAttributeNS(a_uri, qname)
             else:
                 attr = self.document.createAttribute(a_localname)
