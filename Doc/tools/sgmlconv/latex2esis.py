@@ -32,6 +32,9 @@ except ImportError:
     from xmllib import XMLParser
 
 
+from esistools import encode
+
+
 DEBUG = 0
 
 
@@ -46,10 +49,6 @@ class LaTeXStackError(LaTeXFormatError):
         self.found = found
         self.stack = stack[:]
         LaTeXFormatError.__init__(self, msg)
-
-def encode(s):
-    s = xml.sax.saxutils.escape(s)
-    return s.replace("\n", "\\n\n-")
 
 
 _begin_env_rx = re.compile(r"[\\]begin{([^}]*)}")
@@ -85,18 +84,18 @@ class _Stack(UserList.UserList):
         if type(entry) is not StringType:
             raise LaTeXFormatError("cannot push non-string on stack: "
                                    + `entry`)
-        sys.stderr.write("%s<%s>\n" % (" "*len(self.data), entry))
+        #dbgmsg("%s<%s>" % (" "*len(self.data), entry))
         self.data.append(entry)
 
     def pop(self, index=-1):
         entry = self.data[index]
         del self.data[index]
-        sys.stderr.write("%s</%s>\n" % (" "*len(self.data), entry))
+        #dbgmsg("%s</%s>" % (" "*len(self.data), entry))
 
     def __delitem__(self, index):
         entry = self.data[index]
         del self.data[index]
-        sys.stderr.write("%s</%s>\n" % (" "*len(self.data), entry))
+        #dbgmsg("%s</%s>" % (" "*len(self.data), entry))
 
 
 def new_stack():
@@ -112,10 +111,6 @@ class Conversion:
         self.table = table
         self.line = string.join(map(string.rstrip, ifp.readlines()), "\n")
         self.preamble = 1
-
-    def err_write(self, msg):
-        if DEBUG:
-            sys.stderr.write(str(msg) + "\n")
 
     def convert(self):
         self.subconvert()
@@ -271,7 +266,7 @@ class Conversion:
                             opened = 1
                             stack.append(entry.name)
                             self.write("(%s\n" % entry.outputname)
-                        self.err_write("--- text: %s\n" % `pentry.text`)
+                        #dbgmsg("--- text: %s" % `pentry.text`)
                         self.write("-%s\n" % encode(pentry.text))
                     elif pentry.type == "entityref":
                         self.write("&%s\n" % pentry.name)
@@ -290,7 +285,7 @@ class Conversion:
                 # end of macro or group
                 macroname = stack[-1]
                 if macroname:
-                    conversion = self.table.get(macroname)
+                    conversion = self.table[macroname]
                     if conversion.outputname:
                         # otherwise, it was just a bare group
                         self.write(")%s\n" % conversion.outputname)
@@ -373,8 +368,7 @@ class Conversion:
     def get_entry(self, name):
         entry = self.table.get(name)
         if entry is None:
-            self.err_write("get_entry(%s) failing; building default entry!"
-                           % `name`)
+            dbgmsg("get_entry(%s) failing; building default entry!" % `name`)
             # not defined; build a default entry:
             entry = TableEntry(name)
             entry.has_content = 1
