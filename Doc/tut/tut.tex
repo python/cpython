@@ -1,6 +1,6 @@
 % Format this file with latex.
  
-\documentstyle[times,myformat]{report}
+\documentstyle[myformat]{report}
 
 \title{\bf
 	Python Tutorial
@@ -176,7 +176,7 @@ command} in its entirety with double quotes.
 
 Note that there is a difference between ``{\tt python file}'' and
 ``{\tt python $<$file}''.  In the latter case, input requests from the
-program, such as calls to {\tt input()} and {\tt raw\_input()}, are
+program, such as calls to {\tt input()} and {\tt raw_input()}, are
 satisfied from {\em file}.  Since this file has already been read
 until the end by the parser before the program starts executing, the
 program will encounter EOF immediately.  In the former case (which is
@@ -1494,7 +1494,7 @@ There is even a variant to import all names that a module defines:
 \end{verbatim}\ecode
 %
 This imports all names except those beginning with an underscore
-({\tt \_}).
+({\tt _}).
 
 \section{Standard Modules}
 
