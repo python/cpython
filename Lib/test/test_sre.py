@@ -8,7 +8,7 @@ sys.path=['.']+sys.path
 
 from test_support import verbose, TestFailed
 import sre
-import sys, os, traceback
+import sys, os, string, traceback
 
 #
 # test support
