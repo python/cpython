@@ -326,6 +326,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	register PyObject *w;
 	register PyObject *u;
 	register PyObject *t;
+	register PyObject *stream = NULL;    /* for PRINT opcodes */
 	register PyFrameObject *f; /* Current frame */
 	register PyObject **fastlocals;
 	PyObject *retval = NULL;	/* Return value */
@@ -635,7 +636,6 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			}
 		}
 #endif
-
 		/* Main switch on opcode */
 		
 		switch (opcode) {
@@ -975,7 +975,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			Py_DECREF(w);
 			if (err == 0) continue;
 			break;
-		
+
 		case PRINT_EXPR:
 			v = POP();
 			/* Print value except if None */
@@ -1008,15 +1008,21 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			Py_DECREF(v);
 			break;
 		
+		case PRINT_ITEM_TO:
+			w = stream = POP();
+			/* fall through to PRINT_ITEM */
+
 		case PRINT_ITEM:
 			v = POP();
-			w = PySys_GetObject("stdout");
-			if (w == NULL) {
-				PyErr_SetString(PyExc_RuntimeError,
-						"lost sys.stdout");
-				err = -1;
+			if (stream == NULL) {
+				w = PySys_GetObject("stdout");
+				if (w == NULL) {
+					PyErr_SetString(PyExc_RuntimeError,
+							"lost sys.stdout");
+					err = -1;
+				}
 			}
-			else if (PyFile_SoftSpace(w, 1))
+			if (w != NULL && PyFile_SoftSpace(w, 1))
 				err = PyFile_WriteString(" ", w);
 			if (err == 0)
 				err = PyFile_WriteObject(v, w, Py_PRINT_RAW);
@@ -1030,19 +1036,30 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 					PyFile_SoftSpace(w, 0);
 			}
 			Py_DECREF(v);
-			if (err == 0) continue;
+			Py_XDECREF(stream);
+			stream = NULL;
+			if (err == 0)
+				continue;
 			break;
 		
+		case PRINT_NEWLINE_TO:
+			w = stream = POP();
+			/* fall through to PRINT_NEWLINE */
+
 		case PRINT_NEWLINE:
-			x = PySys_GetObject("stdout");
-			if (x == NULL)
-				PyErr_SetString(PyExc_RuntimeError,
-						"lost sys.stdout");
-			else {
-				err = PyFile_WriteString("\n", x);
-				if (err == 0)
-					PyFile_SoftSpace(x, 0);
+			if (stream == NULL) {
+				w = PySys_GetObject("stdout");
+				if (w == NULL)
+					PyErr_SetString(PyExc_RuntimeError,
+							"lost sys.stdout");
 			}
+			if (w != NULL) {
+				err = PyFile_WriteString("\n", w);
+				if (err == 0)
+					PyFile_SoftSpace(w, 0);
+			}
+			Py_XDECREF(stream);
+			stream = NULL;
 			break;
 		
 		case BREAK_LOOP:
