@@ -63,6 +63,8 @@ class FrameWindow(basewin.BaseWindow):
 	
 	def mouse_down(self, detail):
 		(h, v), clicks, button, mask = detail
+		if clicks != 2:
+			return
 		i = v / stdwin.lineheight()
 		if 5 <= i < len(self.displaylist):
 			import string
