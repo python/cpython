@@ -828,7 +828,12 @@ frameworkinstallunixtools:
 
 # This installs IDLE
 idleinstall:
-	SRCDIR=$(srcdir) ./$(BUILDPYTHON) $(srcdir)/Tools/idle/setup.py install --check-tkinter
+	SRCDIR=$(srcdir) \
+	./$(BUILDPYTHON) $(srcdir)/Tools/idle/setup.py install \
+	--check-tkinter \
+	--prefix=$(prefix) \
+	--install-scripts=$(BINDIR) \
+	--install-platlib=$(DESTSHARED)
 
 # Build the toplevel Makefile
 Makefile.pre: Makefile.pre.in config.status
