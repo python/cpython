@@ -270,7 +270,7 @@ class MyHandler(rpc.RPCHandler):
         thread.interrupt_main()
 
 
-class Executive:
+class Executive(object):
 
     def __init__(self, rpchandler):
         self.rpchandler = rpchandler

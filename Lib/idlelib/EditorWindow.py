@@ -37,7 +37,7 @@ def _find_module(fullname, path=None):
             raise ImportError, 'No source for module ' + module.__name__
     return file, filename, descr
 
-class EditorWindow:
+class EditorWindow(object):
     from Percolator import Percolator
     from ColorDelegator import ColorDelegator
     from UndoDelegator import UndoDelegator
@@ -1297,7 +1297,7 @@ import tokenize
 _tokenize = tokenize
 del tokenize
 
-class IndentSearcher:
+class IndentSearcher(object):
 
     # .run() chews over the Text widget, looking for a block opener
     # and the stmt following it.  Returns a pair,

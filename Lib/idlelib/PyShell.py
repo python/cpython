@@ -1186,7 +1186,7 @@ class PyShell(OutputWindow):
             if not use_subprocess:
                 raise KeyboardInterrupt
 
-class PseudoFile:
+class PseudoFile(object):
 
     def __init__(self, shell, tags, encoding=None):
         self.shell = shell

@@ -1,3 +1,11 @@
+What's New in IDLE 1.2a0?
+=======================
+
+*Release date: XX-XXX-2005*
+
+- The remote procedure call module rpc.py can now access data attributes of
+  remote registered objects.  Changes to these attributes are local, however.
+
 What's New in IDLE 1.1?
 =======================
 
