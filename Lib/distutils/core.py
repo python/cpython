@@ -98,13 +98,15 @@ def setup (**attrs):
             dist.run_commands ()
         except KeyboardInterrupt:
             raise SystemExit, "interrupted"
-        except IOError, exc:
+        except (OSError, IOError), exc:
             # arg, try to work with Python pre-1.5.2
             if hasattr (exc, 'filename') and hasattr (exc, 'strerror'):
                 raise SystemExit, \
                       "error: %s: %s" % (exc.filename, exc.strerror)
             else:
                 raise SystemExit, str (exc)
+        except DistutilsExecError, msg:
+            raise SystemExit, "error: " + str (msg)
 
 # setup ()
 
