@@ -233,7 +233,9 @@ if str({}) != '{}': raise TestFailed, 'str({})'
 
 print 'tuple'
 if tuple(()) != (): raise TestFailed, 'tuple(())'
-if tuple((0, 1, 2, 3)) != (0, 1, 2, 3): raise TestFailed, 'tuple((0, 1, 2, 3))'
+t0_3 = (0, 1, 2, 3)
+t0_3_bis = tuple(t0_3)
+if t0_3 is not t0_3_bis: raise TestFailed, 'tuple((0, 1, 2, 3))'
 if tuple([]) != (): raise TestFailed, 'tuple([])'
 if tuple([0, 1, 2, 3]) != (0, 1, 2, 3): raise TestFailed, 'tuple([0, 1, 2, 3])'
 if tuple('') != (): raise TestFailed, 'tuple('')'
