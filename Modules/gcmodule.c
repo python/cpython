@@ -838,7 +838,7 @@ referrentsvisit(PyObject *obj, PyObject *list)
 
 PyDoc_STRVAR(gc_get_referrents__doc__,
 "get_referrents(*objs) -> list\n\
-Return the list of objects that directly refer to any of objs.");
+Return the list of objects that are directly referred to by objs.");
 
 static PyObject *
 gc_get_referrents(PyObject *self, PyObject *args)
