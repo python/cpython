@@ -2908,7 +2908,8 @@ slot_sq_item(PyObject *self, int i)
 		if (func->ob_type == &PyWrapperDescr_Type) {
 			PyWrapperDescrObject *wrapper =
 				(PyWrapperDescrObject *)func;
-			if (wrapper->d_base->wrapper == wrap_sq_item) {
+			if (wrapper->d_base->wrapper == wrap_sq_item &&
+			    PyType_IsSubtype(self->ob_type, wrapper->d_type)) {
 				intargfunc f;
 				f = (intargfunc)(wrapper->d_wrapped);
 				return f(self, i);
@@ -3938,9 +3939,10 @@ fixup_slot_dispatchers(PyTypeObject *type)
 			if (descr->ob_type == &PyWrapperDescr_Type) {
 				d = (PyWrapperDescrObject *)descr;
 				if (d->d_base->wrapper == p->wrapper &&
-					PyType_IsSubtype(type, d->d_type)) {
+				    PyType_IsSubtype(type, d->d_type))
+				{
 					if (specific == NULL ||
-						specific == d->d_wrapped)
+					    specific == d->d_wrapped)
 						specific = d->d_wrapped;
 					else
 						use_generic = 1;
