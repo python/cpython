@@ -1789,7 +1789,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, int alen, int af)
 
 	if (h == NULL) {
 		/* Let's get real error message to return */
-#ifndef MS_WIN32
+#ifndef h_errno
 		extern int h_errno;
 #endif
 		PyH_Err(h_errno);
