@@ -1,15 +1,30 @@
-# This program requires that a DLOG resource with ID=128 exists.
-# You can make one with ResEdit if necessary.
+# Function to display a message and wait for the user to hit OK.
+# This uses a DLOG resource with ID=256 which is part of the standard
+# Python library.
+# The ID can be overridden by passing a second parameter.
 
-from Res import *
 from Dlg import *
+from Events import *
+import string
 
-ires = 128
+ID = 256
 
-def filter(*args): print 'filter:', args
+def f(d, event):
+	what, message, when, where, modifiers = event
+	if what == keyDown and modifiers & cmdKey and \
+	   string.lower(chr(message & charCodeMask)) == 'o':
+		return 1
 
-d = GetNewDialog(ires, -1)
-while 1:
-	n = ModalDialog(filter)
-	print 'item:', n
-	if n == 1: break
+def message(str = "Hello, world!", id = ID):
+	d = GetNewDialog(id, -1)
+	tp, h, rect = d.GetDItem(2)
+	SetIText(h, str)
+	while 1:
+		n = ModalDialog(f)
+		if n == 1: break
+
+def test():
+	message()
+
+if __name__ == '__main__':
+	test()

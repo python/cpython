@@ -20,16 +20,6 @@ f = Function(DialogPtr, 'GetNewDialog',
 )
 functions.append(f)
 
-f = Function(void, 'CouldDialog',
-    (short, 'dialogID', InMode),
-)
-functions.append(f)
-
-f = Function(void, 'FreeDialog',
-    (short, 'dialogID', InMode),
-)
-functions.append(f)
-
 f = Function(void, 'ParamText',
     (ConstStr255Param, 'param0', InMode),
     (ConstStr255Param, 'param1', InMode),
@@ -61,12 +51,6 @@ f = Method(void, 'DrawDialog',
 )
 methods.append(f)
 
-f = Method(void, 'UpdtDialog',
-    (DialogPtr, 'theDialog', InMode),
-    (RgnHandle, 'updateRgn', InMode),
-)
-methods.append(f)
-
 f = Method(void, 'UpdateDialog',
     (DialogPtr, 'theDialog', InMode),
     (RgnHandle, 'updateRgn', InMode),
@@ -94,16 +78,6 @@ functions.append(f)
 f = Function(short, 'CautionAlert',
     (short, 'alertID', InMode),
     (ModalFilterProcPtr, 'filterProc', InMode),
-)
-functions.append(f)
-
-f = Function(void, 'CouldAlert',
-    (short, 'alertID', InMode),
-)
-functions.append(f)
-
-f = Function(void, 'FreeAlert',
-    (short, 'alertID', InMode),
 )
 functions.append(f)
 
@@ -222,3 +196,4 @@ f = Method(void, 'ShortenDITL',
     (short, 'numberItems', InMode),
 )
 methods.append(f)
+
