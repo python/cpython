@@ -3883,6 +3883,10 @@ init_socket(void)
 #ifdef	SO_REUSEADDR
 	PyModule_AddIntConstant(m, "SO_REUSEADDR", SO_REUSEADDR);
 #endif
+#ifdef SO_EXCLUSIVEADDRUSE
+	PyModule_AddIntConstant(m, "SO_EXCLUSIVEADDRUSE", SO_EXCLUSIVEADDRUSE);
+#endif
+
 #ifdef	SO_KEEPALIVE
 	PyModule_AddIntConstant(m, "SO_KEEPALIVE", SO_KEEPALIVE);
 #endif
