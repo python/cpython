@@ -272,7 +272,7 @@ tests = [
     ('(a)b(c)', 'abc', SUCCEED, 'found+"-"+g1+"-"+g2', 'abc-a-c'),
     ('a+b+c', 'aabbabc', SUCCEED, 'found', 'abc'),
     ('a{1,}b{1,}c', 'aabbabc', SUCCEED, 'found', 'abc'),
-    #('a**', '-', SYNTAX_ERROR),
+    ('a**', '-', SYNTAX_ERROR),
     ('a.+?c', 'abcabc', SUCCEED, 'found', 'abc'),
     ('(a+|b)*', 'ab', SUCCEED, 'found+"-"+g1', 'ab-b'),
     ('(a+|b){0,}', 'ab', SUCCEED, 'found+"-"+g1', 'ab-b'),
@@ -317,6 +317,7 @@ tests = [
 # Python does not have the same rules for \\41 so this is a syntax error
 #    ('((((((((((a))))))))))\\41', 'aa', FAIL),
 #    ('((((((((((a))))))))))\\41', 'a!', SUCCEED, 'found', 'a!'),
+    ('((((((((((a))))))))))\\41', '', SYNTAX_ERROR),
     ('(((((((((a)))))))))', 'a', SUCCEED, 'found', 'a'),
     ('multiple words of text', 'uh-uh', FAIL),
     ('multiple words', 'multiple words, yeah', SUCCEED, 'found', 'multiple words'),
@@ -400,7 +401,7 @@ tests = [
     ('(?i)(a)b(c)', 'ABC', SUCCEED, 'found+"-"+g1+"-"+g2', 'ABC-A-C'),
     ('(?i)a+b+c', 'AABBABC', SUCCEED, 'found', 'ABC'),
     ('(?i)a{1,}b{1,}c', 'AABBABC', SUCCEED, 'found', 'ABC'),
-    #('(?i)a**', '-', SYNTAX_ERROR),
+    ('(?i)a**', '-', SYNTAX_ERROR),
     ('(?i)a.+?c', 'ABCABC', SUCCEED, 'found', 'ABC'),
     ('(?i)a.*?c', 'ABCABC', SUCCEED, 'found', 'ABC'),
     ('(?i)a.{0,5}?c', 'ABCABC', SUCCEED, 'found', 'ABC'),
@@ -447,6 +448,7 @@ tests = [
     ('(?i)((((((((((a))))))))))\\10', 'AA', SUCCEED, 'found', 'AA'),
     #('(?i)((((((((((a))))))))))\\41', 'AA', FAIL),
     #('(?i)((((((((((a))))))))))\\41', 'A!', SUCCEED, 'found', 'A!'),
+    ('(?i)((((((((((a))))))))))\\41', '', SYNTAX_ERROR),
     ('(?i)(((((((((a)))))))))', 'A', SUCCEED, 'found', 'A'),
     ('(?i)(?:(?:(?:(?:(?:(?:(?:(?:(?:(a))))))))))', 'A', SUCCEED, 'g1', 'A'),
     ('(?i)(?:(?:(?:(?:(?:(?:(?:(?:(?:(a|b|c))))))))))', 'C', SUCCEED, 'g1', 'C'),
@@ -474,11 +476,15 @@ tests = [
 
     ('w(?# comment', 'w', SYNTAX_ERROR),
     ('w(?# comment 1)xy(?# comment 2)z', 'wxyz', SUCCEED, 'found', 'wxyz'),
-    
-    # Comments using the x embedded pattern modifier (in an unusual place too)
 
-    ("""w# comment 1
-        x(?x) y
+    # Check odd placement of embedded pattern modifiers
+
+    ('w(?i)', 'W', SYNTAX_ERROR),
+    
+    # Comments using the x embedded pattern modifier
+
+    ("""(?x)w# comment 1
+        x y
 	# comment 2
 	z""", 'wxyz', SUCCEED, 'found', 'wxyz'),
 
@@ -491,8 +497,19 @@ xyz""", FAIL),
 abc
 xyz""", SUCCEED, 'found', 'abc'),
 
+    ('(?m)abc$', """jkl
+xyzabc
+123""", SUCCEED, 'found', 'abc'),
+    
     # using the s embedded pattern modifier
 
     ('a.b', 'a\nb', FAIL),
     ('(?s)a.b', 'a\nb', SUCCEED, 'found', 'a\nb'),
+
+    # test \w, etc.
+
+    ('\\w+', '--ab_cd0123--', SUCCEED, 'found', 'ab_cd0123'),
+    ('\\D+', '1234abc5678', SUCCEED, 'found', 'abc'),
+    ('[\\da-fA-F]+', '123abc', SUCCEED, 'found', '123abc'),
+    ('[\\d-x]', '-', SYNTAX_ERROR),
 ]
