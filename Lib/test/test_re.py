@@ -2,10 +2,56 @@
 # -*- mode: python -*-
 # $Id$
 
-from test_support import verbose
+from test_support import verbose, TestFailed
 import re
 import reop
 import sys, os, string, traceback
+
+# Misc tests from Tim Peters' re.doc
+
+try:
+
+    assert re.sub("(?i)b+", "x", "bbbb BBBB") == 'x x'
+
+    def bump_num(matchobj):
+	int_value = int(matchobj.group(0))
+	return str(int_value + 1)
+
+    assert re.sub(r"\d+", bump_num, '08.2 -2 23x99y') == '9.3 -3 24x100y'
+
+    assert re.sub('.', lambda m: r"\n", 'x') == '\\n'
+    assert re.sub('.', r"\n", 'x') == '\n'
+
+    s = r"\1\1"
+    assert re.sub('(.)', s, 'x') == 'xx'
+    assert re.sub('(.)', re.escape(s), 'x') == s
+    assert re.sub('(.)', lambda m: s, 'x') == s
+
+except AssertionError:
+    raise TestFailed, "re.sub"
+
+try:
+    assert re.subn("(?i)b+", "x", "bbbb BBBB") == ('x x', 2)
+    assert re.subn("b+", "x", "bbbb BBBB") == ('x BBBB', 1)
+    assert re.subn("b+", "x", "xyz") == ('xyz', 0)
+    assert re.subn("b*", "x", "xyz") == ('xxxyxzx', 4)
+
+except AssertionError:
+    raise TestFailed, "re.subn"
+
+try:
+    assert re.split(":", ":a:b::c") == ['', 'a', 'b', '', 'c']
+    assert re.split(":*", ":a:b::c") == ['', 'a', 'b', 'c']
+    assert re.split("(:*)", ":a:b::c") == ['', ':', 'a', ':', 'b', '::', 'c']
+    assert re.split("(?::*)", ":a:b::c") == ['', 'a', 'b', 'c']
+    assert re.split("(:)*", ":a:b::c") == ['', ':', 'a', ':', 'b', ':', 'c']
+    assert re.split("([b:]+)", ":a:b::c") == ['', ':', 'a', ':b::', 'c']
+    assert re.split("(b)|(:+)", ":a:b::c") == \
+	   ['', None, ':', 'a', None, ':', '', 'b', None, '', None, '::', 'c']
+    assert re.split("(?:b)|(?::+)", ":a:b::c") == ['', 'a', '', '', 'c']
+
+except AssertionError:
+    raise TestFailed, "re.split"
 
 from re_tests import *
 if verbose: print 'Running re_tests test suite'
