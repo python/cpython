@@ -1,4 +1,3 @@
-#! /ufs/guido/bin/sgi/python-405
 #! /ufs/guido/bin/sgi/python
 
 # Capture a CMIF movie using the Indigo video library and board in burst mode
@@ -41,7 +40,7 @@ def usage():
 	print '-r rate       : capture 1 out of every "rate" frames', \
 	                     '(default and min 1)'
 	print '-w width      : initial window width', \
-		  	     '(default interactive placement)'
+                             '(default 256, use 0 for interactive placement)'
 	print '-d            : drop fields if needed'
 	print '-g bits       : greyscale (2, 4 or 8 bits)'
 	print '-G            : 2-bit greyscale dithered'
@@ -69,7 +68,7 @@ def main():
 	format = SV.RGB8_FRAMES
 	audio = 0
 	rate = 1
-	width = 0
+	width = 256
 	drop = 0
 	mono = 0
 	grey = 0
@@ -167,7 +166,12 @@ def main():
 	gl.keepaspect(x, y)
 	gl.stepunit(8, 6)
 	if width:
-		gl.prefsize(width, width*3/4)
+		height = width*3/4
+		x1 = 150
+		x2 = x1 + width-1
+		y2 = 768-150
+		y1 = y2-height+1
+		gl.prefposition(x1, x2, y1, y2)
 	win = gl.winopen(filename)
 	if width:
 		gl.maxsize(x, y)
@@ -184,12 +188,13 @@ def main():
 	else:
 		param = [SV.FIELDDROP, 0, SV.GENLOCK, SV.GENLOCK_ON]
 	if mono or grey:
-		param = param+[SV.COLOR, SV.MONO, SV.INPUT_BYPASS, 1]
+		param = param+[SV.COLOR, SV.MONO, SV.DITHER, 0, \
+			       SV.INPUT_BYPASS, 1]
 	else:
 		param = param+[SV.COLOR, SV.DEFAULT_COLOR, SV.INPUT_BYPASS, 0]
-	v.SetParam(param)
 
 	v.BindGLWindow(win, SV.IN_REPLACE)
+	v.SetParam(param)
 
 	gl.qdevice(DEVICE.LEFTMOUSE)
 	gl.qdevice(DEVICE.WINQUIT)

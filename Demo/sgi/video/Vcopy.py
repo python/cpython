@@ -166,6 +166,7 @@ def process(infilename, outfilename):
 		sys.stderr.write(outfilename + ': I/O error: ' + `msg` + '\n')
 		return 1
 
+	print '=== input file ==='
 	vin.printinfo()
 
 	vout.setinfo(vin.getinfo())
@@ -187,7 +188,6 @@ def process(infilename, outfilename):
 		if not ypf: ypf = vout.ypf
 		newpf = (xpf, ypf)
 		vout.setpf(newpf)
-		scale = 1
 
 	if newwidth and newheight:
 		scale = 1
@@ -221,6 +221,7 @@ def process(infilename, outfilename):
 	newwidth = newwidth / vout.xpf
 	newheight = newheight / vout.ypf
 
+	print '=== output file ==='
 	vout.printinfo()
 	vout.writeheader()
 
@@ -251,13 +252,14 @@ def process(infilename, outfilename):
 				  inwidth, inheight, newwidth, newheight)
 		if flip:
 			x0, y0 = 0, 0
-			x1, y1 = newwidth-1, neheight-1
+			x1, y1 = newwidth-1, newheight-1
 			if vin.upside_down <> vout.upside_down:
 				y1, y0 = y0, y1
 			if vin.mirror_image <> vout.mirror_image:
 				x1, x0 = x0, x1
 			data = imageop.crop(data, vout.bpp/8, \
 				  newwidth, newheight, x0, y0, x1, y1)
+		print 'Writing frame', nout
 		vout.writeframe(tout, data, cdata)
 		nout = nout + 1
 

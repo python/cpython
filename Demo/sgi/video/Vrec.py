@@ -20,7 +20,7 @@ def usage():
 	print '-r rate       : capture 1 out of every "rate" frames', \
 	                     '(default and min 2)'
 	print '-w width      : initial window width', \
-		  	     '(default interactive placement)'
+                             '(default 256, use 0 for interactive placement)'
 	print '-n            : Don\'t write to file, only timing info'
 	print '-d            : drop fields if needed'
 	print '-g bits       : greyscale (2, 4 or 8 bits)'
@@ -184,7 +184,12 @@ def main():
 	gl.keepaspect(x, y)
 	gl.stepunit(8, 6)
 	if width:
-		gl.prefsize(width, width*3/4)
+		height = width*3/4
+		x1 = 150
+		x2 = x1 + width-1
+		y2 = 768-150
+		y1 = y2-height+1
+		gl.prefposition(x1, x2, y1, y2)
 	win = gl.winopen(filename)
 	if width:
 		gl.maxsize(x, y)
@@ -201,12 +206,13 @@ def main():
 	else:
 		param = [SV.FIELDDROP, 0, SV.GENLOCK, SV.GENLOCK_ON]
 	if mono or grey:
-		param = param+[SV.COLOR, SV.MONO, SV.INPUT_BYPASS, 1]
+		param = param+[SV.COLOR, SV.MONO, SV.DITHER, 0, \
+			       SV.INPUT_BYPASS, 1]
 	else:
 		param = param+[SV.COLOR, SV.DEFAULT_COLOR, SV.INPUT_BYPASS, 0]
-	v.SetParam(param)
 
 	v.BindGLWindow(win, SV.IN_REPLACE)
+	v.SetParam(param)
 
 	gl.qdevice(DEVICE.LEFTMOUSE)
 	gl.qdevice(DEVICE.WINQUIT)
