@@ -1806,7 +1806,7 @@ builtin_sum(PyObject *self, PyObject *args)
 	PyObject *result = NULL;
 	PyObject *temp, *item, *iter;
 
-	if (!PyArg_ParseTuple(args, "O|O:sum", &seq, &result))
+	if (!PyArg_UnpackTuple(args, "sum", 1, 2, &seq, &result))
 		return NULL;
 
 	iter = PyObject_GetIter(seq);
