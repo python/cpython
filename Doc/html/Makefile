@@ -13,8 +13,8 @@ TEXINPUTS=$(TOPDIR)/paper-$(PAPER):$(TOPDIR)/texinputs:
 PYTHON=	   python
 WEBCHECKER=$(PYTHON) $(TOPDIR)/../Tools/webchecker/webchecker.py
 MKHOWTO=   $(TOOLSDIR)/mkhowto --about $(TOPDIR)/html/stdabout.dat \
-		--up-link ../index.html --up-title "Document Index" \
-		--address $(PYTHONDOCS)
+		--address $(PYTHONDOCS) --up-link ../index.html \
+		--up-title "Python Documentation Index"
 MKHTML=	   $(MKHOWTO) --html
 
 BUILDINDEX=$(TOOLSDIR)/buildindex.py
