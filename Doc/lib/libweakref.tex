@@ -57,7 +57,7 @@ be made to support weak references; see section \ref{weakref-extension},
   Return a weak reference to \var{object}.  The original object can be
   retrieved by calling the reference object if the referent is still
   alive; if the referent is no longer alive, calling the reference
-  object will cause \code{None} to be returned.  If \var{callback} is
+  object will cause \constant{None} to be returned.  If \var{callback} is
   provided and not \constant{None},
   it will be called when the object is about to be
   finalized; the weak reference object will be passed as the only
@@ -191,7 +191,7 @@ True
 \end{verbatim}
 
 If the referent no longer exists, calling the reference object returns
-\code{None}:
+\constant{None}:
 
 \begin{verbatim}
 >>> del o, o2
