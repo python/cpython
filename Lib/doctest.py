@@ -348,10 +348,11 @@ class _OutputRedirectingPdb(pdb.Pdb):
         save_stdout = sys.stdout
         sys.stdout = self.__out
         # Call Pdb's trace dispatch method.
-        result = pdb.Pdb.trace_dispatch(self, *args)
-        # Restore stdout.
-        sys.stdout = save_stdout
-        return result
+        try:
+            return pdb.Pdb.trace_dispatch(self, *args)
+        finally:
+            # Restore stdout.
+            sys.stdout = save_stdout
 
 # [XX] Normalize with respect to os.path.pardir?
 def _module_relative_path(module, path):
