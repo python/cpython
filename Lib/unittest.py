@@ -68,7 +68,7 @@ class TestResult:
     Each instance holds the total number of tests run, and collections of
     failures and errors that occurred among those test runs. The collections
     contain tuples of (testcase, exceptioninfo), where exceptioninfo is the
-    formatted traceback of the error that occurred
+    formatted traceback of the error that occurred.
     """
     def __init__(self):
         self.failures = []
