@@ -6,7 +6,7 @@ from random import random, randint
 SHIFT = 15
 BASE = 2 ** SHIFT
 MASK = BASE - 1
-KARATSUBA_CUTOFF = 35   # from longobject.c
+KARATSUBA_CUTOFF = 70   # from longobject.c
 
 # Max number of base BASE digits to use in test cases.  Doubling
 # this will more than double the runtime.
