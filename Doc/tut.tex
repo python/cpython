@@ -65,7 +65,6 @@ modules described in the \emph{Python Library Reference}.
 
 \chapter{Whetting Your Appetite}
 
-%\section{Introduction}
 \label{intro}
 
 If you ever wrote a large shell script, you probably know this
@@ -253,7 +252,7 @@ Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam
 >>>
 \end{verbatim}
 
-\section{The Interpreter and its Environment}
+\section{The Interpreter and Its Environment}
 \label{interp}
 
 \subsection{Error Handling}
@@ -281,7 +280,7 @@ Typing an interrupt while a command is executing raises the
 \code{KeyboardInterrupt} exception, which may be handled by a
 \code{try} statement.
 
-\subsection{Executable Python scripts}
+\subsection{Executable Python Scripts}
 \label{scripts}
 
 On BSD'ish \UNIX{} systems, Python scripts can be made directly
@@ -1274,6 +1273,59 @@ def fprintf(file, format, *args):
     file.write(format % args)
 \end{verbatim}
 
+
+\subsection{Lambda Forms}
+\label{lambda}
+
+By popular demand, a few features commonly found in functional
+programming languages and Lisp have been added to Python.  With the
+\keyword{lambda} keyword, small anonymous functions can be created.
+Here's a function that returns the sum of its two arguments:
+\samp{lambda a, b: a+b}.  Lambda forms can be used wherever function
+objects are required.  They are syntactically restricted to a single
+expression.  Semantically, they are just syntactic sugar for a normal
+function definition.  Like nested function definitions, lambda forms
+cannot reference variables from the containing scope, but this can be
+overcome through the judicious use of default argument values, e.g.
+
+\begin{verbatim}
+def make_incrementor(n):
+    return lambda x, incr=n: x+incr
+\end{verbatim}
+
+\subsection{Documentation Strings}
+\label{docstrings}
+
+There are emerging conventions about the content and formatting of
+documentation strings.
+
+The first line should always be a short, concise summary of the
+object's purpose.  For brevity, it should not explicitly state the
+object's name or type, since these are available by other means
+(except if the name happens to be a verb describing a function's
+operation).  This line should begin with a capital letter and end with
+a period.
+
+If there are more lines in the documentation string, the second line
+should be blank, visually separating the summary from the rest of the
+description.  The following lines should be one of more of paragraphs
+describing the objects calling conventions, its side effects, etc.
+
+The Python parser does not strip indentation from multi-line string
+literals in Python, so tools that process documentation have to strip
+indentation.  This is done using the following convention.  The first
+non-blank line \emph{after} the first line of the string determines the
+amount of indentation for the entire documentation string.  (We can't
+use the first line since it is generally adjacent to the string's
+opening quotes so its indentation is not apparent in the string
+literal.)  Whitespace ``equivalent'' to this indentation is then
+stripped from the start of all lines of the string.  Lines that are
+indented less should not occur, but if they occur all their leading
+whitespace should be stripped.  Equivalence of whitespace should be
+tested after expansion of tabs (to 8 spaces, normally).
+
+
+
 \chapter{Data Structures}
 \label{structures}
 
@@ -1883,7 +1935,7 @@ is not set.  You can modify it using standard list operations, e.g.:
 >>> sys.path.append('/ufs/guido/lib/python')
 \end{verbatim}
 
-\section{The \sectcode{dir()} function}
+\section{The \sectcode{dir()} Function}
 \label{dir}
 
 The built-in function \function{dir()} is used to find out which names
@@ -2124,7 +2176,7 @@ written.  This behind-the-scenes modification to file data is fine for
 writing such files.  (Note that the precise semantics of text mode on
 the Macintosh depends on the underlying \C{} library being used.)
 
-\subsection{Methods of file objects}
+\subsection{Methods of File Objects}
 \label{fileMethods}
 
 The rest of the examples in this section will assume that a file
@@ -2215,7 +2267,7 @@ File objects have some additional methods, such as \method{isatty()}
 and \method{truncate()} which are less frequently used; consult the
 Library Reference for a complete guide to file objects.
 
-\subsection{The \module{pickle} module}
+\subsection{The \module{pickle} Module}
 \label{pickle}
 \refstmodindex{pickle}
 
@@ -2563,7 +2615,7 @@ extension by the user.  Also, like in \Cpp{} but unlike in Modula-3, most
 built-in operators with special syntax (arithmetic operators,
 subscripting etc.) can be redefined for class instances.
 
-\section{A word about terminology}
+\section{A Word About Terminology}
 \label{terminology}
 
 Lacking universally accepted terminology to talk about classes, I will
@@ -2596,7 +2648,7 @@ obviates the need for two different argument passing mechanisms as in
 Pascal.
 
 
-\section{Python scopes and name spaces}
+\section{Python Scopes and Name Spaces}
 \label{scopes}
 
 Before introducing classes, I first have to tell you something about
@@ -2700,14 +2752,14 @@ scope.  (The \keyword{global} statement can be used to indicate that
 particular variables live in the global scope.)
 
 
-\section{A first look at classes}
+\section{A First Look at Classes}
 \label{firstClasses}
 
 Classes introduce a little bit of new syntax, three new object types,
 and some new semantics.
 
 
-\subsection{Class definition syntax}
+\subsection{Class Definition Syntax}
 \label{classDefinition}
 
 The simplest form of class definition looks like this:
@@ -2743,11 +2795,11 @@ object} is created.  This is basically a wrapper around the contents
 of the name space created by the class definition; we'll learn more
 about class objects in the next section.  The original local scope
 (the one in effect just before the class definitions was entered) is
-reinstated, and the class object is bound here to class name given in
-the class definition header (\code{ClassName} in the example).
+reinstated, and the class object is bound here to the class name given
+in the class definition header (\class{ClassName} in the example).
 
 
-\subsection{Class objects}
+\subsection{Class Objects}
 \label{classObjects}
 
 Class objects support two kinds of operations: attribute references
@@ -2786,7 +2838,7 @@ creates a new \emph{instance} of the class and assigns this object to
 the local variable \code{x}.
 
 
-\subsection{Instance objects}
+\subsection{Instance Objects}
 \label{instanceObjects}
 
 Now what can we do with instance objects?  The only operations
@@ -2824,10 +2876,11 @@ example, \code{x.f} is a valid method reference, since
 \code{MyClass.f} is a function, but \code{x.i} is not, since
 \code{MyClass.i} is not.  But \code{x.f} is not the same thing as
 \code{MyClass.f} --- it is a \emph{method object}, not a function
-object.
+object.%
+\obindex{method}
 
 
-\subsection{Method objects}
+\subsection{Method Objects}
 \label{methodObjects}
 
 Usually, a method is called immediately, e.g.:
@@ -2876,7 +2929,7 @@ list is constructed from the instance object and the original argument
 list, and the function object is called with this new argument list.
 
 
-\section{Random remarks}
+\section{Random Remarks}
 \label{remarks}
 
 [These should perhaps be placed more carefully...]
@@ -3063,7 +3116,7 @@ occasionally useful to clients as well.  (Note that this only works if
 the base class is defined or imported directly in the global scope.)
 
 
-\subsection{Multiple inheritance}
+\subsection{Multiple Inheritance}
 \label{multiple}
 
 Python supports a limited form of multiple inheritance as well.  A
@@ -3104,10 +3157,10 @@ variables'' or data attributes used by the common base class), it is
 not clear that these semantics are in any way useful.
 
 
-\section{Private variables through name mangling}
+\section{Private Variables}
 \label{private}
 
-There is now limited support for class-private
+There is limited support for class-private
 identifiers.  Any identifier of the form \code{__spam} (at least two
 leading underscores, at most one trailing underscore) is now textually
 replaced with \code{_classname__spam}, where \code{classname} is the
@@ -3174,7 +3227,7 @@ class VirtualAttributes:
 %so that widespread experience with its use can be gained.  It will not
 %be removed without providing a better solution and a migration path.
 
-\section{Odds and ends}
+\section{Odds and Ends}
 \label{odds}
 
 Sometimes it is useful to have a data type similar to the Pascal
@@ -3317,70 +3370,9 @@ organizes Python workshops.  See \url{http://www.python.org/psa/} for
 information on how to join.
 
 
-\chapter{Recent Additions as of Release 1.1}
+\appendix
 
-% XXX Should the stuff in this chapter be deleted, or can a home be
-% found or it elsewhere in the Tutorial?
-
-\section{Lambda Forms}
-\label{lambda}
-
-% XXX Where to put this?  Or just leave it out?
-
-By popular demand, a few features commonly found in functional
-programming languages and Lisp have been added to Python.  With the
-\keyword{lambda} keyword, small anonymous functions can be created.
-Here's a function that returns the sum of its two arguments:
-\samp{lambda a, b: a+b}.  Lambda forms can be used wherever function
-objects are required.  They are syntactically restricted to a single
-expression.  Semantically, they are just syntactic sugar for a normal
-function definition.  Like nested function definitions, lambda forms
-cannot reference variables from the containing scope, but this can be
-overcome through the judicious use of default argument values, e.g.
-
-\begin{verbatim}
-def make_incrementor(n):
-    return lambda x, incr=n: x+incr
-\end{verbatim}
-
-\section{Documentation Strings}
-\label{docstrings}
-
-% XXX Where to put this?  Or just leave it out?
-
-There are emerging conventions about the content and formatting of
-documentation strings.
-
-The first line should always be a short, concise summary of the
-object's purpose.  For brevity, it should not explicitly state the
-object's name or type, since these are available by other means
-(except if the name happens to be a verb describing a function's
-operation).  This line should begin with a capital letter and end with
-a period.
-
-If there are more lines in the documentation string, the second line
-should be blank, visually separating the summary from the rest of the
-description.  The following lines should be one of more of paragraphs
-describing the objects calling conventions, its side effects, etc.
-
-Some people like to copy the Emacs convention of using UPPER CASE for
-function parameters --- this often saves a few words or lines.
-
-The Python parser does not strip indentation from multi-line string
-literals in Python, so tools that process documentation have to strip
-indentation.  This is done using the following convention.  The first
-non-blank line \emph{after} the first line of the string determines the
-amount of indentation for the entire documentation string.  (We can't
-use the first line since it is generally adjacent to the string's
-opening quotes so its indentation is not apparent in the string
-literal.)  Whitespace ``equivalent'' to this indentation is then
-stripped from the start of all lines of the string.  Lines that are
-indented less should not occur, but if they occur all their leading
-whitespace should be stripped.  Equivalence of whitespace should be
-tested after expansion of tabs (to 8 spaces, normally).
-
-
-\appendix\chapter{Interactive Input Editing and History Substitution}
+\chapter{Interactive Input Editing and History Substitution}
 \label{interacting}
 
 Some versions of the Python interpreter support editing of the current
