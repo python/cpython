@@ -21,9 +21,12 @@ import Dialogs
 import Windows
 import Dlg,Win,Evt,Events # sdm7g
 import Ctl
+import Controls
+import Menu
 import MacOS
 import string
 from ControlAccessor import *	# Also import Controls constants
+import macfs
 
 def cr2lf(text):
 	if '\r' in text:
@@ -285,10 +288,242 @@ class ProgressBar:
 		"""inc(amt) - Increment progress bar position"""
 		self.set(self.curval + n)
 
+ARGV_ID=265
+ARGV_ITEM_OK=1
+ARGV_ITEM_CANCEL=2
+ARGV_OPTION_GROUP=3
+ARGV_OPTION_EXPLAIN=4
+ARGV_OPTION_VALUE=5
+ARGV_OPTION_ADD=6
+ARGV_COMMAND_GROUP=7
+ARGV_COMMAND_EXPLAIN=8
+ARGV_COMMAND_ADD=9
+ARGV_ADD_OLDFILE=10
+ARGV_ADD_NEWFILE=11
+ARGV_ADD_FOLDER=12
+ARGV_CMDLINE_GROUP=13
+ARGV_CMDLINE_DATA=14
+
+##def _myModalDialog(d):
+##	while 1:
+##		ready, ev = Evt.WaitNextEvent(0xffff, -1)
+##		print 'DBG: WNE', ready, ev
+##		if ready : 
+##			what,msg,when,where,mod = ev
+##			part, window = Win.FindWindow(where)
+##			if Dlg.IsDialogEvent(ev):
+##				didit, dlgdone, itemdone = Dlg.DialogSelect(ev)
+##				print 'DBG: DialogSelect', didit, dlgdone, itemdone, d
+##				if didit and dlgdone == d:
+##					return itemdone
+##			elif window == d.GetDialogWindow():
+##				d.GetDialogWindow().SelectWindow()
+##				if part == 4:	# inDrag 
+##						d.DragWindow(where, screenbounds)
+##				else:
+##					MacOS.HandleEvent(ev) 
+##			else:
+##				MacOS.HandleEvent(ev) 
+##
+def _setmenu(control, items):
+		mhandle = control.GetControlDataHandle(Controls.kControlMenuPart,
+				Controls.kControlPopupButtonMenuHandleTag)
+		menu = Menu.as_Menu(mhandle)
+		for item in items:
+			if type(item) == type(()):
+				label = item[0]
+			else:
+				label = item
+			if label[-1] == '=' or label[-1] == ':':
+				label = label[:-1]
+			menu.AppendMenu(label)
+##		mhandle, mid = menu.getpopupinfo()
+##		control.SetControlDataHandle(Controls.kControlMenuPart,
+##				Controls.kControlPopupButtonMenuHandleTag, mhandle)
+		control.SetControlMinimum(1)
+		control.SetControlMaximum(len(items)+1)
+		
+def _selectoption(d, optionlist, idx):
+	if idx < 0 or idx >= len(optionlist):
+		MacOS.SysBeep()
+		return
+	option = optionlist[idx]
+	if type(option) == type(()) and \
+			len(option) > 1:
+		help = option[-1]
+	else:
+		help = ''
+	h = d.GetDialogItemAsControl(ARGV_OPTION_EXPLAIN)
+	Dlg.SetDialogItemText(h, help)
+	hasvalue = 0
+	if type(option) == type(()):
+		label = option[0]
+	else:
+		label = option
+	if label[-1] == '=' or label[-1] == ':':
+		hasvalue = 1
+	h = d.GetDialogItemAsControl(ARGV_OPTION_VALUE)
+	Dlg.SetDialogItemText(h, '')
+	if hasvalue:
+		d.ShowDialogItem(ARGV_OPTION_VALUE)
+		d.SelectDialogItemText(ARGV_OPTION_VALUE, 0, 0)
+	else:
+		d.HideDialogItem(ARGV_OPTION_VALUE)
+
+
+def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfolder=1, id=ARGV_ID):
+	d = GetNewDialog(id, -1)
+	if not d:
+		print "Can't get DLOG resource with id =", id
+		return
+#	h = d.GetDialogItemAsControl(3)
+#	SetDialogItemText(h, lf2cr(prompt))
+#	h = d.GetDialogItemAsControl(4)
+#	SetDialogItemText(h, lf2cr(default))
+#	d.SelectDialogItemText(4, 0, 999)
+#	d.SetDialogItem(4, 0, 255)
+	if optionlist:
+		_setmenu(d.GetDialogItemAsControl(ARGV_OPTION_GROUP), optionlist)
+		_selectoption(d, optionlist, 0)
+	else:
+		d.GetDialogItemAsControl(ARGV_OPTION_GROUP).DeactivateControl()
+	if commandlist:
+		_setmenu(d.GetDialogItemAsControl(ARGV_COMMAND_GROUP), commandlist)
+		if type(commandlist) == type(()) and len(commandlist[0]) > 1:
+			help = commandlist[0][-1]
+			h = d.GetDialogItemAsControl(ARGV_COMMAND_EXPLAIN)
+			Dlg.SetDialogItemText(h, help)
+	else:
+		d.GetDialogItemAsControl(ARGV_COMMAND_GROUP).DeactivateControl()
+	if not addoldfile:
+		d.GetDialogItemAsControl(ARGV_ADD_OLDFILE).DeactivateControl()
+	if not addnewfile:
+		d.GetDialogItemAsControl(ARGV_ADD_NEWFILE).DeactivateControl()
+	if not addfolder:
+		d.GetDialogItemAsControl(ARGV_ADD_FOLDER).DeactivateControl()
+	d.SetDialogDefaultItem(ARGV_ITEM_OK)
+	d.SetDialogCancelItem(ARGV_ITEM_CANCEL)
+	d.GetDialogWindow().ShowWindow()
+	d.DrawDialog()
+	appsw = MacOS.SchedParams(1, 0)
+	try:
+		while 1:
+			stringstoadd = []
+			n = ModalDialog(None)
+			if n == ARGV_ITEM_OK:
+				break
+			elif n == ARGV_ITEM_CANCEL:
+				raise SystemExit
+			elif n == ARGV_OPTION_GROUP:
+				idx = d.GetDialogItemAsControl(ARGV_OPTION_GROUP).GetControlValue()-1
+				_selectoption(d, optionlist, idx)
+			elif n == ARGV_OPTION_VALUE:
+				pass
+			elif n == ARGV_OPTION_ADD:
+				idx = d.GetDialogItemAsControl(ARGV_OPTION_GROUP).GetControlValue()-1
+				if 0 <= idx < len(optionlist):
+					if type(optionlist) == type(()):
+						option = optionlist[idx][0]
+					else:
+						option = optionlist[idx]
+					if option[-1] == '=' or option[-1] == ':':
+						option = option[:-1]
+						h = d.GetDialogItemAsControl(ARGV_OPTION_VALUE)
+						value = Dlg.GetDialogItemText(h)
+					else:
+						value = ''
+					if len(option) == 1:
+						stringtoadd = '-' + option
+					else:
+						stringtoadd = '--' + option
+					stringstoadd = [stringtoadd]
+					if value:
+						stringstoadd.append(value)
+				else:
+					MacOS.SysBeep()
+			elif n == ARGV_COMMAND_GROUP:
+				idx = d.GetDialogItemAsControl(ARGV_COMMAND_GROUP).GetControlValue()-1
+				if 0 <= idx < len(commandlist) and type(commandlist) == type(()) and \
+						len(commandlist[idx]) > 1:
+					help = commandlist[idx][-1]
+					h = d.GetDialogItemAsControl(ARGV_COMMAND_EXPLAIN)
+					Dlg.SetDialogItemText(h, help)
+			elif n == ARGV_COMMAND_ADD:
+				idx = d.GetDialogItemAsControl(ARGV_COMMAND_GROUP).GetControlValue()-1
+				if 0 <= idx < len(commandlist):
+					if type(commandlist) == type(()):
+						stringstoadd = [commandlist[idx][0]]
+					else:
+						stringstoadd = [commandlist[idx]]
+				else:
+					MacOS.SysBeep()
+			elif n == ARGV_ADD_OLDFILE:
+				fss, ok = macfs.StandardGetFile()
+				if ok:
+					stringstoadd = [fss.as_pathname()]
+			elif n == ARGV_ADD_NEWFILE:
+				fss, ok = macfs.StandardPutFile('')
+				if ok:
+					stringstoadd = [fss.as_pathname()]
+			elif n == ARGV_ADD_FOLDER:
+				fss, ok = macfs.GetDirectory()
+				if ok:
+					stringstoadd = [fss.as_pathname()]
+			elif n == ARGV_CMDLINE_DATA:
+				pass # Nothing to do
+			else:
+				raise RuntimeError, "Unknown dialog item %d"%n
+			
+			for stringtoadd in stringstoadd:
+				if '"' in stringtoadd or "'" in stringtoadd or " " in stringtoadd:
+					stringtoadd = `stringtoadd`
+				h = d.GetDialogItemAsControl(ARGV_CMDLINE_DATA)
+				oldstr = GetDialogItemText(h)
+				if oldstr and oldstr[-1] != ' ':
+					oldstr = oldstr + ' '
+				oldstr = oldstr + stringtoadd
+				if oldstr[-1] != ' ':
+					oldstr = oldstr + ' '
+				SetDialogItemText(h, oldstr)
+				d.SelectDialogItemText(ARGV_CMDLINE_DATA, 0x7fff, 0x7fff)
+		h = d.GetDialogItemAsControl(ARGV_CMDLINE_DATA)
+		oldstr = GetDialogItemText(h)
+		tmplist = string.split(oldstr)
+		newlist = []
+		while tmplist:
+			item = tmplist[0]
+			del tmplist[0]
+			if item[0] == '"':
+				while item[-1] != '"':
+					if not tmplist:
+						raise RuntimeError, "Unterminated quoted argument"
+					item = item + ' ' + tmplist[0]
+					del tmplist[0]
+				item = item[1:-1]
+			if item[0] == "'":
+				while item[-1] != "'":
+					if not tmplist:
+						raise RuntimeError, "Unterminated quoted argument"
+					item = item + ' ' + tmplist[0]
+					del tmplist[0]
+				item = item[1:-1]
+			newlist.append(item)
+		return newlist
+	finally:
+		apply(MacOS.SchedParams, appsw)
+	
 def test():
-	import time
+	import time, sys
 
 	Message("Testing EasyDialogs.")
+	optionlist = (('v', 'Verbose'), ('verbose', 'Verbose as long option'), 
+				('flags=', 'Valued option'), ('f:', 'Short valued option'))
+	commandlist = (('start', 'Start something'), ('stop', 'Stop something'))
+	argv = GetArgv(optionlist=optionlist, commandlist=commandlist, addoldfile=0)
+	for i in range(len(argv)):
+		print 'arg[%d] = %s'%(i, `argv[i]`)
+	print 'Type return to continue - ',
+	sys.stdin.readline()
 	ok = AskYesNoCancel("Do you want to proceed?")
 	ok = AskYesNoCancel("Do you want to identify?", yes="Identify", no="No")
 	if ok > 0:
@@ -314,9 +549,6 @@ def test():
 		del bar
 		apply(MacOS.SchedParams, appsw)
 
-
-	
-	
 if __name__ == '__main__':
 	try:
 		test()
