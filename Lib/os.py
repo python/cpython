@@ -93,6 +93,69 @@ else:
 
 del _names
 
+# Super directory utilities.
+# (Inspired by Eric Raymond; the doc strings are mostly his)
+
+def makedirs(name, mode=0777):
+    """makedirs(path [, mode=0777]) -> None
+
+    Super-mkdir; create a leaf directory and all intermediate ones.
+    Works like mkdir, except that any intermediate path segment (not
+    just the rightmost) will be created if it does not exist.  This is
+    recursive.
+
+    """
+    head, tail = path.split(name)
+    if head and tail and not path.exists(head):
+        makedirs(head, mode)
+    mkdir(name, mode)
+
+def removedirs(name):
+    """removedirs(path) -> None
+
+    Super-rmdir; remove a leaf directory and empty all intermediate
+    ones.  Works like rmdir except that, if the leaf directory is
+    successfully removed, directories corresponding to rightmost path
+    segments will be pruned way until either the whole path is
+    consumed or an error occurs.  Errors during this latter phase are
+    ignored -- they generally mean that a directory was not empty.
+
+    """
+    rmdir(name)
+    head, tail = path.split(name)
+    while head and tail:
+        try:
+            rmdir(head)
+        except error:
+            break
+        head, tail = path.split(head)
+
+def renames(old, new):
+    """renames(old, new) -> None
+
+    Super-rename; create directories as necessary and delete any left
+    empty.  Works like rename, except creation of any intermediate
+    directories needed to make the new pathname good is attempted
+    first.  After the rename, directories corresponding to rightmost
+    path segments of the old name will be pruned way until either the
+    whole path is consumed or a nonempty directory is found.
+
+    Note: this function can fail with the new directory structure made
+    if you lack permissions needed to unlink the leaf directory or
+    file.
+
+    """
+    head, tail = path.split(new)
+    if head and tail and not path.exists(head):
+        makedirs(head)
+    rename(old, new)
+    head, tail = path.split(old)
+    if head and tail:
+        try:
+            removedirs(head)
+        except error:
+            pass
+
 # Make sure os.environ exists, at least
 try:
     environ
