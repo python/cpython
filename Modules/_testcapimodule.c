@@ -52,6 +52,7 @@ test_config(PyObject *self, PyObject *args)
 	    if (FATNAME != sizeof(TYPE)) \
     	    	return sizeof_error(#FATNAME, #TYPE, FATNAME, sizeof(TYPE))
 
+	CHECK_SIZEOF(SIZEOF_SHORT, short);
 	CHECK_SIZEOF(SIZEOF_INT, int);
 	CHECK_SIZEOF(SIZEOF_LONG, long);
 	CHECK_SIZEOF(SIZEOF_VOID_P, void*);

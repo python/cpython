@@ -344,6 +344,7 @@ typedef unsigned long uintptr_t;
 #define Py_DEBUG
 #endif
 
+#define SIZEOF_SHORT 2
 #define SIZEOF_INT 4
 #define SIZEOF_LONG 4
 #define SIZEOF_LONG_LONG 8
