@@ -142,10 +142,12 @@ class ReplaceDialog(SearchDialogBase):
             return 0
         new = re.pcre_expand(m, self.replvar.get())
         text.mark_set("insert", first)
+        text.undo_block_start()
         if m.group():
             text.delete(first, last)
         if new:
             text.insert(first, new)
+        text.undo_block_stop()
         self.show_hit(first, text.index("insert"))
         self.ok = 0
         return 1
