@@ -1,0 +1,253 @@
+\begin{longtableiii}{lll}{class}{Node type}{Attribute}{Value}
+
+\lineiii{Add}{left}{left operand}
+\lineiii{}{right}{right operand}
+\hline 
+
+\lineiii{And}{nodes}{list of operands}
+\hline 
+
+\lineiii{AssAttr}{}{\emph{attribute as target of assignment}}
+\lineiii{}{expr}{expression on the left-hand side of the dot}
+\lineiii{}{attrname}{the attribute name, a string}
+\lineiii{}{flags}{XXX}
+\hline 
+
+\lineiii{AssList}{nodes}{list of list elements being assigned to}
+\hline 
+
+\lineiii{AssName}{name}{name being assigned to}
+\lineiii{}{flags}{XXX}
+\hline 
+
+\lineiii{AssTuple}{nodes}{list of tuple elements being assigned to}
+\hline 
+
+\lineiii{Assert}{test}{the expression to be tested}
+\lineiii{}{fail}{the value of the \exception{AssertionError}}
+\hline 
+
+\lineiii{Assign}{nodes}{a list of assignment targets, one per equal sign}
+\lineiii{}{expr}{the value being assigned}
+\hline 
+
+\lineiii{AugAssign}{node}{}
+\lineiii{}{op}{}
+\lineiii{}{expr}{}
+\hline 
+
+\lineiii{Backquote}{expr}{}
+\hline 
+
+\lineiii{Bitand}{nodes}{}
+\hline 
+
+\lineiii{Bitor}{nodes}{}
+\hline 
+
+\lineiii{Bitxor}{nodes}{}
+\hline 
+
+\lineiii{Break}{}{}
+\hline 
+
+\lineiii{CallFunc}{node}{expression for the callee}
+\lineiii{}{args}{a list of arguments}
+\lineiii{}{star_args}{the extended *-arg value}
+\lineiii{}{dstar_args}{the extended **-arg value}
+\hline 
+
+\lineiii{Class}{name}{the name of the class, a string}
+\lineiii{}{bases}{a list of base classes}
+\lineiii{}{doc}{doc string, a string or \code{None}}
+\lineiii{}{code}{the body of the class statement}
+\hline 
+
+\lineiii{Compare}{expr}{}
+\lineiii{}{ops}{}
+\hline 
+
+\lineiii{Const}{value}{}
+\hline 
+
+\lineiii{Continue}{}{}
+\hline 
+
+\lineiii{Dict}{items}{}
+\hline 
+
+\lineiii{Discard}{expr}{}
+\hline 
+
+\lineiii{Div}{left}{}
+\lineiii{}{right}{}
+\hline 
+
+\lineiii{Ellipsis}{}{}
+\hline 
+
+\lineiii{Exec}{expr}{}
+\lineiii{}{locals}{}
+\lineiii{}{globals}{}
+\hline 
+
+\lineiii{For}{assign}{}
+\lineiii{}{list}{}
+\lineiii{}{body}{}
+\lineiii{}{else_}{}
+\hline 
+
+\lineiii{From}{modname}{}
+\lineiii{}{names}{}
+\hline 
+
+\lineiii{Function}{name}{name used in def, a string}
+\lineiii{}{argnames}{list of argument names, as strings}
+\lineiii{}{defaults}{list of default values}
+\lineiii{}{flags}{xxx}
+\lineiii{}{doc}{doc string, a string or \code{None}}
+\lineiii{}{code}{the body of the function}
+\hline
+
+\lineiii{Getattr}{expr}{}
+\lineiii{}{attrname}{}
+\hline 
+
+\lineiii{Global}{names}{}
+\hline 
+
+\lineiii{If}{tests}{}
+\lineiii{}{else_}{}
+\hline 
+
+\lineiii{Import}{names}{}
+\hline 
+
+\lineiii{Invert}{expr}{}
+\hline 
+
+\lineiii{Keyword}{name}{}
+\lineiii{}{expr}{}
+\hline 
+
+\lineiii{Lambda}{argnames}{}
+\lineiii{}{defaults}{}
+\lineiii{}{flags}{}
+\lineiii{}{code}{}
+\hline 
+
+\lineiii{LeftShift}{left}{}
+\lineiii{}{right}{}
+\hline 
+
+\lineiii{List}{nodes}{}
+\hline 
+
+\lineiii{ListComp}{expr}{}
+\lineiii{}{quals}{}
+\hline 
+
+\lineiii{ListCompFor}{assign}{}
+\lineiii{}{list}{}
+\lineiii{}{ifs}{}
+\hline 
+
+\lineiii{ListCompIf}{test}{}
+\hline 
+
+\lineiii{Mod}{left}{}
+\lineiii{}{right}{}
+\hline 
+
+\lineiii{Module}{doc}{doc string, a string or \code{None}}
+\lineiii{}{node}{body of the module, a \class{Stmt}}
+\hline 
+
+\lineiii{Mul}{left}{}
+\lineiii{}{right}{}
+\hline 
+
+\lineiii{Name}{name}{}
+\hline 
+
+\lineiii{Not}{expr}{}
+\hline 
+
+\lineiii{Or}{nodes}{}
+\hline 
+
+\lineiii{Pass}{}{}
+\hline 
+
+\lineiii{Power}{left}{}
+\lineiii{}{right}{}
+\hline 
+
+\lineiii{Print}{nodes}{}
+\lineiii{}{dest}{}
+\hline 
+
+\lineiii{Printnl}{nodes}{}
+\lineiii{}{dest}{}
+\hline 
+
+\lineiii{Raise}{expr1}{}
+\lineiii{}{expr2}{}
+\lineiii{}{expr3}{}
+\hline 
+
+\lineiii{Return}{value}{}
+\hline 
+
+\lineiii{RightShift}{left}{}
+\lineiii{}{right}{}
+\hline 
+
+\lineiii{Slice}{expr}{}
+\lineiii{}{flags}{}
+\lineiii{}{lower}{}
+\lineiii{}{upper}{}
+\hline 
+
+\lineiii{Sliceobj}{nodes}{list of statements}
+\hline 
+
+\lineiii{Stmt}{nodes}{}
+\hline 
+
+\lineiii{Sub}{left}{}
+\lineiii{}{right}{}
+\hline 
+
+\lineiii{Subscript}{expr}{}
+\lineiii{}{flags}{}
+\lineiii{}{subs}{}
+\hline 
+
+\lineiii{TryExcept}{body}{}
+\lineiii{}{handlers}{}
+\lineiii{}{else_}{}
+\hline 
+
+\lineiii{TryFinally}{body}{}
+\lineiii{}{final}{}
+\hline 
+
+\lineiii{Tuple}{nodes}{}
+\hline 
+
+\lineiii{UnaryAdd}{expr}{}
+\hline 
+
+\lineiii{UnarySub}{expr}{}
+\hline 
+
+\lineiii{While}{test}{}
+\lineiii{}{body}{}
+\lineiii{}{else_}{}
+\hline 
+
+\lineiii{Yield}{value}{}
+\hline 
+
+\end{longtableiii}
