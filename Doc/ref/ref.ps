@@ -7208,21 +7208,39 @@ FrameNoSep
 -1.21 (|) 352.02 163.67 P
 1 F
 -0.5 (\051 with reversed operands. These functions) 358.62 163.67 P
--0.62 (are only called if the left operand does not support the corresponding operation \050possibly after) 135 150.67 P
--0.09 (coercion\051. For instance: to evaluate the expression x+y, where x is an instance of a class that) 135 137.67 P
-2.63 (does not have an) 135 124.67 P
+-0.38 (are only called if the left operand does not support the corresponding operation. For instance:) 135 150.67 P
+1.72 (to evaluate the expression x+y, where x is an instance of a class that does not have an) 135 137.67 P
 2 F
-6.31 (__add__) 221.89 124.67 P
+(__add__) 135 124.67 T
 1 F
-2.63 ( method,) 268.09 124.67 P
+( method,) 181.2 124.67 T
 2 F
-6.31 (y.__radd\050x\051) 314.59 124.67 P
+(y.__radd\050x\051) 222.45 124.67 T
 1 F
-2.63 ( is called. If the class defines a) 387.19 124.67 P
-0.37 (__coerce__ method that coerces its arguments to a common type, these methods will never) 135 111.67 P
-0.54 (be called and thus needn\325t be defined. They are useful for classes that implement semi-nu-) 135 98.67 P
--0.53 (merical data types \050types that have some numerical behavior but don\325t adhere to all invariants) 135 85.67 P
-(usually assumed about numbers\051.) 135 72.67 T
+( is called.) 295.05 124.67 T
+2 F
+(__neg__\050self\051) 99 105.67 T
+(__pos__\050self\051) 99 92.67 T
+(__abs__\050self\051) 99 79.67 T
+(__invert__\050self\051) 99 66.67 T
+1 F
+-0.14 ( Called to implement the unary arithmetic operations \050) 211.2 66.67 P
+2 F
+-0.34 (-) 448.98 66.67 P
+1 F
+-0.14 (,) 455.58 66.67 P
+2 F
+-0.34 (+) 460.93 66.67 P
+1 F
+-0.14 (,) 467.53 66.67 P
+2 F
+-0.34 (abs\050\051) 472.89 66.67 P
+1 F
+-0.14 ( and) 505.89 66.67 P
+2 F
+-0.34 (~) 526.99 66.67 P
+1 F
+-0.14 (\051.) 533.59 66.67 P
 0 0 0 1 0 0 0 K
 FMENDPAGE
 %%EndPage: "21" 27
@@ -7253,217 +7271,194 @@ FrameNoSep
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 2 11 Q
-(__neg__\050self\051) 76.5 712.67 T
-(__pos__\050self\051) 76.5 699.67 T
-(__abs__\050self\051) 76.5 686.67 T
-(__invert__\050self\051) 76.5 673.67 T
+(__int__\050self\051) 76.5 712.67 T
+(__long__\050self\051) 76.5 699.67 T
+(__float__\050self\051) 76.5 686.67 T
 1 F
--0.14 ( Called to implement the unary arithmetic operations \050) 188.7 673.67 P
+-0.34 ( Called to implement the built-in functions) 182.1 686.67 P
 2 F
--0.34 (-) 426.48 673.67 P
+-0.82 (int\050\051) 370.09 686.67 P
 1 F
--0.14 (,) 433.08 673.67 P
+-0.34 (,) 403.09 686.67 P
 2 F
--0.34 (+) 438.43 673.67 P
+-0.82 (long\050\051) 408.25 686.67 P
 1 F
--0.14 (,) 445.03 673.67 P
+-0.34 ( and) 447.85 686.67 P
 2 F
--0.34 (abs\050\051) 450.39 673.67 P
+-0.82 (float\050\051) 468.55 686.67 P
 1 F
--0.14 ( and) 483.39 673.67 P
+-0.34 (.) 514.75 686.67 P
+(Should return a value of the appropriate type.) 112.5 673.67 T
 2 F
--0.34 (~) 504.49 673.67 P
+(__oct__\050self\051) 76.5 654.67 T
+(__hex__\050self\051) 76.5 641.67 T
 1 F
--0.14 (\051.) 511.09 673.67 P
+-0.21 ( Called to implement the built-in functions) 168.9 641.67 P
 2 F
-(__int__\050self\051) 76.5 654.67 T
-(__long__\050self\051) 76.5 641.67 T
-(__float__\050self\051) 76.5 628.67 T
+-0.5 (oct\050\051) 357.82 641.67 P
 1 F
--0.34 ( Called to implement the built-in functions) 182.1 628.67 P
+-0.21 ( and) 390.82 641.67 P
 2 F
--0.82 (int\050\051) 370.09 628.67 P
+-0.5 (hex\050\051) 411.79 641.67 P
 1 F
--0.34 (,) 403.09 628.67 P
+-0.21 (. Should return a) 444.79 641.67 P
+(string value.) 112.5 628.67 T
 2 F
--0.82 (long\050\051) 408.25 628.67 P
+(__coerce__\050self, other\051) 76.5 609.67 T
 1 F
--0.34 ( and) 447.85 628.67 P
+0.3 (Called to implement \322mixed-mode\323 numeric arithmetic. Should) 234.9 609.67 P
+-0.34 (either return a 2-tuple containing) 112.5 596.67 P
 2 F
--0.82 (float\050\051) 468.55 628.67 P
+-0.82 (self) 258.34 596.67 P
 1 F
--0.34 (.) 514.75 628.67 P
-(Should return a value of the appropriate type.) 112.5 615.67 T
+-0.34 ( and) 284.74 596.67 P
 2 F
-(__oct__\050self\051) 76.5 596.67 T
-(__hex__\050self\051) 76.5 583.67 T
+-0.82 (other) 305.43 596.67 P
 1 F
--0.21 ( Called to implement the built-in functions) 168.9 583.67 P
+-0.34 ( converted to a common numeric type, or) 338.43 596.67 P
 2 F
--0.5 (oct\050\051) 357.82 583.67 P
+0.6 (None) 112.5 583.67 P
 1 F
--0.21 ( and) 390.82 583.67 P
+0.25 ( if no conversion is possible. When the common type would be the type of) 138.9 583.67 P
 2 F
--0.5 (hex\050\051) 411.79 583.67 P
+0.6 (other) 472.63 583.67 P
 1 F
--0.21 (. Should return a) 444.79 583.67 P
-(string value.) 112.5 570.67 T
+0.25 (, it) 505.63 583.67 P
+0.46 (is sufficient to return) 112.5 570.67 P
 2 F
-(__coerce__\050self, other\051) 76.5 551.67 T
+1.11 (None) 209.06 570.67 P
 1 F
-0.3 (Called to implement \322mixed-mode\323 numeric arithmetic. Should) 234.9 551.67 P
--0.34 (either return a 2-tuple containing) 112.5 538.67 P
-2 F
--0.82 (self) 258.34 538.67 P
-1 F
--0.34 ( and) 284.74 538.67 P
-2 F
--0.82 (other) 305.43 538.67 P
-1 F
--0.34 ( converted to a common numeric type, or) 338.43 538.67 P
-2 F
-0.6 (None) 112.5 525.67 P
-1 F
-0.25 ( if no conversion is possible. When the common type would be the type of) 138.9 525.67 P
-2 F
-0.6 (other) 472.63 525.67 P
-1 F
-0.25 (, it) 505.63 525.67 P
-0.46 (is sufficient to return) 112.5 512.67 P
-2 F
-1.11 (None) 209.06 512.67 P
-1 F
-0.46 (, since the interpreter will also ask the other object to attempt a) 235.46 512.67 P
--0.39 (coercion \050but sometimes, if the implementation of the other type cannot be changed, it is use-) 112.5 499.67 P
-(ful to do the conversion to the other type here\051.) 112.5 486.67 T
+0.46 (, since the interpreter will also ask the other object to attempt a) 235.46 570.67 P
+-0.39 (coercion \050but sometimes, if the implementation of the other type cannot be changed, it is use-) 112.5 557.67 P
+(ful to do the conversion to the other type here\051.) 112.5 544.67 T
 4 F
-1.86 (Coercion rules) 112.5 469.67 P
+1.86 (Coercion rules) 112.5 527.67 P
 1 F
-1.86 (: to evaluate x) 183.1 469.67 P
+1.86 (: to evaluate x) 183.1 527.67 P
 3 F
-1.86 (op) 255.29 469.67 P
+1.86 (op) 255.29 527.67 P
 1 F
-1.86 ( y, the following steps are taken \050where) 266.29 469.67 P
+1.86 ( y, the following steps are taken \050where) 266.29 527.67 P
 2 F
-4.46 (__op__) 457.41 469.67 P
+4.46 (__op__) 457.41 527.67 P
 1 F
-1.86 ( and) 497.01 469.67 P
+1.86 ( and) 497.01 527.67 P
 2 F
-4.69 (__rop__) 112.5 456.67 P
+4.69 (__rop__) 112.5 514.67 P
 1 F
-1.96 ( are the method names corresponding to) 158.7 456.67 P
+1.96 ( are the method names corresponding to) 158.7 514.67 P
 3 F
-1.96 (op) 351.11 456.67 P
+1.96 (op) 351.11 514.67 P
 1 F
-1.96 (, e.g. if) 362.11 456.67 P
+1.96 (, e.g. if) 362.11 514.67 P
 3 F
-1.96 (op) 401.58 456.67 P
+1.96 (op) 401.58 514.67 P
 1 F
-1.96 ( is \324) 412.58 456.67 P
+1.96 ( is \324) 412.58 514.67 P
 2 F
-4.69 (+) 432.99 456.67 P
+4.69 (+) 432.99 514.67 P
 1 F
-1.96 (\325,) 439.59 456.67 P
+1.96 (\325,) 439.59 514.67 P
 2 F
-4.69 (__add__) 450.71 456.67 P
+4.69 (__add__) 450.71 514.67 P
 1 F
-1.96 ( and) 496.91 456.67 P
+1.96 ( and) 496.91 514.67 P
 2 F
-0.89 (__radd__) 112.5 443.67 P
+0.89 (__radd__) 112.5 501.67 P
 1 F
-0.37 ( are used\051. If an exception occurs at any point, the evaluation is abandoned and) 165.3 443.67 P
-(exception handling takes over.) 112.5 430.67 T
-(0.) 112.5 411.67 T
-0.31 (If x is a string object and) 130.5 411.67 P
+0.37 ( are used\051. If an exception occurs at any point, the evaluation is abandoned and) 165.3 501.67 P
+(exception handling takes over.) 112.5 488.67 T
+(0.) 112.5 469.67 T
+0.31 (If x is a string object and) 130.5 469.67 P
 3 F
-0.31 (op) 244.77 411.67 P
+0.31 (op) 244.77 469.67 P
 1 F
-0.31 ( is the modulo operator \050) 255.77 411.67 P
+0.31 ( is the modulo operator \050) 255.77 469.67 P
 2 F
-0.74 (%) 365.77 411.67 P
+0.74 (%) 365.77 469.67 P
 1 F
-0.31 (\051, the string formatting operation) 372.37 411.67 P
-(\050see [Ref:XXX]\051 is invoked and the remaining steps are skipped.) 130.5 398.67 T
-(1.) 112.5 379.67 T
-(If x is a class instance:) 130.5 379.67 T
-(1a.) 130.5 360.67 T
-0.54 (If x has a) 166.5 360.67 P
+0.31 (\051, the string formatting operation) 372.37 469.67 P
+(\050see [Ref:XXX]\051 is invoked and the remaining steps are skipped.) 130.5 456.67 T
+(1.) 112.5 437.67 T
+(If x is a class instance:) 130.5 437.67 T
+(1a.) 130.5 418.67 T
+0.54 (If x has a) 166.5 418.67 P
 2 F
-1.3 (__coerce__) 212.05 360.67 P
+1.3 (__coerce__) 212.05 418.67 P
 1 F
-0.54 ( method: replace x and y with the 2-tuple returned by) 278.05 360.67 P
+0.54 ( method: replace x and y with the 2-tuple returned by) 278.05 418.67 P
 2 F
-(x.__coerce__\050y\051) 166.5 347.67 T
+(x.__coerce__\050y\051) 166.5 405.67 T
 1 F
-(; skip to step 2 if the coercion returns) 265.5 347.67 T
+(; skip to step 2 if the coercion returns) 265.5 405.67 T
 2 F
-(None) 432.01 347.67 T
+(None) 432.01 405.67 T
 1 F
-(.) 458.41 347.67 T
-(1b.) 130.5 328.67 T
-(If neither x nor y is a class instance after coercion, go to step 3.) 166.5 328.67 T
-(1c.) 130.5 309.67 T
--0.41 (If x has a method) 166.5 309.67 P
+(.) 458.41 405.67 T
+(1b.) 130.5 386.67 T
+(If neither x nor y is a class instance after coercion, go to step 3.) 166.5 386.67 T
+(1c.) 130.5 367.67 T
+-0.41 (If x has a method) 166.5 367.67 P
 2 F
--0.98 (__op__) 243.59 309.67 P
+-0.98 (__op__) 243.59 367.67 P
 1 F
--0.41 (, return) 283.19 309.67 P
+-0.41 (, return) 283.19 367.67 P
 2 F
--0.98 (x.__op__\050y\051) 316.89 309.67 P
+-0.98 (x.__op__\050y\051) 316.89 367.67 P
 1 F
--0.41 (; otherwise, restore x and y to) 389.49 309.67 P
-(their value before step 1a.) 166.5 296.67 T
-(2.) 112.5 277.67 T
-(If y is a class instance:) 130.5 277.67 T
-(2a.) 130.5 258.67 T
-0.54 (If y has a) 166.5 258.67 P
+-0.41 (; otherwise, restore x and y to) 389.49 367.67 P
+(their value before step 1a.) 166.5 354.67 T
+(2.) 112.5 335.67 T
+(If y is a class instance:) 130.5 335.67 T
+(2a.) 130.5 316.67 T
+0.54 (If y has a) 166.5 316.67 P
 2 F
-1.3 (__coerce__) 212.05 258.67 P
+1.3 (__coerce__) 212.05 316.67 P
 1 F
-0.54 ( method: replace y and x with the 2-tuple returned by) 278.05 258.67 P
+0.54 ( method: replace y and x with the 2-tuple returned by) 278.05 316.67 P
 2 F
-(y.__coerce__\050x\051) 166.5 245.67 T
+(y.__coerce__\050x\051) 166.5 303.67 T
 1 F
-(; skip to step 3 if the coercion returns None.) 265.5 245.67 T
-(2b.) 130.5 226.67 T
-(If neither x nor y is a class instance after coercion, go to step 3.) 166.5 226.67 T
-(2b.) 130.5 207.67 T
-0.1 (If y has a method) 166.5 207.67 P
+(; skip to step 3 if the coercion returns None.) 265.5 303.67 T
+(2b.) 130.5 284.67 T
+(If neither x nor y is a class instance after coercion, go to step 3.) 166.5 284.67 T
+(2b.) 130.5 265.67 T
+0.1 (If y has a method) 166.5 265.67 P
 2 F
-0.23 (__rop__) 246.11 207.67 P
+0.23 (__rop__) 246.11 265.67 P
 1 F
-0.1 (, return) 292.31 207.67 P
+0.1 (, return) 292.31 265.67 P
 2 F
-0.23 (y.__rop__\050x\051) 327.02 207.67 P
+0.23 (y.__rop__\050x\051) 327.02 265.67 P
 1 F
-0.1 (; otherwise, restore x and) 406.22 207.67 P
-(y to their value before step 2a.) 166.5 194.67 T
-(3.) 112.5 175.67 T
-(We only get here if neither x nor y is a class instance.) 130.5 175.67 T
-(3a.) 130.5 156.67 T
-(If) 166.5 156.67 T
+0.1 (; otherwise, restore x and) 406.22 265.67 P
+(y to their value before step 2a.) 166.5 252.67 T
+(3.) 112.5 233.67 T
+(We only get here if neither x nor y is a class instance.) 130.5 233.67 T
+(3a.) 130.5 214.67 T
+(If) 166.5 214.67 T
 3 F
-(op) 176.58 156.67 T
+(op) 176.58 214.67 T
 1 F
-( is \324) 187.58 156.67 T
+( is \324) 187.58 214.67 T
 2 F
-(+) 204.08 156.67 T
+(+) 204.08 214.67 T
 1 F
-(\325 and x is a sequence, sequence concatenation is invoked.) 210.68 156.67 T
-(3b.) 130.5 137.67 T
--0.37 (If) 166.5 137.67 P
+(\325 and x is a sequence, sequence concatenation is invoked.) 210.68 214.67 T
+(3b.) 130.5 195.67 T
+-0.37 (If) 166.5 195.67 P
 3 F
--0.37 (op) 176.2 137.67 P
+-0.37 (op) 176.2 195.67 P
 1 F
--0.37 ( is \324) 187.2 137.67 P
+-0.37 ( is \324) 187.2 195.67 P
 2 F
--0.89 (*) 202.96 137.67 P
+-0.89 (*) 202.96 195.67 P
 1 F
--0.37 (\325 and one operand is a sequence and the other an integer, sequence rep-) 209.56 137.67 P
-(etition is invoked.) 166.5 124.67 T
-(3c.) 130.5 105.67 T
-0.05 (Otherwise, both operands must be numbers; they are coerced to a common type) 166.5 105.67 P
-(if possible, and the numeric operation is invoked for that type.) 166.5 92.67 T
+-0.37 (\325 and one operand is a sequence and the other an integer, sequence rep-) 209.56 195.67 P
+(etition is invoked.) 166.5 182.67 T
+(3c.) 130.5 163.67 T
+0.05 (Otherwise, both operands must be numbers; they are coerced to a common type) 166.5 163.67 P
+(if possible, and the numeric operation is invoked for that type.) 166.5 150.67 T
 0 0 0 1 0 0 0 K
 FMENDPAGE
 %%EndPage: "22" 28
@@ -12511,7 +12506,7 @@ N
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 ( . . . . . . . . . . . . . . . . . . . . . .) 134.75 604.67 T
-(22) 259 604.67 T
+(21) 259 604.67 T
 (__add__) 94.5 591.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
@@ -12705,7 +12700,7 @@ N
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 ( . . . . . . . . . . . . . . . . . . . .) 145.75 240.67 T
-(22) 259 240.67 T
+(21) 259 240.67 T
 (__len__) 94.5 227.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
@@ -12773,7 +12768,7 @@ N
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 (. . . . . . . . . . . . . . . . . . . . . .) 137.5 110.67 T
-(22) 259 110.67 T
+(21) 259 110.67 T
 (__nonzero__) 94.5 97.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
@@ -12799,7 +12794,7 @@ N
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
 ( . . . . . . . . . . . . . . . . . . . . . .) 365.75 631.67 T
-(22) 488.5 631.67 T
+(21) 488.5 631.67 T
 (__pow__) 324 618.67 T
 0 0 0 1 0 0 0 K
 0 0 0 1 0 0 0 K
