@@ -1,6 +1,12 @@
 What's New in Python 2.2a2?
 ===========================
 
+Tools
+
+- The new Tools/scripts/cleanfuture.py can be used to automatically
+  edit out obsolute future statements from Python source code.  See
+  the module docstring for details.
+
 Tests
 
 - regrtest.py now knows which tests are expected to be skipped on some
@@ -25,7 +31,7 @@ Library
 
 - New class Differ and new functions ndiff() and restore() in difflib.py.
   These package the algorithms used by the popular Tools/scripts/ndiff.py,
-  for progammatic reuse.
+  for programmatic reuse.
 
 - New function xml.sax.saxutils.quoteattr():  Quote an XML attribute
   value using the minimal quoting required for the value; more
