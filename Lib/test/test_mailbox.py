@@ -2,6 +2,12 @@ import mailbox
 import os
 import test_support
 
+# cleanup the turds of some of the other tests. :(
+try:
+    os.unlink(test_support.TESTFN)
+except OSError:
+    pass
+
 # create a new maildir mailbox to work with:
 curdir = os.path.join(test_support.TESTFN, "cur")
 newdir = os.path.join(test_support.TESTFN, "new")
@@ -21,8 +27,8 @@ try:
 
 finally:
     try: os.rmdir(newdir)
-    except IOError: pass
+    except OSError: pass
     try: os.rmdir(curdir)
-    except IOError: pass
+    except OSError: pass
     try: os.rmdir(test_support.TESTFN)
-    except IOError: pass
+    except OSError: pass
