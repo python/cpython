@@ -140,7 +140,7 @@ _codecs _codecsmodule.c	# access to the builtin codecs and codec registry
 unicodedata unicodedata.c unicodedatabase.c
                         # static Unicode character database
 
-#_locale _localemodule.c  # access to ISO C locale support
+_locale _localemodule.c  # access to ISO C locale support
 
 
 # Modules with some UNIX dependencies -- on by default:
