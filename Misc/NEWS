@@ -53,6 +53,9 @@ Tools/Demos
 Build
 -----
 
+- Setting DESTDIR during 'make install' now allows to specify a
+  different root directory.
+
 C API
 -----
 

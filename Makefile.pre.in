@@ -563,16 +563,16 @@ oldsharedinstall: $(DESTSHARED) $(SHAREDMODS)
 		@for i in X $(SHAREDMODS); do \
 		  if test $$i != X; then \
 		    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
-		    $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
+		    $(INSTALL_SHARED) $$i $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
 		  fi; \
 		done
 
 $(DESTSHARED):
 		@for i in $(DESTDIRS); \
 		do \
-			if test ! -d $$i; then \
+			if test ! -d $(DESTDIR)$$i; then \
 				echo "Creating directory $$i"; \
-				$(INSTALL) -d -m $(DIRMODE) $$i; \
+				$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$$i; \
 			else    true; \
 			fi; \
 		done
@@ -580,11 +580,11 @@ $(DESTSHARED):
 
 # Install the interpreter (by creating a hard link to python$(VERSION))
 bininstall:	altbininstall
-	-if test -f $(BINDIR)/$(PYTHON) -o -h $(BINDIR)/$(PYTHON); \
-	then rm -f $(BINDIR)/$(PYTHON); \
+	-if test -f $(DESTDIR)$(BINDIR)/$(PYTHON) -o -h $(DESTDIR)$(BINDIR)/$(PYTHON); \
+	then rm -f $(DESTDIR)$(BINDIR)/$(PYTHON); \
 	else true; \
 	fi
-	(cd $(BINDIR); $(LN) python$(VERSION)$(EXE) $(PYTHON))
+	(cd $(DESTDIR)$(BINDIR); $(LN) python$(VERSION)$(EXE) $(PYTHON))
 
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
@@ -597,18 +597,18 @@ altbininstall:	$(BUILDPYTHON)
 	fi
 	@for i in $(BINDIR) $(LIBDIR); \
 	do \
-		if test ! -d $$i; then \
+		if test ! -d $(DESTDIR)$$i; then \
 			echo "Creating directory $$i"; \
-			$(INSTALL) -d -m $(DIRMODE) $$i; \
+			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$$i; \
 		else	true; \
 		fi; \
 	done
-	$(INSTALL_PROGRAM) $(BUILDPYTHON) $(BINDIR)/python$(VERSION)$(EXE)
+	$(INSTALL_PROGRAM) $(BUILDPYTHON) $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE)
 	if test -f libpython$(VERSION)$(SO); then \
 		if test "$(SO)" = .dll; then \
-			$(INSTALL_SHARED) libpython$(VERSION)$(SO) $(BINDIR); \
+			$(INSTALL_SHARED) libpython$(VERSION)$(SO) $(DESTDIR)$(BINDIR); \
 		else \
-			$(INSTALL_SHARED) libpython$(VERSION)$(SO) $(LIBDIR)/$(INSTSONAME); \
+			$(INSTALL_SHARED) libpython$(VERSION)$(SO) $(DESTDIR)$(LIBDIR)/$(INSTSONAME); \
 		fi; \
 	else	true; \
 	fi
@@ -617,14 +617,14 @@ altbininstall:	$(BUILDPYTHON)
 maninstall:
 	@for i in $(MANDIR) $(MANDIR)/man1; \
 	do \
-		if test ! -d $$i; then \
+		if test ! -d $(DESTDIR)$$i; then \
 			echo "Creating directory $$i"; \
-			$(INSTALL) -d -m $(DIRMODE) $$i; \
+			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$$i; \
 		else	true; \
 		fi; \
 	done
 	$(INSTALL_DATA) $(srcdir)/Misc/python.man \
-		$(MANDIR)/man1/python.1
+		$(DESTDIR)$(MANDIR)/man1/python.1
 
 # Install the library
 PLATDIR=	plat-$(MACHDEP)
@@ -649,9 +649,9 @@ LIBSUBDIRS=	lib-old lib-tk site-packages test test/output test/data \
 libinstall:	$(BUILDPYTHON) $(srcdir)/Lib/$(PLATDIR)
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \
-		if test ! -d $$i; then \
+		if test ! -d $(DESTDIR)$$i; then \
 			echo "Creating directory $$i"; \
-			$(INSTALL) -d -m $(DIRMODE) $$i; \
+			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$$i; \
 		else	true; \
 		fi; \
 	done
@@ -660,19 +660,19 @@ libinstall:	$(BUILDPYTHON) $(srcdir)/Lib/$(PLATDIR)
 		a=$(srcdir)/Lib/$$d; \
 		if test ! -d $$a; then continue; else true; fi; \
 		b=$(LIBDEST)/$$d; \
-		if test ! -d $$b; then \
+		if test ! -d $(DESTDIR)$$b; then \
 			echo "Creating directory $$b"; \
-			$(INSTALL) -d -m $(DIRMODE) $$b; \
+			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$$b; \
 		else	true; \
 		fi; \
 	done
 	@for i in $(srcdir)/Lib/*.py $(srcdir)/Lib/*.doc; \
 	do \
 		if test -x $$i; then \
-			$(INSTALL_SCRIPT) $$i $(LIBDEST); \
+			$(INSTALL_SCRIPT) $$i $(DESTDIR)$(LIBDEST); \
 			echo $(INSTALL_SCRIPT) $$i $(LIBDEST); \
 		else \
-			$(INSTALL_DATA) $$i $(LIBDEST); \
+			$(INSTALL_DATA) $$i $(DESTDIR)$(LIBDEST); \
 			echo $(INSTALL_DATA) $$i $(LIBDEST); \
 		fi; \
 	done
@@ -692,27 +692,27 @@ libinstall:	$(BUILDPYTHON) $(srcdir)/Lib/$(PLATDIR)
 				if test -d $$i; then continue; fi; \
 				if test -x $$i; then \
 				    echo $(INSTALL_SCRIPT) $$i $$b; \
-				    $(INSTALL_SCRIPT) $$i $$b; \
+				    $(INSTALL_SCRIPT) $$i $(DESTDIR)$$b; \
 				else \
 				    echo $(INSTALL_DATA) $$i $$b; \
-				    $(INSTALL_DATA) $$i $$b; \
+				    $(INSTALL_DATA) $$i $(DESTDIR)$$b; \
 				fi;; \
 			esac; \
 		done; \
 	done
-	$(INSTALL_DATA) $(srcdir)/LICENSE $(LIBDEST)/LICENSE.txt
-	PYTHONPATH=$(LIBDEST)  $(RUNSHARED) \
-		./$(BUILDPYTHON) -Wi -tt $(LIBDEST)/compileall.py \
-		-x 'badsyntax|site-packages' $(LIBDEST)
-	PYTHONPATH=$(LIBDEST) $(RUNSHARED) \
-		./$(BUILDPYTHON) -Wi -tt -O $(LIBDEST)/compileall.py \
-		-x 'badsyntax|site-packages' $(LIBDEST)
-	PYTHONPATH=$(LIBDEST)  $(RUNSHARED) \
-		./$(BUILDPYTHON) -Wi -t $(LIBDEST)/compileall.py \
-		-x badsyntax $(LIBDEST)/site-packages
-	PYTHONPATH=$(LIBDEST) $(RUNSHARED) \
-		./$(BUILDPYTHON) -Wi -t -O $(LIBDEST)/compileall.py \
-		-x badsyntax $(LIBDEST)/site-packages
+	$(INSTALL_DATA) $(srcdir)/LICENSE $(DESTDIR)$(LIBDEST)/LICENSE.txt
+	PYTHONPATH=$(DESTDIR)$(LIBDEST)  $(RUNSHARED) \
+		./$(BUILDPYTHON) -Wi -tt $(DESTDIR)$(LIBDEST)/compileall.py \
+		-x 'badsyntax|site-packages' $(DESTDIR)$(LIBDEST)
+	PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
+		./$(BUILDPYTHON) -Wi -tt -O $(DESTDIR)$(LIBDEST)/compileall.py \
+		-x 'badsyntax|site-packages' $(DESTDIR)$(LIBDEST)
+	PYTHONPATH=$(DESTDIR)$(LIBDEST)  $(RUNSHARED) \
+		./$(BUILDPYTHON) -Wi -t $(DESTDIR)$(LIBDEST)/compileall.py \
+		-x badsyntax $(DESTDIR)$(LIBDEST)/site-packages
+	PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
+		./$(BUILDPYTHON) -Wi -t -O $(DESTDIR)$(LIBDEST)/compileall.py \
+		-x badsyntax $(DESTDIR)$(LIBDEST)/site-packages
 
 # Create the PLATDIR source directory, if one wasn't distributed..
 $(srcdir)/Lib/$(PLATDIR):
@@ -729,18 +729,18 @@ INCLDIRSTOMAKE=$(INCLUDEDIR) $(CONFINCLUDEDIR) $(INCLUDEPY) $(CONFINCLUDEPY)
 inclinstall:
 	@for i in $(INCLDIRSTOMAKE); \
 	do \
-		if test ! -d $$i; then \
+		if test ! -d $(DESTDIR)$$i; then \
 			echo "Creating directory $$i"; \
-			$(INSTALL) -d -m $(DIRMODE) $$i; \
+			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$$i; \
 		else	true; \
 		fi; \
 	done
 	@for i in $(srcdir)/Include/*.h; \
 	do \
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY); \
-		$(INSTALL_DATA) $$i $(INCLUDEPY); \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY); \
 	done
-	$(INSTALL_DATA) pyconfig.h $(CONFINCLUDEPY)/pyconfig.h
+	$(INSTALL_DATA) pyconfig.h $(DESTDIR)$(CONFINCLUDEPY)/pyconfig.h
 
 # Install the library and miscellaneous stuff needed for extending/embedding
 # This goes into $(exec_prefix)
@@ -748,55 +748,55 @@ LIBPL=		$(LIBP)/config
 libainstall:	all
 	@for i in $(LIBDIR) $(LIBP) $(LIBPL); \
 	do \
-		if test ! -d $$i; then \
+		if test ! -d $(DESTDIR)$$i; then \
 			echo "Creating directory $$i"; \
-			$(INSTALL) -d -m $(DIRMODE) $$i; \
+			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$$i; \
 		else	true; \
 		fi; \
 	done
 	@if test -d $(LIBRARY); then :; else \
 		if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
 			if test "$(SO)" = .dll; then \
-				$(INSTALL_DATA) $(LDLIBRARY) $(LIBPL) ; \
+				$(INSTALL_DATA) $(LDLIBRARY) $(DESTDIR)$(LIBPL) ; \
 			else \
-				$(INSTALL_DATA) $(LIBRARY) $(LIBPL)/$(LIBRARY) ; \
-				$(RANLIB) $(LIBPL)/$(LIBRARY) ; \
+				$(INSTALL_DATA) $(LIBRARY) $(DESTDIR)$(LIBPL)/$(LIBRARY) ; \
+				$(RANLIB) $(DESTDIR)$(LIBPL)/$(LIBRARY) ; \
 			fi; \
 		else \
 			echo Skip install of $(LIBRARY) - use make frameworkinstall; \
 		fi; \
 	fi
-	$(INSTALL_DATA) Modules/config.c $(LIBPL)/config.c
-	$(INSTALL_DATA) Modules/$(MAINOBJ) $(LIBPL)/$(MAINOBJ)
-	$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(LIBPL)/config.c.in
-	$(INSTALL_DATA) Makefile $(LIBPL)/Makefile
-	$(INSTALL_DATA) Modules/Setup $(LIBPL)/Setup
-	$(INSTALL_DATA) Modules/Setup.local $(LIBPL)/Setup.local
-	$(INSTALL_DATA) Modules/Setup.config $(LIBPL)/Setup.config
-	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(LIBPL)/makesetup
-	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(LIBPL)/install-sh
+	$(INSTALL_DATA) Modules/config.c $(DESTDIR)$(LIBPL)/config.c
+	$(INSTALL_DATA) Modules/$(MAINOBJ) $(DESTDIR)$(LIBPL)/$(MAINOBJ)
+	$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(DESTDIR)$(LIBPL)/config.c.in
+	$(INSTALL_DATA) Makefile $(DESTDIR)$(LIBPL)/Makefile
+	$(INSTALL_DATA) Modules/Setup $(DESTDIR)$(LIBPL)/Setup
+	$(INSTALL_DATA) Modules/Setup.local $(DESTDIR)$(LIBPL)/Setup.local
+	$(INSTALL_DATA) Modules/Setup.config $(DESTDIR)$(LIBPL)/Setup.config
+	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(DESTDIR)$(LIBPL)/makesetup
+	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
 	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
 		echo; echo "Installing support files for building shared extension modules on AIX:"; \
 		$(INSTALL_DATA) Modules/python.exp		\
-				$(LIBPL)/python.exp;		\
+				$(DESTDIR)$(LIBPL)/python.exp;		\
 		echo; echo "$(LIBPL)/python.exp";		\
 		$(INSTALL_SCRIPT) $(srcdir)/Modules/makexp_aix	\
-				$(LIBPL)/makexp_aix;		\
+				$(DESTDIR)$(LIBPL)/makexp_aix;		\
 		echo "$(LIBPL)/makexp_aix";			\
 		$(INSTALL_SCRIPT) $(srcdir)/Modules/ld_so_aix	\
-				$(LIBPL)/ld_so_aix;		\
+				$(DESTDIR)$(LIBPL)/ld_so_aix;		\
 		echo "$(LIBPL)/ld_so_aix";			\
 		echo; echo "See Misc/AIX-NOTES for details.";	\
 	else true; \
 	fi
 	@case "$(MACHDEP)" in beos*) \
 		echo; echo "Installing support files for building shared extension modules on BeOS:"; \
-		$(INSTALL_DATA) Misc/BeOS-NOTES $(LIBPL)/README;	\
+		$(INSTALL_DATA) Misc/BeOS-NOTES $(DESTDIR)$(LIBPL)/README;	\
 		echo; echo "$(LIBPL)/README";			\
-		$(INSTALL_SCRIPT) Modules/ar_beos $(LIBPL)/ar_beos; \
+		$(INSTALL_SCRIPT) Modules/ar_beos $(DESTDIR)$(LIBPL)/ar_beos; \
 		echo "$(LIBPL)/ar_beos";			\
-		$(INSTALL_SCRIPT) Modules/ld_so_beos $(LIBPL)/ld_so_beos; \
+		$(INSTALL_SCRIPT) Modules/ld_so_beos $(DESTDIR)$(LIBPL)/ld_so_beos; \
 		echo "$(LIBPL)/ld_so_beos";			\
 		echo; echo "See Misc/BeOS-NOTES for details.";	\
 		;; \
@@ -808,7 +808,8 @@ sharedinstall:
 	$(RUNSHARED) ./$(BUILDPYTHON) -E $(srcdir)/setup.py install \
 	   	--prefix=$(prefix) \
 		--install-scripts=$(BINDIR) \
-		--install-platlib=$(DESTSHARED)
+		--install-platlib=$(DESTSHARED) \
+		--root=/$(DESTDIR)
 
 # Here are a couple of targets for MacOSX again, to install a full
 # framework-based Python. frameworkinstall installs everything, the
@@ -833,7 +834,7 @@ frameworkinstallstructure:	$(LDLIBRARY)
 	else true; \
 	fi
 	@for i in $(prefix)/Resources/English.lproj $(prefix)/lib; do\
-		if test ! -d $$i; then \
+		if test ! -d $(DESTDIR)$$i; then \
 			echo "Creating directory $$i"; \
 			$(INSTALL) -d -m $(DIRMODE) $$i; \
 		else	true; \
@@ -875,14 +876,16 @@ idleinstall:
 	--check-tkinter \
 	--prefix=$(prefix) \
 	--install-scripts=$(BINDIR) \
-	--install-platlib=$(DESTSHARED)
+	--install-platlib=$(DESTSHARED) \
+	--root=/$(DESTDIR)
 
 # This installs a few of the useful scripts in Tools/scripts
 scriptsinstall:
 	SRCDIR=$(srcdir) $(RUNSHARED) \
 	./$(BUILDPYTHON) $(srcdir)/Tools/scripts/setup.py install \
 	--prefix=$(prefix) \
-	--install-scripts=$(BINDIR)
+	--install-scripts=$(BINDIR) \
+	--root=/$(DESTDIR)
 
 # Build the toplevel Makefile
 Makefile.pre: Makefile.pre.in config.status
