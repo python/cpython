@@ -516,7 +516,7 @@ _PyTuple_Resize(PyObject **pv, int newsize, int last_is_sticky)
 		   (current) reference */
 		Py_DECREF(v);
 		*pv = PyTuple_New(newsize);
-		return 0;
+		return *pv == NULL ? -1 : 0;
 	}
 
 	/* XXX UNREF/NEWREF interface should be more symmetrical */
