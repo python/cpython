@@ -99,7 +99,7 @@ sub top_navigation_panel {
 
     # Now add a few buttons with a space between them
     "<div class=navigation>\n" .
-    "$NEXT $UP $PREVIOUS $CONTENTS $INDEX $CUSTOM_BUTTONS" .
+    "$NEXT\n$UP\n$PREVIOUS\n$CONTENTS\n$INDEX $CUSTOM_BUTTONS" .
 
     "<br>\n" .		# Line break
 
@@ -122,7 +122,7 @@ sub bot_navigation_panel {
     "\n<div class=navigation><hr>".
 
     # Now add a few buttons with a space between them
-    "$NEXT $UP $PREVIOUS $CONTENTS $INDEX $CUSTOM_BUTTONS" .
+    "$NEXT\n$UP\n$PREVIOUS\n$CONTENTS\n$INDEX $CUSTOM_BUTTONS" .
 
     "<br>\n" .		# Line break
 
