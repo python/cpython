@@ -274,8 +274,11 @@ class RawConfigParser:
         except KeyError:
             if section != DEFAULTSECT:
                 raise NoSectionError(section)
+            d2 = {}
         d = self._defaults.copy()
         d.update(d2)
+        if "__name__" in d:
+            del d["__name__"]
         return d.items()
 
     def _get(self, section, conv, option):
@@ -508,11 +511,14 @@ class ConfigParser(RawConfigParser):
         # Update with the entry specific variables
         if vars:
             d.update(vars)
+        options = d.keys()
+        if "__name__" in options:
+            options.remove("__name__")
         if raw:
-            for option in self.options(section):
+            for option in options:
                 yield (option, d[option])
         else:
-            for option in self.options(section):
+            for option in options:
                 yield (option,
                        self._interpolate(section, option, d[option], d))
 
