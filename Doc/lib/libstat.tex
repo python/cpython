@@ -9,10 +9,10 @@
 
 
 The \module{stat} module defines constants and functions for
-interpreting the results of \function{os.stat()} and
-\function{os.lstat()} (if they exist).  For complete details about the
-\cfunction{stat()} and \cfunction{lstat()} system calls, consult your
-local man pages.
+interpreting the results of \function{os.stat()},
+\function{os.fstat()} and \function{os.lstat()} (if they exist).  For
+complete details about the \cfunction{stat()}, \cfunction{fstat()} and
+\cfunction{lstat()} calls, consult the documentation for your system.
 
 The \module{stat} module defines the following functions:
 
@@ -46,7 +46,8 @@ Return non-zero if the mode was gotten from a socket.
 \end{funcdesc}
 
 All the data items below are simply symbolic indexes into the 10-tuple
-returned by \function{os.stat()} or \function{os.lstat()}.  
+returned by \function{os.stat()}, \function{os.fstat()} or
+\function{os.lstat()}.
 
 \begin{datadesc}{ST_MODE}
 Inode protection mode.
