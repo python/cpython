@@ -27,7 +27,13 @@ Copyright (C) 2001-2004 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, logging, logging.handlers, string, thread, threading, socket, struct, os
+import sys, logging, logging.handlers, string, socket, struct, os
+
+try:
+    import thread
+    import threading
+except ImportError:
+    thread = None
 
 from SocketServer import ThreadingTCPServer, StreamRequestHandler
 
