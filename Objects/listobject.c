@@ -382,6 +382,7 @@ list_concat(PyListObject *a, PyObject *bb)
 {
 	int size;
 	int i;
+	PyObject **src, **dest;
 	PyListObject *np;
 	if (!PyList_Check(bb)) {
 		PyErr_Format(PyExc_TypeError,
@@ -397,15 +398,19 @@ list_concat(PyListObject *a, PyObject *bb)
 	if (np == NULL) {
 		return NULL;
 	}
+	src = a->ob_item;
+	dest = np->ob_item;
 	for (i = 0; i < a->ob_size; i++) {
-		PyObject *v = a->ob_item[i];
+		PyObject *v = src[i];
 		Py_INCREF(v);
-		np->ob_item[i] = v;
+		dest[i] = v;
 	}
+	src = b->ob_item;
+	dest = np->ob_item + a->ob_size;
 	for (i = 0; i < b->ob_size; i++) {
-		PyObject *v = b->ob_item[i];
+		PyObject *v = src[i];
 		Py_INCREF(v);
-		np->ob_item[i + a->ob_size] = v;
+		dest[i] = v;
 	}
 	return (PyObject *)np;
 #undef b
@@ -417,7 +422,7 @@ list_repeat(PyListObject *a, int n)
 	int i, j;
 	int size;
 	PyListObject *np;
-	PyObject **p;
+	PyObject **p, **items;
 	PyObject *elem;
 	if (n < 0)
 		n = 0;
@@ -430,18 +435,20 @@ list_repeat(PyListObject *a, int n)
 	if (np == NULL)
 		return NULL;
 
+	items = np->ob_item;
 	if (a->ob_size == 1) {
 		elem = a->ob_item[0];
 		for (i = 0; i < n; i++) {
-			np->ob_item[i] = elem;
+			items[i] = elem;
 			Py_INCREF(elem);
 		}
 		return (PyObject *) np;
 	}
 	p = np->ob_item;
+	items = a->ob_item;
 	for (i = 0; i < n; i++) {
 		for (j = 0; j < a->ob_size; j++) {
-			*p = a->ob_item[j];
+			*p = items[j];
 			Py_INCREF(*p);
 			p++;
 		}
@@ -590,11 +597,12 @@ list_inplace_repeat(PyListObject *self, int n)
 		return NULL;
 
 	p = size;
+	items = self->ob_item;
 	for (i = 1; i < n; i++) { /* Start counting at 1, not 0 */
 		for (j = 0; j < size; j++) {
-			PyObject *o = PyList_GET_ITEM(self, j);
+			PyObject *o = items[j];
 			Py_INCREF(o);
-			PyList_SET_ITEM(self, p++, o);
+			items[p++] = o;
 		}
 	}
 	Py_INCREF(self);
@@ -2404,6 +2412,7 @@ list_subscript(PyListObject* self, PyObject* item)
 		int start, stop, step, slicelength, cur, i;
 		PyObject* result;
 		PyObject* it;
+		PyObject **src, **dest;
 
 		if (PySlice_GetIndicesEx((PySliceObject*)item, self->ob_size,
 				 &start, &stop, &step, &slicelength) < 0) {
@@ -2417,11 +2426,13 @@ list_subscript(PyListObject* self, PyObject* item)
 			result = PyList_New(slicelength);
 			if (!result) return NULL;
 
+			src = self->ob_item;
+			dest = ((PyListObject *)result)->ob_item;
 			for (cur = start, i = 0; i < slicelength;
 			     cur += step, i++) {
-				it = PyList_GET_ITEM(self, cur);
+				it = src[cur];
 				Py_INCREF(it);
-				PyList_SET_ITEM(result, i, it);
+				dest[i] = it;
 			}
 
 			return result;
@@ -2466,7 +2477,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 		if (value == NULL) {
 			/* delete slice */
 			PyObject **garbage;
-			int cur, i, j;
+			int cur, i;
 
 			if (slicelength <= 0)
 				return 0;
@@ -2493,17 +2504,17 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 					lim = self->ob_size - cur - 1;
 				}
 
-				for (j = 0; j < lim; j++) {
-					PyList_SET_ITEM(self, cur + j - i,
-						PyList_GET_ITEM(self,
-								cur + j + 1));
-				}
+				memmove(self->ob_item + cur - i, 
+					self->ob_item + cur + 1,
+					lim * sizeof(PyObject *));
 			}
+
 			for (cur = start + slicelength*step + 1;
 			     cur < self->ob_size; cur++) {
 				PyList_SET_ITEM(self, cur - slicelength,
 						PyList_GET_ITEM(self, cur));
 			}
+
 			self->ob_size -= slicelength;
 			list_resize(self, self->ob_size);
 
@@ -2516,7 +2527,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 		}
 		else {
 			/* assign slice */
-			PyObject **garbage, *ins, *seq;
+			PyObject **garbage, *ins, *seq, **seqitems, **selfitems;
 			int cur, i;
 
 			/* protect against a[::-1] = a */
@@ -2525,11 +2536,8 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 						   PyList_GET_SIZE(value));
 			}
 			else {
-				char msg[256];
-				PyOS_snprintf(msg, sizeof(msg),
-		      "must assign sequence (not \"%.200s\") to extended slice",
-					      value->ob_type->tp_name);
-				seq = PySequence_Fast(value, msg);
+				seq = PySequence_Fast(value, 
+					"must assign iterable to extended slice");
 				if (!seq)
 					return -1;
 			}
@@ -2551,13 +2559,17 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 			garbage = (PyObject**)
 				PyMem_MALLOC(slicelength*sizeof(PyObject*));
 
+			selfitems = self->ob_item;
+			if (PyList_Check(seq))
+				seqitems = ((PyListObject *)seq)->ob_item;
+			else
+				seqitems = ((PyTupleObject *)seq)->ob_item;
 			for (cur = start, i = 0; i < slicelength;
 			     cur += step, i++) {
-				garbage[i] = PyList_GET_ITEM(self, cur);
-
-				ins = PySequence_Fast_GET_ITEM(seq, i);
+				garbage[i] = selfitems[cur];
+				ins = seqitems[i];
 				Py_INCREF(ins);
-				PyList_SET_ITEM(self, cur, ins);
+				selfitems[cur] = ins;
 			}
 
 			for (i = 0; i < slicelength; i++) {

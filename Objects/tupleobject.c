@@ -136,16 +136,18 @@ PyTuple_Pack(int n, ...)
 	int i;
 	PyObject *o;
 	PyObject *result;
+	PyObject **items;
 	va_list vargs;
 
 	va_start(vargs, n);
 	result = PyTuple_New(n);
 	if (result == NULL)
 		return NULL;
+	items = ((PyTupleObject *)result)->ob_item;
 	for (i = 0; i < n; i++) {
 		o = va_arg(vargs, PyObject *);
 		Py_INCREF(o);
-		PyTuple_SET_ITEM(result, i, o);
+		items[i] = o;
 	}
 	va_end(vargs);
 	return result;
@@ -348,6 +350,7 @@ tupleconcat(register PyTupleObject *a, register PyObject *bb)
 {
 	register int size;
 	register int i;
+	PyObject **src, **dest;
 	PyTupleObject *np;
 	if (!PyTuple_Check(bb)) {
 		PyErr_Format(PyExc_TypeError,
@@ -363,15 +366,19 @@ tupleconcat(register PyTupleObject *a, register PyObject *bb)
 	if (np == NULL) {
 		return NULL;
 	}
+	src = a->ob_item;
+	dest = np->ob_item;
 	for (i = 0; i < a->ob_size; i++) {
-		PyObject *v = a->ob_item[i];
+		PyObject *v = src[i];
 		Py_INCREF(v);
-		np->ob_item[i] = v;
+		dest[i] = v;
 	}
+	src = b->ob_item;
+	dest = np->ob_item + a->ob_size;
 	for (i = 0; i < b->ob_size; i++) {
-		PyObject *v = b->ob_item[i];
+		PyObject *v = src[i];
 		Py_INCREF(v);
-		np->ob_item[i + a->ob_size] = v;
+		dest[i] = v;
 	}
 	return (PyObject *)np;
 #undef b
@@ -383,7 +390,7 @@ tuplerepeat(PyTupleObject *a, int n)
 	int i, j;
 	int size;
 	PyTupleObject *np;
-	PyObject **p;
+	PyObject **p, **items;
 	if (n < 0)
 		n = 0;
 	if (a->ob_size == 0 || n == 1) {
@@ -403,9 +410,10 @@ tuplerepeat(PyTupleObject *a, int n)
 	if (np == NULL)
 		return NULL;
 	p = np->ob_item;
+	items = a->ob_item;
 	for (i = 0; i < n; i++) {
 		for (j = 0; j < a->ob_size; j++) {
-			*p = a->ob_item[j];
+			*p = items[j];
 			Py_INCREF(*p);
 			p++;
 		}
@@ -584,6 +592,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
 		int start, stop, step, slicelength, cur, i;
 		PyObject* result;
 		PyObject* it;
+		PyObject **src, **dest;
 
 		if (PySlice_GetIndicesEx((PySliceObject*)item,
 				 PyTuple_GET_SIZE(self),
@@ -597,11 +606,13 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
 		else {
 			result = PyTuple_New(slicelength);
 
+			src = self->ob_item;
+			dest = ((PyTupleObject *)result)->ob_item;
 			for (cur = start, i = 0; i < slicelength; 
 			     cur += step, i++) {
-				it = PyTuple_GET_ITEM(self, cur);
+				it = src[cur];
 				Py_INCREF(it);
-				PyTuple_SET_ITEM(result, i, it);
+				dest[i] = it;
 			}
 			
 			return result;
