@@ -185,11 +185,9 @@ class Distribution:
             if options:
                 del attrs['options']
                 for (command, cmd_options) in options.items():
-                    cmd_obj = self.get_command_obj (command)
-                    for (key, val) in cmd_options.items():
-                        cmd_obj.set_option (key, val)
-                # loop over commands
-            # if any command options                        
+                    opt_dict = self.get_option_dict(command)
+                    for (opt, val) in cmd_options.items():
+                        opt_dict[opt] = ("setup script", val)
 
             # Now work on the rest of the attributes.  Any attribute that's
             # not already defined is invalid!
@@ -203,6 +201,19 @@ class Distribution:
                           "invalid distribution option '%s'" % key
 
     # __init__ ()
+
+
+    def get_option_dict (self, command):
+        """Get the option dictionary for a given command.  If that
+        command's option dictionary hasn't been created yet, then create it
+        and return the new dictionary; otherwise, return the existing
+        option dictionary.
+        """
+
+        dict = self.command_options.get(command)
+        if dict is None:
+            dict = self.command_options[command] = {}
+        return dict
 
 
     # -- Config file finding/parsing methods ---------------------------
@@ -266,13 +277,11 @@ class Distribution:
             parser.read(filename)
             for section in parser.sections():
                 options = parser.options(section)
-                if not self.command_options.has_key(section):
-                    self.command_options[section] = {}
-                opts = self.command_options[section]
+                opt_dict = self.get_option_dict(section)
 
                 for opt in options:
                     if opt != '__name__':
-                        opts[opt] = (filename, parser.get(section,opt))
+                        opt_dict[opt] = (filename, parser.get(section,opt))
 
             # Make the ConfigParser forget everything (so we retain
             # the original filenames that options come from) -- gag,
@@ -409,11 +418,9 @@ class Distribution:
 
         # Put the options from the command-line into their official
         # holding pen, the 'command_options' dictionary.
-        if not self.command_options.has_key(command):
-            self.command_options[command] = {}
-        cmd_opts = self.command_options[command]
+        opt_dict = self.get_option_dict(command)
         for (name, value) in vars(opts).items():
-            cmd_opts[name] = ("command line", value)
+            opt_dict[name] = ("command line", value)
 
         return args
 
