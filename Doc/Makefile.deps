@@ -68,7 +68,7 @@ EXTFILES= ext/ext.tex $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	texinputs/typestruct.h \
 	texinputs/reportingbugs.tex
 
-TUTFILES= tut/tut.tex $(MANSTYLES) $(COMMONTEX)
+TUTFILES= tut/tut.tex tut/glossary.tex $(MANSTYLES) $(COMMONTEX)
 
 # LaTeX source files for the Python Reference Manual
 REFFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
