@@ -3945,6 +3945,7 @@ jcompile(node *n, char *filename, struct compiling *base,
 		if (base->c_nested 
 		    || (sc.c_symtable->st_cur->ste_type == TYPE_FUNCTION))
 			sc.c_nested = 1;
+		sc.c_flags |= base->c_flags & CO_GENERATOR_ALLOWED;
 	} else {
 		sc.c_private = NULL;
 		sc.c_future = PyNode_Future(n, filename);
