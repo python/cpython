@@ -136,7 +136,8 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*.[cC])		srcs="$srcs $arg";;
 			*.cc)		srcs="$srcs $arg";;
 			*.c++)		srcs="$srcs $arg";;
-			\$*)		libs="$libs $arg";;
+			\$*)		libs="$libs $arg"
+					cpps="$cpps $arg";;
 			*.*)		echo 1>&2 "bad word $arg in $line"
 					exit 1;;
 			-u)		skip=libs; libs="$libs -u";;
