@@ -745,7 +745,7 @@ class PyBuildExt(build_ext):
         if platform in ('linux2', 'freebsd4'):
             # ossaudiodev currently doesn't work, so don't build.
             pass
-##             exts.append( Extension('ossaudiodev', ['ossaudiodev.c']) )
+            exts.append( Extension('ossaudiodev', ['ossaudiodev.c']) )
 
         if platform == 'sunos5':
             # SunOS specific modules
