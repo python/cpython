@@ -2,59 +2,44 @@
 /* Code to handle accessing $name$ objects as sequence objects */
 
 static int
-$abbrev$_length(self)
-	$abbrev$object *self;
+$abbrev$_length($abbrev$object *self)
 {
 	/* XXXX Return the size of the object */
 }
 
 static PyObject *
-$abbrev$_concat(self, bb)
-	$abbrev$object *self;
-	PyObject *bb;
+$abbrev$_concat($abbrev$object *self, PyObject *bb)
 {
 	/* XXXX Return the concatenation of self and bb */
 }
 
 static PyObject *
-$abbrev$_repeat(self, n)
-	$abbrev$object *self;
-	int n;
+$abbrev$_repeat($abbrev$object *self, int n)
 {
 	/* XXXX Return a new object that is n times self */
 }
 
 static PyObject *
-$abbrev$_item(self, i)
-	$abbrev$object *self;
-	int i;
+$abbrev$_item($abbrev$object *self, int i)
 {
 	/* XXXX Return the i-th object of self */
 }
 
 static PyObject *
-$abbrev$_slice(self, ilow, ihigh)
-	$abbrev$object *self;
-	int ilow, ihigh;
+$abbrev$_slice($abbrev$object *self, int ilow, int ihigh)
 {
 	/* XXXX Return the ilow..ihigh slice of self in a new object */
 }
 
 static int
-$abbrev$_ass_item(self, i, v)
-	$abbrev$object *self;
-	int i;
-	PyObject *v;
+$abbrev$_ass_item($abbrev$object *self, int i, PyObject *v)
 {
 	/* XXXX Assign to the i-th element of self */
 	return 0;
 }
 
 static int
-$abbrev$_ass_slice(self, ilow, ihigh, v)
-	PyListObject *self;
-	int ilow, ihigh;
-	PyObject *v;
+$abbrev$_ass_slice(PyListObject *self, int ilow, int ihigh, PyObject *v)
 {
 	/* XXXX Replace ilow..ihigh slice of self with v */
 	return 0;

@@ -4,9 +4,7 @@ static char $abbrev$_$method$__doc__[] =
 ;
 
 static PyObject *
-$abbrev$_$method$(self, args)
-	PyObject *self;	/* Not used */
-	PyObject *args;
+$abbrev$_$method$(PyObject *self /* Not used */, PyObject *args)
 {
 
 	if (!PyArg_ParseTuple(args, ""))

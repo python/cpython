@@ -2,24 +2,19 @@
 /* Code to access $name$ objects as mappings */
 
 static int
-$abbrev$_length(self)
-	$abbrev$object *self;
+$abbrev$_length($abbrev$object *self)
 {
 	/* XXXX Return the size of the mapping */
 }
 
 static PyObject *
-$abbrev$_subscript(self, key)
-	$abbrev$object *self;
-	PyObject *key;
+$abbrev$_subscript($abbrev$object *self, PyObject *key)
 {
 	/* XXXX Return the item of self indexed by key */
 }
 
 static int
-$abbrev$_ass_sub(self, v, w)
-	$abbrev$object *self;
-	PyObject *v, *w;
+$abbrev$_ass_sub($abbrev$object *self, PyObject *v, PyObject *w)
 {
 	/* XXXX Put w in self under key v */
 	return 0;

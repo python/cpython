@@ -1,7 +1,6 @@
 
 static PyObject *
-$abbrev$_repr(self)
-	$abbrev$object *self;
+$abbrev$_repr($abbrev$object *self)
 {
 	PyObject *s;
 
