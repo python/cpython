@@ -11,7 +11,7 @@ file causing it."""
 
 __rcsid__ = "$Id$"
 
-import os
+import os, string
 from distutils.errors import *
 
 
@@ -437,3 +437,21 @@ def write_file (filename, contents):
     for line in contents:
         f.write (line + "\n")
     f.close ()
+
+
+def get_platform ():
+    """Return a string (suitable for tacking onto directory names) that
+       identifies the current platform.  Under Unix, identifies both the OS
+       and hardware architecture, e.g. "linux-i586", "solaris-sparc",
+       "irix-mips".  For Windows and Mac OS, just returns 'sys.platform' --
+       i.e. "???" or "???"."""
+
+    if os.name == 'posix':
+        uname = os.uname()
+        OS = uname[0]
+        arch = uname[4]
+        return "%s-%s" % (string.lower (OS), string.lower (arch))
+    else:
+        return sys.platform
+
+# get_platform()
