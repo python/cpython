@@ -46,8 +46,8 @@ Open the hash format file named \var{filename}.  Files never intended
 to be preserved on disk may be created by passing \code{None} as the 
 \var{filename}.  The optional
 \var{flag} identifies the mode used to open the file.  It may be
-\character{r} (read only, default), \character{w} (read-write) ,
-\character{c} (read-write - create if necessary) or
+\character{r} (read only), \character{w} (read-write) ,
+\character{c} (read-write - create if necessary; the default) or
 \character{n} (read-write - truncate to zero length).  The other
 arguments are rarely used and are just passed to the low-level
 \cfunction{dbopen()} function.  Consult the Berkeley DB documentation
@@ -62,8 +62,8 @@ Open the btree format file named \var{filename}.  Files never intended
 to be preserved on disk may be created by passing \code{None} as the 
 \var{filename}.  The optional
 \var{flag} identifies the mode used to open the file.  It may be
-\character{r} (read only, default), \character{w} (read-write),
-\character{c} (read-write - create if necessary) or
+\character{r} (read only), \character{w} (read-write),
+\character{c} (read-write - create if necessary; the default) or
 \character{n} (read-write - truncate to zero length).  The other
 arguments are rarely used and are just passed to the low-level dbopen
 function.  Consult the Berkeley DB documentation for their use and
@@ -78,8 +78,8 @@ Open a DB record format file named \var{filename}.  Files never intended
 to be preserved on disk may be created by passing \code{None} as the 
 \var{filename}.  The optional
 \var{flag} identifies the mode used to open the file.  It may be
-\character{r} (read only, default), \character{w} (read-write),
-\character{c} (read-write - create if necessary) or
+\character{r} (read only), \character{w} (read-write),
+\character{c} (read-write - create if necessary; the default) or
 \character{n} (read-write - truncate to zero length).  The other
 arguments are rarely used and are just passed to the low-level dbopen
 function.  Consult the Berkeley DB documentation for their use and
