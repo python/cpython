@@ -87,7 +87,7 @@ The module defines the following functions:
   An example:
 
 \begin{verbatim}
->>> import array, fnctl, struct, termios, os
+>>> import array, fcntl, struct, termios, os
 >>> os.getpgrp()
 13341
 >>> struct.unpack('h', fcntl.ioctl(0, termios.TIOCGPGRP, "  "))[0]

@@ -76,6 +76,7 @@ by functions or loops that truncate the stream.
 
 \begin{funcdesc}{count}{\optional{n}}
   Make an iterator that returns consecutive integers starting with \var{n}.
+  If not specified \var{n} defaults to zero.  
   Does not currently support python long integers.  Often used as an
   argument to \function{imap()} to generate consecutive data points.
   Also, used with \function{izip()} to add sequence numbers.  Equivalent to:
