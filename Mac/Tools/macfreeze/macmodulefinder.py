@@ -22,7 +22,8 @@ except ImportError:
 MAC_INCLUDE_MODULES=['site', 'exceptions']
 MAC_MAYMISS_MODULES=['posix', 'os2', 'nt', 'ntpath', 'dos', 'dospath', 
 		'win32api',
-		'nturl2path', 'pwd', 'sitecustomize']
+		'nturl2path', 'pwd', 'sitecustomize',
+		'org.python.core']
 
 # An exception:
 Missing="macmodulefinder.Missing"
