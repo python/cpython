@@ -28,7 +28,7 @@ pythonforbundle: $(OBJECTS)
 PYTHON=$(PYTHONBUILDDIR)/python.exe
 APPTEMPLATE=$(PYTHONBUILDDIR)/Mac/OSXResources/app
 APPSUBDIRS=MacOS Resources Resources/English.lproj
-RESOURCEFILE_ASINGLE=$(PYTHONBUILDDIR)/Mac/Resources/dialogs.rsrc
+RESOURCEDIR=$(PYTHONBUILDDIR)/Mac/Resources
 RESOURCEFILE=python.rsrc
 RFCONVERTER=$(PYTHONBUILDDIR)/Mac/Lib/applesingle.py
 install: pythonforbundle
@@ -71,7 +71,11 @@ install: pythonforbundle
 	done
 	$(INSTALL_PROGRAM) pythonforbundle $(APPINSTALLDIR)/Contents/MacOS/python
 	# Create a temporary version of the resources here
-	$(PYTHON) $(RFCONVERTER) -r $(RESOURCEFILE_ASINGLE) $(RESOURCEFILE)
+	$(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/dialogs.rsrc dialogs.rsrc
+	$(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/errors.rsrc errors.rsrc
+	DeRez -useDF -skip ckid dialogs.rsrc > dialogs.r
+	DeRez -useDF -skip ckid errors.rsrc > errors.r
+	Rez -useDF -o $(RESOURCEFILE) dialogs.r errors.r 
 	$(INSTALL_DATA) $(RESOURCEFILE) $(APPINSTALLDIR)/Contents/Resources/$(RESOURCEFILE)
 		
 LIBDEST=$(INSTALLDIR)/Mac/Lib
