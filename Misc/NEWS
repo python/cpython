@@ -6,6 +6,11 @@ Build
 - configure supports a new option --enable-unicode, with the values
   ucs2 and ucs4 (new in 2.2a1). With --disable-unicode, the Unicode
   type and supporting code is completely removed from the interpreter.
+  
+- A new configure option --enable-framework builds a Mac OS X framework,
+  which "make frameworkinstall" will install. This provides a starting
+  point for more mac-like functionality, join pythonmac-sig@python.org
+  if you are interested in helping.
 
 Tools
 
