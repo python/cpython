@@ -607,6 +607,7 @@ class Unpickler:
             try:
                 value = _EmptyClass()
                 value.__class__ = klass
+                instantiated = 1
             except RuntimeError:
                 # In restricted execution, assignment to inst.__class__ is
                 # prohibited
