@@ -11,7 +11,7 @@ allow displaying Web-based documents to users.  The controller objects
 are easy to use and are platform independent.
 
 Under \UNIX, graphical browsers are preferred under X11, but text-mode
-browser will be used if graphical browsers are not available or an X11
+browsers will be used if graphical browsers are not available or an X11
 display isn't available.  If text-mode browsers are used, the calling
 process will block until the user exits the browser.
 
@@ -69,8 +69,10 @@ Notes:
 
 \begin{description}
 \item[(1)]
-``Konquerer'' is the file manager for the KDE desktop environment, and
-only makes sense to use if KDE is running.
+``Konquerer'' is the file manager for the KDE desktop environment for
+UNIX, and only makes sense to use if KDE is running.  Some way of
+reliably detecting KDE would be nice; the \envvar{KDEDIR} variable is
+not sufficient.
 
 \item[(2)]
 Only on Windows platforms; requires the common
