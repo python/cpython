@@ -69,6 +69,10 @@ fixstate(grammar *g, state *s)
 	int nl = g->g_ll.ll_nlabels;
 	s->s_accept = 0;
 	accel = (int *) PyObject_MALLOC(nl * sizeof(int));
+	if (accel == NULL) {
+		fprintf(stderr, "no mem to build parser accelerators\n");
+		exit(1);
+	}
 	for (k = 0; k < nl; k++)
 		accel[k] = -1;
 	a = s->s_arc;
