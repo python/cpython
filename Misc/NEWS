@@ -33,6 +33,11 @@ Extension Modules
 Library
 -------
 
+- _DummyThread objects in the threading module now delete self.__block that is
+  inherited from _Thread since it uses up a lock allocated by 'thread'.  The
+  lock primitives tend to be limited in number and thus should not be wasted on
+  a _DummyThread object.  Fixes bug #1089632.
+
 - The imghdr module now detects Exif files.
 
 - StringIO.truncate() now correctly adjusts the size attribute.
