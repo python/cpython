@@ -1802,9 +1802,10 @@ it's tried again going backward."
       (funcall (if global 'kill-local-variable 'make-local-variable)
 	       'py-indent-offset)
       (setq py-indent-offset new-value)
-      (message "%s value of py-indent-offset set to %d"
-	       (if global "Global" "Local")
-	       py-indent-offset))
+      (or noninteractive
+	  (message "%s value of py-indent-offset set to %d"
+		   (if global "Global" "Local")
+		   py-indent-offset)))
     ))
 
 (defun py-comment-indent-function ()
