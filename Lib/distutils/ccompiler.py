@@ -366,7 +366,7 @@ class CCompiler:
             extra = []
 
         # Get the list of expected output (object) files
-        objects = self.object_filenames(sources, 1, outdir)
+        objects = self.object_filenames(sources, 0, outdir)
         assert len(objects) == len(sources)
 
         # XXX should redo this code to eliminate skip_source entirely.
@@ -472,7 +472,7 @@ class CCompiler:
         which source files can be skipped.
         """
         # Get the list of expected output (object) files
-        objects = self.object_filenames(sources, strip_dir=1,
+        objects = self.object_filenames(sources, strip_dir=0,
                                         output_dir=output_dir)
         assert len(objects) == len(sources)
 
