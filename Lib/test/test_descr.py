@@ -1464,12 +1464,12 @@ def classmethods_in_c():
     a = (1, 2, 3)
     d = {'abc': 123}
     x, a1, d1 = spam.spamlist.classmeth(*a, **d)
-    veris(x, None)
-    vereq((spam.spamlist,) + a, a1)
+    veris(x, spam.spamlist)
+    vereq(a, a1)
     vereq(d, d1)
     x, a1, d1 = spam.spamlist().classmeth(*a, **d)
-    veris(x, None)
-    vereq((spam.spamlist,) + a, a1)
+    veris(x, spam.spamlist)
+    vereq(a, a1)
     vereq(d, d1)
 
 def staticmethods():

@@ -79,6 +79,13 @@ descr_check(PyDescrObject *descr, PyObject *obj, PyTypeObject *type,
 }
 
 static PyObject *
+classmethod_get(PyMethodDescrObject *descr, PyObject *obj,
+		PyTypeObject *type)
+{
+	return PyCFunction_New(descr->d_method, (PyObject *)type);
+}
+
+static PyObject *
 method_get(PyMethodDescrObject *descr, PyObject *obj, PyTypeObject *type)
 {
 	PyObject *res;
@@ -208,6 +215,21 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwds)
 	}
 	result = PyEval_CallObjectWithKeywords(func, args, kwds);
 	Py_DECREF(args);
+	Py_DECREF(func);
+	return result;
+}
+
+static PyObject *
+classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
+		      PyObject *kwds)
+{
+	PyObject *func, *result;
+
+	func = PyCFunction_New(descr->d_method, (PyObject *)descr->d_type);
+	if (func == NULL)
+		return NULL;
+
+	result = PyEval_CallObjectWithKeywords(func, args, kwds);
 	Py_DECREF(func);
 	return result;
 }
@@ -373,6 +395,44 @@ static PyTypeObject PyMethodDescr_Type = {
 	0,					/* tp_descr_set */
 };
 
+static PyTypeObject PyClassMethodDescr_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,
+	"special_method_descriptor",
+	sizeof(PyMethodDescrObject),
+	0,
+	(destructor)descr_dealloc,		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	(reprfunc)method_repr,			/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	(ternaryfunc)classmethoddescr_call,		/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
+	0,					/* tp_doc */
+	descr_traverse,				/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	descr_members,				/* tp_members */
+	method_getset,				/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	(descrgetfunc)classmethod_get,		/* tp_descr_get */
+	0,					/* tp_descr_set */
+};
+
 static PyTypeObject PyMemberDescr_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -511,6 +571,18 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
 	PyMethodDescrObject *descr;
 
 	descr = (PyMethodDescrObject *)descr_new(&PyMethodDescr_Type,
+						 type, method->ml_name);
+	if (descr != NULL)
+		descr->d_method = method;
+	return (PyObject *)descr;
+}
+
+PyObject *
+PyDescr_NewClassMethod(PyTypeObject *type, PyMethodDef *method)
+{
+	PyMethodDescrObject *descr;
+
+	descr = (PyMethodDescrObject *)descr_new(&PyClassMethodDescr_Type,
 						 type, method->ml_name);
 	if (descr != NULL)
 		descr->d_method = method;
