@@ -89,7 +89,7 @@
 
 /* Define if getpgrp() must be called as getpgrp(0)
    and (consequently) setpgrp() as setpgrp(0, 0). */
-#undef GETPGRP_HAVE_ARGS
+#undef GETPGRP_HAVE_ARG
 
 /* Define this if your time.h defines altzone */
 #undef HAVE_ALTZONE
@@ -135,6 +135,9 @@
 /* Define if you want to use the GNU readline library */
 #undef WITH_READLINE
 
+/* Define if you have chown.  */
+#undef HAVE_CHOWN
+
 /* Define if you have clock.  */
 #undef HAVE_CLOCK
 
@@ -159,6 +162,9 @@
 /* Define if you have getwd.  */
 #undef HAVE_GETWD
 
+/* Define if you have link.  */
+#undef HAVE_LINK
+
 /* Define if you have lstat.  */
 #undef HAVE_LSTAT
 
@@ -171,6 +177,9 @@
 /* Define if you have select.  */
 #undef HAVE_SELECT
 
+/* Define if you have setgid.  */
+#undef HAVE_SETGID
+
 /* Define if you have setpgid.  */
 #undef HAVE_SETPGID
 
@@ -179,6 +188,9 @@
 
 /* Define if you have setsid.  */
 #undef HAVE_SETSID
+
+/* Define if you have setuid.  */
+#undef HAVE_SETUID
 
 /* Define if you have setvbuf.  */
 #undef HAVE_SETVBUF
