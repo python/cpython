@@ -9,17 +9,17 @@ from Encoders import encode_7or8bit
 
 
 
-class Text(MIMEBase.MIMEBase):
+class MIMEText(MIMEBase.MIMEBase):
     """Class for generating text/* type MIME documents."""
 
-    def __init__(self, _text, _minor='plain', _charset='us-ascii',
+    def __init__(self, _text, _subtype='plain', _charset='us-ascii',
                  _encoder=encode_7or8bit):
         """Create a text/* type MIME document.
 
         _text is the string for this message object.  If the text does not end
         in a newline, one is added.
 
-        _minor is the minor content type, defaulting to "plain".
+        _subtype is the MIME sub content type, defaulting to "plain".
 
         _charset is the character set parameter added to the Content-Type:
         header.  This defaults to "us-ascii".
@@ -33,7 +33,7 @@ class Text(MIMEBase.MIMEBase):
         but it does set Content-Transfer-Encoding: to either `7bit' or `8bit'
         as appropriate.
         """
-        MIMEBase.MIMEBase.__init__(self, 'text', _minor,
+        MIMEBase.MIMEBase.__init__(self, 'text', _subtype,
                                    **{'charset': _charset})
         if _text and _text[-1] <> '\n':
             _text += '\n'
