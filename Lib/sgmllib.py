@@ -226,14 +226,19 @@ class SGMLParser:
 		if self.stack and self.stack[-1] == tag:
 			del self.stack[-1]
 		else:
-			print '*** Unbalanced </' + tag + '>'
-			print '*** Stack:', self.stack
+			self.report_unbalanced(tag)
+			# Now repair it
 			found = None
 			for i in range(len(self.stack)):
 				if self.stack[i] == tag: found = i
 			if found <> None:
 				del self.stack[found:]
 		method()
+
+	# Example -- report an unbalanced </...> tag.
+	def report_unbalanced(self, tag):
+		print '*** Unbalanced </' + tag + '>'
+		print '*** Stack:', self.stack
 
 	# Example -- handle character reference, no need to override
 	def handle_charref(self, name):
