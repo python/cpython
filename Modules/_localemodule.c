@@ -30,7 +30,7 @@ This software comes with no warranty. Use at your own risk.
 #include <windows.h>
 #endif
 
-#ifdef macintosh
+#if __APPLE__
 #include "macglue.h"
 #endif
 
@@ -400,7 +400,7 @@ PyLocale_getdefaultlocale(PyObject* self)
 }
 #endif
 
-#if defined(macintosh)
+#if defined(__APPLE__)
 static PyObject*
 PyLocale_getdefaultlocale(PyObject* self)
 {
@@ -627,7 +627,7 @@ static struct PyMethodDef PyLocale_Methods[] = {
    METH_VARARGS, strcoll__doc__},
   {"strxfrm", (PyCFunction) PyLocale_strxfrm, 
    METH_VARARGS, strxfrm__doc__},
-#if defined(MS_WINDOWS) || defined(macintosh)
+#if defined(MS_WINDOWS) || defined(__APPLE__)
   {"_getdefaultlocale", (PyCFunction) PyLocale_getdefaultlocale, METH_NOARGS},
 #endif
 #ifdef HAVE_LANGINFO_H
