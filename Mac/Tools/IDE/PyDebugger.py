@@ -345,7 +345,7 @@ class Debugger(bdb.Bdb):
 				self.w.panes.bottom.src.source.set(editor.get(), filename)
 			else:
 				try:
-					f = open(filename, 'rb')
+					f = open(filename, 'rT')
 					data = f.read()
 					f.close()
 				except IOError:
@@ -360,7 +360,7 @@ class Debugger(bdb.Bdb):
 							if f:
 								f.close()
 							if f and suff == '.py':
-								f = open(filename, 'rb')
+								f = open(filename, 'rT')
 								data = f.read()
 								f.close()
 								self.w.panes.bottom.src.source.set(data, filename)
@@ -369,6 +369,7 @@ class Debugger(bdb.Bdb):
 					else:
 						self.w.panes.bottom.src.source.set("can't find file")
 				else:
+					data = data.replace('\n', '\r')
 					self.w.panes.bottom.src.source.set(data, filename)
 			self.file = filename
 		self.w.panes.bottom.srctitle.set('Source: ' + filename + ((lineno > 0) and (' (line %d)' % lineno) or ' '))
