@@ -55,7 +55,7 @@ void PyErr_NormalizeException Py_PROTO((PyObject**, PyObject**, PyObject**));
 
 extern DL_IMPORT(PyObject *) PyExc_Exception;
 extern DL_IMPORT(PyObject *) PyExc_StandardError;
-extern DL_IMPORT(PyObject *) PyExc_NumberError;
+extern DL_IMPORT(PyObject *) PyExc_ArithmeticError;
 extern DL_IMPORT(PyObject *) PyExc_LookupError;
 
 extern DL_IMPORT(PyObject *) PyExc_AssertionError;
