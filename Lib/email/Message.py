@@ -607,17 +607,11 @@ class Message:
                 newheaders.append((h, v))
         self._headers = newheaders
 
-    def walk(self):
-        """Walk over the message tree, yielding each subpart.
-
-        The walk is performed in depth-first order.  This method is a
-        generator.
-        """
-        yield self
-        if self.is_multipart():
-            for subpart in self.get_payload():
-                for subsubpart in subpart.walk():
-                    yield subsubpart
+    try:
+        from email._compat22 import walk
+    except SyntaxError:
+        # Must be using Python 2.1
+        from email._compat21 import walk
 
     def get_charsets(self, failobj=None):
         """Return a list containing the charset(s) used in this message.
