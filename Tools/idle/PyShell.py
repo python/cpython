@@ -270,10 +270,8 @@ class PyShell(PyShellEditorWindow):
     def open_debugger(self):
         import Debugger
         self.interp.setdebugger(Debugger.Debugger(self))
-        sys.ps1 = "[DEBUG ON]>>> "
+        sys.ps1 = "[DEBUG ON]\n>>> "
         self.showprompt()
-        self.top.tkraise()
-        self.text.focus_set()
 
     def beginexecuting(self):
         # Helper for ModifiedInterpreter
