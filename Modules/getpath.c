@@ -36,7 +36,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <strings.h>
+#include <string.h>
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
