@@ -401,6 +401,25 @@ static PyObject * os2_error(int code)
 /* POSIX generic methods */
 
 static PyObject *
+posix_int(args, func)
+        PyObject *args;
+	int (*func) Py_FPROTO((int));
+{
+	int fd;
+	int res;
+	if (!PyArg_Parse(args,  "i", &fd))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = (*func)(fd);
+	Py_END_ALLOW_THREADS
+	if (res < 0)
+		return posix_error();
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+
+static PyObject *
 posix_1str(args, func)
 	PyObject *args;
 	int (*func) Py_FPROTO((const char *));
@@ -588,6 +607,38 @@ posix_chmod(self, args)
 {
 	return posix_strint(args, chmod);
 }
+
+
+#ifdef HAVE_FSYNC
+static char posix_fsync__doc__[] =
+"fsync(fildes) -> None\n\
+force write of file with filedescriptor to disk.";
+
+static PyObject *
+posix_fsync(self, args)
+       PyObject *self;
+       PyObject *args;
+{
+       
+       return posix_int(args, fsync);
+}
+#endif /* HAVE_FSYNC */
+
+#ifdef HAVE_FDATASYNC
+static char posix_fdatasync__doc__[] =
+"fdatasync(fildes) -> None\n\
+force write of file with filedescriptor to disk.\n\
+ does not force update of metadata.";
+
+static PyObject *
+posix_fdatasync(self, args)
+       PyObject *self;
+       PyObject *args;
+{
+       
+       return posix_int(args, fdatasync);
+}
+#endif /* HAVE_FDATASYNC */
 
 
 #ifdef HAVE_CHOWN
@@ -2934,6 +2985,12 @@ static PyMethodDef posix_methods[] = {
 #endif
 #ifdef HAVE_STRERROR
 	{"strerror",	posix_strerror, 1, posix_strerror__doc__},
+#endif
+#ifdef HAVE_FSYNC
+	{"fsync",       posix_fsync, 0, posix_fsync__doc__},
+#endif
+#ifdef HAVE_FDATASYNC
+	{"fdatasync",   posix_fdatasync,  0, posix_fdatasync__doc__},
 #endif
 #ifdef HAVE_SYS_WAIT_H
 #ifdef WIFSTOPPED
