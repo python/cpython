@@ -37,7 +37,7 @@ are always available.  They are listed here in alphabetical order.
   a non-empty \var{fromlist} argument is given, the module named by
   \var{name} is returned.  This is done for compatibility with the
   bytecode generated for the different kinds of import statement; when
-  using \samp{import spam.ham.eggs}, the top-level package \code{spam}
+  using \samp{import spam.ham.eggs}, the top-level package \module{spam}
   must be placed in the importing namespace, but when using \samp{from
   spam.ham import eggs}, the \code{spam.ham} subpackage must be used
   to find the \code{eggs} variable.  As a workaround for this
@@ -45,11 +45,9 @@ are always available.  They are listed here in alphabetical order.
   components.  For example, you could define the following helper:
 
 \begin{verbatim}
-import string
-
 def my_import(name):
     mod = __import__(name)
-    components = string.split(name, '.')
+    components = name.split('.')
     for comp in components[1:]:
         mod = getattr(mod, comp)
     return mod
