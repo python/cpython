@@ -171,6 +171,8 @@ class Node:
         return flatten(self._getChildren())
     def asList(self):
         return tuple(asList(self.getChildren()))
+    def getChildNodes(self):
+        return [n for n in self.getChildnre() if isinstance(n, Node)]
 
 class EmptyNode(Node):
     def __init__(self):
