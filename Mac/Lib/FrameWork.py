@@ -160,9 +160,9 @@ class Application:
 					# applications.
 					break
 		finally:
-			apply(MacOS.SchedParams, self.schedparams)
+			apply(MacOS.SchedParams, saveparams)
 	
-	schedparams = MacOS.SchedParams()
+	schedparams = (0, 0)	# By default disable Python's event handling
 	
 	def dopendingevents(self, mask = everyEvent):
 		"""dopendingevents - Handle all pending events"""
