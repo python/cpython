@@ -56,7 +56,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 extern "C" {
 #endif
 
-#ifdef __CFM68K__
+#ifdef SYMANTEC__CFM68K__
 #pragma lib_export on
 #endif
 
