@@ -364,7 +364,11 @@ complex_add(v, w)
 	complexobject *v;
 	complexobject *w;
 {
-	return newcomplexobject(c_sum(v->cval,w->cval));
+	Py_complex result;
+	PyFPE_START_PROTECT("complex_add", return 0)
+	result = c_sum(v->cval,w->cval);
+	PyFPE_END_PROTECT
+	return newcomplexobject(result);
 }
 
 static object *
@@ -372,7 +376,11 @@ complex_sub(v, w)
 	complexobject *v;
 	complexobject *w;
 {
-	return newcomplexobject(c_diff(v->cval,w->cval));
+	Py_complex result;
+	PyFPE_START_PROTECT("complex_sub", return 0)
+	result = c_diff(v->cval,w->cval);
+	PyFPE_END_PROTECT
+	return newcomplexobject(result);
 }
 
 static object *
@@ -380,7 +388,11 @@ complex_mul(v, w)
 	complexobject *v;
 	complexobject *w;
 {
-	return newcomplexobject(c_prod(v->cval,w->cval));
+	Py_complex result;
+	PyFPE_START_PROTECT("complex_mul", return 0)
+	result = c_prod(v->cval,w->cval);
+	PyFPE_END_PROTECT
+	return newcomplexobject(result);
 }
 
 static object *
@@ -389,8 +401,10 @@ complex_div(v, w)
 	complexobject *w;
 {
 	Py_complex quot;
+	PyFPE_START_PROTECT("complex_div", return 0)
 	c_error = 0;
 	quot = c_quot(v->cval,w->cval);
+	PyFPE_END_PROTECT
 	if (c_error == 1) {
 		err_setstr(ZeroDivisionError, "complex division");
 		return NULL;
@@ -457,6 +471,7 @@ complex_pow(v, w, z)
 		return NULL;
 	}
 
+	PyFPE_START_PROTECT("complex_pow", return 0)
 	c_error = 0;
 	exponent = ((complexobject*)w)->cval;
 	int_exponent = (long)exponent.real;
@@ -465,6 +480,7 @@ complex_pow(v, w, z)
 	else
 		p = c_pow(v->cval,exponent);
 
+	PyFPE_END_PROTECT
 	if (c_error == 2) {
 		err_setstr(ValueError, "0.0 to a negative or complex power");
 		return NULL;
@@ -495,7 +511,11 @@ static object *
 complex_abs(v)
 	complexobject *v;
 {
-	return newfloatobject(hypot(v->cval.real,v->cval.imag));
+	double result;
+	PyFPE_START_PROTECT("complex_abs", return 0)
+	result = hypot(v->cval.real,v->cval.imag);
+	PyFPE_END_PROTECT
+	return newfloatobject(result);
 }
 
 static int

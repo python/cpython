@@ -237,7 +237,7 @@ PyLong_AsUnsignedLong(vv)
 	return x;
 }
 
-/* Get a C double from a long int object.  No overflow check. */
+/* Get a C double from a long int object. */
 
 double
 dgetlongvalue(vv)
@@ -1418,7 +1418,11 @@ static object *
 long_float(v)
 	object *v;
 {
-	return newfloatobject(dgetlongvalue(v));
+	double result;
+	PyFPE_START_PROTECT("long_float", return 0)
+	result = dgetlongvalue(v);
+	PyFPE_END_PROTECT
+	return newfloatobject(result);
 }
 
 static object *
