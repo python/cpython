@@ -859,6 +859,14 @@ This \UNIX\ is also followed by a space.
       The name of a Usenet newsgroup.
     \end{macrodesc}
 
+    \begin{macrodesc}{note}{\p{text}}
+      An especially important bit of information about an API that a
+      user should be aware of when using whatever bit of API the
+      note pertains to.  This should be the last thing in the
+      paragraph as the end of the note is not visually marked in
+      any way.
+    \end{macrodesc}
+
     \begin{macrodesc}{pep}{\p{number}}
       A reference to a Python Enhancement Proposal.  This generates
       appropriate index entries.  The text \samp{PEP \var{number}} is
@@ -987,6 +995,15 @@ This \UNIX\ is also followed by a space.
       description before any availability notes and after
       \macro{versionadded}.  The location should be selected so the
       explanation makes sense and may vary as needed.
+    \end{macrodesc}
+
+    \begin{macrodesc}{warning}{\p{text}}
+      An important bit of information about an API that a user should
+      be very aware of when using whatever bit of API the warning
+      pertains to.  This should be the last thing in the paragraph as
+      the end of the warning is not visually marked in any way.  This
+      differs from \macro{note} in that it is recommended over
+      \macro{note} for information regarding security.
     \end{macrodesc}
 
 

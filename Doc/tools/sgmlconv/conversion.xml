@@ -55,6 +55,12 @@
     <content/>
     </macro>
   <macro name="shortversion"/>
+  <macro name="note">
+    <content/>
+    </macro>
+  <macro name="warning">
+    <content/>
+    </macro>
   <!-- These are broken:  we need to re-order the optional and required
        parameters, making the optional parameter the content for the
        element.  latex2esis.py is not powerful enough to handle this.
