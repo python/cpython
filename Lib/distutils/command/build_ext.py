@@ -12,6 +12,7 @@ import sys, os, string, re
 from types import *
 from distutils.core import Command
 from distutils.errors import *
+from distutils.sysconfig import customize_compiler
 from distutils.dep_util import newer_group
 from distutils.extension import Extension
 
@@ -191,6 +192,7 @@ class build_ext (Command):
                                       verbose=self.verbose,
                                       dry_run=self.dry_run,
                                       force=self.force)
+        customize_compiler(self.compiler)
 
         # And make sure that any compile/link-related options (which might
         # come from the command-line or from the setup script) are set in
@@ -453,14 +455,14 @@ class build_ext (Command):
 
         for source in sources:
             (base, ext) = os.path.splitext(source)
-            if ext in self.swig_ext():
+            if ext == ".i":             # SWIG interface file
                 new_sources.append(base + ".c") # umm, what if it's C++?
-                swig_files.append(source)
+                swig_sources.append(source)
                 swig_targets[source] = new_sources[-1]
             else:
                 new_sources.append(source)
 
-        if not swig_files:
+        if not swig_sources:
             return new_sources
 
         swig = self.find_swig()
