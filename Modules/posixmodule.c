@@ -512,25 +512,6 @@ posix_strint(PyObject *args, char *format, int (*func)(const char *, int))
 	return Py_None;
 }
 
-static PyObject *
-posix_strintint(PyObject *args, char *format,
-		int (*func)(const char *, int, int))
-{
-	char *path;
-	int i,i2;
-	int res;
-	if (!PyArg_ParseTuple(args, format, &path, &i, &i2))
-		return NULL;
-	Py_BEGIN_ALLOW_THREADS
-	res = (*func)(path, i, i2);
-	Py_END_ALLOW_THREADS
-	if (res < 0)
-		return posix_error_with_filename(path);
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-
 
 /* pack a system stat C structure into the Python stat tuple 
    (used by posix_stat() and posix_fstat()) */
@@ -768,7 +749,7 @@ posix_fdatasync(PyObject *self, PyObject *args)
 #endif /* HAVE_FDATASYNC */
 
 
-#ifdef HAVE_CHOWN
+#if HAVE_CHOWN
 static char posix_chown__doc__[] =
 "chown(path, uid, gid) -> None\n\
 Change the owner and group id of path to the numeric uid and gid.";
@@ -776,7 +757,18 @@ Change the owner and group id of path to the numeric uid and gid.";
 static PyObject *
 posix_chown(PyObject *self, PyObject *args)
 {
-	return posix_strintint(args, "sii:chown", chown);
+	char *path;
+	int uid, gid;
+	int res;
+	if (!PyArg_ParseTuple(args, "sii:chown", &path, &uid, &gid))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = chown(path, (uid_t) uid, (gid_t) gid);
+	Py_END_ALLOW_THREADS
+	if (res < 0)
+		return posix_error_with_filename(path);
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 #endif /* HAVE_CHOWN */
 
