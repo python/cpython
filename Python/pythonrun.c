@@ -658,7 +658,7 @@ goaway(sts)
 
 #ifdef Py_TRACE_REFS
 	if (askyesno("Print left references?")) {
-		printrefs(stderr);
+		_Py_PrintReferences(stderr);
 	}
 #endif /* Py_TRACE_REFS */
 

@@ -525,7 +525,7 @@ DELREF(op)
 	(*dealloc)(op);
 }
 
-printrefs(fp)
+_Py_PrintReferences(fp)
 	FILE *fp;
 {
 	object *op;
@@ -541,7 +541,7 @@ printrefs(fp)
 }
 
 PyObject *
-getobjects(self, args)
+_Py_GetObjects(self, args)
 	PyObject *self;
 	PyObject *args;
 {
