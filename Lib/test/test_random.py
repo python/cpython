@@ -164,6 +164,107 @@ class WichmannHill_TestBasicOps(TestBasicOps):
         self.assertRaises(UserWarning, self.gen.randrange, 2**60)
         warnings.filters[:] = oldfilters
 
+class HardwareRandom_TestBasicOps(TestBasicOps):
+    gen = random.HardwareRandom()
+
+    def test_autoseed(self):
+        # Doesn't need to do anything except not fail
+        self.gen.seed()
+
+    def test_saverestore(self):
+        self.assertRaises(NotImplementedError, self.gen.getstate)
+        self.assertRaises(NotImplementedError, self.gen.setstate, None)
+
+    def test_seedargs(self):
+        # Doesn't need to do anything except not fail
+        self.gen.seed(100)
+
+    def test_jumpahead(self):
+        # Doesn't need to do anything except not fail
+        self.gen.jumpahead(100)
+
+    def test_gauss(self):
+        self.gen.gauss_next = None
+        self.gen.seed(100)
+        self.assertEqual(self.gen.gauss_next, None)
+
+    def test_pickling(self):
+        self.assertRaises(NotImplementedError, pickle.dumps, self.gen)
+
+    def test_53_bits_per_float(self):
+        # This should pass whenever a C double has 53 bit precision.
+        span = 2 ** 53
+        cum = 0
+        for i in xrange(100):
+            cum |= int(self.gen.random() * span)
+        self.assertEqual(cum, span-1)
+
+    def test_bigrand(self):
+        # The randrange routine should build-up the required number of bits
+        # in stages so that all bit positions are active.
+        span = 2 ** 500
+        cum = 0
+        for i in xrange(100):
+            r = self.gen.randrange(span)
+            self.assert_(0 <= r < span)
+            cum |= r
+        self.assertEqual(cum, span-1)
+
+    def test_bigrand_ranges(self):
+        for i in [40,80, 160, 200, 211, 250, 375, 512, 550]:
+            start = self.gen.randrange(2 ** i)
+            stop = self.gen.randrange(2 ** (i-2))
+            if stop <= start:
+                return
+            self.assert_(start <= self.gen.randrange(start, stop) < stop)
+
+    def test_rangelimits(self):
+        for start, stop in [(-2,0), (-(2**60)-2,-(2**60)), (2**60,2**60+2)]:
+            self.assertEqual(set(range(start,stop)),
+                set([self.gen.randrange(start,stop) for i in xrange(100)]))
+
+    def test_genrandbits(self):
+        # Verify ranges
+        for k in xrange(1, 1000):
+            self.assert_(0 <= self.gen.getrandbits(k) < 2**k)
+
+        # Verify all bits active
+        getbits = self.gen.getrandbits
+        for span in [1, 2, 3, 4, 31, 32, 32, 52, 53, 54, 119, 127, 128, 129]:
+            cum = 0
+            for i in xrange(100):
+                cum |= getbits(span)
+            self.assertEqual(cum, 2**span-1)
+
+        # Verify argument checking
+        self.assertRaises(TypeError, self.gen.getrandbits)
+        self.assertRaises(TypeError, self.gen.getrandbits, 1, 2)
+        self.assertRaises(ValueError, self.gen.getrandbits, 0)
+        self.assertRaises(ValueError, self.gen.getrandbits, -1)
+        self.assertRaises(TypeError, self.gen.getrandbits, 10.1)
+
+    def test_randbelow_logic(self, _log=log, int=int):
+        # check bitcount transition points:  2**i and 2**(i+1)-1
+        # show that: k = int(1.001 + _log(n, 2))
+        # is equal to or one greater than the number of bits in n
+        for i in xrange(1, 1000):
+            n = 1L << i # check an exact power of two
+            numbits = i+1
+            k = int(1.00001 + _log(n, 2))
+            self.assertEqual(k, numbits)
+            self.assert_(n == 2**(k-1))
+
+            n += n - 1      # check 1 below the next power of two
+            k = int(1.00001 + _log(n, 2))
+            self.assert_(k in [numbits, numbits+1])
+            self.assert_(2**k > n > 2**(k-2))
+
+            n -= n >> 15     # check a little farther below the next power of two
+            k = int(1.00001 + _log(n, 2))
+            self.assertEqual(k, numbits)        # note the stronger assertion
+            self.assert_(2**k > n > 2**(k-1))   # note the stronger assertion
+
+
 class MersenneTwister_TestBasicOps(TestBasicOps):
     gen = random.Random()
 
@@ -391,6 +492,7 @@ class TestModule(unittest.TestCase):
 def test_main(verbose=None):
     testclasses =    (WichmannHill_TestBasicOps,
                       MersenneTwister_TestBasicOps,
+                      HardwareRandom_TestBasicOps,
                       TestDistributions,
                       TestModule)
     test_support.run_unittest(*testclasses)
