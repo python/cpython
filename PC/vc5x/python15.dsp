@@ -391,10 +391,6 @@ SOURCE=..\Modules\regexpr.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\reopmodule.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\Modules\rgbimgmodule.c
 # End Source File
 # Begin Source File
