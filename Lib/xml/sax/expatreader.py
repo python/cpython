@@ -12,6 +12,8 @@ from xml.sax import xmlreader, saxutils, handler
 AttributesImpl = xmlreader.AttributesImpl
 AttributesNSImpl = xmlreader.AttributesNSImpl
 
+import string
+
 # --- ExpatParser
 
 class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
@@ -133,13 +135,13 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._cont_handler.endElement(name)
 
     def start_element_ns(self, name, attrs):
-        pair = name.split()
+        pair = string.split(name)
         if len(pair) == 1:
             pair = (None, name)
 
         newattrs = {}
         for (aname, value) in attrs.items():
-            apair = aname.split()
+            apair = string.split(aname)
             if len(apair) == 1:
                 apair = (None, aname)
             else:
@@ -151,7 +153,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
                                           AttributesNSImpl(newattrs, {}))
 
     def end_element_ns(self, name):
-        pair = name.split()
+        pair = string.split(name)
         if len(pair) == 1:
             pair = (None, name)
             
