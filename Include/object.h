@@ -200,6 +200,7 @@ typedef int (*cmpfunc)(PyObject *, PyObject *);
 typedef PyObject *(*reprfunc)(PyObject *);
 typedef long (*hashfunc)(PyObject *);
 typedef PyObject *(*richcmpfunc) (PyObject *, PyObject *, int);
+typedef PyObject *(*getiterfunc) (PyObject *);
 
 typedef struct _typeobject {
 	PyObject_VAR_HEAD
@@ -249,8 +250,11 @@ typedef struct _typeobject {
 	/* weak reference enabler */
 	long tp_weaklistoffset;
 
+	/* Iterators */
+	getiterfunc tp_iter;
+
 #ifdef COUNT_ALLOCS
-	/* these must be last */
+	/* these must be last and never explicitly initialized */
 	int tp_alloc;
 	int tp_free;
 	int tp_maxalloc;
@@ -342,13 +346,14 @@ given type object has a specified feature.
 /* PyNumberMethods do their own coercion */
 #define Py_TPFLAGS_CHECKTYPES (1L<<4)
 
+/* tp_richcompare is defined */
 #define Py_TPFLAGS_HAVE_RICHCOMPARE (1L<<5)
 
 /* Objects which are weakly referencable if their tp_weaklistoffset is >0 */
-/* XXX Should this have the same value as Py_TPFLAGS_HAVE_RICHCOMPARE?
- * These both indicate a feature that appeared in the same alpha release.
- */
 #define Py_TPFLAGS_HAVE_WEAKREFS (1L<<6)
+
+/* tp_iter is defined */
+#define Py_TPFLAGS_HAVE_ITER (1L<<7)
 
 #define Py_TPFLAGS_DEFAULT  ( \
                              Py_TPFLAGS_HAVE_GETCHARBUFFER | \
@@ -356,6 +361,7 @@ given type object has a specified feature.
                              Py_TPFLAGS_HAVE_INPLACEOPS | \
                              Py_TPFLAGS_HAVE_RICHCOMPARE | \
                              Py_TPFLAGS_HAVE_WEAKREFS | \
+                             Py_TPFLAGS_HAVE_ITER | \
                             0)
 
 #define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)

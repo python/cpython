@@ -1738,3 +1738,20 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 
 	return retval;
 }
+
+PyObject *
+PyObject_GetIter(PyObject *o)
+{
+	PyTypeObject *t = o->ob_type;
+	getiterfunc f = NULL;
+	if (PyType_HasFeature(t, Py_TPFLAGS_HAVE_ITER))
+		f = t->tp_iter;
+	if (f == NULL) {
+		if (PySequence_Check(o))
+			return PyIter_New(o);
+		PyErr_SetString(PyExc_TypeError, "iter() of non-sequence");
+		return NULL;
+	}
+	else
+		return (*f)(o);
+}
