@@ -110,7 +110,85 @@ off.
 \versionadded{2.0}
 \end{funcdesc}
 
+\begin{funcdesc}{AskFileForOpen}{
+	\optional{message}
+	\optional{, typeList}
+	\optional{, defaultLocation}
+	\optional{, defaultOptionFlags}
+	\optional{, location}
+	\optional{, clientName}
+	\optional{, windowTitle}
+	\optional{, actionButtonLabel}
+	\optional{, cancelButtonLabel}
+	\optional{, preferenceKey}
+	\optional{, popupExtension}
+	\optional{, eventProc}
+	\optional{, previewProc}
+	\optional{, filterProc}
+	\optional{, wanted}
+	}
+Post a dialog asking the user for a file to open, and return the file
+selected or \var{None} if the user cancelled.
+\var{message} is a text message to display,
+\var{typeList} is a list of 4-char filetypes allowable,
+\var{defaultLocation} is the pathname, FSSpec or FSRef of the folder
+to show initially,
+\var{location} is the \code{(x, y)} position on the screen where the
+dialog is shown,
+\var{actionButtonLabel} is a string to show in stead of ``Open'' in the
+OK button,
+\var{cancelButtonLabel} is a string to show in stead of ``Cancel'' in the
+cancel button,
+\var{wanted} is the type of value wanted as a return: \class{string},
+\class{unicode}, \class{FSSpec}, \class{FSRef} and subtypes thereof are
+acceptable.
 
+For a description of the other arguments please see the Apple Navigation
+Services documentation and the EasyDialogs sourcecode.
+\end{funcdesc}
+
+\begin{funcdesc}{AskFileForSave}{
+	\optional{message}
+	\optional{, savedFileName}
+	\optional{, defaultLocation}
+	\optional{, defaultOptionFlags}
+	\optional{, location}
+	\optional{, clientName}
+	\optional{, windowTitle}
+	\optional{, actionButtonLabel}
+	\optional{, cancelButtonLabel}
+	\optional{, preferenceKey}
+	\optional{, popupExtension}
+	\optional{, fileType}
+	\optional{, fileCreator}
+	\optional{, eventProc}
+	\optional{, wanted}
+	}
+Post a dialog asking the user for a file to save to, and return the file
+selected or \var{None} if the user cancelled. \var{savedFileName} is the
+default for the file name to save to (the return value). See AskFileForOpen
+for a description of the other arguments.
+\end{funcdesc}
+
+\begin{funcdesc}{AskFolder}{
+	\optional{message}
+	\optional{, defaultLocation}
+	\optional{, defaultOptionFlags}
+	\optional{, location}
+	\optional{, clientName}
+	\optional{, windowTitle}
+	\optional{, actionButtonLabel}
+	\optional{, cancelButtonLabel}
+	\optional{, preferenceKey}
+	\optional{, popupExtension}
+	\optional{, eventProc}
+	\optional{, filterProc}
+	\optional{, wanted}
+	}
+Post a dialog asking the user to select a folder, and return the folder
+selected or \var{None} if the user cancelled. See AskFileForOpen
+for a description of the arguments.
+\end{funcdesc}
 
 \subsection{ProgressBar Objects \label{progressbar-objects}}
 

@@ -13,8 +13,9 @@ and return values, and for additional description you are referred to
 \citetitle[http://developer.apple.com/techpubs/macos8/mac8.html]{Inside
 Macintosh} or similar works.
 
-These modules all live in a package called \module{Carbon}. Despite the
-name Carbon they are also available under classic PPC MacPython.
+These modules all live in a package called \module{Carbon}. Despite that name
+they are not all part of the Carbon framework: CF is really in the CoreFoundation
+framework and Qt is in the QuickTime framework.
 The normal use pattern is
 
 \begin{verbatim}
@@ -36,6 +37,11 @@ in touch with \email{python-docs@python.org}.
   \platform{Mac}
 \modulesynopsis{Interface to the Apple Events toolbox.}
 
+\section{\module{Carbon.AH} --- Apple Help}
+\declaremodule{standard}{Carbon.AH}
+  \platform{Mac}
+\modulesynopsis{Interface to the Apple Help manager.}
+
 
 \section{\module{Carbon.App} --- Appearance Manager}
 \declaremodule{standard}{Carbon.App}
@@ -48,10 +54,20 @@ in touch with \email{python-docs@python.org}.
   \platform{Mac}
 \modulesynopsis{Interface to the Core Foundation.}
 
-This module is only available under Carbon MacPython. The
+The
 \code{CFBase}, \code{CFArray}, \code{CFData}, \code{CFDictionary},
 \code{CFString} and \code{CFURL} objects are supported, some
 only partially.
+
+\section{\module{Carbon.CG} --- Core Graphics}
+\declaremodule{standard}{Carbon.CG}
+  \platform{Mac}
+\modulesynopsis{Interface to the Component Manager.}
+
+\section{\module{Carbon.CarbonEvt} --- Carbon Event Manager}
+\declaremodule{standard}{Carbon.CaronEvt}
+  \platform{Mac}
+\modulesynopsis{Interface to the Carbon Event Manager.}
 
 \section{\module{Carbon.Cm} --- Component Manager}
 \declaremodule{standard}{Carbon.Cm}
@@ -74,7 +90,7 @@ only partially.
 \section{\module{Carbon.Evt} --- Event Manager}
 \declaremodule{standard}{Carbon.Evt}
   \platform{Mac}
-\modulesynopsis{Interface to the Event Manager.}
+\modulesynopsis{Interface to the classic Event Manager.}
 
 
 \section{\module{Carbon.Fm} --- Font Manager}
@@ -82,14 +98,16 @@ only partially.
   \platform{Mac}
 \modulesynopsis{Interface to the Font Manager.}
 
+\section{\module{Carbon.Folder} --- Folder Manager}
+\declaremodule{standard}{Carbon.Folder}
+  \platform{Mac}
+\modulesynopsis{Interface to the Folder Manager.}
+
 
 \section{\module{Carbon.Help} --- Help Manager}
 \declaremodule{standard}{Carbon.Help}
   \platform{Mac}
-\modulesynopsis{Interface to the Balloon Help Manager.}
-
-This module is only available under MacOS9 and earlier in
-classic PPC MacPython.
+\modulesynopsis{Interface to the Carbon Help Manager.}
 
 \section{\module{Carbon.List} --- List Manager}
 \declaremodule{standard}{Carbon.List}
@@ -132,9 +150,10 @@ classic PPC MacPython.
   \platform{Mac}
 \modulesynopsis{Interface to the Resource Manager and Handles.}
 
-
-\input{libscrap}
-
+\section{\module{Carbon.Scrap} --- Scrap Manager}
+\declaremodule{standard}{Carbon.Scrap}
+  \platform{Mac}
+\modulesynopsis{Interface to the Carbon Scrap Manager.}
 
 \section{\module{Carbon.Snd} --- Sound Manager}
 \declaremodule{standard}{Carbon.Snd}

@@ -12,7 +12,7 @@
 The \module{aepack} module defines functions for converting (packing)
 Python variables to AppleEvent descriptors and back (unpacking).
 Within Python the AppleEvent descriptor is handled by Python objects
-of built-in type \pytype{AEDesc}, defined in module \refmodule{AE}.
+of built-in type \class{AEDesc}, defined in module \refmodule{AE}.
 
 The \module{aepack} module defines the following functions:
 
@@ -25,21 +25,20 @@ Apple Event descriptor types is used, as follows:
 
 \begin{tableii}{l|l}{textrm}{Python type}{descriptor type}
   \lineii{\class{FSSpec}}{typeFSS}
+  \lineii{\class{FSRef}}{typeFSRef}
   \lineii{\class{Alias}}{typeAlias}
   \lineii{integer}{typeLong (32 bit integer)}
   \lineii{float}{typeFloat (64 bit floating point)}
   \lineii{string}{typeText}
+  \lineii{unicode}{typeUnicodeText}
   \lineii{list}{typeAEList}
   \lineii{dictionary}{typeAERecord}
   \lineii{instance}{\emph{see below}}
 \end{tableii}  
  
-\pytype{FSSpec} and \pytype{Alias} are built-in object types defined
-in the module \refmodule{macfs}. 
-  
 If \var{x} is a Python instance then this function attempts to call an
 \method{__aepack__()} method.  This method should return an
-\pytype{AE.AEDesc} object.
+\class{AE.AEDesc} object.
 
 If the conversion \var{x} is not defined above, this function returns
 the Python string representation of a value (the repr() function)

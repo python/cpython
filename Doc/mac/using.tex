@@ -1,15 +1,21 @@
-\chapter{Using Python on the Macintosh \label{using}}
+\chapter{Using Python on a Mac OS 9 Macintosh \label{using}}
 \sectionauthor{Bob Savage}{bobsavage@mac.com}
 
-Using Python on the Macintosh can seem like something completely
+Using Python on a Mac OS 9 Macintosh can seem like something completely
 different than using it on a \UNIX-like or Windows system. Most of the
 Python documentation, both the ``official'' documentation and
 published books, describe only how Python is used on these systems,
-causing confusion for the new user of MacPython. This chapter gives a
+causing confusion for the new user of MacPython-OS9. This chapter gives a
 brief introduction to the specifics of using Python on a Macintosh.
 
+Note that this chapter is mainly relevant to Mac OS 9: MacPython-OSX
+is a superset of a normal unix Python. While MacPython-OS9 runs fine
+on Mac OS X it is a better choice to use MacPython-OSX there.
 
-\section{Getting and Installing MacPython \label{getting}}
+The section on the IDE (see Section \ref{IDE}) is relevant to MacPython-OSX
+too.
+
+\section{Getting and Installing MacPython-OS9 \label{getting}}
 
 The most recent release version as well as possible newer experimental
 versions are best found at the MacPython page maintained by Jack
@@ -60,16 +66,6 @@ something that text will stick around for a while. To fix this, see
 section \ref{defaults}.
 
 \item
-After dropping the script onto the \program{PythonInterpreter}, a
-window appeared which said: ``File contains \code{\e r} characters
-(incorrect line endings?)''. That script probably originated on a
-\UNIX{} or Windows machine. You will need to change the line endings
-to the standard Mac usage.  One way to do this is to open the file in
-\program{BBedit}
-(\url{http://www.barebones.com/products/bbedit_lite.html}) which can
-easily change the line endings between Mac, DOS, and \UNIX\ styles.
-
-\item
 When you waved the script icon over the \program{PythonInterpreter},
 the \program{PythonInterpreter} icon did not hilight.  Most likely the
 Creator code and document type is unset (or set incorrectly) -- this
@@ -118,7 +114,7 @@ Navigate into the folder of files you want to fix, and press the
 \section{Simulating command line arguments
          \label{argv}}
 
-There are two ways to simulate command-line arguments with MacPython.
+There are two ways to simulate command-line arguments with MacPython-OS9.
  
 \begin{enumerate}
 \item via Interpreter options
@@ -362,13 +358,3 @@ want to examine the objects that were created during your script.
  
 %\section{CGI on the Mac with Python \label{CGI}}
 %**NEED INFO HERE**
-
-\section{Mac OS X}
-
-At the time of this writing Mac OS X had just been released as a
-Public Beta. Efforts are under way to bring MacPython to Mac OS X. The
-MacPython release \version{1.5.2c1} runs quite well within the
-``Classic'' environment.  A ``Carbon'' port of the MacPython code is
-being prepared for release, and several people have made a command
-line version available to the ``Darwin'' layer (which is accessible
-via Terminal.app).
