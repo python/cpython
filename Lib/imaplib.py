@@ -1105,7 +1105,7 @@ class IMAP4_SSL(IMAP4):
         while read < size:
             data = self.sslobj.read(size-read)
             read += len(data)
-            chunks.append(size)
+            chunks.append(data)
 
         return ''.join(chunks)
 
