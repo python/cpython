@@ -66,6 +66,12 @@ Type/class unification and new-style classes
 Core and builtins
 -----------------
 
+- The repr() function for 8-bit strings now preserves all characters
+  that are considered printable in the current locale.  (Previously,
+  all bytes that are not printable ASCII would be encoded in hex.)
+  This requires the user to set the current locale; in the initial "C"
+  locale the old behavior is maintained.  [SF patch 479898]
+
 - Unicode file name processing for Windows (PEP 277) is implemented.
   All platforms now have an os.path.supports_unicode_filenames attribute,
   which is set to True on Windows NT/2000/XP, and False elsewhere.
@@ -347,6 +353,17 @@ Extension modules
 
 Library
 -------
+
+- Importing the readline module now no longer has the side effect of
+  calling setlocale(LC_CTYPE, "").  The initial "C" locale, or
+  whatever locale is explicitly set by the user, is preserved.  If you
+  want repr() of 8-bit strings in your preferred encoding to preserve
+  all printable characters of that encoding, you have to add the
+  following code to your $PYTHONSTARTUP file or to your application's
+  main():
+
+    import locale
+    locale.setlocale(locale.LC_CTYPE, "")
 
 - shutil.move was added. shutil.copytree now reports errors as an
   exception at the end, instead of printing error messages.
