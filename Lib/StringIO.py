@@ -45,6 +45,9 @@ class StringIO:
         self.closed = 0
         self.softspace = 0
 
+    def __iter__(self):
+        return iter(self.readline, '')
+
     def close(self):
         if not self.closed:
             self.closed = 1
