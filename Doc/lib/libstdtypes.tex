@@ -1082,7 +1082,7 @@ almost arbitrary values.  Only values containing lists, dictionaries
 or other mutable types (that are compared by value rather than by
 object identity) may not be used as keys.
 Numeric types used for keys obey the normal rules for numeric
-comparison: if two numbers compare equal (e.g. \code{1} and
+comparison: if two numbers compare equal (such as \code{1} and
 \code{1.0}) then they can be used interchangeably to index the same
 dictionary entry.
 
@@ -1102,6 +1102,7 @@ arbitrary objects):
   \ttindex{clear()}
   \ttindex{copy()}
   \ttindex{has_key()}
+  \ttindex{fromkeys()}    
   \ttindex{items()}
   \ttindex{keys()}
   \ttindex{update()}
@@ -1268,7 +1269,7 @@ Files have the following methods:
 \end{methoddesc}
 
 \begin{methoddesc}[file]{next}{}
-A file object is its own iterator, i.e. \code{iter(\var{f})} returns
+A file object is its own iterator, for example \code{iter(\var{f})} returns
 \var{f} (unless \var{f} is closed).  When a file is used as an
 iterator, typically in a \keyword{for} loop (for example,
 \code{for line in f: print line}), the \method{next()} method is
@@ -1506,8 +1507,8 @@ same as \code{\var{m}.__dict__} where \var{m} is the module in which
 the function \var{f} was defined).
 
 Function objects also support getting and setting arbitrary
-attributes, which can be used to, e.g. attach metadata to functions.
-Regular attribute dot-notation is used to get and set such
+attributes, which can be used, for example, to attach metadata to
+functions.  Regular attribute dot-notation is used to get and set such
 attributes. \emph{Note that the current implementation only supports
 function attributes on user-defined functions.  Function attributes on
 built-in functions may be supported in the future.}
