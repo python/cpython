@@ -246,7 +246,9 @@ sub insert_index {
     else {
 	$index = `$prog --columns $columns $datafile`;
     }
-    s/$mark/$prefix$index/;
+    if (!s/$mark/$prefix$index/) {
+        print "\nCould not locate index mark: $mark";
+    }
 }
 
 sub add_idx {
@@ -309,8 +311,17 @@ PLAT_DISCUSS
 # replace both indexes as needed:
 sub add_idx_hook {
     add_idx() if (/$idx_mark/);
-    add_module_idx() if (/$idx_module_mark/);
     process_python_state();
+    if ($MODULE_INDEX_FILE) {
+        local ($_);
+        open(MYFILE, "<$MODULE_INDEX_FILE");
+        sysread(MYFILE, $_, 1024*1024);
+        close(MYFILE);
+        add_module_idx();
+        open(MYFILE,">$MODULE_INDEX_FILE");
+        print MYFILE $_;
+        close(MYFILE);
+    }
 }
 
 
@@ -382,31 +393,35 @@ sub do_cmd_textohtmlindex {
     my $heading = make_section_heading($idx_title, 'h2') . $idx_mark;
     my($pre,$post) = minimize_open_tags($heading);
     anchor_label('genindex',$CURRENT_FILE,$_);		# this is added
-    '<br>\n' . $pre . $_;
+    return "<br>\n" . $pre . $_;
 }
+
+$MODULE_INDEX_FILE = '';
 
 # $idx_module_mark will be replaced with the real index at the end
 sub do_cmd_textohtmlmoduleindex {
     local($_) = @_;
     $TITLE = $idx_module_title;
-    anchor_label("modindex",$CURRENT_FILE,$_);
-    '<p>' . make_section_heading($idx_module_title, "h2")
-      . $idx_module_mark . $_;
+    anchor_label('modindex', $CURRENT_FILE, $_);
+    $MODULE_INDEX_FILE = "$CURRENT_FILE";
+    $_ = ('<p>' . make_section_heading($idx_module_title, 'h2')
+          . $idx_module_mark . $_);
+    return $_;
 }
 
-# The bibliography and the index should be treated as separate sections
-# in their own HTML files. The \bibliography{} command acts as a sectioning command
-# that has the desired effect. But when the bibliography is constructed 
-# manually using the thebibliography environment, or when using the
-# theindex environment it is not possible to use the normal sectioning 
-# mechanism. This subroutine inserts a \bibliography{} or a dummy 
-# \textohtmlindex command just before the appropriate environments
-# to force sectioning.
+# The bibliography and the index should be treated as separate
+# sections in their own HTML files. The \bibliography{} command acts
+# as a sectioning command that has the desired effect. But when the
+# bibliography is constructed manually using the thebibliography
+# environment, or when using the theindex environment it is not
+# possible to use the normal sectioning mechanism. This subroutine
+# inserts a \bibliography{} or a dummy \textohtmlindex command just
+# before the appropriate environments to force sectioning.
 
-# XXX	This *assumes* that if there are two {theindex} environments, the
-#	first is the module index and the second is the standard index.  This
-#	is sufficient for the current Python documentation, but that's about
-#	it.
+# XXX	This *assumes* that if there are two {theindex} environments,
+#	the first is the module index and the second is the standard
+#	index.  This is sufficient for the current Python documentation,
+#	but that's about it.
 
 sub add_bbl_and_idx_dummy_commands {
     my $id = $global{'max_id'};
@@ -435,10 +450,10 @@ sub add_bbl_and_idx_dummy_commands {
         if defined(&lib_add_bbl_and_idx_dummy_commands);
 }
 
-# The bibliographic references, the appendices, the lists of figures and tables
-# etc. must appear in the contents table at the same level as the outermost
-# sectioning command. This subroutine finds what is the outermost level and
-# sets the above to the same level;
+# The bibliographic references, the appendices, the lists of figures
+# and tables etc. must appear in the contents table at the same level
+# as the outermost sectioning command. This subroutine finds what is
+# the outermost level and sets the above to the same level;
 
 sub set_depth_levels {
     # Sets $outermost_level
@@ -476,17 +491,17 @@ sub set_depth_levels {
 # <pre>...</pre>.
 #
 # Note that this *must* be done in the init file, not the python.perl
-# style support file.  The %declarations must be set before initialize()
-# is called in the main LaTeX2HTML script (which happens before style files
-# are loaded).
+# style support file.  The %declarations must be set before
+# initialize() is called in the main LaTeX2HTML script (which happens
+# before style files are loaded).
 #
 %declarations = ('preform' => '<dl><dd><pre class="verbatim"></pre></dl>',
 		 %declarations);
 
 
-# This is added to get rid of the long comment that follows the doctype
-# declaration; MSIE5 on NT4 SP4 barfs on it and drops the content of the
-# page.
+# This is added to get rid of the long comment that follows the
+# doctype declaration; MSIE5 on NT4 SP4 barfs on it and drops the
+# content of the page.
 sub make_head_and_body {
     my($title, $body) = @_;
     my $DTDcomment = '';
