@@ -86,7 +86,8 @@ $(LIB):		$& $(OBJS) Makefile
 		mv python ../python
 
 config.o:	config.c Makefile $(MYLIBS)
-		$(LINKCC) $(CFLAGS) -DPYTHONPATH=\"$(PYTHONPATH)\" -c config.c
+		$(LINKCC) $(CFLAGS) -DPYTHONPATH=\"$(PYTHONPATH)\" \
+		          -DPLATFORM=\"$(MACHDEP)\" -c config.c
 
 clean:
 		-rm -f *.o python core *~ [@,#]* *.old *.orig *.rej
