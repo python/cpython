@@ -1,4 +1,4 @@
-# Copyright (C) 2001,2002 Python Software Foundation
+# Copyright (C) 2001,2002,2003 Python Software Foundation
 # email package unit tests
 
 import sys
@@ -50,9 +50,9 @@ except NameError:
 
 
 
-def openfile(filename):
+def openfile(filename, mode='r'):
     path = os.path.join(os.path.dirname(landmark), 'data', filename)
-    return open(path, 'r')
+    return open(path, mode)
 
 
 
@@ -1883,7 +1883,7 @@ Here's the message body
 
     def test_crlf_separation(self):
         eq = self.assertEqual
-        fp = openfile('msg_26.txt')
+        fp = openfile('msg_26.txt', mode='rb')
         try:
             msg = Parser().parse(fp)
         finally:
