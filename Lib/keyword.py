@@ -46,11 +46,7 @@ kwlist = [
 #--end keywords--
         ]
 
-kwdict = {}
-for keyword in kwlist:
-    kwdict[keyword] = 1
-
-iskeyword = kwdict.has_key
+iskeyword = frozenset(kwlist).__contains__
 
 def main():
     import sys, re
