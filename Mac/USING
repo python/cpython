@@ -11,7 +11,7 @@ The most important differences are:
   when an interactive interpreter is started.
 
 - The default search path for modules is different: first the current
-  directory is searched, then the subdirectories 'lib', 'lib:stdwin' and
+  directory is searched, then the subdirectories 'lib', 'lib:stdwin' and
   'demo'.  As always, you can change this (e.g. in your PythonStartup
   file) by assigning or appending to sys.path -- use Macintosh pathnames!
   (The default contains no absolute paths because these are unlikely
