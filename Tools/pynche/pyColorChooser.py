@@ -2,7 +2,6 @@
 """
 
 import os
-from PyncheWidget import PyncheWidget
 import Main
 import ColorDB
 
