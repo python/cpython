@@ -155,7 +155,7 @@ MACLIBSUBDIRS= \
 MACTOOLSDEST=$(prefix)/Mac/Tools
 MACTOOLSSRC=$(srcdir)/Mac/Tools
 MACTOOLSSUBDIRS=IDE
-installmacsubtree: $(INSTALLED_PYTHON)
+installmacsubtree:
 	@for i in $(MACLIBDEST) $(MACTOOLSDEST); \
 	do \
 		if test ! -d $$i; then \
@@ -261,8 +261,8 @@ installmacsubtree: $(INSTALLED_PYTHON)
 	$(INSTALL_DATA) $(srcdir)/Mac/OSX/Mac.pth $(LIBDEST)/site-packages/
 
 	$(PYTHON) $(CACHERSRC) -v $(MACLIBDEST) $(MACTOOLSDEST)
-	$(INSTALLED_PYTHON) -Wi -tt $(srcdir)/Lib/compileall.py -x badsyntax $(MACLIBDEST) $(MACTOOLSDEST)
-	$(INSTALLED_PYTHON) -O -Wi -tt $(srcdir)/Lib/compileall.py -x badsyntax $(MACLIBDEST) $(MACTOOLSDEST)
+	$(PYTHON) -Wi -tt $(srcdir)/Lib/compileall.py -x badsyntax $(MACLIBDEST) $(MACTOOLSDEST)
+	$(PYTHON) -O -Wi -tt $(srcdir)/Lib/compileall.py -x badsyntax $(MACLIBDEST) $(MACTOOLSDEST)
 
 	
 # Put symlinks "python" and "pythonw" in the standard place
@@ -271,10 +271,12 @@ $(INSTALLED_PYTHONW): install_Python
 # $(INSTALLED_PYTHON) has to be done by the main Makefile, we cannot do that here.
 # At least this rule will give an error if it doesn't exist.
 
-installunixtools: $(INSTALLED_PYTHON) $(INSTALLED_PYTHONW) $(srcdir)/Mac/OSX/pythonw.sh
+installunixtools: $(INSTALLED_PYTHON) $(INSTALLED_PYTHONW)
 	$(INSTALL) -d $(bindir)
 	$(INSTALL_SYMLINK) $(INSTALLED_PYTHON) $(bindir)/python
-	$(INSTALL) $(srcdir)/Mac/OSX/pythonw.sh $(bindir)/pythonw
+	echo "#!/bin/sh" > pythonw.sh
+	echo "exec \"$(INSTALLED_PYTHONW)\" \"\$$@\"" >> pythonw.sh
+	$(INSTALL) pythonw.sh $(bindir)/pythonw
 	
 # This is for development purposes: create a Mac.pth that refers to the source
 # directories
