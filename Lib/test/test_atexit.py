@@ -1,66 +1,100 @@
-# Test the atexit module.
-from test.test_support import TESTFN, vereq, is_jython
-import atexit
-from os import popen, unlink
 import sys
-
-executable = sys.executable
-if is_jython:
-    executable = "jython"
-
-input = """\
+import unittest
+import StringIO
 import atexit
+from test import test_support
 
-def handler1():
-    print "handler1"
+class TestCase(unittest.TestCase):
+    def test_args(self):
+        # be sure args are handled properly
+        s = StringIO.StringIO()
+        sys.stdout = sys.stderr = s
+        save_handlers = atexit._exithandlers
+        atexit._exithandlers = []
+        try:
+            atexit.register(self.h1)
+            atexit.register(self.h4)
+            atexit.register(self.h4, 4, kw="abc")
+            atexit._run_exitfuncs()
+        finally:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+            atexit._exithandlers = save_handlers
+        self.assertEqual(s.getvalue(), "h4 (4,) {'kw': 'abc'}\nh4 () {}\nh1\n")
 
-def handler2(*args, **kargs):
-    print "handler2", args, kargs
+    def test_order(self):
+        # be sure handlers are executed in reverse order
+        s = StringIO.StringIO()
+        sys.stdout = sys.stderr = s
+        save_handlers = atexit._exithandlers
+        atexit._exithandlers = []
+        try:
+            atexit.register(self.h1)
+            atexit.register(self.h2)
+            atexit.register(self.h3)
+            atexit._run_exitfuncs()
+        finally:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+            atexit._exithandlers = save_handlers
+        self.assertEqual(s.getvalue(), "h3\nh2\nh1\n")
 
-atexit.register(handler1)
-atexit.register(handler2)
-atexit.register(handler2, 7, kw="abc")
-"""
+    def test_sys_override(self):
+        # be sure a preset sys.exitfunc is handled properly
+        s = StringIO.StringIO()
+        sys.stdout = sys.stderr = s
+        save_handlers = atexit._exithandlers
+        atexit._exithandlers = []
+        exfunc = sys.exitfunc
+        sys.exitfunc = self.h1
+        reload(atexit)
+        try:
+            atexit.register(self.h2)
+            atexit._run_exitfuncs()
+        finally:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+            atexit._exithandlers = save_handlers
+            sys.exitfunc = exfunc
+        self.assertEqual(s.getvalue(), "h2\nh1\n")
 
-fname = TESTFN + ".py"
-f = file(fname, "w")
-f.write(input)
-f.close()
+    def test_raise(self):
+        # be sure raises are handled properly
+        s = StringIO.StringIO()
+        sys.stdout = sys.stderr = s
+        save_handlers = atexit._exithandlers
+        atexit._exithandlers = []
+        try:
+            atexit.register(self.raise1)
+            atexit.register(self.raise2)
+            self.assertRaises(TypeError, atexit._run_exitfuncs)
+        finally:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+            atexit._exithandlers = save_handlers
+       
+    ### helpers
+    def h1(self):
+        print "h1"
 
-p = popen('"%s" %s' % (executable, fname))
-output = p.read()
-p.close()
-vereq(output, """\
-handler2 (7,) {'kw': 'abc'}
-handler2 () {}
-handler1
-""")
+    def h2(self):
+        print "h2"
 
-input = """\
-def direct():
-    print "direct exit"
+    def h3(self):
+        print "h3"
 
-import sys
-sys.exitfunc = direct
+    def h4(self, *args, **kwargs):
+        print "h4", args, kwargs
 
-# Make sure atexit doesn't drop
-def indirect():
-    print "indirect exit"
+    def raise1(self):
+        raise TypeError
 
-import atexit
-atexit.register(indirect)
-"""
+    def raise2(self):
+        raise SystemError
 
-f = file(fname, "w")
-f.write(input)
-f.close()
+def test_main():
+    test_support.run_unittest(TestCase)
 
-p = popen('"%s" %s' % (executable, fname))
-output = p.read()
-p.close()
-vereq(output, """\
-indirect exit
-direct exit
-""")
 
-unlink(fname)
+if __name__ == "__main__":
+    test_main()
