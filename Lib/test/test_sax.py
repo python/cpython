@@ -2,10 +2,11 @@
 # regression test for SAX 2.0
 # $Id$
 
-from xml.sax import make_parser, ContentHandler
+from xml.sax import make_parser, ContentHandler, \
+                    SAXException, SAXReaderNotAvailable, SAXParseException
 try:
     make_parser()
-except xml.sax.SAXReaderNotAvailable:
+except SAXReaderNotAvailable:
     # don't try to test this module if we cannot create a parser
     raise ImportError("no XML parsers available")
 from xml.sax.saxutils import XMLGenerator, escape, XMLFilterBase
@@ -312,6 +313,36 @@ def test_expat_inpsource_stream():
     parser.parse(inpsrc)
 
     return result.getvalue() == xml_test_out
+
+
+# ===========================================================================
+#
+#   error reporting
+#
+# ===========================================================================
+
+def test_expat_inpsource_location():
+    parser = create_parser()
+    parser.setContentHandler(ContentHandler()) # do nothing
+    source = InputSource()
+    source.setByteStream(StringIO("<foo bar foobar>"))   #ill-formed
+    name = "a file name"
+    source.setSystemId(name)
+    try:
+        parser.parse(source)
+    except SAXException, e:
+        return e.getSystemId() == name
+
+def test_expat_incomplete():
+    parser = create_parser()
+    parser.setContentHandler(ContentHandler()) # do nothing
+    try:
+        parser.parse(StringIO("<foo>"))
+    except SAXParseException:
+        return 1 # ok, error found
+    else:
+        return 0
+
 
 # ===========================================================================
 #
