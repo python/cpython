@@ -125,7 +125,7 @@ class HTMLNode:
 
     def link(self, label, nodename, rel=None, rev=None):
         if nodename:
-            if string.lower(nodename) == '(dir)':
+            if nodename.lower() == '(dir)':
                 addr = '../dir.html'
                 title = ''
             else:
@@ -138,14 +138,13 @@ class HTMLNode:
 
     def finalize(self):
         length = len(self.lines)
-        self.text = string.joinfields(self.lines, '')
+        self.text = ''.join(self.lines)
         self.lines = []
         self.open_links()
         self.output_links()
         self.close_links()
-        links = string.joinfields(self.lines, '')
+        links = ''.join(self.lines)
         self.lines = []
-
         self.prologue = (
             self.DOCTYPE +
             '\n<HTML><HEAD>\n'
@@ -337,7 +336,7 @@ class TexinfoParser:
     # Write text to file, or save it in a buffer, or ignore it
     def write(self, *args):
         try:
-            text = string.joinfields(args, '')
+            text = ''.join(args)
         except:
             print args
             raise TypeError
@@ -392,7 +391,7 @@ class TexinfoParser:
             for line in accu:
                 mo = miprog.match(line)
                 if not mo:
-                    line = string.strip(line) + '\n'
+                    line = line.strip() + '\n'
                     self.expand(line)
                     continue
                 bgn, end = mo.span(0)
@@ -412,7 +411,7 @@ class TexinfoParser:
                 self.htmlhelp.menuitem(nodename)
                 self.expand(line[end:])
         else:
-            text = string.joinfields(accu, '')
+            text = ''.join(accu)
             self.expand(text)
 
     # find 'menu' (we might be inside 'ifset' or 'ifclear')
@@ -699,10 +698,7 @@ class TexinfoParser:
         self.startsaving()
     def close_inforef(self):
         text = self.collectsavings()
-        args = string.splitfields(text, ',')
-        n = len(args)
-        for i in range(n):
-            args[i] = string.strip(args[i])
+        args = [s.strip() for s in text.split(',')]
         while len(args) < 3: args.append('')
         node = args[0]
         file = args[2]
@@ -710,10 +706,7 @@ class TexinfoParser:
 
     def makeref(self):
         text = self.collectsavings()
-        args = string.splitfields(text, ',')
-        n = len(args)
-        for i in range(n):
-            args[i] = string.strip(args[i])
+        args = [s.strip() for s in text.split(',')]
         while len(args) < 5: args.append('')
         nodename = label = args[0]
         if args[2]: label = args[2]
@@ -729,10 +722,7 @@ class TexinfoParser:
         self.startsaving()
     def close_uref(self):
         text = self.collectsavings()
-        args = string.splitfields(text, ',')
-        n = len(args)
-        for i in range(n):
-            args[i] = string.strip(args[i])
+        args = [s.strip() for s in text.split(',')]
         while len(args) < 2: args.append('')
         href = args[0]
         label = args[1]
@@ -752,10 +742,7 @@ class TexinfoParser:
         self.makeimage()
     def makeimage(self):
         text = self.collectsavings()
-        args = string.splitfields(text, ',')
-        n = len(args)
-        for i in range(n):
-            args[i] = string.strip(args[i])
+        args = [s.strip() for s in text.split(',')]
         while len(args) < 5: args.append('')
         filename = args[0]
         width    = args[1]
@@ -882,7 +869,7 @@ class TexinfoParser:
     def command(self, line, mo):
         a, b = mo.span(1)
         cmd = line[a:b]
-        args = string.strip(line[b:])
+        args = line[b:].strip()
         if self.debugging > 1:
             print '!'*self.debugging, 'command:', self.skip, self.stack, \
                   '@' + cmd, args
@@ -910,7 +897,7 @@ class TexinfoParser:
             self.unknown[cmd] = self.unknown[cmd] + 1
 
     def do_end(self, args):
-        words = string.split(args)
+        words = args.split()
         if not words:
             print '*** @end w/o args'
         else:
@@ -954,12 +941,12 @@ class TexinfoParser:
     def end_tex(self): self.skip = self.skip - 1
 
     def do_set(self, args):
-        fields = string.splitfields(args, ' ')
+        fields = args.split(' ')
         key = fields[0]
         if len(fields) == 1:
             value = 1
         else:
-            value = string.joinfields(fields[1:], ' ')
+            value = ' '.join(fields[1:])
         self.values[key] = value
 
     def do_clear(self, args):
@@ -1059,9 +1046,8 @@ class TexinfoParser:
     def do_node(self, args):
         self.endnode()
         self.nodelineno = 0
-        parts = string.splitfields(args, ',')
+        parts = [s.strip() for s in args.split(',')]
         while len(parts) < 4: parts.append('')
-        for i in range(4): parts[i] = string.strip(parts[i])
         self.nodelinks = parts
         [name, next, prev, up] = parts[:4]
         file = self.dirname + '/' + makefile(name)
@@ -1083,7 +1069,7 @@ class TexinfoParser:
 
     def link(self, label, nodename):
         if nodename:
-            if string.lower(nodename) == '(dir)':
+            if nodename.lower() == '(dir)':
                 addr = '../dir.html'
             else:
                 addr = makefile(nodename)
@@ -1577,7 +1563,7 @@ class TexinfoParser:
         self.htmlhelp.index(args, self.nodename)
 
     def do_synindex(self, args):
-        words = string.split(args)
+        words = args.split()
         if len(words) <> 2:
             print '*** bad @synindex', args
             return
@@ -1594,7 +1580,7 @@ class TexinfoParser:
     do_syncodeindex = do_synindex # XXX Should use code font
 
     def do_printindex(self, args):
-        words = string.split(args)
+        words = args.split()
         for name in words:
             if self.whichindex.has_key(name):
                 self.prindex(name)
@@ -1612,7 +1598,7 @@ class TexinfoParser:
         index1 = []
         junkprog = re.compile('^(@[a-z]+)?{')
         for key, node in index:
-            sortkey = string.lower(key)
+            sortkey = key.lower()
             # Remove leading `@cmd{' from sort key
             # -- don't bother about the matching `}'
             oldsortkey = sortkey
@@ -1647,7 +1633,7 @@ class TexinfoParser:
             cmds = self.unknown.keys()
             cmds.sort()
             for cmd in cmds:
-                print string.ljust(cmd, 20), self.unknown[cmd]
+                print cmd.ljust(20), self.unknown[cmd]
 
 
 class TexinfoParserHTML3(TexinfoParser):
@@ -1988,7 +1974,7 @@ def findwordend(str, i, n):
 
 # Convert a node name into a file name
 def makefile(nodename):
-    nodename = string.strip(nodename)
+    nodename = nodename.strip()
     return fixfunnychars(nodename) + '.html'
 
 
@@ -2017,7 +2003,7 @@ def increment(s):
     for sequence in string.digits, string.lowercase, string.uppercase:
         lastc = s[-1]
         if lastc in sequence:
-            i = string.index(sequence, lastc) + 1
+            i = sequence.index(lastc) + 1
             if i >= len(sequence):
                 if len(s) == 1:
                     s = sequence[0]*2
