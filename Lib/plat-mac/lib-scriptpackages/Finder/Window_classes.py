@@ -41,28 +41,6 @@ class target(aetools.NProperty):
 
 Finder_windows = Finder_window
 
-class clipping_window(aetools.ComponentItem):
-	"""clipping window - The window containing a clipping """
-	want = 'lwnd'
-
-clipping_windows = clipping_window
-
-class information_window(aetools.ComponentItem):
-	"""information window - An inspector window (opened by \xd2Show Info\xd3) """
-	want = 'iwnd'
-class current_panel(aetools.NProperty):
-	"""current panel - the current panel in the information window """
-	which = 'panl'
-	want = 'ipnl'
-class item(aetools.NProperty):
-	"""item - the item from which this window was opened """
-	which = 'cobj'
-	want = 'obj '
-
-class preferences_window(aetools.ComponentItem):
-	"""preferences window - (NOT AVAILABLE YET) The Finder Preferences window """
-	want = 'pwnd'
-
 class window(aetools.ComponentItem):
 	"""window - A window """
 	want = 'cwin'
@@ -132,6 +110,28 @@ class zoomed_full_size(aetools.NProperty):
 	want = 'bool'
 
 windows = window
+
+class information_window(aetools.ComponentItem):
+	"""information window - An inspector window (opened by \xd2Show Info\xd3) """
+	want = 'iwnd'
+class current_panel(aetools.NProperty):
+	"""current panel - the current panel in the information window """
+	which = 'panl'
+	want = 'ipnl'
+class item(aetools.NProperty):
+	"""item - the item from which this window was opened """
+	which = 'cobj'
+	want = 'obj '
+
+class clipping_window(aetools.ComponentItem):
+	"""clipping window - The window containing a clipping """
+	want = 'lwnd'
+
+clipping_windows = clipping_window
+
+class preferences_window(aetools.ComponentItem):
+	"""preferences window - (NOT AVAILABLE YET) The Finder Preferences window """
+	want = 'pwnd'
 Finder_window._superclassnames = ['window']
 Finder_window._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
@@ -141,27 +141,6 @@ Finder_window._privpropdict = {
 	'target' : target,
 }
 Finder_window._privelemdict = {
-}
-clipping_window._superclassnames = ['window']
-clipping_window._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-}
-clipping_window._privelemdict = {
-}
-information_window._superclassnames = ['window']
-information_window._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'current_panel' : current_panel,
-	'item' : item,
-}
-information_window._privelemdict = {
-}
-preferences_window._superclassnames = ['window']
-preferences_window._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'current_panel' : current_panel,
-}
-preferences_window._privelemdict = {
 }
 window._superclassnames = []
 window._privpropdict = {
@@ -183,6 +162,27 @@ window._privpropdict = {
 	'zoomed_full_size' : zoomed_full_size,
 }
 window._privelemdict = {
+}
+information_window._superclassnames = ['window']
+information_window._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'current_panel' : current_panel,
+	'item' : item,
+}
+information_window._privelemdict = {
+}
+clipping_window._superclassnames = ['window']
+clipping_window._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+}
+clipping_window._privelemdict = {
+}
+preferences_window._superclassnames = ['window']
+preferences_window._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'current_panel' : current_panel,
+}
+preferences_window._privelemdict = {
 }
 
 #

@@ -15,64 +15,13 @@ class Containers_and_folders_Events:
 	pass
 
 
-class container(aetools.ComponentItem):
-	"""container - An item that contains other items """
-	want = 'ctnr'
-class _3c_Inheritance_3e_(aetools.NProperty):
-	"""<Inheritance> - inherits some of its properties from the item class """
-	which = 'c@#^'
-	want = 'cobj'
-class completely_expanded(aetools.NProperty):
-	"""completely expanded - (NOT AVAILABLE YET) Are the container and all of its children opened as outlines? (can only be set for containers viewed as lists) """
-	which = 'pexc'
-	want = 'bool'
-class container_window(aetools.NProperty):
-	"""container window - the container window for this folder """
-	which = 'cwnd'
-	want = 'obj '
-class entire_contents(aetools.NProperty):
-	"""entire contents - the entire contents of the container, including the contents of its children """
-	which = 'ects'
-	want = 'obj '
-class expandable(aetools.NProperty):
-	"""expandable - (NOT AVAILABLE YET) Is the container capable of being expanded as an outline? """
-	which = 'pexa'
-	want = 'bool'
-class expanded(aetools.NProperty):
-	"""expanded - (NOT AVAILABLE YET) Is the container opened as an outline? (can only be set for containers viewed as lists) """
-	which = 'pexp'
-	want = 'bool'
-#        element 'alia' as ['indx', 'name']
-#        element 'appf' as ['indx', 'name', 'ID  ']
-#        element 'cfol' as ['indx', 'name', 'ID  ']
-#        element 'clpf' as ['indx', 'name']
-#        element 'cobj' as ['indx', 'name']
-#        element 'ctnr' as ['indx', 'name']
-#        element 'docf' as ['indx', 'name']
-#        element 'file' as ['indx', 'name']
-#        element 'inlf' as ['indx', 'name']
-#        element 'pack' as ['indx', 'name']
-
-containers = container
-
-class desktop_2d_object(aetools.ComponentItem):
-	"""desktop-object - Desktop-object is the class of the \xd2desktop\xd3 object """
-	want = 'cdsk'
-#        element 'alia' as ['indx', 'name']
-#        element 'appf' as ['indx', 'name', 'ID  ']
-#        element 'cdis' as ['indx', 'name']
-#        element 'cfol' as ['indx', 'name', 'ID  ']
-#        element 'clpf' as ['indx', 'name']
-#        element 'cobj' as ['indx', 'name']
-#        element 'ctnr' as ['indx', 'name']
-#        element 'docf' as ['indx', 'name']
-#        element 'file' as ['indx', 'name']
-#        element 'inlf' as ['indx', 'name']
-#        element 'pack' as ['indx', 'name']
-
 class disk(aetools.ComponentItem):
 	"""disk - A disk """
 	want = 'cdis'
+class _3c_Inheritance_3e_(aetools.NProperty):
+	"""<Inheritance> - inherits some of its properties from the container class """
+	which = 'c@#^'
+	want = 'ctnr'
 class capacity(aetools.NProperty):
 	"""capacity - the total number of bytes (free or used) on the disk """
 	which = 'capa'
@@ -114,6 +63,21 @@ class startup(aetools.NProperty):
 
 disks = disk
 
+class desktop_2d_object(aetools.ComponentItem):
+	"""desktop-object - Desktop-object is the class of the \xd2desktop\xd3 object """
+	want = 'cdsk'
+#        element 'alia' as ['indx', 'name']
+#        element 'appf' as ['indx', 'name', 'ID  ']
+#        element 'cdis' as ['indx', 'name']
+#        element 'cfol' as ['indx', 'name', 'ID  ']
+#        element 'clpf' as ['indx', 'name']
+#        element 'cobj' as ['indx', 'name']
+#        element 'ctnr' as ['indx', 'name']
+#        element 'docf' as ['indx', 'name']
+#        element 'file' as ['indx', 'name']
+#        element 'inlf' as ['indx', 'name']
+#        element 'pack' as ['indx', 'name']
+
 class folder(aetools.ComponentItem):
 	"""folder - A folder """
 	want = 'cfol'
@@ -129,6 +93,42 @@ class folder(aetools.ComponentItem):
 #        element 'pack' as ['indx', 'name']
 
 folders = folder
+
+class container(aetools.ComponentItem):
+	"""container - An item that contains other items """
+	want = 'ctnr'
+class completely_expanded(aetools.NProperty):
+	"""completely expanded - (NOT AVAILABLE YET) Are the container and all of its children opened as outlines? (can only be set for containers viewed as lists) """
+	which = 'pexc'
+	want = 'bool'
+class container_window(aetools.NProperty):
+	"""container window - the container window for this folder """
+	which = 'cwnd'
+	want = 'obj '
+class entire_contents(aetools.NProperty):
+	"""entire contents - the entire contents of the container, including the contents of its children """
+	which = 'ects'
+	want = 'obj '
+class expandable(aetools.NProperty):
+	"""expandable - (NOT AVAILABLE YET) Is the container capable of being expanded as an outline? """
+	which = 'pexa'
+	want = 'bool'
+class expanded(aetools.NProperty):
+	"""expanded - (NOT AVAILABLE YET) Is the container opened as an outline? (can only be set for containers viewed as lists) """
+	which = 'pexp'
+	want = 'bool'
+#        element 'alia' as ['indx', 'name']
+#        element 'appf' as ['indx', 'name', 'ID  ']
+#        element 'cfol' as ['indx', 'name', 'ID  ']
+#        element 'clpf' as ['indx', 'name']
+#        element 'cobj' as ['indx', 'name']
+#        element 'ctnr' as ['indx', 'name']
+#        element 'docf' as ['indx', 'name']
+#        element 'file' as ['indx', 'name']
+#        element 'inlf' as ['indx', 'name']
+#        element 'pack' as ['indx', 'name']
+
+containers = container
 
 class trash_2d_object(aetools.ComponentItem):
 	"""trash-object - Trash-object is the class of the \xd2trash\xd3 object """
@@ -147,18 +147,20 @@ class warns_before_emptying(aetools.NProperty):
 #        element 'file' as ['indx', 'name']
 #        element 'inlf' as ['indx', 'name']
 #        element 'pack' as ['indx', 'name']
-import Finder_items
-container._superclassnames = ['item']
+disk._superclassnames = ['container']
 import Files
-container._privpropdict = {
+import Finder_items
+disk._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'completely_expanded' : completely_expanded,
-	'container_window' : container_window,
-	'entire_contents' : entire_contents,
-	'expandable' : expandable,
-	'expanded' : expanded,
+	'capacity' : capacity,
+	'ejectable' : ejectable,
+	'format' : format,
+	'free_space' : free_space,
+	'ignore_privileges' : ignore_privileges,
+	'local_volume' : local_volume,
+	'startup' : startup,
 }
-container._privelemdict = {
+disk._privelemdict = {
 	'alias_file' : Files.alias_file,
 	'application_file' : Files.application_file,
 	'clipping' : Files.clipping,
@@ -187,18 +189,11 @@ desktop_2d_object._privelemdict = {
 	'item' : Finder_items.item,
 	'package' : Files.package,
 }
-disk._superclassnames = ['container']
-disk._privpropdict = {
+folder._superclassnames = ['container']
+folder._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'capacity' : capacity,
-	'ejectable' : ejectable,
-	'format' : format,
-	'free_space' : free_space,
-	'ignore_privileges' : ignore_privileges,
-	'local_volume' : local_volume,
-	'startup' : startup,
 }
-disk._privelemdict = {
+folder._privelemdict = {
 	'alias_file' : Files.alias_file,
 	'application_file' : Files.application_file,
 	'clipping' : Files.clipping,
@@ -210,11 +205,16 @@ disk._privelemdict = {
 	'item' : Finder_items.item,
 	'package' : Files.package,
 }
-folder._superclassnames = ['container']
-folder._privpropdict = {
+container._superclassnames = ['item']
+container._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'completely_expanded' : completely_expanded,
+	'container_window' : container_window,
+	'entire_contents' : entire_contents,
+	'expandable' : expandable,
+	'expanded' : expanded,
 }
-folder._privelemdict = {
+container._privelemdict = {
 	'alias_file' : Files.alias_file,
 	'application_file' : Files.application_file,
 	'clipping' : Files.clipping,

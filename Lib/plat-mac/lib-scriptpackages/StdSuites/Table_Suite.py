@@ -39,17 +39,17 @@ class name(aetools.NProperty):
 
 columns = column
 
-class row(aetools.ComponentItem):
-	"""row - A row """
+class rows(aetools.ComponentItem):
+	"""rows -  """
 	want = 'crow'
 
-rows = row
+row = rows
 
-class table(aetools.ComponentItem):
-	"""table - A table """
+class tables(aetools.ComponentItem):
+	"""tables -  """
 	want = 'ctbl'
 
-tables = table
+table = tables
 cell._superclassnames = []
 cell._privpropdict = {
 	'formula' : formula,
@@ -63,15 +63,15 @@ column._privpropdict = {
 }
 column._privelemdict = {
 }
-row._superclassnames = []
-row._privpropdict = {
+rows._superclassnames = []
+rows._privpropdict = {
 }
-row._privelemdict = {
+rows._privelemdict = {
 }
-table._superclassnames = []
-table._privpropdict = {
+tables._superclassnames = []
+tables._privpropdict = {
 }
-table._privelemdict = {
+tables._privelemdict = {
 }
 _Enum_prtn = {
 	'read_only' : 'nmod',	# Can\xd5t change values or formulas
@@ -86,8 +86,8 @@ _Enum_prtn = {
 _classdeclarations = {
 	'ccel' : cell,
 	'ccol' : column,
-	'crow' : row,
-	'ctbl' : table,
+	'crow' : rows,
+	'ctbl' : tables,
 }
 
 _propdeclarations = {

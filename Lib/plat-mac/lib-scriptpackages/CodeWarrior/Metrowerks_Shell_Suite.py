@@ -790,30 +790,6 @@ class Metrowerks_Shell_Suite_Events:
 			return _arguments['----']
 
 
-class Access_Paths(aetools.ComponentItem):
-	"""Access Paths - Contains the definitions of a project\xd5s access (search) paths. """
-	want = 'PATH'
-class Always_Full_Search(aetools.NProperty):
-	"""Always Full Search - To force the compiler to search for system includes like it searches for user includes. """
-	which = 'PA02'
-	want = 'bool'
-class Convert_Paths(aetools.NProperty):
-	"""Convert Paths - Enables conversion of DOS & Unix-style relative paths when searching for files. """
-	which = 'PA04'
-	want = 'bool'
-class Require_Framework_Includes(aetools.NProperty):
-	"""Require Framework Includes - Causes the IDE to only look in the framework access paths if a Mac OS X framework style include (i.e. <Carbon/Carbon.h> ) is used. """
-	which = 'PA05'
-	want = 'bool'
-class System_Paths(aetools.NProperty):
-	"""System Paths - To add an access path for the include files. (Not supported in Pascal) """
-	which = 'PA03'
-	want = 'PInf'
-class User_Paths(aetools.NProperty):
-	"""User Paths - To add an access path for the source files. """
-	which = 'PA01'
-	want = 'PInf'
-
 class Browser_Coloring(aetools.ComponentItem):
 	"""Browser Coloring - Colors for Browser symbols. """
 	want = 'BRKW'
@@ -858,26 +834,6 @@ class Typedefs_Color(aetools.NProperty):
 	which = 'BW08'
 	want = 'cRGB'
 
-class Build_Extras(aetools.ComponentItem):
-	"""Build Extras -  """
-	want = 'LXTR'
-class Browser_Active(aetools.NProperty):
-	"""Browser Active - Allow the collection of browser information. """
-	which = 'EX09'
-	want = 'bool'
-class Cache_Subproject_Data(aetools.NProperty):
-	"""Cache Subproject Data -  """
-	which = 'EX31'
-	want = 'bool'
-class Dump_Browser_Info(aetools.NProperty):
-	"""Dump Browser Info -  """
-	which = 'EX30'
-	want = 'bool'
-class Modification_Date_Caching(aetools.NProperty):
-	"""Modification Date Caching -  """
-	which = 'EX04'
-	want = 'bool'
-
 class Build_Settings(aetools.ComponentItem):
 	"""Build Settings - Build Settings preferences. """
 	want = 'BSTG'
@@ -910,6 +866,24 @@ class Success_Sound(aetools.NProperty):
 	which = 'BX02'
 	want = 'TEXT'
 
+class base_class(aetools.ComponentItem):
+	"""base class - A base class or super class of a class """
+	want = 'BsCl'
+class access(aetools.NProperty):
+	"""access -  """
+	which = 'Acce'
+	want = 'Acce'
+class class_(aetools.NProperty):
+	"""class - The class object corresponding to this base class """
+	which = 'Clas'
+	want = 'obj '
+class virtual(aetools.NProperty):
+	"""virtual -  """
+	which = 'Virt'
+	want = 'bool'
+
+base_classes = base_class
+
 class Custom_Keywords(aetools.ComponentItem):
 	"""Custom Keywords -  """
 	want = 'CUKW'
@@ -929,6 +903,48 @@ class Custom_Color_4(aetools.NProperty):
 	"""Custom Color 4 - The color for the fourth set of custom keywords. """
 	which = 'GH08'
 	want = 'cRGB'
+
+class browser_catalog(aetools.ComponentItem):
+	"""browser catalog - The browser symbol catalog for the current project """
+	want = 'Cata'
+#        element 'Clas' as ['indx', 'name']
+
+class class_(aetools.ComponentItem):
+	"""class - A class, struct, or record type in the current project. """
+	want = 'Clas'
+class all_subclasses(aetools.NProperty):
+	"""all subclasses - the classes directly or indirectly derived from this class """
+	which = 'SubA'
+	want = 'Clas'
+class declaration_end_offset(aetools.NProperty):
+	"""declaration end offset - End of class declaration """
+	which = 'DcEn'
+	want = 'long'
+class declaration_file(aetools.NProperty):
+	"""declaration file - Source file containing the class declaration """
+	which = 'DcFl'
+	want = 'fss '
+class declaration_start_offset(aetools.NProperty):
+	"""declaration start offset - Start of class declaration source code """
+	which = 'DcSt'
+	want = 'long'
+class language(aetools.NProperty):
+	"""language - Implementation language of this class """
+	which = 'Lang'
+	want = 'Lang'
+class name(aetools.NProperty):
+	"""name -  """
+	which = 'pnam'
+	want = 'TEXT'
+class subclasses(aetools.NProperty):
+	"""subclasses - the immediate subclasses of this class """
+	which = 'SubC'
+	want = 'Clas'
+#        element 'BsCl' as ['indx']
+#        element 'DtMb' as ['indx', 'name']
+#        element 'MbFn' as ['indx', 'name']
+
+classes = class_
 
 class Debugger_Display(aetools.ComponentItem):
 	"""Debugger Display - Debugger Display preferences """
@@ -1066,6 +1082,16 @@ class Do_Nothing_To_Projects(aetools.NProperty):
 	which = 'Dw02'
 	want = 'bool'
 
+class data_member(aetools.ComponentItem):
+	"""data member - A class data member or field """
+	want = 'DtMb'
+class static(aetools.NProperty):
+	"""static -  """
+	which = 'Stat'
+	want = 'bool'
+
+data_members = data_member
+
 class Editor(aetools.ComponentItem):
 	"""Editor -  """
 	want = 'EDTR'
@@ -1133,10 +1159,6 @@ class Use_Multiple_Undo(aetools.NProperty):
 class Environment_Variable(aetools.ComponentItem):
 	"""Environment Variable - Environment variable for host OS """
 	want = 'EnvV'
-class name(aetools.NProperty):
-	"""name -  """
-	which = 'pnam'
-	want = 'TEXT'
 class value(aetools.NProperty):
 	"""value - Value of the environment variable """
 	which = 'Valu'
@@ -1161,6 +1183,58 @@ class messageKind(aetools.NProperty):
 	"""messageKind - The type of error or warning. """
 	which = 'ErrT'
 	want = 'ErrT'
+
+class Function_Information(aetools.ComponentItem):
+	"""Function Information - Describes the location of any function or global data definition within the current project. """
+	want = 'FDef'
+
+class File_Mappings(aetools.ComponentItem):
+	"""File Mappings - Mappings of extensions & file types to compilers """
+	want = 'FLMP'
+class Mappings(aetools.NProperty):
+	"""Mappings -  """
+	which = 'FMps'
+	want = 'FMap'
+
+class File_Mapping(aetools.ComponentItem):
+	"""File Mapping -  """
+	want = 'FMap'
+class Compiler(aetools.NProperty):
+	"""Compiler -  """
+	which = 'TA07'
+	want = 'TEXT'
+class Extension(aetools.NProperty):
+	"""Extension -  """
+	which = 'TA02'
+	want = 'TEXT'
+class File_Type(aetools.NProperty):
+	"""File Type -  """
+	which = 'PR04'
+	want = 'TEXT'
+class Ignored_by_Make(aetools.NProperty):
+	"""Ignored by Make -  """
+	which = 'TA06'
+	want = 'bool'
+class Launchable(aetools.NProperty):
+	"""Launchable -  """
+	which = 'TA05'
+	want = 'bool'
+class Precompiled(aetools.NProperty):
+	"""Precompiled -  """
+	which = 'TA03'
+	want = 'bool'
+class Resource_File(aetools.NProperty):
+	"""Resource File -  """
+	which = 'TA04'
+	want = 'bool'
+
+class Global_Source_Trees(aetools.ComponentItem):
+	"""Global Source Trees - Globally-defined source tree roots """
+	want = 'GSTs'
+class Source_Trees(aetools.NProperty):
+	"""Source Trees - List of source tree roots """
+	which = 'ST01'
+	want = 'SrcT'
 
 class Extras(aetools.ComponentItem):
 	"""Extras -  """
@@ -1202,85 +1276,67 @@ class Use_ToolServer_Menu(aetools.NProperty):
 	which = 'EX18'
 	want = 'bool'
 
-class File_Mapping(aetools.ComponentItem):
-	"""File Mapping -  """
-	want = 'FMap'
-class Compiler(aetools.NProperty):
-	"""Compiler -  """
-	which = 'TA07'
-	want = 'TEXT'
-class Extension(aetools.NProperty):
-	"""Extension -  """
-	which = 'TA02'
-	want = 'TEXT'
-class File_Type(aetools.NProperty):
-	"""File Type -  """
-	which = 'PR04'
-	want = 'TEXT'
-class Ignored_by_Make(aetools.NProperty):
-	"""Ignored by Make -  """
-	which = 'TA06'
+class Build_Extras(aetools.ComponentItem):
+	"""Build Extras -  """
+	want = 'LXTR'
+class Browser_Active(aetools.NProperty):
+	"""Browser Active - Allow the collection of browser information. """
+	which = 'EX09'
 	want = 'bool'
-class Launchable(aetools.NProperty):
-	"""Launchable -  """
-	which = 'TA05'
+class Cache_Subproject_Data(aetools.NProperty):
+	"""Cache Subproject Data -  """
+	which = 'EX31'
 	want = 'bool'
-class Precompiled(aetools.NProperty):
-	"""Precompiled -  """
-	which = 'TA03'
+class Dump_Browser_Info(aetools.NProperty):
+	"""Dump Browser Info -  """
+	which = 'EX30'
 	want = 'bool'
-class Resource_File(aetools.NProperty):
-	"""Resource File -  """
-	which = 'TA04'
+class Modification_Date_Caching(aetools.NProperty):
+	"""Modification Date Caching -  """
+	which = 'EX04'
 	want = 'bool'
 
-class File_Mappings(aetools.ComponentItem):
-	"""File Mappings - Mappings of extensions & file types to compilers """
-	want = 'FLMP'
-class Mappings(aetools.NProperty):
-	"""Mappings -  """
-	which = 'FMps'
-	want = 'FMap'
+class member_function(aetools.ComponentItem):
+	"""member function - A class member function or method. """
+	want = 'MbFn'
+class implementation_end_offset(aetools.NProperty):
+	"""implementation end offset - end of member function definition """
+	which = 'DfEn'
+	want = 'long'
+class implementation_file(aetools.NProperty):
+	"""implementation file - Source file containing the member function definition """
+	which = 'DfFl'
+	want = 'fss '
+class implementation_start_offset(aetools.NProperty):
+	"""implementation start offset - start of member function definition source code """
+	which = 'DfSt'
+	want = 'long'
 
-class Font(aetools.ComponentItem):
-	"""Font -  """
-	want = 'mFNT'
-class Auto_Indent(aetools.NProperty):
-	"""Auto Indent - Indent new lines automatically. """
-	which = 'FN01'
-	want = 'bool'
-class Tab_Indents_Selection(aetools.NProperty):
-	"""Tab Indents Selection - Tab indents selection when multiple lines are selected """
-	which = 'FN03'
-	want = 'bool'
-class Tab_Inserts_Spaces(aetools.NProperty):
-	"""Tab Inserts Spaces - Insert spaces instead of tab character """
-	which = 'FN04'
-	want = 'bool'
-class Tab_Size(aetools.NProperty):
-	"""Tab Size -  """
-	which = 'FN02'
-	want = 'shor'
-class Text_Font(aetools.NProperty):
-	"""Text Font - The font used in editing windows. """
-	which = 'ptxf'
-	want = 'TEXT'
-class Text_Size(aetools.NProperty):
-	"""Text Size - The size of the text in an editing window. """
-	which = 'ptps'
-	want = 'shor'
+member_functions = member_function
 
-class Function_Information(aetools.ComponentItem):
-	"""Function Information - Describes the location of any function or global data definition within the current project. """
-	want = 'FDef'
-
-class Global_Source_Trees(aetools.ComponentItem):
-	"""Global Source Trees - Globally-defined source tree roots """
-	want = 'GSTs'
-class Source_Trees(aetools.NProperty):
-	"""Source Trees - List of source tree roots """
-	which = 'ST01'
-	want = 'SrcT'
+class Access_Paths(aetools.ComponentItem):
+	"""Access Paths - Contains the definitions of a project\xd5s access (search) paths. """
+	want = 'PATH'
+class Always_Full_Search(aetools.NProperty):
+	"""Always Full Search - To force the compiler to search for system includes like it searches for user includes. """
+	which = 'PA02'
+	want = 'bool'
+class Convert_Paths(aetools.NProperty):
+	"""Convert Paths - Enables conversion of DOS & Unix-style relative paths when searching for files. """
+	which = 'PA04'
+	want = 'bool'
+class Require_Framework_Includes(aetools.NProperty):
+	"""Require Framework Includes - Causes the IDE to only look in the framework access paths if a Mac OS X framework style include (i.e. <Carbon/Carbon.h> ) is used. """
+	which = 'PA05'
+	want = 'bool'
+class System_Paths(aetools.NProperty):
+	"""System Paths - To add an access path for the include files. (Not supported in Pascal) """
+	which = 'PA03'
+	want = 'PInf'
+class User_Paths(aetools.NProperty):
+	"""User Paths - To add an access path for the source files. """
+	which = 'PA01'
+	want = 'PInf'
 
 class Path_Information(aetools.ComponentItem):
 	"""Path Information - Contains all of the parameters that describe an access path. """
@@ -1322,6 +1378,102 @@ class Plugin_Diagnostics_Level(aetools.NProperty):
 	which = 'PX01'
 	want = 'PXdg'
 
+class Runtime_Settings(aetools.ComponentItem):
+	"""Runtime Settings - Runtime settings """
+	want = 'RSTG'
+class Command_Line_Arguments(aetools.NProperty):
+	"""Command Line Arguments - Extra command line args to pass to executable """
+	which = 'RS02'
+	want = 'TEXT'
+class Environment_Variables(aetools.NProperty):
+	"""Environment Variables - Environment variables to use when running the executable """
+	which = 'RS04'
+	want = 'EnvV'
+class Host_Application(aetools.NProperty):
+	"""Host Application - Host application for running/debugging libraries and code resources """
+	which = 'RS01'
+	want = 'RlPt'
+class Working_Directory(aetools.NProperty):
+	"""Working Directory - Working directory to use when running the executable """
+	which = 'RS03'
+	want = 'TEXT'
+
+class Relative_Path(aetools.ComponentItem):
+	"""Relative Path - Relative path from some root """
+	want = 'RlPt'
+
+class Shielded_Folder(aetools.ComponentItem):
+	"""Shielded Folder -  """
+	want = 'SFit'
+class Expression_To_Match(aetools.NProperty):
+	"""Expression To Match - Regular expression which describes folders to skip """
+	which = 'SF01'
+	want = 'TEXT'
+class Skip_Find_And_Compare_Operations(aetools.NProperty):
+	"""Skip Find And Compare Operations - Matching folders will be skipped during find and compare operations """
+	which = 'SF03'
+	want = 'bool'
+class Skip_Project_Operations(aetools.NProperty):
+	"""Skip Project Operations - Matching folders will be skipped during project operations """
+	which = 'SF02'
+	want = 'bool'
+
+class Shielded_Folders(aetools.ComponentItem):
+	"""Shielded Folders - Folders skipped when performing project and find-and-compare operations """
+	want = 'SHFL'
+class Shielded_Items(aetools.NProperty):
+	"""Shielded Items -  """
+	which = 'SFis'
+	want = 'SFit'
+
+class Syntax_Coloring(aetools.ComponentItem):
+	"""Syntax Coloring -  """
+	want = 'SNTX'
+class Comment_Color(aetools.NProperty):
+	"""Comment Color - The color for comments. """
+	which = 'GH02'
+	want = 'cRGB'
+class Keyword_Color(aetools.NProperty):
+	"""Keyword Color - The color for language keywords. """
+	which = 'GH03'
+	want = 'cRGB'
+class String_Color(aetools.NProperty):
+	"""String Color - The color for strings. """
+	which = 'GH04'
+	want = 'cRGB'
+class Syntax_Coloring(aetools.NProperty):
+	"""Syntax Coloring - Mark keywords and comments with color. """
+	which = 'GH01'
+	want = 'bool'
+
+class Segment(aetools.ComponentItem):
+	"""Segment - A segment or group in the project """
+	want = 'Seg '
+class filecount(aetools.NProperty):
+	"""filecount -  """
+	which = 'NumF'
+	want = 'shor'
+class seg_2d_locked(aetools.NProperty):
+	"""seg-locked - Is the segment locked ? [68K only] """
+	which = 'PLck'
+	want = 'bool'
+class seg_2d_preloaded(aetools.NProperty):
+	"""seg-preloaded - Is the segment preloaded ? [68K only] """
+	which = 'Prel'
+	want = 'bool'
+class seg_2d_protected(aetools.NProperty):
+	"""seg-protected - Is the segment protected ? [68K only] """
+	which = 'Prot'
+	want = 'bool'
+class seg_2d_purgeable(aetools.NProperty):
+	"""seg-purgeable - Is the segment purgeable ? [68K only] """
+	which = 'Purg'
+	want = 'bool'
+class seg_2d_system_heap(aetools.NProperty):
+	"""seg-system heap - Is the segment loaded into the system heap ? [68K only] """
+	which = 'SysH'
+	want = 'bool'
+
 class ProjectFile(aetools.ComponentItem):
 	"""ProjectFile - A file contained in a project """
 	want = 'SrcF'
@@ -1358,82 +1510,6 @@ class weak_link(aetools.NProperty):
 	which = 'Weak'
 	want = 'bool'
 
-class Relative_Path(aetools.ComponentItem):
-	"""Relative Path - Relative path from some root """
-	want = 'RlPt'
-
-class Runtime_Settings(aetools.ComponentItem):
-	"""Runtime Settings - Runtime settings """
-	want = 'RSTG'
-class Command_Line_Arguments(aetools.NProperty):
-	"""Command Line Arguments - Extra command line args to pass to executable """
-	which = 'RS02'
-	want = 'TEXT'
-class Environment_Variables(aetools.NProperty):
-	"""Environment Variables - Environment variables to use when running the executable """
-	which = 'RS04'
-	want = 'EnvV'
-class Host_Application(aetools.NProperty):
-	"""Host Application - Host application for running/debugging libraries and code resources """
-	which = 'RS01'
-	want = 'RlPt'
-class Working_Directory(aetools.NProperty):
-	"""Working Directory - Working directory to use when running the executable """
-	which = 'RS03'
-	want = 'TEXT'
-
-class Segment(aetools.ComponentItem):
-	"""Segment - A segment or group in the project """
-	want = 'Seg '
-class filecount(aetools.NProperty):
-	"""filecount -  """
-	which = 'NumF'
-	want = 'shor'
-class seg_2d_locked(aetools.NProperty):
-	"""seg-locked - Is the segment locked ? [68K only] """
-	which = 'PLck'
-	want = 'bool'
-class seg_2d_preloaded(aetools.NProperty):
-	"""seg-preloaded - Is the segment preloaded ? [68K only] """
-	which = 'Prel'
-	want = 'bool'
-class seg_2d_protected(aetools.NProperty):
-	"""seg-protected - Is the segment protected ? [68K only] """
-	which = 'Prot'
-	want = 'bool'
-class seg_2d_purgeable(aetools.NProperty):
-	"""seg-purgeable - Is the segment purgeable ? [68K only] """
-	which = 'Purg'
-	want = 'bool'
-class seg_2d_system_heap(aetools.NProperty):
-	"""seg-system heap - Is the segment loaded into the system heap ? [68K only] """
-	which = 'SysH'
-	want = 'bool'
-
-class Shielded_Folder(aetools.ComponentItem):
-	"""Shielded Folder -  """
-	want = 'SFit'
-class Expression_To_Match(aetools.NProperty):
-	"""Expression To Match - Regular expression which describes folders to skip """
-	which = 'SF01'
-	want = 'TEXT'
-class Skip_Find_And_Compare_Operations(aetools.NProperty):
-	"""Skip Find And Compare Operations - Matching folders will be skipped during find and compare operations """
-	which = 'SF03'
-	want = 'bool'
-class Skip_Project_Operations(aetools.NProperty):
-	"""Skip Project Operations - Matching folders will be skipped during project operations """
-	which = 'SF02'
-	want = 'bool'
-
-class Shielded_Folders(aetools.ComponentItem):
-	"""Shielded Folders - Folders skipped when performing project and find-and-compare operations """
-	want = 'SHFL'
-class Shielded_Items(aetools.NProperty):
-	"""Shielded Items -  """
-	which = 'SFis'
-	want = 'SFit'
-
 class Source_Tree(aetools.ComponentItem):
 	"""Source Tree - User-defined source tree root """
 	want = 'SrcT'
@@ -1445,26 +1521,6 @@ class path_kind(aetools.NProperty):
 	"""path kind - kind of path """
 	which = 'Kind'
 	want = 'STKd'
-
-class Syntax_Coloring(aetools.ComponentItem):
-	"""Syntax Coloring -  """
-	want = 'SNTX'
-class Comment_Color(aetools.NProperty):
-	"""Comment Color - The color for comments. """
-	which = 'GH02'
-	want = 'cRGB'
-class Keyword_Color(aetools.NProperty):
-	"""Keyword Color - The color for language keywords. """
-	which = 'GH03'
-	want = 'cRGB'
-class String_Color(aetools.NProperty):
-	"""String Color - The color for strings. """
-	which = 'GH04'
-	want = 'cRGB'
-class Syntax_Coloring(aetools.NProperty):
-	"""Syntax Coloring - Mark keywords and comments with color. """
-	which = 'GH01'
-	want = 'bool'
 
 class Target_Settings(aetools.ComponentItem):
 	"""Target Settings - Contains the definitions of a project\xd5s target. """
@@ -1554,99 +1610,33 @@ class VCS_Active(aetools.NProperty):
 	which = 'VC01'
 	want = 'bool'
 
-class base_class(aetools.ComponentItem):
-	"""base class - A base class or super class of a class """
-	want = 'BsCl'
-class access(aetools.NProperty):
-	"""access -  """
-	which = 'Acce'
-	want = 'Acce'
-class class_(aetools.NProperty):
-	"""class - The class object corresponding to this base class """
-	which = 'Clas'
-	want = 'obj '
-class virtual(aetools.NProperty):
-	"""virtual -  """
-	which = 'Virt'
+class Font(aetools.ComponentItem):
+	"""Font -  """
+	want = 'mFNT'
+class Auto_Indent(aetools.NProperty):
+	"""Auto Indent - Indent new lines automatically. """
+	which = 'FN01'
 	want = 'bool'
-
-base_classes = base_class
-
-class browser_catalog(aetools.ComponentItem):
-	"""browser catalog - The browser symbol catalog for the current project """
-	want = 'Cata'
-#        element 'Clas' as ['indx', 'name']
-
-class class_(aetools.ComponentItem):
-	"""class - A class, struct, or record type in the current project. """
-	want = 'Clas'
-class all_subclasses(aetools.NProperty):
-	"""all subclasses - the classes directly or indirectly derived from this class """
-	which = 'SubA'
-	want = 'Clas'
-class declaration_end_offset(aetools.NProperty):
-	"""declaration end offset - End of class declaration """
-	which = 'DcEn'
-	want = 'long'
-class declaration_file(aetools.NProperty):
-	"""declaration file - Source file containing the class declaration """
-	which = 'DcFl'
-	want = 'fss '
-class declaration_start_offset(aetools.NProperty):
-	"""declaration start offset - Start of class declaration source code """
-	which = 'DcSt'
-	want = 'long'
-class language(aetools.NProperty):
-	"""language - Implementation language of this class """
-	which = 'Lang'
-	want = 'Lang'
-class subclasses(aetools.NProperty):
-	"""subclasses - the immediate subclasses of this class """
-	which = 'SubC'
-	want = 'Clas'
-#        element 'BsCl' as ['indx']
-#        element 'DtMb' as ['indx', 'name']
-#        element 'MbFn' as ['indx', 'name']
-
-classes = class_
-
-class data_member(aetools.ComponentItem):
-	"""data member - A class data member or field """
-	want = 'DtMb'
-class static(aetools.NProperty):
-	"""static -  """
-	which = 'Stat'
+class Tab_Indents_Selection(aetools.NProperty):
+	"""Tab Indents Selection - Tab indents selection when multiple lines are selected """
+	which = 'FN03'
 	want = 'bool'
-
-data_members = data_member
-
-class member_function(aetools.ComponentItem):
-	"""member function - A class member function or method. """
-	want = 'MbFn'
-class implementation_end_offset(aetools.NProperty):
-	"""implementation end offset - end of member function definition """
-	which = 'DfEn'
-	want = 'long'
-class implementation_file(aetools.NProperty):
-	"""implementation file - Source file containing the member function definition """
-	which = 'DfFl'
-	want = 'fss '
-class implementation_start_offset(aetools.NProperty):
-	"""implementation start offset - start of member function definition source code """
-	which = 'DfSt'
-	want = 'long'
-
-member_functions = member_function
-Access_Paths._superclassnames = []
-Access_Paths._privpropdict = {
-	'Always_Full_Search' : Always_Full_Search,
-	'Convert_Paths' : Convert_Paths,
-	'Require_Framework_Includes' : Require_Framework_Includes,
-	'System_Paths' : System_Paths,
-	'User_Paths' : User_Paths,
-}
-Access_Paths._privelemdict = {
-}
+class Tab_Inserts_Spaces(aetools.NProperty):
+	"""Tab Inserts Spaces - Insert spaces instead of tab character """
+	which = 'FN04'
+	want = 'bool'
+class Tab_Size(aetools.NProperty):
+	"""Tab Size -  """
+	which = 'FN02'
+	want = 'shor'
+class Text_Font(aetools.NProperty):
+	"""Text Font - The font used in editing windows. """
+	which = 'ptxf'
+	want = 'TEXT'
+class Text_Size(aetools.NProperty):
+	"""Text Size - The size of the text in an editing window. """
+	which = 'ptps'
+	want = 'shor'
 Browser_Coloring._superclassnames = []
 Browser_Coloring._privpropdict = {
 	'Browser_Keywords' : Browser_Keywords,
@@ -1662,15 +1652,6 @@ Browser_Coloring._privpropdict = {
 }
 Browser_Coloring._privelemdict = {
 }
-Build_Extras._superclassnames = []
-Build_Extras._privpropdict = {
-	'Browser_Active' : Browser_Active,
-	'Cache_Subproject_Data' : Cache_Subproject_Data,
-	'Dump_Browser_Info' : Dump_Browser_Info,
-	'Modification_Date_Caching' : Modification_Date_Caching,
-}
-Build_Extras._privelemdict = {
-}
 Build_Settings._superclassnames = []
 Build_Settings._privpropdict = {
 	'Build_Before_Running' : Build_Before_Running,
@@ -1683,6 +1664,14 @@ Build_Settings._privpropdict = {
 }
 Build_Settings._privelemdict = {
 }
+base_class._superclassnames = []
+base_class._privpropdict = {
+	'access' : access,
+	'class_' : class_,
+	'virtual' : virtual,
+}
+base_class._privelemdict = {
+}
 Custom_Keywords._superclassnames = []
 Custom_Keywords._privpropdict = {
 	'Custom_Color_1' : Custom_Color_1,
@@ -1691,6 +1680,27 @@ Custom_Keywords._privpropdict = {
 	'Custom_Color_4' : Custom_Color_4,
 }
 Custom_Keywords._privelemdict = {
+}
+browser_catalog._superclassnames = []
+browser_catalog._privpropdict = {
+}
+browser_catalog._privelemdict = {
+	'class_' : class_,
+}
+class_._superclassnames = []
+class_._privpropdict = {
+	'all_subclasses' : all_subclasses,
+	'declaration_end_offset' : declaration_end_offset,
+	'declaration_file' : declaration_file,
+	'declaration_start_offset' : declaration_start_offset,
+	'language' : language,
+	'name' : name,
+	'subclasses' : subclasses,
+}
+class_._privelemdict = {
+	'base_class' : base_class,
+	'data_member' : data_member,
+	'member_function' : member_function,
 }
 Debugger_Display._superclassnames = []
 Debugger_Display._privpropdict = {
@@ -1743,6 +1753,16 @@ Debugger_Windowing._privpropdict = {
 }
 Debugger_Windowing._privelemdict = {
 }
+data_member._superclassnames = []
+data_member._privpropdict = {
+	'access' : access,
+	'declaration_end_offset' : declaration_end_offset,
+	'declaration_start_offset' : declaration_start_offset,
+	'name' : name,
+	'static' : static,
+}
+data_member._privelemdict = {
+}
 Editor._superclassnames = []
 Editor._privpropdict = {
 	'Background_Color' : Background_Color,
@@ -1779,6 +1799,37 @@ Error_Information._privpropdict = {
 }
 Error_Information._privelemdict = {
 }
+Function_Information._superclassnames = []
+Function_Information._privpropdict = {
+	'disk_file' : disk_file,
+	'lineNumber' : lineNumber,
+}
+Function_Information._privelemdict = {
+}
+File_Mappings._superclassnames = []
+File_Mappings._privpropdict = {
+	'Mappings' : Mappings,
+}
+File_Mappings._privelemdict = {
+}
+File_Mapping._superclassnames = []
+File_Mapping._privpropdict = {
+	'Compiler' : Compiler,
+	'Extension' : Extension,
+	'File_Type' : File_Type,
+	'Ignored_by_Make' : Ignored_by_Make,
+	'Launchable' : Launchable,
+	'Precompiled' : Precompiled,
+	'Resource_File' : Resource_File,
+}
+File_Mapping._privelemdict = {
+}
+Global_Source_Trees._superclassnames = []
+Global_Source_Trees._privpropdict = {
+	'Source_Trees' : Source_Trees,
+}
+Global_Source_Trees._privelemdict = {
+}
 Extras._superclassnames = []
 Extras._privpropdict = {
 	'Automatic_Toolbar_Help' : Automatic_Toolbar_Help,
@@ -1793,47 +1844,39 @@ Extras._privpropdict = {
 }
 Extras._privelemdict = {
 }
-File_Mapping._superclassnames = []
-File_Mapping._privpropdict = {
-	'Compiler' : Compiler,
-	'Extension' : Extension,
-	'File_Type' : File_Type,
-	'Ignored_by_Make' : Ignored_by_Make,
-	'Launchable' : Launchable,
-	'Precompiled' : Precompiled,
-	'Resource_File' : Resource_File,
+Build_Extras._superclassnames = []
+Build_Extras._privpropdict = {
+	'Browser_Active' : Browser_Active,
+	'Cache_Subproject_Data' : Cache_Subproject_Data,
+	'Dump_Browser_Info' : Dump_Browser_Info,
+	'Modification_Date_Caching' : Modification_Date_Caching,
 }
-File_Mapping._privelemdict = {
+Build_Extras._privelemdict = {
 }
-File_Mappings._superclassnames = []
-File_Mappings._privpropdict = {
-	'Mappings' : Mappings,
+member_function._superclassnames = []
+member_function._privpropdict = {
+	'access' : access,
+	'declaration_end_offset' : declaration_end_offset,
+	'declaration_file' : declaration_file,
+	'declaration_start_offset' : declaration_start_offset,
+	'implementation_end_offset' : implementation_end_offset,
+	'implementation_file' : implementation_file,
+	'implementation_start_offset' : implementation_start_offset,
+	'name' : name,
+	'static' : static,
+	'virtual' : virtual,
 }
-File_Mappings._privelemdict = {
+member_function._privelemdict = {
 }
-Font._superclassnames = []
-Font._privpropdict = {
-	'Auto_Indent' : Auto_Indent,
-	'Tab_Indents_Selection' : Tab_Indents_Selection,
-	'Tab_Inserts_Spaces' : Tab_Inserts_Spaces,
-	'Tab_Size' : Tab_Size,
-	'Text_Font' : Text_Font,
-	'Text_Size' : Text_Size,
+Access_Paths._superclassnames = []
+Access_Paths._privpropdict = {
+	'Always_Full_Search' : Always_Full_Search,
+	'Convert_Paths' : Convert_Paths,
+	'Require_Framework_Includes' : Require_Framework_Includes,
+	'System_Paths' : System_Paths,
+	'User_Paths' : User_Paths,
 }
-Font._privelemdict = {
-}
-Function_Information._superclassnames = []
-Function_Information._privpropdict = {
-	'disk_file' : disk_file,
-	'lineNumber' : lineNumber,
-}
-Function_Information._privelemdict = {
-}
-Global_Source_Trees._superclassnames = []
-Global_Source_Trees._privpropdict = {
-	'Source_Trees' : Source_Trees,
-}
-Global_Source_Trees._privelemdict = {
+Access_Paths._privelemdict = {
 }
 Path_Information._superclassnames = []
 Path_Information._privpropdict = {
@@ -1854,30 +1897,6 @@ Plugin_Settings._privpropdict = {
 }
 Plugin_Settings._privelemdict = {
 }
-ProjectFile._superclassnames = []
-ProjectFile._privpropdict = {
-	'codesize' : codesize,
-	'datasize' : datasize,
-	'disk_file' : disk_file,
-	'filetype' : filetype,
-	'includes' : includes,
-	'initialize_before' : initialize_before,
-	'name' : name,
-	'symbols' : symbols,
-	'up_to_date' : up_to_date,
-	'weak_link' : weak_link,
-}
-ProjectFile._privelemdict = {
-}
-Relative_Path._superclassnames = []
-Relative_Path._privpropdict = {
-	'format' : format,
-	'name' : name,
-	'origin' : origin,
-	'root' : root,
-}
-Relative_Path._privelemdict = {
-}
 Runtime_Settings._superclassnames = []
 Runtime_Settings._privpropdict = {
 	'Command_Line_Arguments' : Command_Line_Arguments,
@@ -1887,17 +1906,14 @@ Runtime_Settings._privpropdict = {
 }
 Runtime_Settings._privelemdict = {
 }
-Segment._superclassnames = []
-Segment._privpropdict = {
-	'filecount' : filecount,
+Relative_Path._superclassnames = []
+Relative_Path._privpropdict = {
+	'format' : format,
 	'name' : name,
-	'seg_2d_locked' : seg_2d_locked,
-	'seg_2d_preloaded' : seg_2d_preloaded,
-	'seg_2d_protected' : seg_2d_protected,
-	'seg_2d_purgeable' : seg_2d_purgeable,
-	'seg_2d_system_heap' : seg_2d_system_heap,
+	'origin' : origin,
+	'root' : root,
 }
-Segment._privelemdict = {
+Relative_Path._privelemdict = {
 }
 Shielded_Folder._superclassnames = []
 Shielded_Folder._privpropdict = {
@@ -1913,15 +1929,6 @@ Shielded_Folders._privpropdict = {
 }
 Shielded_Folders._privelemdict = {
 }
-Source_Tree._superclassnames = []
-Source_Tree._privpropdict = {
-	'format' : format,
-	'name' : name,
-	'path' : path,
-	'path_kind' : path_kind,
-}
-Source_Tree._privelemdict = {
-}
 Syntax_Coloring._superclassnames = []
 Syntax_Coloring._privpropdict = {
 	'Comment_Color' : Comment_Color,
@@ -1934,6 +1941,42 @@ Syntax_Coloring._privpropdict = {
 	'Syntax_Coloring' : Syntax_Coloring,
 }
 Syntax_Coloring._privelemdict = {
+}
+Segment._superclassnames = []
+Segment._privpropdict = {
+	'filecount' : filecount,
+	'name' : name,
+	'seg_2d_locked' : seg_2d_locked,
+	'seg_2d_preloaded' : seg_2d_preloaded,
+	'seg_2d_protected' : seg_2d_protected,
+	'seg_2d_purgeable' : seg_2d_purgeable,
+	'seg_2d_system_heap' : seg_2d_system_heap,
+}
+Segment._privelemdict = {
+}
+ProjectFile._superclassnames = []
+ProjectFile._privpropdict = {
+	'codesize' : codesize,
+	'datasize' : datasize,
+	'disk_file' : disk_file,
+	'filetype' : filetype,
+	'includes' : includes,
+	'initialize_before' : initialize_before,
+	'name' : name,
+	'symbols' : symbols,
+	'up_to_date' : up_to_date,
+	'weak_link' : weak_link,
+}
+ProjectFile._privelemdict = {
+}
+Source_Tree._superclassnames = []
+Source_Tree._privpropdict = {
+	'format' : format,
+	'name' : name,
+	'path' : path,
+	'path_kind' : path_kind,
+}
+Source_Tree._privelemdict = {
 }
 Target_Settings._superclassnames = []
 Target_Settings._privpropdict = {
@@ -1970,59 +2013,16 @@ VCS_Setup._privpropdict = {
 }
 VCS_Setup._privelemdict = {
 }
-base_class._superclassnames = []
-base_class._privpropdict = {
-	'access' : access,
-	'class_' : class_,
-	'virtual' : virtual,
+Font._superclassnames = []
+Font._privpropdict = {
+	'Auto_Indent' : Auto_Indent,
+	'Tab_Indents_Selection' : Tab_Indents_Selection,
+	'Tab_Inserts_Spaces' : Tab_Inserts_Spaces,
+	'Tab_Size' : Tab_Size,
+	'Text_Font' : Text_Font,
+	'Text_Size' : Text_Size,
 }
-base_class._privelemdict = {
-}
-browser_catalog._superclassnames = []
-browser_catalog._privpropdict = {
-}
-browser_catalog._privelemdict = {
-	'class_' : class_,
-}
-class_._superclassnames = []
-class_._privpropdict = {
-	'all_subclasses' : all_subclasses,
-	'declaration_end_offset' : declaration_end_offset,
-	'declaration_file' : declaration_file,
-	'declaration_start_offset' : declaration_start_offset,
-	'language' : language,
-	'name' : name,
-	'subclasses' : subclasses,
-}
-class_._privelemdict = {
-	'base_class' : base_class,
-	'data_member' : data_member,
-	'member_function' : member_function,
-}
-data_member._superclassnames = []
-data_member._privpropdict = {
-	'access' : access,
-	'declaration_end_offset' : declaration_end_offset,
-	'declaration_start_offset' : declaration_start_offset,
-	'name' : name,
-	'static' : static,
-}
-data_member._privelemdict = {
-}
-member_function._superclassnames = []
-member_function._privpropdict = {
-	'access' : access,
-	'declaration_end_offset' : declaration_end_offset,
-	'declaration_file' : declaration_file,
-	'declaration_start_offset' : declaration_start_offset,
-	'implementation_end_offset' : implementation_end_offset,
-	'implementation_file' : implementation_file,
-	'implementation_start_offset' : implementation_start_offset,
-	'name' : name,
-	'static' : static,
-	'virtual' : virtual,
-}
-member_function._privelemdict = {
+Font._privelemdict = {
 }
 _Enum_Acce = {
 	'public' : 'Publ',	# 

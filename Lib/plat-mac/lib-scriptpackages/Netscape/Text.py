@@ -16,6 +16,31 @@ class Text_Events(Text_Suite_Events):
 	pass
 
 
+class text(aetools.ComponentItem):
+	"""text - independent text view objects """
+	want = 'ctxt'
+class beginning(aetools.NProperty):
+	"""beginning - Beginning of element """
+	which = 'bgng'
+	want = 'obj '
+class end(aetools.NProperty):
+	"""end - Ending of element """
+	which = 'end '
+	want = 'obj '
+class infront(aetools.NProperty):
+	"""infront - Immediately before element """
+	which = 'pBef'
+	want = 'obj '
+class justbehind(aetools.NProperty):
+	"""justbehind - Immediately after element """
+	which = 'pAft'
+	want = 'obj '
+class updateLevel(aetools.NProperty):
+	"""updateLevel - updating level.  Can only be incremented or decremented.  Do so only in a try block -- if the level is greater than zero, visual text updating will cease. """
+	which = 'pUpL'
+	want = 'long'
+#        element 'stys' as ['indx', 'name']
+
 class styleset(aetools.ComponentItem):
 	"""styleset - A style \xd2set\xd3 that may be used repeatedly in text objects. """
 	want = 'stys'
@@ -45,42 +70,6 @@ class writing_code(aetools.NProperty):
 	want = 'tsty'
 
 stylesets = styleset
-
-class text(aetools.ComponentItem):
-	"""text - independent text view objects """
-	want = 'ctxt'
-class beginning(aetools.NProperty):
-	"""beginning - Beginning of element """
-	which = 'bgng'
-	want = 'obj '
-class end(aetools.NProperty):
-	"""end - Ending of element """
-	which = 'end '
-	want = 'obj '
-class infront(aetools.NProperty):
-	"""infront - Immediately before element """
-	which = 'pBef'
-	want = 'obj '
-class justbehind(aetools.NProperty):
-	"""justbehind - Immediately after element """
-	which = 'pAft'
-	want = 'obj '
-class updateLevel(aetools.NProperty):
-	"""updateLevel - updating level.  Can only be incremented or decremented.  Do so only in a try block -- if the level is greater than zero, visual text updating will cease. """
-	which = 'pUpL'
-	want = 'long'
-#        element 'stys' as ['indx', 'name']
-styleset._superclassnames = []
-styleset._privpropdict = {
-	'color' : color,
-	'font' : font,
-	'name' : name,
-	'size' : size,
-	'style' : style,
-	'writing_code' : writing_code,
-}
-styleset._privelemdict = {
-}
 text._superclassnames = []
 text._privpropdict = {
 	'beginning' : beginning,
@@ -91,6 +80,17 @@ text._privpropdict = {
 }
 text._privelemdict = {
 	'styleset' : styleset,
+}
+styleset._superclassnames = []
+styleset._privpropdict = {
+	'color' : color,
+	'font' : font,
+	'name' : name,
+	'size' : size,
+	'style' : style,
+	'writing_code' : writing_code,
+}
+styleset._privelemdict = {
 }
 
 #
