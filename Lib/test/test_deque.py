@@ -19,11 +19,12 @@ class BadCmp:
         raise RuntimeError
 
 class MutateCmp:
-    def __init__(self, deque):
+    def __init__(self, deque, result):
         self.deque = deque
+        self.result = result
     def __eq__(self, other):
         self.deque.clear()
-        return True
+        return self.result
 
 class TestBasic(unittest.TestCase):
 
@@ -226,11 +227,11 @@ class TestBasic(unittest.TestCase):
             self.assert_(x is y)
 
         # Handle evil mutator
-        d = deque(['ab'])
-        d.extend([MutateCmp(d), 'c'])
-        e = deque(d)
-        self.assertRaises(IndexError, d.remove, 'c')
-        self.assertEqual(d, deque())
+        for match in (True, False):
+            d = deque(['ab'])
+            d.extend([MutateCmp(d, match), 'c'])
+            self.assertRaises(IndexError, d.remove, 'c')
+            self.assertEqual(d, deque())
 
     def test_repr(self):
         d = deque(xrange(200))
