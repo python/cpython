@@ -2,7 +2,6 @@
 \label{module-formatter}
 \stmodindex{formatter}
 
-\setindexsubitem{(in module formatter)}
 
 This module supports two interface definitions, each with mulitple
 implementations.  The \emph{formatter} interface is used by the
@@ -188,8 +187,6 @@ Two implementations of formatter objects are provided by this module.
 Most applications may use one of these classes without modification or
 subclassing.
 
-\setindexsubitem{(in module formatter)}
-
 \begin{classdesc}{NullFormatter}{\optional{writer}}
 A formatter which does nothing.  If \var{writer} is omitted, a
 \class{NullWriter} instance is created.  No methods of the writer are
@@ -216,7 +213,7 @@ Note that while most applications can use the
 \class{AbstractFormatter} class as a formatter, the writer must
 typically be provided by the application.
 
-\setindexsubitem{(writer object method)}
+\setindexsubitem{(writer method)}
 
 \begin{funcdesc}{flush}{}
 Flush any buffered output or device control events.
@@ -308,24 +305,22 @@ Three implementations of the writer object interface are provided as
 examples by this module.  Most applications will need to derive new
 writer classes from the \class{NullWriter} class.
 
-\setindexsubitem{(in module formatter)}
-
-\begin{funcdesc}{NullWriter}{}
+\begin{classdesc}{NullWriter}{}
 A writer which only provides the interface definition; no actions are
 taken on any methods.  This should be the base class for all writers
 which do not need to inherit any implementation methods.
-\end{funcdesc}
+\end{classdesc}
 
-\begin{funcdesc}{AbstractWriter}{}
+\begin{classdesc}{AbstractWriter}{}
 A writer which can be used in debugging formatters, but not much
 else.  Each method simply announces itself by printing its name and
 arguments on standard output.
-\end{funcdesc}
+\end{classdesc}
 
-\begin{funcdesc}{DumbWriter}{\optional{file\optional{\, maxcol\code{ = 72}}}}
+\begin{classdesc}{DumbWriter}{\optional{file\optional{\, maxcol\code{ = 72}}}}
 Simple writer class which writes output on the file object passed in
 as \var{file} or, if \var{file} is omitted, on standard output.  The
 output is simply word-wrapped to the number of columns specified by
 \var{maxcol}.  This class is suitable for reflowing a sequence of
 paragraphs.
-\end{funcdesc}
+\end{classdesc}
