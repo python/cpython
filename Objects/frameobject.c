@@ -31,15 +31,14 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Frame object implementation */
 
-#include "allobjects.h"
+#include "Python.h"
 
 #include "compile.h"
 #include "frameobject.h"
 #include "opcode.h"
 #include "structmember.h"
-#include "bltinmodule.h"
 
-#define OFF(x) offsetof(frameobject, x)
+#define OFF(x) offsetof(PyFrameObject, x)
 
 static struct memberlist frame_memberlist[] = {
 	{"f_back",	T_OBJECT,	OFF(f_back),	RO},
@@ -54,23 +53,23 @@ static struct memberlist frame_memberlist[] = {
 	{NULL}	/* Sentinel */
 };
 
-static object *
+static PyObject *
 frame_getattr(f, name)
-	frameobject *f;
+	PyFrameObject *f;
 	char *name;
 {
 	if (strcmp(name, "f_locals") == 0)
-		fast_2_locals(f);
-	return getmember((char *)f, frame_memberlist, name);
+		PyFrame_FastToLocals(f);
+	return PyMember_Get((char *)f, frame_memberlist, name);
 }
 
 static int
 frame_setattr(f, name, value)
-	frameobject *f;
+	PyFrameObject *f;
 	char *name;
-	object *value;
+	PyObject *value;
 {
-	return setmember((char *)f, frame_memberlist, name, value);
+	return PyMember_Set((char *)f, frame_memberlist, name, value);
 }
 
 /* Stack frames are allocated and deallocated at a considerable rate.
@@ -92,11 +91,11 @@ frame_setattr(f, name, value)
    unless the program contains run-away recursion.  I hope.
 */
 
-static frameobject *free_list = NULL;
+static PyFrameObject *free_list = NULL;
 
 static void
 frame_dealloc(f)
-	frameobject *f;
+	PyFrameObject *f;
 {
 	int i;
 	PyObject **fastlocals;
@@ -104,24 +103,24 @@ frame_dealloc(f)
 	/* Kill all local variables */
 	fastlocals = f->f_localsplus;
 	for (i = f->f_nlocals; --i >= 0; ++fastlocals) {
-		XDECREF(*fastlocals);
+		Py_XDECREF(*fastlocals);
 	}
 
-	XDECREF(f->f_back);
-	XDECREF(f->f_code);
-	XDECREF(f->f_builtins);
-	XDECREF(f->f_globals);
-	XDECREF(f->f_locals);
-	XDECREF(f->f_trace);
+	Py_XDECREF(f->f_back);
+	Py_XDECREF(f->f_code);
+	Py_XDECREF(f->f_builtins);
+	Py_XDECREF(f->f_globals);
+	Py_XDECREF(f->f_locals);
+	Py_XDECREF(f->f_trace);
 	f->f_back = free_list;
 	free_list = f;
 }
 
-typeobject Frametype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject PyFrame_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"frame",
-	sizeof(frameobject),
+	sizeof(PyFrameObject),
 	0,
 	(destructor)frame_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
@@ -134,16 +133,16 @@ typeobject Frametype = {
 	0,		/*tp_as_mapping*/
 };
 
-frameobject *
-newframeobject(back, code, globals, locals)
-	frameobject *back;
-	codeobject *code;
-	object *globals;
-	object *locals;
+PyFrameObject *
+PyFrame_New(back, code, globals, locals)
+	PyFrameObject *back;
+	PyCodeObject *code;
+	PyObject *globals;
+	PyObject *locals;
 {
-	static object *builtin_object;
-	frameobject *f;
-	object *builtins;
+	static PyObject *builtin_object;
+	PyFrameObject *f;
+	PyObject *builtins;
 	int extras = code->co_stacksize + code->co_nlocals;
 
 	if (builtin_object == NULL) {
@@ -151,57 +150,59 @@ newframeobject(back, code, globals, locals)
 		if (builtin_object == NULL)
 			return NULL;
 	}
-	if ((back != NULL && !is_frameobject(back)) ||
-	    code == NULL || !is_codeobject(code) ||
-	    globals == NULL || !is_dictobject(globals) ||
-	    (locals != NULL && !is_dictobject(locals))) {
-		err_badcall();
+	if ((back != NULL && !PyFrame_Check(back)) ||
+	    code == NULL || !PyCode_Check(code) ||
+	    globals == NULL || !PyDict_Check(globals) ||
+	    (locals != NULL && !PyDict_Check(locals))) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	builtins = mappinglookup(globals, builtin_object);
-	if (builtins != NULL && is_moduleobject(builtins))
-		builtins = getmoduledict(builtins);
-	if (builtins == NULL || !is_mappingobject(builtins)) {
-		err_setstr(TypeError, "bad __builtins__ dictionary");
+	builtins = PyDict_GetItem(globals, builtin_object);
+	if (builtins != NULL && PyModule_Check(builtins))
+		builtins = PyModule_GetDict(builtins);
+	if (builtins == NULL || !PyDict_Check(builtins)) {
+		PyErr_SetString(PyExc_TypeError,
+				"bad __builtins__ dictionary");
 		return NULL;
 	}
 	if (free_list == NULL) {
-		f = (frameobject *)
-			malloc(sizeof(frameobject) + extras*sizeof(object *));
+		f = (PyFrameObject *)
+			malloc(sizeof(PyFrameObject) +
+			       extras*sizeof(PyObject *));
 		if (f == NULL)
-			return (PyFrameObject *)err_nomem();
-		f->ob_type = &Frametype;
-		NEWREF(f);
+			return (PyFrameObject *)PyErr_NoMemory();
+		f->ob_type = &PyFrame_Type;
+		_Py_NewReference(f);
 	}
 	else {
 		f = free_list;
 		free_list = free_list->f_back;
 		if (f->f_nlocals + f->f_stacksize < extras) {
-			f = realloc(f, sizeof(frameobject) +
-				       extras*sizeof(object *));
+			f = realloc(f, sizeof(PyFrameObject) +
+				       extras*sizeof(PyObject *));
 			if (f == NULL)
-				return (PyFrameObject *)err_nomem();
+				return (PyFrameObject *)PyErr_NoMemory();
 		}
 		else
 			extras = f->f_nlocals + f->f_stacksize;
-		f->ob_type = &Frametype;
-		NEWREF(f);
+		f->ob_type = &PyFrame_Type;
+		_Py_NewReference(f);
 	}
-	XINCREF(back);
+	Py_XINCREF(back);
 	f->f_back = back;
-	INCREF(code);
+	Py_INCREF(code);
 	f->f_code = code;
-	XINCREF(builtins);
+	Py_XINCREF(builtins);
 	f->f_builtins = builtins;
-	INCREF(globals);
+	Py_INCREF(globals);
 	f->f_globals = globals;
 	if (code->co_flags & CO_NEWLOCALS) {
 		if (code->co_flags & CO_OPTIMIZED)
 			locals = NULL; /* Let fast_2_locals handle it */
 		else {
-			locals = newdictobject();
+			locals = PyDict_New();
 			if (locals == NULL) {
-				DECREF(f);
+				Py_DECREF(f);
 				return NULL;
 			}
 		}
@@ -209,14 +210,14 @@ newframeobject(back, code, globals, locals)
 	else {
 		if (locals == NULL)
 			locals = globals;
-		INCREF(locals);
+		Py_INCREF(locals);
 	}
 	f->f_locals = locals;
 	f->f_trace = NULL;
 
 	f->f_lasti = 0;
 	f->f_lineno = code->co_firstlineno;
-	f->f_restricted = (builtins != getbuiltindict());
+	f->f_restricted = (builtins != PyBuiltin_GetDict());
 	f->f_iblock = 0;
 	f->f_nlocals = code->co_nlocals;
 	f->f_stacksize = extras - code->co_nlocals;
@@ -232,28 +233,28 @@ newframeobject(back, code, globals, locals)
 /* Block management */
 
 void
-setup_block(f, type, handler, level)
-	frameobject *f;
+PyFrame_BlockSetup(f, type, handler, level)
+	PyFrameObject *f;
 	int type;
 	int handler;
 	int level;
 {
-	block *b;
+	PyTryBlock *b;
 	if (f->f_iblock >= CO_MAXBLOCKS)
-		fatal("XXX block stack overflow");
+		Py_FatalError("XXX block stack overflow");
 	b = &f->f_blockstack[f->f_iblock++];
 	b->b_type = type;
 	b->b_level = level;
 	b->b_handler = handler;
 }
 
-block *
-pop_block(f)
-	frameobject *f;
+PyTryBlock *
+PyFrame_BlockPop(f)
+	PyFrameObject *f;
 {
-	block *b;
+	PyTryBlock *b;
 	if (f->f_iblock <= 0)
-		fatal("XXX block stack underflow");
+		Py_FatalError("XXX block stack underflow");
 	b = &f->f_blockstack[--f->f_iblock];
 	return b;
 }
@@ -261,59 +262,59 @@ pop_block(f)
 /* Convert between "fast" version of locals and dictionary version */
 
 void
-fast_2_locals(f)
-	frameobject *f;
+PyFrame_FastToLocals(f)
+	PyFrameObject *f;
 {
 	/* Merge fast locals into f->f_locals */
-	object *locals, *map;
-	object **fast;
-	object *error_type, *error_value, *error_traceback;
+	PyObject *locals, *map;
+	PyObject **fast;
+	PyObject *error_type, *error_value, *error_traceback;
 	int j;
 	if (f == NULL)
 		return;
 	locals = f->f_locals;
 	if (locals == NULL) {
-		locals = f->f_locals = newdictobject();
+		locals = f->f_locals = PyDict_New();
 		if (locals == NULL) {
-			err_clear(); /* Can't report it :-( */
+			PyErr_Clear(); /* Can't report it :-( */
 			return;
 		}
 	}
 	if (f->f_nlocals == 0)
 		return;
 	map = f->f_code->co_varnames;
-	if (!is_dictobject(locals) || !is_tupleobject(map))
+	if (!PyDict_Check(locals) || !PyTuple_Check(map))
 		return;
-	err_fetch(&error_type, &error_value, &error_traceback);
+	PyErr_Fetch(&error_type, &error_value, &error_traceback);
 	fast = f->f_localsplus;
-	j = gettuplesize(map);
+	j = PyTuple_Size(map);
 	if (j > f->f_nlocals)
 		j = f->f_nlocals;
 	for (; --j >= 0; ) {
-		object *key = gettupleitem(map, j);
-		object *value = fast[j];
+		PyObject *key = PyTuple_GetItem(map, j);
+		PyObject *value = fast[j];
 		if (value == NULL) {
-			err_clear();
-			if (dict2remove(locals, key) != 0)
-				err_clear();
+			PyErr_Clear();
+			if (PyDict_DelItem(locals, key) != 0)
+				PyErr_Clear();
 		}
 		else {
-			if (dict2insert(locals, key, value) != 0)
-				err_clear();
+			if (PyDict_SetItem(locals, key, value) != 0)
+				PyErr_Clear();
 		}
 	}
-	err_restore(error_type, error_value, error_traceback);
+	PyErr_Restore(error_type, error_value, error_traceback);
 }
 
 void
-locals_2_fast(f, clear)
-	frameobject *f;
+PyFrame_LocalsToFast(f, clear)
+	PyFrameObject *f;
 	int clear;
 {
 	/* Merge f->f_locals into fast locals */
-	object *locals, *map;
-	object **fast;
-	object *error_type, *error_value, *error_traceback;
+	PyObject *locals, *map;
+	PyObject **fast;
+	PyObject *error_type, *error_value, *error_traceback;
 	int j;
 	if (f == NULL)
 		return;
@@ -321,24 +322,24 @@ locals_2_fast(f, clear)
 	map = f->f_code->co_varnames;
 	if (locals == NULL || f->f_code->co_nlocals == 0)
 		return;
-	if (!is_dictobject(locals) || !is_tupleobject(map))
+	if (!PyDict_Check(locals) || !PyTuple_Check(map))
 		return;
-	err_fetch(&error_type, &error_value, &error_traceback);
+	PyErr_Fetch(&error_type, &error_value, &error_traceback);
 	fast = f->f_localsplus;
-	j = gettuplesize(map);
+	j = PyTuple_Size(map);
 	if (j > f->f_nlocals)
 		j = f->f_nlocals;
 	for (; --j >= 0; ) {
-		object *key = gettupleitem(map, j);
-		object *value = dict2lookup(locals, key);
+		PyObject *key = PyTuple_GetItem(map, j);
+		PyObject *value = PyDict_GetItem(locals, key);
 		if (value == NULL)
-			err_clear();
+			PyErr_Clear();
 		else
-			INCREF(value);
+			Py_INCREF(value);
 		if (value != NULL || clear) {
-			XDECREF(fast[j]);
+			Py_XDECREF(fast[j]);
 			fast[j] = value;
 		}
 	}
-	err_restore(error_type, error_value, error_traceback);
+	PyErr_Restore(error_type, error_value, error_traceback);
 }
