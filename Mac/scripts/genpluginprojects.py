@@ -131,7 +131,7 @@ def	genallprojects(force=0):
 			extradirs=["::Plugins"])
 	genpluginproject("all", "Qdoffs",
 		extraexportsymbols=["GWorldObj_New", "GWorldObj_Convert"])
-	genpluginproject("ppc", "Scrap")
+	genpluginproject("all", "Scrap")
 	genpluginproject("ppc", "Snd", libraries=["SoundLib"])
 	genpluginproject("carbon", "Snd")
 	genpluginproject("all", "Sndihooks", sources=[":snd:Sndihooks.c"])
@@ -157,6 +157,19 @@ def	genallprojects(force=0):
 		extradirs=[
 			'::::Waste 1.3 Distribution:*',
 			'::::ICProgKit1.4:APIs']
+		)
+	# This is a hack, combining parts of Waste 2.0 with parts of 1.3
+	genpluginproject("carbon", "waste",
+		sources=[
+			"wastemodule.c",
+			"WEObjectHandlers.c",
+			"WETabs.c", "WETabHooks.c"],
+		libraries=["WASTE.Carbon.lib"],
+		extradirs=[
+			'{Compiler}:MacOS Support:(Third Party Support):Waste 2.0 Distribution:C_C++ Headers',
+			'{Compiler}:MacOS Support:(Third Party Support):Waste 2.0 Distribution:Static Libraries',
+			'::::Waste 1.3 Distribution:Extras:Sample Object Handlers',
+			'::::Waste 1.3 Distribution:Extras:Waste Tabs 1.3.2']
 		)
 	genpluginproject("ppc", "ctb")
 	genpluginproject("ppc", "icglue", sources=["icgluemodule.c"], 
