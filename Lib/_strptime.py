@@ -208,8 +208,8 @@ class TimeRE(dict):
             'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),
             'b': self.__seqToRE(self.locale_time.a_month[1:], 'b'),
             'p': self.__seqToRE(self.locale_time.am_pm, 'p'),
-            'Z': self.__seqToRE([tz for tz_names in self.locale_time.timezone
-                                        for tz in tz_names],
+            'Z': self.__seqToRE((tz for tz_names in self.locale_time.timezone
+                                        for tz in tz_names),
                                 'Z'),
             '%': '%'})
         base.__setitem__('W', base.__getitem__('U'))
