@@ -1650,7 +1650,8 @@ eval_frame(PyFrameObject *f)
 			if (PyInt_Check(v)) {
 				why = (enum why_code) PyInt_AS_LONG(v);
 				assert(why != WHY_YIELD);
-				if (why & (WHY_RETURN | WHY_CONTINUE))
+				if (why == WHY_RETURN ||
+				    why == WHY_CONTINUE)
 					retval = POP();
 			}
 			else if (PyClass_Check(v) || PyString_Check(v)) {
@@ -2289,7 +2290,7 @@ eval_frame(PyFrameObject *f)
 
 		/* Double-check exception status */
 
-		if (why & (WHY_EXCEPTION | WHY_RERAISE)) {
+		if (why == WHY_EXCEPTION || why == WHY_RERAISE) {
 			if (!PyErr_Occurred()) {
 				PyErr_SetString(PyExc_SystemError,
 					"error return without exception set");
@@ -2411,7 +2412,7 @@ fast_block_end:
 fast_yield:
 	if (tstate->use_tracing) {
 		if (tstate->c_tracefunc
-		    && (why & (WHY_RETURN | WHY_YIELD))) {
+		    && (why == WHY_RETURN || why == WHY_YIELD)) {
 			if (call_trace(tstate->c_tracefunc,
 				       tstate->c_traceobj, f,
 				       PyTrace_RETURN, retval)) {
