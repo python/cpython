@@ -34,6 +34,10 @@ class MyFile(File):
 		'c' -- create entry
 		'u' -- update entry
 		"""
+		if not self.lseen:
+			self.getlocal()
+		if not self.rseen:
+			self.getremote()
 		if not self.eseen:
 			if not self.lseen:
 				if not self.rseen: return '0' # Never heard of
@@ -114,6 +118,7 @@ class MyFile(File):
 			      self.file
 
 	def diff(self, opts = []):
+		self.action()		# To update lseen, rseen
 		if self.lsum == self.rsum:
 			return
 		import tempfile
@@ -170,25 +175,63 @@ class RCVS(CVS):
 	def __init__(self):
 		CVS.__init__(self)
 
-	def checkfiles(self, files):
-		if not files:
-			def ok(file, self=self):
-				e = self.entries[file]
-				return e.eseen or e.rseen
-			files[:] = filter(ok, self.entries.keys())
-			files.sort()
-			if not files:
-				print "no files to be processed"
-				return 1
-			else:
-				return None
-		else:
-			sts = None
+	def update(self, files):
+		for e in self.whichentries(files, 1):
+			e.update()
+
+	def commit(self, files, message = ""):
+		list = self.whichentries(files)
+		ok = 1
+		for e in list:
+			if not e.commitcheck():
+				ok = 0
+		if not ok:
+			print "correct above errors first"
+			return
+		if not message:
+			message = raw_input("One-liner: ")
+		for e in list:
+			e.commit(message)
+
+	def report(self, files):
+		for e in self.whichentries(files):
+			e.report()
+
+	def diff(self, files, opts):
+		for e in self.whichentries(files):
+			e.diff(opts)
+
+	def whichentries(self, files, localfilestoo = 0):
+		if files:
+			list = []
 			for file in files:
-				if not self.entries.has_key(file):
-					print "%s: nothing known" % file
-					sts = 1
-			return sts
+				if self.entries.has_key(file):
+					e = self.entries[file]
+				else:
+					e = self.FileClass(file)
+					self.entries[file] = e
+				list.append(e)
+		else:
+			list = self.entries.values()
+			for file in self.proxy.listfiles():
+				if self.entries.has_key(file):
+					continue
+				e = self.FileClass(file)
+				self.entries[file] = e
+				list.append(e)
+			if localfilestoo:
+				for file in os.listdir(os.curdir):
+					if not self.entries.has_key(file) \
+					   and not self.ignored(file):
+						e = self.FileClass(file)
+						self.entries[file] = e
+						list.append(e)
+			list.sort()
+		if self.proxy:
+			for e in list:
+				if e.proxy is None:
+					e.proxy = self.proxy
+		return list
 
 
 class rcvs(CommandFrameWork):
@@ -213,50 +256,29 @@ class rcvs(CommandFrameWork):
 		self.proxy = rcsclient.openrcsclient(self.opts)
 		self.cvs.setproxy(self.proxy)
 		self.cvs.getentries()
-		self.cvs.getlocalfiles()
-		self.cvs.getremotefiles(self.proxy)
 
 	def default(self):
-		files = []
-		if self.cvs.checkfiles(files):
-			return 1
-		for file in files:
-			print self.cvs.entries[file].action(), file
+		self.cvs.report([])
 
 	def do_update(self, opts, files):
 		"""update [file] ..."""
-		if self.cvs.checkfiles(files):
-			return 1
-		for file in files:
-			if not self.cvs.entries.has_key(file):
-				print "%s: not found" % file
-			else:
-				self.cvs.entries[file].update()
+		self.cvs.update(files)
 		self.cvs.putentries()
 	do_up = do_update
 
 	def do_commit(self, opts, files):
-		"""commit [file] ..."""
-		if self.cvs.checkfiles(files):
-			return 1
-		sts = 0
-		for file in files:
-			if not self.cvs.entries[file].commitcheck():
-				sts = 1
-		if sts:
-			return sts
-		message = raw_input("One-liner: ")
-		for file in files:
-			self.cvs.entries[file].commit(message)
+		"""commit [-m message] [file] ..."""
+		message = ""
+		for o, a in opts:
+			if o == '-m': message = a
+		self.cvs.commit(files, message)
 		self.cvs.putentries()
 	do_com = do_commit
+	flags_commit = 'm:'
 
 	def do_diff(self, opts, files):
 		"""diff [difflags] [file] ..."""
-		if self.cvs.checkfiles(files):
-			return 1
-		for file in files:
-			self.cvs.entries[file].diff(opts)
+		self.cvs.diff(files, opts)
 	do_dif = do_diff
 	flags_diff = 'cbitwcefhnlrsD:S:'
 
