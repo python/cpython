@@ -11,19 +11,22 @@ LINKCC=$(PURIFY) $(CC)
 # Optimization preferences
 OPT=-g
 
-# Where Python is installed, and which version
-INST=/usr/local
-VER=2.0
+# Which Python version we're using
+VER=2.2
 
-# Expressions using the above definitions -- no need to change
+# Expressions using the above definitions
 PYVER=python$(VER)
+
 # Use these defs when compiling against installed Python
-PYC=$(INST)/lib/$(PYVER)/config
-PYINCL=-I$(INST)/include/$(PYVER) -I$(PYC)
-PYLIBS=$(PYC)/lib$(PYVER).a
+##INST=/usr/local
+##PYC=$(INST)/lib/$(PYVER)/config
+##PYINCL=-I$(INST)/include/$(PYVER) -I$(PYC)
+##PYLIBS=$(PYC)/lib$(PYVER).a
+
 # Use these defs when compiling against built Python
-##PYINCL=-I../../Include -I../../sparc
-##PYLIBS=../../sparc/lib$(PYVER).a
+PLAT=linux
+PYINCL=-I../../Include -I../../$(PLAT)
+PYLIBS=../../$(PLAT)/lib$(PYVER).a
 
 # Libraries to link with -- very installation dependent
 # (See LIBS= in Modules/Makefile in build tree)
