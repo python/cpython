@@ -26,11 +26,11 @@ item: Global
   Variable Flags2=00001001
   Variable Name3=_SRC_
   Variable Description3=Python source directory
-  Variable Default3=C:\src\Python-2.0
+  Variable Default3=C:\code\python\dist\src
   Variable Flags3=00001001
   Variable Name4=_DOC_
   Variable Description4=HTML documentation tree directory
-  Variable Default4=C:\src\Python-2.0\html
+  Variable Default4=C:\python16\doc
   Variable Flags4=00001001
   Variable Name5=_TCLMINOR_
   Variable Description5=Tcl/Tk Minor Version (e.g. the "3" in "8.3.1")
