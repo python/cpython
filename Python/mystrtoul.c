@@ -26,6 +26,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "config.h"
 #endif
 
+#include "rename2.h"
+
 /* strtol and strtoul, renamed to avoid conflicts */
 
 /*
