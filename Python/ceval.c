@@ -3500,25 +3500,32 @@ import_all_from(PyObject *locals, PyObject *v)
 static PyObject *
 build_class(PyObject *methods, PyObject *bases, PyObject *name)
 {
-	PyObject *metaclass = NULL;
+	PyObject *metaclass = NULL, *result, *base;
 
 	if (PyDict_Check(methods))
 		metaclass = PyDict_GetItemString(methods, "__metaclass__");
-
-	if (metaclass == NULL) {
-		if (PyTuple_Check(bases) && PyTuple_GET_SIZE(bases) > 0)
-			metaclass = (PyObject *)
-				PyTuple_GET_ITEM(bases, 0)->ob_type;
-		else {
-			PyObject *g = PyEval_GetGlobals();
-			if (g != NULL && PyDict_Check(g))
-				metaclass = PyDict_GetItemString(
-					g, "__metaclass__");
-			if (metaclass == NULL)
-				metaclass = (PyObject *) &PyClass_Type;
+	if (metaclass != NULL)
+		Py_INCREF(methods);
+	else if (PyTuple_Check(bases) && PyTuple_GET_SIZE(bases) > 0) {
+		base = PyTuple_GET_ITEM(bases, 0);
+		metaclass = PyObject_GetAttrString(base, "__class__");
+		if (metaclass == NULL) {
+			PyErr_Clear();
+			metaclass = (PyObject *)base->ob_type;
+			Py_INCREF(metaclass);
 		}
 	}
-	return PyObject_CallFunction(metaclass, "OOO", name, bases, methods);
+	else {
+		PyObject *g = PyEval_GetGlobals();
+		if (g != NULL && PyDict_Check(g))
+			metaclass = PyDict_GetItemString(g, "__metaclass__");
+		if (metaclass == NULL)
+			metaclass = (PyObject *) &PyClass_Type;
+		Py_INCREF(metaclass);
+	}
+	result = PyObject_CallFunction(metaclass, "OOO", name, bases, methods);
+	Py_DECREF(metaclass);
+	return result;
 }
 
 static int
