@@ -1,0 +1,77 @@
+dnl Process this file with autoconf to produce a configure script.
+
+AC_INIT(Py/object.h)
+
+# checks for alternative programs
+AC_PROG_CC
+AC_PROG_RANLIB
+
+# checks for UNIX variants that set C preprocessor variables
+AC_AIX
+AC_ISC_POSIX
+AC_MINIX
+dnl DYNIX test runs compile so must be last
+AC_DYNIX_SEQ
+
+# checks for header files
+AC_STDC_HEADERS
+AC_HAVE_HEADERS(dlfcn.h signal.h stdarg.h unistd.h utime.h sys/param.h sys/select.h sys/times.h sys/utsname.h)
+AC_DIR_HEADER
+
+# checks for typedefs
+AC_GETGROUPS_T
+AC_MODE_T
+AC_OFF_T
+AC_PID_T
+AC_RETSIGTYPE
+AC_SIZE_T
+AC_UID_T
+
+# checks for libraries
+AC_HAVE_LIBRARY(dl)
+LIBS="${LIBS} -L${READLINESRC-${PWD-${CWD-`pwd`}}/readline}"
+AC_HAVE_LIBRARY(readline)
+if test -n "${have_lib}"; then
+AC_HAVE_LIBRARY(termcap)
+fi
+
+# Check for IRIX or SOLARIS thread interface
+AC_HAVE_LIBRARY(mpc)
+if test -n "${have_lib}"; then
+DEFS="${DEFS} -DUSE_THREAD"
+LIBOBJS="${LIBOBJS} thread.o"
+fi
+
+AC_HAVE_LIBRARY(thread)
+if test -n "${have_lib}"; then
+DEFS="${DEFS} -DUSE_THREAD"
+LIBOBJS="${LIBOBJS} thread.o"
+fi
+
+# checks for library functions
+AC_HAVE_FUNCS(clock ftime gettimeofday getpgrp getwd lstat readlink readline select setsid setpgid setpgrp siginterrupt symlink tcgetpgrp tcsetpgrp times uname waitpid)
+AC_REPLACE_FUNCS(dup2 getcwd strerror strtoul strtod memmove)
+AC_FUNC_CHECK(getpgrp, AC_COMPILE_CHECK([argument to getpgrp], [#include <unistd.h>], [getpgrp(0);], AC_DEFINE(GETPGRP_HAVE_ARG)))
+
+# checks for structures
+AC_TIME_WITH_SYS_TIME
+AC_STRUCT_TM
+AC_TIMEZONE
+
+# checks for compiler characteristics
+AC_CONST
+echo checking for prototypes
+AC_TEST_PROGRAM([int foo(int x){return 0;} int main(){return foo(10);}], AC_DEFINE(HAVE_PROTOTYPES) have_prototypes=1)
+if test "$have_prototypes"; then
+AC_COMPILE_CHECK(["bad exec* prototypes"], [#include <unistd.h>], [char *const*t;execve("@",t,t);], , AC_DEFINE(BAD_EXEC_PROTOTYPES))
+fi
+
+# checks for system services
+# (none yet)
+
+# other checks for UNIX variants
+AC_IRIX_SUN
+AC_XENIX_DIR
+
+# generate output files
+AC_OUTPUT(Objects/Makefile Parser/Makefile Python/Makefile)

@@ -1,0 +1,61 @@
+This is an ALPHA release of Python 1.0 for UNIX.  Currently it builds
+a rather minimal executable and requires that you already have Python
+0.9.9 (or at least its library).
+
+Instructions for building:
+
+(1) Run the configure shell script:
+
+	./configure
+
+This may take a minute or two -- it does a rather thorough
+investigation of your system to find out many compile-time flags.  It
+prints messages but does not ask questions.  When finished, it will
+create config.status in the current directory, as well as Makefile in
+each of the subdirectories Parser, Objects and Python.  Note that
+unless you have the CC shell environment variable set to the name of
+your C compiler, it will attempt to find the GNU C compiler (gcc) and
+use it if it finds it.  On some systems a broken gcc may be installed;
+put CC=cc in the environment to override it.  On some systems it may
+be interesting to compare both compilers.  (Note: the Makefile has
+been rigged in such a way that it will run configure if you haven't
+done so.)
+
+(2) Run Make:
+
+	make
+
+This will recursively run Make in each of the Parser, Objects and
+Python subdirectories.  In Parser it builds an executable "pgen" and a
+library libParser.a.  In Objects it builds a library libObjects.a.  In
+Python it builds a library libPython.a and an executable "python".
+
+(3) Test the resulting executable:
+
+	Python/python -c 'import testall'
+
+For now, this will assume that you have a working version of Python
+release 0.9.9 installed in /usr/local (it uses the Python library from
+/usr/local/lib/python) or that your PYTHONPATH shell environment
+variable points to the 0.9.9 Python library.
+
+(4) Optionally: read Extensions/README and try to build a Python with
+all the  extensions that make sense on your system.  (Note: some
+extensions are not supported yet.)
+
+(5) Give feedback:
+
+	Mail guido@cwi.nl
+
+Please tell me whether the build succeeded or not.  If you needed to
+edit *any* file, tell me which file, why and how (send me a diff or a
+copy of the modified file if you can).  If you get stuck, please send
+me the error output.  Don't forget to mention the operating system,
+compiler and hardware version that you used, e.g. "Solaris 2.2 with
+gcc version cygnus-2.0.2 on a dual processor Sparcstation 10" or "IRIX
+5.1 with standard cc on an Indigo XS-24 with R4000 CPU".  If you can
+build the core interpreter but get stuck building an extended version,
+let me know which extensions gave problems and how.
+
+--Guido van Rossum, CWI, Amsterdam <Guido.van.Rossum@cwi.nl>
+URL:  <http://www.cwi.nl/cwi/people/Guido.van.Rossum.html>
