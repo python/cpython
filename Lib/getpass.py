@@ -104,7 +104,10 @@ def getuser():
 # Bind the name getpass to the appropriate function
 try:
     import termios
-except ImportError:
+    # it's possible there is an incompatible termios from the
+    # McMillan Installer, make sure we have a UNIX-compatible termios
+    termios.tcgetattr, termios.tcsetattr
+except (ImportError, AttributeError):
     try:
         import msvcrt
     except ImportError:
