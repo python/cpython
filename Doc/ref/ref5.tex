@@ -245,9 +245,11 @@ involved).
 (In particular, converting a string adds quotes around it and converts
 ``funny'' characters to escape sequences that are safe to print.)
 
-It is illegal to attempt to convert recursive objects (e.g., lists or
-dictionaries that contain a reference to themselves, directly or
-indirectly.)
+Recursive objects (for example, lists or dictionaries that contain a
+reference to themselves, directly or indirectly) use \samp{...} to
+indicate a recursive reference, and the result cannot be passed to
+\function{eval()} to get an equal value (\exception{SyntaxError} will
+be raised instead).
 \obindex{recursive}
 
 The built-in function \function{repr()} performs exactly the same
