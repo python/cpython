@@ -25,7 +25,7 @@ class build (Command):
          "compile extensions and libraries with debugging information"),
         ]
 
-    def set_default_options (self):
+    def initialize_options (self):
         self.build_base = 'build'
         # these are decided only after 'build_base' has its final value
         # (unless overridden by the user or client)
@@ -33,7 +33,7 @@ class build (Command):
         self.build_platlib = None
         self.debug = None
 
-    def set_final_options (self):
+    def finalize_options (self):
         # 'build_lib' and 'build_platlib' just default to 'lib' and
         # 'platlib' under the base build directory
         if self.build_lib is None:

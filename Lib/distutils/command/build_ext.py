@@ -38,9 +38,9 @@ class build_ext (Command):
     #     structure
     #   - that data structure (in this case, a list of 2-tuples)
     #     will then be present in the command object by the time
-    #     we get to set_final_options() (i.e. the constructor
+    #     we get to finalize_options() (i.e. the constructor
     #     takes care of both command-line and client options
-    #     in between set_default_options() and set_final_options())
+    #     in between initialize_options() and finalize_options())
 
     user_options = [
         ('build-dir=', 'd',
@@ -64,7 +64,7 @@ class build_ext (Command):
         ]
 
 
-    def set_default_options (self):
+    def initialize_options (self):
         self.extensions = None
         self.build_dir = None
         self.package = None
@@ -79,7 +79,7 @@ class build_ext (Command):
         self.debug = None
 
 
-    def set_final_options (self):
+    def finalize_options (self):
         from distutils import sysconfig
 
         self.set_undefined_options ('build',
@@ -112,7 +112,7 @@ class build_ext (Command):
         # XXX how the heck are 'self.define' and 'self.undef' supposed to
         # be set?
 
-    # set_final_options ()
+    # finalize_options ()
     
 
     def run (self):

@@ -33,7 +33,7 @@ class build_lib (Command):
          "compile with debugging information"),
         ]
 
-    def set_default_options (self):
+    def initialize_options (self):
         # List of libraries to build
         self.libraries = None
 
@@ -43,9 +43,9 @@ class build_lib (Command):
         self.undef = None
         self.debug = None
 
-    # set_default_options()
+    # initialize_options()
 
-    def set_final_options (self):
+    def finalize_options (self):
         self.set_undefined_options ('build',
                                     ('debug', 'debug'))
         self.libraries = self.distribution.libraries
@@ -58,7 +58,7 @@ class build_lib (Command):
         # XXX same as for build_ext -- what about 'self.define' and
         # 'self.undef' ?
 
-    # set_final_options()
+    # finalize_options()
 
 
     def run (self):

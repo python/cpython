@@ -55,7 +55,7 @@ class install (Command):
         ]
 
 
-    def set_default_options (self):
+    def initialize_options (self):
 
         self.build_base = None
         self.build_lib = None
@@ -89,7 +89,7 @@ class install (Command):
         self.optimize_py = 1
 
 
-    def set_final_options (self):
+    def finalize_options (self):
 
         # XXX this method is where the default installation directories
         # for modules and extension modules are determined.  (Someday,
@@ -237,7 +237,7 @@ class install (Command):
         # Punt on doc directories for now -- after all, we're punting on
         # documentation completely!
 
-    # set_final_options ()
+    # finalize_options ()
 
 
     def replace_sys_prefix (self, config_attr, fallback_postfix, use_exec=0):

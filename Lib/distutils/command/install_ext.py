@@ -18,12 +18,12 @@ class install_ext (Command):
         ('build-dir=','b', "build directory (where to install from)"),
         ]
 
-    def set_default_options (self):
+    def initialize_options (self):
         # let the 'install' command dictate our installation directory
         self.install_dir = None
         self.build_dir = None
 
-    def set_final_options (self):
+    def finalize_options (self):
         self.set_undefined_options ('install',
                                     ('build_platlib', 'build_dir'),
                                     ('install_site_platlib', 'install_dir'))
