@@ -395,10 +395,10 @@ mapping_print(mp, fp, flags)
 		if (ep->me_value != NULL) {
 			if (any++ > 0)
 				fprintf(fp, ", ");
-			if (printobject((object *)ep->me_key, fp, flags) != 0)
+			if (printobject((object *)ep->me_key, fp, 0) != 0)
 				return -1;
 			fprintf(fp, ": ");
-			if (printobject(ep->me_value, fp, flags) != 0)
+			if (printobject(ep->me_value, fp, 0) != 0)
 				return -1;
 		}
 	}
