@@ -74,7 +74,7 @@ class Message:
             # (and then assume seek() works, too)
             try:
                 fp.tell()
-            except:
+            except (AttributeError, IOError):
                 seekable = 0
             else:
                 seekable = 1
