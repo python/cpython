@@ -92,7 +92,7 @@ Socket methods:
 #undef HAVE_GETHOSTBYNAME_R_6_ARG
 
 #ifdef HAVE_GETHOSTBYNAME_R
-#if defined(_AIX) || defined(__osf__)
+#if defined(_AIX)
 #define HAVE_GETHOSTBYNAME_R_3_ARG
 #elif defined(__sun__) || defined(__sgi)
 #define HAVE_GETHOSTBYNAME_R_5_ARG
