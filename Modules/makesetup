@@ -140,7 +140,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			srcs)	srcs="$srcs $arg"; skip=; continue;;
 			esac
 			case $arg in
-			-[IDUC]*)	cpps="$cpps $arg";;
+			-[IDUCf]*)	cpps="$cpps $arg";;
 			-Xlinker)	libs="$libs $arg"; skip=libs;;
 			-rpath)		libs="$libs $arg"; skip=libs;;
 			-[A-Zl]*)	libs="$libs $arg";;
