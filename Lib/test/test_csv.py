@@ -30,6 +30,8 @@ class Test_Csv(unittest.TestCase):
         self.assertRaises(TypeError, ctor, arg, lineterminator=None)
         self.assertRaises(TypeError, ctor, arg, lineterminator=1)
         self.assertRaises(TypeError, ctor, arg, quoting=None)
+        self.assertRaises(TypeError, ctor, arg, 
+                          quoting=csv.QUOTE_ALL, quotechar='')
 
     def test_reader_arg_valid(self):
         self._test_arg_valid(csv.reader, [])
@@ -231,15 +233,21 @@ class Test_Csv(unittest.TestCase):
     def test_read_bigfield(self):
         # This exercises the buffer realloc functionality and field size
         # limits.
-        size = 50000
-        bigstring = 'X' * size
-        bigline = '%s,%s' % (bigstring, bigstring)
-        self._read_test([bigline], [[bigstring, bigstring]])
-        csv.set_field_limit(size)
-        self._read_test([bigline], [[bigstring, bigstring]])
-        self.assertEqual(csv.set_field_limit(), size)
-        csv.set_field_limit(size-1)
-        self.assertRaises(csv.Error, self._read_test, [bigline], [])
+        limit = csv.set_field_limit()
+        try:
+            size = 50000
+            bigstring = 'X' * size
+            bigline = '%s,%s' % (bigstring, bigstring)
+            self._read_test([bigline], [[bigstring, bigstring]])
+            csv.set_field_limit(size)
+            self._read_test([bigline], [[bigstring, bigstring]])
+            self.assertEqual(csv.set_field_limit(), size)
+            csv.set_field_limit(size-1)
+            self.assertRaises(csv.Error, self._read_test, [bigline], [])
+            self.assertRaises(TypeError, csv.set_field_limit, None)
+            self.assertRaises(TypeError, csv.set_field_limit, 1, None)
+        finally:
+            csv.set_field_limit(limit)
 
 class TestDialectRegistry(unittest.TestCase):
     def test_registry_badargs(self):
@@ -252,6 +260,12 @@ class TestDialectRegistry(unittest.TestCase):
         self.assertRaises(csv.Error, csv.unregister_dialect, "nonesuch")
         self.assertRaises(TypeError, csv.register_dialect, None)
         self.assertRaises(TypeError, csv.register_dialect, None, None)
+        self.assertRaises(TypeError, csv.register_dialect, "nonesuch", 0, 0)
+        self.assertRaises(TypeError, csv.register_dialect, "nonesuch",
+                          badargument=None)
+        self.assertRaises(TypeError, csv.register_dialect, "nonesuch",
+                          quoting=None)
+        self.assertRaises(TypeError, csv.register_dialect, [])
 
     def test_registry(self):
         class myexceltsv(csv.excel):
