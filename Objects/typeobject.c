@@ -4016,10 +4016,11 @@ static int
 slot_sq_contains(PyObject *self, PyObject *value)
 {
 	PyObject *func, *res, *args;
+	int result = -1;
+
 	static PyObject *contains_str;
 
 	func = lookup_maybe(self, "__contains__", &contains_str);
-
 	if (func != NULL) {
 		args = Py_BuildValue("(O)", value);
 		if (args == NULL)
@@ -4029,16 +4030,16 @@ slot_sq_contains(PyObject *self, PyObject *value)
 			Py_DECREF(args);
 		}
 		Py_DECREF(func);
-		if (res == NULL)
-			return -1;
-		return PyObject_IsTrue(res);
+		if (res != NULL) {
+			result = PyObject_IsTrue(res);
+			Py_DECREF(res);
+		}
 	}
-	else if (PyErr_Occurred())
-		return -1;
-	else {
-		return _PySequence_IterSearch(self, value,
-					      PY_ITERSEARCH_CONTAINS);
+	else if (! PyErr_Occurred()) {
+		result = _PySequence_IterSearch(self, value,
+						 PY_ITERSEARCH_CONTAINS);
 	}
+	return result;
 }
 
 SLOT1(slot_sq_inplace_concat, "__iadd__", PyObject *, "O")
@@ -4685,7 +4686,7 @@ slot_tp_del(PyObject *self)
 
 
 /* Table mapping __foo__ names to tp_foo offsets and slot_tp_foo wrapper
-   functions.  The offsets here are relative to the 'PyHeapTypeObject' 
+   functions.  The offsets here are relative to the 'PyHeapTypeObject'
    structure, which incorporates the additional structures used for numbers,
    sequences and mappings.
    Note that multiple names may map to the same slot (e.g. __eq__,
@@ -5216,7 +5217,7 @@ update_all_slots(PyTypeObject* type)
    mp_subscript generate a __getitem__ descriptor).
 
    In the latter case, the first slotdef entry encoutered wins.  Since
-   slotdef entries are sorted by the offset of the slot in the 
+   slotdef entries are sorted by the offset of the slot in the
    PyHeapTypeObject, this gives us some control over disambiguating
    between competing slots: the members of PyHeapTypeObject are listed from most
    general to least general, so the most general slot is preferred.  In
