@@ -29,15 +29,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
-#ifndef MS_WIN16
-/* Assume all 32-bit platforms come standard with a WINSOCK library */
-#define USE_SOCKET
-#define USE_SELECT
-#endif
-
 extern void initarray();
 extern void initaudioop();
 extern void initbinascii();
+extern void initcmath();
 extern void initenvironment();
 extern void initimageop();
 extern void initmath();
@@ -47,8 +42,8 @@ extern void initnt();
 extern void initregex();
 extern void initrgbimg();
 extern void initrotor();
-extern void initselect();
 extern void initsignal();
+extern void initselect();
 extern void init_socket();
 extern void initsoundex();
 extern void initstrop();
@@ -60,16 +55,14 @@ extern void inittime();
 extern void PyMarshal_Init();
 extern void initimp();
 
-struct {
-        char *name;
-        void (*initfunc)();
-} inittab[] = {
+struct _inittab inittab[] = {
 
         {"array", initarray},
 #ifdef M_I386
         {"audioop", initaudioop},
 #endif
         {"binascii", initbinascii},
+        {"cmath", initcmath},
         {"environment", initenvironment},
         {"imageop", initimageop},
         {"math", initmath},
@@ -79,12 +72,10 @@ struct {
         {"regex", initregex},
         {"rgbimg", initrgbimg},
         {"rotor", initrotor},
-#ifdef USE_SELECT
-	{"select", initselect},
-#endif
         {"signal", initsignal},
 #ifdef USE_SOCKET
 	{"_socket", init_socket},
+	{"select", initselect},
 #endif
         {"soundex", initsoundex},
         {"strop", initstrop},
