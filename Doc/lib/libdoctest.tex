@@ -193,12 +193,15 @@ module docstring, and all function, class and method docstrings are
 searched.  Optionally, the tester can be directed to exclude
 docstrings attached to objects with private names.
 Objects imported into the module are not searched.
+\versionchanged[Previously, the tester defaulted to skipping objects
+with private names (to obtain version independence, explicitly specify
+\var{isprivate} when launching doctests)]{2.3}
 
 In addition, if \code{M.__test__} exists and "is true", it must be a
 dict, and each entry maps a (string) name to a function object, class
 object, or string.  Function and class object docstrings found from
 \code{M.__test__} are searched even if the the tester has been
-directly to skip over private names in the rest of the module.
+directed to skip over private names in the rest of the module.
 In output, a key \code{K} in \code{M.__test__} appears with name
 
 \begin{verbatim}
@@ -312,6 +315,9 @@ are run.
   \end{verbatim}
 
   \versionadded{2.3}
+  \warning{\function{DocTestSuite()} does not current search \code{M.__test__}
+  and its search technique does not exactly match \function{testmod()} in
+  every detail.  Future versions will bring the two into convergence.}
 \end{funcdesc}
 
 
