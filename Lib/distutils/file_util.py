@@ -8,6 +8,7 @@ Utility functions for operating on single files.
 __revision__ = "$Id$"
 
 import os
+from stat import *
 from distutils.errors import DistutilsFileError
 
 
@@ -106,7 +107,6 @@ def copy_file (src, dst,
     # changing it (ie. it's not already a hard/soft link to src OR
     # (not update) and (src newer than dst).
 
-    from stat import *
     from distutils.dep_util import newer
 
     if not os.path.isfile(src):
