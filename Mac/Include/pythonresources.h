@@ -63,8 +63,11 @@
 #define NOPREFNAME_ID	137
 
 /* EditPythonPrefs range. Needed here to forestall conflicts with applets */
-#define EDITPYTHONPREFS_MIN	500
+#define EDITPYTHONPREFS_MIN	508
 #define EDITPYTHONPREFS_MAX 511
+/* twit range. Again needed to forestall conflicts with scripts using their own resources */
+#define TWIT_MIN		500
+#define TWIT_MAX		507
 
 /*
 ** The following are valid both in the binary (or shared library)
