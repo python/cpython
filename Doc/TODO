@@ -10,8 +10,10 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 * Review libppath.tex for completeness, & system-specific behaviors.  (Why
   did this one get mentioned, specifically?)
 
-* Separate modules which share a section.  (I think only one case remains.)
-
 * In the indexes, some subitem entries are separated from the item entries
   by column- or page-breaks.  Reported by Lorenzo M. Catucci
   <lorenzo@argon.roma2.infn.it>.  This one will be hard.
+
+* Fix problem with howto documents getting the last module synopsis
+  twice (in \localmoduletable) so we can get rid of the ugly 'uniq'
+  hack in tools/mkhowto.sh.
