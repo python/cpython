@@ -433,11 +433,15 @@ argument is provided, that many colons are inserted non-electrically."
 			   (py-compute-indentation)))
 	       )
 	  (setq outdent py-indent-offset))
-      (goto-char here)
-      (beginning-of-line)
-      (delete-horizontal-space)
-      (indent-to (- indent outdent))
-      )))
+      ;; electric colon won't re-indent lines that start in column
+      ;; zero.  you'd have to use TAB for that.  TBD: Is there a
+      ;; better way to determine this???
+      (if (zerop (current-indentation)) nil
+	(goto-char here)
+	(beginning-of-line)
+	(delete-horizontal-space)
+	(indent-to (- indent outdent))
+	))))
 
 
 ;;; Functions that execute Python commands in a subprocess
