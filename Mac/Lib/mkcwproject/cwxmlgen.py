@@ -37,7 +37,10 @@ class ProjectBuilder:
 			raise Error, "Cannot find templatedir %s"%templatedir
 		self.dict = dict
 		if not dict.has_key('prefixname'):
-			dict['prefixname'] = 'mwerks_plugin_config.h'
+			if hasattr(MacOS, 'runtimemodel') and MacOS.runtimemodel == "carbon":
+				dict['prefixname'] = 'mwerks_carbonplugin_config.h'
+			else:
+				dict['prefixname'] = 'mwerks_plugin_config.h'
 		self.templatelist = templatelist
 		self.templatedir = templatedir
 		
