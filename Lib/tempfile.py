@@ -42,13 +42,27 @@ def gettempdir():
     testfile = gettempprefix() + 'test'
     for dir in attempdirs:
         try:
-            filename = os.path.join(dir, testfile)
-            fp = open(filename, 'w')
-            fp.write('blat')
-            fp.close()
-            os.unlink(filename)
-            tempdir = dir
-            break
+           filename = os.path.join(dir, testfile)
+           if os.name == 'posix':
+               try:
+                   fd = os.open(filename, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700)
+               except OSError:
+                   pass
+               else:
+                   fp = os.fdopen(fd, 'w')
+                   fp.write('blat')
+                   fp.close()
+                   os.unlink(filename)
+                   del fp, fd
+                   tempdir = dir
+                   break
+           else:
+               fp = open(filename, 'w')
+               fp.write('blat')
+               fp.close()
+               os.unlink(filename)
+               tempdir = dir
+               break
         except IOError:
             pass
     if tempdir is None:
