@@ -37,6 +37,7 @@ class build_py (Command):
         self.build_lib = None
         self.py_modules = None
         self.package = None
+        self.package_data = None
         self.package_dir = None
         self.compile = 0
         self.optimize = 0
@@ -51,6 +52,8 @@ class build_py (Command):
         # options -- list of packages and list of modules.
         self.packages = self.distribution.packages
         self.py_modules = self.distribution.py_modules
+        self.package_data = self.distribution.package_data
+        self.data_files = self.get_data_files()
         self.package_dir = {}
         if self.distribution.package_dir:
             for name, path in self.distribution.package_dir.items():
@@ -92,11 +95,53 @@ class build_py (Command):
             self.build_modules()
         if self.packages:
             self.build_packages()
+            self.build_package_data()
 
         self.byte_compile(self.get_outputs(include_bytecode=0))
 
     # run ()
 
+    def get_data_files (self):
+        """Generate list of '(package,src_dir,build_dir,filenames)' tuples"""
+        data = []
+        for package in self.packages:
+            # Locate package source directory
+            src_dir = self.get_package_dir(package)
+
+            # Compute package build directory
+            build_dir = os.path.join(*([self.build_lib] + package.split('.')))
+
+            # Length of path to strip from found files
+            plen = len(src_dir)+1
+
+            # Strip directory from globbed filenames
+            filenames = [
+                file[plen:] for file in self.find_data_files(package, src_dir)
+                ]
+            data.append((package, src_dir, build_dir, filenames))
+        return data
+
+    def find_data_files (self, package, src_dir):
+        """Return filenames for package's data files in 'src_dir'"""
+        globs = (self.package_data.get('', [])
+                 + self.package_data.get(package, []))
+        files = []
+        for pattern in globs:
+            # Each pattern has to be converted to a platform-specific path
+            filelist = glob(os.path.join(src_dir, convert_path(pattern)))
+            # Files that match more than one pattern are only added once
+            files.extend([fn for fn in filelist if fn not in files])
+        return files
+
+    def build_package_data (self):
+        """Copy data files into build directory"""
+        lastdir = None
+        for package, src_dir, build_dir, filenames in self.data_files:
+            for filename in filenames:
+                target = os.path.join(build_dir, filename)
+                self.mkpath(os.path.dirname(target))
+                self.copy_file(os.path.join(src_dir, filename), target,
+                               preserve_mode=False)
 
     def get_package_dir (self, package):
         """Return the directory, relative to the top of the source
@@ -303,6 +348,12 @@ class build_py (Command):
                     outputs.append(filename + "c")
                 if self.optimize > 0:
                     outputs.append(filename + "o")
+
+        outputs += [
+            os.path.join(build_dir, filename)
+            for package, src_dir, build_dir, filenames in self.data_files
+            for filename in filenames
+            ]
 
         return outputs
 

@@ -158,6 +158,7 @@ class Distribution:
         # than of the Distribution itself.  We provide aliases for them in
         # Distribution as a convenience to the developer.
         self.packages = None
+        self.package_data = {}
         self.package_dir = None
         self.py_modules = None
         self.libraries = None
