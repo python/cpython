@@ -61,13 +61,13 @@ class ASTVisitor:
                     print "dispatch", className
             else:
                 print "dispatch", className, (meth and meth.__name__ or '')
-        return apply(meth, (node,) + args)
+        return meth(node, *args)
 
-    def preorder(self, tree, visitor):
+    def preorder(self, tree, visitor, *args):
         """Do preorder walk of tree using visitor"""
         self.visitor = visitor
         visitor.visit = self._preorder
-        self._preorder(tree)
+        self._preorder(tree, *args) # XXX *args make sense?
 
     _preorder = dispatch
 
