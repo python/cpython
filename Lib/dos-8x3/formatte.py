@@ -16,9 +16,8 @@ class NullFormatter:
 	self.writer = writer
     def end_paragraph(self, blankline): pass
     def add_line_break(self): pass
-    def add_hor_rule(self, abswidth=None, percentwidth=1.0,
-		     height=None, align=None): pass
-    def add_label_data(self, format, counter): pass
+    def add_hor_rule(self, *args, **kw): pass
+    def add_label_data(self, format, counter, blankline=None): pass
     def add_flowing_data(self, data): pass
     def add_literal_data(self, data): pass
     def flush_softspace(self): pass
