@@ -90,7 +90,7 @@ class PyncheWidget:
         # now create the top level window
         root = self.__root = Toplevel(tkroot, class_='Pynche', menu=menubar)
         root.protocol('WM_DELETE_WINDOW',
-                      modal and self.__beep or self.__quit)
+                      modal and self.__bell or self.__quit)
         root.title('Pynche %s' % version)
         root.iconname('Pynche')
         # Only bind accelerators for the File->Quit menu item if running as a
@@ -116,8 +116,8 @@ class PyncheWidget:
     def __quit(self, event=None):
         self.__tkroot.quit()
 
-    def __beep(self, event=None):
-        self.__tkroot.beep()
+    def __bell(self, event=None):
+        self.__tkroot.bell()
 
     def __okay(self, event=None):
         self.__sb.withdraw_views()
@@ -179,3 +179,6 @@ email : bwarsaw@python.org''' % __version__)
 
     def withdraw(self):
         self.__root.withdraw()
+
+    def deiconify(self):
+        self.__root.deiconify()
