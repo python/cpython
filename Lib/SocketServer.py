@@ -570,7 +570,7 @@ class DatagramRequestHandler(BaseRequestHandler):
         import StringIO
         self.packet, self.socket = self.request
         self.rfile = StringIO.StringIO(self.packet)
-        self.wfile = StringIO.StringIO(self.packet)
+        self.wfile = StringIO.StringIO()
 
     def finish(self):
         self.socket.sendto(self.wfile.getvalue(), self.client_address)
