@@ -7,7 +7,6 @@ yup
 
 import test_support
 
-# XXX The class docstring is skipped.
 class C(object):
     """Class C.
 
@@ -29,7 +28,6 @@ class C(object):
         """
         return "42"
 
-    # XXX The class docstring is skipped.
     class D(object):
         """A nested D class.
 
@@ -96,9 +94,7 @@ class C(object):
 
 def test_main():
     import test_doctest2
-    # XXX 2 class docstrings are skipped.
-    # EXPECTED = 19
-    EXPECTED = 17
+    EXPECTED = 19
     f, t = test_support.run_doctest(test_doctest2)
     if t != EXPECTED:
         raise test_support.TestFailed("expected %d tests to run, not %d" %
