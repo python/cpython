@@ -1,5 +1,5 @@
 """
-SAX driver for the Pyexpat C module.  This driver works with
+SAX driver for the pyexpat C module.  This driver works with
 pyexpat.__version__ == '2.22'.
 """
 
@@ -82,7 +82,7 @@ class ExpatLocator(xmlreader.Locator):
 # --- ExpatParser
 
 class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
-    "SAX driver for the Pyexpat C module."
+    """SAX driver for the pyexpat C module."""
 
     def __init__(self, namespaceHandling=0, bufsize=2**16-20):
         xmlreader.IncrementalParser.__init__(self, bufsize)
@@ -110,7 +110,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         if source.getSystemId() != None:
             self._parser.SetBase(source.getSystemId())
 
-    # Redefined setContentHandle to allow changing handlers during parsing
+    # Redefined setContentHandler to allow changing handlers during parsing
 
     def setContentHandler(self, handler):
         xmlreader.IncrementalParser.setContentHandler(self, handler)
@@ -145,16 +145,19 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
                 self._interning = None
         elif name == feature_validation:
             if state:
-                raise SAXNotSupportedException("expat does not support validation")
+                raise SAXNotSupportedException(
+                    "expat does not support validation")
         elif name == feature_external_pes:
             if state:
-                raise SAXNotSupportedException("expat does not read external parameter entities")
+                raise SAXNotSupportedException(
+                    "expat does not read external parameter entities")
         elif name == feature_namespace_prefixes:
             if state:
-                raise SAXNotSupportedException("expat does not report namespace prefixes")
+                raise SAXNotSupportedException(
+                    "expat does not report namespace prefixes")
         else:
-            raise SAXNotRecognizedException("Feature '%s' not recognized" %
-                                            name)
+            raise SAXNotRecognizedException(
+                "Feature '%s' not recognized" % name)
 
     def getProperty(self, name):
         if name == handler.property_lexical_handler:
@@ -166,9 +169,12 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
                 if hasattr(self._parser, "GetInputContext"):
                     return self._parser.GetInputContext()
                 else:
-                    raise SAXNotRecognizedException("This version of expat does not support getting the XML string")
+                    raise SAXNotRecognizedException(
+                        "This version of expat does not support getting"
+                        " the XML string")
             else:
-                raise SAXNotSupportedException("XML string cannot be returned when not parsing")
+                raise SAXNotSupportedException(
+                    "XML string cannot be returned when not parsing")
         raise SAXNotRecognizedException("Property '%s' not recognized" % name)
 
     def setProperty(self, name, value):
@@ -199,9 +205,8 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             # document. When feeding chunks, they are not normally final -
             # except when invoked from close.
             self._parser.Parse(data, isFinal)
-        except expat.error:
-            error_code = self._parser.ErrorCode
-            exc = SAXParseException(expat.ErrorString(error_code), None, self)
+        except expat.error, e:
+            exc = SAXParseException(expat.ErrorString(e.code), e, self)
             # FIXME: when to invoke error()?
             self._err_handler.fatalError(exc)
 
@@ -221,13 +226,26 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._parser.CharacterDataHandler = self._cont_handler.characters
 
     def _reset_lex_handler_prop(self):
-        self._parser.CommentHandler = self._lex_handler_prop.comment
-        self._parser.StartCdataSectionHandler = self._lex_handler_prop.startCDATA
-        self._parser.EndCdataSectionHandler = self._lex_handler_prop.endCDATA
+        lex = self._lex_handler_prop
+        parser = self._parser
+        if lex is None:
+            parser.CommentHandler = None
+            parser.StartCdataSectionHandler = None
+            parser.EndCdataSectionHandler = None
+            parser.StartDoctypeDeclHandler = None
+            parser.EndDoctypeDeclHandler = None
+        else:
+            parser.CommentHandler = lex.comment
+            parser.StartCdataSectionHandler = lex.startCDATA
+            parser.EndCdataSectionHandler = lex.endCDATA
+            parser.StartDoctypeDeclHandler = self.start_doctype_decl
+            parser.EndDoctypeDeclHandler = lex.endDTD
 
     def reset(self):
         if self._namespaces:
-            self._parser = expat.ParserCreate(None, " ", intern = self._interning)
+            self._parser = expat.ParserCreate(None, " ",
+                                              intern=self._interning)
+            self._parser.namespace_prefixes = 1
             self._parser.StartElementHandler = self.start_element_ns
             self._parser.EndElementHandler = self.end_element_ns
         else:
@@ -248,7 +266,13 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 #         self._parser.DefaultHandlerExpand =
 #         self._parser.NotStandaloneHandler =
         self._parser.ExternalEntityRefHandler = self.external_entity_ref
-        self._parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE)
+        try:
+            self._parser.SkippedEntityHandler = self.skipped_entity_handler
+        except AttributeError:
+            # This pyexpat does not support SkippedEntity
+            pass
+        self._parser.SetParamEntityParsing(
+            expat.XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE)
 
         self._parsing = 0
         self._entity_stack = []
@@ -281,27 +305,43 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
     def start_element_ns(self, name, attrs):
         pair = name.split()
         if len(pair) == 1:
+            # no namespace
             pair = (None, name)
+        elif len(pair) == 3:
+            pair = pair[0], pair[1]
         else:
+            # default namespace
             pair = tuple(pair)
 
         newattrs = {}
+        qnames = {}
         for (aname, value) in attrs.items():
-            apair = aname.split()
-            if len(apair) == 1:
+            parts = aname.split()
+            length = len(parts)
+            if length == 1:
+                # no namespace
+                qname = aname
                 apair = (None, aname)
+            elif length == 3:
+                qname = "%s:%s" % (parts[2], parts[1])
+                apair = parts[0], parts[1]
             else:
-                apair = tuple(apair)
+                # default namespace
+                qname = parts[1]
+                apair = tuple(parts)
 
             newattrs[apair] = value
+            qnames[apair] = qname
 
         self._cont_handler.startElementNS(pair, None,
-                                          AttributesNSImpl(newattrs, {}))
+                                          AttributesNSImpl(newattrs, qnames))
 
     def end_element_ns(self, name):
         pair = name.split()
         if len(pair) == 1:
             pair = (None, name)
+        elif len(pair) == 3:
+            pair = pair[0], pair[1]
         else:
             pair = tuple(pair)
 
@@ -320,6 +360,9 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 
     def end_namespace_decl(self, prefix):
         self._cont_handler.endPrefixMapping(prefix)
+
+    def start_doctype_decl(self, name, pubid, sysid, has_internal_subset):
+        self._lex_handler_prop.startDTD(name, pubid, sysid)
 
     def unparsed_entity_decl(self, name, base, sysid, pubid, notation_name):
         self._dtd_handler.unparsedEntityDecl(name, pubid, sysid, notation_name)
@@ -348,6 +391,12 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         (self._parser, self._source) = self._entity_stack[-1]
         del self._entity_stack[-1]
         return 1
+
+    def skipped_entity_handler(self, name, is_pe):
+        if is_pe:
+            # The SAX spec requires to report skipped PEs with a '%'
+            name = '%'+name
+        self._cont_handler.skippedEntity(name)
 
 # ---
 
