@@ -832,7 +832,7 @@ builtin_eval(self, args)
 		return NULL;
 	}
 	str = PyString_AsString(cmd);
-	if ((int)strlen(str) != PyString_Size(cmd)) {
+	if (strlen(str) != (size_t)PyString_Size(cmd)) {
 		PyErr_SetString(PyExc_ValueError,
 			   "embedded '\\0' in string arg");
 		return NULL;
@@ -985,7 +985,7 @@ builtin_id(self, args)
 
 	if (!PyArg_ParseTuple(args, "O:id", &v))
 		return NULL;
-	return PyInt_FromLong((long)v);
+	return PyLong_FromVoidPtr(v);
 }
 
 static char id_doc[] =
@@ -1873,7 +1873,14 @@ builtin_raw_input(self, args)
 			result = NULL;
 		}
 		else { /* strip trailing '\n' */
-			result = PyString_FromStringAndSize(s, strlen(s)-1);
+			size_t len = strlen(s);
+			if (len > INT_MAX) {
+				PyErr_SetString(PyExc_OverflowError, "input too long");
+				result = NULL;
+			}
+			else {
+				result = PyString_FromStringAndSize(s, (int)(len-1));
+			}
 		}
 		PyMem_FREE(s);
 		return result;
