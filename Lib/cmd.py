@@ -94,6 +94,7 @@ class Cmd:
                         line = 'EOF'
                 else:
                     sys.stdout.write(self.prompt)
+                    sys.stdout.flush()
                     line = sys.stdin.readline()
                     if not len(line):
                         line = 'EOF'
