@@ -46,6 +46,15 @@ class ReferencesTestCase(TestBase):
         self.check_basic_ref(create_bound_method)
         self.check_basic_ref(create_unbound_method)
 
+        # Just make sure the tp_repr handler doesn't raise an exception.
+        # Live reference:
+        o = C()
+        wr = weakref.ref(o)
+        `wr`
+        # Dead reference:
+        del o
+        `wr`
+
     def test_basic_callback(self):
         self.check_basic_callback(C)
         self.check_basic_callback(create_function)
@@ -166,6 +175,13 @@ class ReferencesTestCase(TestBase):
         L2 = UserList.UserList(L)
         p2 = weakref.proxy(L2)
         self.assertEqual(p, p2)
+        ## self.assertEqual(`L2`, `p2`)
+        L3 = UserList.UserList(range(10))
+        p3 = weakref.proxy(L3)
+        self.assertEqual(L3[:], p3[:])
+        self.assertEqual(L3[5:], p3[5:])
+        self.assertEqual(L3[:5], p3[:5])
+        self.assertEqual(L3[2:5], p3[2:5])
 
     def test_callable_proxy(self):
         o = Callable()
