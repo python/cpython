@@ -15,7 +15,7 @@ import imgformat
 # PixMap data structure element format (as used with struct)
 _pmElemFormat = {
 	'baseAddr':'l',		# address of pixel data
-	'rowBytes':'h',		# bytes per row, plus 0x8000
+	'rowBytes':'H',		# bytes per row, plus 0x8000
 	'bounds':'hhhh',	# coordinates imposed over pixel data
 		'top':'h',
 		'left':'h',

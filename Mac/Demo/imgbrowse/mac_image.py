@@ -13,7 +13,7 @@ def mkpixmap(w, h, fmt, data):
 	"""kludge a pixmap together"""
 	fmtinfo = _fmt_to_mac[fmt]
 	
-	rv = struct.pack("lhhhhhhhlllhhhhlll",
+	rv = struct.pack("lHhhhhhhlllhhhhlll",
 		id(data)+MacOS.string_id_to_buffer, # HACK HACK!!
 		w*2 + 0x8000,
 		0, 0, h, w,
