@@ -39,11 +39,11 @@ def main():
 
 	size = player.bestreadsize()
 
+	oldparams = [AL.OUTPUT_RATE, 0]
+	params = oldparams[:]
+	al.getparams(AL.DEFAULT_DEVICE, oldparams)
+	params[1] = AL.RATE_44100
 	try:
-		oldparams = [AL.OUTPUT_RATE, 0]
-		params = oldparams[:]
-		al.getparams(AL.DEFAULT_DEVICE, oldparams)
-		params[1] = AL.RATE_44100
 		al.setparams(AL.DEFAULT_DEVICE, params)
 		config = al.newconfig()
 		config.setwidth(AL.SAMPLE_16)
