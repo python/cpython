@@ -26,6 +26,8 @@ class Debugger(bdb.Bdb):
         if self.interacting:
             self.top.bell()
             return
+        if self.stackviewer:
+            self.stackviewer.close(); self.stackviewer = None
         self.pyshell.close_debugger()
         self.top.destroy()
 
