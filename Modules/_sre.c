@@ -3110,7 +3110,11 @@ static PyMethodDef _functions[] = {
     {NULL, NULL}
 };
 
+#if PY_VERSION_HEX < 0x02030000 
+DL_EXPORT(void) init_sre(void)
+#else
 PyMODINIT_FUNC init_sre(void)
+#endif
 {
     PyObject* m;
     PyObject* d;
