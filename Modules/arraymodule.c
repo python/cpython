@@ -470,8 +470,11 @@ ins1(arrayobject *self, int where, PyObject *v)
 		PyErr_NoMemory();
 		return -1;
 	}
-	if (where < 0)
-		where = 0;
+	if (where < 0) {
+		where += self->ob_size;
+		if (where < 0)
+			where = 0;
+	}
 	if (where > self->ob_size)
 		where = self->ob_size;
 	memmove(items + (where+1)*self->ob_descr->itemsize,
