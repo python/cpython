@@ -539,6 +539,82 @@ This is the dingus fish.
         unless(not m0.is_multipart())
         unless(not m1.is_multipart())
 
+    def test_no_parts_in_a_multipart(self):
+        outer = MIMEBase('multipart', 'mixed')
+        outer['Subject'] = 'A subject'
+        outer['To'] = 'aperson@dom.ain'
+        outer['From'] = 'bperson@dom.ain'
+        outer.preamble = ''
+        outer.epilogue = ''
+        outer.set_boundary('BOUNDARY')
+        msg = MIMEText('hello world')
+        self.assertEqual(outer.as_string(), '''\
+Content-Type: multipart/mixed; boundary="BOUNDARY"
+MIME-Version: 1.0
+Subject: A subject
+To: aperson@dom.ain
+From: bperson@dom.ain
+
+--BOUNDARY
+
+
+--BOUNDARY--
+''')        
+
+    def test_one_part_in_a_multipart(self):
+        outer = MIMEBase('multipart', 'mixed')
+        outer['Subject'] = 'A subject'
+        outer['To'] = 'aperson@dom.ain'
+        outer['From'] = 'bperson@dom.ain'
+        outer.preamble = ''
+        outer.epilogue = ''
+        outer.set_boundary('BOUNDARY')
+        msg = MIMEText('hello world')
+        outer.attach(msg)
+        self.assertEqual(outer.as_string(), '''\
+Content-Type: multipart/mixed; boundary="BOUNDARY"
+MIME-Version: 1.0
+Subject: A subject
+To: aperson@dom.ain
+From: bperson@dom.ain
+
+--BOUNDARY
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+hello world
+
+--BOUNDARY--
+''')        
+
+    def test_seq_parts_in_a_multipart(self):
+        outer = MIMEBase('multipart', 'mixed')
+        outer['Subject'] = 'A subject'
+        outer['To'] = 'aperson@dom.ain'
+        outer['From'] = 'bperson@dom.ain'
+        outer.preamble = ''
+        outer.epilogue = ''
+        msg = MIMEText('hello world')
+        outer.attach([msg])
+        outer.set_boundary('BOUNDARY')
+        self.assertEqual(outer.as_string(), '''\
+Content-Type: multipart/mixed; boundary="BOUNDARY"
+MIME-Version: 1.0
+Subject: A subject
+To: aperson@dom.ain
+From: bperson@dom.ain
+
+--BOUNDARY
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+hello world
+
+--BOUNDARY--
+''')        
+
 
 
 # Test some badly formatted messages
