@@ -10,6 +10,11 @@ Core
   access to the current frame during destruction of a local variable
   could access a pointer to freed memory.
 
+Windows
+
+- The installer now installs Start menu shortcuts under (the local
+  equivalent of) "All Users" when doing an Admin install.
+
 
 What's New in Python 2.2.1c2?
 Release date: 26-Mar-2002
@@ -18,7 +23,7 @@ Release date: 26-Mar-2002
 There were a bunch of mostly minor fixes between 2.2.1c1 and 2.2.1c2,
 including:
 
-- I remembered to run autoconf before cutting the release tarball. 
+- I remembered to run autoconf before cutting the release tarball.
 
 Core and builtins
 
