@@ -52,6 +52,9 @@ mmap
     mmapmodule.c
 parser
     the parser module
+pyexpat
+    Python wrapper for accelerated XML parsing, which incorporates stable
+    code from the Expat project:  http://sourceforge.net/projects/expat/
 select
     selectmodule.c
 unicodedata
@@ -98,16 +101,6 @@ bsddb
     before running nmake (this batch file is in your MSVC installation).
     TODO:  make this work like zlib (in particular, MSVC runs the prelink
     step in an enviroment that already has the correct envars set up).
-
-pyexpat
-    Python wrapper for accelerated XML parsing.  Requires the Windows
-    expat_win32bin installer from
-        http://sourceforge.net/projects/expat/
-    Currently using version 1.95.2.
-    Install into dist\expat.
-    You should also copy expat\Libs\expat.dll into your PCbuild directory,
-    else at least two tests will fail (test_pyexpat and test_sax), and
-    others will erroneously get skipped (at least test_minidom).
 
 
 NOTE ON CONFIGURATIONS

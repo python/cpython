@@ -1832,17 +1832,6 @@ end
 item: Remark
 end
 item: Remark
-  Text=More DLLs
-end
-item: Install File
-  Source=..\..\expat\libs\expat.dll
-  Destination=%MAINDIR%\DLLs\expat.dll
-  Description=Expat library
-  Flags=0000000000000010
-end
-item: Remark
-end
-item: Remark
   Text=Main Python DLL
 end
 item: Remark
