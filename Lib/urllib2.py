@@ -416,12 +416,14 @@ class HTTPRedirectHandler(BaseHandler):
         None if you can't but another Handler might.
 
         """
-        if (code in (301, 302, 303, 307) and req.method() in ("GET", "HEAD") or
-            code in (302, 303) and req.method() == "POST"):
-            # Strictly (according to RFC 2616), 302 in response to a POST
-            # MUST NOT cause a redirection without confirmation from the user
-           # (of urllib2, in this case).  In practice, essentially all clients
-            # do redirect in this case, so we do the same.
+        m = req.get_method()
+        if (code in (301, 302, 303, 307) and m in ("GET", "HEAD")
+            or code in (302, 303) and m == "POST"):
+            # Strictly (according to RFC 2616), 302 in response to a
+            # POST MUST NOT cause a redirection without confirmation
+            # from the user (of urllib2, in this case).  In practice,
+            # essentially all clients do redirect in this case, so we
+            # do the same.
             return Request(newurl, headers=req.headers)
         else:
             raise HTTPError(req.get_full_url(), code, msg, hdrs, fp)
