@@ -1584,7 +1584,7 @@ static PyNumberMethods mpz_as_number = {
 };
 
 static PyTypeObject MPZtype = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
 	"mpz",			/*tp_name*/
 	sizeof(mpzobject),	/*tp_size*/
@@ -1716,6 +1716,7 @@ initmpz(void)
 #endif /* def MPZ_DEBUG */
 
 	mp_set_memory_functions( mp_allocate, mp_reallocate, mp_free );
+        MPZtype.ob_type = &PyType_Type;
 	module = Py_InitModule("mpz", mpz_functions);
 
 	/* create some frequently used constants */
