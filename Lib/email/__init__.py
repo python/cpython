@@ -4,7 +4,7 @@
 """A package for parsing, handling, and generating email messages.
 """
 
-__version__ = '2.3.1'
+__version__ = '2.4'
 
 __all__ = ['Charset',
            'Encoders',
@@ -28,12 +28,19 @@ __all__ = ['Charset',
 
 
 
-# Some convenience routines
-from email.Parser import Parser as _Parser
-from email.Message import Message as _Message
+# Some convenience routines.  Don't import Parser and Message as side-effects
+# of importing email since those cascadingly import most of the rest of the
+# email package.
+def message_from_string(s, _class=None, strict=0):
+    from email.Parser import Parser
+    if _class is None:
+        from email.Message import Message
+        _class = Message
+    return Parser(_class, strict=strict).parsestr(s)
 
-def message_from_string(s, _class=_Message, strict=0):
-    return _Parser(_class, strict=strict).parsestr(s)
-
-def message_from_file(fp, _class=_Message, strict=0):
-    return _Parser(_class, strict=strict).parse(fp)
+def message_from_file(fp, _class=None, strict=0):
+    from email.Parser import Parser
+    if _class is None:
+        from email.Message import Message
+        _class = Message
+    return Parser(_class, strict=strict).parse(fp)
