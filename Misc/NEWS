@@ -56,7 +56,8 @@ Extension modules
   hole was quickly plugged in zlib-1.1.4, and the Windows build of
   Python now ships with zlib-1.1.4.
 
-- pwd and grp return enhanced tuples now, with symbolic field names.
+- pwd, grp, and resource return enhanced tuples now, with symbolic
+  field names.
 
 - array.array is now a type object. A new format character
   'u' indicates Py_UNICODE arrays. For those, .tounicode and
