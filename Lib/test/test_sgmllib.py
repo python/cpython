@@ -54,6 +54,9 @@ class EventCollector(sgmllib.SGMLParser):
     def handle_pi(self, data):
         self.append(("pi", data))
 
+    def unknown_decl(self, decl):
+        self.append(("unknown decl", decl))
+
 
 class CDATAEventCollector(EventCollector):
     def start_cdata(self, attrs):
@@ -65,12 +68,24 @@ class SGMLParserTestCase(unittest.TestCase):
 
     collector = EventCollector
 
-    def check_events(self, source, expected_events):
+    def get_events(self, source):
         parser = self.collector()
-        for s in source:
-            parser.feed(s)
-        parser.close()
-        events = parser.get_events()
+        try:
+            for s in source:
+                parser.feed(s)
+            parser.close()
+        except:
+            #self.events = parser.events
+            raise
+        return parser.get_events()
+
+    def check_events(self, source, expected_events):
+        try:
+            events = self.get_events(source)
+        except:
+            import sys
+            #print >>sys.stderr, pprint.pformat(self.events)
+            raise
         if events != expected_events:
             self.fail("received events did not match expected events\n"
                       "Expected:\n" + pprint.pformat(expected_events) +
@@ -86,6 +101,31 @@ class SGMLParserTestCase(unittest.TestCase):
         else:
             self.fail("expected SGMLParseError for %r\nReceived:\n%s"
                       % (source, pprint.pformat(parser.get_events())))
+
+    def test_doctype_decl_internal(self):
+        inside = """\
+DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
+             SYSTEM 'http://www.w3.org/TR/html401/strict.dtd' [
+  <!ELEMENT html - O EMPTY>
+  <!ATTLIST html
+      version CDATA #IMPLIED
+      profile CDATA 'DublinCore'>
+  <!NOTATION datatype SYSTEM 'http://xml.python.org/notations/python-module'>
+  <!ENTITY myEntity 'internal parsed entity'>
+  <!ENTITY anEntity SYSTEM 'http://xml.python.org/entities/something.xml'>
+  <!ENTITY % paramEntity 'name|name|name'>
+  %paramEntity;
+  <!-- comment -->
+]"""
+        self.check_events(["<!%s>" % inside], [
+            ("decl", inside),
+            ])
+
+    def test_doctype_decl_external(self):
+        inside = "DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'"
+        self.check_events("<!%s>" % inside, [
+            ("decl", inside),
+            ])
 
     def test_underscore_in_attrname(self):
         # SF bug #436621
@@ -132,6 +172,16 @@ class SGMLParserTestCase(unittest.TestCase):
             ("endtag", "b"),
             ])
 
+    def test_bare_ampersands(self):
+        self.check_events("this text & contains & ampersands &", [
+            ("data", "this text & contains & ampersands &"),
+            ])
+
+    def test_bare_pointy_brackets(self):
+        self.check_events("this < text > contains < bare>pointy< brackets", [
+            ("data", "this < text > contains < bare>pointy< brackets"),
+            ])
+
     def test_attr_syntax(self):
         output = [
           ("starttag", "a", [("b", "v"), ("c", "v"), ("d", "v"), ("e", "e")])
@@ -154,6 +204,14 @@ class SGMLParserTestCase(unittest.TestCase):
     def test_attr_funky_names(self):
         self.check_events("""<a a.b='v' c:d=v e-f=v>""", [
             ("starttag", "a", [("a.b", "v"), ("c:d", "v"), ("e-f", "v")]),
+            ])
+
+    def test_illegal_declarations(self):
+        s = 'abc<!spacer type="block" height="25">def'
+        self.check_events(s, [
+            ("data", "abc"),
+            ("unknown decl", 'spacer type="block" height="25"'),
+            ("data", "def"),
             ])
 
     def test_weird_starttags(self):
@@ -194,6 +252,14 @@ class SGMLParserTestCase(unittest.TestCase):
             ("starttag", "cdata", []),
             ("data", " <not a='start tag'> "),
             ("endtag", "cdata"),
+            ])
+
+    def test_illegal_declarations(self):
+        s = 'abc<!spacer type="block" height="25">def'
+        self.check_events(s, [
+            ("data", "abc"),
+            ("unknown decl", 'spacer type="block" height="25"'),
+            ("data", "def"),
             ])
 
     # XXX These tests have been disabled by prefixing their names with
@@ -240,4 +306,9 @@ class SGMLParserTestCase(unittest.TestCase):
         self.check_parse_error("<a foo=>")
 
 
-test_support.run_unittest(SGMLParserTestCase)
+def test_main():
+    test_support.run_unittest(SGMLParserTestCase)
+
+
+if __name__ == "__main__":
+    test_main()
