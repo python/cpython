@@ -202,7 +202,6 @@ def readmodule_ex(module, path=[], inpackage=0):
         return dict
 
     _modules[module] = dict
-    imports = []
     classstack = [] # stack of (class, indent) pairs
     src = f.read()
     f.close()
