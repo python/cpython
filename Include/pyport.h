@@ -281,7 +281,7 @@ extern double hypot(double, double);
 /* If the fd manipulation macros aren't defined,
    here is a set that should do the job */
 
-#ifdef 0 /* disabled and probably obsolete */
+#if 0 /* disabled and probably obsolete */
 
 #ifndef	FD_SETSIZE
 #define	FD_SETSIZE	256
