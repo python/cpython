@@ -1,23 +1,28 @@
 #!/usr/bin/env python
 """Generate Python documentation in HTML or text for interactive use.
 
-At the shell command line outside of Python, run "pydoc <name>" to show
-documentation on something.  <name> may be the name of a Python function,
-module, package, or a dotted reference to a class or function within a
-module or module in a package.  Alternatively, the argument can be the
-path to a Python source file.
-
-Or, at the shell prompt, run "pydoc -k <keyword>" to search for a keyword
-in the one-line descriptions of modules.
-
-Or, at the shell prompt, run "pydoc -p <port>" to start an HTTP server
-on a given port on the local machine to generate documentation web pages.
-
-Or, at the shell prompt, run "pydoc -w <name>" to write out the HTML
-documentation for a module to a file named "<name>.html".
-
 In the Python interpreter, do "from pydoc import help" to provide online
-help.  Calling help(thing) on a Python object documents the object."""
+help.  Calling help(thing) on a Python object documents the object.
+
+At the shell command line outside of Python:
+    Run "pydoc <name>" to show documentation on something.  <name> may be
+    the name of a function, module, package, or a dotted reference to a
+    class or function within a module or module in a package.  If the
+    argument contains a path segment delimiter (e.g. slash on Unix,
+    backslash on Windows) it is treated as the path to a Python source file.
+
+    Run "pydoc -k <keyword>" to search for a keyword in the synopsis lines
+    of all available modules.
+
+    Run "pydoc -p <port>" to start an HTTP server on a given port on the
+    local machine to generate documentation web pages.
+
+    For platforms without a command line, "pydoc -g" starts the HTTP server
+    and also pops up a little window for controlling it.
+
+    Run "pydoc -w <name>" to write out the HTML documentation for a module
+    to a file named "<name>.html".
+"""
 
 __author__ = "Ka-Ping Yee <ping@lfw.org>"
 __date__ = "26 February 2001"
@@ -28,6 +33,10 @@ Paul Prescod, for all his work on onlinehelp.
 Richard Chamberlain, for the first implementation of textdoc.
 
 Mynd you, møøse bites Kan be pretty nasti..."""
+
+# Note: this module is designed to deploy instantly and run under any
+# version of Python from 1.5 and up.  That's why it's a single file and
+# some 2.0 features (like string methods) are conspicuously avoided.
 
 import sys, imp, os, stat, re, types, inspect
 from repr import Repr
@@ -58,18 +67,6 @@ def synopsis(filename, cache={}):
         file.close()
         cache[filename] = (mtime, result)
     return result
-
-def index(dir):
-    """Return a list of (module-name, synopsis) pairs for a directory tree."""
-    results = []
-    for entry in os.listdir(dir):
-        path = os.path.join(dir, entry)
-        if ispackage(path):
-            results.extend(map(
-                lambda (m, s), pkg=entry: (pkg + '.' + m, s), index(path)))
-        elif os.path.isfile(path) and entry[-3:] == '.py':
-            results.append((entry[:-3], synopsis(path)))
-    return results
 
 def pathdirs():
     """Convert sys.path into a list of absolute, existing, unique paths."""
@@ -132,7 +129,7 @@ def modulename(path):
     filename = os.path.basename(path)
     if lower(filename[-3:]) == '.py':
         return filename[:-3]
-    elif lower(filename[-4:]) == '.pyc':
+    elif lower(filename[-4:]) in ['.pyc', '.pyd', '.pyo']:
         return filename[:-4]
     elif lower(filename[-11:]) == 'module.so':
         return filename[:-11]
@@ -184,9 +181,7 @@ class Doc:
         args = (object,) + args
         if inspect.ismodule(object): return apply(self.docmodule, args)
         if inspect.isclass(object): return apply(self.docclass, args)
-        if inspect.ismethod(object): return apply(self.docmethod, args)
-        if inspect.isbuiltin(object): return apply(self.docbuiltin, args)
-        if inspect.isfunction(object): return apply(self.docfunction, args)
+        if inspect.isroutine(object): return apply(self.docroutine, args)
         raise TypeError, "don't know how to document objects of type " + \
             type(object).__name__
 
@@ -258,11 +253,12 @@ class HTMLDoc(Doc):
         """Format a page heading."""
         return """
 <p><table width="100%%" cellspacing=0 cellpadding=0 border=0>
-<tr bgcolor="%s"><td colspan=3 valign=bottom><small><small><br></small></small
-><font color="%s" face="helvetica, arial">&nbsp;%s</font></td
+<tr bgcolor="%s"><td>&nbsp;</td>
+<td valign=bottom><small><small><br></small></small
+><font color="%s" face="helvetica"><br>&nbsp;%s</font></td
 ><td align=right valign=bottom
-><font color="%s" face="helvetica, arial">&nbsp;%s</font></td></tr></table>
-    """ % (bgcol, fgcol, title, fgcol, extras)
+><font color="%s" face="helvetica">%s</font></td><td>&nbsp;</td></tr></table>
+    """ % (bgcol, fgcol, title, fgcol, extras or '&nbsp;')
 
     def section(self, title, fgcol, bgcol, contents, width=20,
                 prelude='', marginalia=None, gap='&nbsp;&nbsp;&nbsp;'):
@@ -271,7 +267,8 @@ class HTMLDoc(Doc):
             marginalia = '&nbsp;' * width
         result = """
 <p><table width="100%%" cellspacing=0 cellpadding=0 border=0>
-<tr bgcolor="%s"><td colspan=3 valign=bottom><small><small><br></small></small
+<tr bgcolor="%s"><td rowspan=2>&nbsp;</td>
+<td colspan=3 valign=bottom><small><small><br></small></small
 ><font color="%s" face="helvetica, arial">&nbsp;%s</font></td></tr>
     """ % (bgcol, fgcol, title)
         if prelude:
@@ -290,14 +287,6 @@ class HTMLDoc(Doc):
         """Format a section with a big heading."""
         title = '<big><strong>%s</strong></big>' % title
         return apply(self.section, (title,) + args)
-
-    def footer(self):
-        return """
-<table width="100%"><tr><td align=right>
-<font face="helvetica, arial"><small><small>generated with
-<strong>htmldoc</strong> by Ka-Ping Yee</a></small></small></font>
-</td></tr></table>
-    """
 
     def namelink(self, name, *dicts):
         """Make a link for an identifier, given name-to-URL mappings."""
@@ -390,10 +379,18 @@ class HTMLDoc(Doc):
     def docmodule(self, object):
         """Produce HTML documentation for a module object."""
         name = object.__name__
-        result = ''
-        head = '<br><big><big><strong>&nbsp;%s</strong></big></big>' % name
+        parts = split(name, '.')
+        links = []
+        for i in range(len(parts)-1):
+            links.append(
+                '<a href="%s.html"><font color="#ffffff">%s</font></a>' %
+                (join(parts[:i+1], '.'), parts[i]))
+        linkedname = join(links + parts[-1:], '.')
+        head = '<big><big><strong>%s</strong></big></big>' % linkedname
         try:
             path = os.path.abspath(inspect.getfile(object))
+            sourcepath = os.path.abspath(inspect.getsourcefile(object))
+            if os.path.isfile(sourcepath): path = sourcepath
             filelink = '<a href="file:%s">%s</a>' % (path, path)
         except TypeError:
             filelink = '(built-in)'
@@ -407,7 +404,7 @@ class HTMLDoc(Doc):
             info.append(self.escape(str(object.__date__)))
         if info:
             head = head + ' (%s)' % join(info, ', ')
-        result = result + self.heading(
+        result = self.heading(
             head, '#ffffff', '#7799ee', '<a href=".">index</a><br>' + filelink)
 
         second = lambda list: list[1]
@@ -519,46 +516,42 @@ class HTMLDoc(Doc):
             title = title + '(%s)' % join(parents, ', ')
         doc = self.markup(getdoc(object), self.preformat,
                           funcs, classes, mdict)
-        if doc: doc = '<small><tt>' + doc + '<br>&nbsp;</tt></small>'
+        if doc: doc = '<small><tt>' + doc + '</tt></small>'
         return self.section(title, '#000000', '#ffc8d8', contents, 10, doc)
-
-    def docmethod(self, object, funcs={}, classes={}, methods={}, clname=''):
-        """Produce HTML documentation for a method object."""
-        return self.document(
-            object.im_func, funcs, classes, methods, clname)
 
     def formatvalue(self, object):
         """Format an argument default value as text."""
         return ('<small><font color="#909090">=%s</font></small>' %
                 self.repr(object))
 
-    def docfunction(self, object, funcs={}, classes={}, methods={}, clname=''):
-        """Produce HTML documentation for a function object."""
-        args, varargs, varkw, defaults = inspect.getargspec(object)
-        argspec = inspect.formatargspec(
-            args, varargs, varkw, defaults, formatvalue=self.formatvalue)
-
-        if object.__name__ == '<lambda>':
-            decl = '<em>lambda</em> ' + argspec[1:-1]
+    def docroutine(self, object, funcs={}, classes={}, methods={}, clname=''):
+        """Produce HTML documentation for a function or method object."""
+        if inspect.ismethod(object): object = object.im_func
+        if inspect.isbuiltin(object):
+            decl = '<a name="%s"><strong>%s</strong>(...)</a>\n' % (
+                clname + '-' + object.__name__, object.__name__)
         else:
-            anchor = clname + '-' + object.__name__
-            decl = '<a name="%s"\n><strong>%s</strong>%s</a>\n' % (
-                anchor, object.__name__, argspec)
+            args, varargs, varkw, defaults = inspect.getargspec(object)
+            argspec = inspect.formatargspec(
+                args, varargs, varkw, defaults, formatvalue=self.formatvalue)
+
+            if object.__name__ == '<lambda>':
+                decl = '<em>lambda</em> ' + argspec[1:-1]
+            else:
+                anchor = clname + '-' + object.__name__
+                decl = '<a name="%s"\n><strong>%s</strong>%s</a>\n' % (
+                    anchor, object.__name__, argspec)
         doc = self.markup(getdoc(object), self.preformat,
                           funcs, classes, methods)
         doc = replace(doc, ('<br>\n', '</tt></small\n><dd><small><tt>'))
         doc = doc and '<tt>%s</tt>' % doc
         return '<dl><dt>%s<dd><small>%s</small></dl>' % (decl, doc)
 
-    def docbuiltin(self, object, *extras):
-        """Produce HTML documentation for a built-in function."""
-        return '<dl><dt><strong>%s</strong>(...)</dl>' % object.__name__
-
     def page(self, object):
         """Produce a complete HTML page of documentation for an object."""
-        return '''<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN">
-<html><title>Python: %s</title>
-<body bgcolor="#ffffff">
+        return '''
+<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><title>Python: %s</title><body bgcolor="#ffffff">
 %s
 </body></html>
 ''' % (describe(object), self.document(object))
@@ -757,37 +750,28 @@ class TextDoc(Doc):
         if not contents: return title + '\n'
         return title + '\n' + self.indent(rstrip(contents), ' |  ') + '\n'
 
-    def docmethod(self, object):
-        """Produce text documentation for a method object."""
-        return self.document(object.im_func)
-
     def formatvalue(self, object):
         """Format an argument default value as text."""
         return '=' + self.repr(object)
 
-    def docfunction(self, object):
-        """Produce text documentation for a function object."""
-        try:
+    def docroutine(self, object):
+        """Produce text documentation for a function or method object."""
+        if inspect.ismethod(object): object = object.im_func
+        if inspect.isbuiltin(object):
+            decl = self.bold(object.__name__) + '(...)'
+        else:
             args, varargs, varkw, defaults = inspect.getargspec(object)
             argspec = inspect.formatargspec(
                 args, varargs, varkw, defaults, formatvalue=self.formatvalue)
-        except TypeError:
-            argspec = '(...)'
-
-        if object.__name__ == '<lambda>':
-            decl = '<lambda> ' + argspec[1:-1]
-        else:
-            decl = self.bold(object.__name__) + argspec
+            if object.__name__ == '<lambda>':
+                decl = '<lambda> ' + argspec[1:-1]
+            else:
+                decl = self.bold(object.__name__) + argspec
         doc = getdoc(object)
         if doc:
             return decl + '\n' + rstrip(self.indent(doc)) + '\n'
         else:
             return decl + '\n'
-
-    def docbuiltin(self, object):
-        """Produce text documentation for a built-in function object."""
-        return (self.bold(object.__name__) + '(...)\n' +
-                rstrip(self.indent(object.__doc__)) + '\n')
 
 # --------------------------------------------------------- user interfaces
 
@@ -914,8 +898,6 @@ def locate(path):
         return None, None
     if type(path) is not types.StringType:
         return None, path
-    if hasattr(__builtins__, path):
-        return None, getattr(__builtins__, path)
     parts = split(path, '.')
     n = 1
     while n <= len(parts):
@@ -924,7 +906,7 @@ def locate(path):
             module = __import__(path)
             module = reload(module)
         except:
-            # Did the error occur before or after we found the module?
+            # determine if error occurred before or after module was found
             if sys.modules.has_key(path):
                 filename = sys.modules[path].__file__
             elif sys.exc_type is SyntaxError:
@@ -942,6 +924,8 @@ def locate(path):
         except AttributeError:
             n = n + 1
             continue
+    if hasattr(__builtins__, path):
+        return None, getattr(__builtins__, path)
     return None, None
 
 # --------------------------------------- interactive interpreter interface
@@ -955,12 +939,12 @@ def doc(thing):
         try:
             path, x = locate(thing)
         except DocImportError, value:
-            print 'problem in %s - %s' % (value.filename, value.args)
+            print 'Problem in %s - %s' % (value.filename, value.args)
             return
         if x:
             thing = x
         else:
-            print 'could not find or import %s' % repr(thing)
+            print 'No Python documentation found for %s.' % repr(thing)
             return
 
     desc = describe(thing)
@@ -968,20 +952,6 @@ def doc(thing):
     if module and module is not thing:
         desc = desc + ' in module ' + module.__name__
     pager('Help on %s:\n\n' % desc + text.document(thing))
-
-def writedocs(path, pkgpath=''):
-    if os.path.isdir(path):
-        dir = path
-        for file in os.listdir(dir):
-            path = os.path.join(dir, file)
-            if os.path.isdir(path):
-                writedocs(path, file + '.' + pkgpath)
-            if os.path.isfile(path):
-                writedocs(path, pkgpath)
-    if os.path.isfile(path):
-        modname = modulename(path)
-        if modname:
-            writedoc(pkgpath + modname)
 
 def writedoc(key):
     """Write HTML documentation to a file in the current directory."""
@@ -1015,33 +985,87 @@ def man(key):
         pager('\n' + title + '\n\n' + text.document(object))
         found = 1
     else:
-        print 'could not find or import %s' % repr(key)
+        print 'No Python documentation found for %s.' % repr(key)
+
+class Scanner:
+    """A generic tree iterator."""
+    def __init__(self, roots, children, recurse):
+        self.roots = roots[:]
+        self.state = []
+        self.children = children
+        self.recurse = recurse
+
+    def next(self):
+        if not self.state:
+            if not self.roots:
+                return None
+            root = self.roots.pop(0)
+            self.state = [(root, self.children(root))]
+        node, children = self.state[-1]
+        if not children:
+            self.state.pop()
+            return self.next()
+        child = children.pop(0)
+        if self.recurse(child):
+            self.state.append((child, self.children(child)))
+        return child
+
+class ModuleScanner(Scanner):
+    """An interruptible scanner that searches module synopses."""
+    def __init__(self):
+        roots = map(lambda dir: (dir, ''), pathdirs())
+        Scanner.__init__(self, roots, self.submodules, self.ispackage)
+
+    def submodules(self, (dir, package)):
+        children = []
+        for file in os.listdir(dir):
+            path = os.path.join(dir, file)
+            if ispackage(path): 
+                children.append((path, package + (package and '.') + file))
+            else:
+                children.append((path, package))
+        children.sort()
+        return children
+
+    def ispackage(self, (dir, package)):
+        return ispackage(dir)
+
+    def run(self, key, callback, completer=None):
+        self.quit = 0
+        seen = {}
+
+        for modname in sys.builtin_module_names:
+            seen[modname] = 1
+            desc = split(__import__(modname).__doc__ or '', '\n')[0]
+            if find(lower(modname + ' - ' + desc), lower(key)) >= 0:
+                callback(None, modname, desc)
+
+        while not self.quit:
+            node = self.next()
+            if not node: break
+            path, package = node
+            modname = modulename(path)
+            if os.path.isfile(path) and modname:
+                modname = package + (package and '.') + modname
+                if not seen.has_key(modname):
+                    seen[modname] = 1
+                    desc = synopsis(path) or ''
+                    if find(lower(modname + ' - ' + desc), lower(key)) >= 0:
+                        callback(path, modname, desc)
+        if completer: completer()
 
 def apropos(key):
     """Print all the one-line module summaries that contain a substring."""
-    key = lower(key)
-    for module in sys.builtin_module_names:
-        desc = __import__(module).__doc__ or ''
-        desc = split(desc, '\n')[0]
-        if find(lower(module + ' ' + desc), key) >= 0:
-            print module, '-', desc or '(no description)'
-    modules = []
-    for dir in pathdirs():
-        for module, desc in index(dir):
-            desc = desc or ''
-            if module not in modules:
-                modules.append(module)
-                if find(lower(module + ' ' + desc), key) >= 0:
-                    desc = desc or '(no description)'
-                    if module[-9:] == '.__init__':
-                        print module[:-9], '(package) -', desc
-                    else:
-                        print module, '-', desc
+    def callback(path, modname, desc):
+        if modname[-9:] == '.__init__':
+            modname = modname[:-9] + ' (package)'
+        print modname, '-', desc or '(no description)'
+    ModuleScanner().run(key, callback)
 
 # --------------------------------------------------- web browser interface
 
-def serve(address, callback=None):
-    import BaseHTTPServer, mimetools
+def serve(port, callback=None):
+    import BaseHTTPServer, mimetools, select
 
     # Patch up mimetools.Message so it doesn't break if rfc822 is reloaded.
     class Message(mimetools.Message):
@@ -1055,14 +1079,16 @@ def serve(address, callback=None):
 
     class DocHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         def send_document(self, title, contents):
-            self.send_response(200)
-            self.send_header('Content-Type', 'text/html')
-            self.end_headers()
-            self.wfile.write(
-'''<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN">
-<html><title>Python: %s</title><body bgcolor="#ffffff">''' % title)
-            self.wfile.write(contents)
-            self.wfile.write('</body></html>')
+            try:
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html')
+                self.end_headers()
+                self.wfile.write('''
+<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><title>Python: %s</title><body bgcolor="#ffffff">
+%s
+</body></html>''' % (title, contents))
+            except IOError: pass
 
         def do_GET(self):
             path = self.path
@@ -1073,19 +1099,17 @@ def serve(address, callback=None):
                     p, x = locate(path)
                 except DocImportError, value:
                     self.send_document(path, html.escape(
-                        'problem with %s - %s' % (value.filename, value.args)))
+                        'Problem in %s - %s' % (value.filename, value.args)))
                     return
                 if x:
                     self.send_document(describe(x), html.document(x))
                 else:
                     self.send_document(path,
-'There is no Python module or object named "%s".' % path)
+'No Python documentation found for %s.' % repr(path))
             else:
                 heading = html.heading(
-                    '<br><big><big><strong>&nbsp;'
-                    'Python: Index of Modules'
-                    '</strong></big></big>',
-                    '#ffffff', '#7799ee')
+'<big><big><strong>Python: Index of Modules</strong></big></big>',
+'#ffffff', '#7799ee')
                 builtins = []
                 for name in sys.builtin_module_names:
                     builtins.append('<a href="%s.html">%s</a>' % (name, name))
@@ -1093,100 +1117,275 @@ def serve(address, callback=None):
                 seen = {}
                 for dir in pathdirs():
                     indices.append(html.index(dir, seen))
-                self.send_document('Index of Modules', heading + join(indices))
+                contents = heading + join(indices) + """<p align=right>
+<small><small><font color="#909090" face="helvetica, arial"><strong>
+pydoc</strong> by Ka-Ping Yee &lt;ping@lfw.org&gt;</font></small></small>"""
+                self.send_document('Index of Modules', contents)
 
         def log_message(self, *args): pass
 
     class DocServer(BaseHTTPServer.HTTPServer):
-        def __init__(self, address, callback):
+        def __init__(self, port, callback):
+            self.address = ('127.0.0.1', port)
+            self.url = 'http://127.0.0.1:%d/' % port
             self.callback = callback
-            self.base.__init__(self, address, self.handler)
+            self.base.__init__(self, self.address, self.handler)
+
+        def serve_until_quit(self):
+            import select
+            self.quit = 0
+            while not self.quit:
+                rd, wr, ex = select.select([self.socket.fileno()], [], [], 1)
+                if rd: self.handle_request()
 
         def server_activate(self):
             self.base.server_activate(self)
-            if self.callback: self.callback()
+            if self.callback: self.callback(self)
 
     DocServer.base = BaseHTTPServer.HTTPServer
     DocServer.handler = DocHandler
     DocHandler.MessageClass = Message
     try:
-        DocServer(address, callback).serve_forever()
+        DocServer(port, callback).serve_until_quit()
+    except (KeyboardInterrupt, select.error):
+        pass
+    print 'server stopped'
+
+# ----------------------------------------------------- graphical interface
+
+def gui():
+    """Graphical interface (starts web server and pops up a control window)."""
+    class GUI:
+        def __init__(self, window, port=7464):
+            self.window = window
+            self.server = None
+            self.scanner = None
+
+            import Tkinter
+            self.server_frm = Tkinter.Frame(window)
+            self.title_lbl = Tkinter.Label(self.server_frm,
+                text='Starting server...\n ')
+            self.open_btn = Tkinter.Button(self.server_frm,
+                text='open browser', command=self.open, state='disabled')
+            self.quit_btn = Tkinter.Button(self.server_frm,
+                text='quit serving', command=self.quit, state='disabled')
+
+            self.search_frm = Tkinter.Frame(window)
+            self.search_lbl = Tkinter.Label(self.search_frm, text='Search for')
+            self.search_ent = Tkinter.Entry(self.search_frm)
+            self.search_ent.bind('<Return>', self.search)
+            self.stop_btn = Tkinter.Button(self.search_frm,
+                text='stop', pady=0, command=self.stop, state='disabled')
+            if sys.platform == 'win32':
+                # Attempting to hide and show this button crashes under Windows.
+                self.stop_btn.pack(side='right')
+
+            self.window.title('pydoc')
+            self.window.protocol('WM_DELETE_WINDOW', self.quit)
+            self.title_lbl.pack(side='top', fill='x')
+            self.open_btn.pack(side='left', fill='x', expand=1)
+            self.quit_btn.pack(side='right', fill='x', expand=1)
+            self.server_frm.pack(side='top', fill='x')
+
+            self.search_lbl.pack(side='left')
+            self.search_ent.pack(side='right', fill='x', expand=1)
+            self.search_frm.pack(side='top', fill='x')
+            self.search_ent.focus_set()
+
+            self.result_lst = Tkinter.Listbox(window, 
+                font=('helvetica', 8), height=6)
+            self.result_lst.bind('<Button-1>', self.select)
+            self.result_lst.bind('<Double-Button-1>', self.goto)
+            self.result_scr = Tkinter.Scrollbar(window,
+                orient='vertical', command=self.result_lst.yview)
+            self.result_lst.config(yscrollcommand=self.result_scr.set)
+
+            self.result_frm = Tkinter.Frame(window)
+            self.goto_btn = Tkinter.Button(self.result_frm,
+                text='go to selected', command=self.goto)
+            self.hide_btn = Tkinter.Button(self.result_frm,
+                text='hide results', command=self.hide)
+            self.goto_btn.pack(side='left', fill='x', expand=1)
+            self.hide_btn.pack(side='right', fill='x', expand=1)
+
+            self.window.update()
+            self.minwidth = self.window.winfo_width()
+            self.minheight = self.window.winfo_height()
+            self.bigminheight = (self.server_frm.winfo_reqheight() +
+                                 self.search_frm.winfo_reqheight() +
+                                 self.result_lst.winfo_reqheight() +
+                                 self.result_frm.winfo_reqheight())
+            self.bigwidth, self.bigheight = self.minwidth, self.bigminheight
+            self.expanded = 0
+            self.window.wm_geometry('%dx%d' % (self.minwidth, self.minheight))
+            self.window.wm_minsize(self.minwidth, self.minheight)
+
+            import threading
+            threading.Thread(target=serve, args=(port, self.ready)).start()
+
+        def ready(self, server):
+            self.server = server
+            self.title_lbl.config(
+                text='Python documentation server at\n' + server.url)
+            self.open_btn.config(state='normal')
+            self.quit_btn.config(state='normal')
+
+        def open(self, event=None):
+            import webbrowser
+            webbrowser.open(self.server.url)
+
+        def quit(self, event=None):
+            if self.server:
+                self.server.quit = 1
+            self.window.quit()
+
+        def search(self, event=None):
+            key = self.search_ent.get()
+            self.stop_btn.pack(side='right')
+            self.stop_btn.config(state='normal')
+            self.search_lbl.config(text='Searching for "%s"...' % key)
+            self.search_ent.forget()
+            self.search_lbl.pack(side='left')
+            self.result_lst.delete(0, 'end')
+            self.goto_btn.config(state='disabled')
+            self.expand()
+
+            import threading
+            if self.scanner:
+                self.scanner.quit = 1
+            self.scanner = ModuleScanner()
+            threading.Thread(target=self.scanner.run,
+                             args=(key, self.update, self.done)).start()
+
+        def update(self, path, modname, desc):
+            if modname[-9:] == '.__init__':
+                modname = modname[:-9] + ' (package)'
+            self.result_lst.insert('end',
+                modname + ' - ' + (desc or '(no description)'))
+
+        def stop(self, event=None):
+            if self.scanner:
+                self.scanner.quit = 1
+                self.scanner = None
+
+        def done(self):
+            self.scanner = None
+            self.search_lbl.config(text='Search for')
+            self.search_lbl.pack(side='left')
+            self.search_ent.pack(side='right', fill='x', expand=1)
+            if sys.platform != 'win32': self.stop_btn.forget()
+            self.stop_btn.config(state='disabled')
+
+        def select(self, event=None):
+            self.goto_btn.config(state='normal')
+
+        def goto(self, event=None):
+            selection = self.result_lst.curselection()
+            if selection:
+                import webbrowser
+                modname = split(self.result_lst.get(selection[0]))[0]
+                webbrowser.open(self.server.url + modname + '.html')
+
+        def collapse(self):
+            if not self.expanded: return
+            self.result_frm.forget()
+            self.result_scr.forget()
+            self.result_lst.forget()
+            self.bigwidth = self.window.winfo_width()
+            self.bigheight = self.window.winfo_height()
+            self.window.wm_geometry('%dx%d' % (self.minwidth, self.minheight))
+            self.window.wm_minsize(self.minwidth, self.minheight)
+            self.expanded = 0
+
+        def expand(self):
+            if self.expanded: return
+            self.result_frm.pack(side='bottom', fill='x')
+            self.result_scr.pack(side='right', fill='y')
+            self.result_lst.pack(side='top', fill='both', expand=1)
+            self.window.wm_geometry('%dx%d' % (self.bigwidth, self.bigheight))
+            self.window.wm_minsize(self.minwidth, self.bigminheight)
+            self.expanded = 1
+
+        def hide(self, event=None):
+            self.stop()
+            self.collapse()
+
+    import Tkinter
+    try:
+        gui = GUI(Tkinter.Tk())
+        Tkinter.mainloop()
     except KeyboardInterrupt:
-        print 'server stopped'
+        pass
 
 # -------------------------------------------------- command-line interface
 
 def cli():
+    """Command-line interface (looks at sys.argv to decide what to do)."""
     import getopt
     class BadUsage: pass
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'k:p:w')
+        if sys.platform in ['mac', 'win', 'win32', 'nt'] and not sys.argv[1:]:
+            # CLI-less platforms
+            gui()
+            return
+
+        opts, args = getopt.getopt(sys.argv[1:], 'gk:p:w')
         writing = 0
 
         for opt, val in opts:
+            if opt == '-g':
+                gui()
+                return
             if opt == '-k':
-                apropos(lower(val))
-                break
+                apropos(val)
+                return
             if opt == '-p':
                 try:
                     port = int(val)
                 except ValueError:
                     raise BadUsage
-                def ready(port=port):
-                    print 'server ready at http://127.0.0.1:%d/' % port
-                serve(('127.0.0.1', port), ready)
-                break
+                def ready(server):
+                    print 'server ready at %s' % server.url
+                serve(port, ready)
+                return
             if opt == '-w':
-                if not args: raise BadUsage
                 writing = 1
-        else:
-            if args:
-                for arg in args:
-                    try:
-                        if os.path.isfile(arg):
-                            arg = importfile(arg)
-                        if writing:
-                            if os.path.isdir(arg): writedocs(arg)
-                            else: writedoc(arg)
-                        else: man(arg)
-                    except DocImportError, value:
-                        print 'problem in %s - %s' % (
-                            value.filename, value.args)
-            else:
-                if sys.platform in ['mac', 'win', 'win32', 'nt']:
-                    # GUI platforms with threading
-                    import threading
-                    ready = threading.Event()
-                    address = ('127.0.0.1', 12346)
-                    threading.Thread(
-                        target=serve, args=(address, ready.set)).start()
-                    ready.wait()
-                    import webbrowser
-                    webbrowser.open('http://127.0.0.1:12346/')
-                else:
-                    raise BadUsage
+
+        if not args: raise BadUsage
+        for arg in args:
+            try:
+                if find(arg, os.sep) >= 0 and os.path.isfile(arg):
+                    arg = importfile(arg)
+                if writing: writedoc(arg)
+                else: man(arg)
+            except DocImportError, value:
+                print 'Problem in %s - %s' % (value.filename, value.args)
 
     except (getopt.error, BadUsage):
-        print """%s <name> ...
-    Show documentation on something.
-    <name> may be the name of a Python function, module, or package,
-    or a dotted reference to a class or function within a module or
-    module in a package, or the filename of a Python module to import.
+        cmd = sys.argv[0]
+        print """pydoc - the Python documentation tool
+
+%s <name> ...
+    Show text documentation on something.  <name> may be the name of a
+    function, module, or package, or a dotted reference to a class or
+    function within a module or module in a package.  If <name> contains
+    a '%s', it is used as the path to a Python source file to document.
 
 %s -k <keyword>
-    Search for a keyword in the synopsis lines of all modules.
+    Search for a keyword in the synopsis lines of all available modules.
 
 %s -p <port>
     Start an HTTP server on the given port on the local machine.
 
-%s -w <module> ...
-    Write out the HTML documentation for a module to a file.
+%s -g
+    Pop up a graphical interface for serving and finding documentation.
 
-%s -w <moduledir>
-    Write out the HTML documentation for all modules in the tree
-    under a given directory to files in the current directory.
-""" % ((sys.argv[0],) * 5)
+%s -w <name> ...
+    Write out the HTML documentation for a module to a file in the current
+    directory.  If <name> contains a '%s', it is treated as a filename.
+""" % (cmd, os.sep, cmd, cmd, cmd, cmd, os.sep)
 
-if __name__ == '__main__':
-    cli()
+if __name__ == '__main__': cli()
+
+
