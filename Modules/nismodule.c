@@ -14,11 +14,11 @@
 #include "modsupport.h"
 #include "ceval.h"
 
-#include <rpcsvc/ypclnt.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <rpc/rpc.h>
 #include <rpcsvc/yp_prot.h>
+#include <rpcsvc/ypclnt.h>
 
 static object *NisError;
 
