@@ -414,9 +414,9 @@ def NamedTemporaryFile(mode='w+b', bufsize=-1, suffix="",
     'bufsize' -- the buffer size argument to os.fdopen (default -1).
     The file is created as mkstemp() would do it.
 
-    Returns a file object; the name of the file is accessible as
-    file.name.  The file will be automatically deleted when it is
-    closed.
+    Returns an object with a file-like interface; the name of the file
+    is accessible as file.name.  The file will be automatically deleted
+    when it is closed.
     """
 
     if dir is None:
@@ -451,8 +451,8 @@ else:
         'bufsize' -- the buffer size argument to os.fdopen (default -1).
         The file is created as mkstemp() would do it.
 
-        Returns a file object.  The file has no name, and will cease to
-        exist when it is closed.
+        Returns an object with a file-like interface.  The file has no
+        name, and will cease to exist when it is closed.
         """
 
         if dir is None:
