@@ -81,8 +81,7 @@ arguments.";
 static PyObject *
 md5_digest(md5object *self, PyObject *args)
 {
-
-	MD5_CTX mdContext;
+ 	MD5_CTX mdContext;
 	unsigned char aDigest[16];
 
 	if (!PyArg_NoArgs(args))
@@ -101,6 +100,41 @@ static char digest_doc [] =
 Return the digest of the strings passed to the update() method so\n\
 far. This is an 16-byte string which may contain non-ASCII characters,\n\
 including null bytes.";
+
+
+static PyObject *
+md5_hexdigest(md5object *self, PyObject *args)
+{
+ 	MD5_CTX mdContext;
+	unsigned char digest[16];
+	unsigned char hexdigest[32];
+	int i, j;
+
+	if (!PyArg_NoArgs(args))
+		return NULL;
+
+	/* make a temporary copy, and perform the final */
+	mdContext = self->md5;
+	MD5Final(digest, &mdContext);
+
+	/* Make hex version of the digest */
+	for(i=j=0; i<16; i++) {
+		char c;
+		c = (digest[i] >> 4) & 0xf;
+		c = (c>9) ? c+'a'-10 : c + '0';
+		hexdigest[j++] = c;
+		c = (digest[i] & 0xf);
+		c = (c>9) ? c+'a'-10 : c + '0';
+		hexdigest[j++] = c;
+	}
+	return PyString_FromStringAndSize((char*)hexdigest, 32);
+}
+
+
+static char hexdigest_doc [] =
+"hexdigest() -> string\n\
+\n\
+Like digest(), but returns the digest as a string of hexadecimal digits.";
 
 
 static PyObject *
@@ -126,13 +160,11 @@ Return a copy (``clone'') of the md5 object.";
 
 
 static PyMethodDef md5_methods[] = {
-	{"update",		(PyCFunction)md5_update, 
-	 METH_OLDARGS, update_doc},
-	{"digest",		(PyCFunction)md5_digest, 
-	 METH_OLDARGS, digest_doc},
-	{"copy",		(PyCFunction)md5_copy, 
-	 METH_OLDARGS, copy_doc},
-	{NULL,			NULL}		/* sentinel */
+	{"update",    (PyCFunction)md5_update,    METH_OLDARGS, update_doc},
+	{"digest",    (PyCFunction)md5_digest,    METH_OLDARGS, digest_doc},
+	{"hexdigest", (PyCFunction)md5_hexdigest, METH_OLDARGS, hexdigest_doc},
+	{"copy",      (PyCFunction)md5_copy,      METH_OLDARGS, copy_doc},
+	{NULL, NULL}			     /* sentinel */
 };
 
 static PyObject *
