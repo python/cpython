@@ -217,7 +217,7 @@ are probably experiencing compiler bugs, usually related to
 optimization.  This is a common problem with some versions of gcc, and
 some vendor-supplied compilers, which can sometimes be worked around
 by turning off optimization.  Consider switching to stable versions
-(gcc 2.95.2, or contact your vendor.)
+(gcc 2.95.2, gcc 3.x, or contact your vendor.)
 
 From Python 2.0 onward, all Python C code is ANSI C.  Compiling using
 old K&R-C-only compilers is no longer possible.  ANSI C compilers are
