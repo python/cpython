@@ -733,10 +733,6 @@ class PyBuildExt(build_ext):
                         extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('icglue', ['icgluemodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('macfs',
-                                   ['macfsmodule.c',
-                                    '../Python/getapplbycreator.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_Res', ['res/_Resmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_Snd', ['snd/_Sndmodule.c'],
@@ -746,8 +742,6 @@ class PyBuildExt(build_ext):
             exts.append( Extension('_AE', ['ae/_AEmodule.c'],
                     extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_AH', ['ah/_AHmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Alias', ['alias/_Aliasmodule.c'],
                     extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_App', ['app/_Appmodule.c'],
                     extra_link_args=['-framework', 'Carbon']) )
