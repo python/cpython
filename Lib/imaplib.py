@@ -4,6 +4,8 @@ Based on RFC 2060.
 
 Author: Piers Lauder <piers@cs.su.oz.au> December 1997.
 
+Authentication code contributed by Donn Cave <donn@u.washington.edu> June 1998.
+
 Public class:		IMAP4
 Public variable:	Debug
 Public functions:	Internaldate2tuple
@@ -11,8 +13,12 @@ Public functions:	Internaldate2tuple
 			ParseFlags
 			Time2Internaldate
 """
+#
+#	$Header$
+#
+__version__ = "$Revision$"
 
-import re, socket, string, time, random
+import binascii, re, socket, string, time, random
 
 #	Globals
 
@@ -41,6 +47,7 @@ Commands = {
 	'LOGOUT':	('NONAUTH', 'AUTH', 'SELECTED', 'LOGOUT'),
 	'LSUB':		('AUTH', 'SELECTED'),
 	'NOOP':		('NONAUTH', 'AUTH', 'SELECTED', 'LOGOUT'),
+	'PARTIAL':	('SELECTED',),
 	'RENAME':	('AUTH', 'SELECTED'),
 	'SEARCH':	('SELECTED',),
 	'SELECT':	('AUTH', 'SELECTED'),
@@ -53,7 +60,7 @@ Commands = {
 
 #	Patterns to match server responses
 
-Continuation = re.compile(r'\+ (?P<data>.*)')
+Continuation = re.compile(r'\+( (?P<data>.*))?')
 Flags = re.compile(r'.*FLAGS \((?P<flags>[^\)]*)\)')
 InternalDate = re.compile(r'.*INTERNALDATE "'
 	r'(?P<day>[ 123][0-9])-(?P<mon>[A-Z][a-z][a-z])-(?P<year>[0-9][0-9][0-9][0-9])'
@@ -62,7 +69,7 @@ InternalDate = re.compile(r'.*INTERNALDATE "'
 	r'"')
 Literal = re.compile(r'(?P<data>.*) {(?P<size>\d+)}$')
 Response_code = re.compile(r'\[(?P<type>[A-Z-]+)( (?P<data>[^\]]*))?\]')
-Untagged_response = re.compile(r'\* (?P<type>[A-Z-]+) (?P<data>.*)')
+Untagged_response = re.compile(r'\* (?P<type>[A-Z-]+)( (?P<data>.*))?')
 Untagged_status = re.compile(r'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?')
 
 
@@ -81,8 +88,9 @@ class IMAP4:
 
 	All arguments to commands are converted to strings, except for
 	the last argument to APPEND which is passed as an IMAP4
-	literal.  If necessary (the string isn't enclosed with either
-	parentheses or double quotes) each converted string is quoted.
+	literal.  If necessary (the string contains white-space and
+	isn't enclosed with either parentheses or double quotes) each
+	string is quoted.
 
 	Each command returns a tuple: (type, [data, ...]) where 'type'
 	is usually 'OK' or 'NO', and 'data' is either the text from the
@@ -91,6 +99,11 @@ class IMAP4:
 	Errors raise the exception class <instance>.error("<reason>").
 	IMAP4 server errors raise <instance>.abort("<reason>"),
 	which is a sub-class of 'error'.
+
+	Note: to use this module, you must read the RFCs pertaining
+	to the IMAP4 protocol, as the semantics of the arguments to
+	each IMAP4 command are left to the invoker, not to mention
+	the results.
 	"""
 
 	class error(Exception): pass	# Logical errors - debug required
@@ -110,9 +123,7 @@ class IMAP4:
 
 		# Open socket to server.
 
-		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.sock.connect(self.host, self.port)
-		self.file = self.sock.makefile('r')
+		self.open(host, port)
 
 		# Create unique tag for this session,
 		# and compile tagged response matcher.
@@ -156,6 +167,13 @@ class IMAP4:
 			raise self.error('server not IMAP4 compliant')
 
 
+	def open(self, host, port):
+		"""Setup 'self.sock' and 'self.file'."""
+		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.sock.connect(self.host, self.port)
+		self.file = self.sock.makefile('r')
+
+
 	def __getattr__(self, attr):
 		"""Allow UPPERCASE variants of all following IMAP4 commands."""
 		if Commands.has_key(attr):
@@ -173,7 +191,8 @@ class IMAP4:
 		"""
 		name = 'APPEND'
 		if flags:
-			flags = '(%s)' % flags
+			if (flags[0],flags[-1]) != ('(',')'):
+				flags = '(%s)' % flags
 		else:
 			flags = None
 		if date_time:
@@ -184,12 +203,32 @@ class IMAP4:
 		return self._simple_command(name, mailbox, flags, date_time)
 
 
-	def authenticate(self, func):
+	def authenticate(self, mechanism, authobject):
 		"""Authenticate command - requires response processing.
 
-		UNIMPLEMENTED
+		'mechanism' specifies which authentication mechanism is to
+		be used - it must appear in <instance>.capabilities in the
+		form AUTH=<mechanism>.
+
+		'authobject' must be a callable object:
+
+			data = authobject(response)
+
+		It will be called to process server continuation responses.
+		It should return data that will be encoded and sent to server.
+		It should return None if the client abort response '*' should
+		be sent instead.
 		"""
-		raise self.error('UNIMPLEMENTED')
+		mech = string.upper(mechanism)
+		cap = 'AUTH=%s' % mech
+		if not cap in self.capabilities:
+			raise self.error("Server doesn't allow %s authentication." % mech)
+		self.literal = _Authenticator(authobject).process
+		typ, dat = self._simple_command('AUTHENTICATE', mech)
+		if typ != 'OK':
+			raise self.error(dat)
+		self.state = 'AUTH'
+		return typ, dat
 
 
 	def check(self):
@@ -324,18 +363,32 @@ class IMAP4:
 
 		(typ, data) = <instance>.noop()
 		"""
+		if __debug__ and self.debug >= 3:
+			print '\tuntagged responses: %s' % `self.untagged_responses`
 		return self._simple_command('NOOP')
 
 
+	def partial(self, message_num, message_part, start, length):
+		"""Fetch truncated part of a message.
+
+		(typ, [data, ...]) = <instance>.partial(message_num, message_part, start, length)
+
+		'data' is tuple of message part envelope and data.
+		"""
+		name = 'PARTIAL'
+		typ, dat = self._simple_command(name, message_num, message_part, start, length)
+		return self._untagged_response(typ, 'FETCH')
+
+
 	def recent(self):
-		"""Return most recent 'RECENT' response if it exists,
+		"""Return most recent 'RECENT' responses if any exist,
 		else prompt server for an update using the 'NOOP' command,
 		and flush all untagged responses.
 
 		(typ, [data]) = <instance>.recent()
 
 		'data' is None if no new messages,
-		else value of RECENT response.
+		else list of RECENT responses, most recent last.
 		"""
 		name = 'RECENT'
 		typ, dat = self._untagged_response('OK', name)
@@ -361,7 +414,7 @@ class IMAP4:
 
 		(code, [data]) = <instance>.response(code)
 		"""
-		return self._untagged_response(code, code)
+		return self._untagged_response(code, string.upper(code))
 
 
 	def search(self, charset, criteria):
@@ -403,6 +456,14 @@ class IMAP4:
 		return typ, self.untagged_responses.get('EXISTS', [None])
 
 
+	def socket(self):
+		"""Return socket instance used to connect to IMAP4 server.
+
+		socket = <instance>.socket()
+		"""
+		return self.sock
+
+
 	def status(self, mailbox, names):
 		"""Request named status conditions for mailbox.
 
@@ -440,8 +501,14 @@ class IMAP4:
 
 		Returns response appropriate to 'command'.
 		"""
+		command = string.upper(command)
+		if not Commands.has_key(command):
+			raise self.error("Unknown IMAP4 UID command: %s" % command)
+		if self.state not in Commands[command]:
+			raise self.error('command %s illegal in state %s'
+						% (command, self.state))
 		name = 'UID'
-		typ, dat = apply(self._simple_command, ('UID', command) + args)
+		typ, dat = apply(self._simple_command, (name, command) + args)
 		if command == 'SEARCH':
 			name = 'SEARCH'
 		else:
@@ -476,13 +543,13 @@ class IMAP4:
 
 	def _append_untagged(self, typ, dat):
 
-		if self.untagged_responses.has_key(typ):
-			self.untagged_responses[typ].append(dat)
+		ur = self.untagged_responses
+		if ur.has_key(typ):
+			ur[typ].append(dat)
 		else:
-			self.untagged_responses[typ] = [dat]
-
+			ur[typ] = [dat]
 		if __debug__ and self.debug >= 5:
-			print '\tuntagged_responses[%s] += %.20s..' % (typ, `dat`)
+			print '\tuntagged_responses[%s] %s += %s' % (typ, len(`ur[typ]`), _trunc(20, `dat`))
 
 
 	def _command(self, name, *args):
@@ -491,6 +558,9 @@ class IMAP4:
 			self.literal = None
 			raise self.error(
 			'command %s illegal in state %s' % (name, self.state))
+
+		if self.untagged_responses.has_key('OK'):
+			del self.untagged_responses['OK']
 
 		tag = self._new_tag()
 		data = '%s %s' % (tag, name)
@@ -508,7 +578,11 @@ class IMAP4:
 		literal = self.literal
 		if literal is not None:
 			self.literal = None
-			data = '%s {%s}' % (data, len(literal))
+			if type(literal) is type(self._command):
+				literator = literal
+			else:
+				literator = None
+				data = '%s {%s}' % (data, len(literal))
 
 		try:
 			self.sock.send('%s%s' % (data, CRLF))
@@ -521,22 +595,29 @@ class IMAP4:
 		if literal is None:
 			return tag
 
-		# Wait for continuation response
+		while 1:
+			# Wait for continuation response
 
-		while self._get_response():
-			if self.tagged_commands[tag]:	# BAD/NO?
-				return tag
+			while self._get_response():
+				if self.tagged_commands[tag]:	# BAD/NO?
+					return tag
 
-		# Send literal
+			# Send literal
 
-		if __debug__ and self.debug >= 4:
-			print '\twrite literal size %s' % len(literal)
+			if literator:
+				literal = literator(self.continuation_response)
 
-		try:
-			self.sock.send(literal)
-			self.sock.send(CRLF)
-		except socket.error, val:
-			raise self.abort('socket error: %s' % val)
+			if __debug__ and self.debug >= 4:
+				print '\twrite literal size %s' % len(literal)
+
+			try:
+				self.sock.send(literal)
+				self.sock.send(CRLF)
+			except socket.error, val:
+				raise self.abort('socket error: %s' % val)
+
+			if not literator:
+				break
 
 		return tag
 
@@ -590,10 +671,11 @@ class IMAP4:
 					self.continuation_response = self.mo.group('data')
 					return None	# NB: indicates continuation
 
-				raise self.abort('unexpected response: %s' % resp)
+				raise self.abort("unexpected response: '%s'" % resp)
 
 			typ = self.mo.group('type')
 			dat = self.mo.group('data')
+			if dat is None: dat = ''	# Null untagged response
 			if dat2: dat = dat + ' ' + dat2
 
 			# Is there a literal to come?
@@ -679,10 +761,54 @@ class IMAP4:
 			return typ, [None]
 		data = self.untagged_responses[name]
 		if __debug__ and self.debug >= 5:
-			print '\tuntagged_responses[%s] => %.20s..' % (name, `data`)
+			print '\tuntagged_responses[%s] => %s' % (name, _trunc(20, `data`))
 		del self.untagged_responses[name]
 		return typ, data
 
+
+
+class _Authenticator:
+
+	"""Private class to provide en/decoding
+		for base64-based authentication conversation.
+	"""
+
+	def __init__(self, mechinst):
+		self.mech = mechinst	# Callable object to provide/process data
+
+	def process(self, data):
+		ret = self.mech(self.decode(data))
+		if ret is None:
+			return '*'	# Abort conversation
+		return self.encode(ret)
+
+	def encode(self, inp):
+		#
+		#  Invoke binascii.b2a_base64 iteratively with
+		#  short even length buffers, strip the trailing
+		#  line feed from the result and append.  "Even"
+		#  means a number that factors to both 6 and 8,
+		#  so when it gets to the end of the 8-bit input
+		#  there's no partial 6-bit output.
+		#
+		oup = ''
+		while inp:
+			if len(inp) > 48:
+				t = inp[:48]
+				inp = inp[48:]
+			else:
+				t = inp
+				inp = ''
+			e = binascii.b2a_base64(t)
+			if e:
+				oup = oup + e[:-1]
+		return oup
+  
+	def decode(self, inp):
+		if not inp:
+			return ''
+		return binascii.a2b_base64(inp)
+ 
 
 
 Mon2num = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
@@ -779,6 +905,14 @@ def Time2Internaldate(date_time):
 
 
 
+if __debug__:
+
+	def _trunc(m, s):
+		if len(s) <= m: return s
+		return '%.*s..' % (m, s)
+
+
+
 if __debug__ and __name__ == '__main__':
 
 	host = ''
@@ -798,8 +932,8 @@ if __debug__ and __name__ == '__main__':
 	('CREATE', ('/tmp/yyz 2',)),
 	('append', ('/tmp/yyz 2', None, None, 'From: anon@x.y.z\n\ndata...')),
 	('select', ('/tmp/yyz 2',)),
-	('uid', ('SEARCH', 'ALL')),
-	('fetch', ('1', '(INTERNALDATE RFC822)')),
+	('search', (None, '(TO zork)')),
+	('partial', ('1', 'RFC822', 1, 1024)),
 	('store', ('1', 'FLAGS', '(\Deleted)')),
 	('expunge', ()),
 	('recent', ()),
@@ -820,7 +954,7 @@ if __debug__ and __name__ == '__main__':
 		print ' %s %s\n  => %s %s' % (cmd, args, typ, dat)
 		return dat
 
-	Debug = 4
+	Debug = 5
 	M = IMAP4(host)
 	print 'PROTOCOL_VERSION = %s' % M.PROTOCOL_VERSION
 
@@ -839,6 +973,6 @@ if __debug__ and __name__ == '__main__':
 		if (cmd,args) != ('uid', ('SEARCH', 'ALL')):
 			continue
 
-		uid = string.split(dat[0])[-1]
+		uid = string.split(dat[-1])[-1]
 		run('uid', ('FETCH', '%s' % uid,
-			'(FLAGS INTERNALDATE RFC822.SIZE RFC822.HEADER RFC822)'))
+			'(FLAGS INTERNALDATE RFC822.SIZE RFC822.HEADER RFC822.TEXT)'))
