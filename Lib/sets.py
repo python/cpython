@@ -227,12 +227,12 @@ class BaseSet(object):
         (Called in response to the expression `element in self'.)
         """
         try:
-            transform = element._as_temporarily_immutable
-        except AttributeError:
-            pass
-        else:
-            element = transform()
-        return element in self._data
+            return element in self._data
+        except TypeError:
+            transform = getattr(element, "_as_temporary_immutable", None)
+            if transform is None:
+                raise # re-raise the TypeError exception we caught
+            return transform() in self._data
 
     # Subset and superset test
 
@@ -369,14 +369,14 @@ class Set(BaseSet):
         """Add all values from an iterable (such as a list or file)."""
         data = self._data
         value = True
-        for elt in iterable:
+        for element in iterable:
             try:
-                transform = elt._as_immutable
-            except AttributeError:
-                pass
-            else:
-                elt = transform()
-            data[elt] = value
+                data[element] = value
+            except TypeError:
+                transform = getattr(element, "_as_temporary_immutable", None)
+                if transform is None:
+                    raise # re-raise the TypeError exception we caught
+                data[transform()] = value
 
     def clear(self):
         """Remove all elements from this set."""
@@ -390,12 +390,12 @@ class Set(BaseSet):
         This has no effect if the element is already present.
         """
         try:
-            transform = element._as_immutable
-        except AttributeError:
-            pass
-        else:
-            element = transform()
-        self._data[element] = True
+            self._data[element] = True
+        except TypeError:
+            transform = getattr(element, "_as_temporary_immutable", None)
+            if transform is None:
+                raise # re-raise the TypeError exception we caught
+            self._data[transform()] = True
 
     def remove(self, element):
         """Remove an element from a set; it must be a member.
@@ -403,12 +403,12 @@ class Set(BaseSet):
         If the element is not a member, raise a KeyError.
         """
         try:
-            transform = element._as_temporarily_immutable
-        except AttributeError:
-            pass
-        else:
-            element = transform()
-        del self._data[element]
+            del self._data[element]
+        except TypeError:
+            transform = getattr(element, "_as_temporary_immutable", None)
+            if transform is None:
+                raise # re-raise the TypeError exception we caught
+            del self._data[transform()]
 
     def discard(self, element):
         """Remove an element from a set if it is a member.
