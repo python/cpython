@@ -21,7 +21,7 @@
 
 \begin{abstract}
 \noindent
-The Python language documentation has a substantial body of
+The Python language has a substantial body of
 documentation, much of it contributed by various authors.  The markup
 used for the Python documentation is based on \LaTeX{} and requires a
 significant set of macros written specifically for documenting Python.
@@ -93,8 +93,8 @@ distribution, to create or maintain whole documents or sections.
   \begin{definitions}
     \term{Document Sources}
 	The \LaTeX{} sources for each document are placed in a
-	separate directory.  These directories are given short,
-	three-character names:
+	separate directory.  These directories are given short
+	names which vaguely indicate the document in each:
 
 	\begin{tableii}{p{.75in}|p{3in}}{filenq}{Directory}{Document Title}
 	  \lineii{api/}
@@ -160,7 +160,7 @@ distribution, to create or maintain whole documents or sections.
   productively without having to become ``\TeX{}nicians.''
 
   Perhaps the most important concept to keep in mind while marking up
-  Python documentation is the while \TeX{} is unstructured, \LaTeX{} was
+  Python documentation is that while \TeX{} is unstructured, \LaTeX{} was
   designed as a layer on top of \TeX{} which specifically supports 
   structured markup.  The Python-specific markup is intended to extend
   the structure provided by standard \LaTeX{} document classes to
@@ -219,7 +219,7 @@ distribution, to create or maintain whole documents or sections.
   originally using the LinuxDoc software.  The original intent for the
   document class was that it serve a similar role as the LDP's HOWTO
   series, but the applicability of the class turns out to be somewhat
-  more broad.  This class is used for ``how-to'' documents (this
+  broader.  This class is used for ``how-to'' documents (this
   document is an example) and for shorter reference manuals for small,
   fairly cohesive module libraries.  Examples of the later use include
   the standard \citetitle[../mac/mac.html]{Macintosh Library Modules}
@@ -298,7 +298,7 @@ distribution, to create or maintain whole documents or sections.
       Environment used to described a C function.  The \var{type}
       should be specified as a \keyword{typedef} name, \code{struct
       \var{tag}}, or the name of a primitive type.  If it is a pointer
-      type, the trailing asterisk should not be preceeded by a space.
+      type, the trailing asterisk should not be preceded by a space.
       \var{name} should be the name of the function (or function-like
       pre-processor macro), and \var{args} should give the types and
       names of the parameters.  The names need to be given so they may
@@ -319,7 +319,7 @@ distribution, to create or maintain whole documents or sections.
       Description of a global C variable.  \var{type} should be the
       \keyword{typedef} name, \code{struct \var{tag}}, or the name of
       a primitive type.  If variable has a pointer type, the trailing
-      asterisk should \emph{not} be preceeded by a space.
+      asterisk should \emph{not} be preceded by a space.
     \end{envdesc}
 
     \begin{envdesc}{datadesc}{\p{name}}
