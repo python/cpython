@@ -192,7 +192,7 @@ class Message:
 
         These will be sorted in the order they appeared in the original
         message, and may contain duplicates.  Any fields deleted and
-        re-inserted are alwyas appended to the header list.
+        re-inserted are always appended to the header list.
         """
         return [v for k, v in self._headers]
 
@@ -201,7 +201,7 @@ class Message:
 
         These will be sorted in the order they appeared in the original
         message, and may contain duplicates.  Any fields deleted and
-        re-inserted are alwyas appended to the header list.
+        re-inserted are always appended to the header list.
         """
         return self._headers[:]
 
