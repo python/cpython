@@ -11,7 +11,7 @@
 Top = :::
 CC = SC
 CFlagsNoInclude = -woff -e -model cfmseg -b ¶
-	-d HAVE_CONFIG_H=1 -d MPW=1
+	-d HAVE_CONFIG_H=1 -d MPW=1 -d USE_MAC_SHARED_LIBRARY=1
 PythonIncludes = -i "{Top}"Mac: -i "{Top}"Include:
 MacIncludes = -i "{CIncludes}"
 CFlagsMac = {CFlagsNoInclude} {MacIncludes} {PythonIncludes}
@@ -39,6 +39,7 @@ ALL = ¶
 	"{Objs}"errors.c.o ¶
 	"{Objs}"fileobject.c.o ¶
 	"{Objs}"floatobject.c.o ¶
+#	"{Objs}"fmod.c.o ¶
 	"{Objs}"frameobject.c.o ¶
 	"{Objs}"funcobject.c.o ¶
 	"{Objs}"gestaltmodule.c.o ¶
@@ -63,6 +64,7 @@ ALL = ¶
 	"{Objs}"macmodule.c.o ¶
 	"{Objs}"macosmodule.c.o ¶
 	"{Objs}"macsetfiletype.c.o ¶
+	"{Objs}"macshlglue.c.o ¶
 	"{Objs}"macstat.c.o ¶
 	"{Objs}"mappingobject.c.o ¶
 	"{Objs}"marshal.c.o ¶
@@ -137,7 +139,6 @@ clean Ä
 	Delete -i "{Objs}"Å.o
 	Delete -i PythonLib PythonApplet xxmodule
 	Delete -i stdout stderr
-	Delete -i @Å
 	Delete -i Å.pyc
 
 # Delete everything that can be reconstructed
@@ -179,6 +180,7 @@ PythonLib.slb Ä {ALL}
 		-o PythonLib ¶
 		-xm s ¶
 		-model cfmseg ¶
+		-init __SINIT ¶
 		-export {Exports} ¶
 		"{CLibraries}"NuStdCLib.slb ¶
 		"{Libraries}"NuInterfaceLib.slb ¶
@@ -302,6 +304,9 @@ xxmodule.slb Ä PythonLib.slb "{Objs}"xxmodule.c.o
 
 "{Objs}"macstat.c.o Ä "{Top}"Mac:macstat.c
 	{CC} "{Top}"Mac:macstat.c -o "{Objs}"macstat.c.o -s macstat.c {CFlags}
+
+"{Objs}"macshlglue.c.o Ä "{Top}"Mac:macshlglue.c
+	{CC} "{Top}"Mac:macshlglue.c -o "{Objs}"macshlglue.c.o -s macshlglue.c {CFlags}
 
 "{Objs}"marshal.c.o Ä "{Top}"Python:marshal.c
 	{CC} "{Top}"Python:marshal.c -o "{Objs}"marshal.c.o -s marshal.c {CFlags}
@@ -503,3 +508,6 @@ xxmodule.slb Ä PythonLib.slb "{Objs}"xxmodule.c.o
 
 "{Objs}"strtod.c.o Ä "{Top}"Python:strtod.c
 	{CC} "{Top}"Python:strtod.c -o "{Objs}"strtod.c.o -s strtod.c {CFlags}
+
+"{Objs}"fmod.c.o Ä "{Top}"Python:fmod.c
+	{CC} "{Top}"Python:fmod.c -o "{Objs}"fmod.c.o -s fmod.c {CFlags}
