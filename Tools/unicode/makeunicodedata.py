@@ -51,9 +51,9 @@ def maketables(trace=0):
 
     print len(filter(None, unicode.table)), "characters"
 
-    # makeunicodename(unicode, trace)
+    makeunicodename(unicode, trace)
     makeunicodedata(unicode, trace)
-    # makeunicodetype(unicode, trace)
+    makeunicodetype(unicode, trace)
 
 # --------------------------------------------------------------------
 # unicode character properties
