@@ -849,15 +849,15 @@ eval_code2(co, globals, locals,
 				/* INLINE: list[int] */
 				long i = PyInt_AsLong(w);
 				if (i < 0)
-					i += ((PyListObject*) v)->ob_size;
+					i += PyList_GET_SIZE(v);
 				if (i < 0 ||
-				    i >= ((PyListObject*) v)->ob_size) {
+				    i >= PyList_GET_SIZE(v)) {
 					PyErr_SetString(PyExc_IndexError,
 						"list index out of range");
 					x = NULL;
 				}
 				else {
-					x = ((PyListObject*) v)->ob_item[i];
+					x = PyList_GET_ITEM(v, i);
 					Py_INCREF(x);
 				}
 			}
