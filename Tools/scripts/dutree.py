@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # Format du output in a tree shape
 
-import os, string, sys
+import os, string, sys, errno
 
 def main():
 	p = os.popen('du ' + string.join(sys.argv[1:]), 'r')
@@ -16,7 +16,11 @@ def main():
 		if comps[0] == '': comps[0] = '/'
 		if comps[len(comps)-1] == '': del comps[len(comps)-1]
 		total, d = store(size, comps, total, d)
-	display(total, d)
+	try:
+		display(total, d)
+	except IOError, e:
+		if e.errno != errno.EPIPE:
+			raise
 
 def store(size, comps, total, d):
 	if comps == []:
@@ -52,4 +56,5 @@ def show(total, d, prefix):
 		if d.has_key(key):
 			show(tsub, d[key][1], psub)
 
-main()
+if __name__ == "__main__":
+	main()
