@@ -482,8 +482,9 @@ sys_gettotalrefcount(PyObject *self)
 PyDoc_STRVAR(getrefcount_doc,
 "getrefcount(object) -> integer\n\
 \n\
-Return the current reference count for the object.  This includes the\n\
-temporary reference in the argument list, so it is at least 2."
+Return the reference count of object.  The count returned is generally\n\
+one higher than you might expect, because it includes the (temporary)\n\
+reference as an argument to getrefcount()."
 );
 
 #ifdef COUNT_ALLOCS
