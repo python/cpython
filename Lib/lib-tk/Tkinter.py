@@ -475,8 +475,10 @@ class Misc:
         Identifier returned by after or after_idle must be
         given as first parameter."""
         try:
-            (script, type) = self.tk.splitlist(
-                self.tk.call('after', 'info', id))
+            data = self.tk.call('after', 'info', id)
+            # In Tk 8.3, splitlist returns: (script, type)
+            # In Tk 8.4, splitlist may return (script, type) or (script,)
+            script = self.tk.splitlist(data)[0]
             self.deletecommand(script)
         except TclError:
             pass
