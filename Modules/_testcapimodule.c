@@ -307,6 +307,53 @@ test_L_code(PyObject *self, PyObject *args)
 
 #endif	/* ifdef HAVE_LONG_LONG */
 
+#ifdef Py_USING_UNICODE
+
+/* Test the u and u# codes for PyArg_ParseTuple. May leak memory in case
+   of an error.
+*/
+static PyObject *
+test_u_code(PyObject *self, PyObject *args)
+{
+	PyObject *tuple, *obj;
+	Py_UNICODE *value;
+	int len;
+
+        if (!PyArg_ParseTuple(args, ":test_u_code"))
+                return NULL;
+
+        tuple = PyTuple_New(1);
+        if (tuple == NULL)
+        	return NULL;
+
+        obj = PyUnicode_Decode("test", strlen("test"),
+			       "ascii", NULL);
+        if (obj == NULL)
+        	return NULL;
+
+        PyTuple_SET_ITEM(tuple, 0, obj);
+
+        value = 0;
+        if (PyArg_ParseTuple(tuple, "u:test_u_code", &value) < 0)
+        	return NULL;
+        if (value != PyUnicode_AS_UNICODE(obj))
+        	return raiseTestError("test_u_code",
+			"u code returned wrong value for u'test'");
+        value = 0;
+        if (PyArg_ParseTuple(tuple, "u#:test_u_code", &value, &len) < 0)
+        	return NULL;
+        if (value != PyUnicode_AS_UNICODE(obj) ||
+	    len != PyUnicode_GET_SIZE(obj))
+        	return raiseTestError("test_u_code",
+			"u# code returned wrong values for u'test'");
+	
+	Py_DECREF(tuple);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+#endif
+
 static PyObject *
 raise_exception(PyObject *self, PyObject *args)
 {
@@ -342,6 +389,9 @@ static PyMethodDef TestMethods[] = {
 #ifdef HAVE_LONG_LONG
 	{"test_longlong_api",	test_longlong_api,	METH_VARARGS},
 	{"test_L_code",		test_L_code,		METH_VARARGS},
+#endif
+#ifdef Py_USING_UNICODE
+	{"test_u_code",		test_u_code,		METH_VARARGS},
 #endif
 	{NULL, NULL} /* sentinel */
 };

@@ -28,6 +28,9 @@ Build
 
 C API
 
+- The "u#" parser marker will now pass through Unicode object as-is
+  without going through the buffer API.
+
 - The enumerators of cmp_op have been renamed to use the prefix PyCmp_.
 
 - An old #define of ANY as void has been removed from pyport.h.  This
