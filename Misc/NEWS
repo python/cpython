@@ -118,6 +118,11 @@ Extension modules
 Library
 -------
 
+- Support for internationalized domain names has been added through
+  the 'idna' and 'punycode' encodings, the 'stringprep' module, the
+  'mkstringprep' tool, and enhancements to the socket and httplib
+  modules.
+
 - htmlentitydefs has two new dictionaries: name2codepoint maps
   HTML entity names to Unicode codepoints (as integers).
   codepoint2name is the reverse mapping. See SF patch #722017.

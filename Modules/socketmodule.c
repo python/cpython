@@ -874,7 +874,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 				args->ob_type->tp_name);
 			return 0;
 		}
-		if (!PyArg_ParseTuple(args, "si:getsockaddrarg", &host, &port))
+		if (!PyArg_ParseTuple(args, "eti:getsockaddrarg", 
+				      "idna", &host, &port))
 			return 0;
 		if (setipaddr(host, (struct sockaddr *)addr, sizeof(*addr),  AF_INET) < 0)
 			return 0;
@@ -893,7 +894,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		int port, flowinfo, scope_id;
  		addr = (struct sockaddr_in6*)&(s->sock_addr).in6;
 		flowinfo = scope_id = 0;
-		if (!PyArg_ParseTuple(args, "si|ii", &host, &port, &flowinfo,
+		if (!PyArg_ParseTuple(args, "eti|ii", 
+				      "idna", &host, &port, &flowinfo,
 				      &scope_id)) {
 			return 0;
 		}
@@ -2782,6 +2784,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 {
 	struct addrinfo hints, *res;
 	struct addrinfo *res0 = NULL;
+	PyObject *hobj = NULL;
 	PyObject *pobj = (PyObject *)NULL;
 	char pbuf[30];
 	char *hptr, *pptr;
@@ -2789,12 +2792,27 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 	int error;
 	PyObject *all = (PyObject *)NULL;
 	PyObject *single = (PyObject *)NULL;
+	PyObject *idna = NULL;
 
 	family = socktype = protocol = flags = 0;
 	family = AF_UNSPEC;
-	if (!PyArg_ParseTuple(args, "zO|iiii:getaddrinfo",
-	    &hptr, &pobj, &family, &socktype,
-			&protocol, &flags)) {
+	if (!PyArg_ParseTuple(args, "OO|iiii:getaddrinfo",
+			      &hobj, &pobj, &family, &socktype,
+			      &protocol, &flags)) {
+		return NULL;
+	}
+	if (hobj == Py_None) {
+		hptr = NULL;
+	} else if (PyUnicode_Check(hobj)) {
+		idna = PyObject_CallMethod(hobj, "encode", "s", "idna");
+		if (!idna)
+			return NULL;
+		hptr = PyString_AsString(idna);
+	} else if (PyString_Check(hobj)) {
+		hptr = PyString_AsString(hobj);
+	} else {
+		PyErr_SetString(PyExc_TypeError, 
+				"getaddrinfo() argument 1 must be string or None");
 		return NULL;
 	}
 	if (PyInt_Check(pobj)) {
@@ -2838,12 +2856,14 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 			goto err;
 		Py_XDECREF(single);
 	}
+	Py_XDECREF(idna);
 	if (res0)
 		freeaddrinfo(res0);
 	return all;
  err:
 	Py_XDECREF(single);
 	Py_XDECREF(all);
+	Py_XDECREF(idna);
 	if (res0)
 		freeaddrinfo(res0);
 	return (PyObject *)NULL;

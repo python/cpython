@@ -1,0 +1,134 @@
+\section{\module{stringprep} ---
+         Internet String Preparation}
+
+\declaremodule{standard}{stringprep}
+\modulesynopsis{String preparation, as per RFC 3453}
+\moduleauthor{Martin v. L\"owis}{martin@v.loewis.de}
+\sectionauthor{Martin v. L\"owis}{martin@v.loewis.de}
+
+When identifying things (such as host names) in the internet, it is
+often necessary to compare such identifications for
+``equality''. Exactly how this comparison is executed may depend on
+the application domain, e.g. whether it should be case-insensitive or
+not. It may be also necessary to restrict the possible
+identifications, to allow only identifications consisting of
+``printable'' characters.
+
+\rfc{3454} defines a procedure for ``preparing'' Unicode strings in
+internet protocols. Before passing strings onto the wire, they are
+processed with the preparation procedure, after which they have a
+certain normalized form. The RFC defines a set of tables, which can be
+combined into profiles. Each profile must define which tables it uses,
+and what other optional parts of the \code{stringprep} procedure are
+part of the profile. One example of a \code{stringprep} profile is
+\code{nameprep}, which is used for internationalized domain names.
+
+The module \module{stringprep} only exposes the tables from RFC
+3454. As these tables would be very large to represent them as
+dictionaries or lists, the module uses the Unicode character database
+internally. The module source code itself was generated using the
+\code{mkstringprep.py} utility.
+
+As a result, these tables are exposed as functions, not as data
+structures. There are two kinds of tables in the RFC: sets and
+mappings. For a set, \module{stringprep} provides the ``characteristic
+function'', i.e. a function that returns true if the parameter is part
+of the set. For mappings, it provides the mapping function: given the
+key, it returns the associated value. Below is a list of all functions
+available in the module.
+
+\begin{funcdesc}{in_table_a1}{code}
+Determine whether \var{code} is in table{A.1} (Unassigned code points
+in Unicode 3.2).
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_b1}{code}
+Determine whether \var{code} is in table{B.1} (Commonly mapped to
+nothing).
+\end{funcdesc}
+
+\begin{funcdesc}{map_table_b2}{code}
+Return the mapped value for \var{code} according to table{B.2} 
+(Mapping for case-folding used with NFKC).
+\end{funcdesc}
+
+\begin{funcdesc}{map_table_b3}{code}
+Return the mapped value for \var{code} according to table{B.3} 
+(Mapping for case-folding used with no normalization).
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_c11}{code}
+Determine whether \var{code} is in table{C.1.1} 
+(ASCII space characters).
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_c12}{code}
+Determine whether \var{code} is in table{C.1.2} 
+(Non-ASCII space characters).
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_c11_c12}{code}
+Determine whether \var{code} is in table{C.1} 
+(Space characters, union of C.1.1 and C.1.2).
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_c21}{code}
+Determine whether \var{code} is in table{C.2.1} 
+(ASCII control characters).
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_c22}{code}
+Determine whether \var{code} is in table{C.2.2} 
+(Non-ASCII control characters).
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_c21_c22}{code}
+Determine whether \var{code} is in table{C.2} 
+(Control characters, union of C.2.1 and C.2.2).
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_c3}{code}
+Determine whether \var{code} is in table{C.3} 
+(Private use).
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_c4}{code}
+Determine whether \var{code} is in table{C.4} 
+(Non-character code points).
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_c5}{code}
+Determine whether \var{code} is in table{C.5} 
+(Surrogate codes).
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_c6}{code}
+Determine whether \var{code} is in table{C.6} 
+(Inappropriate for plain text).
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_c7}{code}
+Determine whether \var{code} is in table{C.7} 
+(Inappropriate for canonical representation).
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_c8}{code}
+Determine whether \var{code} is in table{C.8} 
+(Change display properties or are deprecated).
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_c9}{code}
+Determine whether \var{code} is in table{C.9} 
+(Tagging characters).
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_d1}{code}
+Determine whether \var{code} is in table{D.1} 
+(Characters with bidirectional property ``R'' or ``AL'').
+\end{funcdesc}
+
+\begin{funcdesc}{in_table_d2}{code}
+Determine whether \var{code} is in table{D.2} 
+(Characters with bidirectional property ``L'').
+\end{funcdesc}
+

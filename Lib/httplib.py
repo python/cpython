@@ -655,11 +655,11 @@ class HTTPConnection:
                     nil, netloc, nil, nil, nil = urlsplit(url)
 
                 if netloc:
-                    self.putheader('Host', netloc)
+                    self.putheader('Host', netloc.encode("idna"))
                 elif self.port == HTTP_PORT:
-                    self.putheader('Host', self.host)
+                    self.putheader('Host', self.host.encode("idna"))
                 else:
-                    self.putheader('Host', "%s:%s" % (self.host, self.port))
+                    self.putheader('Host', "%s:%s" % (self.host.encode("idna"), self.port))
 
             # note: we are assuming that clients will not attempt to set these
             #       headers since *this* library must deal with the
