@@ -753,80 +753,109 @@ class CallWrapper:
 		except:
 			self.widget._report_exception()
 
+
 class Wm:
-	def aspect(self, 
+	def wm_aspect(self, 
 		   minNumer=None, minDenom=None, 
 		   maxNumer=None, maxDenom=None):
 		return self._getints(
 			self.tk.call('wm', 'aspect', self._w, 
 				     minNumer, minDenom, 
 				     maxNumer, maxDenom))
-	def client(self, name=None):
+	aspect = wm_aspect
+	def wm_client(self, name=None):
 		return self.tk.call('wm', 'client', self._w, name)
-	def colormapwindows(self, *wlist):
+	client = wm_client
+	def wm_colormapwindows(self, *wlist):
 		args = ('wm', 'colormapwindows', self._w) + _flatten(wlist)
 		return map(self._nametowidget, self.tk.call(args))
-	def command(self, value=None):
+	colormapwindows = wm_colormapwindows
+	def wm_command(self, value=None):
 		return self.tk.call('wm', 'command', self._w, value)
-	def deiconify(self):
+	command = wm_command
+	def wm_deiconify(self):
 		return self.tk.call('wm', 'deiconify', self._w)
-	def focusmodel(self, model=None):
+	deiconify = wm_deiconify
+	def wm_focusmodel(self, model=None):
 		return self.tk.call('wm', 'focusmodel', self._w, model)
-	def frame(self):
+	focusmodel = wm_focusmodel
+	def wm_frame(self):
 		return self.tk.call('wm', 'frame', self._w)
-	def geometry(self, newGeometry=None):
+	frame = wm_frame
+	def wm_geometry(self, newGeometry=None):
 		return self.tk.call('wm', 'geometry', self._w, newGeometry)
-	def grid(self,
+	geometry = wm_geometry
+	def wm_grid(self,
 		 baseWidth=None, baseHeight=None, 
 		 widthInc=None, heightInc=None):
 		return self._getints(self.tk.call(
 			'wm', 'grid', self._w,
 			baseWidth, baseHeight, widthInc, heightInc))
-	def group(self, pathName=None):
+	grid = wm_grid
+	def wm_group(self, pathName=None):
 		return self.tk.call('wm', 'group', self._w, pathName)
-	def iconbitmap(self, bitmap=None):
+	group = wm_group
+	def wm_iconbitmap(self, bitmap=None):
 		return self.tk.call('wm', 'iconbitmap', self._w, bitmap)
-	def iconify(self):
+	iconbitmap = wm_iconbitmap
+	def wm_iconify(self):
 		return self.tk.call('wm', 'iconify', self._w)
-	def iconmask(self, bitmap=None):
+	iconify = wm_iconify
+	def wm_iconmask(self, bitmap=None):
 		return self.tk.call('wm', 'iconmask', self._w, bitmap)
-	def iconname(self, newName=None):
+	iconmask = wm_iconmask
+	def wm_iconname(self, newName=None):
 		return self.tk.call('wm', 'iconname', self._w, newName)
-	def iconposition(self, x=None, y=None):
+	iconname = wm_iconname
+	def wm_iconposition(self, x=None, y=None):
 		return self._getints(self.tk.call(
 			'wm', 'iconposition', self._w, x, y))
-	def iconwindow(self, pathName=None):
+	iconposition = wm_iconposition
+	def wm_iconwindow(self, pathName=None):
 		return self.tk.call('wm', 'iconwindow', self._w, pathName)
-	def maxsize(self, width=None, height=None):
+	iconwindow = wm_iconwindow
+	def wm_maxsize(self, width=None, height=None):
 		return self._getints(self.tk.call(
 			'wm', 'maxsize', self._w, width, height))
-	def minsize(self, width=None, height=None):
+	maxsize = wm_maxsize
+	def wm_minsize(self, width=None, height=None):
 		return self._getints(self.tk.call(
 			'wm', 'minsize', self._w, width, height))
-	def overrideredirect(self, boolean=None):
+	minsize = wm_minsize
+	def wm_overrideredirect(self, boolean=None):
 		return self._getboolean(self.tk.call(
 			'wm', 'overrideredirect', self._w, boolean))
-	def positionfrom(self, who=None):
+	overrideredirect = wm_overrideredirect
+	def wm_positionfrom(self, who=None):
 		return self.tk.call('wm', 'positionfrom', self._w, who)
-	def protocol(self, name=None, func=None):
+	positionfrom = wm_positionfrom
+	def wm_protocol(self, name=None, func=None):
 		if callable(func):
 			command = self._register(func)
 		else:
 			command = func
 		return self.tk.call(
 			'wm', 'protocol', self._w, name, command)
-	def resizable(self, width=None, height=None):
+	protocol = wm_protocol
+	def wm_resizable(self, width=None, height=None):
 		return self.tk.call('wm', 'resizable', self._w, width, height)
-	def sizefrom(self, who=None):
+	resizable = wm_resizable
+	def wm_sizefrom(self, who=None):
 		return self.tk.call('wm', 'sizefrom', self._w, who)
-	def state(self):
+	sizefrom = wm_sizefrom
+	def wm_state(self):
 		return self.tk.call('wm', 'state', self._w)
-	def title(self, string=None):
+	state = wm_state
+	def wm_title(self, string=None):
 		return self.tk.call('wm', 'title', self._w, string)
-	def transient(self, master=None):
+	title = wm_title
+	def wm_transient(self, master=None):
 		return self.tk.call('wm', 'transient', self._w, master)
-	def withdraw(self):
+	transient = wm_transient
+	def wm_withdraw(self):
 		return self.tk.call('wm', 'withdraw', self._w)
+	withdraw = wm_withdraw
+
 
 class Tk(Misc, Wm):
 	_w = '.'
