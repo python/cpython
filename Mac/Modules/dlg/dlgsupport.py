@@ -24,6 +24,11 @@ ModalFilterUPP = ModalFilterProcPtr
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 
 DITLMethod = Type("DITLMethod", "h")
+DialogItemIndex = Type("DialogItemIndex", "h")
+DialogItemType = Type("DialogItemType", "h")
+DialogItemIndexZeroBased = Type("DialogItemIndexZeroBased", "h")
+AlertType = Type("AlertType", "h")
+StringPtr = Str255
 
 includestuff = includestuff + """
 #include <Dialogs.h>

@@ -32,6 +32,9 @@ class MyScanner(Scanner):
 				listname = t + "_methods"
 		return classname, listname
 
+	def writeinitialdefs(self):
+		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+
 	def makeblacklistnames(self):
 		return [
 			"DisposeMovie",		# Done on python-object disposal

@@ -7,7 +7,7 @@ from bgenlocations import TOOLBOXDIR
 
 LONG = "Lists"
 SHORT = "list"
-OBJECT = "ListRef"
+OBJECT = "ListHandle"
 
 def main():
 	input = LONG + ".h"

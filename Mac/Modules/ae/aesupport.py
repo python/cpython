@@ -13,6 +13,9 @@ AEArrayType = Type("AEArrayType", "c")
 AESendMode = Type("AESendMode", "l")
 AESendPriority = Type("AESendPriority", "h")
 AEInteractAllowed = Type("AEInteractAllowed", "b")
+AEReturnID = Type("AEReturnID", "h")
+AETransactionID = Type("AETransactionID", "h")
+
 
 
 AEEventClass = OSTypeType('AEEventClass')
@@ -199,6 +202,7 @@ functions = []
 aedescmethods = []
 
 execfile('aegen.py')
+execfile('aedatamodelgen.py')
 
 for f in functions: module.add(f)
 for f in aedescmethods: aedescobject.add(f)

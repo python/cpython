@@ -33,6 +33,16 @@ CCTabHandle = OpaqueByValueType("CCTabHandle", "ResObj")
 AuxCtlHandle = OpaqueByValueType("AuxCtlHandle", "ResObj")
 ControlPartCode = Type("ControlPartCode", "h")
 DragConstraint = Type("DragConstraint", "h")
+ControlVariant = Type("ControlVariant", "h")
+IconTransformType = Type("IconTransformType", "h")
+ControlButtonGraphicAlignment = Type("ControlButtonGraphicAlignment", "h")
+ControlButtonTextAlignment = Type("ControlButtonTextAlignment", "h")
+ControlButtonTextPlacement = Type("ControlButtonTextPlacement", "h")
+ControlContentType = Type("ControlContentType", "h")
+ControlFocusPart = Type("ControlFocusPart", "h")
+
+ControlFontStyleRec = OpaqueType('ControlFontStyleRec', 'ControlFontStyle')
+ControlFontStyleRec_ptr = ControlFontStyleRec
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
@@ -40,10 +50,36 @@ includestuff = includestuff + """
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
 extern PyObject *CtlObj_WhichControl(ControlHandle); /* Forward */
+extern PyObject *QdRGB_New(RGBColorPtr);
+extern QdRGB_Convert(PyObject *, RGBColorPtr);
 
 #ifdef THINK_C
 #define  ControlActionUPP ProcPtr
 #endif
+
+/*
+** Parse/generate ControlFontStyleRec records
+*/
+#if 0 /* Not needed */
+PyObject *ControlFontStyle_New(itself)
+	ControlFontStyleRec *itself;
+{
+
+	return Py_BuildValue("hhhhhhO&O&", itself->flags, itself->font,
+		itself->size, itself->style, itself->mode, itself->just,
+		QdRGB_New, &itself->foreColor, QdRGB_New, &itself->backColor);
+}
+#endif
+
+ControlFontStyle_Convert(v, itself)
+	PyObject *v;
+	ControlFontStyleRec *itself;
+{
+	return PyArg_ParseTuple(v, "hhhhhhO&O&", &itself->flags,
+		&itself->font, &itself->size, &itself->style, &itself->mode, 
+		&itself->just, QdRGB_Convert, &itself->foreColor, 
+		QdRGB_Convert, &itself->backColor);
+}
 """
 
 finalstuff = finalstuff + """

@@ -19,7 +19,7 @@ def main():
 	input = "AERegistry.h"
 	output = "@dummy-registry.py"
 	defsoutput = TOOLBOXDIR + "AERegistry.py"
-	scanner = AppleEventsScanner(input, output, defsoutput)
+	scanner = AppleEventsRegScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()
 	print "=== Scanning AEObjects.h for defines ==="
@@ -32,11 +32,19 @@ def main():
 	scanner = AppleEventsScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()
-	print "=== Scanning AppleEvents.py ==="
+	print "=== Scanning AEDataModel.h ==="
+	input = "AEDataModel.h"
+	output = "aedatamodelgen.py"
+	defsoutput = TOOLBOXDIR + "AEDataModel.py"
+	scanner = AppleEventsScanner(input, output, defsoutput)
+	
+	scanner.scan()
+	scanner.close()
+	print "=== Scanning AppleEvents.h ==="
 	input = "AppleEvents.h"
 	output = "aegen.py"
 	defsoutput = TOOLBOXDIR + "AppleEvents.py"
-	scanner = AppleEventsScanner(input, output, defsoutput)
+	scanner = AppleEventsRegScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()
 	print "=== Done Scanning and Generating, now doing 'import aesupport' ==="
@@ -101,6 +109,14 @@ class AppleEventsScanner(Scanner):
 			([("AEDescList", "theAEDescList", "OutMode")],
 			 [("AEDescList_ptr", "*", "InMode")]),
 			]
+
+	def writeinitialdefs(self):
+		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+
+class AppleEventsRegScanner(AppleEventsScanner):
+	def writeinitialdefs(self):
+		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+		self.defsfile.write("from AEDataModel import *\n")
 
 if __name__ == "__main__":
 	main()

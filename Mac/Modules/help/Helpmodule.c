@@ -54,7 +54,7 @@ static PyObject *Help_HMGetHelpMenuHandle(_self, _args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
-	MenuRef mh;
+	MenuHandle mh;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = HMGetHelpMenuHandle(&mh);
@@ -76,6 +76,20 @@ static PyObject *Help_HMRemoveBalloon(_self, _args)
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Help_HMIsBalloon(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = HMIsBalloon();
+	_res = Py_BuildValue("b",
+	                     _rv);
 	return _res;
 }
 
@@ -107,20 +121,6 @@ static PyObject *Help_HMSetBalloons(_self, _args)
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Help_HMIsBalloon(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = HMIsBalloon();
-	_res = Py_BuildValue("b",
-	                     _rv);
 	return _res;
 }
 
@@ -303,15 +303,15 @@ static PyObject *Help_HMGetBalloonWindow(_self, _args)
 
 static PyMethodDef Help_methods[] = {
 	{"HMGetHelpMenuHandle", (PyCFunction)Help_HMGetHelpMenuHandle, 1,
-	 "() -> (MenuRef mh)"},
+	 "() -> (MenuHandle mh)"},
 	{"HMRemoveBalloon", (PyCFunction)Help_HMRemoveBalloon, 1,
 	 "() -> None"},
+	{"HMIsBalloon", (PyCFunction)Help_HMIsBalloon, 1,
+	 "() -> (Boolean _rv)"},
 	{"HMGetBalloons", (PyCFunction)Help_HMGetBalloons, 1,
 	 "() -> (Boolean _rv)"},
 	{"HMSetBalloons", (PyCFunction)Help_HMSetBalloons, 1,
 	 "(Boolean flag) -> None"},
-	{"HMIsBalloon", (PyCFunction)Help_HMIsBalloon, 1,
-	 "() -> (Boolean _rv)"},
 	{"HMSetFont", (PyCFunction)Help_HMSetFont, 1,
 	 "(SInt16 font) -> None"},
 	{"HMSetFontSize", (PyCFunction)Help_HMSetFontSize, 1,

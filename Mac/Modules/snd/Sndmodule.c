@@ -171,14 +171,14 @@ static PyObject *SndCh_SndPlay(_self, _args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
-	SndListHandle sndHdl;
+	SndListHandle sndHandle;
 	Boolean async;
 	if (!PyArg_ParseTuple(_args, "O&b",
-	                      ResObj_Convert, &sndHdl,
+	                      ResObj_Convert, &sndHandle,
 	                      &async))
 		return NULL;
 	_err = SndPlay(_self->ob_itself,
-	               sndHdl,
+	               sndHandle,
 	               async);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
@@ -276,7 +276,7 @@ static PyMethodDef SndCh_methods[] = {
 	{"SndDoImmediate", (PyCFunction)SndCh_SndDoImmediate, 1,
 	 "(SndCommand cmd) -> None"},
 	{"SndPlay", (PyCFunction)SndCh_SndPlay, 1,
-	 "(SndListHandle sndHdl, Boolean async) -> None"},
+	 "(SndListHandle sndHandle, Boolean async) -> None"},
 	{"SndStartFilePlay", (PyCFunction)SndCh_SndStartFilePlay, 1,
 	 "(short fRefNum, short resNum, long bufferSize, Boolean async) -> None"},
 	{"SndPauseFilePlay", (PyCFunction)SndCh_SndPauseFilePlay, 1,
@@ -314,6 +314,21 @@ staticforward PyTypeObject SndChannel_Type = {
 
 /* ------------------- End object type SndChannel ------------------- */
 
+
+static PyObject *Snd_SysBeep(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short duration;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &duration))
+		return NULL;
+	SysBeep(duration);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
 
 static PyObject *Snd_SndNewChannel(_self, _args)
 	PyObject *_self;
@@ -712,7 +727,244 @@ static PyObject *Snd_GetSoundHeaderOffset(_self, _args)
 	return _res;
 }
 
+static PyObject *Snd_SPBVersion(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	NumVersion _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = SPBVersion();
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildNumVersion, _rv);
+	return _res;
+}
+
+static PyObject *Snd_SPBSignInDevice(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	short deviceRefNum;
+	Str255 deviceName;
+	if (!PyArg_ParseTuple(_args, "hO&",
+	                      &deviceRefNum,
+	                      PyMac_GetStr255, deviceName))
+		return NULL;
+	_err = SPBSignInDevice(deviceRefNum,
+	                       deviceName);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Snd_SPBSignOutDevice(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	short deviceRefNum;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &deviceRefNum))
+		return NULL;
+	_err = SPBSignOutDevice(deviceRefNum);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Snd_SPBGetIndexedDevice(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	short count;
+	Str255 deviceName;
+	Handle deviceIconHandle;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &count))
+		return NULL;
+	_err = SPBGetIndexedDevice(count,
+	                           deviceName,
+	                           &deviceIconHandle);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&O&",
+	                     PyMac_BuildStr255, deviceName,
+	                     ResObj_New, deviceIconHandle);
+	return _res;
+}
+
+static PyObject *Snd_SPBOpenDevice(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	Str255 deviceName;
+	short permission;
+	long inRefNum;
+	if (!PyArg_ParseTuple(_args, "O&h",
+	                      PyMac_GetStr255, deviceName,
+	                      &permission))
+		return NULL;
+	_err = SPBOpenDevice(deviceName,
+	                     permission,
+	                     &inRefNum);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     inRefNum);
+	return _res;
+}
+
+static PyObject *Snd_SPBCloseDevice(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long inRefNum;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &inRefNum))
+		return NULL;
+	_err = SPBCloseDevice(inRefNum);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Snd_SPBPauseRecording(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long inRefNum;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &inRefNum))
+		return NULL;
+	_err = SPBPauseRecording(inRefNum);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Snd_SPBResumeRecording(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long inRefNum;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &inRefNum))
+		return NULL;
+	_err = SPBResumeRecording(inRefNum);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Snd_SPBStopRecording(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long inRefNum;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &inRefNum))
+		return NULL;
+	_err = SPBStopRecording(inRefNum);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Snd_SPBGetRecordingStatus(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long inRefNum;
+	short recordingStatus;
+	short meterLevel;
+	unsigned long totalSamplesToRecord;
+	unsigned long numberOfSamplesRecorded;
+	unsigned long totalMsecsToRecord;
+	unsigned long numberOfMsecsRecorded;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &inRefNum))
+		return NULL;
+	_err = SPBGetRecordingStatus(inRefNum,
+	                             &recordingStatus,
+	                             &meterLevel,
+	                             &totalSamplesToRecord,
+	                             &numberOfSamplesRecorded,
+	                             &totalMsecsToRecord,
+	                             &numberOfMsecsRecorded);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("hhllll",
+	                     recordingStatus,
+	                     meterLevel,
+	                     totalSamplesToRecord,
+	                     numberOfSamplesRecorded,
+	                     totalMsecsToRecord,
+	                     numberOfMsecsRecorded);
+	return _res;
+}
+
+static PyObject *Snd_SPBMillisecondsToBytes(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long inRefNum;
+	long milliseconds;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &inRefNum))
+		return NULL;
+	_err = SPBMillisecondsToBytes(inRefNum,
+	                              &milliseconds);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     milliseconds);
+	return _res;
+}
+
+static PyObject *Snd_SPBBytesToMilliseconds(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long inRefNum;
+	long byteCount;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &inRefNum))
+		return NULL;
+	_err = SPBBytesToMilliseconds(inRefNum,
+	                              &byteCount);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     byteCount);
+	return _res;
+}
+
 static PyMethodDef Snd_methods[] = {
+	{"SysBeep", (PyCFunction)Snd_SysBeep, 1,
+	 "(short duration) -> None"},
 	{"SndNewChannel", (PyCFunction)Snd_SndNewChannel, 1,
 	 "(short synth, long init, PyObject* userRoutine) -> (SndChannelPtr chan)"},
 	{"SndControl", (PyCFunction)Snd_SndControl, 1,
@@ -745,6 +997,30 @@ static PyMethodDef Snd_methods[] = {
 	 "(long level) -> None"},
 	{"GetSoundHeaderOffset", (PyCFunction)Snd_GetSoundHeaderOffset, 1,
 	 "(SndListHandle sndHandle) -> (long offset)"},
+	{"SPBVersion", (PyCFunction)Snd_SPBVersion, 1,
+	 "() -> (NumVersion _rv)"},
+	{"SPBSignInDevice", (PyCFunction)Snd_SPBSignInDevice, 1,
+	 "(short deviceRefNum, Str255 deviceName) -> None"},
+	{"SPBSignOutDevice", (PyCFunction)Snd_SPBSignOutDevice, 1,
+	 "(short deviceRefNum) -> None"},
+	{"SPBGetIndexedDevice", (PyCFunction)Snd_SPBGetIndexedDevice, 1,
+	 "(short count) -> (Str255 deviceName, Handle deviceIconHandle)"},
+	{"SPBOpenDevice", (PyCFunction)Snd_SPBOpenDevice, 1,
+	 "(Str255 deviceName, short permission) -> (long inRefNum)"},
+	{"SPBCloseDevice", (PyCFunction)Snd_SPBCloseDevice, 1,
+	 "(long inRefNum) -> None"},
+	{"SPBPauseRecording", (PyCFunction)Snd_SPBPauseRecording, 1,
+	 "(long inRefNum) -> None"},
+	{"SPBResumeRecording", (PyCFunction)Snd_SPBResumeRecording, 1,
+	 "(long inRefNum) -> None"},
+	{"SPBStopRecording", (PyCFunction)Snd_SPBStopRecording, 1,
+	 "(long inRefNum) -> None"},
+	{"SPBGetRecordingStatus", (PyCFunction)Snd_SPBGetRecordingStatus, 1,
+	 "(long inRefNum) -> (short recordingStatus, short meterLevel, unsigned long totalSamplesToRecord, unsigned long numberOfSamplesRecorded, unsigned long totalMsecsToRecord, unsigned long numberOfMsecsRecorded)"},
+	{"SPBMillisecondsToBytes", (PyCFunction)Snd_SPBMillisecondsToBytes, 1,
+	 "(long inRefNum) -> (long milliseconds)"},
+	{"SPBBytesToMilliseconds", (PyCFunction)Snd_SPBBytesToMilliseconds, 1,
+	 "(long inRefNum) -> (long byteCount)"},
 	{NULL, NULL, 0}
 };
 

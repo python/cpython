@@ -51,6 +51,7 @@ class MyScanner(Scanner):
 
 	def makeblacklisttypes(self):
 		return [
+			"AlertStdAlertParamPtr",	# Too much work, for now
 			]
 
 	def makerepairinstructions(self):

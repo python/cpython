@@ -216,8 +216,8 @@ static PyObject *TEObj_TEKey(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short key;
-	if (!PyArg_ParseTuple(_args, "h",
+	CharParameter key;
+	if (!PyArg_ParseTuple(_args, "c",
 	                      &key))
 		return NULL;
 	TEKey(key,
@@ -736,7 +736,7 @@ static PyMethodDef TEObj_methods[] = {
 	{"TEDeactivate", (PyCFunction)TEObj_TEDeactivate, 1,
 	 "() -> None"},
 	{"TEKey", (PyCFunction)TEObj_TEKey, 1,
-	 "(short key) -> None"},
+	 "(CharParameter key) -> None"},
 	{"TECut", (PyCFunction)TEObj_TECut, 1,
 	 "() -> None"},
 	{"TECopy", (PyCFunction)TEObj_TECopy, 1,

@@ -31,6 +31,9 @@ class SoundScanner(Scanner):
 				listname = "sndmethods"
 		return classname, listname
 
+	def writeinitialdefs(self):
+		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+
 	def makeblacklistnames(self):
 		return [
 			'SndDisposeChannel',		# automatic on deallocation
@@ -44,9 +47,12 @@ class SoundScanner(Scanner):
 			'GetSoundPreference',
 			'SetSoundPreference',
 			'GetCompressionInfo',
+			'GetCompressionName',
 			# Calls with void_ptr arguments (to be done).
 			'SndGetInfo',
 			'SndSetInfo',
+			'SPBGetDeviceInfo',
+			'SPBSetDeviceInfo',
 			# And old calls that are no longer supported
 			'SetSoundVol',
 			'GetSoundVol',
@@ -60,6 +66,13 @@ class SoundScanner(Scanner):
 			"UnsignedFixed",
 			# Don't have the time to dig into this...
 			"Component",
+			"ComponentInstance",
+			"SoundComponentDataPtr",
+			"SoundComponentData",
+			"SoundComponentData_ptr",
+			"SoundConverter",
+			"ModalFilterUPP",
+			"SPBPtr",
 			]
 
 	def makerepairinstructions(self):
