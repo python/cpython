@@ -1,14 +1,12 @@
 # Module 'glob' -- filename globbing.
 
-import posix
-import path
+import os
 import fnmatch
+
 
 def glob(pathname):
 	if not has_magic(pathname): return [pathname]
-	dirname, basename = path.split(pathname)
-	if dirname[-1:] == '/' and dirname <> '/':
-		dirname = dirname[:-1]
+	dirname, basename = os.path.split(pathname)
 	if has_magic(dirname):
 		list = glob(dirname)
 	else:
@@ -16,25 +14,24 @@ def glob(pathname):
 	if not has_magic(basename):
 		result = []
 		for dirname in list:
-			if basename or path.isdir(dirname):
-				name = path.join(dirname, basename)
-				if path.exists(name):
+			if basename or os.path.isdir(dirname):
+				name = os.path.join(dirname, basename)
+				if os.path.exists(name):
 					result.append(name)
 	else:
 		result = []
 		for dirname in list:
 			sublist = glob1(dirname, basename)
 			for name in sublist:
-				result.append(path.join(dirname, name))
+				result.append(os.path.join(dirname, name))
 	return result
 
 def glob1(dirname, pattern):
-	if not dirname: dirname = '.'
+	if not dirname: dirname = os.curdir
 	try:
-		names = posix.listdir(dirname)
-	except posix.error:
+		names = os.listdir(dirname)
+	except os.error:
 		return []
-	names.sort()
 	result = []
 	for name in names:
 		if name[0] <> '.' or pattern[0] == '.':
