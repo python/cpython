@@ -47,7 +47,7 @@ class BaseTestCase(unittest.TestCase):
 class WrapTestCase(BaseTestCase):
 
     def setUp(self):
-        self.wrapper = TextWrapper(width=45, fix_sentence_endings=True)
+        self.wrapper = TextWrapper(width=45)
 
     def test_simple(self):
         # Simple case: just words, spaces, and a bit of punctuation
@@ -84,13 +84,51 @@ What a mess!
                   "wrapped.  Some lines are  tabbed too.  What a",
                   "mess!"]
 
-        result = self.wrapper.wrap(text)
+        wrapper = TextWrapper(45, fix_sentence_endings=True)
+        result = wrapper.wrap(text)
         self.check(result, expect)
 
-        result = self.wrapper.fill(text)
+        result = wrapper.fill(text)
         self.check(result, '\n'.join(expect))
 
+    def test_fix_sentence_endings(self):
+        wrapper = TextWrapper(60, fix_sentence_endings=True)
 
+        # SF #847346: ensure that fix_sentence_endings=True does the
+        # right thing even on input short enough that it doesn't need to
+        # be wrapped.
+        text = "A short line. Note the single space."
+        expect = ["A short line.  Note the single space."]
+        self.check(wrapper.wrap(text), expect)
+
+        # Test some of the hairy end cases that _fix_sentence_endings()
+        # is supposed to handle (the easy stuff is tested in
+        # test_whitespace() above).
+        text = "Well, Doctor? What do you think?"
+        expect = ["Well, Doctor?  What do you think?"]
+        self.check(wrapper.wrap(text), expect)
+
+        text = "Well, Doctor?\nWhat do you think?"
+        self.check(wrapper.wrap(text), expect)
+
+        text = 'I say, chaps! Anyone for "tennis?"\nHmmph!'
+        expect = ['I say, chaps!  Anyone for "tennis?"  Hmmph!']
+        self.check(wrapper.wrap(text), expect)
+
+        wrapper.width = 20
+        expect = ['I say, chaps!', 'Anyone for "tennis?"', 'Hmmph!']
+        self.check(wrapper.wrap(text), expect)
+
+        text = 'And she said, "Go to hell!"\nCan you believe that?'
+        expect = ['And she said, "Go to',
+                  'hell!"  Can you',
+                  'believe that?']
+        self.check(wrapper.wrap(text), expect)
+
+        wrapper.width = 60
+        expect = ['And she said, "Go to hell!"  Can you believe that?']
+        self.check(wrapper.wrap(text), expect)
+        
     def test_wrap_short(self):
         # Wrapping to make short lines longer
 

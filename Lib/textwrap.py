@@ -90,14 +90,14 @@ class TextWrapper:
                                  % string.lowercase)
 
 
-    def __init__ (self,
-                  width=70,
-                  initial_indent="",
-                  subsequent_indent="",
-                  expand_tabs=True,
-                  replace_whitespace=True,
-                  fix_sentence_endings=False,
-                  break_long_words=True):
+    def __init__(self,
+                 width=70,
+                 initial_indent="",
+                 subsequent_indent="",
+                 expand_tabs=True,
+                 replace_whitespace=True,
+                 fix_sentence_endings=False,
+                 break_long_words=True):
         self.width = width
         self.initial_indent = initial_indent
         self.subsequent_indent = subsequent_indent
@@ -268,8 +268,6 @@ class TextWrapper:
         """
         text = self._munge_whitespace(text)
         indent = self.initial_indent
-        if len(text) + len(indent) <= self.width:
-            return [indent + text]
         chunks = self._split(text)
         if self.fix_sentence_endings:
             self._fix_sentence_endings(chunks)
