@@ -181,7 +181,7 @@ class _socketobject(object):
     del _m, _s
 
 if _needwrapper:
-    socket = _socketobject
+    socket = SocketType = _socketobject
 
 class _fileobject(object):
     """Faux file object attached to a socket object."""
