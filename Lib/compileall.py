@@ -36,6 +36,7 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=0):
         print "Can't list", dir
         names = []
     names.sort()
+    success = 1
     for name in names:
         fullname = os.path.join(dir, name)
         if ddir:
@@ -61,11 +62,13 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=0):
                     else: exc_type_name = sys.exc_type.__name__
                     print 'Sorry:', exc_type_name + ':',
                     print sys.exc_value
+                    success = 0
         elif maxlevels > 0 and \
              name != os.curdir and name != os.pardir and \
              os.path.isdir(fullname) and \
              not os.path.islink(fullname):
             compile_dir(fullname, maxlevels - 1, dfile, force)
+    return success
 
 def compile_path(skip_curdir=1, maxlevels=0, force=0):
     """Byte-compile all module on sys.path.
@@ -77,11 +80,13 @@ def compile_path(skip_curdir=1, maxlevels=0, force=0):
     force: as for compile_dir() (default 0)
 
     """
+    success = 1
     for dir in sys.path:
         if (not dir or dir == os.curdir) and skip_curdir:
             print 'Skipping current directory'
         else:
-            compile_dir(dir, maxlevels, None, force)
+            success = success and compile_dir(dir, maxlevels, None, force)
+    return success
 
 def main():
     """Script main program."""
@@ -107,14 +112,17 @@ def main():
         if len(args) != 1:
             print "-d destdir require exactly one directory argument"
             sys.exit(2)
+    success = 1
     try:
         if args:
             for dir in args:
-                compile_dir(dir, maxlevels, ddir, force)
+                success = success and compile_dir(dir, maxlevels, ddir, force)
         else:
-            compile_path()
+            success = compile_path()
     except KeyboardInterrupt:
         print "\n[interrupt]"
+        success = 0
+    return success
 
 if __name__ == '__main__':
-    main()
+    sys.exit(not main())
