@@ -139,7 +139,9 @@ def search(pattern, string, flags=0):
 def sub(pattern, repl, string, count=0):
     """Return the string obtained by replacing the leftmost
     non-overlapping occurrences of the pattern in string by the
-    replacement repl"""
+    replacement repl.  repl can be either a string or a callable;
+    if a callable, it's passed the match object and must return
+    a replacement string to be used."""
     return _compile(pattern, 0).sub(repl, string, count)
 
 def subn(pattern, repl, string, count=0):
@@ -147,7 +149,9 @@ def subn(pattern, repl, string, count=0):
     new_string is the string obtained by replacing the leftmost
     non-overlapping occurrences of the pattern in the source
     string by the replacement repl.  number is the number of
-    substitutions that were made."""
+    substitutions that were made. repl can be either a string or a
+    callable; if a callable, it's passed the match object and must
+    return a replacement string to be used."""
     return _compile(pattern, 0).subn(repl, string, count)
 
 def split(pattern, string, maxsplit=0):
