@@ -8,7 +8,7 @@ class App(Frame):
 	Frame.__init__(self, master)
 	self.pack()
 
-	self.entrythingy = Entry()
+	self.entrythingy = Entry(self)
 	self.entrythingy.pack()
 
 	self.button = Button(self, text="Uppercase The Entry",
