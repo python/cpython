@@ -44,8 +44,10 @@ def base64_decode(input,errors='strict'):
 
 class Codec(codecs.Codec):
 
-    encode = base64_encode
-    decode = base64_decode
+    def encode(self, input,errors='strict'):
+        return base64_encode(input,errors)
+    def decode(self, input,errors='strict'):
+        return base64_decode(input,errors)
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass

@@ -94,9 +94,11 @@ def uu_decode(input,errors='strict'):
 
 class Codec(codecs.Codec):
 
-    encode = uu_encode
-    decode = uu_decode
-
+    def encode(self,input,errors='strict'):
+        return uu_encode(input,errors)
+    def decode(self,input,errors='strict'):
+        return uu_decode(input,errors)
+    
 class StreamWriter(Codec,codecs.StreamWriter):
     pass
         
