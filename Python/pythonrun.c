@@ -1471,6 +1471,9 @@ err_input(perrdetail *err)
 				break;
 			}
 		}
+		if (msg == NULL)
+			msg = "unknown decode error";
+		break;
 	}
 	default:
 		fprintf(stderr, "error=%d\n", err->error);
