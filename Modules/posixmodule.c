@@ -135,10 +135,7 @@ static object *PosixError; /* Exception posix.error */
 
 /* Set a POSIX-specific error from errno, and return NULL */
 
-static object *
-posix_error()
-{
-	return err_errno(PosixError);
+static object * posix_error() { 	return err_errno(PosixError);
 }
 
 
@@ -207,7 +204,6 @@ posix_do_stat(self, args, statfunc)
 {
 	struct stat st;
 	char *path;
-	object *v;
 	int res;
 	if (!getstrarg(args, &path))
 		return NULL;
@@ -216,7 +212,7 @@ posix_do_stat(self, args, statfunc)
 	END_SAVE
 	if (res != 0)
 		return posix_error();
-	v = mkvalue("(llllllllll)",
+	return mkvalue("(llllllllll)",
 		    (long)st.st_mode,
 		    (long)st.st_ino,
 		    (long)st.st_dev,
@@ -664,7 +660,7 @@ posix_setpgrp(self, args)
 #else
 	if (setpgrp(0, 0) < 0)
 #endif
-		return err_errno(PosixError);
+		return posix_error();
 	INCREF(None);
 	return None;
 }
@@ -823,10 +819,8 @@ posix_times(self, args)
 		return NULL;
 	errno = 0;
 	c = times(&t);
-	if (c == (clock_t) -1) {
-		err_errno(PosixError);
-		return NULL;
-	}
+	if (c == (clock_t) -1)
+		return posix_error();
 	return mkvalue("dddd",
 		       (double)t.tms_utime / HZ,
 		       (double)t.tms_stime / HZ,
@@ -845,10 +839,8 @@ posix_setsid(self, args)
 {
 	if (!getnoarg(args))
 		return NULL;
-	if (setsid() < 0) {
-		err_errno(PosixError);
-		return NULL;
-	}
+	if (setsid() < 0)
+		return posix_error();
 	INCREF(None);
 	return None;
 }
@@ -861,10 +853,8 @@ posix_setpgid(self, args)
 	int pid, pgrp;
 	if (!getargs(args, "(ii)", &pid, &pgrp))
 		return NULL;
-	if (setpgid(pid, pgrp) < 0) {
-		err_errno(PosixError);
-		return NULL;
-	}
+	if (setpgid(pid, pgrp) < 0)
+		return posix_error();
 	INCREF(None);
 	return None;
 }
@@ -878,10 +868,8 @@ posix_tcgetpgrp(self, args)
 	if (!getargs(args, "i", &fd))
 		return NULL;
 	pgid = tcgetpgrp(fd);
-	if (pgid < 0) {
-		err_errno(PosixError);
-		return NULL;
-	}
+	if (pgid < 0)
+		return posix_error();
 	return newintobject((long)pgid);
 }
 
@@ -893,16 +881,221 @@ posix_tcsetpgrp(self, args)
 	int fd, pgid;
 	if (!getargs(args, "(ii)", &fd, &pgid))
 		return NULL;
-	if (tcsetpgrp(fd, pgid) < 0) {
-		err_errno(PosixError);
-		return NULL;
-	}
+	if (tcsetpgrp(fd, pgid) < 0)
+		return posix_error();
        INCREF(None);
 	return None;
 }
 
 #endif /* DO_PG */
 
+/* Functions acting on file descriptors */
+
+object *
+posix_open(self, args)
+	object *self;
+	object *args;
+{
+	char *file;
+	int flag;
+	int mode = 0777;
+	int fd;
+	if (!getargs(args, "(si)", &file, &flag)) {
+		err_clear();
+		if (!getargs(args, "(sii)", &file, &flag, &mode))
+			return NULL;
+	}
+	BGN_SAVE
+	fd = open(file, flag, mode);
+	END_SAVE
+	if (fd < 0)
+		return posix_error();
+	return newintobject((long)fd);
+}
+
+object *
+posix_close(self, args)
+	object *self;
+	object *args;
+{
+	int fd, res;
+	if (!getargs(args, "i", &fd))
+		return NULL;
+	BGN_SAVE
+	res = close(fd);
+	END_SAVE
+	if (res < 0)
+		return posix_error();
+	INCREF(None);
+	return None;
+}
+
+object *
+posix_dup(self, args)
+	object *self;
+	object *args;
+{
+	int fd;
+	if (!getargs(args, "i", &fd))
+		return NULL;
+	BGN_SAVE
+	fd = dup(fd);
+	END_SAVE
+	if (fd < 0)
+		return posix_error();
+	return newintobject((long)fd);
+}
+
+object *
+posix_dup2(self, args)
+	object *self;
+	object *args;
+{
+	int fd, fd2, res;
+	if (!getargs(args, "(ii)", &fd, &fd2))
+		return NULL;
+	BGN_SAVE
+	res = dup2(fd, fd2);
+	END_SAVE
+	if (res < 0)
+		return posix_error();
+	INCREF(None);
+	return None;
+}
+
+object *
+posix_lseek(self, args)
+	object *self;
+	object *args;
+{
+	int fd, how;
+	long pos, res;
+	if (!getargs(args, "(ili)", &fd, &pos, &how))
+		return NULL;
+#ifdef SEEK_SET
+	/* Turn 0, 1, 2 into SEEK_{SET,CUR,END} */
+	switch (how) {
+	case 0: how = SEEK_SET; break;
+	case 1: how = SEEK_CUR; break;
+	case 2: how = SEEK_END; break;
+	}
+#endif
+	BGN_SAVE
+	res = lseek(fd, pos, how);
+	END_SAVE
+	if (res < 0)
+		return posix_error();
+	return newintobject(res);
+}
+
+object *
+posix_read(self, args)
+	object *self;
+	object *args;
+{
+	int fd, size;
+	object *buffer;
+	if (!getargs(args, "(ii)", &fd, &size))
+		return NULL;
+	buffer = newsizedstringobject((char *)NULL, size);
+	if (buffer == NULL)
+		return NULL;
+	BGN_SAVE
+	size = read(fd, getstringvalue(buffer), size);
+	END_SAVE
+	if (size < 0) {
+		DECREF(buffer);
+		return posix_error();
+	}
+	resizestring(&buffer, size);
+	return buffer;
+}
+
+object *
+posix_write(self, args)
+	object *self;
+	object *args;
+{
+	int fd, size;
+	char *buffer;
+	if (!getargs(args, "(is#)", &fd, &buffer, &size))
+		return NULL;
+	BGN_SAVE
+	size = write(fd, buffer, size);
+	END_SAVE
+	if (size < 0)
+		return posix_error();
+	return newintobject((long)size);
+}
+
+object *
+posix_fstat(self, args)
+	object *self;
+	object *args;
+{
+	int fd;
+	struct stat st;
+	int res;
+	if (!getargs(args, "i", &fd))
+		return NULL;
+	BGN_SAVE
+	res = fstat(fd, &st);
+	END_SAVE
+	if (res != 0)
+		return posix_error();
+	return mkvalue("(llllllllll)",
+		    (long)st.st_mode,
+		    (long)st.st_ino,
+		    (long)st.st_dev,
+		    (long)st.st_nlink,
+		    (long)st.st_uid,
+		    (long)st.st_gid,
+		    (long)st.st_size,
+		    (long)st.st_atime,
+		    (long)st.st_mtime,
+		    (long)st.st_ctime);
+}
+
+static object *
+posix_fdopen(self, args)
+	object *self;
+	object *args;
+{
+	extern int fclose PROTO((FILE *));
+	int fd;
+	char *mode;
+	FILE *fp;
+	if (!getargs(args, "(is)", &fd, &mode))
+		return NULL;
+	BGN_SAVE
+	fp = fdopen(fd, mode);
+	END_SAVE
+	if (fp == NULL)
+		return posix_error();
+	/* From now on, ignore SIGPIPE and let the error checking
+	   do the work. */
+	(void) signal(SIGPIPE, SIG_IGN);
+	return newopenfileobject(fp, "(fdopen)", mode, fclose);
+}
+
+#ifndef MSDOS
+object *
+posix_pipe(self, args)
+	object *self;
+	object *args;
+{
+	int fds[2];
+	int res;
+	if (!getargs(args, ""))
+		return NULL;
+	BGN_SAVE
+	res = pipe(fds);
+	END_SAVE
+	if (res != 0)
+		return posix_error();
+	return mkvalue("(ii)", fds[0], fds[1]);
+}
+#endif /* MSDOS */
 
 static struct methodlist posix_methods[] = {
 	{"chdir",	posix_chdir},
@@ -958,6 +1151,19 @@ static struct methodlist posix_methods[] = {
 	{"setpgid",	posix_setpgid},
 	{"tcgetpgrp",	posix_tcgetpgrp},
 	{"tcsetpgrp",	posix_tcsetpgrp},
+#endif
+
+	{"open",	posix_open},
+	{"close",	posix_close},
+	{"dup",		posix_dup},
+	{"dup2",	posix_dup2},
+	{"lseek",	posix_lseek},
+	{"read",	posix_read},
+	{"write",	posix_write},
+	{"fstat",	posix_fstat},
+	{"fdopen",	posix_fdopen},
+#ifndef MSDOS
+	{"pipe",	posix_pipe},
 #endif
 
 	{NULL,		NULL}		 /* Sentinel */
