@@ -941,4 +941,4 @@ def IN6_IS_ADDR_MC_SITELOCAL(a): return \
 
 def IN6_IS_ADDR_MC_ORGLOCAL(a): return \
 
-def IN6_IS_ADDR_MC_GLOBAL(a): return \
+def IN6_IS_ADDR_MC_GLOBAL(a): return
