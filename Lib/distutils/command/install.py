@@ -93,14 +93,14 @@ class install (Command):
          "filename in which to record list of installed files"),
         ]
 
-    # 'sub_commands': a list of commands this command might have to run
-    # to get its work done.  Each command is represented as a tuple
-    # (func, command) where 'func' is a function to call that returns
-    # true if 'command' (the sub-command name, a string) needs to be
-    # run.  If 'func' is None, assume that 'command' must always be run.
-    sub_commands = [(None, 'install_lib'),
-                    (None, 'install_scripts'),
-                    (None, 'install_data'),
+    # 'sub_commands': a list of commands this command might have to run to
+    # get its work done.  Each command is represented as a tuple (method,
+    # command) where 'method' is the name of a method to call that returns
+    # true if 'command' (the sub-command name, a string) needs to be run.
+    # If 'method' is None, assume that 'command' must always be run.
+    sub_commands = [('has_lib', 'install_lib'),
+                    ('has_scripts', 'install_scripts'),
+                    ('has_data', 'install_data'),
                    ]
 
 
@@ -422,17 +422,29 @@ class install (Command):
     # handle_extra_path ()
 
 
+    def get_sub_commands (self):
+        """Return the list of subcommands that we need to run.  This is
+        based on the 'subcommands' class attribute: each tuple in that list
+        can name a method that we call to determine if the subcommand needs
+        to be run for the current distribution."""
+        commands = []
+        for (method, cmd_name) in self.sub_commands:
+            if method is not None:
+                method = getattr(self, method)
+            if method is None or method():
+                commands.append(cmd_name)
+        return commands
+
+
     def run (self):
 
         # Obviously have to build before we can install
         if not self.skip_build:
             self.run_peer ('build')
 
-        # Run all sub-commands: currently this just means install all
-        # Python modules using 'install_lib'.
-        for (func, cmd_name) in self.sub_commands:
-            if func is None or func():
-                self.run_peer (cmd_name)
+        # Run all sub-commands (at least those that need to be run)
+        for cmd_name in self.get_sub_commands():
+            self.run_peer (cmd_name)
 
         if self.path_file:
             self.create_path_file ()
@@ -460,14 +472,26 @@ class install (Command):
     # run ()
 
 
+    def has_lib (self):
+        """Return true if the current distribution has any Python
+        modules to install."""
+        return (self.distribution.has_pure_modules() or
+                self.distribution.has_ext_modules())
+
+    def has_scripts (self):
+        return self.distribution.has_scripts()
+
+    def has_data (self):
+        return self.distribution.has_data_files()
+
+
     def get_outputs (self):
         # This command doesn't have any outputs of its own, so just
         # get the outputs of all its sub-commands.
         outputs = []
-        for (func, cmd_name) in self.sub_commands:
-            if func is None or func():
-                cmd = self.find_peer (cmd_name)
-                outputs.extend (cmd.get_outputs())
+        for cmd_name in self.get_sub_commands():
+            cmd = self.find_peer (cmd_name)
+            outputs.extend (cmd.get_outputs())
 
         return outputs
 
@@ -475,10 +499,9 @@ class install (Command):
     def get_inputs (self):
         # XXX gee, this looks familiar ;-(
         inputs = []
-        for (func, cmd_name) in self.sub_commands:
-            if func is None or func():
-                cmd = self.find_peer (cmd_name)
-                inputs.extend (cmd.get_inputs())
+        for cmd_name in self.get_sub_commands():
+            cmd = self.find_peer (cmd_name)
+            inputs.extend (cmd.get_inputs())
 
         return inputs
 
