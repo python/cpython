@@ -10,13 +10,12 @@ class _modulebrowser:
 	def __init__(self):
 		self.editmodules = []
 		self.modules = []
-		self.window = W.Window((194, 1000), "Module Browser", minsize = (194, 160), maxsize = (340, 20000))
+		self.window = W.Window((210, 1000), "Module Browser", minsize = (210, 160), maxsize = (340, 20000))
 		
-		#self.window.bevelbox = W.BevelBox((0, 0, 0, 56))
-		self.window.openbutton = W.Button((10, 8, 80, 16), "Open", self.openbuttonhit)
-		self.window.browsebutton = W.Button((100, 8, 80, 16), "Browse\xc9", self.browsebuttonhit)
-		self.window.reloadbutton = W.Button((10, 32, 80, 16), "Reload", self.reloadbuttonhit)
-		self.window.openotherbutton = W.Button((100, 32, 80, 16), "Open other\xc9", self.openother)
+		self.window.openbutton = W.Button((10, 8, 90, 16), "Open", self.openbuttonhit)
+		self.window.browsebutton = W.Button((110, 8, 90, 16), "Browse\xc9", self.browsebuttonhit)
+		self.window.reloadbutton = W.Button((10, 32, 90, 16), "Reload", self.reloadbuttonhit)
+		self.window.openotherbutton = W.Button((110, 32, 90, 16), "Open other\xc9", self.openother)
 		
 		self.window.openbutton.enable(0)
 		self.window.reloadbutton.enable(0)
