@@ -60,6 +60,8 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #define PRINT_EXPR	70
 #define PRINT_ITEM	71
 #define PRINT_NEWLINE	72
+#define PRINT_ITEM_TO   73
+#define PRINT_NEWLINE_TO 74
 
 #define BREAK_LOOP	80
 
