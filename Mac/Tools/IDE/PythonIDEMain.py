@@ -353,7 +353,6 @@ class PythonIDE(Wapplication.Application):
 	def domenu_openpackagemanager(self):
 		import PackageManager
 		PackageManager.PackageBrowser()
-		print "Done"
 		
 	def makehelpmenu(self):
 		docs = self.installdocumentation()
