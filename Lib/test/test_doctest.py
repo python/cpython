@@ -283,7 +283,7 @@ expected output of an example, then `DocTest` will raise a ValueError:
     ...     '''
     >>> parser.get_doctest(docstring, globs, 'some_test', 'filename', 0)
     Traceback (most recent call last):
-    ValueError: line 4 of the docstring for some_test has inconsistent leading whitespace: '    indentation'
+    ValueError: line 4 of the docstring for some_test has inconsistent leading whitespace: 'indentation'
 
 If the docstring contains inconsistent leading whitespace on
 continuation lines, then `DocTest` will raise a ValueError:
@@ -295,7 +295,7 @@ continuation lines, then `DocTest` will raise a ValueError:
     ...     '''
     >>> parser.get_doctest(docstring, globs, 'some_test', 'filename', 0)
     Traceback (most recent call last):
-    ValueError: line 2 of the docstring for some_test has inconsistent leading whitespace: '    ...          2)'
+    ValueError: line 2 of the docstring for some_test has inconsistent leading whitespace: '...          2)'
 
 If there's no blank space after a PS1 prompt ('>>>'), then `DocTest`
 will raise a ValueError:
@@ -551,6 +551,61 @@ DocTestFinder finds the line number of each example:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> [e.lineno for e in test.examples]
     [1, 9, 12]
+"""
+
+def test_DocTestParser(): r"""
+Unit tests for the `DocTestParser` class.
+
+DocTestParser is used to parse docstrings containing doctest examples.
+
+The `parse` method divides a docstring into examples and intervening
+text:
+
+    >>> s = '''
+    ...     >>> x, y = 2, 3  # no output expected
+    ...     >>> if 1:
+    ...     ...     print x
+    ...     ...     print y
+    ...     2
+    ...     3
+    ...
+    ...     Some text.
+    ...     >>> x+y
+    ...     5
+    ...     '''
+    >>> parser = doctest.DocTestParser()
+    >>> for piece in parser.parse(s):
+    ...     if isinstance(piece, doctest.Example):
+    ...         print 'Example:', (piece.source, piece.want, piece.lineno)
+    ...     else:
+    ...         print '   Text:', `piece`
+       Text: '\n'
+    Example: ('x, y = 2, 3  # no output expected\n', '', 1)
+       Text: ''
+    Example: ('if 1:\n    print x\n    print y\n', '2\n3\n', 2)
+       Text: '\nSome text.\n'
+    Example: ('x+y\n', '5\n', 9)
+       Text: ''
+
+The `get_examples` method returns just the examples:
+
+    >>> for piece in parser.get_examples(s):
+    ...     print (piece.source, piece.want, piece.lineno)
+    ('x, y = 2, 3  # no output expected\n', '', 1)
+    ('if 1:\n    print x\n    print y\n', '2\n3\n', 2)
+    ('x+y\n', '5\n', 9)
+
+The `get_doctest` method creates a Test from the examples, along with the
+given arguments:
+
+    >>> test = parser.get_doctest(s, {}, 'name', 'filename', lineno=5)
+    >>> (test.name, test.filename, test.lineno)
+    ('name', 'filename', 5)
+    >>> for piece in test.examples:
+    ...     print (piece.source, piece.want, piece.lineno)
+    ('x, y = 2, 3  # no output expected\n', '', 1)
+    ('if 1:\n    print x\n    print y\n', '2\n3\n', 2)
+    ('x+y\n', '5\n', 9)
 """
 
 class test_DocTestRunner:

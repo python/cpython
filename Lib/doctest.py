@@ -433,6 +433,14 @@ def _ellipsis_match(want, got):
 
     return True
 
+def _comment_line(line):
+    "Return a commented form of the given line"
+    line = line.rstrip()
+    if line:
+        return '# '+line
+    else:
+        return '#'
+
 ######################################################################
 ## 2. Example & DocTest
 ######################################################################
@@ -606,6 +614,45 @@ class DocTestParser:
     # or contains a single comment.
     _IS_BLANK_OR_COMMENT = re.compile(r'^[ ]*(#.*)?$').match
 
+    def parse(self, string, name='<string>'):
+        """
+        Divide the given string into examples and intervening text,
+        and return them as a list of alternating Examples and strings.
+        Line numbers for the Examples are 0-based.  The optional
+        argument `name` is a name identifying this string, and is only
+        used for error messages.
+        """
+        string = string.expandtabs()
+        # If all lines begin with the same indentation, then strip it.
+        min_indent = self._min_indent(string)
+        if min_indent > 0:
+            string = '\n'.join([l[min_indent:] for l in string.split('\n')])
+
+        output = []
+        charno, lineno = 0, 0
+        # Find all doctest examples in the string:
+        for m in self._EXAMPLE_RE.finditer(string.expandtabs()):
+            # Add the pre-example text to `output`.
+            output.append(string[charno:m.start()])
+            # Update lineno (lines before this example)
+            lineno += string.count('\n', charno, m.start())
+            # Extract info from the regexp match.
+            (source, options, want, exc_msg) = \
+                     self._parse_example(m, name, lineno)
+            # Create an Example, and add it to the list.
+            if not self._IS_BLANK_OR_COMMENT(source):
+                output.append( Example(source, want, exc_msg,
+                                    lineno=lineno,
+                                    indent=min_indent+len(m.group('indent')),
+                                    options=options) )
+            # Update lineno (lines inside this example)
+            lineno += string.count('\n', m.start(), m.end())
+            # Update charno.
+            charno = m.end()
+        # Add any remaining post-example text to `output`.
+        output.append(string[charno:])
+        return output
+
     def get_doctest(self, string, globs, name, filename, lineno):
         """
         Extract all doctest examples from the given string, and
@@ -628,124 +675,9 @@ class DocTestParser:
 
         The optional argument `name` is a name identifying this
         string, and is only used for error messages.
-
-        >>> text = '''
-        ...        >>> x, y = 2, 3  # no output expected
-        ...        >>> if 1:
-        ...        ...     print x
-        ...        ...     print y
-        ...        2
-        ...        3
-        ...
-        ...        Some text.
-        ...        >>> x+y
-        ...        5
-        ...        '''
-        >>> for x in DocTestParser().get_examples(text):
-        ...     print (x.source, x.want, x.lineno)
-        ('x, y = 2, 3  # no output expected\\n', '', 1)
-        ('if 1:\\n    print x\\n    print y\\n', '2\\n3\\n', 2)
-        ('x+y\\n', '5\\n', 9)
         """
-        examples = []
-        charno, lineno = 0, 0
-        # Find all doctest examples in the string:
-        for m in self._EXAMPLE_RE.finditer(string.expandtabs()):
-            # Update lineno (lines before this example)
-            lineno += string.count('\n', charno, m.start())
-            # Extract source/want from the regexp match.
-            (source, want, exc_msg) = self._parse_example(m, name, lineno)
-            # Extract extra options from the source.
-            options = self._find_options(source, name, lineno)
-            # Create an Example, and add it to the list.
-            if not self._IS_BLANK_OR_COMMENT(source):
-                examples.append( Example(source, want, exc_msg,
-                                         lineno=lineno,
-                                         indent=len(m.group('indent')),
-                                         options=options) )
-            # Update lineno (lines inside this example)
-            lineno += string.count('\n', m.start(), m.end())
-            # Update charno.
-            charno = m.end()
-        return examples
-
-    def get_program(self, string, name="<string>"):
-        """
-        Return an executable program from the given string, as a string.
-
-        The format of this isn't rigidly defined.  In general, doctest
-        examples become the executable statements in the result, and
-        their expected outputs become comments, preceded by an \"#Expected:\"
-        comment.  Everything else (text, comments, everything not part of
-        a doctest test) is also placed in comments.
-
-        The optional argument `name` is a name identifying this
-        string, and is only used for error messages.
-
-        >>> text = '''
-        ...        >>> x, y = 2, 3  # no output expected
-        ...        >>> if 1:
-        ...        ...     print x
-        ...        ...     print y
-        ...        2
-        ...        3
-        ...
-        ...        Some text.
-        ...        >>> x+y
-        ...        5
-        ...        '''
-        >>> print DocTestParser().get_program(text)
-        x, y = 2, 3  # no output expected
-        if 1:
-            print x
-            print y
-        # Expected:
-        ## 2
-        ## 3
-        #
-        # Some text.
-        x+y
-        # Expected:
-        ## 5
-        """
-        string = string.expandtabs()
-        # If all lines begin with the same indentation, then strip it.
-        min_indent = self._min_indent(string)
-        if min_indent > 0:
-            string = '\n'.join([l[min_indent:] for l in string.split('\n')])
-
-        output = []
-        charnum, lineno = 0, 0
-        # Find all doctest examples in the string:
-        for m in self._EXAMPLE_RE.finditer(string.expandtabs()):
-            # Add any text before this example, as a comment.
-            if m.start() > charnum:
-                lines = string[charnum:m.start()-1].split('\n')
-                output.extend([self._comment_line(l) for l in lines])
-                lineno += len(lines)
-
-            # Extract source/want from the regexp match.
-            (source, want, exc_msg) = self._parse_example(m, name, lineno)
-            # Display the source
-            output.append(source)
-            # Display the expected output, if any
-            if want:
-                output.append('# Expected:')
-                output.extend(['## '+l for l in want.split('\n')])
-
-            # Update the line number & char number.
-            lineno += string.count('\n', m.start(), m.end())
-            charnum = m.end()
-        # Add any remaining text, as comments.
-        output.extend([self._comment_line(l)
-                       for l in string[charnum:].split('\n')])
-        # Trim junk on both ends.
-        while output and output[-1] == '#':
-            output.pop()
-        while output and output[0] == '#':
-            output.pop(0)
-        # Combine the output, and return it.
-        return '\n'.join(output)
+        return [x for x in self.parse(string, name)
+                if isinstance(x, Example)]
 
     def _parse_example(self, m, name, lineno):
         """
@@ -786,7 +718,10 @@ class DocTestParser:
         else:
             exc_msg = None
 
-        return source, want, exc_msg
+        # Extract options from the source.
+        options = self._find_options(source, name, lineno)
+
+        return source, options, want, exc_msg
 
     # This regular expression looks for option directives in the
     # source code of an example.  Option directives are comments
@@ -826,19 +761,15 @@ class DocTestParser:
 
     # This regular expression finds the indentation of every non-blank
     # line in a string.
-    _INDENT_RE = re.compile('^([ ]+)(?=\S)', re.MULTILINE)
+    _INDENT_RE = re.compile('^([ ]*)(?=\S)', re.MULTILINE)
 
     def _min_indent(self, s):
         "Return the minimum indentation of any non-blank line in `s`"
-        return min([len(indent) for indent in self._INDENT_RE.findall(s)])
-
-    def _comment_line(self, line):
-        "Return a commented form of the given line"
-        line = line.rstrip()
-        if line:
-            return '# '+line
+        indents = [len(indent) for indent in self._INDENT_RE.findall(s)]
+        if len(indents) > 0:
+            return min(indents)
         else:
-            return '#'
+            return 0
 
     def _check_prompt_blank(self, lines, indent, name, lineno):
         """
@@ -2319,25 +2250,31 @@ def script_from_examples(s):
        if 0:
           blah
           blah
-       <BLANKLINE>
        #
        #     Ho hum
        """
+    output = []
+    for piece in DocTestParser().parse(s):
+        if isinstance(piece, Example):
+            # Add the example's source code (strip trailing NL)
+            output.append(piece.source[:-1])
+            # Add the expected output:
+            want = piece.want
+            if want:
+                output.append('# Expected:')
+                output += ['## '+l for l in want.split('\n')[:-1]]
+        else:
+            # Add non-example text.
+            output += [_comment_line(l)
+                       for l in piece.split('\n')[:-1]]
 
-    return DocTestParser().get_program(s)
-
-def _want_comment(example):
-    """
-    Return a comment containing the expected output for the given example.
-    """
-    # Return the expected output, if any
-    want = example.want
-    if want:
-        if want[-1] == '\n':
-            want = want[:-1]
-        want = "\n#     ".join(want.split("\n"))
-        want = "\n# Expected:\n#     %s" % want
-    return want
+    # Trim junk on both ends.
+    while output and output[-1] == '#':
+        output.pop()
+    while output and output[0] == '#':
+        output.pop(0)
+    # Combine the output, and return it.
+    return '\n'.join(output)
 
 def testsource(module, name):
     """Extract the test sources from a doctest docstring as a script.
