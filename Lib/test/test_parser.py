@@ -15,7 +15,12 @@ from test_support import verbose
 def roundtrip(f, s):
     st1 = f(s)
     t = st1.totuple()
-    st2 = parser.sequence2ast(t)
+    try:
+        st2 = parser.sequence2ast(t)
+    except parser.ParserError:
+        print "Failing syntax tree:"
+        pprint.pprint(t)
+        raise
 
 def roundtrip_fromfile(filename):
     roundtrip(suite, open(filename).read())
@@ -46,6 +51,18 @@ test_expr("foo(a, b, c, *args)")
 test_expr("foo(a, b, c, *args, **kw)")
 test_expr("foo(a, b, c, **kw)")
 test_expr("foo + bar")
+test_expr("lambda: 0")
+test_expr("lambda x: 0")
+test_expr("lambda *y: 0")
+test_expr("lambda *y, **z: 0")
+test_expr("lambda **z: 0")
+test_expr("lambda x, y: 0")
+test_expr("lambda foo=bar: 0")
+test_expr("lambda foo=bar, spaz=nifty+spit: 0")
+test_expr("lambda foo=bar, **z: 0")
+test_expr("lambda foo=bar, blaz=blat+2, **z: 0")
+test_expr("lambda foo=bar, blaz=blat+2, *y, **z: 0")
+test_expr("lambda x, *y, **z: 0")
 
 print
 print "Statements:"
@@ -71,6 +88,8 @@ test_suite("a ^= b")
 test_suite("a <<= b")
 test_suite("a >>= b")
 test_suite("a **= b")
+test_suite("def f(): pass")
+test_suite("def f(foo=bar): pass")
 
 #d = os.path.dirname(os.__file__)
 #roundtrip_fromfile(os.path.join(d, "os.py"))

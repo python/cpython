@@ -15,6 +15,18 @@ expr: foo(a, b, c, *args)
 expr: foo(a, b, c, *args, **kw)
 expr: foo(a, b, c, **kw)
 expr: foo + bar
+expr: lambda: 0
+expr: lambda x: 0
+expr: lambda *y: 0
+expr: lambda *y, **z: 0
+expr: lambda **z: 0
+expr: lambda x, y: 0
+expr: lambda foo=bar: 0
+expr: lambda foo=bar, spaz=nifty+spit: 0
+expr: lambda foo=bar, **z: 0
+expr: lambda foo=bar, blaz=blat+2, **z: 0
+expr: lambda foo=bar, blaz=blat+2, *y, **z: 0
+expr: lambda x, *y, **z: 0
 
 Statements:
 suite: print
@@ -37,6 +49,8 @@ suite: a ^= b
 suite: a <<= b
 suite: a >>= b
 suite: a **= b
+suite: def f(): pass
+suite: def f(foo=bar): pass
 
 Invalid parse trees:
 
