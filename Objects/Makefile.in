@@ -1,0 +1,66 @@
+# NOTE: Makefile.in is converted into Makefile by the configure script
+# in the parent directory.  Once configure has run, you can recreate
+# the Makefile by running just config.status.
+
+# === Variables set by config.stat ===
+
+srcdir=		@srcdir@
+VPATH=		@srcdir@
+
+CC=		@CC@
+RANLIB=		@RANLIB@
+
+
+# === Other things that are customizable but not by configure ===
+
+AR=		ar
+MKDEP=		mkdep
+SHELL=		/bin/sh
+
+INCLDIR=	$(srcdir)/../Py
+OPT=		-g
+CFLAGS=		$(OPT) -I$(INCLDIR)
+
+
+# === Fixed definitions ===
+
+OBJS=		accessobject.o \
+		classobject.o fileobject.o floatobject.o \
+		frameobject.o funcobject.o intobject.o listobject.o \
+		longobject.o mappingobject.o methodobject.o \
+		moduleobject.o object.o rangeobject.o stringobject.o \
+		tupleobject.o typeobject.o
+
+SRCS=		accessobject.c \
+		classobject.c fileobject.c floatobject.c \
+		frameobject.c funcobject.c intobject.c listobject.c \
+		longobject.c mappingobject.c methodobject.c \
+		moduleobject.c object.c rangeobject.c stringobject.c \
+		tupleobject.c typeobject.c
+
+LIB=		libObjects.a
+
+
+# === Rules ===
+
+all:		$(LIB)
+
+$(LIB):		$(OBJS)
+		$(AR) cr $(LIB) $(OBJS)
+
+clean:
+		-rm -f $(OBJS)
+		-rm -f core *~ [@,#]* *.old *.orig *.rej
+
+clobber:	clean
+		-rm -f $(LIB) tags TAGS
+
+Makefile:	Makefile.in ../config.status
+		(cd ..; $(SHELL) config.status)
+
+depend:		$(SRCS)
+		$(MKDEP) $(CFLAGS) $(SRCS) $(PGENSRCS)
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
