@@ -266,6 +266,8 @@ class Conversion:
                             self.write("(%s\n" % entry.outputname)
                         self.err_write("--- text: %s\n" % `pentry.text`)
                         self.write("-%s\n" % encode(pentry.text))
+                    elif pentry.type == "entityref":
+                        self.write("&%s\n" % pentry.name)
                 if entry.outputname:
                     if not opened:
                         self.write("(%s\n" % entry.outputname)
@@ -459,6 +461,11 @@ class TableParser(XMLParser):
         self.__buffer = ''
     def end_attribute(self):
         self.__current.parameters[-1].text = self.__buffer
+
+    def start_entityref(self, attrs):
+        name = attrs["name"]
+        p = Parameter("entityref", name)
+        self.__current.parameters.append(p)
 
     def start_child(self, attrs):
         name = attrs["name"]
