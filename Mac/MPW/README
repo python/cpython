@@ -1,0 +1,49 @@
+From: walker@island.com (Richard Walker)
+Date: Wed, 1 Jun 94 15:28:40 PDT
+
+Compiling Python Under MPW C
+============================
+
+This directory contains the Makefiles, source files and scripts
+required to compile Python under MPW C.
+
+Compiling:
+----------
+the "buildall" file at the top level is an MPW script
+which rebuilds the entire Python source.
+
+To build, start the MPW Shell and select the Worksheet window.
+Go to top level directory of the Python source tree.
+Type: buildall<ENTER>
+
+To rebuild:
+Type: buildall clean<ENTER>
+Type: buildall<ENTER>
+
+Configuration:
+--------------
+The files "Makefile", "config.h", "Modules:config.c" and
+"Modules:Makefile" are normally configured and/or generated 
+automagically under Unix.
+
+Macintosh programmers will have to be content with editing
+these files manually to reflect their desired configuration.
+The files provided here are examples only; Modules which 
+made it into this version are those which required little or 
+no modification.
+
+Running:
+--------
+The top-level Makefile compiles Python as an MPW Tool.
+You can then run Python interactively from within
+the MPW Worksheet.
+
+Diagnostics:
+------------
+If Python fails to run by aborting in file "Parser:grammar1.c",
+at the end of the function "finddfa", line 46,
+try defining the preprocessor symbol "MPW_881_BUG" in 
+file "Parser:acceler.c", function "fixstate", line 107.
+
+XXX Note that you have to edit test_grammar.py because of a bug
+in int overflow det that I haven't found yet.
