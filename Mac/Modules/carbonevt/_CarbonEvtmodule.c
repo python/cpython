@@ -1447,9 +1447,10 @@ static PyObject *CarbonEvents_TrackMouseRegion(PyObject *_self, PyObject *_args)
 	RgnHandle inRegion;
 	Boolean ioWasInRgn;
 	UInt16 outResult;
-	if (!PyArg_ParseTuple(_args, "O&O&",
+	if (!PyArg_ParseTuple(_args, "O&O&b",
 	                      GrafObj_Convert, &inPort,
-	                      ResObj_Convert, &inRegion))
+	                      ResObj_Convert, &inRegion,
+	                      &ioWasInRgn))
 		return NULL;
 	_err = TrackMouseRegion(inPort,
 	                        inRegion,
@@ -1795,7 +1796,7 @@ static PyMethodDef CarbonEvents_methods[] = {
 	{"TrackMouseLocationWithOptions", (PyCFunction)CarbonEvents_TrackMouseLocationWithOptions, 1,
 	 "(GrafPtr inPort, OptionBits inOptions, double inTimeout) -> (Point outPt, UInt32 outModifiers, UInt16 outResult)"},
 	{"TrackMouseRegion", (PyCFunction)CarbonEvents_TrackMouseRegion, 1,
-	 "(GrafPtr inPort, RgnHandle inRegion) -> (Boolean ioWasInRgn, UInt16 outResult)"},
+	 "(GrafPtr inPort, RgnHandle inRegion, Boolean ioWasInRgn) -> (Boolean ioWasInRgn, UInt16 outResult)"},
 	{"GetLastUserEventTime", (PyCFunction)CarbonEvents_GetLastUserEventTime, 1,
 	 "() -> (double _rv)"},
 	{"GetWindowEventTarget", (PyCFunction)CarbonEvents_GetWindowEventTarget, 1,
