@@ -41,13 +41,15 @@ _start_optional_rx = re.compile("[ \n]*[[]")
 ESCAPED_CHARS = "$%#^ {}&~"
 
 
-def pushing(name, point, depth):
+def dbgmsg(msg):
     if DEBUG:
-        sys.stderr.write("%s<%s> at %s\n" % (" "*depth, name, point))
+        sys.stderr.write(msg + "\n")
+
+def pushing(name, point, depth):
+    dbgmsg("%s<%s> at %s" % (" "*depth, name, point))
 
 def popping(name, point, depth):
-    if DEBUG:
-        sys.stderr.write("%s</%s> at %s\n" % (" "*depth, name, point))
+    dbgmsg("%s</%s> at %s" % (" "*depth, name, point))
 
 
 class Conversion:
@@ -71,11 +73,11 @@ class Conversion:
         self.write = self.ofp.write
 
     def subconvert(self, endchar=None, depth=0):
+        stack = []
+        line = self.line
         if DEBUG and endchar:
             self.err_write(
                 "subconvert(%s)\n  line = %s\n" % (`endchar`, `line[:20]`))
-        stack = []
-        line = self.line
         while line:
             if line[0] == endchar and not stack:
                 if DEBUG:
@@ -108,7 +110,7 @@ class Conversion:
                     # should be more careful, but this is easier to code:
                     stack = []
                     self.write(")document\n")
-                elif envname == stack[-1]:
+                elif stack and envname == stack[-1]:
                     self.write(")%s\n" % envname)
                     del stack[-1]
                     popping(envname, "a", len(stack) + depth)
@@ -203,7 +205,7 @@ class Conversion:
                         if m:
                             line = line[m.end():]
                     elif type(attrname) is type([]):
-                        # A normal subelement.
+                        # A normal subelement: <macroname><attrname>...</>...
                         attrname = attrname[0]
                         if not opened:
                             opened = 1
@@ -212,7 +214,8 @@ class Conversion:
                         self.write("(%s\n" % attrname)
                         pushing(attrname, "sub-elem", len(stack) + depth + 1)
                         self.line = skip_white(line)[1:]
-                        line = subconvert("}", depth + len(stack) + 2)
+                        line = self.subconvert("}", len(stack) + depth + 1)[1:]
+                        dbgmsg("subconvert() ==> " + `line[:20]`)
                         popping(attrname, "sub-elem", len(stack) + depth + 1)
                         self.write(")%s\n" % attrname)
                     else:
@@ -376,6 +379,7 @@ def main():
         "item": ([("leader",)], 1, 0, 0, 0),
         "label": (["id"], 0, 1, 0, 0),
         "labelwidth": ([], 0, 1, 0, 0),
+        "large": ([], 0, 1, 0, 0),
         "LaTeX": ([], 0, 1, 0, 0),
         "leftmargin": ([], 0, 1, 0, 0),
         "leq": ([], 0, 1, 0, 0),
