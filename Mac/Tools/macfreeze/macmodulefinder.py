@@ -21,7 +21,7 @@ except ImportError:
 #
 MAC_INCLUDE_MODULES=['site', 'exceptions']
 MAC_MAYMISS_MODULES=['posix', 'os2', 'nt', 'ntpath', 'dos', 'dospath', 
-		'win32api',
+		'win32api', 'ce',
 		'nturl2path', 'pwd', 'sitecustomize',
 		'org.python.core']
 
