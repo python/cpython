@@ -637,5 +637,17 @@ MacOS_Init()
 	MacOS_Error = PyMac_GetOSErrException();
 	if (MacOS_Error == NULL || PyDict_SetItemString(d, "Error", MacOS_Error) != 0)
 		Py_FatalError("can't define MacOS.Error");
+	/*
+	** This is a hack: the following constant added to the id() of a string
+	** object gives you the address of the data. Unfortunately, it is needed for
+	** some of the image and sound processing interfaces on the mac:-(
+	*/
+	{
+		PyStringObject *p = 0;
+		long off = (long)&(p->ob_sval[0]);
+		
+		if( PyDict_SetItemString(d, "string_id_to_buffer", Py_BuildValue("i", off)) != 0)
+			Py_FatalError("Can't define MacOS.string_id_to_buffer");
+	}
 }
 
