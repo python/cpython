@@ -976,7 +976,7 @@ static Tcl_Obj**
 Tkapp_CallArgs(PyObject *args, Tcl_Obj** objStore, int *pobjc)
 {
 	Tcl_Obj **objv = objStore;
-	int objc, i;
+	int objc = 0, i;
 	if (args == NULL)
 		/* do nothing */;
 
