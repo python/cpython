@@ -2673,9 +2673,13 @@ formatint(char *buf, size_t buflen, int flags,
 	/* When converting 0 under %#x or %#X, C leaves off the base marker,
 	 * but we want it (for consistency with other %#x conversions, and
 	 * for consistency with Python's hex() function).
+	 * BUG 28-Apr-2001 tim:  At least two platform Cs (Metrowerks &
+	 * Compaq Tru64) violate the std by converting 0 w/ leading 0x anyway.
+	 * So add it only if the platform didn't already.
 	 */
-	if (x == 0 && (flags & F_ALT) && (type == 'x' || type == 'X')) {
-		assert(buf[1] != type);  /* else this C *is* adding 0x/0X */
+	if (x == 0 && (flags & F_ALT) && (type == 'x' || type == 'X') &&
+	    buf[1] != (char)type) /* this last always true under std C */
+		{
 		memmove(buf+2, buf, strlen(buf) + 1);
 		buf[0] = '0';
 		buf[1] = (char)type;
