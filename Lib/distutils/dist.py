@@ -8,11 +8,12 @@ being built/installed/distributed."""
 
 __revision__ = "$Id$"
 
-import sys, string, re
+import sys, os, string, re
 from types import *
 from copy import copy
 from distutils.errors import *
 from distutils.fancy_getopt import FancyGetopt, longopt_xlate
+from distutils.util import check_environ
 
 
 # Regex to define acceptable Distutils command names.  This is not *quite*
@@ -137,6 +138,11 @@ class Distribution:
         # for the setup script to override command classes
         self.cmdclass = {}
 
+        # Store options for commands here between parsing them (from config
+        # files, the command-line, etc.) and actually putting them into the
+        # command object that needs them.
+        self.command_options = {}
+
         # These options are really the business of various commands, rather
         # than of the Distribution itself.  We provide aliases for them in
         # Distribution as a convenience to the developer.
@@ -199,6 +205,74 @@ class Distribution:
                           "invalid distribution option '%s'" % key
 
     # __init__ ()
+
+
+    def find_config_files (self):
+        """Find as many configuration files as should be processed for this
+        platform, and return a list of filenames in the order in which they
+        should be parsed.  The filenames returned are guaranteed to exist
+        (modulo nasty race conditions).
+
+        On Unix, there are three possible config files: pydistutils.cfg in
+        the Distutils installation directory (ie. where the top-level
+        Distutils __inst__.py file lives), .pydistutils.cfg in the user's
+        home directory, and setup.cfg in the current directory.
+
+        On Windows and Mac OS, there are two possible config files:
+        pydistutils.cfg in the Python installation directory (sys.prefix)
+        and setup.cfg in the current directory."""
+
+        files = []
+        if os.name == "posix":
+            check_environ()
+
+            sys_dir = os.path.dirname(sys.modules['distutils'].__file__)
+            sys_file = os.path.join(sys_dir, "pydistutils.cfg")
+            if os.path.isfile(sys_file):
+                files.append(sys_file)
+
+            user_file = os.path.join(os.environ.get('HOME'),
+                                     ".pydistutils.cfg")
+            if os.path.isfile(user_file):
+                files.append(user_file)
+
+        else:
+            sys_file = os.path.join (sysconfig.PREFIX, "pydistutils.cfg")
+            if os.path.isfile(sys_file):
+                files.append(sys_file)
+
+        # All platforms support local setup.cfg
+        local_file = "setup.cfg"
+        if os.path.isfile(local_file):
+            files.append(local_file)
+
+        return files
+
+    # find_config_files ()
+
+
+    def parse_config_files (self, filenames=None):
+
+        from ConfigParser import ConfigParser
+
+        if filenames is None:
+            filenames = self.find_config_files()
+
+        parser = ConfigParser()
+        parser.read(filenames)
+        for section in parser.sections():
+            options = parser.options(section)
+            if not self.command_options.has_key(section) is None:
+                self.command_options[section] = {}
+            cmd_opts = self.command_options[section]
+
+            for opt in options:
+                if opt != '__name__':
+                    cmd_opts[opt] = parser.get(section,opt)
+
+        from pprint import pprint
+        print "configuration options:"
+        pprint (self.command_options)
 
 
     def parse_command_line (self, args):
@@ -436,18 +510,14 @@ class Distribution:
 
     # -- Command class/object methods ----------------------------------
 
-    # This is a method just so it can be overridden if desired; it doesn't
-    # actually use or change any attributes of the Distribution instance.
     def find_command_class (self, command):
-        """Given a command, derives the names of the module and class
-           expected to implement the command: eg. 'foo_bar' becomes
-           'distutils.command.foo_bar' (the module) and 'FooBar' (the
-           class within that module).  Loads the module, extracts the
-           class from it, and returns the class object.
+        """Given a command name, attempts to load the module and class that
+        implements that command.  This is done by importing a module
+        "distutils.command." + command, and a class named 'command' in that
+        module.
 
-           Raises DistutilsModuleError with a semi-user-targeted error
-           message if the expected module could not be loaded, or the
-           expected class was not found in it."""
+        Raises DistutilsModuleError if the expected module could not be
+        found, or if that module does not define the expected class."""
 
         module_name = 'distutils.command.' + command
         klass_name = command
