@@ -34,8 +34,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #include <fcntl.h>
 
-extern int sginap(long);
-
 static object *
 sgi_nap(self, args)
 	object *self;
