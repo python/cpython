@@ -59,7 +59,7 @@ def checkextensions(unknown, extra_inis, prefix):
 
 	defaultMapName = os.path.join( os.path.split(sys.argv[0])[0], "extensions_win32.ini")
 	if not os.path.isfile(defaultMapName):
-		sys.stderr.write("WARNING: %s can not be found - standard extensions may not be found" % mapFileName)
+		sys.stderr.write("WARNING: %s can not be found - standard extensions may not be found\n" % defaultMapName)
 	else:
 		# must go on end, so other inis can override.
 		extra_inis.append(defaultMapName)

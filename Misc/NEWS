@@ -126,6 +126,8 @@ IDLE
 Tools/Demos
 -----------
 
+- Patch #713645: Fix typo in checkextensions_win32.
+
 - Pynche was fixed to not crash when there is no ~/.pynche file and no
   -d option was given.
 
