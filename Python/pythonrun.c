@@ -920,7 +920,7 @@ void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 		if (tb && tb != Py_None)
 			err = PyTraceBack_Print(tb, f);
 		if (err == 0 &&
-		    PyErr_GivenExceptionMatches(exception, PyExc_SyntaxError))
+		    PyObject_HasAttrString(v, "print_file_and_line"))
 		{
 			PyObject *message;
 			char *filename, *text;

@@ -6,6 +6,9 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- PyErr_Display will provide file and line information for all exceptions
+  that have an attribute print_file_and_line, not just SyntaxErrors.
+
 - The UTF-8 codec will now encode and decode Unicode surrogates
   correctly and without raising exceptions for unpaired ones.
 

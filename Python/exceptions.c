@@ -670,7 +670,8 @@ SyntaxError__classinit__(PyObject *klass)
 	PyObject_SetAttrString(klass, "filename", Py_None) ||
 	PyObject_SetAttrString(klass, "lineno", Py_None) ||
 	PyObject_SetAttrString(klass, "offset", Py_None) ||
-	PyObject_SetAttrString(klass, "text", Py_None))
+	PyObject_SetAttrString(klass, "text", Py_None) ||
+	PyObject_SetAttrString(klass, "print_file_and_line", Py_None))
     {
 	retval = -1;
     }

@@ -561,7 +561,9 @@ PyErr_WarnExplicit(PyObject *category, char *message,
 }
 
 
-/* XXX There's a comment missing here */
+/* Set file and line information for the current exception.
+   If the exception is not a SyntaxError, also sets additional attributes
+   to make printing of exceptions believe it is a syntax error. */
 
 void
 PyErr_SyntaxLocation(char *filename, int lineno)
@@ -594,6 +596,26 @@ PyErr_SyntaxLocation(char *filename, int lineno)
 		if (tmp) {
 			PyObject_SetAttrString(v, "text", tmp);
 			Py_DECREF(tmp);
+		}
+	}
+	if (PyObject_SetAttrString(v, "offset", Py_None)) {
+		PyErr_Clear();
+	}
+	if (exc != PyExc_SyntaxError) {
+		if (!PyObject_HasAttrString(v, "msg")) {
+			tmp = PyObject_Str(v);
+			if (tmp) {
+				if (PyObject_SetAttrString(v, "msg", tmp))
+					PyErr_Clear();
+				Py_DECREF(tmp);
+			} else {
+				PyErr_Clear();
+			}
+		}
+		if (!PyObject_HasAttrString(v, "print_file_and_line")) {
+			if (PyObject_SetAttrString(v, "print_file_and_line",
+						   Py_None))
+				PyErr_Clear();
 		}
 	}
 	PyErr_Restore(exc, v, tb);
