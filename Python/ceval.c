@@ -13,6 +13,7 @@
 #include "frameobject.h"
 #include "eval.h"
 #include "opcode.h"
+#include "structmember.h"
 
 #ifdef macintosh
 #include "macglue.h"
@@ -32,17 +33,7 @@
 typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
-
-static PyObject *eval_code2(PyCodeObject *,
-			    PyObject *, PyObject *,
-			    PyObject **, int,
-			    PyObject **, int,
-			    PyObject **, int,
-			    PyObject *);
-
 static PyObject *eval_frame(PyFrameObject *);
-static char *get_func_name(PyObject *);
-static char *get_func_desc(PyObject *);
 static PyObject *call_object(PyObject *, PyObject *, PyObject *);
 static PyObject *call_cfunction(PyObject *, PyObject *, PyObject *);
 static PyObject *call_instance(PyObject *, PyObject *, PyObject *);
@@ -97,7 +88,6 @@ static long dxpairs[257][256];
 static long dxp[256];
 #endif
 #endif
-
 
 staticforward PyTypeObject gentype;
 
@@ -211,24 +201,11 @@ static struct PyMethodDef gen_methods[] = {
 	{NULL,          NULL}   /* Sentinel */
 };
 
-static PyObject *
-gen_getattr(genobject *gen, char *name)
-{
-	PyObject *result;
-
-	if (strcmp(name, "gi_frame") == 0) {
-		result = (PyObject *)gen->gi_frame;
-		assert(result != NULL);
-		Py_INCREF(result);
-	}
-	else if (strcmp(name, "gi_running") == 0)
-		result = (PyObject *)PyInt_FromLong((long)gen->gi_running);
-	else if (strcmp(name, "__members__") == 0)
-		result = Py_BuildValue("[ss]", "gi_frame", "gi_running");
-	else
- 		result = Py_FindMethod(gen_methods, (PyObject *)gen, name);
- 	return result;
-}
+static struct memberlist gen_memberlist[] = {
+	{"gi_frame",	T_OBJECT, offsetof(genobject, gi_frame),	RO},
+	{"gi_running",	T_INT,    offsetof(genobject, gi_running),	RO},
+	{NULL}	/* Sentinel */
+};
 
 statichere PyTypeObject gentype = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -239,7 +216,7 @@ statichere PyTypeObject gentype = {
 	/* methods */
 	(destructor)gen_dealloc, 		/* tp_dealloc */
 	0,					/* tp_print */
-	(getattrfunc)gen_getattr,		/* tp_getattr */
+	0, 					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
 	0,					/* tp_repr */
@@ -249,7 +226,7 @@ statichere PyTypeObject gentype = {
 	0,					/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
-	0,					/* tp_getattro */
+	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
@@ -260,6 +237,11 @@ statichere PyTypeObject gentype = {
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)gen_getiter,		/* tp_iter */
 	(iternextfunc)gen_iternext,		/* tp_iternext */
+	gen_methods,				/* tp_methods */
+	gen_memberlist,				/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
 };
 
 
@@ -505,7 +487,7 @@ static int unpack_iterable(PyObject *, int, PyObject **);
 PyObject *
 PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
 {
-	return eval_code2(co,
+	return PyEval_EvalCodeEx(co,
 			  globals, locals,
 			  (PyObject **)NULL, 0,
 			  (PyObject **)NULL, 0,
@@ -516,7 +498,7 @@ PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
 
 /* Interpreter main loop */
 
-PyObject *
+static PyObject *
 eval_frame(PyFrameObject *f)
 {
 #ifdef DXPAIRS
@@ -965,7 +947,7 @@ eval_frame(PyFrameObject *f)
 		case BINARY_SUBSCR:
 			w = POP();
 			v = POP();
-			if (PyList_Check(v) && PyInt_Check(w)) {
+			if (v->ob_type == &PyList_Type && PyInt_Check(w)) {
 				/* INLINE: list[int] */
 				long i = PyInt_AsLong(w);
 				if (i < 0)
@@ -2273,8 +2255,8 @@ eval_frame(PyFrameObject *f)
 	return retval;
 }
 
-static PyObject *
-eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
+PyObject *
+PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	   PyObject **args, int argcount, PyObject **kws, int kwcount,
 	   PyObject **defs, int defcount, PyObject *closure)
 {
@@ -2973,13 +2955,13 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
 		return NULL;
 	}
 
-	result = call_object(func, arg, kw);
+	result = PyObject_Call(func, arg, kw);
 	Py_DECREF(arg);
 	return result;
 }
 
 /* How often is each kind of object called?  The answer depends on the
-   program.  An instrumented call_object() was used to run the Python
+   program.  An instrumented PyObject_Call() was used to run the Python
    regression test suite.  The results were:
    4200000 PyCFunctions
     390000 fast_function() calls
@@ -2992,11 +2974,11 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
     most common, but not by such a large margin.
 */
 
-static char *
-get_func_name(PyObject *func)
+char *
+PyEval_GetFuncName(PyObject *func)
 {
 	if (PyMethod_Check(func))
-		return get_func_name(PyMethod_GET_FUNCTION(func));
+		return PyEval_GetFuncName(PyMethod_GET_FUNCTION(func));
 	else if (PyFunction_Check(func))
 		return PyString_AsString(((PyFunctionObject*)func)->func_name);
 	else if (PyCFunction_Check(func))
@@ -3011,8 +2993,8 @@ get_func_name(PyObject *func)
 	}
 }
 
-static char *
-get_func_desc(PyObject *func)
+char *
+PyEval_GetFuncDesc(PyObject *func)
 {
 	if (PyMethod_Check(func))
 		return "()";
@@ -3136,7 +3118,8 @@ call_method(PyObject *func, PyObject *arg, PyObject *kw)
 			PyErr_Format(PyExc_TypeError,
 				     "unbound method %s%s must be "
 				     "called with instance as first argument",
-				     get_func_name(func), get_func_desc(func));
+				     PyEval_GetFuncName(func),
+				     PyEval_GetFuncDesc(func));
 			return NULL;
 		}
 		Py_INCREF(arg);
@@ -3199,7 +3182,7 @@ call_eval_code2(PyObject *func, PyObject *arg, PyObject *kw)
 		nk = 0;
 	}
 
-	result = eval_code2(
+	result = PyEval_EvalCodeEx(
 		(PyCodeObject *)PyFunction_GET_CODE(func),
 		PyFunction_GET_GLOBALS(func), (PyObject *)NULL,
 		&PyTuple_GET_ITEM(arg, 0), PyTuple_Size(arg),
@@ -3255,7 +3238,7 @@ fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 		d = &PyTuple_GET_ITEM(argdefs, 0);
 		nd = ((PyTupleObject *)argdefs)->ob_size;
 	}
-	return eval_code2((PyCodeObject *)co, globals,
+	return PyEval_EvalCodeEx((PyCodeObject *)co, globals,
 			  (PyObject *)NULL, (*pp_stack)-n, na,
 			  (*pp_stack)-2*nk, nk, d, nd,
 			  closure);
@@ -3282,8 +3265,8 @@ update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack,
                         PyErr_Format(PyExc_TypeError,
                                      "%.200s%s got multiple values "
                                      "for keyword argument '%.200s'",
-				     get_func_name(func),
-				     get_func_desc(func),
+				     PyEval_GetFuncName(func),
+				     PyEval_GetFuncDesc(func),
 				     PyString_AsString(key));
 			Py_DECREF(key);
 			Py_DECREF(value);
@@ -3356,7 +3339,7 @@ do_call(PyObject *func, PyObject ***pp_stack, int na, int nk)
 	callargs = load_args(pp_stack, na);
 	if (callargs == NULL)
 		goto call_fail;
-	result = call_object(func, callargs, kwdict);
+	result = PyObject_Call(func, callargs, kwdict);
  call_fail:
 	Py_XDECREF(callargs);
 	Py_XDECREF(kwdict);
@@ -3378,8 +3361,8 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 			PyErr_Format(PyExc_TypeError,
 				     "%s%s argument after ** "
 				     "must be a dictionary",
-				     get_func_name(func),
-				     get_func_desc(func));
+				     PyEval_GetFuncName(func),
+				     PyEval_GetFuncDesc(func));
 			goto ext_call_fail;
 		}
 	}
@@ -3393,8 +3376,8 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 					PyErr_Format(PyExc_TypeError,
 						     "%s%s argument after * "
 						     "must be a sequence",
-						     get_func_name(func),
-						     get_func_desc(func));
+						     PyEval_GetFuncName(func),
+						     PyEval_GetFuncDesc(func));
 				}
 				goto ext_call_fail;
 			}
@@ -3411,7 +3394,7 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 	callargs = update_star_args(na, nstar, stararg, pp_stack);
 	if (callargs == NULL)
 		goto ext_call_fail;
-	result = call_object(func, callargs, kwdict);
+	result = PyObject_Call(func, callargs, kwdict);
       ext_call_fail:
 	Py_XDECREF(callargs);
 	Py_XDECREF(kwdict);
@@ -3632,63 +3615,25 @@ import_all_from(PyObject *locals, PyObject *v)
 static PyObject *
 build_class(PyObject *methods, PyObject *bases, PyObject *name)
 {
-	int i, n;
-	if (!PyTuple_Check(bases)) {
-		PyErr_SetString(PyExc_SystemError,
-				"build_class with non-tuple bases");
-		return NULL;
-	}
-	if (!PyDict_Check(methods)) {
-		PyErr_SetString(PyExc_SystemError,
-				"build_class with non-dictionary");
-		return NULL;
-	}
-	if (!PyString_Check(name)) {
-		PyErr_SetString(PyExc_SystemError,
-				"build_class with non-string name");
-		return NULL;
-	}
-	n = PyTuple_Size(bases);
-	for (i = 0; i < n; i++) {
-		PyObject *base = PyTuple_GET_ITEM(bases, i);
-		if (!PyClass_Check(base)) {
-			/* Call the base's *type*, if it is callable.
-			   This code is a hook for Donald Beaudry's
-			   and Jim Fulton's type extensions.  In
-			   unextended Python it will never be triggered
-			   since its types are not callable.
-			   Ditto: call the bases's *class*, if it has
-			   one.  This makes the same thing possible
-			   without writing C code.  A true meta-object
-			   protocol! */
-			PyObject *basetype = (PyObject *)base->ob_type;
-			PyObject *callable = NULL;
-			if (PyCallable_Check(basetype))
-				callable = basetype;
-			else
-				callable = PyObject_GetAttrString(
-					base, "__class__");
-			if (callable) {
-				PyObject *args;
-				PyObject *newclass = NULL;
-				args = Py_BuildValue(
-					"(OOO)", name, bases, methods);
-				if (args != NULL) {
-					newclass = PyEval_CallObject(
-						callable, args);
-					Py_DECREF(args);
-				}
-				if (callable != basetype) {
-					Py_DECREF(callable);
-				}
-				return newclass;
-			}
-			PyErr_SetString(PyExc_TypeError,
-				"base is not a class object");
-			return NULL;
+	PyObject *metaclass = NULL;
+
+	if (PyDict_Check(methods))
+		metaclass = PyDict_GetItemString(methods, "__metaclass__");
+
+	if (metaclass == NULL) {
+		if (PyTuple_Check(bases) && PyTuple_GET_SIZE(bases) > 0)
+			metaclass = (PyObject *)
+				PyTuple_GET_ITEM(bases, 0)->ob_type;
+		else {
+			PyObject *g = PyEval_GetGlobals();
+			if (g != NULL && PyDict_Check(g))
+				metaclass = PyDict_GetItemString(
+					g, "__metaclass__");
+			if (metaclass == NULL)
+				metaclass = (PyObject *) &PyClass_Type;
 		}
 	}
-	return PyClass_New(bases, methods, name);
+	return PyObject_CallFunction(metaclass, "OOO", name, bases, methods);
 }
 
 static int

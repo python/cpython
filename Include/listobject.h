@@ -26,7 +26,7 @@ typedef struct {
 
 extern DL_IMPORT(PyTypeObject) PyList_Type;
 
-#define PyList_Check(op) ((op)->ob_type == &PyList_Type)
+#define PyList_Check(op) PyObject_TypeCheck(op, &PyList_Type)
 
 extern DL_IMPORT(PyObject *) PyList_New(int size);
 extern DL_IMPORT(int) PyList_Size(PyObject *);

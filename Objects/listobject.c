@@ -523,6 +523,10 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 			Py_XDECREF(*p);
 		PyMem_DEL(recycle);
 	}
+	if (a->ob_size == 0 && a->ob_item != NULL) {
+		PyMem_FREE(a->ob_item);
+		a->ob_item = NULL;
+	}
 	return 0;
 #undef b
 }
@@ -1289,16 +1293,18 @@ listsort(PyListObject *self, PyObject *args)
 {
 	int err;
 	PyObject *compare = NULL;
+	PyTypeObject *savetype;
 
 	if (args != NULL) {
 		if (!PyArg_ParseTuple(args, "|O:sort", &compare))
 			return NULL;
 	}
+	savetype = self->ob_type;
 	self->ob_type = &immutable_list_type;
 	err = samplesortslice(self->ob_item,
 			      self->ob_item + self->ob_size,
 			      compare);
-	self->ob_type = &PyList_Type;
+	self->ob_type = savetype;
 	if (err < 0)
 		return NULL;
 	Py_INCREF(Py_None);
@@ -1541,6 +1547,100 @@ list_richcompare(PyObject *v, PyObject *w, int op)
 	return PyObject_RichCompare(vl->ob_item[i], wl->ob_item[i], op);
 }
 
+/* Adapted from newer code by Tim */
+static int
+list_fill(PyListObject *result, PyObject *v)
+{
+	PyObject *it;      /* iter(v) */
+	int n;		   /* guess for result list size */
+	int i;
+
+	n = result->ob_size;
+
+	/* Special-case list(a_list), for speed. */
+	if (PyList_Check(v)) {
+		if (v == (PyObject *)result)
+			return 0; /* source is destination, we're done */
+		return list_ass_slice(result, 0, n, v);
+	}
+
+	/* Empty previous contents */
+	if (n != 0) {
+		if (list_ass_slice(result, 0, n, (PyObject *)NULL) != 0)
+			return -1;
+	}
+
+	/* Get iterator.  There may be some low-level efficiency to be gained
+	 * by caching the tp_iternext slot instead of using PyIter_Next()
+	 * later, but premature optimization is the root etc.
+	 */
+	it = PyObject_GetIter(v);
+	if (it == NULL)
+		return -1;
+
+	/* Guess a result list size. */
+	n = -1;	 /* unknown */
+	if (PySequence_Check(v) &&
+	    v->ob_type->tp_as_sequence->sq_length) {
+		n = PySequence_Size(v);
+		if (n < 0)
+			PyErr_Clear();
+	}
+	if (n < 0)
+		n = 8;	/* arbitrary */
+	NRESIZE(result->ob_item, PyObject*, n);
+	if (result->ob_item == NULL)
+		goto error;
+	for (i = 0; i < n; i++)
+		result->ob_item[i] = NULL;
+	result->ob_size = n;
+
+	/* Run iterator to exhaustion. */
+	for (i = 0; ; i++) {
+		PyObject *item = PyIter_Next(it);
+		if (item == NULL) {
+			if (PyErr_Occurred())
+				goto error;
+			break;
+		}
+		if (i < n)
+			PyList_SET_ITEM(result, i, item); /* steals ref */
+		else {
+			int status = ins1(result, result->ob_size, item);
+			Py_DECREF(item);  /* append creates a new ref */
+			if (status < 0)
+				goto error;
+		}
+	}
+
+	/* Cut back result list if initial guess was too large. */
+	if (i < n && result != NULL) {
+		if (list_ass_slice(result, i, n, (PyObject *)NULL) != 0)
+			goto error;
+	}
+	Py_DECREF(it);
+	return 0;
+
+  error:
+	Py_DECREF(it);
+	return -1;
+}
+
+static int
+list_init(PyListObject *self, PyObject *args, PyObject *kw)
+{
+	PyObject *arg = NULL;
+	static char *kwlist[] = {"sequence", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O:list", kwlist, &arg))
+		return -1;
+	if (arg != NULL)
+		return list_fill(self, arg);
+	if (self->ob_size > 0)
+		return list_ass_slice(self, 0, self->ob_size, (PyObject*)NULL);
+	return 0;
+}
+
 static char append_doc[] =
 "L.append(object) -- append object to end";
 static char extend_doc[] =
@@ -1573,12 +1673,6 @@ static PyMethodDef list_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-static PyObject *
-list_getattr(PyListObject *f, char *name)
-{
-	return Py_FindMethod(list_methods, (PyObject *)f, name);
-}
-
 static PySequenceMethods list_as_sequence = {
 	(inquiry)list_length,			/* sq_length */
 	(binaryfunc)list_concat,		/* sq_concat */
@@ -1592,6 +1686,10 @@ static PySequenceMethods list_as_sequence = {
 	(intargfunc)list_inplace_repeat,	/* sq_inplace_repeat */
 };
 
+static char list_doc[] =
+"list() -> new list\n"
+"list(sequence) -> new list initialized from sequence's items";
+
 PyTypeObject PyList_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -1600,7 +1698,7 @@ PyTypeObject PyList_Type = {
 	0,
 	(destructor)list_dealloc,		/* tp_dealloc */
 	(printfunc)list_print,			/* tp_print */
-	(getattrfunc)list_getattr,		/* tp_getattr */
+	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
 	(reprfunc)list_repr,			/* tp_repr */
@@ -1610,14 +1708,29 @@ PyTypeObject PyList_Type = {
 	0,					/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
-	0,					/* tp_getattro */
+	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
- 	0,					/* tp_doc */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC |
+		Py_TPFLAGS_BASETYPE,		/* tp_flags */
+ 	list_doc,				/* tp_doc */
  	(traverseproc)list_traverse,		/* tp_traverse */
  	(inquiry)list_clear,			/* tp_clear */
 	list_richcompare,			/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	list_methods,				/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	(initproc)list_init,			/* tp_init */
+	PyType_GenericAlloc,			/* tp_alloc */
+	PyType_GenericNew,			/* tp_new */
 };
 
 
@@ -1646,12 +1759,6 @@ static PyMethodDef immutable_list_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-static PyObject *
-immutable_list_getattr(PyListObject *f, char *name)
-{
-	return Py_FindMethod(immutable_list_methods, (PyObject *)f, name);
-}
-
 static int
 immutable_list_ass(void)
 {
@@ -1678,7 +1785,7 @@ static PyTypeObject immutable_list_type = {
 	0,
 	0, /* Cannot happen */			/* tp_dealloc */
 	(printfunc)list_print,			/* tp_print */
-	(getattrfunc)immutable_list_getattr,	/* tp_getattr */
+	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0, /* Won't be called */		/* tp_compare */
 	(reprfunc)list_repr,			/* tp_repr */
@@ -1688,13 +1795,24 @@ static PyTypeObject immutable_list_type = {
 	0,					/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
-	0,					/* tp_getattro */
+	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
- 	0,					/* tp_doc */
+ 	list_doc,				/* tp_doc */
  	(traverseproc)list_traverse,		/* tp_traverse */
 	0,					/* tp_clear */
 	list_richcompare,			/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	immutable_list_methods,			/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_init */
 	/* NOTE: This is *not* the standard list_type struct! */
 };

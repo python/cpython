@@ -7,7 +7,8 @@ from __future__ import generators
 import sys
 
 NoneType = type(None)
-TypeType = type(NoneType)
+TypeType = type
+ObjectType = object
 
 IntType = type(0)
 LongType = type(0L)
@@ -22,8 +23,8 @@ UnicodeType = type(u'')
 BufferType = type(buffer(''))
 
 TupleType = type(())
-ListType = type([])
-DictType = DictionaryType = type({})
+ListType = list
+DictType = DictionaryType = dictionary
 
 def _f(): pass
 FunctionType = type(_f)
@@ -70,5 +71,10 @@ except TypeError:
 
 SliceType = type(slice(0))
 EllipsisType = type(Ellipsis)
+
+DictIterType = type(iter({}))
+SequenceIterType = type(iter([]))
+FunctionIterType = type(iter(lambda: 0, 0))
+DictProxyType = type(TypeType.__dict__)
 
 del sys, _f, _C, _x                     # Not for export

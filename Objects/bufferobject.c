@@ -537,21 +537,21 @@ PyTypeObject PyBuffer_Type = {
 	"buffer",
 	sizeof(PyBufferObject),
 	0,
-	(destructor)buffer_dealloc, /*tp_dealloc*/
-	0,		/*tp_print*/
-	0,		/*tp_getattr*/
-	0,		/*tp_setattr*/
-	(cmpfunc)buffer_compare, /*tp_compare*/
-	(reprfunc)buffer_repr, /*tp_repr*/
-	0,		/*tp_as_number*/
-	&buffer_as_sequence,	/*tp_as_sequence*/
-	0,		/*tp_as_mapping*/
-	(hashfunc)buffer_hash,	/*tp_hash*/
-	0,		/*tp_call*/
-	(reprfunc)buffer_str,		/*tp_str*/
-	0,		/*tp_getattro*/
-	0,		/*tp_setattro*/
-	&buffer_as_buffer,	/*tp_as_buffer*/
-	Py_TPFLAGS_DEFAULT,	/*tp_flags*/
-	0,		/*tp_doc*/
+	(destructor)buffer_dealloc, 		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	(cmpfunc)buffer_compare,		/* tp_compare */
+	(reprfunc)buffer_repr,			/* tp_repr */
+	0,					/* tp_as_number */
+	&buffer_as_sequence,			/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	(hashfunc)buffer_hash,			/* tp_hash */
+	0,					/* tp_call */
+	(reprfunc)buffer_str,			/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	&buffer_as_buffer,			/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	0,					/* tp_doc */
 };

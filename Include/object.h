@@ -202,6 +202,11 @@ typedef long (*hashfunc)(PyObject *);
 typedef PyObject *(*richcmpfunc) (PyObject *, PyObject *, int);
 typedef PyObject *(*getiterfunc) (PyObject *);
 typedef PyObject *(*iternextfunc) (PyObject *);
+typedef PyObject *(*descrgetfunc) (PyObject *, PyObject *, PyObject *);
+typedef int (*descrsetfunc) (PyObject *, PyObject *, PyObject *);
+typedef int (*initproc)(PyObject *, PyObject *, PyObject *);
+typedef PyObject *(*newfunc)(struct _typeobject *, PyObject *, PyObject *);
+typedef PyObject *(*allocfunc)(struct _typeobject *, int);
 
 typedef struct _typeobject {
 	PyObject_VAR_HEAD
@@ -255,18 +260,48 @@ typedef struct _typeobject {
 	getiterfunc tp_iter;
 	iternextfunc tp_iternext;
 
+	/* Attribute descriptor and subclassing stuff */
+	struct PyMethodDef *tp_methods;
+	struct memberlist *tp_members;
+	struct getsetlist *tp_getset;
+	struct _typeobject *tp_base;
+	PyObject *tp_dict;
+	descrgetfunc tp_descr_get;
+	descrsetfunc tp_descr_set;
+	long tp_dictoffset;
+	initproc tp_init;
+	allocfunc tp_alloc;
+	newfunc tp_new;
+	destructor tp_free; /* Low-level free-memory routine */
+	PyObject *tp_bases;
+	PyObject *tp_mro; /* method resolution order */
+	PyObject *tp_defined;
+
 #ifdef COUNT_ALLOCS
 	/* these must be last and never explicitly initialized */
-	int tp_alloc;
-	int tp_free;
+	int tp_allocs;
+	int tp_frees;
 	int tp_maxalloc;
 	struct _typeobject *tp_next;
 #endif
 } PyTypeObject;
 
-extern DL_IMPORT(PyTypeObject) PyType_Type; /* The type of type objects */
 
-#define PyType_Check(op) ((op)->ob_type == &PyType_Type)
+/* Generic type check */
+extern DL_IMPORT(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
+#define PyObject_TypeCheck(ob, tp) \
+	((ob)->ob_type == (tp) || PyType_IsSubtype((ob)->ob_type, (tp)))
+
+extern DL_IMPORT(PyTypeObject) PyType_Type; /* Metatype */
+extern DL_IMPORT(PyTypeObject) PyBaseObject_Type; /* Most base object type */
+
+#define PyType_Check(op) PyObject_TypeCheck(op, &PyType_Type)
+
+extern DL_IMPORT(int) PyType_InitDict(PyTypeObject *);
+extern DL_IMPORT(PyObject *) PyType_GenericAlloc(PyTypeObject *, int);
+extern DL_IMPORT(PyObject *) PyType_GenericNew(PyTypeObject *,
+					       PyObject *, PyObject *);
+extern DL_IMPORT(PyObject *) _PyType_Lookup(PyTypeObject *, PyObject *);
 
 /* Generic operations on objects */
 extern DL_IMPORT(int) PyObject_Print(PyObject *, FILE *, int);
@@ -283,6 +318,10 @@ extern DL_IMPORT(int) PyObject_HasAttrString(PyObject *, char *);
 extern DL_IMPORT(PyObject *) PyObject_GetAttr(PyObject *, PyObject *);
 extern DL_IMPORT(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
 extern DL_IMPORT(int) PyObject_HasAttr(PyObject *, PyObject *);
+extern DL_IMPORT(PyObject **) _PyObject_GetDictPtr(PyObject *);
+extern DL_IMPORT(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
+extern DL_IMPORT(int) PyObject_GenericSetAttr(PyObject *,
+					      PyObject *, PyObject *);
 extern DL_IMPORT(long) PyObject_Hash(PyObject *);
 extern DL_IMPORT(int) PyObject_IsTrue(PyObject *);
 extern DL_IMPORT(int) PyObject_Not(PyObject *);
@@ -357,6 +396,18 @@ given type object has a specified feature.
 /* tp_iter is defined */
 #define Py_TPFLAGS_HAVE_ITER (1L<<7)
 
+/* Experimental stuff for healing the type/class split */
+#define Py_TPFLAGS_HAVE_CLASS (1L<<8)
+
+/* Set if the type object is dynamically allocated */
+#define Py_TPFLAGS_HEAPTYPE (1L<<9)
+
+/* Set if the type allows subclassing */
+#define Py_TPFLAGS_BASETYPE (1L<<10)
+
+/* Set if the type's __dict__ may change */
+#define Py_TPFLAGS_DYNAMICTYPE (1L<<11)
+
 #define Py_TPFLAGS_DEFAULT  ( \
                              Py_TPFLAGS_HAVE_GETCHARBUFFER | \
                              Py_TPFLAGS_HAVE_SEQUENCE_IN | \
@@ -364,6 +415,7 @@ given type object has a specified feature.
                              Py_TPFLAGS_HAVE_RICHCOMPARE | \
                              Py_TPFLAGS_HAVE_WEAKREFS | \
                              Py_TPFLAGS_HAVE_ITER | \
+                             Py_TPFLAGS_HAVE_CLASS | \
                             0)
 
 #define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)
@@ -412,8 +464,8 @@ extern DL_IMPORT(void) _Py_ResetReferences(void);
 
 #ifndef Py_TRACE_REFS
 #ifdef COUNT_ALLOCS
-#define _Py_Dealloc(op) ((op)->ob_type->tp_free++, (*(op)->ob_type->tp_dealloc)((PyObject *)(op)))
-#define _Py_ForgetReference(op) ((op)->ob_type->tp_free++)
+#define _Py_Dealloc(op) ((op)->ob_type->tp_frees++, (*(op)->ob_type->tp_dealloc)((PyObject *)(op)))
+#define _Py_ForgetReference(op) ((op)->ob_type->tp_frees++)
 #else /* !COUNT_ALLOCS */
 #define _Py_Dealloc(op) (*(op)->ob_type->tp_dealloc)((PyObject *)(op))
 #define _Py_ForgetReference(op) /*empty*/

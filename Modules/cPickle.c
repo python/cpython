@@ -1869,6 +1869,10 @@ save(Picklerobject *self, PyObject *args, int  pers_save) {
                 res = save_tuple(self, args);
                 goto finally;
             }
+	    if (type == &PyType_Type) {
+		res = save_global(self, args, NULL);
+		goto finally;
+	    }
             break;
 
         case 'l':

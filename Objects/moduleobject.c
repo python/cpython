@@ -2,11 +2,17 @@
 /* Module object implementation */
 
 #include "Python.h"
+#include "structmember.h"
 
 typedef struct {
 	PyObject_HEAD
 	PyObject *md_dict;
 } PyModuleObject;
+
+struct memberlist module_members[] = {
+	{"__dict__", T_OBJECT, offsetof(PyModuleObject, md_dict), READONLY},
+	{0}
+};
 
 PyObject *
 PyModule_New(char *name)
@@ -128,6 +134,15 @@ _PyModule_Clear(PyObject *m)
 
 /* Methods */
 
+static int
+module_init(PyModuleObject *m, PyObject *args, PyObject *kw)
+{
+	m->md_dict = PyDict_New();
+	if (m->md_dict == NULL)
+		return -1;
+	return 0;
+}
+
 static void
 module_dealloc(PyModuleObject *m)
 {
@@ -161,59 +176,6 @@ module_repr(PyModuleObject *m)
 	return PyString_FromString(buf);
 }
 
-static PyObject *
-module_getattro(PyModuleObject *m, PyObject *name)
-{
-	PyObject *res;
-	char *sname = PyString_AsString(name);
-
-	if (sname[0] == '_' && strcmp(sname, "__dict__") == 0) {
-		Py_INCREF(m->md_dict);
-		return m->md_dict;
-	}
-	res = PyDict_GetItem(m->md_dict, name);
-	if (res == NULL) {
-		char *modname = PyModule_GetName((PyObject *)m);
-		if (modname == NULL) {
-			PyErr_Clear();
-			modname = "?";
-		}
-		PyErr_Format(PyExc_AttributeError,
-			     "'%.50s' module has no attribute '%.400s'",
-			     modname, sname);
-	}
-	else
-		Py_INCREF(res);
-	return res;
-}
-
-static int
-module_setattro(PyModuleObject *m, PyObject *name, PyObject *v)
-{
-	char *sname = PyString_AsString(name);
-	if (sname[0] == '_' && strcmp(sname, "__dict__") == 0) {
-		PyErr_SetString(PyExc_TypeError,
-				"read-only special attribute");
-		return -1;
-	}
-	if (v == NULL) {
-		int rv = PyDict_DelItem(m->md_dict, name);
-		if (rv < 0) {
-			char *modname = PyModule_GetName((PyObject *)m);
-			if (modname == NULL) {
-				PyErr_Clear();
-				modname = "?";
-			}
-			PyErr_Format(PyExc_AttributeError,
-				     "'%.50s' module has no attribute '%.400s'",
-				     modname, sname);
-		}
-		return rv;
-	}
-	else
-		return PyDict_SetItem(m->md_dict, name, v);
-}
-
 /* We only need a traverse function, no clear function: If the module
    is in a cycle, md_dict will be cleared as well, which will break
    the cycle. */
@@ -229,24 +191,41 @@ PyTypeObject PyModule_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
 	"module",				/* tp_name */
-	sizeof(PyModuleObject) + PyGC_HEAD_SIZE,/* tp_size */
+	sizeof(PyModuleObject) + PyGC_HEAD_SIZE, /* tp_size */
 	0,					/* tp_itemsize */
-	(destructor)module_dealloc, 		/* tp_dealloc */
+	(destructor)module_dealloc,		/* tp_dealloc */
 	0,					/* tp_print */
-	0, 					/* tp_getattr */
-	0, 					/* tp_setattr */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
 	0,					/* tp_compare */
-	(reprfunc)module_repr, 			/* tp_repr */
+	(reprfunc)module_repr,			/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
-	(getattrofunc)module_getattro,		/* tp_getattro */
-	(setattrofunc)module_setattro,		/* tp_setattro */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC |
+		Py_TPFLAGS_BASETYPE,		/* tp_flags */
 	0,					/* tp_doc */
 	(traverseproc)module_traverse,		/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	module_members,				/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	offsetof(PyModuleObject, md_dict),	/* tp_dictoffset */
+	(initproc)module_init,			/* tp_init */
+	PyType_GenericAlloc,			/* tp_alloc */
+	PyType_GenericNew,			/* tp_new */
 };

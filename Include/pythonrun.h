@@ -92,10 +92,10 @@ DL_IMPORT(const char *) Py_GetBuildInfo(void);
 DL_IMPORT(PyObject *) _PyBuiltin_Init(void);
 DL_IMPORT(PyObject *) _PySys_Init(void);
 DL_IMPORT(void) _PyImport_Init(void);
-DL_IMPORT(void) init_exceptions(void);
+DL_IMPORT(void) _PyExc_Init(void);
 
 /* Various internal finalizers */
-DL_IMPORT(void) fini_exceptions(void);
+DL_IMPORT(void) _PyExc_Fini(void);
 DL_IMPORT(void) _PyImport_Fini(void);
 DL_IMPORT(void) PyMethod_Fini(void);
 DL_IMPORT(void) PyFrame_Fini(void);

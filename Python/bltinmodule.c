@@ -132,26 +132,6 @@ extend to the end of the target object (or with the specified size).";
 
 
 static PyObject *
-builtin_unicode(PyObject *self, PyObject *args)
-{
-        PyObject *v;
-	char *encoding = NULL;
-	char *errors = NULL;
-
-	if ( !PyArg_ParseTuple(args, "O|ss:unicode", &v, &encoding, &errors) )
-	    return NULL;
-	return PyUnicode_FromEncodedObject(v, encoding, errors);
-}
-
-static char unicode_doc[] =
-"unicode(string [, encoding[, errors]]) -> object\n\
-\n\
-Create a new Unicode object from the given encoded string.\n\
-encoding defaults to the current default string encoding and \n\
-errors, defining the error handling, to 'strict'.";
-
-
-static PyObject *
 builtin_callable(PyObject *self, PyObject *args)
 {
 	PyObject *v;
@@ -434,257 +414,6 @@ The filename will be used for run-time error messages.\n\
 The mode must be 'exec' to compile a module, 'single' to compile a\n\
 single (interactive) statement, or 'eval' to compile an expression.";
 
-
-#ifndef WITHOUT_COMPLEX
-
-static PyObject *
-complex_from_string(PyObject *v)
-{
-	extern double strtod(const char *, char **);
-	const char *s, *start;
-	char *end;
-	double x=0.0, y=0.0, z;
-	int got_re=0, got_im=0, done=0;
-	int digit_or_dot;
-	int sw_error=0;
-	int sign;
-	char buffer[256]; /* For errors */
-	char s_buffer[256];
-	int len;
-
-	if (PyString_Check(v)) {
-		s = PyString_AS_STRING(v);
-		len = PyString_GET_SIZE(v);
-	}
-	else if (PyUnicode_Check(v)) {
-		if (PyUnicode_GET_SIZE(v) >= sizeof(s_buffer)) {
-			PyErr_SetString(PyExc_ValueError,
-				 "complex() literal too large to convert");
-			return NULL;
-		}
-		if (PyUnicode_EncodeDecimal(PyUnicode_AS_UNICODE(v),
-					    PyUnicode_GET_SIZE(v),
-					    s_buffer,
-					    NULL))
-			return NULL;
-		s = s_buffer;
-		len = (int)strlen(s);
-	}
-	else if (PyObject_AsCharBuffer(v, &s, &len)) {
-		PyErr_SetString(PyExc_TypeError,
-				"complex() arg is not a string");
-		return NULL;
-	}
-
-	/* position on first nonblank */
-	start = s;
-	while (*s && isspace(Py_CHARMASK(*s)))
-		s++;
-	if (s[0] == '\0') {
-		PyErr_SetString(PyExc_ValueError,
-				"complex() arg is an empty string");
-		return NULL;
-	}
-
-	z = -1.0;
-	sign = 1;
-	do {
-
-		switch (*s) {
-
-		case '\0':
-			if (s-start != len) {
-				PyErr_SetString(
-					PyExc_ValueError,
-					"complex() arg contains a null byte");
-				return NULL;
-			}
-			if(!done) sw_error=1;
-			break;
-
-		case '-':
-			sign = -1;
-				/* Fallthrough */
-		case '+':
-			if (done)  sw_error=1;
-			s++;
-			if  (  *s=='\0'||*s=='+'||*s=='-'  ||
-			       isspace(Py_CHARMASK(*s))  )  sw_error=1;
-			break;
-
-		case 'J':
-		case 'j':
-			if (got_im || done) {
-				sw_error = 1;
-				break;
-			}
-			if  (z<0.0) {
-				y=sign;
-			}
-			else{
-				y=sign*z;
-			}
-			got_im=1;
-			s++;
-			if  (*s!='+' && *s!='-' )
-				done=1;
-			break;
-
-		default:
-			if (isspace(Py_CHARMASK(*s))) {
-				while (*s && isspace(Py_CHARMASK(*s)))
-					s++;
-				if (s[0] != '\0')
-					sw_error=1;
-				else
-					done = 1;
-				break;
-			}
-			digit_or_dot =
-				(*s=='.' || isdigit(Py_CHARMASK(*s)));
-			if  (done||!digit_or_dot) {
-				sw_error=1;
-				break;
-			}
-			errno = 0;
-			PyFPE_START_PROTECT("strtod", return 0)
-				z = strtod(s, &end) ;
-			PyFPE_END_PROTECT(z)
-				if (errno != 0) {
-					sprintf(buffer,
-					  "float() out of range: %.150s", s);
-					PyErr_SetString(
-						PyExc_ValueError,
-						buffer);
-					return NULL;
-				}
-			s=end;
-			if  (*s=='J' || *s=='j') {
-
-				break;
-			}
-			if  (got_re) {
-				sw_error=1;
-				break;
-			}
-
-				/* accept a real part */
-			x=sign*z;
-			got_re=1;
-			if  (got_im)  done=1;
-			z = -1.0;
-			sign = 1;
-			break;
-
-		}  /* end of switch  */
-
-	} while (*s!='\0' && !sw_error);
-
-	if (sw_error) {
-		PyErr_SetString(PyExc_ValueError,
-				"complex() arg is a malformed string");
-		return NULL;
-	}
-
-	return PyComplex_FromDoubles(x,y);
-}
-
-static PyObject *
-builtin_complex(PyObject *self, PyObject *args)
-{
-	PyObject *r, *i, *tmp;
-	PyNumberMethods *nbr, *nbi = NULL;
-	Py_complex cr, ci;
-	int own_r = 0;
-
-	i = NULL;
-	if (!PyArg_ParseTuple(args, "O|O:complex", &r, &i))
-		return NULL;
-	if (PyString_Check(r) || PyUnicode_Check(r))
-		return complex_from_string(r);
-	if ((nbr = r->ob_type->tp_as_number) == NULL ||
-	    nbr->nb_float == NULL ||
-	    (i != NULL &&
-	     ((nbi = i->ob_type->tp_as_number) == NULL ||
-	      nbi->nb_float == NULL))) {
-		PyErr_SetString(PyExc_TypeError,
-			   "complex() arg can't be converted to complex");
-		return NULL;
-	}
-	/* XXX Hack to support classes with __complex__ method */
-	if (PyInstance_Check(r)) {
-		static PyObject *complexstr;
-		PyObject *f;
-		if (complexstr == NULL) {
-			complexstr = PyString_InternFromString("__complex__");
-			if (complexstr == NULL)
-				return NULL;
-		}
-		f = PyObject_GetAttr(r, complexstr);
-		if (f == NULL)
-			PyErr_Clear();
-		else {
-			PyObject *args = Py_BuildValue("()");
-			if (args == NULL)
-				return NULL;
-			r = PyEval_CallObject(f, args);
-			Py_DECREF(args);
-			Py_DECREF(f);
-			if (r == NULL)
-				return NULL;
-			own_r = 1;
-		}
-	}
-	if (PyComplex_Check(r)) {
-		cr = ((PyComplexObject*)r)->cval;
-		if (own_r) {
-			Py_DECREF(r);
-		}
-	}
-	else {
-		tmp = PyNumber_Float(r);
-		if (own_r) {
-			Py_DECREF(r);
-		}
-		if (tmp == NULL)
-			return NULL;
-		if (!PyFloat_Check(tmp)) {
-			PyErr_SetString(PyExc_TypeError,
-					"float(r) didn't return a float");
-			Py_DECREF(tmp);
-			return NULL;
-		}
-		cr.real = PyFloat_AsDouble(tmp);
-		Py_DECREF(tmp);
-		cr.imag = 0.0;
-	}
-	if (i == NULL) {
-		ci.real = 0.0;
-		ci.imag = 0.0;
-	}
-	else if (PyComplex_Check(i))
-		ci = ((PyComplexObject*)i)->cval;
-	else {
-		tmp = (*nbi->nb_float)(i);
-		if (tmp == NULL)
-			return NULL;
-		ci.real = PyFloat_AsDouble(tmp);
-		Py_DECREF(tmp);
-		ci.imag = 0.;
-	}
-	cr.real -= ci.imag;
-	cr.imag += ci.real;
-	return PyComplex_FromCComplex(cr);
-}
-
-static char complex_doc[] =
-"complex(real[, imag]) -> complex number\n\
-\n\
-Create a complex number from a real part and an optional imaginary part.\n\
-This is equivalent to (real + imag*1j) where imag defaults to 0.";
-
-
-#endif
 
 static PyObject *
 builtin_dir(PyObject *self, PyObject *args)
@@ -1060,8 +789,8 @@ builtin_map(PyObject *self, PyObject *args)
 		}
 		if (curlen < 0)
 			curlen = 8;  /* arbitrary */
-		if (curlen > len)
-			len = curlen;
+			if (curlen > len)
+				len = curlen;
 	}
 
 	/* Get space for the result list. */
@@ -1301,91 +1030,6 @@ same value.";
 
 
 static PyObject *
-builtin_int(PyObject *self, PyObject *args)
-{
-	PyObject *v;
-	int base = -909;		     /* unlikely! */
-
-	if (!PyArg_ParseTuple(args, "O|i:int", &v, &base))
-		return NULL;
-	if (base == -909)
-		return PyNumber_Int(v);
-	else if (PyString_Check(v))
-		return PyInt_FromString(PyString_AS_STRING(v), NULL, base);
-	else if (PyUnicode_Check(v))
-		return PyInt_FromUnicode(PyUnicode_AS_UNICODE(v),
-					 PyUnicode_GET_SIZE(v),
-					 base);
-	else {
-		PyErr_SetString(PyExc_TypeError,
-				"int() can't convert non-string with explicit base");
-		return NULL;
-	}
-}
-
-static char int_doc[] =
-"int(x[, base]) -> integer\n\
-\n\
-Convert a string or number to an integer, if possible.  A floating point\n\
-argument will be truncated towards zero (this does not include a string\n\
-representation of a floating point number!)  When converting a string, use\n\
-the optional base.  It is an error to supply a base when converting a\n\
-non-string.";
-
-
-static PyObject *
-builtin_long(PyObject *self, PyObject *args)
-{
-	PyObject *v;
-	int base = -909;		     /* unlikely! */
-
-	if (!PyArg_ParseTuple(args, "O|i:long", &v, &base))
-		return NULL;
-	if (base == -909)
-		return PyNumber_Long(v);
-	else if (PyString_Check(v))
-		return PyLong_FromString(PyString_AS_STRING(v), NULL, base);
-	else if (PyUnicode_Check(v))
-		return PyLong_FromUnicode(PyUnicode_AS_UNICODE(v),
-					  PyUnicode_GET_SIZE(v),
-					  base);
-	else {
-		PyErr_SetString(PyExc_TypeError,
-				"long() can't convert non-string with explicit base");
-		return NULL;
-	}
-}
-
-static char long_doc[] =
-"long(x) -> long integer\n\
-long(x, base) -> long integer\n\
-\n\
-Convert a string or number to a long integer, if possible.  A floating\n\
-point argument will be truncated towards zero (this does not include a\n\
-string representation of a floating point number!)  When converting a\n\
-string, use the given base.  It is an error to supply a base when\n\
-converting a non-string.";
-
-
-static PyObject *
-builtin_float(PyObject *self, PyObject *args)
-{
-	PyObject *v;
-
-	if (!PyArg_ParseTuple(args, "O:float", &v))
-		return NULL;
-	if (PyString_Check(v))
-		return PyFloat_FromString(v, NULL);
-	return PyNumber_Float(v);
-}
-
-static char float_doc[] =
-"float(x) -> floating point number\n\
-\n\
-Convert a string or number to a floating point number, if possible.";
-
-
-static PyObject *
 builtin_iter(PyObject *self, PyObject *args)
 {
 	PyObject *v, *w = NULL;
@@ -1429,22 +1073,6 @@ static char len_doc[] =
 "len(object) -> integer\n\
 \n\
 Return the number of items of a sequence or mapping.";
-
-
-static PyObject *
-builtin_list(PyObject *self, PyObject *args)
-{
-	PyObject *v;
-
-	if (!PyArg_ParseTuple(args, "O:list", &v))
-		return NULL;
-	return PySequence_List(v);
-}
-
-static char list_doc[] =
-"list(sequence) -> list\n\
-\n\
-Return a new list whose items are the same as those of the argument sequence.";
 
 
 static PyObject *
@@ -2033,58 +1661,6 @@ This always returns a floating point number.  Precision may be negative.";
 
 
 static PyObject *
-builtin_str(PyObject *self, PyObject *args)
-{
-	PyObject *v;
-
-	if (!PyArg_ParseTuple(args, "O:str", &v))
-		return NULL;
-	return PyObject_Str(v);
-}
-
-static char str_doc[] =
-"str(object) -> string\n\
-\n\
-Return a nice string representation of the object.\n\
-If the argument is a string, the return value is the same object.";
-
-
-static PyObject *
-builtin_tuple(PyObject *self, PyObject *args)
-{
-	PyObject *v;
-
-	if (!PyArg_ParseTuple(args, "O:tuple", &v))
-		return NULL;
-	return PySequence_Tuple(v);
-}
-
-static char tuple_doc[] =
-"tuple(sequence) -> list\n\
-\n\
-Return a tuple whose items are the same as those of the argument sequence.\n\
-If the argument is a tuple, the return value is the same object.";
-
-
-static PyObject *
-builtin_type(PyObject *self, PyObject *args)
-{
-	PyObject *v;
-
-	if (!PyArg_ParseTuple(args, "O:type", &v))
-		return NULL;
-	v = (PyObject *)v->ob_type;
-	Py_INCREF(v);
-	return v;
-}
-
-static char type_doc[] =
-"type(object) -> type object\n\
-\n\
-Return the type of the object.";
-
-
-static PyObject *
 builtin_vars(PyObject *self, PyObject *args)
 {
 	PyObject *v = NULL;
@@ -2255,16 +1831,12 @@ static PyMethodDef builtin_methods[] = {
 	{"cmp",		builtin_cmp, 1, cmp_doc},
 	{"coerce",	builtin_coerce, 1, coerce_doc},
 	{"compile",	builtin_compile, 1, compile_doc},
-#ifndef WITHOUT_COMPLEX
-	{"complex",	builtin_complex, 1, complex_doc},
-#endif
 	{"delattr",	builtin_delattr, 1, delattr_doc},
 	{"dir",		builtin_dir, 1, dir_doc},
 	{"divmod",	builtin_divmod, 1, divmod_doc},
 	{"eval",	builtin_eval, 1, eval_doc},
 	{"execfile",	builtin_execfile, 1, execfile_doc},
 	{"filter",	builtin_filter, 1, filter_doc},
-	{"float",	builtin_float, 1, float_doc},
 	{"getattr",	builtin_getattr, 1, getattr_doc},
 	{"globals",	builtin_globals, 1, globals_doc},
 	{"hasattr",	builtin_hasattr, 1, hasattr_doc},
@@ -2273,14 +1845,11 @@ static PyMethodDef builtin_methods[] = {
 	{"id",		builtin_id, 1, id_doc},
 	{"input",	builtin_input, 1, input_doc},
 	{"intern",	builtin_intern, 1, intern_doc},
-	{"int",		builtin_int, 1, int_doc},
 	{"isinstance",  builtin_isinstance, 1, isinstance_doc},
 	{"issubclass",  builtin_issubclass, 1, issubclass_doc},
 	{"iter",	builtin_iter, 1, iter_doc},
 	{"len",		builtin_len, 1, len_doc},
-	{"list",	builtin_list, 1, list_doc},
 	{"locals",	builtin_locals, 1, locals_doc},
-	{"long",	builtin_long, 1, long_doc},
 	{"map",		builtin_map, 1, map_doc},
 	{"max",		builtin_max, 1, max_doc},
 	{"min",		builtin_min, 1, min_doc},
@@ -2296,10 +1865,6 @@ static PyMethodDef builtin_methods[] = {
 	{"round",	builtin_round, 1, round_doc},
 	{"setattr",	builtin_setattr, 1, setattr_doc},
 	{"slice",       builtin_slice, 1, slice_doc},
-	{"str",		builtin_str, 1, str_doc},
-	{"tuple",	builtin_tuple, 1, tuple_doc},
-	{"type",	builtin_type, 1, type_doc},
-	{"unicode",	builtin_unicode, 1, unicode_doc},
 	{"unichr",	builtin_unichr, 1, unichr_doc},
 	{"vars",	builtin_vars, 1, vars_doc},
 	{"xrange",	builtin_xrange, 1, xrange_doc},
@@ -2328,6 +1893,42 @@ _PyBuiltin_Init(void)
 		return NULL;
 	if (PyDict_SetItemString(dict, "NotImplemented",
 				 Py_NotImplemented) < 0)
+		return NULL;
+	if (PyDict_SetItemString(dict, "classmethod",
+				 (PyObject *) &PyClassMethod_Type) < 0)
+		return NULL;
+#ifndef WITHOUT_COMPLEX
+	if (PyDict_SetItemString(dict, "complex",
+				 (PyObject *) &PyComplex_Type) < 0)
+		return NULL;
+#endif
+	if (PyDict_SetItemString(dict, "dictionary",
+				 (PyObject *) &PyDict_Type) < 0)
+		return NULL;
+	if (PyDict_SetItemString(dict, "float",
+				 (PyObject *) &PyFloat_Type) < 0)
+		return NULL;
+	if (PyDict_SetItemString(dict, "int", (PyObject *) &PyInt_Type) < 0)
+		return NULL;
+	if (PyDict_SetItemString(dict, "list", (PyObject *) &PyList_Type) < 0)
+		return NULL;
+	if (PyDict_SetItemString(dict, "long", (PyObject *) &PyLong_Type) < 0)
+		return NULL;
+	if (PyDict_SetItemString(dict, "object",
+				 (PyObject *) &PyBaseObject_Type) < 0)
+		return NULL;
+	if (PyDict_SetItemString(dict, "staticmethod",
+				 (PyObject *) &PyStaticMethod_Type) < 0)
+		return NULL;
+	if (PyDict_SetItemString(dict, "str", (PyObject *) &PyString_Type) < 0)
+		return NULL;
+	if (PyDict_SetItemString(dict, "tuple",
+				 (PyObject *) &PyTuple_Type) < 0)
+		return NULL;
+	if (PyDict_SetItemString(dict, "type", (PyObject *) &PyType_Type) < 0)
+		return NULL;
+	if (PyDict_SetItemString(dict, "unicode",
+				 (PyObject *) &PyUnicode_Type) < 0)
 		return NULL;
 	debug = PyInt_FromLong(Py_OptimizeFlag == 0);
 	if (PyDict_SetItemString(dict, "__debug__", debug) < 0) {

@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "compile.h"
+#include "eval.h"
 #include "structmember.h"
 
 PyObject *
@@ -141,9 +142,8 @@ static struct memberlist func_memberlist[] = {
 };
 
 static PyObject *
-func_getattro(PyFunctionObject *op, PyObject *name)
+func_getattro(PyObject *op, PyObject *name)
 {
-	PyObject *rtn;
 	char *sname = PyString_AsString(name);
 	
 	if (sname[0] != '_' && PyEval_GetRestricted()) {
@@ -152,25 +152,12 @@ func_getattro(PyFunctionObject *op, PyObject *name)
 		return NULL;
 	}
 
-	/* no API for PyMember_HasAttr() */
-	rtn = PyMember_Get((char *)op, func_memberlist, sname);
-
-	if (rtn == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-		PyErr_Clear();
-		if (op->func_dict != NULL) {
-			rtn = PyDict_GetItem(op->func_dict, name);
-			Py_XINCREF(rtn);
-		}
-		if (rtn == NULL)
-			PyErr_SetObject(PyExc_AttributeError, name);
-	}
-	return rtn;
+	return PyObject_GenericGetAttr(op, name);
 }
 
 static int
-func_setattro(PyFunctionObject *op, PyObject *name, PyObject *value)
+func_setattro(PyObject *op, PyObject *name, PyObject *value)
 {
-	int rtn;
 	char *sname = PyString_AsString(name);
 
 	if (PyEval_GetRestricted()) {
@@ -216,31 +203,7 @@ func_setattro(PyFunctionObject *op, PyObject *name, PyObject *value)
 		}
 	}
 
-	rtn = PyMember_Set((char *)op, func_memberlist, sname, value);
-	if (rtn < 0 && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-		PyErr_Clear();
-		if (op->func_dict == NULL) {
-			/* don't create the dict if we're deleting an
-			 * attribute.  In that case, we know we'll get an
-			 * AttributeError.
-			 */
-			if (value == NULL) {
-				PyErr_SetString(PyExc_AttributeError, sname);
-				return -1;
-			}
-			op->func_dict = PyDict_New();
-			if (op->func_dict == NULL)
-				return -1;
-		}
-                if (value == NULL)
-			rtn = PyDict_DelItem(op->func_dict, name);
-                else
-			rtn = PyDict_SetItem(op->func_dict, name, value);
-		/* transform KeyError into AttributeError */
-		if (rtn < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
-			PyErr_SetString(PyExc_AttributeError, sname);
-	}
-	return rtn;
+	return PyObject_GenericSetAttr(op, name, value);
 }
 
 static void
@@ -314,31 +277,324 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 	return 0;
 }
 
+static PyObject *
+function_call(PyObject *func, PyObject *arg, PyObject *kw)
+{
+	PyObject *result;
+	PyObject *argdefs;
+	PyObject **d, **k;
+	int nk, nd;
+
+	argdefs = PyFunction_GET_DEFAULTS(func);
+	if (argdefs != NULL && PyTuple_Check(argdefs)) {
+		d = &PyTuple_GET_ITEM((PyTupleObject *)argdefs, 0);
+		nd = PyTuple_Size(argdefs);
+	}
+	else {
+		d = NULL;
+		nd = 0;
+	}
+
+	if (kw != NULL && PyDict_Check(kw)) {
+		int pos, i;
+		nk = PyDict_Size(kw);
+		k = PyMem_NEW(PyObject *, 2*nk);
+		if (k == NULL) {
+			PyErr_NoMemory();
+			Py_DECREF(arg);
+			return NULL;
+		}
+		pos = i = 0;
+		while (PyDict_Next(kw, &pos, &k[i], &k[i+1]))
+			i += 2;
+		nk = i/2;
+		/* XXX This is broken if the caller deletes dict items! */
+	}
+	else {
+		k = NULL;
+		nk = 0;
+	}
+
+	result = PyEval_EvalCodeEx(
+		(PyCodeObject *)PyFunction_GET_CODE(func),
+		PyFunction_GET_GLOBALS(func), (PyObject *)NULL,
+		&PyTuple_GET_ITEM(arg, 0), PyTuple_Size(arg),
+		k, nk, d, nd,
+		PyFunction_GET_CLOSURE(func));
+
+	if (k != NULL)
+		PyMem_DEL(k);
+
+	return result;
+}
+
+/* Bind a function to an object */
+static PyObject *
+func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
+{
+	if (obj == Py_None)
+		obj = NULL;
+	return PyMethod_New(func, obj, type);
+}
+
 PyTypeObject PyFunction_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"function",
 	sizeof(PyFunctionObject) + PyGC_HEAD_SIZE,
 	0,
-	(destructor)func_dealloc,            /* tp_dealloc */
-	0,                                   /* tp_print */
-	0,                                   /* tp_getattr */
-	0,                                   /* tp_setattr */
-	0,                                   /* tp_compare */
-	(reprfunc)func_repr,                 /* tp_repr */
-	0,                                   /* tp_as_number */
-	0,                                   /* tp_as_sequence */
-	0,                                   /* tp_as_mapping */
-	0,                                   /* tp_hash */
-	0,                                   /* tp_call */
-	0,                                   /* tp_str */
-	(getattrofunc)func_getattro,	     /* tp_getattro */
-	(setattrofunc)func_setattro,         /* tp_setattro */
-	0,                                   /* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,  /* tp_flags */
-	0,                                   /* tp_doc */
-	(traverseproc)func_traverse,	     /* tp_traverse */
-	0,                                   /* tp_clear */
-	0,                                   /* tp_richcompare */
+	(destructor)func_dealloc,		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	(reprfunc)func_repr,			/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	function_call,				/* tp_call */
+	0,					/* tp_str */
+	func_getattro,				/* tp_getattro */
+	func_setattro,				/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
+	0,					/* tp_doc */
+	(traverseproc)func_traverse,		/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
 	offsetof(PyFunctionObject, func_weakreflist), /* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	func_memberlist,			/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	func_descr_get,				/* tp_descr_get */
+	0,					/* tp_descr_set */
+	offsetof(PyFunctionObject, func_dict),	/* tp_dictoffset */
 };
+
+
+/* Class method object */
+
+/* A class method receives the class as implicit first argument,
+   just like an instance method receives the instance.
+   To declare a class method, use this idiom:
+
+     class C:
+         def f(cls, arg1, arg2, ...): ...
+	 f = classmethod(f)
+   
+   It can be called either on the class (e.g. C.f()) or on an instance
+   (e.g. C().f()); the instance is ignored except for its class.
+   If a class method is called for a derived class, the derived class
+   object is passed as the implied first argument.
+
+   Class methods are different than C++ or Java static methods.
+   If you want those, see static methods below.
+*/
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *cm_callable;
+} classmethod;
+
+static void
+cm_dealloc(classmethod *cm)
+{
+	Py_XDECREF(cm->cm_callable);
+	PyObject_DEL(cm);
+}
+
+static PyObject *
+cm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
+{
+	classmethod *cm = (classmethod *)self;
+
+	if (cm->cm_callable == NULL) {
+		PyErr_SetString(PyExc_RuntimeError,
+				"uninitialized classmethod object");
+		return NULL;
+	}
+ 	return PyMethod_New(cm->cm_callable,
+			    type, (PyObject *)(type->ob_type));
+}
+
+static int
+cm_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	classmethod *cm = (classmethod *)self;
+	PyObject *callable;
+
+	if (!PyArg_ParseTuple(args, "O:callable", &callable))
+		return -1;
+	Py_INCREF(callable);
+	cm->cm_callable = callable;
+	return 0;
+}
+
+PyTypeObject PyClassMethod_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,
+	"classmethod",
+	sizeof(classmethod),
+	0,
+	(destructor)cm_dealloc,			/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0,					/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	cm_descr_get,				/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	cm_init,				/* tp_init */
+	PyType_GenericAlloc,			/* tp_alloc */
+	PyType_GenericNew,			/* tp_new */
+};
+
+PyObject *
+PyClassMethod_New(PyObject *callable)
+{
+	classmethod *cm = (classmethod *)
+		PyType_GenericAlloc(&PyClassMethod_Type, 0);
+	if (cm != NULL) {
+		Py_INCREF(callable);
+		cm->cm_callable = callable;
+	}
+	return (PyObject *)cm;
+}
+
+
+/* Static method object */
+
+/* A static method does not receive an implicit first argument.
+   To declare a static method, use this idiom:
+
+     class C:
+         def f(arg1, arg2, ...): ...
+	 f = staticmethod(f)
+
+   It can be called either on the class (e.g. C.f()) or on an instance
+   (e.g. C().f()); the instance is ignored except for its class.
+
+   Static methods in Python are similar to those found in Java or C++.
+   For a more advanced concept, see class methods above.
+*/
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *sm_callable;
+} staticmethod;
+
+static void
+sm_dealloc(staticmethod *sm)
+{
+	Py_XDECREF(sm->sm_callable);
+	PyObject_DEL(sm);
+}
+
+static PyObject *
+sm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
+{
+	staticmethod *sm = (staticmethod *)self;
+
+	if (sm->sm_callable == NULL) {
+		PyErr_SetString(PyExc_RuntimeError,
+				"uninitialized staticmethod object");
+		return NULL;
+	}
+	Py_INCREF(sm->sm_callable);
+	return sm->sm_callable;
+}
+
+static int
+sm_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	staticmethod *sm = (staticmethod *)self;
+	PyObject *callable;
+
+	if (!PyArg_ParseTuple(args, "O:callable", &callable))
+		return -1;
+	Py_INCREF(callable);
+	sm->sm_callable = callable;
+	return 0;
+}
+
+PyTypeObject PyStaticMethod_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,
+	"staticmethod",
+	sizeof(staticmethod),
+	0,
+	(destructor)sm_dealloc,			/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0,					/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	sm_descr_get,				/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	sm_init,				/* tp_init */
+	PyType_GenericAlloc,			/* tp_alloc */
+	PyType_GenericNew,			/* tp_new */
+};
+
+PyObject *
+PyStaticMethod_New(PyObject *callable)
+{
+	staticmethod *sm = (staticmethod *)
+		PyType_GenericAlloc(&PyStaticMethod_Type, 0);
+	if (sm != NULL) {
+		Py_INCREF(callable);
+		sm->sm_callable = callable;
+	}
+	return (PyObject *)sm;
+}

@@ -3,15 +3,8 @@
 
 #include "Python.h"
 
-/* MINSIZE is the minimum size of a dictionary.  This many slots are
- * allocated directly in the dict object (in the ma_smalltable member).
- * It must be a power of 2, and at least 4.  8 allows dicts with no more than
- * 5 active entries to live in ma_smalltable (and so avoid an additional
- * malloc); instrumentation suggested this suffices for the majority of
- * dicts (consisting mostly of usually-small instance dicts and usually-small
- * dicts created to pass keyword arguments).
- */
-#define MINSIZE 8
+typedef PyDictEntry dictentry;
+typedef PyDictObject dictobject;
 
 /* Define this out if you don't want conversion statistics on exit. */
 #undef SHOW_CONVERSION_COUNTS
@@ -116,69 +109,6 @@ equally good collision statistics, needed less code & used less memory.
 /* Object used as dummy key to fill deleted entries */
 static PyObject *dummy; /* Initialized by first call to newdictobject() */
 
-/*
-There are three kinds of slots in the table:
-
-1. Unused.  me_key == me_value == NULL
-   Does not hold an active (key, value) pair now and never did.  Unused can
-   transition to Active upon key insertion.  This is the only case in which
-   me_key is NULL, and is each slot's initial state.
-
-2. Active.  me_key != NULL and me_key != dummy and me_value != NULL
-   Holds an active (key, value) pair.  Active can transition to Dummy upon
-   key deletion.  This is the only case in which me_value != NULL.
-
-3. Dummy.  me_key == dummy and me_value == NULL
-   Previously held an active (key, value) pair, but that was deleted and an
-   active pair has not yet overwritten the slot.  Dummy can transition to
-   Active upon key insertion.  Dummy slots cannot be made Unused again
-   (cannot have me_key set to NULL), else the probe sequence in case of
-   collision would have no way to know they were once active.
-
-Note: .popitem() abuses the me_hash field of an Unused or Dummy slot to
-hold a search finger.  The me_hash field of Unused or Dummy slots has no
-meaning otherwise.
-*/
-typedef struct {
-	long me_hash;      /* cached hash code of me_key */
-	PyObject *me_key;
-	PyObject *me_value;
-#ifdef USE_CACHE_ALIGNED
-	long	aligner;
-#endif
-} dictentry;
-
-/*
-To ensure the lookup algorithm terminates, there must be at least one Unused
-slot (NULL key) in the table.
-The value ma_fill is the number of non-NULL keys (sum of Active and Dummy);
-ma_used is the number of non-NULL, non-dummy keys (== the number of non-NULL
-values == the number of Active items).
-To avoid slowing down lookups on a near-full table, we resize the table when
-it's two-thirds full.
-*/
-typedef struct dictobject dictobject;
-struct dictobject {
-	PyObject_HEAD
-	int ma_fill;  /* # Active + # Dummy */
-	int ma_used;  /* # Active */
-
-	/* The table contains ma_mask + 1 slots, and that's a power of 2.
-	 * We store the mask instead of the size because the mask is more
-	 * frequently needed.
-	 */
-	int ma_mask;
-
-	/* ma_table points to ma_smalltable for small tables, else to
-	 * additional malloc'ed memory.  ma_table is never NULL!  This rule
-	 * saves repeated runtime null-tests in the workhorse getitem and
-	 * setitem calls.
-	 */
-	dictentry *ma_table;
-	dictentry *(*ma_lookup)(dictobject *mp, PyObject *key, long hash);
-	dictentry ma_smalltable[MINSIZE];
-};
-
 /* forward declarations */
 static dictentry *
 lookdict_string(dictobject *mp, PyObject *key, long hash);
@@ -196,12 +126,24 @@ show_counts(void)
 }
 #endif
 
-/* Set dictobject* mp to empty but w/ MINSIZE slots, using ma_smalltable. */
-#define empty_to_minsize(mp) do { 					\
-	memset((mp)->ma_smalltable, 0, sizeof((mp)->ma_smalltable));	\
+/* Initialization macros.
+   There are two ways to create a dict:  PyDict_New() is the main C API
+   function, and the tp_new slot maps to dict_new().  In the latter case we
+   can save a little time over what PyDict_New does because it's guaranteed
+   that the PyDictObject struct is already zeroed out.
+   Everyone except dict_new() should use EMPTY_TO_MINSIZE (unless they have
+   an excellent reason not to).
+*/
+
+#define INIT_NONZERO_DICT_SLOTS(mp) do {				\
 	(mp)->ma_table = (mp)->ma_smalltable;				\
-	(mp)->ma_mask = MINSIZE - 1;					\
+	(mp)->ma_mask = PyDict_MINSIZE - 1;				\
+    } while(0)
+
+#define EMPTY_TO_MINSIZE(mp) do {					\
+	memset((mp)->ma_smalltable, 0, sizeof((mp)->ma_smalltable));	\
 	(mp)->ma_used = (mp)->ma_fill = 0;				\
+	INIT_NONZERO_DICT_SLOTS(mp);					\
     } while(0)
 
 PyObject *
@@ -219,7 +161,7 @@ PyDict_New(void)
 	mp = PyObject_NEW(dictobject, &PyDict_Type);
 	if (mp == NULL)
 		return NULL;
-	empty_to_minsize(mp);
+	EMPTY_TO_MINSIZE(mp);
 	mp->ma_lookup = lookdict_string;
 #ifdef SHOW_CONVERSION_COUNTS
 	++created;
@@ -418,7 +360,10 @@ insertdict(register dictobject *mp, PyObject *key, long hash, PyObject *value)
 {
 	PyObject *old_value;
 	register dictentry *ep;
-	ep = (mp->ma_lookup)(mp, key, hash);
+	typedef PyDictEntry *(*lookupfunc)(PyDictObject *, PyObject *, long);
+
+	assert(mp->ma_lookup != NULL);
+	ep = mp->ma_lookup(mp, key, hash);
 	if (ep->me_value != NULL) {
 		old_value = ep->me_value;
 		ep->me_value = value;
@@ -449,12 +394,12 @@ dictresize(dictobject *mp, int minused)
 	dictentry *oldtable, *newtable, *ep;
 	int i;
 	int is_oldtable_malloced;
-	dictentry small_copy[MINSIZE];
+	dictentry small_copy[PyDict_MINSIZE];
 
 	assert(minused >= 0);
 
 	/* Find the smallest table size > minused. */
-	for (newsize = MINSIZE;
+	for (newsize = PyDict_MINSIZE;
 	     newsize <= minused && newsize > 0;
 	     newsize <<= 1)
 		;
@@ -468,7 +413,7 @@ dictresize(dictobject *mp, int minused)
 	assert(oldtable != NULL);
 	is_oldtable_malloced = oldtable != mp->ma_smalltable;
 
-	if (newsize == MINSIZE) {
+	if (newsize == PyDict_MINSIZE) {
 		/* A large table is shrinking, or we can't get any smaller. */
 		newtable = mp->ma_smalltable;
 		if (newtable == oldtable) {
@@ -649,7 +594,7 @@ PyDict_Clear(PyObject *op)
 	dictentry *ep, *table;
 	int table_is_malloced;
 	int fill;
-	dictentry small_copy[MINSIZE];
+	dictentry small_copy[PyDict_MINSIZE];
 #ifdef Py_DEBUG
 	int i, n;
 #endif
@@ -674,7 +619,7 @@ PyDict_Clear(PyObject *op)
 	 */
 	fill = mp->ma_fill;
 	if (table_is_malloced)
-		empty_to_minsize(mp);
+		EMPTY_TO_MINSIZE(mp);
 
 	else if (fill > 0) {
 		/* It's a small table with something that needs to be cleared.
@@ -683,7 +628,7 @@ PyDict_Clear(PyObject *op)
 		 */
 		memcpy(small_copy, table, sizeof(small_copy));
 		table = small_copy;
-		empty_to_minsize(mp);
+		EMPTY_TO_MINSIZE(mp);
 	}
 	/* else it's a small table that's already empty */
 
@@ -1042,32 +987,47 @@ dict_items(register dictobject *mp, PyObject *args)
 }
 
 static PyObject *
-dict_update(register dictobject *mp, PyObject *args)
+dict_update(PyObject *mp, PyObject *args)
 {
+	PyObject *other;
+
+	if (!PyArg_ParseTuple(args, "O:update", &other))
+		return NULL;
+	if (PyDict_Update(mp, other) < 0)
+		return NULL;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+int
+PyDict_Update(PyObject *a, PyObject *b)
+{
+	register PyDictObject *mp, *other;
 	register int i;
-	dictobject *other;
 	dictentry *entry;
-	PyObject *param;
+
 	/* We accept for the argument either a concrete dictionary object,
 	 * or an abstract "mapping" object.  For the former, we can do
 	 * things quite efficiently.  For the latter, we only require that
 	 * PyMapping_Keys() and PyObject_GetItem() be supported.
 	 */
-	if (!PyArg_ParseTuple(args, "O:update", &param))
-		return NULL;
-
-	if (PyDict_Check(param)) {
-		other = (dictobject*)param;
+	if (a == NULL || !PyDict_Check(a) || b == NULL) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	mp = (dictobject*)a;
+	if (PyDict_Check(b)) {
+		other = (dictobject*)b;
 		if (other == mp || other->ma_used == 0)
 			/* a.update(a) or a.update({}); nothing to do */
-			goto done;
+			return 0;
 		/* Do one big resize at the start, rather than
 		 * incrementally resizing as we insert new items.  Expect
 		 * that there will be no (or few) overlapping keys.
 		 */
 		if ((mp->ma_fill + other->ma_used)*3 >= (mp->ma_mask+1)*2) {
 		   if (dictresize(mp, (mp->ma_used + other->ma_used)*3/2) != 0)
-			   return NULL;
+			   return -1;
 		}
 		for (i = 0; i <= other->ma_mask; i++) {
 			entry = &other->ma_table[i];
@@ -1081,7 +1041,7 @@ dict_update(register dictobject *mp, PyObject *args)
 	}
 	else {
 		/* Do it the generic, slower way */
-		PyObject *keys = PyMapping_Keys(param);
+		PyObject *keys = PyMapping_Keys(b);
 		PyObject *iter;
 		PyObject *key, *value;
 		int status;
@@ -1092,37 +1052,34 @@ dict_update(register dictobject *mp, PyObject *args)
 			 * AttributeError to percolate up.  Might as well
 			 * do the same for any other error.
 			 */
-			return NULL;
+			return -1;
 
 		iter = PyObject_GetIter(keys);
 		Py_DECREF(keys);
 		if (iter == NULL)
-			return NULL;
+			return -1;
 
 		for (key = PyIter_Next(iter); key; key = PyIter_Next(iter)) {
-			value = PyObject_GetItem(param, key);
+			value = PyObject_GetItem(b, key);
 			if (value == NULL) {
 				Py_DECREF(iter);
 				Py_DECREF(key);
-				return NULL;
+				return -1;
 			}
 			status = PyDict_SetItem((PyObject*)mp, key, value);
 			Py_DECREF(key);
 			Py_DECREF(value);
 			if (status < 0) {
 				Py_DECREF(iter);
-				return NULL;
+				return -1;
 			}
 		}
 		Py_DECREF(iter);
 		if (PyErr_Occurred())
 			/* Iterator completed, via error */
-			return NULL;
+			return -1;
 	}
-	
-  done:
-	Py_INCREF(Py_None);
-	return Py_None;
+	return 0;
 }
 
 static PyObject *
@@ -1694,12 +1651,6 @@ static PyMethodDef mapp_methods[] = {
 	{NULL,		NULL}	/* sentinel */
 };
 
-static PyObject *
-dict_getattr(dictobject *mp, char *name)
-{
-	return Py_FindMethod(mapp_methods, (PyObject *)mp, name);
-}
-
 static int
 dict_contains(dictobject *mp, PyObject *key)
 {
@@ -1732,6 +1683,26 @@ static PySequenceMethods dict_as_sequence = {
 };
 
 static PyObject *
+dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+
+	assert(type != NULL && type->tp_alloc != NULL);
+	self = type->tp_alloc(type, 0);
+	if (self != NULL) {
+		PyDictObject *d = (PyDictObject *)self;
+		/* It's guaranteed that tp->alloc zeroed out the struct. */
+		assert(d->ma_table == NULL && d->ma_fill == 0 && d->ma_used == 0);
+		INIT_NONZERO_DICT_SLOTS(d);
+		d->ma_lookup = lookdict_string;
+#ifdef SHOW_CONVERSION_COUNTS
+		++created;
+#endif
+	}
+	return self;
+}
+
+static PyObject *
 dict_iter(dictobject *dict)
 {
 	return dictiter_new(dict, select_key);
@@ -1745,7 +1716,7 @@ PyTypeObject PyDict_Type = {
 	0,
 	(destructor)dict_dealloc,		/* tp_dealloc */
 	(printfunc)dict_print,			/* tp_print */
-	(getattrfunc)dict_getattr,		/* tp_getattr */
+	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	(cmpfunc)dict_compare,			/* tp_compare */
 	(reprfunc)dict_repr,			/* tp_repr */
@@ -1755,17 +1726,29 @@ PyTypeObject PyDict_Type = {
 	0,					/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
-	0,					/* tp_getattro */
+	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
-	0,					/* tp_doc */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC |
+		Py_TPFLAGS_BASETYPE,		/* tp_flags */
+	"dictionary type",			/* tp_doc */
 	(traverseproc)dict_traverse,		/* tp_traverse */
 	(inquiry)dict_tp_clear,			/* tp_clear */
 	dict_richcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)dict_iter,			/* tp_iter */
 	0,					/* tp_iternext */
+	mapp_methods,				/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	0,					/* tp_init */
+	PyType_GenericAlloc,			/* tp_alloc */
+	dict_new,				/* tp_new */
 };
 
 /* For backward compatibility with old dictionary interface */
@@ -1873,12 +1856,6 @@ static PyMethodDef dictiter_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-static PyObject *
-dictiter_getattr(dictiterobject *di, char *name)
-{
-	return Py_FindMethod(dictiter_methods, (PyObject *)di, name);
-}
-
 static PyObject *dictiter_iternext(dictiterobject *di)
 {
 	PyObject *key, *value;
@@ -1903,7 +1880,7 @@ PyTypeObject PyDictIter_Type = {
 	/* methods */
 	(destructor)dictiter_dealloc, 		/* tp_dealloc */
 	0,					/* tp_print */
-	(getattrfunc)dictiter_getattr,		/* tp_getattr */
+	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
 	0,					/* tp_repr */
@@ -1913,7 +1890,7 @@ PyTypeObject PyDictIter_Type = {
 	0,					/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
-	0,					/* tp_getattro */
+	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT,			/* tp_flags */
@@ -1924,4 +1901,11 @@ PyTypeObject PyDictIter_Type = {
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)dictiter_getiter,		/* tp_iter */
 	(iternextfunc)dictiter_iternext,	/* tp_iternext */
+	dictiter_methods,			/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
 };

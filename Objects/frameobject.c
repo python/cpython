@@ -15,7 +15,6 @@ static struct memberlist frame_memberlist[] = {
 	{"f_code",	T_OBJECT,	OFF(f_code),	RO},
 	{"f_builtins",	T_OBJECT,	OFF(f_builtins),RO},
 	{"f_globals",	T_OBJECT,	OFF(f_globals),	RO},
-	{"f_locals",	T_OBJECT,	OFF(f_locals),	RO},
 	{"f_lasti",	T_INT,		OFF(f_lasti),	RO},
 	{"f_lineno",	T_INT,		OFF(f_lineno),	RO},
 	{"f_restricted",T_INT,		OFF(f_restricted),RO},
@@ -27,18 +26,17 @@ static struct memberlist frame_memberlist[] = {
 };
 
 static PyObject *
-frame_getattr(PyFrameObject *f, char *name)
+frame_getlocals(PyFrameObject *f, void *closure)
 {
-	if (strcmp(name, "f_locals") == 0)
-		PyFrame_FastToLocals(f);
-	return PyMember_Get((char *)f, frame_memberlist, name);
+	PyFrame_FastToLocals(f);
+	Py_INCREF(f->f_locals);
+	return f->f_locals;
 }
 
-static int
-frame_setattr(PyFrameObject *f, char *name, PyObject *value)
-{
-	return PyMember_Set((char *)f, frame_memberlist, name, value);
-}
+static struct getsetlist frame_getsetlist[] = {
+	{"f_locals",	(getter)frame_getlocals, NULL, NULL},
+	{0}
+};
 
 /* Stack frames are allocated and deallocated at a considerable rate.
    In an attempt to improve the speed of function calls, we maintain a
@@ -177,8 +175,8 @@ PyTypeObject PyFrame_Type = {
 	0,
 	(destructor)frame_dealloc, 		/* tp_dealloc */
 	0,					/* tp_print */
-	(getattrfunc)frame_getattr, 		/* tp_getattr */
-	(setattrfunc)frame_setattr, 		/* tp_setattr */
+	0, 					/* tp_getattr */
+	0,			 		/* tp_setattr */
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
@@ -187,13 +185,22 @@ PyTypeObject PyFrame_Type = {
 	0,					/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
-	0,					/* tp_getattro */
-	0,					/* tp_setattro */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
 	0,             				/* tp_doc */
  	(traverseproc)frame_traverse,		/* tp_traverse */
 	(inquiry)frame_clear,			/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	frame_memberlist,			/* tp_members */
+	frame_getsetlist,			/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
 };
 
 PyFrameObject *

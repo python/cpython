@@ -742,6 +742,41 @@ int_hex(PyIntObject *v)
 	return PyString_FromString(buf);
 }
 
+static PyObject *
+int_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *x = NULL;
+	int base = -909;
+	static char *kwlist[] = {"x", "base", 0};
+
+	assert(type == &PyInt_Type);
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oi:int", kwlist,
+					 &x, &base))
+		return NULL;
+	if (x == NULL)
+		return PyInt_FromLong(0L);
+	if (base == -909)
+		return PyNumber_Int(x);
+	if (PyString_Check(x))
+		return PyInt_FromString(PyString_AS_STRING(x), NULL, base);
+	if (PyUnicode_Check(x))
+		return PyInt_FromUnicode(PyUnicode_AS_UNICODE(x),
+					 PyUnicode_GET_SIZE(x),
+					 base);
+	PyErr_SetString(PyExc_TypeError,
+			"int() can't convert non-string with explicit base");
+	return NULL;
+}
+
+static char int_doc[] =
+"int(x[, base]) -> integer\n\
+\n\
+Convert a string or number to an integer, if possible.  A floating point\n\
+argument will be truncated towards zero (this does not include a string\n\
+representation of a floating point number!)  When converting a string, use\n\
+the optional base.  It is an error to supply a base when converting a\n\
+non-string.";
+
 static PyNumberMethods int_as_number = {
 	(binaryfunc)int_add,	/*nb_add*/
 	(binaryfunc)int_sub,	/*nb_subtract*/
@@ -785,22 +820,40 @@ PyTypeObject PyInt_Type = {
 	"int",
 	sizeof(PyIntObject),
 	0,
-	(destructor)int_dealloc, /*tp_dealloc*/
-	(printfunc)int_print, /*tp_print*/
-	0,		/*tp_getattr*/
-	0,		/*tp_setattr*/
-	(cmpfunc)int_compare, /*tp_compare*/
-	(reprfunc)int_repr, /*tp_repr*/
-	&int_as_number,	/*tp_as_number*/
-	0,		/*tp_as_sequence*/
-	0,		/*tp_as_mapping*/
-	(hashfunc)int_hash, /*tp_hash*/
-        0,			/*tp_call*/
-        0,			/*tp_str*/
-	0,			/*tp_getattro*/
-	0,			/*tp_setattro*/
-	0,			/*tp_as_buffer*/
-	Py_TPFLAGS_CHECKTYPES	/*tp_flags*/
+	(destructor)int_dealloc,		/* tp_dealloc */
+	(printfunc)int_print,			/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	(cmpfunc)int_compare,			/* tp_compare */
+	(reprfunc)int_repr,			/* tp_repr */
+	&int_as_number,				/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	(hashfunc)int_hash,			/* tp_hash */
+        0,					/* tp_call */
+        0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES, /* tp_flags */
+	int_doc,				/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	0,					/* tp_init */
+	0,					/* tp_alloc */
+	int_new,				/* tp_new */
 };
 
 void

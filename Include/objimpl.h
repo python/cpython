@@ -236,7 +236,13 @@ extern DL_IMPORT(void) _PyObject_Del(PyObject *);
 #define PyObject_GC_Fini(op)
 #define PyObject_AS_GC(op) (op)
 #define PyObject_FROM_GC(op) (op)
- 
+#define PyType_IS_GC(t) 0
+#define PyObject_IS_GC(o) 0
+#define PyObject_AS_GC(o) (o)
+#define PyObject_FROM_GC(o) (o)
+#define PyType_BASICSIZE(t) ((t)->tp_basicsize)
+#define PyType_SET_BASICSIZE(t, s) ((t)->tp_basicsize = (s))
+
 #else
 
 /* Add the object into the container set */
@@ -268,6 +274,13 @@ typedef struct _gc_head {
 
 /* Get the object given the PyGC_Head */
 #define PyObject_FROM_GC(g) ((PyObject *)(((PyGC_Head *)g)+1))
+
+/* Calculate tp_basicsize excluding PyGC_HEAD_SIZE if applicable */
+#define PyType_BASICSIZE(t) (!PyType_IS_GC(t) ? (t)->tp_basicsize : \
+			     (t)->tp_basicsize - PyGC_HEAD_SIZE)
+#define PyType_SET_BASICSIZE(t, s) (!PyType_IS_GC(t) ? \
+			((t)->tp_basicsize = (s)) : \
+			((t)->tp_basicsize  = (s) + PyGC_HEAD_SIZE))
 
 extern DL_IMPORT(void) _PyGC_Dump(PyGC_Head *);
 

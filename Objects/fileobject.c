@@ -1273,29 +1273,15 @@ static struct memberlist file_memberlist[] = {
 };
 
 static PyObject *
-file_getattr(PyFileObject *f, char *name)
+get_closed(PyFileObject *f, void *closure)
 {
-	PyObject *res;
-
-	res = Py_FindMethod(file_methods, (PyObject *)f, name);
-	if (res != NULL)
-		return res;
-	PyErr_Clear();
-	if (strcmp(name, "closed") == 0)
-		return PyInt_FromLong((long)(f->f_fp == 0));
-	return PyMember_Get((char *)f, file_memberlist, name);
+	return PyInt_FromLong((long)(f->f_fp == 0));
 }
 
-static int
-file_setattr(PyFileObject *f, char *name, PyObject *v)
-{
-	if (v == NULL) {
-		PyErr_SetString(PyExc_AttributeError,
-				"can't delete file attributes");
-		return -1;
-	}
-	return PyMember_Set((char *)f, file_memberlist, name, v);
-}
+static struct getsetlist file_getsetlist[] = {
+	{"closed", (getter)get_closed, NULL, NULL},
+	{0},
+};
 
 static PyObject *
 file_getiter(PyObject *f)
@@ -1311,27 +1297,32 @@ PyTypeObject PyFile_Type = {
 	0,
 	(destructor)file_dealloc,		/* tp_dealloc */
 	0,					/* tp_print */
-	(getattrfunc)file_getattr,		/* tp_getattr */
-	(setattrfunc)file_setattr,		/* tp_setattr */
+	0,			 		/* tp_getattr */
+	0,			 		/* tp_setattr */
 	0,					/* tp_compare */
-	(reprfunc)file_repr,			/* tp_repr */
+	(reprfunc)file_repr, 			/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
-	0,					/* tp_getattro */
+	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT,			/* tp_flags */
- 	0,					/* tp_doc */
- 	0,					/* tp_traverse */
- 	0,					/* tp_clear */
+	0,					/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	file_getiter,				/* tp_iter */
 	0,					/* tp_iternext */
+	file_methods,				/* tp_methods */
+	file_memberlist,			/* tp_members */
+	file_getsetlist,			/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
 };
 
 /* Interface for the 'soft space' between print items. */
