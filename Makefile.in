@@ -84,7 +84,11 @@ all:		python
 # Build the interpreter
 python:		Makefiles
 		for i in $(SUBDIRS); do \
-			(echo $$i; cd $$i; $(MAKE) OPT="$(OPT)" all); \
+			(echo $$i; cd $$i; \
+			 $(MAKE) OPT="$(OPT)" \
+			         prefix="$(prefix)" \
+				 exec_prefix="$(exec_prefix)" \
+				 all); \
 		done
 
 # Test the interpreter (twice, once without .pyc files, once with)
@@ -110,7 +114,14 @@ libinstall:
 		cp -r $(srcdir)/Lib/* $(LIBDEST)
 		PYTHONPATH=$(LIBDEST) \
 			./python $(LIBDEST)/compileall.py $(LIBDEST)
-		$(MAKE) sharedinstall
+		$(MAKE) \
+			OPT="$(OPT)" \
+			SO="$(SO)" \
+			LDSHARED="$(LDSHARED)" \
+			CCSHARED="$(CCSHARED)" \
+			LINKFORSHARED="$(LINKFORSHARED)" \
+			DESTSHARED="$(DESTSHARED)" \
+			sharedinstall
 
 # install the manual page
 maninstall:
@@ -140,6 +151,7 @@ libainstall:	all
 			$(RANLIB) $(LIBPL)/lib$$i.a; \
 		done
 		$(INSTALL_DATA) Modules/config.c $(LIBPL)/config.c
+		$(INSTALL_DATA) $(srcdir)/Modules/getpath.c $(LIBPL)/getpath.c
 		$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(LIBPL)/config.c.in
 		$(INSTALL_DATA) Modules/Makefile $(LIBPL)/Makefile
 		$(INSTALL_DATA) Modules/Setup $(LIBPL)/Setup
