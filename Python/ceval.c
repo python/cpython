@@ -379,8 +379,10 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
 	busy = 1;
 	i = pendinglast;
 	j = (i + 1) % NPENDINGCALLS;
-	if (j == pendingfirst)
+	if (j == pendingfirst) {
+		busy = 0;
 		return -1; /* Queue full */
+	}
 	pendingcalls[i].func = func;
 	pendingcalls[i].arg = arg;
 	pendinglast = j;
