@@ -10,7 +10,6 @@
 
 import markupbase
 import re
-import string
 
 # Regular expressions used for parsing
 
@@ -23,7 +22,6 @@ charref = re.compile('&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]')
 
 starttagopen = re.compile('<[a-zA-Z]')
 piclose = re.compile('>')
-endtagopen = re.compile('</')
 commentclose = re.compile(r'--\s*>')
 tagfind = re.compile('[a-zA-Z][-.a-zA-Z0-9:_]*')
 attrfind = re.compile(
@@ -96,7 +94,6 @@ class HTMLParser(markupbase.ParserBase):
     def reset(self):
         """Reset this instance.  Loses all unprocessed data."""
         self.rawdata = ''
-        self.stack = []
         self.lasttag = '???'
         self.interesting = interesting_normal
         markupbase.ParserBase.reset(self)
@@ -145,18 +142,19 @@ class HTMLParser(markupbase.ParserBase):
             if i < j: self.handle_data(rawdata[i:j])
             i = self.updatepos(i, j)
             if i == n: break
-            if rawdata[i] == '<':
+            startswith = rawdata.startswith
+            if startswith('<', i):
                 if starttagopen.match(rawdata, i): # < + letter
                     k = self.parse_starttag(i)
-                elif endtagopen.match(rawdata, i): # </
+                elif startswith("</", i):
                     k = self.parse_endtag(i)
                     if k >= 0:
                         self.clear_cdata_mode()
-                elif rawdata.startswith("<!--", i): # <!--
+                elif startswith("<!--", i):
                     k = self.parse_comment(i)
-                elif rawdata.startswith("<?", i): # <?
+                elif startswith("<?", i):
                     k = self.parse_pi(i)
-                elif rawdata.startswith("<!", i): # <!
+                elif startswith("<!", i):
                     k = self.parse_declaration(i)
                 elif (i + 1) < n:
                     self.handle_data("<")
@@ -168,33 +166,32 @@ class HTMLParser(markupbase.ParserBase):
                         self.error("EOF in middle of construct")
                     break
                 i = self.updatepos(i, k)
-            elif rawdata[i:i+2] == "&#":
+            elif startswith("&#", i):
                 match = charref.match(rawdata, i)
                 if match:
                     name = match.group()[2:-1]
                     self.handle_charref(name)
                     k = match.end()
-                    if rawdata[k-1] != ';':
+                    if not startswith(';', k-1):
                         k = k - 1
                     i = self.updatepos(i, k)
                     continue
                 else:
                     break
-            elif rawdata[i] == '&':
+            elif startswith('&', i):
                 match = entityref.match(rawdata, i)
                 if match:
                     name = match.group(1)
                     self.handle_entityref(name)
                     k = match.end()
-                    if rawdata[k-1] != ';':
+                    if not startswith(';', k-1):
                         k = k - 1
                     i = self.updatepos(i, k)
                     continue
                 match = incomplete.match(rawdata, i)
                 if match:
                     # match.group() will contain at least 2 chars
-                    rest = rawdata[i:]
-                    if end and match.group() == rest:
+                    if end and match.group() == rawdata[i:]:
                         self.error("EOF in middle of entity or char ref")
                     # incomplete
                     break
@@ -252,7 +249,7 @@ class HTMLParser(markupbase.ParserBase):
         match = tagfind.match(rawdata, i+1)
         assert match, 'unexpected call to parse_starttag()'
         k = match.end()
-        self.lasttag = tag = string.lower(rawdata[i+1:k])
+        self.lasttag = tag = rawdata[i+1:k].lower()
 
         while k < endpos:
             m = attrfind.match(rawdata, k)
@@ -265,21 +262,21 @@ class HTMLParser(markupbase.ParserBase):
                  attrvalue[:1] == '"' == attrvalue[-1:]:
                 attrvalue = attrvalue[1:-1]
                 attrvalue = self.unescape(attrvalue)
-            attrs.append((string.lower(attrname), attrvalue))
+            attrs.append((attrname.lower(), attrvalue))
             k = m.end()
 
-        end = string.strip(rawdata[k:endpos])
+        end = rawdata[k:endpos].strip()
         if end not in (">", "/>"):
             lineno, offset = self.getpos()
             if "\n" in self.__starttag_text:
-                lineno = lineno + string.count(self.__starttag_text, "\n")
+                lineno = lineno + self.__starttag_text.count("\n")
                 offset = len(self.__starttag_text) \
-                         - string.rfind(self.__starttag_text, "\n")
+                         - self.__starttag_text.rfind("\n")
             else:
                 offset = offset + len(self.__starttag_text)
             self.error("junk characters in start tag: %s"
                        % `rawdata[k:endpos][:20]`)
-        if end[-2:] == '/>':
+        if end.endswith('/>'):
             # XHTML-style empty tag: <span attr="value" />
             self.handle_startendtag(tag, attrs)
         else:
@@ -299,10 +296,9 @@ class HTMLParser(markupbase.ParserBase):
             if next == ">":
                 return j + 1
             if next == "/":
-                s = rawdata[j:j+2]
-                if s == "/>":
+                if rawdata.startswith("/>", j):
                     return j + 2
-                if s == "/":
+                if rawdata.startswith("/", j):
                     # buffer boundary
                     return -1
                 # else bogus input
@@ -332,7 +328,7 @@ class HTMLParser(markupbase.ParserBase):
         if not match:
             self.error("bad end tag: %s" % `rawdata[i:j]`)
         tag = match.group(1)
-        self.handle_endtag(string.lower(tag))
+        self.handle_endtag(tag.lower())
         return j
 
     # Overridable -- finish processing of start+end tag: <tag.../>
@@ -379,9 +375,9 @@ class HTMLParser(markupbase.ParserBase):
     def unescape(self, s):
         if '&' not in s:
             return s
-        s = string.replace(s, "&lt;", "<")
-        s = string.replace(s, "&gt;", ">")
-        s = string.replace(s, "&apos;", "'")
-        s = string.replace(s, "&quot;", '"')
-        s = string.replace(s, "&amp;", "&") # Must be last
+        s = s.replace("&lt;", "<")
+        s = s.replace("&gt;", ">")
+        s = s.replace("&apos;", "'")
+        s = s.replace("&quot;", '"')
+        s = s.replace("&amp;", "&") # Must be last
         return s
