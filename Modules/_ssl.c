@@ -87,40 +87,40 @@ PySSL_SetError(PySSLObject *obj, int ret)
 	switch (err) {
 	case SSL_ERROR_ZERO_RETURN:
 		errstr = "TLS/SSL connection has been closed";
-		p=PY_SSL_ERROR_ZERO_RETURN;
+		p = PY_SSL_ERROR_ZERO_RETURN;
 		break;
 	case SSL_ERROR_WANT_READ:
 		errstr = "The operation did not complete (read)";
-		p=PY_SSL_ERROR_WANT_READ;
+		p = PY_SSL_ERROR_WANT_READ;
 		break;
 	case SSL_ERROR_WANT_WRITE:
-		p=PY_SSL_ERROR_WANT_WRITE;
+		p = PY_SSL_ERROR_WANT_WRITE;
 		errstr = "The operation did not complete (write)";
 		break;
 	case SSL_ERROR_WANT_X509_LOOKUP:
-		p=PY_SSL_ERROR_WANT_X509_LOOKUP;
+		p = PY_SSL_ERROR_WANT_X509_LOOKUP;
 		errstr = "The operation did not complete (X509 lookup)";
 		break;
 	case SSL_ERROR_WANT_CONNECT:
-		p=PY_SSL_ERROR_WANT_CONNECT;
+		p = PY_SSL_ERROR_WANT_CONNECT;
 		errstr = "The operation did not complete (connect)";
 		break;
 	case SSL_ERROR_SYSCALL:
 	{
 		unsigned long e = ERR_get_error();
-		if(e==0){
-			if(ret==0){
-				p=PY_SSL_ERROR_EOF;
+		if (e == 0) {
+			if (ret == 0) {
+				p = PY_SSL_ERROR_EOF;
 				errstr = "EOF occurred in violation of protocol";
-			}else if(ret==-1){
+			} else if (ret == -1) {
 				/* the underlying BIO reported an I/O error */
 				return obj->Socket->errorhandler();
-			}else{  /* possible? */
-				p=PY_SSL_ERROR_SYSCALL;
+			} else {  /* possible? */
+				p = PY_SSL_ERROR_SYSCALL;
 				errstr = "Some I/O error occurred";
 			}
 		} else {
-			p=PY_SSL_ERROR_SYSCALL;
+			p = PY_SSL_ERROR_SYSCALL;
 			/* XXX Protected by global interpreter lock */
 			errstr = ERR_error_string(e, NULL);
 		}
@@ -129,17 +129,17 @@ PySSL_SetError(PySSLObject *obj, int ret)
 	case SSL_ERROR_SSL:
 	{
 		unsigned long e = ERR_get_error();
-		p=PY_SSL_ERROR_SSL;
-		if (e !=0) {
+		p = PY_SSL_ERROR_SSL;
+		if (e != 0) 
 			/* XXX Protected by global interpreter lock */
 			errstr = ERR_error_string(e, NULL);
-		} else { /* possible? */
-			errstr="A failure in the SSL library occurred";
+		else { /* possible? */
+			errstr = "A failure in the SSL library occurred";
 		}
 		break;
 	}
 	default:
-		p=PY_SSL_ERROR_INVALID_ERROR_CODE;
+		p = PY_SSL_ERROR_INVALID_ERROR_CODE;
 		errstr = "Invalid error code";
 	}
 	n = PyInt_FromLong((long) p);
@@ -162,7 +162,6 @@ PySSL_SetError(PySSLObject *obj, int ret)
 	return NULL;
 }
 
-/* This is a C function to be called for new object initialization */
 static PySSLObject *
 newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 {
@@ -238,7 +237,6 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 	return NULL;
 }
 
-/* This is the Python function called for new object initialization */
 static PyObject *
 PySocket_ssl(PyObject *self, PyObject *args)
 {
