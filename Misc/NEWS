@@ -1,3 +1,72 @@
+========================================
+==> Release 1.0.1 (15 February 1994) <==
+========================================
+
+* Many portability fixes should make it painless to build Python on
+several new platforms, e.g. NeXT, SEQUENT, WATCOM, DOS, and Windows.
+
+* Fixed test for <stdarg.h> -- this broke on some platforms.
+
+* Fixed test for shared library dynalic loading -- this broke on SunOS
+4.x using the GNU loader.
+
+* Changed order and number of SVR4 networking libraries (it is now
+-lsocket -linet -lnsl, if these libraries exist).
+
+* Installing the build intermediate stages with "make libainstall" now
+also installs config.c.in, Setup and makesetup, which are used by the
+new Extensions mechanism.
+
+* Improved README file contains more hints and new troubleshooting
+section.
+
+* The built-in module strop now defines fast versions of three more
+functions of the standard string module: atoi(), atol() and atof().
+The strop versions of atoi() and atol() support an optional second
+argument to specify the base (default 10).  NOTE: you don't have to
+explicitly import strop to use the faster versions -- the string
+module contains code to let versions from stop override the default
+versions.
+
+* There is now a working Lib/dospath.py for those who use Python under
+DOS (or Windows).  Thanks, Jaap!
+
+* There is now a working Modules/dosmodule.c for DOS (or Windows)
+system calls.
+
+* Lib.os.py has been reorganized (making it ready for more operating
+systems).
+
+* Lib/ospath.py is now obsolete (use os.path instead).
+
+* Many fixes to the tutorial to make it match Python 1.0.  Thanks,
+Tim!
+
+* Fixed Doc/Makefile, Doc/README and various scripts there.
+
+* Added missing description of fdopen to Doc/libposix.tex.
+
+* Made cleanup() global, for the benefit of embedded applications.
+
+* Added parsing of addresses and dates to Lib/rfc822.py.
+
+* Small fixes to Lib/aifc.py, Lib/sunau.py, Lib/tzparse.py to make
+them usable at all.
+
+* New module Lib/wave.py reads RIFF (*.wav) audio files.
+
+* Module Lib/filewin.py moved to Lib/stdwin/filewin.py where it
+belongs.
+
+* New options and comments for Modules/makesetup (used by new
+Extension mechanism).
+
+* Misc/HYPE contains text of announcement of 1.0.0 in comp.lang.misc
+and elsewhere.
+
+* Fixed coredump in filter(None, 'abcdefg').
+
+
 =======================================
 ==> Release 1.0.0 (26 January 1994) <==
 =======================================
