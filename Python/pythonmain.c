@@ -368,16 +368,8 @@ goaway(sts)
 	fprintf(stderr, "[%ld refs]\n", ref_total);
 #endif
 
-#ifdef THINK_C_3_0
-	if (sts == 0)
-		Click_On(0);
-#endif
-
 #ifdef TRACE_REFS
 	if (askyesno("Print left references?")) {
-#ifdef THINK_C_3_0
-		Click_On(1);
-#endif
 		printrefs(stderr);
 	}
 #endif /* TRACE_REFS */
@@ -392,9 +384,6 @@ finaloutput()
 #ifdef TRACE_REFS
 	if (!askyesno("Print left references?"))
 		return;
-#ifdef THINK_C_3_0
-	Click_On(1);
-#endif
 	printrefs(stderr);
 #endif /* TRACE_REFS */
 }
@@ -413,7 +402,7 @@ askyesno(prompt)
 	return buf[0] == 'y' || buf[0] == 'Y';
 }
 
-#ifdef THINK_C_3_0
+#ifdef applec /* MPW (also usable for Think C 3.0) */
 
 /* Check for file descriptor connected to interactive device.
    Pretend that stdin is always interactive, other files never. */
@@ -425,26 +414,4 @@ isatty(fd)
 	return fd == fileno(stdin);
 }
 
-#ifdef macintosh
-/* same */
-int
-isatty(fd)
-	int fd;
-{
-	return fd == fileno(stdin);
-}
 #endif
-
-#endif
-
-/*	XXX WISH LIST
-
-	- possible new types:
-		- iterator (for range, keys, ...)
-	- improve interpreter error handling, e.g., true tracebacks
-	- save precompiled modules on file?
-	- fork threads, locking
-	- allow syntax extensions
-*/
-
-/* "Floccinaucinihilipilification" */
