@@ -56,10 +56,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define NOTEQUAL	29
 #define LESSEQUAL	30
 #define GREATEREQUAL	31
+#define TILDE		32
+#define CIRCUMFLEX	33
+#define LEFTSHIFT	34
+#define RIGHTSHIFT	35
 /* Don't forget to update the table tok_name in tokenizer.c! */
-#define OP		32
-#define ERRORTOKEN	33
-#define N_TOKENS	34
+#define OP		36
+#define ERRORTOKEN	37
+#define N_TOKENS	38
 
 /* Special definitions for cooperation with parser */
 

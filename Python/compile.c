@@ -689,6 +689,10 @@ com_factor(c, n)
 		com_factor(c, CHILD(n, 1));
 		com_addbyte(c, UNARY_NEGATIVE);
 	}
+	else if (TYPE(CHILD(n, 0)) == TILDE) {
+		com_factor(c, CHILD(n, 1));
+		com_addbyte(c, UNARY_INVERT);
+	}
 	else {
 		com_atom(c, CHILD(n, 0));
 		for (i = 1; i < NCH(n); i++)
@@ -719,7 +723,111 @@ com_term(c, n)
 			break;
 		default:
 			err_setstr(SystemError,
-				"com_term: term operator not *, / or %");
+				"com_term: operator not *, / or %");
+			c->c_errors++;
+			op = 255;
+		}
+		com_addbyte(c, op);
+	}
+}
+
+static void
+com_arith_expr(c, n)
+	struct compiling *c;
+	node *n;
+{
+	int i;
+	int op;
+	REQ(n, arith_expr);
+	com_term(c, CHILD(n, 0));
+	for (i = 2; i < NCH(n); i += 2) {
+		com_term(c, CHILD(n, i));
+		switch (TYPE(CHILD(n, i-1))) {
+		case PLUS:
+			op = BINARY_ADD;
+			break;
+		case MINUS:
+			op = BINARY_SUBTRACT;
+			break;
+		default:
+			err_setstr(SystemError,
+				"com_arith_expr: operator not + or -");
+			c->c_errors++;
+			op = 255;
+		}
+		com_addbyte(c, op);
+	}
+}
+
+static void
+com_shift_expr(c, n)
+	struct compiling *c;
+	node *n;
+{
+	int i;
+	int op;
+	REQ(n, shift_expr);
+	com_arith_expr(c, CHILD(n, 0));
+	for (i = 2; i < NCH(n); i += 2) {
+		com_arith_expr(c, CHILD(n, i));
+		switch (TYPE(CHILD(n, i-1))) {
+		case LEFTSHIFT:
+			op = BINARY_LSHIFT;
+			break;
+		case RIGHTSHIFT:
+			op = BINARY_RSHIFT;
+			break;
+		default:
+			err_setstr(SystemError,
+				"com_shift_expr: operator not << or >>");
+			c->c_errors++;
+			op = 255;
+		}
+		com_addbyte(c, op);
+	}
+}
+
+static void
+com_and_expr(c, n)
+	struct compiling *c;
+	node *n;
+{
+	int i;
+	int op;
+	REQ(n, and_expr);
+	com_shift_expr(c, CHILD(n, 0));
+	for (i = 2; i < NCH(n); i += 2) {
+		com_shift_expr(c, CHILD(n, i));
+		if (TYPE(CHILD(n, i-1)) == AMPER) {
+			op = BINARY_AND;
+		}
+		else {
+			err_setstr(SystemError,
+				"com_and_expr: operator not &");
+			c->c_errors++;
+			op = 255;
+		}
+		com_addbyte(c, op);
+	}
+}
+
+static void
+com_xor_expr(c, n)
+	struct compiling *c;
+	node *n;
+{
+	int i;
+	int op;
+	REQ(n, xor_expr);
+	com_and_expr(c, CHILD(n, 0));
+	for (i = 2; i < NCH(n); i += 2) {
+		com_and_expr(c, CHILD(n, i));
+		if (TYPE(CHILD(n, i-1)) == CIRCUMFLEX) {
+			op = BINARY_XOR;
+		}
+		else {
+			err_setstr(SystemError,
+				"com_xor_expr: operator not ^");
 			c->c_errors++;
 			op = 255;
 		}
@@ -735,19 +843,15 @@ com_expr(c, n)
 	int i;
 	int op;
 	REQ(n, expr);
-	com_term(c, CHILD(n, 0));
+	com_xor_expr(c, CHILD(n, 0));
 	for (i = 2; i < NCH(n); i += 2) {
-		com_term(c, CHILD(n, i));
-		switch (TYPE(CHILD(n, i-1))) {
-		case PLUS:
-			op = BINARY_ADD;
-			break;
-		case MINUS:
-			op = BINARY_SUBTRACT;
-			break;
-		default:
+		com_xor_expr(c, CHILD(n, i));
+		if (TYPE(CHILD(n, i-1)) == VBAR) {
+			op = BINARY_OR;
+		}
+		else {
 			err_setstr(SystemError,
-				"com_expr: expr operator not + or -");
+				"com_expr: expr operator not |");
 			c->c_errors++;
 			op = 255;
 		}
@@ -1065,35 +1169,12 @@ com_assign(c, n, assigning)
 		case test:
 		case and_test:
 		case not_test:
-			if (NCH(n) > 1) {
-				err_setstr(TypeError,
-					"can't assign to operator");
-				c->c_errors++;
-				return;
-			}
-			n = CHILD(n, 0);
-			break;
-		
 		case comparison:
-			if (NCH(n) > 1) {
-				err_setstr(TypeError,
-					"can't assign to operator");
-				c->c_errors++;
-				return;
-			}
-			n = CHILD(n, 0);
-			break;
-		
 		case expr:
-			if (NCH(n) > 1) {
-				err_setstr(TypeError,
-					"can't assign to operator");
-				c->c_errors++;
-				return;
-			}
-			n = CHILD(n, 0);
-			break;
-		
+		case xor_expr:
+		case and_expr:
+		case shift_expr:
+		case arith_expr:
 		case term:
 			if (NCH(n) > 1) {
 				err_setstr(TypeError,
@@ -1104,8 +1185,8 @@ com_assign(c, n, assigning)
 			n = CHILD(n, 0);
 			break;
 		
-		case factor: /* ('+'|'-') factor | atom trailer* */
-			if (TYPE(CHILD(n, 0)) != atom) { /* '+' | '-' */
+		case factor: /* ('+'|'-'|'~') factor | atom trailer* */
+			if (TYPE(CHILD(n, 0)) != atom) { /* '+'|'-'|'~' */
 				err_setstr(TypeError,
 					"can't assign to operator");
 				c->c_errors++;
@@ -1727,6 +1808,18 @@ com_node(c, n)
 		break;
 	case expr:
 		com_expr(c, n);
+		break;
+	case xor_expr:
+		com_xor_expr(c, n);
+		break;
+	case and_expr:
+		com_and_expr(c, n);
+		break;
+	case shift_expr:
+		com_shift_expr(c, n);
+		break;
+	case arith_expr:
+		com_arith_expr(c, n);
 		break;
 	case term:
 		com_term(c, n);
