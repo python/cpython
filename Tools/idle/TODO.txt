@@ -1,23 +1,27 @@
 
 TO DO:
 
+- improve debugger:
+    - manage breakpoints globally, allow bp deletion, tbreak, cbreak etc.
+    - real object browser
+    - slidable panel separators
+    - help on how to use it (a simple help button will do wonders)
+    - performance?  (updates of large sets of locals are slow)
+    - better integration of "debug module"
+- insert the initial current directory into sys.path
+- default directory attribute for each window instead of only for windows
+  that have an associated filename
 - "GO" command
 - command expansion from keywords, module contents, other buffers, etc.
 - "Recent documents" menu item
 - more emacsisms:
-  - parentheses matching
-  - reindent, reformat text etc.
-  - M-[, M-] to move by paragraphs
-  - smart stuff with whitespace around Return
-  - filter region?
-  - incremental search?
-  - ^K should cut to buffer
+    - parentheses matching
+    - M-[, M-] to move by paragraphs
+    - smart stuff with whitespace around Return
+    - filter region?
+    - incremental search?
+    - ^K should cut to buffer
 - restructure state sensitive code to avoid testing flags all the time
-- finish debugger
-  - quitting while debugging dosen't work
-  - should have a kill command
-  - break GUI should be finished
-- object browser instead of current stack viewer
 - persistent user state (e.g. window and cursor positions, bindings)
 - make backups when saving
 - check file mtimes at various points
