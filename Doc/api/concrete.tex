@@ -74,7 +74,8 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
 
 \begin{cvardesc}{PyObject*}{Py_None}
   The Python \code{None} object, denoting lack of value.  This object
-  has no methods.
+  has no methods.  It needs to be treated just like any other object
+  with respect to reference counts.
 \end{cvardesc}
 
 
