@@ -362,6 +362,7 @@ MACFILES= $(HOWTOSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	mac/libmacui.tex \
 	mac/libmacic.tex \
 	mac/libframework.tex \
+	mac/libautogil.tex \
 	mac/libminiae.tex \
 	mac/libscrap.tex
 
