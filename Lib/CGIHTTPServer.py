@@ -202,7 +202,8 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 pid, sts = os.waitpid(pid, 0)
                 # throw away additional data [see bug #427345]
                 while select.select([self.rfile], [], [], 0)[0]:
-                    waste = self.rfile.read(1)
+                    if not self.rfile.read(1):
+                        break
                 if sts:
                     self.log_error("CGI script exit status %#x", sts)
                 return
@@ -250,7 +251,8 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 fi.write(data)
             # throw away additional data [see bug #427345]
             while select.select([self.rfile._sock], [], [], 0)[0]:
-                waste = self.rfile._sock.recv(1)
+                if not self.rfile._sock.recv(1):
+                    break
             fi.close()
             shutil.copyfileobj(fo, self.wfile)
             if self.have_popen3:
