@@ -315,6 +315,7 @@ def test():
 
 # print help
 def help():
+	import os
 	for dirname in sys.path:
 		fullname = os.path.join(dirname, 'pdb.doc')
 		if os.path.exists(fullname):
