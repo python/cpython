@@ -539,6 +539,14 @@ else:
 verify(unicode('Andr\202 x','ascii','ignore') == u"Andr x")
 verify(unicode('Andr\202 x','ascii','replace') == u'Andr\uFFFD x')
 
+verify("\\N{foo}xx".decode("unicode-escape", "ignore") == u"xx")
+try:
+    "\\".decode("unicode-escape")
+except ValueError:
+    pass
+else:
+    raise TestFailed, '"\\".decode("unicode-escape") should fail'
+
 verify(u'hello'.encode('ascii') == 'hello')
 verify(u'hello'.encode('utf-7') == 'hello')
 verify(u'hello'.encode('utf-8') == 'hello')
