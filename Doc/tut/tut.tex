@@ -4634,14 +4634,14 @@ immediately.
 For example, it may be tempting to use the tuple packing and unpacking
 feature instead of the traditional approach to swapping arguments.
 The \ulink{\module{timeit}}{../lib/module-timeit.html} module
-quickly demonstrates that the traditional approach is faster:
+quickly demonstrates a modest performance advantage:
 
 \begin{verbatim}
 >>> from timeit import Timer
 >>> Timer('t=a; a=b; b=t', 'a=1; b=2').timeit()
-0.60864915603680925
+0.57535828626024577
 >>> Timer('a,b = b,a', 'a=1; b=2').timeit()
-0.8625194857439773
+0.54962537085770791
 \end{verbatim}
 
 In contrast to \module{timeit}'s fine level of granularity, the
