@@ -675,11 +675,11 @@ bziplatex:	latex-$(RELEASE).tar.bz2
 
 bzips:		bzippdf bzipps bziphtml
 
-disthtml:	tarhtml bziphtml ziphtml
-distinfo:	tarinfo bzipinfo
-distps:		tarps bzipps zipps
-distpdf:	tarpdf bzippdf zippdf
-distlatex:	tarlatex bziplatex ziplatex
+disthtml:	bziphtml ziphtml
+distinfo:	bzipinfo
+distps:		bzipps zipps
+distpdf:	bzippdf zippdf
+distlatex:	bziplatex ziplatex
 
 # We use the "pkglist" target at the end of these to ensure the
 # package list is updated after building either of these; this seems a
