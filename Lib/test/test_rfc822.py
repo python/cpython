@@ -124,3 +124,9 @@ test''', [('', 'goit@lip.com')])
 test('''To: guido@[132.151.1.21]
 
 foo''', [('', 'guido@[132.151.1.21]')])
+
+test('''To: User J. Person <person@dom.ain>
+
+foo''', [('User J. Person', 'person@dom.ain')])
+
+     
