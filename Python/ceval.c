@@ -2023,20 +2023,8 @@ call_object(func, arg)
         binaryfunc call;
         object *result;
         
-        if (call = func->ob_type->tp_call) {
-#if 0
-		/* XXX Why is this here??? */
-          	int size = gettuplesize(arg);
-                if (arg) {
-			size = gettuplesize(arg);
-			if (size == 1)
-				arg = GETTUPLEITEM(arg, 0);
-			else if (size == 0)
-				arg = NULL;
-		}
-#endif
+        if (call = func->ob_type->tp_call)
                 result = (*call)(func, arg);
-        }
         else if (is_instancemethodobject(func) || is_funcobject(func))
 		result = call_function(func, arg);
 	else
