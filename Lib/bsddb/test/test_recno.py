@@ -1,17 +1,18 @@
-"""
-TestCases for exercising a Recno DB.
+"""TestCases for exercising a Recno DB.
 """
 
 import os
 import sys
-import string
+import errno
 import tempfile
 from pprint import pprint
 import unittest
 
 from bsddb import db
-
 from test_all import verbose
+
+letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
 
 #----------------------------------------------------------------------
 
@@ -22,16 +23,14 @@ class SimpleRecnoTestCase(unittest.TestCase):
     def tearDown(self):
         try:
             os.remove(self.filename)
-        except os.error:
-            pass
-
-
+        except OSError, e:
+            if e.errno <> errno.EEXIST: raise
 
     def test01_basic(self):
         d = db.DB()
         d.open(self.filename, db.DB_RECNO, db.DB_CREATE)
 
-        for x in string.ascii_letters:
+        for x in letters:
             recno = d.append(x * 60)
             assert type(recno) == type(0)
             assert recno >= 1
@@ -76,7 +75,6 @@ class SimpleRecnoTestCase(unittest.TestCase):
         assert type(keys) == type([])
         assert type(keys[0]) == type(123)
         assert len(keys) == len(d)
-
 
         items = d.items()
         if verbose:
@@ -164,7 +162,6 @@ class SimpleRecnoTestCase(unittest.TestCase):
         c.close()
         d.close()
 
-
     def test02_WithSource(self):
         """
         A Recno file that is given a "backing source file" is essentially a
@@ -220,7 +217,6 @@ class SimpleRecnoTestCase(unittest.TestCase):
         assert text.split('\n') == \
              "The quick reddish-brown fox jumped over the comatose dog".split()
 
-
     def test03_FixedLength(self):
         d = db.DB()
         d.set_re_len(40)  # fixed length records, 40 bytes long
@@ -228,7 +224,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         d.set_re_pad(45)  # ...test both int and char
         d.open(self.filename, db.DB_RECNO, db.DB_CREATE)
 
-        for x in string.ascii_letters:
+        for x in letters:
             d.append(x * 35)    # These will be padded
 
         d.append('.' * 40)      # this one will be exact
@@ -250,6 +246,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
 
         c.close()
         d.close()
+
 
 #----------------------------------------------------------------------
 
