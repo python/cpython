@@ -54,7 +54,7 @@ Neeracher. The original CWGUSI is
 obtainable from <A
 HREF="ftp://sunsite.cnlab-switch.ch/software/platform/macos/src">
 ftp://sunsite.cnlab-switch.ch/software/platform/macos/src</A>.
-At the moment Python is built with a slightly modified version of GUSI 1.8.1fc2,
+At the moment Python is built with a slightly modified version of GUSI,
 these modifications are available in folder <code>Python:Mac:GUSI-mods</code>.
 
 </UL>
@@ -121,32 +121,31 @@ Top-level-folder:
 		zlib
 		libpng
 	gdbm
+	MoreFiles 1.4.3 (not needed by Python, only by tcl/tk)
 	Python
 	Tcl/Tk Folder
 		tcl8.0
 		tk8.0
-		MoreFiles 1.4.3
 	Waste 1.2 distribution (if you want waste)
 </PRE>
 
 First build GUSI. If you didn't get the python-specific GUSI you have to 
 move the files from the "CWGUSI-mods" to the right
-place in the CWGUSI distribution folder. Build the MSL target for your
-platform (MSLGUSI PPC, MSLGUSI 68K or MSLGUSI CFM68K). <p>
+place in the CWGUSI distribution folder. Build the MSL version for your
+platform (ppc, 68k, cfm68k). <p>
 
 Next, in
 <code>MoreFiles</code>, <code>libjpeg</code>, <code>pbmplus</code>,
 <code>zlib</code>, <code>libpng</code>, <code>gdbm</code>,
-and<code>libtiff</code> you build all projects. The projects are in "mac"
+and<code>libtiff</code> you build all projects. Sometimes the projects are in "mac"
 subfolders, sometimes they are in the main folder. Tcl/tk is a special
 case, see below. Of course, if you are only interested in one of
 static 68K, CFM68K or PPC you can skip building the other libraries.
 
 <H2><A NAME="tcltk">Building Tcl/Tk</H2>
 
-You need to make some minor changes to the Tcl/Tk 8.0 beta2
-distribution. You should make the CW Pro projects TclLibraries.¹ and
-TkLibraries.¹ (in the mac subfolders).
+You need to make some minor changes to the Tcl/Tk 8.0
+distribution. You should make the CW Pro projects (in the mac subfolders).
 <UL>
 
 <LI> There are no cfm68k targets. You make these by copying the 68k targets,
@@ -191,14 +190,19 @@ the Python source tree.  At the top level, we find the following
 folders:
 
 <DL>
-<DT> build.mac
-<DD> This is where you build the PPC, CFM68K and Fat shared libraries,
-interpreter and applet framework. The Fat versions, which are derived
-from the other two, are deposited in the parent folder.
+<DT> build.mac68k.stand
+<DD> This is where you build static 68K interpreters.
 
-<DT> build.macstand
-<DD> This is where you build static 68K interpreters, and possibly static
-PPC interpreters (but you probably won't need those).
+<DT> build.mac68k.shared
+<DD> This is where you build the CFM68K shared library, interpreter
+and applet framework.
+
+<DT> build.macppc.shared
+<DD> This is where you build the PPC shared library, interpreter and
+applet framework. You can also build the fat applet framework here.
+
+<DT> build.macppc.stand
+<DD> This is where you build a nonshared PPC interpreter (optional).
 
 <DT> Demo
 <DD> Demo programs that are not Mac-specific. Some of these may not
@@ -307,11 +311,11 @@ use your imagination to work them out.
 
 If you have all the optional libraries mentioned <A
 HREF="#optional">above</A> loaded buildin Python for 68K macs is a
-breeze: open the project in the folder <code>build.mac68k.stand</code>
-and build it.  Do <em>not</em> run it yet, this will possibly result
-in a garbled preferences file. <p>
+breeze: open the project in the folder <code>build.macstand</code> and
+build the 68K target.  Do <em>not</em> run it yet, this will possibly
+result in a garbled preferences file. <p>
 
-First remove the <code>Python preferences</code> file from your
+First remove the <code>Python XXX preferences</code> file from your
 preference folder, only if you had an older version of Python
 installed.  (this is also what you do if you did not heed the last
 sentence of the preceeding paragraph). Next, move the interpreter to
@@ -320,35 +324,31 @@ create a correct initial preferences file. You are now all set, and
 your tree should be completely compatible with a binary-only
 distribution. Read the release notes
 (<code>Relnotes-somethingorother</code>) and
-<code>ReadMeOrSuffer</code> in the <code>Mac</code> folder.
+<code>ReadMe</code> in the <code>Mac</code> folder.
 
-<H2>Building the CFM68K interpreter</H2>
-
-Building the CFM68K interpreter is as almost exactly the same as building
-the PPC interpreter, with the exception that you should read "CFM68K"
-for "PPC" every time. Continue reading with the next section.
-
-<H2>Building the PPC interpreter</H2>
+<H2>Building the PPC and CFM68K interpreter</H2>
 
 First you build the interpreter, core library and applet skeleton in
-folder <code>build.macppc.stand</code>.  The order to build things is
-the following:
+folder <code>build.mac</code>. The projects are all linked together, so
+building the fat targets in <code>Python.prj</code> and
+<code>PythonApplet.prj</code> will result in everything being built. The
+resulting applications and fat shared library are deposited in the main
+Python folder. For completeness sake here is a breakdown of the
+projects:
 
 <DL>
 
-<DT> PythonCorePPC
+<DT> PythonCore (with subprojects PythonCorePPC and PythonCoreCFM68K)
 <DD> The shared library that contains the bulk of the interpreter and
 its resources. It is a good idea to immedeately put an alias to this
 shared library in the <code>Extensions</code> folder of your system
 folder.  Do exactly that: put an <em>alias</em> there, copying or
-moving the file will cause you grief later.
+moving the file will cause you grief later if you rebuild the library and
+forget to copy it to the extensions folder again.
 
-<DT> PythonPPC
+<DT> Python
 <DD> The interpreter. This is basically a routine to call out to the
-shared library. Do
-<em>not</em> run it yet, this will possibly result in a garbled
-preferences file. See the section below on rebuilding .exp files if you
-get funny linker errors. <p>
+shared library.  <p>
 
 <DT> PythonAppletPPC
 <DD> The applet skeleton application. Very similar to
@@ -359,29 +359,23 @@ applet. <p>
 
 </DL>
 
-After creating the alias to <code>PythonCorePPC</code> you should move
-<code>PythonPPC</code> to the main Python folder. Next you remove any old
+After creating the alias to <code>PythonCore</code> you remove any old
 <code>Python XXX Preferences</code> file from the <code>Preferences</code> folder
 (if you had python installed on your system before) and run the interpreter once
-to create the correct preferences file. You should also make an alias
-<code>PythonApplet</code> pointing to <code>PythonAppletPPC</code> in the main
-Python folder. (again: making an alias is preferrable to copying or moving the
-file, since this will cause the correct file to be used if you ever rebuild
-PythonAppletPPC). <p>
+to create the correct preferences file.  <p>
 
 Next, you have to build the extension modules in the
-<code>PlugIns</code> folder. Open each project with <code>.ppc</code> in the
-name and build it. After all
+<code>PlugIns</code> folder. The <code>PlugIns.ppc</code> project has all the
+other projects as subprojects and builds everything. After all
 the dynamically loaded modules are built you have to create a number
 of aliases: some modules live together in a single dynamic
-library. Run the <code>MkPluginAliases.py</code> script from
+library. Run the <code>ConfigurePython.py</code> script from
 <code>Mac:scripts</code> to create the aliases. <p>
 
 Finally, you must build the standard applets:
-<code>EditPythonPrefs</code>, <code>mkapplet</code>, etc. This is
+<code>EditPythonPrefs</code>, <code>BuildApplet</code>, etc. This is
 easiest done with the <code>fullbuild</code> script from
-<code>Mac:scripts</code>. Answer <em>no</em> to all questions except
-when it asks whether to build the applets. <p>
+<code>Mac:scripts</code>. <p>
 
 <BLOCKQUOTE>
 Actually, the <code>fullbuild</code> script can be used to build
@@ -392,13 +386,10 @@ place and use that to run fullbuild, or use the standalone PPC python
 for this. I tend to keep a standalone interpreter in a safe place for
 this use only. <p>
 
-Using fullbuild is also the only easy way to buid the fat application and applet.
-See the fullbuild source for details on how to build the fat binaries "by hand".
-
 </BLOCKQUOTE>
 
 You are all set now, and should read the release notes and
-<code>ReadMeOrSuffer</code> file from the <code>Mac</code> folder.
+<code>ReadMe</code> file from the <code>Mac</code> folder.
 
 <H2>Rebuilding <code>.exp</code> files for PPC and CFM68K</H2>
 
@@ -437,7 +428,7 @@ complete Python. Take the binary distribution, add folders
 <code>Include</code>, <code>Mac:Include</code> and
 <code>Mac:mwerks</code> from the source distribution and you should be
 all set. A template for a dynamic module can be found in
-<code>xx.ppc.µ</code> or <code>xx.CFM68K.µ</code>.
+<code>xx.prj</code>.
 
 <LI> The Python shared library architecture is a variant of the architecture
 described as "application with shared libraries and dropins" in the MetroWerks

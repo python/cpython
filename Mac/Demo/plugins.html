@@ -22,21 +22,19 @@ was compiled with MPW C) assuming you have managed to get Python to
 compile under your development environment, but the step-by-step
 character of this document will be lost. <p>
 
-Next, you need a <A HREF="http://www.python.org/python/Sources.html">python
-source distribution</A>.  There is a <A
-HREF="update-to-1.3/into-PlugIns.hqx"> fixed project template</A> that
-you also need if you are going to make a dynamically loaded
-module. For PowerPC development you can actually get by without a full
-source distribution, using the PPC Development distribution (if I have
-gotten around to putting it together by the time you read
-this). You'll also need a functional python interpreter, and the
-Modulator program (which lives in <CODE>Tools:Modulator</CODE> in the
-standard source distribution). You may also find that Guido's <A
+Next, you need a <A
+HREF="http://www.python.org/python/Sources.html">python source
+distribution</A>.  For PowerPC and cfm68k development you can actually
+get by without a full source distribution, using the Development
+distribution (if I have gotten around to putting it together by the time
+you read this). You'll also need a functional python interpreter, and
+the Modulator program (which lives in <CODE>Tools:Modulator</CODE> in
+the standard source distribution). You may also find that Guido's <A
 HREF="http://www.python.org/doc/ext/ext.html">Extending and embedding
 the Python interpreter</A> is a very handy piece of documentation. I
 will skip lots of details that are handled there, like complete
-descriptions of <CODE>Py_ParseTuple</CODE> and such utility routines,
-or the general structure of extension modules. <p>
+descriptions of <CODE>Py_ParseTuple</CODE> and such utility routines, or
+the general structure of extension modules. <p>
 
 <H2>InterSLIP and the C API to it</H2>
 
@@ -95,11 +93,8 @@ skeleton module into a real module you would overwrite your
 hand-written code. By calling the dummy module a different name you
 have to make <EM>two</EM> mistakes in a row before you do this. <p>
 
-On systems with the Tk windowing API for Python (currently only
-unix/X11 systems, but mac support may be available when you read this)
-this is extremely simple. It is actually so simple that it pays to
-create the skeleton module under unix and ship the code to your
-mac. You start modulator and are provided with a form in which you
+If you installed Tk support when you installed Python this is extremely
+simple. You start modulator and are provided with a form in which you
 fill out the details of the module you are creating. <p>
 
 <IMG SRC="html.icons/modulator.gif" ALIGN=CENTER><p>
@@ -161,7 +156,7 @@ compile, and that if you import it in a python program you will see
 all the methods.  It is, of course, not yet complete in a functional
 way... <p>
 
-<H2>Adding a module to 68K Python</H2>
+<H2>Adding a module to Classic 68K Python</H2>
 
 What you do now depends on whether you're developing for PowerPC (or
 for CFM68K) or for "traditional" mac. For a traditional 68K Python,
@@ -206,18 +201,16 @@ your projects will all be smaller). Moreover, you can distribute a
 plugin module by itself without haveing to distribute a complete
 python interpreter. <p>
 
-Go to the "PlugIns" folder and copy the files xxmodule.µ,
-xxmodule_config.h and xxmodule.µ.exp to interslipmodule.µ,
-interslipmodule_config.h and interslipmodule.µ.exp, respectively. Edit
-interslipmodule.µ.exp and change the name of the exported routine
-"initxx" to "initinterslip".  Open interslipmodule.µ with CodeWarrior,
+Go to the "PlugIns" folder and copy the files xx.prj,
+and xx.prj.exp to interslipmodule.prj and
+interslipmodule.prj.exp, respectively. Edit
+interslipmodule.prj.exp and change the name of the exported routine
+"initxx" to "initinterslip".  Open interslipmodule.prj with CodeWarrior,
 remove the file xxmodule.c and add interslipmodule.c and make a number
 of adjustments to the preferences:
 <UL>
-<LI> in C/C++ language, set the header file to interslipmodule_config.h
-<LI> in PPC linker, set the entry point to "initinterslip"
-<LI> in PPC PEF, set the fragment name to "interslipmodule"
-<LI> in PPC Project, set the output file name to "interslipmodule.slb".
+<LI> in PPC target, set the output file name to "interslipmodule.pcc.slb",
+<LI> in cfm68k target set the output file name to "interslipmodule.cfm68k.slb".
 </UL>
 Next, compile and link your module, fire up python and do the same
 tests as for 68K python. <p>
