@@ -420,10 +420,10 @@ is the instance, and the method object is said to be bound.  For
 instance, when \code{C} is a class which contains a definition for a
 function \code{f}, \code{C.f} does not yield the function object
 \code{f}; rather, it yields an unbound method object \code{m} where
-\code{m.im_class} is \code{C}, \code{m.im_function} is \code{f}, and
+\code{m.im_class} is \code{C}, \code{m.im_func} is \code{f}, and
 m\code{.im_self} is \code{None}.  When \code{x} is a \code{C}
 instance, \code{x.f} yields a bound method object \code{m} where
-m\code{.im_class} is \code{C}, \code{m.im_function} is \code{f}, and
+m\code{.im_class} is \code{C}, \code{m.im_func} is \code{f}, and
 \code{m.im_self} is \code{x}.
 
 When an unbound user-defined method object is called, the underlying
