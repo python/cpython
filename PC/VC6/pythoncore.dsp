@@ -523,10 +523,6 @@ SOURCE=..\..\Modules\rgbimgmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\rotormodule.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Objects\setobject.c
 # End Source File
 # Begin Source File
@@ -612,10 +608,6 @@ SOURCE=..\..\Objects\unicodeobject.c
 # Begin Source File
 
 SOURCE=..\..\Objects\weakrefobject.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Modules\xreadlinesmodule.c
 # End Source File
 # Begin Source File
 
