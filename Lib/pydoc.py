@@ -1065,7 +1065,7 @@ def locate(path):
 text = TextDoc()
 html = HTMLDoc()
 
-def doc(thing, title='Python Library Documentation: '):
+def doc(thing, title='Python Library Documentation: %s'):
     """Display text documentation, given an object or a path to an object."""
     suffix, name = '', None
     if type(thing) is type(''):
@@ -1086,7 +1086,7 @@ def doc(thing, title='Python Library Documentation: '):
     module = inspect.getmodule(thing)
     if not suffix and module and module is not thing:
         suffix = ' in module ' + module.__name__
-    pager(title + desc + suffix + '\n\n' + text.document(object, name))
+    pager(title % (desc + suffix) + '\n\n' + text.document(thing, name))
 
 def writedoc(key):
     """Write HTML documentation to a file in the current directory."""
@@ -1178,17 +1178,20 @@ class ModuleScanner(Scanner):
     def ispackage(self, (dir, package)):
         return ispackage(dir)
 
-    def run(self, key, callback, completer=None):
-        key = lower(key)
+    def run(self, callback, key=None, completer=None):
+        if key: key = lower(key)
         self.quit = 0
         seen = {}
 
         for modname in sys.builtin_module_names:
             if modname != '__main__':
                 seen[modname] = 1
-                desc = split(freshimport(modname).__doc__ or '', '\n')[0]
-                if find(lower(modname + ' - ' + desc), key) >= 0:
-                    callback(None, modname, desc)
+                if key is None:
+                    callback(None, modname, '')
+                else:
+                    desc = split(freshimport(modname).__doc__ or '', '\n')[0]
+                    if find(lower(modname + ' - ' + desc), key) >= 0:
+                        callback(None, modname, desc)
 
         while not self.quit:
             node = self.next()
@@ -1199,12 +1202,12 @@ class ModuleScanner(Scanner):
                 modname = package + (package and '.') + modname
                 if not seen.has_key(modname):
                     seen[modname] = 1 # if we see spam.py, skip spam.pyc
-                    if key:
+                    if key is None:
+                        callback(path, modname, '')
+                    else:
                         desc = synopsis(path) or ''
                         if find(lower(modname + ' - ' + desc), key) >= 0:
                             callback(path, modname, desc)
-                    else:
-                        callback(path, modname, '')
         if completer: completer()
 
 def apropos(key):
@@ -1216,11 +1219,11 @@ def apropos(key):
     try: import warnings
     except ImportError: pass
     else: warnings.filterwarnings('ignore') # ignore problems during import
-    ModuleScanner().run(key, callback)
+    ModuleScanner().run(callback, key)
 
 # --------------------------------------------------- web browser interface
 
-def serve(port, callback=None, finalizer=None):
+def serve(port, callback=None, completer=None):
     import BaseHTTPServer, SocketServer, mimetools, select
 
     # Patch up mimetools.Message so it doesn't break if rfc822 is reloaded.
@@ -1307,7 +1310,7 @@ pydoc</strong> by Ka-Ping Yee &lt;ping@lfw.org&gt;</font></small></small>'''
         except (KeyboardInterrupt, select.error):
             pass
     finally:
-        if finalizer: finalizer()
+        if completer: completer()
 
 # ----------------------------------------------------- graphical interface
 
