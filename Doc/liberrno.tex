@@ -1,4 +1,5 @@
 \section{Standard Module \sectcode{errno}}
+\label{module-errno}
 \stmodindex{errno}
 
 \setindexsubitem{(in module errno)}
@@ -12,8 +13,8 @@ module.
 
 The module also defines the dictionary variable \code{errorcode} which
 maps numeric error codes back to their symbol names, so that e.g.
-\code{errno.errorcode[errno.EPERM] == 'EPERM'}.  To translate a
-numeric error code to an error message, use \code{os.strerror()}.
+\samp{errno.errorcode[errno.EPERM] == 'EPERM'}.  To translate a
+numeric error code to an error message, use \function{os.strerror()}.
 
 Symbols available can include:
 \begin{datadesc}{EPERM} Operation not permitted \end{datadesc}
