@@ -207,6 +207,7 @@ stringliteral:   shortstring | longstring
 shortstring:     "'" shortstringitem* "'" | '"' shortstringitem* '"'
 longstring:      "'''" longstringitem* "'''" | '"""' longstringitem* '"""'
 shortstringitem: shortstringchar | escapeseq
+longstringitem:  longstringchar | escapeseq
 shortstringchar: <any ASCII character except "\" or newline or the quote>
 longstringchar:  <any ASCII character except "\">
 escapeseq:       "\" <any ASCII character>
