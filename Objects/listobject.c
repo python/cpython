@@ -318,6 +318,32 @@ list_concat(a, bb)
 #undef b
 }
 
+static object *
+list_repeat(a, n)
+	listobject *a;
+	int n;
+{
+	int i, j;
+	int size;
+	listobject *np;
+	object **p;
+	if (n < 0)
+		n = 0;
+	size = a->ob_size * n;
+	np = (listobject *) newlistobject(size);
+	if (np == NULL)
+		return NULL;
+	p = np->ob_item;
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < a->ob_size; j++) {
+			*p = a->ob_item[j];
+			INCREF(*p);
+			p++;
+		}
+	}
+	return (object *) np;
+}
+
 static int
 list_ass_item(a, i, v)
 	listobject *a;
@@ -461,6 +487,32 @@ listsort(self, args)
 	return None;
 }
 
+static object *
+listreverse(self, args)
+	listobject *self;
+	object *args;
+{
+	register object **p, **q;
+	register object *tmp;
+	
+	if (args != NULL) {
+		err_badarg();
+		return NULL;
+	}
+
+	if (self->ob_size > 1) {
+		for (p = self->ob_item, q = self->ob_item + self->ob_size - 1;
+						p < q; p++, q--) {
+			tmp = *p;
+			*p = *q;
+			*q = tmp;
+		}
+	}
+	
+	INCREF(None);
+	return None;
+}
+
 int
 sortlist(v)
 	object *v;
@@ -476,10 +528,56 @@ sortlist(v)
 	return 0;
 }
 
+static object *
+listindex(self, args)
+	listobject *self;
+	object *args;
+{
+	int i;
+	
+	if (args == NULL) {
+		err_badarg();
+		return NULL;
+	}
+	for (i = 0; i < self->ob_size; i++) {
+		if (cmpobject(self->ob_item[i], args) == 0)
+			return newintobject(i);
+	}
+	err_setstr(RuntimeError, "list.index(x): x not in list");
+	return NULL;
+}
+
+static object *
+listremove(self, args)
+	listobject *self;
+	object *args;
+{
+	int i;
+	
+	if (args == NULL) {
+		err_badarg();
+		return NULL;
+	}
+	for (i = 0; i < self->ob_size; i++) {
+		if (cmpobject(self->ob_item[i], args) == 0) {
+			if (list_ass_slice(self, i, i+1, (object *)NULL) != 0)
+				return NULL;
+			INCREF(None);
+			return None;
+		}
+			
+	}
+	err_setstr(RuntimeError, "list.remove(x): x not in list");
+	return NULL;
+}
+
 static struct methodlist list_methods[] = {
 	{"append",	listappend},
+	{"index",	listindex},
 	{"insert",	listinsert},
 	{"sort",	listsort},
+	{"remove",	listremove},
+	{"reverse",	listreverse},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -494,7 +592,7 @@ list_getattr(f, name)
 static sequence_methods list_as_sequence = {
 	list_length,	/*sq_length*/
 	list_concat,	/*sq_concat*/
-	0,		/*sq_repeat*/
+	list_repeat,	/*sq_repeat*/
 	list_item,	/*sq_item*/
 	list_slice,	/*sq_slice*/
 	list_ass_item,	/*sq_ass_item*/
