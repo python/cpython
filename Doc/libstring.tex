@@ -110,14 +110,11 @@ sequences.
 \end{funcdesc}
 
 \begin{funcdesc}{find}{s\, sub\optional{\, start\optional{\,end}}}
-Return the lowest index in \var{s} not smaller than \var{start} and not 
-greater than \var{end} where the substring \var{sub} is found.  Return
-\code{-1} when \var{sub} does not occur as a substring of \var{s} with
-index at least \var{start} and less than \var{end}.
-If \var{start} is omitted, it defaults to \code{0}.  If \var{start} is
-negative, \code{len(\var{s})} is added.
-If \var{end} is omitted, it defaults to \code{len(\var{s})}.  If
-\var{end} is negative, \code{len(\var{s})} is added.
+Return the lowest index in \var{s} where the substring \var{sub} is
+found such that \var{sub} is wholly contained in
+\code{\var{s}[\var{start}:\var{end}]}.  Return -1 on failure.
+Defaults for \var{start} and \var{end} and interpretation of negative
+values is the same as for slices.
 \end{funcdesc}
 
 \begin{funcdesc}{rfind}{s\, sub\optional{\, start\optional{\,end}}}
@@ -134,11 +131,11 @@ Like \code{rfind} but raise \code{ValueError} when the substring is
 not found.
 \end{funcdesc}
 
-\begin{funcdesc}{count}{s\, sub\optional{\, start}}
+\begin{funcdesc}{count}{s\, sub\optional{\, start\optional{\,end}}}
 Return the number of (non-overlapping) occurrences of substring
-\var{sub} in string \var{s} with index at least \var{start}.
-If \var{start} is omitted, it defaults to \code{0}.  If \var{start} is
-negative, \code{len(\var{s})} is added.
+\var{sub} in string \code{\var{s}[\var{start}:\var{end}]}.
+Defaults for \var{start} and \var{end} and interpretation of negative
+values is the same as for slices.
 \end{funcdesc}
 
 \begin{funcdesc}{lower}{s}
