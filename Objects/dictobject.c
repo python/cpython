@@ -1256,7 +1256,7 @@ PyDict_Size(PyObject *mp)
 {
 	if (mp == NULL || !PyDict_Check(mp)) {
 		PyErr_BadInternalCall();
-		return 0;
+		return -1;
 	}
 	return ((dictobject *)mp)->ma_used;
 }
