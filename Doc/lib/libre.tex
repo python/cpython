@@ -322,8 +322,8 @@ escapes are treated as characters.
 
 \item[\code{\e b}] Matches the empty string, but only at the
 beginning or end of a word.  A word is defined as a sequence of
-alphanumeric characters, so the end of a word is indicated by
-whitespace or a non-alphanumeric character.  Inside a character range,
+alphanumeric or underscore characters , so the end of a word is indicated by
+whitespace or a non-alphanumeric, non-underscore character.  Inside a character range,
 \regexp{\e b} represents the backspace character, for compatibility with
 Python's string literals.
 
