@@ -320,16 +320,15 @@ list_length(PyListObject *a)
 static int
 list_contains(PyListObject *a, PyObject *el)
 {
-	int i;
+	int i, cmp;
 
-	for (i = 0; i < a->ob_size; ++i) {
-		int cmp = PyObject_RichCompareBool(el, PyList_GET_ITEM(a, i),
+	for (i = 0, cmp = 0 ; cmp == 0 && i < a->ob_size; ++i)
+		cmp = PyObject_RichCompareBool(el, PyList_GET_ITEM(a, i),
 						   Py_EQ);
-		if (cmp > 0)
-			return 1;
-		else if (cmp < 0)
-			return -1;
-	}
+	if (cmp > 0)
+		return 1;
+	if (cmp < 0)
+		return -1;
 	return 0;
 }
 
