@@ -157,7 +157,13 @@ class DbfilenameShelf(Shelf):
 def open(filename, flag='c', binary=False):
     """Open a persistent dictionary for reading and writing.
 
-    Argument is the filename for the dbm database.
+    The filename parameter is the base filename for the underlying database.
+    As a side-effect, an extension may be added to the filename and more
+    than one file may be created.  The optional flag parameter has the
+    same interpretation as the flag parameter of anydbm.open().  The
+    optional binary parameter may be set to True to force the use of binary
+    pickles for serializing data values.
+
     See the module's __doc__ string for an overview of the interface.
     """
 
