@@ -217,6 +217,35 @@ class Distribution:
         return dict
 
 
+    def dump_option_dicts (self, header=None, commands=None, indent=""):
+        from pprint import pformat
+
+        if commands is None:             # dump all command option dicts
+            commands = self.command_options.keys()
+            commands.sort()
+
+        if header is not None:
+            print indent + header
+            indent = indent + "  "
+
+        if not commands:
+            print indent + "no commands known yet"
+            return
+
+        for cmd_name in commands:
+            opt_dict = self.command_options.get(cmd_name)
+            if opt_dict is None:
+                print indent + "no option dict for '%s' command" % cmd_name
+            else:
+                print indent + "option dict for '%s' command:" % cmd_name
+                out = pformat(opt_dict)
+                for line in string.split(out, "\n"):
+                    print indent + "  " + line
+
+    # dump_option_dicts ()
+            
+
+
     # -- Config file finding/parsing methods ---------------------------
 
     def find_config_files (self):
@@ -632,16 +661,61 @@ class Distribution:
             # we won't report the source of the error.)
             options = self.command_options.get(command)
             if options:
-                print "  setting options:"
-                for (option, (source, value)) in options.items():
-                    print "    %s = %s (from %s)" % (option, value, source)
-                    if not hasattr(cmd_obj, option):
-                        raise DistutilsOptionError, \
-                              ("%s: command '%s' has no such option '%s'") % \
-                              (source, command, option)
-                    setattr(cmd_obj, option, value)
+                self._set_command_options(cmd_obj, options)
 
         return cmd_obj
+
+    def _set_command_options (self, command_obj, option_dict=None):
+
+        """Set the options for 'command_obj' from 'option_dict'.  Basically
+        this means copying elements of a dictionary ('option_dict') to
+        attributes of an instance ('command').
+
+        'command_obj' must be a Commnd instance.  If 'option_dict' is not
+        supplied, uses the standard option dictionary for this command
+        (from 'self.command_options').
+        """
+        from distutils.core import DEBUG
+        
+        command_name = command_obj.get_command_name()
+        if option_dict is None:
+            option_dict = self.get_option_dict(command_name)
+
+        if DEBUG: print "  setting options for '%s' command:" % command_name
+        for (option, (source, value)) in option_dict.items():
+            if DEBUG: print "    %s = %s (from %s)" % (option, value, source)
+            if not hasattr(command_obj, option):
+                raise DistutilsOptionError, \
+                      ("error in %s: command '%s' has no such option '%s'") % \
+                      (source, command_name, option)
+            setattr(command_obj, option, value)
+
+    def reinitialize_command (self, command):
+        """Reinitializes a command to the state it was in when first
+        returned by 'get_command_obj()': ie., initialized but not yet
+        finalized.  This gives provides the opportunity to sneak option
+        values in programmatically, overriding or supplementing
+        user-supplied values from the config files and command line.
+        You'll have to re-finalize the command object (by calling
+        'finalize_options()' or 'ensure_finalized()') before using it for
+        real.  
+
+        'command' should be a command name (string) or command object.
+        Returns the reinitialized command object.
+        """
+        from distutils.cmd import Command
+        if not isinstance(command, Command):
+            command_name = command
+            command = self.get_command_obj(command_name)
+        else:
+            command_name = command.get_command_name()
+
+        if not command.finalized:
+            return
+        command.initialize_options()
+        command.finalized = 0
+        self._set_command_options(command)
+        return command
 
         
     # -- Methods that operate on the Distribution ----------------------
