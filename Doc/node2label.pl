@@ -1,4 +1,4 @@
-#!/depot/gnu/plat/bin/perl -i~
+#!/depot/gnu/plat/bin/perl -i
 
 # read the labels, then reverse the mappings
 require "labels.pl";
@@ -33,6 +33,6 @@ while (<>) {
 }
 
 foreach $oldname (keys %newnames) {
-# or mv
-  system("ln -s $oldname $newnames{$oldname}");
+# or ln -s
+  system("mv $oldname $newnames{$oldname}");
 }
