@@ -422,13 +422,22 @@ new_buffersize(f, currentsize)
 	struct stat st;
 	if (fstat(fileno(f->f_fp), &st) == 0) {
 		end = st.st_size;
+		/* The following is not a bug: we really need to call lseek()
+		   *and* ftell().  The reason is that some stdio libraries
+		   mistakenly flush their buffer when ftell() is called and
+		   the lseek() call it makes fails, thereby throwing away
+		   data that cannot be recovered in any way.  To avoid this,
+		   we first test lseek(), and only call ftell() if lseek()
+		   works.  We can't use the lseek() value either, because we
+		   need to take the amount of buffered data into account.
+		   (Yet another reason why stdio stinks. :-) */
 		pos = lseek(fileno(f->f_fp), 0L, SEEK_CUR);
 		if (pos >= 0)
 			pos = ftell(f->f_fp);
 		if (pos < 0)
 			clearerr(f->f_fp);
 		if (end > pos && pos >= 0)
-			return end - pos + 1;
+			return currentsize + end - pos + 1;
 		/* Add 1 so if the file were to grow we'd notice. */
 	}
 #endif
@@ -482,7 +491,7 @@ file_read(f, args)
 		if (bytesread < buffersize)
 			break;
 		if (bytesrequested < 0) {
-			buffersize = bytesread + new_buffersize(f, buffersize);
+			buffersize = new_buffersize(f, buffersize);
 			if (_PyString_Resize(&v, buffersize) < 0)
 				return NULL;
 		}
