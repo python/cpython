@@ -1,10 +1,21 @@
 # Play CD audio on speaker or headphones.
 
+callbacktypes = ['audio','pnum','index','ptime','atime','catalog','ident','control']
+
 def playaudio(port, type, audio):
 	port.writesamps(audio)
 
+def prtrack(cdinfo, type, pnum):
+	if cdinfo.track[pnum] <> '':
+		print 'playing "' + cdinfo.track[pnum] + '"'
+	else:
+		print callbacktypes[type]+': '+`pnum`
+
 def callback(arg, type, data):
-	print `type`,`data`
+	print callbacktypes[type]+': '+`data`
+
+def tcallback(arg, type, data):
+	print callbacktypes[type]+': '+triple(data)
 
 def triple((a, b, c)):
 	return zfill(a) + ':' + zfill(b) + ':' + zfill(c)
@@ -39,12 +50,20 @@ def prstatus(status):
 	print 'Future:', dummy
 
 def main():
-	import sys, readcd, al, string, AL, CD
+	import sys, readcd, al, AL, CD, cdplayer
+	verbose = 0
 	r = readcd.Readcd().init()
 	prstatus(r.getstatus())
 	prtrackinfo(r.gettrackinfo())
-	l = []
+	cdinfo = cdplayer.Cdplayer().init(r.gettrackinfo())
+	if cdinfo.title <> '':
+		print 'Title: "' + cdinfo.title + '"'
+	if cdinfo.artist <> '':
+		print 'Artist: ' + cdinfo.artist
 	for arg in sys.argv[1:]:
+		if arg == '-v':
+			verbose = 1
+			continue
 		x = eval(arg)
 		try:
 			l = len(x)
@@ -64,13 +83,20 @@ def main():
 
 		for i in range(8):
 			r.setcallback(i, callback, None)
-		r.removecallback(CD.PTIME)
-		r.removecallback(CD.ATIME)
+		if verbose:
+			r.setcallback(CD.PTIME, tcallback, None)
+			r.setcallback(CD.ATIME, tcallback, None)
+		else:
+			r.removecallback(CD.PTIME)
+			r.removecallback(CD.ATIME)
+		r.setcallback(CD.PNUM, prtrack, cdinfo)
 		r.setcallback(CD.AUDIO, playaudio, port)
 
 		data = r.play()
 	except KeyboardInterrupt:
-		pass
+		status = r.getstatus()
+		print 'Interrupted at '+triple(status[2])+' into track '+ \
+			  `status[1]`+' (absolute time '+triple(status[3])+')'
 	al.setparams(AL.DEFAULT_DEVICE, oldparams)
 
 main()
