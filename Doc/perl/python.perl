@@ -238,8 +238,7 @@ sub get_indexsubitem{
 
 sub do_cmd_setindexsubitem{
     local($_) = @_;
-    my $subitem = next_argument();
-    $INDEX_SUBITEM = $subitem;
+    $INDEX_SUBITEM = next_argument();
     return $_;
 }
 
@@ -406,6 +405,8 @@ sub make_mod_index_entry{
     my($str,$define) = @_;
     my($name,$aname,$ahref) = new_link_info();
     # equivalent of add_index_entry() using $define instead of ''
+    $ahref =~ s/\#[-_a-zA-Z0-9]*\"/\"/
+      if ($define eq 'DEF');
     $str = gen_index_id($str, $define);
     $index{$str} .= $ahref;
     write_idxfile($ahref, $str);
@@ -426,6 +427,8 @@ sub define_module{
     my $section_tag = join('', @curr_sec_id);
     $word = "$word " if $word;
     $THIS_MODULE = "$name";
+    $INDEX_SUBITEM = "(in $name)";
+    print "[$name]";
     return make_mod_index_entry("<tt>$name</tt> (${word}module)", 'DEF');
 }
 
@@ -491,8 +494,7 @@ sub do_env_cfuncdesc{
 				   . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;		# ????
-    return "<dl><dt>$return_type <b>$idx</b>"
-           . "(<var>$arg_list</var>)\n<dd>"
+    return "<dl><dt>$return_type <b>$idx</b> (<var>$arg_list</var>)\n<dd>"
            . $_
            . '</dl>';
 }
@@ -1024,7 +1026,12 @@ sub do_cmd_term{
 
 process_commands_wrap_deferred(<<_RAW_ARG_DEFERRED_CMDS_);
 code # {}
+declaremodule # [] # {} # {}
+memberline # [] # {}
+methodline # [] # {} # {}
+modulesynopsis # {}
 samp # {}
+setindexsubitem # {}
 _RAW_ARG_DEFERRED_CMDS_
 
 
