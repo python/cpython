@@ -30,7 +30,7 @@ fplist: fpdef (',' fpdef)* [',']
 stmt: simple_stmt | compound_stmt
 simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
 #small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | access_stmt | exec_stmt
-small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | exec_stmt
+small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | exec_stmt | assert_stmt
 expr_stmt: testlist ('=' testlist)*
 # For assignments, additional restrictions enforced by the interpreter
 print_stmt: 'print' (test ',')* [test]
@@ -49,6 +49,7 @@ global_stmt: 'global' NAME (',' NAME)*
 ## accesstype should be ('public' | 'protected' | 'private') ['read'] ['write']
 ## but can't be because that would create undesirable reserved words!
 exec_stmt: 'exec' expr ['in' test [',' test]]
+assert_stmt: '__assert__' test [',' test]
 
 compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
 if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
