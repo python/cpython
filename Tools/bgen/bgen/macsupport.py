@@ -15,7 +15,7 @@ SignedByte = Type("SignedByte", "b")
 ScriptCode = Type("ScriptCode", "h")
 Size = Type("Size", "l")
 Style = Type("Style", "b")
-StyleParameter = Type("Style", "h")
+StyleParameter = Type("StyleParameter", "h")
 CharParameter = Type("CharParameter", "h")
 TextEncoding = Type("TextEncoding", "l")
 
