@@ -183,22 +183,6 @@ fi
 AC_AIX
 AC_MINIX
 
-if test "$MACHDEP" != "dguxR4"
-then
-AC_MSG_CHECKING(whether $CC accepts -Olimit 1500)
-AC_CACHE_VAL(ac_cv_olimit_ok,
-[ac_save_cc="$CC"
-CC="$CC -Olimit 1500"
-AC_TRY_RUN([int main() { return 0; }],
-  ac_cv_olimit_ok=yes,
-  ac_cv_olimit_ok=no)
-CC="$ac_save_cc"])
-AC_MSG_RESULT($ac_cv_olimit_ok)
-if test $ac_cv_olimit_ok = yes; then
-  OPT="$OPT -Olimit 1500"
-fi
-
-AC_SUBST(DGUX_IS_BROKEN)
 AC_MSG_CHECKING(whether $CC accepts -OPT:Olimit=0)
 AC_CACHE_VAL(ac_cv_opt_olimit_ok,
 [ac_save_cc="$CC"
@@ -210,7 +194,24 @@ CC="$ac_save_cc"])
 AC_MSG_RESULT($ac_cv_opt_olimit_ok)
 if test $ac_cv_opt_olimit_ok = yes; then
   OPT="$OPT -OPT:Olimit=0"
+else
+  AC_MSG_CHECKING(whether $CC accepts -Olimit 1500)
+  AC_CACHE_VAL(ac_cv_olimit_ok,
+  [ac_save_cc="$CC"
+  CC="$CC -Olimit 1500"
+  AC_TRY_RUN([int main() { return 0; }],
+    ac_cv_olimit_ok=yes,
+    ac_cv_olimit_ok=no)
+  CC="$ac_save_cc"])
+  AC_MSG_RESULT($ac_cv_olimit_ok)
+  if test $ac_cv_olimit_ok = yes; then
+    OPT="$OPT -Olimit 1500"
+  fi
 fi
+
+AC_SUBST(DGUX_IS_BROKEN)
+if test "$MACHDEP" != "dguxR4"
+then
   REALLIBRARY='libpython$(VERSION).a'
   DGUX_IS_BROKEN="true"
 else
