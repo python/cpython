@@ -56,7 +56,6 @@ NOTE: you MUST use the SAME key in rotor.newrotor()
 /* Rotor objects */
 
 #include "Python.h"
-
 #include "mymath.h"
 
 #define TRUE	1
@@ -70,22 +69,23 @@ typedef struct {
 	int  size;
 	int  size_mask;
     	int  rotors;
-	unsigned char *e_rotor; /* [num_rotors][size] */
-	unsigned char *d_rotor; /* [num_rotors][size] */
-	unsigned char *positions; /* [num_rotors] */
-	unsigned char *advances; /* [num_rotors] */
-} PyRotorObject;
+	unsigned char *e_rotor;		     /* [num_rotors][size] */
+	unsigned char *d_rotor;		     /* [num_rotors][size] */
+	unsigned char *positions;	     /* [num_rotors] */
+	unsigned char *advances;	     /* [num_rotors] */
+} Rotorobj;
 
-staticforward PyTypeObject PyRotor_Type;
+staticforward PyTypeObject Rotor_Type;
 
-#define PyRotor_Check(v)		((v)->ob_type == &PyRotor_Type)
+#define is_rotor(v)		((v)->ob_type == &Rotor_Type)
 
 /*
 	This defines the necessary routines to manage rotor objects
 */
 
-static void set_seed( r )
-PyRotorObject *r;
+static void
+set_seed(r) 
+	Rotorobj *r;
 {
 	r->seed[0] = r->key[0];
 	r->seed[1] = r->key[1];
@@ -94,8 +94,9 @@ PyRotorObject *r;
 }
 	
 /* Return the next random number in the range [0.0 .. 1.0) */
-static float r_random( r )
-PyRotorObject *r;
+static float
+r_random(r)
+	Rotorobj *r;
 {
 	int x, y, z;
 	float val, term;
@@ -117,29 +118,32 @@ PyRotorObject *r;
 	r->seed[2] = z;
 
 	term = (float)(
-			(((float)x)/(float)30269.0) + 
-			(((float)y)/(float)30307.0) + 
-			(((float)z)/(float)30323.0)
-			);
+		(((float)x)/(float)30269.0) + 
+		(((float)y)/(float)30307.0) + 
+		(((float)z)/(float)30323.0)
+		);
 	val = term - (float)floor((double)term);
 
-	if (val >= 1.0) val = 0.0;
+	if (val >= 1.0)
+		val = 0.0;
 
 	return val;
 }
 
-static short r_rand(r,s)
-PyRotorObject *r;
-short s;
+static short
+r_rand(r, s)
+	Rotorobj *r;
+	short s;
 {
 	/*short tmp = (short)((int)(r_random(r) * (float)32768.0) % 32768);*/
 	short tmp = (short)((short)(r_random(r) * (float)s) % s);
 	return tmp;
 }
 
-static void set_key(r, key)
-PyRotorObject *r;
-char *key;
+static void
+set_key(r, key)
+	Rotorobj *r;
+	char *key;
 {
 #ifdef BUGGY_CODE_BW_COMPAT
 	/* See comments below */
@@ -148,8 +152,8 @@ char *key;
 	unsigned long k1=995, k2=576, k3=767, k4=671, k5=463;
 #endif
 	int i;
-	int len=strlen(key);
-	for (i=0;i<len;i++) {
+	int len = strlen(key);
+	for (i = 0; i < len; i++) {
 #ifdef BUGGY_CODE_BW_COMPAT
 		/* This is the code as it was originally released.
 		   It causes warnings on many systems and can generate
@@ -181,13 +185,14 @@ char *key;
 }
 
 /* These define the interface to a rotor object */
-static PyRotorObject *
-PyRotor_New(num_rotors, key)
+static Rotorobj *
+rotorobj_new(num_rotors, key)
 	int num_rotors;
 	char *key;
 {
-	PyRotorObject *xp;
-	xp = PyObject_NEW(PyRotorObject, &PyRotor_Type);
+	Rotorobj *xp;
+
+	xp = PyObject_NEW(Rotorobj, &Rotor_Type);
 	if (xp == NULL)
 		return NULL;
 	set_key(xp, key);
@@ -201,48 +206,48 @@ PyRotor_New(num_rotors, key)
 	xp->positions = NULL;
 	xp->advances = NULL;
 
-	xp->e_rotor =
-	     (unsigned char *)malloc((num_rotors * (xp->size * sizeof(char))));
-	if (xp->e_rotor == (unsigned char *)NULL)
-		goto fail;
-	xp->d_rotor =
-	     (unsigned char *)malloc((num_rotors * (xp->size * sizeof(char))));
-	if (xp->d_rotor == (unsigned char *)NULL)
-		goto fail;
-	xp->positions = (unsigned char *)malloc(num_rotors * sizeof(char));
-	if (xp->positions == (unsigned char *)NULL)
-		goto fail;
-	xp->advances  = (unsigned char *)malloc(num_rotors * sizeof(char));
-	if (xp->advances == (unsigned char *)NULL)
-		goto fail;
+	if (!(xp->e_rotor = PyMem_NEW(unsigned char, num_rotors * xp->size)))
+		goto finally;
+	if (!(xp->d_rotor = PyMem_NEW(unsigned char, num_rotors * xp->size)))
+		goto finally;
+	if (!(xp->positions = PyMem_NEW(unsigned char, num_rotors)))
+		goto finally;
+	if (!(xp->advances = PyMem_NEW(unsigned char, num_rotors)))
+		goto finally;
+
 	return xp;
-fail:
+
+  finally:
+	PyMem_XDEL(xp->e_rotor);
+	PyMem_XDEL(xp->d_rotor);
+	PyMem_XDEL(xp->positions);
+	PyMem_XDEL(xp->advances);
 	Py_DECREF(xp);
-	return (PyRotorObject *)PyErr_NoMemory();
+	return (Rotorobj*)PyErr_NoMemory();
 }
 
 /* These routines impliment the rotor itself */
 
-/*  Here is a fairly sofisticated {en,de}cryption system.  It is bassed
-on the idea of a "rotor" machine.  A bunch of rotors, each with a
-different permutation of the alphabet, rotate around a different
-amount after encrypting one character.  The current state of the
-rotors is used to encrypt one character.
+/*  Here is a fairly sofisticated {en,de}cryption system.  It is based
+    on the idea of a "rotor" machine.  A bunch of rotors, each with a
+    different permutation of the alphabet, rotate around a different amount
+    after encrypting one character.  The current state of the rotors is
+    used to encrypt one character.
 
-  The code is smart enought to tell if your alphabet has a number of
-characters equal to a power of two.  If it does, it uses logical
-operations, if not it uses div and mod (both require a division).
+    The code is smart enought to tell if your alphabet has a number of
+    characters equal to a power of two.  If it does, it uses logical
+    operations, if not it uses div and mod (both require a division).
 
-  You will need to make two changes to the code 1) convert to c, and
-customize for an alphabet of 255 chars 2) add a filter at the
-begining, and end, which subtracts one on the way in, and adds one on
-the way out.
+    You will need to make two changes to the code 1) convert to c, and
+    customize for an alphabet of 255 chars 2) add a filter at the begining,
+    and end, which subtracts one on the way in, and adds one on the way
+    out.
 
-  You might wish to do some timing studies.  Another viable
-alternative is to "byte stuff" the encrypted data of a normal (perhaps
-this one) encryption routine.
+    You might wish to do some timing studies.  Another viable alternative
+    is to "byte stuff" the encrypted data of a normal (perhaps this one)
+    encryption routine.
 
-j'
+    j'
 */
 
 /*(defun RTR-make-id-rotor (rotor)
@@ -251,14 +256,16 @@ j'
     (while (< j RTR-size)
       (aset rotor j j)
       (setq j (+ 1 j)))
-    rotor))*/
-static void RTR_make_id_rotor(r, rtr)
-	PyRotorObject *r;
+    rotor))
+*/
+static void
+RTR_make_id_rotor(r, rtr)
+	Rotorobj *r;
 	unsigned char *rtr;
 {
 	register int j;
 	register int size = r->size;
-	for (j=0;j<size;j++) {
+	for (j = 0; j < size; j++) {
 		rtr[j] = (unsigned char)j;
 	}
 }
@@ -274,13 +281,15 @@ static void RTR_make_id_rotor(r, rtr)
       (aset rv i tr)
       (setq i (+ 1 i)))
     rv)
-  "The current set of encryption rotors")*/
-static void RTR_e_rotors(r)
-	PyRotorObject *r;
+  "The current set of encryption rotors")
+*/
+static void
+RTR_e_rotors(r)
+	Rotorobj *r;
 {
 	int i;
-	for (i=0;i<r->rotors;i++) {
-		RTR_make_id_rotor(r,&(r->e_rotor[(i*r->size)]));
+	for (i = 0; i < r->rotors; i++) {
+		RTR_make_id_rotor(r, &(r->e_rotor[(i*r->size)]));
 	}
 }
 
@@ -297,43 +306,49 @@ static void RTR_e_rotors(r)
       (aset rv i tr)
       (setq i (+ 1 i)))
     rv)
-  "The current set of decryption rotors")*/
-static void RTR_d_rotors(r)
-	PyRotorObject *r;
+  "The current set of decryption rotors")
+*/
+static void
+RTR_d_rotors(r)
+	Rotorobj *r;
 {
 	register int i, j;
-	for (i=0;i<r->rotors;i++) {
-		for (j=0;j<r->size;j++) {
+	for (i = 0; i < r->rotors; i++) {
+		for (j = 0; j < r->size; j++) {
 			r->d_rotor[((i*r->size)+j)] = (unsigned char)j;
 		}
 	}
 }
 
 /*(defvar RTR-positions (make-vector RTR-number-of-rotors 1)
-  "The positions of the rotors at this time")*/
-static void RTR_positions(r)
-	PyRotorObject *r;
+  "The positions of the rotors at this time")
+*/
+static void
+RTR_positions(r)
+	Rotorobj *r;
 {
 	int i;
-	for (i=0;i<r->rotors;i++) {
+	for (i = 0; i < r->rotors; i++) {
 		r->positions[i] = 1;
 	}
 }
 
 /*(defvar RTR-advances (make-vector RTR-number-of-rotors 1)
-  "The number of positions to advance the rotors at a time")*/
-static void RTR_advances(r) 
-	PyRotorObject *r;
+  "The number of positions to advance the rotors at a time")
+*/
+static void
+RTR_advances(r) 
+	Rotorobj *r;
 {
 	int i;
-	for (i=0;i<r->rotors;i++) {
+	for (i = 0; i < r->rotors; i++) {
 		r->advances[i] = 1;
 	}
 }
 
 /*(defun RTR-permute-rotor (e d)
   "Permute the E rotor, and make the D rotor its inverse"
-  ;; see Knuth for explaination of algorythm.
+  ;; see Knuth for explaination of algorithm.
   (RTR-make-id-rotor e)
   (let ((i RTR-size)
 	q j)
@@ -345,9 +360,11 @@ static void RTR_advances(r)
       (aset e i j)
       (aset d j i))
     (aset e 0 (aref e 0))		; don't forget e[0] and d[0]
-    (aset d (aref e 0) 0)))*/
-static void RTR_permute_rotor(r, e, d)
-	PyRotorObject *r;
+    (aset d (aref e 0) 0)))
+*/
+static void
+RTR_permute_rotor(r, e, d)
+	Rotorobj *r;
 	unsigned char *e;
 	unsigned char *d;
 {
@@ -378,9 +395,11 @@ Set the advancement, position, and permutation of the rotors"
       (aset RTR-advances i (+ 1 (* 2 (fair16 (/ RTR-size 2)))))
       (message "Initializing rotor %d..." i)
       (RTR-permute-rotor (aref RTR-e-rotors i) (aref RTR-d-rotors i))
-      (setq i (+ 1 i)))))*/
-static void RTR_init(r)
-	PyRotorObject *r;
+      (setq i (+ 1 i)))))
+*/
+static void
+RTR_init(r)
+	Rotorobj *r;
 {
 	int i;
 	set_seed(r);
@@ -388,10 +407,12 @@ static void RTR_init(r)
 	RTR_advances(r);
 	RTR_e_rotors(r);
 	RTR_d_rotors(r);
-	for(i=0;i<r->rotors;i++) {
+	for (i = 0; i < r->rotors; i++) {
 		r->positions[i] = r_rand(r,r->size);
 		r->advances[i] = (1+(2*(r_rand(r,r->size/2))));
-		RTR_permute_rotor(r,&(r->e_rotor[(i*r->size)]),&(r->d_rotor[(i*r->size)]));
+		RTR_permute_rotor(r,
+				  &(r->e_rotor[(i*r->size)]),
+				  &(r->d_rotor[(i*r->size)]));
 	}
 	r->isinited = TRUE;
 }
@@ -416,13 +437,15 @@ static void RTR_init(r)
 		 (< i (- RTR-number-of-rotors 1))) 
 	    (aset RTR-positions (+ i 1)
 		  (+ 1 (aref RTR-positions (+ i 1)))))
-	(setq i (+ i 1))))))*/
-static void RTR_advance(r)
-	PyRotorObject *r;
+	(setq i (+ i 1))))))
+*/
+static void
+RTR_advance(r)
+	Rotorobj *r;
 {
 	register int i=0, temp=0;
 	if (r->size_mask) {
-		while (i<r->rotors) {
+		while (i < r->rotors) {
 			temp = r->positions[i] + r->advances[i];
 			r->positions[i] = temp & r->size_mask;
 			if ((temp >= r->size) && (i < (r->rotors - 1))) {
@@ -431,7 +454,7 @@ static void RTR_advance(r)
 			i++;
 		}
 	} else {
-		while (i<r->rotors) {
+		while (i < r->rotors) {
 			temp = r->positions[i] + r->advances[i];
 			r->positions[i] = temp%r->size;
 			if ((temp >= r->size) && (i < (r->rotors - 1))) {
@@ -459,21 +482,27 @@ static void RTR_advance(r)
 			   RTR-size)))
 	(setq i (+ 1 i))))
     (RTR-advance)
-    p))*/
-static unsigned char RTR_e_char(r, p)
-	PyRotorObject *r;
+    p))
+*/
+static unsigned char
+RTR_e_char(r, p)
+	Rotorobj *r;
 	unsigned char p;
 {
 	register int i=0;
 	register unsigned char tp=p;
 	if (r->size_mask) {
 		while (i < r->rotors) {
-			tp = r->e_rotor[(i*r->size)+(((r->positions[i] ^ tp) & r->size_mask))];
+			tp = r->e_rotor[(i*r->size) +
+				       (((r->positions[i] ^ tp) &
+					 r->size_mask))];
 			i++;
 		}
 	} else {
 		while (i < r->rotors) {
-			tp = r->e_rotor[(i*r->size)+(((r->positions[i] ^ tp) % (unsigned int) r->size))];
+			tp = r->e_rotor[(i*r->size) +
+				       (((r->positions[i] ^ tp) %
+					 (unsigned int) r->size))];
 			i++;
 		}
 	}
@@ -498,21 +527,27 @@ static unsigned char RTR_e_char(r, p)
 		     RTR-size))
 	  (setq i (- i 1))))
     (RTR-advance)
-    c))*/
-static unsigned char RTR_d_char(r, c)
-	PyRotorObject *r;
+    c))
+*/
+static unsigned char
+RTR_d_char(r, c)
+	Rotorobj *r;
 	unsigned char c;
 {
-	register int i=r->rotors - 1;
-	register unsigned char tc=c;
+	register int i = r->rotors - 1;
+	register unsigned char tc = c;
+
 	if (r->size_mask) {
 		while (0 <= i) {
-			tc = (r->positions[i] ^ r->d_rotor[(i*r->size)+tc]) & r->size_mask;
+			tc = (r->positions[i] ^
+			      r->d_rotor[(i*r->size)+tc]) & r->size_mask;
 			i--;
 		}
 	} else {
 		while (0 <= i) {
-			tc = (r->positions[i] ^ r->d_rotor[(i*r->size)+tc]) % (unsigned int) r->size;
+			tc = (r->positions[i] ^
+			      r->d_rotor[(i*r->size)+tc]) %
+				(unsigned int) r->size;
 			i--;
 		}
 	}
@@ -530,9 +565,11 @@ static unsigned char RTR_d_char(r, c)
       (while (< (point) end)
 	(let ((fc (following-char)))
 	  (insert-char (RTR-e-char fc) 1)
-	  (delete-char 1))))))*/
-static void RTR_e_region(r, beg, len, doinit)
-	PyRotorObject *r;
+	  (delete-char 1))))))
+*/
+static void
+RTR_e_region(r, beg, len, doinit)
+	Rotorobj *r;
 	unsigned char *beg;
 	int len;
 	int doinit;
@@ -540,8 +577,8 @@ static void RTR_e_region(r, beg, len, doinit)
 	register int i;
 	if (doinit || r->isinited == FALSE)
 		RTR_init(r);
-	for (i=0;i<len;i++) {
-		beg[i]=RTR_e_char(r,beg[i]);
+	for (i = 0; i < len; i++) {
+		beg[i] = RTR_e_char(r, beg[i]);
 	}
 }
 
@@ -554,9 +591,11 @@ static void RTR_e_region(r, beg, len, doinit)
       (while (< (point) end)
 	(let ((fc (following-char)))
 	  (insert-char (RTR-d-char fc) 1)
-	  (delete-char 1))))))*/
-static void RTR_d_region(r, beg, len, doinit)
-	PyRotorObject *r;
+	  (delete-char 1))))))
+*/
+static void
+RTR_d_region(r, beg, len, doinit)
+	Rotorobj *r;
 	unsigned char *beg;
 	int len;
 	int doinit;
@@ -564,8 +603,8 @@ static void RTR_d_region(r, beg, len, doinit)
 	register int i;
 	if (doinit || r->isinited == FALSE)
 		RTR_init(r);
-	for (i=0;i<len;i++) {
-		beg[i]=RTR_d_char(r,beg[i]);
+	for (i = 0; i < len; i++) {
+		beg[i] = RTR_d_char(r, beg[i]);
 	}
 }
 
@@ -594,7 +633,7 @@ static void RTR_d_region(r, beg, len, doinit)
   (interactive "r\nsKey:")
   (RTR-e-region beg end (RTR-key-string-to-ints key)))*/
 static void encrypt_region(r, region, len)
-	PyRotorObject *r;
+	Rotorobj *r;
 	unsigned char *region;
 	int len;
 {
@@ -606,19 +645,19 @@ static void encrypt_region(r, region, len)
   (interactive "r\nsKey:")
   (RTR-d-region beg end (RTR-key-string-to-ints key)))*/
 static void decrypt_region(r, region, len)
-	PyRotorObject *r;
+	Rotorobj *r;
 	unsigned char *region;
 	int len;
 {
 	RTR_d_region(r,region,len,TRUE);
 }
-#endif
+#endif /* 0 */
 
 /* Rotor methods */
 
 static void
-PyRotor_Dealloc(xp)
-	PyRotorObject *xp;
+rotor_dealloc(xp)
+	Rotorobj *xp;
 {
 	PyMem_XDEL(xp->e_rotor);
 	PyMem_XDEL(xp->d_rotor);
@@ -628,143 +667,149 @@ PyRotor_Dealloc(xp)
 }
 
 static PyObject * 
-PyRotor_Encrypt(self, args)
-	PyRotorObject *self;
+rotorobj_encrypt(self, args)
+	Rotorobj *self;
 	PyObject * args;
 {
-	char *string = (char *)NULL;
+	char *string = NULL;
 	int len = 0;
-	PyObject * rtn = (PyObject * )NULL;
+	PyObject *rtn = NULL;
 	char *tmp;
 
-	if (!PyArg_Parse(args,"s#",&string, &len))
+	if (!PyArg_Parse(args, "s#", &string, &len))
 		return NULL;
-	if (!(tmp = (char *)malloc(len+5))) {
+	if (!(tmp = PyMem_NEW(char, len+5))) {
 		PyErr_NoMemory();
 		return NULL;
 	}
-	memset(tmp,'\0',len+1);
-	memcpy(tmp,string,len);
-	RTR_e_region(self,(unsigned char *)tmp,len, TRUE);
-	rtn = PyString_FromStringAndSize(tmp,len);
-	free(tmp);
+	memset(tmp, '\0', len+1);
+	memcpy(tmp, string, len);
+	RTR_e_region(self, (unsigned char *)tmp, len, TRUE);
+	rtn = PyString_FromStringAndSize(tmp, len);
+	PyMem_DEL(tmp);
 	return(rtn);
 }
 
 static PyObject * 
-PyRotor_EncryptMore(self, args)
-	PyRotorObject *self;
+rotorobj_encrypt_more(self, args)
+	Rotorobj *self;
 	PyObject * args;
 {
-	char *string = (char *)NULL;
+	char *string = NULL;
 	int len = 0;
-	PyObject * rtn = (PyObject * )NULL;
+	PyObject *rtn = NULL;
 	char *tmp;
 
-	if (!PyArg_Parse(args,"s#",&string, &len))
+	if (!PyArg_Parse(args, "s#", &string, &len))
 		return NULL;
-	if (!(tmp = (char *)malloc(len+5))) {
+	if (!(tmp = PyMem_NEW(char, len+5))) {
 		PyErr_NoMemory();
 		return NULL;
 	}
-	memset(tmp,'\0',len+1);
-	memcpy(tmp,string,len);
-	RTR_e_region(self,(unsigned char *)tmp,len, FALSE);
-	rtn = PyString_FromStringAndSize(tmp,len);
-	free(tmp);
+	memset(tmp, '\0', len+1);
+	memcpy(tmp, string, len);
+	RTR_e_region(self, (unsigned char *)tmp, len, FALSE);
+	rtn = PyString_FromStringAndSize(tmp, len);
+	PyMem_DEL(tmp);
 	return(rtn);
 }
 
 static PyObject * 
-PyRotor_Decrypt(self, args)
-	PyRotorObject *self;
+rotorobj_decrypt(self, args)
+	Rotorobj *self;
 	PyObject * args;
 {
-	char *string = (char *)NULL;
+	char *string = NULL;
 	int len = 0;
-	PyObject * rtn = (PyObject * )NULL;
+	PyObject *rtn = NULL;
 	char *tmp;
 
-	if (!PyArg_Parse(args,"s#",&string, &len))
+	if (!PyArg_Parse(args, "s#", &string, &len))
 		return NULL;
-	if (!(tmp = (char *)malloc(len+5))) {
+	if (!(tmp = PyMem_NEW(char, len+5))) {
 		PyErr_NoMemory();
 		return NULL;
 	}
-	memset(tmp,'\0',len+1);
-	memcpy(tmp,string,len);
-	RTR_d_region(self,(unsigned char *)tmp,len, TRUE);
-	rtn = PyString_FromStringAndSize(tmp,len);
-	free(tmp);
+	memset(tmp, '\0', len+1);
+	memcpy(tmp, string, len);
+	RTR_d_region(self, (unsigned char *)tmp, len, TRUE);
+	rtn = PyString_FromStringAndSize(tmp, len);
+	PyMem_DEL(tmp);
 	return(rtn);
 }
 
 static PyObject * 
-PyRotor_DecryptMore(self, args)
-	PyRotorObject *self;
+rotorobj_decrypt_more(self, args)
+	Rotorobj *self;
 	PyObject * args;
 {
-	char *string = (char *)NULL;
+	char *string = NULL;
 	int len = 0;
-	PyObject * rtn = (PyObject * )NULL;
+	PyObject *rtn = NULL;
 	char *tmp;
 
-	if (!PyArg_Parse(args,"s#",&string, &len))
+	if (!PyArg_Parse(args, "s#", &string, &len))
 		return NULL;
-	if (!(tmp = (char *)malloc(len+5))) {
+	if (!(tmp = PyMem_NEW(char, len+5))) {
 		PyErr_NoMemory();
 		return NULL;
 	}
-	memset(tmp,'\0',len+1);
-	memcpy(tmp,string,len);
-	RTR_d_region(self,(unsigned char *)tmp,len, FALSE);
-	rtn = PyString_FromStringAndSize(tmp,len);
-	free(tmp);
+	memset(tmp, '\0', len+1);
+	memcpy(tmp, string, len);
+	RTR_d_region(self, (unsigned char *)tmp, len, FALSE);
+	rtn = PyString_FromStringAndSize(tmp, len);
+	PyMem_DEL(tmp);
 	return(rtn);
 }
 
 static PyObject * 
-PyRotor_SetKey(self, args)
-	PyRotorObject *self;
+rotorobj_setkey(self, args)
+	Rotorobj *self;
 	PyObject * args;
 {
-	char *string;
+	char *string = NULL;
 
-	if (PyArg_Parse(args,"s",&string))
-		set_key(self,string);
+	if (!PyArg_ParseTuple(args, "|s", &string))
+		return NULL;
+
+	if (string)
+		set_key(self, string);
+
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
-static struct PyMethodDef PyRotor_Methods[] = {
-	{"encrypt",	(PyCFunction)PyRotor_Encrypt},
-	{"encryptmore",	(PyCFunction)PyRotor_EncryptMore},
-	{"decrypt",	(PyCFunction)PyRotor_Decrypt},
-	{"decryptmore",	(PyCFunction)PyRotor_DecryptMore},
-	{"setkey",	(PyCFunction)PyRotor_SetKey},
+static struct PyMethodDef
+rotorobj_methods[] = {
+	{"encrypt",	(PyCFunction)rotorobj_encrypt},
+	{"encryptmore",	(PyCFunction)rotorobj_encrypt_more},
+	{"decrypt",	(PyCFunction)rotorobj_decrypt},
+	{"decryptmore",	(PyCFunction)rotorobj_decrypt_more},
+	{"setkey",	(PyCFunction)rotorobj_setkey, 1},
 	{NULL,		NULL}		/* sentinel */
 };
 
 
 /* Return a rotor object's named attribute. */
 static PyObject * 
-PyRotor_GetAttr(s, name)
-	PyRotorObject *s;
+rotorobj_getattr(s, name)
+	Rotorobj *s;
 	char *name;
 {
-	return Py_FindMethod(PyRotor_Methods, (PyObject * ) s, name);
+	return Py_FindMethod(rotorobj_methods, (PyObject*)s, name);
 }
 
-statichere PyTypeObject PyRotor_Type = {
+
+statichere PyTypeObject Rotor_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
 	"rotor",			/*tp_name*/
-	sizeof(PyRotorObject),		/*tp_size*/
+	sizeof(Rotorobj),		/*tp_size*/
 	0,				/*tp_itemsize*/
 	/* methods */
-	(destructor)PyRotor_Dealloc,	/*tp_dealloc*/
+	(destructor)rotor_dealloc,	/*tp_dealloc*/
 	0,				/*tp_print*/
-	(getattrfunc)PyRotor_GetAttr,	/*tp_getattr*/
+	(getattrfunc)rotorobj_getattr,	/*tp_getattr*/
 	0,				/*tp_setattr*/
 	0,				/*tp_compare*/
 	0,				/*tp_repr*/
@@ -773,29 +818,27 @@ statichere PyTypeObject PyRotor_Type = {
 
 
 static PyObject * 
-PyRotor_Rotor(self, args)
+rotor_rotor(self, args)
 	PyObject * self;
 	PyObject * args;
 {
+	Rotorobj *r;
 	char *string;
-	PyRotorObject *r;
 	int len;
-	int num_rotors;
+	int num_rotors = 6;
 
-	if (PyArg_Parse(args,"s#", &string, &len)) {
-		num_rotors = 6;
-	} else {
-		PyErr_Clear();
-		if (!PyArg_Parse(args,"(s#i)", &string, &len, &num_rotors))
-			return NULL;
-	}
-	r = PyRotor_New(num_rotors, string);
-	return (PyObject * )r;
+	if (!PyArg_ParseTuple(args, "s#|i", &string, &len, &num_rotors))
+		return NULL;
+
+	r = rotorobj_new(num_rotors, string);
+	return (PyObject *)r;
 }
 
-static struct PyMethodDef PyRotor_Rotor_Methods[] = {
-	{"newrotor",		(PyCFunction)PyRotor_Rotor},
-	{NULL,			NULL}		 /* Sentinel */
+
+static struct PyMethodDef
+rotor_methods[] = {
+	{"newrotor",  rotor_rotor, 1},
+	{NULL,        NULL}		     /* sentinel */
 };
 
 
@@ -807,7 +850,5 @@ static struct PyMethodDef PyRotor_Rotor_Methods[] = {
 void
 initrotor()
 {
-	PyObject * m;
-
-	m = Py_InitModule("rotor", PyRotor_Rotor_Methods);
+	(void)Py_InitModule("rotor", rotor_methods);
 }
