@@ -8,19 +8,23 @@
 ; you may not recognize instantly:  click it.  You're done.  It builds
 ; the installer into PCBuild/Python-2.2a1.exe.  Size and speed of the
 ; installer are competitive with the Wise installer; Inno uninstall
-; seems much quicker than Wise.
+; seems much quicker than Wise (but also feebler, and the uninstall
+; log is in some un(human)readable binary format).
 ;
 ; What's Done
 ; -----------
 ; All the usual Windows Python files are installed by this now.
 ; All the usual Windows Python Start menu entries are created and
 ; work fine.
-; The Python install is fully functional for "typical" uses (e.g.,
-; nothing I ever do with Python requires more than this).
+; .py, .pyw, .pyc and .pyo extensions are registered.
+;     PROBLEM:  Inno uninstall does not restore their previous registry
+;               associations (if any).  Wise did.  This will make life
+;               difficult for alpha (etc) testers.
+; The Python install is fully functional for "typical" uses.
 ;
 ; What's Not Done
 ; ---------------
-; No registry entries are written.
+; None of "Mark Hammond's" registry entries are written.
 ; No installation of files is done into the system dir:
 ;     The MS DLLs aren't handled at all by this yet.
 ;     Python22.dll is unpacked into the main Python dir.
@@ -38,9 +42,11 @@
 ; write a very simple Python program to *produce* this script.
 
 [Setup]
+; Note:  we *want* the version number to show up everywhere.
 ; Which of these controls App Path???
 AppName=Python 2.2 alpha 1
 AppVerName=Python 2.2 alpha 1
+AppId=Python 2.2
 AppVersion=2.2a1
 AppCopyright=Copyright © 2001 Python Software Foundation
 
@@ -48,10 +54,8 @@ AppCopyright=Copyright © 2001 Python Software Foundation
 ; {sd} = system root drive, probably "C:".
 DefaultDirName={sd}\Python22
 
-; Start menu folder name.
+; Start menu folder name; value of {group} later (unless user overrides).
 DefaultGroupName=Python 2.2
-
-AppId=Python 2.2
 
 ; Point SourceDir to one above PCBuild = src.
 ; YAY!  That actually worked:  means this script can run unchanged from anyone's
@@ -61,7 +65,7 @@ SourceDir=..
 OutputDir=PCBuild
 OutputBaseFilename=Python-2.2a1
 
-AppPublisher=PythonLabs at Digicool
+AppPublisher=PythonLabs at Digital Creations
 AppPublisherURL=http://www.python.org
 AppSupportURL=http://www.python.org
 AppUpdatesURL=http://www.python.org
@@ -69,8 +73,11 @@ AppUpdatesURL=http://www.python.org
 AlwaysCreateUninstallIcon=yes
 ChangesAssociations=yes
 UninstallLogMode=new
+
+; The fewer screens the better; leave these commented.
 ;LicenseFile=LICENSE
 ;InfoBeforeFile=Misc\NEWS
+
 ; uncomment the following line if you want your installation to run on NT 3.51 too.
 ; MinVersion=4,3.51
 
@@ -78,10 +85,14 @@ UninstallLogMode=new
 Name: normal; Description: "Select desired components"; Flags: iscustom
 
 [Components]
-Name: main;  Description: "Python interpreter and library"; Types: normal
-Name: docs;  Description: "Python documentation (HTML)";    Types: normal
-Name: tools; Description: "Python utility scripts";         Types: normal
-Name: test;  Description: "Python test suite (Lib\test\)";  Types: normal
+Name: main;  Description: "Python interpreter, library and Tk"; Types: normal
+Name: docs;  Description: "Python documentation (HTML)";        Types: normal
+Name: tools; Description: "Python utility scripts (Tools\)";    Types: normal
+Name: test;  Description: "Python test suite (Lib\test\)";      Types: normal
+
+[Tasks]
+Name: startmenu; Description: "Create Start menu shortcuts"; Components: main docs tools
+Name: extensions; Description: "Register file extensions (.py, .pyw, .pyc, .pyo)"; Components: main
 
 [Files]
 ; Caution:  Using forward slashes instead screws up in amazing ways.
@@ -199,8 +210,32 @@ Source: Lib\test\audiotest.au; DestDir: "{app}\Lib\test";        CopyMode: alway
 Source: Lib\test\output\*.*;   DestDir: "{app}\Lib\test\output"; CopyMode: alwaysoverwrite; Components: test
 
 [Icons]
-Name: "{group}\IDLE (Python GUI)"; Filename: "{app}\pythonw.exe"; WorkingDir: "{app}"; Parameters: "{app}\Tools\idle\idle.pyw"
-Name: "{group}\Module Docs"; Filename: "{app}\pythonw.exe"; WorkingDir: "{app}"; Parameters: "{app}\Tools\Scripts\pydoc.pyw"
-Name: "{group}\Python (command line)"; Filename: "{app}\python.exe"; WorkingDir: "{app}"
-Name: "{group}\Python Manuals"; Filename: "{app}\Doc\index.html"; WorkingDir: "{app}"
+Tasks: startmenu; Name: "{group}\IDLE (Python GUI)"; Filename: "{app}\pythonw.exe"; WorkingDir: "{app}"; Parameters: """{app}\Tools\idle\idle.pyw"""; Components: tools
+Tasks: startmenu; Name: "{group}\Module Docs"; Filename: "{app}\pythonw.exe"; WorkingDir: "{app}"; Parameters: """{app}\Tools\Scripts\pydoc.pyw"""; Components: tools
+Tasks: startmenu; Name: "{group}\Python (command line)"; Filename: "{app}\python.exe"; WorkingDir: "{app}"; Components: main
+Tasks: startmenu; Name: "{group}\Python Manuals"; Filename: "{app}\Doc\index.html"; WorkingDir: "{app}"; Components: docs
+
+[Registry]
+; Register .py
+Tasks: extensions; Root: HKCR; Subkey: ".py"; ValueType: string; ValueName: ""; ValueData: "Python File"; Flags: uninsdeletevalue
+Tasks: extensions; Root: HKCR; Subkey: ".py"; ValueType: string; ValueName: "Content Type"; ValueData: "text/plain"; Flags: uninsdeletevalue
+Tasks: extensions; Root: HKCR; Subkey: "Python File"; ValueType: string; ValueName: ""; ValueData: "Python File"; Flags: uninsdeletekey
+Tasks: extensions; Root: HKCR; Subkey: "Python File\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\Py.ico"
+Tasks: extensions; Root: HKCR; Subkey: "Python File\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\python.exe"" ""%1"" %*"
+
+; Register .pyc
+Tasks: extensions; Root: HKCR; Subkey: ".pyc"; ValueType: string; ValueName: ""; ValueData: "Python CompiledFile"; Flags: uninsdeletevalue
+Tasks: extensions; Root: HKCR; Subkey: "Python CompiledFile"; ValueType: string; ValueName: ""; ValueData: "Compiled Python File"; Flags: uninsdeletekey
+Tasks: extensions; Root: HKCR; Subkey: "Python CompiledFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\pyc.ico"
+Tasks: extensions; Root: HKCR; Subkey: "Python CompiledFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\python.exe"" ""%1"" %*"
+
+; Register .pyo
+Tasks: extensions; Root: HKCR; Subkey: ".pyo"; ValueType: string; ValueName: ""; ValueData: "Python CompiledFile"; Flags: uninsdeletevalue
+
+; Register .pyw
+Tasks: extensions; Root: HKCR; Subkey: ".pyw"; ValueType: string; ValueName: ""; ValueData: "Python NoConFile"; Flags: uninsdeletevalue
+Tasks: extensions; Root: HKCR; Subkey: ".pyw"; ValueType: string; ValueName: "Content Type"; ValueData: "text/plain"; Flags: uninsdeletevalue
+Tasks: extensions; Root: HKCR; Subkey: "Python NoConFile"; ValueType: string; ValueName: ""; ValueData: "Python File (no console)"; Flags: uninsdeletekey
+Tasks: extensions; Root: HKCR; Subkey: "Python NoConFile\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\Py.ico"
+Tasks: extensions; Root: HKCR; Subkey: "Python NoConFile\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\pythonw.exe"" ""%1"" %*"
 
