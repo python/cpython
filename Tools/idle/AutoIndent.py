@@ -495,7 +495,7 @@ def classifyws(s, tabwidth):
             effective = effective + 1
         elif ch == '\t':
             raw = raw + 1
-            effective = (effective / tabwidth + 1) * tabwidth
+            effective = (int(effective / tabwidth) + 1) * tabwidth
         else:
             break
     return raw, effective
