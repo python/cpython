@@ -170,8 +170,18 @@ esac
 
 if test $define_xopen_source = yes
 then
-  AC_DEFINE(_XOPEN_SOURCE, 600, 
-            Define to the level of X/Open that your system supports)
+  # On Solaris w/ g++ it appears that _XOPEN_SOURCE has to be
+  # defined precisely as g++ defines it
+  case $ac_sys_system/$ac_sys_release in
+    SunOS/5.8|SunOS/5.9)
+      AC_DEFINE(_XOPEN_SOURCE, 500, 
+                Define to the level of X/Open that your system supports)
+      ;;
+    *)
+      AC_DEFINE(_XOPEN_SOURCE, 600, 
+                Define to the level of X/Open that your system supports)
+      ;;
+  esac
 
   # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires
   # definition of _XOPEN_SOURCE_EXTENDED and _POSIX_C_SOURCE, or else
