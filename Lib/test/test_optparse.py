@@ -125,19 +125,25 @@ and kwargs %(kwargs)r
 
     def assertParseFail(self, cmdline_args, expected_output):
         """Assert the parser fails with the expected message."""
-        sys.stderr = StringIO()
-        self.assertRaises(self.parser.parse_args, (cmdline_args,), None,
-                          SystemExit, expected_output,
-                          self.redirected_stderr)
-        sys.stderr = sys.__stderr__
+        save_stderr = sys.stderr
+        try:
+            sys.stderr = StringIO()
+            self.assertRaises(self.parser.parse_args, (cmdline_args,), None,
+                              SystemExit, expected_output,
+                              self.redirected_stderr)
+        finally:
+            sys.stderr = save_stderr
 
     def assertStdoutEquals(self, cmdline_args, expected_output):
         """Assert the parser prints the expected output on stdout."""
-        sys.stdout = StringIO()
-        self.assertRaises(self.parser.parse_args, (cmdline_args,), None,
-                          SystemExit, expected_output,
-                          self.redirected_stdout)
-        sys.stdout = sys.__stdout__
+        save_stdout = sys.stdout
+        try:
+            sys.stdout = StringIO()
+            self.assertRaises(self.parser.parse_args, (cmdline_args,), None,
+                              SystemExit, expected_output,
+                              self.redirected_stdout)
+        finally:
+            sys.stdout = save_stdout
 
     def assertTypeError(self, func, expected_output, *args):
         """Assert a TypeError is raised when executing func."""
@@ -426,16 +432,21 @@ class TestProgName(BaseTest):
 
     def test_default_progname(self):
         # Make sure that program name taken from sys.argv[0] by default.
-        sys.argv[0] = "/foo/bar/baz.py"
-        parser = OptionParser("usage: %prog ...", version="%prog 1.2")
-        expected_usage = "usage: baz.py ...\n"
-        self.assertUsage(parser, expected_usage)
-        self.assertVersion(parser, "baz.py 1.2")
-        self.assertHelp(parser,
-            expected_usage + "\n" +
-            "options:\n"
-            "  --version   show program's version number and exit\n"
-            "  -h, --help  show this help message and exit\n")
+        save_argv = sys.argv[:]
+        try:
+            # XXX Should the path be hard-coding forward-slashes?
+            sys.argv[0] = "/foo/bar/baz.py"
+            parser = OptionParser("usage: %prog ...", version="%prog 1.2")
+            expected_usage = "usage: baz.py ...\n"
+            self.assertUsage(parser, expected_usage)
+            self.assertVersion(parser, "baz.py 1.2")
+            self.assertHelp(parser,
+                expected_usage + "\n" +
+                "options:\n"
+                "  --version   show program's version number and exit\n"
+                "  -h, --help  show this help message and exit\n")
+        finally:
+            sys.argv[:] = save_argv
 
     def test_custom_progname(self):
         parser = OptionParser(prog="thingy",
