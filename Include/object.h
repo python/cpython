@@ -349,7 +349,7 @@ extern long _Py_RefTotal;
 	if (--_Py_RefTotal, --(op)->ob_refcnt != 0) \
 		; \
 	else \
-		_Py_Dealloc(op)
+		_Py_Dealloc((PyObject *)(op))
 #else /* !Py_REF_DEBUG */
 
 #ifdef COUNT_ALLOCS
@@ -363,7 +363,7 @@ extern long _Py_RefTotal;
 	if (--(op)->ob_refcnt != 0) \
 		; \
 	else \
-		_Py_Dealloc(op)
+		_Py_Dealloc((PyObject *)(op))
 #endif /* !Py_REF_DEBUG */
 
 /* Macros to use in case the object pointer may be NULL: */
