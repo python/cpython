@@ -207,31 +207,44 @@ proxy_checkref(PyWeakReference *proxy)
 }
 
 
+/* If a parameter is a proxy, check that it is still "live" and wrap it,
+ * replacing the original value with the raw object.  Raises ReferenceError
+ * if the param is a dead proxy.
+ */
+#define UNWRAP(o) \
+        if (PyWeakref_CheckProxy(o)) { \
+            if (!proxy_checkref((PyWeakReference *)o)) \
+                return NULL; \
+            o = PyWeakref_GET_OBJECT(o); \
+        }
+
 #define WRAP_UNARY(method, generic) \
     static PyObject * \
-    method(PyWeakReference *proxy) { \
-        if (!proxy_checkref(proxy)) { \
-            return NULL; \
-        } \
-        return generic(PyWeakref_GET_OBJECT(proxy)); \
+    method(PyObject *proxy) { \
+        UNWRAP(proxy); \
+        return generic(proxy); \
     }
 
 #define WRAP_BINARY(method, generic) \
     static PyObject * \
-    method(PyWeakReference *proxy, PyObject *v) { \
-        if (!proxy_checkref(proxy)) { \
-            return NULL; \
-        } \
-        return generic(PyWeakref_GET_OBJECT(proxy), v); \
+    method(PyObject *x, PyObject *y) { \
+        UNWRAP(x); \
+        UNWRAP(y); \
+        return generic(x, y); \
     }
 
+/* Note that the second and third args need to be checked for NULL since
+ * (at least) the tp_call slot can receive NULL for either of those args.
+ */
 #define WRAP_TERNARY(method, generic) \
     static PyObject * \
-    method(PyWeakReference *proxy, PyObject *v, PyObject *w) { \
-        if (!proxy_checkref(proxy)) { \
-            return NULL; \
-	} \
-        return generic(PyWeakref_GET_OBJECT(proxy), v, w); \
+    method(PyObject *proxy, PyObject *v, PyObject *w) { \
+        UNWRAP(proxy); \
+        if (v != NULL) \
+            UNWRAP(v); \
+        if (w != NULL) \
+            UNWRAP(w); \
+        return generic(proxy, v, w); \
     }
 
 
