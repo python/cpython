@@ -3271,7 +3271,7 @@ int charmaptranslate_output(const Py_UNICODE *startinp, const Py_UNICODE *curinp
 	else if (repsize!=0) {
 	    /* more than one character */
 	    int requiredsize = (*outp-PyUnicode_AS_UNICODE(*outobj)) +
-		(insize - (*curinp-*startinp)) +
+		(insize - (curinp-startinp)) +
 		repsize - 1;
 	    if (charmaptranslate_makespace(outobj, outp, requiredsize))
 		return -1;
