@@ -64,6 +64,25 @@ A real Python list object used to store the contents of the
 \class{UserList} class.
 \end{memberdesc}
 
+\strong{Subclassing requirements:}
+Subclasses of \class{UserList} are expect to offer a constructor which
+can be called with either no arguments or one argument.  List
+operations which return a new sequence attempt to create an instance
+of the actual implementation class.  To do so, it assumes that the
+constructor can be called with a single parameter, which is a sequence
+object used as a data source.
+
+If a derived class does not wish to comply with this requirement, all
+of the special methods supported by this class will need to be
+overridden; please consult the sources for information about the
+methods which need to be provided in that case.
+
+\versionchanged[Python versions 1.5.2 and 1.6 also required that the
+                constructor be callable with no parameters, and offer
+                a mutable \member{data} attribute.  Earlier versions
+                of Python did not attempt to create instances of the
+                derived class]{2.0}
+
 
 \section{\module{UserString} ---
          Class wrapper for string objects}
