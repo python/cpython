@@ -130,6 +130,28 @@ PyTuple_SetItem(register PyObject *op, register int i, PyObject *newitem)
 	return 0;
 }
 
+PyObject *
+PyTuple_Pack(int n, ...)
+{
+	int i;
+	PyObject *o;
+	PyObject *result;
+	va_list vargs;
+
+	va_start(vargs, n);
+	result = PyTuple_New(n);
+	if (result == NULL)
+		return NULL;
+	for (i = 0; i < n; i++) {
+		o = va_arg(vargs, PyObject *);
+		Py_INCREF(o);
+		PyTuple_SET_ITEM(result, i, o);
+	}
+	va_end(vargs);
+	return result;
+}
+
+
 /* Methods */
 
 static void

@@ -140,6 +140,11 @@ Build
 C API
 -----
 
+- Added a new function, PyTuple_Pack(n, ...) for constructing tuples from a
+  variable length argument list of Python objects without having to invoke
+  the more complex machinery of Py_BuildValue().  PyTuple_Pack(3, a, b, c)
+  is equivalent to Py_BuildValue("(OOO)", a, b, c).
+
 New platforms
 -------------
 

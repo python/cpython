@@ -973,7 +973,7 @@ which is \ASCII.  The file system calls should use
 \cdata{Py_FileSystemDefaultEncoding} as the encoding for file
 names. This variable should be treated as read-only: On some systems,
 it will be a pointer to a static string, on others, it will change at
-run-time, e.g. when the application invokes setlocale.
+run-time (such as when the application invokes setlocale).
 
 Error handling is set by errors which may also be set to \NULL{}
 meaning to use the default handling defined for the codec.  Default
@@ -1582,6 +1582,14 @@ format.
 
 \begin{cfuncdesc}{PyObject*}{PyTuple_New}{int len}
   Return a new tuple object of size \var{len}, or \NULL{} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyTuple_Pack}{int n, \moreargs}
+  Return a new tuple object of size \var{n}, or \NULL{} on failure.
+  The tuple values are initialized to the subsequent \var{n} C arguments
+  pointing to Python objects.  \samp{PyTuple_Pack(2, \var{a}, \var{b})}
+  is equivalent to \samp{Py_BuildValue("(OO)", \var{a}, \var{b})}.
+  \versionadded{2.4}			 
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyTuple_Size}{PyObject *p}

@@ -35,6 +35,7 @@ PyAPI_FUNC(PyObject *) PyTuple_GetItem(PyObject *, int);
 PyAPI_FUNC(int) PyTuple_SetItem(PyObject *, int, PyObject *);
 PyAPI_FUNC(PyObject *) PyTuple_GetSlice(PyObject *, int, int);
 PyAPI_FUNC(int) _PyTuple_Resize(PyObject **, int);
+PyAPI_FUNC(PyObject *) PyTuple_Pack(int, ...);
 
 /* Macro, trading safety for speed */
 #define PyTuple_GET_ITEM(op, i) (((PyTupleObject *)(op))->ob_item[i])
