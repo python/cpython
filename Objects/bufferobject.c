@@ -184,28 +184,22 @@ buffer_compare(PyBufferObject *self, PyBufferObject *other)
 static PyObject *
 buffer_repr(PyBufferObject *self)
 {
-	char buf[300];
 	char *status = self->b_readonly ? "read-only" : "read-write";
 
 	if ( self->b_base == NULL )
-	{
-		sprintf(buf, "<%s buffer ptr %p, size %d at %p>",
-			status,
-			self->b_ptr,
-			self->b_size,
-			self);
-	}
+		return PyString_FromFormat("<%s buffer ptr %p, size %d at %p>",
+					   status,
+					   self->b_ptr,
+					   self->b_size,
+					   self);
 	else
-	{
-		sprintf(buf, "<%s buffer for %p, ptr %p, size %d at %p>",
+		return PyString_FromFormat(
+			"<%s buffer for %p, ptr %p, size %d at %p>",
 			status,
 			self->b_base,
 			self->b_ptr,
 			self->b_size,
 			self);
-	}
-
-	return PyString_FromString(buf);
 }
 
 static long

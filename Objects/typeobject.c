@@ -113,8 +113,7 @@ type_compare(PyObject *v, PyObject *w)
 static PyObject *
 type_repr(PyTypeObject *type)
 {
-	PyObject *mod, *name;
-	char buf[200];
+	PyObject *mod, *name, *rtn;
 
 	mod = type_module(type, NULL);
 	if (mod == NULL)
@@ -126,15 +125,18 @@ type_repr(PyTypeObject *type)
 	name = type_name(type, NULL);
 	if (name == NULL)
 		return NULL;
-	if (mod != NULL && strcmp(PyString_AS_STRING(mod), "__builtin__"))
-		sprintf(buf, "<type '%.80s.%.80s'>",
-			PyString_AS_STRING(mod),
-			PyString_AS_STRING(name));
+
+	if (mod != NULL && strcmp(PyString_AS_STRING(mod), "__builtin__")) {
+		rtn = PyString_FromFormat("<type '%s.%s'>",
+					  PyString_AS_STRING(mod),
+					  PyString_AS_STRING(name));
+	}
 	else
-		sprintf(buf, "<type '%.80s'>", type->tp_name);
+		rtn = PyString_FromFormat("<type '%s'>", type->tp_name);
+
 	Py_XDECREF(mod);
 	Py_DECREF(name);
-	return PyString_FromString(buf);
+	return rtn;
 }
 
 static PyObject *
@@ -968,8 +970,7 @@ static PyObject *
 object_repr(PyObject *self)
 {
 	PyTypeObject *type;
-	PyObject *mod, *name;
-	char buf[200];
+	PyObject *mod, *name, *rtn;
 
 	type = self->ob_type;
 	mod = type_module(type, NULL);
@@ -983,15 +984,16 @@ object_repr(PyObject *self)
 	if (name == NULL)
 		return NULL;
 	if (mod != NULL && strcmp(PyString_AS_STRING(mod), "__builtin__"))
-		sprintf(buf, "<%.80s.%.80s instance at %p>",
-			PyString_AS_STRING(mod),
-			PyString_AS_STRING(name),
-			self);
+		rtn = PyString_FromFormat("<%s.%s instance at %p>",
+					  PyString_AS_STRING(mod),
+					  PyString_AS_STRING(name),
+					  self);
 	else
-		sprintf(buf, "<%.80s instance at %p>", type->tp_name, self);
+		rtn = PyString_FromFormat("<%s instance at %p>",
+					  type->tp_name, self);
 	Py_XDECREF(mod);
 	Py_DECREF(name);
-	return PyString_FromString(buf);
+	return rtn;
 }
 
 static PyObject *
@@ -2590,13 +2592,9 @@ slot_tp_repr(PyObject *self)
 		Py_DECREF(func);
 		return res;
 	}
-	else {
-		char buf[120];
-		PyErr_Clear();
-		sprintf(buf, "<%.80s object at %p>",
-			self->ob_type->tp_name, self);
-		return PyString_FromString(buf);
-	}
+	PyErr_Clear();
+	return PyString_FromFormat("<%s object at %p>",
+				   self->ob_type->tp_name, self);
 }
 
 static PyObject *

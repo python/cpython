@@ -157,13 +157,8 @@ module_dealloc(PyModuleObject *m)
 static PyObject *
 module_repr(PyModuleObject *m)
 {
-	static int template1len = sizeof("<module '' (built-in)>") + 1;
-	static int template2len = sizeof("<module '' from ''>") + 1;
-
-	char *buf;
 	char *name;
 	char *filename;
-	PyObject *rtn;
 
 	name = PyModule_GetName((PyObject *)m);
 	if (name == NULL) {
@@ -173,19 +168,9 @@ module_repr(PyModuleObject *m)
 	filename = PyModule_GetFilename((PyObject *)m);
 	if (filename == NULL) {
 		PyErr_Clear();
-		buf = PyObject_MALLOC(
-			sizeof(char) * (strlen(name) + template1len));
-		sprintf(buf, "<module '%s' (built-in)>", name);
+		return PyString_FromFormat("<module '%s' (built-in)>", name);
 	}
-	else {
-		buf = PyObject_MALLOC(
-			sizeof(char) * (strlen(name) + strlen(filename) +
-					template2len));
-		sprintf(buf, "<module '%s' from '%s'>", name, filename);
-	}
-	rtn = PyString_FromString(buf);
-	PyObject_FREE(buf);
-	return rtn;
+	return PyString_FromFormat("<module '%s' from '%s'>", name, filename);
 }
 
 /* We only need a traverse function, no clear function: If the module

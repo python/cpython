@@ -172,15 +172,13 @@ static struct getsetlist meth_getsets [] = {
 static PyObject *
 meth_repr(PyCFunctionObject *m)
 {
-	char buf[200];
 	if (m->m_self == NULL)
-		sprintf(buf, "<built-in function %.80s>", m->m_ml->ml_name);
-	else
-		sprintf(buf,
-			"<built-in method %.80s of %.80s object at %p>",
-			m->m_ml->ml_name, m->m_self->ob_type->tp_name,
-			m->m_self);
-	return PyString_FromString(buf);
+		return PyString_FromFormat("<built-in function %s>",
+					   m->m_ml->ml_name);
+	return PyString_FromFormat("<built-in method %s of %s object at %p>",
+				   m->m_ml->ml_name,
+				   m->m_self->ob_type->tp_name,
+				   m->m_self);
 }
 
 static int

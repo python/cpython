@@ -126,30 +126,30 @@ range_length(rangeobject *r)
 static PyObject *
 range_repr(rangeobject *r)
 {
-	/* buffers must be big enough to hold 3 longs + an int +
-	 * a bit of "(xrange(...) * ...)" text.
-	 */
-	char buf1[250];
-	char buf2[250];
-
+	PyObject *rtn;
+	
 	if (r->start == 0 && r->step == 1)
-		sprintf(buf1, "xrange(%ld)", r->start + r->len * r->step);
+		rtn = PyString_FromFormat("xrange(%ld)",
+					  r->start + r->len * r->step);
 
 	else if (r->step == 1)
-		sprintf(buf1, "xrange(%ld, %ld)",
-			r->start,
-			r->start + r->len * r->step);
+		rtn = PyString_FromFormat("xrange(%ld, %ld)",
+					  r->start,
+					  r->start + r->len * r->step);
 
 	else
-		sprintf(buf1, "xrange(%ld, %ld, %ld)",
-			r->start,
-			r->start + r->len * r->step,
-			r->step);
-
-	if (r->reps != 1)
-		sprintf(buf2, "(%s * %d)", buf1, r->reps);
-
-	return PyString_FromString(r->reps == 1 ? buf1 : buf2);
+		rtn = PyString_FromFormat("xrange(%ld, %ld, %ld)",
+					  r->start,
+					  r->start + r->len * r->step,
+					  r->step);
+	if (r->reps != 1) {
+		PyObject *extra = PyString_FromFormat(
+			"(%s * %d)",
+			PyString_AS_STRING(rtn), r->reps);
+		Py_DECREF(rtn);
+		rtn = extra;
+	}
+	return rtn;
 }
 
 static PyObject *

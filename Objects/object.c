@@ -222,6 +222,7 @@ void _PyGC_Dump(PyGC_Head* op)
 }
 #endif /* WITH_CYCLE_GC */
 
+
 PyObject *
 PyObject_Repr(PyObject *v)
 {
@@ -235,12 +236,9 @@ PyObject_Repr(PyObject *v)
 #endif
 	if (v == NULL)
 		return PyString_FromString("<NULL>");
-	else if (v->ob_type->tp_repr == NULL) {
-		char buf[120];
-		sprintf(buf, "<%.80s object at %p>",
-			v->ob_type->tp_name, v);
-		return PyString_FromString(buf);
-	}
+	else if (v->ob_type->tp_repr == NULL)
+		return PyString_FromFormat("<%s object at %p",
+					   v->ob_type->tp_name, v);
 	else {
 		PyObject *res;
 		res = (*v->ob_type->tp_repr)(v);

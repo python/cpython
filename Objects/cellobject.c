@@ -62,14 +62,12 @@ cell_compare(PyCellObject *a, PyCellObject *b)
 static PyObject *
 cell_repr(PyCellObject *op)
 {
-	char buf[256];
-
 	if (op->ob_ref == NULL)
-		sprintf(buf, "<cell at %p: empty>", op);
-	else
-		sprintf(buf, "<cell at %p: %.80s object at %p>",
-			op, op->ob_ref->ob_type->tp_name, op->ob_ref);
-	return PyString_FromString(buf);
+		return PyString_FromFormat("<cell at %p: empty>", op);
+
+	return PyString_FromFormat("<cell at %p: %.80s object at %p>",
+				   op, op->ob_ref->ob_type->tp_name,
+				   op->ob_ref);
 }
 
 static int

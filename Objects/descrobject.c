@@ -55,38 +55,36 @@ descr_name(PyDescrObject *descr)
 static PyObject *
 descr_repr(PyDescrObject *descr, char *format)
 {
-	char buffer[500];
-
-	sprintf(buffer, format, descr_name(descr), descr->d_type->tp_name);
-	return PyString_FromString(buffer);
+	return PyString_FromFormat(format, descr_name(descr),
+				   descr->d_type->tp_name);
 }
 
 static PyObject *
 method_repr(PyMethodDescrObject *descr)
 {
 	return descr_repr((PyDescrObject *)descr, 
-			  "<method '%.300s' of '%.100s' objects>");
+			  "<method '%s' of '%s' objects>");
 }
 
 static PyObject *
 member_repr(PyMemberDescrObject *descr)
 {
 	return descr_repr((PyDescrObject *)descr, 
-			  "<member '%.300s' of '%.100s' objects>");
+			  "<member '%s' of '%s' objects>");
 }
 
 static PyObject *
 getset_repr(PyGetSetDescrObject *descr)
 {
 	return descr_repr((PyDescrObject *)descr, 
-			  "<attribute '%.300s' of '%.100s' objects>");
+			  "<attribute '%s' of '%s' objects>");
 }
 
 static PyObject *
 wrapper_repr(PyWrapperDescrObject *descr)
 {
 	return descr_repr((PyDescrObject *)descr, 
-			  "<slot wrapper '%.300s' of '%.100s' objects>");
+			  "<slot wrapper '%s' of '%s' objects>");
 }
 
 static int
@@ -100,8 +98,8 @@ descr_check(PyDescrObject *descr, PyObject *obj, PyTypeObject *type,
 	}
 	if (!PyObject_IsInstance(obj, (PyObject *)(descr->d_type))) {
 		PyErr_Format(PyExc_TypeError,
-			     "descriptor '%.200s' for '%.100s' objects "
-			     "doesn't apply to '%.100s' object",
+			     "descriptor '%s' for '%s' objects "
+			     "doesn't apply to '%s' object",
 			     descr_name((PyDescrObject *)descr),
 			     descr->d_type->tp_name,
 			     obj->ob_type->tp_name);

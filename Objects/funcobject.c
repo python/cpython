@@ -239,14 +239,11 @@ func_dealloc(PyFunctionObject *op)
 static PyObject*
 func_repr(PyFunctionObject *op)
 {
-	char buf[140];
 	if (op->func_name == Py_None)
-		sprintf(buf, "<anonymous function at %p>", op);
-	else
-		sprintf(buf, "<function %.100s at %p>",
-			PyString_AsString(op->func_name),
-			op);
-	return PyString_FromString(buf);
+		return PyString_FromFormat("<anonymous function at %p>", op);
+	return PyString_FromFormat("<function %s at %p>",
+				   PyString_AsString(op->func_name),
+				   op);
 }
 
 static int
