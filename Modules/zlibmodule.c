@@ -125,7 +125,7 @@ PyZlib_compress(PyObject *self, PyObject *args)
     return NULL;
 
   /* now get a pointer to the internal string */
-  if (PyString_AsStringAndSize(inputString, &input, &length) == -1)
+  if (PyString_AsStringAndSize(inputString, (char**)&input, &length) == -1)
     return NULL;
 
   zst.avail_out = length + length/1000 + 12 + 1;
@@ -249,7 +249,7 @@ PyZlib_decompress(PyObject *self, PyObject *args)
 
   if (!PyArg_ParseTuple(args, "S|ii:decompress", &inputString, &wsize, &r_strlen))
     return NULL;
-  if (PyString_AsStringAndSize(inputString, &input, &length) == -1)
+  if (PyString_AsStringAndSize(inputString, (char**)&input, &length) == -1)
     return NULL;
 
   if (r_strlen <= 0)
@@ -523,7 +523,7 @@ PyZlib_objcompress(compobject *self, PyObject *args)
   
   if (!PyArg_ParseTuple(args, "S:compress", &inputString))
     return NULL;
-  if (PyString_AsStringAndSize(inputString, &input, &inplen) == -1)
+  if (PyString_AsStringAndSize(inputString, (char**)&input, &inplen) == -1)
     return NULL;
 
   if (!(RetVal = PyString_FromStringAndSize(NULL, length))) {
@@ -613,7 +613,7 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
 
   if (!PyArg_ParseTuple(args, "S:decompress", &inputString))
     return NULL;
-  if (PyString_AsStringAndSize(inputString, &input, &inplen) == -1)
+  if (PyString_AsStringAndSize(inputString, (char**)&input, &inplen) == -1)
     return NULL;
 
   if (!(RetVal = PyString_FromStringAndSize(NULL, length))) {
