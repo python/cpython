@@ -3,6 +3,7 @@ import os
 import time
 import socket
 import traceback
+import thread
 import threading
 import Queue
 
@@ -13,7 +14,6 @@ import RemoteDebugger
 import RemoteObjectBrowser
 import StackViewer
 import rpc
-import interrupt
 
 import __main__
 
@@ -189,7 +189,7 @@ class MyRPCServer(rpc.RPCServer):
         except EOFError:
             global exit_now
             exit_now = True
-            interrupt.interrupt_main()
+            thread.interrupt_main()
         except:
             erf = sys.__stderr__
             print>>erf, '\n' + '-'*40
@@ -223,13 +223,13 @@ class MyHandler(rpc.RPCHandler):
         "Override SocketIO method - terminate wait on callback and exit thread"
         global quitting
         quitting = True
-        interrupt.interrupt_main()
+        thread.interrupt_main()
 
     def decode_interrupthook(self):
         "interrupt awakened thread"
         global quitting
         quitting = True
-        interrupt.interrupt_main()
+        thread.interrupt_main()
 
 
 class Executive:
@@ -256,7 +256,7 @@ class Executive:
             flush_stdout()
 
     def interrupt_the_server(self):
-        interrupt.interrupt_main()
+        thread.interrupt_main()
 
     def start_the_debugger(self, gui_adap_oid):
         return RemoteDebugger.start_debugger(self.rpchandler, gui_adap_oid)
