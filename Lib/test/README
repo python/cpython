@@ -1,0 +1,77 @@
+			 Writing Python Test Cases
+			 -------------------------
+			       Skip Montanaro
+
+If you add a new module to Python or modify the functionality of an existing
+module, it is your responsibility to write one or more test cases to test
+that new functionality.  The mechanics of the test system are fairly
+straightforward.  If you are writing test cases for module zyzzyx, you need
+to create a file in .../Lib/test named test_zyzzyx.py and an expected output
+file in .../Lib/test/output named test_zyzzyx ("..." represents the
+top-level directory in the Python source tree, the directory containing the
+configure script).  Generate the initial version of the test output file by
+executing:
+
+    cd .../Lib/test
+    python regrtest.py -g test_zyzzyx.py
+
+Any time you modify test_zyzzyx.py you need to generate a new expected
+output file.  Don't forget to desk check the generated output to make sure
+it's really what you expected to find!  To run a single test after modifying
+a module, simply run regrtest.py without the -g flag:
+
+    cd .../Lib/test
+    python regrtest.py test_zyzzyx.py
+
+To run the entire test suite, make the "test" target at the top level:
+
+    cd ...
+    make test
+
+Test cases generate output based upon computed values and branches taken in
+the code.  When executed, regrtest.py compares the actual output generated
+by executing the test case with the expected output and reports success or
+failure.  It stands to reason that if the actual and expected outputs are to 
+match, they must not contain any machine dependencies.  This means 
+your test cases should not print out absolute machine addresses or floating
+point numbers with large numbers of significant digits.
+
+Writing good test cases is a skilled task and is too complex to discuss in
+detail in this short document.  Many books have been written on the subject.
+I'll show my age by suggesting that Glenford Myers' "The Art of Software
+Testing", published in 1979, is still the best introduction to the subject
+available.  It is short (177 pages), easy to read, and discusses the major
+elements of software testing, though its publication predates the
+object-oriented software revolution, so doesn't cover that subject at all.
+Unfortunately, it is very expensive (about $100 new).  If you can borrow it
+or find it used (around $20), I strongly urge you to pick up a copy.
+
+As an author of at least part of a module, you will be writing unit tests
+(isolated tests of functions and objects defined by the module) using white
+box techniques.  (Unlike black box testing, where you only have the external
+interfaces to guide your test case writing, in white box testing you can see
+the code being tested and tailor your test cases to exercise it more
+completely).
+
+The most important goal when writing test cases is to break things.  A test
+case that doesn't uncover a bug is less valuable than one that does.  In
+designing test cases you should pay attention to the following:
+
+    1. Your test cases should exercise all the functions and objects defined
+       in the module, not just the ones meant to be called by users of your
+       module.  This may require you to write test code that uses the module
+       in ways you don't expect (explicitly calling internal functions, for
+       example - see test_atexit.py).
+
+    2. You should consider any boundary values that may tickle exceptional
+       conditions (e.g. if you were testing a division module you might well 
+       want to generate tests with numerators and denominators at the limits 
+       of floating point and integer numbers on the machine performing the
+       tests as well as a denominator of zero).
+
+    3. You should exercise as many paths through the code as possible.  This 
+       may not always be possible, but is a goal to strive for.  In
+       particular, when considering if statements (or their equivalent), you 
+       want to create test cases that exercise both the true and false
+       branches.  For while and for statements, you should create test cases 
+       that exercise the loop zero, one and multiple times.
