@@ -164,7 +164,8 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libpycompile.tex \
 	../lib/libcompileall.tex \
 	../lib/libshlex.tex \
-	../lib/libnetrc.tex
+	../lib/libnetrc.tex \
+	../lib/libgetpass.tex
 
 # LaTeX source files for Macintosh Library Modules.
 MACFILES= ../mac/mac.tex \
