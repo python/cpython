@@ -1139,7 +1139,7 @@ min_max(PyObject *args, PyObject *kwds, int op)
 
 	maxitem = NULL; /* the result */
 	maxval = NULL;  /* the value associated with the result */
-	while (item = PyIter_Next(it)) {
+	while (( item = PyIter_Next(it) )) {
 		/* get the value from the key function */
 		if (keyfunc != NULL) {
 			val = PyObject_CallFunctionObjArgs(keyfunc, item, NULL);
