@@ -8,20 +8,64 @@ Introduction
 
 If you add a new module to Python or modify the functionality of an existing
 module, you should write one or more test cases to exercise that new
-functionality.  The mechanics of how the test system operates are fairly
-straightforward.  When a test case is run, the output is compared with the
-expected output that is stored in .../Lib/test/output.  If the test runs to
-completion and the actual and expected outputs match, the test succeeds, if
-not, it fails.  If an ImportError or test_support.TestSkipped error is
-raised, the test is not run.
+functionality.  There are different ways to do this within the regression
+testing facility provided with Python; any particular test should use only
+one of these options.  Each option requires writing a test module using the
+conventions of the the selected option:
 
-You will be writing unit tests (isolated tests of functions and objects
+    - PyUnit based tests
+    - doctest based tests
+    - "traditional" Python test modules
+
+Regardless of the mechanics of the testing approach you choose,
+you will be writing unit tests (isolated tests of functions and objects
 defined by the module) using white box techniques.  Unlike black box
 testing, where you only have the external interfaces to guide your test case
 writing, in white box testing you can see the code being tested and tailor
 your test cases to exercise it more completely.  In particular, you will be
 able to refer to the C and Python code in the CVS repository when writing
 your regression test cases.
+
+PyUnit based tests
+
+The PyUnit framework is based on the ideas of unit testing as espoused
+by Kent Beck and the Extreme Programming (XP) movement.  The specific
+interface provided by the framework is tightly based on the JUnit
+Java implementation of Beck's original SmallTalk test framework.  Please
+see the documentation of the unittest module for detailed information on
+the interface and general guidelines on writing PyUnit based tests.
+
+The test_support helper module provides a single function for use by
+PyUnit based tests in the Python regression testing framework:
+run_unittest() takes a unittest.TestCase derived class as a parameter
+and runs the tests defined in that class.  All test methods in the
+Python regression framework have names that start with "test_" and use
+lower-case names with words separated with underscores.
+
+doctest based tests
+
+Tests written to use doctest are actually part of the docstrings for
+the module being tested.  Each test is written as a display of an
+interactive session, including the Python prompts, statements that would
+be typed by the user, and the output of those statements (including
+tracebacks!).  The module in the test package is simply a wrapper that
+causes doctest to run over the tests in the module.  The test for the
+doctest module provides a convenient example:
+
+    import doctest
+    doctest.testmod(doctest, verbose=1)
+
+See the documentation for the doctest module for information on
+writing tests using the doctest framework.
+
+"traditional" Python test modules
+
+The mechanics of how the "traditional" test system operates are fairly
+straightforward.  When a test case is run, the output is compared with the
+expected output that is stored in .../Lib/test/output.  If the test runs to
+completion and the actual and expected outputs match, the test succeeds, if
+not, it fails.  If an ImportError or test_support.TestSkipped error is
+raised, the test is not run.
 
 
 Executing Test Cases
@@ -34,6 +78,10 @@ script).  From the top-level directory, generate the initial version of the
 test output file by executing:
 
     ./python Lib/test/regrtest.py -g test_spam.py
+
+(If your test does not generate any output when run successfully, this
+step may be skipped; no file containing expected output will be needed
+in this case.)
 
 Any time you modify test_spam.py you need to generate a new expected
 output file.  Don't forget to desk check the generated output to make sure
