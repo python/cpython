@@ -1,17 +1,34 @@
 # LaTeX source dependencies; note that the files are named relative to a
 # child directory and not the directory this file is located in.
 
+COMMONSTYLES= ../texinputs/python.sty \
+	../texinputs/pypaper.sty \
+	../texinputs/python.ist
 
-APIFILES= ../api/api.tex
+COMMONTEX= ../texinputs/copyright.tex \
+	../texinputs/boilerplate.tex
 
-DOCFILES= ../doc/doc.tex
+MANSTYLES= ../texinputs/fncychap.sty \
+	../texinputs/manual.cls \
+	$(COMMONSTYLES)
 
-EXTFILES= ../ext/ext.tex
+HOWTOSTYLES= ../texinputs/howto.cls \
+	$(COMMONSTYLES)
 
-TUTFILES= ../tut/tut.tex
+
+APIFILES= ../api/api.tex $(MANSTYLES) $(COMMONTEX)
+
+DOCFILES= $(HOWTOSTYLES) $(COMMONTEX) \
+	../texinputs/ltxmarkup.sty \
+	../doc/doc.tex
+
+EXTFILES= ../ext/ext.tex $(MANSTYLES) $(COMMONTEX)
+
+TUTFILES= ../tut/tut.tex $(MANSTYLES) $(COMMONTEX)
 
 # LaTeX source files for the Python Reference Manual
-REFFILES= ../ref/ref.tex \
+REFFILES= $(MANSTYLES) $(COMMONTEX) \
+	../ref/ref.tex \
 	../ref/ref1.tex \
 	../ref/ref2.tex \
 	../ref/ref3.tex \
@@ -22,7 +39,8 @@ REFFILES= ../ref/ref.tex \
 	../ref/ref8.tex
 
 # LaTeX source files for the Python Library Reference
-LIBFILES= ../lib/lib.tex \
+LIBFILES= $(MANSTYLES) $(COMMONTEX) \
+	../lib/lib.tex \
 	../lib/libintro.tex \
 	../lib/libobjs.tex \
 	../lib/libstdtypes.tex \
@@ -207,7 +225,8 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libcfgparser.tex
 
 # LaTeX source files for Macintosh Library Modules.
-MACFILES= ../mac/mac.tex \
+MACFILES= $(HOWTOSTYLES) $(COMMONTEX) \
+	../mac/mac.tex \
 	../mac/libmac.tex \
 	../mac/libctb.tex \
 	../mac/libmacconsole.tex \

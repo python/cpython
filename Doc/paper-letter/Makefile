@@ -35,31 +35,14 @@ PSFILES=	$(MANPSFILES) $(HOWTOPSFILES)
 
 include ../Makefile.deps
 
-COMMONSTYLES= ../texinputs/python.sty \
-	../texinputs/pypaper.sty \
-	../texinputs/python.ist
-
-COMMONTEX= ../texinputs/copyright.tex \
-	../texinputs/boilerplate.tex
-
-MANSTYLES= ../texinputs/fncychap.sty \
-	../texinputs/manual.cls \
-	$(COMMONSTYLES)
-
-HOWTOSTYLES= ../texinputs/howto.cls \
-	$(COMMONSTYLES)
-
 
 SCRIPTS:	  ../tools/fix_hack ../tools/mkdvi.sh ../tools/indfix.py
 
-$(DVIFILES):	  $(SCRIPTS) $(COMMONTEX)
-$(PDFFILES):	  $(SCRIPTS) $(COMMONTEX)
+$(DVIFILES):	  $(SCRIPTS)
+$(PDFFILES):	  $(SCRIPTS)
 
-$(MANDVIFILES):	  $(MANSTYLES)
-$(MANPDFFILES):	  $(MANSTYLES)
-
-$(HOWTODVIFILES): ../tools/mkhowto $(HOWTOSTYLES)
-$(HOWTOPDFFILES): ../tools/mkhowto $(HOWTOSTYLES)
+$(HOWTODVIFILES): ../tools/mkhowto
+$(HOWTOPDFFILES): ../tools/mkhowto
 
 
 # Rules to build PostScript and PDF formats
@@ -87,10 +70,10 @@ api.pdf: $(APIFILES)
 	$(MKPDF) api
 
 # Documenting Python
-doc.dvi: $(DOCFILES) ../texinputs/ltxmarkup.sty
+doc.dvi: $(DOCFILES)
 	$(MKHOWTO) --dvi ../doc/doc.tex
 
-doc.pdf: $(DOCCFILES) ../texinputs/ltxmarkup.sty
+doc.pdf: $(DOCFILES)
 	$(MKHOWTO) --pdf ../doc/doc.tex
 
 # Extending and Embedding the Python Interpreter
