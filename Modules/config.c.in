@@ -136,7 +136,7 @@ getargcargv(argc,argv)
 #endif
 
 #ifdef __GNUC__
-#define COMPILER " [GCC " ##__VERSION__ "]"
+#define COMPILER " [GCC " __VERSION__ "]"
 #endif
 
 #ifndef COMPILER
