@@ -28,6 +28,7 @@ for dynamically-linked python to use. Do one of the following:
 	sys.exit(1)
 
 import EasyDialogs
+import macostools
 
 goals = [
 	("mactcp.slb", "mactcpmodules.slb"),
@@ -37,6 +38,7 @@ goals = [
 	("Dlg.slb", "toolboxmodules.slb"),
 	("Evt.slb", "toolboxmodules.slb"),
 	("Menu.slb", "toolboxmodules.slb"),
+	("List.slb", "toolboxmodules.slb"),
 	("Qd.slb", "toolboxmodules.slb"),
 	("Res.slb", "toolboxmodules.slb"),
 	("Snd.slb", "toolboxmodules.slb"),
@@ -51,30 +53,10 @@ goals = [
 	("imgtiff.slb", "imgmodules.slb")
 ]
 
-#
-# Not guaranteed to be correct or stay correct (Apple doesn't tell you
-# how to do this), but it seems to work.
-#
-def mkalias(src, dst):
-	"""Create a finder alias"""
-	srcfss = macfs.FSSpec(src)
-	dstfss = macfs.FSSpec(dst)
-	alias = srcfss.NewAlias()
-	srcfinfo = srcfss.GetFInfo()
-
-	Res.FSpCreateResFile(dstfss, srcfinfo.Creator, srcfinfo.Type, -1)
-	h = Res.FSpOpenResFile(dstfss, 3)
-	resource = Res.Resource(alias.data)
-	resource.AddResource('alis', 0, '')
-	Res.CloseResFile(h)
-	
-	dstfinfo = dstfss.GetFInfo()
-	dstfinfo.Flags = dstfinfo.Flags|0x8000    # Alias flag
-	dstfss.SetFInfo(dstfinfo)
 
 def main():
 	# Ask the user for the plugins directory
-	dir, ok = macfs.GetDirectory()
+	dir, ok = macfs.GetDirectory('Where is the PlugIns folder?')
 	if not ok: sys.exit(0)
 	os.chdir(dir.as_pathname())
 	
@@ -97,7 +79,7 @@ def main():
 		sys.exit(0)
 	for dst, src in goals:
 		if src in LibFiles:
-			mkalias(src, dst)
+			macostools.mkalias(src, dst)
 		else:
 			EasyDialogs.Message(dst+' not created: '+src+' not found')
 			
