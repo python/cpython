@@ -12,12 +12,14 @@ import macfs
 import sys
 
 list = [
-	('.py', 'PYTH', 'TEXT'),
-	('.pyc', 'PYTH', 'PYC '),
+	('.py', 'Pyth', 'TEXT'),
+	('.pyc', 'Pyth', 'PYC '),
 	('.c', 'CWIE', 'TEXT'),
 	('.h', 'CWIE', 'TEXT'),
 	('.as', 'ToyS', 'TEXT'),
-	('.hqx', 'BnHq', 'TEXT')
+	('.hqx', 'BnHq', 'TEXT'),
+	('.cmif', 'CMIF', 'TEXT'),
+	('.cmc', 'CMIF', 'CMC ')
 ]
 
 def walktree(name, change):

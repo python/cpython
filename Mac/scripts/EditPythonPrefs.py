@@ -109,7 +109,7 @@ def main():
 	except Res.Error:
 		# Create it
 		message('No preferences file, creating one...')
-		FSpCreateResFile(preff_fss, 'PYTH', 'pref', smAllScripts)
+		FSpCreateResFile(preff_fss, 'Pyth', 'pref', smAllScripts)
 		preff_handle = FSpOpenResFile(preff_fss, WRITE)
 		
 	# Load the path and directory resources
