@@ -1108,8 +1108,13 @@ PySocketSock_connect_ex(PySocketSockObject *s, PyObject *args)
 	Py_BEGIN_ALLOW_THREADS
 	res = connect(s->sock_fd, addr, addrlen);
 	Py_END_ALLOW_THREADS
-	if (res != 0)
+	if (res != 0) {
+#ifdef MS_WINDOWS
+		res = WSAGetLastError();
+#else
 		res = errno;
+#endif
+	}
 	return PyInt_FromLong((long) res);
 }
 
