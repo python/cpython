@@ -204,29 +204,29 @@ the Emacs bell is also rung as a warning.")
 ;; well.
 ;; 
 (defvar python-font-lock-keywords
-   (list
-    (cons (concat
-	   "\\b\\("
-	   (mapconcat
-	    'identity
-	    '("access"     "and"      "break"    "continue"
-	      "del"        "elif"     "else:"    "except"
-	      "except:"    "exec"     "finally:" "for"
-	      "from"       "global"   "if"       "import"
-	      "in"         "is"       "lambda"   "not"
-	      "or"         "pass"     "print"    "raise"
-	      "return"     "try:"     "while"
-	      )
-	    "\\|")
-	   "\\)[ \n\t(]")
-          1)
-    ;; classes
-    '("\\bclass[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
-      1 font-lock-type-face)
-    ;; functions
-    '("\\bdef[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
-      1 font-lock-function-name-face)
-    )
+  (let* ((keywords '("access"     "and"      "break"    "continue"
+		     "del"        "elif"     "else:"    "except"
+		     "except:"    "exec"     "finally:" "for"
+		     "from"       "global"   "if"       "import"
+		     "in"         "is"       "lambda"   "not"
+		     "or"         "pass"     "print"    "raise"
+		     "return"     "try:"     "while"
+		     ))
+	 (kwregex (mapconcat 'identity keywords "\\|")))
+    (list
+     ;; keywords not at beginning of line
+     (cons (concat "\\s-\\(" kwregex "\\)[ \n\t(]") 1)
+     ;; keywords at beginning of line.  i don't think regexps are
+     ;; powerful enough to handle these two cases in one regexp.
+     ;; prove me wrong!
+     (cons (concat "^\\(" kwregex "\\)[ \n\t(]") 1)
+     ;; classes
+     '("\\bclass[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
+       1 font-lock-type-face)
+     ;; functions
+     '("\\bdef[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
+       1 font-lock-function-name-face)
+     ))
   "*Additional expressions to highlight in Python mode.")
 
 ;; R Lindsay Todd <toddr@rpi.edu> suggests these changes to the
