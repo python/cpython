@@ -68,8 +68,6 @@ class sdist (Command):
     default_format = { 'posix': 'gztar',
                        'nt': 'zip' }
 
-    exclude_re = re.compile (r'\s*!\s*(\S+)') # for manifest lines
-
 
     def initialize_options (self):
         # 'template' and 'manifest' are, respectively, the names of
@@ -165,13 +163,11 @@ class sdist (Command):
 
     def get_file_list (self):
         """Figure out the list of files to include in the source
-           distribution, and put it in 'self.files'.  This might
-           involve reading the manifest template (and writing the
-           manifest), or just reading the manifest, or just using
-           the default file set -- it all depends on the user's
-           options and the state of the filesystem."""
-
-
+        distribution, and put it in 'self.files'.  This might involve
+        reading the manifest template (and writing the manifest), or just
+        reading the manifest, or just using the default file set -- it all
+        depends on the user's options and the state of the filesystem.
+        """
         template_exists = os.path.isfile (self.template)
         if template_exists:
             template_newer = newer (self.template, self.manifest)
@@ -261,10 +257,9 @@ class sdist (Command):
 
     def search_dir (self, dir, pattern=None):
         """Recursively find files under 'dir' matching 'pattern' (a string
-           containing a Unix-style glob pattern).  If 'pattern' is None,
-           find all files under 'dir'.  Return the list of found
-           filenames."""
-
+        containing a Unix-style glob pattern).  If 'pattern' is None, find
+        all files under 'dir'.  Return the list of found filenames.
+        """
         allfiles = findall (dir)
         if pattern is None:
             return allfiles
@@ -291,9 +286,9 @@ class sdist (Command):
 
 
     def recursive_exclude_pattern (self, dir, pattern=None):
-        """Remove filenames from 'self.files' that are under 'dir'
-           and whose basenames match 'pattern'."""
-
+        """Remove filenames from 'self.files' that are under 'dir' and
+        whose basenames match 'pattern'.
+        """
         self.debug_print("recursive_exclude_pattern: dir=%s, pattern=%s" %
                          (dir, pattern))
         if pattern is None:
@@ -311,10 +306,10 @@ class sdist (Command):
 
     def read_template (self):
         """Read and parse the manifest template file named by
-           'self.template' (usually "MANIFEST.in").  Process all file
-           specifications (include and exclude) in the manifest template
-           and add the resulting filenames to 'self.files'."""
-
+        'self.template' (usually "MANIFEST.in").  Process all file
+        specifications (include and exclude) in the manifest template and
+        add the resulting filenames to 'self.files'.
+        """
         assert self.files is not None and type (self.files) is ListType
         self.announce("reading manifest template '%s'" % self.template)
 
@@ -533,10 +528,10 @@ class sdist (Command):
 
 
     def write_manifest (self):
-        """Write the file list in 'self.files' (presumably as filled in
-           by 'find_defaults()' and 'read_template()') to the manifest file
-           named by 'self.manifest'."""
-
+        """Write the file list in 'self.files' (presumably as filled in by
+        'find_defaults()' and 'read_template()') to the manifest file named
+        by 'self.manifest'.
+        """
         self.execute(write_file,
                      (self.manifest, self.files),
                      "writing manifest file '%s'" % self.manifest)
@@ -545,10 +540,10 @@ class sdist (Command):
 
 
     def read_manifest (self):
-        """Read the manifest file (named by 'self.manifest') and use
-           it to fill in 'self.files', the list of files to include
-           in the source distribution."""
-
+        """Read the manifest file (named by 'self.manifest') and use it to
+        fill in 'self.files', the list of files to include in the source
+        distribution.
+        """
         self.announce("reading manifest file '%s'" % self.manifest)
         manifest = open (self.manifest)
         while 1:
