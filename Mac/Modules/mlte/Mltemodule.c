@@ -191,7 +191,7 @@ static PyObject *TXNObj_TXNAdjustCursor(TXNObjectObject *_self, PyObject *_args)
 	RgnHandle ioCursorRgn;
 	PyMac_PRECHECK(TXNAdjustCursor);
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      ResObj_Convert, &ioCursorRgn))
+	                      OptResObj_Convert, &ioCursorRgn))
 		return NULL;
 	TXNAdjustCursor(_self->ob_itself,
 	                ioCursorRgn);

@@ -107,6 +107,7 @@ TXNBackgroundType = Type("TXNBackgroundType", "l")
 DragReference = OpaqueByValueType("DragReference", "DragObj")
 DragTrackingMessage = Type("DragTrackingMessage", "h")
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
+OptRgnHandle = OpaqueByValueType("RgnHandle", "OptResObj")
 GWorldPtr = OpaqueByValueType("GWorldPtr", "GWorldObj")
 MlteInBuffer = VarInputBufferType('void *', 'ByteCount', 'l')
 
