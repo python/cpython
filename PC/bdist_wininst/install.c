@@ -1734,7 +1734,9 @@ FinishedDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 				fprintf(stderr, "*** Could not load Python ***");
 			}
 			fflush(stderr);
+			fclose(stderr);
 			fflush(stdout);
+			fclose(stdout);
 	    
 			fp = fopen(tempname, "rb");
 			n = fread(buffer, 1, sizeof(buffer), fp);
@@ -2082,7 +2084,9 @@ BOOL Run_RemoveScript(char *line)
 		}
 	
 		fflush(stderr);
+		fclose(stderr);
 		fflush(stdout);
+		fclose(stdout);
 	
 		fp = fopen(tempname, "rb");
 		n = fread(buffer, 1, sizeof(buffer), fp);
