@@ -256,10 +256,41 @@ struct compiling {
 	int c_nblocks;		/* current block stack level */
 	char *c_filename;	/* filename of current node */
 	char *c_name;		/* name of object (e.g. function) */
+	int c_lineno;		/* Current line number */
 #ifdef PRIVATE_NAME_MANGLING
 	char *c_private;	/* for private name mangling */
 #endif
 };
+
+
+/* Error message including line number */
+
+static void
+com_error(c, exc, msg)
+	struct compiling *c;
+	object *exc;
+	char *msg;
+{
+	int n = strlen(msg);
+	object *v;
+	char buffer[30];
+	char *s;
+	if (c->c_lineno <= 1) {
+		/* Unknown line number or single interactive command */
+		err_setstr(exc, msg);
+		return;
+	}
+	sprintf(buffer, " (line %d)", c->c_lineno);
+	v = newsizedstringobject((char *)NULL, n + strlen(buffer));
+	if (v == NULL)
+		return; /* MemoryError, too bad */
+	s = GETSTRINGVALUE((stringobject *)v);
+	strcpy(s, msg);
+	strcat(s, buffer);
+	err_setval(exc, v);
+	DECREF(v);
+	c->c_errors++;
+}
 
 
 /* Interface to the block stack */
@@ -270,8 +301,7 @@ block_push(c, type)
 	int type;
 {
 	if (c->c_nblocks >= MAXBLOCKS) {
-		err_setstr(SystemError, "too many statically nested blocks");
-		c->c_errors++;
+		com_error(c, SystemError, "too many statically nested blocks");
 	}
 	else {
 		c->c_block[c->c_nblocks++] = type;
@@ -286,8 +316,7 @@ block_pop(c, type)
 	if (c->c_nblocks > 0)
 		c->c_nblocks--;
 	if (c->c_block[c->c_nblocks] != type && c->c_errors == 0) {
-		err_setstr(SystemError, "bad block pop");
-		c->c_errors++;
+		com_error(c, SystemError, "bad block pop");
 	}
 }
 
@@ -343,6 +372,7 @@ com_init(c, filename)
 	c->c_nblocks = 0;
 	c->c_filename = filename;
 	c->c_name = "?";
+	c->c_lineno = 0;
 	return 1;
 	
   fail_000:
@@ -391,8 +421,7 @@ com_addbyte(c, byte)
 		fprintf(stderr, "XXX compiling bad byte: %d\n", byte);
 		fatal("com_addbyte: byte out of range");
 		*/
-		err_setstr(SystemError, "com_addbyte: byte out of range");
-		c->c_errors++;
+		com_error(c, SystemError, "com_addbyte: byte out of range");
 	}
 	if (c->c_code == NULL)
 		return;
@@ -421,6 +450,8 @@ com_addoparg(c, op, arg)
 	int op;
 	int arg;
 {
+	if (op == SET_LINENO)
+		c->c_lineno = arg;
 	com_addbyte(c, op);
 	com_addint(c, arg);
 }
@@ -592,8 +623,8 @@ com_addopname(c, op, n)
 		for (i = 0; i < NCH(n); i += 2) {
 			char *s = STR(CHILD(n, i));
 			if (p + strlen(s) > buffer + (sizeof buffer) - 2) {
-				err_setstr(MemoryError,
-					   "dotted_name too long");
+				com_error(c, MemoryError,
+					  "dotted_name too long");
 				name = NULL;
 				break;
 			}
@@ -611,7 +642,8 @@ com_addopname(c, op, n)
 }
 
 static object *
-parsenumber(s)
+parsenumber(co, s)
+	struct compiling *co;
 	char *s;
 {
 	extern long mystrtol PROTO((const char *, char **, int));
@@ -637,8 +669,8 @@ parsenumber(s)
 		x = mystrtol(s, &end, 0);
 	if (*end == '\0') {
 		if (errno != 0) {
-			err_setstr(OverflowError,
-				   "integer literal too large");
+			com_error(co, OverflowError,
+				  "integer literal too large");
 			return NULL;
 		}
 		return newintobject(x);
@@ -818,8 +850,7 @@ com_atom(c, n)
 		com_addbyte(c, UNARY_CONVERT);
 		break;
 	case NUMBER:
-		if ((v = parsenumber(STR(ch))) == NULL) {
-			c->c_errors++;
+		if ((v = parsenumber(c, STR(ch))) == NULL) {
 			i = 255;
 		}
 		else {
@@ -845,8 +876,7 @@ com_atom(c, n)
 		break;
 	default:
 		fprintf(stderr, "node type %d\n", TYPE(ch));
-		err_setstr(SystemError, "com_atom: unexpected node type");
-		c->c_errors++;
+		com_error(c, SystemError, "com_atom: unexpected node type");
 	}
 }
 
@@ -886,9 +916,8 @@ com_argument(c, n, inkeywords)
 	REQ(n, argument); /* [test '='] test; really [ keyword '='] keyword */
 	if (NCH(n) == 1) {
 		if (inkeywords) {
-			err_setstr(SyntaxError,
+			com_error(c, SyntaxError,
 				   "non-keyword arg after keyword arg");
-			c->c_errors++;
 		}
 		else {
 			com_node(c, CHILD(n, 0));
@@ -900,8 +929,7 @@ com_argument(c, n, inkeywords)
 		m = CHILD(m, 0);
 	} while (NCH(m) == 1);
 	if (TYPE(m) != NAME) {
-		err_setstr(SyntaxError, "keyword can't be an expression");
-		c->c_errors++;
+		com_error(c, SyntaxError, "keyword can't be an expression");
 	}
 	else {
 		object *v = newstringobject(STR(m));
@@ -938,8 +966,7 @@ com_call_function(c, n)
 				nk++;
 		}
 		if (na > 255 || nk > 255) {
-			err_setstr(SyntaxError, "more than 255 arguments");
-			c->c_errors++;
+			com_error(c, SyntaxError, "more than 255 arguments");
 		}
 		com_addoparg(c, CALL_FUNCTION, na | (nk << 8));
 	}
@@ -1071,9 +1098,8 @@ com_apply_trailer(c, n)
 		com_subscriptlist(c, CHILD(n, 1), OP_APPLY);
 		break;
 	default:
-		err_setstr(SystemError,
-			"com_apply_trailer: unknown trailer type");
-		c->c_errors++;
+		com_error(c, SystemError,
+			  "com_apply_trailer: unknown trailer type");
 	}
 }
 
@@ -1141,9 +1167,8 @@ com_term(c, n)
 			op = BINARY_MODULO;
 			break;
 		default:
-			err_setstr(SystemError,
-				"com_term: operator not *, / or %");
-			c->c_errors++;
+			com_error(c, SystemError,
+				  "com_term: operator not *, / or %");
 			op = 255;
 		}
 		com_addbyte(c, op);
@@ -1169,9 +1194,8 @@ com_arith_expr(c, n)
 			op = BINARY_SUBTRACT;
 			break;
 		default:
-			err_setstr(SystemError,
-				"com_arith_expr: operator not + or -");
-			c->c_errors++;
+			com_error(c, SystemError,
+				  "com_arith_expr: operator not + or -");
 			op = 255;
 		}
 		com_addbyte(c, op);
@@ -1197,9 +1221,8 @@ com_shift_expr(c, n)
 			op = BINARY_RSHIFT;
 			break;
 		default:
-			err_setstr(SystemError,
-				"com_shift_expr: operator not << or >>");
-			c->c_errors++;
+			com_error(c, SystemError,
+				  "com_shift_expr: operator not << or >>");
 			op = 255;
 		}
 		com_addbyte(c, op);
@@ -1221,9 +1244,8 @@ com_and_expr(c, n)
 			op = BINARY_AND;
 		}
 		else {
-			err_setstr(SystemError,
-				"com_and_expr: operator not &");
-			c->c_errors++;
+			com_error(c, SystemError,
+				  "com_and_expr: operator not &");
 			op = 255;
 		}
 		com_addbyte(c, op);
@@ -1245,9 +1267,8 @@ com_xor_expr(c, n)
 			op = BINARY_XOR;
 		}
 		else {
-			err_setstr(SystemError,
-				"com_xor_expr: operator not ^");
-			c->c_errors++;
+			com_error(c, SystemError,
+				  "com_xor_expr: operator not ^");
 			op = 255;
 		}
 		com_addbyte(c, op);
@@ -1269,9 +1290,8 @@ com_expr(c, n)
 			op = BINARY_OR;
 		}
 		else {
-			err_setstr(SystemError,
-				"com_expr: expr operator not |");
-			c->c_errors++;
+			com_error(c, SystemError,
+				  "com_expr: expr operator not |");
 			op = 255;
 		}
 		com_addbyte(c, op);
@@ -1366,9 +1386,8 @@ com_comparison(c, n)
 		}
 		op = cmp_type(CHILD(n, i-1));
 		if (op == BAD) {
-			err_setstr(SystemError,
-				"com_comparison: unknown comparison op");
-			c->c_errors++;
+			com_error(c, SystemError,
+				  "com_comparison: unknown comparison op");
 		}
 		com_addoparg(c, COMPARE_OP, op);
 		if (i+2 < NCH(n)) {
@@ -1504,8 +1523,7 @@ com_assign_trailer(c, n, assigning)
 	REQ(n, trailer);
 	switch (TYPE(CHILD(n, 0))) {
 	case LPAR: /* '(' [exprlist] ')' */
-		err_setstr(SyntaxError, "can't assign to function call");
-		c->c_errors++;
+		com_error(c, SyntaxError, "can't assign to function call");
 		break;
 	case DOT: /* '.' NAME */
 		com_assign_attr(c, CHILD(n, 1), assigning);
@@ -1514,8 +1532,7 @@ com_assign_trailer(c, n, assigning)
 		com_subscriptlist(c, CHILD(n, 1), assigning);
 		break;
 	default:
-		err_setstr(SystemError, "unknown trailer type");
-		c->c_errors++;
+		com_error(c, SystemError, "unknown trailer type");
 	}
 }
 
@@ -1588,9 +1605,8 @@ com_assign(c, n, assigning)
 		case term:
 		case factor:
 			if (NCH(n) > 1) {
-				err_setstr(SyntaxError,
-					"can't assign to operator");
-				c->c_errors++;
+				com_error(c, SyntaxError,
+					  "can't assign to operator");
 				return;
 			}
 			n = CHILD(n, 0);
@@ -1599,9 +1615,8 @@ com_assign(c, n, assigning)
 		case power: /* atom trailer* ('**' power)* */
 /* ('+'|'-'|'~') factor | atom trailer* */
 			if (TYPE(CHILD(n, 0)) != atom) {
-				err_setstr(SyntaxError,
-					"can't assign to operator");
-				c->c_errors++;
+				com_error(c, SyntaxError,
+					  "can't assign to operator");
 				return;
 			}
 			if (NCH(n) > 1) { /* trailer or exponent present */
@@ -1609,9 +1624,8 @@ com_assign(c, n, assigning)
 				com_node(c, CHILD(n, 0));
 				for (i = 1; i+1 < NCH(n); i++) {
 					if (TYPE(CHILD(n, i)) == DOUBLESTAR) {
-						err_setstr(SyntaxError,
-							"can't assign to operator");
-						c->c_errors++;
+						com_error(c, SyntaxError,
+						  "can't assign to operator");
 						return;
 					}
 					com_apply_trailer(c, CHILD(n, i));
@@ -1629,18 +1643,16 @@ com_assign(c, n, assigning)
 				n = CHILD(n, 1);
 				if (TYPE(n) == RPAR) {
 					/* XXX Should allow () = () ??? */
-					err_setstr(SyntaxError,
-						"can't assign to ()");
-					c->c_errors++;
+					com_error(c, SyntaxError,
+						  "can't assign to ()");
 					return;
 				}
 				break;
 			case LSQB:
 				n = CHILD(n, 1);
 				if (TYPE(n) == RSQB) {
-					err_setstr(SyntaxError,
-						"can't assign to []");
-					c->c_errors++;
+					com_error(c, SyntaxError,
+						  "can't assign to []");
 					return;
 				}
 				com_assign_list(c, n, assigning);
@@ -1649,22 +1661,19 @@ com_assign(c, n, assigning)
 				com_assign_name(c, CHILD(n, 0), assigning);
 				return;
 			default:
-				err_setstr(SyntaxError,
-						"can't assign to literal");
-				c->c_errors++;
+				com_error(c, SyntaxError,
+					  "can't assign to literal");
 				return;
 			}
 			break;
 
 		case lambdef:
-			err_setstr(SyntaxError, "can't assign to lambda");
-			c->c_errors++;
+			com_error(c, SyntaxError, "can't assign to lambda");
 			return;
 		
 		default:
 			fprintf(stderr, "node type %d\n", TYPE(n));
-			err_setstr(SystemError, "com_assign: bad node");
-			c->c_errors++;
+			com_error(c, SystemError, "com_assign: bad node");
 			return;
 		
 		}
@@ -1717,8 +1726,7 @@ com_return_stmt(c, n)
 {
 	REQ(n, return_stmt); /* 'return' [testlist] */
 	if (!c->c_infunction) {
-		err_setstr(SyntaxError, "'return' outside function");
-		c->c_errors++;
+		com_error(c, SyntaxError, "'return' outside function");
 	}
 	if (NCH(n) < 2)
 		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
@@ -1787,8 +1795,7 @@ com_global_stmt(c, n)
 			s = buffer;
 #endif
 		if (dictlookup(c->c_locals, s) != NULL) {
-			err_setstr(SyntaxError, "name is local and global");
-			c->c_errors++;
+			com_error(c, SyntaxError, "name is local and global");
 		}
 		else if (dictinsert(c->c_globals, s, None) != 0)
 			c->c_errors++;
@@ -1805,8 +1812,7 @@ com_newlocal_o(c, nameval)
 	if (getlistsize(c->c_varnames) != c->c_nlocals) {
 		/* This is usually caused by an error on a previous call */
 		if (c->c_errors == 0) {
-			err_setstr(SystemError, "mixed up var name/index");
-			c->c_errors++;
+			com_error(c, SystemError, "mixed up var name/index");
 		}
 		return 0;
 	}
@@ -2110,9 +2116,8 @@ com_try_except(c, n)
 	     i += 3) {
 		/* except_clause: 'except' [expr [',' expr]] */
 		if (except_anchor == 0) {
-			err_setstr(SyntaxError,
-				"default 'except:' must be last");
-			c->c_errors++;
+			com_error(c, SyntaxError,
+				  "default 'except:' must be last");
 			break;
 		}
 		except_anchor = 0;
@@ -2272,8 +2277,7 @@ com_continue_stmt(c, n)
 		com_addoparg(c, JUMP_ABSOLUTE, c->c_begin);
 	}
 	else {
-		err_setstr(SyntaxError, "'continue' not properly in loop");
-		c->c_errors++;
+		com_error(c, SyntaxError, "'continue' not properly in loop");
 	}
 	/* XXX Could allow it inside a 'finally' clause
 	   XXX if we could pop the exception still on the stack */
@@ -2459,8 +2463,7 @@ com_node(c, n)
 		break;
 	case break_stmt:
 		if (c->c_loops == 0) {
-			err_setstr(SyntaxError, "'break' outside loop");
-			c->c_errors++;
+			com_error(c, SyntaxError, "'break' outside loop");
 		}
 		com_addbyte(c, BREAK_LOOP);
 		break;
@@ -2553,8 +2556,7 @@ com_node(c, n)
 	
 	default:
 		fprintf(stderr, "node type %d\n", TYPE(n));
-		err_setstr(SystemError, "com_node: unexpected node type");
-		c->c_errors++;
+		com_error(c, SystemError, "com_node: unexpected node type");
 	}
 }
 
@@ -2827,8 +2829,8 @@ compile_node(c, n)
 	
 	default:
 		fprintf(stderr, "node type %d\n", TYPE(n));
-		err_setstr(SystemError, "compile_node: unexpected node type");
-		c->c_errors++;
+		com_error(c, SystemError,
+			  "compile_node: unexpected node type");
 	}
 }
 
