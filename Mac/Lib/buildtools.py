@@ -17,9 +17,6 @@ import shutil
 
 BuildError = "BuildError"
 
-DEBUG=1
-
-
 # .pyc file (and 'PYC ' resource magic number)
 MAGIC = imp.get_magic()
 
@@ -70,13 +67,13 @@ def findtemplate_macho():
 	return '/'.join(execpath[:i])
 
 
-def process(template, filename, output, copy_codefragment):
+def process(template, filename, destname, copy_codefragment, 
+		rsrcname=None, others=[], raw=0, progress="default"):
 	
-	if DEBUG:
+	if progress == "default":
 		progress = EasyDialogs.ProgressBar("Processing %s..."%os.path.split(filename)[1], 120)
 		progress.label("Compiling...")
-	else:
-		progress = None
+		progress.inc(0)
 	
 	# Read the source and compile it
 	# (there's no point overwriting the destination if it has a syntax error)
@@ -89,34 +86,38 @@ def process(template, filename, output, copy_codefragment):
 	except (SyntaxError, EOFError):
 		raise BuildError, "Syntax error in script %s" % `filename`
 	
-	# Set the destination file name
+	# Set the destination file name. Note that basename
+	# does contain the whole filepath, only a .py is stripped.
 	
 	if string.lower(filename[-3:]) == ".py":
-		destname = filename[:-3]
-		rsrcname = destname + '.rsrc'
+		basename = filename[:-3]
+		if MacOS.runtimemodel != 'macho' and not destname:
+			destname = basename
 	else:
+		basename = filename
+		
+	if not destname:
 		if MacOS.runtimemodel == 'macho':
-			destname = filename + '.app'
+			destname = basename + '.app'
 		else:
-			destname = filename + ".applet"
-		rsrcname = filename + '.rsrc'
-	
-	if output:
-		destname = output
-	
+			destname = basename + '.applet'
+	if not rsrcname:
+		rsrcname = basename + '.rsrc'
+		
 	# Try removing the output file. This fails in MachO, but it should
 	# do any harm.
 	try:
 		os.remove(destname)
 	except os.error:
 		pass
-	process_common(template, progress, code, rsrcname, destname, 0, copy_codefragment)
+	process_common(template, progress, code, rsrcname, destname, 0, 
+		copy_codefragment, raw, others)
 	
 
 def update(template, filename, output):
 	if MacOS.runtimemodel == 'macho':
 		raise BuildError, "No updating yet for MachO applets"
-	if DEBUG:
+	if progress:
 		progress = EasyDialogs.ProgressBar("Updating %s..."%os.path.split(filename)[1], 120)
 	else:
 		progress = None
@@ -131,16 +132,20 @@ def update(template, filename, output):
 	process_common(template, progress, None, filename, output, 1, 1)
 
 
-def process_common(template, progress, code, rsrcname, destname, is_update, copy_codefragment):
+def process_common(template, progress, code, rsrcname, destname, is_update, 
+		copy_codefragment, raw=0, others=[]):
 	if MacOS.runtimemodel == 'macho':
-		return process_common_macho(template, progress, code, rsrcname, destname, is_update)
+		return process_common_macho(template, progress, code, rsrcname, destname,
+			is_update, raw, others)
+	if others:
+		raise BuildError, "Extra files only allowed for MachoPython applets"
 	# Create FSSpecs for the various files
 	template_fss = macfs.FSSpec(template)
 	template_fss, d1, d2 = macfs.ResolveAliasFile(template_fss)
 	dest_fss = macfs.FSSpec(destname)
 	
 	# Copy data (not resources, yet) from the template
-	if DEBUG:
+	if progress:
 		progress.label("Copy data fork...")
 		progress.set(10)
 	
@@ -157,7 +162,7 @@ def process_common(template, progress, code, rsrcname, destname, is_update, copy
 	
 	# Open the output resource fork
 	
-	if DEBUG:
+	if progress:
 		progress.label("Copy resources...")
 		progress.set(20)
 	try:
@@ -172,7 +177,7 @@ def process_common(template, progress, code, rsrcname, destname, is_update, copy
 		input = Res.FSpOpenResFile(rsrcname, READ)
 	except (MacOS.Error, ValueError):
 		pass
-		if DEBUG:
+		if progress:
 			progress.inc(50)
 	else:
 		if is_update:
@@ -222,7 +227,7 @@ def process_common(template, progress, code, rsrcname, destname, is_update, copy
 			pass
 		
 		# Create the raw data for the resource from the code object
-		if DEBUG:
+		if progress:
 			progress.label("Write PYC resource...")
 			progress.set(120)
 		
@@ -256,10 +261,11 @@ def process_common(template, progress, code, rsrcname, destname, is_update, copy
 	dest_fss.SetFInfo(dest_finfo)
 	
 	macostools.touched(dest_fss)
-	if DEBUG:
+	if progress:
 		progress.label("Done.")
+		progress.inc(0)
 
-def process_common_macho(template, progress, code, rsrcname, destname, is_update):
+def process_common_macho(template, progress, code, rsrcname, destname, is_update, raw=0, others=[]):
 	# First make sure the name ends in ".app"
 	if destname[-4:] != '.app':
 		destname = destname + '.app'
@@ -286,14 +292,17 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 				"Contents/Resources/English.lproj/InfoPlist.strings", 
 				"Contents/Resources/python.rsrc",
 				]
-		copyapptree(template, destname, exceptlist)
+		copyapptree(template, destname, exceptlist, progress)
 	# Now either use the .plist file or the default
+	if progress:
+		progress.label('Create info.plist')
+		progress.inc(0)
 	if plistname:
-		shutil.copy2(plistname, os.path.join(destname, 'Contents/Info.plist'))
+		shutil.copy2(plistname, os.path.join(destname, 'Contents', 'Info.plist'))
 		if icnsname:
 			icnsdest = os.path.split(icnsname)[1]
 			icnsdest = os.path.join(destname, 
-				os.path.join('Contents/Resources', icnsdest))
+				os.path.join('Contents', 'Resources', icnsdest))
 			shutil.copy2(icnsname, icnsdest)
 		# XXXX Wrong. This should be parsed from plist file. Also a big hack:-)
 		if shortname == 'PythonIDE':
@@ -302,31 +311,44 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 			ownertype = 'PytA'
 		# XXXX Should copy .icns file
 	else:
-		plistname = os.path.join(template, 'Contents/Resources/Applet-Info.plist')
+		cocoainfo = ''
+		for o in others:
+			if o[-4:] == '.nib':
+				nibname = os.path.split(o)[1][:-4]
+				cocoainfo = """
+        <key>NSMainNibFile</key>
+        <string>%s</string>
+        <key>NSPrincipalClass</key>
+        <string>NSApplication</string>""" % nibname
+
+
+		plistname = os.path.join(template, 'Contents', 'Resources', 'Applet-Info.plist')
 		plistdata = open(plistname).read()
-		plistdata = plistdata % {'appletname':shortname}
-		ofp = open(os.path.join(destname, 'Contents/Info.plist'), 'w')
+		plistdata = plistdata % {'appletname':shortname, 'cocoainfo':cocoainfo}
+		ofp = open(os.path.join(destname, 'Contents', 'Info.plist'), 'w')
 		ofp.write(plistdata)
 		ofp.close()
 		ownertype = 'PytA'
 	# Create the PkgInfo file
-	ofp = open(os.path.join(destname, 'Contents/PkgInfo'), 'wb')
+	if progress:
+		progress.label('Create PkgInfo')
+		progress.inc(0)
+	ofp = open(os.path.join(destname, 'Contents', 'PkgInfo'), 'wb')
 	ofp.write('APPL' + ownertype)
 	ofp.close()
 		
 	
-	if DEBUG:
+	if progress:
 		progress.label("Copy resources...")
 		progress.set(20)
 	resfilename = '%s.rsrc' % shortname
-	respartialpathname = 'Contents/Resources/%s' % resfilename
 	try:
 		output = Res.FSOpenResourceFile(
-				os.path.join(destname, respartialpathname), 
+				os.path.join(destname, 'Contents', 'Resources', resfilename), 
 				u'', WRITE)
 	except MacOS.Error:
 		fsr, dummy = Res.FSCreateResourceFile(
-				os.path.join(destname, 'Contents/Resources'), 
+				os.path.join(destname, 'Contents', 'Resources'), 
 				unicode(resfilename), '')
 		output = Res.FSOpenResourceFile(fsr, u'', WRITE)
 	
@@ -336,7 +358,7 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 		input = macresource.open_pathname(rsrcname)
 	except (MacOS.Error, ValueError):
 		pass
-		if DEBUG:
+		if progress:
 			progress.inc(50)
 	else:
 		typesfound, ownertype = copyres(input, output, [], 0, progress)
@@ -355,8 +377,12 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 	# Copy the resources from the template
 	
 	input = Res.FSOpenResourceFile(
-			os.path.join(template, 'Contents/Resources/python.rsrc'), u'', READ)
-	dummy, tmplowner = copyres(input, output, skiptypes, 1, progress)
+			os.path.join(template, 'Contents', 'Resources', 'python.rsrc'), u'', READ)
+	if progress:
+		progress.label("Copy standard resources...")
+		progress.inc(0)
+##	dummy, tmplowner = copyres(input, output, skiptypes, 1, progress)
+	dummy, tmplowner = copyres(input, output, skiptypes, 1, None)
 		
 	Res.CloseResFile(input)
 ##	if ownertype == None:
@@ -366,8 +392,29 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 	Res.CloseResFile(output)
 
 	if code:
-		outputfilename = os.path.join(destname, 'Contents/Resources/__main__.pyc')
+		if raw:
+			pycname = '__rawmain__.pyc'
+		else:
+			pycname = '__main__.pyc'
+		outputfilename = os.path.join(destname, 'Contents', 'Resources', pycname)
+		if progress:
+			progress.label('Creating '+pycname)
+			progress.inc(0)
 		writepycfile(code, outputfilename)
+	# Copy other files the user asked for
+	for osrc in others:
+		oname = os.path.split(osrc)[1]
+		odst = os.path.join(destname, 'Contents', 'Resources', oname)
+		if progress: 
+			progress.label('Copy ' + oname)
+			progress.inc(0)
+		if os.path.isdir(osrc):
+			copyapptree(osrc, odst)
+		else:
+			shutil.copy2(osrc, odst)
+	if progress: 
+		progress.label('Done.')
+		progress.inc(0)
 	
 ##	macostools.touched(dest_fss)
 
@@ -400,7 +447,7 @@ def copyres(input, output, skiptypes, skipowner, progress=None):
 					ctor = type
 			size = res.size
 			attrs = res.GetResAttrs()
-			if DEBUG and progress:
+			if progress:
 				progress.label("Copy %s %d %s"%(type, id, name))
 				progress.inc(progress_cur_inc)
 			res.LoadResource()
@@ -411,8 +458,9 @@ def copyres(input, output, skiptypes, skipowner, progress=None):
 			except MacOS.Error:
 				res2 = None
 			if res2:
-				if DEBUG and progress:
+				if progress:
 					progress.label("Overwrite %s %d %s"%(type, id, name))
+					progress.inc(0)
 				res2.RemoveResource()
 			res.AddResource(type, id, name)
 			res.WriteResource()
@@ -421,7 +469,7 @@ def copyres(input, output, skiptypes, skipowner, progress=None):
 			Res.UseResFile(input)
 	return alltypes, ctor
 
-def copyapptree(srctree, dsttree, exceptlist=[]):
+def copyapptree(srctree, dsttree, exceptlist=[], progress=None):
 	names = []
 	if os.path.exists(dsttree):
 		shutil.rmtree(dsttree)
@@ -443,6 +491,9 @@ def copyapptree(srctree, dsttree, exceptlist=[]):
 		if os.path.isdir(srcpath):
 			os.mkdir(dstpath)
 		else:
+			if progress:
+				progress.label('Copy '+this)
+				progress.inc(0)
 			shutil.copy2(srcpath, dstpath)
 			
 def writepycfile(codeobject, cfile):

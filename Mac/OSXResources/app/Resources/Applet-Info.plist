@@ -22,6 +22,8 @@
 
 	<key>CFBundleGetInfoString</key>
 	<string>%(appletname)s, a Python applet</string>
+	
+	%(cocoainfo)s
 
 	<key>CFBundleIconFile</key>
 	<string>PythonApplet.icns</string>
