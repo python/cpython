@@ -32,8 +32,9 @@ def gettempdir():
     	     attempdirs.insert(0, dirname)
 	except macfs.error:
 	    pass
-    if os.environ.has_key('TMPDIR'):
-	attempdirs.insert(0, os.environ['TMPDIR'])
+    for envname in 'TMPDIR', 'TEMP', 'TMP':
+	if os.environ.has_key(envname):
+	    attempdirs.insert(0, os.environ[envname])
     testfile = gettempprefix() + 'test'
     for dir in attempdirs:
 	try:
@@ -82,3 +83,41 @@ def mktemp():
 		file = os.path.join(dir, pre + `counter`)
 		if not os.path.exists(file):
 			return file
+
+
+class TemporaryFileWrapper:
+    """Temporary file wrapper
+
+    This class provides a wrapper around files opened for temporary use.
+    In particular, it seeks to automatically remove the file when it is
+    no longer needed.
+    """
+    def __init__(self, file, path):
+	self.file=file
+	self.path=path
+
+    def close(self):
+	self.file.close()
+	os.unlink(self.path)
+
+    def __del__(self):
+	try: self.close()
+	except: pass
+
+    def __getattr__(self, name):
+	file=self.__dict__['file']
+	a=getattr(file, name)
+	setattr(self, name, a)
+	return a
+
+
+def TemporaryFile(mode='w+b', bufsize=-1):
+    name=mktemp()
+    file=open(name,mode,bufsize)
+    try:
+	os.unlink(name)
+    except os.error:
+	# Non-unix -- can't unlink file that's still open, use wrapper
+	return TemporaryFileWrapper(file, name)
+    else:
+	return file
