@@ -1,4 +1,4 @@
-"""Supporting definitions for the Python regression test."""
+"""Supporting definitions for the Python regression tests."""
 
 if __name__ != 'test.test_support':
     raise ImportError, 'test_support must be imported from the test package'
@@ -50,6 +50,8 @@ def unload(name):
         pass
 
 def forget(modname):
+    '''"Forget" a module was ever imported by removing it from sys.modules and
+    deleting any .pyc and .pyo files.'''
     unload(modname)
     import os
     for dirname in sys.path:
@@ -57,11 +59,24 @@ def forget(modname):
             os.unlink(os.path.join(dirname, modname + '.pyc'))
         except os.error:
             pass
+        # Deleting the .pyo file cannot be within the 'try' for the .pyc since
+        # the chance exists that there is no .pyc (and thus the 'try' statement
+        # is exited) but there is a .pyo file.
+        try:
+            os.unlink(os.path.join(dirname, modname + '.pyo'))
+        except os.error:
+            pass
 
 def is_resource_enabled(resource):
+    """Test whether a resource is enabled.  Known resources are set by
+    regrtest.py."""
     return use_resources is not None and resource in use_resources
 
 def requires(resource, msg=None):
+    """Raise ResourceDenied if the specified resource is not available.
+
+    If the caller's module is __main__ then automatically return True.  The
+    possibility of False being returned occurs when regrtest.py is executing."""
     # see if the caller's module is __main__ - if so, treat as if
     # the resource was set
     if sys._getframe().f_back.f_globals.get("__name__") == "__main__":
@@ -141,6 +156,9 @@ del os, fp
 from os import unlink
 
 def findfile(file, here=__file__):
+    """Try to find a file on sys.path and the working directory.  If it is not
+    found the argument passed to the function is returned (this does not
+    necessarily signal failure; could still be the legitimate path)."""
     import os
     if os.path.isabs(file):
         return file
