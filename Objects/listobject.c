@@ -2315,8 +2315,10 @@ list_init(PyListObject *self, PyObject *args, PyObject *kw)
 		return -1;
 
 	/* Verify list invariants established by PyType_GenericAlloc() */
-	assert(0 <= self->ob_size  &&  self->ob_size <= self->allocated);
-	assert(self->ob_item != NULL  ||  self->allocated == 0);
+	assert(0 <= self->ob_size);
+	assert(self->ob_size <= self->allocated || self->allocated == -1);
+	assert(self->ob_item != NULL ||
+	       self->allocated == 0 || self->allocated == -1);
 
 	/* Empty previous contents */
 	if (self->ob_item != NULL) {
