@@ -34,7 +34,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 
 #include "node.h"
-#include "graminit.h"
 #include "compile.h"
 #include "eval.h"
 
@@ -283,11 +282,11 @@ builtin_compile(self, args)
 	if (!PyArg_ParseTuple(args, "sss:compile", &str, &filename, &startstr))
 		return NULL;
 	if (strcmp(startstr, "exec") == 0)
-		start = file_input;
+		start = Py_file_input;
 	else if (strcmp(startstr, "eval") == 0)
-		start = eval_input;
+		start = Py_eval_input;
 	else if (strcmp(startstr, "single") == 0)
-		start = single_input;
+		start = Py_single_input;
 	else {
 		PyErr_SetString(PyExc_ValueError,
 		   "compile() mode must be 'exec' or 'eval' or 'single'");
@@ -521,7 +520,7 @@ builtin_eval(self, args)
 	}
 	while (*str == ' ' || *str == '\t')
 		str++;
-	return PyRun_String(str, eval_input, globals, locals);
+	return PyRun_String(str, Py_eval_input, globals, locals);
 }
 
 static PyObject *
@@ -558,7 +557,7 @@ builtin_execfile(self, args)
 		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
-	res = PyRun_File(fp, filename, file_input, globals, locals);
+	res = PyRun_File(fp, filename, Py_file_input, globals, locals);
 	Py_BEGIN_ALLOW_THREADS
 	fclose(fp);
 	Py_END_ALLOW_THREADS
@@ -882,7 +881,7 @@ builtin_input(self, args)
 					 PyEval_GetBuiltins()) != 0)
 			return NULL;
 	}
-	res = PyRun_String(str, eval_input, globals, locals);
+	res = PyRun_String(str, Py_eval_input, globals, locals);
 	Py_DECREF(line);
 	return res;
 }

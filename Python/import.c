@@ -35,7 +35,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "node.h"
 #include "token.h"
-#include "graminit.h"
 #include "errcode.h"
 #include "marshal.h"
 #include "compile.h"
@@ -43,8 +42,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "osdefs.h"
 #include "importdl.h"
 #ifdef macintosh
-/* 'argument' is a grammar symbol, but also used in some mac header files */
-#undef argument
 #include "macglue.h"
 #endif
 
@@ -317,7 +314,7 @@ parse_source_module(pathname, fp)
 	PyCodeObject *co;
 	node *n;
 
-	n = PyParser_SimpleParseFile(fp, pathname, file_input);
+	n = PyParser_SimpleParseFile(fp, pathname, Py_file_input);
 	if (n == NULL)
 		return NULL;
 	co = PyNode_Compile(n, pathname);

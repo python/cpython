@@ -36,7 +36,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "grammar.h"
 #include "node.h"
 #include "parsetok.h"
-#include "graminit.h"
 #undef argument /* Avoid conflict on Mac */
 #include "errcode.h"
 #include "compile.h"
@@ -237,7 +236,7 @@ PyRun_InteractiveOne(fp, filename)
 	}
 	Py_BEGIN_ALLOW_THREADS
 	n = PyParser_ParseFile(fp, filename, &_PyParser_Grammar,
-			       single_input, ps1, ps2, &err);
+			       Py_single_input, ps1, ps2, &err);
 	Py_END_ALLOW_THREADS
 	Py_XDECREF(v);
 	Py_XDECREF(w);
@@ -296,7 +295,7 @@ PyRun_SimpleFile(fp, filename)
 			Py_OptimizeFlag = 1;
 		v = run_pyc_file(fp, filename, d, d);
 	} else {
-		v = PyRun_File(fp, filename, file_input, d, d);
+		v = PyRun_File(fp, filename, Py_file_input, d, d);
 	}
 	if (v == NULL) {
 		PyErr_Print();
@@ -316,7 +315,7 @@ PyRun_SimpleString(command)
 	if (m == NULL)
 		return -1;
 	d = PyModule_GetDict(m);
-	v = PyRun_String(command, file_input, d, d);
+	v = PyRun_String(command, Py_file_input, d, d);
 	if (v == NULL) {
 		PyErr_Print();
 		return -1;
