@@ -103,7 +103,13 @@ Return \code{1} if the DB file contains the argument as a key.
 \end{methoddesc}
 
 \begin{methoddesc}{set_location}{key}
-Set the cursor to the item indicated by the key and return it.
+Set the cursor to the item indicated by \var{key} and return a tuple
+containing the key and its value.  For binary tree databases (opened
+using \function{btopen()}), if \var{key} does not actually exist in
+the database, the cursor will point to the next item in sorted order
+and return that key and value.  For other databases,
+\exception{KeyError} will be raised if \var{key} is not found in the
+database.
 \end{methoddesc}
 
 \begin{methoddesc}{first}{}
