@@ -65,12 +65,16 @@ There are three kinds of slots in the table:
    Holds an active (key, value) pair.  Active can transition to Dummy upon
    key deletion.  This is the only case in which me_value != NULL.
 
-3. Dummy.  me_key == dummy && me_value == NULL
+3. Dummy.  me_key == dummy and me_value == NULL
    Previously held an active (key, value) pair, but that was deleted and an
    active pair has not yet overwritten the slot.  Dummy can transition to
    Active upon key insertion.  Dummy slots cannot be made Unused again
    (cannot have me_key set to NULL), else the probe sequence in case of
    collision would have no way to know they were once active.
+
+Note: .popitem() abuses the me_hash field of an Unused or Dummy slot to
+hold a search finger.  The me_hash field of Unused or Dummy slots has no
+meaning otherwise.
 */
 typedef struct {
 	long me_hash;      /* cached hash code of me_key */
@@ -82,7 +86,7 @@ typedef struct {
 } dictentry;
 
 /*
-To ensure the lookup algorithm terminates, there must be at least one Unsused
+To ensure the lookup algorithm terminates, there must be at least one Unused
 slot (NULL key) in the table.
 The value ma_fill is the number of non-NULL keys (sum of Active and Dummy);
 ma_used is the number of non-NULL, non-dummy keys (== the number of non-NULL
