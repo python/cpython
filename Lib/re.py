@@ -20,7 +20,7 @@ The special characters are:
     "$"      Matches the end of the string.
     "*"      Matches 0 or more (greedy) repetitions of the preceding RE.
              Greedy means that it will match as many repetitions as possible.
-    "+"      Matches 0 or more (greedy) repetitions of the preceding RE.
+    "+"      Matches 1 or more (greedy) repetitions of the preceding RE.
     "?"      Matches 0 or 1 (greedy) of the preceding RE.
     *?,+?,?? Non-greedy versions of the previous three special characters.
     {m,n}    Matches from m to n repetitions of the preceding RE.
