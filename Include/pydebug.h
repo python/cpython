@@ -44,7 +44,7 @@ extern DL_IMPORT(int) Py_UseClassExceptionsFlag;
 extern DL_IMPORT(int) Py_FrozenFlag;
 extern DL_IMPORT(int) Py_TabcheckFlag;
 
-void Py_FatalError	Py_PROTO((char *));
+DL_IMPORT(void) Py_FatalError	Py_PROTO((char *));
 
 #ifdef __cplusplus
 }

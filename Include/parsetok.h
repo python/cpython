@@ -45,8 +45,8 @@ typedef struct {
 	char *text;
 } perrdetail;
 
-extern node *PyParser_ParseString Py_PROTO((char *, grammar *, int, perrdetail *));
-extern node *PyParser_ParseFile Py_PROTO((FILE *, char *, grammar *, int,
+extern DL_IMPORT(node *) PyParser_ParseString Py_PROTO((char *, grammar *, int, perrdetail *));
+extern DL_IMPORT(node *) PyParser_ParseFile Py_PROTO((FILE *, char *, grammar *, int,
 			    char *, char *, perrdetail *));
 
 #ifdef __cplusplus

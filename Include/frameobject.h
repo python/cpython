@@ -72,7 +72,7 @@ extern DL_IMPORT(PyTypeObject) PyFrame_Type;
 
 #define PyFrame_Check(op) ((op)->ob_type == &PyFrame_Type)
 
-PyFrameObject * PyFrame_New
+DL_IMPORT(PyFrameObject *) PyFrame_New
 	Py_PROTO((PyThreadState *, PyCodeObject *,
 		  PyObject *, PyObject *));
 
@@ -101,17 +101,17 @@ PyFrameObject * PyFrame_New
 
 /* Block management functions */
 
-void PyFrame_BlockSetup Py_PROTO((PyFrameObject *, int, int, int));
-PyTryBlock *PyFrame_BlockPop Py_PROTO((PyFrameObject *));
+DL_IMPORT(void) PyFrame_BlockSetup Py_PROTO((PyFrameObject *, int, int, int));
+DL_IMPORT(PyTryBlock *) PyFrame_BlockPop Py_PROTO((PyFrameObject *));
 
 /* Extend the value stack */
 
-PyObject **PyFrame_ExtendStack Py_PROTO((PyFrameObject *, int, int));
+DL_IMPORT(PyObject **) PyFrame_ExtendStack Py_PROTO((PyFrameObject *, int, int));
 
 /* Conversions between "fast locals" and locals in dictionary */
 
-void PyFrame_LocalsToFast Py_PROTO((PyFrameObject *, int));
-void PyFrame_FastToLocals Py_PROTO((PyFrameObject *));
+DL_IMPORT(void) PyFrame_LocalsToFast Py_PROTO((PyFrameObject *, int));
+DL_IMPORT(void) PyFrame_FastToLocals Py_PROTO((PyFrameObject *));
 
 #ifdef __cplusplus
 }

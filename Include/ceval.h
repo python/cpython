@@ -37,7 +37,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Interface to random parts in ceval.c */
 
-PyObject *PyEval_CallObjectWithKeywords
+DL_IMPORT(PyObject *) PyEval_CallObjectWithKeywords
 	Py_PROTO((PyObject *, PyObject *, PyObject *));
 
 /* Inline this */
@@ -45,26 +45,26 @@ PyObject *PyEval_CallObjectWithKeywords
         PyEval_CallObjectWithKeywords(func, arg, (PyObject *)NULL)
 
 #ifdef HAVE_STDARG_PROTOTYPES
-PyObject *PyEval_CallFunction Py_PROTO((PyObject *obj, char *format, ...));
-PyObject *PyEval_CallMethod Py_PROTO((PyObject *obj,
+DL_IMPORT(PyObject *) PyEval_CallFunction Py_PROTO((PyObject *obj, char *format, ...));
+DL_IMPORT(PyObject *) PyEval_CallMethod Py_PROTO((PyObject *obj,
 				      char *methodname, char *format, ...));
 #else
 /* Better to have no prototypes at all for varargs functions in this case */
-PyObject *PyEval_CallFunction();
-PyObject *PyEval_CallMethod();
+DL_IMPORT(PyObject *) PyEval_CallFunction();
+DL_IMPORT(PyObject *) PyEval_CallMethod();
 #endif
 
-PyObject *PyEval_GetBuiltins Py_PROTO((void));
-PyObject *PyEval_GetGlobals Py_PROTO((void));
-PyObject *PyEval_GetLocals Py_PROTO((void));
-PyObject *PyEval_GetOwner Py_PROTO((void));
-PyObject *PyEval_GetFrame Py_PROTO((void));
-int PyEval_GetRestricted Py_PROTO((void));
+DL_IMPORT(PyObject *) PyEval_GetBuiltins Py_PROTO((void));
+DL_IMPORT(PyObject *) PyEval_GetGlobals Py_PROTO((void));
+DL_IMPORT(PyObject *) PyEval_GetLocals Py_PROTO((void));
+DL_IMPORT(PyObject *) PyEval_GetOwner Py_PROTO((void));
+DL_IMPORT(PyObject *) PyEval_GetFrame Py_PROTO((void));
+DL_IMPORT(int) PyEval_GetRestricted Py_PROTO((void));
 
-int Py_FlushLine Py_PROTO((void));
+DL_IMPORT(int) Py_FlushLine Py_PROTO((void));
 
-int Py_AddPendingCall Py_PROTO((int (*func) Py_PROTO((ANY *)), ANY *arg));
-int Py_MakePendingCalls Py_PROTO((void));
+DL_IMPORT(int) Py_AddPendingCall Py_PROTO((int (*func) Py_PROTO((ANY *)), ANY *arg));
+DL_IMPORT(int) Py_MakePendingCalls Py_PROTO((void));
 
 
 /* Interface for threads.
@@ -112,16 +112,16 @@ int Py_MakePendingCalls Py_PROTO((void));
    mechanism!
 */
 
-extern PyThreadState *PyEval_SaveThread Py_PROTO((void));
-extern void PyEval_RestoreThread Py_PROTO((PyThreadState *));
+extern DL_IMPORT(PyThreadState *) PyEval_SaveThread Py_PROTO((void));
+extern DL_IMPORT(void) PyEval_RestoreThread Py_PROTO((PyThreadState *));
 
 #ifdef WITH_THREAD
 
-extern void PyEval_InitThreads Py_PROTO((void));
-extern void PyEval_AcquireLock Py_PROTO((void));
-extern void PyEval_ReleaseLock Py_PROTO((void));
-extern void PyEval_AcquireThread Py_PROTO((PyThreadState *tstate));
-extern void PyEval_ReleaseThread Py_PROTO((PyThreadState *tstate));
+extern DL_IMPORT(void) PyEval_InitThreads Py_PROTO((void));
+extern DL_IMPORT(void) PyEval_AcquireLock Py_PROTO((void));
+extern DL_IMPORT(void) PyEval_ReleaseLock Py_PROTO((void));
+extern DL_IMPORT(void) PyEval_AcquireThread Py_PROTO((PyThreadState *tstate));
+extern DL_IMPORT(void) PyEval_ReleaseThread Py_PROTO((PyThreadState *tstate));
 
 #define Py_BEGIN_ALLOW_THREADS { \
 			PyThreadState *_save; \

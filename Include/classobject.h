@@ -69,13 +69,13 @@ extern DL_IMPORT(PyTypeObject) PyClass_Type, PyInstance_Type, PyMethod_Type;
 #define PyInstance_Check(op) ((op)->ob_type == &PyInstance_Type)
 #define PyMethod_Check(op) ((op)->ob_type == &PyMethod_Type)
 
-extern PyObject *PyClass_New Py_PROTO((PyObject *, PyObject *, PyObject *));
-extern PyObject *PyInstance_New Py_PROTO((PyObject *, PyObject *, PyObject *));
-extern PyObject *PyMethod_New Py_PROTO((PyObject *, PyObject *, PyObject *));
+extern DL_IMPORT(PyObject *) PyClass_New Py_PROTO((PyObject *, PyObject *, PyObject *));
+extern DL_IMPORT(PyObject *) PyInstance_New Py_PROTO((PyObject *, PyObject *, PyObject *));
+extern DL_IMPORT(PyObject *) PyMethod_New Py_PROTO((PyObject *, PyObject *, PyObject *));
 
-extern PyObject *PyMethod_Function Py_PROTO((PyObject *));
-extern PyObject *PyMethod_Self Py_PROTO((PyObject *));
-extern PyObject *PyMethod_Class Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyMethod_Function Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyMethod_Self Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyMethod_Class Py_PROTO((PyObject *));
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
@@ -86,9 +86,9 @@ extern PyObject *PyMethod_Class Py_PROTO((PyObject *));
 #define PyMethod_GET_CLASS(meth) \
 	(((PyMethodObject *)meth) -> im_class)
 
-extern int PyClass_IsSubclass Py_PROTO((PyObject *, PyObject *));
+extern DL_IMPORT(int) PyClass_IsSubclass Py_PROTO((PyObject *, PyObject *));
 
-extern PyObject *PyInstance_DoBinOp
+extern DL_IMPORT(PyObject *) PyInstance_DoBinOp
 	Py_PROTO((PyObject *, PyObject *,
 		  char *, char *,
 		  PyObject * (*) Py_PROTO((PyObject *, PyObject *)) ));

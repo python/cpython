@@ -73,7 +73,7 @@ struct _longobject {
 	digit ob_digit[1];
 };
 
-PyLongObject *_PyLong_New Py_PROTO((int));
+DL_IMPORT(PyLongObject *) _PyLong_New Py_PROTO((int));
 
 #ifdef __cplusplus
 }

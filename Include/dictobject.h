@@ -41,21 +41,21 @@ extern DL_IMPORT(PyTypeObject) PyDict_Type;
 
 #define PyDict_Check(op) ((op)->ob_type == &PyDict_Type)
 
-extern PyObject *PyDict_New Py_PROTO((void));
-extern PyObject *PyDict_GetItem Py_PROTO((PyObject *mp, PyObject *key));
-extern int PyDict_SetItem Py_PROTO((PyObject *mp, PyObject *key, PyObject *item));
-extern int PyDict_DelItem Py_PROTO((PyObject *mp, PyObject *key));
-extern void PyDict_Clear Py_PROTO((PyObject *mp));
-extern int PyDict_Next
+extern DL_IMPORT(PyObject *) PyDict_New Py_PROTO((void));
+extern DL_IMPORT(PyObject *) PyDict_GetItem Py_PROTO((PyObject *mp, PyObject *key));
+extern DL_IMPORT(int) PyDict_SetItem Py_PROTO((PyObject *mp, PyObject *key, PyObject *item));
+extern DL_IMPORT(int) PyDict_DelItem Py_PROTO((PyObject *mp, PyObject *key));
+extern DL_IMPORT(void) PyDict_Clear Py_PROTO((PyObject *mp));
+extern DL_IMPORT(int) PyDict_Next
 	Py_PROTO((PyObject *mp, int *pos, PyObject **key, PyObject **value));
-extern PyObject *PyDict_Keys Py_PROTO((PyObject *mp));
-extern PyObject *PyDict_Values Py_PROTO((PyObject *mp));
-extern PyObject *PyDict_Items Py_PROTO((PyObject *mp));
-extern int PyDict_Size Py_PROTO((PyObject *mp));
+extern DL_IMPORT(PyObject *) PyDict_Keys Py_PROTO((PyObject *mp));
+extern DL_IMPORT(PyObject *) PyDict_Values Py_PROTO((PyObject *mp));
+extern DL_IMPORT(PyObject *) PyDict_Items Py_PROTO((PyObject *mp));
+extern DL_IMPORT(int) PyDict_Size Py_PROTO((PyObject *mp));
 
-extern PyObject *PyDict_GetItemString Py_PROTO((PyObject *dp, char *key));
-extern int PyDict_SetItemString Py_PROTO((PyObject *dp, char *key, PyObject *item));
-extern int PyDict_DelItemString Py_PROTO((PyObject *dp, char *key));
+extern DL_IMPORT(PyObject *) PyDict_GetItemString Py_PROTO((PyObject *dp, char *key));
+extern DL_IMPORT(int) PyDict_SetItemString Py_PROTO((PyObject *dp, char *key, PyObject *item));
+extern DL_IMPORT(int) PyDict_DelItemString Py_PROTO((PyObject *dp, char *key));
 
 #ifdef __cplusplus
 }

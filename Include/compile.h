@@ -69,11 +69,11 @@ extern DL_IMPORT(PyTypeObject) PyCode_Type;
 
 /* Public interface */
 struct _node; /* Declare the existence of this type */
-PyCodeObject *PyNode_Compile Py_PROTO((struct _node *, char *));
-PyCodeObject *PyCode_New Py_PROTO((
+DL_IMPORT(PyCodeObject *) PyNode_Compile Py_PROTO((struct _node *, char *));
+DL_IMPORT(PyCodeObject *) PyCode_New Py_PROTO((
 	int, int, int, int, PyObject *, PyObject *, PyObject *, PyObject *,
 	PyObject *, PyObject *, int, PyObject *)); /* same as struct above */
-int PyCode_Addr2Line Py_PROTO((PyCodeObject *, int));
+DL_IMPORT(int) PyCode_Addr2Line Py_PROTO((PyCodeObject *, int));
 
 /* for internal use only */
 #define _PyCode_GETCODEPTR(co, pp) \

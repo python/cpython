@@ -20,12 +20,12 @@ typedef struct {
 #define c_quot _Py_c_quot
 #define c_pow _Py_c_pow
 
-extern Py_complex c_sum Py_PROTO((Py_complex, Py_complex));
-extern Py_complex c_diff Py_PROTO((Py_complex, Py_complex));
-extern Py_complex c_neg Py_PROTO((Py_complex));
-extern Py_complex c_prod Py_PROTO((Py_complex, Py_complex));
-extern Py_complex c_quot Py_PROTO((Py_complex, Py_complex));
-extern Py_complex c_pow Py_PROTO((Py_complex, Py_complex));
+extern DL_IMPORT(Py_complex) c_sum Py_PROTO((Py_complex, Py_complex));
+extern DL_IMPORT(Py_complex) c_diff Py_PROTO((Py_complex, Py_complex));
+extern DL_IMPORT(Py_complex) c_neg Py_PROTO((Py_complex));
+extern DL_IMPORT(Py_complex) c_prod Py_PROTO((Py_complex, Py_complex));
+extern DL_IMPORT(Py_complex) c_quot Py_PROTO((Py_complex, Py_complex));
+extern DL_IMPORT(Py_complex) c_pow Py_PROTO((Py_complex, Py_complex));
 
 
 /* Complex object interface */
@@ -44,12 +44,12 @@ extern DL_IMPORT(PyTypeObject) PyComplex_Type;
 
 #define PyComplex_Check(op) ((op)->ob_type == &PyComplex_Type)
 
-extern PyObject *PyComplex_FromCComplex Py_PROTO((Py_complex));
-extern PyObject *PyComplex_FromDoubles Py_PROTO((double real, double imag));
+extern DL_IMPORT(PyObject *) PyComplex_FromCComplex Py_PROTO((Py_complex));
+extern DL_IMPORT(PyObject *) PyComplex_FromDoubles Py_PROTO((double real, double imag));
 
-extern double PyComplex_RealAsDouble Py_PROTO((PyObject *op));
-extern double PyComplex_ImagAsDouble Py_PROTO((PyObject *op));
-extern Py_complex PyComplex_AsCComplex Py_PROTO((PyObject *op));
+extern DL_IMPORT(double) PyComplex_RealAsDouble Py_PROTO((PyObject *op));
+extern DL_IMPORT(double) PyComplex_ImagAsDouble Py_PROTO((PyObject *op));
+extern DL_IMPORT(Py_complex) PyComplex_AsCComplex Py_PROTO((PyObject *op));
 
 #ifdef __cplusplus
 }

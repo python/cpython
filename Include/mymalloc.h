@@ -106,14 +106,14 @@ extern void free Py_PROTO((ANY *)); /* XXX sometimes int on Unix old systems */
    The Python interpreter continues to use PyMem_NEW etc. */
 
 /* These wrappers around malloc call PyErr_NoMemory() on failure */
-extern ANY *Py_Malloc Py_PROTO((size_t));
-extern ANY *Py_Realloc Py_PROTO((ANY *, size_t));
-extern void Py_Free Py_PROTO((ANY *));
+extern DL_IMPORT(ANY *) Py_Malloc Py_PROTO((size_t));
+extern DL_IMPORT(ANY *) Py_Realloc Py_PROTO((ANY *, size_t));
+extern DL_IMPORT(void) Py_Free Py_PROTO((ANY *));
 
 /* These wrappers around malloc *don't* call anything on failure */
-extern ANY *PyMem_Malloc Py_PROTO((size_t));
-extern ANY *PyMem_Realloc Py_PROTO((ANY *, size_t));
-extern void PyMem_Free Py_PROTO((ANY *));
+extern DL_IMPORT(ANY *) PyMem_Malloc Py_PROTO((size_t));
+extern DL_IMPORT(ANY *) PyMem_Realloc Py_PROTO((ANY *, size_t));
+extern DL_IMPORT(void) PyMem_Free Py_PROTO((ANY *));
 
 #ifdef __cplusplus
 }

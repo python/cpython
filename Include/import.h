@@ -37,26 +37,26 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Module definition and import interface */
 
-long PyImport_GetMagicNumber Py_PROTO((void));
-PyObject *PyImport_ExecCodeModule Py_PROTO((char *name, PyObject *co));
-PyObject *PyImport_ExecCodeModuleEx Py_PROTO((
+DL_IMPORT(long) PyImport_GetMagicNumber Py_PROTO((void));
+DL_IMPORT(PyObject *) PyImport_ExecCodeModule Py_PROTO((char *name, PyObject *co));
+DL_IMPORT(PyObject *) PyImport_ExecCodeModuleEx Py_PROTO((
 	char *name, PyObject *co, char *pathname));
-PyObject *PyImport_GetModuleDict Py_PROTO((void));
-PyObject *PyImport_AddModule Py_PROTO((char *name));
-PyObject *PyImport_ImportModule Py_PROTO((char *name));
-PyObject *PyImport_ImportModuleEx Py_PROTO((
+DL_IMPORT(PyObject *) PyImport_GetModuleDict Py_PROTO((void));
+DL_IMPORT(PyObject *) PyImport_AddModule Py_PROTO((char *name));
+DL_IMPORT(PyObject *) PyImport_ImportModule Py_PROTO((char *name));
+DL_IMPORT(PyObject *) PyImport_ImportModuleEx Py_PROTO((
 	char *name, PyObject *globals, PyObject *locals, PyObject *fromlist));
-PyObject *PyImport_Import Py_PROTO((PyObject *name));
-PyObject *PyImport_ReloadModule Py_PROTO((PyObject *m));
-void PyImport_Cleanup Py_PROTO((void));
-int PyImport_ImportFrozenModule Py_PROTO((char *));
+DL_IMPORT(PyObject *) PyImport_Import Py_PROTO((PyObject *name));
+DL_IMPORT(PyObject *) PyImport_ReloadModule Py_PROTO((PyObject *m));
+DL_IMPORT(void) PyImport_Cleanup Py_PROTO((void));
+DL_IMPORT(int) PyImport_ImportFrozenModule Py_PROTO((char *));
 
-extern PyObject *_PyImport_FindExtension Py_PROTO((char *, char *));
-extern PyObject *_PyImport_FixupExtension Py_PROTO((char *, char *));
+extern DL_IMPORT(PyObject *)_PyImport_FindExtension Py_PROTO((char *, char *));
+extern DL_IMPORT(PyObject *)_PyImport_FixupExtension Py_PROTO((char *, char *));
 
 #ifdef __BEOS__
 #include <kernel/image.h>
-extern image_id PyImport_BeImageID( char *name );
+extern DL_IMPORT(image_id) PyImport_BeImageID( char *name );
 #endif
 
 struct _inittab {
@@ -66,8 +66,8 @@ struct _inittab {
 
 extern DL_IMPORT(struct _inittab *) PyImport_Inittab;
 
-extern int PyImport_AppendInittab Py_PROTO((char *name, void (*initfunc)()));
-extern int PyImport_ExtendInittab Py_PROTO((struct _inittab *newtab));
+extern DL_IMPORT(int) PyImport_AppendInittab Py_PROTO((char *name, void (*initfunc)()));
+extern DL_IMPORT(int) PyImport_ExtendInittab Py_PROTO((struct _inittab *newtab));
 
 struct _frozen {
 	char *name;

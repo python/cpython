@@ -60,12 +60,12 @@ extern DL_IMPORT(PyTypeObject) PyTuple_Type;
 
 #define PyTuple_Check(op) ((op)->ob_type == &PyTuple_Type)
 
-extern PyObject *PyTuple_New Py_PROTO((int size));
-extern int PyTuple_Size Py_PROTO((PyObject *));
-extern PyObject *PyTuple_GetItem Py_PROTO((PyObject *, int));
-extern int PyTuple_SetItem Py_PROTO((PyObject *, int, PyObject *));
-extern PyObject *PyTuple_GetSlice Py_PROTO((PyObject *, int, int));
-extern int _PyTuple_Resize Py_PROTO((PyObject **, int, int));
+extern DL_IMPORT(PyObject *) PyTuple_New Py_PROTO((int size));
+extern DL_IMPORT(int) PyTuple_Size Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyTuple_GetItem Py_PROTO((PyObject *, int));
+extern DL_IMPORT(int) PyTuple_SetItem Py_PROTO((PyObject *, int, PyObject *));
+extern DL_IMPORT(PyObject *) PyTuple_GetSlice Py_PROTO((PyObject *, int, int));
+extern DL_IMPORT(int) _PyTuple_Resize Py_PROTO((PyObject **, int, int));
 
 /* Macro, trading safety for speed */
 #define PyTuple_GET_ITEM(op, i) (((PyTupleObject *)(op))->ob_item[i])

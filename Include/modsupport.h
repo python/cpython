@@ -41,25 +41,25 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdarg.h>
 
-extern int PyArg_Parse Py_PROTO((PyObject *, char *, ...));
-extern int PyArg_ParseTuple Py_PROTO((PyObject *, char *, ...));
-extern int PyArg_ParseTupleAndKeywords Py_PROTO((PyObject *, PyObject *,
+extern DL_IMPORT(int) PyArg_Parse Py_PROTO((PyObject *, char *, ...));
+extern DL_IMPORT(int) PyArg_ParseTuple Py_PROTO((PyObject *, char *, ...));
+extern DL_IMPORT(int) PyArg_ParseTupleAndKeywords Py_PROTO((PyObject *, PyObject *,
 						 char *, char **, ...));
-extern PyObject *Py_BuildValue Py_PROTO((char *, ...));
+extern DL_IMPORT(PyObject *) Py_BuildValue Py_PROTO((char *, ...));
 
 #else
 
 #include <varargs.h>
 
 /* Better to have no prototypes at all for varargs functions in this case */
-extern int PyArg_Parse();
-extern int PyArg_ParseTuple();
-extern PyObject *Py_BuildValue();
+extern DL_IMPORT(int) PyArg_Parse();
+extern DL_IMPORT(int) PyArg_ParseTuple();
+extern DL_IMPORT(PyObject *) Py_BuildValue();
 
 #endif
 
-extern int PyArg_VaParse Py_PROTO((PyObject *, char *, va_list));
-extern PyObject *Py_VaBuildValue Py_PROTO((char *, va_list));
+extern DL_IMPORT(int) PyArg_VaParse Py_PROTO((PyObject *, char *, va_list));
+extern DL_IMPORT(PyObject *) Py_VaBuildValue Py_PROTO((char *, va_list));
 
 #define PYTHON_API_VERSION 1008
 #define PYTHON_API_STRING "1008"
@@ -107,7 +107,7 @@ extern PyObject *Py_VaBuildValue Py_PROTO((char *, va_list));
 #define Py_InitModule4 Py_InitModule4TraceRefs
 #endif
 
-extern PyObject *Py_InitModule4 Py_PROTO((char *, PyMethodDef *,
+extern DL_IMPORT(PyObject *) Py_InitModule4 Py_PROTO((char *, PyMethodDef *,
 					  char *, PyObject *, int));
 #define Py_InitModule(name, methods) \
 	Py_InitModule4(name, methods, (char *)NULL, (PyObject *)NULL, \
@@ -117,7 +117,7 @@ extern PyObject *Py_InitModule4 Py_PROTO((char *, PyMethodDef *,
 	Py_InitModule4(name, methods, doc, (PyObject *)NULL, \
 		       PYTHON_API_VERSION)
 
-extern char *_Py_PackageContext;
+extern DL_IMPORT(char *) _Py_PackageContext;
 
 #ifdef __cplusplus
 }

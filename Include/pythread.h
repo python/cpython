@@ -48,40 +48,40 @@ extern "C" {
 #define set_key_value PyThread_set_key_value
 
 
-void init_thread Py_PROTO((void));
-int start_new_thread Py_PROTO((void (*)(void *), void *));
+DL_IMPORT(void) init_thread Py_PROTO((void));
+DL_IMPORT(int) start_new_thread Py_PROTO((void (*)(void *), void *));
 #ifndef __BEOS__
-void exit_thread Py_PROTO((void));
-void _exit_thread Py_PROTO((void));
+DL_IMPORT(void) exit_thread Py_PROTO((void));
+DL_IMPORT(void) _exit_thread Py_PROTO((void));
 #else
-void PyThread_exit_thread Py_PROTO((void));
-void PyThread__exit_thread Py_PROTO((void));
+DL_IMPORT(void) PyThread_exit_thread Py_PROTO((void));
+DL_IMPORT(void) PyThread__exit_thread Py_PROTO((void));
 #endif
-long get_thread_ident Py_PROTO((void));
+DL_IMPORT(long) get_thread_ident Py_PROTO((void));
 
-type_lock allocate_lock Py_PROTO((void));
-void free_lock Py_PROTO((type_lock));
-int acquire_lock Py_PROTO((type_lock, int));
+DL_IMPORT(type_lock) allocate_lock Py_PROTO((void));
+DL_IMPORT(void) free_lock Py_PROTO((type_lock));
+DL_IMPORT(int) acquire_lock Py_PROTO((type_lock, int));
 #define WAIT_LOCK	1
 #define NOWAIT_LOCK	0
-void release_lock Py_PROTO((type_lock));
+DL_IMPORT(void) release_lock Py_PROTO((type_lock));
 
-type_sema allocate_sema Py_PROTO((int));
-void free_sema Py_PROTO((type_sema));
-int down_sema Py_PROTO((type_sema, int));
+DL_IMPORT(type_sema) allocate_sema Py_PROTO((int));
+DL_IMPORT(void) free_sema Py_PROTO((type_sema));
+DL_IMPORT(int) down_sema Py_PROTO((type_sema, int));
 #define WAIT_SEMA	1
 #define NOWAIT_SEMA	0
-void up_sema Py_PROTO((type_sema));
+DL_IMPORT(void) up_sema Py_PROTO((type_sema));
 
 #ifndef NO_EXIT_PROG
-void exit_prog Py_PROTO((int));
-void _exit_prog Py_PROTO((int));
+DL_IMPORT(void) exit_prog Py_PROTO((int));
+DL_IMPORT(void) _exit_prog Py_PROTO((int));
 #endif
 
-int create_key Py_PROTO((void));
-void delete_key Py_PROTO((int));
-int set_key_value Py_PROTO((int, void *));
-void * get_key_value Py_PROTO((int));
+DL_IMPORT(int) create_key Py_PROTO((void));
+DL_IMPORT(void) delete_key Py_PROTO((int));
+DL_IMPORT(int) set_key_value Py_PROTO((int, void *));
+DL_IMPORT(void *) get_key_value Py_PROTO((int));
 
 #ifdef __cplusplus
 }
