@@ -50,8 +50,10 @@ HOWTOSTYLES= ../texinputs/howto.cls \
 	$(COMMONSTYLES)
 
 
-$(DVIFILES):	  ../tools/fix_hack ../tools/mkdvi.sh $(COMMONTEX)
-$(PDFFILES):	  ../tools/fix_hack ../tools/mkdvi.sh $(COMMONTEX)
+SCRIPTS:	  ../tools/fix_hack ../tools/mkdvi.sh ../tools/indfix.py
+
+$(DVIFILES):	  $(SCRIPTS) $(COMMONTEX)
+$(PDFFILES):	  $(SCRIPTS) $(COMMONTEX)
 
 $(MANDVIFILES):	  $(MANSTYLES)
 $(MANPDFFILES):	  $(MANSTYLES)
@@ -77,28 +79,6 @@ README:	$(PSFILES)
 	$(TOOLSDIR)/getpagecounts >$@
 
 
-# Python Library Reference
-lib.dvi: $(TOOLSDIR)/indfix.py $(LIBFILES)
-	$(TOOLSDIR)/newind.py >lib.ind
-	$(TOOLSDIR)/newind.py modindex >modlib.ind
-	TEXINPUTS=../lib:$(TEXINPUTS) $(LATEX) lib
-	$(MAKEINDEX) modlib.idx
-	$(TOOLSDIR)/fix_hack lib.idx
-	$(MAKEINDEX) lib.idx
-	$(TOOLSDIR)/indfix.py lib.ind
-	TEXINPUTS=../lib:$(TEXINPUTS) $(LATEX) lib
-
-lib.pdf: $(TOOLSDIR)/indfix.py $(LIBFILES)
-	$(TOOLSDIR)/newind.py >lib.ind
-	$(TOOLSDIR)/newind.py modindex >modlib.ind
-	TEXINPUTS=../lib:$(TEXINPUTS) $(PDFLATEX) lib
-	$(MAKEINDEX) modlib.idx
-	$(TOOLSDIR)/fix_hack lib.idx
-	$(MAKEINDEX) lib.idx
-	$(TOOLSDIR)/indfix.py lib.ind
-	$(TOOLSDIR)/toc2bkm.py lib
-	TEXINPUTS=../lib:$(TEXINPUTS) $(PDFLATEX) lib
-
 # Python/C API Reference Manual
 api.dvi: $(APIFILES)
 	$(MKDVI) api
@@ -119,6 +99,13 @@ ext.dvi: $(EXTFILES)
 
 ext.pdf: $(EXTFILES)
 	$(MKPDF) ext
+
+# Python Library Reference
+lib.dvi: $(LIBFILES)
+	$(MKDVI) lib
+
+lib.pdf: $(LIBFILES)
+	$(MKPDF) lib
 
 # Macintosh Library Modules
 mac.dvi: $(MACFILES)
