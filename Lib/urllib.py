@@ -27,7 +27,7 @@ import os
 import sys
 
 
-__version__ = '1.10'
+__version__ = '1.11'    # XXX This version is not always updated :-(
 
 MAXFTPCACHE = 10        # Trim the ftp cache beyond this size
 
@@ -896,6 +896,7 @@ def unquote_plus(s):
 
 always_safe = string.letters + string.digits + '_,.-'
 def quote(s, safe = '/'):
+    # XXX Can speed this up an order of magnitude
     safe = always_safe + safe
     res = list(s)
     for i in range(len(res)):
@@ -905,6 +906,7 @@ def quote(s, safe = '/'):
     return string.joinfields(res, '')
 
 def quote_plus(s, safe = '/'):
+    # XXX Can speed this up an order of magnitude
     if ' ' in s:
         # replace ' ' with '+'
         l = string.split(s, ' ')
