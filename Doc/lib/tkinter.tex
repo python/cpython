@@ -246,64 +246,28 @@ app = Application()                                                     27
 app.mainloop()                                                          28
 \end{verbatim}
 
-\ifhtml
-\subsection{An Overview of The Tkinter Classes} % TkClassHier.html
 
-%begin{latexonly}
-%\begin{figure}[hbtp]
-%\centerline{\epsfig{file=TkClassHier.gif,width=.9\textwidth}}
-%\caption{Class Hierarchy Image}
-%\end{figure}
-%end{latexonly}
+\subsection{A (Very) Quick Look at Tcl/Tk} % BriefTclTk.html
 
 The class hierarchy looks complicated, but in actual practice,
 application programmers almost always refer to the classes at the very
 bottom of the hierarchy. 
-
-Here are links to the interfaces for each of the concrete widgets:
-
-\begin{itemize}
-\item   \citetitle[classes/ClassButton.html]{Button}  
-\item   \citetitle[classes/ClassCanvas.html]{Canvas} 
-\item   \citetitle[classes/ClassCheckbutton.html]{Checkbutton} 
-\item   \citetitle[classes/ClassEntry.html]{Entry} 
-\item   \citetitle[classes/ClassFrame.html]{Frame} 
-\item   \citetitle[classes/ClassLabel.html]{Label} 
-\item   \citetitle[classes/ClassListbox.html]{Listbox} 
-\item   \citetitle[classes/ClassMenu.html]{Menu} 
-\item   \citetitle[classes/ClassMenubutton.html]{Menubutton}  
-\item   \citetitle[classes/ClassMessage.html]{Message}  
-\item   \citetitle[classes/ClassMisc.html]{*Misc} 
-\item   \citetitle[classes/ClassPacker.html]{*Pack} 
-\item   \citetitle[classes/ClassPlacer.html]{*Place}  
-\item   \citetitle[classes/ClassRadiobutton.html]{Radiobutton}  
-\item   \citetitle[classes/ClassScale.html]{Scale}  
-\item   \citetitle[classes/ClassScrollbar.html]{Scrollbar} 
-\item   \citetitle[classes/ClassText.html]{Text} 
-\item   \citetitle[classes/ClassTk.html]{**Tk} 
-\item   \citetitle[classes/ClassToplevel.html]{Toplevel}  
-\item   \citetitle[classes/ClassWidget.html]{***Widget}  
-\item   \citetitle[classes/ClassWm.html]{*Wm} 
-\end{itemize}
-
 
 Notes:
 \begin{itemize}
 \item   These classes are provided for the purposes of
 organizing certain functions under one namespace. They aren't meant to
 be instantiated independently.
-\item    The Tk class is meant to be instantiated only once in
+
+\item    The \class{Tk} class is meant to be instantiated only once in
 an application. Application programmers need not instantiate one
 explicitly, the system creates one whenever any of the other classes
 are instantiated.
-\item    The Widget class is not meant to be instantiated, it
-is meant only for subclassing to make ``real'' widgets. (in \Cpp, this
-is called an `abstract class')
+
+\item    The \class{Widget} class is not meant to be instantiated, it
+is meant only for subclassing to make ``real'' widgets (in \Cpp, this
+is called an `abstract class').
 \end{itemize}
-\fi
-
-
-\subsection{A (Very) Quick Look at Tcl/Tk} % BriefTclTk.html
 
 To make use of this reference material, there will be times when you
 will need to know how to read short passages of Tk and how to identify
