@@ -603,6 +603,10 @@ which are an order of magnitude faster.  A threaded version of Python
 changes, the difference is only 10\%.  These improvements were
 contributed by Yakov Markovitch.
 
+Python 2.0's source now uses only ANSI C prototypes, so compiling Python now
+requires an ANSI C compiler, and can no longer be done using a compiler that
+only supports K\&R C.  
+
 % ======================================================================
 \section{Module changes}
 
@@ -703,6 +707,16 @@ checks Python source code for ambiguous indentation.
 (Contributed by Tim Peters.)
 
 \item{\module{UserString}:} A base class useful for deriving objects that behave like strings.  
+
+\item{\module{webbrowser}:} A module that provides a platform independent
+way to launch a web browser on a specific URL. For each platform, various
+browsers are tried in a specific order. The user can alter which browser
+is launched by setting the \var{BROWSER} environment variable. 
+(Originally inspired by Eric S. Raymond's patch to \module{urllib}
+which added similar functionality, but
+the final module comes from code originally 
+implemented by Fred Drake as \file{Tools/idle/BrowserControl.py},
+and adapted for the standard library by Fred.)
 
 \item{\module{winreg} and \module{_winreg}:} An interface to the
 Windows registry.  \module{_winreg} is an adaptation of functions that
