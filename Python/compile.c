@@ -995,7 +995,7 @@ none_assignment_check(struct compiling *c, char *name, int assigning)
 	if (name[0] == 'N' && strcmp(name, "None") == 0) {
 		char *msg;
 		if (assigning)
-			msg = "assigment to None";
+			msg = "assignment to None";
 		else
 			msg = "deleting None";
 		if (issue_warning(msg, c->c_filename, c->c_lineno) < 0) {
