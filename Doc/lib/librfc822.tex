@@ -6,9 +6,8 @@
 
 This module defines a class, \code{Message}, which represents a
 collection of ``email headers'' as defined by the Internet standard
-RFC 822.  It is used in various contexts, usually to read such headers
-from a file.
-\index{RFC!822}
+\rfc{822}.  It is used in various contexts, usually to read such
+headers from a file.
 
 Note that there's a separate module to read \UNIX{}, MH, and MMDF
 style mailbox files: \code{mailbox}.
@@ -30,10 +29,10 @@ e.g. \code{m['From']}, \code{m['from']} and \code{m['FROM']} all yield
 the same result.
 
 \begin{funcdesc}{parsedate}{date}
-Attempts to parse a date according to the rules in RFC822.  however,
+Attempts to parse a date according to the rules in \rfc{822}.  however,
 some mailers don't follow that format as specified, so
 \code{parsedate()} tries to guess correctly in such cases. 
-\var{date} is a string containing an RFC822 date, such as 
+\var{date} is a string containing an \rfc{822} date, such as 
 \code{"Mon, 20 Nov 1995 19:12:08 -0500"}.  If it succeeds in parsing
 the date, \code{parsedate()} returns a 9-tuple that can be passed
 directly to \code{time.mktime()}; otherwise \code{None} will be
