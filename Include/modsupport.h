@@ -61,8 +61,8 @@ extern DL_IMPORT(PyObject *) Py_BuildValue();
 extern DL_IMPORT(int) PyArg_VaParse Py_PROTO((PyObject *, char *, va_list));
 extern DL_IMPORT(PyObject *) Py_VaBuildValue Py_PROTO((char *, va_list));
 
-#define PYTHON_API_VERSION 1007
-#define PYTHON_API_STRING "1007"
+#define PYTHON_API_VERSION 1009
+#define PYTHON_API_STRING "1009"
 /* The API version is maintained (independently from the Python version)
    so we can detect mismatches between the interpreter and dynamically
    loaded modules.  These are diagnosticised by an error message but
@@ -75,6 +75,8 @@ extern DL_IMPORT(PyObject *) Py_VaBuildValue Py_PROTO((char *, va_list));
 
    Please add a line or two to the top of this log for each API
    version change:
+
+   14-Mar-2000  GvR     1009    Unicode API added
 
    3-Jan-1999	GvR	1007	Decided to change back!  (Don't reuse 1008!)
 
