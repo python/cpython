@@ -873,10 +873,11 @@ parsestr(char *s)
 			return PyUnicode_DecodeUnicodeEscape(
 				s, len, NULL);
 	}
-	else if (rawmode || strchr(s, '\\') == NULL) {
+	if (rawmode || strchr(s, '\\') == NULL)
 		return PyString_FromStringAndSize(s, len);
-	}
 	v = PyString_FromStringAndSize((char *)NULL, len);
+	if (v == NULL)
+		return NULL;
 	p = buf = PyString_AsString(v);
 	end = s + len;
 	while (s < end) {
@@ -909,24 +910,35 @@ parsestr(char *s)
 			*p++ = c;
 			break;
 		case 'x':
-			if (isxdigit(Py_CHARMASK(*s))) {
+			if (isxdigit(Py_CHARMASK(s[0])) && isxdigit(Py_CHARMASK(s[1]))) {
 				unsigned int x = 0;
-				do {
-					c = Py_CHARMASK(*s);
-					s++;
-					x = (x<<4) & ~0xF;
-					if (isdigit(c))
-						x += c - '0';
-					else if (islower(c))
-						x += 10 + c - 'a';
-					else
-						x += 10 + c - 'A';
-				} while (isxdigit(Py_CHARMASK(*s)));
+				c = Py_CHARMASK(*s);
+				s++;
+				if (isdigit(c))
+					x = c - '0';
+				else if (islower(c))
+					x = 10 + c - 'a';
+				else
+					x = 10 + c - 'A';
+				x = x << 4;
+				c = Py_CHARMASK(*s);
+				s++;
+				if (isdigit(c))
+					x += c - '0';
+				else if (islower(c))
+					x += 10 + c - 'a';
+				else
+					x += 10 + c - 'A';
 				*p++ = x;
 				break;
 			}
-		/* FALLTHROUGH */
-		default: *p++ = '\\'; *p++ = s[-1]; break;
+			PyErr_SetString(PyExc_ValueError, "invalid \\x escape");
+			Py_DECREF(v);
+			return NULL;
+		default:
+			*p++ = '\\';
+			*p++ = s[-1];
+			break;
 		}
 	}
 	_PyString_Resize(&v, (int)(p - buf));
