@@ -215,7 +215,7 @@ file_dealloc(f)
 	if (f->f_mode != NULL) {
 		Py_DECREF(f->f_mode);
 	}
-	free((char *)f);
+	PyObject_DEL(f);
 }
 
 static PyObject *

@@ -995,7 +995,7 @@ static void
 long_dealloc(v)
 	PyObject *v;
 {
-	PyMem_DEL(v);
+	PyObject_DEL(v);
 }
 
 static PyObject *

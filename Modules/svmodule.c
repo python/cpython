@@ -340,7 +340,7 @@ capture_dealloc(self)
 		Py_DECREF(self->ob_svideo);
 		self->ob_svideo = NULL;
 	}
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *
@@ -374,7 +374,7 @@ newcaptureobject(self, ptr, mustunlock)
 {
 	captureobject *p;
 
-	p = PyObject_NEW(captureobject, &Capturetype);
+	p = PyObject_New(captureobject, &Capturetype);
 	if (p == NULL)
 		return NULL;
 	p->ob_svideo = self;
@@ -994,7 +994,7 @@ svideo_dealloc(self)
 {
 	if (self->ob_svideo != NULL)
 		(void) svCloseVideo(self->ob_svideo);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *
@@ -1026,7 +1026,7 @@ newsvobject(svp)
 {
 	svobject *p;
 
-	p = PyObject_NEW(svobject, &Svtype);
+	p = PyObject_New(svobject, &Svtype);
 	if (p == NULL)
 		return NULL;
 	p->ob_svideo = svp;

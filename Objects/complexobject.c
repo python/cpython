@@ -166,13 +166,14 @@ PyObject *
 PyComplex_FromCComplex(cval)
 	Py_complex cval;
 {
-	register PyComplexObject *op =
-		(PyComplexObject *) malloc(sizeof(PyComplexObject));
+	register PyComplexObject *op;
+
+	/* PyObject_New is inlined */
+	op = (PyComplexObject *) PyObject_MALLOC(sizeof(PyComplexObject));
 	if (op == NULL)
 		return PyErr_NoMemory();
-	op->ob_type = &PyComplex_Type;
+	PyObject_INIT(op, &PyComplex_Type);
 	op->cval = cval;
-	_Py_NewReference((PyObject *)op);
 	return (PyObject *) op;
 }
 
@@ -226,7 +227,7 @@ static void
 complex_dealloc(op)
 	PyObject *op;
 {
-	PyMem_DEL(op);
+	PyObject_DEL(op);
 }
 
 

@@ -92,19 +92,19 @@ PyString_FromStringAndSize(str, size)
 		return (PyObject *)op;
 	}
 #endif /* DONT_SHARE_SHORT_STRINGS */
+
+	/* PyObject_NewVar is inlined */
 	op = (PyStringObject *)
-		malloc(sizeof(PyStringObject) + size * sizeof(char));
+		PyObject_MALLOC(sizeof(PyStringObject) + size * sizeof(char));
 	if (op == NULL)
 		return PyErr_NoMemory();
-	op->ob_type = &PyString_Type;
-	op->ob_size = size;
+	PyObject_INIT_VAR(op, &PyString_Type, size);
 #ifdef CACHE_HASH
 	op->ob_shash = -1;
 #endif
 #ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
 #endif
-	_Py_NewReference((PyObject *)op);
 	if (str != NULL)
 		memcpy(op->ob_sval, str, size);
 	op->ob_sval[size] = '\0';
@@ -142,19 +142,19 @@ PyString_FromString(str)
 		return (PyObject *)op;
 	}
 #endif /* DONT_SHARE_SHORT_STRINGS */
+
+	/* PyObject_NewVar is inlined */
 	op = (PyStringObject *)
-		malloc(sizeof(PyStringObject) + size * sizeof(char));
+		PyObject_MALLOC(sizeof(PyStringObject) + size * sizeof(char));
 	if (op == NULL)
 		return PyErr_NoMemory();
-	op->ob_type = &PyString_Type;
-	op->ob_size = size;
+	PyObject_INIT_VAR(op, &PyString_Type, size);
 #ifdef CACHE_HASH
 	op->ob_shash = -1;
 #endif
 #ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
 #endif
-	_Py_NewReference((PyObject *)op);
 	strcpy(op->ob_sval, str);
 #ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0) {
@@ -172,7 +172,7 @@ static void
 string_dealloc(op)
 	PyObject *op;
 {
-	PyMem_DEL(op);
+	PyObject_DEL(op);
 }
 
 int
@@ -307,19 +307,18 @@ string_concat(a, bb)
 		return (PyObject *)a;
 	}
 	size = a->ob_size + b->ob_size;
+	/* PyObject_NewVar is inlined */
 	op = (PyStringObject *)
-		malloc(sizeof(PyStringObject) + size * sizeof(char));
+		PyObject_MALLOC(sizeof(PyStringObject) + size * sizeof(char));
 	if (op == NULL)
 		return PyErr_NoMemory();
-	op->ob_type = &PyString_Type;
-	op->ob_size = size;
+	PyObject_INIT_VAR(op, &PyString_Type, size);
 #ifdef CACHE_HASH
 	op->ob_shash = -1;
 #endif
 #ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
 #endif
-	_Py_NewReference((PyObject *)op);
 	memcpy(op->ob_sval, a->ob_sval, (int) a->ob_size);
 	memcpy(op->ob_sval + a->ob_size, b->ob_sval, (int) b->ob_size);
 	op->ob_sval[size] = '\0';
@@ -342,19 +341,18 @@ string_repeat(a, n)
 		Py_INCREF(a);
 		return (PyObject *)a;
 	}
+	/* PyObject_NewVar is inlined */
 	op = (PyStringObject *)
-		malloc(sizeof(PyStringObject) + size * sizeof(char));
+		PyObject_MALLOC(sizeof(PyStringObject) + size * sizeof(char));
 	if (op == NULL)
 		return PyErr_NoMemory();
-	op->ob_type = &PyString_Type;
-	op->ob_size = size;
+	PyObject_INIT_VAR(op, &PyString_Type, size);
 #ifdef CACHE_HASH
 	op->ob_shash = -1;
 #endif
 #ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
 #endif
-	_Py_NewReference((PyObject *)op);
 	for (i = 0; i < size; i += a->ob_size)
 		memcpy(op->ob_sval+i, a->ob_sval, (int) a->ob_size);
 	op->ob_sval[size] = '\0';
@@ -1498,7 +1496,7 @@ mymemreplace(str, len, pat, pat_len, sub, sub_len, count, out_len)
 		goto return_same;
 	new_len = len + nfound*(sub_len - pat_len);
 
-	new_s = (char *)malloc(new_len);
+	new_s = (char *)PyMem_MALLOC(new_len);
 	if (new_s == NULL) return NULL;
 
 	*out_len = new_len;
@@ -1593,7 +1591,7 @@ string_replace(self, args)
 	}
 	else {
 		new = PyString_FromStringAndSize(new_s, out_len);
-		free(new_s);
+		PyMem_FREE(new_s);
 	}
 	return new;
 }
@@ -2273,10 +2271,10 @@ _PyString_Resize(pv, newsize)
 #endif
 	_Py_ForgetReference(v);
 	*pv = (PyObject *)
-		realloc((char *)v,
+		PyObject_REALLOC((char *)v,
 			sizeof(PyStringObject) + newsize * sizeof(char));
 	if (*pv == NULL) {
-		PyMem_DEL(v);
+		PyObject_DEL(v);
 		PyErr_NoMemory();
 		return -1;
 	}

@@ -112,7 +112,7 @@ code_dealloc(co)
 	Py_XDECREF(co->co_filename);
 	Py_XDECREF(co->co_name);
 	Py_XDECREF(co->co_lnotab);
-	PyMem_DEL(co);
+	PyObject_DEL(co);
 }
 
 static PyObject *

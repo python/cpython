@@ -1152,7 +1152,7 @@ static char *mymemreplace(str, len, pat, pat_len, sub, sub_len, count, out_len)
 		goto return_same;
 	new_len = len + nfound*(sub_len - pat_len);
 
-	new_s = (char *)malloc(new_len);
+	new_s = (char *)PyMem_MALLOC(new_len);
 	if (new_s == NULL) return NULL;
 
 	*out_len = new_len;
@@ -1225,7 +1225,7 @@ strop_replace(self, args)
 	}
 	else {
 		new = PyString_FromStringAndSize(new_s, out_len);
-		free(new_s);
+		PyMem_FREE(new_s);
 	}
 	return new;
 }

@@ -124,7 +124,7 @@ _PyImport_Init()
 		++countD;
 	for (scan = _PyImport_StandardFiletab; scan->suffix != NULL; ++scan)
 		++countS;
-	filetab = malloc((countD + countS + 1) * sizeof(struct filedescr));
+	filetab = PyMem_NEW(struct filedescr, countD + countS + 1);
 	memcpy(filetab, _PyImport_DynLoadFiletab,
 	       countD * sizeof(struct filedescr));
 	memcpy(filetab + countD, _PyImport_StandardFiletab,
@@ -2398,10 +2398,10 @@ initimp()
 }
 
 
-/* API for embedding applications that want to add their own entries to the
-   table of built-in modules.  This should normally be called *before*
-   Py_Initialize().  When the malloc() or realloc() call fails, -1 is returned
-   and the existing table is unchanged.
+/* API for embedding applications that want to add their own entries
+   to the table of built-in modules.  This should normally be called
+   *before* Py_Initialize().  When the table resize fails, -1 is
+   returned and the existing table is unchanged.
 
    After a similar function by Just van Rossum. */
 
@@ -2422,10 +2422,8 @@ PyImport_ExtendInittab(newtab)
 		;
 
 	/* Allocate new memory for the combined table */
-	if (our_copy == NULL)
-		p = malloc((i+n+1) * sizeof(struct _inittab));
-	else
-		p = realloc(our_copy, (i+n+1) * sizeof(struct _inittab));
+	p = our_copy;
+	PyMem_RESIZE(p, struct _inittab, i+n+1);
 	if (p == NULL)
 		return -1;
 

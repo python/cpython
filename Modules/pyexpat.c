@@ -471,7 +471,7 @@ newxmlparseobject( char *encoding, char *namespace_separator){
         int i;
         xmlparseobject *self;
         
-        self = PyObject_NEW(xmlparseobject, &Xmlparsetype);
+        self = PyObject_New(xmlparseobject, &Xmlparsetype);
         if (self == NULL)
                 return NULL;
 
@@ -512,7 +512,7 @@ xmlparse_dealloc( xmlparseobject *self )
         for( i=0; handler_info[i].name!=NULL; i++ ){
                 Py_XDECREF( self->handlers[i] );
         }
-        PyMem_DEL(self);
+        PyObject_Del(self);
 }
 
 static int handlername2int( const char *name ){

@@ -62,7 +62,7 @@ newXxoObject(arg)
 	PyObject *arg;
 {
 	XxoObject *self;
-	self = PyObject_NEW(XxoObject, &Xxo_Type);
+	self = PyObject_New(XxoObject, &Xxo_Type);
 	if (self == NULL)
 		return NULL;
 	self->x_attr = NULL;
@@ -76,7 +76,7 @@ Xxo_dealloc(self)
 	XxoObject *self;
 {
 	Py_XDECREF(self->x_attr);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *

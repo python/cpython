@@ -219,26 +219,27 @@ tok_nextc(tok)
 			if (new == NULL)
 				tok->done = E_INTR;
 			else if (*new == '\0') {
-				free(new);
+				PyMem_FREE(new);
 				tok->done = E_EOF;
 			}
 			else if (tok->start != NULL) {
 				int start = tok->start - tok->buf;
 				int oldlen = tok->cur - tok->buf;
 				int newlen = oldlen + strlen(new);
-				char *buf = realloc(tok->buf, newlen+1);
+				char *buf = tok->buf;
+				PyMem_RESIZE(buf, char, newlen+1);
 				tok->lineno++;
 				if (buf == NULL) {
-					free(tok->buf);
+					PyMem_DEL(tok->buf);
 					tok->buf = NULL;
-					free(new);
+					PyMem_FREE(new);
 					tok->done = E_NOMEM;
 					return EOF;
 				}
 				tok->buf = buf;
 				tok->cur = tok->buf + oldlen;
 				strcpy(tok->buf + oldlen, new);
-				free(new);
+				PyMem_FREE(new);
 				tok->inp = tok->buf + newlen;
 				tok->end = tok->inp + 1;
 				tok->start = tok->buf + start;
@@ -246,7 +247,7 @@ tok_nextc(tok)
 			else {
 				tok->lineno++;
 				if (tok->buf != NULL)
-					free(tok->buf);
+					PyMem_DEL(tok->buf);
 				tok->buf = new;
 				tok->cur = tok->buf;
 				tok->inp = strchr(tok->buf, '\0');

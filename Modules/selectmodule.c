@@ -278,9 +278,9 @@ select_select(self, args)
 	wfd2obj = PyMem_NEW(pylist, FD_SETSIZE + 3);
 	efd2obj = PyMem_NEW(pylist, FD_SETSIZE + 3);
 	if (rfd2obj == NULL || wfd2obj == NULL || efd2obj == NULL) {
-		PyMem_XDEL(rfd2obj);
-		PyMem_XDEL(wfd2obj);
-		PyMem_XDEL(efd2obj);
+		if (rfd2obj) PyMem_DEL(rfd2obj);
+		if (wfd2obj) PyMem_DEL(wfd2obj);
+		if (efd2obj) PyMem_DEL(efd2obj);
 		return NULL;
 	}
 #endif

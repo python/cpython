@@ -64,13 +64,14 @@ static void
 reg_dealloc(re)
 	regexobject *re;
 {
-	PyMem_XDEL(re->re_patbuf.buffer);
+	if (re->re_patbuf.buffer)
+		PyMem_DEL(re->re_patbuf.buffer);
 	Py_XDECREF(re->re_translate);
 	Py_XDECREF(re->re_lastok);
 	Py_XDECREF(re->re_groupindex);
 	Py_XDECREF(re->re_givenpat);
 	Py_XDECREF(re->re_realpat);
-	PyMem_DEL(re);
+	PyObject_Del(re);
 }
 
 static PyObject *
@@ -418,7 +419,7 @@ newregexobject(pattern, translate, givenpat, groupindex)
 				"translation table must be 256 bytes");
 		return NULL;
 	}
-	re = PyObject_NEW(regexobject, &Regextype);
+	re = PyObject_New(regexobject, &Regextype);
 	if (re != NULL) {
 		char *error;
 		re->re_patbuf.buffer = NULL;

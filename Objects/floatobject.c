@@ -98,9 +98,6 @@ double (*_Py_math_funcs_hack[])() = {
 #define BHEAD_SIZE	8	/* Enough for a 64-bit pointer */
 #define N_FLOATOBJECTS	((BLOCK_SIZE - BHEAD_SIZE) / sizeof(PyFloatObject))
 
-#define PyMem_MALLOC	malloc
-#define PyMem_FREE	free
-
 struct _floatblock {
 	struct _floatblock *next;
 	PyFloatObject objects[N_FLOATOBJECTS];
@@ -115,9 +112,10 @@ static PyFloatObject *
 fill_free_list()
 {
 	PyFloatObject *p, *q;
-	p = (PyFloatObject *)PyMem_MALLOC(sizeof(PyFloatBlock));
+	/* XXX Float blocks escape the object heap. Use PyObject_MALLOC ??? */
+	p = (PyFloatObject *) PyMem_MALLOC(sizeof(PyFloatBlock));
 	if (p == NULL)
-		return (PyFloatObject *)PyErr_NoMemory();
+		return (PyFloatObject *) PyErr_NoMemory();
 	((PyFloatBlock *)p)->next = block_list;
 	block_list = (PyFloatBlock *)p;
 	p = &((PyFloatBlock *)p)->objects[0];
@@ -141,11 +139,11 @@ PyFloat_FromDouble(fval)
 		if ((free_list = fill_free_list()) == NULL)
 			return NULL;
 	}
+	/* PyObject_New is inlined */
 	op = free_list;
 	free_list = (PyFloatObject *)op->ob_type;
-	op->ob_type = &PyFloat_Type;
+	PyObject_INIT(op, &PyFloat_Type);
 	op->ob_fval = fval;
-	_Py_NewReference((PyObject *)op);
 	return (PyObject *) op;
 }
 
@@ -779,7 +777,7 @@ PyFloat_Fini()
 			}
 		}
 		else {
-			PyMem_FREE(list);
+			PyMem_FREE(list); /* XXX PyObject_FREE ??? */
 			bf++;
 		}
 		fsum += frem;

@@ -192,7 +192,7 @@ parsetok(tok, g, start, err_ret)
 		err_ret->offset = tok->cur - tok->buf;
 		if (tok->buf != NULL) {
 			int len = tok->inp - tok->buf;
-			err_ret->text = malloc(len + 1);
+			err_ret->text = PyMem_NEW(char, len + 1);
 			if (err_ret->text != NULL) {
 				if (len > 0)
 					strncpy(err_ret->text, tok->buf, len);

@@ -112,50 +112,68 @@ inc_count(tp)
 }
 #endif
 
-#ifndef MS_COREDLL
 PyObject *
-_PyObject_New(tp)
-	PyTypeObject *tp;
-#else
-PyObject *
-_PyObject_New(tp,op)
-	PyTypeObject *tp;
+PyObject_Init(op, tp)
 	PyObject *op;
-#endif
+	PyTypeObject *tp;
 {
-#ifndef MS_COREDLL
-	PyObject *op = (PyObject *) malloc(tp->tp_basicsize);
-#endif
-	if (op == NULL)
-		return PyErr_NoMemory();
+	if (op == NULL) {
+		PyErr_SetString(PyExc_SystemError,
+				"NULL object passed to PyObject_Init");
+		return op;
+  	}
+	/* Any changes should be reflected in PyObject_INIT (objimpl.h) */
 	op->ob_type = tp;
 	_Py_NewReference(op);
 	return op;
 }
 
-#ifndef MS_COREDLL
+PyVarObject *
+PyObject_InitVar(op, tp, size)
+	PyVarObject *op;
+	PyTypeObject *tp;
+	int size;
+{
+	if (op == NULL) {
+		PyErr_SetString(PyExc_SystemError,
+				"NULL object passed to PyObject_InitVar");
+		return op;
+	}
+	/* Any changes should be reflected in PyObject_INIT_VAR */
+	op->ob_size = size;
+	op->ob_type = tp;
+	_Py_NewReference((PyObject *)op);
+	return op;
+}
+
+PyObject *
+_PyObject_New(tp)
+	PyTypeObject *tp;
+{
+	PyObject *op;
+	op = (PyObject *) PyObject_MALLOC(_PyObject_SIZE(tp));
+	if (op == NULL)
+		return PyErr_NoMemory();
+	return PyObject_INIT(op, tp);
+}
+
 PyVarObject *
 _PyObject_NewVar(tp, size)
 	PyTypeObject *tp;
 	int size;
-#else
-PyVarObject *
-_PyObject_NewVar(tp, size, op)
-	PyTypeObject *tp;
-	int size;
-	PyVarObject *op;
-#endif
 {
-#ifndef MS_COREDLL
-	PyVarObject *op = (PyVarObject *)
-		malloc(tp->tp_basicsize + size * tp->tp_itemsize);
-#endif
+	PyVarObject *op;
+	op = (PyVarObject *) PyObject_MALLOC(_PyObject_VAR_SIZE(tp, size));
 	if (op == NULL)
 		return (PyVarObject *)PyErr_NoMemory();
-	op->ob_type = tp;
-	op->ob_size = size;
-	_Py_NewReference((PyObject *)op);
-	return op;
+	return PyObject_INIT_VAR(op, tp, size);
+}
+
+void
+_PyObject_Del(op)
+	PyObject *op;
+{
+	PyObject_FREE(op);
 }
 
 int
@@ -888,54 +906,7 @@ PyTypeObject *_Py_cobject_hack = &PyCObject_Type;
 int (*_Py_abstract_hack) Py_FPROTO((PyObject *)) = &PyObject_Length;
 
 
-/* Malloc wrappers (see mymalloc.h) */
-
-/* The Py_{Malloc,Realloc} wrappers call PyErr_NoMemory() on failure */
-
-ANY *
-Py_Malloc(nbytes)
-	size_t nbytes;
-{
-	ANY *p;
-#if _PyMem_EXTRA > 0
-	if (nbytes == 0)
-		nbytes = _PyMem_EXTRA;
-#endif
-	p = malloc(nbytes);
-	if (p != NULL)
-		return p;
-	else {
-		PyErr_NoMemory();
-		return NULL;
-	}
-}
-
-ANY *
-Py_Realloc(p, nbytes)
-	ANY *p;
-	size_t nbytes;
-{
-#if _PyMem_EXTRA > 0
-	if (nbytes == 0)
-		nbytes = _PyMem_EXTRA;
-#endif
-	p = realloc(p, nbytes);
-	if (p != NULL)
-		return p;
-	else {
-		PyErr_NoMemory();
-		return NULL;
-	}
-}
-
-void
-Py_Free(p)
-	ANY *p;
-{
-	free(p);
-}
-
-/* The PyMem_{Malloc,Realloc} wrappers don't call anything on failure */
+/* Python's malloc wrappers (see mymalloc.h) */
 
 ANY *
 PyMem_Malloc(nbytes)
@@ -945,7 +916,7 @@ PyMem_Malloc(nbytes)
 	if (nbytes == 0)
 		nbytes = _PyMem_EXTRA;
 #endif
-	return malloc(nbytes);
+	return PyMem_MALLOC(nbytes);
 }
 
 ANY *
@@ -957,14 +928,39 @@ PyMem_Realloc(p, nbytes)
 	if (nbytes == 0)
 		nbytes = _PyMem_EXTRA;
 #endif
-	return realloc(p, nbytes);
+	return PyMem_REALLOC(p, nbytes);
 }
 
 void
 PyMem_Free(p)
 	ANY *p;
 {
-	free(p);
+	PyMem_FREE(p);
+}
+
+
+/* Python's object malloc wrappers (see objimpl.h) */
+
+ANY *
+PyObject_Malloc(nbytes)
+	size_t nbytes;
+{
+	return PyObject_MALLOC(nbytes);
+}
+
+ANY *
+PyObject_Realloc(p, nbytes)
+	ANY *p;
+	size_t nbytes;
+{
+	return PyObject_REALLOC(p, nbytes);
+}
+
+void
+PyObject_Free(p)
+	ANY *p;
+{
+	PyObject_FREE(p);
 }
 
 

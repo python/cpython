@@ -94,9 +94,6 @@ err_ovf(msg)
 #define BHEAD_SIZE	8	/* Enough for a 64-bit pointer */
 #define N_INTOBJECTS	((BLOCK_SIZE - BHEAD_SIZE) / sizeof(PyIntObject))
 
-#define PyMem_MALLOC	malloc
-#define PyMem_FREE	free
-
 struct _intblock {
 	struct _intblock *next;
 	PyIntObject objects[N_INTOBJECTS];
@@ -111,9 +108,10 @@ static PyIntObject *
 fill_free_list()
 {
 	PyIntObject *p, *q;
-	p = (PyIntObject *)PyMem_MALLOC(sizeof(PyIntBlock));
+	/* XXX Int blocks escape the object heap. Use PyObject_MALLOC ??? */
+	p = (PyIntObject *) PyMem_MALLOC(sizeof(PyIntBlock));
 	if (p == NULL)
-		return (PyIntObject *)PyErr_NoMemory();
+		return (PyIntObject *) PyErr_NoMemory();
 	((PyIntBlock *)p)->next = block_list;
 	block_list = (PyIntBlock *)p;
 	p = &((PyIntBlock *)p)->objects[0];
@@ -164,11 +162,11 @@ PyInt_FromLong(ival)
 		if ((free_list = fill_free_list()) == NULL)
 			return NULL;
 	}
+	/* PyObject_New is inlined */
 	v = free_list;
 	free_list = (PyIntObject *)v->ob_type;
-	v->ob_type = &PyInt_Type;
+	PyObject_INIT(v, &PyInt_Type);
 	v->ob_ival = ival;
-	_Py_NewReference((PyObject *)v);
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
 	if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) {
 		/* save this one for a following allocation */
@@ -933,7 +931,7 @@ PyInt_Fini()
 			}
 		}
 		else {
-			PyMem_FREE(list);
+			PyMem_FREE(list); /* XXX PyObject_FREE ??? */
 			bf++;
 		}
 		isum += irem;

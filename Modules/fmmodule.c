@@ -59,7 +59,7 @@ newfhobject(fh)
 				"error creating new font handle");
 		return NULL;
 	}
-	fhp = PyObject_NEW(fhobject, &Fhtype);
+	fhp = PyObject_New(fhobject, &Fhtype);
 	if (fhp == NULL)
 		return NULL;
 	fhp->fh_fh = fh;
@@ -196,7 +196,7 @@ fh_dealloc(fhp)
 	fhobject *fhp;
 {
 	fmfreefont(fhp->fh_fh);
-	PyMem_DEL(fhp);
+	PyObject_Del(fhp);
 }
 
 static PyTypeObject Fhtype = {

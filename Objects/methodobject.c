@@ -46,8 +46,7 @@ PyCFunction_New(ml, self)
 	op = free_list;
 	if (op != NULL) {
 		free_list = (PyCFunctionObject *)(op->m_self);
-		op->ob_type = &PyCFunction_Type;
-		_Py_NewReference((PyObject *)op);
+		PyObject_INIT(op, &PyCFunction_Type);
 	}
 	else {
 		op = PyObject_NEW(PyCFunctionObject, &PyCFunction_Type);
@@ -288,6 +287,6 @@ PyCFunction_Fini()
 	while (free_list) {
 		PyCFunctionObject *v = free_list;
 		free_list = (PyCFunctionObject *)(v->m_self);
-		PyMem_DEL(v);
+		PyObject_DEL(v);
 	}
 }

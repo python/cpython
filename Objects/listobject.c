@@ -70,7 +70,8 @@ PyList_New(size)
 	if (nbytes / sizeof(PyObject *) != (size_t)size) {
 		return PyErr_NoMemory();
 	}
-	op = (PyListObject *) malloc(sizeof(PyListObject));
+	/* PyObject_NewVar is inlined */
+	op = (PyListObject *) PyObject_MALLOC(sizeof(PyListObject));
 	if (op == NULL) {
 		return PyErr_NoMemory();
 	}
@@ -78,17 +79,15 @@ PyList_New(size)
 		op->ob_item = NULL;
 	}
 	else {
-		op->ob_item = (PyObject **) malloc(nbytes);
+		op->ob_item = (PyObject **) PyMem_MALLOC(nbytes);
 		if (op->ob_item == NULL) {
-			free((ANY *)op);
+			PyObject_FREE(op);
 			return PyErr_NoMemory();
 		}
 	}
-	op->ob_type = &PyList_Type;
-	op->ob_size = size;
+	PyObject_INIT_VAR(op, &PyList_Type, size);
 	for (i = 0; i < size; i++)
 		op->ob_item[i] = NULL;
-	_Py_NewReference((PyObject *)op);
 	return (PyObject *) op;
 }
 
@@ -225,9 +224,9 @@ list_dealloc(op)
 		while (--i >= 0) {
 			Py_XDECREF(op->ob_item[i]);
 		}
-		free((ANY *)op->ob_item);
+		PyMem_FREE(op->ob_item);
 	}
-	free((ANY *)op);
+	PyObject_DEL(op);
 	Py_TRASHCAN_SAFE_END(op)
 }
 
@@ -501,7 +500,8 @@ list_ass_slice(a, ilow, ihigh, v)
 	else { /* Insert d items; recycle ihigh-ilow items */
 		NRESIZE(item, PyObject *, a->ob_size + d);
 		if (item == NULL) {
-			PyMem_XDEL(recycle);
+			if (recycle != NULL)
+				PyMem_DEL(recycle);
 			PyErr_NoMemory();
 			return -1;
 		}

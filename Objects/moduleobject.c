@@ -170,7 +170,7 @@ module_dealloc(m)
 		_PyModule_Clear((PyObject *)m);
 		Py_DECREF(m->md_dict);
 	}
-	free((char *)m);
+	PyObject_DEL(m);
 }
 
 static PyObject *

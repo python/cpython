@@ -346,7 +346,7 @@ newarrayobject(size, descr)
 	if (nbytes / descr->itemsize != (size_t)size) {
 		return PyErr_NoMemory();
 	}
-	op = PyMem_NEW(arrayobject, 1);
+	op = PyObject_NewVar(arrayobject, &Arraytype, size);
 	if (op == NULL) {
 		return PyErr_NoMemory();
 	}
@@ -356,14 +356,11 @@ newarrayobject(size, descr)
 	else {
 		op->ob_item = PyMem_NEW(char, nbytes);
 		if (op->ob_item == NULL) {
-			PyMem_DEL(op);
+			PyObject_Del(op);
 			return PyErr_NoMemory();
 		}
 	}
-	op->ob_type = &Arraytype;
-	op->ob_size = size;
 	op->ob_descr = descr;
-	_Py_NewReference((PyObject *)op);
 	return (PyObject *) op;
 }
 
@@ -466,7 +463,7 @@ array_dealloc(op)
 {
 	if (op->ob_item != NULL)
 		PyMem_DEL(op->ob_item);
-	PyMem_DEL(op);
+	PyObject_Del(op);
 }
 
 static int

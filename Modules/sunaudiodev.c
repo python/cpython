@@ -139,7 +139,7 @@ newsadobject(arg)
 	PyMem_DEL(ctldev);
 
 	/* Create and initialize the object */
-	xp = PyObject_NEW(sadobject, &Sadtype);
+	xp = PyObject_New(sadobject, &Sadtype);
 	if (xp == NULL) {
 		close(fd);
 		return NULL;
@@ -158,7 +158,7 @@ sad_dealloc(xp)
 	sadobject *xp;
 {
         close(xp->x_fd);
-	PyMem_DEL(xp);
+	PyObject_Del(xp);
 }
 
 static PyObject *
@@ -412,7 +412,7 @@ sad_getattr(xp, name)
 
 static sadstatusobject *
 sads_alloc() {
-	return PyObject_NEW(sadstatusobject, &Sadstatustype);
+	return PyObject_New(sadstatusobject, &Sadstatustype);
 }
 
 static void

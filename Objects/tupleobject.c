@@ -80,10 +80,12 @@ PyTuple_New(size)
 #ifdef COUNT_ALLOCS
 		fast_tuple_allocs++;
 #endif
+		/* PyObject_InitVar is inlined */
 #ifdef Py_TRACE_REFS
-		op->ob_type = &PyTuple_Type;
 		op->ob_size = size;
+		op->ob_type = &PyTuple_Type;
 #endif
+		_Py_NewReference((PyObject *)op);
 	}
 	else
 #endif
@@ -96,17 +98,15 @@ PyTuple_New(size)
 		{
 			return PyErr_NoMemory();
 		}
-		;
-		op = (PyTupleObject *) malloc(nbytes);
+		/* PyObject_NewVar is inlined */
+		op = (PyTupleObject *) PyObject_MALLOC(nbytes);
 		if (op == NULL)
 			return PyErr_NoMemory();
 
-		op->ob_type = &PyTuple_Type;
-		op->ob_size = size;
+		PyObject_INIT_VAR(op, &PyTuple_Type, size);
 	}
 	for (i = 0; i < size; i++)
 		op->ob_item[i] = NULL;
-	_Py_NewReference((PyObject *)op);
 #if MAXSAVESIZE > 0
 	if (size == 0) {
 		free_tuples[0] = op;
@@ -193,7 +193,7 @@ tupledealloc(op)
 		}
 #endif
 	}
-	free((ANY *)op);
+	PyObject_DEL(op);
 done:
 	Py_TRASHCAN_SAFE_END(op)
 }
@@ -530,11 +530,11 @@ _PyTuple_Resize(pv, newsize, last_is_sticky)
 #endif		
 	{
 		sv = (PyTupleObject *)
-			realloc((char *)v,
+			PyObject_REALLOC((char *)v,
 				sizeof(PyTupleObject) + newsize * sizeof(PyObject *));
 		*pv = (PyObject *) sv;
 		if (sv == NULL) {
-			PyMem_DEL(v);
+			PyObject_DEL(v);
 			PyErr_NoMemory();
 			return -1;
 		}
@@ -569,7 +569,7 @@ PyTuple_Fini()
 		while (p) {
 			q = p;
 			p = (PyTupleObject *)(p->ob_item[0]);
-			PyMem_DEL(q);
+			PyObject_DEL(q);
 		}
 	}
 #endif

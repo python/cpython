@@ -151,7 +151,7 @@ PyCObject_dealloc(self)
 	    else
 	          (self->destructor)(self->cobject);
 	  }
-	PyMem_DEL(self);
+	PyObject_DEL(self);
 }
 
 

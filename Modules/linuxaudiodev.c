@@ -104,7 +104,7 @@ newladobject(PyObject *arg)
   }
 
   /* Create and initialize the object */
-  if ((xp = PyObject_NEW(lad_t, &Ladtype)) == NULL) {
+  if ((xp = PyObject_New(lad_t, &Ladtype)) == NULL) {
     close(fd);
     return NULL;
   }
@@ -118,7 +118,7 @@ static void
 lad_dealloc(lad_t *xp)
 {
   close(xp->x_fd);
-  PyMem_DEL(xp);
+  PyObject_Del(xp);
 }
 
 static PyObject *

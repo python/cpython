@@ -171,7 +171,7 @@ Pdata_dealloc(Pdata *self) {
 
     if (self->data) free(self->data);
 
-    PyMem_DEL(self);
+    PyObject_Del(self);
 }
 
 static PyTypeObject PdataType = {
@@ -186,7 +186,7 @@ static PyObject *
 Pdata_New() {
     Pdata *self;
 
-    UNLESS (self = PyObject_NEW(Pdata, &PdataType)) return NULL;
+    UNLESS (self = PyObject_New(Pdata, &PdataType)) return NULL;
     self->size=8;
     self->length=0;
     self->data=malloc(self->size * sizeof(PyObject*));
@@ -2132,7 +2132,7 @@ static Picklerobject *
 newPicklerobject(PyObject *file, int bin) {
     Picklerobject *self;
 
-    UNLESS (self = PyObject_NEW(Picklerobject, &Picklertype))
+    UNLESS (self = PyObject_New(Picklerobject, &Picklertype))
         return NULL;
 
     self->fp = NULL;
@@ -2243,7 +2243,7 @@ Pickler_dealloc(Picklerobject *self) {
         free(self->write_buf);
     }
 
-    PyMem_DEL(self);
+    PyObject_Del(self);
 }
 
 
@@ -2885,7 +2885,7 @@ Instance_New(PyObject *cls, PyObject *args) {
               PyInstanceObject *inst;
 
               PyErr_Clear();
-              UNLESS (inst=PyObject_NEW(PyInstanceObject, &PyInstance_Type))
+              UNLESS (inst=PyObject_New(PyInstanceObject, &PyInstance_Type))
                 goto err;
               inst->in_class=(PyClassObject*)cls;
               Py_INCREF(cls);
@@ -4036,7 +4036,7 @@ static Unpicklerobject *
 newUnpicklerobject(PyObject *f) {
     Unpicklerobject *self;
 
-    UNLESS (self = PyObject_NEW(Unpicklerobject, &Unpicklertype))
+    UNLESS (self = PyObject_New(Unpicklerobject, &Unpicklertype))
         return NULL;
 
     self->file = NULL;
@@ -4141,7 +4141,7 @@ Unpickler_dealloc(Unpicklerobject *self) {
         free(self->buf);
     }
     
-    PyMem_DEL(self);
+    PyObject_Del(self);
 }
 
 

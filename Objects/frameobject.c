@@ -180,28 +180,27 @@ PyFrame_New(tstate, code, globals, locals)
 	if (builtins != NULL && !PyDict_Check(builtins))
 		builtins = NULL;
 	if (free_list == NULL) {
+		/* PyObject_New is inlined */
 		f = (PyFrameObject *)
-			malloc(sizeof(PyFrameObject) +
-			       extras*sizeof(PyObject *));
+			PyObject_MALLOC(sizeof(PyFrameObject) +
+					extras*sizeof(PyObject *));
 		if (f == NULL)
 			return (PyFrameObject *)PyErr_NoMemory();
-		f->ob_type = &PyFrame_Type;
-		_Py_NewReference((PyObject *)f);
+		PyObject_INIT(f, &PyFrame_Type);
 	}
 	else {
 		f = free_list;
 		free_list = free_list->f_back;
 		if (f->f_nlocals + f->f_stacksize < extras) {
 			f = (PyFrameObject *)
-				realloc(f, sizeof(PyFrameObject) +
-					extras*sizeof(PyObject *));
+				PyObject_REALLOC(f, sizeof(PyFrameObject) +
+						 extras*sizeof(PyObject *));
 			if (f == NULL)
 				return (PyFrameObject *)PyErr_NoMemory();
 		}
 		else
 			extras = f->f_nlocals + f->f_stacksize;
-		f->ob_type = &PyFrame_Type;
-		_Py_NewReference((PyObject *)f);
+		PyObject_INIT(f, &PyFrame_Type);
 	}
 	if (builtins == NULL) {
 		/* No builtins!  Make up a minimal one. */
@@ -376,6 +375,6 @@ PyFrame_Fini()
 	while (free_list != NULL) {
 		PyFrameObject *f = free_list;
 		free_list = free_list->f_back;
-		PyMem_DEL(f);
+		PyObject_DEL(f);
 	}
 }

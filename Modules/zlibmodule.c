@@ -46,7 +46,7 @@ newcompobject(type)
      PyTypeObject *type;
 {
         compobject *self;
-        self = PyObject_NEW(compobject, type);
+        self = PyObject_New(compobject, type);
         if (self == NULL)
                 return NULL;
 	self->is_initialised = 0;
@@ -369,7 +369,7 @@ Comp_dealloc(self)
     if (self->is_initialised)
       deflateEnd(&self->zst);
     Py_XDECREF(self->unused_data);
-    PyMem_DEL(self);
+    PyObject_Del(self);
 }
 
 static void
@@ -378,7 +378,7 @@ Decomp_dealloc(self)
 {
     inflateEnd(&self->zst);
     Py_XDECREF(self->unused_data);
-    PyMem_DEL(self);
+    PyObject_Del(self);
 }
 
 static char comp_compress__doc__[] =

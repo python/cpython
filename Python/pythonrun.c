@@ -543,7 +543,7 @@ PyRun_InteractiveOne(fp, filename)
 	if (n == NULL) {
 		if (err.error == E_EOF) {
 			if (err.text)
-				free(err.text);
+				PyMem_DEL(err.text);
 			return E_EOF;
 		}
 		err_input(&err);
@@ -1009,7 +1009,7 @@ err_input(err)
 	v = Py_BuildValue("(ziiz)", err->filename,
 			    err->lineno, err->offset, err->text);
 	if (err->text != NULL) {
-		free(err->text);
+		PyMem_DEL(err->text);
 		err->text = NULL;
 	}
 	switch (err->error) {

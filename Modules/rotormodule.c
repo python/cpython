@@ -178,7 +178,7 @@ rotorobj_new(num_rotors, key)
 {
 	Rotorobj *xp;
 
-	xp = PyObject_NEW(Rotorobj, &Rotor_Type);
+	xp = PyObject_New(Rotorobj, &Rotor_Type);
 	if (xp == NULL)
 		return NULL;
 	set_key(xp, key);
@@ -204,10 +204,14 @@ rotorobj_new(num_rotors, key)
 	return xp;
 
   finally:
-	PyMem_XDEL(xp->e_rotor);
-	PyMem_XDEL(xp->d_rotor);
-	PyMem_XDEL(xp->positions);
-	PyMem_XDEL(xp->advances);
+	if (xp->e_rotor)
+		PyMem_DEL(xp->e_rotor);
+	if (xp->d_rotor)
+		PyMem_DEL(xp->d_rotor);
+	if (xp->positions)
+		PyMem_DEL(xp->positions);
+	if (xp->advances)
+		PyMem_DEL(xp->advances);
 	Py_DECREF(xp);
 	return (Rotorobj*)PyErr_NoMemory();
 }
@@ -473,11 +477,15 @@ static void
 rotor_dealloc(xp)
 	Rotorobj *xp;
 {
-	PyMem_XDEL(xp->e_rotor);
-	PyMem_XDEL(xp->d_rotor);
-	PyMem_XDEL(xp->positions);
-	PyMem_XDEL(xp->advances);
-	PyMem_DEL(xp);
+	if (xp->e_rotor)
+		PyMem_DEL(xp->e_rotor);
+	if (xp->d_rotor)
+		PyMem_DEL(xp->d_rotor);
+	if (xp->positions)
+		PyMem_DEL(xp->positions);
+	if (xp->advances)
+		PyMem_DEL(xp->advances);
+	PyObject_Del(xp);
 }
 
 static PyObject * 

@@ -79,7 +79,7 @@ newPcreObject(arg)
 	PyObject *arg;
 {
 	PcreObject *self;
-	self = PyObject_NEW(PcreObject, &Pcre_Type);
+	self = PyObject_New(PcreObject, &Pcre_Type);
 	if (self == NULL)
 		return NULL;
 	self->regex = NULL;
@@ -95,7 +95,7 @@ PyPcre_dealloc(self)
 {
 	if (self->regex) (pcre_free)(self->regex);
 	if (self->regex_extra) (pcre_free)(self->regex_extra);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 

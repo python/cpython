@@ -191,7 +191,7 @@ func_dealloc(op)
 	Py_DECREF(op->func_name);
 	Py_XDECREF(op->func_defaults);
 	Py_XDECREF(op->func_doc);
-	PyMem_DEL(op);
+	PyObject_DEL(op);
 }
 
 static PyObject*
