@@ -1822,7 +1822,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			    na++;
 			    n++;
 			}
-			else {
+			else if (!((flags & 1) && na == 0)) {
 			    /* Unbound methods must be called with an
 			       instance of the class (or a derived
 			       class) as first argument */ 
@@ -1894,6 +1894,20 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			    nstar = PyTuple_GET_SIZE(stararg);
 			    if (nstar < 0) {
 				goto extcall_fail;
+			    }
+			    if (class && self == NULL && na == 0) {
+				/* * arg is first argument of method,
+				   so check it is isinstance of class */
+				self = PyTuple_GET_ITEM(stararg, 0);
+				if (!(PyInstance_Check(self) &&
+				      PyClass_IsSubclass((PyObject *)
+				   (((PyInstanceObject *)self)->in_class),
+							 class))) {
+				    PyErr_SetString(PyExc_TypeError,
+	    "unbound method must be called with instance as first argument");
+				    x = NULL;
+				    break;
+				}
 			    }
 			}
 			if (nk > 0) {
