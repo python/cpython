@@ -8,6 +8,7 @@ __version__ = '$Revision$'
 
 
 import getopt
+import os.path
 import sys
 
 
@@ -18,7 +19,7 @@ class Options:
         "columns=", "help", "output=",
 
         # content components
-        "address=", "iconserver=",
+        "address=", "iconserver=", "favicon=",
         "title=", "uplink=", "uptitle="]
 
     outputfile = "-"
@@ -26,6 +27,7 @@ class Options:
     letters = 0
     uplink = "index.html"
     uptitle = "Python Documentation Index"
+    favicon = None
 
     # The "Aesop Meta Tag" is poorly described, and may only be used
     # by the Aesop search engine (www.aesop.com), but doesn't hurt.
@@ -89,6 +91,8 @@ class Options:
                 self.uptitle = val.strip()
             elif opt == "--iconserver":
                 self.variables["iconserver"] = val.strip() or "."
+            elif opt == "--favicon":
+                self.favicon = val.strip()
             else:
                 self.handle_option(opt, val)
         if self.uplink and self.uptitle:
@@ -114,11 +118,20 @@ class Options:
             repl = "  %s\n</head>" % link
             s = s.replace("</head>", repl, 1)
         if self.aesop_type:
-            meta = '\n  <meta name="aesop" content="%s">'
+            meta = '<meta name="aesop" content="%s">\n  ' % self.aesop_type
             # Insert this in the middle of the head that's been
             # generated so far, keeping <meta> and <link> elements in
             # neat groups:
             s = s.replace("<link ", meta + "<link ", 1)
+        if self.favicon:
+            ext = os.path.splitext(self.favicon)[1]
+            if ext in (".gif", ".png"):
+                type = ' type="image/%s"' % ext[1:]
+            else:
+                type = ''
+            link = ('<link rel="SHORTCUT ICON" href="%s"%s>\n  '
+                    % (self.favicon, type))
+            s = s.replace("<link ", link + "<link ", 1)
         return s
 
     def get_footer(self):
