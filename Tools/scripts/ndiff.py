@@ -6,7 +6,6 @@
 # ndiff file1 file2 -- a human-friendly file differencer.
 
 # $Revision$
-# $NoKeywords: $
 
 # SequenceMatcher tries to compute a "human-friendly diff" between
 # two sequences (chiefly picturing a file as a sequence of lines,
@@ -51,6 +50,12 @@
 #    "  " and "+ " lines.
 # 3) Lines beginning with "? " attempt to guide the eye to intraline
 #    differences, and were not present in either input file.
+#
+# COROLLARY:
+# On Unix, the second file can be recovered by piping the output through
+#    sed -n '/^[+ ] /s/^..//p'
+# Modifications to recover the first file are left as an exercise for
+# the reader.
 #
 # NOTE on junk:  the module-level names
 #    IS_LINE_JUNK
