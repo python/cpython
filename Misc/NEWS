@@ -43,7 +43,7 @@ Core and builtins
 - A new built-in type, bool, has been added, as well as built-in
   names for its two values, True and False.  Comparisons and sundry
   other operations that return a truth value have been changed to
-  return a bool instead.  Read PEP 285 for an explanantion of why this
+  return a bool instead.  Read PEP 285 for an explanation of why this
   is backward compatible.
 
 - Fixed two bugs reported as SF #535905: under certain conditions,
@@ -70,9 +70,7 @@ Core and builtins
   Previously, an xreadlines object was returned which would raise
   a ValueError when the xreadlines.next() method was called.
 
-- posix.killpg has been added where available.
-
-- sys.exit() inadvertantly allowed more than one argument.
+- sys.exit() inadvertently allowed more than one argument.
   An exception will now be raised if more than one argument is used.
 
 Extension modules
@@ -81,7 +79,7 @@ Extension modules
   This will create a temporary in-memory bsddb that won't be
   written to disk.
 
-- posix.mknod was added.
+- posix.killpg and posix.mknod have been added where available.
 
 - The locale module now exposes the C library's gettext interface.
 
@@ -142,7 +140,7 @@ Library
 
 - compileall now supports quiet operation.
 
-- The BaseHTTPServer implements now optionally HTTP/1.1 persistent
+- The BaseHTTPServer now implements optional HTTP/1.1 persistent
   connections.
 
 - socket module: the SSL support was broken out of the main
@@ -221,7 +219,7 @@ C API
   PyMem_MALLOC and PyMem_FREE, even if pymalloc is enabled.  The
   PyCore_* family of APIs have been removed.
 
-- The "u#" parser marker will now pass through Unicode object as-is
+- The "u#" parser marker will now pass through Unicode objects as-is
   without going through the buffer API.
 
 - The enumerators of cmp_op have been renamed to use the prefix PyCmp_.
@@ -268,7 +266,7 @@ Windows
   Windows (not the same thing as a Windows process id).
 
 - New tempfile.TemporaryFile implementation for Windows:  this doesn't
-  need a TemproraryFileWrapper wrapper anymore, and should be immune
+  need a TemporaryFileWrapper wrapper anymore, and should be immune
   to a nasty problem:  before 2.3, if you got a temp file on Windows, it
   got wrapped in an object whose close() method first closed the
   underlying file, then deleted the file.  This usually worked fine.
@@ -329,7 +327,7 @@ Library
 - xmlrpclib.py: version 1.0.0; uses precision for doubles.
 
 - test suite: the pickle and cPickle tests were not executing any code
-  when run from the standard regresssion test.
+  when run from the standard regression test.
 
 Tools/Demos
 
@@ -512,7 +510,7 @@ Type/class unification and new-style classes
 
   The MRO (method resolution order) for each base class is respected
   according to its kind, but the MRO for the derived class is computed
-  using new-style MRO rules if any base clase is a new-style class.
+  using new-style MRO rules if any base class is a new-style class.
   This needs to be documented.
 
 - The new builtin dictionary() constructor, and dictionary type, have
@@ -550,7 +548,7 @@ Extension modules
   both Windows and Unix users to create read-only, write-through and
   copy-on-write memory mappings.  This was previously possible only on
   Unix.  A new keyword argument was required to support this in a
-  uniform way because the mmap() signuatures had diverged across
+  uniform way because the mmap() signatures had diverged across
   platforms.  Thanks to Jay T Miller for repairing this!
 
 - By default, the gc.garbage list now contains only those instances in
@@ -916,7 +914,7 @@ Type/class unification and new-style classes
   report on SourceForge.)
 
 - property() now takes 4 keyword arguments:  fget, fset, fdel and doc.
-  These map to readonly attributes 'fget', 'fset', 'fdel', and '__doc__'
+  These map to read-only attributes 'fget', 'fset', 'fdel', and '__doc__'
   in the constructed property object.  fget, fset and fdel weren't
   discoverable from Python in 2.2a3.  __doc__ is new, and allows to
   associate a docstring with a property.
@@ -966,7 +964,7 @@ Type/class unification and new-style classes
   where the subtype didn't override the operation (and so the
   operation was handled by the builtin type), could return that
   instance instead a value of the base type.  For example, if s was of
-  a str sublass type, s[:] returned s as-is.  Now it returns a str
+  a str subclass type, s[:] returned s as-is.  Now it returns a str
   with the same value as s.
 
 - Provisional support for pickling new-style objects has been added.
