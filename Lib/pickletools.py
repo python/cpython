@@ -615,7 +615,7 @@ def read_long1(f):
     -256L
     >>> read_long1(StringIO.StringIO("\x02\x00\x80"))
     -32768L
-    >>> 
+    >>>
     """
 
     n = read_uint1(f)
@@ -645,7 +645,7 @@ def read_long2(f):
     -256L
     >>> read_long2(StringIO.StringIO("\x02\x00\x00\x80"))
     -32768L
-    >>> 
+    >>>
     """
 
     n = read_uint2(f)
@@ -675,7 +675,7 @@ def read_long4(f):
     -256L
     >>> read_long4(StringIO.StringIO("\x02\x00\x00\x00\x00\x80"))
     -32768L
-    >>> 
+    >>>
     """
 
     n = read_int4(f)
