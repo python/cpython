@@ -588,6 +588,41 @@ eval_frame(PyFrameObject *f)
 	assert(stack_pointer != NULL);
 	f->f_stacktop = NULL;
 
+	if (tstate->use_tracing) {
+		if (tstate->c_tracefunc != NULL) {
+			/* tstate->c_tracefunc, if defined, is a
+			   function that will be called on *every* entry
+			   to a code block.  Its return value, if not
+			   None, is a function that will be called at
+			   the start of each executed line of code.
+			   (Actually, the function must return itself
+			   in order to continue tracing.)  The trace
+			   functions are called with three arguments:
+			   a pointer to the current frame, a string
+			   indicating why the function is called, and
+			   an argument which depends on the situation.
+			   The global trace function is also called
+			   whenever an exception is detected. */
+			if (call_trace(tstate->c_tracefunc, tstate->c_traceobj,
+				       f, PyTrace_CALL, Py_None)) {
+				/* XXX Need way to compute arguments?? */
+				/* Trace function raised an error */
+				return NULL;
+			}
+		}
+		if (tstate->c_profilefunc != NULL) {
+			/* Similar for c_profilefunc, except it needn't
+			   return itself and isn't called for "line" events */
+			if (call_trace(tstate->c_profilefunc,
+				       tstate->c_profileobj,
+				       f, PyTrace_CALL, Py_None)) {
+				/* XXX Need way to compute arguments?? */
+				/* Profile function raised an error */
+				return NULL;
+			}
+		}
+	}
+
 #ifdef LLTRACE
 	lltrace = PyDict_GetItemString(f->f_globals,"__lltrace__") != NULL;
 #endif
@@ -2493,41 +2528,6 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			PyObject *o = PyTuple_GET_ITEM(closure, i);
 			Py_INCREF(o);
 			freevars[f->f_ncells + i] = o;
-		}
-	}
-
-	if (tstate->use_tracing) {
-		if (tstate->c_tracefunc != NULL) {
-			/* tstate->c_tracefunc, if defined, is a
-			   function that will be called on *every* entry
-			   to a code block.  Its return value, if not
-			   None, is a function that will be called at
-			   the start of each executed line of code.
-			   (Actually, the function must return itself
-			   in order to continue tracing.)  The trace
-			   functions are called with three arguments:
-			   a pointer to the current frame, a string
-			   indicating why the function is called, and
-			   an argument which depends on the situation.
-			   The global trace function is also called
-			   whenever an exception is detected. */
-			if (call_trace(tstate->c_tracefunc, tstate->c_traceobj,
-				       f, PyTrace_CALL, Py_None)) {
-				/* XXX Need way to compute arguments?? */
-				/* Trace function raised an error */
-				goto fail;
-			}
-		}
-		if (tstate->c_profilefunc != NULL) {
-			/* Similar for c_profilefunc, except it needn't
-			   return itself and isn't called for "line" events */
-			if (call_trace(tstate->c_profilefunc,
-				       tstate->c_profileobj,
-				       f, PyTrace_CALL, Py_None)) {
-				/* XXX Need way to compute arguments?? */
-				/* Profile function raised an error */
-				goto fail;
-			}
 		}
 	}
 
