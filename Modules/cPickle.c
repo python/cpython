@@ -77,8 +77,8 @@ LONG            Long (unbounded) integer; repr(i), then newline.
 #define TUPLE       't'
 #define EMPTY_TUPLE ')'
 #define SETITEMS    'u'
-#define TRUE        'Z'
-#define FALSE       'z'
+#define TRUE        "I01\n"
+#define FALSE       "I00\n"
 
 
 static char MARKv = MARK;
@@ -936,10 +936,11 @@ save_none(Picklerobject *self, PyObject *args)
 static int
 save_bool(Picklerobject *self, PyObject *args) 
 {
-	static char buf[2] = {FALSE, TRUE};
+	static char *buf[2] = {FALSE, TRUE};
+	static char len[2] = {sizeof(FALSE)-1, sizeof(TRUE)-1};
 	long l = PyInt_AS_LONG((PyIntObject *)args);
 
-	if ((*self->write_func)(self, buf + l, 1) < 0)
+	if ((*self->write_func)(self, buf[l], len[l]) < 0)
 		return -1;
 
 	return 0;
@@ -2655,7 +2656,12 @@ load_int(Unpicklerobject *self)
 		}
 	}
 	else {
-		if (!( py_int = PyInt_FromLong(l)))  goto finally;
+		if (len == 3 && (l == 0 || l == 1)) {
+			if (!( py_int = PyBool_FromLong(l)))  goto finally;
+		}
+		else {
+			if (!( py_int = PyInt_FromLong(l)))  goto finally;
+		}
 	}
 
 	free(s);
@@ -3760,16 +3766,6 @@ load(Unpicklerobject *self)
 		switch (s[0]) {
 		case NONE:
 			if (load_none(self) < 0)
-				break;
-			continue;
-
-		case FALSE:
-			if (load_false(self) < 0)
-				break;
-			continue;
-
-		case TRUE:
-			if (load_true(self) < 0)
 				break;
 			continue;
 
