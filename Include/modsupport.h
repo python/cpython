@@ -1,9 +1,3 @@
-#ifndef Py_MODSUPPORT_H
-#define Py_MODSUPPORT_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /***********************************************************
 Copyright (c) 2000, BeOpen.com.
 Copyright (c) 1995-2000, Corporation for National Research Initiatives.
@@ -14,17 +8,23 @@ See the file "Misc/COPYRIGHT" for information on usage and
 redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 ******************************************************************/
 
+#ifndef Py_MODSUPPORT_H
+#define Py_MODSUPPORT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Module support interface */
 
 #ifdef HAVE_STDARG_PROTOTYPES
 
 #include <stdarg.h>
 
-extern DL_IMPORT(int) PyArg_Parse Py_PROTO((PyObject *, char *, ...));
-extern DL_IMPORT(int) PyArg_ParseTuple Py_PROTO((PyObject *, char *, ...));
-extern DL_IMPORT(int) PyArg_ParseTupleAndKeywords Py_PROTO((PyObject *, PyObject *,
-						 char *, char **, ...));
-extern DL_IMPORT(PyObject *) Py_BuildValue Py_PROTO((char *, ...));
+extern DL_IMPORT(int) PyArg_Parse(PyObject *, char *, ...);
+extern DL_IMPORT(int) PyArg_ParseTuple(PyObject *, char *, ...);
+extern DL_IMPORT(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
+                                                  char *, char **, ...);
+extern DL_IMPORT(PyObject *) Py_BuildValue(char *, ...);
 
 #else
 
@@ -37,8 +37,8 @@ extern DL_IMPORT(PyObject *) Py_BuildValue();
 
 #endif
 
-extern DL_IMPORT(int) PyArg_VaParse Py_PROTO((PyObject *, char *, va_list));
-extern DL_IMPORT(PyObject *) Py_VaBuildValue Py_PROTO((char *, va_list));
+extern DL_IMPORT(int) PyArg_VaParse(PyObject *, char *, va_list);
+extern DL_IMPORT(PyObject *) Py_VaBuildValue(char *, va_list);
 
 #define PYTHON_API_VERSION 1009
 #define PYTHON_API_STRING "1009"
@@ -90,8 +90,10 @@ extern DL_IMPORT(PyObject *) Py_VaBuildValue Py_PROTO((char *, va_list));
 #define Py_InitModule4 Py_InitModule4TraceRefs
 #endif
 
-extern DL_IMPORT(PyObject *) Py_InitModule4 Py_PROTO((char *, PyMethodDef *,
-					  char *, PyObject *, int));
+extern DL_IMPORT(PyObject *) Py_InitModule4(char *name, PyMethodDef *methods,
+                                            char *doc, PyObject *self,
+                                            int apiver);
+
 #define Py_InitModule(name, methods) \
 	Py_InitModule4(name, methods, (char *)NULL, (PyObject *)NULL, \
 		       PYTHON_API_VERSION)
