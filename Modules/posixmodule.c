@@ -1060,6 +1060,27 @@ posix_kill(self, args)
 }
 #endif
 
+#ifdef HAVE_PLOCK
+
+#ifdef HAVE_SYS_LOCK_H
+#include <sys/lock.h>
+#endif
+
+static object *
+posix_plock(self, args)
+	object *self;
+	object *args;
+{
+	int op;
+	if (!getargs(args, "i", &op))
+		return NULL;
+	if (plock(op) == -1)
+		return posix_error();
+	INCREF(None);
+	return None;
+}
+#endif
+
 #ifdef HAVE_POPEN
 static object *
 posix_popen(self, args)
@@ -1220,7 +1241,7 @@ posix_times(self, args)
 		       (double)c / HZ);
 }
 #endif /* HAVE_TIMES */
-#if defined(MS_WIN32) && !defined(HAVE_TIMES)
+#if defined(_MSC_VER) && _MSC_VER > 850
 #define HAVE_TIMES	/* so the method table will pick it up */
 static object *
 posix_times(self, args)
@@ -1645,6 +1666,9 @@ static struct methodlist posix_methods[] = {
 #ifdef HAVE_KILL
 	{"kill",	posix_kill},
 #endif /* HAVE_KILL */
+#ifdef HAVE_PLOCK
+	{"plock",	posix_plock},
+#endif /* HAVE_PLOCK */
 #ifdef HAVE_POPEN
 	{"popen",	posix_popen,	1},
 #endif /* HAVE_POPEN */
