@@ -712,6 +712,31 @@ convertsimple1(arg, p_format, p_va)
 			break;
 		}
 		
+	case 't': /* 8-bit character buffer, read-only access */
+		{
+			const char **p = va_arg(*p_va, const char **);
+			PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
+			int count;
+
+			if ( *format++ != '#' )
+				return "invalid use of 't' format character";
+			if ( !PyType_HasFeature(
+				arg->ob_type,
+				Py_TPFLAGS_HAVE_GETCHARBUFFER) ||
+			     pb == NULL ||
+			     pb->bf_getcharbuffer == NULL ||
+			     pb->bf_getsegcount == NULL )
+				return "read-only character buffer";
+			if ( (*pb->bf_getsegcount)(arg, NULL) != 1 )
+				return "single-segment read-only buffer";
+			if ( (count = pb->bf_getcharbuffer(arg, 0, p)) < 0 )
+				return "(unspecified)";
+
+			*va_arg(*p_va, int *) = count;
+
+			break;
+		}
+		
 	
 	default:
 		return "impossible<bad format char>";
