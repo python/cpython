@@ -14,6 +14,7 @@
 #include <Controls.h>
 
 extern PyObject *ResObj_New(Handle);
+extern PyObject *ResObj_OptNew(Handle);
 extern int ResObj_Convert(PyObject *, Handle *);
 
 extern PyObject *WinObj_New(WindowPtr);

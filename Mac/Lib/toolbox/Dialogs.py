@@ -1,4 +1,4 @@
-# Generated from 'Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Dialogs.h'
+# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Dialogs.h'
 
 ctrlItem = 4
 btnCtrl = 0

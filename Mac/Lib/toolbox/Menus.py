@@ -1,4 +1,4 @@
-# Generated from 'Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Menus.h'
+# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Menus.h'
 
 noMark = 0
 mDrawMsg = 0

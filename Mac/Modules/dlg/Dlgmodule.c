@@ -14,6 +14,7 @@
 #include <Controls.h>
 
 extern PyObject *ResObj_New(Handle);
+extern PyObject *ResObj_OptNew(Handle);
 extern int ResObj_Convert(PyObject *, Handle *);
 
 extern PyObject *WinObj_New(WindowPtr);
@@ -191,7 +192,7 @@ static PyObject *DlgObj_GetDialogItem(_self, _args)
 	              &box);
 	_res = Py_BuildValue("hO&O&",
 	                     itemType,
-	                     ResObj_New, item,
+	                     ResObj_OptNew, item,
 	                     PyMac_BuildRect, &box);
 	return _res;
 }

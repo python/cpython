@@ -14,6 +14,7 @@
 #include <Controls.h>
 
 extern PyObject *ResObj_New(Handle);
+extern PyObject *ResObj_OptNew(Handle);
 extern int ResObj_Convert(PyObject *, Handle *);
 
 extern PyObject *WinObj_New(WindowPtr);
@@ -804,6 +805,20 @@ static PyObject *Win_GetNewCWindow(_self, _args)
 	return _res;
 }
 
+static PyObject *Win_WhichWindow(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	long ptr;
+
+	if ( !PyArg_ParseTuple(_args, "i", &ptr) )
+		return NULL;
+	return WinObj_WhichWindow((WindowPtr)ptr);
+
+}
+
 static PyMethodDef Win_methods[] = {
 	{"InitWindows", (PyCFunction)Win_InitWindows, 1,
 	 "() -> None"},
@@ -827,6 +842,8 @@ static PyMethodDef Win_methods[] = {
 	 "(Rect boundsRect, Str255 title, Boolean visible, short procID, WindowPtr behind, Boolean goAwayFlag, long refCon) -> (WindowPtr _rv)"},
 	{"GetNewCWindow", (PyCFunction)Win_GetNewCWindow, 1,
 	 "(short windowID, WindowPtr behind) -> (WindowPtr _rv)"},
+	{"WhichWindow", (PyCFunction)Win_WhichWindow, 1,
+	 "Resolve an integer WindowPtr address to a Window object"},
 	{NULL, NULL, 0}
 };
 

@@ -1,4 +1,4 @@
-# Generated from 'Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Dialogs.h'
+# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Dialogs.h'
 
 f = Function(DialogRef, 'NewDialog',
     (NullStorage, 'wStorage', InMode),
@@ -85,7 +85,7 @@ f = Method(void, 'GetDialogItem',
     (DialogRef, 'theDialog', InMode),
     (short, 'itemNo', InMode),
     (short, 'itemType', OutMode),
-    (Handle, 'item', OutMode),
+    (OptHandle, 'item', OutMode),
     (Rect, 'box', OutMode),
 )
 methods.append(f)
