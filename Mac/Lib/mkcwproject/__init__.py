@@ -61,6 +61,7 @@ def makeproject(xmlfile, projectfile):
 	xmlfss = macfs.FSSpec(xmlfile)
 	prjfss = macfs.FSSpec(projectfile)
 	cw.my_mkproject(prjfss, xmlfss)
+	cw.Close_Project()
 	
 def buildproject(projectfile):
 	cw = cwtalker.MyCodeWarrior(start=1)
