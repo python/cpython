@@ -29,24 +29,31 @@ Core language, builtins, and interpreter
 
   Classes can overload individual comparison operators by defining one
   or more of the methods__lt__, __le__, __eq__, __ne__, __gt__,
-  __ge__.  There are no explicit "reversed argument" versions of
-  these; instead, __lt__ and __gt__ are each other's reverse, likewise
-  for__le__ and __ge__; __eq__ and __ne__ are their own reverse
-  (similar at the C level).  No other implications are made; in
-  particular, Python does not assume that == is the inverse of !=, or
-  that < is the inverse of >=.  This makes it possible to define types
-  with partial orderings.
+  __ge__.  There are no explicit "reflected argument" versions of
+  these; instead, __lt__ and __gt__ are each other's reflection,
+  likewise for__le__ and __ge__; __eq__ and __ne__ are their own
+  reflection (similar at the C level).  No other implications are
+  made; in particular, Python does not assume that == is the Boolean
+  inverse of !=, or that < is the Boolean inverse of >=.  This makes
+  it possible to define types with partial orderings.
 
   Classes or types that want to implement (in)equality tests but not
   the ordering operators (i.e. unordered types) should implement ==
   and !=, and raise an error for the ordering operators.
 
-  It is possible to define types whose comparison results are not
+  It is possible to define types whose rich comparison results are not
   Boolean; e.g. a matrix type might want to return a matrix of bits
   for A < B, giving elementwise comparisons.  Such types should ensure
   that any interpretation of their value in a Boolean context raises
   an exception, e.g. by defining __nonzero__ (or the tp_nonzero slot
   at the C level) to always raise an exception.
+
+- Complex numbers use rich comparisons to define == and != but raise
+  an exception for <, <=, > and >=.  Unfortunately, this also means
+  that cmp() of two complex numbers raises an exception when the two
+  numbers differ.  Since it is not mathematically meaningful to compare
+  complex numbers except for equality, I hope that this doesn't break
+  too much code.
 
 - Functions and methods now support getting and setting arbitrarily
   named attributes (PEP 232).  Functions have a new __dict__
@@ -113,7 +120,7 @@ Core language, builtins, and interpreter
   subtly.  Since this was a terrible gray area of the language, this
   is considered an improvement.  Also note that __rcmp__ is no longer
   supported -- instead of calling __rcmp__, __cmp__ is called with
-  reversed arguments.
+  reflected arguments.
 
 - In connection with the coercion changes, a new built-in singleton
   object, NotImplemented is defined.  This can be returned for
