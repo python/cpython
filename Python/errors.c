@@ -3,12 +3,6 @@
 
 #include "Python.h"
 
-#ifdef macintosh
-extern char *PyMac_StrError(int);
-#undef strerror
-#define strerror PyMac_StrError
-#endif /* macintosh */
-
 #ifndef __STDC__
 #ifndef MS_WINDOWS
 extern char *strerror(int);

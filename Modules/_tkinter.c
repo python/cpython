@@ -33,10 +33,6 @@ Copyright (C) 1994 Steen Lumholt.
 #include <windows.h>
 #endif
 
-#ifdef macintosh
-#define MAC_TCL
-#endif
-
 /* Allow using this code in Python 2.[12] */
 #ifndef PyDoc_STRVAR
 #define PyDoc_STRVAR(name,str) static char name[] = str
@@ -96,15 +92,7 @@ Copyright (C) 1994 Steen Lumholt.
 #error "unsupported Tcl configuration"
 #endif
 
-#if defined(macintosh)
-/* Sigh, we have to include this to get at the tcl qd pointer */
-#include <tkMac.h>
-/* And this one we need to clear the menu bar */
-#include <Menus.h>
-#endif
-
-#if !(defined(MS_WINDOWS) || defined(__CYGWIN__) || defined(macintosh))
-/* Mac has it, but it doesn't really work:-( */
+#if !(defined(MS_WINDOWS) || defined(__CYGWIN__))
 #define HAVE_CREATEFILEHANDLER
 #endif
 
@@ -237,29 +225,6 @@ static PyThreadState *tcl_tstate = NULL;
 #define CHECK_TCL_APPARTMENT
 
 #endif
-
-#ifdef macintosh
-
-/*
-** Additional cruft needed by Tcl/Tk on the Mac.
-** This is for Tcl 7.5 and Tk 4.1 (patch release 1).
-*/
-
-/* ckfree() expects a char* */
-#define FREECAST (char *)
-
-#include <Events.h> /* For EventRecord */
-
-typedef int (*TclMacConvertEventPtr) (EventRecord *eventPtr);
-void Tcl_MacSetEventProc(TclMacConvertEventPtr procPtr);
-int TkMacConvertEvent(EventRecord *eventPtr);
-
-static int PyMacConvertEvent(EventRecord *eventPtr);
-
-#include <SIOUX.h>
-extern int SIOUXIsAppWindow(WindowPtr);
-
-#endif /* macintosh */
 
 #ifndef FREECAST
 #define FREECAST (char *)
@@ -645,12 +610,6 @@ Tkapp_New(char *screenName, char *baseName, char *className,
 	v->ListType = Tcl_GetObjType("list");
 	v->ProcBodyType = Tcl_GetObjType("procbody");
 	v->StringType = Tcl_GetObjType("string");
-
-#if defined(macintosh)
-	/* This seems to be needed */
-	ClearMenuBar();
-	TkMacInitMenus(v->interp);
-#endif
 
 	/* Delete the 'exit' command, which can screw things up */
 	Tcl_DeleteCommand(v->interp, "exit");
@@ -3092,112 +3051,4 @@ init_tkinter(void)
 	Py_AtExit(Tcl_Finalize);
 #endif
 
-#ifdef macintosh
-	/*
-	** Part of this code is stolen from MacintoshInit in tkMacAppInit.
-	** Most of the initializations in that routine (toolbox init calls and
-	** such) have already been done for us, so we only need these.
-	*/
-	tcl_macQdPtr = &qd;
-
-	Tcl_MacSetEventProc(PyMacConvertEvent);
-#if GENERATINGCFM
-	mac_addlibresources();
-#endif /* GENERATINGCFM */
-#endif /* macintosh */
 }
-
-
-
-#ifdef macintosh
-
-/*
-** Anyone who embeds Tcl/Tk on the Mac must define panic().
-*/
-
-void
-panic(char * format, ...)
-{
-	va_list varg;
-	
-	va_start(varg, format);
-	
-	vfprintf(stderr, format, varg);
-	(void) fflush(stderr);
-	
-	va_end(varg);
-
-	Py_FatalError("Tcl/Tk panic");
-}
-
-/*
-** Pass events to SIOUX before passing them to Tk.
-*/
-
-static int
-PyMacConvertEvent(EventRecord *eventPtr)
-{
-	WindowPtr frontwin;
-	/*
-	** Sioux eats too many events, so we don't pass it everything.  We
-	** always pass update events to Sioux, and we only pass other events if
-	** the Sioux window is frontmost. This means that Tk menus don't work
-	** in that case, but at least we can scroll the sioux window.
-	** Note that the SIOUXIsAppWindow() routine we use here is not really
-	** part of the external interface of Sioux...
-	*/
-	frontwin = FrontWindow();
-	if ( eventPtr->what == updateEvt || SIOUXIsAppWindow(frontwin) ) {
-		if (SIOUXHandleOneEvent(eventPtr))
-			return 0; /* Nothing happened to the Tcl event queue */
-	}
-	return TkMacConvertEvent(eventPtr);
-}
-
-#if GENERATINGCFM
-
-/*
-** Additional Mac specific code for dealing with shared libraries.
-*/
-
-#include <Resources.h>
-#include <CodeFragments.h>
-
-static int loaded_from_shlib = 0;
-static FSSpec library_fss;
-
-/*
-** If this module is dynamically loaded the following routine should
-** be the init routine. It takes care of adding the shared library to
-** the resource-file chain, so that the tk routines can find their
-** resources.
-*/
-OSErr pascal
-init_tkinter_shlib(CFragInitBlockPtr data)
-{
-	__initialize();
-	if ( data == nil ) return noErr;
-	if ( data->fragLocator.where == kDataForkCFragLocator ) {
-		library_fss = *data->fragLocator.u.onDisk.fileSpec;
-		loaded_from_shlib = 1;
-	} else if ( data->fragLocator.where == kResourceCFragLocator ) {
-		library_fss = *data->fragLocator.u.inSegs.fileSpec;
-		loaded_from_shlib = 1;
-	}
-	return noErr;
-}
-
-/*
-** Insert the library resources into the search path. Put them after
-** the resources from the application. Again, we ignore errors.
-*/
-static
-mac_addlibresources(void)
-{
-	if ( !loaded_from_shlib ) 
-		return;
-	(void)FSpOpenResFile(&library_fss, fsRdPerm);
-}
-
-#endif /* GENERATINGCFM */
-#endif /* macintosh */

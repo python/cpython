@@ -39,10 +39,6 @@
 #define NOTE(x)
 #endif
 
-#ifdef macintosh
-char *strdup(char *);
-#endif
-
 /*  String constants used to initialize module attributes.
  *
  */

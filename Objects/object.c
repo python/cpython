@@ -3,10 +3,6 @@
 
 #include "Python.h"
 
-#ifdef macintosh
-#include "macglue.h"
-#endif
-
 #ifdef Py_REF_DEBUG
 long _Py_RefTotal;
 #endif

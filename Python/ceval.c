@@ -14,10 +14,6 @@
 #include "opcode.h"
 #include "structmember.h"
 
-#ifdef macintosh
-#include "macglue.h"
-#endif
-
 #include <ctype.h>
 
 /* Turn this on if your compiler chokes on the big switch: */
@@ -801,7 +797,7 @@ eval_frame(PyFrameObject *f)
 					goto on_error;
 				}
 			}
-#if !defined(HAVE_SIGNAL_H) || defined(macintosh)
+#if !defined(HAVE_SIGNAL_H)
 			/* If we have true signals, the signal handler
 			   will call Py_AddPendingCall() so we don't
 			   have to call PyErr_CheckSignals().  On the 
