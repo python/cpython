@@ -689,7 +689,7 @@ Library
   of their line endings, which can be any of \r, \n, or \r\n (CR, LF,
   or CRLF).  Also, the Header class's constructor default arguments
   has changed slightly so that an explicit maxlinelen value is always
-  honored.
+  honored, and so unicode conversion error handling can be specified.
 
 - distutils' build_ext command now links c++ extensions with the c++
   compiler available in the Makefile or CXX environment variable, if
