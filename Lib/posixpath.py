@@ -18,7 +18,17 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "getatime","getctime","islink","exists","isdir","isfile","ismount",
            "walk","expanduser","expandvars","normpath","abspath",
            "samefile","sameopenfile","samestat",
+           "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "realpath","supports_unicode_filenames"]
+
+# strings representing various path-related bits and pieces
+curdir = '.'
+pardir = '..'
+extsep = '.'
+sep = '/'
+pathsep = ':'
+defpath = ':/bin:/usr/bin'
+altsep = None
 
 # Normalize the case of a pathname.  Trivial in Posix, string.lower on Mac.
 # On MS-DOS this may also turn slashes into backslashes; however, other

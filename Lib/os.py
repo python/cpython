@@ -26,10 +26,8 @@ import sys
 
 _names = sys.builtin_module_names
 
-altsep = None
-
 __all__ = ["altsep", "curdir", "pardir", "sep", "pathsep", "linesep",
-           "defpath", "name"]
+           "defpath", "name", "path"]
 
 def _get_exports_list(module):
     try:
@@ -40,17 +38,13 @@ def _get_exports_list(module):
 if 'posix' in _names:
     name = 'posix'
     linesep = '\n'
-    curdir = '.'; pardir = '..'; sep = '/'; pathsep = ':'
-    defpath = ':/bin:/usr/bin'
     from posix import *
     try:
         from posix import _exit
     except ImportError:
         pass
-    import posixpath
-    path = posixpath
-    del posixpath
-
+    import posixpath as path
+    
     import posix
     __all__.extend(_get_exports_list(posix))
     del posix
@@ -58,17 +52,13 @@ if 'posix' in _names:
 elif 'nt' in _names:
     name = 'nt'
     linesep = '\r\n'
-    curdir = '.'; pardir = '..'; sep = '\\'; pathsep = ';'
-    defpath = '.;C:\\bin'
     from nt import *
     try:
         from nt import _exit
     except ImportError:
         pass
-    import ntpath
-    path = ntpath
-    del ntpath
-
+    import ntpath as path
+    
     import nt
     __all__.extend(_get_exports_list(nt))
     del nt
@@ -76,28 +66,16 @@ elif 'nt' in _names:
 elif 'os2' in _names:
     name = 'os2'
     linesep = '\r\n'
-    curdir = '.'; pardir = '..'; pathsep = ';'
-    if sys.version.find('EMX GCC') == -1:
-        # standard OS/2 compiler (VACPP or Watcom?)
-        sep = '\\'; altsep = '/'
-    else:
-        # EMX
-        sep = '/'; altsep = '\\'
-    defpath = '.;C:\\bin'
     from os2 import *
     try:
         from os2 import _exit
     except ImportError:
         pass
     if sys.version.find('EMX GCC') == -1:
-        import ntpath
-        path = ntpath
-        del ntpath
+        import ntpath as path
     else:
-        import os2emxpath
-        path = os2emxpath
-        del os2emxpath
-
+        import os2emxpath as path
+    
     import os2
     __all__.extend(_get_exports_list(os2))
     del os2
@@ -105,17 +83,13 @@ elif 'os2' in _names:
 elif 'mac' in _names:
     name = 'mac'
     linesep = '\r'
-    curdir = ':'; pardir = '::'; sep = ':'; pathsep = '\n'
-    defpath = ':'
     from mac import *
     try:
         from mac import _exit
     except ImportError:
         pass
-    import macpath
-    path = macpath
-    del macpath
-
+    import macpath as path
+    
     import mac
     __all__.extend(_get_exports_list(mac))
     del mac
@@ -123,18 +97,14 @@ elif 'mac' in _names:
 elif 'ce' in _names:
     name = 'ce'
     linesep = '\r\n'
-    curdir = '.'; pardir = '..'; sep = '\\'; pathsep = ';'
-    defpath = '\\Windows'
     from ce import *
     try:
         from ce import _exit
     except ImportError:
         pass
     # We can use the standard Windows path.
-    import ntpath
-    path = ntpath
-    del ntpath
-
+    import ntpath as path
+    
     import ce
     __all__.extend(_get_exports_list(ce))
     del ce
@@ -142,17 +112,13 @@ elif 'ce' in _names:
 elif 'riscos' in _names:
     name = 'riscos'
     linesep = '\n'
-    curdir = '@'; pardir = '^'; sep = '.'; pathsep = ','
-    defpath = '<Run$Dir>'
     from riscos import *
     try:
         from riscos import _exit
     except ImportError:
         pass
-    import riscospath
-    path = riscospath
-    del riscospath
-
+    import riscospath as path
+    
     import riscos
     __all__.extend(_get_exports_list(riscos))
     del riscos
@@ -160,17 +126,10 @@ elif 'riscos' in _names:
 else:
     raise ImportError, 'no os specific module found'
 
-
-if sep=='.':
-    extsep = '/'
-else:
-    extsep = '.'
-
-__all__.append("path")
+sys.modules['os.path'] = path
+from os.path import curdir, pardir, sep, pathsep, defpath, extsep, altsep
 
 del _names
-
-sys.modules['os.path'] = path
 
 #'
 
