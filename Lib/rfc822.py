@@ -38,7 +38,6 @@ See the class definition for lower level access methods.
 There are also some utility functions here.
 """
 
-import re
 import string
 import time
 
