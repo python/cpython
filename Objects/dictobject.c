@@ -963,13 +963,13 @@ dict_clear(mp, args)
 }
 
 static PyMethodDef mapp_methods[] = {
+	{"has_key",	(PyCFunction)dict_has_key},
+	{"keys",	(PyCFunction)dict_keys},
+	{"items",	(PyCFunction)dict_items},
+	{"values",	(PyCFunction)dict_values},
 	{"update",	(PyCFunction)dict_update},
 	{"clear",	(PyCFunction)dict_clear},
 	{"copy",	(PyCFunction)dict_copy},
-	{"has_key",	(PyCFunction)dict_has_key},
-	{"items",	(PyCFunction)dict_items},
-	{"keys",	(PyCFunction)dict_keys},
-	{"values",	(PyCFunction)dict_values},
 	{NULL,		NULL}		/* sentinel */
 };
 

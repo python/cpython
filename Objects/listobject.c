@@ -1015,12 +1015,12 @@ listremove(self, args)
 
 static PyMethodDef list_methods[] = {
 	{"append",	(PyCFunction)listappend},
-	{"count",	(PyCFunction)listcount},
-	{"index",	(PyCFunction)listindex},
 	{"insert",	(PyCFunction)listinsert},
-	{"sort",	(PyCFunction)listsort, 0},
 	{"remove",	(PyCFunction)listremove},
+	{"index",	(PyCFunction)listindex},
+	{"count",	(PyCFunction)listcount},
 	{"reverse",	(PyCFunction)listreverse},
+	{"sort",	(PyCFunction)listsort, 0},
 	{NULL,		NULL}		/* sentinel */
 };
 
