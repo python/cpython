@@ -68,6 +68,8 @@ Extension modules
 Library
 -------
 
+- Bug #1067732: wininst --install-script doesn't leave residual files anymore.
+
 - Bug #1045381: strptime() now uses %U and %W for date calculations if the year
   and day of the week are also specified.
 
