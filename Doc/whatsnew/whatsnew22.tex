@@ -340,11 +340,21 @@ and Tim Peters, with other fixes from the Python Labs crew.}
 
 Python's Unicode support has been enhanced a bit in 2.2.  Unicode
 strings are usually stored as UCS-2, as 16-bit unsigned integers.
-Python 2.2 can also be compiled to use UCS-4, 32-bit unsigned integers
-by supplying \longprogramopt{enable-unicode=ucs4} to the configure script.
+Python 2.2 can also be compiled to use UCS-4, 32-bit unsigned
+integers, as its internal encoding by supplying
+\longprogramopt{enable-unicode=ucs4} to the configure script.  When
+built to use UCS-4, in theory Python could handle Unicode characters
+from U-00000000 to U-7FFFFFFF.  Being able to use UCS-4 internally is
+a necessary step to do that, but it's not the only step, and in Python
+2.2alpha1 the work isn't complete yet.  For example, the
+\function{unichr()} function still only accepts values from 0 to
+65535, and there's no \code{\e U} notation for embedding characters
+greater than 65535 in a Unicode string literal.  All this is the
+province of the still-unimplemented PEP 261, ``Support for `wide'
+Unicode characters''; consult it for further details, and please offer
+comments and suggestions on the proposal it describes.
 
-XXX explain surrogates?  I have to figure out what the changes mean to users.
-
+Another change is much simpler to explain.
 Since their introduction, Unicode strings have supported an
 \method{encode()} method to convert the string to a selected encoding
 such as UTF-8 or Latin-1.  A symmetric
@@ -375,9 +385,16 @@ end
 'furrfu'
 \end{verbatim}
 
-References: http://mail.python.org/pipermail/i18n-sig/2001-June/001107.html  
-and following thread.
+\method{encode()} and \method{decode()} were implemented by
+Marc-Andr\'e Lemburg.  The changes to support using UCS-4 internally
+were implemented by Fredrik Lundh and Martin von L\"owis.
 
+\begin{seealso}
+
+\seepep{261}{Support for `wide' Unicode characters}{PEP written by
+Paul Prescod.  Not yet accepted or fully implemented.}
+
+\end{seealso}
 
 %======================================================================
 \section{PEP 227: Nested Scopes}
