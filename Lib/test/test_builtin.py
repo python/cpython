@@ -712,6 +712,11 @@ class BuiltinTest(unittest.TestCase):
             #     http://sources.redhat.com/ml/newlib/2002/msg00369.html
             self.assertRaises(MemoryError, list, xrange(sys.maxint // 2))
 
+        # This code used to segfault in Py2.4a3
+        x = []
+        x.extend(-y for y in x)
+        self.assertEqual(x, [])
+
     def test_long(self):
         self.assertEqual(long(314), 314L)
         self.assertEqual(long(3.14), 3L)

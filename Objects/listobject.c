@@ -769,12 +769,20 @@ listextend(PyListObject *self, PyObject *b)
 	}
 	m = self->ob_size;
 	mn = m + n;
-	if (list_resize(self, mn) == -1)
-		goto error;
-	memset(&(self->ob_item[m]), 0, sizeof(*self->ob_item) * n);
+	if (mn >= m) {
+		/* Make room. */
+		if (list_resize(self, mn) == -1)
+			goto error;
+		/* Make the list sane again. */
+		self->ob_size = m;
+	}
+	/* Else m + n overflowed; on the chance that n lied, and there really
+	 * is enough room, ignore it.  If n was telling the truth, we'll
+	 * eventually run out of memory during the loop.
+	 */
 
 	/* Run iterator to exhaustion. */
-	for (i = m; ; i++) {
+	for (;;) {
 		PyObject *item = iternext(it);
 		if (item == NULL) {
 			if (PyErr_Occurred()) {
@@ -785,8 +793,11 @@ listextend(PyListObject *self, PyObject *b)
 			}
 			break;
 		}
-		if (i < mn)
-			PyList_SET_ITEM(self, i, item); /* steals ref */
+		if (self->ob_size < self->allocated) {
+			/* steals ref */
+			PyList_SET_ITEM(self, self->ob_size, item);
+			++self->ob_size;
+		}
 		else {
 			int status = app1(self, item);
 			Py_DECREF(item);  /* append creates a new ref */
@@ -796,10 +807,9 @@ listextend(PyListObject *self, PyObject *b)
 	}
 
 	/* Cut back result list if initial guess was too large. */
-	if (i < mn && self != NULL) {
-		if (list_ass_slice(self, i, mn, (PyObject *)NULL) != 0)
-			goto error;
-	}
+	if (self->ob_size < self->allocated)
+		list_resize(self, self->ob_size);  /* shrinking can't fail */
+
 	Py_DECREF(it);
 	Py_RETURN_NONE;
 
