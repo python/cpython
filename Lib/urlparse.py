@@ -151,7 +151,9 @@ def urljoin(base, url, allow_framents = 1):
 			i = i+1
 		else:
 			break
-	if len(segments) >= 2 and segments[-1] == '..':
+	if len(segments) == 2 and segments[1] == '..' and segments[0] == '':
+		segments[-1] = ''
+	elif len(segments) >= 2 and segments[-1] == '..':
 		segments[-2:] = ['']
 	return urlunparse((scheme, netloc, joinfields(segments, '/'),
 			   params, query, fragment))
