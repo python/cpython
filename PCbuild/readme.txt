@@ -170,8 +170,7 @@ _bsddb
 
     With or without strong cryptography? You can choose either with or
     without strong cryptography, as per the instructions below.  By
-    default, Python is built and distributed WITHOUT strong crypto
-    XXX - is the above correct?
+    default, Python is built and distributed WITHOUT strong crypto.
 
     Unpack into the dist\. directory, ensuring you expand with folder names.
 
@@ -264,7 +263,7 @@ _ssl
 
     Unpack into the "dist" directory, retaining the folder name from
     the archive - for example, the latest stable OpenSSL will install as
-        dist/openssl-0.9.6g
+        dist/openssl-0.9.7d
 
     You can (theoretically) use any version of OpenSSL you like - the
     build process will automatically select the latest version.
