@@ -77,14 +77,37 @@ def split(pattern, string, maxsplit=0):
 #
 #
 
+def _expand(m, repl):
+    results = []
+    index = 0
+    size = len(repl)
+    while index < size:
+	found = string.find(repl, '\\', index)
+	if found < 0:
+	    results.append(repl[index:])
+	    break
+	if found > index:
+	    results.append(repl[index:found])
+	escape_type, value, index = expand_escape(repl, found+1, REPLACEMENT)
+	if escape_type == CHAR:
+	    results.append(value)
+	elif escape_type == MEMORY_REFERENCE:
+	    r = m.group(value)
+	    if r is None:
+		raise error, ('group "' + str(value) + '" did not contribute '
+			      'to the match')
+	    results.append(m.group(value))
+	else:
+	    raise error, "bad escape in replacement"
+    return string.join(results, '')
+
 class RegexObject:
-    def __init__(self, pattern, flags, code, num_regs, groupindex, callouts):
+    def __init__(self, pattern, flags, code, num_regs, groupindex):
 	self.code = code
 	self.num_regs = num_regs
 	self.flags = flags
 	self.pattern = pattern
 	self.groupindex = groupindex
-	self.callouts = callouts
 	self.fastmap = build_fastmap(code)
 	
 	if code[0].name == 'bol':
@@ -132,44 +155,52 @@ class RegexObject:
 			   regs)
     
     def sub(self, repl, string, count=0):
-	return self.subn(repl, string, count)[0]
+        return self.subn(repl, string, count)[0]
     
     def subn(self, repl, source, count=0):
-	if count < 0: raise error, "negative substibution count"
-	if count == 0: import sys; count = sys.maxint
+	if count < 0:
+	    raise ValueError, "negative substibution count"
+	if count == 0:
+	    import sys
+	    count = sys.maxint
 	if type(repl) == type(''):
 	    if '\\' in repl:
 		repl = lambda m, r=repl: _expand(m, r)
 	    else:
 		repl = lambda m, r=repl: r
-	n = 0		# Number of matches
-	pos = 0		# Where to start searching
-	lastmatch = -1	# End of last match
-	results = []	# Substrings making up the result
+	n = 0           # Number of matches
+	pos = 0         # Where to start searching
+	lastmatch = -1  # End of last match
+	results = []    # Substrings making up the result
 	end = len(source)
 	while n < count and pos <= end:
 	    m = self.search(source, pos)
-	    if not m: break
+	    if not m:
+		break
 	    i, j = m.span(0)
 	    if i == j == lastmatch:
 		# Empty match adjacent to previous match
-		pos = pos+1
+		pos = pos + 1
 		results.append(source[lastmatch:pos])
 		continue
-	    if pos < i: results.append(source[pos:i])
+	    if pos < i:
+		results.append(source[pos:i])
 	    results.append(repl(m))
 	    pos = lastmatch = j
 	    if i == j:
 		# Last match was empty; don't try here again
-		pos = pos+1
+		pos = pos + 1
 		results.append(source[lastmatch:pos])
-	    n = n+1
+	    n = n + 1
 	results.append(source[pos:])
 	return (string.join(results, ''), n)
-    
+									    
     def split(self, source, maxsplit=0):
-	if maxsplit < 0: raise error, "negative split count"
-	if maxsplit == 0: import sys; maxsplit = sys.maxint
+	if maxsplit < 0:
+	    raise error, "negative split count"
+	if maxsplit == 0:
+	    import sys
+	    maxsplit = sys.maxint
 	n = 0
 	pos = 0
 	lastmatch = 0
@@ -177,11 +208,13 @@ class RegexObject:
 	end = len(source)
 	while n < maxsplit:
 	    m = self.search(source, pos)
-	    if not m: break
+	    if not m:
+		break
 	    i, j = m.span(0)
 	    if i == j:
 		# Empty match
-		if pos >= end: break
+		if pos >= end:
+		    break
 		pos = pos+1
 		continue
 	    results.append(source[lastmatch:i])
@@ -191,26 +224,6 @@ class RegexObject:
 	    pos = lastmatch = j
 	results.append(source[lastmatch:])
 	return results
-
-def _expand(m, repl):
-    results = []
-    index = 0
-    size = len(repl)
-    while index < size:
-	found = string.find(repl, '\\', index)
-	if found < 0:
-	    results.append(repl[index:])
-	    break
-	if found > index:
-	    results.append(repl[index:found])
-	escape_type, value, index = expand_escape(repl, found+1, REPLACEMENT)
-	if escape_type == CHAR:
-	    results.append(value)
-	elif escape_type == MEMORY_REFERENCE:
-	    results.append(m.group(value))
-	else:
-	    raise error, "bad escape in replacement"
-    return string.join(results, '')
 
 class MatchObject:
     def __init__(self, re, string, pos, regs):
@@ -280,16 +293,6 @@ class Instruction:
     def __repr__(self):
 	return '%-15s' % (self.name)
 
-class FunctionCallout(Instruction):
-    name = 'function'
-    def __init__(self, function):
-	self.function = function
-	Instruction.__init__(self, chr(22), 2 + len(self.function))
-    def assemble(self, position, labels):
-	return self.opcode + chr(len(self.function)) + self.function
-    def __repr__(self):
-	return '%-15s %-10s' % (self.name, self.function)
-    
 class End(Instruction):
     name = 'end'
     def __init__(self):
@@ -608,11 +611,6 @@ def build_fastmap_aux(code, pos, visited, fastmap):
 			      find_label(code, instruction.label),
 			      visited,
 			      fastmap)
-	elif instruction.name == 'function':
-	    for char in map(chr, range(256)):
-		fastmap.add(char)
-	    fastmap.can_be_null = 1
-	    return
 	
 def build_fastmap(code, pos=0):
     visited = [0] * len(code)
@@ -825,10 +823,25 @@ def expand_escape(pattern, index, context=NORMAL):
 		value = string.atoi(pattern[index])
 		return MEMORY_REFERENCE, value, index + 1
 	    
-	    while (end < len(pattern)) and (pattern[end] in string.digits):
-		end = end + 1
-	    value = pattern[index:end]
+    elif pattern[index] == 'g':
+	if context != REPLACEMENT:
+	    return CHAR, 'g', index + 1
 
+	index = index + 1
+	if index >= len(pattern):
+	    raise error, 'unfinished symbolic reference'
+	if pattern[index] != '<':
+	    raise error, 'missing < in symbolic reference'
+
+	index = index + 1
+	end = string.find(pattern, '>', index)
+	if end == -1:
+	    raise error, 'unfinished symbolic reference'
+	value = pattern[index:end]
+	if not valid_identifier(value):
+	    raise error, 'illegal symbolic reference'
+	return MEMORY_REFERENCE, value, end + 1
+    
     else:
 	return CHAR, pattern[index], index + 1
 
@@ -837,7 +850,6 @@ def compile(pattern, flags=0):
     label = 0
     register = 1
     groupindex = {}
-    callouts = []
     lastop = ''
 
     # look for embedded pattern modifiers at the beginning of the pattern
@@ -988,21 +1000,6 @@ def compile(pattern, flags=0):
 			stack.append([MatchMemory(groupindex[name])])
 			index = end + 1
 			lastop = '(?P=)'
-			
-		    elif pattern[index] == '!':
-			# function callout
-			if index >= len(pattern):
-			    raise error, 'no function callout name'
-			start = index + 1
-			end = string.find(pattern, ')', start)
-			if end == -1:
-			    raise error, 'no ) to end function callout name'
-			name = pattern[start:end]
-			if name not in callouts:
-			    raise error, ('function callout name not listed '
-					  'in callouts dict')
-			stack.append([FunctionCallout(name)])
-			lastop = '(?P!)'
 			
 		    else:
 			raise error, ('unknown Python extension: ' + \
@@ -1490,25 +1487,4 @@ def compile(pattern, flags=0):
 	code.append(Label(label))
 	label = label + 1
     code.append(End())
-    return RegexObject(pattern, flags, code, register, groupindex, callouts)
-
-if __name__ == '__main__':
-    print compile('a(b)*')
-    print compile('a{3}')
-    print compile('(a){2}')
-    print compile('a{2,4}')
-    print compile('a|b')
-    print compile('a(b|c)')
-    print compile('a*')
-    print compile('a+')
-    print compile('a|b|c')
-    print compile('a(b|c)*')
-    print compile('\\n')
-    print compile('a(?# huh huh)b')
-    print compile('[a-c\\w]')
-    print compile('[[]')
-    print compile('[]]')
-    print compile('(<hello>a)')
-    print compile('\Q*\e')
-    print compile('a{0,}')
-
+    return RegexObject(pattern, flags, code, register, groupindex)
