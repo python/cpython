@@ -367,12 +367,8 @@ float_pow(v, w, z)
 	iw = ((floatobject *)w)->ob_fval;
 	intw = (long)iw;
 	if (iw == intw) {
-		errno = 0;
-		ix = powi(iv, intw);
-	}
-	else {
 		/* Sort out special cases here instead of relying on pow() */
-		if (iw == 0.0) { 		/* x**0 is 1, even 0**0 */
+		if (intw == 0) { 		/* x**0 is 1, even 0**0 */
 		 	if ((object *)z!=None) {
 			 	ix=fmod(1.0, z->ob_fval);
 			 	if (ix!=0 && z->ob_fval<0) ix+=z->ob_fval;
@@ -380,6 +376,11 @@ float_pow(v, w, z)
 		 	else ix=1.0;
 	    		return newfloatobject(ix); 
 		}
+		errno = 0;
+		ix = powi(iv, intw);
+	}
+	else {
+		/* Sort out special cases here instead of relying on pow() */
 		if (iv == 0.0) {
 			if (iw < 0.0) {
 				err_setstr(ValueError, "0.0 to a negative power");
