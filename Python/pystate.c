@@ -143,6 +143,8 @@ PyThreadState_New(PyInterpreterState *interp)
 		tstate->use_tracing = 0;
 		tstate->tick_counter = 0;
 		tstate->gilstate_counter = 0;
+		tstate->async_exc = NULL;
+		tstate->thread_id = PyThread_get_thread_ident();
 
 		tstate->dict = NULL;
 
@@ -179,6 +181,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 	ZAP(tstate->frame);
 
 	ZAP(tstate->dict);
+	ZAP(tstate->async_exc);
 
 	ZAP(tstate->curexc_type);
 	ZAP(tstate->curexc_value);
@@ -296,6 +299,32 @@ PyThreadState_GetDict(void)
 }
 
 
+/* Asynchronously raise an exception in a thread.
+   Requested by Just van Rossum and Alex Martelli.
+   To prevent naive misuse, you must write your own exception
+   to call this.  Must be called with the GIL held.
+   Returns the number of tstates modified; if it returns a number
+   greater than one, you're in trouble, and you should call it again
+   with exc=NULL to revert the effect.  This raises no exceptions. */
+
+int
+PyThreadState_SetAsyncExc(long id, PyObject *exc) {
+	PyThreadState *tstate = PyThreadState_Get();
+	PyInterpreterState *interp = tstate->interp;
+	PyThreadState *p;
+	int count = 0;
+	for (p = interp->tstate_head; p != NULL; p = p->next) {
+		if (p->thread_id != id)
+			continue;
+		ZAP(p->async_exc);
+		Py_XINCREF(exc);
+		p->async_exc = exc;
+		count += 1;
+	}
+	return count;
+}
+
+
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
 
@@ -319,6 +348,7 @@ PyThreadState *
 PyThreadState_Next(PyThreadState *tstate) {
 	return tstate->next;
 }
+
 
 /* Python "auto thread state" API. */
 #ifdef WITH_THREAD

@@ -290,7 +290,7 @@ static PyTypeObject gentype = {
 
 extern int _PyThread_Started; /* Flag for Py_Exit */
 
-static PyThread_type_lock interpreter_lock = 0;
+static PyThread_type_lock interpreter_lock = 0; /* This is the GIL */
 static long main_thread = 0;
 
 void
@@ -773,6 +773,11 @@ eval_frame(PyFrameObject *f)
 		   Py_MakePendingCalls() above. */
 
 		if (--_Py_Ticker < 0) {
+                        if (*next_instr == SETUP_FINALLY) {
+                                /* Make the last opcode before
+                                   a try: finally: block uninterruptable. */
+                                goto fast_next_opcode;
+                        }
 			_Py_Ticker = _Py_CheckInterval;
 			tstate->tick_counter++;
 			if (things_to_do) {
@@ -805,6 +810,17 @@ eval_frame(PyFrameObject *f)
 				PyThread_acquire_lock(interpreter_lock, 1);
 				if (PyThreadState_Swap(tstate) != NULL)
 					Py_FatalError("ceval: orphan tstate");
+
+				/* Check for thread interrupts */
+
+				if (tstate->async_exc != NULL) {
+					x = tstate->async_exc;
+					tstate->async_exc = NULL;
+					PyErr_SetNone(x);
+					Py_DECREF(x);
+					why = WHY_EXCEPTION;
+					goto on_error;
+				}
 			}
 #endif
 		}
