@@ -1589,6 +1589,14 @@ InstallFilesDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			/* Handle a Next button click here */
 			hDialog = hwnd;
 
+			/* Disable the buttons while we work.  Sending CANCELTOCLOSE has
+			  the effect of disabling the cancel button, which is a) as we
+			  do everything synchronously we can't cancel, and b) the next
+			  step is 'finished', when it is too late to cancel anyway.
+			  The next step being 'Finished' means we also don't need to
+			  restore the button state back */
+			PropSheet_SetWizButtons(GetParent(hwnd), 0);
+			SendMessage(GetParent(hwnd), PSM_CANCELTOCLOSE, 0, 0);
 			/* Make sure the installation directory name ends in a */
 			/* backslash */
 			if (python_dir[strlen(python_dir)-1] != '\\')
