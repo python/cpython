@@ -19,7 +19,10 @@ class WindowList:
         list = []
         for key in self.dict.keys():
             window = self.dict[key]
-            title = window.get_title()
+            try:
+                title = window.get_title()
+            except TclError:
+                continue
             list.append((title, window))
         list.sort()
         for title, window in list:
