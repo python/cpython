@@ -297,11 +297,13 @@ class Misc:
 		return self.tk.call('winfo', 'class', self._w)
 	def winfo_colormapfull(self):
 		return self.tk.getboolean(
-			self.tk.call('winfo', 'colormapfull'))
+			self.tk.call('winfo', 'colormapfull', self._w))
 	def winfo_containing(self, rootX, rootY, displayof=0):
 		args = ('winfo', 'containing') \
 		       + self._displayof(displayof) + (rootX, rootY)
-		return self._nametowidget(apply(self.tk.call, args))
+		name = apply(self.tk.call, args)
+		if not name: return None
+		return self._nametowidget(name)
 	def winfo_depth(self):
 		return self.tk.getint(self.tk.call('winfo', 'depth', self._w))
 	def winfo_exists(self):
@@ -324,6 +326,8 @@ class Misc:
 	def winfo_ismapped(self):
 		return self.tk.getint(
 			self.tk.call('winfo', 'ismapped', self._w))
+	def winfo_manager(self):
+		return self.tk.call('winfo', 'manager', self._w)
 	def winfo_name(self):
 		return self.tk.call('winfo', 'name', self._w)
 	def winfo_parent(self):
@@ -335,6 +339,15 @@ class Misc:
 	def winfo_pixels(self, number):
 		return self.tk.getint(
 			self.tk.call('winfo', 'pixels', self._w, number))
+	def winfo_pointerx(self):
+		return self.tk.getint(
+			self.tk.call('winfo', 'pointerx', self._w))
+	def winfo_pointerxy(self):
+		return self._getints(
+			self.tk.call('winfo', 'pointerxy', self._w))
+	def winfo_pointery(self):
+		return self.tk.getint(
+			self.tk.call('winfo', 'pointery', self._w))
 	def winfo_reqheight(self):
 		return self.tk.getint(
 			self.tk.call('winfo', 'reqheight', self._w))
@@ -372,11 +385,25 @@ class Misc:
 	def winfo_screenwidth(self):
 		return self.tk.getint(
 			self.tk.call('winfo', 'screenwidth', self._w))
+	def winfo_server(self):
+		return self.tk.call('winfo', 'server', self._w)
 	def winfo_toplevel(self):
 		return self._nametowidget(self.tk.call(
 			'winfo', 'toplevel', self._w))
+	def winfo_viewable(self):
+		return self.tk.getint(
+			self.tk.call('winfo', 'viewable', self._w))
 	def winfo_visual(self):
 		return self.tk.call('winfo', 'visual', self._w)
+	def winfo_visualid(self):
+		return self.tk.call('winfo', 'visualid', self._w)
+	def winfo_visualsavailable(self, includeids=0):
+		data = self.tk.split(
+			self.tk.call('winfo', 'visualsavailable', self._w,
+				     includeids and 'includeids' or None))
+		def parseitem(x, self=self):
+			return x[:1] + tuple(map(self.tk.getint, x[1:]))
+		return map(parseitem, data)
 	def winfo_vrootheight(self):
 		return self.tk.getint(
 			self.tk.call('winfo', 'vrootheight', self._w))
