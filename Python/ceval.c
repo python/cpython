@@ -142,6 +142,25 @@ PyEval_ReleaseThread(PyThreadState *tstate)
 		Py_FatalError("PyEval_ReleaseThread: wrong thread state");
 	PyThread_release_lock(interpreter_lock);
 }
+
+/* This function is called from PyOS_AfterFork to ensure that newly
+   created child processes don't hold locks referring to threads which
+   are not running in the child process.  (This could also be done using
+   pthread_atfork mechanism, at least for the pthreads implementation.) */
+
+void
+PyEval_ReInitThreads(void)
+{
+	if (!interpreter_lock)
+		return;
+	/*XXX Can't use PyThread_free_lock here because it does too
+	  much error-checking.  Doing this cleanly would require
+	  adding a new function to each thread_*.h.  Instead, just
+	  create a new lock and waste a little bit of memory */
+	interpreter_lock = PyThread_allocate_lock();
+	PyThread_acquire_lock(interpreter_lock, 1);
+	main_thread = PyThread_get_thread_ident();
+}
 #endif
 
 /* Functions save_thread and restore_thread are always defined so
