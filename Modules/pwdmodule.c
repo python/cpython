@@ -36,6 +36,17 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/types.h>
 #include <pwd.h>
 
+static char pwd__doc__ [] = "\
+This module provides access to the Unix password database.\n\
+It is available on all Unix versions.\n\
+\n\
+Password database entries are reported as 7-tuples containing the following\n\
+items from the password database (see `<pwd.h>'), in order:\n\
+pw_name, pw_passwd, pw_uid, pw_gid, pw_gecos, pw_dir, pw_shell.\n\
+The uid and gid items are integers, all others are strings. An\n\
+exception is raised if the entry asked for cannot be found.";
+
+      
 static PyObject *
 mkpwent(p)
 	struct passwd *p;
@@ -58,6 +69,11 @@ mkpwent(p)
 		p->pw_shell);
 }
 
+static char pwd_getpwuid__doc__[] = "\
+getpwuid(uid) -> entry\n\
+Return the password database entry for the given numeric user ID.\n\
+See pwd.__doc__ for more on password database entries.";
+
 static PyObject *
 pwd_getpwuid(self, args)
 	PyObject *self;
@@ -73,6 +89,11 @@ pwd_getpwuid(self, args)
 	}
 	return mkpwent(p);
 }
+
+static char pwd_getpwnam__doc__[] = "\
+getpwnam(name) -> entry\n\
+Return the password database entry for the given user name.\n\
+See pwd.__doc__ for more on password database entries.";
 
 static PyObject *
 pwd_getpwnam(self, args)
@@ -91,6 +112,12 @@ pwd_getpwnam(self, args)
 }
 
 #ifdef HAVE_GETPWENT
+static char pwd_getpwall__doc__[] = "\
+getpwall() -> list_of_entries\n\
+Return a list of all available password database entries, \
+in arbitrary order.\n\
+See pwd.__doc__ for more on password database entries.";
+
 static PyObject *
 pwd_getpwall(self, args)
 	PyObject *self;
@@ -117,10 +144,10 @@ pwd_getpwall(self, args)
 #endif
 
 static PyMethodDef pwd_methods[] = {
-	{"getpwuid",	pwd_getpwuid},
-	{"getpwnam",	pwd_getpwnam},
+	{"getpwuid",	pwd_getpwuid, 0, pwd_getpwuid__doc__},
+	{"getpwnam",	pwd_getpwnam, 0, pwd_getpwnam__doc__},
 #ifdef HAVE_GETPWENT
-	{"getpwall",	pwd_getpwall},
+	{"getpwall",	pwd_getpwall, 0, pwd_getpwall__doc__},
 #endif
 	{NULL,		NULL}		/* sentinel */
 };
@@ -128,5 +155,6 @@ static PyMethodDef pwd_methods[] = {
 void
 initpwd()
 {
-	Py_InitModule("pwd", pwd_methods);
+	Py_InitModule4("pwd", pwd_methods, pwd__doc__,
+                       (PyObject *)NULL, PYTHON_API_VERSION);
 }
