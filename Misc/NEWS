@@ -39,6 +39,10 @@ Extension modules
 
 Library
 -------
+
+- Bug #679953: zipfile can now handle file sizes over 2 GB.  Previously the
+  compressed and uncompressed file sizes were being stored as signed longs
+  instead of unsigned as the ZIP spec specifies.
   
 - Bug #981530: Fix UnboundLocalError in shutil.rmtree().  This affects
   the documented behavior: the function passed to the onerror()
