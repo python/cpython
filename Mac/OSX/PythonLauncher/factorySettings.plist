@@ -37,15 +37,15 @@
                 <false/>
                 <key>interpreter_list</key>
                 <array>
-                    <string>/usr/local/bin/python</string>
-                    <string>/sw/bin/python</string>
-                    <string>/Library/Frameworks/Python.framework/Versions/Current/bin/python</string>
-                    <string>/usr/bin/python</string>
                     <string>/usr/local/bin/pythonw</string>
                     <string>/sw/bin/pythonw</string>
                     <string>/Library/Frameworks/Python.framework/Versions/Current/Resources/Python.app/Contents/MacOS/python</string>
                     <string>/usr/bin/pythonw</string>
                     <string>/Applications/MacPython-OSX/python-additions/Python.app/Contents/MacOS/python</string>
+                    <string>/usr/local/bin/python</string>
+                    <string>/sw/bin/python</string>
+                    <string>/Library/Frameworks/Python.framework/Versions/Current/bin/python</string>
+                    <string>/usr/bin/python</string>
                 </array>
                 <key>honourhashbang</key>
                 <false/>
@@ -68,6 +68,11 @@
                 <false/>
                 <key>interpreter_list</key>
                 <array>
+                    <string>/usr/local/bin/pythonw</string>
+                    <string>/sw/bin/pythonw</string>
+                    <string>/Library/Frameworks/Python.framework/Versions/Current/Resources/Python.app/Contents/MacOS/python</string>
+                    <string>/usr/bin/pythonw</string>
+                    <string>/Applications/MacPython-OSX/python-additions/Python.app/Contents/MacOS/python</string>
                     <string>/usr/local/bin/python</string>
                     <string>/sw/bin/python</string>
                     <string>/Library/Frameworks/Python.framework/Versions/Current/bin/python</string>
