@@ -59,11 +59,8 @@ __sinit(InitBlockPtr data)
 void
 PyMac_AddLibResources()
 {
-	OSErr err;
-	short fd, curfd;
-	
 	if ( !library_fss_valid ) 
 		return;
-	fd = FSpOpenResFile(&library_fss, fsRdPerm);
+	(void)FSpOpenResFile(&library_fss, fsRdPerm);
 }
 
