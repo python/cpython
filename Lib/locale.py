@@ -11,7 +11,7 @@
 
 """
 
-import string, sys
+import sys
 
 # Try importing the _locale module.
 #
@@ -140,24 +140,24 @@ def str(val):
     """Convert float to integer, taking the locale into account."""
     return format("%.12g",val)
 
-def atof(str,func=string.atof):
+def atof(str,func=float):
     "Parses a string as a float according to the locale settings."
     #First, get rid of the grouping
     ts = localeconv()['thousands_sep']
     if ts:
-        s=string.split(str,ts)
-        str=string.join(s, "")
+        s=str.split(ts)
+        str="".join(s)
     #next, replace the decimal point with a dot
     dd = localeconv()['decimal_point']
     if dd:
-        s=string.split(str,dd)
-        str=string.join(s, '.')
+        s=str.split(dd)
+        str='.'.join(s)
     #finally, parse the string
     return func(str)
 
 def atoi(str):
     "Converts a string to an integer according to the locale settings."
-    return atof(str,string.atoi)
+    return atof(str, int)
 
 def _test():
     setlocale(LC_ALL, "")
@@ -194,12 +194,12 @@ def normalize(localename):
 
     """
     # Normalize the locale name and extract the encoding
-    fullname = string.lower(localename)
+    fullname = localename.lower()
     if ':' in fullname:
         # ':' is sometimes used as encoding delimiter.
-        fullname = string.replace(fullname, ':', '.')
+        fullname = fullname.replace(':', '.')
     if '.' in fullname:
-        langname, encoding = string.split(fullname, '.')[:2]
+        langname, encoding = fullname.split('.')[:2]
         fullname = langname + '.' + encoding
     else:
         langname = fullname
@@ -214,7 +214,7 @@ def normalize(localename):
     code = locale_alias.get(langname, None)
     if code is not None:
         if '.' in code:
-            langname, defenc = string.split(code, '.')
+            langname, defenc = code.split('.')
         else:
             langname = code
             defenc = ''
@@ -246,7 +246,7 @@ def _parse_localename(localename):
     """
     code = normalize(localename)
     if '.' in code:
-        return string.split(code, '.')[:2]
+        return code.split('.')[:2]
     elif code == 'C':
         return None, None
     else:
