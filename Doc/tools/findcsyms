@@ -2,6 +2,7 @@
 
 import errno
 import os
+import re
 import sys
 
 if __name__ == "__main__":
@@ -25,10 +26,38 @@ def list_headers():
     return [fn for fn in os.listdir(incdir)
             if fn.endswith(".h") and fn not in EXCLUDES]
 
+
+def matcher(pattern):
+    return re.compile(pattern).match
+
+MATCHERS = [
+    matcher(r"\\begin\{cfuncdesc\}\{[^{]*\}\{(?P<sym>[^{]*)\}"),
+    matcher(r"\\cfuncline\{[^{]*\}\{(?P<sym>[^{]*)\}"),
+    matcher(r"\\begin\{ctypedesc\}(\[[^{]*\])?\{(?P<sym>[^{]*)\}"),
+    matcher(r"\\begin\{cvardesc\}\{[^{]*\}\{(?P<sym>[^{]*)\}"),
+    matcher(r"\\begin\{cmemberdesc\}\{[^{]*\}\{(?P<sym>[^{]*)\}"),
+    matcher(r"\\cmemberline\{[^{]*\}\{(?P<sym>[^{]*)\}"),
+    matcher(r"\\begin\{csimplemacrodesc\}\{(?P<sym>[^{]*)\}"),
+    ]
+
+
 def list_documented_items():
     """Return a list of everything that's already documented."""
-    docdir = os.path.join(srcdir, "Doc")
-    return []
+    apidir = os.path.join(srcdir, "Doc", "api")
+    files = [fn for fn in os.listdir(apidir) if fn.endswith(".tex")]
+    L = []
+    for fn in files:
+        fullname = os.path.join(apidir, fn)
+        for line in open(fullname):
+            line = line.lstrip()
+            if not line.startswith("\\"):
+                continue
+            for matcher in MATCHERS:
+                m = matcher(line)
+                if m:
+                    L.append(m.group("sym"))
+                    break
+    return L
 
 def split_documented(all, documented):
     """Split the list of all symbols into documented and undocumented
@@ -70,8 +99,8 @@ def main():
         headers = list_headers()
         documented = list_documented_items()
 
-    cmd = ("ctags -f - --file-scope=no --c-types=-mv "
-           "-Istaticforward -Istatichere "
+    cmd = ("ctags -f - --file-scope=no --c-types=dgpstux "
+           "-Istaticforward -Istatichere=static "
            + _spcjoin(headers))
     fp = os.popen(cmd)
     L = []
