@@ -559,11 +559,11 @@ altbininstall:	$(BUILDPYTHON)
 	done
 	$(INSTALL_PROGRAM) $(BUILDPYTHON) $(BINDIR)/python$(VERSION)$(EXE)
 	if test -f libpython$(VERSION)$(SO); then \
-		$(INSTALL_SHARED) libpython$(VERSION)$(SO) $(LIBDIR)/$(INSTSONAME); \
-	else	true; \
-	fi
-	if test -f "$(DLLLIBRARY)"; then \
-		$(INSTALL_SHARED) $(DLLLIBRARY) $(BINDIR); \
+		if test "$(SO)" = .dll; then \
+			$(INSTALL_SHARED) libpython$(VERSION)$(SO) $(BINDIR); \
+		else \
+			$(INSTALL_SHARED) libpython$(VERSION)$(SO) $(LIBDIR)/$(INSTSONAME); \
+		fi; \
 	else	true; \
 	fi
 
@@ -690,8 +690,12 @@ libainstall:	all
 	done
 	@if test -d $(LIBRARY); then :; else \
 		if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
-			$(INSTALL_DATA) $(LIBRARY) $(LIBPL)/$(LIBRARY) ; \
-			$(RANLIB) $(LIBPL)/$(LIBRARY) ; \
+			if test "$(SO)" = .dll; then \
+				$(INSTALL_DATA) $(LDLIBRARY) $(LIBPL) ; \
+			else \
+				$(INSTALL_DATA) $(LIBRARY) $(LIBPL)/$(LIBRARY) ; \
+				$(RANLIB) $(LIBPL)/$(LIBRARY) ; \
+			fi; \
 		else \
 			echo Skip install of $(LIBRARY) - use make frameworkinstall; \
 		fi; \
