@@ -1,22 +1,23 @@
-This is Python release 1.4 (final)
+This is Python release 1.5 alpha 1
 ==================================
 
-I appreciate everybody's patience...  This is the official, final
-release of Python 1.4.  You can throw away your copies of 1.3 and the
-1.4 betas now!
-
+******************************************
+*** RELEASE RESTRICTED TO PSA MEMBERS! ***
+******************************************
 
 What's new in this release?
 ---------------------------
 
-An exhaustive list of (nearly) everything that changed since the
-release of Python 1.3, over a year ago, can be found in the file
-Misc/NEWS.  (A history of all changes before that time is kept in
-Misc/HISTORY.)  An overview of the most important user-visible changes
-is appended as a new chapter to the Tutorial (Doc/tut.tex).  Perhaps
-the most visible changes are the new power operator, complex numbers,
-new slicing and indexing syntax, and class-private names of the form
-__spam (an experimental feature).
+Ehm, I'll be more complete later.  Som highlights: I've completed the
+Grand Renaming.  It's much faster (almost twice for pystone.py -- see
+Tools/scripts.)  There's an assert statement, and a -O option that
+squeezes SET_LINENO instructions and if __debug__ code.  It's much
+smarter (only on Unix, so far) about the initial value for sys.path.
+See the usage message (python -h).  There's an explicit structure that
+maintains all per-thread globals.
+
+Unfinished projects: documentation; multiple independent interpreters;
+better embedding support; more Windows support.
 
 
 What is Python anyway?
@@ -37,7 +38,7 @@ Aaron Watters wrote a second tutorial, that may be more accessible for
 some: http://www.wcmh.com/uworld/archives/95/tutorial/005.html.
 
 There are now also two books on Python.  While these are still based
-on Python 1.3 or 1.4beta2, the language is so stable now that you'd be
+on Python 1.3 or 1.4, the language is so stable now that you'd be
 hard pressed to find places where the books are out of date.  The
 books, both first published in October 1996 and both including a
 CD-ROM, form excellent companions to each other:
@@ -288,8 +289,8 @@ all binary and other platform-specific files in subdirectories if the
 directory given by --exec-prefix or the 'exec_prefix' Make variable
 (defaults to the --prefix directory).  All subdirectories created will
 have Python's version number in their name, e.g. the library modules
-are installed in "/usr/local/lib/python1.4/" by default.  The Python
-binary is installed as "python1.4" and a hard link named "python" is
+are installed in "/usr/local/lib/python1.5/" by default.  The Python
+binary is installed as "python1.5" and a hard link named "python" is
 created.  The only file not installed with a version number in its
 name is the manual page, installed as "/usr/local/man/man1/python.1"
 by default.
@@ -297,7 +298,7 @@ by default.
 If you have a previous installation of a pre-1.4 Python that you don't
 want to replace yet, use "make altinstall".  This installs the same
 set of files as "make install" except it doesn't create the hard link
-to "python1.4" named "python" and it doesn't install the manual page
+to "python1.5" named "python" and it doesn't install the manual page
 at all.
 
 The only thing you may have to install manually is the Python mode for
@@ -589,7 +590,7 @@ have the time to test it with Tcl 7.6 and Tk 4.2 yet, but it might
 well work.
 
 See http://www.sunlabs.com/research/tcl/ for more info on where to get
-Tcl/Tk.
+Tcl/Tk.  Also http://sunscript.sun.com/.
 
 To enable the Python/Tk interface, once you've built and installed
 Tcl/Tk, all you need to do is edit two lines in Modules/Setup; search
