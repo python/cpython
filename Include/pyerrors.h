@@ -81,6 +81,9 @@ extern DL_IMPORT(PyObject *) PyExc_TypeError;
 extern DL_IMPORT(PyObject *) PyExc_UnboundLocalError;
 extern DL_IMPORT(PyObject *) PyExc_ValueError;
 extern DL_IMPORT(PyObject *) PyExc_ZeroDivisionError;
+#ifdef MS_WINDOWS
+extern DL_IMPORT(PyObject *) PyExc_WindowsError;
+#endif
 
 extern DL_IMPORT(PyObject *) PyExc_MemoryErrorInst;
 
@@ -92,6 +95,10 @@ extern DL_IMPORT(PyObject *) PyErr_NoMemory Py_PROTO((void));
 extern DL_IMPORT(PyObject *) PyErr_SetFromErrno Py_PROTO((PyObject *));
 extern DL_IMPORT(PyObject *) PyErr_SetFromErrnoWithFilename Py_PROTO((PyObject *, char *));
 extern DL_IMPORT(PyObject *) PyErr_Format Py_PROTO((PyObject *, const char *, ...));
+#ifdef MS_WINDOWS
+extern DL_IMPORT(PyObject *) PyErr_SetFromWindowsErrWithFilename(int, const char *);
+extern DL_IMPORT(PyObject *) PyErr_SetFromWindowsErr(int);
+#endif
 
 extern DL_IMPORT(void) PyErr_BadInternalCall Py_PROTO((void));
 
