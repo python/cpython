@@ -19,6 +19,7 @@ Core
   arguments:
     filter()
     list()
+    map()
     max()
     min()
 

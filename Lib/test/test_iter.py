@@ -351,4 +351,39 @@ class TestCase(unittest.TestCase):
             except OSError:
                 pass
 
+    # Test map()'s use of iterators.
+    def test_builtin_map(self):
+        self.assertEqual(map(None, SequenceClass(5)), range(5))
+        self.assertEqual(map(lambda x: x+1, SequenceClass(5)), range(1, 6))
+
+        d = {"one": 1, "two": 2, "three": 3}
+        self.assertEqual(map(None, d), d.keys())
+        self.assertEqual(map(lambda k, d=d: (k, d[k]), d), d.items())
+        dkeys = d.keys()
+        expected = [(i < len(d) and dkeys[i] or None,
+                     i,
+                     i < len(d) and dkeys[i] or None)
+                    for i in range(5)]
+        self.assertEqual(map(None, d,
+                                   SequenceClass(5),
+                                   iter(d.iterkeys())),
+                         expected) 
+
+        f = open(TESTFN, "w")
+        try:
+            for i in range(10):
+                f.write("xy" * i + "\n") # line i has len 2*i+1
+        finally:
+            f.close()
+        f = open(TESTFN, "r")
+        try:
+            self.assertEqual(map(len, f), range(1, 21, 2))
+            f.seek(0, 0)
+        finally:
+            f.close()
+            try:
+                unlink(TESTFN)
+            except OSError:
+                pass
+
 run_unittest(TestCase)
