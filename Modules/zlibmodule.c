@@ -210,7 +210,7 @@ PyZlib_decompress(self, args)
               inflateEnd(&zst);
               return NULL;
             }
-	    zst.next_out = PyString_AsString(result_str) + r_strlen;
+	    zst.next_out = (unsigned char *)PyString_AsString(result_str) + r_strlen;
 	    zst.avail_out=r_strlen;
 	    r_strlen = r_strlen << 1;
 	    break;
@@ -369,7 +369,7 @@ PyZlib_objcompress(self, args)
 		      "Can't allocate memory to compress data");
       return NULL;
   }
-  self->zst.next_out = PyString_AsString(RetVal);
+  self->zst.next_out = (unsigned char *)PyString_AsString(RetVal);
   self->zst.avail_out = length;
   while (self->zst.avail_in != 0 && err == Z_OK)
   {
@@ -380,7 +380,7 @@ PyZlib_objcompress(self, args)
 			      "Can't allocate memory to compress data");
 	      return NULL;
 	  }
-	  self->zst.next_out = PyString_AsString(RetVal) + length;
+	  self->zst.next_out = (unsigned char *)PyString_AsString(RetVal) + length;
 	  self->zst.avail_out = length;
 	  length = length << 1;
       }
@@ -419,7 +419,7 @@ PyZlib_objdecompress(self, args)
   self->zst.avail_in=inplen;
   self->zst.next_in=input;
   self->zst.avail_out = length = DEFAULTALLOC;
-  self->zst.next_out = PyString_AsString(RetVal);
+  self->zst.next_out = (unsigned char *)PyString_AsString(RetVal);
   err = Z_OK;
 
   while (self->zst.avail_in != 0 && err == Z_OK)
@@ -433,7 +433,7 @@ PyZlib_objdecompress(self, args)
 			      "Can't allocate memory to compress data");
 	      return NULL;
 	  }
-	  self->zst.next_out = PyString_AsString(RetVal) + length;
+	  self->zst.next_out = (unsigned char *)PyString_AsString(RetVal) + length;
 	  self->zst.avail_out = length;
 	  length = length << 1;
       }
@@ -474,7 +474,7 @@ PyZlib_flush(self, args)
 		      "Can't allocate memory to compress data");
       return NULL;
   }
-  self->zst.next_out = PyString_AsString(RetVal);
+  self->zst.next_out = (unsigned char *)PyString_AsString(RetVal);
   self->zst.avail_out = length;
   while (err == Z_OK)
   {
@@ -485,7 +485,7 @@ PyZlib_flush(self, args)
 			      "Can't allocate memory to compress data");
 	      return NULL;
 	  }
-	  self->zst.next_out = PyString_AsString(RetVal) + length;
+	  self->zst.next_out = (unsigned char *)PyString_AsString(RetVal) + length;
 	  self->zst.avail_out = length;
 	  length = length << 1;
       }
@@ -534,7 +534,7 @@ PyZlib_unflush(self, args)
       return NULL;
   }
   self->zst.avail_in=0;
-  self->zst.next_out = PyString_AsString(RetVal);
+  self->zst.next_out = (unsigned char *)PyString_AsString(RetVal);
   length = self->zst.avail_out = DEFAULTALLOC;
 
   err = Z_OK;
@@ -549,7 +549,7 @@ PyZlib_unflush(self, args)
 			      "Can't allocate memory to decompress data");
 	      return NULL;
 	  }
-	  self->zst.next_out = PyString_AsString(RetVal) + length;
+	  self->zst.next_out = (unsigned char *)PyString_AsString(RetVal) + length;
 	  self->zst.avail_out = length;
 	  length = length << 1;
       }

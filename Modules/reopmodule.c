@@ -141,7 +141,7 @@ reop_match(self, args)
 						     "casefold")) == NULL)
 			return NULL;
 
-		bufp.translate = PyString_AsString(casefold);
+		bufp.translate = (unsigned char*)PyString_AsString(casefold);
 	}
 	else
 		bufp.translate=NULL;
@@ -241,7 +241,7 @@ reop_search(self, args)
 						     "casefold")) == NULL)
 			return NULL;
 
-		bufp.translate = PyString_AsString(casefold);
+		bufp.translate = (unsigned char *)PyString_AsString(casefold);
 	}
 	else
 		bufp.translate=NULL;
@@ -339,7 +339,7 @@ reop_expand_escape(self, args)
 	string[1]='\\';
 	string[length+4]='\0';
 	memcpy(string+2, pattern+index-1, length+1);
-	v=PyRun_String(string, Py_eval_input, 
+	v=PyRun_String((char *)string, Py_eval_input, 
 		       PyEval_GetGlobals(), PyEval_GetLocals());
 	free(string);
 	/* The evaluation raised an exception */
@@ -657,7 +657,7 @@ reop__expand(self, args)
   if (!PyArg_ParseTuple(args, "OS", &match_obj, &repl_obj)) 
     return NULL;
 
-  repl=PyString_AsString(repl_obj);
+  repl=(unsigned char *)PyString_AsString(repl_obj);
   size=PyString_Size(repl_obj);
   results=PyList_New(0);
   if (results==NULL) return NULL;
@@ -671,7 +671,7 @@ reop__expand(self, args)
 	  if (start!=i)
 	    {
 	      PyList_Append(results, 
-			    PyString_FromStringAndSize(repl+start, i-start));
+			    PyString_FromStringAndSize((char *)repl+start, i-start));
 	      total_len += i-start;
 	    }
 	  i++;
@@ -742,7 +742,7 @@ reop__expand(self, args)
 
   if (start!=i)
     {
-      PyList_Append(results, PyString_FromStringAndSize(repl+start, i-start));
+      PyList_Append(results, PyString_FromStringAndSize((char *)repl+start, i-start));
       total_len += i-start;
     }
 
@@ -758,7 +758,7 @@ reop__expand(self, args)
       return NULL;
     }
 
-  repl=PyString_AsString(newstring);
+  repl=(unsigned char *)PyString_AsString(newstring);
   for (pos=i=0; i<PyList_Size(results); i++)
     {
       PyObject *item=PyList_GetItem(results, i);
@@ -963,10 +963,10 @@ initreop()
 		goto finally;
 	
 	/* Initialize reop.casefold constant */
-	if (!(v = PyString_FromStringAndSize((unsigned char *)NULL, 256)))
+	if (!(v = PyString_FromStringAndSize((char *)NULL, 256)))
 		goto finally;
 	
-	if (!(s = PyString_AsString(v)))
+	if (!(s = (unsigned char *)PyString_AsString(v)))
 		goto finally;
 
 	for (i = 0; i < 256; i++) {
@@ -990,7 +990,7 @@ initreop()
 	for (i = 0; i < 256; i++)
 	{
 	   j[0] = i;
-	   k = PyString_FromStringAndSize(j, 1);
+	   k = PyString_FromStringAndSize((char *)j, 1);
 	   if (k == NULL)
 	      goto finally;
 	   v = PyInt_FromLong(re_syntax_table[i]);

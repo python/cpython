@@ -1535,36 +1535,36 @@ unsigned char *re_compile_pattern(unsigned char *regex, int size, regexp_t bufp)
 	STORE(Cend);
 	SET_FIELDS;
 	if(!re_optimize(bufp))
-		return "Optimization error";
+		return (unsigned char *)"Optimization error";
 	return NULL;
 
   op_error:
 	SET_FIELDS;
-	return "Badly placed special character";
+	return (unsigned char *)"Badly placed special character";
 
   bad_match_register:
 	SET_FIELDS;
-	return "Bad match register number";
+	return (unsigned char *)"Bad match register number";
    
   hex_error:
 	SET_FIELDS;
-	return "Bad hexadecimal number";
+	return (unsigned char *)"Bad hexadecimal number";
    
   parenthesis_error:
 	SET_FIELDS;
-	return "Badly placed parenthesis";
+	return (unsigned char *)"Badly placed parenthesis";
    
   out_of_memory:
 	SET_FIELDS;
-	return "Out of memory";
+	return (unsigned char *)"Out of memory";
    
   ends_prematurely:
 	SET_FIELDS;
-	return "Regular expression ends prematurely";
+	return (unsigned char *)"Regular expression ends prematurely";
 
   too_complex:
 	SET_FIELDS;
-	return "Regular expression too complex";
+	return (unsigned char *)"Regular expression too complex";
 }
 
 #undef CHARAT

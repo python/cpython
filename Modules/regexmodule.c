@@ -130,7 +130,7 @@ regobj_match(re, args)
 	}
 	Py_XDECREF(re->re_lastok);
 	re->re_lastok = NULL;
-	result = _Py_re_match(&re->re_patbuf, buffer, size, offset,
+	result = _Py_re_match(&re->re_patbuf, (unsigned char *)buffer, size, offset,
 			      &re->re_regs);
 	if (result < -1) {
 		/* Serious failure of some sort; if re_match didn't 
@@ -174,7 +174,7 @@ regobj_search(re, args)
 	range = size - offset;
 	Py_XDECREF(re->re_lastok);
 	re->re_lastok = NULL;
-	result = _Py_re_search(&re->re_patbuf, buffer, size, offset, range,
+	result = _Py_re_search(&re->re_patbuf, (unsigned char *)buffer, size, offset, range,
 			   &re->re_regs);
 	if (result < -1) {
 		/* Serious failure of some sort; if re_match didn't 
@@ -423,9 +423,9 @@ newregexobject(pattern, translate, givenpat, groupindex)
 		char *error;
 		re->re_patbuf.buffer = NULL;
 		re->re_patbuf.allocated = 0;
-		re->re_patbuf.fastmap = re->re_fastmap;
+		re->re_patbuf.fastmap = (unsigned char *)re->re_fastmap;
 		if (translate) {
-			re->re_patbuf.translate = PyString_AsString(translate);
+			re->re_patbuf.translate = (unsigned char *)PyString_AsString(translate);
 			if (!re->re_patbuf.translate)
 				goto finally;
 			Py_INCREF(translate);
@@ -439,7 +439,7 @@ newregexobject(pattern, translate, givenpat, groupindex)
 		re->re_realpat = pattern;
 		Py_INCREF(givenpat);
 		re->re_givenpat = givenpat;
-		error = re_compile_pattern(pat, size, &re->re_patbuf);
+		error = (char *)re_compile_pattern((unsigned char *)pat, size, &re->re_patbuf);
 		if (error != NULL) {
 			PyErr_SetString(RegexError, error);
 			goto finally;
