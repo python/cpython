@@ -45,25 +45,19 @@ class WrapTestCase(WrapperTestCase):
         t = "Hello there, how are you this fine day?  I'm glad to hear it!"
 
         subcases = [
-            ( (t, 12), [
-                "Hello there,",
-                "how are you",
-                "this fine",
-                "day?  I'm",
-                "glad to hear",
-                "it!" 
-                ] ),
-            ( (t, 42), [ 
-                "Hello there, how are you this fine day?",
-                "I'm glad to hear it!"
-                ] ),
-            ( (t, 80), [ 
-                t 
-                ] ),
+            (12, ["Hello there,",
+                  "how are you",
+                  "this fine",
+                  "day?  I'm",
+                  "glad to hear",
+                  "it!"]),
+            (42, ["Hello there, how are you this fine day?",
+                  "I'm glad to hear it!"]),
+            (80, [t]),
             ]
 
-        for test, expect in subcases:
-            result = wrap(*test)
+        for width, expect in subcases:
+            result = wrap(t, width)
             self.check(result, expect)
 
 
@@ -99,17 +93,13 @@ What a mess!
         t = "This is a\nshort paragraph."
 
         subcases = [
-            ( (t, 20), [
-                "This is a short",
-                "paragraph."
-                ] ),
-            ( (t, 40), [
-                "This is a short paragraph."
-                ] ),
+            (20, ["This is a short",
+                  "paragraph."]),
+            (40, ["This is a short paragraph."]),
             ]
 
-        for test, expect in subcases:
-            result = wrap(*test)
+        for width, expect in subcases:
+            result = wrap(t, width)
             self.check(result, expect)
 
 
@@ -119,22 +109,16 @@ What a mess!
         t = "this-is-a-useful-feature-for-reformatting-posts-from-tim-peters'ly"
 
         subcases = [
-            ( (t, 40), [
-                "this-is-a-useful-feature-for-",
-                "reformatting-posts-from-tim-peters'ly"
-                ] ),
-            ( (t, 41), [
-                "this-is-a-useful-feature-for-",
-                "reformatting-posts-from-tim-peters'ly"
-                ] ),
-            ( (t, 42), [
-                "this-is-a-useful-feature-for-reformatting-",
-                "posts-from-tim-peters'ly"
-                ] ),
+            (40, ["this-is-a-useful-feature-for-",
+                  "reformatting-posts-from-tim-peters'ly"]),
+            (41, ["this-is-a-useful-feature-for-",
+                  "reformatting-posts-from-tim-peters'ly"]),
+            (42, ["this-is-a-useful-feature-for-reformatting-",
+                  "posts-from-tim-peters'ly"]),
             ]
 
-        for test, expect in subcases:
-            result = wrap(*test)
+        for width, expect in subcases:
+            result = wrap(t, width)
             self.check(result, expect)
 
 
@@ -158,20 +142,16 @@ Did you say "supercalifragilisticexpialidocious?"
 How *do* you spell that odd word, anyways?
 '''
         subcases = [
-            ( (t, 30), [
-                'Did you say "supercalifragilis',
-                'ticexpialidocious?" How *do*',
-                'you spell that odd word,',
-                'anyways?' 
-                ] ),
-            ( (t, 50), [
-                'Did you say "supercalifragilisticexpialidocious?"',
-                'How *do* you spell that odd word, anyways?'
-                ] ),
+            (30, ['Did you say "supercalifragilis',
+                  'ticexpialidocious?" How *do*',
+                  'you spell that odd word,',
+                  'anyways?']),
+            (50, ['Did you say "supercalifragilisticexpialidocious?"',
+                  'How *do* you spell that odd word, anyways?']),
             ]
 
-        for test, expect in subcases:
-            result = wrap(*test)
+        for width, expect in subcases:
+            result = wrap(t, width)
             self.check(result, expect)
 
 
