@@ -287,17 +287,17 @@ PyLocale_strxfrm(self,args)
      return NULL;
   /* assume no change in size, first */
   n1=strlen(s)+1;
-  buf=Py_Malloc(n1);
-  if(!buf)return NULL;
+  buf=PyMem_Malloc(n1);
+  if(!buf)return PyErr_NoMemory();
   n2=strxfrm(buf,s,n1);
   if(n2>n1){
     /* more space needed */
-    buf=Py_Realloc(buf,n2);
-    if(!buf)return NULL;
+    buf=PyMem_Realloc(buf,n2);
+    if(!buf)return PyErr_NoMemory();
     strxfrm(buf,s,n2);
   }
   result=PyString_FromString(buf);
-  Py_Free(buf);
+  PyMem_Free(buf);
   return result;
 }
 
