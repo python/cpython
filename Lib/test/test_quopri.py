@@ -28,17 +28,17 @@ characters... have fun!
 DECSAMPLE = "Here's a bunch of special \n" + \
 """\
 
-¡¢£¤¥¦§¨©
-ª«¬­®¯°±²³
-´µ¶·¸¹º»¼½¾
-¿ÀÁÂÃÄÅÆ
-ÇÈÉÊËÌÍÎÏ
-ÐÑÒÓÔÕÖ×
-ØÙÚÛÜÝÞß
-àáâãäåæç
-èéêëìíîï
-ðñòóôõö÷
-øùúûüýþÿ
+\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9
+\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3
+\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe
+\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6
+\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf
+\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7
+\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf
+\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7
+\xe8\xe9\xea\xeb\xec\xed\xee\xef
+\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7
+\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff
 
 characters... have fun!
 """
@@ -68,7 +68,7 @@ class QuopriTestCase(unittest.TestCase):
         ('hello ', 'hello=20'),
         ('hello\t', 'hello=09'),
         # Some long lines.  First, a single line of 108 characters
-        ('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxØÙÚÛÜÝÞßxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        ('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\xd8\xd9\xda\xdb\xdc\xdd\xde\xdfxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
          '''xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=D8=D9=DA=DB=DC=DD=DE=DFx=
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'''),
         # A line of exactly 76 characters, no soft line break should be needed
