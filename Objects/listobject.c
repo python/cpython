@@ -1489,6 +1489,13 @@ PyTypeObject PyList_Type = {
 	0,		/*tp_as_number*/
 	&list_as_sequence,	/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
+	0,		/*tp_hash*/
+	0,		/*tp_call*/
+	0,		/*tp_str*/
+	0,		/*tp_getattro*/
+	0,		/*tp_setattro*/
+	0,		/*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT,	/*tp_flags*/
 };
 
 
@@ -1540,6 +1547,7 @@ static PySequenceMethods immutable_list_as_sequence = {
 	(intintargfunc)list_slice, /*sq_slice*/
 	(intobjargproc)immutable_list_ass, /*sq_ass_item*/
 	(intintobjargproc)immutable_list_ass, /*sq_ass_slice*/
+	(objobjproc)list_contains, /*sq_contains*/
 };
 
 static PyTypeObject immutable_list_type = {
@@ -1557,5 +1565,12 @@ static PyTypeObject immutable_list_type = {
 	0,		/*tp_as_number*/
 	&immutable_list_as_sequence,	/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
+	0,		/*tp_hash*/
+	0,		/*tp_call*/
+	0,		/*tp_str*/
+	0,		/*tp_getattro*/
+	0,		/*tp_setattro*/
+	0,		/*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT,	/*tp_flags*/
 };
 

@@ -447,6 +447,12 @@ PyTypeObject PyTuple_Type = {
 	&tuple_as_sequence,	/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
 	(hashfunc)tuplehash, /*tp_hash*/
+	0,		/*tp_call*/
+	0,		/*tp_str*/
+	0,		/*tp_getattro*/
+	0,		/*tp_setattro*/
+	0,		/*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT, /*tp_flags*/
 };
 
 /* The following function breaks the notion that tuples are immutable:
