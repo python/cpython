@@ -1038,6 +1038,31 @@ dict_clear(mp, args)
 	return Py_None;
 }
 
+static int
+dict_traverse(PyObject *op, visitproc visit, void *arg)
+{
+	int i = 0, err;
+	PyObject *pk;
+	PyObject *pv;
+
+	while (PyDict_Next(op, &i, &pk, &pv)) {
+		err = visit(pk, arg);
+		if (err)
+			return err;
+		err = visit(pv, arg);
+		if (err)
+			return err;
+	}
+	return 0;
+}
+
+static int
+dict_tp_clear(PyObject *op)
+{
+	PyDict_Clear(op);
+	return 0;
+}
+
 static PyMethodDef mapp_methods[] = {
 	{"has_key",	(PyCFunction)dict_has_key,      METH_VARARGS},
 	{"keys",	(PyCFunction)dict_keys},
@@ -1073,6 +1098,16 @@ PyTypeObject PyDict_Type = {
 	0,			/*tp_as_number*/
 	0,			/*tp_as_sequence*/
 	&dict_as_mapping,	/*tp_as_mapping*/
+	0,		/* tp_hash */
+	0,		/* tp_call */
+	0,		/* tp_str */
+	0,		/* tp_getattro */
+	0,		/* tp_setattro */
+	0,		/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT, /*tp_flags*/
+	0,		/* tp_doc */
+	(traverseproc)dict_traverse,	/* tp_traverse */
+	(inquiry)dict_tp_clear,		/* tp_clear */
 };
 
 /* For backward compatibility with old dictionary interface */

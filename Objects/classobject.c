@@ -387,6 +387,43 @@ class_str(op)
 	return res;
 }
 
+static int
+class_traverse(PyClassObject *o, visitproc visit, void *arg)
+{
+	int err;
+	if (o->cl_bases) {
+		err = visit(o->cl_bases, arg);
+		if (err)
+			return err;
+	}
+	if (o->cl_dict) {
+		err = visit(o->cl_dict, arg);
+		if (err)
+			return err;
+	}
+	if (o->cl_name) {
+		err = visit(o->cl_name, arg);
+		if (err)
+			return err;
+	}
+	if (o->cl_getattr) {
+		err = visit(o->cl_getattr, arg);
+		if (err)
+			return err;
+	}
+	if (o->cl_setattr) {
+		err = visit(o->cl_setattr, arg);
+		if (err)
+			return err;
+	}
+	if (o->cl_delattr) {
+		err = visit(o->cl_delattr, arg);
+		if (err)
+			return err;
+	}
+	return 0;
+}
+
 PyTypeObject PyClass_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -407,6 +444,10 @@ PyTypeObject PyClass_Type = {
 	(reprfunc)class_str, /*tp_str*/
 	(getattrofunc)class_getattr, /*tp_getattro*/
 	(setattrofunc)class_setattr, /*tp_setattro*/
+	0,		/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT, /*tp_flags*/
+	0,		/* tp_doc */
+	(traverseproc)class_traverse,	/* tp_traverse */
 };
 
 int
@@ -847,6 +888,23 @@ instance_hash(inst)
 	}
 	Py_DECREF(res);
 	return outcome;
+}
+
+static int
+instance_traverse(PyInstanceObject *o, visitproc visit, void *arg)
+{
+	int err;
+	if (o->in_class) {
+		err = visit((PyObject *)(o->in_class), arg);
+		if (err)
+			return err;
+	}
+	if (o->in_dict) {
+		err = visit(o->in_dict, arg);
+		if (err)
+			return err;
+	}
+	return 1;
 }
 
 static PyObject *getitemstr, *setitemstr, *delitemstr, *lenstr;
@@ -1472,7 +1530,9 @@ PyTypeObject PyInstance_Type = {
 	(getattrofunc)instance_getattr, /*tp_getattro*/
 	(setattrofunc)instance_setattr, /*tp_setattro*/
         0, /* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT, /*tp_flags */
+	Py_TPFLAGS_DEFAULT, /*tp_flags*/
+	0,		/* tp_doc */
+	(traverseproc)instance_traverse,	/* tp_traverse */
 };
 
 
@@ -1662,6 +1722,28 @@ instancemethod_hash(a)
 	return x ^ y;
 }
 
+static int
+instancemethod_traverse(PyMethodObject *im, visitproc visit, void *arg)
+{
+	int err;
+	if (im->im_func) {
+		err = visit(im->im_func, arg);
+		if (err)
+			return err;
+	}
+	if (im->im_self) {
+		err = visit(im->im_self, arg);
+		if (err)
+			return err;
+	}
+	if (im->im_class) {
+		err = visit(im->im_class, arg);
+		if (err)
+			return err;
+	}
+	return 1;
+}
+
 PyTypeObject PyMethod_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -1682,6 +1764,10 @@ PyTypeObject PyMethod_Type = {
 	0,			/*tp_str*/
 	(getattrofunc)instancemethod_getattr, /*tp_getattro*/
 	0,			/*tp_setattro*/
+	0,			/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT, /*tp_flags*/
+	0,			/* tp_doc */
+	(traverseproc)instancemethod_traverse,	/* tp_traverse */
 };
 
 /* Clear out the free list */

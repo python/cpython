@@ -239,6 +239,38 @@ func_hash(f)
 	return h;
 }
 
+static int
+func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
+{
+	int err;
+	if (f->func_code) {
+		err = visit(f->func_code, arg);
+		if (err)
+			return err;
+	}
+	if (f->func_globals) {
+		err = visit(f->func_globals, arg);
+		if (err)
+			return err;
+	}
+	if (f->func_defaults) {
+		err = visit(f->func_defaults, arg);
+		if (err)
+			return err;
+	}
+	if (f->func_doc) {
+		err = visit(f->func_doc, arg);
+		if (err)
+			return err;
+	}
+	if (f->func_name) {
+		err = visit(f->func_name, arg);
+		if (err)
+			return err;
+	}
+	return 0;
+}
+
 PyTypeObject PyFunction_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -255,4 +287,12 @@ PyTypeObject PyFunction_Type = {
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
 	(hashfunc)func_hash, /*tp_hash*/
+	0,		/*tp_call*/
+	0,		/*tp_str*/
+	0,		/*tp_getattro*/
+	0,		/*tp_setattro*/
+	0,		/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT, /*tp_flags*/
+	0,		/* tp_doc */
+	(traverseproc)func_traverse,	/* tp_traverse */
 };
