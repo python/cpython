@@ -1132,6 +1132,12 @@ strop_replace(PyObject *self, PyObject *args)
 		PyErr_SetString(PyExc_ValueError, "empty pattern string");
 		return NULL;
 	}
+	/* CAUTION:  strop treats a replace count of 0 as infinity, unlke
+	 * current (2.1) string.py and string methods.  Preserve this for
+	 * ... well, hard to say for what <wink>.
+	 */
+	if (count == 0)
+		count = -1;
 	new_s = mymemreplace(str,len,pat,pat_len,sub,sub_len,count,&out_len);
 	if (new_s == NULL) {
 		PyErr_NoMemory();
