@@ -25,12 +25,12 @@ Supported options:
     --uptitle str   Set the upward link title.  The default is 'Python
                     Documentation Index'.
 """
-import buildindex
 import os
 import re
-import string
-import support
 import sys
+
+import buildindex
+import support
 
 
 class IndexOptions(support.Options):
@@ -119,10 +119,10 @@ def main():
              ]
     if has_plat_flag:
         parts.insert(1, PLAT_DISCUSS)
-    html = string.join(parts, '')
+    html = ''.join(parts)
     program = os.path.basename(sys.argv[0])
     fp = options.get_output_file()
-    fp.write(string.rstrip(html) + "\n")
+    fp.write(html.rstrip() + "\n")
     if options.outputfile == "-":
         sys.stderr.write("%s: %d index nodes\n" % (program, num_nodes))
     else:
