@@ -25,6 +25,10 @@ class Profile:
         """Close the logfile and terminate the profiler."""
         self._prof.close()
 
+    def fileno(self):
+        """Return the file descriptor of the profiler's log file."""
+        return self._prof.fileno()
+
     def start(self):
         """Start the profiler."""
         self._prof.start()
