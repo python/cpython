@@ -7,7 +7,7 @@ for the Distutils compiler abstraction model."""
 
 __rcsid__ = "$Id$"
 
-import os
+import sys, os
 from types import *
 from copy import copy
 from distutils.errors import *
@@ -30,6 +30,15 @@ class CCompiler:
        most (all?) of those attributes may be varied on a per-compilation
        or per-link basis."""
 
+    # 'compiler_type' is a class attribute that identifies this class.  It
+    # keeps code that wants to know what kind of compiler it's dealing with
+    # from having to import all possible compiler classes just to do an
+    # 'isinstance'.  In concrete CCompiler subclasses, 'compiler_type'
+    # should really, really be one of the keys of the 'compiler_class'
+    # dictionary (see below -- used by the 'new_compiler()' factory
+    # function) -- authors of new compiler interface classes are
+    # responsible for updating 'compiler_class'!
+    compiler_type = None
 
     # XXX things not handled by this compiler abstraction model:
     #   * client can't provide additional options for a compiler,
@@ -251,7 +260,9 @@ class CCompiler:
                  sources,
                  output_dir=None,
                  macros=None,
-                 includes=None):
+                 includes=None,
+                 extra_preargs=None,
+                 extra_postargs=None):
         """Compile one or more C/C++ source files.  'sources' must be
            a list of strings, each one the name of a C/C++ source
            file.  Return a list of the object filenames generated
@@ -266,7 +277,16 @@ class CCompiler:
 
            'includes', if given, must be a list of strings, the directories
            to add to the default include file search path for this
-           compilation only."""
+           compilation only.
+
+           'extra_preargs' and 'extra_postargs' are optional lists of extra
+           command-line arguments that will be, respectively, prepended or
+           appended to the generated command line immediately before
+           execution.  These will most likely be peculiar to the particular
+           platform and compiler being worked with, but are a necessary
+           escape hatch for those occasions when the abstract compiler
+           framework doesn't cut the mustard."""
+           
         pass
 
 
@@ -278,7 +298,9 @@ class CCompiler:
                          output_libname,
                          output_dir=None,
                          libraries=None,
-                         library_dirs=None):
+                         library_dirs=None,
+                         extra_preargs=None,
+                         extra_postargs=None):
         """Link a bunch of stuff together to create a static library
            file.  The "bunch of stuff" consists of the list of object
            files supplied as 'objects', the extra object files supplied
@@ -292,34 +314,14 @@ class CCompiler:
 
            'library_dirs', if supplied, should be a list of additional
            directories to search on top of the system default and those
-           supplied to 'add_library_dir()' and/or 'set_library_dirs()'."""
+           supplied to 'add_library_dir()' and/or 'set_library_dirs()'.
+
+           'extra_preargs' and 'extra_postargs' are as for 'compile()'
+           (except of course that they supply command-line arguments
+           for the particular linker being used)."""
 
         pass
     
-
-    # XXX passing in 'build_info' here is a kludge to deal with the
-    # oddities of one particular compiler (Visual C++).  For some reason,
-    # it needs to be told about ".def" files, and currently the
-    # 'build_info' hash allows this through a 'def_file' element.  The link
-    # methods for VC++ look for 'def_file' and transform it into the
-    # appropriate command-line options.  The current code is objectionable
-    # for a number of reasons: 1) if the link methods take 'build_info',
-    # why bother passing in libraries, library_dirs, etc.? 2) if the link
-    # methods do it, why not the compile methods? 3) build_info is part of
-    # the interface between setup.py and the 'build_ext' command -- it
-    # should stop there and not be propagated down into the compiler
-    # classes! and 4) I don't like elevating a platform- and
-    # compiler-specific oddity to "first-class" status in 'build_info' (oh
-    # well, at least it's not being reified in the compiler classes -- that
-    # would be really gross).
-    #
-    # Possible solutions:
-    #   - just pass build_info to all the compile/link methods, 
-    #     never mind all those other parameters and screw the
-    #     integrity of the interfaces
-    #   - add a mechanism for passing platform-specific and/or
-    #     compiler-specific compiler/linker options from setup.py
-    #     straight through to the appropriate compiler class
 
     def link_shared_lib (self,
                          objects,
@@ -327,7 +329,8 @@ class CCompiler:
                          output_dir=None,
                          libraries=None,
                          library_dirs=None,
-                         build_info=None):
+                         extra_preargs=None,
+                         extra_postargs=None):
         """Link a bunch of stuff together to create a shared library
            file.  Has the same effect as 'link_static_lib()' except
            that the filename inferred from 'output_libname' will most
@@ -335,18 +338,20 @@ class CCompiler:
            almost certainly be different."""
         pass
     
+
     def link_shared_object (self,
                             objects,
                             output_filename,
                             output_dir=None,
                             libraries=None,
                             library_dirs=None,
-                            build_info=None):
+                            extra_preargs=None,
+                            extra_postargs=None):
         """Link a bunch of stuff together to create a shared object
            file.  Much like 'link_shared_lib()', except the output filename
            is explicitly supplied as 'output_filename'.  If 'output_dir' is
            supplied, 'output_filename' is relative to it
-           (i.e. 'output_filename' can provide directoriy components if
+           (i.e. 'output_filename' can provide directory components if
            needed)."""
         pass
 
@@ -407,23 +412,65 @@ class CCompiler:
 # class CCompiler
 
 
+# Map a platform ('posix', 'nt') to the default compiler type for
+# that platform.
+default_compiler = { 'posix': 'unix',
+                     'nt': 'msvc',
+                   }
+
+# Map compiler types to (module_name, class_name) pairs -- ie. where to
+# find the code that implements an interface to this compiler.  (The module
+# is assumed to be in the 'distutils' package.)
+compiler_class = { 'unix': ('unixccompiler', 'UnixCCompiler'),
+                   'msvc': ('msvccompiler', 'MSVCCompiler'),
+                 }
+
+
 def new_compiler (plat=None,
+                  compiler=None,
                   verbose=0,
                   dry_run=0):
-    """Generate a CCompiler instance for platform 'plat' (or the
-       current platform, if 'plat' not supplied).  Really instantiates
-       some concrete subclass of CCompiler, of course."""
 
-    if plat is None: plat = os.name
-    if plat == 'posix':
-        from unixccompiler import UnixCCompiler
-        return UnixCCompiler (verbose, dry_run)
-    elif plat == 'nt':
-        from msvccompiler import MSVCCompiler
-        return MSVCCompiler (verbose, dry_run)
-    else:
-        raise DistutilsPlatformError, \
-              "don't know how to compile C/C++ code on platform %s" % plat
+    """Generate an instance of some CCompiler subclass for the supplied
+       platform/compiler combination.  'plat' defaults to 'os.name'
+       (eg. 'posix', 'nt'), and 'compiler' defaults to the default
+       compiler for that platform.  Currently only 'posix' and 'nt'
+       are supported, and the default compilers are "traditional Unix
+       interface" (UnixCCompiler class) and Visual C++ (MSVCCompiler
+       class).  Note that it's perfectly possible to ask for a Unix
+       compiler object under Windows, and a Microsoft compiler object
+       under Unix -- if you supply a value for 'compiler', 'plat'
+       is ignored."""
+
+    if plat is None:
+        plat = os.name
+
+    try:
+        if compiler is None:
+            compiler = default_compiler[plat]
+        
+        (module_name, class_name) = compiler_class[compiler]
+    except KeyError:
+        msg = "don't know how to compile C/C++ code on platform '%s'" % plat
+        if compiler is not None:
+            msg = msg + " with '%s' compiler" % compiler
+        raise DistutilsPlatformError, msg
+              
+    try:
+        module_name = "distutils." + module_name
+        __import__ (module_name)
+        module = sys.modules[module_name]
+        klass = vars(module)[class_name]
+    except ImportError:
+        raise DistutilsModuleError, \
+              "can't compile C/C++ code: unable to load module '%s'" % \
+              module_name
+    except KeyError:
+        raise DistutilsModuleError, \
+              ("can't compile C/C++ code: unable to find class '%s' " +
+               "in module '%s'") % (class_name, module_name)
+
+    return klass (verbose, dry_run)
 
 
 def gen_preprocess_options (macros, includes):
@@ -477,7 +524,7 @@ def gen_preprocess_options (macros, includes):
 # gen_preprocess_options ()
 
 
-def gen_lib_options (libraries, library_dirs, lib_format, dir_format):
+def gen_lib_options (library_dirs, libraries, dir_format, lib_format):
     """Generate linker options for searching library directories and
        linking with specific libraries.  'libraries' and 'library_dirs'
        are, respectively, lists of library names (not filenames!) and
