@@ -102,8 +102,7 @@ int mode;
 		if (errno != 0)
 			PyErr_SetFromErrno(DbmError);
 		else
-			PyErr_SetString(DbmError,
-					(char *) gdbm_strerror(gdbm_errno));
+			PyErr_SetString(DbmError, gdbm_strerror(gdbm_errno));
 		Py_DECREF(dp);
 		return NULL;
 	}
@@ -203,7 +202,7 @@ PyObject *v, *w;
 				PyErr_SetFromErrno(DbmError);
 			else
 				PyErr_SetString(DbmError,
-					   (char *) gdbm_strerror(gdbm_errno));
+						gdbm_strerror(gdbm_errno));
 			return -1;
 		}
 	}
@@ -384,8 +383,7 @@ PyObject *args;
 		if (errno != 0)
 			PyErr_SetFromErrno(DbmError);
 		else
-			PyErr_SetString(DbmError,
-					(char *) gdbm_strerror(gdbm_errno));
+			PyErr_SetString(DbmError, gdbm_strerror(gdbm_errno));
 		return NULL;
 	}
 	Py_INCREF(Py_None);
