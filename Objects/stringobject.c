@@ -144,7 +144,7 @@ PyString_FromString(const char *str)
 #ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
 #endif
-	strcpy(op->ob_sval, str);
+	memcpy(op->ob_sval, str, size+1);
 #ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0) {
 		PyObject *t = (PyObject *)op;
