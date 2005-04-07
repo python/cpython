@@ -775,9 +775,13 @@ readline_until_enter_or_signal(char *prompt, int *signal)
 		}
 		else if (errno == EINTR) {
 			int s;
+#ifdef WITH_THREAD
 			PyEval_RestoreThread(_PyOS_ReadlineTState);
+#endif
 			s = PyErr_CheckSignals();
+#ifdef WITH_THREAD
 			PyEval_SaveThread();	
+#endif
 			if (s < 0) {
 				rl_free_line_state();
 				rl_cleanup_after_signal();

@@ -82,9 +82,13 @@ my_fgets(char *buf, int len, FILE *fp)
 #ifdef EINTR
 		if (errno == EINTR) {
 			int s;
+#ifdef WITH_THREAD
 			PyEval_RestoreThread(_PyOS_ReadlineTState);
+#endif
 			s = PyErr_CheckSignals();
+#ifdef WITH_THREAD
 			PyEval_SaveThread();
+#endif
 			if (s < 0) {
 				return 1;
 			}
