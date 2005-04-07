@@ -262,7 +262,8 @@ unbound methods, class objects, and instance objects which support the
 
 \begin{funcdesc}{isMappingType}{o}
 Returns true if the object \var{o} supports the mapping interface.
-This is true for dictionaries and all instance objects.
+This is true for dictionaries and all instance objects defining
+\method{__getitem__}.
 \warning{There is no reliable way to test if an instance
 supports the complete mapping protocol since the interface itself is
 ill-defined.  This makes this test less useful than it otherwise might
@@ -271,7 +272,7 @@ be.}
 
 \begin{funcdesc}{isNumberType}{o}
 Returns true if the object \var{o} represents a number.  This is true
-for all numeric types implemented in C, and for all instance objects.
+for all numeric types implemented in C.
 \warning{There is no reliable way to test if an instance
 supports the complete numeric interface since the interface itself is
 ill-defined.  This makes this test less useful than it otherwise might
@@ -281,7 +282,8 @@ be.}
 \begin{funcdesc}{isSequenceType}{o}
 Returns true if the object \var{o} supports the sequence protocol.
 This returns true for all objects which define sequence methods in C,
-and for all instance objects.  \warning{There is no reliable
+and for all instance objects defining \method{__getitem__}.
+\warning{There is no reliable
 way to test if an instance supports the complete sequence interface
 since the interface itself is ill-defined.  This makes this test less
 useful than it otherwise might be.}
