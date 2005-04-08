@@ -43,6 +43,12 @@ Permissions Dropped on Request
   they no longer use their access.   7 Apr 2005 RDH
 
 
+Permissions Dropped after Loss of Contact
+-----------------------------------------
+
+- Several unsuccessful efforts were made to contact Charles G Waldman.
+  Removed on 8 Apr 2005 by RDH.
+
 
 Initials of Project Admins
 --------------------------
