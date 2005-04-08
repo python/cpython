@@ -24,16 +24,21 @@ Permissions History
   patches.  The added permissions give him greater flexibility in
   working with the tracker.
 
+- Eric Price was made a developer on 2 May 2003 by TGP.  This was
+  specifically to work on the new ``decimal`` package, which lived in
+  ``nondist/sandbox/decimal/`` at the time.
+
 
 Permissions Dropped on Request
 ------------------------------
 
 - Steve Holden, Gerhard Haring, and David Cole sent email stating that
   they no longer use their access.   7 Apr 2005 RDH
-  
+
 
 
 Initials of Project Admins
 --------------------------
 
 RDH:  Raymond Hettinger
+TGP:  Tim Peters
