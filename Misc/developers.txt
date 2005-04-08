@@ -32,6 +32,8 @@ Permissions History
 Permissions Dropped on Request
 ------------------------------
 
+- Moshe Zadka sent a drop request.  8 Apr 2005 by RDH
+
 - Steve Holden, Gerhard Haring, and David Cole sent email stating that
   they no longer use their access.   7 Apr 2005 RDH
 
