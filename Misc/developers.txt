@@ -28,6 +28,11 @@ Permissions History
   specifically to work on the new ``decimal`` package, which lived in
   ``nondist/sandbox/decimal/`` at the time.
 
+- Eric S. Raymond was made a developer on 2 Jul 2000 by TGP, for general
+  library work.  His request is archived here:
+
+      http://mail.python.org/pipermail/python-dev/2000-July/005314.html
+
 
 Permissions Dropped on Request
 ------------------------------
