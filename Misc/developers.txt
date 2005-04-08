@@ -17,11 +17,20 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Terry Reedy was given SF tracker permissions on 7 Apr 2005 by RDH.
+
 - Nick Coghlan was given SF tracker permissions on 5 Apr 2005 by RDH.
   For several months, he has been active in reviewing and contributing
   patches.  The added permissions give him greater flexibility in
   working with the tracker.
 
+
+Permissions Dropped on Request
+------------------------------
+
+- Steve Holden, Gerhard Haring, and David Cole sent email stating that
+  they no longer use their access.   7 Apr 2005 RDH
+  
 
 
 Initials of Project Admins
