@@ -80,13 +80,20 @@ class XMLRPCTestCase(unittest.TestCase):
                       </value></param>
                   </params>
                   """
+
+        # sys.setdefaultencoding() normally doesn't exist after site.py is
+        # loaded.  reload(sys) is the way to get it back.
         old_encoding = sys.getdefaultencoding()
+        setdefaultencoding_existed = hasattr(sys, "setdefaultencoding")
         reload(sys) # ugh!
         sys.setdefaultencoding("iso-8859-1")
         try:
             (s, d), m = xmlrpclib.loads(utf8)
         finally:
             sys.setdefaultencoding(old_encoding)
+            if not setdefaultencoding_existed:
+                del sys.setdefaultencoding
+
         items = d.items()
         if have_unicode:
             self.assertEquals(s, u"abc \x95")
