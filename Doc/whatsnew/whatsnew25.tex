@@ -28,18 +28,40 @@ rationale, refer to the PEP for a particular new feature.
 %======================================================================
 \section{PEP 309: Partial Function Application}
 
-For programs written in a functional style, it can be useful to
-construct variants of existing functions that have some of the
-parameters filled in.  This is called ``partial function application''.
-The new \module{functional} module contains a \class{partial} class
-that provides partial application.  
-
 The \module{functional} module is intended to contain tools for
 functional-style programming.  Currently it only contains
 \class{partial}, but new functions will probably be added in future
 versions of Python.
 
-% XXX write rest of this
+For programs written in a functional style, it can be useful to
+construct variants of existing functions that have some of the
+parameters filled in.  Consider a Python function \code{f(a, b, c)};
+you could create a new function \code{g(b, c)} that was equivalent to
+\code{f(1, b, c)}.  This is called ``partial function application'',
+and is provided by the \class{partial} class in the new
+\module{functional} module.
+
+The constructor for \class{partial} takes the arguments
+\code{(\var{function}, \var{arg1}, \var{arg2}, ...
+\var{kwarg1}=\var{value1}, \var{kwarg2}=\var{value2})}.  The resulting
+object is callable, so you can just call it to invoke \var{function}
+with the filled-in arguments.
+
+Here's a small but realistic example:
+
+\begin{verbatim}
+import functional
+
+def log (message, subsystem):
+    "Write the contents of 'message' to the specified subsystem."
+    print '%s: %s' % (subsystem, message)
+    ...
+
+server_log = functional.partial(log, subsystem='server')
+\end{verbatim}
+
+Here's another example, from a program that uses PyGTk.  
+
 % XXX add example from my GTk programming
 
 
