@@ -77,9 +77,26 @@ Raymond Hettinger.}
 %======================================================================
 \section{PEP 314: Metadata for Python Software Packages v1.1}
 
-XXX describe this PEP.
-    distutils \function{setup()} now supports the \var{provides},
-    \var{requires}, \var{obsoletes} keywords.
+Some simple dependency support was added to Distutils.  The
+\function{setup()} function now has \code{requires},\code{provides},
+and \code{obsoletes}.  When you build a source distribution using the
+\code{sdist} command, the dependency information will be recorded in
+the \file{PKG-INFO} file.  
+
+Another new keyword is \code{download_url}, which should be set to a
+URL for the package's source code.  This means it's now possible to
+look up an entry in the package index, determine the dependencies for
+a package, and download the required packages.  
+
+% XXX put example here
+ 
+\begin{seealso}
+
+\seepep{314}{Metadata for Python Software Packages v1.1}{PEP proposed
+and written by A.M. Kuchling, Richard Jones, and Fred Drake; 
+implemented by Richard Jones and Fred Drake.}
+
+\end{seealso}
 
 
 %======================================================================
