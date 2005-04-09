@@ -54,7 +54,7 @@
 # nor are shift and mask operations.
 #
 # The standard module math does not support complex numbers.
-# (I suppose it would be easy to implement a cmath module.)
+# The cmath modules should be used instead.
 #
 # Idea:
 # add a class Polar(r, phi) and mixed-mode arithmetic which
@@ -62,7 +62,7 @@
 # Complex for +,-,cmp
 # Polar   for *,/,pow
 
-import types, math
+import math
 import sys
 
 twopi = math.pi*2.0
@@ -74,8 +74,8 @@ def IsComplex(obj):
 def ToComplex(obj):
     if IsComplex(obj):
         return obj
-    elif type(obj) == types.TupleType:
-        return apply(Complex, obj)
+    elif isinstance(obj, tuple):
+        return Complex(*obj)
     else:
         return Complex(obj)
 
@@ -86,14 +86,12 @@ def PolarToComplex(r = 0, phi = 0, fullcircle = twopi):
 def Re(obj):
     if IsComplex(obj):
         return obj.re
-    else:
-        return obj
+    return obj
 
 def Im(obj):
     if IsComplex(obj):
         return obj.im
-    else:
-        return obj
+    return 0
 
 class Complex:
 
@@ -119,9 +117,9 @@ class Complex:
         raise TypeError, 'Complex numbers are immutable'
 
     def __hash__(self):
-        if not self.im: return hash(self.re)
-        mod = sys.maxint + 1L
-        return int((hash(self.re) + 2L*hash(self.im) + mod) % (2L*mod) - mod)
+        if not self.im:
+            return hash(self.re)
+        return hash((self.re, self.im))
 
     def __repr__(self):
         if not self.im:
@@ -142,8 +140,7 @@ class Complex:
         return self
 
     def __abs__(self):
-        # XXX could be done differently to avoid overflow!
-        return math.sqrt(self.re*self.re + self.im*self.im)
+        return math.hypot(self.re, self.im)
 
     def __int__(self):
         if self.im:
@@ -238,8 +235,8 @@ def checkop(expr, a, b, value, fuzz = 1e-6):
     except:
         result = sys.exc_type
     print '->', result
-    if (type(result) == type('') or type(value) == type('')):
-        ok = result == value
+    if isinstance(result, str) or isinstance(value, str):
+        ok = (result == value)
     else:
         ok = abs(result - value) <= fuzz
     if not ok:
@@ -312,13 +309,11 @@ def test():
                     (Complex(1), Complex(0,10), 1),
             ],
     }
-    exprs = testsuite.keys()
-    exprs.sort()
-    for expr in exprs:
+    for expr in sorted(testsuite):
         print expr + ':'
         t = (expr,)
         for item in testsuite[expr]:
-            apply(checkop, t+item)
+            checkop(*(t+item))
 
 
 if __name__ == '__main__':
