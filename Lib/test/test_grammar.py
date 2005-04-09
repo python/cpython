@@ -685,8 +685,9 @@ x = 123
 ### testlist: test (',' test)* [',']
 # These have been exercised enough above
 
-print 'classdef' # 'class' NAME ['(' testlist ')'] ':' suite
+print 'classdef' # 'class' NAME ['(' [testlist] ')'] ':' suite
 class B: pass
+class B2(): pass
 class C1(B): pass
 class C2(B): pass
 class D(C1, C2, B): pass
