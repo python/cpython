@@ -24,7 +24,9 @@ Core and builtins
 - Added two new builtins, any() and all().
 
 - Defining a class with empty parentheses is now allowed
-  (e.g., ``class C(): pass`` is no longer a syntax error)
+  (e.g., ``class C(): pass`` is no longer a syntax error).
+  Patch #1176012 added support to the 'parser' module and 'compiler' package
+  (thanks to logistix for that added support).
 
 - Patch #1115086: Support PY_LONGLONG in structmember.
 
