@@ -280,11 +280,13 @@ class Transformer:
         return Lambda(names, defaults, flags, code, lineno=nodelist[1][2])
 
     def classdef(self, nodelist):
-        # classdef: 'class' NAME ['(' testlist ')'] ':' suite
+        # classdef: 'class' NAME ['(' [testlist] ')'] ':' suite
 
         name = nodelist[1][1]
         doc = self.get_docstring(nodelist[-1])
         if nodelist[2][0] == token.COLON:
+            bases = []
+        elif nodelist[3][0] == token.RPAR:
             bases = []
         else:
             bases = self.com_bases(nodelist[3])
