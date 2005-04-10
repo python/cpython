@@ -3,6 +3,8 @@
 # XXX There should be separate exceptions for the various reasons why
 # XXX an RPC can fail, rather than using RuntimeError for everything
 
+# XXX Need to use class based exceptions rather than string exceptions
+
 # XXX The UDP version of the protocol resends requests when it does
 # XXX not receive a timely reply -- use only for idempotent calls!
 
@@ -90,13 +92,13 @@ class Unpacker(xdr.Unpacker):
         return (flavor, stuff)
 
     def unpack_callheader(self):
-        xid = self.unpack_uint(xid)
+        xid = self.unpack_uint()
         temp = self.unpack_enum()
-        if temp <> CALL:
+        if temp != CALL:
             raise BadRPCFormat, 'no CALL but %r' % (temp,)
         temp = self.unpack_uint()
-        if temp <> RPCVERSION:
-            raise BadRPCVerspion, 'bad RPC version %r' % (temp,)
+        if temp != RPCVERSION:
+            raise BadRPCVersion, 'bad RPC version %r' % (temp,)
         prog = self.unpack_uint()
         vers = self.unpack_uint()
         proc = self.unpack_uint()
@@ -108,7 +110,7 @@ class Unpacker(xdr.Unpacker):
     def unpack_replyheader(self):
         xid = self.unpack_uint()
         mtype = self.unpack_enum()
-        if mtype <> REPLY:
+        if mtype != REPLY:
             raise RuntimeError, 'no REPLY but %r' % (mtype,)
         stat = self.unpack_enum()
         if stat == MSG_DENIED:
@@ -123,7 +125,7 @@ class Unpacker(xdr.Unpacker):
                 raise RuntimeError, \
                         'MSG_DENIED: AUTH_ERROR: %r' % (stat,)
             raise RuntimeError, 'MSG_DENIED: %r' % (stat,)
-        if stat <> MSG_ACCEPTED:
+        if stat != MSG_ACCEPTED:
             raise RuntimeError, \
               'Neither MSG_DENIED nor MSG_ACCEPTED: %r' % (stat,)
         verf = self.unpack_auth()
@@ -139,7 +141,7 @@ class Unpacker(xdr.Unpacker):
             raise RuntimeError, 'call failed: PROC_UNAVAIL'
         if stat == GARBAGE_ARGS:
             raise RuntimeError, 'call failed: GARBAGE_ARGS'
-        if stat <> SUCCESS:
+        if stat != SUCCESS:
             raise RuntimeError, 'call failed: %r' % (stat,)
         return xid, verf
         # Caller must get procedure-specific part of reply
@@ -329,7 +331,7 @@ def bindresvport(sock, host):
             sock.bind((host, i))
             return last_resv_port_tried
         except socket.error, (errno, msg):
-            if errno <> 114:
+            if errno != 114:
                 raise socket.error, (errno, msg)
     raise RuntimeError, 'can\'t assign reserved port'
 
@@ -348,7 +350,7 @@ class RawTCPClient(Client):
         u = self.unpacker
         u.reset(reply)
         xid, verf = u.unpack_replyheader()
-        if xid <> self.lastxid:
+        if xid != self.lastxid:
             # Can't really happen since this is TCP...
             raise RuntimeError, 'wrong xid in reply %r instead of %r' % (
                                  xid, self.lastxid)
@@ -387,7 +389,7 @@ class RawUDPClient(Client):
             u = self.unpacker
             u.reset(reply)
             xid, verf = u.unpack_replyheader()
-            if xid <> self.lastxid:
+            if xid != self.lastxid:
 ##                              print 'BAD xid'
                 continue
             break
@@ -443,7 +445,7 @@ class RawBroadcastUDPClient(RawUDPClient):
             u = self.unpacker
             u.reset(reply)
             xid, verf = u.unpack_replyheader()
-            if xid <> self.lastxid:
+            if xid != self.lastxid:
 ##                              print 'BAD xid'
                 continue
             reply = unpack_func()
@@ -678,11 +680,11 @@ class Server:
         xid = self.unpacker.unpack_uint()
         self.packer.pack_uint(xid)
         temp = self.unpacker.unpack_enum()
-        if temp <> CALL:
+        if temp != CALL:
             return None # Not worthy of a reply
         self.packer.pack_uint(REPLY)
         temp = self.unpacker.unpack_uint()
-        if temp <> RPCVERSION:
+        if temp != RPCVERSION:
             self.packer.pack_uint(MSG_DENIED)
             self.packer.pack_uint(RPC_MISMATCH)
             self.packer.pack_uint(RPCVERSION)
@@ -691,11 +693,11 @@ class Server:
         self.packer.pack_uint(MSG_ACCEPTED)
         self.packer.pack_auth((AUTH_NULL, make_auth_null()))
         prog = self.unpacker.unpack_uint()
-        if prog <> self.prog:
+        if prog != self.prog:
             self.packer.pack_uint(PROG_UNAVAIL)
             return self.packer.get_buf()
         vers = self.unpacker.unpack_uint()
-        if vers <> self.vers:
+        if vers != self.vers:
             self.packer.pack_uint(PROG_MISMATCH)
             self.packer.pack_uint(self.vers)
             self.packer.pack_uint(self.vers)
@@ -812,7 +814,7 @@ class UDPServer(Server):
     def session(self):
         call, host_port = self.sock.recvfrom(8192)
         reply = self.handle(call)
-        if reply <> None:
+        if reply != None:
             self.sock.sendto(reply, host_port)
 
 
