@@ -1220,6 +1220,9 @@ Accordingly, sets do not implement the \method{__cmp__} method.
 Since sets only define partial ordering (subset relationships), the output
 of the \method{list.sort()} method is undefined for lists of sets.
 
+Set elements are like dictionary keys; they need to define both
+\method{__hash__} and \method{__eq__} methods.
+
 Binary operations that mix \class{set} instances with \class{frozenset}
 return the type of the first operand.  For example:
 \samp{frozenset('ab') | set('bc')} returns an instance of \class{frozenset}.
