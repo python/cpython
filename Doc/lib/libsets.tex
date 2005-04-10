@@ -30,7 +30,10 @@ method but omits methods which alter the contents of the set. Both
 abstract class useful for determining whether something is a set:
 \code{isinstance(\var{obj}, BaseSet)}.
 
-The set classes are implemented using dictionaries.  As a result, sets
+The set classes are implemented using dictionaries.  Accordingly, the
+requirements for set elements are the same as those for dictionary keys;
+namely, that the element defines both \method{__eq__} and \method{__hash__}.
+As a result, sets
 cannot contain mutable elements such as lists or dictionaries.
 However, they can contain immutable collections such as tuples or
 instances of \class{ImmutableSet}.  For convenience in implementing
