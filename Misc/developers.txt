@@ -37,6 +37,9 @@ Permissions History
 Permissions Dropped on Request
 ------------------------------
 
+- Irmen de Jong requested dropping CVS access while keeping tracker
+  access.  10 Apr 2005 RDH
+
 - Moshe Zadka and Ken Manheimer sent drop requests.  8 Apr 2005 by RDH
 
 - Steve Holden, Gerhard Haring, and David Cole sent email stating that
