@@ -37,6 +37,8 @@ Permissions History
 Permissions Dropped on Request
 ------------------------------
 
+- Eric Price sent a drop request.  10 Apr 2005 RDH
+
 - Irmen de Jong requested dropping CVS access while keeping tracker
   access.  10 Apr 2005 RDH
 
