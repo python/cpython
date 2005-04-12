@@ -26,7 +26,7 @@ class xmlrpc_handler:
     def handle_request (self, request):
         [path, params, query, fragment] = request.split_uri()
 
-        if request.command in ('post', 'put'):
+        if request.command.lower() in ('post', 'put'):
             request.collector = collector (self, request)
         else:
             request.error (400)
