@@ -254,8 +254,8 @@ string, and will change the request to be \code{POST} rather than
 
 \begin{methoddesc}[Request]{get_method}{}
 Return a string indicating the HTTP request method.  This is only
-meaningful for HTTP requests, and currently always takes one of the
-values ("GET", "POST").
+meaningful for HTTP requests, and currently always returns
+\code{'GET'} or \code{'POST'}.
 \end{methoddesc}
 
 \begin{methoddesc}[Request]{has_data}{}
