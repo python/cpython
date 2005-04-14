@@ -189,7 +189,7 @@ Wait for child process to terminate.  Returns returncode attribute.
 \begin{methoddesc}{communicate}{input=None}
 Interact with process: Send data to stdin.  Read data from stdout and
 stderr, until end-of-file is reached.  Wait for process to terminate.
-The optional \var{stdin} argument should be a string to be sent to the
+The optional \var{input} argument should be a string to be sent to the
 child process, or \code{None}, if no data should be sent to the child.
 
 communicate() returns a tuple (stdout, stderr).
@@ -374,7 +374,7 @@ executed.}
 \begin{verbatim}
 (child_stdout, child_stdin) = popen2.popen2("somestring", bufsize, mode)
 ==>
-p = Popen(["somestring"], shell=True, bufsize=bufsize
+p = Popen(["somestring"], shell=True, bufsize=bufsize,
           stdin=PIPE, stdout=PIPE, close_fds=True)
 (child_stdout, child_stdin) = (p.stdout, p.stdin)
 \end{verbatim}
