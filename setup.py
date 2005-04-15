@@ -295,6 +295,9 @@ class PyBuildExt(build_ext):
         inc_dirs = self.compiler.include_dirs + ['/usr/include']
         exts = []
 
+        config_h = sysconfig.get_config_h_filename()
+        config_h_vars = sysconfig.parse_config_h(open(config_h))
+
         platform = self.get_platform()
         (srcdir,) = sysconfig.get_config_vars('srcdir')
 
@@ -391,8 +394,8 @@ class PyBuildExt(build_ext):
             # grp(3)
             exts.append( Extension('grp', ['grpmodule.c']) )
             # spwd, shadow passwords
-            if (sysconfig.get_config_var('HAVE_GETSPNAM') or
-                    sysconfig.get_config_var('HAVE_GETSPENT')):
+            if (config_h_vars.get('HAVE_GETSPNAM', False) or
+                    config_h_vars.get('HAVE_GETSPENT', False)):
                 exts.append( Extension('spwd', ['spwdmodule.c']) )
         # select(2); not on ancient System V
         exts.append( Extension('select', ['selectmodule.c']) )
@@ -785,8 +788,6 @@ class PyBuildExt(build_ext):
             ('BYTEORDER', xmlbo),
             ('XML_CONTEXT_BYTES','1024'),
             ]
-        config_h = sysconfig.get_config_h_filename()
-        config_h_vars = sysconfig.parse_config_h(open(config_h))
         for feature_macro in ['HAVE_MEMMOVE', 'HAVE_BCOPY']:
             if config_h_vars.has_key(feature_macro):
                 define_macros.append((feature_macro, '1'))
