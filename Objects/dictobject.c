@@ -1289,7 +1289,7 @@ PyDict_Copy(PyObject *o)
 	if (PyDict_Merge(copy, o, 1) == 0)
 		return copy;
 	Py_DECREF(copy);
-	return copy;
+	return NULL;
 }
 
 int
