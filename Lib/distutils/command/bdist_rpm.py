@@ -298,7 +298,7 @@ class bdist_rpm (Command):
 
         # Make a source distribution and copy to SOURCES directory with
         # optional icon.
-        saved_dist_files = self.distributuion.dist_files[:]
+        saved_dist_files = self.distribution.dist_files[:]
         sdist = self.reinitialize_command('sdist')
         if self.use_bzip2:
             sdist.formats = ['bztar']
