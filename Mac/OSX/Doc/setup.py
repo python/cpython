@@ -28,13 +28,17 @@ import HelpIndexingTool
 import Carbon.File
 import time
 
+MAJOR_VERSION='2.4'
+MINOR_VERSION='2.4.1'
+DESTDIR='/Applications/MacPython-%s/PythonIDE.app/Contents/Resources/English.lproj/PythonDocumentation' % MAJOR_VERSION
+
 class DocBuild(build):
     def initialize_options(self):
         build.initialize_options(self)
         self.build_html = None
         self.build_dest = None
-        self.download = 0
-        self.doc_version = '2.3b1' # Only needed if download is true
+        self.download = 1
+        self.doc_version = MINOR_VERSION # Only needed if download is true
 
     def finalize_options(self):
         build.finalize_options(self)
@@ -48,20 +52,22 @@ class DocBuild(build):
 
     def downloadDocs(self):
         workdir = os.getcwd()
-        url = 'http://www.python.org/ftp/python/doc/%s/html-%s.tgz' % \
+        # XXX Note: the next strings may change from version to version
+        url = 'http://www.python.org/ftp/python/doc/%s/html-%s.tar.bz2' % \
                 (self.doc_version,self.doc_version)
+        tarfile = 'html-%s.tar.bz2' % self.doc_version
+        dirname = 'Python-Docs-%s' % self.doc_version
+        
+        if os.path.exists(self.build_html):
+            raise RuntimeError, '%s: already exists, please remove and try again' % self.build_html
         os.chdir(self.build_base)
         self.spawn('curl','-O', url)
+        self.spawn('tar', '-xjf', tarfile)
+        os.rename(dirname, 'html')
         os.chdir(workdir)
-        tarfile = 'html-%s.tgz' % self.doc_version
-## This no longer works due to name changes
-##              self.mkpath(self.build_html)
-##              os.chdir(self.build_html)
-##              self.spawn('tar', '-xzf', '../' + tarfile)
-##              os.chdir(workdir)
-        print "** Please unpack %s" % os.path.join(self.build_base, tarfile)
-        print "** Unpack the files into %s" % self.build_html
-        raise RuntimeError, "You need to unpack the docs manually"
+##        print "** Please unpack %s" % os.path.join(self.build_base, tarfile)
+##        print "** Unpack the files into %s" % self.build_html
+##        raise RuntimeError, "You need to unpack the docs manually"
 
     def buildDocsFromSource(self):
         srcdir = '../../..'
@@ -173,7 +179,7 @@ class AHVDocInstall(Command):
             build_cmd = self.get_finalized_command('build')
             self.build_dest = build_cmd.build_dest
         if self.install_doc == None:
-            self.install_doc = os.path.join(self.prefix, 'Resources/Python.app/Contents/Resources/English.lproj/PythonDocumentation')
+            self.install_doc = os.path.join(self.prefix, DESTDIR)
         print 'INSTALL', self.build_dest, '->', self.install_doc
 
     def run(self):
