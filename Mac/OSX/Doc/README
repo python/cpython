@@ -1,0 +1,35 @@
+In this directory you can build the Python documentation in a form that
+is suitable for access with Apple Help Viewer. This will enable the
+"Python Documentation" menu entries in the MacPython IDE Help menu.
+
+Unfortunately the procedure to build the docs is not very streamlined.
+
+First, edit setup.py. At the top, edit MAJOR_VERSION and MINOR_VERSION,
+and check that DESTDIR makes sense. The documentation will be installed
+inside PythonIDE.app.
+
+In DocBuild.initialize_options, set self.download to True if you want to
+download the docs. Set it to False if you want to build the docs from
+the source tree, but this requires LaTex and lots of other stuff.
+Doable, but not easy.
+
+Second, if you want to download the docs you may need to do a couple
+more edits. The way the docs are packaged will often change between
+major releases. Fiddle DocBuild.downloadDocs to make it do the right
+thing (download the docs from python.org, unpack them, rename the
+directory to "build/html").
+
+After these edits you should be ready to roll. "pythonw setup.py build"
+should download and unpack (or build) the docs. Next, it will do some
+magic to make the docs indexable. Finally, it will run the Apple Help
+Indexing Tool. (This last step is the reason you must use "pythonw" as
+opposed to "python"). Usually it will time out while waiting for AHIT to
+do its work. Wait until AHIT is done.
+
+Now you're ready to install with "python setup.py install".
+
+After this is done test your work. Fire up PythonIDE, and check that
+Help->Python Documentation brings up the documentation in the Help Viewer.
+Also open an IDE edit window, type something like "import sys", select
+"import", and use Help->Lookup in Python Documentation to check that the
+index has been generated correctly.
