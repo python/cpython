@@ -764,7 +764,7 @@ deemed to delimit empty strings (for example, \samp{'1,,2'.split(',')}
 returns \samp{['1', '', '2']}).  The \var{sep} argument may consist of
 multiple characters (for example, \samp{'1, 2, 3'.split(', ')} returns
 \samp{['1', '2', '3']}).  Splitting an empty string with a specified
-separator returns an empty list.
+separator returns \samp{['']}.
 
 If \var{sep} is not specified or is \code{None}, a different splitting
 algorithm is applied.  First, whitespace characters (spaces, tabs,
@@ -773,7 +773,7 @@ words are separated by arbitrary length strings of whitespace
 characters. Consecutive whitespace delimiters are treated as a single
 delimiter (\samp{'1  2  3'.split()} returns \samp{['1', '2', '3']}).
 Splitting an empty string or a string consisting of just whitespace
-will return \samp{['']}.
+returns an empty list.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{splitlines}{\optional{keepends}}
