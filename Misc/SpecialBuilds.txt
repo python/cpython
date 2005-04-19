@@ -1,6 +1,9 @@
 This file describes some special Python build types enabled via
 compile-time preprocessor defines.
 
+It is best to define these options in the OPT environment variable;
+``OPT="-DPy_REF_DEBUG" ./configure``.
+
 ---------------------------------------------------------------------------
 Py_REF_DEBUG                                              introduced in 1.4
                                                  named REF_DEBUG before 1.4
