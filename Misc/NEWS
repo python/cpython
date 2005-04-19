@@ -12,6 +12,11 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Descriptors defined in C with a PyGetSetDef structure, where the setter is
+  NULL, now raise an AttributeError when attempting to set or delete the
+  attribute.  Previously a TypeError was raised, but this was inconsistent
+  with the equivalent pure-Python implementation.
+
 - It is now safe to call PyGILState_Release() before
   PyEval_InitThreads() (note that if there is reason to believe there
   are multiple threads around you still must call PyEval_InitThreads()
