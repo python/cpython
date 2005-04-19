@@ -144,7 +144,7 @@ getset_get(PyGetSetDescrObject *descr, PyObject *obj, PyObject *type)
 		return res;
 	if (descr->d_getset->get != NULL)
 		return descr->d_getset->get(obj, descr->d_getset->closure);
-	PyErr_Format(PyExc_TypeError,
+	PyErr_Format(PyExc_AttributeError,
 		     "attribute '%.300s' of '%.100s' objects is not readable",
 		     descr_name((PyDescrObject *)descr),
 		     descr->d_type->tp_name);
@@ -199,7 +199,7 @@ getset_set(PyGetSetDescrObject *descr, PyObject *obj, PyObject *value)
 	if (descr->d_getset->set != NULL)
 		return descr->d_getset->set(obj, value,
 					    descr->d_getset->closure);
-	PyErr_Format(PyExc_TypeError,
+	PyErr_Format(PyExc_AttributeError,
 		     "attribute '%.300s' of '%.100s' objects is not writable",
 		     descr_name((PyDescrObject *)descr),
 		     descr->d_type->tp_name);
