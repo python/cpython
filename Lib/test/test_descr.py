@@ -2712,7 +2712,7 @@ def setdict():
     def cant(x, dict):
         try:
             x.__dict__ = dict
-        except TypeError:
+        except (AttributeError, TypeError):
             pass
         else:
             raise TestFailed, "shouldn't allow %r.__dict__ = %r" % (x, dict)
