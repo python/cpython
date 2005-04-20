@@ -34,10 +34,10 @@ f.softspace = softspace    # merely shouldn't blow up
 for attr in 'name', 'mode', 'closed':
     try:
         setattr(f, attr, 'oops')
-    except TypeError:
+    except (AttributeError, TypeError):
         pass
     else:
-        raise TestFailed('expected TypeError setting file attr %r' % attr)
+        raise TestFailed('expected exception setting file attr %r' % attr)
 f.close()
 
 # verify writelines with instance sequence

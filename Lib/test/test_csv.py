@@ -55,8 +55,9 @@ class Test_Csv(unittest.TestCase):
         # Try deleting or changing attributes (they are read-only)
         self.assertRaises(TypeError, delattr, obj.dialect, 'delimiter')
         self.assertRaises(TypeError, setattr, obj.dialect, 'delimiter', ':')
-        self.assertRaises(TypeError, delattr, obj.dialect, 'quoting')
-        self.assertRaises(TypeError, setattr, obj.dialect, 'quoting', None)
+        self.assertRaises(AttributeError, delattr, obj.dialect, 'quoting')
+        self.assertRaises(AttributeError, setattr, obj.dialect,
+                          'quoting', None)
 
     def test_reader_attrs(self):
         self._test_default_attrs(csv.reader, [])
