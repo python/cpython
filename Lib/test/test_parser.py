@@ -129,7 +129,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
 
     def test_class_defs(self):
         self.check_suite("class foo():pass")
-        
+
     def test_import_from_statement(self):
         self.check_suite("from sys.path import *")
         self.check_suite("from sys.path import dirname")

@@ -35,7 +35,7 @@ class CompilerTest(unittest.TestCase):
 
     def testNewClassSyntax(self):
         compiler.compile("class foo():pass\n\n","<string>","exec")
-        
+
     def testLineNo(self):
         # Test that all nodes except Module have a correct lineno attribute.
         filename = __file__
