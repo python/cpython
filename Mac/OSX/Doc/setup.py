@@ -57,7 +57,7 @@ class DocBuild(build):
                 (self.doc_version,self.doc_version)
         tarfile = 'html-%s.tar.bz2' % self.doc_version
         dirname = 'Python-Docs-%s' % self.doc_version
-        
+
         if os.path.exists(self.build_html):
             raise RuntimeError, '%s: already exists, please remove and try again' % self.build_html
         os.chdir(self.build_base)
