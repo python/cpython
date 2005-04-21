@@ -230,7 +230,6 @@ class StreamReader(Codec):
         self.errors = errors
         self.bytebuffer = ""
         self.charbuffer = u""
-        self.atcr = False
 
     def decode(self, input, errors='strict'):
         raise NotImplementedError
@@ -306,18 +305,12 @@ class StreamReader(Codec):
         # If size is given, we call read() only once
         while True:
             data = self.read(readsize)
-            if self.atcr and data.startswith(u"\n"):
-                data = data[1:]
             if data:
-                self.atcr = data.endswith(u"\r")
-                # If we're at a "\r" (and are allowed to read more), read one
-                # extra character (which might be a "\n") to get a proper
-                # line ending. (If the stream is temporarily exhausted we return
-                # the wrong line ending, but at least we won't generate a bogus
-                # second line.)
-                if self.atcr and size is None:
+                # If we're at a "\r" read one # extra character # (which might
+                # be a "\n") to get a proper # line ending. If the stream is
+                # temporarily exhausted we return the wrong line ending.
+                if data.endswith(u"\r"):
                     data += self.read(size=1, chars=1)
-                    self.atcr = data.endswith(u"\r")
 
             line += data
             lines = line.splitlines(True)
@@ -367,7 +360,6 @@ class StreamReader(Codec):
         """
         self.bytebuffer = ""
         self.charbuffer = u""
-        self.atcr = False
 
     def seek(self, offset, whence=0):
         """ Set the input stream's current position.

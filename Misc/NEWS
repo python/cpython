@@ -266,6 +266,12 @@ Library
 - Bug #1149508: ``textwrap`` now handles hyphenated numbers (eg. "2004-03-05")
   correctly.
 
+- Partial fixes for SF bugs #1163244 and #1175396: If a chunk read by
+  ``codecs.StreamReader.readline()`` has a trailing "\r", read one more
+  character even if the user has passed a size parameter to get a proper
+  line ending. Remove the special handling of a "\r\n" that has been split
+  between two lines.
+
 
 Build
 -----
