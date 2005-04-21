@@ -306,8 +306,8 @@ class StreamReader(Codec):
         while True:
             data = self.read(readsize)
             if data:
-                # If we're at a "\r" read one # extra character # (which might
-                # be a "\n") to get a proper # line ending. If the stream is
+                # If we're at a "\r" read one extra character (which might
+                # be a "\n") to get a proper line ending. If the stream is
                 # temporarily exhausted we return the wrong line ending.
                 if data.endswith(u"\r"):
                     data += self.read(size=1, chars=1)
