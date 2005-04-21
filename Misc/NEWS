@@ -32,6 +32,12 @@ Library
 - distutils.commands.register now encodes the data as UTF-8 before posting
   them to PyPI.
 
+- Partial fixes for SF bugs #1163244 and #1175396: If a chunk read by
+  ``codecs.StreamReader.readline()`` has a trailing "\r", read one more
+  character even if the user has passed a size parameter to get a proper
+  line ending. Remove the special handling of a "\r\n" that has been split
+  between two lines.
+
 
 What's New in Python 2.4.1 final?
 =================================
