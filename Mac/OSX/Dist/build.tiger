@@ -1,0 +1,121 @@
+#!/bin/sh -e
+#----------------------------------------------------------------------
+# Build the MacPython 2.3 extensions for an installation to run
+# on the pre-installed 2.3.5 framework build on OSX 10.4
+
+# TODO:  Parameterize the versions, builddirs, etc...
+
+# Script configs
+PYVERSION=2.3.5
+PYVER=2.3
+BUILDNUM=1
+DOCLEANUP=no
+
+PROGDIR="`dirname \"$0\"`"
+case x$PROGDIR in
+x|x.) PROGDIR=`pwd` ;;
+x/*) ;;
+*) echo "Please run with a full pathname"
+   exit 1
+   ;;
+esac
+
+if [ ! -e /usr/bin/python ]; then
+	echo "No /usr/bin/python; this script expects to be run on 10.4 only"
+	exit 1
+fi
+vers=`/usr/bin/python -V 2>&1`
+if [ "$vers" != "Python 2.3.5" ]; then
+    echo "/usr/bin/python is not version 2.3.5; this script expects to be run on 10.3 only"
+    exit 1
+fi
+
+TMPDIR=/tmp/_py
+#TMPDIR=/projects/_py
+
+INSTALLROOT=$TMPDIR/install
+DMGDIR=$TMPDIR/dmg
+RESOURCEDIR=$PROGDIR/resources.tiger
+DESTDIR=$TMPDIR/dist
+PYTHONSRC=$PROGDIR/../../..
+PYTHONOSXDIR=$PYTHONSRC/Mac/OSX
+WASTEDIR=$PYTHONSRC/../waste
+
+rm -rf $DMGDIR
+if [ ! -e $TMPDIR ]; then
+	mkdir $TMPDIR
+fi
+chgrp admin $TMPDIR
+mkdir -p $DMGDIR/root
+
+
+# Ask the user whether s/he has edited Welcome.txt
+read -p "Have you updated $RESOURCEDIR/Welcome.txt (Y/n)? " welcome
+
+if [ "$welcome" = "n" -o "$welcome" = "N" ]; then
+	echo "Please do so and retry"
+	exit
+fi
+
+# Make the installation directories
+mkdir -p $INSTALLROOT/Applications
+mkdir -p $INSTALLROOT/Library/Python/$PYVER
+
+# Make a temporary site-packages symlink
+mkdir -p $INSTALLROOT/System/Library/Frameworks/Python.framework/Versions/2.3/lib/python2.3/
+ln -s $INSTALLROOT/Library/Python/$PYVER $INSTALLROOT/System/Library/Frameworks/Python.framework/Versions/2.3/lib/python2.3/site-packages
+
+pushd $PYTHONOSXDIR
+
+make -f Makefile.tiger DIRMODE=775 EXEMODE=775 FILEMODE=664 DESTDIR=$INSTALLROOT
+
+# Remove the temporary symlink
+rm -r $INSTALLROOT/System
+
+# Unfortunately all the ...MODE arguments above still don't do the trick.
+# Cop out, and recursively set everything group-writeable.
+chmod -R ug+w $INSTALLROOT
+
+popd
+
+# Make the Installer package:
+
+# Finally, build the package...
+rm -rf MacPython-Tiger.pkg
+python $PYTHONSRC/Mac/scripts/buildpkg.py \
+    --Title=MacPython-Tiger \
+    --Version=$PYVERSION-$BUILDNUM \
+    --Description="MacPython $PYVERSION tools and additions for Mac OS X 10.4" \
+    --NeedsAuthorization="YES" \
+    --Relocatable="NO" \
+    --InstallOnly="YES" \
+    --UseUserMask="NO" \
+    $INSTALLROOT \
+    $RESOURCEDIR
+
+#    --RootVolumeOnly="YES" \
+
+# ...and then make a disk image containing the package.
+mv MacPython-Tiger.pkg $DMGDIR/root
+cp $RESOURCEDIR/ReadMe.txt $DMGDIR/root/ReadMe.txt
+$PROGDIR/makedmg $DMGDIR/root $DMGDIR MacPython-Tiger-$PYVERSION-$BUILDNUM
+
+echo Moving $DMGDIR/MacPython-Tiger-$PYVERSION-$BUILDNUM to $DESTDIR
+if [ ! -e $DESTDIR ]; then
+    mkdir $DESTDIR
+fi
+mv $DMGDIR/MacPython-Tiger-$PYVERSION-$BUILDNUM.dmg $DESTDIR
+
+
+# Cleanup build/install dirs
+if [ $DOCLEANUP = yes ]; then
+    echo "Cleaning up..."
+    rm -rf $INSTALLROOT
+    rm -rf $DMGDIR
+else
+    echo "Cleanup is disabled.  You should remove these dirs when done:"
+    echo "          $INSTALLROOT"
+    echo "          $DMGDIR"
+fi
+echo "Your installer can be found in $DESTDIR"
+

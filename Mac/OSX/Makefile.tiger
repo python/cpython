@@ -1,0 +1,62 @@
+# This Makefile is to be used *only* on Tiger.
+# It installs the things that are available in MacPython but that are
+# ommitted from Apple's installation of Python 2.3.5.
+#
+all: install_waste install_IDE install_PackageManager \
+	install_BuildApplet installextras install_PythonLauncher
+
+srcdir=../..
+VERSION=2.3
+DESTDIR=
+PYTHONAPPSDIR=/Applications/MacPython-$(VERSION)
+
+APPLE_prefix=/System/Library/Frameworks/Python.framework/Versions/$(VERSION)
+BUILDPYTHON=/usr/bin/python$(VERSION)
+APPLE_LIBDEST=$(APPLE_prefix)/lib/python$(VERSION)
+INSTALLED_PYTHONW=$(APPLE_prefix)/Resources/Python.app/Contents/MacOS/Python
+APPLE_PYTHONLAUNCHER=$(APPLE_prefix)/Resources/PythonLauncher.app
+bundlebuilder=$(srcdir)/Lib/plat-mac/bundlebuilder.py
+
+install_waste:
+	$(BUILDPYTHON) setup.panther.py install \
+		--prefix=$(APPLE_prefix) --root=/$(DESTDIR)
+	
+install_IDE:
+	$(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
+		--python $(INSTALLED_PYTHONW) \
+		--output $(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app --noargv \
+		$(srcdir)/Mac/Tools/IDE/PythonIDE.py
+#	# Add the extra files to the resources. This is to work around bugs in
+#	# them in the original 2.3.
+#	cp ../Tools/IDE/PythonIDEMain.py $(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app/Contents/Resources
+#	cp ../Tools/IDE/Wapplication.py $(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app/Contents/Resources
+#	cp ../Tools/IDE/Wcontrols.py $(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app/Contents/Resources
+#	cp ../Tools/IDE/PyEdit.py $(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app/Contents/Resources
+
+install_PackageManager:
+	$(BUILDPYTHON) $(bundlebuilder) \
+		--builddir $(DESTDIR)$(PYTHONAPPSDIR)/ \
+		--python $(INSTALLED_PYTHONW) \
+		--resource $(srcdir)/Mac/Tools/IDE/PythonIDE.rsrc \
+		--mainprogram $(srcdir)/Mac/Tools/IDE/PackageManager.py \
+		--iconfile $(srcdir)/Mac/Tools/IDE/PackageManager.icns \
+		--plist $(srcdir)/Mac/Tools/IDE/PackageManager.plist \
+		--creator Pimp build
+
+install_BuildApplet:
+	$(BUILDPYTHON) $(srcdir)/Mac/scripts/BuildApplet.py \
+		--python $(INSTALLED_PYTHONW) \
+		--output $(DESTDIR)$(PYTHONAPPSDIR)/BuildApplet.app \
+		$(srcdir)/Mac/scripts/BuildApplet.py
+
+installextras:
+	$(MAKE) -f Makefile installextras \
+		BUILDPYTHON=$(BUILDPYTHON) INSTALLED_PYTHONW=$(INSTALLED_PYTHONW) \
+		DESTDIR=$(DESTDIR) PYTHONAPPSDIR=$(PYTHONAPPSDIR)
+
+install_PythonLauncher:
+	ln -fsn $(APPLE_PYTHONLAUNCHER) $(DESTDIR)$(PYTHONAPPSDIR)/PythonLauncher
+	
+install_pimpupdate:
+	cp ../../Lib/plat-mac/pimp.py $(DESTDIR)/Library/Python/2.3/pimp_update.py
+    
