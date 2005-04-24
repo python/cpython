@@ -503,6 +503,6 @@ PyGILState_Release(PyGILState_STATE oldstate)
 	}
 	/* Release the lock if necessary */
 	else if (oldstate == PyGILState_UNLOCKED)
-		PyEval_ReleaseThread(tcur);
+		PyEval_SaveThread();
 }
 #endif /* WITH_THREAD */

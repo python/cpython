@@ -12,6 +12,12 @@ What's New in Python 2.4.2a
 Core and builtins
 -----------------
 
+- It is now safe to call PyGILState_Release() before
+  PyEval_InitThreads() (note that if there is reason to believe there
+  are multiple threads around you still must call PyEval_InitThreads()
+  before using the Python API; this fix is for extension modules that
+  have no way of knowing if Python is multi-threaded yet).
+
 - Typing Ctrl-C whilst raw_input() was waiting in a build with threads
   disabled caused a crash.
 
