@@ -827,6 +827,9 @@ the -Wall and -Wstrict-prototypes options.
 Additional debugging code to help debug memory management problems can
 be enabled by using the --with-pydebug option to the configure script.
 
+For flags that change binary compatibility, use the EXTRA_CFLAGS
+variable.
+
 
 Profiling
 ---------

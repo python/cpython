@@ -276,6 +276,11 @@ Library
 Build
 -----
 
+- EXTRA_CFLAGS has been introduced as an environment variable to hold compiler
+  flags that change binary compatibility.  Changes were also made to
+  distutils.sysconfig to also use the environment variable when used during
+  compilation of the interpreter.
+
 - SF patch 1171735: Darwin 8's headers are anal about POSIX compliance,
   and linking has changed (prebinding is now deprecated, and libcc_dynamic
   no longer exists). This configure patch makes things right.
