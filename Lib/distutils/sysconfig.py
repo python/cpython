@@ -146,8 +146,8 @@ def customize_compiler(compiler):
     varies across Unices and is stored in Python's Makefile.
     """
     if compiler.compiler_type == "unix":
-        (cc, cxx, opt, extra_cflags, basecflags, ccshared, ldshared, so_ext) = \
-            get_config_vars('CC', 'CXX', 'OPT', 'EXTRA_CFLAGS', 'BASECFLAGS',
+        (cc, cxx, opt, cflags, ccshared, ldshared, so_ext) = \
+            get_config_vars('CC', 'CXX', 'OPT', 'CFLAGS', 
                             'CCSHARED', 'LDSHARED', 'SO')
 
         if os.environ.has_key('CC'):
@@ -162,17 +162,15 @@ def customize_compiler(compiler):
             cpp = cc + " -E"           # not always
         if os.environ.has_key('LDFLAGS'):
             ldshared = ldshared + ' ' + os.environ['LDFLAGS']
-        if basecflags:
-            opt = basecflags + ' ' + opt
         if os.environ.has_key('CFLAGS'):
-            opt = opt + ' ' + os.environ['CFLAGS']
+            cflags = opt + ' ' + os.environ['CFLAGS']
             ldshared = ldshared + ' ' + os.environ['CFLAGS']
         if os.environ.has_key('CPPFLAGS'):
             cpp = cpp + ' ' + os.environ['CPPFLAGS']
-            opt = opt + ' ' + os.environ['CPPFLAGS']
+            cflags = cflags + ' ' + os.environ['CPPFLAGS']
             ldshared = ldshared + ' ' + os.environ['CPPFLAGS']
 
-        cc_cmd = ' '.join(str(x) for x in (cc, opt, extra_cflags) if x)
+        cc_cmd = cc + ' ' + cflags
         compiler.set_executables(
             preprocessor=cpp,
             compiler=cc_cmd,
@@ -278,25 +276,20 @@ def parse_makefile(fn, g=None):
             m = _findvar1_rx.search(value) or _findvar2_rx.search(value)
             if m:
                 n = m.group(1)
+                found = True
                 if done.has_key(n):
-                    after = value[m.end():]
-                    value = value[:m.start()] + str(done[n]) + after
-                    if "$" in after:
-                        notdone[name] = value
-                    else:
-                        try: value = int(value)
-                        except ValueError:
-                            done[name] = string.strip(value)
-                        else:
-                            done[name] = value
-                        del notdone[name]
+                    item = str(done[n])
                 elif notdone.has_key(n):
                     # get it on a subsequent round
-                    pass
+                    found = False
+                elif os.environ.has_key(n):
+                    # do it like make: fall back to environment
+                    item = os.environ[n]
                 else:
-                    done[n] = ""
+                    done[n] = item = ""
+                if found:
                     after = value[m.end():]
-                    value = value[:m.start()] + after
+                    value = value[:m.start()] + item + after
                     if "$" in after:
                         notdone[name] = value
                     else:
