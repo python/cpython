@@ -826,7 +826,10 @@ int_coerce(PyObject **pv, PyObject **pw)
 static PyObject *
 int_int(PyIntObject *v)
 {
-	Py_INCREF(v);
+	if (PyInt_CheckExact(v))
+		Py_INCREF(v);
+	else
+		v = (PyIntObject *)PyInt_FromLong(v->ob_ival);
 	return (PyObject *)v;
 }
 

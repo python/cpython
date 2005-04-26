@@ -273,6 +273,28 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(complex(real=float2(17.), imag=float2(23.)), 17+23j)
         self.assertRaises(TypeError, complex, float2(None))
 
+        class complex0(complex):
+            """Test usage of __complex__() when inheriting from 'complex'"""
+            def __complex__(self):
+                return 42j
+
+        class complex1(complex):
+            """Test usage of __complex__() with a __new__() method"""
+            def __new__(self, value=0j):
+                return complex.__new__(self, 2*value)
+            def __complex__(self):
+                return self
+
+        class complex2(complex):
+            """Make sure that __complex__() calls fail if anything other than a
+            complex is returned"""
+            def __complex__(self):
+                return None
+
+        self.assertAlmostEqual(complex(complex0(1j)), 42j)
+        self.assertAlmostEqual(complex(complex1(1j)), 2j)
+        self.assertRaises(TypeError, complex, complex2(1j))
+
     def test_hash(self):
         for x in xrange(-30, 30):
             self.assertEqual(hash(x), hash(complex(x, 0)))

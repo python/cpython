@@ -926,7 +926,10 @@ float_int(PyObject *v)
 static PyObject *
 float_float(PyObject *v)
 {
-	Py_INCREF(v);
+	if (PyFloat_CheckExact(v))
+		Py_INCREF(v);
+	else
+		v = PyFloat_FromDouble(((PyFloatObject *)v)->ob_fval);
 	return v;
 }
 

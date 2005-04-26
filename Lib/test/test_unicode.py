@@ -389,7 +389,6 @@ class UnicodeTest(
         self.assertEqual('%i%s %*.*s' % (10, 3, 5, 3, u'abc',), u'103   abc')
         self.assertEqual('%c' % u'a', u'a')
 
-
     def test_constructor(self):
         # unicode(obj) tests (this maps to PyObject_Unicode() at C level)
 
@@ -724,6 +723,69 @@ class UnicodeTest(
         x = u'\U00100000'
         y = x.encode("raw-unicode-escape").decode("raw-unicode-escape")
         self.assertEqual(x, y)
+
+    def test_conversion(self):
+        # Make sure __unicode__() works properly
+        class Foo0:
+            def __str__(self):
+                return "foo"
+
+        class Foo1:
+            def __unicode__(self):
+                return u"foo"
+
+        class Foo2(object):
+            def __unicode__(self):
+                return u"foo"
+
+        class Foo3(object):
+            def __unicode__(self):
+                return "foo"
+
+        class Foo4(str):
+            def __unicode__(self):
+                return "foo"
+
+        class Foo5(unicode):
+            def __unicode__(self):
+                return "foo"
+
+        class Foo6(str):
+            def __str__(self):
+                return "foos"
+
+            def __unicode__(self):
+                return u"foou"
+
+        class Foo7(unicode):
+            def __str__(self):
+                return "foos"
+            def __unicode__(self):
+                return u"foou"
+
+        class Foo8(unicode):
+            def __new__(cls, content=""):
+                return unicode.__new__(cls, 2*content)
+            def __unicode__(self):
+                return self
+
+        class Foo9(unicode):
+            def __str__(self):
+                return "string"
+            def __unicode__(self):
+                return "not unicode"
+
+        self.assertEqual(unicode(Foo0()), u"foo")
+        self.assertEqual(unicode(Foo1()), u"foo")
+        self.assertEqual(unicode(Foo2()), u"foo")
+        self.assertEqual(unicode(Foo3()), u"foo")
+        self.assertEqual(unicode(Foo4("bar")), u"foo")
+        self.assertEqual(unicode(Foo5("bar")), u"foo")
+        self.assertEqual(unicode(Foo6("bar")), u"foou")
+        self.assertEqual(unicode(Foo7("bar")), u"foou")
+        self.assertEqual(unicode(Foo8("foo")), u"foofoo")
+        self.assertEqual(str(Foo9("foo")), "string")
+        self.assertEqual(unicode(Foo9("foo")), u"not unicode")
 
 def test_main():
     test_support.run_unittest(UnicodeTest)

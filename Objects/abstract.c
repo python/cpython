@@ -951,7 +951,19 @@ PyNumber_Int(PyObject *o)
 		Py_INCREF(o);
 		return o;
 	}
-	if (PyInt_Check(o)) {
+	m = o->ob_type->tp_as_number;
+	if (m && m->nb_int) { /* This should include subclasses of int */
+		PyObject *res = m->nb_int(o);
+		if (res && (!PyInt_Check(res) && !PyLong_Check(res))) {
+			PyErr_Format(PyExc_TypeError,
+				     "__int__ returned non-int (type %.200s)",
+				     res->ob_type->tp_name);
+			Py_DECREF(res);
+			return NULL;
+		}
+		return res;
+	}
+	if (PyInt_Check(o)) { /* A int subclass without nb_int */
 		PyIntObject *io = (PyIntObject*)o;
 		return PyInt_FromLong(io->ob_ival);
 	}
@@ -964,18 +976,6 @@ PyNumber_Int(PyObject *o)
 					 PyUnicode_GET_SIZE(o),
 					 10);
 #endif
-	m = o->ob_type->tp_as_number;
-	if (m && m->nb_int) {
-		PyObject *res = m->nb_int(o);
-		if (res && (!PyInt_Check(res) && !PyLong_Check(res))) {
-			PyErr_Format(PyExc_TypeError,
-				     "__int__ returned non-int (type %.200s)",
-				     res->ob_type->tp_name);
-			Py_DECREF(res);
-			return NULL;
-		}
-		return res;
-	}
 	if (!PyObject_AsCharBuffer(o, &buffer, &buffer_len))
 		return int_from_string((char*)buffer, buffer_len);
 
@@ -1010,11 +1010,19 @@ PyNumber_Long(PyObject *o)
 
 	if (o == NULL)
 		return null_error();
-	if (PyLong_CheckExact(o)) {
-		Py_INCREF(o);
-		return o;
+	m = o->ob_type->tp_as_number;
+	if (m && m->nb_long) { /* This should include subclasses of long */
+		PyObject *res = m->nb_long(o);
+		if (res && (!PyInt_Check(res) && !PyLong_Check(res))) {
+			PyErr_Format(PyExc_TypeError,
+				     "__long__ returned non-long (type %.200s)",
+				     res->ob_type->tp_name);
+			Py_DECREF(res);
+			return NULL;
+		}
+		return res;
 	}
-	if (PyLong_Check(o))
+	if (PyLong_Check(o)) /* A long subclass without nb_long */
 		return _PyLong_Copy((PyLongObject *)o);
 	if (PyString_Check(o))
 		/* need to do extra error checking that PyLong_FromString()
@@ -1030,18 +1038,6 @@ PyNumber_Long(PyObject *o)
 					  PyUnicode_GET_SIZE(o),
 					  10);
 #endif
-	m = o->ob_type->tp_as_number;
-	if (m && m->nb_long) {
-		PyObject *res = m->nb_long(o);
-		if (res && (!PyInt_Check(res) && !PyLong_Check(res))) {
-			PyErr_Format(PyExc_TypeError,
-				     "__long__ returned non-long (type %.200s)",
-				     res->ob_type->tp_name);
-			Py_DECREF(res);
-			return NULL;
-		}
-		return res;
-	}
 	if (!PyObject_AsCharBuffer(o, &buffer, &buffer_len))
 		return long_from_string(buffer, buffer_len);
 
@@ -1055,27 +1051,21 @@ PyNumber_Float(PyObject *o)
 
 	if (o == NULL)
 		return null_error();
-	if (PyFloat_CheckExact(o)) {
-		Py_INCREF(o);
-		return o;
+	m = o->ob_type->tp_as_number;
+	if (m && m->nb_float) { /* This should include subclasses of float */
+		PyObject *res = m->nb_float(o);
+		if (res && !PyFloat_Check(res)) {
+			PyErr_Format(PyExc_TypeError,
+		          "__float__ returned non-float (type %.200s)",
+		          res->ob_type->tp_name);
+			Py_DECREF(res);
+			return NULL;
+		}
+		return res;
 	}
-	if (PyFloat_Check(o)) {
+	if (PyFloat_Check(o)) { /* A float subclass with nb_float == NULL */
 		PyFloatObject *po = (PyFloatObject *)o;
 		return PyFloat_FromDouble(po->ob_fval);
-	}
-	if (!PyString_Check(o)) {
-		m = o->ob_type->tp_as_number;
-		if (m && m->nb_float) {
-			PyObject *res = m->nb_float(o);
-			if (res && !PyFloat_Check(res)) {
-				PyErr_Format(PyExc_TypeError,
-			          "__float__ returned non-float (type %.200s)",
-			          res->ob_type->tp_name);
-				Py_DECREF(res);
-				return NULL;
-			}
-			return res;
-		}
 	}
 	return PyFloat_FromString(o, NULL);
 }
