@@ -12,6 +12,14 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- patch #1109424: int, long, float, complex, and unicode now check for the
+  proper magic slot for type conversions when subclassed.  Previously the
+  magic slot was ignored during conversion.  Semantics now match the way
+  subclasses of str always behaved.  int/long/float, conversion of an instance
+  to the base class has been moved the prroper nb_* magic slot and out of
+  PyNumber_*().
+  Thanks Walter Dörwald.
+
 - Descriptors defined in C with a PyGetSetDef structure, where the setter is
   NULL, now raise an AttributeError when attempting to set or delete the
   attribute.  Previously a TypeError was raised, but this was inconsistent

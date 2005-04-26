@@ -545,6 +545,37 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(float(unicode("  3.14  ")), 3.14)
             self.assertEqual(float(unicode("  \u0663.\u0661\u0664  ",'raw-unicode-escape')), 3.14)
 
+    def test_floatconversion(self):
+        # Make sure that calls to __float__() work properly
+        class Foo0:
+            def __float__(self):
+                return 42.
+
+        class Foo1(object):
+            def __float__(self):
+                return 42.
+
+        class Foo2(float):
+            def __float__(self):
+                return 42.
+
+        class Foo3(float):
+            def __new__(cls, value=0.):
+                return float.__new__(cls, 2*value)
+
+            def __float__(self):
+                return self
+
+        class Foo4(float):
+            def __float__(self):
+                return 42
+
+        self.assertAlmostEqual(float(Foo0()), 42.)
+        self.assertAlmostEqual(float(Foo1()), 42.)
+        self.assertAlmostEqual(float(Foo2()), 42.)
+        self.assertAlmostEqual(float(Foo3(21)), 42.)
+        self.assertRaises(TypeError, float, Foo4(42))
+
     def test_getattr(self):
         import sys
         self.assert_(getattr(sys, 'stdout') is sys.stdout)
@@ -649,6 +680,39 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, int, 1, 12)
 
         self.assertEqual(int('0123', 0), 83)
+
+    def test_intconversion(self):
+        # Test __int__()
+        class Foo0:
+            def __int__(self):
+                return 42
+
+        class Foo1(object):
+            def __int__(self):
+                return 42
+
+        class Foo2(int):
+            def __int__(self):
+                return 42
+
+        class Foo3(int):
+            def __int__(self):
+                return self
+
+        class Foo4(int):
+            def __int__(self):
+                return 42L
+
+        class Foo5(int):
+            def __int__(self):
+                return 42.
+
+        self.assertEqual(int(Foo0()), 42)
+        self.assertEqual(int(Foo1()), 42)
+        self.assertEqual(int(Foo2()), 42)
+        self.assertEqual(int(Foo3()), 0)
+        self.assertEqual(int(Foo4()), 42L)
+        self.assertRaises(TypeError, int, Foo5())
 
     def test_intern(self):
         self.assertRaises(TypeError, intern)
@@ -809,6 +873,39 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, long, '123\0')
         self.assertRaises(ValueError, long, '53', 40)
         self.assertRaises(TypeError, long, 1, 12)
+
+    def test_longconversion(self):
+        # Test __long__()
+        class Foo0:
+            def __long__(self):
+                return 42L
+
+        class Foo1(object):
+            def __long__(self):
+                return 42L
+
+        class Foo2(long):
+            def __long__(self):
+                return 42L
+
+        class Foo3(long):
+            def __long__(self):
+                return self
+
+        class Foo4(long):
+            def __long__(self):
+                return 42
+
+        class Foo5(long):
+            def __long__(self):
+                return 42.
+
+        self.assertEqual(long(Foo0()), 42L)
+        self.assertEqual(long(Foo1()), 42L)
+        self.assertEqual(long(Foo2()), 42L)
+        self.assertEqual(long(Foo3()), 0)
+        self.assertEqual(long(Foo4()), 42)
+        self.assertRaises(TypeError, long, Foo5())
 
     def test_map(self):
         self.assertEqual(

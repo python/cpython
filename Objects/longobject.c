@@ -2861,7 +2861,10 @@ long_coerce(PyObject **pv, PyObject **pw)
 static PyObject *
 long_long(PyObject *v)
 {
-	Py_INCREF(v);
+	if (PyLong_CheckExact(v))
+		Py_INCREF(v);
+	else
+		v = _PyLong_Copy((PyLongObject *)v);
 	return v;
 }
 

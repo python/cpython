@@ -373,6 +373,8 @@ PyObject *
 PyObject_Unicode(PyObject *v)
 {
 	PyObject *res;
+	PyObject *func;
+	static PyObject *unicodestr;
 
 	if (v == NULL)
 		res = PyString_FromString("<NULL>");
@@ -380,35 +382,32 @@ PyObject_Unicode(PyObject *v)
 		Py_INCREF(v);
 		return v;
 	}
-	if (PyUnicode_Check(v)) {
-		/* For a Unicode subtype that's not a Unicode object,
-		   return a true Unicode object with the same data. */
-		return PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(v),
-					     PyUnicode_GET_SIZE(v));
+	/* XXX As soon as we have a tp_unicode slot, we should
+	   check this before trying the __unicode__
+	   method. */
+	if (unicodestr == NULL) {
+		unicodestr= PyString_InternFromString("__unicode__");
+		if (unicodestr == NULL)
+			return NULL;
 	}
-	if (PyString_Check(v)) {
-		Py_INCREF(v);
-	    	res = v;
-    	}
+	func = PyObject_GetAttr(v, unicodestr);
+	if (func != NULL) {
+		res = PyEval_CallObject(func, (PyObject *)NULL);
+		Py_DECREF(func);
+	}
 	else {
-		PyObject *func;
-		static PyObject *unicodestr;
-		/* XXX As soon as we have a tp_unicode slot, we should
-		       check this before trying the __unicode__
-		       method. */
-		if (unicodestr == NULL) {
-			unicodestr= PyString_InternFromString(
-						       "__unicode__");
-			if (unicodestr == NULL)
-				return NULL;
+		PyErr_Clear();
+		if (PyUnicode_Check(v)) {
+			/* For a Unicode subtype that's didn't overwrite __unicode__,
+			   return a true Unicode object with the same data. */
+			return PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(v),
+			                             PyUnicode_GET_SIZE(v));
 		}
-		func = PyObject_GetAttr(v, unicodestr);
-		if (func != NULL) {
-		    	res = PyEval_CallObject(func, (PyObject *)NULL);
-			Py_DECREF(func);
+		if (PyString_CheckExact(v)) {
+			Py_INCREF(v);
+			res = v;
 		}
 		else {
-			PyErr_Clear();
 			if (v->ob_type->tp_str != NULL)
 				res = (*v->ob_type->tp_str)(v);
 			else
@@ -424,7 +423,7 @@ PyObject_Unicode(PyObject *v)
 		if (str)
 			res = str;
 		else
-		    	return NULL;
+			return NULL;
 	}
 	return res;
 }
