@@ -1,8 +1,7 @@
-# Copyright (C) 2001,2002 Python Software Foundation
-# Author: barry@zope.com (Barry Warsaw)
+# Copyright (C) 2001-2005 Python Software Foundation
+# Author: barry@python.org (Barry Warsaw)
 
-"""Basic message object for the email package object model.
-"""
+"""Basic message object for the email package object model."""
 
 import re
 import uu
@@ -728,7 +727,13 @@ class Message:
         if isinstance(filename, TupleType):
             # It's an RFC 2231 encoded parameter
             newvalue = _unquotevalue(filename)
-            return unicode(newvalue[2], newvalue[0] or 'us-ascii')
+            try:
+                return unicode(newvalue[2], newvalue[0] or 'us-ascii')
+            # LookupError can get raised if the charset isn't known to Python.
+            # UnicodeError can get raised if the encoded text contains a
+            # character not in the charset.
+            except (LookupError, UnicodeError):
+                return newvalue[2]
         else:
             newvalue = _unquotevalue(filename.strip())
             return newvalue
@@ -815,7 +820,18 @@ class Message:
         if isinstance(charset, TupleType):
             # RFC 2231 encoded, so decode it, and it better end up as ascii.
             pcharset = charset[0] or 'us-ascii'
-            charset = unicode(charset[2], pcharset).encode('us-ascii')
+            try:
+                charset = unicode(charset[2], pcharset).encode('us-ascii')
+            # LookupError can get raised if the charset isn't known to Python.
+            # UnicodeError can get raised if the encoded text contains a
+            # character not in the charset.
+            except (LookupError, UnicodeError):
+                charset = charset[2]
+        # charset characters should be in us-ascii range
+        try:
+            charset = unicode(charset, 'us-ascii').encode('us-ascii')
+        except UnicodeError:
+            return failobj
         # RFC 2046, $4.1.2 says charsets are not case sensitive
         return charset.lower()
 
