@@ -37,6 +37,8 @@ Permissions History
 Permissions Dropped on Request
 ------------------------------
 
+- Paul Prescod sent a drop request.  30 Apr 2005 RDH
+
 - Finn Bock sent a drop request.  13 Apr 2005 RDH
 
 - Eric Price sent a drop request.  10 Apr 2005 RDH
