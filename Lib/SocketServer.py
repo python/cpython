@@ -50,7 +50,7 @@ stream server is the address family, which is simply repeated in both
 unix server classes.
 
 Forking and threading versions of each type of server can be created
-using the ForkingServer and ThreadingServer mix-in classes.  For
+using the ForkingMixIn and ThreadingMixIn mix-in classes.  For
 instance, a threading UDP server class is created as follows:
 
         class ThreadingUDPServer(ThreadingMixIn, UDPServer): pass
