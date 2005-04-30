@@ -345,7 +345,7 @@ class Random(_random.Random):
         # Math Software, 3, (1977), pp257-260.
 
         random = self.random
-        while True:
+        while 1:
             u1 = random()
             u2 = 1.0 - random()
             z = NV_MAGICCONST*(u1-0.5)/u2
@@ -415,7 +415,7 @@ class Random(_random.Random):
         b = (a - _sqrt(2.0 * a))/(2.0 * kappa)
         r = (1.0 + b * b)/(2.0 * b)
 
-        while True:
+        while 1:
             u1 = random()
 
             z = _cos(_pi * u1)
@@ -424,7 +424,7 @@ class Random(_random.Random):
 
             u2 = random()
 
-            if not (u2 >= c * (2.0 - c) and u2 > c * _exp(1.0 - c)):
+            if u2 < c * (2.0 - c) or u2 <= c * _exp(1.0 - c):
                 break
 
         u3 = random()
@@ -462,7 +462,7 @@ class Random(_random.Random):
             bbb = alpha - LOG4
             ccc = alpha + ainv
 
-            while True:
+            while 1:
                 u1 = random()
                 if not 1e-7 < u1 < .9999999:
                     continue
@@ -485,18 +485,19 @@ class Random(_random.Random):
 
             # Uses ALGORITHM GS of Statistical Computing - Kennedy & Gentle
 
-            while True:
+            while 1:
                 u = random()
                 b = (_e + alpha)/_e
                 p = b*u
                 if p <= 1.0:
-                    x = pow(p, 1.0/alpha)
+                    x = p ** (1.0/alpha)
                 else:
-                    # p > 1
                     x = -_log((b-p)/alpha)
                 u1 = random()
-                if not (((p <= 1.0) and (u1 > _exp(-x))) or
-                          ((p > 1)  and  (u1 > pow(x, alpha - 1.0)))):
+                if p > 1.0:
+                    if u1 <= x ** (alpha - 1.0):
+                        break
+                elif u1 <= _exp(-x):
                     break
             return x * beta
 
