@@ -178,7 +178,7 @@ class Rat(object):
         return (x, self - other * x)
 
     def __rdivmod__(self, other):
-        "Divide two Rats, returning quotient and remainder (reversed args)."""
+        """Divide two Rats, returning quotient and remainder (reversed args)."""
         if isint(other):
             other = Rat(other)
         elif not isRat(other):
