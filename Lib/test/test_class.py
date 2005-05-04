@@ -353,7 +353,7 @@ class A:
 try:
     A().a # Raised AttributeError: A instance has no attribute 'a'
 except AttributeError, x:
-    if str(x) is not "booh":
+    if str(x) != "booh":
         print "attribute error for A().a got masked:", str(x)
 
 class E:
