@@ -3,6 +3,9 @@ What's New in IDLE 1.2a0?
 
 *Release date: XX-XXX-2005*
 
+- run.py: use Queue's blocking feature instead of sleeping in the main
+  loop.  Patch # 1190163 Michiel de Hoon
+
 - Add config-main option to make the 'history' feature non-cyclic.
   Default remains cyclic.  Python Patch 914546 Noam Raphael.
 
