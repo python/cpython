@@ -82,9 +82,8 @@ def main(del_exitfunc=False):
                     # exiting but got an extra KBI? Try again!
                     continue
             try:
-                seq, request = rpc.request_queue.get(0)
+                seq, request = rpc.request_queue.get(block=True, timeout=0.05)
             except Queue.Empty:
-                time.sleep(0.05)
                 continue
             method, args, kwargs = request
             ret = method(*args, **kwargs)
