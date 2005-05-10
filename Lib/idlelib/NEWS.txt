@@ -3,6 +3,8 @@ What's New in IDLE 1.2a0?
 
 *Release date: XX-XXX-2005*
 
+- Improve subprocess link error notification.
+
 - run.py: use Queue's blocking feature instead of sleeping in the main
   loop.  Patch # 1190163 Michiel de Hoon
 
