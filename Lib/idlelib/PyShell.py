@@ -596,6 +596,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 self.write("Unsupported characters in input")
                 return
         try:
+            # InteractiveInterpreter.runsource() calls its runcode() method,
+            # which is overridden (see below)
             return InteractiveInterpreter.runsource(self, source, filename)
         finally:
             if self.save_warnings_filters is not None:
@@ -720,6 +722,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 else:
                     self.showtraceback()
             except:
+                print>>sys.stderr, "IDLE internal error in runcode()"
                 self.showtraceback()
         finally:
             if not use_subprocess:

@@ -330,9 +330,10 @@ class SocketIO(object):
             try:
                 r, w, x = select.select([], [self.sock], [])
                 n = self.sock.send(s[:BUFSIZE])
-            except (AttributeError, socket.error):
-                # socket was closed
-                raise IOError
+            except (AttributeError, TypeError):
+                raise IOError, "socket no longer exists"
+            except socket.error:
+                raise
             else:
                 s = s[n:]
 
