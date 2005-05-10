@@ -10,7 +10,8 @@ import datetime
 __all__ = ["error","setfirstweekday","firstweekday","isleap",
            "leapdays","weekday","monthrange","monthcalendar",
            "prmonth","month","prcal","calendar","timegm",
-           "month_name", "month_abbr", "day_name", "day_abbr"]
+           "month_name", "month_abbr", "day_name", "day_abbr",
+           "weekheader"]
 
 # Exception raised for bad input (with string parameter for details)
 error = ValueError
