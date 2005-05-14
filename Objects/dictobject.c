@@ -1203,6 +1203,12 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
 		if (other == mp || other->ma_used == 0)
 			/* a.update(a) or a.update({}); nothing to do */
 			return 0;
+		if (mp->ma_used == 0)
+			/* Since the target dict is empty, PyDict_GetItem()
+			 * always returns NULL.  Setting override to 1
+			 * skips the unnecessary test.
+			 */
+			override = 1;
 		/* Do one big resize at the start, rather than
 		 * incrementally resizing as we insert new items.  Expect
 		 * that there will be no (or few) overlapping keys.
