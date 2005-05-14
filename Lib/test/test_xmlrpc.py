@@ -34,15 +34,47 @@ class XMLRPCTestCase(unittest.TestCase):
                           xmlrpclib.loads(xmlrpclib.dumps((alist,)))[0][0])
 
     def test_dump_bare_datetime(self):
-        # This checks that an unwrapped datetime object can be handled
-        # by the marshalling code.  This can't be done via
-        # test_dump_load() since the unmarshaller doesn't produce base
-        # datetime instances.
+        # This checks that an unwrapped datetime.date object can be handled
+        # by the marshalling code.  This can't be done via test_dump_load()
+        # since with use_datetime set to 1 the unmarshaller would create
+        # datetime objects for the 'datetime[123]' keys as well
         dt = datetime.datetime(2005, 02, 10, 11, 41, 23)
         s = xmlrpclib.dumps((dt,))
-        r, m = xmlrpclib.loads(s)
-        self.assertEquals(r, (xmlrpclib.DateTime('20050210T11:41:23'),))
+        (newdt,), m = xmlrpclib.loads(s, use_datetime=1)
+        self.assertEquals(newdt, dt)
         self.assertEquals(m, None)
+
+        (newdt,), m = xmlrpclib.loads(s, use_datetime=0)
+        self.assertEquals(newdt, xmlrpclib.DateTime('20050210T11:41:23'))
+
+    def test_dump_bare_date(self):
+        # This checks that an unwrapped datetime.date object can be handled
+        # by the marshalling code.  This can't be done via test_dump_load()
+        # since the unmarshaller produces a datetime object
+        d = datetime.datetime(2005, 02, 10, 11, 41, 23).date()
+        s = xmlrpclib.dumps((d,))
+        (newd,), m = xmlrpclib.loads(s, use_datetime=1)
+        self.assertEquals(newd.date(), d)
+        self.assertEquals(newd.time(), datetime.time(0, 0, 0))
+        self.assertEquals(m, None)
+
+        (newdt,), m = xmlrpclib.loads(s, use_datetime=0)
+        self.assertEquals(newdt, xmlrpclib.DateTime('20050210T00:00:00'))
+
+    def test_dump_bare_time(self):
+        # This checks that an unwrapped datetime.time object can be handled
+        # by the marshalling code.  This can't be done via test_dump_load()
+        # since the unmarshaller produces a datetime object
+        t = datetime.datetime(2005, 02, 10, 11, 41, 23).time()
+        s = xmlrpclib.dumps((t,))
+        (newt,), m = xmlrpclib.loads(s, use_datetime=1)
+        today = datetime.datetime.now().date().strftime("%Y%m%d")
+        self.assertEquals(newt.time(), t)
+        self.assertEquals(newt.date(), datetime.datetime.now().date())
+        self.assertEquals(m, None)
+
+        (newdt,), m = xmlrpclib.loads(s, use_datetime=0)
+        self.assertEquals(newdt, xmlrpclib.DateTime('%sT11:41:23'%today))
 
     def test_dump_big_long(self):
         self.assertRaises(OverflowError, xmlrpclib.dumps, (2L**99,))
