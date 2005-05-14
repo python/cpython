@@ -19,7 +19,7 @@ objects and XML on the wire.
 
 \begin{classdesc}{ServerProxy}{uri\optional{, transport\optional{,
                                encoding\optional{, verbose\optional{, 
-                               allow_none}}}}}
+                               allow_none\optional{, use_datetime}}}}}}
 A \class{ServerProxy} instance is an object that manages communication
 with a remote XML-RPC server.  The required first argument is a URI
 (Uniform Resource Indicator), and will normally be the URL of the
@@ -33,6 +33,13 @@ default behaviour is for \code{None} to raise a \exception{TypeError}.
 This is a commonly-used extension to the XML-RPC specification, but isn't
 supported by all clients and servers; see
 \url{http://ontosys.com/xml-rpc/extensions.php} for a description. 
+The \var{use_datetime} flag can be used to cause date/time values to be
+presented as \class{\refmodule{datetime}.datetime} objects; this is false
+by default.  \class{\refmodule{datetime}.datetime},
+\class{\refmodule{datetime}.date} and \class{\refmodule{datetime}.time}
+objects may be passed to calls.  \class{\refmodule{datetime}.date} objects
+are converted with a time of ``00:00:00''.
+\class{\refmodule{datetime}.time} objects are converted using today's date.
 
 Both the HTTP and HTTPS transports support the URL syntax extension for
 HTTP Basic Authentication: \code{http://user:pass@host:port/path}.  The 
@@ -62,8 +69,11 @@ Python type):
                   elements. Arrays are returned as lists}
   \lineii{structures}{A Python dictionary. Keys must be strings,
                       values may be any conformable type.}
-  \lineii{dates}{in seconds since the epoch; pass in an instance of the
-                 \class{DateTime} wrapper class}
+  \lineii{dates}{in seconds since the epoch (pass in an instance of the
+                 \class{DateTime} class) or a
+                 \class{\refmodule{datetime}.datetime},
+                 \class{\refmodule{datetime}.date} or
+                 \class{\refmodule{datetime}.time} instance} 
   \lineii{binary data}{pass in an instance of the \class{Binary}
                        wrapper class}
 \end{tableii}
@@ -87,6 +97,7 @@ described below.
 \class{Server} is retained as an alias for \class{ServerProxy} for backwards
 compatibility.  New code should use \class{ServerProxy}.
 
+\versionchanged[The \var{use_datetime} flag was added]{2.5}
 \end{classdesc}
 
 
@@ -96,7 +107,7 @@ compatibility.  New code should use \class{ServerProxy}.
             client software in several languages.  Contains pretty much
             everything an XML-RPC client developer needs to know.}
   \seetitle[http://xmlrpc-c.sourceforge.net/hacks.php]
-           {XML-RPC-Hacks page}{Extensions for various open-source
+           {XML-RPC Hacks page}{Extensions for various open-source
             libraries to support introspection and multicall.}
 \end{seealso}
 
@@ -149,7 +160,8 @@ returned. The documentation string may contain HTML markup.
 Introspection methods are currently supported by servers written in
 PHP, C and Microsoft .NET. Partial introspection support is included
 in recent updates to UserLand Frontier. Introspection support for
-Perl, Python and Java is available at the XML-RPC Hacks page.
+Perl, Python and Java is available at the \ulink{XML-RPC
+Hacks}{http://xmlrpc-c.sourceforge.net/hacks.php} page.
 
 
 \subsection{Boolean Objects \label{boolean-objects}}
@@ -170,21 +182,23 @@ Write the XML-RPC encoding of this Boolean item to the out stream object.
 
 \subsection{DateTime Objects \label{datetime-objects}}
 
-This class may be initialized with seconds since the epoch, a
-time tuple, or an ISO 8601 time/date string.  It has the following
-methods, supported mainly for internal use by the
-marshalling/unmarshalling code:
+This class may be initialized with seconds since the epoch, a time tuple, an
+ISO 8601 time/date string, or a {}\class{\refmodule{datetime}.datetime},
+{}\class{\refmodule{datetime}.date} or {}\class{\refmodule{datetime}.time}
+instance.  It has the following methods, supported mainly for internal use
+by the marshalling/unmarshalling code:
 
 \begin{methoddesc}{decode}{string}
 Accept a string as the instance's new time value.
 \end{methoddesc}
 
 \begin{methoddesc}{encode}{out}
-Write the XML-RPC encoding of this DateTime item to the out stream object.
+Write the XML-RPC encoding of this \class{DateTime} item to the
+\var{out} stream object.
 \end{methoddesc}
 
 It also supports certain of Python's built-in operators through 
-\method{__cmp__} and \method{__repr__} methods.
+\method{__cmp__()} and \method{__repr__()} methods.
 
 
 \subsection{Binary Objects \label{binary-objects}}
@@ -296,7 +310,6 @@ Trivially convert any Python string to a \class{Binary} object.
 \begin{funcdesc}{dumps}{params\optional{, methodname\optional{, 
 	                methodresponse\optional{, encoding\optional{,
 	                allow_none}}}}}
-
 Convert \var{params} into an XML-RPC request.
 or into a response if \var{methodresponse} is true.
 \var{params} can be either a tuple of arguments or an instance of the 
@@ -308,12 +321,21 @@ used in standard XML-RPC; to allow using it via an extension,
 provide a true value for \var{allow_none}.
 \end{funcdesc}
 
-\begin{funcdesc}{loads}{data}
+\begin{funcdesc}{loads}{data\optional{, use_datetime}}
 Convert an XML-RPC request or response into Python objects, a
 \code{(\var{params}, \var{methodname})}.  \var{params} is a tuple of argument; \var{methodname}
 is a string, or \code{None} if no method name is present in the packet.
 If the XML-RPC packet represents a fault condition, this
 function will raise a \exception{Fault} exception.
+The \var{use_datetime} flag can be used to cause date/time values to be
+presented as \class{\refmodule{datetime}.datetime} objects; this is false
+by default.
+Note that even if you call an XML-RPC method with
+\class{\refmodule{datetime}.date} or \class{\refmodule{datetime}.time}
+objects, they are converted to \class{DateTime} objects internally, so only
+{}\class{\refmodule{datetime}.datetime} objects will be returned.
+
+\versionchanged[The \var{use_datetime} flag was added]{2.5}
 \end{funcdesc}
 
 
