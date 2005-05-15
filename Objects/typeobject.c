@@ -5648,7 +5648,7 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 		return self;
 	}
 	if (su->ob_type != &PySuper_Type)
-		/* If su is not an instance of a subclass of super,
+		/* If su is an instance of a (strict) subclass of super,
 		   call its type */
 		return PyObject_CallFunction((PyObject *)su->ob_type,
 					     "OO", su->type, obj);
