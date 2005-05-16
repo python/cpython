@@ -81,6 +81,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1103951: Expose O_SHLOCK and O_EXLOCK in the posix module if
+  available on the platform.
+
 - Bug #1166660: The readline module could segfault if hook functions
   were set in a different thread than that which called readline.
 

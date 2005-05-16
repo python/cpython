@@ -594,7 +594,9 @@ its \method{write()} method.
 
 
 The following data items are available for use in constructing the
-\var{flags} parameter to the \function{open()} function.
+\var{flags} parameter to the \function{open()} function.  Some items will
+not be available on all platforms.  For descriptions of their availability
+and use, consult \manpage{open}{2}.
 
 \begin{datadesc}{O_RDONLY}
 \dataline{O_WRONLY}
@@ -614,6 +616,8 @@ Availability: Macintosh, \UNIX, Windows.
 \dataline{O_NDELAY}
 \dataline{O_NONBLOCK}
 \dataline{O_NOCTTY}
+\dataline{O_SHLOCK}
+\dataline{O_EXLOCK}
 More options for the \var{flag} argument to the \function{open()} function.
 Availability: Macintosh, \UNIX.
 \end{datadesc}
