@@ -147,7 +147,7 @@ def customize_compiler(compiler):
     """
     if compiler.compiler_type == "unix":
         (cc, cxx, opt, cflags, ccshared, ldshared, so_ext) = \
-            get_config_vars('CC', 'CXX', 'OPT', 'CFLAGS', 
+            get_config_vars('CC', 'CXX', 'OPT', 'CFLAGS',
                             'CCSHARED', 'LDSHARED', 'SO')
 
         if os.environ.has_key('CC'):
