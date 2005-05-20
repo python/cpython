@@ -1377,16 +1377,13 @@ PyAPI_FUNC(int) _PyImport_IsScript(struct filedescr * fd)
 /* First we may need a pile of platform-specific header files; the sequence
  * of #if's here should match the sequence in the body of case_ok().
  */
-#if defined(MS_WINDOWS) || defined(__CYGWIN__)
+#if defined(MS_WINDOWS)
 #include <windows.h>
-#ifdef __CYGWIN__
-#include <sys/cygwin.h>
-#endif
 
 #elif defined(DJGPP)
 #include <dir.h>
 
-#elif defined(__MACH__) && defined(__APPLE__) && defined(HAVE_DIRENT_H)
+#elif (defined(__MACH__) && defined(__APPLE__) || defined(__CYGWIN__)) && defined(HAVE_DIRENT_H)
 #include <sys/types.h>
 #include <dirent.h>
 
@@ -1407,23 +1404,15 @@ case_ok(char *buf, int len, int namelen, char *name)
  * match the sequence just above.
  */
 
-/* MS_WINDOWS || __CYGWIN__ */
-#if defined(MS_WINDOWS) || defined(__CYGWIN__)
+/* MS_WINDOWS */
+#if defined(MS_WINDOWS)
 	WIN32_FIND_DATA data;
 	HANDLE h;
-#ifdef __CYGWIN__
-	char tempbuf[MAX_PATH];
-#endif
 
 	if (Py_GETENV("PYTHONCASEOK") != NULL)
 		return 1;
 
-#ifdef __CYGWIN__
-	cygwin32_conv_to_win32_path(buf, tempbuf);
-	h = FindFirstFile(tempbuf, &data);
-#else
 	h = FindFirstFile(buf, &data);
-#endif
 	if (h == INVALID_HANDLE_VALUE) {
 		PyErr_Format(PyExc_NameError,
 		  "Can't find file for module %.100s\n(filename %.300s)",
@@ -1450,8 +1439,8 @@ case_ok(char *buf, int len, int namelen, char *name)
 	}
 	return strncmp(ffblk.ff_name, name, namelen) == 0;
 
-/* new-fangled macintosh (macosx) */
-#elif defined(__MACH__) && defined(__APPLE__) && defined(HAVE_DIRENT_H)
+/* new-fangled macintosh (macosx) or Cygwin */
+#elif (defined(__MACH__) && defined(__APPLE__) || defined(__CYGWIN__)) && defined(HAVE_DIRENT_H)
 	DIR *dirp;
 	struct dirent *dp;
 	char dirname[MAXPATHLEN + 1];
