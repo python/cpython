@@ -40,6 +40,16 @@ for attr in 'name', 'mode', 'closed':
         raise TestFailed('expected exception setting file attr %r' % attr)
 f.close()
 
+# check invalid mode strings
+for mode in ("", "aU", "wU+"):
+    try:
+        f = file(TESTFN, mode)
+    except ValueError:
+        pass
+    else:
+        f.close()
+        raise TestFailed('%r is an invalid file mode' % mode)
+
 # verify writelines with instance sequence
 l = UserList(['1', '2'])
 f = open(TESTFN, 'wb')
