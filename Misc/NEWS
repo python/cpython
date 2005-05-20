@@ -12,6 +12,9 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- bug #967182: disallow opening files with 'wU' or 'aU' as specified by PEP
+  278.
+
 - patch #1109424: int, long, float, complex, and unicode now check for the
   proper magic slot for type conversions when subclassed.  Previously the
   magic slot was ignored during conversion.  Semantics now match the way

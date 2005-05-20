@@ -128,6 +128,54 @@ fill_file_fields(PyFileObject *f, FILE *fp, PyObject *name, char *mode,
 	return (PyObject *) f;
 }
 
+/* check for known incorrect mode strings - problem is, platforms are
+   free to accept any mode characters they like and are supposed to
+   ignore stuff they don't understand... write or append mode with
+   universal newline support is expressly forbidden by PEP 278. */
+/* zero return is kewl - one is un-kewl */
+static int
+check_the_mode(char *mode)
+{
+	unsigned int len = strlen(mode);
+
+	switch (len) {
+	case 0:
+		PyErr_SetString(PyExc_ValueError, "empty mode string");
+		return 1;
+
+	/* reject wU, aU */
+	case 2:
+		switch (mode[0]) {
+		case 'w':
+		case 'a':
+			if (mode[1] == 'U') {
+				PyErr_SetString(PyExc_ValueError,
+						"invalid mode string");
+				return 1;
+			}
+			break;
+		}
+		break;
+
+	/* reject w+U, a+U, wU+, aU+ */
+	case 3:
+		switch (mode[0]) {
+		case 'w':
+		case 'a':
+			if ((mode[1] == '+' && mode[2] == 'U') ||
+			    (mode[1] == 'U' && mode[2] == '+')) {
+				PyErr_SetString(PyExc_ValueError,
+						"invalid mode string");
+				return 1;
+			}
+			break;
+		}
+		break;
+	}
+
+	return 0;
+}
+
 static PyObject *
 open_the_file(PyFileObject *f, char *name, char *mode)
 {
@@ -141,6 +189,9 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 #endif
 	assert(mode != NULL);
 	assert(f->f_fp == NULL);
+
+	if (check_the_mode(mode))
+		return NULL;
 
 	/* rexec.py can't stop a user from getting the file() constructor --
 	   all they have to do is get *any* file object f, and then do
