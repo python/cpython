@@ -54,11 +54,18 @@ by following the explicit or implicit \emph{line joining} rules.
 
 \subsection{Physical lines\label{physical}}
 
-A physical line ends in whatever the current platform's convention is
-for terminating lines.  On \UNIX, this is the \ASCII{} LF (linefeed)
-character.  On Windows, it is the \ASCII{} sequence CR LF (return
-followed by linefeed).  On Macintosh, it is the \ASCII{} CR (return)
-character.
+A physical line is a sequence of characters terminated by an end-of-line
+sequence.  In source files, any of the standard platform line
+termination sequences can be used - the \UNIX form using \ASCII{} LF
+(linefeed), the Windows form using the \ASCII{} sequence CR LF (return
+followed by linefeed), or the Macintosh form using the \ASCII{} CR
+(return) character.  All of these forms can be used equally, regardless
+of platform.
+
+When embedding Python, source code strings should be passed to Python
+APIs using the standard C conventions for newline characters (the
+\code{\e n} character, representing \ASCII{} LF, is the line
+terminator).
 
 
 \subsection{Comments\label{comments}}
