@@ -1039,7 +1039,8 @@ It's a function
   Return the Unicode string of one character whose Unicode code is the
   integer \var{i}.  For example, \code{unichr(97)} returns the string
   \code{u'a'}.  This is the inverse of \function{ord()} for Unicode
-  strings.  The argument must be in the range [0..65535], inclusive.
+  strings.  The valid range for the argument depends how Python was
+  configured -- it may be either UCS2 [0..0xFFFF] or UCS4 [0..0x10FFFF].
   \exception{ValueError} is raised otherwise.
   \versionadded{2.0}
 \end{funcdesc}
