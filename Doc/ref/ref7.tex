@@ -323,6 +323,8 @@ section~\ref{types}):
              {\token{decorator}+}
   \production{decorator}
              {"@" \token{dotted_name} ["(" [\token{argument_list} [","]] ")"] NEWLINE}
+  \production{dotted_name}
+             {\token{identifier} ("." \token{identifier})*}
   \production{parameter_list}
                  {(\token{defparameter} ",")*}
   \productioncont{(~~"*" \token{identifier} [, "**" \token{identifier}]}
