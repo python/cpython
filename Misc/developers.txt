@@ -17,6 +17,11 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Reinhold Birkenfeld was given SF tracker permissions on 28 May 2005
+  by RDH.  Since the beginning of 2005, he has been active in discussions
+  on python-dev and has submitted a dozen patch reviews.  The permissions
+  add the ability to change tracker status and to attach patches.
+
 - Terry Reedy was given SF tracker permissions on 7 Apr 2005 by RDH.
 
 - Nick Coghlan was given SF tracker permissions on 5 Apr 2005 by RDH.
