@@ -699,11 +699,17 @@ For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{lstrip}{\optional{chars}}
-Return a copy of the string with leading characters removed.  If
-\var{chars} is omitted or \code{None}, whitespace characters are
-removed.  If given and not \code{None}, \var{chars} must be a string;
-the characters in the string will be stripped from the beginning of
-the string this method is called on.
+Return a copy of the string with leading characters removed.  The
+\var{chars} argument is a string specifying the set of characters
+to be removed.  If omitted or \code{None}, the \var{chars} argument
+defaults to removing whitespace.  The \var{chars} argument is not
+a prefix; rather, all combinations of its values are stripped:
+\begin{verbatim}
+    >>> '   spacious   '.lstrip()
+    'spacious   '
+    >>> 'www.example.com'.lstrip('cmowz.')
+    'example.com'
+\end{verbatim}
 \versionchanged[Support for the \var{chars} argument]{2.2.2}
 \end{methoddesc}
 
@@ -745,11 +751,17 @@ is described in detail below.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{rstrip}{\optional{chars}}
-Return a copy of the string with trailing characters removed.  If
-\var{chars} is omitted or \code{None}, whitespace characters are
-removed.  If given and not \code{None}, \var{chars} must be a string;
-the characters in the string will be stripped from the end of the
-string this method is called on.
+Return a copy of the string with trailing characters removed.  The
+\var{chars} argument is a string specifying the set of characters
+to be removed.  If omitted or \code{None}, the \var{chars} argument
+defaults to removing whitespace.  The \var{chars} argument is not
+a suffix; rather, all combinations of its values are stripped:
+\begin{verbatim}
+    >>> '   spacious   '.rstrip()
+    '   spacious'
+    >>> 'mississippi'.rstrip('ipz')
+    'mississ'
+\end{verbatim}
 \versionchanged[Support for the \var{chars} argument]{2.2.2}
 \end{methoddesc}
 
@@ -791,11 +803,17 @@ position.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{strip}{\optional{chars}}
-Return a copy of the string with leading and trailing characters
-removed.  If \var{chars} is omitted or \code{None}, whitespace
-characters are removed.  If given and not \code{None}, \var{chars}
-must be a string; the characters in the string will be stripped from
-the both ends of the string this method is called on.
+Return a copy of the string with the leading and trailing characters
+removed.  The \var{chars} argument is a string specifying the set of
+characters to be removed.  If omitted or \code{None}, the \var{chars}
+argument defaults to removing whitespace.  The \var{chars} argument is not
+a prefix or suffix; rather, all combinations of its values are stripped:
+\begin{verbatim}
+    >>> '   spacious   '.strip()
+    'spacious'
+    >>> 'www.example.com'.strip('cmowz.')
+    'example'
+\end{verbatim}
 \versionchanged[Support for the \var{chars} argument]{2.2.2}
 \end{methoddesc}
 
