@@ -222,6 +222,11 @@ data = authobject(response)
   The method is non-standard, but is supported by the \samp{Cyrus} server.
 \end{methoddesc}
 
+\begin{methoddesc}{getannotation}{mailbox, entry, attribute}
+  Retrieve the specified \samp{ANNOTATION}s for \var{mailbox}.
+  The method is non-standard, but is supported by the \samp{Cyrus} server.
+\end{methoddesc}
+
 \begin{methoddesc}{getquota}{root}
   Get the \samp{quota} \var{root}'s resource usage and limits.
   This method is part of the IMAP4 QUOTA extension defined in rfc2087.
@@ -354,6 +359,11 @@ msgnums = M.search(None, '(FROM "LDJ")')
 
 \begin{methoddesc}{setacl}{mailbox, who, what}
   Set an \samp{ACL} for \var{mailbox}.
+  The method is non-standard, but is supported by the \samp{Cyrus} server.
+\end{methoddesc}
+
+\begin{methoddesc}{setannotation}{mailbox, entry, attribute\optional{, ...}}
+  Set \samp{ANNOTATION}s for \var{mailbox}.
   The method is non-standard, but is supported by the \samp{Cyrus} server.
 \end{methoddesc}
 
