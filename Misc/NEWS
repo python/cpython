@@ -12,6 +12,10 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- SF patch #1181301: on platforms that appear to use IEEE 754 floats,
+  the routines that promise to produce IEEE 754 binary representations
+  of floats now simply copy bytes around.
+
 - bug #967182: disallow opening files with 'wU' or 'aU' as specified by PEP
   278.
 
