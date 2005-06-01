@@ -53,12 +53,11 @@ service) is closed.
   \function{poll()} call, measured in seconds; the default is 30 seconds.
   The \var{use_poll} parameter, if true, indicates that \function{poll()}
   should be used in preference to \function{select()} (the default is
-  \code{False}).  The \var{map} parameter is a dictionary whose items are
-  the channels to watch.  As channels are closed they are deleted from their
-  map.  If \var{map} is omitted, a global map is used (this map is updated
-  by the default class \method{__init__()} -- make sure you extend, rather
-  than override, \method{__init__()} if you want to retain this behavior).
+  \code{False}).  
 
+  The \var{map} parameter is a dictionary whose items are
+  the channels to watch.  As channels are closed they are deleted from their
+  map.  If \var{map} is omitted, a global map is used.
   Channels (instances of \class{asyncore.dispatcher}, \class{asynchat.async_chat}
   and subclasses thereof) can freely be mixed in the map.
 \end{funcdesc}
