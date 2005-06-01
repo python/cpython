@@ -18,8 +18,9 @@ Public functions:       Internaldate2tuple
 # IMAP4_SSL contributed by Tino Lange <Tino.Lange@isg.de> March 2002.
 # GET/SETQUOTA contributed by Andreas Zeidler <az@kreativkombinat.de> June 2002.
 # PROXYAUTH contributed by Rick Holbert <holbert.13@osu.edu> November 2002.
+# GET/SETANNOTATION contributed by Tomas Lindroos <skitta@abo.fi> June 2005.
 
-__version__ = "2.55"
+__version__ = "2.56"
 
 import binascii, os, random, re, socket, sys, time
 
@@ -51,6 +52,7 @@ Commands = {
         'EXPUNGE':      ('SELECTED',),
         'FETCH':        ('SELECTED',),
         'GETACL':       ('AUTH', 'SELECTED'),
+        'GETANNOTATION':('AUTH', 'SELECTED'),
         'GETQUOTA':     ('AUTH', 'SELECTED'),
         'GETQUOTAROOT': ('AUTH', 'SELECTED'),
         'MYRIGHTS':     ('AUTH', 'SELECTED'),
@@ -66,6 +68,7 @@ Commands = {
         'SEARCH':       ('SELECTED',),
         'SELECT':       ('AUTH', 'SELECTED'),
         'SETACL':       ('AUTH', 'SELECTED'),
+        'SETANNOTATION':('AUTH', 'SELECTED'),
         'SETQUOTA':     ('AUTH', 'SELECTED'),
         'SORT':         ('SELECTED',),
         'STATUS':       ('AUTH', 'SELECTED'),
@@ -133,10 +136,10 @@ class IMAP4:
             the command re-tried.
     "readonly" exceptions imply the command should be re-tried.
 
-    Note: to use this module, you must read the RFCs pertaining
-    to the IMAP4 protocol, as the semantics of the arguments to
-    each IMAP4 command are left to the invoker, not to mention
-    the results.
+    Note: to use this module, you must read the RFCs pertaining to the
+    IMAP4 protocol, as the semantics of the arguments to each IMAP4
+    command are left to the invoker, not to mention the results. Also,
+    most IMAP servers implement a sub-set of the commands available here.
     """
 
     class error(Exception): pass    # Logical errors - debug required
@@ -186,11 +189,10 @@ class IMAP4:
         else:
             raise self.error(self.welcome)
 
-        cap = 'CAPABILITY'
-        self._simple_command(cap)
-        if not cap in self.untagged_responses:
+        typ, dat = self.capability()
+        if dat == [None]:
             raise self.error('no CAPABILITY response from server')
-        self.capabilities = tuple(self.untagged_responses[cap][-1].upper().split())
+        self.capabilities = tuple(dat[-1].upper().split())
 
         if __debug__:
             if self.debug >= 3:
@@ -345,6 +347,15 @@ class IMAP4:
         return typ, dat
 
 
+    def capability(self):
+        """(typ, [data]) = <instance>.capability()
+        Fetch capabilities list from server."""
+
+        name = 'CAPABILITY'
+        typ, dat = self._simple_command(name)
+        return self._untagged_response(typ, dat, name)
+
+
     def check(self):
         """Checkpoint mailbox on server.
 
@@ -434,6 +445,14 @@ class IMAP4:
         """
         typ, dat = self._simple_command('GETACL', mailbox)
         return self._untagged_response(typ, dat, 'ACL')
+
+
+    def getannotation(self, mailbox, entry, attribute):
+        """(typ, [data]) = <instance>.getannotation(mailbox, entry, attribute)
+        Retrieve ANNOTATIONs."""
+
+        typ, dat = self._simple_command('GETANNOTATION', mailbox, entry, attribute)
+        return self._untagged_response(typ, dat, 'ANNOTATION')
 
 
     def getquota(self, root):
@@ -641,6 +660,14 @@ class IMAP4:
         (typ, [data]) = <instance>.setacl(mailbox, who, what)
         """
         return self._simple_command('SETACL', mailbox, who, what)
+
+
+    def setannotation(self, *args):
+        """(typ, [data]) = <instance>.setannotation(mailbox[, entry, attribute]+)
+        Set ANNOTATIONs."""
+
+        typ, dat = self._simple_command('SETANNOTATION', *args)
+        return self._untagged_response(typ, dat, 'ANNOTATION')
 
 
     def setquota(self, root, limits):
