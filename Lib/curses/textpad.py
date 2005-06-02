@@ -53,7 +53,7 @@ class Textbox:
         last = self.maxx
         while 1:
             if ascii.ascii(self.win.inch(y, last)) != ascii.SP:
-                last = last + 1
+                last = min(self.maxx, last+1)
                 break
             elif last == 0:
                 break
