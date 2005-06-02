@@ -674,8 +674,8 @@ This object may be accessed either as a tuple of\n\
   (mode, ino, dev, nlink, uid, gid, size, atime, mtime, ctime)\n\
 or via the attributes st_mode, st_ino, st_dev, st_nlink, st_uid, and so on.\n\
 \n\
-Posix/windows: If your platform supports st_blksize, st_blocks, or st_rdev,\n\
-they are available as attributes only.\n\
+Posix/windows: If your platform supports st_blksize, st_blocks, st_rdev,\n\
+or st_flags, they are available as attributes only.\n\
 \n\
 See os.stat for more information.");
 
@@ -703,6 +703,9 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_STRUCT_STAT_ST_RDEV
 	{"st_rdev",    "device type (if inode device)"},
 #endif
+#ifdef HAVE_STRUCT_STAT_ST_FLAGS
+	{"st_flags",   "user defined flags for file"},
+#endif
 	{0}
 };
 
@@ -722,6 +725,12 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_RDEV_IDX (ST_BLOCKS_IDX+1)
 #else
 #define ST_RDEV_IDX ST_BLOCKS_IDX
+#endif
+
+#ifdef HAVE_STRUCT_STAT_ST_FLAGS
+#define ST_FLAGS_IDX (ST_RDEV_IDX+1)
+#else
+#define ST_FLAGS_IDX ST_RDEV_IDX
 #endif
 
 static PyStructSequence_Desc stat_result_desc = {
@@ -886,6 +895,10 @@ _pystat_fromstructstat(STRUCT_STAT st)
 #ifdef HAVE_STRUCT_STAT_ST_RDEV
 	PyStructSequence_SET_ITEM(v, ST_RDEV_IDX,
 			 PyInt_FromLong((long)st.st_rdev));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_FLAGS
+	PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX,
+			 PyInt_FromLong((long)st.st_flags));
 #endif
 
 	if (PyErr_Occurred()) {

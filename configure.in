@@ -2421,6 +2421,7 @@ AC_STRUCT_TM
 AC_STRUCT_TIMEZONE
 AC_CHECK_MEMBERS([struct stat.st_rdev])
 AC_CHECK_MEMBERS([struct stat.st_blksize])
+AC_CHECK_MEMBERS([struct stat.st_flags])
 AC_STRUCT_ST_BLOCKS
 
 AC_MSG_CHECKING(for time.h that defines altzone)
