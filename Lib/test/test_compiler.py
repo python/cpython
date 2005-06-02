@@ -1,4 +1,5 @@
 import compiler
+from compiler.ast import flatten
 import os
 import test.test_support
 import unittest
@@ -59,6 +60,10 @@ class CompilerTest(unittest.TestCase):
                 "lineno=%s on %s" % (node.lineno, node.__class__))
         for child in node.getChildNodes():
             self.check_lineno(child)
+
+    def testFlatten(self):
+        self.assertEquals(flatten([1, [2]]), [1, 2])
+        self.assertEquals(flatten((1, (2,))), [1, 2])
 
 NOLINENO = (compiler.ast.Module, compiler.ast.Stmt, compiler.ast.Discard)
 
