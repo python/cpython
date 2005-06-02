@@ -43,10 +43,10 @@ grammar notation.  This uses the following style of definition:
 \index{syntax}
 \index{notation}
 
-\begin{verbatim}
-name:           lc_letter (lc_letter | "_")*
-lc_letter:      "a"..."z"
-\end{verbatim}
+\begin{productionlist}
+  \production{name}{\token{lc_letter} (\token{lc_letter} | "_")*}
+  \production{lc_letter}{"a"..."z"}
+\end{productionlist}
 
 The first line says that a \code{name} is an \code{lc_letter} followed by
 a sequence of zero or more \code{lc_letter}s and underscores.  An
@@ -55,7 +55,7 @@ through \character{z}.  (This rule is actually adhered to for the
 names defined in lexical and grammar rules in this document.)
 
 Each rule begins with a name (which is the name defined by the rule)
-and a colon.  A vertical bar (\code{|}) is used to separate
+and \code{::=}.  A vertical bar (\code{|}) is used to separate
 alternatives; it is the least binding operator in this notation.  A
 star (\code{*}) means zero or more repetitions of the preceding item;
 likewise, a plus (\code{+}) means one or more repetitions, and a
