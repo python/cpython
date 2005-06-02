@@ -489,6 +489,9 @@
 /* Define to 1 if `st_blocks' is member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLOCKS
 
+/* Define to 1 if `st_flags' is member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_FLAGS
+
 /* Define to 1 if `st_rdev' is member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_RDEV
 

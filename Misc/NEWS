@@ -88,6 +88,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1212117: os.stat().st_flags is now accessible as a attribute
+  if available on the platform.
+
 - Patch #1103951: Expose O_SHLOCK and O_EXLOCK in the posix module if
   available on the platform.
 
