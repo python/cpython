@@ -63,12 +63,7 @@ lock_PyThread_acquire_lock(lockobject *self, PyObject *args)
 	i = PyThread_acquire_lock(self->lock_lock, i);
 	Py_END_ALLOW_THREADS
 
-	if (args == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
-	else
-		return PyBool_FromLong((long)i);
+	return PyBool_FromLong((long)i);
 }
 
 PyDoc_STRVAR(acquire_doc,
