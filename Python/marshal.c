@@ -632,13 +632,13 @@ r_object(RFILE *p)
 			return NULL;
 		}
 		v = PyString_FromStringAndSize((char *)NULL, n);
-		if (v != NULL) {
-			if (r_string(PyString_AS_STRING(v), (int)n, p) != n) {
-				Py_DECREF(v);
-				v = NULL;
-				PyErr_SetString(PyExc_EOFError,
+		if (v == NULL)
+			return v;
+		if (r_string(PyString_AS_STRING(v), (int)n, p) != n) {
+			Py_DECREF(v);
+			PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
-			}
+			return NULL;
 		}
 		if (type == TYPE_INTERNED) {
 			PyString_InternInPlace(&v);
@@ -766,6 +766,8 @@ r_object(RFILE *p)
 			}
 			PyTuple_SET_ITEM(v, (int)i, v2);
 		}
+		if (v == NULL)
+			return v;
 		if (type == TYPE_SET)
 			v3 = PyObject_CallFunctionObjArgs(
 				(PyObject *)&PySet_Type, v, NULL);
