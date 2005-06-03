@@ -476,7 +476,7 @@ class PosixPathTest(unittest.TestCase):
                 self.safe_rmdir(ABSTFN + "/k/y")
                 self.safe_rmdir(ABSTFN + "/k")
                 self.safe_rmdir(ABSTFN)
-        
+
         def test_realpath_resolve_first(self):
             # Bug #1213894: The first component of the path, if not absolute,
             # must be resolved too.
@@ -487,7 +487,7 @@ class PosixPathTest(unittest.TestCase):
                 os.mkdir(ABSTFN + "/k")
                 os.symlink(ABSTFN, ABSTFN + "link")
                 os.chdir(dirname(ABSTFN))
-                
+
                 base = basename(ABSTFN)
                 self.assertEqual(realpath(base + "link"), ABSTFN)
                 self.assertEqual(realpath(base + "link/k"), ABSTFN + "/k")

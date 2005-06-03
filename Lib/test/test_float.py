@@ -58,7 +58,7 @@ class UnknownFormatTestCase(unittest.TestCase):
                              'float':float.__getformat__('float')}
         float.__setformat__('double', 'unknown')
         float.__setformat__('float', 'unknown')
-        
+
     def tearDown(self):
         float.__setformat__('double', self.save_formats['double'])
         float.__setformat__('float', self.save_formats['float'])
