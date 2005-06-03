@@ -414,7 +414,7 @@ symbolic links encountered in the path."""
     if isabs(filename):
         bits = ['/'] + filename.split('/')[1:]
     else:
-        bits = filename.split('/')
+        bits = [''] + filename.split('/')
 
     for i in range(2, len(bits)+1):
         component = join(*bits[0:i])

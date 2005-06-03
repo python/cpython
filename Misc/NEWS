@@ -136,6 +136,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1213894: os.path.realpath didn't resolve symlinks that were the first
+  component of the path.
+
 - Patch #1120353: The xmlrpclib module provides better, more transparent,
   support for datetime.{datetime,date,time} objects.  With use_datetime set
   to True, applications shouldn't have to fiddle with the DateTime wrapper
