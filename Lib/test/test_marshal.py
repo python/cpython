@@ -73,18 +73,32 @@ class FloatTestCase(unittest.TestCase):
             n /= 123.4567
 
         f = 0.0
-        s = marshal.dumps(f)
+        s = marshal.dumps(f, 2)
         got = marshal.loads(s)
         self.assertEqual(f, got)
+        # and with version <= 1 (floats marshalled differently then)
+        s = marshal.dumps(f, 1)
+        got = marshal.loads(s) 
+        self.assertEqual(f, got)       
 
         n = sys.maxint * 3.7e-250
         while n < small:
             for expected in (-n, n):
                 f = float(expected)
+                
                 s = marshal.dumps(f)
                 got = marshal.loads(s)
                 self.assertEqual(f, got)
+                
+                s = marshal.dumps(f, 1)
+                got = marshal.loads(s)
+                self.assertEqual(f, got)
+                
                 marshal.dump(f, file(test_support.TESTFN, "wb"))
+                got = marshal.load(file(test_support.TESTFN, "rb"))
+                self.assertEqual(f, got)
+                
+                marshal.dump(f, file(test_support.TESTFN, "wb"), 1)
                 got = marshal.load(file(test_support.TESTFN, "rb"))
                 self.assertEqual(f, got)
             n *= 123.4567

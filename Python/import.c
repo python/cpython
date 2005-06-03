@@ -50,8 +50,9 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        Python 2.4a0: 62041
        Python 2.4a3: 62051
        Python 2.4b1: 62061
+       Python 2.5a0: 62071
 */
-#define MAGIC (62061 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (62071 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
