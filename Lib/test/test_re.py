@@ -235,15 +235,15 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match('^(?:(a)|c)((?(1)|d))$', 'a').groups(),
                          ('a', ''))
 
-	# Tests for bug #1177831: exercise groups other than the first group
-	p = re.compile('(?P<g1>a)(?P<g2>b)?((?(g2)c|d))')
-	self.assertEqual(p.match('abc').groups(),
-			 ('a', 'b', 'c'))
-	self.assertEqual(p.match('ad').groups(),
-			 ('a', None, 'd'))
-	self.assertEqual(p.match('abd'), None)
-	self.assertEqual(p.match('ac'), None)
-	
+        # Tests for bug #1177831: exercise groups other than the first group
+        p = re.compile('(?P<g1>a)(?P<g2>b)?((?(g2)c|d))')
+        self.assertEqual(p.match('abc').groups(),
+                         ('a', 'b', 'c'))
+        self.assertEqual(p.match('ad').groups(),
+                         ('a', None, 'd'))
+        self.assertEqual(p.match('abd'), None)
+        self.assertEqual(p.match('ac'), None)
+
 
     def test_re_groupref(self):
         self.assertEqual(re.match(r'^(\|)?([^()]+)\1$', '|a|').groups(),
