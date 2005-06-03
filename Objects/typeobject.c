@@ -4908,6 +4908,12 @@ typedef struct wrapperbase slotdef;
 #define RBINSLOT(NAME, SLOT, FUNCTION, DOC) \
 	ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_r, \
 	       "x." NAME "(y) <==> y" DOC "x")
+#define BINSLOTNOTINFIX(NAME, SLOT, FUNCTION, DOC) \
+	ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_l, \
+	       "x." NAME "(y) <==> " DOC)
+#define RBINSLOTNOTINFIX(NAME, SLOT, FUNCTION, DOC) \
+	ETSLOT(NAME, as_number.SLOT, FUNCTION, wrap_binaryfunc_r, \
+	       "x." NAME "(y) <==> " DOC)
 
 static slotdef slotdefs[] = {
 	SQSLOT("__len__", sq_length, slot_sq_length, wrap_inquiry,
@@ -4976,9 +4982,9 @@ static slotdef slotdefs[] = {
 		"%"),
 	RBINSLOT("__rmod__", nb_remainder, slot_nb_remainder,
 		 "%"),
-	BINSLOT("__divmod__", nb_divmod, slot_nb_divmod,
+	BINSLOTNOTINFIX("__divmod__", nb_divmod, slot_nb_divmod,
 		"divmod(x, y)"),
-	RBINSLOT("__rdivmod__", nb_divmod, slot_nb_divmod,
+	RBINSLOTNOTINFIX("__rdivmod__", nb_divmod, slot_nb_divmod,
 		 "divmod(y, x)"),
 	NBSLOT("__pow__", nb_power, slot_nb_power, wrap_ternaryfunc,
 	       "x.__pow__(y[, z]) <==> pow(x, y[, z])"),
