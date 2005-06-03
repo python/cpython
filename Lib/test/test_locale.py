@@ -7,16 +7,18 @@ if sys.platform == 'darwin':
 oldlocale = locale.setlocale(locale.LC_NUMERIC)
 
 if sys.platform.startswith("win"):
-    tloc = "en"
-elif sys.platform.startswith("freebsd"):
-    tloc = "en_US.US-ASCII"
+    tlocs = ("en",)
 else:
-    tloc = "en_US"
+    tlocs = ("en_US.UTF-8", "en_US.US-ASCII", "en_US")
 
-try:
-    locale.setlocale(locale.LC_NUMERIC, tloc)
-except locale.Error:
-    raise ImportError, "test locale %s not supported" % tloc
+for tloc in tlocs:
+    try:
+        locale.setlocale(locale.LC_NUMERIC, tloc)
+        break
+    except locale.Error:
+        continue
+else:
+    raise ImportError, "test locale not supported (tried %s)"%(', '.join(tlocs))
 
 def testformat(formatstr, value, grouping = 0, output=None):
     if verbose:
