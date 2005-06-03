@@ -93,7 +93,7 @@ resources to test.  Currently only the following are defined:
                 in the standard library and test suite.  This takes
                 a long time.
 
-    subprocess  Run all tests for the subprocess module. 
+    subprocess  Run all tests for the subprocess module.
 
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the bsddb tests, give the
