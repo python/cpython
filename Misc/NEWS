@@ -35,6 +35,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1213894: os.path.realpath didn't resolve symlinks that were the first
+  component of the path.
+
 - distutils.commands.register now encodes the data as UTF-8 before posting
   them to PyPI.
 

@@ -476,6 +476,26 @@ class PosixPathTest(unittest.TestCase):
                 self.safe_rmdir(ABSTFN + "/k/y")
                 self.safe_rmdir(ABSTFN + "/k")
                 self.safe_rmdir(ABSTFN)
+        
+        def test_realpath_resolve_first(self):
+            # Bug #1213894: The first component of the path, if not absolute,
+            # must be resolved too.
+
+            try:
+                old_path = abspath('.')
+                os.mkdir(ABSTFN)
+                os.mkdir(ABSTFN + "/k")
+                os.symlink(ABSTFN, ABSTFN + "link")
+                os.chdir(dirname(ABSTFN))
+                
+                base = basename(ABSTFN)
+                self.assertEqual(realpath(base + "link"), ABSTFN)
+                self.assertEqual(realpath(base + "link/k"), ABSTFN + "/k")
+            finally:
+                os.chdir(old_path)
+                self.safe_remove(ABSTFN + "link")
+                self.safe_rmdir(ABSTFN + "/k")
+                self.safe_rmdir(ABSTFN)
 
         # Convenience functions for removing temporary files.
         def pass_os_error(self, func, filename):
