@@ -1308,6 +1308,10 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 			break;
 	}
 
+	if (mode_char == 0) {
+		mode_char = 'r';
+	}
+
 	mode = (mode_char == 'r') ? "rb" : "wb";
 
 	self->file = PyObject_CallFunction((PyObject*)&PyFile_Type, "(Osi)",
