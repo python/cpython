@@ -235,6 +235,16 @@ class BZ2FileTest(BaseTest):
         # "Test opening a nonexistent file"
         self.assertRaises(IOError, BZ2File, "/non/existent")
 
+    def testModeU(self):
+        # Bug #1194181: bz2.BZ2File opened for write with mode "U"
+        self.createTempFile()
+        bz2f = BZ2File(self.filename, "U")
+        bz2f.close()
+        f = file(self.filename)
+        f.seek(0, 2)
+        self.assertEqual(f.tell(), len(self.DATA))
+        f.close()
+
 class BZ2CompressorTest(BaseTest):
     def testCompress(self):
         # "Test BZ2Compressor.compress()/flush()"
