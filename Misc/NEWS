@@ -91,6 +91,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1194181: bz2.BZ2File didn't handle mode 'U' correctly.
+
 - Patch #1212117: os.stat().st_flags is now accessible as a attribute
   if available on the platform.
 
