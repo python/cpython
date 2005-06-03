@@ -164,6 +164,8 @@ class DB(DictMixin):
         return apply(self._cobj.rename, args, kwargs)
     def set_bt_minkey(self, *args, **kwargs):
         return apply(self._cobj.set_bt_minkey, args, kwargs)
+    def set_bt_compare(self, *args, **kwargs):
+        return apply(self._cobj.set_bt_compare, args, kwargs)
     def set_cachesize(self, *args, **kwargs):
         return apply(self._cobj.set_cachesize, args, kwargs)
     def set_flags(self, *args, **kwargs):

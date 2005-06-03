@@ -97,7 +97,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.3.0"
+#define PY_BSDDB_VERSION "4.3.1"
 static char *rcs_id = "$Id$";
 
 
@@ -244,6 +244,7 @@ typedef struct {
     struct behaviourFlags moduleFlags;
 #if (DBVER >= 33)
     PyObject*       associateCallback;
+    PyObject*       btCompareCallback;
     int             primaryDBType;
 #endif
 #ifdef HAVE_WEAKREF
@@ -741,6 +742,7 @@ newDBObject(DBEnvObject* arg, int flags)
     self->myenvobj = NULL;
 #if (DBVER >= 33)
     self->associateCallback = NULL;
+    self->btCompareCallback = NULL;
     self->primaryDBType = 0;
 #endif
 #ifdef HAVE_WEAKREF
@@ -814,6 +816,10 @@ DB_dealloc(DBObject* self)
     if (self->associateCallback != NULL) {
         Py_DECREF(self->associateCallback);
         self->associateCallback = NULL;
+    }
+    if (self->btCompareCallback != NULL) {
+        Py_DECREF(self->btCompareCallback);
+        self->btCompareCallback = NULL;
     }
 #endif
     PyObject_Del(self);
@@ -1957,6 +1963,161 @@ DB_set_bt_minkey(DBObject* self, PyObject* args)
     MYDB_END_ALLOW_THREADS;
     RETURN_IF_ERR();
     RETURN_NONE();
+}
+
+static int 
+_default_cmp (const DBT *leftKey,
+	      const DBT *rightKey)
+{
+  int res;
+  int lsize = leftKey->size, rsize = rightKey->size;
+
+  res = memcmp (leftKey->data, rightKey->data, 
+		lsize < rsize ? lsize : rsize);
+  
+  if (res == 0) {
+      if (lsize < rsize) {
+	  res = -1;
+      }
+      else if (lsize > rsize) {
+	  res = 1;
+      }
+  }
+  return res;
+}
+
+static int
+_db_compareCallback (DB* db, 
+		     const DBT *leftKey,
+		     const DBT *rightKey)
+{
+    int res = 0;
+    PyObject *args;
+    PyObject *result;
+    PyObject *leftObject;
+    PyObject *rightObject;
+    DBObject *self = (DBObject *) db->app_private;
+
+    if (self == NULL || self->btCompareCallback == NULL) {
+	MYDB_BEGIN_BLOCK_THREADS;
+	PyErr_SetString (PyExc_TypeError,
+			 (self == 0
+			  ? "DB_bt_compare db is NULL."
+			  : "DB_bt_compare callback is NULL."));
+	/* we're in a callback within the DB code, we can't raise */
+	PyErr_Print ();
+	res = _default_cmp (leftKey, rightKey);
+	MYDB_END_BLOCK_THREADS;
+    }
+    else {
+	MYDB_BEGIN_BLOCK_THREADS;
+
+	leftObject  = PyString_FromStringAndSize (leftKey->data, leftKey->size);
+	rightObject = PyString_FromStringAndSize (rightKey->data, rightKey->size);
+
+	args = PyTuple_New (3);
+	Py_INCREF (self);
+	PyTuple_SET_ITEM (args, 0, (PyObject *) self);
+	PyTuple_SET_ITEM (args, 1, leftObject);  /* steals reference */
+	PyTuple_SET_ITEM (args, 2, rightObject); /* steals reference */
+    
+	result = PyEval_CallObject (self->btCompareCallback, args);
+	if (result == 0) {
+	    /* we're in a callback within the DB code, we can't raise */
+	    PyErr_Print (); // XXX-gps or can we?  either way the DB is screwed
+	    res = _default_cmp (leftKey, rightKey);
+	}
+	else if (PyInt_Check (result)) {
+	    res = PyInt_AsLong (result);
+	}
+	else {
+	    PyErr_SetString (PyExc_TypeError,
+			     "DB_bt_compare callback MUST return an int.");
+	    /* we're in a callback within the DB code, we can't raise */
+	    PyErr_Print ();
+	    res = _default_cmp (leftKey, rightKey);
+	}
+    
+	Py_DECREF (args);
+	Py_XDECREF (result);
+
+	MYDB_END_BLOCK_THREADS;
+    }
+    return res;
+}
+
+static PyObject*
+DB_set_bt_compare (DBObject* self, PyObject* args)
+{
+    int err;
+    PyObject *comparator;
+    PyObject *tuple, *emptyStr, *result;
+
+    if (!PyArg_ParseTuple(args,"O:set_bt_compare", &comparator ))
+	return NULL;
+
+    CHECK_DB_NOT_CLOSED (self);
+
+    if (! PyCallable_Check (comparator)) {
+	makeTypeError ("Callable", comparator);
+	return NULL;
+    }
+
+    /* 
+     * Perform a test call of the comparator function with two empty
+     * string objects here.  verify that it returns an int (0).
+     * err if not.
+     */
+    tuple = PyTuple_New (3);
+    Py_INCREF (self);
+    PyTuple_SET_ITEM (tuple, 0, (PyObject *) self);
+
+    emptyStr = PyString_FromStringAndSize (NULL, 0);
+    Py_INCREF(emptyStr);
+    PyTuple_SET_ITEM (tuple, 1, emptyStr);
+    PyTuple_SET_ITEM (tuple, 2, emptyStr); /* steals reference */
+    result = PyEval_CallObject (comparator, tuple);
+    Py_DECREF (tuple);
+    if (result == 0 || !PyInt_Check(result)) {
+	PyErr_SetString (PyExc_TypeError,
+			 "callback MUST return an int");
+	return NULL;
+    }
+    else if (PyInt_AsLong(result) != 0) {
+	PyErr_SetString (PyExc_TypeError,
+			 "callback failed to return 0 on two empty strings");
+	return NULL;
+    }
+
+    /* We don't accept multiple set_bt_compare operations, in order to
+     * simplify the code. This would have no real use, as one cannot
+     * change the function once the db is opened anyway */
+    if (self->btCompareCallback != NULL) {
+	PyErr_SetString (PyExc_RuntimeError, "set_bt_compare () cannot be called more than once");
+	return NULL;
+    }
+
+    Py_INCREF (comparator);
+    self->btCompareCallback = comparator;
+
+    /* This is to workaround a problem with un-initialized threads (see
+       comment in DB_associate) */
+#ifdef WITH_THREAD
+    PyEval_InitThreads();
+#endif
+
+    err = self->db->set_bt_compare (self->db, 
+				    (comparator != NULL ? 
+				     _db_compareCallback : NULL));
+
+    if (err) {
+	/* restore the old state in case of error */
+	Py_DECREF (comparator);
+	self->btCompareCallback = NULL;
+    }
+
+    RETURN_IF_ERR ();
+    RETURN_NONE ();
 }
 
 
@@ -4400,6 +4561,7 @@ static PyMethodDef DB_methods[] = {
     {"remove",          (PyCFunction)DB_remove,         METH_VARARGS|METH_KEYWORDS},
     {"rename",          (PyCFunction)DB_rename,         METH_VARARGS},
     {"set_bt_minkey",   (PyCFunction)DB_set_bt_minkey,  METH_VARARGS},
+    {"set_bt_compare",  (PyCFunction)DB_set_bt_compare, METH_VARARGS},
     {"set_cachesize",   (PyCFunction)DB_set_cachesize,  METH_VARARGS},
 #if (DBVER >= 41)
     {"set_encrypt",     (PyCFunction)DB_set_encrypt,    METH_VARARGS|METH_KEYWORDS},
