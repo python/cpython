@@ -43,12 +43,12 @@ class WeakValueDictionary(UserDict.UserDict):
     # way in).
 
     def __init__(self, *args, **kw):
-        UserDict.UserDict.__init__(self, *args, **kw)
         def remove(wr, selfref=ref(self)):
             self = selfref()
             if self is not None:
                 del self.data[wr.key]
         self._remove = remove
+        UserDict.UserDict.__init__(self, *args, **kw)
 
     def __getitem__(self, key):
         o = self.data[key]()
