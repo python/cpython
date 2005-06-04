@@ -397,10 +397,14 @@ class BasicTestCase(unittest.TestCase):
         try:
             rec = c.current()
         except db.DBKeyEmptyError, val:
-            assert val[0] == db.DB_KEYEMPTY
-            if verbose: print val
+	    if get_raises_error:
+		assert val[0] == db.DB_KEYEMPTY
+		if verbose: print val
+	    else:
+		self.fail("unexpected DBKeyEmptyError")
         else:
-            self.fail('exception expected')
+	    if get_raises_error:
+		self.fail('DBKeyEmptyError exception expected')
 
         c.next()
         c2 = c.dup(db.DB_POSITION)
@@ -610,7 +614,6 @@ class BasicTransactionTestCase(BasicTestCase):
         BasicTestCase.populateDB(self, _txn=txn)
 
         self.txn = self.env.txn_begin()
-
 
 
     def test06_Transactions(self):
