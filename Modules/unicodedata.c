@@ -994,7 +994,7 @@ this database is based on the UnicodeData.txt file version\n\
 \n\
 The module uses the same names and symbols as defined by the\n\
 UnicodeData File Format 3.2.0 (see\n\
-http://www.unicode.org/Public/UNIDATA/UnicodeData.html).");
+http://www.unicode.org/Public/3.2-Update/UnicodeData-3.2.0.html).");
 
 PyMODINIT_FUNC
 initunicodedata(void)
