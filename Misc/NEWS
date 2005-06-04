@@ -37,6 +37,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1196315: fix weakref.WeakValueDictionary constructor.
+
 - Bug #1213894: os.path.realpath didn't resolve symlinks that were the first
   component of the path.
 
