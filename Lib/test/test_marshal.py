@@ -111,7 +111,7 @@ class StringTestCase(unittest.TestCase):
             self.assertEqual(s, new)
             self.assertEqual(type(s), type(new))
             marshal.dump(s, file(test_support.TESTFN, "wb"))
-            marshal.load(file(test_support.TESTFN, "rb"))
+            new = marshal.load(file(test_support.TESTFN, "rb"))
             self.assertEqual(s, new)
             self.assertEqual(type(s), type(new))
         os.unlink(test_support.TESTFN)
@@ -122,7 +122,7 @@ class StringTestCase(unittest.TestCase):
             self.assertEqual(s, new)
             self.assertEqual(type(s), type(new))
             marshal.dump(s, file(test_support.TESTFN, "wb"))
-            marshal.load(file(test_support.TESTFN, "rb"))
+            new = marshal.load(file(test_support.TESTFN, "rb"))
             self.assertEqual(s, new)
             self.assertEqual(type(s), type(new))
         os.unlink(test_support.TESTFN)
@@ -133,7 +133,7 @@ class StringTestCase(unittest.TestCase):
             new = marshal.loads(marshal.dumps(b))
             self.assertEqual(s, new)
             marshal.dump(b, file(test_support.TESTFN, "wb"))
-            marshal.load(file(test_support.TESTFN, "rb"))
+            new = marshal.load(file(test_support.TESTFN, "rb"))
             self.assertEqual(s, new)
         os.unlink(test_support.TESTFN)
 
@@ -162,7 +162,7 @@ class ContainerTestCase(unittest.TestCase):
         new = marshal.loads(marshal.dumps(self.d))
         self.assertEqual(self.d, new)
         marshal.dump(self.d, file(test_support.TESTFN, "wb"))
-        marshal.load(file(test_support.TESTFN, "rb"))
+        new = marshal.load(file(test_support.TESTFN, "rb"))
         self.assertEqual(self.d, new)
         os.unlink(test_support.TESTFN)
 
@@ -171,7 +171,7 @@ class ContainerTestCase(unittest.TestCase):
         new = marshal.loads(marshal.dumps(lst))
         self.assertEqual(lst, new)
         marshal.dump(lst, file(test_support.TESTFN, "wb"))
-        marshal.load(file(test_support.TESTFN, "rb"))
+        new = marshal.load(file(test_support.TESTFN, "rb"))
         self.assertEqual(lst, new)
         os.unlink(test_support.TESTFN)
 
@@ -180,7 +180,7 @@ class ContainerTestCase(unittest.TestCase):
         new = marshal.loads(marshal.dumps(t))
         self.assertEqual(t, new)
         marshal.dump(t, file(test_support.TESTFN, "wb"))
-        marshal.load(file(test_support.TESTFN, "rb"))
+        new = marshal.load(file(test_support.TESTFN, "rb"))
         self.assertEqual(t, new)
         os.unlink(test_support.TESTFN)
 
@@ -192,7 +192,7 @@ class ContainerTestCase(unittest.TestCase):
             self.assert_(isinstance(new, constructor))
             self.assertNotEqual(id(t), id(new))
             marshal.dump(t, file(test_support.TESTFN, "wb"))
-            marshal.load(file(test_support.TESTFN, "rb"))
+            new = marshal.load(file(test_support.TESTFN, "rb"))
             self.assertEqual(t, new)
             os.unlink(test_support.TESTFN)
 
