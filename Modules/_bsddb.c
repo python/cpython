@@ -97,7 +97,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.3.1"
+#define PY_BSDDB_VERSION "4.3.2"
 static char *rcs_id = "$Id$";
 
 
@@ -153,7 +153,7 @@ static PyInterpreterState* _db_interpreterState = NULL;
 
 static PyObject* DBError;               /* Base class, all others derive from this */
 static PyObject* DBCursorClosedError;   /* raised when trying to use a closed cursor object */
-static PyObject* DBKeyEmptyError;       /* DB_KEYEMPTY */
+static PyObject* DBKeyEmptyError;       /* DB_KEYEMPTY: also derives from KeyError */
 static PyObject* DBKeyExistError;       /* DB_KEYEXIST */
 static PyObject* DBLockDeadlockError;   /* DB_LOCK_DEADLOCK */
 static PyObject* DBLockNotGrantedError; /* DB_LOCK_NOTGRANTED */
@@ -212,10 +212,10 @@ static PyObject* DBPermissionsError;    /* EPERM  */
 
 struct behaviourFlags {
     /* What is the default behaviour when DB->get or DBCursor->get returns a
-       DB_NOTFOUND error?  Return None or raise an exception? */
+       DB_NOTFOUND || DB_KEYEMPTY error?  Return None or raise an exception? */
     unsigned int getReturnsNone : 1;
     /* What is the default behaviour for DBCursor.set* methods when DBCursor->get
-     * returns a DB_NOTFOUND error?  Return None or raise an exception? */
+     * returns a DB_NOTFOUND || DB_KEYEMPTY  error?  Return None or raise? */
     unsigned int cursorSetReturnsNone : 1;
 };
 
@@ -673,7 +673,8 @@ static PyObject* _DBCursor_get(DBCursorObject* self, int extra_flags,
     err = self->dbc->c_get(self->dbc, &key, &data, flags);
     MYDB_END_ALLOW_THREADS;
 
-    if ((err == DB_NOTFOUND) && self->mydb->moduleFlags.getReturnsNone) {
+    if ((err == DB_NOTFOUND || err == DB_KEYEMPTY)
+	    && self->mydb->moduleFlags.getReturnsNone) {
         Py_INCREF(Py_None);
         retval = Py_None;
     }
@@ -1285,7 +1286,8 @@ _DB_consume(DBObject* self, PyObject* args, PyObject* kwargs, int consume_flag)
     err = self->db->get(self->db, txn, &key, &data, flags|consume_flag);
     MYDB_END_ALLOW_THREADS;
 
-    if ((err == DB_NOTFOUND) && self->moduleFlags.getReturnsNone) {
+    if ((err == DB_NOTFOUND || err == DB_KEYEMPTY)
+	    && self->moduleFlags.getReturnsNone) {
         err = 0;
         Py_INCREF(Py_None);
         retval = Py_None;
@@ -1430,12 +1432,13 @@ DB_get(DBObject* self, PyObject* args, PyObject* kwargs)
     err = self->db->get(self->db, txn, &key, &data, flags);
     MYDB_END_ALLOW_THREADS;
 
-    if ((err == DB_NOTFOUND) && (dfltobj != NULL)) {
+    if ((err == DB_NOTFOUND || err == DB_KEYEMPTY) && (dfltobj != NULL)) {
         err = 0;
         Py_INCREF(dfltobj);
         retval = dfltobj;
     }
-    else if ((err == DB_NOTFOUND) && self->moduleFlags.getReturnsNone) {
+    else if ((err == DB_NOTFOUND || err == DB_KEYEMPTY)
+	     && self->moduleFlags.getReturnsNone) {
         err = 0;
         Py_INCREF(Py_None);
         retval = Py_None;
@@ -1499,12 +1502,13 @@ DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
     err = self->db->pget(self->db, txn, &key, &pkey, &data, flags);
     MYDB_END_ALLOW_THREADS;
 
-    if ((err == DB_NOTFOUND) && (dfltobj != NULL)) {
+    if ((err == DB_NOTFOUND || err == DB_KEYEMPTY) && (dfltobj != NULL)) {
         err = 0;
         Py_INCREF(dfltobj);
         retval = dfltobj;
     }
-    else if ((err == DB_NOTFOUND) && self->moduleFlags.getReturnsNone) {
+    else if ((err == DB_NOTFOUND || err == DB_KEYEMPTY)
+	     && self->moduleFlags.getReturnsNone) {
         err = 0;
         Py_INCREF(Py_None);
         retval = Py_None;
@@ -1629,7 +1633,8 @@ DB_get_both(DBObject* self, PyObject* args, PyObject* kwargs)
     err = self->db->get(self->db, txn, &key, &data, flags);
     MYDB_END_ALLOW_THREADS;
 
-    if ((err == DB_NOTFOUND) && self->moduleFlags.getReturnsNone) {
+    if ((err == DB_NOTFOUND || err == DB_KEYEMPTY)
+	    && self->moduleFlags.getReturnsNone) {
         err = 0;
         Py_INCREF(Py_None);
         retval = Py_None;
@@ -2745,7 +2750,15 @@ DB_has_key(DBObject* self, PyObject* args)
     err = self->db->get(self->db, txn, &key, &data, 0);
     MYDB_END_ALLOW_THREADS;
     FREE_DBT(key);
-    return PyInt_FromLong((err == DB_BUFFER_SMALL) || (err == 0));
+
+    if (err == DB_BUFFER_SMALL || err == 0) {
+        return PyInt_FromLong(1);
+    } else if (err == DB_NOTFOUND || err == DB_KEYEMPTY) {
+        return PyInt_FromLong(0);
+    }
+
+    makeDBError(err);
+    return NULL;
 }
 
 
@@ -2843,8 +2856,8 @@ _DB_make_list(DBObject* self, DB_TXN* txn, int type)
         Py_DECREF(item);
     }
 
-    /* DB_NOTFOUND is okay, it just means we got to the end */
-    if (err != DB_NOTFOUND && makeDBError(err)) {
+    /* DB_NOTFOUND || DB_KEYEMPTY is okay, it means we got to the end */
+    if (err != DB_NOTFOUND && err != DB_KEYEMPTY && makeDBError(err)) {
         Py_DECREF(list);
         list = NULL;
     }
@@ -3051,7 +3064,8 @@ DBC_get(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     err = self->dbc->c_get(self->dbc, &key, &data, flags);
     MYDB_END_ALLOW_THREADS;
 
-    if ((err == DB_NOTFOUND) && self->mydb->moduleFlags.getReturnsNone) {
+    if ((err == DB_NOTFOUND || err == DB_KEYEMPTY)
+	    && self->mydb->moduleFlags.getReturnsNone) {
         Py_INCREF(Py_None);
         retval = Py_None;
     }
@@ -3138,7 +3152,8 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     err = self->dbc->c_pget(self->dbc, &key, &pkey, &data, flags);
     MYDB_END_ALLOW_THREADS;
 
-    if ((err == DB_NOTFOUND) && self->mydb->moduleFlags.getReturnsNone) {
+    if ((err == DB_NOTFOUND || err == DB_KEYEMPTY)
+	    && self->mydb->moduleFlags.getReturnsNone) {
         Py_INCREF(Py_None);
         retval = Py_None;
     }
@@ -3305,7 +3320,8 @@ DBC_set(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->dbc->c_get(self->dbc, &key, &data, flags|DB_SET);
     MYDB_END_ALLOW_THREADS;
-    if ((err == DB_NOTFOUND) && self->mydb->moduleFlags.cursorSetReturnsNone) {
+    if ((err == DB_NOTFOUND || err == DB_KEYEMPTY)
+	    && self->mydb->moduleFlags.cursorSetReturnsNone) {
         Py_INCREF(Py_None);
         retval = Py_None;
     }
@@ -3377,7 +3393,8 @@ DBC_set_range(DBCursorObject* self, PyObject* args, PyObject* kwargs)
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->dbc->c_get(self->dbc, &key, &data, flags|DB_SET_RANGE);
     MYDB_END_ALLOW_THREADS;
-    if ((err == DB_NOTFOUND) && self->mydb->moduleFlags.cursorSetReturnsNone) {
+    if ((err == DB_NOTFOUND || err == DB_KEYEMPTY)
+	    && self->mydb->moduleFlags.cursorSetReturnsNone) {
         Py_INCREF(Py_None);
         retval = Py_None;
     }
@@ -3432,7 +3449,7 @@ _DBC_get_set_both(DBCursorObject* self, PyObject* keyobj, PyObject* dataobj,
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->dbc->c_get(self->dbc, &key, &data, flags|DB_GET_BOTH);
     MYDB_END_ALLOW_THREADS;
-    if ((err == DB_NOTFOUND) && returnsNone) {
+    if ((err == DB_NOTFOUND || err == DB_KEYEMPTY) && returnsNone) {
         Py_INCREF(Py_None);
         retval = Py_None;
     }
@@ -3572,7 +3589,8 @@ DBC_set_recno(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->dbc->c_get(self->dbc, &key, &data, flags|DB_SET_RECNO);
     MYDB_END_ALLOW_THREADS;
-    if ((err == DB_NOTFOUND) && self->mydb->moduleFlags.cursorSetReturnsNone) {
+    if ((err == DB_NOTFOUND || err == DB_KEYEMPTY)
+	    && self->mydb->moduleFlags.cursorSetReturnsNone) {
         Py_INCREF(Py_None);
         retval = Py_None;
     }
@@ -3640,7 +3658,8 @@ DBC_join_item(DBCursorObject* self, PyObject* args)
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->dbc->c_get(self->dbc, &key, &data, flags | DB_JOIN_ITEM);
     MYDB_END_ALLOW_THREADS;
-    if ((err == DB_NOTFOUND) && self->mydb->moduleFlags.getReturnsNone) {
+    if ((err == DB_NOTFOUND || err == DB_KEYEMPTY)
+	    && self->mydb->moduleFlags.getReturnsNone) {
         Py_INCREF(Py_None);
         retval = Py_None;
     }
@@ -3935,6 +3954,23 @@ DBEnv_set_lg_max(DBEnvObject* self, PyObject* args)
 
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->db_env->set_lg_max(self->db_env, lg_max);
+    MYDB_END_ALLOW_THREADS;
+    RETURN_IF_ERR();
+    RETURN_NONE();
+}
+
+
+static PyObject*
+DBEnv_set_lg_regionmax(DBEnvObject* self, PyObject* args)
+{
+    int err, lg_max;
+
+    if (!PyArg_ParseTuple(args, "i:set_lg_regionmax", &lg_max))
+        return NULL;
+    CHECK_ENV_NOT_CLOSED(self);
+
+    MYDB_BEGIN_ALLOW_THREADS;
+    err = self->db_env->set_lg_regionmax(self->db_env, lg_max);
     MYDB_END_ALLOW_THREADS;
     RETURN_IF_ERR();
     RETURN_NONE();
@@ -4651,6 +4687,7 @@ static PyMethodDef DBEnv_methods[] = {
     {"set_lg_bsize",    (PyCFunction)DBEnv_set_lg_bsize,     METH_VARARGS},
     {"set_lg_dir",      (PyCFunction)DBEnv_set_lg_dir,       METH_VARARGS},
     {"set_lg_max",      (PyCFunction)DBEnv_set_lg_max,       METH_VARARGS},
+    {"set_lg_regionmax",(PyCFunction)DBEnv_set_lg_regionmax, METH_VARARGS},
     {"set_lk_detect",   (PyCFunction)DBEnv_set_lk_detect,    METH_VARARGS},
     {"set_lk_max",      (PyCFunction)DBEnv_set_lk_max,       METH_VARARGS},
 #if (DBVER >= 32)
@@ -5279,12 +5316,15 @@ DL_EXPORT(void) init_bsddb(void)
     DBError = PyErr_NewException("bsddb._db.DBError", NULL, NULL);
     PyDict_SetItemString(d, "DBError", DBError);
 
-    /* Some magic to make DBNotFoundError derive from both DBError and
-       KeyError, since the API only supports using one base class. */
+    /* Some magic to make DBNotFoundError and DBKeyEmptyError derive
+     * from both DBError and KeyError, since the API only supports
+     * using one base class. */
     PyDict_SetItemString(d, "KeyError", PyExc_KeyError);
-    PyRun_String("class DBNotFoundError(DBError, KeyError): pass",
+    PyRun_String("class DBNotFoundError(DBError, KeyError): pass\n"
+	         "class DBKeyEmptyError(DBError, KeyError): pass",
                  Py_file_input, d, d);
     DBNotFoundError = PyDict_GetItemString(d, "DBNotFoundError");
+    DBKeyEmptyError = PyDict_GetItemString(d, "DBKeyEmptyError");
     PyDict_DelItemString(d, "KeyError");
 
 
