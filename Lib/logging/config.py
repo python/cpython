@@ -225,9 +225,9 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
             """
             Handle a request.
 
-            Each request is expected to be a 4-byte length,
-            followed by the config file. Uses fileConfig() to do the
-            grunt work.
+            Each request is expected to be a 4-byte length, packed using
+            struct.pack(">L", n), followed by the config file.
+            Uses fileConfig() to do the grunt work.
             """
             import tempfile
             try:
