@@ -1396,7 +1396,10 @@ configurations. If no port is specified, the module's default
 will be sent as a file suitable for processing by \function{fileConfig()}.
 Returns a \class{Thread} instance on which you can call \method{start()}
 to start the server, and which you can \method{join()} when appropriate.
-To stop the server, call \function{stopListening()}.
+To stop the server, call \function{stopListening()}. To send a configuration
+to the socket, read in the configuration file and send it to the socket
+as a string of bytes preceded by a four-byte length packed in binary using
+struct.\code{pack(">L", n)}.
 \end{funcdesc}
 
 \begin{funcdesc}{stopListening}{}
