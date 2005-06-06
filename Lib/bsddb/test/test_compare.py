@@ -2,21 +2,21 @@
 TestCases for python DB Btree key comparison function.
 """
 
-import sys, os
+import sys, os, re
 import test_all
+from cStringIO import StringIO
 
 import unittest
 from bsddb3 import db
 
-def lexical_cmp (db, left, right):
-    return cmp (left, right)
+lexical_cmp = cmp
 
-def lowercase_cmp(db, left, right):
+def lowercase_cmp(left, right):
     return cmp (left.lower(), right.lower())
 
 def make_reverse_comparator (cmp):
-    def reverse (db, left, right, delegate=cmp):
-        return - delegate (db, left, right)
+    def reverse (left, right, delegate=cmp):
+        return - delegate (left, right)
     return reverse
 
 _expected_lexical_test_data = ['', 'CCCP', 'a', 'aaa', 'b', 'c', 'cccce', 'ccccf']
@@ -25,7 +25,7 @@ _expected_lowercase_test_data = ['', 'a', 'aaa', 'b', 'c', 'CC', 'cccce', 'ccccf
 class ComparatorTests (unittest.TestCase):
     def comparator_test_helper (self, comparator, expected_data):
         data = expected_data[:]
-        data.sort (lambda l, r, cmp=comparator: cmp (None, l, r))
+        data.sort (comparator)
         self.failUnless (data == expected_data,
                          "comparator `%s' is not right: %s vs. %s"
                          % (comparator, expected_data, data))
@@ -131,7 +131,7 @@ class BtreeKeyCompareTestCase (AbstractBtreeKeyCompareTestCase):
 
     def test_compare_function_useless (self):
         self.startTest ()
-        def socialist_comparator (db, l, r):
+        def socialist_comparator (l, r):
             return 0
         self.createDB (socialist_comparator)
         self.addDataToDB (['b', 'a', 'd'])
@@ -157,40 +157,69 @@ class BtreeExceptionsTestCase (AbstractBtreeKeyCompareTestCase):
 
     def test_compare_function_incorrect (self):
         self.startTest ()
-        def bad_comparator (db, l, r):
+        def bad_comparator (l, r):
             return 1
-        # verify that set_bt_compare checks that comparator(db, '', '') == 0
+        # verify that set_bt_compare checks that comparator('', '') == 0
         self.assertRaises (TypeError, self.createDB, bad_comparator)
         self.finishTest ()
 
-    def test_compare_function_exception (self):
+    def verifyStderr(self, method, successRe):
+	"""
+	Call method() while capturing sys.stderr output internally and
+	call self.fail() if successRe.search() does not match the stderr
+	output.  This is used to test for uncatchable exceptions.
+	"""
+	stdErr = sys.stderr
+	sys.stderr = StringIO()
+	try:
+	    method()
+	finally:
+	    temp = sys.stderr
+	    sys.stderr = stdErr
+	    errorOut = temp.getvalue()
+	    if not successRe.search(errorOut):
+		self.fail("unexpected stderr output:\n"+errorOut)
+
+    def _test_compare_function_exception (self):
         self.startTest ()
-        def bad_comparator (db, l, r):
+        def bad_comparator (l, r):
             if l == r:
                 # pass the set_bt_compare test
                 return 0
             raise RuntimeError, "i'm a naughty comparison function"
         self.createDB (bad_comparator)
-        print "\n*** this test should print 2 uncatchable tracebacks ***"
-        self.addDataToDB (['a', 'b', 'c'])  # this should raise, but...
-        self.finishTest ()
+	#print "\n*** test should print 2 uncatchable tracebacks ***"
+	self.addDataToDB (['a', 'b', 'c'])  # this should raise, but...
+	self.finishTest ()
 
-    def test_compare_function_bad_return (self):
+    def test_compare_function_exception(self):
+	self.verifyStderr(
+		self._test_compare_function_exception,
+		re.compile('(^RuntimeError:.* naughty.*){2}', re.M|re.S)
+	)
+
+    def _test_compare_function_bad_return (self):
         self.startTest ()
-        def bad_comparator (db, l, r):
+        def bad_comparator (l, r):
             if l == r:
                 # pass the set_bt_compare test
                 return 0
             return l
         self.createDB (bad_comparator)
-        print "\n*** this test should print 2 errors about returning an int ***"
+        #print "\n*** test should print 2 errors about returning an int ***"
         self.addDataToDB (['a', 'b', 'c'])  # this should raise, but...
         self.finishTest ()
+
+    def test_compare_function_bad_return(self):
+	self.verifyStderr(
+		self._test_compare_function_bad_return,
+		re.compile('(^TypeError:.* return an int.*){2}', re.M|re.S)
+	)
 
 
     def test_cannot_assign_twice (self):
 
-        def my_compare (db, a, b):
+        def my_compare (a, b):
             return 0
 
         self.startTest ()
