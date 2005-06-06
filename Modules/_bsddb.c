@@ -1172,6 +1172,7 @@ DB_associate(DBObject* self, PyObject* args, PyObject* kwargs)
         makeTypeError("DB", (PyObject*)secondaryDB);
         return NULL;
     }
+    CHECK_DB_NOT_CLOSED(secondaryDB);
     if (callback == Py_None) {
         callback = NULL;
     }
