@@ -91,6 +91,8 @@ musicdata = {
 
 class AssociateTestCase(unittest.TestCase):
     keytype = ''
+    envFlags = 0
+    dbFlags = 0
 
     def setUp(self):
         self.filename = self.__class__.__name__ + '.db'
@@ -100,7 +102,7 @@ class AssociateTestCase(unittest.TestCase):
         except os.error: pass
         self.env = db.DBEnv()
         self.env.open(homeDir, db.DB_CREATE | db.DB_INIT_MPOOL |
-                               db.DB_INIT_LOCK | db.DB_THREAD)
+                               db.DB_INIT_LOCK | db.DB_THREAD | self.envFlags)
 
     def tearDown(self):
         self.closeDB()
@@ -110,23 +112,24 @@ class AssociateTestCase(unittest.TestCase):
         for file in files:
             os.remove(file)
 
-    def addDataToDB(self, d):
+    def addDataToDB(self, d, txn=None):
         for key, value in musicdata.items():
             if type(self.keytype) == type(''):
                 key = "%02d" % key
-            d.put(key, string.join(value, '|'))
+            d.put(key, string.join(value, '|'), txn=txn)
 
-    def createDB(self):
+    def createDB(self, txn=None):
         self.primary = db.DB(self.env)
         self.primary.set_get_returns_none(2)
         self.primary.open(self.filename, "primary", self.dbtype,
-                          db.DB_CREATE | db.DB_THREAD)
+                          db.DB_CREATE | db.DB_THREAD | self.dbFlags, txn=txn)
 
     def closeDB(self):
         self.primary.close()
 
     def getDB(self):
         return self.primary
+
 
     def test01_associateWithDB(self):
         if verbose:
@@ -140,7 +143,7 @@ class AssociateTestCase(unittest.TestCase):
         secDB.set_flags(db.DB_DUP)
         secDB.set_get_returns_none(2)
         secDB.open(self.filename, "secondary", db.DB_BTREE,
-                   db.DB_CREATE | db.DB_THREAD)
+                   db.DB_CREATE | db.DB_THREAD | self.dbFlags)
         self.getDB().associate(secDB, self.getGenre)
 
         self.addDataToDB(self.getDB())
@@ -160,7 +163,7 @@ class AssociateTestCase(unittest.TestCase):
         secDB = db.DB(self.env)
         secDB.set_flags(db.DB_DUP)
         secDB.open(self.filename, "secondary", db.DB_BTREE,
-                   db.DB_CREATE | db.DB_THREAD)
+                   db.DB_CREATE | db.DB_THREAD | self.dbFlags)
 
         # adding the DB_CREATE flag will cause it to index existing records
         self.getDB().associate(secDB, self.getGenre, db.DB_CREATE)
@@ -168,12 +171,12 @@ class AssociateTestCase(unittest.TestCase):
         self.finish_test(secDB)
 
 
-    def finish_test(self, secDB):
+    def finish_test(self, secDB, txn=None):
         # 'Blues' should not be in the secondary database
-        vals = secDB.pget('Blues')
+        vals = secDB.pget('Blues', txn=txn)
         assert vals == None, vals
 
-        vals = secDB.pget('Unknown')
+        vals = secDB.pget('Unknown', txn=txn)
         assert vals[0] == 99 or vals[0] == '99', vals
         vals[1].index('Unknown')
         vals[1].index('Unnamed')
@@ -181,7 +184,7 @@ class AssociateTestCase(unittest.TestCase):
 
         if verbose:
             print "Primary key traversal:"
-        c = self.getDB().cursor()
+        c = self.getDB().cursor(txn)
         count = 0
         rec = c.first()
         while rec is not None:
@@ -198,7 +201,7 @@ class AssociateTestCase(unittest.TestCase):
 
         if verbose:
             print "Secondary key traversal:"
-        c = secDB.cursor()
+        c = secDB.cursor(txn)
         count = 0
 
         # test cursor pget
@@ -245,6 +248,35 @@ class AssociateBTreeTestCase(AssociateTestCase):
 class AssociateRecnoTestCase(AssociateTestCase):
     dbtype = db.DB_RECNO
     keytype = 0
+
+#----------------------------------------------------------------------
+
+class AssociateBTreeTxnTestCase(AssociateBTreeTestCase):
+    envFlags = db.DB_INIT_TXN
+    dbFlags = 0
+
+    def test13_associateAutoCommit(self):
+        if verbose:
+            print '\n', '-=' * 30
+            print "Running %s.test13_associateAutoCommit..." % \
+                  self.__class__.__name__
+
+	txn = self.env.txn_begin()
+	try:
+	    self.createDB(txn=txn)
+
+	    secDB = db.DB(self.env)
+	    secDB.set_flags(db.DB_DUP)
+	    secDB.set_get_returns_none(2)
+	    secDB.open(self.filename, "secondary", db.DB_BTREE,
+		       db.DB_CREATE | db.DB_THREAD, txn=txn)
+	    self.getDB().associate(secDB, self.getGenre, txn=txn)
+
+	    self.addDataToDB(self.getDB(), txn=txn)
+
+	    self.finish_test(secDB, txn=txn)
+	finally:
+	    txn.commit()
 
 
 #----------------------------------------------------------------------
@@ -334,6 +366,8 @@ def test_suite():
         suite.addTest(unittest.makeSuite(AssociateHashTestCase))
         suite.addTest(unittest.makeSuite(AssociateBTreeTestCase))
         suite.addTest(unittest.makeSuite(AssociateRecnoTestCase))
+
+	suite.addTest(unittest.makeSuite(AssociateBTreeTxnTestCase))
 
         suite.addTest(unittest.makeSuite(ShelveAssociateHashTestCase))
         suite.addTest(unittest.makeSuite(ShelveAssociateBTreeTestCase))
