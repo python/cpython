@@ -97,7 +97,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.3.2"
+#define PY_BSDDB_VERSION "4.3.3"
 static char *rcs_id = "$Id$";
 
 
@@ -2019,11 +2019,10 @@ _db_compareCallback (DB* db,
 	leftObject  = PyString_FromStringAndSize (leftKey->data, leftKey->size);
 	rightObject = PyString_FromStringAndSize (rightKey->data, rightKey->size);
 
-	args = PyTuple_New (3);
+	args = PyTuple_New (2);
 	Py_INCREF (self);
-	PyTuple_SET_ITEM (args, 0, (PyObject *) self);
-	PyTuple_SET_ITEM (args, 1, leftObject);  /* steals reference */
-	PyTuple_SET_ITEM (args, 2, rightObject); /* steals reference */
+	PyTuple_SET_ITEM (args, 0, leftObject);  /* steals reference */
+	PyTuple_SET_ITEM (args, 1, rightObject); /* steals reference */
     
 	result = PyEval_CallObject (self->btCompareCallback, args);
 	if (result == 0) {
@@ -2072,14 +2071,12 @@ DB_set_bt_compare (DBObject* self, PyObject* args)
      * string objects here.  verify that it returns an int (0).
      * err if not.
      */
-    tuple = PyTuple_New (3);
-    Py_INCREF (self);
-    PyTuple_SET_ITEM (tuple, 0, (PyObject *) self);
+    tuple = PyTuple_New (2);
 
     emptyStr = PyString_FromStringAndSize (NULL, 0);
     Py_INCREF(emptyStr);
-    PyTuple_SET_ITEM (tuple, 1, emptyStr);
-    PyTuple_SET_ITEM (tuple, 2, emptyStr); /* steals reference */
+    PyTuple_SET_ITEM (tuple, 0, emptyStr);
+    PyTuple_SET_ITEM (tuple, 1, emptyStr); /* steals reference */
     result = PyEval_CallObject (comparator, tuple);
     Py_DECREF (tuple);
     if (result == 0 || !PyInt_Check(result)) {
