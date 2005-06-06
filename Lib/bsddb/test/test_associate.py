@@ -127,7 +127,8 @@ class AssociateErrorTestCase(unittest.TestCase):
         # dupDB has been configured to allow duplicates, it can't
         # associate with a secondary.  BerkeleyDB will return an error.
 	try:
-	    dupDB.associate(secDB, lambda a, b: a+b)
+	    def f(a,b): return a+b
+	    dupDB.associate(secDB, f)
 	except db.DBError:
 	    # good
 	    secDB.close()
@@ -181,8 +182,12 @@ class AssociateTestCase(unittest.TestCase):
 	self.secDB = None
         self.primary = db.DB(self.env)
         self.primary.set_get_returns_none(2)
-        self.primary.open(self.filename, "primary", self.dbtype,
+	if db.version() >= (4, 1):
+	    self.primary.open(self.filename, "primary", self.dbtype,
                           db.DB_CREATE | db.DB_THREAD | self.dbFlags, txn=txn)
+	else:
+	    self.primary.open(self.filename, "primary", self.dbtype,
+                          db.DB_CREATE | db.DB_THREAD | self.dbFlags)
 
     def closeDB(self):
 	if self.cur:
@@ -346,7 +351,10 @@ class AssociateBTreeTxnTestCase(AssociateBTreeTestCase):
 	    self.secDB.set_get_returns_none(2)
 	    self.secDB.open(self.filename, "secondary", db.DB_BTREE,
 		       db.DB_CREATE | db.DB_THREAD, txn=txn)
-	    self.getDB().associate(self.secDB, self.getGenre, txn=txn)
+	    if db.version() >= (4,1):
+		self.getDB().associate(self.secDB, self.getGenre, txn=txn)
+	    else:
+		self.getDB().associate(self.secDB, self.getGenre)
 
 	    self.addDataToDB(self.getDB(), txn=txn)
 	except:
@@ -446,7 +454,8 @@ def test_suite():
         suite.addTest(unittest.makeSuite(AssociateBTreeTestCase))
         suite.addTest(unittest.makeSuite(AssociateRecnoTestCase))
 
-	suite.addTest(unittest.makeSuite(AssociateBTreeTxnTestCase))
+	if db.version() >= (4, 1):
+	    suite.addTest(unittest.makeSuite(AssociateBTreeTxnTestCase))
 
         suite.addTest(unittest.makeSuite(ShelveAssociateHashTestCase))
         suite.addTest(unittest.makeSuite(ShelveAssociateBTreeTestCase))
