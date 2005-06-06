@@ -88,6 +88,54 @@ musicdata = {
 
 #----------------------------------------------------------------------
 
+class AssociateErrorTestCase(unittest.TestCase):
+    def setUp(self):
+        self.filename = self.__class__.__name__ + '.db'
+        homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
+        self.homeDir = homeDir
+        try: os.mkdir(homeDir)
+        except os.error: pass
+        self.env = db.DBEnv()
+        self.env.open(homeDir, db.DB_CREATE | db.DB_INIT_MPOOL)
+
+    def tearDown(self):
+        self.env.close()
+        import glob
+        files = glob.glob(os.path.join(self.homeDir, '*'))
+        for file in files:
+            os.remove(file)
+
+
+    def test00_associateDBError(self):
+        if verbose:
+            print '\n', '-=' * 30
+            print "Running %s.test00_associateDBError..." % \
+                  self.__class__.__name__
+
+        dupDB = db.DB(self.env)
+        dupDB.set_flags(db.DB_DUP)
+        dupDB.open(self.filename, "primary", db.DB_BTREE, db.DB_CREATE)
+
+        secDB = db.DB(self.env)
+        secDB.open(self.filename, "secondary", db.DB_BTREE, db.DB_CREATE)
+
+        # dupDB has been configured to allow duplicates, it can't
+        # associate with a secondary.  BerkeleyDB will return an error.
+	try:
+	    dupDB.associate(secDB, lambda a, b: a+b)
+	except db.DBError:
+	    # good
+	    secDB.close()
+	    dupDB.close()
+	else:
+	    secDB.close()
+	    dupDB.close()
+	    self.fail("DBError exception was expected")
+
+
+
+#----------------------------------------------------------------------
+
 
 class AssociateTestCase(unittest.TestCase):
     keytype = ''
@@ -363,6 +411,8 @@ def test_suite():
     suite = unittest.TestSuite()
 
     if db.version() >= (3, 3, 11):
+        suite.addTest(unittest.makeSuite(AssociateErrorTestCase))
+
         suite.addTest(unittest.makeSuite(AssociateHashTestCase))
         suite.addTest(unittest.makeSuite(AssociateBTreeTestCase))
         suite.addTest(unittest.makeSuite(AssociateRecnoTestCase))
