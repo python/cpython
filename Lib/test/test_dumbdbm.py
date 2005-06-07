@@ -74,6 +74,24 @@ class DumbDBMTestCase(unittest.TestCase):
         self.assertEqual(f['1'], 'hello2')
         f.close()
 
+    def test_line_endings(self):
+        # test for bug #1172763: dumbdbm would die if the line endings
+        # weren't what was expected.
+        f = dumbdbm.open(_fname)
+        f['1'] = 'hello'
+        f['2'] = 'hello2'
+        f.close()
+
+        # Mangle the file by adding \r before each newline
+        data = open(_fname + '.dir').read()
+        data = data.replace('\n', '\r\n')
+        open(_fname + '.dir', 'wb').write(data)
+        
+        f = dumbdbm.open(_fname)
+        self.assertEqual(f['1'], 'hello')
+        self.assertEqual(f['2'], 'hello2')
+        
+                
     def read_helper(self, f):
         keys = self.keys_helper(f)
         for key in self._dict:
