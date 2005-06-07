@@ -81,6 +81,7 @@ class _Database(UserDict.DictMixin):
             pass
         else:
             for line in f:
+                line = line.rstrip()
                 key, pos_and_siz_pair = eval(line)
                 self._index[key] = pos_and_siz_pair
             f.close()
