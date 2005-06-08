@@ -60,6 +60,7 @@ class BaseXYTestCase(unittest.TestCase):
         eq = self.assertEqual
         # Test default alphabet
         eq(base64.b64encode("www.python.org"), "d3d3LnB5dGhvbi5vcmc=")
+        eq(base64.b64encode('\x00'), 'AA==')
         eq(base64.b64encode("a"), "YQ==")
         eq(base64.b64encode("ab"), "YWI=")
         eq(base64.b64encode("abc"), "YWJj")
@@ -90,6 +91,7 @@ class BaseXYTestCase(unittest.TestCase):
     def test_b64decode(self):
         eq = self.assertEqual
         eq(base64.b64decode("d3d3LnB5dGhvbi5vcmc="), "www.python.org")
+        eq(base64.b64decode('AA=='), '\x00')
         eq(base64.b64decode("YQ=="), "a")
         eq(base64.b64decode("YWI="), "ab")
         eq(base64.b64decode("YWJj"), "abc")
@@ -123,6 +125,7 @@ class BaseXYTestCase(unittest.TestCase):
     def test_b32encode(self):
         eq = self.assertEqual
         eq(base64.b32encode(''), '')
+        eq(base64.b32encode('\x00'), 'AA======')
         eq(base64.b32encode('a'), 'ME======')
         eq(base64.b32encode('ab'), 'MFRA====')
         eq(base64.b32encode('abc'), 'MFRGG===')
@@ -132,6 +135,7 @@ class BaseXYTestCase(unittest.TestCase):
     def test_b32decode(self):
         eq = self.assertEqual
         eq(base64.b32decode(''), '')
+        eq(base64.b32decode('AA======'), '\x00')
         eq(base64.b32decode('ME======'), 'a')
         eq(base64.b32decode('MFRA===='), 'ab')
         eq(base64.b32decode('MFRGG==='), 'abc')
@@ -166,10 +170,12 @@ class BaseXYTestCase(unittest.TestCase):
     def test_b16encode(self):
         eq = self.assertEqual
         eq(base64.b16encode('\x01\x02\xab\xcd\xef'), '0102ABCDEF')
+        eq(base64.b16encode('\x00'), '00')
 
     def test_b16decode(self):
         eq = self.assertEqual
         eq(base64.b16decode('0102ABCDEF'), '\x01\x02\xab\xcd\xef')
+        eq(base64.b16decode('00'), '\x00')
         # Lower case is not allowed without a flag
         self.assertRaises(TypeError, base64.b16decode, '0102abcdef')
         # Case fold
