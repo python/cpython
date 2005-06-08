@@ -35,8 +35,8 @@ class SimpleRecnoTestCase(unittest.TestCase):
     def test01_basic(self):
         d = db.DB()
 
-	get_returns_none = d.set_get_returns_none(2)
-	d.set_get_returns_none(get_returns_none)
+        get_returns_none = d.set_get_returns_none(2)
+        d.set_get_returns_none(get_returns_none)
 
         d.open(self.filename, db.DB_RECNO, db.DB_CREATE)
 
@@ -69,13 +69,13 @@ class SimpleRecnoTestCase(unittest.TestCase):
         else:
             self.fail("expected exception")
 
-	# test that has_key raises DB exceptions (fixed in pybsddb 4.3.2)
-	try:
-	    d.has_key(0)
-	except db.DBError, val:
-	    pass
-	else:
-	    self.fail("has_key did not raise a proper exception")
+        # test that has_key raises DB exceptions (fixed in pybsddb 4.3.2)
+        try:
+            d.has_key(0)
+        except db.DBError, val:
+            pass
+        else:
+            self.fail("has_key did not raise a proper exception")
 
         try:
             data = d[100]
@@ -84,13 +84,13 @@ class SimpleRecnoTestCase(unittest.TestCase):
         else:
             self.fail("expected exception")
 
-	try:
-	    data = d.get(100)
-	except db.DBNotFoundError, val:
-	    if get_returns_none:
-		self.fail("unexpected exception")
-	else:
-	    assert data == None
+        try:
+            data = d.get(100)
+        except db.DBNotFoundError, val:
+            if get_returns_none:
+                self.fail("unexpected exception")
+        else:
+            assert data == None
 
         keys = d.keys()
         if verbose:
@@ -178,14 +178,14 @@ class SimpleRecnoTestCase(unittest.TestCase):
         try:
             d.get(99)
         except db.DBKeyEmptyError, val:
-	    if get_returns_none:
-		self.fail("unexpected DBKeyEmptyError exception")
-	    else:
-		assert val[0] == db.DB_KEYEMPTY
-		if verbose: print val
+            if get_returns_none:
+                self.fail("unexpected DBKeyEmptyError exception")
+            else:
+                assert val[0] == db.DB_KEYEMPTY
+                if verbose: print val
         else:
-	    if not get_returns_none:
-		self.fail("expected exception")
+            if not get_returns_none:
+                self.fail("expected exception")
 
         rec = c.set(40)
         while rec:

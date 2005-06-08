@@ -164,21 +164,21 @@ class BtreeExceptionsTestCase (AbstractBtreeKeyCompareTestCase):
         self.finishTest ()
 
     def verifyStderr(self, method, successRe):
-	"""
-	Call method() while capturing sys.stderr output internally and
-	call self.fail() if successRe.search() does not match the stderr
-	output.  This is used to test for uncatchable exceptions.
-	"""
-	stdErr = sys.stderr
-	sys.stderr = StringIO()
-	try:
-	    method()
-	finally:
-	    temp = sys.stderr
-	    sys.stderr = stdErr
-	    errorOut = temp.getvalue()
-	    if not successRe.search(errorOut):
-		self.fail("unexpected stderr output:\n"+errorOut)
+        """
+        Call method() while capturing sys.stderr output internally and
+        call self.fail() if successRe.search() does not match the stderr
+        output.  This is used to test for uncatchable exceptions.
+        """
+        stdErr = sys.stderr
+        sys.stderr = StringIO()
+        try:
+            method()
+        finally:
+            temp = sys.stderr
+            sys.stderr = stdErr
+            errorOut = temp.getvalue()
+            if not successRe.search(errorOut):
+                self.fail("unexpected stderr output:\n"+errorOut)
 
     def _test_compare_function_exception (self):
         self.startTest ()
@@ -188,15 +188,15 @@ class BtreeExceptionsTestCase (AbstractBtreeKeyCompareTestCase):
                 return 0
             raise RuntimeError, "i'm a naughty comparison function"
         self.createDB (bad_comparator)
-	#print "\n*** test should print 2 uncatchable tracebacks ***"
-	self.addDataToDB (['a', 'b', 'c'])  # this should raise, but...
-	self.finishTest ()
+        #print "\n*** test should print 2 uncatchable tracebacks ***"
+        self.addDataToDB (['a', 'b', 'c'])  # this should raise, but...
+        self.finishTest ()
 
     def test_compare_function_exception(self):
-	self.verifyStderr(
-		self._test_compare_function_exception,
-		re.compile('(^RuntimeError:.* naughty.*){2}', re.M|re.S)
-	)
+        self.verifyStderr(
+                self._test_compare_function_exception,
+                re.compile('(^RuntimeError:.* naughty.*){2}', re.M|re.S)
+        )
 
     def _test_compare_function_bad_return (self):
         self.startTest ()
@@ -211,10 +211,10 @@ class BtreeExceptionsTestCase (AbstractBtreeKeyCompareTestCase):
         self.finishTest ()
 
     def test_compare_function_bad_return(self):
-	self.verifyStderr(
-		self._test_compare_function_bad_return,
-		re.compile('(^TypeError:.* return an int.*){2}', re.M|re.S)
-	)
+        self.verifyStderr(
+                self._test_compare_function_bad_return,
+                re.compile('(^TypeError:.* return an int.*){2}', re.M|re.S)
+        )
 
 
     def test_cannot_assign_twice (self):

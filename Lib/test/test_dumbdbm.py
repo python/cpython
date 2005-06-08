@@ -86,12 +86,12 @@ class DumbDBMTestCase(unittest.TestCase):
         data = open(_fname + '.dir').read()
         data = data.replace('\n', '\r\n')
         open(_fname + '.dir', 'wb').write(data)
-        
+
         f = dumbdbm.open(_fname)
         self.assertEqual(f['1'], 'hello')
         self.assertEqual(f['2'], 'hello2')
-        
-                
+
+
     def read_helper(self, f):
         keys = self.keys_helper(f)
         for key in self._dict:
