@@ -892,9 +892,9 @@ class TestMIMEAudio(unittest.TestCase):
         payload = self._au.get_payload()
         self.assertEqual(base64.decodestring(payload), self._audiodata)
 
-    def checkSetMinor(self):
+    def test_checkSetMinor(self):
         au = MIMEAudio(self._audiodata, 'fish')
-        self.assertEqual(im.get_type(), 'audio/fish')
+        self.assertEqual(au.get_type(), 'audio/fish')
 
     def test_add_header(self):
         eq = self.assertEqual
@@ -935,7 +935,7 @@ class TestMIMEImage(unittest.TestCase):
         payload = self._im.get_payload()
         self.assertEqual(base64.decodestring(payload), self._imgdata)
 
-    def checkSetMinor(self):
+    def test_checkSetMinor(self):
         im = MIMEImage(self._imgdata, 'fish')
         self.assertEqual(im.get_type(), 'image/fish')
 
