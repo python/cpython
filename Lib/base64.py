@@ -221,12 +221,14 @@ def b32decode(s, casefold=False, map01=None):
         acc += _b32rev[c] << shift
         shift -= 5
         if shift < 0:
-            parts.append(binascii.unhexlify(hex(acc)[2:-1]))
+            parts.append(binascii.unhexlify('%010x' % acc))
             acc = 0
             shift = 35
     # Process the last, partial quanta
-    last = binascii.unhexlify(hex(acc)[2:-1])
-    if padchars == 1:
+    last = binascii.unhexlify('%010x' % acc)
+    if padchars == 0:
+        last = ''                       # No characters
+    elif padchars == 1:
         last = last[:-1]
     elif padchars == 3:
         last = last[:-2]
@@ -234,7 +236,7 @@ def b32decode(s, casefold=False, map01=None):
         last = last[:-3]
     elif padchars == 6:
         last = last[:-4]
-    elif padchars <> 0:
+    else:
         raise TypeError('Incorrect padding')
     parts.append(last)
     return EMPTYSTRING.join(parts)
