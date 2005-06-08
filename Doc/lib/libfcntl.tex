@@ -166,9 +166,9 @@ system dependent --- therefore using the \function{flock()} call may be
 better.
 
 \begin{seealso}
-  \seemodule{os}{The \function{os.open()} function supports locking flags
-                 and is available on a wider variety of platforms than
-                 the \function{lockf()} and \function{flock()}
-                 functions, providing a more platform-independent file
-                 locking facility.}
+  \seemodule{os}{If the locking flags \constant{O_SHLOCK} and
+		 \constant{O_EXLOCK} are present in the \module{os} module,
+  		 the \function{os.open()} function provides a more
+  		 platform-independent alternative to the \function{lockf()}
+  		 and \function{flock()} functions.}
 \end{seealso}
