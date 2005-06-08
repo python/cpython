@@ -94,12 +94,12 @@ class AssociateErrorTestCase(unittest.TestCase):
         homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
         self.homeDir = homeDir
         try:
-	    os.mkdir(homeDir)
+            os.mkdir(homeDir)
         except os.error:
-	    import glob
-	    files = glob.glob(os.path.join(self.homeDir, '*'))
-	    for file in files:
-		os.remove(file)
+            import glob
+            files = glob.glob(os.path.join(self.homeDir, '*'))
+            for file in files:
+                os.remove(file)
         self.env = db.DBEnv()
         self.env.open(homeDir, db.DB_CREATE | db.DB_INIT_MPOOL)
 
@@ -126,17 +126,17 @@ class AssociateErrorTestCase(unittest.TestCase):
 
         # dupDB has been configured to allow duplicates, it can't
         # associate with a secondary.  BerkeleyDB will return an error.
-	try:
-	    def f(a,b): return a+b
-	    dupDB.associate(secDB, f)
-	except db.DBError:
-	    # good
-	    secDB.close()
-	    dupDB.close()
-	else:
-	    secDB.close()
-	    dupDB.close()
-	    self.fail("DBError exception was expected")
+        try:
+            def f(a,b): return a+b
+            dupDB.associate(secDB, f)
+        except db.DBError:
+            # good
+            secDB.close()
+            dupDB.close()
+        else:
+            secDB.close()
+            dupDB.close()
+            self.fail("DBError exception was expected")
 
 
 
@@ -153,12 +153,12 @@ class AssociateTestCase(unittest.TestCase):
         homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
         self.homeDir = homeDir
         try:
-	    os.mkdir(homeDir)
+            os.mkdir(homeDir)
         except os.error:
-	    import glob
-	    files = glob.glob(os.path.join(self.homeDir, '*'))
-	    for file in files:
-		os.remove(file)
+            import glob
+            files = glob.glob(os.path.join(self.homeDir, '*'))
+            for file in files:
+                os.remove(file)
         self.env = db.DBEnv()
         self.env.open(homeDir, db.DB_CREATE | db.DB_INIT_MPOOL |
                                db.DB_INIT_LOCK | db.DB_THREAD | self.envFlags)
@@ -178,22 +178,22 @@ class AssociateTestCase(unittest.TestCase):
             d.put(key, string.join(value, '|'), txn=txn)
 
     def createDB(self, txn=None):
-	self.cur = None
-	self.secDB = None
+        self.cur = None
+        self.secDB = None
         self.primary = db.DB(self.env)
         self.primary.set_get_returns_none(2)
-	if db.version() >= (4, 1):
-	    self.primary.open(self.filename, "primary", self.dbtype,
+        if db.version() >= (4, 1):
+            self.primary.open(self.filename, "primary", self.dbtype,
                           db.DB_CREATE | db.DB_THREAD | self.dbFlags, txn=txn)
-	else:
-	    self.primary.open(self.filename, "primary", self.dbtype,
+        else:
+            self.primary.open(self.filename, "primary", self.dbtype,
                           db.DB_CREATE | db.DB_THREAD | self.dbFlags)
 
     def closeDB(self):
-	if self.cur:
-	    self.cur.close()
-	if self.secDB:
-	    self.secDB.close()
+        if self.cur:
+            self.cur.close()
+        if self.secDB:
+            self.secDB.close()
         self.primary.close()
 
     def getDB(self):
@@ -294,7 +294,7 @@ class AssociateTestCase(unittest.TestCase):
         # all items accounted for EXCEPT for 1 with "Blues" genre
         assert count == len(musicdata)-1
 
-	self.cur = None
+        self.cur = None
 
     def getGenre(self, priKey, priData):
         assert type(priData) == type("")
@@ -327,14 +327,14 @@ class AssociateBTreeTxnTestCase(AssociateBTreeTestCase):
     dbFlags = 0
 
     def txn_finish_test(self, sDB, txn):
-	try:
-	    self.finish_test(sDB, txn=txn)
-	finally:
-	    if self.cur:
-		self.cur.close()
-		self.cur = None
-	    if txn:
-		txn.commit()
+        try:
+            self.finish_test(sDB, txn=txn)
+        finally:
+            if self.cur:
+                self.cur.close()
+                self.cur = None
+            if txn:
+                txn.commit()
 
     def test13_associate_in_transaction(self):
         if verbose:
@@ -342,26 +342,26 @@ class AssociateBTreeTxnTestCase(AssociateBTreeTestCase):
             print "Running %s.test13_associateAutoCommit..." % \
                   self.__class__.__name__
 
-	txn = self.env.txn_begin()
-	try:
-	    self.createDB(txn=txn)
+        txn = self.env.txn_begin()
+        try:
+            self.createDB(txn=txn)
 
-	    self.secDB = db.DB(self.env)
-	    self.secDB.set_flags(db.DB_DUP)
-	    self.secDB.set_get_returns_none(2)
-	    self.secDB.open(self.filename, "secondary", db.DB_BTREE,
-		       db.DB_CREATE | db.DB_THREAD, txn=txn)
-	    if db.version() >= (4,1):
-		self.getDB().associate(self.secDB, self.getGenre, txn=txn)
-	    else:
-		self.getDB().associate(self.secDB, self.getGenre)
+            self.secDB = db.DB(self.env)
+            self.secDB.set_flags(db.DB_DUP)
+            self.secDB.set_get_returns_none(2)
+            self.secDB.open(self.filename, "secondary", db.DB_BTREE,
+                       db.DB_CREATE | db.DB_THREAD, txn=txn)
+            if db.version() >= (4,1):
+                self.getDB().associate(self.secDB, self.getGenre, txn=txn)
+            else:
+                self.getDB().associate(self.secDB, self.getGenre)
 
-	    self.addDataToDB(self.getDB(), txn=txn)
-	except:
-	    txn.abort()
-	    raise
+            self.addDataToDB(self.getDB(), txn=txn)
+        except:
+            txn.abort()
+            raise
 
-	self.txn_finish_test(self.secDB, txn=txn)
+        self.txn_finish_test(self.secDB, txn=txn)
 
 
 #----------------------------------------------------------------------
@@ -454,8 +454,8 @@ def test_suite():
         suite.addTest(unittest.makeSuite(AssociateBTreeTestCase))
         suite.addTest(unittest.makeSuite(AssociateRecnoTestCase))
 
-	if db.version() >= (4, 1):
-	    suite.addTest(unittest.makeSuite(AssociateBTreeTxnTestCase))
+        if db.version() >= (4, 1):
+            suite.addTest(unittest.makeSuite(AssociateBTreeTxnTestCase))
 
         suite.addTest(unittest.makeSuite(ShelveAssociateHashTestCase))
         suite.addTest(unittest.makeSuite(ShelveAssociateBTreeTestCase))
