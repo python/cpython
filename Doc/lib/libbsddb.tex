@@ -56,7 +56,7 @@ for their use and interpretation.
 
 \begin{funcdesc}{btopen}{filename\optional{, flag\optional{,
 mode\optional{, btflags\optional{, cachesize\optional{, maxkeypage\optional{,
-minkeypage\optional{, psize\optional{, lorder}}}}}}}}}
+minkeypage\optional{, pgsize\optional{, lorder}}}}}}}}}
 
 Open the btree format file named \var{filename}.  Files never intended 
 to be preserved on disk may be created by passing \code{None} as the 
@@ -71,7 +71,7 @@ interpretation.
 \end{funcdesc}
 
 \begin{funcdesc}{rnopen}{filename\optional{, flag\optional{, mode\optional{,
-rnflags\optional{, cachesize\optional{, psize\optional{, lorder\optional{,
+rnflags\optional{, cachesize\optional{, pgsize\optional{, lorder\optional{,
 reclen\optional{, bval\optional{, bfname}}}}}}}}}}
 
 Open a DB record format file named \var{filename}.  Files never intended 
