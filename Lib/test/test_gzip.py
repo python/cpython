@@ -58,6 +58,29 @@ class TestGzip(unittest.TestCase):
         f = gzip.GzipFile(self.filename, 'rb') ; d = f.read() ; f.close()
         self.assertEqual(d, (data1*50) + (data2*15))
 
+    def test_many_append(self):
+        # Bug #1074261 was triggered when reading a file that contained
+        # many, many members.  Create such a file and verify that reading it
+        # works.
+        f = gzip.open(self.filename, 'wb', 9)
+        f.write('a')
+        f.close()
+        for i in range(0,200):
+            f = gzip.open(self.filename, "ab", 9) # append
+            f.write('a')
+            f.close()
+
+        # Try reading the file
+        zgfile = gzip.open(self.filename, "rb")
+        contents = ""
+        while 1:
+            ztxt = zgfile.read(8192)
+            contents += ztxt
+            if not ztxt: break
+        zgfile.close()
+        self.assertEquals(contents, 'a'*201)
+
+
     def test_readline(self):
         self.test_write()
         # Try .readline() with varying line lengths
