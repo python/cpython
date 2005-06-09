@@ -7,7 +7,12 @@ import test_all
 from cStringIO import StringIO
 
 import unittest
-from bsddb3 import db
+try:
+    # For Pythons w/distutils pybsddb
+    from bsddb3 import db, dbshelve
+except ImportError:
+    # For Python 2.3
+    from bsddb import db, dbshelve
 
 lexical_cmp = cmp
 
