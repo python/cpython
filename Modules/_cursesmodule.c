@@ -162,6 +162,10 @@ static int initialisedcolors = FALSE;
                                   "must call start_color() first"); \
                   return 0; }
 
+#ifndef MIN
+#define MIN(x,y) ((x) < (y) ? (x) : (y))
+#endif
+
 /* Utility Functions */
 
 /*
@@ -801,21 +805,21 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
   switch (PyTuple_Size(args)) {
   case 0:
     Py_BEGIN_ALLOW_THREADS
-    rtn2 = wgetstr(self->win,rtn);
+    rtn2 = wgetnstr(self->win,rtn, 1023);
     Py_END_ALLOW_THREADS
     break;
   case 1:
     if (!PyArg_ParseTuple(args,"i;n", &n))
       return NULL;
     Py_BEGIN_ALLOW_THREADS
-    rtn2 = wgetnstr(self->win,rtn,n);
+    rtn2 = wgetnstr(self->win,rtn,MIN(n, 1023));
     Py_END_ALLOW_THREADS
     break;
   case 2:
     if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
       return NULL;
     Py_BEGIN_ALLOW_THREADS
-    rtn2 = mvwgetstr(self->win,y,x,rtn);
+    rtn2 = mvwgetnstr(self->win,y,x,rtn, 1023);
     Py_END_ALLOW_THREADS
     break;
   case 3:
@@ -825,11 +829,11 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
  /* Untested */
     Py_BEGIN_ALLOW_THREADS
     rtn2 = wmove(self->win,y,x)==ERR ? ERR :
-      wgetnstr(self->win, rtn, n);
+      wgetnstr(self->win, rtn, MIN(n, 1023));
     Py_END_ALLOW_THREADS
 #else
     Py_BEGIN_ALLOW_THREADS
-    rtn2 = mvwgetnstr(self->win, y, x, rtn, n);
+    rtn2 = mvwgetnstr(self->win, y, x, rtn, MIN(n, 1023));
     Py_END_ALLOW_THREADS
 #endif
     break;
@@ -962,22 +966,22 @@ PyCursesWindow_InStr(PyCursesWindowObject *self, PyObject *args)
 
   switch (PyTuple_Size(args)) {
   case 0:
-    rtn2 = winstr(self->win,rtn);
+    rtn2 = winnstr(self->win,rtn, 1023);
     break;
   case 1:
     if (!PyArg_ParseTuple(args,"i;n", &n))
       return NULL;
-    rtn2 = winnstr(self->win,rtn,n);
+    rtn2 = winnstr(self->win,rtn,MIN(n,1023));
     break;
   case 2:
     if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
       return NULL;
-    rtn2 = mvwinstr(self->win,y,x,rtn);
+    rtn2 = mvwinnstr(self->win,y,x,rtn,1023);
     break;
   case 3:
     if (!PyArg_ParseTuple(args, "iii;y,x,n", &y, &x, &n))
       return NULL;
-    rtn2 = mvwinnstr(self->win, y, x, rtn, n);
+    rtn2 = mvwinnstr(self->win, y, x, rtn, MIN(n,1023));
     break;
   default:
     PyErr_SetString(PyExc_TypeError, "instr requires 0 or 3 arguments");
