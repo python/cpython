@@ -18,8 +18,8 @@
 \maketitle
 \tableofcontents
 
-This article explains the new features in Python 2.4, released on
-November~30, 2004.
+This article explains the new features in Python 2.4.1, released on
+March~30, 2005.
 
 Python 2.4 is a medium-sized release.  It doesn't introduce as many
 changes as the radical Python 2.2, but introduces more features than
@@ -1713,6 +1713,11 @@ The \exception{OverflowWarning} warning will disappear in Python 2.5.
   now return  an empty list instead of raising a \exception{TypeError}
   exception if called with no arguments.
 
+\item You can no longer compare the \class{date} and \class{datetime}
+  instances provided by the \module{datetime} module.  Two 
+  instances of different classes will now always be unequal, and 
+  relative comparisons (\code{<}, \code{>}) will raise a \exception{TypeError}.
+
 \item \function{dircache.listdir()} now passes exceptions to the caller
       instead of returning empty lists.
 
@@ -1745,7 +1750,8 @@ longer set a handler on the \constant{SIGKILL} signal.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Koray Can, Hye-Shik Chang, Michael Dyck, Raymond Hettinger, 
-Brian Hurt, Hamish Lawson, Fredrik Lundh, Sean Reifschneider.
+article: Koray Can, Hye-Shik Chang, Michael Dyck, Raymond Hettinger,
+Brian Hurt, Hamish Lawson, Fredrik Lundh, Sean Reifschneider,
+Sadruddin Rejeb.
 
 \end{document}
