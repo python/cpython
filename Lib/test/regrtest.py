@@ -91,7 +91,9 @@ resources to test.  Currently only the following are defined:
 
     compiler -  Test the compiler package by compiling all the source
                 in the standard library and test suite.  This takes
-                a long time.
+                a long time.  Enabling this resource also allows
+                test_tokenize to verify round-trip lexing on every
+                file in the test library.
 
     subprocess  Run all tests for the subprocess module.
 
