@@ -128,7 +128,7 @@ def compile(file, cfile=None, dfile=None, doraise=False):
         if doraise:
             raise py_exc
         else:
-            sys.stderr.write(py_exc.msg)
+            sys.stderr.write(py_exc.msg + '\n')
             return
     if cfile is None:
         cfile = file + (__debug__ and 'c' or 'o')
