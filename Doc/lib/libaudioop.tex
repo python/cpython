@@ -42,11 +42,6 @@ Return a tuple \code{(\var{sample}, \var{newstate})} where the sample
 has the width specified in \var{width}.
 \end{funcdesc}
 
-\begin{funcdesc}{adpcm32lin}{adpcmfragment, width, state}
-Decode an alternative 3-bit ADPCM code.  See \function{lin2adpcm3()}
-for details.
-\end{funcdesc}
-
 \begin{funcdesc}{avg}{fragment, width}
 Return the average over all samples in the fragment.
 \end{funcdesc}
@@ -120,13 +115,6 @@ returns a tuple \code{(\var{adpcmfrag}, \var{newstate})}, and the
 \function{lin2adpcm()}.  In the initial call, \code{None} can be
 passed as the state.  \var{adpcmfrag} is the ADPCM coded fragment
 packed 2 4-bit values per byte.
-\end{funcdesc}
-
-\begin{funcdesc}{lin2adpcm3}{fragment, width, state}
-This is an alternative ADPCM coder that uses only 3 bits per sample.
-It is not compatible with the Intel/DVI ADPCM coder and its output is
-not packed (due to laziness on the side of the author).  Its use is
-discouraged.
 \end{funcdesc}
 
 \begin{funcdesc}{lin2ulaw}{fragment, width}
