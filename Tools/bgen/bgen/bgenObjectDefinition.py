@@ -44,12 +44,8 @@ class ObjectDefinition(GeneratorGroup):
 
         OutHeader2("Object type " + self.name)
 
-        sf = self.static and "static "
-        Output("%sPyTypeObject %s;", sf, self.typename)
-        Output()
-        Output("#define %s_Check(x) ((x)->ob_type == &%s || PyObject_TypeCheck((x), &%s))",
-               self.prefix, self.typename, self.typename)
-        Output()
+        self.outputCheck()
+        
         Output("typedef struct %s {", self.objecttype)
         IndentLevel()
         Output("PyObject_HEAD")
@@ -83,6 +79,14 @@ class ObjectDefinition(GeneratorGroup):
         self.outputTypeObject()
 
         OutHeader2("End object type " + self.name)
+
+    def outputCheck(self):
+        sf = self.static and "static "
+        Output("%sPyTypeObject %s;", sf, self.typename)
+        Output()
+        Output("#define %s_Check(x) ((x)->ob_type == &%s || PyObject_TypeCheck((x), &%s))",
+               self.prefix, self.typename, self.typename)
+        Output()
 
     def outputMethodChain(self):
         Output("%sPyMethodChain %s_chain = { %s_methods, %s };",

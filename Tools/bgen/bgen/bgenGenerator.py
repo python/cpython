@@ -18,6 +18,7 @@ class BaseFunctionGenerator:
     def __init__(self, name, condition=None):
         if DEBUG: print "<--", name
         self.name = name
+        self.callname = name
         self.prefix = name
         self.objecttype = "PyObject" # Type of _self argument to function
         self.condition = condition
@@ -202,7 +203,7 @@ class FunctionGenerator(BaseFunctionGenerator):
     def callit(self):
         args = ""
         if self.rv:
-            s = "%s = %s(" % (self.rv.name, self.name)
+            s = "%s = %s(" % (self.rv.name, self.callname)
         else:
             s = "%s(" % self.name
         sep = ",\n" + ' '*len(s)
@@ -214,9 +215,9 @@ class FunctionGenerator(BaseFunctionGenerator):
             args = args + s
         if self.rv:
             Output("%s = %s(%s);",
-                   self.rv.name, self.name, args)
+                   self.rv.name, self.callname, args)
         else:
-            Output("%s(%s);", self.name, args)
+            Output("%s(%s);", self.callname, args)
 
     def checkit(self):
         for arg in self.argumentList:
@@ -255,8 +256,7 @@ class MethodGenerator(FunctionGenerator):
         self.itself = Variable(t0, "_self->ob_itself", SelfMode)
         self.argumentList.append(self.itself)
         FunctionGenerator.parseArgumentList(self, args)
-
-
+        
 def _test():
     void = None
     eggs = FunctionGenerator(void, "eggs",
