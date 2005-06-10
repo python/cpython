@@ -31,7 +31,7 @@ from token import *
 
 import token
 __all__ = [x for x in dir(token) if x[0] != '_'] + ["COMMENT", "tokenize",
-           "generate_tokens", "NL"]
+           "generate_tokens", "NL", "untokenize"]
 del x
 del token
 
@@ -159,12 +159,55 @@ def tokenize_loop(readline, tokeneater):
     for token_info in generate_tokens(readline):
         tokeneater(*token_info)
 
+
+def untokenize(iterable):
+    """Transform tokens back into Python source code.
+
+    Each element returned by the iterable must be a token sequence
+    with at least two elements, a token number and token value.
+
+    Round-trip invariant:
+        # Output text will tokenize the back to the input
+        t1 = [tok[:2] for tok in generate_tokens(f.readline)]
+        newcode = untokenize(t1)
+        readline = iter(newcode.splitlines(1)).next
+        t2 = [tok[:2] for tokin generate_tokens(readline)]
+        assert t1 == t2
+    """
+
+    startline = False
+    indents = []
+    toks = []
+    toks_append = toks.append
+    for tok in iterable:
+        toknum, tokval = tok[:2]
+
+        if toknum == NAME:
+            tokval += ' '
+
+        if toknum == INDENT:
+            indents.append(tokval)
+            continue
+        elif toknum == DEDENT:
+            indents.pop()
+            continue
+        elif toknum in (NEWLINE, COMMENT, NL):
+            startline = True
+        elif startline and indents:
+            toks_append(indents[-1])
+            startline = False
+        toks_append(tokval)
+    return ''.join(toks)
+
+
 def generate_tokens(readline):
     """
     The generate_tokens() generator requires one argment, readline, which
     must be a callable object which provides the same interface as the
     readline() method of built-in file objects. Each call to the function
-    should return one line of input as a string.
+    should return one line of input as a string.  Alternately, readline
+    can be a callable function terminating with StopIteration:
+        readline = open(myfile).next    # Example of alternate readline
 
     The generator produces 5-tuples with these members: the token type; the
     token string; a 2-tuple (srow, scol) of ints specifying the row and
@@ -180,7 +223,10 @@ def generate_tokens(readline):
     indents = [0]
 
     while 1:                                   # loop over lines in stream
-        line = readline()
+        try:
+            line = readline()
+        except StopIteration:
+            line = ''
         lnum = lnum + 1
         pos, max = 0, len(line)
 

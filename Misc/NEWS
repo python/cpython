@@ -141,6 +141,11 @@ Extension Modules
 Library
 -------
 
+- The tokenize module has a new untokenize() function to support a full
+  roundtrip from lexed tokens back to Python sourcecode.  In addition,
+  the generate_tokens() function now accepts a callable argument that
+  terminates by raising StopIteration.
+
 - Bug #1196315: fix weakref.WeakValueDictionary constructor.
 
 - Bug #1213894: os.path.realpath didn't resolve symlinks that were the first
