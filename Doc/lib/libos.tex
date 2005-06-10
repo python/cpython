@@ -354,7 +354,7 @@ Availability: Macintosh, \UNIX, Windows.
 \end{funcdesc}
 
 
-For each of these \function{popen()} variants, if \var{bufsize} is
+For each of the following \function{popen()} variants, if \var{bufsize} is
 specified, it specifies the buffer size for the I/O pipes.
 \var{mode}, if provided, should be the string \code{'b'} or
 \code{'t'}; on Windows this is needed to determine whether the file
@@ -366,7 +366,7 @@ which case arguments will be passed directly to the program without shell
 intervention (as with \function{os.spawnv()}). If \var{cmd} is a string it will
 be passed to the shell (as with \function{os.system()}).
 
-These methods do not make it possible to retrieve the return code from
+These methods do not make it possible to retrieve the exit status from
 the child processes.  The only way to control the input and output
 streams and also retrieve the return codes is to use the
 \class{Popen3} and \class{Popen4} classes from the \refmodule{popen2}
