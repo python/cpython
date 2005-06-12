@@ -525,11 +525,11 @@ The \class{Context} class defines several general purpose methods as well as a
 large number of methods for doing arithmetic directly in a given context.
 
 \begin{methoddesc}{clear_flags}{}
-  Sets all of the flags to \constant{0}.
+  Resets all of the flags to \constant{0}.
 \end{methoddesc}  
 
 \begin{methoddesc}{copy}{}
-  Returns a duplicate of the context.
+  Return a duplicate of the context.
 \end{methoddesc}  
 
 \begin{methoddesc}{create_decimal}{num}
@@ -1118,3 +1118,156 @@ def sin(x):
     return +s
 
 \end{verbatim}                                             
+
+
+
+\subsection{Decimal FAQ \label{decimal-faq}}
+
+
+Q.  It is cumbersome to type \code{decimal.Decimal('1234.5')}.  Is there a way
+to minimize typing when using the interactive interpreter?
+
+A.  Some users abbreviate the constructor to just a single letter:
+
+\begin{verbatim}
+>>> D = decimal.Decimal
+>>> D('1.23') + D('3.45')
+Decimal("4.68")
+\end{verbatim}
+
+
+Q.  In a fixed-point application to two decimal places, some inputs
+have many places and need to be rounded.  Others are not supposed to have
+excess digits and need to be validated.  What methods should be used?
+
+A.  The \method{quantize()} method rounds to a fixed number of decimal places.
+If the \constant{Inexact} trap is set, it is also useful for validation:
+
+\begin{verbatim}
+>>> TWOPLACES = Decimal(10) ** -2       # same as Decimal('0.01')
+
+>>> # Round to two places
+>>> Decimal("3.214").quantize(TWOPLACES)
+Decimal("3.21")
+
+>>> # Validate that a number does not exceed two places 
+>>> Decimal("3.21").quantize(TWOPLACES, context=Context(traps=[Inexact]))
+Decimal("3.21")
+
+>>> Decimal("3.214").quantize(TWOPLACES, context=Context(traps=[Inexact]))
+Traceback (most recent call last):
+   ...
+Inexact: Changed in rounding
+\end{verbatim}
+
+
+Q.  Once I have valid two place inputs, how do I maintain that invariant
+throughout an application?
+
+A.  Some operations like addition and subtraction automatically preserve fixed
+point.  Others, like multiplication and division, change the number of decimal
+places and need to be followed-up with a \method{quantize()} step.
+
+
+Q.  There are many ways to write express the same value.  The numbers
+\constant{200}, \constant{200.000}, \constant{2E2}, and \constant{.02E+4} all
+have the same value at various precisions. Is there a way to transform them to
+a single recognizable canonical value?
+
+A.  The \method{normalize()} method maps all equivalent values to a single
+representive:
+
+\begin{verbatim}
+>>> values = map(Decimal, '200 200.000 2E2 .02E+4'.split())
+>>> [v.normalize() for v in values]
+[Decimal("2E+2"), Decimal("2E+2"), Decimal("2E+2"), Decimal("2E+2")]
+\end{verbatim}
+
+
+Q.  Is there a way to convert a regular float to a \class{Decimal}?
+
+A.  Yes, all binary floating point numbers can be exactly expressed as a
+Decimal.  An exact conversion may take more precision than intuition would
+suggest, so trapping \constant{Inexact} will signal a need for more precision:
+
+\begin{verbatim}
+def floatToDecimal(f):
+    "Convert a floating point number to a Decimal with no loss of information"
+    # Transform (exactly) a float to a mantissa (0.5 <= abs(m) < 1.0) and an
+    # exponent.  Double the mantissa until it is an integer.  Use the integer
+    # mantissa and exponent to compute an equivalent Decimal.  If this cannot
+    # be done exactly, then retry with more precision.
+
+    mantissa, exponent = math.frexp(f)
+    while mantissa != int(mantissa):
+        mantissa *= 2.0
+        exponent -= 1
+    mantissa = int(mantissa)
+    oldcontext = getcontext()
+    setcontext(Context(traps=[Inexact]))
+    try:
+        while True:
+            try:
+               return mantissa * Decimal(2) ** exponent
+            except Inexact:
+                getcontext().prec += 1
+    finally:
+        setcontext(oldcontext)
+\end{verbatim}
+
+
+Q.  Why isn't the \function{floatToDecimal()} routine included in the module?
+
+A.  There is some question about whether it is advisable to mix binary and
+decimal floating point.  Also, its use requires some care to avoid the
+representation issues associated with binary floating point:
+
+\begin{verbatim}
+>>> floatToDecimal(1.1)
+Decimal("1.100000000000000088817841970012523233890533447265625")
+\end{verbatim}
+
+
+Q.  Within a complex calculation, how can I make sure that I haven't gotten a
+spurious result because of insufficient precision or rounding anomalies.
+
+A.  The decimal module makes it easy to test results.  A best practice is to
+re-run calculations using greater precision and with various rounding modes.
+Widely differing results indicate insufficient precision, rounding mode
+issues, ill-conditioned inputs, or a numerically unstable algorithm.
+
+
+Q.  I noticed that context precision is applied to the results of operations
+but not to the inputs.  Is there anything to watch out for when mixing
+values of different precisions?
+
+A.  Yes.  The principle is that all values are considered to be exact and so
+is the arithmetic on those values.  Only the results are rounded.  The
+advantage for inputs is that ``what you type is what you get''.  A
+disadvantage is that the results can look odd if you forget that the inputs
+haven't been rounded:
+
+\begin{verbatim}
+>>> getcontext().prec = 3
+>>> Decimal('3.104') + D('2.104')
+Decimal("5.21")
+>>> Decimal('3.104') + D('0.000') + D('2.104')
+Decimal("5.20")
+\end{verbatim}
+
+The solution is either to increase precision or to force rounding of inputs
+using the unary plus operation:
+
+\begin{verbatim}
+>>> getcontext().prec = 3
+>>> +Decimal('1.23456789')      # unary plus triggers rounding
+Decimal("1.23")
+\end{verbatim}
+
+Alternatively, inputs can be rounded upon creation using the
+\method{Context.create_decimal()} method:
+
+\begin{verbatim}
+>>> Context(prec=5, rounding=ROUND_DOWN).create_decimal('1.2345678')
+Decimal("1.2345")
+\end{verbatim}
