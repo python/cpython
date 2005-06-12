@@ -23,8 +23,8 @@ Neal Norwitz (code check and clean-up), and Chui Tey (RPC integration, debugger
 integration and persistent breakpoints).
 
 Scott David Daniels, Hernan Foffani, Christos Georgiou, Martin v. Löwis, 
-Jason Orendorff, Noam Raphael, Josh Robb, Nigel Rowe, and Bruce Sherwood have
-submitted useful patches.  Thanks, guys!
+Jason Orendorff, Noam Raphael, Josh Robb, Nigel Rowe, Bruce Sherwood, and
+Jeff Shute have submitted useful patches.  Thanks, guys!
 
 For additional details refer to NEWS.txt and Changelog.
 
