@@ -132,7 +132,8 @@ Additional Help Sources:
 
 Basic editing and navigation:
 
-	Backspace deletes to the left; DEL deletes to the right.
+	Backspace deletes char to the left; DEL deletes char to the right.
+	Control-backspace deletes word left, Control-DEL deletes word right.
 	Arrow keys and Page Up/Down move around.
 	Control-left/right Arrow moves by words in a strange but useful way.
 	Home/End go to begin/end of line.

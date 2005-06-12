@@ -491,7 +491,7 @@ class EditorWindow(object):
             self.center()
 
     def ispythonsource(self, filename):
-        if not filename:
+        if not filename or os.path.isdir(filename):
             return True
         base, ext = os.path.splitext(os.path.basename(filename))
         if os.path.normcase(ext) in (".py", ".pyw"):
@@ -532,6 +532,7 @@ class EditorWindow(object):
     def rmcolorizer(self):
         if not self.color:
             return
+        self.color.removecolors()
         self.per.removefilter(self.undo)
         self.per.removefilter(self.color)
         self.color = None
