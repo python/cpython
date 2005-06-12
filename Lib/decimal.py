@@ -134,7 +134,7 @@ __all__ = [
     'setcontext', 'getcontext'
 ]
 
-import copy
+import copy as _copy
 
 #Rounding
 ROUND_DOWN = 'ROUND_DOWN'
@@ -2210,7 +2210,7 @@ class Context(object):
             del s
         for name, val in locals().items():
             if val is None:
-                setattr(self, name, copy.copy(getattr(DefaultContext, name)))
+                setattr(self, name, _copy.copy(getattr(DefaultContext, name)))
             else:
                 setattr(self, name, val)
         del self.self
