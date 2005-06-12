@@ -1271,7 +1271,7 @@ class EditorWindow(object):
     def _asktabwidth(self):
         return self.askinteger(
             "Tab width",
-            "Spaces per tab? (2-16)",
+            "Columns per tab? (2-16)",
             parent=self.text,
             initialvalue=self.indentwidth,
             minvalue=2,

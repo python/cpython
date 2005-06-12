@@ -31,16 +31,13 @@ IDENTCHARS = string.ascii_letters + string.digits + "_"
 
 indent_message = """Error: Inconsistent indentation detected!
 
-This means that either:
+1) Your indentation is outright incorrect (easy to fix), OR
 
-1) your indentation is outright incorrect (easy to fix), or
+2) Your indentation mixes tabs and spaces.
 
-2) your indentation mixes tabs and spaces in a way that depends on \
-how many spaces a tab is worth.
-
-To fix case 2, change all tabs to spaces by using Select All followed \
-by Untabify Region (both in the Edit menu)."""
-
+To fix case 2, change all tabs to spaces by using Edit->Select All followed \
+by Format->Untabify Region and specify the number of columns used by each tab.
+"""
 
 class ScriptBinding:
 

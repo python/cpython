@@ -3,6 +3,12 @@ What's New in IDLE 1.2a0?
 
 *Release date: XX-XXX-2005*
 
+- Clarify "tab/space" Error Dialog and "Tab Width" Dialog associated with
+  the Untabify command.
+
+- Corrected "tab/space" Error Dialog to show correct menu for Untabify.
+  Patch 1196980 Jeff Shute
+
 - New files are colorized by default, and colorizing is removed when
   saving as non-Python files. Patch 1196895 Jeff Shute
   Closes Python Bugs 775012 and 800432, partial fix IDLEfork 763524
