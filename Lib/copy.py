@@ -14,7 +14,7 @@ compound objects (objects that contain other objects, like lists or
 class instances).
 
 - A shallow copy constructs a new compound object and then (to the
-  extent possible) inserts *the same objects* into in that the
+  extent possible) inserts *the same objects* into it that the
   original contains.
 
 - A deep copy constructs a new compound object and then, recursively,
