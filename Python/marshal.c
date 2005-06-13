@@ -1081,7 +1081,7 @@ marshal_loads(PyObject *self, PyObject *args)
 	char *s;
 	int n;
 	PyObject* result;
-	if (!PyArg_ParseTuple(args, "s#|i:loads", &s, &n))
+	if (!PyArg_ParseTuple(args, "s#:loads", &s, &n))
 		return NULL;
 	rf.fp = NULL;
 	rf.ptr = s;
