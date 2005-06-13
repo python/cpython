@@ -211,6 +211,15 @@ class BugsTestCase(unittest.TestCase):
         self.assertEquals(marshal.loads(marshal.dumps(5, 0)), 5)
         self.assertEquals(marshal.loads(marshal.dumps(5, 1)), 5)
 
+    def test_fuzz(self):
+        # simple test that it's at least not *totally* trivial to
+        # crash from bad marshal data
+        for c in [chr(i) for i in range(256)]:
+            try:
+                marshal.loads(c)
+            except Exception:
+                pass
+
 def test_main():
     test_support.run_unittest(IntTestCase,
                               FloatTestCase,
