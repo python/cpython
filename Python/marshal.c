@@ -648,6 +648,10 @@ r_object(RFILE *p)
 
 	case TYPE_STRINGREF:
 		n = r_long(p);
+		if (n < 0 || n >= PyList_GET_SIZE(p->strings)) {
+			PyErr_SetString(PyExc_ValueError, "bad marshal data");
+			return NULL;
+		}
 		v = PyList_GET_ITEM(p->strings, n);
 		Py_INCREF(v);
 		return v;
