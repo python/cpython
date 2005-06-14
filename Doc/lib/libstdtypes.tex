@@ -72,7 +72,9 @@ return one of their operands.)
 \index{False}
 \index{True}
 
-\subsection{Boolean Operations \label{boolean}}
+\subsection{Boolean Operations ---
+	    \keyword{and}, \keyword{or}, \keyword{not}
+	    \label{boolean}}
 
 These are the Boolean operations, ordered by ascending priority:
 \indexii{Boolean}{operations}
@@ -173,7 +175,9 @@ Two more operations with the same syntactic priority,
 only by sequence types (below).
 
 
-\subsection{Numeric Types \label{typesnumeric}}
+\subsection{Numeric Types ---
+	    \class{int}, \class{float}, \class{long}, \class{complex}
+	    \label{typesnumeric}}
 
 There are four distinct numeric types: \dfn{plain integers},
 \dfn{long integers}, 
@@ -405,7 +409,10 @@ return an iterator object (technically, a generator object)
 supplying the \method{__iter__()} and \method{next()} methods.
 
 
-\subsection{Sequence Types \label{typesseq}}
+\subsection{Sequence Types ---
+	    \class{str}, \class{unicode}, \class{list},
+	    \class{tuple}, \class{buffer}, \class{xrange}
+	    \label{typesseq}}
 
 There are six sequence types: strings, Unicode strings, lists,
 tuples, buffers, and xrange objects.
@@ -1157,7 +1164,9 @@ Notes:
   that the list has been mutated during a sort.
 \end{description}
 
-\subsection{Set Types \label{types-set}}
+\subsection{Set Types ---
+	    \class{set}, \class{frozenset}
+	    \label{types-set}}
 \obindex{set}
 
 A \dfn{set} object is an unordered collection of immutable values.
@@ -1283,7 +1292,7 @@ Note, the non-operator versions of the \method{update()},
 as an argument.
 
 
-\subsection{Mapping Types \label{typesmapping}}
+\subsection{Mapping Types --- class{dict} \label{typesmapping}}
 \obindex{mapping}
 \obindex{dictionary}
 
