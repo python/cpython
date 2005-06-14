@@ -491,6 +491,7 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
                 import gc
                 def cleanup():
                     import _strptime, urlparse, warnings, dircache
+                    import linecache
                     from distutils.dir_util import _path_created
                     _path_created.clear()
                     warnings.filters[:] = fs
@@ -503,6 +504,7 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
                     sys.path_importer_cache.clear()
                     sys.path_importer_cache.update(pic)
                     dircache.reset()
+                    linecache.clearcache()
                 if indirect_test:
                     def run_the_test():
                         indirect_test()
