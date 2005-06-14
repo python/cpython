@@ -13,7 +13,7 @@ ModeMask  = 3 # bits to keep for mode
 SelfMode   =  4+InMode  # this is 'self' -- don't declare it
 ReturnMode =  8+OutMode # this is the function return value
 ErrorMode  = 16+OutMode # this is an error status -- turn it into an exception
-
+RefMode    = 32
 
 class Variable:
 
@@ -39,7 +39,9 @@ class Variable:
 
         If it is "self", it is not declared.
         """
-        if self.flags != SelfMode:
+        if self.flags == ReturnMode+RefMode:
+            self.type.declare(self.name, reference=True)
+        elif self.flags != SelfMode:
             self.type.declare(self.name)
 
     def getargsFormat(self):
@@ -62,6 +64,8 @@ class Variable:
         """
         if self.mode == InMode:
             return self.type.passInput(self.name)
+        if self.mode & RefMode:
+            return self.type.passReference(self.name)
         if self.mode in (OutMode, InOutMode):
             return self.type.passOutput(self.name)
         # XXX Shouldn't get here
