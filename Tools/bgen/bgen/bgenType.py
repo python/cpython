@@ -19,12 +19,15 @@ class Type:
         self.typeName = typeName
         self.fmt = fmt
 
-    def declare(self, name):
+    def declare(self, name, reference=False):
         """Declare a variable of the type with a given name.
 
         Example: int.declare('spam') prints "int spam;"
         """
-        Output("%s %s;", self.typeName, name)
+        if reference:
+            Output("%s& %s;", self.typeName, name)
+        else:
+            Output("%s %s;", self.typeName, name)
 
     def getargs(self):
         return self.getargsFormat(), self.getargsArgs()
@@ -64,6 +67,11 @@ class Type:
         """
         return "&" + name
 
+    def passReference(self, name):
+        """Return an argument for C++ pass-by-reference.
+        Default is to call passInput().
+        """
+        return self.passInput(name)
     def errorCheck(self, name):
         """Check for an error returned in the variable.
 
@@ -172,7 +180,7 @@ class FakeType(InputOnlyType):
         self.substitute = substitute
         self.typeName = None    # Don't show this argument in __doc__ string
 
-    def declare(self, name):
+    def declare(self, name, reference=False):
         pass
 
     def getargsFormat(self):
@@ -236,6 +244,25 @@ class OpaqueByValueType(OpaqueType):
 
     def mkvalueArgs(self, name):
         return "%s, %s" % (self.new, name)
+        
+class OpaqueByRefType(OpaqueType):
+    """An opaque object type, passed by reference.
+
+    Instantiate with the type name, and optionally an object type name whose
+    New/Convert functions will be used.
+    """
+    
+    def passInput(self, name):
+        return name
+        
+#    def passOutput(self, name):
+#        return name
+        
+    def mkvalueFormat(self):
+        return "O"
+        
+    def mkvalueArgs(self, name):
+        return "%s(%s)" % (self.new, name)
 
 class OpaqueByValueStructType(OpaqueByValueType):
     """Similar to OpaqueByValueType, but we also pass this to mkvalue by

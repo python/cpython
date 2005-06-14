@@ -466,6 +466,7 @@ if missing: raise "Missing Types"
         if self.debug:
             self.report("* WHOLE LINE: %r" % (raw,))
         self.processrawspec(raw)
+        return raw
 
     def processrawspec(self, raw):
         match = self.whole.search(raw)
@@ -478,8 +479,8 @@ if missing: raise "Missing Types"
                     self.report("(but type matched)")
             return
         type, name, args = match.group('type', 'name', 'args')
-        type = re.sub("\*", " ptr", type)
-        type = re.sub("[ \t]+", "_", type)
+        type = self.pythonizename(type)
+        name = self.pythonizename(name)
         if name in self.alreadydone:
             self.report("Name has already been defined: %r", name)
             return
@@ -499,6 +500,12 @@ if missing: raise "Missing Types"
             return
         self.alreadydone.append(name)
         self.generate(type, name, arglist)
+
+    def pythonizename(self, name):
+        name = re.sub("\*", " ptr", name)
+        name = name.strip()
+        name = re.sub("[ \t]+", "_", name)
+        return name
 
     def extractarglist(self, args):
         args = args.strip()
@@ -522,9 +529,7 @@ if missing: raise "Missing Types"
         if array:
             # array matches an optional [] after the argument name
             type = type + " ptr "
-        type = re.sub("\*", " ptr ", type)
-        type = type.strip()
-        type = re.sub("[ \t]+", "_", type)
+        type = self.pythonizename(type)
         return self.modifyarg(type, name, mode)
 
     def modifyarg(self, type, name, mode):
@@ -590,6 +595,7 @@ if missing: raise "Missing Types"
     def generate(self, type, name, arglist):
         self.typeused(type, 'return')
         classname, listname = self.destination(type, name, arglist)
+        if not classname or not listname: return
         if not self.specfile: return
         self.specfile.write("f = %s(%s, %r,\n" % (classname, type, name))
         for atype, aname, amode in arglist:
