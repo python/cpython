@@ -416,7 +416,9 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 	}
 
 	ret = (PyObject *)self;
+	Py_INCREF(self);
 err:
+	Py_XDECREF(self);
 	Py_XDECREF(dialect);
 	Py_XDECREF(delimiter);
 	Py_XDECREF(doublequote);
