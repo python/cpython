@@ -107,6 +107,7 @@ def window_funcs(stdscr):
     stdscr.scroll(2)
     stdscr.scroll(-3)
 
+    stdscr.move(12, 2)
     stdscr.setscrreg(10,15)
     win3 = stdscr.subwin(10,10)
     win3 = stdscr.subwin(10,10, 5,5)
@@ -179,7 +180,7 @@ def module_funcs(stdscr):
         curses.init_pair(2, 1,1)
         curses.color_content(1)
         curses.color_pair(2)
-        curses.pair_content(curses.COLOR_PAIRS)
+        curses.pair_content(curses.COLOR_PAIRS - 1)
         curses.pair_number(0)
 
         if hasattr(curses, 'use_default_colors'):
