@@ -2107,7 +2107,7 @@ PyCurses_Pair_Content(PyObject *self, PyObject *args)
     return NULL;
   }
 
-  if (!pair_content(pair, &f, &b)) {
+  if (pair_content(pair, &f, &b)==ERR) {
     PyErr_SetString(PyCursesError,
 		    "Argument 1 was out of range. (1..COLOR_PAIRS-1)");
     return NULL;
