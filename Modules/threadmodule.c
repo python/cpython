@@ -651,6 +651,7 @@ initthread(void)
 	Py_INCREF(&Locktype);
 	PyDict_SetItemString(d, "LockType", (PyObject *)&Locktype);
 
+	Py_INCREF(&localtype);
         if (PyModule_AddObject(m, "_local", (PyObject *)&localtype) < 0)
         	return;
 
