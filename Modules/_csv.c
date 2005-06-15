@@ -1587,6 +1587,7 @@ init_csv(void)
 	}
 
         /* Add the Dialect type */
+	Py_INCREF(&Dialect_Type);
         if (PyModule_AddObject(module, "Dialect", (PyObject *)&Dialect_Type))
                 return;
 
