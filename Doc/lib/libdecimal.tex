@@ -1121,8 +1121,8 @@ def sin(x):
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Decimal FAQ \label{decimal-faq}}
-
 
 Q.  It is cumbersome to type \code{decimal.Decimal('1234.5')}.  Is there a way
 to minimize typing when using the interactive interpreter?
@@ -1169,7 +1169,7 @@ point.  Others, like multiplication and division, change the number of decimal
 places and need to be followed-up with a \method{quantize()} step.
 
 
-Q.  There are many ways to write express the same value.  The numbers
+Q.  There are many ways to express the same value.  The numbers
 \constant{200}, \constant{200.000}, \constant{2E2}, and \constant{.02E+4} all
 have the same value at various precisions. Is there a way to transform them to
 a single recognizable canonical value?
@@ -1203,6 +1203,7 @@ def floatToDecimal(f):
         mantissa *= 2.0
         exponent -= 1
     mantissa = int(mantissa)
+
     oldcontext = getcontext()
     setcontext(Context(traps=[Inexact]))
     try:
