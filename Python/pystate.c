@@ -289,7 +289,7 @@ PyThreadState_Swap(PyThreadState *new)
 #if defined(Py_DEBUG) && defined(WITH_THREAD)
 	if (new) {
 		PyThreadState *check = PyGILState_GetThisThreadState();
-		if (check && check != new)
+		if (check && check->interp == new->interp && check != new)
 			Py_FatalError("Invalid thread state for this thread");
 	}
 #endif
