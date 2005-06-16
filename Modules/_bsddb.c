@@ -2027,7 +2027,7 @@ _db_compareCallback (DB* db,
 	result = PyEval_CallObject (self->btCompareCallback, args);
 	if (result == 0) {
 	    /* we're in a callback within the DB code, we can't raise */
-	    PyErr_Print (); // XXX-gps or can we?  either way the DB is screwed
+	    PyErr_Print ();
 	    res = _default_cmp (leftKey, rightKey);
 	}
 	else if (PyInt_Check (result)) {
