@@ -24,11 +24,16 @@ class Type:
 
         Example: int.declare('spam') prints "int spam;"
         """
-        if reference:
-            Output("%s& %s;", self.typeName, name)
-        else:
-            Output("%s %s;", self.typeName, name)
+        Output("%s;", self.getDeclaration(name, reference))
 
+    def getDeclaration(self, name, reference=False):
+        """Return a string declaring a variable or argument, without
+        any syntactic adornment"""
+        if reference:
+            return "%s& %s" % (self.typeName, name)
+        else:
+            return "%s %s" % (self.typeName, name)
+            
     def getargs(self):
         return self.getargsFormat(), self.getargsArgs()
 
@@ -72,6 +77,7 @@ class Type:
         Default is to call passInput().
         """
         return self.passInput(name)
+        
     def errorCheck(self, name):
         """Check for an error returned in the variable.
 
