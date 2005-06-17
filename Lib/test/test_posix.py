@@ -94,6 +94,37 @@ class PosixTester(unittest.TestCase):
             self.fdopen_helper('r')
             self.fdopen_helper('r', 100)
 
+    def test_osexlock(self):
+        if hasattr(posix, "O_EXLOCK"):
+            fd = os.open(test_support.TESTFN,
+                         os.O_WRONLY|os.O_EXLOCK|os.O_CREAT)
+            self.assertRaises(OSError, os.open, test_support.TESTFN,
+                              os.O_WRONLY|os.O_EXLOCK|os.O_NONBLOCK)
+            os.close(fd)
+
+            if hasattr(posix, "O_SHLOCK"):
+                fd = os.open(test_support.TESTFN,
+                             os.O_WRONLY|os.O_SHLOCK|os.O_CREAT)
+                self.assertRaises(OSError, os.open, test_support.TESTFN,
+                                  os.O_WRONLY|os.O_EXLOCK|os.O_NONBLOCK)
+                os.close(fd)
+
+    def test_osshlock(self):
+        if hasattr(posix, "O_SHLOCK"):
+            fd1 = os.open(test_support.TESTFN,
+                         os.O_WRONLY|os.O_SHLOCK|os.O_CREAT)
+            fd2 = os.open(test_support.TESTFN,
+                          os.O_WRONLY|os.O_SHLOCK|os.O_CREAT)
+            os.close(fd2)
+            os.close(fd1)
+
+            if hasattr(posix, "O_EXLOCK"):
+                fd = os.open(test_support.TESTFN,
+                             os.O_WRONLY|os.O_SHLOCK|os.O_CREAT)
+                self.assertRaises(OSError, os.open, test_support.TESTFN,
+                                  os.O_RDONLY|os.O_EXLOCK|os.O_NONBLOCK)
+                os.close(fd)
+
     def test_fstat(self):
         if hasattr(posix, 'fstat'):
             fp = open(test_support.TESTFN)
