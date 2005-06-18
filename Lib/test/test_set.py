@@ -202,6 +202,16 @@ class TestJointOps(unittest.TestCase):
         self.assertNotEqual(id(t), id(newt))
         self.assertEqual(t.value + 1, newt.value)
 
+    def test_gc(self):
+        # Create a nest of cycles to exercise overall ref count check
+        class A:
+            pass
+        s = set(A() for i in xrange(1000))
+        for elem in s:
+            elem.cycle = s
+            elem.sub = elem
+            elem.set = set([elem])
+
 class TestSet(TestJointOps):
     thetype = set
 
