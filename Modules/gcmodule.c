@@ -1166,6 +1166,7 @@ initgc(void)
 		if (garbage == NULL)
 			return;
 	}
+	Py_INCREF(garbage);
 	if (PyModule_AddObject(m, "garbage", garbage) < 0)
 		return;
 #define ADD_INT(NAME) if (PyModule_AddIntConstant(m, #NAME, NAME) < 0) return
