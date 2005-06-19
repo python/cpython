@@ -3,6 +3,11 @@ What's New in IDLE 1.2a0?
 
 *Release date: XX-XXX-2005*
 
+- <Enter> when cursor is on a previous command retrieves that command.  Instead
+  of replacing the input line, the previous command is now appended to the
+  input line. Indentation is preserved, and undo is enabled.
+  Patch 1196917  Jeff Shute
+
 - Clarify "tab/space" Error Dialog and "Tab Width" Dialog associated with
   the Untabify command.
 
