@@ -114,10 +114,19 @@ frozenset_dict_wrapper(PyObject *d)
 static void
 set_dealloc(PySetObject *so)
 {
+	PyObject_GC_UnTrack(so);
 	if (so->weakreflist != NULL)
 		PyObject_ClearWeakRefs((PyObject *) so);
 	Py_XDECREF(so->data);
 	so->ob_type->tp_free(so);
+}
+
+static int
+set_traverse(PySetObject *so, visitproc visit, void *arg)
+{
+	if (so->data)
+		return visit(so->data, arg);
+	return 0;
 }
 
 static PyObject *
@@ -757,6 +766,14 @@ set_clear(PySetObject *so)
 
 PyDoc_STRVAR(clear_doc, "Remove all elements from this set.");
 
+static int
+set_tp_clear(PySetObject *so)
+{
+	PyDict_Clear(so->data);
+	so->hash = -1;
+	return 0;
+}
+
 static PyObject *
 set_add(PySetObject *so, PyObject *item)
 {
@@ -1007,11 +1024,11 @@ PyTypeObject PySet_Type = {
 	PyObject_GenericGetAttr,	/* tp_getattro */
 	0,				/* tp_setattro */
 	0,				/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES |
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_CHECKTYPES |
 		Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_WEAKREFS,	/* tp_flags */
 	set_doc,			/* tp_doc */
-	0,				/* tp_traverse */
-	0,				/* tp_clear */
+	(traverseproc)set_traverse,	/* tp_traverse */
+	(inquiry)set_tp_clear,		/* tp_clear */
 	(richcmpfunc)set_richcompare,	/* tp_richcompare */
 	offsetof(PySetObject, weakreflist),	/* tp_weaklistoffset */
 	(getiterfunc)set_iter,		/* tp_iter */
@@ -1027,7 +1044,7 @@ PyTypeObject PySet_Type = {
 	(initproc)set_init,		/* tp_init */
 	PyType_GenericAlloc,		/* tp_alloc */
 	set_new,			/* tp_new */
-	PyObject_Del,			/* tp_free */
+	PyObject_GC_Del,		/* tp_free */
 };
 
 /* frozenset object ********************************************************/
@@ -1102,10 +1119,10 @@ PyTypeObject PyFrozenSet_Type = {
 	PyObject_GenericGetAttr,	/* tp_getattro */
 	0,				/* tp_setattro */
 	0,				/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES |
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_CHECKTYPES |
 		Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_WEAKREFS,	/* tp_flags */
 	frozenset_doc,			/* tp_doc */
-	0,				/* tp_traverse */
+	(traverseproc)set_traverse,	/* tp_traverse */
 	0,				/* tp_clear */
 	(richcmpfunc)set_richcompare,	/* tp_richcompare */
 	offsetof(PySetObject, weakreflist),	/* tp_weaklistoffset */
@@ -1122,5 +1139,5 @@ PyTypeObject PyFrozenSet_Type = {
 	0,				/* tp_init */
 	PyType_GenericAlloc,		/* tp_alloc */
 	frozenset_new,			/* tp_new */
-	PyObject_Del,			/* tp_free */
+	PyObject_GC_Del,		/* tp_free */
 };

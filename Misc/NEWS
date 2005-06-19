@@ -12,6 +12,8 @@ What's New in Python 2.4.2a
 Core and builtins
 -----------------
 
+- Fix garbage collection for set and frozenset objects.  SF patch #1200018.
+
 - It is now safe to call PyGILState_Release() before
   PyEval_InitThreads() (note that if there is reason to believe there
   are multiple threads around you still must call PyEval_InitThreads()
