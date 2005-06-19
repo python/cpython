@@ -1074,7 +1074,7 @@ class PyShell(OutputWindow):
             sel = self.text.get("sel.first", "sel.last")
             if sel:
                 if self.text.compare("sel.last", "<=", "iomark"):
-                    self.recall(sel)
+                    self.recall(sel, event)
                     return "break"
         except:
             pass
@@ -1085,18 +1085,18 @@ class PyShell(OutputWindow):
             # Check if there's a relevant stdin range -- if so, use it
             prev = self.text.tag_prevrange("stdin", "insert")
             if prev and self.text.compare("insert", "<", prev[1]):
-                self.recall(self.text.get(prev[0], prev[1]))
+                self.recall(self.text.get(prev[0], prev[1]), event)
                 return "break"
             next = self.text.tag_nextrange("stdin", "insert")
             if next and self.text.compare("insert lineend", ">=", next[0]):
-                self.recall(self.text.get(next[0], next[1]))
+                self.recall(self.text.get(next[0], next[1]), event)
                 return "break"
             # No stdin mark -- just get the current line, less any prompt
             line = self.text.get("insert linestart", "insert lineend")
             last_line_of_prompt = sys.ps1.split('\n')[-1]
             if line.startswith(last_line_of_prompt):
                 line = line[len(last_line_of_prompt):]
-            self.recall(line)
+            self.recall(line, event)
             return "break"
         # If we're between the beginning of the line and the iomark, i.e.
         # in the prompt area, move to the end of the prompt
@@ -1127,9 +1127,29 @@ class PyShell(OutputWindow):
             self.runit()
         return "break"
 
-    def recall(self, s):
-        if self.history:
-            self.history.recall(s)
+    def recall(self, s, event):
+        self.text.undo_block_start()
+        try:
+            self.text.tag_remove("sel", "1.0", "end")
+            self.text.mark_set("insert", "end-1c")
+            s = s.strip()
+            lines = s.split('\n')
+            if lines:
+                prefix = self.text.get("insert linestart","insert").rstrip()
+                if prefix and prefix[-1]==':':
+                    self.newline_and_indent_event(event)
+
+                self.text.insert("insert",lines[0].strip())
+                if len(lines) > 1:
+                    self.newline_and_indent_event(event)
+                    for line in lines[1:]:
+                        self.text.insert("insert", line.strip())
+                        self.newline_and_indent_event(event)
+            else:
+                self.text.insert("insert", s)
+        finally:
+            self.text.see("insert")
+            self.text.undo_block_stop()
 
     def runit(self):
         line = self.text.get("iomark", "end-1c")
