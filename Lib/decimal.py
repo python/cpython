@@ -760,18 +760,19 @@ class Decimal(object):
         Captures all of the information in the underlying representation.
         """
 
-        if self._isnan():
-            minus = '-'*self._sign
-            if self._int == (0,):
-                info = ''
-            else:
-                info = ''.join(map(str, self._int))
-            if self._isnan() == 2:
-                return minus + 'sNaN' + info
-            return minus + 'NaN' + info
-        if self._isinfinity():
-            minus = '-'*self._sign
-            return minus + 'Infinity'
+        if self._is_special:
+            if self._isnan():
+                minus = '-'*self._sign
+                if self._int == (0,):
+                    info = ''
+                else:
+                    info = ''.join(map(str, self._int))
+                if self._isnan() == 2:
+                    return minus + 'sNaN' + info
+                return minus + 'NaN' + info
+            if self._isinfinity():
+                minus = '-'*self._sign
+                return minus + 'Infinity'
 
         if context is None:
             context = getcontext()
