@@ -131,6 +131,12 @@
   objects may affect the wrong (sub-)interpreter's dictionary of
   loaded modules.  (XXX This is a hard-to-fix bug that will be
   addressed in a future release.)
+
+  Also note that the use of this functionality is incompatible with
+  extension modules such as PyObjC and ctypes that use the
+  \cfunction{PyGILState_*} APIs (and this is inherent in the way the
+  \cfunction{PyGILState_*} functions work).  Simple things may work,
+  but confusing behavior will always be near.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_EndInterpreter}{PyThreadState *tstate}
