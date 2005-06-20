@@ -471,10 +471,10 @@ thread is now:
     PyGILState_Release(gstate);
 \end{verbatim}
 
-Note that the \cfunction{PyGILState_*()} functions assume there is only
-one global  interpreter (created automatically by
+Note that the \cfunction{PyGILState_*()} functions assume there is
+only one global interpreter (created automatically by
 \cfunction{Py_Initialize()}).  Python still supports the creation of
-additional interpreters  (using \cfunction{Py_NewInterpreter()}), but
+additional interpreters (using \cfunction{Py_NewInterpreter()}), but
 mixing multiple interpreters and the \cfunction{PyGILState_*()} API is
 unsupported.
 
@@ -697,16 +697,16 @@ interpreter lock has been created.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyGILState_STATE}{PyGILState_Ensure}{}
-Ensure that the current thread is ready to call the Python
-C API regardless of the current state of Python, or of its
-thread lock.  This may be called as many times as desired
-by a thread as long as each call is matched with a call to 
-\cfunction{PyGILState_Release()}.  
-In general, other thread-related APIs may 
-be used between \cfunction{PyGILState_Ensure()} and \cfunction{PyGILState_Release()} calls as long as the 
-thread state is restored to its previous state before the Release().
-For example, normal usage of the \csimplemacro{Py_BEGIN_ALLOW_THREADS}
-and \csimplemacro{Py_END_ALLOW_THREADS} macros is acceptable.
+Ensure that the current thread is ready to call the Python C API
+regardless of the current state of Python, or of its thread lock.
+This may be called as many times as desired by a thread as long as
+each call is matched with a call to \cfunction{PyGILState_Release()}.
+In general, other thread-related APIs may be used between
+\cfunction{PyGILState_Ensure()} and \cfunction{PyGILState_Release()}
+calls as long as the thread state is restored to its previous state
+before the Release().  For example, normal usage of the
+\csimplemacro{Py_BEGIN_ALLOW_THREADS} and
+\csimplemacro{Py_END_ALLOW_THREADS} macros is acceptable.
     
 The return value is an opaque "handle" to the thread state when
 \cfunction{PyGILState_Acquire()} was called, and must be passed to
