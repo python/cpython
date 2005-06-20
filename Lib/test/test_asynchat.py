@@ -6,7 +6,7 @@ import unittest
 from test import test_support
 
 HOST = "127.0.0.1"
-PORT = 54321
+PORT = 54322
 
 class echo_server(threading.Thread):
 
@@ -67,6 +67,7 @@ class TestAsynchat(unittest.TestCase):
         c.push("hello ")
         c.push("world\n")
         asyncore.loop()
+        s.join()
 
         self.assertEqual(c.contents, 'hello world')
 
@@ -79,6 +80,7 @@ class TestAsynchat(unittest.TestCase):
         c.push("hello ")
         c.push("world\n")
         asyncore.loop()
+        s.join()
 
         self.assertEqual(c.contents, 'hello ')
 
