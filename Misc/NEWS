@@ -12,6 +12,12 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- SF bug #1163563: the original fix for bug #1010677 ("thread Module
+  Breaks PyGILState_Ensure()") broke badly in the case of multiple
+  interpreter states; back out that fix and do a better job (see
+  http://mail.python.org/pipermail/python-dev/2005-June/054258.html
+  for a longer write-up of the problem).
+
 - SF patch #1180995: marshal now uses a binary format by default when
   serializing floats.
 
