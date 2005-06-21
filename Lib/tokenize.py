@@ -225,6 +225,9 @@ def generate_tokens(readline):
                 indents.append(column)
                 yield (INDENT, line[:pos], (lnum, 0), (lnum, pos), line)
             while column < indents[-1]:
+                if column not in indents:
+                    raise IndentationError(
+                        "unindent does not match any outer indentation level")
                 indents = indents[:-1]
                 yield (DEDENT, '', (lnum, pos), (lnum, pos), line)
 
