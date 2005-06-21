@@ -86,11 +86,3 @@ class History:
             self.history.append(source)
         self.history_pointer = None
         self.history_prefix = None
-
-    def recall(self, s):
-        s = s.strip()
-        self.text.tag_remove("sel", "1.0", "end")
-        self.text.delete("iomark", "end-1c")
-        self.text.mark_set("insert", "end-1c")
-        self.text.insert("insert", s)
-        self.text.see("insert")

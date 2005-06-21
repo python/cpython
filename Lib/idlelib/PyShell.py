@@ -1134,19 +1134,15 @@ class PyShell(OutputWindow):
             self.text.mark_set("insert", "end-1c")
             s = s.strip()
             lines = s.split('\n')
-            if lines:
-                prefix = self.text.get("insert linestart","insert").rstrip()
-                if prefix and prefix[-1]==':':
+            prefix = self.text.get("insert linestart","insert").rstrip()
+            if prefix and prefix[-1]==':':
+                self.newline_and_indent_event(event)
+            self.text.insert("insert",lines[0].strip())
+            if len(lines) > 1:
+                self.newline_and_indent_event(event)
+                for line in lines[1:]:
+                    self.text.insert("insert", line.strip())
                     self.newline_and_indent_event(event)
-
-                self.text.insert("insert",lines[0].strip())
-                if len(lines) > 1:
-                    self.newline_and_indent_event(event)
-                    for line in lines[1:]:
-                        self.text.insert("insert", line.strip())
-                        self.newline_and_indent_event(event)
-            else:
-                self.text.insert("insert", s)
         finally:
             self.text.see("insert")
             self.text.undo_block_stop()
