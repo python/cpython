@@ -479,6 +479,7 @@ if missing: raise "Missing Types"
                     self.report("(but type matched)")
             return
         type, name, args = match.group('type', 'name', 'args')
+        modifiers = self.getmodifiers(match)
         type = self.pythonizename(type)
         name = self.pythonizename(name)
         if name in self.alreadydone:
@@ -499,8 +500,14 @@ if missing: raise "Missing Types"
             self.report("*** %s %s unmanageable", type, name)
             return
         self.alreadydone.append(name)
-        self.generate(type, name, arglist)
+        if modifiers:
+            self.generate(type, name, arglist, modifiers)
+        else:
+            self.generate(type, name, arglist)
 
+    def getmodifiers(self, match):
+        return []
+        
     def pythonizename(self, name):
         name = re.sub("\*", " ptr", name)
         name = name.strip()
@@ -592,12 +599,16 @@ if missing: raise "Missing Types"
         ##self.report("new: %r", new)
         return new
 
-    def generate(self, type, name, arglist):
-        self.typeused(type, 'return')
-        classname, listname = self.destination(type, name, arglist)
+    def generate(self, tp, name, arglist, modifiers=[]):
+    
+        self.typeused(tp, 'return')
+        if modifiers:
+            classname, listname = self.destination(tp, name, arglist, modifiers)
+        else:
+            classname, listname = self.destination(tp, name, arglist)
         if not classname or not listname: return
         if not self.specfile: return
-        self.specfile.write("f = %s(%s, %r,\n" % (classname, type, name))
+        self.specfile.write("f = %s(%s, %r,\n" % (classname, tp, name))
         for atype, aname, amode in arglist:
             self.typeused(atype, amode)
             self.specfile.write("    (%s, %r, %s),\n" %

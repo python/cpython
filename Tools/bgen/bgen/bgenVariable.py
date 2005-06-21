@@ -14,6 +14,7 @@ SelfMode   =  4+InMode  # this is 'self' -- don't declare it
 ReturnMode =  8+OutMode # this is the function return value
 ErrorMode  = 16+OutMode # this is an error status -- turn it into an exception
 RefMode    = 32
+ConstMode  = 64
 
 class Variable:
 
@@ -47,7 +48,8 @@ class Variable:
     def getDeclaration(self):
         """Return the unadorned declaration of the variable,
         suitable for use in a formal parameter list."""
-        return self.type.getDeclaration(self.name)
+        refmode = (self.flags & RefMode)
+        return self.type.getDeclaration(self.name, reference=refmode)
 
     def getargsFormat(self):
         """Call the type's getargsFormatmethod."""
