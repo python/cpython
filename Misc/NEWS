@@ -147,6 +147,9 @@ Extension Modules
 Library
 -------
 
+- The tokenize module now detects and reports indentation errors.
+  Bug #1224621.
+
 - The tokenize module has a new untokenize() function to support a full
   roundtrip from lexed tokens back to Python sourcecode.  In addition,
   the generate_tokens() function now accepts a callable argument that

@@ -1,4 +1,4 @@
-from test.test_support import verbose, findfile, is_resource_enabled
+from test.test_support import verbose, findfile, is_resource_enabled, TestFailed
 import os, glob, random
 from tokenize import (tokenize, generate_tokens, untokenize,
                       NUMBER, NAME, OP, STRING)
@@ -40,6 +40,24 @@ if not is_resource_enabled('compiler'):
 for f in testfiles:
     test_roundtrip(f)
 
+
+###### Test detecton of IndentationError ######################
+
+from cStringIO import StringIO
+
+sampleBadText = """
+def foo():
+    bar
+  baz
+"""
+
+try:
+    for tok in generate_tokens(StringIO(sampleBadText).readline):
+        pass
+except IndentationError:
+    pass
+else:
+    raise TestFailed("Did not detect IndentationError:")
 
 
 ###### Test example in the docs ###############################
