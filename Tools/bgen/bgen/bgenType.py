@@ -24,15 +24,16 @@ class Type:
 
         Example: int.declare('spam') prints "int spam;"
         """
-        Output("%s;", self.getDeclaration(name, reference))
+        for decl in self.getDeclarations(name, reference):
+            Output("%s;", decl)
 
-    def getDeclaration(self, name, reference=False):
+    def getDeclarations(self, name, reference=False):
         """Return a string declaring a variable or argument, without
         any syntactic adornment"""
         if reference:
-            return "%s& %s" % (self.typeName, name)
+            return ["%s& %s" % (self.typeName, name)]
         else:
-            return "%s %s" % (self.typeName, name)
+            return ["%s %s" % (self.typeName, name)]
             
     def getargs(self):
         return self.getargsFormat(), self.getargsArgs()
@@ -185,9 +186,9 @@ class FakeType(InputOnlyType):
     def __init__(self, substitute):
         self.substitute = substitute
         self.typeName = None    # Don't show this argument in __doc__ string
-
-    def declare(self, name, reference=False):
-        pass
+        
+    def getDeclarations(self, name, reference=False):
+        return []
 
     def getargsFormat(self):
         return ""

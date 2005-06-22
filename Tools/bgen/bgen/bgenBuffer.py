@@ -38,23 +38,25 @@ class FixedInputOutputBufferType(InputOnlyType):
         self.sizeformat = sizeformat or type2format[sizetype]
         self.label_needed = 0
 
-    def declare(self, name):
-        self.declareBuffer(name)
-        self.declareSize(name)
+    def getDeclarations(self, name, reference=False):
+        if reference:
+            raise RuntimeError, "Cannot pass buffer types by reference"
+        return self.getBufferDeclarations(name) + self.getSizeDeclarations(name)
 
-    def declareBuffer(self, name):
-        self.declareInputBuffer(name)
-        self.declareOutputBuffer(name)
+    def getBufferDeclarations(self, name):
+        return self.getInputBufferDeclarations(name) + self.getOutputBufferDeclarations(name)
 
-    def declareInputBuffer(self, name):
-        Output("%s *%s__in__;", self.datatype, name)
+    def getInputBufferDeclarations(self, name):
+        return ["%s *%s__in__" % (self.datatype, name)]
 
-    def declareOutputBuffer(self, name):
-        Output("%s %s__out__[%s];", self.datatype, name, self.size)
+    def getOutputBufferDeclarations(self, name):
+        return ["%s %s__out__[%s]" % (self.datatype, name, self.size)]
 
-    def declareSize(self, name):
-        Output("%s %s__len__;", self.sizetype, name)
-        Output("int %s__in_len__;", name)
+    def getSizeDeclarations(self, name):
+        return [
+            "%s %s__len__" %(self.sizetype, name),
+            "int %s__in_len__" %(name)
+            ]
 
     def getargsFormat(self):
         return "s#"
@@ -102,14 +104,14 @@ class FixedCombinedInputOutputBufferType(FixedInputOutputBufferType):
 
 class InputOnlyBufferMixIn(InputOnlyMixIn):
 
-    def declareOutputBuffer(self, name):
-        pass
+    def getOutputBufferDeclarations(self, name):
+        return []
 
 
 class OutputOnlyBufferMixIn(OutputOnlyMixIn):
 
-    def declareInputBuffer(self, name):
-        pass
+    def getInputBufferDeclarations(self, name):
+        return []
 
 class OptionalInputBufferMixIn:
 
@@ -183,14 +185,14 @@ class StructInputOutputBufferType(FixedInputOutputBufferType):
         FixedInputOutputBufferType.__init__(self, "sizeof(%s)" % type)
         self.typeName = self.type = type
 
-    def declareInputBuffer(self, name):
-        Output("%s *%s__in__;", self.type, name)
+    def getInputBufferDeclarations(self, name):
+        return ["%s *%s__in__" % (self.type, name)]
 
-    def declareSize(self, name):
-        Output("int %s__in_len__;", name)
+    def getSizeDeclarations(self, name):
+        return ["int %s__in_len__" % (name)]
 
-    def declareOutputBuffer(self, name):
-        Output("%s %s__out__;", self.type, name)
+    def getOutputBufferDeclarations(self, name):
+        return ["%s %s__out__" % (self.type, name)]
 
     def getargsArgs(self, name):
         return "(char **)&%s__in__, &%s__in_len__" % (name, name)
@@ -243,8 +245,8 @@ class StructOutputBufferType(OutputOnlyBufferMixIn, StructInputOutputBufferType)
     Instantiate with the struct type as parameter.
     """
 
-    def declareSize(self, name):
-        pass
+    def getSizeDeclarations(self, name):
+        return []
 
     def passOutput(self, name):
         return "&%s__out__" % name
@@ -257,8 +259,8 @@ class ArrayOutputBufferType(OutputOnlyBufferMixIn, StructInputOutputBufferType):
     Instantiate with the struct type as parameter.
     """
 
-    def declareSize(self, name):
-        pass
+    def getSizeDeclarations(self, name):
+        return []
 
     def passOutput(self, name):
         return "%s__out__" % name

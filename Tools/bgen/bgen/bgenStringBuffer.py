@@ -23,8 +23,8 @@ class StringBufferMixIn:
     less common.  I'll write the classes when there is demand.)
     """
 
-    def declareSize(self, name):
-        pass
+    def getSizeDeclarations(self, name):
+        return []
 
     def getargsFormat(self):
         return "s"

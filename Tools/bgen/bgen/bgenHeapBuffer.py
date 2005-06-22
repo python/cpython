@@ -16,8 +16,8 @@ class HeapInputOutputBufferType(FixedInputOutputBufferType):
     def __init__(self, datatype = 'char', sizetype = 'int', sizeformat = None):
         FixedInputOutputBufferType.__init__(self, "0", datatype, sizetype, sizeformat)
 
-    def declareOutputBuffer(self, name):
-        Output("%s *%s__out__;", self.datatype, name)
+    def getOutputBufferDeclarations(self, name):
+        return ["%s *%s__out__" % (self.datatype, name)]
 
     def getargsCheck(self, name):
         Output("if ((%s__out__ = malloc(%s__in_len__)) == NULL)", name, name)
@@ -74,8 +74,8 @@ class HeapOutputBufferType(OutputOnlyMixIn, HeapInputOutputBufferType):
     Call from Python with buffer size.
     """
 
-    def declareInputBuffer(self, name):
-        pass
+    def getInputBufferDeclarations(self, name):
+        return []
 
     def getargsFormat(self):
         return "i"

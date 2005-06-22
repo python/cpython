@@ -22,8 +22,8 @@ class VarStackOutputBufferType(StackOutputBufferType):
     Instantiate with the buffer size as parameter.
     """
 
-    def declareSize(self, name):
-        Output("int %s__len__ = %s;", name, self.size)
+    def getSizeDeclarations(self, name):
+        return ["int %s__len__ = %s" % (name, self.size)]
 
     def passOutput(self, name):
         return "%s__out__, &%s__len__" % (name, name)
