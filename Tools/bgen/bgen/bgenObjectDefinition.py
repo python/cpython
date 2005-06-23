@@ -117,6 +117,7 @@ class ObjectDefinition(GeneratorGroup):
         "Override this method to apply additional checks/conversions"
 
     def outputConvert(self):
+        Output()
         Output("%sint %s_Convert(PyObject *v, %s *p_itself)", self.static, self.prefix,
                 self.itselftype)
         OutLbrace()
