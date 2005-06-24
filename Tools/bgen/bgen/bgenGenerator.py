@@ -256,7 +256,7 @@ class MethodGenerator(FunctionGenerator):
         self.itself = Variable(t0, "_self->ob_itself", SelfMode)
         self.argumentList.append(self.itself)
         FunctionGenerator.parseArgumentList(self, args)
-        
+
 def _test():
     void = None
     eggs = FunctionGenerator(void, "eggs",

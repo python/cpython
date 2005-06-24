@@ -45,7 +45,7 @@ class ObjectDefinition(GeneratorGroup):
         OutHeader2("Object type " + self.name)
 
         self.outputCheck()
-        
+
         Output("typedef struct %s {", self.objecttype)
         IndentLevel()
         Output("PyObject_HEAD")
