@@ -507,7 +507,7 @@ if missing: raise "Missing Types"
 
     def getmodifiers(self, match):
         return []
-        
+
     def pythonizename(self, name):
         name = re.sub("\*", " ptr", name)
         name = name.strip()
@@ -600,7 +600,7 @@ if missing: raise "Missing Types"
         return new
 
     def generate(self, tp, name, arglist, modifiers=[]):
-    
+
         self.typeused(tp, 'return')
         if modifiers:
             classname, listname = self.destination(tp, name, arglist, modifiers)

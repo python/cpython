@@ -44,7 +44,7 @@ class Variable:
             self.type.declare(self.name, reference=True)
         elif self.flags != SelfMode:
             self.type.declare(self.name)
-            
+
     def getDeclarations(self):
         """Return the unadorned declaration of the variable,
         suitable for use in a formal parameter list."""

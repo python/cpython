@@ -34,7 +34,7 @@ class Type:
             return ["%s& %s" % (self.typeName, name)]
         else:
             return ["%s %s" % (self.typeName, name)]
-            
+
     def getargs(self):
         return self.getargsFormat(), self.getargsArgs()
 
@@ -78,7 +78,7 @@ class Type:
         Default is to call passInput().
         """
         return self.passInput(name)
-        
+
     def errorCheck(self, name):
         """Check for an error returned in the variable.
 
@@ -186,7 +186,7 @@ class FakeType(InputOnlyType):
     def __init__(self, substitute):
         self.substitute = substitute
         self.typeName = None    # Don't show this argument in __doc__ string
-        
+
     def getDeclarations(self, name, reference=False):
         return []
 
@@ -251,23 +251,23 @@ class OpaqueByValueType(OpaqueType):
 
     def mkvalueArgs(self, name):
         return "%s, %s" % (self.new, name)
-        
+
 class OpaqueByRefType(OpaqueType):
     """An opaque object type, passed by reference.
 
     Instantiate with the type name, and optionally an object type name whose
     New/Convert functions will be used.
     """
-    
+
     def passInput(self, name):
         return name
-        
+
 #    def passOutput(self, name):
 #        return name
-        
+
     def mkvalueFormat(self):
         return "O"
-        
+
     def mkvalueArgs(self, name):
         return "%s(%s)" % (self.new, name)
 
