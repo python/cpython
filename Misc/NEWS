@@ -370,6 +370,9 @@ Tests
 Documentation
 -------------
 
+- Document the IterableUserDict class in the UserDict module.
+  Closes bug #1166582.
+
 - Remove all latent references for "Macintosh" that referred to semantics for
   Mac OS 9 and change to reflect the state for OS X.
   Closes patch #1095802.  Thanks Jack Jansen.
