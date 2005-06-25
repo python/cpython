@@ -169,14 +169,14 @@ w_object(PyObject *v, WFILE *p)
 	}
 	else if (PyFloat_Check(v)) {
 		if (p->version > 1) {
-			char buf[8];
+			unsigned char buf[8];
 			if (_PyFloat_Pack8(PyFloat_AsDouble(v), 
 					   buf, 1) < 0) {
 				p->error = 1;
 				return;
 			}
 			w_byte(TYPE_BINARY_FLOAT, p);
-			w_string(buf, 8, p);
+			w_string((char*)buf, 8, p);
 		}
 		else {
 			char buf[256]; /* Plenty to format any double */
@@ -190,20 +190,20 @@ w_object(PyObject *v, WFILE *p)
 #ifndef WITHOUT_COMPLEX
 	else if (PyComplex_Check(v)) {
 		if (p->version > 1) {
-			char buf[8];
+			unsigned char buf[8];
 			if (_PyFloat_Pack8(PyComplex_RealAsDouble(v),
 					   buf, 1) < 0) {
 				p->error = 1;
 				return;
 			}
 			w_byte(TYPE_BINARY_COMPLEX, p);
-			w_string(buf, 8, p);
+			w_string((char*)buf, 8, p);
 			if (_PyFloat_Pack8(PyComplex_ImagAsDouble(v), 
 					   buf, 1) < 0) {
 				p->error = 1;
 				return;
 			}
-			w_string(buf, 8, p);
+			w_string((char*)buf, 8, p);
 		}
 		else {
 			char buf[256]; /* Plenty to format any double */
@@ -556,9 +556,9 @@ r_object(RFILE *p)
 
 	case TYPE_BINARY_FLOAT:
 		{
-			char buf[8];
+			unsigned char buf[8];
 			double x;
-			if (r_string(buf, 8, p) != 8) {
+			if (r_string((char*)buf, 8, p) != 8) {
 				PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
 				return NULL;
@@ -600,9 +600,9 @@ r_object(RFILE *p)
 
 	case TYPE_BINARY_COMPLEX:
 		{
-			char buf[8];
+			unsigned char buf[8];
 			Py_complex c;
-			if (r_string(buf, 8, p) != 8) {
+			if (r_string((char*)buf, 8, p) != 8) {
 				PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
 				return NULL;
@@ -611,7 +611,7 @@ r_object(RFILE *p)
 			if (c.real == -1.0 && PyErr_Occurred()) {
 				return NULL;
 			}
-			if (r_string(buf, 8, p) != 8) {
+			if (r_string((char*)buf, 8, p) != 8) {
 				PyErr_SetString(PyExc_EOFError,
 					"EOF read where object expected");
 				return NULL;
