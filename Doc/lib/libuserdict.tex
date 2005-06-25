@@ -21,18 +21,24 @@ existing methods or adding new ones.
 The \module{UserDict} module defines the \class{UserDict} class
 and \class{DictMixin}:
 
-\begin{classdesc}{UserDict}{\optional{initialdata}}
-Class that simulates a dictionary.  The instance's
-contents are kept in a regular dictionary, which is accessible via the
-\member{data} attribute of \class{UserDict} instances.  If
-\var{initialdata} is provided, \member{data} is initialized with its
-contents; note that a reference to \var{initialdata} will not be kept, 
-allowing it be used for other purposes.
+\begin{classdesc}{UserDict}{\optional{initialdata}} 
+Class that simulates a dictionary.  The instance's contents are kept
+in a regular dictionary, which is accessible via the \member{data}
+attribute of \class{UserDict} instances.  If \var{initialdata} is
+provided, \member{data} is initialized with its contents; note that a
+reference to \var{initialdata} will not be kept, allowing it be used
+for other purposes. \note{For backward compatibility, instances of
+\class{UserDict} are not iterable.}
+\end{classdesc}
+
+\begin{classdesc}{IterableUserDict}{\optional{initialdata}}
+Subclass of \class{UserDict} that supports direct iteration (e.g. 
+\code{for key in myDict}).
 \end{classdesc}
 
 In addition to supporting the methods and operations of mappings (see
-section \ref{typesmapping}), \class{UserDict} instances provide the
-following attribute:
+section \ref{typesmapping}), \class{UserDict} and
+\class{IterableUserDict} instances provide the following attribute:
 
 \begin{memberdesc}{data}
 A real dictionary used to store the contents of the \class{UserDict}
