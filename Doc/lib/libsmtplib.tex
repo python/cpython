@@ -190,13 +190,14 @@ the \refmodule{socket} module's \function{ssl()} function.
 \begin{methoddesc}{sendmail}{from_addr, to_addrs, msg\optional{,
                              mail_options, rcpt_options}}
 Send mail.  The required arguments are an \rfc{822} from-address
-string, a list of \rfc{822} to-address strings, and a message string.
-The caller may pass a list of ESMTP options (such as \samp{8bitmime})
-to be used in \samp{MAIL FROM} commands as \var{mail_options}.  ESMTP
-options (such as \samp{DSN} commands) that should be used with all
-\samp{RCPT} commands can be passed as \var{rcpt_options}.  (If you
-need to use different ESMTP options to different recipients you have
-to use the low-level methods such as \method{mail}, \method{rcpt} and
+string, a list of \rfc{822} to-address strings (a bare string will be
+treated as a list with 1 address), and a message string.  The caller
+may pass a list of ESMTP options (such as \samp{8bitmime}) to be used
+in \samp{MAIL FROM} commands as \var{mail_options}.  ESMTP options
+(such as \samp{DSN} commands) that should be used with all \samp{RCPT}
+commands can be passed as \var{rcpt_options}.  (If you need to use
+different ESMTP options to different recipients you have to use the
+low-level methods such as \method{mail}, \method{rcpt} and
 \method{data} to send the message.)
 
 \note{The \var{from_addr} and \var{to_addrs} parameters are
