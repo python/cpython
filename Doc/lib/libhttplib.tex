@@ -304,6 +304,8 @@ with the request.
 \begin{methoddesc}{getresponse}{}
 Should be called after a request is sent to get the response from the server.
 Returns an \class{HTTPResponse} instance.
+\note{Note that you must have read the whole response before you can send a new
+request to the server.}
 \end{methoddesc}
 
 \begin{methoddesc}{set_debuglevel}{level}
@@ -320,11 +322,9 @@ Connect to the server specified when the object was created.
 Close the connection to the server.
 \end{methoddesc}
 
-\begin{methoddesc}{send}{data}
-Send data to the server.  This should be used directly only after the
-\method{endheaders()} method has been called and before
-\method{getreply()} has been called.
-\end{methoddesc}
+As an alternative to using the \method{request()} method described above,
+you can also send your request step by step, by using the four functions
+below.
 
 \begin{methoddesc}{putrequest}{request, selector\optional{,
 skip\_host\optional{, skip_accept_encoding}}}
@@ -349,6 +349,11 @@ each consisting of a tab and an argument.
 Send a blank line to the server, signalling the end of the headers.
 \end{methoddesc}
 
+\begin{methoddesc}{send}{data}
+Send data to the server.  This should be used directly only after the
+\method{endheaders()} method has been called and before
+\method{getresponse()} is called.
+\end{methoddesc}
 
 \subsection{HTTPResponse Objects \label{httpresponse-objects}}
 
