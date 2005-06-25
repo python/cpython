@@ -1680,8 +1680,9 @@ return suitable process handles.
 \end{funcdesc}
 
 \begin{datadesc}{WNOHANG}
-The option for \function{waitpid()} to avoid hanging if no child
-process status is available immediately.
+The option for \function{waitpid()} to return immediately if no child
+process status is available immediately. The function returns
+\code{(0, 0)} in this case.
 Availability: Macintosh, \UNIX.
 \end{datadesc}
 
