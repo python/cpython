@@ -106,9 +106,15 @@ the mapping is modified.
 \code{environ} may cause memory leaks.  Refer to the system documentation
 for \cfunction{putenv()}.}
 
-If \function{putenv()} is not provided, this mapping may be passed to
-the appropriate process-creation functions to cause child processes to
-use a modified environment.
+If \function{putenv()} is not provided, a modified copy of this mapping 
+may be passed to the appropriate process-creation functions to cause 
+child processes to use a modified environment.
+
+If the platform supports the \function{unsetenv()} function, you can 
+delete items in this mapping to unset environment variables.
+\function{unsetenv()} will be called automatically when an item is
+deleted from \code{os.environ}.
+
 \end{datadesc}
 
 \begin{funcdescni}{chdir}{path}
@@ -307,7 +313,20 @@ or even
 Availability: recent flavors of \UNIX.
 \end{funcdesc}
 
+\begin{funcdesc}{unsetenv}{varname}
+\index{environment variables!deleting}
+Unset (delete) the environment variable named \var{varname}. Such
+changes to the environment affect subprocesses started with
+\function{os.system()}, \function{popen()} or \function{fork()} and
+\function{execv()}. Availability: most flavors of \UNIX, Windows.
 
+When \function{unsetenv()} is
+supported, deletion of items in \code{os.environ} is automatically
+translated into a corresponding call to \function{unsetenv()}; however,
+calls to \function{unsetenv()} don't update \code{os.environ}, so it is
+actually preferable to delete items of \code{os.environ}.
+\end{funcdesc}
+\end{funcdesc}
 
 \subsection{File Object Creation \label{os-newstreams}}
 
