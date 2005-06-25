@@ -3284,10 +3284,12 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 	Py_XINCREF(arg);
 	tstate->c_profilefunc = NULL;
 	tstate->c_profileobj = NULL;
+	/* Must make sure that tracing is not ignored if 'temp' is freed */
 	tstate->use_tracing = tstate->c_tracefunc != NULL;
 	Py_XDECREF(temp);
 	tstate->c_profilefunc = func;
 	tstate->c_profileobj = arg;
+	/* Flag that tracing or profiling is turned on */
 	tstate->use_tracing = (func != NULL) || (tstate->c_tracefunc != NULL);
 }
 
@@ -3299,10 +3301,12 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 	Py_XINCREF(arg);
 	tstate->c_tracefunc = NULL;
 	tstate->c_traceobj = NULL;
+	/* Must make sure that profiling is not ignored if 'temp' is freed */
 	tstate->use_tracing = tstate->c_profilefunc != NULL;
 	Py_XDECREF(temp);
 	tstate->c_tracefunc = func;
 	tstate->c_traceobj = arg;
+	/* Flag that tracing or profiling is turned on */
 	tstate->use_tracing = ((func != NULL)
 			       || (tstate->c_profilefunc != NULL));
 }
