@@ -1078,8 +1078,8 @@ On \UNIX, the environment variable \envvar{TMPDIR} overrides
 behavior of this function depends on the C library implementation;
 some aspects are underspecified in system documentation.
 \warning{Use of \function{tempnam()} is vulnerable to symlink attacks;
-consider using \function{tmpfile()} instead.}
-Availability: Macintosh, \UNIX, Windows.
+consider using \function{tmpfile()} (section \ref{os-newstreams})
+instead.}  Availability: Macintosh, \UNIX, Windows.
 \end{funcdesc}
 
 \begin{funcdesc}{tmpnam}{}
@@ -1090,12 +1090,13 @@ responsible for properly creating and managing files created using
 paths returned by \function{tmpnam()}; no automatic cleanup is
 provided.
 \warning{Use of \function{tmpnam()} is vulnerable to symlink attacks;
-consider using \function{tmpfile()} instead.}
-Availability: \UNIX, Windows.  This function probably shouldn't be used
-on Windows, though:  Microsoft's implementation of \function{tmpnam()}
-always creates a name in the root directory of the current drive, and
-that's generally a poor location for a temp file (depending on
-privileges, you may not even be able to open a file using this name).
+consider using \function{tmpfile()} (section \ref{os-newstreams})
+instead.}  Availability: \UNIX, Windows.  This function probably
+shouldn't be used on Windows, though: Microsoft's implementation of
+\function{tmpnam()} always creates a name in the root directory of the
+current drive, and that's generally a poor location for a temp file
+(depending on privileges, you may not even be able to open a file
+using this name).
 \end{funcdesc}
 
 \begin{datadesc}{TMP_MAX}
