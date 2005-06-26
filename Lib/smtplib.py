@@ -439,7 +439,7 @@ class SMTP:
         """SMTP 'help' command.
         Returns help text from server."""
         self.putcmd("help", args)
-        return self.getreply()
+        return self.getreply()[1]
 
     def rset(self):
         """SMTP 'rset' command -- resets session."""
