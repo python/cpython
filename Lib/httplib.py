@@ -353,6 +353,7 @@ class HTTPResponse:
             raise UnknownProtocol(version)
 
         if self.version == 9:
+            self.length = None
             self.chunked = 0
             self.will_close = 1
             self.msg = HTTPMessage(StringIO())
