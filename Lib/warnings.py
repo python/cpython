@@ -50,7 +50,11 @@ def warn(message, category=None, stacklevel=1):
             filename = filename[:-1]
     else:
         if module == "__main__":
-            filename = sys.argv[0]
+            try:
+                filename = sys.argv[0]
+            except AttributeError:
+                # embedded interpreters don't have sys.argv, see bug #839151
+                filename = '__main__'
         if not filename:
             filename = module
     registry = globals.setdefault("__warningregistry__", {})
