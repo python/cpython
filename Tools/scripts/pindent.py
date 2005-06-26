@@ -238,6 +238,7 @@ class PythonIndenter:
         self.indentsize = 1
         stack = []
         todo = []
+        thisid = ''
         current, firstkw, lastkw, topid = 0, '', '', ''
         while 1:
             line = self.getline()
