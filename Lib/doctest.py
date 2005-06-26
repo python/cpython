@@ -2498,7 +2498,8 @@ def script_from_examples(s):
     while output and output[0] == '#':
         output.pop(0)
     # Combine the output, and return it.
-    return '\n'.join(output)
+    # Add a courtesy newline to prevent exec from choking (see bug #1172785)
+    return '\n'.join(output) + '\n'
 
 def testsource(module, name):
     """Extract the test sources from a doctest docstring as a script.
