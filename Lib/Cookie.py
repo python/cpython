@@ -470,9 +470,9 @@ class Morsel(dict):
     def js_output(self, attrs=None):
         # Print javascript
         return """
-        <SCRIPT LANGUAGE="JavaScript">
+        <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = \"%s\"
+        document.cookie = \"%s\";
         // end hiding -->
         </script>
         """ % ( self.OutputString(attrs), )
