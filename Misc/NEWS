@@ -39,6 +39,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1100201: Cross-site scripting was possible on BaseHTTPServer via
+  error messages.
+
 - Bug #1224621: tokenize module does not detect inconsistent dedents
 
 - Bug #1196315: fix weakref.WeakValueDictionary constructor.
@@ -54,6 +57,22 @@ Library
   character even if the user has passed a size parameter to get a proper
   line ending. Remove the special handling of a "\r\n" that has been split
   between two lines.
+
+Documentation
+-------------
+
+- Patch #1180012: The documentation for modulefinder is now in the library reference.
+
+- Patch #1213031: Document that os.chown() accepts argument values of -1.
+
+- Bug #1190563: Document os.waitpid() return value with WNOHANG flag.
+
+- Bug #1175022: Correct the example code for property().
+
+Tools/Demos
+-----------
+
+- Bug #1072853: pindent.py used an uninitialized variable.
 
 
 What's New in Python 2.4.1 final?
