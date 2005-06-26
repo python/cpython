@@ -89,6 +89,8 @@ DEFAULT_ERROR_MESSAGE = """\
 </body>
 """
 
+def _quote_html(html):
+    return html.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 class HTTPServer(SocketServer.TCPServer):
 
@@ -336,8 +338,9 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
             message = short
         explain = long
         self.log_error("code %d, message %s", code, message)
+        # using _quote_html to prevent Cross Site Scripting attacks (see bug #1100201)
         content = (self.error_message_format %
-                   {'code': code, 'message': message, 'explain': explain})
+                   {'code': code, 'message': _quote_html(message), 'explain': explain})
         self.send_response(code, message)
         self.send_header("Content-Type", "text/html")
         self.send_header('Connection', 'close')
