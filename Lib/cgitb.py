@@ -112,8 +112,11 @@ function calls leading up to the error, in the order they occurred.</p>'''
     frames = []
     records = inspect.getinnerframes(etb, context)
     for frame, file, lnum, func, lines, index in records:
-        file = file and os.path.abspath(file) or '?'
-        link = '<a href="file://%s">%s</a>' % (file, pydoc.html.escape(file))
+        if file:
+            file = os.path.abspath(file)
+            link = '<a href="file://%s">%s</a>' % (file, pydoc.html.escape(file))
+        else:
+            file = link = '?'
         args, varargs, varkw, locals = inspect.getargvalues(frame)
         call = ''
         if func != '?':
