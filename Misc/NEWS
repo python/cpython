@@ -147,6 +147,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1100201: Cross-site scripting was possible on BaseHTTPServer via
+  error messages.
+
 - Bug #1108948: Cookie.py produced invalid JavaScript code.
 
 - The tokenize module now detects and reports indentation errors.
