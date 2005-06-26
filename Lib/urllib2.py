@@ -277,8 +277,8 @@ class Request:
 
 class OpenerDirector:
     def __init__(self):
-        server_version = "Python-urllib/%s" % __version__
-        self.addheaders = [('User-agent', server_version)]
+        client_version = "Python-urllib/%s" % __version__
+        self.addheaders = [('User-agent', client_version)]
         # manage the individual handlers
         self.handlers = []
         self.handle_open = {}
