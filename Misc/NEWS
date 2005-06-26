@@ -147,6 +147,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1155638: Fix a bug which affected HTTP 0.9 responses in httplib.
+
 - Bug #1100201: Cross-site scripting was possible on BaseHTTPServer via
   error messages.
 
