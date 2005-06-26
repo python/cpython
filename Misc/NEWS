@@ -147,6 +147,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1108948: Cookie.py produced invalid JavaScript code.
+
 - The tokenize module now detects and reports indentation errors.
   Bug #1224621.
 
@@ -370,6 +372,14 @@ Tests
 Documentation
 -------------
 
+- Patch #1180012: The documentation for modulefinder is now in the library reference.
+
+- Patch #1213031: Document that os.chown() accepts argument values of -1.
+
+- Bug #1190563: Document os.waitpid() return value with WNOHANG flag.
+
+- Bug #1175022: Correct the example code for property().
+
 - Document the IterableUserDict class in the UserDict module.
   Closes bug #1166582.
 
@@ -384,6 +394,8 @@ Mac
 
 Tools/Demos
 -----------
+
+- Bug #1072853: pindent.py used an uninitialized variable.
 
 - Patch #1177597: Correct Complex.__init__.
 
