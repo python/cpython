@@ -16,16 +16,16 @@ Set-Cookie: keebler=E=mc2;
 Set-Cookie: keebler=E=mc2;
 Set-Cookie: Customer="WILE_E_COYOTE"; Path=/acme;
 
-        <SCRIPT LANGUAGE="JavaScript">
+        <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = "Customer="WILE_E_COYOTE"; Path=/acme; Version=1;"
+        document.cookie = "Customer="WILE_E_COYOTE"; Path=/acme; Version=1;";
         // end hiding -->
         </script>
         
 
-        <SCRIPT LANGUAGE="JavaScript">
+        <script type="text/javascript">
         <!-- begin hiding
-        document.cookie = "Customer="WILE_E_COYOTE"; Path=/acme;"
+        document.cookie = "Customer="WILE_E_COYOTE"; Path=/acme;";
         // end hiding -->
         </script>
         
