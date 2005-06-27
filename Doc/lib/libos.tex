@@ -1327,6 +1327,9 @@ The following exit codes are a defined, and can be used with
 \function{_exit()}, although they are not required.  These are
 typically used for system programs written in Python, such as a
 mail server's external command delivery program.
+\note{Some of these may not be available on all \UNIX{} platforms,
+since there is some variation.  These constants are defined where they
+are defined by the underlying platform.}
 
 \begin{datadesc}{EX_OK}
 Exit code that means no error occurred.
