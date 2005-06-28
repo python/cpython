@@ -24,17 +24,25 @@ class Type:
 
         Example: int.declare('spam') prints "int spam;"
         """
-        for decl in self.getDeclarations(name, reference):
+        for decl in self.getArgDeclarations(name, reference):
+            Output("%s;", decl)
+        for decl in self.getAuxDeclarations(name):
             Output("%s;", decl)
 
-    def getDeclarations(self, name, reference=False):
-        """Return a string declaring a variable or argument, without
-        any syntactic adornment"""
+    def getArgDeclarations(self, name, reference=False):
+        """Return the main part of the declarations for this type: the items
+        that will be passed as arguments in the C/C++ function call."""
         if reference:
             return ["%s& %s" % (self.typeName, name)]
         else:
             return ["%s %s" % (self.typeName, name)]
 
+    def getAuxDeclarations(self, name):
+        """Return any auxiliary declarations needed for implementing this
+        type, such as helper variables used to hold sizes, etc. These declarations
+        are not part of the C/C++ function call interface."""
+        return []
+        
     def getargs(self):
         return self.getargsFormat(), self.getargsArgs()
 
@@ -187,7 +195,10 @@ class FakeType(InputOnlyType):
         self.substitute = substitute
         self.typeName = None    # Don't show this argument in __doc__ string
 
-    def getDeclarations(self, name, reference=False):
+    def getArgDeclarations(self, name, reference=False):
+        return []
+
+    def getAuxDeclarations(self, name, reference=False):
         return []
 
     def getargsFormat(self):

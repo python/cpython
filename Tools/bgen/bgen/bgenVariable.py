@@ -45,11 +45,12 @@ class Variable:
         elif self.flags != SelfMode:
             self.type.declare(self.name)
 
-    def getDeclarations(self):
-        """Return the unadorned declaration of the variable,
-        suitable for use in a formal parameter list."""
+    def getArgDeclarations(self):
         refmode = (self.flags & RefMode)
-        return self.type.getDeclarations(self.name, reference=refmode)
+        return self.type.getArgDeclarations(self.name, reference=refmode)
+    
+    def getAuxDeclarations(self):
+        return self.type.getAuxDeclarations(self.name)
 
     def getargsFormat(self):
         """Call the type's getargsFormatmethod."""

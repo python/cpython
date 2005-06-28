@@ -26,6 +26,9 @@ class StringBufferMixIn:
     def getSizeDeclarations(self, name):
         return []
 
+    def getAuxDeclarations(self, name):
+        return []
+
     def getargsFormat(self):
         return "s"
 
