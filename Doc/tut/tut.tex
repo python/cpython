@@ -3166,6 +3166,21 @@ entire file in memory.  Only complete lines will be returned.
 ['This is the first line of the file.\n', 'Second line of the file\n']
 \end{verbatim}
 
+An alternate approach to reading lines is to loop over the file object.
+This is memory efficient, fast, and leads to simpler code:
+
+\begin{verbatim}
+>>> for line in f:
+        print line,
+        
+This is the first line of the file.
+Second line of the file
+\end{verbatim}
+
+The alternative approach is simpler but does not provide as fine-grained
+control.  Since the two approaches manage line buffering differently,
+they should not be mixed.
+
 \code{f.write(\var{string})} writes the contents of \var{string} to
 the file, returning \code{None}.  
 
