@@ -38,10 +38,11 @@ class FixedInputOutputBufferType(InputOnlyType):
         self.sizeformat = sizeformat or type2format[sizetype]
         self.label_needed = 0
 
-    def getDeclarations(self, name, reference=False):
+    def getArgDeclarations(self, name, reference=False):
         if reference:
             raise RuntimeError, "Cannot pass buffer types by reference"
-        return self.getBufferDeclarations(name) + self.getSizeDeclarations(name)
+        return (self.getBufferDeclarations(name) + 
+                self.getSizeDeclarations(name))
 
     def getBufferDeclarations(self, name):
         return self.getInputBufferDeclarations(name) + self.getOutputBufferDeclarations(name)
@@ -53,10 +54,10 @@ class FixedInputOutputBufferType(InputOnlyType):
         return ["%s %s__out__[%s]" % (self.datatype, name, self.size)]
 
     def getSizeDeclarations(self, name):
-        return [
-            "%s %s__len__" %(self.sizetype, name),
-            "int %s__in_len__" %(name)
-            ]
+        return ["%s %s__len__" %(self.sizetype, name)]
+
+    def getAuxDeclarations(self, name):
+        return ["int %s__in_len__" %(name)]
 
     def getargsFormat(self):
         return "s#"
@@ -189,6 +190,9 @@ class StructInputOutputBufferType(FixedInputOutputBufferType):
         return ["%s *%s__in__" % (self.type, name)]
 
     def getSizeDeclarations(self, name):
+        return []
+        
+    def getAuxDeclarations(self, name):
         return ["int %s__in_len__" % (name)]
 
     def getOutputBufferDeclarations(self, name):
@@ -248,6 +252,9 @@ class StructOutputBufferType(OutputOnlyBufferMixIn, StructInputOutputBufferType)
     def getSizeDeclarations(self, name):
         return []
 
+    def getAuxDeclarations(self, name):
+        return []
+
     def passOutput(self, name):
         return "&%s__out__" % name
 
@@ -260,6 +267,9 @@ class ArrayOutputBufferType(OutputOnlyBufferMixIn, StructInputOutputBufferType):
     """
 
     def getSizeDeclarations(self, name):
+        return []
+
+    def getAuxDeclarations(self, name):
         return []
 
     def passOutput(self, name):

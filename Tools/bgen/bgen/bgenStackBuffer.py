@@ -23,6 +23,9 @@ class VarStackOutputBufferType(StackOutputBufferType):
     """
 
     def getSizeDeclarations(self, name):
+        return []
+
+    def getAuxDeclarations(self, name):
         return ["int %s__len__ = %s" % (name, self.size)]
 
     def passOutput(self, name):

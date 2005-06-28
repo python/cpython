@@ -482,8 +482,7 @@ if missing: raise "Missing Types"
         modifiers = self.getmodifiers(match)
         type = self.pythonizename(type)
         name = self.pythonizename(name)
-        if name in self.alreadydone:
-            self.report("Name has already been defined: %r", name)
+        if self.checkduplicate(name):
             return
         self.report("==> %s %s <==", type, name)
         if self.blacklisted(type, name):
@@ -499,7 +498,6 @@ if missing: raise "Missing Types"
             ##  self.report("    %r", arg)
             self.report("*** %s %s unmanageable", type, name)
             return
-        self.alreadydone.append(name)
         if modifiers:
             self.generate(type, name, arglist, modifiers)
         else:
@@ -507,6 +505,13 @@ if missing: raise "Missing Types"
 
     def getmodifiers(self, match):
         return []
+
+    def checkduplicate(self, name):
+        if name in self.alreadydone:
+            self.report("Name has already been defined: %r", name)
+            return True
+        self.alreadydone.append(name)
+        return False
 
     def pythonizename(self, name):
         name = re.sub("\*", " ptr", name)
