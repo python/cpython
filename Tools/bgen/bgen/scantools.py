@@ -620,11 +620,15 @@ if missing: raise "Missing Types"
                                 (atype, aname, amode))
         if self.greydictnames.has_key(name):
             self.specfile.write("    condition=%r,\n"%(self.greydictnames[name],))
+        self.generatemodifiers(classname, name, modifiers)
         self.specfile.write(")\n")
         self.specfile.write("%s.append(f)\n\n" % listname)
 
     def destination(self, type, name, arglist):
         return "FunctionGenerator", "functions"
+        
+    def generatemodifiers(self, classname, name, modifiers):
+        pass
 
     def blacklisted(self, type, name):
         if type in self.blacklisttypes:
