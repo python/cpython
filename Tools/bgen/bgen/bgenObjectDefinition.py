@@ -219,6 +219,9 @@ class ObjectDefinition(GeneratorGroup):
         Output("if (PyType_Ready(&%s) < 0) return;", self.typename)
         Output("""Py_INCREF(&%s);""", self.typename)
         Output("PyModule_AddObject(m, \"%s\", (PyObject *)&%s);", self.name, self.typename);
+        self.outputTypeObjectInitializerCompat()
+        
+    def outputTypeObjectInitializerCompat(self):
         Output("/* Backward-compatible name */")
         Output("""Py_INCREF(&%s);""", self.typename);
         Output("PyModule_AddObject(m, \"%sType\", (PyObject *)&%s);", self.name, self.typename);

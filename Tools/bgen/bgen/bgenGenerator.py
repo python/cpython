@@ -15,18 +15,27 @@ INOUT = IN_OUT = "in-out"
 
 class BaseFunctionGenerator:
 
-    def __init__(self, name, condition=None):
+    def __init__(self, name, condition=None, callname=None, modifiers=None):
         if DEBUG: print "<--", name
         self.name = name
-        self.callname = name
+        if callname:
+            self.callname = callname
+        else:
+            self.callname = name
         self.prefix = name
         self.objecttype = "PyObject" # Type of _self argument to function
         self.condition = condition
+        self.modifiers = modifiers
 
     def setprefix(self, prefix):
         self.prefix = prefix
 
+    def checkgenerate(self):
+        return True
+        
     def generate(self):
+        if not self.checkgenerate():
+            return
         if DEBUG: print "-->", self.name
         if self.condition:
             Output()
@@ -51,6 +60,8 @@ class BaseFunctionGenerator:
         OutRbrace()
 
     def reference(self, name = None):
+        if not self.checkgenerate():
+            return
         if name is None:
             name = self.name
         docstring = self.docstring()
