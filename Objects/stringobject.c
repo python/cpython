@@ -3753,18 +3753,12 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 	}
 
 	/* Fix up case for hex conversions. */
-	switch (type) {
-	case 'x':
-		/* Need to convert all upper case letters to lower case. */
+	if (type == 'X') {
+		/* Need to convert all lower case letters to upper case.
+		   and need to convert 0x to 0X (and -0x to -0X). */
 		for (i = 0; i < len; i++)
-			if (buf[i] >= 'A' && buf[i] <= 'F')
-				buf[i] += 'a'-'A';
-		break;
-	case 'X':
-		/* Need to convert 0x to 0X (and -0x to -0X). */
-		if (buf[sign + 1] == 'x')
-			buf[sign + 1] = 'X';
-		break;
+			if (buf[i] >= 'a' && buf[i] <= 'x')
+				buf[i] -= 'a'-'A';
 	}
 	*pbuf = buf;
 	*plen = len;

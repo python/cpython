@@ -208,7 +208,7 @@ class LongTest(unittest.TestCase):
         digits = digits or [0]
         return '-'[:sign] + \
                {8: '0', 10: '', 16: '0x'}[base] + \
-               "".join(map(lambda i: "0123456789ABCDEF"[i], digits)) + "L"
+               "".join(map(lambda i: "0123456789abcdef"[i], digits)) + "L"
 
     def check_format_1(self, x):
         for base, mapper in (8, oct), (10, repr), (16, hex):
