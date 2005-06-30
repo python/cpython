@@ -1427,7 +1427,7 @@ _PyFloat_Pack4(double x, unsigned char *p, int le)
 		return -1;
 	}
 	else {
-		float y = x;
+		float y = (float)x;
 		const char *s = (char*)&y;
 		int i, incr = 1;
 
