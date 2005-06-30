@@ -213,10 +213,7 @@ class FunctionGenerator(BaseFunctionGenerator):
 
     def callit(self):
         args = ""
-        if self.rv:
-            s = "%s = %s(" % (self.rv.name, self.callname)
-        else:
-            s = "%s(" % self.name
+        s = "%s%s(" % (self.getrvforcallit(), self.callname)
         sep = ",\n" + ' '*len(s)
         for arg in self.argumentList:
             if arg is self.rv:
@@ -224,12 +221,15 @@ class FunctionGenerator(BaseFunctionGenerator):
             s = arg.passArgument()
             if args: s = sep + s
             args = args + s
-        if self.rv:
-            Output("%s = %s(%s);",
-                   self.rv.name, self.callname, args)
-        else:
-            Output("%s(%s);", self.callname, args)
+        Output("%s%s(%s);",
+               self.getrvforcallit(), self.callname, args)
 
+    def getrvforcallit(self):
+        if self.rv:
+            return "%s = " % self.rv.name
+        else:
+            return ""
+            
     def checkit(self):
         for arg in self.argumentList:
             arg.errorCheck()
