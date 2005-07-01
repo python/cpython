@@ -501,13 +501,15 @@ with the \class{Context} constructor.
   arithmetic operations in the context.
 
   The \var{rounding} option is one of:
-      \constant{ROUND_CEILING} (towards \constant{Infinity}),
-      \constant{ROUND_DOWN} (towards zero),
-      \constant{ROUND_FLOOR} (towards \constant{-Infinity}),
-      \constant{ROUND_HALF_DOWN} (towards zero),
-      \constant{ROUND_HALF_EVEN},
-      \constant{ROUND_HALF_UP} (away from zero), or
-      \constant{ROUND_UP} (away from zero).
+  \begin{itemize}
+  \item \constant{ROUND_CEILING} (towards \constant{Infinity}),
+  \item \constant{ROUND_DOWN} (towards zero),
+  \item \constant{ROUND_FLOOR} (towards \constant{-Infinity}),
+  \item \constant{ROUND_HALF_DOWN} (to nearest with ties going towards zero),
+  \item \constant{ROUND_HALF_EVEN} (to nearest with ties going to nearest even integer),
+  \item \constant{ROUND_HALF_UP} (to nearest with ties going away from zero), or
+  \item \constant{ROUND_UP} (away from zero).
+  \end{itemize}
 
   The \var{traps} and \var{flags} fields list any signals to be set.
   Generally, new contexts should only set traps and leave the flags clear.
@@ -834,6 +836,8 @@ The following table summarizes the hierarchy of signals:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Floating Point Notes \label{decimal-notes}}
 
+\subsubsection{Mitigating round-off error with increased precision}
+
 The use of decimal floating point eliminates decimal representation error
 (making it possible to represent \constant{0.1} exactly); however, some
 operations can still incur round-off error when non-zero digits exceed the
@@ -881,6 +885,7 @@ Decimal("0.0060000")
 Decimal("0.0060000")
 \end{verbatim}
 
+\subsubsection{Special values}
 
 The number system for the \module{decimal} module provides special
 values including \constant{NaN}, \constant{sNaN}, \constant{-Infinity},
