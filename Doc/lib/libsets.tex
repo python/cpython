@@ -133,7 +133,7 @@ The following table lists operations available in \class{Set}
 but not found in \class{ImmutableSet}:
 
 \begin{tableiii}{c|c|l}{code}{Operation}{Equivalent}{Result}
-  \lineiii{\var{s}.union_update(\var{t})}
+  \lineiii{\var{s}.update(\var{t})}
          {\var{s} \textbar= \var{t}}
          {return set \var{s} with elements added from \var{t}}
   \lineiii{\var{s}.intersection_update(\var{t})}
@@ -161,12 +161,17 @@ but not found in \class{ImmutableSet}:
          {remove all elements from set \var{s}}
 \end{tableiii}
 
-Note, the non-operator versions of \method{union_update()},
+Note, the non-operator versions of \method{update()},
 \method{intersection_update()}, \method{difference_update()}, and
 \method{symmetric_difference_update()} will accept any iterable as
 an argument.
 \versionchanged[Formerly all arguments were required to be sets]{2.3.1}
 
+Also note, the module also includes a \method{union_update()} method
+which is an alias for \method{update()}.  The method is included for
+backwards compatability.  Programmers should prefer the
+\method{update()} method because it the one supported by the builtin
+\class{set()} and \class{frozenset()} types.
 
 \subsection{Example \label{set-example}}
 
@@ -231,3 +236,28 @@ user; however, a conflict can arise in a multi-threaded environment
 where one thread is updating a set while another has temporarily wrapped it
 in \class{_TemporarilyImmutableSet}.  In other words, sets of mutable sets
 are not thread-safe.
+
+
+\subsection{Comparison to the built-in \class{set} types
+            \label{comparison-to-builtin-set}}
+
+The built-in \class{set} and \class{frozenset} types were designed based
+on lessons learned from the \module{sets} module.  The key differences are:
+
+\begin{itemize}
+\item \class{Set} and \class{ImmutableSet} were renamed to \class{set} and
+      \class{frozenset}.
+\item There is no equivalent to \class{BaseSet}.  Instead, use
+      \code{isinstance(x, (set, frozenset))}.
+\item The hash algorithm for the built-ins performs significantly better
+      (fewer collisions) for most datasets.
+\item The built-in versions have more space efficient pickles.
+\item The built-in versions do not have a \method{union_update()} method.
+      Instead, use the \method{update()} method which is equivalent.
+\item The built-in versions do not have a \method{_repr(sort=True)} method.
+      Instead, use the built-in \function{repr()} and \function{sorted()}
+      functions:  \code{repr(sorted(s))}.
+\item The built-in version does not have a protocol for automatic conversion
+      to immutable.  Many found this feature to be confusing and no one
+      in the community reported having found real uses for it.
+\end{itemize}    
