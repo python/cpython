@@ -194,6 +194,7 @@ class FunctionGenerator(BaseFunctionGenerator):
             if arg.flags == SelfMode:
                 continue
             if arg.mode in (InMode, InOutMode):
+                arg.getargsPreCheck()
                 fmt = fmt + arg.getargsFormat()
                 args = arg.getargsArgs()
                 if args:
@@ -242,6 +243,7 @@ class FunctionGenerator(BaseFunctionGenerator):
             if not arg: continue
             if arg.flags == ErrorMode: continue
             if arg.mode in (OutMode, InOutMode):
+                arg.mkvaluePreCheck()
                 fmt = fmt + arg.mkvalueFormat()
                 lst = lst + sep + arg.mkvalueArgs()
         if fmt == "":

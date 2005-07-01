@@ -61,11 +61,18 @@ class Type:
         """
         return "&" + name
 
+    def getargsPreCheck(self, name):
+        """Perform any actions needed before calling getargs().
+        
+        This could include declaring temporary variables and such.
+        """
+    
     def getargsCheck(self, name):
         """Perform any needed post-[new]getargs() checks.
 
         This is type-dependent; the default does not check for errors.
-        An example would be a check for a maximum string length."""
+        An example would be a check for a maximum string length, or it
+        could do post-getargs() copying or conversion."""
 
     def passInput(self, name):
         """Return an argument for passing a variable into a call.
@@ -119,6 +126,12 @@ class Type:
         """
         return name
 
+    def mkvaluePreCheck(self, name):
+        """Perform any actions needed before calling mkvalue().
+        
+        This could include declaring temporary variables and such.
+        """
+    
     def cleanup(self, name):
         """Clean up if necessary.
 

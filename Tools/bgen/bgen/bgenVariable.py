@@ -63,6 +63,9 @@ class Variable:
     def getargsCheck(self):
         return self.type.getargsCheck(self.name)
 
+    def getargsPreCheck(self):
+        return self.type.getargsPreCheck(self.name)
+
     def passArgument(self):
         """Return the string required to pass the variable as argument.
 
@@ -94,6 +97,9 @@ class Variable:
     def mkvalueArgs(self):
         """Call the type's mkvalueArgs method."""
         return self.type.mkvalueArgs(self.name)
+
+    def mkvaluePreCheck(self):
+        return self.type.mkvaluePreCheck(self.name)
 
     def cleanup(self):
         """Call the type's cleanup method."""
