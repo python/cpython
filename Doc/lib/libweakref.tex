@@ -255,13 +255,10 @@ returned when the referent is accessed:
 import weakref
 
 class ExtendedRef(weakref.ref):
-    def __new__(cls, ob, callback=None, **annotations):
-        weakref.ref.__new__(cls, ob, callback)
-        self.__counter = 0
-
     def __init__(self, ob, callback=None, **annotations):
         super(ExtendedRef, self).__init__(ob, callback)
-        for k, v in annotations:
+        self.__counter = 0
+        for k, v in annotations.iteritems():
             setattr(self, k, v)
 
     def __call__(self):
