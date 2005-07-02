@@ -1001,6 +1001,91 @@ class WeakKeyDictionaryTestCase(mapping_tests.BasicTestMappingProtocol):
     def _reference(self):
         return self.__ref.copy()
 
+libreftest = """ Doctest for examples in the library reference: libweakref.tex
+
+>>> import weakref
+>>> class Dict(dict):
+...     pass
+...
+>>> obj = Dict(red=1, green=2, blue=3)   # this object is weak referencable
+>>> r = weakref.ref(obj)
+>>> print r()
+{'blue': 3, 'green': 2, 'red': 1}
+
+>>> import weakref
+>>> class Object:
+...     pass
+...
+>>> o = Object()
+>>> r = weakref.ref(o)
+>>> o2 = r()
+>>> o is o2
+True
+>>> del o, o2
+>>> print r()
+None
+
+>>> import weakref
+>>> class ExtendedRef(weakref.ref):
+...     def __init__(self, ob, callback=None, **annotations):
+...         super(ExtendedRef, self).__init__(ob, callback)
+...         self.__counter = 0
+...         for k, v in annotations.iteritems():
+...             setattr(self, k, v)
+...     def __call__(self):
+...         '''Return a pair containing the referent and the number of
+...         times the reference has been called.
+...         '''
+...         ob = super(ExtendedRef, self).__call__()
+...         if ob is not None:
+...             self.__counter += 1
+...             ob = (ob, self.__counter)
+...         return ob
+...
+>>> class A:   # not in docs from here, just testing the ExtendedRef
+...     pass
+...
+>>> a = A()
+>>> r = ExtendedRef(a, foo=1, bar="baz")
+>>> r.foo
+1
+>>> r.bar
+'baz'
+>>> r()[1]
+1
+>>> r()[1]
+2
+>>> r()[0] is a
+True
+
+
+>>> import weakref
+>>> _id2obj_dict = weakref.WeakValueDictionary()
+>>> def remember(obj):
+...     oid = id(obj)
+...     _id2obj_dict[oid] = obj
+...     return oid
+...
+>>> def id2obj(oid):
+...     return _id2obj_dict[oid]
+...
+>>> a = A()             # from here, just testing
+>>> a_id = remember(a)
+>>> id2obj(a_id) is a
+True
+>>> del a
+>>> try:
+...     id2obj(a_id)
+... except KeyError:
+...     print 'OK'
+... else:
+...     print 'WeakValueDictionary error'
+OK
+
+"""
+
+__test__ = {'libreftest' : libreftest}
+
 def test_main():
     test_support.run_unittest(
         ReferencesTestCase,
@@ -1008,6 +1093,7 @@ def test_main():
         WeakValueDictionaryTestCase,
         WeakKeyDictionaryTestCase,
         )
+    test_support.run_doctest(sys.modules[__name__])
 
 
 if __name__ == "__main__":
