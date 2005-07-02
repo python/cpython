@@ -604,7 +604,7 @@ cause the function to execute until it provides a value using the
 have reached the end of the set of values to be returned.
 
 \item[Built-in functions]
-A built-in function object is a wrapper around a \C{} function.  Examples
+A built-in function object is a wrapper around a C function.  Examples
 of built-in functions are \function{len()} and \function{math.sin()}
 (\module{math} is a standard built-in module).
 The number and type of the arguments are
@@ -917,14 +917,16 @@ the code object).
   \ttindex{f_builtins}
   \ttindex{f_restricted}}
 
-Special writable attributes: \member{f_trace}, if not \code{None}, is a
-function called at the start of each source code line (this is used by
-the debugger); \member{f_exc_type}, \member{f_exc_value},
-\member{f_exc_traceback} represent the most recent exception caught in
-this frame; \member{f_lineno} is the current line number of the frame
---- writing to this from within a trace function jumps to the given line
-(only for the bottom-most frame).  A debugger can implement a Jump
-command (aka Set Next Statement) by writing to f_lineno.
+Special writable attributes: \member{f_trace}, if not \code{None}, is
+a function called at the start of each source code line (this is used
+by the debugger); \member{f_exc_type}, \member{f_exc_value},
+\member{f_exc_traceback} represent the last exception raised in the
+parent frame provided another exception was ever raised in the current
+frame (in all other cases they are None); \member{f_lineno} is the
+current line number of the frame --- writing to this from within a
+trace function jumps to the given line (only for the bottom-most
+frame).  A debugger can implement a Jump command (aka Set Next
+Statement) by writing to f_lineno.
 \withsubitem{(frame attribute)}{
   \ttindex{f_trace}
   \ttindex{f_exc_type}
@@ -1335,8 +1337,9 @@ The following methods only apply to new-style classes.
 
 \begin{methoddesc}[object]{__getattribute__}{self, name}
 Called unconditionally to implement attribute accesses for instances
-of the class. If the class also defines \method{__getattr__}, it will
-never be called (unless called explicitly).
+of the class. If the class also defines \method{__getattr__}, the latter
+will not be called unless \method{__getattribute__()} either calls it
+explicitly or raises an \exception{AttributeError}.
 This method should return the (computed) attribute
 value or raise an \exception{AttributeError} exception.
 In order to avoid infinite recursion in this method, its
