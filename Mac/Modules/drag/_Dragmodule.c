@@ -52,15 +52,16 @@ PyObject *DragObj_New(DragRef itself)
 {
 	DragObjObject *it;
 	if (itself == NULL) {
-						PyErr_SetString(Drag_Error,"Cannot create null Drag");
-						return NULL;
-					}
+	                                PyErr_SetString(Drag_Error,"Cannot create null Drag");
+	                                return NULL;
+	                        }
 	it = PyObject_NEW(DragObjObject, &DragObj_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	it->sendproc = NULL;
 	return (PyObject *)it;
 }
+
 int DragObj_Convert(PyObject *v, DragRef *p_itself)
 {
 	if (!DragObj_Check(v))
@@ -743,16 +744,16 @@ static PyMethodDef DragObj_methods[] = {
 
 #define DragObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *DragObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *DragObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	DragRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, DragObj_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((DragObjObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, DragObj_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((DragObjObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define DragObj_tp_free PyObject_Del
@@ -920,15 +921,15 @@ static PyObject *Drag_InstallTrackingHandler(PyObject *_self, PyObject *_args)
 	    PyObject *callback;
 	    WindowPtr theWindow = NULL;
 	    OSErr _err;
-	    
+
 	    if ( !PyArg_ParseTuple(_args, "O|O&", &callback, WinObj_Convert, &theWindow) )
-	    	return NULL;
-	    Py_INCREF(callback);	/* Cannot decref later, too bad */
+	        return NULL;
+	    Py_INCREF(callback);        /* Cannot decref later, too bad */
 	    _err = InstallTrackingHandler(dragglue_TrackingHandlerUPP, theWindow, (void *)callback);
-		if (_err != noErr) return PyMac_Error(_err);
-		Py_INCREF(Py_None);
-		_res = Py_None;
-		return _res;
+	        if (_err != noErr) return PyMac_Error(_err);
+	        Py_INCREF(Py_None);
+	        _res = Py_None;
+	        return _res;
 
 }
 
@@ -939,15 +940,15 @@ static PyObject *Drag_InstallReceiveHandler(PyObject *_self, PyObject *_args)
 	    PyObject *callback;
 	    WindowPtr theWindow = NULL;
 	    OSErr _err;
-	    
+
 	    if ( !PyArg_ParseTuple(_args, "O|O&", &callback, WinObj_Convert, &theWindow) )
-	    	return NULL;
-	    Py_INCREF(callback);	/* Cannot decref later, too bad */
+	        return NULL;
+	    Py_INCREF(callback);        /* Cannot decref later, too bad */
 	    _err = InstallReceiveHandler(dragglue_ReceiveHandlerUPP, theWindow, (void *)callback);
-		if (_err != noErr) return PyMac_Error(_err);
-		Py_INCREF(Py_None);
-		_res = Py_None;
-		return _res;
+	        if (_err != noErr) return PyMac_Error(_err);
+	        Py_INCREF(Py_None);
+	        _res = Py_None;
+	        return _res;
 
 }
 
@@ -957,14 +958,14 @@ static PyObject *Drag_RemoveTrackingHandler(PyObject *_self, PyObject *_args)
 
 	    WindowPtr theWindow = NULL;
 	    OSErr _err;
-	    
+
 	    if ( !PyArg_ParseTuple(_args, "|O&", WinObj_Convert, &theWindow) )
-	    	return NULL;
+	        return NULL;
 	    _err = RemoveTrackingHandler(dragglue_TrackingHandlerUPP, theWindow);
-		if (_err != noErr) return PyMac_Error(_err);
-		Py_INCREF(Py_None);
-		_res = Py_None;
-		return _res;
+	        if (_err != noErr) return PyMac_Error(_err);
+	        Py_INCREF(Py_None);
+	        _res = Py_None;
+	        return _res;
 
 }
 
@@ -974,14 +975,14 @@ static PyObject *Drag_RemoveReceiveHandler(PyObject *_self, PyObject *_args)
 
 	    WindowPtr theWindow = NULL;
 	    OSErr _err;
-	    
+
 	    if ( !PyArg_ParseTuple(_args, "|O&", WinObj_Convert, &theWindow) )
-	    	return NULL;
+	        return NULL;
 	    _err = RemoveReceiveHandler(dragglue_ReceiveHandlerUPP, theWindow);
-		if (_err != noErr) return PyMac_Error(_err);
-		Py_INCREF(Py_None);
-		_res = Py_None;
-		return _res;
+	        if (_err != noErr) return PyMac_Error(_err);
+	        Py_INCREF(Py_None);
+	        _res = Py_None;
+	        return _res;
 
 }
 
@@ -1013,81 +1014,81 @@ static pascal OSErr
 dragglue_TrackingHandler(DragTrackingMessage theMessage, WindowPtr theWindow,
                          void *handlerRefCon, DragReference theDrag)
 {
-	PyObject *args, *rv;
-	int i;
-	
-	args = Py_BuildValue("hO&O&", theMessage, DragObj_New, theDrag, WinObj_WhichWindow, theWindow);
-	if ( args == NULL )
-		return -1;
-	rv = PyEval_CallObject((PyObject *)handlerRefCon, args);
-	Py_DECREF(args);
-	if ( rv == NULL ) {
-		PySys_WriteStderr("Drag: Exception in TrackingHandler\n");
-		PyErr_Print();
-		return -1;
-	}
-	i = -1;
-	if ( rv == Py_None )
-		i = 0;
-	else
-		PyArg_Parse(rv, "l", &i);
-	Py_DECREF(rv);
-	return i;
+        PyObject *args, *rv;
+        int i;
+
+        args = Py_BuildValue("hO&O&", theMessage, DragObj_New, theDrag, WinObj_WhichWindow, theWindow);
+        if ( args == NULL )
+                return -1;
+        rv = PyEval_CallObject((PyObject *)handlerRefCon, args);
+        Py_DECREF(args);
+        if ( rv == NULL ) {
+                PySys_WriteStderr("Drag: Exception in TrackingHandler\n");
+                PyErr_Print();
+                return -1;
+        }
+        i = -1;
+        if ( rv == Py_None )
+                i = 0;
+        else
+                PyArg_Parse(rv, "l", &i);
+        Py_DECREF(rv);
+        return i;
 }
 
 static pascal OSErr
 dragglue_ReceiveHandler(WindowPtr theWindow, void *handlerRefCon,
                         DragReference theDrag)
 {
-	PyObject *args, *rv;
-	int i;
-	
-	args = Py_BuildValue("O&O&", DragObj_New, theDrag, WinObj_WhichWindow, theWindow);
-	if ( args == NULL )
-		return -1;
-	rv = PyEval_CallObject((PyObject *)handlerRefCon, args);
-	Py_DECREF(args);
-	if ( rv == NULL ) {
-		PySys_WriteStderr("Drag: Exception in ReceiveHandler\n");
-		PyErr_Print();
-		return -1;
-	}
-	i = -1;
-	if ( rv == Py_None )
-		i = 0;
-	else
-		PyArg_Parse(rv, "l", &i);
-	Py_DECREF(rv);
-	return i;
+        PyObject *args, *rv;
+        int i;
+
+        args = Py_BuildValue("O&O&", DragObj_New, theDrag, WinObj_WhichWindow, theWindow);
+        if ( args == NULL )
+                return -1;
+        rv = PyEval_CallObject((PyObject *)handlerRefCon, args);
+        Py_DECREF(args);
+        if ( rv == NULL ) {
+                PySys_WriteStderr("Drag: Exception in ReceiveHandler\n");
+                PyErr_Print();
+                return -1;
+        }
+        i = -1;
+        if ( rv == Py_None )
+                i = 0;
+        else
+                PyArg_Parse(rv, "l", &i);
+        Py_DECREF(rv);
+        return i;
 }
 
 static pascal OSErr
 dragglue_SendData(FlavorType theType, void *dragSendRefCon,
                       ItemReference theItem, DragReference theDrag)
 {
-	DragObjObject *self = (DragObjObject *)dragSendRefCon;
-	PyObject *args, *rv;
-	int i;
-	
-	if ( self->sendproc == NULL )
-		return -1;
-	args = Py_BuildValue("O&l", PyMac_BuildOSType, theType, theItem);
-	if ( args == NULL )
-		return -1;
-	rv = PyEval_CallObject(self->sendproc, args);
-	Py_DECREF(args);
-	if ( rv == NULL ) {
-		PySys_WriteStderr("Drag: Exception in SendDataHandler\n");
-		PyErr_Print();
-		return -1;
-	}
-	i = -1;
-	if ( rv == Py_None )
-		i = 0;
-	else
-		PyArg_Parse(rv, "l", &i);
-	Py_DECREF(rv);
-	return i;
+        DragObjObject *self = (DragObjObject *)dragSendRefCon;
+        PyObject *args, *rv;
+        int i;
+
+        if ( self->sendproc == NULL )
+                return -1;
+        args = Py_BuildValue("O&l", PyMac_BuildOSType, theType, theItem);
+        if ( args == NULL )
+                return -1;
+        rv = PyEval_CallObject(self->sendproc, args);
+        Py_DECREF(args);
+        if ( rv == NULL ) {
+                PySys_WriteStderr("Drag: Exception in SendDataHandler\n");
+                PyErr_Print();
+                return -1;
+        }
+        i = -1;
+        if ( rv == Py_None )
+                i = 0;
+        else
+                PyArg_Parse(rv, "l", &i);
+        Py_DECREF(rv);
+        return i;
 }
 
 #if 0
@@ -1115,8 +1116,8 @@ void init_Drag(void)
 
 
 
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(DragRef, DragObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(DragRef, DragObj_Convert);
+	        PyMac_INIT_TOOLBOX_OBJECT_NEW(DragRef, DragObj_New);
+	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(DragRef, DragObj_Convert);
 
 
 	m = Py_InitModule("_Drag", Drag_methods);

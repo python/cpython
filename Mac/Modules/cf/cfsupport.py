@@ -315,18 +315,18 @@ class MyGlobalObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
         Output("%s itself;", self.itselftype)
         Output("char *kw[] = {\"itself\", 0};")
         Output()
-        Output("if (PyArg_ParseTupleAndKeywords(args, kwds, \"O&\", kw, %s_Convert, &itself))",
+        Output("if (PyArg_ParseTupleAndKeywords(_args, _kwds, \"O&\", kw, %s_Convert, &itself))",
                 self.prefix)
         OutLbrace()
-        Output("((%s *)self)->ob_itself = itself;", self.objecttype)
+        Output("((%s *)_self)->ob_itself = itself;", self.objecttype)
         Output("return 0;")
         OutRbrace()
         if self.prefix != 'CFTypeRefObj':
             Output()
             Output("/* Any CFTypeRef descendent is allowed as initializer too */")
-            Output("if (PyArg_ParseTupleAndKeywords(args, kwds, \"O&\", kw, CFTypeRefObj_Convert, &itself))")
+            Output("if (PyArg_ParseTupleAndKeywords(_args, _kwds, \"O&\", kw, CFTypeRefObj_Convert, &itself))")
             OutLbrace()
-            Output("((%s *)self)->ob_itself = itself;", self.objecttype)
+            Output("((%s *)_self)->ob_itself = itself;", self.objecttype)
             Output("return 0;")
             OutRbrace()
         Output("return -1;")

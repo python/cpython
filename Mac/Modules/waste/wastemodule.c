@@ -38,21 +38,21 @@ static PyObject *
 TextStyle_New(TextStylePtr itself)
 {
 
-	return Py_BuildValue("lllO&", (long)itself->tsFont, (long)itself->tsFace, (long)itself->tsSize, QdRGB_New,
-				&itself->tsColor);
+        return Py_BuildValue("lllO&", (long)itself->tsFont, (long)itself->tsFace, (long)itself->tsSize, QdRGB_New,
+                                &itself->tsColor);
 }
 
 static int
 TextStyle_Convert(PyObject *v, TextStylePtr p_itself)
 {
-	long font, face, size;
-	
-	if( !PyArg_ParseTuple(v, "lllO&", &font, &face, &size, QdRGB_Convert, &p_itself->tsColor) )
-		return 0;
-	p_itself->tsFont = (short)font;
-	p_itself->tsFace = (Style)face;
-	p_itself->tsSize = (short)size;
-	return 1;
+        long font, face, size;
+
+        if( !PyArg_ParseTuple(v, "lllO&", &font, &face, &size, QdRGB_Convert, &p_itself->tsColor) )
+                return 0;
+        p_itself->tsFont = (short)font;
+        p_itself->tsFace = (Style)face;
+        p_itself->tsSize = (short)size;
+        return 1;
 }
 
 /*
@@ -62,33 +62,33 @@ static PyObject *
 RunInfo_New(WERunInfo *itself)
 {
 
-	return Py_BuildValue("llhhO&O&", itself->runStart, itself->runEnd, itself->runHeight,
-		itself->runAscent, TextStyle_New, &itself->runStyle, WEOObj_New, itself->runObject);
+        return Py_BuildValue("llhhO&O&", itself->runStart, itself->runEnd, itself->runHeight,
+                itself->runAscent, TextStyle_New, &itself->runStyle, WEOObj_New, itself->runObject);
 }
 
 /* Conversion of long points and rects */
 int
 LongRect_Convert(PyObject *v, LongRect *r)
 {
-	return PyArg_Parse(v, "(llll)", &r->left, &r->top, &r->right, &r->bottom);
+        return PyArg_Parse(v, "(llll)", &r->left, &r->top, &r->right, &r->bottom);
 }
 
 PyObject *
 LongRect_New(LongRect *r)
 {
-	return Py_BuildValue("(llll)", r->left, r->top, r->right, r->bottom);
+        return Py_BuildValue("(llll)", r->left, r->top, r->right, r->bottom);
 }
 
 int
 LongPt_Convert(PyObject *v, LongPt *p)
 {
-	return PyArg_Parse(v, "(ll)", &p->h, &p->v);
+        return PyArg_Parse(v, "(ll)", &p->h, &p->v);
 }
 
 PyObject *
 LongPt_New(LongPt *p)
 {
-	return Py_BuildValue("(ll)", p->h, p->v);
+        return Py_BuildValue("(ll)", p->h, p->v);
 }
 
 /* Stuff for the callbacks: */
@@ -101,110 +101,110 @@ WEClickObjectUPP upp_click_handler;
 static OSErr
 any_handler(WESelector what, WEObjectReference who, PyObject *args, PyObject **rv)
 {
-	FlavorType tp;
-	PyObject *key, *func;
-	
-	if ( args == NULL ) return errAECorruptData;
-	
-	tp = WEGetObjectType(who);
-	
-	if( (key=Py_BuildValue("O&O&", PyMac_BuildOSType, tp, PyMac_BuildOSType, what)) == NULL)
-		return errAECorruptData;
-	if( (func = PyDict_GetItem(callbackdict, key)) == NULL ) {
-		Py_DECREF(key);
-		return errAEHandlerNotFound;
-	}
-	Py_INCREF(func);
-	*rv = PyEval_CallObject(func, args);
-	Py_DECREF(func);
-	Py_DECREF(key);
-	if ( *rv == NULL ) {
-		PySys_WriteStderr("--Exception in callback: ");
-		PyErr_Print();
-		return errAEReplyNotArrived;
-	}
-	return 0;
+        FlavorType tp;
+        PyObject *key, *func;
+
+        if ( args == NULL ) return errAECorruptData;
+
+        tp = WEGetObjectType(who);
+
+        if( (key=Py_BuildValue("O&O&", PyMac_BuildOSType, tp, PyMac_BuildOSType, what)) == NULL)
+                return errAECorruptData;
+        if( (func = PyDict_GetItem(callbackdict, key)) == NULL ) {
+                Py_DECREF(key);
+                return errAEHandlerNotFound;
+        }
+        Py_INCREF(func);
+        *rv = PyEval_CallObject(func, args);
+        Py_DECREF(func);
+        Py_DECREF(key);
+        if ( *rv == NULL ) {
+                PySys_WriteStderr("--Exception in callback: ");
+                PyErr_Print();
+                return errAEReplyNotArrived;
+        }
+        return 0;
 }
 
 static pascal OSErr
 my_new_handler(Point *objectSize, WEObjectReference objref)
 {
-	PyObject *args=NULL, *rv=NULL;
-	OSErr err;
-	
-	args=Py_BuildValue("(O&)", WEOObj_New, objref);
-	err = any_handler(weNewHandler, objref, args, &rv);
-	if (!err) {
-		if (!PyMac_GetPoint(rv, objectSize) )
-			err = errAECoercionFail;
-	}
-	if ( args ) {
-		Py_DECREF(args);
-	}
-	if ( rv ) {
-		Py_DECREF(rv);
-	}
-	return err;
+        PyObject *args=NULL, *rv=NULL;
+        OSErr err;
+
+        args=Py_BuildValue("(O&)", WEOObj_New, objref);
+        err = any_handler(weNewHandler, objref, args, &rv);
+        if (!err) {
+                if (!PyMac_GetPoint(rv, objectSize) )
+                        err = errAECoercionFail;
+        }
+        if ( args ) {
+                Py_DECREF(args);
+        }
+        if ( rv ) {
+                Py_DECREF(rv);
+        }
+        return err;
 }
 
 static pascal OSErr
 my_dispose_handler(WEObjectReference objref)
 {
-	PyObject *args=NULL, *rv=NULL;
-	OSErr err;
-	
-	args=Py_BuildValue("(O&)", WEOObj_New, objref);
-	err = any_handler(weDisposeHandler, objref, args, &rv);
-	if ( args ) {
-		Py_DECREF(args);
-	}
-	if ( rv ) {
-		Py_DECREF(rv);
-	}
-	return err;
+        PyObject *args=NULL, *rv=NULL;
+        OSErr err;
+
+        args=Py_BuildValue("(O&)", WEOObj_New, objref);
+        err = any_handler(weDisposeHandler, objref, args, &rv);
+        if ( args ) {
+                Py_DECREF(args);
+        }
+        if ( rv ) {
+                Py_DECREF(rv);
+        }
+        return err;
 }
 
 static pascal OSErr
 my_draw_handler(const Rect *destRect, WEObjectReference objref)
 {
-	PyObject *args=NULL, *rv=NULL;
-	OSErr err;
-	
-	args=Py_BuildValue("O&O&", PyMac_BuildRect, destRect, WEOObj_New, objref);
-	err = any_handler(weDrawHandler, objref, args, &rv);
-	if ( args ) {
-		Py_DECREF(args);
-	}
-	if ( rv ) {
-		Py_DECREF(rv);
-	}
-	return err;
+        PyObject *args=NULL, *rv=NULL;
+        OSErr err;
+
+        args=Py_BuildValue("O&O&", PyMac_BuildRect, destRect, WEOObj_New, objref);
+        err = any_handler(weDrawHandler, objref, args, &rv);
+        if ( args ) {
+                Py_DECREF(args);
+        }
+        if ( rv ) {
+                Py_DECREF(rv);
+        }
+        return err;
 }
 
 static pascal Boolean
 my_click_handler(Point hitPt, EventModifiers modifiers,
-		unsigned long clickTime, WEObjectReference objref)
+                unsigned long clickTime, WEObjectReference objref)
 {
-	PyObject *args=NULL, *rv=NULL;
-	int retvalue;
-	OSErr err;
-	
-	args=Py_BuildValue("O&llO&", PyMac_BuildPoint, hitPt,
-			(long)modifiers, (long)clickTime, WEOObj_New, objref);
-	err = any_handler(weClickHandler, objref, args, &rv);
-	if (!err)
-		retvalue = PyInt_AsLong(rv);
-	else
-		retvalue = 0;
-	if ( args ) {
-		Py_DECREF(args);
-	}
-	if ( rv ) {
-		Py_DECREF(rv);
-	}
-	return retvalue;
+        PyObject *args=NULL, *rv=NULL;
+        int retvalue;
+        OSErr err;
+
+        args=Py_BuildValue("O&llO&", PyMac_BuildPoint, hitPt,
+                        (long)modifiers, (long)clickTime, WEOObj_New, objref);
+        err = any_handler(weClickHandler, objref, args, &rv);
+        if (!err)
+                retvalue = PyInt_AsLong(rv);
+        else
+                retvalue = 0;
+        if ( args ) {
+                Py_DECREF(args);
+        }
+        if ( rv ) {
+                Py_DECREF(rv);
+        }
+        return retvalue;
 }
-		
+
 
 
 static PyObject *waste_Error;
@@ -224,14 +224,15 @@ PyObject *WEOObj_New(WEObjectReference itself)
 {
 	WEOObject *it;
 	if (itself == NULL) {
-						Py_INCREF(Py_None);
-						return Py_None;
-					}
+	                                Py_INCREF(Py_None);
+	                                return Py_None;
+	                        }
 	it = PyObject_NEW(WEOObject, &WEO_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int WEOObj_Convert(PyObject *v, WEObjectReference *p_itself)
 {
 	if (!WEOObj_Check(v))
@@ -400,16 +401,16 @@ static PyMethodDef WEOObj_methods[] = {
 
 #define WEOObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *WEOObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *WEOObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	WEObjectReference itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, WEOObj_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((WEOObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, WEOObj_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((WEOObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define WEOObj_tp_free PyObject_Del
@@ -477,15 +478,16 @@ PyObject *wasteObj_New(WEReference itself)
 {
 	wasteObject *it;
 	if (itself == NULL) {
-						PyErr_SetString(waste_Error,"Cannot create null WE");
-						return NULL;
-					}
+	                                PyErr_SetString(waste_Error,"Cannot create null WE");
+	                                return NULL;
+	                        }
 	it = PyObject_NEW(wasteObject, &waste_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	WESetInfo(weRefCon, (void *)&it, itself);
 	return (PyObject *)it;
 }
+
 int wasteObj_Convert(PyObject *v, WEReference *p_itself)
 {
 	if (!wasteObj_Check(v))
@@ -2149,16 +2151,16 @@ static PyMethodDef wasteObj_methods[] = {
 
 #define wasteObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *wasteObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *wasteObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	WEReference itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, wasteObj_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((wasteObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, wasteObj_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((wasteObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define wasteObj_tp_free PyObject_Del
@@ -2418,42 +2420,42 @@ static PyObject *waste_STDObjectHandlers(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
-		OSErr err;
-		// install the sample object handlers for pictures and sounds
-#define	kTypePicture			'PICT'
-#define	kTypeSound				'snd '
-		
-		if ( !PyArg_ParseTuple(_args, "") ) return NULL;
-		
-		if ((err = WEInstallObjectHandler(kTypePicture, weNewHandler,
-					(UniversalProcPtr) NewWENewObjectProc(HandleNewPicture), NULL)) != noErr)
-			goto cleanup;
-		
-		if ((err = WEInstallObjectHandler(kTypePicture, weDisposeHandler,
-					(UniversalProcPtr) NewWEDisposeObjectProc(HandleDisposePicture), NULL)) != noErr)
-			goto cleanup;
-		
-		if ((err = WEInstallObjectHandler(kTypePicture, weDrawHandler,
-					(UniversalProcPtr) NewWEDrawObjectProc(HandleDrawPicture), NULL)) != noErr)
-			goto cleanup;
-		
-		if ((err = WEInstallObjectHandler(kTypeSound, weNewHandler,
-					(UniversalProcPtr) NewWENewObjectProc(HandleNewSound), NULL)) != noErr)
-			goto cleanup;
-		
-		if ((err = WEInstallObjectHandler(kTypeSound, weDrawHandler,
-					(UniversalProcPtr) NewWEDrawObjectProc(HandleDrawSound), NULL)) != noErr)
-			goto cleanup;
-		
-		if ((err = WEInstallObjectHandler(kTypeSound, weClickHandler,
-					(UniversalProcPtr) NewWEClickObjectProc(HandleClickSound), NULL)) != noErr)
-			goto cleanup;
-		Py_INCREF(Py_None);
-		_res = Py_None;
-		return _res;
-		
+	        OSErr err;
+	        // install the sample object handlers for pictures and sounds
+#define kTypePicture                    'PICT'
+#define kTypeSound                              'snd '
+
+	        if ( !PyArg_ParseTuple(_args, "") ) return NULL;
+
+	        if ((err = WEInstallObjectHandler(kTypePicture, weNewHandler,
+	                                (UniversalProcPtr) NewWENewObjectProc(HandleNewPicture), NULL)) != noErr)
+	                goto cleanup;
+
+	        if ((err = WEInstallObjectHandler(kTypePicture, weDisposeHandler,
+	                                (UniversalProcPtr) NewWEDisposeObjectProc(HandleDisposePicture), NULL)) != noErr)
+	                goto cleanup;
+
+	        if ((err = WEInstallObjectHandler(kTypePicture, weDrawHandler,
+	                                (UniversalProcPtr) NewWEDrawObjectProc(HandleDrawPicture), NULL)) != noErr)
+	                goto cleanup;
+
+	        if ((err = WEInstallObjectHandler(kTypeSound, weNewHandler,
+	                                (UniversalProcPtr) NewWENewObjectProc(HandleNewSound), NULL)) != noErr)
+	                goto cleanup;
+
+	        if ((err = WEInstallObjectHandler(kTypeSound, weDrawHandler,
+	                                (UniversalProcPtr) NewWEDrawObjectProc(HandleDrawSound), NULL)) != noErr)
+	                goto cleanup;
+
+	        if ((err = WEInstallObjectHandler(kTypeSound, weClickHandler,
+	                                (UniversalProcPtr) NewWEClickObjectProc(HandleClickSound), NULL)) != noErr)
+	                goto cleanup;
+	        Py_INCREF(Py_None);
+	        _res = Py_None;
+	        return _res;
+
 	cleanup:
-		return PyMac_Error(err);
+	        return PyMac_Error(err);
 
 }
 
@@ -2461,39 +2463,39 @@ static PyObject *waste_WEInstallObjectHandler(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
-		OSErr err;
-		FlavorType objectType;
-		WESelector selector;
-		PyObject *py_handler;
-		UniversalProcPtr handler;
-		WEReference we = NULL;
-		PyObject *key;
-		
-		
-		if ( !PyArg_ParseTuple(_args, "O&O&O|O&",
-				PyMac_GetOSType, &objectType,
-				PyMac_GetOSType, &selector,
-				&py_handler,
-				WEOObj_Convert, &we) ) return NULL;
-				
-		if ( selector == weNewHandler ) handler = (UniversalProcPtr)upp_new_handler;
-		else if ( selector == weDisposeHandler ) handler = (UniversalProcPtr)upp_dispose_handler;
-		else if ( selector == weDrawHandler ) handler = (UniversalProcPtr)upp_draw_handler;
-		else if ( selector == weClickHandler ) handler = (UniversalProcPtr)upp_click_handler;
-		else return PyMac_Error(weUndefinedSelectorErr);
-				
-		if ((key = Py_BuildValue("O&O&", 
-				PyMac_BuildOSType, objectType, 
-				PyMac_BuildOSType, selector)) == NULL )
-			return NULL;
-			
-		PyDict_SetItem(callbackdict, key, py_handler);
-		
-		err = WEInstallObjectHandler(objectType, selector, handler, we);
-		if ( err ) return PyMac_Error(err);
-		Py_INCREF(Py_None);
-		_res = Py_None;
-		return _res;
+	        OSErr err;
+	        FlavorType objectType;
+	        WESelector selector;
+	        PyObject *py_handler;
+	        UniversalProcPtr handler;
+	        WEReference we = NULL;
+	        PyObject *key;
+
+
+	        if ( !PyArg_ParseTuple(_args, "O&O&O|O&",
+	                        PyMac_GetOSType, &objectType,
+	                        PyMac_GetOSType, &selector,
+	                        &py_handler,
+	                        WEOObj_Convert, &we) ) return NULL;
+
+	        if ( selector == weNewHandler ) handler = (UniversalProcPtr)upp_new_handler;
+	        else if ( selector == weDisposeHandler ) handler = (UniversalProcPtr)upp_dispose_handler;
+	        else if ( selector == weDrawHandler ) handler = (UniversalProcPtr)upp_draw_handler;
+	        else if ( selector == weClickHandler ) handler = (UniversalProcPtr)upp_click_handler;
+	        else return PyMac_Error(weUndefinedSelectorErr);
+
+	        if ((key = Py_BuildValue("O&O&",
+	                        PyMac_BuildOSType, objectType,
+	                        PyMac_BuildOSType, selector)) == NULL )
+	                return NULL;
+
+	        PyDict_SetItem(callbackdict, key, py_handler);
+
+	        err = WEInstallObjectHandler(objectType, selector, handler, we);
+	        if ( err ) return PyMac_Error(err);
+	        Py_INCREF(Py_None);
+	        _res = Py_None;
+	        return _res;
 
 }
 
@@ -2535,18 +2537,18 @@ static PyMethodDef waste_methods[] = {
 
 PyObject *
 ExistingwasteObj_New(w)
-	WEReference w;
+        WEReference w;
 {
-	PyObject *it = NULL;
-	
-	if (w == NULL)
-		it = NULL;
-	else
-		WEGetInfo(weRefCon, (void *)&it, w);
-	if (it == NULL || ((wasteObject *)it)->ob_itself != w)
-		it = Py_None;
-	Py_INCREF(it);
-	return it;
+        PyObject *it = NULL;
+
+        if (w == NULL)
+                it = NULL;
+        else
+                WEGetInfo(weRefCon, (void *)&it, w);
+        if (it == NULL || ((wasteObject *)it)->ob_itself != w)
+                it = Py_None;
+        Py_INCREF(it);
+        return it;
 }
 
 
@@ -2579,13 +2581,13 @@ void initwaste(void)
 	Py_INCREF(&waste_Type);
 	PyModule_AddObject(m, "wasteType", (PyObject *)&waste_Type);
 
-		callbackdict = PyDict_New();
-		if (callbackdict == NULL || PyDict_SetItemString(d, "callbacks", callbackdict) != 0)
-			return;
-		upp_new_handler = NewWENewObjectProc(my_new_handler);
-		upp_dispose_handler = NewWEDisposeObjectProc(my_dispose_handler);
-		upp_draw_handler = NewWEDrawObjectProc(my_draw_handler);
-		upp_click_handler = NewWEClickObjectProc(my_click_handler);
+	        callbackdict = PyDict_New();
+	        if (callbackdict == NULL || PyDict_SetItemString(d, "callbacks", callbackdict) != 0)
+	                return;
+	        upp_new_handler = NewWENewObjectProc(my_new_handler);
+	        upp_dispose_handler = NewWEDisposeObjectProc(my_dispose_handler);
+	        upp_draw_handler = NewWEDrawObjectProc(my_draw_handler);
+	        upp_click_handler = NewWEClickObjectProc(my_click_handler);
 
 
 }

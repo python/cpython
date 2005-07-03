@@ -45,21 +45,22 @@ PyObject *OSAObj_New(ComponentInstance itself)
 {
 	OSAComponentInstanceObject *it;
 	if (itself == NULL) {
-						PyErr_SetString(OSA_Error,"NULL ComponentInstance");
-						return NULL;
-					}
+	                                PyErr_SetString(OSA_Error,"NULL ComponentInstance");
+	                                return NULL;
+	                        }
 	it = PyObject_NEW(OSAComponentInstanceObject, &OSAComponentInstance_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int OSAObj_Convert(PyObject *v, ComponentInstance *p_itself)
 {
 
-				if (CmpInstObj_Convert(v, p_itself))
-					return 1;
-				PyErr_Clear();
-				
+	                if (CmpInstObj_Convert(v, p_itself))
+	                        return 1;
+	                PyErr_Clear();
+	                
 	if (!OSAObj_Check(v))
 	{
 		PyErr_SetString(PyExc_TypeError, "OSAComponentInstance required");
@@ -1133,16 +1134,16 @@ static PyMethodDef OSAObj_methods[] = {
 
 #define OSAObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *OSAObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *OSAObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	ComponentInstance itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, OSAObj_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((OSAComponentInstanceObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, OSAObj_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((OSAComponentInstanceObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define OSAObj_tp_free PyObject_Del
@@ -1210,8 +1211,8 @@ void init_OSA(void)
 
 
 	/*
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(ComponentInstance, OSAObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ComponentInstance, OSAObj_Convert);
+	        PyMac_INIT_TOOLBOX_OBJECT_NEW(ComponentInstance, OSAObj_New);
+	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ComponentInstance, OSAObj_Convert);
 	*/
 
 

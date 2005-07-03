@@ -455,7 +455,7 @@ static PyObject *Evt_WaitNextEvent(PyObject *_self, PyObject *_args)
 	                      &eventMask,
 	                      &sleep,
 	                      OptResObj_Convert, &mouseregion))
-		return NULL;
+	        return NULL;
 	_rv = WaitNextEvent(eventMask,
 	                    &theEvent,
 	                    sleep,

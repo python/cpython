@@ -34,6 +34,7 @@ PyObject *IBNibRefObj_New(IBNibRef itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int IBNibRefObj_Convert(PyObject *v, IBNibRef *p_itself)
 {
 	if (!IBNibRefObj_Check(v))
@@ -145,16 +146,16 @@ static PyMethodDef IBNibRefObj_methods[] = {
 
 #define IBNibRefObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *IBNibRefObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *IBNibRefObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	IBNibRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, IBNibRefObj_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((IBNibRefObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, IBNibRefObj_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((IBNibRefObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define IBNibRefObj_tp_free PyObject_Del
