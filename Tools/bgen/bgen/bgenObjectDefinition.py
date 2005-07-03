@@ -385,7 +385,7 @@ class PEP253Mixin(PEP252Mixin):
 
     def output_tp_init(self):
         if self.output_tp_initBody:
-            Output("static int %s_tp_init(PyObject *self, PyObject *args, PyObject *kwds)", self.prefix)
+            Output("static int %s_tp_init(PyObject *_self, PyObject *_args, PyObject *_kwds)", self.prefix)
             OutLbrace()
             self.output_tp_initBody()
             OutRbrace()
@@ -407,19 +407,19 @@ class PEP253Mixin(PEP252Mixin):
         Output()
 
     def output_tp_newBody(self):
-        Output("PyObject *self;");
+        Output("PyObject *_self;");
         Output("%s itself;", self.itselftype);
         Output("char *kw[] = {\"itself\", 0};")
         Output()
-        Output("if (!PyArg_ParseTupleAndKeywords(args, kwds, \"O&\", kw, %s_Convert, &itself)) return NULL;",
+        Output("if (!PyArg_ParseTupleAndKeywords(_args, _kwds, \"O&\", kw, %s_Convert, &itself)) return NULL;",
             self.prefix);
-        Output("if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;")
-        Output("((%s *)self)->ob_itself = itself;", self.objecttype)
-        Output("return self;")
+        Output("if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;")
+        Output("((%s *)_self)->ob_itself = itself;", self.objecttype)
+        Output("return _self;")
 
     def output_tp_new(self):
         if self.output_tp_newBody:
-            Output("static PyObject *%s_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)", self.prefix)
+            Output("static PyObject *%s_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)", self.prefix)
             OutLbrace()
             self.output_tp_newBody()
             OutRbrace()
