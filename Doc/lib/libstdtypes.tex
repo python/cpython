@@ -1146,6 +1146,9 @@ Notes:
   because \var{cmp} is called multiple times for each list element while
   \var{key} and \var{reverse} touch each element only once.
 
+  \note{If both \var{key} and \var{cmp} are supplied the \var{key}
+  function is applied before the \var{cmp} function.}
+
   \versionchanged[Support for \code{None} as an equivalent to omitting
   \var{cmp} was added]{2.3}
 
