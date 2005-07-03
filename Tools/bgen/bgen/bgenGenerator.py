@@ -187,18 +187,8 @@ class FunctionGenerator(BaseFunctionGenerator):
             arg.declare()
 
     def getargs(self):
-        fmt = ""
-        lst = ""
         sep = ",\n" + ' '*len("if (!PyArg_ParseTuple(")
-        for arg in self.argumentList:
-            if arg.flags == SelfMode:
-                continue
-            if arg.mode in (InMode, InOutMode):
-                arg.getargsPreCheck()
-                fmt = fmt + arg.getargsFormat()
-                args = arg.getargsArgs()
-                if args:
-                    lst = lst + sep + args
+        fmt, lst = self.getargsFormatArgs(sep)
         Output("if (!PyArg_ParseTuple(_args, \"%s\"%s))", fmt, lst)
         IndentLevel()
         Output("return NULL;")
@@ -208,6 +198,20 @@ class FunctionGenerator(BaseFunctionGenerator):
                 continue
             if arg.mode in (InMode, InOutMode):
                 arg.getargsCheck()
+
+    def getargsFormatArgs(self, sep):
+        fmt = ""
+        lst = ""
+        for arg in self.argumentList:
+            if arg.flags == SelfMode:
+                continue
+            if arg.mode in (InMode, InOutMode):
+                arg.getargsPreCheck()
+                fmt = fmt + arg.getargsFormat()
+                args = arg.getargsArgs()
+                if args:
+                    lst = lst + sep + args
+        return fmt, lst
 
     def precheck(self):
         pass
@@ -236,16 +240,8 @@ class FunctionGenerator(BaseFunctionGenerator):
             arg.errorCheck()
 
     def returnvalue(self):
-        fmt = ""
-        lst = ""
         sep = ",\n" + ' '*len("return Py_BuildValue(")
-        for arg in self.argumentList:
-            if not arg: continue
-            if arg.flags == ErrorMode: continue
-            if arg.mode in (OutMode, InOutMode):
-                arg.mkvaluePreCheck()
-                fmt = fmt + arg.mkvalueFormat()
-                lst = lst + sep + arg.mkvalueArgs()
+        fmt, lst = self.mkvalueFormatArgs(sep)
         if fmt == "":
             Output("Py_INCREF(Py_None);")
             Output("_res = Py_None;");
@@ -258,6 +254,17 @@ class FunctionGenerator(BaseFunctionGenerator):
             arg.cleanup()
         Output("return _res;")
 
+    def mkvalueFormatArgs(self, sep):
+        fmt = ""
+        lst = ""
+        for arg in self.argumentList:
+            if not arg: continue
+            if arg.flags == ErrorMode: continue
+            if arg.mode in (OutMode, InOutMode):
+                arg.mkvaluePreCheck()
+                fmt = fmt + arg.mkvalueFormat()
+                lst = lst + sep + arg.mkvalueArgs()
+        return fmt, lst
 
 class MethodGenerator(FunctionGenerator):
 
