@@ -84,19 +84,19 @@ extern int _OptionalCFURLRefObj_Convert(PyObject *, CFURLRef *);
 PyObject *CFRange_New(CFRange *itself)
 {
 
-	return Py_BuildValue("ll", (long)itself->location, (long)itself->length);
+        return Py_BuildValue("ll", (long)itself->location, (long)itself->length);
 }
 
 int
 CFRange_Convert(PyObject *v, CFRange *p_itself)
 {
-	long location, length;
-	
-	if( !PyArg_ParseTuple(v, "ll", &location, &length) )
-		return 0;
-	p_itself->location = (CFIndex)location;
-	p_itself->length = (CFIndex)length;
-	return 1;
+        long location, length;
+
+        if( !PyArg_ParseTuple(v, "ll", &location, &length) )
+                return 0;
+        p_itself->location = (CFIndex)location;
+        p_itself->length = (CFIndex)length;
+        return 1;
 }
 
 /* Optional CFURL argument or None (passed as NULL) */
@@ -104,8 +104,8 @@ int
 OptionalCFURLRefObj_Convert(PyObject *v, CFURLRef *p_itself)
 {
     if ( v == Py_None ) {
-    	p_itself = NULL;
-    	return 1;
+        p_itself = NULL;
+        return 1;
     }
     return CFURLRefObj_Convert(v, p_itself);
 }
@@ -138,6 +138,7 @@ PyObject *CFTypeRefObj_New(CFTypeRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
+
 int CFTypeRefObj_Convert(PyObject *v, CFTypeRef *p_itself)
 {
 
@@ -322,16 +323,16 @@ static PyObject *CFTypeRefObj_CFPropertyListCreateFromXMLData(CFTypeRefObject *_
 	CFStringRef errorString;
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &mutabilityOption))
-		return NULL;
+	        return NULL;
 	_rv = CFPropertyListCreateFromXMLData((CFAllocatorRef)NULL,
 	                                      _self->ob_itself,
 	                                      mutabilityOption,
 	                                      &errorString);
 	if (errorString)
-		CFRelease(errorString);
+	        CFRelease(errorString);
 	if (_rv == NULL) {
-		PyErr_SetString(PyExc_RuntimeError, "Parse error in XML data");
-		return NULL;
+	        PyErr_SetString(PyExc_RuntimeError, "Parse error in XML data");
+	        return NULL;
 	}
 	_res = Py_BuildValue("O&",
 	                     CFTypeRefObj_New, _rv);
@@ -399,14 +400,14 @@ static int CFTypeRefObj_hash(CFTypeRefObject *self)
 	/* XXXX Or should we use CFHash?? */
 	return (int)self->ob_itself;
 }
-static int CFTypeRefObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+static int CFTypeRefObj_tp_init(PyObject *_self, PyObject *_args, PyObject *_kwds)
 {
 	CFTypeRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
 	{
-		((CFTypeRefObject *)self)->ob_itself = itself;
+		((CFTypeRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 	return -1;
@@ -414,7 +415,7 @@ static int CFTypeRefObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 #define CFTypeRefObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *CFTypeRefObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *CFTypeRefObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
 	PyObject *self;
 	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
@@ -500,6 +501,7 @@ PyObject *CFArrayRefObj_New(CFArrayRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
+
 int CFArrayRefObj_Convert(PyObject *v, CFArrayRef *p_itself)
 {
 
@@ -602,21 +604,21 @@ static int CFArrayRefObj_hash(CFArrayRefObject *self)
 	/* XXXX Or should we use CFHash?? */
 	return (int)self->ob_itself;
 }
-static int CFArrayRefObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+static int CFArrayRefObj_tp_init(PyObject *_self, PyObject *_args, PyObject *_kwds)
 {
 	CFArrayRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFArrayRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFArrayRefObj_Convert, &itself))
 	{
-		((CFArrayRefObject *)self)->ob_itself = itself;
+		((CFArrayRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 
 	/* Any CFTypeRef descendent is allowed as initializer too */
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
 	{
-		((CFArrayRefObject *)self)->ob_itself = itself;
+		((CFArrayRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 	return -1;
@@ -624,7 +626,7 @@ static int CFArrayRefObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 #define CFArrayRefObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *CFArrayRefObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *CFArrayRefObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
 	PyObject *self;
 	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
@@ -710,6 +712,7 @@ PyObject *CFMutableArrayRefObj_New(CFMutableArrayRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
+
 int CFMutableArrayRefObj_Convert(PyObject *v, CFMutableArrayRef *p_itself)
 {
 
@@ -841,21 +844,21 @@ static int CFMutableArrayRefObj_hash(CFMutableArrayRefObject *self)
 	/* XXXX Or should we use CFHash?? */
 	return (int)self->ob_itself;
 }
-static int CFMutableArrayRefObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+static int CFMutableArrayRefObj_tp_init(PyObject *_self, PyObject *_args, PyObject *_kwds)
 {
 	CFMutableArrayRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFMutableArrayRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFMutableArrayRefObj_Convert, &itself))
 	{
-		((CFMutableArrayRefObject *)self)->ob_itself = itself;
+		((CFMutableArrayRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 
 	/* Any CFTypeRef descendent is allowed as initializer too */
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
 	{
-		((CFMutableArrayRefObject *)self)->ob_itself = itself;
+		((CFMutableArrayRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 	return -1;
@@ -863,7 +866,7 @@ static int CFMutableArrayRefObj_tp_init(PyObject *self, PyObject *args, PyObject
 
 #define CFMutableArrayRefObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *CFMutableArrayRefObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *CFMutableArrayRefObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
 	PyObject *self;
 	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
@@ -949,6 +952,7 @@ PyObject *CFDictionaryRefObj_New(CFDictionaryRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
+
 int CFDictionaryRefObj_Convert(PyObject *v, CFDictionaryRef *p_itself)
 {
 
@@ -1033,21 +1037,21 @@ static int CFDictionaryRefObj_hash(CFDictionaryRefObject *self)
 	/* XXXX Or should we use CFHash?? */
 	return (int)self->ob_itself;
 }
-static int CFDictionaryRefObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+static int CFDictionaryRefObj_tp_init(PyObject *_self, PyObject *_args, PyObject *_kwds)
 {
 	CFDictionaryRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFDictionaryRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFDictionaryRefObj_Convert, &itself))
 	{
-		((CFDictionaryRefObject *)self)->ob_itself = itself;
+		((CFDictionaryRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 
 	/* Any CFTypeRef descendent is allowed as initializer too */
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
 	{
-		((CFDictionaryRefObject *)self)->ob_itself = itself;
+		((CFDictionaryRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 	return -1;
@@ -1055,7 +1059,7 @@ static int CFDictionaryRefObj_tp_init(PyObject *self, PyObject *args, PyObject *
 
 #define CFDictionaryRefObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *CFDictionaryRefObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *CFDictionaryRefObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
 	PyObject *self;
 	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
@@ -1141,6 +1145,7 @@ PyObject *CFMutableDictionaryRefObj_New(CFMutableDictionaryRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
+
 int CFMutableDictionaryRefObj_Convert(PyObject *v, CFMutableDictionaryRef *p_itself)
 {
 
@@ -1209,21 +1214,21 @@ static int CFMutableDictionaryRefObj_hash(CFMutableDictionaryRefObject *self)
 	/* XXXX Or should we use CFHash?? */
 	return (int)self->ob_itself;
 }
-static int CFMutableDictionaryRefObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+static int CFMutableDictionaryRefObj_tp_init(PyObject *_self, PyObject *_args, PyObject *_kwds)
 {
 	CFMutableDictionaryRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFMutableDictionaryRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFMutableDictionaryRefObj_Convert, &itself))
 	{
-		((CFMutableDictionaryRefObject *)self)->ob_itself = itself;
+		((CFMutableDictionaryRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 
 	/* Any CFTypeRef descendent is allowed as initializer too */
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
 	{
-		((CFMutableDictionaryRefObject *)self)->ob_itself = itself;
+		((CFMutableDictionaryRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 	return -1;
@@ -1231,7 +1236,7 @@ static int CFMutableDictionaryRefObj_tp_init(PyObject *self, PyObject *args, PyO
 
 #define CFMutableDictionaryRefObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *CFMutableDictionaryRefObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *CFMutableDictionaryRefObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
 	PyObject *self;
 	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
@@ -1317,6 +1322,7 @@ PyObject *CFDataRefObj_New(CFDataRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
+
 int CFDataRefObj_Convert(PyObject *v, CFDataRef *p_itself)
 {
 
@@ -1439,21 +1445,21 @@ static int CFDataRefObj_hash(CFDataRefObject *self)
 	/* XXXX Or should we use CFHash?? */
 	return (int)self->ob_itself;
 }
-static int CFDataRefObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+static int CFDataRefObj_tp_init(PyObject *_self, PyObject *_args, PyObject *_kwds)
 {
 	CFDataRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFDataRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFDataRefObj_Convert, &itself))
 	{
-		((CFDataRefObject *)self)->ob_itself = itself;
+		((CFDataRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 
 	/* Any CFTypeRef descendent is allowed as initializer too */
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
 	{
-		((CFDataRefObject *)self)->ob_itself = itself;
+		((CFDataRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 	return -1;
@@ -1461,7 +1467,7 @@ static int CFDataRefObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 #define CFDataRefObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *CFDataRefObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *CFDataRefObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
 	PyObject *self;
 	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
@@ -1547,6 +1553,7 @@ PyObject *CFMutableDataRefObj_New(CFMutableDataRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
+
 int CFMutableDataRefObj_Convert(PyObject *v, CFMutableDataRef *p_itself)
 {
 
@@ -1703,21 +1710,21 @@ static int CFMutableDataRefObj_hash(CFMutableDataRefObject *self)
 	/* XXXX Or should we use CFHash?? */
 	return (int)self->ob_itself;
 }
-static int CFMutableDataRefObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+static int CFMutableDataRefObj_tp_init(PyObject *_self, PyObject *_args, PyObject *_kwds)
 {
 	CFMutableDataRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFMutableDataRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFMutableDataRefObj_Convert, &itself))
 	{
-		((CFMutableDataRefObject *)self)->ob_itself = itself;
+		((CFMutableDataRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 
 	/* Any CFTypeRef descendent is allowed as initializer too */
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
 	{
-		((CFMutableDataRefObject *)self)->ob_itself = itself;
+		((CFMutableDataRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 	return -1;
@@ -1725,7 +1732,7 @@ static int CFMutableDataRefObj_tp_init(PyObject *self, PyObject *args, PyObject 
 
 #define CFMutableDataRefObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *CFMutableDataRefObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *CFMutableDataRefObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
 	PyObject *self;
 	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
@@ -1811,6 +1818,7 @@ PyObject *CFStringRefObj_New(CFStringRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
+
 int CFStringRefObj_Convert(PyObject *v, CFStringRef *p_itself)
 {
 
@@ -1818,19 +1826,19 @@ int CFStringRefObj_Convert(PyObject *v, CFStringRef *p_itself)
 	if (PyString_Check(v)) {
 	    char *cStr;
 	    if (!PyArg_Parse(v, "es", "ascii", &cStr))
-	    	return NULL;
-		*p_itself = CFStringCreateWithCString((CFAllocatorRef)NULL, cStr, kCFStringEncodingASCII);
-		return 1;
+	        return NULL;
+	        *p_itself = CFStringCreateWithCString((CFAllocatorRef)NULL, cStr, kCFStringEncodingASCII);
+	        return 1;
 	}
 	if (PyUnicode_Check(v)) {
-		/* We use the CF types here, if Python was configured differently that will give an error */
-		CFIndex size = PyUnicode_GetSize(v);
-		UniChar *unichars = PyUnicode_AsUnicode(v);
-		if (!unichars) return 0;
-		*p_itself = CFStringCreateWithCharacters((CFAllocatorRef)NULL, unichars, size);
-		return 1;
+	        /* We use the CF types here, if Python was configured differently that will give an error */
+	        CFIndex size = PyUnicode_GetSize(v);
+	        UniChar *unichars = PyUnicode_AsUnicode(v);
+	        if (!unichars) return 0;
+	        *p_itself = CFStringCreateWithCharacters((CFAllocatorRef)NULL, unichars, size);
+	        return 1;
 	}
-		
+
 
 	if (!CFStringRefObj_Check(v))
 	{
@@ -2335,10 +2343,10 @@ static PyObject *CFStringRefObj_CFStringGetString(CFStringRefObject *_self, PyOb
 
 	if( data == NULL ) return PyErr_NoMemory();
 	if ( CFStringGetCString(_self->ob_itself, data, size, 0) ) {
-		_res = (PyObject *)PyString_FromString(data);
+	        _res = (PyObject *)PyString_FromString(data);
 	} else {
-		PyErr_SetString(PyExc_RuntimeError, "CFStringGetCString could not fit the string");
-		_res = NULL;
+	        PyErr_SetString(PyExc_RuntimeError, "CFStringGetCString could not fit the string");
+	        _res = NULL;
 	}
 	free(data);
 	return _res;
@@ -2444,21 +2452,21 @@ static int CFStringRefObj_hash(CFStringRefObject *self)
 	/* XXXX Or should we use CFHash?? */
 	return (int)self->ob_itself;
 }
-static int CFStringRefObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+static int CFStringRefObj_tp_init(PyObject *_self, PyObject *_args, PyObject *_kwds)
 {
 	CFStringRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFStringRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFStringRefObj_Convert, &itself))
 	{
-		((CFStringRefObject *)self)->ob_itself = itself;
+		((CFStringRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 
 	/* Any CFTypeRef descendent is allowed as initializer too */
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
 	{
-		((CFStringRefObject *)self)->ob_itself = itself;
+		((CFStringRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 	return -1;
@@ -2466,7 +2474,7 @@ static int CFStringRefObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds
 
 #define CFStringRefObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *CFStringRefObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *CFStringRefObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
 	PyObject *self;
 	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
@@ -2552,6 +2560,7 @@ PyObject *CFMutableStringRefObj_New(CFMutableStringRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
+
 int CFMutableStringRefObj_Convert(PyObject *v, CFMutableStringRef *p_itself)
 {
 
@@ -2831,21 +2840,21 @@ static int CFMutableStringRefObj_hash(CFMutableStringRefObject *self)
 	/* XXXX Or should we use CFHash?? */
 	return (int)self->ob_itself;
 }
-static int CFMutableStringRefObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+static int CFMutableStringRefObj_tp_init(PyObject *_self, PyObject *_args, PyObject *_kwds)
 {
 	CFMutableStringRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFMutableStringRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFMutableStringRefObj_Convert, &itself))
 	{
-		((CFMutableStringRefObject *)self)->ob_itself = itself;
+		((CFMutableStringRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 
 	/* Any CFTypeRef descendent is allowed as initializer too */
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
 	{
-		((CFMutableStringRefObject *)self)->ob_itself = itself;
+		((CFMutableStringRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 	return -1;
@@ -2853,7 +2862,7 @@ static int CFMutableStringRefObj_tp_init(PyObject *self, PyObject *args, PyObjec
 
 #define CFMutableStringRefObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *CFMutableStringRefObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *CFMutableStringRefObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
 	PyObject *self;
 	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
@@ -2939,6 +2948,7 @@ PyObject *CFURLRefObj_New(CFURLRef itself)
 	it->ob_freeit = CFRelease;
 	return (PyObject *)it;
 }
+
 int CFURLRefObj_Convert(PyObject *v, CFURLRef *p_itself)
 {
 
@@ -3482,21 +3492,21 @@ static int CFURLRefObj_hash(CFURLRefObject *self)
 	/* XXXX Or should we use CFHash?? */
 	return (int)self->ob_itself;
 }
-static int CFURLRefObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+static int CFURLRefObj_tp_init(PyObject *_self, PyObject *_args, PyObject *_kwds)
 {
 	CFURLRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFURLRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFURLRefObj_Convert, &itself))
 	{
-		((CFURLRefObject *)self)->ob_itself = itself;
+		((CFURLRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 
 	/* Any CFTypeRef descendent is allowed as initializer too */
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CFTypeRefObj_Convert, &itself))
 	{
-		((CFURLRefObject *)self)->ob_itself = itself;
+		((CFURLRefObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 	return -1;
@@ -3504,7 +3514,7 @@ static int CFURLRefObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 #define CFURLRefObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *CFURLRefObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *CFURLRefObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
 	PyObject *self;
 	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
@@ -4678,17 +4688,17 @@ static PyObject *CF_toCF(PyObject *_self, PyObject *_args)
 	CFTypeID typeid;
 
 	if (!PyArg_ParseTuple(_args, "O&", PyCF_Python2CF, &rv))
-		return NULL;
+	        return NULL;
 	typeid = CFGetTypeID(rv);
 
 	if (typeid == CFStringGetTypeID())
-		return Py_BuildValue("O&", CFStringRefObj_New, rv);
+	        return Py_BuildValue("O&", CFStringRefObj_New, rv);
 	if (typeid == CFArrayGetTypeID())
-		return Py_BuildValue("O&", CFArrayRefObj_New, rv);
+	        return Py_BuildValue("O&", CFArrayRefObj_New, rv);
 	if (typeid == CFDictionaryGetTypeID())
-		return Py_BuildValue("O&", CFDictionaryRefObj_New, rv);
+	        return Py_BuildValue("O&", CFDictionaryRefObj_New, rv);
 	if (typeid == CFURLGetTypeID())
-		return Py_BuildValue("O&", CFURLRefObj_New, rv);
+	        return Py_BuildValue("O&", CFURLRefObj_New, rv);
 
 	_res = Py_BuildValue("O&", CFTypeRefObj_New, rv);
 	return _res;
@@ -4817,42 +4827,42 @@ static PyMethodDef CF_methods[] = {
 /* Routines to convert any CF type to/from the corresponding CFxxxObj */
 PyObject *CFObj_New(CFTypeRef itself)
 {
-	if (itself == NULL)
-	{
-		PyErr_SetString(PyExc_RuntimeError, "cannot wrap NULL");
-		return NULL;
-	}
-	if (CFGetTypeID(itself) == CFArrayGetTypeID()) return CFArrayRefObj_New((CFArrayRef)itself);
-	if (CFGetTypeID(itself) == CFDictionaryGetTypeID()) return CFDictionaryRefObj_New((CFDictionaryRef)itself);
-	if (CFGetTypeID(itself) == CFDataGetTypeID()) return CFDataRefObj_New((CFDataRef)itself);
-	if (CFGetTypeID(itself) == CFStringGetTypeID()) return CFStringRefObj_New((CFStringRef)itself);
-	if (CFGetTypeID(itself) == CFURLGetTypeID()) return CFURLRefObj_New((CFURLRef)itself);
-	/* XXXX Or should we use PyCF_CF2Python here?? */
-	return CFTypeRefObj_New(itself);
+        if (itself == NULL)
+        {
+                PyErr_SetString(PyExc_RuntimeError, "cannot wrap NULL");
+                return NULL;
+        }
+        if (CFGetTypeID(itself) == CFArrayGetTypeID()) return CFArrayRefObj_New((CFArrayRef)itself);
+        if (CFGetTypeID(itself) == CFDictionaryGetTypeID()) return CFDictionaryRefObj_New((CFDictionaryRef)itself);
+        if (CFGetTypeID(itself) == CFDataGetTypeID()) return CFDataRefObj_New((CFDataRef)itself);
+        if (CFGetTypeID(itself) == CFStringGetTypeID()) return CFStringRefObj_New((CFStringRef)itself);
+        if (CFGetTypeID(itself) == CFURLGetTypeID()) return CFURLRefObj_New((CFURLRef)itself);
+        /* XXXX Or should we use PyCF_CF2Python here?? */
+        return CFTypeRefObj_New(itself);
 }
 int CFObj_Convert(PyObject *v, CFTypeRef *p_itself)
 {
 
-	if (v == Py_None) { *p_itself = NULL; return 1; }
-	/* Check for other CF objects here */
+        if (v == Py_None) { *p_itself = NULL; return 1; }
+        /* Check for other CF objects here */
 
-	if (!CFTypeRefObj_Check(v) &&
-		!CFArrayRefObj_Check(v) &&
-		!CFMutableArrayRefObj_Check(v) &&
-		!CFDictionaryRefObj_Check(v) &&
-		!CFMutableDictionaryRefObj_Check(v) &&
-		!CFDataRefObj_Check(v) &&
-		!CFMutableDataRefObj_Check(v) &&
-		!CFStringRefObj_Check(v) &&
-		!CFMutableStringRefObj_Check(v) &&
-		!CFURLRefObj_Check(v) )
-	{
-		/* XXXX Or should we use PyCF_Python2CF here?? */
-		PyErr_SetString(PyExc_TypeError, "CF object required");
-		return 0;
-	}
-	*p_itself = ((CFTypeRefObject *)v)->ob_itself;
-	return 1;
+        if (!CFTypeRefObj_Check(v) &&
+                !CFArrayRefObj_Check(v) &&
+                !CFMutableArrayRefObj_Check(v) &&
+                !CFDictionaryRefObj_Check(v) &&
+                !CFMutableDictionaryRefObj_Check(v) &&
+                !CFDataRefObj_Check(v) &&
+                !CFMutableDataRefObj_Check(v) &&
+                !CFStringRefObj_Check(v) &&
+                !CFMutableStringRefObj_Check(v) &&
+                !CFURLRefObj_Check(v) )
+        {
+                /* XXXX Or should we use PyCF_Python2CF here?? */
+                PyErr_SetString(PyExc_TypeError, "CF object required");
+                return 0;
+        }
+        *p_itself = ((CFTypeRefObject *)v)->ob_itself;
+        return 1;
 }
 
 

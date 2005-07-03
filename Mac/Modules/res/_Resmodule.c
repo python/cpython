@@ -32,7 +32,7 @@ extern int _OptResObj_Convert(PyObject *, Handle *);
 static void
 PyMac_AutoDisposeHandle(Handle h)
 {
-	DisposeHandle(h);
+        DisposeHandle(h);
 }
 
 static PyObject *Res_Error;
@@ -59,6 +59,7 @@ PyObject *ResObj_New(Handle itself)
 	it->ob_freeit = NULL;
 	return (PyObject *)it;
 }
+
 int ResObj_Convert(PyObject *v, Handle *p_itself)
 {
 	if (!ResObj_Check(v))
@@ -455,13 +456,13 @@ static PyObject *ResObj_AutoDispose(ResourceObject *_self, PyObject *_args)
 
 	int onoff, old = 0;
 	if (!PyArg_ParseTuple(_args, "i", &onoff))
-		return NULL;
+	        return NULL;
 	if ( _self->ob_freeit )
-		old = 1;
+	        old = 1;
 	if ( onoff )
-		_self->ob_freeit = PyMac_AutoDisposeHandle;
+	        _self->ob_freeit = PyMac_AutoDisposeHandle;
 	else
-		_self->ob_freeit = NULL;
+	        _self->ob_freeit = NULL;
 	_res = Py_BuildValue("i", old);
 	return _res;
 
@@ -514,42 +515,42 @@ static PyMethodDef ResObj_methods[] = {
 static PyObject *ResObj_get_data(ResourceObject *self, void *closure)
 {
 
-			PyObject *res;
-			char state;
+	            PyObject *res;
+	            char state;
 
-			state = HGetState(self->ob_itself);
-			HLock(self->ob_itself);
-			res = PyString_FromStringAndSize(
-				*self->ob_itself,
-				GetHandleSize(self->ob_itself));
-			HUnlock(self->ob_itself);
-			HSetState(self->ob_itself, state);
-			return res;
-			
+	            state = HGetState(self->ob_itself);
+	            HLock(self->ob_itself);
+	            res = PyString_FromStringAndSize(
+	                    *self->ob_itself,
+	                    GetHandleSize(self->ob_itself));
+	            HUnlock(self->ob_itself);
+	            HSetState(self->ob_itself, state);
+	            return res;
+	            
 }
 
 static int ResObj_set_data(ResourceObject *self, PyObject *v, void *closure)
 {
 
-			char *data;
-			long size;
-		
-			if ( v == NULL )
-				return -1;
-			if ( !PyString_Check(v) )
-				return -1;
-			size = PyString_Size(v);
-			data = PyString_AsString(v);
-			/* XXXX Do I need the GetState/SetState calls? */
-			SetHandleSize(self->ob_itself, size);
-			if ( MemError())
-				return -1;
-			HLock(self->ob_itself);
-			memcpy((char *)*self->ob_itself, data, size);
-			HUnlock(self->ob_itself);
-			/* XXXX Should I do the Changed call immedeately? */
-			return 0;
-			
+	            char *data;
+	            long size;
+
+	            if ( v == NULL )
+	                    return -1;
+	            if ( !PyString_Check(v) )
+	                    return -1;
+	            size = PyString_Size(v);
+	            data = PyString_AsString(v);
+	            /* XXXX Do I need the GetState/SetState calls? */
+	            SetHandleSize(self->ob_itself, size);
+	            if ( MemError())
+	                    return -1;
+	            HLock(self->ob_itself);
+	            memcpy((char *)*self->ob_itself, data, size);
+	            HUnlock(self->ob_itself);
+	            /* XXXX Should I do the Changed call immedeately? */
+	            return 0;
+	            
 	return 0;
 }
 
@@ -572,26 +573,26 @@ static PyGetSetDef ResObj_getsetlist[] = {
 #define ResObj_repr NULL
 
 #define ResObj_hash NULL
-static int ResObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+static int ResObj_tp_init(PyObject *_self, PyObject *_args, PyObject *_kwds)
 {
 	char *srcdata = NULL;
 	int srclen = 0;
 	Handle itself;
 	char *kw[] = {"itself", 0};
 
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, ResObj_Convert, &itself))
+	if (PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, ResObj_Convert, &itself))
 	{
-		((ResourceObject *)self)->ob_itself = itself;
+		((ResourceObject *)_self)->ob_itself = itself;
 		return 0;
 	}
 	PyErr_Clear();
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|s#", kw, &srcdata, &srclen)) return -1;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "|s#", kw, &srcdata, &srclen)) return -1;
 	if ((itself = NewHandle(srclen)) == NULL)
 	{
 		PyErr_NoMemory();
 		return 0;
 	}
-	((ResourceObject *)self)->ob_itself = itself;
+	((ResourceObject *)_self)->ob_itself = itself;
 	if (srclen && srcdata)
 	{
 		HLock(itself);
@@ -603,7 +604,7 @@ static int ResObj_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 #define ResObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *ResObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *ResObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
 	PyObject *self;
 	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
@@ -1573,11 +1574,11 @@ static PyObject *Res_Handle(PyObject *_self, PyObject *_args)
 	ResourceObject *rv;
 
 	if (!PyArg_ParseTuple(_args, "s#", &buf, &len))
-		return NULL;
+	        return NULL;
 	h = NewHandle(len);
 	if ( h == NULL ) {
-		PyErr_NoMemory();
-		return NULL;
+	        PyErr_NoMemory();
+	        return NULL;
 	}
 	HLock(h);
 	memcpy(*h, buf, len);
@@ -1679,35 +1680,35 @@ static PyMethodDef Res_methods[] = {
 /* Alternative version of ResObj_New, which returns None for null argument */
 PyObject *OptResObj_New(Handle itself)
 {
-	if (itself == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
-	return ResObj_New(itself);
+        if (itself == NULL) {
+                Py_INCREF(Py_None);
+                return Py_None;
+        }
+        return ResObj_New(itself);
 }
 
 int OptResObj_Convert(PyObject *v, Handle *p_itself)
 {
-	PyObject *tmp;
-	
-	if ( v == Py_None ) {
-		*p_itself = NULL;
-		return 1;
-	}
-	if (ResObj_Check(v))
-	{
-		*p_itself = ((ResourceObject *)v)->ob_itself;
-		return 1;
-	}
-	/* If it isn't a resource yet see whether it is convertible */
-	if ( (tmp=PyObject_CallMethod(v, "as_Resource", "")) ) {
-		*p_itself = ((ResourceObject *)tmp)->ob_itself;
-		Py_DECREF(tmp);
-		return 1;
-	}
-	PyErr_Clear();
-	PyErr_SetString(PyExc_TypeError, "Resource required");
-	return 0;
+        PyObject *tmp;
+
+        if ( v == Py_None ) {
+                *p_itself = NULL;
+                return 1;
+        }
+        if (ResObj_Check(v))
+        {
+                *p_itself = ((ResourceObject *)v)->ob_itself;
+                return 1;
+        }
+        /* If it isn't a resource yet see whether it is convertible */
+        if ( (tmp=PyObject_CallMethod(v, "as_Resource", "")) ) {
+                *p_itself = ((ResourceObject *)tmp)->ob_itself;
+                Py_DECREF(tmp);
+                return 1;
+        }
+        PyErr_Clear();
+        PyErr_SetString(PyExc_TypeError, "Resource required");
+        return 0;
 }
 
 
@@ -1718,10 +1719,10 @@ void init_Res(void)
 
 
 
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(Handle, ResObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Handle, ResObj_Convert);
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(Handle, OptResObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Handle, OptResObj_Convert);
+	        PyMac_INIT_TOOLBOX_OBJECT_NEW(Handle, ResObj_New);
+	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Handle, ResObj_Convert);
+	        PyMac_INIT_TOOLBOX_OBJECT_NEW(Handle, OptResObj_New);
+	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Handle, OptResObj_Convert);
 
 
 	m = Py_InitModule("_Res", Res_methods);

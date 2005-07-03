@@ -35,21 +35,21 @@ static PyObject *
 TextStyle_New(TextStylePtr itself)
 {
 
-	return Py_BuildValue("lllO&", (long)itself->tsFont, (long)itself->tsFace, (long)itself->tsSize, QdRGB_New,
-				&itself->tsColor);
+        return Py_BuildValue("lllO&", (long)itself->tsFont, (long)itself->tsFace, (long)itself->tsSize, QdRGB_New,
+                                &itself->tsColor);
 }
 
 static int
 TextStyle_Convert(PyObject *v, TextStylePtr p_itself)
 {
-	long font, face, size;
-	
-	if( !PyArg_ParseTuple(v, "lllO&", &font, &face, &size, QdRGB_Convert, &p_itself->tsColor) )
-		return 0;
-	p_itself->tsFont = (short)font;
-	p_itself->tsFace = (Style)face;
-	p_itself->tsSize = (short)size;
-	return 1;
+        long font, face, size;
+
+        if( !PyArg_ParseTuple(v, "lllO&", &font, &face, &size, QdRGB_Convert, &p_itself->tsColor) )
+                return 0;
+        p_itself->tsFont = (short)font;
+        p_itself->tsFace = (Style)face;
+        p_itself->tsSize = (short)size;
+        return 1;
 }
 
 static PyObject *TE_Error;
@@ -69,14 +69,15 @@ PyObject *TEObj_New(TEHandle itself)
 {
 	TEObject *it;
 	if (itself == NULL) {
-						PyErr_SetString(TE_Error,"Cannot create null TE");
-						return NULL;
-					}
+	                                PyErr_SetString(TE_Error,"Cannot create null TE");
+	                                return NULL;
+	                        }
 	it = PyObject_NEW(TEObject, &TE_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int TEObj_Convert(PyObject *v, TEHandle *p_itself)
 {
 	if (!TEObj_Check(v))
@@ -983,16 +984,16 @@ static PyGetSetDef TEObj_getsetlist[] = {
 
 #define TEObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *TEObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *TEObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	TEHandle itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, TEObj_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((TEObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, TEObj_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((TEObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define TEObj_tp_free PyObject_Del
@@ -1307,8 +1308,8 @@ void init_TE(void)
 
 
 
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(TEHandle, TEObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TEHandle, TEObj_Convert);
+	        PyMac_INIT_TOOLBOX_OBJECT_NEW(TEHandle, TEObj_New);
+	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TEHandle, TEObj_Convert);
 
 
 	m = Py_InitModule("_TE", TE_methods);

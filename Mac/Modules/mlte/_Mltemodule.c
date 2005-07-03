@@ -38,14 +38,14 @@ static int TXNFontMenuObj_Convert(PyObject *, TXNFontMenuObject *);
 static int
 OptFSSpecPtr_Convert(PyObject *v, FSSpec **p_itself)
 {
-	static FSSpec fss;
-	if (v == Py_None)
-	{
-		*p_itself = NULL;
-		return 1;
-	}
-	*p_itself = &fss;
-	return PyMac_GetFSSpec(v, *p_itself);
+        static FSSpec fss;
+        if (v == Py_None)
+        {
+                *p_itself = NULL;
+                return 1;
+        }
+        *p_itself = &fss;
+        return PyMac_GetFSSpec(v, *p_itself);
 }
 
 /*
@@ -54,15 +54,15 @@ OptFSSpecPtr_Convert(PyObject *v, FSSpec **p_itself)
 static int
 OptRectPtr_Convert(PyObject *v, Rect **p_itself)
 {
-	static Rect r;
-	
-	if (v == Py_None)
-	{
-		*p_itself = NULL;
-		return 1;
-	}
-	*p_itself = &r;
-	return PyMac_GetRect(v, *p_itself);
+        static Rect r;
+
+        if (v == Py_None)
+        {
+                *p_itself = NULL;
+                return 1;
+        }
+        *p_itself = &r;
+        return PyMac_GetRect(v, *p_itself);
 }
 
 /*
@@ -70,13 +70,13 @@ OptRectPtr_Convert(PyObject *v, Rect **p_itself)
 */
 static int
 OptGWorldObj_Convert(PyObject *v, GWorldPtr *p_itself)
-{	
-	if (v == Py_None)
-	{
-		*p_itself = NULL;
-		return 1;
-	}
-	return GWorldObj_Convert(v, p_itself);
+{
+        if (v == Py_None)
+        {
+                *p_itself = NULL;
+                return 1;
+        }
+        return GWorldObj_Convert(v, p_itself);
 }
 
 
@@ -102,6 +102,7 @@ PyObject *TXNObj_New(TXNObject itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int TXNObj_Convert(PyObject *v, TXNObject *p_itself)
 {
 	if (!TXNObj_Check(v))
@@ -1255,16 +1256,16 @@ static PyMethodDef TXNObj_methods[] = {
 
 #define TXNObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *TXNObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *TXNObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	TXNObject itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, TXNObj_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((TXNObjectObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, TXNObj_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((TXNObjectObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define TXNObj_tp_free PyObject_Del
@@ -1337,6 +1338,7 @@ PyObject *TXNFontMenuObj_New(TXNFontMenuObject itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int TXNFontMenuObj_Convert(PyObject *v, TXNFontMenuObject *p_itself)
 {
 	if (!TXNFontMenuObj_Check(v))
@@ -1408,16 +1410,16 @@ static PyMethodDef TXNFontMenuObj_methods[] = {
 
 #define TXNFontMenuObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *TXNFontMenuObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *TXNFontMenuObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	TXNFontMenuObject itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, TXNFontMenuObj_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((TXNFontMenuObjectObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, TXNFontMenuObj_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((TXNFontMenuObjectObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define TXNFontMenuObj_tp_free PyObject_Del
@@ -1626,7 +1628,7 @@ static PyObject *Mlte_TXNInitTextension(PyObject *_self, PyObject *_args)
 	TXNInitOptions iUsageFlags;
 	PyMac_PRECHECK(TXNInitTextension);
 	if (!PyArg_ParseTuple(_args, "l", &iUsageFlags))
-		return NULL;
+	        return NULL;
 	_err = TXNInitTextension(iDefaultFonts,
 	                         iCountDefaultFonts,
 	                         iUsageFlags);
@@ -1667,7 +1669,7 @@ void init_Mlte(void)
 
 
 
-	//	PyMac_INIT_TOOLBOX_OBJECT_NEW(xxxx);
+	//      PyMac_INIT_TOOLBOX_OBJECT_NEW(xxxx);
 
 
 	m = Py_InitModule("_Mlte", Mlte_methods);

@@ -24,7 +24,7 @@ extern PyObject *_MenuObj_New(MenuHandle);
 extern int _MenuObj_Convert(PyObject *, MenuHandle *);
 
 #define MenuObj_New _MenuObj_New
-#define MenuObj_Convert _MenuObj_Convert 
+#define MenuObj_Convert _MenuObj_Convert
 #endif
 
 #define as_Menu(h) ((MenuHandle)h)
@@ -34,21 +34,21 @@ extern int _MenuObj_Convert(PyObject *, MenuHandle *);
 /* Alternative version of MenuObj_New, which returns None for NULL argument */
 PyObject *OptMenuObj_New(MenuRef itself)
 {
-	if (itself == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
-	return MenuObj_New(itself);
+        if (itself == NULL) {
+                Py_INCREF(Py_None);
+                return Py_None;
+        }
+        return MenuObj_New(itself);
 }
 
 /* Alternative version of MenuObj_Convert, which returns NULL for a None argument */
 int OptMenuObj_Convert(PyObject *v, MenuRef *p_itself)
 {
-	if ( v == Py_None ) {
-		*p_itself = NULL;
-		return 1;
-	}
-	return MenuObj_Convert(v, p_itself);
+        if ( v == Py_None ) {
+                *p_itself = NULL;
+                return 1;
+        }
+        return MenuObj_Convert(v, p_itself);
 }
 
 static PyObject *Menu_Error;
@@ -72,6 +72,7 @@ PyObject *MenuObj_New(MenuHandle itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int MenuObj_Convert(PyObject *v, MenuHandle *p_itself)
 {
 	if (!MenuObj_Check(v))
@@ -2536,16 +2537,16 @@ static PyMethodDef MenuObj_methods[] = {
 
 #define MenuObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *MenuObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *MenuObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	MenuHandle itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, MenuObj_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((MenuObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, MenuObj_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((MenuObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define MenuObj_tp_free PyObject_Del
@@ -3445,8 +3446,8 @@ void init_Menu(void)
 
 
 
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(MenuHandle, MenuObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MenuHandle, MenuObj_Convert);
+	        PyMac_INIT_TOOLBOX_OBJECT_NEW(MenuHandle, MenuObj_New);
+	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(MenuHandle, MenuObj_Convert);
 
 
 	m = Py_InitModule("_Menu", Menu_methods);

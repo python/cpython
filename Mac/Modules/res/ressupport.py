@@ -182,20 +182,20 @@ class ResDefinition(PEP253Mixin, GlobalObjectDefinition):
         Output("%s itself;", self.itselftype);
         Output("char *kw[] = {\"itself\", 0};")
         Output()
-        Output("if (PyArg_ParseTupleAndKeywords(args, kwds, \"O&\", kw, %s_Convert, &itself))",
+        Output("if (PyArg_ParseTupleAndKeywords(_args, _kwds, \"O&\", kw, %s_Convert, &itself))",
                 self.prefix);
         OutLbrace()
-        Output("((%s *)self)->ob_itself = itself;", self.objecttype)
+        Output("((%s *)_self)->ob_itself = itself;", self.objecttype)
         Output("return 0;")
         OutRbrace()
         Output("PyErr_Clear();")
-        Output("if (!PyArg_ParseTupleAndKeywords(args, kwds, \"|s#\", kw, &srcdata, &srclen)) return -1;")
+        Output("if (!PyArg_ParseTupleAndKeywords(_args, _kwds, \"|s#\", kw, &srcdata, &srclen)) return -1;")
         Output("if ((itself = NewHandle(srclen)) == NULL)")
         OutLbrace()
         Output("PyErr_NoMemory();")
         Output("return 0;")
         OutRbrace()
-        Output("((%s *)self)->ob_itself = itself;", self.objecttype)
+        Output("((%s *)_self)->ob_itself = itself;", self.objecttype)
 # XXXX          Output("((%s *)self)->ob_freeit = PyMac_AutoDisposeHandle;")
         Output("if (srclen && srcdata)")
         OutLbrace()

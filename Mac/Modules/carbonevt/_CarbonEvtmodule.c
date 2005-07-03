@@ -30,17 +30,17 @@ PyObject *EventRef_New(EventRef itself);
 static PyObject*
 EventTypeSpec_New(EventTypeSpec *in)
 {
-	return Py_BuildValue("ll", in->eventClass, in->eventKind);
+        return Py_BuildValue("ll", in->eventClass, in->eventKind);
 }
 
 static int
 EventTypeSpec_Convert(PyObject *v, EventTypeSpec *out)
 {
-	if (PyArg_Parse(v, "(O&l)",
-	                PyMac_GetOSType, &(out->eventClass),
-	                &(out->eventKind)))
-		return 1;
-	return NULL;
+        if (PyArg_Parse(v, "(O&l)",
+                        PyMac_GetOSType, &(out->eventClass),
+                        &(out->eventKind)))
+                return 1;
+        return NULL;
 }
 
 /********** end EventTypeSpec *******/
@@ -51,15 +51,15 @@ EventTypeSpec_Convert(PyObject *v, EventTypeSpec *out)
 static PyObject*
 HIPoint_New(HIPoint *in)
 {
-	return Py_BuildValue("ff", in->x, in->y);
+        return Py_BuildValue("ff", in->x, in->y);
 }
 
 static int
 HIPoint_Convert(PyObject *v, HIPoint *out)
 {
-	if (PyArg_ParseTuple(v, "ff", &(out->x), &(out->y)))
-		return 1;
-	return NULL;
+        if (PyArg_ParseTuple(v, "ff", &(out->x), &(out->y)))
+                return 1;
+        return NULL;
 }
 #endif
 
@@ -70,15 +70,15 @@ HIPoint_Convert(PyObject *v, HIPoint *out)
 static PyObject*
 EventHotKeyID_New(EventHotKeyID *in)
 {
-	return Py_BuildValue("ll", in->signature, in->id);
+        return Py_BuildValue("ll", in->signature, in->id);
 }
 
 static int
 EventHotKeyID_Convert(PyObject *v, EventHotKeyID *out)
 {
-	if (PyArg_ParseTuple(v, "ll", &out->signature, &out->id))
-		return 1;
-	return NULL;
+        if (PyArg_ParseTuple(v, "ll", &out->signature, &out->id))
+                return 1;
+        return NULL;
 }
 
 /********** end EventHotKeyID *******/
@@ -89,27 +89,27 @@ static EventHandlerUPP myEventHandlerUPP;
 
 static pascal OSStatus
 myEventHandler(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject) {
-	PyObject *retValue;
-	int status;
+        PyObject *retValue;
+        int status;
 
-	retValue = PyObject_CallFunction((PyObject *)outPyObject, "O&O&",
-	                                 EventHandlerCallRef_New, handlerRef,
-	                                 EventRef_New, event);
-	if (retValue == NULL) {
-		PySys_WriteStderr("Error in event handler callback:\n");
-		PyErr_Print();  /* this also clears the error */
-		status = noErr; /* complain? how? */
-	} else {
-		if (retValue == Py_None)
-			status = noErr;
-		else if (PyInt_Check(retValue)) {
-			status = PyInt_AsLong(retValue);
-		} else
-			status = noErr; /* wrong object type, complain? */
-		Py_DECREF(retValue);
-	}
+        retValue = PyObject_CallFunction((PyObject *)outPyObject, "O&O&",
+                                         EventHandlerCallRef_New, handlerRef,
+                                         EventRef_New, event);
+        if (retValue == NULL) {
+                PySys_WriteStderr("Error in event handler callback:\n");
+                PyErr_Print();  /* this also clears the error */
+                status = noErr; /* complain? how? */
+        } else {
+                if (retValue == Py_None)
+                        status = noErr;
+                else if (PyInt_Check(retValue)) {
+                        status = PyInt_AsLong(retValue);
+                } else
+                        status = noErr; /* wrong object type, complain? */
+                Py_DECREF(retValue);
+        }
 
-	return status;
+        return status;
 }
 
 /******** end myEventHandler ***********/
@@ -136,6 +136,7 @@ PyObject *EventRef_New(EventRef itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int EventRef_Convert(PyObject *v, EventRef *p_itself)
 {
 	if (!EventRef_Check(v))
@@ -399,16 +400,16 @@ static PyMethodDef EventRef_methods[] = {
 
 #define EventRef_tp_alloc PyType_GenericAlloc
 
-static PyObject *EventRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *EventRef_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	EventRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventRef_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((EventRefObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, EventRef_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventRefObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define EventRef_tp_free PyObject_Del
@@ -480,6 +481,7 @@ PyObject *EventQueueRef_New(EventQueueRef itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int EventQueueRef_Convert(PyObject *v, EventQueueRef *p_itself)
 {
 	if (!EventQueueRef_Check(v))
@@ -619,16 +621,16 @@ static PyMethodDef EventQueueRef_methods[] = {
 
 #define EventQueueRef_tp_alloc PyType_GenericAlloc
 
-static PyObject *EventQueueRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *EventQueueRef_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	EventQueueRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventQueueRef_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((EventQueueRefObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, EventQueueRef_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventQueueRefObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define EventQueueRef_tp_free PyObject_Del
@@ -700,6 +702,7 @@ PyObject *EventLoopRef_New(EventLoopRef itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int EventLoopRef_Convert(PyObject *v, EventLoopRef *p_itself)
 {
 	if (!EventLoopRef_Check(v))
@@ -748,16 +751,16 @@ static PyMethodDef EventLoopRef_methods[] = {
 
 #define EventLoopRef_tp_alloc PyType_GenericAlloc
 
-static PyObject *EventLoopRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *EventLoopRef_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	EventLoopRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventLoopRef_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((EventLoopRefObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, EventLoopRef_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventLoopRefObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define EventLoopRef_tp_free PyObject_Del
@@ -829,6 +832,7 @@ PyObject *EventLoopTimerRef_New(EventLoopTimerRef itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int EventLoopTimerRef_Convert(PyObject *v, EventLoopTimerRef *p_itself)
 {
 	if (!EventLoopTimerRef_Check(v))
@@ -895,16 +899,16 @@ static PyMethodDef EventLoopTimerRef_methods[] = {
 
 #define EventLoopTimerRef_tp_alloc PyType_GenericAlloc
 
-static PyObject *EventLoopTimerRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *EventLoopTimerRef_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	EventLoopTimerRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventLoopTimerRef_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((EventLoopTimerRefObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, EventLoopTimerRef_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventLoopTimerRefObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define EventLoopTimerRef_tp_free PyObject_Del
@@ -978,6 +982,7 @@ PyObject *EventHandlerRef_New(EventHandlerRef itself)
 	it->ob_callback = NULL;
 	return (PyObject *)it;
 }
+
 int EventHandlerRef_Convert(PyObject *v, EventHandlerRef *p_itself)
 {
 	if (!EventHandlerRef_Check(v))
@@ -1050,11 +1055,11 @@ static PyObject *EventHandlerRef_RemoveEventHandler(EventHandlerRefObject *_self
 
 	OSStatus _err;
 	if (_self->ob_itself == NULL) {
-		PyErr_SetString(CarbonEvents_Error, "Handler has been removed");
-		return NULL;
+	        PyErr_SetString(CarbonEvents_Error, "Handler has been removed");
+	        return NULL;
 	}
 	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
+	        return NULL;
 	_err = RemoveEventHandler(_self->ob_itself);
 	if (_err != noErr) return PyMac_Error(_err);
 	_self->ob_itself = NULL;
@@ -1087,16 +1092,16 @@ static PyMethodDef EventHandlerRef_methods[] = {
 
 #define EventHandlerRef_tp_alloc PyType_GenericAlloc
 
-static PyObject *EventHandlerRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *EventHandlerRef_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	EventHandlerRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventHandlerRef_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((EventHandlerRefObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, EventHandlerRef_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventHandlerRefObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define EventHandlerRef_tp_free PyObject_Del
@@ -1168,6 +1173,7 @@ PyObject *EventHandlerCallRef_New(EventHandlerCallRef itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int EventHandlerCallRef_Convert(PyObject *v, EventHandlerCallRef *p_itself)
 {
 	if (!EventHandlerCallRef_Check(v))
@@ -1219,16 +1225,16 @@ static PyMethodDef EventHandlerCallRef_methods[] = {
 
 #define EventHandlerCallRef_tp_alloc PyType_GenericAlloc
 
-static PyObject *EventHandlerCallRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *EventHandlerCallRef_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	EventHandlerCallRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventHandlerCallRef_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((EventHandlerCallRefObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, EventHandlerCallRef_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventHandlerCallRefObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define EventHandlerCallRef_tp_free PyObject_Del
@@ -1300,6 +1306,7 @@ PyObject *EventTargetRef_New(EventTargetRef itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int EventTargetRef_Convert(PyObject *v, EventTargetRef *p_itself)
 {
 	if (!EventTargetRef_Check(v))
@@ -1340,15 +1347,15 @@ static PyObject *EventTargetRef_InstallEventHandler(EventTargetRefObject *_self,
 	OSStatus _err;
 
 	if (!PyArg_ParseTuple(_args, "O&O", EventTypeSpec_Convert, &inSpec, &callback))
-		return NULL;
+	        return NULL;
 
 	_err = InstallEventHandler(_self->ob_itself, myEventHandlerUPP, 1, &inSpec, (void *)callback, &outRef);
 	if (_err != noErr) return PyMac_Error(_err);
 
 	_res = EventHandlerRef_New(outRef);
 	if (_res != NULL) {
-		((EventHandlerRefObject*)_res)->ob_callback = callback;
-		Py_INCREF(callback);
+	        ((EventHandlerRefObject*)_res)->ob_callback = callback;
+	        Py_INCREF(callback);
 	}
 	return _res;
 }
@@ -1373,16 +1380,16 @@ static PyMethodDef EventTargetRef_methods[] = {
 
 #define EventTargetRef_tp_alloc PyType_GenericAlloc
 
-static PyObject *EventTargetRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *EventTargetRef_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	EventTargetRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventTargetRef_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((EventTargetRefObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, EventTargetRef_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventTargetRefObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define EventTargetRef_tp_free PyObject_Del
@@ -1454,6 +1461,7 @@ PyObject *EventHotKeyRef_New(EventHotKeyRef itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int EventHotKeyRef_Convert(PyObject *v, EventHotKeyRef *p_itself)
 {
 	if (!EventHotKeyRef_Check(v))
@@ -1502,16 +1510,16 @@ static PyMethodDef EventHotKeyRef_methods[] = {
 
 #define EventHotKeyRef_tp_alloc PyType_GenericAlloc
 
-static PyObject *EventHotKeyRef_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *EventHotKeyRef_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	EventHotKeyRef itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, EventHotKeyRef_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((EventHotKeyRefObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, EventHotKeyRef_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((EventHotKeyRefObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define EventHotKeyRef_tp_free PyObject_Del

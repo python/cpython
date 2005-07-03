@@ -50,6 +50,7 @@ PyObject *GWorldObj_New(GWorldPtr itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int GWorldObj_Convert(PyObject *v, GWorldPtr *p_itself)
 {
 	if (!GWorldObj_Check(v))
@@ -134,16 +135,16 @@ static PyMethodDef GWorldObj_methods[] = {
 
 #define GWorldObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *GWorldObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *GWorldObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	GWorldPtr itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, GWorldObj_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((GWorldObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, GWorldObj_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((GWorldObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define GWorldObj_tp_free PyObject_Del
@@ -605,7 +606,7 @@ static PyObject *Qdoffs_GetPixMapBytes(PyObject *_self, PyObject *_args)
 	char *cp;
 
 	if ( !PyArg_ParseTuple(_args, "O&ii", ResObj_Convert, &pm, &from, &length) )
-		return NULL;
+	        return NULL;
 	cp = GetPixBaseAddr(pm)+from;
 	_res = PyString_FromStringAndSize(cp, length);
 	return _res;
@@ -621,7 +622,7 @@ static PyObject *Qdoffs_PutPixMapBytes(PyObject *_self, PyObject *_args)
 	char *cp, *icp;
 
 	if ( !PyArg_ParseTuple(_args, "O&is#", ResObj_Convert, &pm, &from, &icp, &length) )
-		return NULL;
+	        return NULL;
 	cp = GetPixBaseAddr(pm)+from;
 	memcpy(cp, icp, length);
 	Py_INCREF(Py_None);
@@ -690,8 +691,8 @@ void init_Qdoffs(void)
 
 
 
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(GWorldPtr, GWorldObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GWorldPtr, GWorldObj_Convert);
+	        PyMac_INIT_TOOLBOX_OBJECT_NEW(GWorldPtr, GWorldObj_New);
+	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GWorldPtr, GWorldObj_Convert);
 
 
 	m = Py_InitModule("_Qdoffs", Qdoffs_methods);

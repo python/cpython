@@ -21,16 +21,16 @@
 static int
 SndCmd_Convert(PyObject *v, SndCommand *pc)
 {
-	int len;
-	pc->param1 = 0;
-	pc->param2 = 0;
-	if (PyTuple_Check(v)) {
-		if (PyArg_ParseTuple(v, "h|hl", &pc->cmd, &pc->param1, &pc->param2))
-			return 1;
-		PyErr_Clear();
-		return PyArg_ParseTuple(v, "Hhs#", &pc->cmd, &pc->param1, &pc->param2, &len);
-	}
-	return PyArg_Parse(v, "H", &pc->cmd);
+        int len;
+        pc->param1 = 0;
+        pc->param2 = 0;
+        if (PyTuple_Check(v)) {
+                if (PyArg_ParseTuple(v, "h|hl", &pc->cmd, &pc->param1, &pc->param2))
+                        return 1;
+                PyErr_Clear();
+                return PyArg_ParseTuple(v, "Hhs#", &pc->cmd, &pc->param1, &pc->param2, &len);
+        }
+        return PyArg_Parse(v, "H", &pc->cmd);
 }
 
 static pascal void SndCh_UserRoutine(SndChannelPtr chan, SndCommand *cmd); /* Forward */
@@ -352,9 +352,9 @@ static PyObject *SPBObj_get_error(SPBObject *self, void *closure)
 static int SPBObj_set_completionRoutine(SPBObject *self, PyObject *v, void *closure)
 {
 	self->ob_spb.completionRoutine = NewSICompletionUPP(SPB_completion);
-			self->ob_completion = v;
-			Py_INCREF(v);
-			return 0;
+	            self->ob_completion = v;
+	            Py_INCREF(v);
+	            return 0;
 	return 0;
 }
 
@@ -1056,62 +1056,62 @@ static PyMethodDef Snd_methods[] = {
 static int
 SndCh_CallCallBack(void *arg)
 {
-	SndChannelObject *p = (SndChannelObject *)arg;
-	PyObject *args;
-	PyObject *res;
-	args = Py_BuildValue("(O(hhl))",
-	                     p, p->ob_cmd.cmd, p->ob_cmd.param1, p->ob_cmd.param2);
-	res = PyEval_CallObject(p->ob_callback, args);
-	Py_DECREF(args);
-	if (res == NULL)
-		return -1;
-	Py_DECREF(res);
-	return 0;
+        SndChannelObject *p = (SndChannelObject *)arg;
+        PyObject *args;
+        PyObject *res;
+        args = Py_BuildValue("(O(hhl))",
+                             p, p->ob_cmd.cmd, p->ob_cmd.param1, p->ob_cmd.param2);
+        res = PyEval_CallObject(p->ob_callback, args);
+        Py_DECREF(args);
+        if (res == NULL)
+                return -1;
+        Py_DECREF(res);
+        return 0;
 }
 
 /* Routine passed to NewSndChannel -- schedule a call to SndCh_CallCallBack */
 static pascal void
 SndCh_UserRoutine(SndChannelPtr chan, SndCommand *cmd)
 {
-	SndChannelObject *p = (SndChannelObject *)(chan->userInfo);
-	if (p->ob_callback != NULL) {
-		long A5 = SetA5(p->ob_A5);
-		p->ob_cmd = *cmd;
-		Py_AddPendingCall(SndCh_CallCallBack, (void *)p);
-		SetA5(A5);
-	}
+        SndChannelObject *p = (SndChannelObject *)(chan->userInfo);
+        if (p->ob_callback != NULL) {
+                long A5 = SetA5(p->ob_A5);
+                p->ob_cmd = *cmd;
+                Py_AddPendingCall(SndCh_CallCallBack, (void *)p);
+                SetA5(A5);
+        }
 }
 
 /* SPB callbacks - Schedule callbacks to Python */
 static int
 SPB_CallCallBack(void *arg)
 {
-	SPBObject *p = (SPBObject *)arg;
-	PyObject *args;
-	PyObject *res;
-	
-	if ( p->ob_thiscallback == 0 ) return 0;
-	args = Py_BuildValue("(O)", p);
-	res = PyEval_CallObject(p->ob_thiscallback, args);
-	p->ob_thiscallback = 0;
-	Py_DECREF(args);
-	if (res == NULL)
-		return -1;
-	Py_DECREF(res);
-	return 0;
+        SPBObject *p = (SPBObject *)arg;
+        PyObject *args;
+        PyObject *res;
+
+        if ( p->ob_thiscallback == 0 ) return 0;
+        args = Py_BuildValue("(O)", p);
+        res = PyEval_CallObject(p->ob_thiscallback, args);
+        p->ob_thiscallback = 0;
+        Py_DECREF(args);
+        if (res == NULL)
+                return -1;
+        Py_DECREF(res);
+        return 0;
 }
 
 static pascal void
 SPB_completion(SPBPtr my_spb)
 {
-	SPBObject *p = (SPBObject *)(my_spb->userLong);
-	
-	if (p && p->ob_completion) {
-		long A5 = SetA5(p->ob_A5);
-		p->ob_thiscallback = p->ob_completion;	/* Hope we cannot get two at the same time */
-		Py_AddPendingCall(SPB_CallCallBack, (void *)p);
-		SetA5(A5);
-	}
+        SPBObject *p = (SPBObject *)(my_spb->userLong);
+
+        if (p && p->ob_completion) {
+                long A5 = SetA5(p->ob_A5);
+                p->ob_thiscallback = p->ob_completion;  /* Hope we cannot get two at the same time */
+                Py_AddPendingCall(SPB_CallCallBack, (void *)p);
+                SetA5(A5);
+        }
 }
 
 

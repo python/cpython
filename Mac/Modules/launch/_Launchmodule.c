@@ -27,21 +27,21 @@ PyObject *PyMac_GetOSErrException(void);
 static int
 OptCFStringRefObj_Convert(PyObject *v, CFStringRef *spec)
 {
-	if (v == Py_None) {
-		*spec = NULL;
-		return 1;
-	}
-	return CFStringRefObj_Convert(v, spec);
+        if (v == Py_None) {
+                *spec = NULL;
+                return 1;
+        }
+        return CFStringRefObj_Convert(v, spec);
 }
 
 PyObject *
 OptCFStringRefObj_New(CFStringRef it)
 {
-	if (it == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
-	return CFStringRefObj_New(it);
+        if (it == NULL) {
+                Py_INCREF(Py_None);
+                return Py_None;
+        }
+        return CFStringRefObj_New(it);
 }
 
 /*
@@ -50,13 +50,13 @@ OptCFStringRefObj_New(CFStringRef it)
 PyObject *
 LSItemInfoRecord_New(LSItemInfoRecord *it)
 {
-	return Py_BuildValue("{s:is:O&s:O&s:O&s:O&s:i}", 
-		"flags", it->flags,
-		"filetype", PyMac_BuildOSType, it->filetype,
-		"creator", PyMac_BuildOSType, it->creator,
-		"extension", OptCFStringRefObj_New, it->extension,
-		"iconFileName", OptCFStringRefObj_New, it->iconFileName,
-		"kindID", it->kindID);
+        return Py_BuildValue("{s:is:O&s:O&s:O&s:O&s:i}",
+                "flags", it->flags,
+                "filetype", PyMac_BuildOSType, it->filetype,
+                "creator", PyMac_BuildOSType, it->creator,
+                "extension", OptCFStringRefObj_New, it->extension,
+                "iconFileName", OptCFStringRefObj_New, it->iconFileName,
+                "kindID", it->kindID);
 }
 
 static PyObject *Launch_Error;

@@ -36,21 +36,21 @@ static PyObject *
 CmpDesc_New(ComponentDescription *itself)
 {
 
-	return Py_BuildValue("O&O&O&ll", 
-		PyMac_BuildOSType, itself->componentType,
-		PyMac_BuildOSType, itself->componentSubType,
-		PyMac_BuildOSType, itself->componentManufacturer,
-		itself->componentFlags, itself->componentFlagsMask);
+        return Py_BuildValue("O&O&O&ll",
+                PyMac_BuildOSType, itself->componentType,
+                PyMac_BuildOSType, itself->componentSubType,
+                PyMac_BuildOSType, itself->componentManufacturer,
+                itself->componentFlags, itself->componentFlagsMask);
 }
 
 static int
 CmpDesc_Convert(PyObject *v, ComponentDescription *p_itself)
 {
-	return PyArg_ParseTuple(v, "O&O&O&ll",
-		PyMac_GetOSType, &p_itself->componentType,
-		PyMac_GetOSType, &p_itself->componentSubType,
-		PyMac_GetOSType, &p_itself->componentManufacturer,
-		&p_itself->componentFlags, &p_itself->componentFlagsMask);
+        return PyArg_ParseTuple(v, "O&O&O&ll",
+                PyMac_GetOSType, &p_itself->componentType,
+                PyMac_GetOSType, &p_itself->componentSubType,
+                PyMac_GetOSType, &p_itself->componentManufacturer,
+                &p_itself->componentFlags, &p_itself->componentFlagsMask);
 }
 
 
@@ -71,14 +71,15 @@ PyObject *CmpInstObj_New(ComponentInstance itself)
 {
 	ComponentInstanceObject *it;
 	if (itself == NULL) {
-						PyErr_SetString(Cm_Error,"NULL ComponentInstance");
-						return NULL;
-					}
+	                                PyErr_SetString(Cm_Error,"NULL ComponentInstance");
+	                                return NULL;
+	                        }
 	it = PyObject_NEW(ComponentInstanceObject, &ComponentInstance_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int CmpInstObj_Convert(PyObject *v, ComponentInstance *p_itself)
 {
 	if (!CmpInstObj_Check(v))
@@ -260,16 +261,16 @@ static PyMethodDef CmpInstObj_methods[] = {
 
 #define CmpInstObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *CmpInstObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *CmpInstObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	ComponentInstance itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CmpInstObj_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((ComponentInstanceObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CmpInstObj_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((ComponentInstanceObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define CmpInstObj_tp_free PyObject_Del
@@ -337,21 +338,22 @@ PyObject *CmpObj_New(Component itself)
 {
 	ComponentObject *it;
 	if (itself == NULL) {
-						/* XXXX Or should we return None? */
-						PyErr_SetString(Cm_Error,"No such component");
-						return NULL;
-					}
+	                                /* XXXX Or should we return None? */
+	                                PyErr_SetString(Cm_Error,"No such component");
+	                                return NULL;
+	                        }
 	it = PyObject_NEW(ComponentObject, &Component_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
+
 int CmpObj_Convert(PyObject *v, Component *p_itself)
 {
 	if ( v == Py_None ) {
-						*p_itself = 0;
-						return 1;
-			}
+	                                *p_itself = 0;
+	                                return 1;
+	        }
 	if (!CmpObj_Check(v))
 	{
 		PyErr_SetString(PyExc_TypeError, "Component required");
@@ -693,16 +695,16 @@ static PyMethodDef CmpObj_methods[] = {
 
 #define CmpObj_tp_alloc PyType_GenericAlloc
 
-static PyObject *CmpObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static PyObject *CmpObj_tp_new(PyTypeObject *type, PyObject *_args, PyObject *_kwds)
 {
-	PyObject *self;
+	PyObject *_self;
 	Component itself;
 	char *kw[] = {"itself", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, CmpObj_Convert, &itself)) return NULL;
-	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((ComponentObject *)self)->ob_itself = itself;
-	return self;
+	if (!PyArg_ParseTupleAndKeywords(_args, _kwds, "O&", kw, CmpObj_Convert, &itself)) return NULL;
+	if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	((ComponentObject *)_self)->ob_itself = itself;
+	return _self;
 }
 
 #define CmpObj_tp_free PyObject_Del
@@ -913,10 +915,10 @@ void init_Cm(void)
 
 
 
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(Component, CmpObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Component, CmpObj_Convert);
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(ComponentInstance, CmpInstObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ComponentInstance, CmpInstObj_Convert);
+	        PyMac_INIT_TOOLBOX_OBJECT_NEW(Component, CmpObj_New);
+	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Component, CmpObj_Convert);
+	        PyMac_INIT_TOOLBOX_OBJECT_NEW(ComponentInstance, CmpInstObj_New);
+	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ComponentInstance, CmpInstObj_Convert);
 
 
 	m = Py_InitModule("_Cm", Cm_methods);
