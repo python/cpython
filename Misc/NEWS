@@ -150,6 +150,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1177468: Don't cache the /dev/urandom file descriptor for os.urandom,
+  as this can cause problems with apps closing all file descriptors.
+
 - Bug #839151: Fix an attempt to access sys.argv in the warnings module
   though this can be missing in embedded interpreters
 
