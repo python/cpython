@@ -20,7 +20,7 @@ Public functions:       Internaldate2tuple
 # PROXYAUTH contributed by Rick Holbert <holbert.13@osu.edu> November 2002.
 # GET/SETANNOTATION contributed by Tomas Lindroos <skitta@abo.fi> June 2005.
 
-__version__ = "2.56"
+__version__ = "2.57"
 
 import binascii, os, random, re, socket, sys, time
 
@@ -165,7 +165,7 @@ class IMAP4:
         # Create unique tag for this session,
         # and compile tagged response matcher.
 
-        self.tagpre = Int2AP(random.randint(0, 31999))
+        self.tagpre = Int2AP(random.randint(4096, 65535))
         self.tagre = re.compile(r'(?P<tag>'
                         + self.tagpre
                         + r'\d+) (?P<type>[A-Z]+) (?P<data>.*)')
