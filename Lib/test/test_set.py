@@ -5,6 +5,7 @@ import operator
 import copy
 import pickle
 import os
+from random import randrange, shuffle
 
 class PassThru(Exception):
     pass
@@ -398,6 +399,15 @@ class TestFrozenSet(TestJointOps):
     def test_hash(self):
         self.assertEqual(hash(self.thetype('abcdeb')),
                          hash(self.thetype('ebecda')))
+
+        # make sure that all permutations give the same hash value
+        n = 100
+        seq = [randrange(n) for i in xrange(n)]
+        results = set()
+        for i in xrange(200):
+            shuffle(seq)
+            results.add(hash(self.thetype(seq)))
+        self.assertEqual(len(results), 1)
 
     def test_copy(self):
         dup = self.s.copy()
