@@ -45,9 +45,12 @@ class Variable:
         elif self.flags != SelfMode:
             self.type.declare(self.name)
 
-    def getArgDeclarations(self):
+    def getArgDeclarations(self, constmode=False):
         refmode = (self.flags & RefMode)
-        return self.type.getArgDeclarations(self.name, reference=refmode)
+        if constmode:
+        	constmode = (self.flags & ConstMode)
+        return self.type.getArgDeclarations(self.name,
+        	reference=refmode, constmode=constmode)
     
     def getAuxDeclarations(self):
         return self.type.getAuxDeclarations(self.name)

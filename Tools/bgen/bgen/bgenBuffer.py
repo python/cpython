@@ -38,19 +38,26 @@ class FixedInputOutputBufferType(InputOnlyType):
         self.sizeformat = sizeformat or type2format[sizetype]
         self.label_needed = 0
 
-    def getArgDeclarations(self, name, reference=False):
+    def getArgDeclarations(self, name, reference=False, constmode=False):
         if reference:
             raise RuntimeError, "Cannot pass buffer types by reference"
-        return (self.getBufferDeclarations(name) + 
+        return (self.getBufferDeclarations(name, constmode) + 
                 self.getSizeDeclarations(name))
 
-    def getBufferDeclarations(self, name):
-        return self.getInputBufferDeclarations(name) + self.getOutputBufferDeclarations(name)
+    def getBufferDeclarations(self, name, constmode=False):
+        return self.getInputBufferDeclarations(name, constmode) + \
+        	self.getOutputBufferDeclarations(name, constmode)
 
-    def getInputBufferDeclarations(self, name):
-        return ["%s *%s__in__" % (self.datatype, name)]
+    def getInputBufferDeclarations(self, name, constmode=False):
+    	if constmode:
+    		const = "const "
+    	else:
+    		const = ""
+        return ["%s%s *%s__in__" % (const, self.datatype, name)]
 
-    def getOutputBufferDeclarations(self, name):
+    def getOutputBufferDeclarations(self, name, constmode=False):
+    	if constmode:
+    		raise RuntimeError, "Cannot use const output buffer"
         return ["%s %s__out__[%s]" % (self.datatype, name, self.size)]
 
     def getSizeDeclarations(self, name):
@@ -105,13 +112,13 @@ class FixedCombinedInputOutputBufferType(FixedInputOutputBufferType):
 
 class InputOnlyBufferMixIn(InputOnlyMixIn):
 
-    def getOutputBufferDeclarations(self, name):
+    def getOutputBufferDeclarations(self, name, constmode=False):
         return []
 
 
 class OutputOnlyBufferMixIn(OutputOnlyMixIn):
 
-    def getInputBufferDeclarations(self, name):
+    def getInputBufferDeclarations(self, name, constmode=False):
         return []
 
 class OptionalInputBufferMixIn:
@@ -186,8 +193,12 @@ class StructInputOutputBufferType(FixedInputOutputBufferType):
         FixedInputOutputBufferType.__init__(self, "sizeof(%s)" % type)
         self.typeName = self.type = type
 
-    def getInputBufferDeclarations(self, name):
-        return ["%s *%s__in__" % (self.type, name)]
+    def getInputBufferDeclarations(self, name, constmode=False):
+    	if constmode:
+    		const = "const "
+    	else:
+    		const = ""
+        return ["%s%s *%s__in__" % (const, self.type, name)]
 
     def getSizeDeclarations(self, name):
         return []
@@ -195,7 +206,9 @@ class StructInputOutputBufferType(FixedInputOutputBufferType):
     def getAuxDeclarations(self, name):
         return ["int %s__in_len__" % (name)]
 
-    def getOutputBufferDeclarations(self, name):
+    def getOutputBufferDeclarations(self, name, constmode=False):
+    	if constmode:
+    		raise RuntimeError, "Cannot use const output buffer"
         return ["%s %s__out__" % (self.type, name)]
 
     def getargsArgs(self, name):
