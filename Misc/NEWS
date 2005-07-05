@@ -12,6 +12,9 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- SF bug #1232517: An overflow error was not detected properly when
+  attempting to convert a large float to an int in os.utime().
+
 - SF bug #1224347: hex longs now print with lowercase letters just
   like their int counterparts.
 

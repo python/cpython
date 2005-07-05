@@ -1991,6 +1991,8 @@ extract_time(PyObject *t, long* sec, long* usec)
 			return -1;
 		intval = PyInt_AsLong(intobj);
 		Py_DECREF(intobj);
+		if (intval == -1 && PyErr_Occurred())
+			return -1;
 		*sec = intval;
 		*usec = (long)((tval - intval) * 1e6); /* can't exceed 1000000 */
 		if (*usec < 0)
