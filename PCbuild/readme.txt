@@ -260,6 +260,7 @@ _ssl
     not
         openssl-engine-0.9.7d.tar.gz
 
+    (see #1233049 for using 0.9.8).
     Unpack into the "dist" directory, retaining the folder name from
     the archive - for example, the latest stable OpenSSL will install as
         dist/openssl-0.9.7d
