@@ -71,7 +71,7 @@ class upload(Command):
                   dry_run=self.dry_run)
 
         # Fill in the data
-        content = open(filename).read()
+        content = open(filename,'rb').read()
         data = {
             ':action':'file_upload',
             'protcol_version':'1',
