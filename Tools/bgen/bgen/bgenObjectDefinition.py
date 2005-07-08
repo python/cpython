@@ -6,6 +6,7 @@ class ObjectDefinition(GeneratorGroup):
     basechain = "NULL"
     tp_flags = "Py_TPFLAGS_DEFAULT"
     basetype = None
+    argref = ""    # set to "*" if arg to <type>_New should be pointer
 
     def __init__(self, name, prefix, itselftype):
         """ObjectDefinition constructor.  May be extended, but do not override.
@@ -22,7 +23,6 @@ class ObjectDefinition(GeneratorGroup):
         self.itselftype = itselftype
         self.objecttype = name + 'Object'
         self.typename = name + '_Type'
-        self.argref = ""    # set to "*" if arg to <type>_New should be pointer
         self.static = "static " # set to "" to make <type>_New and <type>_Convert public
         self.modulename = None
         if hasattr(self, "assertions"):
