@@ -20,8 +20,8 @@ Permissions History
 - Added two new developers for the Summer of Code project. 8 July 2005
   by RDH.  Andrew Kuchling will be mentoring Gregory K Johnson for a
   project to enchance mailbox.  Brett Cannon requested access for Flovis
-  (sirolf) to work on pstats, profile, and hotshot.  Both users are
-  expected to work primarily in nondist/sandbox and have their work
+  Bruynooghe (sirolf) to work on pstats, profile, and hotshot.  Both users
+  are expected to work primarily in nondist/sandbox and have their work
   reviewed before making updates to active code.
 
 - Reinhold Birkenfeld was given SF tracker permissions on 28 May 2005
