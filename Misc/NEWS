@@ -103,6 +103,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1234979: For the argument of thread.Lock.acquire, the Windows 
+  implemented treated all integer values except 1 as false.
+
 - Bug #1194181: bz2.BZ2File didn't handle mode 'U' correctly.
 
 - Patch #1212117: os.stat().st_flags is now accessible as a attribute
