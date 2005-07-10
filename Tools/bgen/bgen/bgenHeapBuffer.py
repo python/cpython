@@ -17,8 +17,8 @@ class HeapInputOutputBufferType(FixedInputOutputBufferType):
         FixedInputOutputBufferType.__init__(self, "0", datatype, sizetype, sizeformat)
 
     def getOutputBufferDeclarations(self, name, constmode=False):
-    	if constmode:
-    		raise RuntimeError, "Cannot use const output buffer"
+        if constmode:
+            raise RuntimeError, "Cannot use const output buffer"
         return ["%s *%s__out__" % (self.datatype, name)]
 
     def getargsCheck(self, name):

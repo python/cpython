@@ -48,10 +48,10 @@ class Variable:
     def getArgDeclarations(self, constmode=False):
         refmode = (self.flags & RefMode)
         if constmode:
-        	constmode = (self.flags & ConstMode)
+            constmode = (self.flags & ConstMode)
         return self.type.getArgDeclarations(self.name,
-        	reference=refmode, constmode=constmode)
-    
+                reference=refmode, constmode=constmode)
+
     def getAuxDeclarations(self):
         return self.type.getAuxDeclarations(self.name)
 
