@@ -12,6 +12,15 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- SF bug #1185883:  Python's small-object memory allocator took over
+  a block managed by the platform C library whenever a realloc specified
+  a small new size.  However, there's no portable way to know then how
+  much of the address space following the pointer is valid, so no
+  portable way to copy data from the C-managed block into Python's
+  small-object space without risking a memory fault.  Python's small-object
+  realloc now leaves such blocks under the control of the platform C
+  realloc.
+
 - SF bug #1232517: An overflow error was not detected properly when
   attempting to convert a large float to an int in os.utime().
 
@@ -59,7 +68,7 @@ Core and builtins
 - Bug #1165306: instancemethod_new allowed the creation of a method
   with im_class == im_self == NULL, which caused a crash when called.
 
-- Move exception finalisation later in the shutdown process - this 
+- Move exception finalisation later in the shutdown process - this
   fixes the crash seen in bug #1165761
 
 - Added two new builtins, any() and all().
@@ -74,7 +83,7 @@ Core and builtins
 - Bug #1155938: new style classes did not check that __init__() was
   returning None.
 
-- Patch #802188: Report characters after line continuation character 
+- Patch #802188: Report characters after line continuation character
   ('\') with a specific error message.
 
 - Bug #723201: Raise a TypeError for passing bad objects to 'L' format.
@@ -82,7 +91,7 @@ Core and builtins
 - Bug #1124295: the __name__ attribute of file objects was
   inadvertently made inaccessible in restricted mode.
 
-- Bug #1074011: closing sys.std{out,err} now causes a flush() and 
+- Bug #1074011: closing sys.std{out,err} now causes a flush() and
   an ferror() call.
 
 - min() and max() now support key= arguments with the same meaning as in
@@ -103,7 +112,7 @@ Core and builtins
 Extension Modules
 -----------------
 
-- Bug #1234979: For the argument of thread.Lock.acquire, the Windows 
+- Bug #1234979: For the argument of thread.Lock.acquire, the Windows
   implemented treated all integer values except 1 as false.
 
 - Bug #1194181: bz2.BZ2File didn't handle mode 'U' correctly.
@@ -128,7 +137,7 @@ Extension Modules
 - Patches #925152, #1118602: Avoid reading after the end of the buffer
   in pyexpat.GetInputContext.
 
-- Patches #749830, #1144555: allow UNIX mmap size to default to current 
+- Patches #749830, #1144555: allow UNIX mmap size to default to current
   file size.
 
 - Added functional.partial().  See PEP309.
@@ -201,7 +210,7 @@ Library
 - Bug #1163325:  Decimal infinities failed to hash.  Attempting to
   hash a NaN raised an InvalidOperation instead of a TypeError.
 
-- Patch #918101: Add tarfile open mode r|* for auto-detection of the 
+- Patch #918101: Add tarfile open mode r|* for auto-detection of the
   stream compression; add, for symmetry reasons, r:* as a synonym of r.
 
 - Patch #1043890: Add extractall method to tarfile.
@@ -212,7 +221,7 @@ Library
 - Patch #1103407: Properly deal with tarfile iterators when untarring
   symbolic links on Windows.
 
-- Patch #645894: Use getrusage for computing the time consumption in 
+- Patch #645894: Use getrusage for computing the time consumption in
   profile.py if available.
 
 - Patch #1046831: Use get_python_version where appropriate in sysconfig.py.
@@ -250,7 +259,7 @@ Library
 
   + Dialects are now validated by the underlying C code, better
     reflecting it's capabilities, and improving it's compliance with
-    PEP 305. 
+    PEP 305.
   + Dialect parameter parsing has been re-implemented to improve error
     reporting.
   + quotechar=None and quoting=QUOTE_NONE now work the way PEP 305
