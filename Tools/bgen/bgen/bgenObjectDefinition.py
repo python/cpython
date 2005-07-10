@@ -220,7 +220,7 @@ class ObjectDefinition(GeneratorGroup):
         Output("""Py_INCREF(&%s);""", self.typename)
         Output("PyModule_AddObject(m, \"%s\", (PyObject *)&%s);", self.name, self.typename);
         self.outputTypeObjectInitializerCompat()
-        
+
     def outputTypeObjectInitializerCompat(self):
         Output("/* Backward-compatible name */")
         Output("""Py_INCREF(&%s);""", self.typename);

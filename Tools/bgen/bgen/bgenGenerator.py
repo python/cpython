@@ -32,7 +32,7 @@ class BaseFunctionGenerator:
 
     def checkgenerate(self):
         return True
-        
+
     def generate(self):
         if not self.checkgenerate():
             return
@@ -234,7 +234,7 @@ class FunctionGenerator(BaseFunctionGenerator):
             return "%s = " % self.rv.name
         else:
             return ""
-            
+
     def checkit(self):
         for arg in self.argumentList:
             arg.errorCheck()

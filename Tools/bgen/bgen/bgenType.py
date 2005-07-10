@@ -47,7 +47,7 @@ class Type:
         type, such as helper variables used to hold sizes, etc. These declarations
         are not part of the C/C++ function call interface."""
         return []
-        
+
     def getargs(self):
         return self.getargsFormat(), self.getargsArgs()
 
@@ -68,10 +68,10 @@ class Type:
 
     def getargsPreCheck(self, name):
         """Perform any actions needed before calling getargs().
-        
+
         This could include declaring temporary variables and such.
         """
-    
+
     def getargsCheck(self, name):
         """Perform any needed post-[new]getargs() checks.
 
@@ -133,10 +133,10 @@ class Type:
 
     def mkvaluePreCheck(self, name):
         """Perform any actions needed before calling mkvalue().
-        
+
         This could include declaring temporary variables and such.
         """
-    
+
     def cleanup(self, name):
         """Clean up if necessary.
 

@@ -626,7 +626,7 @@ if missing: raise "Missing Types"
 
     def destination(self, type, name, arglist):
         return "FunctionGenerator", "functions"
-        
+
     def generatemodifiers(self, classname, name, modifiers):
         pass
 

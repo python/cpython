@@ -41,23 +41,23 @@ class FixedInputOutputBufferType(InputOnlyType):
     def getArgDeclarations(self, name, reference=False, constmode=False):
         if reference:
             raise RuntimeError, "Cannot pass buffer types by reference"
-        return (self.getBufferDeclarations(name, constmode) + 
+        return (self.getBufferDeclarations(name, constmode) +
                 self.getSizeDeclarations(name))
 
     def getBufferDeclarations(self, name, constmode=False):
         return self.getInputBufferDeclarations(name, constmode) + \
-        	self.getOutputBufferDeclarations(name, constmode)
+                self.getOutputBufferDeclarations(name, constmode)
 
     def getInputBufferDeclarations(self, name, constmode=False):
-    	if constmode:
-    		const = "const "
-    	else:
-    		const = ""
+        if constmode:
+            const = "const "
+        else:
+            const = ""
         return ["%s%s *%s__in__" % (const, self.datatype, name)]
 
     def getOutputBufferDeclarations(self, name, constmode=False):
-    	if constmode:
-    		raise RuntimeError, "Cannot use const output buffer"
+        if constmode:
+            raise RuntimeError, "Cannot use const output buffer"
         return ["%s %s__out__[%s]" % (self.datatype, name, self.size)]
 
     def getSizeDeclarations(self, name):
@@ -194,21 +194,21 @@ class StructInputOutputBufferType(FixedInputOutputBufferType):
         self.typeName = self.type = type
 
     def getInputBufferDeclarations(self, name, constmode=False):
-    	if constmode:
-    		const = "const "
-    	else:
-    		const = ""
+        if constmode:
+            const = "const "
+        else:
+            const = ""
         return ["%s%s *%s__in__" % (const, self.type, name)]
 
     def getSizeDeclarations(self, name):
         return []
-        
+
     def getAuxDeclarations(self, name):
         return ["int %s__in_len__" % (name)]
 
     def getOutputBufferDeclarations(self, name, constmode=False):
-    	if constmode:
-    		raise RuntimeError, "Cannot use const output buffer"
+        if constmode:
+            raise RuntimeError, "Cannot use const output buffer"
         return ["%s %s__out__" % (self.type, name)]
 
     def getargsArgs(self, name):
