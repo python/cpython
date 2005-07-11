@@ -12,6 +12,15 @@ What's New in Python 2.4.2a
 Core and builtins
 -----------------
 
+- SF bug #1185883:  Python's small-object memory allocator took over
+  a block managed by the platform C library whenever a realloc specified
+  a small new size.  However, there's no portable way to know then how
+  much of the address space following the pointer is valid, so no
+  portable way to copy data from the C-managed block into Python's
+  small-object space without risking a memory fault.  Python's small-object
+  realloc now leaves such blocks under the control of the platform C
+  realloc.
+
 - Fix garbage collection for set and frozenset objects.  SF patch #1200018.
 
 - It is now safe to call PyGILState_Release() before

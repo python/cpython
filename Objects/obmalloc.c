@@ -139,9 +139,9 @@
  * getpagesize() call or deduced from various header files. To make
  * things simpler, we assume that it is 4K, which is OK for most systems.
  * It is probably better if this is the native page size, but it doesn't
- * have to be.  In theory, if SYSTEM_PAGE_SIZE is larger than the native page 
- * size, then `POOL_ADDR(p)->arenaindex' could rarely cause a segmentation 
- * violation fault.  4K is apparently OK for all the platforms that python 
+ * have to be.  In theory, if SYSTEM_PAGE_SIZE is larger than the native page
+ * size, then `POOL_ADDR(p)->arenaindex' could rarely cause a segmentation
+ * violation fault.  4K is apparently OK for all the platforms that python
  * currently targets.
  */
 #define SYSTEM_PAGE_SIZE	(4 * 1024)
@@ -841,30 +841,26 @@ PyObject_Realloc(void *p, size_t nbytes)
 		}
 		return bp;
 	}
-	/* We're not managing this block. */
-	if (nbytes <= SMALL_REQUEST_THRESHOLD) {
-		/* Take over this block -- ask for at least one byte so
-		 * we really do take it over (PyObject_Malloc(0) goes to
-		 * the system malloc).
-		 */
-		bp = PyObject_Malloc(nbytes ? nbytes : 1);
-		if (bp != NULL) {
-			memcpy(bp, p, nbytes);
-			free(p);
-		}
-		else if (nbytes == 0) {
-			/* Meet the doc's promise that nbytes==0 will
-			 * never return a NULL pointer when p isn't NULL.
-			 */
-			bp = p;
-		}
-
-	}
-	else {
-		assert(nbytes != 0);
-		bp = realloc(p, nbytes);
-	}
-	return bp;
+	/* We're not managing this block.  If nbytes <=
+	 * SMALL_REQUEST_THRESHOLD, it's tempting to try to take over this
+	 * block.  However, if we do, we need to copy the valid data from
+	 * the C-managed block to one of our blocks, and there's no portable
+	 * way to know how much of the memory space starting at p is valid.
+	 * As bug 1185883 pointed out the hard way, it's possible that the
+	 * C-managed block is "at the end" of allocated VM space, so that
+	 * a memory fault can occur if we try to copy nbytes bytes starting
+	 * at p.  Instead we punt:  let C continue to manage this block.
+         */
+	if (nbytes)
+		return realloc(p, nbytes);
+	/* C doesn't define the result of realloc(p, 0) (it may or may not
+	 * return NULL then), but Python's docs promise that nbytes==0 never
+	 * returns NULL.  We don't pass 0 to realloc(), to avoid that endcase
+	 * to begin with.  Even then, we can't be sure that realloc() won't
+	 * return NULL.
+	 */
+	bp = realloc(p, 1);
+   	return bp ? bp : p;
 }
 
 #else	/* ! WITH_PYMALLOC */
