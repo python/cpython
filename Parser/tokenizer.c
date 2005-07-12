@@ -334,7 +334,19 @@ check_bom(int get_char(struct tok_state *),
 }
 
 /* Read a line of text from TOK into S, using the stream in TOK.
-   Return NULL on failure, else S.  */
+   Return NULL on failure, else S.
+   
+   On entry, tok->decoding_buffer will be one of:
+     1) NULL: need to call tok->decoding_readline to get a new line
+     2) PyUnicodeObject *: decoding_feof has called tok->decoding_readline and
+           stored the result in tok->decoding_buffer
+     3) PyStringObject *: previous call to fp_readl did not have enough room
+           (in the s buffer) to copy entire contents of the line read
+           by tok->decoding_readline.  tok->decoding_buffer has the overflow.
+           In this case, fp_readl is called in a loop (with an expanded buffer)
+           until the buffer ends with a '\n' (or until the end of the file is 
+           reached): see tok_nextc and its calls to decoding_fgets.
+*/
 
 static char *
 fp_readl(char *s, int size, struct tok_state *tok)
@@ -344,32 +356,45 @@ fp_readl(char *s, int size, struct tok_state *tok)
 	Py_FatalError("fp_readl should not be called in this build.");
 	return NULL; /* Keep compiler happy (not reachable) */
 #else
-	PyObject* utf8;
+	PyObject* utf8 = NULL;
 	PyObject* buf = tok->decoding_buffer;
+	char *str;
+	int utf8len;
+
+	/* Ask for one less byte so we can terminate it */
+	assert(size > 0);
+	size--;
+
 	if (buf == NULL) {
-		/* Ask for one less byte so we can terminate it */
-		PyObject *args = Py_BuildValue("(i)", size-1);
-		if (args == NULL)
-			return error_ret(tok);
-		buf = PyObject_Call(tok->decoding_readline, args, NULL);
-		Py_DECREF(args);
+		buf = PyObject_CallObject(tok->decoding_readline, NULL);
 		if (buf == NULL)
 			return error_ret(tok);
 	} else {
 		tok->decoding_buffer = NULL;
+		if (PyString_CheckExact(buf))
+			utf8 = buf;
 	}
-	utf8 = PyUnicode_AsUTF8String(buf);
-	Py_DECREF(buf);
-	if (utf8 == NULL)
-		return error_ret(tok);
-	else {
-		const char* str = PyString_AsString(utf8);
-		assert(strlen(str) < (size_t)size); /* XXX */
-		strcpy(s, str);
-		Py_DECREF(utf8);
-		if (s[0] == '\0') return NULL; /* EOF */
-		return s;
+	if (utf8 == NULL) {
+		utf8 = PyUnicode_AsUTF8String(buf);
+		Py_DECREF(buf);
+		if (utf8 == NULL)
+			return error_ret(tok);
 	}
+	str = PyString_AsString(utf8);
+	utf8len = PyString_GET_SIZE(utf8);
+	if (utf8len > size) {
+		tok->decoding_buffer = PyString_FromStringAndSize(str+size, utf8len-size);
+		if (tok->decoding_buffer == NULL) {
+			Py_DECREF(utf8);
+			return error_ret(tok);
+		}
+		utf8len = size;
+	}
+	memcpy(s, str, utf8len);
+	s[utf8len] = '\0';
+	Py_DECREF(utf8);
+	if (utf8len == 0) return NULL; /* EOF */
+	return s;
 #endif
 }
 
@@ -491,14 +516,7 @@ decoding_feof(struct tok_state *tok)
 	} else {
 		PyObject* buf = tok->decoding_buffer;
 		if (buf == NULL) {
-			PyObject *args = PyTuple_New(0);
-			if (args == NULL) {
-				error_ret(tok);
-				return 1;
-			}
-			buf = PyObject_Call(tok->decoding_readline,
-					    args, NULL);
-			Py_DECREF(args);
+			buf = PyObject_CallObject(tok->decoding_readline, NULL);
 			if (buf == NULL) {
 				error_ret(tok);
 				return 1;
