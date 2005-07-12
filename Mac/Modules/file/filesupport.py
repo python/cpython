@@ -198,6 +198,53 @@ PyMac_BuildHFSUniStr255(HFSUniStr255 *itself)
 
         return Py_BuildValue("u#", itself->unicode, itself->length);
 }
+
+/*
+** Get pathname for a given FSSpec
+*/
+static OSErr
+_PyMac_GetFullPathname(FSSpec *fss, char *path, int len)
+{
+	FSRef fsr;
+	OSErr err;
+
+	*path = '\0';
+	err = FSpMakeFSRef(fss, &fsr);
+	if (err == fnfErr) {
+		/* FSSpecs can point to non-existing files, fsrefs can't. */
+		FSSpec fss2;
+		int tocopy;
+
+		err = FSMakeFSSpec(fss->vRefNum, fss->parID, "", &fss2);
+		if (err)
+			return err;
+		err = FSpMakeFSRef(&fss2, &fsr);
+		if (err)
+			return err;
+		err = (OSErr)FSRefMakePath(&fsr, path, len-1);
+		if (err)
+			return err;
+		/* This part is not 100% safe: we append the filename part, but
+		** I'm not sure that we don't run afoul of the various 8bit
+		** encodings here. Will have to look this up at some point...
+		*/
+		strcat(path, "/");
+		tocopy = fss->name[0];
+		if ((strlen(path) + tocopy) >= len)
+			tocopy = len - strlen(path) - 1;
+		if (tocopy > 0)
+			strncat(path, fss->name+1, tocopy);
+	}
+	else {
+		if (err)
+			return err;
+		err = (OSErr)FSRefMakePath(&fsr, path, len);
+		if (err)
+			return err;
+	}
+	return 0;
+}
+
 """
 
 finalstuff = finalstuff + """
@@ -798,7 +845,7 @@ OSErr err;
 
 if (!PyArg_ParseTuple(_args, ""))
         return NULL;
-err = PyMac_GetFullPathname(&_self->ob_itself, strbuf, sizeof(strbuf));
+err = _PyMac_GetFullPathname(&_self->ob_itself, strbuf, sizeof(strbuf));
 if ( err ) {
         PyMac_Error(err);
         return NULL;
