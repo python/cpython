@@ -1797,7 +1797,9 @@ PyObject *
 PyObject_CallMethod(PyObject *o, char *name, char *format, ...)
 {
 	va_list va;
-	PyObject *args, *func = 0, *retval;
+	PyObject *args = NULL;
+	PyObject *func = NULL;
+	PyObject *retval = NULL;
 
 	if (o == NULL || name == NULL)
 		return null_error();
@@ -1808,8 +1810,10 @@ PyObject_CallMethod(PyObject *o, char *name, char *format, ...)
 		return 0;
 	}
 
-	if (!PyCallable_Check(func))
-		return type_error("call of non-callable attribute");
+	if (!PyCallable_Check(func)) {
+		type_error("call of non-callable attribute"); 
+		goto exit;
+	}
 
 	if (format && *format) {
 		va_start(va, format);
@@ -1820,23 +1824,24 @@ PyObject_CallMethod(PyObject *o, char *name, char *format, ...)
 		args = PyTuple_New(0);
 
 	if (!args)
-		return NULL;
+		goto exit;
 
 	if (!PyTuple_Check(args)) {
 		PyObject *a;
 
 		a = PyTuple_New(1);
 		if (a == NULL)
-			return NULL;
+			goto exit;
 		if (PyTuple_SetItem(a, 0, args) < 0)
-			return NULL;
+			goto exit;
 		args = a;
 	}
 
 	retval = PyObject_Call(func, args, NULL);
 
-	Py_DECREF(args);
-	Py_DECREF(func);
+  exit:
+	Py_XDECREF(args);
+	Py_XDECREF(func);
 
 	return retval;
 }

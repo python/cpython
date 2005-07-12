@@ -12,6 +12,9 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- SF bug #1229429: PyObject_CallMethod failed to decrement some
+  reference counts in some error exit cases.
+
 - SF bug #1185883:  Python's small-object memory allocator took over
   a block managed by the platform C library whenever a realloc specified
   a small new size.  However, there's no portable way to know then how
