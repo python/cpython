@@ -168,6 +168,9 @@ Extension Modules
 Library
 -------
 
+- urllib2 has now an attribute 'httpresponses' mapping from HTTP status code
+  to W3C name (404 -> 'Not Found'). RFE #1216944.
+
 - Bug #1177468: Don't cache the /dev/urandom file descriptor for os.urandom,
   as this can cause problems with apps closing all file descriptors.
 
