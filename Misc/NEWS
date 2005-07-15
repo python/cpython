@@ -168,6 +168,9 @@ Extension Modules
 Library
 -------
 
+- textwrap now processes text chucks at O(n) speed instead of O(n**2).
+  Patch #1209527 (Contributed by Connelly).
+
 - urllib2 has now an attribute 'httpresponses' mapping from HTTP status code
   to W3C name (404 -> 'Not Found'). RFE #1216944.
 
