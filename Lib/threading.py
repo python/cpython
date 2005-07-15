@@ -374,9 +374,11 @@ class Thread(_Verbose):
     __exc_info = _sys.exc_info
 
     def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs={}, verbose=None):
+                 args=(), kwargs=None, verbose=None):
         assert group is None, "group argument must be None for now"
         _Verbose.__init__(self, verbose)
+        if kwargs is None:
+            kwargs = {}
         self.__target = target
         self.__name = str(name or _newname())
         self.__args = args
