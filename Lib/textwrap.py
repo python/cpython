@@ -161,7 +161,7 @@ class TextWrapper:
             else:
                 i += 1
 
-    def _handle_long_word(self, chunks, cur_line, cur_len, width):
+    def _handle_long_word(self, reversed_chunks, cur_line, cur_len, width):
         """_handle_long_word(chunks : [string],
                              cur_line : [string],
                              cur_len : int, width : int)
@@ -174,14 +174,14 @@ class TextWrapper:
         # If we're allowed to break long words, then do so: put as much
         # of the next chunk onto the current line as will fit.
         if self.break_long_words:
-            cur_line.append(chunks[0][0:space_left])
-            chunks[0] = chunks[0][space_left:]
+            cur_line.append(reversed_chunks[-1][:space_left])
+            reversed_chunks[-1] = reversed_chunks[-1][space_left:]
 
         # Otherwise, we have to preserve the long word intact.  Only add
         # it to the current line if there's nothing already there --
         # that minimizes how much we violate the width constraint.
         elif not cur_line:
-            cur_line.append(chunks.pop(0))
+            cur_line.append(reversed_chunks.pop())
 
         # If we're not allowed to break long words, and there's already
         # text on the current line, do nothing.  Next time through the
@@ -206,6 +206,10 @@ class TextWrapper:
         if self.width <= 0:
             raise ValueError("invalid width %r (must be > 0)" % self.width)
 
+        # Arrange in reverse order so items can be efficiently popped
+        # from a stack of chucks.
+        chunks.reverse()
+
         while chunks:
 
             # Start the list of chunks that will make up the current line.
@@ -224,15 +228,15 @@ class TextWrapper:
 
             # First chunk on line is whitespace -- drop it, unless this
             # is the very beginning of the text (ie. no lines started yet).
-            if chunks[0].strip() == '' and lines:
-                del chunks[0]
+            if chunks[-1].strip() == '' and lines:
+                del chunks[-1]
 
             while chunks:
-                l = len(chunks[0])
+                l = len(chunks[-1])
 
                 # Can at least squeeze this chunk onto the current line.
                 if cur_len + l <= width:
-                    cur_line.append(chunks.pop(0))
+                    cur_line.append(chunks.pop())
                     cur_len += l
 
                 # Nope, this line is full.
@@ -241,7 +245,7 @@ class TextWrapper:
 
             # The current line is full, and the next chunk is too big to
             # fit on *any* line (not just this one).
-            if chunks and len(chunks[0]) > width:
+            if chunks and len(chunks[-1]) > width:
                 self._handle_long_word(chunks, cur_line, cur_len, width)
 
             # If the last chunk on this line is all whitespace, drop it.
