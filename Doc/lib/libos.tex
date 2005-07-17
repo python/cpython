@@ -680,6 +680,11 @@ test permissions.  Return \constant{True} if access is allowed,
 \constant{False} if not.
 See the \UNIX{} man page \manpage{access}{2} for more information.
 Availability: Macintosh, \UNIX, Windows.
+
+\note{Using \function{access()} to check if a user is authorized to e.g.
+open a file before actually doing so using \function{open()} creates a 
+security hole, because the user might exploit the short time interval 
+between checking and opening the file to manipulate it.}
 \end{funcdesc}
 
 \begin{datadesc}{F_OK}
