@@ -156,7 +156,7 @@ If \var{file} is supplied, then the returned \var{list} is an empty list.
 Send a \samp{NEWNEWS} command.  Here, \var{group} is a group name or
 \code{'*'}, and \var{date} and \var{time} have the same meaning as for
 \method{newgroups()}.  Return a pair \code{(\var{response},
-\var{articles})} where \var{articles} is a list of article ids.
+\var{articles})} where \var{articles} is a list of message ids.
 If the \var{file} parameter is supplied, then the output of the 
 \samp{NEWNEWS} command is stored in a file.  If \var{file} is a string, 
 then the method will open a file object with that name, write to it 
@@ -228,7 +228,7 @@ Send a \samp{STAT} command, where \var{id} is the message id (enclosed
 in \character{<} and \character{>}) or an article number (as a string).
 Return a triple \code{(\var{response}, \var{number}, \var{id})} where
 \var{number} is the article number (as a string) and \var{id} is the
-article id  (enclosed in \character{<} and \character{>}).
+message id  (enclosed in \character{<} and \character{>}).
 \end{methoddesc}
 
 \begin{methoddesc}{next}{}
@@ -275,7 +275,7 @@ keyword, e.g. \code{'subject'}.  The \var{string} argument should have
 the form \code{'\var{first}-\var{last}'} where \var{first} and
 \var{last} are the first and last article numbers to search.  Return a
 pair \code{(\var{response}, \var{list})}, where \var{list} is a list of
-pairs \code{(\var{id}, \var{text})}, where \var{id} is an article id
+pairs \code{(\var{id}, \var{text})}, where \var{id} is an article number
 (as a string) and \var{text} is the text of the requested header for
 that article.
 If the \var{file} parameter is supplied, then the output of the 
@@ -295,7 +295,9 @@ automatically escapes lines beginning with \samp{.}.
 \end{methoddesc}
 
 \begin{methoddesc}{ihave}{id, file}
-Send an \samp{IHAVE} command.  If the response is not an error, treat
+Send an \samp{IHAVE} command. \var{id} is a message id (enclosed in 
+\character{<} and \character{>}).
+If the response is not an error, treat
 \var{file} exactly as for the \method{post()} method.
 \end{methoddesc}
 

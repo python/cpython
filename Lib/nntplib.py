@@ -281,7 +281,7 @@ class NNTP:
         - time: string 'hhmmss' indicating the time
         Return:
         - resp: server response if successful
-        - list: list of article ids"""
+        - list: list of message ids"""
 
         cmd = 'NEWNEWS ' + group + ' ' + date + ' ' + time
         return self.longcmd(cmd, file)
@@ -391,7 +391,7 @@ class NNTP:
         Returns:
         - resp: server response if successful
         - nr:   the article number
-        - id:   the article id"""
+        - id:   the message id"""
 
         return self.statcmd('STAT ' + id)
 
