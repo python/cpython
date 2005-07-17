@@ -2360,8 +2360,11 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 		c = (PyLongObject *)x;
 		Py_INCREF(x);
 	}
-	else if (PyInt_Check(x))
+	else if (PyInt_Check(x)) {
 		c = (PyLongObject *)PyLong_FromLong(PyInt_AS_LONG(x));
+		if (c == NULL)
+			goto Error;
+	}
 	else if (x == Py_None)
 		c = NULL;
 	else {
@@ -2511,14 +2514,14 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
  	}
 	/* fall through */
  Done:
-	Py_XDECREF(a);
-	Py_XDECREF(b);
-	Py_XDECREF(c);
-	Py_XDECREF(temp);
 	if (b->ob_size > FIVEARY_CUTOFF) {
 		for (i = 0; i < 32; ++i)
 			Py_XDECREF(table[i]);
 	}
+	Py_DECREF(a);
+	Py_DECREF(b);
+	Py_XDECREF(c);
+	Py_XDECREF(temp);
 	return (PyObject *)z;
 }
 

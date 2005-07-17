@@ -12,6 +12,8 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- SF bug #1238681:  freed pointer is used in longobject.c:long_pow().
+
 - SF bug #1229429: PyObject_CallMethod failed to decrement some
   reference counts in some error exit cases.
 
