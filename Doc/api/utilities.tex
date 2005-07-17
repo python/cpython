@@ -539,7 +539,7 @@ whose address should be passed.
   Convert a Python integer to a C \ctype{long int}.
 
   \item[\samp{k} (integer) {[unsigned long]}]
-  Convert a Python integer to a C \ctype{unsigned long} without
+  Convert a Python integer or long integer to a C \ctype{unsigned long} without
   overflow checking.  \versionadded{2.3}
 
   \item[\samp{L} (integer) {[PY_LONG_LONG]}]
@@ -548,7 +548,7 @@ whose address should be passed.
   \ctype{_int64} on Windows).
 
   \item[\samp{K} (integer) {[unsigned PY_LONG_LONG]}]
-  Convert a Python integer to a C \ctype{unsigned long long}
+  Convert a Python integer or long integer to a C \ctype{unsigned long long}
   without overflow checking.  This format is only available on
   platforms that support \ctype{unsigned long long} (or
   \ctype{unsigned _int64} on Windows).  \versionadded{2.3}
