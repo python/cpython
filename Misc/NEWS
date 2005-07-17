@@ -168,6 +168,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1015140: disambiguated the term "article id" in nntplib docs and
+  docstrings to either "article number" or "message id".
+
 - Bug #1238170: threading.Thread.__init__ no longer has "kwargs={}" as a
   parameter, but uses the usual "kwargs=None".
 
