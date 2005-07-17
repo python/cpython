@@ -23,13 +23,13 @@ __CC_SUPPORTS_WARNING = 1
 __CC_SUPPORTS_VARADIC_XXX = 1
 __CC_SUPPORTS_DYNAMIC_ARRAY_INIT = 1
 __CC_INT_IS_32BIT = 1
-def __P(protos): return protos		 
+def __P(protos): return protos
 
-def __STRING(x): return #x		 
+def __STRING(x): return #x
 
-def __XSTRING(x): return __STRING(x)	 
+def __XSTRING(x): return __STRING(x)
 
-def __P(protos): return ()		 
+def __P(protos): return ()
 
 def __STRING(x): return "x"
 

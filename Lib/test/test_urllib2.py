@@ -40,7 +40,7 @@ class TrivialTests(unittest.TestCase):
 
         buf = f.read()
         f.close()
-        
+
     def test_statudict(self):
         # test the new-in-2.5 httpresponses dictionary
         self.assertEquals(urllib2.httpresponses[404], "Not Found")

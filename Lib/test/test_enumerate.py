@@ -193,7 +193,7 @@ class TestReversed(unittest.TestCase):
             else:
                 self.fail("non-callable __reversed__ didn't raise!")
         self.assertEqual(rc, sys.getrefcount(r))
-            
+
 
 def test_main(verbose=None):
     testclasses = (EnumerateTestCase, SubclassTestCase, TestEmpty, TestBig,
