@@ -1,0 +1,3 @@
+#! /bin/sh
+set -v
+python ../../Tools/scripts/h2py.py -i '(u_long)' /usr/include/netinet/in.h

@@ -821,7 +821,8 @@ class PyBuildExt(build_ext):
             # Linux-specific modules
             exts.append( Extension('linuxaudiodev', ['linuxaudiodev.c']) )
 
-        if platform in ('linux2', 'freebsd4', 'freebsd5', 'freebsd6'):
+        if platform in ('linux2', 'freebsd4', 'freebsd5', 'freebsd6',
+                        'freebsd7'):
             exts.append( Extension('ossaudiodev', ['ossaudiodev.c']) )
 
         if platform == 'sunos5':
