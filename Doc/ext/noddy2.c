@@ -3,8 +3,8 @@
 
 typedef struct {
     PyObject_HEAD
-    PyObject *first;
-    PyObject *last;
+    PyObject *first; /* first name */
+    PyObject *last;  /* last name */
     int number;
 } Noddy;
 
