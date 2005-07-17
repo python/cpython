@@ -374,7 +374,7 @@ if missing: raise "Missing Types"
         tmp = self.scanmine and self.scanfile
         self.scanfile = None
         if tmp: tmp.close()
-        
+
     def closehtml(self):
         if self.htmlfile: self.htmlfile.write(ENDHTMLREPORT)
         tmp = self.htmlmine and self.htmlfile
@@ -415,7 +415,7 @@ if missing: raise "Missing Types"
             self.htmlfile = file
             self.htmlmine = mine
             self.htmlfile.write(BEGINHTMLREPORT)
-            
+
     def openoutput(self, filename):
         try:
             file = open(filename, 'w')
@@ -728,10 +728,10 @@ if missing: raise "Missing Types"
             classname, listname = self.destination(tp, name, arglist, modifiers)
         else:
             classname, listname = self.destination(tp, name, arglist)
-        if not classname or not listname: 
+        if not classname or not listname:
             self.htmlreport("*** no output generated: self.destination() returned None", klass="blacklisted")
             return
-        if not self.specfile: 
+        if not self.specfile:
             self.htmlreport("*** no output generated: no output file specified", klass="blacklisted")
             return
         self.specfile.write("f = %s(%s, %r,\n" % (classname, tp, name))
@@ -800,7 +800,7 @@ if missing: raise "Missing Types"
         if not line or line[-1] != '\n':
             oline += '\n'
         self.htmlfile.write(oline)
-        
+
 class Scanner_PreUH3(Scanner):
     """Scanner for Universal Headers before release 3"""
     def initpatterns(self):
