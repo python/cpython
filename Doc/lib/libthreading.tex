@@ -594,7 +594,12 @@ unhandled exception -- or until the optional timeout occurs.
 
 When the \var{timeout} argument is present and not \code{None}, it
 should be a floating point number specifying a timeout for the
-operation in seconds (or fractions thereof).
+operation in seconds (or fractions thereof). As \method{join()} always 
+returns \code{None}, you must call \method{isAlive()} to decide whether 
+a timeout happened.
+
+When the \var{timeout} argument is not present or \code{None}, the
+operation will block until the thread terminates.
 
 A thread can be \method{join()}ed many times.
 
