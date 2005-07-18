@@ -95,8 +95,7 @@ To implement a service, you must derive a class from
 can then run various versions of the service by combining one of the server
 classes with your request handler class.  The request handler class must be
 different for datagram or stream services.  This can be hidden by using the
-mix-in request handler classes \class{StreamRequestHandler} or
-\class{DatagramRequestHandler}.
+handler subclasses \class{StreamRequestHandler} or \class{DatagramRequestHandler}.
 
 Of course, you still have to use your head!  For instance, it makes no sense
 to use a forking server if the service contains state in memory that can be
@@ -279,11 +278,10 @@ information.
 The type of \member{self.request} is different for datagram or stream
 services.  For stream services, \member{self.request} is a socket
 object; for datagram services, \member{self.request} is a string.
-However, this can be hidden by using the mix-in request handler
-classes
+However, this can be hidden by using the  request handler subclasses
 \class{StreamRequestHandler} or \class{DatagramRequestHandler}, which
 override the \method{setup()} and \method{finish()} methods, and
-provides \member{self.rfile} and \member{self.wfile} attributes.
+provide \member{self.rfile} and \member{self.wfile} attributes.
 \member{self.rfile} and \member{self.wfile} can be read or written,
 respectively, to get the request data or return data to the client.
 \end{funcdesc}
