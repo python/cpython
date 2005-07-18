@@ -65,8 +65,8 @@ various versions of the service by combining one of the server classes
 with your request handler class.
 
 The request handler class must be different for datagram or stream
-services.  This can be hidden by using the mix-in request handler
-classes StreamRequestHandler or DatagramRequestHandler.
+services.  This can be hidden by using the request handler
+subclasses StreamRequestHandler or DatagramRequestHandler.
 
 Of course, you still have to use your head!
 
