@@ -418,6 +418,8 @@ Tests
 Documentation
 -------------
 
+- Bug #755617: Document the effects of os.chown() on Windows.
+
 - Patch #1180012: The documentation for modulefinder is now in the library reference.
 
 - Patch #1213031: Document that os.chown() accepts argument values of -1.
