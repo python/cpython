@@ -764,6 +764,11 @@ Change the mode of \var{path} to the numeric \var{mode}.
   \item \code{S_IXOTH}
 \end{itemize}
 Availability: Macintosh, \UNIX, Windows.
+
+\note{Although Windows supports \function{chmod()}, you can only 
+set the file's read-only flag with it (via the \code{S_IWRITE} 
+and \code{S_IREAD} constants or a corresponding integer value). 
+All other bits are ignored.}
 \end{funcdesc}
 
 \begin{funcdesc}{chown}{path, uid, gid}
