@@ -210,10 +210,15 @@ builtin_filter(PyObject *self, PyObject *args)
 	if (PyTuple_Check(seq))
 		return filtertuple(func, seq);
 
+	/* Pre-allocate argument list tuple. */
+	arg = PyTuple_New(1);
+	if (arg == NULL)
+		return NULL;
+
 	/* Get iterator. */
 	it = PyObject_GetIter(seq);
 	if (it == NULL)
-		return NULL;
+		goto Fail_arg;
 
 	/* Guess a result list size. */
 	len = PyObject_Size(seq);
@@ -221,11 +226,6 @@ builtin_filter(PyObject *self, PyObject *args)
 		PyErr_Clear();
 		len = 8;	/* arbitrary */
 	}
-
-	/* Pre-allocate argument list tuple. */
-	arg = PyTuple_New(1);
-	if (arg == NULL)
-		goto Fail_arg;
 
 	/* Get a result list. */
 	if (PyList_Check(seq) && seq->ob_refcnt == 1) {
