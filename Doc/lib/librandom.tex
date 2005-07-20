@@ -159,8 +159,8 @@ Functions for sequences:
   population contains repeats, then each occurrence is a possible
   selection in the sample.
 
-  To choose a sample from a range of integers, use \function{xrange}
-  as an argument.  This is especially fast and space efficient for
+  To choose a sample from a range of integers, use an \function{xrange()}
+  object as an argument.  This is especially fast and space efficient for
   sampling from a large population:  \code{sample(xrange(10000000), 60)}.
 \end{funcdesc}
 
@@ -236,7 +236,7 @@ Alternative Generators
 
 \begin{classdesc}{WichmannHill}{\optional{seed}}
 Class that implements the Wichmann-Hill algorithm as the core generator.
-Has all of the same methods as \class{Random} plus the \method{whseed}
+Has all of the same methods as \class{Random} plus the \method{whseed()}
 method described below.  Because this class is implemented in pure
 Python, it is not threadsafe and may require locks between calls.  The
 period of the generator is 6,953,607,871,644 which is small enough to
@@ -246,7 +246,7 @@ require care that two independent random sequences do not overlap.
 \begin{funcdesc}{whseed}{\optional{x}}
   This is obsolete, supplied for bit-level compatibility with versions
   of Python prior to 2.1.
-  See \function{seed} for details.  \function{whseed} does not guarantee
+  See \function{seed()} for details.  \function{whseed()} does not guarantee
   that distinct integer arguments yield distinct internal states, and can
   yield no more than about 2**24 distinct internal states in all.
 \end{funcdesc}
