@@ -663,6 +663,22 @@ class StreamReaderTest(unittest.TestCase):
         f = self.reader(self.stream)
         self.assertEquals(f.readlines(), [u'\ud55c\n', u'\uae00'])
 
+class Str2StrTest(unittest.TestCase):
+
+    def test_read(self):
+        sin = "\x80".encode("base64_codec")
+        reader = codecs.getreader("base64_codec")(StringIO.StringIO(sin))
+        sout = reader.read()
+        self.assertEqual(sout, "\x80")
+        self.assert_(isinstance(sout, str))
+
+    def test_readline(self):
+        sin = "\x80".encode("base64_codec")
+        reader = codecs.getreader("base64_codec")(StringIO.StringIO(sin))
+        sout = reader.readline()
+        self.assertEqual(sout, "\x80")
+        self.assert_(isinstance(sout, str))
+
 all_unicode_encodings = [
     "ascii",
     "base64_codec",
@@ -867,6 +883,7 @@ def test_main():
         CodecTest,
         CodecsModuleTest,
         StreamReaderTest,
+        Str2StrTest,
         BasicUnicodeTest,
         BasicStrTest
     )
