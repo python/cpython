@@ -229,7 +229,9 @@ class StreamReader(Codec):
         self.stream = stream
         self.errors = errors
         self.bytebuffer = ""
-        self.charbuffer = u""
+        # For str->str decoding this will stay a str
+        # For str->unicode decoding the first read will promote it to unicode
+        self.charbuffer = ""
 
     def decode(self, input, errors='strict'):
         raise NotImplementedError
@@ -284,7 +286,7 @@ class StreamReader(Codec):
         if chars < 0:
             # Return everything we've got
             result = self.charbuffer
-            self.charbuffer = u""
+            self.charbuffer = ""
         else:
             # Return the first chars characters
             result = self.charbuffer[:chars]
@@ -301,7 +303,7 @@ class StreamReader(Codec):
 
         """
         readsize = size or 72
-        line = u""
+        line = ""
         # If size is given, we call read() only once
         while True:
             data = self.read(readsize)
@@ -309,7 +311,7 @@ class StreamReader(Codec):
                 # If we're at a "\r" read one extra character (which might
                 # be a "\n") to get a proper line ending. If the stream is
                 # temporarily exhausted we return the wrong line ending.
-                if data.endswith(u"\r"):
+                if data.endswith("\r"):
                     data += self.read(size=1, chars=1)
 
             line += data
@@ -319,7 +321,7 @@ class StreamReader(Codec):
                 line0withoutend = lines[0].splitlines(False)[0]
                 if line0withend != line0withoutend: # We really have a line end
                     # Put the rest back together and keep it until the next call
-                    self.charbuffer = u"".join(lines[1:]) + self.charbuffer
+                    self.charbuffer = "".join(lines[1:]) + self.charbuffer
                     if keepends:
                         line = line0withend
                     else:
