@@ -21,7 +21,7 @@ It is dangerous to add too many implementation details to a language
 reference document --- the implementation may change, and other
 implementations of the same language may work differently.  On the
 other hand, there is currently only one Python implementation in
-widespread use (although a second one now exists!), and
+widespread use (although alternate implementations exist), and
 its particular quirks are sometimes worth being mentioned, especially
 where the implementation imposes additional limitations.  Therefore,
 you'll find short ``implementation notes'' sprinkled throughout the
@@ -32,6 +32,56 @@ standard modules.  These are not documented here, but in the separate
 \citetitle[../lib/lib.html]{Python Library Reference} document.  A few
 built-in modules are mentioned when they interact in a significant way
 with the language definition.
+
+
+\section{Alternate Implementations\label{implementations}}
+
+Though there is one Python implementation which is by far the most
+popular, there are some alternate implementations which are of
+particular interest to different audiences.
+
+Known implementations include:
+
+\begin{itemize}
+\item[CPython]
+This is the original and most-maintained implementation of Python,
+written in C.  New language features generally appear here first.
+
+\item[Jython]
+Python implemented in Java.  This implementation can be used as a
+scripting language for Java applications, or can be used to create
+applications using the Java class libraries.  It is also often used to
+create tests for Java libraries.  More information can be found at
+\ulink{the Jython website}{http://www.jython.org/}.
+
+\item[Python for .NET]
+This implementation actually uses the CPython implementation, but is a
+managed .NET application and makes .NET libraries available.  This was
+created by Brian Lloyd.  For more information, see the \ulink{Python
+for .NET home page}{http://www.zope.org/Members/Brian/PythonNet}.
+
+\item[IronPython]
+An alternate Python for\ .NET.  Unlike Python.NET, this is a complete
+Python implementation that generates IL, and compiles Python code
+directly to\ .NET assemblies.  It was created by Jim Hugunin, the
+original creator of Jython.  For more information, see \ulink{the
+IronPython website}{http://workspaces.gotdotnet.com/ironpython}.
+
+\item[PyPy]
+An implementation of Python written in Python; even the bytecode
+interpreter is written in Python.  This is executed using CPython as
+the underlying interpreter.  One of the goals of the project is to
+encourage experimentation with the language itself by making it easier
+to modify the interpreter (since it is written in Python).  Additional
+information is available on \ulink{the PyPy project's home
+page}{http://codespeak.net/pypy/}.
+\end{itemize}
+
+Each of these implementations varies in some way from the language as
+documented in this manual, or introduces specific information beyond
+what's covered in the standard Python documentation.  Please refer to
+the implementation-specific documentation to determine what else you
+need to know about the specific implementation you're using.
 
 
 \section{Notation\label{notation}}
