@@ -275,7 +275,7 @@ Library
 - Enhancements to the csv module:
 
   + Dialects are now validated by the underlying C code, better
-    reflecting it's capabilities, and improving it's compliance with
+    reflecting its capabilities, and improving its compliance with
     PEP 305.
   + Dialect parameter parsing has been re-implemented to improve error
     reporting.

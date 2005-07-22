@@ -170,7 +170,7 @@ class SimpleXMLRPCDispatcher:
 
         If the registered instance has a _dispatch method then that
         method will be called with the name of the XML-RPC method and
-        it's parameters as a tuple
+        its parameters as a tuple
         e.g. instance._dispatch('add',(2,3))
 
         If the registered instance does not have a _dispatch method
@@ -371,7 +371,7 @@ class SimpleXMLRPCDispatcher:
 
         If the registered instance has a _dispatch method then that
         method will be called with the name of the XML-RPC method and
-        it's parameters as a tuple
+        its parameters as a tuple
         e.g. instance._dispatch('add',(2,3))
 
         If the registered instance does not have a _dispatch method

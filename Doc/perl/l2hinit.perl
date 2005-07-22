@@ -98,7 +98,7 @@ sub custom_driver_hook {
     $dir =~ s/$dd$//;
     $TEXINPUTS = "$dir$envkey$mytexinputs";
     # Push everything into $TEXINPUTS since LaTeX2HTML doesn't pick
-    # this up on it's own; we clear $ENV{'TEXINPUTS'} so the value set
+    # this up on its own; we clear $ENV{'TEXINPUTS'} so the value set
     # for this by the main LaTeX2HTML script doesn't contain duplicate
     # directories.
     if ($ENV{'TEXINPUTS'}) {

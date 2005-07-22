@@ -64,7 +64,7 @@ clattrs = ['ADDED_ALGORITHM_ERROR', 'ALAW', 'ALGORITHM_ID',
 
 
 # This is a very inobtrusive test for the existence of the cl
-# module and all it's attributes.
+# module and all its attributes.
 
 def main():
     # touch all the attributes of al without doing anything

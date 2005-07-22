@@ -28,7 +28,7 @@ ConfigParser -- responsible for parsing a list of
         create the parser and specify a dictionary of intrinsic defaults.  The
         keys must be strings, the values must be appropriate for %()s string
         interpolation.  Note that `__name__' is always an intrinsic default;
-        it's value is the section's name.
+        its value is the section's name.
 
     sections()
         return all the configuration section names, sans DEFAULT

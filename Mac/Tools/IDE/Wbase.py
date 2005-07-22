@@ -128,28 +128,28 @@ class Widget:
             # depending on the values of l(eft), t(op), r(right) and b(ottom),
             # they mean different things:
             if l < -1:
-                # l is less than -1, this mean it measures from the *right* of it's parent
+                # l is less than -1, this mean it measures from the *right* of its parent
                 l = pr + l
             else:
-                # l is -1 or greater, this mean it measures from the *left* of it's parent
+                # l is -1 or greater, this mean it measures from the *left* of its parent
                 l = pl + l
             if t < -1:
-                # t is less than -1, this mean it measures from the *bottom* of it's parent
+                # t is less than -1, this mean it measures from the *bottom* of its parent
                 t = pb + t
             else:
-                # t is -1 or greater, this mean it measures from the *top* of it's parent
+                # t is -1 or greater, this mean it measures from the *top* of its parent
                 t = pt + t
             if r > 1:
                 # r is greater than 1, this means r is the *width* of the widget
                 r = l + r
             else:
-                # r is less than 1, this means it measures from the *right* of it's parent
+                # r is less than 1, this means it measures from the *right* of its parent
                 r = pr + r
             if b > 1:
                 # b is greater than 1, this means b is the *height* of the widget
                 b = t + b
             else:
-                # b is less than 1, this means it measures from the *bottom* of it's parent
+                # b is less than 1, this means it measures from the *bottom* of its parent
                 b = pb + b
             self._bounds = (l, t, r, b)
         if oldbounds and oldbounds <> self._bounds:

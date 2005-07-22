@@ -268,7 +268,7 @@ class StripWidget:
         else:
             # decimal
             text = repr(coloraxis)
-        # move the arrow, and set it's text
+        # move the arrow, and set its text
         if coloraxis <= 128:
             # use the left arrow
             self.__leftarrow.set_text(text)

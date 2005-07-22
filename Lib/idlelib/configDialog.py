@@ -27,7 +27,7 @@ class ConfigDialog(Toplevel):
         self.configure(borderwidth=5)
         self.geometry("+%d+%d" % (parent.winfo_rootx()+20,
                 parent.winfo_rooty()+30))
-        #Theme Elements. Each theme element key is it's display name.
+        #Theme Elements. Each theme element key is its display name.
         #The first value of the tuple is the sample area tag name.
         #The second value is the display name list sort index.
         self.themeElements={'Normal Text':('normal','00'),

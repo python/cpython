@@ -1462,7 +1462,7 @@ class TarFile(object):
                 # stream of tar blocks.
                 raise StreamError, "cannot extract (sym)link as file object"
             else:
-                # A (sym)link's file object is it's target's file object.
+                # A (sym)link's file object is its target's file object.
                 return self.extractfile(self._getmember(tarinfo.linkname,
                                                         tarinfo))
         else:

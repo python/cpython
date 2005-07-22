@@ -11,7 +11,7 @@
    * Python always adds an empty entry at the start, which corresponds
      to the current directory.
 
-   * If the PYTHONPATH env. var. exists, it's entries are added next.
+   * If the PYTHONPATH env. var. exists, its entries are added next.
 
    * We attempt to locate the "Python Home" - if the PYTHONHOME env var
      is set, we believe it.  Otherwise, we use the path of our host .EXE's
