@@ -11,7 +11,7 @@
    * Python always adds an empty entry at the start, which corresponds
      to the current directory.
 
-   * If the PYTHONPATH env. var. exists, it's entries are added next.
+   * If the PYTHONPATH env. var. exists, its entries are added next.
 
    * We look in the registry for "application paths" - that is, sub-keys
      under the main PythonPath registry key.  These are added next (the

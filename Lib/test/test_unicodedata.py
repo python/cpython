@@ -191,7 +191,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
     def test_decimal_numeric_consistent(self):
         # Test that decimal and numeric are consistent,
         # i.e. if a character has a decimal value,
-        # it's numeric value should be the same.
+        # its numeric value should be the same.
         count = 0
         for i in xrange(0x10000):
             c = unichr(i)
@@ -204,7 +204,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
     def test_digit_numeric_consistent(self):
         # Test that digit and numeric are consistent,
         # i.e. if a character has a digit value,
-        # it's numeric value should be the same.
+        # its numeric value should be the same.
         count = 0
         for i in xrange(0x10000):
             c = unichr(i)

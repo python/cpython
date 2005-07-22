@@ -1199,7 +1199,7 @@ def testSetIdAttribute():
             and not a1.isId
             and a2.isId
             and not a3.isId)
-    # renaming an attribute should not affect it's ID-ness:
+    # renaming an attribute should not affect its ID-ness:
     doc.renameNode(a2, xml.dom.EMPTY_NAMESPACE, "an")
     confirm(e.isSameNode(doc.getElementById("w"))
             and a2.isId)
@@ -1235,7 +1235,7 @@ def testSetIdAttributeNS():
     confirm(a2.isId)
     confirm(not a3.isId)
     confirm(doc.getElementById("v") is None)
-    # renaming an attribute should not affect it's ID-ness:
+    # renaming an attribute should not affect its ID-ness:
     doc.renameNode(a2, xml.dom.EMPTY_NAMESPACE, "an")
     confirm(e.isSameNode(doc.getElementById("w"))
             and a2.isId)
@@ -1271,7 +1271,7 @@ def testSetIdAttributeNode():
     confirm(a2.isId)
     confirm(not a3.isId)
     confirm(doc.getElementById("v") is None)
-    # renaming an attribute should not affect it's ID-ness:
+    # renaming an attribute should not affect its ID-ness:
     doc.renameNode(a2, xml.dom.EMPTY_NAMESPACE, "an")
     confirm(e.isSameNode(doc.getElementById("w"))
             and a2.isId)
