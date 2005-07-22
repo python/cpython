@@ -87,7 +87,7 @@ DVIPS=	   dvips -N0 -t $(PAPER)
 # (e.g. OpenBSD needs package gmake installed; use gmake instead of make)
 PWD=$(shell pwd)
 
-# (The trailing colon in the value is needed; TeX places it's default
+# (The trailing colon in the value is needed; TeX places its default
 # set of paths at the location of the empty string in the path list.)
 TEXINPUTS=$(PWD)/commontex:
 

@@ -107,7 +107,7 @@ Running as a Modal Dialog
         master[*]
             the master window to use as the parent of the modal
             dialog.  Without this argument, pyColorChooser will create 
-            it's own Tkinter.Tk instance as the master.  This may not
+            its own Tkinter.Tk instance as the master.  This may not
             be what you want.
 
         databasefile

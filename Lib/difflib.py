@@ -1371,7 +1371,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                 text = ' '
             # insert marks that won't be noticed by an xml/html escaper.
             text = '\0' + format_key + text + '\1'
-        # Return line of text, first allow user's line formatter to do it's
+        # Return line of text, first allow user's line formatter to do its
         # thing (such as adding the line number) then replace the special
         # marks with what the user's change markup.
         return (num_lines[side],text)
@@ -1472,7 +1472,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
         """Yields from/to lines of text with a change indication.
 
         This function is an iterator.  It itself pulls lines from the line
-        iterator.  It's difference from that iterator is that this function
+        iterator.  Its difference from that iterator is that this function
         always yields a pair of from/to text lines (with the change
         indication).  If necessary it will collect single from/to lines
         until it has a matching pair from/to pair to yield.
