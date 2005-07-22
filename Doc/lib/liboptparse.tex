@@ -584,7 +584,7 @@ foo 1.0
 
 There are two broad classes of errors that \module{optparse} has to worry about:
 programmer errors and user errors.  Programmer errors are usually
-erroneous calls to \code{parse.add{\_}option()}, e.g. invalid option strings,
+erroneous calls to \code{parser.add{\_}option()}, e.g. invalid option strings,
 unknown option attributes, missing option attributes, etc.  These are
 dealt with in the usual way: raise an exception (either
 \code{optparse.OptionError} or \code{TypeError}) and let the program crash.
@@ -1347,7 +1347,7 @@ parser.add_option("--novice", action="store_const",
 
 To avoid this confusion, use \method{set{\_}defaults()}:
 \begin{verbatim}
-parse.set_defaults(mode="advanced")
+parser.set_defaults(mode="advanced")
 parser.add_option("--advanced", action="store_const",
                   dest="mode", const="advanced")
 parser.add_option("--novice", action="store_const",
