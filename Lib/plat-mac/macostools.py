@@ -13,7 +13,7 @@ import time
 try:
     openrf = MacOS.openrf
 except AttributeError:
-    # Backward compatability
+    # Backward compatibility
     openrf = open
 
 Error = 'macostools.Error'
