@@ -92,7 +92,7 @@ def classname(object, modname):
     return name
 
 def isdata(object):
-    """Check if an object is of a type that probably means its data."""
+    """Check if an object is of a type that probably means it's data."""
     return not (inspect.ismodule(object) or inspect.isclass(object) or
                 inspect.isroutine(object) or inspect.isframe(object) or
                 inspect.istraceback(object) or inspect.iscode(object))
