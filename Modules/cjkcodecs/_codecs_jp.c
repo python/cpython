@@ -36,7 +36,7 @@ ENCODER(cp932)
 			continue;
 		}
 		else if (c >= 0xf8f0 && c <= 0xf8f3) {
-			/* Windows compatability */
+			/* Windows compatibility */
 			REQUIRE_OUTBUF(1)
 			if (c == 0xf8f0)
 				OUT1(0xa0)
