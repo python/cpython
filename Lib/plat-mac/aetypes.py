@@ -430,7 +430,7 @@ def IsObjectSpecifier(x):
     return isinstance(x, ObjectSpecifier)
 
 
-# Backwards compatability, sigh...
+# Backwards compatibility, sigh...
 class Property(ObjectSpecifier):
 
     def __init__(self, which, fr = None, want='prop'):

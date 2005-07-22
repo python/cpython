@@ -906,7 +906,7 @@ Library
 - The decimal package's Context.copy() method now returns deep copies.
 
 - Deprecated sys.exitfunc in favor of the atexit module.  The sys.exitfunc
-  attribute will be kept around for backwards compatability and atexit
+  attribute will be kept around for backwards compatibility and atexit
   will just become the one preferred way to do it.
 
 - patch #675551: Add get_history_item and replace_history_item functions

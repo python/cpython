@@ -169,8 +169,8 @@ an argument.
 
 Also note, the module also includes a \method{union_update()} method
 which is an alias for \method{update()}.  The method is included for
-backwards compatability.  Programmers should prefer the
-\method{update()} method because it the one supported by the builtin
+backwards compatibility.  Programmers should prefer the
+\method{update()} method because it is the one supported by the builtin
 \class{set()} and \class{frozenset()} types.
 
 \subsection{Example \label{set-example}}
@@ -254,7 +254,7 @@ on lessons learned from the \module{sets} module.  The key differences are:
 \item The built-in versions have more space efficient pickles.
 \item The built-in versions do not have a \method{union_update()} method.
       Instead, use the \method{update()} method which is equivalent.
-\item The built-in versions do not have a \method{_repr(sort=True)} method.
+\item The built-in versions do not have a \method{_repr(sorted=True)} method.
       Instead, use the built-in \function{repr()} and \function{sorted()}
       functions:  \code{repr(sorted(s))}.
 \item The built-in version does not have a protocol for automatic conversion

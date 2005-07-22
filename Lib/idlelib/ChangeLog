@@ -378,7 +378,7 @@ IDLEfork ChangeLog
 
 2001-07-12 16:54  elguavas
 
-	* ReplaceDialog.py: py-cvs merge, python 1.5.2 compatability
+	* ReplaceDialog.py: py-cvs merge, python 1.5.2 compatibility
 
 2001-07-12 16:46  elguavas
 

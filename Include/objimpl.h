@@ -124,7 +124,7 @@ PyAPI_FUNC(void) _PyObject_DebugMallocStats(void);
 #else	/* ! WITH_PYMALLOC */
 #define PyObject_MALLOC		PyMem_MALLOC
 #define PyObject_REALLOC	PyMem_REALLOC
-/* This is an odd one!  For backward compatability with old extensions, the
+/* This is an odd one!  For backward compatibility with old extensions, the
    PyMem "release memory" functions have to invoke the object allocator's
    free() function.  When pymalloc isn't enabled, that leaves us using
    the platform free(). */
