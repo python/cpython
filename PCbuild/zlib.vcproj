@@ -21,7 +21,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\..\zlib-1.2.1"
+				AdditionalIncludeDirectories="..\Include,..\PC,..\..\zlib-1.2.3"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
@@ -37,7 +37,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\zlib-1.2.1\zlib.lib"
+				AdditionalDependencies="..\..\zlib-1.2.3\zlib.lib"
 				OutputFile="./zlib_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -63,7 +63,7 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Checking static zlib has been built"
-				CommandLine="cd ..\..\zlib-1.2.1
+				CommandLine="cd ..\..\zlib-1.2.3
 nmake -nologo -f win32\Makefile.msc zlib.lib
 "/>
 			<Tool
@@ -92,7 +92,7 @@ nmake -nologo -f win32\Makefile.msc zlib.lib
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\..\zlib-1.2.1"
+				AdditionalIncludeDirectories="..\Include,..\PC,..\..\zlib-1.2.3"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -110,7 +110,7 @@ nmake -nologo -f win32\Makefile.msc zlib.lib
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\zlib-1.2.1\zlib.lib"
+				AdditionalDependencies="..\..\zlib-1.2.3\zlib.lib"
 				OutputFile="./zlib.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -136,7 +136,7 @@ nmake -nologo -f win32\Makefile.msc zlib.lib
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Checking static zlib has been built"
-				CommandLine="cd ..\..\zlib-1.2.1
+				CommandLine="cd ..\..\zlib-1.2.3
 nmake -nologo -f win32\Makefile.msc zlib.lib
 "/>
 			<Tool
@@ -166,7 +166,7 @@ nmake -nologo -f win32\Makefile.msc zlib.lib
 				AdditionalOptions=" /USECL:MS_ITANIUM"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="{MSSDKPATH}\include\Win64\atl;{MSSDKPATH}\include\Win64\crt;{MSSDKPATH}\include\Win64\crt\sys;{MSSDKPATH}\include\Win64\mfc;..\Include,..\PC,..\..\zlib-1.2.1"
+				AdditionalIncludeDirectories="{MSSDKPATH}\include\Win64\atl;{MSSDKPATH}\include\Win64\crt;{MSSDKPATH}\include\Win64\crt\sys;{MSSDKPATH}\include\Win64\mfc;..\Include,..\PC,..\..\zlib-1.2.3"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -188,7 +188,7 @@ nmake -nologo -f win32\Makefile.msc zlib.lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\zlib-1.2.1\zlib.lib"
+				AdditionalDependencies="..\..\zlib-1.2.3\zlib.lib"
 				OutputFile="./zlib.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -214,7 +214,7 @@ nmake -nologo -f win32\Makefile.msc zlib.lib
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Checking static zlib has been built"
-				CommandLine="cd ..\..\zlib-1.2.1
+				CommandLine="cd ..\..\zlib-1.2.3
 nmake -nologo -f win32\Makefile.msc zlib.lib
 "/>
 			<Tool
