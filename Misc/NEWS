@@ -53,6 +53,10 @@ Extension Modules
 Library
 -------
 
+- Fix a problem in Tkinter introduced by SF patch #869468: delete bogus
+  __hasattr__ and __delattr__ methods on class Tk that were breaking
+  Tkdnd.
+
 - Bug #1015140: disambiguated the term "article id" in nntplib docs and
   docstrings to either "article number" or "message id".
 

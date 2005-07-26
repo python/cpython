@@ -1652,12 +1652,6 @@ class Tk(Misc, Wm):
     def __getattr__(self, attr):
         "Delegate attribute access to the interpreter object"
         return getattr(self.tk, attr)
-    def __hasattr__(self, attr):
-        "Delegate attribute access to the interpreter object"
-        return hasattr(self.tk, attr)
-    def __delattr__(self, attr):
-        "Delegate attribute access to the interpreter object"
-        return delattr(self.tk, attr)
 
 # Ideally, the classes Pack, Place and Grid disappear, the
 # pack/place/grid methods are defined on the Widget class, and
