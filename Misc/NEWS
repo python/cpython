@@ -83,6 +83,14 @@ Library
   line ending. Remove the special handling of a "\r\n" that has been split
   between two lines.
 
+
+Build
+-----
+
+- Upgrade Windows build to zlib 1.2.3 which eliminates a potential security
+  vulnerability in zlib 1.2.1 and 1.2.2.
+
+
 Documentation
 -------------
 
