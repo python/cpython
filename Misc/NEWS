@@ -12,10 +12,6 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
-- Fix a problem in Tkinter introduced by SF patch #869468: delete bogus
-  __hasattr__ and __delattr__ methods on class Tk that were breaking
-  Tkdnd.
-
 - SF bug #1238681:  freed pointer is used in longobject.c:long_pow().
 
 - SF bug #1229429: PyObject_CallMethod failed to decrement some
@@ -173,6 +169,10 @@ Extension Modules
 
 Library
 -------
+
+- Fix a problem in Tkinter introduced by SF patch #869468: delete bogus
+  __hasattr__ and __delattr__ methods on class Tk that were breaking
+  Tkdnd.
 
 - Bug #1015140: disambiguated the term "article id" in nntplib docs and
   docstrings to either "article number" or "message id".
