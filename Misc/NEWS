@@ -117,6 +117,10 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1231069: The fcntl.ioctl function now uses the 'I' code for
+  the request code argument, which results in more C-like behaviour
+  for large or negative values.
+
 - Bug #1234979: For the argument of thread.Lock.acquire, the Windows
   implemented treated all integer values except 1 as false.
 
