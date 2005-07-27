@@ -50,6 +50,8 @@ Permissions History
 Permissions Dropped on Request
 ------------------------------
 
+- Johannes Gijsbers sent a drop request.  27 July 2005 RDH
+
 - Flovis Bruynooghe sent a drop request.  14 July 2005 RDH
 
 - Paul Prescod sent a drop request.  30 Apr 2005 RDH
