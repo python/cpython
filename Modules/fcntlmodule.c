@@ -173,7 +173,7 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 	arg = 0;
 	if (!PyArg_ParseTuple(args,
 	     "O&I|i;ioctl requires a file or file descriptor,"
-	     " an integer and optionally a integer or buffer argument",
+	     " an integer and optionally an integer or buffer argument",
 			      conv_descriptor, &fd, &code, &arg)) {
 	  return NULL;
 	}
