@@ -35,6 +35,11 @@ class UrlParseTestCase(unittest.TestCase):
               '', '', ''),
              ('mms', 'wms.sys.hinet.net', '/cts/Drama/09006251100.asf',
               '', '')),
+            ('svn+ssh://svn.zope.org/repos/main/ZConfig/trunk/',
+             ('svn+ssh', 'svn.zope.org', '/repos/main/ZConfig/trunk/',
+              '', '', ''),
+             ('svn+ssh', 'svn.zope.org', '/repos/main/ZConfig/trunk/',
+              '', ''))
             ]
         for url, parsed, split in testcases:
             self.checkRoundtrips(url, parsed, split)
