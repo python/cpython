@@ -64,7 +64,8 @@
     \let\footnotesize\small
     \let\footnoterule\relax
     \py@doHorizontalRule%
-    \@ifundefined{pdfinfo}{}{{
+    \ifpdf
+      \begingroup
       % This \def is required to deal with multi-line authors; it
       % changes \\ to ', ' (comma-space), making it pass muster for
       % generating document info in the PDF file.
@@ -73,7 +74,8 @@
         /Author (\@author)
         /Title (\@title)
       }
-    }}
+      \endgroup
+    \fi
     \begin{flushright}%
       {\rm\Huge\py@HeaderFamily \@title \par}%
       {\em\LARGE\py@HeaderFamily \py@release\releaseinfo \par}
