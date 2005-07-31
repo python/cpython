@@ -793,6 +793,19 @@ set_len(PyObject *so)
 	return ((PySetObject *)so)->used;
 }
 
+/* set_swap_bodies() switches the contents of any two sets by moving their
+   internal data pointers and, if needed, copying the internal smalltables.
+   Semantically equivalent to:
+
+     t=set(a); a.clear(); a.update(b); b.clear(); b.update(t); del t
+
+   The function always succeeds and it leaves both objects in a stable state.
+   Useful for creating temporary frozensets from sets for membership testing 
+   in __contains__(), discard(), and remove().  Also useful for operations
+   that update in-place (by allowing an intermediate result to be swapped 
+   into one of original the inputs).
+*/
+
 static void
 set_swap_bodies(PySetObject *a, PySetObject *b)
 {
