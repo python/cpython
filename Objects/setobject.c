@@ -735,8 +735,7 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		if (type == &PyFrozenSet_Type) {
 			if (emptyfrozenset == NULL)
 				emptyfrozenset = make_new_set(type, NULL);
-			else
-				Py_INCREF(emptyfrozenset);
+			Py_INCREF(emptyfrozenset);
 			return emptyfrozenset;
 		}
 	} else if (PyFrozenSet_CheckExact(iterable)) {
@@ -803,7 +802,7 @@ set_len(PyObject *so)
    Useful for creating temporary frozensets from sets for membership testing 
    in __contains__(), discard(), and remove().  Also useful for operations
    that update in-place (by allowing an intermediate result to be swapped 
-   into one of original the inputs).
+   into one of the original inputs).
 */
 
 static void
