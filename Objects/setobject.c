@@ -311,9 +311,6 @@ set_table_resize(PySetObject *so, int minused)
 	return 0;
 }
 
-/*** Internal functions (derived from public dictionary api functions )  ***/
-
-
 /* CAUTION: set_add_internal() must guarantee that it won't resize the table */
 static int
 set_add_internal(register PySetObject *so, PyObject *key)
@@ -435,10 +432,10 @@ set_clear_internal(PySetObject *so)
 /*
  * Iterate over a set table.  Use like so:
  *
- *     int i;
+ *     int pos;
  *     PyObject *key;
- *     i = 0;   # important!  i should not otherwise be changed by you
- *     while (set_next_internal(yourset, &i, &key)) {
+ *     pos = 0;   # important!  pos should not otherwise be changed by you
+ *     while (set_next_internal(yourset, &pos, &key)) {
  *              Refer to borrowed reference in key.
  *     }
  *
@@ -467,14 +464,13 @@ set_next_internal(PySetObject *so, int *pos, PyObject **key)
 	return 1;
 }
 
-/* Methods */
-
 static int
 set_merge_internal(PySetObject *so, PyObject *otherset)
 {
-	register PySetObject *other;
+	PySetObject *other;
 	register int i;
-	setentry *entry;
+	register setentry *entry, *othertable;
+	register int othermask;
 
 	assert (PyAnySet_Check(so));
 	assert (PyAnySet_Check(otherset));
@@ -491,8 +487,10 @@ set_merge_internal(PySetObject *so, PyObject *otherset)
 	   if (set_table_resize(so, (so->used + other->used)*2) != 0)
 		   return -1;
 	}
-	for (i = 0; i <= other->mask; i++) {
-		entry = &other->table[i];
+	othermask = other->mask;
+	othertable = other->table;
+	for (i = 0; i <= othermask; i++) {
+		entry = &othertable[i];
 		if (entry->key != NULL && 
 		    entry->key != dummy) {
 			Py_INCREF(entry->key);
@@ -517,9 +515,9 @@ set_contains_internal(PySetObject *so, PyObject *key)
 	return key != NULL && key != dummy;
 }
 
-static PyTypeObject PySetIter_Type; /* Forward */
+/***** Set iterator types **********************************************/
 
-/* Set iterator types */
+static PyTypeObject PySetIter_Type; /* Forward */
 
 typedef struct {
 	PyObject_HEAD
@@ -647,41 +645,52 @@ static PyTypeObject PySetIter_Type = {
    All rights reserved.
 */
 
-static PyObject *
-set_update(PySetObject *so, PyObject *other)
+static int
+set_len(PyObject *so)
+{
+	return ((PySetObject *)so)->used;
+}
+
+static int
+set_update_internal(PySetObject *so, PyObject *other)
 {
 	PyObject *key, *it;
 
-	if (PyAnySet_Check(other)) {
-		if (set_merge_internal(so, other) == -1) 
-			return NULL;
-		Py_RETURN_NONE;
-	}
+	if (PyAnySet_Check(other))
+		return set_merge_internal(so, other);
 
 	if (PyDict_Check(other)) {
 		PyObject *key, *value;
 		int pos = 0;
 		while (PyDict_Next(other, &pos, &key, &value)) {
 			if (set_add_internal(so, key) == -1)
-				return NULL;
+				return -1;
 		}
-		Py_RETURN_NONE;
+		return 0;
 	}
 
 	it = PyObject_GetIter(other);
 	if (it == NULL)
-		return NULL;
+		return -1;
 
 	while ((key = PyIter_Next(it)) != NULL) {
                 if (set_add_internal(so, key) == -1) {
 			Py_DECREF(it);
 			Py_DECREF(key);
-			return NULL;
+			return -1;
                 } 
 		Py_DECREF(key);
 	}
 	Py_DECREF(it);
 	if (PyErr_Occurred())
+		return -1;
+	return 0;
+}
+
+static PyObject *
+set_update(PySetObject *so, PyObject *other)
+{
+	if (set_update_internal(so, other) == -1)
 		return NULL;
 	Py_RETURN_NONE;
 }
@@ -692,7 +701,6 @@ PyDoc_STRVAR(update_doc,
 static PyObject *
 make_new_set(PyTypeObject *type, PyObject *iterable)
 {
-	PyObject *tmp;
 	register PySetObject *so = NULL;
 
 	if (dummy == NULL) { /* Auto-initialize dummy */
@@ -712,37 +720,51 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
 	so->weakreflist = NULL;
 
 	if (iterable != NULL) {
-		tmp = set_update(so, iterable);
-		if (tmp == NULL) {
+		if (set_update_internal(so, iterable) == -1) {
 			Py_DECREF(so);
 			return NULL;
 		}
-		Py_DECREF(tmp);
 	}
 
 	return (PyObject *)so;
 }
 
+/* The empty frozenset is a singleton */
+static PyObject *emptyfrozenset = NULL;
+
 static PyObject *
 frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *iterable = NULL;
-	static PyObject *emptyfrozenset = NULL;
+	PyObject *iterable = NULL, *result;
 
 	if (!PyArg_UnpackTuple(args, type->tp_name, 0, 1, &iterable))
 		return NULL;
-	if (iterable == NULL) {
-		if (type == &PyFrozenSet_Type) {
-			if (emptyfrozenset == NULL)
-				emptyfrozenset = make_new_set(type, NULL);
-			Py_INCREF(emptyfrozenset);
-			return emptyfrozenset;
+
+	if (type != &PyFrozenSet_Type)
+		return make_new_set(type, iterable);
+
+	if (iterable != NULL) {
+		/* frozenset(f) is idempotent */
+		if (PyFrozenSet_CheckExact(iterable)) {
+			Py_INCREF(iterable);
+			return iterable;
 		}
-	} else if (PyFrozenSet_CheckExact(iterable)) {
-		Py_INCREF(iterable);
-		return iterable;
+		result = make_new_set(type, iterable);
+		if (result == NULL || set_len(result))
+			return result;
+		Py_DECREF(result);
 	}
-	return make_new_set(type, iterable);
+	/* The empty frozenset is a singleton */
+	if (emptyfrozenset == NULL)
+		emptyfrozenset = make_new_set(type, NULL);
+	Py_XINCREF(emptyfrozenset);
+	return emptyfrozenset;
+}
+
+void
+PySet_Fini(void)
+{
+	Py_XDECREF(emptyfrozenset);
 }
 
 static PyObject *
@@ -784,12 +806,6 @@ set_traverse(PySetObject *so, visitproc visit, void *arg)
 	while (set_next_internal(so, &pos, &key))
 		Py_VISIT(key);
 	return 0;
-}
-
-static int
-set_len(PyObject *so)
-{
-	return ((PySetObject *)so)->used;
 }
 
 /* set_swap_bodies() switches the contents of any two sets by moving their
@@ -892,17 +908,14 @@ static PyObject *
 set_union(PySetObject *so, PyObject *other)
 {
 	PySetObject *result;
-	PyObject *rv;
 
 	result = (PySetObject *)set_copy(so);
 	if (result == NULL)
 		return NULL;
-	rv = set_update(result, other);
-	if (rv == NULL) {
+	if (set_update_internal(result, other) == -1) {
 		Py_DECREF(result);
 		return NULL;
 	}
-	Py_DECREF(rv);
 	return (PyObject *)result;
 }
 
@@ -924,16 +937,12 @@ set_or(PySetObject *so, PyObject *other)
 static PyObject *
 set_ior(PySetObject *so, PyObject *other)
 {
-	PyObject *result;
-
 	if (!PyAnySet_Check(other)) {
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
-	result = set_update(so, other);
-	if (result == NULL)
+	if (set_update_internal(so, other) == -1)
 		return NULL;
-	Py_DECREF(result);
 	Py_INCREF(so);
 	return (PyObject *)so;
 }
@@ -1553,7 +1562,6 @@ static int
 set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 {
 	PyObject *iterable = NULL;
-	PyObject *result;
 
 	if (!PyAnySet_Check(self))
 		return -1;
@@ -1563,12 +1571,7 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 	self->hash = -1;
 	if (iterable == NULL)
 		return 0;
-	result = set_update(self, iterable);
-	if (result != NULL) {
-		Py_DECREF(result);
-		return 0;
-	}
-	return -1;
+	return set_update_internal(self, iterable);
 }
 
 static PySequenceMethods set_as_sequence = {

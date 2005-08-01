@@ -115,6 +115,7 @@ PyAPI_FUNC(void) PyFrame_Fini(void);
 PyAPI_FUNC(void) PyCFunction_Fini(void);
 PyAPI_FUNC(void) PyTuple_Fini(void);
 PyAPI_FUNC(void) PyList_Fini(void);
+PyAPI_FUNC(void) PySet_Fini(void);
 PyAPI_FUNC(void) PyString_Fini(void);
 PyAPI_FUNC(void) PyInt_Fini(void);
 PyAPI_FUNC(void) PyFloat_Fini(void);

@@ -42,8 +42,7 @@ struct _setobject {
 
 	/* table points to smalltable for small tables, else to
 	 * additional malloc'ed memory.  table is never NULL!  This rule
-	 * saves repeated runtime null-tests in the workhorse getitem and
-	 * setitem calls.
+	 * saves repeated runtime null-tests.
 	 */
 	setentry *table;
 	setentry *(*lookup)(PySetObject *so, PyObject *key, long hash);
