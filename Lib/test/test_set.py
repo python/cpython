@@ -391,6 +391,15 @@ class TestFrozenSet(TestJointOps):
         s.__init__(self.otherword)
         self.assertEqual(s, set(self.word))
 
+    def test_singleton_empty_frozenset(self):
+        f = frozenset()
+        efs = [frozenset(), frozenset([]), frozenset(()), frozenset(''),
+               frozenset(), frozenset([]), frozenset(()), frozenset(''),
+               frozenset(xrange(0)), frozenset(frozenset()),
+               frozenset(f), f]
+        # All of the empty frozensets should have just one id()
+        self.assertEqual(len(set(map(id, efs))), 1)
+
     def test_constructor_identity(self):
         s = self.thetype(range(3))
         t = self.thetype(s)
@@ -455,6 +464,17 @@ class TestFrozenSetSubclass(TestFrozenSet):
         s = self.thetype()
         t = self.thetype(s)
         self.assertEqual(s, t)
+
+    def test_singleton_empty_frozenset(self):
+        Frozenset = self.thetype
+        f = frozenset()
+        F = Frozenset()
+        efs = [Frozenset(), Frozenset([]), Frozenset(()), Frozenset(''),
+               Frozenset(), Frozenset([]), Frozenset(()), Frozenset(''),
+               Frozenset(xrange(0)), Frozenset(Frozenset()),
+               Frozenset(frozenset()), f, F, Frozenset(f), Frozenset(F)]
+        # All empty frozenset subclass instances should have different ids
+        self.assertEqual(len(set(map(id, efs))), len(efs))
 
 # Tests taken from test_sets.py =============================================
 
