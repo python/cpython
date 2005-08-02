@@ -60,9 +60,21 @@ def log (message, subsystem):
 server_log = functional.partial(log, subsystem='server')
 \end{verbatim}
 
-Here's another example, from a program that uses PyGTk.  
+Here's another example, from a program that uses PyGTk.  Here a
+context-sensitive pop-up menu is being constructed dynamically.  The
+callback provided for the menu option is a partially applied version
+of the \method{open_item()} method, where the first argument has been
+provided.
 
-% XXX add example from my GTk programming
+\begin{verbatim}
+...
+class Application:
+    def open_item(self, path):
+       ...
+    def init (self):
+        open_func = functional.partial(self.open_item, item_path)
+        popup_menu.append( ("Open", open_func, 1) )
+\end{verbatim}
 
 
 \begin{seealso}
