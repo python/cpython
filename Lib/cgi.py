@@ -1041,7 +1041,9 @@ environment as well.  Here are some common variable names:
 # =========
 
 def escape(s, quote=None):
-    """Replace special characters '&', '<' and '>' by SGML entities."""
+    '''Replace special characters "&", "<" and ">" to HTML-safe sequences.
+    If the optional flag quote is true, the quotation mark character (")
+    is also translated.'''
     s = s.replace("&", "&amp;") # Must be done first!
     s = s.replace("<", "&lt;")
     s = s.replace(">", "&gt;")
