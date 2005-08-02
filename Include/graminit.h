@@ -76,3 +76,4 @@
 #define gen_if 331
 #define testlist1 332
 #define encoding_decl 333
+#define yield_expr 334

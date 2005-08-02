@@ -382,7 +382,7 @@ From the Iterators list, about the types of these things.
 >>> type(i)
 <type 'generator'>
 >>> [s for s in dir(i) if not s.startswith('_')]
-['gi_frame', 'gi_running', 'next']
+['close', 'gi_frame', 'gi_running', 'next', 'send', 'throw']
 >>> print i.next.__doc__
 x.next() -> the next value, or raise StopIteration
 >>> iter(i) is i
@@ -421,6 +421,7 @@ Subject: Re: PEP 255: Simple Generators
 ...         self.name = name
 ...         self.parent = None
 ...         self.generator = self.generate()
+...         self.close = self.generator.close
 ...
 ...     def generate(self):
 ...         while not self.parent:
@@ -482,6 +483,9 @@ merged F into A
 A->A B->G C->A D->G E->G F->A G->G H->G I->A J->G K->A L->A M->G
 merged A into G
 A->G B->G C->G D->G E->G F->G G->G H->G I->G J->G K->G L->G M->G
+
+>>> for s in sets: s.close()	# break cycles
+
 """
 # Emacs turd '
 
@@ -589,6 +593,7 @@ arguments are iterable -- a LazyList is the same as a generator to times().
 ...     def __init__(self, g):
 ...         self.sofar = []
 ...         self.fetch = g.next
+...         self.close = g.close
 ...
 ...     def __getitem__(self, i):
 ...         sofar, fetch = self.sofar, self.fetch
@@ -619,6 +624,7 @@ efficient.
 [200, 216, 225, 240, 243, 250, 256, 270, 288, 300, 320, 324, 360, 375, 384]
 [400, 405, 432, 450, 480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675]
 
+>>> m235.close()
 
 Ye olde Fibonacci generator, LazyList style.
 
@@ -642,6 +648,7 @@ Ye olde Fibonacci generator, LazyList style.
 >>> fib = LazyList(fibgen(1, 2))
 >>> firstn(iter(fib), 17)
 [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584]
+>>> fib.close()
 """
 
 # syntax_tests mostly provokes SyntaxErrors.  Also fiddling with #if 0
@@ -672,7 +679,7 @@ Traceback (most recent call last):
   ..
 SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.syntax[2]>, line 3)
 
-This one is fine:
+These are fine:
 
 >>> def f():
 ...     yield 1
@@ -683,9 +690,6 @@ This one is fine:
 ...         yield 1
 ...     finally:
 ...         pass
-Traceback (most recent call last):
-  ..
-SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (<doctest test.test_generators.__test__.syntax[4]>, line 3)
 
 >>> def f():
 ...     try:
@@ -697,11 +701,6 @@ SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (<doct
 ...             pass
 ...     finally:
 ...         pass
-Traceback (most recent call last):
-  ...
-SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (<doctest test.test_generators.__test__.syntax[5]>, line 6)
-
-But this is fine:
 
 >>> def f():
 ...     try:
@@ -722,14 +721,16 @@ But this is fine:
 
 >>> def f():
 ...    yield
-Traceback (most recent call last):
-SyntaxError: invalid syntax
+>>> type(f())
+<type 'generator'>
+
 
 >>> def f():
 ...    if 0:
 ...        yield
-Traceback (most recent call last):
-SyntaxError: invalid syntax
+>>> type(f())
+<type 'generator'>
+
 
 >>> def f():
 ...     if 0:
@@ -805,7 +806,7 @@ SyntaxError: invalid syntax
 ...     if 0:
 ...         yield 2             # because it's a generator
 Traceback (most recent call last):
-SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.syntax[22]>, line 8)
+SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.syntax[24]>, line 8)
 
 This one caused a crash (see SF bug 567538):
 
@@ -1383,6 +1384,250 @@ True
 
 """
 
+coroutine_tests = """\
+Sending a value into a started generator:
+
+>>> def f():
+...     print (yield 1)
+...     yield 2
+>>> g = f()
+>>> g.next()
+1
+>>> g.send(42)
+42
+2
+
+Sending a value into a new generator produces a TypeError:
+
+>>> f().send("foo")
+Traceback (most recent call last):
+...
+TypeError: can't send non-None value to a just-started generator
+
+
+Yield by itself yields None:
+
+>>> def f(): yield
+>>> list(f())
+[None]
+
+
+
+An obscene abuse of a yield expression within a generator expression:
+
+>>> list((yield 21) for i in range(4))
+[21, None, 21, None, 21, None, 21, None]
+
+And a more sane, but still weird usage:
+
+>>> def f(): list(i for i in [(yield 26)])
+>>> type(f())
+<type 'generator'>
+
+
+Check some syntax errors for yield expressions:
+
+>>> f=lambda: (yield 1),(yield 2)
+Traceback (most recent call last):
+  ...
+SyntaxError: 'yield' outside function (<doctest test.test_generators.__test__.coroutine[10]>, line 1)
+
+>>> def f(): return lambda x=(yield): 1
+Traceback (most recent call last):
+  ...
+SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.coroutine[11]>, line 1)
+
+>>> def f(): x = yield = y
+Traceback (most recent call last):
+  ...
+SyntaxError: assignment to yield expression not possible (<doctest test.test_generators.__test__.coroutine[12]>, line 1)
+
+
+Now check some throw() conditions:
+
+>>> def f():
+...     while True:
+...         try:
+...             print (yield)
+...         except ValueError,v:
+...             print "caught ValueError (%s)" % (v),
+>>> import sys
+>>> g = f()
+>>> g.next()
+
+>>> g.throw(ValueError) # type only
+caught ValueError ()
+
+>>> g.throw(ValueError("xyz"))  # value only
+caught ValueError (xyz)
+
+>>> g.throw(ValueError, ValueError(1))   # value+matching type
+caught ValueError (1)
+
+>>> g.throw(ValueError, TypeError(1))  # mismatched type, rewrapped
+caught ValueError (1)
+
+>>> g.throw(ValueError(1), "foo")	# bad args
+Traceback (most recent call last):
+  ...
+TypeError: instance exception may not have a separate value
+
+>>> g.throw(ValueError, "foo", 23)	# bad args
+Traceback (most recent call last):
+  ...
+TypeError: throw() third argument must be a traceback object
+
+>>> def throw(g,exc):
+...     try:
+...         raise exc
+...     except:
+...         g.throw(*sys.exc_info())
+>>> throw(g,ValueError)	# do it with traceback included
+caught ValueError ()
+
+>>> g.send(1)
+1
+
+>>> throw(g,TypeError)	# terminate the generator
+Traceback (most recent call last):
+  ...
+TypeError
+
+>>> print g.gi_frame
+None
+
+>>> g.send(2)
+Traceback (most recent call last):
+  ...
+StopIteration
+
+>>> g.throw(ValueError,6)	# throw on closed generator
+Traceback (most recent call last):
+  ...
+ValueError: 6
+
+>>> f().throw(ValueError,7)	# throw on just-opened generator
+Traceback (most recent call last):
+  ...
+ValueError: 7
+
+
+Now let's try closing a generator:
+
+>>> def f():
+...     try: yield
+...     except GeneratorExit:
+...         print "exiting"
+
+>>> g = f()
+>>> g.next()
+>>> g.close()
+exiting
+>>> g.close()  # should be no-op now
+
+>>> f().close()  # close on just-opened generator should be fine
+
+>>> def f(): yield	# an even simpler generator
+>>> f().close()		# close before opening
+>>> g = f()
+>>> g.next()
+>>> g.close()		# close normally
+
+And finalization:
+
+>>> def f():
+...     try: yield
+...     finally:
+...         print "exiting"
+
+>>> g = f()
+>>> g.next()
+>>> del g
+exiting
+
+
+Now let's try some ill-behaved generators:
+
+>>> def f():
+...     try: yield
+...     except GeneratorExit:
+...         yield "foo!"
+>>> g = f()
+>>> g.next()
+>>> g.close()
+Traceback (most recent call last):
+  ...
+RuntimeError: generator ignored GeneratorExit
+>>> g.close()
+
+
+Our ill-behaved code should be invoked during GC:
+
+>>> import sys, StringIO
+>>> old, sys.stderr = sys.stderr, StringIO.StringIO()
+>>> g = f()
+>>> g.next()
+>>> del g
+>>> sys.stderr.getvalue().startswith(
+...     "Exception exceptions.RuntimeError: 'generator ignored GeneratorExit' in "
+... )
+True
+>>> sys.stderr = old
+
+
+And errors thrown during closing should propagate:
+
+>>> def f():
+...     try: yield
+...     except GeneratorExit:
+...         raise TypeError("fie!")
+>>> g = f()
+>>> g.next()
+>>> g.close()
+Traceback (most recent call last):
+  ...
+TypeError: fie!
+
+
+Ensure that various yield expression constructs make their
+enclosing function a generator:
+
+>>> def f(): x += yield
+>>> type(f())
+<type 'generator'>
+
+>>> def f(): x = yield
+>>> type(f())
+<type 'generator'>
+
+>>> def f(): lambda x=(yield): 1
+>>> type(f())
+<type 'generator'>
+
+>>> def f(): x=(i for i in (yield) if (yield))
+>>> type(f())
+<type 'generator'>
+
+>>> def f(d): d[(yield "a")] = d[(yield "b")] = 27
+>>> data = [1,2]
+>>> g = f(data)
+>>> type(g)
+<type 'generator'>
+>>> g.send(None)
+'a'
+>>> data
+[1, 2]
+>>> g.send(0)
+'b'
+>>> data
+[27, 2]
+>>> try: g.send(1)
+... except StopIteration: pass
+>>> data
+[27, 27]
+
+"""
+
 __test__ = {"tut":      tutorial_tests,
             "pep":      pep_tests,
             "email":    email_tests,
@@ -1390,6 +1635,7 @@ __test__ = {"tut":      tutorial_tests,
             "syntax":   syntax_tests,
             "conjoin":  conjoin_tests,
             "weakref":  weakref_tests,
+            "coroutine":  coroutine_tests,
             }
 
 # Magic test name that regrtest.py invokes *after* importing this module.

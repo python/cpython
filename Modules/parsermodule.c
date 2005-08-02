@@ -859,7 +859,8 @@ VALIDATER(arglist);             VALIDATER(argument);
 VALIDATER(listmaker);           VALIDATER(yield_stmt);
 VALIDATER(testlist1);           VALIDATER(gen_for);
 VALIDATER(gen_iter);            VALIDATER(gen_if);
-VALIDATER(testlist_gexp);
+VALIDATER(testlist_gexp);	VALIDATER(yield_expr);
+VALIDATER(yield_or_testlist);	
 
 #undef VALIDATER
 
@@ -1507,6 +1508,15 @@ validate_compound_stmt(node *tree)
 
 
 static int
+validate_yield_or_testlist(node *tree)
+{
+	if (TYPE(tree) == yield_expr) 
+		return validate_yield_expr(tree);
+	else
+		return validate_testlist(tree);
+}
+
+static int
 validate_expr_stmt(node *tree)
 {
     int j;
@@ -1517,8 +1527,8 @@ validate_expr_stmt(node *tree)
 
     if (res && nch == 3
         && TYPE(CHILD(tree, 1)) == augassign) {
-        res = (validate_numnodes(CHILD(tree, 1), 1, "augassign")
-               && validate_testlist(CHILD(tree, 2)));
+        res = validate_numnodes(CHILD(tree, 1), 1, "augassign")
+		&& validate_yield_or_testlist(CHILD(tree, 2));
 
         if (res) {
             char *s = STR(CHILD(CHILD(tree, 1), 0));
@@ -1541,8 +1551,8 @@ validate_expr_stmt(node *tree)
     }
     else {
         for (j = 1; res && (j < nch); j += 2)
-            res = (validate_equal(CHILD(tree, j))
-                   && validate_testlist(CHILD(tree, j + 1)));
+            res = validate_equal(CHILD(tree, j))
+                   && validate_yield_or_testlist(CHILD(tree, j + 1));
     }
     return (res);
 }
@@ -1649,15 +1659,31 @@ validate_raise_stmt(node *tree)
 }
 
 
-/* yield_stmt: 'yield' testlist
+/* yield_expr: 'yield' [testlist]
+ */
+static int
+validate_yield_expr(node *tree)
+{
+    int nch = NCH(tree);
+    int res = (validate_ntype(tree, yield_expr)
+               && ((nch == 1) || (nch == 2))
+               && validate_name(CHILD(tree, 0), "yield"));
+
+    if (res && (nch == 2))
+        res = validate_testlist(CHILD(tree, 1));
+
+    return (res);
+}
+
+
+/* yield_stmt: yield_expr
  */
 static int
 validate_yield_stmt(node *tree)
 {
     return (validate_ntype(tree, yield_stmt)
-            && validate_numnodes(tree, 2, "yield_stmt")
-            && validate_name(CHILD(tree, 0), "yield")
-            && validate_testlist(CHILD(tree, 1)));
+            && validate_numnodes(tree, 1, "yield_stmt")
+            && validate_yield_expr(CHILD(tree, 0)));
 }
 
 
@@ -2300,8 +2326,12 @@ validate_atom(node *tree)
             res = ((nch <= 3)
                    && (validate_rparen(CHILD(tree, nch - 1))));
 
-            if (res && (nch == 3))
-                res = validate_testlist_gexp(CHILD(tree, 1));
+            if (res && (nch == 3)) {
+		if (TYPE(CHILD(tree, 1))==yield_expr)
+			res = validate_yield_expr(CHILD(tree, 1));
+		else
+                	res = validate_testlist_gexp(CHILD(tree, 1));
+	    }
             break;
           case LSQB:
             if (nch == 2)
@@ -2913,6 +2943,9 @@ validate_node(node *tree)
              */
           case testlist:
             res = validate_testlist(tree);
+            break;
+          case yield_expr:
+            res = validate_yield_expr(tree);
             break;
           case testlist1:
             res = validate_testlist1(tree);

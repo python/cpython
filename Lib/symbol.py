@@ -88,6 +88,7 @@ gen_for = 330
 gen_if = 331
 testlist1 = 332
 encoding_decl = 333
+yield_expr = 334
 #--end constants--
 
 sym_name = {}

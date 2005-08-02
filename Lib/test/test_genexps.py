@@ -130,7 +130,7 @@ Verify that syntax error's are raised for genexps used as lvalues
     >>> (y for y in (1,2)) += 10
     Traceback (most recent call last):
        ...
-    SyntaxError: augmented assign to tuple literal or generator expression not possible
+    SyntaxError: augmented assign to tuple literal, yield, or generator expression not possible
 
 
 
