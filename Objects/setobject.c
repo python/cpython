@@ -1508,24 +1508,42 @@ static PyObject *
 set_pop(PySetObject *so)
 {
 	PyObject *key;
-	int pos = 0;
-	int rv;
+	register setentry *entry;
+	register int i = 0;
 
-	if (!set_next_internal(so, &pos, &key)) {
+	assert (PyAnySet_Check(so));
+	if (so->used == 0) {
 		PyErr_SetString(PyExc_KeyError, "pop from an empty set");
 		return NULL;
 	}
-	Py_INCREF(key);
 
-	rv = set_discard_internal(so, key);
-	if (rv == -1) {
-		Py_DECREF(key);
-		return NULL;
-	} else if (rv == DISCARD_NOTFOUND) {
-		Py_DECREF(key);
-		PyErr_SetObject(PyExc_KeyError, key);
-		return NULL;
+	/* Set entry to "the first" unused or dummy set entry.  We abuse
+	 * the hash field of slot 0 to hold a search finger:
+	 * If slot 0 has a value, use slot 0.
+	 * Else slot 0 is being used to hold a search finger,
+	 * and we use its hash value as the first index to look.
+	 */
+	entry = &so->table[0];
+	if (entry->key == NULL || entry->key == dummy) {
+		i = (int)entry->hash;
+		/* The hash field may be a real hash value, or it may be a
+		 * legit search finger, or it may be a once-legit search
+		 * finger that's out of bounds now because it wrapped around
+		 * or the table shrunk -- simply make sure it's in bounds now.
+		 */
+		if (i > so->mask || i < 1)
+			i = 1;	/* skip slot 0 */
+		while ((entry = &so->table[i])->key == NULL || entry->key==dummy) {
+			i++;
+			if (i > so->mask)
+				i = 1;
+		}
 	}
+	key = entry->key;
+	Py_INCREF(dummy);
+	entry->key = dummy;
+	so->used--;
+	so->table[0].hash = i + 1;  /* next place to start */
 	return key;
 }
 
