@@ -342,17 +342,33 @@ with Python's string literals.
 at the beginning or end of a word.  This is just the opposite of {}\code{\e
 b}, so is also subject to the settings of \code{LOCALE} and \code{UNICODE}.
 
-\item[\code{\e d}]Matches any decimal digit; this is
-equivalent to the set \regexp{[0-9]}.
+\item[\code{\e d}]When the \constant{UNICODE} flag is not specified, matches
+any decimal digit; this is equivalent to the set \regexp{[0-9]}. 
+With \constant{UNICODE}, it will match whatever is classified as a digit
+in the Unicode character properties database.
 
-\item[\code{\e D}]Matches any non-digit character; this is
-equivalent to the set \regexp{[{\textasciicircum}0-9]}.
+\item[\code{\e D}]When the \constant{UNICODE} flag is not specified, matches
+any non-digit character; this is equivalent to the set 
+\regexp{[{\textasciicircum}0-9]}.  With \constant{UNICODE}, it will match 
+anything other than character marked as digits in the Unicode character 
+properties database.
 
-\item[\code{\e s}]Matches any whitespace character; this is
+\item[\code{\e s}]When the \constant{LOCALE} and \constant{UNICODE}
+flags are not specified, matches any whitespace character; this is
 equivalent to the set \regexp{[ \e t\e n\e r\e f\e v]}.
+With \constant{LOCALE}, it will match this set plus whatever characters
+are defined as space for the current locale. If \constant{UNICODE} is set,
+this will match the characters \regexp{[ \e t\e n\e r\e f\e v]} plus
+whatever is classified as space in the Unicode character properties
+database.
 
-\item[\code{\e S}]Matches any non-whitespace character; this is
-equivalent to the set \regexp{[\textasciicircum\ \e t\e n\e r\e f\e v]}.
+\item[\code{\e S}]When the \constant{LOCALE} and \constant{UNICODE}
+flags are not specified, matches any non-whitespace character; this is
+equivalent to the set \regexp{[\textasciicircum\ \e t\e n\e r\e f\e v]}
+With \constant{LOCALE}, it will match any character not in this set,
+and not defined as space in the current locale. If \constant{UNICODE}
+is set, this will match anything other than \regexp{[ \e t\e n\e r\e f\e v]}
+and characters marked as space in the Unicode character properties database.
 
 \item[\code{\e w}]When the \constant{LOCALE} and \constant{UNICODE}
 flags are not specified, matches any alphanumeric character and the
@@ -468,8 +484,8 @@ current locale.
 
 \begin{datadesc}{L}
 \dataline{LOCALE}
-Make \regexp{\e w}, \regexp{\e W}, \regexp{\e b}, and
-\regexp{\e B} dependent on the current locale.
+Make \regexp{\e w}, \regexp{\e W}, \regexp{\e b}, \regexp{\e B},
+\regexp{\e s} and \regexp{\e S} dependent on the current locale.
 \end{datadesc}
 
 \begin{datadesc}{M}
@@ -493,8 +509,9 @@ anything \emph{except} a newline.
 
 \begin{datadesc}{U}
 \dataline{UNICODE}
-Make \regexp{\e w}, \regexp{\e W}, \regexp{\e b}, and
-\regexp{\e B} dependent on the Unicode character properties database.
+Make \regexp{\e w}, \regexp{\e W}, \regexp{\e b}, \regexp{\e B},
+\regexp{\e d}, \regexp{\e D}, \regexp{\e s} and \regexp{\e S}
+dependent on the Unicode character properties database.
 \versionadded{2.0}
 \end{datadesc}
 
