@@ -499,7 +499,14 @@ PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
 /* Interpreter main loop */
 
 PyObject *
-PyEval_EvalFrame(PyFrameObject *f)
+PyEval_EvalFrame(PyFrameObject *f) {
+	/* This is for backward compatibility with extension modules that
+           used this API; core interpreter code should call PyEval_EvalFrameEx() */
+	return PyEval_EvalFrameEx(f, 0);
+}
+
+PyObject *
+PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 {
 #ifdef DXPAIRS
 	int lastopcode = 0;
@@ -747,6 +754,11 @@ PyEval_EvalFrame(PyFrameObject *f)
 	x = Py_None;	/* Not a reference, just anything non-NULL */
 	w = NULL;
 
+	if (throw) { /* support for generator.throw() */
+		why = WHY_EXCEPTION;
+		goto on_error;
+	}
+		
 	for (;;) {
 #ifdef WITH_TSC
 		if (inst1 == 0) {
@@ -2733,7 +2745,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		return PyGen_New(f);
 	}
 
-        retval = PyEval_EvalFrame(f);
+        retval = PyEval_EvalFrameEx(f,0);
 
   fail: /* Jump here from prelude on failure */
 
@@ -3636,7 +3648,7 @@ fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 			Py_INCREF(*stack);
 			fastlocals[i] = *stack++;
 		}
-		retval = PyEval_EvalFrame(f);
+		retval = PyEval_EvalFrameEx(f,0);
 		assert(tstate != NULL);
 		++tstate->recursion_depth;
 		Py_DECREF(f);

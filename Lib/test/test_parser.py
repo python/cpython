@@ -29,10 +29,21 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
 
     def test_yield_statement(self):
         self.check_suite("def f(): yield 1")
+        self.check_suite("def f(): yield")
+        self.check_suite("def f(): x += yield")
+        self.check_suite("def f(): x = yield 1")
+        self.check_suite("def f(): x = y = yield 1")
+        self.check_suite("def f(): x = yield")
+        self.check_suite("def f(): x = y = yield")
+        self.check_suite("def f(): 1 + (yield)*2")
+        self.check_suite("def f(): (yield 1)*2")
         self.check_suite("def f(): return; yield 1")
         self.check_suite("def f(): yield 1; return")
         self.check_suite("def f():\n"
                          "    for x in range(30):\n"
+                         "        yield x\n")
+        self.check_suite("def f():\n"
+                         "    if (yield):\n"
                          "        yield x\n")
 
     def test_expressions(self):

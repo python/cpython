@@ -403,7 +403,15 @@ class Transformer:
         return Return(self.com_node(nodelist[1]), lineno=nodelist[0][2])
 
     def yield_stmt(self, nodelist):
-        return Yield(self.com_node(nodelist[1]), lineno=nodelist[0][2])
+        expr = self.com_node(nodelist[0])
+        return Discard(expr, lineno=expr.lineno)
+
+    def yield_expr(self, nodelist):
+        if len(nodelist)>1:
+            value = nodelist[1]
+        else:
+            value = Const(None)
+        return Yield(self.com_node(value), lineno=nodelist[0][2])
 
     def raise_stmt(self, nodelist):
         # raise: [test [',' test [',' test]]]
@@ -1402,6 +1410,8 @@ _legal_node_types = [
 
 if hasattr(symbol, 'yield_stmt'):
     _legal_node_types.append(symbol.yield_stmt)
+if hasattr(symbol, 'yield_expr'):
+    _legal_node_types.append(symbol.yield_expr)
 
 _assign_types = [
     symbol.test,

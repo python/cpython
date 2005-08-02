@@ -2145,6 +2145,7 @@ com_gen_for(struct compiling *c, node *n, node *t, int is_outmost)
 	else {
 		com_test(c, t);
 		com_addbyte(c, YIELD_VALUE);
+		com_addbyte(c, POP_TOP);
 		com_pop(c, 1);
 	}
 
@@ -2193,6 +2194,7 @@ com_gen_if(struct compiling *c, node *n, node *t)
 	else {
 		com_test(c, t);
 		com_addbyte(c, YIELD_VALUE);
+		com_addbyte(c, POP_TOP);
 		com_pop(c, 1);
 	}
 	com_addfwref(c, JUMP_FORWARD, &anchor);
@@ -2354,6 +2356,10 @@ com_dictmaker(struct compiling *c, node *n)
 	}
 }
 
+
+/* forward reference */
+static void com_yield_expr(struct compiling *c, node *n);
+
 static void
 com_atom(struct compiling *c, node *n)
 {
@@ -2369,7 +2375,10 @@ com_atom(struct compiling *c, node *n)
 			com_push(c, 1);
 		}
 		else
-			com_testlist_gexp(c, CHILD(n, 1));
+			if (TYPE(CHILD(n, 1)) == yield_expr)
+				com_yield_expr(c, CHILD(n, 1));
+			else
+				com_testlist_gexp(c, CHILD(n, 1));
 		break;
 	case LSQB: /* '[' [listmaker] ']' */
 		if (TYPE(CHILD(n, 1)) == RSQB) {
@@ -3436,7 +3445,11 @@ com_assign(struct compiling *c, node *n, int assigning, node *augn)
 			}
 			n = CHILD(n, 0);
 			break;
-		
+		case yield_expr:
+			com_error(c, PyExc_SyntaxError,
+			  "assignment to yield expression not possible");
+			return;
+					
 		case test:
 		case and_test:
 		case not_test:
@@ -3493,7 +3506,7 @@ com_assign(struct compiling *c, node *n, int assigning, node *augn)
 				}
 				if (assigning > OP_APPLY) {
 					com_error(c, PyExc_SyntaxError,
-				  "augmented assign to tuple literal or generator expression not possible");
+				  "augmented assign to tuple literal, yield, or generator expression not possible");
 					return;
 				}
 				break;
@@ -3729,26 +3742,41 @@ com_return_stmt(struct compiling *c, node *n)
 }
 
 static void
-com_yield_stmt(struct compiling *c, node *n)
+com_yield_expr(struct compiling *c, node *n)
 {
 	int i;
-	REQ(n, yield_stmt); /* 'yield' testlist */
+	REQ(n, yield_expr); /* 'yield' testlist */
 	if (!c->c_infunction) {
 		com_error(c, PyExc_SyntaxError, "'yield' outside function");
 	}
 	
-	for (i = 0; i < c->c_nblocks; ++i) {
+	/* for (i = 0; i < c->c_nblocks; ++i) {
 		if (c->c_block[i] == SETUP_FINALLY) {
 			com_error(c, PyExc_SyntaxError,
 				  "'yield' not allowed in a 'try' block "
 				  "with a 'finally' clause");
 			return;
 		}
+	} */
+
+	if (NCH(n) < 2) {
+		com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
+		com_push(c, 1);
 	}
-	com_node(c, CHILD(n, 1));
+	else
+		com_node(c, CHILD(n, 1));
 	com_addbyte(c, YIELD_VALUE);
+}
+
+static void
+com_yield_stmt(struct compiling *c, node *n)
+{
+	REQ(n, yield_stmt); /* yield_expr */
+	com_node(c, CHILD(n, 0));
+	com_addbyte(c, POP_TOP);
 	com_pop(c, 1);
 }
+
 
 static void
 com_raise_stmt(struct compiling *c, node *n)
@@ -4768,6 +4796,10 @@ com_node(struct compiling *c, node *n)
 	
 	/* Expression nodes */
 	
+	case yield_expr:
+		com_yield_expr(c, n);
+		break;
+
 	case testlist:
 	case testlist1:
 	case testlist_safe:
@@ -5027,7 +5059,9 @@ compile_generator_expression(struct compiling *c, node *n)
 	REQ(CHILD(n, 1), gen_for); 
 
 	c->c_name = "<generator expression>";
+	c->c_infunction = 1;
 	com_gen_for(c, CHILD(n, 1), CHILD(n, 0), 1);
+	c->c_infunction = 0;
 
 	com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
 	com_push(c, 1);
@@ -6115,7 +6149,7 @@ symtable_add_def_o(struct symtable *st, PyObject *dict,
 
 #define symtable_add_use(ST, NAME) symtable_add_def((ST), (NAME), USE)
 
-/* Look for a yield stmt under n.  Return 1 if found, else 0.
+/* Look for a yield stmt or expr under n.  Return 1 if found, else 0.
    This hack is used to look inside "if 0:" blocks (which are normally
    ignored) in case those are the only places a yield occurs (so that this
    function is a generator). */
@@ -6137,6 +6171,7 @@ look_for_yield(node *n)
 			return 0;
 
 		case yield_stmt:
+		case yield_expr:
 			return GENERATOR;
 
 		default:
@@ -6247,8 +6282,10 @@ symtable_node(struct symtable *st, node *n)
 	case del_stmt:
 		symtable_assign(st, CHILD(n, 1), 0);
 		break;
-	case yield_stmt:
+	case yield_expr:
 		st->st_cur->ste_generator = 1;
+		if (NCH(n)==1) 
+			break;
 		n = CHILD(n, 1);
 		goto loop;
 	case expr_stmt:
@@ -6341,9 +6378,15 @@ symtable_node(struct symtable *st, node *n)
 		/* fall through */
 
 	case atom:
-		if (TYPE(n) == atom && TYPE(CHILD(n, 0)) == NAME) {
-			symtable_add_use(st, STR(CHILD(n, 0)));
-			break;
+		if (TYPE(n) == atom) {
+			if (TYPE(CHILD(n, 0)) == NAME) {
+				symtable_add_use(st, STR(CHILD(n, 0)));
+				break;
+			}
+			else if (TYPE(CHILD(n,0)) == LPAR) {
+				n = CHILD(n,1);
+				goto loop;
+			}
 		}
 		/* fall through */
 	default:
@@ -6739,6 +6782,15 @@ symtable_assign(struct symtable *st, node *n, int def_flag)
 			symtable_add_def(st, STR(tmp), DEF_LOCAL | def_flag);
 		}
 		return;
+
+	case yield_expr:
+		st->st_cur->ste_generator = 1;
+		if (NCH(n)==2) {
+			n = CHILD(n, 1);
+			goto loop;
+		}
+		return;
+
 	case dotted_as_name:
 		if (NCH(n) == 3)
 			symtable_add_def(st, STR(CHILD(n, 2)),

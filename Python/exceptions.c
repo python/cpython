@@ -57,6 +57,7 @@ Exception\n\
  |\n\
  +-- SystemExit\n\
  +-- StopIteration\n\
+ +-- GeneratorExit\n\
  +-- StandardError\n\
  |    |\n\
  |    +-- KeyboardInterrupt\n\
@@ -394,6 +395,7 @@ PyDoc_STRVAR(StandardError__doc__,
 PyDoc_STRVAR(TypeError__doc__, "Inappropriate argument type.");
 
 PyDoc_STRVAR(StopIteration__doc__, "Signal the end from iterator.next().");
+PyDoc_STRVAR(GeneratorExit__doc__, "Request that a generator exit.");
 
 
 
@@ -1583,6 +1585,7 @@ static PyMethodDef functions[] = {
 
 PyObject *PyExc_Exception;
 PyObject *PyExc_StopIteration;
+PyObject *PyExc_GeneratorExit;
 PyObject *PyExc_StandardError;
 PyObject *PyExc_ArithmeticError;
 PyObject *PyExc_LookupError;
@@ -1657,6 +1660,8 @@ static struct {
  {"Exception", &PyExc_Exception},
  {"StopIteration", &PyExc_StopIteration, &PyExc_Exception,
   StopIteration__doc__},
+ {"GeneratorExit", &PyExc_GeneratorExit, &PyExc_Exception,
+  GeneratorExit__doc__},
  {"StandardError", &PyExc_StandardError, &PyExc_Exception,
   StandardError__doc__},
  {"TypeError", &PyExc_TypeError, 0, TypeError__doc__},
