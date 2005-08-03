@@ -328,17 +328,18 @@ What a mess!
         self.check_wrap(text, 30,
                         [" This is a sentence with", "leading whitespace."])
 
-    def test_unicode(self):
-        # *Very* simple test of wrapping Unicode strings.  I'm sure
-        # there's more to it than this, but let's at least make
-        # sure textwrap doesn't crash on Unicode input!
-        text = u"Hello there, how are you today?"
-        self.check_wrap(text, 50, [u"Hello there, how are you today?"])
-        self.check_wrap(text, 20, [u"Hello there, how are", "you today?"])
-        olines = self.wrapper.wrap(text)
-        assert isinstance(olines, list) and isinstance(olines[0], unicode)
-        otext = self.wrapper.fill(text)
-        assert isinstance(otext, unicode)
+    if test_support.have_unicode:
+        def test_unicode(self):
+            # *Very* simple test of wrapping Unicode strings.  I'm sure
+            # there's more to it than this, but let's at least make
+            # sure textwrap doesn't crash on Unicode input!
+            text = u"Hello there, how are you today?"
+            self.check_wrap(text, 50, [u"Hello there, how are you today?"])
+            self.check_wrap(text, 20, [u"Hello there, how are", "you today?"])
+            olines = self.wrapper.wrap(text)
+            assert isinstance(olines, list) and isinstance(olines[0], unicode)
+            otext = self.wrapper.fill(text)
+            assert isinstance(otext, unicode)
 
     def test_split(self):
         # Ensure that the standard _split() method works as advertised

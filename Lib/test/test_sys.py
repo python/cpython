@@ -247,7 +247,8 @@ class SysModuleTest(unittest.TestCase):
         self.assert_(isinstance(sys.executable, basestring))
         self.assert_(isinstance(sys.hexversion, int))
         self.assert_(isinstance(sys.maxint, int))
-        self.assert_(isinstance(sys.maxunicode, int))
+        if test.test_support.have_unicode:
+            self.assert_(isinstance(sys.maxunicode, int))
         self.assert_(isinstance(sys.platform, basestring))
         self.assert_(isinstance(sys.prefix, basestring))
         self.assert_(isinstance(sys.version, basestring))
