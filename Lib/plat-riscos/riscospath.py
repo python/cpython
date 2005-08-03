@@ -168,23 +168,16 @@ def dirname(p):
     return split(p)[0]
 
 
-def commonprefix(ps):
-    """
-  Return the longest prefix of all list elements. Purely string-based; does not
-  separate any path parts. Why am I in os.path?
-  """
-    if len(ps)==0:
-        return ''
-    prefix= ps[0]
-    for p in ps[1:]:
-        prefix= prefix[:len(p)]
-        for i in range(len(prefix)):
-            if prefix[i] <> p[i]:
-                prefix= prefix[:i]
-                if i==0:
-                    return ''
-                break
-    return prefix
+def commonprefix(m):
+    "Given a list of pathnames, returns the longest common leading component"
+    if not m: return ''
+    s1 = min(m)
+    s2 = max(m)
+    n = min(len(s1), len(s2))
+    for i in xrange(n):
+        if s1[i] != s2[i]:
+            return s1[:i]
+    return s1[:n]
 
 
 ## File access functions. Why are we in os.path?

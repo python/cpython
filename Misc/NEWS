@@ -178,6 +178,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1105730: Apply the new implementation of commonprefix in posixpath
+  to ntpath, macpath, os2emxpath and riscospath.
+
 - Fix a problem in Tkinter introduced by SF patch #869468: delete bogus
   __hasattr__ and __delattr__ methods on class Tk that were breaking
   Tkdnd.
