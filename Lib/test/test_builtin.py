@@ -582,14 +582,16 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, getattr, sys, 1)
         self.assertRaises(TypeError, getattr, sys, 1, "foo")
         self.assertRaises(TypeError, getattr)
-        self.assertRaises(UnicodeError, getattr, sys, unichr(sys.maxunicode))
+        if have_unicode:
+            self.assertRaises(UnicodeError, getattr, sys, unichr(sys.maxunicode))
 
     def test_hasattr(self):
         import sys
         self.assert_(hasattr(sys, 'stdout'))
         self.assertRaises(TypeError, hasattr, sys, 1)
         self.assertRaises(TypeError, hasattr)
-        self.assertRaises(UnicodeError, hasattr, sys, unichr(sys.maxunicode))
+        if have_unicode:
+            self.assertRaises(UnicodeError, hasattr, sys, unichr(sys.maxunicode))
 
     def test_hash(self):
         hash(None)
@@ -1101,7 +1103,8 @@ class BuiltinTest(unittest.TestCase):
         if have_unicode:
             self.assertEqual(ord(unichr(sys.maxunicode)), sys.maxunicode)
         self.assertRaises(TypeError, ord, 42)
-        self.assertRaises(TypeError, ord, unicode("12"))
+        if have_unicode:
+            self.assertRaises(TypeError, ord, unicode("12"))
 
     def test_pow(self):
         self.assertEqual(pow(0,0), 1)
@@ -1494,11 +1497,17 @@ class TestSorted(unittest.TestCase):
 
     def test_inputtypes(self):
         s = 'abracadabra'
-        for T in [unicode, list, tuple]:
+        types = [list, tuple]
+        if have_unicode:
+            types.insert(0, unicode)
+        for T in types:
             self.assertEqual(sorted(s), sorted(T(s)))
 
         s = ''.join(dict.fromkeys(s).keys())  # unique letters only
-        for T in [unicode, set, frozenset, list, tuple, dict.fromkeys]:
+        types = [set, frozenset, list, tuple, dict.fromkeys]
+        if have_unicode:
+            types.insert(0, unicode)
+        for T in types:
             self.assertEqual(sorted(s), sorted(T(s)))
 
     def test_baddecorator(self):
