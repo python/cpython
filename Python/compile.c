@@ -3744,7 +3744,6 @@ com_return_stmt(struct compiling *c, node *n)
 static void
 com_yield_expr(struct compiling *c, node *n)
 {
-	int i;
 	REQ(n, yield_expr); /* 'yield' testlist */
 	if (!c->c_infunction) {
 		com_error(c, PyExc_SyntaxError, "'yield' outside function");
