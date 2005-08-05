@@ -1,15 +1,19 @@
+/* set object implementation 
+   Written and maintained by Raymond D. Hettinger <python@rcn.com>
+   Derived from Lib/sets.py and Objects/dictobject.c.
 
-/* Set object implementation using a hash table 
-   Functions adapted from dictobject.c
+   Copyright (c) 2003-5 Python Software Foundation.
+   All rights reserved.
 */
 
 #include "Python.h"
+#include "structmember.h"
 
 /* This must be >= 1. */
 #define PERTURB_SHIFT 5
 
 /* Object used as dummy key to fill deleted entries */
-static PyObject *dummy; /* Initialized by first call to make_new_set() */
+static PyObject *dummy = NULL; /* Initialized by first call to make_new_set() */
 
 #define EMPTY_TO_MINSIZE(so) do {				\
 	memset((so)->smalltable, 0, sizeof((so)->smalltable));	\
@@ -515,7 +519,7 @@ set_contains_internal(PySetObject *so, PyObject *key)
 	return key != NULL && key != dummy;
 }
 
-/***** Set iterator types **********************************************/
+/***** Set iterator type ***********************************************/
 
 static PyTypeObject PySetIter_Type; /* Forward */
 
@@ -558,7 +562,6 @@ setiter_len(setiterobject *si)
 
 static PySequenceMethods setiter_as_sequence = {
 	(inquiry)setiter_len,		/* sq_length */
-	0,				/* sq_concat */
 };
 
 static PyObject *setiter_iternext(setiterobject *si)
@@ -631,19 +634,6 @@ static PyTypeObject PySetIter_Type = {
 	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)setiter_iternext,		/* tp_iternext */
 };
-
-/***** Derived functions (table accesses only done with above primitives *****/
-
-#include "structmember.h"
-
-/* set object implementation 
-   written and maintained by Raymond D. Hettinger <python@rcn.com>
-   derived from sets.py written by Greg V. Wilson, Alex Martelli, 
-   Guido van Rossum, Raymond Hettinger, and Tim Peters.
-
-   Copyright (c) 2003-5 Python Software Foundation.
-   All rights reserved.
-*/
 
 static int
 set_len(PyObject *so)
@@ -764,6 +754,7 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 void
 PySet_Fini(void)
 {
+	Py_XDECREF(dummy);
 	Py_XDECREF(emptyfrozenset);
 }
 
@@ -1309,22 +1300,26 @@ set_nocmp(PyObject *self)
 static long
 frozenset_hash(PyObject *self)
 {
-	PyObject *key;
 	PySetObject *so = (PySetObject *)self;
-	int pos = 0;
 	long hash = 1927868237L;
+	int i, j;
 
 	if (so->hash != -1)
 		return so->hash;
 
 	hash *= set_len(self) + 1;
-	while (set_next_internal(so, &pos, &key)) {
+	for (i=0, j=so->used ; j ; j--, i++) {
+		setentry *entry;
+		long h;
+
+		while ((entry = &so->table[i])->key == NULL || entry->key==dummy)
+			i++;
 		/* Work to increase the bit dispersion for closely spaced hash
 		   values.  The is important because some use cases have many 
 		   combinations of a small number of elements with nearby 
 		   hashes so that many distinct combinations collapse to only 
 		   a handful of distinct hash values. */
-		long h = PyObject_Hash(key);
+		h = entry->hash;
 		hash ^= (h ^ (h << 16) ^ 89869747L)  * 3644798167u;
 	}
 	hash = hash * 69069L + 907133923L;
