@@ -46,7 +46,7 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 	register unsigned int perturb;
 	register setentry *freeslot;
 	register unsigned int mask = so->mask;
-	setentry *entry0 = so->table;
+	setentry *table = so->table;
 	register setentry *entry;
 	register int restore_error;
 	register int checked_error;
@@ -55,7 +55,7 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 	PyObject *startkey;
 
 	i = hash & mask;
-	entry = &entry0[i];
+	entry = &table[i];
 	if (entry->key == NULL || entry->key == key)
 		return entry;
 
@@ -74,7 +74,7 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 			cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
 			if (cmp < 0)
 				PyErr_Clear();
-			if (entry0 == so->table && entry->key == startkey) {
+			if (table == so->table && entry->key == startkey) {
 				if (cmp > 0)
 					goto Done;
 			}
@@ -93,7 +93,7 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 	   least likely outcome, so test for that last. */
 	for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
 		i = (i << 2) + i + perturb + 1;
-		entry = &entry0[i & mask];
+		entry = &table[i & mask];
 		if (entry->key == NULL) {
 			if (freeslot != NULL)
 				entry = freeslot;
@@ -114,7 +114,7 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 			cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
 			if (cmp < 0)
 				PyErr_Clear();
-			if (entry0 == so->table && entry->key == startkey) {
+			if (table == so->table && entry->key == startkey) {
 				if (cmp > 0)
 					break;
 			}
@@ -153,7 +153,7 @@ set_lookkey_string(PySetObject *so, PyObject *key, register long hash)
 	register unsigned int perturb;
 	register setentry *freeslot;
 	register unsigned int mask = so->mask;
-	setentry *entry0 = so->table;
+	setentry *table = so->table;
 	register setentry *entry;
 
 	/* Make sure this function doesn't have to handle non-string keys,
@@ -165,31 +165,47 @@ set_lookkey_string(PySetObject *so, PyObject *key, register long hash)
 		return set_lookkey(so, key, hash);
 	}
 	i = hash & mask;
-	entry = &entry0[i];
+	entry = &table[i];
 	if (entry->key == NULL || entry->key == key)
 		return entry;
-	if (entry->key == dummy)
-		freeslot = entry;
-	else {
+	if (so->fill != so->used) {
+		if (entry->key == dummy)
+			freeslot = entry;
+		else {
+			if (entry->hash == hash && _PyString_Eq(entry->key, key))
+				return entry;
+			freeslot = NULL;
+		}
+
+		/* In the loop, key == dummy is by far (factor of 100s) the
+		   least likely outcome, so test for that last. */
+		for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
+			i = (i << 2) + i + perturb + 1;
+			entry = &table[i & mask];
+			if (entry->key == NULL)
+				return freeslot == NULL ? entry : freeslot;
+			if (entry->key == key
+			    || (entry->hash == hash
+				&& entry->key != dummy
+				&& _PyString_Eq(entry->key, key)))
+				return entry;
+			if (entry->key == dummy && freeslot == NULL)
+				freeslot = entry;
+		}
+	} else {
+		/* Simplified loop that can assume are no dummy entries */
 		if (entry->hash == hash && _PyString_Eq(entry->key, key))
 			return entry;
-		freeslot = NULL;
-	}
-
-	/* In the loop, key == dummy is by far (factor of 100s) the
-	   least likely outcome, so test for that last. */
-	for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
-		i = (i << 2) + i + perturb + 1;
-		entry = &entry0[i & mask];
-		if (entry->key == NULL)
-			return freeslot == NULL ? entry : freeslot;
-		if (entry->key == key
-		    || (entry->hash == hash
-		        && entry->key != dummy
-			&& _PyString_Eq(entry->key, key)))
-			return entry;
-		if (entry->key == dummy && freeslot == NULL)
-			freeslot = entry;
+		for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
+			i = (i << 2) + i + perturb + 1;
+			entry = &table[i & mask];
+			if (entry->key == NULL)
+				return entry;
+			if (entry->key == key
+			    || (entry->hash == hash
+				&& _PyString_Eq(entry->key, key)))
+				return entry;
+		}
 	}
 }
 
@@ -377,10 +393,8 @@ set_clear_internal(PySetObject *so)
 	setentry small_copy[PySet_MINSIZE];
 #ifdef Py_DEBUG
 	int i, n;
-#endif
-
 	assert (PyAnySet_Check(so));
-#ifdef Py_DEBUG
+
 	n = so->mask + 1;
 	i = 0;
 #endif
@@ -841,7 +855,13 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
 		memcpy(b->smalltable, tab, sizeof(tab));
 	}
 
-	h = a->hash;     a->hash   = b->hash;        b->hash     = h;
+	if (PyType_IsSubtype(a->ob_type, &PyFrozenSet_Type)  &&
+	    PyType_IsSubtype(b->ob_type, &PyFrozenSet_Type)) {
+		h = a->hash;     a->hash = b->hash;  b->hash = h;
+	} else {
+		a->hash = -1;
+		b->hash = -1;
+	}
 }
 
 static int
@@ -1301,19 +1321,18 @@ static long
 frozenset_hash(PyObject *self)
 {
 	PySetObject *so = (PySetObject *)self;
-	long hash = 1927868237L;
-	int i, j;
+	long h, hash = 1927868237L;
+	setentry *entry;
+	int i;
 
 	if (so->hash != -1)
 		return so->hash;
 
 	hash *= set_len(self) + 1;
-	for (i=0, j=so->used ; j ; j--, i++) {
-		setentry *entry;
-		long h;
-
-		while ((entry = &so->table[i])->key == NULL || entry->key==dummy)
-			i++;
+	entry = &so->table[0];
+	for (i=so->used ; i ; entry++, i--) {
+		while (entry->key == NULL || entry->key==dummy)
+			entry++;
 		/* Work to increase the bit dispersion for closely spaced hash
 		   values.  The is important because some use cases have many 
 		   combinations of a small number of elements with nearby 
