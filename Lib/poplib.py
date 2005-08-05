@@ -219,7 +219,7 @@ class POP3:
         """Request listing, return result.
 
         Result without a message number argument is in form
-        ['response', ['mesg_num octets', ...]].
+        ['response', ['mesg_num octets', ...], octets].
 
         Result when a message number argument is given is a
         single response: the "scan listing" for that message.
