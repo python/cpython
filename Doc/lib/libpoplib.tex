@@ -108,8 +108,8 @@ Get mailbox status.  The result is a tuple of 2 integers:
 
 \begin{methoddesc}{list}{\optional{which}}
 Request message list, result is in the form
-\code{(\var{response}, ['mesg_num octets', ...])}.  If \var{which} is
-set, it is the message to list.
+\code{(\var{response}, ['mesg_num octets', ...], \var{octets})}.
+If \var{which} is set, it is the message to list.
 \end{methoddesc}
 
 \begin{methoddesc}{retr}{which}
