@@ -66,7 +66,7 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 		if (entry->hash == hash) {
 			/* error can't have been checked yet */
 			checked_error = 1;
-			if (PyErr_Occurred()) {
+			if (_PyErr_OCCURRED()) {
 				restore_error = 1;
 				PyErr_Fetch(&err_type, &err_value, &err_tb);
 			}
@@ -104,7 +104,7 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 		if (entry->hash == hash && entry->key != dummy) {
 			if (!checked_error) {
 				checked_error = 1;
-				if (PyErr_Occurred()) {
+				if (_PyErr_OCCURRED()) {
 					restore_error = 1;
 					PyErr_Fetch(&err_type, &err_value,
 						    &err_tb);
@@ -720,7 +720,10 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
 	if (so == NULL)
 		return NULL;
 
-	EMPTY_TO_MINSIZE(so);
+	/* tp_alloc has already zeroed the structure */
+	assert(so->table == NULL && so->fill == 0 && so->used == 0);
+	so->table = so->smalltable;
+	so->mask = PySet_MINSIZE - 1;
 	so->lookup = set_lookkey_string;
 	so->hash = -1;
 	so->weakreflist = NULL;
