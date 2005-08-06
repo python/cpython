@@ -49,7 +49,6 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 	setentry *table = so->table;
 	register setentry *entry;
 	register int restore_error;
-	register int checked_error;
 	register int cmp;
 	PyObject *err_type, *err_value, *err_tb;
 	PyObject *startkey;
@@ -59,13 +58,11 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 	if (entry->key == NULL || entry->key == key)
 		return entry;
 
-	restore_error = checked_error = 0;
+	restore_error = 0;
 	if (entry->key == dummy)
 		freeslot = entry;
 	else {
 		if (entry->hash == hash) {
-			/* error can't have been checked yet */
-			checked_error = 1;
 			if (_PyErr_OCCURRED()) {
 				restore_error = 1;
 				PyErr_Fetch(&err_type, &err_value, &err_tb);
@@ -102,13 +99,10 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 		if (entry->key == key)
 			break;
 		if (entry->hash == hash && entry->key != dummy) {
-			if (!checked_error) {
-				checked_error = 1;
-				if (_PyErr_OCCURRED()) {
-					restore_error = 1;
-					PyErr_Fetch(&err_type, &err_value,
-						    &err_tb);
-				}
+			if (_PyErr_OCCURRED()) {
+				restore_error = 1;
+				PyErr_Fetch(&err_type, &err_value,
+					    &err_tb);
 			}
 			startkey = entry->key;
 			cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -1267,8 +1261,8 @@ static PyObject *
 set_issubset(PySetObject *so, PyObject *other)
 {
 	PyObject *tmp, *result;
-	PyObject *key;
-	int pos = 0;
+	register setentry *entry;
+	register int i;
 
 	if (!PyAnySet_Check(other)) {
 		tmp = make_new_set(&PySet_Type, other);
@@ -1281,8 +1275,11 @@ set_issubset(PySetObject *so, PyObject *other)
 	if (set_len((PyObject *)so) > set_len(other)) 
 		Py_RETURN_FALSE;
 
-	while (set_next_internal(so, &pos, &key)) {
-		if (!set_contains_internal((PySetObject *)other, key))
+	entry = &so->table[0];
+	for (i=so->used ; i ; entry++, i--) {
+		while (entry->key == NULL || entry->key==dummy)
+			entry++;
+		if (!set_contains_internal((PySetObject *)other, entry->key))
 			Py_RETURN_FALSE;
 	}
 	Py_RETURN_TRUE;
