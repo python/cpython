@@ -384,7 +384,7 @@ set_discard_internal(PySetObject *so, PyObject *key)
 	return DISCARD_FOUND;
 }
 
-static void
+static int
 set_clear_internal(PySetObject *so)
 {
 	setentry *entry, *table;
@@ -406,7 +406,7 @@ set_clear_internal(PySetObject *so)
 	/* This is delicate.  During the process of clearing the set,
 	 * decrefs can cause the set to mutate.  To avoid fatal confusion
 	 * (voice of experience), we have to make the set empty before
-	 * clearing the slots, and never refer to anything via mp->ref while
+	 * clearing the slots, and never refer to anything via so->ref while
 	 * clearing.
 	 */
 	fill = so->fill;
@@ -445,6 +445,8 @@ set_clear_internal(PySetObject *so)
 
 	if (table_is_malloced)
 		PyMem_DEL(table);
+	so->hash = -1;
+	return 0;
 }
 
 /*
@@ -1433,19 +1435,10 @@ static PyObject *
 set_clear(PySetObject *so)
 {
 	set_clear_internal(so);
-	so->hash = -1;
 	Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(clear_doc, "Remove all elements from this set.");
-
-static int
-set_tp_clear(PySetObject *so)
-{
-	set_clear_internal(so);
-	so->hash = -1;
-	return 0;
-}
 
 static PyObject *
 set_add(PySetObject *so, PyObject *key)
@@ -1727,7 +1720,7 @@ PyTypeObject PySet_Type = {
 		Py_TPFLAGS_BASETYPE,	/* tp_flags */
 	set_doc,			/* tp_doc */
 	(traverseproc)set_traverse,	/* tp_traverse */
-	(inquiry)set_tp_clear,		/* tp_clear */
+	(inquiry)set_clear_internal,	/* tp_clear */
 	(richcmpfunc)set_richcompare,	/* tp_richcompare */
 	offsetof(PySetObject, weakreflist),	/* tp_weaklistoffset */
 	(getiterfunc)set_iter,	/* tp_iter */
@@ -1822,7 +1815,7 @@ PyTypeObject PyFrozenSet_Type = {
 		Py_TPFLAGS_BASETYPE,	/* tp_flags */
 	frozenset_doc,			/* tp_doc */
 	(traverseproc)set_traverse,	/* tp_traverse */
-	0,				/* tp_clear */
+	(inquiry)set_clear_internal,	/* tp_clear */
 	(richcmpfunc)set_richcompare,	/* tp_richcompare */
 	offsetof(PySetObject, weakreflist),	/* tp_weaklistoffset */
 	(getiterfunc)set_iter,		/* tp_iter */
