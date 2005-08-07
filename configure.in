@@ -471,9 +471,11 @@ then
         if test -z "$CXX"; then
               LINKCC="\$(PURIFY) \$(CC)"
         else
-              echo 'void foo();int main(){foo();}void foo(){}' > conftest.$ac_ext
-              $CXX -c conftest.$ac_ext 2>&5
-              if $CC -o conftest$ac_exeext conftest.$ac_objext 2>&5 \
+              echo 'extern "C" void foo();int main(){foo();}' > conftest_a.cc
+              $CXX -c conftest_a.cc # 2>&5
+              echo 'void foo(){}' > conftest_b.$ac_ext
+              $CC -c conftest_b.$ac_ext # 2>&5
+              if $CC -o conftest$ac_exeext conftest_a.$ac_objext conftest_b.$ac_objext 2>&5 \
                  && test -s conftest$ac_exeext && ./conftest$ac_exeext
               then
                  LINKCC="\$(PURIFY) \$(CC)"
