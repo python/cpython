@@ -238,17 +238,6 @@ __bsddb - 0 error(s), 5 warning(s)
     XXX doesn't cause a test to fail when it happens (exceptions in
     XXX threads are invisible to unittest).
 
-    XXX 11-Apr-2004 tim
-    XXX On WinXP Pro, I got one failure from test_bsddb3:
-    XXX
-    XXX ERROR: test04_n_flag (bsddb.test.test_compat.CompatibilityTestCase)
-    XXX Traceback (most recent call last):
-    XXX  File "C:\Code\python\lib\bsddb\test\test_compat.py", line 86, in test04_n_flag
-    XXX    f = hashopen(self.filename, 'n')
-    XXX File "C:\Code\python\lib\bsddb\__init__.py", line 293, in hashopen
-    XXX    d.open(file, db.DB_HASH, flags, mode)
-    XXX DBInvalidArgError: (22, 'Invalid argument -- DB_TRUNCATE illegal with locking specified')
-
 _ssl
     Python wrapper for the secure sockets library.
 
