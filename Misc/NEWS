@@ -53,6 +53,8 @@ Extension Modules
 Library
 -------
 
+- Patch #827386: Support absolute source paths in msvccompiler.py.
+
 - Fix a problem in Tkinter introduced by SF patch #869468: delete bogus
   __hasattr__ and __delattr__ methods on class Tk that were breaking
   Tkdnd.

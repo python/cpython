@@ -270,6 +270,8 @@ class MSVCCompiler (CCompiler) :
         obj_names = []
         for src_name in source_filenames:
             (base, ext) = os.path.splitext (src_name)
+            base = os.path.splitdrive(base)[1] # Chop off the drive
+            base = base[os.path.isabs(base):]  # If abs, chop off leading /
             if ext not in self.src_extensions:
                 # Better to raise an exception instead of silently continuing
                 # and later complain about sources and targets having
