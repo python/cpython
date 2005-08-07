@@ -391,6 +391,9 @@ Library
 Build
 -----
 
+- Bug #1189330: configure did not correctly determine the necessary
+  value of LINKCC if python was built with GCC 4.0.
+
 - Upgrade Windows build to zlib 1.2.3 which eliminates a potential security
   vulnerability in zlib 1.2.1 and 1.2.2.
 
