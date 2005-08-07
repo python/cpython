@@ -12,7 +12,7 @@ the "Standard" toolbar"), and build the projects.
 The proper order to build subprojects:
 
 1) pythoncore (this builds the main Python DLL and library files,
-               python21.{dll, lib} in Release mode)
+               python25.{dll, lib} in Release mode)
               NOTE:  in previous releases, this subproject was
               named after the release number, e.g. python20.
 
@@ -25,7 +25,7 @@ The proper order to build subprojects:
    to the subsystems they implement; see SUBPROJECTS below)
 
 When using the Debug setting, the output files have a _d added to
-their name:  python24_d.dll, python_d.exe, parser_d.pyd, and so on.
+their name:  python25_d.dll, python_d.exe, parser_d.pyd, and so on.
 
 SUBPROJECTS
 -----------
@@ -114,7 +114,7 @@ _tkinter
         all.tcl:        Total   8420    Passed  6826    Skipped 1581    Failed  13
         Sourced 91 Test Files.
         Files with failing tests: canvImg.test scrollbar.test textWind.test winWm.test
-        
+
    Built Tix
    ---------
    Download from http://prdownloads.sourceforge.net/tix/tix-8.1.4.tar.gz
