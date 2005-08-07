@@ -59,12 +59,16 @@ struct _setobject {
 PyAPI_DATA(PyTypeObject) PySet_Type;
 PyAPI_DATA(PyTypeObject) PyFrozenSet_Type;
 
-/* Invariants for frozensets only:
+/* Invariants for frozensets:
  *     data is immutable.
  *     hash is the hash of the frozenset or -1 if not computed yet.
+ * Invariants for sets:
+ *     hash is -1
  */
 
 #define PyFrozenSet_CheckExact(ob) ((ob)->ob_type == &PyFrozenSet_Type)
+#define PyAnySet_CheckExact(ob) \
+	((ob)->ob_type == &PySet_Type || (ob)->ob_type == &PyFrozenSet_Type)
 #define PyAnySet_Check(ob) \
 	((ob)->ob_type == &PySet_Type || (ob)->ob_type == &PyFrozenSet_Type || \
 	  PyType_IsSubtype((ob)->ob_type, &PySet_Type) || \
