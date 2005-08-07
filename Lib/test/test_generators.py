@@ -484,7 +484,7 @@ A->A B->G C->A D->G E->G F->A G->G H->G I->A J->G K->A L->A M->G
 merged A into G
 A->G B->G C->G D->G E->G F->G G->G H->G I->G J->G K->G L->G M->G
 
->>> for s in sets: s.close()	# break cycles
+>>> for s in sets: s.close()    # break cycles
 
 """
 # Emacs turd '
@@ -1467,12 +1467,12 @@ caught ValueError (1)
 >>> g.throw(ValueError, TypeError(1))  # mismatched type, rewrapped
 caught ValueError (1)
 
->>> g.throw(ValueError(1), "foo")	# bad args
+>>> g.throw(ValueError(1), "foo")       # bad args
 Traceback (most recent call last):
   ...
 TypeError: instance exception may not have a separate value
 
->>> g.throw(ValueError, "foo", 23)	# bad args
+>>> g.throw(ValueError, "foo", 23)      # bad args
 Traceback (most recent call last):
   ...
 TypeError: throw() third argument must be a traceback object
@@ -1482,13 +1482,13 @@ TypeError: throw() third argument must be a traceback object
 ...         raise exc
 ...     except:
 ...         g.throw(*sys.exc_info())
->>> throw(g,ValueError)	# do it with traceback included
+>>> throw(g,ValueError) # do it with traceback included
 caught ValueError ()
 
 >>> g.send(1)
 1
 
->>> throw(g,TypeError)	# terminate the generator
+>>> throw(g,TypeError)  # terminate the generator
 Traceback (most recent call last):
   ...
 TypeError
@@ -1501,12 +1501,12 @@ Traceback (most recent call last):
   ...
 StopIteration
 
->>> g.throw(ValueError,6)	# throw on closed generator
+>>> g.throw(ValueError,6)       # throw on closed generator
 Traceback (most recent call last):
   ...
 ValueError: 6
 
->>> f().throw(ValueError,7)	# throw on just-opened generator
+>>> f().throw(ValueError,7)     # throw on just-opened generator
 Traceback (most recent call last):
   ...
 ValueError: 7
@@ -1527,11 +1527,11 @@ exiting
 
 >>> f().close()  # close on just-opened generator should be fine
 
->>> def f(): yield	# an even simpler generator
->>> f().close()		# close before opening
+>>> def f(): yield      # an even simpler generator
+>>> f().close()         # close before opening
 >>> g = f()
 >>> g.next()
->>> g.close()		# close normally
+>>> g.close()           # close normally
 
 And finalization:
 
