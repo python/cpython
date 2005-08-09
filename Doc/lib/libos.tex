@@ -796,7 +796,7 @@ entries \code{'.'} and \code{'..'} even if they are present in the
 directory.
 Availability: Macintosh, \UNIX, Windows.
 
-\versionchanged[On Windows NT/2k/XP and Unix, if \var{path} is a Unicode
+\versionchanged[On Windows NT/2k/XP and \UNIX, if \var{path} is a Unicode
 object, the result will be a list of Unicode objects.]{2.3}
 \end{funcdesc}
 
@@ -989,14 +989,14 @@ values are floats, measuring seconds. Fractions of a second may be
 reported if the system supports that. On Mac OS, the times are always
 floats. See \function{stat_float_times} for further discussion. ]{2.3}
 
-On some Unix systems (such as Linux), the following attributes may
+On some \UNIX{} systems (such as Linux), the following attributes may
 also be available:
 \member{st_blocks} (number of blocks allocated for file),
 \member{st_blksize} (filesystem blocksize),
 \member{st_rdev} (type of device if an inode device).
 \member{st_flags} (user defined flags for file).
 
-On other Unix systems (such as FreeBSD), the following attributes
+On other \UNIX{} systems (such as FreeBSD), the following attributes
 may be available (but may be only filled out of root tries to
 use them:
 \member{st_gen} (file generation number),
