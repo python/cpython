@@ -706,6 +706,12 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
 	{"st_flags",   "user defined flags for file"},
 #endif
+#ifdef HAVE_STRUCT_STAT_ST_GEN
+	{"st_gen",    "generation number"},
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
+	{"st_birthtime",   "time of creation"},
+#endif
 	{0}
 };
 
@@ -731,6 +737,18 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_FLAGS_IDX (ST_RDEV_IDX+1)
 #else
 #define ST_FLAGS_IDX ST_RDEV_IDX
+#endif
+
+#ifdef HAVE_STRUCT_STAT_ST_GEN
+#define ST_GEN_IDX (ST_RDEV_IDX+1)
+#else
+#define ST_GEN_IDX ST_RDEV_IDX
+#endif
+
+#ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
+#define ST_BIRTHTIME_IDX (ST_GEN_IDX+1)
+#else
+#define ST_BIRTHTIME_IDX ST_GEN_IDX
 #endif
 
 static PyStructSequence_Desc stat_result_desc = {
@@ -878,7 +896,13 @@ _pystat_fromstructstat(STRUCT_STAT st)
 	mnsec = st.st_mtim.tv_nsec;
 	cnsec = st.st_ctim.tv_nsec;
 #else
+#ifdef HAVE_STAT_TV_NSEC2
+	ansec = st.st_atimespec.tv_nsec;
+	mnsec = st.st_mtimespec.tv_nsec;
+	cnsec = st.st_ctimespec.tv_nsec;
+#else
 	ansec = mnsec = cnsec = 0;
+#endif
 #endif
 	fill_time(v, 7, st.st_atime, ansec);
 	fill_time(v, 8, st.st_mtime, mnsec);
@@ -895,6 +919,29 @@ _pystat_fromstructstat(STRUCT_STAT st)
 #ifdef HAVE_STRUCT_STAT_ST_RDEV
 	PyStructSequence_SET_ITEM(v, ST_RDEV_IDX,
 			 PyInt_FromLong((long)st.st_rdev));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_GEN
+	PyStructSequence_SET_ITEM(v, ST_GEN_IDX,
+			 PyInt_FromLong((long)st.st_gen));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
+	{
+	  PyObject *val;
+	  unsigned long bsec,bnsec;
+	  bsec = (long)st.st_birthtime;
+#ifdef HAVE_STAT_TV_NSEC2
+	  bnsec = st.st_birthtimespec.tv_nsec;
+#else
+	  bnsec = 0;
+#endif
+	  if (_stat_float_times) {
+	    val = PyFloat_FromDouble(bsec + 1e-9*bnsec);
+	  } else {
+	    val = PyInt_FromLong((long)bsec);
+	  }
+	  PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX,
+				    val);
+	}
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
 	PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX,

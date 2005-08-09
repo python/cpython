@@ -996,6 +996,12 @@ also be available:
 \member{st_rdev} (type of device if an inode device).
 \member{st_flags} (user defined flags for file).
 
+On other Unix systems (such as FreeBSD), the following attributes
+may be available (but may be only filled out of root tries to
+use them:
+\member{st_gen} (file generation number),
+\member{st_birthtime} (time of file creation).
+
 On Mac OS systems, the following attributes may also be available:
 \member{st_rsize},
 \member{st_creator},
@@ -1037,6 +1043,7 @@ Availability: Macintosh, \UNIX, Windows.
 
 \versionchanged
 [Added access to values as attributes of the returned object]{2.2}
+\versionchanged[Added st_gen, st_birthtime]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{stat_float_times}{\optional{newvalue}}
