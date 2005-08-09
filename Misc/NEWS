@@ -121,6 +121,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1180695: Add nanosecond stat resolution, and st_gen, 
+  st_birthtime for FreeBSD.
+
 - Patch #1231069: The fcntl.ioctl function now uses the 'I' code for
   the request code argument, which results in more C-like behaviour
   for large or negative values.

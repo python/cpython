@@ -2424,6 +2424,8 @@ AC_STRUCT_TIMEZONE
 AC_CHECK_MEMBERS([struct stat.st_rdev])
 AC_CHECK_MEMBERS([struct stat.st_blksize])
 AC_CHECK_MEMBERS([struct stat.st_flags])
+AC_CHECK_MEMBERS([struct stat.st_gen])
+AC_CHECK_MEMBERS([struct stat.st_birthtime])
 AC_STRUCT_ST_BLOCKS
 
 AC_MSG_CHECKING(for time.h that defines altzone)
@@ -3040,6 +3042,23 @@ if test "$ac_cv_stat_tv_nsec" = yes
 then
   AC_DEFINE(HAVE_STAT_TV_NSEC, 1,
   [Define if you have struct stat.st_mtim.tv_nsec])
+fi
+
+# Look for BSD style subsecond timestamps in struct stat
+AC_MSG_CHECKING(for tv_nsec2 in struct stat)
+AC_CACHE_VAL(ac_cv_stat_tv_nsec2,
+AC_TRY_COMPILE([#include <sys/stat.h>], [
+struct stat st;
+st.st_mtimespec.tv_nsec = 1;
+],
+ac_cv_stat_tv_nsec2=yes,
+ac_cv_stat_tv_nsec2=no,
+ac_cv_stat_tv_nsec2=no))
+AC_MSG_RESULT($ac_cv_stat_tv_nsec2)
+if test "$ac_cv_stat_tv_nsec2" = yes
+then
+  AC_DEFINE(HAVE_STAT_TV_NSEC2, 1,
+  [Define if you have struct stat.st_mtimensec])
 fi
 
 # On HP/UX 11.0, mvwdelch is a block with a return statement

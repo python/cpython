@@ -455,6 +455,9 @@
 /* Define if you have struct stat.st_mtim.tv_nsec */
 #undef HAVE_STAT_TV_NSEC
 
+/* Define if you have struct stat.st_mtimensec */
+#undef HAVE_STAT_TV_NSEC2
+
 /* Define if your compiler supports variable length function prototypes (e.g.
    void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
 #undef HAVE_STDARG_PROTOTYPES
@@ -483,6 +486,9 @@
 /* Define to 1 if you have the <stropts.h> header file. */
 #undef HAVE_STROPTS_H
 
+/* Define to 1 if `st_birthtime' is member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_BIRTHTIME
+
 /* Define to 1 if `st_blksize' is member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
 
@@ -491,6 +497,9 @@
 
 /* Define to 1 if `st_flags' is member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_FLAGS
+
+/* Define to 1 if `st_gen' is member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_GEN
 
 /* Define to 1 if `st_rdev' is member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_RDEV
