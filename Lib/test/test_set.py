@@ -370,6 +370,18 @@ class TestSet(TestJointOps):
             else:
                 self.assert_(c not in self.s)
 
+    def test_inplace_on_self(self):
+        t = self.s.copy()
+        t |= t
+        self.assertEqual(t, self.s)
+        t &= t
+        self.assertEqual(t, self.s)
+        t -= t
+        self.assertEqual(t, self.thetype())
+        t = self.s.copy()
+        t ^= t
+        self.assertEqual(t, self.thetype())
+
     def test_weakref(self):
         s = self.thetype('gallahad')
         p = proxy(s)
