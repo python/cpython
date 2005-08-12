@@ -932,20 +932,22 @@ static int
 set_contains(PySetObject *so, PyObject *key)
 {
 	PyObject *tmpkey;
-	int result;
+	int rv;
 
-	result = set_contains_key(so, key);
-	if (result == -1 && PyAnySet_Check(key)) {
+	rv = set_contains_key(so, key);
+	if (rv == -1) {
+		if (!PyAnySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
+			return -1;
 		PyErr_Clear();
 		tmpkey = make_new_set(&PyFrozenSet_Type, NULL);
 		if (tmpkey == NULL)
 			return -1;
 		set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
-		result = set_contains_key(so, tmpkey);
+		rv = set_contains(so, tmpkey);
 		set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
 		Py_DECREF(tmpkey);
 	}
-	return result;
+	return rv;
 }
 
 static PyObject *
@@ -1046,15 +1048,16 @@ set_intersection(PySetObject *so, PyObject *other)
 	if (result == NULL)
 		return NULL;
 
-	if (PyAnySet_Check(other) && set_len(other) > set_len((PyObject *)so)) {
-		tmp = (PyObject *)so;
-		so = (PySetObject *)other;
-		other = tmp;
-	}
-
 	if (PyAnySet_Check(other)) {		
 		int pos = 0;
 		setentry *entry;
+
+		if (set_len(other) > set_len((PyObject *)so)) {
+			tmp = (PyObject *)so;
+			so = (PySetObject *)other;
+			other = tmp;
+		}
+
 		while (set_next((PySetObject *)other, &pos, &entry)) {
 			if (set_contains_entry(so, entry)) {
 				if (set_add_entry(result, entry) == -1) {
@@ -1556,21 +1559,20 @@ set_remove(PySetObject *so, PyObject *key)
 	PyObject *tmpkey, *result;
 	int rv;
 
-	if (PyType_IsSubtype(key->ob_type, &PySet_Type)) {
+	rv = set_discard_key(so, key);
+	if (rv == -1) {
+		if (!PyAnySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
+			return NULL;
+		PyErr_Clear();
 		tmpkey = make_new_set(&PyFrozenSet_Type, NULL);
 		if (tmpkey == NULL)
 			return NULL;
-		set_swap_bodies((PySetObject *)key, (PySetObject *)tmpkey);
+		set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
 		result = set_remove(so, tmpkey);
-		set_swap_bodies((PySetObject *)key, (PySetObject *)tmpkey);
+		set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
 		Py_DECREF(tmpkey);
 		return result;
-	}
-
-	rv = set_discard_key(so, key);
-	if (rv == -1) 
-		return NULL;
-	else if (rv == DISCARD_NOTFOUND) {
+	} else if (rv == DISCARD_NOTFOUND) {
 		PyErr_SetObject(PyExc_KeyError, key);
 		return NULL;
 	}
@@ -1586,20 +1588,22 @@ static PyObject *
 set_discard(PySetObject *so, PyObject *key)
 {
 	PyObject *tmpkey, *result;
+	int rv;
 
-	if (PyType_IsSubtype(key->ob_type, &PySet_Type)) {
+	rv = set_discard_key(so, key);
+	if (rv == -1) {
+		if (!PyAnySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
+			return NULL;
+		PyErr_Clear();
 		tmpkey = make_new_set(&PyFrozenSet_Type, NULL);
 		if (tmpkey == NULL)
 			return NULL;
-		set_swap_bodies((PySetObject *)key, (PySetObject *)tmpkey);
+		set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
 		result = set_discard(so, tmpkey);
-		set_swap_bodies((PySetObject *)key, (PySetObject *)tmpkey);
+		set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
 		Py_DECREF(tmpkey);
 		return result;
 	}
-
-	if (set_discard_key(so, key) == -1)
-		return NULL;
 	Py_RETURN_NONE;
 }
 
