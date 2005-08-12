@@ -388,6 +388,10 @@ class UnicodeTest(
         self.assertEqual('%i %*.*s' % (10, 5,3,u'abc',), u'10   abc')
         self.assertEqual('%i%s %*.*s' % (10, 3, 5, 3, u'abc',), u'103   abc')
         self.assertEqual('%c' % u'a', u'a')
+        class Wrapper:
+            def __str__(self):
+                return u'\u1234'
+        self.assertEqual('%s' % Wrapper(), u'\u1234')
 
     def test_constructor(self):
         # unicode(obj) tests (this maps to PyObject_Unicode() at C level)

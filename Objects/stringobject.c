@@ -3853,7 +3853,6 @@ formatchar(char *buf, size_t buflen, PyObject *v)
 	return 1;
 }
 
-
 /* fmt%(v1,v2,...) is roughly equivalent to sprintf(fmt, v1, v2, ...)
 
    FORMATBUFLEN is the length of the buffer in which the floats, ints, &
@@ -4079,7 +4078,9 @@ PyString_Format(PyObject *format, PyObject *args)
 				break;
 			case 's':
 #ifdef Py_USING_UNICODE
-				if (PyUnicode_Check(v)) {
+				temp = _PyObject_Str(v);
+				if (temp != NULL && PyUnicode_Check(temp)) {
+					Py_DECREF(temp);
 					fmt = fmt_start;
 					argidx = argidx_start;
 					goto unicode;
@@ -4087,16 +4088,11 @@ PyString_Format(PyObject *format, PyObject *args)
 #endif
 				/* Fall through */
 			case 'r':
-				if (c == 's')
-					temp = PyObject_Str(v);
-				else
+				if (c == 'r')
 					temp = PyObject_Repr(v);
 				if (temp == NULL)
 					goto error;
 				if (!PyString_Check(temp)) {
-					/* XXX Note: this should never happen,
-					   since PyObject_Repr() and
-					   PyObject_Str() assure this */
 					PyErr_SetString(PyExc_TypeError,
 					  "%s argument has non-string str()");
 					Py_DECREF(temp);

@@ -118,6 +118,10 @@ Core and builtins
   positions.  It once again reports a syntax error if a future
   statement occurs after anything other than a doc string.
 
+- Change the %s format specifier for str objects so that it returns a
+  unicode instance if the argument is not an instance of basestring and
+  calling __str__ on the argument returns a unicode instance.
+
 Extension Modules
 -----------------
 
