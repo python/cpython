@@ -213,6 +213,19 @@ class TestJointOps(unittest.TestCase):
             elem.sub = elem
             elem.set = set([elem])
 
+    def test_subclass_with_custom_hash(self):
+        # Bug #1257731
+        class H(self.thetype):
+            def __hash__(self):
+                return id(self)
+        s=H()
+        f=set()
+        f.add(s)
+        self.assert_(s in f)
+        f.remove(s)
+        f.add(s)
+        f.discard(s)
+
 class TestSet(TestJointOps):
     thetype = set
 
