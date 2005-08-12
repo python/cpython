@@ -331,20 +331,46 @@ PyObject_Repr(PyObject *v)
 }
 
 PyObject *
-PyObject_Str(PyObject *v)
+_PyObject_Str(PyObject *v)
 {
 	PyObject *res;
-
+	int type_ok;
 	if (v == NULL)
 		return PyString_FromString("<NULL>");
 	if (PyString_CheckExact(v)) {
 		Py_INCREF(v);
 		return v;
 	}
+#ifdef Py_USING_UNICODE
+	if (PyUnicode_CheckExact(v)) {
+		Py_INCREF(v);
+		return v;
+	}
+#endif
 	if (v->ob_type->tp_str == NULL)
 		return PyObject_Repr(v);
 
 	res = (*v->ob_type->tp_str)(v);
+	if (res == NULL)
+		return NULL;
+	type_ok = PyString_Check(res);
+#ifdef Py_USING_UNICODE
+	type_ok = type_ok || PyUnicode_Check(res);
+#endif
+	if (!type_ok) {
+		PyErr_Format(PyExc_TypeError,
+			     "__str__ returned non-string (type %.200s)",
+			     res->ob_type->tp_name);
+		Py_DECREF(res);
+		return NULL;
+	}
+	return res;
+}
+
+PyObject *
+PyObject_Str(PyObject *v)
+{
+	PyObject *res = _PyObject_Str(v);
 	if (res == NULL)
 		return NULL;
 #ifdef Py_USING_UNICODE
@@ -358,13 +384,7 @@ PyObject_Str(PyObject *v)
 		    	return NULL;
 	}
 #endif
-	if (!PyString_Check(res)) {
-		PyErr_Format(PyExc_TypeError,
-			     "__str__ returned non-string (type %.200s)",
-			     res->ob_type->tp_name);
-		Py_DECREF(res);
-		return NULL;
-	}
+	assert(PyString_Check(res));
 	return res;
 }
 
