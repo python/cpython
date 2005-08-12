@@ -12,6 +12,11 @@ What's New in Python 2.4.2a
 Core and builtins
 -----------------
 
+- SF bug #1257731:  set.discard() and set.remove() did not correctly
+  handle keys that both inherited from set and defined their own
+  __hash__() function.  Also, changed set.__contains__() to have
+  identical logic.
+
 - SF bug #1238681:  freed pointer is used in longobject.c:long_pow().
 
 - SF bug #1185883:  Python's small-object memory allocator took over

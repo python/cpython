@@ -145,18 +145,20 @@ static int
 set_contains(PySetObject *so, PyObject *key)
 {
 	PyObject *tmp;
-	int result;
+	int rv;
 
-	result = PyDict_Contains(so->data, key);
-	if (result == -1 && PyAnySet_Check(key)) {
+	rv = PyDict_Contains(so->data, key);
+	if (rv == -1) {
+		if (!PyAnySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
+			return -1;
 		PyErr_Clear();
 		tmp = frozenset_dict_wrapper(((PySetObject *)(key))->data);
 		if (tmp == NULL)
 			return -1;
-		result = PyDict_Contains(so->data, tmp);
+		rv = PyDict_Contains(so->data, tmp);
 		Py_DECREF(tmp);
 	}
-	return result;
+	return rv;
 }
 
 static PyObject *
@@ -791,19 +793,20 @@ static PyObject *
 set_remove(PySetObject *so, PyObject *item)
 {
 	PyObject *tmp, *result;
+	int rv;
 
-	if (PyType_IsSubtype(item->ob_type, &PySet_Type)) {
-		tmp = frozenset_dict_wrapper(((PySetObject *)(item))->data);
-		if (tmp == NULL)
-			return NULL;
-		result = set_remove(so, tmp);
-		Py_DECREF(tmp);
-		return result;
-	}
-
-	if (PyDict_DelItem(so->data, item) == -1) 
+	rv = PyDict_DelItem(so->data, item);
+	if (rv == 0) 
+		Py_RETURN_NONE;
+	if (!PyAnySet_Check(item) || !PyErr_ExceptionMatches(PyExc_TypeError))
 		return NULL;
-	Py_RETURN_NONE;
+	PyErr_Clear();
+	tmp = frozenset_dict_wrapper(((PySetObject *)(item))->data);
+	if (tmp == NULL)
+		return NULL;
+	result = set_remove(so, tmp);
+	Py_DECREF(tmp);
+	return result;
 }
 
 PyDoc_STRVAR(remove_doc,
@@ -815,22 +818,24 @@ static PyObject *
 set_discard(PySetObject *so, PyObject *item)
 {
 	PyObject *tmp, *result;
+	int rv;
 
-	if (PyType_IsSubtype(item->ob_type, &PySet_Type)) {
-		tmp = frozenset_dict_wrapper(((PySetObject *)(item))->data);
-		if (tmp == NULL)
-			return NULL;
-		result = set_discard(so, tmp);
-		Py_DECREF(tmp);
-		return result;
-	}
-
-	if (PyDict_DelItem(so->data, item) == -1) {
-		if (!PyErr_ExceptionMatches(PyExc_KeyError))
-			return NULL;
+	rv = PyDict_DelItem(so->data, item);
+	if (rv == 0) 
+		Py_RETURN_NONE;	
+	if (PyErr_ExceptionMatches(PyExc_KeyError)) {
 		PyErr_Clear();
+		Py_RETURN_NONE;
 	}
-	Py_RETURN_NONE;
+	if (!PyAnySet_Check(item) || !PyErr_ExceptionMatches(PyExc_TypeError))
+		return NULL;
+	PyErr_Clear();
+	tmp = frozenset_dict_wrapper(((PySetObject *)(item))->data);
+	if (tmp == NULL)
+		return NULL;
+	result = set_discard(so, tmp);
+	Py_DECREF(tmp);
+	return result;
 }
 
 PyDoc_STRVAR(discard_doc,
@@ -841,18 +846,18 @@ If the element is not a member, do nothing.");
 static PyObject *
 set_pop(PySetObject *so)
 {
-	PyObject *key, *value;
-	int pos = 0;
+	PyObject *item, *key;
 
-	if (!PyDict_Next(so->data, &pos, &key, &value)) {
+	if (set_len(so) == 0) {
 		PyErr_SetString(PyExc_KeyError, "pop from an empty set");
 		return NULL;
 	}
-	Py_INCREF(key);
-	if (PyDict_DelItem(so->data, key) == -1) {
-		Py_DECREF(key);
+	item = PyObject_CallMethod(so->data, "popitem", NULL);
+	if (item == NULL)
 		return NULL;
-	}
+	key = PyTuple_GET_ITEM(item, 0);
+	Py_INCREF(key);
+	Py_DECREF(item);
 	return key;
 }
 
