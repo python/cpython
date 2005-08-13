@@ -243,6 +243,19 @@ class TestBinaryOps(unittest.TestCase):
         self.assertRaises(TypeError, cmp, a, 12)
         self.assertRaises(TypeError, cmp, "abc", a)
 
+    def test_inplace_on_self(self):
+        t = self.set.copy()
+        t |= t
+        self.assertEqual(t, self.set)
+        t &= t
+        self.assertEqual(t, self.set)
+        t -= t
+        self.assertEqual(len(t), 0)
+        t = self.set.copy()
+        t ^= t
+        self.assertEqual(len(t), 0)
+
+
 #==============================================================================
 
 class TestUpdateOps(unittest.TestCase):
