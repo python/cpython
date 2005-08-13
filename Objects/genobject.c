@@ -82,7 +82,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
 	/* Don't keep the reference to f_back any longer than necessary.  It
 	 * may keep a chain of frames alive or it could create a reference
 	 * cycle. */
-	assert(f->f_back != NULL);
+	assert(f->f_back == tstate->frame);
 	Py_CLEAR(f->f_back);
 
 	/* If the generator just returned (as opposed to yielding), signal
