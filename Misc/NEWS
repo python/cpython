@@ -17,6 +17,8 @@ Core and builtins
   __hash__() function.  Also, changed set.__contains__() to have
   identical logic.
 
+- The set() builtin can now properly compute s-=s as an empty set.
+
 - SF bug #1238681:  freed pointer is used in longobject.c:long_pow().
 
 - SF bug #1185883:  Python's small-object memory allocator took over
@@ -57,6 +59,8 @@ Extension Modules
 
 Library
 -------
+
+- The sets module can now properly compute s-=s and s^=s as an empty set.
 
 - Patch #827386: Support absolute source paths in msvccompiler.py.
 

@@ -193,6 +193,16 @@ frozenset_copy(PySetObject *so)
 PyDoc_STRVAR(copy_doc, "Return a shallow copy of a set.");
 
 static PyObject *
+set_clear(PySetObject *so)
+{
+	PyDict_Clear(so->data);
+	so->hash = -1;
+	Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(clear_doc, "Remove all elements from this set.");
+
+static PyObject *
 set_union(PySetObject *so, PyObject *other)
 {
 	PySetObject *result;
@@ -379,6 +389,9 @@ static PyObject *
 set_difference_update(PySetObject *so, PyObject *other)
 {
 	PyObject *item, *tgtdata, *it;
+
+	if ((PyObject *)so == other)
+		return set_clear(so);
 	
 	it = PyObject_GetIter(other);
 	if (it == NULL)
@@ -757,16 +770,6 @@ set_tp_print(PySetObject *so, FILE *fp, int flags)
 	fputs("])", fp);
 	return 0;
 }
-
-static PyObject *
-set_clear(PySetObject *so)
-{
-	PyDict_Clear(so->data);
-	so->hash = -1;
-	Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(clear_doc, "Remove all elements from this set.");
 
 static int
 set_tp_clear(PySetObject *so)
