@@ -566,6 +566,57 @@ set_contains_entry(PySetObject *so, setentry *entry)
 	return key != NULL && key != dummy;
 }
 
+static PyObject *
+set_pop(PySetObject *so)
+{
+	PyObject *key;
+	register setentry *entry;
+	register int i = 0;
+
+	assert (PyAnySet_Check(so));
+	if (so->used == 0) {
+		PyErr_SetString(PyExc_KeyError, "pop from an empty set");
+		return NULL;
+	}
+
+	/* Set entry to "the first" unused or dummy set entry.  We abuse
+	 * the hash field of slot 0 to hold a search finger:
+	 * If slot 0 has a value, use slot 0.
+	 * Else slot 0 is being used to hold a search finger,
+	 * and we use its hash value as the first index to look.
+	 */
+	entry = &so->table[0];
+	if (entry->key == NULL || entry->key == dummy) {
+		i = (int)entry->hash;
+		/* The hash field may be a real hash value, or it may be a
+		 * legit search finger, or it may be a once-legit search
+		 * finger that's out of bounds now because it wrapped around
+		 * or the table shrunk -- simply make sure it's in bounds now.
+		 */
+		if (i > so->mask || i < 1)
+			i = 1;	/* skip slot 0 */
+		while ((entry = &so->table[i])->key == NULL || entry->key==dummy) {
+			i++;
+			if (i > so->mask)
+				i = 1;
+		}
+	}
+	key = entry->key;
+	Py_INCREF(dummy);
+	entry->key = dummy;
+	so->used--;
+	so->table[0].hash = i + 1;  /* next place to start */
+	return key;
+}
+
+PyDoc_STRVAR(pop_doc, "Remove and return an arbitrary set element.");
+
+static int
+set_len(PyObject *so)
+{
+	return ((PySetObject *)so)->used;
+}
+
 /***** Set iterator type ***********************************************/
 
 static PyTypeObject PySetIter_Type; /* Forward */
@@ -681,12 +732,6 @@ static PyTypeObject PySetIter_Type = {
 	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)setiter_iternext,		/* tp_iternext */
 };
-
-static int
-set_len(PyObject *so)
-{
-	return ((PySetObject *)so)->used;
-}
 
 static int
 set_update_internal(PySetObject *so, PyObject *other)
@@ -917,41 +962,6 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
 		b->hash = -1;
 	}
 }
-
-static int
-set_contains(PySetObject *so, PyObject *key)
-{
-	PyObject *tmpkey;
-	int rv;
-
-	rv = set_contains_key(so, key);
-	if (rv == -1) {
-		if (!PyAnySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
-			return -1;
-		PyErr_Clear();
-		tmpkey = make_new_set(&PyFrozenSet_Type, NULL);
-		if (tmpkey == NULL)
-			return -1;
-		set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
-		rv = set_contains(so, tmpkey);
-		set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
-		Py_DECREF(tmpkey);
-	}
-	return rv;
-}
-
-static PyObject *
-set_direct_contains(PySetObject *so, PyObject *key)
-{
-	long result;
-
-	result = set_contains(so, key);
-	if (result == -1)
-		return NULL;
-	return PyBool_FromLong(result);
-}
-
-PyDoc_STRVAR(contains_doc, "x.__contains__(y) <==> y in x.");
 
 static PyObject *
 set_copy(PySetObject *so)
@@ -1537,6 +1547,41 @@ PyDoc_STRVAR(add_doc,
 \n\
 This has no effect if the element is already present.");
 
+static int
+set_contains(PySetObject *so, PyObject *key)
+{
+	PyObject *tmpkey;
+	int rv;
+
+	rv = set_contains_key(so, key);
+	if (rv == -1) {
+		if (!PyAnySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
+			return -1;
+		PyErr_Clear();
+		tmpkey = make_new_set(&PyFrozenSet_Type, NULL);
+		if (tmpkey == NULL)
+			return -1;
+		set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
+		rv = set_contains(so, tmpkey);
+		set_swap_bodies((PySetObject *)tmpkey, (PySetObject *)key);
+		Py_DECREF(tmpkey);
+	}
+	return rv;
+}
+
+static PyObject *
+set_direct_contains(PySetObject *so, PyObject *key)
+{
+	long result;
+
+	result = set_contains(so, key);
+	if (result == -1)
+		return NULL;
+	return PyBool_FromLong(result);
+}
+
+PyDoc_STRVAR(contains_doc, "x.__contains__(y) <==> y in x.");
+
 static PyObject *
 set_remove(PySetObject *so, PyObject *key)
 {
@@ -1595,51 +1640,6 @@ PyDoc_STRVAR(discard_doc,
 "Remove an element from a set if it is a member.\n\
 \n\
 If the element is not a member, do nothing."); 
-
-static PyObject *
-set_pop(PySetObject *so)
-{
-	PyObject *key;
-	register setentry *entry;
-	register int i = 0;
-
-	assert (PyAnySet_Check(so));
-	if (so->used == 0) {
-		PyErr_SetString(PyExc_KeyError, "pop from an empty set");
-		return NULL;
-	}
-
-	/* Set entry to "the first" unused or dummy set entry.  We abuse
-	 * the hash field of slot 0 to hold a search finger:
-	 * If slot 0 has a value, use slot 0.
-	 * Else slot 0 is being used to hold a search finger,
-	 * and we use its hash value as the first index to look.
-	 */
-	entry = &so->table[0];
-	if (entry->key == NULL || entry->key == dummy) {
-		i = (int)entry->hash;
-		/* The hash field may be a real hash value, or it may be a
-		 * legit search finger, or it may be a once-legit search
-		 * finger that's out of bounds now because it wrapped around
-		 * or the table shrunk -- simply make sure it's in bounds now.
-		 */
-		if (i > so->mask || i < 1)
-			i = 1;	/* skip slot 0 */
-		while ((entry = &so->table[i])->key == NULL || entry->key==dummy) {
-			i++;
-			if (i > so->mask)
-				i = 1;
-		}
-	}
-	key = entry->key;
-	Py_INCREF(dummy);
-	entry->key = dummy;
-	so->used--;
-	so->table[0].hash = i + 1;  /* next place to start */
-	return key;
-}
-
-PyDoc_STRVAR(pop_doc, "Remove and return an arbitrary set element.");
 
 static PyObject *
 set_reduce(PySetObject *so)
