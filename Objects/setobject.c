@@ -61,6 +61,7 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 	setentry *table = so->table;
 	register setentry *entry;
 	register int restore_error;
+	register int checked_error;
 	register int cmp;
 	PyObject *err_type, *err_value, *err_tb;
 	PyObject *startkey;
@@ -70,11 +71,13 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 	if (entry->key == NULL || entry->key == key)
 		return entry;
 
-	restore_error = 0;
+	restore_error = checked_error = 0;
 	if (entry->key == dummy)
 		freeslot = entry;
 	else {
 		if (entry->hash == hash) {
+			/* error can't have been checked yet */
+			checked_error = 1;
 			if (_PyErr_OCCURRED()) {
 				restore_error = 1;
 				PyErr_Fetch(&err_type, &err_value, &err_tb);
@@ -111,10 +114,13 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 		if (entry->key == key)
 			break;
 		if (entry->hash == hash && entry->key != dummy) {
-			if (_PyErr_OCCURRED()) {
-				restore_error = 1;
-				PyErr_Fetch(&err_type, &err_value,
-					    &err_tb);
+			if (!checked_error) {
+				checked_error = 1;
+				if (_PyErr_OCCURRED()) {
+					restore_error = 1;
+					PyErr_Fetch(&err_type, &err_value,
+						    &err_tb);
+				}
 			}
 			startkey = entry->key;
 			cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -174,44 +180,28 @@ set_lookkey_string(PySetObject *so, PyObject *key, register long hash)
 	entry = &table[i];
 	if (entry->key == NULL || entry->key == key)
 		return entry;
-	if (so->fill != so->used) {
-		if (entry->key == dummy)
-			freeslot = entry;
-		else {
-			if (entry->hash == hash && _PyString_Eq(entry->key, key))
-				return entry;
-			freeslot = NULL;
-		}
-
-		/* In the loop, key == dummy is by far (factor of 100s) the
-		   least likely outcome, so test for that last. */
-		for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
-			i = (i << 2) + i + perturb + 1;
-			entry = &table[i & mask];
-			if (entry->key == NULL)
-				return freeslot == NULL ? entry : freeslot;
-			if (entry->key == key
-			    || (entry->hash == hash
-				&& entry->key != dummy
-				&& _PyString_Eq(entry->key, key)))
-				return entry;
-			if (entry->key == dummy && freeslot == NULL)
-				freeslot = entry;
-		}
-	} else {
-		/* Simplified loop when there are no dummy entries. */
+	if (entry->key == dummy)
+		freeslot = entry;
+	else {
 		if (entry->hash == hash && _PyString_Eq(entry->key, key))
 			return entry;
-		for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
-			i = (i << 2) + i + perturb + 1;
-			entry = &table[i & mask];
-			if (entry->key == NULL)
-				return entry;
-			if (entry->key == key
-			    || (entry->hash == hash
-				&& _PyString_Eq(entry->key, key)))
-				return entry;
-		}
+		freeslot = NULL;
+	}
+
+	/* In the loop, key == dummy is by far (factor of 100s) the
+	   least likely outcome, so test for that last. */
+	for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
+		i = (i << 2) + i + perturb + 1;
+		entry = &table[i & mask];
+		if (entry->key == NULL)
+			return freeslot == NULL ? entry : freeslot;
+		if (entry->key == key
+		    || (entry->hash == hash
+			&& entry->key != dummy
+			&& _PyString_Eq(entry->key, key)))
+			return entry;
+		if (entry->key == dummy && freeslot == NULL)
+			freeslot = entry;
 	}
 }
 
@@ -1369,11 +1359,11 @@ set_ixor(PySetObject *so, PyObject *other)
 static PyObject *
 set_issubset(PySetObject *so, PyObject *other)
 {
-	PyObject *tmp, *result;
-	register setentry *entry;
-	register int i;
+	setentry *entry;
+	int pos = 0;
 
 	if (!PyAnySet_Check(other)) {
+		PyObject *tmp, *result;
 		tmp = make_new_set(&PySet_Type, other);
 		if (tmp == NULL)
 			return NULL;
@@ -1384,10 +1374,7 @@ set_issubset(PySetObject *so, PyObject *other)
 	if (set_len((PyObject *)so) > set_len(other)) 
 		Py_RETURN_FALSE;
 
-	entry = &so->table[0];
-	for (i=so->used ; i ; entry++, i--) {
-		while (entry->key == NULL || entry->key==dummy)
-			entry++;
+	while (set_next(so, &pos, &entry)) {
 		if (!set_contains_entry((PySetObject *)other, entry))
 			Py_RETURN_FALSE;
 	}
@@ -1413,51 +1400,6 @@ set_issuperset(PySetObject *so, PyObject *other)
 }
 
 PyDoc_STRVAR(issuperset_doc, "Report whether this set contains another set.");
-
-static long
-set_nohash(PyObject *self)
-{
-	PyErr_SetString(PyExc_TypeError, "set objects are unhashable");
-	return -1;
-}
-
-static int
-set_nocmp(PyObject *self)
-{
-	PyErr_SetString(PyExc_TypeError, "cannot compare sets using cmp()");
-	return -1;
-}
-
-static long
-frozenset_hash(PyObject *self)
-{
-	PySetObject *so = (PySetObject *)self;
-	long h, hash = 1927868237L;
-	setentry *entry;
-	int i;
-
-	if (so->hash != -1)
-		return so->hash;
-
-	hash *= set_len(self) + 1;
-	entry = &so->table[0];
-	for (i=so->used ; i ; entry++, i--) {
-		while (entry->key == NULL || entry->key==dummy)
-			entry++;
-		/* Work to increase the bit dispersion for closely spaced hash
-		   values.  The is important because some use cases have many 
-		   combinations of a small number of elements with nearby 
-		   hashes so that many distinct combinations collapse to only 
-		   a handful of distinct hash values. */
-		h = entry->hash;
-		hash ^= (h ^ (h << 16) ^ 89869747L)  * 3644798167u;
-	}
-	hash = hash * 69069L + 907133923L;
-	if (hash == -1)
-		hash = 590923713L;
-	so->hash = hash;
-	return hash;
-}
 
 static PyObject *
 set_richcompare(PySetObject *v, PyObject *w, int op)
@@ -1500,6 +1442,48 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
 	}
 	Py_INCREF(Py_NotImplemented);
 	return Py_NotImplemented;
+}
+
+static int
+set_nocmp(PyObject *self)
+{
+	PyErr_SetString(PyExc_TypeError, "cannot compare sets using cmp()");
+	return -1;
+}
+
+static long
+frozenset_hash(PyObject *self)
+{
+	PySetObject *so = (PySetObject *)self;
+	long h, hash = 1927868237L;
+	setentry *entry;
+	int pos = 0;
+
+	if (so->hash != -1)
+		return so->hash;
+
+	hash *= set_len(self) + 1;
+	while (set_next(so, &pos, &entry)) {
+		/* Work to increase the bit dispersion for closely spaced hash
+		   values.  The is important because some use cases have many 
+		   combinations of a small number of elements with nearby 
+		   hashes so that many distinct combinations collapse to only 
+		   a handful of distinct hash values. */
+		h = entry->hash;
+		hash ^= (h ^ (h << 16) ^ 89869747L)  * 3644798167u;
+	}
+	hash = hash * 69069L + 907133923L;
+	if (hash == -1)
+		hash = 590923713L;
+	so->hash = hash;
+	return hash;
+}
+
+static long
+set_nohash(PyObject *self)
+{
+	PyErr_SetString(PyExc_TypeError, "set objects are unhashable");
+	return -1;
 }
 
 static PyObject *
