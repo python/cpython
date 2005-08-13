@@ -480,6 +480,8 @@ class Set(BaseSet):
         value = True
         if not isinstance(other, BaseSet):
             other = Set(other)
+        if self is other:
+            self.clear()
         for elt in other:
             if elt in data:
                 del data[elt]
@@ -497,6 +499,8 @@ class Set(BaseSet):
         data = self._data
         if not isinstance(other, BaseSet):
             other = Set(other)
+        if self is other:
+            self.clear()
         for elt in ifilter(data.has_key, other):
             del data[elt]
 
