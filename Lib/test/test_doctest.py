@@ -1517,6 +1517,7 @@ words and expected output are converted to comments:
     ## 44
     #
     # Yee ha!
+    <BLANKLINE>
 
     >>> name = 'test.test_doctest.SampleNewStyleClass'
     >>> print doctest.testsource(test.test_doctest, name)
@@ -1525,6 +1526,7 @@ words and expected output are converted to comments:
     ## 1
     ## 2
     ## 3
+    <BLANKLINE>
 
     >>> name = 'test.test_doctest.SampleClass.a_classmethod'
     >>> print doctest.testsource(test.test_doctest, name)
@@ -1534,6 +1536,7 @@ words and expected output are converted to comments:
     print SampleClass(0).a_classmethod(10)
     # Expected:
     ## 12
+    <BLANKLINE>
 """
 
 def test_debug(): r"""

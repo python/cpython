@@ -2472,6 +2472,7 @@ def script_from_examples(s):
           blah
        #
        #     Ho hum
+       <BLANKLINE>
        """
     output = []
     for piece in DocTestParser().parse(s):
