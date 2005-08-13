@@ -98,7 +98,7 @@ end
 #end
 
 define printframe
-    if $pc > PyEval_EvalFrame && $pc < PyEval_EvalCodeEx
+    if $pc > PyEval_EvalFrameEx && $pc < PyEval_EvalCodeEx
 	pyframe
     else
         frame
