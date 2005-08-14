@@ -740,9 +740,9 @@ static PyStructSequence_Field stat_result_fields[] = {
 #endif
 
 #ifdef HAVE_STRUCT_STAT_ST_GEN
-#define ST_GEN_IDX (ST_RDEV_IDX+1)
+#define ST_GEN_IDX (ST_FLAGS_IDX+1)
 #else
-#define ST_GEN_IDX ST_RDEV_IDX
+#define ST_GEN_IDX ST_FLAGS_IDX
 #endif
 
 #ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
