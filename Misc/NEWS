@@ -12,6 +12,9 @@ What's New in Python 2.4.2a
 Core and builtins
 -----------------
 
+- SF bug #900092: When tracing (e.g. for hotshot), restore 'return' events for
+  exceptions that cause a function to exit.
+
 - SF bug #1257731:  set.discard() and set.remove() did not correctly
   handle keys that both inherited from set and defined their own
   __hash__() function.  Also, changed set.__contains__() to have
