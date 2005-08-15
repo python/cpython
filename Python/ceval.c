@@ -2480,14 +2480,20 @@ fast_block_end:
 
 fast_yield:
 	if (tstate->use_tracing) {
-		if (tstate->c_tracefunc
-		    && (why == WHY_RETURN || why == WHY_YIELD)) {
-			if (call_trace(tstate->c_tracefunc,
-				       tstate->c_traceobj, f,
-				       PyTrace_RETURN, retval)) {
-				Py_XDECREF(retval);
-				retval = NULL;
-				why = WHY_EXCEPTION;
+		if (tstate->c_tracefunc) {
+			if (why == WHY_RETURN || why == WHY_YIELD) {
+				if (call_trace(tstate->c_tracefunc,
+					       tstate->c_traceobj, f,
+					       PyTrace_RETURN, retval)) {
+					Py_XDECREF(retval);
+					retval = NULL;
+					why = WHY_EXCEPTION;
+				}
+			}
+			else if (why == WHY_EXCEPTION) {
+				call_trace_protected(tstate->c_tracefunc,
+						     tstate->c_traceobj, f,
+						     PyTrace_RETURN);
 			}
 		}
 		if (tstate->c_profilefunc) {
