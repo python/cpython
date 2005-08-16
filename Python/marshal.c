@@ -773,11 +773,9 @@ r_object(RFILE *p)
 		if (v == NULL)
 			return v;
 		if (type == TYPE_SET)
-			v3 = PyObject_CallFunctionObjArgs(
-				(PyObject *)&PySet_Type, v, NULL);
+			v3 = PySet_New(v);
 		else
-			v3 = PyObject_CallFunctionObjArgs(
-				(PyObject *)&PyFrozenSet_Type, v, NULL);
+			v3 = PyFrozenSet_New(v);
 		Py_DECREF(v);
 		return v3;
 

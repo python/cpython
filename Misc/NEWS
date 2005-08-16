@@ -439,6 +439,8 @@ Build
 C API
 -----
 
+- Added a C API for set and frozenset objects.
+
 - Removed PyRange_New().
 
 

@@ -843,7 +843,7 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			return iterable;
 		}
 		result = make_new_set(type, iterable);
-		if (result == NULL || set_len(result))
+		if (result == NULL || PySet_GET_SIZE(result))
 			return result;
 		Py_DECREF(result);
 	}
@@ -1052,7 +1052,7 @@ set_intersection(PySetObject *so, PyObject *other)
 		int pos = 0;
 		setentry *entry;
 
-		if (set_len(other) > set_len((PyObject *)so)) {
+		if (PySet_GET_SIZE(other) > PySet_GET_SIZE(so)) {
 			tmp = (PyObject *)so;
 			so = (PySetObject *)other;
 			other = tmp;
@@ -1381,7 +1381,7 @@ set_issubset(PySetObject *so, PyObject *other)
 		Py_DECREF(tmp);
 		return result;
 	}
-	if (set_len((PyObject *)so) > set_len(other)) 
+	if (PySet_GET_SIZE(so) > PySet_GET_SIZE(other)) 
 		Py_RETURN_FALSE;
 
 	while (set_next(so, &pos, &entry)) {
@@ -1426,11 +1426,11 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
 	}
 	switch (op) {
 	case Py_EQ:
-		if (set_len((PyObject *)v) != set_len(w))
+		if (PySet_GET_SIZE(v) != PySet_GET_SIZE(w))
 			Py_RETURN_FALSE;
 		return set_issubset(v, w);
 	case Py_NE:
-		if (set_len((PyObject *)v) != set_len(w))
+		if (PySet_GET_SIZE(v) != PySet_GET_SIZE(w))
 			Py_RETURN_TRUE;
 		r1 = set_issubset(v, w);
 		assert (r1 != NULL);
@@ -1442,11 +1442,11 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
 	case Py_GE:
 		return set_issuperset(v, w);
 	case Py_LT:
-		if (set_len((PyObject *)v) >= set_len(w))
+		if (PySet_GET_SIZE(v) >= PySet_GET_SIZE(w))
 			Py_RETURN_FALSE;		
 		return set_issubset(v, w);
 	case Py_GT:
-		if (set_len((PyObject *)v) <= set_len(w))
+		if (PySet_GET_SIZE(v) <= PySet_GET_SIZE(w))
 			Py_RETURN_FALSE;
 		return set_issuperset(v, w);
 	}
@@ -1472,7 +1472,7 @@ frozenset_hash(PyObject *self)
 	if (so->hash != -1)
 		return so->hash;
 
-	hash *= set_len(self) + 1;
+	hash *= PySet_GET_SIZE(self) + 1;
 	while (set_next(so, &pos, &entry)) {
 		/* Work to increase the bit dispersion for closely spaced hash
 		   values.  The is important because some use cases have many 
@@ -1918,3 +1918,67 @@ PyTypeObject PyFrozenSet_Type = {
 	frozenset_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
+
+
+/***** C API functions *************************************************/
+
+PyObject *
+PySet_New(PyObject *iterable)
+{
+	return make_new_set(&PySet_Type, iterable);
+}
+
+PyObject *
+PyFrozenSet_New(PyObject *iterable)
+{
+	PyObject *args = NULL, *result;
+
+	if (iterable != NULL) {
+		args = PyTuple_Pack(1, iterable);
+		if (args == NULL)
+			return NULL;
+	}
+	result = frozenset_new(&PyFrozenSet_Type, args, NULL);
+	Py_DECREF(args);
+	return result;
+}
+
+int
+PySet_Contains(PyObject *anyset, PyObject *key)
+{
+	if (!PyAnySet_Check(anyset)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	return set_contains_key((PySetObject *)anyset, key);
+}
+
+int
+PySet_Discard(PyObject *anyset, PyObject *key)
+{
+	if (!PyAnySet_Check(anyset)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	return set_discard_key((PySetObject *)anyset, key);
+}
+
+int
+PySet_Add(PyObject *set, PyObject *key)
+{
+	if (!PyType_IsSubtype(set->ob_type, &PySet_Type)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	return set_add_key((PySetObject *)set, key);
+}
+
+PyObject *
+PySet_Pop(PyObject *set)
+{
+	if (!PyType_IsSubtype(set->ob_type, &PySet_Type)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	return set_pop((PySetObject *)set);
+}
