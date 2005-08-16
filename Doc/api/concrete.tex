@@ -2959,14 +2959,16 @@ Likewise, the constructor functions work with any iterable Python object.
   Returns a new \class{set} containing objects returned by the
   \var{iterable}.  The \var{iterable} may be \NULL{} to create a
   new empty set.  Returns the new set on success or \NULL{} on
-  failure.
+  failure.  Raises \exception{TypeError} if \var{iterable} is
+  not actually iterable.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFrozenSet_New}{PyObject *iterable}
   Returns a new \class{frozenset} containing objects returned by the
   \var{iterable}.  The \var{iterable} may be \NULL{} to create a
   new empty frozenset.  Returns the new set on success or \NULL{} on
-  failure.
+  failure.  Raises \exception{TypeError} if \var{iterable} is
+  not actually iterable.
 \end{cfuncdesc}
 
 
@@ -2976,7 +2978,7 @@ The following functions and macros are available for instances of
 \begin{cfuncdesc}{int}{PySet_Size}{PyObject *anyset}
   Returns the length of a \class{set} or \class{frozenset} object.
   Equivalent to \samp{len(\var{anyset})}.  Raises a
-  \exception{PyExc_SystemError} if the argument is not a \class{set},
+  \exception{PyExc_SystemError} if \var{anyset} is not a \class{set},
   \class{frozenset}, or an instance of a subtype.
   \bifuncindex{len}
 \end{cfuncdesc}
@@ -2989,15 +2991,9 @@ The following functions and macros are available for instances of
   Returns 1 if found, 0 if not found, and -1 if an error is
   encountered.  Unlike the Python \method{__contains__()} method, this
   function does not automatically convert unhashable sets into temporary
-  frozensets.  Raises a \exception{TypeError} if the key is unhashable.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{int}{PySet_Discard}{PyObject *anyset, PyObject *key}
-  Returns 1 if found and removed, 0 if not found (no action taken),
-  and -1 if an error is encountered.  Does not raise \exception{KeyError}
-  for missing keys.  Raises a \exception{TypeError} if the key is unhashable.
-  Unlike the Python \method{discard()} method, this function does
-  not automatically convert unhashable sets into temporary frozensets.  
+  frozensets.  Raises a \exception{TypeError} if the \var{key} is unhashable.
+  Raises \exception{PyExc_SystemError} if \var{anyset} is not a \class{set},
+  \class{frozenset}, or an instance of a subtype.                         
 \end{cfuncdesc}
 
 
@@ -3007,17 +3003,27 @@ its subtypes but not for instances of \class{frozenset} or its subtypes.
 \begin{cfuncdesc}{int}{PySet_Add}{PyObject *set, PyObject *key}
   Adds \var{key} to a \class{set} instance.  Does not apply to
   \class{frozenset} instances.  Returns 0 on success or -1 on failure.
-  Raises a \exception{TypeError} if the key is unhashable.
+  Raises a \exception{TypeError} if the \var{key} is unhashable.
   Raises a \exception{MemoryError} if there is no room to grow.
-  Raises a \exception{SystemError} if \var{key} is an not an instance
+  Raises a \exception{SystemError} if \var{set} is an not an instance
   of \class{set} or its subtype.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PySet_Discard}{PyObject *set, PyObject *key}
+  Returns 1 if found and removed, 0 if not found (no action taken),
+  and -1 if an error is encountered.  Does not raise \exception{KeyError}
+  for missing keys.  Raises a \exception{TypeError} if the \var{key} is
+  unhashable.  Unlike the Python \method{discard()} method, this function
+  does not automatically convert unhashable sets into temporary frozensets.
+  Raises \exception{PyExc_SystemError} if \var{set} is an not an instance
+  of \class{set} or its subtype.                         
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PySet_Pop}{PyObject *set}
   Returns a new reference to an arbitrary object in the \var{set},
   and removes the object from the \var{set}.  Returns \NULL{} on
   failure.  Raises \exception{KeyError} if the set is empty.
-  Raises a \exception{SystemError} if \var{key} is an not an instance
+  Raises a \exception{SystemError} if \var{set} is an not an instance
   of \class{set} or its subtype.                        
 \end{cfuncdesc}
 

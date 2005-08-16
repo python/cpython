@@ -79,7 +79,7 @@ PyAPI_FUNC(PyObject *) PyFrozenSet_New(PyObject *);
 PyAPI_FUNC(int) PySet_Size(PyObject *anyset);
 #define PySet_GET_SIZE(so) (((PySetObject *)(so))->used)
 PyAPI_FUNC(int) PySet_Contains(PyObject *anyset, PyObject *key);
-PyAPI_FUNC(int) PySet_Discard(PyObject *anyset, PyObject *key);
+PyAPI_FUNC(int) PySet_Discard(PyObject *set, PyObject *key);
 PyAPI_FUNC(int) PySet_Add(PyObject *set, PyObject *key);
 PyAPI_FUNC(PyObject *) PySet_Pop(PyObject *set);
 
