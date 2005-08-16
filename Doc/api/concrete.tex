@@ -2897,3 +2897,128 @@ Macros for the convenience of modules implementing the DB API:
   tuple suitable for passing to \code{datetime.date.fromtimestamp()}.
   \versionadded{2.4}
 \end{cfuncdesc}
+
+
+\subsection{Set Objects \label{setObjects}}
+\sectionauthor{Raymond D. Hettinger}{python@rcn.com}                     
+
+\obindex{set}
+\obindex{frozenset}
+\versionadded{2.5}
+
+This section details the public API for \class{set} and \class{frozenset}
+objects.  Any functionality not listed below is best accessed using the
+abstract object API (including
+\cfunction{PyObject_CallMethod()}, \cfunction{PyObject_RichCompareBool()}, 
+\cfunction{PyObject_Hash()}, \cfunction{PyObject_Repr()}, 
+\cfunction{PyObject_IsTrue()}, \cfunction{PyObject_Print()}, and
+\cfunction{PyObject_GetIter()}).                  
+                      
+\begin{ctypedesc}{PySetObject}
+  This subtype of \ctype{PyObject} is used to hold the internal data for
+  both \class{set} and \class{frozenset} objects.  It is like a
+  \ctype{PyDictObject} in that it is a fixed size for small sets
+  (much like tuple storage) and will point to a separate, variable sized
+  block of memory for medium and large sized sets (much like list storage).
+  None of the fields of this structure should be considered public and
+  are subject to change.  All access should be done through the
+  documented API.  
+
+\end{ctypedesc}
+
+\begin{cvardesc}{PyTypeObject}{PySet_Type}
+  This is an instance of \ctype{PyTypeObject} representing the Python
+  \class{set} type.
+\end{cvardesc}
+
+\begin{cvardesc}{PyTypeObject}{PyFrozenSet_Type}
+  This is an instance of \ctype{PyTypeObject} representing the Python
+  \class{frozenset} type.
+\end{cvardesc}
+
+
+The following type check macros work on pointers to any Python object.
+Likewise, the constructor functions work with any iterable Python object.
+
+\begin{cfuncdesc}{int}{PyAnySet_Check}{PyObject *p}
+  Returns true if \var{p} is a \class{set} object, a \class{frozenset} 
+  object, or an instance of a subtype.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyAnySet_CheckExact}{PyObject *p}
+  Returns true if \var{p} is a \class{set} object or a \class{frozenset}
+  object but not an instance of a subtype.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyFrozenSet_CheckExact}{PyObject *p}
+  Returns true if \var{p} is a \class{frozenset} object
+  but not an instance of a subtype.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PySet_New}{PyObject *iterable}
+  Returns a new \class{set} containing objects returned by the
+  \var{iterable}.  The \var{iterable} may be \NULL{} to create a
+  new empty set.  Returns the new set on success or \NULL{} on
+  failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyFrozenSet_New}{PyObject *iterable}
+  Returns a new \class{frozenset} containing objects returned by the
+  \var{iterable}.  The \var{iterable} may be \NULL{} to create a
+  new empty frozenset.  Returns the new set on success or \NULL{} on
+  failure.
+\end{cfuncdesc}
+
+
+The following functions and macros are available for instances of
+\class{set} or \class{frozenset} or instances of their subtypes.
+
+\begin{cfuncdesc}{int}{PySet_Size}{PyObject *anyset}
+  Returns the length of a \class{set} or \class{frozenset} object.
+  Equivalent to \samp{len(\var{anyset})}.  Raises a
+  \exception{PyExc_SystemError} if the argument is not a \class{set},
+  \class{frozenset}, or an instance of a subtype.
+  \bifuncindex{len}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PySet_GET_SIZE}{PyObject *anyset}
+  Macro form of \cfunction{PySet_Size()} without error checking.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PySet_Contains}{PyObject *anyset, PyObject *key}
+  Returns 1 if found, 0 if not found, and -1 if an error is
+  encountered.  Unlike the Python \method{__contains__()} method, this
+  function does not automatically convert unhashable sets into temporary
+  frozensets.  Raises a \exception{TypeError} if the key is unhashable.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PySet_Discard}{PyObject *anyset, PyObject *key}
+  Returns 1 if found and removed, 0 if not found (no action taken),
+  and -1 if an error is encountered.  Does not raise \exception{KeyError}
+  for missing keys.  Raises a \exception{TypeError} if the key is unhashable.
+  Unlike the Python \method{discard()} method, this function does
+  not automatically convert unhashable sets into temporary frozensets.  
+\end{cfuncdesc}
+
+
+The following functions are available for instances of \class{set} or
+its subtypes but not for instances of \class{frozenset} or its subtypes.
+
+\begin{cfuncdesc}{int}{PySet_Add}{PyObject *set, PyObject *key}
+  Adds \var{key} to a \class{set} instance.  Does not apply to
+  \class{frozenset} instances.  Returns 0 on success or -1 on failure.
+  Raises a \exception{TypeError} if the key is unhashable.
+  Raises a \exception{MemoryError} if there is no room to grow.
+  Raises a \exception{SystemError} if \var{key} is an not an instance
+  of \class{set} or its subtype.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PySet_Pop}{PyObject *set}
+  Returns a new reference to an arbitrary object in the \var{set},
+  and removes the object from the \var{set}.  Returns \NULL{} on
+  failure.  Raises \exception{KeyError} if the set is empty.
+  Raises a \exception{SystemError} if \var{key} is an not an instance
+  of \class{set} or its subtype.                        
+\end{cfuncdesc}
+
+
