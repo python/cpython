@@ -1697,6 +1697,13 @@ static PySequenceMethods set_as_sequence = {
 
 /* set object ********************************************************/
 
+#ifdef Py_DEBUG
+static PyObject *test_c_api(PySetObject *so);
+
+PyDoc_STRVAR(test_c_api_doc, "Exercises C API.  Returns True.\n\
+All is well if assertions don't fail.");
+#endif
+
 static PyMethodDef set_methods[] = {
 	{"add",		(PyCFunction)set_add,		METH_O,
 	 add_doc},
@@ -1730,6 +1737,10 @@ static PyMethodDef set_methods[] = {
 	 symmetric_difference_doc},
 	{"symmetric_difference_update",(PyCFunction)set_symmetric_difference_update,	METH_O,
 	 symmetric_difference_update_doc},
+#ifdef Py_DEBUG
+	{"test_c_api",	(PyCFunction)test_c_api,	METH_NOARGS,
+	 test_c_api_doc},
+#endif
 	{"union",	(PyCFunction)set_union,		METH_O,
 	 union_doc},
 	{"update",	(PyCFunction)set_update,	METH_O,
@@ -1931,16 +1942,27 @@ PySet_New(PyObject *iterable)
 PyObject *
 PyFrozenSet_New(PyObject *iterable)
 {
-	PyObject *args = NULL, *result;
+	PyObject *args, *result;
 
-	if (iterable != NULL) {
+	if (iterable == NULL)
+		args = PyTuple_New(0);
+	else
 		args = PyTuple_Pack(1, iterable);
-		if (args == NULL)
-			return NULL;
-	}
+	if (args == NULL)
+		return NULL;
 	result = frozenset_new(&PyFrozenSet_Type, args, NULL);
-	Py_XDECREF(args);
+	Py_DECREF(args);
 	return result;
+}
+
+int
+PySet_Size(PyObject *anyset)
+{
+	if (!PyAnySet_Check(anyset)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	return ((PySetObject *)anyset)->used;
 }
 
 int
@@ -1954,13 +1976,13 @@ PySet_Contains(PyObject *anyset, PyObject *key)
 }
 
 int
-PySet_Discard(PyObject *anyset, PyObject *key)
+PySet_Discard(PyObject *set, PyObject *key)
 {
-	if (!PyAnySet_Check(anyset)) {
+	if (!PyType_IsSubtype(set->ob_type, &PySet_Type)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
-	return set_discard_key((PySetObject *)anyset, key);
+	return set_discard_key((PySetObject *)set, key);
 }
 
 int
@@ -1982,3 +2004,92 @@ PySet_Pop(PyObject *set)
 	}
 	return set_pop((PySetObject *)set);
 }
+
+
+#ifdef Py_DEBUG
+
+/* Test code to be called with any three element set. 
+   Returns True and original set is restored. */
+
+#define assertRaises(call_return_value, exception)		\
+	do {							\
+		assert(call_return_value);			\
+		assert(PyErr_ExceptionMatches(exception));	\
+		PyErr_Clear();					\
+	} while(0)
+
+static PyObject *
+test_c_api(PySetObject *so)
+{
+	PyObject *elem, *dup, *t, *f, *ob = (PyObject *)so;
+
+	/* Verify preconditions and exercise type/size checks */
+	assert(PyAnySet_Check(ob));
+	assert(PyAnySet_CheckExact(ob));
+	assert(!PyFrozenSet_CheckExact(ob));
+	assert(PySet_Size(ob) == 3);
+	assert(PySet_GET_SIZE(ob) == 3);
+
+	/* Raise TypeError for non-iterable constructor arguments */
+	assertRaises(PySet_New(Py_None) == NULL, PyExc_TypeError);
+	assertRaises(PyFrozenSet_New(Py_None) == NULL, PyExc_TypeError);
+
+	/* Raise TypeError for unhashable key */
+	dup = PySet_New(ob);
+	assertRaises(PySet_Discard(ob, dup) == -1, PyExc_TypeError);
+	assertRaises(PySet_Contains(ob, dup) == -1, PyExc_TypeError);
+	assertRaises(PySet_Add(ob, dup) == -1, PyExc_TypeError);
+
+	/* Exercise successful pop, contains, add, and discard */
+	elem = PySet_Pop(ob);
+	assert(PySet_Contains(ob, elem) == 0);
+	assert(PySet_GET_SIZE(ob) == 2);
+	assert(PySet_Add(ob, elem) == 0);
+	assert(PySet_Contains(ob, elem) == 1);
+	assert(PySet_GET_SIZE(ob) == 3);
+	assert(PySet_Discard(ob, elem) == 1);
+	assert(PySet_GET_SIZE(ob) == 2);
+	assert(PySet_Discard(ob, elem) == 0);
+	assert(PySet_GET_SIZE(ob) == 2);
+
+	/* Raise SystemError when self argument is not a set or frozenset. */
+	t = PyTuple_New(0);
+	assertRaises(PySet_Size(t) == -1, PyExc_SystemError);
+	assertRaises(PySet_Contains(t, elem) == -1, PyExc_SystemError);
+	Py_DECREF(t);
+
+	/* Raise SystemError when self argument is not a set. */
+	f = PyFrozenSet_New(dup);
+	assert(PySet_Size(f) == 3);
+	assert(PyFrozenSet_CheckExact(f));
+	assertRaises(PySet_Add(f, elem) == -1, PyExc_SystemError);
+	assertRaises(PySet_Discard(f, elem) == -1, PyExc_SystemError);
+	assertRaises(PySet_Pop(f) == NULL, PyExc_SystemError);
+	Py_DECREF(f);
+
+	/* Raise KeyError when popping from an empty set */
+	set_clear_internal(so);
+	assert(PySet_GET_SIZE(ob) == 0);
+	assertRaises(PySet_Pop(ob) == NULL, PyExc_KeyError);
+
+	/* Restore the set from the copy and use the abstract API */
+	assert(PyObject_CallMethod(ob, "update", "O", dup) == Py_None);
+	Py_DECREF(Py_None);
+
+	/* Verify constructors accept NULL arguments */
+	f = PySet_New(NULL);
+	assert(f != NULL);
+	assert(PySet_GET_SIZE(f) == 0);
+	Py_DECREF(f);
+	f = PyFrozenSet_New(NULL);
+	assert(f != NULL);
+	assert(PyFrozenSet_CheckExact(f));
+	assert(PySet_GET_SIZE(f) == 0);
+	Py_DECREF(f);
+
+	Py_DECREF(elem);
+	Py_DECREF(dup);
+	Py_RETURN_TRUE;
+}
+
+#endif

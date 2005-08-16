@@ -6,6 +6,7 @@ import copy
 import pickle
 import os
 from random import randrange, shuffle
+import sys
 
 class PassThru(Exception):
     pass
@@ -401,6 +402,11 @@ class TestSet(TestJointOps):
         self.assertEqual(str(p), str(s))
         s = None
         self.assertRaises(ReferenceError, str, p)
+
+    # C API test only available in a debug build
+    if hasattr(sys, "gettotalrefcount"):
+        def test_c_api(self):
+            self.assertEqual(set('abc').test_c_api(), True)
 
 class SetSubclass(set):
     pass
@@ -1372,7 +1378,6 @@ class TestVariousIteratorArgs(unittest.TestCase):
 #==============================================================================
 
 def test_main(verbose=None):
-    import sys
     from test import test_sets
     test_classes = (
         TestSet,
