@@ -1939,7 +1939,7 @@ PyFrozenSet_New(PyObject *iterable)
 			return NULL;
 	}
 	result = frozenset_new(&PyFrozenSet_Type, args, NULL);
-	Py_DECREF(args);
+	Py_XDECREF(args);
 	return result;
 }
 
