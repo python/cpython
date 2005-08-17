@@ -492,8 +492,7 @@ set_next(PySetObject *so, int *pos_ptr, setentry **entry_ptr)
 
 	assert (PyAnySet_Check(so));
 	i = *pos_ptr;
-	if (i < 0)
-		return 0;
+	assert(i >= 0);
 	table = so->table;
 	mask = so->mask;
 	while (i <= mask && (table[i].key == NULL || table[i].key == dummy))
@@ -501,9 +500,78 @@ set_next(PySetObject *so, int *pos_ptr, setentry **entry_ptr)
 	*pos_ptr = i+1;
 	if (i > mask)
 		return 0;
-	if (table[i].key)
-		*entry_ptr = &table[i];
+	assert(table[i].key != NULL);
+	*entry_ptr = &table[i];
 	return 1;
+}
+
+static void
+set_dealloc(PySetObject *so)
+{
+	register setentry *entry;
+	int fill = so->fill;
+	PyObject_GC_UnTrack(so);
+	Py_TRASHCAN_SAFE_BEGIN(so)
+	if (so->weakreflist != NULL)
+		PyObject_ClearWeakRefs((PyObject *) so);
+
+	for (entry = so->table; fill > 0; entry++) {
+		if (entry->key) {
+			--fill;
+			Py_DECREF(entry->key);
+		}
+	}
+	if (so->table != so->smalltable)
+		PyMem_DEL(so->table);
+	if (num_free_sets < MAXFREESETS && PyAnySet_CheckExact(so))
+		free_sets[num_free_sets++] = so;
+	else 
+		so->ob_type->tp_free(so);
+	Py_TRASHCAN_SAFE_END(so)
+}
+
+static int
+set_tp_print(PySetObject *so, FILE *fp, int flags)
+{
+	setentry *entry;
+	int pos=0;
+	char *emit = "";	/* No separator emitted on first pass */
+	char *separator = ", ";
+
+	fprintf(fp, "%s([", so->ob_type->tp_name);
+	while (set_next(so, &pos, &entry)) {
+		fputs(emit, fp);
+		emit = separator;
+		if (PyObject_Print(entry->key, fp, 0) != 0)
+			return -1;
+	}
+	fputs("])", fp);
+	return 0;
+}
+
+static PyObject *
+set_repr(PySetObject *so)
+{
+	PyObject *keys, *result, *listrepr;
+
+	keys = PySequence_List((PyObject *)so);
+	if (keys == NULL)
+		return NULL;
+	listrepr = PyObject_Repr(keys);
+	Py_DECREF(keys);
+	if (listrepr == NULL)
+		return NULL;
+
+	result = PyString_FromFormat("%s(%s)", so->ob_type->tp_name,
+		PyString_AS_STRING(listrepr));
+	Py_DECREF(listrepr);
+	return result;
+}
+
+static int
+set_len(PyObject *so)
+{
+	return ((PySetObject *)so)->used;
 }
 
 static int
@@ -511,8 +579,7 @@ set_merge(PySetObject *so, PyObject *otherset)
 {
 	PySetObject *other;
 	register int i;
-	register setentry *entry, *othertable;
-	register int othermask;
+	register setentry *entry;
 
 	assert (PyAnySet_Check(so));
 	assert (PyAnySet_Check(otherset));
@@ -529,10 +596,8 @@ set_merge(PySetObject *so, PyObject *otherset)
 	   if (set_table_resize(so, (so->used + other->used)*2) != 0)
 		   return -1;
 	}
-	othermask = other->mask;
-	othertable = other->table;
-	for (i = 0; i <= othermask; i++) {
-		entry = &othertable[i];
+	for (i = 0; i <= other->mask; i++) {
+		entry = &other->table[i];
 		if (entry->key != NULL && 
 		    entry->key != dummy) {
 			Py_INCREF(entry->key);
@@ -569,9 +634,9 @@ set_contains_entry(PySetObject *so, setentry *entry)
 static PyObject *
 set_pop(PySetObject *so)
 {
-	PyObject *key;
-	register setentry *entry;
 	register int i = 0;
+	register setentry *entry;
+	PyObject *key;
 
 	assert (PyAnySet_Check(so));
 	if (so->used == 0) {
@@ -612,9 +677,49 @@ set_pop(PySetObject *so)
 PyDoc_STRVAR(pop_doc, "Remove and return an arbitrary set element.");
 
 static int
-set_len(PyObject *so)
+set_traverse(PySetObject *so, visitproc visit, void *arg)
 {
-	return ((PySetObject *)so)->used;
+	int pos = 0;
+	setentry *entry;
+
+	while (set_next(so, &pos, &entry))
+		Py_VISIT(entry->key);
+	return 0;
+}
+
+static long
+frozenset_hash(PyObject *self)
+{
+	PySetObject *so = (PySetObject *)self;
+	long h, hash = 1927868237L;
+	setentry *entry;
+	int pos = 0;
+
+	if (so->hash != -1)
+		return so->hash;
+
+	hash *= PySet_GET_SIZE(self) + 1;
+	while (set_next(so, &pos, &entry)) {
+		/* Work to increase the bit dispersion for closely spaced hash
+		   values.  The is important because some use cases have many 
+		   combinations of a small number of elements with nearby 
+		   hashes so that many distinct combinations collapse to only 
+		   a handful of distinct hash values. */
+		h = entry->hash;
+		hash ^= (h ^ (h << 16) ^ 89869747L)  * 3644798167u;
+	}
+	hash = hash * 69069L + 907133923L;
+	if (hash == -1)
+		hash = 590923713L;
+	so->hash = hash;
+	return hash;
+}
+
+static long
+set_nohash(PyObject *self)
+{
+	PyErr_SetString(PyExc_TypeError, "set objects are unhashable");
+	return -1;
 }
 
 /***** Set iterator type ***********************************************/
@@ -660,6 +765,7 @@ setiter_len(setiterobject *si)
 
 static PySequenceMethods setiter_as_sequence = {
 	(inquiry)setiter_len,		/* sq_length */
+	0,				/* sq_concat */
 };
 
 static PyObject *setiter_iternext(setiterobject *si)
@@ -681,8 +787,7 @@ static PyObject *setiter_iternext(setiterobject *si)
 	}
 
 	i = si->si_pos;
-	if (i < 0)
-		goto fail;
+	assert(i>=0);
 	entry = so->table;
 	mask = so->mask;
 	while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy))
@@ -872,44 +977,6 @@ static PyObject *
 set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	return make_new_set(type, NULL);
-}
-
-static void
-set_dealloc(PySetObject *so)
-{
-	register setentry *entry;
-	int fill = so->fill;
-
-	PyObject_GC_UnTrack(so);
-	Py_TRASHCAN_SAFE_BEGIN(so)
-	if (so->weakreflist != NULL)
-		PyObject_ClearWeakRefs((PyObject *) so);
-
-	for (entry = so->table; fill > 0; entry++) {
-		if (entry->key) {
-			--fill;
-			Py_DECREF(entry->key);
-		}
-	}
-	if (so->table != so->smalltable)
-		PyMem_DEL(so->table);
-
-	if (num_free_sets < MAXFREESETS && PyAnySet_CheckExact(so))
-		free_sets[num_free_sets++] = so;
-	else 
-		so->ob_type->tp_free(so);
-	Py_TRASHCAN_SAFE_END(so)
-}
-
-static int
-set_traverse(PySetObject *so, visitproc visit, void *arg)
-{
-	int pos = 0;
-	setentry *entry;
-
-	while (set_next(so, &pos, &entry))
-		Py_VISIT(entry->key);
-	return 0;
 }
 
 /* set_swap_bodies() switches the contents of any two sets by moving their
@@ -1459,79 +1526,6 @@ set_nocmp(PyObject *self)
 {
 	PyErr_SetString(PyExc_TypeError, "cannot compare sets using cmp()");
 	return -1;
-}
-
-static long
-frozenset_hash(PyObject *self)
-{
-	PySetObject *so = (PySetObject *)self;
-	long h, hash = 1927868237L;
-	setentry *entry;
-	int pos = 0;
-
-	if (so->hash != -1)
-		return so->hash;
-
-	hash *= PySet_GET_SIZE(self) + 1;
-	while (set_next(so, &pos, &entry)) {
-		/* Work to increase the bit dispersion for closely spaced hash
-		   values.  The is important because some use cases have many 
-		   combinations of a small number of elements with nearby 
-		   hashes so that many distinct combinations collapse to only 
-		   a handful of distinct hash values. */
-		h = entry->hash;
-		hash ^= (h ^ (h << 16) ^ 89869747L)  * 3644798167u;
-	}
-	hash = hash * 69069L + 907133923L;
-	if (hash == -1)
-		hash = 590923713L;
-	so->hash = hash;
-	return hash;
-}
-
-static long
-set_nohash(PyObject *self)
-{
-	PyErr_SetString(PyExc_TypeError, "set objects are unhashable");
-	return -1;
-}
-
-static PyObject *
-set_repr(PySetObject *so)
-{
-	PyObject *keys, *result, *listrepr;
-
-	keys = PySequence_List((PyObject *)so);
-	if (keys == NULL)
-		return NULL;
-	listrepr = PyObject_Repr(keys);
-	Py_DECREF(keys);
-	if (listrepr == NULL)
-		return NULL;
-
-	result = PyString_FromFormat("%s(%s)", so->ob_type->tp_name,
-		PyString_AS_STRING(listrepr));
-	Py_DECREF(listrepr);
-	return result;
-}
-
-static int
-set_tp_print(PySetObject *so, FILE *fp, int flags)
-{
-	setentry *entry;
-	int pos=0;
-	char *emit = "";	/* No separator emitted on first pass */
-	char *separator = ", ";
-
-	fprintf(fp, "%s([", so->ob_type->tp_name);
-	while (set_next(so, &pos, &entry)) {
-		fputs(emit, fp);
-		emit = separator;
-		if (PyObject_Print(entry->key, fp, 0) != 0)
-			return -1;
-	}
-	fputs("])", fp);
-	return 0;
 }
 
 static PyObject *
