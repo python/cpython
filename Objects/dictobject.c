@@ -113,7 +113,7 @@ equally good collision statistics, needed less code & used less memory.
 */
 
 /* Object used as dummy key to fill deleted entries */
-static PyObject *dummy; /* Initialized by first call to newdictobject() */
+static PyObject *dummy = NULL; /* Initialized by first call to newdictobject() */
 
 /* forward declarations */
 static dictentry *
@@ -567,7 +567,7 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 	 */
 	if (!(mp->ma_used > n_used && mp->ma_fill*3 >= (mp->ma_mask+1)*2))
 		return 0;
-	return dictresize(mp, mp->ma_used*(mp->ma_used>50000 ? 2 : 4));
+	return dictresize(mp, (mp->ma_used>50000 ? mp->ma_used*2 : mp->ma_used*4));
 }
 
 int
