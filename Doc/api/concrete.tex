@@ -1144,7 +1144,7 @@ These are the UTF-16 codec APIs:
   If \var{consumed} is \NULL{}, behaves like
   \cfunction{PyUnicode_DecodeUTF16()}. If \var{consumed} is not \NULL{},
   \cfunction{PyUnicode_DecodeUTF16Stateful()} will not treat trailing incomplete
-  UTF-16 byte sequences (i.e. an odd number of bytes or a split surrogate pair)
+  UTF-16 byte sequences (such as an odd number of bytes or a split surrogate pair)
   as an error. Those bytes will not be decoded and the number of bytes that
   have been decoded will be stored in \var{consumed}.
   \versionadded{2.4}
@@ -2908,11 +2908,18 @@ Macros for the convenience of modules implementing the DB API:
 
 This section details the public API for \class{set} and \class{frozenset}
 objects.  Any functionality not listed below is best accessed using the
-abstract object API (including
+either the abstract object protocol (including
 \cfunction{PyObject_CallMethod()}, \cfunction{PyObject_RichCompareBool()}, 
 \cfunction{PyObject_Hash()}, \cfunction{PyObject_Repr()}, 
 \cfunction{PyObject_IsTrue()}, \cfunction{PyObject_Print()}, and
-\cfunction{PyObject_GetIter()}).                  
+\cfunction{PyObject_GetIter()})
+or the abstract number protocol (including
+\cfunction{PyNumber_Add()}, \cfunction{PyNumber_Subtract()},
+\cfunction{PyNumber_Or()}, \cfunction{PyNumber_Xor()},
+\cfunction{PyNumber_InplaceAdd()}, \cfunction{PyNumber_InplaceSubtract()},
+\cfunction{PyNumber_InplaceOr()}, and \cfunction{PyNumber_InplaceXor()}).
+Note, the latter are also useful for copying (\code{c=s+s}) and clearing
+(\code{s-=s}).                         
                       
 \begin{ctypedesc}{PySetObject}
   This subtype of \ctype{PyObject} is used to hold the internal data for
