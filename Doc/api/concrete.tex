@@ -2918,8 +2918,8 @@ or the abstract number protocol (including
 \cfunction{PyNumber_Or()}, \cfunction{PyNumber_Xor()},
 \cfunction{PyNumber_InplaceAdd()}, \cfunction{PyNumber_InplaceSubtract()},
 \cfunction{PyNumber_InplaceOr()}, and \cfunction{PyNumber_InplaceXor()}).
-Note, the latter are also useful for copying (\code{c=s+s}) and clearing
-(\code{s-=s}).                         
+Note, \cfunction{PyNumber_InplaceSubtract()} is also useful clearing
+clearing a set (\code{s-=s}).                         
                       
 \begin{ctypedesc}{PySetObject}
   This subtype of \ctype{PyObject} is used to hold the internal data for
@@ -2929,7 +2929,7 @@ Note, the latter are also useful for copying (\code{c=s+s}) and clearing
   block of memory for medium and large sized sets (much like list storage).
   None of the fields of this structure should be considered public and
   are subject to change.  All access should be done through the
-  documented API.  
+  documented API rather than by manipulating the values in the structure. 
 
 \end{ctypedesc}
 
@@ -2967,7 +2967,8 @@ Likewise, the constructor functions work with any iterable Python object.
   \var{iterable}.  The \var{iterable} may be \NULL{} to create a
   new empty set.  Returns the new set on success or \NULL{} on
   failure.  Raises \exception{TypeError} if \var{iterable} is
-  not actually iterable.
+  not actually iterable.  The constructor is also useful for
+  copying a set (\code{c=set(s)}).
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFrozenSet_New}{PyObject *iterable}
