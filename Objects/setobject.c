@@ -1065,6 +1065,8 @@ set_union(PySetObject *so, PyObject *other)
 	result = (PySetObject *)set_copy(so);
 	if (result == NULL)
 		return NULL;
+	if ((PyObject *)so == other)
+		return (PyObject *)result;
 	if (set_update_internal(result, other) == -1) {
 		Py_DECREF(result);
 		return NULL;
@@ -1106,10 +1108,8 @@ set_intersection(PySetObject *so, PyObject *other)
 	PySetObject *result;
 	PyObject *key, *it, *tmp;
 
-	if ((PyObject *)so == other) {
-		Py_INCREF(other);
-		return other;
-	}
+	if ((PyObject *)so == other)
+		return set_copy(so);
 
 	result = (PySetObject *)make_new_set(so->ob_type, NULL);
 	if (result == NULL)
@@ -2062,13 +2062,14 @@ test_c_api(PySetObject *so)
 	Py_DECREF(f);
 
 	/* Raise KeyError when popping from an empty set */
-	set_clear_internal(so);
+	assert(PyNumber_InPlaceSubtract(ob, ob) == ob);
+	Py_DECREF(ob);
 	assert(PySet_GET_SIZE(ob) == 0);
 	assertRaises(PySet_Pop(ob) == NULL, PyExc_KeyError);
 
-	/* Restore the set from the copy and use the abstract API */
-	assert(PyObject_CallMethod(ob, "update", "O", dup) == Py_None);
-	Py_DECREF(Py_None);
+	/* Restore the set from the copy using the PyNumber API */
+	assert(PyNumber_InPlaceOr(ob, dup) == ob);
+	Py_DECREF(ob);
 
 	/* Verify constructors accept NULL arguments */
 	f = PySet_New(NULL);
