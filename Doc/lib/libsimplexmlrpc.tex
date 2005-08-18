@@ -61,7 +61,7 @@ simple, stand alone XML-RPC servers.
   not been registered using \method{register_function()}.  If
   \var{instance} contains a \method{_dispatch()} method, it is called
   with the requested method name and the parameters from the request.  Its
-  API is \code{def \method{_dispatch}(self, method, params)} (note tha
+  API is \code{def \method{_dispatch}(self, method, params)} (note that
   \var{params} does not represent a variable argument list).  If it calls an
   underlying function to perform its task, that function is called as
   \code{func(*params)}, expanding the parameter list.
