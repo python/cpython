@@ -1658,6 +1658,8 @@ If \var{key} is of an inappropriate type, \exception{TypeError} may be
 raised; if of a value outside the set of indexes for the sequence
 (after any special interpretation of negative values),
 \exception{IndexError} should be raised.
+For mapping types, if \var{key} is missing (not in the container),
+\exception{KeyError} should be raised.                     
 \note{\keyword{for} loops expect that an
 \exception{IndexError} will be raised for illegal indexes to allow
 proper detection of the end of the sequence.}
