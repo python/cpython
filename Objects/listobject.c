@@ -777,6 +777,11 @@ listextend(PyListObject *self, PyObject *b)
 	/* Guess a result list size. */
 	n = PyObject_Size(b);
 	if (n < 0) {
+		if (!PyErr_ExceptionMatches(PyExc_TypeError)  &&
+		    !PyErr_ExceptionMatches(PyExc_AttributeError)) {
+			Py_DECREF(it);
+			return NULL;
+		}
 		PyErr_Clear();
 		n = 8;	/* arbitrary */
 	}
