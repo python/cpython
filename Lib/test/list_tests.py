@@ -494,3 +494,12 @@ class CommonTest(seq_tests.CommonTest):
         a = self.type2test(range(10))
         a[::2] = tuple(range(5))
         self.assertEqual(a, self.type2test([0, 1, 1, 3, 2, 5, 3, 7, 4, 9]))
+
+    def test_constructor_exception_handling(self):
+        # Bug #1242657
+        class F(object):
+            def __iter__(self):
+                yield 23
+            def __len__(self):
+                raise KeyboardInterrupt
+        self.assertRaises(KeyboardInterrupt, list, F())
