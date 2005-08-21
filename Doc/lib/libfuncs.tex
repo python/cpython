@@ -1111,12 +1111,12 @@ It's a function
         that the number of elements fit in a native C long.}
 \end{funcdesc}
 
-\begin{funcdesc}{zip}{\optional{seq1, \moreargs}}
+\begin{funcdesc}{zip}{\optional{iterable, \moreargs}}
   This function returns a list of tuples, where the \var{i}-th tuple contains
-  the \var{i}-th element from each of the argument sequences.
+  the \var{i}-th element from each of the argument sequences or iterables.
   The returned list is truncated in length to the length of
-  the shortest argument sequence.  When there are multiple argument
-  sequences which are all of the same length, \function{zip()} is
+  the shortest argument sequence.  When there are multiple arguments
+  which are all of the same length, \function{zip()} is
   similar to \function{map()} with an initial argument of \code{None}.
   With a single sequence argument, it returns a list of 1-tuples.
   With no arguments, it returns an empty list.
