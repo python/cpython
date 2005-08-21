@@ -1021,9 +1021,8 @@ PySet_Discard:int:::
 PySet_Discard:PyObject*:set:0:
 PySet_Discard:PyObject*:key:-1:no effect if key not found
 
-PySet_Pop:PyObject*::+1:or NULL if key not found
+PySet_Pop:PyObject*::0:or returns NULL and raises KeyError if set is empty
 PySet_Pop:PyObject*:set:0:
-PySet_Pop:PyObject*:key:-1:no effect if key not found
 
 PySet_Size:int:::
 PySet_Size:PyObject*:anyset:0:
