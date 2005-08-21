@@ -24,9 +24,9 @@ Rossum}{http://www.python.org/\textasciitilde{}guido/}, Python's creator.
 \index{byte code}
 \item[byte code]
 The internal representation of a Python program in the interpreter.
-The byte code is also cached in the \code{.pyc} and \code{.pyo}
+The byte code is also cached in \code{.pyc} and \code{.pyo}
 files so that executing the same file is faster the second time
-(compilation from source to byte code can be saved).  This
+(recompilation from source to byte code can be avoided).  This
 ``intermediate language'' is said to run on a ``virtual
 machine'' that calls the subroutines corresponding to each bytecode.
 
@@ -37,7 +37,6 @@ Any class which does not inherit from \class{object}.  See
 
 \index{coercion}
 \item[coercion]
-
 The implicit conversion of an instance of one type to another during an
 operation which involves two arguments of the same type.  For example,
 {}\code{int(3.15)} converts the floating point number to the integer
@@ -53,7 +52,6 @@ same value by the programmer, e.g., {}\code{float(3)+4.5} rather than just
 
 \index{complex number}
 \item[complex number]
-
 An extension of the familiar real number system in which all numbers are
 expressed as a sum of a real part and an imaginary part.  Imaginary numbers
 are real multiples of the imaginary unit (the square root of {}\code{-1}),
@@ -117,7 +115,7 @@ by executing:
 from __future__ import division
 \end{verbatim}
 
-the expression \code{11/4} would evaluate to \code{2.75}.  By actually
+the expression \code{11/4} would evaluate to \code{2.75}.  By
 importing the \ulink{\module{__future__}}{../lib/module-future.html}
 module and evaluating its variables, you can see when a new feature
 was first added to the language and when it will become the default:
@@ -249,6 +247,13 @@ pass it to the \function{iter()} function or use it in a
 return the same exhausted iterator object used in the previous iteration
 pass, making it appear like an empty container.
 
+\index{LBYL}
+\item[LBYL]
+Look before you leap.  This coding style explicitly tests for
+pre-conditions before making calls or lookups.  This style contrasts
+with the \emph{EAFP} approach and is characterized by the presence of
+many \keyword{if} statements.
+
 \index{list comprehension}
 \item[list comprehension]
 A compact way to process all or a subset of elements in a sequence and
@@ -257,14 +262,6 @@ return a list with the results.  \code{result = ["0x\%02x"
 containing hex numbers (0x..) that are even and in the range from 0 to 255.
 The \keyword{if} clause is optional.  If omitted, all elements in
 {}\code{range(256)} are processed.
-
-
-\index{LBYL}
-\item[LBYL]
-Look before you leap.  This coding style explicitly tests for
-pre-conditions before making calls or lookups.  This style contrasts
-with the \emph{EAFP} approach and is characterized by the presence of
-many \keyword{if} statements.
 
 \index{mapping}
 \item[mapping]
@@ -293,11 +290,11 @@ See also \emph{immutable}.
 \item[namespace]
 The place where a variable is stored.  Namespaces are implemented as
 dictionaries.  There are the local, global and builtin namespaces
-as well asnested namespaces in objects (in methods).  Namespaces support
+as well as nested namespaces in objects (in methods).  Namespaces support
 modularity by preventing naming conflicts.  For instance, the
 functions \function{__builtin__.open()} and \function{os.open()} are
 distinguished by their namespaces.  Namespaces also aid readability
-and maintainability by making it clear which modules implement a
+and maintainability by making it clear which module implements a
 function.  For instance, writing \function{random.seed()} or
 {}\function{itertools.izip()} makes it clear that those functions are
 implemented by the \ulink{\module{random}}{../lib/module-random.html}
@@ -324,7 +321,7 @@ classes can use Python's newer, versatile features like
 
 \index{Python3000}
 \item[Python3000]
-A mythical python release, not required be backward compatible, with
+A mythical python release, not required to be backward compatible, with
 telepathic interface.
 
 \index{__slots__}
