@@ -105,9 +105,10 @@ class SanityTestCase(unittest.TestCase):
 
     def test_default_is_md5(self):
         # Testing if HMAC defaults to MD5 algorithm.
-        import md5
+        # NOTE: this whitebox test depends on the hmac class internals
+        import hashlib
         h = hmac.HMAC("key")
-        self.failUnless(h.digestmod == md5)
+        self.failUnless(h.digest_cons == hashlib.md5)
 
     def test_exercise_all_methods(self):
         # Exercising all methods once.
@@ -127,8 +128,8 @@ class CopyTestCase(unittest.TestCase):
         # Testing if attributes are of same type.
         h1 = hmac.HMAC("key")
         h2 = h1.copy()
-        self.failUnless(h1.digestmod == h2.digestmod,
-            "Modules don't match.")
+        self.failUnless(h1.digest_cons == h2.digest_cons,
+            "digest constructors don't match.")
         self.failUnless(type(h1.inner) == type(h2.inner),
             "Types of inner don't match.")
         self.failUnless(type(h1.outer) == type(h2.outer),

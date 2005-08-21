@@ -400,15 +400,6 @@ class PyBuildExt(build_ext):
         # select(2); not on ancient System V
         exts.append( Extension('select', ['selectmodule.c']) )
 
-        # The md5 module implements the RSA Data Security, Inc. MD5
-        # Message-Digest Algorithm, described in RFC 1321.  The
-        # necessary files md5c.c and md5.h are included here.
-        exts.append( Extension('md5', ['md5module.c', 'md5c.c']) )
-
-        # The sha module implements the SHA checksum algorithm.
-        # (NIST's Secure Hash Algorithm.)
-        exts.append( Extension('sha', ['shamodule.c']) )
-
         # Helper module for various ascii-encoders
         exts.append( Extension('binascii', ['binascii.c']) )
 
@@ -505,6 +496,32 @@ class PyBuildExt(build_ext):
                                    library_dirs = ssl_libs,
                                    libraries = ['ssl', 'crypto'],
                                    depends = ['socketmodule.h']), )
+
+        if (ssl_incs is not None and
+            ssl_libs is not None):
+            # The _hashlib module wraps optimized implementations
+            # of hash functions from the OpenSSL library.
+            exts.append( Extension('_hashlib', ['_hashopenssl.c'],
+                                   include_dirs = ssl_incs,
+                                   library_dirs = ssl_libs,
+                                   libraries = ['ssl', 'crypto']) )
+        else:
+            # The _sha module implements the SHA1 hash algorithm.
+            exts.append( Extension('_sha', ['shamodule.c']) )
+            # The _md5 module implements the RSA Data Security, Inc. MD5
+            # Message-Digest Algorithm, described in RFC 1321.  The
+            # necessary files md5c.c and md5.h are included here.
+            exts.append( Extension('_md5', ['md5module.c', 'md5c.c']) )
+
+        # always compile these for now under the assumption that
+        # OpenSSL does not support them (it doesn't in common OpenSSL
+        # 0.9.7e installs at the time of this writing; OpenSSL 0.9.8
+        # does).  In the future we could make this conditional on
+        # OpenSSL version or support.  The hashlib module uses the
+        # better implementation regardless.
+        exts.append( Extension('_sha256', ['sha256module.c']) )
+        exts.append( Extension('_sha512', ['sha512module.c']) )
+
 
         # Modules that provide persistent dictionary-like semantics.  You will
         # probably want to arrange for at least one of them to be available on
