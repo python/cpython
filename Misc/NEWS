@@ -1570,6 +1570,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- Fix bz2.BZ2File.(x)readlines() for files containing one line without
+  newlines.
+
 - Added socket.getservbyport(), and make the second argument in
   getservbyname() and getservbyport() optional.
 

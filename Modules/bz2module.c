@@ -22,6 +22,18 @@ static char __author__[] =
     Gustavo Niemeyer <niemeyer@conectiva.com>\n\
 ";
 
+/* Our very own off_t-like type, 64-bit if possible */
+/* copied from Objects/fileobject.c */
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+typedef off_t Py_off_t;
+#elif SIZEOF_OFF_T >= 8
+typedef off_t Py_off_t;
+#elif SIZEOF_FPOS_T >= 8
+typedef fpos_t Py_off_t;
+#else
+#error "Large file support, but neither off_t nor fpos_t is large enough."
+#endif
+
 #define BUF(v) PyString_AS_STRING((PyStringObject *)v)
 
 #define MODE_CLOSED   0
@@ -405,7 +417,9 @@ Util_ReadAhead(BZ2FileObject *f, int bufsize)
 			Util_DropReadAhead(f);
 	}
 	if (f->mode == MODE_READ_EOF) {
-		return -1;
+		f->f_bufptr = f->f_buf;
+		f->f_bufend = f->f_buf;
+		return 0;
 	}
 	if ((f->f_buf = PyMem_Malloc(bufsize)) == NULL) {
 		return -1;
@@ -682,13 +696,13 @@ BZ2File_readlines(BZ2FileObject *self, PyObject *args)
 		}
 		totalread += nread;
 		p = memchr(buffer+nfilled, '\n', nread);
-		if (p == NULL) {
+		if (!shortread && p == NULL) {
 			/* Need a larger buffer to fit this line */
 			nfilled += nread;
 			buffersize *= 2;
 			if (buffersize > INT_MAX) {
 				PyErr_SetString(PyExc_OverflowError,
-			    "line is longer than a Python string can hold");
+				"line is longer than a Python string can hold");
 				goto error;
 			}
 			if (big_buffer == NULL) {
@@ -705,11 +719,11 @@ BZ2File_readlines(BZ2FileObject *self, PyObject *args)
 				_PyString_Resize(&big_buffer, buffersize);
 				buffer = PyString_AS_STRING(big_buffer);
 			}
-			continue;
+			continue;			
 		}
 		end = buffer+nfilled+nread;
 		q = buffer;
-		do {
+		while (p != NULL) {
 			/* Process complete lines */
 			p++;
 			line = PyString_FromStringAndSize(q, p-q);
@@ -721,7 +735,7 @@ BZ2File_readlines(BZ2FileObject *self, PyObject *args)
 				goto error;
 			q = p;
 			p = memchr(q, '\n', end-q);
-		} while (p != NULL);
+		}
 		/* Move the remaining incomplete line to the start */
 		nfilled = end-q;
 		memmove(buffer, q, nfilled);
@@ -962,7 +976,8 @@ static PyObject *
 BZ2File_seek(BZ2FileObject *self, PyObject *args)
 {
 	int where = 0;
-	long offset;
+	PyObject *offobj;
+	Py_off_t offset;
 	char small_buffer[SMALLCHUNK];
 	char *buffer = small_buffer;
 	size_t buffersize = SMALLCHUNK;
@@ -973,7 +988,15 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 	int rewind = 0;
 	PyObject *ret = NULL;
 
-	if (!PyArg_ParseTuple(args, "l|i:seek", &offset, &where))
+	if (!PyArg_ParseTuple(args, "O|i:seek", &offobj, &where))
+		return NULL;
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+	offset = PyInt_AsLong(offobj);
+#else
+	offset = PyLong_Check(offobj) ?
+		PyLong_AsLongLong(offobj) : PyInt_AsLong(offobj);
+#endif
+	if (PyErr_Occurred())
 		return NULL;
 
 	ACQUIRE_LOCK(self);
