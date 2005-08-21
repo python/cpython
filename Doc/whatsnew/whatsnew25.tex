@@ -247,6 +247,15 @@ archive into the current working directory.  It's also possible to set
 a different directory as the extraction target, and to unpack only a
 subset of the archive's members.  (Contributed by Lars Gust\"abel.)
 
+\item A new \module{hashlib} module has been added to replace the
+\module{md5} and \module{sha} modules and adds support for additional
+secure hashes such as SHA-256 and SHA-512.  The \module{hashlib} module
+uses OpenSSL for fast platform optimized implementations of algorithms
+when available.  The old \module{md5} and \module{sha} modules still
+exist as wrappers around hashlib to preserve backwards compatibility.
+
+(Contributed by Gregory P. Smith.)
+
 \end{itemize}
 
 

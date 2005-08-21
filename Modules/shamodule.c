@@ -7,11 +7,16 @@
 
    Andrew Kuchling (amk@amk.ca)
    Greg Stein (gstein@lyra.org)
+
+   Copyright (C) 2005   Gregory P. Smith (greg@electricrain.com)
+   Licensed to PSF under a Contributor Agreement.
+
 */
 
 /* SHA objects */
 
 #include "Python.h"
+#include "structmember.h"
 
 
 /* Endianness testing and definitions */
@@ -453,26 +458,78 @@ static PyMethodDef SHA_methods[] = {
 };
 
 static PyObject *
-SHA_getattr(PyObject *self, char *name)
+SHA_get_block_size(PyObject *self, void *closure)
 {
-    if (strcmp(name, "blocksize")==0)
-        return PyInt_FromLong(1);
-    if (strcmp(name, "digest_size")==0 || strcmp(name, "digestsize")==0)
-        return PyInt_FromLong(20);
-
-    return Py_FindMethod(SHA_methods, self, name);
+    return PyInt_FromLong(SHA_BLOCKSIZE);
 }
+
+static PyObject *
+SHA_get_digest_size(PyObject *self, void *closure)
+{
+    return PyInt_FromLong(SHA_DIGESTSIZE);
+}
+
+static PyObject *
+SHA_get_name(PyObject *self, void *closure)
+{
+    return PyString_FromStringAndSize("SHA1", 4);
+}
+
+static PyGetSetDef SHA_getseters[] = {
+    {"digest_size",
+     (getter)SHA_get_digest_size, NULL,
+     NULL,
+     NULL},
+    {"block_size",
+     (getter)SHA_get_block_size, NULL,
+     NULL,
+     NULL},
+    {"name",
+     (getter)SHA_get_name, NULL,
+     NULL,
+     NULL},
+    /* the old md5 and sha modules support 'digest_size' as in PEP 247.
+     * the old sha module also supported 'digestsize'.  ugh. */
+    {"digestsize",
+     (getter)SHA_get_digest_size, NULL,
+     NULL,
+     NULL},
+    {NULL}  /* Sentinel */
+};
 
 static PyTypeObject SHAtype = {
     PyObject_HEAD_INIT(NULL)
     0,			/*ob_size*/
-    "sha.SHA",		/*tp_name*/
+    "_sha.sha",		/*tp_name*/
     sizeof(SHAobject),	/*tp_size*/
     0,			/*tp_itemsize*/
     /* methods */
     SHA_dealloc,	/*tp_dealloc*/
     0,			/*tp_print*/
-    SHA_getattr,	/*tp_getattr*/
+    0,                  /*tp_getattr*/
+    0,                  /*tp_setattr*/
+    0,                  /*tp_compare*/
+    0,                  /*tp_repr*/
+    0,                  /*tp_as_number*/
+    0,                  /*tp_as_sequence*/
+    0,                  /*tp_as_mapping*/
+    0,                  /*tp_hash*/
+    0,                  /*tp_call*/
+    0,                  /*tp_str*/
+    0,                  /*tp_getattro*/
+    0,                  /*tp_setattro*/
+    0,                  /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT, /*tp_flags*/
+    0,                  /*tp_doc*/
+    0,                  /*tp_traverse*/
+    0,			/*tp_clear*/
+    0,			/*tp_richcompare*/
+    0,			/*tp_weaklistoffset*/
+    0,			/*tp_iter*/
+    0,			/*tp_iternext*/
+    SHA_methods,	/* tp_methods */
+    0,                  /* tp_members */
+    SHA_getseters,      /* tp_getset */
 };
 
 
@@ -516,7 +573,6 @@ SHA_new(PyObject *self, PyObject *args, PyObject *kwdict)
 
 static struct PyMethodDef SHA_functions[] = {
     {"new", (PyCFunction)SHA_new, METH_VARARGS|METH_KEYWORDS, SHA_new__doc__},
-    {"sha", (PyCFunction)SHA_new, METH_VARARGS|METH_KEYWORDS, SHA_new__doc__},
     {NULL,	NULL}		 /* Sentinel */
 };
 
@@ -526,12 +582,14 @@ static struct PyMethodDef SHA_functions[] = {
 #define insint(n,v) { PyModule_AddIntConstant(m,n,v); }
 
 PyMODINIT_FUNC
-initsha(void)
+init_sha(void)
 {
     PyObject *m;
 
     SHAtype.ob_type = &PyType_Type;
-    m = Py_InitModule("sha", SHA_functions);
+    if (PyType_Ready(&SHAtype) < 0)
+        return;
+    m = Py_InitModule("_sha", SHA_functions);
 
     /* Add some symbolic constants to the module */
     insint("blocksize", 1);  /* For future use, in case some hash

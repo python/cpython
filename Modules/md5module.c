@@ -10,6 +10,7 @@
 /* MD5 objects */
 
 #include "Python.h"
+#include "structmember.h"
 #include "md5.h"
 
 typedef struct {
@@ -150,14 +151,45 @@ static PyMethodDef md5_methods[] = {
 };
 
 static PyObject *
-md5_getattr(md5object *self, char *name)
+md5_get_block_size(PyObject *self, void *closure)
 {
-        if (strcmp(name, "digest_size") == 0) {
-    		return PyInt_FromLong(16);
-        }
-
-	return Py_FindMethod(md5_methods, (PyObject *)self, name);
+    return PyInt_FromLong(64);
 }
+
+static PyObject *
+md5_get_digest_size(PyObject *self, void *closure)
+{
+    return PyInt_FromLong(16);
+}
+
+static PyObject *
+md5_get_name(PyObject *self, void *closure)
+{
+    return PyString_FromStringAndSize("MD5", 3);
+}
+
+static PyGetSetDef md5_getseters[] = {
+    {"digest_size",
+     (getter)md5_get_digest_size, NULL,
+     NULL,
+     NULL},
+    {"block_size",
+     (getter)md5_get_block_size, NULL,
+     NULL,
+     NULL},
+    {"name",
+     (getter)md5_get_name, NULL,
+     NULL,
+     NULL},
+    /* the old md5 and sha modules support 'digest_size' as in PEP 247.
+     * the old sha module also supported 'digestsize'.  ugh. */
+    {"digestsize",
+     (getter)md5_get_digest_size, NULL,
+     NULL,
+     NULL},
+    {NULL}  /* Sentinel */
+};
+
 
 PyDoc_STRVAR(module_doc,
 "This module implements the interface to RSA's MD5 message digest\n\
@@ -191,13 +223,13 @@ copy() -- return a copy of the current md5 object");
 static PyTypeObject MD5type = {
 	PyObject_HEAD_INIT(NULL)
 	0,			  /*ob_size*/
-	"md5.md5",		  /*tp_name*/
+	"_md5.md5",		  /*tp_name*/
 	sizeof(md5object),	  /*tp_size*/
 	0,			  /*tp_itemsize*/
 	/* methods */
 	(destructor)md5_dealloc,  /*tp_dealloc*/
 	0,			  /*tp_print*/
-	(getattrfunc)md5_getattr, /*tp_getattr*/
+	0,                        /*tp_getattr*/
 	0,			  /*tp_setattr*/
 	0,			  /*tp_compare*/
 	0,			  /*tp_repr*/
@@ -210,8 +242,17 @@ static PyTypeObject MD5type = {
 	0,			  /*tp_getattro*/
 	0,			  /*tp_setattro*/
 	0,	                  /*tp_as_buffer*/
-	0,			  /*tp_xxx4*/
+	Py_TPFLAGS_DEFAULT,	  /*tp_flags*/
 	md5type_doc,		  /*tp_doc*/
+        0,                        /*tp_traverse*/
+        0,			  /*tp_clear*/
+        0,			  /*tp_richcompare*/
+        0,			  /*tp_weaklistoffset*/
+        0,			  /*tp_iter*/
+        0,			  /*tp_iternext*/
+        md5_methods,	          /*tp_methods*/
+        0,      	          /*tp_members*/
+        md5_getseters,            /*tp_getset*/
 };
 
 
@@ -247,7 +288,6 @@ is made.");
 
 static PyMethodDef md5_functions[] = {
 	{"new",		(PyCFunction)MD5_new, METH_VARARGS, new_doc},
-	{"md5",		(PyCFunction)MD5_new, METH_VARARGS, new_doc}, /* Backward compatibility */
 	{NULL,		NULL}	/* Sentinel */
 };
 
@@ -255,12 +295,14 @@ static PyMethodDef md5_functions[] = {
 /* Initialize this module. */
 
 PyMODINIT_FUNC
-initmd5(void)
+init_md5(void)
 {
 	PyObject *m, *d;
 
         MD5type.ob_type = &PyType_Type;
-	m = Py_InitModule3("md5", md5_functions, module_doc);
+        if (PyType_Ready(&MD5type) < 0)
+            return;
+	m = Py_InitModule3("_md5", md5_functions, module_doc);
 	d = PyModule_GetDict(m);
 	PyDict_SetItemString(d, "MD5Type", (PyObject *)&MD5type);
 	PyModule_AddIntConstant(m, "digest_size", 16);
