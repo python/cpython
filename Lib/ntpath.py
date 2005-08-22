@@ -11,10 +11,10 @@ import sys
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
-           "getatime","getctime", "islink","exists","isdir","isfile","ismount",
-           "walk","expanduser","expandvars","normpath","abspath","splitunc",
-           "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
-           "devnull","realpath","supports_unicode_filenames"]
+           "getatime","getctime", "islink","exists","lexists","isdir","isfile",
+           "ismount","walk","expanduser","expandvars","normpath","abspath",
+           "splitunc","curdir","pardir","sep","pathsep","defpath","altsep",
+           "extsep","devnull","realpath","supports_unicode_filenames"]
 
 # strings representing various path-related bits and pieces
 curdir = '.'

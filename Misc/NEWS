@@ -1692,6 +1692,8 @@ Extension modules
 Library
 -------
 
+- Bug #1266283: The new function "lexists" is now in os.path.__all__.
+
 - Bug #981530: Fix UnboundLocalError in shutil.rmtree().  This affects
   the documented behavior: the function passed to the onerror()
   handler can now also be os.listdir.
