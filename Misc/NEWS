@@ -63,6 +63,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1266283: "lexists" is now in os.path.__all__.
+
 - The sets module can now properly compute s-=s and s^=s as an empty set.
 
 - Patch #827386: Support absolute source paths in msvccompiler.py.

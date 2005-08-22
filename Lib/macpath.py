@@ -5,7 +5,7 @@ from stat import *
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
-           "getatime","getctime", "islink","exists","isdir","isfile",
+           "getatime","getctime", "islink","exists","lexists","isdir","isfile",
            "walk","expanduser","expandvars","normpath","abspath",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames"]
