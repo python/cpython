@@ -2755,7 +2755,7 @@ class Context(object):
         return a.sqrt(context=self)
 
     def subtract(self, a, b):
-        """Return the sum of the two operands.
+        """Return the difference between the two operands.
 
         >>> ExtendedContext.subtract(Decimal('1.3'), Decimal('1.07'))
         Decimal("0.23")
