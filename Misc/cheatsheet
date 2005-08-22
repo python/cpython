@@ -209,7 +209,7 @@ Highest             Operator                             Comment
         +x, -x, ~x                        Unary operators
         x**y                              Power
         x*y  x/y  x%y x//y                mult, division, modulo, floor division
-        x+y  x-y                          addition, substraction
+        x+y  x-y                          addition, subtraction
         x<<y   x>>y                       Bit shifting
         x&y                               Bitwise and
         x^y                               Bitwise exclusive or
