@@ -3924,8 +3924,9 @@ creates a new \emph{instance} of the class and assigns this object to
 the local variable \code{x}.
 
 The instantiation operation (``calling'' a class object) creates an
-empty object.  Many classes like to create objects in a known initial
-state.  Therefore a class may define a special method named
+empty object.  Many classes like to create objects with instances
+customized to a specific initial state.
+Therefore a class may define a special method named
 \method{__init__()}, like this:
 
 \begin{verbatim}
@@ -3981,7 +3982,7 @@ print x.counter
 del x.counter
 \end{verbatim}
 
-The other kind of instance attribute references is a \emph{method}.
+The other kind of instance attribute reference is a \emph{method}.
 A method is a function that ``belongs to'' an
 object.  (In Python, the term method is not unique to class instances:
 other object types can have methods as well.  For example, list objects have
@@ -4001,13 +4002,13 @@ a function object.
 
 \subsection{Method Objects \label{methodObjects}}
 
-Usually, a method is called immediately:
+Usually, a method is called right after it is bound:
 
 \begin{verbatim}
 x.f()
 \end{verbatim}
 
-In our example, this will return the string \code{'hello world'}.
+In the \class{MyClass} example, this will return the string \code{'hello world'}.
 However, it is not necessary to call a method right away:
 \code{x.f} is a method object, and can be stored away and called at a
 later time.  For example:
@@ -4085,7 +4086,7 @@ the readability of methods: there is no chance of confusing local
 variables and instance variables when glancing through a method.
 
 
-Conventionally, the first argument of a method is often called
+Often, the first argument of a method is called
 \code{self}.  This is nothing more than a convention: the name
 \code{self} has absolutely no special meaning to Python.  (Note,
 however, that by not following the convention your code may be less
@@ -4149,7 +4150,7 @@ reasons why a method would want to reference its own class!
 
 Of course, a language feature would not be worthy of the name ``class''
 without supporting inheritance.  The syntax for a derived class
-definition looks as follows:
+definition looks like this:
 
 \begin{verbatim}
 class DerivedClassName(BaseClassName):
@@ -4161,9 +4162,9 @@ class DerivedClassName(BaseClassName):
 \end{verbatim}
 
 The name \class{BaseClassName} must be defined in a scope containing
-the derived class definition.  Instead of a base class name, an
-expression is also allowed.  This is useful when the base class is
-defined in another module,
+the derived class definition.  In place of a base class name, other
+arbitrary expressions are also allowed.  This can be useful, for
+example, when the base class is defined in another module:
 
 \begin{verbatim}
 class DerivedClassName(modname.BaseClassName):
@@ -4172,7 +4173,7 @@ class DerivedClassName(modname.BaseClassName):
 Execution of a derived class definition proceeds the same as for a
 base class.  When the class object is constructed, the base class is
 remembered.  This is used for resolving attribute references: if a
-requested attribute is not found in the class, it is searched in the
+requested attribute is not found in the class, the search proceeds to look in the
 base class.  This rule is applied recursively if the base class itself
 is derived from some other class.
 
@@ -4185,7 +4186,7 @@ and the method reference is valid if this yields a function object.
 Derived classes may override methods of their base classes.  Because
 methods have no special privileges when calling other methods of the
 same object, a method of a base class that calls another method
-defined in the same base class, may in fact end up calling a method of
+defined in the same base class may end up calling a method of
 a derived class that overrides it.  (For \Cpp{} programmers: all methods
 in Python are effectively \keyword{virtual}.)
 
@@ -4200,7 +4201,7 @@ the base class is defined or imported directly in the global scope.)
 \subsection{Multiple Inheritance \label{multiple}}
 
 Python supports a limited form of multiple inheritance as well.  A
-class definition with multiple base classes looks as follows:
+class definition with multiple base classes looks like this:
 
 \begin{verbatim}
 class DerivedClassName(Base1, Base2, Base3):
@@ -4359,15 +4360,15 @@ Note that if the except clauses were reversed (with
 \samp{except B} first), it would have printed B, B, B --- the first
 matching except clause is triggered.
 
-When an error message is printed for an unhandled exception which is a
-class, the class name is printed, then a colon and a space, and
+When an error message is printed for an unhandled exception, the
+exception's class name is printed, then a colon and a space, and
 finally the instance converted to a string using the built-in function
 \function{str()}.
 
 
 \section{Iterators\label{iterators}}
 
-By now, you've probably noticed that most container objects can be looped
+By now you have probably noticed that most container objects can be looped
 over using a \keyword{for} statement:
 
 \begin{verbatim}
@@ -4406,7 +4407,7 @@ to terminate.  This example shows how it all works:
 >>> it.next()
 
 Traceback (most recent call last):
-  File "<pyshell#6>", line 1, in -toplevel-
+  File "<stdin>", line 1, in ?
     it.next()
 StopIteration
 \end{verbatim}
@@ -4743,7 +4744,7 @@ by modules including:
 \section{Performance Measurement\label{performance-measurement}}
 
 Some Python users develop a deep interest in knowing the relative
-performance between different approaches to the same problem.
+performance of different approaches to the same problem.
 Python provides a measurement tool that answers those questions
 immediately.
 
@@ -4907,7 +4908,7 @@ with group separators:
     >>> locale.format("%d", x, grouping=True)
     '1,234,567'
     >>> locale.format("%s%.*f", (conv['currency_symbol'],
-    ...	      conv['int_frac_digits'], x), grouping=True)
+    ...	      conv['frac_digits'], x), grouping=True)
     '$1,234,567.80'
 \end{verbatim}
 
@@ -4974,8 +4975,8 @@ img_1077.jpg --> Ashley_2.jpg
 \end{verbatim}
 
 Another application for templating is separating program logic from the
-details of multiple output formats.  The makes it possible to substitute
-custom templates for XML files, plain text reports, and HMTL web reports.
+details of multiple output formats.  This makes it possible to substitute
+custom templates for XML files, plain text reports, and HTML web reports.
 
 
 \section{Working with Binary Data Record Layouts\label{binary-formats}}
@@ -4995,7 +4996,7 @@ numbers respectively):
     for i in range(3):                      # show the first 3 file headers
         start += 14
         fields = struct.unpack('LLLHH', data[start:start+16])
-        crc32, comp_size, uncomp_size, filenamesize, extra_size =  fields
+        crc32, comp_size, uncomp_size, filenamesize, extra_size = fields
 
         start += 16
         filename = data[start:start+filenamesize]
@@ -5049,7 +5050,7 @@ events, condition variables, and semaphores.
 While those tools are powerful, minor design errors can result in
 problems that are difficult to reproduce.  So, the preferred approach
 to task coordination is to concentrate all access to a resource
-in a single thread and then using the
+in a single thread and then use the
 \ulink{\module{Queue}}{../lib/module-Queue.html} module to feed that
 thread with requests from other threads.  Applications using
 \class{Queue} objects for inter-thread communication and coordination
@@ -5229,7 +5230,7 @@ Decimal("0.7350")
 \end{verbatim}
 
 The \class{Decimal} result keeps a trailing zero, automatically inferring four
-place significance from the two digit multiplicands.  Decimal reproduces
+place significance from multiplicands with two place significance.  Decimal reproduces
 mathematics as done by hand and avoids issues that can arise when binary
 floating point cannot exactly represent decimal quantities.
 
