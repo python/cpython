@@ -114,6 +114,29 @@ implemented by Richard Jones and Fred Drake.}
 %======================================================================
 \section{PEP 342: New Generator Features}
 
+As introduced in Python 2.3, generators only produce output; once a
+generator's code was invoked to create an iterator, there's no way to
+pass new parameters into the function when its execution is resumed.
+(Well, you could make the generator's code look at a global
+variable and modify the global value, but this is an unreliable hack
+that doesn't work if you have multiple instances of the same generator
+alive at the same time.)
+
+Python 2.5 adds the ability to pass values \emph{into} a generator.
+
+To refresh your memory of basic generators, here's a simple example:
+
+\begin{verbatim}
+def counter (maximum):
+    i = 0
+    while i < maximum:
+        yield i
+	i += 1
+\end{verbatim}
+
+On executing the \
+When you call \code{counter(10)}, the result is an 
+
 XXX write this section
 
 \begin{seealso}
@@ -151,6 +174,16 @@ print max(L)
 
 (Contributed by Steven Bethard and Raymond Hettinger.)
 
+\item Two new built-in functions, \function{any()} and
+\function{all()}, evaluate whether an iterator contains any true or
+false values.  \function{any()} returns \constant{True} if any value
+returned by the iterator is true; otherwise it will return
+\constant{False}.  \function{all()} returns \constant{True} only if
+all of the values returned by the iterator evaluate as being true.
+
+% XXX who added?
+
+
 \item The list of base classes in a class definition can now be empty.  
 As an example, this is now legal:
 
@@ -168,7 +201,12 @@ class C():
 
 \begin{itemize}
 
-\item Optimizations should be described here.
+\item When they were introduced 
+in Python 2.4, the built-in \class{set} and \class{frozenset} types
+were built on top of Python's dictionary type.  
+In 2.5 the internal data structure has been customized for implementing sets,
+and as a result sets will use a third less memory and are somewhat faster.
+(Implemented by Raymond Hettinger.)
 
 \end{itemize}
 
@@ -188,6 +226,8 @@ details.
 
 \begin{itemize}
 
+% collections.deque now has .remove()
+
 % the cPickle module no longer accepts the deprecated None option in the
 % args tuple returned by __reduce__().
 
@@ -195,6 +235,14 @@ details.
 
 % datetime.datetime() now has a strptime class method which can be used to
 % create datetime object using a string and format.
+
+\item A new \module{hashlib} module has been added to replace the
+\module{md5} and \module{sha} modules.  \module{hashlib} adds support
+for additional secure hashes (SHA-224, SHA-256, SHA-384, and SHA-512).
+When available, the module uses OpenSSL for fast platform optimized
+implementations of algorithms.  The old \module{md5} and \module{sha}
+modules still exist as wrappers around hashlib to preserve backwards
+compatibility.  (Contributed by Gregory P. Smith.)
 
 \item The \function{nsmallest()} and 
 \function{nlargest()} functions in the \module{heapq} module 
@@ -226,9 +274,16 @@ itertools.islice(iterable, s.start, s.stop, s.step)
 
 (Contributed by Raymond Hettinger.)
 
-\item New module: \module{spwd} provides functions for accessing the
-shadow password database on systems that support it.  
-% XXX give example
+\item The \module{operator} module's \function{itemgetter()} 
+and \function{attrgetter()} functions now support multiple fields.  
+A call such as \code{operator.attrgetter('a', 'b')}
+will return a function 
+that retrieves the \member{a} and \member{b} attributes.  Combining 
+this new feature with the \method{sort()} method's \code{key} parameter 
+lets you easily sort lists using multiple fields.
+
+% XXX who added?
+
 
 \item The \module{os} module underwent a number of changes.  The
 \member{stat_float_times} variable now defaults to true, meaning that
@@ -237,24 +292,38 @@ doesn't necessarily mean that \function{os.stat()} will return times
 that are precise to fractions of a second; not all systems support
 such precision.)
 
-Also, constants named \member{os.SEEK_SET}, \member{os.SEEK_CUR}, and
+Constants named \member{os.SEEK_SET}, \member{os.SEEK_CUR}, and
 \member{os.SEEK_END} have been added; these are the parameters to the
-\function{os.lseek()} function.
+\function{os.lseek()} function.  Two new constants for locking are
+\member{os.O_SHLOCK} and \member{os.O_EXLOCK}.
+
+On FreeBSD, the \function{os.stat()} function now returns 
+times with nanosecond resolution, and the returned object
+now has \member{st_gen} and \member{st_birthtime}.
+The \member{st_flags} member is also available, if the platform supports it.
+% XXX patch 1180695, 1212117
+
+\item New module: \module{spwd} provides functions for accessing the
+shadow password database on systems that support it.  
+% XXX give example
 
 \item The \class{TarFile} class in the \module{tarfile} module now has
 an \method{extractall()} method that extracts all members from the
 archive into the current working directory.  It's also possible to set
 a different directory as the extraction target, and to unpack only a
-subset of the archive's members.  (Contributed by Lars Gust\"abel.)
+subset of the archive's members.  
 
-\item A new \module{hashlib} module has been added to replace the
-\module{md5} and \module{sha} modules and adds support for additional
-secure hashes such as SHA-256 and SHA-512.  The \module{hashlib} module
-uses OpenSSL for fast platform optimized implementations of algorithms
-when available.  The old \module{md5} and \module{sha} modules still
-exist as wrappers around hashlib to preserve backwards compatibility.
+A tarfile's compression can be autodetected by 
+using the mode \code{'r|*'}.
+% patch 918101
+(Contributed by Lars Gust\"abel.)
 
-(Contributed by Gregory P. Smith.)
+\item The \module{xmlrpclib} module now supports returning 
+      \class{datetime} objects for the XML-RPC date type.  Supply 
+      \code{use_datetime=True} to the \function{loads()} function
+      or the \class{Unmarshaller} class to enable this feature.
+% XXX patch 1120353
+
 
 \end{itemize}
 
@@ -262,6 +331,10 @@ exist as wrappers around hashlib to preserve backwards compatibility.
 
 %======================================================================
 % whole new modules get described in \subsections here
+
+% XXX new distutils features: upload
+
+
 
 
 % ======================================================================
@@ -271,8 +344,15 @@ Changes to Python's build process and to the C API include:
 
 \begin{itemize}
 
-\item The \cfunction{PyRange_New()} function was removed.  It was never documented,
-never used in the core code, and had dangerously lax error checking.  
+\item The built-in set types now have an official C API.  Call
+\cfunction{PySet_New()} and \cfunction{PyFrozenSet_New()} to create a
+new set, \cfunction{PySet_Add()} and \cfunction{PySet_Discard()} to
+add and remove elements, and \cfunction{PySet_Contains} and
+\cfunction{PySet_Size} to examine the set's state.
+
+\item The \cfunction{PyRange_New()} function was removed.  It was
+never documented, never used in the core code, and had dangerously lax
+error checking.
 
 \end{itemize}
 
