@@ -1,4 +1,10 @@
-"""Shared support for scanning document type declarations in HTML and XHTML."""
+"""Shared support for scanning document type declarations in HTML and XHTML.
+
+This module is used as a foundation for the HTMLParser and sgmllib
+modules (indirectly, for htmllib as well).  It has no documented
+public API and should not be used directly.
+
+"""
 
 import re
 
