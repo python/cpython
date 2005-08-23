@@ -474,10 +474,12 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_socket', ['socketmodule.c'],
                                depends = ['socketmodule.h']) )
         # Detect SSL support for the socket module (via _ssl)
-        ssl_incs = find_file('openssl/ssl.h', inc_dirs,
-                             ['/usr/local/ssl/include',
+        search_for_ssl_incs_in = [
+                              '/usr/local/ssl/include',
                               '/usr/contrib/ssl/include/'
                              ]
+        ssl_incs = find_file('openssl/ssl.h', inc_dirs,
+                             search_for_ssl_incs_in
                              )
         if ssl_incs is not None:
             krb5_h = find_file('krb5.h', inc_dirs,
@@ -497,8 +499,32 @@ class PyBuildExt(build_ext):
                                    libraries = ['ssl', 'crypto'],
                                    depends = ['socketmodule.h']), )
 
+        # find out which version of OpenSSL we have
+        openssl_ver = 0
+        openssl_ver_re = re.compile(
+            '^\s*#\s*define\s+OPENSSL_VERSION_NUMBER\s+(0x[0-9a-fA-F]+)' )
+        for ssl_inc_dir in inc_dirs + search_for_ssl_incs_in:
+            name = os.path.join(ssl_inc_dir, 'openssl', 'opensslv.h')
+            if os.path.isfile(name):
+                try:
+                    incfile = open(name, 'r')
+                    for line in incfile:
+                        m = openssl_ver_re.match(line)
+                        if m:
+                            openssl_ver = eval(m.group(1))
+                            break
+                except IOError:
+                    pass
+
+            # first version found is what we'll use (as the compiler should)
+            if openssl_ver:
+                break
+
+        #print 'openssl_ver = 0x%08x' % openssl_ver
+
         if (ssl_incs is not None and
-            ssl_libs is not None):
+            ssl_libs is not None and
+            openssl_ver >= 0x00907000):
             # The _hashlib module wraps optimized implementations
             # of hash functions from the OpenSSL library.
             exts.append( Extension('_hashlib', ['_hashopenssl.c'],
@@ -513,14 +539,10 @@ class PyBuildExt(build_ext):
             # necessary files md5c.c and md5.h are included here.
             exts.append( Extension('_md5', ['md5module.c', 'md5c.c']) )
 
-        # always compile these for now under the assumption that
-        # OpenSSL does not support them (it doesn't in common OpenSSL
-        # 0.9.7e installs at the time of this writing; OpenSSL 0.9.8
-        # does).  In the future we could make this conditional on
-        # OpenSSL version or support.  The hashlib module uses the
-        # better implementation regardless.
-        exts.append( Extension('_sha256', ['sha256module.c']) )
-        exts.append( Extension('_sha512', ['sha512module.c']) )
+        if (openssl_ver < 0x00908000):
+            # OpenSSL doesn't do these until 0.9.8 so we'll bring our own hash
+            exts.append( Extension('_sha256', ['sha256module.c']) )
+            exts.append( Extension('_sha512', ['sha512module.c']) )
 
 
         # Modules that provide persistent dictionary-like semantics.  You will
