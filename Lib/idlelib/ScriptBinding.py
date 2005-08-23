@@ -90,6 +90,7 @@ class ScriptBinding:
         f.close()
         if '\r' in source:
             source = re.sub(r"\r\n", "\n", source)
+            source = re.sub(r"\r", "\n", source)
         if source and source[-1] != '\n':
             source = source + '\n'
         text = self.editwin.text
