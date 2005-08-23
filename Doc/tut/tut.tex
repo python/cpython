@@ -114,7 +114,7 @@ easy to experiment with features of the language, to write throw-away
 programs, or to test functions during bottom-up program development.
 It is also a handy desk calculator.
 
-Python enables programs to written compactly and readably.  Programs
+Python enables programs to be written compactly and readably.  Programs
 written in Python are typically much shorter than equivalent C or
 \Cpp{} programs, for several reasons:
 \begin{itemize}
@@ -1754,7 +1754,7 @@ It is an error if there is no such item.
 \begin{methoddesc}[list]{pop}{\optional{i}}
 Remove the item at the given position in the list, and return it.  If
 no index is specified, \code{a.pop()} removes and returns the last item
-in the list.  The item is also removed from the list.  (The square brackets
+in the list.  (The square brackets
 around the \var{i} in the method signature denote that the parameter
 is optional, not that you should type square brackets at that
 position.  You will see this notation frequently in the
@@ -1987,9 +1987,9 @@ applied to complex expressions and nested functions:
 \section{The \keyword{del} statement \label{del}}
 
 There is a way to remove an item from a list given its index instead
-of its value: the \keyword{del} statement.  Unlike the \method{pop()})
-method which returns a value, the \keyword{del} keyword is a statement 
-and can also be used to
+of its value: the \keyword{del} statement.  This differs from the
+\method{pop()}) method which returns a value.  The \keyword{del}
+statement can also be used to
 remove slices from a list (which we did earlier by assignment of an
 empty list to the slice).  For example:
 
@@ -2137,9 +2137,9 @@ which can be any immutable type; strings and numbers can always be
 keys.  Tuples can be used as keys if they contain only strings,
 numbers, or tuples; if a tuple contains any mutable object either
 directly or indirectly, it cannot be used as a key.  You can't use
-lists as keys, since lists can be modified in place using methods like
-\method{append()} and \method{extend()} or modified with slice and
-indexed assignments.
+lists as keys, since lists can be modified in place using
+index assignments, slice assignments, or methods like
+\method{append()} and \method{extend()}.
 
 It is best to think of a dictionary as an unordered set of
 \emph{key: value} pairs, with the requirement that the keys are unique
@@ -5646,7 +5646,7 @@ This section explains the ``0.1'' example in detail, and shows how
 you can perform an exact analysis of cases like this yourself.  Basic
 familiarity with binary floating-point representation is assumed.
 
-\dfn{Representation error} refers to fact that some (most, actually)
+\dfn{Representation error} refers to the fact that some (most, actually)
 decimal fractions cannot be represented exactly as binary (base 2)
 fractions.  This is the chief reason why Python (or Perl, C, \Cpp,
 Java, Fortran, and many others) often won't display the exact decimal
