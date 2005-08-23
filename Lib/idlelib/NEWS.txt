@@ -3,6 +3,9 @@ What's New in IDLE 1.2a0?
 
 *Release date: XX-XXX-2005*
 
+- Mac line endings were incorrect when pasting code from some browsers
+  when using X11 and the Fink distribution.  Python Bug 1263656.
+
 - <Enter> when cursor is on a previous command retrieves that command.  Instead
   of replacing the input line, the previous command is now appended to the
   input line. Indentation is preserved, and undo is enabled.

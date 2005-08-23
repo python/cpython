@@ -53,7 +53,7 @@ class ScriptBinding:
         self.flist = self.editwin.flist
         self.root = self.flist.root
 
-    def check_module_event(self, event):
+    def check_module_event(self, event=None):
         filename = self.getfilename()
         if not filename:
             return
@@ -87,6 +87,7 @@ class ScriptBinding:
         f.close()
         if '\r' in source:
             source = re.sub(r"\r\n", "\n", source)
+            source = re.sub(r"\r", "\n", source)
         if source and source[-1] != '\n':
             source = source + '\n'
         text = self.editwin.text
@@ -132,12 +133,7 @@ class ScriptBinding:
         add that directory to its sys.path if not already included.
 
         """
-        filename = self.getfilename()
-        if not filename:
-            return
-        if not self.tabnanny(filename):
-            return
-        code = self.checksyntax(filename)
+        code = self.check_module_event(event)
         if not code:
             return
         shell = self.shell
