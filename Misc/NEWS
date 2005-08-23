@@ -136,7 +136,7 @@ Extension Modules
   for large or negative values.
 
 - Bug #1234979: For the argument of thread.Lock.acquire, the Windows
-  implemented treated all integer values except 1 as false.
+  implementation treated all integer values except 1 as false.
 
 - Bug #1194181: bz2.BZ2File didn't handle mode 'U' correctly.
 
@@ -203,7 +203,7 @@ Library
 - Bug #1238170: threading.Thread.__init__ no longer has "kwargs={}" as a
   parameter, but uses the usual "kwargs=None".
 
-- textwrap now processes text chucks at O(n) speed instead of O(n**2).
+- textwrap now processes text chunks at O(n) speed instead of O(n**2).
   Patch #1209527 (Contributed by Connelly).
 
 - urllib2 has now an attribute 'httpresponses' mapping from HTTP status code
@@ -213,7 +213,7 @@ Library
   as this can cause problems with apps closing all file descriptors.
 
 - Bug #839151: Fix an attempt to access sys.argv in the warnings module
-  though this can be missing in embedded interpreters
+  it can be missing in embedded interpreters
 
 - Bug #1155638: Fix a bug which affected HTTP 0.9 responses in httplib.
 
@@ -351,7 +351,7 @@ Library
 - locale.py now uses an updated locale alias table (built using
   Tools/i18n/makelocalealias.py, a tool to parse the X11 locale
   alias file); the encoding lookup was enhanced to use Python's
-  encoding alias table
+  encoding alias table.
 
 - moved deprecated modules to Lib/lib-old:  whrandom, tzparse, statcache.
 
