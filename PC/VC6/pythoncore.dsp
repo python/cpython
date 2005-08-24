@@ -539,6 +539,14 @@ SOURCE=..\..\Modules\shamodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\sha256module.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Modules\sha512module.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\signalmodule.c
 # End Source File
 # Begin Source File
