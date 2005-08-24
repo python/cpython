@@ -2764,7 +2764,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-                        RelativePath="..\Modules\shamodule256.c">
+                        RelativePath="..\Modules\sha256module.c">
 			<FileConfiguration
 				Name="Release|Win32">
 				<Tool
@@ -2791,7 +2791,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-                        RelativePath="..\Modules\shamodule512.c">
+                        RelativePath="..\Modules\sha512module.c">
 			<FileConfiguration
 				Name="Release|Win32">
 				<Tool
