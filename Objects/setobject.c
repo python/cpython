@@ -1495,12 +1495,15 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
 	case Py_EQ:
 		if (PySet_GET_SIZE(v) != PySet_GET_SIZE(w))
 			Py_RETURN_FALSE;
+		if (v->hash != -1  &&
+		    ((PySetObject *)w)->hash != -1 &&
+		    v->hash != ((PySetObject *)w)->hash)
+			Py_RETURN_FALSE;
 		return set_issubset(v, w);
 	case Py_NE:
-		if (PySet_GET_SIZE(v) != PySet_GET_SIZE(w))
-			Py_RETURN_TRUE;
-		r1 = set_issubset(v, w);
-		assert (r1 != NULL);
+		r1 = set_richcompare(v, w, Py_EQ);
+		if (r1 == NULL)
+			return NULL;
 		r2 = PyBool_FromLong(PyObject_Not(r1));
 		Py_DECREF(r1);
 		return r2;
@@ -1956,7 +1959,7 @@ PySet_Size(PyObject *anyset)
 		PyErr_BadInternalCall();
 		return -1;
 	}
-	return ((PySetObject *)anyset)->used;
+	return PySet_GET_SIZE(anyset);
 }
 
 int
