@@ -63,8 +63,6 @@ Extension Modules
 Library
 -------
 
-- Patch #1262036: Make tarfile name absolute. Fixes #1257255.
-
 - Bug #1266283: "lexists" is now in os.path.__all__.
 
 - The sets module can now properly compute s-=s and s^=s as an empty set.
