@@ -450,11 +450,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
         numberlist = arg.split()
         for i in numberlist:
+            if not (0 <= i < len(bdb.Breakpoint.bpbynumber)):
+                print 'No breakpoint numbered', i
+                continue
             err = self.clear_bpbynumber(i)
             if err:
                 print '***', err
             else:
-                print 'Deleted breakpoint %s ' % (i,)
+                print 'Deleted breakpoint', i
     do_cl = do_clear # 'c' is already an abbreviation for 'continue'
 
     def do_where(self, arg):
