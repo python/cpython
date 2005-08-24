@@ -193,6 +193,9 @@ Extension Modules
 Library
 -------
 
+- Patch #848017: Make Cookie more RFC-compliant. Use CRLF as default output
+  separator and do not output trailing semicola.
+
 - Patch #1062060: urllib.urlretrieve() now raises a new exception, named
   ContentTooShortException, when the actually downloaded size does not
   match the Content-Length header.

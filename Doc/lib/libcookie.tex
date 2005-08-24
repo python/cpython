@@ -98,7 +98,9 @@ In general, it should be the case that \method{value_encode()} and
 Return a string representation suitable to be sent as HTTP headers.
 \var{attrs} and \var{header} are sent to each \class{Morsel}'s
 \method{output()} method. \var{sep} is used to join the headers
-together, and is by default a newline.
+together, and is by default the combination '\r\n' (CRLF).
+\versionchanged[The default separator has been changed from '\n' to match the cookie
+specification]{2.5}
 \end{methoddesc}
 
 \begin{methoddesc}[BaseCookie]{js_output}{\optional{attrs}}
@@ -195,32 +197,32 @@ The following example demonstrates how to use the \module{Cookie} module.
 >>> C["fig"] = "newton"
 >>> C["sugar"] = "wafer"
 >>> print C # generate HTTP headers
-Set-Cookie: sugar=wafer;
-Set-Cookie: fig=newton;
+Set-Cookie: sugar=wafer
+Set-Cookie: fig=newton
 >>> print C.output() # same thing
-Set-Cookie: sugar=wafer;
-Set-Cookie: fig=newton;
+Set-Cookie: sugar=wafer
+Set-Cookie: fig=newton
 >>> C = Cookie.SmartCookie()
 >>> C["rocky"] = "road"
 >>> C["rocky"]["path"] = "/cookie"
 >>> print C.output(header="Cookie:")
-Cookie: rocky=road; Path=/cookie;
+Cookie: rocky=road; Path=/cookie
 >>> print C.output(attrs=[], header="Cookie:")
-Cookie: rocky=road;
+Cookie: rocky=road
 >>> C = Cookie.SmartCookie()
 >>> C.load("chips=ahoy; vienna=finger") # load from a string (HTTP header)
 >>> print C
-Set-Cookie: vienna=finger;
-Set-Cookie: chips=ahoy;
+Set-Cookie: vienna=finger
+Set-Cookie: chips=ahoy
 >>> C = Cookie.SmartCookie()
 >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
 >>> print C
-Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;";
+Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
 >>> C = Cookie.SmartCookie()
 >>> C["oreo"] = "doublestuff"
 >>> C["oreo"]["path"] = "/"
 >>> print C
-Set-Cookie: oreo=doublestuff; Path=/;
+Set-Cookie: oreo=doublestuff; Path=/
 >>> C = Cookie.SmartCookie()
 >>> C["twix"] = "none for you"
 >>> C["twix"].value
@@ -233,8 +235,8 @@ Set-Cookie: oreo=doublestuff; Path=/;
 >>> C["string"].value
 'seven'
 >>> print C
-Set-Cookie: number=7;
-Set-Cookie: string=seven;
+Set-Cookie: number=7
+Set-Cookie: string=seven
 >>> C = Cookie.SerialCookie()
 >>> C["number"] = 7
 >>> C["string"] = "seven"
@@ -243,8 +245,8 @@ Set-Cookie: string=seven;
 >>> C["string"].value
 'seven'
 >>> print C
-Set-Cookie: number="I7\012.";
-Set-Cookie: string="S'seven'\012p1\012.";
+Set-Cookie: number="I7\012."
+Set-Cookie: string="S'seven'\012p1\012."
 >>> C = Cookie.SmartCookie()
 >>> C["number"] = 7
 >>> C["string"] = "seven"
@@ -253,6 +255,6 @@ Set-Cookie: string="S'seven'\012p1\012.";
 >>> C["string"].value
 'seven'
 >>> print C
-Set-Cookie: number="I7\012.";
-Set-Cookie: string=seven;
+Set-Cookie: number="I7\012."
+Set-Cookie: string=seven
 \end{verbatim}
