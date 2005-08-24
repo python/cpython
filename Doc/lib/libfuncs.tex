@@ -1019,26 +1019,30 @@ class C(B):
 
 \begin{funcdesc}{type}{object}
   Return the type of an \var{object}.  The return value is a
-  type\obindex{type} object.  The standard module
-  \module{types}\refstmodindex{types} defines names for all built-in
-  types that don't already have built-in names.
-  For instance:
+  type\obindex{type} object.  The \function{isinstance()} built-in
+  function is recommended for testing the type of an object.
+
+  With three arguments, \function{type} functions as a constructor
+  as detailed below.
+\end{funcdesc}
+
+\begin{funcdesc}{type}{name, bases, dict}
+  Return a new type object.  This is essentially a dynamic form of the
+  \keyword{class} statement. The \var{name} string is the class name
+  and becomes the \member{__name__} attribute; the \var{bases} tuple
+  itemizes the base classes and becomes the \member{__bases__}
+  attribute; and the \var{dict} dictionary is the namespace containing
+  definitions for class body and becomes the \member{__dict__}
+  attribute.  For example, the following two statements create
+  identical \class{type} objects:
 
 \begin{verbatim}
->>> import types
->>> x = 'abc'
->>> if type(x) is str: print "It's a string"
-...
-It's a string
->>> def f(): pass
-...
->>> if type(f) is types.FunctionType: print "It's a function"
-...
-It's a function
+  >>> class X(object):
+  ...     a = 1
+  ...     
+  >>> X = type('X', (object,), dict(a=1))
 \end{verbatim}
-
-  The \function{isinstance()} built-in function is recommended for
-  testing the type of an object.
+\versionadded{2.2}          
 \end{funcdesc}
 
 \begin{funcdesc}{unichr}{i}
