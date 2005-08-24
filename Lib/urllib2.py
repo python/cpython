@@ -1064,49 +1064,46 @@ def parse_keqv_list(l):
 
 def parse_http_list(s):
     """Parse lists as described by RFC 2068 Section 2.
-
+    
     In particular, parse comma-separated lists where the elements of
     the list may include quoted-strings.  A quoted-string could
-    contain a comma.
+    contain a comma.  A non-quoted string could have quotes in the
+    middle.  Neither commas nor quotes count if they are escaped.
+    Only double-quotes count, not single-quotes.
     """
-    # XXX this function could probably use more testing
+    res = []
+    part = ''
 
-    list = []
-    end = len(s)
-    i = 0
-    inquote = 0
-    start = 0
-    while i < end:
-        cur = s[i:]
-        c = cur.find(',')
-        q = cur.find('"')
-        if c == -1:
-            list.append(s[start:])
-            break
-        if q == -1:
-            if inquote:
-                raise ValueError, "unbalanced quotes"
-            else:
-                list.append(s[start:i+c])
-                i = i + c + 1
+    escape = quote = False
+    for cur in s:
+        if escape:
+            part += cur
+            escape = False
+            continue
+        if quote:
+            if cur == '\\':
+                escape = True
                 continue
-        if inquote:
-            if q < c:
-                list.append(s[start:i+c])
-                i = i + c + 1
-                start = i
-                inquote = 0
-            else:
-                i = i + q
-        else:
-            if c < q:
-                list.append(s[start:i+c])
-                i = i + c + 1
-                start = i
-            else:
-                inquote = 1
-                i = i + q + 1
-    return map(lambda x: x.strip(), list)
+            elif cur == '"':
+                quote = False
+            part += cur
+            continue
+
+        if cur == ',':
+            res.append(part)
+            part = ''
+            continue
+
+        if cur == '"':
+            quote = True
+        
+        part += cur
+
+    # append last part
+    if part:
+        res.append(part)
+
+    return [part.strip() for part in res]
 
 class FileHandler(BaseHandler):
     # Use local file or FTP depending on form of URL
