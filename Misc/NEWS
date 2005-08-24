@@ -193,6 +193,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1121494: distutils.dir_utils.mkpath now accepts Unicode strings.
+
 - Bug #1178484: Return complete lines from codec stream readers
   even if there is an exception in later lines, resulting in
   correct line numbers for decoding errors in source code. 
