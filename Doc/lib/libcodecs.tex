@@ -394,7 +394,7 @@ order to be compatible to the Python codec registry.
   be extended with \function{register_error()}.
 \end{classdesc}
 
-\begin{methoddesc}{read}{\optional{size\optional{, chars}}}
+\begin{methoddesc}{read}{\optional{size\optional{, chars, \optional{firstline}}}}
   Decodes data from the stream and returns the resulting object.
 
   \var{chars} indicates the number of characters to read from the
@@ -408,12 +408,16 @@ order to be compatible to the Python codec registry.
   decode as much as possible.  \var{size} is intended to prevent having
   to decode huge files in one step.
 
+  \var{firstline} indicates that it would be sufficient to only return
+  the first line, if there are decoding errors on later lines.
+
   The method should use a greedy read strategy meaning that it should
   read as much data as is allowed within the definition of the encoding
   and the given size, e.g.  if optional encoding endings or state
   markers are available on the stream, these should be read too.
 
   \versionchanged[\var{chars} argument added]{2.4}
+  \versionchanged[\var{firstline} argument added]{2.4.2}
 \end{methoddesc}
 
 \begin{methoddesc}{readline}{\optional{size\optional{, keepends}}}
