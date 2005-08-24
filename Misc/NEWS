@@ -120,6 +120,8 @@ Build
 Documentation
 -------------
 
+- Bug #1193849: Clarify os.path.expanduser() documentation.
+
 - Bug #1243192: re.UNICODE and re.LOCALE affect \d, \D, \s and \S.
 
 - Bug #755617: Document the effects of os.chown() on Windows.

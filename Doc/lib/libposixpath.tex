@@ -55,12 +55,20 @@ Equivalent to \function{exists()} on platforms lacking
 \end{funcdesc}
 
 \begin{funcdesc}{expanduser}{path}
-Return the argument with an initial component of \samp{\~} or
-\samp{\~\var{user}} replaced by that \var{user}'s home directory.  An
-initial \samp{\~{}} is replaced by the environment variable
-\envvar{HOME}; an initial \samp{\~\var{user}} is looked up in the
-password directory through the built-in module
-\refmodule{pwd}\refbimodindex{pwd}.  If the expansion fails, or if the
+On \UNIX, return the argument with an initial component of \samp{\~} or
+\samp{\~\var{user}} replaced by that \var{user}'s home directory.
+An initial \samp{\~} is replaced by the environment variable
+\envvar{HOME} if it is set; otherwise the current user's home directory
+is looked up in the password directory through the built-in module
+\refmodule{pwd}\refbimodindex{pwd}.
+An initial \samp{\~\var{user}} is looked up directly in the
+password directory.
+
+On Windows, only \samp{\~} is supported; it is replaced by the
+environment variable \envvar{HOME} or by a combination of
+\envvar{HOMEDRIVE} and \envvar{HOMEPATH}.
+
+If the expansion fails or if the
 path does not begin with a tilde, the path is returned unchanged.
 \end{funcdesc}
 
@@ -158,7 +166,7 @@ slashes.
 
 \begin{funcdesc}{normpath}{path}
 Normalize a pathname.  This collapses redundant separators and
-up-level references, e.g. \code{A//B}, \code{A/./B} and
+up-level references so that \code{A//B}, \code{A/./B} and
 \code{A/foo/../B} all become \code{A/B}.  It does not normalize the
 case (use \function{normcase()} for that).  On Windows, it converts
 forward slashes to backward slashes. It should be understood that this may
@@ -234,7 +242,7 @@ is a directory).  The argument \var{dirname} specifies the visited
 directory, the argument \var{names} lists the files in the directory
 (gotten from \code{os.listdir(\var{dirname})}).
 The \var{visit} function may modify \var{names} to
-influence the set of directories visited below \var{dirname}, e.g., to
+influence the set of directories visited below \var{dirname}, e.g. to
 avoid visiting certain parts of the tree.  (The object referred to by
 \var{names} must be modified in place, using \keyword{del} or slice
 assignment.)
