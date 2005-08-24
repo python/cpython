@@ -421,6 +421,11 @@ mmap_resize_method(mmap_object *self,
 		return NULL;
 #else
 	} else {
+		if (ftruncate(self->fd, new_size) == -1) {
+			PyErr_SetFromErrno(mmap_module_error);
+			return NULL;
+		}
+		
 		void *newmap;
 
 #ifdef MREMAP_MAYMOVE
@@ -907,7 +912,12 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	if (m_obj == NULL) {return NULL;}
 	m_obj->size = (size_t) map_size;
 	m_obj->pos = (size_t) 0;
-	m_obj->fd = fd;
+	m_obj->fd = dup(fd);
+	if (m_obj->fd == -1) {
+		Py_DECREF(m_obj);
+		PyErr_SetFromErrno(mmap_module_error);
+		return NULL;
+	}
 	m_obj->data = mmap(NULL, map_size, 
 			   prot, flags,
 			   fd, 0);

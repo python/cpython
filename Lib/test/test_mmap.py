@@ -120,6 +120,14 @@ def test_both():
             else:
                 verify(0, 'Could seek beyond the new size')
 
+            # Check that the underlying file is truncated too
+            # (bug #728515)
+            f = open(TESTFN)
+            f.seek(0, 2)
+            verify(f.tell() == 512, 'Underlying file not truncated')
+            f.close()
+            verify(m.size() == 512, 'New size not reflected in file') 
+
         m.close()
 
     finally:

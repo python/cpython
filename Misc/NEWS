@@ -50,6 +50,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #728515: mmap.resize() now resizes the file on Unix as it did
+  on Windows.
+
 - Bug #1234979: For the argument of thread.Lock.acquire, the Windows 
   implemented treated all integer values except 1 as false.
 
