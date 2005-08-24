@@ -193,6 +193,10 @@ Extension Modules
 Library
 -------
 
+- Patch #1062060: urllib.urlretrieve() now raises a new exception, named
+  ContentTooShortException, when the actually downloaded size does not
+  match the Content-Length header.
+
 - Bug #1121494: distutils.dir_utils.mkpath now accepts Unicode strings.
 
 - Bug #1178484: Return complete lines from codec stream readers

@@ -86,6 +86,11 @@ def urlcleanup():
     if _urlopener:
         _urlopener.cleanup()
 
+# exception raised when downloaded size does not match content-length
+class ContentTooShortError(IOError):
+    def __init__(self, message, content):
+        IOError.__init__(self, message)
+        self.content = content
 
 ftpcache = {}
 class URLopener:
@@ -228,24 +233,33 @@ class URLopener:
             self.tempcache[url] = result
         bs = 1024*8
         size = -1
+        read = 0
         blocknum = 1
         if reporthook:
             if "content-length" in headers:
                 size = int(headers["Content-Length"])
             reporthook(0, bs, size)
         block = fp.read(bs)
+        read += len(block)
         if reporthook:
             reporthook(1, bs, size)
         while block:
             tfp.write(block)
             block = fp.read(bs)
-            blocknum = blocknum + 1
+            read += len(block)
+            blocknum += 1
             if reporthook:
                 reporthook(blocknum, bs, size)
         fp.close()
         tfp.close()
         del fp
         del tfp
+
+        # raise exception if actual size does not match content-length header
+        if size >= 0 and read < size:
+            raise ContentTooShortError("retrieval incomplete: got only %i out "
+                                       "of %i bytes" % (read, size), result)
+
         return result
 
     # Each method named open_<type> knows how to open that type of URL
