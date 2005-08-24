@@ -502,6 +502,11 @@ New platforms
 Tools/Demos
 -----------
 
+- Added two new files to Tools/scripts: pysource.py, which recursively
+  finds Python source files, and findnocoding.py, which finds Python
+  source files that need an encoding declaration.
+  Patch #784089, credits to Oleg Broytmann.
+
 - Bug #1072853: pindent.py used an uninitialized variable.
 
 - Patch #1177597: Correct Complex.__init__.
