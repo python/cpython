@@ -17,7 +17,7 @@ extern void initgc(void);
 extern void initimageop(void);
 #endif
 extern void initmath(void);
-extern void initmd5(void);
+extern void init_md5(void);
 extern void initnt(void);
 extern void initoperator(void);
 extern void initregex(void);
@@ -25,7 +25,9 @@ extern void initregex(void);
 extern void initrgbimg(void);
 #endif
 extern void initsignal(void);
-extern void initsha(void);
+extern void init_sha(void);
+extern void init_sha256(void);
+extern void init_sha512(void);
 extern void initstrop(void);
 extern void initstruct(void);
 extern void inittime(void);
@@ -86,7 +88,7 @@ struct _inittab _PyImport_Inittab[] = {
         {"imageop", initimageop},
 #endif
         {"math", initmath},
-        {"md5", initmd5},
+        {"_md5", init_md5},
         {"nt", initnt}, /* Use the NT os functions, not posix */
         {"operator", initoperator},
         {"regex", initregex},
@@ -94,7 +96,9 @@ struct _inittab _PyImport_Inittab[] = {
         {"rgbimg", initrgbimg},
 #endif
         {"signal", initsignal},
-        {"sha", initsha},
+        {"_sha", init_sha},
+        {"_sha256", init_sha256},
+        {"_sha512", init_sha512},
         {"strop", initstrop},
         {"struct", initstruct},
         {"time", inittime},
