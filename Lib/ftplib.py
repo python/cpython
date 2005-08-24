@@ -208,13 +208,13 @@ class FTP:
         if self.debugging: print '*resp*', self.sanitize(resp)
         self.lastresp = resp[:3]
         c = resp[:1]
+        if c in ('1', '2', '3'):
+            return resp
         if c == '4':
             raise error_temp, resp
         if c == '5':
             raise error_perm, resp
-        if c not in '123':
-            raise error_proto, resp
-        return resp
+        raise error_proto, resp
 
     def voidresp(self):
         """Expect a response beginning with '2'."""
@@ -582,17 +582,17 @@ def parse229(resp, peer):
     Raises error_proto if it does not contain '(|||port|)'
     Return ('host.addr.as.numbers', port#) tuple.'''
 
-    if resp[:3] <> '229':
+    if resp[:3] != '229':
         raise error_reply, resp
     left = resp.find('(')
     if left < 0: raise error_proto, resp
     right = resp.find(')', left + 1)
     if right < 0:
         raise error_proto, resp # should contain '(|||port|)'
-    if resp[left + 1] <> resp[right - 1]:
+    if resp[left + 1] != resp[right - 1]:
         raise error_proto, resp
     parts = resp[left + 1:right].split(resp[left+1])
-    if len(parts) <> 5:
+    if len(parts) != 5:
         raise error_proto, resp
     host = peer[0]
     port = int(parts[3])
@@ -755,7 +755,16 @@ class Netrc:
 
 def test():
     '''Test program.
-    Usage: ftp [-d] [-r[file]] host [-l[dir]] [-d[dir]] [-p] [file] ...'''
+    Usage: ftp [-d] [-r[file]] host [-l[dir]] [-d[dir]] [-p] [file] ...
+
+    -d dir
+    -l list
+    -p password
+    '''
+
+    if len(sys.argv) < 2:
+        print test.__doc__
+        sys.exit(0)
 
     debugging = 0
     rcfile = None
