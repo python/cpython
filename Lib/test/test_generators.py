@@ -649,6 +649,84 @@ Ye olde Fibonacci generator, LazyList style.
 >>> firstn(iter(fib), 17)
 [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584]
 >>> fib.close()
+
+
+Running after your tail with itertools.tee (new in version 2.4)
+
+The algorithms "m235" (Hamming) and Fibonacci presented above are both
+examples of a whole family of FP (functional programming) algorithms
+where a function produces and returns a list while the production algorithm
+suppose the list as already produced by recursively calling itself.
+For these algorithms to work, they must:
+
+- produce at least a first element without presupposing the existence of
+  the rest of the list
+- produce their elements in a lazy manner
+
+To work efficiently, the beginning of the list must not be recomputed over
+and over again. This is ensured in most FP languages as a built-in feature.
+In python, we have to explicitly maintain a list of already computed results
+and abandon genuine recursivity.
+
+This is what had been attempted above with the LazyList class. One problem
+with that class is that it keeps a list of all of the generated results and
+therefore continually grows. This partially defeats the goal of the generator
+concept, viz. produce the results only as needed instead of producing them
+all and thereby wasting memory.
+
+Thanks to itertools.tee, it is now clear "how to get the internal uses of
+m235 to share a single generator".
+
+>>> from itertools import tee
+>>> def m235():
+...     def _m235():
+...         yield 1
+...         for n in merge(times(2, m2),
+...                        merge(times(3, m3),
+...                              times(5, m5))):
+...             yield n
+...     m2, m3, m5, mRes = tee(_m235(), 4)
+...     return mRes
+
+>>> it = m235()
+>>> for i in range(5):
+...     print firstn(it, 15)
+[1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20, 24]
+[25, 27, 30, 32, 36, 40, 45, 48, 50, 54, 60, 64, 72, 75, 80]
+[81, 90, 96, 100, 108, 120, 125, 128, 135, 144, 150, 160, 162, 180, 192]
+[200, 216, 225, 240, 243, 250, 256, 270, 288, 300, 320, 324, 360, 375, 384]
+[400, 405, 432, 450, 480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675]
+
+The "tee" function does just what we want. It internally keeps a generated
+result for as long as it has not been "consumed" from all of the duplicated
+iterators, whereupon it is deleted. You can therefore print the hamming
+sequence during hours without increasing memory usage, or very little.
+
+The beauty of it is that recursive running after their tail FP algorithms
+are quite straightforwardly expressed with this Python idiom.
+
+
+Ye olde Fibonacci generator, tee style.
+
+>>> def fib():
+... 
+...     def _isum(g, h):
+...         while 1:
+...             yield g.next() + h.next()
+... 
+...     def _fib():
+...         yield 1
+...         yield 2
+...         fibTail.next() # throw first away
+...         for res in _isum(fibHead, fibTail):
+...             yield res
+...   
+...     fibHead, fibTail, fibRes = tee(_fib(), 3)
+...     return fibRes
+
+>>> firstn(fib(), 17)
+[1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584]
+
 """
 
 # syntax_tests mostly provokes SyntaxErrors.  Also fiddling with #if 0
