@@ -45,6 +45,14 @@ class TrivialTests(unittest.TestCase):
         # test the new-in-2.5 httpresponses dictionary
         self.assertEquals(urllib2.httpresponses[404], "Not Found")
 
+    def test_parse_http_list(self):
+        tests = [('a,b,c', ['a', 'b', 'c']),
+                 ('path"o,l"og"i"cal, example', ['path"o,l"og"i"cal', 'example']),
+                 ('a, b, "c", "d", "e,f", g, h', ['a', 'b', '"c"', '"d"', '"e,f"', 'g', 'h']),
+                 ('a="b\\"c", d="e\\,f", g="h\\\\i"', ['a="b"c"', 'd="e,f"', 'g="h\\i"'])]
+        for string, list in tests:
+            self.assertEquals(urllib2.parse_http_list(string), list)
+
 
 class MockOpener:
     addheaders = []
