@@ -142,6 +142,25 @@ If the \var{url} uses the \file{http:} scheme identifier, the optional
 (normally the request type is \code{GET}).  The \var{data} argument
 must in standard \mimetype{application/x-www-form-urlencoded} format;
 see the \function{urlencode()} function below.
+
+\versionchanged[
+\function{urlretrieve()} will raise \exception{ContentTooShortError}
+when it detects that the amount of data available 
+was less than the expected amount (which is the size reported by a 
+\var{Content-Length} header). This can occur, for example, when the 
+download is interrupted.
+
+The \var{Content-Length} is treated as a lower bound: if there's more data 
+to read, urlretrieve reads more data, but if less data is available, 
+it raises the exception.
+
+You can still retrieve the downloaded data in this case, it is stored 
+in the \member{content} attribute of the exception instance.
+
+If no \var{Content-Length} header was supplied, urlretrieve can
+not check the size of the data it has downloaded, and just returns it. 
+In this case you just have to assume that the download was successful]{2.5}
+
 \end{funcdesc}
 
 \begin{datadesc}{_urlopener}
@@ -283,6 +302,15 @@ subclass may override this method to support more appropriate behavior
 if needed.}
 \end{classdesc}
 
+\begin{excclassdesc}{ContentTooShortError}{msg\optional{, content}}
+This exception is raised when the \function{urlretrieve()} function
+detects that the amount of the downloaded data is less than the 
+expected amount (given by the \var{Content-Length} header). The
+\member{content} attribute stores the downloaded (and supposedly
+truncated) data.
+\versionadded{2.5}
+\end{excclassdesc}
+
 Restrictions:
 
 \begin{itemize}
@@ -317,7 +345,7 @@ Web client using these functions without using threads.
 \item
 The data returned by \function{urlopen()} or \function{urlretrieve()}
 is the raw data returned by the server.  This may be binary data
-(e.g. an image), plain text or (for example) HTML\index{HTML}.  The
+(such as an image), plain text or (for example) HTML\index{HTML}.  The
 HTTP\indexii{HTTP}{protocol} protocol provides type information in the
 reply header, which can be inspected by looking at the
 \mailheader{Content-Type} header.  For the
