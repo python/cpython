@@ -12,6 +12,8 @@ What's New in Python 2.4.2a
 Core and builtins
 -----------------
 
+- Forward UnicodeDecodeError into SyntaxError for source encoding errors.
+
 - SF bug #900092: When tracing (e.g. for hotshot), restore 'return' events for
   exceptions that cause a function to exit.
 
