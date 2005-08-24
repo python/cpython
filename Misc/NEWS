@@ -191,6 +191,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1192315: Disallow negative arguments to clear() in pdb.
+
 - Patch #827386: Support absolute source paths in msvccompiler.py.
 
 - Patch #1105730: Apply the new implementation of commonprefix in posixpath
