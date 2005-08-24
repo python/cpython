@@ -128,6 +128,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #728515: mmap.resize() now resizes the file on Unix as it did
+  on Windows.
+
 - Patch #1180695: Add nanosecond stat resolution, and st_gen, 
   st_birthtime for FreeBSD.
 
