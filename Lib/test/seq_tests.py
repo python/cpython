@@ -207,6 +207,33 @@ class CommonTest(unittest.TestCase):
 
         self.assertRaises(TypeError, u.__contains__)
 
+    def test_contains_fake(self):
+        class AllEq:
+            # Sequences must use rich comparison against each item
+            # (unless "is" is true, or an earlier item answered)
+            # So instances of AllEq must be found in all non-empty sequences.
+            def __eq__(self, other):
+                return True
+            def __hash__(self):
+                raise NotImplemented
+        self.assert_(AllEq() not in self.type2test([]))
+        self.assert_(AllEq() in self.type2test([1]))
+
+    def test_contains_order(self):
+        # Sequences must test in-order.  If a rich comparison has side
+        # effects, these will be visible to tests against later members.
+        # In this test, the "side effect" is a short-circuiting raise.
+        class DoNotTestEq(Exception):
+            pass
+        class StopCompares:
+            def __eq__(self, other):
+                raise DoNotTestEq
+        
+        checkfirst = self.type2test([1, StopCompares()])
+        self.assert_(1 in checkfirst)
+        checklast = self.type2test([StopCompares(), 1])
+        self.assertRaises(DoNotTestEq, checklast.__contains__, 1)
+
     def test_len(self):
         self.assertEqual(len(self.type2test()), 0)
         self.assertEqual(len(self.type2test([])), 0)
