@@ -236,7 +236,7 @@ class StreamReader(Codec):
     def decode(self, input, errors='strict'):
         raise NotImplementedError
 
-    def read(self, size=-1, chars=-1):
+    def read(self, size=-1, chars=-1, firstline=False):
 
         """ Decodes data from the stream self.stream and returns the
             resulting object.
@@ -252,6 +252,11 @@ class StreamReader(Codec):
             -1 indicates to read and decode as much as possible.  size
             is intended to prevent having to decode huge files in one
             step.
+
+            If firstline is true, and a UnicodeDecodeError happens
+            after the first line terminator in the input only the first line
+            will be returned, the rest of the input will be kept until the
+            next call to read().
 
             The method should use a greedy read strategy meaning that
             it should read as much data as is allowed within the
@@ -275,7 +280,16 @@ class StreamReader(Codec):
                 newdata = self.stream.read(size)
             # decode bytes (those remaining from the last call included)
             data = self.bytebuffer + newdata
-            newchars, decodedbytes = self.decode(data, self.errors)
+            try:
+                newchars, decodedbytes = self.decode(data, self.errors)
+            except UnicodeDecodeError, exc:
+                if firstline:
+                    newchars, decodedbytes = self.decode(data[:exc.start], self.errors)
+                    lines = newchars.splitlines(True)
+                    if len(lines)<=1:
+                        raise
+                else:
+                    raise
             # keep undecoded bytes until the next call
             self.bytebuffer = data[decodedbytes:]
             # put new characters in the character buffer
@@ -306,7 +320,7 @@ class StreamReader(Codec):
         line = ""
         # If size is given, we call read() only once
         while True:
-            data = self.read(readsize)
+            data = self.read(readsize, firstline=True)
             if data:
                 # If we're at a "\r" read one extra character (which might
                 # be a "\n") to get a proper line ending. If the stream is
