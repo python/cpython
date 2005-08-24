@@ -188,6 +188,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1262036: Make tarfile name absolute. Fixes #1257255.
+
 - Patch #827386: Support absolute source paths in msvccompiler.py.
 
 - Patch #1105730: Apply the new implementation of commonprefix in posixpath
