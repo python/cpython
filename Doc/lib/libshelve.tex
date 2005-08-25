@@ -42,6 +42,14 @@ Shelve objects support all methods supported by dictionaries.  This eases
 the transition from dictionary based scripts to those requiring persistent
 storage.
 
+One additional method is supported:
+\begin{methoddesc}[Shelf]{sync}{}
+Write back all entries in the cache if the shelf was opened with
+\var{writeback} set to \var{True}. Also empty the cache and synchronize
+the persistent dictionary on disk, if feasible.  This is called automatically
+when the shelf is closed with \method{close()}.
+\end{methoddesc}
+
 \subsection{Restrictions}
 
 \begin{itemize}
