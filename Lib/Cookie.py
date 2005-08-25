@@ -224,6 +224,7 @@ __all__ = ["CookieError","BaseCookie","SimpleCookie","SerialCookie",
 
 _nulljoin = ''.join
 _semispacejoin = '; '.join
+_spacejoin = ' '.join
 
 #
 # Define an exception visible to External modules
@@ -594,7 +595,7 @@ class BaseCookie(dict):
         items.sort()
         for K,V in items:
             L.append( '%s=%s' % (K,repr(V.value) ) )
-        return '<%s: %s>' % (self.__class__.__name__, _semispacejoin(L))
+        return '<%s: %s>' % (self.__class__.__name__, _spacejoin(L))
 
     def js_output(self, attrs=None):
         """Return a string suitable for JavaScript."""
