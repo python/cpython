@@ -12,17 +12,17 @@ warnings.filterwarnings("ignore",
 
 cases = [
     ('chips=ahoy; vienna=finger', {'chips':'ahoy', 'vienna':'finger'}),
-    ('keebler="E=mc2; L=\\"Loves\\"; fudge=\\012;";',
+    ('keebler="E=mc2; L=\\"Loves\\"; fudge=\\012;"',
      {'keebler' : 'E=mc2; L="Loves"; fudge=\012;'}),
 
     # Check illegal cookies that have an '=' char in an unquoted value
-    ('keebler=E=mc2;', {'keebler' : 'E=mc2'})
+    ('keebler=E=mc2', {'keebler' : 'E=mc2'})
     ]
 
 for data, dict in cases:
     C = Cookie.SimpleCookie() ; C.load(data)
     print repr(C)
-    print str(C)
+    print C.output(sep='\n')
     for k, v in sorted(dict.iteritems()):
         print ' ', k, repr( C[k].value ), repr(v)
         verify(C[k].value == v)
