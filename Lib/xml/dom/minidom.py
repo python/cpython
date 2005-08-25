@@ -1278,15 +1278,15 @@ class DocumentType(Identified, Childless, Node):
         writer.write("<!DOCTYPE ")
         writer.write(self.name)
         if self.publicId:
-            writer.write("\n  PUBLIC '%s'\n  '%s'"
-                         % (self.publicId, self.systemId))
+            writer.write("%s  PUBLIC '%s'%s  '%s'"
+                         % (newl, self.publicId, newl, self.systemId))
         elif self.systemId:
-            writer.write("\n  SYSTEM '%s'" % self.systemId)
+            writer.write("%s  SYSTEM '%s'" % (newl, self.systemId))
         if self.internalSubset is not None:
             writer.write(" [")
             writer.write(self.internalSubset)
             writer.write("]")
-        writer.write(">\n")
+        writer.write(">"+newl)
 
 class Entity(Identified, Node):
     attributes = None
@@ -1739,9 +1739,9 @@ class Document(Node, DocumentLS):
     def writexml(self, writer, indent="", addindent="", newl="",
                  encoding = None):
         if encoding is None:
-            writer.write('<?xml version="1.0" ?>\n')
+            writer.write('<?xml version="1.0" ?>'+newl)
         else:
-            writer.write('<?xml version="1.0" encoding="%s"?>\n' % encoding)
+            writer.write('<?xml version="1.0" encoding="%s"?>%s' % (encoding, newl))
         for node in self.childNodes:
             node.writexml(writer, indent, addindent, newl)
 
