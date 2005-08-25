@@ -135,6 +135,9 @@ zlib
     However, the zlib project is not smart enough to remove anything under
     zlib-1.2.3\ when you do a clean, so if you want to rebuild zlib.lib
     you need to clean up zlib-1.2.3\ by hand.
+    When building zlib.pyd for Itanium, the pre-link build step won't work,
+    so you will need to invoke nmake manually, using an IA64 build 
+    environment.
 
 bz2
     Python wrapper for the libbz2 compression library.  Homepage

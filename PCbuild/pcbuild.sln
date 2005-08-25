@@ -179,8 +179,8 @@ Global
 		{680CDC79-9CCA-4282-9A8D-927CB0DB55B2}.Debug.Build.0 = Debug|Win32
 		{680CDC79-9CCA-4282-9A8D-927CB0DB55B2}.Release.ActiveCfg = Release|Win32
 		{680CDC79-9CCA-4282-9A8D-927CB0DB55B2}.Release.Build.0 = Release|Win32
-		{680CDC79-9CCA-4282-9A8D-927CB0DB55B2}.ReleaseItanium.ActiveCfg = Release|Win32
-		{680CDC79-9CCA-4282-9A8D-927CB0DB55B2}.ReleaseItanium.Build.0 = Release|Win32
+		{680CDC79-9CCA-4282-9A8D-927CB0DB55B2}.ReleaseItanium.ActiveCfg = ReleaseItanium|Win32
+		{680CDC79-9CCA-4282-9A8D-927CB0DB55B2}.ReleaseItanium.Build.0 = ReleaseItanium|Win32
 	EndGlobalSection
 	GlobalSection(SolutionItems) = postSolution
 		readme.txt = readme.txt
