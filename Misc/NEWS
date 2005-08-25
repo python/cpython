@@ -120,6 +120,8 @@ Library
 Build
 -----
 
+- Patch #1160164: Build zlib.pyd for Itanium.
+
 - Bug #1189330: configure did not correctly determine the necessary
   value of LINKCC if python was built with GCC 4.0.
 
