@@ -413,11 +413,18 @@ def testAttributeRepr():
 def testTextNodeRepr(): pass
 
 def testWriteXML():
-    str = '<?xml version="1.0" ?>\n<a b="c"/>'
+    str = '<?xml version="1.0" ?><a b="c"/>'
     dom = parseString(str)
     domstr = dom.toxml()
     dom.unlink()
     confirm(str == domstr)
+
+def testAltNewline():
+    str = '<?xml version="1.0" ?>\n<a b="c"/>\n'
+    dom = parseString(str)
+    domstr = dom.toprettyxml(newl="\r\n")
+    dom.unlink()
+    confirm(domstr == str.replace("\n", "\r\n"))
 
 def testProcessingInstruction():
     dom = parseString('<e><?mypi \t\n data \t\n ?></e>')
@@ -878,9 +885,9 @@ def testSAX2DOM():
 
 def testEncodings():
     doc = parseString('<foo>&#x20ac;</foo>')
-    confirm(doc.toxml() == u'<?xml version="1.0" ?>\n<foo>\u20ac</foo>'
-            and doc.toxml('utf-8') == '<?xml version="1.0" encoding="utf-8"?>\n<foo>\xe2\x82\xac</foo>'
-            and doc.toxml('iso-8859-15') == '<?xml version="1.0" encoding="iso-8859-15"?>\n<foo>\xa4</foo>',
+    confirm(doc.toxml() == u'<?xml version="1.0" ?><foo>\u20ac</foo>'
+            and doc.toxml('utf-8') == '<?xml version="1.0" encoding="utf-8"?><foo>\xe2\x82\xac</foo>'
+            and doc.toxml('iso-8859-15') == '<?xml version="1.0" encoding="iso-8859-15"?><foo>\xa4</foo>',
             "testEncodings - encoding EURO SIGN")
     doc.unlink()
 
