@@ -52,6 +52,11 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1215928: Fix bz2.BZ2File.seek() for 64-bit file offsets.
+
+- Bug #1191043: Fix bz2.BZ2File.(x)readlines() for files containing one line
+  without newlines.
+
 - Bug #728515: mmap.resize() now resizes the file on Unix as it did
   on Windows.
 
