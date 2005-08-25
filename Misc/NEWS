@@ -68,6 +68,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1163178: Make IDNA return an empty string when the input is empty.
+
 - Bug #1121494: distutils.dir_utils.mkpath now accepts Unicode strings.
 
 - Bug #1178484: Return complete lines from codec stream readers

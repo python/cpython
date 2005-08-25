@@ -149,6 +149,9 @@ class Codec(codecs.Codec):
             # IDNA is quite clear that implementations must be strict
             raise UnicodeError, "unsupported error handling "+errors
 
+        if not input:
+            return "", 0
+
         result = []
         labels = dots.split(input)
         if labels and len(labels[-1])==0:
@@ -165,6 +168,9 @@ class Codec(codecs.Codec):
 
         if errors != 'strict':
             raise UnicodeError, "Unsupported error handling "+errors
+
+        if not input:
+            return u"", 0
 
         # IDNA allows decoding to operate on Unicode strings, too.
         if isinstance(input, unicode):
