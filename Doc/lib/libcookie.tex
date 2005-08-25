@@ -98,9 +98,9 @@ In general, it should be the case that \method{value_encode()} and
 Return a string representation suitable to be sent as HTTP headers.
 \var{attrs} and \var{header} are sent to each \class{Morsel}'s
 \method{output()} method. \var{sep} is used to join the headers
-together, and is by default the combination '\r\n' (CRLF).
-\versionchanged[The default separator has been changed from '\n' to match the cookie
-specification]{2.5}
+together, and is by default the combination \code{'\e r\e n'} (CRLF).
+\versionchanged[The default separator has been changed from \code{'\e n'}
+to match the cookie specification]{2.5}
 \end{methoddesc}
 
 \begin{methoddesc}[BaseCookie]{js_output}{\optional{attrs}}
