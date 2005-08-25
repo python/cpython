@@ -20,6 +20,6 @@ Files:
 			handle nested constructs easily using the functions
 			and classes in example.py.
 
-	test_parser.py  program to put the parser module through it's paces.
+	test_parser.py  program to put the parser module through its paces.
 
 Enjoy!
