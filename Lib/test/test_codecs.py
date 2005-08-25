@@ -630,6 +630,12 @@ class CodecTest(unittest.TestCase):
     def test_builtin(self):
         self.assertEquals(unicode("python.org", "idna"), u"python.org")
 
+    def test_stream(self):
+        import StringIO
+        r = codecs.getreader("idna")(StringIO.StringIO("abc"))
+        r.read(3)
+        self.assertEquals(r.read(), u"")
+
 class CodecsModuleTest(unittest.TestCase):
 
     def test_decode(self):

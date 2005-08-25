@@ -193,6 +193,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1163178: Make IDNA return an empty string when the input is empty.
+
 - Patch #848017: Make Cookie more RFC-compliant. Use CRLF as default output
   separator and do not output trailing semicola.
 
