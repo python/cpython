@@ -959,7 +959,7 @@ calcsize(const char *fmt, const formatdef *f)
 	s = fmt;
 	size = 0;
 	while ((c = *s++) != '\0') {
-		if (isspace((int)c))
+		if (isspace(Py_CHARMASK(c)))
 			continue;
 		if ('0' <= c && c <= '9') {
 			num = c - '0';
@@ -1059,7 +1059,7 @@ struct_pack(PyObject *self, PyObject *args)
 	res = restart = PyString_AsString(result);
 
 	while ((c = *s++) != '\0') {
-		if (isspace((int)c))
+		if (isspace(Py_CHARMASK(c)))
 			continue;
 		if ('0' <= c && c <= '9') {
 			num = c - '0';
@@ -1191,7 +1191,7 @@ struct_unpack(PyObject *self, PyObject *args)
 	str = start;
 	s = fmt;
 	while ((c = *s++) != '\0') {
-		if (isspace((int)c))
+		if (isspace(Py_CHARMASK(c)))
 			continue;
 		if ('0' <= c && c <= '9') {
 			num = c - '0';
