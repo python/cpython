@@ -380,10 +380,12 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEquals('\xff\x00\xff\x00', f('255.0.255.0'))
         self.assertEquals('\xaa\xaa\xaa\xaa', f('170.170.170.170'))
         self.assertEquals('\x01\x02\x03\x04', f('1.2.3.4'))
+        self.assertEquals('\xff\xff\xff\xff', f('255.255.255.255'))
 
         self.assertEquals('\x00\x00\x00\x00', g('0.0.0.0'))
         self.assertEquals('\xff\x00\xff\x00', g('255.0.255.0'))
         self.assertEquals('\xaa\xaa\xaa\xaa', g('170.170.170.170'))
+        self.assertEquals('\xff\xff\xff\xff', g('255.255.255.255'))
 
     def testIPv6toString(self):
         if not hasattr(socket, 'inet_pton'):

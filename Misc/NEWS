@@ -133,9 +133,12 @@ Core and builtins
 Extension Modules
 -----------------
 
-- Bug #1191043: Fix bz2.BZ2File.seek() for 64-bit file offsets.
+- Patch #756021: Special-case socket.inet_aton('255.255.255.255') for
+  platforms that don't have inet_aton().
 
-- Bug #1215928: Fix bz2.BZ2File.(x)readlines for files containing one
+- Bug #1215928: Fix bz2.BZ2File.seek() for 64-bit file offsets.
+
+- Bug #1191043: Fix bz2.BZ2File.(x)readlines for files containing one
   line without newlines.
 
 - Bug #728515: mmap.resize() now resizes the file on Unix as it did
