@@ -15,6 +15,7 @@ PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
                                                   char *, char **, ...);
 PyAPI_FUNC(int) PyArg_UnpackTuple(PyObject *, char *, int, int, ...);
 PyAPI_FUNC(PyObject *) Py_BuildValue(char *, ...);
+PyAPI_FUNC(int) _PyArg_NoKeywords(char *funcname, PyObject *kw);
 
 PyAPI_FUNC(int) PyArg_VaParse(PyObject *, char *, va_list);
 PyAPI_FUNC(int) PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,

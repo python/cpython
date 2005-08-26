@@ -481,6 +481,9 @@ random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	RandomObject *self;
 	PyObject *tmp;
 
+	if (!_PyArg_NoKeywords("Random()", kwds))
+		return NULL;
+
 	self = (RandomObject *)type->tp_alloc(type, 0);
 	if (self == NULL)
 		return NULL;

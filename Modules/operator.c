@@ -269,6 +269,9 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *item;
 	int nitems;
 
+	if (!_PyArg_NoKeywords("itemgetter()", kwds))
+		return NULL;
+
 	nitems = PyTuple_GET_SIZE(args);
 	if (nitems <= 1) {
 		if (!PyArg_UnpackTuple(args, "itemgetter", 1, 1, &item))
@@ -404,6 +407,9 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	attrgetterobject *ag;
 	PyObject *attr;
 	int nattrs;
+
+	if (!_PyArg_NoKeywords("attrgetter()", kwds))
+		return NULL;
 
 	nattrs = PyTuple_GET_SIZE(args);
 	if (nattrs <= 1) {

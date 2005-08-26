@@ -174,6 +174,9 @@ slice_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
 	start = stop = step = NULL;
 
+	if (!_PyArg_NoKeywords("slice()", kw))
+		return NULL;
+
 	if (!PyArg_UnpackTuple(args, "slice", 1, 3, &start, &stop, &step))
 		return NULL;
 

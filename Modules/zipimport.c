@@ -65,6 +65,9 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
 	char *path, *p, *prefix, buf[MAXPATHLEN+2];
 	int len;
 
+	if (!_PyArg_NoKeywords("zipimporter()", kwds))
+		return -1;
+
 	if (!PyArg_ParseTuple(args, "s:zipimporter",
 			      &path))
 		return -1;
