@@ -79,6 +79,9 @@ Extension Modules
 Library
 -------
 
+- Patch #810023: Fix off-by-one bug in urllib.urlretrieve reporthook
+  functionality.
+
 - Bug #1163178: Make IDNA return an empty string when the input is empty.
 
 - Bug #1121494: distutils.dir_utils.mkpath now accepts Unicode strings.

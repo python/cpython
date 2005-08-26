@@ -228,18 +228,17 @@ class URLopener:
             self.tempcache[url] = result
         bs = 1024*8
         size = -1
-        blocknum = 1
+        blocknum = 0
         if reporthook:
             if "content-length" in headers:
                 size = int(headers["Content-Length"])
-            reporthook(0, bs, size)
-        block = fp.read(bs)
-        if reporthook:
-            reporthook(1, bs, size)
-        while block:
-            tfp.write(block)
+            reporthook(blocknum, bs, size)
+        while 1:
             block = fp.read(bs)
-            blocknum = blocknum + 1
+            if block == "":
+                break
+            tfp.write(block)
+            blocknum += 1
             if reporthook:
                 reporthook(blocknum, bs, size)
         fp.close()
