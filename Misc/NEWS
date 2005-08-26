@@ -204,6 +204,9 @@ Extension Modules
 Library
 -------
 
+- Patch #810023: Fix off-by-one bug in urllib.urlretrieve reporthook
+  functionality.
+
 - Bug #1163178: Make IDNA return an empty string when the input is empty.
 
 - Patch #848017: Make Cookie more RFC-compliant. Use CRLF as default output
