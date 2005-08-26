@@ -3238,14 +3238,19 @@ socket_inet_aton(PyObject *self, PyObject *args)
 	return NULL;
 
 #else /* ! HAVE_INET_ATON */
-	/* XXX Problem here: inet_aton('255.255.255.255') raises
-	   an exception while it should be a valid address. */
-	packed_addr = inet_addr(ip_addr);
+	/* special-case this address as inet_addr might return INADDR_NONE
+	 * for this */
+	if (strcmp(ip_addr, "255.255.255.255") == 0) {
+		packed_addr = 0xFFFFFFFF;
+	} else {
+	
+		packed_addr = inet_addr(ip_addr);
 
-	if (packed_addr == INADDR_NONE) {	/* invalid address */
-		PyErr_SetString(socket_error,
-			"illegal IP address string passed to inet_aton");
-		return NULL;
+		if (packed_addr == INADDR_NONE) {	/* invalid address */
+			PyErr_SetString(socket_error,
+				"illegal IP address string passed to inet_aton");
+			return NULL;
+		}
 	}
 	return PyString_FromStringAndSize((char *) &packed_addr,
 					  sizeof(packed_addr));
