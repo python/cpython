@@ -90,4 +90,3 @@ test_scaled_msg(scale=212, name='[2*small data]')
 test_scaled_msg(scale=106, name='[small data]')
 test_scaled_msg(scale=creatorFunc().digest_size, name='[digest_size data]')
 test_scaled_msg(scale=10, name='[tiny data]')
-

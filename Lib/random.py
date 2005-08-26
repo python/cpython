@@ -303,7 +303,7 @@ class Random(_random.Random):
         result = [None] * k
         setsize = 21        # size of a small set minus size of an empty list
         if k > 5:
-              setsize += 4 ** _ceil(_log(k * 3, 4)) # table size for big sets
+            setsize += 4 ** _ceil(_log(k * 3, 4)) # table size for big sets
         if n <= setsize:    # is an n-length list smaller than a k-length set
             pool = list(population)
             for i in xrange(k):         # invariant:  non-selected at [0,n-i)

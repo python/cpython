@@ -126,7 +126,7 @@ def test_both():
             f.seek(0, 2)
             verify(f.tell() == 512, 'Underlying file not truncated')
             f.close()
-            verify(m.size() == 512, 'New size not reflected in file') 
+            verify(m.size() == 512, 'New size not reflected in file')
 
         m.close()
 

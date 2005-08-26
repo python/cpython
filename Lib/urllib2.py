@@ -1069,7 +1069,7 @@ def parse_keqv_list(l):
 
 def parse_http_list(s):
     """Parse lists as described by RFC 2068 Section 2.
-    
+
     In particular, parse comma-separated lists where the elements of
     the list may include quoted-strings.  A quoted-string could
     contain a comma.  A non-quoted string could have quotes in the
@@ -1101,7 +1101,7 @@ def parse_http_list(s):
 
         if cur == '"':
             quote = True
-        
+
         part += cur
 
     # append last part

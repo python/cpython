@@ -709,18 +709,18 @@ are quite straightforwardly expressed with this Python idiom.
 Ye olde Fibonacci generator, tee style.
 
 >>> def fib():
-... 
+...
 ...     def _isum(g, h):
 ...         while 1:
 ...             yield g.next() + h.next()
-... 
+...
 ...     def _fib():
 ...         yield 1
 ...         yield 2
 ...         fibTail.next() # throw first away
 ...         for res in _isum(fibHead, fibTail):
 ...             yield res
-...   
+...
 ...     fibHead, fibTail, fibRes = tee(_fib(), 3)
 ...     return fibRes
 

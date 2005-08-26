@@ -26,8 +26,8 @@ except:
                             if filename.endswith(".py"):
                                 yield os.path.join(root, filename)
     pysource = pysource()
-                
-            
+
+
     print >>sys.stderr, ("The pysource module is not available; "
                          "no sophisticated Python source file search will be done.")
 
@@ -56,19 +56,19 @@ def needs_declaration(fullpath):
 
     line1 = infile.readline()
     line2 = infile.readline()
-    
+
     if get_declaration(line1) or get_declaration(line2):
         # the file does have an encoding declaration, so trust it
         infile.close()
         return False
-    
+
     # check the whole file for non-ASCII characters
     rest = infile.read()
     infile.close()
-    
+
     if has_correct_encoding(line1+line2+rest, "ascii"):
         return False
-    
+
     return True
 
 
@@ -102,5 +102,3 @@ for fullpath in pysource.walk_python_files(args, is_python):
     result = needs_declaration(fullpath)
     if result:
         print fullpath
-
-

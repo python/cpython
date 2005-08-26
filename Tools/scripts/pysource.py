@@ -57,12 +57,12 @@ def looks_like_python(fullpath):
 
     line = infile.readline()
     infile.close()
-    
+
     if binary_re.search(line):
         # file appears to be binary
         print_debug("%s: appears to be binary" % fullpath)
         return False
-        
+
     if fullpath.endswith(".py") or fullpath.endswith(".pyw"):
         return True
     elif "python" in line:
@@ -95,12 +95,12 @@ def walk_python_files(paths, is_python=looks_like_python, exclude_dirs=None):
     paths: a list of files and/or directories to be checked.
     is_python: a function that takes a file name and checks whether it is a
                Python source file
-    exclude_dirs: a list of directory base names that should be excluded in 
+    exclude_dirs: a list of directory base names that should be excluded in
                   the search
     """
     if exclude_dirs is None:
         exclude_dirs=[]
-    
+
     for path in paths:
         print_debug("testing: %s" % path)
         if os.path.isfile(path):
