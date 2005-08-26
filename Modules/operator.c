@@ -267,6 +267,9 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	itemgetterobject *ig;
 	PyObject *item;
 
+	if (!_PyArg_NoKeywords("itemgetter()", kdws))
+		return NULL;
+
 	if (!PyArg_UnpackTuple(args, "itemgetter", 1, 1, &item))
 		return NULL;
 
@@ -373,6 +376,9 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	attrgetterobject *ag;
 	PyObject *attr;
+
+	if (!_PyArg_NoKeywords("attrgetter()", kwds))
+		return NULL;
 
 	if (!PyArg_UnpackTuple(args, "attrgetter", 1, 1, &attr))
 		return NULL;

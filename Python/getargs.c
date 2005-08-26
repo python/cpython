@@ -1594,3 +1594,29 @@ PyArg_UnpackTuple(PyObject *args, char *name, int min, int max, ...)
 	va_end(vargs);
 	return 1;
 }
+
+
+/* For type constructors that don't take keyword args
+ *
+ * Sets a TypeError and returns 0 if the kwds dict is 
+ * not emtpy, returns 1 otherwise
+ */
+int
+_PyArg_NoKeywords(char *funcname, PyObject *kw)
+{
+	if (kw == NULL)
+		return 1;
+	if (!PyDict_CheckExact(kw)) {
+		PyErr_BadInternalCall();
+		return 0;
+	}
+	if (PyDict_Size(kw) == 0)
+		return 1;
+	
+	PyErr_Format(PyExc_TypeError, "%s does not take keyword arguments", 
+			funcname);
+	return 0;
+}
+
+
+

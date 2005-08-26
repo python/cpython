@@ -81,6 +81,9 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *iterable = NULL;
 
+	if (!_PyArg_NoKeywords("frozenset()", kwds))
+		return NULL;
+
 	if (!PyArg_UnpackTuple(args, type->tp_name, 0, 1, &iterable))
 		return NULL;
 	if (iterable != NULL && PyFrozenSet_CheckExact(iterable)) {
@@ -93,6 +96,9 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+	if (!_PyArg_NoKeywords("set()", kwds))
+		return NULL;
+	
 	return make_new_set(type, NULL);
 }
 

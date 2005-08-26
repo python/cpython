@@ -1774,18 +1774,9 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	char c;
 	PyObject *initial = NULL, *it = NULL;
 	struct arraydescr *descr;
-
-	if (kwds != NULL) {
-		int i = PyObject_Length(kwds);
-		if (i < 0)
-			return NULL;
-		else if (i > 0) {
-			PyErr_SetString(PyExc_TypeError,
-			    "array.array constructor takes "
-			    "no keyword arguments");
-			return NULL;
-		}
-	}
+	
+	if (!_PyArg_NoKeywords("array.array()", kwds))
+		return NULL;
 
 	if (!PyArg_ParseTuple(args, "c|O:array", &c, &initial))
 		return NULL;

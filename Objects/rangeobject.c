@@ -90,6 +90,9 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	long ilow = 0, ihigh = 0, istep = 1;
 	long n;
 
+	if (!_PyArg_NoKeywords("xrange()", kw))
+		return NULL;
+
 	if (PyTuple_Size(args) <= 1) {
 		if (!PyArg_ParseTuple(args,
 				"l;xrange() requires 1-3 int arguments",
