@@ -267,7 +267,7 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	itemgetterobject *ig;
 	PyObject *item;
 
-	if (!_PyArg_NoKeywords("itemgetter()", kdws))
+	if (!_PyArg_NoKeywords("itemgetter()", kwds))
 		return NULL;
 
 	if (!PyArg_UnpackTuple(args, "itemgetter", 1, 1, &item))
