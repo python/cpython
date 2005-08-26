@@ -12,7 +12,7 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
-- Disallow keyword arguments for type constructors that don't use it
+- Disallow keyword arguments for type constructors that don't use them
   (fixes bug #1119418).
 
 - Forward UnicodeDecodeError into SyntaxError for source encoding errors.
