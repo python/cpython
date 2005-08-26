@@ -228,7 +228,7 @@ class CommonTest(unittest.TestCase):
         class StopCompares:
             def __eq__(self, other):
                 raise DoNotTestEq
-        
+
         checkfirst = self.type2test([1, StopCompares()])
         self.assert_(1 in checkfirst)
         checklast = self.type2test([StopCompares(), 1])
