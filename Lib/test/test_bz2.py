@@ -191,7 +191,7 @@ class BZ2FileTest(BaseTest):
     def testSeekBackwardsFromEnd(self):
         # "Test BZ2File.seek(-150, 2)"
         self.createTempFile()
-        bz2f = BZ2File(self.filename)
+        )bz2f = BZ2File(self.filename)
         bz2f.seek(-150, 2)
         self.assertEqual(bz2f.read(), self.TEXT[len(self.TEXT)-150:])
         bz2f.close()
@@ -256,7 +256,7 @@ class BZ2FileTest(BaseTest):
         bz2f.close()
         self.assertEqual(lines, ['Test'])
         bz2f = BZ2File(self.filename)
-        xlines = bz2f.xreadlines()
+        xlines = list(bz2f.xreadlines())
         bz2f.close()
         self.assertEqual(lines, ['Test'])
 
