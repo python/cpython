@@ -256,7 +256,7 @@ class BZ2FileTest(BaseTest):
         bz2f.close()
         self.assertEqual(lines, ['Test'])
         bz2f = BZ2File(self.filename)
-        xlines = bz2f.xreadlines()
+        xlines = list(bz2f.xreadlines())
         bz2f.close()
         self.assertEqual(lines, ['Test'])
 
