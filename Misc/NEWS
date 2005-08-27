@@ -204,6 +204,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1167128: Fix size of a symlink in a tarfile to be 0.
+
 - Patch #810023: Fix off-by-one bug in urllib.urlretrieve reporthook
   functionality.
 

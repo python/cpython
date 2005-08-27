@@ -230,6 +230,40 @@ class WriteTest(BaseTest):
             else:
                 self.dst.addfile(tarinfo, f)
 
+class WriteSize0Test(BaseTest):
+    mode = 'w'
+
+    def setUp(self):
+        self.tmpdir = dirname()
+        self.dstname = tmpname()
+        self.dst = tarfile.open(self.dstname, "w")
+
+    def tearDown(self):
+        self.dst.close()
+
+    def test_file(self):
+        path = os.path.join(self.tmpdir, "file")
+        file(path, "w")
+        tarinfo = self.dst.gettarinfo(path)
+        self.assertEqual(tarinfo.size, 0)
+        file(path, "w").write("aaa")
+        tarinfo = self.dst.gettarinfo(path)
+        self.assertEqual(tarinfo.size, 3)
+
+    def test_directory(self):
+        path = os.path.join(self.tmpdir, "directory")
+        os.mkdir(path)
+        tarinfo = self.dst.gettarinfo(path)
+        self.assertEqual(tarinfo.size, 0)
+
+    def test_symlink(self):
+        if hasattr(os, "symlink"):
+            path = os.path.join(self.tmpdir, "symlink")
+            os.symlink("link_target", path)
+            tarinfo = self.dst.gettarinfo(path)
+            self.assertEqual(tarinfo.size, 0)
+
+
 class WriteStreamTest(WriteTest):
     sep = '|'
 
@@ -399,6 +433,7 @@ def test_main():
         ReadAsteriskTest,
         ReadStreamAsteriskTest,
         WriteTest,
+        WriteSize0Test,
         WriteStreamTest,
         WriteGNULongTest,
     ]
