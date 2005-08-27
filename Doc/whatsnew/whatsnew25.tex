@@ -117,12 +117,10 @@ implemented by Richard Jones and Fred Drake.}
 As introduced in Python 2.3, generators only produce output; once a
 generator's code was invoked to create an iterator, there's no way to
 pass new parameters into the function when its execution is resumed.
-(Well, you could make the generator's code look at a global
-variable and modify the global value, but this is an unreliable hack
-that doesn't work if you have multiple instances of the same generator
-alive at the same time.)
-
-Python 2.5 adds the ability to pass values \emph{into} a generator.
+Hackish solutions to this include making the generator's code look at
+a global variable and then changing the global variable's value, or
+passing in some mutable object that callers then modify.  Python
+2.5 adds the ability to pass values \emph{into} a generator.
 
 To refresh your memory of basic generators, here's a simple example:
 
@@ -134,16 +132,120 @@ def counter (maximum):
 	i += 1
 \end{verbatim}
 
-On executing the \
-When you call \code{counter(10)}, the result is an 
+When you call \code{counter(10)}, the result is an iterator that
+returns the values from 0 up to 9.  On encountering the
+\keyword{yield} statement, the iterator returns the provided value and
+suspends the function's execution, preserving the local variables.
+Execution resumes on the following call to the iterator's 
+\method{next()} method, picking up after the \keyword{yield}.
 
-XXX write this section
+In Python 2.3, \keyword{yield} was a statement; it didn't return any
+value.  In 2.5, \keyword{yield} is now an expression, returning a
+value that can be assigned to a variable or otherwise operated on:
 
+\begin{verbatim}
+val = (yield i)
+\end{verbatim}
+
+I recommend that you always put parentheses around a \keyword{yield}
+expression when you're doing something with the returned value, as in
+the above example.  The parentheses aren't always necessary, but it's
+easier to always add them instead of having to remember when they're
+needed.  The exact rules are that a \keyword{yield}-expression must
+always be parenthesized except when it occurs at the top-level
+expression on the right-hand side of an assignment, meaning
+you can to write \code{val = yield i} but \code{val = (yield i) + 12}.
+
+Values are sent into a generator by calling its
+\method{send(\var{value})} method.  The generator's code is then
+resumed and the \keyword{yield} expression produces \var{value}.
+If the regular \method{next()} method is called, the \keyword{yield} 
+returns \constant{None}.
+
+Here's the previous example, modified to allow changing the value of
+the internal counter.
+
+\begin{verbatim}
+def counter (maximum):
+    i = 0
+    while i < maximum:
+        val = (yield i)
+	# If value provided, change counter
+        if val is not None:
+            i = val
+	else:
+  	    i += 1
+\end{verbatim}
+
+And here's an example of changing the counter:
+
+\begin{verbatim}
+>>> it = counter(10)
+>>> print it.next()
+0
+>>> print it.next()
+1
+>>> print it.send(8)
+8
+>>> print it.next()
+9
+>>> print it.next()
+Traceback (most recent call last):
+  File ``t.py'', line 15, in ?
+    print it.next()
+StopIteration
+
+Because \keyword{yield} will often be returning \constant{None}, 
+you shouldn't just use its value in expressions unless you're sure 
+that only the \method{send()} method will be used.
+
+There are two other new methods on generators in addition to 
+\method{send()}:
+
+\begin{itemize}
+
+  \item \method{throw(\var{type}, \var{value}=None,
+  \var{traceback}=None)} is used to raise an exception inside the
+  generator; the exception is raised by the \keyword{yield} expression
+  where the generator's execution is paused.
+
+  \item \method{close()} raises a new \exception{GeneratorExit}
+  exception inside the generator to terminate the iteration.  
+  On receiving this
+  exception, the generator's code must either raise
+  \exception{GeneratorExit} or \exception{StopIteration}; catching the 
+  exception and doing anything else is illegal and will trigger
+  a \exception{RuntimeError}.  \method{close()} will also be called by 
+  Python's garbage collection when the generator is garbage-collected.
+
+  If you need to run cleanup code in case of a \exception{GeneratorExit},
+  I suggest using a \code{try: ... finally:} suite instead of 
+  catching \exception{GeneratorExit}.
+
+\end{itemize}
+
+The cumulative effect of these changes is to turn generators from
+one-way producers of information into both producers and consumers.
+Generators also become \emph{coroutines}, a more generalized form of
+subroutines; subroutines are entered at one point and exited at
+another point (the top of the function, and a \keyword{return
+statement}), but coroutines can be entered, exited, and resumed at
+many different points (the \keyword{yield} statements).science term
+
+  
 \begin{seealso}
 
 \seepep{342}{Coroutines via Enhanced Generators}{PEP written by 
 Guido van Rossum and Phillip J. Eby;
-implemented by Phillip J. Eby.}
+implemented by Phillip J. Eby.  Includes examples of 
+some fancier uses of generators as coroutines.}
+
+\seeurl{http://en.wikipedia.org/wiki/Coroutine}{The Wikipedia entry for 
+coroutines.}
+
+\seeurl{http://www.sidhe.org/~dan/blog/archives/000178.html}{An
+explanation of coroutines from a Perl point of view, written by Dan
+Sugalski.}
 
 \end{seealso}
 
