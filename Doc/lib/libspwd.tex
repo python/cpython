@@ -4,9 +4,10 @@
 \declaremodule{builtin}{spwd}
   \platform{Unix}
 \modulesynopsis{The shadow password database (\function{getspnam()} and friends).}
+\versionadded{2.5}
 
 This module provides access to the \UNIX{} shadow password database.
-It is available on various Unix versions.
+It is available on various \UNIX{} versions.
 
 You must have enough privileges to access the shadow password database
 (this usually means you have to be root).
@@ -42,5 +43,6 @@ Return a list of all available shadow password database entries, in arbitrary or
 
 
 \begin{seealso}
+  \seemodule{grp}{An interface to the group database, similar to this.}
   \seemodule{pwd}{An interface to the normal password database, similar to this.}
 \end{seealso}
