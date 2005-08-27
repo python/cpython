@@ -1179,17 +1179,16 @@ class TarFile(object):
 
         # Fill the TarInfo object with all
         # information we can get.
-        tarinfo.name  = arcname
-        tarinfo.mode  = stmd
-        tarinfo.uid   = statres.st_uid
-        tarinfo.gid   = statres.st_gid
-        if stat.S_ISDIR(stmd):
-            # For a directory, the size must be 0
-            tarinfo.size  = 0
-        else:
+        tarinfo.name = arcname
+        tarinfo.mode = stmd
+        tarinfo.uid = statres.st_uid
+        tarinfo.gid = statres.st_gid
+        if stat.S_ISREG(stmd):
             tarinfo.size = statres.st_size
+        else:
+            tarinfo.size = 0L
         tarinfo.mtime = statres.st_mtime
-        tarinfo.type  = type
+        tarinfo.type = type
         tarinfo.linkname = linkname
         if pwd:
             try:
@@ -1280,15 +1279,14 @@ class TarFile(object):
             self.addfile(tarinfo, f)
             f.close()
 
-        if tarinfo.type in (LNKTYPE, SYMTYPE, FIFOTYPE, CHRTYPE, BLKTYPE):
-            tarinfo.size = 0L
-            self.addfile(tarinfo)
-
-        if tarinfo.isdir():
+        elif tarinfo.isdir():
             self.addfile(tarinfo)
             if recursive:
                 for f in os.listdir(name):
                     self.add(os.path.join(name, f), os.path.join(arcname, f))
+
+        else:
+            self.addfile(tarinfo)
 
     def addfile(self, tarinfo, fileobj=None):
         """Add the TarInfo object `tarinfo' to the archive. If `fileobj' is
