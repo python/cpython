@@ -148,7 +148,7 @@ class LocaleTime(object):
                 if old:
                     current_format = current_format.replace(old, new)
             time_tuple = time.struct_time((1999,1,3,1,1,1,6,3,0))
-            if time.strftime(directive, time_tuple).find('00'):
+            if '00' in time.strftime(directive, time_tuple):
                 U_W = '%U'
             else:
                 U_W = '%W'
