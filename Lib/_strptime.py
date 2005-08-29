@@ -147,11 +147,14 @@ class LocaleTime(object):
                 # strings (e.g., MacOS 9 having timezone as ('','')).
                 if old:
                     current_format = current_format.replace(old, new)
+            # If %W is used, then Sunday, 2005-01-03 will fall on week 0 since
+            # 2005-01-03 occurs before the first Monday of the year.  Otherwise
+            # %U is used.
             time_tuple = time.struct_time((1999,1,3,1,1,1,6,3,0))
             if '00' in time.strftime(directive, time_tuple):
-                U_W = '%U'
-            else:
                 U_W = '%W'
+            else:
+                U_W = '%U'
             date_time[offset] = current_format.replace('11', U_W)
         self.LC_date_time = date_time[0]
         self.LC_date = date_time[1]
