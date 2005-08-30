@@ -111,7 +111,7 @@ class CodecCallbackTest(unittest.TestCase):
             sout += "\\U%08x" % sys.maxunicode
         self.assertEqual(sin.encode("iso-8859-15", "backslashreplace"), sout)
 
-    def test_relaxedutf8(self):
+    def test_decoderelaxedutf8(self):
         # This is the test for a decoding callback handler,
         # that relaxes the UTF-8 minimal encoding restriction.
         # A null byte that is encoded as "\xc0\x80" will be
@@ -157,6 +157,35 @@ class CodecCallbackTest(unittest.TestCase):
 
         charmap[ord("?")] = u"XYZ"
         self.assertRaises(TypeError, codecs.charmap_encode, sin, "replace", charmap)
+
+    def test_decodeunicodeinternal(self):
+        self.assertRaises(
+            UnicodeDecodeError,
+            "\x00\x00\x00\x00\x00".decode,
+            "unicode-internal",
+        )
+        if sys.maxunicode > 0xffff:
+            def handler_unicodeinternal(exc):
+                if not isinstance(exc, UnicodeDecodeError):
+                    raise TypeError("don't know how to handle %r" % exc)
+                return (u"\x01", 1)
+
+            self.assertEqual(
+                "\x00\x00\x00\x00\x00".decode("unicode-internal", "ignore"),
+                u"\u0000"
+            )
+
+            self.assertEqual(
+                "\x00\x00\x00\x00\x00".decode("unicode-internal", "replace"),
+                u"\u0000\ufffd"
+            )
+
+            codecs.register_error("test.hui", handler_unicodeinternal)
+
+            self.assertEqual(
+                "\x00\x00\x00\x00\x00".decode("unicode-internal", "test.hui"),
+                u"\u0000\u0001\u0000"
+            )
 
     def test_callbacks(self):
         def handler1(exc):
@@ -503,7 +532,8 @@ class CodecCallbackTest(unittest.TestCase):
             for (enc, bytes) in (
                 ("ascii", "\xff"),
                 ("utf-8", "\xff"),
-                ("utf-7", "+x-")
+                ("utf-7", "+x-"),
+                ("unicode-internal", "\x00"),
             ):
                 self.assertRaises(
                     TypeError,
