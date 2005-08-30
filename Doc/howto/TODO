@@ -1,0 +1,13 @@
+
+Short-term tasks:
+  Quick revision pass to make HOWTOs match the current state of Python:
+advocacy curses doanddont regex sockets sorting
+
+Medium-term tasks:
+ Revisit the regex howto.  
+	* Add exercises with answers for each section
+	* More examples?
+
+Long-term tasks:
+ Integrate with other Python docs?
+
