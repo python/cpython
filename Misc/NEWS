@@ -435,6 +435,10 @@ Library
   line ending. Remove the special handling of a "\r\n" that has been split
   between two lines.
 
+- Bug #1251300: On UCS-4 builds the "unicode-internal" codec will now complain
+  about illegal code points. The codec now supports PEP 293 style error
+  handlers.
+
 
 Build
 -----

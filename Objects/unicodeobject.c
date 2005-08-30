@@ -2273,6 +2273,81 @@ PyObject *PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
 					    PyUnicode_GET_SIZE(unicode));
 }
 
+/* --- Unicode Internal Codec ------------------------------------------- */
+
+PyObject *_PyUnicode_DecodeUnicodeInternal(const char *s,
+					   int size,
+					   const char *errors)
+{
+    const char *starts = s;
+    int startinpos;
+    int endinpos;
+    int outpos;
+    Py_UNICODE unimax;
+    PyUnicodeObject *v;
+    Py_UNICODE *p;
+    const char *end;
+    const char *reason;
+    PyObject *errorHandler = NULL;
+    PyObject *exc = NULL;
+
+    unimax = PyUnicode_GetMax();
+    v = _PyUnicode_New((size+Py_UNICODE_SIZE-1)/ Py_UNICODE_SIZE);
+    if (v == NULL)
+	goto onError;
+    if (PyUnicode_GetSize((PyObject *)v) == 0)
+	return (PyObject *)v;
+    p = PyUnicode_AS_UNICODE(v);
+    end = s + size;
+
+    while (s < end) {
+        *p = *(Py_UNICODE *)s;
+        /* We have to sanity check the raw data, otherwise doom looms for
+           some malformed UCS-4 data. */
+        if (
+            #ifdef Py_UNICODE_WIDE
+            *p > unimax || *p < 0 ||
+            #endif
+            end-s < Py_UNICODE_SIZE
+            )
+            {
+            startinpos = s - starts;
+            if (end-s < Py_UNICODE_SIZE) {
+                endinpos = end-starts;
+                reason = "truncated input";
+            }
+            else {
+                endinpos = s - starts + Py_UNICODE_SIZE;
+                reason = "illegal code point (> 0x10FFFF)";
+            }
+            outpos = p - PyUnicode_AS_UNICODE(v);
+            if (unicode_decode_call_errorhandler(
+                    errors, &errorHandler,
+                    "unicode_internal", reason,
+                    starts, size, &startinpos, &endinpos, &exc, &s,
+                    (PyObject **)&v, &outpos, &p)) {
+                goto onError;
+            }
+        }
+        else {
+            p++;
+            s += Py_UNICODE_SIZE;
+        }
+    }
+
+    if (_PyUnicode_Resize(&v, (int)(p - PyUnicode_AS_UNICODE(v))) < 0)
+        goto onError;
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
+    return (PyObject *)v;
+
+ onError:
+    Py_XDECREF(v);
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
+    return NULL;
+}
+
 /* --- Latin-1 Codec ------------------------------------------------------ */
 
 PyObject *PyUnicode_DecodeLatin1(const char *s,

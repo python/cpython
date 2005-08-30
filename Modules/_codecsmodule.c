@@ -254,8 +254,8 @@ unicode_internal_decode(PyObject *self,
     else {
 	if (PyObject_AsReadBuffer(obj, (const void **)&data, &size))
 	    return NULL;
-	return codec_tuple(PyUnicode_FromUnicode((Py_UNICODE *)data,
-						 size / sizeof(Py_UNICODE)),
+
+	return codec_tuple(_PyUnicode_DecodeUnicodeInternal(data, size, errors),
 			   size);
     }
 }

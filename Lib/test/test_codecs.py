@@ -1,7 +1,7 @@
 from test import test_support
 import unittest
 import codecs
-import StringIO
+import sys, StringIO
 
 class Queue(object):
     """
@@ -453,6 +453,54 @@ class PunycodeTest(unittest.TestCase):
         for uni, puny in punycode_testcases:
             self.assertEquals(uni, puny.decode("punycode"))
 
+class UnicodeInternalTest(unittest.TestCase):
+    def test_bug1251300(self):
+        # Decoding with unicode_internal used to not correctly handle "code
+        # points" above 0x10ffff on UCS-4 builds.
+        if sys.maxunicode > 0xffff:
+            ok = [
+                ("\x00\x10\xff\xff", u"\U0010ffff"),
+                ("\x00\x00\x01\x01", u"\U00000101"),
+                ("", u""),
+            ]
+            not_ok = [
+                "\x7f\xff\xff\xff",
+                "\x80\x00\x00\x00",
+                "\x81\x00\x00\x00",
+                "\x00",
+                "\x00\x00\x00\x00\x00",
+            ]
+            for internal, uni in ok:
+                if sys.byteorder == "little":
+                    internal = "".join(reversed(internal))
+                self.assertEquals(uni, internal.decode("unicode_internal"))
+            for internal in not_ok:
+                if sys.byteorder == "little":
+                    internal = "".join(reversed(internal))
+                self.assertRaises(UnicodeDecodeError, internal.decode,
+                    "unicode_internal")
+
+    def test_decode_error_attributes(self):
+        if sys.maxunicode > 0xffff:
+            try:
+                "\x00\x00\x00\x00\x00\x11\x11\x00".decode("unicode_internal")
+            except UnicodeDecodeError, ex:
+                self.assertEquals("unicode_internal", ex.encoding)
+                self.assertEquals("\x00\x00\x00\x00\x00\x11\x11\x00", ex.object)
+                self.assertEquals(4, ex.start)
+                self.assertEquals(8, ex.end)
+            else:
+                self.fail()
+
+    def test_decode_callback(self):
+        if sys.maxunicode > 0xffff:
+            codecs.register_error("UnicodeInternalTest", codecs.ignore_errors)
+            decoder = codecs.getdecoder("unicode_internal")
+            ab = u"ab".encode("unicode_internal")
+            ignored = decoder("%s\x22\x22\x22\x22%s" % (ab[:4], ab[4:]),
+                "UnicodeInternalTest")
+            self.assertEquals((u"ab", 12), ignored)
+
 # From http://www.gnu.org/software/libidn/draft-josefsson-idn-test-vectors.html
 nameprep_tests = [
     # 3.1 Map to nothing.
@@ -885,6 +933,7 @@ def test_main():
         EscapeDecodeTest,
         RecodingTest,
         PunycodeTest,
+        UnicodeInternalTest,
         NameprepTest,
         CodecTest,
         CodecsModuleTest,
