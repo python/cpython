@@ -1,0 +1,267 @@
+\documentclass{howto}
+
+\title{Sorting Mini-HOWTO}
+
+% Increment the release number whenever significant changes are made.
+% The author and/or editor can define 'significant' however they like.
+\release{0.01}
+
+\author{Andrew Dalke}
+\authoraddress{\email{dalke@bioreason.com}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+This document is a little tutorial
+showing a half dozen ways to sort a list with the built-in
+\method{sort()} method.  
+
+This document is available from the Python HOWTO page at
+\url{http://www.python.org/doc/howto}.
+\end{abstract}
+
+\tableofcontents
+
+Python lists have a built-in \method{sort()} method.  There are many
+ways to use it to sort a list and there doesn't appear to be a single,
+central place in the various manuals describing them, so I'll do so
+here.
+
+\section{Sorting basic data types}
+
+A simple ascending sort is easy; just call the \method{sort()} method of a list.
+
+\begin{verbatim}
+>>> a = [5, 2, 3, 1, 4]
+>>> a.sort()
+>>> print a
+[1, 2, 3, 4, 5]
+\end{verbatim}
+
+Sort takes an optional function which can be called for doing the
+comparisons.  The default sort routine is equivalent to
+
+\begin{verbatim}
+>>> a = [5, 2, 3, 1, 4]
+>>> a.sort(cmp)
+>>> print a
+[1, 2, 3, 4, 5]
+\end{verbatim}
+
+where \function{cmp} is the built-in function which compares two objects, \code{x} and
+\code{y}, and returns -1, 0 or 1 depending on whether $x<y$, $x==y$, or $x>y$.  During
+the course of the sort the relationships must stay the same for the
+final list to make sense.
+
+If you want, you can define your own function for the comparison.  For 
+integers (and numbers in general) we can do:
+
+\begin{verbatim}
+>>> def numeric_compare(x, y):
+>>>    return x-y
+>>> 
+>>> a = [5, 2, 3, 1, 4]
+>>> a.sort(numeric_compare)
+>>> print a
+[1, 2, 3, 4, 5]
+\end{verbatim}
+
+By the way, this function won't work if result of the subtraction
+is out of range, as in \code{sys.maxint - (-1)}.
+
+Or, if you don't want to define a new named function you can create an
+anonymous one using \keyword{lambda}, as in:
+
+\begin{verbatim}
+>>> a = [5, 2, 3, 1, 4]
+>>> a.sort(lambda x, y: x-y)
+>>> print a
+[1, 2, 3, 4, 5]
+\end{verbatim}
+
+If you want the numbers sorted in reverse you can do
+
+\begin{verbatim}
+>>> a = [5, 2, 3, 1, 4]
+>>> def reverse_numeric(x, y):
+>>>     return y-x
+>>> 
+>>> a.sort(reverse_numeric)
+>>> print a
+[5, 4, 3, 2, 1]
+\end{verbatim}
+
+(a more general implementation could return \code{cmp(y,x)} or \code{-cmp(x,y)}).
+
+However, it's faster if Python doesn't have to call a function for
+every comparison, so if you want a reverse-sorted list of basic data
+types, do the forward sort first, then use the \method{reverse()} method.
+
+\begin{verbatim}
+>>> a = [5, 2, 3, 1, 4]
+>>> a.sort()
+>>> a.reverse()
+>>> print a
+[5, 4, 3, 2, 1]
+\end{verbatim}
+
+Here's a case-insensitive string comparison using a \keyword{lambda} function:
+
+\begin{verbatim}
+>>> import string
+>>> a = string.split("This is a test string from Andrew.")
+>>> a.sort(lambda x, y: cmp(string.lower(x), string.lower(y)))
+>>> print a
+['a', 'Andrew.', 'from', 'is', 'string', 'test', 'This']
+\end{verbatim}
+
+This goes through the overhead of converting a word to lower case
+every time it must be compared.  At times it may be faster to compute
+these once and use those values, and the following example shows how.
+
+\begin{verbatim}
+>>> words = string.split("This is a test string from Andrew.")
+>>> offsets = []
+>>> for i in range(len(words)):
+>>>     offsets.append( (string.lower(words[i]), i) )
+>>> 
+>>> offsets.sort()
+>>> new_words = []
+>>> for dontcare, i in offsets:
+>>>      new_words.append(words[i])
+>>> 
+>>> print new_words
+\end{verbatim}
+
+The \code{offsets} list is initialized to a tuple of the lower-case string
+and its position in the \code{words} list.  It is then sorted.  Python's
+sort method sorts tuples by comparing terms; given \code{x} and \code{y}, compare
+\code{x[0]} to \code{y[0]}, then \code{x[1]} to \code{y[1]}, etc. until there is a difference.
+
+The result is that the \code{offsets} list is ordered by its first
+term, and the second term can be used to figure out where the original
+data was stored.  (The \code{for} loop assigns \code{dontcare} and
+\code{i} to the two fields of each term in the list, but we only need the
+index value.)
+
+Another way to implement this is to store the original data as the
+second term in the \code{offsets} list, as in:
+
+\begin{verbatim}
+>>> words = string.split("This is a test string from Andrew.")
+>>> offsets = []
+>>> for word in words:
+>>>     offsets.append( (string.lower(word), word) )
+>>> 
+>>> offsets.sort()
+>>> new_words = []
+>>> for word in offsets:
+>>>     new_words.append(word[1])
+>>> 
+>>> print new_words
+\end{verbatim}
+
+This isn't always appropriate because the second terms in the list
+(the word, in this example) will be compared when the first terms are
+the same.  If this happens many times, then there will be the unneeded
+performance hit of comparing the two objects.  This can be a large
+cost if most terms are the same and the objects define their own
+\method{__cmp__} method, but there will still be some overhead to determine if
+\method{__cmp__} is defined.
+
+Still, for large lists, or for lists where the comparison information
+is expensive to calculate, the last two examples are likely to be the
+fastest way to sort a list.  It will not work on weakly sorted data,
+like complex numbers, but if you don't know what that means, you
+probably don't need to worry about it.
+
+\section{Comparing classes}
+
+The comparison for two basic data types, like ints to ints or string to
+string, is built into Python and makes sense.  There is a default way
+to compare class instances, but the default manner isn't usually very
+useful.  You can define your own comparison with the \method{__cmp__} method,
+as in:
+
+\begin{verbatim}
+>>> class Spam:
+>>>     def __init__(self, spam, eggs):
+>>>         self.spam = spam
+>>>         self.eggs = eggs
+>>>     def __cmp__(self, other):
+>>>         return cmp(self.spam+self.eggs, other.spam+other.eggs)
+>>>     def __str__(self):
+>>>         return str(self.spam + self.eggs)
+>>> 
+>>> a = [Spam(1, 4), Spam(9, 3), Spam(4,6)]
+>>> a.sort()
+>>> for spam in a:
+>>>   print str(spam)
+5
+10
+12
+\end{verbatim}
+
+Sometimes you may want to sort by a specific attribute of a class.  If
+appropriate you should just define the \method{__cmp__} method to compare
+those values, but you cannot do this if you want to compare between
+different attributes at different times.  Instead, you'll need to go
+back to passing a comparison function to sort, as in:
+
+\begin{verbatim}
+>>> a = [Spam(1, 4), Spam(9, 3), Spam(4,6)]
+>>> a.sort(lambda x, y: cmp(x.eggs, y.eggs))
+>>> for spam in a:
+>>>   print spam.eggs, str(spam)
+3 12
+4 5
+6 10
+\end{verbatim}
+
+If you want to compare two arbitrary attributes (and aren't overly
+concerned about performance) you can even define your own comparison
+function object.  This uses the ability of a class instance to emulate
+an function by defining the \method{__call__} method, as in:
+
+\begin{verbatim}
+>>> class CmpAttr:
+>>>     def __init__(self, attr):
+>>>         self.attr = attr
+>>>     def __call__(self, x, y):
+>>>         return cmp(getattr(x, self.attr), getattr(y, self.attr))
+>>> 
+>>> a = [Spam(1, 4), Spam(9, 3), Spam(4,6)]
+>>> a.sort(CmpAttr("spam"))  # sort by the "spam" attribute
+>>> for spam in a:
+>>>    print spam.spam, spam.eggs, str(spam)
+1 4 5
+4 6 10
+9 3 12
+
+>>> a.sort(CmpAttr("eggs"))   # re-sort by the "eggs" attribute
+>>> for spam in a:
+>>>    print spam.spam, spam.eggs, str(spam)
+9 3 12
+1 4 5
+4 6 10
+\end{verbatim}
+
+Of course, if you want a faster sort you can extract the attributes
+into an intermediate list and sort that list.
+
+
+So, there you have it; about a half-dozen different ways to define how
+to sort a list:
+\begin{itemize}
+ \item sort using the default method
+ \item sort using a comparison function
+ \item reverse sort not using a comparison function
+ \item sort on an intermediate list (two forms)
+ \item sort using class defined __cmp__ method
+ \item sort using a sort function object
+\end{itemize}
+
+\end{document}
+% LocalWords:  maxint

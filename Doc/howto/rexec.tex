@@ -1,0 +1,61 @@
+\documentclass{howto}
+
+\title{Restricted Execution HOWTO}
+
+\release{2.1}
+
+\author{A.M. Kuchling}
+\authoraddress{\email{amk@amk.ca}}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent
+
+Python 2.2.2 and earlier provided a \module{rexec} module running
+untrusted code.  However, it's never been exhaustively audited for
+security and it hasn't been updated to take into account recent
+changes to Python such as new-style classes. Therefore, the
+\module{rexec} module should not be trusted.  To discourage use of 
+\module{rexec}, this HOWTO has been withdrawn.
+
+The \module{rexec} and \module{Bastion} modules have been disabled in
+the Python CVS tree, both on the trunk (which will eventually become
+Python 2.3alpha2 and later 2.3final) and on the release22-maint branch
+(which will become Python 2.2.3, if someone ever volunteers to issue
+2.2.3).
+
+For discussion of the problems with \module{rexec}, see the python-dev
+threads starting at the following URLs:
+\url{http://mail.python.org/pipermail/python-dev/2002-December/031160.html},
+and
+\url{http://mail.python.org/pipermail/python-dev/2003-January/031848.html}.
+
+\end{abstract}
+
+
+\section{Version History}
+
+Sep. 12, 1998: Minor revisions and added the reference to the Janus
+project.
+
+Feb. 26, 1998: First version.  Suggestions are welcome.
+
+Mar. 16, 1998: Made some revisions suggested by Jeff Rush.  Some minor
+changes and clarifications, and a sizable section on exceptions added.
+
+Oct. 4, 2000: Checked with Python 2.0.  Minor rewrites and fixes made.
+Version number increased to 2.0.
+
+Dec. 17, 2002: Withdrawn.
+
+Jan. 8, 2003: Mention that \module{rexec} will be disabled in Python 2.3,
+and added links to relevant python-dev threads.
+
+\end{document}
+
+
+
+
