@@ -797,6 +797,16 @@ PyAPI_FUNC(PyObject*) PyUnicode_EncodeRawUnicodeEscape(
     int length	 		/* Number of Py_UNICODE chars to encode */
     );
 
+/* --- Unicode Internal Codec ---------------------------------------------
+
+    Only for internal use in _codecsmodule.c */
+
+PyObject *_PyUnicode_DecodeUnicodeInternal(
+    const char *string,
+    int length,
+    const char *errors
+    );
+
 /* --- Latin-1 Codecs ----------------------------------------------------- 
 
    Note: Latin-1 corresponds to the first 256 Unicode ordinals.
