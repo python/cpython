@@ -4,6 +4,17 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.3.6rc1?
+==============================
+
+*Release date: XX-XXX-200X*
+
+Extension modules
+-----------------
+
+- Apply fix for potential heap overflow in PCRE code (CAN-2005-2491).
+
+
 What's New in Python 2.3.5?
 ==============================
 
