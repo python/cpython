@@ -155,7 +155,7 @@ class IMAP4:
         self.tagged_commands = {}       # Tagged commands awaiting response
         self.untagged_responses = {}    # {typ: [data, ...], ...}
         self.continuation_response = '' # Last continuation response
-        self.is_readonly = None         # READ-ONLY desired state
+        self.is_readonly = False        # READ-ONLY desired state
         self.tagnum = 0
 
         # Open socket to server.
@@ -622,12 +622,12 @@ class IMAP4:
         return self._untagged_response(typ, dat, name)
 
 
-    def select(self, mailbox='INBOX', readonly=None):
+    def select(self, mailbox='INBOX', readonly=False):
         """Select a mailbox.
 
         Flush all untagged responses.
 
-        (typ, [data]) = <instance>.select(mailbox='INBOX', readonly=None)
+        (typ, [data]) = <instance>.select(mailbox='INBOX', readonly=False)
 
         'data' is count of messages in mailbox ('EXISTS' response).
 
@@ -636,7 +636,7 @@ class IMAP4:
         """
         self.untagged_responses = {}    # Flush old responses.
         self.is_readonly = readonly
-        if readonly is not None:
+        if readonly:
             name = 'EXAMINE'
         else:
             name = 'SELECT'
