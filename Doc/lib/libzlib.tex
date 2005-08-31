@@ -8,10 +8,15 @@
 
 For applications that require data compression, the functions in this
 module allow compression and decompression, using the zlib library.
-The zlib library has its own home page at \url{http://www.gzip.org/zlib/}.  
+The zlib library has its own home page at \url{http://www.zlib.net}.  
 There are known incompatibilities between the Python module and
 versions of the zlib library earlier than 1.1.3; 1.1.3 has a security
 vulnerability, so we recommend using 1.1.4 or later.
+
+zlib's functions have many options and often need to be used in a
+particular order.  This documentation doesn't attempt to cover all of
+the permutations; consult the zlib manual at
+\url{http://www.zlib.net/manual.html} for authoritative information.
 
 The available exception and functions in this module are:
 
@@ -171,5 +176,7 @@ action is to delete the object.
 
 \begin{seealso}
   \seemodule{gzip}{Reading and writing \program{gzip}-format files.}
-  \seeurl{http://www.gzip.org/zlib/}{The zlib library home page.}
+  \seeurl{http://www.zlib.net}{The zlib library home page.}
+  \seeurl{http://www.zlib.net/manual.html}{The zlib manual explains 
+    the semantics and usage of the library's many functions.}
 \end{seealso}
