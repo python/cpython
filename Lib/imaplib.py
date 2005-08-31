@@ -20,7 +20,7 @@ Public functions:       Internaldate2tuple
 # PROXYAUTH contributed by Rick Holbert <holbert.13@osu.edu> November 2002.
 # GET/SETANNOTATION contributed by Tomas Lindroos <skitta@abo.fi> June 2005.
 
-__version__ = "2.57"
+__version__ = "2.58"
 
 import binascii, os, random, re, socket, sys, time
 
