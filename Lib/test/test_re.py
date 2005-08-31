@@ -497,6 +497,23 @@ class ReTests(unittest.TestCase):
         self.assert_(re.compile('bug_926075') is not
                      re.compile(eval("u'bug_926075'")))
 
+class PreTests(unittest.TestCase):
+    def test_can_2005_2491(self):
+        import pre
+        # min < 0
+        self.assertRaises(pre.error, pre.compile, 'a{4544564564646450,}')
+        # min > 65535
+        self.assertRaises(pre.error, pre.compile,
+                          'a{1231313134536434,}')
+        # max < 0
+        self.assertRaises(pre.error, pre.compile,
+                          'a{12,4544564564646450}')
+        # max > 65535
+        self.assertRaises(pre.error, pre.compile,
+                          'a{12,1231313134536434}')
+        self.assertRaises(pre.error, pre.compile,
+                          'a{32,14}')
+    
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR
     if verbose:
@@ -623,6 +640,7 @@ def run_re_tests():
 
 def test_main():
     run_unittest(ReTests)
+    #run_unittest(PreTests)
     run_re_tests()
 
 if __name__ == "__main__":
