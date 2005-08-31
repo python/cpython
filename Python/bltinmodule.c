@@ -529,7 +529,7 @@ builtin_eval(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	if (globals != Py_None && !PyDict_Check(globals)) {
-		PyErr_SetString(PyExc_TypeError, PyMapping_Check(globals) ? 
+		PyErr_SetString(PyExc_TypeError, PyMapping_Check(globals) ?
 			"globals must be a real dict; try eval(expr, {}, mapping)"
 			: "globals must be a dict");
 		return NULL;
@@ -1198,11 +1198,11 @@ min_max(PyObject *args, PyObject *kwds, int op)
 	if (kwds != NULL && PyDict_Check(kwds) && PyDict_Size(kwds)) {
 		keyfunc = PyDict_GetItemString(kwds, "key");
 		if (PyDict_Size(kwds)!=1  ||  keyfunc == NULL) {
-			PyErr_Format(PyExc_TypeError, 
+			PyErr_Format(PyExc_TypeError,
 				"%s() got an unexpected keyword argument", name);
 			return NULL;
 		}
-	} 
+	}
 
 	it = PyObject_GetIter(v);
 	if (it == NULL)
@@ -1916,7 +1916,7 @@ builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
 		Py_DECREF(newlist);
 		return NULL;
 	}
-	
+
 	newargs = PyTuple_GetSlice(args, 1, 4);
 	if (newargs == NULL) {
 		Py_DECREF(newlist);
@@ -2548,21 +2548,21 @@ filterunicode(PyObject *func, PyObject *strobj)
 		if (ok) {
 			int reslen;
 			if (!PyUnicode_Check(item)) {
-				PyErr_SetString(PyExc_TypeError, 
+				PyErr_SetString(PyExc_TypeError,
 				"can't filter unicode to unicode:"
 				" __getitem__ returned different type");
 				Py_DECREF(item);
 				goto Fail_1;
 			}
 			reslen = PyUnicode_GET_SIZE(item);
-			if (reslen == 1) 
+			if (reslen == 1)
 				PyUnicode_AS_UNICODE(result)[j++] =
 					PyUnicode_AS_UNICODE(item)[0];
 			else {
 				/* do we need more space? */
 				int need = j + reslen + len - i - 1;
 				if (need > outlen) {
-					/* overallocate, 
+					/* overallocate,
 					   to avoid reallocations */
 					if (need < 2 * outlen)
 						need = 2 * outlen;
