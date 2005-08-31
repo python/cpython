@@ -4078,6 +4078,11 @@ PyString_Format(PyObject *format, PyObject *args)
 				break;
 			case 's':
 #ifdef Py_USING_UNICODE
+				if (PyUnicode_Check(v)) {
+					fmt = fmt_start;
+					argidx = argidx_start;
+					goto unicode;
+				}
 				temp = _PyObject_Str(v);
 				if (temp != NULL && PyUnicode_Check(temp)) {
 					Py_DECREF(temp);
