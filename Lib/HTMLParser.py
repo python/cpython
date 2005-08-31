@@ -36,7 +36,7 @@ locatestarttagend = re.compile(r"""
         (?:'[^']*'                   # LITA-enclosed value
           |\"[^\"]*\"                # LIT-enclosed value
           |[^'\">\s]+                # bare value
-         )
+         )?
        )?
      )
    )*
