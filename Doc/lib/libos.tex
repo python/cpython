@@ -427,8 +427,15 @@ functions have a different order.
 
 \subsection{File Descriptor Operations \label{os-fd-ops}}
 
-These functions operate on I/O streams referred to
-using file descriptors.
+These functions operate on I/O streams referenced using file
+descriptors.  
+
+File descriptors are small integers corresponding to a file that has
+been opened by the current process.  For example, standard input is
+usually file descriptor 0, standard output is 1, and standard error is
+2.  Further files opened by a process will then be assigned 3, 4, 5,
+and so forth.  The name ``file descriptor'' is slightly deceptive; on
+{\UNIX} platforms, sockets and pipes are also referenced by file descriptors.
 
 
 \begin{funcdesc}{close}{fd}
