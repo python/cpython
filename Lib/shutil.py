@@ -7,13 +7,12 @@ XXX The functions here don't copy the resource fork or other metadata on Mac.
 import os
 import sys
 import stat
-import exceptions
 from os.path import abspath
 
 __all__ = ["copyfileobj","copyfile","copymode","copystat","copy","copy2",
            "copytree","move","rmtree","Error"]
 
-class Error(exceptions.EnvironmentError):
+class Error(EnvironmentError):
     pass
 
 def copyfileobj(fsrc, fdst, length=16*1024):
