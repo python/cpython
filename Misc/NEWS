@@ -64,7 +64,7 @@ Core and builtins
   proper magic slot for type conversions when subclassed.  Previously the
   magic slot was ignored during conversion.  Semantics now match the way
   subclasses of str always behaved.  int/long/float, conversion of an instance
-  to the base class has been moved the prroper nb_* magic slot and out of
+  to the base class has been moved to the proper nb_* magic slot and out of
   PyNumber_*().
   Thanks Walter Dörwald.
 
@@ -439,7 +439,7 @@ Library
   about illegal code points. The codec now supports PEP 293 style error
   handlers.
 
-- Bug #1235646: ^^codecs.StreamRecoder.next()^^ now reencodes the data it reads
+- Bug #1235646: ``codecs.StreamRecoder.next()`` now reencodes the data it reads
   from the input stream, so that the output is a byte string in the correct
   encoding instead of a unicode string.
 
