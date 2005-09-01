@@ -439,6 +439,9 @@ Library
   about illegal code points. The codec now supports PEP 293 style error
   handlers.
 
+- Bug #1235646: ^^codecs.StreamRecoder.next()^^ now reencodes the data it reads
+  from the input stream, so that the output is a byte string in the correct
+  encoding instead of a unicode string.
 
 Build
 -----

@@ -556,7 +556,9 @@ class StreamRecoder:
     def next(self):
 
         """ Return the next decoded line from the input stream."""
-        return self.reader.next()
+        data = self.reader.next()
+        data, bytesencoded = self.encode(data, self.errors)
+        return data
 
     def __iter__(self):
         return self
