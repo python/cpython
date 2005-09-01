@@ -115,8 +115,7 @@ All pending input is processed, and a string containing the remaining
 compressed output is returned.  \var{mode} can be selected from the
 constants \constant{Z_SYNC_FLUSH},  \constant{Z_FULL_FLUSH},  or 
 \constant{Z_FINISH}, defaulting to \constant{Z_FINISH}.  \constant{Z_SYNC_FLUSH} and 
-\constant{Z_FULL_FLUSH} allow compressing further strings of data and
-are used to allow partial error recovery on decompression, while
+\constant{Z_FULL_FLUSH} allow compressing further strings of data, while
 \constant{Z_FINISH} finishes the compressed stream and 
 prevents compressing any more data.  After calling
 \method{flush()} with \var{mode} set to \constant{Z_FINISH}, the
