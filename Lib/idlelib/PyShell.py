@@ -11,7 +11,6 @@ import time
 import threading
 import traceback
 import types
-import exceptions
 
 import linecache
 from code import InteractiveInterpreter
