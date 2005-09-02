@@ -52,7 +52,9 @@ __date__    = "27 March 2005"
 # _srcfile is used when walking the stack to check when we've got the first
 # caller stack frame.
 #
-if string.lower(__file__[-4:]) in ['.pyc', '.pyo']:
+if hasattr(sys, 'frozen'): #support for py2exe
+    _srcfile = "logging%s__init__%s" % (os.sep, __file__[-4:])
+elif string.lower(__file__[-4:]) in ['.pyc', '.pyo']:
     _srcfile = __file__[:-4] + '.py'
 else:
     _srcfile = __file__
