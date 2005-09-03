@@ -36,20 +36,20 @@ This section describes Python type objects and the singleton object
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyType_Check}{PyObject *o}
-  Returns true if the object \var{o} is a type object, including
-  instances of types derived from the standard type object.  Returns
+  Return true if the object \var{o} is a type object, including
+  instances of types derived from the standard type object.  Return
   false in all other cases.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyType_CheckExact}{PyObject *o}
-  Returns true if the object \var{o} is a type object, but not a
-  subtype of the standard type object.  Returns false in all other
+  Return true if the object \var{o} is a type object, but not a
+  subtype of the standard type object.  Return false in all other
   cases.
   \versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyType_HasFeature}{PyObject *o, int feature}
-  Returns true if the type object \var{o} sets the feature
+  Return true if the type object \var{o} sets the feature
   \var{feature}.  Type features are denoted by single bit flags.
 \end{cfuncdesc}
 
@@ -60,7 +60,7 @@ This section describes Python type objects and the singleton object
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyType_IsSubtype}{PyTypeObject *a, PyTypeObject *b}
-  Returns true if \var{a} is a subtype of \var{b}.
+  Return true if \var{a} is a subtype of \var{b}.
   \versionadded{2.2}
 \end{cfuncdesc}
 
@@ -77,8 +77,8 @@ This section describes Python type objects and the singleton object
 \begin{cfuncdesc}{int}{PyType_Ready}{PyTypeObject *type}
   Finalize a type object.  This should be called on all type objects
   to finish their initialization.  This function is responsible for
-  adding inherited slots from a type's base class.  Returns \code{0}
-  on success, or returns \code{-1} and sets an exception on error.
+  adding inherited slots from a type's base class.  Return \code{0}
+  on success, or return \code{-1} and sets an exception on error.
   \versionadded{2.2}
 \end{cfuncdesc}
 
@@ -98,7 +98,7 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
 \end{cvardesc}
 
 \begin{csimplemacrodesc}{Py_RETURN_NONE}
-  Properly handles returning \cdata{Py_None} from within a C function.
+  Properly handle returning \cdata{Py_None} from within a C function.
 \end{csimplemacrodesc}
 
 
@@ -122,13 +122,13 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyInt_Check}{PyObject *o}
-  Returns true if \var{o} is of type \cdata{PyInt_Type} or a subtype
+  Return true if \var{o} is of type \cdata{PyInt_Type} or a subtype
   of \cdata{PyInt_Type}.
   \versionchanged[Allowed subtypes to be accepted]{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyInt_CheckExact}{PyObject *o}
-  Returns true if \var{o} is of type \cdata{PyInt_Type}, but not a
+  Return true if \var{o} is of type \cdata{PyInt_Type}, but not a
   subtype of \cdata{PyInt_Type}.
   \versionadded{2.2}
 \end{cfuncdesc}
@@ -153,7 +153,7 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyInt_FromLong}{long ival}
-  Creates a new integer object with a value of \var{ival}.
+  Create a new integer object with a value of \var{ival}.
 
   The current implementation keeps an array of integer objects for all
   integers between \code{-1} and \code{100}, when you create an int in
@@ -168,7 +168,7 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{long}{PyInt_AS_LONG}{PyObject *io}
-  Returns the value of the object \var{io}.  No error checking is
+  Return the value of the object \var{io}.  No error checking is
   performed.
 \end{cfuncdesc}
 
@@ -187,7 +187,7 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{long}{PyInt_GetMax}{}
-  Returns the system's idea of the largest integer it can handle
+  Return the system's idea of the largest integer it can handle
   (\constant{LONG_MAX}\ttindex{LONG_MAX}, as defined in the system
   header files).
 \end{cfuncdesc}
@@ -200,7 +200,7 @@ such, the normal creation and deletion functions don't apply to
 booleans.  The following macros are available, however.
 
 \begin{cfuncdesc}{int}{PyBool_Check}{PyObject *o}
-  Returns true if \var{o} is of type \cdata{PyBool_Type}.
+  Return true if \var{o} is of type \cdata{PyBool_Type}.
   \versionadded{2.3}
 \end{cfuncdesc}
 
@@ -226,9 +226,9 @@ booleans.  The following macros are available, however.
 \versionadded{2.4}
 \end{csimplemacrodesc}
 
-\begin{cfuncdesc}{int}{PyBool_FromLong}{long v}
-Returns \constant{Py_True} or \constant{Py_False} depending on the
-truth value of \var{v}.
+\begin{cfuncdesc}{PyObject*}{PyBool_FromLong}{long v}
+  Return a new reference to \constant{Py_True} or \constant{Py_False} 
+  depending on the truth value of \var{v}.
 \versionadded{2.3}
 \end{cfuncdesc}
 
@@ -247,39 +247,39 @@ truth value of \var{v}.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyLong_Check}{PyObject *p}
-  Returns true if its argument is a \ctype{PyLongObject} or a subtype
+  Return true if its argument is a \ctype{PyLongObject} or a subtype
   of \ctype{PyLongObject}.
   \versionchanged[Allowed subtypes to be accepted]{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyLong_CheckExact}{PyObject *p}
-  Returns true if its argument is a \ctype{PyLongObject}, but not a
+  Return true if its argument is a \ctype{PyLongObject}, but not a
   subtype of \ctype{PyLongObject}.
   \versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyLong_FromLong}{long v}
-  Returns a new \ctype{PyLongObject} object from \var{v}, or \NULL{}
+  Return a new \ctype{PyLongObject} object from \var{v}, or \NULL{}
   on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyLong_FromUnsignedLong}{unsigned long v}
-  Returns a new \ctype{PyLongObject} object from a C \ctype{unsigned
+  Return a new \ctype{PyLongObject} object from a C \ctype{unsigned
   long}, or \NULL{} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyLong_FromLongLong}{long long v}
-  Returns a new \ctype{PyLongObject} object from a C \ctype{long long},
+  Return a new \ctype{PyLongObject} object from a C \ctype{long long},
   or \NULL{} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyLong_FromUnsignedLongLong}{unsigned long long v}
-  Returns a new \ctype{PyLongObject} object from a C \ctype{unsigned
+  Return a new \ctype{PyLongObject} object from a C \ctype{unsigned
   long long}, or \NULL{} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyLong_FromDouble}{double v}
-  Returns a new \ctype{PyLongObject} object from the integer part of
+  Return a new \ctype{PyLongObject} object from the integer part of
   \var{v}, or \NULL{} on failure.
 \end{cfuncdesc}
 
@@ -318,7 +318,7 @@ truth value of \var{v}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{long}{PyLong_AsLong}{PyObject *pylong}
-  Returns a C \ctype{long} representation of the contents of
+  Return a C \ctype{long} representation of the contents of
   \var{pylong}.  If \var{pylong} is greater than
   \constant{LONG_MAX}\ttindex{LONG_MAX}, an \exception{OverflowError}
   is raised.
@@ -326,7 +326,7 @@ truth value of \var{v}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{unsigned long}{PyLong_AsUnsignedLong}{PyObject *pylong}
-  Returns a C \ctype{unsigned long} representation of the contents of
+  Return a C \ctype{unsigned long} representation of the contents of
   \var{pylong}.  If \var{pylong} is greater than
   \constant{ULONG_MAX}\ttindex{ULONG_MAX}, an
   \exception{OverflowError} is raised.
@@ -363,7 +363,7 @@ truth value of \var{v}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyLong_AsDouble}{PyObject *pylong}
-  Returns a C \ctype{double} representation of the contents of
+  Return a C \ctype{double} representation of the contents of
   \var{pylong}.  If \var{pylong} cannot be approximately represented
   as a \ctype{double}, an \exception{OverflowError} exception is
   raised and \code{-1.0} will be returned.
@@ -394,35 +394,35 @@ truth value of \var{v}.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyFloat_Check}{PyObject *p}
-  Returns true if its argument is a \ctype{PyFloatObject} or a subtype
+  Return true if its argument is a \ctype{PyFloatObject} or a subtype
   of \ctype{PyFloatObject}.
   \versionchanged[Allowed subtypes to be accepted]{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyFloat_CheckExact}{PyObject *p}
-  Returns true if its argument is a \ctype{PyFloatObject}, but not a
+  Return true if its argument is a \ctype{PyFloatObject}, but not a
   subtype of \ctype{PyFloatObject}.
   \versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFloat_FromString}{PyObject *str, char **pend}
-  Creates a \ctype{PyFloatObject} object based on the string value in
+  Create a \ctype{PyFloatObject} object based on the string value in
   \var{str}, or \NULL{} on failure.  The \var{pend} argument is ignored.  It
   remains only for backward compatibility.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFloat_FromDouble}{double v}
-  Creates a \ctype{PyFloatObject} object from \var{v}, or \NULL{} on
+  Create a \ctype{PyFloatObject} object from \var{v}, or \NULL{} on
   failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyFloat_AsDouble}{PyObject *pyfloat}
-  Returns a C \ctype{double} representation of the contents of
+  Return a C \ctype{double} representation of the contents of
   \var{pyfloat}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyFloat_AS_DOUBLE}{PyObject *pyfloat}
-  Returns a C \ctype{double} representation of the contents of
+  Return a C \ctype{double} representation of the contents of
   \var{pyfloat}, but without error checking.
 \end{cfuncdesc}
 
@@ -502,13 +502,13 @@ typedef struct {
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyComplex_Check}{PyObject *p}
-  Returns true if its argument is a \ctype{PyComplexObject} or a
+  Return true if its argument is a \ctype{PyComplexObject} or a
   subtype of \ctype{PyComplexObject}.
   \versionchanged[Allowed subtypes to be accepted]{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyComplex_CheckExact}{PyObject *p}
-  Returns true if its argument is a \ctype{PyComplexObject}, but not a
+  Return true if its argument is a \ctype{PyComplexObject}, but not a
   subtype of \ctype{PyComplexObject}.
   \versionadded{2.2}
 \end{cfuncdesc}
@@ -519,20 +519,20 @@ typedef struct {
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyComplex_FromDoubles}{double real, double imag}
-  Returns a new \ctype{PyComplexObject} object from \var{real} and
+  Return a new \ctype{PyComplexObject} object from \var{real} and
   \var{imag}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyComplex_RealAsDouble}{PyObject *op}
-  Returns the real part of \var{op} as a C \ctype{double}.
+  Return the real part of \var{op} as a C \ctype{double}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyComplex_ImagAsDouble}{PyObject *op}
-  Returns the imaginary part of \var{op} as a C \ctype{double}.
+  Return the imaginary part of \var{op} as a C \ctype{double}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{Py_complex}{PyComplex_AsCComplex}{PyObject *op}
-  Returns the \ctype{Py_complex} value of the complex number
+  Return the \ctype{Py_complex} value of the complex number
   \var{op}.
 \end{cfuncdesc}
 
@@ -564,34 +564,34 @@ parameter and are called with a non-string parameter.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyString_Check}{PyObject *o}
-  Returns true if the object \var{o} is a string object or an instance
+  Return true if the object \var{o} is a string object or an instance
   of a subtype of the string type.
   \versionchanged[Allowed subtypes to be accepted]{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyString_CheckExact}{PyObject *o}
-  Returns true if the object \var{o} is a string object, but not an
+  Return true if the object \var{o} is a string object, but not an
   instance of a subtype of the string type.
   \versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_FromString}{const char *v}
-  Returns a new string object with the value \var{v} on success, and
+  Return a new string object with the value \var{v} on success, and
   \NULL{} on failure.  The parameter \var{v} must not be \NULL{}; it
   will not be checked.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_FromStringAndSize}{const char *v,
                                                          int len}
-  Returns a new string object with the value \var{v} and length
+  Return a new string object with the value \var{v} and length
   \var{len} on success, and \NULL{} on failure.  If \var{v} is
   \NULL{}, the contents of the string are uninitialized.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_FromFormat}{const char *format, ...}
-  Takes a C \cfunction{printf()}-style \var{format} string and a
-  variable number of arguments, calculates the size of the resulting
-  Python string and returns a string with the values formatted into
+  Take a C \cfunction{printf()}-style \var{format} string and a
+  variable number of arguments, calculate the size of the resulting
+  Python string and return a string with the values formatted into
   it.  The variable arguments must be C types and must correspond
   exactly to the format characters in the \var{format} string.  The
   following format characters are allowed:
@@ -618,7 +618,7 @@ parameter and are called with a non-string parameter.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyString_Size}{PyObject *string}
-  Returns the length of the string in string object \var{string}.
+  Return the length of the string in string object \var{string}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyString_GET_SIZE}{PyObject *string}
@@ -627,7 +627,7 @@ parameter and are called with a non-string parameter.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{char*}{PyString_AsString}{PyObject *string}
-  Returns a NUL-terminated representation of the contents of
+  Return a NUL-terminated representation of the contents of
   \var{string}.  The pointer refers to the internal buffer of
   \var{string}, not a copy.  The data must not be modified in any way,
   unless the string was just created using
@@ -648,7 +648,7 @@ parameter and are called with a non-string parameter.
 \begin{cfuncdesc}{int}{PyString_AsStringAndSize}{PyObject *obj,
                                                  char **buffer,
                                                  int *length}
-  Returns a NUL-terminated representation of the contents of the
+  Return a NUL-terminated representation of the contents of the
   object \var{obj} through the output variables \var{buffer} and
   \var{length}.
 
@@ -670,7 +670,7 @@ parameter and are called with a non-string parameter.
 
 \begin{cfuncdesc}{void}{PyString_Concat}{PyObject **string,
                                          PyObject *newpart}
-  Creates a new string object in \var{*string} containing the contents
+  Create a new string object in \var{*string} containing the contents
   of \var{newpart} appended to \var{string}; the caller will own the
   new reference.  The reference to the old value of \var{string} will
   be stolen.  If the new string cannot be created, the old reference
@@ -681,7 +681,7 @@ parameter and are called with a non-string parameter.
 
 \begin{cfuncdesc}{void}{PyString_ConcatAndDel}{PyObject **string,
                                                PyObject *newpart}
-  Creates a new string object in \var{*string} containing the contents
+  Create a new string object in \var{*string} containing the contents
   of \var{newpart} appended to \var{string}.  This version decrements
   the reference count of \var{newpart}.
 \end{cfuncdesc}
@@ -703,7 +703,7 @@ parameter and are called with a non-string parameter.
 
 \begin{cfuncdesc}{PyObject*}{PyString_Format}{PyObject *format,
                                               PyObject *args}
-  Returns a new string object from \var{format} and \var{args}.
+  Return a new string object from \var{format} and \var{args}.
   Analogous to \code{\var{format} \%\ \var{args}}.  The \var{args}
   argument must be a tuple.
 \end{cfuncdesc}
@@ -733,48 +733,48 @@ parameter and are called with a non-string parameter.
                                                int size,
                                                const char *encoding,
                                                const char *errors}
-  Creates an object by decoding \var{size} bytes of the encoded
+  Create an object by decoding \var{size} bytes of the encoded
   buffer \var{s} using the codec registered for
   \var{encoding}.  \var{encoding} and \var{errors} have the same
   meaning as the parameters of the same name in the
   \function{unicode()} built-in function.  The codec to be used is
-  looked up using the Python codec registry.  Returns \NULL{} if
+  looked up using the Python codec registry.  Return \NULL{} if
   an exception was raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_AsDecodedObject}{PyObject *str,
                                                const char *encoding,
                                                const char *errors}
-  Decodes a string object by passing it to the codec registered for
-  \var{encoding} and returns the result as Python
+  Decode a string object by passing it to the codec registered for
+  \var{encoding} and return the result as Python
   object. \var{encoding} and \var{errors} have the same meaning as the
   parameters of the same name in the string \method{encode()} method.
   The codec to be used is looked up using the Python codec registry.
-  Returns \NULL{} if an exception was raised by the codec.
+  Return \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_Encode}{const char *s,
                                                int size,
                                                const char *encoding,
                                                const char *errors}
-  Encodes the \ctype{char} buffer of the given size by passing it to
-  the codec registered for \var{encoding} and returns a Python object.
+  Encode the \ctype{char} buffer of the given size by passing it to
+  the codec registered for \var{encoding} and return a Python object.
   \var{encoding} and \var{errors} have the same meaning as the
   parameters of the same name in the string \method{encode()} method.
   The codec to be used is looked up using the Python codec
-  registry.  Returns \NULL{} if an exception was raised by the
+  registry.  Return \NULL{} if an exception was raised by the
   codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_AsEncodedObject}{PyObject *str,
                                                const char *encoding,
                                                const char *errors}
-  Encodes a string object using the codec registered for
-  \var{encoding} and returns the result as Python object.
+  Encode a string object using the codec registered for
+  \var{encoding} and return the result as Python object.
   \var{encoding} and \var{errors} have the same meaning as the
   parameters of the same name in the string \method{encode()} method.
   The codec to be used is looked up using the Python codec registry.
-  Returns \NULL{} if an exception was raised by the codec.
+  Return \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
 
@@ -808,34 +808,34 @@ The following APIs are really C macros and can be used to do fast
 checks and to access internal read-only data of Unicode objects:
 
 \begin{cfuncdesc}{int}{PyUnicode_Check}{PyObject *o}
-  Returns true if the object \var{o} is a Unicode object or an
+  Return true if the object \var{o} is a Unicode object or an
   instance of a Unicode subtype.
   \versionchanged[Allowed subtypes to be accepted]{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyUnicode_CheckExact}{PyObject *o}
-  Returns true if the object \var{o} is a Unicode object, but not an
+  Return true if the object \var{o} is a Unicode object, but not an
   instance of a subtype.
   \versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyUnicode_GET_SIZE}{PyObject *o}
-  Returns the size of the object.  \var{o} has to be a
+  Return the size of the object.  \var{o} has to be a
   \ctype{PyUnicodeObject} (not checked).
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyUnicode_GET_DATA_SIZE}{PyObject *o}
-  Returns the size of the object's internal buffer in bytes.  \var{o}
+  Return the size of the object's internal buffer in bytes.  \var{o}
   has to be a \ctype{PyUnicodeObject} (not checked).
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{Py_UNICODE*}{PyUnicode_AS_UNICODE}{PyObject *o}
-  Returns a pointer to the internal \ctype{Py_UNICODE} buffer of the
+  Return a pointer to the internal \ctype{Py_UNICODE} buffer of the
   object.  \var{o} has to be a \ctype{PyUnicodeObject} (not checked).
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{const char*}{PyUnicode_AS_DATA}{PyObject *o}
-  Returns a pointer to the internal buffer of the object.
+  Return a pointer to the internal buffer of the object.
   \var{o} has to be a \ctype{PyUnicodeObject} (not checked).
 \end{cfuncdesc}
 
@@ -846,78 +846,78 @@ needed ones are available through these macros which are mapped to C
 functions depending on the Python configuration.
 
 \begin{cfuncdesc}{int}{Py_UNICODE_ISSPACE}{Py_UNICODE ch}
-  Returns 1/0 depending on whether \var{ch} is a whitespace
+  Return 1 or 0 depending on whether \var{ch} is a whitespace
   character.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_UNICODE_ISLOWER}{Py_UNICODE ch}
-  Returns 1/0 depending on whether \var{ch} is a lowercase character.
+  Return 1 or 0 depending on whether \var{ch} is a lowercase character.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_UNICODE_ISUPPER}{Py_UNICODE ch}
-  Returns 1/0 depending on whether \var{ch} is an uppercase
+  Return 1 or 0 depending on whether \var{ch} is an uppercase
   character.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_UNICODE_ISTITLE}{Py_UNICODE ch}
-  Returns 1/0 depending on whether \var{ch} is a titlecase character.
+  Return 1 or 0 depending on whether \var{ch} is a titlecase character.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_UNICODE_ISLINEBREAK}{Py_UNICODE ch}
-  Returns 1/0 depending on whether \var{ch} is a linebreak character.
+  Return 1 or 0 depending on whether \var{ch} is a linebreak character.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_UNICODE_ISDECIMAL}{Py_UNICODE ch}
-  Returns 1/0 depending on whether \var{ch} is a decimal character.
+  Return 1 or 0 depending on whether \var{ch} is a decimal character.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_UNICODE_ISDIGIT}{Py_UNICODE ch}
-  Returns 1/0 depending on whether \var{ch} is a digit character.
+  Return 1 or 0 depending on whether \var{ch} is a digit character.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_UNICODE_ISNUMERIC}{Py_UNICODE ch}
-  Returns 1/0 depending on whether \var{ch} is a numeric character.
+  Return 1 or 0 depending on whether \var{ch} is a numeric character.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_UNICODE_ISALPHA}{Py_UNICODE ch}
-  Returns 1/0 depending on whether \var{ch} is an alphabetic
+  Return 1 or 0 depending on whether \var{ch} is an alphabetic
   character.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_UNICODE_ISALNUM}{Py_UNICODE ch}
-  Returns 1/0 depending on whether \var{ch} is an alphanumeric
+  Return 1 or 0 depending on whether \var{ch} is an alphanumeric
   character.
 \end{cfuncdesc}
 
 These APIs can be used for fast direct character conversions:
 
 \begin{cfuncdesc}{Py_UNICODE}{Py_UNICODE_TOLOWER}{Py_UNICODE ch}
-  Returns the character \var{ch} converted to lower case.
+  Return the character \var{ch} converted to lower case.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{Py_UNICODE}{Py_UNICODE_TOUPPER}{Py_UNICODE ch}
-  Returns the character \var{ch} converted to upper case.
+  Return the character \var{ch} converted to upper case.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{Py_UNICODE}{Py_UNICODE_TOTITLE}{Py_UNICODE ch}
-  Returns the character \var{ch} converted to title case.
+  Return the character \var{ch} converted to title case.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_UNICODE_TODECIMAL}{Py_UNICODE ch}
-  Returns the character \var{ch} converted to a decimal positive
-  integer.  Returns \code{-1} if this is not possible.  Does not raise
-  exceptions.
+  Return the character \var{ch} converted to a decimal positive
+  integer.  Return \code{-1} if this is not possible.  This macro
+  does not raise exceptions.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_UNICODE_TODIGIT}{Py_UNICODE ch}
-  Returns the character \var{ch} converted to a single digit integer.
-  Returns \code{-1} if this is not possible.  Does not raise
+  Return the character \var{ch} converted to a single digit integer.
+  Return \code{-1} if this is not possible.  This macro does not raise
   exceptions.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{Py_UNICODE_TONUMERIC}{Py_UNICODE ch}
-  Returns the character \var{ch} converted to a (positive) double.
-  Returns \code{-1.0} if this is not possible.  Does not raise
+  Return the character \var{ch} converted to a (positive) double.
+  Return \code{-1.0} if this is not possible.  This macro does not raise
   exceptions.
 \end{cfuncdesc}
 
@@ -988,15 +988,15 @@ following functions. Support is optimized if Python's own
 \begin{cfuncdesc}{PyObject*}{PyUnicode_FromWideChar}{const wchar_t *w,
                                                      int size}
   Create a Unicode object from the \ctype{wchar_t} buffer \var{w} of
-  the given size.  Returns \NULL{} on failure.
+  the given size.  Return \NULL{} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyUnicode_AsWideChar}{PyUnicodeObject *unicode,
                                              wchar_t *w,
                                              int size}
-  Copies the Unicode object contents into the \ctype{wchar_t} buffer
+  Copy the Unicode object contents into the \ctype{wchar_t} buffer
   \var{w}.  At most \var{size} \ctype{wchar_t} characters are copied
-  (excluding a possibly trailing 0-termination character).  Returns
+  (excluding a possibly trailing 0-termination character).  Return
   the number of \ctype{wchar_t} characters copied or -1 in case of an
   error.  Note that the resulting \ctype{wchar_t} string may or may
   not be 0-terminated.  It is the responsibility of the caller to make
@@ -1042,7 +1042,7 @@ These are the generic codec APIs:
   string \var{s}.  \var{encoding} and \var{errors} have the same
   meaning as the parameters of the same name in the
   \function{unicode()} builtin function.  The codec to be used is
-  looked up using the Python codec registry.  Returns \NULL{} if an
+  looked up using the Python codec registry.  Return \NULL{} if an
   exception was raised by the codec.
 \end{cfuncdesc}
 
@@ -1050,22 +1050,22 @@ These are the generic codec APIs:
                                                int size,
                                                const char *encoding,
                                                const char *errors}
-  Encodes the \ctype{Py_UNICODE} buffer of the given size and returns
+  Encode the \ctype{Py_UNICODE} buffer of the given size and return
   a Python string object.  \var{encoding} and \var{errors} have the
   same meaning as the parameters of the same name in the Unicode
   \method{encode()} method.  The codec to be used is looked up using
-  the Python codec registry.  Returns \NULL{} if an exception was
+  the Python codec registry.  Return \NULL{} if an exception was
   raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_AsEncodedString}{PyObject *unicode,
                                                const char *encoding,
                                                const char *errors}
-  Encodes a Unicode object and returns the result as Python string
+  Encode a Unicode object and return the result as Python string
   object. \var{encoding} and \var{errors} have the same meaning as the
   parameters of the same name in the Unicode \method{encode()} method.
   The codec to be used is looked up using the Python codec registry.
-  Returns \NULL{} if an exception was raised by the codec.
+  Return \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
 % --- UTF-8 Codecs -------------------------------------------------------
@@ -1075,8 +1075,8 @@ These are the UTF-8 codec APIs:
 \begin{cfuncdesc}{PyObject*}{PyUnicode_DecodeUTF8}{const char *s,
                                                int size,
                                                const char *errors}
-  Creates a Unicode object by decoding \var{size} bytes of the UTF-8
-  encoded string \var{s}. Returns \NULL{} if an exception was raised
+  Create a Unicode object by decoding \var{size} bytes of the UTF-8
+  encoded string \var{s}. Return \NULL{} if an exception was raised
   by the codec.
 \end{cfuncdesc}
 
@@ -1084,7 +1084,7 @@ These are the UTF-8 codec APIs:
                                                int size,
                                                const char *errors,
                                                int *consumed}
-  If \var{consumed} is \NULL{}, behaves like \cfunction{PyUnicode_DecodeUTF8()}.
+  If \var{consumed} is \NULL{}, behave like \cfunction{PyUnicode_DecodeUTF8()}.
   If \var{consumed} is not \NULL{}, trailing incomplete UTF-8 byte sequences
   will not be treated as an error. Those bytes will not be decoded and the
   number of bytes that have been decoded will be stored in \var{consumed}.
@@ -1094,14 +1094,14 @@ These are the UTF-8 codec APIs:
 \begin{cfuncdesc}{PyObject*}{PyUnicode_EncodeUTF8}{const Py_UNICODE *s,
                                                int size,
                                                const char *errors}
-  Encodes the \ctype{Py_UNICODE} buffer of the given size using UTF-8
-  and returns a Python string object.  Returns \NULL{} if an exception
+  Encode the \ctype{Py_UNICODE} buffer of the given size using UTF-8
+  and return a Python string object.  Return \NULL{} if an exception
   was raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_AsUTF8String}{PyObject *unicode}
-  Encodes a Unicode objects using UTF-8 and returns the result as
-  Python string object.  Error handling is ``strict''.  Returns
+  Encode a Unicode objects using UTF-8 and return the result as
+  Python string object.  Error handling is ``strict''.  Return
   \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
@@ -1113,8 +1113,8 @@ These are the UTF-16 codec APIs:
                                                int size,
                                                const char *errors,
                                                int *byteorder}
-  Decodes \var{length} bytes from a UTF-16 encoded buffer string and
-  returns the corresponding Unicode object.  \var{errors} (if
+  Decode \var{length} bytes from a UTF-16 encoded buffer string and
+  return the corresponding Unicode object.  \var{errors} (if
   non-\NULL{}) defines the error handling. It defaults to ``strict''.
 
   If \var{byteorder} is non-\NULL{}, the decoder starts decoding using
@@ -1133,7 +1133,7 @@ These are the UTF-16 codec APIs:
 
   If \var{byteorder} is \NULL{}, the codec starts in native order mode.
 
-  Returns \NULL{} if an exception was raised by the codec.
+  Return \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_DecodeUTF16Stateful}{const char *s,
@@ -1141,7 +1141,7 @@ These are the UTF-16 codec APIs:
                                                const char *errors,
                                                int *byteorder,
                                                int *consumed}
-  If \var{consumed} is \NULL{}, behaves like
+  If \var{consumed} is \NULL{}, behave like
   \cfunction{PyUnicode_DecodeUTF16()}. If \var{consumed} is not \NULL{},
   \cfunction{PyUnicode_DecodeUTF16Stateful()} will not treat trailing incomplete
   UTF-16 byte sequences (i.e. an odd number of bytes or a split surrogate pair)
@@ -1154,7 +1154,7 @@ These are the UTF-16 codec APIs:
                                                int size,
                                                const char *errors,
                                                int byteorder}
-  Returns a Python string object holding the UTF-16 encoded value of
+  Return a Python string object holding the UTF-16 encoded value of
   the Unicode data in \var{s}.  If \var{byteorder} is not \code{0},
   output is written according to the following byte order:
 
@@ -1173,13 +1173,13 @@ These are the UTF-16 codec APIs:
   defined, each \ctype{Py_UNICODE} values is interpreted as an
   UCS-2 character.
 
-  Returns \NULL{} if an exception was raised by the codec.
+  Return \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_AsUTF16String}{PyObject *unicode}
-  Returns a Python string using the UTF-16 encoding in native byte
+  Return a Python string using the UTF-16 encoding in native byte
   order. The string always starts with a BOM mark.  Error handling is
-  ``strict''.  Returns \NULL{} if an exception was raised by the
+  ``strict''.  Return \NULL{} if an exception was raised by the
   codec.
 \end{cfuncdesc}
 
@@ -1190,23 +1190,23 @@ These are the ``Unicode Escape'' codec APIs:
 \begin{cfuncdesc}{PyObject*}{PyUnicode_DecodeUnicodeEscape}{const char *s,
                                                int size,
                                                const char *errors}
-  Creates a Unicode object by decoding \var{size} bytes of the
-  Unicode-Escape encoded string \var{s}.  Returns \NULL{} if an
+  Create a Unicode object by decoding \var{size} bytes of the
+  Unicode-Escape encoded string \var{s}.  Return \NULL{} if an
   exception was raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_EncodeUnicodeEscape}{const Py_UNICODE *s,
                                                int size,
                                                const char *errors}
-  Encodes the \ctype{Py_UNICODE} buffer of the given size using
-  Unicode-Escape and returns a Python string object.  Returns \NULL{}
+  Encode the \ctype{Py_UNICODE} buffer of the given size using
+  Unicode-Escape and return a Python string object.  Return \NULL{}
   if an exception was raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_AsUnicodeEscapeString}{PyObject *unicode}
-  Encodes a Unicode objects using Unicode-Escape and returns the
+  Encode a Unicode objects using Unicode-Escape and return the
   result as Python string object.  Error handling is ``strict''.
-  Returns \NULL{} if an exception was raised by the codec.
+  Return \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
 % --- Raw-Unicode-Escape Codecs ------------------------------------------
@@ -1216,23 +1216,23 @@ These are the ``Raw Unicode Escape'' codec APIs:
 \begin{cfuncdesc}{PyObject*}{PyUnicode_DecodeRawUnicodeEscape}{const char *s,
                                                int size,
                                                const char *errors}
-  Creates a Unicode object by decoding \var{size} bytes of the
-  Raw-Unicode-Escape encoded string \var{s}.  Returns \NULL{} if an
+  Create a Unicode object by decoding \var{size} bytes of the
+  Raw-Unicode-Escape encoded string \var{s}.  Return \NULL{} if an
   exception was raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_EncodeRawUnicodeEscape}{const Py_UNICODE *s,
                                                int size,
                                                const char *errors}
-  Encodes the \ctype{Py_UNICODE} buffer of the given size using
-  Raw-Unicode-Escape and returns a Python string object.  Returns
+  Encode the \ctype{Py_UNICODE} buffer of the given size using
+  Raw-Unicode-Escape and return a Python string object.  Return
   \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_AsRawUnicodeEscapeString}{PyObject *unicode}
-  Encodes a Unicode objects using Raw-Unicode-Escape and returns the
+  Encode a Unicode objects using Raw-Unicode-Escape and return the
   result as Python string object. Error handling is ``strict''.
-  Returns \NULL{} if an exception was raised by the codec.
+  Return \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
 % --- Latin-1 Codecs -----------------------------------------------------
@@ -1244,22 +1244,22 @@ are accepted by the codecs during encoding.
 \begin{cfuncdesc}{PyObject*}{PyUnicode_DecodeLatin1}{const char *s,
                                                      int size,
                                                      const char *errors}
-  Creates a Unicode object by decoding \var{size} bytes of the Latin-1
-  encoded string \var{s}.  Returns \NULL{} if an exception was raised
+  Create a Unicode object by decoding \var{size} bytes of the Latin-1
+  encoded string \var{s}.  Return \NULL{} if an exception was raised
   by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_EncodeLatin1}{const Py_UNICODE *s,
                                                      int size,
                                                      const char *errors}
-  Encodes the \ctype{Py_UNICODE} buffer of the given size using
-  Latin-1 and returns a Python string object.  Returns \NULL{} if an
+  Encode the \ctype{Py_UNICODE} buffer of the given size using
+  Latin-1 and return a Python string object.  Return \NULL{} if an
   exception was raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_AsLatin1String}{PyObject *unicode}
-  Encodes a Unicode objects using Latin-1 and returns the result as
-  Python string object.  Error handling is ``strict''.  Returns
+  Encode a Unicode objects using Latin-1 and return the result as
+  Python string object.  Error handling is ``strict''.  Return
   \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
@@ -1271,22 +1271,22 @@ accepted. All other codes generate errors.
 \begin{cfuncdesc}{PyObject*}{PyUnicode_DecodeASCII}{const char *s,
                                                     int size,
                                                     const char *errors}
-  Creates a Unicode object by decoding \var{size} bytes of the
-  \ASCII{} encoded string \var{s}.  Returns \NULL{} if an exception
+  Create a Unicode object by decoding \var{size} bytes of the
+  \ASCII{} encoded string \var{s}.  Return \NULL{} if an exception
   was raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_EncodeASCII}{const Py_UNICODE *s,
                                                     int size,
                                                     const char *errors}
-  Encodes the \ctype{Py_UNICODE} buffer of the given size using
-  \ASCII{} and returns a Python string object.  Returns \NULL{} if an
+  Encode the \ctype{Py_UNICODE} buffer of the given size using
+  \ASCII{} and return a Python string object.  Return \NULL{} if an
   exception was raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_AsASCIIString}{PyObject *unicode}
-  Encodes a Unicode objects using \ASCII{} and returns the result as
-  Python string object.  Error handling is ``strict''.  Returns
+  Encode a Unicode objects using \ASCII{} and return the result as
+  Python string object.  Error handling is ``strict''.  Return
   \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
@@ -1320,8 +1320,8 @@ points.
                                                int size,
                                                PyObject *mapping,
                                                const char *errors}
-  Creates a Unicode object by decoding \var{size} bytes of the encoded
-  string \var{s} using the given \var{mapping} object.  Returns
+  Create a Unicode object by decoding \var{size} bytes of the encoded
+  string \var{s} using the given \var{mapping} object.  Return
   \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
@@ -1329,16 +1329,16 @@ points.
                                                int size,
                                                PyObject *mapping,
                                                const char *errors}
-  Encodes the \ctype{Py_UNICODE} buffer of the given size using the
-  given \var{mapping} object and returns a Python string object.
-  Returns \NULL{} if an exception was raised by the codec.
+  Encode the \ctype{Py_UNICODE} buffer of the given size using the
+  given \var{mapping} object and return a Python string object.
+  Return \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_AsCharmapString}{PyObject *unicode,
                                                         PyObject *mapping}
-  Encodes a Unicode objects using the given \var{mapping} object and
-  returns the result as Python string object.  Error handling is
-  ``strict''.  Returns \NULL{} if an exception was raised by the
+  Encode a Unicode objects using the given \var{mapping} object and
+  return the result as Python string object.  Error handling is
+  ``strict''.  Return \NULL{} if an exception was raised by the
   codec.
 \end{cfuncdesc}
 
@@ -1348,9 +1348,9 @@ The following codec API is special in that maps Unicode to Unicode.
                                                int size,
                                                PyObject *table,
                                                const char *errors}
-  Translates a \ctype{Py_UNICODE} buffer of the given length by
-  applying a character mapping \var{table} to it and returns the
-  resulting Unicode object.  Returns \NULL{} when an exception was
+  Translate a \ctype{Py_UNICODE} buffer of the given length by
+  applying a character mapping \var{table} to it and return the
+  resulting Unicode object.  Return \NULL{} when an exception was
   raised by the codec.
 
   The \var{mapping} table must map Unicode ordinal integers to Unicode
@@ -1373,22 +1373,22 @@ machine running the codec.
 \begin{cfuncdesc}{PyObject*}{PyUnicode_DecodeMBCS}{const char *s,
                                                int size,
                                                const char *errors}
-  Creates a Unicode object by decoding \var{size} bytes of the MBCS
-  encoded string \var{s}.  Returns \NULL{} if an exception was
+  Create a Unicode object by decoding \var{size} bytes of the MBCS
+  encoded string \var{s}.  Return \NULL{} if an exception was
   raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_EncodeMBCS}{const Py_UNICODE *s,
                                                int size,
                                                const char *errors}
-  Encodes the \ctype{Py_UNICODE} buffer of the given size using MBCS
-  and returns a Python string object.  Returns \NULL{} if an exception
+  Encode the \ctype{Py_UNICODE} buffer of the given size using MBCS
+  and return a Python string object.  Return \NULL{} if an exception
   was raised by the codec.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_AsMBCSString}{PyObject *unicode}
-  Encodes a Unicode objects using MBCS and returns the result as
-  Python string object.  Error handling is ``strict''.  Returns
+  Encode a Unicode objects using MBCS and return the result as
+  Python string object.  Error handling is ``strict''.  Return
   \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
@@ -1457,7 +1457,7 @@ They all return \NULL{} or \code{-1} if an exception occurs.
   Return 1 if \var{substr} matches \var{str}[\var{start}:\var{end}] at
   the given tail end (\var{direction} == -1 means to do a prefix
   match, \var{direction} == 1 a suffix match), 0 otherwise.
-  Returns \code{-1} if an error occurred.                         
+  Return \code{-1} if an error occurred.                         
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyUnicode_Find}{PyObject *str,
@@ -1479,7 +1479,7 @@ They all return \NULL{} or \code{-1} if an exception occurs.
                                         int start,
                                         int end}
   Return the number of non-overlapping occurrences of \var{substr} in
-  \code{\var{str}[\var{start}:\var{end}]}.  Returns \code{-1} if an
+  \code{\var{str}[\var{start}:\var{end}]}.  Return \code{-1} if an
   error occurred.
 \end{cfuncdesc}
 
@@ -1499,15 +1499,15 @@ They all return \NULL{} or \code{-1} if an exception occurs.
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_Format}{PyObject *format,
                                               PyObject *args}
-  Returns a new string object from \var{format} and \var{args}; this
+  Return a new string object from \var{format} and \var{args}; this
   is analogous to \code{\var{format} \%\ \var{args}}.  The
   \var{args} argument must be a tuple.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyUnicode_Contains}{PyObject *container,
                                            PyObject *element}
-  Checks whether \var{element} is contained in \var{container} and
-  returns true or false accordingly.
+  Check whether \var{element} is contained in \var{container} and
+  return true or false accordingly.
 
   \var{element} has to coerce to a one element Unicode
   string. \code{-1} is returned if there was an error.
@@ -1623,7 +1623,7 @@ format.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyBuffer_New}{int size}
-  Returns a new writable buffer object that maintains its own memory
+  Return a new writable buffer object that maintains its own memory
   buffer of \var{size} bytes.  \exception{ValueError} is returned if
   \var{size} is not zero or positive.  Note that the memory buffer (as
   returned by \cfunction{PyObject_AsWriteBuffer()}) is not specifically
@@ -1669,7 +1669,7 @@ format.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyTuple_Size}{PyObject *p}
-  Takes a pointer to a tuple object, and returns the size of that
+  Take a pointer to a tuple object, and return the size of that
   tuple.
 \end{cfuncdesc}
 
@@ -1679,8 +1679,8 @@ format.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyTuple_GetItem}{PyObject *p, int pos}
-  Returns the object at position \var{pos} in the tuple pointed to by
-  \var{p}.  If \var{pos} is out of bounds, returns \NULL{} and sets an
+  Return the object at position \var{pos} in the tuple pointed to by
+  \var{p}.  If \var{pos} is out of bounds, return \NULL{} and sets an
   \exception{IndexError} exception.
 \end{cfuncdesc}
 
@@ -1691,14 +1691,14 @@ format.
 
 \begin{cfuncdesc}{PyObject*}{PyTuple_GetSlice}{PyObject *p,
                                                int low, int high}
-  Takes a slice of the tuple pointed to by \var{p} from \var{low} to
-  \var{high} and returns it as a new tuple.
+  Take a slice of the tuple pointed to by \var{p} from \var{low} to
+  \var{high} and return it as a new tuple.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyTuple_SetItem}{PyObject *p,
                                         int pos, PyObject *o}
-  Inserts a reference to object \var{o} at position \var{pos} of the
-  tuple pointed to by \var{p}. It returns \code{0} on success.
+  Insert a reference to object \var{o} at position \var{pos} of the
+  tuple pointed to by \var{p}. Return \code{0} on success.
   \note{This function ``steals'' a reference to \var{o}.}
 \end{cfuncdesc}
 
@@ -1742,7 +1742,7 @@ format.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyList_Check}{PyObject *p}
-  Returns true if \var{p} is a list object or an instance of a
+  Return true if \var{p} is a list object or an instance of a
   subtype of the list type.
   \versionchanged[Allowed subtypes to be accepted]{2.2}
 \end{cfuncdesc}
@@ -1754,12 +1754,12 @@ format.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_New}{int len}
-  Returns a new list of length \var{len} on success, or \NULL{} on
+  Return a new list of length \var{len} on success, or \NULL{} on
   failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Size}{PyObject *list}
-  Returns the length of the list object in \var{list}; this is
+  Return the length of the list object in \var{list}; this is
   equivalent to \samp{len(\var{list})} on a list object.
   \bifuncindex{len}
 \end{cfuncdesc}
@@ -1769,8 +1769,8 @@ format.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_GetItem}{PyObject *list, int index}
-  Returns the object at position \var{pos} in the list pointed to by
-  \var{p}.  If \var{pos} is out of bounds, returns \NULL{} and sets an
+  Return the object at position \var{pos} in the list pointed to by
+  \var{p}.  If \var{pos} is out of bounds, return \NULL{} and set an
   \exception{IndexError} exception.
 \end{cfuncdesc}
 
@@ -1780,7 +1780,7 @@ format.
 
 \begin{cfuncdesc}{int}{PyList_SetItem}{PyObject *list, int index,
                                        PyObject *item}
-  Sets the item at index \var{index} in list to \var{item}.  Returns
+  Set the item at index \var{index} in list to \var{item}.  Return
   \code{0} on success or \code{-1} on failure.  \note{This function
   ``steals'' a reference to \var{item} and discards a reference to an
   item already in the list at the affected position.}
@@ -1799,23 +1799,23 @@ format.
 
 \begin{cfuncdesc}{int}{PyList_Insert}{PyObject *list, int index,
                                       PyObject *item}
-  Inserts the item \var{item} into list \var{list} in front of index
-  \var{index}.  Returns \code{0} if successful; returns \code{-1} and
-  raises an exception if unsuccessful.  Analogous to
+  Insert the item \var{item} into list \var{list} in front of index
+  \var{index}.  Return \code{0} if successful; return \code{-1} and
+  set an exception if unsuccessful.  Analogous to
   \code{\var{list}.insert(\var{index}, \var{item})}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Append}{PyObject *list, PyObject *item}
-  Appends the object \var{item} at the end of list \var{list}.
-  Returns \code{0} if successful; returns \code{-1} and sets an
+  Append the object \var{item} at the end of list \var{list}.
+  Return \code{0} if successful; return \code{-1} and set an
   exception if unsuccessful.  Analogous to
   \code{\var{list}.append(\var{item})}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_GetSlice}{PyObject *list,
                                               int low, int high}
-  Returns a list of the objects in \var{list} containing the objects
-  \emph{between} \var{low} and \var{high}.  Returns \NULL{} and sets
+  Return a list of the objects in \var{list} containing the objects
+  \emph{between} \var{low} and \var{high}.  Return \NULL{} and set
   an exception if unsuccessful.
   Analogous to \code{\var{list}[\var{low}:\var{high}]}.
 \end{cfuncdesc}
@@ -1823,28 +1823,28 @@ format.
 \begin{cfuncdesc}{int}{PyList_SetSlice}{PyObject *list,
                                         int low, int high,
                                         PyObject *itemlist}
-  Sets the slice of \var{list} between \var{low} and \var{high} to the
+  Set the slice of \var{list} between \var{low} and \var{high} to the
   contents of \var{itemlist}.  Analogous to
   \code{\var{list}[\var{low}:\var{high}] = \var{itemlist}}.
   The \var{itemlist} may be \NULL{}, indicating the assignment
   of an empty list (slice deletion).
-  Returns \code{0} on success, \code{-1} on failure.
+  Return \code{0} on success, \code{-1} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Sort}{PyObject *list}
-  Sorts the items of \var{list} in place.  Returns \code{0} on
+  Sort the items of \var{list} in place.  Return \code{0} on
   success, \code{-1} on failure.  This is equivalent to
   \samp{\var{list}.sort()}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Reverse}{PyObject *list}
-  Reverses the items of \var{list} in place.  Returns \code{0} on
+  Reverse the items of \var{list} in place.  Return \code{0} on
   success, \code{-1} on failure.  This is the equivalent of
   \samp{\var{list}.reverse()}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_AsTuple}{PyObject *list}
-  Returns a new tuple object containing the contents of \var{list};
+  Return a new tuple object containing the contents of \var{list};
   equivalent to \samp{tuple(\var{list})}.\bifuncindex{tuple}
 \end{cfuncdesc}
 
@@ -1870,7 +1870,7 @@ format.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyDict_Check}{PyObject *p}
-  Returns true if \var{p} is a dict object or an instance of a
+  Return true if \var{p} is a dict object or an instance of a
   subtype of the dict type.
   \versionchanged[Allowed subtypes to be accepted]{2.2}
 \end{cfuncdesc}
@@ -1882,7 +1882,7 @@ format.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_New}{}
-  Returns a new empty dictionary, or \NULL{} on failure.
+  Return a new empty dictionary, or \NULL{} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDictProxy_New}{PyObject *dict}
@@ -1893,7 +1893,7 @@ format.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyDict_Clear}{PyObject *p}
-  Empties an existing dictionary of all key-value pairs.
+  Empty an existing dictionary of all key-value pairs.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyDict_Contains}{PyObject *p, PyObject *key}
@@ -1905,44 +1905,44 @@ format.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_Copy}{PyObject *p}
-  Returns a new dictionary that contains the same key-value pairs as
+  Return a new dictionary that contains the same key-value pairs as
   \var{p}.
   \versionadded{1.6}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyDict_SetItem}{PyObject *p, PyObject *key,
                                        PyObject *val}
-  Inserts \var{value} into the dictionary \var{p} with a key of
+  Insert \var{value} into the dictionary \var{p} with a key of
   \var{key}.  \var{key} must be hashable; if it isn't,
   \exception{TypeError} will be raised.
-  Returns \code{0} on success or \code{-1} on failure.
+  Return \code{0} on success or \code{-1} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyDict_SetItemString}{PyObject *p,
             char *key,
             PyObject *val}
-  Inserts \var{value} into the dictionary \var{p} using \var{key} as a
+  Insert \var{value} into the dictionary \var{p} using \var{key} as a
   key. \var{key} should be a \ctype{char*}.  The key object is created
-  using \code{PyString_FromString(\var{key})}. Returns \code{0} on
+  using \code{PyString_FromString(\var{key})}. Return \code{0} on
   success or \code{-1} on failure.
   \ttindex{PyString_FromString()}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyDict_DelItem}{PyObject *p, PyObject *key}
-  Removes the entry in dictionary \var{p} with key \var{key}.
+  Remove the entry in dictionary \var{p} with key \var{key}.
   \var{key} must be hashable; if it isn't, \exception{TypeError} is
-  raised.  Returns \code{0} on success or \code{-1} on failure.
+  raised.  Return \code{0} on success or \code{-1} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyDict_DelItemString}{PyObject *p, char *key}
-  Removes the entry in dictionary \var{p} which has a key specified by
-  the string \var{key}.  Returns \code{0} on success or \code{-1} on
+  Remove the entry in dictionary \var{p} which has a key specified by
+  the string \var{key}.  Return \code{0} on success or \code{-1} on
   failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_GetItem}{PyObject *p, PyObject *key}
-  Returns the object from dictionary \var{p} which has a key
-  \var{key}.  Returns \NULL{} if the key \var{key} is not present, but
+  Return the object from dictionary \var{p} which has a key
+  \var{key}.  Return \NULL{} if the key \var{key} is not present, but
   \emph{without} setting an exception.
 \end{cfuncdesc}
 
@@ -1952,25 +1952,25 @@ format.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_Items}{PyObject *p}
-  Returns a \ctype{PyListObject} containing all the items from the
+  Return a \ctype{PyListObject} containing all the items from the
   dictionary, as in the dictionary method \method{items()} (see the
   \citetitle[../lib/lib.html]{Python Library Reference}).
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_Keys}{PyObject *p}
-  Returns a \ctype{PyListObject} containing all the keys from the
+  Return a \ctype{PyListObject} containing all the keys from the
   dictionary, as in the dictionary method \method{keys()} (see the
   \citetitle[../lib/lib.html]{Python Library Reference}).
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_Values}{PyObject *p}
-  Returns a \ctype{PyListObject} containing all the values from the
+  Return a \ctype{PyListObject} containing all the values from the
   dictionary \var{p}, as in the dictionary method \method{values()}
   (see the \citetitle[../lib/lib.html]{Python Library Reference}).
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyDict_Size}{PyObject *p}
-  Returns the number of items in the dictionary.  This is equivalent
+  Return the number of items in the dictionary.  This is equivalent
   to \samp{len(\var{p})} on a dictionary.\bifuncindex{len}
 \end{cfuncdesc}
 
@@ -2085,34 +2085,34 @@ implementation detail and may change in future releases of Python.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyFile_Check}{PyObject *p}
-  Returns true if its argument is a \ctype{PyFileObject} or a subtype
+  Return true if its argument is a \ctype{PyFileObject} or a subtype
   of \ctype{PyFileObject}.
   \versionchanged[Allowed subtypes to be accepted]{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyFile_CheckExact}{PyObject *p}
-  Returns true if its argument is a \ctype{PyFileObject}, but not a
+  Return true if its argument is a \ctype{PyFileObject}, but not a
   subtype of \ctype{PyFileObject}.
   \versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFile_FromString}{char *filename, char *mode}
-  On success, returns a new file object that is opened on the file
+  On success, return a new file object that is opened on the file
   given by \var{filename}, with a file mode given by \var{mode}, where
   \var{mode} has the same semantics as the standard C routine
-  \cfunction{fopen()}\ttindex{fopen()}.  On failure, returns \NULL{}.
+  \cfunction{fopen()}\ttindex{fopen()}.  On failure, return \NULL{}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFile_FromFile}{FILE *fp,
                                               char *name, char *mode,
                                               int (*close)(FILE*)}
-  Creates a new \ctype{PyFileObject} from the already-open standard C
+  Create a new \ctype{PyFileObject} from the already-open standard C
   file pointer, \var{fp}.  The function \var{close} will be called
-  when the file should be closed.  Returns \NULL{} on failure.
+  when the file should be closed.  Return \NULL{} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{FILE*}{PyFile_AsFile}{PyFileObject *p}
-  Returns the file object associated with \var{p} as a \ctype{FILE*}.
+  Return the file object associated with \var{p} as a \ctype{FILE*}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFile_GetLine}{PyObject *p, int n}
@@ -2131,7 +2131,7 @@ implementation detail and may change in future releases of Python.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFile_Name}{PyObject *p}
-  Returns the name of the file specified by \var{p} as a string
+  Return the name of the file specified by \var{p} as a string
   object.
 \end{cfuncdesc}
 
@@ -2148,9 +2148,9 @@ implementation detail and may change in future releases of Python.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyFile_SoftSpace}{PyObject *p, int newflag}
-  This function exists for internal use by the interpreter.  Sets the
+  This function exists for internal use by the interpreter.  Set the
   \member{softspace} attribute of \var{p} to \var{newflag} and
-  \withsubitem{(file attribute)}{\ttindex{softspace}}returns the
+  \withsubitem{(file attribute)}{\ttindex{softspace}}return the
   previous value.  \var{p} does not have to be a file object for this
   function to work properly; any object is supported (thought its only
   interesting if the \member{softspace} attribute can be set).  This
@@ -2162,16 +2162,16 @@ implementation detail and may change in future releases of Python.
 
 \begin{cfuncdesc}{int}{PyFile_WriteObject}{PyObject *obj, PyFileObject *p,
                                            int flags}
-  Writes object \var{obj} to file object \var{p}.  The only supported
+  Write object \var{obj} to file object \var{p}.  The only supported
   flag for \var{flags} is
   \constant{Py_PRINT_RAW}\ttindex{Py_PRINT_RAW}; if given, the
   \function{str()} of the object is written instead of the
-  \function{repr()}.  Returns \code{0} on success or \code{-1} on
+  \function{repr()}.  Return \code{0} on success or \code{-1} on
   failure; the appropriate exception will be set.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyFile_WriteString}{const char *s, PyFileObject *p}
-  Writes string \var{s} to file object \var{p}.  Returns \code{0} on
+  Write string \var{s} to file object \var{p}.  Return \code{0} on
   success or \code{-1} on failure; the appropriate exception will be
   set.
 \end{cfuncdesc}
@@ -2187,7 +2187,7 @@ There are very few functions specific to instance objects.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyInstance_Check}{PyObject *obj}
-  Returns true if \var{obj} is an instance.
+  Return true if \var{obj} is an instance.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyInstance_New}{PyObject *class,
@@ -2278,13 +2278,13 @@ There are only a few functions special to module objects.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyModule_Check}{PyObject *p}
-  Returns true if \var{p} is a module object, or a subtype of a module
+  Return true if \var{p} is a module object, or a subtype of a module
   object.
   \versionchanged[Allowed subtypes to be accepted]{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyModule_CheckExact}{PyObject *p}
-  Returns true if \var{p} is a module object, but not a subtype of
+  Return true if \var{p} is a module object, but not a subtype of
   \cdata{PyModule_Type}.
   \versionadded{2.2}
 \end{cfuncdesc}
@@ -2329,7 +2329,7 @@ There are only a few functions special to module objects.
                                            char *name, PyObject *value}
   Add an object to \var{module} as \var{name}.  This is a convenience
   function which can be used from the module's initialization
-  function.  This steals a reference to \var{value}.  Returns
+  function.  This steals a reference to \var{value}.  Return
   \code{-1} on error, \code{0} on success.
   \versionadded{2.0}
 \end{cfuncdesc}
@@ -2338,7 +2338,7 @@ There are only a few functions special to module objects.
                                                 char *name, long value}
   Add an integer constant to \var{module} as \var{name}.  This
   convenience function can be used from the module's initialization
-  function. Returns \code{-1} on error, \code{0} on success.
+  function. Return \code{-1} on error, \code{0} on success.
   \versionadded{2.0}
 \end{cfuncdesc}
 
@@ -2346,7 +2346,7 @@ There are only a few functions special to module objects.
                                                    char *name, char *value}
   Add a string constant to \var{module} as \var{name}.  This
   convenience function can be used from the module's initialization
-  function.  The string \var{value} must be null-terminated.  Returns
+  function.  The string \var{value} must be null-terminated.  Return
   \code{-1} on error, \code{0} on success.
   \versionadded{2.0}
 \end{cfuncdesc}
@@ -2440,7 +2440,7 @@ They are found in the dictionary of type objects.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyDescr_IsData}{PyObject *descr}
-  Returns true if the descriptor objects \var{descr} describes a data
+  Return true if the descriptor objects \var{descr} describes a data
   attribute, or false if it describes a method.  \var{descr} must be a
   descriptor object; there is no error checking.
   \versionadded{2.2}
@@ -2460,7 +2460,7 @@ They are found in the dictionary of type objects.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PySlice_Check}{PyObject *ob}
-  Returns true if \var{ob} is a slice object; \var{ob} must not be
+  Return true if \var{ob} is a slice object; \var{ob} must not be
   \NULL{}.
 \end{cfuncdesc}
 
@@ -2470,7 +2470,7 @@ They are found in the dictionary of type objects.
   \var{stop}, and \var{step} parameters are used as the values of the
   slice object attributes of the same names.  Any of the values may be
   \NULL{}, in which case the \code{None} will be used for the
-  corresponding attribute.  Returns \NULL{} if the new object could
+  corresponding attribute.  Return \NULL{} if the new object could
   not be allocated.
 \end{cfuncdesc}
 
@@ -2558,7 +2558,7 @@ acts as a proxy for the original object as much as it can.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyWeakref_GetObject}{PyObject *ref}
-  Returns the referenced object from a weak reference, \var{ref}.  If
+  Return the referenced object from a weak reference, \var{ref}.  If
   the referent is no longer live, returns \code{None}.
   \versionadded{2.2}
 \end{cfuncdesc}
