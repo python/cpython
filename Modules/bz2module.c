@@ -110,8 +110,8 @@ typedef struct {
 
 	BZFILE *fp;
 	int mode;
-	long pos;
-	long size;
+	Py_off_t pos;
+	Py_off_t size;
 #ifdef WITH_THREAD
 	PyThread_type_lock lock;
 #endif
@@ -982,7 +982,7 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 	char *buffer = small_buffer;
 	size_t buffersize = SMALLCHUNK;
 	int bytesread = 0;
-	int readsize;
+	size_t readsize;
 	int chunksize;
 	int bzerror;
 	int rewind = 0;
@@ -1089,10 +1089,13 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 	/* Before getting here, offset must be set to the number of bytes
 	 * to walk forward. */
 	for (;;) {
-		if ((size_t)offset-bytesread > buffersize)
+		if (offset-bytesread > buffersize)
 			readsize = buffersize;
 		else
-			readsize = offset-bytesread;
+			/* offset might be wider that readsize, but the result
+			 * of the subtraction is bound by buffersize (see the
+			 * condition above). buffersize is 8192. */
+			readsize = (size_t)(offset-bytesread);
 		Py_BEGIN_ALLOW_THREADS
 		chunksize = Util_UnivNewlineRead(&bzerror, self->fp,
 						 buffer, readsize, self);
@@ -1137,7 +1140,11 @@ BZ2File_tell(BZ2FileObject *self, PyObject *args)
 		goto cleanup;
 	}
 
+#if !defined(HAVE_LARGEFILE_SUPPORT)
 	ret = PyInt_FromLong(self->pos);
+#else
+	ret = PyLong_FromLongLong(self->pos);
+#endif
 
 cleanup:
 	return ret;
