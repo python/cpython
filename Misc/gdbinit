@@ -46,18 +46,19 @@ end
 # A rewrite of the Python interpreter's line number calculator in GDB's
 # command language
 define lineno
+    set $__continue = 1
     set $__co = f->f_code
     set $__lasti = f->f_lasti
     set $__sz = ((PyStringObject *)$__co->co_lnotab)->ob_size/2
     set $__p = (unsigned char *)((PyStringObject *)$__co->co_lnotab)->ob_sval
     set $__li = $__co->co_firstlineno
     set $__ad = 0
-    while ($__sz-1 >= 0)
+    while ($__sz-1 >= 0 && $__continue)
       set $__sz = $__sz - 1
       set $__ad = $__ad + *$__p
       set $__p = $__p + 1
       if ($__ad > $__lasti)
-	break
+	set $__continue = 0
       end
       set $__li = $__li + *$__p
       set $__p = $__p + 1
