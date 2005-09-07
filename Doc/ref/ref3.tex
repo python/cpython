@@ -326,7 +326,7 @@ separate items.  The built-in functions
 \function{ord()}\bifuncindex{ord} convert between code units and
 nonnegative integers representing the Unicode ordinals as defined in
 the Unicode Standard 3.0. Conversion from and to other encodings are
-possible through the Unicode method \method{encode} and the built-in
+possible through the Unicode method \method{encode()} and the built-in
 function \function{unicode()}.\bifuncindex{unicode}
 \obindex{unicode}
 \index{character}
@@ -1208,8 +1208,8 @@ By convention, \code{False} is used for false and \code{True} for true.
 
 There are no implied relationships among the comparison operators.
 The truth of \code{\var{x}==\var{y}} does not imply that \code{\var{x}!=\var{y}}
-is false.  Accordingly, when defining \method{__eq__}, one should also
-define \method{__ne__} so that the operators will behave as expected.
+is false.  Accordingly, when defining \method{__eq__()}, one should also
+define \method{__ne__()} so that the operators will behave as expected.
 
 There are no reflected (swapped-argument) versions of these methods
 (to be used when the left argument does not support the operation but
@@ -1338,7 +1338,7 @@ The following methods only apply to new-style classes.
 
 \begin{methoddesc}[object]{__getattribute__}{self, name}
 Called unconditionally to implement attribute accesses for instances
-of the class. If the class also defines \method{__getattr__}, the latter
+of the class. If the class also defines \method{__getattr__()}, the latter
 will not be called unless \method{__getattribute__()} either calls it
 explicitly or raises an \exception{AttributeError}.
 This method should return the (computed) attribute
@@ -1905,7 +1905,7 @@ methods.  For instance, to evaluate the expression
 \var{x}\code{+=}\var{y}, where \var{x} is an instance of a class that
 has an \method{__iadd__()} method, \code{\var{x}.__iadd__(\var{y})} is
 called.  If \var{x} is an instance of a class that does not define a
-\method{__iadd()} method, \code{\var{x}.__add__(\var{y})} and
+\method{__iadd__()} method, \code{\var{x}.__add__(\var{y})} and
 \code{\var{y}.__radd__(\var{x})} are considered, as with the
 evaluation of \var{x}\code{+}\var{y}.
 \end{methoddesc}
@@ -1988,10 +1988,10 @@ implemented at all.
 
 Below, \method{__op__()} and \method{__rop__()} are used to signify
 the generic method names corresponding to an operator;
-\method{__iop__} is used for the corresponding in-place operator.  For
+\method{__iop__()} is used for the corresponding in-place operator.  For
 example, for the operator `\code{+}', \method{__add__()} and
 \method{__radd__()} are used for the left and right variant of the
-binary operator, and \method{__iadd__} for the in-place variant.
+binary operator, and \method{__iadd__()} for the in-place variant.
 
 \item
 
