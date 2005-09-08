@@ -544,6 +544,7 @@ class Filterer:
 #---------------------------------------------------------------------------
 
 _handlers = {}  #repository of handlers (for flushing when shutdown called)
+_handlerList = [] # added to allow handlers to be removed in reverse of order initialized
 
 class Handler(Filterer):
     """
@@ -566,6 +567,7 @@ class Handler(Filterer):
         _acquireLock()
         try:    #unlikely to raise an exception, but you never know...
             _handlers[self] = 1
+            _handlerList.insert(0, self)
         finally:
             _releaseLock()
         self.createLock()
@@ -668,6 +670,7 @@ class Handler(Filterer):
         _acquireLock()
         try:    #unlikely to raise an exception, but you never know...
             del _handlers[self]
+            _handlerList.remove(self)
         finally:
             _releaseLock()
 
@@ -1307,7 +1310,7 @@ def shutdown():
 
     Should be called at application exit.
     """
-    for h in _handlers.keys():
+    for h in _handlerList[:]: # was _handlers.keys():
         #errors might occur, for example, if files are locked
         #we just ignore them
         try:
