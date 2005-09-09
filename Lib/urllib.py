@@ -1076,22 +1076,7 @@ def unquote_plus(s):
 always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                'abcdefghijklmnopqrstuvwxyz'
                '0123456789' '_.-')
-
-_fast_safe_test = always_safe + '/'
-_fast_safe = None
-
-def _fast_quote(s):
-    global _fast_safe
-    if _fast_safe is None:
-        _fast_safe = {}
-        for c in _fast_safe_test:
-            _fast_safe[c] = c
-    res = list(s)
-    for i in range(len(res)):
-        c = res[i]
-        if not c in _fast_safe:
-            res[i] = '%%%02X' % ord(c)
-    return ''.join(res)
+_safemaps = {}
 
 def quote(s, safe = '/'):
     """quote('abc def') -> 'abc%20def'
@@ -1114,14 +1099,17 @@ def quote(s, safe = '/'):
     called on a path where the existing slash characters are used as
     reserved characters.
     """
-    safe = always_safe + safe
-    if _fast_safe_test == safe:
-        return _fast_quote(s)
-    res = list(s)
-    for i in range(len(res)):
-        c = res[i]
-        if c not in safe:
-            res[i] = '%%%02X' % ord(c)
+    cachekey = (safe, always_safe)
+    try:
+        safe_map = _safemaps[cachekey]
+    except KeyError:
+        safe += always_safe
+        safe_map = {}
+        for i in range(256):
+            c = chr(i)
+            safe_map[c] = (c in safe) and c or ('%%%02X' % i)
+        _safemaps[cachekey] = safe_map
+    res = map(safe_map.__getitem__, s)
     return ''.join(res)
 
 def quote_plus(s, safe = ''):
