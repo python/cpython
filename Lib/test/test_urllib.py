@@ -353,6 +353,12 @@ class QuotingTests(unittest.TestCase):
         self.assertEqual(expect, result,
                          "using quote_plus(): %s != %s" % (expect, result))
 
+    def test_quoting_plus(self):
+        self.assertEqual(urllib.quote_plus('alpha+beta gamma'),
+                         'alpha%2Bbeta+gamma')
+        self.assertEqual(urllib.quote_plus('alpha+beta gamma', '+'),
+                         'alpha+beta+gamma')
+
 class UnquotingTests(unittest.TestCase):
     """Tests for unquote() and unquote_plus()
 

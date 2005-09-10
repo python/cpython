@@ -1110,9 +1110,12 @@ def quote(s, safe = '/'):
 def quote_plus(s, safe = ''):
     """Quote the query fragment of a URL; replacing ' ' with '+'"""
     if ' ' in s:
-        s = s.replace(' ', '+')
-        safe += '+'
-    return quote(s, safe)
+        l = s.split(' ')
+        for i in range(len(l)):
+            l[i] = quote(l[i], safe)
+        return '+'.join(l)
+    else:
+        return quote(s, safe)
 
 def urlencode(query,doseq=0):
     """Encode a sequence of two-element tuples or dictionary into a URL query string.
