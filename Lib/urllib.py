@@ -1049,23 +1049,18 @@ def splitgophertype(selector):
         return selector[1], selector[2:]
     return None, selector
 
+_hextochr = dict(('%02x' % i, chr(i)) for i in range(256))
+_hextochr.update(('%02X' % i, chr(i)) for i in range(256))
+
 def unquote(s):
     """unquote('abc%20def') -> 'abc def'."""
-    mychr = chr
-    myatoi = int
-    list = s.split('%')
-    res = [list[0]]
-    myappend = res.append
-    del list[0]
-    for item in list:
-        if item[1:2]:
-            try:
-                myappend(mychr(myatoi(item[:2], 16))
-                     + item[2:])
-            except ValueError:
-                myappend('%' + item)
-        else:
-            myappend('%' + item)
+    res = s.split('%')
+    for i in xrange(1, len(res)):
+        item = res[i]
+        try:
+            res[i] = _hextochr[item[:2]] + item[2:]
+        except KeyError:
+            res[i] = '%' + item
     return "".join(res)
 
 def unquote_plus(s):
