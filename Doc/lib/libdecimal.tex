@@ -32,7 +32,7 @@ differences prevent reliable equality testing and differences can accumulate.
 For this reason, decimal would be preferred in accounting applications which
 have strict equality invariants.
 
-\item The decimal module incorporates notion of significant places so that
+\item The decimal module incorporates a notion of significant places so that
 \samp{1.30 + 1.20} is \constant{2.50}.  The trailing zero is kept to indicate
 significance.  This is the customary presentation for monetary applications. For
 multiplication, the ``schoolbook'' approach uses all the figures in the
@@ -1141,7 +1141,7 @@ Decimal("4.68")
 \end{verbatim}
 
 
-Q.  In a fixed-point application to two decimal places, some inputs
+Q.  In a fixed-point application with two decimal places, some inputs
 have many places and need to be rounded.  Others are not supposed to have
 excess digits and need to be validated.  What methods should be used?
 
@@ -1187,6 +1187,15 @@ representive:
 >>> [v.normalize() for v in values]
 [Decimal("2E+2"), Decimal("2E+2"), Decimal("2E+2"), Decimal("2E+2")]
 \end{verbatim}
+
+
+Q.  Some decimal values always print with exponential notation.  Is there
+a way to get a non-exponential representation?
+
+A.  For some values, exponential notation is the only way to express
+the number of significant places in the coefficient.  For example,
+expressing \constant{5.0E+3} as \constant{5000} keeps the value
+constant but cannot show the original's two-place significance.
 
 
 Q.  Is there a way to convert a regular float to a \class{Decimal}?
