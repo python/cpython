@@ -2012,8 +2012,7 @@ class TarFileCompat:
             raise ValueError, "unknown compression constant"
         if mode[0:1] == "r":
             members = self.tarfile.getmembers()
-            for i in xrange(len(members)):
-                m = members[i]
+            for m in members:
                 m.filename = m.name
                 m.file_size = m.size
                 m.date_time = time.gmtime(m.mtime)[:6]
