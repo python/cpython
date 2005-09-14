@@ -669,5 +669,6 @@ PyOS_AfterFork(void)
 	PyEval_ReInitThreads();
 	main_thread = PyThread_get_thread_ident();
 	main_pid = getpid();
+	_PyImport_ReInitLock();
 #endif
 }

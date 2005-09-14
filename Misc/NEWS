@@ -12,6 +12,10 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Changes donated by Elemental Security to make it work on AIX 5.3
+  with IBM's 64-bit compiler (SF patch #1284289).  This also closes SF
+  bug #105470: test_pwd fails on 64bit system (Opteron).
+
 - Changes donated by Elemental Security to make it work on HP-UX 11 on
   Itanium2 with HP's 64-bit compiler (SF patch #1225212).
 

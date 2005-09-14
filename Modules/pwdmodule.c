@@ -102,9 +102,9 @@ See pwd.__doc__ for more on password database entries.");
 static PyObject *
 pwd_getpwuid(PyObject *self, PyObject *args)
 {
-	int uid;
+	unsigned int uid;
 	struct passwd *p;
-	if (!PyArg_ParseTuple(args, "i:getpwuid", &uid))
+	if (!PyArg_ParseTuple(args, "I:getpwuid", &uid))
 		return NULL;
 	if ((p = getpwuid(uid)) == NULL) {
 		PyErr_Format(PyExc_KeyError,

@@ -24,6 +24,7 @@ PyAPI_FUNC(int) PyImport_ImportFrozenModule(char *);
 PyAPI_FUNC(struct filedescr *) _PyImport_FindModule(
 	const char *, PyObject *, char *, size_t, FILE **, PyObject **);
 PyAPI_FUNC(int) _PyImport_IsScript(struct filedescr *);
+PyAPI_FUNC(void) _PyImport_ReInitLock(void);
 
 PyAPI_FUNC(PyObject *)_PyImport_FindExtension(char *, char *);
 PyAPI_FUNC(PyObject *)_PyImport_FixupExtension(char *, char *);
