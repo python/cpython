@@ -1070,6 +1070,34 @@ _expectations = {
         test_winreg
         test_winsound
         """,
+    'aix5':
+        """
+        test_aepack
+        test_al
+        test_applesingle
+        test_bsddb
+        test_bsddb185
+        test_bsddb3
+        test_bz2
+        test_cd
+        test_cl
+        test_dl
+        test_gdbm
+        test_gl
+        test_gzip
+        test_imgfile
+        test_linuxaudiodev
+        test_macfs
+        test_macostools
+        test_nis
+        test_ossaudiodev
+        test_sunaudiodev
+        test_tcl
+        test_winreg
+        test_winsound
+        test_zipimport
+        test_zlib
+        """,
 }
 _expectations['freebsd5'] = _expectations['freebsd4']
 _expectations['freebsd6'] = _expectations['freebsd4']

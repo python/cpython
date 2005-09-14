@@ -70,6 +70,12 @@ echo "*" >> $expFileName
 #    left with just the symbol name.
 # 7. Eliminate all entries containing two colons, like Class::method
 #
-/usr/ccs/bin/nm -Bex $inputFiles				\
+
+# Use -X32_64 if it appears to be implemented in this version of 'nm'.
+NM=/usr/ccs/bin/nm
+xopt=-X32_64
+$NM -e $xopt $1 >/dev/null 2>&1 || xopt=""
+
+$NM -Bex $xopt $inputFiles					\
 | sed -e '/ [^BDT] /d' -e '/\./d' -e 's/.* [BDT] //' -e '/::/d'	\
 | sort | uniq >> $expFileName

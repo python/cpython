@@ -85,9 +85,9 @@ mkgrent(struct group *p)
 static PyObject *
 grp_getgrgid(PyObject *self, PyObject *args)
 {
-    int gid;
+    unsigned int gid;
     struct group *p;
-    if (!PyArg_ParseTuple(args, "i:getgrgid", &gid))
+    if (!PyArg_ParseTuple(args, "I:getgrgid", &gid))
         return NULL;
     if ((p = getgrgid(gid)) == NULL) {
 	PyErr_Format(PyExc_KeyError, "getgrgid(): gid not found: %d", gid);

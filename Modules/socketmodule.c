@@ -1344,7 +1344,7 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 static PyObject *
 sock_accept(PySocketSockObject *s)
 {
-	char addrbuf[256];
+	sock_addr_t addrbuf;
 	SOCKET_T newfd;
 	socklen_t addrlen;
 	PyObject *sock = NULL;
@@ -1354,7 +1354,7 @@ sock_accept(PySocketSockObject *s)
 
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
-	memset(addrbuf, 0, addrlen);
+	memset(&addrbuf, 0, addrlen);
 
 #ifdef MS_WINDOWS
 	newfd = INVALID_SOCKET;
@@ -1365,7 +1365,7 @@ sock_accept(PySocketSockObject *s)
 	Py_BEGIN_ALLOW_THREADS
 	timeout = internal_select(s, 0);
 	if (!timeout)
-		newfd = accept(s->sock_fd, (struct sockaddr *) addrbuf,
+		newfd = accept(s->sock_fd, (struct sockaddr *) &addrbuf,
 			       &addrlen);
 	Py_END_ALLOW_THREADS
 
@@ -1392,7 +1392,7 @@ sock_accept(PySocketSockObject *s)
 		SOCKETCLOSE(newfd);
 		goto finally;
 	}
-	addr = makesockaddr(s->sock_fd, (struct sockaddr *)addrbuf,
+	addr = makesockaddr(s->sock_fd, (struct sockaddr *) &addrbuf,
 			    addrlen, s->sock_proto);
 	if (addr == NULL)
 		goto finally;
@@ -1865,19 +1865,19 @@ Return a new socket object connected to the same system resource.");
 static PyObject *
 sock_getsockname(PySocketSockObject *s)
 {
-	char addrbuf[256];
+	sock_addr_t addrbuf;
 	int res;
 	socklen_t addrlen;
 
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
-	memset(addrbuf, 0, addrlen);
+	memset(&addrbuf, 0, addrlen);
 	Py_BEGIN_ALLOW_THREADS
-	res = getsockname(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
+	res = getsockname(s->sock_fd, (struct sockaddr *) &addrbuf, &addrlen);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return s->errorhandler();
-	return makesockaddr(s->sock_fd, (struct sockaddr *) addrbuf, addrlen,
+	return makesockaddr(s->sock_fd, (struct sockaddr *) &addrbuf, addrlen,
 			    s->sock_proto);
 }
 
@@ -1894,19 +1894,19 @@ info is a pair (hostaddr, port).");
 static PyObject *
 sock_getpeername(PySocketSockObject *s)
 {
-	char addrbuf[256];
+	sock_addr_t addrbuf;
 	int res;
 	socklen_t addrlen;
 
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
-	memset(addrbuf, 0, addrlen);
+	memset(&addrbuf, 0, addrlen);
 	Py_BEGIN_ALLOW_THREADS
-	res = getpeername(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
+	res = getpeername(s->sock_fd, (struct sockaddr *) &addrbuf, &addrlen);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return s->errorhandler();
-	return makesockaddr(s->sock_fd, (struct sockaddr *) addrbuf, addrlen,
+	return makesockaddr(s->sock_fd, (struct sockaddr *) &addrbuf, addrlen,
 			    s->sock_proto);
 }
 
@@ -2115,7 +2115,7 @@ the remote end is closed and all data is read, return the empty string.");
 static PyObject *
 sock_recvfrom(PySocketSockObject *s, PyObject *args)
 {
-	char addrbuf[256];
+	sock_addr_t addrbuf;
 	PyObject *buf = NULL;
 	PyObject *addr = NULL;
 	PyObject *ret = NULL;
@@ -2132,18 +2132,18 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
-	memset(addrbuf, 0, addrlen);
+	memset(&addrbuf, 0, addrlen);
 	timeout = internal_select(s, 0);
 	if (!timeout)
 		n = recvfrom(s->sock_fd, PyString_AS_STRING(buf), len, flags,
 #ifndef MS_WINDOWS
 #if defined(PYOS_OS2) && !defined(PYCC_GCC)
-			     (struct sockaddr *)addrbuf, &addrlen
+			     (struct sockaddr *) &addrbuf, &addrlen
 #else
-			     (void *)addrbuf, &addrlen
+			     (void *) &addrbuf, &addrlen
 #endif
 #else
-			     (struct sockaddr *)addrbuf, &addrlen
+			     (struct sockaddr *) &addrbuf, &addrlen
 #endif
 			);
 	Py_END_ALLOW_THREADS
@@ -2161,7 +2161,7 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
 	if (n != len && _PyString_Resize(&buf, n) < 0)
 		return NULL;
 
-	if (!(addr = makesockaddr(s->sock_fd, (struct sockaddr *)addrbuf,
+	if (!(addr = makesockaddr(s->sock_fd, (struct sockaddr *) &addrbuf,
 				  addrlen, s->sock_proto)))
 		goto finally;
 
@@ -2589,11 +2589,7 @@ static PyObject *
 socket_gethostbyname(PyObject *self, PyObject *args)
 {
 	char *name;
-#ifdef ENABLE_IPV6
-	struct sockaddr_storage addrbuf;
-#else
-        struct sockaddr_in addrbuf;
-#endif
+	sock_addr_t addrbuf;
 
 	if (!PyArg_ParseTuple(args, "s:gethostbyname", &name))
 		return NULL;

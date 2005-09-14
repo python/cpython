@@ -260,6 +260,18 @@ unlock_import(void)
 	return 1;
 }
 
+/* This function is called from PyOS_AfterFork to ensure that newly
+   created child processes do not share locks with the parent. */
+
+void
+_PyImport_ReInitLock(void)
+{
+#ifdef _AIX
+	if (import_lock != NULL)
+		import_lock = PyThread_allocate_lock();
+#endif
+}
+
 #else
 
 #define lock_import()
