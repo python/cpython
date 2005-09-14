@@ -12,6 +12,9 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- SF bug #893549: parsing keyword arguments was broken with a few format
+  codes.
+
 - Changes donated by Elemental Security to make it work on AIX 5.3
   with IBM's 64-bit compiler (SF patch #1284289).  This also closes SF
   bug #105470: test_pwd fails on 64bit system (Opteron).
