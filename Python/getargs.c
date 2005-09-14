@@ -453,7 +453,9 @@ float_argument_error(PyObject *arg)
    or a string with a message describing the failure.  The message is
    formatted as "must be <desired type>, not <actual type>".
    When failing, an exception may or may not have been raised.
-   Don't call if a tuple is expected. 
+   Don't call if a tuple is expected.
+
+   When you add new format codes, please don't forget poor skipitem() below.
 */
 
 static char *
@@ -1405,73 +1407,52 @@ skipitem(char **p_format, va_list *p_va)
 	char c = *format++;
 	
 	switch (c) {
-	
+
+	/* simple codes
+	 * The individual types (second arg of va_arg) are irrelevant */
+
 	case 'b': /* byte -- very short int */
 	case 'B': /* byte as bitfield */
-		{
-			(void) va_arg(*p_va, char *);
-			break;
-		}
-	
 	case 'h': /* short int */
-		{
-			(void) va_arg(*p_va, short *);
-			break;
-		}
-	
 	case 'H': /* short int as bitfield */
-		{
-			(void) va_arg(*p_va, unsigned short *);
-			break;
-		}
-	
 	case 'i': /* int */
-		{
-			(void) va_arg(*p_va, int *);
-			break;
-		}
-	
+	case 'I': /* int sized bitfield */
 	case 'l': /* long int */
-		{
-			(void) va_arg(*p_va, long *);
-			break;
-		}
-	
+	case 'k': /* long int sized bitfield */
 #ifdef HAVE_LONG_LONG
-	case 'L': /* PY_LONG_LONG int */
-		{
-			(void) va_arg(*p_va, PY_LONG_LONG *);
-			break;
-		}
+	case 'L': /* PY_LONG_LONG */
+	case 'K': /* PY_LONG_LONG sized bitfield */
 #endif
-	
 	case 'f': /* float */
-		{
-			(void) va_arg(*p_va, float *);
-			break;
-		}
-	
 	case 'd': /* double */
-		{
-			(void) va_arg(*p_va, double *);
-			break;
-		}
-	
 #ifndef WITHOUT_COMPLEX
 	case 'D': /* complex double */
-		{
-			(void) va_arg(*p_va, Py_complex *);
-			break;
-		}
-#endif /* WITHOUT_COMPLEX */
-	
+#endif
 	case 'c': /* char */
 		{
-			(void) va_arg(*p_va, char *);
+			(void) va_arg(*p_va, void *);
 			break;
+		}
+	
+	/* string codes */
+		
+	case 'e': /* string with encoding */
+		{
+			(void) va_arg(*p_va, const char *);
+			if (!(*format == 's' || *format == 't'))
+				/* after 'e', only 's' and 't' is allowed */
+				goto err;
+			format++;
+			/* explicit fallthrough to string cases */
 		}
 	
 	case 's': /* string */
+	case 'z': /* string or None */
+#ifdef Py_USING_UNICODE
+	case 'u': /* unicode string */
+#endif
+	case 't': /* buffer, read-only */
+	case 'w': /* buffer, read-write */
 		{
 			(void) va_arg(*p_va, char **);
 			if (*format == '#') {
@@ -1480,18 +1461,13 @@ skipitem(char **p_format, va_list *p_va)
 			}
 			break;
 		}
-	
-	case 'z': /* string */
-		{
-			(void) va_arg(*p_va, char **);
-			if (*format == '#') {
-				(void) va_arg(*p_va, int *);
-				format++;
-			}
-			break;
-		}
-	
+
+	/* object codes */
+
 	case 'S': /* string object */
+#ifdef Py_USING_UNICODE
+	case 'U': /* unicode string object */
+#endif
 		{
 			(void) va_arg(*p_va, PyObject **);
 			break;
@@ -1527,9 +1503,13 @@ skipitem(char **p_format, va_list *p_va)
 		}
 	
 	default:
+err:
 		return "impossible<bad format char>";
 	
 	}
+
+	/* The "(...)" format code for tuples is not handled here because
+	 * it is not allowed with keyword args. */
 	
 	*p_format = format;
 	return NULL;
