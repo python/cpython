@@ -485,6 +485,9 @@ def _parse(source, state):
             elif this == "+":
                 min, max = 1, MAXREPEAT
             elif this == "{":
+                if source.next == "}":
+                    subpatternappend((LITERAL, ord(this)))
+                    continue
                 here = source.tell()
                 min, max = 0, MAXREPEAT
                 lo = hi = ""
