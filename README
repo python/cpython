@@ -374,11 +374,29 @@ HP-UX:  When using threading, you may have to add -D_REENTRANT to the
 	using HP/UX 11 and later - threading seems to work "out of the 
 	box".
 
-HP-UX ia64: When building on the ia64 (Itanium) platform using HP's 
-	compiler, some experience has shown that the compiler's 
-	optimiser produces a completely broken version of python 
-	(see http://www.python.org/sf/814976). To work around this, 
-	edit the Makefile and remove -O from the OPT line.
+HP-UX ia64: When building on the ia64 (Itanium) platform using HP's
+	compiler, some experience has shown that the compiler's
+	optimiser produces a completely broken version of python
+	(see http://www.python.org/sf/814976). To work around this,
+	edit the Makefile and remove -O from the OPT line.  (This is
+	old information; with the latest compiler this problem does
+	not occur.)
+
+	To build a 64-bit executable on an Itanium 2 system using HP's
+	compiler, use these environment variables:
+
+		CC=cc
+		CXX=aCC
+		BASECFLAGS="+DD64"
+		LDFLAGS="+DD64 -lxnet"
+
+	and call configure as:
+
+		./configure --without-gcc
+
+	then *unset* the environment variables again before running
+	make.  (At least one of these flags causes the build to fail
+	if it remains set.)
 
 HP PA-RISC 2.0: A recent bug report (http://www.python.org/sf/546117)
 	suggests that the C compiler in this 64-bit system has bugs

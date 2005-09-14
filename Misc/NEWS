@@ -12,6 +12,9 @@ What's New in Python 2.4.2a
 Core and builtins
 -----------------
 
+- Changes donated by Elemental Security to make it work on HP-UX 11 on
+  Itanium2 with HP's 64-bit compiler (SF patch #1225212).
+
 - Disallow keyword arguments for type constructors that don't use them
   (fixes bug #1119418).
 
