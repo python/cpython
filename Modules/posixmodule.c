@@ -7182,7 +7182,8 @@ win32_startfile(PyObject *self, PyObject *args)
 {
 	char *filepath;
 	HINSTANCE rc;
-	if (!PyArg_ParseTuple(args, "s:startfile", &filepath))
+	if (!PyArg_ParseTuple(args, "et:startfile", 
+				Py_FileSystemDefaultEncoding, &filepath))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	rc = ShellExecute((HWND)0, NULL, filepath, NULL, NULL, SW_SHOWNORMAL);
