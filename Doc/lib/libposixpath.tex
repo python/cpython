@@ -234,6 +234,15 @@ and \var{ext} is empty or begins with a period and contains
 at most one period.
 \end{funcdesc}
 
+\begin{funcdesc}{splitunc}{path}
+Split the pathname \var{path} into a pair \code{(\var{unc}, \var{rest})}
+so that \var{unc} is the UNC mount point (such as \code{r'\e\e host\e mount'}),
+if present, and \var{rest} the rest of the path (such as 
+\code{r'\e path\e file.ext'}).  For paths containing drive letters, \var{unc}
+will always be the empty string.
+Availability:  Windows.
+\end{funcdesc}
+
 \begin{funcdesc}{walk}{path, visit, arg}
 Calls the function \var{visit} with arguments
 \code{(\var{arg}, \var{dirname}, \var{names})} for each directory in the

@@ -512,6 +512,8 @@ Tests
 Documentation
 -------------
 
+- Bug #1274828: Document os.path.splitunc().
+
 - Bug #1190204: Clarify which directories are searched by site.py.
 
 - Bug #1193849: Clarify os.path.expanduser() documentation.
