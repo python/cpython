@@ -65,6 +65,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1007046: os.startfile() did not accept unicode strings encoded in
+  the file system encoding.
+
 - Patch #756021: Special-case socket.inet_aton('255.255.255.255') for
   platforms that don't have inet_aton().
 
