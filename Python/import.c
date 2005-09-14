@@ -2288,13 +2288,14 @@ PyImport_ReloadModule(PyObject *m)
 		if (parentname == NULL)
 			return NULL;
 		parent = PyDict_GetItem(modules, parentname);
-		Py_DECREF(parentname);
 		if (parent == NULL) {
 			PyErr_Format(PyExc_ImportError,
 			    "reload(): parent %.200s not in sys.modules",
-			    name);
+			    PyString_AS_STRING(parentname));
+			Py_DECREF(parentname);
 			return NULL;
 		}
+		Py_DECREF(parentname);
 		subname++;
 		path = PyObject_GetAttrString(parent, "__path__");
 		if (path == NULL)
