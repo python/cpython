@@ -258,8 +258,10 @@ class Application(Frame):
         self.pack()
         self.createWidgets()
 
-app = Application()
+root = Tk()
+app = Application(master=root)
 app.mainloop()
+root.destroy()
 \end{verbatim}
 
 
