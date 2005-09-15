@@ -479,6 +479,13 @@ builtin_eval(PyObject *self, PyObject *args)
 	else if (locals == Py_None)
 		locals = globals;
 
+	if (globals == NULL || locals == NULL) {
+		PyErr_SetString(PyExc_TypeError, 
+			"eval must be given globals and locals "
+			"when called without a frame");
+		return NULL;
+	}
+
 	if (PyDict_GetItemString(globals, "__builtins__") == NULL) {
 		if (PyDict_SetItemString(globals, "__builtins__",
 					 PyEval_GetBuiltins()) != 0)
