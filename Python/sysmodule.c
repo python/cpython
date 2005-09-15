@@ -1188,7 +1188,7 @@ PySys_SetArgv(int argc, char **argv)
 		char link[MAXPATHLEN+1];
 		char argv0copy[2*MAXPATHLEN+1];
 		int nr = 0;
-		if (argc > 0 && argv0 != NULL)
+		if (argc > 0 && argv0 != NULL && strcmp(argv0, "-c") != 0)
 			nr = readlink(argv0, link, MAXPATHLEN);
 		if (nr > 0) {
 			/* It's a symlink */
@@ -1213,7 +1213,7 @@ PySys_SetArgv(int argc, char **argv)
 		}
 #endif /* HAVE_READLINK */
 #if SEP == '\\' /* Special case for MS filename syntax */
-		if (argc > 0 && argv0 != NULL) {
+		if (argc > 0 && argv0 != NULL && strcmp(argv0, "-c") != 0) {
 			char *q;
 #ifdef MS_WINDOWS
 			char *ptemp;
@@ -1236,7 +1236,7 @@ PySys_SetArgv(int argc, char **argv)
 			}
 		}
 #else /* All other filename syntaxes */
-		if (argc > 0 && argv0 != NULL) {
+		if (argc > 0 && argv0 != NULL && strcmp(argv0, "-c") != 0) {
 #if defined(HAVE_REALPATH)
 			if (realpath(argv0, fullpath)) {
 				argv0 = fullpath;
