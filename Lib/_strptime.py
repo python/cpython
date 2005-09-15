@@ -272,13 +272,14 @@ _regex_cache = {}
 
 def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a time struct based on the input string and the format string."""
-    global _TimeRE_cache
+    global _TimeRE_cache, _regex_cache
     _cache_lock.acquire()
     try:
         time_re = _TimeRE_cache
         locale_time = time_re.locale_time
         if _getlang() != locale_time.lang:
             _TimeRE_cache = TimeRE()
+            _regex_cache = {}
         if len(_regex_cache) > _CACHE_MAX_SIZE:
             _regex_cache.clear()
         format_regex = _regex_cache.get(format)

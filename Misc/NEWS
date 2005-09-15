@@ -92,6 +92,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1290505: time.strptime() was not invalidating its regex cache when the
+  locale changed.
+
 - Fix a misuse of str.find() in detection of use of %U or %W in datetime
   format.
 
