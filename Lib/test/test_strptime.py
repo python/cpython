@@ -462,10 +462,12 @@ class CacheTests(unittest.TestCase):
         # Make sure cache is recreated when current locale does not match what
         # cached object was created with.
         _strptime.strptime("10", "%d")
+        _strptime.strptime("2005", "%Y")
         _strptime._TimeRE_cache.locale_time.lang = "Ni"
         original_time_re = id(_strptime._TimeRE_cache)
         _strptime.strptime("10", "%d")
         self.failIfEqual(original_time_re, id(_strptime._TimeRE_cache))
+        self.failUnlessEqual(len(_strptime._regex_cache), 1)
 
     def test_regex_cleanup(self):
         # Make sure cached regexes are discarded when cache becomes "full".
