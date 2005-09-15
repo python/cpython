@@ -515,7 +515,7 @@ class Decimal(object):
         if isinstance(value, (list,tuple)):
             if len(value) != 3:
                 raise ValueError, 'Invalid arguments'
-            if value[0] not in [0,1]:
+            if value[0] not in (0,1):
                 raise ValueError, 'Invalid sign'
             for digit in value[1]:
                 if not isinstance(digit, (int,long)) or digit < 0:
@@ -760,18 +760,19 @@ class Decimal(object):
         Captures all of the information in the underlying representation.
         """
 
-        if self._isnan():
-            minus = '-'*self._sign
-            if self._int == (0,):
-                info = ''
-            else:
-                info = ''.join(map(str, self._int))
-            if self._isnan() == 2:
-                return minus + 'sNaN' + info
-            return minus + 'NaN' + info
-        if self._isinfinity():
-            minus = '-'*self._sign
-            return minus + 'Infinity'
+        if self._is_special:
+            if self._isnan():
+                minus = '-'*self._sign
+                if self._int == (0,):
+                    info = ''
+                else:
+                    info = ''.join(map(str, self._int))
+                if self._isnan() == 2:
+                    return minus + 'sNaN' + info
+                return minus + 'NaN' + info
+            if self._isinfinity():
+                minus = '-'*self._sign
+                return minus + 'Infinity'
 
         if context is None:
             context = getcontext()
@@ -1446,7 +1447,7 @@ class Decimal(object):
         return float(str(self))
 
     def __int__(self):
-        """Converts self to a int, truncating if necessary."""
+        """Converts self to an int, truncating if necessary."""
         if self._is_special:
             if self._isnan():
                 context = getcontext()
