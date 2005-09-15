@@ -127,7 +127,7 @@ class Netscape:
 
     def open(self, url, new=0, autoraise=1):
         if new:
-            self._remote("openURL(%s, new-window)"%url, autoraise)
+            self._remote("openURL(%s,new-window)"%url, autoraise)
         else:
             self._remote("openURL(%s)" % url, autoraise)
 
@@ -355,7 +355,7 @@ if sys.platform[:3] == "os2" and _iscommand("netscape.exe"):
 if "BROWSER" in os.environ:
     # It's the user's responsibility to register handlers for any unknown
     # browser referenced by this value, before calling open().
-    _tryorder = os.environ["BROWSER"].split(os.pathsep)
+    _tryorder[0:0] = os.environ["BROWSER"].split(os.pathsep)
 
 for cmd in _tryorder:
     if not cmd.lower() in _browsers:
