@@ -52,7 +52,9 @@ __date__    = "27 March 2005"
 # _srcfile is used when walking the stack to check when we've got the first
 # caller stack frame.
 #
-if string.lower(__file__[-4:]) in ['.pyc', '.pyo']:
+if hasattr(sys, 'frozen'): #support for py2exe
+    _srcfile = "logging%s__init__%s" % (os.sep, __file__[-4:])
+elif string.lower(__file__[-4:]) in ['.pyc', '.pyo']:
     _srcfile = __file__[:-4] + '.py'
 else:
     _srcfile = __file__
@@ -542,6 +544,7 @@ class Filterer:
 #---------------------------------------------------------------------------
 
 _handlers = {}  #repository of handlers (for flushing when shutdown called)
+_handlerList = [] # added to allow handlers to be removed in reverse of order initialized
 
 class Handler(Filterer):
     """
@@ -564,6 +567,7 @@ class Handler(Filterer):
         _acquireLock()
         try:    #unlikely to raise an exception, but you never know...
             _handlers[self] = 1
+            _handlerList.insert(0, self)
         finally:
             _releaseLock()
         self.createLock()
@@ -666,6 +670,7 @@ class Handler(Filterer):
         _acquireLock()
         try:    #unlikely to raise an exception, but you never know...
             del _handlers[self]
+            _handlerList.remove(self)
         finally:
             _releaseLock()
 
@@ -1085,7 +1090,11 @@ class Logger(Filterer):
         """
         if hdlr in self.handlers:
             #hdlr.close()
-            self.handlers.remove(hdlr)
+            hdlr.acquire()
+            try:
+                self.handlers.remove(hdlr)
+            finally:
+                hdlr.release()
 
     def callHandlers(self, record):
         """
@@ -1305,7 +1314,7 @@ def shutdown():
 
     Should be called at application exit.
     """
-    for h in _handlers.keys():
+    for h in _handlerList[:]: # was _handlers.keys():
         #errors might occur, for example, if files are locked
         #we just ignore them
         try:
