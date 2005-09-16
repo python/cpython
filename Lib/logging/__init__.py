@@ -1090,7 +1090,11 @@ class Logger(Filterer):
         """
         if hdlr in self.handlers:
             #hdlr.close()
-            self.handlers.remove(hdlr)
+            hdlr.acquire()
+            try:
+                self.handlers.remove(hdlr)
+            finally:
+                hdlr.release()
 
     def callHandlers(self, record):
         """
