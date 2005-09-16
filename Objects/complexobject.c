@@ -279,15 +279,12 @@ complex_to_buf(char *buf, int bufsz, PyComplexObject *v, int precision)
 		strncat(buf, "j", bufsz);
 	} else {
 		char re[64], im[64];
-		char *fmt;
+		/* Format imaginary part with sign, real part without */
 		PyOS_snprintf(format, 32, "%%.%ig", precision);
 		PyOS_ascii_formatd(re, 64, format, v->cval.real);
+		PyOS_snprintf(format, 32, "%%+.%ig", precision);
 		PyOS_ascii_formatd(im, 64, format, v->cval.imag);
-		if (v->cval.imag < 0.)
-			fmt = "(%s%sj)";
-		else
-			fmt = "(%s+%sj)";
-		PyOS_snprintf(buf, bufsz, fmt, re, im);
+		PyOS_snprintf(buf, bufsz, "(%s%sj)", re, im);
 	}
 }
 
