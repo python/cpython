@@ -15,6 +15,12 @@ def check_pass_thru():
     raise PassThru
     yield 1
 
+class BadCmp:
+    def __hash__(self):
+        return 1
+    def __cmp__(self, other):
+        raise RuntimeError
+
 class TestJointOps(unittest.TestCase):
     # Tests common to both set and frozenset
 
@@ -226,6 +232,17 @@ class TestJointOps(unittest.TestCase):
         f.remove(s)
         f.add(s)
         f.discard(s)
+
+    def test_badcmp(self):
+        s = self.thetype([BadCmp()])
+        # Detect comparison errors during insertion and lookup
+        self.assertRaises(RuntimeError, self.thetype, [BadCmp(), BadCmp()])
+        self.assertRaises(RuntimeError, s.__contains__, BadCmp())
+        # Detect errors during mutating operations
+        if hasattr(s, 'add'):
+            self.assertRaises(RuntimeError, s.add, BadCmp())
+            self.assertRaises(RuntimeError, s.discard, BadCmp())
+            self.assertRaises(RuntimeError, s.remove, BadCmp())
 
 class TestSet(TestJointOps):
     thetype = set
