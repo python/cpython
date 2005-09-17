@@ -288,6 +288,8 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(repr(1+6j), '(1+6j)')
         self.assertEqual(repr(1-6j), '(1-6j)')
 
+        self.assertNotEqual(repr(-(1+0j)), '(-1+-0j)')
+
     def test_neg(self):
         self.assertEqual(-(1+6j), -1-6j)
 
