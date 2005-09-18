@@ -165,6 +165,10 @@ Library
   from the input stream, so that the output is a byte string in the correct
   encoding instead of a unicode string.
 
+- Bug #1202493: Fixing SRE parser to handle '{}' as perl does, rather than
+  considering it exactly like a '*'.
+
+
 Build
 -----
 

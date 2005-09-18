@@ -297,6 +297,9 @@ class ReTests(unittest.TestCase):
         self.assertNotEqual(re.match("^x{1,4}?$", "xxx"), None)
         self.assertNotEqual(re.match("^x{3,4}?$", "xxx"), None)
 
+        self.assertEqual(re.match("^x{}$", "xxx"), None)
+        self.assertNotEqual(re.match("^x{}$", "x{}"), None)
+
     def test_getattr(self):
         self.assertEqual(re.match("(a)", "a").pos, 0)
         self.assertEqual(re.match("(a)", "a").endpos, 1)
