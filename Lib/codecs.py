@@ -232,6 +232,7 @@ class StreamReader(Codec):
         # For str->str decoding this will stay a str
         # For str->unicode decoding the first read will promote it to unicode
         self.charbuffer = ""
+        self.linebuffer = None
 
     def decode(self, input, errors='strict'):
         raise NotImplementedError
@@ -264,6 +265,11 @@ class StreamReader(Codec):
             optional encoding endings or state markers are available
             on the stream, these should be read too.
         """
+        # If we have lines cached, first merge them back into characters
+        if self.linebuffer:
+            self.charbuffer = "".join(self.linebuffer)
+            self.linebuffer = None
+            
         # read until we get the required number of characters (if available)
         while True:
             # can the request can be satisfied from the character buffer?
@@ -316,6 +322,20 @@ class StreamReader(Codec):
             read() method.
 
         """
+        # If we have lines cached from an earlier read, return
+        # them unconditionally
+        if self.linebuffer:
+            line = self.linebuffer[0]
+            del self.linebuffer[0]
+            if len(self.linebuffer) == 1:
+                # revert to charbuffer mode; we might need more data
+                # next time
+                self.charbuffer = self.linebuffer[0]
+                self.linebuffer = None
+            if not keepends:
+                line = line.splitlines(False)[0]
+            return line
+            
         readsize = size or 72
         line = ""
         # If size is given, we call read() only once
@@ -331,6 +351,22 @@ class StreamReader(Codec):
             line += data
             lines = line.splitlines(True)
             if lines:
+                if len(lines) > 1:
+                    # More than one line result; the first line is a full line
+                    # to return
+                    line = lines[0]
+                    del lines[0]
+                    if len(lines) > 1:
+                        # cache the remaining lines
+                        lines[-1] += self.charbuffer
+                        self.linebuffer = lines
+                        self.charbuffer = None
+                    else:
+                        # only one remaining line, put it back into charbuffer
+                        self.charbuffer = lines[0] + self.charbuffer
+                    if not keepends:
+                        line = line.splitlines(False)[0]
+                    break
                 line0withend = lines[0]
                 line0withoutend = lines[0].splitlines(False)[0]
                 if line0withend != line0withoutend: # We really have a line end
@@ -376,6 +412,7 @@ class StreamReader(Codec):
         """
         self.bytebuffer = ""
         self.charbuffer = u""
+        self.linebuffer = None
 
     def seek(self, offset, whence=0):
         """ Set the input stream's current position.
