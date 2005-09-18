@@ -94,6 +94,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1268314: Cache lines in StreamReader.readlines for performance.
+
 - Bug #1290505: time.strptime() was not invalidating its regex cache when the
   locale changed.
 
