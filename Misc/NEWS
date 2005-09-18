@@ -65,6 +65,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1213831: Fix typo in unicodedata._getcode.
+
 - Bug #1007046: os.startfile() did not accept unicode strings encoded in
   the file system encoding.
 
