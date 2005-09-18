@@ -219,6 +219,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1268314: Cache lines in StreamReader.readlines for performance.
+
 - Bug #1290505: Fix clearing the regex cache for time.strptime().
 
 - Bug #1167128: Fix size of a symlink in a tarfile to be 0.
