@@ -65,6 +65,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Fix memory leak in posix.access().
+
 - Patch #1213831: Fix typo in unicodedata._getcode.
 
 - Bug #1007046: os.startfile() did not accept unicode strings encoded in
