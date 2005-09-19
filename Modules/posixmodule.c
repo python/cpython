@@ -1166,7 +1166,7 @@ posix_access(PyObject *self, PyObject *args)
 			   it is a simple dereference. */
 			res = _waccess(PyUnicode_AS_UNICODE(po), mode);
 			Py_END_ALLOW_THREADS
-			return(PyBool_FromLong(res == 0));
+			return PyBool_FromLong(res == 0);
 		}
 		/* Drop the argument parsing error as narrow strings
 		   are also valid. */
@@ -1180,7 +1180,7 @@ posix_access(PyObject *self, PyObject *args)
 	res = access(path, mode);
 	Py_END_ALLOW_THREADS
 	PyMem_Free(path);
-	return(PyBool_FromLong(res == 0));
+	return PyBool_FromLong(res == 0);
 }
 
 #ifndef F_OK
@@ -1222,8 +1222,8 @@ posix_ttyname(PyObject *self, PyObject *args)
 	ret = ttyname(id);
 #endif
 	if (ret == NULL)
-		return(posix_error());
-	return(PyString_FromString(ret));
+		return posix_error();
+	return PyString_FromString(ret);
 }
 #endif
 
@@ -1244,8 +1244,8 @@ posix_ctermid(PyObject *self, PyObject *noargs)
         ret = ctermid(buffer);
 #endif
 	if (ret == NULL)
-		return(posix_error());
-	return(PyString_FromString(buffer));
+		return posix_error();
+	return PyString_FromString(buffer);
 }
 #endif
 
