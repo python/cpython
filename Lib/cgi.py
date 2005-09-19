@@ -38,7 +38,8 @@ from operator import attrgetter
 import sys
 import os
 import urllib
-import email.Parser
+import mimetools
+import rfc822
 import UserDict
 try:
     from cStringIO import StringIO
@@ -106,8 +107,6 @@ log = initlog           # The current logging function
 
 # Parsing functions
 # =================
-
-_header_parser = email.Parser.HeaderParser()
 
 # Maximum input we will accept when REQUEST_METHOD is POST
 # 0 ==> unlimited input
@@ -271,7 +270,7 @@ def parse_multipart(fp, pdict):
         data = None
         if terminator:
             # At start of next part.  Read headers first.
-            headers = _header_parser.parse(fp)
+            headers = mimetools.Message(fp)
             clength = headers.getheader('content-length')
             if clength:
                 try:
@@ -408,9 +407,8 @@ class FieldStorage:
 
     disposition_options: dictionary of corresponding options
 
-    headers: a dictionary(-like) object (sometimes
-        email.Message.Message or a subclass thereof) containing *all*
-        headers
+    headers: a dictionary(-like) object (sometimes rfc822.Message or a
+        subclass thereof) containing *all* headers
 
     The class is subclassable, mostly for the purpose of overriding
     the make_file() method, which is called internally to come up with
@@ -652,7 +650,7 @@ class FieldStorage:
                      environ, keep_blank_values, strict_parsing)
         # Throw first part away
         while not part.done:
-            headers = _header_parser.parse(self.fp)
+            headers = rfc822.Message(self.fp)
             part = klass(self.fp, headers, ib,
                          environ, keep_blank_values, strict_parsing)
             self.list.append(part)
