@@ -1119,6 +1119,7 @@ posix_access(PyObject *self, PyObject *args)
 	Py_BEGIN_ALLOW_THREADS
 	res = access(path, mode);
 	Py_END_ALLOW_THREADS
+	PyMem_Free(path);
 	return(PyBool_FromLong(res == 0));
 }
 
@@ -2950,7 +2951,7 @@ To both, return fd of newly opened pseudo-terminal.\n");
 static PyObject *
 posix_forkpty(PyObject *self, PyObject *noargs)
 {
-	int master_fd, pid;
+	int master_fd = -1, pid;
 
 	pid = forkpty(&master_fd, NULL, NULL, NULL);
 	if (pid == -1)
