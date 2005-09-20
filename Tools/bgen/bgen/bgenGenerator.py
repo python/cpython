@@ -216,6 +216,12 @@ class FunctionGenerator(BaseFunctionGenerator):
     def precheck(self):
         pass
 
+    def beginallowthreads(self):
+        pass
+        
+    def endallowthreads(self):
+        pass
+        
     def callit(self):
         args = ""
         s = "%s%s(" % (self.getrvforcallit(), self.callname)
@@ -226,8 +232,10 @@ class FunctionGenerator(BaseFunctionGenerator):
             s = arg.passArgument()
             if args: s = sep + s
             args = args + s
+        self.beginallowthreads()
         Output("%s%s(%s);",
                self.getrvforcallit(), self.callname, args)
+        self.endallowthreads()
 
     def getrvforcallit(self):
         if self.rv:
