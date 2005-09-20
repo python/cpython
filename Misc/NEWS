@@ -12,6 +12,9 @@ What's New in Python 2.4.2c1
 Core and builtins
 -----------------
 
+- On 64-bit platforms, when __len__() returns a value that cannot be
+  represented as a C int, raise OverflowError.
+
 - SF bug #893549: parsing keyword arguments was broken with a few format
   codes.
 

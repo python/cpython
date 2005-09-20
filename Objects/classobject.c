@@ -1013,7 +1013,17 @@ instance_length(PyInstanceObject *inst)
 	if (res == NULL)
 		return -1;
 	if (PyInt_Check(res)) {
-		outcome = PyInt_AsLong(res);
+		long temp = PyInt_AsLong(res);
+		outcome = (int)temp;
+#if SIZEOF_INT < SIZEOF_LONG
+		/* Overflow check -- range of PyInt is more than C int */
+		if (outcome != temp) {
+			PyErr_SetString(PyExc_OverflowError,
+			 "__len__() should return 0 <= outcome < 2**31");
+			outcome = -1;
+		}
+		else
+#endif
 		if (outcome < 0)
 			PyErr_SetString(PyExc_ValueError,
 					"__len__() should return >= 0");
