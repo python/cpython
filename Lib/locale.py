@@ -306,7 +306,7 @@ def _build_localename(localetuple):
     else:
         return language + '.' + encoding
 
-def getdefaultlocale(envvars=('LANGUAGE', 'LC_ALL', 'LC_CTYPE', 'LANG')):
+def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
 
     """ Tries to determine the default locale settings and returns
         them as tuple (language code, encoding).
@@ -351,6 +351,8 @@ def getdefaultlocale(envvars=('LANGUAGE', 'LC_ALL', 'LC_CTYPE', 'LANG')):
     for variable in envvars:
         localename = lookup(variable,None)
         if localename:
+            if variable == 'LANGUAGE':
+                localename = localename.split(':')[0]
             break
     else:
         localename = 'C'
