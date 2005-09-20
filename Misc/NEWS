@@ -12,6 +12,9 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- On 64-bit platforms, when __len__() returns a value that cannot be
+  represented as a C int, raise OverflowError.
+
 - test__locale is skipped on OS X < 10.4 (only partial locale support is
 present).
 
