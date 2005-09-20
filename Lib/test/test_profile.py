@@ -10,7 +10,7 @@ from test.test_support import TESTFN, vereq
 # included in the profile and would appear to consume all the time.)
 ticks = 0
 
-def test_main():
+def test_1():
     global ticks
     ticks = 0
     prof = profile.Profile(timer)
@@ -95,6 +95,25 @@ def test_2():
     vereq (x, 1)
     os.unlink (TESTFN)
 
+def test_3():
+    result = []
+    def testfunc1():
+        try: len(None)
+        except: pass
+        try: len(None)
+        except: pass
+        result.append(True)
+    def testfunc2():
+        testfunc1()
+        testfunc1()
+    profile.runctx("testfunc2()", locals(), locals(), TESTFN)
+    vereq(result, [True, True])
+    os.unlink(TESTFN)
+
+def test_main():
+    test_1()
+    test_2()
+    test_3()
+
 if __name__ == "__main__":
     test_main()
-    test_2()
