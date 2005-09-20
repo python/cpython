@@ -102,7 +102,7 @@ static int prtrace(PyObject *, char *);
 static int call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
 		      int, PyObject *);
 static void call_trace_protected(Py_tracefunc, PyObject *,
-				 PyFrameObject *, int);
+				 PyFrameObject *, int, PyObject *);
 static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
 static int maybe_call_line_trace(Py_tracefunc, PyObject *,
 				  PyFrameObject *, int *, int *, int *);
@@ -2493,14 +2493,14 @@ fast_yield:
 			else if (why == WHY_EXCEPTION) {
 				call_trace_protected(tstate->c_tracefunc,
 						     tstate->c_traceobj, f,
-						     PyTrace_RETURN);
+						     PyTrace_RETURN, NULL);
 			}
 		}
 		if (tstate->c_profilefunc) {
 			if (why == WHY_EXCEPTION)
 				call_trace_protected(tstate->c_profilefunc,
 						     tstate->c_profileobj, f,
-						     PyTrace_RETURN);
+						     PyTrace_RETURN, NULL);
 			else if (call_trace(tstate->c_profilefunc,
 					    tstate->c_profileobj, f,
 					    PyTrace_RETURN, retval)) {
@@ -3108,12 +3108,12 @@ call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
 
 static void
 call_trace_protected(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
-		     int what)
+		     int what, PyObject *arg)
 {
 	PyObject *type, *value, *traceback;
 	int err;
 	PyErr_Fetch(&type, &value, &traceback);
-	err = call_trace(func, obj, frame, what, NULL);
+	err = call_trace(func, obj, frame, what, arg);
 	if (err == 0)
 		PyErr_Restore(type, value, traceback);
 	else {
@@ -3503,31 +3503,36 @@ err_args(PyObject *func, int flags, int nargs)
 			     nargs);
 }
 
-#define C_TRACE(call) \
+#define C_TRACE(x, call) \
 if (tstate->use_tracing && tstate->c_profilefunc) { \
 	if (call_trace(tstate->c_profilefunc, \
 		tstate->c_profileobj, \
 		tstate->frame, PyTrace_C_CALL, \
-		func)) \
-		{ return NULL; } \
-	call; \
-	if (tstate->c_profilefunc != NULL) { \
-		if (x == NULL) { \
-			if (call_trace (tstate->c_profilefunc, \
-				tstate->c_profileobj, \
-				tstate->frame, PyTrace_C_EXCEPTION, \
-				func)) \
-				{ return NULL; } \
-		} else { \
-			if (call_trace(tstate->c_profilefunc, \
-				tstate->c_profileobj, \
-				tstate->frame, PyTrace_C_RETURN, \
-				func)) \
-				{ return NULL; } \
+		func)) { \
+		x = NULL; \
+	} \
+	else { \
+		x = call; \
+		if (tstate->c_profilefunc != NULL) { \
+			if (x == NULL) { \
+				call_trace_protected(tstate->c_profilefunc, \
+					tstate->c_profileobj, \
+					tstate->frame, PyTrace_C_EXCEPTION, \
+					func); \
+				/* XXX should pass (type, value, tb) */ \
+			} else { \
+				if (call_trace(tstate->c_profilefunc, \
+					tstate->c_profileobj, \
+					tstate->frame, PyTrace_C_RETURN, \
+					func)) { \
+					Py_DECREF(x); \
+					x = NULL; \
+				} \
+			} \
 		} \
 	} \
 } else { \
-	call; \
+	x = call; \
 	}
 
 static PyObject *
@@ -3556,11 +3561,11 @@ call_function(PyObject ***pp_stack, int oparg
 			PyCFunction meth = PyCFunction_GET_FUNCTION(func);
 			PyObject *self = PyCFunction_GET_SELF(func);
 			if (flags & METH_NOARGS && na == 0) {
-				C_TRACE(x=(*meth)(self,NULL));
+				C_TRACE(x, (*meth)(self,NULL));
 			}
 			else if (flags & METH_O && na == 1) {
 				PyObject *arg = EXT_POP(*pp_stack);
-				C_TRACE(x=(*meth)(self,arg));
+				C_TRACE(x, (*meth)(self,arg));
 				Py_DECREF(arg);
 			}
 			else {
@@ -3572,7 +3577,7 @@ call_function(PyObject ***pp_stack, int oparg
 			PyObject *callargs;
 			callargs = load_args(pp_stack, na);
 			READ_TIMESTAMP(*pintr0);
-			C_TRACE(x=PyCFunction_Call(func,callargs,NULL));
+			C_TRACE(x, PyCFunction_Call(func,callargs,NULL));
 			READ_TIMESTAMP(*pintr1);
 			Py_XDECREF(callargs);
 		}
