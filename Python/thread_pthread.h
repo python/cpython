@@ -355,8 +355,8 @@ PyThread_allocate_lock(void)
 		PyThread_init_thread();
 
 	lock = (pthread_lock *) malloc(sizeof(pthread_lock));
-	memset((void *)lock, '\0', sizeof(pthread_lock));
 	if (lock) {
+		memset((void *)lock, '\0', sizeof(pthread_lock));
 		lock->locked = 0;
 
 		status = pthread_mutex_init(&lock->mut,
