@@ -96,6 +96,12 @@ Extension Modules
 Library
 -------
 
+- Patch #1166948: locale.py: Prefer LC_ALL, LC_CTYPE and LANG over LANGUAGE
+  to get the correct encoding.
+
+- Patch #1166938: locale.py: Parse LANGUAGE as a colon separated list of
+  languages.
+
 - Patch #1268314: Cache lines in StreamReader.readlines for performance.
 
 - Bug #1290505: time.strptime() was not invalidating its regex cache when the
