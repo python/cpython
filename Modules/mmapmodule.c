@@ -421,12 +421,12 @@ mmap_resize_method(mmap_object *self,
 		return NULL;
 #else
 	} else {
+		void *newmap;
+
 		if (ftruncate(self->fd, new_size) == -1) {
 			PyErr_SetFromErrno(mmap_module_error);
 			return NULL;
 		}
-		
-		void *newmap;
 
 #ifdef MREMAP_MAYMOVE
 		newmap = mremap(self->data, self->size, new_size, MREMAP_MAYMOVE);
