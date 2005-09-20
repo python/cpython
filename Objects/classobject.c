@@ -1019,7 +1019,7 @@ instance_length(PyInstanceObject *inst)
 		/* Overflow check -- range of PyInt is more than C int */
 		if (outcome != temp) {
 			PyErr_SetString(PyExc_OverflowError,
-			 "__len__() should return 0 <= outcome < 2**32");
+			 "__len__() should return 0 <= outcome < 2**31");
 			outcome = -1;
 		}
 		else
