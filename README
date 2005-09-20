@@ -367,6 +367,14 @@ AIX:	A complete overhaul of the shared library support is now in
 	like "cc_r".  For full C++ module support, set CC="xlC_r" (or
 	CC="xlC" without thread support).
 
+AIX 5.3: To build a 64-bit version with IBM's compiler, I used the
+        following:
+
+        export PATH=/usr/bin:/usr/vacpp/bin
+	./configure --with-gcc="xlc_r -q64" --with-cxx="xlC_r -q64" \
+                    --disable-ipv6 AR="ar -X64"
+	make
+
 HP-UX:  When using threading, you may have to add -D_REENTRANT to the
 	OPT variable in the top-level Makefile; reported by Pat Knight,
 	this seems to make a difference (at least for HP-UX 10.20)
@@ -378,9 +386,7 @@ HP-UX ia64: When building on the ia64 (Itanium) platform using HP's
 	compiler, some experience has shown that the compiler's
 	optimiser produces a completely broken version of python
 	(see http://www.python.org/sf/814976). To work around this,
-	edit the Makefile and remove -O from the OPT line.  (This is
-	old information; with the latest compiler this problem does
-	not occur.)
+	edit the Makefile and remove -O from the OPT line.
 
 	To build a 64-bit executable on an Itanium 2 system using HP's
 	compiler, use these environment variables:
@@ -396,7 +402,8 @@ HP-UX ia64: When building on the ia64 (Itanium) platform using HP's
 
 	then *unset* the environment variables again before running
 	make.  (At least one of these flags causes the build to fail
-	if it remains set.)
+	if it remains set.)  You still have to edit the Makefile and
+	remove -O from the OPT line.
 
 HP PA-RISC 2.0: A recent bug report (http://www.python.org/sf/546117)
 	suggests that the C compiler in this 64-bit system has bugs
