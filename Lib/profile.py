@@ -360,7 +360,7 @@ class Profile:
         "exception": trace_dispatch_exception,
         "return": trace_dispatch_return,
         "c_call": trace_dispatch_c_call,
-        "c_exception": trace_dispatch_exception,
+        "c_exception": trace_dispatch_return,  # the C function returned
         "c_return": trace_dispatch_return,
         }
 
