@@ -1908,11 +1908,9 @@ builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
 	static char *kwlist[] = {"iterable", "cmp", "key", "reverse", 0};
 	long reverse;
 
-	if (args != NULL) {
-		if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OOi:sorted",
-			kwlist, &seq, &compare, &keyfunc, &reverse))
-			return NULL;
-	}
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OOi:sorted",
+		kwlist, &seq, &compare, &keyfunc, &reverse))
+		return NULL;
 
 	newlist = PySequence_List(seq);
 	if (newlist == NULL)
