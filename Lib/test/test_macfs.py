@@ -48,9 +48,9 @@ class TestMacfs(unittest.TestCase):
         import time
         fss = macfs.FSSpec(test_support.TESTFN)
         now = int(time.time())
-        fss.SetDates(now, now-1, now-2)
+        fss.SetDates(now, now+1, now+2)
         dates = fss.GetDates()
-        self.assertEqual(dates, (now, now-1, now-2))
+        self.assertEqual(dates, (now, now+1, now+2))
 
     def test_ctor_type(self):
         fss = macfs.FSSpec(test_support.TESTFN)
