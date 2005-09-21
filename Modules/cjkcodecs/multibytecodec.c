@@ -1265,6 +1265,10 @@ static struct PyMethodDef __methods[] = {
 void
 init_multibytecodec(void)
 {
+	MultibyteCodec_Type.ob_type = &PyType_Type;
+	MultibyteStreamReader_Type.ob_type = &PyType_Type;
+	MultibyteStreamWriter_Type.ob_type = &PyType_Type;
+
 	Py_InitModule("_multibytecodec", __methods);
 
 	if (PyErr_Occurred())
