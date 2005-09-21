@@ -149,6 +149,9 @@ present).
 Extension Modules
 -----------------
 
+- Patch #1297028: fix segfault if call type on MultibyteCodec,
+  MultibyteStreamReader, or MultibyteStreamWriter
+
 - Fix memory leak in posix.access().
 
 - Patch #1213831: Fix typo in unicodedata._getcode.
