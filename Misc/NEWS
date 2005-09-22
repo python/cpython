@@ -149,6 +149,9 @@ present).
 Extension Modules
 -----------------
 
+- Patches #1298449 and #1298499: Add some missing checks for error
+  returns in cStringIO.c.
+
 - Patch #1297028: fix segfault if call type on MultibyteCodec,
   MultibyteStreamReader, or MultibyteStreamWriter
 

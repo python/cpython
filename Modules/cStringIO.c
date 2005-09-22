@@ -241,7 +241,10 @@ IO_readlines(IOobject *self, PyObject *args) {
 		line = PyString_FromStringAndSize (output, n);
 		if (!line) 
                         goto err;
-		PyList_Append (result, line);
+		if (PyList_Append (result, line) == -1) {
+			Py_DECREF (line);
+			goto err;
+		}
 		Py_DECREF (line);
                 length += n;
                 if (hint > 0 && length >= hint)
@@ -440,13 +443,18 @@ O_writelines(Oobject *self, PyObject *args) {
 			Py_DECREF(it);
 			Py_DECREF(s);
 			return NULL;
-		}
-		Py_DECREF(s);
-	}
-	Py_DECREF(it);
-	Py_RETURN_NONE;
-}
+               }
+               Py_DECREF(s);
+       }
 
+       Py_DECREF(it);
+
+       /* See if PyIter_Next failed */
+       if (PyErr_Occurred())
+               return NULL;
+
+       Py_RETURN_NONE;
+}
 static struct PyMethodDef O_methods[] = {
   /* Common methods: */
   {"flush",     (PyCFunction)IO_flush,    METH_NOARGS,  IO_flush__doc__},
