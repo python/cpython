@@ -322,8 +322,7 @@ data = authobject(response)
 \end{methoddesc}
 
 \begin{methoddesc}{search}{charset, criterion\optional{, ...}}
-  Search mailbox for matching messages.  Returned data contains a space
-  separated list of matching message numbers.  \var{charset} may be
+  Search mailbox for matching messages.  \var{charset} may be
   \code{None}, in which case no \samp{CHARSET} will be specified in the
   request to the server.  The IMAP protocol requires that at least one
   criterion be specified; an exception will be raised when the server
@@ -333,10 +332,10 @@ data = authobject(response)
 
 \begin{verbatim}
 # M is a connected IMAP4 instance...
-msgnums = M.search(None, 'FROM', '"LDJ"')
+typ, msgnums = M.search(None, 'FROM', '"LDJ"')
 
 # or:
-msgnums = M.search(None, '(FROM "LDJ")')
+typ, msgnums = M.search(None, '(FROM "LDJ")')
 \end{verbatim}
 \end{methoddesc}
 
