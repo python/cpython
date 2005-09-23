@@ -54,6 +54,16 @@ Comparison with Python's Samplesort Hybrid
 + Here are exact comparison counts across all the tests in sortperf.py,
   when run with arguments "15 20 1".
 
+  Column Key:
+      *sort: random data
+      \sort: descending data
+      /sort: ascending data
+      3sort: ascending, then 3 random exchanges
+      +sort: ascending, then 10 random at the end
+      ~sort: many duplicates
+      =sort: all equal
+      !sort: worst case scenario
+
   First the trivial cases, trivial for samplesort because it special-cased
   them, and trivial for timsort because it naturally works on runs.  Within
   an "n" block, the first line gives the # of compares done by samplesort,
