@@ -23,6 +23,10 @@ Extension Modules
 Tests
 -----
 
+- Fixed failure in test_macfs on Mac OS X 10.4 (Tiger), which
+  apparently doesn't allow the creation time to be set later than the
+  modification time.  Fixed by changing the test data.
+
 
 Build
 -----
