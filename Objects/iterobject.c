@@ -71,7 +71,7 @@ iter_iternext(PyObject *iterator)
 	return NULL;
 }
 
-static int
+static PyObject *
 iter_len(seqiterobject *it)
 {
 	int seqsize, len;
@@ -79,17 +79,19 @@ iter_len(seqiterobject *it)
 	if (it->it_seq) {
 		seqsize = PySequence_Size(it->it_seq);
 		if (seqsize == -1)
-			return -1;
+			return NULL;
 		len = seqsize - it->it_index;
 		if (len >= 0)
-			return len;
+			return PyInt_FromLong(len);
 	}
-	return 0;
+	return PyInt_FromLong(0);
 }
 
-static PySequenceMethods iter_as_sequence = {
-	(inquiry)iter_len,		/* sq_length */
-	0,				/* sq_concat */
+PyDoc_STRVAR(length_cue_doc, "Private method returning an estimate of len(list(it)).");
+
+static PyMethodDef seqiter_methods[] = {
+	{"_length_cue", (PyCFunction)iter_len, METH_NOARGS, length_cue_doc},
+ 	{NULL,		NULL}		/* sentinel */
 };
 
 PyTypeObject PySeqIter_Type = {
@@ -106,7 +108,7 @@ PyTypeObject PySeqIter_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	&iter_as_sequence,			/* tp_as_sequence */
+	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
@@ -122,13 +124,8 @@ PyTypeObject PySeqIter_Type = {
 	0,					/* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)iter_iternext,		/* tp_iternext */
-	0,					/* tp_methods */
+	seqiter_methods,			/* tp_methods */
 	0,					/* tp_members */
-	0,					/* tp_getset */
-	0,					/* tp_base */
-	0,					/* tp_dict */
-	0,					/* tp_descr_get */
-	0,					/* tp_descr_set */
 };
 
 /* -------------------------------------- */
@@ -236,10 +233,4 @@ PyTypeObject PyCallIter_Type = {
 	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)calliter_iternext,	/* tp_iternext */
 	0,					/* tp_methods */
-	0,					/* tp_members */
-	0,					/* tp_getset */
-	0,					/* tp_base */
-	0,					/* tp_dict */
-	0,					/* tp_descr_get */
-	0,					/* tp_descr_set */
 };

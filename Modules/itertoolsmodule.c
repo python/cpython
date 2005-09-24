@@ -2336,17 +2336,21 @@ repeat_repr(repeatobject *ro)
 	return result;
 }	
 
-static int
+static PyObject *
 repeat_len(repeatobject *ro)
 {
-        if (ro->cnt == -1)
+        if (ro->cnt == -1) {
                 PyErr_SetString(PyExc_TypeError, "len() of unsized object");
-        return (int)(ro->cnt);
+		return NULL;
+	}
+        return PyInt_FromLong(ro->cnt);
 }
 
-static PySequenceMethods repeat_as_sequence = {
-	(inquiry)repeat_len,		/* sq_length */
-	0,				/* sq_concat */
+PyDoc_STRVAR(length_cue_doc, "Private method returning an estimate of len(list(it)).");
+
+static PyMethodDef repeat_methods[] = {
+	{"_length_cue", (PyCFunction)repeat_len, METH_NOARGS, length_cue_doc},
+ 	{NULL,		NULL}		/* sentinel */
 };
 
 PyDoc_STRVAR(repeat_doc,
@@ -2368,7 +2372,7 @@ static PyTypeObject repeat_type = {
 	0,				/* tp_compare */
 	(reprfunc)repeat_repr,		/* tp_repr */
 	0,				/* tp_as_number */
-	&repeat_as_sequence,		/* tp_as_sequence */
+	0,				/* tp_as_sequence */
 	0,				/* tp_as_mapping */
 	0,				/* tp_hash */
 	0,				/* tp_call */
@@ -2385,7 +2389,7 @@ static PyTypeObject repeat_type = {
 	0,				/* tp_weaklistoffset */
 	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)repeat_next,	/* tp_iternext */
-	0,				/* tp_methods */
+	repeat_methods,			/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
 	0,				/* tp_base */

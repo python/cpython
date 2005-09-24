@@ -749,17 +749,20 @@ setiter_dealloc(setiterobject *si)
 	PyObject_Del(si);
 }
 
-static int
+static PyObject *
 setiter_len(setiterobject *si)
 {
+	int len = 0;
 	if (si->si_set != NULL && si->si_used == si->si_set->used)
-		return si->len;
-	return 0;
+		len = si->len;
+	return PyInt_FromLong(len);
 }
 
-static PySequenceMethods setiter_as_sequence = {
-	(inquiry)setiter_len,		/* sq_length */
-	0,				/* sq_concat */
+PyDoc_STRVAR(length_cue_doc, "Private method returning an estimate of len(list(it)).");
+
+static PyMethodDef setiter_methods[] = {
+	{"_length_cue", (PyCFunction)setiter_len, METH_NOARGS, length_cue_doc},
+ 	{NULL,		NULL}		/* sentinel */
 };
 
 static PyObject *setiter_iternext(setiterobject *si)
@@ -814,7 +817,7 @@ static PyTypeObject PySetIter_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	&setiter_as_sequence,			/* tp_as_sequence */
+	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
@@ -830,6 +833,8 @@ static PyTypeObject PySetIter_Type = {
 	0,					/* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)setiter_iternext,		/* tp_iternext */
+	setiter_methods,			/* tp_methods */
+	0,
 };
 
 static int

@@ -239,23 +239,25 @@ PyDoc_STRVAR(reversed_doc,
 "\n"
 "Return a reverse iterator");
 
-static int
+static PyObject *
 reversed_len(reversedobject *ro)
 {
 	int position, seqsize;
 
 	if (ro->seq == NULL)
-		return 0;
+		return PyInt_FromLong(0);
 	seqsize = PySequence_Size(ro->seq);
 	if (seqsize == -1)
-		return -1;
+		return NULL;
 	position = ro->index + 1;
-	return (seqsize < position)  ?  0  :  position;
+	return PyInt_FromLong((seqsize < position)  ?  0  :  position);
 }
 
-static PySequenceMethods reversed_as_sequence = {
-	(inquiry)reversed_len,		/* sq_length */
-	0,				/* sq_concat */
+PyDoc_STRVAR(length_cue_doc, "Private method returning an estimate of len(list(it)).");
+
+static PyMethodDef reversediter_methods[] = {
+	{"_length_cue", (PyCFunction)reversed_len, METH_NOARGS, length_cue_doc},
+ 	{NULL,		NULL}		/* sentinel */
 };
 
 PyTypeObject PyReversed_Type = {
@@ -272,7 +274,7 @@ PyTypeObject PyReversed_Type = {
 	0,                              /* tp_compare */
 	0,                              /* tp_repr */
 	0,                              /* tp_as_number */
-	&reversed_as_sequence,          /* tp_as_sequence */
+	0,				/* tp_as_sequence */
 	0,                              /* tp_as_mapping */
 	0,                              /* tp_hash */
 	0,                              /* tp_call */
@@ -289,7 +291,7 @@ PyTypeObject PyReversed_Type = {
 	0,                              /* tp_weaklistoffset */
 	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)reversed_next,    /* tp_iternext */
-	0,				/* tp_methods */
+	reversediter_methods,		/* tp_methods */
 	0,                              /* tp_members */
 	0,                              /* tp_getset */
 	0,                              /* tp_base */
