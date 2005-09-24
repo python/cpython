@@ -140,9 +140,14 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 # define USE_GETHOSTBYNAME_LOCK
 #endif
 
+/* To use __FreeBSD_version */
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
 /* On systems on which getaddrinfo() is believed to not be thread-safe,
    (this includes the getaddrinfo emulation) protect access with a lock. */
-#if defined(WITH_THREAD) && (defined(__APPLE__) || defined(__FreeBSD__) || \
+#if defined(WITH_THREAD) && (defined(__APPLE__) || \
+    (defined(__FreeBSD__) && __FreeBSD_version+0 < 503000) || \
     defined(__OpenBSD__) || defined(__NetBSD__) || !defined(HAVE_GETADDRINFO))
 #define USE_GETADDRINFO_LOCK
 #endif
