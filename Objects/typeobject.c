@@ -2522,7 +2522,7 @@ slotnames(PyObject *cls)
 
 	clsdict = ((PyTypeObject *)cls)->tp_dict;
 	slotnames = PyDict_GetItemString(clsdict, "__slotnames__");
-	if (slotnames != NULL) {
+	if (slotnames != NULL && PyList_Check(slotnames)) {
 		Py_INCREF(slotnames);
 		return slotnames;
 	}
