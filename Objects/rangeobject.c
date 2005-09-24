@@ -262,17 +262,18 @@ rangeiter_next(rangeiterobject *r)
 	return NULL;
 }
 
-static int
+static PyObject *
 rangeiter_len(rangeiterobject *r)
 {
-	return r->len - r->index;
+	return PyInt_FromLong(r->len - r->index);
 }
 
-static PySequenceMethods rangeiter_as_sequence = {
-	(inquiry)rangeiter_len,		/* sq_length */
-	0,				/* sq_concat */
-};
+PyDoc_STRVAR(length_cue_doc, "Private method returning an estimate of len(list(it)).");
 
+static PyMethodDef rangeiter_methods[] = {
+	{"_length_cue", (PyCFunction)rangeiter_len, METH_NOARGS, length_cue_doc},
+ 	{NULL,		NULL}		/* sentinel */
+};
 
 static PyTypeObject Pyrangeiter_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -288,7 +289,7 @@ static PyTypeObject Pyrangeiter_Type = {
 	0,                                      /* tp_compare */
 	0,                                      /* tp_repr */
 	0,                                      /* tp_as_number */
-	&rangeiter_as_sequence,			/* tp_as_sequence */
+	0,					/* tp_as_sequence */
 	0,                                      /* tp_as_mapping */
 	0,                                      /* tp_hash */
 	0,                                      /* tp_call */
@@ -304,5 +305,6 @@ static PyTypeObject Pyrangeiter_Type = {
 	0,                                      /* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)rangeiter_next,		/* tp_iternext */
-	0,					/* tp_methods */
+	rangeiter_methods,			/* tp_methods */
+	0,
 };

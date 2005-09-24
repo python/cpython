@@ -851,17 +851,20 @@ tupleiter_next(tupleiterobject *it)
 	return NULL;
 }
 
-static int
+static PyObject *
 tupleiter_len(tupleiterobject *it)
 {
+	int len = 0;
 	if (it->it_seq)
-		return PyTuple_GET_SIZE(it->it_seq) - it->it_index;
-	return 0;
+		len = PyTuple_GET_SIZE(it->it_seq) - it->it_index;
+	return PyInt_FromLong(len);
 }
 
-static PySequenceMethods tupleiter_as_sequence = {
-	(inquiry)tupleiter_len,		/* sq_length */
-	0,				/* sq_concat */
+PyDoc_STRVAR(length_cue_doc, "Private method returning an estimate of len(list(it)).");
+
+static PyMethodDef tupleiter_methods[] = {
+	{"_length_cue", (PyCFunction)tupleiter_len, METH_NOARGS, length_cue_doc},
+ 	{NULL,		NULL}		/* sentinel */
 };
 
 PyTypeObject PyTupleIter_Type = {
@@ -878,7 +881,7 @@ PyTypeObject PyTupleIter_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	&tupleiter_as_sequence,			/* tp_as_sequence */
+	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
@@ -894,4 +897,6 @@ PyTypeObject PyTupleIter_Type = {
 	0,					/* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)tupleiter_next,		/* tp_iternext */
+	tupleiter_methods,			/* tp_methods */
+	0,
 };

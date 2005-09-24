@@ -2054,17 +2054,20 @@ dictiter_dealloc(dictiterobject *di)
 	PyObject_Del(di);
 }
 
-static int
+static PyObject *
 dictiter_len(dictiterobject *di)
 {
+	int len = 0;
 	if (di->di_dict != NULL && di->di_used == di->di_dict->ma_used)
-		return di->len;
-	return 0;
+		len = di->len;
+	return PyInt_FromLong(len);
 }
 
-static PySequenceMethods dictiter_as_sequence = {
-	(inquiry)dictiter_len,		/* sq_length */
-	0,				/* sq_concat */
+PyDoc_STRVAR(length_cue_doc, "Private method returning an estimate of len(list(it)).");
+
+static PyMethodDef dictiter_methods[] = {
+	{"_length_cue", (PyCFunction)dictiter_len, METH_NOARGS, length_cue_doc},
+ 	{NULL,		NULL}		/* sentinel */
 };
 
 static PyObject *dictiter_iternextkey(dictiterobject *di)
@@ -2120,7 +2123,7 @@ PyTypeObject PyDictIterKey_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	&dictiter_as_sequence,			/* tp_as_sequence */
+	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
@@ -2136,6 +2139,8 @@ PyTypeObject PyDictIterKey_Type = {
 	0,					/* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)dictiter_iternextkey,	/* tp_iternext */
+	dictiter_methods,			/* tp_methods */
+	0,
 };
 
 static PyObject *dictiter_iternextvalue(dictiterobject *di)
@@ -2191,7 +2196,7 @@ PyTypeObject PyDictIterValue_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	&dictiter_as_sequence,			/* tp_as_sequence */
+	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
@@ -2207,6 +2212,8 @@ PyTypeObject PyDictIterValue_Type = {
 	0,					/* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)dictiter_iternextvalue,	/* tp_iternext */
+	dictiter_methods,			/* tp_methods */
+	0,
 };
 
 static PyObject *dictiter_iternextitem(dictiterobject *di)
@@ -2276,7 +2283,7 @@ PyTypeObject PyDictIterItem_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	&dictiter_as_sequence,			/* tp_as_sequence */
+	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
@@ -2292,4 +2299,6 @@ PyTypeObject PyDictIterItem_Type = {
 	0,					/* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)dictiter_iternextitem,	/* tp_iternext */
+	dictiter_methods,			/* tp_methods */
+	0,
 };

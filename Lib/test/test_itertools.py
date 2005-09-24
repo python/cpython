@@ -670,6 +670,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
 class LengthTransparency(unittest.TestCase):
 
     def test_repeat(self):
+        from test.test_iterlen import len
         self.assertEqual(len(repeat(None, 50)), 50)
         self.assertRaises(TypeError, len, repeat(None))
 

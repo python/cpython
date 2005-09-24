@@ -422,6 +422,21 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      PyAPI_FUNC(int) PyObject_Length(PyObject *o);
 #define PyObject_Length PyObject_Size
 
+     PyAPI_FUNC(int) _PyObject_LengthCue(PyObject *o);
+
+       /*
+         Return the size of object o.  If the object, o, provides
+	 both sequence and mapping protocols, the sequence size is
+	 returned. On error, -1 is returned.  If the object provides
+	 a _length_cue() method, its value is returned.  This is the 
+	 equivalent to the Python expression: 
+		try:
+			return len(o)
+		except (AttributeError, TypeError):
+			if hasattr(o, '_length_cue'):
+				return o._length_cue()
+			raise
+       */
 
      PyAPI_FUNC(PyObject *) PyObject_GetItem(PyObject *o, PyObject *key);
 

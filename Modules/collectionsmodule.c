@@ -935,15 +935,17 @@ dequeiter_next(dequeiterobject *it)
 	return item;
 }
 
-static int
+static PyObject *
 dequeiter_len(dequeiterobject *it)
 {
-	return it->counter;
+	return PyInt_FromLong(it->counter);
 }
 
-static PySequenceMethods dequeiter_as_sequence = {
-	(inquiry)dequeiter_len,		/* sq_length */
-	0,				/* sq_concat */
+PyDoc_STRVAR(length_cue_doc, "Private method returning an estimate of len(list(it)).");
+
+static PyMethodDef dequeiter_methods[] = {
+	{"_length_cue", (PyCFunction)dequeiter_len, METH_NOARGS, length_cue_doc},
+ 	{NULL,		NULL}		/* sentinel */
 };
 
 PyTypeObject dequeiter_type = {
@@ -960,7 +962,7 @@ PyTypeObject dequeiter_type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	&dequeiter_as_sequence,			/* tp_as_sequence */
+	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
@@ -976,6 +978,7 @@ PyTypeObject dequeiter_type = {
 	0,					/* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)dequeiter_next,		/* tp_iternext */
+	dequeiter_methods,			/* tp_methods */
 	0,
 };
 
@@ -1042,7 +1045,7 @@ PyTypeObject dequereviter_type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	&dequeiter_as_sequence,			/* tp_as_sequence */
+	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
@@ -1058,6 +1061,7 @@ PyTypeObject dequereviter_type = {
 	0,					/* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)dequereviter_next,	/* tp_iternext */
+	dequeiter_methods,			/* tp_methods */
 	0,
 };
 

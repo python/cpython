@@ -144,6 +144,7 @@ class TestReversed(unittest.TestCase):
 
     def test_len(self):
         # This is an implementation detail, not an interface requirement
+        from test.test_iterlen import len
         for s in ('hello', tuple('hello'), list('hello'), xrange(5)):
             self.assertEqual(len(reversed(s)), len(s))
             r = reversed(s)
