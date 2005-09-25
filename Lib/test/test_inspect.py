@@ -238,6 +238,18 @@ class TestBuggyCases(GetSourceBase):
     def test_multiline_sig(self):
         self.assertSourceEqual(mod2.multiline_sig[0], 63, 64)
 
+    def test_nested_class(self):
+        self.assertSourceEqual(mod2.func69().func71, 71, 72)
+
+    def test_one_liner_followed_by_non_name(self):
+        self.assertSourceEqual(mod2.func77, 77, 77)
+
+    def test_one_liner_dedent_non_name(self):
+        self.assertSourceEqual(mod2.cls82.func83, 83, 83)
+
+    def test_with_comment_instead_of_docstring(self):
+        self.assertSourceEqual(mod2.func88, 88, 90)
+
 # Helper for testing classify_class_attrs.
 def attrs_wo_objs(cls):
     return [t[:3] for t in inspect.classify_class_attrs(cls)]

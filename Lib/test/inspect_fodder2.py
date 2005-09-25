@@ -64,3 +64,27 @@ multiline_sig = [
             y): x+y,
     None,
     ]
+
+# line 68
+def func69():
+    class cls70:
+        def func71():
+            pass
+    return cls70
+extra74 = 74
+
+# line 76
+def func77(): pass
+(extra78, stuff78) = 'xy'
+extra79 = 'stop'
+
+# line 81
+class cls82:
+    def func83(): pass
+(extra84, stuff84) = 'xy'
+extra85 = 'stop'
+
+# line 87
+def func88():
+    # comment
+    return 90
