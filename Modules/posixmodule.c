@@ -7255,8 +7255,12 @@ win32_startfile(PyObject *self, PyObject *args)
 	Py_BEGIN_ALLOW_THREADS
 	rc = ShellExecute((HWND)0, NULL, filepath, NULL, NULL, SW_SHOWNORMAL);
 	Py_END_ALLOW_THREADS
-	if (rc <= (HINSTANCE)32)
-		return win32_error("startfile", filepath);
+	if (rc <= (HINSTANCE)32) {
+		PyObject *errval = win32_error("startfile", filepath);
+		PyMem_Free(filepath);
+		return errval;
+	}
+	PyMem_Free(filepath);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
