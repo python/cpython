@@ -44,6 +44,13 @@ class TestGenericStringIO(unittest.TestCase):
         f.seek(0)
         self.assertEqual(f.getvalue(), 'abc')
 
+    def test_writelines_error(self):
+        def errorGen():
+            yield 'a'
+            raise KeyboardInterrupt()
+        f = self.MODULE.StringIO()
+        self.assertRaises(KeyboardInterrupt, f.writelines, errorGen())
+
     def test_truncate(self):
         eq = self.assertEqual
         f = self.MODULE.StringIO()
