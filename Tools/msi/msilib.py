@@ -393,7 +393,7 @@ class CAB:
         else:
             print "WARNING: cabarc.exe not found in registry"
             cabarc = "cabarc.exe"
-        f = popen2.popen4(r'"%s" n %s.cab @%s.txt' % (cabarc, self.name, self.name))[0]
+        f = popen2.popen4(r'"%s" -m lzx:21 n %s.cab @%s.txt' % (cabarc, self.name, self.name))[0]
         for line in f:
             if line.startswith("  -- adding "):
                 sys.stdout.write(".")
