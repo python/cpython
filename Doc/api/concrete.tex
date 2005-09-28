@@ -664,8 +664,8 @@ parameter and are called with a non-string parameter.
   \var{size})}.  It must not be deallocated.  If \var{string} is a
   Unicode object, this function computes the default encoding of
   \var{string} and operates on that.  If \var{string} is not a string
-  object at all, \cfunction{PyString_AsString()} returns \NULL{} and
-  raises \exception{TypeError}.
+  object at all, \cfunction{PyString_AsStringAndSize()} returns 
+  \code{-1} and raises \exception{TypeError}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyString_Concat}{PyObject **string,
