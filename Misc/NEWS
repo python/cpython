@@ -7,11 +7,7 @@ Python News
 What's New in Python 2.4.2 final?
 =================================
 
-*Release date: XX-SEP-2005*
-
-Core and builtins
------------------
-
+*Release date: 28-SEP-2005*
 
 Extension Modules
 -----------------
@@ -22,7 +18,6 @@ Extension Modules
 - Patch #1297028: fix segfault if call type on MultibyteCodec,
   MultibyteStreamReader, or MultibyteStreamWriter.
 
-
 Tests
 -----
 
@@ -30,10 +25,11 @@ Tests
   apparently doesn't allow the creation time to be set later than the
   modification time.  Fixed by changing the test data.
 
-
 Build
 -----
 
+- The Windows .msi files are now compressed using lzx:21. This produces a 
+  significantly smaller installer.
 
 What's New in Python 2.4.2c1
 ============================
