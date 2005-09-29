@@ -14,6 +14,12 @@ Extension Modules
 
 - Fix parse errors in the readline module when compiling without threads.
 
+Library
+-------
+
+- Bug #1296004: httplib.py: Limit maximal amount of data read from the
+  socket to avoid a MemoryError on Windows.
+
 
 What's New in Python 2.4.2 final?
 =================================
