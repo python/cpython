@@ -603,6 +603,7 @@ on_hook(PyObject *func)
 #ifdef WITH_THREAD	      
 		PyGILState_Release(gilstate);
 #endif
+		return result;
 	}
 	return result;
 }
@@ -655,6 +656,7 @@ on_completion(char *text, int state)
 #ifdef WITH_THREAD	      
 		PyGILState_Release(gilstate);
 #endif
+		return result;
 	}
 	return result;
 }
