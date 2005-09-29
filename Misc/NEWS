@@ -153,6 +153,8 @@ present).
 Extension Modules
 -----------------
 
+- Fix parse errors in the readline module when compiling without threads.
+
 - Patch #1288833: Removed thread lock from socket.getaddrinfo on
   FreeBSD 5.3 and later versions which got thread-safe getaddrinfo(3).
 
