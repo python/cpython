@@ -242,6 +242,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1300515: xdrlib.py: Fix pack_fstring() to really use null bytes
+  for padding.
+
 - Bug #1296004: httplib.py: Limit maximal amount of data read from the
   socket to avoid a MemoryError on Windows.
 
