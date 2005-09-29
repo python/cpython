@@ -242,6 +242,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1296004: httplib.py: Limit maximal amount of data read from the
+  socket to avoid a MemoryError on Windows.
+
 - Patch #1166948: locale.py: Prefer LC_ALL, LC_CTYPE and LANG over LANGUAGE
   to get the correct encoding.
 
