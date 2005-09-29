@@ -4,6 +4,17 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.4.3a0?
+=============================
+
+*Release date: XX-XX-200X*
+
+Extension Modules
+-----------------
+
+- Fix parse errors in the readline module when compiling without threads.
+
+
 What's New in Python 2.4.2 final?
 =================================
 
@@ -31,8 +42,9 @@ Build
 - The Windows .msi files are now compressed using lzx:21. This produces a 
   significantly smaller installer.
 
-What's New in Python 2.4.2c1
-============================
+
+What's New in Python 2.4.2c1?
+=============================
 
 *Release date: 21-SEP-2005*
 
