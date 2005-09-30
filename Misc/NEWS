@@ -153,6 +153,9 @@ present).
 Extension Modules
 -----------------
 
+- Patch #1309009, Fix segfault in pyexpat when the XML document is in latin_1,
+  but Python incorrectly assumes it is in UTF-8 format
+
 - Fix parse errors in the readline module when compiling without threads.
 
 - Patch #1288833: Removed thread lock from socket.getaddrinfo on
