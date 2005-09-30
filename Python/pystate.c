@@ -53,7 +53,9 @@ static PyInterpreterState *interp_head = NULL;
 PyThreadState *_PyThreadState_Current = NULL;
 PyThreadFrameGetter _PyThreadState_GetFrame = NULL;
 
+#ifdef WITH_THREAD
 static void _PyGILState_NoteThreadState(PyThreadState* tstate);
+#endif
 
 
 PyInterpreterState *
@@ -188,7 +190,9 @@ PyThreadState_New(PyInterpreterState *interp)
 		tstate->c_profileobj = NULL;
 		tstate->c_traceobj = NULL;
 
+#ifdef WITH_THREAD
 		_PyGILState_NoteThreadState(tstate);
+#endif
 
 		HEAD_LOCK();
 		tstate->next = interp->tstate_head;
