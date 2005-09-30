@@ -4,13 +4,16 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.4.3a0?
+What's New in Python 2.4.3c1?
 =============================
 
 *Release date: XX-XX-200X*
 
 Extension Modules
 -----------------
+
+- Patch #1309009, Fix segfault in pyexpat when the XML document is in latin_1,
+  but Python incorrectly assumes it is in UTF-8 format
 
 - Fix parse errors in the readline module when compiling without threads.
 
