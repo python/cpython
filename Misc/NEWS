@@ -245,6 +245,9 @@ Extension Modules
 Library
 -------
 
+- Bug #729103: pydoc.py: Fix docother() method to accept additional 
+  "parent" argument.
+
 - Patch #1300515: xdrlib.py: Fix pack_fstring() to really use null bytes
   for padding.
 

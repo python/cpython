@@ -1079,7 +1079,7 @@ class TextDoc(Doc):
         if data:
             contents = []
             for key, value in data:
-                contents.append(self.docother(value, key, name, 70))
+                contents.append(self.docother(value, key, name, maxlen=70))
             result = result + self.section('DATA', join(contents, '\n'))
 
         if hasattr(object, '__version__'):
@@ -1164,7 +1164,7 @@ class TextDoc(Doc):
                     else:
                         doc = None
                     push(self.docother(getattr(object, name),
-                                       name, mod, 70, doc) + '\n')
+                                       name, mod, maxlen=70, doc=doc) + '\n')
             return attrs
 
         attrs = filter(lambda (name, kind, cls, value): visiblename(name),
@@ -1272,7 +1272,7 @@ class TextDoc(Doc):
         """Produce text documentation for a property."""
         return self._docdescriptor(name, object, mod)
 
-    def docother(self, object, name=None, mod=None, maxlen=None, doc=None):
+    def docother(self, object, name=None, mod=None, parent=None, maxlen=None, doc=None):
         """Produce text documentation for a data object."""
         repr = self.repr(object)
         if maxlen:
