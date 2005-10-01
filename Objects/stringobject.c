@@ -4083,7 +4083,9 @@ PyString_Format(PyObject *format, PyObject *args)
 					argidx = argidx_start;
 					goto unicode;
 				}
+#endif
 				temp = _PyObject_Str(v);
+#ifdef Py_USING_UNICODE
 				if (temp != NULL && PyUnicode_Check(temp)) {
 					Py_DECREF(temp);
 					fmt = fmt_start;
