@@ -603,8 +603,11 @@ decode_str(const char *str, struct tok_state *tok)
 	if (tok->enc != NULL) {
 		assert(utf8 == NULL);
 		utf8 = translate_into_utf8(str, tok->enc);
-		if (utf8 == NULL)
+		if (utf8 == NULL) {
+			PyErr_Format(PyExc_SyntaxError,
+				"unknown encoding: %s", tok->enc);
 			return NULL;
+		}
 		str = PyString_AsString(utf8);
 	}
 #endif

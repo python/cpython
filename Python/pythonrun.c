@@ -1487,7 +1487,7 @@ err_input(perrdetail *err)
 			msg = "unknown decode error";
 		Py_DECREF(type);
 		Py_DECREF(value);
-		Py_DECREF(tb);
+		Py_XDECREF(tb);
 		break;
 	}
 	case E_LINECONT:
