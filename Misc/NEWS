@@ -9,6 +9,11 @@ What's New in Python 2.4.3c1?
 
 *Release date: XX-XX-200X*
 
+Core and builtins
+-----------------
+
+- Fix segfault with invalid coding.
+
 Extension Modules
 -----------------
 
