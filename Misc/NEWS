@@ -12,6 +12,10 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Fix segfault with invalid coding.
+
+- SF bug #772896: unknown encoding results in MemoryError.
+
 - All iterators now have a Boolean value of true.  Formerly, some iterators
   supported a __len__() method which evaluated to False when the iterator
   was empty.
