@@ -3,6 +3,8 @@ What's New in IDLE 1.2a0?
 
 *Release date: XX-XXX-2005*
 
+- Increased performance in CodeContext extension  Patch 936169 Noam Raphael
+
 - Mac line endings were incorrect when pasting code from some browsers
   when using X11 and the Fink distribution.  Python Bug 1263656.
 
@@ -148,12 +150,12 @@ What's New in IDLE 1.1a1?
 - If nulls somehow got into the strings in recent-files.lst
   EditorWindow.update_recent_files_list() was failing.  Python Bug 931336.
 
-- If the normal background is changed via Configure/Highlighting, it will update
-  immediately, thanks to the previously mentioned patch by Nigel Rowe.
+- If the normal background is changed via Configure/Highlighting, it will
+  update immediately, thanks to the previously mentioned patch by Nigel Rowe.
 
 - Add a highlight theme for builtin keywords.  Python Patch 805830 Nigel Rowe
-  This also fixed IDLEfork bug [ 693418 ] Normal text background color not refreshed
-  and Python bug [897872 ] Unknown color name on HP-UX
+  This also fixed IDLEfork bug [ 693418 ] Normal text background color not
+  refreshed and Python bug [897872 ] Unknown color name on HP-UX
 
 - rpc.py:SocketIO - Large modules were generating large pickles when downloaded
   to the execution server.  The return of the OK response from the subprocess

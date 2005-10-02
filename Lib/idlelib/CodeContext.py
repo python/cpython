@@ -14,10 +14,10 @@ import Tkinter
 from configHandler import idleConf
 from sets import Set
 import re
+from sys import maxint as INFINITY
 
 BLOCKOPENERS = Set(["class", "def", "elif", "else", "except", "finally", "for",
                     "if", "try", "while"])
-INFINITY = 1 << 30
 UPDATEINTERVAL = 100 # millisec
 FONTUPDATEINTERVAL = 1000 # millisec
 
@@ -37,8 +37,12 @@ class CodeContext:
         self.text = editwin.text
         self.textfont = self.text["font"]
         self.label = None
-        # Dummy line, which starts the "block" of the whole document:
-        self.info = list(self.interesting_lines(1))
+        # self.info holds information about the context lines of line number
+        # self.lastfirstline. The information is a tuple of the line's
+        # indentation, the line's text and the keyword at the beginning of the
+        # line, as returned by get_line_info. At the beginning of the list
+        # there's a dummy line, which starts the "block" of the whole document.
+        self.info = [(0, -1, "", False)]
         self.lastfirstline = 1
         visible = idleConf.GetOption("extensions", "CodeContext",
                                      "visible", type="bool", default=False)
@@ -73,14 +77,7 @@ class CodeContext:
 
         If the line does not start a block, the keyword value is False.
         The indentation of empty lines (or comment lines) is INFINITY.
-        There is a dummy block start, with indentation -1 and text "".
-
-        Return the indent level, text (including leading whitespace),
-        and the block opening keyword.
-
         """
-        if linenum == 0:
-            return -1, "", True
         text = self.text.get("%d.0" % linenum, "%d.end" % linenum)
         spaces, firstword = getspacesfirstword(text)
         opener = firstword in BLOCKOPENERS and firstword
@@ -90,40 +87,59 @@ class CodeContext:
             indent = len(spaces)
         return indent, text, opener
 
-    def interesting_lines(self, firstline):
-        """Generator which yields context lines, starting at firstline."""
+    def interesting_lines(self, firstline, stopline=1, stopindent=0):
+        """
+        Find the context lines, starting at firstline.
+        Will not return lines whose index is smaller than stopline or whose
+        indentation is smaller than stopindent.
+        stopline should always be >= 1, so the dummy block start will never
+        be returned (This function doesn't know what to do about it.)
+        Returns a list with the context lines, starting from the first (top),
+        and a number which all context lines above the inspected region should
+        have a smaller indentation than it.
+        """
+        lines = []
         # The indentation level we are currently in:
         lastindent = INFINITY
         # For a line to be interesting, it must begin with a block opening
         # keyword, and have less indentation than lastindent.
-        for line_index in xrange(firstline, -1, -1):
+        for line_index in xrange(firstline, stopline-1, -1):
             indent, text, opener = self.get_line_info(line_index)
             if indent < lastindent:
                 lastindent = indent
                 if opener in ("else", "elif"):
                     # We also show the if statement
                     lastindent += 1
-                if opener and line_index < firstline:
-                    yield line_index, text
+                if opener and line_index < firstline and indent >= stopindent:
+                    lines.append((line_index, indent, text, opener))
+                if lastindent <= stopindent:
+                    break
+        lines.reverse()
+        return lines, lastindent
 
     def update_label(self):
+        """Update the CodeContext label, if needed.
+        """
         firstline = int(self.text.index("@0,0").split('.')[0])
         if self.lastfirstline == firstline:
             return
-        self.lastfirstline = firstline
-        tmpstack = []
-        for line_index, text in self.interesting_lines(firstline):
-            # Remove irrelevant self.info items, and when we reach a relevant
-            # item (which must happen because of the dummy element), break.
-            while self.info[-1][0] > line_index:
+        if self.lastfirstline < firstline:
+            lines, lastindent = self.interesting_lines(firstline,
+                                                       self.lastfirstline)
+            while self.info[-1][1] >= lastindent:
                 del self.info[-1]
-            if self.info[-1][0] == line_index:
-                break
-            tmpstack.append((line_index, text))
-        while tmpstack:
-            self.info.append(tmpstack.pop())
+            self.info.extend(lines)
+        else:
+            stopindent = self.info[-1][1] + 1
+            while self.info[-1][0] >= firstline:
+                stopindent = self.info[-1][1]
+                del self.info[-1]
+            lines, lastindent = self.interesting_lines(
+                firstline, self.info[-1][0]+1, stopindent)
+            self.info.extend(lines)
+        self.lastfirstline = firstline
         lines = [""] * max(0, self.numlines - len(self.info)) + \
-                [x[1] for x in self.info[-self.numlines:]]
+                [x[2] for x in self.info[-self.numlines:]]
         self.label["text"] = '\n'.join(lines)
 
     def timer_event(self):
