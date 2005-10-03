@@ -823,12 +823,14 @@ defines the newly created device special file (probably using
 \end{funcdesc}
 
 \begin{funcdesc}{major}{device}
-Extracts a device major number from a raw device number.
+Extracts the device major number from a raw device number (usually
+the \member{st_dev} or \member{st_rdev} field from \ctype{stat}).
 \versionadded{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{minor}{device}
-Extracts a device minor number from a raw device number.
+Extracts the device minor number from a raw device number (usually
+the \member{st_dev} or \member{st_rdev} field from \ctype{stat}).
 \versionadded{2.3}
 \end{funcdesc}
 
