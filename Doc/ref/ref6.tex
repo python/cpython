@@ -524,8 +524,9 @@ from __future__ import generators
 
 If no expressions are present, \keyword{raise} re-raises the last
 exception that was active in the current scope.  If no exception is
-active in the current scope, a \exception{Queue.Empty} exception is
-raised indicating this error.
+active in the current scope, a \exception{TypeError} exception is
+raised indicating that this is an error (if running under IDLE, a
+\exception{Queue.Empty} exception is raised instead}.
 \index{exception}
 \indexii{raising}{exception}
 
