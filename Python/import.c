@@ -868,8 +868,12 @@ load_source_module(char *name, char *pathname, FILE *fp)
 	PyObject *m;
 
 	mtime = PyOS_GetLastModificationTime(pathname, fp);
-	if (mtime == (time_t)(-1))
+	if (mtime == (time_t)(-1)) {
+		PyErr_Format(PyExc_RuntimeError,
+			     "unable to get modification time from '%s'",
+			     pathname);
 		return NULL;
+	}
 #if SIZEOF_TIME_T > 4
 	/* Python's .pyc timestamp handling presumes that the timestamp fits
 	   in 4 bytes. This will be fine until sometime in the year 2038,
