@@ -3,6 +3,8 @@ What's New in IDLE 1.2a0?
 
 *Release date: XX-XXX-2005*
 
+- Fixed CodeContext alignment problem, following suggestion from Tal Einat.
+
 - Increased performance in CodeContext extension  Patch 936169 Noam Raphael
 
 - Mac line endings were incorrect when pasting code from some browsers

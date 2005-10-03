@@ -55,18 +55,25 @@ class CodeContext:
 
     def toggle_code_context_event(self, event=None):
         if not self.label:
-            self.label = Tkinter.Label(self.editwin.top,
+            self.pad_frame = Tkinter.Frame(self.editwin.top,
+                                           bg=self.bgcolor, border=2,
+                                           relief="sunken")
+            self.label = Tkinter.Label(self.pad_frame,
                                       text="\n" * (self.context_depth - 1),
                                       anchor="w", justify="left",
                                       font=self.textfont,
                                       bg=self.bgcolor, fg=self.fgcolor,
-                                      relief="sunken",
+                                      border=0,
                                       width=1, # Don't request more than we get
                                       )
-            self.label.pack(side="top", fill="x", expand=0,
-                            after=self.editwin.status_bar)
+            self.label.pack(side="top", fill="x", expand=True,
+                            padx=4, pady=0)
+            self.pad_frame.pack(side="top", fill="x", expand=False,
+                                padx=0, pady=0,
+                                after=self.editwin.status_bar)
         else:
             self.label.destroy()
+            self.pad_frame.destroy()
             self.label = None
         idleConf.SetOption("extensions", "CodeContext", "visible",
                            str(self.label is not None))
