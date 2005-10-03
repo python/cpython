@@ -254,6 +254,8 @@ Extension Modules
 Library
 -------
 
+- Patch #754022: Greatly enhanced webbrowser.py (by Oleg Broytmann).
+
 - Bug #729103: pydoc.py: Fix docother() method to accept additional 
   "parent" argument.
 
