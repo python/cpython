@@ -947,6 +947,15 @@ _PySys_Init(void)
 	m = Py_InitModule3("sys", sys_methods, sys_doc);
 	sysdict = PyModule_GetDict(m);
 
+	{
+		/* XXX: does this work on Win/Win64? (see posix_fstat) */
+		struct stat sb;
+		if (fstat(fileno(stdin), &sb) == 0 &&
+		    S_ISDIR(sb.st_mode)) {
+			Py_FatalError("<stdin> is a directory");
+		}
+	}
+
 	/* Closing the standard FILE* if sys.std* goes aways causes problems
 	 * for embedded Python usages. Closing them when somebody explicitly
 	 * invokes .close() might be possible, but the FAQ promises they get

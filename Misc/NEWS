@@ -12,6 +12,9 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- SF Bug #887946: fix segfault when redirecting stdin from a directory.
+  Provide a warning when a directory is passed on the command line.
+
 - Fix segfault with invalid coding.
 
 - SF bug #772896: unknown encoding results in MemoryError.
