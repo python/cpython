@@ -692,6 +692,11 @@ Availability: Macintosh, \UNIX, Windows.
 open a file before actually doing so using \function{open()} creates a 
 security hole, because the user might exploit the short time interval 
 between checking and opening the file to manipulate it.}
+
+\note{I/O operations may fail even when \function{access()}
+indicates that they would succeed, particularly for operations
+on network filesystems which may have permissions semantics
+beyond the usual \POSIX{} permission-bit model.}
 \end{funcdesc}
 
 \begin{datadesc}{F_OK}
