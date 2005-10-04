@@ -134,6 +134,9 @@ class BaseBrowser(object):
     def __init__(self, name=""):
         self.name = name
     
+    def open(self, url, new=0, autoraise=1):
+        raise NotImplementedError
+
     def open_new(self, url):
         return self.open(url, 1)
 
@@ -171,7 +174,7 @@ class UnixBrowser(BaseBrowser):
         raise_opt = self.raise_opts and self.raise_opts[autoraise] or ''
         cmd = "%s %s %s '%s' >/dev/null 2>&1" % (self.name, raise_opt,
                                                  self.remote_cmd, action)
-        if remote_background:
+        if self.remote_background:
             cmd += ' &'
         rc = os.system(cmd)
         if rc:
@@ -333,9 +336,7 @@ class Grail(BaseBrowser):
 # These are the right tests because all these Unix browsers require either
 # a console terminal or an X display to run.
 
-# Prefer X browsers if present
-if os.environ.get("DISPLAY"):
-
+def register_X_browsers():
     # First, the Mozilla/Netscape browsers
     for browser in ("mozilla-firefox", "firefox",
                     "mozilla-firebird", "firebird",
@@ -380,6 +381,10 @@ if os.environ.get("DISPLAY"):
     # Grail, the Python browser. Does anybody still use it?
     if _iscommand("grail"):
         register("grail", Grail, None)
+
+# Prefer X browsers if present
+if os.environ.get("DISPLAY"):
+    register_X_browsers()
 
 # Also try console browsers
 if os.environ.get("TERM"):
