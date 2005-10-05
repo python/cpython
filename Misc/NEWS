@@ -30,6 +30,8 @@ Extension Modules
 Library
 -------
 
+- SF #1313496:  the bisect module now accepts named arguments.
+
 - Bug #729103: pydoc.py: Fix docother() method to accept additional
   "parent" argument.
 
