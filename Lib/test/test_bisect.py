@@ -130,6 +130,16 @@ class TestBisect(unittest.TestCase):
     def test_backcompatibility(self):
         self.assertEqual(bisect, bisect_right)
 
+    def test_keyword_args(self):
+        data = [10, 20, 30, 40, 50]
+        self.assertEqual(bisect_left(a=data, x=25, lo=1, hi=3), 2)
+        self.assertEqual(bisect_right(a=data, x=25, lo=1, hi=3), 2)
+        self.assertEqual(bisect(a=data, x=25, lo=1, hi=3), 2)
+        insort_left(a=data, x=25, lo=1, hi=3)
+        insort_right(a=data, x=25, lo=1, hi=3)
+        insort(a=data, x=25, lo=1, hi=3)
+        self.assertEqual(data, [10, 20, 25, 25, 25, 30, 40, 50])
+
 #==============================================================================
 
 class TestInsort(unittest.TestCase):
