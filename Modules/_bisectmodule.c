@@ -34,15 +34,16 @@ internal_bisect_right(PyObject *list, PyObject *item, int lo, int hi)
 }
 
 static PyObject *
-bisect_right(PyObject *self, PyObject *args)
+bisect_right(PyObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *list, *item;
 	int lo = 0;
 	int hi = -1;
 	int index;
+	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-	if (!PyArg_ParseTuple(args, "OO|ii:bisect_right",
-		&list, &item, &lo, &hi))
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:bisect_right",
+		keywords, &list, &item, &lo, &hi))
 		return NULL;
 	index = internal_bisect_right(list, item, lo, hi);
 	if (index < 0)
@@ -51,7 +52,7 @@ bisect_right(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(bisect_right_doc,
-"bisect_right(list, item[, lo[, hi]]) -> index\n\
+"bisect_right(a, x[, lo[, hi]]) -> index\n\
 \n\
 Return the index where to insert item x in list a, assuming a is sorted.\n\
 \n\
@@ -63,15 +64,16 @@ Optional args lo (default 0) and hi (default len(a)) bound the\n\
 slice of a to be searched.\n");
 
 static PyObject *
-insort_right(PyObject *self, PyObject *args)
+insort_right(PyObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *list, *item, *result;
 	int lo = 0;
 	int hi = -1;
 	int index;
+	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-	if (!PyArg_ParseTuple(args, "OO|ii:insort_right",
-		&list, &item, &lo, &hi))
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:insort_right",
+		keywords, &list, &item, &lo, &hi))
 		return NULL;
 	index = internal_bisect_right(list, item, lo, hi);
 	if (index < 0)
@@ -91,7 +93,7 @@ insort_right(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(insort_right_doc,
-"insort_right(list, item[, lo[, hi]])\n\
+"insort_right(a, x[, lo[, hi]])\n\
 \n\
 Insert item x in list a, and keep it sorted assuming a is sorted.\n\
 \n\
@@ -129,15 +131,16 @@ internal_bisect_left(PyObject *list, PyObject *item, int lo, int hi)
 }
 
 static PyObject *
-bisect_left(PyObject *self, PyObject *args)
+bisect_left(PyObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *list, *item;
 	int lo = 0;
 	int hi = -1;
 	int index;
+	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-	if (!PyArg_ParseTuple(args, "OO|ii:bisect_left",
-		&list, &item, &lo, &hi))
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:bisect_left",
+		keywords, &list, &item, &lo, &hi))
 		return NULL;
 	index = internal_bisect_left(list, item, lo, hi);
 	if (index < 0)
@@ -146,7 +149,7 @@ bisect_left(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(bisect_left_doc,
-"bisect_left(list, item[, lo[, hi]]) -> index\n\
+"bisect_left(a, x[, lo[, hi]]) -> index\n\
 \n\
 Return the index where to insert item x in list a, assuming a is sorted.\n\
 \n\
@@ -158,15 +161,16 @@ Optional args lo (default 0) and hi (default len(a)) bound the\n\
 slice of a to be searched.\n");
 
 static PyObject *
-insort_left(PyObject *self, PyObject *args)
+insort_left(PyObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *list, *item, *result;
 	int lo = 0;
 	int hi = -1;
 	int index;
+	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
-	if (!PyArg_ParseTuple(args, "OO|ii:insort_left",
-		&list, &item, &lo, &hi))
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:insort_left",
+		keywords, &list, &item, &lo, &hi))
 		return NULL;
 	index = internal_bisect_left(list, item, lo, hi);
 	if (index < 0)
@@ -186,7 +190,7 @@ insort_left(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(insort_left_doc,
-"insort_left(list, item[, lo[, hi]])\n\
+"insort_left(a, x[, lo[, hi]])\n\
 \n\
 Insert item x in list a, and keep it sorted assuming a is sorted.\n\
 \n\
@@ -200,17 +204,17 @@ PyDoc_STRVAR(insort_doc, "Alias for insort_right().\n");
 
 static PyMethodDef bisect_methods[] = {
 	{"bisect_right", (PyCFunction)bisect_right,
-		METH_VARARGS, bisect_right_doc},
+		METH_VARARGS|METH_KEYWORDS, bisect_right_doc},
 	{"bisect", (PyCFunction)bisect_right,
-		METH_VARARGS, bisect_doc},
+		METH_VARARGS|METH_KEYWORDS, bisect_doc},
 	{"insort_right", (PyCFunction)insort_right,
-		METH_VARARGS, insort_right_doc},
+		METH_VARARGS|METH_KEYWORDS, insort_right_doc},
 	{"insort", (PyCFunction)insort_right,
-		METH_VARARGS, insort_doc},
+		METH_VARARGS|METH_KEYWORDS, insort_doc},
 	{"bisect_left", (PyCFunction)bisect_left,
-		METH_VARARGS, bisect_left_doc},
+		METH_VARARGS|METH_KEYWORDS, bisect_left_doc},
 	{"insort_left", (PyCFunction)insort_left,
-		METH_VARARGS, insort_left_doc},
+		METH_VARARGS|METH_KEYWORDS, insort_left_doc},
 	{NULL, NULL} /* sentinel */
 };
 
