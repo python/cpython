@@ -1322,7 +1322,12 @@ points.
                                                const char *errors}
   Create a Unicode object by decoding \var{size} bytes of the encoded
   string \var{s} using the given \var{mapping} object.  Return
-  \NULL{} if an exception was raised by the codec.
+  \NULL{} if an exception was raised by the codec. If \var{mapping} is \NULL{}
+  latin-1 decoding will be done. Else it can be a dictionary mapping byte or a
+  unicode string, which is treated as a lookup table. Byte values greater
+  that the length of the string and U+FFFE "characters" are treated as
+  "undefined mapping".
+  \versionchanged[Allowed unicode string as mapping argument]{2.4}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_EncodeCharmap}{const Py_UNICODE *s,

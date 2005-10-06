@@ -924,6 +924,40 @@ class BasicStrTest(unittest.TestCase):
             (chars, size) = codecs.getdecoder(encoding)(bytes)
             self.assertEqual(chars, s, "%r != %r (encoding=%r)" % (chars, s, encoding))
 
+class CharmapTest(unittest.TestCase):
+    def test_decode_with_string_map(self):
+        self.assertEquals(
+            codecs.charmap_decode("\x00\x01\x02", "strict", u"abc"),
+            (u"abc", 3)
+        )
+
+        self.assertEquals(
+            codecs.charmap_decode("\x00\x01\x02", "replace", u"ab"),
+            (u"ab\ufffd", 3)
+        )
+
+        self.assertEquals(
+            codecs.charmap_decode("\x00\x01\x02", "replace", u"ab\ufffe"),
+            (u"ab\ufffd", 3)
+        )
+
+        self.assertEquals(
+            codecs.charmap_decode("\x00\x01\x02", "ignore", u"ab"),
+            (u"ab", 3)
+        )
+
+        self.assertEquals(
+            codecs.charmap_decode("\x00\x01\x02", "ignore", u"ab\ufffe"),
+            (u"ab", 3)
+        )
+
+        allbytes = "".join(chr(i) for i in xrange(256))
+        self.assertEquals(
+            codecs.charmap_decode(allbytes, "ignore", u""),
+            (u"", len(allbytes))
+        )
+
+
 def test_main():
     test_support.run_unittest(
         UTF16Test,
@@ -940,7 +974,8 @@ def test_main():
         StreamReaderTest,
         Str2StrTest,
         BasicUnicodeTest,
-        BasicStrTest
+        BasicStrTest,
+        CharmapTest
     )
 
 

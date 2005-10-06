@@ -563,6 +563,11 @@ C API
 
 - Removed PyRange_New().
 
+- Patch #1313939: PyUnicode_DecodeCharmap() accepts a unicode string as the
+  mapping argument now. This string is used as a mapping table. Byte values
+  greater than the length of the string and 0xFFFE are treated as undefined
+  mappings.
+
 
 Tests
 -----
