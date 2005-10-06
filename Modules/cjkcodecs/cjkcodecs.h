@@ -12,7 +12,10 @@
 #include "multibytecodec.h"
 
 
-#define UNIINV	Py_UNICODE_REPLACEMENT_CHARACTER
+/* a unicode "undefined" codepoint */
+#define UNIINV	0xFFFE
+
+/* internal-use DBCS codepoints which aren't used by any charsets */
 #define NOCHAR	0xFFFF
 #define MULTIC	0xFFFE
 #define DBCINV	0xFFFD
