@@ -41,8 +41,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "beta"
-__version__ = "0.4.9.6"
-__date__    = "27 March 2005"
+__version__ = "0.4.9.7"
+__date__    = "07 October 2005"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -266,10 +266,12 @@ class LogRecord:
         if not hasattr(types, "UnicodeType"): #if no unicode support...
             msg = str(self.msg)
         else:
-            try:
-                msg = str(self.msg)
-            except UnicodeError:
-                msg = self.msg      #Defer encoding till later
+            msg = self.msg
+            if type(msg) not in (types.UnicodeType, types.StringType):
+                try:
+                    msg = str(self.msg)
+                except UnicodeError:
+                    msg = self.msg      #Defer encoding till later
         if self.args:
             msg = msg % self.args
         return msg
