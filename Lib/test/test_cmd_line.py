@@ -17,7 +17,7 @@ class CmdLineTest(unittest.TestCase):
 
     def verify_valid_flag(self, cmd_line):
         data = self.start_python(cmd_line)
-        self.assertTrue(data.endswith('\n'))
+        self.assertTrue(data == '' or data.endswith('\n'))
         self.assertTrue('Traceback' not in data)
 
     def test_environment(self):
