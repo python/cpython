@@ -133,6 +133,7 @@ class BaseBrowser(object):
 
     def __init__(self, name=""):
         self.name = name
+        self.basename = name
     
     def open(self, url, new=0, autoraise=1):
         raise NotImplementedError
@@ -150,6 +151,7 @@ class GenericBrowser(BaseBrowser):
 
     def __init__(self, cmd):
         self.name, self.args = cmd.split(None, 1)
+        self.basename = os.path.basename(self.name)
 
     def open(self, url, new=0, autoraise=1):
         assert "'" not in url
@@ -358,8 +360,10 @@ def register_X_browsers():
                 commd + " '%s' >/dev/null &"))
 
     # Konqueror/kfm, the KDE browser.
-    if _iscommand("kfm") or _iscommand("konqueror"):
-        register("kfm", Konqueror, Konqueror())
+    if _iscommand("kfm"):
+        register("kfm", Konqueror, Konqueror("kfm"))
+    elif _iscommand("konqueror"):
+        register("konqueror", Konqueror, Konqueror("konqueror"))
 
     # Gnome's Galeon and Epiphany
     for browser in ("galeon", "epiphany"):
