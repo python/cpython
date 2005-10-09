@@ -482,6 +482,7 @@ aliases = {
     # utf_7 codec
     'u7'                 : 'utf_7',
     'utf7'               : 'utf_7',
+    'unicode_1_1_utf_7'  : 'utf_7',
 
     # utf_8 codec
     'u8'                 : 'utf_8',
