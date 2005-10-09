@@ -517,6 +517,8 @@ Library
 - Bug #1202493: Fixing SRE parser to handle '{}' as perl does, rather than
   considering it exactly like a '*'.
 
+- Bug #1245379: Add "unicode-1-1-utf-7" as an alias for "utf-7" to
+  ``encodings.aliases``.
 
 Build
 -----
