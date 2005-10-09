@@ -194,7 +194,7 @@ Extension Modules
 - Bug #728515: mmap.resize() now resizes the file on Unix as it did
   on Windows.
 
-- Patch #1180695: Add nanosecond stat resolution, and st_gen, 
+- Patch #1180695: Add nanosecond stat resolution, and st_gen,
   st_birthtime for FreeBSD.
 
 - Patch #1231069: The fcntl.ioctl function now uses the 'I' code for
@@ -256,7 +256,7 @@ Library
 
 - Patch #754022: Greatly enhanced webbrowser.py (by Oleg Broytmann).
 
-- Bug #729103: pydoc.py: Fix docother() method to accept additional 
+- Bug #729103: pydoc.py: Fix docother() method to accept additional
   "parent" argument.
 
 - Patch #1300515: xdrlib.py: Fix pack_fstring() to really use null bytes
@@ -293,7 +293,7 @@ Library
 
 - Bug #1178484: Return complete lines from codec stream readers
   even if there is an exception in later lines, resulting in
-  correct line numbers for decoding errors in source code. 
+  correct line numbers for decoding errors in source code.
 
 - Bug #1192315: Disallow negative arguments to clear() in pdb.
 
