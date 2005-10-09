@@ -29,7 +29,7 @@ Core and builtins
   represented as a C int, raise OverflowError.
 
 - test__locale is skipped on OS X < 10.4 (only partial locale support is
-present).
+  present).
 
 - SF bug #893549: parsing keyword arguments was broken with a few format
   codes.
