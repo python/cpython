@@ -787,13 +787,23 @@ These are the basic Unicode object types used for the Unicode
 implementation in Python:
 
 \begin{ctypedesc}{Py_UNICODE}
-  This type represents a 16-bit unsigned storage type which is used by
-  Python internally as basis for holding Unicode ordinals.  On
-  platforms where \ctype{wchar_t} is available and also has 16-bits,
-  \ctype{Py_UNICODE} is a typedef alias for \ctype{wchar_t} to enhance
-  native platform compatibility.  On all other platforms,
-  \ctype{Py_UNICODE} is a typedef alias for \ctype{unsigned short}.
+  This type represents the storage type which is used by Python
+  internally as basis for holding Unicode ordinals.  Python's default
+  builds use a 16-bit type for \ctype{Py_UNICODE} and store Unicode
+  values internally as UCS2. It is also possible to build a UCS4
+  version of Python (most recent Linux distributions come with UCS4
+  builds of Python). These builds then use a 32-bit type for
+  \ctype{Py_UNICODE} and store Unicode data internally as UCS4. On
+  platforms where \ctype{wchar_t} is available and compatible with the
+  chosen Python Unicode build variant, \ctype{Py_UNICODE} is a typedef
+  alias for \ctype{wchar_t} to enhance native platform compatibility.
+  On all other platforms, \ctype{Py_UNICODE} is a typedef alias for
+  either \ctype{unsigned short} (UCS2) or \ctype{unsigned long}
+  (UCS4).
 \end{ctypedesc}
+
+Note that UCS2 and UCS4 Python builds are not binary compatible.
+Please keep this in mind when writing extensions or interfaces.
 
 \begin{ctypedesc}{PyUnicodeObject}
   This subtype of \ctype{PyObject} represents a Python Unicode object.
