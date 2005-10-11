@@ -20,7 +20,7 @@ main(int argc, char *argv[])
     Py_DECREF(pName);
 
     if (pModule != NULL) {
-        pFunc = PyDict_GetAttrString(pModule, argv[2]);
+        pFunc = PyDict_GetItemString(pModule, argv[2]);
         /* pFunc is a new reference */
 
         if (pFunc && PyCallable_Check(pFunc)) {
