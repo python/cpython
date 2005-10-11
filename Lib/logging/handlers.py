@@ -854,7 +854,8 @@ class HTTPHandler(logging.Handler):
         """
         try:
             import httplib, urllib
-            h = httplib.HTTP(self.host)
+            host = self.host
+            h = httplib.HTTP(host)
             url = self.url
             data = urllib.urlencode(self.mapLogRecord(record))
             if self.method == "GET":
@@ -864,7 +865,15 @@ class HTTPHandler(logging.Handler):
                     sep = '?'
                 url = url + "%c%s" % (sep, data)
             h.putrequest(self.method, url)
+            # support multiple hosts on one IP address...
+            # need to strip optional :port from host, if present
+            i = string.find(host, ":")
+            if i >= 0:
+                host = host[:i]
+            h.putheader("Host", host)
             if self.method == "POST":
+                h.putheader("Content-type",
+                            "application/x-www-form-urlencoded")
                 h.putheader("Content-length", str(len(data)))
             h.endheaders()
             if self.method == "POST":
