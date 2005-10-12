@@ -778,12 +778,6 @@ determination.
   the Python statement \samp{del \var{o}[\var{i1}:\var{i2}]}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PySequence_Tuple}{PyObject *o}
-  Returns the \var{o} as a tuple on success, and \NULL{} on failure.
-  This is equivalent to the Python expression \samp{tuple(\var{o})}.
-  \bifuncindex{tuple}
-\end{cfuncdesc}
-
 \begin{cfuncdesc}{int}{PySequence_Count}{PyObject *o, PyObject *value}
   Return the number of occurrences of \var{value} in \var{o}, that is,
   return the number of keys for which \code{\var{o}[\var{key}] ==
@@ -811,9 +805,11 @@ determination.
 
 \begin{cfuncdesc}{PyObject*}{PySequence_Tuple}{PyObject *o}
   Return a tuple object with the same contents as the arbitrary
-  sequence \var{o}.  If \var{o} is a tuple, a new reference will be
-  returned, otherwise a tuple will be constructed with the appropriate
-  contents.
+  sequence \var{o} or \NULL{} on failure.  If \var{o} is a tuple,
+  a new reference will be returned, otherwise a tuple will be
+  constructed with the appropriate contents.  This is equivalent
+  to the Python expression \samp{tuple(\var{o})}.
+  \bifuncindex{tuple}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PySequence_Fast}{PyObject *o, const char *m}
