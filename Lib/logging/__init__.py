@@ -783,14 +783,17 @@ class PlaceHolder:
         """
         Initialize with the specified logger being a child of this placeholder.
         """
-        self.loggers = [alogger]
+        #self.loggers = [alogger]
+        self.loggerMap = { alogger : None }
 
     def append(self, alogger):
         """
         Add the specified logger as a child of this placeholder.
         """
-        if alogger not in self.loggers:
-            self.loggers.append(alogger)
+        #if alogger not in self.loggers:
+        if not self.loggerMap.has_key(alogger):
+            #self.loggers.append(alogger)
+            self.loggerMap[alogger] = None
 
 #
 #   Determine which class to use when instantiating loggers.
@@ -892,7 +895,8 @@ class Manager:
         Ensure that children of the placeholder ph are connected to the
         specified logger.
         """
-        for c in ph.loggers:
+        #for c in ph.loggers:
+        for c in ph.loggerMap.keys():
             if string.find(c.parent.name, alogger.name) <> 0:
                 alogger.parent = c.parent
                 c.parent = alogger
