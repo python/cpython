@@ -409,6 +409,10 @@ class UnquotingTests(unittest.TestCase):
         self.assertEqual(expect, result,
                          "using unquote_plus(): %s != %s" % (expect, result))
 
+    def test_unquote_with_unicode(self):
+        r = urllib.unquote(u'br%C3%BCckner_sapporo_20050930.doc')
+        self.assertEqual(r, u'br\xc3\xbcckner_sapporo_20050930.doc')
+
 class urlencode_Tests(unittest.TestCase):
     """Tests for urlencode()"""
 

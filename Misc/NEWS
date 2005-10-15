@@ -30,6 +30,9 @@ Extension Modules
 Library
 -------
 
+- urllib.unquote() now handles Unicode strings correctly.  Formerly, it would
+  either ignore the substitution or raise UnicodeDecodeError.
+
 - SF #1313496:  the bisect module now accepts named arguments.
 
 - Bug #729103: pydoc.py: Fix docother() method to accept additional
