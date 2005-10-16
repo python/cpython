@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Nick Coghlan requested CVS access so he could update his PEP directly.
+  Granted by GvR on 16 Oct 2005.
+
 - Added two new developers for the Summer of Code project. 8 July 2005
   by RDH.  Andrew Kuchling will be mentoring Gregory K Johnson for a
   project to enchance mailbox.  Brett Cannon requested access for Flovis
@@ -79,5 +82,6 @@ Permissions Dropped after Loss of Contact
 Initials of Project Admins
 --------------------------
 
+GvR:  Guido van Rossum
 RDH:  Raymond Hettinger
 TGP:  Tim Peters
