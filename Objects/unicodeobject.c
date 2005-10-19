@@ -850,7 +850,7 @@ char utf7_special[128] = {
 
 #define SPECIAL(c, encodeO, encodeWS) \
     ((c) > 127 || (c) <= 0 || utf7_special[(c)] == 1 || \
-	 (encodeWS && (utf7_special[(c)] == 2)) || \
+     (encodeWS && (utf7_special[(c)] == 2)) || \
      (encodeO && (utf7_special[(c)] == 3)))
 
 #define B64(n)  \
@@ -861,29 +861,29 @@ char utf7_special[128] = {
     ((c) == '+' ? 62 : (c) == '/' ? 63 : (c) >= 'a' ?                   \
      (c) - 71 : (c) >= 'A' ? (c) - 65 : (c) + 4 )
 
-#define ENCODE(out, ch, bits) \
-    while (bits >= 6) { \
-        *out++ = B64(ch >> (bits-6)); \
-        bits -= 6; \
+#define ENCODE(out, ch, bits)                   \
+    while (bits >= 6) {                         \
+        *out++ = B64(ch >> (bits-6));           \
+        bits -= 6;                              \
     }
 
-#define DECODE(out, ch, bits, surrogate) \
-    while (bits >= 16) { \
-        Py_UNICODE outCh = (Py_UNICODE) ((ch >> (bits-16)) & 0xffff); \
-        bits -= 16; \
-		if (surrogate) { \
+#define DECODE(out, ch, bits, surrogate)                                \
+    while (bits >= 16) {                                                \
+        Py_UNICODE outCh = (Py_UNICODE) ((ch >> (bits-16)) & 0xffff);   \
+        bits -= 16;                                                     \
+        if (surrogate) {                                                \
             /* We have already generated an error for the high surrogate \
                so let's not bother seeing if the low surrogate is correct or not */ \
-			surrogate = 0; \
-		} else if (0xDC00 <= outCh && outCh <= 0xDFFF) { \
+            surrogate = 0;                                              \
+        } else if (0xDC00 <= outCh && outCh <= 0xDFFF) {                \
             /* This is a surrogate pair. Unfortunately we can't represent \
-               it in a 16-bit character */ \
-			surrogate = 1; \
-            errmsg = "code pairs are not supported"; \
-	        goto utf7Error; \
-		} else { \
-				*out++ = outCh; \
-		} \
+               it in a 16-bit character */                              \
+            surrogate = 1;                                              \
+            errmsg = "code pairs are not supported";                    \
+            goto utf7Error;                                             \
+        } else {                                                        \
+            *out++ = outCh;                                             \
+        }                                                               \
     }
 
 PyObject *PyUnicode_DecodeUTF7(const char *s,
