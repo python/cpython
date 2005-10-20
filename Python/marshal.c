@@ -6,6 +6,7 @@
 
 #include "Python.h"
 #include "longintrepr.h"
+#include "code.h"
 #include "compile.h"
 #include "marshal.h"
 

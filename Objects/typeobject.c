@@ -1737,20 +1737,14 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			goto bad_slots;
 		for (i = j = 0; i < nslots; i++) {
 			char *s;
-			char buffer[256];
 			tmp = PyTuple_GET_ITEM(slots, i);
 			s = PyString_AS_STRING(tmp);
 			if ((add_dict && strcmp(s, "__dict__") == 0) ||
 			    (add_weak && strcmp(s, "__weakref__") == 0))
 				continue;
-			if (_Py_Mangle(PyString_AS_STRING(name),
-				       PyString_AS_STRING(tmp),
-				       buffer, sizeof(buffer)))
-			{
-				tmp = PyString_FromString(buffer);
-			} else {
-				Py_INCREF(tmp);
-			}
+			tmp =_Py_Mangle(name, tmp);
+                        if (!tmp)
+                            goto bad_slots;
 			PyTuple_SET_ITEM(newslots, j, tmp);
 			j++;
 		}

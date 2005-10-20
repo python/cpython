@@ -2,7 +2,7 @@
 /* Function object implementation */
 
 #include "Python.h"
-#include "compile.h"
+#include "code.h"
 #include "eval.h"
 #include "structmember.h"
 
@@ -144,7 +144,9 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
 		Py_XINCREF(closure);
 	}
 	else {
-		PyErr_SetString(PyExc_SystemError, "non-tuple closure");
+		PyErr_Format(PyExc_SystemError, 
+			     "expected tuple for closure, got '%.100s'",
+			     closure->ob_type->tp_name);
 		return -1;
 	}
 	Py_XDECREF(((PyFunctionObject *) op) -> func_closure);

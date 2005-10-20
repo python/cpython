@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="pythoncore"
+	ProjectGUID="{7AFA1F0B-A8A1-455A-A832-BF263404BBEF}"
 	SccProjectName="pythoncore"
 	SccLocalPath="..">
 	<Platforms>
@@ -478,6 +479,12 @@
 			</FileConfiguration>
 		</File>
 		<File
+			RelativePath="..\Python\asdl.c">
+		</File>
+		<File
+			RelativePath="..\Python\ast.c">
+		</File>
+		<File
 			RelativePath="..\Modules\audioop.c">
 			<FileConfiguration
 				Name="Release|Win32">
@@ -802,34 +809,10 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\Modules\collectionsmodule.c">
+			RelativePath="..\Objects\codeobject.c">
 		</File>
 		<File
-			RelativePath="..\Python\compile.c">
-			<FileConfiguration
-				Name="Release|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="2"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="0"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;WIN32;_WINDOWS;$(NoInherit)"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="ReleaseItanium|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="2"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
-			</FileConfiguration>
+			RelativePath="..\Modules\collectionsmodule.c">
 		</File>
 		<File
 			RelativePath="..\Objects\complexobject.c">
@@ -1186,6 +1169,9 @@
 			</FileConfiguration>
 		</File>
 		<File
+			RelativePath="..\Parser\firstsets.c">
+		</File>
+		<File
 			RelativePath="..\Objects\floatobject.c">
 			<FileConfiguration
 				Name="Release|Win32">
@@ -1268,6 +1254,33 @@
 		</File>
 		<File
 			RelativePath="..\Objects\funcobject.c">
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;WIN32;_WINDOWS;$(NoInherit)"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="ReleaseItanium|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\Modules\functionalmodule.c">
 			<FileConfiguration
 				Name="Release|Win32">
 				<Tool
@@ -1646,6 +1659,9 @@
 					AdditionalIncludeDirectories=""
 					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
 			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\Parser\grammar.c">
 		</File>
 		<File
 			RelativePath="..\Parser\grammar1.c">
@@ -2302,6 +2318,9 @@
 			</FileConfiguration>
 		</File>
 		<File
+			RelativePath="..\Python\compile.c">
+		</File>
+		<File
 			RelativePath="..\Parser\node.c">
 			<FileConfiguration
 				Name="Release|Win32">
@@ -2437,9 +2456,6 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\Modules\parsermodule.c">
-		</File>
-		<File
 			RelativePath="..\Parser\parsetok.c">
 			<FileConfiguration
 				Name="Release|Win32">
@@ -2465,6 +2481,9 @@
 					AdditionalIncludeDirectories=""
 					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
 			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\Parser\pgen.c">
 		</File>
 		<File
 			RelativePath="..\Modules\posixmodule.c">
@@ -2549,6 +2568,9 @@
 		</File>
 		<File
 			RelativePath="..\Python\pystrtod.c">
+		</File>
+		<File
+			RelativePath="..\Python\Python-ast.c">
 		</File>
 		<File
 			RelativePath="..\PC\python_nt.rc">
@@ -2764,7 +2786,65 @@
 			</FileConfiguration>
 		</File>
 		<File
+<<<<<<< pythoncore.vcproj
                         RelativePath="..\Modules\sha256module.c">
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;WIN32;_WINDOWS;$(NoInherit)"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="ReleaseItanium|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
+			</FileConfiguration>
+		</File>
+		<File
+                        RelativePath="..\Modules\sha512module.c">
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;WIN32;_WINDOWS;$(NoInherit)"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="ReleaseItanium|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\Modules\signalmodule.c">
+=======
+                        RelativePath="..\Modules\sha256module.c">
+>>>>>>> 1.26.2.3
 			<FileConfiguration
 				Name="Release|Win32">
 				<Tool
@@ -3145,31 +3225,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\Parser\tokenizer.c">
-			<FileConfiguration
-				Name="Release|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="2"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="0"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;WIN32;_WINDOWS;$(NoInherit)"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="ReleaseItanium|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="2"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
-			</FileConfiguration>
+			RelativePath="..\Parser\tokenizer_pgen.c">
 		</File>
 		<File
 			RelativePath="..\Python\traceback.c">

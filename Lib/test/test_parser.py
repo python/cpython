@@ -411,10 +411,32 @@ class IllegalSyntaxTestCase(unittest.TestCase):
                 (0, ''))
         self.check_bad_tree(tree, "malformed global ast")
 
+
+class CompileTestCase(unittest.TestCase):
+
+    # These tests are very minimal. :-(
+
+    def test_compile_expr(self):
+        st = parser.expr('2 + 3')
+        code = parser.compilest(st)
+        self.assertEquals(eval(code), 5)
+
+    def test_compile_suite(self):
+        st = parser.suite('x = 2; y = x + 3')
+        code = parser.compilest(st)
+        globs = {}
+        exec code in globs
+        self.assertEquals(globs['y'], 5)
+
+    def test_compile_error(self):
+        st = parser.suite('1 = 3 + 4')
+        self.assertRaises(SyntaxError, parser.compilest, st)
+
 def test_main():
     test_support.run_unittest(
         RoundtripLegalSyntaxTestCase,
-        IllegalSyntaxTestCase
+        IllegalSyntaxTestCase,
+        CompileTestCase,
     )
 
 

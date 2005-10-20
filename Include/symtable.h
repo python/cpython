@@ -4,64 +4,59 @@
 extern "C" {
 #endif
 
-/* A symbol table is constructed each time PyNode_Compile() is
-   called.  The table walks the entire parse tree and identifies each
-   use or definition of a variable. 
-
-   The symbol table contains a dictionary for each code block in a
-   module: The symbol dictionary for the block.  They keys of these
-   dictionaries are the name of all variables used or defined in the
-   block; the integer values are used to store several flags,
-   e.g. DEF_PARAM indicates that a variable is a parameter to a
-   function. 
-*/
+typedef enum _block_type { FunctionBlock, ClassBlock, ModuleBlock }
+    block_ty;
 
 struct _symtable_entry;
 
 struct symtable {
-	int st_pass;             /* pass == 1 or 2 */
 	const char *st_filename; /* name of file being compiled */
 	struct _symtable_entry *st_cur; /* current symbol table entry */
+	struct _symtable_entry *st_top; /* module entry */
 	PyObject *st_symbols;    /* dictionary of symbol table entries */
         PyObject *st_stack;      /* stack of namespace info */
 	PyObject *st_global;     /* borrowed ref to MODULE in st_symbols */
-	int st_nscopes;          /* number of scopes */
-	int st_errors;           /* number of errors */
+	int st_nblocks;          /* number of blocks */
 	char *st_private;        /* name of current class or NULL */
+        int st_tmpname;          /* temporary name counter */
 	PyFutureFeatures *st_future; /* module's future features */
 };
 
 typedef struct _symtable_entry {
 	PyObject_HEAD
-	PyObject *ste_id;        /* int: key in st_symbols) */
-	PyObject *ste_symbols;   /* dict: name to flags) */
-	PyObject *ste_name;      /* string: name of scope */
+	PyObject *ste_id;        /* int: key in st_symbols */
+	PyObject *ste_symbols;   /* dict: name to flags */
+	PyObject *ste_name;      /* string: name of block */
 	PyObject *ste_varnames;  /* list of variable names */
 	PyObject *ste_children;  /* list of child ids */
-	int ste_type;            /* module, class, or function */
-	int ste_lineno;          /* first line of scope */
-	int ste_optimized;       /* true if namespace can't be optimized */
-	int ste_nested;          /* true if scope is nested */
-	int ste_child_free;      /* true if a child scope has free variables,
+	block_ty ste_type;       /* module, class, or function */
+	int ste_unoptimized;     /* false if namespace is optimized */
+	int ste_nested : 1;      /* true if block is nested */
+	int ste_free : 1;        /* true if block has free variables */
+	int ste_child_free : 1;  /* true if a child block has free variables,
 				    including free refs to globals */
-	int ste_generator;       /* true if namespace is a generator */
+	int ste_generator : 1;   /* true if namespace is a generator */
+	int ste_varargs : 1;     /* true if block has varargs */
+	int ste_varkeywords : 1; /* true if block has varkeywords */
+	int ste_lineno;          /* first line of block */
 	int ste_opt_lineno;      /* lineno of last exec or import * */
-	int ste_tmpname;         /* temporary name counter */
+	int ste_tmpname;         /* counter for listcomp temp vars */
 	struct symtable *ste_table;
-} PySymtableEntryObject;
+} PySTEntryObject;
 
-PyAPI_DATA(PyTypeObject) PySymtableEntry_Type;
+PyAPI_DATA(PyTypeObject) PySTEntry_Type;
 
-#define PySymtableEntry_Check(op) ((op)->ob_type == &PySymtableEntry_Type)
+#define PySTEntry_Check(op) ((op)->ob_type == &PySTEntry_Type)
 
-PyAPI_FUNC(PyObject *) PySymtableEntry_New(struct symtable *,
-						 char *, int, int);
+PyAPI_FUNC(PySTEntryObject *) \
+	PySTEntry_New(struct symtable *, identifier, block_ty, void *, int);
+PyAPI_FUNC(int) PyST_GetScope(PySTEntryObject *, PyObject *);
 
-PyAPI_FUNC(struct symtable *) PyNode_CompileSymtable(struct _node *, const char *);
+PyAPI_FUNC(struct symtable *) PySymtable_Build(mod_ty, const char *, 
+					      PyFutureFeatures *);
+PyAPI_FUNC(PySTEntryObject *) PySymtable_Lookup(struct symtable *, void *);
+
 PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
-
-
-#define TOP "global"
 
 /* Flags for def-use information */
 
@@ -72,16 +67,19 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 #define DEF_STAR 2<<3          /* parameter is star arg */
 #define DEF_DOUBLESTAR 2<<4    /* parameter is star-star arg */
 #define DEF_INTUPLE 2<<5       /* name defined in tuple in parameters */
-#define DEF_FREE 2<<6          /* name used but not defined in nested scope */
+#define DEF_FREE 2<<6          /* name used but not defined in nested block */
 #define DEF_FREE_GLOBAL 2<<7   /* free variable is actually implicit global */
 #define DEF_FREE_CLASS 2<<8    /* free variable from class's method */
 #define DEF_IMPORT 2<<9        /* assignment occurred via import */
 
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 
-#define TYPE_FUNCTION 1
-#define TYPE_CLASS 2
-#define TYPE_MODULE 3
+/* GLOBAL_EXPLICIT and GLOBAL_IMPLICIT are used internally by the symbol
+   table.  GLOBAL is returned from PyST_GetScope() for either of them. 
+   It is stored in ste_symbols at bits 12-14.
+*/
+#define SCOPE_OFF 11
+#define SCOPE_MASK 7
 
 #define LOCAL 1
 #define GLOBAL_EXPLICIT 2
@@ -89,9 +87,14 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 #define FREE 4
 #define CELL 5
 
+/* The following three names are used for the ste_unoptimized bit field */
 #define OPT_IMPORT_STAR 1
 #define OPT_EXEC 2
 #define OPT_BARE_EXEC 4
+#define OPT_TOPLEVEL 8  /* top-level names, including eval and exec */
+
+#define GENERATOR 1
+#define GENERATOR_EXPRESSION 2
 
 #define GENERATOR 1
 #define GENERATOR_EXPRESSION 2

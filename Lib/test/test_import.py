@@ -192,3 +192,16 @@ def test_failing_reload():
             del sys.modules[TESTFN]
 
 test_failing_reload()
+
+def test_import_name_binding():
+    # import x.y.z binds x in the current namespace
+    import test as x
+    import test.test_support
+    assert x is test, x.__name__
+    assert hasattr(test.test_support, "__file__")
+
+    # import x.y.z as w binds z as w
+    import test.test_support as y
+    assert y is test.test_support, y.__name__
+
+test_import_name_binding()

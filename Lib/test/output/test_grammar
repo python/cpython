@@ -34,6 +34,7 @@ continue + try/except ok
 continue + try/finally ok
 testing continue and break in try/except in loop
 return_stmt
+yield_stmt
 raise_stmt
 import_name
 import_from

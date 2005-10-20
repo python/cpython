@@ -8,7 +8,7 @@
 
 #include "Python.h"
 
-#include "compile.h"
+#include "code.h"
 #include "frameobject.h"
 #include "eval.h"
 #include "opcode.h"
@@ -543,7 +543,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 #ifdef LLTRACE
 	int lltrace;
 #endif
-#if defined(Py_DEBUG) || defined(LLTRACE)
+#if defined(Py_DEBUG)
 	/* Make it easier to find out where we are with a debugger */
 	char *filename;
 #endif
@@ -743,9 +743,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 	f->f_stacktop = NULL;	/* remains NULL unless yield suspends frame */
 
 #ifdef LLTRACE
-	lltrace = PyDict_GetItemString(f->f_globals,"__lltrace__") != NULL;
+	lltrace = PyDict_GetItemString(f->f_globals, "__lltrace__") != NULL;
 #endif
-#if defined(Py_DEBUG) || defined(LLTRACE)
+#if defined(Py_DEBUG)
 	filename = PyString_AsString(co->co_filename);
 #endif
 
@@ -2257,23 +2257,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 
 		case MAKE_CLOSURE:
 		{
-			int nfree;
 			v = POP(); /* code object */
 			x = PyFunction_New(v, f->f_globals);
-			nfree = PyCode_GetNumFree((PyCodeObject *)v);
 			Py_DECREF(v);
-			/* XXX Maybe this should be a separate opcode? */
-			if (x != NULL && nfree > 0) {
-				v = PyTuple_New(nfree);
-				if (v == NULL) {
-					Py_DECREF(x);
-					x = NULL;
-					break;
-				}
-				while (--nfree >= 0) {
-					w = POP();
-					PyTuple_SET_ITEM(v, nfree, w);
-				}
+			if (x != NULL) {
+				v = POP();
 				err = PyFunction_SetClosure(x, v);
 				Py_DECREF(v);
 			}
@@ -2695,12 +2683,18 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		if (co->co_flags & CO_VARKEYWORDS)
 			nargs++;
 
-		/* Check for cells that shadow args */
-		for (i = 0; i < f->f_ncells && j < nargs; ++i) {
+		/* Initialize each cell var, taking into account
+		   cell vars that are initialized from arguments.
+
+		   Should arrange for the compiler to put cellvars
+		   that are arguments at the beginning of the cellvars
+		   list so that we can march over it more efficiently?
+		*/
+		for (i = 0; i < f->f_ncells; ++i) {
 			cellname = PyString_AS_STRING(
 				PyTuple_GET_ITEM(co->co_cellvars, i));
 			found = 0;
-			while (j < nargs) {
+			for (j = 0; j < nargs; j++) {
 				argname = PyString_AS_STRING(
 					PyTuple_GET_ITEM(co->co_varnames, j));
 				if (strcmp(cellname, argname) == 0) {
@@ -2711,7 +2705,6 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 					found = 1;
 					break;
 				}
-				j++;
 			}
 			if (found == 0) {
 				c = PyCell_New(NULL);
@@ -2719,14 +2712,6 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 					goto fail;
 				SETLOCAL(f->f_nlocals + i, c);
 			}
-		}
-		/* Initialize any that are left */
-		while (i < f->f_ncells) {
-			c = PyCell_New(NULL);
-			if (c == NULL)
-				goto fail;
-			SETLOCAL(f->f_nlocals + i, c);
-			i++;
 		}
 	}
 	if (f->f_nfreevars) {

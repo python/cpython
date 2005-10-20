@@ -21,7 +21,7 @@ static void initerr(perrdetail *err_ret, const char* filename);
 node *
 PyParser_ParseString(const char *s, grammar *g, int start, perrdetail *err_ret)
 {
-	return PyParser_ParseStringFlags(s, g, start, err_ret, 0);
+	return PyParser_ParseStringFlagsFilename(s, NULL, g, start, err_ret, 0);
 }
 
 node *
@@ -55,7 +55,6 @@ PyParser_ParseStringFlagsFilename(const char *s, const char *filename,
 
 	return parsetok(tok, g, start, err_ret, flags);
 }
-
 
 /* Parse input coming from a file.  Return error code, print some errors. */
 
@@ -210,7 +209,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 }
 
 static void
-initerr(perrdetail *err_ret, const char* filename)
+initerr(perrdetail *err_ret, const char *filename)
 {
 	err_ret->error = E_OK;
 	err_ret->filename = filename;

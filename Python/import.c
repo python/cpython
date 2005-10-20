@@ -3,10 +3,11 @@
 
 #include "Python.h"
 
-#include "node.h"
-#include "token.h"
+#include "Python-ast.h"
+#include "pythonrun.h"
 #include "errcode.h"
 #include "marshal.h"
+#include "code.h"
 #include "compile.h"
 #include "eval.h"
 #include "osdefs.h"
@@ -766,17 +767,17 @@ load_compiled_module(char *name, char *cpathname, FILE *fp)
 /* Parse a source file and return the corresponding code object */
 
 static PyCodeObject *
-parse_source_module(char *pathname, FILE *fp)
+parse_source_module(const char *pathname, FILE *fp)
 {
-	PyCodeObject *co;
-	node *n;
+	PyCodeObject *co = NULL;
+	mod_ty mod;
 
-	n = PyParser_SimpleParseFile(fp, pathname, Py_file_input);
-	if (n == NULL)
-		return NULL;
-	co = PyNode_Compile(n, pathname);
-	PyNode_Free(n);
-
+	mod = PyParser_ASTFromFile(fp, pathname, Py_file_input, 0, 0, 0, 
+				   NULL);
+	if (mod) {
+		co = PyAST_Compile(mod, pathname, NULL);
+		free_mod(mod);
+	}
 	return co;
 }
 

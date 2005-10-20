@@ -29,46 +29,37 @@ PyAPI_FUNC(int) Py_IsInitialized(void);
 PyAPI_FUNC(PyThreadState *) Py_NewInterpreter(void);
 PyAPI_FUNC(void) Py_EndInterpreter(PyThreadState *);
 
-PyAPI_FUNC(int) PyRun_AnyFile(FILE *, const char *);
-PyAPI_FUNC(int) PyRun_AnyFileEx(FILE *, const char *, int);
-
-PyAPI_FUNC(int) PyRun_AnyFileFlags(FILE *, const char *, PyCompilerFlags *);
-PyAPI_FUNC(int) PyRun_AnyFileExFlags(FILE *, const char *, int, PyCompilerFlags *);
-
-PyAPI_FUNC(int) PyRun_SimpleString(const char *);
+PyAPI_FUNC(int) PyRun_AnyFileFlags(FILE *, char *, PyCompilerFlags *);
+PyAPI_FUNC(int) PyRun_AnyFileExFlags(FILE *, char *, int, PyCompilerFlags *);
 PyAPI_FUNC(int) PyRun_SimpleStringFlags(const char *, PyCompilerFlags *);
-PyAPI_FUNC(int) PyRun_SimpleFile(FILE *, const char *);
-PyAPI_FUNC(int) PyRun_SimpleFileEx(FILE *, const char *, int);
 PyAPI_FUNC(int) PyRun_SimpleFileExFlags(FILE *, const char *, int, PyCompilerFlags *);
-PyAPI_FUNC(int) PyRun_InteractiveOne(FILE *, const char *);
 PyAPI_FUNC(int) PyRun_InteractiveOneFlags(FILE *, const char *, PyCompilerFlags *);
-PyAPI_FUNC(int) PyRun_InteractiveLoop(FILE *, const char *);
 PyAPI_FUNC(int) PyRun_InteractiveLoopFlags(FILE *, const char *, PyCompilerFlags *);
 
-PyAPI_FUNC(struct _node *) PyParser_SimpleParseString(const char *, int);
-PyAPI_FUNC(struct _node *) PyParser_SimpleParseFile(FILE *, const char *, int);
-PyAPI_FUNC(struct _node *) PyParser_SimpleParseStringFlags(const char *, int, int);
-PyAPI_FUNC(struct _node *) PyParser_SimpleParseStringFlagsFilename(const char *,
-								  const char *,
-								  int,
-								  int);
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromString(const char *, const char *, 
+						 int, PyCompilerFlags *flags);
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromFile(FILE *, const char *, int, 
+					       char *, char *,
+                                               PyCompilerFlags *, int *);
+#define PyParser_SimpleParseString(S, B) \
+        PyParser_SimpleParseStringFlags(S, B, 0)
+#define PyParser_SimpleParseFile(FP, S, B) \
+        PyParser_SimpleParseFileFlags(FP, S, B, 0)
+PyAPI_FUNC(struct _node *) PyParser_SimpleParseStringFlags(const char *, int, 
+							  int);
 PyAPI_FUNC(struct _node *) PyParser_SimpleParseFileFlags(FILE *, const char *,
 							int, int);
 
-PyAPI_FUNC(PyObject *) PyRun_String(const char *, int, PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) PyRun_File(FILE *, const char *, int, PyObject *, PyObject *);
-PyAPI_FUNC(PyObject *) PyRun_FileEx(FILE *, const char *, int,
-				   PyObject *, PyObject *, int);
-PyAPI_FUNC(PyObject *) PyRun_StringFlags(const char *, int, PyObject *, PyObject *,
-					PyCompilerFlags *);
-PyAPI_FUNC(PyObject *) PyRun_FileFlags(FILE *, const char *, int, PyObject *, 
-				      PyObject *, PyCompilerFlags *);
-PyAPI_FUNC(PyObject *) PyRun_FileExFlags(FILE *, const char *, int, PyObject *, 
-					PyObject *, int, PyCompilerFlags *);
+PyAPI_FUNC(PyObject *) PyRun_StringFlags(const char *, int, PyObject *, 
+					 PyObject *, PyCompilerFlags *);
 
-PyAPI_FUNC(PyObject *) Py_CompileString(const char *, const char *, int);
+PyAPI_FUNC(PyObject *) PyRun_FileExFlags(FILE *, const char *, int, 
+					 PyObject *, PyObject *, int, 
+					 PyCompilerFlags *);
+
+#define Py_CompileString(str, p, s) Py_CompileStringFlags(str, p, s, NULL)
 PyAPI_FUNC(PyObject *) Py_CompileStringFlags(const char *, const char *, int,
-					    PyCompilerFlags *);
+					     PyCompilerFlags *);
 PyAPI_FUNC(struct symtable *) Py_SymtableString(const char *, const char *, int);
 
 PyAPI_FUNC(void) PyErr_Print(void);
@@ -83,6 +74,25 @@ PyAPI_FUNC(int) Py_FdIsInteractive(FILE *, const char *);
 
 /* Bootstrap */
 PyAPI_FUNC(int) Py_Main(int argc, char **argv);
+
+/* Use macros for a bunch of old variants */
+#define PyRun_String(str, s, g, l) PyRun_StringFlags(str, s, g, l, NULL)
+#define PyRun_AnyFile(fp, name) PyRun_AnyFileExFlags(fp, name, 0, NULL)
+#define PyRun_AnyFileEx(fp, name, closeit) \
+	PyRun_AnyFileExFlags(fp, name, closeit, NULL)
+#define PyRun_AnyFileFlags(fp, name, flags) \
+	PyRun_AnyFileExFlags(fp, name, 0, flags)
+#define PyRun_SimpleString(s, f) PyRunSimpleStringFlags(s, f, NULL)
+#define PyRun_SimpleFile(f, p) PyRun_SimpleFileExFlags(f, p, 0, NULL)
+#define PyRun_SimpleFileEx(f, p, c) PyRun_SimpleFileExFlags(f, p, c, NULL)
+#define PyRun_InteractiveOne(f, p) PyRun_InteractiveOneFlags(f, p, NULL)
+#define PyRun_InteractiveLoop(f, p) PyRun_InteractiveLoopFlags(f, p, NULL)
+#define PyRun_File(fp, p, s, g, l) \
+        PyRun_FileExFlags(fp, p, s, g, l, 0, NULL)
+#define PyRun_FileEx(fp, p, s, g, l, c) \
+        PyRun_FileExFlags(fp, p, s, g, l, c, NULL)
+#define PyRun_FileFlags(fp, p, s, g, l, flags) \
+        PyRun_FileExFlags(fp, p, s, g, l, 0, flags)
 
 /* In getpath.c */
 PyAPI_FUNC(char *) Py_GetProgramFullPath(void);
