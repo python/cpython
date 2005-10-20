@@ -1969,6 +1969,7 @@ DB_set_bt_minkey(DBObject* self, PyObject* args)
     RETURN_NONE();
 }
 
+#if (DBVER >= 33)
 static int 
 _default_cmp (const DBT *leftKey,
 	      const DBT *rightKey)
@@ -2120,6 +2121,7 @@ DB_set_bt_compare (DBObject* self, PyObject* args)
     RETURN_IF_ERR ();
     RETURN_NONE ();
 }
+#endif /* DBVER >= 33 */
 
 
 static PyObject*
@@ -3956,6 +3958,7 @@ DBEnv_set_lg_max(DBEnvObject* self, PyObject* args)
 }
 
 
+#if (DBVER >= 33)
 static PyObject*
 DBEnv_set_lg_regionmax(DBEnvObject* self, PyObject* args)
 {
@@ -3971,6 +3974,7 @@ DBEnv_set_lg_regionmax(DBEnvObject* self, PyObject* args)
     RETURN_IF_ERR();
     RETURN_NONE();
 }
+#endif
 
 
 static PyObject*
@@ -4593,7 +4597,9 @@ static PyMethodDef DB_methods[] = {
     {"remove",          (PyCFunction)DB_remove,         METH_VARARGS|METH_KEYWORDS},
     {"rename",          (PyCFunction)DB_rename,         METH_VARARGS},
     {"set_bt_minkey",   (PyCFunction)DB_set_bt_minkey,  METH_VARARGS},
+#if (DBVER >= 33)
     {"set_bt_compare",  (PyCFunction)DB_set_bt_compare, METH_VARARGS},
+#endif
     {"set_cachesize",   (PyCFunction)DB_set_cachesize,  METH_VARARGS},
 #if (DBVER >= 41)
     {"set_encrypt",     (PyCFunction)DB_set_encrypt,    METH_VARARGS|METH_KEYWORDS},
@@ -4683,7 +4689,9 @@ static PyMethodDef DBEnv_methods[] = {
     {"set_lg_bsize",    (PyCFunction)DBEnv_set_lg_bsize,     METH_VARARGS},
     {"set_lg_dir",      (PyCFunction)DBEnv_set_lg_dir,       METH_VARARGS},
     {"set_lg_max",      (PyCFunction)DBEnv_set_lg_max,       METH_VARARGS},
+#if (DBVER >= 33)
     {"set_lg_regionmax",(PyCFunction)DBEnv_set_lg_regionmax, METH_VARARGS},
+#endif
     {"set_lk_detect",   (PyCFunction)DBEnv_set_lk_detect,    METH_VARARGS},
     {"set_lk_max",      (PyCFunction)DBEnv_set_lk_max,       METH_VARARGS},
 #if (DBVER >= 32)
