@@ -1198,6 +1198,8 @@ string_subscript(PyStringObject* self, PyObject* item)
 		else {
 			source_buf = PyString_AsString((PyObject*)self);
 			result_buf = PyMem_Malloc(slicelength);
+			if (result_buf == NULL)
+				return PyErr_NoMemory();
 
 			for (cur = start, i = 0; i < slicelength; 
 			     cur += step, i++) {
