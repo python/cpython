@@ -579,6 +579,7 @@ class PyBuildExt(build_ext):
         # 4.x minor number specific paths
         for x in (0,1,2,3):
             db_inc_paths.append('/usr/include/db4%d' % x)
+            db_inc_paths.append('/usr/include/db4.%d' % x)
             db_inc_paths.append('/usr/local/BerkeleyDB.4.%d/include' % x)
             db_inc_paths.append('/usr/local/include/db4%d' % x)
             db_inc_paths.append('/pkg/db-4.%d/include' % x)
