@@ -350,6 +350,53 @@ class ExtractHardlinkTest(BaseTest):
             if e.errno == errno.ENOENT:
                 self.fail("hardlink not extracted properly")
 
+class CreateHardlinkTest(BaseTest):
+    """Test the creation of LNKTYPE (hardlink) members in an archive.
+       In this respect tarfile.py mimics the behaviour of GNU tar: If
+       a file has a st_nlink > 1, it will be added a REGTYPE member
+       only the first time.
+    """
+
+    def setUp(self):
+        self.tar = tarfile.open(tmpname(), "w")
+
+        self.foo = os.path.join(dirname(), "foo")
+        self.bar = os.path.join(dirname(), "bar")
+
+        if os.path.exists(self.foo):
+            os.remove(self.foo)
+        if os.path.exists(self.bar):
+            os.remove(self.bar)
+
+        file(self.foo, "w").write("foo")
+        self.tar.add(self.foo)
+
+    def test_add_twice(self):
+        # If st_nlink == 1 then the same file will be added as
+        # REGTYPE every time.
+        tarinfo = self.tar.gettarinfo(self.foo)
+        self.assertEqual(tarinfo.type, tarfile.REGTYPE,
+                "add file as regular failed")
+
+    def test_add_hardlink(self):
+        # If st_nlink > 1 then the same file will be added as
+        # LNKTYPE.
+        os.link(self.foo, self.bar)
+        tarinfo = self.tar.gettarinfo(self.foo)
+        self.assertEqual(tarinfo.type, tarfile.LNKTYPE,
+                "add file as hardlink failed")
+
+        tarinfo = self.tar.gettarinfo(self.bar)
+        self.assertEqual(tarinfo.type, tarfile.LNKTYPE,
+                "add file as hardlink failed")
+
+    def test_dereference_hardlink(self):
+        self.tar.dereference = True
+        os.link(self.foo, self.bar)
+        tarinfo = self.tar.gettarinfo(self.bar)
+        self.assertEqual(tarinfo.type, tarfile.REGTYPE,
+                "dereferencing hardlink failed")
+
 
 # Gzip TestCases
 class ReadTestGzip(ReadTest):
@@ -407,6 +454,7 @@ def test_main():
 
     if hasattr(os, "link"):
         tests.append(ExtractHardlinkTest)
+        tests.append(CreateHardlinkTest)
 
     if gzip:
         tests.extend([
