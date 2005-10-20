@@ -372,6 +372,8 @@ def _checkflag(flag, file):
 try:
     import thread
     del thread
+    if db.version() < (3, 3, 0):
+        db.DB_THREAD = 0
 except ImportError:
     db.DB_THREAD = 0
 
