@@ -1,0 +1,107 @@
+-- ASDL's three builtin types are identifier, int, string
+
+module Python
+{
+	mod = Module(stmt* body)
+	    | Interactive(stmt* body)
+	    | Expression(expr body)
+
+	    -- not really an actual node but useful in Jython's typesystem.
+	    | Suite(stmt* body)
+
+	stmt = FunctionDef(identifier name, arguments args, 
+                           stmt* body, expr* decorators)
+	      | ClassDef(identifier name, expr* bases, stmt* body)
+	      | Return(expr? value)
+
+	      | Delete(expr* targets)
+	      | Assign(expr* targets, expr value)
+	      | AugAssign(expr target, operator op, expr value)
+
+	      -- not sure if bool is allowed, can always use int
+ 	      | Print(expr? dest, expr* values, bool nl)
+
+	      -- use 'orelse' because else is a keyword in target languages
+	      | For(expr target, expr iter, stmt* body, stmt* orelse)
+	      | While(expr test, stmt* body, stmt* orelse)
+	      | If(expr test, stmt* body, stmt* orelse)
+
+	      -- 'type' is a bad name
+	      | Raise(expr? type, expr? inst, expr? tback)
+	      | TryExcept(stmt* body, excepthandler* handlers, stmt* orelse)
+	      | TryFinally(stmt* body, stmt* finalbody)
+	      | Assert(expr test, expr? msg)
+
+	      | Import(alias* names)
+	      | ImportFrom(identifier module, alias* names)
+
+	      -- Doesn't capture requirement that locals must be
+	      -- defined if globals is
+	      -- still supports use as a function!
+	      | Exec(expr body, expr? globals, expr? locals)
+
+	      | Global(identifier* names)
+	      | Expr(expr value)
+	      | Pass | Break | Continue
+
+	      -- XXX Jython will be different
+	      attributes (int lineno)
+
+	      -- BoolOp() can use left & right?
+	expr = BoolOp(boolop op, expr* values)
+	     | BinOp(expr left, operator op, expr right)
+	     | UnaryOp(unaryop op, expr operand)
+	     | Lambda(arguments args, expr body)
+	     | Dict(expr* keys, expr* values)
+	     | ListComp(expr elt, comprehension* generators)
+	     | GeneratorExp(expr elt, comprehension* generators)
+	     | Yield(expr? value)
+	     -- need sequences for compare to distinguish between
+	     -- x < 4 < 3 and (x < 4) < 3
+	     | Compare(expr left, cmpop* ops, expr* comparators)
+	     | Call(expr func, expr* args, keyword* keywords,
+			 expr? starargs, expr? kwargs)
+	     | Repr(expr value)
+	     | Num(object n) -- a number as a PyObject.
+	     | Str(string s) -- need to specify raw, unicode, etc?
+	     -- other literals? bools?
+
+	     -- the following expression can appear in assignment context
+	     | Attribute(expr value, identifier attr, expr_context ctx)
+	     | Subscript(expr value, slice slice, expr_context ctx)
+	     | Name(identifier id, expr_context ctx)
+	     | List(expr* elts, expr_context ctx) 
+	     | Tuple(expr *elts, expr_context ctx)
+
+	      attributes (int lineno)
+
+	expr_context = Load | Store | Del | AugLoad | AugStore | Param
+
+	slice = Ellipsis | Slice(expr? lower, expr? upper, expr? step) 
+	      | ExtSlice(slice* dims) 
+	      | Index(expr value) 
+
+	boolop = And | Or 
+
+	operator = Add | Sub | Mult | Div | Mod | Pow | LShift 
+                 | RShift | BitOr | BitXor | BitAnd | FloorDiv
+
+	unaryop = Invert | Not | UAdd | USub
+
+	cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn
+
+	comprehension = (expr target, expr iter, expr* ifs)
+
+	-- not sure what to call the first argument for raise and except
+
+	excepthandler = (expr? type, expr? name, stmt* body)
+
+	arguments = (expr* args, identifier? vararg, 
+		     identifier? kwarg, expr* defaults)
+
+        -- keyword arguments supplied to call
+        keyword = (identifier arg, expr value)
+
+        -- import name with optional 'as' alias.
+        alias = (identifier name, identifier? asname)
+}

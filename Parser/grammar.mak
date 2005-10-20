@@ -15,7 +15,7 @@
 # particular case --pragma in PC\pyconfig.h, which demands that
 # python23.lib get linked in).
 
-LIBS= ..\PCbuild\python23.lib
+LIBS= ..\PCbuild\python25.lib
 
 CFLAGS= /I ..\Include /I ..\PC /D MS_NO_COREDLL /D PGEN /MD
 

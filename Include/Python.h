@@ -128,8 +128,7 @@
 #include "pystrtod.h"
 
 /* _Py_Mangle is defined in compile.c */
-PyAPI_FUNC(int) _Py_Mangle(char *p, char *name, \
-				 char *buffer, size_t maxlen);
+PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
 
 /* PyArg_GetInt is deprecated and should not be used, use PyArg_Parse(). */
 #define PyArg_GetInt(v, a)	PyArg_Parse((v), "i", (a))

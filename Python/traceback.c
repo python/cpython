@@ -3,7 +3,7 @@
 
 #include "Python.h"
 
-#include "compile.h"
+#include "code.h"
 #include "frameobject.h"
 #include "structmember.h"
 #include "osdefs.h"

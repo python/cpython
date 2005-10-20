@@ -22,6 +22,7 @@ The default handler displays output as HTML.
 """
 
 __author__ = 'Ka-Ping Yee'
+
 __version__ = '$Revision$'
 
 import sys

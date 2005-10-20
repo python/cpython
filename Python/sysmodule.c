@@ -15,7 +15,7 @@ Data members:
 */
 
 #include "Python.h"
-#include "compile.h"
+#include "code.h"
 #include "frameobject.h"
 #include "eval.h"
 

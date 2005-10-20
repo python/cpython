@@ -1,3 +1,6 @@
 Makefile
 pgen
 add2lib
+asdl.pyc
+asdl_c.pyc
+spark.pyc

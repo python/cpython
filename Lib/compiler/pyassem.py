@@ -364,16 +364,15 @@ class PyFlowGraph(FlowGraph):
 
     def getCode(self):
         """Get a Python code object"""
-        if self.stage == RAW:
-            self.computeStackDepth()
-            self.flattenGraph()
-        if self.stage == FLAT:
-            self.convertArgs()
-        if self.stage == CONV:
-            self.makeByteCode()
-        if self.stage == DONE:
-            return self.newCodeObject()
-        raise RuntimeError, "inconsistent PyFlowGraph state"
+        assert self.stage == RAW
+        self.computeStackDepth()
+        self.flattenGraph()
+        assert self.stage == FLAT
+        self.convertArgs()
+        assert self.stage == CONV
+        self.makeByteCode()
+        assert self.stage == DONE
+        return self.newCodeObject()
 
     def dump(self, io=None):
         if io:

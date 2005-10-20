@@ -583,6 +583,7 @@ typedef	struct fd_set {
 
 #ifndef INT_MAX
 #define INT_MAX 2147483647
+#define INT_MIN (-INT_MAX - 1)
 #endif
 
 #ifndef LONG_MAX
