@@ -393,11 +393,18 @@ aliases = {
     'cskoi8r'            : 'koi8_r',
 
     # latin_1 codec
+    #
+    # Note that the latin_1 codec is implemented internally in C and a
+    # lot faster than the charmap codec iso8859_1 which uses the same
+    # encoding. This is why we discourage the use of the iso8859_1
+    # codec and alias it to latin_1 instead.
+    #
     '8859'               : 'latin_1',
     'cp819'              : 'latin_1',
     'csisolatin1'        : 'latin_1',
     'ibm819'             : 'latin_1',
     'iso8859'            : 'latin_1',
+    'iso8859_1'          : 'latin_1',
     'iso_8859_1'         : 'latin_1',
     'iso_8859_1_1987'    : 'latin_1',
     'iso_ir_100'         : 'latin_1',
