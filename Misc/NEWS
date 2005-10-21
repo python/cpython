@@ -12,6 +12,10 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Speed up some Unicode operations.
+
+- A new AST parser implementation was completed.
+
 - SF bug #1167751: fix incorrect code being for generator expressions.
   The following code now raises a SyntaxError:  foo(a = i for i in range(10))
 
@@ -164,6 +168,8 @@ Core and builtins
 
 Extension Modules
 -----------------
+
+- Get bsddb module to build with BSD DB version 3.2
 
 - Patch #1309009, Fix segfault in pyexpat when the XML document is in latin_1,
   but Python incorrectly assumes it is in UTF-8 format
