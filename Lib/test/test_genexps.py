@@ -82,6 +82,18 @@ Verify that parenthesis are required in a statement
        ...
     SyntaxError: invalid syntax
 
+Verify that parenthesis are required when used as a keyword argument value
+
+    >>> dict(a = i for i in xrange(10))
+    Traceback (most recent call last):
+       ...
+    SyntaxError: invalid syntax
+
+Verify that parenthesis are required when used as a keyword argument value
+
+    >>> dict(a = (i for i in xrange(10))) #doctest: +ELLIPSIS
+    {'a': <generator object at ...>}
+
 Verify early binding for the outermost for-expression
 
     >>> x=10
@@ -125,12 +137,12 @@ Verify that syntax error's are raised for genexps used as lvalues
     >>> (y for y in (1,2)) = 10
     Traceback (most recent call last):
        ...
-    SyntaxError: assignment to generator expression not possible (<doctest test.test_genexps.__test__.doctests[38]>, line 1)
+    SyntaxError: assignment to generator expression not possible (<doctest test.test_genexps.__test__.doctests[40]>, line 1)
 
     >>> (y for y in (1,2)) += 10
     Traceback (most recent call last):
        ...
-    SyntaxError: augmented assignment to generator expression not possible (<doctest test.test_genexps.__test__.doctests[39]>, line 1)
+    SyntaxError: augmented assignment to generator expression not possible (<doctest test.test_genexps.__test__.doctests[41]>, line 1)
 
 
 ########### Tests borrowed from or inspired by test_generators.py ############
