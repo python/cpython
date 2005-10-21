@@ -444,12 +444,13 @@ analyze_cells(PyObject *scope, PyObject *free)
 static int
 check_unoptimized(const PySTEntryObject* ste) {
 	char buf[300];
+	const char* trailer;
 
 	if (ste->ste_type == ModuleBlock || !ste->ste_unoptimized
 	    || !(ste->ste_free || ste->ste_child_free))
 		return 1;
 
-	const char* trailer = (ste->ste_child_free ? 
+	trailer = (ste->ste_child_free ? 
 		       "contains a nested function with free variables" :
 			       "is a nested function");
 
@@ -621,8 +622,9 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 	/* Recursively call analyze_block() on each child block */
 	for (i = 0; i < PyList_GET_SIZE(ste->ste_children); ++i) {
 		PyObject *c = PyList_GET_ITEM(ste->ste_children, i);
+		PySTEntryObject* entry;
 		assert(c && PySTEntry_Check(c));
-		PySTEntryObject* entry = (PySTEntryObject*)c;
+		entry = (PySTEntryObject*)c;
 		if (!analyze_block(entry, newbound, newfree, newglobal))
 			goto error;
 		if (entry->ste_free || entry->ste_child_free)

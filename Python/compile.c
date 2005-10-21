@@ -2329,8 +2329,9 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
 		src = dot + 1;
 		while (dot) {
 			/* NB src is only defined when dot != NULL */
+			PyObject *attr;
 			dot = strchr(src, '.');
-			PyObject *attr = PyString_FromStringAndSize(src, 
+			attr = PyString_FromStringAndSize(src, 
 					    dot ? dot - src : strlen(src));
 			ADDOP_O(c, LOAD_ATTR, attr, names);
 			src = dot + 1;

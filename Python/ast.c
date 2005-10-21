@@ -512,14 +512,14 @@ static asdl_seq *
 seq_for_testlist(struct compiling *c, const node *n)
 {
     /* testlist: test (',' test)* [','] */
+    asdl_seq *seq;
+    expr_ty expression;
+    int i;
     assert(TYPE(n) == testlist
 	   || TYPE(n) == listmaker
 	   || TYPE(n) == testlist_gexp
 	   || TYPE(n) == testlist_safe
 	   );
-    asdl_seq *seq;
-    expr_ty expression;
-    int i;
 
     seq = asdl_seq_new((NCH(n) + 1) / 2);
     if (!seq)
@@ -641,12 +641,13 @@ ast_for_arguments(struct compiling *c, const node *n)
                                     compiler_complex_args(CHILD(ch, 1))); 
 		}
                 else if (TYPE(CHILD(ch, 0)) == NAME) {
+		    expr_ty name;
 		    if (!strcmp(STR(CHILD(ch, 0)), "None")) {
 			    ast_error(CHILD(ch, 0), "assignment to None");
 			    goto error;
 		    }
-                    expr_ty name = Name(NEW_IDENTIFIER(CHILD(ch, 0)),
-                                        Param, LINENO(ch));
+                    name = Name(NEW_IDENTIFIER(CHILD(ch, 0)),
+                                Param, LINENO(ch));
                     if (!name)
                         goto error;
                     asdl_seq_APPEND(args, name);
@@ -1897,12 +1898,13 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 	if (!targets)
 	    return NULL;
 	for (i = 0; i < NCH(n) - 2; i += 2) {
+	    expr_ty e;
 	    node *ch = CHILD(n, i);
 	    if (TYPE(ch) == yield_expr) {
 		ast_error(ch, "assignment to yield expression not possible");
 		goto error;
 	    }
-	    expr_ty e = ast_for_testlist(c, ch, 0);
+	    e = ast_for_testlist(c, ch, 0);
 
 	    /* set context to assign */
 	    if (!e) 
