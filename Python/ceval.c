@@ -543,7 +543,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 #ifdef LLTRACE
 	int lltrace;
 #endif
-#if defined(Py_DEBUG)
+#if defined(Py_DEBUG) || defined(LLTRACE)
 	/* Make it easier to find out where we are with a debugger */
 	char *filename;
 #endif
@@ -745,7 +745,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 #ifdef LLTRACE
 	lltrace = PyDict_GetItemString(f->f_globals, "__lltrace__") != NULL;
 #endif
-#if defined(Py_DEBUG)
+#if defined(Py_DEBUG) || defined(LLTRACE)
 	filename = PyString_AsString(co->co_filename);
 #endif
 
