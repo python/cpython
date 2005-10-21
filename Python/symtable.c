@@ -1,7 +1,6 @@
 #include "Python.h"
 #include "Python-ast.h"
 #include "code.h"
-#include "compile.h"
 #include "symtable.h"
 #include "structmember.h"
 

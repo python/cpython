@@ -2,7 +2,6 @@
 #include "structmember.h"
 #include "osdefs.h"
 #include "marshal.h"
-#include "compile.h"
 #include <time.h>
 
 

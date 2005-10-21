@@ -2,7 +2,7 @@
 
 #include "Python.h"
 #include "osdefs.h"
-#include "compile.h" /* For CO_FUTURE_DIVISION */
+#include "code.h" /* For CO_FUTURE_DIVISION */
 #include "import.h"
 
 #ifdef __VMS

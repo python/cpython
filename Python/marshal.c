@@ -7,7 +7,6 @@
 #include "Python.h"
 #include "longintrepr.h"
 #include "code.h"
-#include "compile.h"
 #include "marshal.h"
 
 /* High water mark to determine when the marshalled object is dangerously deep

@@ -1,7 +1,6 @@
 #include "Python.h"
 #include <ctype.h>
 
-#include "compile.h"
 #include "frameobject.h"
 #include "expat.h"
 

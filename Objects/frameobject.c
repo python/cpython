@@ -4,7 +4,6 @@
 #include "Python.h"
 
 #include "code.h"
-#include "compile.h"
 #include "frameobject.h"
 #include "opcode.h"
 #include "structmember.h"
