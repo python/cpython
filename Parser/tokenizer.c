@@ -277,11 +277,14 @@ check_coding_spec(const char* line, int size, struct tok_state *tok,
 					tok->encoding = cs;
 					tok->decoding_state = -1;
 				}
+				else
+					PyMem_DEL(cs);
 #else
                                 /* Without Unicode support, we cannot
                                    process the coding spec. Since there
                                    won't be any Unicode literals, that
                                    won't matter. */
+				PyMem_DEL(cs);
 #endif
 			}
 		} else {	/* then, compare cs with BOM */
