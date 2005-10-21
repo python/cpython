@@ -96,9 +96,6 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 #define GENERATOR 1
 #define GENERATOR_EXPRESSION 2
 
-#define GENERATOR 1
-#define GENERATOR_EXPRESSION 2
-
 #ifdef __cplusplus
 }
 #endif
