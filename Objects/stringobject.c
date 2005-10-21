@@ -1620,10 +1620,6 @@ string_join(PyStringObject *self, PyObject *orig)
 
 	seq = PySequence_Fast(orig, "");
 	if (seq == NULL) {
-		if (PyErr_ExceptionMatches(PyExc_TypeError))
-			PyErr_Format(PyExc_TypeError,
-				     "sequence expected, %.80s found",
-				     orig->ob_type->tp_name);
 		return NULL;
 	}
 
