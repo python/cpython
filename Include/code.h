@@ -50,17 +50,17 @@ typedef struct {
 
 #define CO_MAXBLOCKS 20 /* Max static block nesting within a function */
 
-extern DL_IMPORT(PyTypeObject) PyCode_Type;
+PyAPI_DATA(PyTypeObject) PyCode_Type;
 
 #define PyCode_Check(op) ((op)->ob_type == &PyCode_Type)
 #define PyCode_GetNumFree(op) (PyTuple_GET_SIZE((op)->co_freevars))
 
 /* Public interface */
-DL_IMPORT(PyCodeObject *) PyCode_New(
+PyAPI_FUNC(PyCodeObject *) PyCode_New(
 	int, int, int, int, PyObject *, PyObject *, PyObject *, PyObject *,
 	PyObject *, PyObject *, PyObject *, PyObject *, int, PyObject *); 
         /* same as struct above */
-DL_IMPORT(int) PyCode_Addr2Line(PyCodeObject *, int);
+PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 /* for internal use only */
 #define _PyCode_GETCODEPTR(co, pp) \
