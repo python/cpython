@@ -471,7 +471,6 @@ ast_for_comp_op(const node *n)
             case GREATER:
                 return Gt;
             case EQEQUAL:			/* == */
-            case EQUAL:
                 return Eq;
             case LESSEQUAL:
                 return LtE;
