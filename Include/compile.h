@@ -11,11 +11,6 @@ extern "C" {
 /* Public interface */
 struct _node; /* Declare the existence of this type */
 PyAPI_FUNC(PyCodeObject *) PyNode_Compile(struct _node *, const char *);
-PyAPI_FUNC(PyCodeObject *) PyCode_New(
-	int, int, int, int, PyObject *, PyObject *, PyObject *, PyObject *,
-	PyObject *, PyObject *, PyObject *, PyObject *, int, PyObject *); 
-        /* same as struct above */
-PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 /* Future feature support */
 
