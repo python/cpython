@@ -123,7 +123,7 @@ class ReprTests(unittest.TestCase):
 
     def test_lambda(self):
         self.failUnless(repr(lambda x: x).startswith(
-            "<function lambda"))
+            "<function <lambda"))
         # XXX anonymous functions?  see func_repr
 
     def test_builtin_function(self):
