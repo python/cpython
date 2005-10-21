@@ -51,6 +51,17 @@ class StringTest(
 
         self.checkraises(TypeError, string_tests.BadSeq1(), 'join', ' ')
         self.checkequal('a b c', string_tests.BadSeq2(), 'join', ' ')
+        try:
+            def f():
+                yield 4 + ""
+            self.fixtype(' ').join(f())
+        except TypeError, e:
+            if '+' not in str(e):
+                self.fail('join() ate exception message')
+        else:
+            self.fail('exception not raised')
+
+
 
 
 class ModuleTest(unittest.TestCase):

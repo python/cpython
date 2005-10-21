@@ -657,6 +657,15 @@ class MixinStrUnicodeUserStringTest:
         self.checkraises(TypeError, ' ', 'join')
         self.checkraises(TypeError, ' ', 'join', 7)
         self.checkraises(TypeError, ' ', 'join', Sequence([7, 'hello', 123L]))
+        try:
+            def f():
+                yield 4 + ""
+            self.fixtype(' ').join(f())
+        except TypeError, e:
+            if '+' not in str(e):
+                self.fail('join() ate exception message')
+        else:
+            self.fail('exception not raised')
 
     def test_formatting(self):
         self.checkequal('+hello+', '+%s+', '__mod__', 'hello')

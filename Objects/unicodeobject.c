@@ -4148,10 +4148,6 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
 
     fseq = PySequence_Fast(seq, "");
     if (fseq == NULL) {
-	if (PyErr_ExceptionMatches(PyExc_TypeError))
-	    PyErr_Format(PyExc_TypeError,
-			 "sequence expected, %.80s found",
-			 seq->ob_type->tp_name);
     	return NULL;
     }
 
