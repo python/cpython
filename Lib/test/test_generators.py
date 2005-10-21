@@ -774,7 +774,7 @@ These are fine:
 ...         try:
 ...             1//0
 ...         except ZeroDivisionError:
-...             yield 666 
+...             yield 666  # bad because *outer* try has finally
 ...         except:
 ...             pass
 ...     finally:
