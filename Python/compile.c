@@ -1961,7 +1961,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
 	arguments_ty args = e->v.Lambda.args;
 	assert(e->kind == Lambda_kind);
 
-	name = PyString_InternFromString("lambda");
+	name = PyString_InternFromString("<lambda>");
 	if (!name)
 		return 0;
 
