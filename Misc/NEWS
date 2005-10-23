@@ -12,6 +12,9 @@ What's New in Python 2.4.3c1?
 Core and builtins
 -----------------
 
+- SF bug #1167751: fix incorrect code being for generator expressions.
+  The following code now raises a SyntaxError:  foo(a = i for i in range(10))
+
 - SF Bug #976608: fix SystemError when mtime of an imported file is -1.
 
 - SF Bug #887946: fix segfault when redirecting stdin from a directory.

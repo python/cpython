@@ -82,6 +82,18 @@ Verify that parenthesis are required in a statement
        ...
     SyntaxError: invalid syntax
 
+Verify that parenthesis are required when used as a keyword argument value
+
+    >>> dict(a = i for i in xrange(10))
+    Traceback (most recent call last):
+       ...
+    SyntaxError: invalid syntax
+
+Verify that parenthesis are required when used as a keyword argument value
+
+    >>> dict(a = (i for i in xrange(10))) #doctest: +ELLIPSIS
+    {'a': <generator object at ...>}
+
 Verify early binding for the outermost for-expression
 
     >>> x=10
