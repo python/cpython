@@ -2178,6 +2178,7 @@ ast_for_import_stmt(struct compiling *c, const node *n)
     n = CHILD(n, 0);
     if (STR(CHILD(n, 0))[0] == 'i') { /* import */
         n = CHILD(n, 1);
+	REQ(n, dotted_as_names);
 	aliases = asdl_seq_new((NCH(n) + 1) / 2);
 	if (!aliases)
 		return NULL;
