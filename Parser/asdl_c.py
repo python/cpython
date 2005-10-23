@@ -282,7 +282,7 @@ class FunctionVisitor(PrototypeVisitor):
 
         emit("p = (%s)malloc(sizeof(*p));" % ctype, 1)
         emit("if (!p) {", 1)
-        emit("PyErr_SetString(PyExc_MemoryError, \"no memory\");", 2)
+        emit("PyErr_NoMemory();", 2)
         emit("return NULL;", 2)
         emit("}", 1)
         if union:
@@ -491,9 +491,8 @@ class MarshalFunctionVisitor(PickleVisitor):
         self.emit("marshal_write_%s(PyObject **buf, int *off, %s o)" %
                   (name, ctype), 0)
         self.emit("{", 0)
-        # XXX: add declaration of "int i;" properly
-        if has_seq or True:
-            self.emit("int i;", 1) # XXX only need it for sequences
+        if has_seq:
+            self.emit("int i;", 1)
 
     def func_end(self):
         self.emit("return 1;", 1)
@@ -501,8 +500,7 @@ class MarshalFunctionVisitor(PickleVisitor):
         self.emit("", 0)
     
     def visitSum(self, sum, name):
-        has_seq = has_sequence(sum.types, False)
-        self.func_begin(name, has_seq)
+        self.func_begin(name, has_sequence(sum.types, False))
         simple = is_simple(sum)
         if simple:
             self.emit("switch (o) {", 1)
@@ -515,7 +513,7 @@ class MarshalFunctionVisitor(PickleVisitor):
         self.func_end()
 
     def visitProduct(self, prod, name):
-        self.func_begin(name, find_sequence(prod.fields, True))
+        self.func_begin(name, find_sequence(prod.fields, False))
         for field in prod.fields:
             self.visitField(field, name, 1, 1)
         self.func_end()
