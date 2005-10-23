@@ -3886,17 +3886,20 @@ static void
 assemble_jump_offsets(struct assembler *a, struct compiler *c)
 {
 	basicblock *b;
-	int bsize, totsize = 0;
+	int bsize, totsize, extended_arg_count, last_extended_arg_count = 0;
 	int i;
 
 	/* Compute the size of each block and fixup jump args.
 	   Replace block pointer with position in bytecode. */
+start:
+	totsize = 0;
 	for (i = a->a_nblocks - 1; i >= 0; i--) {
 		b = a->a_postorder[i];
 		bsize = blocksize(b);
 		b->b_offset = totsize;
 		totsize += bsize;
 	}
+	extended_arg_count = 0;
 	for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
 		bsize = b->b_offset;
 		for (i = 0; i < b->b_iused; i++) {
@@ -3912,7 +3915,33 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
 				int delta = instr->i_target->b_offset - bsize;
 				instr->i_oparg = delta;
 			}
+			else
+				continue;
+			if (instr->i_oparg > 0xffff)
+				extended_arg_count++;
 		}
+	}
+
+	/* XXX: This is an awful hack that could hurt performance, but
+	        on the bright side it should work until we come up
+		with a better solution.
+
+		In the meantime, should the goto be dropped in favor
+		of a loop?
+
+		The issue is that in the first loop blocksize() is called
+		which calls instrsize() which requires i_oparg be set
+		appropriately.  There is a bootstrap problem because
+		i_oparg is calculated in the second loop above.
+
+		So we loop until we stop seeing new EXTENDED_ARGs.
+		The only EXTENDED_ARGs that could be popping up are
+		ones in jump instructions.  So this should converge
+		fairly quickly.
+	*/
+	if (last_extended_arg_count != extended_arg_count) {
+		last_extended_arg_count = extended_arg_count;
+		goto start;
 	}
 }
 
