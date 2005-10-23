@@ -173,6 +173,14 @@ SOURCE=..\..\Modules\arraymodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Python\asdl.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Python\ast.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\audioop.c
 # End Source File
 # Begin Source File
@@ -218,6 +226,10 @@ SOURCE=..\..\Objects\cobject.c
 # Begin Source File
 
 SOURCE=..\..\Python\codecs.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Objects\codeobject.c
 # End Source File
 # Begin Source File
 
@@ -508,6 +520,10 @@ SOURCE=..\..\Python\pystrtod.c
 # Begin Source File
 
 SOURCE=..\python_nt.rc
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\Python\Python-ast.c
 # End Source File
 # Begin Source File
 
