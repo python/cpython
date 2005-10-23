@@ -440,6 +440,15 @@ vereq(test(6)(2), 8)
 x = -1
 vereq(test(3)(2), 5)
 
+looked_up_by_load_name = False
+class X:
+    # Implicit globals inside classes are be looked up by LOAD_NAME, not
+    # LOAD_GLOBAL.
+    locals()['looked_up_by_load_name'] = True
+    passed = looked_up_by_load_name
+
+verify(X.passed)
+
 print "18. verify that locals() works"
 
 def f(x):
