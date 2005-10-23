@@ -2701,7 +2701,7 @@ inplace_binop(struct compiler *c, operator_ty op)
 static int
 compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 {
-	int op, scope, r, arg;
+	int op, scope, arg;
 	enum { OP_FAST, OP_GLOBAL, OP_DEREF, OP_NAME } optype;
 
         PyObject *dict = c->u->u_names;
@@ -2811,9 +2811,8 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 	arg = compiler_add_o(c, dict, mangled);
 	if (arg < 0)
 		return 0;
-	r = compiler_addop_i(c, op, arg);
 	Py_DECREF(mangled);
-	return r;
+	return compiler_addop_i(c, op, arg);
 }
 
 static int
