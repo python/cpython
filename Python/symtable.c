@@ -740,8 +740,11 @@ static int
 symtable_lookup(struct symtable *st, PyObject *name)
 {
 	PyObject *o;
-
-	o = PyDict_GetItem(st->st_cur->ste_symbols, name);
+	PyObject *mangled = _Py_Mangle(st->st_private, name);
+	if (!mangled)
+		return 0;
+	o = PyDict_GetItem(st->st_cur->ste_symbols, mangled);
+	Py_DECREF(mangled);
 	if (!o)
 		return 0;
 	return PyInt_AsLong(o);
@@ -753,49 +756,57 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag)
 	PyObject *o;
 	PyObject *dict;
 	int val;
+	PyObject *mangled = _Py_Mangle(st->st_private, name);
 
+	if (!mangled)
+		return 0;
 	dict = st->st_cur->ste_symbols;
-	if ((o = PyDict_GetItem(dict, name))) {
+	if ((o = PyDict_GetItem(dict, mangled))) {
 	    val = PyInt_AS_LONG(o);
 	    if ((flag & DEF_PARAM) && (val & DEF_PARAM)) {
+		    /* Is it better to use 'mangled' or 'name' here? */
 		    PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT,
 				 PyString_AsString(name));
 		    PyErr_SyntaxLocation(st->st_filename,
 				       st->st_cur->ste_lineno);
-		    return 0;
+		    goto error;
 	    }
 	    val |= flag;
 	} else
 	    val = flag;
 	o = PyInt_FromLong(val);
         if (o == NULL)
-            return 0;
-	if (PyDict_SetItem(dict, name, o) < 0) {
+	    goto error;
+	if (PyDict_SetItem(dict, mangled, o) < 0) {
 		Py_DECREF(o);
-		return 0;
+		goto error;
 	}
 	Py_DECREF(o);
 
 	if (flag & DEF_PARAM) {
-		if (PyList_Append(st->st_cur->ste_varnames, name) < 0) 
-			return 0;
+		if (PyList_Append(st->st_cur->ste_varnames, mangled) < 0)
+			goto error;
 	} else	if (flag & DEF_GLOBAL) {
 		/* XXX need to update DEF_GLOBAL for other flags too;
 		   perhaps only DEF_FREE_GLOBAL */
 		val = flag;
-		if ((o = PyDict_GetItem(st->st_global, name))) {
+		if ((o = PyDict_GetItem(st->st_global, mangled))) {
 			val |= PyInt_AS_LONG(o);
 		}
 		o = PyInt_FromLong(val);
 		if (o == NULL)
-			return 0;
-		if (PyDict_SetItem(st->st_global, name, o) < 0) {
+			goto error;
+		if (PyDict_SetItem(st->st_global, mangled, o) < 0) {
 			Py_DECREF(o);
-			return 0;
+			goto error;
 		}
 		Py_DECREF(o);
 	}
 	return 1;
+
+error:
+	Py_DECREF(mangled);
+	return 0;
 }
 
 /* VISIT, VISIT_SEQ and VIST_SEQ_TAIL take an ASDL type as their second argument.
@@ -849,17 +860,22 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 		if (!symtable_exit_block(st, s))
 			return 0;
 		break;
-        case ClassDef_kind:
+        case ClassDef_kind: {
+		PyObject *tmp;
 		if (!symtable_add_def(st, s->v.ClassDef.name, DEF_LOCAL))
 			return 0;
 		VISIT_SEQ(st, expr, s->v.ClassDef.bases);
 		if (!symtable_enter_block(st, s->v.ClassDef.name, ClassBlock, 
 					  (void *)s, s->lineno))
 			return 0;
+		tmp = st->st_private;
+		st->st_private = s->v.ClassDef.name;
 		VISIT_SEQ(st, stmt, s->v.ClassDef.body);
+		st->st_private = tmp;
 		if (!symtable_exit_block(st, s))
 			return 0;
 		break;
+	}
         case Return_kind:
 		if (s->v.Return.value)
 			VISIT(st, expr, s->v.Return.value);

@@ -2701,10 +2701,11 @@ inplace_binop(struct compiler *c, operator_ty op)
 static int
 compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 {
-	int op, scope;
+	int op, scope, r, arg;
 	enum { OP_FAST, OP_GLOBAL, OP_DEREF, OP_NAME } optype;
 
         PyObject *dict = c->u->u_names;
+	PyObject *mangled;
 	/* XXX AugStore isn't used anywhere! */
 
 	/* First check for assignment to __debug__. Param? */
@@ -2713,9 +2714,13 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 		return compiler_error(c, "can not assign to __debug__");
 	}
 
+	mangled = _Py_Mangle(c->u->u_private, name);
+	if (!mangled)
+		return 0;
+
 	op = 0;
 	optype = OP_NAME;
-	scope = PyST_GetScope(c->u->u_ste, name);
+	scope = PyST_GetScope(c->u->u_ste, mangled);
 	switch (scope) {
 	case FREE:
                 dict = c->u->u_freevars;
@@ -2755,6 +2760,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 				     "can not delete variable '%s' referenced "
 				     "in nested scope",
 				     PyString_AS_STRING(name));
+			Py_DECREF(mangled);
 			return 0;
 			break;
 		case Param:
@@ -2772,7 +2778,8 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 		case Param:
 			assert(0); /* impossible */
 		}
-		ADDOP_O(c, op, name, varnames);
+		ADDOP_O(c, op, mangled, varnames);
+		Py_DECREF(mangled);
 		return 1;
 	case OP_GLOBAL:
 		switch (ctx) {
@@ -2801,7 +2808,12 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 	}
 
 	assert(op);
-	return compiler_addop_name(c, op, dict, name);
+	arg = compiler_add_o(c, dict, mangled);
+	if (arg < 0)
+		return 0;
+	r = compiler_addop_i(c, op, arg);
+	Py_DECREF(mangled);
+	return r;
 }
 
 static int
