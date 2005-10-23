@@ -2359,8 +2359,9 @@ compiler_import(struct compiler *c, stmt_ty s)
 		ADDOP_NAME(c, IMPORT_NAME, alias->name, names);
 
 		if (alias->asname) {
-			return compiler_import_as(c, 
-						  alias->name, alias->asname);
+			r = compiler_import_as(c, alias->name, alias->asname);
+                        if (!r)
+                            return r;
                 }
                 else {
 			identifier tmp = alias->name;
