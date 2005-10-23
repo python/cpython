@@ -1489,8 +1489,7 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 	int arg;
 
         /* necessary to make sure types aren't coerced (e.g., int and long) */
-        /* XXX should use: t = PyTuple_Pack(2, o, o->ob_type); */
-        t = Py_BuildValue("(OO)", o, o->ob_type);
+        t = PyTuple_Pack(2, o, o->ob_type);
         if (t == NULL)
             return -1;
 
