@@ -24,9 +24,9 @@ typedef struct {
 #define FUTURE_DIVISION "division"
 
 struct _mod; /* Declare the existence of this type */
-DL_IMPORT(PyCodeObject *) PyAST_Compile(struct _mod *, const char *,
+PyAPI_FUNC(PyCodeObject *) PyAST_Compile(struct _mod *, const char *,
 					PyCompilerFlags *);
-DL_IMPORT(PyFutureFeatures *) PyFuture_FromAST(struct _mod *, const char *);
+PyAPI_FUNC(PyFutureFeatures *) PyFuture_FromAST(struct _mod *, const char *);
 
 #define ERR_LATE_FUTURE \
 "from __future__ imports must occur at the beginning of the file"
