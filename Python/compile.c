@@ -2731,7 +2731,8 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 			optype = OP_FAST;
 		break;
 	case GLOBAL_IMPLICIT:
-		if (!c->u->u_ste->ste_unoptimized)
+		if (c->u->u_ste->ste_type == FunctionBlock &&
+			!c->u->u_ste->ste_unoptimized)
 			optype = OP_GLOBAL;
 		break;
 	case GLOBAL_EXPLICIT:
