@@ -447,6 +447,31 @@ Changes to Python's build process and to the C API include:
 
 \begin{itemize}
 
+\item The design of the bytecode compiler has changed a great deal, no
+longer generating bytecode by traversing the parse tree.  Instead
+the parse tree is converted to an abstract syntax tree (or AST), and it is 
+the abstract syntax tree that's traversed to produce the bytecode.
+
+No documentation has been written for the AST code yet.  To start
+learning about it, read the definition of the various AST nodes in
+\file{Parser/Python.asdl}.  A Python script reads this file and
+generates a set of C structure definitions in
+\file{Include/Python-ast.h}.  The \cfunction{PyParser_ASTFromString()}
+and \cfunction{PyParser_ASTFromFile()}, defined in
+\file{Include/pythonrun.h}, take Python source as input and return the
+root of an AST representing the contents.  This AST can then be turned
+into a code object by \cfunction{PyAST_Compile()}.  For more
+information, read the source code, and then ask questions on
+python-dev.
+
+% List of names taken from Jeremy's python-dev post at 
+% http://mail.python.org/pipermail/python-dev/2005-October/057500.html
+The AST code was developed under Jeremy Hylton's management, and
+implemented by (in alphabetical order) Brett Cannon, Nick Coghlan,
+Grant Edwards, John Ehresman, Kurt Kaiser, Neal Norwitz, Tim Peters,
+Armin Rigo, and Neil Schemenauer, plus the participants in a number of
+AST sprints at conferences such as PyCon.
+ 
 \item The built-in set types now have an official C API.  Call
 \cfunction{PySet_New()} and \cfunction{PyFrozenSet_New()} to create a
 new set, \cfunction{PySet_Add()} and \cfunction{PySet_Discard()} to
