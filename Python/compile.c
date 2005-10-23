@@ -3696,13 +3696,11 @@ assemble_free(struct assembler *a)
 static int
 instrsize(struct instr *instr)
 {
-	int size = 1;
-	if (instr->i_hasarg) {
-		size += 2;
-		if (instr->i_oparg >> 16)
-			size += 2;
-	}
-	return size;
+	if (!instr->i_hasarg)
+		return 1;
+	if (instr->i_oparg > 0xffff)
+		return 6;
+	return 3;
 }
 
 static int
@@ -3851,42 +3849,40 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 static int
 assemble_emit(struct assembler *a, struct instr *i)
 {
-	int arg = 0, size = 0, ext = i->i_oparg >> 16;
+	int size, arg = 0, ext = 0;
 	int len = PyString_GET_SIZE(a->a_bytecode);
 	char *code;
 
-	if (!i->i_hasarg)
-		size = 1;
-	else {
-		if (ext)
-			size = 6;
-		else
-			size = 3;
+	size = instrsize(i);
+	if (i->i_hasarg) {
 		arg = i->i_oparg;
+		ext = arg >> 16;
 	}
 	if (i->i_lineno && !assemble_lnotab(a, i))
-			return 0;
+		return 0;
 	if (a->a_offset + size >= len) {
 		if (_PyString_Resize(&a->a_bytecode, len * 2) < 0)
 		    return 0;
 	}
 	code = PyString_AS_STRING(a->a_bytecode) + a->a_offset;
 	a->a_offset += size;
-	if (ext > 0) {
-	    *code++ = (char)EXTENDED_ARG;
-	    *code++ = ext & 0xff;
-	    *code++ = ext >> 8;
-	    arg &= 0xffff;
+	if (size == 6) {
+		assert(i->i_hasarg);
+		*code++ = (char)EXTENDED_ARG;
+		*code++ = ext & 0xff;
+		*code++ = ext >> 8;
+		arg &= 0xffff;
 	}
 	*code++ = i->i_opcode;
-	if (size == 1)
-		return 1;
-	*code++ = arg & 0xff;
-	*code++ = arg >> 8;
+	if (i->i_hasarg) {
+		assert(size == 3 || size == 6);
+		*code++ = arg & 0xff;
+		*code++ = arg >> 8;
+	}
 	return 1;
 }
 
-static int
+static void
 assemble_jump_offsets(struct assembler *a, struct compiler *c)
 {
 	basicblock *b;
@@ -3896,7 +3892,7 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
 	/* Compute the size of each block and fixup jump args.
 	   Replace block pointer with position in bytecode. */
 	for (i = a->a_nblocks - 1; i >= 0; i--) {
-		basicblock *b = a->a_postorder[i];
+		b = a->a_postorder[i];
 		bsize = blocksize(b);
 		b->b_offset = totsize;
 		totsize += bsize;
@@ -3918,7 +3914,6 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
 			}
 		}
 	}
-	return 1;
 }
 
 static PyObject *
@@ -4079,8 +4074,7 @@ assemble(struct compiler *c, int addNone)
 	dfs(c, entryblock, &a);
 
 	/* Can't modify the bytecode after computing jump offsets. */
-	if (!assemble_jump_offsets(&a, c))
-		goto error;
+	assemble_jump_offsets(&a, c);
 
 	/* Emit code in reverse postorder from dfs. */
 	for (i = a.a_nblocks - 1; i >= 0; i--) {
