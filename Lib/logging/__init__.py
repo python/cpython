@@ -1123,7 +1123,7 @@ class Logger(Filterer):
                 c = None    #break out
             else:
                 c = c.parent
-        if (found == 0) and not self.manager.emittedNoHandlerWarning:
+        if (found == 0) and raiseExceptions and not self.manager.emittedNoHandlerWarning:
             sys.stderr.write("No handlers could be found for logger"
                              " \"%s\"\n" % self.name)
             self.manager.emittedNoHandlerWarning = 1
