@@ -445,7 +445,7 @@ check_unoptimized(const PySTEntryObject* ste) {
 	char buf[300];
 	const char* trailer;
 
-	if (ste->ste_type == ModuleBlock || !ste->ste_unoptimized
+	if (ste->ste_type != FunctionBlock || !ste->ste_unoptimized
 	    || !(ste->ste_free || ste->ste_child_free))
 		return 1;
 
