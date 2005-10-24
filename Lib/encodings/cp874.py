@@ -42,12 +42,12 @@ decoding_table = (
     u'\x07'	#  0x07 -> BELL
     u'\x08'	#  0x08 -> BACKSPACE
     u'\t'	#  0x09 -> HORIZONTAL TABULATION
-    u'\n'	#  0x0a -> LINE FEED
-    u'\x0b'	#  0x0b -> VERTICAL TABULATION
-    u'\x0c'	#  0x0c -> FORM FEED
-    u'\r'	#  0x0d -> CARRIAGE RETURN
-    u'\x0e'	#  0x0e -> SHIFT OUT
-    u'\x0f'	#  0x0f -> SHIFT IN
+    u'\n'	#  0x0A -> LINE FEED
+    u'\x0b'	#  0x0B -> VERTICAL TABULATION
+    u'\x0c'	#  0x0C -> FORM FEED
+    u'\r'	#  0x0D -> CARRIAGE RETURN
+    u'\x0e'	#  0x0E -> SHIFT OUT
+    u'\x0f'	#  0x0F -> SHIFT IN
     u'\x10'	#  0x10 -> DATA LINK ESCAPE
     u'\x11'	#  0x11 -> DEVICE CONTROL ONE
     u'\x12'	#  0x12 -> DEVICE CONTROL TWO
@@ -58,12 +58,12 @@ decoding_table = (
     u'\x17'	#  0x17 -> END OF TRANSMISSION BLOCK
     u'\x18'	#  0x18 -> CANCEL
     u'\x19'	#  0x19 -> END OF MEDIUM
-    u'\x1a'	#  0x1a -> SUBSTITUTE
-    u'\x1b'	#  0x1b -> ESCAPE
-    u'\x1c'	#  0x1c -> FILE SEPARATOR
-    u'\x1d'	#  0x1d -> GROUP SEPARATOR
-    u'\x1e'	#  0x1e -> RECORD SEPARATOR
-    u'\x1f'	#  0x1f -> UNIT SEPARATOR
+    u'\x1a'	#  0x1A -> SUBSTITUTE
+    u'\x1b'	#  0x1B -> ESCAPE
+    u'\x1c'	#  0x1C -> FILE SEPARATOR
+    u'\x1d'	#  0x1D -> GROUP SEPARATOR
+    u'\x1e'	#  0x1E -> RECORD SEPARATOR
+    u'\x1f'	#  0x1F -> UNIT SEPARATOR
     u' '	#  0x20 -> SPACE
     u'!'	#  0x21 -> EXCLAMATION MARK
     u'"'	#  0x22 -> QUOTATION MARK
@@ -74,12 +74,12 @@ decoding_table = (
     u"'"	#  0x27 -> APOSTROPHE
     u'('	#  0x28 -> LEFT PARENTHESIS
     u')'	#  0x29 -> RIGHT PARENTHESIS
-    u'*'	#  0x2a -> ASTERISK
-    u'+'	#  0x2b -> PLUS SIGN
-    u','	#  0x2c -> COMMA
-    u'-'	#  0x2d -> HYPHEN-MINUS
-    u'.'	#  0x2e -> FULL STOP
-    u'/'	#  0x2f -> SOLIDUS
+    u'*'	#  0x2A -> ASTERISK
+    u'+'	#  0x2B -> PLUS SIGN
+    u','	#  0x2C -> COMMA
+    u'-'	#  0x2D -> HYPHEN-MINUS
+    u'.'	#  0x2E -> FULL STOP
+    u'/'	#  0x2F -> SOLIDUS
     u'0'	#  0x30 -> DIGIT ZERO
     u'1'	#  0x31 -> DIGIT ONE
     u'2'	#  0x32 -> DIGIT TWO
@@ -90,12 +90,12 @@ decoding_table = (
     u'7'	#  0x37 -> DIGIT SEVEN
     u'8'	#  0x38 -> DIGIT EIGHT
     u'9'	#  0x39 -> DIGIT NINE
-    u':'	#  0x3a -> COLON
-    u';'	#  0x3b -> SEMICOLON
-    u'<'	#  0x3c -> LESS-THAN SIGN
-    u'='	#  0x3d -> EQUALS SIGN
-    u'>'	#  0x3e -> GREATER-THAN SIGN
-    u'?'	#  0x3f -> QUESTION MARK
+    u':'	#  0x3A -> COLON
+    u';'	#  0x3B -> SEMICOLON
+    u'<'	#  0x3C -> LESS-THAN SIGN
+    u'='	#  0x3D -> EQUALS SIGN
+    u'>'	#  0x3E -> GREATER-THAN SIGN
+    u'?'	#  0x3F -> QUESTION MARK
     u'@'	#  0x40 -> COMMERCIAL AT
     u'A'	#  0x41 -> LATIN CAPITAL LETTER A
     u'B'	#  0x42 -> LATIN CAPITAL LETTER B
@@ -106,12 +106,12 @@ decoding_table = (
     u'G'	#  0x47 -> LATIN CAPITAL LETTER G
     u'H'	#  0x48 -> LATIN CAPITAL LETTER H
     u'I'	#  0x49 -> LATIN CAPITAL LETTER I
-    u'J'	#  0x4a -> LATIN CAPITAL LETTER J
-    u'K'	#  0x4b -> LATIN CAPITAL LETTER K
-    u'L'	#  0x4c -> LATIN CAPITAL LETTER L
-    u'M'	#  0x4d -> LATIN CAPITAL LETTER M
-    u'N'	#  0x4e -> LATIN CAPITAL LETTER N
-    u'O'	#  0x4f -> LATIN CAPITAL LETTER O
+    u'J'	#  0x4A -> LATIN CAPITAL LETTER J
+    u'K'	#  0x4B -> LATIN CAPITAL LETTER K
+    u'L'	#  0x4C -> LATIN CAPITAL LETTER L
+    u'M'	#  0x4D -> LATIN CAPITAL LETTER M
+    u'N'	#  0x4E -> LATIN CAPITAL LETTER N
+    u'O'	#  0x4F -> LATIN CAPITAL LETTER O
     u'P'	#  0x50 -> LATIN CAPITAL LETTER P
     u'Q'	#  0x51 -> LATIN CAPITAL LETTER Q
     u'R'	#  0x52 -> LATIN CAPITAL LETTER R
@@ -122,12 +122,12 @@ decoding_table = (
     u'W'	#  0x57 -> LATIN CAPITAL LETTER W
     u'X'	#  0x58 -> LATIN CAPITAL LETTER X
     u'Y'	#  0x59 -> LATIN CAPITAL LETTER Y
-    u'Z'	#  0x5a -> LATIN CAPITAL LETTER Z
-    u'['	#  0x5b -> LEFT SQUARE BRACKET
-    u'\\'	#  0x5c -> REVERSE SOLIDUS
-    u']'	#  0x5d -> RIGHT SQUARE BRACKET
-    u'^'	#  0x5e -> CIRCUMFLEX ACCENT
-    u'_'	#  0x5f -> LOW LINE
+    u'Z'	#  0x5A -> LATIN CAPITAL LETTER Z
+    u'['	#  0x5B -> LEFT SQUARE BRACKET
+    u'\\'	#  0x5C -> REVERSE SOLIDUS
+    u']'	#  0x5D -> RIGHT SQUARE BRACKET
+    u'^'	#  0x5E -> CIRCUMFLEX ACCENT
+    u'_'	#  0x5F -> LOW LINE
     u'`'	#  0x60 -> GRAVE ACCENT
     u'a'	#  0x61 -> LATIN SMALL LETTER A
     u'b'	#  0x62 -> LATIN SMALL LETTER B
@@ -138,12 +138,12 @@ decoding_table = (
     u'g'	#  0x67 -> LATIN SMALL LETTER G
     u'h'	#  0x68 -> LATIN SMALL LETTER H
     u'i'	#  0x69 -> LATIN SMALL LETTER I
-    u'j'	#  0x6a -> LATIN SMALL LETTER J
-    u'k'	#  0x6b -> LATIN SMALL LETTER K
-    u'l'	#  0x6c -> LATIN SMALL LETTER L
-    u'm'	#  0x6d -> LATIN SMALL LETTER M
-    u'n'	#  0x6e -> LATIN SMALL LETTER N
-    u'o'	#  0x6f -> LATIN SMALL LETTER O
+    u'j'	#  0x6A -> LATIN SMALL LETTER J
+    u'k'	#  0x6B -> LATIN SMALL LETTER K
+    u'l'	#  0x6C -> LATIN SMALL LETTER L
+    u'm'	#  0x6D -> LATIN SMALL LETTER M
+    u'n'	#  0x6E -> LATIN SMALL LETTER N
+    u'o'	#  0x6F -> LATIN SMALL LETTER O
     u'p'	#  0x70 -> LATIN SMALL LETTER P
     u'q'	#  0x71 -> LATIN SMALL LETTER Q
     u'r'	#  0x72 -> LATIN SMALL LETTER R
@@ -154,12 +154,12 @@ decoding_table = (
     u'w'	#  0x77 -> LATIN SMALL LETTER W
     u'x'	#  0x78 -> LATIN SMALL LETTER X
     u'y'	#  0x79 -> LATIN SMALL LETTER Y
-    u'z'	#  0x7a -> LATIN SMALL LETTER Z
-    u'{'	#  0x7b -> LEFT CURLY BRACKET
-    u'|'	#  0x7c -> VERTICAL LINE
-    u'}'	#  0x7d -> RIGHT CURLY BRACKET
-    u'~'	#  0x7e -> TILDE
-    u'\x7f'	#  0x7f -> DELETE
+    u'z'	#  0x7A -> LATIN SMALL LETTER Z
+    u'{'	#  0x7B -> LEFT CURLY BRACKET
+    u'|'	#  0x7C -> VERTICAL LINE
+    u'}'	#  0x7D -> RIGHT CURLY BRACKET
+    u'~'	#  0x7E -> TILDE
+    u'\x7f'	#  0x7F -> DELETE
     u'\u20ac'	#  0x80 -> EURO SIGN
     u'\ufffe'	#  0x81 -> UNDEFINED
     u'\ufffe'	#  0x82 -> UNDEFINED
@@ -170,12 +170,12 @@ decoding_table = (
     u'\ufffe'	#  0x87 -> UNDEFINED
     u'\ufffe'	#  0x88 -> UNDEFINED
     u'\ufffe'	#  0x89 -> UNDEFINED
-    u'\ufffe'	#  0x8a -> UNDEFINED
-    u'\ufffe'	#  0x8b -> UNDEFINED
-    u'\ufffe'	#  0x8c -> UNDEFINED
-    u'\ufffe'	#  0x8d -> UNDEFINED
-    u'\ufffe'	#  0x8e -> UNDEFINED
-    u'\ufffe'	#  0x8f -> UNDEFINED
+    u'\ufffe'	#  0x8A -> UNDEFINED
+    u'\ufffe'	#  0x8B -> UNDEFINED
+    u'\ufffe'	#  0x8C -> UNDEFINED
+    u'\ufffe'	#  0x8D -> UNDEFINED
+    u'\ufffe'	#  0x8E -> UNDEFINED
+    u'\ufffe'	#  0x8F -> UNDEFINED
     u'\ufffe'	#  0x90 -> UNDEFINED
     u'\u2018'	#  0x91 -> LEFT SINGLE QUOTATION MARK
     u'\u2019'	#  0x92 -> RIGHT SINGLE QUOTATION MARK
@@ -186,108 +186,108 @@ decoding_table = (
     u'\u2014'	#  0x97 -> EM DASH
     u'\ufffe'	#  0x98 -> UNDEFINED
     u'\ufffe'	#  0x99 -> UNDEFINED
-    u'\ufffe'	#  0x9a -> UNDEFINED
-    u'\ufffe'	#  0x9b -> UNDEFINED
-    u'\ufffe'	#  0x9c -> UNDEFINED
-    u'\ufffe'	#  0x9d -> UNDEFINED
-    u'\ufffe'	#  0x9e -> UNDEFINED
-    u'\ufffe'	#  0x9f -> UNDEFINED
-    u'\xa0'	#  0xa0 -> NO-BREAK SPACE
-    u'\u0e01'	#  0xa1 -> THAI CHARACTER KO KAI
-    u'\u0e02'	#  0xa2 -> THAI CHARACTER KHO KHAI
-    u'\u0e03'	#  0xa3 -> THAI CHARACTER KHO KHUAT
-    u'\u0e04'	#  0xa4 -> THAI CHARACTER KHO KHWAI
-    u'\u0e05'	#  0xa5 -> THAI CHARACTER KHO KHON
-    u'\u0e06'	#  0xa6 -> THAI CHARACTER KHO RAKHANG
-    u'\u0e07'	#  0xa7 -> THAI CHARACTER NGO NGU
-    u'\u0e08'	#  0xa8 -> THAI CHARACTER CHO CHAN
-    u'\u0e09'	#  0xa9 -> THAI CHARACTER CHO CHING
-    u'\u0e0a'	#  0xaa -> THAI CHARACTER CHO CHANG
-    u'\u0e0b'	#  0xab -> THAI CHARACTER SO SO
-    u'\u0e0c'	#  0xac -> THAI CHARACTER CHO CHOE
-    u'\u0e0d'	#  0xad -> THAI CHARACTER YO YING
-    u'\u0e0e'	#  0xae -> THAI CHARACTER DO CHADA
-    u'\u0e0f'	#  0xaf -> THAI CHARACTER TO PATAK
-    u'\u0e10'	#  0xb0 -> THAI CHARACTER THO THAN
-    u'\u0e11'	#  0xb1 -> THAI CHARACTER THO NANGMONTHO
-    u'\u0e12'	#  0xb2 -> THAI CHARACTER THO PHUTHAO
-    u'\u0e13'	#  0xb3 -> THAI CHARACTER NO NEN
-    u'\u0e14'	#  0xb4 -> THAI CHARACTER DO DEK
-    u'\u0e15'	#  0xb5 -> THAI CHARACTER TO TAO
-    u'\u0e16'	#  0xb6 -> THAI CHARACTER THO THUNG
-    u'\u0e17'	#  0xb7 -> THAI CHARACTER THO THAHAN
-    u'\u0e18'	#  0xb8 -> THAI CHARACTER THO THONG
-    u'\u0e19'	#  0xb9 -> THAI CHARACTER NO NU
-    u'\u0e1a'	#  0xba -> THAI CHARACTER BO BAIMAI
-    u'\u0e1b'	#  0xbb -> THAI CHARACTER PO PLA
-    u'\u0e1c'	#  0xbc -> THAI CHARACTER PHO PHUNG
-    u'\u0e1d'	#  0xbd -> THAI CHARACTER FO FA
-    u'\u0e1e'	#  0xbe -> THAI CHARACTER PHO PHAN
-    u'\u0e1f'	#  0xbf -> THAI CHARACTER FO FAN
-    u'\u0e20'	#  0xc0 -> THAI CHARACTER PHO SAMPHAO
-    u'\u0e21'	#  0xc1 -> THAI CHARACTER MO MA
-    u'\u0e22'	#  0xc2 -> THAI CHARACTER YO YAK
-    u'\u0e23'	#  0xc3 -> THAI CHARACTER RO RUA
-    u'\u0e24'	#  0xc4 -> THAI CHARACTER RU
-    u'\u0e25'	#  0xc5 -> THAI CHARACTER LO LING
-    u'\u0e26'	#  0xc6 -> THAI CHARACTER LU
-    u'\u0e27'	#  0xc7 -> THAI CHARACTER WO WAEN
-    u'\u0e28'	#  0xc8 -> THAI CHARACTER SO SALA
-    u'\u0e29'	#  0xc9 -> THAI CHARACTER SO RUSI
-    u'\u0e2a'	#  0xca -> THAI CHARACTER SO SUA
-    u'\u0e2b'	#  0xcb -> THAI CHARACTER HO HIP
-    u'\u0e2c'	#  0xcc -> THAI CHARACTER LO CHULA
-    u'\u0e2d'	#  0xcd -> THAI CHARACTER O ANG
-    u'\u0e2e'	#  0xce -> THAI CHARACTER HO NOKHUK
-    u'\u0e2f'	#  0xcf -> THAI CHARACTER PAIYANNOI
-    u'\u0e30'	#  0xd0 -> THAI CHARACTER SARA A
-    u'\u0e31'	#  0xd1 -> THAI CHARACTER MAI HAN-AKAT
-    u'\u0e32'	#  0xd2 -> THAI CHARACTER SARA AA
-    u'\u0e33'	#  0xd3 -> THAI CHARACTER SARA AM
-    u'\u0e34'	#  0xd4 -> THAI CHARACTER SARA I
-    u'\u0e35'	#  0xd5 -> THAI CHARACTER SARA II
-    u'\u0e36'	#  0xd6 -> THAI CHARACTER SARA UE
-    u'\u0e37'	#  0xd7 -> THAI CHARACTER SARA UEE
-    u'\u0e38'	#  0xd8 -> THAI CHARACTER SARA U
-    u'\u0e39'	#  0xd9 -> THAI CHARACTER SARA UU
-    u'\u0e3a'	#  0xda -> THAI CHARACTER PHINTHU
-    u'\ufffe'	#  0xdb -> UNDEFINED
-    u'\ufffe'	#  0xdc -> UNDEFINED
-    u'\ufffe'	#  0xdd -> UNDEFINED
-    u'\ufffe'	#  0xde -> UNDEFINED
-    u'\u0e3f'	#  0xdf -> THAI CURRENCY SYMBOL BAHT
-    u'\u0e40'	#  0xe0 -> THAI CHARACTER SARA E
-    u'\u0e41'	#  0xe1 -> THAI CHARACTER SARA AE
-    u'\u0e42'	#  0xe2 -> THAI CHARACTER SARA O
-    u'\u0e43'	#  0xe3 -> THAI CHARACTER SARA AI MAIMUAN
-    u'\u0e44'	#  0xe4 -> THAI CHARACTER SARA AI MAIMALAI
-    u'\u0e45'	#  0xe5 -> THAI CHARACTER LAKKHANGYAO
-    u'\u0e46'	#  0xe6 -> THAI CHARACTER MAIYAMOK
-    u'\u0e47'	#  0xe7 -> THAI CHARACTER MAITAIKHU
-    u'\u0e48'	#  0xe8 -> THAI CHARACTER MAI EK
-    u'\u0e49'	#  0xe9 -> THAI CHARACTER MAI THO
-    u'\u0e4a'	#  0xea -> THAI CHARACTER MAI TRI
-    u'\u0e4b'	#  0xeb -> THAI CHARACTER MAI CHATTAWA
-    u'\u0e4c'	#  0xec -> THAI CHARACTER THANTHAKHAT
-    u'\u0e4d'	#  0xed -> THAI CHARACTER NIKHAHIT
-    u'\u0e4e'	#  0xee -> THAI CHARACTER YAMAKKAN
-    u'\u0e4f'	#  0xef -> THAI CHARACTER FONGMAN
-    u'\u0e50'	#  0xf0 -> THAI DIGIT ZERO
-    u'\u0e51'	#  0xf1 -> THAI DIGIT ONE
-    u'\u0e52'	#  0xf2 -> THAI DIGIT TWO
-    u'\u0e53'	#  0xf3 -> THAI DIGIT THREE
-    u'\u0e54'	#  0xf4 -> THAI DIGIT FOUR
-    u'\u0e55'	#  0xf5 -> THAI DIGIT FIVE
-    u'\u0e56'	#  0xf6 -> THAI DIGIT SIX
-    u'\u0e57'	#  0xf7 -> THAI DIGIT SEVEN
-    u'\u0e58'	#  0xf8 -> THAI DIGIT EIGHT
-    u'\u0e59'	#  0xf9 -> THAI DIGIT NINE
-    u'\u0e5a'	#  0xfa -> THAI CHARACTER ANGKHANKHU
-    u'\u0e5b'	#  0xfb -> THAI CHARACTER KHOMUT
-    u'\ufffe'	#  0xfc -> UNDEFINED
-    u'\ufffe'	#  0xfd -> UNDEFINED
-    u'\ufffe'	#  0xfe -> UNDEFINED
-    u'\ufffe'	#  0xff -> UNDEFINED
+    u'\ufffe'	#  0x9A -> UNDEFINED
+    u'\ufffe'	#  0x9B -> UNDEFINED
+    u'\ufffe'	#  0x9C -> UNDEFINED
+    u'\ufffe'	#  0x9D -> UNDEFINED
+    u'\ufffe'	#  0x9E -> UNDEFINED
+    u'\ufffe'	#  0x9F -> UNDEFINED
+    u'\xa0'	#  0xA0 -> NO-BREAK SPACE
+    u'\u0e01'	#  0xA1 -> THAI CHARACTER KO KAI
+    u'\u0e02'	#  0xA2 -> THAI CHARACTER KHO KHAI
+    u'\u0e03'	#  0xA3 -> THAI CHARACTER KHO KHUAT
+    u'\u0e04'	#  0xA4 -> THAI CHARACTER KHO KHWAI
+    u'\u0e05'	#  0xA5 -> THAI CHARACTER KHO KHON
+    u'\u0e06'	#  0xA6 -> THAI CHARACTER KHO RAKHANG
+    u'\u0e07'	#  0xA7 -> THAI CHARACTER NGO NGU
+    u'\u0e08'	#  0xA8 -> THAI CHARACTER CHO CHAN
+    u'\u0e09'	#  0xA9 -> THAI CHARACTER CHO CHING
+    u'\u0e0a'	#  0xAA -> THAI CHARACTER CHO CHANG
+    u'\u0e0b'	#  0xAB -> THAI CHARACTER SO SO
+    u'\u0e0c'	#  0xAC -> THAI CHARACTER CHO CHOE
+    u'\u0e0d'	#  0xAD -> THAI CHARACTER YO YING
+    u'\u0e0e'	#  0xAE -> THAI CHARACTER DO CHADA
+    u'\u0e0f'	#  0xAF -> THAI CHARACTER TO PATAK
+    u'\u0e10'	#  0xB0 -> THAI CHARACTER THO THAN
+    u'\u0e11'	#  0xB1 -> THAI CHARACTER THO NANGMONTHO
+    u'\u0e12'	#  0xB2 -> THAI CHARACTER THO PHUTHAO
+    u'\u0e13'	#  0xB3 -> THAI CHARACTER NO NEN
+    u'\u0e14'	#  0xB4 -> THAI CHARACTER DO DEK
+    u'\u0e15'	#  0xB5 -> THAI CHARACTER TO TAO
+    u'\u0e16'	#  0xB6 -> THAI CHARACTER THO THUNG
+    u'\u0e17'	#  0xB7 -> THAI CHARACTER THO THAHAN
+    u'\u0e18'	#  0xB8 -> THAI CHARACTER THO THONG
+    u'\u0e19'	#  0xB9 -> THAI CHARACTER NO NU
+    u'\u0e1a'	#  0xBA -> THAI CHARACTER BO BAIMAI
+    u'\u0e1b'	#  0xBB -> THAI CHARACTER PO PLA
+    u'\u0e1c'	#  0xBC -> THAI CHARACTER PHO PHUNG
+    u'\u0e1d'	#  0xBD -> THAI CHARACTER FO FA
+    u'\u0e1e'	#  0xBE -> THAI CHARACTER PHO PHAN
+    u'\u0e1f'	#  0xBF -> THAI CHARACTER FO FAN
+    u'\u0e20'	#  0xC0 -> THAI CHARACTER PHO SAMPHAO
+    u'\u0e21'	#  0xC1 -> THAI CHARACTER MO MA
+    u'\u0e22'	#  0xC2 -> THAI CHARACTER YO YAK
+    u'\u0e23'	#  0xC3 -> THAI CHARACTER RO RUA
+    u'\u0e24'	#  0xC4 -> THAI CHARACTER RU
+    u'\u0e25'	#  0xC5 -> THAI CHARACTER LO LING
+    u'\u0e26'	#  0xC6 -> THAI CHARACTER LU
+    u'\u0e27'	#  0xC7 -> THAI CHARACTER WO WAEN
+    u'\u0e28'	#  0xC8 -> THAI CHARACTER SO SALA
+    u'\u0e29'	#  0xC9 -> THAI CHARACTER SO RUSI
+    u'\u0e2a'	#  0xCA -> THAI CHARACTER SO SUA
+    u'\u0e2b'	#  0xCB -> THAI CHARACTER HO HIP
+    u'\u0e2c'	#  0xCC -> THAI CHARACTER LO CHULA
+    u'\u0e2d'	#  0xCD -> THAI CHARACTER O ANG
+    u'\u0e2e'	#  0xCE -> THAI CHARACTER HO NOKHUK
+    u'\u0e2f'	#  0xCF -> THAI CHARACTER PAIYANNOI
+    u'\u0e30'	#  0xD0 -> THAI CHARACTER SARA A
+    u'\u0e31'	#  0xD1 -> THAI CHARACTER MAI HAN-AKAT
+    u'\u0e32'	#  0xD2 -> THAI CHARACTER SARA AA
+    u'\u0e33'	#  0xD3 -> THAI CHARACTER SARA AM
+    u'\u0e34'	#  0xD4 -> THAI CHARACTER SARA I
+    u'\u0e35'	#  0xD5 -> THAI CHARACTER SARA II
+    u'\u0e36'	#  0xD6 -> THAI CHARACTER SARA UE
+    u'\u0e37'	#  0xD7 -> THAI CHARACTER SARA UEE
+    u'\u0e38'	#  0xD8 -> THAI CHARACTER SARA U
+    u'\u0e39'	#  0xD9 -> THAI CHARACTER SARA UU
+    u'\u0e3a'	#  0xDA -> THAI CHARACTER PHINTHU
+    u'\ufffe'	#  0xDB -> UNDEFINED
+    u'\ufffe'	#  0xDC -> UNDEFINED
+    u'\ufffe'	#  0xDD -> UNDEFINED
+    u'\ufffe'	#  0xDE -> UNDEFINED
+    u'\u0e3f'	#  0xDF -> THAI CURRENCY SYMBOL BAHT
+    u'\u0e40'	#  0xE0 -> THAI CHARACTER SARA E
+    u'\u0e41'	#  0xE1 -> THAI CHARACTER SARA AE
+    u'\u0e42'	#  0xE2 -> THAI CHARACTER SARA O
+    u'\u0e43'	#  0xE3 -> THAI CHARACTER SARA AI MAIMUAN
+    u'\u0e44'	#  0xE4 -> THAI CHARACTER SARA AI MAIMALAI
+    u'\u0e45'	#  0xE5 -> THAI CHARACTER LAKKHANGYAO
+    u'\u0e46'	#  0xE6 -> THAI CHARACTER MAIYAMOK
+    u'\u0e47'	#  0xE7 -> THAI CHARACTER MAITAIKHU
+    u'\u0e48'	#  0xE8 -> THAI CHARACTER MAI EK
+    u'\u0e49'	#  0xE9 -> THAI CHARACTER MAI THO
+    u'\u0e4a'	#  0xEA -> THAI CHARACTER MAI TRI
+    u'\u0e4b'	#  0xEB -> THAI CHARACTER MAI CHATTAWA
+    u'\u0e4c'	#  0xEC -> THAI CHARACTER THANTHAKHAT
+    u'\u0e4d'	#  0xED -> THAI CHARACTER NIKHAHIT
+    u'\u0e4e'	#  0xEE -> THAI CHARACTER YAMAKKAN
+    u'\u0e4f'	#  0xEF -> THAI CHARACTER FONGMAN
+    u'\u0e50'	#  0xF0 -> THAI DIGIT ZERO
+    u'\u0e51'	#  0xF1 -> THAI DIGIT ONE
+    u'\u0e52'	#  0xF2 -> THAI DIGIT TWO
+    u'\u0e53'	#  0xF3 -> THAI DIGIT THREE
+    u'\u0e54'	#  0xF4 -> THAI DIGIT FOUR
+    u'\u0e55'	#  0xF5 -> THAI DIGIT FIVE
+    u'\u0e56'	#  0xF6 -> THAI DIGIT SIX
+    u'\u0e57'	#  0xF7 -> THAI DIGIT SEVEN
+    u'\u0e58'	#  0xF8 -> THAI DIGIT EIGHT
+    u'\u0e59'	#  0xF9 -> THAI DIGIT NINE
+    u'\u0e5a'	#  0xFA -> THAI CHARACTER ANGKHANKHU
+    u'\u0e5b'	#  0xFB -> THAI CHARACTER KHOMUT
+    u'\ufffe'	#  0xFC -> UNDEFINED
+    u'\ufffe'	#  0xFD -> UNDEFINED
+    u'\ufffe'	#  0xFE -> UNDEFINED
+    u'\ufffe'	#  0xFF -> UNDEFINED
 )
 
 ### Encoding Map
@@ -303,12 +303,12 @@ encoding_map = {
     0x0007: 0x07,	#  BELL
     0x0008: 0x08,	#  BACKSPACE
     0x0009: 0x09,	#  HORIZONTAL TABULATION
-    0x000a: 0x0a,	#  LINE FEED
-    0x000b: 0x0b,	#  VERTICAL TABULATION
-    0x000c: 0x0c,	#  FORM FEED
-    0x000d: 0x0d,	#  CARRIAGE RETURN
-    0x000e: 0x0e,	#  SHIFT OUT
-    0x000f: 0x0f,	#  SHIFT IN
+    0x000A: 0x0A,	#  LINE FEED
+    0x000B: 0x0B,	#  VERTICAL TABULATION
+    0x000C: 0x0C,	#  FORM FEED
+    0x000D: 0x0D,	#  CARRIAGE RETURN
+    0x000E: 0x0E,	#  SHIFT OUT
+    0x000F: 0x0F,	#  SHIFT IN
     0x0010: 0x10,	#  DATA LINK ESCAPE
     0x0011: 0x11,	#  DEVICE CONTROL ONE
     0x0012: 0x12,	#  DEVICE CONTROL TWO
@@ -319,12 +319,12 @@ encoding_map = {
     0x0017: 0x17,	#  END OF TRANSMISSION BLOCK
     0x0018: 0x18,	#  CANCEL
     0x0019: 0x19,	#  END OF MEDIUM
-    0x001a: 0x1a,	#  SUBSTITUTE
-    0x001b: 0x1b,	#  ESCAPE
-    0x001c: 0x1c,	#  FILE SEPARATOR
-    0x001d: 0x1d,	#  GROUP SEPARATOR
-    0x001e: 0x1e,	#  RECORD SEPARATOR
-    0x001f: 0x1f,	#  UNIT SEPARATOR
+    0x001A: 0x1A,	#  SUBSTITUTE
+    0x001B: 0x1B,	#  ESCAPE
+    0x001C: 0x1C,	#  FILE SEPARATOR
+    0x001D: 0x1D,	#  GROUP SEPARATOR
+    0x001E: 0x1E,	#  RECORD SEPARATOR
+    0x001F: 0x1F,	#  UNIT SEPARATOR
     0x0020: 0x20,	#  SPACE
     0x0021: 0x21,	#  EXCLAMATION MARK
     0x0022: 0x22,	#  QUOTATION MARK
@@ -335,12 +335,12 @@ encoding_map = {
     0x0027: 0x27,	#  APOSTROPHE
     0x0028: 0x28,	#  LEFT PARENTHESIS
     0x0029: 0x29,	#  RIGHT PARENTHESIS
-    0x002a: 0x2a,	#  ASTERISK
-    0x002b: 0x2b,	#  PLUS SIGN
-    0x002c: 0x2c,	#  COMMA
-    0x002d: 0x2d,	#  HYPHEN-MINUS
-    0x002e: 0x2e,	#  FULL STOP
-    0x002f: 0x2f,	#  SOLIDUS
+    0x002A: 0x2A,	#  ASTERISK
+    0x002B: 0x2B,	#  PLUS SIGN
+    0x002C: 0x2C,	#  COMMA
+    0x002D: 0x2D,	#  HYPHEN-MINUS
+    0x002E: 0x2E,	#  FULL STOP
+    0x002F: 0x2F,	#  SOLIDUS
     0x0030: 0x30,	#  DIGIT ZERO
     0x0031: 0x31,	#  DIGIT ONE
     0x0032: 0x32,	#  DIGIT TWO
@@ -351,12 +351,12 @@ encoding_map = {
     0x0037: 0x37,	#  DIGIT SEVEN
     0x0038: 0x38,	#  DIGIT EIGHT
     0x0039: 0x39,	#  DIGIT NINE
-    0x003a: 0x3a,	#  COLON
-    0x003b: 0x3b,	#  SEMICOLON
-    0x003c: 0x3c,	#  LESS-THAN SIGN
-    0x003d: 0x3d,	#  EQUALS SIGN
-    0x003e: 0x3e,	#  GREATER-THAN SIGN
-    0x003f: 0x3f,	#  QUESTION MARK
+    0x003A: 0x3A,	#  COLON
+    0x003B: 0x3B,	#  SEMICOLON
+    0x003C: 0x3C,	#  LESS-THAN SIGN
+    0x003D: 0x3D,	#  EQUALS SIGN
+    0x003E: 0x3E,	#  GREATER-THAN SIGN
+    0x003F: 0x3F,	#  QUESTION MARK
     0x0040: 0x40,	#  COMMERCIAL AT
     0x0041: 0x41,	#  LATIN CAPITAL LETTER A
     0x0042: 0x42,	#  LATIN CAPITAL LETTER B
@@ -367,12 +367,12 @@ encoding_map = {
     0x0047: 0x47,	#  LATIN CAPITAL LETTER G
     0x0048: 0x48,	#  LATIN CAPITAL LETTER H
     0x0049: 0x49,	#  LATIN CAPITAL LETTER I
-    0x004a: 0x4a,	#  LATIN CAPITAL LETTER J
-    0x004b: 0x4b,	#  LATIN CAPITAL LETTER K
-    0x004c: 0x4c,	#  LATIN CAPITAL LETTER L
-    0x004d: 0x4d,	#  LATIN CAPITAL LETTER M
-    0x004e: 0x4e,	#  LATIN CAPITAL LETTER N
-    0x004f: 0x4f,	#  LATIN CAPITAL LETTER O
+    0x004A: 0x4A,	#  LATIN CAPITAL LETTER J
+    0x004B: 0x4B,	#  LATIN CAPITAL LETTER K
+    0x004C: 0x4C,	#  LATIN CAPITAL LETTER L
+    0x004D: 0x4D,	#  LATIN CAPITAL LETTER M
+    0x004E: 0x4E,	#  LATIN CAPITAL LETTER N
+    0x004F: 0x4F,	#  LATIN CAPITAL LETTER O
     0x0050: 0x50,	#  LATIN CAPITAL LETTER P
     0x0051: 0x51,	#  LATIN CAPITAL LETTER Q
     0x0052: 0x52,	#  LATIN CAPITAL LETTER R
@@ -383,12 +383,12 @@ encoding_map = {
     0x0057: 0x57,	#  LATIN CAPITAL LETTER W
     0x0058: 0x58,	#  LATIN CAPITAL LETTER X
     0x0059: 0x59,	#  LATIN CAPITAL LETTER Y
-    0x005a: 0x5a,	#  LATIN CAPITAL LETTER Z
-    0x005b: 0x5b,	#  LEFT SQUARE BRACKET
-    0x005c: 0x5c,	#  REVERSE SOLIDUS
-    0x005d: 0x5d,	#  RIGHT SQUARE BRACKET
-    0x005e: 0x5e,	#  CIRCUMFLEX ACCENT
-    0x005f: 0x5f,	#  LOW LINE
+    0x005A: 0x5A,	#  LATIN CAPITAL LETTER Z
+    0x005B: 0x5B,	#  LEFT SQUARE BRACKET
+    0x005C: 0x5C,	#  REVERSE SOLIDUS
+    0x005D: 0x5D,	#  RIGHT SQUARE BRACKET
+    0x005E: 0x5E,	#  CIRCUMFLEX ACCENT
+    0x005F: 0x5F,	#  LOW LINE
     0x0060: 0x60,	#  GRAVE ACCENT
     0x0061: 0x61,	#  LATIN SMALL LETTER A
     0x0062: 0x62,	#  LATIN SMALL LETTER B
@@ -399,12 +399,12 @@ encoding_map = {
     0x0067: 0x67,	#  LATIN SMALL LETTER G
     0x0068: 0x68,	#  LATIN SMALL LETTER H
     0x0069: 0x69,	#  LATIN SMALL LETTER I
-    0x006a: 0x6a,	#  LATIN SMALL LETTER J
-    0x006b: 0x6b,	#  LATIN SMALL LETTER K
-    0x006c: 0x6c,	#  LATIN SMALL LETTER L
-    0x006d: 0x6d,	#  LATIN SMALL LETTER M
-    0x006e: 0x6e,	#  LATIN SMALL LETTER N
-    0x006f: 0x6f,	#  LATIN SMALL LETTER O
+    0x006A: 0x6A,	#  LATIN SMALL LETTER J
+    0x006B: 0x6B,	#  LATIN SMALL LETTER K
+    0x006C: 0x6C,	#  LATIN SMALL LETTER L
+    0x006D: 0x6D,	#  LATIN SMALL LETTER M
+    0x006E: 0x6E,	#  LATIN SMALL LETTER N
+    0x006F: 0x6F,	#  LATIN SMALL LETTER O
     0x0070: 0x70,	#  LATIN SMALL LETTER P
     0x0071: 0x71,	#  LATIN SMALL LETTER Q
     0x0072: 0x72,	#  LATIN SMALL LETTER R
@@ -415,107 +415,108 @@ encoding_map = {
     0x0077: 0x77,	#  LATIN SMALL LETTER W
     0x0078: 0x78,	#  LATIN SMALL LETTER X
     0x0079: 0x79,	#  LATIN SMALL LETTER Y
-    0x007a: 0x7a,	#  LATIN SMALL LETTER Z
-    0x007b: 0x7b,	#  LEFT CURLY BRACKET
-    0x007c: 0x7c,	#  VERTICAL LINE
-    0x007d: 0x7d,	#  RIGHT CURLY BRACKET
-    0x007e: 0x7e,	#  TILDE
-    0x007f: 0x7f,	#  DELETE
-    0x00a0: 0xa0,	#  NO-BREAK SPACE
-    0x0e01: 0xa1,	#  THAI CHARACTER KO KAI
-    0x0e02: 0xa2,	#  THAI CHARACTER KHO KHAI
-    0x0e03: 0xa3,	#  THAI CHARACTER KHO KHUAT
-    0x0e04: 0xa4,	#  THAI CHARACTER KHO KHWAI
-    0x0e05: 0xa5,	#  THAI CHARACTER KHO KHON
-    0x0e06: 0xa6,	#  THAI CHARACTER KHO RAKHANG
-    0x0e07: 0xa7,	#  THAI CHARACTER NGO NGU
-    0x0e08: 0xa8,	#  THAI CHARACTER CHO CHAN
-    0x0e09: 0xa9,	#  THAI CHARACTER CHO CHING
-    0x0e0a: 0xaa,	#  THAI CHARACTER CHO CHANG
-    0x0e0b: 0xab,	#  THAI CHARACTER SO SO
-    0x0e0c: 0xac,	#  THAI CHARACTER CHO CHOE
-    0x0e0d: 0xad,	#  THAI CHARACTER YO YING
-    0x0e0e: 0xae,	#  THAI CHARACTER DO CHADA
-    0x0e0f: 0xaf,	#  THAI CHARACTER TO PATAK
-    0x0e10: 0xb0,	#  THAI CHARACTER THO THAN
-    0x0e11: 0xb1,	#  THAI CHARACTER THO NANGMONTHO
-    0x0e12: 0xb2,	#  THAI CHARACTER THO PHUTHAO
-    0x0e13: 0xb3,	#  THAI CHARACTER NO NEN
-    0x0e14: 0xb4,	#  THAI CHARACTER DO DEK
-    0x0e15: 0xb5,	#  THAI CHARACTER TO TAO
-    0x0e16: 0xb6,	#  THAI CHARACTER THO THUNG
-    0x0e17: 0xb7,	#  THAI CHARACTER THO THAHAN
-    0x0e18: 0xb8,	#  THAI CHARACTER THO THONG
-    0x0e19: 0xb9,	#  THAI CHARACTER NO NU
-    0x0e1a: 0xba,	#  THAI CHARACTER BO BAIMAI
-    0x0e1b: 0xbb,	#  THAI CHARACTER PO PLA
-    0x0e1c: 0xbc,	#  THAI CHARACTER PHO PHUNG
-    0x0e1d: 0xbd,	#  THAI CHARACTER FO FA
-    0x0e1e: 0xbe,	#  THAI CHARACTER PHO PHAN
-    0x0e1f: 0xbf,	#  THAI CHARACTER FO FAN
-    0x0e20: 0xc0,	#  THAI CHARACTER PHO SAMPHAO
-    0x0e21: 0xc1,	#  THAI CHARACTER MO MA
-    0x0e22: 0xc2,	#  THAI CHARACTER YO YAK
-    0x0e23: 0xc3,	#  THAI CHARACTER RO RUA
-    0x0e24: 0xc4,	#  THAI CHARACTER RU
-    0x0e25: 0xc5,	#  THAI CHARACTER LO LING
-    0x0e26: 0xc6,	#  THAI CHARACTER LU
-    0x0e27: 0xc7,	#  THAI CHARACTER WO WAEN
-    0x0e28: 0xc8,	#  THAI CHARACTER SO SALA
-    0x0e29: 0xc9,	#  THAI CHARACTER SO RUSI
-    0x0e2a: 0xca,	#  THAI CHARACTER SO SUA
-    0x0e2b: 0xcb,	#  THAI CHARACTER HO HIP
-    0x0e2c: 0xcc,	#  THAI CHARACTER LO CHULA
-    0x0e2d: 0xcd,	#  THAI CHARACTER O ANG
-    0x0e2e: 0xce,	#  THAI CHARACTER HO NOKHUK
-    0x0e2f: 0xcf,	#  THAI CHARACTER PAIYANNOI
-    0x0e30: 0xd0,	#  THAI CHARACTER SARA A
-    0x0e31: 0xd1,	#  THAI CHARACTER MAI HAN-AKAT
-    0x0e32: 0xd2,	#  THAI CHARACTER SARA AA
-    0x0e33: 0xd3,	#  THAI CHARACTER SARA AM
-    0x0e34: 0xd4,	#  THAI CHARACTER SARA I
-    0x0e35: 0xd5,	#  THAI CHARACTER SARA II
-    0x0e36: 0xd6,	#  THAI CHARACTER SARA UE
-    0x0e37: 0xd7,	#  THAI CHARACTER SARA UEE
-    0x0e38: 0xd8,	#  THAI CHARACTER SARA U
-    0x0e39: 0xd9,	#  THAI CHARACTER SARA UU
-    0x0e3a: 0xda,	#  THAI CHARACTER PHINTHU
-    0x0e3f: 0xdf,	#  THAI CURRENCY SYMBOL BAHT
-    0x0e40: 0xe0,	#  THAI CHARACTER SARA E
-    0x0e41: 0xe1,	#  THAI CHARACTER SARA AE
-    0x0e42: 0xe2,	#  THAI CHARACTER SARA O
-    0x0e43: 0xe3,	#  THAI CHARACTER SARA AI MAIMUAN
-    0x0e44: 0xe4,	#  THAI CHARACTER SARA AI MAIMALAI
-    0x0e45: 0xe5,	#  THAI CHARACTER LAKKHANGYAO
-    0x0e46: 0xe6,	#  THAI CHARACTER MAIYAMOK
-    0x0e47: 0xe7,	#  THAI CHARACTER MAITAIKHU
-    0x0e48: 0xe8,	#  THAI CHARACTER MAI EK
-    0x0e49: 0xe9,	#  THAI CHARACTER MAI THO
-    0x0e4a: 0xea,	#  THAI CHARACTER MAI TRI
-    0x0e4b: 0xeb,	#  THAI CHARACTER MAI CHATTAWA
-    0x0e4c: 0xec,	#  THAI CHARACTER THANTHAKHAT
-    0x0e4d: 0xed,	#  THAI CHARACTER NIKHAHIT
-    0x0e4e: 0xee,	#  THAI CHARACTER YAMAKKAN
-    0x0e4f: 0xef,	#  THAI CHARACTER FONGMAN
-    0x0e50: 0xf0,	#  THAI DIGIT ZERO
-    0x0e51: 0xf1,	#  THAI DIGIT ONE
-    0x0e52: 0xf2,	#  THAI DIGIT TWO
-    0x0e53: 0xf3,	#  THAI DIGIT THREE
-    0x0e54: 0xf4,	#  THAI DIGIT FOUR
-    0x0e55: 0xf5,	#  THAI DIGIT FIVE
-    0x0e56: 0xf6,	#  THAI DIGIT SIX
-    0x0e57: 0xf7,	#  THAI DIGIT SEVEN
-    0x0e58: 0xf8,	#  THAI DIGIT EIGHT
-    0x0e59: 0xf9,	#  THAI DIGIT NINE
-    0x0e5a: 0xfa,	#  THAI CHARACTER ANGKHANKHU
-    0x0e5b: 0xfb,	#  THAI CHARACTER KHOMUT
+    0x007A: 0x7A,	#  LATIN SMALL LETTER Z
+    0x007B: 0x7B,	#  LEFT CURLY BRACKET
+    0x007C: 0x7C,	#  VERTICAL LINE
+    0x007D: 0x7D,	#  RIGHT CURLY BRACKET
+    0x007E: 0x7E,	#  TILDE
+    0x007F: 0x7F,	#  DELETE
+    0x00A0: 0xA0,	#  NO-BREAK SPACE
+    0x0E01: 0xA1,	#  THAI CHARACTER KO KAI
+    0x0E02: 0xA2,	#  THAI CHARACTER KHO KHAI
+    0x0E03: 0xA3,	#  THAI CHARACTER KHO KHUAT
+    0x0E04: 0xA4,	#  THAI CHARACTER KHO KHWAI
+    0x0E05: 0xA5,	#  THAI CHARACTER KHO KHON
+    0x0E06: 0xA6,	#  THAI CHARACTER KHO RAKHANG
+    0x0E07: 0xA7,	#  THAI CHARACTER NGO NGU
+    0x0E08: 0xA8,	#  THAI CHARACTER CHO CHAN
+    0x0E09: 0xA9,	#  THAI CHARACTER CHO CHING
+    0x0E0A: 0xAA,	#  THAI CHARACTER CHO CHANG
+    0x0E0B: 0xAB,	#  THAI CHARACTER SO SO
+    0x0E0C: 0xAC,	#  THAI CHARACTER CHO CHOE
+    0x0E0D: 0xAD,	#  THAI CHARACTER YO YING
+    0x0E0E: 0xAE,	#  THAI CHARACTER DO CHADA
+    0x0E0F: 0xAF,	#  THAI CHARACTER TO PATAK
+    0x0E10: 0xB0,	#  THAI CHARACTER THO THAN
+    0x0E11: 0xB1,	#  THAI CHARACTER THO NANGMONTHO
+    0x0E12: 0xB2,	#  THAI CHARACTER THO PHUTHAO
+    0x0E13: 0xB3,	#  THAI CHARACTER NO NEN
+    0x0E14: 0xB4,	#  THAI CHARACTER DO DEK
+    0x0E15: 0xB5,	#  THAI CHARACTER TO TAO
+    0x0E16: 0xB6,	#  THAI CHARACTER THO THUNG
+    0x0E17: 0xB7,	#  THAI CHARACTER THO THAHAN
+    0x0E18: 0xB8,	#  THAI CHARACTER THO THONG
+    0x0E19: 0xB9,	#  THAI CHARACTER NO NU
+    0x0E1A: 0xBA,	#  THAI CHARACTER BO BAIMAI
+    0x0E1B: 0xBB,	#  THAI CHARACTER PO PLA
+    0x0E1C: 0xBC,	#  THAI CHARACTER PHO PHUNG
+    0x0E1D: 0xBD,	#  THAI CHARACTER FO FA
+    0x0E1E: 0xBE,	#  THAI CHARACTER PHO PHAN
+    0x0E1F: 0xBF,	#  THAI CHARACTER FO FAN
+    0x0E20: 0xC0,	#  THAI CHARACTER PHO SAMPHAO
+    0x0E21: 0xC1,	#  THAI CHARACTER MO MA
+    0x0E22: 0xC2,	#  THAI CHARACTER YO YAK
+    0x0E23: 0xC3,	#  THAI CHARACTER RO RUA
+    0x0E24: 0xC4,	#  THAI CHARACTER RU
+    0x0E25: 0xC5,	#  THAI CHARACTER LO LING
+    0x0E26: 0xC6,	#  THAI CHARACTER LU
+    0x0E27: 0xC7,	#  THAI CHARACTER WO WAEN
+    0x0E28: 0xC8,	#  THAI CHARACTER SO SALA
+    0x0E29: 0xC9,	#  THAI CHARACTER SO RUSI
+    0x0E2A: 0xCA,	#  THAI CHARACTER SO SUA
+    0x0E2B: 0xCB,	#  THAI CHARACTER HO HIP
+    0x0E2C: 0xCC,	#  THAI CHARACTER LO CHULA
+    0x0E2D: 0xCD,	#  THAI CHARACTER O ANG
+    0x0E2E: 0xCE,	#  THAI CHARACTER HO NOKHUK
+    0x0E2F: 0xCF,	#  THAI CHARACTER PAIYANNOI
+    0x0E30: 0xD0,	#  THAI CHARACTER SARA A
+    0x0E31: 0xD1,	#  THAI CHARACTER MAI HAN-AKAT
+    0x0E32: 0xD2,	#  THAI CHARACTER SARA AA
+    0x0E33: 0xD3,	#  THAI CHARACTER SARA AM
+    0x0E34: 0xD4,	#  THAI CHARACTER SARA I
+    0x0E35: 0xD5,	#  THAI CHARACTER SARA II
+    0x0E36: 0xD6,	#  THAI CHARACTER SARA UE
+    0x0E37: 0xD7,	#  THAI CHARACTER SARA UEE
+    0x0E38: 0xD8,	#  THAI CHARACTER SARA U
+    0x0E39: 0xD9,	#  THAI CHARACTER SARA UU
+    0x0E3A: 0xDA,	#  THAI CHARACTER PHINTHU
+    0x0E3F: 0xDF,	#  THAI CURRENCY SYMBOL BAHT
+    0x0E40: 0xE0,	#  THAI CHARACTER SARA E
+    0x0E41: 0xE1,	#  THAI CHARACTER SARA AE
+    0x0E42: 0xE2,	#  THAI CHARACTER SARA O
+    0x0E43: 0xE3,	#  THAI CHARACTER SARA AI MAIMUAN
+    0x0E44: 0xE4,	#  THAI CHARACTER SARA AI MAIMALAI
+    0x0E45: 0xE5,	#  THAI CHARACTER LAKKHANGYAO
+    0x0E46: 0xE6,	#  THAI CHARACTER MAIYAMOK
+    0x0E47: 0xE7,	#  THAI CHARACTER MAITAIKHU
+    0x0E48: 0xE8,	#  THAI CHARACTER MAI EK
+    0x0E49: 0xE9,	#  THAI CHARACTER MAI THO
+    0x0E4A: 0xEA,	#  THAI CHARACTER MAI TRI
+    0x0E4B: 0xEB,	#  THAI CHARACTER MAI CHATTAWA
+    0x0E4C: 0xEC,	#  THAI CHARACTER THANTHAKHAT
+    0x0E4D: 0xED,	#  THAI CHARACTER NIKHAHIT
+    0x0E4E: 0xEE,	#  THAI CHARACTER YAMAKKAN
+    0x0E4F: 0xEF,	#  THAI CHARACTER FONGMAN
+    0x0E50: 0xF0,	#  THAI DIGIT ZERO
+    0x0E51: 0xF1,	#  THAI DIGIT ONE
+    0x0E52: 0xF2,	#  THAI DIGIT TWO
+    0x0E53: 0xF3,	#  THAI DIGIT THREE
+    0x0E54: 0xF4,	#  THAI DIGIT FOUR
+    0x0E55: 0xF5,	#  THAI DIGIT FIVE
+    0x0E56: 0xF6,	#  THAI DIGIT SIX
+    0x0E57: 0xF7,	#  THAI DIGIT SEVEN
+    0x0E58: 0xF8,	#  THAI DIGIT EIGHT
+    0x0E59: 0xF9,	#  THAI DIGIT NINE
+    0x0E5A: 0xFA,	#  THAI CHARACTER ANGKHANKHU
+    0x0E5B: 0xFB,	#  THAI CHARACTER KHOMUT
     0x2013: 0x96,	#  EN DASH
     0x2014: 0x97,	#  EM DASH
     0x2018: 0x91,	#  LEFT SINGLE QUOTATION MARK
     0x2019: 0x92,	#  RIGHT SINGLE QUOTATION MARK
-    0x201c: 0x93,	#  LEFT DOUBLE QUOTATION MARK
-    0x201d: 0x94,	#  RIGHT DOUBLE QUOTATION MARK
+    0x201C: 0x93,	#  LEFT DOUBLE QUOTATION MARK
+    0x201D: 0x94,	#  RIGHT DOUBLE QUOTATION MARK
     0x2022: 0x95,	#  BULLET
     0x2026: 0x85,	#  HORIZONTAL ELLIPSIS
-    0x20ac: 0x80,	#  EURO SIGN
+    0x20AC: 0x80,	#  EURO SIGN
 }
+
