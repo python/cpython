@@ -12,7 +12,7 @@
 "name '%.400s' is used prior to global declaration"
 
 PySTEntryObject *
-PySTEntry_New(struct symtable *st, identifier name, block_ty block,
+PySTEntry_New(struct symtable *st, identifier name, _Py_block_ty block,
 	      void *key, int lineno)
 {
 	PySTEntryObject *ste = NULL;
@@ -153,7 +153,7 @@ PyTypeObject PySTEntry_Type = {
 static int symtable_analyze(struct symtable *st);
 static int symtable_warn(struct symtable *st, char *msg);
 static int symtable_enter_block(struct symtable *st, identifier name, 
-				block_ty block, void *ast, int lineno);
+				_Py_block_ty block, void *ast, int lineno);
 static int symtable_exit_block(struct symtable *st, void *ast);
 static int symtable_visit_stmt(struct symtable *st, stmt_ty s);
 static int symtable_visit_expr(struct symtable *st, expr_ty s);
@@ -711,7 +711,7 @@ symtable_exit_block(struct symtable *st, void *ast)
 }
 
 static int
-symtable_enter_block(struct symtable *st, identifier name, block_ty block, 
+symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block, 
 		     void *ast, int lineno)
 {
 	PySTEntryObject *prev = NULL;
