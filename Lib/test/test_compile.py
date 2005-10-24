@@ -101,6 +101,29 @@ class TestSpecifics(unittest.TestCase):
         exec 'z = a' in g, d
         self.assertEqual(d['z'], 12)
 
+    def test_extended_arg(self):
+        longexpr = 'x = x or ' + '-x' * 2500
+        code = '''
+def f(x):
+    %s
+    %s
+    %s
+    %s
+    %s
+    %s
+    %s
+    %s
+    %s
+    %s
+    # the expressions above have no effect, x == argument
+    while x:
+        x -= 1
+        # EXTENDED_ARG/JUMP_ABSOLUTE here
+    return x
+''' % ((longexpr,)*10)
+        exec code
+        self.assertEqual(f(5), 0)
+
     def test_complex_args(self):
 
         def comp_args((a, b)):
