@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 typedef enum _block_type { FunctionBlock, ClassBlock, ModuleBlock }
-    block_ty;
+    _Py_block_ty;
 
 struct _symtable_entry;
 
@@ -29,7 +29,7 @@ typedef struct _symtable_entry {
 	PyObject *ste_name;      /* string: name of block */
 	PyObject *ste_varnames;  /* list of variable names */
 	PyObject *ste_children;  /* list of child ids */
-	block_ty ste_type;       /* module, class, or function */
+	_Py_block_ty ste_type;   /* module, class, or function */
 	int ste_unoptimized;     /* false if namespace is optimized */
 	int ste_nested : 1;      /* true if block is nested */
 	int ste_free : 1;        /* true if block has free variables */
@@ -49,7 +49,7 @@ PyAPI_DATA(PyTypeObject) PySTEntry_Type;
 #define PySTEntry_Check(op) ((op)->ob_type == &PySTEntry_Type)
 
 PyAPI_FUNC(PySTEntryObject *) \
-	PySTEntry_New(struct symtable *, identifier, block_ty, void *, int);
+	PySTEntry_New(struct symtable *, identifier, _Py_block_ty, void *, int);
 PyAPI_FUNC(int) PyST_GetScope(PySTEntryObject *, PyObject *);
 
 PyAPI_FUNC(struct symtable *) PySymtable_Build(mod_ty, const char *, 
