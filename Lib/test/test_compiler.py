@@ -28,7 +28,7 @@ class CompilerTest(unittest.TestCase):
                 f = open(path, "U")
                 buf = f.read()
                 f.close()
-                if "badsyntax" in basename:
+                if "badsyntax" in basename or "bad_coding" in basename:
                     self.assertRaises(SyntaxError, compiler.compile,
                                       buf, basename, "exec")
                 else:
