@@ -15,12 +15,14 @@ lowercase with hyphens replaced by underscores.
 The tool also writes marshalled versions of the mapping tables to the
 same location (with .mapping extension).
 
-Written by Marc-Andre Lemburg (mal@lemburg.com).  Modified to generate
-Unicode table maps for decoding.
+Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 (c) Copyright Guido van Rossum, 2000.
+
+Table generation:
 (c) Copyright Marc-Andre Lemburg, 2005.
+    Licensed to PSF under a Contributor Agreement.
 
 """#"
 
@@ -117,21 +119,22 @@ def readmap(filename):
 
     return enc2uni
 
-def hexrepr(t):
+def hexrepr(t, precision=4):
 
     if t is None:
         return 'None'
     try:
         len(t)
     except:
-        return '0x%04x' % t
+        return '0x%0*X' % (precision, t)
     try:
-        return '(' + ', '.join(map(lambda t: '0x%04x' % t, t)) + ')'
+        return '(' + ', '.join(['0x%0*X' % (precision, item)
+                                for item in t]) + ')'
     except TypeError, why:
         print '* failed to convert %r: %s' % (t, why)
         raise
 
-def python_mapdef_code(varname, map, comments=1):
+def python_mapdef_code(varname, map, comments=1, precisions=(2, 4)):
 
     l = []
     append = l.append
@@ -150,6 +153,7 @@ def python_mapdef_code(varname, map, comments=1):
     mappings = map.items()
     mappings.sort()
     i = 0
+    key_precision, value_precision = precisions
     for mapkey, mapvalue in mappings:
         mapcomment = ''
         if isinstance(mapkey, tuple):
@@ -164,8 +168,8 @@ def python_mapdef_code(varname, map, comments=1):
             # No need to include identity mappings, since these
             # are already set for the first 256 code points.
             continue
-        key = hexrepr(mapkey)
-        value = hexrepr(mapvalue)
+        key = hexrepr(mapkey, key_precision)
+        value = hexrepr(mapvalue, value_precision)
         if mapcomment and comments:
             append('    %s: %s,\t#  %s' % (key, value, mapcomment))
         else:
@@ -188,7 +192,7 @@ def python_mapdef_code(varname, map, comments=1):
 
     return l
 
-def python_tabledef_code(varname, map, comments=1):
+def python_tabledef_code(varname, map, comments=1, key_precision=2):
 
     l = []
     append = l.append
@@ -236,7 +240,7 @@ def python_tabledef_code(varname, map, comments=1):
                 mapchar = unichr(mapvalue)
         if mapcomment and comments:
             append('    %r\t#  %s -> %s' % (mapchar,
-                                            hexrepr(key),
+                                            hexrepr(key, key_precision),
                                             mapcomment))
         else:
             append('    %r' % mapchar)
@@ -263,7 +267,8 @@ def codegen(name, map, comments=1):
     encoding_map_code = python_mapdef_code(
         'encoding_map',
         codecs.make_encoding_map(map),
-        comments=comments)
+        comments=comments,
+        precisions=(4, 2))
 
     l = [
         '''\
@@ -303,22 +308,28 @@ class StreamReader(Codec,codecs.StreamReader):
 def getregentry():
 
     return (Codec().encode,Codec().decode,StreamReader,StreamWriter)
+''')
 
+    # Add decoding table or map (with preference to the table)
+    if not decoding_table_code:
+        l.append('''
 ### Decoding Map
 ''')
-    l.extend(decoding_map_code)
-
-    # Add optional decoding table
-    if decoding_table_code:
+        l.extend(decoding_map_code)
+    else:
         l.append('''
 ### Decoding Table
 ''')
         l.extend(decoding_table_code)
 
+    # Add encoding map
     l.append('''
 ### Encoding Map
 ''')
     l.extend(encoding_map_code)
+
+    # Final new-line
+    l.append('\n')
     
     return '\n'.join(l)
 
@@ -343,6 +354,8 @@ def convertdir(dir,prefix='',comments=1):
     mapnames = os.listdir(dir)
     for mapname in mapnames:
         mappathname = os.path.join(dir, mapname)
+        if not os.path.isfile(mappathname):
+            continue
         name = os.path.split(mapname)[1]
         name = name.replace('-','_')
         name = name.split('.')[0]
