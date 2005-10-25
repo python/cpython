@@ -1439,6 +1439,99 @@ ast_for_binop(struct compiling *c, const node *n)
 	return result;
 }
 
+static expr_ty
+ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
+{
+    /* trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME */
+    expr_ty e;
+    REQ(n, trailer);
+    if (TYPE(CHILD(n, 0)) == LPAR) {
+        if (NCH(n) == 2)
+            e = Call(left_expr, NULL, NULL, NULL, NULL, LINENO(n));
+        else
+            e = ast_for_call(c, CHILD(n, 1), left_expr);
+    }
+    else if (TYPE(CHILD(n, 0)) == LSQB) {
+        REQ(CHILD(n, 2), RSQB);
+        n = CHILD(n, 1);
+        if (NCH(n) <= 2) {
+            slice_ty slc = ast_for_slice(c, CHILD(n, 0));
+            if (!slc)
+                return NULL;
+            e = Subscript(left_expr, slc, Load, LINENO(n));
+            if (!e) {
+                free_slice(slc);
+                return NULL;
+            }
+        }
+        else {
+            int j;
+            slice_ty slc;
+            asdl_seq *slices = asdl_seq_new((NCH(n) + 1) / 2);
+            if (!slices)
+                return NULL;
+            for (j = 0; j < NCH(n); j += 2) {
+                slc = ast_for_slice(c, CHILD(n, j));
+                if (!slc) {
+                    asdl_seq_free(slices);
+                    return NULL;
+                }
+                asdl_seq_SET(slices, j / 2, slc);
+            }
+            e = Subscript(left_expr, ExtSlice(slices), Load, LINENO(n));
+            if (!e) {
+                asdl_seq_free(slices);
+                return NULL;
+            }
+        }
+    }
+    else {
+        assert(TYPE(CHILD(n, 0)) == DOT);
+        e = Attribute(left_expr, NEW_IDENTIFIER(CHILD(n, 1)), Load, LINENO(n));
+    }
+    return e;
+}
+
+static expr_ty
+ast_for_power(struct compiling *c, const node *n)
+{
+    /* power: atom trailer* ('**' factor)*
+     */
+    int i;
+    expr_ty e, tmp;
+    REQ(n, power);
+    e = ast_for_atom(c, CHILD(n, 0));
+    if (!e)
+        return NULL;
+    if (NCH(n) == 1)
+        return e;
+    for (i = 1; i < NCH(n); i++) {
+        node *ch = CHILD(n, i);
+        if (TYPE(ch) != trailer)
+            break;
+        tmp = ast_for_trailer(c, ch, e);
+        if (!tmp) {
+            free_expr(e);
+            return NULL;
+        }
+        e = tmp;
+    }
+    if (TYPE(CHILD(n, NCH(n) - 1)) == factor) {
+        expr_ty f = ast_for_expr(c, CHILD(n, NCH(n) - 1));
+        if (!f) {
+            free_expr(e);
+            return NULL;
+        }
+        tmp = BinOp(e, Pow, f, LINENO(n));
+        if (!tmp) {
+            free_expr(e);
+            return NULL;
+        }
+        e = tmp;
+    }
+    return e;
+}
+
 /* Do not name a variable 'expr'!  Will cause a compile error.
 */
 
@@ -1587,97 +1680,8 @@ ast_for_expr(struct compiling *c, const node *n)
             }
             break;
         }
-        case power: {
-            expr_ty e = ast_for_atom(c, CHILD(n, 0));
-	    if (!e)
-		return NULL;
-            if (NCH(n) == 1)
-                return e;
-            /* power: atom trailer* ('**' factor)*
-               trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME 
-
-               XXX What about atom trailer trailer ** factor?
-            */
-            for (i = 1; i < NCH(n); i++) {
-                expr_ty new = e;
-                node *ch = CHILD(n, i);
-                if (ch->n_str && strcmp(ch->n_str, "**") == 0)
-                    break;
-                if (TYPE(CHILD(ch, 0)) == LPAR) {
-                    if (NCH(ch) == 2)
-                        new = Call(new, NULL, NULL, NULL, NULL, LINENO(ch));
-                    else
-                        new = ast_for_call(c, CHILD(ch, 1), new);
-
-                    if (!new) {
-		        free_expr(e);
-                        return NULL;
-		    }
-                }
-                else if (TYPE(CHILD(ch, 0)) == LSQB) {
-                    REQ(CHILD(ch, 2), RSQB);
-                    ch = CHILD(ch, 1);
-                    if (NCH(ch) <= 2) {
-                        slice_ty slc = ast_for_slice(c, CHILD(ch, 0));
-                        if (!slc) {
-		            free_expr(e);
-                            return NULL;
-			}
-
-                        new = Subscript(e, slc, Load, LINENO(ch));
-                        if (!new) {
-		            free_expr(e);
-                            free_slice(slc);
-                            return NULL;
-			}
-                    }
-                    else {
-                        int j;
-                        slice_ty slc;
-                        asdl_seq *slices = asdl_seq_new((NCH(ch) + 1) / 2);
-                        if (!slices) {
-		            free_expr(e);
-                            return NULL;
-			}
-
-                        for (j = 0; j < NCH(ch); j += 2) {
-                            slc = ast_for_slice(c, CHILD(ch, j));
-                            if (!slc) {
-		                free_expr(e);
-		                asdl_seq_free(slices);
-                                return NULL;
-			    }
-                            asdl_seq_SET(slices, j / 2, slc);
-                        }
-                        new = Subscript(e, ExtSlice(slices), Load, LINENO(ch));
-                        if (!new) {
-		            free_expr(e);
-		            asdl_seq_free(slices);
-                            return NULL;
-			}
-                    }
-                }
-                else {
-                    assert(TYPE(CHILD(ch, 0)) == DOT);
-                    new = Attribute(e, NEW_IDENTIFIER(CHILD(ch, 1)), Load,
-				    LINENO(ch));
-                    if (!new) {
-		        free_expr(e);
-                        return NULL;
-		    }
-                }
-                e = new;
-            }
-            if (TYPE(CHILD(n, NCH(n) - 1)) == factor) {
-                expr_ty f = ast_for_expr(c, CHILD(n, NCH(n) - 1));
-                if (!f) {
-		    free_expr(e);
-                    return NULL;
-		}
-                return BinOp(e, Pow, f, LINENO(n));
-            }
-            return e;
-        }
+        case power:
+            return ast_for_power(c, n);
         default:
 	    abort();
             PyErr_Format(PyExc_Exception, "unhandled expr: %d", TYPE(n));
