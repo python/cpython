@@ -35,7 +35,8 @@ static expr_ty ast_for_expr(struct compiling *, const node *);
 static stmt_ty ast_for_stmt(struct compiling *, const node *);
 static asdl_seq *ast_for_suite(struct compiling *, const node *);
 static asdl_seq *ast_for_exprlist(struct compiling *, const node *, int);
-static expr_ty ast_for_testlist(struct compiling *, const node *, int);
+static expr_ty ast_for_testlist(struct compiling *, const node *);
+static expr_ty ast_for_testlist_gexp(struct compiling *, const node *);
 
 /* Note different signature for ast_for_call */
 static expr_ty ast_for_call(struct compiling *, const node *, expr_ty);
@@ -251,7 +252,7 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename)
             expr_ty testlist_ast;
 
             /* XXX Why not gen_for here? */
-            testlist_ast = ast_for_testlist(&c, CHILD(n, 0), 0);
+            testlist_ast = ast_for_testlist(&c, CHILD(n, 0));
             if (!testlist_ast)
                 goto error;
             return Expression(testlist_ast);
@@ -980,7 +981,7 @@ ast_for_listcomp(struct compiling *c, const node *n)
             free_expr(elt);
             return NULL;
         }
-        expression = ast_for_testlist(c, CHILD(ch, 3), 0);
+        expression = ast_for_testlist(c, CHILD(ch, 3));
         if (!expression) {
             asdl_seq_free(t);
             asdl_seq_free(listcomps);
@@ -1144,7 +1145,7 @@ ast_for_genexp(struct compiling *c, const node *n)
             free_expr(elt);
             return NULL;
         }
-        expression = ast_for_testlist(c, CHILD(ch, 3), 1);
+        expression = ast_for_expr(c, CHILD(ch, 3));
         if (!expression) {
             asdl_seq_free(genexps);
             free_expr(elt);
@@ -1184,11 +1185,17 @@ ast_for_genexp(struct compiling *c, const node *n)
             }
             
             for (j = 0; j < n_ifs; j++) {
+                expr_ty expression;
                 REQ(ch, gen_iter);
                 ch = CHILD(ch, 0);
                 REQ(ch, gen_if);
                 
-                asdl_seq_APPEND(ifs, ast_for_expr(c, CHILD(ch, 1)));
+                expression = ast_for_expr(c, CHILD(ch, 1));
+                if (!expression) {
+                    asdl_seq_free(genexps);
+                    return NULL;
+                }
+                asdl_seq_APPEND(ifs, expression);
                 if (NCH(ch) == 3)
                     ch = CHILD(ch, 2);
             }
@@ -1244,7 +1251,7 @@ ast_for_atom(struct compiling *c, const node *n)
 	if ((NCH(ch) > 1) && (TYPE(CHILD(ch, 1)) == gen_for))
 	    return ast_for_genexp(c, ch);
 	
-	return ast_for_testlist(c, ch, 1);
+	return ast_for_testlist_gexp(c, ch);
     case LSQB: /* list (or list comprehension) */
 	ch = CHILD(n, 1);
 	
@@ -1297,7 +1304,7 @@ ast_for_atom(struct compiling *c, const node *n)
 	return Dict(keys, values, LINENO(n));
     }
     case BACKQUOTE: { /* repr */
-	expr_ty expression = ast_for_testlist(c, CHILD(n, 1), 0);
+	expr_ty expression = ast_for_testlist(c, CHILD(n, 1));
 	
 	if (!expression)
 	    return NULL;
@@ -1552,7 +1559,7 @@ ast_for_expr(struct compiling *c, const node *n)
         case yield_expr: {
 	    expr_ty exp = NULL;
 	    if (NCH(n) == 2) {
-		exp = ast_for_testlist(c, CHILD(n, 1), 0);
+		exp = ast_for_testlist(c, CHILD(n, 1));
 		if (!exp)
 		    return NULL;
 	    }
@@ -1796,36 +1803,69 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
     return NULL;
 }
 
-/* Unlike other ast_for_XXX() functions, this takes a flag that
-   indicates whether generator expressions are allowed.  If gexp is
-   non-zero, check for testlist_gexp instead of plain testlist.
-*/
-
 static expr_ty
-ast_for_testlist(struct compiling *c, const node* n, int gexp)
+ast_for_testlist(struct compiling *c, const node* n)
 {
-  /* testlist_gexp: test ( gen_for | (',' test)* [','] )
-     testlist: test (',' test)* [',']
-  */
-
+    /* testlist_gexp: test (',' test)* [','] */
+    /* testlist: test (',' test)* [','] */
+    /* testlist_safe: test (',' test)+ [','] */
+    /* testlist1: test (',' test)* */
     assert(NCH(n) > 0);
+    if (TYPE(n) == testlist_gexp) {
+        if (NCH(n) > 1)
+            assert(TYPE(CHILD(n, 1)) != gen_for);
+    }
+    else {
+        assert(TYPE(n) == testlist ||
+               TYPE(n) == testlist_safe ||
+               TYPE(n) == testlist1);
+    }
     if (NCH(n) == 1)
 	return ast_for_expr(c, CHILD(n, 0));
-    if (TYPE(CHILD(n, 1)) == gen_for) {
-	if (!gexp) {
-	    ast_error(n, "illegal generator expression");
-	    return NULL;
-	}
-	return ast_for_genexp(c, n);
-    }
     else {
         asdl_seq *tmp = seq_for_testlist(c, n);
         if (!tmp)
             return NULL;
-
 	return Tuple(tmp, Load, LINENO(n));
     }
-    return NULL;  /* unreachable */
+}
+
+static expr_ty
+ast_for_testlist_gexp(struct compiling *c, const node* n)
+{
+    /* testlist_gexp: test ( gen_for | (',' test)* [','] ) */
+    /* argument: test [ gen_for ] */
+    assert(TYPE(n) == testlist_gexp || TYPE(n) == argument);
+    if (NCH(n) > 1 && TYPE(CHILD(n, 1)) == gen_for) {
+	return ast_for_genexp(c, n);
+    }
+    else
+        return ast_for_testlist(c, n);
+}
+
+/* like ast_for_testlist() but returns a sequence */
+static asdl_seq*
+ast_for_class_bases(struct compiling *c, const node* n)
+{
+    /* testlist: test (',' test)* [','] */
+    assert(NCH(n) > 0);
+    REQ(n, testlist);
+    if (NCH(n) == 1) {
+        expr_ty base;
+        asdl_seq *bases = asdl_seq_new(1);
+        if (!bases)
+            return NULL;
+        base = ast_for_expr(c, CHILD(n, 0));
+        if (!base) {
+            asdl_seq_free(bases);
+            return NULL;
+        }
+        asdl_seq_SET(bases, 0, base);
+        return bases;
+    }
+    else {
+        return seq_for_testlist(c, n);
+    }
 }
 
 static stmt_ty
@@ -1841,7 +1881,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
      */
 
     if (NCH(n) == 1) {
-	expr_ty e = ast_for_testlist(c, CHILD(n, 0), 0);
+	expr_ty e = ast_for_testlist(c, CHILD(n, 0));
         if (!e)
             return NULL;
 
@@ -1853,7 +1893,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 	node *ch = CHILD(n, 0);
 
 	if (TYPE(ch) == testlist)
-	    expr1 = ast_for_testlist(c, ch, 0);
+	    expr1 = ast_for_testlist(c, ch);
 	else
 	    expr1 = Yield(ast_for_expr(c, CHILD(ch, 0)), LINENO(ch));
 
@@ -1874,7 +1914,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 
 	ch = CHILD(n, 2);
 	if (TYPE(ch) == testlist)
-	    expr2 = ast_for_testlist(c, ch, 0);
+	    expr2 = ast_for_testlist(c, ch);
 	else
 	    expr2 = Yield(ast_for_expr(c, ch), LINENO(ch));
         if (!expr2)
@@ -1904,7 +1944,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 		ast_error(ch, "assignment to yield expression not possible");
 		goto error;
 	    }
-	    e = ast_for_testlist(c, ch, 0);
+	    e = ast_for_testlist(c, ch);
 
 	    /* set context to assign */
 	    if (!e) 
@@ -1919,7 +1959,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 	}
 	value = CHILD(n, NCH(n) - 1);
 	if (TYPE(value) == testlist)
-	    expression = ast_for_testlist(c, value, 0);
+	    expression = ast_for_testlist(c, value);
 	else
 	    expression = ast_for_expr(c, value);
 	if (!expression)
@@ -2041,7 +2081,7 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
             if (NCH(ch) == 1)
                 return Return(NULL, LINENO(n));
             else {
-                expr_ty expression = ast_for_testlist(c, CHILD(ch, 1), 0);
+                expr_ty expression = ast_for_testlist(c, CHILD(ch, 1));
                 if (!expression)
                     return NULL;
                 return Return(expression, LINENO(n));
@@ -2599,7 +2639,7 @@ ast_for_for_stmt(struct compiling *c, const node *n)
     else
 	target = Tuple(_target, Store, LINENO(n));
 
-    expression = ast_for_testlist(c, CHILD(n, 3), 0);
+    expression = ast_for_testlist(c, CHILD(n, 3));
     if (!expression)
         return NULL;
     suite_seq = ast_for_suite(c, CHILD(n, 5));
@@ -2725,7 +2765,6 @@ static stmt_ty
 ast_for_classdef(struct compiling *c, const node *n)
 {
     /* classdef: 'class' NAME ['(' testlist ')'] ':' suite */
-    expr_ty _bases;
     asdl_seq *bases, *s;
     
     REQ(n, classdef);
@@ -2750,37 +2789,13 @@ ast_for_classdef(struct compiling *c, const node *n)
     }
 
     /* else handle the base class list */
-    _bases = ast_for_testlist(c, CHILD(n, 3), 0);
-    if (!_bases)
+    bases = ast_for_class_bases(c, CHILD(n, 3));
+    if (!bases)
         return NULL;
-    /* XXX: I don't think we can set to diff types here, how to free???
-
-	Here's the allocation chain:
-    		Tuple (Python-ast.c:907)
-    		ast_for_testlist (ast.c:1782)
-    		ast_for_classdef (ast.c:2677)
-     */
-    if (_bases->kind == Tuple_kind)
-	bases = _bases->v.Tuple.elts;
-    else {
-	bases = asdl_seq_new(1);
-	if (!bases) {
-            free_expr(_bases);
-	    /* XXX: free _bases */
-            return NULL;
-	}
-	asdl_seq_SET(bases, 0, _bases);
-    }
 
     s = ast_for_suite(c, CHILD(n, 6));
     if (!s) {
-	/* XXX: I think this free is correct, but needs to change see above */
-        if (_bases->kind == Tuple_kind)
-		free_expr(_bases);
-	else {
-		free_expr(_bases);
-        	asdl_seq_free(bases);
-	}
+        asdl_seq_free(bases);
         return NULL;
     }
     return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), bases, s, LINENO(n));
