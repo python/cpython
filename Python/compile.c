@@ -1113,7 +1113,7 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
 	return 1;
 }
 
-static int
+static void
 compiler_exit_scope(struct compiler *c)
 {
 	int n;
@@ -1126,14 +1126,14 @@ compiler_exit_scope(struct compiler *c)
 	if (n >= 0) {
 		wrapper = PyList_GET_ITEM(c->c_stack, n);
 		c->u = (struct compiler_unit *)PyCObject_AsVoidPtr(wrapper);
+		/* we are deleting from a list so this really shouldn't fail */
 		if (PySequence_DelItem(c->c_stack, n) < 0)
-			return 0;
+			Py_FatalError("compiler_exit_scope()");
 		compiler_unit_check(c->u);
 	}
 	else
 		c->u = NULL;
 
-	return 1; /* XXX void? */
 }
 
 /* Allocate a new block and return a pointer to it.
@@ -1701,8 +1701,10 @@ compiler_mod(struct compiler *c, mod_ty mod)
 		return NULL;
 	switch (mod->kind) {
 	case Module_kind: 
-		if (!compiler_body(c, mod->v.Module.body))
+		if (!compiler_body(c, mod->v.Module.body)) {
+			compiler_exit_scope(c);
 			return 0;
+		}
 		break;
 	case Interactive_kind:
 		c->c_interactive = 1;
@@ -1872,8 +1874,10 @@ compiler_function(struct compiler *c, stmt_ty s)
         docstring = compiler_isdocstring(st);
         if (docstring)
             first_const = st->v.Expr.value->v.Str.s;
-        if (compiler_add_o(c, c->u->u_consts, first_const) < 0)
+        if (compiler_add_o(c, c->u->u_consts, first_const) < 0)  {
+	    compiler_exit_scope(c);
             return 0;
+	}
 
         /* unpack nested arguments */
 	compiler_arguments(c, args);
@@ -1889,9 +1893,9 @@ compiler_function(struct compiler *c, stmt_ty s)
 		VISIT(c, stmt, s2);
 	}
 	co = assemble(c, 1);
+	compiler_exit_scope(c);
 	if (co == NULL)
 		return 0;
-	compiler_exit_scope(c);
 
         compiler_make_closure(c, co, asdl_seq_LEN(args->defaults));
 
@@ -1923,6 +1927,7 @@ compiler_class(struct compiler *c, stmt_ty s)
         str = PyString_InternFromString("__name__");
 	if (!str || !compiler_nameop(c, str, Load)) {
 		Py_XDECREF(str);
+		compiler_exit_scope(c);
 		return 0;
         }
         
@@ -1930,19 +1935,22 @@ compiler_class(struct compiler *c, stmt_ty s)
         str = PyString_InternFromString("__module__");
 	if (!str || !compiler_nameop(c, str, Store)) {
 		Py_XDECREF(str);
+		compiler_exit_scope(c);
 		return 0;
         }
         Py_DECREF(str);
 
-	if (!compiler_body(c, s->v.ClassDef.body))
+	if (!compiler_body(c, s->v.ClassDef.body)) {
+		compiler_exit_scope(c);
 		return 0;
+	}
 
 	ADDOP(c, LOAD_LOCALS);
 	ADDOP(c, RETURN_VALUE);
 	co = assemble(c, 1);
+	compiler_exit_scope(c);
 	if (co == NULL)
 		return 0;
-	compiler_exit_scope(c);
 
         compiler_make_closure(c, co, 0);
 	ADDOP_I(c, CALL_FUNCTION, 0);
@@ -1976,9 +1984,9 @@ compiler_lambda(struct compiler *c, expr_ty e)
 	VISIT(c, expr, e->v.Lambda.body);
 	ADDOP(c, RETURN_VALUE);
 	co = assemble(c, 1);
+	compiler_exit_scope(c);
 	if (co == NULL)
 		return 0;
-	compiler_exit_scope(c);
 
         compiler_make_closure(c, co, asdl_seq_LEN(args->defaults));
 	Py_DECREF(name);
@@ -3149,9 +3157,9 @@ compiler_genexp(struct compiler *c, expr_ty e)
 	compiler_genexp_generator(c, e->v.GeneratorExp.generators, 0,
 				  e->v.GeneratorExp.elt);
 	co = assemble(c, 1);
+	compiler_exit_scope(c);
 	if (co == NULL)
 		return 0;
-	compiler_exit_scope(c);
 
         compiler_make_closure(c, co, 0);
 	VISIT(c, expr, outermost_iter);
