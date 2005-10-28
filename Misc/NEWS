@@ -25,6 +25,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1338314, Bug #1336623: fix tarfile so it can extract
+  REGTYPE directories from tarfiles written by old programs.
+
 - Patch #1309009, Fix segfault in pyexpat when the XML document is in latin_1,
   but Python incorrectly assumes it is in UTF-8 format
 
