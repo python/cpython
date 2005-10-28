@@ -734,7 +734,7 @@ int PyUnicode_SetDefaultEncoding(const char *encoding)
 
 /* error handling callback helper:
    build arguments, call the callback and check the arguments,
-   if no exception occured, copy the replacement to the output
+   if no exception occurred, copy the replacement to the output
    and adjust various state variables.
    return 0 on success, -1 on error
 */
@@ -2987,7 +2987,7 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 
 /* Lookup the character ch in the mapping. If the character
    can't be found, Py_None is returned (or NULL, if another
-   error occured). */
+   error occurred). */
 static PyObject *charmapencode_lookup(Py_UNICODE c, PyObject *mapping)
 {
     PyObject *w = PyInt_FromLong((long)c);

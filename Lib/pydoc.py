@@ -273,7 +273,7 @@ def safeimport(path, forceload=0, cache={}):
         # Did the error occur before or after the module was found?
         (exc, value, tb) = info = sys.exc_info()
         if path in sys.modules:
-            # An error occured while executing the imported module.
+            # An error occurred while executing the imported module.
             raise ErrorDuringImport(sys.modules[path].__file__, info)
         elif exc is SyntaxError:
             # A SyntaxError occurred before we could execute the module.
