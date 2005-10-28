@@ -177,6 +177,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1338314, Bug #1336623: fix tarfile so it can extract
+  REGTYPE directories from tarfiles written by old programs.
+
 - Get bsddb module to build with BSD DB version 3.2
 
 - Patch #1309009, Fix segfault in pyexpat when the XML document is in latin_1,

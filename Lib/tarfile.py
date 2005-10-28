@@ -739,6 +739,11 @@ class TarInfo(object):
             tarinfo.devmajor = tarinfo.devmajor = 0
         tarinfo.prefix = buf[345:500]
 
+        # Some old tar programs represent a directory as a regular
+        # file with a trailing slash.
+        if tarinfo.isreg() and tarinfo.name.endswith("/"):
+            tarinfo.type = DIRTYPE
+
         # The prefix field is used for filenames > 100 in
         # the POSIX standard.
         # name = prefix + '/' + name
@@ -746,7 +751,7 @@ class TarInfo(object):
             tarinfo.name = normpath(os.path.join(nts(tarinfo.prefix), tarinfo.name))
 
         # Directory names should have a '/' at the end.
-        if tarinfo.isdir() and tarinfo.name[-1:] != "/":
+        if tarinfo.isdir():
             tarinfo.name += "/"
         return tarinfo
 
@@ -1715,10 +1720,6 @@ class TarFile(object):
         if tarinfo.isreg() or tarinfo.type not in SUPPORTED_TYPES:
             # Skip the following data blocks.
             self.offset += self._block(tarinfo.size)
-
-        if tarinfo.isreg() and tarinfo.name[:-1] == "/":
-            # some old tar programs don't know DIRTYPE
-            tarinfo.type = DIRTYPE
 
         self.members.append(tarinfo)
         return tarinfo

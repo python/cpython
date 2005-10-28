@@ -144,6 +144,36 @@ class ReadTest(BaseTest):
                          "readlines() after seek failed")
             fobj.close()
 
+    def test_old_dirtype(self):
+        """Test old style dirtype member (bug #1336623).
+        """
+        # Old tars create directory members using a REGTYPE
+        # header with a "/" appended to the filename field.
+
+        # Create an old tar style directory entry.
+        filename = tmpname()
+        tarinfo = tarfile.TarInfo("directory/")
+        tarinfo.type = tarfile.REGTYPE
+
+        fobj = file(filename, "w")
+        fobj.write(tarinfo.tobuf())
+        fobj.close()
+
+        try:
+            # Test if it is still a directory entry when
+            # read back.
+            tar = tarfile.open(filename)
+            tarinfo = tar.getmembers()[0]
+            tar.close()
+
+            self.assert_(tarinfo.type == tarfile.DIRTYPE)
+            self.assert_(tarinfo.name.endswith("/"))
+        finally:
+            try:
+                os.unlink(filename)
+            except:
+                pass
+
 class ReadStreamTest(ReadTest):
     sep = "|"
 
