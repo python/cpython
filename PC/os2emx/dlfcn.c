@@ -216,7 +216,7 @@ inv_handle:
 	}
 }
 
-/* return a string describing last occured dl error */
+/* return a string describing last occurred dl error */
 char *dlerror()
 {
 	return dlerr;

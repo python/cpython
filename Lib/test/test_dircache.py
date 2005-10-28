@@ -46,7 +46,7 @@ class DircacheTests(unittest.TestCase):
 
         if sys.platform[:3] not in ('win', 'os2'):
             # Sadly, dircache has the same granularity as stat.mtime, and so
-            # can't notice any changes that occured within 1 sec of the last
+            # can't notice any changes that occurred within 1 sec of the last
             # time it examined a directory.
             time.sleep(1)
             self.writeTemp("test1")

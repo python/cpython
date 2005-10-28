@@ -1308,7 +1308,7 @@ Special informative state attributes for some types:
         tb_next (frame/None, R/O): next level in stack trace (toward the frame where
                                   the exception occurred)
         tb_frame (frame, R/O): execution frame of the current level
-        tb_lineno (int, R/O): line number where the exception occured
+        tb_lineno (int, R/O): line number where the exception occurred
         tb_lasti (int, R/O): precise instruction (index into bytecode)
 
     Slices:
@@ -1597,7 +1597,7 @@ whitespace[,       the string <sep> as a separator.
 maxsplit=0]])
 join(words[, sep=' Concatenate a list or tuple of words with
 '])                interveningseparators; inverse of split.
-replace(s, old,    Returns a copy of string <s> with all occurences of
+replace(s, old,    Returns a copy of string <s> with all occurrences of
 new[, maxsplit=0]  substring<old> replaced by <new>. Limits to <maxsplit>
                    firstsubstitutions if specified.
 strip(s)           Return a string that is (a copy of) <s> without leadingand
@@ -1620,7 +1620,7 @@ litteralize backslashes.
 $          matches end of the string (of every line in MULTILINE mode)
 *          0 or more of preceding regular expression (as many as possible)
 +          1 or more of preceding regular expression (as many as possible)
-?          0 or 1 occurence of preceding regular expression
+?          0 or 1 occurrence of preceding regular expression
 *?, +?, ?? Same as *, + and ? but matches as few characters as possible
 {m,n}      matches from m to n repetitions of preceding RE
 {m,n}?     idem, attempting to match as few repetitions as possible

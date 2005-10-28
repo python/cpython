@@ -45,7 +45,7 @@ void *dlsym(void *handle, char *symbol);
 /* free dynamicaly-linked library */
 int dlclose(void *handle);
 
-/* return a string describing last occured dl error */
+/* return a string describing last occurred dl error */
 char *dlerror(void);
 
 #endif /* !_DLFCN_H */

@@ -21,7 +21,7 @@ def registerSignals((for_usr1, for_usr2, for_alrm)):
     return usr1, usr2, alrm
 
 
-# The signal handler. Just note that the signal occured and
+# The signal handler. Just note that the signal occurred and
 # from who.
 def handle_signals(sig,frame):
     signal_blackboard[sig]['tripped'] += 1

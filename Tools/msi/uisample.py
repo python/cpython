@@ -1,3 +1,4 @@
+
 import msilib,os;dirname=os.path.dirname(__file__)
 AdminExecuteSequence = [
 (u'InstallValidate', None, 1400),
@@ -1393,7 +1394,7 @@ Error = [
 (1932, u'The Windows Installer service cannot update the protected Windows file [2]. {{Package version: [3], OS Protected version: [4], SFP Error: [5]}}'),
 (1933, u'The Windows Installer service cannot update one or more protected Windows files. {{SFP Error: [2].  List of protected files:\\r\\n[3]}}'),
 (1934, u'User installations are disabled via policy on the machine.'),
-(1935, u'An error occured during the installation of assembly component [2]. HRESULT: [3]. {{assembly interface: [4], function: [5], assembly name: [6]}}'),
+(1935, u'An error occurred during the installation of assembly component [2]. HRESULT: [3]. {{assembly interface: [4], function: [5], assembly name: [6]}}'),
 ]
 
 tables=['AdminExecuteSequence', 'AdminUISequence', 'AdvtExecuteSequence', 'BBControl', 'Billboard', 'Binary', 'CheckBox', 'Property', 'ComboBox', 'Control', 'ListBox', 'ActionText', 'ControlCondition', 'ControlEvent', 'Dialog', 'EventMapping', 'InstallExecuteSequence', 'InstallUISequence', 'ListView', 'RadioButton', 'TextStyle', 'UIText', '_Validation', 'Error']
