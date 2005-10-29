@@ -1253,7 +1253,9 @@ Web server, using either \samp{GET} or \samp{POST} semantics.
 \begin{classdesc}{HTTPHandler}{host, url\optional{, method}}
 Returns a new instance of the \class{HTTPHandler} class. The
 instance is initialized with a host address, url and HTTP method.
-If no \var{method} is specified, \samp{GET} is used.
+The \var{host} can be of the form \code{host:port}, should you need to
+use a specific port number. If no \var{method} is specified, \samp{GET}
+is used.
 \end{classdesc}
 
 \begin{methoddesc}{emit}{record}
