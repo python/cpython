@@ -9,3 +9,4 @@ build
 Makefile.pre
 platform
 pyconfig.h
+libpython*.a
