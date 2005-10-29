@@ -1152,11 +1152,11 @@ PyAPI_FUNC(int) _PyUnicode_IsTitlecase(
     );
 
 PyAPI_FUNC(int) _PyUnicode_IsWhitespace(
-    Py_UNICODE ch 	/* Unicode character */
+    const Py_UNICODE ch 	/* Unicode character */
     );
 
 PyAPI_FUNC(int) _PyUnicode_IsLinebreak(
-    Py_UNICODE ch 	/* Unicode character */
+    const Py_UNICODE ch 	/* Unicode character */
     );
 
 PyAPI_FUNC(Py_UNICODE) _PyUnicode_ToLowercase(
