@@ -12,8 +12,20 @@ class CmdLineTest(unittest.TestCase):
         return data
 
     def test_directories(self):
-        self.assertTrue('is a directory' in self.start_python('.'))
-        self.assertTrue('is a directory' in self.start_python('< .'))
+        # Does this test make sense?  The message for "< ."  may depend on
+        # the command shell, and the message for "." depends on the OS.
+        if sys.platform.startswith("win"):
+            # On WinXP w/ cmd.exe,
+            #    "< ." gives "Access is denied.\n"
+            #    "."   gives "C:\\Code\\python\\PCbuild\\python.exe: " +
+            #                "can't open file '.':" +
+            #                "[Errno 13] Permission denied\n"
+            lookfor = " denied"  # common to both cases
+        else:
+            # This is what the test looked for originally, on all platforms.
+            lookfor = "is a directory"
+        self.assertTrue(lookfor in self.start_python('.'))
+        self.assertTrue(lookfor in self.start_python('< .'))
 
     def verify_valid_flag(self, cmd_line):
         data = self.start_python(cmd_line)
