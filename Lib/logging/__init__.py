@@ -738,6 +738,8 @@ class StreamHandler(Handler):
                 except UnicodeError:
                     self.stream.write(fs % msg.encode("UTF-8"))
             self.flush()
+        except (KeyboardInterrupt, SystemExit):
+            raise
         except:
             self.handleError(record)
 
