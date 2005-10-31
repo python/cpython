@@ -71,6 +71,8 @@ class BaseRotatingHandler(logging.FileHandler):
             if self.shouldRollover(record):
                 self.doRollover()
             logging.FileHandler.emit(self, record)
+        except (KeyboardInterrupt, SystemExit):
+            raise
         except:
             self.handleError(record)
 
@@ -418,6 +420,8 @@ class SocketHandler(logging.Handler):
         try:
             s = self.makePickle(record)
             self.send(s)
+        except (KeyboardInterrupt, SystemExit):
+            raise
         except:
             self.handleError(record)
 
@@ -639,6 +643,8 @@ class SysLogHandler(logging.Handler):
                     self.socket.send(msg)
             else:
                 self.socket.sendto(msg, self.address)
+        except (KeyboardInterrupt, SystemExit):
+            raise
         except:
             self.handleError(record)
 
