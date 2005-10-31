@@ -725,6 +725,8 @@ class SMTPHandler(logging.Handler):
                             formatdate(), msg)
             smtp.sendmail(self.fromaddr, self.toaddrs, msg)
             smtp.quit()
+        except (KeyboardInterrupt, SystemExit):
+            raise
         except:
             self.handleError(record)
 
@@ -810,6 +812,8 @@ class NTEventLogHandler(logging.Handler):
                 type = self.getEventType(record)
                 msg = self.format(record)
                 self._welu.ReportEvent(self.appname, id, cat, type, [msg])
+            except (KeyboardInterrupt, SystemExit):
+                raise
             except:
                 self.handleError(record)
 
@@ -885,6 +889,8 @@ class HTTPHandler(logging.Handler):
             if self.method == "POST":
                 h.send(data)
             h.getreply()    #can't do anything with the result
+        except (KeyboardInterrupt, SystemExit):
+            raise
         except:
             self.handleError(record)
 
