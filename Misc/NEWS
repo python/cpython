@@ -276,6 +276,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1340337: change time.strptime() to always return ValueError when there
+  is an error in the format string.
+
 - Patch #754022: Greatly enhanced webbrowser.py (by Oleg Broytmann).
 
 - Bug #729103: pydoc.py: Fix docother() method to accept additional
