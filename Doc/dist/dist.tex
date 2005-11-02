@@ -921,7 +921,8 @@ before the \function{setup()} call.
 \begin{verbatim}
 # patch distutils if it can't cope with the "classifiers" or
 # "download_url" keywords
-if sys.version < '2.2.3':
+from sys import version
+if version < '2.2.3':
     from distutils.dist import DistributionMetadata
     DistributionMetadata.classifiers = None
     DistributionMetadata.download_url = None
