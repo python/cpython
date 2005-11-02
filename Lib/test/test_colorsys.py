@@ -4,7 +4,7 @@ import colorsys
 def frange(start, stop, step):
     while start <= stop:
         yield start
-        start += stop
+        start += step
 
 class ColorsysTest(unittest.TestCase):
 
