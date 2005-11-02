@@ -99,6 +99,7 @@ mmap_object_dealloc(mmap_object *m_obj)
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
+	close(m_obj->fd);
 	if (m_obj->data!=NULL) {
 		msync(m_obj->data, m_obj->size, MS_SYNC);
 		munmap(m_obj->data, m_obj->size);
