@@ -99,6 +99,8 @@ mmap_object_dealloc(mmap_object *m_obj)
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
+	if (m_obj->fd >= 0)
+		(void) close(m_obj->fd);
 	if (m_obj->data!=NULL) {
 		msync(m_obj->data, m_obj->size, MS_SYNC);
 		munmap(m_obj->data, m_obj->size);
@@ -136,6 +138,8 @@ mmap_close_method(mmap_object *self, PyObject *args)
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
+	(void) close(self->fd);
+	self->fd = -1;
 	if (self->data != NULL) {
 		munmap(self->data, self->size);
 		self->data = NULL;
