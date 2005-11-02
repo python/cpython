@@ -3035,7 +3035,7 @@ static PyObject *charmapencode_lookup(Py_UNICODE c, PyObject *mapping)
    space is available. Return a new reference to the object that
    was put in the output buffer, or Py_None, if the mapping was undefined
    (in which case no character was written) or NULL, if a
-   reallocation error ocurred. The called must decref the result */
+   reallocation error ocurred. The caller must decref the result */
 static
 PyObject *charmapencode_output(Py_UNICODE c, PyObject *mapping,
     PyObject **outobj, int *outpos)
