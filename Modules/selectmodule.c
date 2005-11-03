@@ -470,6 +470,8 @@ poll_poll(pollObject *self, PyObject *args)
 			return NULL;
 		timeout = PyInt_AsLong(tout);
 		Py_DECREF(tout);
+		if (timeout == -1 && PyErr_Occurred())
+			return NULL;
 	}
 
 	/* Ensure the ufd array is up to date */
