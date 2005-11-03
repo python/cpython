@@ -168,5 +168,25 @@ def test_poll2():
     p.close()
     print 'Poll test 2 complete'
 
+def test_poll3():
+    # test int overflow
+    print 'Running poll test 3'
+    pollster = select.poll()
+    pollster.register(1)
+
+    try:
+        pollster.poll(1L << 64)
+    except OverflowError:
+        pass
+    else:
+        print 'Expected OverflowError with excessive timeout'
+
+    x = 2 + 3
+    if x != 5:
+        print 'Overflow must have occurred'
+    print 'Poll test 3 complete'
+    
+
 test_poll1()
 test_poll2()
+test_poll3()
