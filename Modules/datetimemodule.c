@@ -3046,7 +3046,8 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	if (PyTuple_GET_SIZE(args) >= 1 &&
 	    PyTuple_GET_SIZE(args) <= 2 &&
 	    PyString_Check(state = PyTuple_GET_ITEM(args, 0)) &&
-	    PyString_GET_SIZE(state) == _PyDateTime_TIME_DATASIZE)
+	    PyString_GET_SIZE(state) == _PyDateTime_TIME_DATASIZE &&
+	    ((unsigned char) (PyString_AS_STRING(state)[0])) < 24)
 	{
 		PyDateTime_Time *me;
 		char aware;

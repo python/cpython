@@ -1830,6 +1830,13 @@ class TestTime(HarmlessMixedComparison):
         self.assertEqual(dt1.isoformat(), dt2.isoformat())
         self.assertEqual(dt2.newmeth(-7), dt1.hour + dt1.second - 7)
 
+    def test_backdoor_resistance(self):
+        # see TestDate.test_backdoor_resistance().
+        base = '2:59.0'
+        for hour_byte in ' ', '9', chr(24), '\xff':
+            self.assertRaises(TypeError, self.theclass,
+                                         hour_byte + base[1:])
+
 # A mixin for classes with a tzinfo= argument.  Subclasses must define
 # theclass as a class atribute, and theclass(1, 1, 1, tzinfo=whatever)
 # must be legit (which is true for time and datetime).
