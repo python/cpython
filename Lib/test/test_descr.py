@@ -3977,6 +3977,18 @@ def test_init():
     else:
         raise TestFailed, "did not test __init__() for None return"
 
+def methodwrapper():
+    # <type 'method-wrapper'> did not support any reflection before 2.5
+    if verbose:
+        print "Testing method-wrapper objects..."
+
+    l = []
+    vereq(l.__add__, l.__add__)
+    verify(l.__add__ != [].__add__)
+    verify(l.__add__.__name__ == '__add__')
+    verify(l.__add__.__self__ is l)
+    verify(l.__add__.__objclass__ is list)
+    vereq(l.__add__.__doc__, list.__add__.__doc__)
 
 def test_main():
     weakref_segfault() # Must be first, somehow
@@ -4071,6 +4083,7 @@ def test_main():
     filefault()
     vicious_descriptor_nonsense()
     test_init()
+    methodwrapper()
 
     if verbose: print "All OK"
 
