@@ -12,6 +12,10 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- SF Bug #1350188, "setdlopenflags" leads to crash upon "import"
+  It was possible dlerror() returns a NULL pointer, use a default error
+  message in this case.
+
 - Replaced most Unicode charmap codecs with new ones using the
   new Unicode translate string feature in the builtin charmap
   codec; the codecs were created from the mapping tables available
