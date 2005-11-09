@@ -12,6 +12,10 @@ What's New in Python 2.4.3c1?
 Core and builtins
 -----------------
 
+- SF Bug #1350188, "setdlopenflags" leads to crash upon "import"
+  It was possible dlerror() returns a NULL pointer, use a default error
+  message in this case.
+
 - SF bug #1167751: fix incorrect code being for generator expressions.
   The following code now raises a SyntaxError:  foo(a = i for i in range(10))
 
