@@ -589,7 +589,7 @@ class SysLogHandler(logging.Handler):
         except socket.error:
             self.socket.close()
             self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.socket.connect(address)
+            self.socket.connect(address)
 
     # curious: when talking to the unix-domain '/dev/log' socket, a
     #   zero-terminator seems to be required.  this string is placed
