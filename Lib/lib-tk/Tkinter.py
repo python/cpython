@@ -130,7 +130,7 @@ class Event:
              (ButtonPress, ButtonRelease, KeyPress, KeyRelease, Motion)
     char - pressed character (KeyPress, KeyRelease)
     send_event - see X/Windows documentation
-    keysym - keysym of the the event as a string (KeyPress, KeyRelease)
+    keysym - keysym of the event as a string (KeyPress, KeyRelease)
     keysym_num - keysym of the event as a number (KeyPress, KeyRelease)
     type - type of the event as a number
     widget - widget in which the event occurred
