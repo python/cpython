@@ -180,8 +180,11 @@ class UnixBrowser(BaseBrowser):
             cmd += ' &'
         rc = os.system(cmd)
         if rc:
+            cmd = "%s %s" % (self.name, url)
+            if self.remote_background:
+                cmd += " &"
             # bad return status, try again with simpler command
-            rc = os.system("%s %s" % (self.name, url))
+            rc = os.system(cmd)
         return not rc
 
     def open(self, url, new=0, autoraise=1):
@@ -209,6 +212,7 @@ class Mozilla(UnixBrowser):
     remote_action = "openURL(%s)"
     remote_action_newwin = "openURL(%s,new-window)"
     remote_action_newtab = "openURL(%s,new-tab)"
+    remote_background = True
 
 Netscape = Mozilla
 
@@ -240,7 +244,7 @@ class Konqueror(BaseBrowser):
             if _iscommand("konqueror"):
                 rc = os.system(self.name + " --silent '%s' &" % url)
             elif _iscommand("kfm"):
-                rc = os.system(self.name + " -d '%s'" % url)
+                rc = os.system(self.name + " -d '%s' &" % url)
         return not rc
 
     def open(self, url, new=0, autoraise=1):
@@ -264,6 +268,7 @@ class Opera(UnixBrowser):
     remote_action = "openURL(%s)"
     remote_action_newwin = "openURL(%s,new-window)"
     remote_action_newtab = "openURL(%s,new-page)"
+    remote_background = True
 
 
 class Elinks(UnixBrowser):
@@ -459,7 +464,7 @@ if sys.platform == 'darwin':
             new = int(bool(new))
             if self.name == "default":
                 # User called open, open_new or get without a browser parameter
-                script = _safequote('open location "%s"', url) # opens in default browser
+                script = 'open location "%s"' % url.replace('"', '%22') # opens in default browser
             else:
                 # User called get and chose a browser
                 if self.name == "OmniWeb":
@@ -468,7 +473,7 @@ if sys.platform == 'darwin':
                     # Include toWindow parameter of OpenURL command for browsers
                     # that support it.  0 == new window; -1 == existing
                     toWindow = "toWindow %d" % (new - 1)
-                cmd = _safequote('OpenURL "%s"', url)
+                cmd = 'OpenURL "%s"' % url.replace('"', '%22')
                 script = '''tell application "%s"
                                 activate
                                 %s %s
