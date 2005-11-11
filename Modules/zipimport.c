@@ -640,7 +640,8 @@ get_long(unsigned char *buf) {
 
    A toc_entry is a tuple:
 
-       (compress,      # compression kind; 0 for uncompressed
+       (__file__,      # value to use for __file__, available for all files
+        compress,      # compression kind; 0 for uncompressed
         data_size,     # size of compressed data on disk
         file_size,     # size of decompressed data
         file_offset,   # offset of file header from start of archive
