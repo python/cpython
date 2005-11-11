@@ -103,7 +103,8 @@ class PrettyPrinter:
             self._stream = _sys.stdout
 
     def pprint(self, object):
-        self._stream.write(self.pformat(object) + "\n")
+        self._format(object, self._stream, 0, 0, {}, 0)
+        self._stream.write("\n")
 
     def pformat(self, object):
         sio = _StringIO()
