@@ -385,6 +385,9 @@ sp_CreateProcess(PyObject* self, PyObject* args)
 	si.hStdOutput = gethandle(startup_info, "hStdOutput");
 	si.hStdError = gethandle(startup_info, "hStdError");
 
+	if (PyErr_Occurred())
+		return NULL;
+
 	if (env_mapping == Py_None)
 		environment = NULL;
 	else {
