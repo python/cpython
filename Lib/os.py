@@ -168,7 +168,7 @@ def makedirs(name, mode=0777):
 def removedirs(name):
     """removedirs(path)
 
-    Super-rmdir; remove a leaf directory and empty all intermediate
+    Super-rmdir; remove a leaf directory and all empty intermediate
     ones.  Works like rmdir except that, if the leaf directory is
     successfully removed, directories corresponding to rightmost path
     segments will be pruned away until either the whole path is
