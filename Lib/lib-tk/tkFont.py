@@ -1,18 +1,9 @@
+# Tkinter font wrapper
 #
-# Tkinter
-# $Id$
-#
-# font wrapper
-#
-# written by Fredrik Lundh <fredrik@pythonware.com>, February 1998
+# written by Fredrik Lundh, February 1998
 #
 # FIXME: should add 'displayof' option where relevant (actual, families,
 #        measure, and metrics)
-#
-# Copyright (c) Secret Labs AB 1998.
-#
-# info@pythonware.com
-# http://www.pythonware.com
 #
 
 __version__ = "0.9"
