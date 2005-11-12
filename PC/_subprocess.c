@@ -333,6 +333,9 @@ getenvironment(PyObject* environment)
 
 	/* PyObject_Print(out, stdout, 0); */
 
+	Py_XDECREF(keys);
+	Py_XDECREF(values);
+
 	return out;
 
  error:
