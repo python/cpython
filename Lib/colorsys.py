@@ -5,17 +5,21 @@ This modules provides two functions for each color system ABC:
   rgb_to_abc(r, g, b) --> a, b, c
   abc_to_rgb(a, b, c) --> r, g, b
 
-All inputs and outputs are triples of floats in the range [0.0...1.0].
-Inputs outside this range may cause exceptions or invalid outputs.
+All inputs and outputs are triples of floats in the range [0.0...1.0]
+(with the exception of I and Q, which covers a slightly larger range).
+Inputs outside the valid range may cause exceptions or invalid outputs.
 
 Supported color systems:
 RGB: Red, Green, Blue components
-YIQ: used by composite video signals
+YIQ: Luminance, Chrominance (used by composite video signals)
 HLS: Hue, Luminance, Saturation
 HSV: Hue, Saturation, Value
 """
+
 # References:
-# XXX Where's the literature?
+# http://en.wikipedia.org/wiki/YIQ
+# http://en.wikipedia.org/wiki/HLS_color_space
+# http://en.wikipedia.org/wiki/HSV_color_space
 
 __all__ = ["rgb_to_yiq","yiq_to_rgb","rgb_to_hls","hls_to_rgb",
            "rgb_to_hsv","hsv_to_rgb"]
@@ -25,7 +29,6 @@ __all__ = ["rgb_to_yiq","yiq_to_rgb","rgb_to_hls","hls_to_rgb",
 ONE_THIRD = 1.0/3.0
 ONE_SIXTH = 1.0/6.0
 TWO_THIRD = 2.0/3.0
-
 
 # YIQ: used by composite video signals (linear combinations of RGB)
 # Y: perceived grey level (0.0 == black, 1.0 == white)
@@ -50,10 +53,10 @@ def yiq_to_rgb(y, i, q):
     return (r, g, b)
 
 
-# HLS: Hue, Luminance, S???
+# HLS: Hue, Luminance, Saturation
 # H: position in the spectrum
-# L: ???
-# S: ???
+# L: color lightness
+# S: color saturation
 
 def rgb_to_hls(r, g, b):
     maxc = max(r, g, b)
@@ -87,10 +90,10 @@ def _v(m1, m2, hue):
     return m1
 
 
-# HSV: Hue, Saturation, Value(?)
+# HSV: Hue, Saturation, Value
 # H: position in the spectrum
-# S: ???
-# V: ???
+# S: color saturation ("purity")
+# V: color brightness
 
 def rgb_to_hsv(r, g, b):
     maxc = max(r, g, b)
