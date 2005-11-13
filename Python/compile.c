@@ -3625,7 +3625,7 @@ dfs(struct compiler *c, basicblock *b, struct assembler *a)
 	a->a_postorder[a->a_nblocks++] = b;
 }
 
-int
+static int
 stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
 {
 	int i;
