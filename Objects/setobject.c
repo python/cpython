@@ -1214,7 +1214,7 @@ set_iand(PySetObject *so, PyObject *other)
 	return (PyObject *)so;
 }
 
-int
+static int
 set_difference_update_internal(PySetObject *so, PyObject *other)
 {
 	if ((PyObject *)so == other)
