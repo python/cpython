@@ -29,7 +29,7 @@
 }
 
 {
-   ADDRESS_IN_RANGE/Invalid read of size 8 (x86_64)
+   ADDRESS_IN_RANGE/Invalid read of size 8 (x86_64 aka amd64)
    Memcheck:Value8
    fun:Py_ADDRESS_IN_RANGE
 }
@@ -38,6 +38,57 @@
    ADDRESS_IN_RANGE/Conditional jump or move depends on uninitialised value
    Memcheck:Cond
    fun:Py_ADDRESS_IN_RANGE
+}
+
+#
+# Leaks (including possible leaks)
+#    Hmmm, I wonder if this masks some real leaks.  I think it does.
+#    Will need to fix that.
+#
+
+{
+   Handle PyMalloc confusing valgrind (possibly leaked)
+   Memcheck:Leak
+   fun:realloc
+   fun:_PyObject_GC_Resize
+   fun:COMMENT_THIS_LINE_TO_DISABLE_LEAK_WARNING
+}
+
+{
+   Handle PyMalloc confusing valgrind (possibly leaked)
+   Memcheck:Leak
+   fun:malloc
+   fun:_PyObject_GC_New
+   fun:COMMENT_THIS_LINE_TO_DISABLE_LEAK_WARNING
+}
+
+{
+   Handle PyMalloc confusing valgrind (possibly leaked)
+   Memcheck:Leak
+   fun:malloc
+   fun:_PyObject_GC_NewVar
+   fun:COMMENT_THIS_LINE_TO_DISABLE_LEAK_WARNING
+}
+
+#
+# Non-python specific leaks
+#
+
+{
+   Handle pthread issue (possibly leaked)
+   Memcheck:Leak
+   fun:calloc
+   fun:allocate_dtv
+   fun:_dl_allocate_tls_storage
+   fun:_dl_allocate_tls
+}
+
+{
+   Handle pthread issue (possibly leaked)
+   Memcheck:Leak
+   fun:memalign
+   fun:_dl_allocate_tls_storage
+   fun:_dl_allocate_tls
 }
 
 ###{
@@ -81,6 +132,53 @@
 ### that Python uses.  The problems to not appear to be related to Python's
 ### use of the libraries.
 ###
+
+{
+   DBM problems, see test_dbm
+   Memcheck:Param
+   write(buf)
+   fun:write
+   obj:/usr/lib/libdb1.so.2
+   obj:/usr/lib/libdb1.so.2
+   obj:/usr/lib/libdb1.so.2
+   obj:/usr/lib/libdb1.so.2
+   fun:dbm_close
+}
+
+{
+   DBM problems, see test_dbm
+   Memcheck:Value8
+   fun:memmove
+   obj:/usr/lib/libdb1.so.2
+   obj:/usr/lib/libdb1.so.2
+   obj:/usr/lib/libdb1.so.2
+   obj:/usr/lib/libdb1.so.2
+   fun:dbm_store
+   fun:dbm_ass_sub
+}
+
+{
+   DBM problems, see test_dbm
+   Memcheck:Cond
+   obj:/usr/lib/libdb1.so.2
+   obj:/usr/lib/libdb1.so.2
+   obj:/usr/lib/libdb1.so.2
+   fun:dbm_store
+   fun:dbm_ass_sub
+}
+
+{
+   DBM problems, see test_dbm
+   Memcheck:Cond
+   fun:memmove
+   obj:/usr/lib/libdb1.so.2
+   obj:/usr/lib/libdb1.so.2
+   obj:/usr/lib/libdb1.so.2
+   obj:/usr/lib/libdb1.so.2
+   fun:dbm_store
+   fun:dbm_ass_sub
+}
+
 {
    GDBM problems, see test_gdbm
    Memcheck:Param
@@ -91,76 +189,11 @@
 }
 
 {
-   Avoid problem in libc on gentoo
+   ZLIB problems, see test_gzip
    Memcheck:Cond
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-}
-
-{
-   Avoid problem in glibc on gentoo
-   Memcheck:Addr8
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/libc-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   fun:_dl_open
-   obj:/lib/libdl-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/libdl-2.3.4.so
-   fun:dlopen
-}
-
-{
-   Avoid problem in glibc on gentoo
-   Memcheck:Addr8
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/libc-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   fun:_dl_open
-   obj:/lib/libdl-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/libdl-2.3.4.so
-   fun:dlopen
-}
-
-{
-   Avoid problem in glibc on gentoo
-   Memcheck:Cond
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/libc-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   fun:_dl_open
-   obj:/lib/libdl-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/libdl-2.3.4.so
-   fun:dlopen
-}
-
-{
-   Avoid problem in glibc on gentoo
-   Memcheck:Cond
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/libc-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   fun:_dl_open
-   obj:/lib/libdl-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/libdl-2.3.4.so
-   fun:dlopen
+   obj:/lib/libz.so.1.2.3
+   obj:/lib/libz.so.1.2.3
+   fun:deflate
 }
 
 {
@@ -173,33 +206,6 @@
    fun:_rl_init_terminal_io
    obj:/lib/libreadline.so.4.3
    fun:rl_initialize
-   fun:setup_readline
-   fun:initreadline
-   fun:_PyImport_LoadDynamicModule
-   fun:load_module
-   fun:import_submodule
-   fun:load_next
-   fun:import_module_ex
-   fun:PyImport_ImportModuleEx
-}
-
-{
-   Mysterious leak that seems to deal w/pthreads
-   Memcheck:Leak
-   fun:calloc
-   obj:/lib/ld-2.3.4.so
-   obj:/lib/ld-2.3.4.so
-   fun:_dl_allocate_tls
-   fun:__pthread_initialize_minimal
-}
-
-{
-   Mysterious leak that seems to deal w/pthreads
-   Memcheck:Leak
-   fun:memalign
-   obj:/lib/ld-2.3.4.so
-   fun:_dl_allocate_tls
-   fun:__pthread_initialize_minimal
 }
 
 ###
