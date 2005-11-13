@@ -14,10 +14,6 @@
 
 #include <assert.h>
 
-#if 0
-#define fprintf if (0) fprintf
-#endif
-
 /* XXX TO DO
    - re-indent this file (should be done)
    - internal error checking (freeing memory, etc.)
@@ -908,7 +904,7 @@ count_list_fors(const node *n)
     }
     else {
         /* Should never be reached */
-        PyErr_SetString(PyExc_Exception, "logic error in count_list_fors");
+        PyErr_SetString(PyExc_SystemError, "logic error in count_list_fors");
         return -1;
     }
 }
@@ -1076,7 +1072,8 @@ count_gen_fors(const node *n)
 	}
 	else {
 		/* Should never be reached */
-		PyErr_SetString(PyExc_Exception, "logic error in count_gen_fors");
+		PyErr_SetString(PyExc_SystemError,
+				"logic error in count_gen_fors");
 		return -1;
 	}
 }
@@ -2760,7 +2757,7 @@ ast_for_try_stmt(struct compiling *c, const node *n)
 	return TryExcept(suite_seq1, handlers, suite_seq2, LINENO(n));
     }
     else {
-        PyErr_SetString(PyExc_Exception, "malformed 'try' statement");
+        ast_error(n, "malformed 'try' statement");
         return NULL;
     }
 }
