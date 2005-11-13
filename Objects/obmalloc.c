@@ -557,8 +557,15 @@ error:
 
 #undef Py_ADDRESS_IN_RANGE
 
-/* Don't make static, to ensure this isn't inlined. */
-int Py_ADDRESS_IN_RANGE(void *P, poolp pool);
+#if defined(__GNUC__) && (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)
+#define Py_NO_INLINE __attribute__((__noinline__))
+#else
+#define Py_NO_INLINE
+#endif
+
+/* Don't make static, to try to ensure this isn't inlined. */
+int Py_ADDRESS_IN_RANGE(void *P, poolp pool) Py_NO_INLINE;
+#undef Py_NO_INLINE
 #endif
 
 /*==========================================================================*/
