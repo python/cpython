@@ -334,7 +334,7 @@ class MarshalPrototypeVisitor(PickleVisitor):
 
     def prototype(self, sum, name):
         ctype = get_c_type(name)
-        self.emit("int marshal_write_%s(PyObject **, int *, %s);"
+        self.emit("static int marshal_write_%s(PyObject **, int *, %s);"
                   % (name, ctype), 0)
 
     visitProduct = visitSum = prototype
@@ -487,7 +487,7 @@ class MarshalFunctionVisitor(PickleVisitor):
 
     def func_begin(self, name, has_seq):
         ctype = get_c_type(name)
-        self.emit("int", 0)
+        self.emit("static int", 0)
         self.emit("marshal_write_%s(PyObject **buf, int *off, %s o)" %
                   (name, ctype), 0)
         self.emit("{", 0)
@@ -580,7 +580,6 @@ def main(srcfile):
                         StructVisitor(f),
                         PrototypeVisitor(f),
                         FreePrototypeVisitor(f),
-                        MarshalPrototypeVisitor(f),
                         )
     c.visit(mod)
     f.close()
@@ -594,7 +593,8 @@ def main(srcfile):
     print >> f, '#include "Python.h"'
     print >> f, '#include "%s-ast.h"' % mod.name
     print >> f
-    v = ChainOfVisitors(FunctionVisitor(f),
+    v = ChainOfVisitors(MarshalPrototypeVisitor(f),
+                        FunctionVisitor(f),
                         StaticVisitor(f),
                         FreeVisitor(f),
                         MarshalFunctionVisitor(f),

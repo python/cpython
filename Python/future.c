@@ -46,7 +46,7 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, const char *filename)
 	return 1;
 }
 
-int
+static int
 future_parse(PyFutureFeatures *ff, mod_ty mod, const char *filename)
 {
 	int i, found_docstring = 0, done = 0, prev_line = 0;

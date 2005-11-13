@@ -3,6 +3,20 @@
 #include "Python.h"
 #include "Python-ast.h"
 
+static int marshal_write_mod(PyObject **, int *, mod_ty);
+static int marshal_write_stmt(PyObject **, int *, stmt_ty);
+static int marshal_write_expr(PyObject **, int *, expr_ty);
+static int marshal_write_expr_context(PyObject **, int *, expr_context_ty);
+static int marshal_write_slice(PyObject **, int *, slice_ty);
+static int marshal_write_boolop(PyObject **, int *, boolop_ty);
+static int marshal_write_operator(PyObject **, int *, operator_ty);
+static int marshal_write_unaryop(PyObject **, int *, unaryop_ty);
+static int marshal_write_cmpop(PyObject **, int *, cmpop_ty);
+static int marshal_write_comprehension(PyObject **, int *, comprehension_ty);
+static int marshal_write_excepthandler(PyObject **, int *, excepthandler_ty);
+static int marshal_write_arguments(PyObject **, int *, arguments_ty);
+static int marshal_write_keyword(PyObject **, int *, keyword_ty);
+static int marshal_write_alias(PyObject **, int *, alias_ty);
 mod_ty
 Module(asdl_seq * body)
 {
@@ -1519,7 +1533,7 @@ free_alias(alias_ty o)
         free(o);
 }
 
-int
+static int
 marshal_write_mod(PyObject **buf, int *off, mod_ty o)
 {
         int i;
@@ -1557,7 +1571,7 @@ marshal_write_mod(PyObject **buf, int *off, mod_ty o)
         return 1;
 }
 
-int
+static int
 marshal_write_stmt(PyObject **buf, int *off, stmt_ty o)
 {
         int i;
@@ -1818,7 +1832,7 @@ marshal_write_stmt(PyObject **buf, int *off, stmt_ty o)
         return 1;
 }
 
-int
+static int
 marshal_write_expr(PyObject **buf, int *off, expr_ty o)
 {
         int i;
@@ -1989,7 +2003,7 @@ marshal_write_expr(PyObject **buf, int *off, expr_ty o)
         return 1;
 }
 
-int
+static int
 marshal_write_expr_context(PyObject **buf, int *off, expr_context_ty o)
 {
         switch (o) {
@@ -2015,7 +2029,7 @@ marshal_write_expr_context(PyObject **buf, int *off, expr_context_ty o)
         return 1;
 }
 
-int
+static int
 marshal_write_slice(PyObject **buf, int *off, slice_ty o)
 {
         int i;
@@ -2063,7 +2077,7 @@ marshal_write_slice(PyObject **buf, int *off, slice_ty o)
         return 1;
 }
 
-int
+static int
 marshal_write_boolop(PyObject **buf, int *off, boolop_ty o)
 {
         switch (o) {
@@ -2077,7 +2091,7 @@ marshal_write_boolop(PyObject **buf, int *off, boolop_ty o)
         return 1;
 }
 
-int
+static int
 marshal_write_operator(PyObject **buf, int *off, operator_ty o)
 {
         switch (o) {
@@ -2121,7 +2135,7 @@ marshal_write_operator(PyObject **buf, int *off, operator_ty o)
         return 1;
 }
 
-int
+static int
 marshal_write_unaryop(PyObject **buf, int *off, unaryop_ty o)
 {
         switch (o) {
@@ -2141,7 +2155,7 @@ marshal_write_unaryop(PyObject **buf, int *off, unaryop_ty o)
         return 1;
 }
 
-int
+static int
 marshal_write_cmpop(PyObject **buf, int *off, cmpop_ty o)
 {
         switch (o) {
@@ -2179,7 +2193,7 @@ marshal_write_cmpop(PyObject **buf, int *off, cmpop_ty o)
         return 1;
 }
 
-int
+static int
 marshal_write_comprehension(PyObject **buf, int *off, comprehension_ty o)
 {
         int i;
@@ -2193,7 +2207,7 @@ marshal_write_comprehension(PyObject **buf, int *off, comprehension_ty o)
         return 1;
 }
 
-int
+static int
 marshal_write_excepthandler(PyObject **buf, int *off, excepthandler_ty o)
 {
         int i;
@@ -2219,7 +2233,7 @@ marshal_write_excepthandler(PyObject **buf, int *off, excepthandler_ty o)
         return 1;
 }
 
-int
+static int
 marshal_write_arguments(PyObject **buf, int *off, arguments_ty o)
 {
         int i;
@@ -2250,7 +2264,7 @@ marshal_write_arguments(PyObject **buf, int *off, arguments_ty o)
         return 1;
 }
 
-int
+static int
 marshal_write_keyword(PyObject **buf, int *off, keyword_ty o)
 {
         marshal_write_identifier(buf, off, o->arg);
@@ -2258,7 +2272,7 @@ marshal_write_keyword(PyObject **buf, int *off, keyword_ty o)
         return 1;
 }
 
-int
+static int
 marshal_write_alias(PyObject **buf, int *off, alias_ty o)
 {
         marshal_write_identifier(buf, off, o->name);
