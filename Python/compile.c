@@ -302,7 +302,7 @@ compiler_free(struct compiler *c)
 	if (c->c_st)
 		PySymtable_Free(c->c_st);
 	if (c->c_future)
-		PyObject_Free((void *)c->c_future);
+		PyMem_Free(c->c_future);
 	Py_DECREF(c->c_stack);
 }
 
@@ -1607,6 +1607,13 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 		return 0; \
 }
 
+#define ADDOP_IN_SCOPE(C, OP) { \
+	if (!compiler_addop((C), (OP))) { \
+		compiler_exit_scope(c); \
+		return 0; \
+	} \
+}
+
 #define ADDOP_O(C, OP, O, TYPE) { \
 	if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) \
 		return 0; \
@@ -1641,6 +1648,13 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 		return 0; \
 }
 
+#define VISIT_IN_SCOPE(C, TYPE, V) {\
+	if (!compiler_visit_ ## TYPE((C), (V))) { \
+		compiler_exit_scope(c); \
+		return 0; \
+	} \
+}
+
 #define VISIT_SLICE(C, V, CTX) {\
 	if (!compiler_visit_slice((C), (V), (CTX))) \
 		return 0; \
@@ -1653,6 +1667,18 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 		TYPE ## _ty elt = asdl_seq_GET(seq, i); \
 		if (!compiler_visit_ ## TYPE((C), elt)) \
 			return 0; \
+	} \
+}
+
+#define VISIT_SEQ_IN_SCOPE(C, TYPE, SEQ) { \
+	int i; \
+	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
+	for (i = 0; i < asdl_seq_LEN(seq); i++) { \
+		TYPE ## _ty elt = asdl_seq_GET(seq, i); \
+		if (!compiler_visit_ ## TYPE((C), elt)) { \
+			compiler_exit_scope(c); \
+			return 0; \
+		} \
 	} \
 }
 
@@ -1708,15 +1734,15 @@ compiler_mod(struct compiler *c, mod_ty mod)
 		break;
 	case Interactive_kind:
 		c->c_interactive = 1;
-		VISIT_SEQ(c, stmt, mod->v.Interactive.body);
+		VISIT_SEQ_IN_SCOPE(c, stmt, mod->v.Interactive.body);
 		break;
 	case Expression_kind:
-		VISIT(c, expr, mod->v.Expression.body);
+		VISIT_IN_SCOPE(c, expr, mod->v.Expression.body);
                 addNone = 0;
 		break;
 	case Suite_kind:
 		assert(0);      /* XXX: what should we do here? */
-		VISIT_SEQ(c, stmt, mod->v.Suite.body);
+		VISIT_SEQ_IN_SCOPE(c, stmt, mod->v.Suite.body);
 		break;
         default:
             assert(0);
@@ -1890,7 +1916,7 @@ compiler_function(struct compiler *c, stmt_ty s)
 		if (i == 0 && s2->kind == Expr_kind &&
 		    s2->v.Expr.value->kind == Str_kind)
 			continue;
-		VISIT(c, stmt, s2);
+		VISIT_IN_SCOPE(c, stmt, s2);
 	}
 	co = assemble(c, 1);
 	compiler_exit_scope(c);
@@ -1945,8 +1971,8 @@ compiler_class(struct compiler *c, stmt_ty s)
 		return 0;
 	}
 
-	ADDOP(c, LOAD_LOCALS);
-	ADDOP(c, RETURN_VALUE);
+	ADDOP_IN_SCOPE(c, LOAD_LOCALS);
+	ADDOP_IN_SCOPE(c, RETURN_VALUE);
 	co = assemble(c, 1);
 	compiler_exit_scope(c);
 	if (co == NULL)
@@ -1981,8 +2007,8 @@ compiler_lambda(struct compiler *c, expr_ty e)
 	compiler_arguments(c, args);
 	
 	c->u->u_argcount = asdl_seq_LEN(args->args);
-	VISIT(c, expr, e->v.Lambda.body);
-	ADDOP(c, RETURN_VALUE);
+	VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
+	ADDOP_IN_SCOPE(c, RETURN_VALUE);
 	co = assemble(c, 1);
 	compiler_exit_scope(c);
 	if (co == NULL)

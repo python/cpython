@@ -16,7 +16,7 @@ PySTEntry_New(struct symtable *st, identifier name, _Py_block_ty block,
 	      void *key, int lineno)
 {
 	PySTEntryObject *ste = NULL;
-	PyObject *k, *v;
+	PyObject *k;
 
 	k = PyLong_FromVoidPtr(key);
 	if (k == NULL)
@@ -29,21 +29,22 @@ PySTEntry_New(struct symtable *st, identifier name, _Py_block_ty block,
 
 	ste->ste_name = name;
 	Py_INCREF(name);
-	
-	v = PyDict_New();
-	if (v == NULL)
-	    goto fail;
-	ste->ste_symbols = v;
 
-	v = PyList_New(0);
-	if (v == NULL)
-	    goto fail;
-	ste->ste_varnames = v;
+	ste->ste_symbols = NULL;
+	ste->ste_varnames = NULL;
+	ste->ste_children = NULL;
 
-	v = PyList_New(0);
-	if (v == NULL)
+	ste->ste_symbols = PyDict_New();
+	if (ste->ste_symbols == NULL)
 	    goto fail;
-	ste->ste_children = v;
+
+	ste->ste_varnames = PyList_New(0);
+	if (ste->ste_varnames == NULL)
+	    goto fail;
+
+	ste->ste_children = PyList_New(0);
+	if (ste->ste_children == NULL)
+	    goto fail;
 
 	ste->ste_type = block;
 	ste->ste_unoptimized = 0;
@@ -187,6 +188,8 @@ symtable_new(void)
 		return NULL;
 
 	st->st_filename = NULL;
+	st->st_symbols = NULL;
+
 	if ((st->st_stack = PyList_New(0)) == NULL)
 		goto fail;
 	if ((st->st_symbols = PyDict_New()) == NULL)
@@ -236,13 +239,18 @@ PySymtable_Build(mod_ty mod, const char *filename, PyFutureFeatures *future)
 	case Suite_kind:
 		PyErr_SetString(PyExc_RuntimeError,
 				"this compiler does not handle Suites");
+		goto error;
+	}
+	if (!symtable_exit_block(st, (void *)mod)) {
+		PySymtable_Free(st);
 		return NULL;
 	}
-	if (!symtable_exit_block(st, (void *)mod))
-		return NULL;
 	if (symtable_analyze(st))
 		return st;
+	PySymtable_Free(st);
+	return NULL;
  error:
+	(void) symtable_exit_block(st, (void *)mod);
 	PySymtable_Free(st);
 	return NULL;
 }
@@ -266,15 +274,15 @@ PySymtable_Lookup(struct symtable *st, void *key)
 	v = PyDict_GetItem(st->st_symbols, k);
 	if (v) {
 		assert(PySTEntry_Check(v));
-		Py_DECREF(k);
 		Py_INCREF(v);
-		return (PySTEntryObject *)v;
 	}
 	else {
 		PyErr_SetString(PyExc_KeyError,
 				"unknown symbol table entry");
-		return NULL;
 	}
+
+	Py_DECREF(k);
+	return (PySTEntryObject *)v;
 }
 
 int 
@@ -329,8 +337,11 @@ PyST_GetScope(PySTEntryObject *ste, PyObject *name)
 	PyObject *o = PyInt_FromLong(I); \
 	if (!o) \
 		return 0; \
-	if (PyDict_SetItem((DICT), (NAME), o) < 0) \
+	if (PyDict_SetItem((DICT), (NAME), o) < 0) { \
+		Py_DECREF(o); \
 		return 0; \
+	} \
+	Py_DECREF(o); \
 }
 
 /* Decide on scope of name, given flags.
@@ -536,6 +547,7 @@ update_symbols(PyObject *symbols, PyObject *scope,
 					Py_DECREF(free_value);
 					return 0;
 				}
+				Py_DECREF(o);
 			}
 			/* else it's not free, probably a cell */
 			continue;
@@ -663,7 +675,7 @@ symtable_analyze(struct symtable *st)
 	    return 0;
 	global = PyDict_New();
 	if (!global) {
-	    Py_DECREF(global);
+	    Py_DECREF(free);
 	    return 0;
 	}
 	r = analyze_block(st->st_top, NULL, free, global);
@@ -820,7 +832,13 @@ error:
 #define VISIT(ST, TYPE, V) \
 	if (!symtable_visit_ ## TYPE((ST), (V))) \
 		return 0; 
-						    
+
+#define VISIT_IN_BLOCK(ST, TYPE, V, S) \
+	if (!symtable_visit_ ## TYPE((ST), (V))) { \
+		symtable_exit_block((ST), (S)); \
+		return 0; \
+	}
+
 #define VISIT_SEQ(ST, TYPE, SEQ) { \
 	int i; \
 	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
@@ -830,7 +848,19 @@ error:
 			return 0; \
 	} \
 }
-						    
+
+#define VISIT_SEQ_IN_BLOCK(ST, TYPE, SEQ, S) { \
+	int i; \
+	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
+	for (i = 0; i < asdl_seq_LEN(seq); i++) { \
+		TYPE ## _ty elt = asdl_seq_GET(seq, i); \
+		if (!symtable_visit_ ## TYPE((ST), elt)) { \
+			symtable_exit_block((ST), (S)); \
+			return 0; \
+		} \
+	} \
+}
+
 #define VISIT_SEQ_TAIL(ST, TYPE, SEQ, START) { \
 	int i; \
 	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
@@ -840,7 +870,19 @@ error:
 			return 0; \
 	} \
 }
-						    
+
+#define VISIT_SEQ_TAIL_IN_BLOCK(ST, TYPE, SEQ, START, S) { \
+	int i; \
+	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
+	for (i = (START); i < asdl_seq_LEN(seq); i++) { \
+		TYPE ## _ty elt = asdl_seq_GET(seq, i); \
+		if (!symtable_visit_ ## TYPE((ST), elt)) { \
+			symtable_exit_block((ST), (S)); \
+			return 0; \
+		} \
+	} \
+}
+
 static int
 symtable_visit_stmt(struct symtable *st, stmt_ty s)
 {
@@ -855,8 +897,8 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 		if (!symtable_enter_block(st, s->v.FunctionDef.name, 
 					  FunctionBlock, (void *)s, s->lineno))
 			return 0;
-		VISIT(st, arguments, s->v.FunctionDef.args);
-		VISIT_SEQ(st, stmt, s->v.FunctionDef.body);
+		VISIT_IN_BLOCK(st, arguments, s->v.FunctionDef.args, s);
+		VISIT_SEQ_IN_BLOCK(st, stmt, s->v.FunctionDef.body, s);
 		if (!symtable_exit_block(st, s))
 			return 0;
 		break;
@@ -870,7 +912,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 			return 0;
 		tmp = st->st_private;
 		st->st_private = s->v.ClassDef.name;
-		VISIT_SEQ(st, stmt, s->v.ClassDef.body);
+		VISIT_SEQ_IN_BLOCK(st, stmt, s->v.ClassDef.body, s);
 		st->st_private = tmp;
 		if (!symtable_exit_block(st, s))
 			return 0;
@@ -977,7 +1019,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 			if (cur < 0)
 				return 0;
 			if (cur & (DEF_LOCAL | USE)) {
-				char buf[1000];
+				char buf[256];
 				if (cur & DEF_LOCAL) 
 					PyOS_snprintf(buf, sizeof(buf),
 						      GLOBAL_AFTER_ASSIGN,
@@ -991,9 +1033,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 			}
 			if (!symtable_add_def(st, name, DEF_GLOBAL))
 				return 0;
-			
 		}
-		
 		break;
 	}
         case Expr_kind:
@@ -1031,8 +1071,8 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 		if (!symtable_enter_block(st, GET_IDENTIFIER(lambda),
                                           FunctionBlock, (void *)e, 0))
 			return 0;
-		VISIT(st, arguments, e->v.Lambda.args);
-		VISIT(st, expr, e->v.Lambda.body);
+		VISIT_IN_BLOCK(st, arguments, e->v.Lambda.args, (void*)e);
+		VISIT_IN_BLOCK(st, expr, e->v.Lambda.body, (void*)e);
 		if (!symtable_exit_block(st, (void *)e))
 			return 0;
 		break;
@@ -1302,12 +1342,14 @@ symtable_visit_genexp(struct symtable *st, expr_ty e)
 	st->st_cur->ste_generator = 1;
 	/* Outermost iter is received as an argument */
 	if (!symtable_implicit_arg(st, 0)) {
+		symtable_exit_block(st, (void *)e);
 		return 0;
 	}
-	VISIT(st, expr, outermost->target);
-	VISIT_SEQ(st, expr, outermost->ifs);
-	VISIT_SEQ_TAIL(st, comprehension, e->v.GeneratorExp.generators, 1);
-	VISIT(st, expr, e->v.GeneratorExp.elt);
+	VISIT_IN_BLOCK(st, expr, outermost->target, (void*)e);
+	VISIT_SEQ_IN_BLOCK(st, expr, outermost->ifs, (void*)e);
+	VISIT_SEQ_TAIL_IN_BLOCK(st, comprehension,
+				e->v.GeneratorExp.generators, 1, (void*)e);
+	VISIT_IN_BLOCK(st, expr, e->v.GeneratorExp.elt, (void*)e);
 	if (!symtable_exit_block(st, (void *)e))
 		return 0;
 	return 1;
