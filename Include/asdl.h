@@ -44,11 +44,4 @@ void asdl_seq_free(asdl_seq *);
 #endif
 #define asdl_seq_LEN(S) ((S) == NULL ? 0 : (S)->size)
 
-/* Routines to marshal the basic types. */
-int marshal_write_int(PyObject **, int *, int);
-int marshal_write_bool(PyObject **, int *, bool);
-int marshal_write_identifier(PyObject **, int *, identifier);
-int marshal_write_string(PyObject **, int *, string);
-int marshal_write_object(PyObject **, int *, object);
-
 #endif /* !Py_ASDL_H */
