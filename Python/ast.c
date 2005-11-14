@@ -1901,6 +1901,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         if (!expr1)
             return NULL;
         if (expr1->kind == GeneratorExp_kind) {
+	    free_expr(expr1);
 	    ast_error(ch, "augmented assignment to generator "
 		      "expression not possible");
 	    return NULL;
@@ -1908,6 +1909,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 	if (expr1->kind == Name_kind) {
 		char *var_name = PyString_AS_STRING(expr1->v.Name.id);
 		if (var_name[0] == 'N' && !strcmp(var_name, "None")) {
+			free_expr(expr1);
 			ast_error(ch, "assignment to None");
 			return NULL;
 		}
@@ -1918,12 +1920,17 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 	    expr2 = ast_for_testlist(c, ch);
 	else
 	    expr2 = Yield(ast_for_expr(c, ch), LINENO(ch));
-        if (!expr2)
+        if (!expr2) {
+            free_expr(expr1);
             return NULL;
+        }
 
         operator = ast_for_augassign(CHILD(n, 1));
-        if (!operator)
+        if (!operator) {
+            free_expr(expr1);
+            free_expr(expr2);
             return NULL;
+        }
 
 	return AugAssign(expr1, operator, expr2, LINENO(n));
     }
@@ -1964,7 +1971,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 	else
 	    expression = ast_for_expr(c, value);
 	if (!expression)
-	    return NULL;
+	    goto error;
 	return Assign(targets, expression, LINENO(n));
     error:
         for (i = i / 2; i >= 0; i--)
