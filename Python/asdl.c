@@ -10,7 +10,7 @@ asdl_seq_new(int size)
 
 	seq = (asdl_seq *)PyObject_Malloc(n);
 	if (!seq) {
-		PyErr_SetString(PyExc_MemoryError, "no memory");
+		PyErr_NoMemory();
 		return NULL;
 	}
 	memset(seq, 0, n);
