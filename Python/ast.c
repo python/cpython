@@ -448,7 +448,7 @@ ast_for_augassign(const node *n)
             else
                 return Mult;
         default:
-            PyErr_Format(PyExc_Exception, "invalid augassign: %s", STR(n));
+            PyErr_Format(PyExc_SystemError, "invalid augassign: %s", STR(n));
             return 0;
     }
 }
@@ -481,7 +481,7 @@ ast_for_comp_op(const node *n)
                 if (strcmp(STR(n), "is") == 0)
                     return Is;
             default:
-                PyErr_Format(PyExc_Exception, "invalid comp_op: %s",
+                PyErr_Format(PyExc_SystemError, "invalid comp_op: %s",
                              STR(n));
                 return 0;
 	}
@@ -495,12 +495,12 @@ ast_for_comp_op(const node *n)
                 if (strcmp(STR(CHILD(n, 0)), "is") == 0)
                     return IsNot;
             default:
-                PyErr_Format(PyExc_Exception, "invalid comp_op: %s %s",
+                PyErr_Format(PyExc_SystemError, "invalid comp_op: %s %s",
                              STR(CHILD(n, 0)), STR(CHILD(n, 1)));
                 return 0;
 	}
     }
-    PyErr_Format(PyExc_Exception, "invalid comp_op: has %d children",
+    PyErr_Format(PyExc_SystemError, "invalid comp_op: has %d children",
                  NCH(n));
     return 0;
 }
@@ -669,7 +669,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 i += 3;
                 break;
             default:
-                PyErr_Format(PyExc_Exception,
+                PyErr_Format(PyExc_SystemError,
                              "unexpected node in varargslist: %d @ %d",
                              TYPE(ch), i);
                 goto error;
@@ -1309,8 +1309,7 @@ ast_for_atom(struct compiling *c, const node *n)
 	return Repr(expression, LINENO(n));
     }
     default:
-	PyErr_Format(PyExc_Exception, "unhandled atom %d",
-		     TYPE(ch));
+	PyErr_Format(PyExc_SystemError, "unhandled atom %d", TYPE(ch));
 	return NULL;
     }
 }
@@ -1680,8 +1679,7 @@ ast_for_expr(struct compiling *c, const node *n)
         case power:
             return ast_for_power(c, n);
         default:
-	    abort();
-            PyErr_Format(PyExc_Exception, "unhandled expr: %d", TYPE(n));
+            PyErr_Format(PyExc_SystemError, "unhandled expr: %d", TYPE(n));
             return NULL;
     }
     /* should never get here */
@@ -2131,7 +2129,7 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
                 return Raise(expr1, expr2, expr3, LINENO(n));
             }
         default:
-            PyErr_Format(PyExc_Exception,
+            PyErr_Format(PyExc_SystemError,
                          "unexpected flow_stmt: %d", TYPE(ch));
             return NULL;
     }
@@ -2202,7 +2200,7 @@ alias_for_import_name(const node *n)
         case STAR:
             return alias(PyString_InternFromString("*"), NULL);
         default:
-            PyErr_Format(PyExc_Exception,
+            PyErr_Format(PyExc_SystemError,
                          "unexpected import name: %d", TYPE(n));
             return NULL;
     }
@@ -2304,7 +2302,7 @@ ast_for_import_stmt(struct compiling *c, const node *n)
 	free_alias(mod);
 	return import;
     }
-    PyErr_Format(PyExc_Exception,
+    PyErr_Format(PyExc_SystemError,
                  "unknown import statement: starts with command '%s'",
                  STR(CHILD(n, 0)));
     return NULL;
@@ -2339,7 +2337,7 @@ ast_for_exec_stmt(struct compiling *c, const node *n)
     expr_ty expr1, globals = NULL, locals = NULL;
     int n_children = NCH(n);
     if (n_children != 2 && n_children != 4 && n_children != 6) {
-        PyErr_Format(PyExc_Exception,
+        PyErr_Format(PyExc_SystemError,
                      "poorly formed 'exec' statement: %d parts to statement",
                      n_children);
         return NULL;
@@ -2387,7 +2385,7 @@ ast_for_assert_stmt(struct compiling *c, const node *n)
             
 	return Assert(expr1, expr2, LINENO(n));
     }
-    PyErr_Format(PyExc_Exception,
+    PyErr_Format(PyExc_SystemError,
                  "improper number of parts to 'assert' statement: %d",
                  NCH(n));
     return NULL;
@@ -2574,7 +2572,7 @@ ast_for_if_stmt(struct compiling *c, const node *n)
 		  orelse, LINENO(n));
     }
     else {
-        PyErr_Format(PyExc_Exception,
+        PyErr_Format(PyExc_SystemError,
                      "unexpected token in 'if' statement: %s", s);
         return NULL;
     }
@@ -2615,7 +2613,7 @@ ast_for_while_stmt(struct compiling *c, const node *n)
 	return While(expression, seq1, seq2, LINENO(n));
     }
     else {
-        PyErr_Format(PyExc_Exception,
+        PyErr_Format(PyExc_SystemError,
                      "wrong number of tokens for 'while' statement: %d",
                      NCH(n));
         return NULL;
@@ -2702,7 +2700,7 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
 	return excepthandler(expression, e, suite_seq);
     }
     else {
-        PyErr_Format(PyExc_Exception,
+        PyErr_Format(PyExc_SystemError,
                      "wrong number of children for 'except' clause: %d",
                      NCH(exc));
         return NULL;
@@ -2847,7 +2845,7 @@ ast_for_stmt(struct compiling *c, const node *n)
             case assert_stmt:
                 return ast_for_assert_stmt(c, n);
             default:
-                PyErr_Format(PyExc_Exception,
+                PyErr_Format(PyExc_SystemError,
                              "unhandled small_stmt: TYPE=%d NCH=%d\n",
                              TYPE(n), NCH(n));
                 return NULL;
@@ -2873,7 +2871,7 @@ ast_for_stmt(struct compiling *c, const node *n)
             case classdef:
                 return ast_for_classdef(c, ch);
             default:
-                PyErr_Format(PyExc_Exception,
+                PyErr_Format(PyExc_SystemError,
                              "unhandled small_stmt: TYPE=%d NCH=%d\n",
                              TYPE(n), NCH(n));
                 return NULL;
