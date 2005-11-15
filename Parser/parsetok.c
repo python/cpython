@@ -108,6 +108,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 	if ((ps = PyParser_New(g, start)) == NULL) {
 		fprintf(stderr, "no mem for new parser\n");
 		err_ret->error = E_NOMEM;
+		PyTokenizer_Free(tok);
 		return NULL;
 	}
 #if 0 /* future keyword */
