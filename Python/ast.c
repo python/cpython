@@ -20,6 +20,26 @@
    - syntax errors
 */
 
+/*
+  Note:
+  
+  You should rarely need to use the asdl_seq_free() in this file.
+  If you use asdl_seq_free(), you will leak any objects held in the seq.
+  If there is an appropriate asdl_*_seq_free() function, use it.
+  If there isn't an asdl_*_seq_free() function for you, you will
+  need to loop over the data in the sequence and free it.
+
+  asdl_seq* seq;
+  int i;
+
+  for (i = 0; i < asdl_seq_LEN(seq); i++)
+      free_***(asdl_seq_GET(seq, i));
+  asdl_seq_free(seq);
+
+  Almost all of the ast functions return a seq of expr, so you should
+  use asdl_expr_seq_free().  The exception is ast_for_suite() which
+  returns a seq of stmt's, so use asdl_stmt_seq_free() to free it.
+*/
 
 /* Data structure used internally */
 struct compiling {
