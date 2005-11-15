@@ -1588,6 +1588,7 @@ ast_for_power(struct compiling *c, const node *n)
         }
         tmp = BinOp(e, Pow, f, LINENO(n));
         if (!tmp) {
+            free_expr(f);
             free_expr(e);
             return NULL;
         }
@@ -2112,11 +2113,11 @@ ast_for_exprlist(struct compiling *c, const node *n, int context)
 	e = ast_for_expr(c, CHILD(n, i));
 	if (!e)
 	    goto error;
+	asdl_seq_SET(seq, i / 2, e);
 	if (context) {
 	    if (!set_context(e, context, CHILD(n, i)))
 	    	goto error;
         }
-	asdl_seq_SET(seq, i / 2, e);
     }
     return seq;
 
