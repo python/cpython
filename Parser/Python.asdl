@@ -1,4 +1,4 @@
--- ASDL's three builtin types are identifier, int, string
+-- ASDL's five builtin types are identifier, int, string, object, bool
 
 module Python
 {
