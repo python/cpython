@@ -2,7 +2,8 @@ import re
 import sys
 
 # Reason last stmt is continued (or C_NONE if it's not).
-C_NONE, C_BACKSLASH, C_STRING, C_BRACKET = range(4)
+(C_NONE, C_BACKSLASH, C_STRING_FIRST_LINE,
+ C_STRING_NEXT_LINES, C_BRACKET) = range(5)
 
 if 0:   # for throwaway debugging output
     def dump(*stuff):
@@ -281,6 +282,7 @@ class Parser:
                 quote = ch
                 if str[i-1:i+2] == quote * 3:
                     quote = quote * 3
+                firstlno = lno
                 w = len(quote) - 1
                 i = i+w
                 while i < n:
@@ -315,7 +317,12 @@ class Parser:
                 else:
                     # didn't break out of the loop, so we're still
                     # inside a string
-                    continuation = C_STRING
+                    if (lno - 1) == firstlno:
+                        # before the previous \n in str, we were in the first
+                        # line of the string
+                        continuation = C_STRING_FIRST_LINE
+                    else:
+                        continuation = C_STRING_NEXT_LINES
                 continue    # with outer loop
 
             if ch == '#':
@@ -335,7 +342,8 @@ class Parser:
         # The last stmt may be continued for all 3 reasons.
         # String continuation takes precedence over bracket
         # continuation, which beats backslash continuation.
-        if continuation != C_STRING and level > 0:
+        if (continuation != C_STRING_FIRST_LINE
+            and continuation != C_STRING_NEXT_LINES and level > 0):
             continuation = C_BRACKET
         self.continuation = continuation
 

@@ -3,6 +3,9 @@ What's New in IDLE 1.2a0?
 
 *Release date: XX-XXX-2005*
 
+- Better indentation after first line of string continuation.
+  IDLEfork Patch 681992, Noam Raphael
+
 - Fixed CodeContext alignment problem, following suggestion from Tal Einat.
 
 - Increased performance in CodeContext extension  Patch 936169 Noam Raphael

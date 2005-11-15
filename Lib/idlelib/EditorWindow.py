@@ -1078,8 +1078,12 @@ class EditorWindow(object):
             c = y.get_continuation_type()
             if c != PyParse.C_NONE:
                 # The current stmt hasn't ended yet.
-                if c == PyParse.C_STRING:
-                    # inside a string; just mimic the current indent
+                if c == PyParse.C_STRING_FIRST_LINE:
+                    # after the first line of a string; do not indent at all
+                    pass
+                elif c == PyParse.C_STRING_NEXT_LINES:
+                    # inside a string which started before this line;
+                    # just mimic the current indent
                     text.insert("insert", indent)
                 elif c == PyParse.C_BRACKET:
                     # line up with the first (if any) element of the
