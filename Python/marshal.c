@@ -1035,6 +1035,7 @@ marshal_dump(PyObject *self, PyObject *args)
 	wf.error = 0;
 	wf.depth = 0;
 	wf.strings = (version > 0) ? PyDict_New() : 0;
+	wf.version = version;
 	w_object(x, &wf);
 	Py_XDECREF(wf.strings);
 	if (wf.error) {
