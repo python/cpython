@@ -170,7 +170,7 @@ static int symtable_visit_params_nested(struct symtable *st, asdl_seq *args);
 static int symtable_implicit_arg(struct symtable *st, int pos);
 
 
-static identifier top = NULL, lambda = NULL;
+static identifier top = NULL, lambda = NULL, genexpr = NULL;
 
 #define GET_IDENTIFIER(VAR) \
 	((VAR) ? (VAR) : ((VAR) = PyString_InternFromString(# VAR)))
@@ -1329,14 +1329,13 @@ symtable_visit_slice(struct symtable *st, slice_ty s)
 static int 
 symtable_visit_genexp(struct symtable *st, expr_ty e)
 {
-	identifier tmp;
 	comprehension_ty outermost = ((comprehension_ty)
 			 (asdl_seq_GET(e->v.GeneratorExp.generators, 0)));
 	/* Outermost iterator is evaluated in current scope */
 	VISIT(st, expr, outermost->iter);
 	/* Create generator scope for the rest */
-	tmp = PyString_FromString("<genexpr>");
-	if (!symtable_enter_block(st, tmp, FunctionBlock, (void *)e, 0)) {
+	if (!symtable_enter_block(st, GET_IDENTIFIER(genexpr),
+				  FunctionBlock, (void *)e, 0)) {
 		return 0;
 	}
 	st->st_cur->ste_generator = 1;
