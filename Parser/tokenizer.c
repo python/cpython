@@ -328,6 +328,8 @@ check_bom(int get_char(struct tok_state *),
 		unget_char(ch, tok);
 		return 1;
 	}
+	if (tok->encoding != NULL)
+		PyMem_DEL(tok->encoding);
 	tok->encoding = new_string("utf-8", 5);	/* resulting is in utf-8 */
 	return 1;
   NON_BOM:
@@ -581,14 +583,14 @@ decode_str(const char *str, struct tok_state *tok)
 	tok->enc = NULL;
 	tok->str = str;
 	if (!check_bom(buf_getc, buf_ungetc, buf_setreadl, tok))
-		return NULL;
+		return error_ret(tok);
 	str = tok->str;		/* string after BOM if any */
 	assert(str);
 #ifdef Py_USING_UNICODE
 	if (tok->enc != NULL) {
 		utf8 = translate_into_utf8(str, tok->enc);
 		if (utf8 == NULL)
-			return NULL;
+			return error_ret(tok);
 		str = PyString_AsString(utf8);
 	}
 #endif
@@ -601,7 +603,7 @@ decode_str(const char *str, struct tok_state *tok)
 	}
 	tok->enc = NULL;
 	if (!check_coding_spec(str, s - str, tok, buf_setreadl))
-		return NULL;
+		return error_ret(tok);
 #ifdef Py_USING_UNICODE
 	if (tok->enc != NULL) {
 		assert(utf8 == NULL);
@@ -609,7 +611,7 @@ decode_str(const char *str, struct tok_state *tok)
 		if (utf8 == NULL) {
 			PyErr_Format(PyExc_SyntaxError,
 				"unknown encoding: %s", tok->enc);
-			return NULL;
+			return error_ret(tok);
 		}
 		str = PyString_AsString(utf8);
 	}
@@ -630,8 +632,11 @@ PyTokenizer_FromString(const char *str)
 	if (tok == NULL)
 		return NULL;
 	str = (char *)decode_str(str, tok);
-	if (str == NULL)
+	if (str == NULL) {
+		PyTokenizer_Free(tok);
 		return NULL;
+	}
+
 	/* XXX: constify members. */
 	tok->buf = tok->cur = tok->end = tok->inp = (char*)str;
 	return tok;
@@ -647,7 +652,7 @@ PyTokenizer_FromFile(FILE *fp, char *ps1, char *ps2)
 	if (tok == NULL)
 		return NULL;
 	if ((tok->buf = PyMem_NEW(char, BUFSIZ)) == NULL) {
-		PyMem_DEL(tok);
+		PyTokenizer_Free(tok);
 		return NULL;
 	}
 	tok->cur = tok->inp = tok->buf;
