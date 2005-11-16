@@ -34,11 +34,32 @@
 
   for (i = 0; i < asdl_seq_LEN(seq); i++)
       free_***(asdl_seq_GET(seq, i));
-  asdl_seq_free(seq);
+  asdl_seq_free(seq); / * ok * /
 
   Almost all of the ast functions return a seq of expr, so you should
   use asdl_expr_seq_free().  The exception is ast_for_suite() which
   returns a seq of stmt's, so use asdl_stmt_seq_free() to free it.
+
+  If asdl_seq_free is appropriate, you should mark it with an ok comment.
+
+  There are still many memory problems in this file even though
+  it runs clean in valgrind, save one problem that may have existed
+  before the AST.
+
+  Any code which does something like this:
+
+      return ASTconstruct(local, LINENO(n));
+
+  will leak memory.  The problem is if ASTconstruct (e.g., TryFinally)
+  cannot allocate memory, local will be leaked.
+
+  There was discussion on python-dev to replace the entire allocation
+  scheme in this file with arenas.  Basically rather than allocate
+  memory in little blocks with malloc(), we allocate one big honking
+  hunk and deref everything into this block.  We would still need
+  another block or technique to handle the PyObject*s.
+
+  http://mail.python.org/pipermail/python-dev/2005-November/058138.html
 */
 
 /* Data structure used internally */
