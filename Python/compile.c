@@ -12,6 +12,11 @@
  *
  * Note that compiler_mod() suggests module, but the module ast type
  * (mod_ty) has cases for expressions and interactive statements.
+ *
+ * CAUTION: The VISIT_* macros abort the current function when they encounter
+ *          a problem. So don't invoke them when there is memory which needs to be
+ *          released. Code blocks are OK, as the compiler structure takes care of
+ *          releasing those.
  */
 
 #include "Python.h"
@@ -1990,13 +1995,15 @@ static int
 compiler_lambda(struct compiler *c, expr_ty e)
 {
 	PyCodeObject *co;
-	identifier name;
+	static identifier name;
 	arguments_ty args = e->v.Lambda.args;
 	assert(e->kind == Lambda_kind);
 
-	name = PyString_InternFromString("<lambda>");
-	if (!name)
-		return 0;
+	if (!name) {
+		name = PyString_InternFromString("<lambda>");
+		if (!name)
+			return 0;
+	}
 
 	if (args->defaults)
 		VISIT_SEQ(c, expr, args->defaults);
@@ -2015,7 +2022,6 @@ compiler_lambda(struct compiler *c, expr_ty e)
 		return 0;
 
         compiler_make_closure(c, co, asdl_seq_LEN(args->defaults));
-	Py_DECREF(name);
 
 	return 1;
 }
@@ -3168,15 +3174,17 @@ compiler_genexp_generator(struct compiler *c,
 static int
 compiler_genexp(struct compiler *c, expr_ty e)
 {
-	PyObject *name;
+	static identifier name;
 	PyCodeObject *co;
 	expr_ty outermost_iter = ((comprehension_ty)
 				 (asdl_seq_GET(e->v.GeneratorExp.generators,
 					       0)))->iter;
 
-	name = PyString_FromString("<generator expression>");
-	if (!name)
-		return 0;
+	if (!name) {
+		name = PyString_FromString("<genexpr>");
+		if (!name)
+			return 0;
+	}
 
 	if (!compiler_enter_scope(c, name, (void *)e, e->lineno))
 		return 0;
@@ -3191,8 +3199,6 @@ compiler_genexp(struct compiler *c, expr_ty e)
 	VISIT(c, expr, outermost_iter);
 	ADDOP(c, GET_ITER);
 	ADDOP_I(c, CALL_FUNCTION, 1);
-	Py_DECREF(name);
-	Py_DECREF(co);
 
 	return 1;
 }
