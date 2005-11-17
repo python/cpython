@@ -746,15 +746,34 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertEquals(codecs.encode(u'\xe4\xf6\xfc', 'latin-1'),
                           '\xe4\xf6\xfc')
         self.assertRaises(TypeError, codecs.encode)
+        self.assertRaises(LookupError, codecs.encode, "foo", "__spam__")
         self.assertEquals(codecs.encode(u'abc'), 'abc')
         self.assertRaises(UnicodeEncodeError, codecs.encode, u'\xffff', 'ascii')
 
     def test_register(self):
         self.assertRaises(TypeError, codecs.register)
+        self.assertRaises(TypeError, codecs.register, 42)
 
     def test_lookup(self):
         self.assertRaises(TypeError, codecs.lookup)
         self.assertRaises(LookupError, codecs.lookup, "__spam__")
+        self.assertRaises(LookupError, codecs.lookup, " ")
+
+    def test_getencoder(self):
+        self.assertRaises(TypeError, codecs.getencoder)
+        self.assertRaises(LookupError, codecs.getencoder, "__spam__")
+
+    def test_getdecoder(self):
+        self.assertRaises(TypeError, codecs.getdecoder)
+        self.assertRaises(LookupError, codecs.getdecoder, "__spam__")
+
+    def test_getreader(self):
+        self.assertRaises(TypeError, codecs.getreader)
+        self.assertRaises(LookupError, codecs.getreader, "__spam__")
+
+    def test_getwriter(self):
+        self.assertRaises(TypeError, codecs.getwriter)
+        self.assertRaises(LookupError, codecs.getwriter, "__spam__")
 
 class StreamReaderTest(unittest.TestCase):
 
