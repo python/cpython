@@ -307,6 +307,12 @@ Solaris: When using Sun's C compiler with threads, at least on Solaris
 	4. Modify the installed GCC specs file, adding -R options into the
 	   *link: section.
 
+        The complex object fails to compile on Solaris 10 with gcc 3.4 (at
+        least up to 3.4.3).  To work around it, define Py_HUGE_VAL as
+        HUGE_VAL(), e.g.:
+
+          make CPPFLAGS='-D"Py_HUGE_VAL=HUGE_VAL()" -I. -I$(srcdir)/Include'
+
 Linux:  A problem with threads and fork() was tracked down to a bug in
 	the pthreads code in glibc version 2.0.5; glibc version 2.0.7
 	solves the problem.  This causes the popen2 test to fail;
