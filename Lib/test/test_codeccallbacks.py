@@ -577,6 +577,11 @@ class CodecCallbackTest(unittest.TestCase):
         self.assertRaises(TypeError, codecs.register_error, 42)
         self.assertRaises(TypeError, codecs.register_error, "test.dummy", 42)
 
+    def test_badlookupcall(self):
+        # enhance coverage of:
+        # Modules/_codecsmodule.c::lookup_error()
+        self.assertRaises(TypeError, codecs.lookup_error)
+
     def test_unknownhandler(self):
         # enhance coverage of:
         # Modules/_codecsmodule.c::lookup_error()

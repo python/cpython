@@ -260,6 +260,9 @@ class UTF16Test(ReadTest):
             ]
         )
 
+    def test_errors(self):
+        self.assertRaises(UnicodeDecodeError, codecs.utf_16_decode, "\xff", "strict", True)
+
 class UTF16LETest(ReadTest):
     encoding = "utf-16-le"
 
@@ -278,6 +281,9 @@ class UTF16LETest(ReadTest):
             ]
         )
 
+    def test_errors(self):
+        self.assertRaises(UnicodeDecodeError, codecs.utf_16_le_decode, "\xff", "strict", True)
+
 class UTF16BETest(ReadTest):
     encoding = "utf-16-be"
 
@@ -295,6 +301,9 @@ class UTF16BETest(ReadTest):
                 u"\x00\xff\u0100\uffff",
             ]
         )
+
+    def test_errors(self):
+        self.assertRaises(UnicodeDecodeError, codecs.utf_16_be_decode, "\xff", "strict", True)
 
 class UTF8Test(ReadTest):
     encoding = "utf-8"
@@ -317,8 +326,49 @@ class UTF8Test(ReadTest):
             ]
         )
 
+class UTF7Test(ReadTest):
+    encoding = "utf-7"
+
+    # No test_partial() yet, because UTF-7 doesn't support it.
+
+class UTF16ExTest(unittest.TestCase):
+
+    def test_errors(self):
+        self.assertRaises(UnicodeDecodeError, codecs.utf_16_ex_decode, "\xff", "strict", 0, True)
+
+    def test_bad_args(self):
+        self.assertRaises(TypeError, codecs.utf_16_ex_decode)
+
+class ReadBufferTest(unittest.TestCase):
+
+    def test_array(self):
+        import array
+        self.assertEqual(
+            codecs.readbuffer_encode(array.array("c", "spam")),
+            ("spam", 4)
+        )
+
+    def test_empty(self):
+        self.assertEqual(codecs.readbuffer_encode(""), ("", 0))
+
+    def test_bad_args(self):
+        self.assertRaises(TypeError, codecs.readbuffer_encode)
+        self.assertRaises(TypeError, codecs.readbuffer_encode, 42)
+
+class CharBufferTest(unittest.TestCase):
+
+    def test_string(self):
+        self.assertEqual(codecs.charbuffer_encode("spam"), ("spam", 4))
+
+    def test_empty(self):
+        self.assertEqual(codecs.charbuffer_encode(""), ("", 0))
+
+    def test_bad_args(self):
+        self.assertRaises(TypeError, codecs.charbuffer_encode)
+        self.assertRaises(TypeError, codecs.charbuffer_encode, 42)
+
 class EscapeDecodeTest(unittest.TestCase):
-    def test_empty_escape_decode(self):
+    def test_empty(self):
         self.assertEquals(codecs.escape_decode(""), ("", 0))
 
 class RecodingTest(unittest.TestCase):
@@ -394,7 +444,6 @@ punycode_testcases = [
      u"\u1EC9\u006E\u00F3\u0069\u0074\u0069\u1EBF\u006E\u0067"
      u"\u0056\u0069\u1EC7\u0074",
      "TisaohkhngthchnitingVit-kjcr8268qyxafd2f1b9g"),
-
 
     #(L) 3<nen>B<gumi><kinpachi><sensei>
     (u"\u0033\u5E74\u0042\u7D44\u91D1\u516B\u5148\u751F",
@@ -915,6 +964,18 @@ class BasicUnicodeTest(unittest.TestCase):
                 line = reader.readline()
                 self.assertEqual(s[:len(line)], line)
 
+    def test_bad_decode_args(self):
+        for encoding in all_unicode_encodings:
+            decoder = codecs.getdecoder(encoding)
+            self.assertRaises(TypeError, decoder)
+            if encoding not in ("idna", "punycode"):
+                self.assertRaises(TypeError, decoder, 42)
+
+    def test_bad_encode_args(self):
+        for encoding in all_unicode_encodings:
+            encoder = codecs.getencoder(encoding)
+            self.assertRaises(TypeError, encoder)
+
 class BasicStrTest(unittest.TestCase):
     def test_basics(self):
         s = "abc123"
@@ -964,6 +1025,10 @@ def test_main():
         UTF16LETest,
         UTF16BETest,
         UTF8Test,
+        UTF7Test,
+        UTF16ExTest,
+        ReadBufferTest,
+        CharBufferTest,
         EscapeDecodeTest,
         RecodingTest,
         PunycodeTest,
