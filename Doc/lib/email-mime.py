@@ -1,7 +1,7 @@
 # Import smtplib for the actual sending function
 import smtplib
 
-# Here are the email pacakge modules we'll need
+# Here are the email package modules we'll need
 from email.MIMEImage import MIMEImage
 from email.MIMEMultipart import MIMEMultipart
 
