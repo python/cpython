@@ -314,6 +314,7 @@ Solaris: When using Sun's C compiler with threads, at least on Solaris
         HUGE_VAL(), e.g.:
 
           make CPPFLAGS='-D"Py_HUGE_VAL=HUGE_VAL()" -I. -I$(srcdir)/Include'
+	  ./python setup.py CPPFLAGS='-D"Py_HUGE_VAL=HUGE_VAL()"'
 
 Linux:  A problem with threads and fork() was tracked down to a bug in
 	the pthreads code in glibc version 2.0.5; glibc version 2.0.7
