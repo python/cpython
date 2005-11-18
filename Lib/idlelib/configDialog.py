@@ -1106,6 +1106,13 @@ class ConfigDialog(Toplevel):
             idleConf.userCfg[configType].Save()
         self.ResetChangedItems() #clear the changed items dict
 
+    def DeactivateCurrentConfig(self):
+        #Before a config is saved, some cleanup of current
+        #config must be done - remove the previous keybindings
+        winInstances=self.parent.instance_dict.keys()
+        for instance in winInstances:
+            instance.RemoveKeybindings()
+
     def ActivateConfigChanges(self):
         "Dynamically apply configuration changes"
         winInstances=self.parent.instance_dict.keys()
@@ -1113,7 +1120,7 @@ class ConfigDialog(Toplevel):
             instance.ResetColorizer()
             instance.ResetFont()
             instance.set_notabs_indentwidth()
-            instance.ResetKeybindings()
+            instance.ApplyKeybindings()
             instance.reset_help_menu_entries()
 
     def Cancel(self):
@@ -1124,6 +1131,7 @@ class ConfigDialog(Toplevel):
         self.destroy()
 
     def Apply(self):
+        self.DeactivateCurrentConfig()
         self.SaveAllChangedConfigs()
         self.ActivateConfigChanges()
 
