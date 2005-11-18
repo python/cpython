@@ -6,6 +6,7 @@ from itertools import count
 from Tkinter import *
 import tkSimpleDialog
 import tkMessageBox
+from MultiCall import MultiCallCreator
 
 import webbrowser
 import idlever
@@ -89,7 +90,8 @@ class EditorWindow(object):
         self.vbar = vbar = Scrollbar(top, name='vbar')
         self.text_frame = text_frame = Frame(top)
         self.width = idleConf.GetOption('main','EditorWindow','width')
-        self.text = text = Text(text_frame, name='text', padx=5, wrap='none',
+        self.text = text = MultiCallCreator(Text)(
+                text_frame, name='text', padx=5, wrap='none',
                 foreground=idleConf.GetHighlight(currentTheme,
                         'normal',fgBg='fg'),
                 background=idleConf.GetHighlight(currentTheme,
@@ -264,8 +266,9 @@ class EditorWindow(object):
         self.status_bar.set_label('column', 'Col: ?', side=RIGHT)
         self.status_bar.set_label('line', 'Ln: ?', side=RIGHT)
         self.status_bar.pack(side=BOTTOM, fill=X)
-        self.text.bind('<KeyRelease>', self.set_line_and_column)
-        self.text.bind('<ButtonRelease>', self.set_line_and_column)
+        self.text.bind("<<set-line-and-column>>", self.set_line_and_column)
+        self.text.event_add("<<set-line-and-column>>",
+                            "<KeyRelease>", "<ButtonRelease>")
         self.text.after_idle(self.set_line_and_column)
 
     def set_line_and_column(self, event=None):
@@ -355,6 +358,9 @@ class EditorWindow(object):
         return "break"
 
     def copy(self,event):
+        if not self.text.tag_ranges("sel"):
+            # There is no selection, so do nothing and maybe interrupt.
+            return
         self.text.event_generate("<<Copy>>")
         return "break"
 
@@ -557,14 +563,28 @@ class EditorWindow(object):
                 idleConf.GetOption('main','EditorWindow','font-size'),
                 fontWeight))
 
-    def ResetKeybindings(self):
-        "Update the keybindings if they are changed"
+    def RemoveKeybindings(self):
+        "Remove the keybindings before they are changed."
         # Called from configDialog.py
         self.Bindings.default_keydefs=idleConf.GetCurrentKeySet()
         keydefs = self.Bindings.default_keydefs
         for event, keylist in keydefs.items():
-            self.text.event_delete(event)
+            self.text.event_delete(event, *keylist)
+        for extensionName in self.get_standard_extension_names():
+            keydefs = idleConf.GetExtensionBindings(extensionName)
+            if keydefs:
+                for event, keylist in keydefs.items():
+                    self.text.event_delete(event, *keylist)
+
+    def ApplyKeybindings(self):
+        "Update the keybindings after they are changed"
+        # Called from configDialog.py
+        self.Bindings.default_keydefs=idleConf.GetCurrentKeySet()
         self.apply_bindings()
+        for extensionName in self.get_standard_extension_names():
+            keydefs = idleConf.GetExtensionBindings(extensionName)
+            if keydefs:
+                self.apply_bindings(keydefs)
         #update menu accelerators
         menuEventDict={}
         for menu in self.Bindings.menudefs:
@@ -1064,17 +1084,28 @@ class EditorWindow(object):
             # open/close first need to find the last stmt
             lno = index2line(text.index('insert'))
             y = PyParse.Parser(self.indentwidth, self.tabwidth)
-            for context in self.num_context_lines:
-                startat = max(lno - context, 1)
-                startatindex = repr(startat) + ".0"
+            if not self.context_use_ps1:
+                for context in self.num_context_lines:
+                    startat = max(lno - context, 1)
+                    startatindex = `startat` + ".0"
+                    rawtext = text.get(startatindex, "insert")
+                    y.set_str(rawtext)
+                    bod = y.find_good_parse_start(
+                              self.context_use_ps1,
+                              self._build_char_in_string_func(startatindex))
+                    if bod is not None or startat == 1:
+                        break
+                y.set_lo(bod or 0)
+            else:
+                r = text.tag_prevrange("console", "insert")
+                if r:
+                    startatindex = r[1]
+                else:
+                    startatindex = "1.0"
                 rawtext = text.get(startatindex, "insert")
                 y.set_str(rawtext)
-                bod = y.find_good_parse_start(
-                          self.context_use_ps1,
-                          self._build_char_in_string_func(startatindex))
-                if bod is not None or startat == 1:
-                    break
-            y.set_lo(bod or 0)
+                y.set_lo(0)
+
             c = y.get_continuation_type()
             if c != PyParse.C_NONE:
                 # The current stmt hasn't ended yet.

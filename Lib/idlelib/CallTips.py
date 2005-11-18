@@ -3,21 +3,21 @@
 Call Tips are floating windows which display function, class, and method
 parameter and docstring information when you type an opening parenthesis, and
 which disappear when you type a closing parenthesis.
-
-Future plans include extending the functionality to include class attributes.
-
 """
 import sys
-import string
 import types
 
 import CallTipWindow
+from HyperParser import HyperParser
 
 import __main__
 
 class CallTips:
 
     menudefs = [
+        ('edit', [
+            ("Show call tip", "<<force-open-calltip>>"),
+        ])
     ]
 
     def __init__(self, editwin=None):
@@ -36,51 +36,47 @@ class CallTips:
         # See __init__ for usage
         return CallTipWindow.CallTip(self.text)
 
-    def _remove_calltip_window(self):
+    def _remove_calltip_window(self, event=None):
         if self.calltip:
             self.calltip.hidetip()
             self.calltip = None
 
-    def paren_open_event(self, event):
+    def force_open_calltip_event(self, event):
+        """Happens when the user really wants to open a CallTip, even if a
+        function call is needed.
+        """
+        self.open_calltip(True)
+
+    def try_open_calltip_event(self, event):
+        """Happens when it would be nice to open a CallTip, but not really
+        neccesary, for example after an opening bracket, so function calls
+        won't be made.
+        """
+        self.open_calltip(False)
+
+    def refresh_calltip_event(self, event):
+        """If there is already a calltip window, check if it is still needed,
+        and if so, reload it.
+        """
+        if self.calltip and self.calltip.is_active():
+            self.open_calltip(False)
+
+    def open_calltip(self, evalfuncs):
         self._remove_calltip_window()
-        name = self.get_name_at_cursor()
+
+        hp = HyperParser(self.editwin, "insert")
+        sur_paren = hp.get_surrounding_brackets('(')
+        if not sur_paren:
+            return
+        hp.set_index(sur_paren[0])
+        name = hp.get_expression()
+        if not name or (not evalfuncs and name.find('(') != -1):
+            return
         arg_text = self.fetch_tip(name)
-        if arg_text:
-            self.calltip_start = self.text.index("insert")
-            self.calltip = self._make_calltip_window()
-            self.calltip.showtip(arg_text)
-        return "" #so the event is handled normally.
-
-    def paren_close_event(self, event):
-        # Now just hides, but later we should check if other
-        # paren'd expressions remain open.
-        self._remove_calltip_window()
-        return "" #so the event is handled normally.
-
-    def check_calltip_cancel_event(self, event):
-        if self.calltip:
-            # If we have moved before the start of the calltip,
-            # or off the calltip line, then cancel the tip.
-            # (Later need to be smarter about multi-line, etc)
-            if self.text.compare("insert", "<=", self.calltip_start) or \
-               self.text.compare("insert", ">", self.calltip_start
-                                 + " lineend"):
-                self._remove_calltip_window()
-        return "" #so the event is handled normally.
-
-    def calltip_cancel_event(self, event):
-        self._remove_calltip_window()
-        return "" #so the event is handled normally.
-
-    __IDCHARS = "._" + string.ascii_letters + string.digits
-
-    def get_name_at_cursor(self):
-        idchars = self.__IDCHARS
-        str = self.text.get("insert linestart", "insert")
-        i = len(str)
-        while i and str[i-1] in idchars:
-            i -= 1
-        return str[i:]
+        if not arg_text:
+            return
+        self.calltip = self._make_calltip_window()
+        self.calltip.showtip(arg_text, sur_paren[0], sur_paren[1])
 
     def fetch_tip(self, name):
         """Return the argument list and docstring of a function or class
@@ -127,7 +123,7 @@ def _find_constructor(class_ob):
     return None
 
 def get_arg_text(ob):
-    "Get a string describing the arguments for the given object"
+    """Get a string describing the arguments for the given object"""
     argText = ""
     if ob is not None:
         argOffset = 0
@@ -150,7 +146,7 @@ def get_arg_text(ob):
             try:
                 realArgs = fob.func_code.co_varnames[argOffset:fob.func_code.co_argcount]
                 defaults = fob.func_defaults or []
-                defaults = list(map(lambda name: "=%s" % name, defaults))
+                defaults = list(map(lambda name: "=%s" % repr(name), defaults))
                 defaults = [""] * (len(realArgs)-len(defaults)) + defaults
                 items = map(lambda arg, dflt: arg+dflt, realArgs, defaults)
                 if fob.func_code.co_flags & 0x4:

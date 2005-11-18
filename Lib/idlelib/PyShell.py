@@ -1091,11 +1091,12 @@ class PyShell(OutputWindow):
                 self.recall(self.text.get(next[0], next[1]), event)
                 return "break"
             # No stdin mark -- just get the current line, less any prompt
-            line = self.text.get("insert linestart", "insert lineend")
-            last_line_of_prompt = sys.ps1.split('\n')[-1]
-            if line.startswith(last_line_of_prompt):
-                line = line[len(last_line_of_prompt):]
-            self.recall(line, event)
+            indices = self.text.tag_nextrange("console", "insert linestart")
+            if indices and \
+               self.text.compare(indices[0], "<=", "insert linestart"):
+                self.recall(self.text.get(indices[1], "insert lineend"), event)
+            else:
+                self.recall(self.text.get("insert linestart", "insert lineend"), event)
             return "break"
         # If we're between the beginning of the line and the iomark, i.e.
         # in the prompt area, move to the end of the prompt

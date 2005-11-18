@@ -52,22 +52,30 @@ check-module=<Alt-Key-x>
 
 [CallTips]
 enable=1
+[CallTips_cfgBindings]
+force-open-calltip=<Control-Key-backslash>
 [CallTips_bindings]
-paren-open=<Key-parenleft>
-paren-close=<Key-parenright>
-check-calltip-cancel=<KeyRelease>
-calltip-cancel=<ButtonPress> <Key-Escape>
+try-open-calltip=<KeyRelease-parenleft>
+refresh-calltip=<KeyRelease-parenright> <KeyRelease-0>
 
 [ParenMatch]
-enable=0
+enable=1
 style= expression
 flash-delay= 500
 bell= 1
-hilite-foreground= black
-hilite-background= #43cd80
+[ParenMatch_cfgBindings]
+flash-paren=<Control-Key-0>
 [ParenMatch_bindings]
-flash-open-paren=<KeyRelease-parenright> <KeyRelease-bracketright> <KeyRelease-braceright>
-check-restore=<KeyPress>
+paren-closed=<KeyRelease-parenright> <KeyRelease-bracketright> <KeyRelease-braceright>
+
+[AutoComplete]
+enable=1
+popupwait=0
+[AutoComplete_cfgBindings]
+force-open-completions=<Control-Key-space>
+[AutoComplete_bindings]
+autocomplete=<Key-Tab>
+try-open-completions=<KeyRelease-period> <KeyRelease-slash> <KeyRelease-backslash>
 
 [CodeContext]
 enable=1

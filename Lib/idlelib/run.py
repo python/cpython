@@ -9,6 +9,8 @@ import threading
 import Queue
 
 import CallTips
+import AutoComplete
+
 import RemoteDebugger
 import RemoteObjectBrowser
 import StackViewer
@@ -275,6 +277,7 @@ class Executive(object):
         self.rpchandler = rpchandler
         self.locals = __main__.__dict__
         self.calltip = CallTips.CallTips()
+        self.autocomplete = AutoComplete.AutoComplete()
 
     def runcode(self, code):
         try:
@@ -304,6 +307,9 @@ class Executive(object):
 
     def get_the_calltip(self, name):
         return self.calltip.fetch_tip(name)
+
+    def get_the_completion_list(self, what, mode):
+        return self.autocomplete.fetch_completions(what, mode)
 
     def stackviewer(self, flist_oid=None):
         if self.usr_exc_info:
