@@ -332,6 +332,7 @@ list2dict(PyObject *list)
 			Py_DECREF(dict);
 			return NULL;
 		}
+		Py_DECREF(k);
 		Py_DECREF(v);
 	}
 	return dict;
@@ -511,7 +512,9 @@ fold_binops_on_constants(unsigned char *codestr, PyObject *consts)
 		break;
 	default:
 		/* Called with an unknown opcode */
-		assert(0);
+		PyErr_Format(PyExc_SystemError,
+			     "unexpected binary operation %d on a constant",
+			     opcode);
 		return 0;
 	}
 	if (newconst == NULL) {
@@ -568,7 +571,9 @@ fold_unaryops_on_constants(unsigned char *codestr, PyObject *consts)
 		break;
 	default:
 		/* Called with an unknown opcode */
-		assert(0);
+		PyErr_Format(PyExc_SystemError,
+			     "unexpected unary operation %d on a constant",
+			     opcode);
 		return 0;
 	}
 	if (newconst == NULL) {
@@ -1746,11 +1751,14 @@ compiler_mod(struct compiler *c, mod_ty mod)
                 addNone = 0;
 		break;
 	case Suite_kind:
-		assert(0);      /* XXX: what should we do here? */
-		VISIT_SEQ_IN_SCOPE(c, stmt, mod->v.Suite.body);
-		break;
+		PyErr_SetString(PyExc_SystemError,
+				"suite should not be possible");
+		return 0;
         default:
-            assert(0);
+		PyErr_Format(PyExc_SystemError,
+			     "module kind %d should not be possible",
+			     mod->kind);
+		return 0;
 	}
 	co = assemble(c, addNone);
 	compiler_exit_scope(c);
@@ -1929,6 +1937,7 @@ compiler_function(struct compiler *c, stmt_ty s)
 		return 0;
 
         compiler_make_closure(c, co, asdl_seq_LEN(args->defaults));
+	Py_DECREF(co);
 
 	for (i = 0; i < asdl_seq_LEN(decos); i++) {
 		ADDOP_I(c, CALL_FUNCTION, 1);
@@ -1984,6 +1993,8 @@ compiler_class(struct compiler *c, stmt_ty s)
 		return 0;
 
         compiler_make_closure(c, co, 0);
+	Py_DECREF(co);
+
 	ADDOP_I(c, CALL_FUNCTION, 0);
 	ADDOP(c, BUILD_CLASS);
 	if (!compiler_nameop(c, s->v.ClassDef.name, Store))
@@ -2009,7 +2020,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
 		VISIT_SEQ(c, expr, args->defaults);
 	if (!compiler_enter_scope(c, name, (void *)e, e->lineno))
 		return 0;
-		
+
         /* unpack nested arguments */
 	compiler_arguments(c, args);
 	
@@ -2022,6 +2033,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
 		return 0;
 
         compiler_make_closure(c, co, asdl_seq_LEN(args->defaults));
+	Py_DECREF(co);
 
 	return 1;
 }
@@ -2734,7 +2746,9 @@ inplace_binop(struct compiler *c, operator_ty op)
 	case FloorDiv:
 		return INPLACE_FLOOR_DIVIDE;
 	}
-	assert(0);
+	PyErr_Format(PyExc_SystemError,
+		     "inplace binary op %d should not be possible",
+		     op);
 	return 0;
 }
 
@@ -2802,9 +2816,10 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 				     PyString_AS_STRING(name));
 			Py_DECREF(mangled);
 			return 0;
-			break;
 		case Param:
-			assert(0); /* impossible */
+			PyErr_SetString(PyExc_SystemError,
+					"param invalid for deref variable");
+			return 0;
 		}
 		break;
 	case OP_FAST:
@@ -2816,7 +2831,9 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 		case AugStore:
 			break;
 		case Param:
-			assert(0); /* impossible */
+			PyErr_SetString(PyExc_SystemError,
+					"param invalid for local variable");
+			return 0;
 		}
 		ADDOP_O(c, op, mangled, varnames);
 		Py_DECREF(mangled);
@@ -2830,7 +2847,9 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 		case AugStore:
 			break;
 		case Param:
-			assert(0); /* impossible */
+			PyErr_SetString(PyExc_SystemError,
+					"param invalid for global variable");
+			return 0;
 		}
 		break;
 	case OP_NAME:
@@ -2842,16 +2861,18 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 		case AugStore:
 			break;
 		case Param:
-			assert(0); /* impossible */
+			PyErr_SetString(PyExc_SystemError,
+					"param invalid for name variable");
+			return 0;
 		}
 		break;
 	}
 
 	assert(op);
 	arg = compiler_add_o(c, dict, mangled);
+	Py_DECREF(mangled);
 	if (arg < 0)
 		return 0;
-	Py_DECREF(mangled);
 	return compiler_addop_i(c, op, arg);
 }
 
@@ -3196,6 +3217,8 @@ compiler_genexp(struct compiler *c, expr_ty e)
 		return 0;
 
         compiler_make_closure(c, co, 0);
+	Py_DECREF(co);
+
 	VISIT(c, expr, outermost_iter);
 	ADDOP(c, GET_ITER);
 	ADDOP_I(c, CALL_FUNCTION, 1);
@@ -3325,8 +3348,9 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 			ADDOP_NAME(c, DELETE_ATTR, e->v.Attribute.attr, names);
 			break;
 		case Param:
-			assert(0);
-			break;
+			PyErr_SetString(PyExc_SystemError,
+					"param invalid in attribute expression");
+			return 0;
 		}
 		break;
         case Subscript_kind:
@@ -3351,8 +3375,9 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 			VISIT_SLICE(c, e->v.Subscript.slice, Del);
 			break;
 		case Param:
-			assert(0);
-			break;
+			PyErr_SetString(PyExc_SystemError,
+					"param invalid in subscript expression");
+			return 0;
 		}
 		break;
         case Name_kind:
@@ -3562,9 +3587,10 @@ compiler_simple_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 	case AugStore:/* fall through to Store */
 	case Store: op = STORE_SLICE; break;
 	case Del: op = DELETE_SLICE; break;
-	case Param:  /* XXX impossible? */
-		fprintf(stderr, "param invalid\n");
-		assert(0);
+	case Param:
+		PyErr_SetString(PyExc_SystemError,
+				"param invalid in simple slice");
+		return 0;
 	}
 
 	ADDOP(c, op + slice_offset);
@@ -3586,8 +3612,9 @@ compiler_visit_nested_slice(struct compiler *c, slice_ty s,
 		VISIT(c, expr, s->v.Index.value);
 		break;
 	case ExtSlice_kind:
-		assert(0);
-		break;
+		PyErr_SetString(PyExc_SystemError,
+				"extended slice invalid in nested slice");
+		return 0;
 	}
 	return 1;
 }
@@ -3612,7 +3639,6 @@ compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 			ADDOP(c, ROT_THREE);
 		}
 		return compiler_handle_subscr(c, "slice", ctx);
-		break;
 	case ExtSlice_kind: {
 		int i, n = asdl_seq_LEN(s->v.ExtSlice.dims);
 		for (i = 0; i < n; i++) {
@@ -3622,7 +3648,6 @@ compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 		}
 		ADDOP_I(c, BUILD_TUPLE, n);
                 return compiler_handle_subscr(c, "extended slice", ctx);
-		break;
 	}
 	case Index_kind:
                 if (ctx != AugStore)

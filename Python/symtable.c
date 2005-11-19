@@ -731,7 +731,6 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
 	if (st->st_cur) {
 		prev = st->st_cur;
 		if (PyList_Append(st->st_stack, (PyObject *)st->st_cur) < 0) {
-			Py_DECREF(st->st_cur);
 			return 0;
 		}
 		Py_DECREF(st->st_cur);
@@ -814,6 +813,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag)
 		}
 		Py_DECREF(o);
 	}
+	Py_DECREF(mangled);
 	return 1;
 
 error:
@@ -1087,9 +1087,10 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 
 		PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]",
 			      ++st->st_cur->ste_tmpname);
-		tmp = PyString_FromString(tmpname);
+		tmp = PyString_InternFromString(tmpname);
 		if (!symtable_add_def(st, tmp, DEF_LOCAL))
 			return 0;
+		Py_DECREF(tmp);
 		VISIT(st, expr, e->v.ListComp.elt);
 		VISIT_SEQ(st, comprehension, e->v.ListComp.generators);
 		break;
@@ -1186,8 +1187,10 @@ symtable_visit_params(struct symtable *st, asdl_seq *args, int toplevel)
 			}
 		}
 		else {
-			/* syntax error */
-			fprintf(stderr, "unexpected expr in parameter list\n");
+		        PyErr_SetString(PyExc_SyntaxError,
+					"invalid expression in parameter list");
+		        PyErr_SyntaxLocation(st->st_filename,
+				             st->st_cur->ste_lineno);
 			return 0;
 		}
 	}
@@ -1279,6 +1282,7 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
                     return 0;
             }
 	    st->st_cur->ste_unoptimized |= OPT_IMPORT_STAR;
+	    Py_DECREF(store_name);
 	    return 1;
 	}
 }
