@@ -246,7 +246,7 @@ abstract type called ``basestring``, which is also an ancestor of the
 ``str`` type; you can therefore check if a value is a string type with
 ``isinstance(value, basestring)``.  Under the hood, Python represents
 Unicode strings as either 16- or 32-bit integers, depending on how the
-Python interpreter was compiled, but this 
+Python interpreter was compiled.
 
 The ``unicode()`` constructor has the signature ``unicode(string[, encoding, errors])``.
 All of its arguments should be 8-bit strings.  The first argument is converted 
