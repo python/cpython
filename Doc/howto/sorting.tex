@@ -110,11 +110,10 @@ types, do the forward sort first, then use the \method{reverse()} method.
 Here's a case-insensitive string comparison using a \keyword{lambda} function:
 
 \begin{verbatim}
->>> import string
->>> a = string.split("This is a test string from Andrew.")
->>> a.sort(lambda x, y: cmp(string.lower(x), string.lower(y)))
+>>> a = "This is a test string from Andrew".split()
+>>> a.sort(lambda x, y: cmp(x.lower(), y.lower()))
 >>> print a
-['a', 'Andrew.', 'from', 'is', 'string', 'test', 'This']
+['a', 'Andrew', 'from', 'is', 'string', 'test', 'This']
 \end{verbatim}
 
 This goes through the overhead of converting a word to lower case
