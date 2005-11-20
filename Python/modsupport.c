@@ -82,6 +82,7 @@ Py_InitModule4(char *name, PyMethodDef *methods, char *doc,
 			}
 			Py_DECREF(v);
 		}
+		Py_DECREF(n);
 	}
 	if (doc != NULL) {
 		v = PyString_FromString(doc);
