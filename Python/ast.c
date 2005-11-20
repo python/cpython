@@ -1054,8 +1054,12 @@ ast_for_listcomp(struct compiling *c, const node *n)
             return NULL;
         }
 
-	if (asdl_seq_LEN(t) == 1)
+	if (asdl_seq_LEN(t) == 1) {
 	    lc = comprehension(asdl_seq_GET(t, 0), expression, NULL);
+	    /* only free the sequence since we grabbed element 0 above */
+	    if (lc)
+	        asdl_seq_free(t); /* ok */
+	}
 	else
 	    lc = comprehension(Tuple(t, Store, LINENO(ch)), expression, NULL);
 
@@ -1222,9 +1226,13 @@ ast_for_genexp(struct compiling *c, const node *n)
             return NULL;
         }
         
-        if (asdl_seq_LEN(t) == 1)
+        if (asdl_seq_LEN(t) == 1) {
             ge = comprehension(asdl_seq_GET(t, 0), expression,
                                NULL);
+	    /* only free the sequence since we grabbed element 0 above */
+	    if (ge)
+	        asdl_seq_free(t); /* ok */
+	}
         else
             ge = comprehension(Tuple(t, Store, LINENO(ch)),
                                expression, NULL);

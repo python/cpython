@@ -2384,7 +2384,10 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
 			dot = strchr(src, '.');
 			attr = PyString_FromStringAndSize(src, 
 					    dot ? dot - src : strlen(src));
+			if (!attr)
+				return -1;
 			ADDOP_O(c, LOAD_ATTR, attr, names);
+			Py_DECREF(attr);
 			src = dot + 1;
 		}
 	}
