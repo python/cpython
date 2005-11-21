@@ -33,7 +33,6 @@ decode(in_file [, out_file, mode])
 import binascii
 import os
 import sys
-from types import StringType
 
 __all__ = ["Error", "encode", "decode"]
 
@@ -47,7 +46,7 @@ def encode(in_file, out_file, name=None, mode=None):
     #
     if in_file == '-':
         in_file = sys.stdin
-    elif isinstance(in_file, StringType):
+    elif isinstance(in_file, basestring):
         if name is None:
             name = os.path.basename(in_file)
         if mode is None:
@@ -61,7 +60,7 @@ def encode(in_file, out_file, name=None, mode=None):
     #
     if out_file == '-':
         out_file = sys.stdout
-    elif isinstance(out_file, StringType):
+    elif isinstance(out_file, basestring):
         out_file = open(out_file, 'w')
     #
     # Set defaults for name and mode
@@ -88,7 +87,7 @@ def decode(in_file, out_file=None, mode=None, quiet=0):
     #
     if in_file == '-':
         in_file = sys.stdin
-    elif isinstance(in_file, StringType):
+    elif isinstance(in_file, basestring):
         in_file = open(in_file)
     #
     # Read until a begin is encountered or we've exhausted the file
@@ -117,7 +116,7 @@ def decode(in_file, out_file=None, mode=None, quiet=0):
     #
     if out_file == '-':
         out_file = sys.stdout
-    elif isinstance(out_file, StringType):
+    elif isinstance(out_file, basestring):
         fp = open(out_file, 'wb')
         try:
             os.path.chmod(out_file, mode)
@@ -172,7 +171,7 @@ def test():
 
     if dopt:
         if topt:
-            if isinstance(output, StringType):
+            if isinstance(output, basestring):
                 output = open(output, 'w')
             else:
                 print sys.argv[0], ': cannot do -t to stdout'
@@ -180,7 +179,7 @@ def test():
         decode(input, output)
     else:
         if topt:
-            if isinstance(input, StringType):
+            if isinstance(input, basestring):
                 input = open(input, 'r')
             else:
                 print sys.argv[0], ': cannot do -t from stdin'

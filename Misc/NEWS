@@ -551,6 +551,8 @@ Library
 - Bug #1245379: Add "unicode-1-1-utf-7" as an alias for "utf-7" to
   ``encodings.aliases``.
 
+- ` uu.encode()`` and ``uu.decode()`` now support unicode filenames.
+
 Build
 -----
 
