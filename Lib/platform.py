@@ -360,7 +360,7 @@ def popen(cmd, mode='r', bufsize=None):
 def _norm_version(version,build=''):
 
     """ Normalize the version and build strings and return a single
-        vesion string using the format major.minor.build (or patchlevel).
+        version string using the format major.minor.build (or patchlevel).
     """
     l = string.split(version,'.')
     if build:
