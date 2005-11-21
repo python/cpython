@@ -7,6 +7,7 @@ class ObjectDefinition(GeneratorGroup):
     tp_flags = "Py_TPFLAGS_DEFAULT"
     basetype = None
     argref = ""    # set to "*" if arg to <type>_New should be pointer
+    argconst = ""   # set to "const " if arg to <type>_New should be const
 
     def __init__(self, name, prefix, itselftype):
         """ObjectDefinition constructor.  May be extended, but do not override.
@@ -97,8 +98,8 @@ class ObjectDefinition(GeneratorGroup):
 
     def outputNew(self):
         Output()
-        Output("%sPyObject *%s_New(%s %sitself)", self.static, self.prefix,
-                self.itselftype, self.argref)
+        Output("%sPyObject *%s_New(%s%s %sitself)", self.static, self.prefix,
+                self.argconst, self.itselftype, self.argref)
         OutLbrace()
         Output("%s *it;", self.objecttype)
         self.outputCheckNewArg()
