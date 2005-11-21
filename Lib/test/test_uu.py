@@ -128,6 +128,14 @@ class UUFileTest(unittest.TestCase):
             s = fout.read()
             fout.close()
             self.assertEqual(s, encodedtextwrapped % (0644, self.tmpin))
+
+            # in_file and out_file as filenames
+            uu.encode(self.tmpin, self.tmpout, mode=0644)
+            fout = open(self.tmpout, 'r')
+            s = fout.read()
+            fout.close()
+            self.assertEqual(s, encodedtextwrapped % (0644, self.tmpin))
+
         finally:
             self._kill(fin)
             self._kill(fout)
