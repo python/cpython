@@ -73,10 +73,10 @@ def encode(in_file, out_file, name=None, mode=None):
     # Write the data
     #
     out_file.write('begin %o %s\n' % ((mode&0777),name))
-    str = in_file.read(45)
-    while len(str) > 0:
-        out_file.write(binascii.b2a_uu(str))
-        str = in_file.read(45)
+    data = in_file.read(45)
+    while len(data) > 0:
+        out_file.write(binascii.b2a_uu(data))
+        data = in_file.read(45)
     out_file.write(' \nend\n')
 
 
