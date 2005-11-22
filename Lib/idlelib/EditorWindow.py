@@ -566,47 +566,46 @@ class EditorWindow(object):
     def RemoveKeybindings(self):
         "Remove the keybindings before they are changed."
         # Called from configDialog.py
-        self.Bindings.default_keydefs=idleConf.GetCurrentKeySet()
-        keydefs = self.Bindings.default_keydefs
+        self.Bindings.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
         for event, keylist in keydefs.items():
             self.text.event_delete(event, *keylist)
         for extensionName in self.get_standard_extension_names():
-            keydefs = idleConf.GetExtensionBindings(extensionName)
-            if keydefs:
-                for event, keylist in keydefs.items():
+            xkeydefs = idleConf.GetExtensionBindings(extensionName)
+            if xkeydefs:
+                for event, keylist in xkeydefs.items():
                     self.text.event_delete(event, *keylist)
 
     def ApplyKeybindings(self):
         "Update the keybindings after they are changed"
         # Called from configDialog.py
-        self.Bindings.default_keydefs=idleConf.GetCurrentKeySet()
+        self.Bindings.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
         self.apply_bindings()
         for extensionName in self.get_standard_extension_names():
-            keydefs = idleConf.GetExtensionBindings(extensionName)
-            if keydefs:
-                self.apply_bindings(keydefs)
+            xkeydefs = idleConf.GetExtensionBindings(extensionName)
+            if xkeydefs:
+                self.apply_bindings(xkeydefs)
         #update menu accelerators
-        menuEventDict={}
+        menuEventDict = {}
         for menu in self.Bindings.menudefs:
-            menuEventDict[menu[0]]={}
+            menuEventDict[menu[0]] = {}
             for item in menu[1]:
                 if item:
-                    menuEventDict[menu[0]][prepstr(item[0])[1]]=item[1]
+                    menuEventDict[menu[0]][prepstr(item[0])[1]] = item[1]
         for menubarItem in self.menudict.keys():
-            menu=self.menudict[menubarItem]
-            end=menu.index(END)+1
-            for index in range(0,end):
-                if menu.type(index)=='command':
-                    accel=menu.entrycget(index,'accelerator')
+            menu = self.menudict[menubarItem]
+            end = menu.index(END) + 1
+            for index in range(0, end):
+                if menu.type(index) == 'command':
+                    accel = menu.entrycget(index, 'accelerator')
                     if accel:
-                        itemName=menu.entrycget(index,'label')
-                        event=''
+                        itemName = menu.entrycget(index, 'label')
+                        event = ''
                         if menuEventDict.has_key(menubarItem):
                             if menuEventDict[menubarItem].has_key(itemName):
-                                event=menuEventDict[menubarItem][itemName]
+                                event = menuEventDict[menubarItem][itemName]
                         if event:
-                            accel=get_accelerator(keydefs, event)
-                            menu.entryconfig(index,accelerator=accel)
+                            accel = get_accelerator(keydefs, event)
+                            menu.entryconfig(index, accelerator=accel)
 
     def set_notabs_indentwidth(self):
         "Update the indentwidth if changed and not using tabs in this window"
