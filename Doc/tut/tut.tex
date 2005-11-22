@@ -1632,6 +1632,20 @@ are not available separately, write the function call with the
 [3, 4, 5]
 \end{verbatim}
 
+In the same fashion, dictionaries can deliver keyword arguments with the
+\code{**}-operator:
+
+\begin{verbatim}
+>>> def parrot(voltage, state='a stiff', action='voom'):
+...     print "-- This parrot wouldn't", action,
+...     print "if you put", voltage, "volts through it.",
+...     print "E's", state, "!"
+...
+>>> d = {"voltage": "four million", "state": "bleedin' demised", "action": "VOOM"}
+>>> parrot(**d)
+-- This parrot wouldn't VOOM if you put four million volts through it. E's bleedin' demised !
+\end{verbatim}
+
 
 \subsection{Lambda Forms \label{lambda}}
 
