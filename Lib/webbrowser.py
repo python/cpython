@@ -344,13 +344,6 @@ class Grail(BaseBrowser):
 # a console terminal or an X display to run.
 
 def register_X_browsers():
-    # First, the Mozilla/Netscape browsers
-    for browser in ("mozilla-firefox", "firefox",
-                    "mozilla-firebird", "firebird",
-                    "mozilla", "netscape"):
-        if _iscommand(browser):
-            register(browser, None, Mozilla(browser))
-
     # The default Gnome browser
     if _iscommand("gconftool-2"):
         # get the web browser string from gconftool
@@ -363,6 +356,13 @@ def register_X_browsers():
         if retncode == None and len(commd) != 0:
             register("gnome", None, GenericBrowser(
                 commd + " '%s' >/dev/null &"))
+
+   # First, the Mozilla/Netscape browsers
+    for browser in ("mozilla-firefox", "firefox",
+                    "mozilla-firebird", "firebird",
+                    "mozilla", "netscape"):
+        if _iscommand(browser):
+            register(browser, None, Mozilla(browser))
 
     # Konqueror/kfm, the KDE browser.
     if _iscommand("kfm"):
