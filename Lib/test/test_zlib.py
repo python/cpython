@@ -24,6 +24,7 @@ class ChecksumTestCase(unittest.TestCase):
     # checksum test cases
     def test_crc32start(self):
         self.assertEqual(zlib.crc32(""), zlib.crc32("", 0))
+        self.assert_(zlib.crc32("abc", 0xffffffff))
 
     def test_crc32empty(self):
         self.assertEqual(zlib.crc32("", 0), 0)
@@ -32,6 +33,7 @@ class ChecksumTestCase(unittest.TestCase):
 
     def test_adler32start(self):
         self.assertEqual(zlib.adler32(""), zlib.adler32("", 1))
+        self.assert_(zlib.adler32("abc", 0xffffffff))
 
     def test_adler32empty(self):
         self.assertEqual(zlib.adler32("", 0), 0)
