@@ -92,9 +92,9 @@ processing, not cause it to fail.
 \end{methoddesc}
 
 \begin{methoddesc}{push}{str}
-Push a boundary string.  When an appropriately decorated version of
-this boundary is found as an input line, it will be interpreted as a
-section-divider or end-marker.  All subsequent
+Push a boundary string.  When a decorated version of this boundary 
+is found as an input line, it will be interpreted as a section-divider 
+or end-marker (depending on the decoration, see \rfc{2045}).  All subsequent
 reads will return the empty string to indicate end-of-file, until a
 call to \method{pop()} removes the boundary a or \method{next()} call
 reenables it.
