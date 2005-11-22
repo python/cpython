@@ -545,6 +545,34 @@ class BuiltinTest(unittest.TestCase):
             self.assertEqual(float(unicode("  3.14  ")), 3.14)
             self.assertEqual(float(unicode("  \u0663.\u0661\u0664  ",'raw-unicode-escape')), 3.14)
 
+    def test_float_with_comma(self):
+        # set locale to something that doesn't use '.' for the decimal point
+        try:
+            import locale
+            orig_locale = locale.setlocale(locale.LC_NUMERIC, '')
+            locale.setlocale(locale.LC_NUMERIC, 'fr_FR')
+        except:
+            # if we can't set the locale, just ignore this test
+            return
+
+        try:
+            self.assertEqual(locale.localeconv()['decimal_point'], ',')
+        except:
+            # this test is worthless, just skip it and reset the locale
+            locale.setlocale(locale.LC_NUMERIC, orig_locale)
+            return
+
+        try:
+            self.assertEqual(float("  3,14  "), 3.14)
+            self.assertEqual(float("  +3,14  "), 3.14)
+            self.assertEqual(float("  -3,14  "), -3.14)
+            self.assertEqual(float("  0x3.1  "), 3.0625)
+            self.assertEqual(float("  -0x3.p-1  "), -1.5)
+            self.assertEqual(float("  25.e-1  "), 2.5)
+            self.assertEqual(fcmp(float("  .25e-1  "), .025), 0)
+        finally:
+            locale.setlocale(locale.LC_NUMERIC, orig_locale)
+
     def test_floatconversion(self):
         # Make sure that calls to __float__() work properly
         class Foo0:
@@ -682,6 +710,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, int, 1, 12)
 
         self.assertEqual(int('0123', 0), 83)
+        self.assertEqual(int('0x123', 16), 291)
 
     def test_intconversion(self):
         # Test __int__()
