@@ -514,8 +514,9 @@ as part of the string, \emph{not} as a line continuation.
 
 When an \character{r} or \character{R} prefix is used in conjunction
 with a \character{u} or \character{U} prefix, then the \code{\e uXXXX}
-escape sequence is processed while \emph{all other backslashes are
-left in the string}.  For example, the string literal
+and \code{\e UXXXXXXXX} escape sequences are processed while 
+\emph{all other backslashes are left in the string}.
+For example, the string literal
 \code{ur"\e{}u0062\e n"} consists of three Unicode characters: `LATIN
 SMALL LETTER B', `REVERSE SOLIDUS', and `LATIN SMALL LETTER N'.
 Backslashes can be escaped with a preceding backslash; however, both
