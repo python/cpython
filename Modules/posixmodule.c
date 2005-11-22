@@ -4912,13 +4912,38 @@ posix_setgroups(PyObject *self, PyObject *args)
 		if (!elem)
 			return NULL;
 		if (!PyInt_Check(elem)) {
-			PyErr_SetString(PyExc_TypeError,
-					"groups must be integers");
-			Py_DECREF(elem);
-			return NULL;
+			if (!PyLong_Check(elem)) {
+				PyErr_SetString(PyExc_TypeError,
+						"groups must be integers");
+				Py_DECREF(elem);
+				return NULL;
+			} else {
+				unsigned long x = PyLong_AsUnsignedLong(elem);
+				if (PyErr_Occurred()) {
+					PyErr_SetString(PyExc_TypeError, 
+							"group id too big");
+					Py_DECREF(elem);
+					return NULL;
+				}
+				grouplist[i] = x;
+				/* read back the value to see if it fitted in gid_t */
+				if (grouplist[i] != x) {
+					PyErr_SetString(PyExc_TypeError,
+							"group id too big");
+					Py_DECREF(elem);
+					return NULL;
+				}
+			}
+		} else {
+			long x  = PyInt_AsLong(elem);
+			grouplist[i] = x;
+			if (grouplist[i] != x) {
+				PyErr_SetString(PyExc_TypeError,
+						"group id too big");
+				Py_DECREF(elem);
+				return NULL;
+			}
 		}
-		/* XXX: check that value fits into gid_t. */
-		grouplist[i] = PyInt_AsLong(elem);
 		Py_DECREF(elem);
 	}
 
