@@ -1127,6 +1127,17 @@ def testWholeText():
     checkWholeText(text, "cabd")
     checkWholeText(text2, "cabd")
 
+def testPatch1094164 ():
+    doc = parseString("<doc><e/></doc>")
+    elem = doc.documentElement
+    e = elem.firstChild
+    confirm(e.parentNode is elem, "Before replaceChild()")
+    # Check that replacing a child with itself leaves the tree unchanged
+    elem.replaceChild(e, e)
+    confirm(e.parentNode is elem, "After replaceChild()")
+    
+    
+    
 def testReplaceWholeText():
     def setup():
         doc = parseString("<doc>a<e/>d</doc>")
