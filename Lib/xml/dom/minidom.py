@@ -135,10 +135,10 @@ class Node(xml.dom.Node, GetattrMagic):
         if newChild.nodeType not in self._child_node_types:
             raise xml.dom.HierarchyRequestErr(
                 "%s cannot be child of %s" % (repr(newChild), repr(self)))
-        if newChild.parentNode is not None:
-            newChild.parentNode.removeChild(newChild)
         if newChild is oldChild:
             return
+        if newChild.parentNode is not None:
+            newChild.parentNode.removeChild(newChild)
         try:
             index = self.childNodes.index(oldChild)
         except ValueError:
