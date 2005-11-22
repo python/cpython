@@ -758,7 +758,7 @@ Core and builtins
   weakref to a dead object, or via any Python code run in any other thread
   that managed to obtain the GIL while a __del__ or callback was running
   in the thread doing gc).  The most likely symptom was "impossible"
-  ``AttributeEror`` exceptions, appearing seemingly at random, on weakly
+  ``AttributeError`` exceptions, appearing seemingly at random, on weakly
   referenced objects.  The cure was to clear all weakrefs to unreachable
   objects before allowing any callbacks to run.
 
