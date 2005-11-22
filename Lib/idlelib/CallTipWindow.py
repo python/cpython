@@ -6,7 +6,7 @@ Used by the CallTips IDLE extension.
 """
 from Tkinter import *
 
-HIDE_VIRTUAL_EVENT_NAME = "<<caltipwindow-hide>>"
+HIDE_VIRTUAL_EVENT_NAME = "<<calltipwindow-hide>>"
 HIDE_SEQUENCES = ("<Key-Escape>", "<FocusOut>")
 CHECKHIDE_VIRTUAL_EVENT_NAME = "<<calltipwindow-checkhide>>"
 CHECKHIDE_SEQUENCES = ("<KeyRelease>", "<ButtonRelease>")
@@ -60,10 +60,7 @@ class CallTip:
 
         self.tipwindow = tw = Toplevel(self.widget)
         self.position_window()
-        # XXX 12 Dec 2002 KBK The following command has two effects: It removes
-        #     the calltip window border (good) but also causes (at least on
-        #     Linux) the calltip to show as a top level window, burning through
-        #     any other window dragged over it.  Also, shows on all viewports!
+        # remove border on calltip window
         tw.wm_overrideredirect(1)
         try:
             # This command is only needed and available on Tk >= 8.4.0 for OSX
