@@ -6,6 +6,9 @@
 #    !   this child is a sequence that contains nodes in it
 #    &   this child may be set to None
 #  = ... a default value for the node constructor (optional args)
+#
+# If you add node types here, please be sure to update the list of 
+# Node types in Doc/lib/asttable.tex.
 Module: doc*, node
 Stmt: nodes!
 Decorators: nodes!
