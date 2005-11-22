@@ -70,7 +70,7 @@ paren-closed=<KeyRelease-parenright> <KeyRelease-bracketright> <KeyRelease-brace
 
 [AutoComplete]
 enable=1
-popupwait=0
+popupwait=2000
 [AutoComplete_cfgBindings]
 force-open-completions=<Control-Key-space>
 [AutoComplete_bindings]
