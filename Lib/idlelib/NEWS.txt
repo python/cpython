@@ -1,7 +1,14 @@
 What's New in IDLE 1.2a0?
 =======================
 
-*Release date: XX-XXX-2005*
+*Release date: XX-XXX-2006*
+
+- Options / Keys / Advanced dialog made functional.  Also, allow binding
+  of 'movement' keys.
+
+- 'syntax' patch adds improved calltips and a new class attribute listbox.
+  MultiCall module allows binding multiple actions to an event.
+  Patch 906702 Noam Raphael
 
 - Better indentation after first line of string continuation.
   IDLEfork Patch 681992, Noam Raphael
