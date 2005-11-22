@@ -29,6 +29,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #869197: os.setgroups rejects long integer arguments
+
 - Bug #1344508, Fix UNIX mmap leaking file descriptors
 
 - Patch #1338314, Bug #1336623: fix tarfile so it can extract
