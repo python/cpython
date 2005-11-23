@@ -44,6 +44,10 @@ Extension Modules
 Library
 -------
 
+- Patch #1314396: Prevent threading.Thread.join() from blocking if a previous
+  call caused an exception to be raised (e.g., calling join() with an illegal
+  argument).
+
 - urllib.unquote() now handles Unicode strings correctly.  Formerly, it would
   either ignore the substitution or raise UnicodeDecodeError.
 

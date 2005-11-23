@@ -534,24 +534,26 @@ class Thread(_Verbose):
             if not self.__stopped:
                 self._note("%s.join(): waiting until thread stops", self)
         self.__block.acquire()
-        if timeout is None:
-            while not self.__stopped:
-                self.__block.wait()
-            if __debug__:
-                self._note("%s.join(): thread stopped", self)
-        else:
-            deadline = _time() + timeout
-            while not self.__stopped:
-                delay = deadline - _time()
-                if delay <= 0:
-                    if __debug__:
-                        self._note("%s.join(): timed out", self)
-                    break
-                self.__block.wait(delay)
-            else:
+        try:
+            if timeout is None:
+                while not self.__stopped:
+                    self.__block.wait()
                 if __debug__:
                     self._note("%s.join(): thread stopped", self)
-        self.__block.release()
+            else:
+                deadline = _time() + timeout
+                while not self.__stopped:
+                    delay = deadline - _time()
+                    if delay <= 0:
+                        if __debug__:
+                            self._note("%s.join(): timed out", self)
+                        break
+                    self.__block.wait(delay)
+                else:
+                    if __debug__:
+                        self._note("%s.join(): thread stopped", self)
+        finally:
+            self.__block.release()
 
     def getName(self):
         assert self.__initialized, "Thread.__init__() not called"
