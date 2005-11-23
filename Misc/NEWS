@@ -284,6 +284,10 @@ Extension Modules
 Library
 -------
 
+- Patch #1314396: prevent deadlock for threading.Thread.join() when an exception
+  is raised within the method itself on a previous call (e.g., passing in an
+  illegal argument)
+
 - Bug #1340337: change time.strptime() to always return ValueError when there
   is an error in the format string.
 
