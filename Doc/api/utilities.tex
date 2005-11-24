@@ -836,13 +836,35 @@ PyArg_ParseTuple(args, "O|O:ref", &object, &callback)
     Convert a plain C \ctype{int} to a Python integer object.
 
     \item[\samp{b} (integer) {[char]}]
-    Same as \samp{i}.
+    Convert a plain C \ctype{char} to a Python integer object.
 
     \item[\samp{h} (integer) {[short int]}]
-    Same as \samp{i}.
+    Convert a plain C \ctype{short int} to a Python integer object.
 
     \item[\samp{l} (integer) {[long int]}]
     Convert a C \ctype{long int} to a Python integer object.
+
+    \item[\samp{B} (integer) {[unsigned char]}]
+    Convert a C \ctype{unsigned char} to a Python integer object.
+
+    \item[\samp{H} (integer) {[unsigned short int]}]
+    Convert a C \ctype{unsigned short int} to a Python integer object.
+
+    \item[\samp{I} (integer/long) {[unsigned int]}]
+    Convert a C \ctype{unsigned int} to a Python integer object
+    or a Python long integer object, if it is larger than \code{sys.maxint}.
+
+    \item[\samp{k} (integer/long) {[unsigned long]}]
+    Convert a C \ctype{unsigned long} to a Python integer object
+    or a Python long integer object, if it is larger than \code{sys.maxint}.
+
+    \item[\samp{L} (long) {[PY_LONG_LONG]}]
+    Convert a C \ctype{long long} to a Python long integer object. Only
+    available on platforms that support \ctype{long long}.
+
+    \item[\samp{K} (long) {[unsigned PY_LONG_LONG]}]
+    Convert a C \ctype{unsigned long long} to a Python long integer object.
+    Only available on platforms that support \ctype{unsigned long long}.
 
     \item[\samp{c} (string of length 1) {[char]}]
     Convert a C \ctype{int} representing a character to a Python
