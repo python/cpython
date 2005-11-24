@@ -1278,8 +1278,10 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
 	else {
             if (st->st_cur->ste_type != ModuleBlock) {
                 if (!symtable_warn(st,
-                                   "import * only allowed at module level"))
+                                   "import * only allowed at module level")) {
+                    Py_DECREF(store_name);
                     return 0;
+		}
             }
 	    st->st_cur->ste_unoptimized |= OPT_IMPORT_STAR;
 	    Py_DECREF(store_name);
