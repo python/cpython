@@ -1801,6 +1801,7 @@ compiler_lookup_arg(PyObject *dict, PyObject *name)
     if (k == NULL)
         return -1;
     v = PyDict_GetItem(dict, k);
+    Py_DECREF(k);
     if (v == NULL)
         return -1;
     return PyInt_AS_LONG(v);
@@ -2464,6 +2465,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 	}
 
 	ADDOP_O(c, LOAD_CONST, names, consts);
+	Py_DECREF(names);
 	ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);
 	for (i = 0; i < n; i++) {
 		alias_ty alias = asdl_seq_GET(s->v.ImportFrom.names, i);
