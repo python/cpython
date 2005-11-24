@@ -303,18 +303,35 @@ do_mkvalue(char **p_format, va_list *p_va)
 		case 'H':
 			return PyInt_FromLong((long)va_arg(*p_va, unsigned int));
 
+		case 'I':
+		{
+			unsigned int n;
+			n = va_arg(*p_va, unsigned int);
+			if (n > PyInt_GetMax())
+				return PyLong_FromUnsignedLong((unsigned long)n);
+			else
+				return PyInt_FromLong(n);
+		}
+		
 		case 'l':
-			return PyInt_FromLong((long)va_arg(*p_va, long));
+			return PyInt_FromLong(va_arg(*p_va, long));
 
 		case 'k':
-			return PyInt_FromLong((long)va_arg(*p_va, unsigned long));
+		{
+			unsigned long n;
+			n = va_arg(*p_va, unsigned long);
+			if (n > PyInt_GetMax())
+				return PyLong_FromUnsignedLong(n);
+			else
+				return PyInt_FromLong(n);
+		}
 
 #ifdef HAVE_LONG_LONG
 		case 'L':
 			return PyLong_FromLongLong((PY_LONG_LONG)va_arg(*p_va, PY_LONG_LONG));
 
 		case 'K':
-			return PyLong_FromLongLong((PY_LONG_LONG)va_arg(*p_va, unsigned PY_LONG_LONG));
+			return PyLong_FromUnsignedLongLong((PY_LONG_LONG)va_arg(*p_va, unsigned PY_LONG_LONG));
 #endif
 #ifdef Py_USING_UNICODE
 		case 'u':

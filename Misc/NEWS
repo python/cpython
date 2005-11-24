@@ -12,6 +12,9 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1281408: Py_BuildValue now works correct even with unsigned longs
+  and long longs.
+
 - SF Bug #1350188, "setdlopenflags" leads to crash upon "import"
   It was possible dlerror() returns a NULL pointer, use a default error
   message in this case.
