@@ -36,7 +36,7 @@ dict2 = {}
 dict1keys = []
 dict2keys = []
 
-# Global flag telling maybe_mutate() wether to *consider* mutating.
+# Global flag telling maybe_mutate() whether to *consider* mutating.
 mutate = 0
 
 # If global mutate is true, consider mutating a dict.  May or may not
@@ -281,3 +281,4 @@ finally:
     os.unlink(TESTFN)
 
 del dict
+del dict1, dict2, dict1keys, dict2keys
