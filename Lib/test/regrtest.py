@@ -490,8 +490,8 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
                 pic = sys.path_importer_cache.copy()
                 import gc
                 def cleanup():
-                    import _strptime, urlparse, warnings, dircache
-                    import linecache
+                    import _strptime, linecache, warnings, dircache
+                    import urlparse, urllib, urllib2
                     from distutils.dir_util import _path_created
                     _path_created.clear()
                     warnings.filters[:] = fs
@@ -499,6 +499,8 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
                     sre.purge()
                     _strptime._regex_cache.clear()
                     urlparse.clear_cache()
+                    urllib.urlcleanup()
+                    urllib2.install_opener(None)
                     copy_reg.dispatch_table.clear()
                     copy_reg.dispatch_table.update(ps)
                     sys.path_importer_cache.clear()
