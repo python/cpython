@@ -1,9 +1,8 @@
-import types
 
 def flatten(tup):
     elts = []
     for elt in tup:
-        if type(elt) == types.TupleType:
+        if isinstance(elt, tuple):
             elts = elts + flatten(elt)
         else:
             elts.append(elt)

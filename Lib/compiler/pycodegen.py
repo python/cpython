@@ -3,7 +3,6 @@ import os
 import marshal
 import struct
 import sys
-import types
 from cStringIO import StringIO
 
 from compiler import ast, parse, walk, syntax
@@ -1312,7 +1311,7 @@ class AbstractFunctionCode:
     def generateArgUnpack(self, args):
         for i in range(len(args)):
             arg = args[i]
-            if type(arg) == types.TupleType:
+            if isinstance(arg, tuple):
                 self.emit('LOAD_FAST', '.%d' % (i * 2))
                 self.unpackSequence(arg)
 
@@ -1322,7 +1321,7 @@ class AbstractFunctionCode:
         else:
             self.emit('UNPACK_TUPLE', len(tup))
         for elt in tup:
-            if type(elt) == types.TupleType:
+            if isinstance(elt, tuple):
                 self.unpackSequence(elt)
             else:
                 self._nameOp('STORE', elt)
@@ -1408,9 +1407,9 @@ def generateArgList(arglist):
     count = 0
     for i in range(len(arglist)):
         elt = arglist[i]
-        if type(elt) == types.StringType:
+        if isinstance(elt, str):
             args.append(elt)
-        elif type(elt) == types.TupleType:
+        elif isinstance(elt, tuple):
             args.append(TupleArg(i * 2, elt))
             extra.extend(misc.flatten(elt))
             count = count + 1
