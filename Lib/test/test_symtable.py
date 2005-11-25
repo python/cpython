@@ -1,8 +1,8 @@
 from test.test_support import vereq, TestFailed
 
-import _symtable
+import symtable
 
-symbols = _symtable.symtable("def f(x): return x", "?", "exec")
+symbols = symtable.symtable("def f(x): return x", "?", "exec")
 
 ## XXX
 ## Test disabled because symtable module needs to be rewritten for new compiler
