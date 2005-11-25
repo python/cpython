@@ -762,8 +762,6 @@ class Transformer:
     def lookup_node(self, node):
         return self._dispatch[node[0]]
 
-    _callers = {}
-
     def com_node(self, node):
         # Note: compile.c has handling in com_node for del_stmt, pass_stmt,
         #       break_stmt, stmt, small_stmt, flow_stmt, simple_stmt,
@@ -1427,7 +1425,6 @@ _assign_types = [
     symbol.factor,
     ]
 
-import types
 _names = {}
 for k, v in symbol.sym_name.items():
     _names[k] = v
@@ -1437,9 +1434,9 @@ for k, v in token.tok_name.items():
 def debug_tree(tree):
     l = []
     for elt in tree:
-        if type(elt) == types.IntType:
+        if isinstance(elt, int):
             l.append(_names.get(elt, elt))
-        elif type(elt) == types.StringType:
+        elif isinstance(elt, str):
             l.append(elt)
         else:
             l.append(debug_tree(elt))
