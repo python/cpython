@@ -2,6 +2,7 @@
 import test.test_support, unittest
 import sys
 import popen2
+import subprocess
 
 class CmdLineTest(unittest.TestCase):
     def start_python(self, cmd_line):
@@ -11,21 +12,19 @@ class CmdLineTest(unittest.TestCase):
         outfp.close()
         return data
 
+    def exit_code(self, cmd_line):
+        return subprocess.call([sys.executable, cmd_line], stderr=subprocess.PIPE)
+
     def test_directories(self):
-        # Does this test make sense?  The message for "< ."  may depend on
-        # the command shell, and the message for "." depends on the OS.
-        if sys.platform.startswith("win"):
-            # On WinXP w/ cmd.exe,
-            #    "< ." gives "Access is denied.\n"
-            #    "."   gives "C:\\Code\\python\\PCbuild\\python.exe: " +
-            #                "can't open file '.':" +
-            #                "[Errno 13] Permission denied\n"
-            lookfor = " denied"  # common to both cases
+        if sys.platform == 'win32':
+            # Exit code for "python .", Error 13: permission denied = 2
+            expected_exit_code = 2
         else:
-            # This is what the test looked for originally, on all platforms.
-            lookfor = "is a directory"
-        self.assertTrue(lookfor in self.start_python('.'))
-        self.assertTrue(lookfor in self.start_python('< .'))
+            # Linux has no problem with "python .", Exit code = 0
+            expected_exit_code = 0
+        self.assertEqual(self.exit_code('.'), expected_exit_code)
+
+        self.assertTrue(self.exit_code('< .') != 0)
 
     def verify_valid_flag(self, cmd_line):
         data = self.start_python(cmd_line)
