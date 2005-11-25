@@ -409,13 +409,8 @@ class SymbolVisitor:
         scope.generator = 1
         self.visit(node.value, scope)
 
-def sort(l):
-    l = l[:]
-    l.sort()
-    return l
-
 def list_eq(l1, l2):
-    return sort(l1) == sort(l2)
+    return sorted(l1) == sorted(l2)
 
 if __name__ == "__main__":
     import sys
@@ -443,8 +438,8 @@ if __name__ == "__main__":
         if not list_eq(mod_names, names2):
             print
             print "oops", file
-            print sort(mod_names)
-            print sort(names2)
+            print sorted(mod_names)
+            print sorted(names2)
             sys.exit(-1)
 
         d = {}
@@ -463,6 +458,6 @@ if __name__ == "__main__":
                     if not list_eq(get_names(s.get_namespace()),
                                    l[0].get_names()):
                         print s.get_name()
-                        print sort(get_names(s.get_namespace()))
-                        print sort(l[0].get_names())
+                        print sorted(get_names(s.get_namespace()))
+                        print sorted(l[0].get_names())
                         sys.exit(-1)
