@@ -3,7 +3,6 @@
 import dis
 import new
 import sys
-import types
 
 from compiler import misc
 from compiler.consts \
@@ -641,7 +640,7 @@ def getArgCount(args):
 
 def twobyte(val):
     """Convert an int argument into high and low bytes"""
-    assert type(val) == types.IntType
+    assert isinstance(val, int)
     return divmod(val, 256)
 
 class LineAddrTable:
