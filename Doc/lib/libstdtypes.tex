@@ -590,7 +590,7 @@ may be given to set a different error handling scheme.  The default is
 \code{'strict'}, meaning that encoding errors raise
 \exception{UnicodeError}.  Other possible values are \code{'ignore'},
 \code{'replace'} and any other name registered via
-\function{codecs.register_error}.
+\function{codecs.register_error}, see section~\ref{codec-base-classes}.
 \versionadded{2.2}
 \versionchanged[Support for other error handling schemes added]{2.3}
 \end{methoddesc}
@@ -602,7 +602,8 @@ error handling scheme.  The default for \var{errors} is
 \code{'strict'}, meaning that encoding errors raise a
 \exception{UnicodeError}.  Other possible values are \code{'ignore'},
 \code{'replace'}, \code{'xmlcharrefreplace'}, \code{'backslashreplace'}
-and any other name registered via \function{codecs.register_error}.
+and any other name registered via \function{codecs.register_error},
+see section~\ref{codec-base-classes}.
 For a list of possible encodings, see section~\ref{standard-encodings}.
 \versionadded{2.0}
 \versionchanged[Support for \code{'xmlcharrefreplace'} and
