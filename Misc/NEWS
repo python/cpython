@@ -287,6 +287,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1365984: urllib now opens "data:" URLs again.
+
 - Patch #1314396: prevent deadlock for threading.Thread.join() when an exception
   is raised within the method itself on a previous call (e.g., passing in an
   illegal argument)
