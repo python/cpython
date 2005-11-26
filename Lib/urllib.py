@@ -556,7 +556,7 @@ class URLopener:
         msg = '\n'.join(msg)
         f = StringIO(msg)
         headers = mimetools.Message(f, 0)
-        f.fileno = None     # needed for addinfourl
+        #f.fileno = None     # needed for addinfourl
         return addinfourl(f, headers, url)
 
 
@@ -813,7 +813,10 @@ class addbase:
         self.read = self.fp.read
         self.readline = self.fp.readline
         if hasattr(self.fp, "readlines"): self.readlines = self.fp.readlines
-        if hasattr(self.fp, "fileno"): self.fileno = self.fp.fileno
+        if hasattr(self.fp, "fileno"):
+            self.fileno = self.fp.fileno
+        else:
+            self.fileno = lambda: None
         if hasattr(self.fp, "__iter__"):
             self.__iter__ = self.fp.__iter__
             if hasattr(self.fp, "next"):
