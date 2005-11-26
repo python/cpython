@@ -183,8 +183,10 @@ if test $define_xopen_source = yes
 then
   # On Solaris w/ g++ it appears that _XOPEN_SOURCE has to be
   # defined precisely as g++ defines it
+  # Furthermore, on Solaris 10, XPG6 requires the use of a C99
+  # compiler
   case $ac_sys_system/$ac_sys_release in
-    SunOS/5.8|SunOS/5.9)
+    SunOS/5.8|SunOS/5.9|SunOS/5.10)
       AC_DEFINE(_XOPEN_SOURCE, 500, 
                 Define to the level of X/Open that your system supports)
       ;;
@@ -198,8 +200,16 @@ then
   # definition of _XOPEN_SOURCE_EXTENDED and _POSIX_C_SOURCE, or else
   # several APIs are not declared. Since this is also needed in some
   # cases for HP-UX, we define it globally.
-  
-  AC_DEFINE(_XOPEN_SOURCE_EXTENDED, 1, Define to activate Unix95-and-earlier features)
+  # except for Solaris 10, where it must not be defined, 
+  # as it implies XPG4.2
+  case $ac_sys_system/$ac_sys_release in
+    SunOS/5.10)
+      ;;
+    *)
+      AC_DEFINE(_XOPEN_SOURCE_EXTENDED, 1,
+      		Define to activate Unix95-and-earlier features)
+      ;;
+  esac
 
   AC_DEFINE(_POSIX_C_SOURCE, 200112L, Define to activate features from IEEE Stds 1003.1-2001)
   
