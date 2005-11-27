@@ -606,6 +606,8 @@ class TestBasicOps(unittest.TestCase):
     def test_iteration(self):
         for v in self.set:
             self.assert_(v in self.values)
+        setiter = iter(self.set)
+        self.assertEqual(setiter._length_cue(), len(self.set))
 
     def test_pickling(self):
         p = pickle.dumps(self.set)
@@ -692,6 +694,16 @@ class TestExceptionPropagation(unittest.TestCase):
         set(xrange(3))
         set('abc')
         set(gooditer())
+
+    def test_changingSizeWhileIterating(self):
+        s = set([1,2,3])
+        try:
+            for i in s:
+                s.update([4])
+        except RuntimeError:
+            pass
+        else:
+            self.fail("no exception when changing size during iteration")
 
 #==============================================================================
 

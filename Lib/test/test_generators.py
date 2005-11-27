@@ -1589,6 +1589,11 @@ Traceback (most recent call last):
   ...
 ValueError: 7
 
+>>> f().throw("abc")     # throw on just-opened generator
+Traceback (most recent call last):
+  ...
+TypeError: exceptions must be classes, or instances, not str
+
 
 Now let's try closing a generator:
 
