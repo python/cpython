@@ -404,7 +404,7 @@ builtin_compile(PyObject *self, PyObject *args)
 	int dont_inherit = 0;
 	int supplied_flags = 0;
 	PyCompilerFlags cf;
-	PyObject *result, *cmd, *tmp = NULL;
+	PyObject *result = NULL, *cmd, *tmp = NULL;
 	int length;
 
 	if (!PyArg_ParseTuple(args, "Oss|ii:compile", &cmd, &filename,
@@ -427,7 +427,7 @@ builtin_compile(PyObject *self, PyObject *args)
 	if ((size_t)length != strlen(str)) {
 		PyErr_SetString(PyExc_TypeError,
 				"compile() expected string without null bytes");
-		return NULL;
+		goto cleanup;
 	}
 
 	if (strcmp(startstr, "exec") == 0)
@@ -439,7 +439,7 @@ builtin_compile(PyObject *self, PyObject *args)
 	else {
 		PyErr_SetString(PyExc_ValueError,
 		   "compile() arg 3 must be 'exec' or 'eval' or 'single'");
-		return NULL;
+		goto cleanup;
 	}
 
 	if (supplied_flags &
@@ -447,7 +447,7 @@ builtin_compile(PyObject *self, PyObject *args)
 	{
 		PyErr_SetString(PyExc_ValueError,
 				"compile(): unrecognised flags");
-		return NULL;
+		goto cleanup;
 	}
 	/* XXX Warn if (supplied_flags & PyCF_MASK_OBSOLETE) != 0? */
 
@@ -455,6 +455,7 @@ builtin_compile(PyObject *self, PyObject *args)
 		PyEval_MergeCompilerFlags(&cf);
 	}
 	result = Py_CompileStringFlags(str, filename, start, &cf);
+cleanup:
 	Py_XDECREF(tmp);
 	return result;
 }
@@ -580,8 +581,10 @@ builtin_eval(PyObject *self, PyObject *args)
 		cf.cf_flags |= PyCF_SOURCE_IS_UTF8;
 	}
 #endif
-	if (PyString_AsStringAndSize(cmd, &str, NULL))
+	if (PyString_AsStringAndSize(cmd, &str, NULL)) {
+		Py_XDECREF(tmp);
 		return NULL;
+	}
 	while (*str == ' ' || *str == '\t')
 		str++;
 
