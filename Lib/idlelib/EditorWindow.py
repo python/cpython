@@ -42,7 +42,7 @@ class EditorWindow(object):
     from Percolator import Percolator
     from ColorDelegator import ColorDelegator
     from UndoDelegator import UndoDelegator
-    from IOBinding import IOBinding
+    from IOBinding import IOBinding, filesystemencoding, encoding
     import Bindings
     from Tkinter import Toplevel
     from MultiStatusBar import MultiStatusBar
@@ -255,6 +255,21 @@ class EditorWindow(object):
         self.askyesno = tkMessageBox.askyesno
         self.askinteger = tkSimpleDialog.askinteger
         self.showerror = tkMessageBox.showerror
+
+    def _filename_to_unicode(self, filename):
+        """convert filename to unicode in order to display it in Tk"""
+        if isinstance(filename, unicode) or not filename:
+            return filename
+        else:
+            try:
+                return filename.decode(self.filesystemencoding)
+            except UnicodeDecodeError:
+                # XXX
+                try:
+                    return filename.decode(self.encoding)
+                except UnicodeDecodeError:
+                    # byte-to-byte conversion
+                    return filename.decode('iso8859-1')
 
     def new_callback(self, event):
         dirname, basename = self.io.defaultfilename()
@@ -675,8 +690,10 @@ class EditorWindow(object):
             menu.delete(1, END)  # clear, and rebuild:
             for i, file in zip(count(), rf_list):
                 file_name = file[0:-1]  # zap \n
+                # make unicode string to display non-ASCII chars correctly
+                ufile_name = self._filename_to_unicode(file_name)
                 callback = instance.__recent_file_callback(file_name)
-                menu.add_command(label=ulchars[i] + " " + file_name,
+                menu.add_command(label=ulchars[i] + " " + ufile_name,
                                  command=callback,
                                  underline=0)
 
@@ -716,10 +733,12 @@ class EditorWindow(object):
         filename = self.io.filename
         if filename:
             filename = os.path.basename(filename)
-        return filename
+        # return unicode string to display non-ASCII chars correctly
+        return self._filename_to_unicode(filename)
 
     def long_title(self):
-        return self.io.filename or ""
+        # return unicode string to display non-ASCII chars correctly
+        return self._filename_to_unicode(self.io.filename or "")
 
     def center_insert_event(self, event):
         self.center()
