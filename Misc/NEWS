@@ -287,6 +287,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1162825: Support non-ASCII characters in IDLE window titles.
+
 - Bug #1365984: urllib now opens "data:" URLs again.
 
 - Patch #1314396: prevent deadlock for threading.Thread.join() when an exception
