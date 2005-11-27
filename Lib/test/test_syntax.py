@@ -42,6 +42,18 @@ class SyntaxTestCase(unittest.TestCase):
         self._check_error(source, "global")
         warnings.filters.pop(0)
 
+    def test_break_outside_loop(self):
+        self._check_error("break", "outside loop")
+
+    def test_delete_deref(self):
+        source = re.sub('(?m)^ *:', '', """\
+            :def foo(x):
+            :  def bar():
+            :    print x
+            :  del x
+            :""")
+        self._check_error(source, "nested scope")
+
 def test_main():
     test_support.run_unittest(SyntaxTestCase)
 

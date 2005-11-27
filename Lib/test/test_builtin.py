@@ -238,8 +238,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, compile)
         self.assertRaises(ValueError, compile, 'print 42\n', '<string>', 'badmode')
         self.assertRaises(ValueError, compile, 'print 42\n', '<string>', 'single', 0xff)
+        self.assertRaises(TypeError, compile, chr(0), 'f', 'exec')
         if have_unicode:
             compile(unicode('print u"\xc3\xa5"\n', 'utf8'), '', 'exec')
+            self.assertRaises(TypeError, compile, unichr(0), 'f', 'exec')
+            self.assertRaises(ValueError, compile, unicode('a = 1'), 'f', 'bad')
 
     def test_delattr(self):
         import sys
@@ -421,6 +424,7 @@ class BuiltinTest(unittest.TestCase):
 
         unlink(TESTFN)
         self.assertRaises(TypeError, execfile)
+        self.assertRaises(TypeError, execfile, TESTFN, {}, ())
         import os
         self.assertRaises(IOError, execfile, os.curdir)
         self.assertRaises(IOError, execfile, "I_dont_exist")
@@ -1008,6 +1012,9 @@ class BuiltinTest(unittest.TestCase):
             def __getitem__(self, index):
                 raise ValueError
         self.assertRaises(ValueError, map, lambda x: x, BadSeq())
+        def badfunc(x):
+            raise RuntimeError
+        self.assertRaises(RuntimeError, map, badfunc, range(5))
 
     def test_max(self):
         self.assertEqual(max('123123'), '3')
@@ -1239,6 +1246,12 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, range)
         self.assertRaises(TypeError, range, 1, 2, 3, 4)
         self.assertRaises(ValueError, range, 1, 2, 0)
+        self.assertRaises(ValueError, range, a, a + 1, long(0))
+
+        class badzero(int):
+            def __cmp__(self, other):
+                raise RuntimeError
+        self.assertRaises(RuntimeError, range, a, a + 1, badzero(1))
 
         # Reject floats when it would require PyLongs to represent.
         # (smaller floats still accepted, but deprecated)

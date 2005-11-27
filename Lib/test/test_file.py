@@ -100,6 +100,39 @@ else:
     print "writelines accepted sequence of non-string objects"
 f.close()
 
+try:
+    sys.stdin.seek(0)
+except IOError:
+    pass
+else:
+    print "should not be able to seek on sys.stdin"
+
+try:
+    sys.stdin.tell()
+except IOError:
+    pass
+else:
+    print "should not be able to seek on sys.stdin"
+
+try:
+    sys.stdin.truncate()
+except IOError:
+    pass
+else:
+    print "should not be able to truncate on sys.stdin"
+
+# verify repr works
+f = open(TESTFN)
+if not repr(f).startswith("<open file '" + TESTFN):
+    print "repr(file) failed"
+f.close()
+
+# verify repr works for unicode too
+f = open(unicode(TESTFN))
+if not repr(f).startswith("<open file u'" + TESTFN):
+    print "repr(file with unicode name) failed"
+f.close()
+
 # verify that we get a sensible error message for bad mode argument
 bad_mode = "qwerty"
 try:
