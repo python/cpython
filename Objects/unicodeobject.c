@@ -2889,6 +2889,7 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 		Py_DECREF(x);
 		goto onError;
 	    }
+	    Py_DECREF(x);
 	    continue;
 	}
 	else if (PyUnicode_Check(x)) {
