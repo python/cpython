@@ -27,6 +27,16 @@ MS_CORE_DLL.
 
 */
 
+/* Visual Studio 2005 introduces deprecation warnings for
+   "insecure" and POSIX functions. The insecure functions should
+   be replaces by *_s versions (according to Microsoft); the
+   POSIX functions by _* versions (which, according to Microsoft,
+   would be ISO C conforming). Neither renaming is feasible, so
+   we just silence the warnings. */
+
+#define _CRT_SECURE_NO_DEPRECATE 1
+#define _CRT_NONSTDC_NO_DEPRECATE 1
+
 #include <io.h>
 #define HAVE_SYS_UTIME_H
 #define HAVE_HYPOT
