@@ -145,6 +145,7 @@ sound_beep(PyObject *self, PyObject *args)
 			return NULL;
 		}
 	}
+#ifdef _M_IX86
 	else if (whichOS == Win9X) {
 		int speaker_state;
 		/* Force timer into oscillator mode via timer control port. */
@@ -169,6 +170,7 @@ sound_beep(PyObject *self, PyObject *args)
 		/* Restore speaker control to original state. */
 		_outp(0x61, speaker_state);
 	}
+#endif /* _M_IX86 */
 	else {
 		assert(!"winsound's whichOS has insane value");
 	}
