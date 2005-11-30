@@ -163,7 +163,7 @@ class ConnectionUI:
             def settotal(int total): gets called when the connection knows the data size
             def setcurrent(int current): gets called when some new data has arrived
             def done(): gets called when the transaction is complete
-            def error(type, value, tb): gets called wheneven an error occured
+            def error(type, value, tb): gets called wheneven an error occurred
     """
 
     def __init__(self, settotal_func, setcurrent_func, done_func, error_func):

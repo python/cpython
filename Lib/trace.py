@@ -133,7 +133,7 @@ class Ignore:
             # the ignore list
             n = len(mod)
             # (will not overflow since if the first n characters are the
-            # same and the name has not already occured, then the size
+            # same and the name has not already occurred, then the size
             # of "name" is greater than that of "mod")
             if mod == modulename[:n] and modulename[n] == '.':
                 self._ignore[modulename] = 1
