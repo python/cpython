@@ -12,14 +12,14 @@ class CmdLineTest(unittest.TestCase):
         outfp.close()
         return data
 
-     def exit_code(self, cmd_line):
-         return subprocess.call([sys.executable, cmd_line], stderr=subprocess.PIPE)
+    def exit_code(self, cmd_line):
+        return subprocess.call([sys.executable, cmd_line], stderr=subprocess.PIPE)
 
     def test_directories(self):
          if sys.platform == 'win32':
              # Exit code for "python .", Error 13: permission denied = 2
              expected_exit_code = 2
-          else:
+         else:
              # Linux has no problem with "python .", Exit code = 0
              expected_exit_code = 0
          self.assertEqual(self.exit_code('.'), expected_exit_code)
