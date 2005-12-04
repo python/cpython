@@ -104,7 +104,7 @@ from xmlrpclib import Fault
 import SocketServer
 import BaseHTTPServer
 import sys
-import os
+import os, fcntl
 
 def resolve_dotted_attribute(obj, attr, allow_dotted_names=True):
     """resolve_dotted_attribute(a, 'b.c.d') => a.b.c.d
@@ -465,12 +465,22 @@ class SimpleXMLRPCServer(SocketServer.TCPServer,
     from SimpleXMLRPCDispatcher to change this behavior.
     """
 
+    allow_reuse_address = True
+
     def __init__(self, addr, requestHandler=SimpleXMLRPCRequestHandler,
                  logRequests=1):
         self.logRequests = logRequests
 
         SimpleXMLRPCDispatcher.__init__(self)
         SocketServer.TCPServer.__init__(self, addr, requestHandler)
+
+        # [Bug #1222790] If possible, set close-on-exec flag; if a 
+        # method spawns a subprocess, the subprocess shouldn't have 
+        # the listening socket open.
+        if hasattr(fcntl, 'FD_CLOEXEC'):
+            flags = fcntl.fcntl(self.fileno(), fcntl.F_GETFD)
+            flags |= fcntl.FD_CLOEXEC
+            fcntl.fcntl(self.fileno(), fcntl.F_SETFD, flags)
 
 class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
     """Simple handler for XML-RPC data passed through CGI."""
