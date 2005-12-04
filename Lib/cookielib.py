@@ -1304,10 +1304,6 @@ class CookieJar:
 
         self._policy._now = self._now = int(time.time())
 
-        req_host, erhn = eff_request_host(request)
-        strict_non_domain = (
-            self._policy.strict_ns_domain & self._policy.DomainStrictNonDomain)
-
         cookies = self._cookies_for_request(request)
 
         attrs = self._cookie_attrs(cookies)
