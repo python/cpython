@@ -159,9 +159,10 @@ class SimpleXMLRPCDispatcher:
     reason to instantiate this class directly.
     """
 
-    def __init__(self):
+    def __init__(self, allow_none):
         self.funcs = {}
         self.instance = None
+        self.allow_none = allow_none
 
     def register_instance(self, instance, allow_dotted_names=False):
         """Registers an instance to respond to XML-RPC requests.
@@ -251,7 +252,8 @@ class SimpleXMLRPCDispatcher:
                 response = self._dispatch(method, params)
             # wrap response in a singleton tuple
             response = (response,)
-            response = xmlrpclib.dumps(response, methodresponse=1)
+            response = xmlrpclib.dumps(response, methodresponse=1, 
+                                       allow_none = self.allow_none)
         except Fault, fault:
             response = xmlrpclib.dumps(fault)
         except:
@@ -479,10 +481,10 @@ class SimpleXMLRPCServer(SocketServer.TCPServer,
     allow_reuse_address = True
 
     def __init__(self, addr, requestHandler=SimpleXMLRPCRequestHandler,
-                 logRequests=1):
+                 logRequests=1, allow_none=False):
         self.logRequests = logRequests
 
-        SimpleXMLRPCDispatcher.__init__(self)
+        SimpleXMLRPCDispatcher.__init__(self, allow_none)
         SocketServer.TCPServer.__init__(self, addr, requestHandler)
 
         # [Bug #1222790] If possible, set close-on-exec flag; if a 
@@ -496,8 +498,8 @@ class SimpleXMLRPCServer(SocketServer.TCPServer,
 class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
     """Simple handler for XML-RPC data passed through CGI."""
 
-    def __init__(self):
-        SimpleXMLRPCDispatcher.__init__(self)
+    def __init__(self, allow_none=False):
+        SimpleXMLRPCDispatcher.__init__(self, allow_none)
 
     def handle_xmlrpc(self, request_text):
         """Handle a single XML-RPC request"""
