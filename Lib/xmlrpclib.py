@@ -388,6 +388,7 @@ class DateTime:
         return "<DateTime %s at %x>" % (repr(self.value), id(self))
 
     def decode(self, data):
+        data = str(data)
         self.value = string.strip(data)
 
     def encode(self, out):
