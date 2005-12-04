@@ -422,8 +422,19 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """
 
         try:
-            # get arguments
-            data = self.rfile.read(int(self.headers["content-length"]))
+            # Get arguments by reading body of request. 
+            # We read this in chunks to avoid straining 
+            # socket.read(); around the 10 or 15Mb mark, some platforms
+            # begin to have problems (bug #792570).
+            max_chunk_size = 10*1024*1024
+            size_remaining = int(self.headers["content-length"])
+            L = []
+            while size_remaining:
+                chunk_size = min(size_remaining, max_chunk_size)
+                L.append(self.rfile.read(chunk_size))
+                size_remaining -= len(L[-1])
+            data = ''.join(L)
+
             # In previous versions of SimpleXMLRPCServer, _dispatch
             # could be overridden in this class, instead of in
             # SimpleXMLRPCDispatcher. To maintain backwards compatibility,
