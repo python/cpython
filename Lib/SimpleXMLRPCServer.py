@@ -481,7 +481,7 @@ class SimpleXMLRPCServer(SocketServer.TCPServer,
     allow_reuse_address = True
 
     def __init__(self, addr, requestHandler=SimpleXMLRPCRequestHandler,
-                 logRequests=1, allow_none=False):
+                 logRequests=True, allow_none=False):
         self.logRequests = logRequests
 
         SimpleXMLRPCDispatcher.__init__(self, allow_none)
