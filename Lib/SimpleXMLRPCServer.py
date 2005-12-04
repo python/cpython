@@ -159,10 +159,11 @@ class SimpleXMLRPCDispatcher:
     reason to instantiate this class directly.
     """
 
-    def __init__(self, allow_none):
+    def __init__(self, allow_none, encoding):
         self.funcs = {}
         self.instance = None
         self.allow_none = allow_none
+        self.encoding = encoding
 
     def register_instance(self, instance, allow_dotted_names=False):
         """Registers an instance to respond to XML-RPC requests.
@@ -253,13 +254,15 @@ class SimpleXMLRPCDispatcher:
             # wrap response in a singleton tuple
             response = (response,)
             response = xmlrpclib.dumps(response, methodresponse=1, 
-                                       allow_none = self.allow_none)
+                                       allow_none=self.allow_none, encoding=self.encoding)
         except Fault, fault:
-            response = xmlrpclib.dumps(fault)
+            response = xmlrpclib.dumps(fault, allow_none=self.allow_none, 
+                                       encoding=self.encoding)
         except:
             # report exception back to server
             response = xmlrpclib.dumps(
-                xmlrpclib.Fault(1, "%s:%s" % (sys.exc_type, sys.exc_value))
+                xmlrpclib.Fault(1, "%s:%s" % (sys.exc_type, sys.exc_value)),
+                encoding=self.encoding, allow_none=self.allow_none,
                 )
 
         return response
@@ -481,10 +484,10 @@ class SimpleXMLRPCServer(SocketServer.TCPServer,
     allow_reuse_address = True
 
     def __init__(self, addr, requestHandler=SimpleXMLRPCRequestHandler,
-                 logRequests=True, allow_none=False):
+                 logRequests=True, allow_none=False, encoding=None):
         self.logRequests = logRequests
 
-        SimpleXMLRPCDispatcher.__init__(self, allow_none)
+        SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding)
         SocketServer.TCPServer.__init__(self, addr, requestHandler)
 
         # [Bug #1222790] If possible, set close-on-exec flag; if a 
@@ -498,8 +501,8 @@ class SimpleXMLRPCServer(SocketServer.TCPServer,
 class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
     """Simple handler for XML-RPC data passed through CGI."""
 
-    def __init__(self, allow_none=False):
-        SimpleXMLRPCDispatcher.__init__(self, allow_none)
+    def __init__(self, allow_none=False, encoding=None):
+        SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding)
 
     def handle_xmlrpc(self, request_text):
         """Handle a single XML-RPC request"""
