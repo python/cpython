@@ -1031,7 +1031,20 @@ by the built-in \function{classmethod()} constructor.
 
 \end{description} % Types
 
+%=========================================================================
+\section{New-style and classic classes}
 
+Classes and instances come in two flavours: old-style or classic, and new-style.  
+
+Old-style classes were the only flavour of class available before Python 2.1.  While they supported multiple inheritance, the rules for resolving names were chosen for ease of implementation.  These rules turn out to make multiple inheritance hard to use in certain situations.
+
+New-style classes were introduced in Python 2.1, and change the method resolution order to make multiple inheritance more usable.  
+
+The plan is to eventually drop old-style classes, leaving only the semantics of new-style classes.  This change will probably only be feasible in Python 3.0.
+
+
+
+%=========================================================================
 \section{Special method names\label{specialnames}}
 
 A class can implement certain operations that are invoked by special
