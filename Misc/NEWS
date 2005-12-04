@@ -448,6 +448,9 @@ Library
   disables recursive traversal through instance attributes, which can
   be exploited in various ways.
 
+- Bug #1222790: in SimpleXMLRPCServer, set the reuse-address and close-on-exec 
+  flags on the HTTP listening socket.
+
 - Bug #1110478: Revert os.environ.update to do putenv again.
 
 - Bug #1103844: fix distutils.install.dump_dirs() with negated options.
