@@ -14,24 +14,31 @@ CGI environment, using \class{CGIXMLRPCRequestHandler}.
 
 \begin{classdesc}{SimpleXMLRPCServer}{addr\optional{,
                                       requestHandler\optional{,
-					logRequests\optional{allow_none}}}}
+					logRequests\optional{allow_none\optional{, encoding}}}}}
 
-  Create a new server instance.  The \var{requestHandler} parameter
+  Create a new server instance.  This class
+  provides methods for registration of functions that can be called by
+  the XML-RPC protocol.  The \var{requestHandler} parameter
   should be a factory for request handler instances; it defaults to
   \class{SimpleXMLRPCRequestHandler}.  The \var{addr} and
   \var{requestHandler} parameters are passed to the
   \class{\refmodule{SocketServer}.TCPServer} constructor.  If
   \var{logRequests} is true (the default), requests will be logged;
-  setting this parameter to false will turn off logging.  This class
-  provides methods for registration of functions that can be called by
-  the XML-RPC protocol.
-  \versionchanged[The \var{allow_none} parameter was added]{2.5}
+  setting this parameter to false will turn off logging.  
+  The \var{allow_none} and \var{encoding} parameters are passed on to 
+  \module{xmlrpclib} and control the XML-RPC responses that will be returned 
+  from the server.
+  \versionchanged[The \var{allow_none} and \var{encoding} parameters were added]{2.5}
 \end{classdesc}
 
-\begin{classdesc}{CGIXMLRPCRequestHandler}{\optional{allow_none}}
+\begin{classdesc}{CGIXMLRPCRequestHandler}{\optional{allow_none\optional{, encoding}}}
   Create a new instance to handle XML-RPC requests in a CGI
-  environment. \versionadded{2.3}
-  \versionchanged[The \var{allow_none} parameter was added]{2.5}
+  environment. 
+  The \var{allow_none} and \var{encoding} parameters are passed on to 
+  \module{xmlrpclib} and control the XML-RPC responses that will be returned 
+  from the server.
+  \versionadded{2.3}
+  \versionchanged[The \var{allow_none} and \var{encoding} parameters were added]{2.5}
 \end{classdesc}
 
 \begin{classdesc}{SimpleXMLRPCRequestHandler}{}
