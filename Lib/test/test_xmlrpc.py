@@ -76,6 +76,16 @@ class XMLRPCTestCase(unittest.TestCase):
         (newdt,), m = xmlrpclib.loads(s, use_datetime=0)
         self.assertEquals(newdt, xmlrpclib.DateTime('%sT11:41:23'%today))
 
+    def test_bug_1164912 (self):
+        d = xmlrpclib.DateTime()
+        ((new_d,), dummy) = xmlrpclib.loads(xmlrpclib.dumps((d,), 
+                                            methodresponse=True))
+        self.assert_(isinstance(new_d.value, str))
+
+        # Check that the output of dumps() is still an 8-bit string
+        s = xmlrpclib.dumps((new_d,), methodresponse=True)
+        self.assert_(isinstance(s, str))
+
     def test_dump_big_long(self):
         self.assertRaises(OverflowError, xmlrpclib.dumps, (2L**99,))
 
