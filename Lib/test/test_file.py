@@ -101,7 +101,7 @@ else:
 f.close()
 
 try:
-    sys.stdin.seek(0)
+    sys.stdin.seek(-1)
 except IOError:
     pass
 else:
