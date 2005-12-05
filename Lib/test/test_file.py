@@ -112,7 +112,7 @@ try:
 except IOError:
     pass
 else:
-    print "should not be able to seek on sys.stdin"
+    print "should not be able to tell on sys.stdin"
 
 try:
     sys.stdin.truncate()
