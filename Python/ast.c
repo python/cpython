@@ -82,8 +82,6 @@ static PyObject *parsenumber(const char *);
 static PyObject *parsestr(const char *s, const char *encoding);
 static PyObject *parsestrplus(struct compiling *, const node *n);
 
-extern grammar _PyParser_Grammar; /* From graminit.c */
-
 #ifndef LINENO
 #define LINENO(n)	((n)->n_lineno)
 #endif
