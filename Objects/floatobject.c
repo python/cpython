@@ -1631,20 +1631,24 @@ _PyFloat_Unpack4(const unsigned char *p, int le)
 		return x;
 	}
 	else {
+		float x;
+
 		if ((float_format == ieee_little_endian_format && !le)
 		    || (float_format == ieee_big_endian_format && le)) {
-			char buf[8];
+			char buf[4];
 			char *d = &buf[3];
 			int i;
 
 			for (i = 0; i < 4; i++) {
 				*d-- = *p++;
 			}
-			return *(float*)&buf[0];
+			memcpy(&x, buf, 4);
 		}
 		else {
-			return *(float*)p;
+			memcpy(&x, p, 4);
 		}
+
+		return x;
 	}		
 }
 
@@ -1722,6 +1726,8 @@ _PyFloat_Unpack8(const unsigned char *p, int le)
 		return x;
 	}
 	else {
+		double x;
+
 		if ((double_format == ieee_little_endian_format && !le)
 		    || (double_format == ieee_big_endian_format && le)) {
 			char buf[8];
@@ -1731,10 +1737,12 @@ _PyFloat_Unpack8(const unsigned char *p, int le)
 			for (i = 0; i < 8; i++) {
 				*d-- = *p++;
 			}
-			return *(double*)&buf[0];
+			memcpy(&x, buf, 8);
 		}
 		else {
-			return *(double*)p;
+			memcpy(&x, p, 8);
 		}
+
+		return x;
 	}
 }
