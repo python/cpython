@@ -13,7 +13,6 @@ static int
 future_check_features(PyFutureFeatures *ff, stmt_ty s, const char *filename)
 {
 	int i;
-	const char *feature;
 	asdl_seq *names;
 
 	assert(s->kind == ImportFrom_kind);
@@ -21,7 +20,7 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, const char *filename)
 	names = s->v.ImportFrom.names;
 	for (i = 0; i < asdl_seq_LEN(names); i++) {
                 alias_ty name = asdl_seq_GET(names, i);
-		feature = PyString_AsString(name->name);
+		const char *feature = PyString_AsString(name->name);
 		if (!feature)
 			return 0;
 		if (strcmp(feature, FUTURE_NESTED_SCOPES) == 0) {
