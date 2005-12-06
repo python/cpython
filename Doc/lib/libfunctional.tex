@@ -44,7 +44,7 @@ the \function{int} function where the \var{base} argument defaults to
 two:
   \begin{verbatim}
         >>> basetwo = partial(int, base=2)
-        >>> basetwo.__doc__('Convert base 2 string to an int.')
+        >>> basetwo.__doc__ = 'Convert base 2 string to an int.'
         >>> basetwo('10010')
         18
   \end{verbatim}
