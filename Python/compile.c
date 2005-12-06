@@ -2440,7 +2440,6 @@ static int
 compiler_from_import(struct compiler *c, stmt_ty s)
 {
 	int i, n = asdl_seq_LEN(s->v.ImportFrom.names);
-	int star = 0;
 
 	PyObject *names = PyTuple_New(n);
 	if (!names)
@@ -2474,8 +2473,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 		if (i == 0 && *PyString_AS_STRING(alias->name) == '*') {
 			assert(n == 1);
 			ADDOP(c, IMPORT_STAR);
-			star = 1;
-			break;
+			return 1;
 		}
 		    
 		ADDOP_NAME(c, IMPORT_FROM, alias->name, names);
@@ -2488,9 +2486,8 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 			return 0;
 		}
 	}
-	if (!star) 
-		/* remove imported module */
-		ADDOP(c, POP_TOP);
+	/* remove imported module */
+	ADDOP(c, POP_TOP);
 	return 1;
 }
 
