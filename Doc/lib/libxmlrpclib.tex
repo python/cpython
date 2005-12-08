@@ -355,3 +355,30 @@ try:
 except Error, v:
     print "ERROR", v
 \end{verbatim}
+
+To access an XML-RPC server through a proxy, you need to define 
+a custom transport.  The following example, 
+written by NoboNobo, % fill in original author's name if we ever learn it
+shows how:
+
+% Example taken from http://lowlife.jp/nobonobo/wiki/xmlrpcwithproxy.html
+\begin{verbatim}
+import xmlrpclib, httplib
+
+class ProxiedTransport(xmlrpclib.Transport):
+    def set_proxy(self, proxy):
+        self.proxy = proxy
+    def make_connection(self, host):
+        self.realhost = host
+	h = httplib.HTTP(self.proxy)
+	return h
+    def send_request(self, connection, handler, request_body):
+        connection.putrequest("POST", 'http://%s%s' % (self.realhost, handler))
+    def send_host(self, connection, host):
+        connection.putheader('Host', self.realhost)
+
+p = ProxiedTransport()
+p.set_proxy('proxy-server:8080')
+server = xmlrpclib.Server('http://time.xmlrpc.com/RPC2', transport=p)
+print server.currentTime.getCurrentTime()
+\end{verbatim}
