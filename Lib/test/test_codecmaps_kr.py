@@ -12,7 +12,6 @@ import unittest
 class TestCP949Map(test_multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):
     encoding = 'cp949'
-    mapfilename = 'CP949.TXT'
     mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT' \
                  '/WINDOWS/CP949.TXT'
 
@@ -20,14 +19,12 @@ class TestCP949Map(test_multibytecodec_support.TestBase_Mapping,
 class TestEUCKRMap(test_multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):
     encoding = 'euc_kr'
-    mapfilename = 'EUC-KR.TXT'
     mapfileurl = 'http://people.freebsd.org/~perky/i18n/EUC-KR.TXT'
 
 
 class TestJOHABMap(test_multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):
     encoding = 'johab'
-    mapfilename = 'JOHAB.TXT'
     mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/OBSOLETE/EASTASIA/' \
                  'KSC/JOHAB.TXT'
     # KS X 1001 standard assigned 0x5c as WON SIGN.
@@ -44,7 +41,5 @@ def test_main():
     suite.addTest(unittest.makeSuite(TestJOHABMap))
     test_support.run_suite(suite)
 
-test_multibytecodec_support.register_skip_expected(TestCP949Map,
-    TestEUCKRMap, TestJOHABMap)
 if __name__ == "__main__":
     test_main()

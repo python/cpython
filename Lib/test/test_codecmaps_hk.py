@@ -12,7 +12,6 @@ import unittest
 class TestBig5HKSCSMap(test_multibytecodec_support.TestBase_Mapping,
                        unittest.TestCase):
     encoding = 'big5hkscs'
-    mapfilename = 'BIG5HKSCS.TXT'
     mapfileurl = 'http://people.freebsd.org/~perky/i18n/BIG5HKSCS.TXT'
 
 def test_main():
@@ -20,6 +19,5 @@ def test_main():
     suite.addTest(unittest.makeSuite(TestBig5HKSCSMap))
     test_support.run_suite(suite)
 
-test_multibytecodec_support.register_skip_expected(TestBig5HKSCSMap)
 if __name__ == "__main__":
     test_main()

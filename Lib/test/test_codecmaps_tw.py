@@ -12,14 +12,12 @@ import unittest
 class TestBIG5Map(test_multibytecodec_support.TestBase_Mapping,
                   unittest.TestCase):
     encoding = 'big5'
-    mapfilename = 'BIG5.TXT'
     mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/OBSOLETE/' \
                  'EASTASIA/OTHER/BIG5.TXT'
 
 class TestCP950Map(test_multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):
     encoding = 'cp950'
-    mapfilename = 'CP950.TXT'
     mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/' \
                  'WINDOWS/CP950.TXT'
     pass_enctest = [
@@ -33,6 +31,5 @@ def test_main():
     suite.addTest(unittest.makeSuite(TestCP950Map))
     test_support.run_suite(suite)
 
-test_multibytecodec_support.register_skip_expected(TestBIG5Map, TestCP950Map)
 if __name__ == "__main__":
     test_main()

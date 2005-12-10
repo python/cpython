@@ -163,15 +163,16 @@ class TestBase_Mapping(unittest.TestCase):
 
     def __init__(self, *args, **kw):
         unittest.TestCase.__init__(self, *args, **kw)
-        if not os.path.exists(self.mapfilename):
-            raise test_support.TestSkipped('%s not found, download from %s' %
-                    (self.mapfilename, self.mapfileurl))
+        self.open_mapping_file() # test it to report the error early
+
+    def open_mapping_file(self):
+        return test_support.open_urlresource(self.mapfileurl)
 
     def test_mapping_file(self):
         unichrs = lambda s: u''.join(map(unichr, map(eval, s.split('+'))))
         urt_wa = {}
 
-        for line in open(self.mapfilename):
+        for line in self.open_mapping_file():
             if not line:
                 break
             data = line.split('#')[0].strip().split()
@@ -217,16 +218,3 @@ def load_teststring(encoding):
     else:
         from test import cjkencodings_test
         return cjkencodings_test.teststring[encoding]
-
-def register_skip_expected(*cases):
-    for case in cases: # len(cases) must be 1 at least.
-        for path in [os.path.curdir, os.path.pardir]:
-            fn = os.path.join(path, case.mapfilename)
-            if os.path.exists(fn):
-                case.mapfilename = fn
-                break
-        else:
-            sys.modules[case.__module__].skip_expected = True
-            break
-    else:
-        sys.modules[case.__module__].skip_expected = False

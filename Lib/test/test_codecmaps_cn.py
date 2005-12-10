@@ -12,13 +12,11 @@ import unittest
 class TestGB2312Map(test_multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):
     encoding = 'gb2312'
-    mapfilename = 'EUC-CN.TXT'
     mapfileurl = 'http://people.freebsd.org/~perky/i18n/EUC-CN.TXT'
 
 class TestGBKMap(test_multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):
     encoding = 'gbk'
-    mapfilename = 'CP936.TXT'
     mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/VENDORS/' \
                  'MICSFT/WINDOWS/CP936.TXT'
 
@@ -28,6 +26,5 @@ def test_main():
     suite.addTest(unittest.makeSuite(TestGBKMap))
     test_support.run_suite(suite)
 
-test_multibytecodec_support.register_skip_expected(TestGB2312Map, TestGBKMap)
 if __name__ == "__main__":
     test_main()
