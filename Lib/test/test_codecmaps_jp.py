@@ -12,7 +12,6 @@ import unittest
 class TestCP932Map(test_multibytecodec_support.TestBase_Mapping,
                    unittest.TestCase):
     encoding = 'cp932'
-    mapfilename = 'CP932.TXT'
     mapfileurl = 'http://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/' \
                  'WINDOWS/CP932.TXT'
     supmaps = [
@@ -70,10 +69,6 @@ def test_main():
     suite.addTest(unittest.makeSuite(TestEUCJISX0213Map))
     suite.addTest(unittest.makeSuite(TestSJISX0213Map))
     test_support.run_suite(suite)
-
-test_multibytecodec_support.register_skip_expected(TestCP932Map,
-    TestEUCJPCOMPATMap, TestSJISCOMPATMap, TestEUCJISX0213Map,
-    TestSJISX0213Map)
 
 if __name__ == "__main__":
     test_main()

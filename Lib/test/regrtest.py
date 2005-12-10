@@ -97,6 +97,8 @@ resources to test.  Currently only the following are defined:
 
     subprocess  Run all tests for the subprocess module.
 
+    urlfetch -  It is okay to download files required on testing.
+
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the bsddb tests, give the
 option '-uall,-bsddb'.
@@ -140,7 +142,7 @@ if sys.platform == 'darwin':
 from test import test_support
 
 RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
-                  'decimal', 'compiler', 'subprocess')
+                  'decimal', 'compiler', 'subprocess', 'urlfetch')
 
 
 def usage(code, msg=''):
@@ -671,20 +673,12 @@ def printlist(x, width=70, indent=4):
 #     test_pep277
 #         The _ExpectedSkips constructor adds this to the set of expected
 #         skips if not os.path.supports_unicode_filenames.
-#     test_normalization
-#         Whether a skip is expected here depends on whether a large test
-#         input file has been downloaded.  test_normalization.skip_expected
-#         controls that.
 #     test_socket_ssl
 #         Controlled by test_socket_ssl.skip_expected.  Requires the network
 #         resource, and a socket module with ssl support.
 #     test_timeout
 #         Controlled by test_timeout.skip_expected.  Requires the network
 #         resource and a socket module.
-#     test_codecmaps_*
-#         Whether a skip is expected here depends on whether a large test
-#         input file has been downloaded.  test_codecmaps_*.skip_expected
-#         controls that.
 
 _expectations = {
     'win32':
@@ -1056,7 +1050,6 @@ _expectations = {
         test_macfs
         test_macostools
         test_nis
-        test_normalization
         test_ossaudiodev
         test_pep277
         test_plistlib
@@ -1108,12 +1101,8 @@ _expectations['freebsd7'] = _expectations['freebsd4']
 class _ExpectedSkips:
     def __init__(self):
         import os.path
-        from test import test_normalization
         from test import test_socket_ssl
         from test import test_timeout
-        from test import test_codecmaps_cn, test_codecmaps_jp
-        from test import test_codecmaps_kr, test_codecmaps_tw
-        from test import test_codecmaps_hk
 
         self.valid = False
         if sys.platform in _expectations:
@@ -1126,18 +1115,11 @@ class _ExpectedSkips:
             if not os.path.supports_unicode_filenames:
                 self.expected.add('test_pep277')
 
-            if test_normalization.skip_expected:
-                self.expected.add('test_normalization')
-
             if test_socket_ssl.skip_expected:
                 self.expected.add('test_socket_ssl')
 
             if test_timeout.skip_expected:
                 self.expected.add('test_timeout')
-
-            for cc in ('cn', 'jp', 'kr', 'tw', 'hk'):
-                if eval('test_codecmaps_' + cc).skip_expected:
-                    self.expected.add('test_codecmaps_' + cc)
 
             if sys.maxint == 9223372036854775807L:
                 self.expected.add('test_rgbimg')

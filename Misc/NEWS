@@ -633,6 +633,9 @@ Tests
 
 - In test_os, st_?time is now truncated before comparing it with ST_?TIME.
 
+- Patch #1276356: New resource "urlfetch" is implemented.  This enables
+  even impatient people to run tests that require remote files.
+
 
 Documentation
 -------------

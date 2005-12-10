@@ -1,21 +1,11 @@
-from test.test_support import verbose, TestFailed, TestSkipped, verify
+from test.test_support import (verbose, TestFailed, TestSkipped, verify,
+                               open_urlresource)
 import sys
 import os
 from unicodedata import normalize
 
 TESTDATAFILE = "NormalizationTest-3.2.0" + os.extsep + "txt"
-
-# This search allows using a build directory just inside the source
-# directory, and saving just one copy of the test data in the source
-# tree, rather than having a copy in each build directory.
-# There might be a better way to do this.
-
-for path in [os.path.curdir, os.path.pardir]:
-    fn = os.path.join(path, TESTDATAFILE)
-    skip_expected = not os.path.exists(fn)
-    if not skip_expected:
-        TESTDATAFILE = fn
-        break
+TESTDATAURL = "http://www.unicode.org/Public/3.2-Update/" + TESTDATAFILE
 
 class RangeError:
     pass
@@ -40,12 +30,8 @@ def unistr(data):
     return u"".join([unichr(x) for x in data])
 
 def test_main():
-    if skip_expected:
-        raise TestSkipped(TESTDATAFILE + " not found, download from " +
-                    "http://www.unicode.org/Public/3.2-Update/" + TESTDATAFILE)
-
     part1_data = {}
-    for line in open(TESTDATAFILE):
+    for line in open_urlresource(TESTDATAURL):
         if '#' in line:
             line = line.split('#')[0]
         line = line.strip()

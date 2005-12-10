@@ -237,7 +237,21 @@ def check_syntax(statement):
     else:
         print 'Missing SyntaxError: "%s"' % statement
 
+def open_urlresource(url):
+    import urllib, urlparse
+    import os.path
 
+    filename = urlparse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
+
+    for path in [os.path.curdir, os.path.pardir]:
+        fn = os.path.join(path, filename)
+        if os.path.exists(fn):
+            return open(fn)
+
+    requires('urlfetch')
+    print >> get_original_stdout(), '\tfetching %s ...' % url
+    fn, _ = urllib.urlretrieve(url, filename)
+    return open(fn)
 
 #=======================================================================
 # Preliminary PyUNIT integration.
