@@ -2489,7 +2489,7 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
 	PySocketSockObject *s = (PySocketSockObject *)self;
 	SOCKET_T fd;
 	int family = AF_INET, type = SOCK_STREAM, proto = 0;
-	static char *keywords[] = {"family", "type", "proto", 0};
+	static const char *keywords[] = {"family", "type", "proto", 0};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds,
 					 "|iii:socket", keywords,

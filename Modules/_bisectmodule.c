@@ -40,7 +40,7 @@ bisect_right(PyObject *self, PyObject *args, PyObject *kw)
 	int lo = 0;
 	int hi = -1;
 	int index;
-	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+	static const char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:bisect_right",
 		keywords, &list, &item, &lo, &hi))
@@ -70,7 +70,7 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
 	int lo = 0;
 	int hi = -1;
 	int index;
-	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+	static const char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:insort_right",
 		keywords, &list, &item, &lo, &hi))
@@ -137,7 +137,7 @@ bisect_left(PyObject *self, PyObject *args, PyObject *kw)
 	int lo = 0;
 	int hi = -1;
 	int index;
-	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+	static const char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:bisect_left",
 		keywords, &list, &item, &lo, &hi))
@@ -167,7 +167,7 @@ insort_left(PyObject *self, PyObject *args, PyObject *kw)
 	int lo = 0;
 	int hi = -1;
 	int index;
-	static char *keywords[] = {"a", "x", "lo", "hi", NULL};
+	static const char *keywords[] = {"a", "x", "lo", "hi", NULL};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|ii:insort_left",
 		keywords, &list, &item, &lo, &hi))
@@ -233,4 +233,3 @@ init_bisect(void)
 
 	m = Py_InitModule3("_bisect", bisect_methods, module_doc);
 }
-

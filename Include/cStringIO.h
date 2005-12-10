@@ -38,7 +38,7 @@ static struct PycStringIO_CAPI {
   int(*creadline)(PyObject *, char **);
 
   /* Write a string to an output object*/
-  int(*cwrite)(PyObject *, char *, int);
+  int(*cwrite)(PyObject *, const char *, int);
 
   /* Get the output object as a Python string (returns new reference). */
   PyObject *(*cgetvalue)(PyObject *);

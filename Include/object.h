@@ -225,9 +225,9 @@ typedef struct {
 typedef void (*freefunc)(void *);
 typedef void (*destructor)(PyObject *);
 typedef int (*printfunc)(PyObject *, FILE *, int);
-typedef PyObject *(*getattrfunc)(PyObject *, char *);
+typedef PyObject *(*getattrfunc)(PyObject *, const char *);
 typedef PyObject *(*getattrofunc)(PyObject *, PyObject *);
-typedef int (*setattrfunc)(PyObject *, char *, PyObject *);
+typedef int (*setattrfunc)(PyObject *, const char *, PyObject *);
 typedef int (*setattrofunc)(PyObject *, PyObject *, PyObject *);
 typedef int (*cmpfunc)(PyObject *, PyObject *);
 typedef PyObject *(*reprfunc)(PyObject *);
@@ -243,7 +243,7 @@ typedef PyObject *(*allocfunc)(struct _typeobject *, int);
 
 typedef struct _typeobject {
 	PyObject_VAR_HEAD
-	char *tp_name; /* For printing, in format "<module>.<name>" */
+	const char *tp_name; /* For printing, in format "<module>.<name>" */
 	int tp_basicsize, tp_itemsize; /* For allocation */
 
 	/* Methods to implement standard operations */
@@ -275,7 +275,7 @@ typedef struct _typeobject {
 	/* Flags to define presence of optional/expanded features */
 	long tp_flags;
 
-	char *tp_doc; /* Documentation string */
+	const char *tp_doc; /* Documentation string */
 
 	/* Assigned meaning in release 2.0 */
 	/* call function for all accessible objects */
@@ -379,9 +379,9 @@ PyAPI_FUNC(PyObject *) PyObject_Unicode(PyObject *);
 PyAPI_FUNC(int) PyObject_Compare(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_RichCompare(PyObject *, PyObject *, int);
 PyAPI_FUNC(int) PyObject_RichCompareBool(PyObject *, PyObject *, int);
-PyAPI_FUNC(PyObject *) PyObject_GetAttrString(PyObject *, char *);
-PyAPI_FUNC(int) PyObject_SetAttrString(PyObject *, char *, PyObject *);
-PyAPI_FUNC(int) PyObject_HasAttrString(PyObject *, char *);
+PyAPI_FUNC(PyObject *) PyObject_GetAttrString(PyObject *, const char *);
+PyAPI_FUNC(int) PyObject_SetAttrString(PyObject *, const char *, PyObject *);
+PyAPI_FUNC(int) PyObject_HasAttrString(PyObject *, const char *);
 PyAPI_FUNC(PyObject *) PyObject_GetAttr(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);

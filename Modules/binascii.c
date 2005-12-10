@@ -1032,7 +1032,7 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
 	unsigned char *data, *odata;
 	unsigned int datalen = 0;
 	PyObject *rv;
-	static char *kwlist[] = {"data", "header", NULL};
+	static const char *kwlist[] = {"data", "header", NULL};
 	int header = 0;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|i", kwlist, &data,
@@ -1133,7 +1133,8 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 	unsigned int datalen = 0, odatalen = 0;
 	PyObject *rv;
 	unsigned int linelen = 0;
-	static char *kwlist[] = {"data", "quotetabs", "istext", "header", NULL};
+	static const char *kwlist[] = {"data", "quotetabs", "istext",
+                                       "header", NULL};
 	int istext = 1;
 	int quotetabs = 0;
 	int header = 0;

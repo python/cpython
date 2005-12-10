@@ -1886,10 +1886,10 @@ PyCurses_setupterm(PyObject* self, PyObject *args, PyObject* keywds)
 	int err;
 	char* termstr = NULL;
 
-	static char *kwlist[] = {"term", "fd", NULL};
+	static const char *kwlist[] = {"term", "fd", NULL};
 
 	if (!PyArg_ParseTupleAndKeywords(
-		args,keywds,"|zi:setupterm",kwlist,&termstr,&fd)) {
+		args, keywds, "|zi:setupterm", kwlist, &termstr, &fd)) {
 		return NULL;
 	}
 	

@@ -2393,7 +2393,7 @@ Tktt_Repr(PyObject *self)
 }
 
 static PyObject *
-Tktt_GetAttr(PyObject *self, char *name)
+Tktt_GetAttr(PyObject *self, const char *name)
 {
 	return Py_FindMethod(Tktt_methods, self, name);
 }
@@ -2723,7 +2723,7 @@ Tkapp_Dealloc(PyObject *self)
 }
 
 static PyObject *
-Tkapp_GetAttr(PyObject *self, char *name)
+Tkapp_GetAttr(PyObject *self, const char *name)
 {
 	return Py_FindMethod(Tkapp_methods, self, name);
 }

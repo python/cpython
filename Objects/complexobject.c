@@ -829,7 +829,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	Py_complex cr, ci;
 	int own_r = 0;
 	static PyObject *complexstr;
-	static char *kwlist[] = {"real", "imag", 0};
+	static const char *kwlist[] = {"real", "imag", 0};
 
 	r = Py_False;
 	i = NULL;

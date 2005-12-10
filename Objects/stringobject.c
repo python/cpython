@@ -3325,7 +3325,7 @@ static PyObject *
 string_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *x = NULL;
-	static char *kwlist[] = {"object", 0};
+	static const char *kwlist[] = {"object", 0};
 
 	if (type != &PyString_Type)
 		return str_subtype_new(type, args, kwds);

@@ -528,7 +528,7 @@ static PyObject *
 tuple_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *arg = NULL;
-	static char *kwlist[] = {"sequence", 0};
+	static const char *kwlist[] = {"sequence", 0};
 
 	if (type != &PyTuple_Type)
 		return tuple_subtype_new(type, args, kwds);

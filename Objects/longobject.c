@@ -1,4 +1,5 @@
 
+
 /* Long (arbitrary precision) integer object implementation */
 
 /* XXX The functional organization of this file is terrible */
@@ -2922,7 +2923,7 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *x = NULL;
 	int base = -909;		     /* unlikely! */
-	static char *kwlist[] = {"x", "base", 0};
+	static const char *kwlist[] = {"x", "base", 0};
 
 	if (type != &PyLong_Type)
 		return long_subtype_new(type, args, kwds); /* Wimp out */

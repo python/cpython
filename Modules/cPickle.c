@@ -339,7 +339,7 @@ typedef struct Picklerobject {
 
 	int fast; /* Fast mode doesn't save in memo, don't use if circ ref */
         int nesting;
-	int (*write_func)(struct Picklerobject *, char *, int);
+	int (*write_func)(struct Picklerobject *, const char *, int);
 	char *write_buf;
 	int buf_size;
 	PyObject *dispatch_table;
@@ -417,7 +417,7 @@ cPickle_ErrFormat(PyObject *ErrType, char *stringformat, char *format, ...)
 }
 
 static int
-write_file(Picklerobject *self, char *s, int  n)
+write_file(Picklerobject *self, const char *s, int  n)
 {
 	size_t nbyteswritten;
 
@@ -437,7 +437,7 @@ write_file(Picklerobject *self, char *s, int  n)
 }
 
 static int
-write_cStringIO(Picklerobject *self, char *s, int  n)
+write_cStringIO(Picklerobject *self, const char *s, int  n)
 {
 	if (s == NULL) {
 		return 0;
@@ -451,14 +451,14 @@ write_cStringIO(Picklerobject *self, char *s, int  n)
 }
 
 static int
-write_none(Picklerobject *self, char *s, int  n)
+write_none(Picklerobject *self, const char *s, int  n)
 {
 	if (s == NULL) return 0;
 	return n;
 }
 
 static int
-write_other(Picklerobject *self, char *s, int  n)
+write_other(Picklerobject *self, const char *s, int  n)
 {
 	PyObject *py_str = 0, *junk = 0;
 
@@ -669,7 +669,7 @@ readline_other(Unpicklerobject *self, char **s)
  * The caller is responsible for free()'ing the return value.
  */
 static char *
-pystrndup(char *s, int n)
+pystrndup(const char *s, int n)
 {
 	char *r = (char *)malloc(n+1);
 	if (r == NULL)
@@ -945,7 +945,7 @@ save_none(Picklerobject *self, PyObject *args)
 static int
 save_bool(Picklerobject *self, PyObject *args)
 {
-	static char *buf[2] = {FALSE, TRUE};
+	static const char *buf[2] = {FALSE, TRUE};
 	static char len[2] = {sizeof(FALSE)-1, sizeof(TRUE)-1};
 	long l = PyInt_AS_LONG((PyIntObject *)args);
 
@@ -2858,7 +2858,7 @@ newPicklerobject(PyObject *file, int proto)
 static PyObject *
 get_Pickler(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	static char *kwlist[] = {"file", "protocol", NULL};
+	static const char *kwlist[] = {"file", "protocol", NULL};
 	PyObject *file = NULL;
 	int proto = 0;
 
@@ -5378,7 +5378,7 @@ Unpickler_setattr(Unpicklerobject *self, char *name, PyObject *value)
 static PyObject *
 cpm_dump(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	static char *kwlist[] = {"obj", "file", "protocol", NULL};
+	static const char *kwlist[] = {"obj", "file", "protocol", NULL};
 	PyObject *ob, *file, *res = NULL;
 	Picklerobject *pickler = 0;
 	int proto = 0;
@@ -5407,7 +5407,7 @@ cpm_dump(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 cpm_dumps(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	static char *kwlist[] = {"obj", "protocol", NULL};
+	static const char *kwlist[] = {"obj", "protocol", NULL};
 	PyObject *ob, *file = 0, *res = NULL;
 	Picklerobject *pickler = 0;
 	int proto = 0;

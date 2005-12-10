@@ -579,7 +579,7 @@ PyTypeObject PyWrapperDescr_Type = {
 };
 
 static PyDescrObject *
-descr_new(PyTypeObject *descrtype, PyTypeObject *type, char *name)
+descr_new(PyTypeObject *descrtype, PyTypeObject *type, const char *name)
 {
 	PyDescrObject *descr;
 
@@ -1182,7 +1182,7 @@ static int
 property_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	PyObject *get = NULL, *set = NULL, *del = NULL, *doc = NULL;
-	static char *kwlist[] = {"fget", "fset", "fdel", "doc", 0};
+	static const char *kwlist[] = {"fget", "fset", "fdel", "doc", 0};
 	propertyobject *gs = (propertyobject *)self;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOOO:property",

@@ -159,7 +159,7 @@ static PyObject *
 class_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *name, *bases, *dict;
-	static char *kwlist[] = {"name", "bases", "dict", 0};
+	static const char *kwlist[] = {"name", "bases", "dict", 0};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "SOO", kwlist,
 					 &name, &bases, &dict))

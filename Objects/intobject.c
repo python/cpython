@@ -879,7 +879,7 @@ int_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *x = NULL;
 	int base = -909;
-	static char *kwlist[] = {"x", "base", 0};
+	static const char *kwlist[] = {"x", "base", 0};
 
 	if (type != &PyInt_Type)
 		return int_subtype_new(type, args, kwds); /* Wimp out */

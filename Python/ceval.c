@@ -3434,7 +3434,7 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
 	return result;
 }
 
-char *
+const char *
 PyEval_GetFuncName(PyObject *func)
 {
 	if (PyMethod_Check(func))
@@ -3453,7 +3453,7 @@ PyEval_GetFuncName(PyObject *func)
 	}
 }
 
-char *
+const char *
 PyEval_GetFuncDesc(PyObject *func)
 {
 	if (PyMethod_Check(func))

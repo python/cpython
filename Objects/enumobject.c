@@ -16,7 +16,7 @@ enum_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	enumobject *en;
 	PyObject *seq = NULL;
-	static char *kwlist[] = {"sequence", 0};
+	static const char *kwlist[] = {"sequence", 0};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:enumerate", kwlist,
 					 &seq))

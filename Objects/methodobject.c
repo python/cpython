@@ -132,7 +132,7 @@ meth_dealloc(PyCFunctionObject *m)
 static PyObject *
 meth_get__doc__(PyCFunctionObject *m, void *closure)
 {
-	char *doc = m->m_ml->ml_doc;
+	const char *doc = m->m_ml->ml_doc;
 
 	if (doc != NULL)
 		return PyString_FromString(doc);
@@ -311,13 +311,13 @@ listmethodchain(PyMethodChain *chain)
 /* Find a method in a method chain */
 
 PyObject *
-Py_FindMethodInChain(PyMethodChain *chain, PyObject *self, char *name)
+Py_FindMethodInChain(PyMethodChain *chain, PyObject *self, const char *name)
 {
 	if (name[0] == '_' && name[1] == '_') {
 		if (strcmp(name, "__methods__") == 0)
 			return listmethodchain(chain);
 		if (strcmp(name, "__doc__") == 0) {
-			char *doc = self->ob_type->tp_doc;
+			const char *doc = self->ob_type->tp_doc;
 			if (doc != NULL)
 				return PyString_FromString(doc);
 		}
@@ -339,7 +339,7 @@ Py_FindMethodInChain(PyMethodChain *chain, PyObject *self, char *name)
 /* Find a method in a single method list */
 
 PyObject *
-Py_FindMethod(PyMethodDef *methods, PyObject *self, char *name)
+Py_FindMethod(PyMethodDef *methods, PyObject *self, const char *name)
 {
 	PyMethodChain chain;
 	chain.methods = methods;

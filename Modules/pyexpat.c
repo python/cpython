@@ -1724,8 +1724,8 @@ pyexpat_ParserCreate(PyObject *notused, PyObject *args, PyObject *kw)
     PyObject *intern = NULL;
     PyObject *result;
     int intern_decref = 0;
-    static char *kwlist[] = {"encoding", "namespace_separator",
-			     "intern", NULL};
+    static const char *kwlist[] = {"encoding", "namespace_separator",
+                                   "intern", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kw, "|zzO:ParserCreate", kwlist,
                                      &encoding, &namespace_separator, &intern))

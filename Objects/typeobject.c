@@ -21,7 +21,7 @@ static PyMemberDef type_members[] = {
 static PyObject *
 type_name(PyTypeObject *type, void *context)
 {
-	char *s;
+	const char *s;
 
 	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
 		PyHeapTypeObject* et = (PyHeapTypeObject*)type;
@@ -1556,7 +1556,7 @@ static PyObject *
 type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 {
 	PyObject *name, *bases, *dict;
-	static char *kwlist[] = {"name", "bases", "dict", 0};
+	static const char *kwlist[] = {"name", "bases", "dict", 0};
 	PyObject *slots, *tmp, *newslots;
 	PyTypeObject *type, *base, *tmptype, *winner;
 	PyHeapTypeObject *et;
@@ -1856,12 +1856,13 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		PyObject *doc = PyDict_GetItemString(dict, "__doc__");
 		if (doc != NULL && PyString_Check(doc)) {
 			const size_t n = (size_t)PyString_GET_SIZE(doc);
-			type->tp_doc = (char *)PyObject_MALLOC(n+1);
-			if (type->tp_doc == NULL) {
+                        char *tp_doc = PyObject_MALLOC(n+1);
+			if (tp_doc == NULL) {
 				Py_DECREF(type);
 				return NULL;
 			}
-			memcpy(type->tp_doc, PyString_AS_STRING(doc), n+1);
+			memcpy(tp_doc, PyString_AS_STRING(doc), n+1);
+                        type->tp_doc = tp_doc;
 		}
 	}
 
@@ -2105,7 +2106,10 @@ type_dealloc(PyTypeObject *type)
 	Py_XDECREF(type->tp_mro);
 	Py_XDECREF(type->tp_cache);
 	Py_XDECREF(type->tp_subclasses);
-	PyObject_Free(type->tp_doc);
+        /* A type's tp_doc is heap allocated, unlike the tp_doc slots
+         * of most other objects.  It's okay to cast it to char *.
+         */
+	PyObject_Free((char *)type->tp_doc);
 	Py_XDECREF(et->name);
 	Py_XDECREF(et->slots);
 	type->ob_type->tp_free((PyObject *)type);
