@@ -650,7 +650,7 @@ static PyObject* _DBCursor_get(DBCursorObject* self, int extra_flags,
     int dlen = -1;
     int doff = -1;
     int flags = 0;
-    char* kwnames[] = { "flags", "dlen", "doff", NULL };
+    static const char* kwnames[] = { "flags", "dlen", "doff", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, format, kwnames,
 				     &flags, &dlen, &doff)) 
@@ -1147,9 +1147,10 @@ DB_associate(DBObject* self, PyObject* args, PyObject* kwargs)
 #if (DBVER >= 41)
     PyObject *txnobj = NULL;
     DB_TXN *txn = NULL;
-    char* kwnames[] = {"secondaryDB", "callback", "flags", "txn", NULL};
+    static const char* kwnames[] = {"secondaryDB", "callback", "flags", "txn",
+                                    NULL};
 #else
-    char* kwnames[] = {"secondaryDB", "callback", "flags", NULL};
+    static const char* kwnames[] = {"secondaryDB", "callback", "flags", NULL};
 #endif
 
 #if (DBVER >= 41)
@@ -1255,7 +1256,7 @@ _DB_consume(DBObject* self, PyObject* args, PyObject* kwargs, int consume_flag)
     PyObject* retval = NULL;
     DBT key, data;
     DB_TXN *txn = NULL;
-    char* kwnames[] = { "txn", "flags", NULL };
+    static const char* kwnames[] = { "txn", "flags", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Oi:consume", kwnames,
                                      &txnobj, &flags))
@@ -1325,7 +1326,7 @@ DB_cursor(DBObject* self, PyObject* args, PyObject* kwargs)
     DBC* dbc;
     PyObject* txnobj = NULL;
     DB_TXN *txn = NULL;
-    char* kwnames[] = { "txn", "flags", NULL };
+    static const char* kwnames[] = { "txn", "flags", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Oi:cursor", kwnames,
                                      &txnobj, &flags))
@@ -1350,7 +1351,7 @@ DB_delete(DBObject* self, PyObject* args, PyObject* kwargs)
     PyObject* keyobj;
     DBT key;
     DB_TXN *txn = NULL;
-    char* kwnames[] = { "key", "txn", "flags", NULL };
+    static const char* kwnames[] = { "key", "txn", "flags", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Oi:delete", kwnames,
                                      &keyobj, &txnobj, &flags))
@@ -1402,7 +1403,8 @@ DB_get(DBObject* self, PyObject* args, PyObject* kwargs)
     int doff = -1;
     DBT key, data;
     DB_TXN *txn = NULL;
-    char* kwnames[] = {"key", "default", "txn", "flags", "dlen", "doff", NULL};
+    static const char* kwnames[] = {"key", "default", "txn", "flags", "dlen",
+                                    "doff", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OOiii:get", kwnames,
                                      &keyobj, &dfltobj, &txnobj, &flags, &dlen,
@@ -1469,7 +1471,8 @@ DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
     int doff = -1;
     DBT key, pkey, data;
     DB_TXN *txn = NULL;
-    char* kwnames[] = {"key", "default", "txn", "flags", "dlen", "doff", NULL};
+    static const char* kwnames[] = {"key", "default", "txn", "flags", "dlen",
+                                    "doff", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OOiii:pget", kwnames,
                                      &keyobj, &dfltobj, &txnobj, &flags, &dlen,
@@ -1558,7 +1561,7 @@ DB_get_size(DBObject* self, PyObject* args, PyObject* kwargs)
     PyObject* retval = NULL;
     DBT key, data;
     DB_TXN *txn = NULL;
-    char* kwnames[] = { "key", "txn", NULL };
+    static const char* kwnames[] = { "key", "txn", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:get_size", kwnames,
                                      &keyobj, &txnobj))
@@ -1601,7 +1604,7 @@ DB_get_both(DBObject* self, PyObject* args, PyObject* kwargs)
     PyObject* retval = NULL;
     DBT key, data;
     DB_TXN *txn = NULL;
-    char* kwnames[] = { "key", "data", "txn", "flags", NULL };
+    static const char* kwnames[] = { "key", "data", "txn", "flags", NULL };
 
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|Oi:get_both", kwnames,
@@ -1752,7 +1755,7 @@ DB_key_range(DBObject* self, PyObject* args, PyObject* kwargs)
     DBT key;
     DB_TXN *txn = NULL;
     DB_KEY_RANGE range;
-    char* kwnames[] = { "key", "txn", "flags", NULL };
+    static const char* kwnames[] = { "key", "txn", "flags", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Oi:key_range", kwnames,
                                      &keyobj, &txnobj, &flags))
@@ -1783,17 +1786,17 @@ DB_open(DBObject* self, PyObject* args, PyObject* kwargs)
     PyObject *txnobj = NULL;
     DB_TXN *txn = NULL;
     /* with dbname */
-    char* kwnames[] = {
+    static const char* kwnames[] = {
         "filename", "dbname", "dbtype", "flags", "mode", "txn", NULL};
     /* without dbname */
-    char* kwnames_basic[] = {
+    static const char* kwnames_basic[] = {
         "filename", "dbtype", "flags", "mode", "txn", NULL};
 #else
     /* with dbname */
-    char* kwnames[] = {
+    static const char* kwnames[] = {
         "filename", "dbname", "dbtype", "flags", "mode", NULL};
     /* without dbname */
-    char* kwnames_basic[] = {
+    static const char* kwnames_basic[] = {
         "filename", "dbtype", "flags", "mode", NULL};
 #endif
 
@@ -1877,7 +1880,8 @@ DB_put(DBObject* self, PyObject* args, PyObject* kwargs)
     PyObject* keyobj, *dataobj, *retval;
     DBT key, data;
     DB_TXN *txn = NULL;
-    char* kwnames[] = { "key", "data", "txn", "flags", "dlen", "doff", NULL };
+    static const char* kwnames[] = { "key", "data", "txn", "flags", "dlen",
+                                     "doff", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|Oiii:put", kwnames,
                          &keyobj, &dataobj, &txnobj, &flags, &dlen, &doff))
@@ -1917,7 +1921,7 @@ DB_remove(DBObject* self, PyObject* args, PyObject* kwargs)
     char* filename;
     char* database = NULL;
     int err, flags=0;
-    char* kwnames[] = { "filename", "dbname", "flags", NULL};
+    static const char* kwnames[] = { "filename", "dbname", "flags", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|zi:remove", kwnames,
                                      &filename, &database, &flags))
@@ -2335,9 +2339,9 @@ DB_stat(DBObject* self, PyObject* args, PyObject* kwargs)
 #if (DBVER >= 43)
     PyObject* txnobj = NULL;
     DB_TXN *txn = NULL;
-    char* kwnames[] = { "txn", "flags", NULL };
+    static const char* kwnames[] = { "txn", "flags", NULL };
 #else
-    char* kwnames[] = { "flags", NULL };
+    static const char* kwnames[] = { "flags", NULL };
 #endif
 
 #if (DBVER >= 43)
@@ -2477,7 +2481,7 @@ DB_truncate(DBObject* self, PyObject* args, PyObject* kwargs)
     u_int32_t count=0;
     PyObject* txnobj = NULL;
     DB_TXN *txn = NULL;
-    char* kwnames[] = { "txn", "flags", NULL };
+    static const char* kwnames[] = { "txn", "flags", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Oi:cursor", kwnames,
                                      &txnobj, &flags))
@@ -2521,7 +2525,8 @@ DB_verify(DBObject* self, PyObject* args, PyObject* kwargs)
     char* dbName=NULL;
     char* outFileName=NULL;
     FILE* outFile=NULL;
-    char* kwnames[] = { "filename", "dbname", "outfile", "flags", NULL };
+    static const char* kwnames[] = { "filename", "dbname", "outfile", "flags",
+                                     NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|zzi:verify", kwnames,
                                      &fileName, &dbName, &outFileName, &flags))
@@ -2578,7 +2583,7 @@ DB_set_encrypt(DBObject* self, PyObject* args, PyObject* kwargs)
     int err;
     u_int32_t flags=0;
     char *passwd = NULL;
-    char* kwnames[] = { "passwd", "flags", NULL };
+    static const char* kwnames[] = { "passwd", "flags", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|i:set_encrypt", kwnames,
 		&passwd, &flags)) {
@@ -3018,7 +3023,8 @@ DBC_get(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     int dlen = -1;
     int doff = -1;
     DBT key, data;
-    char* kwnames[] = { "key","data", "flags", "dlen", "doff", NULL };
+    static const char* kwnames[] = { "key","data", "flags", "dlen", "doff",
+                                     NULL };
 
     CLEAR_DBT(key);
     CLEAR_DBT(data);
@@ -3104,7 +3110,8 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     int dlen = -1;
     int doff = -1;
     DBT key, pkey, data;
-    char* kwnames[] = { "key","data", "flags", "dlen", "doff", NULL };
+    static const char* kwnames[] = { "key","data", "flags", "dlen", "doff",
+                                     NULL };
 
     CLEAR_DBT(key);
     CLEAR_DBT(data);
@@ -3257,7 +3264,8 @@ DBC_put(DBCursorObject* self, PyObject* args, PyObject* kwargs)
     int err, flags = 0;
     PyObject* keyobj, *dataobj;
     DBT key, data;
-    char* kwnames[] = { "key", "data", "flags", "dlen", "doff", NULL };
+    static const char* kwnames[] = { "key", "data", "flags", "dlen", "doff",
+                                     NULL };
     int dlen = -1;
     int doff = -1;
 
@@ -3292,7 +3300,7 @@ DBC_set(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     int err, flags = 0;
     DBT key, data;
     PyObject* retval, *keyobj;
-    char* kwnames[] = { "key", "flags", "dlen", "doff", NULL };
+    static const char* kwnames[] = { "key", "flags", "dlen", "doff", NULL };
     int dlen = -1;
     int doff = -1;
 
@@ -3362,7 +3370,7 @@ DBC_set_range(DBCursorObject* self, PyObject* args, PyObject* kwargs)
     int err, flags = 0;
     DBT key, data;
     PyObject* retval, *keyobj;
-    char* kwnames[] = { "key", "flags", "dlen", "doff", NULL };
+    static const char* kwnames[] = { "key", "flags", "dlen", "doff", NULL };
     int dlen = -1;
     int doff = -1;
 
@@ -3552,7 +3560,7 @@ DBC_set_recno(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     PyObject* retval;
     int dlen = -1;
     int doff = -1;
-    char* kwnames[] = { "recno","flags", "dlen", "doff", NULL };
+    static const char* kwnames[] = { "recno","flags", "dlen", "doff", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|iii:set_recno", kwnames,
 				     &irecno, &flags, &dlen, &doff))
@@ -3746,7 +3754,8 @@ DBEnv_dbremove(DBEnvObject* self, PyObject* args, PyObject* kwargs)
     char *database = NULL;
     PyObject *txnobj = NULL;
     DB_TXN *txn = NULL;
-    char* kwnames[] = { "file", "database", "txn", "flags", NULL };
+    static const char* kwnames[] = { "file", "database", "txn", "flags",
+                                     NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ss|Oi:dbremove", kwnames,
 		&file, &database, &txnobj, &flags)) {
@@ -3773,7 +3782,8 @@ DBEnv_dbrename(DBEnvObject* self, PyObject* args, PyObject* kwargs)
     char *newname = NULL;
     PyObject *txnobj = NULL;
     DB_TXN *txn = NULL;
-    char* kwnames[] = { "file", "database", "newname", "txn", "flags", NULL };
+    static const char* kwnames[] = { "file", "database", "newname", "txn",
+                                     "flags", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sss|Oi:dbrename", kwnames,
 		&file, &database, &newname, &txnobj, &flags)) {
@@ -3797,7 +3807,7 @@ DBEnv_set_encrypt(DBEnvObject* self, PyObject* args, PyObject* kwargs)
     int err;
     u_int32_t flags=0;
     char *passwd = NULL;
-    char* kwnames[] = { "passwd", "flags", NULL };
+    static const char* kwnames[] = { "passwd", "flags", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|i:set_encrypt", kwnames,
 		&passwd, &flags)) {
@@ -3820,7 +3830,7 @@ DBEnv_set_timeout(DBEnvObject* self, PyObject* args, PyObject* kwargs)
     int err;
     u_int32_t flags=0;
     u_int32_t timeout = 0;
-    char* kwnames[] = { "timeout", "flags", NULL };
+    static const char* kwnames[] = { "timeout", "flags", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ii:set_timeout", kwnames,
 		&timeout, &flags)) {
@@ -4107,7 +4117,7 @@ DBEnv_txn_begin(DBEnvObject* self, PyObject* args, PyObject* kwargs)
     int flags = 0;
     PyObject* txnobj = NULL;
     DB_TXN *txn = NULL;
-    char* kwnames[] = { "parent", "flags", NULL };
+    static const char* kwnames[] = { "parent", "flags", NULL };
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Oi:txn_begin", kwnames,
                                      &txnobj, &flags))
@@ -4937,7 +4947,7 @@ DB_construct(PyObject* self, PyObject* args, PyObject* kwargs)
 {
     PyObject* dbenvobj = NULL;
     int flags = 0;
-    char* kwnames[] = { "dbEnv", "flags", NULL};
+    static const char* kwnames[] = { "dbEnv", "flags", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Oi:DB", kwnames,
                                      &dbenvobj, &flags))

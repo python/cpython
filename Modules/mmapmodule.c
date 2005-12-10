@@ -864,12 +864,13 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	int map_size;
 	int fd, flags = MAP_SHARED, prot = PROT_WRITE | PROT_READ;
 	access_mode access = ACCESS_DEFAULT;
-	char *keywords[] = {"fileno", "length", 
-			    "flags", "prot", 
-			    "access", NULL};
+	static const char *keywords[] = {"fileno", "length", 
+                                         "flags", "prot", 
+                                         "access", NULL};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iO|iii", keywords, 
-					 &fd, &map_size_obj, &flags, &prot, &access))
+					 &fd, &map_size_obj, &flags, &prot,
+                                         &access))
 		return NULL;
 	map_size = _GetMapSize(map_size_obj);
 	if (map_size < 0)
@@ -952,9 +953,9 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	HANDLE fh = 0;
 	access_mode   access = ACCESS_DEFAULT;
 	DWORD flProtect, dwDesiredAccess;
-	char *keywords[] = { "fileno", "length", 
-			     "tagname", 
-			     "access", NULL };
+	static const char *keywords[] = { "fileno", "length", 
+                                          "tagname", 
+                                          "access", NULL };
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iO|zi", keywords,
 					 &fileno, &map_size_obj, 

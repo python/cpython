@@ -663,7 +663,7 @@ static int
 default_3way_compare(PyObject *v, PyObject *w)
 {
 	int c;
-	char *vname, *wname;
+	const char *vname, *wname;
 
 	if (v->ob_type == w->ob_type) {
 		/* When comparing these pointers, they must be cast to
@@ -1018,7 +1018,7 @@ PyObject_Hash(PyObject *v)
 }
 
 PyObject *
-PyObject_GetAttrString(PyObject *v, char *name)
+PyObject_GetAttrString(PyObject *v, const char *name)
 {
 	PyObject *w, *res;
 
@@ -1033,7 +1033,7 @@ PyObject_GetAttrString(PyObject *v, char *name)
 }
 
 int
-PyObject_HasAttrString(PyObject *v, char *name)
+PyObject_HasAttrString(PyObject *v, const char *name)
 {
 	PyObject *res = PyObject_GetAttrString(v, name);
 	if (res != NULL) {
@@ -1045,7 +1045,7 @@ PyObject_HasAttrString(PyObject *v, char *name)
 }
 
 int
-PyObject_SetAttrString(PyObject *v, char *name, PyObject *w)
+PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
 {
 	PyObject *s;
 	int res;
@@ -1589,7 +1589,7 @@ merge_class_dict(PyObject* dict, PyObject* aclass)
 */
 
 static int
-merge_list_attr(PyObject* dict, PyObject* obj, char *attrname)
+merge_list_attr(PyObject* dict, PyObject* obj, const char *attrname)
 {
 	PyObject *list;
 	int result = 0;

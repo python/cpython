@@ -555,7 +555,7 @@ _PyImport_FindExtension(char *name, char *filename)
    'NEW' REFERENCE! */
 
 PyObject *
-PyImport_AddModule(char *name)
+PyImport_AddModule(const char *name)
 {
 	PyObject *modules = PyImport_GetModuleDict();
 	PyObject *m;
@@ -1875,7 +1875,7 @@ PyImport_ImportFrozenModule(char *name)
    its module object WITH INCREMENTED REFERENCE COUNT */
 
 PyObject *
-PyImport_ImportModule(char *name)
+PyImport_ImportModule(const char *name)
 {
 	PyObject *pname;
 	PyObject *result;

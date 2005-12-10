@@ -9,22 +9,22 @@ extern "C" {
 
 #include <stdarg.h>
 
-PyAPI_FUNC(int) PyArg_Parse(PyObject *, char *, ...);
-PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, char *, ...);
+PyAPI_FUNC(int) PyArg_Parse(PyObject *, const char *, ...);
+PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
-                                                  char *, char **, ...);
-PyAPI_FUNC(int) PyArg_UnpackTuple(PyObject *, char *, int, int, ...);
-PyAPI_FUNC(PyObject *) Py_BuildValue(char *, ...);
-PyAPI_FUNC(int) _PyArg_NoKeywords(char *funcname, PyObject *kw);
+                                                  const char *, const char **, ...);
+PyAPI_FUNC(int) PyArg_UnpackTuple(PyObject *, const char *, int, int, ...);
+PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
+PyAPI_FUNC(int) _PyArg_NoKeywords(const char *funcname, PyObject *kw);
 
-PyAPI_FUNC(int) PyArg_VaParse(PyObject *, char *, va_list);
+PyAPI_FUNC(int) PyArg_VaParse(PyObject *, const char *, va_list);
 PyAPI_FUNC(int) PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,
-                                                  char *, char **, va_list);
-PyAPI_FUNC(PyObject *) Py_VaBuildValue(char *, va_list);
+                                                  const char *, const char **, va_list);
+PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);
 
-PyAPI_FUNC(int) PyModule_AddObject(PyObject *, char *, PyObject *);
-PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, char *, long);
-PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, char *, char *);
+PyAPI_FUNC(int) PyModule_AddObject(PyObject *, const char *, PyObject *);
+PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);
+PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char *);
 
 #define PYTHON_API_VERSION 1012
 #define PYTHON_API_STRING "1012"
@@ -84,9 +84,9 @@ PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, char *, char *);
 #define Py_InitModule4 Py_InitModule4TraceRefs
 #endif
 
-PyAPI_FUNC(PyObject *) Py_InitModule4(char *name, PyMethodDef *methods,
-                                            char *doc, PyObject *self,
-                                            int apiver);
+PyAPI_FUNC(PyObject *) Py_InitModule4(const char *name, PyMethodDef *methods,
+                                      const char *doc, PyObject *self,
+                                      int apiver);
 
 #define Py_InitModule(name, methods) \
 	Py_InitModule4(name, methods, (char *)NULL, (PyObject *)NULL, \

@@ -1907,7 +1907,7 @@ builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	PyObject *newlist, *v, *seq, *compare=NULL, *keyfunc=NULL, *newargs;
 	PyObject *callable;
-	static char *kwlist[] = {"iterable", "cmp", "key", "reverse", 0};
+	static const char *kwlist[] = {"iterable", "cmp", "key", "reverse", 0};
 	long reverse;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OOi:sorted",

@@ -364,7 +364,7 @@ func_new(PyTypeObject* type, PyObject* args, PyObject* kw)
 	PyObject *closure = Py_None;
 	PyFunctionObject *newfunc;
 	int nfree, nclosure;
-	static char *kwlist[] = {"code", "globals", "name",
+	static const char *kwlist[] = {"code", "globals", "name",
 				 "argdefs", "closure", 0};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "O!O!|OOO:function",

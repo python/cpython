@@ -15,7 +15,7 @@ static PyMemberDef module_members[] = {
 };
 
 PyObject *
-PyModule_New(char *name)
+PyModule_New(const char *name)
 {
 	PyModuleObject *m;
 	PyObject *nameobj;
@@ -149,10 +149,10 @@ _PyModule_Clear(PyObject *m)
 static int
 module_init(PyModuleObject *m, PyObject *args, PyObject *kwds)
 {
-	static char *kwlist[] = {"name", "doc", NULL};
+	static const char *kwlist[] = {"name", "doc", NULL};
 	PyObject *dict, *name = Py_None, *doc = Py_None;
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "S|O:module.__init__", kwlist,
-					 &name, &doc))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "S|O:module.__init__",
+                                         kwlist, &name, &doc))
 		return -1;
 	dict = m->md_dict;
 	if (dict == NULL) {

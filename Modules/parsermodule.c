@@ -158,7 +158,7 @@ typedef struct {
 
 static void parser_free(PyST_Object *st);
 static int parser_compare(PyST_Object *left, PyST_Object *right);
-static PyObject *parser_getattr(PyObject *self, char *name);
+static PyObject *parser_getattr(PyObject *self, const char *name);
 
 
 static
@@ -292,7 +292,7 @@ parser_st2tuple(PyST_Object *self, PyObject *args, PyObject *kw)
     PyObject *res = 0;
     int ok;
 
-    static char *keywords[] = {"ast", "line_info", NULL};
+    static const char *keywords[] = {"ast", "line_info", NULL};
 
     if (self == NULL) {
         ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|O:st2tuple", keywords,
@@ -330,7 +330,7 @@ parser_st2list(PyST_Object *self, PyObject *args, PyObject *kw)
     PyObject *res = 0;
     int ok;
 
-    static char *keywords[] = {"ast", "line_info", NULL};
+    static const char *keywords[] = {"ast", "line_info", NULL};
 
     if (self == NULL)
         ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|O:st2list", keywords,
@@ -367,7 +367,7 @@ parser_compilest(PyST_Object *self, PyObject *args, PyObject *kw)
     char*         str = "<syntax-tree>";
     int ok;
 
-    static char *keywords[] = {"ast", "filename", NULL};
+    static const char *keywords[] = {"ast", "filename", NULL};
 
     if (self == NULL)
         ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|s:compilest", keywords,
@@ -396,7 +396,7 @@ parser_isexpr(PyST_Object *self, PyObject *args, PyObject *kw)
     PyObject* res = 0;
     int ok;
 
-    static char *keywords[] = {"ast", NULL};
+    static const char *keywords[] = {"ast", NULL};
 
     if (self == NULL)
         ok = PyArg_ParseTupleAndKeywords(args, kw, "O!:isexpr", keywords,
@@ -419,7 +419,7 @@ parser_issuite(PyST_Object *self, PyObject *args, PyObject *kw)
     PyObject* res = 0;
     int ok;
 
-    static char *keywords[] = {"ast", NULL};
+    static const char *keywords[] = {"ast", NULL};
 
     if (self == NULL)
         ok = PyArg_ParseTupleAndKeywords(args, kw, "O!:issuite", keywords,
@@ -456,7 +456,7 @@ parser_methods[] = {
 
 
 static PyObject*
-parser_getattr(PyObject *self, char *name)
+parser_getattr(PyObject *self, const char *name)
 {
     return (Py_FindMethod(parser_methods, self, name));
 }
@@ -486,7 +486,7 @@ parser_do_parse(PyObject *args, PyObject *kw, char *argspec, int type)
     char*     string = 0;
     PyObject* res    = 0;
 
-    static char *keywords[] = {"source", NULL};
+    static const char *keywords[] = {"source", NULL};
 
     if (PyArg_ParseTupleAndKeywords(args, kw, argspec, keywords, &string)) {
         node* n = PyParser_SimpleParseString(string,
@@ -568,7 +568,7 @@ parser_tuple2st(PyST_Object *self, PyObject *args, PyObject *kw)
     PyObject *tuple;
     node *tree;
 
-    static char *keywords[] = {"sequence", NULL};
+    static const char *keywords[] = {"sequence", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kw, "O:sequence2st", keywords,
                                      &tuple))

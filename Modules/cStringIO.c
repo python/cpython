@@ -362,7 +362,7 @@ PyDoc_STRVAR(O_write__doc__,
 
 
 static int
-O_cwrite(PyObject *self, char *c, int  l) {
+O_cwrite(PyObject *self, const char *c, int  l) {
         int newl;
         Oobject *oself;
 

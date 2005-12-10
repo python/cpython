@@ -1884,7 +1884,7 @@ file_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	PyFileObject *foself = (PyFileObject *)self;
 	int ret = 0;
-	static char *kwlist[] = {"name", "mode", "buffering", 0};
+	static const char *kwlist[] = {"name", "mode", "buffering", 0};
 	char *name = NULL;
 	char *mode = "r";
 	int bufsize = -1;
@@ -1926,8 +1926,9 @@ file_init(PyObject *self, PyObject *args, PyObject *kwds)
 			return -1;
 
                 /* We parse again to get the name as a PyObject */
-                if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|si:file", kwlist,
-                    &o_name, &mode, &bufsize))
+                if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|si:file", 
+                                                 kwlist, &o_name, &mode, 
+                                                 &bufsize))
                         return -1;
 
 		if (fill_file_fields(foself, NULL, o_name, mode,

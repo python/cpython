@@ -12,8 +12,8 @@ PyAPI_FUNC(PyObject *) PyImport_ExecCodeModule(char *name, PyObject *co);
 PyAPI_FUNC(PyObject *) PyImport_ExecCodeModuleEx(
 	char *name, PyObject *co, char *pathname);
 PyAPI_FUNC(PyObject *) PyImport_GetModuleDict(void);
-PyAPI_FUNC(PyObject *) PyImport_AddModule(char *name);
-PyAPI_FUNC(PyObject *) PyImport_ImportModule(char *name);
+PyAPI_FUNC(PyObject *) PyImport_AddModule(const char *name);
+PyAPI_FUNC(PyObject *) PyImport_ImportModule(const char *name);
 PyAPI_FUNC(PyObject *) PyImport_ImportModuleEx(
 	char *name, PyObject *globals, PyObject *locals, PyObject *fromlist);
 PyAPI_FUNC(PyObject *) PyImport_Import(PyObject *name);
