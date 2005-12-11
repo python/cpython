@@ -2562,6 +2562,11 @@ ast_for_suite(struct compiling *c, const node *n)
 		ch = CHILD(ch, 0);
 		REQ(ch, simple_stmt);
 		for (j = 0; j < NCH(ch); j += 2) {
+		    /* statement terminates with a semi-colon ';' */
+		    if (NCH(CHILD(ch, j)) == 0) {
+		    	assert((j + 1) == NCH(ch));
+		    	break;
+		    }
 		    s = ast_for_stmt(c, CHILD(ch, j));
 		    if (!s)
 			goto error;

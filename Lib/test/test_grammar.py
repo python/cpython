@@ -276,6 +276,10 @@ check_syntax("lambda x: x = 2")
 ### simple_stmt: small_stmt (';' small_stmt)* [';']
 print 'simple_stmt'
 x = 1; pass; del x
+def foo():
+    # verify statments that end with semi-colons
+    x = 1; pass; del x;
+foo()
 
 ### small_stmt: expr_stmt | print_stmt  | pass_stmt | del_stmt | flow_stmt | import_stmt | global_stmt | access_stmt | exec_stmt
 # Tested below
