@@ -33,7 +33,6 @@ enum_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	}
 	en->en_result = PyTuple_Pack(2, Py_None, Py_None);
 	if (en->en_result == NULL) {
-		Py_DECREF(en->en_sit);
 		Py_DECREF(en);
 		return NULL;
 	}
