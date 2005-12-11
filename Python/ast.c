@@ -179,8 +179,10 @@ ast_error_finish(const char *filename)
 	return;
     Py_INCREF(errstr);
     lineno = PyInt_AsLong(PyTuple_GetItem(value, 1));
-    if (lineno == -1)
+    if (lineno == -1) {
+	Py_DECREF(errstr);
 	return;
+    }
     Py_DECREF(value);
 
     loc = PyErr_ProgramText(filename, lineno);
@@ -190,8 +192,10 @@ ast_error_finish(const char *filename)
     }
     tmp = Py_BuildValue("(ziOO)", filename, lineno, Py_None, loc);
     Py_DECREF(loc);
-    if (!tmp)
+    if (!tmp) {
+	Py_DECREF(errstr);
 	return;
+    }
     value = Py_BuildValue("(OO)", errstr, tmp);
     Py_DECREF(errstr);
     Py_DECREF(tmp);
