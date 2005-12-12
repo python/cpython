@@ -292,6 +292,10 @@ Extension Modules
 Library
 -------
 
+- Added a subset of Fredrik Lundh's ElementTree package.  Available
+  modules are xml.etree.ElementTree, xml.etree.ElementPath, and
+  xml.etree.ElementInclude, from ElementTree 1.2.6.
+
 - Patch #1162825: Support non-ASCII characters in IDLE window titles.
 
 - Bug #1365984: urllib now opens "data:" URLs again.
