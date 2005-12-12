@@ -186,6 +186,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1290333: Added a workaround for cjkcodecs' _codecs_cn build
+  problem on AIX.
+
 - Bug #869197: os.setgroups rejects long integer arguments
 
 - Bug #1346533, select.poll() doesn't raise an error if timeout > sys.maxint
