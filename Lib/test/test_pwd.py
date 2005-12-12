@@ -38,8 +38,8 @@ class PwdTest(unittest.TestCase):
         # check whether the entry returned by getpwuid()
         # for each uid is among those from getpwall() for this uid
         for e in entries:
-            if e[0] == '+':
-                continue # skip NIS entries
+            if not e[0] or e[0] == '+':
+                continue # skip NIS entries etc.
             self.assert_(pwd.getpwnam(e.pw_name) in entriesbyname[e.pw_name])
             self.assert_(pwd.getpwuid(e.pw_uid) in entriesbyuid[e.pw_uid])
 
