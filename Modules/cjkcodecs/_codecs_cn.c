@@ -8,6 +8,14 @@
 #include "cjkcodecs.h"
 #include "mappings_cn.h"
 
+/**
+ * hz is predefined as 100 on AIX. So we undefine it to avoid
+ * conflict against hz codec's.
+ */
+#ifdef _AIX
+#undef hz
+#endif
+
 #define GBK_PREDECODE(dc1, dc2, assi) \
 	if ((dc1) == 0xa1 && (dc2) == 0xaa) (assi) = 0x2014; \
 	else if ((dc1) == 0xa8 && (dc2) == 0x44) (assi) = 0x2015; \
