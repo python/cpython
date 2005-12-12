@@ -41,6 +41,7 @@ else:
     else:
         if v >= _MINIMUM_XMLPLUS_VERSION:
             import sys
+            _xmlplus.__path__.extend(__path__)
             sys.modules[__name__] = _xmlplus
         else:
             del v
