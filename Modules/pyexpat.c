@@ -1840,8 +1840,8 @@ MODULE_INITFUNC(void)
     PyObject *modelmod_name;
     PyObject *model_module;
     PyObject *sys_modules;
-    static struct PyExpat_Dispatch dispatch;
-    PyObject* dispatch_object;
+    static struct PyExpat_CAPI capi;
+    PyObject* capi_object;
 
     if (errmod_name == NULL)
         return;
@@ -2017,31 +2017,31 @@ MODULE_INITFUNC(void)
 #undef MYCONST
 
     /* initialize pyexpat dispatch table */
-    dispatch.size = sizeof(dispatch);
-    dispatch.MAJOR_VERSION = XML_MAJOR_VERSION;
-    dispatch.MINOR_VERSION = XML_MINOR_VERSION;
-    dispatch.MICRO_VERSION = XML_MICRO_VERSION;
-    dispatch.ErrorString = XML_ErrorString;
-    dispatch.GetCurrentColumnNumber = XML_GetCurrentColumnNumber;
-    dispatch.GetCurrentLineNumber = XML_GetCurrentLineNumber;
-    dispatch.Parse = XML_Parse;
-    dispatch.ParserCreate_MM = XML_ParserCreate_MM;
-    dispatch.ParserFree = XML_ParserFree;
-    dispatch.SetCharacterDataHandler = XML_SetCharacterDataHandler;
-    dispatch.SetCommentHandler = XML_SetCommentHandler;
-    dispatch.SetDefaultHandlerExpand = XML_SetDefaultHandlerExpand;
-    dispatch.SetElementHandler = XML_SetElementHandler;
-    dispatch.SetNamespaceDeclHandler = XML_SetNamespaceDeclHandler;
-    dispatch.SetProcessingInstructionHandler = XML_SetProcessingInstructionHandler;
-    dispatch.SetUnknownEncodingHandler = XML_SetUnknownEncodingHandler;
-    dispatch.SetUserData = XML_SetUserData;
+    capi.size = sizeof(capi);
+    capi.MAJOR_VERSION = XML_MAJOR_VERSION;
+    capi.MINOR_VERSION = XML_MINOR_VERSION;
+    capi.MICRO_VERSION = XML_MICRO_VERSION;
+    capi.ErrorString = XML_ErrorString;
+    capi.GetCurrentColumnNumber = XML_GetCurrentColumnNumber;
+    capi.GetCurrentLineNumber = XML_GetCurrentLineNumber;
+    capi.Parse = XML_Parse;
+    capi.ParserCreate_MM = XML_ParserCreate_MM;
+    capi.ParserFree = XML_ParserFree;
+    capi.SetCharacterDataHandler = XML_SetCharacterDataHandler;
+    capi.SetCommentHandler = XML_SetCommentHandler;
+    capi.SetDefaultHandlerExpand = XML_SetDefaultHandlerExpand;
+    capi.SetElementHandler = XML_SetElementHandler;
+    capi.SetNamespaceDeclHandler = XML_SetNamespaceDeclHandler;
+    capi.SetProcessingInstructionHandler = XML_SetProcessingInstructionHandler;
+    capi.SetUnknownEncodingHandler = XML_SetUnknownEncodingHandler;
+    capi.SetUserData = XML_SetUserData;
     
     /* export as cobject */
-    dispatch_object = PyCObject_FromVoidPtrAndDesc(
-        &dispatch, PyExpat_DISPATCH_MAGIC, NULL
+    capi_object = PyCObject_FromVoidPtrAndDesc(
+        &capi, PyExpat_CAPI_MAGIC, NULL
         );
-    if (dispatch_object)
-        PyModule_AddObject(m, "dispatch", dispatch_object);
+    if (capi_object)
+        PyModule_AddObject(m, "expat_CAPI", capi_object);
 }
 
 static void

@@ -3,11 +3,11 @@
 
 /* note: you must import expat.h before importing this module! */
 
-#define PyExpat_DISPATCH_MAGIC  "pyexpat.dispatch 1.0"
+#define PyExpat_CAPI_MAGIC  "pyexpat.expat_CAPI 1.0"
 
-struct PyExpat_Dispatch 
+struct PyExpat_CAPI 
 {
-    int size; /* set to sizeof(struct PyExpat_Dispatch) */
+    int size; /* set to sizeof(struct PyExpat_CAPI) */
     int MAJOR_VERSION; /* XXX: use the ExpatVersionInfo instead? */
     int MINOR_VERSION;
     int MICRO_VERSION;
