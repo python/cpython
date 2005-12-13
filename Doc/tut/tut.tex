@@ -72,35 +72,42 @@ Reference}.
 
 \chapter{Whetting Your Appetite \label{intro}}
 
-If you ever wrote a large shell script, you probably know this
-feeling: you'd love to add yet another feature, but it's already so
-slow, and so big, and so complicated; or the feature involves a system
-call or other function that is only accessible from C\ldots\ Usually
-the problem at hand isn't serious enough to warrant rewriting the
-script in C; perhaps the problem requires variable-length strings or
-other data types (like sorted lists of file names) that are easy in
-the shell but lots of work to implement in C, or perhaps you're not
-sufficiently familiar with C.
+If you do much work on computers, eventually you find that there's
+some task you'd like to automate.  For example, you may wish to
+perform a search-and-replace over a large number of text files, or
+rename and rearrange a bunch of photo files in a complicated way.
+Perhaps you'd like to write a small custom database, or a specialized
+GUI application, or a simple game.
 
-Another situation: perhaps you have to work with several C libraries,
-and the usual C write/compile/test/re-compile cycle is too slow.  You
-need to develop software more quickly.  Possibly you've
-written a program that could use an extension language, and you don't
-want to design a language, write and debug an interpreter for it, then
-tie it into your application.
+If you're a professional software developer, you may have to work with
+several C/\Cpp/Java libraries but find the usual
+write/compile/test/re-compile cycle is too slow.  Perhaps you're
+writing a test suite for such a library and find writing the testing
+code a tedious task.  Or maybe you've written a program that could use
+an extension language, and you don't want to design and implement a
+whole new language for your application.
 
-In such cases, Python may be just the language for you.  Python is
-simple to use, but it is a real programming language, offering much
-more structure and support for large programs than the shell has.  On
-the other hand, it also offers much more error checking than C, and,
-being a \emph{very-high-level language}, it has high-level data types
-built in, such as flexible arrays and dictionaries that would cost you
-days to implement efficiently in C.  Because of its more general data
-types Python is applicable to a much larger problem domain than
-\emph{Awk} or even \emph{Perl}, yet many things are at least as easy
-in Python as in those languages.
+Python is just the language for you.
 
-Python allows you to split your program in modules that can be
+You could write a {\UNIX} shell script or Windows batch files for some
+of these tasks, but shell scripts are best at moving around files and
+changing text data, not well-suited for GUI applications or games.
+You could write a C/{\Cpp}/Java program, but it can take a lot of
+development time to get even a first-draft program.  Python is simpler
+to use, available on Windows, MacOS X, and {\UNIX} operating systems,
+and will help you get the job done more quickly.
+
+Python is simple to use, but it is a real programming language,
+offering much more structure and support for large programs than shell
+scripts or batch files can offer.  On the other hand, Python also
+offers much more error checking than C, and, being a
+\emph{very-high-level language}, it has high-level data types built
+in, such as flexible arrays and dictionaries.  Because of its more
+general data types Python is applicable to a much larger problem
+domain than Awk or even Perl, yet many things are at
+least as easy in Python as in those languages.
+
+Python allows you to split your program into modules that can be
 reused in other Python programs.  It comes with a large collection of
 standard modules that you can use as the basis of your programs --- or
 as examples to start learning to program in Python.  Some of these
@@ -115,8 +122,8 @@ programs, or to test functions during bottom-up program development.
 It is also a handy desk calculator.
 
 Python enables programs to be written compactly and readably.  Programs
-written in Python are typically much shorter than equivalent C or
-\Cpp{} programs, for several reasons:
+written in Python are typically much shorter than equivalent C, 
+\Cpp{}, or Java programs, for several reasons:
 \begin{itemize}
 \item
 the high-level data types allow you to express complex operations in a
@@ -145,7 +152,8 @@ it is encouraged!
 
 Now that you are all excited about Python, you'll want to examine it
 in some more detail.  Since the best way to learn a language is
-to use it, you are invited to do so with this tutorial.
+to use it, the tutorial invites you to play with the Python interpreter
+as you read.
 
 In the next chapter, the mechanics of using the interpreter are
 explained.  This is rather mundane information, but essential for
