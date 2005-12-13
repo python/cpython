@@ -2018,12 +2018,14 @@ MODULE_INITFUNC(void)
 
     /* initialize pyexpat dispatch table */
     capi.size = sizeof(capi);
+    capi.magic = PyExpat_CAPI_MAGIC;
     capi.MAJOR_VERSION = XML_MAJOR_VERSION;
     capi.MINOR_VERSION = XML_MINOR_VERSION;
     capi.MICRO_VERSION = XML_MICRO_VERSION;
     capi.ErrorString = XML_ErrorString;
-    capi.GetCurrentColumnNumber = XML_GetCurrentColumnNumber;
-    capi.GetCurrentLineNumber = XML_GetCurrentLineNumber;
+    capi.GetErrorCode = XML_GetErrorCode;
+    capi.GetErrorColumnNumber = XML_GetErrorColumnNumber;
+    capi.GetErrorLineNumber = XML_GetErrorLineNumber;
     capi.Parse = XML_Parse;
     capi.ParserCreate_MM = XML_ParserCreate_MM;
     capi.ParserFree = XML_ParserFree;
@@ -2037,9 +2039,7 @@ MODULE_INITFUNC(void)
     capi.SetUserData = XML_SetUserData;
     
     /* export as cobject */
-    capi_object = PyCObject_FromVoidPtrAndDesc(
-        &capi, PyExpat_CAPI_MAGIC, NULL
-        );
+    capi_object = PyCObject_FromVoidPtr(&capi, NULL);
     if (capi_object)
         PyModule_AddObject(m, "expat_CAPI", capi_object);
 }
