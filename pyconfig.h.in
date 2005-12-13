@@ -46,6 +46,9 @@
 /* Define to 1 if you have the <bluetooth.h> header file. */
 #undef HAVE_BLUETOOTH_H
 
+/* Define if ftell() set errno on tty files. */
+#undef HAVE_BROKEN_FTELL
+
 /* Define if nice() returns success/failure instead of the new priority. */
 #undef HAVE_BROKEN_NICE
 
