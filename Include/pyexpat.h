@@ -7,15 +7,17 @@
 
 struct PyExpat_CAPI 
 {
+    char* magic; /* set to PyExpat_CAPI_MAGIC */
     int size; /* set to sizeof(struct PyExpat_CAPI) */
-    int MAJOR_VERSION; /* XXX: use the ExpatVersionInfo instead? */
+    int MAJOR_VERSION;
     int MINOR_VERSION;
     int MICRO_VERSION;
     /* pointers to selected expat functions.  add new functions at
        the end, if needed */
     const XML_LChar * (*ErrorString)(enum XML_Error code);
-    int (*GetCurrentColumnNumber)(XML_Parser parser);
-    int (*GetCurrentLineNumber)(XML_Parser parser);
+    enum XML_Error (*GetErrorCode)(XML_Parser parser);
+    int (*GetErrorColumnNumber)(XML_Parser parser);
+    int (*GetErrorLineNumber)(XML_Parser parser);
     enum XML_Status (*Parse)(
         XML_Parser parser, const char *s, int len, int isFinal);
     XML_Parser (*ParserCreate_MM)(
