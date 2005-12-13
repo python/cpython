@@ -4,6 +4,8 @@
 #include "frameobject.h"
 #include "expat.h"
 
+#include "pyexpat.h"
+
 #define XML_COMBINED_VERSION (10000*XML_MAJOR_VERSION+100*XML_MINOR_VERSION+XML_MICRO_VERSION)
 
 #ifndef PyDoc_STRVAR
@@ -1838,6 +1840,8 @@ MODULE_INITFUNC(void)
     PyObject *modelmod_name;
     PyObject *model_module;
     PyObject *sys_modules;
+    static struct PyExpat_Dispatch dispatch;
+    PyObject* dispatch_object;
 
     if (errmod_name == NULL)
         return;
@@ -2011,6 +2015,33 @@ MODULE_INITFUNC(void)
     MYCONST(XML_CQUANT_REP);
     MYCONST(XML_CQUANT_PLUS);
 #undef MYCONST
+
+    /* initialize pyexpat dispatch table */
+    dispatch.size = sizeof(dispatch);
+    dispatch.MAJOR_VERSION = XML_MAJOR_VERSION;
+    dispatch.MINOR_VERSION = XML_MINOR_VERSION;
+    dispatch.MICRO_VERSION = XML_MICRO_VERSION;
+    dispatch.ErrorString = XML_ErrorString;
+    dispatch.GetCurrentColumnNumber = XML_GetCurrentColumnNumber;
+    dispatch.GetCurrentLineNumber = XML_GetCurrentLineNumber;
+    dispatch.Parse = XML_Parse;
+    dispatch.ParserCreate_MM = XML_ParserCreate_MM;
+    dispatch.ParserFree = XML_ParserFree;
+    dispatch.SetCharacterDataHandler = XML_SetCharacterDataHandler;
+    dispatch.SetCommentHandler = XML_SetCommentHandler;
+    dispatch.SetDefaultHandlerExpand = XML_SetDefaultHandlerExpand;
+    dispatch.SetElementHandler = XML_SetElementHandler;
+    dispatch.SetNamespaceDeclHandler = XML_SetNamespaceDeclHandler;
+    dispatch.SetProcessingInstructionHandler = XML_SetProcessingInstructionHandler;
+    dispatch.SetUnknownEncodingHandler = XML_SetUnknownEncodingHandler;
+    dispatch.SetUserData = XML_SetUserData;
+    
+    /* export as cobject */
+    dispatch_object = PyCObject_FromVoidPtrAndDesc(
+        &dispatch, PyExpat_DISPATCH_MAGIC, NULL
+        );
+    if (dispatch_object)
+        PyModule_AddObject(m, "dispatch", dispatch_object);
 }
 
 static void
