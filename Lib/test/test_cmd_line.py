@@ -19,6 +19,10 @@ class CmdLineTest(unittest.TestCase):
         if sys.platform == 'win32':
             # Exit code for "python .", Error 13: permission denied = 2
             expected_exit_code = 2
+        elif sys.platform.startswith('freebsd'):
+            # On FreeBSD, it more likely raise SyntaxError for binary
+            # directory data.
+            expected_exit_code = 1
         else:
             # Linux has no problem with "python .", Exit code = 0
             expected_exit_code = 0
