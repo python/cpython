@@ -1,11 +1,11 @@
 """Implementation of the DOM Level 3 'LS-Load' feature."""
 
 import copy
-import xml.dom
+import xmlcore.dom
 
-from xml.dom.minicompat import *
+from xmlcore.dom.minicompat import *
 
-from xml.dom.NodeFilter import NodeFilter
+from xmlcore.dom.NodeFilter import NodeFilter
 
 
 __all__ = ["DOMBuilder", "DOMEntityResolver", "DOMInputSource"]
@@ -80,13 +80,13 @@ class DOMBuilder:
             try:
                 settings = self._settings[(_name_xform(name), state)]
             except KeyError:
-                raise xml.dom.NotSupportedErr(
+                raise xmlcore.dom.NotSupportedErr(
                     "unsupported feature: %r" % (name,))
             else:
                 for name, value in settings:
                     setattr(self._options, name, value)
         else:
-            raise xml.dom.NotFoundErr("unknown feature: " + repr(name))
+            raise xmlcore.dom.NotFoundErr("unknown feature: " + repr(name))
 
     def supportsFeature(self, name):
         return hasattr(self._options, _name_xform(name))
@@ -177,7 +177,7 @@ class DOMBuilder:
                                  or options.create_entity_ref_nodes
                                  or options.entities
                                  or options.cdata_sections))
-            raise xml.dom.NotFoundErr("feature %s not known" % repr(name))
+            raise xmlcore.dom.NotFoundErr("feature %s not known" % repr(name))
 
     def parseURI(self, uri):
         if self.entityResolver:
@@ -202,8 +202,8 @@ class DOMBuilder:
         raise NotImplementedError("Haven't written this yet...")
 
     def _parse_bytestream(self, stream, options):
-        import xml.dom.expatbuilder
-        builder = xml.dom.expatbuilder.makeBuilder(options)
+        import xmlcore.dom.expatbuilder
+        builder = xmlcore.dom.expatbuilder.makeBuilder(options)
         return builder.parseFile(stream)
 
 
@@ -342,7 +342,7 @@ class DocumentLS:
         return False
     def _set_async(self, async):
         if async:
-            raise xml.dom.NotSupportedErr(
+            raise xmlcore.dom.NotSupportedErr(
                 "asynchronous document loading is not supported")
 
     def abort(self):
@@ -361,7 +361,7 @@ class DocumentLS:
         if snode is None:
             snode = self
         elif snode.ownerDocument is not self:
-            raise xml.dom.WrongDocumentErr()
+            raise xmlcore.dom.WrongDocumentErr()
         return snode.toxml()
 
 
@@ -371,12 +371,12 @@ class DOMImplementationLS:
 
     def createDOMBuilder(self, mode, schemaType):
         if schemaType is not None:
-            raise xml.dom.NotSupportedErr(
+            raise xmlcore.dom.NotSupportedErr(
                 "schemaType not yet supported")
         if mode == self.MODE_SYNCHRONOUS:
             return DOMBuilder()
         if mode == self.MODE_ASYNCHRONOUS:
-            raise xml.dom.NotSupportedErr(
+            raise xmlcore.dom.NotSupportedErr(
                 "asynchronous builders are not supported")
         raise ValueError("unknown value for mode")
 

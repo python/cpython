@@ -1109,7 +1109,7 @@ class XMLTreeBuilder:
 
     def __init__(self, html=0, target=None):
         try:
-            from xml.parsers import expat
+            from xmlcore.parsers import expat
         except ImportError:
             raise ImportError(
                 "No module named expat; use SimpleXMLTreeBuilder instead"
@@ -1191,7 +1191,7 @@ class XMLTreeBuilder:
             try:
                 self._target.data(self.entity[text[1:-1]])
             except KeyError:
-                from xml.parsers import expat
+                from xmlcore.parsers import expat
                 raise expat.error(
                     "undefined entity %s: line %d, column %d" %
                     (text, self._parser.ErrorLineNumber,

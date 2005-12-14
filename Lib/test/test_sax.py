@@ -1,17 +1,17 @@
 # regression test for SAX 2.0            -*- coding: iso-8859-1 -*-
 # $Id$
 
-from xml.sax import make_parser, ContentHandler, \
-                    SAXException, SAXReaderNotAvailable, SAXParseException
+from xmlcore.sax import make_parser, ContentHandler, \
+     SAXException, SAXReaderNotAvailable, SAXParseException
 try:
     make_parser()
 except SAXReaderNotAvailable:
     # don't try to test this module if we cannot create a parser
     raise ImportError("no XML parsers available")
-from xml.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
-                             XMLFilterBase
-from xml.sax.expatreader import create_parser
-from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
+from xmlcore.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
+     XMLFilterBase
+from xmlcore.sax.expatreader import create_parser
+from xmlcore.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from cStringIO import StringIO
 from test.test_support import verify, verbose, TestFailed, findfile
 import os
@@ -36,17 +36,17 @@ def test_make_parser2():
         # Creating parsers several times in a row should succeed.
         # Testing this because there have been failures of this kind
         # before.
-        from xml.sax import make_parser
+        from xmlcore.sax import make_parser
         p = make_parser()
-        from xml.sax import make_parser
+        from xmlcore.sax import make_parser
         p = make_parser()
-        from xml.sax import make_parser
+        from xmlcore.sax import make_parser
         p = make_parser()
-        from xml.sax import make_parser
+        from xmlcore.sax import make_parser
         p = make_parser()
-        from xml.sax import make_parser
+        from xmlcore.sax import make_parser
         p = make_parser()
-        from xml.sax import make_parser
+        from xmlcore.sax import make_parser
         p = make_parser()
     except:
         return 0
@@ -108,7 +108,7 @@ def test_make_parser():
     try:
         # Creating a parser should succeed - it should fall back
         # to the expatreader
-        p = make_parser(['xml.parsers.no_such_parser'])
+        p = make_parser(['xmlcore.parsers.no_such_parser'])
     except:
         return 0
     else:

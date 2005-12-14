@@ -16,6 +16,8 @@ etree -- The ElementTree XML library.  This is a subset of the full
 
 """
 
+import sys
+import xmlcore
 
 __all__ = ["dom", "parsers", "sax", "etree"]
 
@@ -27,11 +29,10 @@ __version__ = "$Revision$".split()[-2:][0]
 
 _MINIMUM_XMLPLUS_VERSION = (0, 8, 4)
 
-
 try:
     import _xmlplus
 except ImportError:
-    pass
+    sys.modules[__name__] = xmlcore
 else:
     try:
         v = _xmlplus.version_info
@@ -40,8 +41,7 @@ else:
         pass
     else:
         if v >= _MINIMUM_XMLPLUS_VERSION:
-            import sys
-            _xmlplus.__path__.extend(__path__)
+            _xmlplus.__path__.extend(xmlcore.__path__)
             sys.modules[__name__] = _xmlplus
         else:
             del v

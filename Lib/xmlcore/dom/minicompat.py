@@ -50,7 +50,7 @@
 __all__ = ["NodeList", "EmptyNodeList", "NewStyle",
            "StringTypes", "defproperty", "GetattrMagic"]
 
-import xml.dom
+import xmlcore.dom
 
 try:
     unicode
@@ -100,7 +100,7 @@ if list is type([]):
             return len(self)
 
         def _set_length(self, value):
-            raise xml.dom.NoModificationAllowedErr(
+            raise xmlcore.dom.NoModificationAllowedErr(
                 "attempt to modify read-only attribute 'length'")
 
         length = property(_get_length, _set_length,
@@ -132,7 +132,7 @@ if list is type([]):
             return 0
 
         def _set_length(self, value):
-            raise xml.dom.NoModificationAllowedErr(
+            raise xmlcore.dom.NoModificationAllowedErr(
                 "attempt to modify read-only attribute 'length'")
 
         length = property(_get_length, _set_length,
@@ -171,7 +171,7 @@ else:
     def defproperty(klass, name, doc):
         get = getattr(klass, ("_get_" + name)).im_func
         def set(self, value, name=name):
-            raise xml.dom.NoModificationAllowedErr(
+            raise xmlcore.dom.NoModificationAllowedErr(
                 "attempt to modify read-only attribute " + repr(name))
         assert not hasattr(klass, "_set_" + name), \
                "expected not to find _set_" + name

@@ -1,4 +1,4 @@
-# test for xml.dom.minidom
+# test for xmlcore.dom.minidom
 
 import os
 import sys
@@ -7,12 +7,12 @@ import traceback
 from StringIO import StringIO
 from test.test_support import verbose
 
-import xml.dom
-import xml.dom.minidom
-import xml.parsers.expat
+import xmlcore.dom
+import xmlcore.dom.minidom
+import xmlcore.parsers.expat
 
-from xml.dom.minidom import parse, Node, Document, parseString
-from xml.dom.minidom import getDOMImplementation
+from xmlcore.dom.minidom import parse, Node, Document, parseString
+from xmlcore.dom.minidom import getDOMImplementation
 
 
 if __name__ == "__main__":
@@ -138,29 +138,29 @@ def testLegalChildren():
     text = dom.createTextNode('text')
 
     try: dom.appendChild(text)
-    except xml.dom.HierarchyRequestErr: pass
+    except xmlcore.dom.HierarchyRequestErr: pass
     else:
         print "dom.appendChild didn't raise HierarchyRequestErr"
 
     dom.appendChild(elem)
     try: dom.insertBefore(text, elem)
-    except xml.dom.HierarchyRequestErr: pass
+    except xmlcore.dom.HierarchyRequestErr: pass
     else:
         print "dom.appendChild didn't raise HierarchyRequestErr"
 
     try: dom.replaceChild(text, elem)
-    except xml.dom.HierarchyRequestErr: pass
+    except xmlcore.dom.HierarchyRequestErr: pass
     else:
         print "dom.appendChild didn't raise HierarchyRequestErr"
 
     nodemap = elem.attributes
     try: nodemap.setNamedItem(text)
-    except xml.dom.HierarchyRequestErr: pass
+    except xmlcore.dom.HierarchyRequestErr: pass
     else:
         print "NamedNodeMap.setNamedItem didn't raise HierarchyRequestErr"
 
     try: nodemap.setNamedItemNS(text)
-    except xml.dom.HierarchyRequestErr: pass
+    except xmlcore.dom.HierarchyRequestErr: pass
     else:
         print "NamedNodeMap.setNamedItemNS didn't raise HierarchyRequestErr"
 
@@ -439,7 +439,7 @@ def testProcessingInstruction():
             and pi.firstChild is None
             and pi.lastChild is None
             and pi.localName is None
-            and pi.namespaceURI == xml.dom.EMPTY_NAMESPACE)
+            and pi.namespaceURI == xmlcore.dom.EMPTY_NAMESPACE)
 
 def testProcessingInstructionRepr(): pass
 
@@ -454,7 +454,7 @@ def testTooManyDocumentElements():
     elem = doc.createElement("extra")
     try:
         doc.appendChild(elem)
-    except xml.dom.HierarchyRequestErr:
+    except xmlcore.dom.HierarchyRequestErr:
         pass
     else:
         print "Failed to catch expected exception when" \
@@ -491,7 +491,7 @@ def testRemoveNamedItem():
     confirm(a1.isSameNode(a2))
     try:
         attrs.removeNamedItem("a")
-    except xml.dom.NotFoundErr:
+    except xmlcore.dom.NotFoundErr:
         pass
 
 def testRemoveNamedItemNS():
@@ -503,7 +503,7 @@ def testRemoveNamedItemNS():
     confirm(a1.isSameNode(a2))
     try:
         attrs.removeNamedItemNS("http://xml.python.org/", "b")
-    except xml.dom.NotFoundErr:
+    except xmlcore.dom.NotFoundErr:
         pass
 
 def testAttrListValues(): pass
@@ -682,7 +682,7 @@ def check_import_document(deep, testName):
     doc2 = parseString("<doc/>")
     try:
         doc1.importNode(doc2, deep)
-    except xml.dom.NotSupportedErr:
+    except xmlcore.dom.NotSupportedErr:
         pass
     else:
         raise Exception(testName +
@@ -705,12 +705,14 @@ def create_nonempty_doctype():
     doctype = getDOMImplementation().createDocumentType("doc", None, None)
     doctype.entities._seq = []
     doctype.notations._seq = []
-    notation = xml.dom.minidom.Notation("my-notation", None,
-                                        "http://xml.python.org/notations/my")
+    notation = xmlcore.dom.minidom.Notation(
+        "my-notation", None,
+        "http://xml.python.org/notations/my")
     doctype.notations._seq.append(notation)
-    entity = xml.dom.minidom.Entity("my-entity", None,
-                                    "http://xml.python.org/entities/my",
-                                    "my-notation")
+    entity = xmlcore.dom.minidom.Entity(
+        "my-entity", None,
+        "http://xml.python.org/entities/my",
+        "my-notation")
     entity.version = "1.0"
     entity.encoding = "utf-8"
     entity.actualEncoding = "us-ascii"
@@ -729,7 +731,7 @@ def testImportDocumentTypeShallow():
     target = create_doc_without_doctype()
     try:
         imported = target.importNode(src.doctype, 0)
-    except xml.dom.NotSupportedErr:
+    except xmlcore.dom.NotSupportedErr:
         pass
     else:
         raise Exception(
@@ -740,7 +742,7 @@ def testImportDocumentTypeDeep():
     target = create_doc_without_doctype()
     try:
         imported = target.importNode(src.doctype, 1)
-    except xml.dom.NotSupportedErr:
+    except xmlcore.dom.NotSupportedErr:
         pass
     else:
         raise Exception(
@@ -848,7 +850,7 @@ def testNodeListItem():
     doc.unlink()
 
 def testSAX2DOM():
-    from xml.dom import pulldom
+    from xmlcore.dom import pulldom
 
     sax2dom = pulldom.SAX2DOM()
     sax2dom.startDocument()
@@ -938,11 +940,11 @@ def testRenameAttribute():
     attr = elem.attributes['a']
 
     # Simple renaming
-    attr = doc.renameNode(attr, xml.dom.EMPTY_NAMESPACE, "b")
+    attr = doc.renameNode(attr, xmlcore.dom.EMPTY_NAMESPACE, "b")
     confirm(attr.name == "b"
             and attr.nodeName == "b"
             and attr.localName is None
-            and attr.namespaceURI == xml.dom.EMPTY_NAMESPACE
+            and attr.namespaceURI == xmlcore.dom.EMPTY_NAMESPACE
             and attr.prefix is None
             and attr.value == "v"
             and elem.getAttributeNode("a") is None
@@ -987,11 +989,11 @@ def testRenameAttribute():
             and attrmap[("http://xml.python.org/ns2", "d")].isSameNode(attr))
 
     # Rename back to a simple non-NS node
-    attr = doc.renameNode(attr, xml.dom.EMPTY_NAMESPACE, "e")
+    attr = doc.renameNode(attr, xmlcore.dom.EMPTY_NAMESPACE, "e")
     confirm(attr.name == "e"
             and attr.nodeName == "e"
             and attr.localName is None
-            and attr.namespaceURI == xml.dom.EMPTY_NAMESPACE
+            and attr.namespaceURI == xmlcore.dom.EMPTY_NAMESPACE
             and attr.prefix is None
             and attr.value == "v"
             and elem.getAttributeNode("a") is None
@@ -1005,7 +1007,7 @@ def testRenameAttribute():
 
     try:
         doc.renameNode(attr, "http://xml.python.org/ns", "xmlns")
-    except xml.dom.NamespaceErr:
+    except xmlcore.dom.NamespaceErr:
         pass
     else:
         print "expected NamespaceErr"
@@ -1018,11 +1020,11 @@ def testRenameElement():
     elem = doc.documentElement
 
     # Simple renaming
-    elem = doc.renameNode(elem, xml.dom.EMPTY_NAMESPACE, "a")
+    elem = doc.renameNode(elem, xmlcore.dom.EMPTY_NAMESPACE, "a")
     confirm(elem.tagName == "a"
             and elem.nodeName == "a"
             and elem.localName is None
-            and elem.namespaceURI == xml.dom.EMPTY_NAMESPACE
+            and elem.namespaceURI == xmlcore.dom.EMPTY_NAMESPACE
             and elem.prefix is None
             and elem.ownerDocument.isSameNode(doc))
 
@@ -1045,11 +1047,11 @@ def testRenameElement():
             and elem.ownerDocument.isSameNode(doc))
 
     # Rename back to a simple non-NS node
-    elem = doc.renameNode(elem, xml.dom.EMPTY_NAMESPACE, "d")
+    elem = doc.renameNode(elem, xmlcore.dom.EMPTY_NAMESPACE, "d")
     confirm(elem.tagName == "d"
             and elem.nodeName == "d"
             and elem.localName is None
-            and elem.namespaceURI == xml.dom.EMPTY_NAMESPACE
+            and elem.namespaceURI == xmlcore.dom.EMPTY_NAMESPACE
             and elem.prefix is None
             and elem.ownerDocument.isSameNode(doc))
 
@@ -1060,15 +1062,15 @@ def checkRenameNodeSharedConstraints(doc, node):
     # Make sure illegal NS usage is detected:
     try:
         doc.renameNode(node, "http://xml.python.org/ns", "xmlns:foo")
-    except xml.dom.NamespaceErr:
+    except xmlcore.dom.NamespaceErr:
         pass
     else:
         print "expected NamespaceErr"
 
     doc2 = parseString("<doc/>")
     try:
-        doc2.renameNode(node, xml.dom.EMPTY_NAMESPACE, "foo")
-    except xml.dom.WrongDocumentErr:
+        doc2.renameNode(node, xmlcore.dom.EMPTY_NAMESPACE, "foo")
+    except xmlcore.dom.WrongDocumentErr:
         pass
     else:
         print "expected WrongDocumentErr"
@@ -1076,12 +1078,12 @@ def checkRenameNodeSharedConstraints(doc, node):
 def testRenameOther():
     # We have to create a comment node explicitly since not all DOM
     # builders used with minidom add comments to the DOM.
-    doc = xml.dom.minidom.getDOMImplementation().createDocument(
-        xml.dom.EMPTY_NAMESPACE, "e", None)
+    doc = xmlcore.dom.minidom.getDOMImplementation().createDocument(
+        xmlcore.dom.EMPTY_NAMESPACE, "e", None)
     node = doc.createComment("comment")
     try:
-        doc.renameNode(node, xml.dom.EMPTY_NAMESPACE, "foo")
-    except xml.dom.NotSupportedErr:
+        doc.renameNode(node, xmlcore.dom.EMPTY_NAMESPACE, "foo")
+    except xmlcore.dom.NotSupportedErr:
         pass
     else:
         print "expected NotSupportedErr when renaming comment node"
@@ -1192,13 +1194,13 @@ def testSchemaType():
     # since each supports a different level of DTD information.
     t = elem.schemaType
     confirm(t.name is None
-            and t.namespace == xml.dom.EMPTY_NAMESPACE)
+            and t.namespace == xmlcore.dom.EMPTY_NAMESPACE)
     names = "id notid text enum ref refs ent ents nm nms".split()
     for name in names:
         a = elem.getAttributeNode(name)
         t = a.schemaType
         confirm(hasattr(t, "name")
-                and t.namespace == xml.dom.EMPTY_NAMESPACE)
+                and t.namespace == xmlcore.dom.EMPTY_NAMESPACE)
 
 def testSetIdAttribute():
     doc = parseString("<doc a1='v' a2='w'/>")
@@ -1227,7 +1229,7 @@ def testSetIdAttribute():
             and a2.isId
             and not a3.isId)
     # renaming an attribute should not affect its ID-ness:
-    doc.renameNode(a2, xml.dom.EMPTY_NAMESPACE, "an")
+    doc.renameNode(a2, xmlcore.dom.EMPTY_NAMESPACE, "an")
     confirm(e.isSameNode(doc.getElementById("w"))
             and a2.isId)
 
@@ -1263,7 +1265,7 @@ def testSetIdAttributeNS():
     confirm(not a3.isId)
     confirm(doc.getElementById("v") is None)
     # renaming an attribute should not affect its ID-ness:
-    doc.renameNode(a2, xml.dom.EMPTY_NAMESPACE, "an")
+    doc.renameNode(a2, xmlcore.dom.EMPTY_NAMESPACE, "an")
     confirm(e.isSameNode(doc.getElementById("w"))
             and a2.isId)
 
@@ -1299,7 +1301,7 @@ def testSetIdAttributeNode():
     confirm(not a3.isId)
     confirm(doc.getElementById("v") is None)
     # renaming an attribute should not affect its ID-ness:
-    doc.renameNode(a2, xml.dom.EMPTY_NAMESPACE, "an")
+    doc.renameNode(a2, xmlcore.dom.EMPTY_NAMESPACE, "an")
     confirm(e.isSameNode(doc.getElementById("w"))
             and a2.isId)
 
