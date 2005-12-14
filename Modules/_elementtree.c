@@ -2522,7 +2522,7 @@ static PyMethodDef _functions[] = {
 };
 
 DL_EXPORT(void)
-initcElementTree(void)
+init_elementtree(void)
 {
     PyObject* m;
     PyObject* g;
@@ -2537,7 +2537,7 @@ initcElementTree(void)
     XMLParser_Type.ob_type = &PyType_Type;
 #endif
 
-    m = Py_InitModule("cElementTree", _functions);
+    m = Py_InitModule("_elementtree", _functions);
 
     /* python glue code */
 
@@ -2554,13 +2554,13 @@ initcElementTree(void)
         "from copy import copy, deepcopy\n"
 
         "try:\n"
-        "  from elementtree import ElementTree\n"
+        "  from xml.etree import ElementTree\n"
         "except ImportError:\n"
         "  import ElementTree\n"
         "ET = ElementTree\n"
         "del ElementTree\n"
 
-        "import cElementTree\n"
+        "import _elementtree as cElementTree\n"
 
         "try:\n" /* check if copy works as is */
         "  copy(cElementTree.Element('x'))\n"
