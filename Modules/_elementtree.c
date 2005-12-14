@@ -40,6 +40,9 @@
  * http://www.pythonware.com
  */
 
+/* Licensed to PSF under a Contributor Agreement. */
+/* See http://www.python.org/2.4/license for licensing details. */
+
 #include "Python.h"
 
 #define VERSION "1.0.4"
