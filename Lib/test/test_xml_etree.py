@@ -1,4 +1,4 @@
-# xml.etree test.  This file contains enough tests to make sure that
+# xmlcore.etree test.  This file contains enough tests to make sure that
 # all included components work as they should.  For a more extensive
 # test suite, see the selftest script in the ElementTree distribution.
 
@@ -30,9 +30,9 @@ def sanity():
     """
     Import sanity.
 
-    >>> from xml.etree import ElementTree
-    >>> from xml.etree import ElementInclude
-    >>> from xml.etree import ElementPath
+    >>> from xmlcore.etree import ElementTree
+    >>> from xmlcore.etree import ElementInclude
+    >>> from xmlcore.etree import ElementPath
     """
 
 def check_method(method):
@@ -59,7 +59,7 @@ def interface():
     """
     Test element tree interface.
 
-    >>> from xml.etree import ElementTree as ET
+    >>> from xmlcore.etree import ElementTree as ET
 
     >>> element = ET.Element("tag", key="value")
     >>> tree = ET.ElementTree(element)
@@ -108,7 +108,7 @@ def find():
     """
     Test find methods (including xpath syntax).
 
-    >>> from xml.etree import ElementTree as ET
+    >>> from xmlcore.etree import ElementTree as ET
 
     >>> elem = ET.XML(SAMPLE_XML)
     >>> elem.find("tag").tag
@@ -176,7 +176,7 @@ def find():
 def parseliteral():
     r"""
 
-    >>> from xml.etree import ElementTree as ET
+    >>> from xmlcore.etree import ElementTree as ET
 
     >>> element = ET.XML("<html><body>text</body></html>")
     >>> ET.ElementTree(element).write(sys.stdout)
@@ -273,7 +273,7 @@ def xinclude_loader(href, parse="xml", encoding=None):
     except KeyError:
         raise IOError("resource not found")
     if parse == "xml":
-        from xml.etree.ElementTree import XML
+        from xmlcore.etree.ElementTree import XML
         return XML(data)
     return data
 
@@ -281,8 +281,8 @@ def xinclude():
     r"""
     Basic inclusion example (XInclude C.1)
 
-    >>> from xml.etree import ElementTree as ET
-    >>> from xml.etree import ElementInclude
+    >>> from xmlcore.etree import ElementTree as ET
+    >>> from xmlcore.etree import ElementInclude
 
     >>> document = xinclude_loader("C1.xml")
     >>> ElementInclude.include(document, xinclude_loader)
