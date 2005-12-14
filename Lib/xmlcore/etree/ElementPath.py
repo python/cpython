@@ -42,6 +42,9 @@
 # OF THIS SOFTWARE.
 # --------------------------------------------------------------------
 
+# Licensed to PSF under a Contributor Agreement.
+# See http://www.python.org/2.4/license for licensing details.
+
 ##
 # Implementation module for XPath support.  There's usually no reason
 # to import this module directly; the <b>ElementTree</b> does this for

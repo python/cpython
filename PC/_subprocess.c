@@ -32,6 +32,9 @@
  *
  */
 
+/* Licensed to PSF under a Contributor Agreement. */
+/* See http://www.python.org/2.4/license for licensing details. */
+
 /* TODO: handle unicode command lines? */
 /* TODO: handle unicode environment? */
 
