@@ -841,6 +841,17 @@ class PyBuildExt(build_ext):
                                          ],
                               ))
 
+        # Fredrik Lundh's cElementTree module.  Note that this also
+        # uses expat (via the CAPI hook in pyexpat).
+
+        if os.path.isfile('Modules/_elementtree.c'):
+            define_macros.append(('USE_PYEXPAT_CAPI', None))
+            exts.append(Extension('_elementtree',
+                                  define_macros = define_macros,
+                                  include_dirs = [expatinc],
+                                  sources = ['_elementtree.c'],
+                                  ))
+
         # Hye-Shik Chang's CJKCodecs modules.
         if have_unicode:
             exts.append(Extension('_multibytecodec',
