@@ -482,13 +482,6 @@ _portable_fseek(FILE *fp, Py_off_t offset, int whence)
 static Py_off_t
 _portable_ftell(FILE* fp)
 {
-#ifdef HAVE_BROKEN_FTELL
-	/* ftell doesn't fail for tty fds on FreeBSD and some others */
-	if (isatty(fileno(fp))) {
-		errno = ESPIPE;
-		return -1;
-	}
-#endif
 #if !defined(HAVE_LARGEFILE_SUPPORT)
 	return ftell(fp);
 #elif defined(HAVE_FTELLO) && SIZEOF_OFF_T >= 8

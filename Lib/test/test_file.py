@@ -108,13 +108,6 @@ else:
     print "should not be able to seek on sys.stdin"
 
 try:
-    sys.stdin.tell()
-except IOError:
-    pass
-else:
-    print "should not be able to tell on sys.stdin"
-
-try:
     sys.stdin.truncate()
 except IOError:
     pass
