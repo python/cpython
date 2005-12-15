@@ -1588,7 +1588,7 @@ flush the read-ahead buffer.
   file is only opened for writing in append mode (mode \code{'a'}),
   this method is essentially a no-op, but it remains useful for files
   opened in append mode with reading enabled (mode \code{'a+'}).  If the
-  file is opened in text mode (mode \code{'t'}), only offsets returned
+  file is opened in text mode (without \code{'b'}), only offsets returned
   by \method{tell()} are legal.  Use of other offsets causes undefined
   behavior.
 
