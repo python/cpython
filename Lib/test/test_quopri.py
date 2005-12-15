@@ -1,7 +1,7 @@
 from test import test_support
 import unittest
 
-from cStringIO import StringIO
+import sys, os, cStringIO
 import quopri
 
 
@@ -145,16 +145,16 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
     @withpythonimplementation
     def test_encode(self):
         for p, e in self.STRINGS:
-            infp = StringIO(p)
-            outfp = StringIO()
+            infp = cStringIO.StringIO(p)
+            outfp = cStringIO.StringIO()
             quopri.encode(infp, outfp, quotetabs=False)
             self.assert_(outfp.getvalue() == e)
 
     @withpythonimplementation
     def test_decode(self):
         for p, e in self.STRINGS:
-            infp = StringIO(e)
-            outfp = StringIO()
+            infp = cStringIO.StringIO(e)
+            outfp = cStringIO.StringIO()
             quopri.decode(infp, outfp)
             self.assert_(outfp.getvalue() == p)
 
@@ -173,6 +173,20 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
     def test_decode_header(self):
         for p, e in self.HSTRINGS:
             self.assert_(quopri.decodestring(e, header=True) == p)
+
+    def test_scriptencode(self):
+       (p, e) = self.STRINGS[-1]
+       (cin, cout) = os.popen2("%s -mquopri" % sys.executable)
+       cin.write(p)
+       cin.close()
+       self.assert_(cout.read() == e)
+
+    def test_scriptdecode(self):
+       (p, e) = self.STRINGS[-1]
+       (cin, cout) = os.popen2("%s -mquopri -d" % sys.executable)
+       cin.write(e)
+       cin.close()
+       self.assert_(cout.read() == p)
 
 def test_main():
     test_support.run_unittest(QuopriTestCase)
