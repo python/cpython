@@ -104,6 +104,7 @@ extensions = [
     'unicodedata.pyd',
     'winsound.pyd',
     'zlib.pyd',
+    '_elementtree.pyd',
     '_bsddb.pyd',
     '_socket.pyd',
     '_ssl.pyd',
