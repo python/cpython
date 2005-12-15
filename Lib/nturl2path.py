@@ -10,6 +10,8 @@ def url2pathname(url):
             C:\foo\bar\spam.foo
     """
     import string, urllib
+    # Windows itself uses ":" even in URLs.
+    url = url.replace(':', '|')
     if not '|' in url:
         # No drive specifier, just convert slashes
         if url[:4] == '////':
