@@ -292,6 +292,9 @@ Extension Modules
 Library
 -------
 
+- Added the hashlib module.  It provides secure hash functions for MD5 and
+  SHA1, 224, 256, 384, and 512.
+
 - Added a subset of Fredrik Lundh's ElementTree package.  Available
   modules are xml.etree.ElementTree, xml.etree.ElementPath, and
   xml.etree.ElementInclude, from ElementTree 1.2.6.
