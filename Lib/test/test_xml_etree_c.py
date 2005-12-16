@@ -4,6 +4,8 @@ import doctest, sys
 
 from test import test_support
 
+from xmlcore.etree import cElementTree as ET
+
 SAMPLE_XML = """
 <body>
   <tag>text</tag>
@@ -55,8 +57,6 @@ def interface():
     """
     Test element tree interface.
 
-    >>> from xmlcore.etree import cElementTree as ET
-
     >>> element = ET.Element("tag", key="value")
     >>> tree = ET.ElementTree(element)
 
@@ -103,8 +103,6 @@ def interface():
 def find():
     """
     Test find methods (including xpath syntax).
-
-    >>> from xmlcore.etree import cElementTree as ET
 
     >>> elem = ET.XML(SAMPLE_XML)
     >>> elem.find("tag").tag
@@ -172,8 +170,6 @@ def find():
 def parseliteral():
     r"""
 
-    >>> from xmlcore.etree import cElementTree as ET
-
     >>> element = ET.XML("<html><body>text</body></html>")
     >>> ET.ElementTree(element).write(sys.stdout)
     <html><body>text</body></html>
@@ -194,6 +190,19 @@ def parseliteral():
     >>> ids["body"].tag
     'body'
     """
+
+def check_encoding(encoding):
+    """
+    >>> check_encoding("ascii")
+    >>> check_encoding("us-ascii")
+    >>> check_encoding("iso-8859-1")
+    >>> check_encoding("iso-8859-15")
+    >>> check_encoding("cp437")
+    >>> check_encoding("mac-roman")
+    """
+    ET.XML(
+        "<?xml version='1.0' encoding='%s'?><xml />" % encoding
+        )
 
 def test_main():
     from test import test_xml_etree_c
