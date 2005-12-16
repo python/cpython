@@ -27,7 +27,7 @@ Core and builtins
   at ftp.unicode.org and contain a few updates (e.g. the Mac OS
   encodings now include a mapping for the Apple logo)
 
-- Added a few more codecs for Mac OS encodings 
+- Added a few more codecs for Mac OS encodings
 
 - Speed up some Unicode operations.
 
@@ -293,7 +293,16 @@ Library
 -------
 
 - Added the hashlib module.  It provides secure hash functions for MD5 and
-  SHA1, 224, 256, 384, and 512.
+  SHA1, 224, 256, 384, and 512.  Note that recent developments make the
+  historic MD5 and SHA1 unsuitable for cryptographic-strength applications.
+  In <http://mail.python.org/pipermail/python-dev/2005-December/058850.html>
+  Ronald L. Rivest offered this advice for Python:
+
+      "The consensus of researchers in this area (at least as
+      expressed at the NIST Hash Function Workshop 10/31/05),
+      is that SHA-256 is a good choice for the time being, but
+      that research should continue, and other alternatives may
+      arise from this research.  The larger SHA's also seem OK."
 
 - Added a subset of Fredrik Lundh's ElementTree package.  Available
   modules are xml.etree.ElementTree, xml.etree.ElementPath, and
@@ -458,13 +467,13 @@ Library
   disables recursive traversal through instance attributes, which can
   be exploited in various ways.
 
-- Bug #1222790: in SimpleXMLRPCServer, set the reuse-address and close-on-exec 
+- Bug #1222790: in SimpleXMLRPCServer, set the reuse-address and close-on-exec
   flags on the HTTP listening socket.
 
 - Bug #792570: SimpleXMLRPCServer had problems if the request grew too large.
   Fixed by reading the HTTP body in chunks instead of one big socket.read().
 
-- Patches #893642, #1039083: add allow_none, encoding arguments to constructors of 
+- Patches #893642, #1039083: add allow_none, encoding arguments to constructors of
   SimpleXMLRPCServer and CGIXMLRPCRequestHandler.
 
 - Bug #1110478: Revert os.environ.update to do putenv again.
