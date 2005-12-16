@@ -99,8 +99,9 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return None
         list.sort(key=lambda a: a.lower())
         f = StringIO()
-        f.write("<title>Directory listing for %s</title>\n" % self.path)
-        f.write("<h2>Directory listing for %s</h2>\n" % self.path)
+        displaypath = cgi.escape(urllib.unquote(self.path))
+        f.write("<title>Directory listing for %s</title>\n" % displaypath)
+        f.write("<h2>Directory listing for %s</h2>\n" % displaypath)
         f.write("<hr>\n<ul>\n")
         for name in list:
             fullname = os.path.join(path, name)
