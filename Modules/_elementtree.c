@@ -1956,7 +1956,6 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
             res = PyObject_CallFunction(self->handle_data, "O", value);
         else
             res = NULL;
-        Py_DECREF(value);
         Py_XDECREF(res);
     } else {
         PyErr_Format(
