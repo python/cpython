@@ -12,6 +12,10 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Implementation of PEP 341 - Unification of try/except and try/finally.
+  "except" clauses can now be written together with a "finally" clause in
+  the one try statement instead of two nested ones.
+
 - Bug #1379994: Builtin unicode_escape and raw_unicode_escape codec
   now encodes backslash correctly.
 
