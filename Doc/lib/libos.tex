@@ -857,6 +857,8 @@ leaf directory.  Throws an \exception{error} exception if the leaf
 directory already exists or cannot be created.  The default \var{mode}
 is \code{0777} (octal).  On some systems, \var{mode} is ignored.
 Where it is used, the current umask value is first masked out.
+\note{\function{makedirs()} will become confused if the path elements
+to create include \var{os.pardir}.}
 \versionadded{1.5.2}
 \versionchanged[This function now handles UNC paths correctly]{2.3}
 \end{funcdesc}
