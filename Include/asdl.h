@@ -23,7 +23,7 @@ typedef struct {
     void *elements[1];
 } asdl_seq;
 
-asdl_seq *asdl_seq_new(int size);
+asdl_seq *asdl_seq_new(int size, PyArena *arena);
 void asdl_seq_free(asdl_seq *);
 
 #ifdef Py_DEBUG

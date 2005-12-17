@@ -19,10 +19,10 @@ static int marshal_write_keyword(PyObject **, int *, keyword_ty);
 static int marshal_write_alias(PyObject **, int *, alias_ty);
 
 mod_ty
-Module(asdl_seq * body)
+Module(asdl_seq * body, PyArena *arena)
 {
         mod_ty p;
-        p = (mod_ty)malloc(sizeof(*p));
+        p = (mod_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -33,10 +33,10 @@ Module(asdl_seq * body)
 }
 
 mod_ty
-Interactive(asdl_seq * body)
+Interactive(asdl_seq * body, PyArena *arena)
 {
         mod_ty p;
-        p = (mod_ty)malloc(sizeof(*p));
+        p = (mod_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -47,7 +47,7 @@ Interactive(asdl_seq * body)
 }
 
 mod_ty
-Expression(expr_ty body)
+Expression(expr_ty body, PyArena *arena)
 {
         mod_ty p;
         if (!body) {
@@ -55,7 +55,7 @@ Expression(expr_ty body)
                                 "field body is required for Expression");
                 return NULL;
         }
-        p = (mod_ty)malloc(sizeof(*p));
+        p = (mod_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -66,10 +66,10 @@ Expression(expr_ty body)
 }
 
 mod_ty
-Suite(asdl_seq * body)
+Suite(asdl_seq * body, PyArena *arena)
 {
         mod_ty p;
-        p = (mod_ty)malloc(sizeof(*p));
+        p = (mod_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -81,7 +81,7 @@ Suite(asdl_seq * body)
 
 stmt_ty
 FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
-            decorators, int lineno)
+            decorators, int lineno, PyArena *arena)
 {
         stmt_ty p;
         if (!name) {
@@ -94,7 +94,7 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
                                 "field args is required for FunctionDef");
                 return NULL;
         }
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -109,7 +109,8 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
 }
 
 stmt_ty
-ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int lineno)
+ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int lineno,
+         PyArena *arena)
 {
         stmt_ty p;
         if (!name) {
@@ -117,7 +118,7 @@ ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int lineno)
                                 "field name is required for ClassDef");
                 return NULL;
         }
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -131,10 +132,10 @@ ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int lineno)
 }
 
 stmt_ty
-Return(expr_ty value, int lineno)
+Return(expr_ty value, int lineno, PyArena *arena)
 {
         stmt_ty p;
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -146,10 +147,10 @@ Return(expr_ty value, int lineno)
 }
 
 stmt_ty
-Delete(asdl_seq * targets, int lineno)
+Delete(asdl_seq * targets, int lineno, PyArena *arena)
 {
         stmt_ty p;
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -161,7 +162,7 @@ Delete(asdl_seq * targets, int lineno)
 }
 
 stmt_ty
-Assign(asdl_seq * targets, expr_ty value, int lineno)
+Assign(asdl_seq * targets, expr_ty value, int lineno, PyArena *arena)
 {
         stmt_ty p;
         if (!value) {
@@ -169,7 +170,7 @@ Assign(asdl_seq * targets, expr_ty value, int lineno)
                                 "field value is required for Assign");
                 return NULL;
         }
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -182,7 +183,8 @@ Assign(asdl_seq * targets, expr_ty value, int lineno)
 }
 
 stmt_ty
-AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno)
+AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno, PyArena
+          *arena)
 {
         stmt_ty p;
         if (!target) {
@@ -200,7 +202,7 @@ AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno)
                                 "field value is required for AugAssign");
                 return NULL;
         }
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -214,10 +216,10 @@ AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno)
 }
 
 stmt_ty
-Print(expr_ty dest, asdl_seq * values, bool nl, int lineno)
+Print(expr_ty dest, asdl_seq * values, bool nl, int lineno, PyArena *arena)
 {
         stmt_ty p;
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -232,7 +234,7 @@ Print(expr_ty dest, asdl_seq * values, bool nl, int lineno)
 
 stmt_ty
 For(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse, int
-    lineno)
+    lineno, PyArena *arena)
 {
         stmt_ty p;
         if (!target) {
@@ -245,7 +247,7 @@ For(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse, int
                                 "field iter is required for For");
                 return NULL;
         }
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -260,7 +262,8 @@ For(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse, int
 }
 
 stmt_ty
-While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno)
+While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, PyArena
+      *arena)
 {
         stmt_ty p;
         if (!test) {
@@ -268,7 +271,7 @@ While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno)
                                 "field test is required for While");
                 return NULL;
         }
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -282,7 +285,7 @@ While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno)
 }
 
 stmt_ty
-If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno)
+If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, PyArena *arena)
 {
         stmt_ty p;
         if (!test) {
@@ -290,7 +293,7 @@ If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno)
                                 "field test is required for If");
                 return NULL;
         }
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -304,10 +307,10 @@ If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno)
 }
 
 stmt_ty
-Raise(expr_ty type, expr_ty inst, expr_ty tback, int lineno)
+Raise(expr_ty type, expr_ty inst, expr_ty tback, int lineno, PyArena *arena)
 {
         stmt_ty p;
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -321,10 +324,11 @@ Raise(expr_ty type, expr_ty inst, expr_ty tback, int lineno)
 }
 
 stmt_ty
-TryExcept(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse, int lineno)
+TryExcept(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse, int lineno,
+          PyArena *arena)
 {
         stmt_ty p;
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -338,10 +342,10 @@ TryExcept(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse, int lineno)
 }
 
 stmt_ty
-TryFinally(asdl_seq * body, asdl_seq * finalbody, int lineno)
+TryFinally(asdl_seq * body, asdl_seq * finalbody, int lineno, PyArena *arena)
 {
         stmt_ty p;
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -354,7 +358,7 @@ TryFinally(asdl_seq * body, asdl_seq * finalbody, int lineno)
 }
 
 stmt_ty
-Assert(expr_ty test, expr_ty msg, int lineno)
+Assert(expr_ty test, expr_ty msg, int lineno, PyArena *arena)
 {
         stmt_ty p;
         if (!test) {
@@ -362,7 +366,7 @@ Assert(expr_ty test, expr_ty msg, int lineno)
                                 "field test is required for Assert");
                 return NULL;
         }
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -375,10 +379,10 @@ Assert(expr_ty test, expr_ty msg, int lineno)
 }
 
 stmt_ty
-Import(asdl_seq * names, int lineno)
+Import(asdl_seq * names, int lineno, PyArena *arena)
 {
         stmt_ty p;
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -390,7 +394,7 @@ Import(asdl_seq * names, int lineno)
 }
 
 stmt_ty
-ImportFrom(identifier module, asdl_seq * names, int lineno)
+ImportFrom(identifier module, asdl_seq * names, int lineno, PyArena *arena)
 {
         stmt_ty p;
         if (!module) {
@@ -398,7 +402,7 @@ ImportFrom(identifier module, asdl_seq * names, int lineno)
                                 "field module is required for ImportFrom");
                 return NULL;
         }
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -411,7 +415,7 @@ ImportFrom(identifier module, asdl_seq * names, int lineno)
 }
 
 stmt_ty
-Exec(expr_ty body, expr_ty globals, expr_ty locals, int lineno)
+Exec(expr_ty body, expr_ty globals, expr_ty locals, int lineno, PyArena *arena)
 {
         stmt_ty p;
         if (!body) {
@@ -419,7 +423,7 @@ Exec(expr_ty body, expr_ty globals, expr_ty locals, int lineno)
                                 "field body is required for Exec");
                 return NULL;
         }
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -433,10 +437,10 @@ Exec(expr_ty body, expr_ty globals, expr_ty locals, int lineno)
 }
 
 stmt_ty
-Global(asdl_seq * names, int lineno)
+Global(asdl_seq * names, int lineno, PyArena *arena)
 {
         stmt_ty p;
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -448,7 +452,7 @@ Global(asdl_seq * names, int lineno)
 }
 
 stmt_ty
-Expr(expr_ty value, int lineno)
+Expr(expr_ty value, int lineno, PyArena *arena)
 {
         stmt_ty p;
         if (!value) {
@@ -456,7 +460,7 @@ Expr(expr_ty value, int lineno)
                                 "field value is required for Expr");
                 return NULL;
         }
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -468,10 +472,10 @@ Expr(expr_ty value, int lineno)
 }
 
 stmt_ty
-Pass(int lineno)
+Pass(int lineno, PyArena *arena)
 {
         stmt_ty p;
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -482,10 +486,10 @@ Pass(int lineno)
 }
 
 stmt_ty
-Break(int lineno)
+Break(int lineno, PyArena *arena)
 {
         stmt_ty p;
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -496,10 +500,10 @@ Break(int lineno)
 }
 
 stmt_ty
-Continue(int lineno)
+Continue(int lineno, PyArena *arena)
 {
         stmt_ty p;
-        p = (stmt_ty)malloc(sizeof(*p));
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -510,7 +514,7 @@ Continue(int lineno)
 }
 
 expr_ty
-BoolOp(boolop_ty op, asdl_seq * values, int lineno)
+BoolOp(boolop_ty op, asdl_seq * values, int lineno, PyArena *arena)
 {
         expr_ty p;
         if (!op) {
@@ -518,7 +522,7 @@ BoolOp(boolop_ty op, asdl_seq * values, int lineno)
                                 "field op is required for BoolOp");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -531,7 +535,7 @@ BoolOp(boolop_ty op, asdl_seq * values, int lineno)
 }
 
 expr_ty
-BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno)
+BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, PyArena *arena)
 {
         expr_ty p;
         if (!left) {
@@ -549,7 +553,7 @@ BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno)
                                 "field right is required for BinOp");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -563,7 +567,7 @@ BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno)
 }
 
 expr_ty
-UnaryOp(unaryop_ty op, expr_ty operand, int lineno)
+UnaryOp(unaryop_ty op, expr_ty operand, int lineno, PyArena *arena)
 {
         expr_ty p;
         if (!op) {
@@ -576,7 +580,7 @@ UnaryOp(unaryop_ty op, expr_ty operand, int lineno)
                                 "field operand is required for UnaryOp");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -589,7 +593,7 @@ UnaryOp(unaryop_ty op, expr_ty operand, int lineno)
 }
 
 expr_ty
-Lambda(arguments_ty args, expr_ty body, int lineno)
+Lambda(arguments_ty args, expr_ty body, int lineno, PyArena *arena)
 {
         expr_ty p;
         if (!args) {
@@ -602,7 +606,7 @@ Lambda(arguments_ty args, expr_ty body, int lineno)
                                 "field body is required for Lambda");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -615,10 +619,10 @@ Lambda(arguments_ty args, expr_ty body, int lineno)
 }
 
 expr_ty
-Dict(asdl_seq * keys, asdl_seq * values, int lineno)
+Dict(asdl_seq * keys, asdl_seq * values, int lineno, PyArena *arena)
 {
         expr_ty p;
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -631,7 +635,7 @@ Dict(asdl_seq * keys, asdl_seq * values, int lineno)
 }
 
 expr_ty
-ListComp(expr_ty elt, asdl_seq * generators, int lineno)
+ListComp(expr_ty elt, asdl_seq * generators, int lineno, PyArena *arena)
 {
         expr_ty p;
         if (!elt) {
@@ -639,7 +643,7 @@ ListComp(expr_ty elt, asdl_seq * generators, int lineno)
                                 "field elt is required for ListComp");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -652,7 +656,7 @@ ListComp(expr_ty elt, asdl_seq * generators, int lineno)
 }
 
 expr_ty
-GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno)
+GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, PyArena *arena)
 {
         expr_ty p;
         if (!elt) {
@@ -660,7 +664,7 @@ GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno)
                                 "field elt is required for GeneratorExp");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -673,10 +677,10 @@ GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno)
 }
 
 expr_ty
-Yield(expr_ty value, int lineno)
+Yield(expr_ty value, int lineno, PyArena *arena)
 {
         expr_ty p;
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -688,7 +692,8 @@ Yield(expr_ty value, int lineno)
 }
 
 expr_ty
-Compare(expr_ty left, asdl_seq * ops, asdl_seq * comparators, int lineno)
+Compare(expr_ty left, asdl_seq * ops, asdl_seq * comparators, int lineno,
+        PyArena *arena)
 {
         expr_ty p;
         if (!left) {
@@ -696,7 +701,7 @@ Compare(expr_ty left, asdl_seq * ops, asdl_seq * comparators, int lineno)
                                 "field left is required for Compare");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -711,7 +716,7 @@ Compare(expr_ty left, asdl_seq * ops, asdl_seq * comparators, int lineno)
 
 expr_ty
 Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty starargs,
-     expr_ty kwargs, int lineno)
+     expr_ty kwargs, int lineno, PyArena *arena)
 {
         expr_ty p;
         if (!func) {
@@ -719,7 +724,7 @@ Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty starargs,
                                 "field func is required for Call");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -735,7 +740,7 @@ Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty starargs,
 }
 
 expr_ty
-Repr(expr_ty value, int lineno)
+Repr(expr_ty value, int lineno, PyArena *arena)
 {
         expr_ty p;
         if (!value) {
@@ -743,7 +748,7 @@ Repr(expr_ty value, int lineno)
                                 "field value is required for Repr");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -755,7 +760,7 @@ Repr(expr_ty value, int lineno)
 }
 
 expr_ty
-Num(object n, int lineno)
+Num(object n, int lineno, PyArena *arena)
 {
         expr_ty p;
         if (!n) {
@@ -763,7 +768,7 @@ Num(object n, int lineno)
                                 "field n is required for Num");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -775,7 +780,7 @@ Num(object n, int lineno)
 }
 
 expr_ty
-Str(string s, int lineno)
+Str(string s, int lineno, PyArena *arena)
 {
         expr_ty p;
         if (!s) {
@@ -783,7 +788,7 @@ Str(string s, int lineno)
                                 "field s is required for Str");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -795,7 +800,8 @@ Str(string s, int lineno)
 }
 
 expr_ty
-Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno)
+Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno,
+          PyArena *arena)
 {
         expr_ty p;
         if (!value) {
@@ -813,7 +819,7 @@ Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno)
                                 "field ctx is required for Attribute");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -827,7 +833,8 @@ Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno)
 }
 
 expr_ty
-Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int lineno)
+Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int lineno,
+          PyArena *arena)
 {
         expr_ty p;
         if (!value) {
@@ -845,7 +852,7 @@ Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int lineno)
                                 "field ctx is required for Subscript");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -859,7 +866,7 @@ Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int lineno)
 }
 
 expr_ty
-Name(identifier id, expr_context_ty ctx, int lineno)
+Name(identifier id, expr_context_ty ctx, int lineno, PyArena *arena)
 {
         expr_ty p;
         if (!id) {
@@ -872,7 +879,7 @@ Name(identifier id, expr_context_ty ctx, int lineno)
                                 "field ctx is required for Name");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -885,7 +892,7 @@ Name(identifier id, expr_context_ty ctx, int lineno)
 }
 
 expr_ty
-List(asdl_seq * elts, expr_context_ty ctx, int lineno)
+List(asdl_seq * elts, expr_context_ty ctx, int lineno, PyArena *arena)
 {
         expr_ty p;
         if (!ctx) {
@@ -893,7 +900,7 @@ List(asdl_seq * elts, expr_context_ty ctx, int lineno)
                                 "field ctx is required for List");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -906,7 +913,7 @@ List(asdl_seq * elts, expr_context_ty ctx, int lineno)
 }
 
 expr_ty
-Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno)
+Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, PyArena *arena)
 {
         expr_ty p;
         if (!ctx) {
@@ -914,7 +921,7 @@ Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno)
                                 "field ctx is required for Tuple");
                 return NULL;
         }
-        p = (expr_ty)malloc(sizeof(*p));
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -927,10 +934,10 @@ Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno)
 }
 
 slice_ty
-Ellipsis()
+Ellipsis(PyArena *arena)
 {
         slice_ty p;
-        p = (slice_ty)malloc(sizeof(*p));
+        p = (slice_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -940,10 +947,10 @@ Ellipsis()
 }
 
 slice_ty
-Slice(expr_ty lower, expr_ty upper, expr_ty step)
+Slice(expr_ty lower, expr_ty upper, expr_ty step, PyArena *arena)
 {
         slice_ty p;
-        p = (slice_ty)malloc(sizeof(*p));
+        p = (slice_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -956,10 +963,10 @@ Slice(expr_ty lower, expr_ty upper, expr_ty step)
 }
 
 slice_ty
-ExtSlice(asdl_seq * dims)
+ExtSlice(asdl_seq * dims, PyArena *arena)
 {
         slice_ty p;
-        p = (slice_ty)malloc(sizeof(*p));
+        p = (slice_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -970,7 +977,7 @@ ExtSlice(asdl_seq * dims)
 }
 
 slice_ty
-Index(expr_ty value)
+Index(expr_ty value, PyArena *arena)
 {
         slice_ty p;
         if (!value) {
@@ -978,7 +985,7 @@ Index(expr_ty value)
                                 "field value is required for Index");
                 return NULL;
         }
-        p = (slice_ty)malloc(sizeof(*p));
+        p = (slice_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -989,7 +996,7 @@ Index(expr_ty value)
 }
 
 comprehension_ty
-comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs)
+comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs, PyArena *arena)
 {
         comprehension_ty p;
         if (!target) {
@@ -1002,7 +1009,7 @@ comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs)
                                 "field iter is required for comprehension");
                 return NULL;
         }
-        p = (comprehension_ty)malloc(sizeof(*p));
+        p = (comprehension_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -1014,10 +1021,10 @@ comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs)
 }
 
 excepthandler_ty
-excepthandler(expr_ty type, expr_ty name, asdl_seq * body)
+excepthandler(expr_ty type, expr_ty name, asdl_seq * body, PyArena *arena)
 {
         excepthandler_ty p;
-        p = (excepthandler_ty)malloc(sizeof(*p));
+        p = (excepthandler_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -1030,10 +1037,10 @@ excepthandler(expr_ty type, expr_ty name, asdl_seq * body)
 
 arguments_ty
 arguments(asdl_seq * args, identifier vararg, identifier kwarg, asdl_seq *
-          defaults)
+          defaults, PyArena *arena)
 {
         arguments_ty p;
-        p = (arguments_ty)malloc(sizeof(*p));
+        p = (arguments_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -1046,7 +1053,7 @@ arguments(asdl_seq * args, identifier vararg, identifier kwarg, asdl_seq *
 }
 
 keyword_ty
-keyword(identifier arg, expr_ty value)
+keyword(identifier arg, expr_ty value, PyArena *arena)
 {
         keyword_ty p;
         if (!arg) {
@@ -1059,7 +1066,7 @@ keyword(identifier arg, expr_ty value)
                                 "field value is required for keyword");
                 return NULL;
         }
-        p = (keyword_ty)malloc(sizeof(*p));
+        p = (keyword_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -1070,7 +1077,7 @@ keyword(identifier arg, expr_ty value)
 }
 
 alias_ty
-alias(identifier name, identifier asname)
+alias(identifier name, identifier asname, PyArena *arena)
 {
         alias_ty p;
         if (!name) {
@@ -1078,7 +1085,7 @@ alias(identifier name, identifier asname)
                                 "field name is required for alias");
                 return NULL;
         }
-        p = (alias_ty)malloc(sizeof(*p));
+        p = (alias_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p) {
                 PyErr_NoMemory();
                 return NULL;
@@ -1086,454 +1093,6 @@ alias(identifier name, identifier asname)
         p->name = name;
         p->asname = asname;
         return p;
-}
-
-
-static void
-free_seq_exprs(asdl_seq *seq)
-{
-        int i, n;
-        n = asdl_seq_LEN(seq);
-        for (i = 0; i < n; i++)
-                free_expr((expr_ty)asdl_seq_GET(seq, i));
-        asdl_seq_free(seq);
-}
-
-static void
-free_seq_stmts(asdl_seq *seq)
-{
-        int i, n;
-        n = asdl_seq_LEN(seq);
-        for (i = 0; i < n; i++)
-                free_stmt((stmt_ty)asdl_seq_GET(seq, i));
-        asdl_seq_free(seq);
-}
-
-
-void
-free_mod(mod_ty o)
-{
-        if (!o)
-                return;
-
-        switch (o->kind) {
-        case Module_kind:
-                free_seq_stmts(o->v.Module.body);
-                break;
-        case Interactive_kind:
-                free_seq_stmts(o->v.Interactive.body);
-                break;
-        case Expression_kind:
-                free_expr((expr_ty)o->v.Expression.body);
-                break;
-        case Suite_kind:
-                free_seq_stmts(o->v.Suite.body);
-                break;
-        }
-
-        free(o);
-}
-
-void
-free_stmt(stmt_ty o)
-{
-        int i, n;
-        asdl_seq *seq;
-
-        if (!o)
-                return;
-
-        switch (o->kind) {
-        case FunctionDef_kind:
-                Py_DECREF((identifier)o->v.FunctionDef.name);
-                free_arguments((arguments_ty)o->v.FunctionDef.args);
-                free_seq_stmts(o->v.FunctionDef.body);
-                free_seq_exprs(o->v.FunctionDef.decorators);
-                break;
-        case ClassDef_kind:
-                Py_DECREF((identifier)o->v.ClassDef.name);
-                free_seq_exprs(o->v.ClassDef.bases);
-                free_seq_stmts(o->v.ClassDef.body);
-                break;
-        case Return_kind:
-                if (o->v.Return.value) {
-                        free_expr((expr_ty)o->v.Return.value);
-                }
-                break;
-        case Delete_kind:
-                free_seq_exprs(o->v.Delete.targets);
-                break;
-        case Assign_kind:
-                free_seq_exprs(o->v.Assign.targets);
-                free_expr((expr_ty)o->v.Assign.value);
-                break;
-        case AugAssign_kind:
-                free_expr((expr_ty)o->v.AugAssign.target);
-                free_operator((operator_ty)o->v.AugAssign.op);
-                free_expr((expr_ty)o->v.AugAssign.value);
-                break;
-        case Print_kind:
-                if (o->v.Print.dest) {
-                        free_expr((expr_ty)o->v.Print.dest);
-                }
-                free_seq_exprs(o->v.Print.values);
-                break;
-        case For_kind:
-                free_expr((expr_ty)o->v.For.target);
-                free_expr((expr_ty)o->v.For.iter);
-                free_seq_stmts(o->v.For.body);
-                free_seq_stmts(o->v.For.orelse);
-                break;
-        case While_kind:
-                free_expr((expr_ty)o->v.While.test);
-                free_seq_stmts(o->v.While.body);
-                free_seq_stmts(o->v.While.orelse);
-                break;
-        case If_kind:
-                free_expr((expr_ty)o->v.If.test);
-                free_seq_stmts(o->v.If.body);
-                free_seq_stmts(o->v.If.orelse);
-                break;
-        case Raise_kind:
-                if (o->v.Raise.type) {
-                        free_expr((expr_ty)o->v.Raise.type);
-                }
-                if (o->v.Raise.inst) {
-                        free_expr((expr_ty)o->v.Raise.inst);
-                }
-                if (o->v.Raise.tback) {
-                        free_expr((expr_ty)o->v.Raise.tback);
-                }
-                break;
-        case TryExcept_kind:
-                free_seq_stmts(o->v.TryExcept.body);
-                seq = o->v.TryExcept.handlers;
-                n = asdl_seq_LEN(seq);
-                for (i = 0; i < n; i++)
-                        free_excepthandler((excepthandler_ty)asdl_seq_GET(seq,
-                                           i));
-                asdl_seq_free(seq);
-                free_seq_stmts(o->v.TryExcept.orelse);
-                break;
-        case TryFinally_kind:
-                free_seq_stmts(o->v.TryFinally.body);
-                free_seq_stmts(o->v.TryFinally.finalbody);
-                break;
-        case Assert_kind:
-                free_expr((expr_ty)o->v.Assert.test);
-                if (o->v.Assert.msg) {
-                        free_expr((expr_ty)o->v.Assert.msg);
-                }
-                break;
-        case Import_kind:
-                seq = o->v.Import.names;
-                n = asdl_seq_LEN(seq);
-                for (i = 0; i < n; i++)
-                        free_alias((alias_ty)asdl_seq_GET(seq, i));
-                asdl_seq_free(seq);
-                break;
-        case ImportFrom_kind:
-                Py_DECREF((identifier)o->v.ImportFrom.module);
-                seq = o->v.ImportFrom.names;
-                n = asdl_seq_LEN(seq);
-                for (i = 0; i < n; i++)
-                        free_alias((alias_ty)asdl_seq_GET(seq, i));
-                asdl_seq_free(seq);
-                break;
-        case Exec_kind:
-                free_expr((expr_ty)o->v.Exec.body);
-                if (o->v.Exec.globals) {
-                        free_expr((expr_ty)o->v.Exec.globals);
-                }
-                if (o->v.Exec.locals) {
-                        free_expr((expr_ty)o->v.Exec.locals);
-                }
-                break;
-        case Global_kind:
-                seq = o->v.Global.names;
-                n = asdl_seq_LEN(seq);
-                for (i = 0; i < n; i++)
-                        Py_DECREF((identifier)asdl_seq_GET(seq, i));
-                asdl_seq_free(seq);
-                break;
-        case Expr_kind:
-                free_expr((expr_ty)o->v.Expr.value);
-                break;
-        case Pass_kind:
-                break;
-        case Break_kind:
-                break;
-        case Continue_kind:
-                break;
-        }
-
-        free(o);
-}
-
-void
-free_expr(expr_ty o)
-{
-        int i, n;
-        asdl_seq *seq;
-
-        if (!o)
-                return;
-
-        switch (o->kind) {
-        case BoolOp_kind:
-                free_boolop((boolop_ty)o->v.BoolOp.op);
-                free_seq_exprs(o->v.BoolOp.values);
-                break;
-        case BinOp_kind:
-                free_expr((expr_ty)o->v.BinOp.left);
-                free_operator((operator_ty)o->v.BinOp.op);
-                free_expr((expr_ty)o->v.BinOp.right);
-                break;
-        case UnaryOp_kind:
-                free_unaryop((unaryop_ty)o->v.UnaryOp.op);
-                free_expr((expr_ty)o->v.UnaryOp.operand);
-                break;
-        case Lambda_kind:
-                free_arguments((arguments_ty)o->v.Lambda.args);
-                free_expr((expr_ty)o->v.Lambda.body);
-                break;
-        case Dict_kind:
-                free_seq_exprs(o->v.Dict.keys);
-                free_seq_exprs(o->v.Dict.values);
-                break;
-        case ListComp_kind:
-                free_expr((expr_ty)o->v.ListComp.elt);
-                seq = o->v.ListComp.generators;
-                n = asdl_seq_LEN(seq);
-                for (i = 0; i < n; i++)
-                        free_comprehension((comprehension_ty)asdl_seq_GET(seq,
-                                           i));
-                asdl_seq_free(seq);
-                break;
-        case GeneratorExp_kind:
-                free_expr((expr_ty)o->v.GeneratorExp.elt);
-                seq = o->v.GeneratorExp.generators;
-                n = asdl_seq_LEN(seq);
-                for (i = 0; i < n; i++)
-                        free_comprehension((comprehension_ty)asdl_seq_GET(seq,
-                                           i));
-                asdl_seq_free(seq);
-                break;
-        case Yield_kind:
-                if (o->v.Yield.value) {
-                        free_expr((expr_ty)o->v.Yield.value);
-                }
-                break;
-        case Compare_kind:
-                free_expr((expr_ty)o->v.Compare.left);
-                seq = o->v.Compare.ops;
-                n = asdl_seq_LEN(seq);
-                for (i = 0; i < n; i++)
-                        free_cmpop((cmpop_ty)asdl_seq_GET(seq, i));
-                asdl_seq_free(seq);
-                free_seq_exprs(o->v.Compare.comparators);
-                break;
-        case Call_kind:
-                free_expr((expr_ty)o->v.Call.func);
-                free_seq_exprs(o->v.Call.args);
-                seq = o->v.Call.keywords;
-                n = asdl_seq_LEN(seq);
-                for (i = 0; i < n; i++)
-                        free_keyword((keyword_ty)asdl_seq_GET(seq, i));
-                asdl_seq_free(seq);
-                if (o->v.Call.starargs) {
-                        free_expr((expr_ty)o->v.Call.starargs);
-                }
-                if (o->v.Call.kwargs) {
-                        free_expr((expr_ty)o->v.Call.kwargs);
-                }
-                break;
-        case Repr_kind:
-                free_expr((expr_ty)o->v.Repr.value);
-                break;
-        case Num_kind:
-                Py_DECREF((object)o->v.Num.n);
-                break;
-        case Str_kind:
-                Py_DECREF((string)o->v.Str.s);
-                break;
-        case Attribute_kind:
-                free_expr((expr_ty)o->v.Attribute.value);
-                Py_DECREF((identifier)o->v.Attribute.attr);
-                free_expr_context((expr_context_ty)o->v.Attribute.ctx);
-                break;
-        case Subscript_kind:
-                free_expr((expr_ty)o->v.Subscript.value);
-                free_slice((slice_ty)o->v.Subscript.slice);
-                free_expr_context((expr_context_ty)o->v.Subscript.ctx);
-                break;
-        case Name_kind:
-                Py_DECREF((identifier)o->v.Name.id);
-                free_expr_context((expr_context_ty)o->v.Name.ctx);
-                break;
-        case List_kind:
-                free_seq_exprs(o->v.List.elts);
-                free_expr_context((expr_context_ty)o->v.List.ctx);
-                break;
-        case Tuple_kind:
-                free_seq_exprs(o->v.Tuple.elts);
-                free_expr_context((expr_context_ty)o->v.Tuple.ctx);
-                break;
-        }
-
-        free(o);
-}
-
-void
-free_expr_context(expr_context_ty o)
-{
-        if (!o)
-                return;
-
-}
-
-void
-free_slice(slice_ty o)
-{
-        int i, n;
-        asdl_seq *seq;
-
-        if (!o)
-                return;
-
-        switch (o->kind) {
-        case Ellipsis_kind:
-                break;
-        case Slice_kind:
-                if (o->v.Slice.lower) {
-                        free_expr((expr_ty)o->v.Slice.lower);
-                }
-                if (o->v.Slice.upper) {
-                        free_expr((expr_ty)o->v.Slice.upper);
-                }
-                if (o->v.Slice.step) {
-                        free_expr((expr_ty)o->v.Slice.step);
-                }
-                break;
-        case ExtSlice_kind:
-                seq = o->v.ExtSlice.dims;
-                n = asdl_seq_LEN(seq);
-                for (i = 0; i < n; i++)
-                        free_slice((slice_ty)asdl_seq_GET(seq, i));
-                asdl_seq_free(seq);
-                break;
-        case Index_kind:
-                free_expr((expr_ty)o->v.Index.value);
-                break;
-        }
-
-        free(o);
-}
-
-void
-free_boolop(boolop_ty o)
-{
-        if (!o)
-                return;
-
-}
-
-void
-free_operator(operator_ty o)
-{
-        if (!o)
-                return;
-
-}
-
-void
-free_unaryop(unaryop_ty o)
-{
-        if (!o)
-                return;
-
-}
-
-void
-free_cmpop(cmpop_ty o)
-{
-        if (!o)
-                return;
-
-}
-
-void
-free_comprehension(comprehension_ty o)
-{
-        if (!o)
-                return;
-
-        free_expr((expr_ty)o->target);
-        free_expr((expr_ty)o->iter);
-        free_seq_exprs(o->ifs);
-
-        free(o);
-}
-
-void
-free_excepthandler(excepthandler_ty o)
-{
-        if (!o)
-                return;
-
-        if (o->type) {
-                free_expr((expr_ty)o->type);
-        }
-        if (o->name) {
-                free_expr((expr_ty)o->name);
-        }
-        free_seq_stmts(o->body);
-
-        free(o);
-}
-
-void
-free_arguments(arguments_ty o)
-{
-        if (!o)
-                return;
-
-        free_seq_exprs(o->args);
-        if (o->vararg) {
-                Py_DECREF((identifier)o->vararg);
-        }
-        if (o->kwarg) {
-                Py_DECREF((identifier)o->kwarg);
-        }
-        free_seq_exprs(o->defaults);
-
-        free(o);
-}
-
-void
-free_keyword(keyword_ty o)
-{
-        if (!o)
-                return;
-
-        Py_DECREF((identifier)o->arg);
-        free_expr((expr_ty)o->value);
-
-        free(o);
-}
-
-void
-free_alias(alias_ty o)
-{
-        if (!o)
-                return;
-
-        Py_DECREF((identifier)o->name);
-        if (o->asname) {
-                Py_DECREF((identifier)o->asname);
-        }
-
-        free(o);
 }
 
 

@@ -254,6 +254,7 @@ PYTHON_OBJS=	\
 		Python/modsupport.o \
 		Python/mystrtoul.o \
 		Python/mysnprintf.o \
+		Python/pyarena.o \
 		Python/pyfpe.o \
 		Python/pystate.o \
 		Python/pythonrun.o \
@@ -520,6 +521,7 @@ PYTHON_HEADERS= \
 		Include/object.h \
 		Include/objimpl.h \
 		Include/patchlevel.h \
+		Include/pyarena.h \
 		Include/pydebug.h \
 		Include/pyerrors.h \
 		Include/pyfpe.h \

@@ -23,6 +23,7 @@
 
 #include "Python-ast.h"
 #include "node.h"
+#include "pyarena.h"
 #include "ast.h"
 #include "code.h"
 #include "compile.h"
@@ -148,6 +149,7 @@ struct compiler {
         struct compiler_unit *u; /* compiler state for current block */
 	PyObject *c_stack;       /* Python list holding compiler_unit ptrs */
 	char *c_encoding;	 /* source encoding (a borrowed reference) */
+        PyArena *c_arena;        /* pointer to memory allocation arena */
 };
 
 struct assembler {
@@ -243,7 +245,8 @@ compiler_init(struct compiler *c)
 }
 
 PyCodeObject *
-PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags)
+PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
+              PyArena *arena)
 {
 	struct compiler c;
 	PyCodeObject *co = NULL;
@@ -259,6 +262,7 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags)
 	if (!compiler_init(&c))
 		goto error;
 	c.c_filename = filename;
+        c.c_arena = arena;
 	c.c_future = PyFuture_FromAST(mod, filename);
 	if (c.c_future == NULL)
 		goto error;
@@ -292,12 +296,13 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags)
 PyCodeObject *
 PyNode_Compile(struct _node *n, const char *filename)
 {
-	PyCodeObject *co;
-	mod_ty mod = PyAST_FromNode(n, NULL, filename);
-	if (!mod)
-		return NULL;
-	co = PyAST_Compile(mod, filename, NULL);
-	free_mod(mod);
+	PyCodeObject *co = NULL;
+        PyArena *arena;
+        arena = PyArena_New();
+	mod_ty mod = PyAST_FromNode(n, NULL, filename, arena);
+	if (mod)
+		co = PyAST_Compile(mod, filename, NULL, arena);
+        PyArena_Free(arena);
 	return co;
 }
 
@@ -3404,7 +3409,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
 	switch (e->kind) {
                 case Attribute_kind:
 		auge = Attribute(e->v.Attribute.value, e->v.Attribute.attr,
-				 AugLoad, e->lineno);
+				 AugLoad, e->lineno, c->c_arena);
                 if (auge == NULL)
                     return 0;
 		VISIT(c, expr, auge);
@@ -3412,11 +3417,10 @@ compiler_augassign(struct compiler *c, stmt_ty s)
 		ADDOP(c, inplace_binop(c, s->v.AugAssign.op));
 		auge->v.Attribute.ctx = AugStore;
 		VISIT(c, expr, auge);
-		free(auge);
 		break;
 	case Subscript_kind:
 		auge = Subscript(e->v.Subscript.value, e->v.Subscript.slice,
-				 AugLoad, e->lineno);
+				 AugLoad, e->lineno, c->c_arena);
                 if (auge == NULL)
                     return 0;
 		VISIT(c, expr, auge);
@@ -3424,7 +3428,6 @@ compiler_augassign(struct compiler *c, stmt_ty s)
 		ADDOP(c, inplace_binop(c, s->v.AugAssign.op));
                 auge->v.Subscript.ctx = AugStore;
 		VISIT(c, expr, auge);
-		free(auge);
                 break;
 	case Name_kind:
 		VISIT(c, expr, s->v.AugAssign.target);

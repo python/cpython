@@ -4,6 +4,7 @@
 #include "Python.h"
 
 #include "Python-ast.h"
+#include "pyarena.h"
 #include "pythonrun.h"
 #include "errcode.h"
 #include "marshal.h"
@@ -773,13 +774,14 @@ parse_source_module(const char *pathname, FILE *fp)
 {
 	PyCodeObject *co = NULL;
 	mod_ty mod;
+        PyArena *arena = PyArena_New();
 
 	mod = PyParser_ASTFromFile(fp, pathname, Py_file_input, 0, 0, 0, 
-				   NULL);
+				   NULL, arena);
 	if (mod) {
-		co = PyAST_Compile(mod, pathname, NULL);
-		free_mod(mod);
+		co = PyAST_Compile(mod, pathname, NULL, arena);
 	}
+        PyArena_Free(arena);
 	return co;
 }
 

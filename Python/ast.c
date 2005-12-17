@@ -7,6 +7,7 @@
 #include "Python-ast.h"
 #include "grammar.h"
 #include "node.h"
+#include "pyarena.h"
 #include "ast.h"
 #include "token.h"
 #include "parsetok.h"
@@ -20,51 +21,10 @@
    - syntax errors
 */
 
-/*
-  Note:
-  
-  You should rarely need to use the asdl_seq_free() in this file.
-  If you use asdl_seq_free(), you will leak any objects held in the seq.
-  If there is an appropriate asdl_*_seq_free() function, use it.
-  If there isn't an asdl_*_seq_free() function for you, you will
-  need to loop over the data in the sequence and free it.
-
-  asdl_seq* seq;
-  int i;
-
-  for (i = 0; i < asdl_seq_LEN(seq); i++)
-      free_***(asdl_seq_GET(seq, i));
-  asdl_seq_free(seq); / * ok * /
-
-  Almost all of the ast functions return a seq of expr, so you should
-  use asdl_expr_seq_free().  The exception is ast_for_suite() which
-  returns a seq of stmt's, so use asdl_stmt_seq_free() to free it.
-
-  If asdl_seq_free is appropriate, you should mark it with an ok comment.
-
-  There are still many memory problems in this file even though
-  it runs clean in valgrind, save one problem that may have existed
-  before the AST.
-
-  Any code which does something like this:
-
-      return ASTconstruct(local, LINENO(n));
-
-  will leak memory.  The problem is if ASTconstruct (e.g., TryFinally)
-  cannot allocate memory, local will be leaked.
-
-  There was discussion on python-dev to replace the entire allocation
-  scheme in this file with arenas.  Basically rather than allocate
-  memory in little blocks with malloc(), we allocate one big honking
-  hunk and deref everything into this block.  We would still need
-  another block or technique to handle the PyObject*s.
-
-  http://mail.python.org/pipermail/python-dev/2005-November/058138.html
-*/
-
 /* Data structure used internally */
 struct compiling {
-	char *c_encoding; /* source encoding */
+    char *c_encoding; /* source encoding */
+    PyArena *c_arena; /* arena for allocating memeory */
 };
 
 static asdl_seq *seq_for_testlist(struct compiling *, const node *);
@@ -86,63 +46,14 @@ static PyObject *parsestrplus(struct compiling *, const node *n);
 #define LINENO(n)	((n)->n_lineno)
 #endif
 
-#define NEW_IDENTIFIER(n) PyString_InternFromString(STR(n))
-
-static void
-asdl_stmt_seq_free(asdl_seq* seq)
-{
-    int n, i;
-
-    if (!seq)
-	return;
-
-    n = asdl_seq_LEN(seq);
-    for (i = 0; i < n; i++)
-	free_stmt(asdl_seq_GET(seq, i));
-    asdl_seq_free(seq); /* ok */
+static identifier
+new_identifier(const char* n, PyArena *arena) {
+    PyObject* id = PyString_InternFromString(n);
+    PyArena_AddPyObject(arena, id);
+    return id;
 }
 
-static void
-asdl_expr_seq_free(asdl_seq* seq)
-{
-    int n, i;
-
-    if (!seq)
-	return;
-
-    n = asdl_seq_LEN(seq);
-    for (i = 0; i < n; i++)
-	free_expr(asdl_seq_GET(seq, i));
-    asdl_seq_free(seq); /* ok */
-}
-
-static void
-asdl_alias_seq_free(asdl_seq* seq)
-{
-    int n, i;
-
-    if (!seq)
-	return;
-
-    n = asdl_seq_LEN(seq);
-    for (i = 0; i < n; i++)
-	free_alias(asdl_seq_GET(seq, i));
-    asdl_seq_free(seq); /* ok */
-}
-
-static void
-asdl_comprehension_seq_free(asdl_seq* seq)
-{
-    int n, i;
-
-    if (!seq)
-	return;
-
-    n = asdl_seq_LEN(seq);
-    for (i = 0; i < n; i++)
-	free_comprehension(asdl_seq_GET(seq, i));
-    asdl_seq_free(seq); /* ok */
-}
+#define NEW_IDENTIFIER(n) new_identifier(STR(n), c->c_arena)
 
 /* This routine provides an invalid object for the syntax error.
    The outermost routine must unpack this error and create the
@@ -269,7 +180,8 @@ num_stmts(const node *n)
 */
 
 mod_ty
-PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename)
+PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
+               PyArena *arena)
 {
     int i, j, num;
     asdl_seq *stmts = NULL;
@@ -278,17 +190,18 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename)
     struct compiling c;
 
     if (flags && flags->cf_flags & PyCF_SOURCE_IS_UTF8) {
-            c.c_encoding = "utf-8";
+        c.c_encoding = "utf-8";
     } else if (TYPE(n) == encoding_decl) {
         c.c_encoding = STR(n);
         n = CHILD(n, 0);
     } else {
         c.c_encoding = NULL;
     }
+    c.c_arena = arena;
 
     switch (TYPE(n)) {
         case file_input:
-            stmts = asdl_seq_new(num_stmts(n));
+            stmts = asdl_seq_new(num_stmts(n), arena);
             if (!stmts)
                     return NULL;
             for (i = 0; i < NCH(n) - 1; i++) {
@@ -314,7 +227,7 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename)
                     }
                 }
             }
-            return Module(stmts);
+            return Module(stmts, arena);
         case eval_input: {
             expr_ty testlist_ast;
 
@@ -322,20 +235,20 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename)
             testlist_ast = ast_for_testlist(&c, CHILD(n, 0));
             if (!testlist_ast)
                 goto error;
-            return Expression(testlist_ast);
+            return Expression(testlist_ast, arena);
         }
         case single_input:
             if (TYPE(CHILD(n, 0)) == NEWLINE) {
-                stmts = asdl_seq_new(1);
+                stmts = asdl_seq_new(1, arena);
                 if (!stmts)
 		    goto error;
-                asdl_seq_SET(stmts, 0, Pass(n->n_lineno));
-                return Interactive(stmts);
+                asdl_seq_SET(stmts, 0, Pass(n->n_lineno, arena));
+                return Interactive(stmts, arena);
             }
             else {
                 n = CHILD(n, 0);
                 num = num_stmts(n);
-                stmts = asdl_seq_new(num);
+                stmts = asdl_seq_new(num, arena);
                 if (!stmts)
 		    goto error;
                 if (num == 1) {
@@ -358,14 +271,12 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename)
                     }
                 }
 
-                return Interactive(stmts);
+                return Interactive(stmts, arena);
             }
         default:
             goto error;
     }
  error:
-    if (stmts)
-	asdl_stmt_seq_free(stmts);
     ast_error_finish(filename);
     return NULL;
 }
@@ -589,7 +500,7 @@ seq_for_testlist(struct compiling *c, const node *n)
 	   || TYPE(n) == testlist_safe
 	   );
 
-    seq = asdl_seq_new((NCH(n) + 1) / 2);
+    seq = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
     if (!seq)
         return NULL;
 
@@ -597,10 +508,8 @@ seq_for_testlist(struct compiling *c, const node *n)
         REQ(CHILD(n, i), test);
 
         expression = ast_for_expr(c, CHILD(n, i));
-        if (!expression) {
-            asdl_expr_seq_free(seq);
+        if (!expression)
             return NULL;
-        }
 
         assert(i / 2 < seq->size);
         asdl_seq_SET(seq, i / 2, expression);
@@ -609,11 +518,11 @@ seq_for_testlist(struct compiling *c, const node *n)
 }
 
 static expr_ty
-compiler_complex_args(const node *n)
+compiler_complex_args(struct compiling *c, const node *n)
 {
     int i, len = (NCH(n) + 1) / 2;
     expr_ty result;
-    asdl_seq *args = asdl_seq_new(len);
+    asdl_seq *args = asdl_seq_new(len, c->c_arena);
     if (!args)
         return NULL;
 
@@ -627,15 +536,16 @@ compiler_complex_args(const node *n)
 			ast_error(child, "assignment to None");
 			return NULL;
 		}
-            arg = Name(NEW_IDENTIFIER(child), Store, LINENO(child));
+            arg = Name(NEW_IDENTIFIER(child), Store, LINENO(child),
+                       c->c_arena);
 	}
         else
-            arg = compiler_complex_args(CHILD(CHILD(n, 2*i), 1));
+            arg = compiler_complex_args(c, CHILD(CHILD(n, 2*i), 1));
 	set_context(arg, Store, n);
         asdl_seq_SET(args, i, arg);
     }
 
-    result = Tuple(args, Store, LINENO(n));
+    result = Tuple(args, Store, LINENO(n), c->c_arena);
     set_context(result, Store, n);
     return result;
 }
@@ -660,7 +570,7 @@ ast_for_arguments(struct compiling *c, const node *n)
 
     if (TYPE(n) == parameters) {
 	if (NCH(n) == 2) /* () as argument list */
-	    return arguments(NULL, NULL, NULL, NULL);
+	    return arguments(NULL, NULL, NULL, NULL, c->c_arena);
 	n = CHILD(n, 1);
     }
     REQ(n, varargslist);
@@ -674,10 +584,10 @@ ast_for_arguments(struct compiling *c, const node *n)
 	if (TYPE(ch) == EQUAL)
 	    n_defaults++;
     }
-    args = (n_args ? asdl_seq_new(n_args) : NULL);
+    args = (n_args ? asdl_seq_new(n_args, c->c_arena) : NULL);
     if (!args && n_args)
     	return NULL; /* Don't need to go to NULL; nothing allocated */
-    defaults = (n_defaults ? asdl_seq_new(n_defaults) : NULL);
+    defaults = (n_defaults ? asdl_seq_new(n_defaults, c->c_arena) : NULL);
     if (!defaults && n_defaults)
         goto error;
 
@@ -706,7 +616,7 @@ ast_for_arguments(struct compiling *c, const node *n)
 
                 if (NCH(ch) == 3) {
                     asdl_seq_APPEND(args, 
-                                    compiler_complex_args(CHILD(ch, 1))); 
+                                    compiler_complex_args(c, CHILD(ch, 1))); 
 		}
                 else if (TYPE(CHILD(ch, 0)) == NAME) {
 		    expr_ty name;
@@ -715,7 +625,7 @@ ast_for_arguments(struct compiling *c, const node *n)
 			    goto error;
 		    }
                     name = Name(NEW_IDENTIFIER(CHILD(ch, 0)),
-                                Param, LINENO(ch));
+                                Param, LINENO(ch), c->c_arena);
                     if (!name)
                         goto error;
                     asdl_seq_APPEND(args, name);
@@ -747,15 +657,11 @@ ast_for_arguments(struct compiling *c, const node *n)
 	}
     }
 
-    return arguments(args, vararg, kwarg, defaults);
+    return arguments(args, vararg, kwarg, defaults, c->c_arena);
 
  error:
     Py_XDECREF(vararg);
     Py_XDECREF(kwarg);
-    if (args)
-        asdl_expr_seq_free(args);
-    if (defaults)
-        asdl_expr_seq_free(defaults);
     return NULL;
 }
 
@@ -771,29 +677,24 @@ ast_for_dotted_name(struct compiling *c, const node *n)
     
     id = NEW_IDENTIFIER(CHILD(n, 0));
     if (!id)
-        goto error;
-    e = Name(id, Load, LINENO(n));
+        return NULL;
+    e = Name(id, Load, LINENO(n), c->c_arena);
     if (!e)
-	goto error;
+	return NULL;
     id = NULL;
 
     for (i = 2; i < NCH(n); i+=2) {
         id = NEW_IDENTIFIER(CHILD(n, i));
 	if (!id)
-	    goto error;
-	attrib = Attribute(e, id, Load, LINENO(CHILD(n, i)));
+	    return NULL;
+	attrib = Attribute(e, id, Load, LINENO(CHILD(n, i)), c->c_arena);
 	if (!attrib)
-	    goto error;
+	    return NULL;
 	e = attrib;
 	attrib = NULL;
     }
 
     return e;
-    
-  error:
-    Py_XDECREF(id);
-    free_expr(e);
-    return NULL;
 }
 
 static expr_ty
@@ -808,36 +709,31 @@ ast_for_decorator(struct compiling *c, const node *n)
     if ((NCH(n) < 3 && NCH(n) != 5 && NCH(n) != 6)
 	|| TYPE(CHILD(n, 0)) != AT || TYPE(RCHILD(n, -1)) != NEWLINE) {
 	ast_error(n, "Invalid decorator node");
-	goto error;
+	return NULL;
     }
     
     name_expr = ast_for_dotted_name(c, CHILD(n, 1));
     if (!name_expr)
-	goto error;
+	return NULL;
 	
     if (NCH(n) == 3) { /* No arguments */
 	d = name_expr;
 	name_expr = NULL;
     }
     else if (NCH(n) == 5) { /* Call with no arguments */
-	d = Call(name_expr, NULL, NULL, NULL, NULL, LINENO(n));
+	d = Call(name_expr, NULL, NULL, NULL, NULL, LINENO(n), c->c_arena);
 	if (!d)
-	    goto error;
+	    return NULL;
 	name_expr = NULL;
     }
     else {
 	d = ast_for_call(c, CHILD(n, 3), name_expr);
 	if (!d)
-	    goto error;
+	    return NULL;
 	name_expr = NULL;
     }
 
     return d;
-    
-  error:
-    free_expr(name_expr);
-    free_expr(d);
-    return NULL;
 }
 
 static asdl_seq*
@@ -849,20 +745,17 @@ ast_for_decorators(struct compiling *c, const node *n)
     
     REQ(n, decorators);
 
-    decorator_seq = asdl_seq_new(NCH(n));
+    decorator_seq = asdl_seq_new(NCH(n), c->c_arena);
     if (!decorator_seq)
         return NULL;
 	
     for (i = 0; i < NCH(n); i++) {
 	d = ast_for_decorator(c, CHILD(n, i));
 	if (!d)
-	    goto error;
+	    return NULL;
 	asdl_seq_APPEND(decorator_seq, d);
     }
     return decorator_seq;
-  error:
-    asdl_expr_seq_free(decorator_seq);
-    return NULL;
 }
 
 static stmt_ty
@@ -880,7 +773,7 @@ ast_for_funcdef(struct compiling *c, const node *n)
     if (NCH(n) == 6) { /* decorators are present */
 	decorator_seq = ast_for_decorators(c, CHILD(n, 0));
 	if (!decorator_seq)
-	    goto error;
+	    return NULL;
 	name_i = 2;
     }
     else {
@@ -889,26 +782,19 @@ ast_for_funcdef(struct compiling *c, const node *n)
 
     name = NEW_IDENTIFIER(CHILD(n, name_i));
     if (!name)
-	goto error;
+	return NULL;
     else if (!strcmp(STR(CHILD(n, name_i)), "None")) {
 	ast_error(CHILD(n, name_i), "assignment to None");
-	goto error;
+	return NULL;
     }
     args = ast_for_arguments(c, CHILD(n, name_i + 1));
     if (!args)
-	goto error;
+	return NULL;
     body = ast_for_suite(c, CHILD(n, name_i + 3));
     if (!body)
-	goto error;
+	return NULL;
 
-    return FunctionDef(name, args, body, decorator_seq, LINENO(n));
-
-error:
-    asdl_stmt_seq_free(body);
-    asdl_expr_seq_free(decorator_seq);
-    free_arguments(args);
-    Py_XDECREF(name);
-    return NULL;
+    return FunctionDef(name, args, body, decorator_seq, LINENO(n), c->c_arena);
 }
 
 static expr_ty
@@ -919,27 +805,23 @@ ast_for_lambdef(struct compiling *c, const node *n)
     expr_ty expression;
 
     if (NCH(n) == 3) {
-        args = arguments(NULL, NULL, NULL, NULL);
+        args = arguments(NULL, NULL, NULL, NULL, c->c_arena);
         if (!args)
             return NULL;
         expression = ast_for_expr(c, CHILD(n, 2));
-        if (!expression) {
-            free_arguments(args);
+        if (!expression)
             return NULL;
-        }
     }
     else {
         args = ast_for_arguments(c, CHILD(n, 1));
         if (!args)
             return NULL;
         expression = ast_for_expr(c, CHILD(n, 3));
-        if (!expression) {
-            free_arguments(args);
+        if (!expression)
             return NULL;
-        }
     }
 
-    return Lambda(args, expression, LINENO(n));
+    return Lambda(args, expression, LINENO(n), c->c_arena);
 }
 
 /* Count the number of 'for' loop in a list comprehension.
@@ -1028,12 +910,10 @@ ast_for_listcomp(struct compiling *c, const node *n)
     if (n_fors == -1)
         return NULL;
 
-    listcomps = asdl_seq_new(n_fors);
-    if (!listcomps) {
-        free_expr(elt);
+    listcomps = asdl_seq_new(n_fors, c->c_arena);
+    if (!listcomps)
     	return NULL;
-    }
-    
+
     ch = CHILD(n, 1);
     for (i = 0; i < n_fors; i++) {
 	comprehension_ty lc;
@@ -1043,35 +923,20 @@ ast_for_listcomp(struct compiling *c, const node *n)
 	REQ(ch, list_for);
 
 	t = ast_for_exprlist(c, CHILD(ch, 1), Store);
-        if (!t) {
-            asdl_comprehension_seq_free(listcomps);
-            free_expr(elt);
+        if (!t)
             return NULL;
-        }
         expression = ast_for_testlist(c, CHILD(ch, 3));
-        if (!expression) {
-            asdl_expr_seq_free(t);
-            asdl_comprehension_seq_free(listcomps);
-            free_expr(elt);
+        if (!expression)
             return NULL;
-        }
 
-	if (asdl_seq_LEN(t) == 1) {
-	    lc = comprehension(asdl_seq_GET(t, 0), expression, NULL);
-	    /* only free the sequence since we grabbed element 0 above */
-	    if (lc)
-	        asdl_seq_free(t); /* ok */
-	}
+	if (asdl_seq_LEN(t) == 1)
+	    lc = comprehension(asdl_seq_GET(t, 0), expression, NULL,
+                               c->c_arena);
 	else
-	    lc = comprehension(Tuple(t, Store, LINENO(ch)), expression, NULL);
-
-        if (!lc) {
-            asdl_expr_seq_free(t);
-            asdl_comprehension_seq_free(listcomps);
-            free_expr(expression);
-            free_expr(elt);
+	    lc = comprehension(Tuple(t, Store, LINENO(ch), c->c_arena),
+                               expression, NULL, c->c_arena);
+        if (!lc)
             return NULL;
-        }
 
 	if (NCH(ch) == 5) {
 	    int j, n_ifs;
@@ -1079,20 +944,12 @@ ast_for_listcomp(struct compiling *c, const node *n)
 
 	    ch = CHILD(ch, 4);
 	    n_ifs = count_list_ifs(ch);
-            if (n_ifs == -1) {
-                free_comprehension(lc);
-                asdl_comprehension_seq_free(listcomps);
-                free_expr(elt);
+            if (n_ifs == -1)
                 return NULL;
-            }
 
-	    ifs = asdl_seq_new(n_ifs);
-	    if (!ifs) {
-                free_comprehension(lc);
-		asdl_comprehension_seq_free(listcomps);
-                free_expr(elt);
+	    ifs = asdl_seq_new(n_ifs, c->c_arena);
+	    if (!ifs)
 		return NULL;
-	    }
 
 	    for (j = 0; j < n_ifs; j++) {
 		REQ(ch, list_iter);
@@ -1112,7 +969,7 @@ ast_for_listcomp(struct compiling *c, const node *n)
 	asdl_seq_APPEND(listcomps, lc);
     }
 
-    return ListComp(elt, listcomps, LINENO(n));
+    return ListComp(elt, listcomps, LINENO(n), c->c_arena);
 }
 
 /*
@@ -1198,13 +1055,11 @@ ast_for_genexp(struct compiling *c, const node *n)
     n_fors = count_gen_fors(n);
     if (n_fors == -1)
         return NULL;
-    
-    genexps = asdl_seq_new(n_fors);
-    if (!genexps) {
-        free_expr(elt);
+
+    genexps = asdl_seq_new(n_fors, c->c_arena);
+    if (!genexps)
         return NULL;
-    }
-    
+
     ch = CHILD(n, 1);
     for (i = 0; i < n_fors; i++) {
         comprehension_ty ge;
@@ -1214,59 +1069,35 @@ ast_for_genexp(struct compiling *c, const node *n)
         REQ(ch, gen_for);
         
         t = ast_for_exprlist(c, CHILD(ch, 1), Store);
-        if (!t) {
-            asdl_comprehension_seq_free(genexps);
-	    asdl_expr_seq_free(t);
-            free_expr(elt);
+        if (!t)
             return NULL;
-        }
         expression = ast_for_expr(c, CHILD(ch, 3));
-        if (!expression) {
-            asdl_comprehension_seq_free(genexps);
-	    asdl_expr_seq_free(t);
-            free_expr(elt);
+        if (!expression)
             return NULL;
-        }
-        
-        if (asdl_seq_LEN(t) == 1) {
+
+        if (asdl_seq_LEN(t) == 1)
             ge = comprehension(asdl_seq_GET(t, 0), expression,
-                               NULL);
-	    /* only free the sequence since we grabbed element 0 above */
-	    if (ge)
-	        asdl_seq_free(t); /* ok */
-	}
+                               NULL, c->c_arena);
         else
-            ge = comprehension(Tuple(t, Store, LINENO(ch)),
-                               expression, NULL);
-        
-        if (!ge) {
-            asdl_comprehension_seq_free(genexps);
-	    asdl_expr_seq_free(t);
-            free_expr(elt);
+            ge = comprehension(Tuple(t, Store, LINENO(ch), c->c_arena),
+                               expression, NULL, c->c_arena);
+
+        if (!ge)
             return NULL;
-        }
-        
+
         if (NCH(ch) == 5) {
             int j, n_ifs;
             asdl_seq *ifs;
             
             ch = CHILD(ch, 4);
             n_ifs = count_gen_ifs(ch);
-            if (n_ifs == -1) {
-                asdl_comprehension_seq_free(genexps);
-		free_comprehension(ge);
-                free_expr(elt);
+            if (n_ifs == -1)
                 return NULL;
-            }
-            
-            ifs = asdl_seq_new(n_ifs);
-            if (!ifs) {
-                asdl_comprehension_seq_free(genexps);
-		free_comprehension(ge);
-                free_expr(elt);
+
+            ifs = asdl_seq_new(n_ifs, c->c_arena);
+            if (!ifs)
                 return NULL;
-            }
-            
+
             for (j = 0; j < n_ifs; j++) {
                 expr_ty expression;
                 REQ(ch, gen_iter);
@@ -1274,13 +1105,8 @@ ast_for_genexp(struct compiling *c, const node *n)
                 REQ(ch, gen_if);
                 
                 expression = ast_for_expr(c, CHILD(ch, 1));
-                if (!expression) {
-		    asdl_expr_seq_free(ifs);
-                    asdl_comprehension_seq_free(genexps);
-		    free_comprehension(ge);
-                    free_expr(elt);
+                if (!expression)
                     return NULL;
-                }
                 asdl_seq_APPEND(ifs, expression);
                 if (NCH(ch) == 3)
                     ch = CHILD(ch, 2);
@@ -1293,7 +1119,7 @@ ast_for_genexp(struct compiling *c, const node *n)
         asdl_seq_APPEND(genexps, ge);
     }
     
-    return GeneratorExp(elt, genexps, LINENO(n));
+    return GeneratorExp(elt, genexps, LINENO(n), c->c_arena);
 }
 
 static expr_ty
@@ -1308,28 +1134,28 @@ ast_for_atom(struct compiling *c, const node *n)
     case NAME:
 	/* All names start in Load context, but may later be
 	   changed. */
-	return Name(NEW_IDENTIFIER(ch), Load, LINENO(n));
+	return Name(NEW_IDENTIFIER(ch), Load, LINENO(n), c->c_arena);
     case STRING: {
 	PyObject *str = parsestrplus(c, n);
-	
 	if (!str)
 	    return NULL;
-	
-	return Str(str, LINENO(n));
+
+	PyArena_AddPyObject(c->c_arena, str);
+	return Str(str, LINENO(n), c->c_arena);
     }
     case NUMBER: {
 	PyObject *pynum = parsenumber(STR(ch));
-	
 	if (!pynum)
 	    return NULL;
-	
-	return Num(pynum, LINENO(n));
+
+	PyArena_AddPyObject(c->c_arena, pynum);
+	return Num(pynum, LINENO(n), c->c_arena);
     }
     case LPAR: /* some parenthesized expressions */
 	ch = CHILD(n, 1);
 	
 	if (TYPE(ch) == RPAR)
-	    return Tuple(NULL, Load, LINENO(n));
+	    return Tuple(NULL, Load, LINENO(n), c->c_arena);
 	
 	if (TYPE(ch) == yield_expr)
 	    return ast_for_expr(c, ch);
@@ -1342,16 +1168,15 @@ ast_for_atom(struct compiling *c, const node *n)
 	ch = CHILD(n, 1);
 	
 	if (TYPE(ch) == RSQB)
-	    return List(NULL, Load, LINENO(n));
+	    return List(NULL, Load, LINENO(n), c->c_arena);
 	
 	REQ(ch, listmaker);
 	if (NCH(ch) == 1 || TYPE(CHILD(ch, 1)) == COMMA) {
 	    asdl_seq *elts = seq_for_testlist(c, ch);
-	    
 	    if (!elts)
 		return NULL;
-	    
-	    return List(elts, Load, LINENO(n));
+
+	    return List(elts, Load, LINENO(n), c->c_arena);
 	}
 	else
 	    return ast_for_listcomp(c, ch);
@@ -1362,46 +1187,37 @@ ast_for_atom(struct compiling *c, const node *n)
 	
 	ch = CHILD(n, 1);
 	size = (NCH(ch) + 1) / 4; /* +1 in case no trailing comma */
-	keys = asdl_seq_new(size);
+	keys = asdl_seq_new(size, c->c_arena);
 	if (!keys)
 	    return NULL;
 	
-	values = asdl_seq_new(size);
-	if (!values) {
-	    asdl_seq_free(keys); /* ok */
+	values = asdl_seq_new(size, c->c_arena);
+	if (!values)
 	    return NULL;
-	}
 	
 	for (i = 0; i < NCH(ch); i += 4) {
 	    expr_ty expression;
 	    
 	    expression = ast_for_expr(c, CHILD(ch, i));
-	    if (!expression) {
-		asdl_expr_seq_free(keys);
-		asdl_expr_seq_free(values);
+	    if (!expression)
 		return NULL;
-	    }
-	    
+
 	    asdl_seq_SET(keys, i / 4, expression);
-	    
+
 	    expression = ast_for_expr(c, CHILD(ch, i + 2));
-	    if (!expression) {
-		asdl_expr_seq_free(keys);
-		asdl_expr_seq_free(values);
+	    if (!expression)
 		return NULL;
-	    }
 
 	    asdl_seq_SET(values, i / 4, expression);
 	}
-	return Dict(keys, values, LINENO(n));
+	return Dict(keys, values, LINENO(n), c->c_arena);
     }
     case BACKQUOTE: { /* repr */
 	expr_ty expression = ast_for_testlist(c, CHILD(n, 1));
-	
 	if (!expression)
 	    return NULL;
-	
-	return Repr(expression, LINENO(n));
+
+	return Repr(expression, LINENO(n), c->c_arena);
     }
     default:
 	PyErr_Format(PyExc_SystemError, "unhandled atom %d", TYPE(ch));
@@ -1423,7 +1239,7 @@ ast_for_slice(struct compiling *c, const node *n)
     */
     ch = CHILD(n, 0);
     if (TYPE(ch) == DOT)
-	return Ellipsis();
+	return Ellipsis(c->c_arena);
 
     if (NCH(n) == 1 && TYPE(ch) == test) {
         /* 'step' variable hold no significance in terms of being used over
@@ -1432,7 +1248,7 @@ ast_for_slice(struct compiling *c, const node *n)
         if (!step)
             return NULL;
             
-	return Index(step);
+	return Index(step, c->c_arena);
     }
 
     if (TYPE(ch) == test) {
@@ -1477,7 +1293,7 @@ ast_for_slice(struct compiling *c, const node *n)
         }
     }
 
-    return Slice(lower, upper, step);
+    return Slice(lower, upper, step, c->c_arena);
 }
 
 static expr_ty
@@ -1504,7 +1320,7 @@ ast_for_binop(struct compiling *c, const node *n)
         if (!operator)
             return NULL;
 
-	result = BinOp(expr1, operator, expr2, LINENO(n));
+	result = BinOp(expr1, operator, expr2, LINENO(n), c->c_arena);
 	if (!result)
             return NULL;
 
@@ -1522,7 +1338,7 @@ ast_for_binop(struct compiling *c, const node *n)
                     return NULL;
 
                 tmp_result = BinOp(result, operator, tmp, 
-				   LINENO(next_oper));
+				   LINENO(next_oper), c->c_arena);
 		if (!tmp) 
 			return NULL;
 		result = tmp_result;
@@ -1538,7 +1354,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
     REQ(n, trailer);
     if (TYPE(CHILD(n, 0)) == LPAR) {
         if (NCH(n) == 2)
-            e = Call(left_expr, NULL, NULL, NULL, NULL, LINENO(n));
+            e = Call(left_expr, NULL, NULL, NULL, NULL, LINENO(n), c->c_arena);
         else
             e = ast_for_call(c, CHILD(n, 1), left_expr);
     }
@@ -1549,40 +1365,32 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             slice_ty slc = ast_for_slice(c, CHILD(n, 0));
             if (!slc)
                 return NULL;
-            e = Subscript(left_expr, slc, Load, LINENO(n));
-            if (!e) {
-                free_slice(slc);
+            e = Subscript(left_expr, slc, Load, LINENO(n), c->c_arena);
+            if (!e)
                 return NULL;
-            }
         }
         else {
             int j;
             slice_ty slc;
-            asdl_seq *slices = asdl_seq_new((NCH(n) + 1) / 2);
+            asdl_seq *slices = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
             if (!slices)
                 return NULL;
             for (j = 0; j < NCH(n); j += 2) {
                 slc = ast_for_slice(c, CHILD(n, j));
-                if (!slc) {
-		    for (j = j / 2; j >= 0; j--)
-                        free_slice(asdl_seq_GET(slices, j));
-                    asdl_seq_free(slices); /* ok */
+                if (!slc)
                     return NULL;
-                }
                 asdl_seq_SET(slices, j / 2, slc);
             }
-            e = Subscript(left_expr, ExtSlice(slices), Load, LINENO(n));
-            if (!e) {
-		for (j = 0; j < asdl_seq_LEN(slices); j++)
-                    free_slice(asdl_seq_GET(slices, j));
-                asdl_seq_free(slices); /* ok */
+            e = Subscript(left_expr, ExtSlice(slices, c->c_arena),
+                          Load, LINENO(n), c->c_arena);
+            if (!e)
                 return NULL;
-            }
         }
     }
     else {
         assert(TYPE(CHILD(n, 0)) == DOT);
-        e = Attribute(left_expr, NEW_IDENTIFIER(CHILD(n, 1)), Load, LINENO(n));
+        e = Attribute(left_expr, NEW_IDENTIFIER(CHILD(n, 1)), Load, LINENO(n),
+                      c->c_arena);
     }
     return e;
 }
@@ -1605,24 +1413,17 @@ ast_for_power(struct compiling *c, const node *n)
         if (TYPE(ch) != trailer)
             break;
         tmp = ast_for_trailer(c, ch, e);
-        if (!tmp) {
-            free_expr(e);
+        if (!tmp)
             return NULL;
-        }
         e = tmp;
     }
     if (TYPE(CHILD(n, NCH(n) - 1)) == factor) {
         expr_ty f = ast_for_expr(c, CHILD(n, NCH(n) - 1));
-        if (!f) {
-            free_expr(e);
+        if (!f)
             return NULL;
-        }
-        tmp = BinOp(e, Pow, f, LINENO(n));
-        if (!tmp) {
-            free_expr(f);
-            free_expr(e);
+        tmp = BinOp(e, Pow, f, LINENO(n), c->c_arena);
+        if (!tmp)
             return NULL;
-        }
         e = tmp;
     }
     return e;
@@ -1663,7 +1464,7 @@ ast_for_expr(struct compiling *c, const node *n)
                 n = CHILD(n, 0);
                 goto loop;
             }
-            seq = asdl_seq_new((NCH(n) + 1) / 2);
+            seq = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
             if (!seq)
                 return NULL;
             for (i = 0; i < NCH(n); i += 2) {
@@ -1673,10 +1474,10 @@ ast_for_expr(struct compiling *c, const node *n)
                 asdl_seq_SET(seq, i / 2, e);
             }
             if (!strcmp(STR(CHILD(n, 1)), "and"))
-                return BoolOp(And, seq, LINENO(n));
+                return BoolOp(And, seq, LINENO(n), c->c_arena);
             else {
                 assert(!strcmp(STR(CHILD(n, 1)), "or"));
-                return BoolOp(Or, seq, LINENO(n));
+                return BoolOp(Or, seq, LINENO(n), c->c_arena);
             }
             break;
         case not_test:
@@ -1689,7 +1490,7 @@ ast_for_expr(struct compiling *c, const node *n)
                 if (!expression)
                     return NULL;
 
-                return UnaryOp(Not, expression, LINENO(n));
+                return UnaryOp(Not, expression, LINENO(n), c->c_arena);
             }
         case comparison:
             if (NCH(n) == 1) {
@@ -1699,12 +1500,11 @@ ast_for_expr(struct compiling *c, const node *n)
             else {
                 expr_ty expression;
                 asdl_seq *ops, *cmps;
-                ops = asdl_seq_new(NCH(n) / 2);
+                ops = asdl_seq_new(NCH(n) / 2, c->c_arena);
                 if (!ops)
                     return NULL;
-                cmps = asdl_seq_new(NCH(n) / 2);
+                cmps = asdl_seq_new(NCH(n) / 2, c->c_arena);
                 if (!cmps) {
-                    asdl_seq_free(ops); /* ok */
                     return NULL;
                 }
                 for (i = 1; i < NCH(n); i += 2) {
@@ -1713,15 +1513,11 @@ ast_for_expr(struct compiling *c, const node *n)
 
                     operator = ast_for_comp_op(CHILD(n, i));
                     if (!operator) {
-		        asdl_expr_seq_free(ops);
-		        asdl_expr_seq_free(cmps);
                         return NULL;
 		    }
 
                     expression = ast_for_expr(c, CHILD(n, i + 1));
                     if (!expression) {
-		        asdl_expr_seq_free(ops);
-		        asdl_expr_seq_free(cmps);
                         return NULL;
 		    }
                         
@@ -1730,12 +1526,10 @@ ast_for_expr(struct compiling *c, const node *n)
                 }
                 expression = ast_for_expr(c, CHILD(n, 0));
                 if (!expression) {
-		    asdl_expr_seq_free(ops);
-		    asdl_expr_seq_free(cmps);
                     return NULL;
 		}
                     
-                return Compare(expression, ops, cmps, LINENO(n));
+                return Compare(expression, ops, cmps, LINENO(n), c->c_arena);
             }
             break;
 
@@ -1761,7 +1555,7 @@ ast_for_expr(struct compiling *c, const node *n)
 		if (!exp)
 		    return NULL;
 	    }
-	    return Yield(exp, LINENO(n));
+	    return Yield(exp, LINENO(n), c->c_arena);
 	}
         case factor: {
             expr_ty expression;
@@ -1777,11 +1571,11 @@ ast_for_expr(struct compiling *c, const node *n)
 
             switch (TYPE(CHILD(n, 0))) {
                 case PLUS:
-                    return UnaryOp(UAdd, expression, LINENO(n));
+                    return UnaryOp(UAdd, expression, LINENO(n), c->c_arena);
                 case MINUS:
-                    return UnaryOp(USub, expression, LINENO(n));
+                    return UnaryOp(USub, expression, LINENO(n), c->c_arena);
                 case TILDE:
-                    return UnaryOp(Invert, expression, LINENO(n));
+                    return UnaryOp(Invert, expression, LINENO(n), c->c_arena);
             }
             PyErr_Format(PyExc_SystemError, "unhandled factor: %d",
 	    		 TYPE(CHILD(n, 0)));
@@ -1793,7 +1587,7 @@ ast_for_expr(struct compiling *c, const node *n)
             PyErr_Format(PyExc_SystemError, "unhandled expr: %d", TYPE(n));
             return NULL;
     }
-    /* should never get here */
+    /* should never get here unless if error is set*/
     return NULL;
 }
 
@@ -1838,12 +1632,12 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
       return NULL;
     }
 
-    args = asdl_seq_new(nargs + ngens);
+    args = asdl_seq_new(nargs + ngens, c->c_arena);
     if (!args)
-        goto error;
-    keywords = asdl_seq_new(nkeywords);
+        return NULL;
+    keywords = asdl_seq_new(nkeywords, c->c_arena);
     if (!keywords)
-        goto error;
+        return NULL;
     nargs = 0;
     nkeywords = 0;
     for (i = 0; i < NCH(n); i++) {
@@ -1853,13 +1647,13 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
 	    if (NCH(ch) == 1) {
 		e = ast_for_expr(c, CHILD(ch, 0));
                 if (!e)
-                    goto error;
+                    return NULL;
 		asdl_seq_SET(args, nargs++, e);
 	    }  
 	    else if (TYPE(CHILD(ch, 1)) == gen_for) {
         	e = ast_for_genexp(c, ch);
                 if (!e)
-                    goto error;
+                    return NULL;
 		asdl_seq_SET(args, nargs++, e);
             }
 	    else {
@@ -1869,7 +1663,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
 		/* CHILD(ch, 0) is test, but must be an identifier? */ 
 		e = ast_for_expr(c, CHILD(ch, 0));
                 if (!e)
-                    goto error;
+                    return NULL;
                 /* f(lambda x: x[0] = 3) ends up getting parsed with
                  * LHS test = lambda x: x[0], and RHS test = 3.
                  * SF bug 132313 points out that complaining about a keyword
@@ -1877,19 +1671,18 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                  */
                 if (e->kind == Lambda_kind) {
                   ast_error(CHILD(ch, 0), "lambda cannot contain assignment");
-                  goto error;
+                  return NULL;
                 } else if (e->kind != Name_kind) {
                   ast_error(CHILD(ch, 0), "keyword can't be an expression");
-                  goto error;
+                  return NULL;
                 }
 		key = e->v.Name.id;
-		free(e); /* XXX: is free correct here? */
 		e = ast_for_expr(c, CHILD(ch, 2));
                 if (!e)
-                    goto error;
-		kw = keyword(key, e);
+                    return NULL;
+		kw = keyword(key, e, c->c_arena);
                 if (!kw)
-                    goto error;
+                    return NULL;
 		asdl_seq_SET(keywords, nkeywords++, kw);
 	    }
 	}
@@ -1903,19 +1696,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
 	}
     }
 
-    return Call(func, args, keywords, vararg, kwarg, LINENO(n));
-
- error:
-    free_expr(vararg);
-    free_expr(kwarg);
-    if (args)
-        asdl_expr_seq_free(args);
-    if (keywords) {
-	for (i = 0; i < asdl_seq_LEN(keywords); i++)
-            free_keyword(asdl_seq_GET(keywords, i));
-        asdl_seq_free(keywords); /* ok */
-    }
-    return NULL;
+    return Call(func, args, keywords, vararg, kwarg, LINENO(n), c->c_arena);
 }
 
 static expr_ty
@@ -1941,7 +1722,7 @@ ast_for_testlist(struct compiling *c, const node* n)
         asdl_seq *tmp = seq_for_testlist(c, n);
         if (!tmp)
             return NULL;
-	return Tuple(tmp, Load, LINENO(n));
+	return Tuple(tmp, Load, LINENO(n), c->c_arena);
     }
 }
 
@@ -1967,12 +1748,11 @@ ast_for_class_bases(struct compiling *c, const node* n)
     REQ(n, testlist);
     if (NCH(n) == 1) {
         expr_ty base;
-        asdl_seq *bases = asdl_seq_new(1);
+        asdl_seq *bases = asdl_seq_new(1, c->c_arena);
         if (!bases)
             return NULL;
         base = ast_for_expr(c, CHILD(n, 0));
         if (!base) {
-            asdl_seq_free(bases); /* ok */
             return NULL;
         }
         asdl_seq_SET(bases, 0, base);
@@ -2000,7 +1780,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         if (!e)
             return NULL;
 
-	return Expr(e, LINENO(n));
+	return Expr(e, LINENO(n), c->c_arena);
     }
     else if (TYPE(CHILD(n, 1)) == augassign) {
         expr_ty expr1, expr2;
@@ -2010,12 +1790,12 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 	if (TYPE(ch) == testlist)
 	    expr1 = ast_for_testlist(c, ch);
 	else
-	    expr1 = Yield(ast_for_expr(c, CHILD(ch, 0)), LINENO(ch));
+	    expr1 = Yield(ast_for_expr(c, CHILD(ch, 0)), LINENO(ch),
+                          c->c_arena);
 
         if (!expr1)
             return NULL;
         if (expr1->kind == GeneratorExp_kind) {
-	    free_expr(expr1);
 	    ast_error(ch, "augmented assignment to generator "
 		      "expression not possible");
 	    return NULL;
@@ -2023,7 +1803,6 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 	if (expr1->kind == Name_kind) {
 		char *var_name = PyString_AS_STRING(expr1->v.Name.id);
 		if (var_name[0] == 'N' && !strcmp(var_name, "None")) {
-			free_expr(expr1);
 			ast_error(ch, "assignment to None");
 			return NULL;
 		}
@@ -2033,20 +1812,17 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 	if (TYPE(ch) == testlist)
 	    expr2 = ast_for_testlist(c, ch);
 	else
-	    expr2 = Yield(ast_for_expr(c, ch), LINENO(ch));
+	    expr2 = Yield(ast_for_expr(c, ch), LINENO(ch), c->c_arena);
         if (!expr2) {
-            free_expr(expr1);
             return NULL;
         }
 
         operator = ast_for_augassign(CHILD(n, 1));
         if (!operator) {
-            free_expr(expr1);
-            free_expr(expr2);
             return NULL;
         }
 
-	return AugAssign(expr1, operator, expr2, LINENO(n));
+	return AugAssign(expr1, operator, expr2, LINENO(n), c->c_arena);
     }
     else {
 	int i;
@@ -2056,7 +1832,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 
 	/* a normal assignment */
 	REQ(CHILD(n, 1), EQUAL);
-	targets = asdl_seq_new(NCH(n) / 2);
+	targets = asdl_seq_new(NCH(n) / 2, c->c_arena);
 	if (!targets)
 	    return NULL;
 	for (i = 0; i < NCH(n) - 2; i += 2) {
@@ -2064,17 +1840,16 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 	    node *ch = CHILD(n, i);
 	    if (TYPE(ch) == yield_expr) {
 		ast_error(ch, "assignment to yield expression not possible");
-		goto error;
+		return NULL;
 	    }
 	    e = ast_for_testlist(c, ch);
 
 	    /* set context to assign */
 	    if (!e) 
-	      goto error;
+	      return NULL;
 
 	    if (!set_context(e, Store, CHILD(n, i))) {
-              free_expr(e);
-	      goto error;
+	      return NULL;
             }
 
 	    asdl_seq_SET(targets, i / 2, e);
@@ -2085,12 +1860,9 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 	else
 	    expression = ast_for_expr(c, value);
 	if (!expression)
-	    goto error;
-	return Assign(targets, expression, LINENO(n));
-    error:
-        asdl_expr_seq_free(targets);
+	    return NULL;
+	return Assign(targets, expression, LINENO(n), c->c_arena);
     }
-    return NULL;
 }
 
 static stmt_ty
@@ -2111,21 +1883,19 @@ ast_for_print_stmt(struct compiling *c, const node *n)
             return NULL;
 	start = 4;
     }
-    seq = asdl_seq_new((NCH(n) + 1 - start) / 2);
+    seq = asdl_seq_new((NCH(n) + 1 - start) / 2, c->c_arena);
     if (!seq)
 	return NULL;
     for (i = start; i < NCH(n); i += 2) {
         expression = ast_for_expr(c, CHILD(n, i));
         if (!expression) {
-	    free_expr(dest);
-	    asdl_expr_seq_free(seq);
             return NULL;
 	}
 
 	asdl_seq_APPEND(seq, expression);
     }
     nl = (TYPE(CHILD(n, NCH(n) - 1)) == COMMA) ? false : true;
-    return Print(dest, seq, nl, LINENO(n));
+    return Print(dest, seq, nl, LINENO(n), c->c_arena);
 }
 
 static asdl_seq *
@@ -2137,24 +1907,20 @@ ast_for_exprlist(struct compiling *c, const node *n, int context)
 
     REQ(n, exprlist);
 
-    seq = asdl_seq_new((NCH(n) + 1) / 2);
+    seq = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
     if (!seq)
 	return NULL;
     for (i = 0; i < NCH(n); i += 2) {
 	e = ast_for_expr(c, CHILD(n, i));
 	if (!e)
-	    goto error;
+	    return NULL;
 	asdl_seq_SET(seq, i / 2, e);
 	if (context) {
 	    if (!set_context(e, context, CHILD(n, i)))
-	    	goto error;
+	    	return NULL;
         }
     }
     return seq;
-
-error:
-    asdl_expr_seq_free(seq);
-    return NULL;
 }
 
 static stmt_ty
@@ -2168,7 +1934,7 @@ ast_for_del_stmt(struct compiling *c, const node *n)
     expr_list = ast_for_exprlist(c, CHILD(n, 1), Del);
     if (!expr_list)
         return NULL;
-    return Delete(expr_list, LINENO(n));
+    return Delete(expr_list, LINENO(n), c->c_arena);
 }
 
 static stmt_ty
@@ -2190,32 +1956,32 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
     ch = CHILD(n, 0);
     switch (TYPE(ch)) {
         case break_stmt:
-            return Break(LINENO(n));
+            return Break(LINENO(n), c->c_arena);
         case continue_stmt:
-            return Continue(LINENO(n));
+            return Continue(LINENO(n), c->c_arena);
         case yield_stmt: { /* will reduce to yield_expr */
 	    expr_ty exp = ast_for_expr(c, CHILD(ch, 0));
 	    if (!exp)
 		return NULL;
-            return Expr(exp, LINENO(n));
+            return Expr(exp, LINENO(n), c->c_arena);
         }
         case return_stmt:
             if (NCH(ch) == 1)
-                return Return(NULL, LINENO(n));
+                return Return(NULL, LINENO(n), c->c_arena);
             else {
                 expr_ty expression = ast_for_testlist(c, CHILD(ch, 1));
                 if (!expression)
                     return NULL;
-                return Return(expression, LINENO(n));
+                return Return(expression, LINENO(n), c->c_arena);
             }
         case raise_stmt:
             if (NCH(ch) == 1)
-                return Raise(NULL, NULL, NULL, LINENO(n));
+                return Raise(NULL, NULL, NULL, LINENO(n), c->c_arena);
             else if (NCH(ch) == 2) {
                 expr_ty expression = ast_for_expr(c, CHILD(ch, 1));
                 if (!expression)
                     return NULL;
-                return Raise(expression, NULL, NULL, LINENO(n));
+                return Raise(expression, NULL, NULL, LINENO(n), c->c_arena);
             }
             else if (NCH(ch) == 4) {
                 expr_ty expr1, expr2;
@@ -2227,7 +1993,7 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
                 if (!expr2)
                     return NULL;
 
-                return Raise(expr1, expr2, NULL, LINENO(n));
+                return Raise(expr1, expr2, NULL, LINENO(n), c->c_arena);
             }
             else if (NCH(ch) == 6) {
                 expr_ty expr1, expr2, expr3;
@@ -2242,7 +2008,7 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
                 if (!expr3)
                     return NULL;
                     
-                return Raise(expr1, expr2, expr3, LINENO(n));
+                return Raise(expr1, expr2, expr3, LINENO(n), c->c_arena);
             }
         default:
             PyErr_Format(PyExc_SystemError,
@@ -2252,22 +2018,24 @@ ast_for_flow_stmt(struct compiling *c, const node *n)
 }
 
 static alias_ty
-alias_for_import_name(const node *n)
+alias_for_import_name(struct compiling *c, const node *n)
 {
     /*
       import_as_name: NAME [NAME NAME]
       dotted_as_name: dotted_name [NAME NAME]
       dotted_name: NAME ('.' NAME)*
     */
+    PyObject *str;
+
  loop:
     switch (TYPE(n)) {
         case import_as_name:
             if (NCH(n) == 3)
                 return alias(NEW_IDENTIFIER(CHILD(n, 0)),
-                             NEW_IDENTIFIER(CHILD(n, 2)));
+                             NEW_IDENTIFIER(CHILD(n, 2)), c->c_arena);
             else
                 return alias(NEW_IDENTIFIER(CHILD(n, 0)),
-                             NULL);
+                             NULL, c->c_arena);
             break;
         case dotted_as_name:
             if (NCH(n) == 1) {
@@ -2275,7 +2043,7 @@ alias_for_import_name(const node *n)
                 goto loop;
             }
             else {
-                alias_ty a = alias_for_import_name(CHILD(n, 0));
+                alias_ty a = alias_for_import_name(c, CHILD(n, 0));
                 assert(!a->asname);
                 a->asname = NEW_IDENTIFIER(CHILD(n, 2));
                 return a;
@@ -2283,11 +2051,10 @@ alias_for_import_name(const node *n)
             break;
         case dotted_name:
             if (NCH(n) == 1)
-                return alias(NEW_IDENTIFIER(CHILD(n, 0)), NULL);
+                return alias(NEW_IDENTIFIER(CHILD(n, 0)), NULL, c->c_arena);
             else {
                 /* Create a string of the form "a.b.c" */
                 int i, len;
-                PyObject *str;
                 char *s;
 
                 len = 0;
@@ -2310,11 +2077,14 @@ alias_for_import_name(const node *n)
                 --s;
                 *s = '\0';
                 PyString_InternInPlace(&str);
-                return alias(str, NULL);
+		PyArena_AddPyObject(c->c_arena, str);
+                return alias(str, NULL, c->c_arena);
             }
             break;
         case STAR:
-            return alias(PyString_InternFromString("*"), NULL);
+	    str = PyString_InternFromString("*");
+	    PyArena_AddPyObject(c->c_arena, str);
+            return alias(str, NULL, c->c_arena);
         default:
             PyErr_Format(PyExc_SystemError,
                          "unexpected import name: %d", TYPE(n));
@@ -2341,25 +2111,23 @@ ast_for_import_stmt(struct compiling *c, const node *n)
     if (STR(CHILD(n, 0))[0] == 'i') { /* import */
         n = CHILD(n, 1);
 	REQ(n, dotted_as_names);
-	aliases = asdl_seq_new((NCH(n) + 1) / 2);
+	aliases = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
 	if (!aliases)
 		return NULL;
 	for (i = 0; i < NCH(n); i += 2) {
-            alias_ty import_alias = alias_for_import_name(CHILD(n, i));
+            alias_ty import_alias = alias_for_import_name(c, CHILD(n, i));
             if (!import_alias) {
-                asdl_alias_seq_free(aliases);
                 return NULL;
             }
 	    asdl_seq_SET(aliases, i / 2, import_alias);
         }
-	return Import(aliases, LINENO(n));
+	return Import(aliases, LINENO(n), c->c_arena);
     }
     else if (STR(CHILD(n, 0))[0] == 'f') { /* from */
-	stmt_ty import;
         int n_children;
         const char *from_modules;
 	int lineno = LINENO(n);
-	alias_ty mod = alias_for_import_name(CHILD(n, 1));
+	alias_ty mod = alias_for_import_name(c, CHILD(n, 1));
 	if (!mod)
             return NULL;
 
@@ -2370,7 +2138,6 @@ ast_for_import_stmt(struct compiling *c, const node *n)
             n = CHILD(n, 3);                  /* from ... import x, y, z */
             if (NCH(n) % 2 == 0) {
                 /* it ends with a comma, not valid but the parser allows it */
-		free_alias(mod);
                 ast_error(n, "trailing comma not allowed without"
                              " surrounding parentheses");
                 return NULL;
@@ -2383,7 +2150,6 @@ ast_for_import_stmt(struct compiling *c, const node *n)
             n = CHILD(n, 4);                  /* from ... import (x, y, z) */
         else {
 	    /* XXX: don't we need to call ast_error(n, "..."); */
-	    free_alias(mod);
             return NULL;
 	}
 
@@ -2391,36 +2157,28 @@ ast_for_import_stmt(struct compiling *c, const node *n)
         if (from_modules && from_modules[0] == '*')
             n_children = 1;
 
-	aliases = asdl_seq_new((n_children + 1) / 2);
+	aliases = asdl_seq_new((n_children + 1) / 2, c->c_arena);
 	if (!aliases) {
-            free_alias(mod);
             return NULL;
 	}
 
         /* handle "from ... import *" special b/c there's no children */
         if (from_modules && from_modules[0] == '*') {
-            alias_ty import_alias = alias_for_import_name(n);
+            alias_ty import_alias = alias_for_import_name(c, n);
             if (!import_alias) {
-                asdl_alias_seq_free(aliases);
-                free_alias(mod);
                 return NULL;
             }
 	    asdl_seq_APPEND(aliases, import_alias);
         }
 
 	for (i = 0; i < NCH(n); i += 2) {
-            alias_ty import_alias = alias_for_import_name(CHILD(n, i));
+            alias_ty import_alias = alias_for_import_name(c, CHILD(n, i));
             if (!import_alias) {
-                asdl_alias_seq_free(aliases);
-                free_alias(mod);
                 return NULL;
             }
 	    asdl_seq_APPEND(aliases, import_alias);
         }
-        Py_INCREF(mod->name);
-	import = ImportFrom(mod->name, aliases, lineno);
-	free_alias(mod);
-	return import;
+	return ImportFrom(mod->name, aliases, lineno, c->c_arena);
     }
     PyErr_Format(PyExc_SystemError,
                  "unknown import statement: starts with command '%s'",
@@ -2437,20 +2195,17 @@ ast_for_global_stmt(struct compiling *c, const node *n)
     int i;
 
     REQ(n, global_stmt);
-    s = asdl_seq_new(NCH(n) / 2);
+    s = asdl_seq_new(NCH(n) / 2, c->c_arena);
     if (!s)
     	return NULL;
     for (i = 1; i < NCH(n); i += 2) {
 	name = NEW_IDENTIFIER(CHILD(n, i));
 	if (!name) {
-	    for (i = i / 2; i > 0; i--)
-                Py_XDECREF((identifier) asdl_seq_GET(s, i));
-	    asdl_seq_free(s); /* ok */
 	    return NULL;
 	}
 	asdl_seq_SET(s, i / 2, name);
     }
-    return Global(s, LINENO(n));
+    return Global(s, LINENO(n), c->c_arena);
 }
 
 static stmt_ty
@@ -2481,7 +2236,7 @@ ast_for_exec_stmt(struct compiling *c, const node *n)
             return NULL;
     }
 
-    return Exec(expr1, globals, locals, LINENO(n));
+    return Exec(expr1, globals, locals, LINENO(n), c->c_arena);
 }
 
 static stmt_ty
@@ -2493,7 +2248,7 @@ ast_for_assert_stmt(struct compiling *c, const node *n)
         expr_ty expression = ast_for_expr(c, CHILD(n, 1));
         if (!expression)
             return NULL;
-	return Assert(expression, NULL, LINENO(n));
+	return Assert(expression, NULL, LINENO(n), c->c_arena);
     }
     else if (NCH(n) == 4) {
         expr_ty expr1, expr2;
@@ -2505,7 +2260,7 @@ ast_for_assert_stmt(struct compiling *c, const node *n)
         if (!expr2)
             return NULL;
             
-	return Assert(expr1, expr2, LINENO(n));
+	return Assert(expr1, expr2, LINENO(n), c->c_arena);
     }
     PyErr_Format(PyExc_SystemError,
                  "improper number of parts to 'assert' statement: %d",
@@ -2525,7 +2280,7 @@ ast_for_suite(struct compiling *c, const node *n)
     REQ(n, suite);
 
     total = num_stmts(n);
-    seq = asdl_seq_new(total);
+    seq = asdl_seq_new(total, c->c_arena);
     if (!seq)
     	return NULL;
     if (TYPE(CHILD(n, 0)) == simple_stmt) {
@@ -2541,7 +2296,7 @@ ast_for_suite(struct compiling *c, const node *n)
 	    ch = CHILD(n, i);
 	    s = ast_for_stmt(c, ch);
 	    if (!s)
-		goto error;
+		return NULL;
 	    asdl_seq_SET(seq, pos++, s);
 	}
     }
@@ -2554,7 +2309,7 @@ ast_for_suite(struct compiling *c, const node *n)
 		/* small_stmt or compound_stmt with only one child */
 		s = ast_for_stmt(c, ch);
 		if (!s)
-		    goto error;
+		    return NULL;
 		asdl_seq_SET(seq, pos++, s);
 	    }
 	    else {
@@ -2564,12 +2319,12 @@ ast_for_suite(struct compiling *c, const node *n)
 		for (j = 0; j < NCH(ch); j += 2) {
 		    /* statement terminates with a semi-colon ';' */
 		    if (NCH(CHILD(ch, j)) == 0) {
-		    	assert((j + 1) == NCH(ch));
-		    	break;
+			assert((j + 1) == NCH(ch));
+			break;
 		    }
 		    s = ast_for_stmt(c, CHILD(ch, j));
 		    if (!s)
-			goto error;
+			return NULL;
 		    asdl_seq_SET(seq, pos++, s);
 		}
 	    }
@@ -2577,10 +2332,6 @@ ast_for_suite(struct compiling *c, const node *n)
     }
     assert(pos == seq->size);
     return seq;
- error:
-    if (seq)
-	asdl_stmt_seq_free(seq);
-    return NULL;
 }
 
 static stmt_ty
@@ -2602,11 +2353,10 @@ ast_for_if_stmt(struct compiling *c, const node *n)
             return NULL;
         suite_seq = ast_for_suite(c, CHILD(n, 3)); 
         if (!suite_seq) {
-	    free_expr(expression);
             return NULL;
 	}
             
-	return If(expression, suite_seq, NULL, LINENO(n));
+	return If(expression, suite_seq, NULL, LINENO(n), c->c_arena);
     }
     s = STR(CHILD(n, 4));
     /* s[2], the third character in the string, will be
@@ -2622,17 +2372,14 @@ ast_for_if_stmt(struct compiling *c, const node *n)
             return NULL;
         seq1 = ast_for_suite(c, CHILD(n, 3));
         if (!seq1) {
-	    free_expr(expression);
             return NULL;
 	}
         seq2 = ast_for_suite(c, CHILD(n, 6));
         if (!seq2) {
-	    asdl_stmt_seq_free(seq1);
-	    free_expr(expression);
             return NULL;
 	}
 
-	return If(expression, seq1, seq2, LINENO(n));
+	return If(expression, seq1, seq2, LINENO(n), c->c_arena);
     }
     else if (s[2] == 'i') {
 	int i, n_elif, has_else = 0;
@@ -2651,30 +2398,25 @@ ast_for_if_stmt(struct compiling *c, const node *n)
             expr_ty expression;
             asdl_seq *seq1, *seq2;
 
-	    orelse = asdl_seq_new(1);
+	    orelse = asdl_seq_new(1, c->c_arena);
 	    if (!orelse)
 		return NULL;
             expression = ast_for_expr(c, CHILD(n, NCH(n) - 6));
             if (!expression) {
-                asdl_seq_free(orelse); /* ok */
                 return NULL;
             }
             seq1 = ast_for_suite(c, CHILD(n, NCH(n) - 4));
             if (!seq1) {
-                free_expr(expression);
-                asdl_seq_free(orelse); /* ok */
                 return NULL;
             }
             seq2 = ast_for_suite(c, CHILD(n, NCH(n) - 1));
             if (!seq2) {
-                free_expr(expression);
-                asdl_stmt_seq_free(seq1);
-                asdl_seq_free(orelse); /* ok */
                 return NULL;
             }
 
 	    asdl_seq_SET(orelse, 0, If(expression, seq1, seq2, 
-				       LINENO(CHILD(n, NCH(n) - 6))));
+				       LINENO(CHILD(n, NCH(n) - 6)),
+                                       c->c_arena));
 	    /* the just-created orelse handled the last elif */
 	    n_elif--;
 	}
@@ -2685,33 +2427,27 @@ ast_for_if_stmt(struct compiling *c, const node *n)
 	    int off = 5 + (n_elif - i - 1) * 4;
             expr_ty expression;
             asdl_seq *suite_seq;
-	    asdl_seq *new = asdl_seq_new(1);
+	    asdl_seq *new = asdl_seq_new(1, c->c_arena);
 	    if (!new) {
-		asdl_stmt_seq_free(orelse);
 		return NULL;
 	    }
             expression = ast_for_expr(c, CHILD(n, off));
             if (!expression) {
-		asdl_stmt_seq_free(orelse);
-                asdl_seq_free(new); /* ok */
                 return NULL;
             }
             suite_seq = ast_for_suite(c, CHILD(n, off + 2));
             if (!suite_seq) {
-		asdl_stmt_seq_free(orelse);
-	        free_expr(expression);
-                asdl_seq_free(new); /* ok */
                 return NULL;
             }
 
 	    asdl_seq_SET(new, 0,
 			 If(expression, suite_seq, orelse, 
-			    LINENO(CHILD(n, off))));
+			    LINENO(CHILD(n, off)), c->c_arena));
 	    orelse = new;
 	}
 	return If(ast_for_expr(c, CHILD(n, 1)),
 		  ast_for_suite(c, CHILD(n, 3)),
-		  orelse, LINENO(n));
+		  orelse, LINENO(n), c->c_arena);
     }
     else {
         PyErr_Format(PyExc_SystemError,
@@ -2735,10 +2471,9 @@ ast_for_while_stmt(struct compiling *c, const node *n)
             return NULL;
         suite_seq = ast_for_suite(c, CHILD(n, 3));
         if (!suite_seq) {
-	    free_expr(expression);
             return NULL;
 	}
-	return While(expression, suite_seq, NULL, LINENO(n));
+	return While(expression, suite_seq, NULL, LINENO(n), c->c_arena);
     }
     else if (NCH(n) == 7) {
         expr_ty expression;
@@ -2749,17 +2484,14 @@ ast_for_while_stmt(struct compiling *c, const node *n)
             return NULL;
         seq1 = ast_for_suite(c, CHILD(n, 3));
         if (!seq1) {
-	    free_expr(expression);
             return NULL;
 	}
         seq2 = ast_for_suite(c, CHILD(n, 6));
         if (!seq2) {
-	    asdl_stmt_seq_free(seq1);
-	    free_expr(expression);
             return NULL;
 	}
 
-	return While(expression, seq1, seq2, LINENO(n));
+	return While(expression, seq1, seq2, LINENO(n), c->c_arena);
     }
     else {
         PyErr_Format(PyExc_SystemError,
@@ -2786,31 +2518,24 @@ ast_for_for_stmt(struct compiling *c, const node *n)
 
     _target = ast_for_exprlist(c, CHILD(n, 1), Store);
     if (!_target) {
-	asdl_stmt_seq_free(seq);
         return NULL;
     }
     if (asdl_seq_LEN(_target) == 1) {
 	target = asdl_seq_GET(_target, 0);
-	asdl_seq_free(_target); /* ok */
     }
     else
-	target = Tuple(_target, Store, LINENO(n));
+	target = Tuple(_target, Store, LINENO(n), c->c_arena);
 
     expression = ast_for_testlist(c, CHILD(n, 3));
     if (!expression) {
-	free_expr(target);
-	asdl_stmt_seq_free(seq);
         return NULL;
     }
     suite_seq = ast_for_suite(c, CHILD(n, 5));
     if (!suite_seq) {
-	free_expr(target);
-	free_expr(expression);
-	asdl_stmt_seq_free(seq);
         return NULL;
     }
 
-    return For(target, expression, suite_seq, seq, LINENO(n));
+    return For(target, expression, suite_seq, seq, LINENO(n), c->c_arena);
 }
 
 static excepthandler_ty
@@ -2825,7 +2550,7 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
         if (!suite_seq)
             return NULL;
 
-	return excepthandler(NULL, NULL, suite_seq);
+	return excepthandler(NULL, NULL, suite_seq, c->c_arena);
     }
     else if (NCH(exc) == 2) {
         expr_ty expression;
@@ -2836,11 +2561,10 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
             return NULL;
         suite_seq = ast_for_suite(c, body);
         if (!suite_seq) {
-	    free_expr(expression);
             return NULL;
 	}
 
-	return excepthandler(expression, NULL, suite_seq);
+	return excepthandler(expression, NULL, suite_seq, c->c_arena);
     }
     else if (NCH(exc) == 4) {
         asdl_seq *suite_seq;
@@ -2849,22 +2573,18 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
 	if (!e)
             return NULL;
 	if (!set_context(e, Store, CHILD(exc, 3))) {
-	    free_expr(e);
             return NULL;
 	}
         expression = ast_for_expr(c, CHILD(exc, 1));
         if (!expression) {
-	    free_expr(e);
             return NULL;
 	}
         suite_seq = ast_for_suite(c, body);
         if (!suite_seq) {
-	    free_expr(expression);
-	    free_expr(e);
             return NULL;
 	}
 
-	return excepthandler(expression, e, suite_seq);
+	return excepthandler(expression, e, suite_seq, c->c_arena);
     }
     else {
         PyErr_Format(PyExc_SystemError,
@@ -2887,11 +2607,10 @@ ast_for_try_stmt(struct compiling *c, const node *n)
             return NULL;
         s2 = ast_for_suite(c, CHILD(n, 5));
         if (!s2) {
-	    asdl_stmt_seq_free(s1);
             return NULL;
 	}
             
-	return TryFinally(s1, s2, LINENO(n));
+	return TryFinally(s1, s2, LINENO(n), c->c_arena);
     }
     else if (TYPE(CHILD(n, 3)) == except_clause) {
 	/* try_stmt: ('try' ':' suite (except_clause ':' suite)+
@@ -2905,7 +2624,7 @@ ast_for_try_stmt(struct compiling *c, const node *n)
 	    n_except -= 3;
 	}
 	n_except /= 3;
-	handlers = asdl_seq_new(n_except);
+	handlers = asdl_seq_new(n_except, c->c_arena);
 	if (!handlers)
 		return NULL;
 	for (i = 0; i < n_except; i++) {
@@ -2913,9 +2632,6 @@ ast_for_try_stmt(struct compiling *c, const node *n)
                                                        CHILD(n, 3 + i * 3),
                                                        CHILD(n, 5 + i * 3));
             if (!e) {
-		for ( ; i >= 0; i--)
-		    free_excepthandler(asdl_seq_GET(handlers, i));
-	        asdl_seq_free(handlers); /* ok */
                 return NULL;
 	    }
 	    asdl_seq_SET(handlers, i, e);
@@ -2923,25 +2639,19 @@ ast_for_try_stmt(struct compiling *c, const node *n)
 
         suite_seq1 = ast_for_suite(c, CHILD(n, 2));
         if (!suite_seq1) {
-	    for (i = 0; i < asdl_seq_LEN(handlers); i++)
-		free_excepthandler(asdl_seq_GET(handlers, i));
-	    asdl_seq_free(handlers); /* ok */
             return NULL;
 	}
         if (has_else) {
             suite_seq2 = ast_for_suite(c, CHILD(n, NCH(n) - 1));
             if (!suite_seq2) {
-	        for (i = 0; i < asdl_seq_LEN(handlers); i++)
-		    free_excepthandler(asdl_seq_GET(handlers, i));
-	        asdl_seq_free(handlers); /* ok */
-		asdl_stmt_seq_free(suite_seq1);
                 return NULL;
 	    }
         }
         else
             suite_seq2 = NULL;
 
-	return TryExcept(suite_seq1, handlers, suite_seq2, LINENO(n));
+	return TryExcept(suite_seq1, handlers, suite_seq2, LINENO(n),
+                         c->c_arena);
     }
     else {
         ast_error(n, "malformed 'try' statement");
@@ -2966,14 +2676,16 @@ ast_for_classdef(struct compiling *c, const node *n)
         s = ast_for_suite(c, CHILD(n, 3));
         if (!s)
             return NULL;
-	return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, s, LINENO(n));
+	return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, s, LINENO(n),
+                        c->c_arena);
     }
     /* check for empty base list */
     if (TYPE(CHILD(n,3)) == RPAR) {
 	s = ast_for_suite(c, CHILD(n,5));
 	if (!s)
 		return NULL;
-	return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, s, LINENO(n));
+	return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, s, LINENO(n),
+                        c->c_arena);
     }
 
     /* else handle the base class list */
@@ -2983,10 +2695,10 @@ ast_for_classdef(struct compiling *c, const node *n)
 
     s = ast_for_suite(c, CHILD(n, 6));
     if (!s) {
-        asdl_expr_seq_free(bases);
         return NULL;
     }
-    return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), bases, s, LINENO(n));
+    return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), bases, s, LINENO(n),
+                    c->c_arena);
 }
 
 static stmt_ty
@@ -3015,7 +2727,7 @@ ast_for_stmt(struct compiling *c, const node *n)
             case del_stmt:
                 return ast_for_del_stmt(c, n);
             case pass_stmt:
-                return Pass(LINENO(n));
+                return Pass(LINENO(n), c->c_arena);
             case flow_stmt:
                 return ast_for_flow_stmt(c, n);
             case import_stmt:
@@ -3204,7 +2916,6 @@ decode_unicode(const char *s, size_t len, int rawmode, const char *encoding)
 static PyObject *
 parsestr(const char *s, const char *encoding)
 {
-	PyObject *v;
 	size_t len;
 	int quote = *s;
 	int rawmode = 0;
@@ -3259,7 +2970,7 @@ parsestr(const char *s, const char *encoding)
 			   encoding. */
 			Py_FatalError("cannot deal with encodings in this build.");
 #else
-			PyObject* u = PyUnicode_DecodeUTF8(s, len, NULL);
+			PyObject *v, *u = PyUnicode_DecodeUTF8(s, len, NULL);
 			if (u == NULL)
 				return NULL;
 			v = PyUnicode_AsEncodedString(u, encoding, NULL);
@@ -3271,9 +2982,8 @@ parsestr(const char *s, const char *encoding)
 		}
 	}
 
-	v = PyString_DecodeEscape(s, len, NULL, unicode,
-				  need_encoding ? encoding : NULL);
-	return v;
+	return PyString_DecodeEscape(s, len, NULL, unicode,
+				     need_encoding ? encoding : NULL);
 }
 
 /* Build a Python string object out of a STRING atom.  This takes care of
@@ -3300,13 +3010,12 @@ parsestrplus(struct compiling *c, const node *n)
 			}
 #ifdef Py_USING_UNICODE
 			else {
-				PyObject *temp;
-				temp = PyUnicode_Concat(v, s);
+				PyObject *temp = PyUnicode_Concat(v, s);
 				Py_DECREF(s);
-				if (temp == NULL)
-					goto onError;
 				Py_DECREF(v);
 				v = temp;
+				if (v == NULL)
+				    goto onError;
 			}
 #endif
 		}

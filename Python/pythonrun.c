@@ -12,6 +12,7 @@
 #include "code.h"
 #include "compile.h"
 #include "symtable.h"
+#include "pyarena.h"
 #include "ast.h"
 #include "eval.h"
 #include "marshal.h"
@@ -36,9 +37,9 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 static void initmain(void);
 static void initsite(void);
 static PyObject *run_err_mod(mod_ty, const char *, PyObject *, PyObject *,
-			      PyCompilerFlags *);
+			      PyCompilerFlags *, PyArena *arena);
 static PyObject *run_mod(mod_ty, const char *, PyObject *, PyObject *,
-			  PyCompilerFlags *);
+			  PyCompilerFlags *, PyArena *);
 static PyObject *run_pyc_file(FILE *, const char *, PyObject *, PyObject *,
 			      PyCompilerFlags *);
 static void err_input(perrdetail *);
@@ -697,6 +698,7 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 {
 	PyObject *m, *d, *v, *w;
 	mod_ty mod;
+        PyArena *arena;
 	char *ps1 = "", *ps2 = "";
 	int errcode = 0;
 
@@ -716,12 +718,14 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 		else if (PyString_Check(w))
 			ps2 = PyString_AsString(w);
 	}
+        arena = PyArena_New();
 	mod = PyParser_ASTFromFile(fp, filename, 
 				   Py_single_input, ps1, ps2,
-				   flags, &errcode);
+				   flags, &errcode, arena);
 	Py_XDECREF(v);
 	Py_XDECREF(w);
 	if (mod == NULL) {
+        	PyArena_Free(arena);
 		if (errcode == E_EOF) {
 			PyErr_Clear();
 			return E_EOF;
@@ -730,11 +734,13 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 		return -1;
 	}
 	m = PyImport_AddModule("__main__");
-	if (m == NULL)
+	if (m == NULL) {
+        	PyArena_Free(arena);
 		return -1;
+	}
 	d = PyModule_GetDict(m);
-	v = run_mod(mod, filename, d, d, flags);
-	free_mod(mod);
+	v = run_mod(mod, filename, d, d, flags, arena);
+        PyArena_Free(arena);
 	if (v == NULL) {
 		PyErr_Print();
 		return -1;
@@ -1155,9 +1161,11 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
 		  PyObject *locals, PyCompilerFlags *flags)
 {
 	PyObject *ret;
-	mod_ty mod = PyParser_ASTFromString(str, "<string>", start, flags);
-	ret = run_err_mod(mod, "<string>", globals, locals, flags);
-	free_mod(mod);
+        PyArena *arena = PyArena_New();
+	mod_ty mod = PyParser_ASTFromString(str, "<string>", start, flags,
+                                            arena);
+	ret = run_err_mod(mod, "<string>", globals, locals, flags, arena);
+        PyArena_Free(arena);
 	return ret;
 }
 
@@ -1166,33 +1174,36 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 		  PyObject *locals, int closeit, PyCompilerFlags *flags)
 {
 	PyObject *ret;
+        PyArena *arena = PyArena_New();
 	mod_ty mod = PyParser_ASTFromFile(fp, filename, start, 0, 0,
-					  flags, NULL);
-	if (mod == NULL)
+					  flags, NULL, arena);
+	if (mod == NULL) {
+                PyArena_Free(arena);
 		return NULL;
+        }
 	if (closeit)
 		fclose(fp);
-	ret = run_err_mod(mod, filename, globals, locals, flags);
-	free_mod(mod);
+	ret = run_err_mod(mod, filename, globals, locals, flags, arena);
+        PyArena_Free(arena);
 	return ret;
 }
 
 static PyObject *
 run_err_mod(mod_ty mod, const char *filename, PyObject *globals, 
-	    PyObject *locals, PyCompilerFlags *flags)
+	    PyObject *locals, PyCompilerFlags *flags, PyArena *arena)
 {
 	if (mod == NULL)
 		return  NULL;
-	return run_mod(mod, filename, globals, locals, flags);
+	return run_mod(mod, filename, globals, locals, flags, arena);
 }
 
 static PyObject *
 run_mod(mod_ty mod, const char *filename, PyObject *globals, PyObject *locals,
-	 PyCompilerFlags *flags)
+	 PyCompilerFlags *flags, PyArena *arena)
 {
 	PyCodeObject *co;
 	PyObject *v;
-	co = PyAST_Compile(mod, filename, flags);
+	co = PyAST_Compile(mod, filename, flags, arena);
 	if (co == NULL)
 		return NULL;
 	v = PyEval_EvalCode(co, globals, locals);
@@ -1236,43 +1247,45 @@ PyObject *
 Py_CompileStringFlags(const char *str, const char *filename, int start,
 		      PyCompilerFlags *flags)
 {
-	mod_ty mod;
 	PyCodeObject *co;
-	mod = PyParser_ASTFromString(str, filename, start, flags);
-	if (mod == NULL)
+        PyArena *arena = PyArena_New();
+	mod_ty mod = PyParser_ASTFromString(str, filename, start, flags, arena);
+	if (mod == NULL) {
+                PyArena_Free(arena);
 		return NULL;
-	co = PyAST_Compile(mod, filename, flags);
-	free_mod(mod);
+        }
+	co = PyAST_Compile(mod, filename, flags, arena);
+        PyArena_Free(arena);
 	return (PyObject *)co;
 }
 
 struct symtable *
 Py_SymtableString(const char *str, const char *filename, int start)
 {
-	mod_ty mod;
 	struct symtable *st;
-
-	mod = PyParser_ASTFromString(str, filename, start, NULL);
-	if (mod == NULL)
+        PyArena *arena = PyArena_New();
+	mod_ty mod = PyParser_ASTFromString(str, filename, start, NULL, arena);
+	if (mod == NULL) {
+                PyArena_Free(arena);
 		return NULL;
+        }
 	st = PySymtable_Build(mod, filename, 0);
-	free_mod(mod);
+        PyArena_Free(arena);
 	return st;
 }
 
 /* Preferred access to parser is through AST. */
 mod_ty
 PyParser_ASTFromString(const char *s, const char *filename, int start, 
-		       PyCompilerFlags *flags)
+		       PyCompilerFlags *flags, PyArena *arena)
 {
-	node *n;
 	mod_ty mod;
 	perrdetail err;
-	n = PyParser_ParseStringFlagsFilename(s, filename, &_PyParser_Grammar,
-					      start, &err, 
-					      PARSER_FLAGS(flags));
+	node *n = PyParser_ParseStringFlagsFilename(s, filename,
+					&_PyParser_Grammar, start, &err, 
+					PARSER_FLAGS(flags));
 	if (n) {
-		mod = PyAST_FromNode(n, flags, filename);
+		mod = PyAST_FromNode(n, flags, filename, arena);
 		PyNode_Free(n);
 		return mod;
 	}
@@ -1284,15 +1297,15 @@ PyParser_ASTFromString(const char *s, const char *filename, int start,
 
 mod_ty
 PyParser_ASTFromFile(FILE *fp, const char *filename, int start, char *ps1, 
-		     char *ps2, PyCompilerFlags *flags, int *errcode)
+		     char *ps2, PyCompilerFlags *flags, int *errcode,
+                     PyArena *arena)
 {
-	node *n;
 	mod_ty mod;
 	perrdetail err;
-	n = PyParser_ParseFileFlags(fp, filename, &_PyParser_Grammar, start, 
-				    ps1, ps2, &err, PARSER_FLAGS(flags));
+	node *n = PyParser_ParseFileFlags(fp, filename, &_PyParser_Grammar,
+				start, ps1, ps2, &err, PARSER_FLAGS(flags));
 	if (n) {
-		mod = PyAST_FromNode(n, flags, filename);
+		mod = PyAST_FromNode(n, flags, filename, arena);
 		PyNode_Free(n);
 		return mod;
 	}
@@ -1309,10 +1322,9 @@ PyParser_ASTFromFile(FILE *fp, const char *filename, int start, char *ps1,
 node *
 PyParser_SimpleParseFileFlags(FILE *fp, const char *filename, int start, int flags)
 {
-	node *n;
 	perrdetail err;
-	n = PyParser_ParseFileFlags(fp, filename, &_PyParser_Grammar, start,
-					(char *)0, (char *)0, &err, flags);
+	node *n = PyParser_ParseFileFlags(fp, filename, &_PyParser_Grammar,
+					  start, NULL, NULL, &err, flags);
 	if (n == NULL)
 		err_input(&err);
 		
@@ -1324,10 +1336,9 @@ PyParser_SimpleParseFileFlags(FILE *fp, const char *filename, int start, int fla
 node *
 PyParser_SimpleParseStringFlags(const char *str, int start, int flags)
 {
-	node *n;
 	perrdetail err;
-	n = PyParser_ParseStringFlags(str, &_PyParser_Grammar, start, &err,
-				      flags);
+	node *n = PyParser_ParseStringFlags(str, &_PyParser_Grammar,
+					    start, &err, flags);
 	if (n == NULL)
 		err_input(&err);
 	return n;
@@ -1337,12 +1348,9 @@ node *
 PyParser_SimpleParseStringFlagsFilename(const char *str, const char *filename,
 					int start, int flags)
 {
-	node *n;
 	perrdetail err;
-
-	n = PyParser_ParseStringFlagsFilename(str, filename,
-					      &_PyParser_Grammar,
-					      start, &err, flags);
+	node *n = PyParser_ParseStringFlagsFilename(str, filename,
+				&_PyParser_Grammar, start, &err, flags);
 	if (n == NULL)
 		err_input(&err);
 	return n;
@@ -1351,8 +1359,7 @@ PyParser_SimpleParseStringFlagsFilename(const char *str, const char *filename,
 node *
 PyParser_SimpleParseStringFilename(const char *str, const char *filename, int start)
 {
-	return PyParser_SimpleParseStringFlagsFilename(str, filename,
-						       start, 0);
+	return PyParser_SimpleParseStringFlagsFilename(str, filename, start, 0);
 }
 
 /* May want to move a more generalized form of this to parsetok.c or
