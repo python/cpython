@@ -195,26 +195,25 @@ The \keyword{try} statement specifies exception handlers and/or cleanup
 code for a group of statements:
 
 \begin{productionlist}
-  \production{try_stmt}
-             {\token{try_exc_stmt} | \token{try_fin_stmt}}
-  \production{try_exc_stmt}
+  \production{try_stmt} {try1_stmt | try2_stmt}
+  \production{try1_stmt}
              {"try" ":" \token{suite}}
   \productioncont{("except" [\token{expression}
                              ["," \token{target}]] ":" \token{suite})+}
   \productioncont{["else" ":" \token{suite}]}
-  \production{try_fin_stmt}
-             {"try" ":" \token{suite}
-              "finally" ":" \token{suite}}
+  \productioncont{["finally" ":" \token{suite}]}
+  \production{try2_stmt}
+             {"try" ":" \token{suite}}
+  \productioncont{"finally" ":" \token{suite}}
 \end{productionlist}
 
-There are two forms of \keyword{try} statement:
-\keyword{try}...\keyword{except} and
-\keyword{try}...\keyword{finally}.  These forms cannot be mixed (but
-they can be nested in each other).
+\versionchanged[In previous versions of Python,
+\keyword{try}...\keyword{except}...\keyword{finally} did not work.
+\keyword{try}...\keyword{except} had to be nested in
+\keyword{try}...\keyword{finally}]{2.5}
 
-The \keyword{try}...\keyword{except} form specifies one or more
-exception handlers
-(the \keyword{except} clauses).  When no exception occurs in the
+The \keyword{except} clause(s) specify one or more exception handlers.
+When no exception occurs in the
 \keyword{try} clause, no exception handler is executed.  When an
 exception occurs in the \keyword{try} suite, a search for an exception
 handler is started.  This search inspects the except clauses in turn until
@@ -232,6 +231,8 @@ string object, not just a string with the same value).
 
 If no except clause matches the exception, the search for an exception
 handler continues in the surrounding code and on the invocation stack.
+\footnote{The exception is propogated to the invocation stack only if
+there is no \keyword{finally} clause that negates the exception.}
 
 If the evaluation of an expression in the header of an except clause
 raises an exception, the original search for a handler is canceled
@@ -277,12 +278,13 @@ preceding \keyword{except} clauses.
 \stindex{break}
 \stindex{continue}
 
-The \keyword{try}...\keyword{finally} form specifies a `cleanup' handler.  The
-\keyword{try} clause is executed.  When no exception occurs, the
-\keyword{finally} clause is executed.  When an exception occurs in the
-\keyword{try} clause, the exception is temporarily saved, the
-\keyword{finally} clause is executed, and then the saved exception is
-re-raised.  If the \keyword{finally} clause raises another exception or
+If \keyword{finally} is present, it specifies a `cleanup' handler.  The
+\keyword{try} clause is executed, including any \keyword{except} and
+\keyword{else} clauses.  If an exception occurs in any of the clauses
+and is not handled, the exception is temporarily saved. The
+\keyword{finally} clause is executed.  If there is a saved exception,
+it is re-raised at the end of the \keyword{finally} clause.
+If the \keyword{finally} clause raises another exception or
 executes a \keyword{return} or \keyword{break} statement, the saved
 exception is lost.  A \keyword{continue} statement is illegal in the
 \keyword{finally} clause.  (The reason is a problem with the current
