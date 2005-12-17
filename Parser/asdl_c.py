@@ -249,8 +249,9 @@ class PrototypeVisitor(EmitVisitor):
         if args:
             argstr = ", ".join(["%s %s" % (atype, aname)
                                 for atype, aname, opt in args])
+            argstr += ", PyArena *arena"
         else:
-            argstr = "void"
+            argstr = "PyArena *arena"
         self.emit("%s %s(%s);" % (ctype, name, argstr), 0)
 
     def visitProduct(self, prod, name):
@@ -265,6 +266,10 @@ class FunctionVisitor(PrototypeVisitor):
             self.emit(s, depth, reflow)
         argstr = ", ".join(["%s %s" % (atype, aname)
                             for atype, aname, opt in args + attrs])
+        if argstr:
+            argstr += ", PyArena *arena"
+        else:
+            argstr = "PyArena *arena"
         self.emit("%s" % ctype, 0)
         emit("%s(%s)" % (name, argstr))
         emit("{")
@@ -280,7 +285,7 @@ class FunctionVisitor(PrototypeVisitor):
                 emit('return NULL;', 2)
                 emit('}', 1)
 
-        emit("p = (%s)malloc(sizeof(*p));" % ctype, 1)
+        emit("p = (%s)PyArena_Malloc(arena, sizeof(*p));" % ctype, 1);
         emit("if (!p) {", 1)
         emit("PyErr_NoMemory();", 2)
         emit("return NULL;", 2)
@@ -655,7 +660,7 @@ def main(srcfile):
     c = ChainOfVisitors(TypeDefVisitor(f),
                         StructVisitor(f),
                         PrototypeVisitor(f),
-                        FreePrototypeVisitor(f),
+##                        FreePrototypeVisitor(f),
                         )
     c.visit(mod)
     f.close()
@@ -671,8 +676,8 @@ def main(srcfile):
     print >> f
     v = ChainOfVisitors(MarshalPrototypeVisitor(f),
                         FunctionVisitor(f),
-                        FreeUtilVisitor(f),
-                        FreeVisitor(f),
+##                        FreeUtilVisitor(f),
+##                        FreeVisitor(f),
                         MarshalUtilVisitor(f),
                         MarshalFunctionVisitor(f),
                         )

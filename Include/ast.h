@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 PyAPI_FUNC(mod_ty) PyAST_FromNode(const node *, PyCompilerFlags *flags,
-				  const char *);
+				  const char *, PyArena *);
 
 #ifdef __cplusplus
 }

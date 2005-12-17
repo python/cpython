@@ -25,7 +25,7 @@ typedef struct {
 
 struct _mod; /* Declare the existence of this type */
 PyAPI_FUNC(PyCodeObject *) PyAST_Compile(struct _mod *, const char *,
-					PyCompilerFlags *);
+					PyCompilerFlags *, PyArena *);
 PyAPI_FUNC(PyFutureFeatures *) PyFuture_FromAST(struct _mod *, const char *);
 
 #define ERR_LATE_FUTURE \

@@ -328,81 +328,79 @@ struct _alias {
 };
 
 
-mod_ty Module(asdl_seq * body);
-mod_ty Interactive(asdl_seq * body);
-mod_ty Expression(expr_ty body);
-mod_ty Suite(asdl_seq * body);
+mod_ty Module(asdl_seq * body, PyArena *arena);
+mod_ty Interactive(asdl_seq * body, PyArena *arena);
+mod_ty Expression(expr_ty body, PyArena *arena);
+mod_ty Suite(asdl_seq * body, PyArena *arena);
 stmt_ty FunctionDef(identifier name, arguments_ty args, asdl_seq * body,
-                    asdl_seq * decorators, int lineno);
+                    asdl_seq * decorators, int lineno, PyArena *arena);
 stmt_ty ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int
-                 lineno);
-stmt_ty Return(expr_ty value, int lineno);
-stmt_ty Delete(asdl_seq * targets, int lineno);
-stmt_ty Assign(asdl_seq * targets, expr_ty value, int lineno);
-stmt_ty AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno);
-stmt_ty Print(expr_ty dest, asdl_seq * values, bool nl, int lineno);
+                 lineno, PyArena *arena);
+stmt_ty Return(expr_ty value, int lineno, PyArena *arena);
+stmt_ty Delete(asdl_seq * targets, int lineno, PyArena *arena);
+stmt_ty Assign(asdl_seq * targets, expr_ty value, int lineno, PyArena *arena);
+stmt_ty AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno,
+                  PyArena *arena);
+stmt_ty Print(expr_ty dest, asdl_seq * values, bool nl, int lineno, PyArena
+              *arena);
 stmt_ty For(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse,
-            int lineno);
-stmt_ty While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno);
-stmt_ty If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno);
-stmt_ty Raise(expr_ty type, expr_ty inst, expr_ty tback, int lineno);
+            int lineno, PyArena *arena);
+stmt_ty While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno,
+              PyArena *arena);
+stmt_ty If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno,
+           PyArena *arena);
+stmt_ty Raise(expr_ty type, expr_ty inst, expr_ty tback, int lineno, PyArena
+              *arena);
 stmt_ty TryExcept(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse, int
-                  lineno);
-stmt_ty TryFinally(asdl_seq * body, asdl_seq * finalbody, int lineno);
-stmt_ty Assert(expr_ty test, expr_ty msg, int lineno);
-stmt_ty Import(asdl_seq * names, int lineno);
-stmt_ty ImportFrom(identifier module, asdl_seq * names, int lineno);
-stmt_ty Exec(expr_ty body, expr_ty globals, expr_ty locals, int lineno);
-stmt_ty Global(asdl_seq * names, int lineno);
-stmt_ty Expr(expr_ty value, int lineno);
-stmt_ty Pass(int lineno);
-stmt_ty Break(int lineno);
-stmt_ty Continue(int lineno);
-expr_ty BoolOp(boolop_ty op, asdl_seq * values, int lineno);
-expr_ty BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno);
-expr_ty UnaryOp(unaryop_ty op, expr_ty operand, int lineno);
-expr_ty Lambda(arguments_ty args, expr_ty body, int lineno);
-expr_ty Dict(asdl_seq * keys, asdl_seq * values, int lineno);
-expr_ty ListComp(expr_ty elt, asdl_seq * generators, int lineno);
-expr_ty GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno);
-expr_ty Yield(expr_ty value, int lineno);
+                  lineno, PyArena *arena);
+stmt_ty TryFinally(asdl_seq * body, asdl_seq * finalbody, int lineno, PyArena
+                   *arena);
+stmt_ty Assert(expr_ty test, expr_ty msg, int lineno, PyArena *arena);
+stmt_ty Import(asdl_seq * names, int lineno, PyArena *arena);
+stmt_ty ImportFrom(identifier module, asdl_seq * names, int lineno, PyArena
+                   *arena);
+stmt_ty Exec(expr_ty body, expr_ty globals, expr_ty locals, int lineno, PyArena
+             *arena);
+stmt_ty Global(asdl_seq * names, int lineno, PyArena *arena);
+stmt_ty Expr(expr_ty value, int lineno, PyArena *arena);
+stmt_ty Pass(int lineno, PyArena *arena);
+stmt_ty Break(int lineno, PyArena *arena);
+stmt_ty Continue(int lineno, PyArena *arena);
+expr_ty BoolOp(boolop_ty op, asdl_seq * values, int lineno, PyArena *arena);
+expr_ty BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, PyArena
+              *arena);
+expr_ty UnaryOp(unaryop_ty op, expr_ty operand, int lineno, PyArena *arena);
+expr_ty Lambda(arguments_ty args, expr_ty body, int lineno, PyArena *arena);
+expr_ty Dict(asdl_seq * keys, asdl_seq * values, int lineno, PyArena *arena);
+expr_ty ListComp(expr_ty elt, asdl_seq * generators, int lineno, PyArena
+                 *arena);
+expr_ty GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, PyArena
+                     *arena);
+expr_ty Yield(expr_ty value, int lineno, PyArena *arena);
 expr_ty Compare(expr_ty left, asdl_seq * ops, asdl_seq * comparators, int
-                lineno);
+                lineno, PyArena *arena);
 expr_ty Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty
-             starargs, expr_ty kwargs, int lineno);
-expr_ty Repr(expr_ty value, int lineno);
-expr_ty Num(object n, int lineno);
-expr_ty Str(string s, int lineno);
+             starargs, expr_ty kwargs, int lineno, PyArena *arena);
+expr_ty Repr(expr_ty value, int lineno, PyArena *arena);
+expr_ty Num(object n, int lineno, PyArena *arena);
+expr_ty Str(string s, int lineno, PyArena *arena);
 expr_ty Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int
-                  lineno);
+                  lineno, PyArena *arena);
 expr_ty Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int
-                  lineno);
-expr_ty Name(identifier id, expr_context_ty ctx, int lineno);
-expr_ty List(asdl_seq * elts, expr_context_ty ctx, int lineno);
-expr_ty Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno);
-slice_ty Ellipsis(void);
-slice_ty Slice(expr_ty lower, expr_ty upper, expr_ty step);
-slice_ty ExtSlice(asdl_seq * dims);
-slice_ty Index(expr_ty value);
-comprehension_ty comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs);
-excepthandler_ty excepthandler(expr_ty type, expr_ty name, asdl_seq * body);
+                  lineno, PyArena *arena);
+expr_ty Name(identifier id, expr_context_ty ctx, int lineno, PyArena *arena);
+expr_ty List(asdl_seq * elts, expr_context_ty ctx, int lineno, PyArena *arena);
+expr_ty Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, PyArena *arena);
+slice_ty Ellipsis(PyArena *arena);
+slice_ty Slice(expr_ty lower, expr_ty upper, expr_ty step, PyArena *arena);
+slice_ty ExtSlice(asdl_seq * dims, PyArena *arena);
+slice_ty Index(expr_ty value, PyArena *arena);
+comprehension_ty comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs,
+                               PyArena *arena);
+excepthandler_ty excepthandler(expr_ty type, expr_ty name, asdl_seq * body,
+                               PyArena *arena);
 arguments_ty arguments(asdl_seq * args, identifier vararg, identifier kwarg,
-                       asdl_seq * defaults);
-keyword_ty keyword(identifier arg, expr_ty value);
-alias_ty alias(identifier name, identifier asname);
-
-void free_mod(mod_ty);
-void free_stmt(stmt_ty);
-void free_expr(expr_ty);
-void free_expr_context(expr_context_ty);
-void free_slice(slice_ty);
-void free_boolop(boolop_ty);
-void free_operator(operator_ty);
-void free_unaryop(unaryop_ty);
-void free_cmpop(cmpop_ty);
-void free_comprehension(comprehension_ty);
-void free_excepthandler(excepthandler_ty);
-void free_arguments(arguments_ty);
-void free_keyword(keyword_ty);
-void free_alias(alias_ty);
+                       asdl_seq * defaults, PyArena *arena);
+keyword_ty keyword(identifier arg, expr_ty value, PyArena *arena);
+alias_ty alias(identifier name, identifier asname, PyArena *arena);
 
