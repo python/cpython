@@ -12,6 +12,9 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1379994: Builtin unicode_escape and raw_unicode_escape codec
+  now encodes backslash correctly.
+
 - Patch #1350409: Work around signal handling bug in Visual Studio 2005.
 
 - Bug #1281408: Py_BuildValue now works correct even with unsigned longs
