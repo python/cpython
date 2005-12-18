@@ -1439,8 +1439,8 @@ err_input(perrdetail *err)
 		}
 		if (msg == NULL)
 			msg = "unknown decode error";
-		Py_DECREF(type);
-		Py_DECREF(value);
+		Py_XDECREF(type);
+		Py_XDECREF(value);
 		Py_XDECREF(tb);
 		break;
 	}

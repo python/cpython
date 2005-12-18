@@ -12,6 +12,8 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1378022, UTF-8 files with a leading BOM crashed the interpreter.
+
 - Support for converting hex strings to floats no longer works.
   This was not portable.  float('0x3') now raises a ValueError.
 
