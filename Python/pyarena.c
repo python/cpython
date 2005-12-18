@@ -40,9 +40,6 @@ PyArenaList_New(void)
 static void
 PyArenaList_FreeObject(PyArenaList *alist) 
 {
-  if (!alist)
-    return;
-
   while (alist) {
     PyArenaList *prev;
     Py_XDECREF((PyObject *)alist->al_pointer);
@@ -56,9 +53,6 @@ PyArenaList_FreeObject(PyArenaList *alist)
 static void
 PyArenaList_FreeMalloc(PyArenaList *alist)
 {
-  if (!alist)
-    return;
-
   while (alist) {
     PyArenaList *prev;
     if (alist->al_pointer) {
@@ -105,7 +99,8 @@ PyArena_Malloc(PyArena *arena, size_t size)
   void *p;
   assert(size != 0);
   p = malloc(size);
-  PyArena_AddMallocPointer(arena, p);
+  if (p)
+    PyArena_AddMallocPointer(arena, p);
   return p;
 }
 
