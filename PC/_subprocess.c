@@ -425,6 +425,26 @@ sp_CreateProcess(PyObject* self, PyObject* args)
 }
 
 static PyObject *
+sp_TerminateProcess(PyObject* self, PyObject* args)
+{
+	BOOL result;
+
+	long process;
+	int exit_code;
+	if (! PyArg_ParseTuple(args, "li:TerminateProcess", &process,
+			       &exit_code))
+		return NULL;
+
+	result = TerminateProcess((HANDLE) process, exit_code);
+
+	if (! result)
+		return PyErr_SetFromWindowsErr(GetLastError());
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static PyObject *
 sp_GetExitCodeProcess(PyObject* self, PyObject* args)
 {
 	DWORD exit_code;
@@ -498,6 +518,7 @@ static PyMethodDef sp_functions[] = {
 	{"DuplicateHandle",	sp_DuplicateHandle,	METH_VARARGS},
 	{"CreatePipe",		sp_CreatePipe,		METH_VARARGS},
 	{"CreateProcess",	sp_CreateProcess,	METH_VARARGS},
+	{"TerminateProcess",	sp_TerminateProcess,	METH_VARARGS},
 	{"GetExitCodeProcess",	sp_GetExitCodeProcess,	METH_VARARGS},
 	{"WaitForSingleObject",	sp_WaitForSingleObject, METH_VARARGS},
 	{"GetVersion",		sp_GetVersion,		METH_VARARGS},
