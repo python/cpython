@@ -171,7 +171,6 @@ static int compiler_addop(struct compiler *, int);
 static int compiler_addop_o(struct compiler *, int, PyObject *, PyObject *);
 static int compiler_addop_i(struct compiler *, int, int);
 static int compiler_addop_j(struct compiler *, int, basicblock *, int);
-static void compiler_use_block(struct compiler *, basicblock *);
 static basicblock *compiler_use_new_block(struct compiler *);
 static int compiler_error(struct compiler *, const char *);
 static int compiler_nameop(struct compiler *, identifier, expr_context_ty);
@@ -1176,13 +1175,6 @@ compiler_new_block(struct compiler *c)
 	b->b_list = u->u_blocks;
 	u->u_blocks = b;
 	return b;
-}
-
-static void
-compiler_use_block(struct compiler *c, basicblock *block)
-{
-        assert (block != NULL);
-	c->u->u_curblock = block;
 }
 
 static basicblock *
@@ -2529,7 +2521,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
 	else {
 		ADDOP_I(c, RAISE_VARARGS, 1);
 	}
-	compiler_use_block(c, end);
+	compiler_use_next_block(c, end);
 	ADDOP(c, POP_TOP);
 	return 1;
 }
