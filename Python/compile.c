@@ -1075,12 +1075,16 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
 	struct compiler_unit *u;
 
 	u = PyObject_Malloc(sizeof(struct compiler_unit));
+	if (!u) {
+                PyErr_NoMemory();
+                return 0;
+	}
         memset(u, 0, sizeof(struct compiler_unit));
 	u->u_argcount = 0;
 	u->u_ste = PySymtable_Lookup(c->c_st, key);
 	if (!u->u_ste) {
                 compiler_unit_free(u);
-		return 0;
+                return 0;
 	}
 	Py_INCREF(name);
 	u->u_name = name;
@@ -1163,8 +1167,10 @@ compiler_new_block(struct compiler *c)
 
 	u = c->u;
 	b = (basicblock *)PyObject_Malloc(sizeof(basicblock));
-	if (b == NULL)
+	if (b == NULL) {
+		PyErr_NoMemory();
 		return NULL;
+	}
 	memset((void *)b, 0, sizeof(basicblock));
 	assert (b->b_next == NULL);
 	b->b_list = u->u_blocks;
@@ -3747,8 +3753,10 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
 		return 0;
 	a->a_postorder = (basicblock **)PyObject_Malloc(
                                             sizeof(basicblock *) * nblocks);
-	if (!a->a_postorder)
+	if (!a->a_postorder) {
+		PyErr_NoMemory();
 		return 0;
+	}
 	return 1;
 }
 
