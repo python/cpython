@@ -2760,8 +2760,7 @@ inplace_binop(struct compiler *c, operator_ty op)
 		return INPLACE_FLOOR_DIVIDE;
 	}
 	PyErr_Format(PyExc_SystemError,
-		     "inplace binary op %d should not be possible",
-		     op);
+		     "inplace binary op %d should not be possible", op);
 	return 0;
 }
 
@@ -2809,6 +2808,9 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 	case GLOBAL_EXPLICIT:
 		optype = OP_GLOBAL;
 		break;
+	default:
+		/* scope can be 0 */
+		break;
 	}
 
 	/* XXX Leave assert here, but handle __doc__ and the like better */
@@ -2830,6 +2832,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 			Py_DECREF(mangled);
 			return 0;
 		case Param:
+		default:
 			PyErr_SetString(PyExc_SystemError,
 					"param invalid for deref variable");
 			return 0;
@@ -2844,6 +2847,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 		case AugStore:
 			break;
 		case Param:
+		default:
 			PyErr_SetString(PyExc_SystemError,
 					"param invalid for local variable");
 			return 0;
@@ -2860,6 +2864,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 		case AugStore:
 			break;
 		case Param:
+		default:
 			PyErr_SetString(PyExc_SystemError,
 					"param invalid for global variable");
 			return 0;
@@ -2874,6 +2879,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 		case AugStore:
 			break;
 		case Param:
+		default:
 			PyErr_SetString(PyExc_SystemError,
 					"param invalid for name variable");
 			return 0;
@@ -3361,6 +3367,7 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 			ADDOP_NAME(c, DELETE_ATTR, e->v.Attribute.attr, names);
 			break;
 		case Param:
+		default:
 			PyErr_SetString(PyExc_SystemError,
 					"param invalid in attribute expression");
 			return 0;
@@ -3388,6 +3395,7 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 			VISIT_SLICE(c, e->v.Subscript.slice, Del);
 			break;
 		case Param:
+		default:
 			PyErr_SetString(PyExc_SystemError,
 					"param invalid in subscript expression");
 			return 0;
@@ -3441,8 +3449,9 @@ compiler_augassign(struct compiler *c, stmt_ty s)
 		ADDOP(c, inplace_binop(c, s->v.AugAssign.op));
 		return compiler_nameop(c, e->v.Name.id, Store);
 	default:
-                fprintf(stderr, 
-                        "invalid node type for augmented assignment\n");
+		PyErr_Format(PyExc_SystemError, 
+			"invalid node type (%d) for augmented assignment",
+			e->kind);
                 return 0;
 	}
 	return 1;
@@ -3514,9 +3523,9 @@ compiler_handle_subscr(struct compiler *c, const char *kind,
                 case Store:   op = STORE_SUBSCR; break;
                 case Del:     op = DELETE_SUBSCR; break;
                 case Param:
-                        fprintf(stderr, 
-                                "invalid %s kind %d in subscript\n", 
-                                kind, ctx);
+                        PyErr_Format(PyExc_SystemError, 
+				     "invalid %s kind %d in subscript\n", 
+				     kind, ctx);
                         return 0;
         }
         if (ctx == AugLoad) {
@@ -3599,6 +3608,7 @@ compiler_simple_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 	case Store: op = STORE_SLICE; break;
 	case Del: op = DELETE_SLICE; break;
 	case Param:
+	default:
 		PyErr_SetString(PyExc_SystemError,
 				"param invalid in simple slice");
 		return 0;
@@ -3618,11 +3628,11 @@ compiler_visit_nested_slice(struct compiler *c, slice_ty s,
 		break;
 	case Slice_kind:
 		return compiler_slice(c, s, ctx);
-		break;
 	case Index_kind:
 		VISIT(c, expr, s->v.Index.value);
 		break;
 	case ExtSlice_kind:
+	default:
 		PyErr_SetString(PyExc_SystemError,
 				"extended slice invalid in nested slice");
 		return 0;
@@ -3664,6 +3674,10 @@ compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
                 if (ctx != AugStore)
 			VISIT(c, expr, s->v.Index.value);
                 return compiler_handle_subscr(c, "index", ctx);
+	default:
+		PyErr_Format(PyExc_SystemError,
+			     "invalid slice %d", s->kind);
+		return 0;
 	}
 	return 1;
 }
