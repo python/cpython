@@ -272,6 +272,12 @@
   \withsubitem{(in module sys)}{\ttindex{version}}
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{const char*}{Py_GetBuildNumber}{}
+  Return a string representing the Subversion revision that this Python
+  executable was built from.  This number is a string because it may contain a
+  trailing 'M' if Python was built from a mixed revision source tree.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{const char*}{Py_GetPlatform}{}
   Return the platform identifier for the current platform.  On \UNIX,
   this is formed from the ``official'' name of the operating system,
