@@ -1092,7 +1092,7 @@ def processor():
 ### Various APIs for extracting information from sys.version
 
 _sys_version_parser = re.compile(r'([\w.+]+)\s*'
-                                  '\(#(\d+),\s*([\w ]+),\s*([\w :]+)\)\s*'
+                                  '\(#?(\d+:?\d+M?),\s*([\w ]+),\s*([\w :]+)\)\s*'
                                   '\[([^\]]+)\]?')
 _sys_version_cache = None
 
@@ -1114,7 +1114,6 @@ def _sys_version():
         return _sys_version_cache
     version, buildno, builddate, buildtime, compiler = \
              _sys_version_parser.match(sys.version).groups()
-    buildno = int(buildno)
     builddate = builddate + ' ' + buildtime
     l = string.split(version, '.')
     if len(l) == 2:
