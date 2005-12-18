@@ -1003,6 +1003,9 @@ _PySys_Init(void)
 	PyDict_SetItemString(sysdict, "hexversion",
 			     v = PyInt_FromLong(PY_VERSION_HEX));
 	Py_XDECREF(v);
+	PyDict_SetItemString(sysdict, "build_number",
+			     v = PyString_FromString(Py_GetBuildNumber()));
+	Py_XDECREF(v);
 	/*
 	 * These release level checks are mutually exclusive and cover
 	 * the field, so don't get too fancy with the pre-processor!

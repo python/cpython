@@ -349,7 +349,9 @@ buildno: $(PARSER_OBJS) \
 		$(SIGNAL_OBJS) \
 		$(MODOBJS) \
 		$(srcdir)/Modules/getbuildinfo.c
-	if test -f buildno; then \
+	if test -d .svn; then \
+		svnversion . >buildno; \
+	elif test -f buildno; then \
 		expr `cat buildno` + 1 >buildno1; \
 		mv -f buildno1 buildno; \
 	else echo 1 >buildno; fi
@@ -444,7 +446,7 @@ Modules/Setup: $(srcdir)/Modules/Setup.dist
 # Special rules for object files
 
 Modules/getbuildinfo.o: $(srcdir)/Modules/getbuildinfo.c buildno
-	$(CC) -c $(PY_CFLAGS) -DBUILD=`cat buildno` -o $@ $(srcdir)/Modules/getbuildinfo.c
+	$(CC) -c $(PY_CFLAGS) -DBUILD=\"`cat buildno`\" -o $@ $(srcdir)/Modules/getbuildinfo.c
 
 Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
 	$(CC) -c $(PY_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \

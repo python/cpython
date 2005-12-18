@@ -21,7 +21,7 @@
 #endif
 
 #ifndef BUILD
-#define BUILD 0
+#define BUILD "0"
 #endif
 
 const char *
@@ -29,6 +29,12 @@ Py_GetBuildInfo(void)
 {
 	static char buildinfo[50];
 	PyOS_snprintf(buildinfo, sizeof(buildinfo),
-		      "#%d, %.20s, %.9s", BUILD, DATE, TIME);
+		      "%s, %.20s, %.9s", BUILD, DATE, TIME);
 	return buildinfo;
+}
+
+const char *
+Py_GetBuildNumber(void)
+{
+	return BUILD;
 }

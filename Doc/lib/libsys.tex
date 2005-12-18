@@ -27,6 +27,12 @@ It is always available.
   \versionadded{2.0}
 \end{datadesc}
 
+\begin{datadesc}{build_number}
+  A string representing the Subversion revision that this Python executable
+  was built from.  This number is a string because it may contain a trailing
+  'M' if Python was built from a mixed revision source tree.
+\end{datadesc}  
+
 \begin{datadesc}{builtin_module_names}
   A tuple of strings giving the names of all modules that are compiled
   into this Python interpreter.  (This information is not available in
