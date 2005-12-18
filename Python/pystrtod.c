@@ -41,7 +41,7 @@ double
 PyOS_ascii_strtod(const char *nptr, char **endptr)
 {
 	char *fail_pos;
-	double val;
+	double val = -1.0;
 	struct lconv *locale_data;
 	const char *decimal_point;
 	int decimal_point_len;
@@ -130,7 +130,7 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 		if (nptr[i] == '-')
 			i++;
 		if (nptr[i] == '0' && (nptr[i+1] == 'x' || nptr[i+1] == 'X'))
-			fail_pos = nptr;
+			fail_pos = (char*)nptr;
 		else
 			val = strtod(nptr, &fail_pos);
 	}
