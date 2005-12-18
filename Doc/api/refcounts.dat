@@ -751,6 +751,11 @@ PyOS_GetLastModificationTime:char*:filename::
 PyObject_AsFileDescriptor:int::: 
 PyObject_AsFileDescriptor:PyObject*:o:0:
 
+PyObject_Call:PyObject*::+1:
+PyObject_Call:PyObject*:callable_object:0:
+PyObject_Call:PyObject*:args:0:
+PyObject_Call:PyObject*:kw:0:
+
 PyObject_CallFunction:PyObject*::+1:
 PyObject_CallFunction:PyObject*:callable_object:0:
 PyObject_CallFunction:char*:format::
