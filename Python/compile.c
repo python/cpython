@@ -296,8 +296,7 @@ PyCodeObject *
 PyNode_Compile(struct _node *n, const char *filename)
 {
 	PyCodeObject *co = NULL;
-        PyArena *arena;
-        arena = PyArena_New();
+        PyArena *arena = PyArena_New();
 	mod_ty mod = PyAST_FromNode(n, NULL, filename, arena);
 	if (mod)
 		co = PyAST_Compile(mod, filename, NULL, arena);
