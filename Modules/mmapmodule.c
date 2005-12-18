@@ -374,7 +374,7 @@ mmap_resize_method(mmap_object *self,
 {
 	unsigned long new_size;
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple (args, "l:resize", &new_size) || 
+	if (!PyArg_ParseTuple (args, "k:resize", &new_size) || 
 	    !is_resizeable(self)) {
 		return NULL;
 #ifdef MS_WINDOWS
@@ -463,10 +463,10 @@ mmap_tell_method(mmap_object *self, PyObject *args)
 static PyObject *
 mmap_flush_method(mmap_object *self, PyObject *args)
 {
-	size_t offset	= 0;
-	size_t size = self->size;
+	unsigned long offset = 0;
+	unsigned long size = self->size;
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple (args, "|ll:flush", &offset, &size)) {
+	if (!PyArg_ParseTuple (args, "|kk:flush", &offset, &size)) {
 		return NULL;
 	} else if ((offset + size) > self->size) {
 		PyErr_SetString (PyExc_ValueError,
@@ -539,7 +539,7 @@ mmap_move_method(mmap_object *self, PyObject *args)
 {
 	unsigned long dest, src, count;
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple (args, "iii:move", &dest, &src, &count) ||
+	if (!PyArg_ParseTuple (args, "kkk:move", &dest, &src, &count) ||
 	    !is_writeable(self)) {
 		return NULL;
 	} else {
@@ -863,7 +863,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	PyObject *map_size_obj = NULL;
 	int map_size;
 	int fd, flags = MAP_SHARED, prot = PROT_WRITE | PROT_READ;
-	access_mode access = ACCESS_DEFAULT;
+	int access = (int)ACCESS_DEFAULT;
 	static const char *keywords[] = {"fileno", "length", 
                                          "flags", "prot", 
                                          "access", NULL};
@@ -876,11 +876,11 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	if (map_size < 0)
 		return NULL;
 
-	if ((access != ACCESS_DEFAULT) && 
+	if ((access != (int)ACCESS_DEFAULT) && 
 	    ((flags != MAP_SHARED) || ( prot != (PROT_WRITE | PROT_READ))))
 		return PyErr_Format(PyExc_ValueError, 
 				    "mmap can't specify both access and flags, prot.");
-	switch(access) {
+	switch((access_mode)access) {
 	case ACCESS_READ:
 		flags = MAP_SHARED;
 		prot = PROT_READ;
@@ -935,7 +935,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 		PyErr_SetFromErrno(mmap_module_error);
 		return NULL;
 	}
-	m_obj->access = access;
+	m_obj->access = (access_mode)access;
 	return (PyObject *)m_obj;
 }
 #endif /* UNIX */
@@ -951,7 +951,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	DWORD dwErr = 0;
 	int fileno;
 	HANDLE fh = 0;
-	access_mode   access = ACCESS_DEFAULT;
+	int access = (access_mode)ACCESS_DEFAULT;
 	DWORD flProtect, dwDesiredAccess;
 	static const char *keywords[] = { "fileno", "length", 
                                           "tagname", 
@@ -963,7 +963,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 		return NULL;
 	}
 
-	switch(access) {
+	switch((access_mode)access) {
 	case ACCESS_READ:
 		flProtect = PAGE_READONLY;
 		dwDesiredAccess = FILE_MAP_READ;
@@ -1048,7 +1048,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	else
 		m_obj->tagname = NULL;
 
-	m_obj->access = access;
+	m_obj->access = (access_mode)access;
 	m_obj->map_handle = CreateFileMapping (m_obj->file_handle,
 					       NULL,
 					       flProtect,

@@ -197,6 +197,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1365916: fix some unsafe 64-bit mmap methods.
+
 - Bug #1290333: Added a workaround for cjkcodecs' _codecs_cn build
   problem on AIX.
 
