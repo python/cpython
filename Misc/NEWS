@@ -12,6 +12,9 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Support for converting hex strings to floats no longer works.
+  This was not portable.  float('0x3') now raises a ValueError.
+
 - Patch #1382163: Expose Subversion revision number to Python.  New C API
   function Py_GetBuildNumber().  New attribute sys.build_number.  Build number
   is now displayed in interactive prompt banner.
