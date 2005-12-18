@@ -46,6 +46,43 @@ dis_bug708901 = """\
      bug708901.func_code.co_firstlineno + 2,
      bug708901.func_code.co_firstlineno + 3)
 
+
+def bug1333982(x=[]):
+    assert 0, ([s for s in x] +
+              1)
+    pass
+
+dis_bug1333982 = """\
+ %-4d         0 LOAD_CONST               1 (0)
+              3 JUMP_IF_TRUE            47 (to 53)
+              6 POP_TOP
+              7 LOAD_GLOBAL              0 (AssertionError)
+             10 BUILD_LIST               0
+             13 DUP_TOP
+             14 LOAD_ATTR                1 (append)
+             17 STORE_FAST               1 (_[1])
+             20 LOAD_FAST                0 (x)
+             23 GET_ITER
+        >>   24 FOR_ITER                16 (to 43)
+             27 STORE_FAST               2 (s)
+             30 LOAD_FAST                1 (_[1])
+             33 LOAD_FAST                2 (s)
+             36 CALL_FUNCTION            1
+             39 POP_TOP
+             40 JUMP_ABSOLUTE           24
+        >>   43 DELETE_FAST              1 (_[1])
+
+ %-4d        46 LOAD_CONST               2 (1)
+             49 BINARY_ADD
+             50 RAISE_VARARGS            2
+        >>   53 POP_TOP
+
+ %-4d        54 LOAD_CONST               0 (None)
+             57 RETURN_VALUE
+"""%(bug1333982.func_code.co_firstlineno + 1,
+     bug1333982.func_code.co_firstlineno + 2,
+     bug1333982.func_code.co_firstlineno + 3)
+
 class DisTests(unittest.TestCase):
     def do_disassembly_test(self, func, expected):
         s = StringIO.StringIO()
@@ -82,6 +119,9 @@ class DisTests(unittest.TestCase):
 
     def test_bug_708901(self):
         self.do_disassembly_test(bug708901, dis_bug708901)
+
+    def test_bug_1333982(self):
+        self.do_disassembly_test(bug1333982, dis_bug1333982)
 
 def test_main():
     run_unittest(DisTests)
