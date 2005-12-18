@@ -356,6 +356,22 @@ def test_both():
         finally:
             os.unlink(TESTFN)
 
+    # make move works everywhere (64-bit format problem earlier)
+    f = open(TESTFN, 'w+')
+
+    try:    # unlink TESTFN no matter what
+        f.write("ABCDEabcde") # Arbitrary character
+        f.flush()
+
+        mf = mmap.mmap(f.fileno(), 10)
+        mf.move(5, 0, 5)
+        verify(mf[:] == "ABCDEABCDE", "Map move should have duplicated front 5")
+        mf.close()
+        f.close()
+
+    finally:
+        os.unlink(TESTFN)
+
     print ' Test passed'
 
 test_both()
