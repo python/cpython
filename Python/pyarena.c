@@ -107,8 +107,8 @@ PyArena_Malloc(PyArena *arena, size_t size)
 int
 PyArena_AddMallocPointer(PyArena *arena, void *pointer) 
 {
-  assert(pointer);
   PyArenaList *tail = arena->a_malloc_tail;
+  assert(pointer);
   assert(tail->al_pointer != pointer);
   tail->al_next = PyArenaList_New();
   tail->al_pointer = pointer;
@@ -119,8 +119,8 @@ PyArena_AddMallocPointer(PyArena *arena, void *pointer)
 int
 PyArena_AddPyObject(PyArena *arena, PyObject *pointer) 
 {
-  assert(pointer);
   PyArenaList *tail = arena->a_object_tail;
+  assert(pointer);
   tail->al_next = PyArenaList_New();
   tail->al_pointer = pointer;
   arena->a_object_tail = tail->al_next;
