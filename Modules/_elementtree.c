@@ -1501,10 +1501,12 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
 
     if (self->data) {
         if (self->this == self->last) {
+            Py_DECREF(self->last->text);
             self->last->text = JOIN_SET(
                 self->data, PyList_CheckExact(self->data)
                 );
         } else {
+            Py_DECREF(self->last->tail);
             self->last->tail = JOIN_SET(
                 self->data, PyList_CheckExact(self->data)
                 );
@@ -1606,10 +1608,12 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
 
     if (self->data) {
         if (self->this == self->last) {
+            Py_DECREF(self->last->text);
             self->last->text = JOIN_SET(
                 self->data, PyList_CheckExact(self->data)
                 );
         } else {
+            Py_DECREF(self->last->tail);
             self->last->tail = JOIN_SET(
                 self->data, PyList_CheckExact(self->data)
                 );
