@@ -38,8 +38,7 @@
  * Return value: the #gdouble value.
  **/
 double
-PyOS_ascii_strtod(const char  *nptr, 
-	    char       **endptr)
+PyOS_ascii_strtod(const char *nptr, char **endptr)
 {
 	char *fail_pos;
 	double val;
@@ -49,7 +48,6 @@ PyOS_ascii_strtod(const char  *nptr,
 	const char *p, *decimal_point_pos;
 	const char *end = NULL; /* Silence gcc */
 
-/* 	g_return_val_if_fail (nptr != NULL, 0); */
 	assert(nptr != NULL);
 
 	fail_pos = NULL;
@@ -73,64 +71,36 @@ PyOS_ascii_strtod(const char  *nptr,
 		if (*p == '+' || *p == '-')
 			p++;
 
-		if (p[0] == '0' && 
-		    (p[1] == 'x' || p[1] == 'X'))
+		while (ISDIGIT(*p))
+			p++;
+
+		if (*p == '.')
 		{
-			p += 2;
-			  /* HEX - find the (optional) decimal point */
+			decimal_point_pos = p++;
 
-			while (ISXDIGIT(*p))
-				p++;
-
-			if (*p == '.')
-			{
-				decimal_point_pos = p++;
-
-				while (ISXDIGIT(*p))
-					p++;
-
-				if (*p == 'p' || *p == 'P')
-					p++;
-				if (*p == '+' || *p == '-')
-					p++;
-				while (ISDIGIT(*p))
-					p++;
-				end = p;
-			}
-		}
-		else
-		{
 			while (ISDIGIT(*p))
 				p++;
 
-			if (*p == '.')
-			{
-				decimal_point_pos = p++;
-
-				while (ISDIGIT(*p))
-					p++;
-
-				if (*p == 'e' || *p == 'E')
-					p++;
-				if (*p == '+' || *p == '-')
-					p++;
-				while (ISDIGIT(*p))
-					p++;
-				end = p;
-			}
+			if (*p == 'e' || *p == 'E')
+				p++;
+			if (*p == '+' || *p == '-')
+				p++;
+			while (ISDIGIT(*p))
+				p++;
+			end = p;
 		}
-		  /* For the other cases, we need not convert the decimal point */
+		/* For the other cases, we need not convert the decimal point */
 	}
 
-	  /* Set errno to zero, so that we can distinguish zero results
-	     and underflows */
+	/* Set errno to zero, so that we can distinguish zero results
+	   and underflows */
 	errno = 0;
 
 	if (decimal_point_pos)
 	{
 		char *copy, *c;
 
-		  /* We need to convert the '.' to the locale specific decimal point */
+		/* We need to convert the '.' to the locale specific decimal point */
 		copy = malloc(end - nptr + 1 + decimal_point_len);
 
 		c = copy;
@@ -155,8 +125,15 @@ PyOS_ascii_strtod(const char  *nptr,
 		free(copy);
 
 	}
-	else
-		val = strtod(nptr, &fail_pos);
+	else {
+		unsigned i = 0;
+		if (nptr[i] == '-')
+			i++;
+		if (nptr[i] == '0' && (nptr[i+1] == 'x' || nptr[i+1] == 'X'))
+			fail_pos = nptr;
+		else
+			val = strtod(nptr, &fail_pos);
+	}
 
 	if (endptr)
 		*endptr = fail_pos;
