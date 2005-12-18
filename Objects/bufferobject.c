@@ -356,6 +356,8 @@ buffer_concat(PyBufferObject *self, PyObject *other)
 		return NULL;
 
  	ob = PyString_FromStringAndSize(NULL, size + count);
+	if ( ob == NULL )
+		return NULL;
  	p = PyString_AS_STRING(ob);
  	memcpy(p, ptr1, size);
  	memcpy(p + size, ptr2, count);
