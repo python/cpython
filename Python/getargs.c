@@ -255,7 +255,7 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int compat)
 		}
 	}
 
-	if (*format != '\0' && !isalpha(Py_CHARMASK((*format))) &&
+	if (*format != '\0' && !isalpha(Py_CHARMASK(*format)) &&
 	    *format != '(' &&
 	    *format != '|' && *format != ':' && *format != ';') {
 		PyErr_Format(PyExc_SystemError,
