@@ -166,7 +166,7 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int compat)
 			if (level == 0) {
 				if (c == 'O')
 					max++;
-				else if (isalpha(c)) {
+				else if (isalpha(Py_CHARMASK(c))) {
 					if (c != 'e') /* skip encoded */
 						max++;
 				} else if (c == '|')
@@ -255,7 +255,7 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int compat)
 		}
 	}
 
-	if (*format != '\0' && !isalpha((int)(*format)) &&
+	if (*format != '\0' && !isalpha(Py_CHARMASK((*format))) &&
 	    *format != '(' &&
 	    *format != '|' && *format != ':' && *format != ';') {
 		PyErr_Format(PyExc_SystemError,
@@ -347,7 +347,7 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int *levels,
 		}
 		else if (c == ':' || c == ';' || c == '\0')
 			break;
-		else if (level == 0 && isalpha(c))
+		else if (level == 0 && isalpha(Py_CHARMASK(c)))
 			n++;
 	}
 	
@@ -1223,7 +1223,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
 	min = -1;
 	max = 0;
 	while ((i = *format++) != '\0') {
-		if (isalpha(i) && i != 'e') {
+		if (isalpha(Py_CHARMASK(i)) && i != 'e') {
 			max++;
 			if (*p == NULL) {
 				PyErr_SetString(PyExc_RuntimeError,
