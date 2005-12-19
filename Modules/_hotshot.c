@@ -1396,7 +1396,7 @@ get_version_string(void)
     char *buffer;
     int i = 0;
 
-    while (*rev && !isdigit((int)*rev))
+    while (*rev && !isdigit(Py_CHARMASK(*rev)))
         ++rev;
     while (rev[i] != ' ' && rev[i] != '\0')
         ++i;

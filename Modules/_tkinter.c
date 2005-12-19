@@ -636,7 +636,7 @@ Tkapp_New(char *screenName, char *baseName, char *className,
 	}
 
 	strcpy(argv0, className);
-	if (isupper((int)(argv0[0])))
+	if (isupper(Py_CHARMASK((argv0[0]))))
 		argv0[0] = tolower(argv0[0]);
 	Tcl_SetVar(v->interp, "argv0", argv0, TCL_GLOBAL_ONLY);
 	ckfree(argv0);

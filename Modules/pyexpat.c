@@ -1803,7 +1803,7 @@ get_version_string(void)
     char *rev = rcsid;
     int i = 0;
 
-    while (!isdigit((int)*rev))
+    while (!isdigit(Py_CHARMASK(*rev)))
         ++rev;
     while (rev[i] != ' ' && rev[i] != '\0')
         ++i;

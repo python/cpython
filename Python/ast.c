@@ -2879,7 +2879,7 @@ static PyObject *
 parsestr(const char *s, const char *encoding)
 {
 	size_t len;
-	int quote = *s;
+	int quote = Py_CHARMASK(*s);
 	int rawmode = 0;
 	int need_encoding;
 	int unicode = 0;

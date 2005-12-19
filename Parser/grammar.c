@@ -180,7 +180,8 @@ translabel(grammar *g, label *lb)
 	}
 	
 	if (lb->lb_type == STRING) {
-		if (isalpha((int)(lb->lb_str[1])) || lb->lb_str[1] == '_') {
+		if (isalpha(Py_CHARMASK(lb->lb_str[1])) ||
+		    lb->lb_str[1] == '_') {
 			char *p;
 			char *src;
 			char *dest;
