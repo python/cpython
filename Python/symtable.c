@@ -4,12 +4,15 @@
 #include "symtable.h"
 #include "structmember.h"
 
-/* two error strings used for warnings */
+/* error strings used for warnings */
 #define GLOBAL_AFTER_ASSIGN \
 "name '%.400s' is assigned to before global declaration"
 
 #define GLOBAL_AFTER_USE \
 "name '%.400s' is used prior to global declaration"
+
+#define IMPORT_STAR_WARNING "import * only allowed at module level"
+
 
 PySTEntryObject *
 PySTEntry_New(struct symtable *st, identifier name, _Py_block_ty block,
@@ -152,7 +155,7 @@ PyTypeObject PySTEntry_Type = {
 };
 
 static int symtable_analyze(struct symtable *st);
-static int symtable_warn(struct symtable *st, char *msg);
+static int symtable_warn(struct symtable *st, char *msg, int lineno);
 static int symtable_enter_block(struct symtable *st, identifier name, 
 				_Py_block_ty block, void *ast, int lineno);
 static int symtable_exit_block(struct symtable *st, void *ast);
@@ -686,10 +689,10 @@ symtable_analyze(struct symtable *st)
 
 
 static int
-symtable_warn(struct symtable *st, char *msg)
+symtable_warn(struct symtable *st, char *msg, int lineno)
 {
 	if (PyErr_WarnExplicit(PyExc_SyntaxWarning, msg, st->st_filename,
-			       st->st_cur->ste_lineno, NULL, NULL) < 0)	{
+			       lineno, NULL, NULL) < 0)	{
 		if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
 			PyErr_SetString(PyExc_SyntaxError, msg);
 			PyErr_SyntaxLocation(st->st_filename, 
@@ -1028,7 +1031,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 					PyOS_snprintf(buf, sizeof(buf),
 						      GLOBAL_AFTER_USE,
 						      c_name);
-				if (!symtable_warn(st, buf))
+				if (!symtable_warn(st, buf, s->lineno))
                                     return 0;
 			}
 			if (!symtable_add_def(st, name, DEF_GLOBAL))
@@ -1277,8 +1280,8 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
 	}
 	else {
             if (st->st_cur->ste_type != ModuleBlock) {
-                if (!symtable_warn(st,
-                                   "import * only allowed at module level")) {
+                int lineno = st->st_cur->ste_lineno;
+                if (!symtable_warn(st, IMPORT_STAR_WARNING, lineno)) {
                     Py_DECREF(store_name);
                     return 0;
 		}
