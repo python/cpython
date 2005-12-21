@@ -1428,7 +1428,7 @@
 					Name="VCCLCompilerTool"
 					Optimization="2"
 					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="BUILD=60"/>
+					PreprocessorDefinitions="BUILD=\&quot;60\&quot;"/>
 			</FileConfiguration>
 			<FileConfiguration
 				Name="Debug|Win32">
@@ -1436,7 +1436,7 @@
 					Name="VCCLCompilerTool"
 					Optimization="0"
 					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="BUILD=60"/>
+					PreprocessorDefinitions="BUILD=\&quot;60\&quot;"/>
 			</FileConfiguration>
 			<FileConfiguration
 				Name="ReleaseItanium|Win32">
@@ -1444,7 +1444,7 @@
 					Name="VCCLCompilerTool"
 					Optimization="2"
 					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="BUILD=60"/>
+					PreprocessorDefinitions="BUILD=\&quot;60\&quot;"/>
 			</FileConfiguration>
 		</File>
 		<File
@@ -2514,6 +2514,9 @@
 					AdditionalIncludeDirectories=""
 					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
 			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\Python\pyarena.c">
 		</File>
 		<File
 			RelativePath="..\Python\pyfpe.c">
