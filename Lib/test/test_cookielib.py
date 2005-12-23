@@ -386,6 +386,39 @@ class CookieTests(TestCase):
         self.assertEquals(interact_netscape(c, "http://www.acme.com/foo/"),
                           '"spam"; eggs')
 
+    def test_rfc2109_handling(self):
+        # RFC 2109 cookies are handled as RFC 2965 or Netscape cookies,
+        # dependent on policy settings
+        from cookielib import CookieJar, DefaultCookiePolicy
+
+        for rfc2109_as_netscape, rfc2965, version in [
+            # default according to rfc2965 if not explicitly specified
+            (None, False, 0),
+            (None, True, 1),
+            # explicit rfc2109_as_netscape
+            (False, False, None),  # version None here means no cookie stored
+            (False, True, 1),
+            (True, False, 0),
+            (True, True, 0),
+            ]:
+            policy = DefaultCookiePolicy(
+                rfc2109_as_netscape=rfc2109_as_netscape,
+                rfc2965=rfc2965)
+            c = CookieJar(policy)
+            interact_netscape(c, "http://www.example.com/", "ni=ni; Version=1")
+            try:
+                cookie = c._cookies["www.example.com"]["/"]["ni"]
+            except KeyError:
+                self.assert_(version is None)  # didn't expect a stored cookie
+            else:
+                self.assertEqual(cookie.version, version)
+                # 2965 cookies are unaffected
+                interact_2965(c, "http://www.example.com/",
+                              "foo=bar; Version=1")
+                if rfc2965:
+                    cookie2965 = c._cookies["www.example.com"]["/"]["foo"]
+                    self.assertEqual(cookie2965.version, 1)
+
     def test_ns_parser(self):
         from cookielib import CookieJar, DEFAULT_HTTP_PORT
 
