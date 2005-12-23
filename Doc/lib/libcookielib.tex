@@ -18,17 +18,18 @@ the server in later HTTP requests.
 Both the regular Netscape cookie protocol and the protocol defined by
 \rfc{2965} are handled.  RFC 2965 handling is switched off by default.
 \rfc{2109} cookies are parsed as Netscape cookies and subsequently
-treated as RFC 2965 cookies.  Note that the great majority of cookies
-on the Internet are Netscape cookies.  \module{cookielib} attempts to
-follow the de-facto Netscape cookie protocol (which differs
-substantially from that set out in the original Netscape
-specification), including taking note of the \code{max-age} and
-\code{port} cookie-attributes introduced with RFC 2109.  \note{The
-various named parameters found in \mailheader{Set-Cookie} and
-\mailheader{Set-Cookie2} headers (eg. \code{domain} and
-\code{expires}) are conventionally referred to as \dfn{attributes}.
-To distinguish them from Python attributes, the documentation for this
-module uses the term \dfn{cookie-attribute} instead}.
+treated either as Netscape or RFC 2965 cookies according to the
+'policy' in effect.  Note that the great majority of cookies on the
+Internet are Netscape cookies.  \module{cookielib} attempts to follow
+the de-facto Netscape cookie protocol (which differs substantially
+from that set out in the original Netscape specification), including
+taking note of the \code{max-age} and \code{port} cookie-attributes
+introduced with RFC 2109.  \note{The various named parameters found in
+\mailheader{Set-Cookie} and \mailheader{Set-Cookie2} headers
+(eg. \code{domain} and \code{expires}) are conventionally referred to
+as \dfn{attributes}.  To distinguish them from Python attributes, the
+documentation for this module uses the term \dfn{cookie-attribute}
+instead}.
 
 
 The module defines the following exception:
@@ -74,6 +75,7 @@ accepted from / returned to the server.
     blocked_domains=\constant{None},
     allowed_domains=\constant{None},
     netscape=\constant{True}, rfc2965=\constant{False},
+    rfc2109_as_netscape=\constant{None},
     hide_cookie2=\constant{False},
     strict_domain=\constant{False},
     strict_rfc2965_unverifiable=\constant{True},
@@ -92,10 +94,14 @@ documentation for \class{CookiePolicy} and \class{DefaultCookiePolicy}
 objects.
 
 \class{DefaultCookiePolicy} implements the standard accept / reject
-rules for Netscape and RFC 2965 cookies.  RFC 2109 cookies
+rules for Netscape and RFC 2965 cookies.  By default, RFC 2109 cookies
 (ie. cookies received in a \mailheader{Set-Cookie} header with a
 version cookie-attribute of 1) are treated according to the RFC 2965
-rules.  \class{DefaultCookiePolicy} also provides some parameters to
+rules.  However, if RFC 2965 handling is turned off or
+\member{rfc2109_as_netscape} is True, RFC 2109 cookies are
+'downgraded' by the \class{CookieJar} instance to Netscape cookies, by
+setting the \member{version} attribute of the \class{Cookie} instance
+to 0.  \class{DefaultCookiePolicy} also provides some parameters to
 allow some fine-tuning of policy.
 \end{classdesc}
 
@@ -493,6 +499,17 @@ receiving cookies.
 which are all initialised from the constructor arguments of the same
 name, and which may all be assigned to.
 
+\begin{memberdesc}{rfc2109_as_netscape}
+If true, request that the \class{CookieJar} instance downgrade RFC
+2109 cookies (ie. cookies received in a \mailheader{Set-Cookie} header
+with a version cookie-attribute of 1) to Netscape cookies by setting
+the version attribute of the \class{Cookie} instance to 0.  The
+default value is \constant{None}, in which case RFC 2109 cookies are
+downgraded if and only if RFC 2965 handling is turned off.  Therefore,
+RFC 2109 cookies are downgraded by default.
+\versionadded{2.5}
+\end{memberdesc}
+
 General strictness switches:
 
 \begin{memberdesc}{strict_domain}
@@ -567,9 +584,10 @@ Equivalent to \code{DomainStrictNoDots|DomainStrictNonDomain}.
 \class{Cookie} instances have Python attributes roughly corresponding
 to the standard cookie-attributes specified in the various cookie
 standards.  The correspondence is not one-to-one, because there are
-complicated rules for assigning default values, and because the
+complicated rules for assigning default values, because the
 \code{max-age} and \code{expires} cookie-attributes contain equivalent
-information.
+information, and because RFC 2109 cookies may be 'downgraded' by
+\module{cookielib} from version 1 to version 0 (Netscape) cookies.
 
 Assignment to these attributes should not be necessary other than in
 rare circumstances in a \class{CookiePolicy} method.  The class does
@@ -577,8 +595,10 @@ not enforce internal consistency, so you should know what you're
 doing if you do that.
 
 \begin{memberdesc}[Cookie]{version}
-Integer or \constant{None}.  Netscape cookies have version 0.  RFC
-2965 and RFC 2109 cookies have version 1.
+Integer or \constant{None}.  Netscape cookies have \member{version} 0.
+RFC 2965 and RFC 2109 cookies have a \code{version} cookie-attribute
+of 1.  However, note that \module{cookielib} may 'downgrade' RFC 2109
+cookies to Netscape cookies, in which case \member{version} is 0.
 \end{memberdesc}
 \begin{memberdesc}[Cookie]{name}
 Cookie name (a string).
@@ -610,6 +630,14 @@ or \constant{None}.
 \begin{memberdesc}[Cookie]{comment_url}
 URL linking to a comment from the server explaining the function of
 this cookie, or \constant{None}.
+\end{memberdesc}
+\begin{memberdesc}[Cookie]{rfc2109}
+True if this cookie was received as an RFC 2109 cookie (ie. the cookie
+arrived in a \mailheader{Set-Cookie} header, and the value of the
+Version cookie-attribute in that header was 1).  This attribute is
+provided because \module{cookielib} may 'downgrade' RFC 2109 cookies
+to Netscape cookies, in which case \member{version} is 0.
+\versionadded{2.5}
 \end{memberdesc}
 
 \begin{memberdesc}[Cookie]{port_specified}

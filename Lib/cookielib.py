@@ -460,10 +460,7 @@ def parse_ns_headers(ns_headers):
                 if lc in known_attrs:
                     k = lc
                 if k == "version":
-                    # This is an RFC 2109 cookie.  Will be treated as RFC 2965
-                    # cookie in rest of code.
-                    # Probably it should be parsed with split_header_words, but
-                    # that's too much hassle.
+                    # This is an RFC 2109 cookie.
                     version_set = True
                 if k == "expires":
                     # convert expires date to seconds since epoch
@@ -723,7 +720,9 @@ class Cookie:
                  discard,
                  comment,
                  comment_url,
-                 rest):
+                 rest,
+                 rfc2109=False,
+                 ):
 
         if version is not None: version = int(version)
         if expires is not None: expires = int(expires)
@@ -750,6 +749,7 @@ class Cookie:
         self.discard = discard
         self.comment = comment
         self.comment_url = comment_url
+        self.rfc2109 = rfc2109
 
         self._rest = copy.copy(rest)
 
@@ -787,6 +787,7 @@ class Cookie:
             attr = getattr(self, name)
             args.append("%s=%s" % (name, repr(attr)))
         args.append("rest=%s" % repr(self._rest))
+        args.append("rfc2109=%s" % repr(self.rfc2109))
         return "Cookie(%s)" % ", ".join(args)
 
 
@@ -836,6 +837,7 @@ class DefaultCookiePolicy(CookiePolicy):
     def __init__(self,
                  blocked_domains=None, allowed_domains=None,
                  netscape=True, rfc2965=False,
+                 rfc2109_as_netscape=None,
                  hide_cookie2=False,
                  strict_domain=False,
                  strict_rfc2965_unverifiable=True,
@@ -847,6 +849,7 @@ class DefaultCookiePolicy(CookiePolicy):
         """Constructor arguments should be passed as keyword arguments only."""
         self.netscape = netscape
         self.rfc2965 = rfc2965
+        self.rfc2109_as_netscape = rfc2109_as_netscape
         self.hide_cookie2 = hide_cookie2
         self.strict_domain = strict_domain
         self.strict_rfc2965_unverifiable = strict_rfc2965_unverifiable
@@ -1518,6 +1521,18 @@ class CookieJar:
             if cookie: cookies.append(cookie)
         return cookies
 
+    def _process_rfc2109_cookies(self, cookies):
+        rfc2109_as_ns = getattr(self._policy, 'rfc2109_as_netscape', None)
+        if rfc2109_as_ns is None:
+            rfc2109_as_ns = not self._policy.rfc2965
+        for cookie in cookies:
+            if cookie.version == 1:
+                cookie.rfc2109 = True
+                if rfc2109_as_ns: 
+                    # treat 2109 cookies as Netscape cookies rather than
+                    # as RFC2965 cookies
+                    cookie.version = 0
+
     def make_cookies(self, response, request):
         """Return sequence of Cookie objects extracted from response object."""
         # get cookie-attributes for RFC 2965 and Netscape protocols
@@ -1543,11 +1558,13 @@ class CookieJar:
 
         if ns_hdrs and netscape:
             try:
+                # RFC 2109 and Netscape cookies
                 ns_cookies = self._cookies_from_attrs_set(
                     parse_ns_headers(ns_hdrs), request)
             except:
                 reraise_unmasked_exceptions()
                 ns_cookies = []
+            self._process_rfc2109_cookies(ns_cookies)
 
             # Look for Netscape cookies (from Set-Cookie headers) that match
             # corresponding RFC 2965 cookies (from Set-Cookie2 headers).
