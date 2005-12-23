@@ -271,6 +271,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libgettext.tex \
 	lib/libbasehttp.tex \
 	lib/libcookie.tex \
+	lib/libcookielib.tex \
 	lib/libcopyreg.tex \
 	lib/libsymbol.tex \
 	lib/libbinhex.tex \
