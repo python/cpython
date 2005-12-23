@@ -314,6 +314,10 @@ Extension Modules
 Library
 -------
 
+- Patch #1117398: cookielib.LWPCookieJar and .MozillaCookieJar now raise
+  LoadError as documented, instead of IOError.  For compatibility,
+  LoadError subclasses IOError.
+
 - Added the hashlib module.  It provides secure hash functions for MD5 and
   SHA1, 224, 256, 384, and 512.  Note that recent developments make the
   historic MD5 and SHA1 unsuitable for cryptographic-strength applications.
