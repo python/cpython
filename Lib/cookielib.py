@@ -1682,7 +1682,8 @@ class CookieJar:
         return "<%s[%s]>" % (self.__class__, ", ".join(r))
 
 
-class LoadError(Exception): pass
+# derives from IOError for backwards-compatibility with Python 2.4.0
+class LoadError(IOError): pass
 
 class FileCookieJar(CookieJar):
     """CookieJar that can be loaded from and saved to a file."""
