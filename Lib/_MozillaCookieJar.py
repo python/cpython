@@ -2,8 +2,8 @@
 
 import re, time, logging
 
-from cookielib import (reraise_unmasked_exceptions, FileCookieJar, Cookie,
-     MISSING_FILENAME_TEXT)
+from cookielib import (reraise_unmasked_exceptions, FileCookieJar, LoadError,
+     Cookie, MISSING_FILENAME_TEXT)
 
 class MozillaCookieJar(FileCookieJar):
     """
@@ -50,7 +50,7 @@ class MozillaCookieJar(FileCookieJar):
         magic = f.readline()
         if not re.search(self.magic_re, magic):
             f.close()
-            raise IOError(
+            raise LoadError(
                 "%s does not look like a Netscape format cookies file" %
                 filename)
 
@@ -106,8 +106,8 @@ class MozillaCookieJar(FileCookieJar):
 
         except:
             reraise_unmasked_exceptions((IOError,))
-            raise IOError("invalid Netscape format file %s: %s" %
-                          (filename, line))
+            raise LoadError("invalid Netscape format file %s: %s" %
+                            (filename, line))
 
     def save(self, filename=None, ignore_discard=False, ignore_expires=False):
         if filename is None:
