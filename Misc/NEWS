@@ -53,6 +53,10 @@ Extension Modules
 Library
 -------
 
+- Patch #1117398: cookielib.LWPCookieJar and .MozillaCookieJar now raise
+  LoadError as documented, instead of IOError.  For compatibility,
+  LoadError subclasses IOError.
+
 - Bug #1365984: urllib now opens "data:" URLs again.
 
 - Patch #1314396: Prevent threading.Thread.join() from blocking if a previous

@@ -12,8 +12,8 @@ libwww-perl, I hope.
 """
 
 import time, re, logging
-from cookielib import (reraise_unmasked_exceptions, FileCookieJar, Cookie,
-     MISSING_FILENAME_TEXT, join_header_words, split_header_words,
+from cookielib import (reraise_unmasked_exceptions, FileCookieJar, LoadError,
+     Cookie, MISSING_FILENAME_TEXT, join_header_words, split_header_words,
      iso2time, time2isoz)
 
 def lwp_cookie_str(cookie):
@@ -93,7 +93,7 @@ class LWPCookieJar(FileCookieJar):
         magic = f.readline()
         if not re.search(self.magic_re, magic):
             msg = "%s does not seem to contain cookies" % filename
-            raise IOError(msg)
+            raise LoadError(msg)
 
         now = time.time()
 
@@ -161,4 +161,4 @@ class LWPCookieJar(FileCookieJar):
                     self.set_cookie(c)
         except:
             reraise_unmasked_exceptions((IOError,))
-            raise IOError("invalid Set-Cookie3 format file %s" % filename)
+            raise LoadError("invalid Set-Cookie3 format file %s" % filename)
