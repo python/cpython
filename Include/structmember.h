@@ -79,11 +79,11 @@ typedef struct PyMemberDef {
 
 
 /* Obsolete API, for binary backwards compatibility */
-PyAPI_FUNC(PyObject *) PyMember_Get(char *, struct memberlist *, char *);
-PyAPI_FUNC(int) PyMember_Set(char *, struct memberlist *, char *, PyObject *);
+PyAPI_FUNC(PyObject *) PyMember_Get(const char *, struct memberlist *, const char *);
+PyAPI_FUNC(int) PyMember_Set(char *, struct memberlist *, const char *, PyObject *);
 
 /* Current API, use this */
-PyAPI_FUNC(PyObject *) PyMember_GetOne(char *, struct PyMemberDef *);
+PyAPI_FUNC(PyObject *) PyMember_GetOne(const char *, struct PyMemberDef *);
 PyAPI_FUNC(int) PyMember_SetOne(char *, struct PyMemberDef *, PyObject *);
 
 
