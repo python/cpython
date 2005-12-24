@@ -455,7 +455,7 @@ static PyNumberMethods PyHKEY_NumberMethods =
 
 
 /* fwd declare __getattr__ */
-static PyObject *PyHKEY_getattr(PyObject *self, char *name);
+static PyObject *PyHKEY_getattr(PyObject *self, const char *name);
 
 /* The type itself */
 PyTypeObject PyHKEY_Type =
@@ -526,7 +526,7 @@ static struct PyMethodDef PyHKEY_methods[] = {
 };
 
 /*static*/ PyObject *
-PyHKEY_getattr(PyObject *self, char *name)
+PyHKEY_getattr(PyObject *self, const char *name)
 {
 	PyObject *res;
 

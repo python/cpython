@@ -29,7 +29,7 @@ listmembers(struct memberlist *mlist)
 }
 
 PyObject *
-PyMember_Get(char *addr, struct memberlist *mlist, char *name)
+PyMember_Get(const char *addr, struct memberlist *mlist, const char *name)
 {
 	struct memberlist *l;
 
@@ -51,7 +51,7 @@ PyMember_Get(char *addr, struct memberlist *mlist, char *name)
 }
 
 PyObject *
-PyMember_GetOne(char *addr, PyMemberDef *l)
+PyMember_GetOne(const char *addr, PyMemberDef *l)
 {
 	PyObject *v;
 	if ((l->flags & READ_RESTRICTED) &&
@@ -134,7 +134,7 @@ PyMember_GetOne(char *addr, PyMemberDef *l)
 }
 
 int
-PyMember_Set(char *addr, struct memberlist *mlist, char *name, PyObject *v)
+PyMember_Set(char *addr, struct memberlist *mlist, const char *name, PyObject *v)
 {
 	struct memberlist *l;
 
