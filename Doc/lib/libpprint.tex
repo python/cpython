@@ -197,10 +197,10 @@ affecting the presentation) as the keys; if an object needs to be
 presented which is already represented in \var{context}, the third
 return value should be true.  Recursive calls to the \method{format()}
 method should add additional entries for containers to this
-dictionary.  The fourth argument, \var{maxlevels}, gives the requested
+dictionary.  The third argument, \var{maxlevels}, gives the requested
 limit to recursion; this will be \code{0} if there is no requested
 limit.  This argument should be passed unmodified to recursive calls.
-The fourth argument, \var{level} gives the current level; recursive
+The fourth argument, \var{level}, gives the current level; recursive
 calls should be passed a value less than that of the current call.
 \versionadded{2.3}
 \end{methoddesc}
