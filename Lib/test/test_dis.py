@@ -121,7 +121,10 @@ class DisTests(unittest.TestCase):
         self.do_disassembly_test(bug708901, dis_bug708901)
 
     def test_bug_1333982(self):
-        self.do_disassembly_test(bug1333982, dis_bug1333982)
+        # This one is checking bytecodes generated for an `assert` statement,
+        # so fails if the tests are run with -O.  Skip this test then.
+        if __debug__:
+            self.do_disassembly_test(bug1333982, dis_bug1333982)
 
 def test_main():
     run_unittest(DisTests)
