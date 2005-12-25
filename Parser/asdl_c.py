@@ -439,7 +439,7 @@ class FreeVisitor(PickleVisitor):
         self.emit("", 0)
         self.emit("free(o);", 1)
         self.func_end()
-        
+
     def visitConstructor(self, cons, enum, name):
         self.emit("case %s_kind:" % cons.name, 1)
         for f in cons.fields:
@@ -487,76 +487,76 @@ class FreeVisitor(PickleVisitor):
         else:
             ctype = get_c_type(field.type)
             self.emit("free_%s((%s)%s);" % (field.type, ctype, value), depth)
-        
+
 
 class MarshalUtilVisitor(StaticVisitor):
 
     CODE = '''
 #define CHECKSIZE(BUF, OFF, MIN) { \\
-	int need = *(OFF) + MIN; \\
-	if (need >= PyString_GET_SIZE(*(BUF))) { \\
-		int newsize = PyString_GET_SIZE(*(BUF)) * 2; \\
-		if (newsize < need) \\
-			newsize = need; \\
-		if (_PyString_Resize((BUF), newsize) < 0) \\
-			return 0; \\
-	} \\
-} 
+        int need = *(OFF) + MIN; \\
+        if (need >= PyString_GET_SIZE(*(BUF))) { \\
+                int newsize = PyString_GET_SIZE(*(BUF)) * 2; \\
+                if (newsize < need) \\
+                        newsize = need; \\
+                if (_PyString_Resize((BUF), newsize) < 0) \\
+                        return 0; \\
+        } \\
+}
 
-static int 
+static int
 marshal_write_int(PyObject **buf, int *offset, int x)
 {
-	char *s;
+        char *s;
 
-	CHECKSIZE(buf, offset, 4)
-	s = PyString_AS_STRING(*buf) + (*offset);
-	s[0] = (x & 0xff);
-	s[1] = (x >> 8) & 0xff;
-	s[2] = (x >> 16) & 0xff;
-	s[3] = (x >> 24) & 0xff;
-	*offset += 4;
-	return 1;
+        CHECKSIZE(buf, offset, 4)
+        s = PyString_AS_STRING(*buf) + (*offset);
+        s[0] = (x & 0xff);
+        s[1] = (x >> 8) & 0xff;
+        s[2] = (x >> 16) & 0xff;
+        s[3] = (x >> 24) & 0xff;
+        *offset += 4;
+        return 1;
 }
 
-static int 
+static int
 marshal_write_bool(PyObject **buf, int *offset, bool b)
 {
-	if (b)
-		marshal_write_int(buf, offset, 1);
-	else
-		marshal_write_int(buf, offset, 0);
-	return 1;
+        if (b)
+                marshal_write_int(buf, offset, 1);
+        else
+                marshal_write_int(buf, offset, 0);
+        return 1;
 }
 
-static int 
+static int
 marshal_write_identifier(PyObject **buf, int *offset, identifier id)
 {
-	int l = PyString_GET_SIZE(id);
-	marshal_write_int(buf, offset, l);
-	CHECKSIZE(buf, offset, l);
-	memcpy(PyString_AS_STRING(*buf) + *offset,
-	       PyString_AS_STRING(id), l);
-	*offset += l;
-	return 1;
+        int l = PyString_GET_SIZE(id);
+        marshal_write_int(buf, offset, l);
+        CHECKSIZE(buf, offset, l);
+        memcpy(PyString_AS_STRING(*buf) + *offset,
+               PyString_AS_STRING(id), l);
+        *offset += l;
+        return 1;
 }
 
-static int 
+static int
 marshal_write_string(PyObject **buf, int *offset, string s)
 {
-	int len = PyString_GET_SIZE(s);
-	marshal_write_int(buf, offset, len);
-	CHECKSIZE(buf, offset, len);
-	memcpy(PyString_AS_STRING(*buf) + *offset,
-	       PyString_AS_STRING(s), len);
-	*offset += len;
-	return 1;
+        int len = PyString_GET_SIZE(s);
+        marshal_write_int(buf, offset, len);
+        CHECKSIZE(buf, offset, len);
+        memcpy(PyString_AS_STRING(*buf) + *offset,
+               PyString_AS_STRING(s), len);
+        *offset += len;
+        return 1;
 }
 
-static int 
+static int
 marshal_write_object(PyObject **buf, int *offset, object s)
 {
-	/* XXX */
-	return 0;
+        /* XXX */
+        return 0;
 }
 '''
 
@@ -575,7 +575,7 @@ class MarshalFunctionVisitor(PickleVisitor):
         self.emit("return 1;", 1)
         self.emit("}", 0)
         self.emit("", 0)
-    
+
     def visitSum(self, sum, name):
         self.func_begin(name, has_sequence(sum.types, False))
         simple = is_simple(sum)
@@ -594,7 +594,7 @@ class MarshalFunctionVisitor(PickleVisitor):
         for field in prod.fields:
             self.visitField(field, name, 1, 1)
         self.func_end()
-            
+
     def visitConstructor(self, cons, enum, name, simple):
         if simple:
             self.emit("case %s:" % cons.name, 1)

@@ -142,7 +142,7 @@ class ASDLParser(spark.GenericParser, object):
     def p_product(self, (_0, fields, _1)):
         " product ::= ( fields ) "
         # XXX can't I just construct things in the right order?
-        fields.reverse() 
+        fields.reverse()
         return Product(fields)
 
     def p_sum_0(self, (constructor,)):
@@ -164,7 +164,7 @@ class ASDLParser(spark.GenericParser, object):
     def p_constructor_1(self, (id, _0, fields, _1)):
         " constructor ::= Id ( fields ) "
         # XXX can't I just construct things in the right order?
-        fields.reverse() 
+        fields.reverse()
         return Constructor(id, fields)
 
     def p_fields_0(self, (field,)):
@@ -355,7 +355,7 @@ def check(mod):
             v.errors += 1
             uses = ", ".join(v.types[t])
             print "Undefined type %s, used in %s" % (t, uses)
-    
+
     return not v.errors
 
 def parse(file):
@@ -380,7 +380,7 @@ if __name__ == "__main__":
     else:
         testdir = "tests"
         files = glob.glob(testdir + "/*.asdl")
-    
+
     for file in files:
         print file
         mod = parse(file)

@@ -96,7 +96,7 @@ def _synthesize(browser, update_tryorder=1):
 if sys.platform[:3] == "win":
     def _isexecutable(cmd):
         cmd = cmd.lower()
-        if os.path.isfile(cmd) and (cmd.endswith(".exe") or 
+        if os.path.isfile(cmd) and (cmd.endswith(".exe") or
                                     cmd.endswith(".bat")):
             return True
         for ext in ".exe", ".bat":
@@ -134,7 +134,7 @@ class BaseBrowser(object):
     def __init__(self, name=""):
         self.name = name
         self.basename = name
-    
+
     def open(self, url, new=0, autoraise=1):
         raise NotImplementedError
 

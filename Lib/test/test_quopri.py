@@ -175,18 +175,18 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
             self.assert_(quopri.decodestring(e, header=True) == p)
 
     def test_scriptencode(self):
-       (p, e) = self.STRINGS[-1]
-       (cin, cout) = os.popen2("%s -mquopri" % sys.executable)
-       cin.write(p)
-       cin.close()
-       self.assert_(cout.read() == e)
+        (p, e) = self.STRINGS[-1]
+        (cin, cout) = os.popen2("%s -mquopri" % sys.executable)
+        cin.write(p)
+        cin.close()
+        self.assert_(cout.read() == e)
 
     def test_scriptdecode(self):
-       (p, e) = self.STRINGS[-1]
-       (cin, cout) = os.popen2("%s -mquopri -d" % sys.executable)
-       cin.write(e)
-       cin.close()
-       self.assert_(cout.read() == p)
+        (p, e) = self.STRINGS[-1]
+        (cin, cout) = os.popen2("%s -mquopri -d" % sys.executable)
+        cin.write(e)
+        cin.close()
+        self.assert_(cout.read() == p)
 
 def test_main():
     test_support.run_unittest(QuopriTestCase)

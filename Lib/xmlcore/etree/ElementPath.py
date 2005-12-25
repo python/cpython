@@ -196,4 +196,3 @@ def findtext(element, path, default=None):
 
 def findall(element, path):
     return _compile(path).findall(element)
-

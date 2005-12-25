@@ -295,8 +295,8 @@ class Codec(codecs.Codec):
     else:
         l.append('''\
         return codecs.charmap_decode(input,errors,decoding_map)''')
-         
-    l.append('''    
+
+    l.append('''
 class StreamWriter(Codec,codecs.StreamWriter):
     pass
 
@@ -330,7 +330,7 @@ def getregentry():
 
     # Final new-line
     l.append('\n')
-    
+
     return '\n'.join(l)
 
 def pymap(name,map,pyfile,comments=1):

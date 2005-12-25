@@ -185,7 +185,7 @@ def test_poll3():
     if x != 5:
         print 'Overflow must have occurred'
     print 'Poll test 3 complete'
-    
+
 
 test_poll1()
 test_poll2()

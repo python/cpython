@@ -218,10 +218,10 @@ class FunctionGenerator(BaseFunctionGenerator):
 
     def beginallowthreads(self):
         pass
-        
+
     def endallowthreads(self):
         pass
-        
+
     def callit(self):
         args = ""
         s = "%s%s(" % (self.getrvforcallit(), self.callname)

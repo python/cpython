@@ -49,7 +49,7 @@ class ExceptionTestCase(unittest.TestCase):
             hit_except = True
         finally:
             hit_finally = True
-            
+
         self.assertTrue(hit_except)
         self.assertTrue(hit_finally)
 
@@ -66,7 +66,7 @@ class ExceptionTestCase(unittest.TestCase):
 
         self.assertFalse(hit_except)
         self.assertTrue(hit_finally)
-        
+
     def test_try_except(self):
         hit_except = False
 
@@ -139,7 +139,7 @@ class ExceptionTestCase(unittest.TestCase):
                 hit_inner_finally = True
         finally:
             hit_finally = True
-            
+
         self.assertTrue(hit_inner_except)
         self.assertTrue(hit_inner_finally)
         self.assertTrue(hit_finally)
