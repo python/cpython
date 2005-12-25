@@ -2146,7 +2146,7 @@ expat_unknown_encoding_handler(XMLParserObject *self, const XML_Char *name,
     for (i = 0; i < 256; i++)
         s[i] = i;
     
-    u = PyUnicode_Decode(s, 256, name, "replace");
+    u = PyUnicode_Decode((char*) s, 256, name, "replace");
     if (!u)
         return XML_STATUS_ERROR;
 
