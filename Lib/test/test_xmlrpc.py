@@ -78,7 +78,7 @@ class XMLRPCTestCase(unittest.TestCase):
 
     def test_bug_1164912 (self):
         d = xmlrpclib.DateTime()
-        ((new_d,), dummy) = xmlrpclib.loads(xmlrpclib.dumps((d,), 
+        ((new_d,), dummy) = xmlrpclib.loads(xmlrpclib.dumps((d,),
                                             methodresponse=True))
         self.assert_(isinstance(new_d.value, str))
 

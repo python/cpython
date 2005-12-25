@@ -1528,7 +1528,7 @@ class CookieJar:
         for cookie in cookies:
             if cookie.version == 1:
                 cookie.rfc2109 = True
-                if rfc2109_as_ns: 
+                if rfc2109_as_ns:
                     # treat 2109 cookies as Netscape cookies rather than
                     # as RFC2965 cookies
                     cookie.version = 0

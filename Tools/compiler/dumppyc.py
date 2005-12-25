@@ -43,5 +43,5 @@ if __name__ == "__main__":
         buf = open(filename).read()
         co = compile(buf, filename, "exec")
         walk(co)
-    else:   
+    else:
         load(filename, codename)

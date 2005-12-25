@@ -111,10 +111,10 @@ class VarVarHeapOutputBufferType(VarHeapOutputBufferType):
 
     def passOutput(self, name):
         return "%s__out__, %s__len__, &%s__len__" % (name, name, name)
-        
+
 class MallocHeapOutputBufferType(HeapOutputBufferType):
     """Output buffer allocated by the called function -- passed as (&buffer, &size).
-    
+
     Instantiate without parameters.
     Call from Python without parameters.
     """
@@ -124,7 +124,7 @@ class MallocHeapOutputBufferType(HeapOutputBufferType):
 
     def getAuxDeclarations(self, name):
         return []
-        
+
     def passOutput(self, name):
         return "&%s__out__, &%s__len__" % (name, name)
 
@@ -133,10 +133,9 @@ class MallocHeapOutputBufferType(HeapOutputBufferType):
 
     def getargsArgs(self, name):
         return None
-        
+
     def mkvalueFormat(self):
         return "z#"
-        
+
     def cleanup(self, name):
         Output("if( %s__out__ ) free(%s__out__);", name, name)
-

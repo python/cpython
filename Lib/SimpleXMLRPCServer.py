@@ -253,10 +253,10 @@ class SimpleXMLRPCDispatcher:
                 response = self._dispatch(method, params)
             # wrap response in a singleton tuple
             response = (response,)
-            response = xmlrpclib.dumps(response, methodresponse=1, 
+            response = xmlrpclib.dumps(response, methodresponse=1,
                                        allow_none=self.allow_none, encoding=self.encoding)
         except Fault, fault:
-            response = xmlrpclib.dumps(fault, allow_none=self.allow_none, 
+            response = xmlrpclib.dumps(fault, allow_none=self.allow_none,
                                        encoding=self.encoding)
         except:
             # report exception back to server
@@ -427,8 +427,8 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """
 
         try:
-            # Get arguments by reading body of request. 
-            # We read this in chunks to avoid straining 
+            # Get arguments by reading body of request.
+            # We read this in chunks to avoid straining
             # socket.read(); around the 10 or 15Mb mark, some platforms
             # begin to have problems (bug #792570).
             max_chunk_size = 10*1024*1024
@@ -490,8 +490,8 @@ class SimpleXMLRPCServer(SocketServer.TCPServer,
         SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding)
         SocketServer.TCPServer.__init__(self, addr, requestHandler)
 
-        # [Bug #1222790] If possible, set close-on-exec flag; if a 
-        # method spawns a subprocess, the subprocess shouldn't have 
+        # [Bug #1222790] If possible, set close-on-exec flag; if a
+        # method spawns a subprocess, the subprocess shouldn't have
         # the listening socket open.
         if hasattr(fcntl, 'FD_CLOEXEC'):
             flags = fcntl.fcntl(self.fileno(), fcntl.F_GETFD)
