@@ -1,14 +1,12 @@
 """Convert a NT pathname to a file URL and vice versa."""
 
 def url2pathname(url):
-    r"""Convert a URL to a DOS path.
-
-            ///C|/foo/bar/spam.foo
-
-                    becomes
-
-            C:\foo\bar\spam.foo
-    """
+    """OS-specific conversion from a relative URL of the 'file' scheme
+    to a file system path; not recommended for general use."""
+    # e.g.
+    # ///C|/foo/bar/spam.foo
+    # becomes
+    # C:\foo\bar\spam.foo
     import string, urllib
     # Windows itself uses ":" even in URLs.
     url = url.replace(':', '|')
@@ -35,15 +33,12 @@ def url2pathname(url):
     return path
 
 def pathname2url(p):
-    r"""Convert a DOS path name to a file url.
-
-            C:\foo\bar\spam.foo
-
-                    becomes
-
-            ///C|/foo/bar/spam.foo
-    """
-
+    """OS-specific conversion from a file system path to a relative URL
+    of the 'file' scheme; not recommended for general use."""
+    # e.g.
+    # C:\foo\bar\spam.foo
+    # becomes
+    # ///C|/foo/bar/spam.foo
     import urllib
     if not ':' in p:
         # No drive specifier, just convert slashes and quote the name
