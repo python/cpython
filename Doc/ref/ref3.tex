@@ -24,7 +24,8 @@ for example, it \emph{is} now possible in some cases to change an
 object's type, under certain controlled conditions.  Until this manual
 undergoes extensive revision, it must now be taken as authoritative
 only regarding ``classic classes'', that are still the default, for
-compatibility purposes, in Python 2.2 and 2.3.}
+compatibility purposes, in Python 2.2 and 2.3.  For more information,
+see \url{http://www.python.org/doc/newstyle.html}.}
 An object's type determines the operations that the object
 supports (e.g., ``does it have a length?'') and also defines the
 possible values for objects of that type.  The
@@ -1036,13 +1037,38 @@ by the built-in \function{classmethod()} constructor.
 
 Classes and instances come in two flavours: old-style or classic, and new-style.  
 
-Old-style classes were the only flavour of class available before Python 2.1.  While they supported multiple inheritance, the rules for resolving names were chosen for ease of implementation.  These rules turn out to make multiple inheritance hard to use in certain situations.
+Up to Python 2.1, old-style classes were the only flavour available to the
+user.  The concept of (old-style) class is unrelated to the concept of type: if
+\var{x} is an instance of an old-style class, then \code{x.__class__}
+designates the class of \var{x}, but \code{type(x)} is always \code{<type
+'instance'>}.  This reflects the fact that all old-style instances,
+independently of their class, are implemented with a single built-in type,
+called \code{instance}.
 
-New-style classes were introduced in Python 2.1, and change the method resolution order to make multiple inheritance more usable.  
+New-style classes were introduced in Python 2.2 to unify classes and types.  A
+new-style class neither more nor less than a user-defined type.  If \var{x} is
+an instance of a new-style class, then \code{type(x)} is the same as
+\code{x.__class__}.
+
+The major motivation for introducing new-style classes is to provide a unified
+object model with a full meta-model.  It also has a number of immediate
+benefits, like the ability to subclass most built-in types, or the introduction
+of "descriptors", which enable computed properties.
+
+For compatibility reasons, classes are still old-style by default.  New-style
+classes are created by specifying another new-style class (i.e.\ a type) as a
+parent class, or the "top-level type" \class{object} if no other parent is
+needed.  The behaviour of new-style classes differs from that of old-style
+classes in a number of important details in addition to what \function{type}
+returns.  Some of these changes are fundamental to the new object model, like
+the way special methods are invoked.  Others are "fixes" that could not be
+implemented before for compatibility concerns, like the method resolution order
+in case of multiple inheritance.
+
+This manuel is not up-to-date with respect to new-style classes.  For now,
+please see \url{http://www.python.org/doc/newstyle.html} for more information.
 
 The plan is to eventually drop old-style classes, leaving only the semantics of new-style classes.  This change will probably only be feasible in Python 3.0.
-
-
 
 %=========================================================================
 \section{Special method names\label{specialnames}}
@@ -1054,7 +1080,9 @@ This is Python's approach to \dfn{operator overloading}, allowing
 classes to define their own behavior with respect to language
 operators.  For instance, if a class defines
 a method named \method{__getitem__()}, and \code{x} is an instance of
-this class, then \code{x[i]} is equivalent to
+this class, then \code{x[i]} is equivalent\footnote{This, and other
+statements, are only roughly true for instances of new-style
+classes.} to
 \code{x.__getitem__(i)}.  Except where mentioned, attempts to execute
 an operation raise an exception when no appropriate method is defined.
 \withsubitem{(mapping object method)}{\ttindex{__getitem__()}}
