@@ -1261,17 +1261,17 @@ that do not apply to immutable instances of \class{frozenset}:
 \begin{tableiii}{c|c|l}{code}{Operation}{Equivalent}{Result}
   \lineiii{\var{s}.update(\var{t})}
          {\var{s} |= \var{t}}
-         {return set \var{s} with elements added from \var{t}}
+         {update set \var{s}, adding elements from \var{t}}
   \lineiii{\var{s}.intersection_update(\var{t})}
          {\var{s} \&= \var{t}}
-         {return set \var{s} keeping only elements also found in \var{t}}
+         {update set \var{s}, keeping only elements found in both \var{s} and \var{t}}
   \lineiii{\var{s}.difference_update(\var{t})}
          {\var{s} -= \var{t}}
-         {return set \var{s} after removing elements found in \var{t}}
+         {update set \var{s}, removing elements found in \var{t}}
   \lineiii{\var{s}.symmetric_difference_update(\var{t})}
          {\var{s} \textasciicircum= \var{t}}
-         {return set \var{s} with elements from \var{s} or \var{t}
-          but not both}
+         {update set \var{s}, keeping only elements found in either \var{s} or \var{t}
+          but not in both}
 
   \hline
   \lineiii{\var{s}.add(\var{x})}{}
