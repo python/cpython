@@ -50,8 +50,13 @@ elif os.name == 'riscos':
     from rourl2path import url2pathname, pathname2url
 else:
     def url2pathname(pathname):
+        """OS-specific conversion from a relative URL of the 'file' scheme
+        to a file system path; not recommended for general use."""
         return unquote(pathname)
+
     def pathname2url(pathname):
+        """OS-specific conversion from a file system path to a relative URL
+        of the 'file' scheme; not recommended for general use."""
         return quote(pathname)
 
 # This really consists of two pieces:
