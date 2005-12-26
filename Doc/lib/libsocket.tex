@@ -557,6 +557,8 @@ the data received.  The maximum amount of data to be received
 at once is specified by \var{bufsize}.  See the \UNIX{} manual page
 \manpage{recv}{2} for the meaning of the optional argument
 \var{flags}; it defaults to zero.
+\note{For best match with hardware and network realities, the value of 
+\var{bufsize} should be a relatively small power of 2, for example, 4096.}
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{recvfrom}{bufsize\optional{, flags}}
