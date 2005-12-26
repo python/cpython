@@ -372,6 +372,10 @@ section~\ref{pickle-protocol} for details)
 Attempts to pickle unpicklable objects will raise the
 \exception{PicklingError} exception; when this happens, an unspecified
 number of bytes may have already been written to the underlying file.
+Trying to pickle a highly recursive data structure may exceed the
+maximum recursion depth, a \exception{RuntimeError} will be raised
+in this case. You can carefully raise this limit with 
+\function{sys.setrecursionlimit()}.
 
 Note that functions (built-in and user-defined) are pickled by ``fully
 qualified'' name reference, not by value.  This means that only the
