@@ -11,7 +11,8 @@ __all__ = ["url2pathname","pathname2url"]
 __slash_dot = string.maketrans("/.", "./")
 
 def url2pathname(url):
-    "Convert URL to a RISC OS path."
+    """OS-specific conversion from a relative URL of the 'file' scheme
+    to a file system path; not recommended for general use."""
     tp = urllib.splittype(url)[0]
     if tp and tp <> 'file':
         raise RuntimeError, 'Cannot convert non-local URL to pathname'
@@ -46,7 +47,8 @@ def url2pathname(url):
     return '.'.join(components)
 
 def pathname2url(pathname):
-    "Convert a RISC OS path name to a file url."
+    """OS-specific conversion from a file system path to a relative URL
+    of the 'file' scheme; not recommended for general use."""
     return urllib.quote('///' + pathname.translate(__slash_dot), "/$:")
 
 def test():
