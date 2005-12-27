@@ -42,7 +42,7 @@ This module offers the following functions:
  \var{key} is the predefined handle to connect to.
 
  The return value is the handle of the opened key.
- If the function fails, an \exception{WindowsError} exception is 
+ If the function fails, an \exception{EnvironmentError} exception is 
  raised.
 \end{funcdesc}
 
@@ -63,7 +63,7 @@ This module offers the following functions:
  If the key already exists, this function opens the existing key
 
  The return value is the handle of the opened key.
- If the function fails, an \exception{WindowsError} exception is 
+ If the function fails, an \exception{EnvironmentError} exception is 
  raised.
 \end{funcdesc}
 
@@ -80,7 +80,7 @@ This module offers the following functions:
  \emph{This method can not delete keys with subkeys.}
 
  If the method succeeds, the entire key, including all of its values,
- is removed.  If the method fails, an \exception{WindowsError} 
+ is removed.  If the method fails, an \exception{EnvironmentError} 
  exception is raised.
 \end{funcdesc}
 
@@ -106,7 +106,7 @@ This module offers the following functions:
 
  The function retrieves the name of one subkey each time it 
  is called.  It is typically called repeatedly until an 
- \exception{WindowsError} exception 
+ \exception{EnvironmentError} exception 
  is raised, indicating, no more values are available.
 \end{funcdesc}
 
@@ -122,7 +122,7 @@ This module offers the following functions:
  
  The function retrieves the name of one subkey each time it is 
  called. It is typically called repeatedly, until an 
- \exception{WindowsError} exception is raised, indicating 
+ \exception{EnvironmentError} exception is raised, indicating 
  no more values.
  
  The result is a tuple of 3 items:
@@ -201,7 +201,7 @@ This module offers the following functions:
  
  The result is a new handle to the specified key
  
- If the function fails, \exception{WindowsError} is raised.
+ If the function fails, \exception{EnvironmentError} is raised.
 \end{funcdesc}
 
 
