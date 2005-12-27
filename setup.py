@@ -148,17 +148,18 @@ class PyBuildExt(build_ext):
                 self.extensions.remove(ext)
 
         if platform != 'mac':
-            # Parse Modules/Setup to figure out which modules are turned
-            # on in the file.
-            input = text_file.TextFile('Modules/Setup', join_lines=1)
+            # Parse Modules/Setup and Modules/Setup.local to figure out which
+            # modules are turned on in the file.
             remove_modules = []
-            while 1:
-                line = input.readline()
-                if not line: break
-                line = line.split()
-                remove_modules.append( line[0] )
-            input.close()
-
+            for filename in ('Modules/Setup', 'Modules/Setup.local'):
+                input = text_file.TextFile(filename, join_lines=1)
+                while 1:
+                    line = input.readline()
+                    if not line: break
+                    line = line.split()
+                    remove_modules.append(line[0])
+                input.close()
+    
             for ext in self.extensions[:]:
                 if ext.name in remove_modules:
                     self.extensions.remove(ext)
