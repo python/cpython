@@ -12,6 +12,9 @@ What's New in Python 2.4.3c1?
 Core and builtins
 -----------------
 
+- Bug #959576: The pwd module is now builtin. This allows Python to be
+  built on UNIX platforms without $HOME set.
+
 - Bug #1379994: Builtin unicode_escape and raw_unicode_escape codec
   now encodes backslash correctly.
 

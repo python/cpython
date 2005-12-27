@@ -111,6 +111,8 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 posix posixmodule.c		# posix (UNIX) system calls
 errno errnomodule.c		# posix (UNIX) errno values
+pwd pwdmodule.c			# this is needed to find out the user's home dir
+				# if $HOME is not set
 _sre _sre.c			# Fredrik Lundh's new regular expressions
 _codecs _codecsmodule.c		# access to the builtin codecs and codec registry
 
@@ -186,7 +188,6 @@ GLHACK=-Dclear=__GLclear
 # supported...)
 
 #fcntl fcntlmodule.c	# fcntl(2) and ioctl(2)
-#pwd pwdmodule.c		# pwd(3) 
 #grp grpmodule.c		# grp(3)
 #select selectmodule.c	# select(2); not on ancient System V
 
