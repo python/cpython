@@ -738,6 +738,8 @@ Stonecutters Seafood and Chop House, Lemont, IL, 12/19/02, Week Back
 47483648;43.0;170;abc;def
 '''
 
+    sample5 = "aaa\tbbb\r\nAAA\t\r\nBBB\t\r\n"
+
     def test_has_header(self):
         sniffer = csv.Sniffer()
         self.assertEqual(sniffer.has_header(self.sample1), False)
@@ -765,6 +767,8 @@ Stonecutters Seafood and Chop House, Lemont, IL, 12/19/02, Week Back
         self.assertEqual(dialect.delimiter, "/")
         dialect = sniffer.sniff(self.sample4)
         self.assertEqual(dialect.delimiter, ";")
+        dialect = sniffer.sniff(self.sample5)
+        self.assertEqual(dialect.delimiter, "\t")
 
 if not hasattr(sys, "gettotalrefcount"):
     if test_support.verbose: print "*** skipping leakage tests ***"
