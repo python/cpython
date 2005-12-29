@@ -1288,12 +1288,14 @@ static int
 mro_internal(PyTypeObject *type)
 {
 	PyObject *mro, *result, *tuple;
+	int checkit = 0;
 
 	if (type->ob_type == &PyType_Type) {
 		result = mro_implementation(type);
 	}
 	else {
 		static PyObject *mro_str;
+		checkit = 1;
 		mro = lookup_method((PyObject *)type, "mro", &mro_str);
 		if (mro == NULL)
 			return -1;
@@ -1304,6 +1306,37 @@ mro_internal(PyTypeObject *type)
 		return -1;
 	tuple = PySequence_Tuple(result);
 	Py_DECREF(result);
+	if (tuple == NULL)
+		return -1;
+	if (checkit) {
+		int i, len;
+		PyObject *cls;
+		PyTypeObject *solid;
+
+		solid = solid_base(type);
+
+		len = PyTuple_GET_SIZE(tuple);
+
+		for (i = 0; i < len; i++) {
+			PyTypeObject *t;
+			cls = PyTuple_GET_ITEM(tuple, i);
+			if (PyClass_Check(cls)) 
+				continue;
+			else if (!PyType_Check(cls)) {
+				PyErr_Format(PyExc_TypeError,
+			     "mro() returned a non-class ('%.500s')",
+					     cls->ob_type->tp_name);
+				return -1;
+			}
+			t = (PyTypeObject*)cls;
+			if (!PyType_IsSubtype(solid, solid_base(t))) {
+				PyErr_Format(PyExc_TypeError,
+		     "mro() returned base with unsuitable layout ('%.500s')",
+					     t->tp_name);
+				return -1;
+			}
+		}
+	}
 	type->tp_mro = tuple;
 	return 0;
 }

@@ -1635,6 +1635,37 @@ def altmro():
     vereq(X.__mro__, (object, A, C, B, D, X))
     vereq(X().f(), "A")
 
+    try:
+        class X(object):
+            class __metaclass__(type):
+                def mro(self):
+                    return [self, dict, object]
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "devious mro() return not caught"
+
+    try:
+        class X(object):
+            class __metaclass__(type):
+                def mro(self):
+                    return [1]
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "non-class mro() return not caught"
+
+    try:
+        class X(object):
+            class __metaclass__(type):
+                def mro(self):
+                    return 1
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "non-sequence mro() return not caught"
+        
+
 def overloading():
     if verbose: print "Testing operator overloading..."
 
