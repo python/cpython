@@ -2773,7 +2773,7 @@ parsenumber(const char *s)
 	if (imflag) {
 		c.real = 0.;
 		PyFPE_START_PROTECT("atof", return 0)
-		c.imag = atof(s);
+		c.imag = PyOS_ascii_atof(s);
 		PyFPE_END_PROTECT(c)
 		return PyComplex_FromCComplex(c);
 	}
@@ -2781,7 +2781,7 @@ parsenumber(const char *s)
 #endif
 	{
 		PyFPE_START_PROTECT("atof", return 0)
-		dx = atof(s);
+		dx = PyOS_ascii_atof(s);
 		PyFPE_END_PROTECT(dx)
 		return PyFloat_FromDouble(dx);
 	}
