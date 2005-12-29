@@ -237,6 +237,108 @@ sequence \var{v}.
 \end{funcdesc}
 
 
+Many operations have an ``in-place'' version.  The following functions
+provide a more primitive access to in-place operators than the usual
+syntax does; for example, the statement \code{x += y} is equivalent to
+\code{x = operator.iadd(x, y)}.  Another way to put it is to say that
+\code{z = operator.iadd(x, y)} is equivalent to the compound statement
+\code{z = x; z += y}.
+
+\begin{funcdesc}{iadd}{a, b}
+\funcline{__iadd__}{a, b}
+\code{a = iadd(a, b)} is equivalent to \code{a += b}.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{iand}{a, b}
+\funcline{__iand__}{a, b}
+\code{a = iand(a, b)} is equivalent to \code{a \&= b}.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{iconcat}{a, b}
+\funcline{__iconcat__}{a, b}
+\code{a = iconcat(a, b)} is equivalent to \code{a += b} for \var{a}
+and \var{b} sequences.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{idiv}{a, b}
+\funcline{__idiv__}{a, b}
+\code{a = idiv(a, b)} is equivalent to \code{a /= b} when
+\code{__future__.division} is not in effect.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{ifloordiv}{a, b}
+\funcline{__ifloordiv__}{a, b}
+\code{a = ifloordiv(a, b)} is equivalent to \code{a //= b}.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{ilshift}{a, b}
+\funcline{__ilshift__}{a, b}
+\code{a = ilshift(a, b)} is equivalent to \code{a <}\code{<= b}.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{imod}{a, b}
+\funcline{__imod__}{a, b}
+\code{a = imod(a, b)} is equivalent to \code{a \%= b}.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{imul}{a, b}
+\funcline{__imul__}{a, b}
+\code{a = imul(a, b)} is equivalent to \code{a *= b}.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{ior}{a, b}
+\funcline{__ior__}{a, b}
+\code{a = ior(a, b)} is equivalent to \code{a |= b}.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{ipow}{a, b}
+\funcline{__ipow__}{a, b}
+\code{a = ipow(a, b)} is equivalent to \code{a **= b}.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{irepeat}{a, b}
+\funcline{__irepeat__}{a, b}
+\code{a = irepeat(a, b)} is equivalent to \code{a *= b} where
+\var{a} is a sequence and \var{b} is an integer.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{irshift}{a, b}
+\funcline{__irshift__}{a, b}
+\code{a = irshift(a, b)} is equivalent to \code{a >}\code{>= b}.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{isub}{a, b}
+\funcline{__isub__}{a, b}
+\code{a = isub(a, b)} is equivalent to \code{a -= b}.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{itruediv}{a, b}
+\funcline{__itruediv__}{a, b}
+\code{a = itruediv(a, b)} is equivalent to \code{a /= b} when
+\code{__future__.division} is in effect.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{ixor}{a, b}
+\funcline{__ixor__}{a, b}
+\code{a = ixor(a, b)} is equivalent to \code{a \textasciicircum= b}.
+\versionadded{2.5}
+\end{funcdesc}
+
+
 The \module{operator} module also defines a few predicates to test the
 type of objects.  \note{Be careful not to misinterpret the
 results of these functions; only \function{isCallable()} has any
