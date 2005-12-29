@@ -75,8 +75,8 @@ information.
   retrieved by calling the reference object if the referent is still
   alive; if the referent is no longer alive, calling the reference
   object will cause \constant{None} to be returned.  If \var{callback} is
-  provided and not \constant{None},
-  it will be called when the object is about to be
+  provided and not \constant{None}, and the returned weakref object is
+  still alive, the callback will be called when the object is about to be
   finalized; the weak reference object will be passed as the only
   parameter to the callback; the referent will no longer be available.
 
