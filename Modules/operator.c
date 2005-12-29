@@ -80,9 +80,23 @@ spami(op_not_          , PyObject_Not)
 spam2(op_and_          , PyNumber_And)
 spam2(op_xor           , PyNumber_Xor)
 spam2(op_or_           , PyNumber_Or)
+spam2(op_iadd          , PyNumber_InPlaceAdd)
+spam2(op_isub          , PyNumber_InPlaceSubtract)
+spam2(op_imul          , PyNumber_InPlaceMultiply)
+spam2(op_idiv          , PyNumber_InPlaceDivide)
+spam2(op_ifloordiv     , PyNumber_InPlaceFloorDivide)
+spam2(op_itruediv      , PyNumber_InPlaceTrueDivide)
+spam2(op_imod          , PyNumber_InPlaceRemainder)
+spam2(op_ilshift       , PyNumber_InPlaceLshift)
+spam2(op_irshift       , PyNumber_InPlaceRshift)
+spam2(op_iand          , PyNumber_InPlaceAnd)
+spam2(op_ixor          , PyNumber_InPlaceXor)
+spam2(op_ior           , PyNumber_InPlaceOr)
 spami(isSequenceType   , PySequence_Check)
 spam2(op_concat        , PySequence_Concat)
 spamoi(op_repeat       , PySequence_Repeat)
+spam2(op_iconcat       , PySequence_InPlaceConcat)
+spamoi(op_irepeat      , PySequence_InPlaceRepeat)
 spami2b(op_contains     , PySequence_Contains)
 spami2b(sequenceIncludes, PySequence_Contains)
 spami2(indexOf         , PySequence_Index)
@@ -104,6 +118,15 @@ op_pow(PyObject *s, PyObject *a)
 	PyObject *a1, *a2;
 	if (PyArg_UnpackTuple(a,"pow", 2, 2, &a1, &a2))
 		return PyNumber_Power(a1, a2, Py_None);
+	return NULL;
+}
+
+static PyObject*
+op_ipow(PyObject *s, PyObject *a)
+{
+	PyObject *a1, *a2;
+	if (PyArg_UnpackTuple(a,"ipow", 2, 2, &a1, &a2))
+		return PyNumber_InPlacePower(a1, a2, Py_None);
 	return NULL;
 }
 
@@ -224,17 +247,34 @@ spam2o(not_,__not__, "not_(a) -- Same as not a.")
 spam2(and_,__and__, "and_(a, b) -- Same as a & b.")
 spam2(xor,__xor__, "xor(a, b) -- Same as a ^ b.")
 spam2(or_,__or__, "or_(a, b) -- Same as a | b.")
+spam2(iadd,__iadd__, "iadd(a, b) -- Same as a += b.")
+spam2(isub,__isub__, "isub(a, b) -- Same as a -= b.")
+spam2(imul,__imul__, "imul(a, b) -- Same as a *= b.")
+spam2(idiv,__idiv__, "idiv(a, b) -- Same as a /= b when __future__.division is not in effect.")
+spam2(ifloordiv,__ifloordiv__, "ifloordiv(a, b) -- Same as a //= b.")
+spam2(itruediv,__itruediv__, "itruediv(a, b) -- Same as a /= b when __future__.division is in effect.")
+spam2(imod,__imod__, "imod(a, b) -- Same as a %= b.")
+spam2(ilshift,__ilshift__, "ilshift(a, b) -- Same as a <<= b.")
+spam2(irshift,__irshift__, "irshift(a, b) -- Same as a >>= b.")
+spam2(iand,__iand__, "iand(a, b) -- Same as a &= b.")
+spam2(ixor,__ixor__, "ixor(a, b) -- Same as a ^= b.")
+spam2(ior,__ior__, "ior(a, b) -- Same as a |= b.")
 spam2(concat,__concat__,
  "concat(a, b) -- Same as a + b, for a and b sequences.")
 spam2(repeat,__repeat__,
  "repeat(a, b) -- Return a * b, where a is a sequence, and b is an integer.")
+spam2(iconcat,__iconcat__,
+ "iconcat(a, b) -- Same as a += b, for a and b sequences.")
+spam2(irepeat,__irepeat__,
+ "irepeat(a, b) -- Same as a *= b, where a is a sequence, and b is an integer.")
 spam2(getitem,__getitem__,
  "getitem(a, b) -- Same as a[b].")
 spam2(setitem,__setitem__,
  "setitem(a, b, c) -- Same as a[b] = c.")
 spam2(delitem,__delitem__,
  "delitem(a, b) -- Same as del a[b].")
-spam2(pow,__pow__, "pow(a, b) -- Same as a**b.")
+spam2(pow,__pow__, "pow(a, b) -- Same as a ** b.")
+spam2(ipow,__ipow__, "ipow(a, b) -- Same as a **= b.")
 spam2(getslice,__getslice__,
  "getslice(a, b, c) -- Same as a[b:c].")
 spam2(setslice,__setslice__,
