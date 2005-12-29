@@ -97,6 +97,18 @@ class _LocaleTests(unittest.TestCase):
                                                 loc, set_locale))
 
 
+    def test_float_parsing(self):
+        # Bug #1391872: Test whether float parsing is okay on European
+        # locales.
+        for loc in candidate_locales:
+            try:
+                setlocale(LC_NUMERIC, loc)
+            except Error:
+                continue
+            self.assertEquals(int(eval('3.14') * 100), 314)
+            self.assertEquals(int(float('3.14') * 100), 314)
+
+
 
 def test_main():
     run_unittest(_LocaleTests)
