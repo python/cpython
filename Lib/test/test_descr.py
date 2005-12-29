@@ -3990,6 +3990,77 @@ def methodwrapper():
     verify(l.__add__.__objclass__ is list)
     vereq(l.__add__.__doc__, list.__add__.__doc__)
 
+def notimplemented():
+    # all binary methods should be able to return a NotImplemented
+    if verbose:
+        print "Testing NotImplemented..."
+
+    import sys
+    import types
+    import operator
+
+    def specialmethod(self, other):
+        return NotImplemented
+
+    def check(expr, x, y):
+        try:
+            exec expr in {'x': x, 'y': y, 'operator': operator}
+        except TypeError:
+            pass
+        else:
+            raise TestFailed("no TypeError from %r" % (expr,))
+
+    N1 = sys.maxint + 1L    # might trigger OverflowErrors instead of TypeErrors
+    N2 = sys.maxint         # if sizeof(int) < sizeof(long), might trigger
+                            #   ValueErrors instead of TypeErrors
+    for metaclass in [type, types.ClassType]:
+        for name, expr, iexpr in [
+                ('__add__',      'x + y',                   'x += y'),
+                ('__sub__',      'x - y',                   'x -= y'),
+                ('__mul__',      'x * y',                   'x *= y'),
+                ('__truediv__',  'operator.truediv(x, y)',  None),
+                ('__floordiv__', 'operator.floordiv(x, y)', None),
+                ('__div__',      'x / y',                   'x /= y'),
+                ('__mod__',      'x % y',                   'x %= y'),
+                ('__divmod__',   'divmod(x, y)',            None),
+                ('__pow__',      'x ** y',                  'x **= y'),
+                ('__lshift__',   'x << y',                  'x <<= y'),
+                ('__rshift__',   'x >> y',                  'x >>= y'),
+                ('__and__',      'x & y',                   'x &= y'),
+                ('__or__',       'x | y',                   'x |= y'),
+                ('__xor__',      'x ^ y',                   'x ^= y'),
+                ('__coerce__',   'coerce(x, y)',            None)]:
+            if name == '__coerce__':
+                rname = name
+            else:
+                rname = '__r' + name[2:]
+            A = metaclass('A', (), {name: specialmethod})
+            B = metaclass('B', (), {rname: specialmethod})
+            a = A()
+            b = B()
+            check(expr, a, a)
+            check(expr, a, b)
+            check(expr, b, a)
+            check(expr, b, b)
+            check(expr, a, N1)
+            check(expr, a, N2)
+            check(expr, N1, b)
+            check(expr, N2, b)
+            if iexpr:
+                check(iexpr, a, a)
+                check(iexpr, a, b)
+                check(iexpr, b, a)
+                check(iexpr, b, b)
+                check(iexpr, a, N1)
+                check(iexpr, a, N2)
+                iname = '__i' + name[2:]
+                C = metaclass('C', (), {iname: specialmethod})
+                c = C()
+                check(iexpr, c, a)
+                check(iexpr, c, b)
+                check(iexpr, c, N1)
+                check(iexpr, c, N2)
+
 def test_main():
     weakref_segfault() # Must be first, somehow
     do_this_first()
@@ -4084,6 +4155,7 @@ def test_main():
     vicious_descriptor_nonsense()
     test_init()
     methodwrapper()
+    notimplemented()
 
     if verbose: print "All OK"
 
