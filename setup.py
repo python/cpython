@@ -159,7 +159,7 @@ class PyBuildExt(build_ext):
                     line = line.split()
                     remove_modules.append(line[0])
                 input.close()
-    
+
             for ext in self.extensions[:]:
                 if ext.name in remove_modules:
                     self.extensions.remove(ext)
