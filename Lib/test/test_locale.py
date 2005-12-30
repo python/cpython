@@ -38,13 +38,15 @@ def testformat(formatstr, value, grouping = 0, output=None):
             print "yes"
 
 try:
-    testformat("%f", 1024, grouping=1, output='1,024.000000')
+    # On Solaris 10, the thousands_sep is the empty string
+    sep = locale.localeconv()['thousands_sep']
+    testformat("%f", 1024, grouping=1, output='1%s024.000000' % sep)
     testformat("%f", 102, grouping=1, output='102.000000')
     testformat("%f", -42, grouping=1, output='-42.000000')
     testformat("%+f", -42, grouping=1, output='-42.000000')
     testformat("%20.f", -42, grouping=1, output='                 -42')
-    testformat("%+10.f", -4200, grouping=1, output='    -4,200')
-    testformat("%-10.f", 4200, grouping=1, output='4,200     ')
+    testformat("%+10.f", -4200, grouping=1, output='    -4%s200' % sep)
+    testformat("%-10.f", 4200, grouping=1, output='4%s200     ' % sep)
     # Invoke getpreferredencoding to make sure it does not cause exceptions,
     locale.getpreferredencoding()
 finally:
@@ -65,6 +67,9 @@ def teststrop(s, method, output):
         print "yes"
 
 try:
+    if sys.platform == 'sunos5':
+        # On Solaris, in en_US.UTF-8, \xa0 is a space
+        raise locale.Error
     oldlocale = locale.setlocale(locale.LC_CTYPE)
     locale.setlocale(locale.LC_CTYPE, 'en_US.UTF-8')
 except locale.Error:
