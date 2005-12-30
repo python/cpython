@@ -1410,6 +1410,7 @@ then
 	case $ac_sys_system/$ac_sys_release in
 	SunOS*) if test "$GCC" = yes;
 	        then CCSHARED="-fPIC";
+		else CCSHARED="-xcode=pic32";
 	        fi;;
 	hp*|HP*) if test "$GCC" = yes;
 		 then CCSHARED="-fPIC";

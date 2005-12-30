@@ -105,6 +105,8 @@ Tests
 Build
 -----
 
+- Use -xcode=pic32 for CCSHARED on Solaris with SunPro.
+
 - The Windows .msi files are now compressed using lzx:21. This produces a 
   significantly smaller installer.
 
