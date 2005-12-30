@@ -152,9 +152,12 @@ class Sniffer:
 
         quotechar, delimiter, skipinitialspace = \
                    self._guess_quote_and_delimiter(sample, delimiters)
-        if delimiter is None:
+        if not delimiter:
             delimiter, skipinitialspace = self._guess_delimiter(sample,
                                                                 delimiters)
+
+        if not delimiter:
+            raise Error, "Could not determine delimiter"
 
         class dialect(Dialect):
             _name = "sniffed"
@@ -329,8 +332,12 @@ class Sniffer:
                                         data[0].count("%c " % d))
                     return (d, skipinitialspace)
 
-        # finally, just return the first damn character in the list
-        delim = delims.keys()[0]
+        # nothing else indicates a preference, pick the character that
+        # dominates(?)
+        items = [(v,k) for (k,v) in delims.items()]
+        items.sort()
+        delim = items[-1][1]
+
         skipinitialspace = (data[0].count(delim) ==
                             data[0].count("%c " % delim))
         return (delim, skipinitialspace)
