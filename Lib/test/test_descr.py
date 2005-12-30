@@ -1664,7 +1664,7 @@ def altmro():
         pass
     else:
         raise TestFailed, "non-sequence mro() return not caught"
-        
+
 
 def overloading():
     if verbose: print "Testing operator overloading..."
