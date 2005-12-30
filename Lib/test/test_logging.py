@@ -487,11 +487,20 @@ def test_main():
         # or a Mac OS X box which supports very little locale stuff at all
         original_locale = None
 
+    # Save and restore the original root logger level across the tests.
+    # Otherwise, e.g., if any test using cookielib runs after test_logging,
+    # cookielib's debug-level logger tries to log messages, leading to
+    # confusing:
+    #    No handlers could be found for logger "cookielib"
+    # output while the tests are running.
+    root_logger = logging.getLogger("")
+    original_logging_level = root_logger.getEffectiveLevel()
     try:
         test_main_inner()
     finally:
         if original_locale is not None:
             locale.setlocale(locale.LC_ALL, original_locale)
+        root_logger.setLevel(original_logging_level)
 
 if __name__ == "__main__":
     sys.stdout.write("test_logging\n")
