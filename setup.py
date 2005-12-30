@@ -1000,7 +1000,7 @@ class PyBuildExt(build_ext):
             join(os.getenv('HOME'), '/Library/Frameworks')
         ]
 
-        # Find the directory that contains the Tcl.framwork and Tk.framework
+        # Find the directory that contains the Tcl.framework and Tk.framework
         # bundles.
         # XXX distutils should support -F!
         for F in framework_dirs:
@@ -1051,8 +1051,8 @@ class PyBuildExt(build_ext):
         # AquaTk is a separate method. Only one Tkinter will be built on
         # Darwin - either AquaTk, if it is found, or X11 based Tk.
         platform = self.get_platform()
-        if platform == 'darwin' and \
-           self.detect_tkinter_darwin(inc_dirs, lib_dirs):
+        if (platform == 'darwin' and
+            self.detect_tkinter_darwin(inc_dirs, lib_dirs)):
             return
 
         # Assume we haven't found any of the libraries or include files
