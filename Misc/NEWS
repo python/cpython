@@ -630,6 +630,8 @@ Library
 Build
 -----
 
+- Use -xcode=pic32 for CCSHARED on Solaris with SunPro.
+
 - Bug #1189330: configure did not correctly determine the necessary
   value of LINKCC if python was built with GCC 4.0.
 
