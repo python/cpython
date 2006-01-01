@@ -80,6 +80,11 @@ Library
 - Bug #1296004: httplib.py: Limit maximal amount of data read from the
   socket to avoid a MemoryError on Windows.
 
+Tools/Demos
+-----------
+
+- Fixed a display glitch in Pynche, which could cause the right arrow to
+  wiggle over by a pixel.
 
 What's New in Python 2.4.2 final?
 =================================

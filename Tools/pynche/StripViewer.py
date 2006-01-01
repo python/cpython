@@ -151,9 +151,9 @@ class RightArrow(LeftArrow):
         return arrow, text
 
     def _x(self):
-        coords = self._canvas.bbox(self._TAG)
+        coords = self._canvas.coords(self._TAG)
         assert coords
-        return coords[2] - 6                      # BAW: kludge
+        return coords[0] + self._ARROWWIDTH
 
 
 
