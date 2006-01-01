@@ -2,7 +2,7 @@
 /* Dictionary object implementation using a hash table */
 
 /* The distribution includes a separate file, Objects/dictnotes.txt,
-   describing explorations into dictionary design and optimization.  
+   describing explorations into dictionary design and optimization.
    It covers typical dictionary use patterns, the parameters for
    tuning dictionaries, and several ideas for possible optimizations.
 */
@@ -519,10 +519,10 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 }
 
 /* CAUTION: PyDict_SetItem() must guarantee that it won't resize the
- * dictionary if it is merely replacing the value for an existing key.
- * This is means that it's safe to loop over a dictionary with
- * PyDict_Next() and occasionally replace a value -- but you can't
- * insert new keys or remove them.
+ * dictionary if it's merely replacing the value for an existing key.
+ * This means that it's safe to loop over a dictionary with PyDict_Next()
+ * and occasionally replace a value -- but you can't insert new keys or
+ * remove them.
  */
 int
 PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
@@ -554,15 +554,15 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 	/* If we added a key, we can safely resize.  Otherwise just return!
 	 * If fill >= 2/3 size, adjust size.  Normally, this doubles or
 	 * quaduples the size, but it's also possible for the dict to shrink
-	 * (if ma_fill is much larger than ma_used, meaning a lot of dict 
+	 * (if ma_fill is much larger than ma_used, meaning a lot of dict
 	 * keys have been * deleted).
-	 * 
+	 *
 	 * Quadrupling the size improves average dictionary sparseness
 	 * (reducing collisions) at the cost of some memory and iteration
 	 * speed (which loops over every possible entry).  It also halves
 	 * the number of expensive resize operations in a growing dictionary.
-	 * 
-	 * Very large dictionaries (over 50K items) use doubling instead.  
+	 *
+	 * Very large dictionaries (over 50K items) use doubling instead.
 	 * This may help applications with severe memory constraints.
 	 */
 	if (!(mp->ma_used > n_used && mp->ma_fill*3 >= (mp->ma_mask+1)*2))
@@ -734,7 +734,7 @@ dict_dealloc(register dictobject *mp)
 		PyMem_DEL(mp->ma_table);
 	if (num_free_dicts < MAXFREEDICTS && mp->ob_type == &PyDict_Type)
 		free_dicts[num_free_dicts++] = mp;
-	else 
+	else
 		mp->ob_type->tp_free((PyObject *)mp);
 	Py_TRASHCAN_SAFE_END(mp)
 }
@@ -2251,7 +2251,7 @@ static PyObject *dictiter_iternextitem(dictiterobject *di)
 		Py_DECREF(PyTuple_GET_ITEM(result, 1));
 	} else {
 		result = PyTuple_New(2);
-		if (result == NULL) 
+		if (result == NULL)
 			return NULL;
 	}
 	di->len--;
