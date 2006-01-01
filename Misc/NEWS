@@ -593,8 +593,9 @@ Library
   once when a size argument is given. This prevents a buffer overflow in the
   tokenizer with very long source lines.
 
-- Bug #1083110: ``zlib.decompress.flush()`` would segfault if called immediately
-  after creating the object, without any intervening ``.decompress()`` calls.
+- Bug #1083110: ``zlib.decompress.flush()`` would segfault if called
+  immediately after creating the object, without any intervening
+  ``.decompress()`` calls.
 
 - The reconvert.quote function can now emit triple-quoted strings.  The
   reconvert module now has some simple documentation.
@@ -739,6 +740,8 @@ Tools/Demos
 
 - Patch #1177597: Correct Complex.__init__.
 
+- Fixed a display glitch in Pynche, which could cause the right arrow to
+  wiggle over by a pixel.
 
 What's New in Python 2.4 final?
 ===============================
