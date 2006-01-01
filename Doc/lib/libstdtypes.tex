@@ -952,8 +952,8 @@ The conversion flag characters are:
              precede the conversion (overrides a "space" flag).}
 \end{tableii}
 
-The length modifier may be \code{h}, \code{l}, and \code{L} may be
-present, but are ignored as they are not necessary for Python.
+A length modifier (\code{h}, \code{l}, or \code{L}) may be
+present, but is ignored as it is not necessary for Python.
 
 The conversion types are:
 
@@ -1606,7 +1606,7 @@ flush the read-ahead buffer.
   defaults to the current position.  The current file position is
   not changed.  Note that if a specified size exceeds the file's
   current size, the result is platform-dependent:  possibilities
-  include that file may remain unchanged, increase to the specified
+  include that the file may remain unchanged, increase to the specified
   size as if zero-filled, or increase to the specified size with
   undefined new content.
   Availability:  Windows, many \UNIX{} variants.
