@@ -24,8 +24,6 @@ import shutil
 import sys
 import tempfile
 
-import cvsinfo
-
 try:
     __file__
 except NameError:
@@ -79,42 +77,22 @@ def main():
      else:
           formats = ["gzip"]
      release = args[0]
-     cvstag = None
+     svntag = None
      if len(args) > 1:
-          cvstag = args[1]
+          svntag = args[1]
      tempdir = tempfile.mktemp()
      os.mkdir(tempdir)
      pkgdir = os.path.join(tempdir, "Python-Docs-" + release)
-     os.mkdir(pkgdir)
      pwd = os.getcwd()
      mydir = os.path.abspath(os.path.dirname(sys.argv[0]))
-     info = cvsinfo.RepositoryInfo(mydir)
-     cvsroot = info.get_cvsroot()
-     m = rx.match(cvsroot)
-     if m and anonymous:
-          # If this is an authenticated SourceForge repository, convert to
-          # anonymous usage for the export/checkout, since that avoids the
-          # SSH overhead.
-          group = m.group(1)
-          cvsroot = ":pserver:anonymous@cvs.%s.sourceforge.net:/cvsroot/%s" \
-                    % (group, group)
-          # For some reason, SourceForge/CVS doesn't seem to care that we
-          # might not have done a "cvs login" to the anonymous server.
-          # That avoids a lot of painful gunk here.
      os.chdir(tempdir)
      if not quiet:
-          print "--- current directory is:", pkgdir
-     if cvstag:
-          run("cvs -d%s export -r %s -d Python-Docs-%s python/dist/src/Doc"
-              % (cvsroot, cvstag, release))
-     else:
-          run("cvs -Q -d%s checkout -d Python-Docs-%s python/dist/src/Doc"
-              % (cvsroot, release))
-          # remove CVS directories
-          for p in ('*/CVS', '*/*/CVS', '*/*/*/CVS'):
-               map(shutil.rmtree, glob.glob(p))
-     for f in ('.cvsignore', '*/.cvsignore'):
-          map(os.unlink, glob.glob(f))
+          print "--- current directory is:", tempdir
+     if not svntag:
+         svntag = "trunk"
+     svnbase = "http://svn.python.org/projects/python"
+     run("svn export %s/%s/Doc Python-Docs-%s"
+         % (svnbase, svntag, release))
 
      # Copy in the version informtation, if we're not just going to
      # rip it back out:
