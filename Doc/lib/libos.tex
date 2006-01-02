@@ -812,9 +812,9 @@ the client opens it for writing.  Note that \function{mkfifo()}
 doesn't open the FIFO --- it just creates the rendezvous point.
 \end{funcdesc}
 
-\begin{funcdesc}{mknod}{path\optional{, mode=0600, device}}
+\begin{funcdesc}{mknod}{filename\optional{, mode=0600, device}}
 Create a filesystem node (file, device special file or named pipe)
-named filename. \var{mode} specifies both the permissions to use and
+named \var{filename}. \var{mode} specifies both the permissions to use and
 the type of node to be created, being combined (bitwise OR) with one
 of S_IFREG, S_IFCHR, S_IFBLK, and S_IFIFO (those constants are
 available in \module{stat}). For S_IFCHR and S_IFBLK, \var{device}
