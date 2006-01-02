@@ -27,7 +27,7 @@
 ## FIXME: we should run code coverage
 
 ## Utilities invoked in this script include:
-##    date, dirname, expr, grep, readlink, uname
+##    basename, date, dirname, expr, grep, readlink, uname
 ##    cksum, make, mutt, rsync, svn
 
 ## need to get svn from ~/local/bin
@@ -41,7 +41,7 @@ fi
 
 ## make directory absolute
 DIR=`readlink -f $DIR`
-FULLPATHNAME="$DIR/$0"
+FULLPATHNAME="$DIR/`basename $0`"
 ## we want Misc/..
 DIR=`dirname $DIR`
 
@@ -163,7 +163,7 @@ if [ $err = 0 ]; then
             ./python -E -tt ./Lib/test/regrtest.py -uall -x test_curses test_linuxaudiodev test_ossaudiodev >& build/$F
             NUM_FAILURES=`grep -ic fail build/$F`
             update_status "Testing all except curses and sound ($NUM_FAILURES failures)" "$F" $start
-            mail_on_failure "all" buiild/$F
+            mail_on_failure "all" build/$F
         fi
     fi
 fi
