@@ -1124,7 +1124,7 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
 	c->u = u;
 
         c->c_nestlevel++;
-	if (compiler_use_new_block(c) < 0)
+	if (compiler_use_new_block(c) == NULL)
 		return 0;
 
 	return 1;
@@ -2899,7 +2899,7 @@ compiler_boolop(struct compiler *c, expr_ty e)
 	else
 		jumpi = JUMP_IF_TRUE;
 	end = compiler_new_block(c);
-	if (end < 0)
+	if (end == NULL)
 		return 0;
 	s = e->v.BoolOp.values;
 	n = asdl_seq_LEN(s) - 1;
