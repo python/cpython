@@ -1326,6 +1326,7 @@ mro_internal(PyTypeObject *type)
 				PyErr_Format(PyExc_TypeError,
 			     "mro() returned a non-class ('%.500s')",
 					     cls->ob_type->tp_name);
+				Py_DECREF(tuple);
 				return -1;
 			}
 			t = (PyTypeObject*)cls;
@@ -1333,6 +1334,7 @@ mro_internal(PyTypeObject *type)
 				PyErr_Format(PyExc_TypeError,
 		     "mro() returned base with unsuitable layout ('%.500s')",
 					     t->tp_name);
+				Py_DECREF(tuple);
 				return -1;
 			}
 		}
