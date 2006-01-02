@@ -133,13 +133,13 @@ if [ $err = 0 ]; then
         warnings=`grep warning build/$F | egrep -vc "te?mpnam(_r|)' is dangerous,"`
         update_status "Building ($warnings warnings)" "$F" $start
         if [ $err = 0 ]; then
-	    ## make install
+            ## make install
             F=make-install.out
             start=`current_time`
             make install >& build/$F
             update_status "Installing" "$F" $start
 
-	    ## make and run basic tests
+            ## make and run basic tests
             F=make-test.out
             start=`current_time`
             make test >& build/$F
@@ -147,20 +147,20 @@ if [ $err = 0 ]; then
             update_status "Testing basics ($NUM_FAILURES failures)" "$F" $start
             mail_on_failure "basics" buiild/$F
 
-	    ## run the tests looking for leaks
+            ## run the tests looking for leaks
             F=make-test-refleak.out
             start=`current_time`
-            ./python ./Lib/test/regrtest.py -R 4:3:$REFLOG >& build/$F
+            ./python ./Lib/test/regrtest.py -R 4:3:$REFLOG -u network >& build/$F
             NUM_FAILURES=`grep -ic leak $REFLOG`
             update_status "Testing refleaks ($NUM_FAILURES failures)" "$F" $start
             mail_on_failure "refleak" $REFLOG
 
-	    ## now try to run all the tests
+            ## now try to run all the tests
             F=make-testall.out
             start=`current_time`
-	    ## skip curses when running from cron since there's no terminal
-	    ## skip sound since it's not setup on the PSF box (/dev/dsp)
-            ./python -E -tt ./Lib/test/regrtest.py -uall -x test_curses,test_linuxaudiodev,test_ossaudiodev >& build/$F
+            ## skip curses when running from cron since there's no terminal
+            ## skip sound since it's not setup on the PSF box (/dev/dsp)
+            ./python -E -tt ./Lib/test/regrtest.py -uall -x test_curses test_linuxaudiodev test_ossaudiodev >& build/$F
             NUM_FAILURES=`grep -ic fail build/$F`
             update_status "Testing all except curses and sound ($NUM_FAILURES failures)" "$F" $start
             mail_on_failure "all" buiild/$F
