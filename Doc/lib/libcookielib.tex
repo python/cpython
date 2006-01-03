@@ -36,7 +36,9 @@ The module defines the following exception:
 
 \begin{excdesc}{LoadError}
 Instances of \class{FileCookieJar} raise this exception on failure to
-load cookies from a file.
+load cookies from a file.  \note{For backwards-compatibility
+with Python 2.4 (which raised an \exception{IOError}),
+\exception{LoadError} is a subclass of \exception{IOError}}.
 \end{excdesc}
 
 
@@ -273,16 +275,19 @@ Old cookies are kept unless overwritten by newly loaded ones.
 Arguments are as for \method{save()}.
 
 The named file must be in the format understood by the class, or
-\exception{LoadError} will be raised.
+\exception{LoadError} will be raised.  Also, \exception{IOError} may
+be raised, for example if the file does not exist.  \note{For
+backwards-compatibility with Python 2.4 (which raised
+an \exception{IOError}), \exception{LoadError} is a subclass
+of \exception{IOError}.}
 \end{methoddesc}
 
 \begin{methoddesc}[FileCookieJar]{revert}{filename=\constant{None},
     ignore_discard=\constant{False}, ignore_expires=\constant{False}}
 Clear all cookies and reload cookies from a saved file.
 
-Raises \exception{cookielib.LoadError} or \exception{IOError} if
-reversion is not successful; the object's state will not be altered if
-this happens.
+\method{revert()} can raise the same exceptions as \method{load()}.
+If there is a failure, the object's state will not be altered.
 \end{methoddesc}
 
 \class{FileCookieJar} instances have the following public attributes:
