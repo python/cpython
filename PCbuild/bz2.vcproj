@@ -25,10 +25,6 @@
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\x86-temp-debug\bz2/bz2.pch"
-				AssemblerListingLocation=".\x86-temp-debug\bz2/"
-				ObjectFile=".\x86-temp-debug\bz2/"
-				ProgramDataBaseFileName=".\x86-temp-debug\bz2/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -49,13 +45,7 @@
 				ImportLibrary=".\./bz2_d.lib"
 				TargetMachine="1"/>
 			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\./bz2.tlb"
-				HeaderFileName=""/>
+				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -66,9 +56,7 @@
 nmake /nologo /f makefile.msc
 "/>
 			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1033"/>
+				Name="VCResourceCompilerTool"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
@@ -97,10 +85,6 @@ nmake /nologo /f makefile.msc
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\x86-temp-release\bz2/bz2.pch"
-				AssemblerListingLocation=".\x86-temp-release\bz2/"
-				ObjectFile=".\x86-temp-release\bz2/"
-				ProgramDataBaseFileName=".\x86-temp-release\bz2/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -121,13 +105,7 @@ nmake /nologo /f makefile.msc
 				ImportLibrary=".\./bz2.lib"
 				TargetMachine="1"/>
 			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\./bz2.tlb"
-				HeaderFileName=""/>
+				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -138,9 +116,7 @@ nmake /nologo /f makefile.msc
 nmake /nologo /f makefile.msc lib
 "/>
 			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
-				Culture="1033"/>
+				Name="VCResourceCompilerTool"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
@@ -172,10 +148,6 @@ nmake /nologo /f makefile.msc lib
 				BufferSecurityCheck="FALSE"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\ia64-temp-release\bz2/bz2.pch"
-				AssemblerListingLocation=".\ia64-temp-release\bz2/"
-				ObjectFile=".\ia64-temp-release\bz2/"
-				ProgramDataBaseFileName=".\ia64-temp-release\bz2/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				Detect64BitPortabilityProblems="TRUE"
@@ -198,13 +170,7 @@ nmake /nologo /f makefile.msc lib
 				ImportLibrary=".\./bz2.lib"
 				TargetMachine="0"/>
 			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\./bz2.tlb"
-				HeaderFileName=""/>
+				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -215,9 +181,7 @@ nmake /nologo /f makefile.msc lib
 nmake /nologo /f makefile.msc lib
 "/>
 			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
-				Culture="1033"/>
+				Name="VCResourceCompilerTool"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
@@ -235,30 +199,6 @@ nmake /nologo /f makefile.msc lib
 	<Files>
 		<File
 			RelativePath="..\Modules\bz2module.c">
-			<FileConfiguration
-				Name="Debug|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="0"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;$(NoInherit)"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="2"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;$(NoInherit)"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="ReleaseItanium|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="2"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;$(NoInherit)"/>
-			</FileConfiguration>
 		</File>
 	</Files>
 	<Globals>

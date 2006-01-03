@@ -24,10 +24,6 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\x86-temp-debug\pythonw/pythonw.pch"
-				AssemblerListingLocation=".\x86-temp-debug\pythonw/"
-				ObjectFile=".\x86-temp-debug\pythonw/"
-				ProgramDataBaseFileName=".\x86-temp-debug\pythonw/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -46,13 +42,7 @@
 				BaseAddress="0x1d000000"
 				TargetMachine="1"/>
 			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\./pythonw.tlb"
-				HeaderFileName=""/>
+				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -91,10 +81,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\x86-temp-release\pythonw/pythonw.pch"
-				AssemblerListingLocation=".\x86-temp-release\pythonw/"
-				ObjectFile=".\x86-temp-release\pythonw/"
-				ProgramDataBaseFileName=".\x86-temp-release\pythonw/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -113,13 +99,7 @@
 				BaseAddress="0x1d000000"
 				TargetMachine="1"/>
 			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\./pythonw.tlb"
-				HeaderFileName=""/>
+				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -161,10 +141,6 @@
 				BufferSecurityCheck="FALSE"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\ia64-temp-release\pythonw/pythonw.pch"
-				AssemblerListingLocation=".\ia64-temp-release\pythonw/"
-				ObjectFile=".\ia64-temp-release\pythonw/"
-				ProgramDataBaseFileName=".\ia64-temp-release\pythonw/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				Detect64BitPortabilityProblems="TRUE"
@@ -185,13 +161,7 @@
 				BaseAddress="0x1d000000"
 				TargetMachine="0"/>
 			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\./pythonw.tlb"
-				HeaderFileName=""/>
+				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -219,54 +189,9 @@
 	<Files>
 		<File
 			RelativePath="..\PC\python_exe.rc">
-			<FileConfiguration
-				Name="Debug|Win32">
-				<Tool
-					Name="VCResourceCompilerTool"
-					PreprocessorDefinitions=""
-					AdditionalIncludeDirectories="\Pyinst\python\PC"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32">
-				<Tool
-					Name="VCResourceCompilerTool"
-					PreprocessorDefinitions=""
-					AdditionalIncludeDirectories="\Pyinst\python\PC"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="ReleaseItanium|Win32">
-				<Tool
-					Name="VCResourceCompilerTool"
-					PreprocessorDefinitions=""
-					AdditionalIncludeDirectories="\Pyinst\python\PC"/>
-			</FileConfiguration>
 		</File>
 		<File
 			RelativePath="..\PC\WinMain.c">
-			<FileConfiguration
-				Name="Debug|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="0"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="2"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="ReleaseItanium|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="2"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""/>
-			</FileConfiguration>
 		</File>
 	</Files>
 	<Globals>
