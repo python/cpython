@@ -103,7 +103,6 @@ extensions = [
     'select.pyd',
     'unicodedata.pyd',
     'winsound.pyd',
-    'zlib.pyd',
     '_elementtree.pyd',
     '_bsddb.pyd',
     '_socket.pyd',
@@ -112,15 +111,9 @@ extensions = [
     '_tkinter.pyd',
 ]
 
-if major+minor <= "23":
+if major+minor <= "24":
     extensions.extend([
-    '_csv.pyd',
-    '_sre.pyd',
-    '_symtable.pyd',
-    '_winreg.pyd',
-    'datetime.pyd'
-    'mmap.pyd',
-    'parser.pyd',
+    'zlib.pyd',
     ])
 
 # Well-known component UUIDs

@@ -56,6 +56,7 @@ extern void initparser(void);
 extern void init_winreg(void);
 extern void initdatetime(void);
 extern void initfunctional(void);
+extern void initzlib(void);
 
 extern void init_multibytecodec(void);
 extern void init_codecs_cn(void);
@@ -133,7 +134,8 @@ struct _inittab _PyImport_Inittab[] = {
 
 	{"xxsubtype", initxxsubtype},
 	{"zipimport", initzipimport},
-
+	{"zlib", initzlib},
+	
 	/* CJK codecs */
 	{"_multibytecodec", init_multibytecodec},
 	{"_codecs_cn", init_codecs_cn},

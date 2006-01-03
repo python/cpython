@@ -226,6 +226,67 @@
 	<References>
 	</References>
 	<Files>
+		<Filter
+			Name="zlib"
+			Filter="">
+			<File
+				RelativePath="..\Modules\zlib\adler32.c">
+			</File>
+			<File
+				RelativePath="..\Modules\zlib\compress.c">
+			</File>
+			<File
+				RelativePath="..\Modules\zlib\crc32.c">
+			</File>
+			<File
+				RelativePath="..\Modules\zlib\deflate.c">
+			</File>
+			<File
+				RelativePath="..\Modules\zlib\gzio.c">
+			</File>
+			<File
+				RelativePath="..\Modules\zlib\infback.c">
+			</File>
+			<File
+				RelativePath="..\Modules\zlib\inffast.c">
+			</File>
+			<File
+				RelativePath="..\Modules\zlib\inflate.c">
+			</File>
+			<File
+				RelativePath="..\Modules\zlib\inftrees.c">
+			</File>
+			<File
+				RelativePath="..\Modules\zlib\trees.c">
+			</File>
+			<File
+				RelativePath="..\Modules\zlib\uncompr.c">
+			</File>
+			<File
+				RelativePath="..\Modules\zlibmodule.c">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\Modules\zlib"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\Modules\zlib"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseItanium|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\Modules\zlib"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\Modules\zlib\zutil.c">
+			</File>
+		</Filter>
 		<File
 			RelativePath="..\Modules\_bisectmodule.c">
 		</File>

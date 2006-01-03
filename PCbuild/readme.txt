@@ -124,21 +124,6 @@ _tkinter
    nmake -f makefile.vc
    nmake -f makefile.vc install
 
-zlib
-    Python wrapper for the zlib compression library.  Get the source code
-    for version 1.2.3 from a convenient mirror at:
-        http://www.gzip.org/zlib/
-    Unpack into dist\zlib-1.2.3.
-    A custom pre-link step in the zlib project settings should manage to
-    build zlib-1.2.3\zlib.lib by magic before zlib.pyd (or zlib_d.pyd) is
-    linked in PCbuild\.
-    However, the zlib project is not smart enough to remove anything under
-    zlib-1.2.3\ when you do a clean, so if you want to rebuild zlib.lib
-    you need to clean up zlib-1.2.3\ by hand.
-    When building zlib.pyd for Itanium, the pre-link build step won't work,
-    so you will need to invoke nmake manually, using an IA64 build 
-    environment.
-
 bz2
     Python wrapper for the libbz2 compression library.  Homepage
         http://sources.redhat.com/bzip2/
