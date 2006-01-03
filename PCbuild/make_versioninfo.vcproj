@@ -29,10 +29,6 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\x86-temp-release\make_versioninfo/make_versioninfo.pch"
-				AssemblerListingLocation=".\x86-temp-release\make_versioninfo/"
-				ObjectFile=".\x86-temp-release\make_versioninfo/"
-				ProgramDataBaseFileName=".\x86-temp-release\make_versioninfo/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -54,9 +50,7 @@
 				BaseAddress="0x1d000000"
 				TargetMachine="1"/>
 			<Tool
-				Name="VCMIDLTool"
-				TypeLibraryName=".\./make_versioninfo.tlb"
-				HeaderFileName=""/>
+				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
 				CommandLine="$(TargetFileName) &gt; ..\PC\python_nt.h"/>
@@ -65,9 +59,7 @@
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
-				Culture="1033"/>
+				Name="VCResourceCompilerTool"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
@@ -94,10 +86,6 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\x86-temp-debug\make_versioninfo/make_versioninfo.pch"
-				AssemblerListingLocation=".\x86-temp-debug\make_versioninfo/"
-				ObjectFile=".\x86-temp-debug\make_versioninfo/"
-				ProgramDataBaseFileName=".\x86-temp-debug\make_versioninfo/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -120,9 +108,7 @@
 				BaseAddress="0x1d000000"
 				TargetMachine="1"/>
 			<Tool
-				Name="VCMIDLTool"
-				TypeLibraryName=".\./make_versioninfo.tlb"
-				HeaderFileName=""/>
+				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
 				CommandLine="$(TargetFileName) &gt; ..\PC\python_nt_d.h"/>
@@ -131,10 +117,7 @@
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1033"
-				AdditionalIncludeDirectories="..\Include"/>
+				Name="VCResourceCompilerTool"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
@@ -152,23 +135,6 @@
 	<Files>
 		<File
 			RelativePath="..\PC\make_versioninfo.c">
-			<FileConfiguration
-				Name="Release|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="2"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="0"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""
-					BrowseInformation="1"/>
-			</FileConfiguration>
 		</File>
 	</Files>
 	<Globals>
