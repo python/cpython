@@ -1,0 +1,971 @@
+<html>
+<head>
+ <title>
+ zlib general purpose compression library version 1.1.4
+ </title>
+</head>
+<body bgcolor="White" text="Black" vlink="Red" alink="Navy" link="Red">
+<!-- background="zlibbg.gif" -->
+
+<h1> zlib 1.1.4 Manual </h1>
+<hr>
+<a name="Contents"><h2>Contents</h2>
+<ol type="I">
+<li> <a href="#Prologue">Prologue</a>
+<li> <a href="#Introduction">Introduction</a>
+<li> <a href="#Utility functions">Utility functions</a>
+<li> <a href="#Basic functions">Basic functions</a>
+<li> <a href="#Advanced functions">Advanced functions</a>
+<li> <a href="#Constants">Constants</a>
+<li> <a href="#struct z_stream_s">struct z_stream_s</a>
+<li> <a href="#Checksum functions">Checksum functions</a>
+<li> <a href="#Misc">Misc</a>
+</ol>
+<hr>
+<a name="Prologue"><h2> Prologue </h2>
+  'zlib' general purpose compression library version 1.1.4, March 11th, 2002
+  <p>
+  Copyright (C) 1995-2002 Jean-loup Gailly and Mark Adler
+  <p>
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+  <p>
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+  <ol>
+   <li> The origin of this software must not be misrepresented ; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+   <li> Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+   <li> This notice may not be removed or altered from any source distribution.
+  </ol>
+
+  <dl>
+  <dt>Jean-loup Gailly
+  <dd><a href="mailto:jloup@gzip.org">jloup@gzip.org</a>
+  <dt>Mark Adler
+  <dd><a href="mailto:madler@alumni.caltech.edu">madler@alumni.caltech.edu</a>
+  </dl>
+
+  The data format used by the zlib library is described by RFCs (Request for
+  Comments) 1950 to 1952 in the files
+  <a href="ftp://ds.internic.net/rfc/rfc1950.txt">
+  ftp://ds.internic.net/rfc/rfc1950.txt </a>
+  (zlib format),
+  <a href="ftp://ds.internic.net/rfc/rfc1951.txt">
+  rfc1951.txt </a>
+  (<a href="#deflate">deflate</a> format) and
+  <a href="ftp://ds.internic.net/rfc/rfc1952.txt">
+  rfc1952.txt </a>
+  (gzip format).
+  <p>
+  This manual is converted from zlib.h by
+  <a href="mailto:piaip@csie.ntu.edu.tw"> piaip </a>
+  <p>
+  Visit <a href="http://ftp.cdrom.com/pub/infozip/zlib/">
+  http://ftp.cdrom.com/pub/infozip/zlib/</a>
+  for the official zlib web page.
+  <p>
+
+<hr>
+<a name="Introduction"><h2> Introduction </h2>
+     The 'zlib' compression library provides in-memory compression and
+  decompression functions, including integrity checks of the uncompressed
+  data.  This version of the library supports only one compression method
+  (deflation) but other algorithms will be added later and will have the same
+  stream interface.
+  <p>
+
+     Compression can be done in a single step if the buffers are large
+  enough (for example if an input file is mmap'ed), or can be done by
+  repeated calls of the compression function.  In the latter case, the
+  application must provide more input and/or consume the output
+  (providing more output space) before each call.
+  <p>
+
+     The library also supports reading and writing files in gzip (.gz) format
+  with an interface similar to that of stdio.
+  <p>
+
+     The library does not install any signal handler. The decoder checks
+  the consistency of the compressed data, so the library should never
+  crash even in case of corrupted input.
+  <p>
+
+<hr>
+<a name="Utility functions"><h2> Utility functions </h2>
+     The following utility functions are implemented on top of the
+   <a href="#Basic functions">basic stream-oriented functions</a>.
+   To simplify the interface, some
+   default options are assumed (compression level and memory usage,
+   standard memory allocation functions). The source code of these
+   utility functions can easily be modified if you need special options.
+<h3> Function list </h3>
+<ul>
+<li> int  <a href="#compress">compress</a> (Bytef *dest,   uLongf *destLen, const Bytef *source, uLong sourceLen);
+<li> int  <a href="#compress2">compress2</a> (Bytef *dest,   uLongf *destLen, const Bytef *source, uLong sourceLen, int level);
+<li> int  <a href="#uncompress">uncompress</a> (Bytef *dest,   uLongf *destLen, const Bytef *source, uLong sourceLen);
+<li> typedef voidp gzFile;
+<li>  gzFile  <a href="#gzopen">gzopen</a>  (const char *path, const char *mode);
+<li> gzFile  <a href="#gzdopen">gzdopen</a>  (int fd, const char *mode);
+<li> int  <a href="#gzsetparams">gzsetparams</a> (gzFile file, int level, int strategy);
+<li> int     <a href="#gzread">gzread</a>  (gzFile file, voidp buf, unsigned len);
+<li> int     <a href="#gzwrite">gzwrite</a> (gzFile file, const voidp buf, unsigned len);
+<li> int VA   <a href="#gzprintf">gzprintf</a> (gzFile file, const char *format, ...);
+<li> int  <a href="#gzputs">gzputs</a> (gzFile file, const char *s);
+<li> char *  <a href="#gzgets">gzgets</a> (gzFile file, char *buf, int len);
+<li> int     <a href="#gzputc">gzputc</a> (gzFile file, int c);
+<li> int     <a href="#gzgetc">gzgetc</a> (gzFile file);
+<li> int     <a href="#gzflush">gzflush</a> (gzFile file, int flush);
+<li> z_off_t     <a href="#gzseek">gzseek</a> (gzFile file, z_off_t offset, int whence);
+<li> z_off_t     <a href="#gztell">gztell</a> (gzFile file);
+<li> int     <a href="#gzrewind">gzrewind</a> (gzFile file);
+<li> int  <a href="#gzeof">gzeof</a> (gzFile file);
+<li> int     <a href="#gzclose">gzclose</a> (gzFile file);
+<li> const char *  <a href="#gzerror">gzerror</a> (gzFile file, int *errnum);
+</ul>
+<h3> Function description </h3>
+<dl>
+<font color="Blue"><dt> int  <a name="compress">compress</a> (Bytef *dest,   uLongf *destLen, const Bytef *source, uLong sourceLen);</font>
+<dd>
+     Compresses the source buffer into the destination buffer.  sourceLen is
+   the byte length of the source buffer. Upon entry, destLen is the total
+   size of the destination buffer, which must be at least 0.1% larger than
+   sourceLen plus 12 bytes. Upon exit, destLen is the actual size of the
+   compressed buffer.<p>
+     This function can be used to <a href="#compress">compress</a> a whole file at once if the
+   input file is mmap'ed.<p>
+     <a href="#compress">compress</a> returns <a href="#Z_OK">Z_OK</a> if success, <a href="#Z_MEM_ERROR">Z_MEM_ERROR</a> if there was not
+   enough memory, <a href="#Z_BUF_ERROR">Z_BUF_ERROR</a> if there was not enough room in the output
+   buffer.<p>
+
+<font color="Blue"><dt> int  <a name="compress2">compress2</a> (Bytef *dest,   uLongf *destLen, const Bytef *source, uLong sourceLen, int level);</font>
+<dd>
+     Compresses the source buffer into the destination buffer. The level
+   parameter has the same meaning as in <a href="#deflateInit">deflateInit</a>.  sourceLen is the byte
+   length of the source buffer. Upon entry, destLen is the total size of the
+   destination buffer, which must be at least 0.1% larger than sourceLen plus
+   12 bytes. Upon exit, destLen is the actual size of the compressed buffer.
+   <p>
+
+     <a href="#compress2">compress2</a> returns <a href="#Z_OK">Z_OK</a> if success, <a href="#Z_MEM_ERROR">Z_MEM_ERROR</a> if there was not enough
+   memory, <a href="#Z_BUF_ERROR">Z_BUF_ERROR</a> if there was not enough room in the output buffer,
+   <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if the level parameter is invalid.
+   <p>
+
+<font color="Blue"><dt> int  <a name="uncompress">uncompress</a> (Bytef *dest,   uLongf *destLen, const Bytef *source, uLong sourceLen);</font>
+<dd>
+     Decompresses the source buffer into the destination buffer.  sourceLen is
+   the byte length of the source buffer. Upon entry, destLen is the total
+   size of the destination buffer, which must be large enough to hold the
+   entire uncompressed data. (The size of the uncompressed data must have
+   been saved previously by the compressor and transmitted to the decompressor
+   by some mechanism outside the scope of this compression library.)
+   Upon exit, destLen is the actual size of the compressed buffer. <p>
+     This function can be used to decompress a whole file at once if the
+   input file is mmap'ed.
+   <p>
+
+     <a href="#uncompress">uncompress</a> returns <a href="#Z_OK">Z_OK</a> if success, <a href="#Z_MEM_ERROR">Z_MEM_ERROR</a> if there was not
+   enough memory, <a href="#Z_BUF_ERROR">Z_BUF_ERROR</a> if there was not enough room in the output
+   buffer, or <a href="#Z_DATA_ERROR">Z_DATA_ERROR</a> if the input data was corrupted.
+   <p>
+
+<dt> typedef voidp gzFile;
+<dd> <p>
+
+<font color="Blue"><dt>  gzFile  <a name="gzopen">gzopen</a>  (const char *path, const char *mode);</font>
+<dd>
+     Opens a gzip (.gz) file for reading or writing. The mode parameter
+   is as in fopen ("rb" or "wb") but can also include a compression level
+   ("wb9") or a strategy: 'f' for filtered data as in "wb6f", 'h' for
+   Huffman only compression as in "wb1h". (See the description
+   of <a href="#deflateInit2">deflateInit2</a> for more information about the strategy parameter.)
+   <p>
+
+     <a href="#gzopen">gzopen</a> can be used to read a file which is not in gzip format ; in this
+   case <a href="#gzread">gzread</a> will directly read from the file without decompression.
+   <p>
+
+     <a href="#gzopen">gzopen</a> returns NULL if the file could not be opened or if there was
+   insufficient memory to allocate the (de)compression <a href="#state">state</a> ; errno
+   can be checked to distinguish the two cases (if errno is zero, the
+   zlib error is <a href="#Z_MEM_ERROR">Z_MEM_ERROR</a>).
+   <p>
+
+<font color="Blue"><dt> gzFile  <a name="gzdopen">gzdopen</a>  (int fd, const char *mode);</font>
+<dd>
+     <a href="#gzdopen">gzdopen</a>() associates a gzFile with the file descriptor fd.  File
+   descriptors are obtained from calls like open, dup, creat, pipe or
+   fileno (in the file has been previously opened with fopen).
+   The mode parameter is as in <a href="#gzopen">gzopen</a>.
+   <p>
+     The next call of <a href="#gzclose">gzclose</a> on the returned gzFile will also close the
+   file descriptor fd, just like fclose(fdopen(fd), mode) closes the file
+   descriptor fd. If you want to keep fd open, use <a href="#gzdopen">gzdopen</a>(dup(fd), mode).
+   <p>
+     <a href="#gzdopen">gzdopen</a> returns NULL if there was insufficient memory to allocate
+   the (de)compression <a href="#state">state</a>.
+   <p>
+
+<font color="Blue"><dt> int  <a name="gzsetparams">gzsetparams</a> (gzFile file, int level, int strategy);</font>
+<dd>
+     Dynamically update the compression level or strategy. See the description
+   of <a href="#deflateInit2">deflateInit2</a> for the meaning of these parameters.
+   <p>
+     <a href="#gzsetparams">gzsetparams</a> returns <a href="#Z_OK">Z_OK</a> if success, or <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if the file was not
+   opened for writing.
+   <p>
+
+<font color="Blue"><dt> int     <a name="gzread">gzread</a>  (gzFile file, voidp buf, unsigned len);</font>
+<dd>
+     Reads the given number of uncompressed bytes from the compressed file.
+   If the input file was not in gzip format, <a href="#gzread">gzread</a> copies the given number
+   of bytes into the buffer.
+   <p>
+     <a href="#gzread">gzread</a> returns the number of uncompressed bytes actually read (0 for
+   end of file, -1 for error).
+   <p>
+
+<font color="Blue"><dt> int     <a name="gzwrite">gzwrite</a> (gzFile file, const voidp buf, unsigned len);</font>
+<dd>
+     Writes the given number of uncompressed bytes into the compressed file.
+   <a href="#gzwrite">gzwrite</a> returns the number of uncompressed bytes actually written
+   (0 in case of error).
+   <p>
+
+<font color="Blue"><dt> int VA   <a name="gzprintf">gzprintf</a> (gzFile file, const char *format, ...);</font>
+<dd>
+     Converts, formats, and writes the args to the compressed file under
+   control of the format string, as in fprintf. <a href="#gzprintf">gzprintf</a> returns the number of
+   uncompressed bytes actually written (0 in case of error).
+   <p>
+
+<font color="Blue"><dt> int  <a name="gzputs">gzputs</a> (gzFile file, const char *s);</font>
+<dd>
+      Writes the given null-terminated string to the compressed file, excluding
+   the terminating null character.
+   <p>
+      <a href="#gzputs">gzputs</a> returns the number of characters written, or -1 in case of error.
+      <p>
+
+<font color="Blue"><dt> char *  <a name="gzgets">gzgets</a> (gzFile file, char *buf, int len);</font>
+<dd>
+      Reads bytes from the compressed file until len-1 characters are read, or
+   a newline character is read and transferred to buf, or an end-of-file
+   condition is encountered.  The string is then terminated with a null
+   character.
+   <p>
+      <a href="#gzgets">gzgets</a> returns buf, or <a href="#Z_NULL">Z_NULL</a> in case of error.
+      <p>
+
+<font color="Blue"><dt> int     <a name="gzputc">gzputc</a> (gzFile file, int c);</font>
+<dd>
+      Writes c, converted to an unsigned char, into the compressed file.
+   <a href="#gzputc">gzputc</a> returns the value that was written, or -1 in case of error.
+   <p>
+
+<font color="Blue"><dt> int     <a name="gzgetc">gzgetc</a> (gzFile file);</font>
+<dd>
+      Reads one byte from the compressed file. <a href="#gzgetc">gzgetc</a> returns this byte
+   or -1 in case of end of file or error.
+   <p>
+
+<font color="Blue"><dt> int     <a name="gzflush">gzflush</a> (gzFile file, int flush);</font>
+<dd>
+     Flushes all pending output into the compressed file. The parameter
+   flush is as in the <a href="#deflate">deflate</a>() function. The return value is the zlib
+   error number (see function <a href="#gzerror">gzerror</a> below). <a href="#gzflush">gzflush</a> returns <a href="#Z_OK">Z_OK</a> if
+   the flush parameter is <a href="#Z_FINISH">Z_FINISH</a> and all output could be flushed.
+   <p>
+     <a href="#gzflush">gzflush</a> should be called only when strictly necessary because it can
+   degrade compression.
+   <p>
+
+<font color="Blue"><dt> z_off_t     <a name="gzseek">gzseek</a> (gzFile file, z_off_t offset, int whence);</font>
+<dd>
+      Sets the starting position for the next <a href="#gzread">gzread</a> or <a href="#gzwrite">gzwrite</a> on the
+   given compressed file. The offset represents a number of bytes in the
+   uncompressed data stream. The whence parameter is defined as in lseek(2);
+   the value SEEK_END is not supported.
+   <p>
+     If the file is opened for reading, this function is emulated but can be
+   extremely slow. If the file is opened for writing, only forward seeks are
+   supported ; <a href="#gzseek">gzseek</a> then compresses a sequence of zeroes up to the new
+   starting position.
+   <p>
+      <a href="#gzseek">gzseek</a> returns the resulting offset location as measured in bytes from
+   the beginning of the uncompressed stream, or -1 in case of error, in
+   particular if the file is opened for writing and the new starting position
+   would be before the current position.
+   <p>
+
+<font color="Blue"><dt> int     <a name="gzrewind">gzrewind</a> (gzFile file);</font>
+<dd>
+     Rewinds the given file. This function is supported only for reading.
+     <p>
+   <a href="#gzrewind">gzrewind</a>(file) is equivalent to (int)<a href="#gzseek">gzseek</a>(file, 0L, SEEK_SET)
+   <p>
+
+<font color="Blue"><dt> z_off_t     <a name="gztell">gztell</a> (gzFile file);</font>
+<dd>
+     Returns the starting position for the next <a href="#gzread">gzread</a> or <a href="#gzwrite">gzwrite</a> on the
+   given compressed file. This position represents a number of bytes in the
+   uncompressed data stream.
+   <p>
+
+   <a href="#gztell">gztell</a>(file) is equivalent to <a href="#gzseek">gzseek</a>(file, 0L, SEEK_CUR)
+   <p>
+
+<font color="Blue"><dt> int  <a name="gzeof">gzeof</a> (gzFile file);</font>
+<dd>
+     Returns 1 when EOF has previously been detected reading the given
+   input stream, otherwise zero.
+   <p>
+
+<font color="Blue"><dt> int     <a name="gzclose">gzclose</a> (gzFile file);</font>
+<dd>
+     Flushes all pending output if necessary, closes the compressed file
+   and deallocates all the (de)compression <a href="#state">state</a>. The return value is the zlib
+   error number (see function <a href="#gzerror">gzerror</a> below).
+   <p>
+
+<font color="Blue"><dt> const char *  <a name="gzerror">gzerror</a> (gzFile file, int *errnum);</font>
+<dd>
+     Returns the error message for the last error which occurred on the
+   given compressed file. errnum is set to zlib error number. If an
+   error occurred in the file system and not in the compression library,
+   errnum is set to <a href="#Z_ERRNO">Z_ERRNO</a> and the application may consult errno
+   to get the exact error code.
+   <p>
+</dl>
+<hr>
+<a name="Basic functions"><h2> Basic functions </h2>
+<h3> Function list </h3>
+<ul>
+<li>  const char *  <a href="#zlibVersion">zlibVersion</a> (void);
+<li>  int  <a href="#deflateInit">deflateInit</a> (<a href="#z_streamp">z_streamp</a> strm, int level);
+<li>  int  <a href="#deflate">deflate</a> (<a href="#z_streamp">z_streamp</a> strm, int flush);
+<li>  int  <a href="#deflateEnd">deflateEnd</a> (<a href="#z_streamp">z_streamp</a> strm);
+<li>  int  <a href="#inflateInit">inflateInit</a> (<a href="#z_streamp">z_streamp</a> strm);
+<li>  int  <a href="#inflate">inflate</a> (<a href="#z_streamp">z_streamp</a> strm, int flush);
+<li>  int  <a href="#inflateEnd">inflateEnd</a> (<a href="#z_streamp">z_streamp</a> strm);
+</ul>
+
+<h3> Function description </h3>
+<dl>
+<font color="Blue"><dt>  const char *  <a name="zlibVersion">zlibVersion</a> (void);</font>
+<dd> The application can compare <a href="#zlibVersion">zlibVersion</a> and ZLIB_VERSION for consistency.
+   If the first character differs, the library code actually used is
+   not compatible with the zlib.h header file used by the application.
+   This check is automatically made by <a href="#deflateInit">deflateInit</a> and <a href="#inflateInit">inflateInit</a>.
+   <p>
+
+<font color="Blue"><dt> int  <a name="deflateInit">deflateInit</a> (<a href="#z_streamp">z_streamp</a> strm, int level);</font>
+<dd>
+     Initializes the internal stream <a href="#state">state</a> for compression. The fields
+   <a href="#zalloc">zalloc</a>, <a href="#zfree">zfree</a> and <a href="#opaque">opaque</a> must be initialized before by the caller.
+   If <a href="#zalloc">zalloc</a> and <a href="#zfree">zfree</a> are set to <a href="#Z_NULL">Z_NULL</a>, <a href="#deflateInit">deflateInit</a> updates them to
+   use default allocation functions.
+   <p>
+
+     The compression level must be <a href="#Z_DEFAULT_COMPRESSION">Z_DEFAULT_COMPRESSION</a>, or between 0 and 9:
+   1 gives best speed, 9 gives best compression, 0 gives no compression at
+   all (the input data is simply copied a block at a time).
+   <p>
+
+   <a href="#Z_DEFAULT_COMPRESSION">Z_DEFAULT_COMPRESSION</a> requests a default compromise between speed and
+   compression (currently equivalent to level 6).
+   <p>
+
+     <a href="#deflateInit">deflateInit</a> returns <a href="#Z_OK">Z_OK</a> if success, <a href="#Z_MEM_ERROR">Z_MEM_ERROR</a> if there was not
+   enough memory, <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if level is not a valid compression level,
+   <a href="#Z_VERSION_ERROR">Z_VERSION_ERROR</a> if the zlib library version (<a href="#zlib_version">zlib_version</a>) is incompatible
+   with the version assumed by the caller (ZLIB_VERSION).
+   <a href="#msg">msg</a> is set to null if there is no error message.  <a href="#deflateInit">deflateInit</a> does not
+   perform any compression: this will be done by <a href="#deflate">deflate</a>().
+   <p>
+
+<font color="Blue"><dt>  int  <a name="deflate">deflate</a> (<a href="#z_streamp">z_streamp</a> strm, int flush);</font>
+<dd>
+    <a href="#deflate">deflate</a> compresses as much data as possible, and stops when the input
+  buffer becomes empty or the output buffer becomes full. It may introduce some
+  output latency (reading input without producing any output) except when
+  forced to flush.<p>
+
+    The detailed semantics are as follows. <a href="#deflate">deflate</a> performs one or both of the
+  following actions:
+
+  <ul>
+  <li> Compress more input starting at <a href="#next_in">next_in</a> and update <a href="#next_in">next_in</a> and <a href="#avail_in">avail_in</a>
+    accordingly. If not all input can be processed (because there is not
+    enough room in the output buffer), <a href="#next_in">next_in</a> and <a href="#avail_in">avail_in</a> are updated and
+    processing will resume at this point for the next call of <a href="#deflate">deflate</a>().
+
+  <li>
+    Provide more output starting at <a href="#next_out">next_out</a> and update <a href="#next_out">next_out</a> and <a href="#avail_out">avail_out</a>
+    accordingly. This action is forced if the parameter flush is non zero.
+    Forcing flush frequently degrades the compression ratio, so this parameter
+    should be set only when necessary (in interactive applications).
+    Some output may be provided even if flush is not set.
+  </ul> <p>
+
+  Before the call of <a href="#deflate">deflate</a>(), the application should ensure that at least
+  one of the actions is possible, by providing more input and/or consuming
+  more output, and updating <a href="#avail_in">avail_in</a> or <a href="#avail_out">avail_out</a> accordingly ; <a href="#avail_out">avail_out</a>
+  should never be zero before the call. The application can consume the
+  compressed output when it wants, for example when the output buffer is full
+  (<a href="#avail_out">avail_out</a> == 0), or after each call of <a href="#deflate">deflate</a>(). If <a href="#deflate">deflate</a> returns <a href="#Z_OK">Z_OK</a>
+  and with zero <a href="#avail_out">avail_out</a>, it must be called again after making room in the
+  output buffer because there might be more output pending.
+  <p>
+
+    If the parameter flush is set to <a href="#Z_SYNC_FLUSH">Z_SYNC_FLUSH</a>, all pending output is
+  flushed to the output buffer and the output is aligned on a byte boundary, so
+  that the decompressor can get all input data available so far. (In particular
+  <a href="#avail_in">avail_in</a> is zero after the call if enough output space has been provided
+  before the call.)  Flushing may degrade compression for some compression
+  algorithms and so it should be used only when necessary.
+  <p>
+
+    If flush is set to <a href="#Z_FULL_FLUSH">Z_FULL_FLUSH</a>, all output is flushed as with
+  <a href="#Z_SYNC_FLUSH">Z_SYNC_FLUSH</a>, and the compression <a href="#state">state</a> is reset so that decompression can
+  restart from this point if previous compressed data has been damaged or if
+  random access is desired. Using <a href="#Z_FULL_FLUSH">Z_FULL_FLUSH</a> too often can seriously degrade
+  the compression.
+  <p>
+
+    If <a href="#deflate">deflate</a> returns with <a href="#avail_out">avail_out</a> == 0, this function must be called again
+  with the same value of the flush parameter and more output space (updated
+  <a href="#avail_out">avail_out</a>), until the flush is complete (<a href="#deflate">deflate</a> returns with non-zero
+  <a href="#avail_out">avail_out</a>).
+  <p>
+
+    If the parameter flush is set to <a href="#Z_FINISH">Z_FINISH</a>, pending input is processed,
+  pending output is flushed and <a href="#deflate">deflate</a> returns with <a href="#Z_STREAM_END">Z_STREAM_END</a> if there
+  was enough output space ; if <a href="#deflate">deflate</a> returns with <a href="#Z_OK">Z_OK</a>, this function must be
+  called again with <a href="#Z_FINISH">Z_FINISH</a> and more output space (updated <a href="#avail_out">avail_out</a>) but no
+  more input data, until it returns with <a href="#Z_STREAM_END">Z_STREAM_END</a> or an error. After
+  <a href="#deflate">deflate</a> has returned <a href="#Z_STREAM_END">Z_STREAM_END</a>, the only possible operations on the
+  stream are <a href="#deflateReset">deflateReset</a> or <a href="#deflateEnd">deflateEnd</a>.
+  <p>
+
+    <a href="#Z_FINISH">Z_FINISH</a> can be used immediately after <a href="#deflateInit">deflateInit</a> if all the compression
+  is to be done in a single step. In this case, <a href="#avail_out">avail_out</a> must be at least
+  0.1% larger than <a href="#avail_in">avail_in</a> plus 12 bytes.  If <a href="#deflate">deflate</a> does not return
+  <a href="#Z_STREAM_END">Z_STREAM_END</a>, then it must be called again as described above.
+  <p>
+
+    <a href="#deflate">deflate</a>() sets strm-&gt <a href="#adler">adler</a> to the <a href="#adler32">adler32</a> checksum of all input read
+  so far (that is, <a href="#total_in">total_in</a> bytes).
+  <p>
+
+    <a href="#deflate">deflate</a>() may update <a href="#data_type">data_type</a> if it can make a good guess about
+  the input data type (<a href="#Z_ASCII">Z_ASCII</a> or <a href="#Z_BINARY">Z_BINARY</a>). In doubt, the data is considered
+  binary. This field is only for information purposes and does not affect
+  the compression algorithm in any manner.
+  <p>
+
+    <a href="#deflate">deflate</a>() returns <a href="#Z_OK">Z_OK</a> if some progress has been made (more input
+  processed or more output produced), <a href="#Z_STREAM_END">Z_STREAM_END</a> if all input has been
+  consumed and all output has been produced (only when flush is set to
+  <a href="#Z_FINISH">Z_FINISH</a>), <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if the stream <a href="#state">state</a> was inconsistent (for example
+  if <a href="#next_in">next_in</a> or <a href="#next_out">next_out</a> was NULL), <a href="#Z_BUF_ERROR">Z_BUF_ERROR</a> if no progress is possible
+  (for example <a href="#avail_in">avail_in</a> or <a href="#avail_out">avail_out</a> was zero).
+  <p>
+
+<font color="Blue"><dt>  int  <a name="deflateEnd">deflateEnd</a> (<a href="#z_streamp">z_streamp</a> strm);</font>
+<dd>
+     All dynamically allocated data structures for this stream are freed.
+   This function discards any unprocessed input and does not flush any
+   pending output.
+   <p>
+
+     <a href="#deflateEnd">deflateEnd</a> returns <a href="#Z_OK">Z_OK</a> if success, <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if the
+   stream <a href="#state">state</a> was inconsistent, <a href="#Z_DATA_ERROR">Z_DATA_ERROR</a> if the stream was freed
+   prematurely (some input or output was discarded). In the error case,
+   <a href="#msg">msg</a> may be set but then points to a static string (which must not be
+   deallocated).
+   <p>
+
+<font color="Blue"><dt>  int  <a name="inflateInit">inflateInit</a> (<a href="#z_streamp">z_streamp</a> strm);</font>
+<dd>
+	Initializes the internal stream <a href="#state">state</a> for decompression. The fields
+   <a href="#next_in">next_in</a>, <a href="#avail_in">avail_in</a>, <a href="#zalloc">zalloc</a>, <a href="#zfree">zfree</a> and <a href="#opaque">opaque</a> must be initialized before by
+   the caller. If <a href="#next_in">next_in</a> is not <a href="#Z_NULL">Z_NULL</a> and <a href="#avail_in">avail_in</a> is large enough (the exact
+   value depends on the compression method), <a href="#inflateInit">inflateInit</a> determines the
+   compression method from the zlib header and allocates all data structures
+   accordingly ; otherwise the allocation will be deferred to the first call of
+   <a href="#inflate">inflate</a>.  If <a href="#zalloc">zalloc</a> and <a href="#zfree">zfree</a> are set to <a href="#Z_NULL">Z_NULL</a>, <a href="#inflateInit">inflateInit</a> updates them to
+   use default allocation functions.
+   <p>
+
+     <a href="#inflateInit">inflateInit</a> returns <a href="#Z_OK">Z_OK</a> if success, <a href="#Z_MEM_ERROR">Z_MEM_ERROR</a> if there was not enough
+   memory, <a href="#Z_VERSION_ERROR">Z_VERSION_ERROR</a> if the zlib library version is incompatible with the
+   version assumed by the caller.  <a href="#msg">msg</a> is set to null if there is no error
+   message. <a href="#inflateInit">inflateInit</a> does not perform any decompression apart from reading
+   the zlib header if present: this will be done by <a href="#inflate">inflate</a>().  (So <a href="#next_in">next_in</a> and
+   <a href="#avail_in">avail_in</a> may be modified, but <a href="#next_out">next_out</a> and <a href="#avail_out">avail_out</a> are unchanged.)
+   <p>
+
+<font color="Blue"><dt>  int  <a name="inflate">inflate</a> (<a href="#z_streamp">z_streamp</a> strm, int flush);</font>
+<dd>
+    <a href="#inflate">inflate</a> decompresses as much data as possible, and stops when the input
+  buffer becomes empty or the output buffer becomes full. It may some
+  introduce some output latency (reading input without producing any output)
+  except when forced to flush.
+  <p>
+
+  The detailed semantics are as follows. <a href="#inflate">inflate</a> performs one or both of the
+  following actions:
+
+  <ul>
+  <li> Decompress more input starting at <a href="#next_in">next_in</a> and update <a href="#next_in">next_in</a> and <a href="#avail_in">avail_in</a>
+    accordingly. If not all input can be processed (because there is not
+    enough room in the output buffer), <a href="#next_in">next_in</a> is updated and processing
+    will resume at this point for the next call of <a href="#inflate">inflate</a>().
+
+  <li> Provide more output starting at <a href="#next_out">next_out</a> and update <a href="#next_out">next_out</a> and
+    <a href="#avail_out">avail_out</a> accordingly.  <a href="#inflate">inflate</a>() provides as much output as possible,
+    until there is no more input data or no more space in the output buffer
+    (see below about the flush parameter).
+  </ul> <p>
+
+  Before the call of <a href="#inflate">inflate</a>(), the application should ensure that at least
+  one of the actions is possible, by providing more input and/or consuming
+  more output, and updating the next_* and avail_* values accordingly.
+  The application can consume the uncompressed output when it wants, for
+  example when the output buffer is full (<a href="#avail_out">avail_out</a> == 0), or after each
+  call of <a href="#inflate">inflate</a>(). If <a href="#inflate">inflate</a> returns <a href="#Z_OK">Z_OK</a> and with zero <a href="#avail_out">avail_out</a>, it
+  must be called again after making room in the output buffer because there
+  might be more output pending.
+  <p>
+
+    If the parameter flush is set to <a href="#Z_SYNC_FLUSH">Z_SYNC_FLUSH</a>, <a href="#inflate">inflate</a> flushes as much
+  output as possible to the output buffer. The flushing behavior of <a href="#inflate">inflate</a> is
+  not specified for values of the flush parameter other than <a href="#Z_SYNC_FLUSH">Z_SYNC_FLUSH</a>
+  and <a href="#Z_FINISH">Z_FINISH</a>, but the current implementation actually flushes as much output
+  as possible anyway.
+  <p>
+
+    <a href="#inflate">inflate</a>() should normally be called until it returns <a href="#Z_STREAM_END">Z_STREAM_END</a> or an
+  error. However if all decompression is to be performed in a single step
+  (a single call of <a href="#inflate">inflate</a>), the parameter flush should be set to
+  <a href="#Z_FINISH">Z_FINISH</a>. In this case all pending input is processed and all pending
+  output is flushed ; <a href="#avail_out">avail_out</a> must be large enough to hold all the
+  uncompressed data. (The size of the uncompressed data may have been saved
+  by the compressor for this purpose.) The next operation on this stream must
+  be <a href="#inflateEnd">inflateEnd</a> to deallocate the decompression <a href="#state">state</a>. The use of <a href="#Z_FINISH">Z_FINISH</a>
+  is never required, but can be used to inform <a href="#inflate">inflate</a> that a faster routine
+  may be used for the single <a href="#inflate">inflate</a>() call.
+  <p>
+
+     If a preset dictionary is needed at this point (see <a href="#inflateSetDictionary">inflateSetDictionary</a>
+  below), <a href="#inflate">inflate</a> sets strm-<a href="#adler">adler</a> to the <a href="#adler32">adler32</a> checksum of the
+  dictionary chosen by the compressor and returns <a href="#Z_NEED_DICT">Z_NEED_DICT</a> ; otherwise
+  it sets strm-&gt <a href="#adler">adler</a> to the <a href="#adler32">adler32</a> checksum of all output produced
+  so far (that is, <a href="#total_out">total_out</a> bytes) and returns <a href="#Z_OK">Z_OK</a>, <a href="#Z_STREAM_END">Z_STREAM_END</a> or
+  an error code as described below. At the end of the stream, <a href="#inflate">inflate</a>()
+  checks that its computed <a href="#adler32">adler32</a> checksum is equal to that saved by the
+  compressor and returns <a href="#Z_STREAM_END">Z_STREAM_END</a> only if the checksum is correct.
+  <p>
+
+    <a href="#inflate">inflate</a>() returns <a href="#Z_OK">Z_OK</a> if some progress has been made (more input processed
+  or more output produced), <a href="#Z_STREAM_END">Z_STREAM_END</a> if the end of the compressed data has
+  been reached and all uncompressed output has been produced, <a href="#Z_NEED_DICT">Z_NEED_DICT</a> if a
+  preset dictionary is needed at this point, <a href="#Z_DATA_ERROR">Z_DATA_ERROR</a> if the input data was
+  corrupted (input stream not conforming to the zlib format or incorrect
+  <a href="#adler32">adler32</a> checksum), <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if the stream structure was inconsistent
+  (for example if <a href="#next_in">next_in</a> or <a href="#next_out">next_out</a> was NULL), <a href="#Z_MEM_ERROR">Z_MEM_ERROR</a> if there was not
+  enough memory, <a href="#Z_BUF_ERROR">Z_BUF_ERROR</a> if no progress is possible or if there was not
+  enough room in the output buffer when <a href="#Z_FINISH">Z_FINISH</a> is used. In the <a href="#Z_DATA_ERROR">Z_DATA_ERROR</a>
+  case, the application may then call <a href="#inflateSync">inflateSync</a> to look for a good
+  compression block.
+  <p>
+
+<font color="Blue"><dt>  int  <a name="inflateEnd">inflateEnd</a> (<a href="#z_streamp">z_streamp</a> strm);</font>
+<dd>
+     All dynamically allocated data structures for this stream are freed.
+   This function discards any unprocessed input and does not flush any
+   pending output.
+   <p>
+
+     <a href="#inflateEnd">inflateEnd</a> returns <a href="#Z_OK">Z_OK</a> if success, <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if the stream <a href="#state">state</a>
+   was inconsistent. In the error case, <a href="#msg">msg</a> may be set but then points to a
+   static string (which must not be deallocated).
+</dl>
+<hr>
+<a name="Advanced functions"><h2> Advanced functions </h2>
+    The following functions are needed only in some special applications.
+<h3> Function list </h3>
+<ul>
+<li>  int  <a href="#deflateInit2">deflateInit2</a> (<a href="#z_streamp">z_streamp</a> strm,
+<li> int  <a href="#deflateSetDictionary">deflateSetDictionary</a> (<a href="#z_streamp">z_streamp</a> strm, const Bytef *dictionary, uInt  dictLength);
+<li> int  <a href="#deflateCopy">deflateCopy</a> (<a href="#z_streamp">z_streamp</a> dest, <a href="#z_streamp">z_streamp</a> source);
+<li> int  <a href="#deflateReset">deflateReset</a> (<a href="#z_streamp">z_streamp</a> strm);
+<li> int  <a href="#deflateParams">deflateParams</a> (<a href="#z_streamp">z_streamp</a> strm, int level, int strategy);
+<li> int  <a href="#inflateInit2">inflateInit2</a> (<a href="#z_streamp">z_streamp</a> strm, int  windowBits);
+<li>  int  <a href="#inflateSetDictionary">inflateSetDictionary</a> (<a href="#z_streamp">z_streamp</a> strm, const Bytef *dictionary, uInt  dictLength);
+<li> int  <a href="#inflateSync">inflateSync</a> (<a href="#z_streamp">z_streamp</a> strm);
+<li> int  <a href="#inflateReset">inflateReset</a> (<a href="#z_streamp">z_streamp</a> strm);
+
+</ul>
+<h3> Function description </h3>
+<dl>
+<font color="Blue"><dt>  int  <a name="deflateInit2">deflateInit2</a> (<a href="#z_streamp">z_streamp</a> strm, int  level, int  method, int  windowBits, int  memLevel, int  strategy);</font>
+
+<dd> This is another version of <a href="#deflateInit">deflateInit</a> with more compression options. The
+   fields <a href="#next_in">next_in</a>, <a href="#zalloc">zalloc</a>, <a href="#zfree">zfree</a> and <a href="#opaque">opaque</a> must be initialized before by
+   the caller.<p>
+
+     The method parameter is the compression method. It must be <a href="#Z_DEFLATED">Z_DEFLATED</a> in
+   this version of the library.<p>
+
+     The windowBits parameter is the base two logarithm of the window size
+   (the size of the history buffer).  It should be in the range 8..15 for this
+   version of the library. Larger values of this parameter result in better
+   compression at the expense of memory usage. The default value is 15 if
+   <a href="#deflateInit">deflateInit</a> is used instead.<p>
+
+     The memLevel parameter specifies how much memory should be allocated
+   for the internal compression <a href="#state">state</a>. memLevel=1 uses minimum memory but
+   is slow and reduces compression ratio ; memLevel=9 uses maximum memory
+   for optimal speed. The default value is 8. See zconf.h for total memory
+   usage as a function of windowBits and memLevel.<p>
+
+     The strategy parameter is used to tune the compression algorithm. Use the
+   value <a href="#Z_DEFAULT_STRATEGY">Z_DEFAULT_STRATEGY</a> for normal data, <a href="#Z_FILTERED">Z_FILTERED</a> for data produced by a
+   filter (or predictor), or <a href="#Z_HUFFMAN_ONLY">Z_HUFFMAN_ONLY</a> to force Huffman encoding only (no
+   string match).  Filtered data consists mostly of small values with a
+   somewhat random distribution. In this case, the compression algorithm is
+   tuned to <a href="#compress">compress</a> them better. The effect of <a href="#Z_FILTERED">Z_FILTERED</a> is to force more
+   Huffman coding and less string matching ; it is somewhat intermediate
+   between Z_DEFAULT and <a href="#Z_HUFFMAN_ONLY">Z_HUFFMAN_ONLY</a>. The strategy parameter only affects
+   the compression ratio but not the correctness of the compressed output even
+   if it is not set appropriately.<p>
+
+      <a href="#deflateInit2">deflateInit2</a> returns <a href="#Z_OK">Z_OK</a> if success, <a href="#Z_MEM_ERROR">Z_MEM_ERROR</a> if there was not enough
+   memory, <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if a parameter is invalid (such as an invalid
+   method). <a href="#msg">msg</a> is set to null if there is no error message.  <a href="#deflateInit2">deflateInit2</a> does
+   not perform any compression: this will be done by <a href="#deflate">deflate</a>().<p>
+
+<font color="Blue"><dt> int  <a name="deflateSetDictionary">deflateSetDictionary</a> (<a href="#z_streamp">z_streamp</a> strm, const Bytef *dictionary, uInt  dictLength);</font>
+<dd>
+     Initializes the compression dictionary from the given byte sequence
+   without producing any compressed output. This function must be called
+   immediately after <a href="#deflateInit">deflateInit</a>, <a href="#deflateInit2">deflateInit2</a> or <a href="#deflateReset">deflateReset</a>, before any
+   call of <a href="#deflate">deflate</a>. The compressor and decompressor must use exactly the same
+   dictionary (see <a href="#inflateSetDictionary">inflateSetDictionary</a>).<p>
+
+     The dictionary should consist of strings (byte sequences) that are likely
+   to be encountered later in the data to be compressed, with the most commonly
+   used strings preferably put towards the end of the dictionary. Using a
+   dictionary is most useful when the data to be compressed is short and can be
+   predicted with good accuracy ; the data can then be compressed better than
+   with the default empty dictionary.<p>
+
+     Depending on the size of the compression data structures selected by
+   <a href="#deflateInit">deflateInit</a> or <a href="#deflateInit2">deflateInit2</a>, a part of the dictionary may in effect be
+   discarded, for example if the dictionary is larger than the window size in
+   <a href="#deflate">deflate</a> or deflate2. Thus the strings most likely to be useful should be
+   put at the end of the dictionary, not at the front.<p>
+
+     Upon return of this function, strm-&gt <a href="#adler">adler</a> is set to the Adler32 value
+   of the dictionary ; the decompressor may later use this value to determine
+   which dictionary has been used by the compressor. (The Adler32 value
+   applies to the whole dictionary even if only a subset of the dictionary is
+   actually used by the compressor.)<p>
+
+     <a href="#deflateSetDictionary">deflateSetDictionary</a> returns <a href="#Z_OK">Z_OK</a> if success, or <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if a
+   parameter is invalid (such as NULL dictionary) or the stream <a href="#state">state</a> is
+   inconsistent (for example if <a href="#deflate">deflate</a> has already been called for this stream
+   or if the compression method is bsort). <a href="#deflateSetDictionary">deflateSetDictionary</a> does not
+   perform any compression: this will be done by <a href="#deflate">deflate</a>().<p>
+
+<font color="Blue"><dt> int  <a name="deflateCopy">deflateCopy</a> (<a href="#z_streamp">z_streamp</a> dest, <a href="#z_streamp">z_streamp</a> source);</font>
+<dd>
+     Sets the destination stream as a complete copy of the source stream.<p>
+
+     This function can be useful when several compression strategies will be
+   tried, for example when there are several ways of pre-processing the input
+   data with a filter. The streams that will be discarded should then be freed
+   by calling <a href="#deflateEnd">deflateEnd</a>.  Note that <a href="#deflateCopy">deflateCopy</a> duplicates the internal
+   compression <a href="#state">state</a> which can be quite large, so this strategy is slow and
+   can consume lots of memory.<p>
+
+     <a href="#deflateCopy">deflateCopy</a> returns <a href="#Z_OK">Z_OK</a> if success, <a href="#Z_MEM_ERROR">Z_MEM_ERROR</a> if there was not
+   enough memory, <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if the source stream <a href="#state">state</a> was inconsistent
+   (such as <a href="#zalloc">zalloc</a> being NULL). <a href="#msg">msg</a> is left unchanged in both source and
+   destination.<p>
+
+<font color="Blue"><dt> int  <a name="deflateReset">deflateReset</a> (<a href="#z_streamp">z_streamp</a> strm);</font>
+<dd>     This function is equivalent to <a href="#deflateEnd">deflateEnd</a> followed by <a href="#deflateInit">deflateInit</a>,
+   but does not free and reallocate all the internal compression <a href="#state">state</a>.
+   The stream will keep the same compression level and any other attributes
+   that may have been set by <a href="#deflateInit2">deflateInit2</a>.<p>
+
+      <a href="#deflateReset">deflateReset</a> returns <a href="#Z_OK">Z_OK</a> if success, or <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if the source
+   stream <a href="#state">state</a> was inconsistent (such as <a href="#zalloc">zalloc</a> or <a href="#state">state</a> being NULL).<p>
+
+<font color="Blue"><dt> int  <a name="deflateParams">deflateParams</a> (<a href="#z_streamp">z_streamp</a> strm, int level, int strategy);</font>
+<dd>
+     Dynamically update the compression level and compression strategy.  The
+   interpretation of level and strategy is as in <a href="#deflateInit2">deflateInit2</a>.  This can be
+   used to switch between compression and straight copy of the input data, or
+   to switch to a different kind of input data requiring a different
+   strategy. If the compression level is changed, the input available so far
+   is compressed with the old level (and may be flushed); the new level will
+   take effect only at the next call of <a href="#deflate">deflate</a>().<p>
+
+     Before the call of <a href="#deflateParams">deflateParams</a>, the stream <a href="#state">state</a> must be set as for
+   a call of <a href="#deflate">deflate</a>(), since the currently available input may have to
+   be compressed and flushed. In particular, strm-&gt <a href="#avail_out">avail_out</a> must be
+   non-zero.<p>
+
+     <a href="#deflateParams">deflateParams</a> returns <a href="#Z_OK">Z_OK</a> if success, <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if the source
+   stream <a href="#state">state</a> was inconsistent or if a parameter was invalid, <a href="#Z_BUF_ERROR">Z_BUF_ERROR</a>
+   if strm-&gtavail_out was zero.<p>
+
+<font color="Blue"><dt> int  <a name="inflateInit2">inflateInit2</a> (<a href="#z_streamp">z_streamp</a> strm, int  windowBits);</font>
+
+<dd>     This is another version of <a href="#inflateInit">inflateInit</a> with an extra parameter. The
+   fields <a href="#next_in">next_in</a>, <a href="#avail_in">avail_in</a>, <a href="#zalloc">zalloc</a>, <a href="#zfree">zfree</a> and <a href="#opaque">opaque</a> must be initialized
+   before by the caller.<p>
+
+     The windowBits parameter is the base two logarithm of the maximum window
+   size (the size of the history buffer).  It should be in the range 8..15 for
+   this version of the library. The default value is 15 if <a href="#inflateInit">inflateInit</a> is used
+   instead. If a compressed stream with a larger window size is given as
+   input, <a href="#inflate">inflate</a>() will return with the error code <a href="#Z_DATA_ERROR">Z_DATA_ERROR</a> instead of
+   trying to allocate a larger window.<p>
+
+      <a href="#inflateInit2">inflateInit2</a> returns <a href="#Z_OK">Z_OK</a> if success, <a href="#Z_MEM_ERROR">Z_MEM_ERROR</a> if there was not enough
+   memory, <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if a parameter is invalid (such as a negative
+   memLevel). <a href="#msg">msg</a> is set to null if there is no error message.  <a href="#inflateInit2">inflateInit2</a>
+   does not perform any decompression apart from reading the zlib header if
+   present: this will be done by <a href="#inflate">inflate</a>(). (So <a href="#next_in">next_in</a> and <a href="#avail_in">avail_in</a> may be
+   modified, but <a href="#next_out">next_out</a> and <a href="#avail_out">avail_out</a> are unchanged.)<p>
+
+<font color="Blue"><dt>  int  <a name="inflateSetDictionary">inflateSetDictionary</a> (<a href="#z_streamp">z_streamp</a> strm, const Bytef *dictionary, uInt  dictLength);</font>
+<dd>
+     Initializes the decompression dictionary from the given uncompressed byte
+   sequence. This function must be called immediately after a call of <a href="#inflate">inflate</a>
+   if this call returned <a href="#Z_NEED_DICT">Z_NEED_DICT</a>. The dictionary chosen by the compressor
+   can be determined from the Adler32 value returned by this call of
+   <a href="#inflate">inflate</a>. The compressor and decompressor must use exactly the same
+   dictionary (see <a href="#deflateSetDictionary">deflateSetDictionary</a>).<p>
+
+     <a href="#inflateSetDictionary">inflateSetDictionary</a> returns <a href="#Z_OK">Z_OK</a> if success, <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if a
+   parameter is invalid (such as NULL dictionary) or the stream <a href="#state">state</a> is
+   inconsistent, <a href="#Z_DATA_ERROR">Z_DATA_ERROR</a> if the given dictionary doesn't match the
+   expected one (incorrect Adler32 value). <a href="#inflateSetDictionary">inflateSetDictionary</a> does not
+   perform any decompression: this will be done by subsequent calls of
+   <a href="#inflate">inflate</a>().<p>
+
+<font color="Blue"><dt> int  <a name="inflateSync">inflateSync</a> (<a href="#z_streamp">z_streamp</a> strm);</font>
+
+<dd>    Skips invalid compressed data until a full flush point (see above the
+  description of <a href="#deflate">deflate</a> with <a href="#Z_FULL_FLUSH">Z_FULL_FLUSH</a>) can be found, or until all
+  available input is skipped. No output is provided.<p>
+
+    <a href="#inflateSync">inflateSync</a> returns <a href="#Z_OK">Z_OK</a> if a full flush point has been found, <a href="#Z_BUF_ERROR">Z_BUF_ERROR</a>
+  if no more input was provided, <a href="#Z_DATA_ERROR">Z_DATA_ERROR</a> if no flush point has been found,
+  or <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if the stream structure was inconsistent. In the success
+  case, the application may save the current current value of <a href="#total_in">total_in</a> which
+  indicates where valid compressed data was found. In the error case, the
+  application may repeatedly call <a href="#inflateSync">inflateSync</a>, providing more input each time,
+  until success or end of the input data.<p>
+
+<font color="Blue"><dt> int  <a name="inflateReset">inflateReset</a> (<a href="#z_streamp">z_streamp</a> strm);</font>
+<dd>
+     This function is equivalent to <a href="#inflateEnd">inflateEnd</a> followed by <a href="#inflateInit">inflateInit</a>,
+   but does not free and reallocate all the internal decompression <a href="#state">state</a>.
+   The stream will keep attributes that may have been set by <a href="#inflateInit2">inflateInit2</a>.
+   <p>
+
+      <a href="#inflateReset">inflateReset</a> returns <a href="#Z_OK">Z_OK</a> if success, or <a href="#Z_STREAM_ERROR">Z_STREAM_ERROR</a> if the source
+   stream <a href="#state">state</a> was inconsistent (such as <a href="#zalloc">zalloc</a> or <a href="#state">state</a> being NULL).
+   <p>
+</dl>
+
+<hr>
+<a name="Checksum functions"><h2> Checksum functions </h2>
+     These functions are not related to compression but are exported
+   anyway because they might be useful in applications using the
+   compression library.
+<h3> Function list </h3>
+<ul>
+<li> uLong  <a href="#adler32">adler32</a> (uLong <a href="#adler">adler</a>, const Bytef *buf, uInt len);
+<li> uLong  <a href="#crc32">crc32</a>   (uLong crc, const Bytef *buf, uInt len);
+</ul>
+<h3> Function description </h3>
+<dl>
+<font color="Blue"><dt> uLong  <a name="adler32">adler32</a> (uLong <a href="#adler">adler</a>, const Bytef *buf, uInt len);</font>
+<dd>
+     Update a running Adler-32 checksum with the bytes buf[0..len-1] and
+   return the updated checksum. If buf is NULL, this function returns
+   the required initial value for the checksum.
+   <p>
+   An Adler-32 checksum is almost as reliable as a CRC32 but can be computed
+   much faster. Usage example:
+   <pre>
+
+     uLong <a href="#adler">adler</a> = <a href="#adler32">adler32</a>(0L, <a href="#Z_NULL">Z_NULL</a>, 0);
+
+     while (read_buffer(buffer, length) != EOF) {
+       <a href="#adler">adler</a> = <a href="#adler32">adler32</a>(<a href="#adler">adler</a>, buffer, length);
+     }
+     if (<a href="#adler">adler</a> != original_adler) error();
+   </pre>
+
+<font color="Blue"><dt> uLong  <a name="crc32">crc32</a>   (uLong crc, const Bytef *buf, uInt len);</font>
+<dd>
+     Update a running crc with the bytes buf[0..len-1] and return the updated
+   crc. If buf is NULL, this function returns the required initial value
+   for the crc. Pre- and post-conditioning (one's complement) is performed
+   within this function so it shouldn't be done by the application.
+   Usage example:
+   <pre>
+
+     uLong crc = <a href="#crc32">crc32</a>(0L, <a href="#Z_NULL">Z_NULL</a>, 0);
+
+     while (read_buffer(buffer, length) != EOF) {
+       crc = <a href="#crc32">crc32</a>(crc, buffer, length);
+     }
+     if (crc != original_crc) error();
+   </pre>
+</dl>
+<hr>
+<a name="struct z_stream_s"><h2> struct z_stream_s </h2>
+<font color="Blue">
+<a name="z_stream_s">
+<pre>
+typedef struct z_stream_s {
+    Bytef    *<a name="next_in">next_in</a>;  /* next input byte */
+    uInt     <a name="avail_in">avail_in</a>;  /* number of bytes available at <a href="#next_in">next_in</a> */
+    uLong    <a name="total_in">total_in</a>;  /* total nb of input bytes read so far */
+
+    Bytef    *<a name="next_out">next_out</a>; /* next output byte should be put there */
+    uInt     <a name="avail_out">avail_out</a>; /* remaining free space at <a href="#next_out">next_out</a> */
+    uLong    <a name="total_out">total_out</a>; /* total nb of bytes output so far */
+
+    char     *<a name="msg">msg</a>;      /* last error message, NULL if no error */
+    struct internal_state FAR *<a name="state">state</a>; /* not visible by applications */
+
+    alloc_func <a name="zalloc">zalloc</a>;  /* used to allocate the internal <a href="#state">state</a> */
+    free_func  <a name="zfree">zfree</a>;   /* used to free the internal <a href="#state">state</a> */
+    voidpf     <a name="opaque">opaque</a>;  /* private data object passed to <a href="#zalloc">zalloc</a> and <a href="#zfree">zfree</a> */
+
+    int     <a name="data_type">data_type</a>;  /* best guess about the data type: ascii or binary */
+    uLong   <a name="adler">adler</a>;      /* <a href="#adler32">adler32</a> value of the uncompressed data */
+    uLong   <a name="reserved">reserved</a>;   /* <a href="#reserved">reserved</a> for future use */
+} <a href="#z_stream_s">z_stream</a> ;
+
+typedef <a href="#z_stream_s">z_stream</a> FAR * <a name="z_streamp">z_streamp</a>;  ÿ
+</pre>
+</font>
+   The application must update <a href="#next_in">next_in</a> and <a href="#avail_in">avail_in</a> when <a href="#avail_in">avail_in</a> has
+   dropped to zero. It must update <a href="#next_out">next_out</a> and <a href="#avail_out">avail_out</a> when <a href="#avail_out">avail_out</a>
+   has dropped to zero. The application must initialize <a href="#zalloc">zalloc</a>, <a href="#zfree">zfree</a> and
+   <a href="#opaque">opaque</a> before calling the init function. All other fields are set by the
+   compression library and must not be updated by the application. <p>
+
+   The <a href="#opaque">opaque</a> value provided by the application will be passed as the first
+   parameter for calls of <a href="#zalloc">zalloc</a> and <a href="#zfree">zfree</a>. This can be useful for custom
+   memory management. The compression library attaches no meaning to the
+   <a href="#opaque">opaque</a> value. <p>
+
+   <a href="#zalloc">zalloc</a> must return <a href="#Z_NULL">Z_NULL</a> if there is not enough memory for the object.
+   If zlib is used in a multi-threaded application, <a href="#zalloc">zalloc</a> and <a href="#zfree">zfree</a> must be
+   thread safe. <p>
+
+   On 16-bit systems, the functions <a href="#zalloc">zalloc</a> and <a href="#zfree">zfree</a> must be able to allocate
+   exactly 65536 bytes, but will not be required to allocate more than this
+   if the symbol MAXSEG_64K is defined (see zconf.h). WARNING: On MSDOS,
+   pointers returned by <a href="#zalloc">zalloc</a> for objects of exactly 65536 bytes *must*
+   have their offset normalized to zero. The default allocation function
+   provided by this library ensures this (see zutil.c). To reduce memory
+   requirements and avoid any allocation of 64K objects, at the expense of
+   compression ratio, compile the library with -DMAX_WBITS=14 (see zconf.h).
+   <p>
+
+   The fields <a href="#total_in">total_in</a> and <a href="#total_out">total_out</a> can be used for statistics or
+   progress reports. After compression, <a href="#total_in">total_in</a> holds the total size of
+   the uncompressed data and may be saved for use in the decompressor
+   (particularly if the decompressor wants to decompress everything in
+   a single step). <p>
+
+<hr>
+<a name="Constants"><h2> Constants </h2>
+<font color="Blue">
+<pre>
+#define <a name="Z_NO_FLUSH">Z_NO_FLUSH</a>      0
+#define <a name="Z_PARTIAL_FLUSH">Z_PARTIAL_FLUSH</a> 1
+	/* will be removed, use <a href="#Z_SYNC_FLUSH">Z_SYNC_FLUSH</a> instead */
+#define <a name="Z_SYNC_FLUSH">Z_SYNC_FLUSH</a>    2
+#define <a name="Z_FULL_FLUSH">Z_FULL_FLUSH</a>    3
+#define <a name="Z_FINISH">Z_FINISH</a>        4
+/* Allowed flush values ; see <a href="#deflate">deflate</a>() below for details */
+
+#define <a name="Z_OK">Z_OK</a>            0
+#define <a name="Z_STREAM_END">Z_STREAM_END</a>    1
+#define <a name="Z_NEED_DICT">Z_NEED_DICT</a>     2
+#define <a name="Z_ERRNO">Z_ERRNO</a>        (-1)
+#define <a name="Z_STREAM_ERROR">Z_STREAM_ERROR</a> (-2)
+#define <a name="Z_DATA_ERROR">Z_DATA_ERROR</a>   (-3)
+#define <a name="Z_MEM_ERROR">Z_MEM_ERROR</a>    (-4)
+#define <a name="Z_BUF_ERROR">Z_BUF_ERROR</a>    (-5)
+#define <a name="Z_VERSION_ERROR">Z_VERSION_ERROR</a> (-6)
+/* Return codes for the compression/decompression functions. Negative
+ * values are errors, positive values are used for special but normal events.
+ */
+
+#define <a name="Z_NO_COMPRESSION">Z_NO_COMPRESSION</a>         0
+#define <a name="Z_BEST_SPEED">Z_BEST_SPEED</a>             1
+#define <a name="Z_BEST_COMPRESSION">Z_BEST_COMPRESSION</a>       9
+#define <a name="Z_DEFAULT_COMPRESSION">Z_DEFAULT_COMPRESSION</a>  (-1)
+/* compression levels */
+
+#define <a name="Z_FILTERED">Z_FILTERED</a>            1
+#define <a name="Z_HUFFMAN_ONLY">Z_HUFFMAN_ONLY</a>        2
+#define <a name="Z_DEFAULT_STRATEGY">Z_DEFAULT_STRATEGY</a>    0
+/* compression strategy ; see <a href="#deflateInit2">deflateInit2</a>() below for details */
+
+#define <a name="Z_BINARY">Z_BINARY</a>   0
+#define <a name="Z_ASCII">Z_ASCII</a>    1
+#define <a name="Z_UNKNOWN">Z_UNKNOWN</a>  2
+/* Possible values of the <a href="#data_type">data_type</a> field */
+
+#define <a name="Z_DEFLATED">Z_DEFLATED</a>   8
+/* The <a href="#deflate">deflate</a> compression method (the only one supported in this version) */
+
+#define <a name="Z_NULL">Z_NULL</a>  0  /* for initializing <a href="#zalloc">zalloc</a>, <a href="#zfree">zfree</a>, <a href="#opaque">opaque</a> */
+
+#define <a name="zlib_version">zlib_version</a> <a href="#zlibVersion">zlibVersion</a>()
+/* for compatibility with versions less than 1.0.2 */
+</pre>
+</font>
+
+<hr>
+<a name="Misc"><h2> Misc </h2>
+ <a href="#deflateInit">deflateInit</a> and <a href="#inflateInit">inflateInit</a> are macros to allow checking the zlib version
+ and the compiler's view of <a href="#z_stream_s">z_stream</a>.
+ <p>
+ Other functions:
+ <dl>
+ <font color="Blue"><dt> const char   *  <a name="zError">zError</a>           (int err);</font>
+ <font color="Blue"><dt> int             <a name="inflateSyncPoint">inflateSyncPoint</a> (<a href="#z_streamp">z_streamp</a> z);</font>
+ <font color="Blue"><dt> const uLongf *  <a name="get_crc_table">get_crc_table</a>    (void);</font>
+ </dl>
+ <hr>
+ <font size="-1">
+ Last update: Wed Oct 13 20:42:34 1999<br>
+ piapi@csie.ntu.edu.tw
+ </font>
+
+</body>
+</html>
