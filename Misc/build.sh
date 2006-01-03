@@ -143,7 +143,7 @@ if [ $err = 0 ]; then
             NUM_FAILURES=`grep -ic fail build/$F`
             update_status "Testing basics ($NUM_FAILURES failures)" "$F" $start
             ## FIXME: should mail since -uall below should find same problems
-            mail_on_failure "basics" buiild/$F
+            mail_on_failure "basics" build/$F
 
             ## run the tests looking for leaks
             F=make-test-refleak.out
