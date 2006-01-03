@@ -30,9 +30,6 @@
 ##    basename, date, dirname, expr, grep, readlink, uname
 ##    cksum, make, mutt, rsync, svn
 
-## need to get svn from ~/local/bin
-PATH=$PATH:$HOME/local/bin
-
 ## remember where did we started from
 DIR=`dirname $0`
 if [ "$DIR" = "" ]; then
@@ -145,6 +142,7 @@ if [ $err = 0 ]; then
             make test >& build/$F
             NUM_FAILURES=`grep -ic fail build/$F`
             update_status "Testing basics ($NUM_FAILURES failures)" "$F" $start
+            ## FIXME: should mail since -uall below should find same problems
             mail_on_failure "basics" buiild/$F
 
             ## run the tests looking for leaks
