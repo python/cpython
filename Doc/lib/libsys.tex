@@ -27,10 +27,19 @@ It is always available.
   \versionadded{2.0}
 \end{datadesc}
 
-\begin{datadesc}{build_number}
-  A string representing the Subversion revision that this Python executable
-  was built from.  This number is a string because it may contain a trailing
-  'M' if Python was built from a mixed revision source tree.
+\begin{datadesc}{subversion}
+  A triple (repo, branch, version) representing the Subversion
+  information of the Python interpreter.
+  \var{repo} is the name of the repository, \code{'CPython'}.
+  \var{branch} is the a string of one of the forms \code{'trunk'},
+  \code{'branches/name'} or \code{'tags/name'}.
+  \var{version} is the output of \code{svnversion}, if the
+  interpreter was built from a Subversion checkout; it contains
+  the revision number (range) and possibly a trailing 'M' if
+  there were local modifications. If the tree was exported
+  (or svnversion was not available), it is the revision of
+  \code{Include/patchlevel.h} if the branch is a tag. Otherwise,
+  it is \code{None}.
   \versionadded{2.5}
 \end{datadesc}  
 

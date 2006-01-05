@@ -20,32 +20,25 @@
 #endif
 #endif
 
-static const char revision[] = "$Revision$";
-static const char headurl[] = "$HeadURL$";
-
 const char *
 Py_GetBuildInfo(void)
 {
 	static char buildinfo[50];
-#ifdef SVNVERSION
-	static char svnversion[50] = SVNVERSION;
-#else
-	static char svnversion[50] = "exported";
-#endif
-	if (strcmp(svnversion, "exported") == 0 &&
-	    strstr(headurl, "/tags/") != NULL) {
-		int start = 11;
-		int stop = strlen(revision)-2;
-		strncpy(svnversion, revision+start, stop-start);
-		svnversion[stop-start] = '\0';
-	}
+	char *revision = Py_SubversionRevision();
+	char *sep = revision ? ":" : "";
+	char *branch = Py_SubversionShortBranch();
 	PyOS_snprintf(buildinfo, sizeof(buildinfo),
-		      "%s, %.20s, %.9s", svnversion, DATE, TIME);
+		      "%s%s%s, %.20s, %.9s", branch, sep, revision, 
+		      DATE, TIME);
 	return buildinfo;
 }
 
 const char *
-Py_GetBuildNumber(void)
+_Py_svnversion(void)
 {
-	return "0";
+#ifdef SVNVERSION
+	return SVNVERSION;
+#else
+	return "exported";
+#endif
 }

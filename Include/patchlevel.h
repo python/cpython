@@ -28,6 +28,9 @@
 /* Version as a string */
 #define PY_VERSION		"2.5a0"
 
+/* Subversion Revision number of this file (not of the repository) */
+#define PY_PATCHLEVEL_REVISION  "$Revision$"
+
 /* Version as a single 4-byte hex number, e.g. 0x010502B2 == 1.5.2b2.
    Use this for numeric comparisons, e.g. #if PY_VERSION_HEX >= ... */
 #define PY_VERSION_HEX ((PY_MAJOR_VERSION << 24) | \
