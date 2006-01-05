@@ -619,7 +619,13 @@ AC_SUBST(AR)
 AC_CHECK_PROGS(AR, ar aal, ar)
 
 AC_SUBST(SVNVERSION)
-AC_CHECK_PROGS(SVNVERSION, svnversion, [echo no svnversion])
+AC_CHECK_PROG(SVNVERSION, svnversion, found)
+if test $SVNVERSION = found
+then
+	SVNVERSION="svnversion \$(srcdir)"
+else
+	SVNVERSION="echo exported"
+fi
 
 case $MACHDEP in
 bsdos*|hp*|HP*)

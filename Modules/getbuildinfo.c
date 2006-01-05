@@ -28,15 +28,17 @@ Py_GetBuildInfo(void)
 {
 	static char buildinfo[50];
 #ifdef SVNVERSION
-	static char svnversion[] = SVNVERSION;
+	static char svnversion[50] = SVNVERSION;
 #else
-	static char svnversion[20] = "unknown";
-	if (strstr(headurl, "/tags/") != NULL) {
-		int start = ;
+	static char svnversion[50] = "exported";
+#endif
+	if (strcmp(svnversion, "exported") == 0 &&
+	    strstr(headurl, "/tags/") != NULL) {
+		int start = 11;
+		int stop = strlen(revision)-2;
 		strncpy(svnversion, revision+start, stop-start);
 		svnversion[stop-start] = '\0';
 	}
-#endif
 	PyOS_snprintf(buildinfo, sizeof(buildinfo),
 		      "%s, %.20s, %.9s", svnversion, DATE, TIME);
 	return buildinfo;
