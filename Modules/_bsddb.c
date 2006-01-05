@@ -1174,9 +1174,7 @@ DB_associate(DBObject* self, PyObject* args, PyObject* kwargs)
     }
 
     /* Save a reference to the callback in the secondary DB. */
-    if (self->associateCallback != NULL) {
-        Py_DECREF(self->associateCallback);
-    }
+    Py_XDECREF(secondaryDB->associateCallback);
     Py_INCREF(callback);
     secondaryDB->associateCallback = callback;
     secondaryDB->primaryDBType = _DB_get_type(self);
@@ -1210,8 +1208,8 @@ DB_associate(DBObject* self, PyObject* args, PyObject* kwargs)
     MYDB_END_ALLOW_THREADS;
 
     if (err) {
-        Py_DECREF(self->associateCallback);
-        self->associateCallback = NULL;
+        Py_XDECREF(secondaryDB->associateCallback);
+        secondaryDB->associateCallback = NULL;
         secondaryDB->primaryDBType = 0;
     }
 

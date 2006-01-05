@@ -38,6 +38,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1215432: in bsddb DB.associate() would crash when a DBError
+  was supposed to be raised.
+
 - Fix 64-bit problems in bsddb.
 
 - Bug #1290333: Added a workaround for cjkcodecs' _codecs_cn build
