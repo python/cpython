@@ -38,6 +38,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Fix 64-bit problems in bsddb.
+
 - Bug #1290333: Added a workaround for cjkcodecs' _codecs_cn build
   problem on AIX.
 
