@@ -1522,7 +1522,7 @@ DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
 
         if (self->primaryDBType == DB_RECNO ||
             self->primaryDBType == DB_QUEUE)
-            pkeyObj = PyInt_FromLong(*(long *)pkey.data);
+            pkeyObj = PyInt_FromLong(*(int *)pkey.data);
         else
             pkeyObj = PyString_FromStringAndSize(pkey.data, pkey.size);
 
@@ -1531,7 +1531,7 @@ DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
             PyObject *keyObj;
             int type = _DB_get_type(self);
             if (type == DB_RECNO || type == DB_QUEUE)
-                keyObj = PyInt_FromLong(*(long *)key.data);
+                keyObj = PyInt_FromLong(*(int *)key.data);
             else
                 keyObj = PyString_FromStringAndSize(key.data, key.size);
             retval = Py_BuildValue("OOO", keyObj, pkeyObj, dataObj);
@@ -3172,7 +3172,7 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
 
         if (self->mydb->primaryDBType == DB_RECNO ||
             self->mydb->primaryDBType == DB_QUEUE)
-            pkeyObj = PyInt_FromLong(*(long *)pkey.data);
+            pkeyObj = PyInt_FromLong(*(int *)pkey.data);
         else
             pkeyObj = PyString_FromStringAndSize(pkey.data, pkey.size);
 
@@ -3181,7 +3181,7 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
             PyObject *keyObj;
             int type = _DB_get_type(self->mydb);
             if (type == DB_RECNO || type == DB_QUEUE)
-                keyObj = PyInt_FromLong(*(long *)key.data);
+                keyObj = PyInt_FromLong(*(int *)key.data);
             else
                 keyObj = PyString_FromStringAndSize(key.data, key.size);
             retval = Py_BuildValue("OOO", keyObj, pkeyObj, dataObj);
