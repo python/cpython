@@ -209,6 +209,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Fix 64-bit problems in bsddb.
+
 - Patch #1365916: fix some unsafe 64-bit mmap methods.
 
 - Bug #1290333: Added a workaround for cjkcodecs' _codecs_cn build
