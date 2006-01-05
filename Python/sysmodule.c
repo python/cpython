@@ -934,6 +934,87 @@ _check_and_flush (FILE *stream)
   return fflush (stream) || prev_fail ? EOF : 0;
 }
 
+/* Subversion branch and revision management */
+static const char _patchlevel_revision[] = PY_PATCHLEVEL_REVISION;
+static const char headurl[] = "$HeadURL$";
+static int svn_initialized;
+static char patchlevel_revision[50]; /* Just the number */
+static char branch[50];
+static char shortbranch[50];
+static const char *svn_revision;
+
+static void svnversion_init(void)
+{
+	const char *python, *br_start, *br_end, *br_end2, *svnversion;
+	int len, istag;
+
+	if (svn_initialized)
+		return;
+
+	python = strstr(headurl, "/python/");
+	if (!python)
+		Py_FatalError("subversion keywords missing");
+
+	br_start = python + 8;
+	br_end = strchr(br_start, '/');
+	/* Works even for trunk, 
+	   as we are in trunk/Python/sysmodule.c */
+	br_end2 = strchr(br_end+1, '/');
+
+	istag = strncmp(br_start, "tags", 4) == 0;
+	if (strncmp(br_start, "trunk", 5) == 0) {
+		strcpy(branch, "trunk");
+		strcpy(shortbranch, "trunk");
+
+	} 
+	else if (istag || strncmp(br_start, "branches", 8) == 0) {
+		len = br_end2 - br_start;
+		strncpy(branch, br_start, len);
+		branch[len] = '\0';
+
+		len = br_end2 - (br_end + 1);
+		strncpy(shortbranch, br_end + 1, len);
+		shortbranch[len] = '\0';
+	} 
+	else {
+		Py_FatalError("bad HeadURL");
+		return;
+	}
+
+
+	svnversion = _Py_svnversion();
+	if (strcmp(svnversion, "exported") != 0)
+		svn_revision = svnversion;
+	else if (istag) {
+		len = strlen(_patchlevel_revision);
+		strncpy(patchlevel_revision, _patchlevel_revision + 11,
+			len - 13);
+		patchlevel_revision[len - 13] = '\0';
+		svn_revision = patchlevel_revision;
+	}
+	else
+		svn_revision = "";
+	
+	svn_initialized = 1;
+}
+
+/* Return svnversion output if available.
+   Else return Revision of patchlevel.h if on branch.
+   Else return empty string */
+const char*
+Py_SubversionRevision()
+{
+	svnversion_init();
+	return svn_revision;
+}
+
+const char*
+Py_SubversionShortBranch()
+{
+	svnversion_init();
+	return shortbranch;
+}
+
 PyObject *
 _PySys_Init(void)
 {
@@ -1003,8 +1084,9 @@ _PySys_Init(void)
 	PyDict_SetItemString(sysdict, "hexversion",
 			     v = PyInt_FromLong(PY_VERSION_HEX));
 	Py_XDECREF(v);
-	PyDict_SetItemString(sysdict, "build_number",
-			     v = PyString_FromString(Py_GetBuildNumber()));
+	svnversion_init();
+	v = Py_BuildValue("(ssz)", "CPython", branch, svn_revision);
+	PyDict_SetItemString(sysdict, "subversion", v);
 	Py_XDECREF(v);
 	/*
 	 * These release level checks are mutually exclusive and cover
