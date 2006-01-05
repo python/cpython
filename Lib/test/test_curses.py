@@ -8,7 +8,7 @@
 # getmouse(), ungetmouse(), init_color()
 #
 
-import curses, sys, tempfile
+import curses, sys, tempfile, os
 
 # Optionally test curses module.  This currently requires that the
 # 'curses' resource be given on the regrtest command line using the -u
@@ -16,6 +16,8 @@ import curses, sys, tempfile
 
 from test import test_support
 test_support.requires('curses')
+if not os.isatty(sys.stdin.fileno()):
+    raise test_support.TestSkipped, "stdin is not a tty"
 
 def window_funcs(stdscr):
     "Test the methods of windows"
