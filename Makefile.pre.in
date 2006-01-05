@@ -33,6 +33,7 @@ CXX=		@CXX@
 LINKCC=		@LINKCC@
 AR=		@AR@
 RANLIB=		@RANLIB@
+SVNVERSION=	@SVNVERSION@
 
 # Shell used by make (some versions default to the login shell, which is bad)
 SHELL=		/bin/sh
@@ -341,21 +342,6 @@ sharedmods: $(BUILDPYTHON)
 	*) $(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py build;; \
 	esac
 
-# buildno should really depend on something like LIBRARY_SRC
-buildno: $(PARSER_OBJS) \
-		$(OBJECT_OBJS) \
-		$(PYTHON_OBJS) \
-		$(MODULE_OBJS) \
-		$(SIGNAL_OBJS) \
-		$(MODOBJS) \
-		$(srcdir)/Modules/getbuildinfo.c
-	if test -d $(srcdir)/.svn -a "`which svnversion 2> /dev/null`"; then \
-		svnversion $(srcdir) >buildno; \
-	elif test -f buildno; then \
-		expr `cat buildno` + 1 >buildno1; \
-		mv -f buildno1 buildno; \
-	else echo 1 >buildno; fi
-
 # Build static library
 # avoid long command lines, same as LIBRARY_OBJS
 $(LIBRARY): $(LIBRARY_OBJS)
@@ -445,8 +431,14 @@ Modules/Setup: $(srcdir)/Modules/Setup.dist
 ############################################################################
 # Special rules for object files
 
-Modules/getbuildinfo.o: $(srcdir)/Modules/getbuildinfo.c buildno
-	$(CC) -c $(PY_CFLAGS) -DBUILD=\"`cat buildno`\" -o $@ $(srcdir)/Modules/getbuildinfo.c
+Modules/getbuildinfo.o: $(PARSER_OBJS) \
+		$(OBJECT_OBJS) \
+		$(PYTHON_OBJS) \
+		$(MODULE_OBJS) \
+		$(SIGNAL_OBJS) \
+		$(MODOBJS) \
+		$(srcdir)/Modules/getbuildinfo.c
+	$(CC) -c $(PY_CFLAGS) -DSVNVERSION=\"`LANG=C $(SVNVERSION) $(srcdir)`\" -o $@ $(srcdir)/Modules/getbuildinfo.c
 
 Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
 	$(CC) -c $(PY_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
@@ -990,7 +982,7 @@ clobber: clean
 # remove all generated files, even Makefile[.pre]
 # Keep configure and Python-ast.[ch], it's possible they can't be generated
 distclean: clobber
-	-rm -f core Makefile Makefile.pre buildno config.status \
+	-rm -f core Makefile Makefile.pre config.status \
 		Modules/Setup Modules/Setup.local Modules/Setup.config
 	find $(srcdir) '(' -name '*.fdc' -o -name '*~' \
 			   -o -name '[@,#]*' -o -name '*.old' \
