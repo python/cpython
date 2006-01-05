@@ -349,7 +349,7 @@ buildno: $(PARSER_OBJS) \
 		$(SIGNAL_OBJS) \
 		$(MODOBJS) \
 		$(srcdir)/Modules/getbuildinfo.c
-	if test -d $(srcdir)/.svn -a ! -z "`type -t svnversion`" ; then \
+	if test -d $(srcdir)/.svn -a "`which svnversion 2> /dev/null`"; then \
 		svnversion $(srcdir) >buildno; \
 	elif test -f buildno; then \
 		expr `cat buildno` + 1 >buildno1; \
