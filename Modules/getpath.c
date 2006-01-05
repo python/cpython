@@ -381,7 +381,11 @@ calculate_path(void)
     NSModule pythonModule;
 #endif
 #ifdef __APPLE__
+#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
     uint32_t nsexeclength = MAXPATHLEN;
+#else
+    unsigned long nsexeclength = MAXPATHLEN;
+#endif
 #endif
 
 	/* If there is no slash in the argv0 path, then we have to
