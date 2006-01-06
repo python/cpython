@@ -24,9 +24,9 @@ const char *
 Py_GetBuildInfo(void)
 {
 	static char buildinfo[50];
-	char *revision = Py_SubversionRevision();
-	char *sep = *revision ? ":" : "";
-	char *branch = Py_SubversionShortBranch();
+	const char *revision = Py_SubversionRevision();
+	const char *sep = *revision ? ":" : "";
+	const char *branch = Py_SubversionShortBranch();
 	PyOS_snprintf(buildinfo, sizeof(buildinfo),
 		      "%s%s%s, %.20s, %.9s", branch, sep, revision, 
 		      DATE, TIME);
