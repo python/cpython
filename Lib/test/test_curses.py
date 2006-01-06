@@ -14,10 +14,13 @@ import curses, sys, tempfile, os
 # 'curses' resource be given on the regrtest command line using the -u
 # option.  If not available, nothing after this line will be executed.
 
-from test import test_support
-test_support.requires('curses')
-if not os.isatty(sys.stdin.fileno()):
-    raise test_support.TestSkipped, "stdin is not a tty"
+from test.test_support import requires, TestSkipped
+requires('curses')
+
+# XXX: if newterm was supported we could use it instead of initscr and not exit
+term = os.environ.get('TERM')
+if not term or term == 'unknown':
+    raise TestSkipped, "$TERM=%r, calling initscr() may cause exit" % term
 
 def window_funcs(stdscr):
     "Test the methods of windows"
