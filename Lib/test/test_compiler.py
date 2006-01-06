@@ -12,7 +12,6 @@ class CompilerTest(unittest.TestCase):
         # standard library and its test suite.  This doesn't verify
         # that any of the code is correct, merely the compiler is able
         # to generate some kind of code for it.
-
         libdir = os.path.dirname(unittest.__file__)
         testdir = os.path.dirname(test.test_support.__file__)
 
@@ -36,6 +35,10 @@ class CompilerTest(unittest.TestCase):
 
     def testNewClassSyntax(self):
         compiler.compile("class foo():pass\n\n","<string>","exec")
+    
+    def testSyntaxErrors(self):
+        self.assertRaises(SyntaxError, compiler.compile, 
+                          "def foo(a=1,b):pass\n\n", "<string>", "exec")
 
     def testLineNo(self):
         # Test that all nodes except Module have a correct lineno attribute.
