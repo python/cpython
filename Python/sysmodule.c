@@ -943,7 +943,8 @@ static char branch[50];
 static char shortbranch[50];
 static const char *svn_revision;
 
-static void svnversion_init(void)
+static void
+svnversion_init(void)
 {
 	const char *python, *br_start, *br_end, *br_end2, *svnversion;
 	int len, istag;
