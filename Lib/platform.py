@@ -1092,7 +1092,7 @@ def processor():
 ### Various APIs for extracting information from sys.version
 
 _sys_version_parser = re.compile(r'([\w.+]+)\s*'
-                                  '\(#?(\d+:?\d+M?),\s*([\w ]+),\s*([\w :]+)\)\s*'
+                                  '\(#?([^,]+),\s*([\w ]+),\s*([\w :]+)\)\s*'
                                   '\[([^\]]+)\]?')
 _sys_version_cache = None
 
