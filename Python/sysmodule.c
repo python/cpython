@@ -457,16 +457,16 @@ sys_settscdump(PyObject *self, PyObject *args)
 		tstate->interp->tscdump = 0;
 	Py_INCREF(Py_None);
 	return Py_None;
-	
+
 }
 
-PyDoc_STRVAR(settscdump_doc, 
+PyDoc_STRVAR(settscdump_doc,
 "settscdump(bool)\n\
 \n\
 If true, tell the Python interpreter to dump VM measurements to\n\
 stderr.  If false, turn off dump.  The measurements are based on the\n\
 processor's time-stamp counter."
-); 
+);
 #endif /* TSC */
 
 static PyObject *
@@ -476,8 +476,8 @@ sys_setrecursionlimit(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "i:setrecursionlimit", &new_limit))
 		return NULL;
 	if (new_limit <= 0) {
-		PyErr_SetString(PyExc_ValueError, 
-				"recursion limit must be positive");  
+		PyErr_SetString(PyExc_ValueError,
+				"recursion limit must be positive");
 		return NULL;
 	}
 	Py_SetRecursionLimit(new_limit);
@@ -713,7 +713,7 @@ extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
 
 static PyMethodDef sys_methods[] = {
 	/* Might as well keep this in alphabetic order */
-	{"callstats", (PyCFunction)PyEval_GetCallStats, METH_NOARGS, 
+	{"callstats", (PyCFunction)PyEval_GetCallStats, METH_NOARGS,
 	 callstats_doc},
 	{"displayhook",	sys_displayhook, METH_O, displayhook_doc},
 	{"exc_info",	sys_exc_info, METH_NOARGS, exc_info_doc},
@@ -721,11 +721,11 @@ static PyMethodDef sys_methods[] = {
 	{"excepthook",	sys_excepthook, METH_VARARGS, excepthook_doc},
 	{"exit",	sys_exit, METH_VARARGS, exit_doc},
 #ifdef Py_USING_UNICODE
-	{"getdefaultencoding", (PyCFunction)sys_getdefaultencoding, 
-	 METH_NOARGS, getdefaultencoding_doc}, 
+	{"getdefaultencoding", (PyCFunction)sys_getdefaultencoding,
+	 METH_NOARGS, getdefaultencoding_doc},
 #endif
 #ifdef HAVE_DLOPEN
-	{"getdlopenflags", (PyCFunction)sys_getdlopenflags, METH_NOARGS, 
+	{"getdlopenflags", (PyCFunction)sys_getdlopenflags, METH_NOARGS,
 	 getdlopenflags_doc},
 #endif
 #ifdef COUNT_ALLOCS
@@ -736,7 +736,7 @@ static PyMethodDef sys_methods[] = {
 #endif
 #ifdef Py_USING_UNICODE
 	{"getfilesystemencoding", (PyCFunction)sys_getfilesystemencoding,
-	 METH_NOARGS, getfilesystemencoding_doc}, 
+	 METH_NOARGS, getfilesystemencoding_doc},
 #endif
 #ifdef Py_TRACE_REFS
 	{"getobjects",	_Py_GetObjects, METH_VARARGS},
@@ -757,14 +757,14 @@ static PyMethodDef sys_methods[] = {
 #endif
 #ifdef Py_USING_UNICODE
 	{"setdefaultencoding", sys_setdefaultencoding, METH_VARARGS,
-	 setdefaultencoding_doc}, 
+	 setdefaultencoding_doc},
 #endif
 	{"setcheckinterval",	sys_setcheckinterval, METH_VARARGS,
-	 setcheckinterval_doc}, 
+	 setcheckinterval_doc},
 	{"getcheckinterval",	sys_getcheckinterval, METH_NOARGS,
-	 getcheckinterval_doc}, 
+	 getcheckinterval_doc},
 #ifdef HAVE_DLOPEN
-	{"setdlopenflags", sys_setdlopenflags, METH_VARARGS, 
+	{"setdlopenflags", sys_setdlopenflags, METH_VARARGS,
 	 setdlopenflags_doc},
 #endif
 	{"setprofile",	sys_setprofile, METH_O, setprofile_doc},
@@ -957,7 +957,7 @@ static void svnversion_init(void)
 
 	br_start = python + 8;
 	br_end = strchr(br_start, '/');
-	/* Works even for trunk, 
+	/* Works even for trunk,
 	   as we are in trunk/Python/sysmodule.c */
 	br_end2 = strchr(br_end+1, '/');
 
@@ -966,7 +966,7 @@ static void svnversion_init(void)
 		strcpy(branch, "trunk");
 		strcpy(shortbranch, "trunk");
 
-	} 
+	}
 	else if (istag || strncmp(br_start, "branches", 8) == 0) {
 		len = br_end2 - br_start;
 		strncpy(branch, br_start, len);
@@ -975,7 +975,7 @@ static void svnversion_init(void)
 		len = br_end2 - (br_end + 1);
 		strncpy(shortbranch, br_end + 1, len);
 		shortbranch[len] = '\0';
-	} 
+	}
 	else {
 		Py_FatalError("bad HeadURL");
 		return;
@@ -994,7 +994,7 @@ static void svnversion_init(void)
 	}
 	else
 		svn_revision = "";
-	
+
 	svn_initialized = 1;
 }
 
@@ -1168,7 +1168,7 @@ _PySys_Init(void)
 	if (warnoptions != NULL) {
 		PyDict_SetItemString(sysdict, "warnoptions", warnoptions);
 	}
-	
+
 	if (PyErr_Occurred())
 		return NULL;
 	return m;
@@ -1180,7 +1180,7 @@ makepathobject(char *path, int delim)
 	int i, n;
 	char *p;
 	PyObject *v, *w;
-	
+
 	n = 1;
 	p = path;
 	while ((p = strchr(p, delim)) != NULL) {
