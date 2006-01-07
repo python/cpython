@@ -252,7 +252,7 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
                 if (!stmts)
 		    goto error;
                 if (num == 1) {
-		    stmt_ty s = ast_for_stmt(&c, n);
+		    s = ast_for_stmt(&c, n);
 		    if (!s)
 			goto error;
                     asdl_seq_SET(stmts, 0, s);
@@ -1092,7 +1092,6 @@ ast_for_genexp(struct compiling *c, const node *n)
                 return NULL;
 
             for (j = 0; j < n_ifs; j++) {
-                expr_ty expression;
                 REQ(ch, gen_iter);
                 ch = CHILD(ch, 0);
                 REQ(ch, gen_if);
