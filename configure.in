@@ -775,6 +775,12 @@ then
 	BASECFLAGS="$BASECFLAGS $ac_arch_flags"
 fi
 
+# disable check for icc since it seems to pass, but generates a warning
+if test "$CC" = icc
+then
+  ac_cv_opt_olimit_ok=no
+fi
+
 AC_MSG_CHECKING(whether $CC accepts -OPT:Olimit=0)
 AC_CACHE_VAL(ac_cv_opt_olimit_ok,
 [ac_save_cc="$CC"
