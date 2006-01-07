@@ -2871,10 +2871,17 @@ then
   [Define this if you have flockfile(), getc_unlocked(), and funlockfile()])
 fi
 
+# check where readline lives
+AC_CHECK_LIB(readline, readline)
+if test "$ac_cv_have_readline_readline" = no
+then
+  AC_CHECK_LIB(termcap, readline)
+fi
+
 # check for readline 2.1
 AC_CHECK_LIB(readline, rl_callback_handler_install,
 	AC_DEFINE(HAVE_RL_CALLBACK, 1,
-        [Define if you have readline 2.1]), , -ltermcap)
+        [Define if you have readline 2.1]), , )
 
 # check for readline 2.2
 AC_TRY_CPP([#include <readline/readline.h>],
@@ -2890,12 +2897,12 @@ fi
 # check for readline 4.0
 AC_CHECK_LIB(readline, rl_pre_input_hook,
 	AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK, 1,
-        [Define if you have readline 4.0]), , -ltermcap)
+        [Define if you have readline 4.0]), , )
 
 # check for readline 4.2
 AC_CHECK_LIB(readline, rl_completion_matches,
 	AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,
-        [Define if you have readline 4.2]), , -ltermcap)
+        [Define if you have readline 4.2]), , )
 
 # also in readline 4.2
 AC_TRY_CPP([#include <readline/readline.h>],
