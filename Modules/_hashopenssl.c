@@ -33,12 +33,12 @@ static PyTypeObject EVPtype;
     static EVP_MD_CTX CONST_new_ ## Name ## _ctx; \
     static EVP_MD_CTX *CONST_new_ ## Name ## _ctx_p = NULL;
 
-DEFINE_CONSTS_FOR_NEW(md5);
-DEFINE_CONSTS_FOR_NEW(sha1);
-DEFINE_CONSTS_FOR_NEW(sha224);
-DEFINE_CONSTS_FOR_NEW(sha256);
-DEFINE_CONSTS_FOR_NEW(sha384);
-DEFINE_CONSTS_FOR_NEW(sha512);
+DEFINE_CONSTS_FOR_NEW(md5)
+DEFINE_CONSTS_FOR_NEW(sha1)
+DEFINE_CONSTS_FOR_NEW(sha224)
+DEFINE_CONSTS_FOR_NEW(sha256)
+DEFINE_CONSTS_FOR_NEW(sha384)
+DEFINE_CONSTS_FOR_NEW(sha512)
 
 
 static EVPobject *
@@ -101,7 +101,7 @@ EVP_digest(EVPobject *self, PyObject *args)
 
     EVP_MD_CTX_copy(&temp_ctx, &self->ctx);
     digest_size = EVP_MD_CTX_size(&temp_ctx);
-    EVP_DigestFinal(&temp_ctx, (char *)digest, NULL);
+    EVP_DigestFinal(&temp_ctx, digest, NULL);
 
     retval = PyString_FromStringAndSize((const char *)digest, digest_size);
     EVP_MD_CTX_cleanup(&temp_ctx);
@@ -329,7 +329,7 @@ static PyTypeObject EVPtype = {
 static PyObject *
 EVPnew(PyObject *name_obj,
        const EVP_MD *digest, const EVP_MD_CTX *initial_ctx,
-       const char *cp, unsigned int len)
+       const unsigned char *cp, unsigned int len)
 {
     EVPobject *self;
 
