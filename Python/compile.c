@@ -51,9 +51,9 @@ int Py_OptimizeFlag = 0;
 #define DEFAULT_LNOTAB_SIZE 16
 
 struct instr {
-	int i_jabs : 1;
-	int i_jrel : 1;
-	int i_hasarg : 1;
+	unsigned i_jabs : 1;
+	unsigned i_jrel : 1;
+	unsigned i_hasarg : 1;
 	unsigned char i_opcode;
 	int i_oparg;
 	struct basicblock_ *i_target; /* target block (if jump instruction) */
@@ -74,9 +74,9 @@ typedef struct basicblock_ {
 	   block reached by normal control flow. */
 	struct basicblock_ *b_next;
 	/* b_seen is used to perform a DFS of basicblocks. */
-	int b_seen : 1;
+	unsigned b_seen : 1;
 	/* b_return is true if a RETURN_VALUE opcode is inserted. */
-	int b_return : 1;
+	unsigned b_return : 1;
 	/* depth of stack upon entry of block, computed by stackdepth() */
 	int b_startdepth;
 	/* instruction offset for block, computed by assemble_jump_offsets() */
@@ -1673,20 +1673,20 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 }
 
 #define VISIT_SEQ(C, TYPE, SEQ) { \
-	int i; \
+	int _i; \
 	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
-	for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-		TYPE ## _ty elt = asdl_seq_GET(seq, i); \
+	for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
+		TYPE ## _ty elt = asdl_seq_GET(seq, _i); \
 		if (!compiler_visit_ ## TYPE((C), elt)) \
 			return 0; \
 	} \
 }
 
 #define VISIT_SEQ_IN_SCOPE(C, TYPE, SEQ) { \
-	int i; \
+	int _i; \
 	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
-	for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-		TYPE ## _ty elt = asdl_seq_GET(seq, i); \
+	for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
+		TYPE ## _ty elt = asdl_seq_GET(seq, _i); \
 		if (!compiler_visit_ ## TYPE((C), elt)) { \
 			compiler_exit_scope(c); \
 			return 0; \
@@ -3859,7 +3859,7 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 		return 1;
 
 	if (d_bytecode > 255) {
-		int i, nbytes, ncodes = d_bytecode / 255;
+		int j, nbytes, ncodes = d_bytecode / 255;
 		nbytes = a->a_lnotab_off + 2 * ncodes;
 		len = PyString_GET_SIZE(a->a_lnotab);
 		if (nbytes >= len) {
@@ -3871,7 +3871,7 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 				return 0;
 		}
 		lnotab = PyString_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
-		for (i = 0; i < ncodes; i++) {
+		for (j = 0; j < ncodes; j++) {
 			*lnotab++ = 255;
 			*lnotab++ = 0;
 		}
@@ -3880,7 +3880,7 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 	}
 	assert(d_bytecode <= 255);
 	if (d_lineno > 255) {
-		int i, nbytes, ncodes = d_lineno / 255;
+		int j, nbytes, ncodes = d_lineno / 255;
 		nbytes = a->a_lnotab_off + 2 * ncodes;
 		len = PyString_GET_SIZE(a->a_lnotab);
 		if (nbytes >= len) {
@@ -3895,7 +3895,7 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 		*lnotab++ = 255;
 		*lnotab++ = d_bytecode;
 		d_bytecode = 0;
-		for (i = 1; i < ncodes; i++) {
+		for (j = 1; j < ncodes; j++) {
 			*lnotab++ = 255;
 			*lnotab++ = 0;
 		}
@@ -4190,7 +4190,7 @@ assemble(struct compiler *c, int addNone)
 
 	/* Emit code in reverse postorder from dfs. */
 	for (i = a.a_nblocks - 1; i >= 0; i--) {
-		basicblock *b = a.a_postorder[i];
+		b = a.a_postorder[i];
 		for (j = 0; j < b->b_iused; j++)
 			if (!assemble_emit(&a, &b->b_instr[j]))
 				goto error;
