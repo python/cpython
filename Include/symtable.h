@@ -31,13 +31,13 @@ typedef struct _symtable_entry {
 	PyObject *ste_children;  /* list of child ids */
 	_Py_block_ty ste_type;   /* module, class, or function */
 	int ste_unoptimized;     /* false if namespace is optimized */
-	int ste_nested : 1;      /* true if block is nested */
-	int ste_free : 1;        /* true if block has free variables */
-	int ste_child_free : 1;  /* true if a child block has free variables,
-				    including free refs to globals */
-	int ste_generator : 1;   /* true if namespace is a generator */
-	int ste_varargs : 1;     /* true if block has varargs */
-	int ste_varkeywords : 1; /* true if block has varkeywords */
+	unsigned ste_nested : 1;      /* true if block is nested */
+	unsigned ste_free : 1;        /* true if block has free variables */
+	unsigned ste_child_free : 1;  /* true if a child block has free vars,
+				         including free refs to globals */
+	unsigned ste_generator : 1;   /* true if namespace is a generator */
+	unsigned ste_varargs : 1;     /* true if block has varargs */
+	unsigned ste_varkeywords : 1; /* true if block has varkeywords */
 	int ste_lineno;          /* first line of block */
 	int ste_opt_lineno;      /* lineno of last exec or import * */
 	int ste_tmpname;         /* counter for listcomp temp vars */
