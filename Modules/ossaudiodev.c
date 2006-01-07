@@ -45,7 +45,7 @@ typedef unsigned long uint32_t;
 #endif
 
 typedef struct {
-    PyObject_HEAD;
+    PyObject_HEAD
     char    *devicename;              /* name of the device file */
     int      fd;                      /* file descriptor */
     int      mode;                    /* file mode (O_RDONLY, etc.) */
@@ -55,7 +55,7 @@ typedef struct {
 } oss_audio_t;
 
 typedef struct {
-    PyObject_HEAD;
+    PyObject_HEAD
     int      fd;                      /* The open mixer device */
 } oss_mixer_t;
 

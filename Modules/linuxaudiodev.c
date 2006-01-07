@@ -40,7 +40,7 @@ typedef unsigned long uint32_t;
 #endif
 
 typedef struct {
-    PyObject_HEAD;
+    PyObject_HEAD
     int		x_fd;		/* The open file */
     int         x_mode;           /* file mode */
     int		x_icount;	/* Input count */
