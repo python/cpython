@@ -539,7 +539,7 @@ update_symbols(PyObject *symbols, PyObject *scope,
 			*/
 			if  (class && 
 			     PyInt_AS_LONG(o) & (DEF_BOUND | DEF_GLOBAL)) {
-				int i = PyInt_AS_LONG(o) | DEF_FREE_CLASS;
+				i = PyInt_AS_LONG(o) | DEF_FREE_CLASS;
 				o = PyInt_FromLong(i);
 				if (!o) {
 					Py_DECREF(free_value);
@@ -1170,7 +1170,7 @@ symtable_implicit_arg(struct symtable *st, int pos)
 static int 
 symtable_visit_params(struct symtable *st, asdl_seq *args, int toplevel)
 {
-	int i, complex = 0;
+	int i;
 	
         /* go through all the toplevel arguments first */
 	for (i = 0; i < asdl_seq_LEN(args); i++) {
@@ -1183,7 +1183,6 @@ symtable_visit_params(struct symtable *st, asdl_seq *args, int toplevel)
 		}
 		else if (arg->kind == Tuple_kind) {
 			assert(arg->v.Tuple.ctx == Store);
-                        complex = 1;
 			if (toplevel) {
 				if (!symtable_implicit_arg(st, i))
 					return 0;
