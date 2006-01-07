@@ -1539,7 +1539,7 @@ enum XML_Status XMLCALL
 XML_ParseBuffer(XML_Parser parser, int len, int isFinal)
 {
   const char *start;
-  enum XML_Error result = XML_STATUS_OK;
+  enum XML_Status result = XML_STATUS_OK;
 
   switch (parsing) {
   case XML_SUSPENDED:
@@ -1698,7 +1698,7 @@ XML_StopParser(XML_Parser parser, XML_Bool resumable)
 enum XML_Status XMLCALL
 XML_ResumeParser(XML_Parser parser)
 {
-  enum XML_Error result = XML_STATUS_OK;
+  enum XML_Status result = XML_STATUS_OK;
 
   if (parsing != XML_SUSPENDED) {
     errorCode = XML_ERROR_NOT_SUSPENDED;
