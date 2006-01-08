@@ -115,6 +115,8 @@ Tests
 Build
 -----
 
+- Patch #881820: look for openpty and forkpty also in libbsd.
+
 - Use -xcode=pic32 for CCSHARED on Solaris with SunPro.
 
 - The Windows .msi files are now compressed using lzx:21. This produces a 
