@@ -319,6 +319,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1177307: Added a new codec utf_8_sig for UTF-8 with a BOM signature.
+
 - Patch #1157027: cookielib mishandles RFC 2109 cookies in Netscape mode
 
 - Patch #1117398: cookielib.LWPCookieJar and .MozillaCookieJar now raise
@@ -673,7 +675,6 @@ Build
   to exist in the struct (not required by either ISO C nor the UNIX 2 spec).
   Tests for sanity in tzname when HAVE_TZNAME defined were also defined.
   Closes bug #1096244.  Thanks Gregory Bond.
-
 
 C API
 -----
