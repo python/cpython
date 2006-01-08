@@ -367,6 +367,33 @@ class CharBufferTest(unittest.TestCase):
         self.assertRaises(TypeError, codecs.charbuffer_encode)
         self.assertRaises(TypeError, codecs.charbuffer_encode, 42)
 
+class UTF8SigTest(ReadTest):
+    encoding = "utf-8-sig"
+
+    def test_partial(self):
+        self.check_partial(
+            u"\ufeff\x00\xff\u07ff\u0800\uffff",
+            [
+                u"",
+                u"",
+                u"", # First BOM has been read and skipped
+                u"",
+                u"",
+                u"\ufeff", # Second BOM has been read and emitted
+                u"\ufeff\x00", # "\x00" read and emitted
+                u"\ufeff\x00", # First byte of encoded u"\xff" read
+                u"\ufeff\x00\xff", # Second byte of encoded u"\xff" read
+                u"\ufeff\x00\xff", # First byte of encoded u"\u07ff" read
+                u"\ufeff\x00\xff\u07ff", # Second byte of encoded u"\u07ff" read
+                u"\ufeff\x00\xff\u07ff",
+                u"\ufeff\x00\xff\u07ff",
+                u"\ufeff\x00\xff\u07ff\u0800",
+                u"\ufeff\x00\xff\u07ff\u0800",
+                u"\ufeff\x00\xff\u07ff\u0800",
+                u"\ufeff\x00\xff\u07ff\u0800\uffff",
+            ]
+        )
+
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
         self.assertEquals(codecs.escape_decode(""), ("", 0))
@@ -1044,6 +1071,7 @@ def test_main():
         UTF16LETest,
         UTF16BETest,
         UTF8Test,
+        UTF8SigTest,
         UTF7Test,
         UTF16ExTest,
         ReadBufferTest,
