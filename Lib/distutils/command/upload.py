@@ -70,17 +70,41 @@ class upload(Command):
             spawn(("gpg", "--detach-sign", "-a", filename),
                   dry_run=self.dry_run)
 
-        # Fill in the data
+        # Fill in the data - send all the meta-data in case we need to
+        # register a new release
         content = open(filename,'rb').read()
+        meta = self.distribution.metadata
         data = {
-            ':action':'file_upload',
-            'protcol_version':'1',
-            'name':self.distribution.get_name(),
-            'version':self.distribution.get_version(),
-            'content':(os.path.basename(filename),content),
-            'filetype':command,
-            'pyversion':pyversion,
-            'md5_digest':md5(content).hexdigest(),
+            # action
+            ':action': 'file_upload',
+            'protcol_version': '1',
+
+            # identify release
+            'name': meta.get_name(),
+            'version': meta.get_version(),
+
+            # file content
+            'content': (os.path.basename(filename),content),
+            'filetype': command,
+            'pyversion': pyversion,
+            'md5_digest': md5(content).hexdigest(),
+
+            # additional meta-data
+            'metadata_version' : '1.0',
+            'summary': meta.get_description(),
+            'home_page': meta.get_url(),
+            'author': meta.get_contact(),
+            'author_email': meta.get_contact_email(),
+            'license': meta.get_licence(),
+            'description': meta.get_long_description(),
+            'keywords': meta.get_keywords(),
+            'platform': meta.get_platforms(),
+            'classifiers': meta.get_classifiers(),
+            'download_url': meta.get_download_url(),
+            # PEP 314
+            'provides': meta.get_provides(),
+            'requires': meta.get_requires(),
+            'obsoletes': meta.get_obsoletes(),
             }
         comment = ''
         if command == 'bdist_rpm':
