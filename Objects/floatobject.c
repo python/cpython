@@ -425,7 +425,6 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 		int vsign = i == 0.0 ? 0 : i < 0.0 ? -1 : 1;
 		int wsign = _PyLong_Sign(w);
 		size_t nbits;
-		double mant;
 		int exponent;
 
 		if (vsign != wsign) {
@@ -471,7 +470,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 			op = _Py_SwappedOp[op];
 		}
 		assert(i > 0.0);
-		mant = frexp(i, &exponent);
+		(void) frexp(i, &exponent);
 		/* exponent is the # of bits in v before the radix point;
 		 * we know that nbits (the # of bits in w) > 48 at this point
 		 */
