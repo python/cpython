@@ -44,7 +44,7 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 	double val = -1.0;
 	struct lconv *locale_data;
 	const char *decimal_point;
-	int decimal_point_len;
+	size_t decimal_point_len;
 	const char *p, *decimal_point_pos;
 	const char *end = NULL; /* Silence gcc */
 
@@ -165,9 +165,8 @@ PyOS_ascii_formatd(char       *buffer,
 {
 	struct lconv *locale_data;
 	const char *decimal_point;
-	int decimal_point_len;
+	size_t decimal_point_len, rest_len;
 	char *p;
-	int rest_len;
 	char format_char;
 
 /* 	g_return_val_if_fail (buffer != NULL, NULL); */
