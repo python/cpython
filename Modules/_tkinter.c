@@ -98,6 +98,16 @@ Copyright (C) 1994 Steen Lumholt.
 
 #ifdef HAVE_CREATEFILEHANDLER
 
+/* This bit is to ensure that TCL_UNIX_FD is defined and doesn't interfere
+   with the proper calculation of FHANDLETYPE == TCL_UNIX_FD below. */
+#ifndef TCL_UNIX_FD
+#  ifdef TCL_WIN_SOCKET
+#    define TCL_UNIX_FD (! TCL_WIN_SOCKET)
+#  else
+#    define TCL_UNIX_FD 1
+#  endif
+#endif
+
 /* Tcl_CreateFileHandler() changed several times; these macros deal with the
    messiness.  In Tcl 8.0 and later, it is not available on Windows (and on
    Unix, only because Jack added it back); when available on Windows, it only
@@ -2619,6 +2629,7 @@ Tkapp_TkInit(PyObject *self, PyObject *args)
 	err = Tcl_Eval(Tkapp_Interp(self), "info exists	tk_version");
 	ENTER_OVERLAP
 	if (err == TCL_ERROR) {
+		/* XXX: shouldn't we do something with res? */
 		res = Tkinter_Error(self);
 	} else {
 		_tk_exists = Tkapp_Result(self);
