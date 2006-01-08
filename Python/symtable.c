@@ -432,8 +432,9 @@ analyze_cells(PyObject *scope, PyObject *free)
 	if (!w)
 		return 0;
 	while (PyDict_Next(scope, &pos, &name, &v)) {
+		long flags;
 		assert(PyInt_Check(v));
-		long flags = PyInt_AS_LONG(v);
+		flags = PyInt_AS_LONG(v);
 		if (flags != LOCAL)
 			continue;
 		if (!PyDict_GetItem(free, name))
