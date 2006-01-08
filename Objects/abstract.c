@@ -415,7 +415,7 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
 				binaryfunc slot;
 				slot = NB_BINOP(mv, op_slot);
 				if (slot) {
-					PyObject *x = slot(v, w);
+					x = slot(v, w);
 					Py_DECREF(v);
 					Py_DECREF(w);
 					return x;

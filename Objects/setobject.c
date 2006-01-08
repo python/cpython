@@ -846,7 +846,7 @@ set_update_internal(PySetObject *so, PyObject *other)
 		return set_merge(so, other);
 
 	if (PyDict_Check(other)) {
-		PyObject *key, *value;
+		PyObject *value;
 		int pos = 0;
 		while (PyDict_Next(other, &pos, &key, &value)) {
 			if (set_add_key(so, key) == -1)

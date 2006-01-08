@@ -920,8 +920,8 @@ PyObject_ClearWeakRefs(PyObject *object)
                 PyObject *callback = PyTuple_GET_ITEM(tuple, i * 2 + 1);
 
                 if (callback != NULL) {
-                    PyObject *current = PyTuple_GET_ITEM(tuple, i * 2);
-                    handle_callback((PyWeakReference *)current, callback);
+                    PyObject *item = PyTuple_GET_ITEM(tuple, i * 2);
+                    handle_callback((PyWeakReference *)item, callback);
                 }
             }
             Py_DECREF(tuple);
