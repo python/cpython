@@ -633,6 +633,8 @@ Library
 Build
 -----
 
+- Patch #881820: look for openpty and forkpty also in libbsd.
+
 - The sources of zlib are now part of the Python distribution (zlib 1.2.3).
   The zlib module is now builtin on Windows.
 

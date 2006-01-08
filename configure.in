@@ -2273,8 +2273,18 @@ void* p = setgroups,
 
 # check for openpty and forkpty
 
-AC_CHECK_FUNCS(openpty,, AC_CHECK_LIB(util,openpty, [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lutil"]))
-AC_CHECK_FUNCS(forkpty,, AC_CHECK_LIB(util,forkpty, [AC_DEFINE(HAVE_FORKPTY) LIBS="$LIBS -lutil"]))
+AC_CHECK_FUNCS(openpty,, 
+   AC_CHECK_LIB(util,openpty,
+     [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lutil"],
+     AC_CHECK_LIB(bsd,openpty, [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lbsd"])
+   )
+)
+AC_CHECK_FUNCS(forkpty,, 
+   AC_CHECK_LIB(util,forkpty, 
+     [AC_DEFINE(HAVE_FORKPTY) LIBS="$LIBS -lutil"],
+     AC_CHECK_LIB(bsd,forkpty, [AC_DEFINE(HAVE_FORKPTY) LIBS="$LIBS -lbsd"])
+   )
+)
 
 # check for long file support functions
 AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)
