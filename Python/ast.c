@@ -2030,7 +2030,7 @@ alias_for_import_name(struct compiling *c, const node *n)
                 return alias(NEW_IDENTIFIER(CHILD(n, 0)), NULL, c->c_arena);
             else {
                 /* Create a string of the form "a.b.c" */
-				int i;
+                int i;
                 size_t len;
                 char *s;
 
