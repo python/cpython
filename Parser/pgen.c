@@ -276,11 +276,14 @@ compile_item(labellist *ll, nfa *nf, node *n, int *pa, int *pb)
 static void
 compile_atom(labellist *ll, nfa *nf, node *n, int *pa, int *pb)
 {
+	int i;
+	
 	REQ(n, ATOM);
-	REQN(n->n_nchildren, 1);
+	i = n->n_nchildren;
+	REQN(i, 1);
 	n = n->n_child;
 	if (n->n_type == LPAR) {
-		REQN(n->n_nchildren, 3);
+		REQN(i, 3);
 		n++;
 		REQ(n, RHS);
 		compile_rhs(ll, nf, n, pa, pb);
