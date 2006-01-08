@@ -136,7 +136,7 @@ fill_file_fields(PyFileObject *f, FILE *fp, PyObject *name, char *mode,
 static int
 check_the_mode(char *mode)
 {
-	unsigned int len = strlen(mode);
+	size_t len = strlen(mode);
 
 	switch (len) {
 	case 0:
