@@ -18,6 +18,10 @@
 #include <openssl/evp.h>
 
 
+#ifndef HASH_OBJ_CONSTRUCTOR
+#define HASH_OBJ_CONSTRUCTOR 0
+#endif
+
 typedef struct {
     PyObject_HEAD
     PyObject            *name;  /* name of this hash algorithm */
