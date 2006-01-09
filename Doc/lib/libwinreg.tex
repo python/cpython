@@ -60,7 +60,7 @@ This module offers the following functions:
  be \code{None}. In that case, the handle returned is the same key handle 
  passed in to the function.
 
- If the key already exists, this function opens the existing key
+ If the key already exists, this function opens the existing key.
 
  The return value is the handle of the opened key.
  If the function fails, an \exception{EnvironmentError} exception is 
@@ -164,7 +164,7 @@ This module offers the following functions:
  \var{key} is an already open key, or any of the predefined
  \constant{HKEY_*} constants.
  
- \var{sub_key} is a string that identifies the sub_key to load
+ \var{sub_key} is a string that identifies the sub_key to load.
  
  \var {file_name} is the name of the file to load registry data from.
   This file must have been created with the \function{SaveKey()} function.
@@ -192,14 +192,14 @@ This module offers the following functions:
  \var{key} is an already open key, or any one of the predefined
  \constant{HKEY_*} constants.
 
- \var{sub_key} is a string that identifies the sub_key to open
+ \var{sub_key} is a string that identifies the sub_key to open.
  
  \var{res} is a reserved integer, and must be zero.  The default is zero.
  
  \var{sam} is an integer that specifies an access mask that describes 
  the desired security access for the key.  Default is \constant{KEY_READ}
  
- The result is a new handle to the specified key
+ The result is a new handle to the specified key.
  
  If the function fails, \exception{EnvironmentError} is raised.
 \end{funcdesc}
