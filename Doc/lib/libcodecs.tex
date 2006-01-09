@@ -546,7 +546,7 @@ There's another group of encodings (the so called charmap encodings)
 that choose a different subset of all unicode code points and how
 these codepoints are mapped to the bytes 0x0-0xff. To see how this is
 done simply open e.g.  encodings/cp1252.py (which is an encoding that
-is used primarily on Windows).  There's string constant with 256
+is used primarily on Windows).  There's a string constant with 256
 characters that shows you which character is mapped to which byte
 value.
 
@@ -584,7 +584,7 @@ there are no issues with byte order in UTF-8. Each byte in a UTF-8
 byte sequence consists of two parts: Marker bits (the most significant
 bits) and payload bits. The marker bits are a sequence of zero to six
 1 bits followed by a 0 bit. Unicode characters are encoded like this
-(with x being a payload bit, which when concatenated give the Unicode
+(with x being payload bits, which when concatenated give the Unicode
 character):
 
 \begin{tableii}{l|l}{textrm}{}{Range}{Encoding}
@@ -608,7 +608,7 @@ which encoding was used for encoding a Unicode string. Each charmap
 encoding can decode any random byte sequence. However that's not
 possible with UTF-8, as UTF-8 byte sequences have a structure that
 doesn't allow arbitrary byte sequence. To increase the reliability
-with which an UTF-8 encoding can be detected, Microsoft invented a
+with which a UTF-8 encoding can be detected, Microsoft invented a
 variant of UTF-8 (that Python 2.5 calls "utf-8-sig") for its Notepad
 program: Before any of the Unicode characters is written to the file,
 a UTF-8 encoded BOM (which looks like this as a byte sequence: 0xef,
