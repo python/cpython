@@ -12,6 +12,9 @@ What's New in Python 2.4.3c1?
 Core and builtins
 -----------------
 
+- Bug #1244610, #1392915, fix build problem on OpenBSD 3.7 and 3.8.
+  configure would break checking curses.h.
+
 - Bug #959576: The pwd module is now builtin. This allows Python to be
   built on UNIX platforms without $HOME set.
 
