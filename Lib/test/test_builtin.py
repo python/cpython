@@ -557,7 +557,7 @@ class BuiltinTest(unittest.TestCase):
         # set locale to something that doesn't use '.' for the decimal point
         try:
             import locale
-            orig_locale = locale.setlocale(locale.LC_NUMERIC, '')
+            orig_locale = locale.setlocale(locale.LC_NUMERIC)
             locale.setlocale(locale.LC_NUMERIC, 'fr_FR')
         except:
             # if we can't set the locale, just ignore this test
