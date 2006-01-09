@@ -209,6 +209,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1400115, Fix segfault when calling curses.panel.userptr()
+  without prior setting of the userptr.
+
 - Fix 64-bit problems in bsddb.
 
 - Patch #1365916: fix some unsafe 64-bit mmap methods.
