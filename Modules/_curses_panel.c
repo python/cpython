@@ -299,6 +299,11 @@ PyCursesPanel_userptr(PyCursesPanelObject *self)
     PyObject *obj;
     PyCursesInitialised; 
     obj = (PyObject *) panel_userptr(self->pan);
+    if (obj == NULL) {
+	PyErr_SetString(PyCursesError, "no userptr set");
+	return NULL;
+    }
+
     Py_INCREF(obj);
     return obj;
 }

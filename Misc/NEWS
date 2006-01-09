@@ -193,6 +193,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1400115, Fix segfault when calling curses.panel.userptr()
+  without prior setting of the userptr.
+
 - Bug #1346533, select.poll() doesn't raise an error if timeout > sys.maxint
 
 - Fix memory leak in posix.access().

@@ -9,6 +9,7 @@
 #
 
 import curses, sys, tempfile, os
+import curses.panel
 
 # Optionally test curses module.  This currently requires that the
 # 'curses' resource be given on the regrtest command line using the -u
@@ -213,12 +214,22 @@ def unit_tests():
             print 'curses.unctrl fails on character', repr(ch)
 
 
+def test_userptr_without_set(stdscr):
+    w = curses.newwin(10, 10)
+    p = curses.panel.new_panel(w)
+    # try to access userptr() before calling set_userptr() -- segfaults
+    try:
+        p.userptr()
+        raise RuntimeError, 'userptr should fail since not set'
+    except curses.panel.error:
+        pass
 
 def main(stdscr):
     curses.savetty()
     try:
         module_funcs(stdscr)
         window_funcs(stdscr)
+        test_userptr_without_set(stdscr)
     finally:
         curses.resetty()
 
