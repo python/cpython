@@ -6579,24 +6579,29 @@ getnextarg(PyObject *args, int arglen, int *p_argidx)
 #define F_ALT	(1<<3)
 #define F_ZERO	(1<<4)
 
-static
-int usprintf(register Py_UNICODE *buffer, char *format, ...)
+static int
+strtounicode(Py_UNICODE *buffer, const char *charbuffer)
 {
-    register int i;
-    int len;
-    va_list va;
-    char *charbuffer;
-    va_start(va, format);
-
-    /* First, format the string as char array, then expand to Py_UNICODE
-       array. */
-    charbuffer = (char *)buffer;
-    len = vsprintf(charbuffer, format, va);
+    register long i;
+    long len = strlen(charbuffer);
     for (i = len - 1; i >= 0; i--)
 	buffer[i] = (Py_UNICODE) charbuffer[i];
 
-    va_end(va);
     return len;
+}
+
+static int
+doubletounicode(Py_UNICODE *buffer, size_t len, const char *format, double x)
+{
+    PyOS_ascii_formatd((char *)buffer, len, format, x);
+    return strtounicode(buffer, (char *)buffer);
+}
+
+static int
+longtounicode(Py_UNICODE *buffer, size_t len, const char *format, long x)
+{
+    PyOS_snprintf((char *)buffer, len, format, x);
+    return strtounicode(buffer, (char *)buffer);
 }
 
 /* XXX To save some code duplication, formatfloat/long/int could have been
@@ -6648,7 +6653,7 @@ formatfloat(Py_UNICODE *buf,
     PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%d%c",
 		  (flags&F_ALT) ? "#" : "",
 		  prec, type);
-    return usprintf(buf, fmt, x);
+    return doubletounicode(buf, buflen, fmt, x);
 }
 
 static PyObject*
@@ -6740,9 +6745,9 @@ formatint(Py_UNICODE *buf,
                       prec, type);
     }
     if (sign[0])
-        return usprintf(buf, fmt, -x);
+        return longtounicode(buf, buflen, fmt, -x);
     else
-        return usprintf(buf, fmt, x);
+        return longtounicode(buf, buflen, fmt, x);
 }
 
 static int
