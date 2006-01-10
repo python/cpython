@@ -22,3 +22,6 @@ class TestBug1385040(unittest.TestCase):
 
 def test_main():
     test_support.run_unittest(TestBug1385040)
+
+if __name__ == "__main__":
+    test_main()
