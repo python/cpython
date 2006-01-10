@@ -5,7 +5,8 @@
 # does call every method and function.
 #
 # Functions not tested: {def,reset}_{shell,prog}_mode, getch(), getstr(),
-# getmouse(), ungetmouse(), init_color()
+# init_color()
+# Only called, not tested: getmouse(), ungetmouse()
 #
 
 import curses, sys, tempfile, os
@@ -106,6 +107,8 @@ def window_funcs(stdscr):
     stdscr.notimeout(1)
     win2.overlay(win)
     win2.overwrite(win)
+    win2.overlay(win, 1, 2, 3, 3, 2, 1)
+    win2.overwrite(win, 1, 2, 3, 3, 2, 1)
     stdscr.redrawln(1,2)
 
     stdscr.scrollok(1)
@@ -201,6 +204,9 @@ def module_funcs(stdscr):
     if hasattr(curses, 'getmouse'):
         curses.mousemask(curses.BUTTON1_PRESSED)
         curses.mouseinterval(10)
+        # just verify these don't cause errors
+        m = curses.getmouse()
+        curses.ungetmouse(*m)
 
 def unit_tests():
     from curses import ascii
