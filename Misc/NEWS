@@ -216,6 +216,10 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1400822, _curses over{lay,write} doesn't work when passing 6 ints.
+  Also fix ungetmouse() which did not accept arguments properly.
+  The code now conforms to the documented signature.
+
 - Bug #1400115, Fix segfault when calling curses.panel.userptr()
   without prior setting of the userptr.
 

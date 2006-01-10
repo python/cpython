@@ -1163,7 +1163,7 @@ PyCursesWindow_Overlay(PyCursesWindowObject *self, PyObject *args)
 	    return NULL;
 	break;
     case 7:
-	if (!PyArg_ParseTuple(args, "(O!iiiiii);window object, int, int, int, int, int, int",
+	if (!PyArg_ParseTuple(args, "O!iiiiii;window object, int, int, int, int, int, int",
 			      &PyCursesWindow_Type, &temp, &sminrow, &smincol,
 			      &dminrow, &dmincol, &dmaxrow, &dmaxcol))
 	    return NULL;
@@ -1201,7 +1201,7 @@ PyCursesWindow_Overwrite(PyCursesWindowObject *self, PyObject *args)
 	    return NULL;
 	break;
     case 7:
-	if (!PyArg_ParseTuple(args, "(O!iiiiii);window object, int, int, int, int, int, int",
+	if (!PyArg_ParseTuple(args, "O!iiiiii;window object, int, int, int, int, int, int",
 			      &PyCursesWindow_Type, &temp, &sminrow, &smincol,
 			      &dminrow, &dmincol, &dmaxrow, &dmaxcol))
 	    return NULL;
@@ -1674,7 +1674,7 @@ PyCurses_UngetMouse(PyObject *self, PyObject *args)
 	MEVENT event;
 
 	PyCursesInitialised
-	if (!PyArg_ParseTuple(args, "(hiiil)",
+	if (!PyArg_ParseTuple(args, "hiiil",
 			     &event.id, 
 			     &event.x, &event.y, &event.z,
 			     (int *) &event.bstate))
